@@ -265,7 +265,6 @@ int main(int argc, char **argv)
 
       #ifdef USE_LENSFUN
       // Retrieve lens distortion
-      lfDistortionModel distoModel;
       const lfCamera** cameras = lensfunDatabase->FindCameras(sCamName.c_str(), sCamModel.c_str());
       if(!cameras)
       {
@@ -281,21 +280,22 @@ int main(int argc, char **argv)
 
       lfLensCalibDistortion disto;
       (*lenses)[0].InterpolateDistortion(focalLengthPixel, disto);
-      k1 = disto.Terms[0];
-      k2 = disto.Terms[1];
-      k3 = disto.Terms[2];
-      distoModel = disto.Model;
-
       switch(disto.Model)
       {
         case LF_DIST_MODEL_POLY3:
           e_camera_model = PINHOLE_CAMERA_RADIAL1;
+          k1 = disto.Terms[0];
           break;
         case LF_DIST_MODEL_POLY5:
           e_camera_model = PINHOLE_CAMERA_RADIAL3;
+          k1 = disto.Terms[0];
+          k2 = disto.Terms[1];
           break;
         case LF_DIST_MODEL_PTLENS:
           e_camera_model = PINHOLE_CAMERA_PTLENS;
+          k1 = disto.Terms[0];
+          k2 = disto.Terms[1];
+          k3 = disto.Terms[2];
           break;
         default:
           break;
