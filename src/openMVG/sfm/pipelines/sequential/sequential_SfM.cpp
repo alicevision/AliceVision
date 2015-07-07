@@ -917,6 +917,11 @@ bool SequentialSfMReconstructionEngine::Resection(size_t viewIndex)
             std::make_shared<Pinhole_Intrinsic_Radial_K3>
             (view_I->ui_width, view_I->ui_height, K_(0,0), K_(0,2), K_(1,2));
         break;
+        case PINHOLE_CAMERA_PTLENS:
+          tiny_scene.intrinsics[view_I->id_intrinsic] =
+            std::make_shared<Pinhole_Intrinsic_Radial_PTLens>
+            (view_I->ui_width, view_I->ui_height, K_(0,0), K_(0,2), K_(1,2));
+        break;
         default:
           std::cerr << "Try to create an unknown camera type." << std::endl;
           return false;

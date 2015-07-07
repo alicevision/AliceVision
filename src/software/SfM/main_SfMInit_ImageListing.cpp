@@ -259,6 +259,10 @@ int main(int argc, char **argv)
           intrinsic = std::make_shared<Pinhole_Intrinsic_Radial_K3>
             (width, height, focal, ppx, ppy, 0.0, 0.0, 0.0);  // setup no distortion as initial guess
         break;
+        case PINHOLE_CAMERA_PTLENS:
+          intrinsic = std::make_shared<Pinhole_Intrinsic_Radial_PTLens>
+            (width, height, focal, ppx, ppy, 0.0, 0.0, 0.0);  // setup no distortion as initial guess
+        break;
         default:
           std::cout << "Unknown camera model: " << (int) e_User_camera_model << std::endl;
       }

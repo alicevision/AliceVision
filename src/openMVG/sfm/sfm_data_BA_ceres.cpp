@@ -31,6 +31,10 @@ ceres::CostFunction * IntrinsicsToCostFunction(IntrinsicBase * intrinsic, const 
       return new ceres::AutoDiffCostFunction<ResidualErrorFunctor_Pinhole_Intrinsic_Radial_K3, 2, 6, 6, 3>(
         new ResidualErrorFunctor_Pinhole_Intrinsic_Radial_K3(observation.data()));
     break;
+    case PINHOLE_CAMERA_PTLENS:
+      return new ceres::AutoDiffCostFunction<ResidualErrorFunctor_Pinhole_Intrinsic_Radial_PTLens, 2, 6, 6, 3>(
+        new ResidualErrorFunctor_Pinhole_Intrinsic_Radial_PTLens(observation.data()));
+    break;
     default:
       return NULL;
   }
