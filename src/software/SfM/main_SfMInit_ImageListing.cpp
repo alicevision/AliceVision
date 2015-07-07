@@ -206,19 +206,17 @@ int main(int argc, char **argv)
     }
 
     ImageHeader imgHeader;
-    if (openMVG::image::ReadImageHeader(sImageFilename.c_str(), &imgHeader))
-    {
-      width = imgHeader.width;
-      height = imgHeader.height;
-      ppx = width / 2.0;
-      ppy = height / 2.0;
-    }
-    else
+    if (!openMVG::image::ReadImageHeader(sImageFilename.c_str(), &imgHeader))
     {
       std::cerr << "Image "<< sImageFilename << "can't be opened" << std::endl;
-      continue; // image cannot be read
+      continue; 
     }
 
+    width = imgHeader.width;
+    height = imgHeader.height;
+    ppx = width / 2.0;
+    ppy = height / 2.0;
+    
     std::unique_ptr<Exif_IO> exifReader(new Exif_IO_EasyExif());
     exifReader->open( sImageFilename );
 
@@ -297,8 +295,7 @@ int main(int argc, char **argv)
           e_camera_model = PINHOLE_CAMERA_RADIAL3;
           break;
         case LF_DIST_MODEL_PTLENS:
-          // TODO
-          // e_camera_model = PINHOLE_CAMERA_PTLENS;
+          e_camera_model = PINHOLE_CAMERA_PTLENS;
           break;
         default:
           break;
@@ -325,6 +322,10 @@ int main(int argc, char **argv)
         case PINHOLE_CAMERA_RADIAL3:
           intrinsic = std::make_shared<Pinhole_Intrinsic_Radial_K3>
             (width, height, focalLengthPixel, ppx, ppy, k1, k2, 0);  // setup no distortion as initial guess
+        break;
+        case PINHOLE_CAMERA_PTLENS:
+          intrinsic = std::make_shared<Pinhole_Intrinsic_Radial_PTLens>
+            (width, height, focalLengthPixel, ppx, ppy, k1, k2, k3);  // setup no distortion as initial guess
         break;
         default:
           std::cout << "Unknown camera model: " << (int) e_camera_model << std::endl;

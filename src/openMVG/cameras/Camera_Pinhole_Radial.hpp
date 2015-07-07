@@ -144,13 +144,19 @@ class Pinhole_Intrinsic_Radial_K1 : public Pinhole_Intrinsic
     ar(cereal::make_nvp("disto_k1", _params));
   }
 
+  /// Compute distortion coefficient
+  template<typename T>
+  static T distoCoef(T k1, T r2)
+  {
+    return 1. + r2 * k1;
+  }
+
   private:
 
   /// Functor to solve Square(disto(radius(p'))) = r^2
   static double distoFunctor(const std::vector<double> & params, double r2)
   {
-    const double k1 = params[0];
-    return r2 * Square(1.+r2*k1);
+    return r2 * Square(distoCoef(params[0], r2));
   }
 };
 
@@ -178,23 +184,19 @@ class Pinhole_Intrinsic_Radial_K3 : public Pinhole_Intrinsic
 
   EINTRINSIC getType() const { return PINHOLE_CAMERA_RADIAL3; }
 
-  virtual bool have_disto() const {  return true; }
+  bool have_disto() const {  return true; }
 
   /// Add distortion to the point p (assume p is in the camera frame [normalized coordinates])
-  virtual Vec2 add_disto(const Vec2 & p) const {
-
-    const double k1 = _params[0], k2 = _params[1], k3 = _params[2];
+  Vec2 add_disto(const Vec2 & p) const {
 
     const double r2 = p(0)*p(0) + p(1)*p(1);
-    const double r4 = r2 * r2;
-    const double r6 = r4 * r2;
-    const double r_coeff = (1. + k1*r2 + k2*r4 + k3*r6);
+    const double r_coeff = distoCoef(_params[0], _params[1], _params[2], r2);
 
     return (p * r_coeff);
   }
 
   /// Remove distortion (return p' such that disto(p') = p)
-  virtual Vec2 remove_disto(const Vec2& p) const {
+  Vec2 remove_disto(const Vec2& p) const {
     // Compute the radius from which the point p comes from thanks to a bisection
     // Minimize disto(radius(p')^2) == actual Squared(radius(p))
 
@@ -206,7 +208,7 @@ class Pinhole_Intrinsic_Radial_K3 : public Pinhole_Intrinsic
   }
 
   // Data wrapper for non linear optimization (get data)
-  virtual std::vector<double> getParams() const
+  std::vector<double> getParams() const
   {
     std::vector<double> params = Pinhole_Intrinsic::getParams();
     params.push_back(_params[0]);
@@ -216,28 +218,27 @@ class Pinhole_Intrinsic_Radial_K3 : public Pinhole_Intrinsic
   }
 
   // Data wrapper for non linear optimization (update from data)
-  virtual bool updateFromParams(const std::vector<double> & params)
+  bool updateFromParams(const std::vector<double> & params)
   {
-    if (params.size() == 6) {
-      *this = Pinhole_Intrinsic_Radial_K3(
-        _w, _h,
-        params[0], params[1], params[2], // focal, ppx, ppy
-        params[3], params[4], params[5]); // K1, K2, K3
-      return true;
-    }
-    else  {
-      return false;
-    }
+    if (params.size() != 6)
+        return false;
+    
+    *this = Pinhole_Intrinsic_Radial_K3(
+      _w, _h,
+      params[0], params[1], params[2], // focal, ppx, ppy
+      params[3], params[4], params[5]); // K1, K2, K3
+    
+    return true;
   }
 
   /// Return the un-distorted pixel (with removed distortion)
-  virtual Vec2 get_ud_pixel(const Vec2& p) const
+  Vec2 get_ud_pixel(const Vec2& p) const
   {
     return cam2ima( remove_disto(ima2cam(p)) );
   }
 
   /// Return the distorted pixel (with added distortion)
-  virtual Vec2 get_d_pixel(const Vec2& p) const
+  Vec2 get_d_pixel(const Vec2& p) const
   {
     return cam2ima( add_disto(ima2cam(p)) );
   }
@@ -258,13 +259,134 @@ class Pinhole_Intrinsic_Radial_K3 : public Pinhole_Intrinsic
     ar(cereal::make_nvp("disto_k3", _params));
   }
 
+  /// Compute distortion coefficient
+  template<typename T>
+  static T distoCoef(T k1, T k2, T k3, T r2)
+  {
+    return 1. + r2 * (k1 + r2 * (k2 + r2 * k3));
+  }
+
+  private:
+  
+  /// Functor to solve Square(disto(radius(p'))) = r^2
+  static double distoFunctor(const std::vector<double> & params, double r2)
+  {
+    return r2 * Square(distoCoef(params[0], params[1], params[2], r2));
+  }
+};
+
+class Pinhole_Intrinsic_Radial_PTLens : public Pinhole_Intrinsic
+{
+  protected:
+  // center of distortion is applied by the Intrinsics class
+  std::vector<double> _params; // A, B, C
+
+  public:
+
+  Pinhole_Intrinsic_Radial_PTLens(
+    int w = 0, int h = 0,
+    double focal = 0.0, double ppx = 0, double ppy = 0,
+    double a = 0.0, double b = 0.0, double c = 0.0)
+      :Pinhole_Intrinsic(w, h, focal, ppx, ppy)
+  {
+    _params.resize(3);
+    _params[0] = a;
+    _params[1] = b;
+    _params[2] = c;
+  }
+
+  EINTRINSIC getType() const { return PINHOLE_CAMERA_PTLENS; }
+
+  bool have_disto() const {  return true; }
+
+  /// Add distortion to the point p (assume p is in the camera frame [normalized coordinates])
+  Vec2 add_disto(const Vec2 & p) const {
+
+    const double r2 = p(0)*p(0) + p(1)*p(1);
+    const double r_coeff = distoCoef(_params[0], _params[1], _params[2], r2);
+
+    return (p * r_coeff);
+  }
+
+  /// Remove distortion (return p' such that disto(p') = p)
+  Vec2 remove_disto(const Vec2& p) const {
+    // Compute the radius from which the point p comes from thanks to a bisection
+    // Minimize disto(radius(p')^2) == actual Squared(radius(p))
+
+    const double r2 = p(0)*p(0) + p(1)*p(1);
+    const double radius = (r2 == 0) ?
+      1. :
+      ::sqrt(radial_distortion::bisection_Radius_Solve(_params, r2, distoFunctor) / r2);
+    return radius * p;
+  }
+
+  // Data wrapper for non linear optimization (get data)
+  std::vector<double> getParams() const
+  {
+    std::vector<double> params = Pinhole_Intrinsic::getParams();
+    params.push_back(_params[0]);
+    params.push_back(_params[1]);
+    params.push_back(_params[2]);
+    return params;
+  }
+
+  // Data wrapper for non linear optimization (update from data)
+  bool updateFromParams(const std::vector<double> & params)
+  {
+    if (params.size() != 6)
+        return false;
+    
+    *this = Pinhole_Intrinsic_Radial_PTLens(
+      _w, _h,
+      params[0], params[1], params[2], // focal, ppx, ppy
+      params[3], params[4], params[5]); // K1, K2, K3
+    
+    return true;
+  }
+
+  /// Return the un-distorted pixel (with removed distortion)
+  Vec2 get_ud_pixel(const Vec2& p) const
+  {
+    return cam2ima( remove_disto(ima2cam(p)) );
+  }
+
+  /// Return the distorted pixel (with added distortion)
+  Vec2 get_d_pixel(const Vec2& p) const
+  {
+    return cam2ima( add_disto(ima2cam(p)) );
+  }
+
+  // Serialization
+  template <class Archive>
+  void save( Archive & ar) const
+  {
+    Pinhole_Intrinsic::save(ar);
+    ar(cereal::make_nvp("disto_ptlens", _params));
+  }
+
+  // Serialization
+  template <class Archive>
+  void load( Archive & ar)
+  {
+    Pinhole_Intrinsic::load(ar);
+    ar(cereal::make_nvp("disto_ptlens", _params));
+  }
+
+  /// Compute distortion coefficient
+  template<typename T>
+  static T distoCoef(T a, T b, T c, T r2)
+  {
+    const T r = sqrt(r2);
+    const T r3 = r * r2;
+    return ( a * r3 + b * r2 + c * r + 1. - a - b - c);
+  }
+
   private:
 
   /// Functor to solve Square(disto(radius(p'))) = r^2
   static double distoFunctor(const std::vector<double> & params, double r2)
   {
-    const double k1 = params[0], k2 = params[1], k3 = params[2];
-    return r2 * Square(1.+r2*(k1+r2*(k2+r2*k3)));
+    return r2 * Square(distoCoef(params[0], params[1], params[2], r2));
   }
 };
 
@@ -276,6 +398,8 @@ class Pinhole_Intrinsic_Radial_K3 : public Pinhole_Intrinsic
 
 CEREAL_REGISTER_TYPE_WITH_NAME(openMVG::cameras::Pinhole_Intrinsic_Radial_K1, "pinhole_radial_k1");
 CEREAL_REGISTER_TYPE_WITH_NAME(openMVG::cameras::Pinhole_Intrinsic_Radial_K3, "pinhole_radial_k3");
+CEREAL_REGISTER_TYPE_WITH_NAME(openMVG::cameras::Pinhole_Intrinsic_Radial_PTLens, "pinhole_radial_ptlens");
+
 
 #endif // #ifndef OPENMVG_CAMERA_PINHOLE_RADIAL_K_HPP
 
