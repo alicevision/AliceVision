@@ -3,7 +3,15 @@
 # Intrinsic image analysis and SfM_Data container initialization
 ###
 ADD_EXECUTABLE(openMVG_main_SfMInit_ImageListing main_SfMInit_ImageListing.cpp)
-TARGET_LINK_LIBRARIES(openMVG_main_SfMInit_ImageListing ${OpenMVG_LIBRARIES})
+SET(SFM_INIT_IMAGELISTING_LIBRARIES ${OpenMVG_LIBRARIES})
+FIND_PACKAGE(Lensfun)
+IF(LENSFUN_FOUND)
+  INCLUDE_DIRECTORIES(${LENSFUN_INCLUDE_DIR})
+  SET(SFM_INIT_IMAGELISTING_LIBRARIES ${OpenMVG_LIBRARIES} ${LENSFUN_LIBRARIES})
+  TARGET_COMPILE_DEFINITIONS(openMVG_main_SfMInit_ImageListing PUBLIC -DUSE_LENSFUN)
+ENDIF(LENSFUN_FOUND)
+
+TARGET_LINK_LIBRARIES(openMVG_main_SfMInit_ImageListing ${SFM_INIT_IMAGELISTING_LIBRARIES})
 
 #convert a v0.6 lists.txt file to the new sfm_data.X format
 ADD_EXECUTABLE(openMVG_main_ConvertList main_ConvertList.cpp)

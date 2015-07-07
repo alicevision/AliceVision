@@ -12,6 +12,10 @@
 
 #include "openMVG/sfm/sfm.hpp"
 
+#ifdef USE_LENSFUN
+#include "lensfun/lensfun.h"
+#endif
+
 #include "third_party/cmdLine/cmdLine.h"
 #include "third_party/stlplus3/filesystemSimplified/file_system.hpp"
 
@@ -71,12 +75,12 @@ int main(int argc, char **argv)
 
   bool b_Group_camera_model = true;
 
-  double focalPixPermm = -1.0;
+  double user_FocalLengthPixel = -1.0;
 
   cmd.add( make_option('i', sImageDir, "imageDirectory") );
   cmd.add( make_option('d', sfileDatabase, "sensorWidthDatabase") );
   cmd.add( make_option('o', sOutputDir, "outputDirectory") );
-  cmd.add( make_option('f', focalPixPermm, "focal") );
+  cmd.add( make_option('f', user_FocalLengthPixel, "focal") );
   cmd.add( make_option('k', sKmatrix, "intrinsics") );
   cmd.add( make_option('c', i_User_camera_model, "camera_model") );
   cmd.add( make_option('g', b_Group_camera_model, "group_camera_model") );
@@ -109,15 +113,16 @@ int main(int argc, char **argv)
             << "--imageDirectory " << sImageDir << std::endl
             << "--sensorWidthDatabase " << sfileDatabase << std::endl
             << "--outputDirectory " << sOutputDir << std::endl
-            << "--focal " << focalPixPermm << std::endl
+            << "--focal " << user_FocalLengthPixel << std::endl
             << "--intrinsics " << sKmatrix << std::endl
             << "--camera_model " << i_User_camera_model << std::endl
             << "--group_camera_model " << b_Group_camera_model << std::endl;
 
   // Expected properties for each image
-  double width = -1, height = -1, focal = -1, ppx = -1,  ppy = -1;
+  double width = -1, height = -1, focalLengthPixel = -1, ppx = -1, ppy = -1, sensorWidth = -1, k1 = 0, k2 = 0, k3 = 0;
 
-  const EINTRINSIC e_User_camera_model = EINTRINSIC(i_User_camera_model);
+  EINTRINSIC e_camera_model = EINTRINSIC(i_User_camera_model);
+
 
   if ( !stlplus::folder_exists( sImageDir ) )
   {
@@ -141,13 +146,13 @@ int main(int argc, char **argv)
   }
 
   if (sKmatrix.size() > 0 &&
-    !checkIntrinsicStringValidity(sKmatrix, focal, ppx, ppy) )
+    !checkIntrinsicStringValidity(sKmatrix, focalLengthPixel, ppx, ppy) )
   {
     std::cerr << "\nInvalid K matrix input" << std::endl;
     return EXIT_FAILURE;
   }
 
-  if (sKmatrix.size() > 0 && focalPixPermm != -1.0)
+  if (sKmatrix.size() > 0 && user_FocalLengthPixel != -1.0)
   {
     std::cerr << "\nCannot combine -f and -k options" << std::endl;
     return EXIT_FAILURE;
@@ -163,6 +168,18 @@ int main(int argc, char **argv)
     }
   }
 
+  // Lensfun database
+  #ifdef USE_LENSFUN
+  struct lfDatabase *lensfunDatabase;
+  lensfunDatabase = lf_db_new ();
+  if (!lensfunDatabase)
+  {
+      std::cerr << "Failed to create lensfun database" << std::endl;
+      return EXIT_FAILURE;
+  }
+  lf_db_load(lensfunDatabase);
+  #endif
+
   std::vector<std::string> vec_image = stlplus::folder_files( sImageDir );
   std::sort(vec_image.begin(), vec_image.end());
 
@@ -177,13 +194,16 @@ int main(int argc, char **argv)
     iter_image++ )
   {
     // Read meta data to fill camera parameter (w,h,focal,ppx,ppy) fields.
-    width = height = ppx = ppy = focal = -1.0;
+    width = height = ppx = ppy = focalLengthPixel = -1.0;
 
     const std::string sImageFilename = stlplus::create_filespec( sImageDir, *iter_image );
 
     // Test if the image format is supported:
     if (openMVG::image::GetFormat(sImageFilename.c_str()) == openMVG::image::Unknown)
+    {
+      std::cerr << "Image "<< sImageFilename << "can't be opened" << std::endl;
       continue; // image cannot be opened
+    }
 
     ImageHeader imgHeader;
     if (openMVG::image::ReadImageHeader(sImageFilename.c_str(), &imgHeader))
@@ -194,30 +214,35 @@ int main(int argc, char **argv)
       ppy = height / 2.0;
     }
     else
+    {
+      std::cerr << "Image "<< sImageFilename << "can't be opened" << std::endl;
       continue; // image cannot be read
+    }
 
     std::unique_ptr<Exif_IO> exifReader(new Exif_IO_EasyExif());
     exifReader->open( sImageFilename );
 
-    // Consider the case where focal is provided manually
-    if ( !exifReader->doesHaveExifInfo() || focalPixPermm != -1)
+    // Consider the case where focal is provided manually  
+    if ( !exifReader->doesHaveExifInfo() || user_FocalLengthPixel != -1)
     {
       if (sKmatrix.size() > 0) // Known user calibration K matrix
       {
-        if (!checkIntrinsicStringValidity(sKmatrix, focal, ppx, ppy))
-          focal = -1.0;
+        if (!checkIntrinsicStringValidity(sKmatrix, focalLengthPixel, ppx, ppy))
+          focalLengthPixel = -1.0;
       }
       else // User provided focal lenght value
-        if (focalPixPermm != -1 )
-        focal = focalPixPermm;
+        if (user_FocalLengthPixel != -1 )
+          focalLengthPixel = user_FocalLengthPixel;
     }
     else // If image contains meta data
     {
       const std::string sCamName = exifReader->getBrand();
       const std::string sCamModel = exifReader->getModel();
+      const std::string sLensModel = exifReader->getLensModel();
+      const float focalLengthMm = exifReader->getFocal();
 
       // Handle case where focal length is equal to 0
-      if (exifReader->getFocal() == 0.0f)
+      if (focalLengthMm == 0.0f)
       {
         std::cerr << stlplus::basename_part(sImageFilename) << ": Focal length is missing." << std::endl;
         continue;
@@ -229,8 +254,8 @@ int main(int argc, char **argv)
         if ( getInfo( sCamName, sCamModel, vec_database, datasheet ))
         {
           // The camera model was found in the database so we can compute it's approximated focal length
-          const double ccdw = datasheet._sensorSize;
-          focal = std::max ( width, height ) * exifReader->getFocal() / ccdw;
+          sensorWidth = datasheet._sensorSize;
+          focalLengthPixel = std::max ( width, height ) * focalLengthMm / sensorWidth;
         }
         else
         {
@@ -239,30 +264,70 @@ int main(int argc, char **argv)
             << "Please consider add your camera model and sensor width in the database." << std::endl;
         }
       }
+
+      #ifdef USE_LENSFUN
+      // Retrieve lens distortion
+      lfDistortionModel distoModel;
+      const lfCamera** cameras = lensfunDatabase->FindCameras(sCamName.c_str(), sCamModel.c_str());
+      if(!cameras)
+      {
+        std::cerr << "Camera \""<< sCamName.c_str() << " - " << sCamModel.c_str() << "\" not found in lensfun database" << std::endl;
+        continue;
+      }
+      const lfLens** lenses = lensfunDatabase->FindLenses(*cameras, sCamName.c_str(), sLensModel.c_str());
+      if(!lenses)
+      {
+        std::cerr << "Lens \"" << sLensModel.c_str() << "\" not found in lensfun database" << std::endl;
+        continue;
+      }
+
+      lfLensCalibDistortion disto;
+      (*lenses)[0].InterpolateDistortion(focalLengthPixel, disto);
+      k1 = disto.Terms[0];
+      k2 = disto.Terms[1];
+      k3 = disto.Terms[2];
+      distoModel = disto.Model;
+
+      switch(disto.Model)
+      {
+        case LF_DIST_MODEL_POLY3:
+          e_camera_model = PINHOLE_CAMERA_RADIAL1;
+          break;
+        case LF_DIST_MODEL_POLY5:
+          e_camera_model = PINHOLE_CAMERA_RADIAL3;
+          break;
+        case LF_DIST_MODEL_PTLENS:
+          // TODO
+          // e_camera_model = PINHOLE_CAMERA_PTLENS;
+          break;
+        default:
+          break;
+      }
+      #endif
     }
 
     // Build intrinsic parameter related to the view
     std::shared_ptr<IntrinsicBase> intrinsic (NULL);
 
-    if (focal > 0 && ppx > 0 && ppy > 0 && width > 0 && height > 0)
+    if (focalLengthPixel > 0 && ppx > 0 && ppy > 0 && width > 0 && height > 0 && sensorWidth > 0)
     {
       // Create the desired camera type
-      switch(e_User_camera_model)
+      switch(e_camera_model)
       {
         case PINHOLE_CAMERA:
           intrinsic = std::make_shared<Pinhole_Intrinsic>
-            (width, height, focal, ppx, ppy);
+            (width, height, focalLengthPixel, ppx, ppy);
         break;
         case PINHOLE_CAMERA_RADIAL1:
           intrinsic = std::make_shared<Pinhole_Intrinsic_Radial_K1>
-            (width, height, focal, ppx, ppy, 0.0); // setup no distortion as initial guess
+            (width, height, focalLengthPixel, ppx, ppy, k1); // setup no distortion as initial guess
         break;
         case PINHOLE_CAMERA_RADIAL3:
           intrinsic = std::make_shared<Pinhole_Intrinsic_Radial_K3>
-            (width, height, focal, ppx, ppy, 0.0, 0.0, 0.0);  // setup no distortion as initial guess
+            (width, height, focalLengthPixel, ppx, ppy, k1, k2, 0);  // setup no distortion as initial guess
         break;
         default:
-          std::cout << "Unknown camera model: " << (int) e_User_camera_model << std::endl;
+          std::cout << "Unknown camera model: " << (int) e_camera_model << std::endl;
       }
     }
 
