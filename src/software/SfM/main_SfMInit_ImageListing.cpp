@@ -72,11 +72,13 @@ int main(int argc, char **argv)
   bool b_Group_camera_model = true;
 
   double focalPixPermm = -1.0;
+  double sensorWidth = -1.0;
 
   cmd.add( make_option('i', sImageDir, "imageDirectory") );
   cmd.add( make_option('d', sfileDatabase, "sensorWidthDatabase") );
   cmd.add( make_option('o', sOutputDir, "outputDirectory") );
   cmd.add( make_option('f', focalPixPermm, "focal") );
+  cmd.add( make_option('s', sensorWidth, "sensorWidth") );
   cmd.add( make_option('k', sKmatrix, "intrinsics") );
   cmd.add( make_option('c', i_User_camera_model, "camera_model") );
   cmd.add( make_option('g', b_Group_camera_model, "group_camera_model") );
@@ -90,6 +92,7 @@ int main(int argc, char **argv)
       << "[-d|--sensorWidthDatabase]\n"
       << "[-o|--outputDirectory]\n"
       << "[-f|--focal] (pixels)\n"
+      << "[-s|--sensorWidth] (mm)\n"
       << "[-k|--intrinsics] Kmatrix: \"f;0;ppx;0;f;ppy;0;0;1\"\n"
       << "[-c|--camera_model] Camera model type:\n"
       << "\t 1: Pinhole\n"
@@ -110,12 +113,13 @@ int main(int argc, char **argv)
             << "--sensorWidthDatabase " << sfileDatabase << std::endl
             << "--outputDirectory " << sOutputDir << std::endl
             << "--focal " << focalPixPermm << std::endl
+            << "--sensorWidth " << sensorWidth << std::endl
             << "--intrinsics " << sKmatrix << std::endl
             << "--camera_model " << i_User_camera_model << std::endl
             << "--group_camera_model " << b_Group_camera_model << std::endl;
 
   // Expected properties for each image
-  double width = -1, height = -1, focal = -1, ppx = -1,  ppy = -1;
+  double width = -1, height = -1, ppx = -1,  ppy = -1;
 
   const EINTRINSIC e_User_camera_model = EINTRINSIC(i_User_camera_model);
 
@@ -141,7 +145,7 @@ int main(int argc, char **argv)
   }
 
   if (sKmatrix.size() > 0 &&
-    !checkIntrinsicStringValidity(sKmatrix, focal, ppx, ppy) )
+    !checkIntrinsicStringValidity(sKmatrix, focalPixPermm, ppx, ppy) )
   {
     std::cerr << "\nInvalid K matrix input" << std::endl;
     return EXIT_FAILURE;
@@ -177,7 +181,7 @@ int main(int argc, char **argv)
     iter_image++ )
   {
     // Read meta data to fill camera parameter (w,h,focal,ppx,ppy) fields.
-    width = height = ppx = ppy = focal = -1.0;
+    width = height = ppx = ppy = -1.0;
 
     const std::string sImageFilename = stlplus::create_filespec( sImageDir, *iter_image );
 
@@ -200,37 +204,28 @@ int main(int argc, char **argv)
     exifReader->open( sImageFilename );
 
     // Consider the case where focal is provided manually
-    if ( !exifReader->doesHaveExifInfo() || focalPixPermm != -1)
+    if (sKmatrix.size() > 0)
     {
-      if (sKmatrix.size() > 0) // Known user calibration K matrix
-      {
-        if (!checkIntrinsicStringValidity(sKmatrix, focal, ppx, ppy))
-          focal = -1.0;
-      }
-      else // User provided focal lenght value
-        if (focalPixPermm != -1 )
-        focal = focalPixPermm;
-    }
-    else // If image contains meta data
+      if (!checkIntrinsicStringValidity(sKmatrix, focalPixPermm, ppx, ppy))
+          focalPixPermm = -1.0;
+    } 
+
+    // If image contains meta data
+    if (exifReader->doesHaveExifInfo())
     {
-      const std::string sCamName = exifReader->getBrand();
-      const std::string sCamModel = exifReader->getModel();
-
-      // Handle case where focal length is equal to 0
-      if (exifReader->getFocal() == 0.0f)
+      
+      // Retrieve sensor width in the database
+      if(sensorWidth == -1.0)
       {
-        std::cerr << stlplus::basename_part(sImageFilename) << ": Focal length is missing." << std::endl;
-        continue;
-      }
+        const std::string sCamName = exifReader->getBrand();
+        const std::string sCamModel = exifReader->getModel();
 
-      // Create the image entry in the list file
-      {
+        std::cout << "Search sensor width in the database." << std::endl;
         Datasheet datasheet;
         if ( getInfo( sCamName, sCamModel, vec_database, datasheet ))
         {
-          // The camera model was found in the database so we can compute it's approximated focal length
-          const double ccdw = datasheet._sensorSize;
-          focal = std::max ( width, height ) * exifReader->getFocal() / ccdw;
+          sensorWidth = datasheet._sensorSize;
+          std::cout << "Camera found in database. Sensor width = " << sensorWidth << std::endl;
         }
         else
         {
@@ -239,27 +234,44 @@ int main(int argc, char **argv)
             << "Please consider add your camera model and sensor width in the database." << std::endl;
         }
       }
+
+      // Focal
+      if(focalPixPermm == -1)
+      {
+        // Handle case where focal length is equal to 0
+        if (exifReader->getFocal() == 0.0f)
+        {
+          std::cerr << stlplus::basename_part(sImageFilename) << ": Focal length is missing." << std::endl;
+          continue;
+        }
+
+        // Compute approximated focal length
+        if(sensorWidth != -1.0)
+        {     
+          focalPixPermm = std::max ( width, height ) * exifReader->getFocal() / sensorWidth;
+          std::cout << "Focal = " <<  focalPixPermm << std::endl;
+        }
+      }
     }
 
     // Build intrinsic parameter related to the view
     std::shared_ptr<IntrinsicBase> intrinsic (NULL);
-
-    if (focal > 0 && ppx > 0 && ppy > 0 && width > 0 && height > 0)
+    if (focalPixPermm > 0 && ppx > 0 && ppy > 0 && width > 0 && height > 0)
     {
       // Create the desired camera type
       switch(e_User_camera_model)
       {
         case PINHOLE_CAMERA:
           intrinsic = std::make_shared<Pinhole_Intrinsic>
-            (width, height, focal, ppx, ppy);
+            (width, height, focalPixPermm, ppx, ppy);
         break;
         case PINHOLE_CAMERA_RADIAL1:
           intrinsic = std::make_shared<Pinhole_Intrinsic_Radial_K1>
-            (width, height, focal, ppx, ppy, 0.0); // setup no distortion as initial guess
+            (width, height, focalPixPermm, ppx, ppy, 0.0); // setup no distortion as initial guess
         break;
         case PINHOLE_CAMERA_RADIAL3:
           intrinsic = std::make_shared<Pinhole_Intrinsic_Radial_K3>
-            (width, height, focal, ppx, ppy, 0.0, 0.0, 0.0);  // setup no distortion as initial guess
+            (width, height, focalPixPermm, ppx, ppy, 0.0, 0.0, 0.0);  // setup no distortion as initial guess
         break;
         default:
           std::cout << "Unknown camera model: " << (int) e_User_camera_model << std::endl;
