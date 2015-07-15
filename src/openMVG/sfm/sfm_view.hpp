@@ -28,15 +28,19 @@ struct View
   // image size
   IndexT ui_width, ui_height;
 
+  // Sensort width
+  double sensorWidth;
+
   // Constructor (use unique index for the view_id)
   View(
     const std::string & sImgPath = "",
     IndexT view_id = UndefinedIndexT,
     IndexT intrinsic_id = UndefinedIndexT,
     IndexT pose_id = UndefinedIndexT,
-    IndexT width = UndefinedIndexT, IndexT height = UndefinedIndexT)
+    IndexT width = UndefinedIndexT, IndexT height = UndefinedIndexT,
+    double sensorWidth = -1.0)
     :s_Img_path(sImgPath), id_view(view_id), id_intrinsic(intrinsic_id),
-    id_pose(pose_id), ui_width(width), ui_height(height)
+    id_pose(pose_id), ui_width(width), ui_height(height), sensorWidth(sensorWidth)
     {}
 
   // Serialization
@@ -52,6 +56,7 @@ struct View
        cereal::make_nvp("filename", filename),
        cereal::make_nvp("width", ui_width),
        cereal::make_nvp("height", ui_height),
+       cereal::make_nvp("sensorWidth", sensorWidth),
        cereal::make_nvp("id_view", id_view),
        cereal::make_nvp("id_intrinsic", id_intrinsic),
        cereal::make_nvp("id_pose", id_pose));

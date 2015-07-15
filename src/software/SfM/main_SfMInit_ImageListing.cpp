@@ -75,12 +75,14 @@ int main(int argc, char **argv)
 
   bool b_Group_camera_model = true;
 
-  double user_FocalLengthPixel = -1.0;
+  double focalLengthPixel = -1.0;
+  double sensorWidth = -1.0;
 
   cmd.add( make_option('i', sImageDir, "imageDirectory") );
   cmd.add( make_option('d', sfileDatabase, "sensorWidthDatabase") );
   cmd.add( make_option('o', sOutputDir, "outputDirectory") );
-  cmd.add( make_option('f', user_FocalLengthPixel, "focal") );
+  cmd.add( make_option('f', focalLengthPixel, "focal") );
+  cmd.add( make_option('s', sensorWidth, "sensorWidth") );
   cmd.add( make_option('k', sKmatrix, "intrinsics") );
   cmd.add( make_option('c', i_User_camera_model, "camera_model") );
   cmd.add( make_option('g', b_Group_camera_model, "group_camera_model") );
@@ -94,6 +96,7 @@ int main(int argc, char **argv)
       << "[-d|--sensorWidthDatabase]\n"
       << "[-o|--outputDirectory]\n"
       << "[-f|--focal] (pixels)\n"
+      << "[-s|--sensorWidth] (mm)\n"
       << "[-k|--intrinsics] Kmatrix: \"f;0;ppx;0;f;ppy;0;0;1\"\n"
       << "[-c|--camera_model] Camera model type:\n"
       << "\t 1: Pinhole\n"
@@ -113,16 +116,15 @@ int main(int argc, char **argv)
             << "--imageDirectory " << sImageDir << std::endl
             << "--sensorWidthDatabase " << sfileDatabase << std::endl
             << "--outputDirectory " << sOutputDir << std::endl
-            << "--focal " << user_FocalLengthPixel << std::endl
+            << "--focal " << focalLengthPixel << std::endl
+            << "--sensorWidth " << sensorWidth << std::endl
             << "--intrinsics " << sKmatrix << std::endl
             << "--camera_model " << i_User_camera_model << std::endl
             << "--group_camera_model " << b_Group_camera_model << std::endl;
 
   // Expected properties for each image
-  double width = -1, height = -1, focalLengthPixel = -1, ppx = -1, ppy = -1, sensorWidth = -1, k1 = 0, k2 = 0, k3 = 0;
-
+  double width = -1, height = -1, ppx = -1, ppy = -1, k1 = 0, k2 = 0, k3 = 0;
   EINTRINSIC e_camera_model = EINTRINSIC(i_User_camera_model);
-
 
   if ( !stlplus::folder_exists( sImageDir ) )
   {
@@ -152,7 +154,7 @@ int main(int argc, char **argv)
     return EXIT_FAILURE;
   }
 
-  if (sKmatrix.size() > 0 && user_FocalLengthPixel != -1.0)
+  if (sKmatrix.size() > 0 && focalLengthPixel != -1.0)
   {
     std::cerr << "\nCannot combine -f and -k options" << std::endl;
     return EXIT_FAILURE;
@@ -194,7 +196,7 @@ int main(int argc, char **argv)
     iter_image++ )
   {
     // Read meta data to fill camera parameter (w,h,focal,ppx,ppy) fields.
-    width = height = ppx = ppy = focalLengthPixel = -1.0;
+    width = height = ppx = ppy = -1.0;
 
     const std::string sImageFilename = stlplus::create_filespec( sImageDir, *iter_image );
 
@@ -220,46 +222,52 @@ int main(int argc, char **argv)
     std::unique_ptr<Exif_IO> exifReader(new Exif_IO_EasyExif());
     exifReader->open( sImageFilename );
 
-    // Consider the case where focal is provided manually  
-    if ( !exifReader->doesHaveExifInfo() || user_FocalLengthPixel != -1)
+    // Consider the case where focal is provided manually
+    if (sKmatrix.size() > 0)
     {
-      if (sKmatrix.size() > 0) // Known user calibration K matrix
-      {
-        if (!checkIntrinsicStringValidity(sKmatrix, focalLengthPixel, ppx, ppy))
+      if (!checkIntrinsicStringValidity(sKmatrix, focalLengthPixel, ppx, ppy))
           focalLengthPixel = -1.0;
-      }
-      else // User provided focal lenght value
-        if (user_FocalLengthPixel != -1 )
-          focalLengthPixel = user_FocalLengthPixel;
-    }
-    else // If image contains meta data
+    } 
+
+    // If image contains meta data
+    if (exifReader->doesHaveExifInfo())
     {
       const std::string sCamName = exifReader->getBrand();
       const std::string sCamModel = exifReader->getModel();
-      const std::string sLensModel = exifReader->getLensModel();
-      const float focalLengthMm = exifReader->getFocal();
-
-      // Handle case where focal length is equal to 0
-      if (focalLengthMm == 0.0f)
+      
+      // Retrieve sensor width in the database
+      if(sensorWidth == -1.0)
       {
-        std::cerr << stlplus::basename_part(sImageFilename) << ": Focal length is missing." << std::endl;
-        continue;
-      }
-
-      // Create the image entry in the list file
-      {
+        std::cout << "Search sensor width in the database." << std::endl;
         Datasheet datasheet;
         if ( getInfo( sCamName, sCamModel, vec_database, datasheet ))
         {
-          // The camera model was found in the database so we can compute it's approximated focal length
           sensorWidth = datasheet._sensorSize;
-          focalLengthPixel = std::max ( width, height ) * focalLengthMm / sensorWidth;
+          std::cout << "Camera found in database. Sensor width = " << sensorWidth << std::endl;
         }
         else
         {
           std::cout << stlplus::basename_part(sImageFilename) << ": Camera \""
             << sCamName << "\" model \"" << sCamModel << "\" doesn't exist in the database" << std::endl
             << "Please consider add your camera model and sensor width in the database." << std::endl;
+        }
+      }
+
+      // Focal
+      if(focalLengthPixel == -1)
+      {
+        // Handle case where focal length is equal to 0
+        if (exifReader->getFocal() == 0.0f)
+        {
+          std::cerr << stlplus::basename_part(sImageFilename) << ": Focal length is missing." << std::endl;
+          continue;
+        }
+
+        // Compute approximated focal length
+        if(sensorWidth != -1.0)
+        {     
+          focalLengthPixel = std::max ( width, height ) * exifReader->getFocal() / sensorWidth;
+          std::cout << "Focal = " <<  focalLengthPixel << std::endl;
         }
       }
 
@@ -301,12 +309,13 @@ int main(int argc, char **argv)
           break;
       }
       #endif
+
+
     }
 
     // Build intrinsic parameter related to the view
     std::shared_ptr<IntrinsicBase> intrinsic (NULL);
-
-    if (focalLengthPixel > 0 && ppx > 0 && ppy > 0 && width > 0 && height > 0 && sensorWidth > 0)
+    if (focalLengthPixel > 0 && ppx > 0 && ppy > 0 && width > 0 && height > 0)
     {
       // Create the desired camera type
       switch(e_camera_model)
@@ -333,7 +342,7 @@ int main(int argc, char **argv)
     }
 
     // Build the view corresponding to the image
-    View v(*iter_image, views.size(), views.size(), views.size(), width, height);
+    View v(*iter_image, views.size(), views.size(), views.size(), width, height, sensorWidth);
 
     // Add intrinsic related to the image (if any)
     if (intrinsic == NULL)
