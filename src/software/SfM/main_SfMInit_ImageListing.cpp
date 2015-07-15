@@ -279,7 +279,7 @@ int main(int argc, char **argv)
     }
 
     // Build the view corresponding to the image
-    View v(*iter_image, views.size(), views.size(), views.size(), width, height);
+    View v(*iter_image, views.size(), views.size(), views.size(), width, height, sensorWidth);
 
     // Add intrinsic related to the image (if any)
     if (intrinsic == NULL)
