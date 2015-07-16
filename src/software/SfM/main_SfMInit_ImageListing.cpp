@@ -25,6 +25,7 @@
 #include <memory>
 #include <string>
 #include <vector>
+#include <cmath>
 
 using namespace openMVG;
 using namespace openMVG::cameras;
@@ -234,45 +235,20 @@ int main(int argc, char **argv)
     {
       const std::string sCamName = exifReader->getBrand();
       const std::string sCamModel = exifReader->getModel();
+      const std::string sLensModel = exifReader->getLensModel();
+      const float focalLengthMm = exifReader->getFocal();
       
-      // Retrieve sensor width in the database
-      if(sensorWidth == -1.0)
-      {
-        std::cout << "Search sensor width in the database." << std::endl;
-        Datasheet datasheet;
-        if ( getInfo( sCamName, sCamModel, vec_database, datasheet ))
-        {
-          sensorWidth = datasheet._sensorSize;
-          std::cout << "Camera found in database. Sensor width = " << sensorWidth << std::endl;
-        }
-        else
-        {
-          std::cout << stlplus::basename_part(sImageFilename) << ": Camera \""
-            << sCamName << "\" model \"" << sCamModel << "\" doesn't exist in the database" << std::endl
-            << "Please consider add your camera model and sensor width in the database." << std::endl;
-        }
-      }
-
-      // Focal
-      if(focalLengthPixel == -1)
-      {
-        // Handle case where focal length is equal to 0
-        if (exifReader->getFocal() == 0.0f)
-        {
-          std::cerr << stlplus::basename_part(sImageFilename) << ": Focal length is missing." << std::endl;
-          continue;
-        }
-
-        // Compute approximated focal length
-        if(sensorWidth != -1.0)
-        {     
-          focalLengthPixel = std::max ( width, height ) * exifReader->getFocal() / sensorWidth;
-          std::cout << "Focal = " <<  focalLengthPixel << std::endl;
-        }
-      }
-
       #ifdef USE_LENSFUN
-      // Retrieve lens distortion
+      // Initialize ensfun database
+      struct lfDatabase *lensfunDatabase;
+      lensfunDatabase = lf_db_new ();
+      if (!lensfunDatabase)
+      {
+          std::cerr << "Failed to create lensfun database" << std::endl;
+          return EXIT_FAILURE;
+      }
+      lf_db_load(lensfunDatabase);
+      // Retrieve camera and lens model
       const lfCamera** cameras = lensfunDatabase->FindCameras(sCamName.c_str(), sCamModel.c_str());
       if(!cameras)
       {
@@ -285,7 +261,56 @@ int main(int argc, char **argv)
         std::cerr << "Lens \"" << sLensModel.c_str() << "\" not found in lensfun database" << std::endl;
         continue;
       }
+      #endif
 
+      // Retrieve sensor width in the database
+      if(sensorWidth == -1.0)
+      {
+        // Use Lensfun database
+        #ifdef USE_LENSFUN
+        std::cout << "Search sensor width in lensfun database." << std::endl;
+        float cropFactor = (*cameras)[0].CropFactor;
+        float usualDiagonal = 43.27;  // Diagonal of a usual 35mm film rate
+        float ratio = width / height;
+        sensorWidth = usualDiagonal / (cropFactor * sqrt(1 + 1/pow(ratio, 2)));
+        std::cout << "Camera found in database. Sensor width = " << sensorWidth << std::endl;
+        // Use file database
+        #else     
+        std::cout << "Search sensor width in file database." << std::endl;
+        Datasheet datasheet;
+        if ( getInfo( sCamName, sCamModel, vec_database, datasheet ))
+        {
+          sensorWidth = datasheet._sensorSize;
+          std::cout << "Camera found in database. Sensor width = " << sensorWidth << std::endl;
+        }
+        else
+        {
+          std::cout << stlplus::basename_part(sImageFilename) << ": Camera \""
+            << sCamName << "\" model \"" << sCamModel << "\" doesn't exist in the database" << std::endl
+            << "Please consider add your camera model and sensor width in the database." << std::endl;
+        }
+        #endif
+      }
+
+      // Focal
+      if(focalLengthPixel == -1)
+      {
+        // Handle case where focal length is equal to 0
+        if (focalLengthMm == 0.0f)
+        {
+          std::cerr << stlplus::basename_part(sImageFilename) << ": Focal length is missing." << std::endl;
+          continue;
+        }
+        // Compute approximated focal length
+        if(sensorWidth != -1.0)
+        {     
+          focalLengthPixel = std::max ( width, height ) * focalLengthMm / sensorWidth;
+          std::cout << "Focal = " <<  focalLengthPixel << std::endl;
+        }
+      }
+
+      // Retrieve lens distortion
+      #ifdef USE_LENSFUN
       lfLensCalibDistortion disto;
       (*lenses)[0].InterpolateDistortion(focalLengthPixel, disto);
       switch(disto.Model)
@@ -309,8 +334,6 @@ int main(int argc, char **argv)
           break;
       }
       #endif
-
-
     }
 
     // Build intrinsic parameter related to the view
