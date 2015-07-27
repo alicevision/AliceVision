@@ -278,27 +278,30 @@ int main(int argc, char **argv)
       }
       #endif
 
+      #ifdef USE_LENSFUN
       // Retrieve sensor width in the database
       if(sensorWidth == -1.0)
       {
         // Use Lensfun database
-        #ifdef USE_LENSFUN
         std::cout << "Search sensor width in lensfun database." << std::endl;
         float cropFactor = (*cameras)[0].CropFactor;
         float usualDiagonal = 43.27;  // Diagonal of a usual 35mm film rate
         float ratio = width / height;
         sensorWidth = usualDiagonal / (cropFactor * sqrt(1 + 1/pow(ratio, 2)));
-        std::cout << "Camera found in database. Sensor width = " << sensorWidth << std::endl;
+        std::cout << "Camera found in Lensfun database. Sensor width = " << sensorWidth << std::endl;
         if(storeMetadata)
           allExifData.emplace("sensor_width", std::to_string(sensorWidth));
-        // Use file database
-        #else
-        std::cout << "Search sensor width in file database." << std::endl;
+      }
+      #endif
+      // Use file database
+      if(sensorWidth == -1.0)
+      {
+        std::cout << "Search sensor width in openMVG database." << std::endl;
         Datasheet datasheet;
         if ( getInfo( sCamName, sCamModel, vec_database, datasheet ))
         {
           sensorWidth = datasheet._sensorSize;
-          std::cout << "Camera found in database. Sensor width = " << sensorWidth << std::endl;
+          std::cout << "Camera found in openMVG database. Sensor width = " << sensorWidth << std::endl;
           if(storeMetadata)
             allExifData.emplace("sensor_width", std::to_string(sensorWidth));
         }
@@ -307,8 +310,7 @@ int main(int argc, char **argv)
           std::cout << stlplus::basename_part(sImageFilename) << ": Camera \""
             << sCamName << "\" model \"" << sCamModel << "\" doesn't exist in the database" << std::endl
             << "Please consider add your camera model and sensor width in the database." << std::endl;
-        }
-        #endif
+        }          
       }
 
       // Focal
@@ -381,7 +383,7 @@ int main(int argc, char **argv)
             (width, height, focalLengthPixel, ppx, ppy, k1, k2, k3);  // setup no distortion as initial guess
         break;
         default:
-          std::cout << "Unknown camera model: " << (int) e_camera_model << std::endl;
+          std::cerr << "Unknown camera model: " << (int) e_camera_model << std::endl;
       }
     }
 
