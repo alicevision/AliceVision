@@ -11,6 +11,7 @@
 #include "openMVG/stl/split.hpp"
 
 #include "openMVG/sfm/sfm.hpp"
+#include "openMVG/sfm/sfm_view_metadata.hpp"
 
 #ifdef USE_LENSFUN
 #include "lensfun/lensfun.h"
@@ -75,6 +76,7 @@ int main(int argc, char **argv)
   int i_User_camera_model = PINHOLE_CAMERA_RADIAL3;
 
   bool b_Group_camera_model = true;
+  bool storeMetadata = false;
 
   double focalLengthPixel = -1.0;
   double sensorWidth = -1.0;
@@ -87,6 +89,7 @@ int main(int argc, char **argv)
   cmd.add( make_option('k', sKmatrix, "intrinsics") );
   cmd.add( make_option('c', i_User_camera_model, "camera_model") );
   cmd.add( make_option('g', b_Group_camera_model, "group_camera_model") );
+  cmd.add( make_switch('m', "storeMetadata") );
 
   try {
       if (argc == 1) throw std::string("Invalid command line parameter.");
@@ -106,11 +109,15 @@ int main(int argc, char **argv)
       << "[-g|--group_camera_model]\n"
       << "\t 0-> each view have it's own camera intrinsic parameters,\n"
       << "\t 1-> (default) view can share some camera intrinsic parameters\n"
+      << "[-m|--storeMetadata : switch]\n"
       << std::endl;
 
       std::cerr << s << std::endl;
       return EXIT_FAILURE;
   }
+
+  if(cmd.used('m'))
+    storeMetadata = true;
 
   std::cout << " You called : " <<std::endl
             << argv[0] << std::endl
@@ -121,7 +128,8 @@ int main(int argc, char **argv)
             << "--sensorWidth " << sensorWidth << std::endl
             << "--intrinsics " << sKmatrix << std::endl
             << "--camera_model " << i_User_camera_model << std::endl
-            << "--group_camera_model " << b_Group_camera_model << std::endl;
+            << "--group_camera_model " << b_Group_camera_model << std::endl
+            << "--storeMetadata " << storeMetadata << std::endl;
 
   // Expected properties for each image
   double width = -1, height = -1, ppx = -1, ppy = -1, k1 = 0, k2 = 0, k3 = 0;
@@ -198,6 +206,7 @@ int main(int argc, char **argv)
   {
     // Read meta data to fill camera parameter (w,h,focal,ppx,ppy) fields.
     width = height = ppx = ppy = -1.0;
+    std::map<std::string, std::string> allExifData;
 
     const std::string sImageFilename = stlplus::create_filespec( sImageDir, *iter_image );
 
@@ -237,7 +246,11 @@ int main(int argc, char **argv)
       const std::string sCamModel = exifReader->getModel();
       const std::string sLensModel = exifReader->getLensModel();
       const float focalLengthMm = exifReader->getFocal();
-      
+
+      // Store metadata
+      if(storeMetadata)
+        allExifData = exifReader->getExifData();
+
       #ifdef USE_LENSFUN
       // Initialize ensfun database
       struct lfDatabase *lensfunDatabase;
@@ -274,6 +287,8 @@ int main(int argc, char **argv)
         float ratio = width / height;
         sensorWidth = usualDiagonal / (cropFactor * sqrt(1 + 1/pow(ratio, 2)));
         std::cout << "Camera found in database. Sensor width = " << sensorWidth << std::endl;
+        if(storeMetadata)
+          allExifData.emplace("sensor_width", std::to_string(sensorWidth));
         // Use file database
         #else     
         std::cout << "Search sensor width in file database." << std::endl;
@@ -282,6 +297,8 @@ int main(int argc, char **argv)
         {
           sensorWidth = datasheet._sensorSize;
           std::cout << "Camera found in database. Sensor width = " << sensorWidth << std::endl;
+          if(storeMetadata)
+            allExifData.emplace("sensor_width", std::to_string(sensorWidth));
         }
         else
         {
@@ -365,23 +382,31 @@ int main(int argc, char **argv)
     }
 
     // Build the view corresponding to the image
-    View v(*iter_image, views.size(), views.size(), views.size(), width, height, sensorWidth);
+    std::shared_ptr<View> currentView;
+    if(!storeMetadata)
+    {
+      currentView.reset(new View(*iter_image, views.size(), views.size(), views.size(), width, height));
+    }
+    else
+    {
+      currentView.reset(new View_Metadata(*iter_image, views.size(), views.size(), views.size(), width, height, allExifData));
+    }
 
     // Add intrinsic related to the image (if any)
     if (intrinsic == NULL)
     {
       //Since the view have invalid intrinsic data
       // (export the view, with an invalid intrinsic field value)
-      v.id_intrinsic = UndefinedIndexT;
+      currentView->id_intrinsic = UndefinedIndexT;
     }
     else
     {
       // Add the intrinsic to the sfm_container
-      intrinsics[v.id_intrinsic] = intrinsic;
+      intrinsics[currentView->id_intrinsic] = intrinsic;
     }
 
     // Add the view to the sfm_container
-    views[v.id_view] = std::make_shared<View>(v);
+    views[currentView->id_view] = currentView;
   }
 
   // Group camera that share common properties if desired (leads to more faster & stable BA).
@@ -439,12 +464,13 @@ int main(int argc, char **argv)
   }
 
   // Store SfM_Data views & intrinsic data
-  if (Save(
+  if (!Save(
     sfm_data,
     stlplus::create_filespec( sOutputDir, "sfm_data.json" ).c_str(),
-    ESfM_Data(VIEWS|INTRINSICS))
-    )
+    ESfM_Data(VIEWS|INTRINSICS)))
+  {
+    return EXIT_FAILURE;
+  }
+
   return EXIT_SUCCESS;
-    else
-  return EXIT_FAILURE;
 }
