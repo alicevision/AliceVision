@@ -78,14 +78,14 @@ int main(int argc, char **argv)
   bool b_Group_camera_model = true;
   bool storeMetadata = false;
 
-  double focalLengthPixel = -1.0;
-  double sensorWidth = -1.0;
+  double userFocalLengthPixel = -1.0;
+  double userSensorWidth = -1.0;
 
   cmd.add( make_option('i', sImageDir, "imageDirectory") );
   cmd.add( make_option('d', sfileDatabase, "sensorWidthDatabase") );
   cmd.add( make_option('o', sOutputDir, "outputDirectory") );
-  cmd.add( make_option('f', focalLengthPixel, "focal") );
-  cmd.add( make_option('s', sensorWidth, "sensorWidth") );
+  cmd.add( make_option('f', userFocalLengthPixel, "focal") );
+  cmd.add( make_option('s', userSensorWidth, "sensorWidth") );
   cmd.add( make_option('k', sKmatrix, "intrinsics") );
   cmd.add( make_option('c', i_User_camera_model, "camera_model") );
   cmd.add( make_option('g', b_Group_camera_model, "group_camera_model") );
@@ -124,8 +124,8 @@ int main(int argc, char **argv)
             << "--imageDirectory " << sImageDir << std::endl
             << "--sensorWidthDatabase " << sfileDatabase << std::endl
             << "--outputDirectory " << sOutputDir << std::endl
-            << "--focal " << focalLengthPixel << std::endl
-            << "--sensorWidth " << sensorWidth << std::endl
+            << "--focal " << userFocalLengthPixel << std::endl
+            << "--sensorWidth " << userSensorWidth << std::endl
             << "--intrinsics " << sKmatrix << std::endl
             << "--camera_model " << i_User_camera_model << std::endl
             << "--group_camera_model " << b_Group_camera_model << std::endl
@@ -157,13 +157,13 @@ int main(int argc, char **argv)
   }
 
   if (sKmatrix.size() > 0 &&
-    !checkIntrinsicStringValidity(sKmatrix, focalLengthPixel, ppx, ppy) )
+    !checkIntrinsicStringValidity(sKmatrix, userFocalLengthPixel, ppx, ppy) )
   {
     std::cerr << "\nInvalid K matrix input" << std::endl;
     return EXIT_FAILURE;
   }
 
-  if (sKmatrix.size() > 0 && focalLengthPixel != -1.0)
+  if (sKmatrix.size() > 0 && userFocalLengthPixel != -1.0)
   {
     std::cerr << "\nCannot combine -f and -k options" << std::endl;
     return EXIT_FAILURE;
@@ -206,6 +206,8 @@ int main(int argc, char **argv)
   {
     // Read meta data to fill camera parameter (w,h,focal,ppx,ppy) fields.
     width = height = ppx = ppy = -1.0;
+    double focalLengthPixel = userFocalLengthPixel;
+    double sensorWidth = userSensorWidth;
     std::map<std::string, std::string> allExifData;
 
     const std::string sImageFilename = stlplus::create_filespec( sImageDir, *iter_image );
@@ -290,7 +292,7 @@ int main(int argc, char **argv)
         if(storeMetadata)
           allExifData.emplace("sensor_width", std::to_string(sensorWidth));
         // Use file database
-        #else     
+        #else
         std::cout << "Search sensor width in file database." << std::endl;
         Datasheet datasheet;
         if ( getInfo( sCamName, sCamModel, vec_database, datasheet ))
@@ -319,11 +321,13 @@ int main(int argc, char **argv)
           continue;
         }
         // Compute approximated focal length
-        if(sensorWidth != -1.0)
-        {     
-          focalLengthPixel = std::max ( width, height ) * focalLengthMm / sensorWidth;
-          std::cout << "Focal = " <<  focalLengthPixel << std::endl;
+        if(sensorWidth == -1.0)
+        {
+          std::cerr << stlplus::basename_part(sImageFilename) << ": Sensor width is missing, we can't compute the focal length in pixels." << std::endl;
+          continue;
         }
+        focalLengthPixel = std::max( width, height ) * focalLengthMm / sensorWidth;
+        std::cout << "Focal = " <<  focalLengthPixel << std::endl;
       }
 
       // Retrieve lens distortion
