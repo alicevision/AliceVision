@@ -415,6 +415,12 @@ int main(int argc, char **argv)
     views[currentView->id_view] = currentView;
   }
 
+  if(views.size() < 3)
+  {
+    std::cerr << "Not enough cameras recognized: " << views.size() << std::endl;
+    return EXIT_FAILURE;
+  }
+
   // Group camera that share common properties if desired (leads to more faster & stable BA).
   if (b_Group_camera_model)
   {
