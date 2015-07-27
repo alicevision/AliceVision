@@ -2,6 +2,7 @@
 #define EXIF_IO_HPP
 
 #include <string>
+#include <map>
 
 namespace openMVG {
 namespace exif  {
@@ -28,7 +29,10 @@ class Exif_IO
     virtual bool doesHaveExifInfo() const = 0;
 
     /** Print all data*/
-    virtual std::string allExifData() const = 0;
+    virtual std::string getExifDataString() const = 0;
+
+    /** Get all data */
+    virtual std::map<std::string, std::string> getExifData () const = 0;
 
 };
 
