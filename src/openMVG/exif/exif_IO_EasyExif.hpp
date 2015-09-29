@@ -1,3 +1,9 @@
+// Copyright (c) 2013-2015 Pierre MOULON.
+
+// This Source Code Form is subject to the terms of the Mozilla Public
+// License, v. 2.0. If a copy of the MPL was not distributed with this
+// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+
 #ifndef EXIF_IO_EASYEXIF_HPP
 #define EXIF_IO_EASYEXIF_HPP
 
@@ -72,6 +78,8 @@ class Exif_IO_EasyExif : public Exif_IO
         // remove leading and trailing spaces
         sbrand.erase(0, sbrand.find_first_not_of(' '));
         sbrand.erase(sbrand.find_last_not_of(' '));
+        // handle multiple trailing end character
+        sbrand = sbrand.substr(0, sbrand.find('\0'));
       }
       return sbrand;
     }
@@ -84,6 +92,8 @@ class Exif_IO_EasyExif : public Exif_IO
         // remove leading and trailing spaces
         smodel.erase(0, smodel.find_first_not_of(' '));
         smodel.erase(smodel.find_last_not_of(' '));
+        // handle multiple trailing end character
+        smodel = smodel.substr(0, smodel.find('\0'));
       }
       return smodel;
     }

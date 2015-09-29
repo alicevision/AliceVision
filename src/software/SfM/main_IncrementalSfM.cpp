@@ -9,7 +9,6 @@
 
 #include "openMVG/sfm/sfm.hpp"
 #include "openMVG/system/timer.hpp"
-#include "software/SfM/io_regions_type.hpp"
 
 #include "third_party/cmdLine/cmdLine.h"
 #include "third_party/stlplus3/filesystemSimplified/file_system.hpp"
@@ -87,8 +86,8 @@ int main(int argc, char **argv)
     << "[-i|--input_file] path to a SfM_Data scene\n"
     << "[-m|--matchdir] path to the matches that corresponds to the provided SfM_Data scene\n"
     << "[-o|--outdir] path where the output data will be stored\n"
-    << "[-a|--initialPairA] NAME \n"
-    << "[-b|--initialPairB] NAME \n"
+    << "[-a|--initialPairA] filename of the first image (without path)\n"
+    << "[-b|--initialPairB] filename of the second image (without path)\n"
     << "[-c|--camera_model] Camera model type for view with unknown intrinsic:\n"
       << "\t 1: Pinhole \n"
       << "\t 2: Pinhole radial 1\n"
@@ -167,7 +166,11 @@ int main(int argc, char **argv)
   {
     Pair initialPairIndex;
     if(!computeIndexFromImageNames(sfm_data, initialPairString, initialPairIndex))
+    {
+        std::cerr << "Could not find the initial pairs <" << initialPairString.first 
+          <<  ", " << initialPairString.second << ">!\n";
       return EXIT_FAILURE;
+    }
     sfmEngine.setInitialPair(initialPairIndex);
   }
 
