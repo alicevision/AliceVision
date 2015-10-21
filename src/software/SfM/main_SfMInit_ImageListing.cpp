@@ -142,7 +142,7 @@ int main(int argc, char **argv)
   std::string sImageDir;
   std::string sJsonFile;
   std::string sfileDatabase;
-  std::string sOutputDir;
+  std::string sOutputSfMData;
   std::string sKmatrix;
 
   int i_User_camera_model = PINHOLE_CAMERA_RADIAL3;
@@ -155,7 +155,7 @@ int main(int argc, char **argv)
   cmd.add( make_option('i', sImageDir, "imageDirectory") );
   cmd.add( make_option('j', sJsonFile, "jsonFile") );
   cmd.add( make_option('d', sfileDatabase, "sensorWidthDatabase") );
-  cmd.add( make_option('o', sOutputDir, "outputDirectory") );
+  cmd.add( make_option('o', sOutputSfMData, "outputSfMData") );
   cmd.add( make_option('f', focal_pixels, "focal") );
   cmd.add( make_option('k', sKmatrix, "intrinsics") );
   cmd.add( make_option('c', i_User_camera_model, "camera_model") );
@@ -171,7 +171,7 @@ int main(int argc, char **argv)
       << "[-i|--imageDirectory]\n"
       << "[-j|--jsonFile]\n"
       << "[-d|--sensorWidthDatabase]\n"
-      << "[-o|--outputDirectory]\n"
+      << "[-o|--outputSfMData]\n"
       << "[-f|--focal] (pixels)\n"
       << "[-k|--intrinsics] Kmatrix: \"f;0;ppx;0;f;ppy;0;0;1\"\n"
       << "[-c|--camera_model] Camera model type:\n"
@@ -194,7 +194,7 @@ int main(int argc, char **argv)
             << "--imageDirectory " << sImageDir << std::endl
             << "--jsonFile " << sJsonFile << std::endl
             << "--sensorWidthDatabase " << sfileDatabase << std::endl
-            << "--outputDirectory " << sOutputDir << std::endl
+            << "--outputSfMData " << sOutputSfMData << std::endl
             << "--focal " << focal_pixels << std::endl
             << "--intrinsics " << sKmatrix << std::endl
             << "--camera_model " << i_User_camera_model << std::endl
@@ -215,15 +215,16 @@ int main(int argc, char **argv)
     std::cerr << "\nThe input directory doesn't exist" << std::endl;
     return EXIT_FAILURE;
   }
-  if (sOutputDir.empty())
+  if (sOutputSfMData.empty())
   {
-    std::cerr << "\nInvalid output directory" << std::endl;
+    std::cerr << "\nInvalid output SfMData file" << std::endl;
     return EXIT_FAILURE;
   }
 
-  if ( !stlplus::folder_exists( sOutputDir ) )
+  const std::string jsonFileFolder = stlplus::folder_part(sOutputSfMData);
+  if ( !stlplus::folder_exists( jsonFileFolder ) )
   {
-    if ( !stlplus::folder_create( sOutputDir ))
+    if ( !stlplus::folder_create( jsonFileFolder ))
     {
       std::cerr << "\nCannot create output directory" << std::endl;
       return EXIT_FAILURE;
@@ -452,10 +453,7 @@ int main(int argc, char **argv)
   }
 
   // Store SfM_Data views & intrinsic data
-  if (!Save(
-    sfm_data,
-    stlplus::create_filespec( sOutputDir, "sfm_data.json" ).c_str(),
-    ESfM_Data(VIEWS|INTRINSICS)))
+  if (!Save(sfm_data, sOutputSfMData, ESfM_Data(VIEWS|INTRINSICS)))
   {
     return EXIT_FAILURE;
   }
