@@ -46,7 +46,7 @@ int main(int argc, char **argv)
     std::cerr << "Usage: " << argv[0] << '\n'
       << "[-i|--gt] path (where ground truth camera trajectory are saved)\n"
       << "[-c|--computed] path (openMVG SfM_Output directory)\n"
-      << "[-o|--output] path (where statistics will be saved)\n"
+      << "[-o|--outdir] path (where statistics will be saved)\n"
       << "[-t|--camtype] Type of the camera:\n"
       << " -1: autoguess (try 1,2,3),\n"
       << "  1: openMVG (bin),\n"
