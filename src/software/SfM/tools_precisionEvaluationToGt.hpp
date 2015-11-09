@@ -141,6 +141,10 @@ void EvaluteToGT(
     }
   }
 
+  std::string jsonStatFilepath = stlplus::create_filespec(sOutPath, "statistics", "json");
+  std::cout << "jsonStatFilepath: " << jsonStatFilepath << std::endl;
+  std::ofstream statsJson(jsonStatFilepath, std::ofstream::out);
+
   // Display residual errors :
   std::cout << "\nBaseline residuals (in GT unit)\n";
   copy(vec_residualErrors.begin(), vec_residualErrors.end(), std::ostream_iterator<double>(std::cout, " , "));
@@ -156,6 +160,23 @@ void EvaluteToGT(
   minMaxMeanMedian<double>(vec_angularErrors.begin(), vec_angularErrors.end());
   double minA, maxA, meanA, medianA;
   minMaxMeanMedian<double>(vec_angularErrors.begin(), vec_angularErrors.end(), minA, maxA, meanA, medianA);
+
+  statsJson
+    << "{\n"
+    << "    \"baselineError:\": {\n"
+    << "       \"min\": " << minB << ",\n"
+    << "       \"max\": " << maxB << ",\n"
+    << "       \"mean\": " << meanB << ",\n"
+    << "       \"median\": " << medianB << "\n"
+    << "    },\n"
+    << "    \"angularError:\": {\n"
+    << "       \"min\": " << minA << ",\n"
+    << "       \"max\": " << maxA << ",\n"
+    << "       \"mean\": " << meanA << ",\n"
+    << "       \"median\": " << medianA << "\n"
+    << "    }\n"
+    << "}\n";
+  statsJson.close();
 
   // Export camera position (viewable)
   exportToPly(vec_camPosGT, vec_camPosComputed_T,
