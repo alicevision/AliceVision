@@ -55,6 +55,7 @@ SequentialSfMReconstructionEngine::SequentialSfMReconstructionEngine(
     _htmlDocStream->pushInfo( "Views count: " +
       htmlDocument::toString( sfm_data.GetViews().size()) + "<br>");
   }
+
   // Init remaining image list
   for (Views::const_iterator itV = sfm_data.GetViews().begin();
     itV != sfm_data.GetViews().end(); ++itV)
@@ -83,8 +84,68 @@ void SequentialSfMReconstructionEngine::SetMatchesProvider(Matches_Provider * pr
   _matches_provider = provider;
 }
 
-bool SequentialSfMReconstructionEngine::Process() {
+// Compute robust Resection of remaining images
+// - group of images will be selected and resection + scene completion will be tried
+void SequentialSfMReconstructionEngine::RobustResectionOfImages(
+  const std::set<size_t>& viewIds,
+  std::set<size_t>& set_reconstructedViewId,
+  std::set<size_t>& set_rejectedViewId)
+{
+  size_t imageIndex = 0;
+  size_t resectionGroupIndex = 0;
+  std::set<size_t> set_remainingViewId(viewIds);
+  std::vector<size_t> vec_possible_resection_indexes;
+  while (FindImagesWithPossibleResection(vec_possible_resection_indexes, set_remainingViewId))
+  {
+    // std::cout << "Resection group start " << resectionGroupIndex << " with " << vec_possible_resection_indexes.size() << " images.\n";
 
+    bool bImageAdded = false;
+    // Add images to the 3D reconstruction
+    for (const size_t possible_resection_index: vec_possible_resection_indexes )
+    {
+      const size_t currentIndex = imageIndex;
+      ++imageIndex;
+      const bool bResect = Resection(possible_resection_index);
+      bImageAdded |= bResect;
+      if (!bResect)
+      {
+        set_rejectedViewId.insert(possible_resection_index);
+        std::cout << "\nResection of image: " << possible_resection_index << " was not possible." << std::endl;
+      }
+      else
+      {
+        set_reconstructedViewId.insert(possible_resection_index);
+        std::cout << "\nResection of image: " << possible_resection_index << " succeed." << std::endl;
+      }
+      set_remainingViewId.erase(possible_resection_index);
+    }
+
+    if (bImageAdded)
+    {
+      // Scene logging as ply for visual debug
+      std::ostringstream os;
+      os << std::setw(8) << std::setfill('0') << resectionGroupIndex << "_Resection";
+      Save(_sfm_data, stlplus::create_filespec(_sOutDirectory, os.str(), _sfmdataInterFileExtension), _sfmdataInterFilter);
+
+      // std::cout << "Global Bundle start, resection group index: " << resectionGroupIndex << ".\n";
+      int bundleAdjustmentIteration = 0;
+      // Perform BA until all point are under the given precision
+      do
+      {
+        // std::cout << "Resection group index: " << resectionGroupIndex << ", bundle iteration: " << bundleAdjustmentIteration << "\n";
+        BundleAdjustment();
+        ++bundleAdjustmentIteration;
+      }
+      while (badTrackRejector(4.0, 50) != 0);
+    }
+    ++resectionGroupIndex;
+  }
+  // Ensure there is no remaining outliers
+  badTrackRejector(4.0, 0);
+}
+
+bool SequentialSfMReconstructionEngine::Process()
+{
   //-------------------
   //-- Incremental reconstruction
   //-------------------
@@ -113,39 +174,35 @@ bool SequentialSfMReconstructionEngine::Process() {
   if (!MakeInitialPair3D(initialPairIndex))
     return false;
 
-  // Compute robust Resection of remaining images
-  // - group of images will be selected and resection + scene completion will be tried
-  size_t resectionGroupIndex = 0;
-  std::vector<size_t> vec_possible_resection_indexes;
-  while (FindImagesWithPossibleResection(vec_possible_resection_indexes))
+  std::set<size_t> reconstructedViewIds;
+  std::set<size_t> rejectedViewIds;
+  std::size_t nbRejectedLoops = 0;
+  do
   {
-    bool bImageAdded = false;
-    // Add images to the 3D reconstruction
-    for (std::vector<size_t>::const_iterator iter = vec_possible_resection_indexes.begin();
-      iter != vec_possible_resection_indexes.end(); ++iter)
+    reconstructedViewIds.clear();
+    rejectedViewIds.clear();
+
+    // Compute robust Resection of remaining images
+    // - group of images will be selected and resection + scene completion will be tried
+    RobustResectionOfImages(
+      _set_remainingViewId,
+      reconstructedViewIds,
+      rejectedViewIds);
+    // Remove all reconstructed views from the remaining views
+    for(const size_t v: reconstructedViewIds)
     {
-      bImageAdded |= Resection(*iter);
-      _set_remainingViewId.erase(*iter);
+      _set_remainingViewId.erase(v);
     }
 
-    if (bImageAdded)
-    {
-      // Scene logging as ply for visual debug
-      std::ostringstream os;
-      os << std::setw(8) << std::setfill('0') << resectionGroupIndex << "_Resection";
-      Save(_sfm_data, stlplus::create_filespec(_sOutDirectory, os.str(), ".ply"), ESfM_Data(ALL));
+    std::cout << "SequenctiamSfM -- nbRejectedLoops: " << nbRejectedLoops << std::endl;
+    std::cout << "SequenctiamSfM -- reconstructedViewIds: " << reconstructedViewIds.size() << std::endl;
+    std::cout << "SequenctiamSfM -- rejectedViewIds: " << rejectedViewIds.size() << std::endl;
+    std::cout << "SequenctiamSfM -- _set_remainingViewId: " << _set_remainingViewId.size() << std::endl;
 
-      // Perform BA until all point are under the given precision
-      do
-      {
-        BundleAdjustment();
-      }
-      while (badTrackRejector(4.0, 50) != 0);
-    }
-    ++resectionGroupIndex;
-  }
-  // Ensure there is no remaining outliers
-  badTrackRejector(4.0, 0);
+    ++nbRejectedLoops;
+    // Retry to perform the resectioning of all the rejected views,
+    // as long as new views are successfully added.
+  } while( !reconstructedViewIds.empty() && !_set_remainingViewId.empty() );
 
   //-- Reconstruction done.
   //-- Display some statistics
@@ -471,6 +528,7 @@ bool SequentialSfMReconstructionEngine::AutomaticInitialPairChoice(Pair & initia
     initial_pair = scoring_per_pair.begin()->second;
     return true;
   }
+  std::cout << "No valid initial pair found automatically." << std::endl;
   return false;
 }
 
@@ -488,9 +546,14 @@ bool SequentialSfMReconstructionEngine::MakeInitialPair3D(const Pair & current_p
   const View * view_J = _sfm_data.GetViews().at(J).get();
   const Intrinsics::const_iterator iterIntrinsic_J = _sfm_data.GetIntrinsics().find(view_J->id_intrinsic);
 
+  std::cout << "Initial pair is:\n"
+          << "  A - Id: " << I << " - " << " filepath: " << view_I->s_Img_path << "\n"
+          << "  B - Id: " << J << " - " << " filepath: " << view_J->s_Img_path << std::endl;
+
   if (iterIntrinsic_I == _sfm_data.GetIntrinsics().end() ||
       iterIntrinsic_J == _sfm_data.GetIntrinsics().end() )
   {
+    std::cout << "Can't find initial image pair intrinsics." << std::endl;
     return false;
   }
 
@@ -498,6 +561,7 @@ bool SequentialSfMReconstructionEngine::MakeInitialPair3D(const Pair & current_p
   const Pinhole_Intrinsic * cam_J = dynamic_cast<const Pinhole_Intrinsic*>(iterIntrinsic_J->second.get());
   if (cam_I == NULL || cam_J == NULL)
   {
+    std::cout << "Can't find initial image pair intrinsics (NULL ptr)." << std::endl;
     return false;
   }
 
@@ -524,6 +588,7 @@ bool SequentialSfMReconstructionEngine::MakeInitialPair3D(const Pair & current_p
     feat = _features_provider->feats_per_view[J][j].coords().cast<double>();
     xJ.col(cptIndex) = cam_J->get_ud_pixel(feat);
   }
+  std::cout << n << " matches in the image pair for the initial pose estimation." << std::endl;
 
   // c. Robust estimation of the relative pose
   RelativePose_Info relativePose_info;
@@ -583,7 +648,8 @@ bool SequentialSfMReconstructionEngine::MakeInitialPair3D(const Pair & current_p
       landmarks[iterT->first].obs = std::move(obs);
       landmarks[iterT->first].X = X;
     }
-    Save(tiny_scene, stlplus::create_filespec(_sOutDirectory, "initialPair.ply"), ESfM_Data(ALL));
+
+    Save(tiny_scene, stlplus::create_filespec(_sOutDirectory, "initialPair", _sfmdataInterFileExtension), _sfmdataInterFilter);
 
     // - refine only Structure and Rotations & translations (keep intrinsic constant)
     Bundle_Adjustment_Ceres::BA_options options(true, false);
@@ -759,14 +825,15 @@ struct sort_pair_second {
  *  0.75 * #correspondences(I) common correspondences to the reconstruction.
  */
 bool SequentialSfMReconstructionEngine::FindImagesWithPossibleResection(
-  std::vector<size_t> & vec_possible_indexes)
+  std::vector<size_t> & vec_possible_indexes,
+  std::set<size_t>& set_remainingViewId) const
 {
   // Threshold used to select the best images
   static const float dThresholdGroup = 0.75f;
 
   vec_possible_indexes.clear();
 
-  if (_set_remainingViewId.empty() || _sfm_data.GetLandmarks().empty())
+  if (set_remainingViewId.empty() || _sfm_data.GetLandmarks().empty())
     return false;
 
   // Collect tracksIds
@@ -779,8 +846,8 @@ bool SequentialSfMReconstructionEngine::FindImagesWithPossibleResection(
 #ifdef OPENMVG_USE_OPENMP
   #pragma omp parallel
 #endif
-  for (std::set<size_t>::const_iterator iter = _set_remainingViewId.begin();
-        iter != _set_remainingViewId.end(); ++iter)
+  for (std::set<size_t>::const_iterator iter = set_remainingViewId.begin();
+        iter != set_remainingViewId.end(); ++iter)
   {
 #ifdef OPENMVG_USE_OPENMP
   #pragma omp single nowait
@@ -819,12 +886,12 @@ bool SequentialSfMReconstructionEngine::FindImagesWithPossibleResection(
   // Sort by the number of matches to the 3D scene.
   std::sort(vec_putative.begin(), vec_putative.end(), sort_pair_second<size_t, size_t, std::greater<size_t> >());
 
-  // If the list is empty or if the list contains images with no correspdences
+  // If the list is empty or if the list contains images with no correspondences
   // -> (no resection will be possible)
   if (vec_putative.empty() || vec_putative[0].second == 0)
   {
     // All remaining images cannot be used for pose estimation
-    _set_remainingViewId.clear();
+    set_remainingViewId.clear();
     return false;
   }
 

@@ -7,6 +7,7 @@
 
 #pragma once
 
+#include "openMVG/sfm/sfm_data_io.hpp"
 #include "openMVG/sfm/pipelines/sfm_engine.hpp"
 #include "openMVG/sfm/pipelines/sfm_features_provider.hpp"
 #include "openMVG/sfm/pipelines/sfm_matches_provider.hpp"
@@ -32,6 +33,11 @@ public:
 
   void SetFeaturesProvider(Features_Provider * provider);
   void SetMatchesProvider(Matches_Provider * provider);
+
+  void RobustResectionOfImages(
+    const std::set<size_t>& viewIds,
+    std::set<size_t>& set_reconstructedViewId,
+    std::set<size_t>& set_rejectedViewId);
 
   virtual bool Process();
 
@@ -62,6 +68,14 @@ public:
   {
     _camType = camType;
   }
+  
+  /**
+   * @brief Extension of the file format to store intermediate reconstruction files.
+   */
+  void setSfmdataInterFileExtension(const std::string& interFileExtension)
+  {
+    _sfmdataInterFileExtension = interFileExtension;
+  }
 
 protected:
 
@@ -72,7 +86,9 @@ private:
   double ComputeResidualsHistogram(Histogram<double> * histo);
 
   /// List the images that the greatest number of matches to the current 3D reconstruction.
-  bool FindImagesWithPossibleResection(std::vector<size_t> & vec_possible_indexes);
+  bool FindImagesWithPossibleResection(
+    std::vector<size_t>& vec_possible_indexes,
+    std::set<size_t>& set_remainingViewId) const;
 
   /// Add a single Image to the scene and triangulate new possible tracks.
   bool Resection(const size_t imageIndex);
@@ -90,6 +106,10 @@ private:
   // HTML logger
   std::shared_ptr<htmlDocument::htmlDocumentStream> _htmlDocStream;
   std::string _sLoggingFile;
+
+  // Extension of the file format to store intermediate reconstruction files.
+  std::string _sfmdataInterFileExtension = ".ply";
+  ESfM_Data _sfmdataInterFilter = ESfM_Data(VIEWS | EXTRINSICS | INTRINSICS | STRUCTURE);
 
   // Parameter
   Pair _initialpair;
