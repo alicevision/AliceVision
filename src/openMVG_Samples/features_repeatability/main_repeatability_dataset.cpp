@@ -25,6 +25,7 @@ using namespace svg;
 using namespace std;
 
 #include "nonFree/sift/SIFT_describer.hpp"
+#include "nonFree/sift/SIFT_OPENCV_Image_describer.hpp"
 
 // Class to load images and ground truth homography matrices
 // A reference image
@@ -222,6 +223,7 @@ int main(int argc, char **argv)
       << "  (method to use to describe an image):\n"
       << "   SIFT (default),\n"
       << "   AKAZE_FLOAT: AKAZE with floating point descriptors.\n"
+      << "   SIFT_OCV: OpenCV implementation of SIFT (vlfeat impl. by default).\n"
       << "[-p|--describer_preset]\n"
       << "  (used to control the Image_describer configuration):\n"
       << "   LOW,\n"
@@ -277,6 +279,10 @@ int main(int argc, char **argv)
       if (sImage_Describer_Method == "SIFT")
       {
         image_describer.reset(new SIFT_Image_describer(SiftParams()));
+      }
+      if (sImage_Describer_Method == "SIFT_OCV")
+      {
+        image_describer.reset(new SIFT_OPENCV_Image_describer());
       }
       else
       if (sImage_Describer_Method == "AKAZE_FLOAT")
