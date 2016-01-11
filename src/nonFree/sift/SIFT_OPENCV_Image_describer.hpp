@@ -118,6 +118,12 @@ public:
       if(!_params.gridSize)  // If no grid filtering, use opencv to limit the number of features
         maxDetect = _params.maxTotalKeypoints;
 
+    std::cout << "maxDetect" << maxDetect << std::endl; // to clean
+    std::cout << "_params.nOctaveLayers" << _params.nOctaveLayers << std::endl;
+    std::cout << "_params.contrastThreshold" << _params.contrastThreshold << std::endl;
+    std::cout << "_params.edgeThreshold" << _params.edgeThreshold << std::endl;
+    std::cout << "_params.sigma" << _params.sigma << std::endl;
+    
     cv::Ptr<cv::Feature2D> siftdetector = cv::xfeatures2d::SIFT::create(maxDetect, _params.nOctaveLayers, _params.contrastThreshold, _params.edgeThreshold, _params.sigma);
 
     // Detect SIFT keypoints

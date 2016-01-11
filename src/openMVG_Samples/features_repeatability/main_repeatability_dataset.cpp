@@ -319,7 +319,7 @@ int main(int argc, char **argv)
       // Evaluate the feature positions accuracy (descriptors are ignored)
       if (bFeature_Repeatability)
       {
-        for (size_t i = 1; i < dataset.size(); ++i)
+        for (size_t i = 1; i < 2 ; ++i) //dataset.size(); ++i)
         {
           if (map_regions.count(0) == 0 || map_regions.count(i) == 0)
             continue;
@@ -352,7 +352,7 @@ int main(int argc, char **argv)
       {
         // Test the repeatability (matching (descriptor))
         RepeatabilityResults_Matching image_results;
-        for (size_t i = 1; i < dataset.size(); ++i)
+        for (size_t i = 1; i < 2 ; ++i ) // dataset.size(); ++i)
         {
           if (map_regions.count(0) == 0 || map_regions.count(i) == 0)
             continue;
