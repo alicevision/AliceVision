@@ -71,7 +71,6 @@ install:
   - if [ ! "$(ls -A $OPENCV_INSTALL)" ]; then make install; fi
   - ls -l $OPENCV_INSTALL
   # CERES
-  - locate eigen3 | grep /Core/
   - cd $CERES_BUILD
   - locate eigen3
   - if [ ! "$(ls -A $CERES_INSTALL)" ]; then cmake -DCMAKE_INSTALL_PREFIX=$CERES_INSTALL -DEIGEN_INCLUDE_DIR=/usr/local/include/eigen3 $CERES_SOURCE; fi
