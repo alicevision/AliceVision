@@ -26,6 +26,7 @@ using namespace std;
 
 #include "nonFree/sift/SIFT_describer.hpp"
 #include "nonFree/sift/SIFT_OPENCV_Image_describer.hpp"
+#include "nonFree/sift/SIFT_popSIFT_describer.hpp"
 
 // Class to load images and ground truth homography matrices
 // A reference image
@@ -283,6 +284,10 @@ int main(int argc, char **argv)
       if (sImage_Describer_Method == "SIFT_OCV")
       {
         image_describer.reset(new SIFT_OPENCV_Image_describer());
+      }
+      if (sImage_Describer_Method == "POP_SIFT")
+      {
+        image_describer.reset(new SIFT_popSIFT_describer());
       }
       else
       if (sImage_Describer_Method == "AKAZE_FLOAT")
