@@ -69,6 +69,11 @@ install:
   - if [ ! "$(ls -A $OPENCV_INSTALL)" ]; then make -j 16; fi
   - if [ ! "$(ls -A $OPENCV_INSTALL)" ]; then make install; fi
   - ls -l $OPENCV_INSTALL
+  # CERES
+  - cd $CERES_BUILD
+  - if [ ! "$(ls -A $CERES_INSTALL)" ]; then cmake -DCMAKE_INSTALL_PREFIX=$CERES_INSTALL -DEIGEN_INCLUDE_DIR=/usr/local/include/eigen3 $CERES_SOURCE; fi
+  - if [ ! "$(ls -A $CERES_INSTALL)" ]; then make -j 16; fi
+  - if [ ! "$(ls -A $CERES_INSTALL)" ]; then make install; fi
 
 before_script:
   - export CXX="g++-4.8"
