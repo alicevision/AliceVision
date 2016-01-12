@@ -72,7 +72,7 @@ install:
   - ls -l $OPENCV_INSTALL
   # CERES
   - cd $CERES_BUILD
-  - find /usr/*/eigen* | grep QR
+  - find /*/eigen* | grep QR
   - if [ ! "$(ls -A $CERES_INSTALL)" ]; then cmake -DCMAKE_INSTALL_PREFIX=$CERES_INSTALL -DEIGEN_INCLUDE_DIR=/usr/local/include/eigen3 $CERES_SOURCE; fi
   - if [ ! "$(ls -A $CERES_INSTALL)" ]; then make -j 16; fi
   - if [ ! "$(ls -A $CERES_INSTALL)" ]; then make install; fi
