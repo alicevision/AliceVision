@@ -262,7 +262,8 @@ ADD_DEFINITIONS(-DEIGEN_MPL2_ONLY)
 # - external if CERES_DIR_HINTS and FIND_PACKAGE return a valid Ceres setup
 # ==============================================================================
 MESSAGE(STATUS "Trying to find package Ceres for openMVG: ${CERES_DIR_HINTS}")
-FIND_PACKAGE(Ceres QUIET HINTS ${CERES_DIR_HINTS})
+FIND_PACKAGE(Ceres HINTS ${CERES_DIR_HINTS})
+MESSAGE(STATUS "Finished looking for Ceres")
 IF(NOT Ceres_FOUND)
   IF(DEFINED OpenMVG_USE_INTERNAL_CERES AND NOT OpenMVG_USE_INTERNAL_CERES)
     MESSAGE(FATAL_ERROR "External CERES not found. Not found in CERES_DIR_HINTS: ${CERES_DIR_HINTS}")

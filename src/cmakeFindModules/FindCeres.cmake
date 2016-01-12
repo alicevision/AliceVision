@@ -15,7 +15,7 @@
 IF(NOT Ceres_ROOT_DIR AND NOT $ENV{Ceres_ROOT_DIR} STREQUAL "")
   SET(Ceres_ROOT_DIR $ENV{Ceres_ROOT_DIR})
 ENDIF()
-
+MESSAGE(STATUS "coucou : ${Ceres_ROOT_DIR}")
 SET(_ceres_SEARCH_DIRS
   ${Ceres_ROOT_DIR}
   /usr/local

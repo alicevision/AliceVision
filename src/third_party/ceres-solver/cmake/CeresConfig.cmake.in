@@ -148,7 +148,7 @@ LIST(APPEND EIGEN_INCLUDE_DIR_HINTS @EIGEN_INCLUDE_DIR@)
 # Search quietly s/t we control the timing of the error message if not found.
 FIND_PACKAGE(Eigen ${CERES_EIGEN_VERSION} EXACT QUIET)
 IF (EIGEN_FOUND)
-  MESSAGE(STATUS "Found required Ceres dependency: "
+  MESSAGE(STATUS "Found required Ceres dependency lalalala: "
     "Eigen version ${CERES_EIGEN_VERSION} in ${EIGEN_INCLUDE_DIRS}")
 ELSE (EIGEN_FOUND)
   CERES_REPORT_NOT_FOUND("Missing required Ceres "
@@ -182,7 +182,7 @@ ELSE (CERES_USES_MINIGLOG)
   # Search quietly s/t we control the timing of the error message if not found.
   FIND_PACKAGE(Glog QUIET)
   IF (GLOG_FOUND)
-    MESSAGE(STATUS "Found required Ceres dependency: "
+    MESSAGE(STATUS "Found required Ceres dependency lalalala: "
       "Glog in ${GLOG_INCLUDE_DIRS}")
   ELSE (GLOG_FOUND)
     CERES_REPORT_NOT_FOUND("Missing required Ceres "
