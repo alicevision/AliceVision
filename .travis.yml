@@ -71,7 +71,7 @@ before_install:
  - if [ ! "$(ls -A $OPENCV_CONTRIB)" ]; then git clone --branch 3.0.0 --depth 1  https://github.com/Itseez/opencv_contrib.git $OPENCV_CONTRIB; fi
  # EIGEN
  - mkdir --parent $EIGEN_INSTALL
- - if [ ! "$(ls -A $EIGEN_INSTALL)" ]; then hg -r 3.2.0 https://bitbucket.org/eigen/eigen/ $EIGEN_INSTALL; fi
+ - if [ ! "$(ls -A $EIGEN_INSTALL)" ]; then hg clone -r 3.2.0 https://bitbucket.org/eigen/eigen/ $EIGEN_INSTALL; fi
  # CERES
  - mkdir --parent $CERES_SOURCE
  - mkdir --parent $CERES_BUILD
