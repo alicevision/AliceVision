@@ -32,6 +32,7 @@ addons:
       - libgoogle-glog-dev
       - libatlas-base-dev
       - locate
+      - libsuitesparse-dev
 
 env:
   global:
