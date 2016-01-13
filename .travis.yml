@@ -32,6 +32,7 @@ addons:
       - libatlas-base-dev
       - locate
       - libsuitesparse-dev
+      - libcxsparse3.1.2
 
 env:
   global:
