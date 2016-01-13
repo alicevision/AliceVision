@@ -52,6 +52,13 @@ env:
     - OPENCV_CONTRIB=${OPENCV_ROOT}/contrib
     - OPENCV_BUILD=${OPENCV_ROOT}/build
     - OPENCV_INSTALL=${OPENCV_ROOT}/install
+    # EIGEN
+    - EIGEN_INSTALL=${TRAVIS_BUILD_DIR}/eigen320
+    # CERES
+    - CERES_ROOT=${TRAVIS_BUILD_DIR}/ceres
+    - CERES_SOURCE=${CERES_ROOT}/source
+    - CERES_BUILD=${CERES_ROOT}/build
+    - CERES_INSTALL=${CERES_ROOT}/install
 
 before_install:
  - gem install coveralls-lcov
@@ -62,6 +69,14 @@ before_install:
  - mkdir --parent $OPENCV_INSTALL
  - if [ ! "$(ls -A $OPENCV_INSTALL)" ]; then git clone --recursive --branch 3.0.0 --depth 1 https://github.com/Itseez/opencv.git $OPENCV_SOURCE; fi
  - if [ ! "$(ls -A $OPENCV_CONTRIB)" ]; then git clone --branch 3.0.0 --depth 1  https://github.com/Itseez/opencv_contrib.git $OPENCV_CONTRIB; fi
+ # EIGEN
+ - mkdir --parent $EIGEN_INSTALL
+ - if [ ! "$(ls -A $EIGEN_INSTALL)" ]; then hg -r 3.2.0 https://bitbucket.org/eigen/eigen/ $EIGEN_INSTALL; fi
+ # CERES
+ - mkdir --parent $CERES_SOURCE
+ - mkdir --parent $CERES_BUILD
+ - mkdir --parent $CERES_INSTALL
+ - if [ ! "$(ls -A $CERES_INSTALL)" ]; then git clone --branch 1.10.0 --depth 1 https://ceres-solver.googlesource.com/ceres-solver $CERES_SOURCE; fi
 
 install:
   # OPENCV
@@ -72,8 +87,7 @@ install:
   - ls -l $OPENCV_INSTALL
   # CERES
   - cd $CERES_BUILD
-  - find / -type d -name "Eigen" 2>/dev/null
-  - if [ ! "$(ls -A $CERES_INSTALL)" ]; then cmake -DCMAKE_INSTALL_PREFIX=$CERES_INSTALL -DEIGEN_INCLUDE_DIR=/usr/local/include/eigen3 $CERES_SOURCE; fi
+  - if [ ! "$(ls -A $CERES_INSTALL)" ]; then cmake -DCMAKE_INSTALL_PREFIX=$CERES_INSTALL -DEIGEN_INCLUDE_DIR=$EIGEN_INSTALL $CERES_SOURCE; fi
   - if [ ! "$(ls -A $CERES_INSTALL)" ]; then make -j 16; fi
   - if [ ! "$(ls -A $CERES_INSTALL)" ]; then make install; fi
 
@@ -83,7 +97,7 @@ before_script:
   - mkdir $OPENMVG_BUILD
   - cd $OPENMVG_BUILD
   # Classic release build
-  - cmake -DCMAKE_BUILD_TYPE=$BUILD_TYPE -DOpenMVG_BUILD_TESTS=ON -DOpenMVG_BUILD_EXAMPLES=ON -DOpenMVG_USE_OPENCV=ON -DOpenCV_DIR=$OPENCV_INSTALL/share/OpenCV -DOpenMVG_BUILD_VOCTREE=ON -DOpenMVG_USE_CCTAG=OFF -DBOOST_NO_CXX11=ON . $OPENMVG_SOURCE
+  - cmake -DCMAKE_BUILD_TYPE=$BUILD_TYPE -DOpenMVG_BUILD_TESTS=ON -DOpenMVG_BUILD_EXAMPLES=ON -DOpenMVG_USE_OPENCV=ON -DOpenCV_DIR=$OPENCV_INSTALL/share/OpenCV -DOpenMVG_BUILD_VOCTREE=ON -DOpenMVG_USE_CCTAG=OFF -DBOOST_NO_CXX11=ON -DCeres_DIR=$CERES_INSTALL/share/Ceres -DEIGEN_INCLUDE_DIR=$EIGEN_INSTALL . $OPENMVG_SOURCE
   # Build for code coverage evaluation
   #- cmake -DOpenMVG_BUILD_COVERAGE=ON -DOpenMVG_BUILD_TESTS=ON -DOpenMVG_BUILD_EXAMPLES=ON . ../openMVG/src
 
