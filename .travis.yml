@@ -29,7 +29,6 @@ addons:
       - x11proto-xf86vidmode-dev
       - libxrandr-dev
       - g++-4.8
-      - libgoogle-glog-dev
       - libatlas-base-dev
       - locate
       - libsuitesparse-dev
