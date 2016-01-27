@@ -17,7 +17,7 @@ addons:
       - boost-latest
       - ubuntu-toolchain-r-test
       - lucid
-      - debian-cid
+      - debian-sid
     packages:
       - cmake
       - libeigen3-dev
