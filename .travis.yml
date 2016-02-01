@@ -15,7 +15,6 @@ addons:
   apt:
     sources:
       - debian-sid
-      - boost-latest
       - ubuntu-toolchain-r-test
     packages:
       - cmake
