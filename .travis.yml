@@ -14,9 +14,9 @@ sudo: false
 addons:
   apt:
     sources:
+      - debian-sid
       - boost-latest
       - ubuntu-toolchain-r-test
-      - debian-sid
     packages:
       - cmake
       - libeigen3-dev
