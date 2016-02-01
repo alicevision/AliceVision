@@ -29,7 +29,9 @@ addons:
       - x11proto-xf86vidmode-dev
       - libxrandr-dev
       - g++-4.8
-      
+      - libatlas-base-dev
+      - libsuitesparse-dev
+
 env:
   global:
     - NUM_CPU="`grep processor /proc/cpuinfo | wc -l`"; echo $NUM_CPU
