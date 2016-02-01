@@ -16,8 +16,6 @@ addons:
     sources:
       - boost-latest
       - ubuntu-toolchain-r-test
-      - lucid
-      - debian-sid
     packages:
       - cmake
       - libeigen3-dev
@@ -31,11 +29,7 @@ addons:
       - x11proto-xf86vidmode-dev
       - libxrandr-dev
       - g++-4.8
-      - libatlas-base-dev
-      - locate
-      - libsuitesparse-dev
-      - libgoogle-glog-dev
-
+      
 env:
   global:
     - NUM_CPU="`grep processor /proc/cpuinfo | wc -l`"; echo $NUM_CPU
