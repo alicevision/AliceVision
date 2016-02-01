@@ -16,7 +16,7 @@ addons:
     sources:
       - boost-latest
       - ubuntu-toolchain-r-test
-      - lucid
+      - debian-sid
     packages:
       - cmake
       - libeigen3-dev
