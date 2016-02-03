@@ -17,16 +17,31 @@ file(GLOB_RECURSE REMOVEFILESUNITTEST *_test.hpp)
 list(REMOVE_ITEM sfm_files_header ${REMOVEFILESUNITTEST})
 
 add_library(openMVG_sfm ${sfm_files_header} ${sfm_files_cpp})
-target_link_libraries(
-  openMVG_sfm
-  openMVG_multiview
-  stlplus
-  ${CERES_LIBRARIES}
-  openMVG_lInftyComputerVision
-  openMVG_system
-  openMVG_matching
-  openMVG_dataio
-)
+IF(OpenMVG_BUILD_VOCTREE)
+  target_compile_definitions(openMVG_sfm PUBLIC JSONSTAT=1)
+  target_link_libraries(
+    openMVG_sfm
+    openMVG_multiview
+    stlplus
+    ${CERES_LIBRARIES}
+    openMVG_lInftyComputerVision
+    openMVG_system
+    openMVG_matching
+    openMVG_dataio
+    ${Boost_LIBRARIES}
+  )
+ELSE(OpenMVG_BUILD_VOCTREE)
+  target_link_libraries(
+    openMVG_sfm
+    openMVG_multiview
+    stlplus
+    ${CERES_LIBRARIES}
+    openMVG_lInftyComputerVision
+    openMVG_system
+    openMVG_matching
+    openMVG_dataio
+  )
+ENDIF(OpenMVG_BUILD_VOCTREE)
 set_target_properties(openMVG_sfm PROPERTIES SOVERSION ${OPENMVG_VERSION_MAJOR} VERSION "${OPENMVG_VERSION_MAJOR}.${OPENMVG_VERSION_MINOR}")
 
 install(TARGETS openMVG_sfm DESTINATION lib EXPORT openMVG-targets)
