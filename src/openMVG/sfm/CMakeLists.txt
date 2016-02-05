@@ -18,8 +18,7 @@ list(REMOVE_ITEM sfm_files_header ${REMOVEFILESUNITTEST})
 
 add_library(openMVG_sfm ${sfm_files_header} ${sfm_files_cpp})
 IF(Boost_FOUND)
-  #If Boost can be used we activate the json stat export
-  add_definitions( -DJSONSTAT=1)
+  #If Boost can be used we add boost librairies for json export
   target_link_libraries(
     openMVG_sfm
     openMVG_multiview
