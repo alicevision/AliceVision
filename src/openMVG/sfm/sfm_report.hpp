@@ -198,6 +198,7 @@ static bool Generate_SfM_Report
 
   #if JSONSTAT // write property tree in a json file on disk
     pt::write_json(stlplus::create_filespec(stlplus::folder_part(htmlFilename), "stats", "json"), tree);
+    std::cout << "......Additional json statistics report has been generated." << std::endl;
   #endif
 
   std::ofstream htmlFileStream(htmlFilename.c_str());
