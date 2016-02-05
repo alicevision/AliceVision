@@ -17,7 +17,8 @@ file(GLOB_RECURSE REMOVEFILESUNITTEST *_test.hpp)
 list(REMOVE_ITEM sfm_files_header ${REMOVEFILESUNITTEST})
 
 add_library(openMVG_sfm ${sfm_files_header} ${sfm_files_cpp})
-IF(OpenMVG_BUILD_VOCTREE)
+IF(Boost_FOUND)
+  #If Boost can be used we activate the json stat export
   target_compile_definitions(openMVG_sfm PUBLIC JSONSTAT=1)
   target_link_libraries(
     openMVG_sfm
@@ -30,7 +31,7 @@ IF(OpenMVG_BUILD_VOCTREE)
     openMVG_dataio
     ${Boost_LIBRARIES}
   )
-ELSE(OpenMVG_BUILD_VOCTREE)
+ELSE(Boost_FOUND)
   target_link_libraries(
     openMVG_sfm
     openMVG_multiview
@@ -41,7 +42,7 @@ ELSE(OpenMVG_BUILD_VOCTREE)
     openMVG_matching
     openMVG_dataio
   )
-ENDIF(OpenMVG_BUILD_VOCTREE)
+ENDIF(Boost_FOUND)
 set_target_properties(openMVG_sfm PROPERTIES SOVERSION ${OPENMVG_VERSION_MAJOR} VERSION "${OPENMVG_VERSION_MAJOR}.${OPENMVG_VERSION_MINOR}")
 
 install(TARGETS openMVG_sfm DESTINATION lib EXPORT openMVG-targets)
