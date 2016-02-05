@@ -27,7 +27,7 @@ static bool Generate_SfM_Report
   const std::string & htmlFilename
 )
 {
-  #if JSONSTAT
+  #if JSONSTAT // Creation of property tree, put nb images, nb poses, np points
     pt::ptree tree;
     tree.put("sfm.views", sfm_data.GetViews().size());
     tree.put("sfm.poses", sfm_data.GetPoses().size());
@@ -55,13 +55,13 @@ static bool Generate_SfM_Report
       residuals_per_view[itObs->first].push_back(residual(1));
       ++residualCount;
     }
-    #if JSONSTAT
+    #if JSONSTAT // create the observations histogram vector
       if (obs_histogram.size() < obs.size() + 1)
         obs_histogram.resize(obs.size() + 1, 0);
       obs_histogram[obs.size()]++;
     #endif
   }
-  #if JSONSTAT
+  #if JSONSTAT // add the observations histogram in ptree
     for(int i = 0; i < obs_histogram.size(); i++)
     {
       tree.add("sfm.observations_histogram."
@@ -174,7 +174,7 @@ static bool Generate_SfM_Report
       os.str("");
       os << sFullLine << "SfM Scene RMSE: " << RMSE << sFullLine;
       htmlDocStream.pushInfo(os.str());
-      #if JSONSTAT
+      #if JSONSTAT // put RMSE
         tree.put("sfm.rmse", RMSE);
       #endif
 
@@ -196,7 +196,7 @@ static bool Generate_SfM_Report
     }
   }
 
-  #if JSONSTAT
+  #if JSONSTAT // write property tree in a json file on disk
     pt::write_json(stlplus::create_filespec(stlplus::folder_part(htmlFilename), "stats", "json"), tree);
   #endif
 
