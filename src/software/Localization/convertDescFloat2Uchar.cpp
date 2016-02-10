@@ -7,7 +7,9 @@
 #include <openMVG/features/descriptor.hpp>
 
 #include <boost/progress.hpp>
+#define BOOST_NO_CXX11_SCOPED_ENUMS
 #include <boost/filesystem.hpp>
+#undef BOOST_NO_CXX11_SCOPED_ENUMS
 #include <boost/program_options.hpp> 
 #include <boost/algorithm/string/case_conv.hpp> 
 
@@ -90,7 +92,6 @@ int main( int argc, char** argv )
     {
       // just copy the file into the output directory
       bfs::copy_file(iterator->path(), bfs::path(outputFolder)/bfs::path(filename), bfs::copy_option::overwrite_if_exists);
-      
       ++countFeat;
     }
     else if(ext == ".desc")
