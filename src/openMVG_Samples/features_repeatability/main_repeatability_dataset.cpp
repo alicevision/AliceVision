@@ -281,10 +281,14 @@ int main(int argc, char **argv)
       {
         image_describer.reset(new SIFT_Image_describer(SiftParams()));
       }
+      else
+#ifdef USE_OCVSIFT
       if (sImage_Describer_Method == "SIFT_OCV")
       {
         image_describer.reset(new SIFT_OPENCV_Image_describer());
       }
+      else
+#endif
       if (sImage_Describer_Method == "POP_SIFT")
       {
         image_describer.reset(new SIFT_popSIFT_describer());
