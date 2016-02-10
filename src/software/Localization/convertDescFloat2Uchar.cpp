@@ -7,9 +7,7 @@
 #include <openMVG/features/descriptor.hpp>
 
 #include <boost/progress.hpp>
-#define BOOST_NO_CXX11_SCOPED_ENUMS
 #include <boost/filesystem.hpp>
-#undef BOOST_NO_CXX11_SCOPED_ENUMS
 #include <boost/program_options.hpp> 
 #include <boost/algorithm/string/case_conv.hpp> 
 
