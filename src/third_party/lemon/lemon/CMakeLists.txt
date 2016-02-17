@@ -56,31 +56,44 @@ ENDIF()
 
 ADD_LIBRARY(lemon ${LEMON_SOURCES})
 IF(UNIX)
-  SET_TARGET_PROPERTIES(lemon PROPERTIES OUTPUT_NAME emon)
+#  SET_TARGET_PROPERTIES(lemon PROPERTIES OUTPUT_NAME emon)
+  SET_TARGET_PROPERTIES(lemon PROPERTIES OUTPUT_NAME lemon)
 ENDIF()
 
 INSTALL(
   TARGETS lemon
-  ARCHIVE DESTINATION lib
-  LIBRARY DESTINATION lib
-  COMPONENT library
+  DESTINATION lib
+  EXPORT openMVG-targets
 )
 
 INSTALL(
-  DIRECTORY . bits concepts
-  DESTINATION include/lemon
+  DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+  DESTINATION include/openMVG/third_party/lemon
   COMPONENT headers
-  FILES_MATCHING PATTERN "*.h"
+  FILES_MATCHING PATTERN "*.hpp" PATTERN "*.h"
 )
 
 INSTALL(
   FILES ${CMAKE_CURRENT_BINARY_DIR}/config.h
-  DESTINATION include/lemon
+  DESTINATION include/openMVG/third_party/lemon
   COMPONENT headers
 )
 
-INSTALL(
-  FILES ${CMAKE_CURRENT_BINARY_DIR}/lemon.pc
-  DESTINATION lib/pkgconfig
-)
+#INSTALL(
+#  DIRECTORY . bits concepts
+#  DESTINATION include/lemon
+#  COMPONENT headers
+#  FILES_MATCHING PATTERN "*.h"
+#)
+
+#INSTALL(
+#  FILES ${CMAKE_CURRENT_BINARY_DIR}/config.h
+#  DESTINATION include/openMVG_third_party/lemon
+#  COMPONENT headers
+#)
+
+#INSTALL(
+#  FILES ${CMAKE_CURRENT_BINARY_DIR}/lemon.pc
+#  DESTINATION lib/pkgconfig
+#)
 

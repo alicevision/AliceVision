@@ -1,16 +1,15 @@
 ############################
-openMVG softwares
+openMVG softwares & tools
 ############################
   
-openMVG provide complete software pipeline
-=======================================
-
-They can perform:
-
 .. toctree::
   :maxdepth: 1
   
   SfM/SfM.rst
-  colorHarmonization/color.rst    
+  ui/SfM/control_points_registration/GCP.rst
+  localization/localization.rst
+  MVS/MVS.rst
+  colorHarmonization/color.rst
+
 
 

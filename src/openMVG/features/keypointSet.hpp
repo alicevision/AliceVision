@@ -13,6 +13,7 @@
 #include <string>
 
 namespace openMVG {
+namespace features {
 
 /// Association storage of associated feature and descriptor for a given image.
 /// Load, save, R/W accessor operation.
@@ -66,18 +67,19 @@ public:
   }
 
   /// Mutable and non-mutable FeatureT getters.
-  FeaturesT & features() { return _feats; }
-  const FeaturesT & features() const { return _feats; }
+  inline FeaturesT & features() { return _feats; }
+  inline const FeaturesT & features() const { return _feats; }
 
   /// Mutable and non-mutable DescriptorT getters.
-  DescriptorsT & descriptors() { return _descs; }
-  const DescriptorsT & descriptors() const { return _descs; }
+  inline DescriptorsT & descriptors() { return _descs; }
+  inline const DescriptorsT & descriptors() const { return _descs; }
 
 private:
   FeaturesT _feats;
   DescriptorsT _descs;
 };
 
+} // namespace features
 } // namespace openMVG
 
 #endif // OPENMVG_FEATURES_KEYPOINTSET_HPP

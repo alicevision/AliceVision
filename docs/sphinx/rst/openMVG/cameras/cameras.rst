@@ -22,7 +22,7 @@ Intrinsic parameters model the optic component (without distortion) and extrinsi
 This projection of the camera is described as:
 
 .. math::
-  P_{3 \times 4} =
+  P_{3 \times 4} = K [R|t] = 
   \begin{bmatrix}
   f*k_u &  & c_u \\
    & f*k_v & c_v \\
@@ -75,6 +75,40 @@ A 3D point is projected in a image with the following formula (homogeneous coord
   W_i\\
   \end{bmatrix}
 
+
+OpenMVG Pinhole camera models
+------------------------------
+
+* Pinhole intrinsic
+
+  * :class:`Pinhole_Intrinsic : public IntrinsicBase` 
+
+    * classic pinhole camera (Focal + principal point and image size).
+
+  * :class:`Pinhole_Intrinsic_Radial_K1 : public Pinhole_Intrinsic`
+
+    * classic pinhole camera (Focal + principal point and image size) + radial distortion defined by one factor.
+    * can add and remove distortion
+
+  * :class:`Pinhole_Intrinsic_Radial_K3 : public Pinhole_Intrinsic`
+
+    * classic pinhole camera (Focal + principal point and image size) + radial distortion by three factors.
+    * can add and remove distortion
+
+  * :class:`Pinhole_Intrinsic_Brown_T2 : public Pinhole_Intrinsic`
+
+    * classic pinhole camera (Focal + principal point and image size) + radial distortion by three factors + tangential distortion by two factors.
+    * can add and remove distortion
+
+  * :class:`Pinhole_Intrinsic_Fisheye : public Pinhole_Intrinsic`
+
+    * classic pinhole camera (Focal + principal point and image size) + fish-eye distortion by four factors.
+    * can only be applied to a full frame fish-eye (i.e not to hemispherical ones)
+    * can add and remove distortion
+
+
+* Simple pinhole camera models (intrinsic + extrinsic(pose))
+
 .. code-block:: c++ 
 
   // Setup a simple pinhole camera at origin
@@ -83,5 +117,4 @@ A 3D point is projected in a image with the following formula (homogeneous coord
   K << 1000, 0, 500,
        0, 1000, 500,
        0, 0, 1;
-  PinholeCamera cam(K, Mat3::Identity(), Vec3::Identity());
-
+  PinholeCamera cam(K, Mat3::Identity(), Vec3::Zero());

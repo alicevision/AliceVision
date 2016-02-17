@@ -36,21 +36,24 @@ using namespace std;
   * \return void.
   */
 template <typename DataInputIterator>
-static void NNdistanceRatio( DataInputIterator first, // distance start
-                        DataInputIterator last,  // distance end
-                        int NN, // Number of neighbor in iterator sequence (minimum required 2)
-                        vector<int> & vec_ratioOkIndex, // output (index that respect NN dist Ratio)
-                        float fratio = 0.6f) // ratio value
+static inline void NNdistanceRatio
+(
+  DataInputIterator first, // distance start
+  DataInputIterator last,  // distance end
+  int NN, // Number of neighbor in iterator sequence (minimum required 2)
+  std::vector<int> & vec_ratioOkIndex, // output (index that respect NN dist Ratio)
+  float fratio = 0.6f) // ratio value
 {
   assert( NN >= 2);
 
-  vec_ratioOkIndex.clear();
   const size_t n = std::distance(first,last);
+  vec_ratioOkIndex.clear();
+  vec_ratioOkIndex.reserve(n/NN);
   DataInputIterator iter = first;
-  for(size_t i=0; i < n/NN; ++i, advance(iter, NN))
+  for(size_t i=0; i < n/NN; ++i, std::advance(iter, NN))
   {
     DataInputIterator iter2 = iter;
-    advance(iter2,1);
+    std::advance(iter2, 1);
     if ( (*iter) < fratio * (*iter2))
       vec_ratioOkIndex.push_back(static_cast<int>(i));
   }
@@ -71,7 +74,7 @@ static void NNdistanceRatio( DataInputIterator first, // distance start
   * \return void.
   */
 // TODO
-static void SymmetricMatches(const vector<int> & vec_matches,
+static inline void SymmetricMatches(const vector<int> & vec_matches,
   const vector<int> & vec_reversematches,
   int NN,
   vector<int> & vec_goodIndex)
@@ -101,7 +104,7 @@ static void SymmetricMatches(const vector<int> & vec_matches,
   * \return void.
   */
 template <typename Iterator, typename Type>
-static void IntersectMatches( Iterator aStart, Iterator aEnd,
+static inline void IntersectMatches( Iterator aStart, Iterator aEnd,
                        Iterator bStart, Iterator bEnd,
                        vector<Type> & vec_out)
 {
@@ -122,7 +125,7 @@ enum eMatchFilter
   MATCHFILER_SYM_AND_NNDISTANCERATIO = MATCHFILTER_SYMMETRIC | MATCHFILTER_NNDISTANCERATIO
 };
 
-static void Filter( int NN,
+static inline void Filter( int NN,
        const vector<int> & vec_Matches01,
        const vector<float> & vec_distance01,
        const vector<int> & vec_Matches10,

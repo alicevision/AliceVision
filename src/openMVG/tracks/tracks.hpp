@@ -34,7 +34,6 @@
 
 #include "lemon/list_graph.h"
 #include "lemon/unionfind.h"
-using namespace lemon;
 
 #include "openMVG/matching/indMatch.hpp"
 
@@ -44,10 +43,12 @@ using namespace lemon;
 #include <vector>
 #include <set>
 #include <map>
+#include <memory>
 
-namespace openMVG  {
+namespace openMVG {
 
 using namespace openMVG::matching;
+using namespace lemon;
 
 /// Lightweight copy of the flat_map of BOOST library
 /// Use a vector to speed up insertion (preallocated array)
@@ -59,11 +60,11 @@ public:
   typedef typename std::vector< P >::iterator iterator;
 
   typename std::vector< P >::iterator find(const T1 & val)  {
-    return lower_bound(m_vec.begin(), m_vec.end(), val, superiorToFirst);
+    return std::lower_bound(m_vec.begin(), m_vec.end(), val, superiorToFirst);
   }
 
   T2 & operator[](const T1 & val) {
-    return lower_bound(m_vec.begin(), m_vec.end(), val, superiorToFirst)->second;
+    return std::lower_bound(m_vec.begin(), m_vec.end(), val, superiorToFirst)->second;
   }
 
   void sort()  {std::sort(m_vec.begin(), m_vec.end(), sortPairAscend);}
@@ -78,7 +79,6 @@ private:
 };
 
 namespace tracks  {
-  using namespace std;
 
 // Data structure to store a track: collection of {ImageId,FeatureId}
 //  The corresponding image points with their imageId and FeatureId.
@@ -92,22 +92,66 @@ struct TracksBuilder
   typedef ListDigraph::NodeMap<size_t> IndexMap;
   typedef lemon::UnionFindEnum< IndexMap > UnionFindObject;
 
-  typedef flat_pair_map< lemon::ListDigraph::Node, indexedFeaturePair> MapNodeIndex;
-  typedef flat_pair_map< indexedFeaturePair, lemon::ListDigraph::Node > MapIndexNode;
+  typedef flat_pair_map< lemon::ListDigraph::Node, indexedFeaturePair> MapNodeToIndex;
+  typedef flat_pair_map< indexedFeaturePair, lemon::ListDigraph::Node > MapIndexToNode;
 
-  lemon::ListDigraph g; //Graph container to create the node
-  MapNodeIndex reverse_my_Map; //Node to index map
-  auto_ptr<IndexMap> index;
-  auto_ptr<UnionFindObject> myTracksUF;
+  lemon::ListDigraph _graph; //Graph container to create the node
+  MapNodeToIndex _map_nodeToIndex; //Node to index map
+  std::unique_ptr<IndexMap> _index;
+  std::unique_ptr<UnionFindObject> _tracksUF;
 
-  const UnionFindObject & getUnionFindEnum() const {return *myTracksUF; }
-  const MapNodeIndex & getReverseMap() const {return reverse_my_Map;}
+  const UnionFindObject & getUnionFindEnum() const {return *_tracksUF; }
+  const MapNodeToIndex & getReverseMap() const {return _map_nodeToIndex;}
 
   /// Build tracks for a given series of pairWise matches
   bool Build( const PairWiseMatches &  map_pair_wise_matches)
   {
     typedef std::set<indexedFeaturePair> SetIndexedPair;
-    SetIndexedPair myset;
+    // Set of all features of all images: (imageIndex, featureIndex)
+    SetIndexedPair allFeatures;
+    // For each couple of images
+    for (PairWiseMatches::const_iterator iter = map_pair_wise_matches.begin();
+      iter != map_pair_wise_matches.end();
+      ++iter)
+    {
+      const size_t & I = iter->first.first;
+      const size_t & J = iter->first.second;
+      // Features correspondences between I and J image.
+      const std::vector<IndMatch> & vec_FilteredMatches = iter->second;
+
+      // Retrieve all features
+      for( size_t k = 0; k < vec_FilteredMatches.size(); ++k)
+      {
+        allFeatures.insert(std::make_pair(I,vec_FilteredMatches[k]._i));
+        allFeatures.insert(std::make_pair(J,vec_FilteredMatches[k]._j));
+      }
+    }
+
+    // Build the node indirection for each referenced feature
+    MapIndexToNode map_indexToNode;
+    map_indexToNode.reserve(allFeatures.size());
+    _map_nodeToIndex.reserve(allFeatures.size());
+    for (SetIndexedPair::const_iterator iter = allFeatures.begin();
+      iter != allFeatures.end();
+      ++iter)
+    {
+      lemon::ListDigraph::Node node = _graph.addNode();
+      map_indexToNode.push_back( std::make_pair(*iter, node));
+      _map_nodeToIndex.push_back( std::make_pair(node,*iter));
+    }
+
+    // Sort the flat_pair_map
+    map_indexToNode.sort();
+    _map_nodeToIndex.sort();
+
+    // Add the element of myset to the UnionFind insert method.
+    _index = std::unique_ptr<IndexMap>( new IndexMap(_graph) );
+    _tracksUF = std::unique_ptr<UnionFindObject>( new UnionFindObject(*_index));
+    for (ListDigraph::NodeIt it(_graph); it != INVALID; ++it) {
+      _tracksUF->insert(it);
+    }
+
+    // Make the union according the pair matches
     for (PairWiseMatches::const_iterator iter = map_pair_wise_matches.begin();
       iter != map_pair_wise_matches.end();
       ++iter)
@@ -119,138 +163,63 @@ struct TracksBuilder
 
       for( size_t k = 0; k < vec_FilteredMatches.size(); ++k)
       {
-        // Look if one of the feature already belong to a track :
-        myset.insert(make_pair(I,vec_FilteredMatches[k]._i));
-        myset.insert(make_pair(J,vec_FilteredMatches[k]._j));
-      }
-    }
-
-    // Build the node indirection for each referenced feature
-    MapIndexNode my_Map;
-    my_Map.reserve(myset.size());
-    reverse_my_Map.reserve(myset.size());
-    for (SetIndexedPair::const_iterator iter = myset.begin();
-      iter != myset.end();
-      ++iter)
-    {
-      lemon::ListDigraph::Node node = g.addNode();
-      my_Map.push_back( std::make_pair(*iter, node));
-      reverse_my_Map.push_back( std::make_pair(node,*iter));
-    }
-
-    // Sort the flat_pair_map
-    my_Map.sort();
-    reverse_my_Map.sort();
-
-    // Add the element of myset to the UnionFind insert method.
-    index = auto_ptr<IndexMap>( new IndexMap(g) );
-    myTracksUF = auto_ptr<UnionFindObject>( new UnionFindObject(*index));
-    for (ListDigraph::NodeIt it(g); it != INVALID; ++it) {
-      myTracksUF->insert(it);
-    }
-
-    // Make the union according the pair matches
-    for (PairWiseMatches::const_iterator iter = map_pair_wise_matches.begin();
-      iter != map_pair_wise_matches.end();
-      ++iter)
-    {
-      const size_t & I = iter->first.first;
-      const size_t & J = iter->first.second;
-      const vector<IndMatch> & vec_FilteredMatches = iter->second;
-      // We have correspondences between I and J image index.
-
-      for( size_t k = 0; k < vec_FilteredMatches.size(); ++k)
-      {
-        indexedFeaturePair pairI = make_pair(I,vec_FilteredMatches[k]._i);
-        indexedFeaturePair pairJ = make_pair(J,vec_FilteredMatches[k]._j);
-        myTracksUF->join( my_Map[pairI], my_Map[pairJ] );
+        indexedFeaturePair pairI(I,vec_FilteredMatches[k]._i);
+        indexedFeaturePair pairJ(J,vec_FilteredMatches[k]._j);
+        _tracksUF->join( map_indexToNode[pairI], map_indexToNode[pairJ] );
       }
     }
     return false;
   }
 
-  /// Remove bad tracks, conflict tracks (many times the same image index in a track)
-  bool Filter(size_t nLengthSupTo = 2)
+  /// Remove bad tracks (too short or track with ids collision)
+  bool Filter(size_t nLengthSupTo = 2, bool bMultithread = true)
   {
-    // Remove bad tracks (shorter, conflicts (Many times the same image index)...)
+    // Remove bad tracks:
+    // - track that are too short,
+    // - track with id conflicts (many times the same image index)
 
-    // Remove tracks that have a conflict (many times the same image index)
     std::set<int> set_classToErase;
-    for ( lemon::UnionFindEnum< IndexMap >::ClassIt cit(*myTracksUF); cit != INVALID; ++cit) {
-      size_t cpt = 0;
-      std::set<size_t> myset;
-      for (lemon::UnionFindEnum< IndexMap >::ItemIt iit(*myTracksUF, cit); iit != INVALID; ++iit) {
-        myset.insert(reverse_my_Map[ iit ].first);
-        ++cpt;
-      }
-      if (myset.size() != cpt || myset.size() < nLengthSupTo)
+#ifdef OPENMVG_USE_OPENMP
+    #pragma omp parallel if(bMultithread)
+#endif
+    for ( lemon::UnionFindEnum< IndexMap >::ClassIt cit(*_tracksUF); cit != INVALID; ++cit) {
+#ifdef OPENMVG_USE_OPENMP
+    #pragma omp single nowait
+#endif
       {
-        set_classToErase.insert(cit.operator int());
+        size_t cpt = 0;
+        std::set<size_t> myset;
+        for (lemon::UnionFindEnum< IndexMap >::ItemIt iit(*_tracksUF, cit); iit != INVALID; ++iit) {
+          myset.insert(_map_nodeToIndex[ iit ].first);
+          ++cpt;
+        }
+        if (myset.size() != cpt || myset.size() < nLengthSupTo)
+        {
+#ifdef OPENMVG_USE_OPENMP
+          #pragma omp critical
+#endif
+          set_classToErase.insert(cit.operator int());
+        }
       }
     }
-    for_each (set_classToErase.begin(), set_classToErase.end(),
-      std::bind1st( std::mem_fun( &UnionFindObject::eraseClass ), myTracksUF.get() ));
+    std::for_each (set_classToErase.begin(), set_classToErase.end(),
+      std::bind1st( std::mem_fun( &UnionFindObject::eraseClass ), _tracksUF.get() ));
     return false;
   }
 
-  /// Remove the pair that have too few correspondences.
-  bool FilterPairWiseMinimumMatches(size_t minMatchesOccurences, bool bVerbose = false)
-  {
-    std::vector<size_t> vec_tracksToRemove;
-    std::map< size_t, set<size_t> > map_tracksIdPerImages;
-
-    //-- Count the number of track per image Id
-    for ( lemon::UnionFindEnum< IndexMap >::ClassIt cit(*myTracksUF); cit != INVALID; ++cit) {
-      size_t trackId = cit.operator int();
-      for (lemon::UnionFindEnum< IndexMap >::ItemIt iit(*myTracksUF, cit); iit != INVALID; ++iit) {
-        const MapNodeIndex::iterator iterTrackValue = reverse_my_Map.find(iit);
-        const indexedFeaturePair & currentPair = iterTrackValue->second;
-        map_tracksIdPerImages[currentPair.first].insert(trackId);
-      }
-    }
-
-    //-- Compute cross images matches
-    for (std::map<size_t, set<size_t> >::const_iterator iter = map_tracksIdPerImages.begin();
-      iter != map_tracksIdPerImages.end();
-      ++iter)
-    {
-      const set<size_t> & setA = iter->second;
-      for (std::map<size_t, set<size_t> >::const_iterator iter2 = iter;
-        iter2 != map_tracksIdPerImages.end();  ++iter2)
-      {
-        const set<size_t> & setB = iter2->second;
-        vector<size_t> inter;
-
-        set_intersection(setA.begin(), setA.end(), setB.begin(), setB.end(), back_inserter(inter));
-
-        if (inter.size() < minMatchesOccurences)
-          copy(inter.begin(), inter.end(), back_inserter(vec_tracksToRemove));
-      }
-    }
-    sort(vec_tracksToRemove.begin(), vec_tracksToRemove.end());
-    std::vector<size_t>::iterator it = std::unique(vec_tracksToRemove.begin(), vec_tracksToRemove.end());
-    vec_tracksToRemove.resize( std::distance(vec_tracksToRemove.begin(), it) );
-    if (bVerbose)
-      std::cout << std::endl << std::endl << vec_tracksToRemove.size()
-        << " Tracks will be removed"<< std::endl;
-    std::for_each(vec_tracksToRemove.begin(), vec_tracksToRemove.end(),
-      std::bind1st(std::mem_fun(&UnionFindObject::eraseClass), myTracksUF.get()));
-    return false;
-  }
-
-  bool ExportToStream(ostream & os)
+  bool ExportToStream(std::ostream & os)
   {
     size_t cpt = 0;
-    for ( lemon::UnionFindEnum< IndexMap >::ClassIt cit(*myTracksUF); cit != INVALID; ++cit) {
+    for ( lemon::UnionFindEnum< IndexMap >::ClassIt cit(*_tracksUF); cit != INVALID; ++cit) {
       os << "Class: " << cpt++ << std::endl;
       size_t cptTrackLength = 0;
-      for (lemon::UnionFindEnum< IndexMap >::ItemIt iit(*myTracksUF, cit); iit != INVALID; ++iit) {
+      for (lemon::UnionFindEnum< IndexMap >::ItemIt iit(*_tracksUF, cit); iit != INVALID; ++iit) {
         ++cptTrackLength;
       }
       os << "\t" << "track length: " << cptTrackLength << std::endl;
 
-      for (lemon::UnionFindEnum< IndexMap >::ItemIt iit(*myTracksUF, cit); iit != INVALID; ++iit) {
-        os << reverse_my_Map[ iit ].first << "  " << reverse_my_Map[ iit ].second << std::endl;
+      for (lemon::UnionFindEnum< IndexMap >::ItemIt iit(*_tracksUF, cit); iit != INVALID; ++iit) {
+        os << _map_nodeToIndex[ iit ].first << "  " << _map_nodeToIndex[ iit ].second << std::endl;
       }
     }
     return os.good();
@@ -260,7 +229,7 @@ struct TracksBuilder
   size_t NbTracks() const
   {
     size_t cpt = 0;
-    for ( lemon::UnionFindEnum< IndexMap >::ClassIt cit(*myTracksUF); cit != INVALID; ++cit)
+    for ( lemon::UnionFindEnum< IndexMap >::ClassIt cit(*_tracksUF); cit != INVALID; ++cit)
       ++cpt;
     return cpt;
   }
@@ -272,13 +241,13 @@ struct TracksBuilder
     map_tracks.clear();
 
     size_t cptClass = 0;
-    for ( lemon::UnionFindEnum< IndexMap >::ClassIt cit(*myTracksUF); cit != INVALID; ++cit, ++cptClass) {
-      pair<STLMAPTracks::iterator, bool> ret =
-        map_tracks.insert(std::pair<size_t, submapTrack >(cptClass, submapTrack() ) );
+    for ( lemon::UnionFindEnum< IndexMap >::ClassIt cit(*_tracksUF); cit != INVALID; ++cit, ++cptClass) {
+      std::pair<STLMAPTracks::iterator, bool> ret =
+        map_tracks.insert(std::pair<size_t, submapTrack >(cptClass, submapTrack()));
       STLMAPTracks::iterator iterN = ret.first;
 
-      for (lemon::UnionFindEnum< IndexMap >::ItemIt iit(*myTracksUF, cit); iit != INVALID; ++iit) {
-        const MapNodeIndex::iterator iterTrackValue = reverse_my_Map.find(iit);
+      for (lemon::UnionFindEnum< IndexMap >::ItemIt iit(*_tracksUF, cit); iit != INVALID; ++iit) {
+        const MapNodeToIndex::iterator iterTrackValue = _map_nodeToIndex.find(iit);
         const indexedFeaturePair & currentPair = iterTrackValue->second;
 
         iterN->second[currentPair.first] = currentPair.second;
@@ -289,30 +258,39 @@ struct TracksBuilder
 
 struct TracksUtilsMap
 {
-  /// Return the tracks that are in common to the set_imageIndex indexes.
+  /**
+   * @brief Find common tracks between images.
+   *
+   * @param[in] set_imageIndex: set of images we are looking for common tracks
+   * @param[in] map_tracksIn: all tracks of the scene
+   * @param[out] map_tracksOut: output with only the common tracks
+   */
   static bool GetTracksInImages(
     const std::set<size_t> & set_imageIndex,
     const STLMAPTracks & map_tracksIn,
     STLMAPTracks & map_tracksOut)
   {
+    assert(!set_imageIndex.empty());
     map_tracksOut.clear();
 
     // Go along the tracks
     for (STLMAPTracks::const_iterator iterT = map_tracksIn.begin();
-      iterT != map_tracksIn.end(); ++iterT)  {
-
-      // If the track contain one of the provided index save the point of the track
-      std::map<size_t, size_t> map_temp;
+      iterT != map_tracksIn.end(); ++iterT)
+    {
+      // Look if the track contains the provided view index & save the point ids
+      submapTrack map_temp;
       for (std::set<size_t>::const_iterator iterIndex = set_imageIndex.begin();
         iterIndex != set_imageIndex.end(); ++iterIndex)
       {
         submapTrack::const_iterator iterSearch = iterT->second.find(*iterIndex);
-        if (iterSearch != iterT->second.end())
-          map_temp[iterSearch->first] = iterSearch->second;
+        if (iterSearch == iterT->second.end())
+            break; // at least one request image is not in the track
+        map_temp[iterSearch->first] = iterSearch->second;
       }
-
-      if (!map_temp.empty() && map_temp.size() == set_imageIndex.size())
-        map_tracksOut.insert(make_pair(iterT->first, map_temp));
+      // if we have a feature for each input image
+      // we can add it to the output tracks.
+      if (map_temp.size() == set_imageIndex.size())
+        map_tracksOut[iterT->first] = std::move(map_temp);
     }
     return !map_tracksOut.empty();
   }
@@ -340,7 +318,7 @@ struct TracksUtilsMap
     for (STLMAPTracks::const_iterator iterT = map_tracks.begin();
       iterT != map_tracks.end(); ++iterT)
     {
-      size_t trackId = iterT->first;
+      const size_t trackId = iterT->first;
       if (set_trackId.find(trackId) != set_trackId.end())
       {
         //try to find imageIndex
@@ -348,28 +326,37 @@ struct TracksUtilsMap
         submapTrack::const_iterator iterSearch = map_ref.find(nImageIndex);
         if (iterSearch != map_ref.end())
         {
-          pvec_featIndex->push_back(iterSearch->second);
+          pvec_featIndex->emplace_back(iterSearch->second);
         }
       }
     }
     return !pvec_featIndex->empty();
   }
 
-  struct FunctorMapFirstEqual : public std::unary_function <std::map<size_t, std::map<size_t,size_t> >, bool>
+  struct FunctorMapFirstEqual : public std::unary_function <STLMAPTracks , bool>
   {
     size_t id;
     FunctorMapFirstEqual(size_t val):id(val){};
-    bool operator()(const std::pair<size_t, std::map<size_t,size_t> > & val) {
+    bool operator()(const std::pair<size_t, submapTrack > & val) {
       return ( id == val.first);
     }
   };
 
-  /// Convert a trackId to a vector of indexed Matches.
-  /// The input tracks must be compound of only two images index.
-  /// Be careful image index are sorted (increasing order)
-  /// Only track index contained in the filter vector are kept.
+  /**
+   * @brief Convert a trackId to a vector of indexed Matches.
+   *
+   * @param[in]  map_tracks: set of tracks with only 2 elements
+   *             (image A and image B) in each submapTrack.
+   * @param[in]  vec_filterIndex: the track indexes to retrieve.
+   *             Only track indexes contained in this filter vector are kept.
+   * @param[out] pvec_index: list of matches
+   *             (feature index in image A, feature index in image B).
+   *
+   * @warning The input tracks must be composed of only two images index.
+   * @warning Image index are considered sorted (increasing order).
+   */
   static void TracksToIndexedMatches(const STLMAPTracks & map_tracks,
-    const std::vector<size_t> & vec_filterIndex,
+    const std::vector<IndexT> & vec_filterIndex,
     std::vector<IndMatch> * pvec_index)
   {
 
@@ -377,14 +364,18 @@ struct TracksUtilsMap
     vec_indexref.clear();
     for (size_t i = 0; i < vec_filterIndex.size(); ++i)
     {
+      // Retrieve the track information from the current index i.
       STLMAPTracks::const_iterator itF =
         find_if(map_tracks.begin(), map_tracks.end(), FunctorMapFirstEqual(vec_filterIndex[i]));
+      // The current track.
       const submapTrack & map_ref = itF->second;
-      submapTrack::const_iterator iter = map_ref.begin();
-      size_t indexI = iter->second;
-      ++iter;
-      size_t indexJ = iter->second;
-      vec_indexref.push_back(IndMatch(indexI, indexJ));
+
+      // We have 2 elements for a track.
+      assert(map_ref.size() == 2);
+      const IndexT indexI = (map_ref.begin())->second;
+      const IndexT indexJ = (++map_ref.begin())->second;
+
+      vec_indexref.emplace_back(indexI, indexJ);
     }
   }
 
@@ -395,7 +386,7 @@ struct TracksUtilsMap
     for (STLMAPTracks::const_iterator iterT = map_tracks.begin();
       iterT != map_tracks.end(); ++iterT)
     {
-      size_t trLength = iterT->second.size();
+      const size_t trLength = iterT->second.size();
       if (map_Occurence_TrackLength.end() ==
         map_Occurence_TrackLength.find(trLength))
       {

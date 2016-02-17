@@ -7,11 +7,6 @@
 
 //---------------------------------
 //  Universal Image Processing Algorithm (UIPA)
-//   _  _  __  ___  __
-//  ( )( )(  )(  ,\(  )
-//  ( )( ) )(  ) _//__\
-//  (____)(__)(_) (_)(_)
-//-------
 // Generic Image algorithm that require
 //  an ImageModel class that must implement the following:
 //
@@ -26,6 +21,7 @@
 #include "openMVG/image/image_container.hpp"
 
 namespace openMVG {
+namespace image {
 
 /// Put the pixel in the image to the given color only if the point (xc,yc)
 ///  is inside the image.
@@ -402,6 +398,7 @@ void DrawLineThickness(int xa, int ya, int xb, int yb, const Color& col, int thi
   DrawCircle(x, y, halfThickness, col, pim);
 }
 
-} //namespace openMVG
+} // namespace image
+} // namespace openMVG
 
 #endif  // OPENMVG_IMAGE_IMAGE_DRAWING_HPP

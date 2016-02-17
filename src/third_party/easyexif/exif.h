@@ -1,18 +1,22 @@
 /**************************************************************************
-  exif.h  -- A simple ISO C++ library to parse basic EXIF 
+  exif.h  -- A simple ISO C++ library to parse basic EXIF
              information from a JPEG file.
 
   Based on the description of the EXIF file format at:
+  -- http://www.sno.phy.queensu.ca/~phil/exiftool/TagNames/EXIF.html
   -- http://park2.wakwak.com/~tsuruzoh/Computer/Digicams/exif-e.html
   -- http://www.media.mit.edu/pia/Research/deepview/exif.html
   -- http://www.exif.org/Exif2-2.PDF
 
-  Copyright (c) 2010-2013 Mayank Lahiri
+  Copyright (c) 2010-2015 Mayank Lahiri
   mlahiri@gmail.com
   All rights reserved.
 
   VERSION HISTORY:
   ================
+
+  2.2: Release December 2014
+       --
 
   2.1: Released July 2013
        -- fixed a bug where JPEGs without an EXIF SubIFD would not be parsed
@@ -28,25 +32,25 @@
        -- added GPS support
 
   1.0: Released 2010
-  
-  Redistribution and use in source and binary forms, with or without 
+
+  Redistribution and use in source and binary forms, with or without
   modification, are permitted provided that the following conditions are met:
 
-  -- Redistributions of source code must retain the above copyright notice, 
+  -- Redistributions of source code must retain the above copyright notice,
      this list of conditions and the following disclaimer.
-  -- Redistributions in binary form must reproduce the above copyright notice, 
-     this list of conditions and the following disclaimer in the documentation 
+  -- Redistributions in binary form must reproduce the above copyright notice,
+     this list of conditions and the following disclaimer in the documentation
    and/or other materials provided with the distribution.
 
-   THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS ``AS IS'' AND ANY EXPRESS 
-   OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES 
-   OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN 
-   NO EVENT SHALL THE FREEBSD PROJECT OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, 
-   INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, 
-   BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, 
-   DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY 
-   OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING 
-   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, 
+   THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS ``AS IS'' AND ANY EXPRESS
+   OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
+   OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN
+   NO EVENT SHALL THE FREEBSD PROJECT OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT,
+   INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
+   BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+   DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY
+   OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
    EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 #ifndef __EXIF_H
@@ -54,7 +58,9 @@
 
 #include <string>
 
-// 
+namespace easyexif {
+
+//
 // Class responsible for storing and parsing EXIF information from a JPEG blob
 //
 class EXIFInfo {
@@ -69,7 +75,7 @@ class EXIFInfo {
   int parseFrom(const std::string &data);
 
   // Parsing function for an EXIF segment. This is used internally by parseFrom()
-  // but can be called for special cases where only the EXIF section is 
+  // but can be called for special cases where only the EXIF section is
   // available (i.e., a blob starting with the bytes "Exif\0\0").
   int parseFromEXIFSegment(const unsigned char *buf, unsigned len);
 
@@ -77,7 +83,7 @@ class EXIFInfo {
   void clear();
 
   // Data fields filled out by parseFrom()
-  char ByteAlign;                   // 0 = Motorola byte alignment, 1 = Intel 
+  char ByteAlign;                   // 0 = Motorola byte alignment, 1 = Intel
   std::string ImageDescription;     // Image description
   std::string Make;                 // Camera manufacturer's name
   std::string Model;                // Camera model
@@ -95,6 +101,9 @@ class EXIFInfo {
   std::string DateTimeDigitized;    // Digitization date and time (may not exist)
   std::string SubSecTimeOriginal;   // Sub-second time that original picture was taken
   std::string Copyright;            // File copyright information
+  std::string ImageUniqueID;        // Unique identifier assigned to the picture
+  std::string SerialNumber;
+  std::string LensSerialNumber;
   double ExposureTime;              // Exposure time in seconds
   double FNumber;                   // F/stop
   unsigned short ISOSpeedRatings;   // ISO speed
@@ -117,17 +126,32 @@ class EXIFInfo {
     double Longitude;                 // Image longitude expressed as decimal
     double Altitude;                  // Altitude in meters, relative to sea level
     char AltitudeRef;                 // 0 = above sea level, -1 = below sea level
+    double DOP;                       // GPS degree of precision (DOP)
     struct Coord_t {
-      double degrees;               
+      double degrees;
       double minutes;
       double seconds;
       char direction;
-    } LatComponents, LonComponents;   // Latitude, Longitude expressed in deg/min/sec 
+    } LatComponents, LonComponents;   // Latitude, Longitude expressed in deg/min/sec
   } GeoLocation;
+  struct LensInfo_t {               // Lens information
+    double FStopMin;                // Min aperture (f-stop)
+    double FStopMax;                // Max aperture (f-stop)
+    double FocalLengthMin;          // Min focal length (mm)
+    double FocalLengthMax;          // Max focal length (mm)
+    double FocalPlaneXResolution;   // Focal plane X-resolution
+    double FocalPlaneYResolution;   // Focal plane Y-resolution
+    std::string Make;               // Lens manufacturer
+    std::string Model;              // Lens model
+  } LensInfo;
+
+
   EXIFInfo() {
     clear();
   }
 };
+
+}
 
 // Parse was successful
 #define PARSE_EXIF_SUCCESS                    0

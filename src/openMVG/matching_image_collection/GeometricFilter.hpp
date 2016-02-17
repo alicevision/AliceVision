@@ -7,9 +7,9 @@
 
 #pragma once
 
-#include "openMVG/features/features.hpp"
-
-using namespace openMVG;
+#include "openMVG/features/feature.hpp"
+#include "openMVG/sfm/pipelines/sfm_regions_provider.hpp"
+#include "openMVG/matching/indMatch.hpp"
 
 #include "third_party/stlplus3/filesystemSimplified/file_system.hpp"
 #include "third_party/progress/progress.hpp"
@@ -17,99 +17,94 @@ using namespace openMVG;
 #include <vector>
 #include <map>
 
-template <typename FeatureT>
-class ImageCollectionGeometricFilter
+namespace openMVG {
+namespace matching_image_collection {
+
+using namespace openMVG::matching;
+
+/// Allow to keep only geometrically coherent matches
+/// -> It discards pairs that do not lead to a valid robust model estimation
+struct ImageCollectionGeometricFilter
 {
-  public:
-  ImageCollectionGeometricFilter()
-  {
-  }
+  ImageCollectionGeometricFilter
+  (
+    const sfm::SfM_Data * sfm_data,
+    const std::shared_ptr<sfm::Regions_Provider> & regions_provider
+  ):_sfm_data(sfm_data), _regions_provider(regions_provider)
+  {}
 
-  /// Load all features in memory
-  bool loadData(
-    const std::vector<std::string> & vec_fileNames, // input filenames
-    const std::string & sMatchDir) // where the data are saved
-  {
-    bool bOk = true;
-    for (size_t j = 0; j < vec_fileNames.size(); ++j)  {
-      // Load features of Jnth image
-      const std::string sFeatJ = stlplus::create_filespec(sMatchDir,
-        stlplus::basename_part(vec_fileNames[j]), "feat");
-      bOk &= loadFeatsFromFile(sFeatJ, map_Feat[j]);
-    }
-    return bOk;
-  }
+  /// Perform robust model estimation (with optional guided_matching) for all the pairs and regions correspondences contained in the putative_matches set.
+  template<typename GeometryFunctor>
+  void Robust_model_estimation
+  (
+    const GeometryFunctor & functor,
+    const PairWiseMatches & putative_matches,
+    const bool b_guided_matching = false,
+    const double d_distance_ratio = 0.6
+  );
 
-  /// Filter all putative correspondences according the templated geometric filter
-  template <typename GeometricFilterT>
-  void Filter(
-    const GeometricFilterT & geometricFilter,
-    PairWiseMatches & map_PutativesMatchesPair, // putative correspondences to filter
-    PairWiseMatches & map_GeometricMatches,
-    const std::vector<std::pair<size_t, size_t> > & vec_imagesSize) const
-  {
-    C_Progress_display my_progress_bar( map_PutativesMatchesPair.size() );
+  const PairWiseMatches & Get_geometric_matches() const {return _map_GeometricMatches;}
 
-#ifdef USE_OPENMP
-  #pragma omp parallel for schedule(dynamic, 1)
+  // Data
+  const sfm::SfM_Data * _sfm_data;
+  const std::shared_ptr<sfm::Regions_Provider> & _regions_provider;
+  PairWiseMatches _map_GeometricMatches;
+};
+
+template<typename GeometryFunctor>
+void ImageCollectionGeometricFilter::Robust_model_estimation
+(
+  const GeometryFunctor & functor,
+  const PairWiseMatches & putative_matches,
+  const bool b_guided_matching,
+  const double d_distance_ratio
+)
+{
+  C_Progress_display my_progress_bar( putative_matches.size() );
+
+#ifdef OPENMVG_USE_OPENMP
+#pragma omp parallel for schedule(dynamic)
 #endif
-    for (int i = 0; i < (int)map_PutativesMatchesPair.size(); ++i)
+  for (int i = 0; i < (int)putative_matches.size(); ++i)
+  {
+    PairWiseMatches::const_iterator iter = putative_matches.begin();
+    advance(iter,i);
+
+    const Pair current_pair = iter->first;
+    const std::vector<IndMatch> & vec_PutativeMatches = iter->second;
+
+    //-- Apply the geometric filter (robust model estimation)
     {
-      PairWiseMatches::const_iterator iter = map_PutativesMatchesPair.begin();
-      advance(iter,i);
-
-      const size_t iIndex = iter->first.first;
-      const size_t jIndex = iter->first.second;
-      const std::vector<IndMatch> & vec_PutativeMatches = iter->second;
-
-      // Load features of Inth and Jnth images
-      typename std::map<size_t, std::vector<FeatureT> >::const_iterator iterFeatsI = map_Feat.begin();
-      typename std::map<size_t, std::vector<FeatureT> >::const_iterator iterFeatsJ = map_Feat.begin();
-      std::advance(iterFeatsI, iIndex);
-      std::advance(iterFeatsJ, jIndex);
-      const std::vector<FeatureT> & kpSetI = iterFeatsI->second;
-      const std::vector<FeatureT> & kpSetJ = iterFeatsJ->second;
-
-      //-- Copy point to array in order to estimate fundamental matrix :
-      const size_t n = vec_PutativeMatches.size();
-      Mat xI(2,n), xJ(2,n);
-
-      for (size_t i=0; i < vec_PutativeMatches.size(); ++i)  {
-        const FeatureT & imaA = kpSetI[vec_PutativeMatches[i]._i];
-        const FeatureT & imaB = kpSetJ[vec_PutativeMatches[i]._j];
-        xI.col(i) = Vec2f(imaA.coords()).cast<double>();
-        xJ.col(i) = Vec2f(imaB.coords()).cast<double>();
-      }
-
-      //-- Apply the geometric filter
+      IndMatches putative_inliers;
+      GeometryFunctor geometricFilter = functor; // use a copy since we are in a multi-thread context
+      if (geometricFilter.Robust_estimation(_sfm_data, _regions_provider, iter->first, vec_PutativeMatches, putative_inliers))
       {
-        std::vector<size_t> vec_inliers;
-        // Use a copy in order to copy use internal functor parameters
-        // and use it safely in multi-thread environment
-        GeometricFilterT filter = geometricFilter;
-        filter.Fit(xI, vec_imagesSize[iIndex], xJ, vec_imagesSize[jIndex], vec_inliers);
-
-        if(!vec_inliers.empty())
+        if (b_guided_matching)
         {
-          std::vector<IndMatch> vec_filteredMatches;
-          vec_filteredMatches.reserve(vec_inliers.size());
-          for (size_t i=0; i < vec_inliers.size(); ++i)  {
-            vec_filteredMatches.push_back( vec_PutativeMatches[vec_inliers[i]] );
-          }
-#ifdef USE_OPENMP
-  #pragma omp critical
+          IndMatches guided_geometric_inliers;
+          geometricFilter.Geometry_guided_matching(_sfm_data, _regions_provider, iter->first, d_distance_ratio, guided_geometric_inliers);
+          //std::cout << "#before/#after: " << putative_inliers.size() << "/" << guided_geometric_inliers.size() << std::endl;
+          std::swap(putative_inliers, guided_geometric_inliers);
+        }
+
+#ifdef OPENMVG_USE_OPENMP
+#pragma omp critical
 #endif
-          {
-            map_GeometricMatches[std::make_pair(iIndex,jIndex)] = vec_filteredMatches;
-          }
+        {
+          _map_GeometricMatches.insert(std::make_pair(current_pair, std::move(putative_inliers)));
         }
       }
+    }
+#ifdef OPENMVG_USE_OPENMP
+#pragma omp critical
+#endif
+    {
       ++my_progress_bar;
     }
   }
+}
 
-  private:
-  // Features per image
-  std::map<size_t, std::vector<FeatureT> > map_Feat;
-};
+} // namespace openMVG
+} // namespace matching_image_collection
+
 

@@ -48,7 +48,7 @@ public:
   // All bins of the histogram are set to zero.
   Histogram(
     const T& Start= T(0),
-    const T& End=T(0),
+    const T& End=T(1),
     const size_t& nBins = 10):
     Start(Start),
     End(End),
@@ -75,13 +75,15 @@ public:
   {
     if( x < Start )
       ++underflow;
+    else if( x > End )
+      ++overflow;
     else
     {
       const size_t i(
         static_cast<size_t>(
         (x-Start)*nBins_by_interval) );
-      if( i < nBins ) ++freq[i];
-      else ++overflow;
+      // clamp for the particular case when (x == End)
+      ++freq[std::min(i, nBins-1)];
     }
   }
   // Get the sum of all counts in the histogram.
@@ -110,9 +112,9 @@ public:
     return vec_XbinValue;
   }
   // Get start
-  const double GetStart() const {return Start;}
+  double GetStart() const {return Start;}
   // Get End
-  const double GetEnd() const {return End;}
+  double GetEnd() const {return End;}
 
   // Text display of the histogram
   std::string ToString(const std::string & sTitle = "") const
@@ -123,7 +125,7 @@ public:
     for (size_t i = 0; i < n; ++i)
     {
        os << std::setprecision(3)
-          << static_cast<float>(End-Start)/n*static_cast<float>(i)
+          << Start + static_cast<float>(End-Start)/n*static_cast<float>(i)
           << "\t|\t" << freq[i] << "\n";
     }
     os << std::setprecision(3) << End << std::endl;

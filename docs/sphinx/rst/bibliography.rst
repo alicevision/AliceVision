@@ -30,6 +30,9 @@ Bibliography
 .. [Chatterjee] **Efficient and Robust Large-Scale Rotation Averaging.**
     Avishek Chatterjee and Venu Madhav Govindu, ICCV 2013.
 
+.. [Kyle2014] **Robust Global Translations with 1DSfM.**
+    Kyle Wilson and Noah Snavely, ECCV 2014.
+
 .. [Martinec] **Robust Multiview Reconstruction.**
     Daniel Martinec, 2008.
     
@@ -57,6 +60,9 @@ Bibliography
 .. [CMPMVS] **Multi-View Reconstruction Preserving Weakly-Supported Surfaces.**
     M. Jancosek, T. Pajdla, CVPR 2011.
 
+.. [Waechter2014] **Let There Be Color! Large-Scale Texturing of 3D Reconstructions.**
+    M. Waechter, N. Moehrle, and M. Goesele, ECCV 2014.
+
 .. [FLANN] **Fast Approximate Nearest Neighbors with Automatic Algorithm Configuration.**
     Muja, Marius, and David G. Lowe.  VISAPP (1). 2009.
  
@@ -82,6 +88,9 @@ Bibliography
 
 .. [OlssonDuality] **Outlier Removal Using Duality.**
     Carl Olsson, Anders Eriksson and Richard Hartley, Richard. CVPR 2010.
+    
+.. [CASCADEHASHING] **Fast and Accurate Image Matching with Cascade Hashing for 3D Reconstruction**
+   Jian Cheng, Cong Leng, Jiaxiang Wu, Hainan Cui, Hanqing Lu. CVPR 2014. 
  
 .. [Ceres] **Ceres Solver**
     Sameer Agarwal and Keir Mierle and Others, http://ceres-solver.org
