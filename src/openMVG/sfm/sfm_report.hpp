@@ -11,12 +11,6 @@
 #include "third_party/htmlDoc/htmlDoc.hpp"
 #include "third_party/histogram/histogram.hpp"
 #include "third_party/vectorGraphics/svgDrawer.hpp"
-#ifdef USE_BOOST
-  #include <boost/property_tree/ptree.hpp>
-  #include <boost/property_tree/json_parser.hpp>
-  #include <boost/lexical_cast.hpp>
-  namespace pt = boost::property_tree;
-#endif
 
 namespace openMVG {
 namespace sfm {
@@ -27,13 +21,6 @@ static bool Generate_SfM_Report
   const std::string & htmlFilename
 )
 {
-  #ifdef USE_BOOST // Creation of property tree, put nb images, nb poses, np points
-    pt::ptree tree;
-    tree.put("sfm.views", sfm_data.GetViews().size());
-    tree.put("sfm.poses", sfm_data.GetPoses().size());
-    tree.put("sfm.points", sfm_data.GetLandmarks().size());
-    std::vector<int> obs_histogram;
-  #endif
   // Compute mean,max,median residual values per View
   IndexT residualCount = 0;
   Hash_Map< IndexT, std::vector<double> > residuals_per_view;
@@ -55,19 +42,7 @@ static bool Generate_SfM_Report
       residuals_per_view[itObs->first].push_back(residual(1));
       ++residualCount;
     }
-    #ifdef USE_BOOST // create the observations histogram vector
-      if (obs_histogram.size() < obs.size() + 1)
-        obs_histogram.resize(obs.size() + 1, 0);
-      obs_histogram[obs.size()]++;
-    #endif
   }
-  #ifdef USE_BOOST // add the observations histogram in ptree
-    for(int i = 0; i < obs_histogram.size(); i++)
-    {
-      tree.add("sfm.observations_histogram."
-        + boost::lexical_cast<std::string>(i), obs_histogram[i]);
-    }
-  #endif
   using namespace htmlDocument;
   // extract directory from htmlFilename
   const std::string sTableBegin = "<table border=\"1\">",
@@ -174,9 +149,6 @@ static bool Generate_SfM_Report
       os.str("");
       os << sFullLine << "SfM Scene RMSE: " << RMSE << sFullLine;
       htmlDocStream.pushInfo(os.str());
-      #if USE_BOOST // put RMSE
-        tree.put("sfm.rmse", RMSE);
-      #endif
 
       const double maxRange = *max_element(residuals.begin(), residuals.end());
       Histogram<double> histo(0.0, maxRange, 100);
@@ -195,11 +167,6 @@ static bool Generate_SfM_Report
       htmlDocStream.pushInfo(os.str());
     }
   }
-
-  #ifdef USE_BOOST // write property tree in a json file on disk
-    pt::write_json(stlplus::create_filespec(stlplus::folder_part(htmlFilename), "stats", "json"), tree);
-    std::cout << "......Additional json statistics report has been generated." << std::endl;
-  #endif
 
   std::ofstream htmlFileStream(htmlFilename.c_str());
   htmlFileStream << htmlDocStream.getDoc();

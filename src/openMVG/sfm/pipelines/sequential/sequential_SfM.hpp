@@ -16,6 +16,13 @@
 #include "third_party/htmlDoc/htmlDoc.hpp"
 #include "third_party/histogram/histogram.hpp"
 
+#ifdef USE_BOOST
+  #include <boost/property_tree/ptree.hpp>
+  #include <boost/property_tree/json_parser.hpp>
+  #include <boost/lexical_cast.hpp>
+  namespace pt = boost::property_tree;
+#endif
+
 namespace openMVG {
 namespace sfm {
 
@@ -130,6 +137,11 @@ private:
   Hash_Map<IndexT, double> _map_ACThreshold; // Per camera confidence (A contrario estimated threshold error)
 
   std::set<size_t> _set_remainingViewId;     // Remaining camera index that can be used for resection
+
+  #ifdef USE_BOOST
+    // Property tree for json stats export
+    pt::ptree _tree;
+  #endif
 };
 
 } // namespace sfm

@@ -252,6 +252,35 @@ bool SequentialSfMReconstructionEngine::Process()
     jsxGraph.close();
     _htmlDocStream->pushInfo(jsxGraph.toStr());
   }
+
+  #ifdef USE_BOOST
+    // Put nb images, nb poses, nb points
+    _tree.put("sfm.views", _sfm_data.GetViews().size());
+    _tree.put("sfm.poses", _sfm_data.GetPoses().size());
+    _tree.put("sfm.points", _sfm_data.GetLandmarks().size());
+
+    // Add observations histogram
+    std::vector<int> obs_histogram;
+    for (Landmarks::const_iterator iterTracks = _sfm_data.GetLandmarks().begin();
+      iterTracks != _sfm_data.GetLandmarks().end();
+      ++iterTracks
+    )
+    {
+      const Observations & obs = iterTracks->second.obs;
+      if(obs_histogram.size() < obs.size() + 1)
+        obs_histogram.resize(obs.size() + 1, 0);
+      obs_histogram[obs.size()]++;
+    }
+    for(int i = 2; i < obs_histogram.size(); i++)
+    {
+      _tree.add("sfm.observations_histogram."
+        + boost::lexical_cast<std::string>(i), obs_histogram[i]);
+    }
+
+    // Write json on disk
+    pt::write_json(stlplus::folder_append_separator(_sOutDirectory)+"stats.json", _tree);
+  #endif
+
   return true;
 }
 
@@ -392,6 +421,11 @@ bool SequentialSfMReconstructionEngine::InitLandmarkTracks()
       for (std::map<size_t, size_t>::const_iterator iter = map_Occurence_TrackLength.begin();
         iter != map_Occurence_TrackLength.end(); ++iter)  {
         osTrack << "\t" << iter->first << "\t" << iter->second << "\n";
+        #ifdef USE_BOOST
+          // Add input tracks histogram
+          _tree.add("sfm.inputtracks_histogram."
+            + boost::lexical_cast<std::string>(iter->first), iter->second);
+        #endif
       }
       osTrack << "\n";
       std::cout << osTrack.str();
