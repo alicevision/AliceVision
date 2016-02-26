@@ -66,43 +66,84 @@ public:
     const image::Image<unsigned char> * mask = NULL)
   {
     const int w = image.Width(), h = image.Height();
-
-    //Convert to float
-    const image::Image<float> If(image.GetMat().cast<float>()); // <== 
-
-    Descriptor<float, 128> descr; // <== an openMVG descriptor
-
+    
     // Process SIFT computation
     cudaDeviceReset();
 
+//struct imgStream {
+//    int width;
+//    int height;
+//    pixel_uc *data_r;
+//    pixel_uc *data_g;
+//    pixel_uc *data_b;
+//};
     imgStream inp;
-
+    inp.width = w;
+    inp.height = h;
+    inp.data_r = new unsigned char [w*h];
+    inp.data_g = inp.data_r; 
+    inp.data_b = inp.data_r;;
+    
+    unsigned char *pixel = inp.data_r;
+    for(int j=0; j<h; j++)
+    {
+      for(int i=0; i<w; i++)
+      {
+        *pixel++ = image(i, j);
+      }
+    }
     /* Parse user input */
-    // => how the image is packed ? read_gray(inputFilename, inp);
+    // TODO => how the image is packed ? read_gray(inputFilename, inp);
 
     const double sigma = 1.6;
     PopSift PopSift( _params._num_octaves,
                     _params._num_scales,
                     1,
-                    _params._peak_threshold, // DoG threshold, FIXME: verify this is actually _peak_threshold
+                    _params._peak_threshold, // DoG threshold, FIXME: verify this is actually _peak_threshold we want
                     _params._edge_threshold,
                     sigma );
 
     PopSift.init( w, h );
     PopSift.execute(inp);
-    PopSift.uninit( );
 
-    Allocate(regions); // <== regions allocation
+    Allocate(regions); 
 
     // Build alias to cached data
-    SIFT_Float_Regions * regionsCasted = dynamic_cast<SIFT_Float_Regions*>(regions.get()); // <== This is the container where the final result of the extraction is stored.
-                // it consists in the aggregation of a vector of the extracted keypoints (a keypoint type named SIOPointFeature)
-                // and a vector of their associated descriptors (a descriptor type named Descriptor)
+    SIFT_Float_Regions * regionsCasted = dynamic_cast<SIFT_Float_Regions*>(regions.get()); 
+    regionsCasted->Features().reserve(2000);
+    regionsCasted->Descriptors().reserve(2000);
 
-    // reserve some memory for faster keypoint saving
-    regionsCasted->Features().reserve(2000); // <== 
-    regionsCasted->Descriptors().reserve(2000); // <==
+    popart::Pyramid &pyramid = PopSift.pyramid();
+    for( int o=0; o<_params._num_octaves; o++ )
+    {
+      popart::Pyramid::Octave &octave = pyramid.octave(o);
+      // GPU to CPU memory
+      octave.downloadDescriptor();
 
+      for( int s=0; s<_params._num_scales+3; s++ ) 
+      {
+          size_t count = octave.getExtremaCount(s);
+          popart::ExtremumCandidate *featIt = octave.getExtrema(s);
+          popart::Descriptor *descIt = octave.getDescriptors(s);
+          while(count > 0)
+          {
+            // position scale orientation
+            regionsCasted->Features().emplace_back(featIt->xpos, featIt->ypos, featIt->sigma, featIt->angle_from_bemap);
+
+            // descriptor feature vectors
+            Descriptor<float, 128> desc;
+            for(int j = 0; j < 128; j++)
+            {
+              desc[j] = descIt->features[j]; // FIXME: write correct convertion
+            }
+            regionsCasted->Descriptors().emplace_back(desc);
+
+            count--; featIt++; descIt++;
+          }
+        }
+    }
+
+    PopSift.uninit( );
     return true;  // <==
   };
 
