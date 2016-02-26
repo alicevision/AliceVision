@@ -28,6 +28,11 @@ using namespace std;
 #include "nonFree/sift/SIFT_OPENCV_Image_describer.hpp"
 #include "nonFree/sift/SIFT_popSIFT_describer.hpp"
 
+
+// FIXME log_to_file needed by popsift, essentially for debugging 
+// it should be removed here and in the popsift code
+int log_to_file = 0;
+
 // Class to load images and ground truth homography matrices
 // A reference image
 // And a series of transformed images with the Homography mapping to the reference
