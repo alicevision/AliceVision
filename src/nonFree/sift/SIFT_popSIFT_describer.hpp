@@ -81,15 +81,15 @@ public:
     inp.width = w;
     inp.height = h;
     inp.data_r = new unsigned char [w*h];
-    inp.data_g = inp.data_r; 
-    inp.data_b = inp.data_r;;
+    inp.data_g = nullptr; // inp.data_r; 
+    inp.data_b = nullptr; //inp.data_r;;
     
     unsigned char *pixel = inp.data_r;
     for(int j=0; j<h; j++)
     {
       for(int i=0; i<w; i++)
       {
-        *pixel++ = image(i, j);
+        *pixel++ = image(j, i);
       }
     }
     /* Parse user input */
@@ -120,25 +120,30 @@ public:
       // GPU to CPU memory
       octave.downloadDescriptor();
 
+      std::vector<popart::ExtremumCandidate> candidates;
+      std::vector<popart::Descriptor> descriptors;
       for( int s=0; s<_params._num_scales+3; s++ ) 
       {
           size_t count = octave.getExtremaCount(s);
-          popart::ExtremumCandidate *featIt = octave.getExtrema(s);
-          popart::Descriptor *descIt = octave.getDescriptors(s);
-          while(count > 0)
-          {
-            // position scale orientation
-            regionsCasted->Features().emplace_back(featIt->xpos, featIt->ypos, featIt->sigma, featIt->angle_from_bemap);
+          candidates.resize(count);
+          descriptors.resize(count);
+          octave.downloadToVector(s, candidates, descriptors); // This also does GPU to CPU memory transfert
 
-            // descriptor feature vectors
+          // position scale orientation
+          for(auto &feat : candidates)
+          {
+            regionsCasted->Features().emplace_back(feat.xpos, feat.ypos, feat.sigma, feat.angle_from_bemap);
+          }
+
+          // Descriptor values
+          for(auto &descIt : descriptors)
+          {
             Descriptor<float, 128> desc;
             for(int j = 0; j < 128; j++)
             {
-              desc[j] = descIt->features[j]; // FIXME: write correct convertion
+              desc[j] = descIt.features[j]; // FIXME: write correct convertion
             }
             regionsCasted->Descriptors().emplace_back(desc);
-
-            count--; featIt++; descIt++;
           }
         }
     }
