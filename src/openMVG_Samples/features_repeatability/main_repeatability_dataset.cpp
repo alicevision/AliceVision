@@ -28,6 +28,8 @@ using namespace std;
 #include "nonFree/sift/SIFT_OPENCV_Image_describer.hpp"
 #include "nonFree/sift/SIFT_popSIFT_describer.hpp"
 
+// FIXME: remove debug_file_name global variable, this is only used for debugging purposes
+char *debug_file_name;
 
 // Class to load images and ground truth homography matrices
 // A reference image
@@ -51,6 +53,7 @@ public:
   }
 
   const image::Image<RGBColor>& image(size_t i) const { return vec_image_[i]; }
+  string imagename(size_t i) const { return vec_image_name_[i];}
   const Mat3& H(size_t i) const { return vec_H_[i]; }
   const size_t size() const { return vec_image_.size(); }
 
@@ -66,11 +69,13 @@ private:
       return false;
     sort(vec_image_basename.begin(), vec_image_basename.end());
     vec_image_.resize(vec_image_basename.size());
+    vec_image_name_.resize(vec_image_basename.size());
     for (int i = 0; i < vec_image_basename.size(); ++i)
     {
       const std::string path = stlplus::create_filespec(folderPath_, vec_image_basename[i]);
       image::Image<RGBColor> imageRGB;
       const bool bReadOk = image::ReadImage(path.c_str(), &imageRGB);
+      vec_image_name_[i] = vec_image_basename[i].substr(0, vec_image_basename[i].size()-4);
       if ( bReadOk )
       {
         vec_image_[i] = imageRGB;
@@ -133,6 +138,8 @@ private:
 
   std::vector<image::Image<RGBColor> > vec_image_;
   std::vector<Mat3> vec_H_;
+  std::vector<std::string> vec_image_name_; // FIXME: vec_image_name_ is used to pass the name of the image, 
+                                            // for debugging purposes. remove it once everything is fine
 };
 
 
@@ -321,6 +328,7 @@ int main(int argc, char **argv)
       for (size_t i = 0; i < dataset.size(); ++i)
       {
         image::ConvertPixelType(dataset.image(i), &imageGray);
+        debug_file_name = const_cast<char*>(dataset.imagename(i).c_str());
         image_describer->Describe(imageGray, map_regions[i]);
         std::cout << "image: " << i << "\t #found features: " << map_regions[i]->RegionCount() << std::endl;
       }
@@ -371,7 +379,29 @@ int main(int argc, char **argv)
           const Regions * regions_I = map_regions[i].get();
           const PointFeatures pointsFeatures0 = regions_0->GetRegionsPositions();
           const PointFeatures pointsFeaturesI = regions_I->GetRegionsPositions();
+#if 0 // Compute min and max values of the descriptors
+          const float * desc0 = static_cast<const float*>(regions_0->DescriptorRawData());
+          const float * desc1 = static_cast<const float*>(regions_I->DescriptorRawData());
+          float maxval=0, minval=0;
 
+          auto findMinMax = [&] (const float *desc, size_t nbRegions) 
+          {
+            for (int i=0; i< nbRegions; i++)
+            {
+              for (int j=0; j< 128; j++)
+              {
+                maxval = std::max(maxval, *desc);
+                minval = std::min(minval, *desc);
+                desc++;
+              }
+            }
+          };
+
+          findMinMax(desc0, regions_0->RegionCount());
+          findMinMax(desc1, regions_I->RegionCount());
+        
+          std::cout << "min:" << minval << " max:" << maxval << std::endl;
+#endif
           matching::IndMatches putativesMatches;
           matching::DistanceRatioMatch(
             nndr, matching::BRUTE_FORCE_L2,

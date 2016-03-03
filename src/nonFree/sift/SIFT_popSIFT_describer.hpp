@@ -15,6 +15,10 @@
 #include <iostream>
 #include <numeric>
 
+
+extern char *debug_file_name; // FIXME: get rid of debug_file_name, it is used in popsift and
+                              // openMVG_Samples/main_repeatability_dataset.cpp for quick 
+                              // debugging puposes 
 namespace openMVG {
 namespace features {
 
@@ -70,19 +74,12 @@ public:
     // Process SIFT computation
     cudaDeviceReset();
 
-//struct imgStream {
-//    int width;
-//    int height;
-//    pixel_uc *data_r;
-//    pixel_uc *data_g;
-//    pixel_uc *data_b;
-//};
     imgStream inp;
     inp.width = w;
     inp.height = h;
     inp.data_r = new unsigned char [w*h];
-    inp.data_g = nullptr; // inp.data_r; 
-    inp.data_b = nullptr; //inp.data_r;;
+    inp.data_g = nullptr;
+    inp.data_b = nullptr;
     
     unsigned char *pixel = inp.data_r;
     for(int j=0; j<h; j++)
@@ -92,8 +89,6 @@ public:
         *pixel++ = image(j, i);
       }
     }
-    /* Parse user input */
-    // TODO => how the image is packed ? read_gray(inputFilename, inp);
 
     const double sigma = 1.6;
     PopSift PopSift( _params._num_octaves,
@@ -118,8 +113,11 @@ public:
     {
       popart::Pyramid::Octave &octave = pyramid.octave(o);
       // GPU to CPU memory
+      // TODO: the download GPU -> CPU is also done in downloadToVector,
+      // check that we can safely remove downloadDescriptors
       octave.downloadDescriptor();
 
+      const float imageScale = static_cast<float>(1 << o);
       std::vector<popart::ExtremumCandidate> candidates;
       std::vector<popart::Descriptor> descriptors;
       for( int s=0; s<_params._num_scales+3; s++ ) 
@@ -129,10 +127,15 @@ public:
           descriptors.resize(count);
           octave.downloadToVector(s, candidates, descriptors); // This also does GPU to CPU memory transfert
 
+          // DEBUGGING:
+          //octave.download_and_save_array(debug_file_name, o, s);
+
           // position scale orientation
           for(auto &feat : candidates)
           {
-            regionsCasted->Features().emplace_back(feat.xpos, feat.ypos, feat.sigma, feat.angle_from_bemap);
+            // the position of the points we get from popsift are multiplied by two
+            // the 0.5 value is used to move their coordinates to the correct image coordinates
+            regionsCasted->Features().emplace_back(0.5*feat.xpos*imageScale, 0.5*feat.ypos*imageScale, feat.sigma, feat.angle_from_bemap);
           }
 
           // Descriptor values
@@ -141,14 +144,18 @@ public:
             Descriptor<float, 128> desc;
             for(int j = 0; j < 128; j++)
             {
-              desc[j] = descIt.features[j]; // FIXME: write correct convertion
+              desc[j] = descIt.features[j]; // FIXME: ensure the conversion is correct 
             }
             regionsCasted->Descriptors().emplace_back(desc);
           }
         }
     }
+    // FIXME: do we have to deallocate the image allocated line 78 ?
 
     PopSift.uninit( );
+    // FIXME: remove following commented code once the debug is finished
+    //regions->Save("/tmp/features_popsift.txt", "/tmp/descriptors_popsift.txt");    
+    //_exit(0);
     return true;  // <==
   };
 
