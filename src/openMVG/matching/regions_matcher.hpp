@@ -53,7 +53,7 @@ class RegionsMatcher
    /**
     * @brief The destructor.
     */ 
-   ~RegionsMatcher() {}
+   virtual ~RegionsMatcher() {}
 
 
     /**
@@ -119,10 +119,10 @@ class Matcher_Regions_Database
      */
     bool Match
     (
-    float dist_ratio, // Distance ratio used to discard spurious correspondence
+      float dist_ratio, // Distance ratio used to discard spurious correspondence
       const features::Regions & query_regions,
-    matching::IndMatches & matches // photometric corresponding points
-    )const;
+      matching::IndMatches & matches // photometric corresponding points
+    ) const;
 
   private:
   // Matcher Type
