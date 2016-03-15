@@ -31,12 +31,12 @@ int main(int argc, char ** argv)
 
   std::string sSfM_Data_Filename;
   std::string sMatchesDir;
-  std::string sMatchFile;
+  std::string sMatchMode; // TODO
   std::string sOutDir = "";
 
   cmd.add( make_option('i', sSfM_Data_Filename, "input_file") );
   cmd.add( make_option('d', sMatchesDir, "matchdir") );
-  cmd.add( make_option('m', sMatchFile, "matchfile") );
+  cmd.add( make_option('m', sMatchMode, "matchmode") );
   cmd.add( make_option('o', sOutDir, "outdir") );
 
   try {
@@ -46,7 +46,7 @@ int main(int argc, char ** argv)
       std::cerr << "Export pairwise tracks.\nUsage: " << argv[0] << "\n"
       << "[-i|--input_file file] path to a SfM_Data scene\n"
       << "[-d|--matchdir path]\n"
-      << "[-m|--sMatchFile filename]\n"
+      << "[-m|--sMatchMode MODE] geometric matching mode (f, e or h)\n"
       << "[-o|--outdir path]\n"
       << std::endl;
 
@@ -94,7 +94,7 @@ int main(int argc, char ** argv)
   }
   // Read the matches
   std::shared_ptr<Matches_Provider> matches_provider = std::make_shared<Matches_Provider>();
-  if (!matches_provider->load(sfm_data, stlplus::folder_part(sMatchFile), stlplus::filename_part(sMatchFile)))
+  if(!matches_provider->load(sfm_data, sMatchesDir, sMatchMode))
   {
     std::cerr << "\nInvalid matches file." << std::endl;
     return EXIT_FAILURE;
