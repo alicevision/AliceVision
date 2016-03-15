@@ -51,18 +51,17 @@ inline void computeSparseHistogram(const std::vector<Word>& document, SparseHist
  * @brief Optimized vocabulary tree quantizer, templated on feature type and distance metric
  * for maximum efficiency.
  *
- * \c Feature is the data type of one feature. It has no requirements except compatibility with the distance metric.
+ * \c VoctreeDescriptorT is the data type of one feature. It has no requirements except compatibility with the distance metric.
  *
- * \c Distance is a functor that computes the distance between two Feature objects. It must have a \c result_type
+ * \c Distance is a functor that computes the distance between two VoctreeDescriptorT objects. It must have a \c result_type
  * typedef specifying the type of the returned distance. For the purposes of VocabularyTree, this need not even be
  * a metric; distances simply need to be comparable.
  *
- * \c FeatureAllocator is an STL-compatible allocator used to allocate Features internally.
+ * \c VocDescAllocator is an STL-compatible allocator used to allocate Features internally.
  */
-
-
-template<class Feature, template<typename, typename> class Distance = L2,
-class FeatureAllocator = typename DefaultAllocator<Feature>::type>
+template<class VoctreeDescriptorT,
+         template<typename, typename> class Distance = L2,
+         class VocDescAllocator = typename DefaultAllocator<VoctreeDescriptorT>::type>
 class VocabularyTree
 {
 public:
@@ -84,15 +83,15 @@ public:
   VocabularyTree(const std::string& file);
 
   /// Quantizes a feature into a discrete word.
-  template<class DescriptorT>
-  Word quantize(const DescriptorT& feature) const;
+  template<class OtherDescriptorT>
+  Word quantize(const OtherDescriptorT& feature) const;
 
   /// Quantizes a set of features into visual words.
-  template<class DescriptorT>
-  std::vector<Word> quantize(const std::vector<DescriptorT>& features) const;
+  template<class OtherDescriptorT>
+  std::vector<Word> quantize(const std::vector<OtherDescriptorT>& features) const;
   /// Quantizes a set of features into sparse histogram of visual words.
-  template<class DescriptorT>
-  SparseHistogram quantizeToSparse(const std::vector<DescriptorT>& features) const;
+  template<class OtherDescriptorT>
+  SparseHistogram quantizeToSparse(const std::vector<OtherDescriptorT>& features) const;
 
   /// Get the depth (number of levels) of the tree.
   uint32_t levels() const;
@@ -123,7 +122,7 @@ public:
     return true;
   }
 protected:
-  std::vector<Feature, FeatureAllocator> centers_;
+  std::vector<VoctreeDescriptorT, VocDescAllocator> centers_;
   std::vector<uint8_t> valid_centers_; /// @todo Consider bit-vector
 
   uint32_t k_; // splits, or branching factor
@@ -139,28 +138,26 @@ protected:
   void setNodeCounts();
 };
 
-template<class Feature, template<typename, typename> class Distance, class FeatureAllocator>
-VocabularyTree<Feature, Distance, FeatureAllocator>::VocabularyTree()
+template<class VoctreeDescriptorT, template<typename, typename> class Distance, class VocDescAllocator>
+VocabularyTree<VoctreeDescriptorT, Distance, VocDescAllocator>::VocabularyTree()
 : k_(0), levels_(0), num_words_(0), word_start_(0)
 {
 }
 
-template<class Feature, template<typename, typename> class Distance, class FeatureAllocator>
-VocabularyTree<Feature, Distance, FeatureAllocator>::VocabularyTree(const std::string& file)
+template<class VoctreeDescriptorT, template<typename, typename> class Distance, class VocDescAllocator>
+VocabularyTree<VoctreeDescriptorT, Distance, VocDescAllocator>::VocabularyTree(const std::string& file)
 : k_(0), levels_(0), num_words_(0), word_start_(0)
 {
   load(file);
 }
 
-template<class Feature, template<typename, typename> class Distance, class FeatureAllocator>
-template<class DescriptorT>
-Word VocabularyTree<Feature, Distance, FeatureAllocator>::quantize(const DescriptorT& feature) const
+template<class VoctreeDescriptorT, template<typename, typename> class Distance, class VocDescAllocator>
+template<class OtherDescriptorT>
+Word VocabularyTree<VoctreeDescriptorT, Distance, VocDescAllocator>::quantize(const OtherDescriptorT& feature) const
 {
-  typedef typename Distance<Feature, DescriptorT>::result_type distance_type;
+  typedef typename Distance<VoctreeDescriptorT, OtherDescriptorT>::result_type distance_type;
 
-  //	printf("asserting\n");
   assert(initialized());
-  //	printf("initialized\n");
   int32_t index = -1; // virtual "root" index, which has no associated center.
   for(unsigned level = 0; level < levels_; ++level)
   {
@@ -173,7 +170,7 @@ Word VocabularyTree<Feature, Distance, FeatureAllocator>::quantize(const Descrip
     {
       if(!valid_centers_[child])
         break; // Fewer than splits() children.
-      distance_type child_distance = Distance<DescriptorT, Feature>()(feature, centers_[child]);
+      distance_type child_distance = Distance<OtherDescriptorT, VoctreeDescriptorT>()(feature, centers_[child]);
       if(child_distance < best_distance)
       {
         best_child = child;
@@ -186,29 +183,29 @@ Word VocabularyTree<Feature, Distance, FeatureAllocator>::quantize(const Descrip
   return index - word_start_;
 }
 
-template<class Feature, template<typename, typename> class Distance, class FeatureAllocator>
-template<class DescriptorT>
-std::vector<Word> VocabularyTree<Feature, Distance, FeatureAllocator>::quantize(const std::vector<DescriptorT>& features) const
+template<class VoctreeDescriptorT, template<typename, typename> class Distance, class VocDescAllocator>
+template<class OtherDescriptorT>
+std::vector<Word> VocabularyTree<VoctreeDescriptorT, Distance, VocDescAllocator>::quantize(const std::vector<OtherDescriptorT>& descriptors) const
 {
 //  std::cout << std::endl;
 //  std::cout << "VocabularyTree quantize: " << features.size() << std::endl;
-  std::vector<Word> imgVisualWords(features.size(), 0);
+  std::vector<Word> imgVisualWords(descriptors.size(), 0);
 
   // quantize the features
   #pragma omp parallel for
-  for(size_t j = 0; j < features.size(); ++j)
+  for(size_t j = 0; j < descriptors.size(); ++j)
   {
     // store the visual word associated to the feature in the temporary list
-    imgVisualWords[j] = quantize<DescriptorT>(features[j]);
+    imgVisualWords[j] = quantize<OtherDescriptorT>(descriptors[j]);
   }
 
   // add the vector to the documents
   return imgVisualWords;
 }
 
-template<class Feature, template<typename, typename> class Distance, class FeatureAllocator>
+template<class VoctreeDescriptorT, template<typename, typename> class Distance, class VocDescAllocator>
 template<class DescriptorT>
-SparseHistogram VocabularyTree<Feature, Distance, FeatureAllocator>::quantizeToSparse(const std::vector<DescriptorT>& features) const
+SparseHistogram VocabularyTree<VoctreeDescriptorT, Distance, VocDescAllocator>::quantizeToSparse(const std::vector<DescriptorT>& features) const
 {
   SparseHistogram histo;
   std::vector<Word> doc = quantize(features);
@@ -216,34 +213,34 @@ SparseHistogram VocabularyTree<Feature, Distance, FeatureAllocator>::quantizeToS
   return histo;
 }
 
-template<class Feature, template<typename, typename> class Distance, class FeatureAllocator>
-uint32_t VocabularyTree<Feature, Distance, FeatureAllocator>::levels() const
+template<class VoctreeDescriptorT, template<typename, typename> class Distance, class VocDescAllocator>
+uint32_t VocabularyTree<VoctreeDescriptorT, Distance, VocDescAllocator>::levels() const
 {
   return levels_;
 }
 
-template<class Feature, template<typename, typename> class Distance, class FeatureAllocator>
-uint32_t VocabularyTree<Feature, Distance, FeatureAllocator>::splits() const
+template<class VoctreeDescriptorT, template<typename, typename> class Distance, class VocDescAllocator>
+uint32_t VocabularyTree<VoctreeDescriptorT, Distance, VocDescAllocator>::splits() const
 {
   return k_;
 }
 
-template<class Feature, template<typename, typename> class Distance, class FeatureAllocator>
-uint32_t VocabularyTree<Feature, Distance, FeatureAllocator>::words() const
+template<class VoctreeDescriptorT, template<typename, typename> class Distance, class VocDescAllocator>
+uint32_t VocabularyTree<VoctreeDescriptorT, Distance, VocDescAllocator>::words() const
 {
   return num_words_;
 }
 
-template<class Feature, template<typename, typename> class Distance, class FeatureAllocator>
-void VocabularyTree<Feature, Distance, FeatureAllocator>::clear()
+template<class VoctreeDescriptorT, template<typename, typename> class Distance, class VocDescAllocator>
+void VocabularyTree<VoctreeDescriptorT, Distance, VocDescAllocator>::clear()
 {
   centers_.clear();
   valid_centers_.clear();
   k_ = levels_ = num_words_ = word_start_ = 0;
 }
 
-template<class Feature, template<typename, typename> class Distance, class FeatureAllocator>
-void VocabularyTree<Feature, Distance, FeatureAllocator>::save(const std::string& file) const
+template<class VoctreeDescriptorT, template<typename, typename> class Distance, class VocDescAllocator>
+void VocabularyTree<VoctreeDescriptorT, Distance, VocDescAllocator>::save(const std::string& file) const
 {
   /// @todo Support serializing of non-"simple" feature classes
   /// @todo Some identifying name for the distance used
@@ -254,12 +251,12 @@ void VocabularyTree<Feature, Distance, FeatureAllocator>::save(const std::string
   out.write((char*) (&levels_), sizeof (uint32_t));
   uint32_t size = centers_.size();
   out.write((char*) (&size), sizeof (uint32_t));
-  out.write((char*) (&centers_[0]), centers_.size() * sizeof (Feature));
+  out.write((char*) (&centers_[0]), centers_.size() * sizeof (VoctreeDescriptorT));
   out.write((char*) (&valid_centers_[0]), valid_centers_.size());
 }
 
-template<class Feature, template<typename, typename> class Distance, class FeatureAllocator>
-void VocabularyTree<Feature, Distance, FeatureAllocator>::load(const std::string& file)
+template<class VoctreeDescriptorT, template<typename, typename> class Distance, class VocDescAllocator>
+void VocabularyTree<VoctreeDescriptorT, Distance, VocDescAllocator>::load(const std::string& file)
 {
   clear();
 
@@ -275,7 +272,7 @@ void VocabularyTree<Feature, Distance, FeatureAllocator>::load(const std::string
     in.read((char*) (&size), sizeof (uint32_t));
     centers_.resize(size);
     valid_centers_.resize(size);
-    in.read((char*) (&centers_[0]), centers_.size() * sizeof (Feature));
+    in.read((char*) (&centers_[0]), centers_.size() * sizeof (VoctreeDescriptorT));
     in.read((char*) (&valid_centers_[0]), valid_centers_.size());
   }
   catch(std::ifstream::failure& e)
@@ -287,8 +284,8 @@ void VocabularyTree<Feature, Distance, FeatureAllocator>::load(const std::string
   assert(size == num_words_ + word_start_);
 }
 
-template<class Feature, template<typename, typename> class Distance, class FeatureAllocator>
-void VocabularyTree<Feature, Distance, FeatureAllocator>::setNodeCounts()
+template<class VoctreeDescriptorT, template<typename, typename> class Distance, class VocDescAllocator>
+void VocabularyTree<VoctreeDescriptorT, Distance, VocDescAllocator>::setNodeCounts()
 {
   num_words_ = k_;
   word_start_ = 0;
