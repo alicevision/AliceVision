@@ -10,7 +10,7 @@
 namespace openMVG{
 namespace voctree{
 
-std::ostream& operator<<(std::ostream& os, const SparseHistogram &dv)	
+std::ostream& operator<<(std::ostream& os, const SparseHistogram &dv)
 {
 	for( const auto &e : dv )
 	{
@@ -171,6 +171,7 @@ void Database::loadWeights(const std::string& file)
     throw std::runtime_error((boost::format("Failed to load vocabulary weights file '%s'") % file).str());
   }
 }
+
 
 ///**
 // * Normalize a document vector representing the histogram of visual words for a given image
