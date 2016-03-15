@@ -138,8 +138,15 @@ public:
     const std::string& sfileNameFeats,
     const std::string& sfileNameDescs)
   {
-    return loadFeatsFromFile(sfileNameFeats, this->_vec_feats)
+    bool res = loadFeatsFromFile(sfileNameFeats, this->_vec_feats)
           & loadDescsFromBinFile(sfileNameDescs, _vec_descs);
+    if(this->_vec_feats.size() != _vec_descs.size())
+    {
+      std::stringstream ss;
+      ss << "Error while loading features and descriptors: " << this->_vec_feats.size() << " features loaded but " << _vec_descs.size() << " descriptors loaded.";
+      throw std::runtime_error(ss.str());
+    }
+    return res;
   }
 
   /// Export in two separate files the regions and their corresponding descriptors.

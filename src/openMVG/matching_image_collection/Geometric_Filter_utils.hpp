@@ -38,7 +38,11 @@ void MatchesPointsToMat
   x_J.resize(2, n);
   typedef typename MatT::Scalar Scalar; // Output matrix type
 
-  for (size_t i=0; i < putativeMatches.size(); ++i)  {
+
+  for (size_t i=0; i < putativeMatches.size(); ++i)
+  {
+    assert(putativeMatches[i]._i < feature_I.size());
+    assert(putativeMatches[i]._j < feature_J.size());
     const features::PointFeature & pt_I = feature_I[putativeMatches[i]._i];
     const features::PointFeature & pt_J = feature_J[putativeMatches[i]._j];
     if (cam_I)
