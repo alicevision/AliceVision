@@ -73,8 +73,8 @@ bool Rig::initializeCalibration()
     std::size_t shortestSeqLength(-1);
     for (const auto& v: _vLocalizationResults)
       shortestSeqLength = std::min(shortestSeqLength, v.second.size());
-    for(std::size_t i = 1; i < nCams; ++i)
-      _vLocalizationResults[i].resize(shortestSeqLength);
+    for (auto& v: _vLocalizationResults)
+      v.second.resize(shortestSeqLength);
   }
   
   // Tracker of the main cameras
