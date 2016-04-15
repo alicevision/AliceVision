@@ -89,12 +89,18 @@ public:
   template<class OtherDescriptorT>
   std::vector<Word> softQuantize(const OtherDescriptorT& feature, int n) const;
   
+  template<class OtherDescriptorT>
+  std::vector<Word> newSoftQuantize(const OtherDescriptorT& feature) const;
+  
   /// Quantizes a set of features into sparse histogram of visual words.
   template<class OtherDescriptorT>
   SparseHistogram quantizeToSparse(const std::vector<OtherDescriptorT>& features) const;
   
   template<class DescriptorT>
   SparseHistogram softQuantizeToSparse(const std::vector<DescriptorT>& descriptors) const;
+  
+  template<class DescriptorT>
+  SparseHistogram newSoftQuantizeToSparse(const std::vector<DescriptorT>& descriptors) const;
 
   /// Get the depth (number of levels) of the tree.
   uint32_t levels() const;
@@ -261,6 +267,105 @@ std::vector<Word> VocabularyTree<VoctreeDescriptorT, Distance, VocDescAllocator>
 }
 
 template<class VoctreeDescriptorT, template<typename, typename> class Distance, class VocDescAllocator>
+template<class OtherDescriptorT>
+std::vector<Word> VocabularyTree<VoctreeDescriptorT, Distance, VocDescAllocator>::newSoftQuantize(const OtherDescriptorT& descriptor) const
+{
+  typedef typename Distance<VoctreeDescriptorT, OtherDescriptorT>::result_type distance_type;
+  typedef typename VoctreeDescriptorT::value_type value_type;
+
+  assert(initialized());
+  std::vector<BestChild<distance_type>> currentIndexes;
+  std::vector<BestChild<distance_type>> futurIndexes;
+  std::vector<BestChild<distance_type>> otherIndexes;
+  currentIndexes.push_back(-1);
+  
+  //A sortir de la fonction + valeur à changer
+  float radius = 3.0;
+  
+  for(unsigned level = 0; level < levels_; ++level)
+  {
+    for(auto currentChild: currentIndexes)
+    {
+      // Calculate the offset to the first child of the current index.
+      int32_t first_child = (currentChild.child_ + 1) * splits();
+      
+      // Find the child in the sphere
+      for(int32_t child = first_child; child < first_child + (int32_t) splits(); ++child)
+      {
+        if(!valid_centers_[child])
+          break; // Fewer than splits() children.
+        distance_type child_distance = Distance<OtherDescriptorT, VoctreeDescriptorT>()(descriptor, centers_[child]);
+        if(child_distance < radius)
+        {
+          futurIndexes.push_back(BestChild<distance_type>(child, child_distance));
+        }
+        else
+        {
+          otherIndexes.push_back(BestChild<distance_type>(child, child_distance));
+        }
+      }
+      //sans doute mieux à faire:
+      std::partial_sort(futurIndexes.begin(), futurIndexes.begin() + 1, futurIndexes.end());     
+      VoctreeDescriptorT bestDescriptor = centers_[futurIndexes[0]];
+              
+      //en unse seule boucle ?
+      //necessite une condition pour éviter de tester l'univers !
+      for(BestChild<distance_type> child = otherIndexes.begin(); child != otherIndexes.end(); child++)
+      {
+        VoctreeDescriptorT secDescriptor = centers_[child];
+        
+        //equation hyperplan entre  centers_[bestChild] centers_[child]
+        //Coder la taille différemment
+        std::vector<value_type> normalVect(128);
+        std::vector<value_type> projection(128);
+        value_type normNormalVector;
+        
+        
+        for(size_t i = 0; i < 128; i++)
+        {
+          normalVect[i] = (bestDescriptor[i] - secDescriptor[i]);
+          normNormalVector += normalVect[i];
+        }
+        
+        normNormalVector = normNormalVector / 128;
+        
+        //projection du centre sur l'hyperplan
+        for(size_t i = 0; i < 128; i++)
+        {
+          projection[i] = bestDescriptor[i] - (bestDescriptor[i]*normalVect[i]) / normNormalVector;
+        }
+        
+        //si projection dans la sphere: OK
+        //seconde condition ?
+        distance_type d = Distance<VoctreeDescriptorT, std::vector<value_type>>()(centers_[futurIndexes[0]], projection);
+        if(d < radius)
+        {
+          futurIndexes.push_back(BestChild<distance_type>(child, d));
+        }   
+      }
+      
+    }
+    
+    
+    currentIndexes.swap(futurIndexes);
+    futurIndexes.clear();
+  }
+  
+  std::sort(currentIndexes.begin(), currentIndexes.end());
+  //currentIndexes.resize(n);
+  std::vector<int32_t> res;
+
+  for(BestChild<distance_type>& child: currentIndexes)
+  {
+    if(child.distance_ < 80000)
+    {
+      res.push_back(child.child_ - word_start_);
+    }
+  }
+  return res;
+}
+
+template<class VoctreeDescriptorT, template<typename, typename> class Distance, class VocDescAllocator>
 template<class DescriptorT>
 SparseHistogram VocabularyTree<VoctreeDescriptorT, Distance, VocDescAllocator>::quantizeToSparse(const std::vector<DescriptorT>& descriptors) const
 {
@@ -301,6 +406,30 @@ SparseHistogram VocabularyTree<VoctreeDescriptorT, Distance, VocDescAllocator>::
   return histo;
 }
 
+/*template<class VoctreeDescriptorT, template<typename, typename> class Distance, class VocDescAllocator>
+template<class DescriptorT>
+SparseHistogram VocabularyTree<VoctreeDescriptorT, Distance, VocDescAllocator>::newSoftQuantizeToSparse(const std::vector<DescriptorT>& descriptors) const
+{
+  SparseHistogram histo;
+  
+//  std::size_t descSize = std::min(descriptors.size(), (std::size_t)500);
+  std::size_t descSize = descriptors.size();
+  // quantize the features
+  #pragma omp parallel for
+  for(size_t j = 0; j < descSize; ++j)
+  {
+    // store the visual word associated to the feature in the temporary list
+    std::vector<Word> quantizedDescriptors = newSoftQuantize<DescriptorT>(descriptors[j], 2);
+    #pragma omp critical
+    {
+      for(auto qDesc: quantizedDescriptors)
+      {
+        histo[qDesc].push_back(j);
+      }
+    }
+  }
+  return histo;
+}*/
 
 template<class VoctreeDescriptorT, template<typename, typename> class Distance, class VocDescAllocator>
 uint32_t VocabularyTree<VoctreeDescriptorT, Distance, VocDescAllocator>::levels() const
