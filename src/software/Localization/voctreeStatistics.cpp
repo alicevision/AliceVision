@@ -134,7 +134,7 @@ int main(int argc, char** argv)
   // Add each object (document) to the database
   openMVG::voctree::Database db(tree.words());
 
-  if(withWeights)
+  /*if(withWeights)
   {
     POPART_COUT("Loading weights...");
     db.loadWeights(weightsName);
@@ -142,36 +142,7 @@ int main(int argc, char** argv)
   else
   {
     POPART_COUT("No weights specified, skipping...");
-  }
-
-
-  //*********************************************************
-  // Read the descriptors and populate the database
-  //*********************************************************
-
-  POPART_COUT("Reading descriptors from " << keylist);
-  auto detect_start = std::chrono::steady_clock::now();
-  size_t numTotFeatures = openMVG::voctree::populateDatabase<DescriptorUChar>(keylist, tree, db);
-  auto detect_end = std::chrono::steady_clock::now();
-  auto detect_elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(detect_end - detect_start);
-
-  if(numTotFeatures == 0)
-  {
-    POPART_CERR("No descriptors loaded!!");
-    return EXIT_FAILURE;
-  }
-
-  POPART_COUT("Done! " << db.getSparseHistogramPerImage().size() << " sets of descriptors read for a total of " << numTotFeatures << " features");
-  POPART_COUT("Reading took " << detect_elapsed.count() << " sec");
-  
-
-  if(!withWeights)
-  {
-    // Compute and save the word weights
-    POPART_COUT("Computing weights...");
-    db.computeTfIdfWeights();
-  }
-
+  }*/
 
   //************************************************
   // Query documents for Statistics

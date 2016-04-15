@@ -15,9 +15,6 @@
 
 #include <Eigen/Core>
 
-//#include "selection.hpp"
-#include <opencv2/opencv.hpp>
-
 #include <boost/program_options.hpp> 
 #include <boost/accumulators/accumulators.hpp>
 #include <boost/accumulators/statistics/tail.hpp>
@@ -355,7 +352,7 @@ int main(int argc, char** argv)
   }
 
   openMVG::matching::PairWiseMatches allMatches;
-
+  
   for(auto docMatches: allDocMatches)
   {
     const openMVG::voctree::DocMatches& matches = docMatches.second;
@@ -403,30 +400,46 @@ int main(int argc, char** argv)
       
       // Perform features matching
       const openMVG::voctree::SparseHistogram& currentHistogram = histograms.at(docMatches.first);
+
       
-      for (const auto comparedPicture : matches)
+      int keypoints;
+      
+      int maxAmbiguousPoints = 0;
+      int minAmbiguousPoints = 100000;
+      int totalAmbiguousPoints = 0;
+      int ambiguousPoints;
+      
+      int maxUsedPoints = 0;
+      int minUsedPoints = 100000;
+      int totalUsedPoints = 0;
+      int usedKeypoints;
+      
+      
+      
+      for(const auto comparedPicture : matches)
       {
         openMVG::voctree::SparseHistogram comparedHistogram = histograms.at(comparedPicture.id);
         openMVG::Pair indexImagePair = openMVG::Pair(docMatches.first, comparedPicture.id);
         
-        //Get the regions for the current view pair.
-		    //openMVG::features::SIFT_Regions* lRegions = dynamic_cast<openMVG::features::SIFT_Regions*>(regions_provider->regions_per_view[indexImagePair.first].get());
-		    //openMVG::features::SIFT_Regions* rRegions = dynamic_cast<openMVG::features::SIFT_Regions*>(regions_provider->regions_per_view[indexImagePair.second].get());
-        
-        //Distances Vector
-        //const std::vector<float> distances;
-        
         openMVG::matching::IndMatches featureMatches;
 
-        for (const auto& currentLeaf: currentHistogram)
-        {
-          if ( (currentLeaf.second.size() == 1) )
+        ambiguousPoints = 0;
+        usedKeypoints = 0;
+        keypoints = 0;
+        
+        for(const auto& currentLeaf: currentHistogram)
+        { 
+          keypoints += currentLeaf.second.size();
+          auto leafRightIt = comparedHistogram.find(currentLeaf.first);
+          if(leafRightIt == comparedHistogram.end())
+            continue;
+          if( (currentLeaf.second.size() == 1) )
           {
-            auto leafRightIt = comparedHistogram.find(currentLeaf.first);
-            if (leafRightIt == comparedHistogram.end())
-              continue;
             if(leafRightIt->second.size() != 1)
+            {
+              ambiguousPoints += 1;
               continue;
+            }
 
             Regions* siftRegionsLeft = regions_provider->regions_per_view[docMatches.first].get();
             Regions* siftRegionsRight = regions_provider->regions_per_view[comparedPicture.id].get();
@@ -438,17 +451,50 @@ int main(int argc, char** argv)
 #endif
                     );
             featureMatches.push_back(currentMatch);
-
-            // TODO: distance computation
+            usedKeypoints++;
+          }
+          else
+          {
+            ambiguousPoints += currentLeaf.second.size();
           }
         }
+        
+        //Some Statistics:
+        totalAmbiguousPoints += ambiguousPoints;
+        if(ambiguousPoints > maxAmbiguousPoints)
+          maxAmbiguousPoints = ambiguousPoints;
+        if(ambiguousPoints < minAmbiguousPoints)
+          minAmbiguousPoints = ambiguousPoints;
+        
+        totalUsedPoints += usedKeypoints;
+        if(usedKeypoints > maxUsedPoints)
+          maxUsedPoints = usedKeypoints;
+        if(usedKeypoints < minUsedPoints)
+          minUsedPoints = usedKeypoints;
+        
 
         allMatches[indexImagePair] = featureMatches;
 
-        // TODO: display + symlinks
       }
-    }
+      
+      int meanAmbiguousPoints = totalAmbiguousPoints/matches.size();
+      int meanUsedPoints = totalUsedPoints/matches.size();
+      
+      std::cout << " ---------------------------- \n" << std::endl;
+      std::cout << "Features Matching - Statistics: \n" << std::endl;
 
+      std::cout << "Image " << docMatches.first << ": \n" << std::endl;
+      std::cout << "Number of key points:" << keypoints << " \n" << std::endl;
+      
+      std::cout << "Mean number of ambiguous points:" << meanAmbiguousPoints << "(" << meanAmbiguousPoints * 100.0 /keypoints << "%)" << " \n" << std::endl;
+      std::cout << "Min number of ambiguous points:" << minAmbiguousPoints << "(" << minAmbiguousPoints * 100.0 /keypoints << "%)" << " \n" << std::endl;
+      std::cout << "Max number of ambiguous points:" << maxAmbiguousPoints << "(" << maxAmbiguousPoints * 100.0 /keypoints << "%)" << " \n" << std::endl;
+      
+      std::cout << "Mean number of used points:" << meanUsedPoints << "(" << meanUsedPoints * 100.0 /keypoints << "%)" << " \n" << std::endl;
+      std::cout << "Min number of used points:" << minUsedPoints << "(" << minUsedPoints * 100.0 /keypoints << "%)" << " \n" << std::endl;
+      std::cout << "Max number of used points:" << maxUsedPoints << "(" << maxUsedPoints * 100.0 /keypoints << "%)" << " \n" << std::endl;
+    }
+    
     // now parse all the returned matches 
     for(size_t j = 0; j < matches.size(); ++j)
     {

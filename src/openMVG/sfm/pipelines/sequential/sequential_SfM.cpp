@@ -800,7 +800,8 @@ double SequentialSfMReconstructionEngine::ComputeResidualsHistogram(Histogram<do
     minMaxMeanMedian<float>(vec_residuals.begin(), vec_residuals.end(),
                             dMin, dMax, dMean, dMedian);
     if (histo)  {
-      *histo = Histogram<double>(dMin, dMax, 10);
+      //*histo = Histogram<double>(dMin, dMax, 10);
+      *histo = Histogram<double>(0, 4, 10);
       histo->Add(vec_residuals.begin(), vec_residuals.end());
     }
 

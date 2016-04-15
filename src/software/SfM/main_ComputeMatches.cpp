@@ -57,22 +57,27 @@ enum EPairMode
 void getStatsMap(const PairWiseMatches& map)
 {
 #ifdef OPENMVG_DEBUG_MATCHING
-      std::map<int,int> stats;
-      for( const auto& imgMatches: map)
-      {
-        for( const matching::IndMatch& featMatches: imgMatches.second)
-        {
-          int d = std::floor(featMatches._distance / 1000.0);
-          if( stats.find(d) != stats.end() )
-            stats[d] += 1;
-          else
-            stats[d] = 1;
-        }
-      }
-      for(const auto& stat: stats)
-      {
-        std::cout << stat.first << "\t" << stat.second << std::endl;
-      }
+  std::map<int,int> stats;
+  size_t nbMatches = 0;
+          
+  for( const auto& imgMatches: map)
+  {
+    nbMatches += imgMatches.second.size(); 
+    for( const matching::IndMatch& featMatches: imgMatches.second)
+    {
+      int d = std::floor(featMatches._distance / 1000.0);
+      if( stats.find(d) != stats.end() )
+        stats[d] += 1;
+      else
+        stats[d] = 1;
+    }
+  }
+  for(const auto& stat: stats)
+  {
+    std::cout << stat.first << "\t" << stat.second << std::endl;
+  }
+  
+  std::cout << "There are " << nbMatches << " matches." << std::endl;
 #endif
 }
 
@@ -610,7 +615,7 @@ int main(int argc, char **argv)
 #ifdef OPENMVG_DEBUG_MATCHING
     {
       std::cout << "GEOMETRIC" << std::endl;
-      getStatsMap(map_GeometricMatches);
+      getStatsMap(finalMatches);
     }
 #endif
 
