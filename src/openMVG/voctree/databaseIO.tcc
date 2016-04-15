@@ -47,7 +47,7 @@ std::size_t populateDatabase(const std::string &fileFullPath,
     loadDescsFromBinFile(currentFile.second, descriptors, false, Nmax);
     size_t result = descriptors.size();
     
-    SparseHistogram newDoc =  tree.quantizeToSparse(descriptors);
+    SparseHistogram newDoc =  tree.softQuantizeToSparse(descriptors);
 
     // Insert document in database
     db.insert(currentFile.first, newDoc);
@@ -88,7 +88,7 @@ std::size_t populateDatabase(const std::string &fileFullPath,
     
     allDescriptors[currentFile.first] = descriptors;
     
-    SparseHistogram newDoc = tree.quantizeToSparse(descriptors);
+    SparseHistogram newDoc = tree.softQuantizeToSparse(descriptors);
     
     // Insert document in database
     db.insert(currentFile.first, newDoc);
@@ -175,7 +175,7 @@ void queryDatabase(const std::string &fileFullPath,
     loadDescsFromBinFile(currentFileIt->second, descriptors, false, Nmax);
 
     // quantize the descriptors
-    SparseHistogram query = tree.quantizeToSparse(descriptors);
+    SparseHistogram query = tree.softQuantizeToSparse(descriptors);
 
     openMVG::voctree::DocMatches docMatches;
     // query the database
@@ -225,7 +225,7 @@ void voctreeStatistics(
     loadDescsFromBinFile(currentFile.second, descriptors, false);
 
     // query the database
-    SparseHistogram query = tree.quantizeToSparse(descriptors);
+    SparseHistogram query = tree.softQuantizeToSparse(descriptors);
     std::map<int,int> localHisto;
     
     for(auto q: query)

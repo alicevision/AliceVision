@@ -86,12 +86,15 @@ public:
   template<class OtherDescriptorT>
   Word quantize(const OtherDescriptorT& feature) const;
 
-  /// Quantizes a set of features into visual words.
   template<class OtherDescriptorT>
-  std::vector<Word> quantize(const std::vector<OtherDescriptorT>& features) const;
+  std::vector<Word> softQuantize(const OtherDescriptorT& feature, int n) const;
+  
   /// Quantizes a set of features into sparse histogram of visual words.
   template<class OtherDescriptorT>
   SparseHistogram quantizeToSparse(const std::vector<OtherDescriptorT>& features) const;
+  
+  template<class DescriptorT>
+  SparseHistogram softQuantizeToSparse(const std::vector<DescriptorT>& descriptors) const;
 
   /// Get the depth (number of levels) of the tree.
   uint32_t levels() const;
@@ -183,35 +186,121 @@ Word VocabularyTree<VoctreeDescriptorT, Distance, VocDescAllocator>::quantize(co
   return index - word_start_;
 }
 
+template <typename distance_type> 
+struct BestChild
+{
+  BestChild()
+  {}
+  
+  BestChild(int32_t child, distance_type distance = std::numeric_limits<distance_type>::max())
+  : child_(child)
+  , distance_(distance)
+  {}
+  
+  int32_t child_;
+  distance_type distance_;
+  
+  bool operator<(const BestChild<distance_type>& otherChild) const
+  { 
+    return (distance_ < otherChild.distance_); 
+  }
+};
+
 template<class VoctreeDescriptorT, template<typename, typename> class Distance, class VocDescAllocator>
 template<class OtherDescriptorT>
-std::vector<Word> VocabularyTree<VoctreeDescriptorT, Distance, VocDescAllocator>::quantize(const std::vector<OtherDescriptorT>& descriptors) const
+std::vector<Word> VocabularyTree<VoctreeDescriptorT, Distance, VocDescAllocator>::softQuantize(const OtherDescriptorT& descriptor, int n) const
 {
-//  std::cout << std::endl;
-//  std::cout << "VocabularyTree quantize: " << features.size() << std::endl;
-  std::vector<Word> imgVisualWords(descriptors.size(), 0);
+  typedef typename Distance<VoctreeDescriptorT, OtherDescriptorT>::result_type distance_type;
 
-  // quantize the features
-  #pragma omp parallel for
-  for(size_t j = 0; j < descriptors.size(); ++j)
+  assert(initialized());
+  std::vector<BestChild<distance_type>> currentIndexes;
+  std::vector<BestChild<distance_type>> futurIndexes;
+  currentIndexes.push_back(-1);
+  
+  for(unsigned level = 0; level < levels_; ++level)
   {
-    // store the visual word associated to the feature in the temporary list
-    imgVisualWords[j] = quantize<OtherDescriptorT>(descriptors[j]);
+    
+    std::vector<BestChild<distance_type>> children;
+    for(auto currentChild: currentIndexes)
+    {
+      // Calculate the offset to the first child of the current index.
+      int32_t first_child = (currentChild.child_ + 1) * splits();
+      // Find the child center closest to the query.
+      for(int32_t child = first_child; child < first_child + (int32_t) splits(); ++child)
+      {
+        if(!valid_centers_[child])
+          break; // Fewer than splits() children.
+        distance_type child_distance = Distance<OtherDescriptorT, VoctreeDescriptorT>()(descriptor, centers_[child]);
+        children.push_back(BestChild<distance_type>(child, child_distance));
+      }
+      
+      std::partial_sort(children.begin(), children.begin() + n, children.end());
+      children.resize(n);
+      
+      for(auto child: children)
+      {
+        futurIndexes.push_back(child);
+      }
+      children.clear();
+    }
+    currentIndexes.swap(futurIndexes);
+    futurIndexes.clear();
   }
+  std::sort(currentIndexes.begin(), currentIndexes.end());
+  //currentIndexes.resize(n);
+  std::vector<int32_t> res;
 
-  // add the vector to the documents
-  return imgVisualWords;
+  for(BestChild<distance_type>& child: currentIndexes)
+  {
+    if(child.distance_ < 80000)
+    {
+      res.push_back(child.child_ - word_start_);
+    }
+  }
+  return res;
 }
 
 template<class VoctreeDescriptorT, template<typename, typename> class Distance, class VocDescAllocator>
 template<class DescriptorT>
-SparseHistogram VocabularyTree<VoctreeDescriptorT, Distance, VocDescAllocator>::quantizeToSparse(const std::vector<DescriptorT>& features) const
+SparseHistogram VocabularyTree<VoctreeDescriptorT, Distance, VocDescAllocator>::quantizeToSparse(const std::vector<DescriptorT>& descriptors) const
 {
   SparseHistogram histo;
-  std::vector<Word> doc = quantize(features);
+  std::vector<Word> doc(descriptors.size(), 0);;
+  
+  #pragma omp parallel for
+  for(size_t j = 0; j < descriptors.size(); ++j)
+  {
+    doc[j] = quantize(descriptors[j]);
+  }
   computeSparseHistogram(doc, histo);
   return histo;
 }
+
+template<class VoctreeDescriptorT, template<typename, typename> class Distance, class VocDescAllocator>
+template<class DescriptorT>
+SparseHistogram VocabularyTree<VoctreeDescriptorT, Distance, VocDescAllocator>::softQuantizeToSparse(const std::vector<DescriptorT>& descriptors) const
+{
+  SparseHistogram histo;
+  
+//  std::size_t descSize = std::min(descriptors.size(), (std::size_t)500);
+  std::size_t descSize = descriptors.size();
+  // quantize the features
+  #pragma omp parallel for
+  for(size_t j = 0; j < descSize; ++j)
+  {
+    // store the visual word associated to the feature in the temporary list
+    std::vector<Word> quantizedDescriptors = softQuantize<DescriptorT>(descriptors[j], 2);
+    #pragma omp critical
+    {
+      for(auto qDesc: quantizedDescriptors)
+      {
+        histo[qDesc].push_back(j);
+      }
+    }
+  }
+  return histo;
+}
+
 
 template<class VoctreeDescriptorT, template<typename, typename> class Distance, class VocDescAllocator>
 uint32_t VocabularyTree<VoctreeDescriptorT, Distance, VocDescAllocator>::levels() const

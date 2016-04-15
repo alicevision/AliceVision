@@ -364,8 +364,7 @@ bool VoctreeLocalizer::initDatabase(const std::string & vocTreeFilepath,
     }
     
     voctree::SparseHistogram histo;
-    std::vector<voctree::Word> words = _voctree.quantize(currRecoRegions._regions.Descriptors());
-    voctree::computeSparseHistogram(words, histo);
+    histo = _voctree.softQuantizeToSparse(currRecoRegions._regions.Descriptors());
     _database.insert(id_view, histo);
 
     // Filter descriptors to keep only the 3D reconstructed points
@@ -412,13 +411,16 @@ bool VoctreeLocalizer::localizeFirstBestResult(const image::Image<unsigned char>
   POPART_COUT("[database]\tRequest closest images from voctree");
   // pass the descriptors through the vocabulary tree to get the visual words
   // associated to each feature
-  std::vector<voctree::Word> requestImageWords = _voctree.quantize(queryRegions.Descriptors());
+  std::vector<voctree::Word> requestImageWords;
+  for(auto desc: queryRegions.Descriptors())
+  {
+    requestImageWords.push_back(_voctree.quantize(desc));
+  }
   
   // Request closest images from voctree
   std::vector<voctree::DocMatch> matchedImages;
   _database.find(requestImageWords, param._numResults, matchedImages);
   
-//  // just debugging bla bla
 //  // for each similar image found print score and number of features
 //  for(const voctree::DocMatch & currMatch : matchedImages )
 //  {
@@ -660,7 +662,11 @@ bool VoctreeLocalizer::localizeAllResults(const image::Image<unsigned char> & im
   // pass the descriptors through the vocabulary tree to get the visual words
   // associated to each feature
   POPART_COUT("[database]\tRequest closest images from voctree");
-  std::vector<voctree::Word> requestImageWords = _voctree.quantize(queryRegions.Descriptors());
+  std::vector<voctree::Word> requestImageWords;
+  for(auto desc: queryRegions.Descriptors())
+  {
+    requestImageWords.push_back(_voctree.quantize(desc));
+  }
   
   // Request closest images from voctree
   std::vector<voctree::DocMatch> matchedImages;

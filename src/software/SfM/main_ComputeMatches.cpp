@@ -396,6 +396,12 @@ int main(int argc, char **argv)
       std::cout << "Using FAST_CASCADE_HASHING_L2 matcher" << std::endl;
       collectionMatcher.reset(new Cascade_Hashing_Matcher_Regions_AllInMemory(fDistRatio));
     }
+    else
+    if(sNearestMatchingMethod == "VOCTREE")
+    {
+      std::cout << "Using VOCTREE matcher" << std::endl;
+      collectionMatcher.reset(new Matcher_Regions_AllInMemory(fDistRatio, VOCTREE_MATCHER));
+    }
     if(!collectionMatcher)
     {
       std::cerr << "Invalid Nearest Neighbor method: " << sNearestMatchingMethod << std::endl;
