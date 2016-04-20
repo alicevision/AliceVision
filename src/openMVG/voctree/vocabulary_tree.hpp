@@ -103,8 +103,8 @@ public:
   template<class DescriptorT>
   SparseHistogram softQuantizeToSparse(const std::vector<DescriptorT>& descriptors) const;
   
-  template<class DescriptorT>
-  SparseHistogram newSoftQuantizeToSparse(const std::vector<DescriptorT>& descriptors) const;
+  //template<class DescriptorT>
+  //SparseHistogram newSoftQuantizeToSparse(const std::vector<DescriptorT>& descriptors) const;
 
   /// Get the depth (number of levels) of the tree.
   uint32_t levels() const;
@@ -270,7 +270,7 @@ std::vector<Word> VocabularyTree<VoctreeDescriptorT, Distance, VocDescAllocator>
   return res;
 }
 
-template<class VoctreeDescriptorT, template<typename, typename> class Distance, class VocDescAllocator>
+/*template<class VoctreeDescriptorT, template<typename, typename> class Distance, class VocDescAllocator>
 template<class OtherDescriptorT>
 std::vector<Word> VocabularyTree<VoctreeDescriptorT, Distance, VocDescAllocator>::newSoftQuantize(const OtherDescriptorT& descriptor) const
 {
@@ -363,7 +363,7 @@ std::vector<Word> VocabularyTree<VoctreeDescriptorT, Distance, VocDescAllocator>
     }
   }
   return res;
-}
+}*/
 
 template<class VoctreeDescriptorT, template<typename, typename> class Distance, class VocDescAllocator>
 template<class OtherDescriptorT>
@@ -371,7 +371,7 @@ Word VocabularyTree<VoctreeDescriptorT, Distance, VocDescAllocator>::onlySureFea
 {
   typedef typename Distance<VoctreeDescriptorT, OtherDescriptorT>::result_type distance_type;
   typedef typename VoctreeDescriptorT::value_type value_type;
-  float radius = 3.0;
+  float radius = 73000.0f;
 
   assert(initialized());
   int32_t index = -1;
@@ -426,8 +426,8 @@ Word VocabularyTree<VoctreeDescriptorT, Distance, VocDescAllocator>::onlySureFea
         normN = sqrt(auxNormal);
         for(int i = 0; i < 128; ++i)
         {
+          d += (bestDescriptor[i] + normal[i]/2) * normal[i] / normN;
           normal[i] = normal[i] /  normN;
-          d = (bestDescriptor[i] + normal[i]/2) * normal[i];
         }
         
         //projection du centre sur l'hyperplan:
@@ -451,10 +451,10 @@ Word VocabularyTree<VoctreeDescriptorT, Distance, VocDescAllocator>::onlySureFea
           for(int32_t childToCompare = first_child; childToCompare < first_child + (int32_t) splits(); ++childToCompare)
           {
             distance_type distToCompare = Distance<VoctreeDescriptorT, std::vector<value_type>>()(centers_[childToCompare], featureProj);
-            if(distToCompare < dist)
+            if(distToCompare < dist + 0.001)
             {
               return -1;
-            }            
+            }       
           }
         }
         
