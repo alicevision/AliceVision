@@ -81,7 +81,7 @@ public:
    * @param d    Functor for computing the distance between two features
    */
   VocabularyTree(const std::string& file);
-
+  
   /// Quantizes a feature into a discrete word.
   template<class OtherDescriptorT>
   Word quantize(const OtherDescriptorT& feature) const;
@@ -370,6 +370,7 @@ template<class OtherDescriptorT>
 Word VocabularyTree<VoctreeDescriptorT, Distance, VocDescAllocator>::onlySureFeaturesQuantize(const OtherDescriptorT& feature) const
 {
   typedef typename Distance<VoctreeDescriptorT, OtherDescriptorT>::result_type distance_type;
+  typedef typename VoctreeDescriptorT::value_type value_type;
   float radius = 3.0;
 
   assert(initialized());
@@ -383,6 +384,7 @@ Word VocabularyTree<VoctreeDescriptorT, Distance, VocDescAllocator>::onlySureFea
     // Find the child center closest to the query.
     int32_t best_child = first_child;
     distance_type best_distance = std::numeric_limits<distance_type>::max();
+    
     for(int32_t child = first_child; child < first_child + (int32_t) splits(); ++child)
     {
       if(!valid_centers_[child])
@@ -402,19 +404,62 @@ Word VocabularyTree<VoctreeDescriptorT, Distance, VocDescAllocator>::onlySureFea
     
     for(int32_t child = first_child; child < first_child + (int32_t) splits(); ++child)
     {
-      VoctreeDescriptorT secDescriptor = centers_[child];
-
-      std::vector<value_type> projection(128);
-
-      //projection du centre sur l'hyperplan
-      
-      //A REFAIRE
-
-      distance_type d = Distance<VoctreeDescriptorT, std::vector<value_type>>()(bestDescriptor, projection);
-      if(d < radius)
+      if(child != best_child)
       {
-        return -1;
+        VoctreeDescriptorT secDescriptor = centers_[child];
+
+        //A REFAIRE AVEC EIGEN + dimension à coder en propre
+        std::vector<value_type> normal(128);
+        std::vector<value_type> featureProj(128);
+        float auxNormal = 0.0f;
+        float normN = 0.0f;
+        float d = 0.0f;
+        
+        //Calcul vecteur normal
+        for(int i = 0; i < 128; ++i)
+        {
+          normal[i] = secDescriptor[i] - bestDescriptor[i];
+          auxNormal += normal[i]*normal[i];
+        }
+        
+        //Normalisation:
+        normN = sqrt(auxNormal);
+        for(int i = 0; i < 128; ++i)
+        {
+          normal[i] = normal[i] /  normN;
+          d = (bestDescriptor[i] + normal[i]/2) * normal[i];
+        }
+        
+        //projection du centre sur l'hyperplan:
+        
+        //Produit scalaire feature.normal
+        float scalarPdtFeatNorm = 0.0f;
+        for(int i = 0; i < 128; ++i)
+        {
+          scalarPdtFeatNorm += feature[i]*normal[i];
+        }
+        
+        //calcul projection
+        for(int i = 0; i < 128; ++i)
+        {
+          featureProj[i] = feature[i] - (scalarPdtFeatNorm - d) * normal[i];
+        }
+        
+        distance_type dist = Distance<VoctreeDescriptorT, std::vector<value_type>>()(bestDescriptor, featureProj);
+        if(dist < radius)
+        {
+          for(int32_t childToCompare = first_child; childToCompare < first_child + (int32_t) splits(); ++childToCompare)
+          {
+            distance_type distToCompare = Distance<VoctreeDescriptorT, std::vector<value_type>>()(centers_[childToCompare], featureProj);
+            if(distToCompare < dist)
+            {
+              return -1;
+            }            
+          }
+        }
+        
       }
+      
     }
   }
 
