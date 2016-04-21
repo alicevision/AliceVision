@@ -5,6 +5,7 @@
  * Created on February 11, 2016, 11:54 AM
  */
 
+#include <openMVG/logger.hpp>
 #include <openMVG/voctree/simple_kmeans.hpp>
 
 #include <testing/testing.h>
@@ -18,7 +19,7 @@ TEST(kmeans, kmeanInitializer)
 {
   using namespace openMVG;
   
-  std::cout << "Testing kmeanspp Initializer..." << std::endl;
+  OPENMVG_COUT("Testing kmeanspp Initializer...");
 
   const std::size_t DIMENSION = 128;
   const std::size_t FEATURENUMBER = 1000;
@@ -75,7 +76,7 @@ TEST(kmeans, kmeanInitializerVarying)
 {
   using namespace openMVG;
   
-  std::cout << "Testing kmeanspp Initializer with variable k and DIM..." << std::endl;
+  OPENMVG_COUT("Testing kmeanspp Initializer with variable k and DIM...");
 
   const int FEATURENUMBER = 1000;
   const std::size_t numTrial = 10;
@@ -91,7 +92,7 @@ TEST(kmeans, kmeanInitializerVarying)
     const std::size_t DIMENSION = dimGen(generator);
     const std::size_t K = kGen(generator);
     const std::size_t STEP = 5 * K;
-    std::cout << "\tTrial " << trial + 1 << "/" << numTrial << " with K = " << K << " and DIMENSION = " << DIMENSION << std::endl;
+    OPENMVG_COUT("\tTrial " << trial + 1 << "/" << numTrial << " with K = " << K << " and DIMENSION = " << DIMENSION);
 
     typedef Eigen::RowVectorXf FeatureFloat;
     typedef std::vector<FeatureFloat, Eigen::aligned_allocator<FeatureFloat> > FeatureFloatVector;
@@ -128,7 +129,7 @@ TEST(kmeans, kmeanSimple)
 {
   using namespace openMVG;
 
-  std::cout << "Testing kmeans..." << std::endl;
+  OPENMVG_COUT("Testing kmeans...");
 
   const std::size_t DIMENSION = 8;
   const std::size_t FEATURENUMBER = 1000;
@@ -206,7 +207,7 @@ TEST(kmeans, kmeanSimple)
 TEST(kmeans, kmeanVarying)
 {
   using namespace openMVG;
-  std::cout << "Testing kmeans with variable k and DIM..." << std::endl;
+  OPENMVG_COUT("Testing kmeans with variable k and DIM...");
 
 
   const std::size_t FEATURENUMBER = 1000;
@@ -222,7 +223,7 @@ TEST(kmeans, kmeanVarying)
     const std::size_t DIMENSION = dimGen(generator);
     const std::size_t K = kGen(generator);
     const std::size_t STEP = 5 * K;
-    std::cout << "\tTrial " << trial + 1 << "/" << numTrial << " with K = " << K << " and DIMENSION = " << DIMENSION << std::endl;
+    OPENMVG_COUT("\tTrial " << trial + 1 << "/" << numTrial << " with K = " << K << " and DIMENSION = " << DIMENSION);
 
     typedef Eigen::RowVectorXf FeatureFloat;
     typedef std::vector<FeatureFloat, Eigen::aligned_allocator<FeatureFloat> > FeatureFloatVector;
@@ -274,7 +275,7 @@ TEST(kmeans, kmeanVarying)
       }
       globDist += bestDist;
     }
-    std::cout << "center distance " << globDist << std::endl;
+    OPENMVG_COUT("center distance " << globDist);
 
     std::vector<size_t> h(K, 0);
     for(size_t i = 0; i < membership.size(); ++i)
@@ -283,7 +284,7 @@ TEST(kmeans, kmeanVarying)
     }
     for(size_t i = 0; i < h.size(); ++i)
     {
-//      std::cout << h[i] << std::endl;
+//      OPENMVG_COUT(h[i]);
       EXPECT_TRUE(h[i] > 0);
       EXPECT_EQ(h[i], FEATURENUMBER);
     }

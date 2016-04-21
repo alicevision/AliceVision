@@ -1,5 +1,6 @@
 #include <openMVG/features/descriptor.hpp>
 #include <openMVG/sfm/sfm_data_io.hpp>
+#include <openMVG/logger.hpp>
 
 #include <boost/filesystem.hpp>
 #include <boost/algorithm/string/case_conv.hpp>
@@ -24,7 +25,7 @@ size_t readDescFromFiles(const std::string &fileFullPath, std::vector<Descriptor
   int bytesPerElement = 0;
 
   // Display infos and progress bar
-  std::cout << "Pre-computing the memory needed..." << std::endl;
+  OPENMVG_COUT("Pre-computing the memory needed...");
   boost::progress_display display(descriptorsFiles.size());
 
   // Read all files and get the number of descriptors to load
@@ -44,7 +45,7 @@ size_t readDescFromFiles(const std::string &fileFullPath, std::vector<Descriptor
     ++display;
   }
   BOOST_ASSERT(bytesPerElement > 0);
-  std::cout << "Found " << numDescriptors << " descriptors overall, allocating memory..." << std::endl;
+  OPENMVG_COUT("Found " << numDescriptors << " descriptors overall, allocating memory...");
 
   // Allocate the memory
   descriptors.reserve(numDescriptors);
@@ -52,7 +53,7 @@ size_t readDescFromFiles(const std::string &fileFullPath, std::vector<Descriptor
   numDescriptors = 0;
 
   // Read the descriptors
-  std::cout << "Reading the descriptors..." << std::endl;
+  OPENMVG_COUT("Reading the descriptors...");
   display.restart(descriptorsFiles.size());
 
   // Run through the path vector and read the descriptors
