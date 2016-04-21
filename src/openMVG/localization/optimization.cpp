@@ -52,18 +52,18 @@ bool refineSequence(std::vector<LocalizationResult> & vec_localizationResult,
     // it may be the case that all the localization result are invalid...
     if(!vec_localizationResult[intrinsicIndex].isValid())
     {
-      POPART_CERR("Apparently all the vec_localizationResult are invalid! Aborting...");
+      OPENMVG_CERR("Apparently all the vec_localizationResult are invalid! Aborting...");
       return false;
     }
     
-    POPART_CERR("allTheSameIntrinsics mode: using the intrinsics of the " << intrinsicIndex << " result");
+    OPENMVG_CERR("allTheSameIntrinsics mode: using the intrinsics of the " << intrinsicIndex << " result");
     
     cameras::Pinhole_Intrinsic_Radial_K3* currIntrinsics = &vec_localizationResult[intrinsicIndex].getIntrinsics();
     
     if(b_no_distortion)
     {
       // no distortion refinement
-      POPART_COUT("Optical distortion won't be considered");
+      OPENMVG_COUT("Optical distortion won't be considered");
       // just add a simple pinhole camera with the same K as the input camera
       Vec2 pp = currIntrinsics->principal_point();
       tinyScene.intrinsics[intrinsicID] = std::make_shared<cameras::Pinhole_Intrinsic>(currIntrinsics->_w, currIntrinsics->_h, currIntrinsics->focal(), pp(0), pp(1));
@@ -72,7 +72,7 @@ bool refineSequence(std::vector<LocalizationResult> & vec_localizationResult,
     {
       // intrinsic (the shared_ptr does not take the ownership, will not release the input pointer)
       tinyScene.intrinsics[intrinsicID] = std::shared_ptr<cameras::Pinhole_Intrinsic_Radial_K3>(currIntrinsics, [](cameras::Pinhole_Intrinsic_Radial_K3*){});
-      POPART_COUT("Type of intrinsics " <<tinyScene.intrinsics[0].get()->getType());
+      OPENMVG_COUT("Type of intrinsics " <<tinyScene.intrinsics[0].get()->getType());
     }
   }
   
@@ -89,7 +89,7 @@ bool refineSequence(std::vector<LocalizationResult> & vec_localizationResult,
       const Mat2X residuals = currResult.computeResiduals();
       
       const auto sqrErrors = (residuals.cwiseProduct(residuals)).colwise().sum();
-      POPART_COUT("View " << viewID << " RMSE = " << std::sqrt(sqrErrors.mean()) 
+      OPENMVG_COUT("View " << viewID << " RMSE = " << std::sqrt(sqrErrors.mean()) 
               << " min = " << std::sqrt(sqrErrors.minCoeff()) 
               << " mean = " << std::sqrt(sqrErrors.mean())
               << " max = " << std::sqrt(sqrErrors.maxCoeff()));
@@ -102,11 +102,11 @@ bool refineSequence(std::vector<LocalizationResult> & vec_localizationResult,
     // skip invalid poses
     if(!currResult.isValid())
     {
-      POPART_COUT("\n*****\nskipping invalid View " << viewID);
+      OPENMVG_COUT("\n*****\nskipping invalid View " << viewID);
       continue;
     }
     
-//    POPART_COUT("\n*****\nView " << viewID);
+//    OPENMVG_COUT("\n*****\nView " << viewID);
     // view
     tinyScene.views.insert( std::make_pair(viewID, std::make_shared<sfm::View>("",viewID, intrinsicID, viewID)));
     // pose
@@ -131,7 +131,7 @@ bool refineSequence(std::vector<LocalizationResult> & vec_localizationResult,
       const IndexT landmarkID = currentIDs[idx].first;
       // get the corresponding 2D point ID
       const IndexT featID = currentIDs[idx].second;
-//      POPART_COUT("inlier " << idx << " is land " << landmarkID << " and feat " << featID);
+//      OPENMVG_COUT("inlier " << idx << " is land " << landmarkID << " and feat " << featID);
       // get the corresponding feature
       const Vec2 &feature = currResult.getPt2D().col(idx);
       // check if the point exists already
@@ -142,7 +142,7 @@ bool refineSequence(std::vector<LocalizationResult> & vec_localizationResult,
         if(tinyScene.structure[landmarkID].obs.count(viewID) != 0)
         {
           // this is weird but it could happen when two features are really close to each other (?)
-          POPART_COUT("Point 3D " << landmarkID << " has multiple features " 
+          OPENMVG_COUT("Point 3D " << landmarkID << " has multiple features " 
                   << tinyScene.structure[landmarkID].obs.size() 
                   << " in the same view " << viewID << " size "); 
           continue;
@@ -165,7 +165,7 @@ bool refineSequence(std::vector<LocalizationResult> & vec_localizationResult,
   {
     // just debugging some stats -- this block can be safely removed/commented out
     
-    POPART_COUT("Number of 3D-2D associations " << tinyScene.structure.size());
+    OPENMVG_COUT("Number of 3D-2D associations " << tinyScene.structure.size());
     
     std::size_t maxObs = 0;
     for(const auto landmark : tinyScene.GetLandmarks() )
@@ -183,22 +183,22 @@ bool refineSequence(std::vector<LocalizationResult> & vec_localizationResult,
       stats(nobs);
       hist[nobs]++;
     }
-    POPART_COUT("Min number of observations per point:   " << bacc::min(stats) );
-    POPART_COUT("Mean number of observations per point:   " << bacc::mean(stats) );
-    POPART_COUT("Max number of observations per point:   " << bacc::max(stats) );
+    OPENMVG_COUT("Min number of observations per point:   " << bacc::min(stats) );
+    OPENMVG_COUT("Mean number of observations per point:   " << bacc::mean(stats) );
+    OPENMVG_COUT("Max number of observations per point:   " << bacc::max(stats) );
     
     for( int i = 0; i < hist.size(); i++ ) 
     {
-      POPART_COUT("Points with " << i << " observations: " << hist[i]); 
+      OPENMVG_COUT("Points with " << i << " observations: " << hist[i]); 
     }
 
     // just debugging stuff
     if(allTheSameIntrinsics)
     {
       std::vector<double> params = tinyScene.intrinsics[0].get()->getParams();
-      POPART_COUT("K before bundle: " << params[0] << " " << params[1] << " "<< params[2]);
+      OPENMVG_COUT("K before bundle: " << params[0] << " " << params[1] << " "<< params[2]);
       if(params.size() == 6)
-        POPART_COUT("Distortion before bundle: " << params[3] << " " << params[4] << " "<< params[5]);
+        OPENMVG_COUT("Distortion before bundle: " << params[3] << " " << params[4] << " "<< params[5]);
     }
   }
 
@@ -221,7 +221,7 @@ bool refineSequence(std::vector<LocalizationResult> & vec_localizationResult,
     
     // get its optimized parameters
     std::vector<double> params = tinyScene.intrinsics[0].get()->getParams();
-    POPART_COUT("Type of intrinsics " <<tinyScene.intrinsics[0].get()->getType());
+    OPENMVG_COUT("Type of intrinsics " <<tinyScene.intrinsics[0].get()->getType());
     if(params.size() == 3)
     {
       // this means that the b_no_distortion has been passed
@@ -231,8 +231,8 @@ bool refineSequence(std::vector<LocalizationResult> & vec_localizationResult,
       params.push_back(0);
     }
     assert(params.size() == 6);
-    POPART_COUT("K after bundle: " << params[0] << " " << params[1] << " "<< params[2]);
-    POPART_COUT("Distortion after bundle " << params[3] << " " << params[4] << " "<< params[5]);
+    OPENMVG_COUT("K after bundle: " << params[0] << " " << params[1] << " "<< params[2]);
+    OPENMVG_COUT("Distortion after bundle " << params[3] << " " << params[4] << " "<< params[5]);
 
     // update the intrinsics of the each localization result
     for(size_t viewID = 0; viewID < numViews; ++viewID)
@@ -248,7 +248,7 @@ bool refineSequence(std::vector<LocalizationResult> & vec_localizationResult,
       const Mat2X residuals = currResult.computeResiduals();
       
       const auto sqrErrors = (residuals.cwiseProduct(residuals)).colwise().sum();
-      POPART_COUT("View " << viewID << " RMSE = " << std::sqrt(sqrErrors.mean()) 
+      OPENMVG_COUT("View " << viewID << " RMSE = " << std::sqrt(sqrErrors.mean()) 
               << " min = " << std::sqrt(sqrErrors.minCoeff()) 
               << " mean = " << std::sqrt(sqrErrors.mean())
               << " max = " << std::sqrt(sqrErrors.maxCoeff()));
@@ -289,7 +289,7 @@ bool refineRigPose(const std::vector<geometry::Pose3 > &vec_subPoses,
 
     if(!localizationResult.isValid())
     {
-      POPART_COUT("Skipping camera " << iLocalizer << " as it has not been localized");
+      OPENMVG_COUT("Skipping camera " << iLocalizer << " as it has not been localized");
       continue;
     }
     // Get the inliers 3D points
@@ -329,7 +329,7 @@ bool refineRigPose(const std::vector<geometry::Pose3 > &vec_subPoses,
       }
       else
       {
-        POPART_CERR("Fail in adding residual block for the " << iLocalizer 
+        OPENMVG_CERR("Fail in adding residual block for the " << iLocalizer 
                 << " camera while adding point id " << iPoint);
       }
     }

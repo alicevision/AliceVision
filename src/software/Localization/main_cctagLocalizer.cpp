@@ -86,7 +86,7 @@ int main(int argc, char** argv)
 
     if(vm.count("help") || (argc == 1))
     {
-      POPART_COUT(desc);
+      OPENMVG_COUT(desc);
       return EXIT_SUCCESS;
     }
 
@@ -94,14 +94,14 @@ int main(int argc, char** argv)
   }
   catch(boost::program_options::required_option& e)
   {
-    POPART_CERR("ERROR: " << e.what() << std::endl);
-    POPART_COUT("Usage:\n\n" << desc);
+    OPENMVG_CERR("ERROR: " << e.what() << std::endl);
+    OPENMVG_COUT("Usage:\n\n" << desc);
     return EXIT_FAILURE;
   }
   catch(boost::program_options::error& e)
   {
-    POPART_CERR("ERROR: " << e.what() << std::endl);
-    POPART_COUT("Usage:\n\n" << desc);
+    OPENMVG_CERR("ERROR: " << e.what() << std::endl);
+    OPENMVG_COUT("Usage:\n\n" << desc);
     return EXIT_FAILURE;
   }
   if(vm.count("preset"))
@@ -111,16 +111,16 @@ int main(int argc, char** argv)
   {
     // the bundle adjustment can be run for now only if the refine intrinsics option is not set
     globalBundle = (globalBundle && !param._refineIntrinsics);
-    POPART_COUT("Program called with the following parameters:");
-    POPART_COUT("\tcalibration: " << calibFile);
-    POPART_COUT("\tsfmdata: " << sfmFilePath);
-    POPART_COUT("\tmediafile: " << mediaFilepath);
-    POPART_COUT("\tsiftPath: " << descriptorsFolder);
-    POPART_COUT("\tresults: " << param._nNearestKeyFrames);
-    POPART_COUT("\trefineIntrinsics: " << param._refineIntrinsics);
-    POPART_COUT("\tpreset: " << features::describerPreset_enumToString(param._featurePreset));
-    POPART_COUT("\tglobalBundle: " << globalBundle);
-    POPART_COUT("\tvisual debug: " << param._visualDebug);
+    OPENMVG_COUT("Program called with the following parameters:");
+    OPENMVG_COUT("\tcalibration: " << calibFile);
+    OPENMVG_COUT("\tsfmdata: " << sfmFilePath);
+    OPENMVG_COUT("\tmediafile: " << mediaFilepath);
+    OPENMVG_COUT("\tsiftPath: " << descriptorsFolder);
+    OPENMVG_COUT("\tresults: " << param._nNearestKeyFrames);
+    OPENMVG_COUT("\trefineIntrinsics: " << param._refineIntrinsics);
+    OPENMVG_COUT("\tpreset: " << features::describerPreset_enumToString(param._featurePreset));
+    OPENMVG_COUT("\tglobalBundle: " << globalBundle);
+    OPENMVG_COUT("\tvisual debug: " << param._visualDebug);
   }
   
   if(!param._visualDebug.empty() && !bfs::exists(param._visualDebug))
@@ -133,7 +133,7 @@ int main(int argc, char** argv)
 
   if(!localizer.isInit())
   {
-    POPART_CERR("ERROR while initializing the localizer!");
+    OPENMVG_CERR("ERROR while initializing the localizer!");
     return EXIT_FAILURE;
   }
 
@@ -141,7 +141,7 @@ int main(int argc, char** argv)
   dataio::FeedProvider feed(mediaFilepath, calibFile);
   if(!feed.isInit())
   {
-    POPART_CERR("ERROR while initializing the FeedProvider!");
+    OPENMVG_CERR("ERROR while initializing the FeedProvider!");
     return EXIT_FAILURE;
   }
   bool feedIsVideo = feed.isVideo();
@@ -169,9 +169,9 @@ int main(int argc, char** argv)
 
   while(feed.next(imageGrey, queryIntrinsics, currentImgName, hasIntrinsics))
   {
-    POPART_COUT("******************************");
-    POPART_COUT("FRAME " << myToString(frameCounter, 4));
-    POPART_COUT("******************************");
+    OPENMVG_COUT("******************************");
+    OPENMVG_COUT("FRAME " << myToString(frameCounter, 4));
+    OPENMVG_COUT("******************************");
     auto detect_start = std::chrono::steady_clock::now();
     localization::LocalizationResult localizationResult;
     localizer.localize(imageGrey,
@@ -182,7 +182,7 @@ int main(int argc, char** argv)
                        (feedIsVideo) ? "" : currentImgName);
     auto detect_end = std::chrono::steady_clock::now();
     auto detect_elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(detect_end - detect_start);
-    POPART_COUT("\nLocalization took  " << detect_elapsed.count() << " [ms]");
+    OPENMVG_COUT("\nLocalization took  " << detect_elapsed.count() << " [ms]");
     stats(detect_elapsed.count());
 
     // save data
@@ -205,22 +205,22 @@ int main(int argc, char** argv)
 #if HAVE_ALEMBIC
       exporter.jumpKeyframe();
 #endif
-      POPART_CERR("Unable to localize frame " << frameCounter);
+      OPENMVG_CERR("Unable to localize frame " << frameCounter);
     }
     ++frameCounter;
   }
 
   if(globalBundle)
   {
-    POPART_COUT("\n\n\n***********************************************");
-    POPART_COUT("Bundle Adjustment - Refining the whole sequence");
-    POPART_COUT("***********************************************\n\n");
+    OPENMVG_COUT("\n\n\n***********************************************");
+    OPENMVG_COUT("Bundle Adjustment - Refining the whole sequence");
+    OPENMVG_COUT("***********************************************\n\n");
     // run a bundle adjustment
 //    const bool BAresult = localization::refineSequence(&queryIntrinsics, vec_localizationResults);
     const bool BAresult = localization::refineSequence(vec_localizationResults, true);
     if(!BAresult)
     {
-      POPART_CERR("Bundle Adjustment failed!");
+      OPENMVG_CERR("Bundle Adjustment failed!");
     }
     else
     {
@@ -248,13 +248,13 @@ int main(int argc, char** argv)
   }
 
   // print out some time stats
-  POPART_COUT("\n\n******************************");
-  POPART_COUT("Localized " << goodFrameCounter << "/" << frameCounter << " images");
-  POPART_COUT("Images localized with the number of 2D/3D matches during localization :");
+  OPENMVG_COUT("\n\n******************************");
+  OPENMVG_COUT("Localized " << goodFrameCounter << "/" << frameCounter << " images");
+  OPENMVG_COUT("Images localized with the number of 2D/3D matches during localization :");
   for(int i = 0; i < goodFrameList.size(); i++)
-    POPART_COUT(goodFrameList[i]);
-  POPART_COUT("Processing took " << bacc::sum(stats)/1000 << " [s] overall");
-  POPART_COUT("Mean time for localization:   " << bacc::mean(stats) << " [ms]");
-  POPART_COUT("Max time for localization:   " << bacc::max(stats) << " [ms]");
-  POPART_COUT("Min time for localization:   " << bacc::min(stats) << " [ms]");
+    OPENMVG_COUT(goodFrameList[i]);
+  OPENMVG_COUT("Processing took " << bacc::sum(stats)/1000 << " [s] overall");
+  OPENMVG_COUT("Mean time for localization:   " << bacc::mean(stats) << " [ms]");
+  OPENMVG_COUT("Max time for localization:   " << bacc::max(stats) << " [ms]");
+  OPENMVG_COUT("Min time for localization:   " << bacc::min(stats) << " [ms]");
 }

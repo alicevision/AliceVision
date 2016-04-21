@@ -154,7 +154,7 @@ int main(int argc, char** argv)
 
     if(vm.count("help") || (argc == 1))
     {
-      POPART_COUT(desc);
+      OPENMVG_COUT(desc);
       return EXIT_SUCCESS;
     }
 
@@ -162,28 +162,28 @@ int main(int argc, char** argv)
   }
   catch(boost::program_options::required_option& e)
   {
-    POPART_CERR("ERROR: " << e.what() << std::endl);
-    POPART_COUT("Usage:\n\n" << desc);
+    OPENMVG_CERR("ERROR: " << e.what() << std::endl);
+    OPENMVG_COUT("Usage:\n\n" << desc);
     return EXIT_FAILURE;
   }
   catch(boost::program_options::error& e)
   {
-    POPART_CERR("ERROR: " << e.what() << std::endl);
-    POPART_COUT("Usage:\n\n" << desc);
+    OPENMVG_CERR("ERROR: " << e.what() << std::endl);
+    OPENMVG_COUT("Usage:\n\n" << desc);
     return EXIT_FAILURE;
   }
   // just debugging prints
   {
-    POPART_COUT("Program called with the following parameters:");
-    POPART_COUT("\tsfmdata: " << sfmFilePath);
-    POPART_COUT("\tmediapath: " << mediaPath);
-    POPART_COUT("\tsiftPath: " << descriptorsFolder);
-    POPART_COUT("\trefineIntrinsics: " << refineIntrinsics);
-    POPART_COUT("\tnCameras: " << numCameras);
-    POPART_COUT("\tpreset: " << preset);
+    OPENMVG_COUT("Program called with the following parameters:");
+    OPENMVG_COUT("\tsfmdata: " << sfmFilePath);
+    OPENMVG_COUT("\tmediapath: " << mediaPath);
+    OPENMVG_COUT("\tsiftPath: " << descriptorsFolder);
+    OPENMVG_COUT("\trefineIntrinsics: " << refineIntrinsics);
+    OPENMVG_COUT("\tnCameras: " << numCameras);
+    OPENMVG_COUT("\tpreset: " << preset);
     if(!filelist.empty())
-      POPART_COUT("\tfilelist: " << filelist);
-    POPART_COUT("\tdescriptors: " << str_descriptorType);
+      OPENMVG_COUT("\tfilelist: " << filelist);
+    OPENMVG_COUT("\tdescriptors: " << str_descriptorType);
     if((DescriberType::SIFT==stringToDescriberType(str_descriptorType))
 #if HAVE_CCTAG
             ||(DescriberType::SIFT_CCTAG==stringToDescriberType(str_descriptorType))
@@ -191,15 +191,15 @@ int main(int argc, char** argv)
       )
     {
       // parameters for voctree localizer
-      POPART_COUT("\tvoctree: " << vocTreeFilepath);
-      POPART_COUT("\tweights: " << weightsFilepath);
-      POPART_COUT("\talgorithm: " << algostring);
-      POPART_COUT("\tresults: " << numResults);
+      OPENMVG_COUT("\tvoctree: " << vocTreeFilepath);
+      OPENMVG_COUT("\tweights: " << weightsFilepath);
+      OPENMVG_COUT("\talgorithm: " << algostring);
+      OPENMVG_COUT("\tresults: " << numResults);
     }
 #if HAVE_CCTAG
     else
     {
-      POPART_COUT("\tnNearestKeyFrames: " << nNearestKeyFrames);
+      OPENMVG_COUT("\tnNearestKeyFrames: " << nNearestKeyFrames);
     }
 #endif
 
@@ -248,7 +248,7 @@ int main(int argc, char** argv)
 
   if(!localizer->isInit())
   {
-    POPART_CERR("ERROR while initializing the localizer!");
+    OPENMVG_CERR("ERROR while initializing the localizer!");
     return EXIT_FAILURE;
   }
 
@@ -270,7 +270,7 @@ int main(int argc, char** argv)
     feeders[idCamera] = new dataio::FeedProvider(feedPath, calibFile);
     if(!feeders[idCamera]->isInit())
     {
-      POPART_CERR("ERROR while initializing the FeedProvider for the camera " 
+      OPENMVG_CERR("ERROR while initializing the FeedProvider for the camera " 
               << idCamera << " " << feedPath);
       return EXIT_FAILURE;
     }
@@ -313,7 +313,7 @@ int main(int argc, char** argv)
         {
           // this is quite odd, it means that eg the fist camera has an image but
           // one of the others has not image
-          POPART_CERR("This is weird... Camera " << idCamera << " seems not to have any available images while some other cameras do...");
+          OPENMVG_CERR("This is weird... Camera " << idCamera << " seems not to have any available images while some other cameras do...");
           return EXIT_FAILURE;  // a bit harsh but if we are here it's cheesy to say the less
         }
         break;
@@ -322,7 +322,7 @@ int main(int argc, char** argv)
       // for now let's suppose that the cameras are calibrated internally too
       if(!hasIntrinsics)
       {
-        POPART_CERR("For now only internally calibrated cameras are supported!"
+        OPENMVG_CERR("For now only internally calibrated cameras are supported!"
                 << "\nCamera " << idCamera << " does not have calibration for image " << currentImgName);
         return EXIT_FAILURE;  // a bit harsh but if we are here it's cheesy to say the less
       }
@@ -337,9 +337,9 @@ int main(int argc, char** argv)
       break;
     }
     
-    POPART_COUT("******************************");
-    POPART_COUT("FRAME " << myToString(frameCounter, 4));
-    POPART_COUT("******************************");
+    OPENMVG_COUT("******************************");
+    OPENMVG_COUT("FRAME " << myToString(frameCounter, 4));
+    OPENMVG_COUT("******************************");
     auto detect_start = std::chrono::steady_clock::now();
     const bool isLocalized = localizer->localizeRig(vec_imageGrey,
                                                     param,
@@ -348,7 +348,7 @@ int main(int argc, char** argv)
                                                     rigPose);
     auto detect_end = std::chrono::steady_clock::now();
     auto detect_elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(detect_end - detect_start);
-    POPART_COUT("\nLocalization took  " << detect_elapsed.count() << " [ms]");
+    OPENMVG_COUT("\nLocalization took  " << detect_elapsed.count() << " [ms]");
     stats(detect_elapsed.count());
     
     //@todo do something with the pose
@@ -371,10 +371,10 @@ int main(int argc, char** argv)
   }
   
   // print out some time stats
-  POPART_COUT("\n\n******************************");
-  POPART_COUT("Localized " << frameCounter << " images");
-  POPART_COUT("Processing took " << bacc::sum(stats) / 1000 << " [s] overall");
-  POPART_COUT("Mean time for localization:   " << bacc::mean(stats) << " [ms]");
-  POPART_COUT("Max time for localization:   " << bacc::max(stats) << " [ms]");
-  POPART_COUT("Min time for localization:   " << bacc::min(stats) << " [ms]");
+  OPENMVG_COUT("\n\n******************************");
+  OPENMVG_COUT("Localized " << frameCounter << " images");
+  OPENMVG_COUT("Processing took " << bacc::sum(stats) / 1000 << " [s] overall");
+  OPENMVG_COUT("Mean time for localization:   " << bacc::mean(stats) << " [ms]");
+  OPENMVG_COUT("Max time for localization:   " << bacc::max(stats) << " [ms]");
+  OPENMVG_COUT("Min time for localization:   " << bacc::min(stats) << " [ms]");
 }

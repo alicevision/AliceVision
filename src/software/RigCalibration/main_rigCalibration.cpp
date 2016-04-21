@@ -148,7 +148,7 @@ int main(int argc, char** argv)
 
     if(vm.count("help") || (argc == 1))
     {
-      POPART_COUT(desc);
+      OPENMVG_COUT(desc);
       return EXIT_SUCCESS;
     }
 
@@ -156,28 +156,28 @@ int main(int argc, char** argv)
   }
   catch(boost::program_options::required_option& e)
   {
-    POPART_CERR("ERROR: " << e.what() << std::endl);
-    POPART_COUT("Usage:\n\n" << desc);
+    OPENMVG_CERR("ERROR: " << e.what() << std::endl);
+    OPENMVG_COUT("Usage:\n\n" << desc);
     return EXIT_FAILURE;
   }
   catch(boost::program_options::error& e)
   {
-    POPART_CERR("ERROR: " << e.what() << std::endl);
-    POPART_COUT("Usage:\n\n" << desc);
+    OPENMVG_CERR("ERROR: " << e.what() << std::endl);
+    OPENMVG_COUT("Usage:\n\n" << desc);
     return EXIT_FAILURE;
   }
   // just debugging prints
   {
-    POPART_COUT("Program called with the following parameters:");
-    POPART_COUT("\tsfmdata: " << sfmFilePath);
-    POPART_COUT("\tmediapath: " << mediaPath);
-    POPART_COUT("\tsiftPath: " << descriptorsFolder);
-    POPART_COUT("\trefineIntrinsics: " << refineIntrinsics);
-    POPART_COUT("\tnCameras: " << nCam);
-    POPART_COUT("\tpreset: " << preset);
+    OPENMVG_COUT("Program called with the following parameters:");
+    OPENMVG_COUT("\tsfmdata: " << sfmFilePath);
+    OPENMVG_COUT("\tmediapath: " << mediaPath);
+    OPENMVG_COUT("\tsiftPath: " << descriptorsFolder);
+    OPENMVG_COUT("\trefineIntrinsics: " << refineIntrinsics);
+    OPENMVG_COUT("\tnCameras: " << nCam);
+    OPENMVG_COUT("\tpreset: " << preset);
     if(!filelist.empty())
-      POPART_COUT("\tfilelist: " << filelist);
-    POPART_COUT("\tdescriptors: " << str_descriptorType);
+      OPENMVG_COUT("\tfilelist: " << filelist);
+    OPENMVG_COUT("\tdescriptors: " << str_descriptorType);
     if((DescriberType::SIFT==stringToDescriberType(str_descriptorType))
 #if HAVE_CCTAG
             ||(DescriberType::SIFT_CCTAG==stringToDescriberType(str_descriptorType))
@@ -185,15 +185,15 @@ int main(int argc, char** argv)
       )
     {
       // parameters for voctree localizer
-      POPART_COUT("\tvoctree: " << vocTreeFilepath);
-      POPART_COUT("\tweights: " << weightsFilepath);
-      POPART_COUT("\talgorithm: " << algostring);
-      POPART_COUT("\tresults: " << numResults);
+      OPENMVG_COUT("\tvoctree: " << vocTreeFilepath);
+      OPENMVG_COUT("\tweights: " << weightsFilepath);
+      OPENMVG_COUT("\talgorithm: " << algostring);
+      OPENMVG_COUT("\tresults: " << numResults);
     }
 #if HAVE_CCTAG
     else
     {
-      POPART_COUT("\tnNearestKeyFrames: " << nNearestKeyFrames);
+      OPENMVG_COUT("\tnNearestKeyFrames: " << nNearestKeyFrames);
     }
 #endif
 
@@ -212,7 +212,7 @@ int main(int argc, char** argv)
 #endif
       )
   {
-    POPART_COUT("Calibrating sequence using the voctree localizer");
+    OPENMVG_COUT("Calibrating sequence using the voctree localizer");
     localizer = new localization::VoctreeLocalizer(sfmFilePath,
                                            descriptorsFolder,
                                            vocTreeFilepath,
@@ -231,7 +231,7 @@ int main(int argc, char** argv)
 #if HAVE_CCTAG
   else
   {
-    POPART_COUT("Calibrating sequence using the cctag localizer");
+    OPENMVG_COUT("Calibrating sequence using the cctag localizer");
     localizer = new localization::CCTagLocalizer(sfmFilePath, descriptorsFolder);
     param = new localization::CCTagLocalizer::Parameters();
     param->_featurePreset = features::describerPreset_stringToEnum(preset);
@@ -244,7 +244,7 @@ int main(int argc, char** argv)
 
   if(!localizer->isInit())
   {
-    POPART_CERR("ERROR while initializing the localizer!");
+    OPENMVG_CERR("ERROR while initializing the localizer!");
     return EXIT_FAILURE;
   }
 
@@ -259,9 +259,9 @@ int main(int argc, char** argv)
   // Loop over all cameras of the rig
   for(int idCamera = 0; idCamera < nCam; ++idCamera)
   {
-    POPART_COUT("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~");
-    POPART_COUT("CAMERA " << idCamera);
-    POPART_COUT("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n\n");
+    OPENMVG_COUT("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~");
+    OPENMVG_COUT("CAMERA " << idCamera);
+    OPENMVG_COUT("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n\n");
     const std::string subMediaFilepath = mediaPath + "/" + std::to_string(idCamera);
     const std::string calibFile = subMediaFilepath + "/intrinsics.txt";
     const std::string feedPath = subMediaFilepath + "/"+filelist;
@@ -270,7 +270,7 @@ int main(int argc, char** argv)
     dataio::FeedProvider feed(feedPath, calibFile);
     if(!feed.isInit())
     {
-      POPART_CERR("ERROR while initializing the FeedProvider!");
+      OPENMVG_CERR("ERROR while initializing the FeedProvider!");
       return EXIT_FAILURE;
     }
 
@@ -296,9 +296,9 @@ int main(int argc, char** argv)
     std::vector<localization::LocalizationResult> vLocalizationResults;
     while(feed.next(imageGrey, queryIntrinsics, currentImgName, hasIntrinsics))
     {
-      POPART_COUT("******************************");
-      POPART_COUT("FRAME " << myToString(frameCounter, 4));
-      POPART_COUT("******************************");
+      OPENMVG_COUT("******************************");
+      OPENMVG_COUT("FRAME " << myToString(frameCounter, 4));
+      OPENMVG_COUT("******************************");
       auto detect_start = std::chrono::steady_clock::now();
       localization::LocalizationResult localizationResult;
       localizer->localize(imageGrey,
@@ -309,7 +309,7 @@ int main(int argc, char** argv)
       vLocalizationResults.emplace_back(localizationResult);
       auto detect_end = std::chrono::steady_clock::now();
       auto detect_elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(detect_end - detect_start);
-      POPART_COUT("\nLocalization took  " << detect_elapsed.count() << " [ms]");
+      OPENMVG_COUT("\nLocalization took  " << detect_elapsed.count() << " [ms]");
       stats(detect_elapsed.count());
       
 #if HAVE_ALEMBIC
@@ -329,16 +329,16 @@ int main(int argc, char** argv)
     rig.setTrackingResult(vLocalizationResults, idCamera);
 
     // print out some time stats
-    POPART_COUT("\n\n******************************");
-    POPART_COUT("Localized " << frameCounter << " images");
-    POPART_COUT("Processing took " << bacc::sum(stats) / 1000 << " [s] overall");
-    POPART_COUT("Mean time for localization:   " << bacc::mean(stats) << " [ms]");
-    POPART_COUT("Max time for localization:   " << bacc::max(stats) << " [ms]");
-    POPART_COUT("Min time for localization:   " << bacc::min(stats) << " [ms]");
+    OPENMVG_COUT("\n\n******************************");
+    OPENMVG_COUT("Localized " << frameCounter << " images");
+    OPENMVG_COUT("Processing took " << bacc::sum(stats) / 1000 << " [s] overall");
+    OPENMVG_COUT("Mean time for localization:   " << bacc::mean(stats) << " [ms]");
+    OPENMVG_COUT("Max time for localization:   " << bacc::max(stats) << " [ms]");
+    OPENMVG_COUT("Min time for localization:   " << bacc::min(stats) << " [ms]");
   }
-  POPART_COUT("Rig calibration initialization");
+  OPENMVG_COUT("Rig calibration initialization");
   rig.initializeCalibration();
-  POPART_COUT("Rig calibration optimization");
+  OPENMVG_COUT("Rig calibration optimization");
   rig.optimizeCalibration();
   
   // save the rig calibration (subposes)
@@ -349,11 +349,11 @@ int main(int argc, char** argv)
   // the first rig pose
   if(rig.getPosesSize() > 0)
   {
-    POPART_COUT("First pose of the rig");
+    OPENMVG_COUT("First pose of the rig");
     const geometry::Pose3 &pose = rig.getPose(0); 
-    POPART_COUT("R\n" << pose.rotation());
-    POPART_COUT("center\n" << pose.center());
-    POPART_COUT("t\n" << pose.translation());
+    OPENMVG_COUT("R\n" << pose.rotation());
+    OPENMVG_COUT("center\n" << pose.center());
+    OPENMVG_COUT("t\n" << pose.translation());
   }
   
   // get the subposes of the cameras inside the rig
@@ -362,11 +362,11 @@ int main(int argc, char** argv)
   for(std::size_t i = 0; i < subposes.size(); ++i)
   {
     const geometry::Pose3 &pose = subposes[i];
-    POPART_COUT("--------------------");
-    POPART_COUT("Subpose p0" << i+1); // from camera 0 to camera i+1
-    POPART_COUT("R\n" << pose.rotation());
-    POPART_COUT("center\n" << pose.center());
-    POPART_COUT("t\n" << pose.translation());
-    POPART_COUT("--------------------\n");
+    OPENMVG_COUT("--------------------");
+    OPENMVG_COUT("Subpose p0" << i+1); // from camera 0 to camera i+1
+    OPENMVG_COUT("R\n" << pose.rotation());
+    OPENMVG_COUT("center\n" << pose.center());
+    OPENMVG_COUT("t\n" << pose.translation());
+    OPENMVG_COUT("--------------------\n");
   }
 }

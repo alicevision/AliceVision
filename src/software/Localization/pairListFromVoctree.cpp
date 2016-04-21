@@ -268,18 +268,18 @@ int main(int argc, char** argv)
   // Create the database
   //**********************************************************
 
-  POPART_COUT("Creating the database...");
+  OPENMVG_COUT("Creating the database...");
   // Add each object (document) to the database
   openMVG::voctree::Database db(tree.words());
 
   if(withWeights)
   {
-    POPART_COUT("Loading weights...");
+    OPENMVG_COUT("Loading weights...");
     db.loadWeights(weightsName);
   }
   else
   {
-    POPART_COUT("No weights specified, skipping...");
+    OPENMVG_COUT("No weights specified, skipping...");
   }
 
 
@@ -287,7 +287,7 @@ int main(int argc, char** argv)
   // Read the descriptors and populate the database
   //*********************************************************
 
-  POPART_COUT("Reading descriptors from " << keylist);
+  OPENMVG_COUT("Reading descriptors from " << keylist);
   DocumentMap documents;
 
   auto detect_start = std::chrono::steady_clock::now();
@@ -296,17 +296,17 @@ int main(int argc, char** argv)
 
   if(numTotFeatures == 0)
   {
-    POPART_CERR("No descriptors loaded!!");
+    OPENMVG_CERR("No descriptors loaded!!");
     return EXIT_FAILURE;
   }
 
-  POPART_COUT("Done! " << documents.size() << " sets of descriptors read for a total of " << numTotFeatures << " features");
-  POPART_COUT("Reading took " << detect_elapsed.count() << " sec");
+  OPENMVG_COUT("Done! " << documents.size() << " sets of descriptors read for a total of " << numTotFeatures << " features");
+  OPENMVG_COUT("Reading took " << detect_elapsed.count() << " sec");
 
   if(!withWeights)
   {
     // Compute and save the word weights
-    POPART_COUT("Computing weights...");
+    OPENMVG_COUT("Computing weights...");
     db.computeTfIdfWeights();
   }
 
@@ -331,7 +331,7 @@ int main(int argc, char** argv)
     db.find(doc.second, numImageQuery, matches);
     auto detect_end = std::chrono::steady_clock::now();
     detect_elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(detect_end - detect_start);
-    POPART_COUT("query document " << doc.first 
+    OPENMVG_COUT("query document " << doc.first 
 			<< " took " << detect_elapsed.count() 
 			<< " ms and has " << matches.size() 
 			<< " matches\tBest " << matches[0].id 

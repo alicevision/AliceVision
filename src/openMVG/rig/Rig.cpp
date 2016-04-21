@@ -72,7 +72,7 @@ bool Rig::initializeCalibration()
 
     if(shortestSeqLength == 0)
     {
-        POPART_COUT("The calibration results are empty!");
+        OPENMVG_COUT("The calibration results are empty!");
         return false;
     }
   }

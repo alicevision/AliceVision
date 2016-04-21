@@ -25,7 +25,7 @@ CCTagLocalizer::CCTagLocalizer(const std::string &sfmFilePath,
   {
     std::cerr << std::endl
       << "The input SfM_Data file "<< sfmFilePath << " cannot be read." << std::endl;
-    POPART_CERR("\n\nIf the error says \"JSON Parsing failed - provided NVP not found\" "
+    OPENMVG_CERR("\n\nIf the error says \"JSON Parsing failed - provided NVP not found\" "
         "it's likely that you have to convert your sfm_data to a recent version supporting "
         "polymorphic Views. You can run the python script convertSfmData.py to update an existing sfmdata.");
     throw std::invalid_argument("The input SfM_Data file "+ sfmFilePath + " cannot be read.");
@@ -37,7 +37,7 @@ CCTagLocalizer::CCTagLocalizer(const std::string &sfmFilePath,
   std::unique_ptr<Regions> regions_type = Init_region_type_from_file(sImage_describer);
   if(!regions_type)
   {
-    POPART_CERR("Invalid: "
+    OPENMVG_CERR("Invalid: "
             << sImage_describer << " regions type file.");
     throw std::invalid_argument("Invalid: "+ sImage_describer + " regions type file.");
   }
@@ -46,7 +46,7 @@ CCTagLocalizer::CCTagLocalizer(const std::string &sfmFilePath,
   
   if(!loadSuccessful)
   {
-    POPART_CERR("Unable to load the descriptors");
+    OPENMVG_CERR("Unable to load the descriptors");
     throw std::invalid_argument("Unable to load the descriptors from "+descriptorsFolder);
   }
   
@@ -122,7 +122,7 @@ bool CCTagLocalizer::loadReconstructionDescriptors(const sfm::SfM_Data & sfm_dat
       descFilepath = stlplus::create_filespec(feat_directory, basename, ".desc");
       if(!(stlplus::is_file(featFilepath) && stlplus::is_file(descFilepath)))
       {
-        POPART_CERR("Cannot find the features for image " << sImageName 
+        OPENMVG_CERR("Cannot find the features for image " << sImageName 
                 << " neither using the UID naming convention nor the image name based convention");
         return false;
       }
@@ -216,10 +216,10 @@ bool CCTagLocalizer::localize(const image::Image<unsigned char> & imageGrey,
     throw std::invalid_argument("The parameters are not in the right format!!");
   }
   // extract descriptors and features from image
-  POPART_COUT("[features]\tExtract CCTag from query image");
+  OPENMVG_COUT("[features]\tExtract CCTag from query image");
   std::unique_ptr<features::Regions> tmpQueryRegions(new features::CCTAG_Regions());
   _image_describer.Describe(imageGrey, tmpQueryRegions);
-  POPART_COUT("[features]\tExtract CCTAG done: found " << tmpQueryRegions->RegionCount() << " features");
+  OPENMVG_COUT("[features]\tExtract CCTAG done: found " << tmpQueryRegions->RegionCount() << " features");
   
   std::pair<std::size_t, std::size_t> imageSize = std::make_pair(imageGrey.Width(),imageGrey.Height());
   
@@ -284,10 +284,10 @@ bool CCTagLocalizer::localize(const std::unique_ptr<features::Regions> &genQuery
   std::vector<pair<IndexT, IndexT> > bestAssociationIDs;
   geometry::Pose3 bestPose;
   
-  POPART_COUT_DEBUG("nearestKeyFrames.size() = " << nearestKeyFrames.size());
+  OPENMVG_COUT_DEBUG("nearestKeyFrames.size() = " << nearestKeyFrames.size());
   for(const IndexT indexKeyFrame : nearestKeyFrames)
   {
-    POPART_COUT("[localization]\tProcessing nearest kframe " << indexKeyFrame 
+    OPENMVG_COUT("[localization]\tProcessing nearest kframe " << indexKeyFrame 
             << " (" << _sfm_data.GetViews().at(indexKeyFrame)->s_Img_path << ")");
     const Reconstructed_RegionsCCTag& matchedRegions = _regions_per_view[indexKeyFrame];
     
@@ -316,10 +316,10 @@ bool CCTagLocalizer::localize(const std::unique_ptr<features::Regions> &genQuery
     
     if ( vec_featureMatches.size() < 3 )
     {
-      POPART_COUT("[localization]\tSkipping kframe " << indexKeyFrame << " as it contains only "<< vec_featureMatches.size()<<" matches");
+      OPENMVG_COUT("[localization]\tSkipping kframe " << indexKeyFrame << " as it contains only "<< vec_featureMatches.size()<<" matches");
       continue;
     }
-    POPART_COUT("[localization]\tFound "<< vec_featureMatches.size()<<" matches");
+    OPENMVG_COUT("[localization]\tFound "<< vec_featureMatches.size()<<" matches");
     
     // D. recover the 2D-3D associations from the matches 
     // Each matched feature in the current similar image is associated to a 3D point,
@@ -400,7 +400,7 @@ bool CCTagLocalizer::localize(const std::unique_ptr<features::Regions> &genQuery
   bestResectionData.max_iteration = 4096;
   
   // E. refine the estimated pose
-  POPART_COUT("[poseEstimation]\tRefining estimated pose");
+  OPENMVG_COUT("[poseEstimation]\tRefining estimated pose");
   bool refineStatus = sfm::SfM_Localizer::RefinePose(
           &queryIntrinsics, 
           bestPose, 
@@ -409,7 +409,7 @@ bool CCTagLocalizer::localize(const std::unique_ptr<features::Regions> &genQuery
           param->_refineIntrinsics /*b_refine_intrinsic*/);
   
   if(!refineStatus)
-    POPART_COUT("[poseEstimation]\tRefine pose could not improve the estimation of the camera pose.");
+    OPENMVG_COUT("[poseEstimation]\tRefine pose could not improve the estimation of the camera pose.");
   
   localizationResult = LocalizationResult(bestResectionData, bestAssociationIDs, bestPose, queryIntrinsics, true);
 
@@ -450,7 +450,7 @@ bool CCTagLocalizer::localizeRig(const std::vector<image::Image<unsigned char> >
     isLocalized[i] = localize(vec_imageGrey[i], param, true /*useInputIntrinsics*/, vec_queryIntrinsics[i], vec_localizationResults[i]);
     if(!isLocalized[i])
     {
-      POPART_CERR("Could not localize camera " << i);
+      OPENMVG_CERR("Could not localize camera " << i);
       // even if it is not localize we can try to go on and do with the cameras we have
     }
   }
@@ -462,11 +462,11 @@ bool CCTagLocalizer::localizeRig(const std::vector<image::Image<unsigned char> >
   // no camera has be localized
   if(numLocalizedCam == 0)
   {
-    POPART_COUT("No camera has been localized!!!");
+    OPENMVG_COUT("No camera has been localized!!!");
     return false;
   }
   
-  POPART_COUT("Localized cameras: " << numLocalizedCam << "/" << numCams);
+  OPENMVG_COUT("Localized cameras: " << numLocalizedCam << "/" << numCams);
   
   // if there is only one camera (the main one)
   if(numCams==1)
@@ -550,7 +550,7 @@ bool CCTagLocalizer::localizeAllAssociations(const std::vector<std::unique_ptr<f
   const size_t minNumAssociations = 5;  //possible parameter?
   if(numAssociations < minNumAssociations)
   {
-    POPART_COUT("[poseEstimation]\tonly " << numAssociations << " have been found, not enough to do the resection!");
+    OPENMVG_COUT("[poseEstimation]\tonly " << numAssociations << " have been found, not enough to do the resection!");
     return false;
   }
 
@@ -596,7 +596,7 @@ bool CCTagLocalizer::localizeAllAssociations(const std::vector<std::unique_ptr<f
   // undistorted and in their normalized camera coordinates, hence the K is the 
   // identity matrix (f=1, pp=(0,0)), image size is irrelevant/not used so set to 0
   cameras::Pinhole_Intrinsic rigIntrinsics(0,0,1,0,0);
-  POPART_COUT("[poseEstimation]\tEstimating camera pose...");
+  OPENMVG_COUT("[poseEstimation]\tEstimating camera pose...");
   bool bResection = sfm::SfM_Localizer::Localize(std::make_pair(0,0), // image size is not used for calibrated case
                                                  &rigIntrinsics,
                                                  resectionData,
@@ -604,29 +604,29 @@ bool CCTagLocalizer::localizeAllAssociations(const std::vector<std::unique_ptr<f
 
   if(!bResection)
   {
-    POPART_COUT("[poseEstimation]\tResection FAILED");
+    OPENMVG_COUT("[poseEstimation]\tResection FAILED");
     return false;
   }
-  POPART_COUT("[poseEstimation]\tResection SUCCEDED");
+  OPENMVG_COUT("[poseEstimation]\tResection SUCCEDED");
 
-  POPART_COUT("R est\n" << rigPose.rotation());
-  POPART_COUT("t est\n" << rigPose.translation());
+  OPENMVG_COUT("R est\n" << rigPose.rotation());
+  OPENMVG_COUT("t est\n" << rigPose.translation());
   
   // E. refine the estimated pose
-  POPART_COUT("[poseEstimation]\tRefining estimated pose");
+  OPENMVG_COUT("[poseEstimation]\tRefining estimated pose");
   bool refineStatus = sfm::SfM_Localizer::RefinePose(&rigIntrinsics, 
                                                      rigPose, 
                                                      resectionData, 
                                                      true /*b_refine_pose*/, 
                                                      false /*b_refine_intrinsic*/);
   if(!refineStatus)
-    POPART_COUT("Refine pose could not improve the estimation of the camera pose.");
+    OPENMVG_COUT("Refine pose could not improve the estimation of the camera pose.");
 
   {
     // just temporary code to evaluate the estimated pose @todo remove it
-    POPART_COUT("R refined\n" << rigPose.rotation());
-    POPART_COUT("t refined\n" << rigPose.translation());
-    POPART_COUT("K refined\n" << rigIntrinsics.K());
+    OPENMVG_COUT("R refined\n" << rigPose.rotation());
+    OPENMVG_COUT("t refined\n" << rigPose.translation());
+    OPENMVG_COUT("K refined\n" << rigIntrinsics.K());
   }
   
   //@fixme return something meaningful
@@ -647,11 +647,11 @@ void CCTagLocalizer::getAllAssociationsFromNearestKFrames(const features::CCTAG_
           param._nNearestKeyFrames,
           nearestKeyFrames);
   
-  POPART_COUT_DEBUG("nearestKeyFrames.size() = " << nearestKeyFrames.size());
+  OPENMVG_COUT_DEBUG("nearestKeyFrames.size() = " << nearestKeyFrames.size());
   for(const IndexT indexKeyFrame : nearestKeyFrames)
   {
-    POPART_COUT_DEBUG(indexKeyFrame);
-    POPART_COUT_DEBUG(_sfm_data.GetViews().at(indexKeyFrame)->s_Img_path);
+    OPENMVG_COUT_DEBUG(indexKeyFrame);
+    OPENMVG_COUT_DEBUG(_sfm_data.GetViews().at(indexKeyFrame)->s_Img_path);
     const Reconstructed_RegionsCCTag& matchedRegions = _regions_per_view.at(indexKeyFrame);
     
     // Matching

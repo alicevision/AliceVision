@@ -43,7 +43,7 @@ int main( int argc, char** argv )
 
     if(vm.count("help") || (argc == 1))
     {
-      POPART_COUT(desc);
+      OPENMVG_COUT(desc);
       return EXIT_SUCCESS;
     }
 
@@ -51,20 +51,20 @@ int main( int argc, char** argv )
   }
   catch(boost::program_options::required_option& e)
   {
-    POPART_CERR("ERROR: " << e.what() << std::endl);
-    POPART_COUT("Usage:\n\n" << desc);
+    OPENMVG_CERR("ERROR: " << e.what() << std::endl);
+    OPENMVG_COUT("Usage:\n\n" << desc);
     return EXIT_FAILURE;
   }
   catch(boost::program_options::error& e)
   {
-    POPART_CERR("ERROR: " << e.what() << std::endl);
-    POPART_COUT("Usage:\n\n" << desc);
+    OPENMVG_CERR("ERROR: " << e.what() << std::endl);
+    OPENMVG_COUT("Usage:\n\n" << desc);
     return EXIT_FAILURE;
   }
 
   if(!(bfs::exists(inputFolder) && bfs::is_directory(inputFolder)))
   {
-    POPART_CERR("ERROR: " << inputFolder << " does not exists or it is not a directory" << std::endl);
+    OPENMVG_CERR("ERROR: " << inputFolder << " does not exists or it is not a directory" << std::endl);
     return EXIT_FAILURE;
   }
 
@@ -154,5 +154,5 @@ int main( int argc, char** argv )
       ++countDesc;
     }
   }
-  POPART_COUT("Converted " << countDesc << " files .desc and copied " << countFeat << " files .feat");
+  OPENMVG_COUT("Converted " << countDesc << " files .desc and copied " << countFeat << " files .feat");
 }
