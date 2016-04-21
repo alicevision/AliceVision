@@ -278,6 +278,156 @@ int main(int argc, char **argv)
 
   std::cout << "\nCCTag Structure estimation took (s): " << timer.elapsed() << "." << std::endl;
 
+#define POINTS_ON_THE_CEILING
+  
+  #ifdef POINTS_ON_THE_CEILING
+  // todo@L: dedicated to a scene where markers are coplanar and put on the ceiling
+  //// @L Transform the data to locate a planar 3D point cloud at (0,0,hRoof)
+  // and the 
+  // Closest orthogonal matrix
+  const std::size_t nCCTags = cctagSfmData.GetLandmarks().size();
+  Mat3X vCC(3,nCCTags);
+  std::size_t i=0;
+  for(const auto & landmark : cctagSfmData.GetLandmarks())
+  {
+    vCC.col(i) = landmark.second.X;
+    ++i;
+  }
+  // Compute the mean of the point cloud
+  Vec3 meanPoints = Vec3::Zero(3,1);
+  for(int i=0 ; i < nCCTags ; ++i )
+  {
+    meanPoints +=  vCC.col(i);
+  }
+  meanPoints /= nCCTags; // @meanPoints
+  
+  // Center the point cloud in [0;0;0]
+  for(int i=0 ; i < nCCTags ; ++i )
+  {
+    vCC.col(i) -= meanPoints;
+  }
+  
+  const std::size_t nCameras = cctagSfmData.GetPoses().size();
+  Mat3X vCamCenter(3,nCameras);
+  i=0;
+  for(const auto & pose : cctagSfmData.GetPoses())
+  {
+    vCamCenter.col(i) = pose.second.center() - meanPoints;
+    ++i;
+  }
+  
+  // Perform an svd over vX*vXT
+  Mat3 dum = vCC * vCC.transpose();
+  Eigen::JacobiSVD<Mat3> svd(dum,Eigen::ComputeFullV|Eigen::ComputeFullU);
+  Mat3 U = svd.matrixU();
+  
+  // Check wheter the determinant is negative in order to keep
+  // a direct coordinate system
+  if ( U.determinant() < 0 )
+  {
+    U.col(2) = -U.col(2);
+  } //@U
+  
+  // Center the point cloud in [0;0;0]
+  for(int i=0 ; i < nCCTags ; ++i )
+  {
+    vCC.col(i) = U.transpose() * vCC.col(i);
+  }
+  // Center the camera centers
+  for(int i=0 ; i < nCameras ; ++i )
+  {
+    vCamCenter.col(i) = U.transpose() * vCamCenter.col(i);
+  }
+  
+  // Compute the maximal distance between the two farthest points
+  double dMax = 0;
+  std::size_t iMax = 0;
+  std::size_t jMax = 0;
+  for(int i=0 ; i < nCCTags ; ++i )
+  {
+    for(int j=0 ; j < nCCTags ; ++j )
+    {
+      double dP1P2 = Vec3(vCC.col(i) - vCC.col(j)).norm();
+      if ( dP1P2 > dMax)
+      {
+        dMax = dP1P2;
+        iMax = i;
+        jMax = j;
+      }
+    }
+  }
+  
+  // Parameter 1 to set
+  const double farthestDistanceInStorStua = 2*sqrt(2); // to be adapted to the scale factor in MindCraft
+  const double scaleFactor = farthestDistanceInStorStua/dMax;
+  
+  // Point cloud scaling
+  vCC *= scaleFactor; // @scaleFactor
+  vCamCenter *= scaleFactor;
+  
+  // Cameras used for the acquisition are located below the markers/ceiling
+  // Therefore, z-camera centers are supposed to be negative, the point cloud
+  // being centered in (0,0,0), the z axis pointing up.
+  if ( vCamCenter.col(0)[2] > 0 )
+  {
+    Mat3 flip = Eigen::MatrixXd::Identity(3,3); //@flip
+    flip(0,0) = -flip(0,0);
+    flip(2,2) = -flip(2,2);
+    
+    for(int i=0 ; i < nCCTags ; ++i )
+      vCC.col(i) = flip * vCC.col(i);
+    
+    for(int i=0 ; i < nCameras ; ++i )
+      vCamCenter.col(i) = flip * vCamCenter.col(i);
+  }
+  
+//  // Point cloud translation to the ceiling
+//  // Parameter 2 to set
+//  const double heightStorStua = 5;
+//  // Center the point cloud in [0;0;0]
+//  for(int i=0 ; i < nCCTags ; ++i )
+//  {
+//    vX.col(i) += Vec3(0,0,heightStorStua);
+//    
+//  }
+  
+  // Centering based on the middle of the diagonal
+  Vec3 ptMiddle = Vec3(vCC.col(iMax) + vCC.col(jMax))/2; // @ptMiddle
+  for(int i=0 ; i < nCCTags ; ++i )
+    vCC.col(i) -= ptMiddle;
+    
+  for(int i=0 ; i < nCameras ; ++i )
+    vCamCenter.col(i) -= ptMiddle; 
+  
+  // 2D rotation to align to the square [-xmin -ymin +xmax +ymax]
+  double thetaAlign = -atan2(vCC(1,iMax),vCC(0,iMax)) + M_PI/4;
+  double cosAlign = cos(thetaAlign);
+  double sinAlign = sin(thetaAlign);
+
+  Mat3 alignSquareRot = Eigen::MatrixXd::Identity(3,3);
+  alignSquareRot(0,0) = cosAlign;
+  alignSquareRot(0,1) = -sinAlign;
+  alignSquareRot(1,0) = sinAlign;
+  alignSquareRot(1,1) = cosAlign; // @alignSquareRot
+  
+  for(int i=0 ; i < nCCTags ; ++i )
+    vCC.col(i) = alignSquareRot * vCC.col(i);
+    
+  for(int i=0 ; i < nCameras ; ++i )
+    vCamCenter.col(i) = alignSquareRot * vCamCenter.col(i);
+  
+  /// End of the transformations // todo@L: dedicated to a scene where markers are coplanar and put on the ceiling
+  
+//  i=0;
+//  for( auto & landmark : cctagSfmData.structure )
+//  {
+//    landmark.second.X = vCC.col(i);
+//    ++i;
+//  }
+  //// @L Transform the data to locate a planar 3D point cloud at (0,0,hRoof)
+#endif // POINTS_ON_THE_CEILING
+  
+  
   if(sKeepSift)
   {
     // Copy non-CCTag landmarks
@@ -301,6 +451,105 @@ int main(int argc, char **argv)
       cctagSfmData.structure[landmarkById.first] = landmarkById.second;
     }
   }
+  
+  #define POINTS_ON_THE_CEILING
+  
+  #ifdef POINTS_ON_THE_CEILING
+  // todo@L: dedicated to a scene where markers are coplanar and put on the ceiling
+  //// @L Transform the data to locate a planar 3D point cloud at (0,0,hRoof)
+  // and the 
+  // Closest orthogonal matrix
+  const std::size_t nPoints = cctagSfmData.GetLandmarks().size();
+  Mat3X vX(3,nPoints);
+  i=0;
+  for(const auto & landmark : cctagSfmData.GetLandmarks())
+  {
+    vX.col(i) = landmark.second.X;
+    ++i;
+  }
+  
+  // Center the point cloud in [0;0;0]
+  for(int i=0 ; i < nPoints ; ++i )
+  {
+    vX.col(i) -= meanPoints;
+  }
+  
+  i=0;
+  for(const auto & pose : cctagSfmData.GetPoses())
+  {
+    vCamCenter.col(i) = pose.second.center() - meanPoints;
+    ++i;
+  }
+  
+  // Center the point cloud
+  for(int i=0 ; i < nPoints ; ++i )
+  {
+    vX.col(i) = U.transpose() * vX.col(i);
+  }
+  // Center the camera centers
+  for(int i=0 ; i < nCameras ; ++i )
+  {
+    vCamCenter.col(i) = U.transpose() * vCamCenter.col(i);
+  }
+  
+  // Point cloud scaling
+  vX *= scaleFactor; // @scaleFactor
+  vCamCenter *= scaleFactor;
+  
+  // Cameras used for the acquisition are located below the markers/ceiling
+  // Therefore, z-camera centers are supposed to be negative, the point cloud
+  // being centered in (0,0,0), the z axis pointing up.
+  if ( vCamCenter.col(0)[2] > 0 )
+  {
+    Mat3 flip = Eigen::MatrixXd::Identity(3,3); //@flip
+    flip(0,0) = -flip(0,0);
+    flip(2,2) = -flip(2,2);
+    
+    for(int i=0 ; i < nPoints ; ++i )
+      vX.col(i) = flip * vX.col(i);
+    
+    for(int i=0 ; i < nCameras ; ++i )
+      vCamCenter.col(i) = flip * vCamCenter.col(i);
+  }
+  
+//  // Point cloud translation to the ceiling
+//  // Parameter 2 to set
+//  const double heightStorStua = 5;
+//  // Center the point cloud in [0;0;0]
+//  for(int i=0 ; i < nPoints ; ++i )
+//  {
+//    vX.col(i) += Vec3(0,0,heightStorStua);
+//    
+//  }
+  
+  // Centering based on the middle of the diagonal
+  for(int i=0 ; i < nPoints ; ++i )
+    vX.col(i) -= ptMiddle;
+    
+  for(int i=0 ; i < nCameras ; ++i )
+    vCamCenter.col(i) -= ptMiddle; 
+  
+  // 2D rotation to align to the square [-xmin -ymin +xmax +ymax]
+  
+  for(int i=0 ; i < nPoints ; ++i )
+    vX.col(i) = alignSquareRot * vX.col(i);
+    
+  for(int i=0 ; i < nCameras ; ++i )
+    vCamCenter.col(i) = alignSquareRot * vCamCenter.col(i);
+  
+  /// End of the transformations // todo@L: dedicated to a scene where markers are coplanar and put on the ceiling
+  
+  i=0;
+  std::cout << " [ " ;
+  for( auto & landmark : cctagSfmData.structure )
+  {
+    landmark.second.X = vX.col(i);
+    std::cout << " [ " << landmark.second.X(0) << " " << landmark.second.X(1) << " " << landmark.second.X(2)<< " ] ; ";
+    ++i;
+  }
+  std::cout << " ] " ;
+  //// @L Transform the data to locate a planar 3D point cloud at (0,0,hRoof)
+#endif // POINTS_ON_THE_CEILING
   
   if (stlplus::extension_part(sOutFile) != "ply")
   {
