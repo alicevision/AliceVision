@@ -428,7 +428,7 @@ ENDIF(OpenMVG_USE_OPENCV)
 # ==============================================================================
 IF(OpenMVG_USE_BOOST)
   OPTION(BOOST_NO_CXX11 "If Boost is compiled without C++11 support (as it is often the case in OS packages) this must be enabled to avoid symbol conflicts (SCOPED_ENUM)." OFF)
-  FIND_PACKAGE(Boost 1.53.0 QUIET COMPONENTS system filesystem program_options thread serialization)
+  FIND_PACKAGE(Boost 1.53.0 QUIET COMPONENTS system filesystem program_options thread serialization log log_setup)
   IF(Boost_FOUND)
      MESSAGE(STATUS "Boost ${Boost_LIB_VERSION} found")
      add_definitions(-DHAVE_BOOST)
