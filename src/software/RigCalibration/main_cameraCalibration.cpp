@@ -1,3 +1,5 @@
+#include <openMVG/logger.hpp>
+
 #include "opencv2/core/core.hpp"
 #include "opencv2/imgproc/imgproc.hpp"
 #include "opencv2/calib3d/calib3d.hpp"
@@ -159,7 +161,7 @@ static bool runCalibration( vector<vector<Point2f> > imagePoints,
     double rms = calibrateCamera(objectPoints, imagePoints, imageSize, cameraMatrix,
                     distCoeffs, rvecs, tvecs, flags|CV_CALIB_FIX_K4|CV_CALIB_FIX_K5);
                     ///*|CV_CALIB_FIX_K3*/|CV_CALIB_FIX_K4|CV_CALIB_FIX_K5);
-    printf("RMS error reported by calibrateCamera: %g\n", rms);
+    OPENMVG_COUT("RMS error reported by calibrateCamera: " << rms);
 
     bool ok = checkRange(cameraMatrix) && checkRange(distCoeffs);
 
@@ -177,7 +179,7 @@ static void saveCameraParamsToPlainTxt(const string &filename,
   std::ofstream fs(filename, std::ios::out);
   if(!fs.is_open())
   {
-    std::cerr << "Unable to create the calibration file " << filename << std::endl;
+    OPENMVG_CERR("Unable to create the calibration file " << filename);
     throw std::invalid_argument("Unable to create the calibration file "+filename);
   }
   
@@ -332,9 +334,10 @@ static bool runAndSave(const string& outputFilename,
     bool ok = runCalibration(imagePoints, imageSize, boardSize, patternType, squareSize,
                    aspectRatio, flags, cameraMatrix, distCoeffs,
                    rvecs, tvecs, reprojErrs, totalAvgErr);
-    printf("%s. avg reprojection error = %.2f\n",
-           ok ? "Calibration succeeded" : "Calibration failed",
-           totalAvgErr);
+    if( ok )
+        OPENMVG_COUT("Calibration succeeded. Average reprojection error = " << totalAvgErr);
+    else
+        OPENMVG_COUT("Calibration failed. Average reprojection error = " << totalAvgErr);
 
     if( ok )
         saveCameraParams( outputFilename, imageSize,
@@ -385,12 +388,18 @@ int main( int argc, char** argv )
         if( strcmp( s, "-w" ) == 0 )
         {
             if( sscanf( argv[++i], "%u", &boardSize.width ) != 1 || boardSize.width <= 0 )
-                return fprintf( stderr, "Invalid board width\n" ), -1;
+            {
+                OPENMVG_CERR("Invalid board width");
+                return -1;
+            }
         }
         else if( strcmp( s, "-h" ) == 0 )
         {
             if( sscanf( argv[++i], "%u", &boardSize.height ) != 1 || boardSize.height <= 0 )
-                return fprintf( stderr, "Invalid board height\n" ), -1;
+            {
+                OPENMVG_CERR("Invalid board height");
+                return -1;
+            }
         }
         else if( strcmp( s, "-pt" ) == 0 )
         {
@@ -402,28 +411,43 @@ int main( int argc, char** argv )
             else if( !strcmp( argv[i], "chessboard" ) )
                 pattern = CHESSBOARD;
             else
-                return fprintf( stderr, "Invalid pattern type: must be chessboard or circles\n" ), -1;
+            {
+                OPENMVG_CERR("Invalid pattern type: must be chessboard or circles");
+                return -1;
+            }
         }
         else if( strcmp( s, "-s" ) == 0 )
         {
             if( sscanf( argv[++i], "%f", &squareSize ) != 1 || squareSize <= 0 )
-                return fprintf( stderr, "Invalid board square width\n" ), -1;
+            {
+                OPENMVG_CERR("Invalid board square width");
+                return -1;
+            }
         }
         else if( strcmp( s, "-n" ) == 0 )
         {
             if( sscanf( argv[++i], "%u", &nframes ) != 1 || nframes <= 3 )
-                return printf("Invalid number of images\n" ), -1;
+            {
+                OPENMVG_CERR("Invalid number of images");
+                return -1;
+            }
         }
         else if( strcmp( s, "-a" ) == 0 )
         {
             if( sscanf( argv[++i], "%f", &aspectRatio ) != 1 || aspectRatio <= 0 )
-                return printf("Invalid aspect ratio\n" ), -1;
+            {
+                OPENMVG_CERR("Invalid aspect ratio");
+                return -1;
+            }
             flags |= CV_CALIB_FIX_ASPECT_RATIO;
         }
         else if( strcmp( s, "-d" ) == 0 )
         {
             if( sscanf( argv[++i], "%u", &delay ) != 1  )
-                return printf("Invalid delay\n" ), -1;
+            {
+                OPENMVG_CERR("Invalid delay");
+                return -1;
+            }
         }
         else if( strcmp( s, "-op" ) == 0 )
         {
@@ -469,7 +493,10 @@ int main( int argc, char** argv )
                 inputFilename = s;
         }
         else
-            return fprintf( stderr, "Unknown option %s", s ), -1;
+        {
+            OPENMVG_CERR("Unknown option " << s);
+            return -1;
+        }
     }
 
     if( inputFilename )
@@ -487,7 +514,10 @@ int main( int argc, char** argv )
 	}
 
     if( !capture.isOpened() && imageList.empty() )
-        return fprintf( stderr, "Could not initialize video (%d) capture\n",cameraId ), -2;
+    {
+        OPENMVG_CERR("Could not initialize video (" << cameraId << ") capture");
+        return -2;
+    }
 
     if( !imageList.empty() )
         nframes = (int)imageList.size();
@@ -499,7 +529,7 @@ int main( int argc, char** argv )
 	}
 
     if( capture.isOpened() )
-        printf( "%s", liveCaptureHelp );
+        OPENMVG_COUT(liveCaptureHelp);
 
     namedWindow( "Image View", 1 );
 
@@ -550,7 +580,8 @@ int main( int argc, char** argv )
                 found = findCirclesGrid( view, boardSize, pointbuf, CALIB_CB_ASYMMETRIC_GRID );
                 break;
             default:
-                return fprintf( stderr, "Unknown pattern type\n" ), -1;
+                OPENMVG_CERR("Unknown pattern type");
+                return -1;
         }
 
        // improve the found corners' coordinate accuracy
