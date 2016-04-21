@@ -11,6 +11,7 @@
 #include <cctag/ICCTag.hpp>
 #include <boost/filesystem/path.hpp>
 #include <algorithm>
+#include <sstream>
 
 namespace openMVG {
 namespace localization {
@@ -23,8 +24,7 @@ CCTagLocalizer::CCTagLocalizer(const std::string &sfmFilePath,
   // load the sfm data containing the 3D reconstruction info
   if (!Load(_sfm_data, sfmFilePath, sfm::ESfM_Data::ALL)) 
   {
-    std::cerr << std::endl
-      << "The input SfM_Data file "<< sfmFilePath << " cannot be read." << std::endl;
+    OPENMVG_CERR("The input SfM_Data file "<< sfmFilePath << " cannot be read.");
     OPENMVG_CERR("\n\nIf the error says \"JSON Parsing failed - provided NVP not found\" "
         "it's likely that you have to convert your sfm_data to a recent version supporting "
         "polymorphic Views. You can run the python script convertSfmData.py to update an existing sfmdata.");
@@ -81,7 +81,7 @@ bool CCTagLocalizer::loadReconstructionDescriptors(const sfm::SfM_Data & sfm_dat
   C_Progress_display my_progress_bar(sfm_data.GetViews().size(),
                                      std::cout, "\n- Regions Loading -\n");
 
-  std::cout << "Build observations per view" << std::endl;
+  OPENMVG_COUT("Build observations per view");
   // Build observations per view
   std::map<IndexT, std::vector<FeatureInImage> > observationsPerView;
   for(auto landmarkValue : sfm_data.structure)
@@ -100,7 +100,7 @@ bool CCTagLocalizer::loadReconstructionDescriptors(const sfm::SfM_Data & sfm_dat
     std::sort(featuresInImage.second.begin(), featuresInImage.second.end());
   }
   
-  std::cout << "Load Features and Descriptors per view" << std::endl;
+  OPENMVG_COUT("Load Features and Descriptors per view");
   std::vector<bool> presentIds(128,false); // @todo Assume a maximum library size of 128 unique ids.
   std::vector<int> counterCCtagsInImage = {0, 0, 0, 0, 0, 0};
   // Read for each view the corresponding regions and store them
@@ -130,7 +130,7 @@ bool CCTagLocalizer::loadReconstructionDescriptors(const sfm::SfM_Data & sfm_dat
 
     if(!reconstructedRegion._regions.Load(featFilepath, descFilepath))
     {
-      std::cerr << "Invalid regions files for the view: " << sImageName << std::endl;
+      OPENMVG_CERR("Invalid regions files for the view: " << sImageName);
       return false;
     }
     
@@ -151,21 +151,22 @@ bool CCTagLocalizer::loadReconstructionDescriptors(const sfm::SfM_Data & sfm_dat
       const IndexT id_view = iter.second->id_view;
       Reconstructed_RegionsCCTag& reconstructedRegion = _regions_per_view[id_view];
       const std::string &sImageName = iter.second.get()->s_Img_path;
+      std::stringstream ss;
 
-      std::cout << "Image " << sImageName;
+      ss << "Image " << sImageName;
       if(reconstructedRegion._regions.Descriptors().size() == 0 )
       {
         counterCCtagsInImage[0] +=1;
-        std::cout << " does not contain any cctag!!!";
+        ss << " does not contain any cctag!!!";
       }
       else
       {
-        std::cout << " contains CCTag Id:\t";
+        ss << " contains CCTag Id: ";
         for(const auto &desc : reconstructedRegion._regions.Descriptors())
         {
           const IndexT cctagIdA = features::getCCTagId(desc);
           if(cctagIdA != UndefinedIndexT)
-            std::cout << cctagIdA << " ";
+            ss << cctagIdA << " ";
         }
         // Update histogram
         int countcctag = reconstructedRegion._regions.Descriptors().size();
@@ -174,26 +175,24 @@ bool CCTagLocalizer::loadReconstructionDescriptors(const sfm::SfM_Data & sfm_dat
         else
           counterCCtagsInImage[countcctag] += 1;
       }
-      std::cout << "\n";
+      OPENMVG_COUT(ss.str());
     }
     
     // Display histogram
-    std::cout << std::endl << "Histogram of number of cctags in images :" << std::endl;
+    OPENMVG_COUT("Histogram of number of cctags in images :");
     for(int i = 0; i < 5; i++)
-      std::cout << "Images with " << i << "  CCTags : " << counterCCtagsInImage[i] << std::endl;
-    std::cout << "Images with 5+ CCTags : " << counterCCtagsInImage[5] << std::endl << std::endl;
+      OPENMVG_COUT("Images with " << i << "  CCTags : " << counterCCtagsInImage[i]);
+    OPENMVG_COUT("Images with 5+ CCTags : " << counterCCtagsInImage[5]);
 
     // Display the cctag ids over all cctag landmarks present in the database
-    std::cout << std::endl << "Found " << std::count(presentIds.begin(), presentIds.end(), true) 
+    OPENMVG_COUT("Found " << std::count(presentIds.begin(), presentIds.end(), true) 
             << " CCTag in the database with " << _sfm_data.GetLandmarks().size() << " associated 3D points\n"
-            "The CCTag id in the database are: " << std::endl;
+            "The CCTag id in the database are: ");
     for(std::size_t i = 0; i < presentIds.size(); ++i)
-    {
+    { 
       if(presentIds[i])
-        std::cout << i + 1 << " ";
+        OPENMVG_COUT(i + 1);
     }
-
-    std::cout << std::endl << std::endl;
 
   }
   
