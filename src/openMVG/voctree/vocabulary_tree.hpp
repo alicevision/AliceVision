@@ -187,7 +187,7 @@ template<class Feature, template<typename, typename> class Distance, class Featu
 template<class DescriptorT>
 std::vector<Word> VocabularyTree<Feature, Distance, FeatureAllocator>::quantize(const std::vector<DescriptorT>& features) const
 {
-  OPENMVG_COUT("VocabularyTree quantize: " << features.size());
+  // OPENMVG_COUT("VocabularyTree quantize: " << features.size());
   std::vector<Word> imgVisualWords(features.size(), 0);
 
   // quantize the features
