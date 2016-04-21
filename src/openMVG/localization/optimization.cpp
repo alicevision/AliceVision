@@ -57,18 +57,18 @@ bool refineSequence(std::vector<LocalizationResult> & vec_localizationResult,
     // it may be the case that all the localization result are invalid...
     if(!vec_localizationResult[intrinsicIndex].isValid())
     {
-      POPART_CERR("Apparently all the vec_localizationResult are invalid! Aborting...");
+      OPENMVG_CERR("Apparently all the vec_localizationResult are invalid! Aborting...");
       return false;
     }
     
-    POPART_CERR("allTheSameIntrinsics mode: using the intrinsics of the " << intrinsicIndex << " result");
+    OPENMVG_CERR("allTheSameIntrinsics mode: using the intrinsics of the " << intrinsicIndex << " result");
     
     cameras::Pinhole_Intrinsic_Radial_K3* currIntrinsics = &vec_localizationResult[intrinsicIndex].getIntrinsics();
     
     if(b_no_distortion)
     {
       // no distortion refinement
-      POPART_COUT("Optical distortion won't be considered");
+      OPENMVG_COUT("Optical distortion won't be considered");
       // just add a simple pinhole camera with the same K as the input camera
       Vec2 pp = currIntrinsics->principal_point();
       tinyScene.intrinsics[intrinsicID] = std::make_shared<cameras::Pinhole_Intrinsic>(currIntrinsics->_w, currIntrinsics->_h, currIntrinsics->focal(), pp(0), pp(1));
@@ -77,7 +77,7 @@ bool refineSequence(std::vector<LocalizationResult> & vec_localizationResult,
     {
       // intrinsic (the shared_ptr does not take the ownership, will not release the input pointer)
       tinyScene.intrinsics[intrinsicID] = std::shared_ptr<cameras::Pinhole_Intrinsic_Radial_K3>(currIntrinsics, [](cameras::Pinhole_Intrinsic_Radial_K3*){});
-      POPART_COUT("Type of intrinsics " <<tinyScene.intrinsics[0].get()->getType());
+      OPENMVG_COUT("Type of intrinsics " <<tinyScene.intrinsics[0].get()->getType());
     }
   }
   
@@ -94,7 +94,7 @@ bool refineSequence(std::vector<LocalizationResult> & vec_localizationResult,
       const Mat2X residuals = currResult.computeInliersResiduals();
       
       const auto sqrErrors = (residuals.cwiseProduct(residuals)).colwise().sum();
-      POPART_COUT("View " << viewID << " RMSE = " << std::sqrt(sqrErrors.mean()) 
+      OPENMVG_COUT("View " << viewID << " RMSE = " << std::sqrt(sqrErrors.mean()) 
               << " min = " << std::sqrt(sqrErrors.minCoeff()) 
               << " mean = " << std::sqrt(sqrErrors.mean())
               << " max = " << std::sqrt(sqrErrors.maxCoeff())
@@ -108,11 +108,11 @@ bool refineSequence(std::vector<LocalizationResult> & vec_localizationResult,
     // skip invalid poses
     if(!currResult.isValid())
     {
-      POPART_COUT("\n*****\nskipping invalid View " << viewID);
+      OPENMVG_COUT("\n*****\nskipping invalid View " << viewID);
       continue;
     }
     
-//    POPART_COUT("\n*****\nView " << viewID);
+//    OPENMVG_COUT("\n*****\nView " << viewID);
     // view
     tinyScene.views.insert( std::make_pair(viewID, std::make_shared<sfm::View>("",viewID, intrinsicID, viewID)));
     // pose
@@ -137,7 +137,7 @@ bool refineSequence(std::vector<LocalizationResult> & vec_localizationResult,
       const IndexT landmarkID = currentIDs[idx].first;
       // get the corresponding 2D point ID
       const IndexT featID = currentIDs[idx].second;
-//      POPART_COUT("inlier " << idx << " is land " << landmarkID << " and feat " << featID);
+//      OPENMVG_COUT("inlier " << idx << " is land " << landmarkID << " and feat " << featID);
       // get the corresponding feature
       const Vec2 &feature = currResult.getPt2D().col(idx);
       // check if the point exists already
@@ -148,17 +148,17 @@ bool refineSequence(std::vector<LocalizationResult> & vec_localizationResult,
         if(tinyScene.structure[landmarkID].obs.count(viewID) != 0)
         {
           // this is weird but it could happen when two features are really close to each other (?)
-          POPART_COUT("Point 3D " << landmarkID << " has multiple features " 
+          OPENMVG_COUT("Point 3D " << landmarkID << " has multiple features " 
                   << "in the same view " << viewID << ", current size of obs: " 
                   << tinyScene.structure[landmarkID].obs.size() );
-          POPART_COUT("its associated features are: ");
+          OPENMVG_COUT("its associated features are: ");
           for(std::size_t i = 0; i <  currentIDs.size(); ++i)
           {
             auto const &p = currentIDs[i];
             if(p.first == landmarkID)
             {
               const Vec2 &fff = currResult.getPt2D().col(i);
-              POPART_COUT("\tfeatID " << p.second << " " << fff.transpose());
+              OPENMVG_COUT("\tfeatID " << p.second << " " << fff.transpose());
             }
           }
           continue;
@@ -179,7 +179,7 @@ bool refineSequence(std::vector<LocalizationResult> & vec_localizationResult,
   }
 
 //  {
-//    POPART_COUT("Number of 3D-2D associations before filtering " << tinyScene.structure.size());
+//    OPENMVG_COUT("Number of 3D-2D associations before filtering " << tinyScene.structure.size());
 //    sfm::Landmarks &landmarks = tinyScene.structure;
 //    for(sfm::Landmarks::iterator it = landmarks.begin(), ite = landmarks.end(); it != ite;)
 //    {
@@ -195,7 +195,7 @@ bool refineSequence(std::vector<LocalizationResult> & vec_localizationResult,
   {
     // just debugging some stats -- this block can be safely removed/commented out
     
-    POPART_COUT("Number of 3D-2D associations " << tinyScene.structure.size());
+    OPENMVG_COUT("Number of 3D-2D associations " << tinyScene.structure.size());
     
     std::size_t maxObs = 0;
     for(const auto landmark : tinyScene.GetLandmarks() )
@@ -213,15 +213,15 @@ bool refineSequence(std::vector<LocalizationResult> & vec_localizationResult,
       stats(nobs);
       hist[nobs]++;
     }
-    POPART_COUT("Min number of observations per point:   " << bacc::min(stats) );
-    POPART_COUT("Mean number of observations per point:   " << bacc::mean(stats) );
-    POPART_COUT("Max number of observations per point:   " << bacc::max(stats) );
+    OPENMVG_COUT("Min number of observations per point:   " << bacc::min(stats) );
+    OPENMVG_COUT("Mean number of observations per point:   " << bacc::mean(stats) );
+    OPENMVG_COUT("Max number of observations per point:   " << bacc::max(stats) );
     
     std::size_t cumulative = 0;
     const std::size_t num3DPoints = tinyScene.structure.size();
     for(std::size_t i = 0; i < hist.size(); i++ ) 
     {
-      POPART_COUT("Points with " << i << " observations: " << hist[i] 
+      OPENMVG_COUT("Points with " << i << " observations: " << hist[i] 
               << " (cumulative in %: " << 100*(num3DPoints-cumulative)/float(num3DPoints) << ")"); 
       cumulative += hist[i];
     }
@@ -230,9 +230,9 @@ bool refineSequence(std::vector<LocalizationResult> & vec_localizationResult,
     if(allTheSameIntrinsics)
     {
       std::vector<double> params = tinyScene.intrinsics[0].get()->getParams();
-      POPART_COUT("K before bundle: " << params[0] << " " << params[1] << " "<< params[2]);
+      OPENMVG_COUT("K before bundle: " << params[0] << " " << params[1] << " "<< params[2]);
       if(params.size() == 6)
-        POPART_COUT("Distortion before bundle: " << params[3] << " " << params[4] << " "<< params[5]);
+        OPENMVG_COUT("Distortion before bundle: " << params[3] << " " << params[4] << " "<< params[5]);
     }
   }
 
@@ -260,7 +260,7 @@ bool refineSequence(std::vector<LocalizationResult> & vec_localizationResult,
   {
     const std::string outfile = outputFilename+".BEFORE.json";
     if(!sfm::Save(tinyScene, outfile, sfm::ESfM_Data::ALL))
-      POPART_CERR("Could not save " << outfile);
+      OPENMVG_CERR("Could not save " << outfile);
   }
 
   sfm::Bundle_Adjustment_Ceres bundle_adjustment_obj;
@@ -286,7 +286,7 @@ bool refineSequence(std::vector<LocalizationResult> & vec_localizationResult,
     {
       const std::string outfile = outputFilename+".AFTER.json";
       if(!sfm::Save(tinyScene, outfile, sfm::ESfM_Data::ALL))
-        POPART_CERR("Could not save " << outfile);
+        OPENMVG_CERR("Could not save " << outfile);
     }
   }
   
@@ -297,7 +297,7 @@ bool refineSequence(std::vector<LocalizationResult> & vec_localizationResult,
     
     // get its optimized parameters
     std::vector<double> params = tinyScene.intrinsics[0].get()->getParams();
-    POPART_COUT("Type of intrinsics " <<tinyScene.intrinsics[0].get()->getType());
+    OPENMVG_COUT("Type of intrinsics " <<tinyScene.intrinsics[0].get()->getType());
     if(params.size() == 3)
     {
       // this means that the b_no_distortion has been passed
@@ -307,8 +307,8 @@ bool refineSequence(std::vector<LocalizationResult> & vec_localizationResult,
       params.push_back(0);
     }
     assert(params.size() == 6);
-    POPART_COUT("K after bundle: " << params[0] << " " << params[1] << " "<< params[2]);
-    POPART_COUT("Distortion after bundle " << params[3] << " " << params[4] << " "<< params[5]);
+    OPENMVG_COUT("K after bundle: " << params[0] << " " << params[1] << " "<< params[2]);
+    OPENMVG_COUT("Distortion after bundle " << params[3] << " " << params[4] << " "<< params[5]);
 
     // update the intrinsics of the each localization result
     for(size_t viewID = 0; viewID < numViews; ++viewID)
@@ -324,7 +324,7 @@ bool refineSequence(std::vector<LocalizationResult> & vec_localizationResult,
       const Mat2X residuals = currResult.computeInliersResiduals();
       
       const auto sqrErrors = (residuals.cwiseProduct(residuals)).colwise().sum();
-      POPART_COUT("View " << viewID << " RMSE = " << std::sqrt(sqrErrors.mean()) 
+      OPENMVG_COUT("View " << viewID << " RMSE = " << std::sqrt(sqrErrors.mean()) 
               << " min = " << std::sqrt(sqrErrors.minCoeff()) 
               << " mean = " << std::sqrt(sqrErrors.mean())
               << " max = " << std::sqrt(sqrErrors.maxCoeff())
@@ -369,7 +369,7 @@ bool refineRigPose(const std::vector<geometry::Pose3 > &vec_subPoses,
 
     if(!localizationResult.isValid())
     {
-      POPART_COUT("Skipping camera " << iLocalizer << " as it has not been localized");
+      OPENMVG_COUT("Skipping camera " << iLocalizer << " as it has not been localized");
       continue;
     }
     // Get the inliers 3D points
@@ -412,7 +412,7 @@ bool refineRigPose(const std::vector<geometry::Pose3 > &vec_subPoses,
       }
       else
       {
-        POPART_CERR("Fail in adding residual block for the " << iLocalizer 
+        OPENMVG_CERR("Fail in adding residual block for the " << iLocalizer 
                 << " camera while adding point id " << iPoint);
       }
     }
@@ -519,7 +519,7 @@ bool refineRigPose(const std::vector<Mat> &pts2d,
 
     if(inliers[cam].empty())
     {
-      POPART_COUT("Skipping cam " << cam << " as it has no inliers");
+      OPENMVG_COUT("Skipping cam " << cam << " as it has no inliers");
       continue;
     }
     // Add a residual block for all inliers
@@ -557,7 +557,7 @@ bool refineRigPose(const std::vector<Mat> &pts2d,
       }
       else
       {
-        POPART_CERR("Fail in adding residual block for the " << cam 
+        OPENMVG_CERR("Fail in adding residual block for the " << cam 
                 << " camera while adding point id " << iPoint);
       }
     }
@@ -635,10 +635,10 @@ std::tuple<double, double, double> computeStatistics(const Mat &pts2D,
 
   Vec sqrErrors = (residuals.cwiseProduct(residuals)).colwise().sum();
 
-  //      POPART_COUT("Camera " << camID << " all reprojection errors:");
-  //      POPART_COUT(sqrErrors);
+  //      OPENMVG_COUT("Camera " << camID << " all reprojection errors:");
+  //      OPENMVG_COUT(sqrErrors);
   //
-  //      POPART_COUT("Camera " << camID << " inliers reprojection errors:");
+  //      OPENMVG_COUT("Camera " << camID << " inliers reprojection errors:");
 
   double rmse = 0;
   double rmseMin = std::numeric_limits<double>::max();
@@ -682,7 +682,7 @@ void printRigRMSEStats(const std::vector<Mat> &vec_pts2D,
                                             vec_inliers[camID],
                                             (camID != 0 ) ? vec_subPoses[camID-1] : geometry::Pose3(),
                                             rigPose);
-      POPART_COUT("\nCam #" << camID 
+      OPENMVG_COUT("\nCam #" << camID 
               << " RMSE inliers: " << std::get<0>(stats)
               << " min: " << std::get<1>(stats)
               << " max: " << std::get<2>(stats));        
@@ -691,7 +691,7 @@ void printRigRMSEStats(const std::vector<Mat> &vec_pts2D,
     totalInliers += vec_inliers[camID].size();
     }
   }
-  POPART_COUT("Overall RMSE: " << std::sqrt(totalRMSE/totalInliers));
+  OPENMVG_COUT("Overall RMSE: " << std::sqrt(totalRMSE/totalInliers));
 }
 
 std::pair<double, bool> computeInliers(const std::vector<Mat> &vec_pts2d,
@@ -762,7 +762,7 @@ std::pair<double, bool> computeInliers(const std::vector<Mat> &vec_pts2d,
       }
     }
   }
-  POPART_COUT("Removed " << numRemoved << " inliers, added new " << numAdded << " point");
+  OPENMVG_COUT("Removed " << numRemoved << " inliers, added new " << numAdded << " point");
   
   // swap
   vec_inliers.swap(vec_newInliers);
@@ -787,7 +787,7 @@ bool iterativeRefineRigPose(const std::vector<Mat> &pts2d,
   
   do
   {
-    POPART_COUT("[poseEstimation]\tIteration " << iterationNumber);
+    OPENMVG_COUT("[poseEstimation]\tIteration " << iterationNumber);
     const bool refineOk = refineRigPose(pts2d,
                                         pts3d,
                                         vec_inliers,
@@ -796,7 +796,7 @@ bool iterativeRefineRigPose(const std::vector<Mat> &pts2d,
                                         optimalPose);
     if(!refineOk)
     {
-      POPART_COUT("[poseEstimation]\tIterative refine rig pose failed");
+      OPENMVG_COUT("[poseEstimation]\tIterative refine rig pose failed");
       return false;
     }
     
@@ -818,13 +818,13 @@ bool iterativeRefineRigPose(const std::vector<Mat> &pts2d,
     
     if(numInliers <= minNumPoints)
     {
-      POPART_COUT("[poseEstimation]\tIterative refine rig pose has reached the minimum number of points");
+      OPENMVG_COUT("[poseEstimation]\tIterative refine rig pose has reached the minimum number of points");
       return false;
     }
     
     ++iterationNumber;
     if(iterationNumber > maxIterationNumber)
-      POPART_COUT("Terminating refine because the max number of iterations has been reached");
+      OPENMVG_COUT("Terminating refine because the max number of iterations has been reached");
   }
   while(hasChanged && iterationNumber <= maxIterationNumber);
 

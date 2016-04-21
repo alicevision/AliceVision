@@ -28,10 +28,10 @@ OPTION(OpenMVG_USE_OPENMP "Enable OpenMP parallelization" ON)
 OPTION(OpenMVG_USE_CCTAG "Enable CCTAG markers" ON)
 OPTION(OpenMVG_USE_OPENGV "Enable use of OpenGV algorithms" OFF)
 OPTION(OpenMVG_USE_ALEMBIC "Enable Alembic I/O" OFF)
-OPTION(OpenMVG_USE_POPART_LOG "Enable POPART logger" ON)
+OPTION(OpenMVG_USE_LOG "Enable logger" ON)
 
-IF(OpenMVG_USE_POPART_LOG)
-  ADD_DEFINITIONS(-DWANTS_POPART_COUT)
+IF(OpenMVG_USE_LOG)
+  ADD_DEFINITIONS(-DWANTS_OPENMVG_COUT)
 ENDIF()
 
 OPTION(OPENMVG_REQUIRE_CERES_WITH_SUITESPARSE ON)
@@ -625,7 +625,7 @@ MESSAGE("** Use OpenCV SIFT features: " ${OpenMVG_USE_OCVSIFT})
 MESSAGE("** Use CCTAG markers: " ${OpenMVG_USE_CCTAG})
 MESSAGE("** Build Alembic exporter: " ${OpenMVG_USE_ALEMBIC})
 MESSAGE("** Use OpenGV for rig localization: " ${OpenMVG_USE_OPENGV})
-MESSAGE("** Use POPART logger: " ${OpenMVG_USE_POPART_LOG})
+MESSAGE("** Use POPART logger: " ${OpenMVG_USE_OPENMVG_LOG})
 
 MESSAGE("\n")
 

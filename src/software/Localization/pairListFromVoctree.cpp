@@ -273,18 +273,18 @@ int main(int argc, char** argv)
   // Create the database
   //**********************************************************
 
-  POPART_COUT("Creating the database...");
+  OPENMVG_COUT("Creating the database...");
   // Add each object (document) to the database
   openMVG::voctree::Database db(tree.words());
 
   if(withWeights)
   {
-    POPART_COUT("Loading weights...");
+    OPENMVG_COUT("Loading weights...");
     db.loadWeights(weightsName);
   }
   else
   {
-    POPART_COUT("No weights specified, skipping...");
+    OPENMVG_COUT("No weights specified, skipping...");
   }
 
 
@@ -292,24 +292,24 @@ int main(int argc, char** argv)
   // Read the descriptors and populate the database
   //*********************************************************
 
-  POPART_COUT("Reading descriptors from " << keylist);
+  OPENMVG_COUT("Reading descriptors from " << keylist);
   auto detect_start = std::chrono::steady_clock::now();
   size_t numTotFeatures = openMVG::voctree::populateDatabase<DescriptorUChar>(keylist, tree, db, nbMaxDescriptors);
   auto detect_elapsed = std::chrono::duration_cast<std::chrono::seconds>(std::chrono::steady_clock::now() - detect_start);
 
   if(numTotFeatures == 0)
   {
-    POPART_CERR("No descriptors loaded!!");
+    OPENMVG_CERR("No descriptors loaded!!");
     return EXIT_FAILURE;
   }
 
-  POPART_COUT("Done! " << db.getSparseHistogramPerImage().size() << " sets of descriptors read for a total of " << numTotFeatures << " features");
-  POPART_COUT("Reading took " << detect_elapsed.count() << " sec");
+  OPENMVG_COUT("Done! " << db.getSparseHistogramPerImage().size() << " sets of descriptors read for a total of " << numTotFeatures << " features");
+  OPENMVG_COUT("Reading took " << detect_elapsed.count() << " sec");
 
   if(!withWeights)
   {
     // Compute and save the word weights
-    POPART_COUT("Computing weights...");
+    OPENMVG_COUT("Computing weights...");
     db.computeTfIdfWeights();
   }
 
@@ -326,7 +326,7 @@ int main(int argc, char** argv)
 
   PairList allMatches;
 
-  POPART_COUT("Query all documents");
+  OPENMVG_COUT("Query all documents");
   detect_start = std::chrono::steady_clock::now();
   // Now query each document
   #ifdef OPENMVG_USE_OPENMP
@@ -339,7 +339,7 @@ int main(int argc, char** argv)
     std::vector<openMVG::voctree::DocMatch> matches;
     
     db.find(docIt->second, numImageQuery, matches);
-//    POPART_COUT("query document " << docIt->first
+//    OPENMVG_COUT("query document " << docIt->first
 //			<< " took " << detect_elapsed.count() 
 //			<< " ms and has " << matches.size() 
 //			<< " matches\tBest " << matches[0].id 
@@ -359,7 +359,7 @@ int main(int argc, char** argv)
     }
   }
   detect_elapsed = std::chrono::duration_cast<std::chrono::seconds>(std::chrono::steady_clock::now() - detect_start);
-  POPART_COUT("Query of all documents took " << detect_elapsed.count() << " sec.");
+  OPENMVG_COUT("Query of all documents took " << detect_elapsed.count() << " sec.");
 
   //**********************************************************
   // process pair list
@@ -368,10 +368,10 @@ int main(int argc, char** argv)
   detect_start = std::chrono::steady_clock::now();
   OrderedPairList selectedPairs;
 
-  POPART_COUT("Convert all matches to pairList");
+  OPENMVG_COUT("Convert all matches to pairList");
   convertAllMatchesToPairList(allMatches, numImageQuery, selectedPairs);
   detect_elapsed = std::chrono::duration_cast<std::chrono::seconds>(std::chrono::steady_clock::now() - detect_start);
-  POPART_COUT("Convert all matches to pairList took " << detect_elapsed.count() << " sec.");
+  OPENMVG_COUT("Convert all matches to pairList took " << detect_elapsed.count() << " sec.");
 
   // check if the output directory exists
   const auto basePath = bfs::path(outfile).parent_path();
@@ -380,7 +380,7 @@ int main(int argc, char** argv)
     // then create the missing directory
     if(!bfs::create_directories(basePath))
     {
-      POPART_CERR("Unable to create directories: " << basePath);
+      OPENMVG_CERR("Unable to create directories: " << basePath);
       return EXIT_FAILURE;
     }
   }
@@ -391,6 +391,6 @@ int main(int argc, char** argv)
   fileout << selectedPairs;
   fileout.close();
 
-  POPART_COUT("pairList exported in: " << outfile);
+  OPENMVG_COUT("pairList exported in: " << outfile);
   return EXIT_SUCCESS;
 }

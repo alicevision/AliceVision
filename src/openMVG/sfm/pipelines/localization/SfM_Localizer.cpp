@@ -155,7 +155,7 @@ bool SfM_Localizer::Localize
 
   // Test if the mode support some points (more than those required for estimation)
   const bool bResection = (resection_data.vec_inliers.size() > MINIMUM_SAMPLES * OPENMVG_MINIMUM_SAMPLES_COEF);
-#ifdef WANTS_POPART_COUT
+#ifdef WANTS_OPENMVG_COUT
   if (!bResection) 
   {
     std::cout << "bResection is false";
@@ -172,7 +172,7 @@ bool SfM_Localizer::Localize
     KRt_From_P(P, &K, &R, &t);
     pose = geometry::Pose3(R, -R.transpose() * t);
   }
-#ifdef WANTS_POPART_COUT
+#ifdef WANTS_OPENMVG_COUT
   std::cout << "\n"
     << "-------------------------------" << "\n"
     << "-- Robust Resection " << "\n"

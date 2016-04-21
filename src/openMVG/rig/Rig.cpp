@@ -60,7 +60,7 @@ bool Rig::initializeCalibration()
 {
   if(_isInitialized)
   {
-    POPART_COUT("The rig is already initialized");
+    OPENMVG_COUT("The rig is already initialized");
     return _isInitialized;
   }
   // check that there are cameras
@@ -77,7 +77,7 @@ bool Rig::initializeCalibration()
   
     if(shortestSeqLength == 0)
     {
-        POPART_COUT("The calibration results are empty!");
+        OPENMVG_COUT("The calibration results are empty!");
         return false;
     }
   }
@@ -115,7 +115,7 @@ bool Rig::initializeCalibration()
     }
     if(vRelativePoses.empty())
     {
-      POPART_CERR("Unable to find candidate poses between the main camera and "
+      OPENMVG_CERR("Unable to find candidate poses between the main camera and "
               "the witness camera " << iLocalizer << "\nAborting...");
       return false;
     }
@@ -254,7 +254,7 @@ bool Rig::optimizeCalibration()
 {
   if(!_isInitialized)
   {
-    POPART_COUT("The rig is yet initialized");
+    OPENMVG_COUT("The rig is yet initialized");
     return _isInitialized;
   }
   
@@ -435,7 +435,7 @@ bool Rig::optimizeCalibration()
                                       &vMainPoses[iView][0]);
           }else
           {
-            POPART_CERR("Fail in adding residual block for the main camera");
+            OPENMVG_CERR("Fail in adding residual block for the main camera");
           }
 
         }else
@@ -457,7 +457,7 @@ bool Rig::optimizeCalibration()
                                       &vRelativePoses[iLocalizer-1][0]);
           }else
           {
-            POPART_CERR("Fail in adding residual block for a secondary camera");
+            OPENMVG_CERR("Fail in adding residual block for a secondary camera");
           }
         }
       }
@@ -484,20 +484,20 @@ bool Rig::optimizeCalibration()
   ceres::Solve(options, &problem, &summary);
   
   if (openMVG_options._bCeres_Summary)
-    POPART_COUT(summary.FullReport());
+    OPENMVG_COUT(summary.FullReport());
 
   // If no error, get back refined parameters
   if (!summary.IsSolutionUsable())
   {
     if (openMVG_options._bVerbose)
-      POPART_COUT("Bundle Adjustment failed.");
+      OPENMVG_COUT("Bundle Adjustment failed.");
     return false;
   }
 
   if (openMVG_options._bVerbose)
   {
     // Display statistics about the minimization
-  POPART_COUT( "\n"
+  OPENMVG_COUT( "\n"
       << "Bundle Adjustment statistics (approximated RMSE):\n"
       << " #localizers: " << _vLocalizationResults.size() << "\n"
       << " #views: " << _vLocalizationResults[0].size() << "\n"
@@ -505,8 +505,8 @@ bool Rig::optimizeCalibration()
       << " Initial RMSE: " << std::sqrt( summary.initial_cost / summary.num_residuals) << "\n"
     << " Final RMSE: " << std::sqrt( summary.final_cost / summary.num_residuals) << "\n");
   }
-    
-    // Update relative pose after optimization
+
+  // Update relative pose after optimization
   for(std::size_t iRelativePose = 0 ; iRelativePose < _vRelativePoses.size() ; ++iRelativePose)
   {
     openMVG::Mat3 R_refined;
@@ -646,14 +646,14 @@ bool loadRigCalibration(const std::string &filename, std::vector<geometry::Pose3
   std::ifstream fs(filename, std::ios::in);
   if(!fs.is_open())
   {
-    POPART_CERR("Unable to load the calibration file " << filename);
+    OPENMVG_CERR("Unable to load the calibration file " << filename);
     throw std::invalid_argument("Unable to load the calibration file "+filename);
   }  
   
   // first read the number of cameras subposes stores
   std::size_t numCameras = 0;
   fs >> numCameras;
-  POPART_COUT("Found " << numCameras << " cameras");
+  OPENMVG_COUT("Found " << numCameras << " cameras");
   subposes.reserve(numCameras);
   
   for(std::size_t cam = 0; cam < numCameras; ++cam)
@@ -693,7 +693,7 @@ bool saveRigCalibration(const std::string &filename, const std::vector<geometry:
   std::ofstream fs(filename, std::ios::out);
   if(!fs.is_open())
   {
-    POPART_CERR("Unable to create the calibration file " << filename);
+    OPENMVG_CERR("Unable to create the calibration file " << filename);
     throw std::invalid_argument("Unable to create the calibration file "+filename);
   }
   fs << subposes.size() << std::endl;
