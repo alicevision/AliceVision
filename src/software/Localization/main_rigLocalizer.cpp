@@ -348,7 +348,7 @@ int main(int argc, char** argv)
                                                     rigPose);
     auto detect_end = std::chrono::steady_clock::now();
     auto detect_elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(detect_end - detect_start);
-    OPENMVG_COUT("\nLocalization took  " << detect_elapsed.count() << " [ms]");
+    OPENMVG_COUT("Localization took  " << detect_elapsed.count() << " [ms]");
     stats(detect_elapsed.count());
     
     //@todo do something with the pose

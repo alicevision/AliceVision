@@ -287,8 +287,8 @@ bool VoctreeLocalizer::initDatabase(const std::string & vocTreeFilepath,
   OPENMVG_COUT("Loading vocabulary tree...");
 
   _voctree.load(vocTreeFilepath);
-  OPENMVG_COUT("tree loaded with" << endl << "\t" << _voctree.levels() << " levels" 
-          << endl << "\t" << _voctree.splits() << " branching factor");
+  OPENMVG_COUT("tree loaded with " << _voctree.levels() << " levels and " 
+          << _voctree.splits() << " branching factors");
 
   OPENMVG_COUT("Creating the database...");
   // Add each object (document) to the database
