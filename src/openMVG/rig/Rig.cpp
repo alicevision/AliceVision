@@ -497,13 +497,12 @@ bool Rig::optimizeCalibration()
   if (openMVG_options._bVerbose)
   {
     // Display statistics about the minimization
-  OPENMVG_COUT( "\n"
-      << "Bundle Adjustment statistics (approximated RMSE):\n"
-      << " #localizers: " << _vLocalizationResults.size() << "\n"
-      << " #views: " << _vLocalizationResults[0].size() << "\n"
-      << " #residuals: " << summary.num_residuals << "\n"
-      << " Initial RMSE: " << std::sqrt( summary.initial_cost / summary.num_residuals) << "\n"
-    << " Final RMSE: " << std::sqrt( summary.final_cost / summary.num_residuals) << "\n");
+    OPENMVG_COUT("Bundle Adjustment statistics (approximated RMSE):");
+    OPENMVG_COUT(" #localizers: " << _vLocalizationResults.size());
+    OPENMVG_COUT(" #views: " << _vLocalizationResults[0].size());
+    OPENMVG_COUT(" #residuals: " << summary.num_residuals);
+    OPENMVG_COUT(" Initial RMSE: " << std::sqrt( summary.initial_cost / summary.num_residuals));
+    OPENMVG_COUT(" Final RMSE: " << std::sqrt( summary.final_cost / summary.num_residuals));
   }
 
   // Update relative pose after optimization
@@ -635,7 +634,7 @@ void cvpause(){
 
   if ( (char) keyboard == 'q' )
   {
-    std::cerr << "The program has been manually stopped" << std::endl;
+    OPENMVG_CERR("The program has been manually stopped");
     std::exit(0);
   }
 #endif

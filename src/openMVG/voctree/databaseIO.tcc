@@ -1,5 +1,6 @@
 #include "descriptor_loader.hpp"
 
+#include <openMVG/logger.hpp>
 #include <openMVG/sfm/sfm_data_io.hpp>
 
 #include <boost/filesystem.hpp>
@@ -37,7 +38,7 @@ std::size_t populateDatabase(const std::string &fileFullPath,
   std::size_t numDescriptors = 0;
   
   // Read the descriptors
-  std::cout << "Reading the descriptors from " << descriptorsFiles.size() <<" files..." << std::endl;
+  OPENMVG_COUT("Reading the descriptors from " << descriptorsFiles.size() <<" files...");
   boost::progress_display display(descriptorsFiles.size());
 
   // Run through the path vector and read the descriptors
@@ -161,7 +162,7 @@ void queryDatabase(const std::string &fileFullPath,
   getListOfDescriptorFiles(fileFullPath, descriptorsFiles);
   
   // Read the descriptors
-  std::cout << "queryDatabase: Reading the descriptors from " << descriptorsFiles.size() <<" files..." << std::endl;
+  OPENMVG_COUT("queryDatabase: Reading the descriptors from " << descriptorsFiles.size() << " files...");
   boost::progress_display display(descriptorsFiles.size());
 
   #ifdef OPENMVG_USE_OPENMP

@@ -279,8 +279,6 @@ bool VoctreeLocalizer::loadReconstructionDescriptors(const sfm::SfM_Data & sfm_d
     const std::string basename = stlplus::basename_part(sImageName);
     const std::string featFilepath = stlplus::create_filespec(feat_directory, basename, ".feat");
     const std::string descFilepath = stlplus::create_filespec(feat_directory, basename, ".desc");
-    //    std::cout << "Feat: " << featFilepath << std::endl;
-    //    std::cout << "Desc: " << descFilepath << std::endl;
 
     if(!reconstructedRegion._regions.Load(featFilepath, descFilepath))
     {
@@ -378,7 +376,7 @@ bool VoctreeLocalizer::initDatabase(const std::string & vocTreeFilepath,
 
     if(!currRecoRegions._regions.Load(featFilepath, descFilepath))
     {
-      std::cerr << "Invalid regions files for the view: " << sImageName << std::endl;
+      OPENMVG_CERR("Invalid regions files for the view: " << sImageName);
       return false;
     }
     
