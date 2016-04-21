@@ -408,7 +408,7 @@ ENDIF(OpenMVG_USE_OPENCV)
 # - optional, it allows to compile the vocabulary tree
 # ==============================================================================
 OPTION(BOOST_NO_CXX11 "If Boost is not build with C++11 support this must be enabled to avoid symbol conflicts (SCOPED_ENUM)" OFF)
-FIND_PACKAGE(Boost 1.53.0 QUIET COMPONENTS system filesystem program_options thread serialization)
+FIND_PACKAGE(Boost 1.53.0 QUIET COMPONENTS system filesystem program_options thread serialization log log_setup)
 IF(Boost_FOUND)
    MESSAGE(STATUS "Boost ${Boost_LIB_VERSION} found")
    if(BOOST_NO_CXX11)
