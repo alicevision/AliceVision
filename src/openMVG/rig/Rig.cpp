@@ -407,7 +407,7 @@ bool Rig::optimizeCalibration()
                                         &vMainPoses[iView][0]);
             }else
             {
-              std::cout << "Fail in adding residual block for the main camera" << std::endl;
+              OPENMVG_COUT("Fail in adding residual block for the main camera");
             }
           }
 
@@ -431,7 +431,7 @@ bool Rig::optimizeCalibration()
                                         &vRelativePoses[iLocalizer-1][0]);
             }else
             {
-              std::cout << "Fail in adding residual block for a secondary camera" << std::endl;
+              OPENMVG_COUT("Fail in adding residual block for a secondary camera");
             }
           }
         }
@@ -459,13 +459,13 @@ bool Rig::optimizeCalibration()
   ceres::Solve(options, &problem, &summary);
   
   if (openMVG_options._bCeres_Summary)
-    std::cout << summary.FullReport() << std::endl;
+    OPENMVG_COUT(summary.FullReport());
 
   // If no error, get back refined parameters
   if (!summary.IsSolutionUsable())
   {
     if (openMVG_options._bVerbose)
-      std::cout << "Bundle Adjustment failed." << std::endl;
+      OPENMVG_COUT("Bundle Adjustment failed.");
     return false;
   }
   else // Solution is usable
@@ -473,14 +473,12 @@ bool Rig::optimizeCalibration()
     if (openMVG_options._bVerbose)
     {
       // Display statistics about the minimization
-      std::cout << std::endl
-        << "Bundle Adjustment statistics (approximated RMSE):\n"
-        << " #localizers: " << _vLocalizationResults.size() << "\n"
-        << " #views: " << _vLocalizationResults[0].size() << "\n"
-        << " #residuals: " << summary.num_residuals << "\n"
-        << " Initial RMSE: " << std::sqrt( summary.initial_cost / summary.num_residuals) << "\n"
-        << " Final RMSE: " << std::sqrt( summary.final_cost / summary.num_residuals) << "\n"
-        << std::endl;
+      OPENMVG_COUT("Bundle Adjustment statistics (approximated RMSE):");
+      OPENMVG_COUT(" #localizers: " << _vLocalizationResults.size());
+      OPENMVG_COUT(" #views: " << _vLocalizationResults[0].size());
+      OPENMVG_COUT(" #residuals: " << summary.num_residuals);
+      OPENMVG_COUT(" Initial RMSE: " << std::sqrt( summary.initial_cost / summary.num_residuals));
+      OPENMVG_COUT(" Final RMSE: " << std::sqrt( summary.final_cost / summary.num_residuals));
     }
     
     // Update relative pose after optimization
@@ -613,7 +611,7 @@ void cvpause(){
 
   if ( (char) keyboard == 'q' )
   {
-    std::cerr << "The program has been manually stopped" << std::endl;
+    OPENMVG_CERR("The program has been manually stopped");
     std::exit(0);
   }
 #endif
@@ -624,14 +622,14 @@ bool loadRigCalibration(const std::string &filename, std::vector<geometry::Pose3
   std::ifstream fs(filename, std::ios::in);
   if(!fs.is_open())
   {
-    std::cerr << "Unable to load the calibration file " << filename << std::endl;
+    OPENMVG_CERR("Unable to load the calibration file " << filename);
     throw std::invalid_argument("Unable to load the calibration file "+filename);
   }  
   
   // first read the number of cameras subposes stores
   std::size_t numCameras = 0;
   fs >> numCameras;
-  std::cout << "Found " << numCameras << " cameras" << std::endl;
+  OPENMVG_COUT("Found " << numCameras << " cameras");
   subposes.reserve(numCameras);
   
   for(std::size_t cam = 0; cam < numCameras; ++cam)
@@ -671,7 +669,7 @@ bool saveRigCalibration(const std::string &filename, const std::vector<geometry:
   std::ofstream fs(filename, std::ios::out);
   if(!fs.is_open())
   {
-    std::cerr << "Unable to create the calibration file " << filename << std::endl;
+    OPENMVG_CERR("Unable to create the calibration file " << filename);
     throw std::invalid_argument("Unable to create the calibration file "+filename);
   }
   fs << subposes.size() << std::endl;
