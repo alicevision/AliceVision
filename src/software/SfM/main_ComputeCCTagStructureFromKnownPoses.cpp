@@ -38,7 +38,7 @@ void alignAndScaleStructure(
   {
     meanPoints +=  vX.col(i);
   }
-  meanPoints /= nCCTags; // @meanPoints
+  meanPoints /= nCCTags;
   
   // Center the point cloud in [0;0;0]
   for(int i=0 ; i < nLandmarks ; ++i )
@@ -104,13 +104,13 @@ void alignAndScaleStructure(
   const double scaleFactor = farthestDistance/dMax;
   
   // Point cloud scaling
-  vX *= scaleFactor; // @scaleFactor
+  vX *= scaleFactor;
   vCamCenter *= scaleFactor;
   
   // Cameras used for the acquisition are located below the markers/ceiling
   // Therefore, z-camera centers are supposed to be negative, the point cloud
   // being centered in (0,0,0), the z axis pointing up.
-  Mat3 flip = Eigen::MatrixXd::Identity(3,3); //@flip
+  Mat3 flip = Eigen::MatrixXd::Identity(3,3);
   if ( vCamCenter.col(0)[2] > 0 )
   {
     flip(0,0) = -flip(0,0);
