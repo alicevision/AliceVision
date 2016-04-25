@@ -31,8 +31,8 @@ void MatcherVoctree::Init_database(const features::Regions& regions)
     std::cout << "Descriptors size: " << descriptors.size() << std::endl;
   }
   //Compute histogram
-  histogram_ = voctree_.softQuantizeToSparse(descriptors);
-  //histogram_ = voctree_.quantizeToSparse(descriptors);
+  //histogram_ = voctree_.softQuantizeToSparse(descriptors);
+  histogram_ = voctree_.quantizeToSparse(descriptors);
 }
       
 bool MatcherVoctree::Match(const float f_dist_ratio, const features::Regions& query_regions, matching::IndMatches& vec_putative_matches)

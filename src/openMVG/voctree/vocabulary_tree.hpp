@@ -371,7 +371,7 @@ Word VocabularyTree<VoctreeDescriptorT, Distance, VocDescAllocator>::onlySureFea
 {
   typedef typename Distance<VoctreeDescriptorT, OtherDescriptorT>::result_type distance_type;
   typedef typename VoctreeDescriptorT::value_type value_type;
-  float radius = 73000.0f;
+  float radius = sqrt(73000);
 
   assert(initialized());
   int32_t index = -1;
@@ -471,13 +471,22 @@ template<class DescriptorT>
 SparseHistogram VocabularyTree<VoctreeDescriptorT, Distance, VocDescAllocator>::quantizeToSparse(const std::vector<DescriptorT>& descriptors) const
 {
   SparseHistogram histo;
-  std::vector<Word> doc(descriptors.size(), 0);;
-  
-  #pragma omp parallel for
+  std::vector<Word> doc(descriptors.size(), 0);
+  //int sizeDesc = descriptors.size();
+  //int nbDescriptors = 0;
+
+  //#pragma omp parallel for
   for(size_t j = 0; j < descriptors.size(); ++j)
-  {
+  { 
     doc[j] = quantize(descriptors[j]);
+    std::cout << "Decriptor n° " << j << ": " << doc[j] << std::endl; 
+    /*if(onlySureFeaturesQuantize(descriptors[j]) != -1)
+     {
+      doc[j] = onlySureFeaturesQuantize(descriptors[j]);
+      nbDescriptors++;
+    }*/
   }
+  std::cout << "------------------------" << std::endl;
   computeSparseHistogram(doc, histo);
   return histo;
 }
