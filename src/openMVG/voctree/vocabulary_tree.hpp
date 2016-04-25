@@ -376,7 +376,7 @@ Word VocabularyTree<VoctreeDescriptorT, Distance, VocDescAllocator>::onlySureFea
   assert(initialized());
   int32_t index = -1;
   
-  for(unsigned level = 0; level < levels_; ++level)
+  for(unsigned level = 0; level < 1 ; ++level)
   {
     // Calculate the offset to the first child of the current index.
     int32_t first_child = (index + 1) * splits();
@@ -448,15 +448,15 @@ Word VocabularyTree<VoctreeDescriptorT, Distance, VocDescAllocator>::onlySureFea
         float r = abs((scalarPdtFeatNorm - d));
         if(r < radius)
         {
-          distance_type dist = sqrt(Distance<VoctreeDescriptorT, std::vector<value_type>>()(bestDescriptor, featureProj));
-          for(int32_t childToCompare = first_child; childToCompare < first_child + (int32_t) splits(); ++childToCompare)
-          {
-            distance_type distToCompare = sqrt(Distance<VoctreeDescriptorT, std::vector<value_type>>()(centers_[childToCompare], featureProj));
-            if(distToCompare < dist + 0.001)
-            {
+          //distance_type dist = sqrt(Distance<VoctreeDescriptorT, std::vector<value_type>>()(bestDescriptor, featureProj));
+          //for(int32_t childToCompare = first_child; childToCompare < first_child + (int32_t) splits(); ++childToCompare)
+          //{
+          //  distance_type distToCompare = sqrt(Distance<VoctreeDescriptorT, std::vector<value_type>>()(centers_[childToCompare], featureProj));
+          //  if(distToCompare < dist + 0.001)
+          //  {
               return -1;
-            }       
-          }
+          //  }       
+          //}
         }
         
       }
@@ -473,21 +473,20 @@ SparseHistogram VocabularyTree<VoctreeDescriptorT, Distance, VocDescAllocator>::
 {
   SparseHistogram histo;
   std::vector<Word> doc(descriptors.size(), 0);
-  //int sizeDesc = descriptors.size();
-  //int nbDescriptors = 0;
+  int sizeDesc = descriptors.size();
+  int nbDescriptors = 0;
 
   //#pragma omp parallel for
   for(size_t j = 0; j < descriptors.size(); ++j)
   { 
-    doc[j] = quantize(descriptors[j]);
-    std::cout << "Decriptor n° " << j << ": " << doc[j] << std::endl; 
-    /*if(onlySureFeaturesQuantize(descriptors[j]) != -1)
+    //doc[j] = quantize(descriptors[j]);
+    if(onlySureFeaturesQuantize(descriptors[j]) != -1)
      {
       doc[j] = onlySureFeaturesQuantize(descriptors[j]);
       nbDescriptors++;
-    }*/
+    }
   }
-  std::cout << "------------------------" << std::endl;
+  std::cout << nbDescriptors << " descripteurs sur " << sizeDesc << " sont sans ambiguité" << std::endl;
   computeSparseHistogram(doc, histo);
   return histo;
 }
