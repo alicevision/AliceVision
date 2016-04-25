@@ -214,7 +214,7 @@ void GuidedMatching(
     // Add correspondence only iff the distance ratio is valid
     if (dR.isValid(distRatio))  {
       // save the best corresponding index
-      vec_corresponding_index.push_back(IndMatch(i,dR.idx));
+      vec_corresponding_index.push_back(IndMatch(i,dR.idx,dR.bd));
     }
   }
 

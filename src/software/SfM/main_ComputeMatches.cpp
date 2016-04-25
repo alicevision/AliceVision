@@ -54,6 +54,33 @@ enum EPairMode
   PAIR_FROM_FILE  = 2
 };
 
+void getStatsMap(const PairWiseMatches& map)
+{
+#ifdef OPENMVG_DEBUG_MATCHING
+  std::map<int,int> stats;
+  size_t nbMatches = 0;
+          
+  for( const auto& imgMatches: map)
+  {
+    nbMatches += imgMatches.second.size(); 
+    for( const matching::IndMatch& featMatches: imgMatches.second)
+    {
+      int d = std::floor(featMatches._distance / 1000.0);
+      if( stats.find(d) != stats.end() )
+        stats[d] += 1;
+      else
+        stats[d] = 1;
+    }
+  }
+  for(const auto& stat: stats)
+  {
+    std::cout << stat.first << "\t" << stat.second << std::endl;
+  }
+  
+  std::cout << "There are " << nbMatches << " matches." << std::endl;
+#endif
+}
+
 /// Compute corresponding features between a series of views:
 /// - Load view images description (regions: features & descriptors)
 /// - Compute putative local feature matches (descriptors matching)
@@ -80,6 +107,7 @@ int main(int argc, char **argv)
   bool matchFilePerImage = false;
   size_t uNumMatchesToKeep = 0;
   bool bUseGridSort = false;
+  bool bExportDebugFiles = false;
 
   //required
   cmd.add( make_option('i', sSfM_Data_Filename, "input_file") );
@@ -99,6 +127,7 @@ int main(int argc, char **argv)
   cmd.add( make_option('x', matchFilePerImage, "match_file_per_image") );
   cmd.add(make_option('u', uNumMatchesToKeep, "max_matches"));
   cmd.add(make_option('y', bUseGridSort, "use_grid_sort"));
+  cmd.add(make_option('e', bExportDebugFiles, "export_debug_files"));
 
   try {
       if(argc == 1) throw std::string("Invalid command line parameter.");
@@ -148,6 +177,7 @@ int main(int argc, char **argv)
       << "[-u|--max_matches]\n"
       << "[-y|--use_grid_sort]\n"
       << "  Use matching grid sort\n"
+      << "[-e|--export_debug_files] Export debug files (svg, dot)"
       << std::endl;
 
       std::cerr << s << std::endl;
@@ -169,7 +199,11 @@ int main(int argc, char **argv)
             << "--range_size " << rangeSize <<  "\n"
             << "--nearest_matching_method " << sNearestMatchingMethod << "\n"
             << "--guided_matching " << bGuided_matching << "\n"
-            << "--match_file_per_image " << matchFilePerImage << std::endl;
+            << "--match_file_per_image " << matchFilePerImage << "\n"
+            << "--max_matches " << uNumMatchesToKeep  << "\n"
+            << "--use_grid_sort " << bUseGridSort << "\n"
+            << "--export_debug_files " << bExportDebugFiles
+            << std::endl;
 
   EPairMode ePairmode = (iMatchingVideoMode == -1 ) ? PAIR_EXHAUSTIVE : PAIR_CONTIGUOUS;
 
@@ -367,6 +401,12 @@ int main(int argc, char **argv)
       std::cout << "Using FAST_CASCADE_HASHING_L2 matcher" << std::endl;
       collectionMatcher.reset(new Cascade_Hashing_Matcher_Regions_AllInMemory(fDistRatio));
     }
+    else
+    if(sNearestMatchingMethod == "VOCTREE")
+    {
+      std::cout << "Using VOCTREE matcher" << std::endl;
+      collectionMatcher.reset(new Matcher_Regions_AllInMemory(fDistRatio, VOCTREE_MATCHER));
+    }
     if(!collectionMatcher)
     {
       std::cerr << "Invalid Nearest Neighbor method: " << sNearestMatchingMethod << std::endl;
@@ -377,7 +417,7 @@ int main(int argc, char **argv)
     {
       std::cout << "There are " << sfm_data.GetViews().size() << " views and " << pairs.size() << " image pairs." << std::endl;
 
-      // Photometric matching of putative pairs
+      // Photometric matching of putative pairs    
       collectionMatcher->Match(sfm_data, regions_provider, pairs, map_PutativesMatches);
       
       if(map_PutativesMatches.empty())
@@ -400,21 +440,31 @@ int main(int argc, char **argv)
     }
     std::cout << "Task (Regions Matching) done in (s): " << timer.elapsed() << std::endl;
   }
-  //-- export putative matches Adjacency matrix
-  PairWiseMatchingToAdjacencyMatrixSVG(vec_fileNames.size(),
-    map_PutativesMatches,
-    stlplus::create_filespec(sMatchesDirectory, "PutativeAdjacencyMatrix", "svg"));
-  //-- export view pair graph once putative graph matches have been computed
+
+  if(bExportDebugFiles)
   {
-    std::set<IndexT> set_ViewIds;
-    std::transform(sfm_data.GetViews().begin(), sfm_data.GetViews().end(),
-      std::inserter(set_ViewIds, set_ViewIds.begin()), stl::RetrieveKey());
-    graph::indexedGraph putativeGraph(set_ViewIds, getPairs(map_PutativesMatches));
-    graph::exportToGraphvizData(
-      stlplus::create_filespec(sMatchesDirectory, "putative_matches.dot"),
-      putativeGraph.g);
+    //-- export putative matches Adjacency matrix
+    PairWiseMatchingToAdjacencyMatrixSVG(vec_fileNames.size(),
+      map_PutativesMatches,
+      stlplus::create_filespec(sMatchesDirectory, "PutativeAdjacencyMatrix", "svg"));
+    //-- export view pair graph once putative graph matches have been computed
+    {
+      std::set<IndexT> set_ViewIds;
+      std::transform(sfm_data.GetViews().begin(), sfm_data.GetViews().end(),
+        std::inserter(set_ViewIds, set_ViewIds.begin()), stl::RetrieveKey());
+      graph::indexedGraph putativeGraph(set_ViewIds, getPairs(map_PutativesMatches));
+      graph::exportToGraphvizData(
+        stlplus::create_filespec(sMatchesDirectory, "putative_matches.dot"),
+        putativeGraph.g);
+    }
   }
 
+#ifdef OPENMVG_DEBUG_MATCHING
+  {
+    std::cout << "PUTATIVE" << std::endl;
+    getStatsMap(map_PutativesMatches);
+  }
+#endif
   //---------------------------------------
   // b. Geometric filtering of putative matches
   //    - AContrario Estimation of the desired geometric model
@@ -536,27 +586,39 @@ int main(int argc, char **argv)
     //---------------------------------------
     //-- Export geometric filtered matches
     //---------------------------------------
+    std::cout << "Save geometric matches." << std::endl;
     Save(finalMatches, sMatchesDirectory, sGeometricMode, "bin", matchFilePerImage);
 
     std::cout << "Task done in (s): " << timer.elapsed() << std::endl;
 
-    //-- export Adjacency matrix
-    std::cout << "\n Export Adjacency Matrix of the pairwise's geometric matches"
-      << std::endl;
-    PairWiseMatchingToAdjacencyMatrixSVG(vec_fileNames.size(),
-      finalMatches,
-      stlplus::create_filespec(sMatchesDirectory, "GeometricAdjacencyMatrix", "svg"));
-
-    //-- export view pair graph once geometric filter have been done
+    if(bExportDebugFiles)
     {
-      std::set<IndexT> set_ViewIds;
-      std::transform(sfm_data.GetViews().begin(), sfm_data.GetViews().end(),
-        std::inserter(set_ViewIds, set_ViewIds.begin()), stl::RetrieveKey());
-      graph::indexedGraph putativeGraph(set_ViewIds, getPairs(finalMatches));
-      graph::exportToGraphvizData(
-        stlplus::create_filespec(sMatchesDirectory, "geometric_matches.dot"),
-        putativeGraph.g);
+      //-- export Adjacency matrix
+      std::cout << "\n Export Adjacency Matrix of the pairwise's geometric matches"
+        << std::endl;
+      PairWiseMatchingToAdjacencyMatrixSVG(vec_fileNames.size(),
+        finalMatches,
+        stlplus::create_filespec(sMatchesDirectory, "GeometricAdjacencyMatrix", "svg"));
+      
+      //-- export view pair graph once geometric filter have been done
+      {
+        std::set<IndexT> set_ViewIds;
+        std::transform(sfm_data.GetViews().begin(), sfm_data.GetViews().end(),
+          std::inserter(set_ViewIds, set_ViewIds.begin()), stl::RetrieveKey());
+        graph::indexedGraph putativeGraph(set_ViewIds, getPairs(finalMatches));
+        graph::exportToGraphvizData(
+          stlplus::create_filespec(sMatchesDirectory, "geometric_matches.dot"),
+          putativeGraph.g);
+      }
     }
+
+#ifdef OPENMVG_DEBUG_MATCHING
+    {
+      std::cout << "GEOMETRIC" << std::endl;
+      getStatsMap(finalMatches);
+    }
+#endif
+
   }
 
   return EXIT_SUCCESS;

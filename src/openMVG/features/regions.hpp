@@ -39,6 +39,8 @@ public:
     const std::string& sfileNameFeats,
     const std::string& sfileNameDescs) const = 0;
 
+  virtual bool SaveDesc(const std::string& sfileNameDescs) const = 0;
+
   virtual bool LoadFeatures(
     const std::string& sfileNameFeats) = 0;
 
@@ -136,8 +138,15 @@ public:
     const std::string& sfileNameFeats,
     const std::string& sfileNameDescs)
   {
-    return loadFeatsFromFile(sfileNameFeats, this->_vec_feats)
+    bool res = loadFeatsFromFile(sfileNameFeats, this->_vec_feats)
           & loadDescsFromBinFile(sfileNameDescs, _vec_descs);
+    if(this->_vec_feats.size() != _vec_descs.size())
+    {
+      std::stringstream ss;
+      ss << "Error while loading features and descriptors: " << this->_vec_feats.size() << " features loaded but " << _vec_descs.size() << " descriptors loaded.";
+      throw std::runtime_error(ss.str());
+    }
+    return res;
   }
 
   /// Export in two separate files the regions and their corresponding descriptors.
@@ -147,6 +156,11 @@ public:
   {
     return saveFeatsToFile(sfileNameFeats, this->_vec_feats)
           & saveDescsToBinFile(sfileNameDescs, _vec_descs);
+  }
+
+  bool SaveDesc(const std::string& sfileNameDescs) const
+  {
+    return saveDescsToBinFile(sfileNameDescs, _vec_descs);
   }
 
   /// Mutable and non-mutable DescriptorT getters.

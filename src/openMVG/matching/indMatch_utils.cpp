@@ -136,6 +136,7 @@ bool Load(
 {
   bool res = false;
   const std::string basename = "matches." + mode;
+  std::cout <<"Load :" << folder << "/" << basename << std::endl;
   if(stlplus::is_file(stlplus::create_filespec(folder, basename + ".txt")))
   {
     res = LoadMatchFile(matches, folder, basename + ".txt");
