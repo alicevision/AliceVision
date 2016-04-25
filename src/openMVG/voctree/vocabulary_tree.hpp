@@ -390,7 +390,7 @@ Word VocabularyTree<VoctreeDescriptorT, Distance, VocDescAllocator>::onlySureFea
       if(!valid_centers_[child])
         break;
       
-      distance_type child_distance = Distance<OtherDescriptorT, VoctreeDescriptorT>()(feature, centers_[child]);
+      distance_type child_distance = sqrt(Distance<OtherDescriptorT, VoctreeDescriptorT>()(feature, centers_[child]));
       if(child_distance < best_distance)
       {
         best_child = child;
@@ -415,14 +415,14 @@ Word VocabularyTree<VoctreeDescriptorT, Distance, VocDescAllocator>::onlySureFea
         float normN = 0.0f;
         float d = 0.0f;
         
-        //Calcul vecteur normal
+        //Normal Vector
         for(int i = 0; i < 128; ++i)
         {
           normal[i] = secDescriptor[i] - bestDescriptor[i];
           auxNormal += normal[i]*normal[i];
         }
         
-        //Normalisation:
+        //Normalization:
         normN = sqrt(auxNormal);
         for(int i = 0; i < 128; ++i)
         {
@@ -445,12 +445,13 @@ Word VocabularyTree<VoctreeDescriptorT, Distance, VocDescAllocator>::onlySureFea
           featureProj[i] = feature[i] - (scalarPdtFeatNorm - d) * normal[i];
         }
         
-        distance_type dist = Distance<VoctreeDescriptorT, std::vector<value_type>>()(bestDescriptor, featureProj);
-        if(dist < radius)
+        float r = abs((scalarPdtFeatNorm - d));
+        if(r < radius)
         {
+          distance_type dist = sqrt(Distance<VoctreeDescriptorT, std::vector<value_type>>()(bestDescriptor, featureProj));
           for(int32_t childToCompare = first_child; childToCompare < first_child + (int32_t) splits(); ++childToCompare)
           {
-            distance_type distToCompare = Distance<VoctreeDescriptorT, std::vector<value_type>>()(centers_[childToCompare], featureProj);
+            distance_type distToCompare = sqrt(Distance<VoctreeDescriptorT, std::vector<value_type>>()(centers_[childToCompare], featureProj));
             if(distToCompare < dist + 0.001)
             {
               return -1;
