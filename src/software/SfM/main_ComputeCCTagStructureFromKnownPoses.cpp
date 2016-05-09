@@ -112,7 +112,7 @@ void alignAndScaleStructure(
   // Therefore, z-camera centers are supposed to be negative, the point cloud
   // being centered in (0,0,0), the z axis pointing up.
   Mat3 flip = Eigen::MatrixXd::Identity(3,3);
-  if ( vCamCenter.col(0)[2] > 0 )
+  if ( vCamCenter.col(0)[2] < 0 ) // Markers on the ceiling: > 0, on the ground < 0
   {
     flip(0,0) = -flip(0,0);
     flip(2,2) = -flip(2,2);
