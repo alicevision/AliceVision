@@ -47,6 +47,19 @@ inline void computeSparseHistogram(const std::vector<Word>& document, SparseHist
   }
 }
 
+inline void computeSparseHistogramMultiDesc(const std::vector<Word>& document, SparseHistogram& v, std::vector<IndexT> &queryDescUID)
+{
+  // for each visual word in the list
+  for(std::size_t i = 0; i < document.size(); ++i)
+  {
+    Word word = document[i];
+    if(find(v[word].begin(), v[word].end(), queryDescUID[i]) == v[word].end())
+    {
+      v[word].push_back(queryDescUID[i]);
+    }
+  }
+}
+
 /**
  * @brief Optimized vocabulary tree quantizer, templated on feature type and distance metric
  * for maximum efficiency.
@@ -95,6 +108,9 @@ public:
   
   template<class DescriptorT>
   SparseHistogram softQuantizeToSparse(const std::vector<DescriptorT>& descriptors) const;
+
+  template<class OtherDescriptorT>
+  SparseHistogram quantizeMultiToSparse(const std::vector<OtherDescriptorT>& features, std::vector<IndexT> &queryDescUID) const;
 
   /// Get the depth (number of levels) of the tree.
   uint32_t levels() const;
@@ -273,6 +289,21 @@ SparseHistogram VocabularyTree<VoctreeDescriptorT, Distance, VocDescAllocator>::
     doc[j] = quantize(descriptors[j]);
   }
   computeSparseHistogram(doc, histo);
+  return histo;
+}
+
+template<class VoctreeDescriptorT, template<typename, typename> class Distance, class VocDescAllocator>
+template<class DescriptorT>
+SparseHistogram VocabularyTree<VoctreeDescriptorT, Distance, VocDescAllocator>::quantizeMultiToSparse(const std::vector<DescriptorT>& descriptors, std::vector<IndexT> &queryDescUID) const
+{
+  SparseHistogram histo;
+  std::vector<Word> doc(descriptors.size(), 0);;
+  #pragma omp parallel for
+  for(size_t j = 0; j < descriptors.size(); ++j)
+  {
+    doc[j] = quantize(descriptors[j]);
+  }
+  computeSparseHistogramMultiDesc(doc, histo, queryDescUID);
   return histo;
 }
 

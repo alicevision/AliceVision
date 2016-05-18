@@ -15,7 +15,6 @@ void MatcherVoctree::Init_database(const features::Regions& regions)
   if(regions_->RegionCount() == 0)
     return;
   
-  typedef features::FeatDesc_Regions<features::SIOPointFeature, unsigned char, 128> SiftRegion;
   const SiftRegion* castedRegion = dynamic_cast<const SiftRegion*>(&regions);
   if(castedRegion == NULL)
   {
@@ -37,7 +36,6 @@ void MatcherVoctree::Init_database(const features::Regions& regions)
       
 bool MatcherVoctree::Match(const float f_dist_ratio, const features::Regions& query_regions, matching::IndMatches& vec_putative_matches)
 {
-  typedef features::FeatDesc_Regions<features::SIOPointFeature, unsigned char, 128> SiftRegion;
   const SiftRegion* castedRegion = dynamic_cast<const SiftRegion*>(&query_regions);
   if(castedRegion == NULL)
   {
@@ -53,7 +51,12 @@ bool MatcherVoctree::Match(const float f_dist_ratio, const features::Regions& qu
 
   //Compute histogram for the second region
   //voctree::SparseHistogram queryHistogram = voctree_.softQuantizeToSparse(queryDescriptors);
-  voctree::SparseHistogram queryHistogram = voctree_.quantizeToSparse(queryDescriptors);
+  //voctree::SparseHistogram queryHistogram = voctree_.quantizeToSparse(queryDescriptors);
+
+  const std::vector<SiftRegion::FeatureT> queryFeatures = castedRegion->Features();
+  std::vector<IndexT> queryDescUID;
+  createVectFeatures(queryFeatures, queryDescUID);
+  voctree::SparseHistogram queryHistogram = voctree_.quantizeMultiToSparse(queryDescriptors, queryDescUID);
         
   // Matching points
   // Version 1: matches only features that are alone in their leaves
@@ -71,16 +74,6 @@ bool MatcherVoctree::Match(const float f_dist_ratio, const features::Regions& qu
     double dist = regions_->SquaredDescriptorDistance(currentLeaf.second[0], castedRegion, queryLeafIt->second[0]);
     openMVG::matching::IndMatch currentMatch = openMVG::matching::IndMatch(currentLeaf.second[0], queryLeafIt->second[0], dist);
     vec_putative_matches.push_back(currentMatch);
-    //Version 2
-    /*for(const auto& leftPoint: currentLeaf.second)
-    {
-      for(const auto& rightPoint: queryLeafIt->second)
-      {
-        double dist = regions_->SquaredDescriptorDistance(leftPoint, castedRegion, rightPoint);
-        openMVG::matching::IndMatch currentMatch = openMVG::matching::IndMatch(leftPoint, rightPoint, dist);
-        vec_putative_matches.push_back(currentMatch);
-      }
-    }*/
   }
   
   // Remove duplicates
@@ -92,6 +85,31 @@ bool MatcherVoctree::Match(const float f_dist_ratio, const features::Regions& qu
   matchDeduplicator.getDeduplicated(vec_putative_matches);
 
   return true;
+}
+
+
+void MatcherVoctree::createVectFeatures(const std::vector<SiftRegion::FeatureT> &features, 
+        std::vector<IndexT>& indexVect)
+{
+
+  std::map<std::pair<float,float>, IndexT> mapId2Index;
+
+  IndexT cpt = 0;
+  for(auto& feat : features)
+  {
+    std::pair<float,float> currentPair = make_pair(feat.x(), feat.y());
+    std::map<std::pair<float,float>, IndexT>::iterator it = mapId2Index.find(currentPair);
+    if(it != mapId2Index.end())
+    {
+      indexVect.push_back(it->second);
+    }
+    else
+    {
+      mapId2Index.insert(std::pair<std::pair<float,float>, IndexT>(currentPair,cpt));
+      indexVect.push_back(cpt);
+    }
+    cpt++;
+  }
 }
 
 

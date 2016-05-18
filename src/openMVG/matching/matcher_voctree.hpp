@@ -2,6 +2,7 @@
 
 #include "regions_matcher.hpp"
 #include "openMVG/voctree/database.hpp"
+#include "openMVG/features/regions.hpp"
 
 
 namespace openMVG {
@@ -10,6 +11,7 @@ namespace matching {
 static const int DIMENSION = 128;
 typedef openMVG::features::Descriptor<float, DIMENSION> DescriptorFloat;
 typedef openMVG::features::Descriptor<unsigned char, DIMENSION> DescriptorUChar;
+typedef features::FeatDesc_Regions<features::SIOPointFeature, unsigned char, 128> SiftRegion;
 
 class MatcherVoctree : public RegionsMatcher
 {
@@ -45,6 +47,9 @@ public:
     const features::Regions& query_regions,
     matching::IndMatches & vec_putative_matches
   );
+
+  void createVectFeatures(const std::vector<SiftRegion::FeatureT>& features,
+        std::vector<IndexT>& indexVect);
 };
 
 } // namespace matching
