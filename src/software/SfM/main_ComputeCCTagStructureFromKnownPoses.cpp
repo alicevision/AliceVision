@@ -19,7 +19,146 @@ using namespace openMVG;
 using namespace openMVG::sfm;
 namespace bfs = boost::filesystem;
 
-void alignAndScaleStructure(
+ /**
+   * Apply a similarity transformation to the reconstruction so that the centroid
+   * of the optical centers is the origin of the world coordinate system, a 
+   * dominant plane P is fitted to the set of the optical centers and the scene 
+   * aligned so that P roughly define the (x,y) plane, and the scale is set so 
+   * that the optical centers RMS is of sqrt(2).
+   * (Hartley-like normalization, p.180)
+   *
+   * \param[out] sfmData   Transformed reconstruction.
+   */
+void conditionSfMFromFromCameras(
+    SfM_Data & sfmData)
+{
+  const std::size_t nLandmarks = sfmData.GetLandmarks().size();
+  Mat3X vX(3,nLandmarks);
+  
+  std::size_t i=0;
+  for(const auto & landmark : sfmData.GetLandmarks())
+  {
+    vX.col(i) = landmark.second.X;
+    ++i;
+  }
+
+  const std::size_t nCameras = sfmData.GetPoses().size();
+  Mat3X vCamCenter(3,nCameras);
+  
+  // Compute the mean of the point cloud
+  Vec3 meanPoints = Vec3::Zero(3,1);
+  i=0;
+  for(const auto & pose : sfmData.GetPoses())
+  {
+    vCamCenter.col(i) = pose.second.center();
+    meanPoints +=  pose.second.center();
+    ++i;
+  }
+  
+  meanPoints /= nCameras;
+  
+  std::vector<Mat3> vCamRotation; // Camera rotations
+  vCamRotation.reserve(nCameras);
+  i=0;
+  float rms = 0;
+  for(const auto & pose : sfmData.GetPoses())
+  {
+    vCamCenter.col(i) -= meanPoints;
+    rms += vCamCenter.col(i).transpose()*vCamCenter.col(i);
+    
+    vCamRotation.push_back(pose.second.rotation().transpose()); // Rotation in the world coordinate system
+    ++i;
+  }
+  rms /= nCameras;
+  rms = sqrt(rms);
+  
+  // Perform an svd over vX*vXT (var-covar)
+  Mat3 dum = vCamCenter * vCamCenter.transpose();
+  Eigen::JacobiSVD<Mat3> svd(dum,Eigen::ComputeFullV|Eigen::ComputeFullU);
+  Mat3 U = svd.matrixU();
+  
+  // Check whether the determinant is positive in order to keep
+  // a direct coordinate system
+  if ( U.determinant() < 0 )
+  {
+    U.col(2) = -U.col(2);
+  }
+  
+  for(int i=0 ; i < nLandmarks ; ++i )
+  {
+    vX.col(i) = U.transpose() * vX.col(i);
+  }
+
+  for(int i=0 ; i < nCameras ; ++i )
+  {
+    vCamCenter.col(i) = U.transpose() * vCamCenter.col(i);
+    vCamRotation[i] = U.transpose() * vCamRotation[i];
+  }
+
+  const float scaleFactor = sqrt(2)/rms;
+  
+  // Point cloud scaling
+  vX *= scaleFactor;
+  vCamCenter *= scaleFactor;
+  
+  // Camera up should be pointing down
+  Mat3 flip = Eigen::MatrixXd::Identity(3,3);
+  // TODO: take the median instead of the first camera
+  if ( vCamRotation[0](2,2) > 0 )
+  {
+    flip(0,0) = -flip(0,0);
+    flip(2,2) = -flip(2,2);
+    
+    for(int i=0 ; i < nLandmarks ; ++i )
+      vX.col(i) = flip * vX.col(i);
+    
+    for(int i=0 ; i < nCameras ; ++i )
+    {
+      vCamCenter.col(i) = flip * vCamCenter.col(i);
+      vCamRotation[i] = flip * vCamRotation[i];
+    }
+  }
+  
+  i=0;
+  // Matlab style output to display transformed poses.
+  // Display structure
+  // std::cout << " pts = [ " ;
+  
+  // Structure transformation
+  for( auto & landmark : sfmData.structure )
+  {
+    landmark.second.X = vX.col(i);
+    // std::cout << " [ " << landmark.second.X(0) << " " << landmark.second.X(1) << " " << landmark.second.X(2)<< " ] ; ";
+    ++i;
+  }
+  // std::cout << " ] " ;
+  
+  i=0;
+  
+  // Camera transformation
+  for( auto & pose : sfmData.poses )
+  {
+    pose.second = geometry::Pose3(vCamRotation[i].transpose(), vCamCenter.col(i));
+    // std::cout << " camera(" << i+1 << ").center = [ " << pose.second.center()(0) << " ; " << pose.second.center()(1) << " ; " << pose.second.center()(2) << " ] ; ";
+    // std::cout << " camera(" << i+1 << ").rotation = [ " << pose.second.rotation() << " ] ; ";
+    ++i;
+  }
+}
+
+ /**
+   * Apply a similarity transformation to the reconstruction so that a landmark (e.g. artificial)
+   * defines the origin of the world coordinate system, a dominant plane P is fitted from
+   * a subset of landmarks (e.g. artificial ones) and the scene aligned so that P
+   * roughly defined the (x,y) plane. 
+   * TODO: scale is set so that their RMS is sqrt(2).
+   * (Hartley-like normalization, p.180)
+   *
+   * \param[out] sfmData      Transformed reconstruction.
+   * \param[in]  nCCTags      First-n landmarks to compute the similarity transformation.
+   * \param[in]  indexOrigin  Id of the landmark defining the origin of the world coordinate system.
+   * 
+   */
+void conditionSfMFromStructure(
     SfM_Data & sfmData,
     const IndexT nCCTags,
     const IndexT indexOrigin)
@@ -255,7 +394,7 @@ int main(int argc, char **argv)
       << "The input SfM_Data file \""<< sSfM_Data_Filename << "\" cannot be read." << std::endl;
     return EXIT_FAILURE;
   }
-
+  
   // Init the regions_type from the image describer file (used for image regions extraction)
   using namespace openMVG::features;
   const std::string sImage_describer = stlplus::create_filespec(sMatchesDir, "image_describer", "json");
@@ -485,11 +624,10 @@ int main(int argc, char **argv)
     }
   }
   
-  // Set the coordinate system so that the (x,y) plane is aligned to the plane formed by a set of cctags.
-  // Currently all the cctags are considered in the plane fitting.
+  // Currently all the cctags are considered to roughly lie on a single  plane.
   // If passed in the command line, the origin of the system correspond to the cctag whose id is idOrigin,
   // otherwise set to the gravity center of all tags.
-  alignAndScaleStructure(cctagSfmData, cctagReconstructedLandmarksSize, indexLandmarkOrigin);
+  conditionSfMFromStructure(cctagSfmData, cctagReconstructedLandmarksSize, indexLandmarkOrigin);
   
   if (stlplus::extension_part(sOutFile) != "ply")
   {
