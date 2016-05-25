@@ -68,41 +68,66 @@ before_install:
  - mkdir --parent $OPENCV_CONTRIB
  - mkdir --parent $OPENCV_BUILD
  - mkdir --parent $OPENCV_INSTALL
- - if [ ! "$(ls -A $OPENCV_INSTALL)" ]; then git clone --recursive --branch 3.0.0 --depth 1 https://github.com/Itseez/opencv.git $OPENCV_SOURCE; fi
- - if [ ! "$(ls -A $OPENCV_CONTRIB)" ]; then git clone --branch 3.0.0 --depth 1  https://github.com/Itseez/opencv_contrib.git $OPENCV_CONTRIB; fi
+ - >
+    if [ ! "$(ls -A $OPENCV_INSTALL)" ]; then
+    git clone --recursive --branch 3.0.0 --depth 1 https://github.com/Itseez/opencv.git $OPENCV_SOURCE;
+    git clone --branch 3.0.0 --depth 1  https://github.com/Itseez/opencv_contrib.git $OPENCV_CONTRIB;
+    fi
  # EIGEN
  - mkdir --parent $EIGEN_INSTALL
  - if [ ! "$(ls -A $EIGEN_INSTALL)" ]; then hg clone -r 3.2.0 https://bitbucket.org/eigen/eigen/ $EIGEN_INSTALL; fi
  # BOOST
  - mkdir --parent $BOOST_SOURCE
  - mkdir --parent $BOOST_INSTALL
- - if [ ! "$(ls -1 $BOOST_INSTALL)" ]; then wget https://sourceforge.net/projects/boost/files/boost/1.55.0/boost_1_55_0.tar.gz; fi
- - if [ ! "$(ls -1 $BOOST_INSTALL)" ]; then tar -xf boost_1_55_0.tar.gz; fi
- - if [ ! "$(ls -1 $BOOST_INSTALL)" ]; then cp -r boost_1_55_0/* $BOOST_SOURCE; fi
+ - >
+    if [ ! "$(ls -1 $BOOST_INSTALL)" ]; then
+    wget https://sourceforge.net/projects/boost/files/boost/1.55.0/boost_1_55_0.tar.gz;
+    tar -xf boost_1_55_0.tar.gz;
+    cp -r boost_1_55_0/* $BOOST_SOURCE;
+    fi
  # CERES
  - mkdir --parent $CERES_SOURCE
  - mkdir --parent $CERES_BUILD
  - mkdir --parent $CERES_INSTALL
- - if [ ! "$(ls -A $CERES_INSTALL)" ]; then wget http://ceres-solver.org/ceres-solver-1.11.0.tar.gz; fi
- - if [ ! "$(ls -A $CERES_INSTALL)" ]; then tar -xf ceres-solver-1.11.0.tar.gz; fi
- - if [ ! "$(ls -A $CERES_INSTALL)" ]; then cp -r ceres-solver-1.11.0/* $CERES_SOURCE; fi
+ - >
+    if [ ! "$(ls -A $CERES_INSTALL)" ]; then
+    tar -xf ceres-solver-1.11.0.tar.gz;
+    cp -r ceres-solver-1.11.0/* $CERES_SOURCE;
+    wget http://ceres-solver.org/ceres-solver-1.11.0.tar.gz;
+    fi
 
 install:
   # OPENCV
   - cd $OPENCV_BUILD
-  - if [ ! "$(ls -A $OPENCV_INSTALL)" ]; then cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=$OPENCV_INSTALL -DOPENCV_EXTRA_MODULES_PATH=$OPENCV_CONTRIB/modules $OPENCV_SOURCE; fi
-  - if [ ! "$(ls -A $OPENCV_INSTALL)" ]; then make -j 2; fi
-  - if [ ! "$(ls -A $OPENCV_INSTALL)" ]; then make install; fi
-  - ls -l $OPENCV_INSTALL
+  - >
+     if [ ! "$(ls -A $OPENCV_INSTALL)" ]; then
+     cmake
+     -DCMAKE_BUILD_TYPE=Release
+     -DCMAKE_INSTALL_PREFIX=$OPENCV_INSTALL
+     -DOPENCV_EXTRA_MODULES_PATH=$OPENCV_CONTRIB/modules
+     $OPENCV_SOURCE;
+     make -j 2;
+     make install;
+     fi
   # BOOST
   - cd $BOOST_SOURCE
-  - if [ ! "$(ls -1 $BOOST_INSTALL)" ]; then ./bootstrap.sh --with-libraries=filesystem,program_options,graph --prefix=$BOOST_INSTALL; fi
-  - if [ ! "$(ls -1 $BOOST_INSTALL)" ]; then ./b2 link=shared install > null; fi
+  - >
+     if [ ! "$(ls -1 $BOOST_INSTALL)" ]; then
+     ./bootstrap.sh --with-libraries=filesystem,program_options,graph --prefix=$BOOST_INSTALL;
+     ./b2 link=shared install > null;
+     fi
   # CERES
   - cd $CERES_BUILD
-  - if [ ! "$(ls -A $CERES_INSTALL)" ]; then cmake -DCMAKE_INSTALL_PREFIX=$CERES_INSTALL -DEIGEN_INCLUDE_DIR=$EIGEN_INSTALL -DMINIGLOG=ON $CERES_SOURCE ; fi
-  - if [ ! "$(ls -A $CERES_INSTALL)" ]; then make -j 2; fi
-  - if [ ! "$(ls -A $CERES_INSTALL)" ]; then make install; fi
+  - >
+     if [ ! "$(ls -A $CERES_INSTALL)" ]; then
+     cmake
+     -DCMAKE_INSTALL_PREFIX=$CERES_INSTALL
+     -DEIGEN_INCLUDE_DIR=$EIGEN_INSTALL
+     -DMINIGLOG=ON
+     $CERES_SOURCE;
+     make -j 2;
+     make install;
+     fi
 
 before_script:
   - export CXX="g++-4.8"
