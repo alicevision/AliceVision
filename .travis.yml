@@ -59,6 +59,10 @@ env:
     - BOOST_ROOT=${TRAVIS_BUILD_DIR}/boost
     - BOOST_SOURCE=${BOOST_ROOT}/source
     - BOOST_INSTALL=${BOOST_ROOT}/install
+    # SUITESPARSE
+    - SS_ROOT=${TRAVIS_BUILD_DIR}/suitesparse
+    - SS_SOURCE=${SS_ROOT}/SuiteSparse
+    - SS_INSTALL=${SS_ROOT}/install
 
 before_install:
  - gem install coveralls-lcov
@@ -74,7 +78,7 @@ before_install:
     fi
  # EIGEN
  - mkdir --parent $EIGEN_INSTALL
- - if [ ! "$(ls -A $EIGEN_INSTALL)" ]; then hg clone -r 3.2.0 https://bitbucket.org/eigen/eigen/ $EIGEN_INSTALL; fi
+ - if [ ! "$(ls -A $EIGEN_INSTALL)" ]; then hg clone -r 3.2.8 https://bitbucket.org/eigen/eigen/ $EIGEN_INSTALL; fi
  # BOOST
  - mkdir --parent $BOOST_SOURCE
  - mkdir --parent $BOOST_INSTALL
@@ -83,6 +87,14 @@ before_install:
     wget https://sourceforge.net/projects/boost/files/boost/1.55.0/boost_1_55_0.tar.gz;
     tar -xf boost_1_55_0.tar.gz;
     cp -r boost_1_55_0/* $BOOST_SOURCE;
+    fi
+ # SUITESPARSE
+ - >
+    if [ ! "$(ls -A $SS_INSTALL)" ]; then
+    cd $SS_ROOT;
+    mkdir --parent $SS_INSTALL;
+    wget http://faculty.cse.tamu.edu/davis/SuiteSparse/SuiteSparse-4.5.3.tar.gz;
+    tar -xf SuiteSparse-4.5.3.tar.gz;
     fi
  # CERES
  - mkdir --parent $CERES_SOURCE
@@ -115,6 +127,14 @@ install:
      ./bootstrap.sh --with-libraries=filesystem,program_options,graph --prefix=$BOOST_INSTALL;
      ./b2 link=shared install > null;
      fi
+  # SUITESPARSE
+  - >
+     if [ ! "$(ls -A $SS_INSTALL)" ]; then
+     cd $SS_SOURCE;
+     make -j 2;
+     cp -r include $SS_INSTALL;
+     cp -r lib $SS_INSTALL;
+     fi
   # CERES
   - cd $CERES_BUILD
   - >
@@ -122,6 +142,8 @@ install:
      cmake
      -DCMAKE_INSTALL_PREFIX=$CERES_INSTALL
      -DEIGEN_INCLUDE_DIR=$EIGEN_INSTALL
+     -DSUITESPARSE_INCLUDE_DIR_HINTS=$SS_INSTALL/include
+     -DSUITESPARSE_LIBRARY_DIR_HINTS=$SS_INSTALL/lib
      -DMINIGLOG=ON
      $CERES_SOURCE;
      make -j 2;
@@ -190,3 +212,4 @@ cache:
     - $CERES_INSTALL
     - $BOOST_INSTALL
     - $EIGEN_INSTALL
+    - $SS_INSTALL
