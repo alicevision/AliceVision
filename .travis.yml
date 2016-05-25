@@ -27,7 +27,6 @@ addons:
       - libxrandr-dev
       - g++-4.8
       - libatlas-base-dev
-      - libsuitesparse-dev
 
 env:
   global:
