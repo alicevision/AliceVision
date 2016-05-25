@@ -49,7 +49,7 @@ env:
     - OPENCV_BUILD=${OPENCV_ROOT}/build
     - OPENCV_INSTALL=${OPENCV_ROOT}/install
     # EIGEN
-    - EIGEN_INSTALL=${TRAVIS_BUILD_DIR}/eigen320
+    - EIGEN_INSTALL=${TRAVIS_BUILD_DIR}/eigen
     # CERES
     - CERES_ROOT=${TRAVIS_BUILD_DIR}/ceres
     - CERES_SOURCE=${CERES_ROOT}/source
