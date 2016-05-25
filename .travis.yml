@@ -17,7 +17,6 @@ addons:
       - ubuntu-toolchain-r-test
     packages:
       - cmake
-      - libeigen3-dev
       - lcov
       - libpng-dev
       - libjpeg8-dev
@@ -91,9 +90,9 @@ before_install:
  - mkdir --parent $CERES_INSTALL
  - >
     if [ ! "$(ls -A $CERES_INSTALL)" ]; then
+    wget http://ceres-solver.org/ceres-solver-1.11.0.tar.gz;
     tar -xf ceres-solver-1.11.0.tar.gz;
     cp -r ceres-solver-1.11.0/* $CERES_SOURCE;
-    wget http://ceres-solver.org/ceres-solver-1.11.0.tar.gz;
     fi
 
 install:
