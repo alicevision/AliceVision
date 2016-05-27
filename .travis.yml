@@ -123,7 +123,7 @@ install:
   - cd $BOOST_SOURCE
   - >
      if [ ! "$(ls -1 $BOOST_INSTALL)" ]; then
-     ./bootstrap.sh --with-libraries=filesystem,program_options,graph --prefix=$BOOST_INSTALL;
+     ./bootstrap.sh --with-libraries=filesystem,program_options,graph,serialization,thread --prefix=$BOOST_INSTALL;
      ./b2 link=shared install > null;
      fi
   # SUITESPARSE
