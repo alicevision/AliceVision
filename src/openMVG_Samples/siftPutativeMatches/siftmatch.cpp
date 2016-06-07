@@ -10,6 +10,8 @@
 #include "openMVG/matching/regions_matcher.hpp"
 
 #include "nonFree/sift/SIFT_describer.hpp"
+#include "nonFree/sift/SIFT_OPENCV_Image_describer.hpp"
+#include "nonFree/sift/SIFT_popSIFT_describer.hpp"
 #include "third_party/stlplus3/filesystemSimplified/file_system.hpp"
 
 #include "third_party/vectorGraphics/svgDrawer.hpp"
@@ -39,10 +41,12 @@ int main() {
   // Detect regions thanks to an image_describer
   //--
   using namespace openMVG::features;
-  std::unique_ptr<Image_describer> image_describer(new SIFT_Image_describer);
+  std::unique_ptr<Image_describer> image_describer(new SIFT_popSIFT_describer);
   std::map<IndexT, std::unique_ptr<features::Regions> > regions_perImage;
   image_describer->Describe(imageL, regions_perImage[0]);
   image_describer->Describe(imageR, regions_perImage[1]);
+  
+  std::cerr << "Extraction in both images done" << std::endl;
 
   const PointFeatures
     featsL = regions_perImage.at(0)->GetRegionsPositions(),
@@ -55,19 +59,26 @@ int main() {
     string out_filename = "00_images.jpg";
     WriteImage(out_filename.c_str(), concat);
   }
+    
+  std::cerr << __LINE__ << std::endl;
 
   const SIFT_Regions* regionsL = dynamic_cast<SIFT_Regions*>(regions_perImage.at(0).get());
   const SIFT_Regions* regionsR = dynamic_cast<SIFT_Regions*>(regions_perImage.at(1).get());
 
+  std::cerr << __LINE__ << " " << (intptr_t) regionsL<< std::endl;
+  
   //- Draw features on the two image (side by side)
   {
     Image<unsigned char> concat;
+    std::cerr << __LINE__ << " bef, concat" << std::endl;
     ConcatH(imageL, imageR, concat);
 
     //-- Draw features :
     for (size_t i=0; i < featsL.size(); ++i )  {
+      std::cerr << __LINE__ << std::endl;
       const SIOPointFeature point = regionsL->Features()[i];
       DrawCircle(point.x(), point.y(), point.scale(), 255, &concat);
+      std::cerr << __LINE__ << " " << point.x() << " " << point.y()  << " scale " << point.scale() << std::endl;
     }
     for (size_t i=0; i < featsR.size(); ++i )  {
       const SIOPointFeature point = regionsR->Features()[i];
@@ -76,6 +87,8 @@ int main() {
     const std::string out_filename = "01_features.jpg";
     WriteImage(out_filename.c_str(), concat);
   }
+  
+  std::cerr << __LINE__ << std::endl;
 
   //-- Perform matching -> find Nearest neighbor, filtered with Distance ratio
   std::vector<IndMatch> vec_PutativeMatches;
