@@ -22,7 +22,8 @@ namespace bfs = boost::filesystem;
 void alignAndScaleStructure(
     SfM_Data & sfmData,
     const IndexT nCCTags,
-    const IndexT indexOrigin)
+    const IndexT indexOrigin,
+    const IndexT indexXDirection)
 {
   const std::size_t nLandmarks = sfmData.GetLandmarks().size();
   Mat3X vX(3,nLandmarks);
@@ -111,7 +112,7 @@ void alignAndScaleStructure(
   // Therefore, z-camera centers are supposed to be negative, the point cloud
   // being centered in (0,0,0), the z axis pointing up.
   Mat3 flip = Eigen::MatrixXd::Identity(3,3);
-  if ( vCamCenter.col(0)[2] > 0 )
+  if ( vCamCenter.col(0)[2] > 0 ) // Markers on the ceiling: > 0, on the ground < 0
   {
     flip(0,0) = -flip(0,0);
     flip(2,2) = -flip(2,2);
@@ -145,22 +146,25 @@ void alignAndScaleStructure(
   //{
     origin = Vec3(vX.col(indexOrigin));
   //}
-  for(int i=0 ; i < nLandmarks ; ++i )
-    vX.col(i) -= origin;
+
+  //todo: uncomment the 2 loops
+  //for(int i=0 ; i < nLandmarks ; ++i )
+  //  vX.col(i) -= origin;
     
-  for(int i=0 ; i < nCameras ; ++i )
-    vCamCenter.col(i) -= origin; 
+  //for(int i=0 ; i < nCameras ; ++i )
+  //  vCamCenter.col(i) -= origin; 
   
   // 2D rotation to align to the square [-xmin -ymin +xmax +ymax]
-  double thetaAlign = -atan2(vX(1,iMax),vX(0,iMax)) + M_PI/4;
+  //double thetaAlign = -atan2(vX(1,indexXDirection),vX(0,indexXDirection));// + M_PI/4;
+  double thetaAlign = -atan2(vX(1,iMax),vX(0,iMax)) + 3*M_PI/16;
   double cosAlign = cos(thetaAlign);
   double sinAlign = sin(thetaAlign);
 
   Mat3 alignSquareRot = Eigen::MatrixXd::Identity(3,3);
-  alignSquareRot(0,0) = cosAlign;
-  alignSquareRot(0,1) = -sinAlign;
-  alignSquareRot(1,0) = sinAlign;
-  alignSquareRot(1,1) = cosAlign;
+  //alignSquareRot(0,0) = cosAlign;
+  //alignSquareRot(0,1) = -sinAlign;
+  //alignSquareRot(1,0) = sinAlign;
+  //alignSquareRot(1,1) = cosAlign;
   
   for(int i=0 ; i < nLandmarks ; ++i )
     vX.col(i) = alignSquareRot * vX.col(i);
@@ -173,16 +177,16 @@ void alignAndScaleStructure(
   
   i=0;
   // Matlab style output for debug
-  //std::cout << " [ " ;
+  std::cout << " [ " ;
   
   // Write back the transformed structure
   for( auto & landmark : sfmData.structure )
   {
     landmark.second.X = vX.col(i);
-    //std::cout << " [ " << landmark.second.X(0) << " " << landmark.second.X(1) << " " << landmark.second.X(2)<< " ] ; ";
+    std::cout << " [ " << landmark.second.X(0) << " " << landmark.second.X(1) << " " << landmark.second.X(2)<< " ] ; ";
     ++i;
   }
-  //std::cout << " ] " ;
+  std::cout << " ] " ;
   
   i=0;
   // Write back the transformed cameras
@@ -216,6 +220,7 @@ int main(int argc, char **argv)
   bool sUseSfmVisibility = false;
   bool sKeepSift = false;
   IndexT idOrigin = UndefinedIndexT;
+  IndexT idXDirection = UndefinedIndexT;
   IndexT minTrackLength = 4;
 
   cmd.add( make_option('i', sSfM_Data_Filename, "input_file") );
@@ -225,6 +230,7 @@ int main(int argc, char **argv)
   cmd.add( make_option('r', sUseSfmVisibility, "use_sfm_visibility") );
   cmd.add( make_option('d', sDebugOutputDir, "debug_dir") );
   cmd.add( make_option('c', idOrigin, "cctag_id_origin") );
+  cmd.add( make_option('x', idXDirection, "cctag_id_x_direction") );
   cmd.add( make_option('t', minTrackLength, "min_track_length") );
 
   try {
@@ -241,6 +247,7 @@ int main(int argc, char **argv)
     << "[-r|--use_sfm_visibility] Use connections between views based on SfM observations instead of relying on frustums intersections (default false)\n"
     << "[-d|--debug_dir] debug output directory to generate svg files with detected CCTags (default \"\")\n"
     << "[-c|--cctag_id_origin] id of the cctag defining the origin of the coordinate system (if not set, the cctags gravity center will be used)\n"
+    << "[-x|--cctag_id_x_direction] id of the cctag defining the x direction of the coordinate system (if not set, dominant direction of the point cloud will be used)\n"
     << "[-t|--min_track_length] minimum of the track lengths required by a point to be triangulated (default "<< minTrackLength << ")\n"     
     << std::endl;
 
@@ -385,8 +392,12 @@ int main(int argc, char **argv)
   }
 
   IndexT landmarkIndex = landmarkMaxIndex;
+  
   IndexT indexLandmarkOrigin = UndefinedIndexT;
   bool flagOrigin = false;
+  
+  IndexT indexLandmarkXDirection = UndefinedIndexT;
+  bool flagXDirection = false;
   
   for(const auto& cctagVisibility: cctagsVisibility)
   {
@@ -414,6 +425,8 @@ int main(int argc, char **argv)
           landmark.obs[iObsViewId] = cctagsObservations[std::make_pair(cctagVisibility.first, iObsViewId)];
         }
         
+       std::cout << "ID: " << cctagVisibility.first  << std::endl;
+
         if (idOrigin == cctagVisibility.first)
         {
           if (!flagOrigin)
@@ -422,7 +435,19 @@ int main(int argc, char **argv)
             indexLandmarkOrigin = landmarkIndex;
           }else
           {
-            std::cout << " WARNING: the id of the cctag origin is associated to a cctag appearing at least two times in the reconstruction." << std::endl;
+            std::cout << " WARNING: the id of the cctag origin is associated to a cctag existing at least two times in the reconstruction." << std::endl;
+          }
+        }
+        
+        if (idXDirection == cctagVisibility.first)
+        {
+          if (!flagXDirection)
+          {
+            flagXDirection = true;
+            indexLandmarkXDirection = landmarkIndex;
+          }else
+          {
+            std::cout << " WARNING: the id of the cctag defining the X direction is associated to a cctag existing at least two times in the reconstruction." << std::endl;
           }
         }
         
@@ -439,6 +464,13 @@ int main(int argc, char **argv)
   {
     std::cout << " WARNING: the id of the cctag origin is associated to a cctag that does not appear enough times in the image collection." << std::endl;
     indexLandmarkOrigin = UndefinedIndexT;
+  }
+  
+  // If the id origin has been specified and its associated id has not been found in the views, then the cctag origin is missing.
+  if ( (idXDirection != UndefinedIndexT) && (!flagXDirection) )
+  {
+    std::cout << " WARNING: the id of the cctag defining the X direction is associated to a cctag that does not appear enough times in the image collection." << std::endl;
+    indexLandmarkXDirection = UndefinedIndexT;
   }
   
   openMVG::system::Timer timer;
@@ -489,7 +521,7 @@ int main(int argc, char **argv)
   // Currently all the cctags are considered in the plane fitting.
   // If passed in the command line, the origin of the system correspond to the cctag whose id is idOrigin,
   // otherwise set to the gravity center of all tags.
-  alignAndScaleStructure(cctagSfmData, cctagReconstructedLandmarksSize, indexLandmarkOrigin);
+  alignAndScaleStructure(cctagSfmData, cctagReconstructedLandmarksSize, indexLandmarkOrigin, indexLandmarkXDirection);
   
   if (stlplus::extension_part(sOutFile) != "ply")
   {
