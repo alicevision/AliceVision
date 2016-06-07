@@ -156,7 +156,7 @@ void alignAndScaleStructure(
   
   // 2D rotation to align to the square [-xmin -ymin +xmax +ymax]
   //double thetaAlign = -atan2(vX(1,indexXDirection),vX(0,indexXDirection));// + M_PI/4;
-  double thetaAlign = -atan2(vX(1,iMax),vX(0,iMax)) + 3*M_PI/16;
+  double thetaAlign = -atan2(vX(1,iMax),vX(0,iMax)) + M_PI/4;
   double cosAlign = cos(thetaAlign);
   double sinAlign = sin(thetaAlign);
 
