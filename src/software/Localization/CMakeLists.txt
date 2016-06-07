@@ -4,7 +4,7 @@ IF(OpenMVG_BUILD_VOCTREE)
     ###
     ADD_EXECUTABLE(openMVG_main_voctreeLocalizer main_voctreeLocalizer.cpp)
     INSTALL(TARGETS openMVG_main_voctreeLocalizer DESTINATION bin/)
-    TARGET_LINK_LIBRARIES(openMVG_main_voctreeLocalizer openMVG_localization openMVG_dataio openMVG_image openMVG_features vlsift ${BOOST_LIBRARIES})
+    TARGET_LINK_LIBRARIES(openMVG_main_voctreeLocalizer openMVG_localization openMVG_dataio openMVG_image openMVG_features glog vlsift ${BOOST_LIBRARIES})
     if(OpenMVG_USE_ALEMBIC)
         target_link_libraries(openMVG_main_voctreeLocalizer ${ABC_LIBRARIES})
     endif()
@@ -21,7 +21,7 @@ IF(OpenMVG_BUILD_VOCTREE)
       ###
       ADD_EXECUTABLE(openMVG_main_cctagLocalizer main_cctagLocalizer.cpp)
       INSTALL(TARGETS openMVG_main_cctagLocalizer DESTINATION bin/)
-      TARGET_LINK_LIBRARIES(openMVG_main_cctagLocalizer openMVG_localization openMVG_dataio openMVG_image openMVG_features ${CCTAG_LIBRARIES} ${BOOST_LIBRARIES})
+      TARGET_LINK_LIBRARIES(openMVG_main_cctagLocalizer openMVG_localization openMVG_dataio openMVG_image openMVG_features glog ${CCTAG_LIBRARIES} ${BOOST_LIBRARIES})
       if(OpenMVG_USE_ALEMBIC)
         target_link_libraries(openMVG_main_cctagLocalizer ${ABC_LIBRARIES})
       endif()
@@ -39,14 +39,14 @@ IF(OpenMVG_BUILD_VOCTREE)
     ###
     ADD_EXECUTABLE(openMVG_main_voctreeQueryUtility voctreeQueryUtility.cpp)
     INSTALL(TARGETS openMVG_main_voctreeQueryUtility DESTINATION bin/)
-    TARGET_LINK_LIBRARIES(openMVG_main_voctreeQueryUtility openMVG_voctree ${BOOST_LIBRARIES})
+    TARGET_LINK_LIBRARIES(openMVG_main_voctreeQueryUtility openMVG_voctree glog ${BOOST_LIBRARIES})
 
     ###
     # Test the localization class
     ###
     ADD_EXECUTABLE(openMVG_main_rigLocalizer main_rigLocalizer.cpp)
     INSTALL(TARGETS openMVG_main_rigLocalizer DESTINATION bin/)
-    TARGET_LINK_LIBRARIES(openMVG_main_rigLocalizer openMVG_localization openMVG_dataio openMVG_rig openMVG_image openMVG_features vlsift ${BOOST_LIBRARIES})
+    TARGET_LINK_LIBRARIES(openMVG_main_rigLocalizer openMVG_localization openMVG_dataio openMVG_rig openMVG_image openMVG_features glog vlsift ${BOOST_LIBRARIES})
     if(OpenMVG_USE_ALEMBIC)
         target_link_libraries(openMVG_main_rigLocalizer ${ABC_LIBRARIES})
     endif()
@@ -86,6 +86,7 @@ TARGET_LINK_LIBRARIES(openMVG_main_SfM_Localization
   openMVG_sfm
   easyexif
   vlsift
+  glog
   )
 
 # Installation rules

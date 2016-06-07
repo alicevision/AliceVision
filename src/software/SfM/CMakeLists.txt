@@ -81,6 +81,7 @@ TARGET_LINK_LIBRARIES(openMVG_main_IncrementalSfM
   openMVG_image
   openMVG_features
   openMVG_sfm
+  glog
   stlplus
   )
 
@@ -90,6 +91,7 @@ TARGET_LINK_LIBRARIES(openMVG_main_GlobalSfM
   openMVG_image
   openMVG_features
   openMVG_sfm
+  glog
   stlplus
   )
 
@@ -114,6 +116,7 @@ TARGET_LINK_LIBRARIES(openMVG_main_ComputeStructureFromKnownPoses
   openMVG_system
   openMVG_features
   openMVG_sfm
+  glog
   stlplus
   )
 
@@ -123,6 +126,7 @@ TARGET_LINK_LIBRARIES(openMVG_main_ComputeCCTagStructureFromKnownPoses
   openMVG_system
   openMVG_features
   openMVG_sfm
+  glog
   stlplus
   ${CCTAG_LIBRARIES}
   )

@@ -9,6 +9,7 @@ TARGET_LINK_LIBRARIES(openMVG_sample_robustEssential_ba
   openMVG_system
   openMVG_sfm
   stlplus
+  glog
   vlsift)
 
 SET_PROPERTY(TARGET openMVG_sample_robustEssential_ba PROPERTY FOLDER OpenMVG/Samples)
