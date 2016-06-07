@@ -1,3 +1,4 @@
+
 #ifndef SIFT_POPSIFT_DESCRIBER_HPP
 #define	SIFT_POPSIFT_DESCRIBER_HPP
 
@@ -7,8 +8,10 @@
 #include <openMVG/features/regions_factory.hpp>
 
 // popsift include
-#include <SIFT.h>
-
+#include <popsift/c_util_img.h>
+#include <popsift/popsift.h>
+#include <popsift/sift_pyramid.h>
+#include <popsift/sift_octave.h>
 
 #include <cereal/cereal.hpp>
 
@@ -91,38 +94,49 @@ public:
     }
 
     const double sigma = 1.6;
-    PopSift PopSift( _params._num_octaves,
-                    _params._num_scales,
-                    1,
-                    _params._peak_threshold, // DoG threshold, FIXME: verify this is actually _peak_threshold we want
-                    _params._edge_threshold,
-                    sigma );
+    
+    popart::Config config;
+    config.setOctaves(_params._num_octaves);
+    config.setLevels(_params._num_scales);
+    config.setDownsampling(-1);
+    config.setThreshold(_params._peak_threshold);
+    config.setEdgeLimit(_params._edge_threshold);
+    config.setSigma(sigma);
 
-    PopSift.init( w, h );
-    PopSift.execute(inp);
+    
+    PopSift PopSift(config);
+    
+
+    PopSift.init( 0, w, h );
+    PopSift.execute(0, &inp);
 
     Allocate(regions); 
 
     // Build alias to cached data
     SIFT_Float_Regions * regionsCasted = dynamic_cast<SIFT_Float_Regions*>(regions.get()); 
-    regionsCasted->Features().reserve(2000);
-    regionsCasted->Descriptors().reserve(2000);
+    regionsCasted->Features().reserve(10000);
+    regionsCasted->Descriptors().reserve(10000);
 
-    popart::Pyramid &pyramid = PopSift.pyramid();
+    popart::Pyramid &pyramid = PopSift.pyramid(0);
     for( int o=0; o<_params._num_octaves; o++ )
     {
-      popart::Pyramid::Octave &octave = pyramid.octave(o);
+      std::cout << "Processing octave " << o << std::endl;
+      popart::Octave &octave = pyramid.octave(o);
       // GPU to CPU memory
       // TODO: the download GPU -> CPU is also done in downloadToVector,
       // check that we can safely remove downloadDescriptors
       octave.downloadDescriptor();
 
       const float imageScale = static_cast<float>(1 << o);
-      std::vector<popart::ExtremumCandidate> candidates;
+      std::vector<popart::Extremum> candidates;
       std::vector<popart::Descriptor> descriptors;
       for( int s=0; s<_params._num_scales+3; s++ ) 
       {
+          std::cout << "Level " << s << std::endl;
+          
           size_t count = octave.getExtremaCount(s);
+          std::cout << "#extremas " << count << std::endl;
+          
           candidates.resize(count);
           descriptors.resize(count);
           octave.downloadToVector(s, candidates, descriptors); // This also does GPU to CPU memory transfert
@@ -135,7 +149,7 @@ public:
           {
             // the position of the points we get from popsift are multiplied by two
             // the 0.5 value is used to move their coordinates to the correct image coordinates
-            regionsCasted->Features().emplace_back(0.5*feat.xpos*imageScale, 0.5*feat.ypos*imageScale, feat.sigma, feat.angle_from_bemap);
+            regionsCasted->Features().emplace_back(0.5*feat.xpos*imageScale, 0.5*feat.ypos*imageScale, feat.sigma, feat.orientation);
           }
 
           // Descriptor values
@@ -150,9 +164,11 @@ public:
           }
         }
     }
+    std::cerr << "end loop" << std::endl;
     // FIXME: do we have to deallocate the image allocated line 78 ?
 
-    PopSift.uninit( );
+    PopSift.uninit(0);
+    std::cerr << "after uninit" << std::endl;
     // FIXME: remove following commented code once the debug is finished
     //regions->Save("/tmp/features_popsift.txt", "/tmp/descriptors_popsift.txt");    
     //_exit(0);
@@ -187,4 +203,3 @@ CEREAL_REGISTER_TYPE_WITH_NAME(openMVG::features::SIFT_popSIFT_describer, "SIFT_
 
 
 #endif	/* SIFT_POPSIFT_DESCRIBER_HPP */
-
