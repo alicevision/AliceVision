@@ -12,6 +12,9 @@ TARGET_LINK_LIBRARIES(openMVG_sample_main_repeatability_dataset
   openMVG_multiview
   vlsift
   popsift
-  stlplus)
+  stlplus
+  ${CUDA_LIBRARIES}
+  ${CUDA_CUDADEVRT_LIBRARY}
+  )
 
 SET_PROPERTY(TARGET openMVG_sample_main_repeatability_dataset PROPERTY FOLDER OpenMVG/Samples)
