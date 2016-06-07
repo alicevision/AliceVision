@@ -1,10 +1,10 @@
 #include "VoctreeLocalizer.hpp"
-#include "svgVisualization.hpp"
 
 #include <openMVG/sfm/sfm_data_io.hpp>
 #include <openMVG/sfm/pipelines/sfm_robust_model_estimation.hpp>
 #include <openMVG/sfm/sfm_data_BA_ceres.hpp>
 #include <openMVG/features/io_regions_type.hpp>
+#include <openMVG/features/svgVisualization.hpp>
 #ifdef HAVE_CCTAG
 #include <openMVG/features/cctag/SIFT_CCTAG_describer.hpp>
 #endif
@@ -15,6 +15,8 @@
 #include <openMVG/matching_image_collection/F_ACRobust.hpp>
 #include <openMVG/numeric/numeric.h>
 #include <openMVG/robust_estimation/guided_matching.hpp>
+#include <openMVG/logger.hpp>
+
 #include <third_party/progress/progress.hpp>
 //#include <cereal/archives/json.hpp>
 
@@ -22,10 +24,6 @@
 
 #include <algorithm>
 #include <chrono>
-
-//@fixme move/redefine
-#define POPART_COUT(x) std::cout << x << std::endl
-#define POPART_CERR(x) std::cerr << x << std::endl
 
 namespace openMVG {
 namespace localization {
@@ -394,6 +392,10 @@ bool VoctreeLocalizer::localizeFirstBestResult(const image::Image<unsigned char>
 #endif
   auto detect_start = std::chrono::steady_clock::now();
   _image_describer->Set_configuration_preset(param._featurePreset);
+#if HAVE_CCTAG
+  if (auto* p = dynamic_cast<features::SIFT_CCTAG_Image_describer*>(_image_describer))
+    p->Set_cctag_use_cuda(param._ccTagUseCuda);
+#endif
   _image_describer->Describe(imageGrey, tmpQueryRegions, nullptr);
   auto detect_end = std::chrono::steady_clock::now();
   auto detect_elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(detect_end - detect_start);
@@ -514,7 +516,7 @@ bool VoctreeLocalizer::localizeFirstBestResult(const image::Image<unsigned char>
       const std::string matchedImage = bfs::path(mview->s_Img_path).stem().string();
       const std::string matchedPath = (bfs::path(_sfm_data.s_root_path) /  bfs::path(mview->s_Img_path)).string();
       
-      saveMatches2SVG(imagePath,
+      features::saveMatches2SVG(imagePath,
                       queryImageSize,
                       queryRegions.GetRegionsPositions(),
                       matchedPath,
@@ -635,6 +637,10 @@ bool VoctreeLocalizer::localizeAllResults(const image::Image<unsigned char> & im
 #endif
   auto detect_start = std::chrono::steady_clock::now();
   _image_describer->Set_configuration_preset(param._featurePreset);
+#if HAVE_CCTAG
+  if (auto* p = dynamic_cast<features::SIFT_CCTAG_Image_describer*>(_image_describer))
+    p->Set_cctag_use_cuda(param._ccTagUseCuda);
+#endif
   _image_describer->Describe(imageGrey, tmpQueryRegions, nullptr);
   auto detect_end = std::chrono::steady_clock::now();
   auto detect_elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(detect_end - detect_start);
@@ -650,7 +656,7 @@ bool VoctreeLocalizer::localizeAllResults(const image::Image<unsigned char> & im
   if(!param._visualDebug.empty() && !imagePath.empty())
   {
     namespace bfs = boost::filesystem;
-    saveFeatures2SVG(imagePath, 
+    features::saveFeatures2SVG(imagePath, 
                      queryImageSize, 
                      tmpQueryRegions->GetRegionsPositions(),
                      param._visualDebug+"/"+bfs::path(imagePath).stem().string()+".svg");
@@ -755,7 +761,7 @@ bool VoctreeLocalizer::localizeAllResults(const image::Image<unsigned char> & im
       const std::string matchedPath = (bfs::path(_sfm_data.s_root_path) /  bfs::path(mview->s_Img_path)).string();
       
 
-      saveMatches2SVG(imagePath,
+      features::saveMatches2SVG(imagePath,
                       queryImageSize,
                       queryRegions.GetRegionsPositions(),
                       matchedPath,
@@ -827,7 +833,7 @@ bool VoctreeLocalizer::localizeAllResults(const image::Image<unsigned char> & im
   if(!param._visualDebug.empty() && !imagePath.empty())
   {
     namespace bfs = boost::filesystem;
-    saveFeatures2SVG(imagePath, 
+    features::saveFeatures2SVG(imagePath, 
                      queryImageSize, 
                      resectionData.pt2D,
                      param._visualDebug+"/"+bfs::path(imagePath).stem().string()+".associations.svg");
@@ -881,14 +887,21 @@ bool VoctreeLocalizer::localizeAllResults(const image::Image<unsigned char> & im
   if(!refineStatus)
     POPART_COUT("Refine pose could not improve the estimation of the camera pose.");
 
+  localizationResult = LocalizationResult(resectionData, associationIDs, pose, queryIntrinsics, true);
+  
   {
     // just temporary code to evaluate the estimated pose @todo remove it
     POPART_COUT("R refined\n" << pose.rotation());
     POPART_COUT("t refined\n" << pose.translation());
     POPART_COUT("K refined\n" << queryIntrinsics.K());
+
+    const Mat2X residuals = localizationResult.computeResiduals();
+
+    const auto sqrErrors = (residuals.cwiseProduct(residuals)).colwise().sum();
+    POPART_COUT("RMSE = " << std::sqrt(sqrErrors.mean())
+              << " min = " << std::sqrt(sqrErrors.minCoeff())
+              << " max = " << std::sqrt(sqrErrors.maxCoeff()));
   }
-    
-  localizationResult = LocalizationResult(resectionData, associationIDs, pose, queryIntrinsics, true);
   
   return localizationResult.isValid();
 }
