@@ -521,7 +521,7 @@ int main(int argc, char **argv)
   // Currently all the cctags are considered in the plane fitting.
   // If passed in the command line, the origin of the system correspond to the cctag whose id is idOrigin,
   // otherwise set to the gravity center of all tags.
-  alignAndScaleStructure(cctagSfmData, cctagReconstructedLandmarksSize, indexLandmarkOrigin, indexLandmarkXDirection);
+  //alignAndScaleStructure(cctagSfmData, cctagReconstructedLandmarksSize, indexLandmarkOrigin, indexLandmarkXDirection);
   
   if (stlplus::extension_part(sOutFile) != "ply")
   {
