@@ -9,8 +9,9 @@
 #include <numeric>
 #include <array>
 
-#include <cctag/ICCTag.hpp>
 #include <boost/ptr_container/ptr_list.hpp>
+
+namespace cctag { class ICCTag; }
 
 namespace openMVG {
 namespace features {
