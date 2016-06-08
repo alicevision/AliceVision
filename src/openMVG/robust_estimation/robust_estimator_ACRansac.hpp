@@ -240,7 +240,7 @@ std::pair<double, double> ACRANSAC(const Kernel &kernel,
         }
         if (nInlier > 2.5 * sizeSample) // does the model is meaningful
           bACRansacMode = true;
-        if (!bACRansacMode && nIter > nIterReserve)
+        if (!bACRansacMode && iter > nIterReserve*2)
           nIter = 0;
       }
       if (bACRansacMode)
