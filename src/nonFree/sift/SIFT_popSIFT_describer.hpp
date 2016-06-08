@@ -173,7 +173,7 @@ public:
     //regions->Save("/tmp/features_popsift.txt", "/tmp/descriptors_popsift.txt");    
     //_exit(0);
     return true;  // <==
-  };
+  }
 
   /// Allocate Regions type depending of the Image_describer
   void Allocate(std::unique_ptr<Regions> &regions) const

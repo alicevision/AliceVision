@@ -62,8 +62,10 @@ int main() {
     
   std::cerr << __LINE__ << std::endl;
 
-  const SIFT_Regions* regionsL = dynamic_cast<SIFT_Regions*>(regions_perImage.at(0).get());
-  const SIFT_Regions* regionsR = dynamic_cast<SIFT_Regions*>(regions_perImage.at(1).get());
+  const openMVG::features::Regions* l = regions_perImage.at(0).get();
+  const openMVG::features::Regions* r = regions_perImage.at(1).get();
+  const SIFT_Regions* regionsL = (const SIFT_Regions*)l;
+  const SIFT_Regions* regionsR = (const SIFT_Regions*)r;
 
   std::cerr << __LINE__ << " " << (intptr_t) regionsL<< std::endl;
   
