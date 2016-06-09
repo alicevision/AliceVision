@@ -7,7 +7,6 @@
 #include <cereal/cereal.hpp>
 #include <iostream>
 #include <numeric>
-#include <array>
 
 #include <boost/ptr_container/ptr_list.hpp>
 
@@ -54,12 +53,6 @@ private:
   struct CCTagParameters; // Hidden implementation
   CCTagParameters *_params;
   bool _doAppend;
-
-  // Temporal consistency filtering data.
-  std::array<uint32_t, 5> _lastSeen;
-  size_t _frameCount;
-  uint32_t updateLastSeen(const boost::ptr_list<cctag::ICCTag>& tags);
-  static uint32_t tagsToBitmask(const boost::ptr_list<cctag::ICCTag>& tags);
 };
 
 /**
