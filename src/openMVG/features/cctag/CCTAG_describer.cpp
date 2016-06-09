@@ -98,8 +98,7 @@ bool CCTAG_Image_describer::Describe(const image::Image<unsigned char>& image,
 #endif
     // durations->print( std::cerr );
 
-    const uint32_t tagbits = updateLastSeen(cctags);
-
+    const uint32_t tagbits = tagsToBitmask(cctags);
     for (const auto & cctag : cctags)
     {
       if ( cctag.getStatus() > 0 && cctag.id() < 32 && (tagbits & (1U << cctag.id())) )
