@@ -889,17 +889,22 @@ vl_sift_new (int width, int height,
              int noctaves, int nlevels,
              int o_min)
 {
+  fprintf( stderr, "Enter %s\n", __func__ );
+
   VlSiftFilt *f = vl_malloc (sizeof(VlSiftFilt)) ;
 
+  fprintf( stderr, "Line %d in %s\n", __LINE__, __func__ );
   int w   = VL_SHIFT_LEFT (width,  -o_min) ;
   int h   = VL_SHIFT_LEFT (height, -o_min) ;
   int nel = w * h ;
 
+  fprintf( stderr, "Line %d in %s\n", __LINE__, __func__ );
   /* negative value O => calculate max. value */
   if (noctaves < 0) {
     noctaves = VL_MAX (floor (log2 (VL_MIN(width, height))) - o_min - 3, 1) ;
   }
 
+  fprintf( stderr, "Line %d in %s\n", __LINE__, __func__ );
   f-> width   = width ;
   f-> height  = height ;
   f-> O       = noctaves ;
@@ -916,6 +921,8 @@ vl_sift_new (int width, int height,
                         * (f->s_max - f->s_min    )  ) ;
   f-> grad    = vl_malloc (sizeof(vl_sift_pix) * nel * 2
                         * (f->s_max - f->s_min    )  ) ;
+
+  fprintf( stderr, "Line %d in %s\n", __LINE__, __func__ );
 
   f-> sigman  = 0.5 ;
   f-> sigmak  = pow (2.0, 1.0 / nlevels) ;
@@ -944,6 +951,7 @@ vl_sift_new (int width, int height,
   /* initialize fast_expn stuff */
   fast_expn_init () ;
 
+  fprintf( stderr, "Leave %s\n", __func__ );
   return f ;
 }
 

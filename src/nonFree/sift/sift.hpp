@@ -180,11 +180,16 @@ bool extractSIFT(const image::Image<unsigned char>& image,
     bool bOrientation,
     const image::Image<unsigned char> * mask)
 {
+cerr << "Enter " << __func__ << endl;
   const int w = image.Width(), h = image.Height();
   //Convert to float
+cerr << "Line " << __LINE__ << " in " << __func__ << endl;
   const image::Image<float> imageFloat(image.GetMat().cast<float>());
 
+cerr << "Line " << __LINE__ << " in " << __func__ << endl;
+cerr << w << " " << h << " " << params._num_octaves << " " << params._num_scales << " " << params._first_octave << endl;
   VlSiftFilt *filt = vl_sift_new(w, h, params._num_octaves, params._num_scales, params._first_octave);
+cerr << "Line " << __LINE__ << " in " << __func__ << endl;
   if (params._edge_threshold >= 0)
     vl_sift_set_edge_thresh(filt, params._edge_threshold);
   if (params._peak_threshold >= 0)
@@ -193,19 +198,24 @@ bool extractSIFT(const image::Image<unsigned char>& image,
   Descriptor<vl_sift_pix, 128> vlFeatDescriptor;
   Descriptor<T, 128> descriptor;
 
+cerr << "Line " << __LINE__ << " in " << __func__ << endl;
   // Process SIFT computation
   vl_sift_process_first_octave(filt, imageFloat.data());
+cerr << "Line " << __LINE__ << " in " << __func__ << endl;
 
   typedef Scalar_Regions<SIOPointFeature,T,128> SIFT_Region_T;
   regions.reset( new SIFT_Region_T );
   
+cerr << "Line " << __LINE__ << " in " << __func__ << endl;
   // Build alias to cached data
   SIFT_Region_T * regionsCasted = dynamic_cast<SIFT_Region_T*>(regions.get());
+cerr << "Line " << __LINE__ << " in " << __func__ << endl;
   // reserve some memory for faster keypoint saving
   const std::size_t reserveSize = (params._gridSize && params._maxTotalKeypoints) ? params._maxTotalKeypoints : 2000;
   regionsCasted->Features().reserve(reserveSize);
   regionsCasted->Descriptors().reserve(reserveSize);
 
+cerr << "Line " << __LINE__ << " in " << __func__ << endl;
   while (true)
   {
     vl_sift_detect(filt);
@@ -258,6 +268,7 @@ bool extractSIFT(const image::Image<unsigned char>& image,
     if (vl_sift_process_next_octave(filt))
       break; // Last octave
   }
+cerr << "Line " << __LINE__ << " in " << __func__ << endl;
   vl_sift_delete(filt);
 
   const auto& features = regionsCasted->Features();
@@ -281,6 +292,7 @@ bool extractSIFT(const image::Image<unsigned char>& image,
     regionsCasted->Descriptors().swap(sortedDescriptors);
   }
      
+cerr << "Line " << __LINE__ << " in " << __func__ << endl;
   // Grid filtering of the keypoints to ensure a global repartition
   if(params._gridSize && params._maxTotalKeypoints)
   {
@@ -339,6 +351,7 @@ bool extractSIFT(const image::Image<unsigned char>& image,
   }
   assert(features.size() == descriptors.size());
   
+cerr << "Enter " << __func__ << endl;
   return true;
 }
 

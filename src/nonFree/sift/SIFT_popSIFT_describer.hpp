@@ -99,8 +99,8 @@ public:
     config.setOctaves(_params._num_octaves);
     config.setLevels(_params._num_scales);
     config.setDownsampling(-1);
-    config.setThreshold(_params._peak_threshold);
-    config.setEdgeLimit(_params._edge_threshold);
+    config.setThreshold( 1.0f ); // _params._peak_threshold);
+    config.setEdgeLimit( 0.8f ); // _params._edge_threshold);
     config.setSigma(sigma);
 
     
@@ -120,7 +120,6 @@ public:
     popart::Pyramid &pyramid = PopSift.pyramid(0);
     for( int o=0; o<_params._num_octaves; o++ )
     {
-      std::cout << "Processing octave " << o << std::endl;
       popart::Octave &octave = pyramid.octave(o);
       // GPU to CPU memory
       // TODO: the download GPU -> CPU is also done in downloadToVector,
@@ -132,10 +131,10 @@ public:
       std::vector<popart::Descriptor> descriptors;
       for( int s=0; s<_params._num_scales+3; s++ ) 
       {
-          std::cout << "Level " << s << std::endl;
           
           size_t count = octave.getExtremaCount(s);
-          std::cout << "#extremas " << count << std::endl;
+          std::cerr << "Octave " << o << " level " << s
+                    << " #extremas " << count << std::endl;
           
           candidates.resize(count);
           descriptors.resize(count);
@@ -164,11 +163,9 @@ public:
           }
         }
     }
-    std::cerr << "end loop" << std::endl;
     // FIXME: do we have to deallocate the image allocated line 78 ?
 
     PopSift.uninit(0);
-    std::cerr << "after uninit" << std::endl;
     // FIXME: remove following commented code once the debug is finished
     //regions->Save("/tmp/features_popsift.txt", "/tmp/descriptors_popsift.txt");    
     //_exit(0);

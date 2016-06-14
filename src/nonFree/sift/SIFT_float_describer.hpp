@@ -49,7 +49,10 @@ public:
     std::unique_ptr<Regions> &regions,
     const image::Image<unsigned char> * mask = NULL)
   {
-    return extractSIFT<float>(image, regions, _params, _bOrientation, mask);
+    cerr << "Enter " << __func__ << endl;
+    bool val = extractSIFT<float>(image, regions, _params, _bOrientation, mask);
+    cerr << "Leave " << __func__ << endl;
+    return val;
   }
 
   /*/// Allocate Regions type depending of the Image_describer
