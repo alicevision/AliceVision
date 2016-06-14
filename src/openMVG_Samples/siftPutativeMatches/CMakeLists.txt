@@ -12,6 +12,7 @@ TARGET_LINK_LIBRARIES(openMVG_sample_siftPutative
   popsift
   ${CUDA_LIBRARIES}
   ${CUDA_CUDADEVRT_LIBRARY}
+  ${OpenCV_LIBS}
   stlplus)
 
 SET_PROPERTY(TARGET openMVG_sample_siftPutative PROPERTY FOLDER OpenMVG/Samples)

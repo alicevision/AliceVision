@@ -17,6 +17,7 @@ TARGET_LINK_LIBRARIES(openMVG_sample_main_repeatability_dataset
   stlplus
   ${CUDA_LIBRARIES}
   ${CUDA_CUDADEVRT_LIBRARY}
-  )
+  ${OpenCV_LIBS}
+)
 
 SET_PROPERTY(TARGET openMVG_sample_main_repeatability_dataset PROPERTY FOLDER OpenMVG/Samples)
