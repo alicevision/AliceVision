@@ -38,6 +38,8 @@
 #include "ceres/types.h"
 #include "glog/logging.h"
 
+using namespace std;
+
 namespace ceres {
 
 struct CRSMatrix;
@@ -109,11 +111,11 @@ class CompressedRowSparseMatrix : public SparseMatrix {
   const int* rows() const { return &rows_[0]; }
   int* mutable_rows() { return &rows_[0]; }
 
-  const vector<int>& row_blocks() const { return row_blocks_; }
-  vector<int>* mutable_row_blocks() { return &row_blocks_; }
+  const std::vector<int>& row_blocks() const { return row_blocks_; }
+  std::vector<int>* mutable_row_blocks() { return &row_blocks_; }
 
-  const vector<int>& col_blocks() const { return col_blocks_; }
-  vector<int>* mutable_col_blocks() { return &col_blocks_; }
+  const std::vector<int>& col_blocks() const { return col_blocks_; }
+  std::vector<int>* mutable_col_blocks() { return &col_blocks_; }
 
   // Destructive array resizing method.
   void SetMaxNumNonZeros(int num_nonzeros);
@@ -129,7 +131,7 @@ class CompressedRowSparseMatrix : public SparseMatrix {
 
   static CompressedRowSparseMatrix* CreateBlockDiagonalMatrix(
       const double* diagonal,
-      const vector<int>& blocks);
+      const std::vector<int>& blocks);
 
   // Compute the sparsity structure of the product m.transpose() * m
   // and create a CompressedRowSparseMatrix corresponding to it.
@@ -154,23 +156,23 @@ class CompressedRowSparseMatrix : public SparseMatrix {
   // created using the CreateOuterProductMatrixAndProgram function
   // above.
   static void ComputeOuterProduct(const CompressedRowSparseMatrix& m,
-                                  const vector<int>& program,
+                                  const std::vector<int>& program,
                                   CompressedRowSparseMatrix* result);
 
  private:
   int num_rows_;
   int num_cols_;
-  vector<int> rows_;
-  vector<int> cols_;
-  vector<double> values_;
+  std::vector<int> rows_;
+  std::vector<int> cols_;
+  std::vector<double> values_;
 
   // If the matrix has an underlying block structure, then it can also
   // carry with it row and column block sizes. This is auxilliary and
   // optional information for use by algorithms operating on the
   // matrix. The class itself does not make use of this information in
   // any way.
-  vector<int> row_blocks_;
-  vector<int> col_blocks_;
+  std::vector<int> row_blocks_;
+  std::vector<int> col_blocks_;
 
   CERES_DISALLOW_COPY_AND_ASSIGN(CompressedRowSparseMatrix);
 };

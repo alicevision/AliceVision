@@ -39,6 +39,8 @@
 #include "ceres/types.h"
 #include "glog/logging.h"
 
+using namespace std;
+
 namespace ceres {
 
 // This cost function has the same dimensions (parameters, residuals) as

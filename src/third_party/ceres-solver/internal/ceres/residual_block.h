@@ -71,7 +71,7 @@ class ResidualBlock {
   // residual_blocks array.
   ResidualBlock(const CostFunction* cost_function,
                 const LossFunction* loss_function,
-                const vector<ParameterBlock*>& parameter_blocks,
+                const std::vector<ParameterBlock*>& parameter_blocks,
                 int index);
 
   // Evaluates the residual term, storing the scalar cost in *cost, the residual
@@ -127,7 +127,7 @@ class ResidualBlock {
   int index() const { return index_; }
   void set_index(int index) { index_ = index; }
 
-  string ToString() {
+  std::string ToString() {
     return StringPrintf("{residual block; index=%d}", index_);
   }
 

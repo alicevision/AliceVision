@@ -49,6 +49,8 @@
 #include "ceres/types.h"
 #include "glog/logging.h"
 
+using namespace std;
+
 namespace ceres {
 namespace internal {
 namespace {
@@ -82,7 +84,7 @@ class GradientCheckingCostFunction : public CostFunction {
   GradientCheckingCostFunction(const CostFunction* function,
                                double relative_step_size,
                                double relative_precision,
-                               const string& extra_info)
+                               const std::string& extra_info)
       : function_(function),
         relative_precision_(relative_precision),
         extra_info_(extra_info) {

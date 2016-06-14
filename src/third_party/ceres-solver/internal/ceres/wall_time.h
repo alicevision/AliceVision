@@ -37,6 +37,8 @@
 #include "ceres/stringprintf.h"
 #include "glog/logging.h"
 
+using namespace std;
+
 namespace ceres {
 namespace internal {
 

@@ -33,6 +33,8 @@
 
 #include <vector>
 #include "ceres/internal/port.h"
+ 
+using namespace std;
 
 namespace ceres {
 namespace internal {

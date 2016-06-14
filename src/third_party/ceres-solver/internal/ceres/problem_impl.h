@@ -49,6 +49,8 @@
 #include "ceres/problem.h"
 #include "ceres/types.h"
 
+using namespace std;
+
 namespace ceres {
 
 class CostFunction;

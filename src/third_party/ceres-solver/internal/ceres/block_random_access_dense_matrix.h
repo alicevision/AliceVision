@@ -39,6 +39,8 @@
 #include "ceres/internal/port.h"
 #include "ceres/internal/scoped_ptr.h"
 
+using namespace std;
+
 namespace ceres {
 namespace internal {
 

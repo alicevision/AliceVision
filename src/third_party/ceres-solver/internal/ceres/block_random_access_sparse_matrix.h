@@ -45,6 +45,8 @@
 #include "ceres/types.h"
 #include "ceres/small_blas.h"
 
+using namespace std;
+
 namespace ceres {
 namespace internal {
 
