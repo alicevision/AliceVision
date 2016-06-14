@@ -12,6 +12,7 @@
 #include "nonFree/sift/SIFT_describer.hpp"
 #include "nonFree/sift/SIFT_OPENCV_Image_describer.hpp"
 #include "nonFree/sift/SIFT_popSIFT_describer.hpp"
+#include "nonFree/sift/SIFT_float_describer.hpp"
 #include "third_party/stlplus3/filesystemSimplified/file_system.hpp"
 
 #include "third_party/vectorGraphics/svgDrawer.hpp"
@@ -41,8 +42,11 @@ int main() {
   // Detect regions thanks to an image_describer
   //--
   using namespace openMVG::features;
-  std::unique_ptr<Image_describer> image_describer(new SIFT_popSIFT_describer);
+  //std::unique_ptr<Image_describer> image_describer(new SIFT_popSIFT_describer);
+  //std::unique_ptr<Image_describer> image_describer(new SIFT_float_describer);
+  std::unique_ptr<Image_describer> image_describer(new SIFT_OPENCV_Image_describer);
   std::map<IndexT, std::unique_ptr<features::Regions> > regions_perImage;
+  std::cerr << __LINE__ << " in " << __func__ << std::endl;
   image_describer->Describe(imageL, regions_perImage[0]);
   image_describer->Describe(imageR, regions_perImage[1]);
   
@@ -60,8 +64,8 @@ int main() {
     WriteImage(out_filename.c_str(), concat);
   }
     
-  std::cerr << __LINE__ << std::endl;
-
+  // const SIFT_Regions* regionsL = dynamic_cast<SIFT_Regions*>(regions_perImage.at(0).get());
+  // const SIFT_Regions* regionsR = dynamic_cast<SIFT_Regions*>(regions_perImage.at(1).get());
   const openMVG::features::Regions* l = regions_perImage.at(0).get();
   const openMVG::features::Regions* r = regions_perImage.at(1).get();
   const SIFT_Regions* regionsL = (const SIFT_Regions*)l;
@@ -77,10 +81,9 @@ int main() {
 
     //-- Draw features :
     for (size_t i=0; i < featsL.size(); ++i )  {
-      std::cerr << __LINE__ << std::endl;
       const SIOPointFeature point = regionsL->Features()[i];
       DrawCircle(point.x(), point.y(), point.scale(), 255, &concat);
-      std::cerr << __LINE__ << " " << point.x() << " " << point.y()  << " scale " << point.scale() << std::endl;
+      // std::cerr << __LINE__ << " " << point.x() << " " << point.y()  << " scale " << point.scale() << std::endl;
     }
     for (size_t i=0; i < featsR.size(); ++i )  {
       const SIOPointFeature point = regionsR->Features()[i];
@@ -90,8 +93,6 @@ int main() {
     WriteImage(out_filename.c_str(), concat);
   }
   
-  std::cerr << __LINE__ << std::endl;
-
   //-- Perform matching -> find Nearest neighbor, filtered with Distance ratio
   std::vector<IndMatch> vec_PutativeMatches;
   {
@@ -101,6 +102,11 @@ int main() {
       *regions_perImage.at(0).get(),
       *regions_perImage.at(1).get(),
       vec_PutativeMatches);
+
+#if 1
+  //
+  // SVG include xref does not work, so this is pointless
+  //
 
     // Draw correspondences after Nearest Neighbor ratio filter
     svgDrawer svgStream( imageL.Width() + imageR.Width(), max(imageL.Height(), imageR.Height()));
@@ -118,6 +124,7 @@ int main() {
     ofstream svgFile( out_filename.c_str() );
     svgFile << svgStream.closeSvgFile().str();
     svgFile.close();
+#endif
   }
 
   // Display some statistics
