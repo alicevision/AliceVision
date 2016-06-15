@@ -22,42 +22,78 @@ MESSAGE(STATUS "Looking for Alembic. 1.5.8")
 # Alembic includes half.h for a single function "half to float", this is unfortunate
 FIND_PATH(ABC_HALF_INCLUDE_DIR half.h
     HINTS
-        ${ALEMBIC_ILMBASE_ROOT}/include
-        $ENV{ALEMBIC_ILMBASE_ROOT}/include
+        ${ALEMBIC_ROOT}
+        ${ALEMBIC_ILMBASE_ROOT}
+        ${ILMBASE_INCLUDE_DIR}
+        $ENV{ALEMBIC_ROOT}
+        $ENV{ALEMBIC_ILMBASE_ROOT}
         $ENV{ILMBASE_INCLUDE_DIR}
     PATH_SUFFIXES
         OpenEXR
+	include
+	include/OpenEXR
     )
 
-FIND_LIBRARY(ABC_ILMBASE_IEX_LIB NAMES Iex
+FIND_LIBRARY(ABC_ILMBASE_IEX NAMES Iex Iex-2_2
     PATHS
-        ${ALEMBIC_ILMBASE_ROOT}/lib
-        ${ALEMBIC_ILMBASE_ROOT}/lib/static
-        ${ALEMBIC_ILMBASE_ROOT}/lib64
-        $ENV{ALEMBIC_ILMBASE_ROOT}/lib
-        $ENV{ALEMBIC_ILMBASE_ROOT}/lib64
+        ${ALEMBIC_ILMBASE_ROOT}
+        ${ILMBASE_LIBRARY_DIR}
+        ${ALEMBIC_ROOT}
         $ENV{ILMBASE_LIBRARY_DIR}
+        $ENV{ALEMBIC_ILMBASE_ROOT}
+        $ENV{ALEMBIC_ROOT}
+    PATH_SUFFIXES
+        lib
+	lib/static
+	lib64
     )
 
-GET_FILENAME_COMPONENT(ABC_ILMBASE_LIBS_PATH ${ABC_ILMBASE_IEX_LIB} DIRECTORY)
-
-FIND_LIBRARY(ABC_ILMBASE_IEX Iex PATHS ${ABC_ILMBASE_LIBS_PATH})
-FIND_LIBRARY(ABC_ILMBASE_IEXMATH IexMath PATHS ${ABC_ILMBASE_LIBS_PATH})
+FIND_LIBRARY(ABC_ILMBASE_IEXMATH NAMES IexMath IexMath-2_2
+    PATHS
+        ${ALEMBIC_ILMBASE_ROOT}
+        ${ILMBASE_LIBRARY_DIR}
+        ${ALEMBIC_ROOT}
+        $ENV{ILMBASE_LIBRARY_DIR}
+        $ENV{ALEMBIC_ILMBASE_ROOT}
+        $ENV{ALEMBIC_ROOT}
+    PATH_SUFFIXES
+        lib
+	lib/static
+	lib64
+    )
 IF(ABC_ILMBASE_IEXMATH MATCHES ".*-NOTFOUND")
-  # This library is optional, so ignore if not found.
-  SET(ABC_ILMBASE_IEXMATH "")
+    # This library is optional, so ignore if not found.
+    SET(ABC_ILMBASE_IEXMATH "")
 ENDIF()
-FIND_LIBRARY(ABC_ILMBASE_HALF Half PATHS ${ABC_ILMBASE_LIBS_PATH})
+
+FIND_LIBRARY(ABC_ILMBASE_HALF NAMES Half
+    PATHS
+        ${ALEMBIC_ILMBASE_ROOT}
+        ${ILMBASE_LIBRARY_DIR}
+        ${ALEMBIC_ROOT}
+        $ENV{ILMBASE_LIBRARY_DIR}
+        $ENV{ALEMBIC_ILMBASE_ROOT}
+        $ENV{ALEMBIC_ROOT}
+    PATH_SUFFIXES
+        lib
+	lib/static
+	lib64
+    )
+
 SET(ABC_ILMBASE_LIBS ${ABC_ILMBASE_IEX} ${ABC_ILMBASE_IEXMATH} ${ABC_ILMBASE_HALF})
 
 # OpenEXR
-FIND_LIBRARY(ABC_OPENEXR_LIBS IlmImf 
+FIND_LIBRARY(ABC_OPENEXR_LIBS IlmImf IlmImf-2_2
     PATHS 
-        ${ALEMBIC_OPENEXR_ROOT}/lib
-        ${ALEMBIC_OPENEXR_ROOT}/lib64
-        $ENV{ALEMBIC_OPENEXR_ROOT}/lib 
-        $ENV{ALEMBIC_OPENEXR_ROOT}/lib64
+        ${ALEMBIC_OPENEXR_ROOT}
+        ${OPENEXR_LIBRARY_DIR}
+        ${ALEMBIC_ROOT}
+        $ENV{ALEMBIC_OPENEXR_ROOT}
         $ENV{OPENEXR_LIBRARY_DIR}
+        $ENV{ALEMBIC_ROOT}
+    PATH_SUFFIXES
+        lib
+	lib64
     )
 
 ################################################################################
@@ -65,14 +101,18 @@ FIND_LIBRARY(ABC_OPENEXR_LIBS IlmImf
 ################################################################################
 
 # FIXME: hdf5 should be handled by a specialized module
-FIND_PATH(ABC_HDF5_LIBS_PATH NAMES libhdf5.so libhdf5.a
-       PATHS 
-        ${ALEMBIC_HDF5_ROOT}/lib 
-        ${ALEMBIC_HDF5_ROOT}/lib64
-        $ENV{ALEMBIC_HDF5_ROOT}/lib 
-        $ENV{ALEMBIC_HDF5_ROOT}/lib64
+FIND_PATH(ABC_HDF5_LIBS_PATH NAMES hdf5
+    PATHS 
+        ${ALEMBIC_HDF5_ROOT}
+        ${HDF5_LIBRARY_DIR}
+        ${ALEMBIC_ROOT}
+        $ENV{ALEMBIC_HDF5_ROOT}
         $ENV{HDF5_LIBRARY_DIR}
-       )
+        $ENV{ALEMBIC_ROOT}
+    PATH_SUFFIXES
+        lib
+	lib64
+    )
 FIND_LIBRARY(ABC_HDF5 hdf5 PATHS ${ABC_HDF5_LIBS_PATH})
 FIND_LIBRARY(ABC_HDF5_HL hdf5_hl PATHS ${ABC_HDF5_LIBS_PATH})
 SET(ABC_HDF5_LIBS ${ABC_HDF5} ${ABC_HDF5_HL})
@@ -103,14 +143,15 @@ FIND_PATH(ABC_INCLUDE_DIR Alembic/Abc/All.h
 message(STATUS "trying to found the all-in-one libAlembic.so")
 FIND_LIBRARY(ABC_LIBRARY_ALLINONE Alembic
     PATHS
-        ${ALEMBIC_ROOT}/lib
-        ${ALEMBIC_ROOT}/lib/static
-        ${ALEMBIC_ROOT}/lib64
-        $ENV{ALEMBIC_ROOT}/lib
-        $ENV{ALEMBIC_ROOT}/lib/static
-        $ENV{ALEMBIC_ROOT}/lib64
+        ${ALEMBIC_LIBRARY_DIR}
+        ${ALEMBIC_ROOT}
         $ENV{ALEMBIC_LIBRARY_DIR}
-        $ENV{ALEMBIC_LIBRARY_DIR}/static
+        $ENV{ALEMBIC_ROOT}
+    PATH_SUFFIXES
+        lib
+	lib/static
+	lib64
+	static
     )
 # message(STATUS "ABC_LIBRARY_ALLINONE ${ABC_LIBRARY_ALLINONE}")
 if( EXISTS ${ABC_LIBRARY_ALLINONE})
@@ -122,22 +163,24 @@ else()
 
     FIND_LIBRARY(ABC_LIBRARY AlembicAbc
         PATHS
-            ${ALEMBIC_ROOT}/lib
-            ${ALEMBIC_ROOT}/lib/static
-            ${ALEMBIC_ROOT}/lib64
-            $ENV{ALEMBIC_ROOT}/lib
-            $ENV{ALEMBIC_ROOT}/lib64
+            ${ALEMBIC_LIBRARY_DIR}
+            ${ALEMBIC_ROOT}
+            $ENV{ALEMBIC_ROOT}
             $ENV{ALEMBIC_LIBRARY_DIR}
+	PATH_SUFFIXES
+	    lib
+	    lib/static
+	    lib64
         )
     GET_FILENAME_COMPONENT(ABC_LIBRARY_DIR ${ABC_LIBRARY} DIRECTORY)
 
     FIND_LIBRARY(ABC_COLLECTION AlembicAbcCollection PATHS ${ABC_LIBRARY_DIR})
     FIND_LIBRARY(ABC_COREFACTORY AlembicAbcCoreFactory PATHS ${ABC_LIBRARY_DIR})
     FIND_LIBRARY(ABC_COREOGAWA AlembicAbcCoreOgawa PATHS ${ABC_LIBRARY_DIR})
-    #FIND_LIBRARY(ABC_MATERIAL libAlembicAbcMaterial.so PATHS ${ABC_LIBRARY_DIR})
+    #FIND_LIBRARY(ABC_MATERIAL AlembicAbcMaterial PATHS ${ABC_LIBRARY_DIR})
     FIND_LIBRARY(ABC_OGAWA AlembicOgawa PATHS ${ABC_LIBRARY_DIR})
-    #FIND_LIBRARY(ABC_OPENGL libAlembicAbcOpenGL.so PATHS ${ABC_LIBRARY_DIR})
-    #FIND_LIBRARY(ABC_WFOBJCONVERT libAbcWFObjConvert.so PATHS ${ABC_LIBRARY_DIR})
+    #FIND_LIBRARY(ABC_OPENGL AlembicAbcOpenGL PATHS ${ABC_LIBRARY_DIR})
+    #FIND_LIBRARY(ABC_WFOBJCONVERT AbcWFObjConvert PATHS ${ABC_LIBRARY_DIR})
     FIND_LIBRARY(ABC_COREABSTRACT AlembicAbcCoreAbstract PATHS ${ABC_LIBRARY_DIR})
     FIND_LIBRARY(ABC_COREHDF5 AlembicAbcCoreHDF5 PATHS ${ABC_LIBRARY_DIR})
     FIND_LIBRARY(ABC_GEOM AlembicAbcGeom PATHS ${ABC_LIBRARY_DIR})
@@ -164,8 +207,9 @@ INCLUDE(FindPackageHandleStandardArgs)
 FIND_PACKAGE_HANDLE_STANDARD_ARGS("Alembic" DEFAULT_MSG ABC_LIBRARIES ABC_LIBRARY_DIR ABC_INCLUDE_DIR ABC_HDF5_LIBS)
 
 if (ALEMBIC_FOUND)
-    mark_as_advanced(ABC_LIBRARY_DIR ABC_HDF5_LIBS_PATH ABC_ILMBASE_LIBS_PATH)
+    mark_as_advanced(ABC_LIBRARY_DIR ABC_HDF5_LIBS_PATH)
     message("Found Alembic - will build alembic exporter")
 else()
     message("Alembic NOT FOUND")   
 endif()
+
