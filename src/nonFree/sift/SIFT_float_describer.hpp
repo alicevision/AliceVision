@@ -29,9 +29,16 @@ class SIFT_float_describer : public Image_describer
 {
 public:
   SIFT_float_describer(const SiftParams & params = SiftParams(), bool bOrientation = true)
-    :Image_describer(), _params(params), _bOrientation(bOrientation) {}
+    :Image_describer(), _params(params), _bOrientation(bOrientation)
+  {
+    // Configure VLFeat
+    vl_constructor();
+  }
 
-  ~SIFT_float_describer() {}
+  ~SIFT_float_describer()
+  {
+    vl_destructor();
+  }
 
   bool Set_configuration_preset(EDESCRIBER_PRESET preset)
   {
@@ -49,10 +56,7 @@ public:
     std::unique_ptr<Regions> &regions,
     const image::Image<unsigned char> * mask = NULL)
   {
-    cerr << "Enter " << __func__ << endl;
-    bool val = extractSIFT<float>(image, regions, _params, _bOrientation, mask);
-    cerr << "Leave " << __func__ << endl;
-    return val;
+    return extractSIFT<float>(image, regions, _params, _bOrientation, mask);
   }
 
   /*/// Allocate Regions type depending of the Image_describer
