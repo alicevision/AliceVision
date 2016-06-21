@@ -54,6 +54,7 @@ public:
           maxTotalKeypoints = 40000;
           break;
       }
+      maxTotalKeypoints = 0; // TEMP, do not use GRID, line to delete
       return true;
   }
 
@@ -71,8 +72,8 @@ public:
   }
 
   // Parameters
-  std::size_t gridSize = 4;
-  std::size_t maxTotalKeypoints = 1000;
+  std::size_t gridSize = 0; // TEMP, don't use GRID => 4
+  std::size_t maxTotalKeypoints = 0; // TEMP, don't use GRID => 1000
   int nOctaveLayers = 3;  // default opencv value is 3
   double contrastThreshold = 0.04;  // default opencv value is 0.04
   double edgeThreshold = 10;

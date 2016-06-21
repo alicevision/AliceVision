@@ -25,8 +25,8 @@ struct SiftParams
     float edge_threshold = 10.0f,
     float peak_threshold = 0.04f,
     //
-    std::size_t gridSize = 4,
-    std::size_t maxTotalKeypoints = 1000,
+    std::size_t gridSize = 0, // TEMP: don't use GRID, 4 default
+    std::size_t maxTotalKeypoints = 0, // TEMP: don't use GRID, 1000 default
     //
     bool root_sift = true
   ):
@@ -109,6 +109,8 @@ struct SiftParams
     default:
       return false;
     }
+    _maxTotalKeypoints = 0; // TEMP: don't use GRID, line to delete
+    _gridSize = 0; // TEMP: don't use GRID, line to delete
     return true;
   }
   
