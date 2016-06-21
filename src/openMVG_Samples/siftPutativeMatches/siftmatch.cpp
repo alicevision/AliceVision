@@ -16,6 +16,7 @@
 #include "third_party/stlplus3/filesystemSimplified/file_system.hpp"
 
 #include "third_party/vectorGraphics/svgDrawer.hpp"
+#include "third_party/cmdLine/cmdLine.h"
 
 #include <string>
 #include <iostream>
@@ -28,7 +29,30 @@ using namespace std;
 
 //#define SINGLE_IMG
 
-int main() {
+int main(int argc, char **argv)
+{
+  CmdLine cmd;
+  //--
+  // Command line parameters
+  std::string sImage_Describer_Method = "SIFT";
+  cmd.add( make_option('d', sImage_Describer_Method, "describer_method") );
+  
+    // Command line parsing
+  try {
+      if (argc == 1) throw std::string("Invalid command line parameter.");
+      cmd.process(argc, argv);
+  } catch(const std::string& s) {
+      std::cerr << "Usage: " << argv[0] << '\n'
+      << "[-d|--describer_method]\n"
+      << "   POP: popSIFT,\n"
+      << "   VL: VLFeat \n"
+      << "   OCV: OpenCV  (default).\n"
+      << std::endl;
+
+      std::cerr << s << std::endl;
+      return EXIT_FAILURE;
+  }
+  //--
 
   Image<RGBColor> image;
   string jpg_filenameL = stlplus::folder_up(string(THIS_SOURCE_DIR))
@@ -47,8 +71,22 @@ int main() {
   //--
   // Detect regions thanks to an image_describer
   //--
+  
   using namespace openMVG::features;
-  std::unique_ptr<Image_describer> image_describer(new SIFT_popSIFT_describer);
+  std::unique_ptr<Image_describer> image_describer;
+  if (sImage_Describer_Method == "POP")
+  {
+    image_describer.reset(new SIFT_popSIFT_describer);
+  }else if (sImage_Describer_Method == "VL")
+  {
+      image_describer.reset(new SIFT_float_describer);
+  }else if (sImage_Describer_Method == "OCV")
+  {
+      image_describer.reset(new SIFT_OPENCV_Image_describer);
+  }
+  
+  //using namespace openMVG::features;
+  //std::unique_ptr<Image_describer> image_describer(new SIFT_popSIFT_describer);
   //std::unique_ptr<Image_describer> image_describer(new SIFT_float_describer);
   //std::unique_ptr<Image_describer> image_describer(new SIFT_OPENCV_Image_describer);
   std::map<IndexT, std::unique_ptr<features::Regions> > regions_perImage;
