@@ -1,47 +1,34 @@
-// Copyright (c) 2015 Pierre MOULON.
+/* 
+ * File:   SIFT_Float_describer.hpp
+ * Author: sgaspari
+ *
+ * Created on September 23, 2015, 5:52 PM
+ */
 
-// This Source Code Form is subject to the terms of the Mozilla Public
-// License, v. 2.0. If a copy of the MPL was not distributed with this
-// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+#pragma once
 
-#ifndef OPENMVG_PATENTED_SIFT_SIFT_DESCRIBER_H
-#define OPENMVG_PATENTED_SIFT_SIFT_DESCRIBER_H
+#include "SIFT_describer.hpp"
 
 #include <openMVG/features/descriptor.hpp>
 #include <openMVG/features/image_describer.hpp>
 #include <openMVG/features/regions_factory.hpp>
-#include <nonFree/sift/sift.hpp>
+
+#include <openMVG/features/sift/sift.hpp>
 
 #include <cereal/cereal.hpp>
 
 #include <iostream>
 #include <numeric>
 
-extern "C" {
-#include "nonFree/sift/vl/sift.h"
-}
-
 namespace openMVG {
 namespace features {
 
-// Bibliography:
-// [1] R. Arandjelović, A. Zisserman.
-// Three things everyone should know to improve object retrieval. CVPR2012.
-
-class SIFT_Image_describer : public Image_describer
+class SIFT_float_describer : public Image_describer
 {
 public:
-  SIFT_Image_describer(const SiftParams & params = SiftParams(), bool bOrientation = true)
-    :Image_describer(), _params(params), _bOrientation(bOrientation)
-  {
-    // Configure VLFeat
-    vl_constructor();
-  }
+  SIFT_float_describer(const SiftParams & params = SiftParams(), bool bOrientation = true);
 
-  ~SIFT_Image_describer()
-  {
-    vl_destructor();
-  }
+  ~SIFT_float_describer();
 
   bool Set_configuration_preset(EDESCRIBER_PRESET preset)
   {
@@ -57,15 +44,12 @@ public:
   */
   bool Describe(const image::Image<unsigned char>& image,
     std::unique_ptr<Regions> &regions,
-    const image::Image<unsigned char> * mask = NULL)
-  {
-    return extractSIFT<unsigned char>(image, regions, _params, _bOrientation, mask);
-  };
+    const image::Image<unsigned char> * mask = NULL);
 
   /*/// Allocate Regions type depending of the Image_describer
   void Allocate(std::unique_ptr<Regions> &regions) const
   {
-    regions.reset( new SIFT_Regions );
+      regions.reset( new SIFT_Float_Regions );
   }*/
 
   template<class Archive>
@@ -78,9 +62,9 @@ public:
   
   void Allocate(std::unique_ptr<Regions>& regions) const
   {
-    regions.reset(new SIFT_Regions);
+    regions.reset(new SIFT_Float_Regions);
   }
-
+  
 private:
   SiftParams _params;
   bool _bOrientation;
@@ -91,6 +75,5 @@ private:
 
 #include <cereal/types/polymorphic.hpp>
 #include <cereal/archives/json.hpp>
-CEREAL_REGISTER_TYPE_WITH_NAME(openMVG::features::SIFT_Image_describer, "SIFT_Image_describer");
+CEREAL_REGISTER_TYPE_WITH_NAME(openMVG::features::SIFT_float_describer, "SIFT_float_describer");
 
-#endif // OPENMVG_PATENTED_SIFT_SIFT_DESCRIBER_H

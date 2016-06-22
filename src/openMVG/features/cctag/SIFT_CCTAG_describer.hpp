@@ -8,7 +8,7 @@
 #include <openMVG/features/regions_factory.hpp>
 
 // Sift related
-#include <nonFree/sift/SIFT_describer.hpp>
+#include <openMVG/features/sift/SIFT_describer.hpp>
 
 // CCTag related
 #include <cctag/ICCTag.hpp>

@@ -96,10 +96,8 @@ public:
   template<class Archive>
   void serialize(Archive & ar)
   {
-    ar (
-      _coords(0), _coords(1),
-      _scale,
-      _orientation);
+    PointFeature::serialize(ar);
+    ar(_scale, _orientation);
   }
 
 protected:

@@ -24,7 +24,7 @@ using namespace openMVG::matching;
 using namespace svg;
 using namespace std;
 
-#include "nonFree/sift/SIFT_describer.hpp"
+#include "openMVG/features/sift/SIFT_describer.hpp"
 
 // Class to load images and ground truth homography matrices
 // A reference image

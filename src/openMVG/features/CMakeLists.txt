@@ -8,6 +8,9 @@ set(features_files_headers
   akaze/AKAZE.hpp
   image_describer.hpp
   liop/liop_descriptor.hpp
+  sift/sift.hpp
+  sift/SIFT_describer.hpp
+  sift/SIFT_float_describer.hpp
   descriptor.hpp
   io_regions_type.hpp
   image_describer_akaze.hpp
@@ -22,6 +25,9 @@ set( features_files_sources
   selection.cpp
   akaze/AKAZE.cpp
   liop/liop_descriptor.cpp
+  sift/SIFT_describer.cpp
+  sift/SIFT_float_describer.cpp
+  sift/sift.cpp
   features_test.cpp
   svgVisualization.cpp)
 

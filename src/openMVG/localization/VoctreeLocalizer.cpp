@@ -8,7 +8,7 @@
 #ifdef HAVE_CCTAG
 #include <openMVG/features/cctag/SIFT_CCTAG_describer.hpp>
 #endif
-#include <nonFree/sift/SIFT_float_describer.hpp>
+#include <openMVG/features/sift/SIFT_float_describer.hpp>
 #include <openMVG/matching/regions_matcher.hpp>
 #include <openMVG/matching_image_collection/Matcher.hpp>
 #include <openMVG/matching/matcher_kdtree_flann.hpp>
