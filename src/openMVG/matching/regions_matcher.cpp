@@ -94,7 +94,9 @@ Matcher_Regions_Database::Matcher_Regions_Database
         }
         case VOCTREE_MATCHER:
         {
-          const std::string voctreeFile = "/s/prods/mvg/_source_global/bank/generic_voctree_jeme/listsiftAllK80L3.tree";
+          const char* voctreeFile = std::getenv("OPENMVG_VOCTREE");
+          if(voctreeFile == NULL)
+            throw std::logic_error("Error: Voctree matcher needs an environment variable OPENMVG_VOCTREE with the path to the voctree file.");
           _matching_interface.reset(new matching::MatcherVoctree(database_regions, voctreeFile));
         }
         break;
