@@ -96,7 +96,7 @@ class ArrayMatcher_Kdtree_Flann : public ArrayMatcher<Scalar, Metric>
    *
    * \param[in]   query           The query array
    * \param[in]   nbQuery         The number of query rows
-   * \param[out]  indices   The corresponding (query, neighbor) indices
+   * \param[out]  pvec_indices    The corresponding (query, neighbor) indices
    * \param[out]  pvec_distances  The distances between the matched arrays.
    * \param[out]  NN              The number of maximal neighbor that will be searched.
    *
@@ -104,7 +104,8 @@ class ArrayMatcher_Kdtree_Flann : public ArrayMatcher<Scalar, Metric>
    */
   bool SearchNeighbours
   (
-    const Scalar * query, int nbQuery,
+    const Scalar * query,
+    int nbQuery,
     IndMatches * pvec_indices,
     std::vector<DistanceType> * pvec_distances,
     size_t NN
@@ -132,9 +133,9 @@ class ArrayMatcher_Kdtree_Flann : public ArrayMatcher<Scalar, Metric>
         pvec_distances->reserve(nbQuery * NN);
         for (size_t i = 0; i < nbQuery; ++i)
         {
-          for (size_t j = 0; j < NN; ++j)
+          if (indices[i] != nullptr)
           {
-            if (indices[i] > 0)
+            for (size_t j = 0; j < NN; ++j)
             {
               pvec_indices->emplace_back(IndMatch(i, vec_indices[i*NN+j]));
               pvec_distances->emplace_back(vec_distances[i*NN+j]);
