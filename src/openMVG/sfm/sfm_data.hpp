@@ -67,7 +67,7 @@ struct SfM_Data
   /// Check if the View have defined intrinsic and pose
   bool IsPoseAndIntrinsicDefined(const View * view) const
   {
-    if (view == NULL) return false;
+    if (view == nullptr) return false;
     return (
       view->id_intrinsic != UndefinedIndexT &&
       view->id_pose != UndefinedIndexT &&
@@ -152,8 +152,9 @@ struct SfM_Data
  * the sfm_data, using the track to determine the best view from which
  * to get the color.
  * @param sfm_data The container of the data
+ * @return true if everything went well
  */
-void ColorizeTracks( SfM_Data & sfm_data );
+bool ColorizeTracks( SfM_Data & sfm_data );
 
 } // namespace sfm
 } // namespace openMVG

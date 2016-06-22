@@ -31,7 +31,7 @@ int main(int argc, char ** argv)
 
   std::string sSfM_Data_Filename;
   std::string sMatchesDir;
-  std::string sMatchMode; // TODO
+  std::string sMatchMode;
   std::string sOutDir = "";
 
   cmd.add( make_option('i', sSfM_Data_Filename, "input_file") );

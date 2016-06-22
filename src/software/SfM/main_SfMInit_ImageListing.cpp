@@ -337,6 +337,30 @@ int main(int argc, char **argv)
     if( bHaveValidExifMetadata )
       allExifData = exifReader.getExifData();
 
+    int metadataImageWidth = imgHeader.width;
+    int metadataImageHeight = imgHeader.height;
+    if(allExifData.count("image_width"))
+    {
+      metadataImageWidth = std::stoi(allExifData.at("image_width"));
+      // If the metadata is bad, use the real image size
+      if(metadataImageWidth <= 0)
+        metadataImageWidth = imgHeader.width;
+    }
+    if(allExifData.count("image_height"))
+    {
+      metadataImageHeight = std::stoi(allExifData.at("image_height"));
+      // If the metadata is bad, use the real image size
+      if(metadataImageHeight <= 0)
+        metadataImageHeight = imgHeader.height;
+    }
+    const bool resizedImage = metadataImageWidth != width || metadataImageHeight != height;
+    if(resizedImage)
+    {
+      std::cout << "Resized image detected:" << std::endl;
+      std::cout << " * real image size: " << imgHeader.width << "x" << imgHeader.height << std::endl;
+      std::cout << " * image size from metadata is: " << metadataImageWidth << "x" << metadataImageHeight << std::endl;
+    }
+
     // Sensor width
     double ccdw = 0.0;
     if(userSensorWidth != -1.0)
@@ -402,7 +426,7 @@ int main(int argc, char **argv)
       else
       {
         // Retrieve the focal from the metadata in mm and convert to pixel.
-        focalPix = std::max ( width, height ) * focalLength_mm / ccdw;
+        focalPix = std::max ( metadataImageWidth, metadataImageHeight ) * focalLength_mm / ccdw;
       }
     }
     else
@@ -420,49 +444,52 @@ int main(int argc, char **argv)
       // If no user input choose a default camera model
       if(camera_model == PINHOLE_CAMERA_START)
       {
-        // Use standard lens with radial distortion
+        // Use standard lens with radial distortion by default
         camera_model = PINHOLE_CAMERA_RADIAL3;
-        // If the focal lens is short, the fisheye model should fit better.
-        if(focalLength_mm > 0.0 && focalLength_mm < 15)
+        if(resizedImage)
+        {
+          // If the image has been resized, we assume that it has been undistorted
+          // and we use a camera without lens distortion.
+          camera_model = PINHOLE_CAMERA;
+        }
+        else if(focalLength_mm > 0.0 && focalLength_mm < 15)
+        {
+          // If the focal lens is short, the fisheye model should fit better.
           camera_model = PINHOLE_CAMERA_FISHEYE;
+        }
       }
 
       // Create the desired camera type
+      intrinsic = createPinholeIntrinsic(camera_model, width, height, focalPix, ppx, ppy);
+
+      // Initialize distortion parameters
       switch(camera_model)
       {
-        case PINHOLE_CAMERA:
-          intrinsic = std::make_shared<Pinhole_Intrinsic>
-            (width, height, focalPix, ppx, ppy);
-        break;
-        case PINHOLE_CAMERA_RADIAL1:
-          intrinsic = std::make_shared<Pinhole_Intrinsic_Radial_K1>
-            (width, height, focalPix, ppx, ppy, 0.0); // setup no distortion as initial guess
-        break;
-        case PINHOLE_CAMERA_RADIAL3:
-          intrinsic = std::make_shared<Pinhole_Intrinsic_Radial_K3>
-            (width, height, focalPix, ppx, ppy, 0.0, 0.0, 0.0);  // setup no distortion as initial guess
-        break;
-        case PINHOLE_CAMERA_BROWN:
-          intrinsic =std::make_shared<Pinhole_Intrinsic_Brown_T2>
-            (width, height, focalPix, ppx, ppy, 0.0, 0.0, 0.0, 0.0, 0.0); // setup no distortion as initial guess
-        break;
         case PINHOLE_CAMERA_FISHEYE:
         {
           if(sCamName == "GoPro")
-          {
-            intrinsic =std::make_shared<Pinhole_Intrinsic_Fisheye>
-              (width, height, focalPix, ppx, ppy, 0.0524, 0.0094, -0.0037, -0.0004);
-          }
-          else
-          {
-            intrinsic =std::make_shared<Pinhole_Intrinsic_Fisheye>
-              (width, height, focalPix, ppx, ppy, 0.0, 0.0, 0.0, 0.0); // setup no distortion as initial guess
-          }
+            intrinsic->updateFromParams({focalPix, ppx, ppy, 0.0524, 0.0094, -0.0037, -0.0004});
+          break;
         }
-        break;
+        case PINHOLE_CAMERA_FISHEYE1:
+        {
+          if(sCamName == "GoPro")
+            intrinsic->updateFromParams({focalPix, ppx, ppy, 1.04});
+          break;
+        }
         default:
-          std::cerr << "Error: unknown camera model: " << (int) e_User_camera_model << std::endl;
-          return EXIT_FAILURE;
+          break;
+      }
+
+      // Add serial number
+      if( bHaveValidExifMetadata )
+      {
+        // Create custom serial number
+        std::string customSerialNumber = "";
+        customSerialNumber += exifReader.getSerialNumber();
+        customSerialNumber += exifReader.getLensSerialNumber();
+
+        intrinsic->setSerialNumber(customSerialNumber);
       }
     }
     else

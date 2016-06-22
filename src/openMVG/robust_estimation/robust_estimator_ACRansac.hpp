@@ -174,7 +174,7 @@ template<typename Kernel>
 std::pair<double, double> ACRANSAC(const Kernel &kernel,
   std::vector<size_t> & vec_inliers,
   size_t nIter = 1024,
-  typename Kernel::Model * model = NULL,
+  typename Kernel::Model * model = nullptr,
   double precision = std::numeric_limits<double>::infinity(),
   bool bVerbose = false)
 {
@@ -240,12 +240,11 @@ std::pair<double, double> ACRANSAC(const Kernel &kernel,
         }
         if (nInlier > 2.5 * sizeSample) // does the model is meaningful
           bACRansacMode = true;
-        if (!bACRansacMode && nIter > nIterReserve)
-          nIter = 0;
       }
       if (bACRansacMode)
       {
-        for (size_t i = 0; i < nData; ++i)  {
+        for (size_t i = 0; i < nData; ++i)
+        {
           const double error = vec_residuals_[i];
           vec_residuals[i] = ErrorIndex(error, i);
         }
@@ -262,7 +261,8 @@ std::pair<double, double> ACRANSAC(const Kernel &kernel,
           vec_logc_k,
           kernel.multError());
 
-        if (best.first < minNFA /*&& vec_residuals[best.second-1].first < errorMax*/)  {
+        if (best.first < minNFA /*&& vec_residuals[best.second-1].first < errorMax*/)
+        {
           // A better model was found
           better = true;
           minNFA = best.first;
@@ -272,7 +272,8 @@ std::pair<double, double> ACRANSAC(const Kernel &kernel,
           errorMax = vec_residuals[best.second-1].first; // Error threshold
           if(model) *model = vec_models[k];
 
-          if(bVerbose)  {
+          if(bVerbose)
+          {
             std::cout << "  nfa=" << minNFA
               << " inliers=" << best.second << "/" << nData
               << " precisionNormalized=" << errorMax
@@ -284,8 +285,12 @@ std::pair<double, double> ACRANSAC(const Kernel &kernel,
             std::cout << ")" <<std::endl;
           }
         }
-      }
-    }
+      } //if(bACRansacMode)
+    } //for(size_t k...
+    
+    // Early exit test -> no meaningful model found after nIterReserve*2 iterations
+    if (!bACRansacMode && iter > nIterReserve*2)
+      break;
 
     // ACRANSAC optimization: draw samples among best set of inliers so far
     if (bACRansacMode && ((better && minNFA<0) || (iter+1==nIter && nIterReserve)))
@@ -302,8 +307,8 @@ std::pair<double, double> ACRANSAC(const Kernel &kernel,
         vec_index = vec_inliers;
         if(nIterReserve)
         {
-            nIter = iter + 1 + nIterReserve;
-            nIterReserve = 0;
+          nIter = iter + 1 + nIterReserve;
+          nIterReserve = 0;
         }
       }
     }

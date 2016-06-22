@@ -34,6 +34,11 @@ public:
 
   bool Set_configuration_preset(EDESCRIBER_PRESET preset);
 
+  void Set_cctag_use_cuda(bool use_cuda)
+  {
+    _cctagDescriber.Set_use_cuda(use_cuda);
+  }
+
   /**
   @brief Detect regions on the image and compute their attributes (description)
   @param image Image.
@@ -43,7 +48,7 @@ public:
   */
   bool Describe(const image::Image<unsigned char>& image,
     std::unique_ptr<Regions> &regions,
-    const image::Image<unsigned char> * mask = NULL);
+    const image::Image<unsigned char> * mask = nullptr);
 
   /// Allocate Regions type depending of the Image_describer
   void Allocate(std::unique_ptr<Regions> &regions) const
