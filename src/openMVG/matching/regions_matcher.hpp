@@ -230,7 +230,7 @@ public:
     
     // Consider the match valid if the 2 first matches correspond to the "same" feature.
     //
-    // In [Mishkin 2015] "MODS: Fast and Robust Method for Tow-View Matching" they introduce the FGINN strategy
+    // In [Mishkin 2015] "MODS: Fast and Robust Method for Two-View Matching" they introduce the FGINN strategy
     // "First Geometrically Inconsistent Nearest Neighbor".
     // Here, for simplicity and performances, we don't search for the first
     // geometrically inconsistent but assume that the match is strong enough if
