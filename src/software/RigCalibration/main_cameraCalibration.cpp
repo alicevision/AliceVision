@@ -357,7 +357,7 @@ int main( int argc, char** argv )
     const char* outputFilename = "out_camera_data.yml";
     const char* inputFilename = 0;
 
-    int i, nframes = 10;
+    int i, nframes = 100;
     bool writeExtrinsics = false, writePoints = false;
     bool undistortImage = false;
     int flags = 0;
@@ -501,7 +501,7 @@ int main( int argc, char** argv )
     if( capture.isOpened() )
         printf( "%s", liveCaptureHelp );
 
-    namedWindow( "Image View", 1 );
+    namedWindow( "Image View", WINDOW_NORMAL );
 
     for(i = 0;;i++)
     {
