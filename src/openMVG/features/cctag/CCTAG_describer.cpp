@@ -42,12 +42,10 @@ struct CCTAG_Image_describer::CCTagParameters : public cctag::Parameters
 
 
 CCTAG_Image_describer::CCTAG_Image_describer()
-    :Image_describer(), _params(new CCTagParameters(3)), _doAppend(false), _frameCount(0)
-{}
+    :Image_describer(), _params(new CCTagParameters(3)), _doAppend(false) {}
     
 CCTAG_Image_describer::CCTAG_Image_describer(const std::size_t nRings, const bool doAppend)
-    :Image_describer(), _params(new CCTagParameters(nRings)), _doAppend(doAppend), _frameCount(0)
-{}   
+    :Image_describer(), _params(new CCTagParameters(nRings)), _doAppend(doAppend){}   
 
 CCTAG_Image_describer::~CCTAG_Image_describer() 
 {
@@ -97,12 +95,10 @@ bool CCTAG_Image_describer::Describe(const image::Image<unsigned char>& image,
     cctag::cctagDetection(cctags, 1 ,cctagView._grayView ,*_params, 0 );
 #endif
     // durations->print( std::cerr );
-
-    const uint32_t tagbits = updateLastSeen(cctags);
-
+    
     for (const auto & cctag : cctags)
     {
-      if ( cctag.getStatus() > 0 && cctag.id() < 32 && (tagbits & (1U << cctag.id())) )
+      if ( cctag.getStatus() > 0 )
       {
         std::cout << " New CCTag: Id" << cctag.id() << " ; Location ( " << cctag.x() << " , " << cctag.y() << " ) " << std::endl;
 
@@ -122,36 +118,6 @@ bool CCTAG_Image_describer::Describe(const image::Image<unsigned char>& image,
 
     return true;
   };
-
-uint32_t CCTAG_Image_describer::updateLastSeen(const boost::ptr_list<cctag::ICCTag>& tags)
-{
-  uint32_t currTags = tagsToBitmask(tags);
-
-  // No filtering if history is shorter than its size.
-  if (_frameCount < _lastSeen.size()) {
-    _lastSeen[_frameCount++] = currTags;
-    return currTags;
-  }
-
-  for (size_t i = 1; i < _lastSeen.size(); ++i)
-    _lastSeen[i-1] = _lastSeen[i];
-  _lastSeen.back() = currTags;
-
-  for (size_t i = 0; i < _lastSeen.size(); ++i)
-    currTags &= _lastSeen[i];
-
-  return currTags;
-}
-
-uint32_t CCTAG_Image_describer::tagsToBitmask(const boost::ptr_list<cctag::ICCTag>& tags)
-{
-  uint32_t bits = 0;
-  for (const auto& tag: tags)
-  if (tag.getStatus() > 0 && tag.id() < 32)
-    bits |= 1U << tag.id();
-  return bits;
-}
-
 
 } // namespace features
 } // namespace openMVG
