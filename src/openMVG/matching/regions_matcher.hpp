@@ -240,8 +240,8 @@ public:
     // Warning: This code assumes that NNN__ is 2.
     for(size_t i=0; i < n/NNN__; ++i)
     {
-      const Vec2& vecA = queryregions_.GetRegionPosition(vec_nIndice[i*NNN__]._j);
-      const Vec2& vecB = queryregions_.GetRegionPosition(vec_nIndice[i*NNN__+1]._j);
+      const Vec2 vecA = regions_->GetRegionPosition(vec_nIndice[i*NNN__]._j);
+      const Vec2 vecB = regions_->GetRegionPosition(vec_nIndice[i*NNN__+1]._j);
       if(std::abs(vecA.x() - vecB.x()) < 10.0 &&
          std::abs(vecA.y() - vecB.y()) < 10.0)
       {
