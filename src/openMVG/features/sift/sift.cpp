@@ -216,12 +216,13 @@ bool applyGrid(std::unique_ptr<Regions>& regions,
 /**
  * @brief Standard SIFT extraction
  * 
- * @param[in] regions
- * @param[in] 
- * @param[in] 
- * @param[in] 
- * @param[in] 
- * @param[inout] filt
+ * @param[in] regions The detected regions and attributes
+ * @param[in] params The parameters of the Image describer
+ * @param[in] bOrientation A boolean for SIFT orientation
+ * @param[in] mask A binary mask (not used yet)
+ * @param[in] imageFloat The image descriptors are extracted from
+ * @param[inout] filt Used for vl_feat extraction
+ * @param[inout] vectKeyPoints Keypoints extracted from the image
  */
 template < typename T >
 void extractFromFirstImage(std::unique_ptr<Regions> &regions,
@@ -305,7 +306,15 @@ void extractFromFirstImage(std::unique_ptr<Regions> &regions,
   }
 }
 
-
+/**
+ * @brief Extract SIFT regions (in float or unsigned char).
+ * Classic SIFT extraction
+ * @param image - The input image
+ * @param regions - The detected regions and attributes (the caller must delete the allocated data)
+ * @param params - The parameters of the SIFT extractor
+ * @param bOrientation - Compute orientation of SIFT descriptor (for the first extraction only)
+ * @param mask - 8-bit gray image for keypoint filtering (optional).
+ */
 
 template < typename T >
 bool extractSIFT(const image::Image<unsigned char>& image,

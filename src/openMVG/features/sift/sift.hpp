@@ -123,14 +123,12 @@ struct SiftParams
 
 /**
  * @brief Extract SIFT regions (in float or unsigned char).
- * 
- * @param image
- * @param regions
- * @param params
- * @param bOrientation
- * @param mask
- * @return 
- */
+ * @param image - The input image
+ * @param regions - The detected regions and attributes (the caller must delete the allocated data)
+ * @param params - The parameters of the SIFT extractor
+ * @param bOrientation - Compute orientation of SIFT descriptor (for the first extraction only)
+ * @param mask - 8-bit gray image for keypoint filtering (optional).
+*/
 template < typename T >
 bool extractSIFT(const image::Image<unsigned char>& image,
     std::unique_ptr<Regions>& regions,
