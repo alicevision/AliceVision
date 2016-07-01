@@ -127,6 +127,9 @@ bool Load(SfM_Data & sfm_data, const std::string & filename, ESfM_Data flags_par
   return bStatus;
 }
 
+// Self-contained in the .cpp file
+bool Save_FBX(const SfM_Data & sfm_data, const std::string & filename, ESfM_Data flags_part);
+
 bool Save(const SfM_Data & sfm_data, const std::string & filename, ESfM_Data flags_part)
 {
   const std::string ext = stlplus::extension_part(filename);
@@ -140,6 +143,10 @@ bool Save(const SfM_Data & sfm_data, const std::string & filename, ESfM_Data fla
     return Save_PLY(sfm_data, filename, flags_part);
   else if (ext == "baf") // Bundle Adjustment file
     return Save_BAF(sfm_data, filename, flags_part);
+#if HAVE_FBX
+  else if (ext == "fbx")
+    return Save_FBX(sfm_data, filename, flags_part);
+#endif
 #if HAVE_ALEMBIC
   else if (ext == "abc") // Alembic
   {

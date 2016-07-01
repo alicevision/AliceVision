@@ -27,6 +27,12 @@ target_link_libraries(
   openMVG_matching
   openMVG_exif
 )
+
+if(FBX_INCLUDE_DIR AND FBX_LIB)
+  target_include_directories(openMVG_sfm PRIVATE ${FBX_INCLUDE_DIR})
+  target_link_libraries(openMVG_sfm ${FBX_LIB})
+endif()
+
 set_target_properties(openMVG_sfm PROPERTIES SOVERSION ${OPENMVG_VERSION_MAJOR} VERSION "${OPENMVG_VERSION_MAJOR}.${OPENMVG_VERSION_MINOR}")
 
 if(OpenMVG_USE_ALEMBIC)
