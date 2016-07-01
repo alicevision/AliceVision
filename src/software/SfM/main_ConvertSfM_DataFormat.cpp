@@ -44,6 +44,9 @@ int main(int argc, char **argv)
 #if HAVE_ALEMBIC
            ", .abc"
 #endif
+#if HAVE_FBX
+           ", .fbx"
+#endif
            "\n"
         << "\n[Options to export partial data (by default all data are exported)]\n"
         << "\nUsable for json/bin/xml format\n"

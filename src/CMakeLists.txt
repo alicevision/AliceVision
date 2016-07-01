@@ -28,6 +28,7 @@ OPTION(OpenMVG_USE_OPENMP "Enable OpenMP parallelization" ON)
 OPTION(OpenMVG_USE_CCTAG "Enable CCTAG markers" ON)
 OPTION(OpenMVG_USE_ALEMBIC "Enable Alembic I/O" OFF)
 OPTION(OpenMVG_USE_POPART_LOG "Enable POPART logger" ON)
+SET(OpenMVG_FBX_DIR "" CACHE PATH "FBX SDK install directory")
 
 IF(OpenMVG_USE_POPART_LOG)
   ADD_DEFINITIONS(-DWANTS_POPART_COUT)
@@ -448,6 +449,26 @@ IF(OpenMVG_USE_ALEMBIC)
     UPDATE_CACHE_VARIABLE(OpenMVG_USE_ALEMBIC OFF)
   ENDIF(ALEMBIC_FOUND)
 ENDIF(OpenMVG_USE_ALEMBIC)
+
+# ==============================================================================
+# FBX
+# ==============================================================================
+# - optional, builds SfM->FBX point cloud converter
+# ==============================================================================
+IF(OpenMVG_FBX_DIR)
+  FIND_PATH(FBX_INCLUDE_DIR fbxsdk.h
+    PATHS ${OpenMVG_FBX_DIR}/include
+    DOC "Include path for FBX SDK")
+  FIND_LIBRARY(FBX_LIB libfbxsdk.a
+    PATHS ${OpenMVG_FBX_DIR}/lib/gcc4/x64/release
+    DOC "FBX library to link to")
+  IF(FBX_INCLUDE_DIR AND FBX_LIB)
+    MESSAGE(STATUS "FBX found")
+    ADD_DEFINITIONS(-DHAVE_FBX)
+  ELSE()
+    MESSAGE(STATUS "FBX not found -- not building FBX converter")
+  ENDIF()
+ENDIF(OpenMVG_FBX_DIR)
 
 # ==============================================================================
 # Third-party libraries:
