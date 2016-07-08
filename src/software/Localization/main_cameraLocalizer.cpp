@@ -482,7 +482,7 @@ int main(int argc, char** argv)
         if(res.isValid())
         {
           assert(idx < vec_localizationResults.size());
-          exporterBA.addCameraKeyframe(res.getPose(), &res.getIntrinsics(), currentImgName, frameCounter, frameCounter);
+          exporterBA.addCameraKeyframe(res.getPose(), &res.getIntrinsics(), currentImgName, idx, idx);
         }
         else
         {
