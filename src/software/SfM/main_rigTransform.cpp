@@ -4,6 +4,10 @@
 #include <openMVG/sfm/sfm_data.hpp>
 #include <openMVG/sfm/sfm_data_io.hpp>
 
+#if HAVE_ALEMBIC
+#include <openMVG/sfm/AlembicExporter.hpp>
+#endif // HAVE_ALEMBIC
+
 #include <boost/filesystem.hpp>
 #include <boost/progress.hpp>
 #include <boost/program_options.hpp> 
@@ -17,15 +21,6 @@ namespace po = boost::program_options;
 
 using namespace openMVG;
 using namespace openMVG::sfm;
-
-enum DescriberType
-{
-  SIFT
-#if HAVE_CCTAG
-  ,CCTAG,
-  SIFT_CCTAG
-#endif
-};
 
 static std::vector<double> ReadIntrinsicsFile(const std::string& fname)
 {
@@ -53,7 +48,7 @@ int main(int argc, char** argv)
             "The input file containing cameras.")
         ("output,o", po::value<std::string>(&exportFile)->default_value(exportFile),
           "Filename for the SfM_Data export file (where camera poses will be stored)."
-          " Default : trackedcameras-rig.abc.")
+          " Only Alembic supported for now. Default: trackedcameras-rig.abc.")
         ("rigFile,e", po::value<std::string>(&rigFile)->required(),
             "Rig calibration file that will be  applied to input.")
         ("calibrationFile,c", po::value<std::string>(&calibFile),
@@ -109,29 +104,24 @@ int main(int argc, char** argv)
   SfM_Data sfmData;
   Load(sfmData, importFile, ESfM_Data(flags));
 
-  POPART_COUT("Updating poses.");
-  // Loop through poses and add rig transformation
+  // Load intrinsics
+  auto v = ReadIntrinsicsFile(calibFile);
+  openMVG::cameras::Pinhole_Intrinsic_Radial_K3 intrinsics = openMVG::cameras::Pinhole_Intrinsic_Radial_K3(v[0], v[1], v[2], v[3], v[4], v[5], v[6], v[7]);
+
+  // Export to abc
+#if HAVE_ALEMBIC
+  dataio::AlembicExporter exporter( exportFile );
+  exporter.initAnimatedCamera("camera");
+
+  size_t idx = 0;
   for (auto &p : sfmData.poses)
   {
     const openMVG::geometry::Pose3 rigPose = extrinsics[0].inverse() * p.second;
-    p.second = rigPose;
+    exporter.addCameraKeyframe(rigPose, &intrinsics, "", idx, idx);
+    ++idx;
   }
+  exporter.addPoints(sfmData.GetLandmarks());
+#endif
 
-  // Update intrinsics
-  if (calibFile.size())
-  {
-    // Load intrinsics
-    auto v = ReadIntrinsicsFile(calibFile);
-    std::shared_ptr<cameras::IntrinsicBase> intrinsics = std::make_shared<openMVG::cameras::Pinhole_Intrinsic_Radial_K3>(v[0], v[1], v[2], v[3], v[4], v[5], v[6], v[7]);
-
-    POPART_COUT("Updating intrinsics.");
-    for (auto &i : sfmData.intrinsics)
-    {
-      i.second = intrinsics;
-    }
-  }
-
-  // Save new sfm file
-  Save(sfmData, exportFile, ESfM_Data(flags));
   POPART_COUT("Done.");
 }
