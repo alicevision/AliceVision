@@ -51,8 +51,8 @@ int main(int argc, char** argv)
           " Only Alembic supported for now. Default: trackedcameras-rig.abc.")
         ("rigFile,e", po::value<std::string>(&rigFile)->required(),
             "Rig calibration file that will be  applied to input.")
-        ("calibrationFile,c", po::value<std::string>(&calibFile),
-            "An optional calibration file for the target camera.")
+        ("calibrationFile,c", po::value<std::string>(&calibFile)->required(),
+            "A calibration file for the target camera.")
           ;
 
   po::variables_map vm;
