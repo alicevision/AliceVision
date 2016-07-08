@@ -149,6 +149,18 @@ TARGET_LINK_LIBRARIES(openMVG_main_ComputeSfM_DataColor
   stlplus
   )
 
+ADD_EXECUTABLE(openMVG_main_rigTransform main_rigTransform.cpp)
+INSTALL(TARGETS openMVG_main_rigTransform DESTINATION bin/)
+TARGET_LINK_LIBRARIES(openMVG_main_rigTransform
+                        openMVG_localization
+                        openMVG_dataio
+                        openMVG_rig
+                        ${BOOST_LIBRARIES})
+if(OpenMVG_USE_ALEMBIC)
+    target_link_libraries(openMVG_main_rigTransform openMVG_sfm ${ABC_LIBRARIES})
+endif()
+
+
 # Installation rules
 SET_PROPERTY(TARGET openMVG_main_IncrementalSfM PROPERTY FOLDER OpenMVG/software)
 INSTALL(TARGETS openMVG_main_IncrementalSfM DESTINATION bin/)
