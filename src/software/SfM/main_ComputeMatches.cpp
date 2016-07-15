@@ -58,8 +58,11 @@ void getStatsMap(const PairWiseMatches& map)
 {
 #ifdef OPENMVG_DEBUG_MATCHING
   std::map<int,int> stats;
+  size_t nbMatches = 0;
+          
   for( const auto& imgMatches: map)
   {
+    nbMatches += imgMatches.second.size(); 
     for( const matching::IndMatch& featMatches: imgMatches.second)
     {
       int d = std::floor(featMatches._distance / 1000.0);
@@ -73,6 +76,7 @@ void getStatsMap(const PairWiseMatches& map)
   {
     std::cout << stat.first << "\t" << stat.second << std::endl;
   }
+  std::cout << "There are " << nbMatches << " matches." << std::endl;
 #endif
 }
 
@@ -116,7 +120,7 @@ int main(int argc, char **argv)
   cmd.add( make_option('d', rangeSize, "range_size") );
   cmd.add( make_option('n', sNearestMatchingMethod, "nearest_matching_method") );
   cmd.add( make_option('f', bForce, "force") );
-  cmd.add( make_option('f', bSavePutativeMatches, "save_putative_matches") );
+  cmd.add( make_option('p', bSavePutativeMatches, "save_putative_matches") );
   cmd.add( make_option('m', bGuided_matching, "guided_matching") );
   cmd.add( make_option('I', imax_iteration, "max_iteration") );
   cmd.add( make_option('x', matchFilePerImage, "match_file_per_image") );
@@ -342,7 +346,7 @@ int main(int argc, char **argv)
   std::cout << std::endl << " - PUTATIVE MATCHES - " << std::endl;
 
   // If the matches already exists, reload them
-  if(!bForce && !matchFilePerImage && stlplus::is_file(stlplus::create_filespec(sMatchesDirectory, "matches.putative.bin")))
+  if(!bForce && !matchFilePerImage && stlplus::is_file(stlplus::create_filespec(sMatchesDirectory, "putative.txt")))
   {
     Load(map_PutativesMatches, sfm_data.GetViewsKeys(), sMatchesDirectory, "putative");
     std::cout << "\t PREVIOUS RESULTS LOADED" << std::endl;
@@ -403,6 +407,12 @@ int main(int argc, char **argv)
       std::cout << "Using FAST_CASCADE_HASHING_L2 matcher" << std::endl;
       collectionMatcher.reset(new Cascade_Hashing_Matcher_Regions_AllInMemory(fDistRatio));
     }
+    else
+    if(sNearestMatchingMethod == "VOCTREE")
+    {
+      std::cout << "Using VOCTREE matcher" << std::endl;
+      collectionMatcher.reset(new Matcher_Regions_AllInMemory(fDistRatio, VOCTREE_MATCHER));
+    }
     if(!collectionMatcher)
     {
       std::cerr << "Invalid Nearest Neighbor method: " << sNearestMatchingMethod << std::endl;
@@ -432,7 +442,7 @@ int main(int argc, char **argv)
       //-- Export putative matches
       //---------------------------------------
       if(bSavePutativeMatches)
-        Save(map_PutativesMatches, sMatchesDirectory, "putative", "bin", matchFilePerImage);
+        Save(map_PutativesMatches, sMatchesDirectory, "putative", "txt", matchFilePerImage);
     }
     std::cout << "Task (Regions Matching) done in (s): " << timer.elapsed() << std::endl;
   }
@@ -455,12 +465,8 @@ int main(int argc, char **argv)
     }
   }
 
-#ifdef OPENMVG_DEBUG_MATCHING
-  {
     std::cout << "PUTATIVE" << std::endl;
     getStatsMap(map_PutativesMatches);
-  }
-#endif
   //---------------------------------------
   // b. Geometric filtering of putative matches
   //    - AContrario Estimation of the desired geometric model

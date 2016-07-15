@@ -122,10 +122,13 @@ public:
     std::ostringstream os;
     os << std::endl << sTitle << std::endl;
     const size_t n = freq.size();
+    if(n == 0)
+      return std::string();
+
     for (size_t i = 0; i < n; ++i)
     {
        os << std::setprecision(3)
-          << Start + static_cast<float>(End-Start)/n*static_cast<float>(i)
+          << Start + (End-Start + 1) / double(n) * double(i)
           << "\t|\t" << freq[i] << "\n";
     }
     os << std::setprecision(3) << End << std::endl;

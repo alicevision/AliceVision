@@ -79,8 +79,6 @@ void queryDatabase(const std::string &fileFullPath,
  * 
  * @param[in] fileFullPath A file containing the path the features to load, it could be a .txt or an OpenMVG .json
  * @param[in] tree The vocabulary tree to be used for feature quantization
- * @param[in] db The built database
- * @param[in] distanceMethod The distance method used for create the pair list
  * @param[in/out] globalHistogram The histogram of the "population" of voctree leaves. 
  * @see queryDatabase()
  */
@@ -88,8 +86,6 @@ template<class DescriptorT, class VocDescriptorT>
 void voctreeStatistics(
     const std::string &fileFullPath,
     const VocabularyTree<VocDescriptorT> &tree,
-    const Database &db,
-    const std::string &distanceMethod,
     std::map<int, int> &globalHistogram);
 
 } //namespace voctree

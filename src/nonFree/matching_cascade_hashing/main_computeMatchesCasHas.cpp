@@ -10,7 +10,7 @@
 #include "openMVG/sfm/sfm.hpp"
 #include "openMVG/features/features.hpp"
 /// Feature detector and descriptor interface
-#include "nonFree/sift/SIFT_describer.hpp"
+#include "openMVG/features/sift/SIFT_describer.hpp"
 
 /// Generic Image Collection image matching
 #include "openMVG/matching_image_collection/GeometricFilter.hpp"

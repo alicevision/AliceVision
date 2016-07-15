@@ -41,6 +41,11 @@ public:
 
   inline Descriptor(T defaultValue)
   {
+    clear(defaultValue);
+  }
+
+  inline void clear(T defaultValue)
+  {
     for(size_type i = 0; i < N; ++i)
       data[i] = defaultValue;
   }

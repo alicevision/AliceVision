@@ -14,7 +14,8 @@ enum EMatcherType
   BRUTE_FORCE_L2,
   ANN_L2,
   CASCADE_HASHING_L2,
-  BRUTE_FORCE_HAMMING
+  BRUTE_FORCE_HAMMING,
+  VOCTREE_MATCHER
 };
 
 } // namespace matching

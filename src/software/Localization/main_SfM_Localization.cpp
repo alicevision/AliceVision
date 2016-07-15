@@ -7,7 +7,7 @@
 
 #include <openMVG/sfm/sfm.hpp>
 #include <openMVG/features/features.hpp>
-#include <nonFree/sift/SIFT_describer.hpp>
+#include <openMVG/features/sift/SIFT_describer.hpp>
 #include <openMVG/image/image.hpp>
 
 #include <openMVG/system/timer.hpp>

@@ -260,7 +260,7 @@ vl_sift_get_octave (VlSiftFilt const *f, int s)
 /** ------------------------------------------------------------------
  ** @brief Get number of levels per octave
  ** @param f SIFT filter.
- ** @return number of leves per octave.
+ ** @return number of levels per octave.
  **/
 
 VL_INLINE int

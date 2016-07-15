@@ -9,7 +9,7 @@
 #include "openMVG/features/features.hpp"
 #include "openMVG/matching/regions_matcher.hpp"
 
-#include "nonFree/sift/SIFT_describer.hpp"
+#include "openMVG/features/sift/SIFT_describer.hpp"
 #include "third_party/stlplus3/filesystemSimplified/file_system.hpp"
 
 #include "third_party/vectorGraphics/svgDrawer.hpp"

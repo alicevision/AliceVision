@@ -10,8 +10,8 @@
 
 /// Feature/Regions & Image describer interfaces
 #include "openMVG/features/features.hpp"
-#include "nonFree/sift/SIFT_describer.hpp"
-#include "nonFree/sift/SIFT_float_describer.hpp"
+#include "openMVG/features/sift/SIFT_describer.hpp"
+#include "openMVG/features/sift/SIFT_float_describer.hpp"
 
 #if HAVE_CCTAG
 #include "openMVG/features/cctag/CCTAG_describer.hpp"

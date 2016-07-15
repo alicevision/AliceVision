@@ -14,7 +14,7 @@
 #include "third_party/vectorGraphics/svgDrawer.hpp"
 #include "third_party/cmdLine/cmdLine.h"
 
-#include "nonFree/sift/SIFT_describer.hpp"
+#include "openMVG/features/sift/SIFT_describer.hpp"
 
 #include <string>
 #include <iostream>

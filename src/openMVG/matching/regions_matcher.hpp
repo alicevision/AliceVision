@@ -53,7 +53,7 @@ class RegionsMatcher
    /**
     * @brief The destructor.
     */ 
-   ~RegionsMatcher() {}
+   virtual ~RegionsMatcher() {}
 
 
     /**
@@ -119,10 +119,10 @@ class Matcher_Regions_Database
      */
     bool Match
     (
-    float dist_ratio, // Distance ratio used to discard spurious correspondence
+      float dist_ratio, // Distance ratio used to discard spurious correspondence
       const features::Regions & query_regions,
-    matching::IndMatches & matches // photometric corresponding points
-    )const;
+      matching::IndMatches & matches // photometric corresponding points
+    ) const;
 
   private:
   // Matcher Type
@@ -213,7 +213,8 @@ public:
     if (!matcher_.SearchNeighbours(queries, queryregions_.RegionCount(), &vec_nIndice, &vec_fDistance, NNN__))
       return false;
 
-    std::vector<int> vec_nn_ratio_idx;
+    std::vector<int> vec_valid_matches_idx;
+    
     // Filter the matches using a distance ratio test:
     //   The probability that a match is correct is determined by taking
     //   the ratio of distance from the closest neighbor to the distance
@@ -222,16 +223,47 @@ public:
       vec_fDistance.begin(), // distance start
       vec_fDistance.end(),   // distance end
       NNN__, // Number of neighbor in iterator sequence (minimum required 2)
-      vec_nn_ratio_idx, // output (indices that respect the distance Ratio)     
+      vec_valid_matches_idx, // output (indices that respect the distance Ratio)     
       b_squared_metric_ ? Square(f_dist_ratio) : f_dist_ratio);
 
-    vec_putative_matches.reserve(vec_nn_ratio_idx.size());
-    for (size_t k=0; k < vec_nn_ratio_idx.size(); ++k)
+    const size_t n = vec_fDistance.size();
+    
+    // Consider the match valid if the 2 first matches correspond to the "same" feature.
+    //
+    // In [Mishkin 2015] "MODS: Fast and Robust Method for Two-View Matching" they introduce the FGINN strategy
+    // "First Geometrically Inconsistent Nearest Neighbor".
+    // Here, for simplicity and performances, we don't search for the first
+    // geometrically inconsistent but assume that the match is strong enough if
+    // the 2 nearest neighbors are on the same image region.
+    // It could be 2 really close features or the same feature with multiple
+    // descriptors (different orientations of SIFT for instance).
+    // Warning: This code assumes that NNN__ is 2.
+    for(size_t i=0; i < n/NNN__; ++i)
     {
-      const size_t index = vec_nn_ratio_idx[k];
-      vec_putative_matches.emplace_back(vec_nIndice[index*NNN__]._j, vec_nIndice[index*NNN__]._i
+      const Vec2 vecA = regions_->GetRegionPosition(vec_nIndice[i*NNN__]._j);
+      const Vec2 vecB = regions_->GetRegionPosition(vec_nIndice[i*NNN__+1]._j);
+      if(std::abs(vecA.x() - vecB.x()) < 10.0 &&
+         std::abs(vecA.y() - vecB.y()) < 10.0)
+      {
+        vec_valid_matches_idx.push_back(i);
+      }
+    }
+
+    // Remove duplicates
+    {
+      std::sort(vec_valid_matches_idx.begin(), vec_valid_matches_idx.end());
+      std::vector<int>::iterator it = std::unique(vec_valid_matches_idx.begin(), vec_valid_matches_idx.end());
+      vec_valid_matches_idx.resize(std::distance(vec_valid_matches_idx.begin(), it));
+    }
+    
+    vec_putative_matches.reserve(vec_valid_matches_idx.size());
+    for (size_t k=0; k < vec_valid_matches_idx.size(); ++k)
+    {
+      const size_t index = vec_valid_matches_idx[k];
+      const matching::IndMatch& match = vec_nIndice[index*NNN__];
+      vec_putative_matches.emplace_back(match._j, match._i
 #ifdef OPENMVG_DEBUG_MATCHING
-          , (float) vec_fDistance[vec_nn_ratio_idx[0]]
+          , (float) vec_fDistance[index*NNN__]
 #endif
       );
     }

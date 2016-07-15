@@ -9,6 +9,7 @@
 #include "openMVG/matching/matcher_brute_force.hpp"
 #include "openMVG/matching/matcher_kdtree_flann.hpp"
 #include "openMVG/matching/matcher_cascade_hashing.hpp"
+#include "openMVG/matching/matcher_voctree.hpp"
 
 namespace openMVG {
 namespace matching {
@@ -40,8 +41,7 @@ bool Matcher_Regions_Database::Match
 
   if (_matching_interface)
   {
-    _matching_interface->Match(dist_ratio, query_regions, matches);
-    return true;
+    return _matching_interface->Match(dist_ratio, query_regions, matches);
   }
   return false;
 }
@@ -91,6 +91,13 @@ Matcher_Regions_Database::Matcher_Regions_Database
           typedef L2_Vectorized<unsigned char> MetricT;
           typedef ArrayMatcherCascadeHashing<unsigned char, MetricT> MatcherT;
           _matching_interface.reset(new matching::RegionsMatcherT<MatcherT>(database_regions, true));
+        }
+        case VOCTREE_MATCHER:
+        {
+          const char* voctreeFile = std::getenv("OPENMVG_VOCTREE");
+          if(voctreeFile == NULL)
+            throw std::logic_error("Error: Voctree matcher needs an environment variable OPENMVG_VOCTREE with the path to the voctree file.");
+          _matching_interface.reset(new matching::MatcherVoctree(database_regions, voctreeFile));
         }
         break;
         default:
