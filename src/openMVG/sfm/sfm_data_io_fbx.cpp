@@ -42,7 +42,7 @@ static bool useNullObjects(const std::string& filename)
   return filename.substr(filename.size()-enableNullExtension.size()) == enableNullExtension;
 }
 
-static void exportAsMesh(const SfM_Data& sfm_data, FbxScene* fbxscene)
+static void exportPointsAsMesh(const SfM_Data& sfm_data, FbxScene* fbxscene)
 {
   FbxNode* fbxnode = FbxNode::Create(fbxscene, "sfm_node");
   fbxscene->GetRootNode()->AddChild(fbxnode);
@@ -69,7 +69,7 @@ static void exportAsMesh(const SfM_Data& sfm_data, FbxScene* fbxscene)
   }
 }
 
-static void exportAsNullObjects(const SfM_Data& sfm_data, FbxScene* fbxscene)
+static void exportPointsAsNullObjects(const SfM_Data& sfm_data, FbxScene* fbxscene)
 {
   const int point_count = sfm_data.GetLandmarks().size();
   char nodeName[64];
@@ -99,13 +99,15 @@ bool Save_FBX(const SfM_Data& sfm_data, const std::string& filename, ESfM_Data /
   FbxScene* fbxscene = FbxScene::Create(fbxmanager, "openMVG");
   
   if (useNullObjects(filename))
-    exportAsNullObjects(sfm_data, fbxscene);
+    exportPointsAsNullObjects(sfm_data, fbxscene);
   else
-    exportAsMesh(sfm_data, fbxscene);
+    exportPointsAsMesh(sfm_data, fbxscene);
 
   //=================================================================================
-  // TODO: Add cameras
+  // Add cameras to the scene; 1 camera per shot
   //=================================================================================
+  
+  
 
   //=================================================================================
   // Save FBX; choose older format for compatibility
