@@ -34,6 +34,8 @@ using namespace openMVG::sfm;
 namespace openMVG {
 namespace sfm {
 
+// MESHES ///////////////////////////////////////////////////////////////////
+
 static bool useNullObjects(const std::string& filename)
 {
   static const std::string enableNullExtension = "_null.fbx";
@@ -71,7 +73,6 @@ static void exportPointsAsMesh(const SfM_Data& sfm_data, FbxScene* fbxscene)
 
 static void exportPointsAsNullObjects(const SfM_Data& sfm_data, FbxScene* fbxscene)
 {
-  const int point_count = sfm_data.GetLandmarks().size();
   char nodeName[64];
   int currentPoint = 0;
   
@@ -84,6 +85,62 @@ static void exportPointsAsNullObjects(const SfM_Data& sfm_data, FbxScene* fbxsce
     fbxscene->GetRootNode()->AddChild(ptNode);
   }
 }
+
+// CAMERAS //////////////////////////////////////////////////////////////////
+
+static void setCameraXform(FbxNode* fbxnode, const geometry::Pose3& pose)
+{
+  // TODO: UNIMPLEMENTED.
+}
+
+static void setCameraAperture(FbxCamera* fbxcamera, const cameras::Pinhole_Intrinsic* intrinsics, const float sensorWidth_mm)
+{
+  const float imgWidth = intrinsics->w();
+  const float imgHeight = intrinsics->h();
+  const float sensorWidth_pix = std::max(imgWidth, imgHeight);
+  const float sensorHeight_pix = std::min(imgWidth, imgHeight);
+  const float imgRatio = sensorHeight_pix / sensorWidth_pix;
+  const float focalLength_pix = intrinsics->focal();
+
+  const float sensorHeight_mm = sensorWidth_mm * imgRatio;
+  const float focalLength_mm = sensorWidth_mm * focalLength_pix / sensorWidth_pix;
+  const float pix2mm = sensorWidth_mm / sensorWidth_pix;
+
+#if 0
+  // openMVG: origin is (top,left) corner and orientation is (bottom,right)
+  // ABC: origin is centered and orientation is (up,right)
+  // Following values are in cm, hence the 0.1 multiplier
+  const float haperture_cm = 0.1 * imgWidth * pix2mm;
+  const float vaperture_cm = 0.1 * imgHeight * pix2mm;
+
+  camSample.setFocalLength(focalLength_mm);
+  camSample.setHorizontalAperture(haperture_cm);
+  camSample.setVerticalAperture(vaperture_cm);
+#endif
+}
+
+static void addCamera(FbxScene* fbxscene, const std::string& cameraName, const geometry::Pose3& pose,
+    const cameras::Pinhole_Intrinsic* intrinsics, const std::string& imagePath, const IndexT id_view,
+    const IndexT id_intrinsic, const float sensorWidth_mm, const IndexT id_pose)
+{
+  FbxNode* fbxnode = FbxNode::Create(fbxscene, (std::string("camnode_") + cameraName).c_str());
+  fbxscene->GetRootNode()->AddChild(fbxnode);
+  
+  FbxCamera* fbxcamera = FbxCamera::Create(fbxscene, (std::string("cam_") + cameraName).c_str());
+  fbxnode->SetNodeAttribute(fbxcamera);
+  
+  setCameraXform(fbxnode, pose);
+  setCameraAperture(fbxcamera, intrinsics, sensorWidth_mm);
+
+  // User data
+  {
+    
+  }  
+  
+}
+
+
+// MAIN ENTRY POINT /////////////////////////////////////////////////////////
 
 bool Save_FBX(const SfM_Data& sfm_data, const std::string& filename, ESfM_Data /* unused flags_part*/)
 {
@@ -107,7 +164,27 @@ bool Save_FBX(const SfM_Data& sfm_data, const std::string& filename, ESfM_Data /
   // Add cameras to the scene; 1 camera per shot
   //=================================================================================
   
-  
+  for (const auto& it: sfm_data.GetViews()) {
+    const sfm::View* view = it.second.get();
+    if (!sfm_data.IsPoseAndIntrinsicDefined(view))
+      continue;
+    
+    const geometry::Pose3 pose = sfm_data.GetPoseOrDie(view);
+    const cameras::IntrinsicBase* camera = sfm_data.GetIntrinsics().at(view->id_intrinsic).get();
+    const std::string cameraName = stlplus::basename_part(view->s_Img_path);
+    const std::string fileName = stlplus::create_filespec(sfm_data.s_root_path, view->s_Img_path);
+    
+    // Extract sensor width if present, otherwise default to 36mm
+    float sensorWidth_mm = 36;
+    if (const auto viewMetadata = dynamic_cast<const sfm::View_Metadata*>(view)) {
+      auto it = viewMetadata->metadata.find("sensor_width");
+      if (it != viewMetadata->metadata.end())
+        sensorWidth_mm = std::stof(it->second);
+    }
+    
+    addCamera(fbxscene, cameraName, pose, dynamic_cast<const cameras::Pinhole_Intrinsic*>(camera),
+        fileName, view->id_view, view->id_intrinsic, sensorWidth_mm, view->id_pose);
+  }
 
   //=================================================================================
   // Save FBX; choose older format for compatibility
