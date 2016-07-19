@@ -11,21 +11,52 @@
 namespace openMVG {
 namespace features {
 
-struct CCTAG_Image_describer::CCTagParameters : public cctag::Parameters 
+CCTAG_Image_describer::CCTagParameters::CCTagParameters(size_t nRings)
 {
-  CCTagParameters(size_t nRings) : cctag::Parameters(nRings) {}
-};
+  _internalParams = new cctag::Parameters(nRings);
+}
+
+CCTAG_Image_describer::CCTagParameters::~CCTagParameters()
+{
+  delete _internalParams;
+}
+
+bool CCTAG_Image_describer::CCTagParameters::setPreset(EDESCRIBER_PRESET preset)
+{
+  switch(preset)
+  {
+  // Normal lighting conditions: normal contrast
+  case LOW_PRESET:
+  case MEDIUM_PRESET:
+  case NORMAL_PRESET:
+    _cannyThrLow = 0.01f;
+    _cannyThrHigh = 0.04f;
+  break;
+  // Low lighting conditions: very low contrast
+  case HIGH_PRESET:
+  case ULTRA_PRESET:
+    _cannyThrLow = 0.002f;
+    _cannyThrHigh = 0.01f;
+  break;
+  }
+  return true;
+}
 
 
 CCTAG_Image_describer::CCTAG_Image_describer()
-    :Image_describer(), _params(new CCTagParameters(3)), _doAppend(false) {}
+  : Image_describer()
+  , _params(3)
+  , _doAppend(false)
+{}
     
 CCTAG_Image_describer::CCTAG_Image_describer(const std::size_t nRings, const bool doAppend)
-    :Image_describer(), _params(new CCTagParameters(nRings)), _doAppend(doAppend){}   
+  : Image_describer()
+  , _params(nRings)
+  , _doAppend(doAppend)
+  {}   
 
 CCTAG_Image_describer::~CCTAG_Image_describer() 
 {
-  delete _params;
 }
 
 void CCTAG_Image_describer::Allocate(std::unique_ptr<Regions> &regions) const
@@ -35,28 +66,12 @@ void CCTAG_Image_describer::Allocate(std::unique_ptr<Regions> &regions) const
 
 bool CCTAG_Image_describer::Set_configuration_preset(EDESCRIBER_PRESET preset)
 {
-  // todo@L: choose most relevant preset names
-  switch(preset)
-  {
-  // Normal lighting conditions: normal contrast
-  case LOW_PRESET:
-  case MEDIUM_PRESET:
-  case NORMAL_PRESET:
-    _params->_cannyThrLow = 0.01f;
-    _params->_cannyThrHigh = 0.04f;
-  break;
-  // Low lighting conditions: very low contrast
-  case HIGH_PRESET:
-    _params->_cannyThrLow = 0.002f;
-    _params->_cannyThrHigh = 0.01f;
-  break;
-  case ULTRA_PRESET:
-    // todo@L: not set yet
-  break;
-  default:
-    return false;
-  }
-  return true;
+  return _params.setPreset(preset);
+}
+
+void CCTAG_Image_describer::Set_use_cuda(bool use_cuda)
+{
+  _params._internalParams->_useCuda = use_cuda;
 }
 
 bool CCTAG_Image_describer::Describe(const image::Image<unsigned char>& image,
@@ -84,12 +99,12 @@ bool CCTAG_Image_describer::Describe(const image::Image<unsigned char>& image,
     //// Invert the image
     //cv::Mat invertImg;
     //cv::bitwise_not(graySrc,invertImg);
-    cctag::cctagDetection(cctags,1,graySrc, *_params, durations );
+    cctag::cctagDetection(cctags,1,graySrc, *_params._internalParams, durations);
 #else //todo: #ifdef depreciated
     cctag::MemoryPool::instance().updateMemoryAuthorizedWithRAM();
     cctag::View cctagView((const unsigned char *) image.data(), image.Width(), image.Height(), image.Depth()*image.Width());
     boost::ptr_list<cctag::ICCTag> cctags;
-    cctag::cctagDetection(cctags, 1 ,cctagView._grayView ,*_params, durations );
+    cctag::cctagDetection(cctags, 1 ,cctagView._grayView ,*_params._internalParams, durations );
 #endif
     durations->print( std::cerr );
     

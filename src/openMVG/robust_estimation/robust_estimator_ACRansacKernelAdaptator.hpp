@@ -31,6 +31,8 @@
 namespace openMVG {
 namespace robust {
 
+#define OPENMVG_MINIMUM_SAMPLES_COEF 7
+
 /// Two view Kernel adapter for the A contrario model estimator
 /// Handle data normalization and compute the corresponding logalpha 0
 ///  that depends of the error model (point to line, or point to point)
@@ -324,8 +326,8 @@ public:
     ApplyTransformationToPoints(x2_, K2_.inverse(), &x2k_);
 
     //Point to line probability (line is the epipolar line)
-    double D = sqrt(w2 * (double) w2 + h2 * (double) h2); // diameter
-    double A = w2 * (double) h2; // area
+    const double D = sqrt(w2 * (double)w2 + h2 * (double)h2); // diameter
+    const double A = w2 * (double)h2; // area
     logalpha0_ = log10(2.0 * D / A * .5);
   }
 

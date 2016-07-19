@@ -31,12 +31,12 @@ int main(int argc, char ** argv)
 
   std::string sSfM_Data_Filename;
   std::string sMatchesDir;
-  std::string sMatchFile;
+  std::string sMatchGeometricModel = "f";
   std::string sOutDir = "";
 
   cmd.add( make_option('i', sSfM_Data_Filename, "input_file") );
   cmd.add( make_option('d', sMatchesDir, "matchdir") );
-  cmd.add( make_option('m', sMatchFile, "matchfile") );
+  cmd.add( make_option('g', sMatchGeometricModel, "geometric_model") );
   cmd.add( make_option('o', sOutDir, "outdir") );
 
   try {
@@ -45,8 +45,11 @@ int main(int argc, char ** argv)
   } catch(const std::string& s) {
       std::cerr << "Export pairwise tracks.\nUsage: " << argv[0] << "\n"
       << "[-i|--input_file file] path to a SfM_Data scene\n"
-      << "[-d|--matchdir path]\n"
-      << "[-m|--sMatchFile filename]\n"
+      << "[-d|--matchdir PATH] path to the folder with all features and match files\n"
+      << "[-g|--geometric_model MODEL] model used for the matching:\n"
+      << "   f: (default) fundamental matrix,\n"
+      << "   e: essential matrix,\n"
+      << "   h: homography matrix.\n"
       << "[-o|--outdir path]\n"
       << std::endl;
 
@@ -86,16 +89,17 @@ int main(int argc, char ** argv)
 
   // Read the features
   std::shared_ptr<Features_Provider> feats_provider = std::make_shared<Features_Provider>();
-  if (!feats_provider->load(sfm_data, sMatchesDir, regions_type)) {
+  if (!feats_provider->load(sfm_data, sMatchesDir, regions_type))
+  {
     std::cerr << std::endl
       << "Invalid features." << std::endl;
     return EXIT_FAILURE;
   }
   // Read the matches
   std::shared_ptr<Matches_Provider> matches_provider = std::make_shared<Matches_Provider>();
-  if (!matches_provider->load(sfm_data, sMatchFile)) {
-    std::cerr << std::endl
-      << "Invalid matches file." << std::endl;
+  if (!matches_provider->load(sfm_data, sMatchesDir, sMatchGeometricModel))
+  {
+    std::cerr << "\nInvalid matches file." << std::endl;
     return EXIT_FAILURE;
   }
 

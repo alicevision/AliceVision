@@ -27,7 +27,7 @@ class Pose3
     Pose3(const Mat34& Rt)
     : _rotation(Rt.block<3,3>(0,0))
     {
-      Vec3 t = Rt.block<1, 3>(3,0);
+      Vec3 t = Rt.block<3, 1>(0,3);
       _center = -_rotation.transpose() * t;
     }
 
@@ -41,9 +41,9 @@ class Pose3
     inline Vec3 translation() const { return -(_rotation * _center); }
 
     // Apply pose
-    inline Vec3 operator () (const Vec3& p) const
+    inline Mat3X operator () (const Mat3X& p) const
     {
-      return _rotation * (p - _center);
+      return _rotation * (p.colwise() - _center);
     }
 
     // Composition
@@ -52,15 +52,32 @@ class Pose3
       return Pose3(_rotation * P._rotation, P._center + P._rotation.transpose() * _center );
     }
 
+    // Operator ==
+    bool operator==(const Pose3& other) const
+    {
+      return AreMatNearEqual(_rotation, other._rotation, 1e-6) &&
+              AreVecNearEqual(_center, other._center, 1e-6);
+    }
+
     // Inverse
     Pose3 inverse() const
     {
       return Pose3(_rotation.transpose(),  -(_rotation * _center));
     }
 
-    // Return the depth (distance) of a point respect to the camera center
-    double depth(const Vec3 &X) const {
+    /// Return the depth (distance) of a point respect to the camera center
+    double depth(const Vec3 &X) const
+    {
       return (_rotation * (X - _center))[2];
+    }
+
+    /// Return the pose with the Scale, Rotation and translation applied.
+    Pose3 transformSRt(const double S, const Mat3 & R, const Vec3 & t) const
+    {
+      Pose3 pose;
+      pose._center = S * R * _center + t;
+      pose._rotation = _rotation * R.transpose();
+      return pose;
     }
 
     // Serialization
@@ -95,6 +112,18 @@ class Pose3
       _center = Eigen::Map<const Vec3>(&vec[0]);
     }
 };
+
+/**
+ * @brief Build a pose froma a rotation and a translation.
+ * @param[in] R The 3x3 rotation.
+ * @param[in] t The 3x1 translation.
+ * @return The pose as [R, -R'*t]
+ */
+inline Pose3 poseFromRT(const Mat3& R, const Vec3& t) 
+{
+  return Pose3(R, -R.transpose()*t);
+}
+
 } // namespace geometry
 } // namespace openMVG
 

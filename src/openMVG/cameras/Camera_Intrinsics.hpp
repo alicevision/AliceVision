@@ -23,14 +23,43 @@ namespace cameras {
 struct IntrinsicBase
 {
   unsigned int _w, _h;
+  double _initialFocalLengthPix = -1;
+  std::string _serialNumber;
 
-  IntrinsicBase(unsigned int w = 0, unsigned int h = 0):_w(w), _h(h) {}
-  virtual ~IntrinsicBase() {}
+  IntrinsicBase(unsigned int w = 0, unsigned int h = 0, const std::string& serialNumber = ""):_w(w), _h(h), _serialNumber(serialNumber)
+  {}
+  virtual ~IntrinsicBase()
+  {}
+  
+  virtual IntrinsicBase* clone() const = 0;
+  virtual void assign(const IntrinsicBase& other) = 0;
 
+  virtual bool isValid() const { return _w != 0 && _h != 0; }
+  
   unsigned int w() const {return _w;}
   unsigned int h() const {return _h;}
+  const std::string& serialNumber() const {return _serialNumber;}
+  double initialFocalLengthPix() const {return _initialFocalLengthPix;}
+  
   void setWidth(unsigned int w) { _w = w;}
   void setHeight(unsigned int h) { _h = h;}
+  void setSerialNumber(const std::string& serialNumber)
+  {
+    _serialNumber = serialNumber;
+  }
+  void setInitialFocalLengthPix(double initialFocalLengthPix)
+  {
+    _initialFocalLengthPix = initialFocalLengthPix;
+  }
+
+  // Operator ==
+  bool operator==(const IntrinsicBase& other) const {
+    return _w == other._w &&
+           _h == other._h &&
+           _serialNumber == other._serialNumber &&
+           getType() == other.getType() &&
+           getParams() == other.getParams();
+  }
 
   /// Projection of a 3D point into the camera plane (Apply pose, disto (if any) and Intrinsics)
   Vec2 project(
@@ -45,13 +74,22 @@ struct IntrinsicBase
   }
 
   /// Compute the residual between the 3D projected point X and an image observation x
-  Vec2 residual(
-    const geometry::Pose3 & pose,
-    const Vec3 & X,
-    const Vec2 & x) const
+  Vec2 residual(const geometry::Pose3 & pose, const Vec3 & X, const Vec2 & x) const
   {
     const Vec2 proj = this->project(pose, X);
     return x - proj;
+  }
+  
+  Mat2X residuals(const geometry::Pose3 & pose, const Mat3X & X, const Mat2X & x) const
+  {
+    assert(X.cols() == x.cols());
+    const std::size_t numPts = x.cols();
+    Mat2X residuals = Mat2X::Zero(2, numPts);
+    for(std::size_t i = 0; i < numPts; ++i)
+    {
+      residuals.col(i) = residual(pose, X.col(i), x.col(i));
+    }
+    return residuals;
   }
 
   // --
@@ -103,6 +141,8 @@ struct IntrinsicBase
   {
     ar(cereal::make_nvp("width", _w));
     ar(cereal::make_nvp("height", _h));
+    ar(cereal::make_nvp("serialNumber", _serialNumber));
+    ar(cereal::make_nvp("initialFocalLengthPix", _initialFocalLengthPix));
   }
 
   /// Serialization in
@@ -111,6 +151,23 @@ struct IntrinsicBase
   {
     ar(cereal::make_nvp("width", _w));
     ar(cereal::make_nvp("height", _h));
+    // compatibility with older versions
+    try
+    {
+      ar(cereal::make_nvp("serialNumber", _serialNumber));
+    }
+    catch(cereal::Exception& e)
+    {
+      _serialNumber = "";
+    }
+    try
+    {
+      ar(cereal::make_nvp("initialFocalLengthPix", _initialFocalLengthPix));
+    }
+    catch(cereal::Exception& e)
+    {
+      _initialFocalLengthPix = -1;
+    }
   }
 
   /// Generate an unique Hash from the camera parameters (used for grouping)
@@ -120,6 +177,7 @@ struct IntrinsicBase
     stl::hash_combine(seed, static_cast<int>(this->getType()));
     stl::hash_combine(seed, _w);
     stl::hash_combine(seed, _h);
+    stl::hash_combine(seed, _serialNumber);
     const std::vector<double> params = this->getParams();
     for (size_t i=0; i < params.size(); ++i)
       stl::hash_combine(seed, params[i]);

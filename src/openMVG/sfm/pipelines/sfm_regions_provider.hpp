@@ -26,18 +26,28 @@ struct Regions_Provider
   /// Regions per ViewId of the considered SfM_Data container
   Hash_Map<IndexT, std::unique_ptr<features::Regions> > regions_per_view;
 
+  void clearDescriptors()
+  {
+    for(auto& it: regions_per_view)
+    {
+      it.second->clearDescriptors();
+    }
+  }
+
   // Load Regions related to a provided SfM_Data View container
   virtual bool load(
     const SfM_Data & sfm_data,
     const std::string & feat_directory,
-    std::unique_ptr<features::Regions>& region_type)
+    std::unique_ptr<features::Regions>& region_type,
+    const std::set<IndexT>& filter = std::set<IndexT>())
   {
     C_Progress_display my_progress_bar( sfm_data.GetViews().size(),
       std::cout, "\n- Regions Loading -\n");
     // Read for each view the corresponding regions and store them
     bool bContinue = true;
+
 #ifdef OPENMVG_USE_OPENMP
-    #pragma omp parallel
+    #pragma omp parallel num_threads(3)
 #endif
     for (Views::const_iterator iter = sfm_data.GetViews().begin();
       iter != sfm_data.GetViews().end() && bContinue; ++iter)
@@ -48,28 +58,33 @@ struct Regions_Provider
       {
         const std::string sImageName = stlplus::create_filespec(sfm_data.s_root_path, std::to_string(iter->second.get()->id_view));
         const std::string basename = stlplus::basename_part(sImageName);
-        const std::string featFile = stlplus::create_filespec(feat_directory, basename, ".feat");
-        const std::string descFile = stlplus::create_filespec(feat_directory, basename, ".desc");
+        
+        if(filter.empty() || filter.find(iter->second.get()->id_view) != filter.end())
+        {
+          const std::string featFile = stlplus::create_filespec(feat_directory, basename, ".feat");
+          const std::string descFile = stlplus::create_filespec(feat_directory, basename, ".desc");
 
-        std::unique_ptr<features::Regions> regions_ptr(region_type->EmptyClone());
-        if (!regions_ptr->Load(featFile, descFile))
-        {
-          std::cerr << "Invalid regions files for the view: " << sImageName << std::endl;
+          std::unique_ptr<features::Regions> regions_ptr(region_type->EmptyClone());
+          if (!regions_ptr->Load(featFile, descFile))
+          {
+            std::cerr << "Invalid regions files for the view: " << sImageName << std::endl;
 #ifdef OPENMVG_USE_OPENMP
-        #pragma omp critical
+          #pragma omp critical
 #endif
-          bContinue = false;
-        }
+            bContinue = false;
+          }
 #ifdef OPENMVG_USE_OPENMP
-        #pragma omp critical
+          #pragma omp critical
 #endif
-        {
-          regions_per_view[iter->second.get()->id_view] = std::move(regions_ptr);
-          ++my_progress_bar;
+          {
+            regions_per_view[iter->second.get()->id_view] = std::move(regions_ptr);
+            ++my_progress_bar;
+          }
         }
+        
       }
     }
-    return true;
+    return bContinue;
   }
 
 }; // Regions_Provider

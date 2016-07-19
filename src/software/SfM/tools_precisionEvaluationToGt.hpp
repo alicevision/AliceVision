@@ -14,6 +14,7 @@
 #include "third_party/htmlDoc/htmlDoc.hpp"
 #include "third_party/histogram/histogram.hpp"
 #include "third_party/vectorGraphics/svgDrawer.hpp"
+#include "third_party/stlplus3/filesystemSimplified/file_system.hpp"
 
 #include <vector>
 #include <algorithm>
@@ -133,14 +134,17 @@ void EvaluteToGT(
   // -b. angle between rotation matrix
 
   // -a. distance between camera center
+  double trajectoryLength = 0;
   std::vector<double> vec_baselineErrors;
+  for(std::size_t i = 0; i < numCameras; ++i)
   {
-    for (size_t i = 0; i  < numCameras; ++i)
-    {
-      const double dResidual = (vec_camCenterGT[i] - vec_camPosComputed_T[i]).norm();
-      vec_baselineErrors.push_back(dResidual);
-    }
+    const double dResidual = (vec_camCenterGT[i] - vec_camPosComputed_T[i]).norm();
+    vec_baselineErrors.push_back(dResidual);
+    if(i > 0 && i < numCameras-2)
+      trajectoryLength += (vec_camCenterGT[i] - vec_camCenterGT[i+1]).norm();
   }
+  
+  std::cout << std::endl << "\nTrajectory length: " << trajectoryLength ;
 
   // -b. angle between rotation matrix
   std::vector<double> vec_angularErrors;
@@ -309,6 +313,24 @@ void EvaluteToGT(
     }
     htmlDocStream->pushInfo(sFullLine);
   }
+}
+
+// Find a file in a list and return the index, or -1 if nothing found.
+// Handle relative/absolute paths
+int findIdGT(std::string file, std::vector<std::string> filelist)
+{
+  int result = -1;
+  std::string file_relative = stlplus::filename_part(file);
+  for(unsigned int i = 0; i < filelist.size(); ++i)
+  {
+    if(file_relative.compare(stlplus::basename_part(filelist[i])) == 0)
+    {
+      result = i;
+      break;
+    }
+  }
+
+  return result;
 }
 
 } //namespace openMVG

@@ -34,9 +34,10 @@
 
 #include "lemon/list_graph.h"
 #include "lemon/unionfind.h"
-using namespace lemon;
 
 #include "openMVG/matching/indMatch.hpp"
+#include "openMVG/stl/flatMap.hpp"
+#include "openMVG/stl/flatSet.hpp"
 
 #include <algorithm>
 #include <iostream>
@@ -46,9 +47,10 @@ using namespace lemon;
 #include <map>
 #include <memory>
 
-namespace openMVG  {
+namespace openMVG {
 
 using namespace openMVG::matching;
+using namespace lemon;
 
 /// Lightweight copy of the flat_map of BOOST library
 /// Use a vector to speed up insertion (preallocated array)
@@ -78,13 +80,36 @@ private:
   static bool superiorToFirst(const P &a, const T1 &b) {return a.first<b;}
 };
 
-namespace tracks  {
+namespace tracks {
 
-// Data structure to store a track: collection of {ImageId,FeatureId}
-//  The corresponding image points with their imageId and FeatureId.
-typedef std::map<size_t,size_t> submapTrack;
-// A track is a collection of {trackId, submapTrack}
-typedef std::map< size_t, submapTrack > STLMAPTracks;
+/// Data structure to store a track: collection of {ImageId,FeatureId}
+///  The corresponding image points with their imageId and FeatureId.
+typedef stl::flat_map<size_t,size_t> submapTrack;
+/// A track is a collection of {trackId, submapTrack}
+typedef stl::flat_map< size_t, submapTrack > STLMAPTracks;
+typedef std::vector<size_t> TrackIdSet;
+
+/**
+ * @brief Data structure that contains for each features of each view, its corresponding cell positions for each level of the pyramid, i.e.
+ * for each view:
+ *   each feature is mapped N times (N=depth of the pyramid)
+ *      each times it contains the absolute position P of the cell in the corresponding pyramid level
+ *
+ * FeatsPyramidPerView contains map<viewId, map<trackId*N, pyramidIndex>>
+ *
+ * Cell position:
+ * Consider the set of all cells of all pyramids, there are M = \sum_{l=1...N} K_l^2 cells with K_l = 2^l and l=1...N
+ * We enumerate the cells starting from the first pyramid l=1 (so that they have position from 0 to 3 (ie K^2 - 1))
+ * and we go on for increasing values of l so that e.g. the first cell of the pyramid at l=2 has position K^2, the second K^2 + 1 etc...
+ * So in general the i-th cell of the pyramid at level l has position P= \sum_{j=1...l-1} K_j^2 + i
+ */
+typedef stl::flat_map< size_t, stl::flat_map<size_t, size_t> > TracksPyramidPerView;
+/**
+ * List of visible track ids for each view.
+ *
+ * TracksPerView contains <viewId, vector<trackId> >
+ */
+typedef stl::flat_map< size_t, TrackIdSet > TracksPerView;
 
 struct TracksBuilder
 {
@@ -207,64 +232,6 @@ struct TracksBuilder
     return false;
   }
 
-  /// Remove the pair that have too few correspondences.
-  bool FilterPairWiseMinimumMatches(size_t minMatchesOccurences, bool bMultithread = true)
-  {
-    std::vector<size_t> vec_tracksToRemove;
-    typedef std::map< size_t, std::set<size_t> > TrackIdPerImageT;
-    TrackIdPerImageT map_tracksIdPerImages;
-
-    //-- Count the number of track per image Id
-    for ( lemon::UnionFindEnum< IndexMap >::ClassIt cit(*_tracksUF); cit != INVALID; ++cit) {
-      const size_t trackId = cit.operator int();
-      for (lemon::UnionFindEnum< IndexMap >::ItemIt iit(*_tracksUF, cit); iit != INVALID; ++iit) {
-        const MapNodeToIndex::iterator iterTrackValue = _map_nodeToIndex.find(iit);
-        const indexedFeaturePair & currentPair = iterTrackValue->second;
-        map_tracksIdPerImages[currentPair.first].insert(trackId);
-      }
-    }
-
-    //-- Compute corresponding track per image pair
-#ifdef OPENMVG_USE_OPENMP
-    #pragma omp parallel if(bMultithread)
-#endif
-    for (TrackIdPerImageT::const_iterator iter = map_tracksIdPerImages.begin();
-      iter != map_tracksIdPerImages.end();
-      ++iter)
-    {
-#ifdef OPENMVG_USE_OPENMP
-    #pragma omp single nowait
-#endif
-      {
-        const std::set<size_t> & setA = iter->second;
-        std::vector<size_t> inter;
-        for (TrackIdPerImageT::const_iterator iter2 = iter;
-          iter2 != map_tracksIdPerImages.end();  ++iter2)
-        {
-          // compute intersection of track ids
-          const std::set<size_t> & setB = iter2->second;
-          inter.clear();
-          std::set_intersection(setA.begin(), setA.end(), setB.begin(), setB.end(), std::back_inserter(inter));
-          if (inter.size() < minMatchesOccurences)
-          {
-#ifdef OPENMVG_USE_OPENMP
-            #pragma omp critical
-#endif
-            {
-              std::copy(inter.begin(), inter.end(), std::back_inserter(vec_tracksToRemove));
-            }
-          }
-        }
-      }
-    }
-    std::sort(vec_tracksToRemove.begin(), vec_tracksToRemove.end());
-    std::vector<size_t>::iterator it = std::unique(vec_tracksToRemove.begin(), vec_tracksToRemove.end());
-    vec_tracksToRemove.resize( std::distance(vec_tracksToRemove.begin(), it) );
-    std::for_each(vec_tracksToRemove.begin(), vec_tracksToRemove.end(),
-      std::bind1st(std::mem_fun(&UnionFindObject::eraseClass), _tracksUF.get()));
-    return false;
-  }
-
   bool ExportToStream(std::ostream & os)
   {
     size_t cpt = 0;
@@ -320,7 +287,7 @@ struct TracksUtilsMap
    * @brief Find common tracks between images.
    *
    * @param[in] set_imageIndex: set of images we are looking for common tracks
-   * @param[in] map_tracksIn: all tracks of the world
+   * @param[in] map_tracksIn: all tracks of the scene
    * @param[out] map_tracksOut: output with only the common tracks
    */
   static bool GetTracksInImages(
@@ -328,26 +295,135 @@ struct TracksUtilsMap
     const STLMAPTracks & map_tracksIn,
     STLMAPTracks & map_tracksOut)
   {
+    assert(!set_imageIndex.empty());
     map_tracksOut.clear();
 
     // Go along the tracks
-    for (STLMAPTracks::const_iterator iterT = map_tracksIn.begin();
-      iterT != map_tracksIn.end(); ++iterT)  {
-
-      // If the track contain one of the provided index save the point of the track
+    for (auto& trackIn: map_tracksIn)
+    {
+      // Look if the track contains the provided view index & save the point ids
       submapTrack map_temp;
-      for (std::set<size_t>::const_iterator iterIndex = set_imageIndex.begin();
-        iterIndex != set_imageIndex.end(); ++iterIndex)
+      for (size_t imageIndex: set_imageIndex)
       {
-        submapTrack::const_iterator iterSearch = iterT->second.find(*iterIndex);
-        if (iterSearch != iterT->second.end())
-          map_temp[iterSearch->first] = iterSearch->second;
+        submapTrack::const_iterator iterSearch = trackIn.second.find(imageIndex);
+        if (iterSearch == trackIn.second.end())
+            break; // at least one request image is not in the track
+        map_temp[iterSearch->first] = iterSearch->second;
       }
-
-      if (!map_temp.empty() && map_temp.size() == set_imageIndex.size())
-        map_tracksOut[iterT->first] = map_temp;
+      // if we have a feature for each input image
+      // we can add it to the output tracks.
+      if (map_temp.size() == set_imageIndex.size())
+        map_tracksOut[trackIn.first] = std::move(map_temp);
     }
     return !map_tracksOut.empty();
+  }
+  
+  static void GetCommonTracksInImages(
+    const std::set<size_t> & set_imageIndex,
+    const TracksPerView & map_tracksPerView,
+    std::set<size_t> & set_visibleTracks)
+  {
+    assert(!set_imageIndex.empty());
+    set_visibleTracks.clear();
+    
+    std::set<size_t>::const_iterator it = set_imageIndex.cbegin();
+    {
+      TracksPerView::const_iterator tracksPerViewIt = map_tracksPerView.find(*it);
+      if(tracksPerViewIt == map_tracksPerView.end())
+        return;
+      const TrackIdSet& imageTracks = tracksPerViewIt->second;
+      set_visibleTracks.insert(imageTracks.cbegin(), imageTracks.cend());
+    }
+    ++it;
+    for(; it != set_imageIndex.cend(); ++it)
+    {
+      TracksPerView::const_iterator tracksPerViewIt = map_tracksPerView.find(*it);
+      if(tracksPerViewIt == map_tracksPerView.end())
+        return;
+      const TrackIdSet& imageTracks = tracksPerViewIt->second;
+      std::set<size_t> tmp;
+      std::set_intersection(
+          set_visibleTracks.cbegin(), set_visibleTracks.cend(),
+          imageTracks.cbegin(), imageTracks.cend(),
+          std::inserter(tmp, tmp.begin()));
+      set_visibleTracks.swap(tmp);
+    }
+  }
+  
+  /**
+   * @brief Find common tracks between images.
+   *
+   * @param[in] set_imageIndex: set of images we are looking for common tracks
+   * @param[in] map_tracksIn: all tracks of the scene
+   * @param[out] map_tracksOut: output with only the common tracks
+   */
+  static bool GetTracksInImagesFast(
+    const std::set<size_t> & set_imageIndex,
+    const STLMAPTracks & map_tracksIn,
+    const TracksPerView & map_tracksPerView,
+    STLMAPTracks & map_tracksOut)
+  {
+    assert(!set_imageIndex.empty());
+    map_tracksOut.clear();
+    
+    std::set<size_t> set_visibleTracks;
+    GetCommonTracksInImages(set_imageIndex, map_tracksPerView, set_visibleTracks);
+    
+    // Go along the tracks
+    for (size_t visibleTrack: set_visibleTracks)
+    {
+      STLMAPTracks::const_iterator itTrackIn = map_tracksIn.find(visibleTrack);
+      if(itTrackIn == map_tracksIn.end())
+        continue;
+      const submapTrack& trackFeatsIn = itTrackIn->second;
+      submapTrack& trackFeatsOut = map_tracksOut[visibleTrack];
+      for (size_t imageIndex: set_imageIndex)
+      {
+        submapTrack::const_iterator trackFeatsInIt = trackFeatsIn.find(imageIndex);
+        if(trackFeatsInIt != trackFeatsIn.end())
+          trackFeatsOut[imageIndex] = trackFeatsInIt->second;
+      }
+    }
+    return !map_tracksOut.empty();
+  }
+
+  /// Return the tracksId of one image
+  static void GetImageTracksId(
+    const STLMAPTracks & map_tracks,
+    const size_t & imageIndex,
+    std::set<size_t> * set_tracksIds)
+  {
+    set_tracksIds->clear();
+    for (auto& track: map_tracks)
+    {
+      submapTrack::const_iterator iterSearch = track.second.find(imageIndex);
+      if (iterSearch != track.second.end())
+        set_tracksIds->insert(track.first);
+    }
+  }
+
+  static void computeTracksPerView(const STLMAPTracks & map_tracks, TracksPerView& map_tracksPerView)
+  {
+    for (auto& track: map_tracks)
+    {
+      for (auto& feat: track.second)
+      {
+        TrackIdSet& tracksSet = map_tracksPerView[feat.first];
+        if(tracksSet.empty())
+          tracksSet.reserve(1000);
+        tracksSet.push_back(track.first);
+      }
+    }
+    // sort tracks Ids in each view
+#ifdef OPENMVG_USE_OPENMP
+    #pragma omp parallel for
+#endif
+    for(int i = 0; i < map_tracksPerView.size(); ++i)
+    {
+      TracksPerView::iterator it = map_tracksPerView.begin();
+      std::advance(it, i);
+      std::sort(it->second.begin(), it->second.end());
+    }
   }
 
   /// Return the tracksId as a set (sorted increasing)
@@ -370,19 +446,18 @@ struct TracksUtilsMap
     size_t nImageIndex,
     std::vector<size_t> * pvec_featIndex)
   {
-    for (STLMAPTracks::const_iterator iterT = map_tracks.begin();
-      iterT != map_tracks.end(); ++iterT)
+    for (size_t trackId: set_trackId)
     {
-      const size_t trackId = iterT->first;
-      if (set_trackId.find(trackId) != set_trackId.end())
+      STLMAPTracks::const_iterator iterT = map_tracks.find(trackId);
+      // Ignore it if the track doesn't exist
+      if(iterT == map_tracks.end())
+        continue;
+      // Try to find imageIndex
+      const submapTrack & map_ref = iterT->second;
+      submapTrack::const_iterator iterSearch = map_ref.find(nImageIndex);
+      if (iterSearch != map_ref.end())
       {
-        //try to find imageIndex
-        const submapTrack & map_ref = iterT->second;
-        submapTrack::const_iterator iterSearch = map_ref.find(nImageIndex);
-        if (iterSearch != map_ref.end())
-        {
-          pvec_featIndex->push_back(iterSearch->second);
-        }
+        pvec_featIndex->emplace_back(iterSearch->second);
       }
     }
     return !pvec_featIndex->empty();
@@ -430,7 +505,7 @@ struct TracksUtilsMap
       const IndexT indexI = (map_ref.begin())->second;
       const IndexT indexJ = (++map_ref.begin())->second;
 
-      vec_indexref.push_back(IndMatch(indexI, indexJ));
+      vec_indexref.emplace_back(indexI, indexJ);
     }
   }
 
@@ -454,6 +529,16 @@ struct TracksUtilsMap
     }
   }
 
+  /// Return a set containing the image Id considered in the tracks container.
+  static void ImageIdInTracks(const TracksPerView & map_tracksPerView,
+    std::set<size_t> & set_imagesId)
+  {
+    for (auto& viewTracks: map_tracksPerView)
+    {
+      set_imagesId.insert(viewTracks.first);
+    }
+  }
+  
   /// Return a set containing the image Id considered in the tracks container.
   static void ImageIdInTracks(const STLMAPTracks & map_tracks,
     std::set<size_t> & set_imagesId)

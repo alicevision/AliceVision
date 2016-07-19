@@ -38,18 +38,18 @@ int main(int argc, char **argv)
   std::string sSfM_Data_Filename;
   std::string sMatchesDir;
   std::string sOutDir = "";
+  std::string sOutSfMDataFilepath = "";
   int iRotationAveragingMethod = int (ROTATION_AVERAGING_L2);
   int iTranslationAveragingMethod = int (TRANSLATION_AVERAGING_SOFTL1);
   bool bRefineIntrinsics = true;
-  bool matchFilePerImage = false;
 
   cmd.add( make_option('i', sSfM_Data_Filename, "input_file") );
   cmd.add( make_option('m', sMatchesDir, "matchdir") );
   cmd.add( make_option('o', sOutDir, "outdir") );
+  cmd.add( make_option('s', sOutSfMDataFilepath, "out_sfmdata_file") );
   cmd.add( make_option('r', iRotationAveragingMethod, "rotationAveraging") );
   cmd.add( make_option('t', iTranslationAveragingMethod, "translationAveraging") );
   cmd.add( make_option('f', bRefineIntrinsics, "refineIntrinsics") );
-  cmd.add( make_option('p', matchFilePerImage, "matchFilePerImage") );
 
   try {
     if (argc == 1) throw std::string("Invalid parameter.");
@@ -60,6 +60,7 @@ int main(int argc, char **argv)
     << "[-m|--matchdir] path to the matches that corresponds to the provided SfM_Data scene\n"
     << "[-o|--outdir] path where the output data will be stored\n"
     << "\n[Optional]\n"
+    << "[-s|--out_sfmdata_file] path of the output sfmdata file (default: $outdir/sfm_data.json)\n"
     << "[-r|--rotationAveraging]\n"
     << "\t 1 -> L1 minimization\n"
     << "\t 2 -> L2 minimization (default)\n"
@@ -70,13 +71,14 @@ int main(int argc, char **argv)
     << "[-f|--refineIntrinsics]\n"
     << "\t 0-> intrinsic parameters are kept as constant\n"
     << "\t 1-> refine intrinsic parameters (default). \n"
-    << "[-p|--matchFilePerImage] \n"
-    << "\t To use one match file per image instead of a global file.\n"
     << std::endl;
 
     std::cerr << s << std::endl;
     return EXIT_FAILURE;
   }
+
+  if(sOutSfMDataFilepath.empty())
+    sOutSfMDataFilepath = stlplus::create_filespec(sOutDir, "sfm_data", "json");
 
   if (iRotationAveragingMethod < ROTATION_AVERAGING_L1 ||
       iRotationAveragingMethod > ROTATION_AVERAGING_L2 )  {
@@ -118,38 +120,15 @@ int main(int argc, char **argv)
   }
   // Matches reading
   std::shared_ptr<Matches_Provider> matches_provider = std::make_shared<Matches_Provider>();
-  if( !matchFilePerImage )
+  // Load the match file (try to read the two matches file formats)
+  if(!(matches_provider->load(sfm_data, sMatchesDir, "e")))
   {
-    // Load the match file
-    if (!matches_provider->load(sfm_data, stlplus::create_filespec(sMatchesDir, "matches.e.txt"))) {
-      std::cerr << std::endl
-        << "Invalid matches file." << std::endl;
-      return EXIT_FAILURE;
-    }
-  }
-  else
-  {
-    int nbLoadedMatchFiles = 0;
-    // Load one match file per image
-    for (Views::const_iterator it = sfm_data.GetViews().begin();
-      it != sfm_data.GetViews().end(); ++it)
-    {
-      const View * v = it->second.get();
-      const std::string matchFilepath = stlplus::create_filespec(sMatchesDir, std::to_string(v->id_view) + ".matches.e.txt");
-      if (stlplus::file_exists(matchFilepath) && !matches_provider->load(sfm_data, matchFilepath)) {
-        std::cerr << std::endl << "Unable to load matches file: " << matchFilepath << std::endl;
-        continue;
-      }
-      ++nbLoadedMatchFiles;
-    }
-    if( nbLoadedMatchFiles == 0 )
-    {
-      std::cerr << std::endl << "No matches file loaded in: " << sMatchesDir << std::endl;
-      return EXIT_FAILURE;
-    }
+    std::cerr << std::endl << "Unable to load matches files from: " << sMatchesDir << std::endl;
+    return EXIT_FAILURE;
   }
 
-  if (sOutDir.empty())  {
+  if (sOutDir.empty())
+  {
     std::cerr << "\nIt is an invalid output directory" << std::endl;
     return EXIT_FAILURE;
   }
@@ -182,23 +161,28 @@ int main(int argc, char **argv)
 
   if (sfmEngine.Process())
   {
-    std::cout << std::endl << " Total Ac-Global-Sfm took (s): " << timer.elapsed() << std::endl;
-
-    std::cout << "...Generating SfM_Report.html" << std::endl;
-    Generate_SfM_Report(sfmEngine.Get_SfM_Data(),
-      stlplus::create_filespec(sOutDir, "SfMReconstruction_Report.html"));
-
-    //-- Export to disk computed scene (data & visualizable results)
-    std::cout << "...Export SfM_Data to disk." << std::endl;
-    Save(sfmEngine.Get_SfM_Data(),
-      stlplus::create_filespec(sOutDir, "sfm_data", ".json"),
-      ESfM_Data(ALL));
-
-    Save(sfmEngine.Get_SfM_Data(),
-      stlplus::create_filespec(sOutDir, "cloud_and_poses", ".ply"),
-      ESfM_Data(ALL));
-
-    return EXIT_SUCCESS;
+    return EXIT_FAILURE;
   }
-  return EXIT_FAILURE;
+
+  // get the color for the 3D points
+  if(!sfmEngine.Colorize())
+  {
+    std::cerr << "Colorize failed!" << std::endl;
+  }
+
+  std::cout << std::endl << " Total Ac-Global-Sfm took (s): " << timer.elapsed() << std::endl;
+
+  std::cout << "...Generating SfM_Report.html" << std::endl;
+  Generate_SfM_Report(sfmEngine.Get_SfM_Data(),
+    stlplus::create_filespec(sOutDir, "SfMReconstruction_Report.html"));
+
+  //-- Export to disk computed scene (data & visualizable results)
+  std::cout << "...Export SfM_Data to disk." << std::endl;
+  Save(sfmEngine.Get_SfM_Data(), sOutSfMDataFilepath, ESfM_Data(ALL));
+
+  Save(sfmEngine.Get_SfM_Data(),
+    stlplus::create_filespec(sOutDir, "cloud_and_poses", ".ply"),
+    ESfM_Data(ALL));
+
+  return EXIT_SUCCESS;
 }

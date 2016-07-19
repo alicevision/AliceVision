@@ -1,8 +1,8 @@
 #include "CCTagLocalizer.hpp"
 #include "reconstructed_regions.hpp"
 #include "optimization.hpp"
-#include "svgVisualization.hpp"
 
+#include <openMVG/features/svgVisualization.hpp>
 #include <openMVG/sfm/sfm_data_io.hpp>
 #include <openMVG/matching/indMatch.hpp>
 #include <openMVG/sfm/pipelines/sfm_robust_model_estimation.hpp>
@@ -229,7 +229,7 @@ bool CCTagLocalizer::localize(const image::Image<unsigned char> & imageGrey,
     features::CCTAG_Regions &queryRegions = *dynamic_cast<features::CCTAG_Regions*> (tmpQueryRegions.get());
     
     // just debugging -- save the svg image with detected cctag
-    saveCCTag2SVG(imagePath, 
+    features::saveCCTag2SVG(imagePath, 
                   imageSize, 
                   queryRegions, 
                   param->_visualDebug+"/"+bfs::path(imagePath).stem().string()+".svg");
@@ -246,7 +246,7 @@ bool CCTagLocalizer::localize(const image::Image<unsigned char> & imageGrey,
 
 
 bool CCTagLocalizer::localize(const std::unique_ptr<features::Regions> &genQueryRegions,
-                              const std::pair<std::size_t, std::size_t> imageSize,
+                              const std::pair<std::size_t, std::size_t> &imageSize,
                               const LocalizerParameters *parameters,
                               bool useInputIntrinsics,
                               cameras::Pinhole_Intrinsic_Radial_K3 &queryIntrinsics,
@@ -268,11 +268,10 @@ bool CCTagLocalizer::localize(const std::unique_ptr<features::Regions> &genQuery
   std::vector<IndexT> nearestKeyFrames;
   nearestKeyFrames.reserve(param->_nNearestKeyFrames);
   
-  kNearestKeyFrames(
-          queryRegions,
-          _regions_per_view,
-          param->_nNearestKeyFrames,
-          nearestKeyFrames);
+  kNearestKeyFrames(queryRegions,
+                    _regions_per_view,
+                    param->_nNearestKeyFrames,
+                    nearestKeyFrames, 4);
   
   // Set the minimum of the residual to infinite.
   double residualMin = std::numeric_limits<double>::max();
@@ -303,7 +302,7 @@ bool CCTagLocalizer::localize(const std::unique_ptr<features::Regions> &genQuery
       const std::string matchedPath = (bfs::path(_sfm_data.s_root_path) /  bfs::path(mview->s_Img_path)).string();
       
       
-      saveCCTagMatches2SVG(imagePath, 
+      features::saveCCTagMatches2SVG(imagePath, 
                            imageSize, 
                            queryRegions,
                            matchedPath,
@@ -526,7 +525,7 @@ bool CCTagLocalizer::localizeAllAssociations(const std::vector<std::unique_ptr<f
               geometry::Pose3 rigPose)
 {
   assert(vec_queryRegions.size()==vec_queryIntrinsics.size());
-  assert(vec_queryRegions.size()==vec_subPoses.size());   
+  assert(vec_queryRegions.size()==vec_subPoses.size()-1);   
 
   const size_t numCams = vec_queryRegions.size();
 

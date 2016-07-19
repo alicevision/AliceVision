@@ -35,6 +35,7 @@ typedef Reconstructed_Regions<features::SIOPointFeature, float, 128> Reconstruct
 typedef Reconstructed_Regions<features::SIOPointFeature, unsigned char, 128> Reconstructed_RegionsT;
 #endif
 
+
 class VoctreeLocalizer : public ILocalizer
 {
 
@@ -48,16 +49,21 @@ public:
 
     Parameters() : LocalizerParameters(), 
       _useGuidedMatching(false),
-      _algorithm(Algorithm::FirstBest),
+      _algorithm(Algorithm::AllResults),
       _numResults(4),
       _maxResults(10),
-      _numCommonViews(3) { }
+      _numCommonViews(3),
+      _ccTagUseCuda(true),
+      _matchingError(std::numeric_limits<double>::infinity())
+    { }
     
     bool _useGuidedMatching;    //< Enable/disable guided matching when matching images
     Algorithm _algorithm;       //< algorithm to use for localization
     size_t _numResults;         //< number of best matching images to retrieve from the database
     size_t _maxResults;         //< for algorithm AllResults, it stops the image matching when this number of matched images is reached
     size_t _numCommonViews;     //< number minimum common images in which a point must be seen to be used in cluster tracking
+    bool _ccTagUseCuda;         //< ccTag-CUDA cannot process frames at different resolutions ATM, so set to false if localizer is used on images of differing sizes
+    double _matchingError;		//< maximum reprojection error allowed for image matching with geometric validation
   };
   
 public:
@@ -86,8 +92,9 @@ public:
                   );
   
   /**
-   * @brief Just a wrapper around the different localization algorithm, the algorith
-   * used to localized is chosen using \p param._algorithm
+   * @brief Just a wrapper around the different localization algorithm, the algorithm
+   * used to localized is chosen using \p param._algorithm. This version extract the
+   * sift features from the query image.
    * 
    * @param[in] imageGrey The input greyscale image.
    * @param[in] param The parameters for the localization.
@@ -97,7 +104,7 @@ public:
    * @param[out] localizationResult The localization result containing the pose and the associations.
    * @param[in] imagePath Optional complete path to the image, used only for debugging purposes.
    * @return  true if the image has been successfully localized.
-   *    */
+   */
   bool localize(const image::Image<unsigned char> & imageGrey,
                 const LocalizerParameters *param,
                 bool useInputIntrinsics,
@@ -105,14 +112,30 @@ public:
                 LocalizationResult &localizationResult, 
                 const std::string& imagePath = std::string());
 
+  /**
+   * @brief Just a wrapper around the different localization algorithm, the algorithm
+   * used to localized is chosen using \p param._algorithm. This version takes as
+   * input the sift feature already extracted.
+   * 
+   * @param[in] genQueryRegions The input features of the query image
+   * @param[in] imageSize The size of the input image
+   * @param[in] param The parameters for the localization.
+   * @param[in] useInputIntrinsics Uses the \p queryIntrinsics as known calibration.
+   * @param[in,out] queryIntrinsics Intrinsic parameters of the camera, they are used if the
+   * flag useInputIntrinsics is set to true, otherwise they are estimated from the correspondences.
+   * @param[out] localizationResult The localization result containing the pose and the associations.
+   * @param[in] imagePath Optional complete path to the image, used only for debugging purposes.
+   * @return  true if the image has been successfully localized.
+   */
   bool localize(const std::unique_ptr<features::Regions> &genQueryRegions,
-                const std::pair<std::size_t, std::size_t> imageSize,
-                const LocalizerParameters *parameters,
+                const std::pair<std::size_t, std::size_t> &imageSize,
+                const LocalizerParameters *param,
                 bool useInputIntrinsics,
                 cameras::Pinhole_Intrinsic_Radial_K3 &queryIntrinsics,
                 LocalizationResult & localizationResult,
                 const std::string& imagePath);
   
+  // not yet implemented!
   bool localizeRig(const std::vector<image::Image<unsigned char> > & vec_imageGrey,
                              const LocalizerParameters *param,
                              std::vector<cameras::Pinhole_Intrinsic_Radial_K3 > &vec_queryIntrinsics,
@@ -124,7 +147,8 @@ public:
    * retrieve \p numResults matching images and it tries to localize the query image
    * wrt the retrieve images in order of their score taking the first best result.
    *
-   * @param[in] imageGray The input greayscale image
+   * @param[in] siftQueryRegions The input features of the query image
+   * @param[in] imageSize The size of the input image
    * @param[in] param The parameters for the localization
    * @param[in] useInputIntrinsics Uses the \p queryIntrinsics as known calibration
    * @param[in,out] queryIntrinsics Intrinsic parameters of the camera, they are used if the
@@ -134,11 +158,13 @@ public:
    * @param[out] associationIDs the ids of the 2D-3D correspondences used to compute the pose
    * @return true if the localization is successful
    */
-  bool localizeFirstBestResult(const image::Image<unsigned char> & imageGrey,
-                const Parameters &param,
-                bool useInputIntrinsics,
-                cameras::Pinhole_Intrinsic_Radial_K3 &queryIntrinsics,
-                LocalizationResult &localizationResult, const std::string& imagePath = std::string());
+  bool localizeFirstBestResult(const features::SIFT_Regions &siftQueryRegions,
+                               const std::pair<std::size_t, std::size_t> imageSize,
+                               const Parameters &param,
+                               bool useInputIntrinsics,
+                               cameras::Pinhole_Intrinsic_Radial_K3 &queryIntrinsics,
+                               LocalizationResult &localizationResult,
+                               const std::string& imagePath = std::string());
 
   /**
    * @brief Try to localize an image in the database: it queries the database to 
@@ -146,7 +172,8 @@ public:
    * wrt the retrieve images in order of their score, collecting all the 2d-3d correspondences
    * and performing the resection with all these correspondences
    *
-   * @param[in] imageGray The input greyscale image
+   * @param[in] siftQueryRegions The input features of the query image
+   * @param[in] imageSize The size of the input image
    * @param[in] param The parameters for the localization
    * @param[in] useInputIntrinsics Uses the \p queryIntrinsics as known calibration
    * @param[in,out] queryIntrinsics Intrinsic parameters of the camera, they are used if the
@@ -156,11 +183,24 @@ public:
    * @param[out] associationIDs the ids of the 2D-3D correspondences used to compute the pose
    * @return true if the localization is successful
    */
-  bool localizeAllResults(const image::Image<unsigned char> & imageGrey,
-                const Parameters &param,
-                bool useInputIntrinsics,
-                cameras::Pinhole_Intrinsic_Radial_K3 &queryIntrinsics,
-                LocalizationResult &localizationResult, const std::string& imagePath = std::string());
+  bool localizeAllResults(const features::SIFT_Regions &siftQueryRegions,
+                          const std::pair<std::size_t, std::size_t> imageSize,
+                          const Parameters &param,
+                          bool useInputIntrinsics,
+                          cameras::Pinhole_Intrinsic_Radial_K3 &queryIntrinsics,
+                          LocalizationResult &localizationResult,
+                          const std::string& imagePath = std::string());
+  
+  
+  void getAllAssociations(const features::SIFT_Regions &siftQueryRegions,
+                          const std::pair<std::size_t, std::size_t> imageSize,
+                          const Parameters &param,
+                          bool useInputIntrinsics,
+                          const cameras::Pinhole_Intrinsic_Radial_K3 &queryIntrinsics,
+                          std::map< std::pair<IndexT, IndexT>, std::size_t > &occurences,
+                          Mat &pt2D,
+                          Mat &pt3D,
+                          const std::string& imagePath = std::string()) const;
 
 private:
   /**
@@ -191,6 +231,7 @@ private:
                       const Reconstructed_RegionsT & regionsToMatch,
                       const cameras::IntrinsicBase * matchedIntrinsics,
                       const float fDistRatio,
+                      const double matchingError,
                       const bool b_guided_matching,
                       const std::pair<size_t,size_t> & imageSizeI,     // size of the first image  
                       const std::pair<size_t,size_t> & imageSizeJ,     // size of the first image

@@ -9,6 +9,7 @@
 
 #include "AlembicExporter.hpp"
 #include "openMVG/sfm/sfm_view_metadata.hpp"
+#include "openMVG/version.hpp"
 
 namespace openMVG {
 namespace dataio {
@@ -29,6 +30,15 @@ AlembicExporter::AlembicExporter(const std::string &filename)
   mvgCloud = Alembic::Abc::OObject(mvgRoot, "mvgCloud");
   mvgPointCloud = Alembic::Abc::OObject(mvgCloud, "mvgPointCloud"); 
 
+  // Add version as custom property
+  auto userProps = mvgRoot.getProperties();
+  OUInt32ArrayProperty propAbcVersion(userProps, "mvg_ABC_version");
+  OUInt32ArrayProperty propOpenMVGVersion(userProps, "mvg_openMVG_version");
+  const std::vector<uint32_t> abcVersion = {1, 0};
+  propAbcVersion.set(abcVersion);
+  const std::vector<uint32_t> openMVGVersion = {OPENMVG_VERSION_MAJOR, OPENMVG_VERSION_MINOR, OPENMVG_VERSION_REVISION};
+  propOpenMVGVersion.set(openMVGVersion);
+
 }
 
 AlembicExporter::~AlembicExporter()
@@ -42,13 +52,16 @@ void AlembicExporter::addPoints(const sfm::Landmarks &landmarks, bool withVisibi
 
   // Fill vector with the values taken from OpenMVG 
   std::vector<V3f> positions;
+  std::vector<Imath::C3f> colors;
   positions.reserve(landmarks.size());
 
   // For all the 3d points in the hash_map
   for(const auto landmark : landmarks)
   {
-    const openMVG::Vec3 &pt = landmark.second.X;
+    const openMVG::Vec3& pt = landmark.second.X;
+    const openMVG::image::RGBColor& color = landmark.second.rgb;
     positions.emplace_back(pt[0], pt[1], pt[2]);
+    colors.emplace_back(color.r()/255.f, color.g()/255.f, color.b()/255.f);
   }
 
   std::vector<Alembic::Util::uint64_t> ids(positions.size());
@@ -59,6 +72,12 @@ void AlembicExporter::addPoints(const sfm::Landmarks &landmarks, bool withVisibi
 
   OPointsSchema::Sample psamp(std::move(V3fArraySample(positions)), std::move(UInt64ArraySample(ids)));
   pSchema.set(psamp);
+
+  C3fArraySample val_samp(&colors[0], colors.size());
+  OC3fGeomParam::Sample color_samp(val_samp, kVertexScope);
+  OCompoundProperty arbGeom = pSchema.getArbGeomParams();
+  OC3fGeomParam rgbOut(arbGeom, "color", false, kVertexScope, 1);
+  rgbOut.set(color_samp);
 
   if(withVisibility)
   {
@@ -113,7 +132,8 @@ void AlembicExporter::appendCamera(const std::string &cameraName,
                                    const std::string &imagePath,
                                    const IndexT id_view,
                                    const IndexT id_intrinsic,
-                                   const float sensorWidth_mm)
+                                   const float sensorWidth_mm,
+                                   const IndexT id_pose)
 {
   const openMVG::Mat3 R = pose.rotation();
   const openMVG::Vec3 center = pose.center();
@@ -147,7 +167,8 @@ void AlembicExporter::appendCamera(const std::string &cameraName,
   xformsample.setMatrix(xformMatrix);
 
   std::stringstream ss;
-  ss << cameraName;
+  ss << std::setfill('0') << std::setw(5) << id_pose;
+  ss << "_" << cameraName << "_" << id_view;
   Alembic::AbcGeom::OXform xform(mvgCameras, "camxform_" + ss.str());
   xform.getSchema().set(xformsample);
 
@@ -163,9 +184,6 @@ void AlembicExporter::appendCamera(const std::string &cameraName,
   const float sensorHeight_pix = std::min(imgWidth, imgHeight);
   const float imgRatio = sensorHeight_pix / sensorWidth_pix;
   const float focalLength_pix = cam->focal();
-  const float hoffset_pix = cam->principal_point()(0);
-  const float voffset_pix = cam->principal_point()(1);
-  
 
   const float sensorHeight_mm = sensorWidth_mm * imgRatio;
   const float focalLength_mm = sensorWidth_mm * focalLength_pix / sensorWidth_pix;
@@ -174,20 +192,17 @@ void AlembicExporter::appendCamera(const std::string &cameraName,
   // openMVG: origin is (top,left) corner and orientation is (bottom,right)
   // ABC: origin is centered and orientation is (up,right)
   // Following values are in cm, hence the 0.1 multiplier
-  const float hoffset_cm = 0.1 * ((imgWidth*0.5) - hoffset_pix) * pix2mm;
-  const float voffset_cm = -0.1 * ((imgHeight*0.5) - voffset_pix) * pix2mm; // vertical flip
   const float haperture_cm = 0.1 * imgWidth * pix2mm;
   const float vaperture_cm = 0.1 * imgHeight * pix2mm;
 
   camSample.setFocalLength(focalLength_mm);
   camSample.setHorizontalAperture(haperture_cm);
   camSample.setVerticalAperture(vaperture_cm);
-  camSample.setHorizontalFilmOffset(hoffset_cm);
-  camSample.setVerticalFilmOffset(voffset_cm);
   
   // Add sensor width (largest image side) in pixels as custom property
-  OUInt32Property propSensorWidth_pix(userProps, "mvg_sensorWidth_pix");
-  propSensorWidth_pix.set(sensorWidth_pix);
+  OUInt32ArrayProperty propSensorSize_pix(userProps, "mvg_sensorSizePix");
+  std::vector<uint32_t> sensorSize_pix = {uint32_t(sensorWidth_pix), uint32_t(sensorHeight_pix)};
+  propSensorSize_pix.set(sensorSize_pix);
 
   // Add image path as custom property
   if(!imagePath.empty())
@@ -199,6 +214,9 @@ void AlembicExporter::appendCamera(const std::string &cameraName,
 
   OUInt32Property propViewId(userProps, "mvg_viewId");
   propViewId.set(id_view);
+
+  OUInt32Property propPoseId(userProps, "mvg_poseId");
+  propPoseId.set(id_pose);
 
   OUInt32Property propIntrinsicId(userProps, "mvg_intrinsicId");
   propIntrinsicId.set(id_intrinsic);
@@ -231,8 +249,8 @@ void AlembicExporter::initAnimatedCamera(const std::string& cameraName)
   
   // Add the custom properties
   auto userProps = mcamObj.getSchema().getUserProperties();
-  // Sensor width
-  mpropSensorWidth_pix = OUInt32Property(userProps, "mvg_sensorWidth_pix", tsp);
+  // Sensor size
+  mpropSensorSize_pix = OUInt32ArrayProperty(userProps, "mvg_sensorSizePix", tsp);
   // Image path
   mimagePlane = OStringProperty(userProps, "mvg_imagePath", tsp);
   // View id
@@ -296,8 +314,6 @@ void AlembicExporter::addCameraKeyframe(const geometry::Pose3 &pose,
   const float sensorHeight_pix = std::min(imgWidth, imgHeight);
   const float imgRatio = sensorHeight_pix / sensorWidth_pix;
   const float focalLength_pix = cam->focal();
-  const float hoffset_pix = cam->principal_point()(0);
-  const float voffset_pix = cam->principal_point()(1);
   
 
   const float sensorHeight_mm = sensorWidth_mm * imgRatio;
@@ -307,19 +323,16 @@ void AlembicExporter::addCameraKeyframe(const geometry::Pose3 &pose,
   // openMVG: origin is (top,left) corner and orientation is (bottom,right)
   // ABC: origin is centered and orientation is (up,right)
   // Following values are in cm, hence the 0.1 multiplier
-  const float hoffset_cm = 0.1 * ((imgWidth*0.5) - hoffset_pix) * pix2mm;
-  const float voffset_cm = -0.1 * ((imgHeight*0.5) - voffset_pix) * pix2mm; // vertical flip
   const float haperture_cm = 0.1 * imgWidth * pix2mm;
   const float vaperture_cm = 0.1 * imgHeight * pix2mm;
 
   camSample.setFocalLength(focalLength_mm);
   camSample.setHorizontalAperture(haperture_cm);
   camSample.setVerticalAperture(vaperture_cm);
-  camSample.setHorizontalFilmOffset(hoffset_cm);
-  camSample.setVerticalFilmOffset(voffset_cm);
   
   // Add sensor width (largest image side) in pixels as custom property
-  mpropSensorWidth_pix.set(sensorWidth_pix);
+  std::vector<uint32_t> sensorSize_pix = {uint32_t(sensorWidth_pix), uint32_t(sensorHeight_pix)};
+  mpropSensorSize_pix.set(sensorSize_pix);
   
   // Set custom attributes
   // Image path
@@ -361,12 +374,15 @@ void AlembicExporter::add(const sfm::SfM_Data &sfmdata, sfm::ESfM_Data flags_par
       {
         // OpenMVG Camera
         pose = sfmdata.GetPoseOrDie(view);
-        auto iterIntrinsic = sfmdata.GetIntrinsics().find(view->id_intrinsic);
-        cam = iterIntrinsic->second;
+        cam = sfmdata.GetIntrinsics().at(view->id_intrinsic);
       }
-      else if(!(flags_part & sfm::ESfM_Data::VIEWS))
-      {
-        // If we don't export views, skip cameras without valid pose.
+      // else if(!(flags_part & sfm::ESfM_Data::VIEWS))
+      // {
+      //   // If we don't export views, skip cameras without valid pose.
+      //   continue;
+      // }
+      else{
+        // If there is no intrinsic/pose defined, skip camera
         continue;
       }
       const std::string cameraName = stlplus::basename_part(view->s_Img_path);
@@ -378,9 +394,14 @@ void AlembicExporter::add(const sfm::SfM_Data &sfmdata, sfm::ESfM_Data flags_par
       const sfm::View_Metadata* viewMetadata = dynamic_cast<const sfm::View_Metadata*>(view);
       if(viewMetadata)
       {
-        sensorWidth_mm = std::stof(viewMetadata->metadata.at(std::string("sensor_width")));
+        static const std::string kSensorWidth("sensor_width");
+        if(viewMetadata->metadata.find(kSensorWidth) != viewMetadata->metadata.end())
+          sensorWidth_mm = std::stof(viewMetadata->metadata.at(kSensorWidth));
       }
-      appendCamera(cameraName, pose, dynamic_cast<openMVG::cameras::Pinhole_Intrinsic*>(cam.get()), sView_filename, view->id_view, view->id_intrinsic, sensorWidth_mm);
+      appendCamera(cameraName, pose,
+            dynamic_cast<openMVG::cameras::Pinhole_Intrinsic*>(cam.get()),
+            sView_filename, view->id_view, view->id_intrinsic,
+            sensorWidth_mm, view->id_pose);
     }
   }
   if(flags_part & sfm::ESfM_Data::STRUCTURE)
