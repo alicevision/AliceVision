@@ -90,7 +90,23 @@ static void exportPointsAsNullObjects(const SfM_Data& sfm_data, FbxScene* fbxsce
 
 static void setCameraXform(FbxNode* fbxnode, const geometry::Pose3& pose)
 {
-  // TODO: UNIMPLEMENTED.
+  // Set translation component.
+  {
+    const auto& center = pose.center();
+    fbxnode->LclTranslation.Set(FbxDouble3(center(0), center(1), center(2)));
+  }
+  
+  // Extract rotation component.  Use quaternions, to avoid Euler angle mess.
+  // 180 degrees are added to X-rotation in order to flip openMVG coord system to FBX.
+  // This works since X-rotation comes first.
+  {
+    Eigen::Quaterniond quat(pose.rotation());
+    FbxAMatrix am;
+    am.SetQ(FbxQuaternion(quat.x(), quat.y(), quat.z(), quat.w()));
+    auto eulerXYZ = am.GetR();
+    eulerXYZ[0] += 180;
+    fbxnode->LclRotation.Set(eulerXYZ);
+  }
 }
 
 template<typename T>
