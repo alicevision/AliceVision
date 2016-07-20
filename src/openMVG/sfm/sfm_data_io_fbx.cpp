@@ -93,30 +93,13 @@ static void setCameraXform(FbxNode* fbxnode, const geometry::Pose3& pose)
   // TODO: UNIMPLEMENTED.
 }
 
-static void setCameraAperture(FbxCamera* fbxcamera, const cameras::Pinhole_Intrinsic* intrinsics, const float sensorWidth_mm)
+template<typename T>
+static void addCameraUserProperty(FbxNode* fbxnode, FbxDataType dt, const char* propertyName, const T& propertyValue)
 {
-  const float imgWidth = intrinsics->w();
-  const float imgHeight = intrinsics->h();
-  const float sensorWidth_pix = std::max(imgWidth, imgHeight);
-  const float sensorHeight_pix = std::min(imgWidth, imgHeight);
-  const float imgRatio = sensorHeight_pix / sensorWidth_pix;
-  const float focalLength_pix = intrinsics->focal();
-
-  const float sensorHeight_mm = sensorWidth_mm * imgRatio;
-  const float focalLength_mm = sensorWidth_mm * focalLength_pix / sensorWidth_pix;
-  const float pix2mm = sensorWidth_mm / sensorWidth_pix;
-
-#if 0
-  // openMVG: origin is (top,left) corner and orientation is (bottom,right)
-  // ABC: origin is centered and orientation is (up,right)
-  // Following values are in cm, hence the 0.1 multiplier
-  const float haperture_cm = 0.1 * imgWidth * pix2mm;
-  const float vaperture_cm = 0.1 * imgHeight * pix2mm;
-
-  camSample.setFocalLength(focalLength_mm);
-  camSample.setHorizontalAperture(haperture_cm);
-  camSample.setVerticalAperture(vaperture_cm);
-#endif
+  FbxProperty prop = FbxProperty::Create(fbxnode, dt, propertyName);
+  prop.ModifyFlag(FbxPropertyFlags::eUserDefined, true);
+  if (!prop.Set(propertyValue))
+    std::cerr << "Save_FBX: cannot set camera property " << propertyName;
 }
 
 static void addCamera(FbxScene* fbxscene, const std::string& cameraName, const geometry::Pose3& pose,
@@ -130,13 +113,46 @@ static void addCamera(FbxScene* fbxscene, const std::string& cameraName, const g
   fbxnode->SetNodeAttribute(fbxcamera);
   
   setCameraXform(fbxnode, pose);
-  setCameraAperture(fbxcamera, intrinsics, sensorWidth_mm);
-
-  // User data
-  {
-    
-  }  
   
+  // Set aperture data.
+  {
+    const float imgWidth = intrinsics->w();
+    const float imgHeight = intrinsics->h();
+    const float sensorWidth_pix = std::max(imgWidth, imgHeight);
+    const float sensorHeight_pix = std::min(imgWidth, imgHeight);
+    const float imgRatio = sensorHeight_pix / sensorWidth_pix;
+    const float focalLength_pix = intrinsics->focal();
+    const float focalLength_mm = sensorWidth_mm * focalLength_pix / sensorWidth_pix;
+    const float pix2mm = sensorWidth_mm / sensorWidth_pix;
+
+    // FBX uses inches for aperture width and height, but mm for focal length
+    fbxcamera->SetApertureMode(FbxCamera::eFocalLength);
+    fbxcamera->SetApertureWidth(imgWidth * pix2mm / 25.4f);
+    fbxcamera->SetApertureHeight(imgHeight * pix2mm / 25.4f);
+    fbxcamera->FocalLength.Set(focalLength_mm);
+    
+    addCameraUserProperty(fbxnode, FbxDouble2DT, "mvg_sensorSizePix", FbxDouble2(sensorWidth_pix, sensorHeight_pix));
+  }
+
+  if (!imagePath.empty())
+    addCameraUserProperty(fbxnode, FbxStringDT, "mvg_imagePath", FbxString(imagePath.c_str()));
+  
+  addCameraUserProperty<FbxUInt>(fbxnode, FbxUIntDT, "mvg_viewId", id_view);
+  addCameraUserProperty<FbxUInt>(fbxnode, FbxUIntDT,"mvg_poseId", id_pose);
+  addCameraUserProperty<FbxUInt>(fbxnode, FbxUIntDT, "mvg_intrinsicId", id_intrinsic);
+  addCameraUserProperty(fbxnode, FbxStringDT, "mvg_intrinsicType", FbxString(intrinsics->getTypeStr().c_str()));
+  
+  // FBX doesn't support properties which contain an array of, say, doubles.  Therefore serialize
+  // intrinsics to a string and set it as a string property.  Alternative is to put data into FbxBlob,
+  // but the data is then machine-specific.
+  
+  {
+    const auto& params = intrinsics->getParams();
+    std::ostringstream oss;
+    for (double v: params)
+      oss << v << ' ';
+    addCameraUserProperty(fbxnode, FbxStringDT, "mvg_intrinsicParams", FbxString(oss.str().c_str()));
+  }
 }
 
 
