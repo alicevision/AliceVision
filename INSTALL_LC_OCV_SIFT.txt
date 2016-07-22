@@ -1,0 +1,1 @@
+cmake -DCMAKE_BUILD_TYPE=RELEASE -DOpenMVG_BUILD_VOCTREE=ON -DOpenMVG_USE_CCTAG=ON -DOpenMVG_USE_ALEMBIC=ON -DBOOST_NO_CXX11=ON -DALEMBIC_ROOT=/usr/local/alembic-1.5.8 ../src -DOpenMVG_USE_OPENCV=ON -DOpenMVG_USE_OCVSIFT=ON -DOpenCV_DIR=/home/lilian/cpp_workspace/popartExtern/opencv/build
