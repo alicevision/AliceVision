@@ -19,16 +19,16 @@ namespace features {
 struct SiftParams
 {
   SiftParams(
-    int first_octave = 0,
-    int num_octaves = 6,
+    int first_octave = -1,
+    int num_octaves = 8, // TEMP 6 
     int num_scales = 3,
     float edge_threshold = 10.0f,
     float peak_threshold = 0.04f,
     //
     std::size_t gridSize = 4,
-    std::size_t maxTotalKeypoints = 1000,
+    std::size_t maxTotalKeypoints = 0, // TEMP 1000,
     //
-    bool root_sift = true
+    bool root_sift = false //TEMP true
   ):
     _first_octave(first_octave),
     _num_octaves(num_octaves),
@@ -109,6 +109,7 @@ struct SiftParams
     default:
       return false;
     }
+    _maxTotalKeypoints = 0;
     return true;
   }
   
