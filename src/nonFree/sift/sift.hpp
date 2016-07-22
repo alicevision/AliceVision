@@ -340,6 +340,14 @@ bool extractSIFT(const image::Image<unsigned char>& image,
   }
   assert(features.size() == descriptors.size());
   
+  std::cout << "First octave: " << params._first_octave << std::endl;
+  std::cout << ", nOctaves: " << params._num_octaves << std::endl;
+  std::cout << ", nOctaveLayers: " << params._num_scales << std::endl;
+  std::cout << ", contrastThreshold: " << params._peak_threshold << std::endl;
+  std::cout << ", edgeThreshold: " << params._edge_threshold << std::endl;
+  std::cout << ", _root_sift: " << (int) params._root_sift << std::endl;
+  std::cout << "Number of detected features: " << regionsCasted->Features().size() << std::endl;
+  
   return true;
 }
 
