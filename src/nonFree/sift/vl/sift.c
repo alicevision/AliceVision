@@ -1059,8 +1059,10 @@ vl_sift_process_first_octave (VlSiftFilt *f, vl_sift_pix const *im)
   sa = sigma0 * pow (sigmak,   s_min) ;
   sb = sigman * pow (2.0,    - o_min) ;
 
+  printf("Octave 0 \n");
   if (sa > sb) {
     double sd = sqrt (sa*sa - sb*sb) ;
+    printf("Level 0 - sig %4.4f \n", sd);
     _vl_sift_smooth (f, octave, temp, octave, w, h, sd) ;
   }
 
@@ -1070,6 +1072,7 @@ vl_sift_process_first_octave (VlSiftFilt *f, vl_sift_pix const *im)
 
   for(s = s_min + 1 ; s <= s_max ; ++s) {
     double sd = dsigma0 * pow (sigmak, s) ;
+    printf("Level %d - sig %4.4f \n", s, sd);
     _vl_sift_smooth (f, vl_sift_get_octave(f, s), temp,
                      vl_sift_get_octave(f, s - 1), w, h, sd) ;
   }
@@ -1136,15 +1139,18 @@ vl_sift_process_next_octave (VlSiftFilt *f)
 
   if (sa > sb) {
     double sd = sqrt (sa*sa - sb*sb) ;
+    printf("Octave %d - sig %4.4f \n", f-> o_cur, sd);
+    printf("Level 0 - sig %4.4f \n", sd);
     _vl_sift_smooth (f, octave, temp, octave, w, h, sd) ;
   }
 
   /* ------------------------------------------------------------------
    *                                                        Fill octave
    * --------------------------------------------------------------- */
-
+   printf("Octave %d \n", f-> o_cur);
   for(s = s_min + 1 ; s <= s_max ; ++s) {
     double sd = dsigma0 * pow (sigmak, s) ;
+    printf("Level %d - sig %4.4f \n", s, sd);
     _vl_sift_smooth (f, vl_sift_get_octave(f, s), temp,
                      vl_sift_get_octave(f, s - 1), w, h, sd) ;
   }
