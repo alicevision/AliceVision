@@ -32,6 +32,10 @@
 #include <ctime>
 #include <cstdlib>
 #include <fstream>
+#ifdef __linux__
+#include <unistd.h>
+#include <sys/sysinfo.h>
+#endif
 
 #ifdef _MSC_VER
 #pragma warning( once : 4267 ) //warning C4267: 'argument' : conversion from 'size_t' to 'const int', possible loss of data
@@ -401,17 +405,10 @@ bool SequentialSfMReconstructionEngine::Process()
       char values[20];
       std::ifstream ifs;
 
-      if(!std::system("nproc >values.txt"))
-      {
-        ifs.open("values.txt");
-        if(ifs.is_open())
-        {
-          ifs.get(values, 20, '\n');
-          ifs.close();
-          _tree.put("hardware.cpu.cores", values);
-        }
-      }
+      // CPU cores
+      _tree.put("hardware.cpu.cores", sysconf(_SC_NPROCESSORS_ONLN));
 
+      // CPU frequency
       if(!std::system("lscpu | grep \"CPU MHz\" | awk '{print $3}' >values.txt"))
       {
         ifs.open("values.txt");
@@ -423,16 +420,10 @@ bool SequentialSfMReconstructionEngine::Process()
         }
       }
 
-      if(!std::system("cat /proc/meminfo | grep MemTotal | awk '{print $2}' >values.txt"))
-      {
-        ifs.open("values.txt");
-        if(ifs.is_open())
-        {
-          ifs.get(values, 20, '\n');
-          ifs.close();
-          _tree.put("hardware.ram.size", values);
-        }
-      }
+      // RAM size
+      struct sysinfo sys_info;
+      sysinfo(&sys_info);
+      _tree.put("hardware.ram.size", sys_info.totalram);
 
       std::system("rm values.txt");
     #endif
