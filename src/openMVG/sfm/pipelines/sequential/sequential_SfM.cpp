@@ -322,7 +322,7 @@ bool SequentialSfMReconstructionEngine::Process()
   } while( !reconstructedViewIds.empty() && !_set_remainingViewId.empty() );
 
   // timer for stats
-  double time_sfm = timer_sfm.elapsed();
+  const double time_sfm = timer_sfm.elapsed();
 
   //-- Reconstruction done.
   //-- Display some statistics
