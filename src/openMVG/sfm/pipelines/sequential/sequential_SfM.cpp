@@ -371,12 +371,9 @@ bool SequentialSfMReconstructionEngine::Process()
 
     // Add observations histogram
     std::vector<int> obs_histogram;
-    for (Landmarks::const_iterator iterTracks = _sfm_data.GetLandmarks().begin();
-      iterTracks != _sfm_data.GetLandmarks().end();
-      ++iterTracks
-    )
+    for (const auto & iterTracks : _sfm_data.GetLandmarks())
     {
-      const Observations & obs = iterTracks->second.obs;
+      const Observations & obs = iterTracks.second.obs;
       if(obs_histogram.size() < obs.size() + 1)
         obs_histogram.resize(obs.size() + 1, 0);
       obs_histogram[obs.size()]++;
