@@ -17,31 +17,21 @@ file(GLOB_RECURSE REMOVEFILESUNITTEST *_test.hpp)
 list(REMOVE_ITEM sfm_files_header ${REMOVEFILESUNITTEST})
 
 add_library(openMVG_sfm ${sfm_files_header} ${sfm_files_cpp})
-IF(Boost_FOUND)
-  #If Boost can be used we add boost librairies for json export
-  target_link_libraries(
-    openMVG_sfm
-    openMVG_multiview
-    stlplus
-    ${CERES_LIBRARIES}
-    openMVG_lInftyComputerVision
-    openMVG_system
-    openMVG_matching
-    openMVG_dataio
-    openMVG_exif
-    ${Boost_LIBRARIES}
-  )
-ELSE(Boost_FOUND)
-  target_link_libraries(
-    openMVG_sfm
-    openMVG_multiview
-    stlplus
-    ${CERES_LIBRARIES}
-    openMVG_lInftyComputerVision
-    openMVG_system
-    openMVG_matching
-    openMVG_dataio
+target_link_libraries(
+  openMVG_sfm
+  openMVG_multiview
+  stlplus
+  ${CERES_LIBRARIES}
+  openMVG_lInftyComputerVision
+  openMVG_system
+  openMVG_matching
+  openMVG_dataio
   openMVG_exif
+)
+IF(Boost_FOUND)
+  target_link_libraries(
+    openMVG_sfm
+    ${Boost_LIBRARIES}
   )
 ENDIF(Boost_FOUND)
 set_target_properties(openMVG_sfm PROPERTIES SOVERSION ${OPENMVG_VERSION_MAJOR} VERSION "${OPENMVG_VERSION_MAJOR}.${OPENMVG_VERSION_MINOR}")
