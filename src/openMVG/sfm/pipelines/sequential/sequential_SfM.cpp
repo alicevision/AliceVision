@@ -29,6 +29,7 @@
 #endif
 
 #include <tuple>
+#include <ctime>
 
 #ifdef _MSC_VER
 #pragma warning( once : 4267 ) //warning C4267: 'argument' : conversion from 'size_t' to 'const int', possible loss of data
@@ -287,6 +288,9 @@ bool SequentialSfMReconstructionEngine::Process()
   if (!MakeInitialPair3D(_initialpair))
     return false;
 
+  // time for stats
+  int time_start = clock();
+
   std::set<size_t> reconstructedViewIds;
   std::set<size_t> rejectedViewIds;
   std::size_t nbRejectedLoops = 0;
@@ -316,6 +320,9 @@ bool SequentialSfMReconstructionEngine::Process()
     // Retry to perform the resectioning of all the rejected views,
     // as long as new views are successfully added.
   } while( !reconstructedViewIds.empty() && !_set_remainingViewId.empty() );
+
+  // time for stats
+  int time_stop = clock();
 
   //-- Reconstruction done.
   //-- Display some statistics
@@ -383,6 +390,9 @@ bool SequentialSfMReconstructionEngine::Process()
       _tree.add("sfm.observations_histogram."
         + boost::lexical_cast<std::string>(i), obs_histogram[i]);
     }
+
+    // Add process time
+    _tree.put("sfm.time", (time_stop - time_start)/double(CLOCKS_PER_SEC));
 
     // Write json on disk
     pt::write_json(stlplus::folder_append_separator(_sOutDirectory)+"stats.json", _tree);
