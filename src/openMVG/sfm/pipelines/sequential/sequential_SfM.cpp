@@ -30,6 +30,8 @@
 
 #include <tuple>
 #include <ctime>
+#include <cstdlib>
+#include <fstream>
 
 #ifdef _MSC_VER
 #pragma warning( once : 4267 ) //warning C4267: 'argument' : conversion from 'size_t' to 'const int', possible loss of data
@@ -393,6 +395,38 @@ bool SequentialSfMReconstructionEngine::Process()
 
     // Add process time
     _tree.put("sfm.time", time_sfm);
+
+    #ifdef __linux__
+      // Add CPU/RAM infos
+      char values[20];
+      std::ifstream ifs;
+
+      if(!std::system("nproc >values.txt"))
+      {
+        ifs.open("values.txt");
+        ifs.get(values, 20, '\n');
+        ifs.close();
+        _tree.put("hardware.cpu.cores", values);
+      }
+
+      if(!std::system("lscpu | grep \"CPU MHz\" | awk '{print $3}' >values.txt"))
+      {
+        ifs.open("values.txt");
+        ifs.get(values, 20, '\n');
+        ifs.close();
+        _tree.put("hardware.cpu.freq", values);
+      }
+
+      if(!std::system("cat /proc/meminfo | grep MemTotal | awk '{print $2}' >values.txt"))
+      {
+        ifs.open("values.txt");
+        ifs.get(values, 20, '\n');
+        ifs.close();
+        _tree.put("hardware.ram.size", values);
+      }
+
+      std::system("rm values.txt");
+    #endif
 
     // Write json on disk
     pt::write_json(stlplus::folder_append_separator(_sOutDirectory)+"stats.json", _tree);
