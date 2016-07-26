@@ -381,7 +381,7 @@ bool SequentialSfMReconstructionEngine::Process()
         obs_histogram.resize(obs.size() + 1, 0);
       obs_histogram[obs.size()]++;
     }
-    for(int i = 2; i < obs_histogram.size(); i++)
+    for(std::size_t i = 2; i < obs_histogram.size(); i++)
     {
       _tree.add("sfm.observations_histogram."
         + boost::lexical_cast<std::string>(i), obs_histogram[i]);
@@ -582,7 +582,7 @@ bool SequentialSfMReconstructionEngine::AutomaticInitialPairChoice(Pair & initia
 #ifdef OPENMVG_USE_OPENMP
   #pragma omp parallel for schedule(dynamic)
 #endif
-  for (int i = 0; i < _matches_provider->_pairWise_matches.size(); ++i)
+  for (std::size_t i = 0; i < _matches_provider->_pairWise_matches.size(); ++i)
   {
     matching::PairWiseMatches::const_iterator iter = _matches_provider->_pairWise_matches.begin();
     std::advance(iter, i);
@@ -1066,7 +1066,7 @@ bool SequentialSfMReconstructionEngine::FindConnectedViews(
   #ifdef OPENMVG_USE_OPENMP
     #pragma omp parallel for
   #endif
-  for (int i = 0; i < remainingViewIds.size(); ++i)
+  for (std::size_t i = 0; i < remainingViewIds.size(); ++i)
   {
     std::set<size_t>::const_iterator iter = remainingViewIds.cbegin();
     std::advance(iter, i);
