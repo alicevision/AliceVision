@@ -404,25 +404,34 @@ bool SequentialSfMReconstructionEngine::Process()
       if(!std::system("nproc >values.txt"))
       {
         ifs.open("values.txt");
-        ifs.get(values, 20, '\n');
-        ifs.close();
-        _tree.put("hardware.cpu.cores", values);
+        if(ifs.is_open())
+        {
+          ifs.get(values, 20, '\n');
+          ifs.close();
+          _tree.put("hardware.cpu.cores", values);
+        }
       }
 
       if(!std::system("lscpu | grep \"CPU MHz\" | awk '{print $3}' >values.txt"))
       {
         ifs.open("values.txt");
-        ifs.get(values, 20, '\n');
-        ifs.close();
-        _tree.put("hardware.cpu.freq", values);
+        if(ifs.is_open())
+        {
+          ifs.get(values, 20, '\n');
+          ifs.close();
+          _tree.put("hardware.cpu.freq", values);
+        }
       }
 
       if(!std::system("cat /proc/meminfo | grep MemTotal | awk '{print $2}' >values.txt"))
       {
         ifs.open("values.txt");
-        ifs.get(values, 20, '\n');
-        ifs.close();
-        _tree.put("hardware.ram.size", values);
+        if(ifs.is_open())
+        {
+          ifs.get(values, 20, '\n');
+          ifs.close();
+          _tree.put("hardware.ram.size", values);
+        }
       }
 
       std::system("rm values.txt");
