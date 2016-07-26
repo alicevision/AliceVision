@@ -288,8 +288,8 @@ bool SequentialSfMReconstructionEngine::Process()
   if (!MakeInitialPair3D(_initialpair))
     return false;
 
-  // time for stats
-  int time_start = clock();
+  // timer for stats
+  openMVG::system::Timer timer_sfm;
 
   std::set<size_t> reconstructedViewIds;
   std::set<size_t> rejectedViewIds;
@@ -321,8 +321,8 @@ bool SequentialSfMReconstructionEngine::Process()
     // as long as new views are successfully added.
   } while( !reconstructedViewIds.empty() && !_set_remainingViewId.empty() );
 
-  // time for stats
-  int time_stop = clock();
+  // timer for stats
+  double time_sfm = timer_sfm.elapsed();
 
   //-- Reconstruction done.
   //-- Display some statistics
@@ -392,7 +392,7 @@ bool SequentialSfMReconstructionEngine::Process()
     }
 
     // Add process time
-    _tree.put("sfm.time", (time_stop - time_start)/double(CLOCKS_PER_SEC));
+    _tree.put("sfm.time", time_sfm);
 
     // Write json on disk
     pt::write_json(stlplus::folder_append_separator(_sOutDirectory)+"stats.json", _tree);
