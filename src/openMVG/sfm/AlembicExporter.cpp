@@ -55,6 +55,14 @@ void AlembicExporter::addPoints(const sfm::Landmarks &landmarks, bool withVisibi
   std::vector<Imath::C3f> colors;
   positions.reserve(landmarks.size());
 
+  // Initialize color vectors
+  std::vector<uint32_t> colorR;
+  colorR.reserve(landmarks.size());
+  std::vector<uint32_t> colorG;
+  colorG.reserve(landmarks.size());
+  std::vector<uint32_t> colorB;
+  colorB.reserve(landmarks.size());
+
   // For all the 3d points in the hash_map
   for(const auto landmark : landmarks)
   {
@@ -62,6 +70,9 @@ void AlembicExporter::addPoints(const sfm::Landmarks &landmarks, bool withVisibi
     const openMVG::image::RGBColor& color = landmark.second.rgb;
     positions.emplace_back(pt[0], pt[1], pt[2]);
     colors.emplace_back(color.r()/255.f, color.g()/255.f, color.b()/255.f);
+    colorR.emplace_back(color.r());
+    colorG.emplace_back(color.g());
+    colorB.emplace_back(color.b());
   }
 
   std::vector<Alembic::Util::uint64_t> ids(positions.size());
@@ -78,6 +89,7 @@ void AlembicExporter::addPoints(const sfm::Landmarks &landmarks, bool withVisibi
   OCompoundProperty arbGeom = pSchema.getArbGeomParams();
   OC3fGeomParam rgbOut(arbGeom, "color", false, kVertexScope, 1);
   rgbOut.set(color_samp);
+
 
   if(withVisibility)
   {
@@ -123,6 +135,15 @@ void AlembicExporter::addPoints(const sfm::Landmarks &landmarks, bool withVisibi
     // Feature position (x,y)
     OFloatArrayProperty propFeatPos2d( userProps, "mvg_visibilityFeatPos" );
     propFeatPos2d.set(featPos2d);
+
+    //R-G-B
+    OUInt32ArrayProperty propColorR( userProps, "mvg_R" );
+    propColorR.set(colorR);
+    OUInt32ArrayProperty propColorG( userProps, "mvg_G" );
+    propColorG.set(colorG);
+    OUInt32ArrayProperty propColorB( userProps, "mvg_B" );
+    propColorB.set(colorB);
+
   }
 }
 
