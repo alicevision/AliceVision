@@ -167,6 +167,11 @@ private:
   /// Discard track with too large residual error
   size_t badTrackRejector(double dPrecision, size_t count = 0);
 
+  #ifdef USE_BOOST
+  /// Export statistics in a JSON file
+  void exportStatistics(double time_sfm);
+  #endif
+
   //----
   //-- Data
   //----

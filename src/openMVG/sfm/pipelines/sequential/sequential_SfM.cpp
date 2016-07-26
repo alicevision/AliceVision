@@ -377,59 +377,7 @@ bool SequentialSfMReconstructionEngine::Process()
   }
 
   #ifdef USE_BOOST
-    // Put nb images, nb poses, nb points
-    _tree.put("sfm.views", _sfm_data.GetViews().size());
-    _tree.put("sfm.poses", _sfm_data.GetPoses().size());
-    _tree.put("sfm.points", _sfm_data.GetLandmarks().size());
-
-    // Add observations histogram
-    std::vector<int> obs_histogram;
-    for (const auto & iterTracks : _sfm_data.GetLandmarks())
-    {
-      const Observations & obs = iterTracks.second.obs;
-      if(obs_histogram.size() < obs.size() + 1)
-        obs_histogram.resize(obs.size() + 1, 0);
-      obs_histogram[obs.size()]++;
-    }
-    for(std::size_t i = 2; i < obs_histogram.size(); i++)
-    {
-      _tree.add("sfm.observations_histogram."
-        + boost::lexical_cast<std::string>(i), obs_histogram[i]);
-    }
-
-    // Add process time
-    _tree.put("sfm.time", time_sfm);
-
-    #ifdef __linux__
-      // Add CPU/RAM infos
-      char values[20];
-      std::ifstream ifs;
-
-      // CPU cores
-      _tree.put("hardware.cpu.cores", sysconf(_SC_NPROCESSORS_ONLN));
-
-      // CPU frequency
-      if(!std::system("lscpu | grep \"CPU MHz\" | awk '{print $3}' >values.txt"))
-      {
-        ifs.open("values.txt");
-        if(ifs.is_open())
-        {
-          ifs.get(values, 20, '\n');
-          ifs.close();
-          _tree.put("hardware.cpu.freq", values);
-        }
-      }
-
-      // RAM size
-      struct sysinfo sys_info;
-      sysinfo(&sys_info);
-      _tree.put("hardware.ram.size", sys_info.totalram);
-
-      std::system("rm values.txt");
-    #endif
-
-    // Write json on disk
-    pt::write_json(stlplus::folder_append_separator(_sOutDirectory)+"stats.json", _tree);
+    exportStatistics(time_sfm);
   #endif
   return true;
 }
@@ -1609,6 +1557,70 @@ size_t SequentialSfMReconstructionEngine::badTrackRejector(double dPrecision, si
   std::cout << "badTrackRejector: nbOutliers_residualErr: " << nbOutliers_residualErr << ", nbOutliers_angleErr: " << nbOutliers_angleErr << "\n";
   return (nbOutliers_residualErr + nbOutliers_angleErr) > count;
 }
+
+/**
+ * @brief Export a JSON file containing various statistics about the SfM reconstruction
+ *
+ * @param[in] time_sfm time in seconds of the reconstruction process
+ */
+#ifdef USE_BOOST
+void SequentialSfMReconstructionEngine::exportStatistics(double time_sfm)
+{
+  // Put nb images, nb poses, nb points
+  _tree.put("sfm.views", _sfm_data.GetViews().size());
+  _tree.put("sfm.poses", _sfm_data.GetPoses().size());
+  _tree.put("sfm.points", _sfm_data.GetLandmarks().size());
+
+  // Add observations histogram
+  std::vector<int> obs_histogram;
+  for (const auto & iterTracks : _sfm_data.GetLandmarks())
+  {
+    const Observations & obs = iterTracks.second.obs;
+    if(obs_histogram.size() < obs.size() + 1)
+      obs_histogram.resize(obs.size() + 1, 0);
+    obs_histogram[obs.size()]++;
+  }
+  for(std::size_t i = 2; i < obs_histogram.size(); i++)
+  {
+    _tree.add("sfm.observations_histogram."
+      + boost::lexical_cast<std::string>(i), obs_histogram[i]);
+  }
+
+  // Add process time
+  _tree.put("sfm.time", time_sfm);
+
+  #ifdef __linux__
+    // Add CPU/RAM infos
+    char values[20];
+    std::ifstream ifs;
+
+    // CPU cores
+    _tree.put("hardware.cpu.cores", sysconf(_SC_NPROCESSORS_ONLN));
+
+    // CPU frequency
+    if(!std::system("lscpu | grep \"CPU MHz\" | awk '{print $3}' >values.txt"))
+    {
+      ifs.open("values.txt");
+      if(ifs.is_open())
+      {
+        ifs.get(values, 20, '\n');
+        ifs.close();
+        _tree.put("hardware.cpu.freq", values);
+      }
+    }
+
+    // RAM size
+    struct sysinfo sys_info;
+    sysinfo(&sys_info);
+    _tree.put("hardware.ram.size", sys_info.totalram);
+
+    std::system("rm values.txt");
+  #endif
+
+  // Write json on disk
+  pt::write_json(stlplus::folder_append_separator(_sOutDirectory)+"stats.json", _tree);
+}
+#endif
 
 } // namespace sfm
 } // namespace openMVG
