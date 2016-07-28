@@ -41,10 +41,8 @@ for algoName = allAlgos
             
             figure; subplot(1,2,1); hold on;
             hist(fA(3,:),1:0.5:80);
-            ylim([0 3000]);
             subplot(1,2,2); hold on;
             hist(fB(3,:),1:0.5:80);
-            ylim([0 3000]);
             
             title(algoName{1});
             
