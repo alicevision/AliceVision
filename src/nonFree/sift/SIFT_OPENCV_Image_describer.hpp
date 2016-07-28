@@ -120,8 +120,8 @@ public:
         maxDetect = _params.maxTotalKeypoints;
 
     //std::cout << "maxDetect: " << maxDetect << std::endl; // to clean
-    std::cout << "First octave: " << -1 << std::endl;
-    std::cout << "_params.nOctave: " << cvRound(std::log( (double)std::min( img.cols, img.rows ) ) / std::log(2.) - 2) + 1 << std::endl;
+    std::cout << "First octave: " << "0 (hardcoded)" << std::endl;
+    std::cout << "_params.nOctave: " << "8 (hardcoded)"  << std::endl;
     std::cout << "_params.nOctaveLayers: " << _params.nOctaveLayers << std::endl;
     std::cout << "_params.contrastThreshold: " << _params.contrastThreshold << std::endl;
     std::cout << "_params.edgeThreshold: " << _params.edgeThreshold << std::endl;
