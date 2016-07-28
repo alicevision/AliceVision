@@ -800,6 +800,7 @@ _vl_sift_smooth (VlSiftFilt * self,
     self->gaussFilterWidth = VL_MAX(ceil(4.0 * sigma), 1) ;
     self->gaussFilterSigma = sigma ;
     self->gaussFilter = vl_malloc (sizeof(vl_sift_pix) * (2 * self->gaussFilterWidth + 1)) ;
+    //printf("Kernel size %d pixels \n", 2 * self->gaussFilterWidth + 1);
 
     for (j = 0 ; j < 2 * self->gaussFilterWidth + 1 ; ++j) {
       vl_sift_pix d = ((vl_sift_pix)((signed)j - (signed)self->gaussFilterWidth)) / ((vl_sift_pix)sigma) ;
@@ -808,6 +809,7 @@ _vl_sift_smooth (VlSiftFilt * self,
     }
     for (j = 0 ; j < 2 * self->gaussFilterWidth + 1 ; ++j) {
       self->gaussFilter[j] /= acc ;
+      //printf(" %4.8f \n", self->gaussFilter[j]);
     }
   }
 
@@ -899,6 +901,8 @@ vl_sift_new (int width, int height,
   if (noctaves < 0) {
     noctaves = VL_MAX (floor (log2 (VL_MIN(width, height))) - o_min - 3, 1) ;
   }
+  
+  printf("WARNING: Actual number of octaves in vlfeat: %d \n ", noctaves);
 
   f-> width   = width ;
   f-> height  = height ;
@@ -1059,12 +1063,19 @@ vl_sift_process_first_octave (VlSiftFilt *f, vl_sift_pix const *im)
   sa = sigma0 * pow (sigmak,   s_min) ;
   sb = sigman * pow (2.0,    - o_min) ;
 
+  char buffer[100];
+  sprintf(buffer, "blurred-o-0-l-%d_dump", 0);
+  
   printf("Octave 0 \n");
   if (sa > sb) {
     double sd = sqrt (sa*sa - sb*sb) ;
-    printf("Level 0 - sig %4.4f \n", sd);
+    //printf("Level 0 - sig %4.6f \n", sd);
     _vl_sift_smooth (f, octave, temp, octave, w, h, sd) ;
+    write2Dfloat( octave, w, h, buffer);
   }
+  
+  
+  
 
   /* -----------------------------------------------------------------
    *                                          Compute the first octave
@@ -1072,13 +1083,35 @@ vl_sift_process_first_octave (VlSiftFilt *f, vl_sift_pix const *im)
 
   for(s = s_min + 1 ; s <= s_max ; ++s) {
     double sd = dsigma0 * pow (sigmak, s) ;
-    printf("Level %d - sig %4.4f \n", s, sd);
+    //printf("Level %d - sig %4.6f \n", s, sd);
+    sprintf(buffer, "blurred-o-0-l-%d_dump", s+1);
     _vl_sift_smooth (f, vl_sift_get_octave(f, s), temp,
                      vl_sift_get_octave(f, s - 1), w, h, sd) ;
+    
+    write2Dfloat( vl_sift_get_octave(f, s), w, h, buffer);
   }
 
   return VL_ERR_OK ;
 }
+
+void write2Dfloat( float * gray, int rows, int cols, const char* filename)
+{
+    //float* c = (float*) malloc(rows * cols * sizeof(float));
+    //for( int y=0; y<rows; y++ ) {
+    //    for( int x=0; x<cols; x++ ) {
+    //        float v = gray[y*cols+x]
+    //        c[y*cols+x] = v;
+    //    }
+    //}
+
+    FILE* f = fopen( filename, "w" );
+    fprintf( f, "floats\n%d %d\n", cols, rows);
+    fwrite( gray, rows*cols, sizeof(float), f );
+    fclose(f);
+  //  of.write( (char*)c, rows*cols*sizeof(float) );
+  //  delete [] c;
+}
+
 
 /** ------------------------------------------------------------------
  ** @brief Process next octave
@@ -1128,6 +1161,10 @@ vl_sift_process_next_octave (VlSiftFilt *f)
 
   /* next octave */
   copy_and_downsample (octave, pt, w, h, 1) ;
+  
+  char buffer[100];
+  sprintf(buffer, "blurred-o-%d-l-%d_dump", f-> o_cur+2, 0);
+  write2Dfloat( octave, w, h, buffer);
 
   f-> o_cur            += 1 ;
   f-> nkeys             = 0 ;
@@ -1139,22 +1176,25 @@ vl_sift_process_next_octave (VlSiftFilt *f)
 
   if (sa > sb) {
     double sd = sqrt (sa*sa - sb*sb) ;
-    printf("Octave %d - sig %4.4f \n", f-> o_cur, sd);
-    printf("Level 0 - sig %4.4f \n", sd);
+    //printf("Octave %d - sig %4.4f \n", f-> o_cur, sd);
+    //printf("Level 0 - sig %4.4f \n", sd);
     _vl_sift_smooth (f, octave, temp, octave, w, h, sd) ;
   }
 
   /* ------------------------------------------------------------------
    *                                                        Fill octave
    * --------------------------------------------------------------- */
-   printf("Octave %d \n", f-> o_cur);
+  
+  printf("Octave %d \n", f-> o_cur);
   for(s = s_min + 1 ; s <= s_max ; ++s) {
     double sd = dsigma0 * pow (sigmak, s) ;
-    printf("Level %d - sig %4.4f \n", s, sd);
+    //printf("Level %d - sig %4.4f \n", s, sd);
+    sprintf(buffer, "blurred-o-%d-l-%d_dump", f-> o_cur+1, s);
     _vl_sift_smooth (f, vl_sift_get_octave(f, s), temp,
                      vl_sift_get_octave(f, s - 1), w, h, sd) ;
+    write2Dfloat( vl_sift_get_octave(f, s), w, h, buffer);
   }
-
+    
   return VL_ERR_OK ;
 }
 
@@ -1211,6 +1251,9 @@ vl_sift_detect (VlSiftFilt * f)
   /* start from dog [1,1,s_min+1] */
   pt  = dog + xo + yo + so ;
 
+  
+  //printf("Threshold value : %4.4f \n", 0.8*tp);
+  
   for(s = s_min + 1 ; s <= s_max - 2 ; ++s) {
     for(y = 1 ; y < h - 1 ; ++y) {
       for(x = 1 ; x < w - 1 ; ++x) {
@@ -1269,6 +1312,8 @@ vl_sift_detect (VlSiftFilt * f)
           k-> ix = x ;
           k-> iy = y ;
           k-> is = s ;
+          
+          //printf("not refined keypoint: [%d,%d] level %d \n", x, y, s);
         }
         pt += 1 ;
       }
@@ -1276,6 +1321,8 @@ vl_sift_detect (VlSiftFilt * f)
     }
     pt += 2 * yo ;
   }
+  
+  printf("Number of local maxima: %d \n", f->nkeys);
 
   /* -----------------------------------------------------------------
    *                                               Refine local maxima
@@ -1442,12 +1489,18 @@ vl_sift_detect (VlSiftFilt * f)
         k-> sigma = f->sigma0 * pow (2.0, sn/f->S) * xper ;
         ++ k ;
       }
+      
+      //printf("keypoint: [%d,%d] level %d, accepted: %d \n", f-> keys [i].ix, f-> keys [i].iy, f-> keys[i].is, (int) good);
 
     } /* done checking */
   } /* next keypoint to refine */
 
   /* update keypoint count */
   f-> nkeys = (int)(k - f->keys) ;
+  
+  printf("Number of local maxima after refinement: %d \n", f->nkeys);
+  //printf("Range sn: %4.4f \n", (float)s_max-s_min);
+  
 }
 
 
