@@ -3,20 +3,21 @@ clear all;
 
 setPath;
 
-allAlgos= { 'opencv', 'vlfeat' }; %'opencv', 'vlfeat', 'popsift'
 datasetPath = '/home/lilian/data/Features_Repeatability/vgg_oxford_feat_eval/';
 
-datasetNames = { 'boat' };
+allAlgos= { 'vlfeat', 'opencv'};%, 'popsift' };
+algoNames= { 'VLFeat', 'OpenCV'}%;, 'popSift'}
+
+datasetNames = {'bark','bikes','graf','leuven','trees','ubc','wall'};
 for i=1:length(datasetNames)
     allFolders{i} = [ datasetPath datasetNames{i} ]
 end
 
-listImages=[1 4];
+listImages=[ 1 2 3 4 5 6];
+
+save(sprintf('%s/infos.mat', datasetPath), 'allAlgos', 'allFolders', 'listImages','algoNames');
 
 indA = listImages(1);
-display_ = 0;
-
-doGeometricValidation = 1;
 
 for algoName = allAlgos
     for folderName=allFolders
@@ -32,10 +33,16 @@ for algoName = allAlgos
             
             gtFile = sprintf('%s/H%dto%dp', folderName{1},indA,indB)
             
-            [v_overlap,v_repeatability,v_nb_of_corespondences,matching_score,nb_of_matches,twi] = ...
+            [v_overlap,v_repeatability,v_nb_corespondences,matching_score,nb_matches,twi] = ...
                 repeatability(fileA ,fileB, gtFile, imgA, imgB ,0);
             
-            pause
+            v_overlap
+            v_repeatability
+            v_nb_corespondences
+            matching_score
+            nb_matches
+            save(sprintf('%s/%s/res-%d-%d.mat',folderName{1}, algoName{1}, indA, indB ), 'v_overlap', 'v_repeatability', ...
+                'v_nb_corespondences','matching_score', 'nb_matches');
         end
     end
 end
