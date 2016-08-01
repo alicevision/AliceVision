@@ -19,8 +19,8 @@ namespace features {
 struct SiftParams
 {
   SiftParams(
-    int first_octave = 0,
-    int num_octaves = 6,
+    int first_octave = -1,
+    int num_octaves = 8, // TEMP
     int num_scales = 3,
     float edge_threshold = 10.0f,
     float peak_threshold = 0.04f,
