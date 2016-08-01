@@ -955,6 +955,26 @@ vl_sift_new (int width, int height,
   return f ;
 }
 
+
+void write2Dfloat( float * gray, int rows, int cols, const char* filename)
+{
+    //float* c = (float*) malloc(rows * cols * sizeof(float));
+    //for( int y=0; y<rows; y++ ) {
+    //    for( int x=0; x<cols; x++ ) {
+    //        float v = gray[y*cols+x]
+    //        c[y*cols+x] = v;
+    //    }
+    //}
+
+    FILE* f = fopen( filename, "w" );
+    fprintf( f, "floats\n%d %d\n", cols, rows);
+    fwrite( gray, rows*cols, sizeof(float), f );
+    fclose(f);
+//    of.write( (char*)c, rows*cols*sizeof(float) );
+  //  delete [] c;
+}
+
+
 /** -------------------------------------------------------------------
  ** @brief Delete SIFT filter
  **
@@ -1067,19 +1087,27 @@ vl_sift_process_first_octave (VlSiftFilt *f, vl_sift_pix const *im)
   sa = sigma0 * pow (sigmak,   s_min) ;
   sb = sigman * pow (2.0,    - o_min) ;
 
+  char buffer[100];
+  sprintf(buffer, "blurred-o-0-l-%d_dump", 0);
+
   if (sa > sb) {
     double sd = sqrt (sa*sa - sb*sb) ;
     _vl_sift_smooth (f, octave, temp, octave, w, h, sd) ;
+    write2Dfloat( octave, w, h, buffer);
   }
 
   /* -----------------------------------------------------------------
    *                                          Compute the first octave
    * -------------------------------------------------------------- */
+printf("Processing first octave ---");
 
   for(s = s_min + 1 ; s <= s_max ; ++s) {
     double sd = dsigma0 * pow (sigmak, s) ;
+    sprintf(buffer, "blurred-o-0-l-%d_dump", s+1);
     _vl_sift_smooth (f, vl_sift_get_octave(f, s), temp,
                      vl_sift_get_octave(f, s - 1), w, h, sd) ;
+                     printf("Dimensions [%d,%d] \n", w, h);
+    write2Dfloat( vl_sift_get_octave(f, s), w, h, buffer);
   }
 
   return VL_ERR_OK ;
@@ -1134,6 +1162,10 @@ vl_sift_process_next_octave (VlSiftFilt *f)
   /* next octave */
   copy_and_downsample (octave, pt, w, h, 1) ;
 
+  char buffer[100];
+  sprintf(buffer, "blurred-o-%d-l-%d_dump", f-> o_cur+2, 0);
+  write2Dfloat( octave, w/2, h/2, buffer);
+
   f-> o_cur            += 1 ;
   f-> nkeys             = 0 ;
   w = f-> octave_width  = VL_SHIFT_LEFT(f->width,  - f->o_cur) ;
@@ -1153,8 +1185,10 @@ vl_sift_process_next_octave (VlSiftFilt *f)
 
   for(s = s_min + 1 ; s <= s_max ; ++s) {
     double sd = dsigma0 * pow (sigmak, s) ;
+    sprintf(buffer, "blurred-o-%d-l-%d_dump", f-> o_cur+1, s+1);
     _vl_sift_smooth (f, vl_sift_get_octave(f, s), temp,
                      vl_sift_get_octave(f, s - 1), w, h, sd) ;
+    write2Dfloat( vl_sift_get_octave(f, s), w, h, buffer);
   }
 
   return VL_ERR_OK ;
@@ -1279,6 +1313,8 @@ vl_sift_detect (VlSiftFilt * f)
     pt += 2 * yo ;
   }
 
+printf("Number of local maxima: %d \n", f->nkeys);
+
   /* -----------------------------------------------------------------
    *                                               Refine local maxima
    * -------------------------------------------------------------- */
@@ -1291,6 +1327,10 @@ vl_sift_detect (VlSiftFilt * f)
     int x = f-> keys [i] .ix ;
     int y = f-> keys [i] .iy ;
     int s = f-> keys [i]. is ;
+
+int xInit = x;
+int yInit = y;
+int sInit = s+1;
 
     double Dx=0,Dy=0,Ds=0,Dxx=0,Dyy=0,Dss=0,Dxy=0,Dxs=0,Dys=0 ;
     double A [3*3], b [3] ;
@@ -1442,14 +1482,21 @@ vl_sift_detect (VlSiftFilt * f)
         k-> x     = xn * xper ;
         k-> y     = yn * xper ;
         k-> sigma = f->sigma0 * pow (2.0, sn/f->S) * xper ;
+printf("Refined: [%d,%d] level %d, xRefined %4.4f, yRefined %4.4f, sRefined %4.4f, sigma %4.4f \n", xInit, yInit, sInit, k-> x, k-> y, k-> s, k-> sigma);
         ++ k ;
       }
 
+//#ifdef DEBUG_VL
+//printf("keypoint: [%d,%d] level %d, accepted: %d \n", xInit, yInit, sInit, (int) good);
+//#endif
     } /* done checking */
   } /* next keypoint to refine */
 
   /* update keypoint count */
   f-> nkeys = (int)(k - f->keys) ;
+
+printf("Number of local maxima after refinement in octave %d: %d \n", f->o_cur, f->nkeys);
+
 }
 
 
@@ -2178,6 +2225,8 @@ vl_sift_calc_keypoint_descriptor (VlSiftFilt *f,
  ** clamped to their feasible range as determined by the SIFT filter
  ** parameters.
  **/
+
+#define DEBUG_VL
 
 VL_EXPORT
 void
