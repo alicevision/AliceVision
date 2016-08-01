@@ -42,9 +42,9 @@ int main() {
   // Detect regions thanks to an image_describer
   //--
   using namespace openMVG::features;
-  //std::unique_ptr<Image_describer> image_describer(new SIFT_popSIFT_describer);
+  std::unique_ptr<Image_describer> image_describer(new SIFT_popSIFT_describer);
   //std::unique_ptr<Image_describer> image_describer(new SIFT_float_describer);
-  std::unique_ptr<Image_describer> image_describer(new SIFT_OPENCV_Image_describer);
+  //std::unique_ptr<Image_describer> image_describer(new SIFT_OPENCV_Image_describer);
   std::map<IndexT, std::unique_ptr<features::Regions> > regions_perImage;
   std::cerr << __LINE__ << " in " << __func__ << std::endl;
   image_describer->Describe(imageL, regions_perImage[0]);
