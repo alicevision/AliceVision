@@ -46,11 +46,10 @@ int main() {
   //std::unique_ptr<Image_describer> image_describer(new SIFT_float_describer);
   //std::unique_ptr<Image_describer> image_describer(new SIFT_OPENCV_Image_describer);
   std::map<IndexT, std::unique_ptr<features::Regions> > regions_perImage;
-  std::cerr << __LINE__ << " in " << __func__ << std::endl;
   image_describer->Describe(imageL, regions_perImage[0]);
   image_describer->Describe(imageR, regions_perImage[1]);
   
-  std::cerr << "Extraction in both images done" << std::endl;
+  std::cout << "Extraction in both images done" << std::endl;
 
   const PointFeatures
     featsL = regions_perImage.at(0)->GetRegionsPositions(),
@@ -70,20 +69,16 @@ int main() {
   const openMVG::features::Regions* r = regions_perImage.at(1).get();
   const SIFT_Regions* regionsL = (const SIFT_Regions*)l;
   const SIFT_Regions* regionsR = (const SIFT_Regions*)r;
-
-  std::cerr << __LINE__ << " " << (intptr_t) regionsL<< std::endl;
   
   //- Draw features on the two image (side by side)
   {
     Image<unsigned char> concat;
-    std::cerr << __LINE__ << " bef, concat" << std::endl;
     ConcatH(imageL, imageR, concat);
 
     //-- Draw features :
     for (size_t i=0; i < featsL.size(); ++i )  {
       const SIOPointFeature point = regionsL->Features()[i];
       DrawCircle(point.x(), point.y(), point.scale(), 255, &concat);
-      // std::cerr << __LINE__ << " " << point.x() << " " << point.y()  << " scale " << point.scale() << std::endl;
     }
     for (size_t i=0; i < featsR.size(); ++i )  {
       const SIOPointFeature point = regionsR->Features()[i];
