@@ -18,6 +18,8 @@
 #include "third_party/vectorGraphics/svgDrawer.hpp"
 #include "third_party/cmdLine/cmdLine.h"
 
+#include <opencv2/core/eigen.hpp>
+
 #include <string>
 #include <iostream>
 
@@ -27,7 +29,7 @@ using namespace openMVG::matching;
 using namespace svg;
 using namespace std;
 
-//#define SINGLE_IMG
+#define SINGLE_IMG
 
 int main(int argc, char **argv)
 {
@@ -56,11 +58,13 @@ int main(int argc, char **argv)
 
   Image<RGBColor> image;
   string jpg_filenameL = stlplus::folder_up(string(THIS_SOURCE_DIR))
-    + "/imageData/StanfordMobileVisualSearch/Ace_0s.png";
+    + "/imageData/StanfordMobileVisualSearch/Ace_40p_gray.pgm"; //0s
+  
+  std::cout << "Processing the file: " << jpg_filenameL << std::endl;
   
    Image<unsigned char> imageL;
-   ReadImage(jpg_filenameL.c_str(), &imageL);
-   
+   ReadImage(jpg_filenameL.c_str(), &imageL);   
+
 #ifndef SINGLE_IMG
   string jpg_filenameR = stlplus::folder_up(string(THIS_SOURCE_DIR))
     + "/imageData/StanfordMobileVisualSearch/Ace_1s.png";
