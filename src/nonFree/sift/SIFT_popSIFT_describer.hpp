@@ -98,14 +98,12 @@ public:
     popart::Config config;
     config.setOctaves(_params._num_octaves);
     config.setLevels(_params._num_scales);
-    config.setDownsampling(-1);
-    config.setThreshold( 1.0f ); // _params._peak_threshold);
-    config.setEdgeLimit( 0.8f ); // _params._edge_threshold);
+    config.setDownsampling(_params._first_octave);
+    config.setThreshold(  _params._peak_threshold);
+    config.setEdgeLimit(  _params._edge_threshold);
     config.setSigma(sigma);
-
     
     PopSift PopSift(config);
-    
 
     PopSift.init( 0, w, h );
     PopSift.execute(0, &inp);
