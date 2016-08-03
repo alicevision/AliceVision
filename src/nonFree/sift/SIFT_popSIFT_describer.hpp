@@ -98,14 +98,12 @@ public:
     popart::Config config;
     config.setOctaves(_params._num_octaves);
     config.setLevels(_params._num_scales);
-    config.setDownsampling(-1);
-    config.setThreshold( 1.0f ); // _params._peak_threshold);
-    config.setEdgeLimit( 0.8f ); // _params._edge_threshold);
+    config.setDownsampling(_params._first_octave);
+    config.setThreshold(  _params._peak_threshold);
+    config.setEdgeLimit(  _params._edge_threshold);
     config.setSigma(sigma);
-
     
     PopSift PopSift(config);
-    
 
     PopSift.init( 0, w, h );
     PopSift.execute(0, &inp);
@@ -120,11 +118,11 @@ public:
     popart::Pyramid &pyramid = PopSift.pyramid(0);
     for( int o=0; o<_params._num_octaves; o++ )
     {
-      popart::Octave &octave = pyramid.octave(o);
+      popart::Octave & octave = pyramid.getOctave(o);
       // GPU to CPU memory
       // TODO: the download GPU -> CPU is also done in downloadToVector,
       // check that we can safely remove downloadDescriptors
-      octave.downloadDescriptor();
+      pyramid.download_descriptors(config, o);
 
       const float imageScale = static_cast<float>(1 << o);
       std::vector<popart::Extremum> candidates;
@@ -148,7 +146,7 @@ public:
           {
             // the position of the points we get from popsift are multiplied by two
             // the 0.5 value is used to move their coordinates to the correct image coordinates
-            regionsCasted->Features().emplace_back(0.5*feat.xpos*imageScale, 0.5*feat.ypos*imageScale, feat.sigma, feat.orientation);
+            regionsCasted->Features().emplace_back(feat.xpos*pow(2.f, o+_params._first_octave), feat.ypos*pow(2.f, o+_params._first_octave), feat.sigma*pow(2.f, o+_params._first_octave), feat.orientation);
           }
 
           // Descriptor values

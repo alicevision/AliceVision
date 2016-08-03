@@ -77,6 +77,7 @@ int main(int argc, char **argv)
   //--
   
   using namespace openMVG::features;
+
   std::unique_ptr<Image_describer> image_describer;
   if (sImage_Describer_Method == "POP")
   {
@@ -89,12 +90,7 @@ int main(int argc, char **argv)
       image_describer.reset(new SIFT_OPENCV_Image_describer);
   }
   
-  //using namespace openMVG::features;
-  //std::unique_ptr<Image_describer> image_describer(new SIFT_popSIFT_describer);
-  //std::unique_ptr<Image_describer> image_describer(new SIFT_float_describer);
-  //std::unique_ptr<Image_describer> image_describer(new SIFT_OPENCV_Image_describer);
   std::map<IndexT, std::unique_ptr<features::Regions> > regions_perImage;
-  std::cerr << __LINE__ << " in " << __func__ << std::endl;
   image_describer->Describe(imageL, regions_perImage[0]);
   
 #ifdef SINGLE_IMG
@@ -102,7 +98,7 @@ int main(int argc, char **argv)
 #else
   image_describer->Describe(imageR, regions_perImage[1]);
   
-  std::cerr << "Extraction in both images done" << std::endl;
+  std::cout << "Extraction in both images done" << std::endl;
 
   const PointFeatures featsL = regions_perImage.at(0)->GetRegionsPositions();
   const PointFeatures featsR = regions_perImage.at(1)->GetRegionsPositions();
@@ -120,8 +116,6 @@ int main(int argc, char **argv)
   
   const SIFT_Regions* regionsL = (const SIFT_Regions*)l;
   const SIFT_Regions* regionsR = (const SIFT_Regions*)r;
-
-  std::cerr << __LINE__ << " " << (intptr_t) regionsL<< std::endl;
   
   //- Draw features on the two image (side by side)
   {
