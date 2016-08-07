@@ -154,7 +154,7 @@ bool SfM_Localizer::Localize
   }
 
   // Test if the mode support some points (more than those required for estimation)
-  const bool bResection = (resection_data.vec_inliers.size() > MINIMUM_SAMPLES * OPENMVG_MINIMUM_SAMPLES_COEF);
+  const bool bResection = (resection_data.vec_inliers.size() >= 4);
 #ifdef WANTS_POPART_COUT
   if (!bResection) 
   {
