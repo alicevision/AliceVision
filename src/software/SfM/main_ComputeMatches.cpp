@@ -288,7 +288,7 @@ int main(int argc, char **argv)
   //---------------------------------------
   // Init the regions_type from the image describer file (used for image regions extraction)
   using namespace openMVG::features;
-  const std::string sImage_describer = stlplus::create_filespec(sMatchesDirectory, "image_describer", "json");
+  const std::string sImage_describer = stlplus::create_filespec(featDirectory, "image_describer", "json");
   std::unique_ptr<Regions> regions_type = Init_region_type_from_file(sImage_describer);
   if(!regions_type)
   {
@@ -335,7 +335,7 @@ int main(int argc, char **argv)
   
   // Load the corresponding view regions
   std::shared_ptr<Regions_Provider> regions_provider = std::make_shared<Regions_Provider>();  
-  if(!regions_provider->load(sfm_data, sMatchesDirectory, regions_type, filter)) {
+  if(!regions_provider->load(sfm_data, featDirectory, regions_type, filter)) {
     std::cerr << std::endl << "Invalid regions." << std::endl;
     return EXIT_FAILURE;
   }
