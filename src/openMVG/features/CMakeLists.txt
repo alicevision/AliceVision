@@ -10,6 +10,7 @@ set(features_files_headers
   liop/liop_descriptor.hpp
   sift/sift.hpp
   sift/SIFT_describer.hpp
+  sift/ASIFT_describer.hpp
   sift/SIFT_float_describer.hpp
   descriptor.hpp
   io_regions_type.hpp
@@ -26,6 +27,7 @@ set( features_files_sources
   akaze/AKAZE.cpp
   liop/liop_descriptor.cpp
   sift/SIFT_describer.cpp
+  sift/ASIFT_describer.cpp
   sift/SIFT_float_describer.cpp
   sift/sift.cpp
   features_test.cpp

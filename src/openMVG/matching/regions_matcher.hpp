@@ -205,7 +205,7 @@ public:
 
     const Scalar * queries = reinterpret_cast<const Scalar *>(queryregions_.DescriptorRawData());
 
-    const size_t NNN__ = 2;
+    const size_t NNN__ = 6;
     matching::IndMatches vec_nIndice;
     std::vector<DistanceType> vec_fDistance;
 
@@ -219,42 +219,28 @@ public:
     //   The probability that a match is correct is determined by taking
     //   the ratio of distance from the closest neighbor to the distance
     //   of the second closest.
-    matching::NNdistanceRatio(
-      vec_fDistance.begin(), // distance start
-      vec_fDistance.end(),   // distance end
-      NNN__, // Number of neighbor in iterator sequence (minimum required 2)
-      vec_valid_matches_idx, // output (indices that respect the distance Ratio)     
-      b_squared_metric_ ? Square(f_dist_ratio) : f_dist_ratio);
+    if(false)
+    {
+      matching::NNdistanceRatio(
+        vec_fDistance.begin(), // distance start
+        vec_fDistance.end(),   // distance end
+        NNN__, // Number of neighbor in iterator sequence (minimum required 2)
+        vec_valid_matches_idx, // output (indices that respect the distance Ratio)
+        b_squared_metric_ ? Square(f_dist_ratio) : f_dist_ratio);
+    }
+    else
+    {
+      matching::NNdistanceRatio_multiDesc(
+        vec_fDistance.begin(), // distance start
+        vec_fDistance.end(),   // distance end
+        NNN__, // Number of neighbor in iterator sequence (minimum required 2)
+        regions_,
+        vec_nIndice,
+        vec_valid_matches_idx, // output (indices that respect the distance Ratio)
+        b_squared_metric_ ? Square(f_dist_ratio) : f_dist_ratio);
+    }
 
     const size_t n = vec_fDistance.size();
-    
-    // Consider the match valid if the 2 first matches correspond to the "same" feature.
-    //
-    // In [Mishkin 2015] "MODS: Fast and Robust Method for Two-View Matching" they introduce the FGINN strategy
-    // "First Geometrically Inconsistent Nearest Neighbor".
-    // Here, for simplicity and performances, we don't search for the first
-    // geometrically inconsistent but assume that the match is strong enough if
-    // the 2 nearest neighbors are on the same image region.
-    // It could be 2 really close features or the same feature with multiple
-    // descriptors (different orientations of SIFT for instance).
-    // Warning: This code assumes that NNN__ is 2.
-    for(size_t i=0; i < n/NNN__; ++i)
-    {
-      const Vec2 vecA = regions_->GetRegionPosition(vec_nIndice[i*NNN__]._j);
-      const Vec2 vecB = regions_->GetRegionPosition(vec_nIndice[i*NNN__+1]._j);
-      if(std::abs(vecA.x() - vecB.x()) < 10.0 &&
-         std::abs(vecA.y() - vecB.y()) < 10.0)
-      {
-        vec_valid_matches_idx.push_back(i);
-      }
-    }
-
-    // Remove duplicates
-    {
-      std::sort(vec_valid_matches_idx.begin(), vec_valid_matches_idx.end());
-      std::vector<int>::iterator it = std::unique(vec_valid_matches_idx.begin(), vec_valid_matches_idx.end());
-      vec_valid_matches_idx.resize(std::distance(vec_valid_matches_idx.begin(), it));
-    }
     
     vec_putative_matches.reserve(vec_valid_matches_idx.size());
     for (size_t k=0; k < vec_valid_matches_idx.size(); ++k)
@@ -268,8 +254,9 @@ public:
       );
     }
 
-    // Remove duplicates
-    matching::IndMatch::getDeduplicated(vec_putative_matches);
+    std::vector<IndexT> indexVect;
+    createVectFeatures(regions_->GetRegionsPositions(), indexVect);
+    remapFeaturesToFirstIndex(vec_putative_matches, regions_->GetRegionsPositions(), queryregions_.GetRegionsPositions());
 
     // Remove duplicates matches
     matching::removeDuplicateMatches(vec_putative_matches);
@@ -283,8 +270,6 @@ public:
   }
   
   
-  
-  const features::Regions* getDatabaseRegions() const { return regions_; } 
   
 };
 

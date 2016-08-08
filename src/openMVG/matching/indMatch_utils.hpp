@@ -9,13 +9,38 @@
 #define OPENMVG_MATCHING_IND_MATCH_UTILS_H
 
 #include "openMVG/matching/indMatch.hpp"
+#include "openMVG/features/feature.hpp"
 
 #include <string>
 
 namespace openMVG {
 namespace matching {
 
-  
+ /**
+ * @brief For multiple descriptor techniques:
+ * Create a vector which, for each descriptor, maps to the index
+ * of the first descriptor associated with the same feature
+ *
+ * @param[in] feature: the list of features of the image
+ * @param[out] indexVect: the mapping vector
+ */
+void createVectFeatures(const std::vector<features::PointFeature> &features, std::vector<IndexT>& indexVect);
+
+/**
+ * @brief For multiple descriptor techniques.
+ * For each match of a vec_match file, remap the descriptor indexes
+ * to the index of the first descriptor associated with the same feature.
+ * (for track fusion purposes)
+ *
+ * @param[in] vec_match: the list of matches of the pair of images
+ * @param[out] featuresI : the list of features of the image I
+ * @param[out] featuresJ : the list of features of the image J
+ */
+
+void remapFeaturesToFirstIndex(std::vector<IndMatch> & vec_match,
+        const std::vector<features::PointFeature> &featuresI,
+        const std::vector<features::PointFeature> &featuresJ);
+
 /**
  * @brief Load a match file.
  *

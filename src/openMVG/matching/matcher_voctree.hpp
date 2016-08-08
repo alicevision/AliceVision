@@ -3,7 +3,7 @@
 #include "regions_matcher.hpp"
 #include "openMVG/voctree/database.hpp"
 #include "openMVG/features/regions.hpp"
-
+#include "openMVG/matching/indMatch_utils.hpp"
 
 namespace openMVG {
 namespace matching {
@@ -48,8 +48,6 @@ public:
     matching::IndMatches & vec_putative_matches
   );
 
-  void createVectFeatures(const std::vector<SiftRegion::FeatureT>& features,
-        std::vector<IndexT>& indexVect);
 };
 
 } // namespace matching

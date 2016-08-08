@@ -12,6 +12,7 @@
 #include <openMVG/matching/regions_matcher.hpp>
 #include <openMVG/matching_image_collection/Matcher.hpp>
 #include <openMVG/matching/matcher_kdtree_flann.hpp>
+#include <openMVG/matching/matcher_voctree.hpp>
 #include <openMVG/matching_image_collection/F_ACRobust.hpp>
 #include <openMVG/numeric/numeric.h>
 #include <openMVG/robust_estimation/guided_matching.hpp>
@@ -379,16 +380,21 @@ bool VoctreeLocalizer::initDatabase(const std::string & vocTreeFilepath,
       std::cerr << "Invalid regions files for the view: " << sImageName << std::endl;
       return false;
     }
-    
-    voctree::SparseHistogram histo;
-    histo = _voctree.softQuantizeToSparse(currRecoRegions._regions.Descriptors());
-    _database.insert(id_view, histo);
 
     // Filter descriptors to keep only the 3D reconstructed points
     currRecoRegions.filterRegions(observationsPerView[id_view]);
+
+    voctree::SparseHistogram histo;
+
+    std::vector<IndexT> queryDescUID;
+    matching::createVectFeatures(currRecoRegions._regions.GetRegionsPositions(), queryDescUID);
+    histo = _voctree.quantizeMultiToSparse(currRecoRegions._regions.Descriptors(), queryDescUID);
+
+    _database.insert(id_view, histo);
+
     ++my_progress_bar;
   }
-  
+
   return true;
 }
 
@@ -750,6 +756,12 @@ void VoctreeLocalizer::getAllAssociations(const features::SIFT_Regions &queryReg
   }
   
   // Request closest images from voctree
+  const std::vector<features::SIFT_Regions::DescriptorT>& queryDescriptors = queryRegions.Descriptors();
+  std::vector<IndexT> queryDescUID;
+  matching::createVectFeatures(queryRegions.GetRegionsPositions(), queryDescUID);
+
+  voctree::SparseHistogram queryHistogram = _voctree.quantizeMultiToSparse(queryDescriptors, queryDescUID);
+
   std::vector<voctree::DocMatch> matchedImages;
   _database.find(requestImageWords, (param._numResults==0) ? (_database.size()) : (param._numResults) , matchedImages);
   

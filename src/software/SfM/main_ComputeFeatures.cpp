@@ -11,6 +11,7 @@
 /// Feature/Regions & Image describer interfaces
 #include "openMVG/features/features.hpp"
 #include "openMVG/features/sift/SIFT_describer.hpp"
+#include "openMVG/features/sift/ASIFT_describer.hpp"
 #include "openMVG/features/sift/SIFT_float_describer.hpp"
 
 #if HAVE_CCTAG
@@ -227,6 +228,8 @@ int main(int argc, char **argv)
   std::string sFeaturePreset = "NORMAL";
   int rangeStart = -1;
   int rangeSize = 1;
+  int nbTilts = 1;
+  float stepTilts = 0.4f;
 
   // MAX_JOBS_DEFAULT is the default value for maxJobs which keeps 
   // the original behavior of the program:
@@ -244,6 +247,8 @@ int main(int argc, char **argv)
   cmd.add( make_option('s', rangeStart, "range_start") );
   cmd.add( make_option('r', rangeSize, "range_size") );
   cmd.add( make_option('j', maxJobs, "jobs") );
+  cmd.add( make_option('t', nbTilts, "nbTilts") );
+  cmd.add( make_option('e', stepTilts, "stepTilts") );
 
   try 
   {
@@ -260,6 +265,7 @@ int main(int argc, char **argv)
     << "[-m|--describerMethod]\n"
     << "  (method to use to describe an image):\n"
     << "   SIFT (default),\n"
+    << "   ASIFT,\n"
     << "   SIFT_FLOAT to use SIFT stored as float,\n"
     << "   AKAZE_FLOAT: AKAZE with floating point descriptors,\n"
     << "   AKAZE_MLDB:  AKAZE with binary descriptors\n"
@@ -280,6 +286,8 @@ int main(int argc, char **argv)
     << "[-s]--range_start] range image index start\n"
     << "[-r]--range_size] range size\n"
     << "[-j|--jobs] Specifies the number of jobs to run simultaneously. Use -j 0 for automatic mode.\n"
+    << "[-t|--nbTilts] Specifies the number of tilts (ASIFT method only)\n"
+    << "[-e|--stepTilts] Specifies the step between tilts (ASIFT method only)\n"
     << std::endl;
 
     std::cerr << s << std::endl;
@@ -296,7 +304,9 @@ int main(int argc, char **argv)
             << "--describerPreset " << sFeaturePreset << std::endl
             << "--force " << bForce << std::endl
             << "--range_start " << rangeStart << std::endl
-            << "--range_size " << rangeSize << std::endl;
+            << "--range_size " << rangeSize << std::endl
+            << "--nbTilts " << nbTilts << std::endl
+            << "--stepTilts " << stepTilts << std::endl;
 
   if (maxJobs != MAX_JOBS_DEFAULT)
   {
@@ -409,6 +419,11 @@ int main(int argc, char **argv)
     {
       image_describer.reset(new SIFT_float_describer(SiftParams(), !bUpRight));
     }
+    else
+    if (sImage_Describer_Method == "ASIFT")
+    {
+      image_describer.reset(new ASIFT_Image_describer(ASiftParams(0, 6, 3, 10.0f, 0.04f, 4, 1000, true, nbTilts, stepTilts), !bUpRight));
+    }
 #if HAVE_CCTAG
     else
     if (sImage_Describer_Method == "CCTAG3")
@@ -430,19 +445,19 @@ int main(int argc, char **argv)
     {
       image_describer.reset(new SIFT_CCTAG_Image_describer(SiftParams(), !bUpRight, 4));
     }
-#endif //HAVE_CCTAG   
+#endif //HAVE_CCTAG
     else
-    if (sImage_Describer_Method == "AKAZE_FLOAT")
+    if(sImage_Describer_Method == "AKAZE_FLOAT")
     {
       image_describer.reset(new AKAZE_Image_describer(AKAZEParams(AKAZEConfig(), AKAZE_MSURF), !bUpRight));
     }
     else
-    if (sImage_Describer_Method == "AKAZE_MLDB")
+    if(sImage_Describer_Method == "AKAZE_MLDB")
     {
       image_describer.reset(new AKAZE_Image_describer(AKAZEParams(AKAZEConfig(), AKAZE_MLDB), !bUpRight));
     }
     //image_describer.reset(new AKAZE_Image_describer(AKAZEParams(AKAZEConfig(), AKAZE_LIOP), !bUpRight));
-    if (!image_describer)
+    if(!image_describer)
     {
       std::cerr << "Cannot create the designed Image_describer:"
         << sImage_Describer_Method << "." << std::endl;
@@ -450,8 +465,7 @@ int main(int argc, char **argv)
     }
     else
     {
-      if (!sFeaturePreset.empty())
-      if (!image_describer->Set_configuration_preset(sFeaturePreset))
+      if(!image_describer->Set_configuration_preset(sFeaturePreset))
       {
         std::cerr << "Preset configuration failed." << std::endl;
         return EXIT_FAILURE;
@@ -504,6 +518,8 @@ int main(int argc, char **argv)
       std::advance(iterViewsEnd, rangeSize);
     }
 
+    //DEBUG ASIFT distances
+    //std::map<std::pair<float,float>, std::vector<float>> asiftDistances;
     Image<unsigned char> imageGray;
     for(;
       iterViews != iterViewsEnd;
@@ -530,6 +546,8 @@ int main(int argc, char **argv)
             std::unique_ptr<Regions> regions;
             image_describer->Describe(imageGray, regions);
             image_describer->Save(regions.get(), sFeat, sDesc);
+            //DEBUG ASIFT distances
+            //retrieveASIFTDistances(regions, asiftDistances);
         };
         if (maxJobs != MAX_JOBS_DEFAULT)
           dispatch(maxJobs, computeFunction);
@@ -537,6 +555,8 @@ int main(int argc, char **argv)
           computeFunction();
       }
     }
+    //DEBUG ASIFT distances
+    //printMultiStats(asiftDistances);
 
     if (maxJobs != MAX_JOBS_DEFAULT) waitForCompletion();
 

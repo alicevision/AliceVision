@@ -25,6 +25,7 @@ using namespace svg;
 using namespace std;
 
 #include "openMVG/features/sift/SIFT_describer.hpp"
+#include "openMVG/features/sift/ASIFT_describer.hpp"
 
 // Class to load images and ground truth homography matrices
 // A reference image
@@ -282,6 +283,12 @@ int main(int argc, char **argv)
       if (sImage_Describer_Method == "AKAZE_FLOAT")
       {
         image_describer.reset(new AKAZE_Image_describer(AKAZEParams(AKAZEConfig(), AKAZE_MSURF)));
+      }
+      else
+      if (sImage_Describer_Method == "ASIFT")
+      {
+        std::cout << "Creation ImageDescriber ASIFT" << std::endl;
+        image_describer.reset(new ASIFT_Image_describer(ASiftParams()));
       }
 
       if (!image_describer)

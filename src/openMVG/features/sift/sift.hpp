@@ -3,6 +3,7 @@
 #include <openMVG/features/descriptor.hpp>
 #include <openMVG/features/image_describer.hpp>
 #include <openMVG/features/regions_factory.hpp>
+#include <openMVG/features/svgVisualization.hpp>
 #include <openMVG/voctree/distance.hpp>
 
 #include <opencv2/opencv.hpp>
@@ -120,6 +121,54 @@ struct SiftParams
   }
 };
 
+struct ASiftParams : public SiftParams
+{
+  ASiftParams(
+    int first_octave = 0,
+    int num_octaves = 6,
+    int num_scales = 3,
+    float edge_threshold = 10.0f,
+    float peak_threshold = 0.04f,
+    std::size_t gridSize = 4,
+    std::size_t maxTotalKeypoints = 1000,
+    bool root_sift = true,
+    int nbTilts = 1,
+    float stepTilts = 0.4f
+  )
+    : SiftParams(first_octave,
+                  num_octaves,
+                  num_scales,
+                  edge_threshold,
+                  peak_threshold,
+                  gridSize,
+                  maxTotalKeypoints,
+                  root_sift)
+    , _nbTilts(nbTilts)
+    , _stepTilts(stepTilts)
+  {}
+
+  // Parameters
+  int _nbTilts;
+  float _stepTilts;
+};
+
+
+/**
+ * @brief Extract ASIFT regions (in float or unsigned char).
+ * A first extraction is done using classic SIFT descriptors. The image is twisted in different ways.
+ * Then, for each twist, for each feature, a new descriptor is extracted.
+ * @param image - The input image
+ * @param regions - The detected regions and attributes (the caller must delete the allocated data)
+ * @param params - The parameters of the SIFT extractor
+ * @param bOrientation - Compute orientation of SIFT descriptor (for the first extraction only)
+ * @param mask - 8-bit gray image for keypoint filtering (optional).
+ */
+template < typename T >
+bool extractASIFT(const image::Image<unsigned char>& image,
+    std::unique_ptr<Regions>& regions,
+    const ASiftParams& params,
+    const bool bOrientation,
+    const image::Image<unsigned char> * mask);
 
 /**
  * @brief Extract SIFT regions (in float or unsigned char).

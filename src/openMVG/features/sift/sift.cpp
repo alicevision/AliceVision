@@ -91,14 +91,73 @@ inline void convertSIFT<unsigned char>(
 
 
 /**
- * @brief Apply a grid filtering on the extracted keypoints
- * 
+ * @brief Twists an image for the ASIFT extraction
  * @param imageCV -  The input image (OpenCV format)
  * @parma twistedImage - The twisted output image (OpenCV format)
  * @parma tilt - The tilt parameter of ASIFT
  * @parma phi - The phi parameter of ASIFT
  * @parma mask -  8-bit gray image for keypoint filtering (optional).
  * @param finalTransformation - the affine transformation between the input and the output pictures
+ */
+void getTwistedImage(const cv::Mat& imageCV,
+        cv::Mat& twistedImage,
+        double tilt,
+        double phi,
+        cv::Mat& mask,
+        cv::Mat& finalTransformation)
+{
+
+  imageCV.copyTo(twistedImage);
+  int h = imageCV.rows;
+  int w = imageCV.cols;
+
+  mask = cv::Mat(h, w, CV_8UC1, cv::Scalar(255));
+  finalTransformation = cv::Mat::eye(2,3, CV_32F);
+
+  if(phi != 0.0)
+  {
+    phi *= M_PI/180.;
+    double s = sin(phi);
+    double c = cos(phi);
+
+    finalTransformation = (cv::Mat_<float>(2,2) << c, -s, s, c);
+
+    cv::Mat corners = (cv::Mat_<float>(4,2) << 0, 0, w, 0, w, h, 0, h);
+    cv::Mat tcorners = corners*finalTransformation.t();
+    cv::Mat tcorners_x, tcorners_y;
+    tcorners.col(0).copyTo(tcorners_x);
+    tcorners.col(1).copyTo(tcorners_y);
+    std::vector<cv::Mat> channels;
+    channels.push_back(tcorners_x);
+    channels.push_back(tcorners_y);
+    merge(channels, tcorners);
+
+    cv::Rect rect = cv::boundingRect(tcorners);
+    finalTransformation =  (cv::Mat_<float>(2,3) << c, -s, -rect.x, s, c, -rect.y);
+
+    cv::warpAffine(twistedImage, twistedImage, finalTransformation, cv::Size(rect.width, rect.height), cv::INTER_LINEAR, cv::BORDER_REPLICATE);
+  }
+  if(tilt != 1.0)
+  {
+    double s = 0.8*sqrt(tilt*tilt-1);
+    cv::GaussianBlur(twistedImage, twistedImage, cv::Size(0,0), s, 0.01);
+    cv::resize(twistedImage, twistedImage, cv::Size(0,0), 1.0/tilt, 1.0, cv::INTER_NEAREST);
+    finalTransformation.row(0) = finalTransformation.row(0)/tilt;
+  }
+
+  if(tilt != 1.0 || phi != 0.0)
+  {
+    h = twistedImage.rows;
+    w = twistedImage.cols;
+    cv::warpAffine(mask, mask, finalTransformation, cv::Size(w, h), cv::INTER_NEAREST);
+  }
+
+}
+
+/**
+ * @brief Apply a grid filtering on the extracted keypoints
+ *
+
  */
 template < typename T >
 bool applyGrid(std::unique_ptr<Regions>& regions,
@@ -201,7 +260,7 @@ bool applyGrid(std::unique_ptr<Regions>& regions,
       
       regionsCasted->Features().swap(filtered_features);
       regionsCasted->Descriptors().swap(filtered_descriptors);
-      vectKeyPoints.swap(filtered_VectKeyPoints);      
+      vectKeyPoints.swap(filtered_VectKeyPoints);
  
     }
   }
@@ -262,7 +321,6 @@ void extractFromFirstImage(std::unique_ptr<Regions> &regions,
     // Update gradient before launching parallel extraction
     vl_sift_update_gradient(filt);
 
-    std::cout << std::endl;
     #ifdef OPENMVG_USE_OPENMP
     #pragma omp parallel for private(vlFeatDescriptor, descriptor)
     #endif
@@ -308,6 +366,220 @@ void extractFromFirstImage(std::unique_ptr<Regions> &regions,
 
 
 
+/**
+ * @brief Extract descriptors from known keypoints for ASIFT.
+ * @param[in] regions The detected regions and attributes
+ * @param[in] params The parameters of the Image describer
+ * @param[in] image The twisted image descriptors are extracted from
+ * @param[in] mask A binary mask (not used yet)
+ * @param[inout] filt Used for vl_feat extraction
+ * @param[in] featuresPerOctave A map between octave and corresponding feature indexes
+ * @param[in] finalTransformation The transformation between the original image and the twisted image
+ * @param[inout] currentPictureKeypoints Keypoints extracted from the twisted image (for graphic purposes)
+ * @param[in] tilt The ASIFT tilt parameter of the current twisted image 
+ * @param[in] phi The ASIFT phi parameter of the current twisted image 
+ */
+template < typename T >
+void extractFromTwistedImage(std::unique_ptr<Regions> &regions,
+        const SiftParams& params,
+        const image::Image<float>& image,
+        const image::Image<unsigned char> * mask,
+        VlSiftFilt *filt,
+        const std::map<int, std::vector<VlSiftKeypoint>>& featuresPerOctave,
+        const cv::Mat& finalTransformation,
+        std::vector<features::SIOPointFeature>& currentPictureKeypoints,
+        const float tilt,
+        const float phi)
+{
+  //std::cout << "extractFromTwistedImage" << std::endl;
+  if (params._edge_threshold >= 0)
+    vl_sift_set_edge_thresh(filt, params._edge_threshold);
+  if (params._peak_threshold >= 0)
+    vl_sift_set_peak_thresh(filt, 255.0 * params._peak_threshold/params._num_scales);
+
+  // Descriptors extraction
+  vl_sift_process_first_octave(filt, image.data());
+  Descriptor<vl_sift_pix, 128> vlFeatDescriptor;
+  Descriptor<T, 128> descriptor;
+
+  typedef Scalar_Regions<SIOPointFeature,T,128> SIFT_Region_T;
+
+  // Build alias to cached data
+  SIFT_Region_T * regionsCasted = dynamic_cast<SIFT_Region_T*>(regions.get());
+  // reserve some memory for faster keypoint saving
+  const std::size_t reserveSize = (params._gridSize && params._maxTotalKeypoints) ? params._maxTotalKeypoints : 2000;
+  regionsCasted->Features().reserve(regionsCasted->Features().size() + reserveSize);
+  regionsCasted->Descriptors().reserve(regionsCasted->Descriptors().size() + reserveSize);
+  int cptOctaves = 0;
+
+
+  float phiRad = phi * M_PI/180.;
+  double s = sin(phiRad);
+  double c = cos(phiRad);
+
+  while(true)
+  {
+    vl_sift_detect(filt); // TODO: check if we can remove that
+
+    // Update gradient before launching parallel extraction
+    vl_sift_update_gradient(filt);
+
+
+    if(featuresPerOctave.find(cptOctaves) != featuresPerOctave.end())
+    {
+      const std::vector<VlSiftKeypoint>& vectKeyPoints = featuresPerOctave.at(cptOctaves);
+      const std::size_t nkeys = vectKeyPoints.size();
+
+      filt->nkeys = nkeys;
+      filt->keys_res = nkeys;
+      filt->keys = (VlSiftKeypoint*) vl_realloc(filt->keys,
+                              filt->keys_res * sizeof(VlSiftKeypoint));
+
+      for (std::size_t i = 0; i < nkeys; ++i)
+      {
+        cv::Point3f twistedKeys(vectKeyPoints[i].x, vectKeyPoints[i].y, 1);
+        cv::Mat twistedKeys_t = finalTransformation * cv::Mat(twistedKeys);
+        filt->keys[i].x = twistedKeys_t.at<float>(0,0);
+        filt->keys[i].y = twistedKeys_t.at<float>(1,0);
+        filt->keys[i].sigma = vectKeyPoints[i].sigma;
+        filt->keys[i].o = vectKeyPoints[i].o;
+        filt->keys[i].s = vectKeyPoints[i].s;
+        filt->keys[i].is = vectKeyPoints[i].is;
+        filt->keys[i].ix = vectKeyPoints[i].ix;
+        filt->keys[i].iy = vectKeyPoints[i].iy;
+      }
+
+      #ifdef OPENMVG_USE_OPENMP
+      #pragma omp parallel for private(vlFeatDescriptor, descriptor)
+      #endif
+      for (int i = 0; i < nkeys; ++i)
+      {
+        // Feature masking
+        if(mask)
+        {
+          const image::Image<unsigned char> & maskIma = *mask;
+          if (maskIma(filt->keys[i].y, filt->keys[i].x) > 0)
+            continue;
+        }
+
+        double angles [4] = {0.0, 0.0, 0.0, 0.0};
+        int nangles; // by default (1 upright feature)
+        nangles = vl_sift_calc_keypoint_orientations(filt, angles, &filt->keys[i]);
+        nangles = 1; // Don't use multiple angles in ASIFT
+        for (int q=0 ; q < nangles ; ++q)
+        {
+          vlFeatDescriptor.clear(0);
+          vl_sift_calc_keypoint_descriptor(filt, &vlFeatDescriptor[0], &filt->keys[i], angles[q]);
+
+          const SIOPointFeature fp(vectKeyPoints[i].x, vectKeyPoints[i].y,
+                         filt->keys[i].sigma, angles[q], tilt, phi);
+
+          SIOPointFeature currentPictureFp(filt->keys[i].x, filt->keys[i].y, filt->keys[i].sigma, angles[q]);
+          convertSIFT<T>(&vlFeatDescriptor[0], descriptor, params._root_sift);
+          #ifdef OPENMVG_USE_OPENMP
+          #pragma omp critical
+          #endif
+          {
+            regionsCasted->Descriptors().push_back(descriptor);
+            regionsCasted->Features().push_back(fp);
+            currentPictureKeypoints.push_back(currentPictureFp);
+          }
+        }
+      }
+    }
+    ++cptOctaves;
+    if (vl_sift_process_next_octave(filt))
+      break; // Last octave
+  }
+}
+
+
+/**
+ * @brief Extract ASIFT regions (in float or unsigned char).
+ * A first extraction is done using classic SIFT descriptors. The image is twisted in different ways.
+ * Then, for each twist, for each feature, a new descriptor is extracted.
+ * @param image - The input image
+ * @param regions - The detected regions and attributes (the caller must delete the allocated data)
+ * @param params - The parameters of the SIFT extractor
+ * @param bOrientation - Compute orientation of SIFT descriptor (for the first extraction only)
+ * @param mask - 8-bit gray image for keypoint filtering (optional).
+ */
+template < typename T >
+bool extractASIFT(const image::Image<unsigned char>& image,
+    std::unique_ptr<Regions>& regions,
+    const ASiftParams& params,
+    const bool bOrientation,
+    const image::Image<unsigned char> * mask)
+{
+  const int w = image.Width(), h = image.Height();
+  //Convert to float
+  const image::Image<float> imageFloat(image.GetMat().cast<float>());
+
+  std::vector<VlSiftKeypoint> vectKeyPoints;
+
+  VlSiftFilt *mainFilt = vl_sift_new(w, h, params._num_octaves, params._num_scales, params._first_octave);
+  extractFromFirstImage<T>(regions, params, bOrientation, mask, imageFloat, mainFilt, vectKeyPoints);
+  applyGrid<T>(regions, params, vectKeyPoints, w, h);
+
+  const int nbFeatures = vectKeyPoints.size();
+  std::map<int, std::vector<VlSiftKeypoint>> featuresPerOctave;
+  for(int i = 0; i < nbFeatures; ++i)
+  {
+    featuresPerOctave[vectKeyPoints[i].o].push_back(vectKeyPoints[i]);
+  }
+  vl_sift_delete(mainFilt);
+
+  cv::Mat imgCV;
+  cv::Mat maskCV; // not used yet
+  cv::eigen2cv(imageFloat.GetMat(), imgCV);
+
+  for(int tilt = 1; tilt <= params._nbTilts; tilt++)
+  {
+    double t;
+    if(params._stepTilts)
+    {
+      t = 1 + tilt*params._stepTilts;
+    }
+    else
+    {
+      t = pow(2, 0.5*tilt);
+    }
+
+    for(double phi = 0; phi < 180; phi += 72.0/t)
+    {
+      cv::Mat twistedImageCV;
+      cv::Mat finalTransformation;
+      std::vector<features::SIOPointFeature> currentPictureKeypoints;
+
+      getTwistedImage(imgCV, twistedImageCV, t, phi, maskCV, finalTransformation);
+
+      image::Image<float> twistedImage(twistedImageCV.cols,twistedImageCV.rows);
+      cv::cv2eigen(twistedImageCV, twistedImage);
+
+      VlSiftFilt * twistedFilt = vl_sift_new(twistedImage.Width(), twistedImage.Height(), params._num_octaves, params._num_scales, params._first_octave);
+      extractFromTwistedImage<T>(regions, params, twistedImage, mask, twistedFilt, featuresPerOctave, finalTransformation, currentPictureKeypoints, t, phi);
+
+      vl_sift_delete(twistedFilt);
+    }
+  }
+
+
+  return true;
+}
+
+template
+bool extractASIFT<unsigned char>(const image::Image<unsigned char>& image,
+    std::unique_ptr<Regions>& regions,
+    const ASiftParams& params,
+    const bool bOrientation,
+    const image::Image<unsigned char> * mask);
+
+template
+bool extractASIFT<float>(const image::Image<unsigned char>& image,
+    std::unique_ptr<Regions>& regions,
+    const ASiftParams& params,
+    const bool bOrientation,
+    const image::Image<unsigned char> * mask);
 
 /**
  * @brief Extract SIFT regions (in float or unsigned char).

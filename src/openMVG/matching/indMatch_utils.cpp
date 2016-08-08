@@ -18,6 +18,50 @@
 namespace openMVG {
 namespace matching {
 
+void createVectFeatures(const std::vector<features::PointFeature> &features,
+        std::vector<IndexT>& indexVect)
+{
+  std::map<std::pair<float,float>, IndexT> mapId2Index;
+
+  IndexT cpt = 0;
+  for(auto& feat : features)
+  {
+    std::pair<float,float> currentPair(feat.x(), feat.y());
+    std::map<std::pair<float,float>, IndexT>::iterator it = mapId2Index.find(currentPair);
+    if(it != mapId2Index.end())
+    {
+      indexVect.push_back(it->second);
+    }
+    else
+    {
+      mapId2Index.insert(std::pair<std::pair<float,float>, IndexT>(currentPair,cpt));
+      indexVect.push_back(cpt);
+    }
+    ++cpt;
+  }
+  std::cout << "features.size(): " << features.size() << std::endl;
+  std::cout << "mapId2Index.size(): " << mapId2Index.size() << std::endl;
+}
+
+void remapFeaturesToFirstIndex(std::vector<IndMatch> & vec_match,
+        const std::vector<features::PointFeature> &featuresI,
+        const std::vector<features::PointFeature> &featuresJ)
+{
+  std::vector<IndexT> indexVectI;
+  std::vector<IndexT> indexVectJ;
+
+  createVectFeatures(featuresI, indexVectI);
+  createVectFeatures(featuresJ, indexVectJ);
+
+  for(IndMatch& match: vec_match)
+  {
+    match._i = indexVectI[match._i];
+    match._j = indexVectJ[match._j];
+  }
+}
+
+
+
 bool LoadMatchFile(
   PairWiseMatches & matches,
   const std::string & folder,

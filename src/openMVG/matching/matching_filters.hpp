@@ -9,6 +9,7 @@
 #define OPENMVG_MATCHING_MATCHINGFILTERS_H
 
 #include "openMVG/matching/indMatch.hpp"
+#include "openMVG/features/regions.hpp"
 #include <algorithm>
 #include <cassert>
 #include <iterator>
@@ -55,9 +56,63 @@ static inline void NNdistanceRatio
     DataInputIterator iter2 = iter;
     std::advance(iter2, 1);
     if ( (*iter) < fratio * (*iter2))
+        vec_ratioOkIndex.push_back(static_cast<int>(i));
+  }
+}
+
+// Consider the match valid if the 2 first matches correspond to the "same" feature.
+//
+// In [Mishkin 2015] "MODS: Fast and Robust Method for Two-View Matching" they introduce the FGINN strategy
+// "First Geometrically Inconsistent Nearest Neighbor".
+// Here, for simplicity and performances, we don't search for the first
+// geometrically inconsistent but assume that the match is strong enough if
+// the 2 nearest neighbors are on the same image region.
+// It could be 2 really close features or the same feature with multiple
+// descriptors (different orientations of SIFT for instance).
+// Warning: This code assumes that NNN__ is 2.
+template <typename DataInputIterator>
+static inline void NNdistanceRatio_multiDesc
+(
+  DataInputIterator first, // distance start
+  DataInputIterator last,  // distance end
+  int NN, // Number of neighbor in iterator sequence (minimum required 2)
+  const features::Regions* regions,
+  const matching::IndMatches& vec_nIndice,
+  std::vector<int> & vec_ratioOkIndex, // output (index that respect NN dist Ratio)
+  float fratio = 0.6f) // ratio value
+{
+  assert( NN >= 2);
+
+  const size_t n = std::distance(first,last);
+  vec_ratioOkIndex.clear();
+  vec_ratioOkIndex.reserve(n/NN);
+  DataInputIterator iter = first;
+  for(size_t i=0; i < n/NN; ++i, std::advance(iter, NN))
+  {
+    const Vec2 vecA = regions->GetRegionPosition(vec_nIndice[i*NN]._j);
+    DataInputIterator iter2 = iter;
+    std::advance(iter2, 1);
+    bool validMatch = true;
+    for(size_t j=0; j < NN; ++j, ++iter2)
+    {
+      const Vec2 vecB = regions->GetRegionPosition(vec_nIndice[i*NN+j]._j);
+      if(std::abs(vecA.x() - vecB.x()) < 10.0 &&
+         std::abs(vecA.y() - vecB.y()) < 10.0)
+      {
+        continue;
+      }
+      validMatch = false;
+      if ((*iter) < 90000 && (*iter) < fratio * (*iter2))
+      {
+        validMatch = true;
+        break;
+      }
+    }
+    if(validMatch)
       vec_ratioOkIndex.push_back(static_cast<int>(i));
   }
 }
+
 
 /**
   * Symmetric matches filtering :
