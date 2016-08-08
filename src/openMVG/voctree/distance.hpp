@@ -29,6 +29,7 @@ struct L2
       result_type diff = (result_type)a[i] - (result_type)b[i];
       result += diff*diff;
     }
+    assert(result >= 0);
     return result;
   }
 };
