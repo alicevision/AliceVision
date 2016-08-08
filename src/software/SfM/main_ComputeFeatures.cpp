@@ -224,7 +224,7 @@ int main(int argc, char **argv)
   bool bUpRight = false;
   std::string sImage_Describer_Method = "SIFT";
   bool bForce = false;
-  std::string sFeaturePreset = "";
+  std::string sFeaturePreset = "NORMAL";
   int rangeStart = -1;
   int rangeSize = 1;
 
@@ -254,7 +254,7 @@ int main(int argc, char **argv)
   {
     std::cerr << "Usage: " << argv[0] << '\n'
     << "[-i|--input_file] a SfM_Data file \n"
-    << "[-o|--outdir path] output path for the features and descriptors files (*.feat, *.desc)\n"
+    << "[-o|--outdir] output path for the features and descriptors files (*.feat, *.desc)\n"
     << "\n[Optional]\n"
     << "[-f|--force] Force to recompute data\n"
     << "[-m|--describerMethod]\n"
@@ -293,7 +293,7 @@ int main(int argc, char **argv)
             << "--outdir " << sOutDir << std::endl
             << "--describerMethod " << sImage_Describer_Method << std::endl
             << "--upright " << bUpRight << std::endl
-            << "--describerPreset " << (sFeaturePreset.empty() ? "NORMAL" : sFeaturePreset) << std::endl
+            << "--describerPreset " << sFeaturePreset << std::endl
             << "--force " << bForce << std::endl
             << "--range_start " << rangeStart << std::endl
             << "--range_size " << rangeSize << std::endl;
