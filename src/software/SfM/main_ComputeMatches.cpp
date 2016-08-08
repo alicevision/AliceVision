@@ -91,6 +91,7 @@ int main(int argc, char **argv)
 
   std::string sSfM_Data_Filename;
   std::string sMatchesDirectory = "";
+  std::string featDirectory = "";
   std::string sGeometricModel = "f";
   float fDistRatio = 0.8f;
   int iMatchingVideoMode = -1;
@@ -112,6 +113,7 @@ int main(int argc, char **argv)
   cmd.add( make_option('i', sSfM_Data_Filename, "input_file") );
   cmd.add( make_option('o', sMatchesDirectory, "out_dir") );
   // Options
+  cmd.add( make_option('j', featDirectory, "feat_dir") );
   cmd.add( make_option('r', fDistRatio, "ratio") );
   cmd.add( make_option('g', sGeometricModel, "geometric_model") );
   cmd.add( make_option('v', iMatchingVideoMode, "video_mode_matching") );
@@ -140,10 +142,10 @@ int main(int argc, char **argv)
       << "[-o|--out_dir path]\n"
       << "   path of the directory containing the extracted features and in which computed matches will be stored\n"
       << "\n[Optional]\n"
-      << "[-f|--force] Force to recompute data\n"
-      << "[-p|--save_putative_matches] Save putative matches\n"
-      << "[-r|--ratio] Distance ratio to discard non meaningful matches\n"
-      << "   0.8: (default).\n"
+      << "[-j|--feat_dir] path of the directory containing the .feat files (default: 'out_dir')\n"
+      << "[-f|--force] Force to recompute data (default: 0)\n"
+      << "[-p|--save_putative_matches] Save putative matches (default: 0)\n"
+      << "[-r|--ratio] Distance ratio to discard non meaningful matches (default: 0.8).\n"
       << "[-g|--geometric_model]\n"
       << "  (pairwise correspondences filtering thanks to robust model estimation):\n"
       << "   f: (default) fundamental matrix,\n"
@@ -194,6 +196,7 @@ int main(int argc, char **argv)
             << "--input_file " << sSfM_Data_Filename << "\n"
             << "--out_dir " << sMatchesDirectory << "\n"
             << "Optional parameters:" << "\n"
+            << "--feat_dir " << featDirectory << "\n"
             << "--force " << bForce << "\n"
             << "--save_putative_matches " << bSavePutativeMatches << "\n"
             << "--ratio " << fDistRatio << "\n"
@@ -220,10 +223,24 @@ int main(int argc, char **argv)
       return EXIT_FAILURE;
     }
   }
-
-  if(sMatchesDirectory.empty() || !stlplus::is_folder(sMatchesDirectory))  {
-    std::cerr << "\nIt is an invalid output directory" << std::endl;
+  if(sMatchesDirectory.empty())
+  {
+    std::cerr << "\nNeed to set an output folder for matches." << std::endl;
     return EXIT_FAILURE;
+  }
+  // Create output dir
+  if(!stlplus::folder_exists(sMatchesDirectory))
+  {
+    if(!stlplus::folder_create(sMatchesDirectory))
+    {
+      std::cerr << "Cannot create output directory" << std::endl;
+      return EXIT_FAILURE;
+    }
+  }
+  if(featDirectory.empty())
+  {
+    // by default, it's the same than the match dir.
+    featDirectory = sMatchesDirectory;
   }
 
   EGeometricModel eGeometricModelToCompute = FUNDAMENTAL_MATRIX;
