@@ -76,7 +76,6 @@ void getStatsMap(const PairWiseMatches& map)
   {
     std::cout << stat.first << "\t" << stat.second << std::endl;
   }
-  std::cout << "There are " << nbMatches << " matches." << std::endl;
 #endif
 }
 
@@ -216,9 +215,11 @@ int main(int argc, char **argv)
 
   EPairMode ePairmode = (iMatchingVideoMode == -1 ) ? PAIR_EXHAUSTIVE : PAIR_CONTIGUOUS;
 
-  if(sPredefinedPairList.length()) {
+  if(sPredefinedPairList.length())
+  {
     ePairmode = PAIR_FROM_FILE;
-    if (iMatchingVideoMode>0) {
+    if(iMatchingVideoMode>0)
+    {
       std::cerr << "\nIncompatible options: --videoModeMatching and --pairList" << std::endl;
       return EXIT_FAILURE;
     }
@@ -482,8 +483,14 @@ int main(int argc, char **argv)
     }
   }
 
-    std::cout << "PUTATIVE" << std::endl;
-    getStatsMap(map_PutativesMatches);
+  //getStatsMap(map_PutativesMatches);
+  int nbPutativeMatches = 0;
+  for(const auto& imgMatches: map_PutativesMatches)
+  {
+    nbPutativeMatches += imgMatches.second.size();
+  }
+  std::cout << "There are " << nbPutativeMatches << " putative matches." << std::endl;
+
   //---------------------------------------
   // b. Geometric filtering of putative matches
   //    - AContrario Estimation of the desired geometric model
@@ -638,7 +645,13 @@ int main(int argc, char **argv)
 #ifdef OPENMVG_DEBUG_MATCHING
   {
     std::cout << "GEOMETRIC" << std::endl;
-    getStatsMap(map_GeometricMatches);
+    //getStatsMap(finalMatches);
+      int nbGeometricMatches = 0;
+    for(const auto& imgMatches: finalMatches)
+    {
+      nbGeometricMatches += imgMatches.second.size();
+    }
+    std::cout << "There are " << nbGeometricMatches << " geometric matches." << std::endl;
   }
 #endif
 
