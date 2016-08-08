@@ -152,6 +152,9 @@ struct ASiftParams : public SiftParams
   float _stepTilts;
 };
 
+void printMultiStats(const std::map<std::pair<float,float>, std::vector<float>>& dataMatrix);
+
+void retrieveASIFTDistances(const std::unique_ptr<Regions>& regions, std::map<std::pair<float,float>, std::vector<float>>& out_distances);
 
 /**
  * @brief Extract ASIFT regions (in float or unsigned char).

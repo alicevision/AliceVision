@@ -1,4 +1,5 @@
 #include "sift.hpp"
+#include <third_party/histogram/histogram.hpp>
 
 #include <openMVG/types.hpp>
 
@@ -31,6 +32,29 @@ void getStats(const std::vector<float>& dataVect)
   {
     std::cout << stat.first << "\t" << stat.second << std::endl;
   }
+}
+
+/**
+ * @brief Prints an histogram of the data (console) for a matrix
+ * Used for inter-descriptor distances (class are distances/1000)
+ * @param dataMatrix - the vector of vector containing the data
+ */
+void printMultiStats(const std::map<std::pair<float,float>, std::vector<float>>& dataMatrix)
+{
+  std::vector<Histogram<float>> histograms;
+
+  for(auto& distPerVariation : dataMatrix)
+  {
+    Histogram<float> variationHistogram(0.0, 300.0, 100);
+    variationHistogram.Add(distPerVariation.second.begin(), distPerVariation.second.end());
+
+    histograms.emplace_back(variationHistogram);
+  }
+  std::cout << "\t";
+  for(auto& distPerVariation : dataMatrix)
+    std::cout << distPerVariation.first.first << "/" << distPerVariation.first.second << "\t";
+  std::cout << std::endl;
+  std::cout << multiHistogramToString(histograms) << std::endl;
 }
 
 
@@ -89,6 +113,66 @@ inline void convertSIFT<unsigned char>(
   }
 }
 
+/**
+ * @brief For a given region, creates a map with features positions as key and index as values
+ * @param regions -  The detected regions and attributes
+ * @param mapPairIndexes - the output map
+ */
+void getIndexMap(const std::unique_ptr<Regions>& regions,
+                       std::map<std::pair<float,float>, std::vector<int> >& mapPairIndexes)
+{
+  for(int i = 0; i < regions->RegionCount(); i++)
+  {
+    const auto& feat = regions->GetRegionPosition(i);
+    const std::pair<float,float> currentPair = std::make_pair(feat.x(), feat.y());
+    mapPairIndexes[currentPair].push_back(i);
+  }
+}
+
+/**
+ * @brief For a given region, after ASIFT extraction, and a map with features positions as key and index as values,
+ * computes distance between the descriptors from the twisted image and the corresponding descriptor from the input picture
+ * and prints some statistics (console)
+ * @param regions -  The detected regions and attributes
+ * @param mapPairIndexes - the output map
+ */
+//std::map<(tilt,phi), std::vector<distance>> allDistances;
+void retrieveASIFTDistances(const std::unique_ptr<Regions>& regions, std::map<std::pair<float,float>, std::vector<float>>& out_distances)
+{
+  std::map<std::pair<float,float>, std::vector<int> > mapPairIndexes;
+  getIndexMap(regions, mapPairIndexes);
+
+  const features::SIFT_Regions * regionsCasted = dynamic_cast<features::SIFT_Regions*>(regions.get());
+  const auto& descriptors = regionsCasted->Descriptors();
+
+  for(const auto& currentPairIndex : mapPairIndexes)
+  {
+    const std::vector<int>& currentIndexVector = currentPairIndex.second;
+
+    // First descriptor from the original input image
+    int siftFeatureIndex = currentIndexVector[0];
+    const auto& refFeat = regionsCasted->Features()[siftFeatureIndex];
+    assert(refFeat.tilt() == 0 && refFeat.phi() == 0);
+    const auto& refDesc = descriptors[siftFeatureIndex];
+
+    for(int i = 1; i < currentIndexVector.size(); ++i)
+    {
+      // Descriptor modified (tilt/phi)
+      const auto& comparedDesc = descriptors[currentIndexVector[i]];
+      float distance = voctree::L2<Descriptor<unsigned char, 128>>()(refDesc, comparedDesc);
+      assert(distance >= 0);
+      const auto& comparedFeat = regionsCasted->Features()[currentIndexVector[i]];
+      out_distances[std::make_pair(comparedFeat.tilt(), comparedFeat.phi())].push_back(distance/1000.0);
+    }
+  }
+}
+
+void printStatisticsASIFT(const std::unique_ptr<Regions>& regions)
+{
+  std::map<std::pair<float,float>, std::vector<float>> distances;
+  retrieveASIFTDistances(regions, distances);
+  printMultiStats(distances);
+}
 
 /**
  * @brief Twists an image for the ASIFT extraction

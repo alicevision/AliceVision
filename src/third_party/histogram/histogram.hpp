@@ -142,6 +142,33 @@ private:
   size_t overflow, underflow; //count under/over flow
 };
 
+/**
+ * @warning Assumes that all histograms have the same distribution.
+ * @param[in] histograms list of histograms to print
+ */
+template <typename T>
+std::string multiHistogramToString(const std::vector<Histogram<T>>& histograms)
+{
+  if(histograms.empty())
+    return std::string();
+  const Histogram<T>& firstHistogram = histograms.front();
+  std::ostringstream os;
+  const size_t n = firstHistogram.GetHist().size();
+  if(n == 0)
+    return std::string();
+
+  for (size_t i = 0; i < n; ++i)
+  {
+     os << std::setprecision(3)
+        << firstHistogram.GetStart() + (firstHistogram.GetEnd() - firstHistogram.GetStart() + 1) / double(n) * double(i);
+     for(const Histogram<T>& histogram: histograms)
+        os << "\t" << histogram.GetHist()[i];
+     os << "\n";
+  }
+//  os << std::setprecision(3) << End << std::endl;
+  return os.str();
+}
+
 } // namespace
 
 #endif // HISTOGRAMMING_H
