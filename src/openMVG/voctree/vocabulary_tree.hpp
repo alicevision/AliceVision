@@ -47,15 +47,16 @@ inline void computeSparseHistogram(const std::vector<Word>& document, SparseHist
   }
 }
 
-inline void computeSparseHistogramMultiDesc(const std::vector<Word>& document, SparseHistogram& v, std::vector<IndexT> &queryDescUID)
+inline void computeSparseHistogramMultiDesc(const std::vector<Word>& document, SparseHistogram& v, const std::vector<IndexT> &queryDescUID)
 {
   // for each visual word in the list
   for(std::size_t i = 0; i < document.size(); ++i)
   {
     Word word = document[i];
-    if(find(v[word].begin(), v[word].end(), queryDescUID[i]) == v[word].end())
+    std::vector<IndexT>& descUIDs = v[word];
+    if(std::find(descUIDs.begin(), descUIDs.end(), queryDescUID[i]) == descUIDs.end())
     {
-      v[word].push_back(queryDescUID[i]);
+      descUIDs.push_back(queryDescUID[i]);
     }
   }
 }
@@ -110,7 +111,7 @@ public:
   SparseHistogram softQuantizeToSparse(const std::vector<DescriptorT>& descriptors) const;
 
   template<class OtherDescriptorT>
-  SparseHistogram quantizeMultiToSparse(const std::vector<OtherDescriptorT>& features, std::vector<IndexT> &queryDescUID) const;
+  SparseHistogram quantizeMultiToSparse(const std::vector<OtherDescriptorT>& features, const std::vector<IndexT> &queryDescUID) const;
 
   /// Get the depth (number of levels) of the tree.
   uint32_t levels() const;
@@ -290,7 +291,7 @@ SparseHistogram VocabularyTree<VoctreeDescriptorT, Distance, VocDescAllocator>::
 
 template<class VoctreeDescriptorT, template<typename, typename> class Distance, class VocDescAllocator>
 template<class DescriptorT>
-SparseHistogram VocabularyTree<VoctreeDescriptorT, Distance, VocDescAllocator>::quantizeMultiToSparse(const std::vector<DescriptorT>& descriptors, std::vector<IndexT> &queryDescUID) const
+SparseHistogram VocabularyTree<VoctreeDescriptorT, Distance, VocDescAllocator>::quantizeMultiToSparse(const std::vector<DescriptorT>& descriptors, const std::vector<IndexT> &queryDescUID) const
 {
   SparseHistogram histo;
   std::vector<Word> doc(descriptors.size(), 0);;
