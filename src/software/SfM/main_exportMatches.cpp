@@ -62,11 +62,13 @@ int main(int argc, char ** argv)
 
   std::string sSfM_Data_Filename;
   std::string sMatchesDir;
+  std::string sFeatDir;
   std::string sMatchMode;
   std::string sOutDir = "";
 
   cmd.add( make_option('i', sSfM_Data_Filename, "input_file") );
   cmd.add( make_option('d', sMatchesDir, "matchdir") );
+  cmd.add( make_option('f', sFeatDir, "featdir") );
   cmd.add( make_option('m', sMatchMode, "matchmode") );
   cmd.add( make_option('o', sOutDir, "outdir") );
 
@@ -77,6 +79,7 @@ int main(int argc, char ** argv)
       std::cerr << "Export pairwise matches.\nUsage: " << argv[0] << "\n"
       << "[-i|--input_file file] path to a SfM_Data scene\n"
       << "[-d|--matchdir path]\n"
+      << "[-f|--featdir path]\n"
       << "[-m|--sMatchMode MODE] geometric matching mode (f, e or h)\n"
       << "[-o|--outdir path]\n"
       << std::endl;
@@ -105,7 +108,7 @@ int main(int argc, char ** argv)
   // Load SfM Scene regions
   //---------------------------------------
   // Init the regions_type from the image describer file (used for image regions extraction)
-  const std::string sImage_describer = stlplus::create_filespec(sMatchesDir, "image_describer", "json");
+  const std::string sImage_describer = stlplus::create_filespec(sFeatDir, "image_describer", "json");
   std::unique_ptr<Regions> regions_type = Init_region_type_from_file(sImage_describer);
   if (!regions_type)
   {
@@ -116,7 +119,7 @@ int main(int argc, char ** argv)
 
   // Read the features
   std::shared_ptr<Features_Provider> feats_provider = std::make_shared<Features_Provider>();
-  if (!feats_provider->load(sfm_data, sMatchesDir, regions_type)) {
+  if (!feats_provider->load(sfm_data, sFeatDir, regions_type)) {
     std::cerr << std::endl
       << "Invalid features." << std::endl;
     return EXIT_FAILURE;
