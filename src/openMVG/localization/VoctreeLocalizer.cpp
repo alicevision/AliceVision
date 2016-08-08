@@ -239,60 +239,6 @@ bool VoctreeLocalizer::localize(const image::Image<unsigned char> & imageGrey,
                   imagePath);
 }
 
-//@fixme deprecated.. now inside initDatabase
-
-bool VoctreeLocalizer::loadReconstructionDescriptors(const sfm::SfM_Data & sfm_data,
-                                                     const std::string & feat_directory)
-{
-  C_Progress_display my_progress_bar(sfm_data.GetViews().size(),
-                                     std::cout, "\n- Regions Loading -\n");
-
-  POPART_COUT("Build observations per view");
-  // Build observations per view
-  std::map<IndexT, std::vector<FeatureInImage> > observationsPerView;
-  for(auto landmarkValue : sfm_data.structure)
-  {
-    IndexT trackId = landmarkValue.first;
-    sfm::Landmark& landmark = landmarkValue.second;
-    for(auto obs : landmark.obs)
-    {
-      const IndexT viewId = obs.first;
-      const sfm::Observation& obs2d = obs.second;
-      observationsPerView[viewId].push_back(FeatureInImage(obs2d.id_feat, trackId));
-    }
-  }
-  for(auto featuresInImage : observationsPerView)
-  {
-    std::sort(featuresInImage.second.begin(), featuresInImage.second.end());
-  }
-
-  POPART_COUT("Load Features and Descriptors per view");
-  // Read for each view the corresponding regions and store them
-  for(sfm::Views::const_iterator iter = sfm_data.GetViews().begin();
-          iter != sfm_data.GetViews().end(); ++iter, ++my_progress_bar)
-  {
-    const IndexT id_view = iter->second->id_view;
-    Reconstructed_RegionsT& reconstructedRegion = _regions_per_view[id_view];
-
-    const std::string sImageName = stlplus::create_filespec(sfm_data.s_root_path, iter->second.get()->s_Img_path);
-    const std::string basename = stlplus::basename_part(sImageName);
-    const std::string featFilepath = stlplus::create_filespec(feat_directory, basename, ".feat");
-    const std::string descFilepath = stlplus::create_filespec(feat_directory, basename, ".desc");
-    //    std::cout << "Feat: " << featFilepath << std::endl;
-    //    std::cout << "Desc: " << descFilepath << std::endl;
-
-    if(!reconstructedRegion._regions.Load(featFilepath, descFilepath))
-    {
-      POPART_CERR("Invalid regions files for the view: " << sImageName);
-      return false;
-    }
-
-    // Filter descriptors to keep only the 3D reconstructed points
-    reconstructedRegion.filterRegions(observationsPerView[id_view]);
-  }
-  return true;
-}
-
 /**
  * @brief Initialize the database...
  */
@@ -322,7 +268,7 @@ bool VoctreeLocalizer::initDatabase(const std::string & vocTreeFilepath,
   {
     POPART_COUT("No weights specified, skipping...");
   }
-  
+
   // Load the descriptors and the features related to the images
   // for every image, pass the descriptors through the vocabulary tree and
   // add its visual words to the database.
@@ -382,7 +328,7 @@ bool VoctreeLocalizer::initDatabase(const std::string & vocTreeFilepath,
     }
 
     // Filter descriptors to keep only the 3D reconstructed points
-    currRecoRegions.filterRegions(observationsPerView[id_view]);
+    //currRecoRegions.filterRegions(observationsPerView[id_view]);
 
     voctree::SparseHistogram histo;
 
@@ -435,8 +381,8 @@ bool VoctreeLocalizer::localizeFirstBestResult(const features::SIFT_Regions &que
 //  }
 
   POPART_COUT("[matching]\tBuilding the matcher");
-  matching::RegionsMatcherT<MatcherT> matcher(queryRegions);
-  
+  matching::Matcher_Regions_Database matcher(param._matcherType, queryRegions);
+
   sfm::Image_Localizer_Match_Data resectionData;
   std::vector<pair<IndexT, IndexT> > associationIDs;
   geometry::Pose3 pose;
@@ -623,7 +569,6 @@ bool VoctreeLocalizer::localizeAllResults(const features::SIFT_Regions &queryReg
                                           LocalizationResult &localizationResult,
                                           const std::string& imagePath /*= std::string()*/)
 {
-  
   sfm::Image_Localizer_Match_Data resectionData;
   std::map< std::pair<IndexT, IndexT>, std::size_t > occurences;
   
@@ -749,171 +694,231 @@ void VoctreeLocalizer::getAllAssociations(const features::SIFT_Regions &queryReg
   // pass the descriptors through the vocabulary tree to get the visual words
   // associated to each feature
   POPART_COUT("[database]\tRequest closest images from voctree");
-  std::vector<voctree::Word> requestImageWords;
-  for(auto desc: queryRegions.Descriptors())
-  {
-    requestImageWords.push_back(_voctree.quantize(desc));
-  }
   
-  // Request closest images from voctree
   const std::vector<features::SIFT_Regions::DescriptorT>& queryDescriptors = queryRegions.Descriptors();
   std::vector<IndexT> queryDescUID;
   matching::createVectFeatures(queryRegions.GetRegionsPositions(), queryDescUID);
 
   voctree::SparseHistogram queryHistogram = _voctree.quantizeMultiToSparse(queryDescriptors, queryDescUID);
 
+  // Retrieve the closest images from voctree
   std::vector<voctree::DocMatch> matchedImages;
-  _database.find(requestImageWords, (param._numResults==0) ? (_database.size()) : (param._numResults) , matchedImages);
-  
-//  // just debugging bla bla
-//  // for each similar image found print score and number of features
-//  for(const voctree::DocMatch& currMatch : matchedImages )
-//  {
-//    // get the view handle
-//    const std::shared_ptr<sfm::View> matchedView = _sfm_data.views[currMatch.id];
-//    POPART_COUT( "[database]\t\t match " << matchedView->s_Img_path 
-//            << " [docid: "<< currMatch.id << "]"
-//            << " with score " << currMatch.score 
-//            << " and it has "  << _regions_per_view[currMatch.id]._regions.RegionCount() 
-//            << " features with 3D points");
-//  }
+  _database.find(queryHistogram, (param._numResults==0) ? (_database.size()) : (param._numResults) , matchedImages);
 
-
-  POPART_COUT("[matching]\tBuilding the matcher");
-  matching::RegionsMatcherT<MatcherT> matcher(queryRegions);
-
-  
-  std::map< std::pair<IndexT, IndexT>, std::size_t > repeated;
-  
-  // B. for each found similar image, try to find the correspondences between the 
-  // query image adn the similar image
-  // stop when param._maxResults successful matches have been found
-  std::size_t goodMatches = 0;
-  for(const voctree::DocMatch& matchedImage : matchedImages)
+  if(param._matcherType == matching::VOCTREE_MATCHER)
   {
-    // minimum number of points that allows a reliable 3D reconstruction
-    const size_t minNum3DPoints = 5;
-    
-    // the handler to the current view
-    const std::shared_ptr<sfm::View> matchedView = _sfm_data.views.at(matchedImage.id);
-    // its associated reconstructed regions
-    const Reconstructed_RegionsT& matchedRegions = _regions_per_view.at(matchedImage.id);
-    
-    // safeguard: we should match the query image with an image that has at least
-    // some 3D points visible --> if this is not true it is likely that it is an
-    // image of the dataset that was not reconstructed
-    if(matchedRegions._regions.RegionCount() < minNum3DPoints)
+    std::size_t goodMatches = 0;
+    for(const voctree::DocMatch& matchedImage : matchedImages)
     {
-      POPART_COUT("[matching]\tSkipping matching with " << matchedView->s_Img_path << " as it has too few visible 3D points");
-      continue;
-    }
-    POPART_COUT("[matching]\tTrying to match the query image with " << matchedView->s_Img_path);
-    
-    // its associated intrinsics
-    // this is just ugly!
-    const cameras::IntrinsicBase *matchedIntrinsicsBase = _sfm_data.intrinsics.at(matchedView->id_intrinsic).get();
-    if ( !isPinhole(matchedIntrinsicsBase->getType()) )
-    {
-      //@fixme maybe better to throw something here
-      POPART_CERR("Only Pinhole cameras are supported!");
-      return;
-    }
-    const cameras::Pinhole_Intrinsic *matchedIntrinsics = (const cameras::Pinhole_Intrinsic*)(matchedIntrinsicsBase);
-     
-    std::vector<matching::IndMatch> vec_featureMatches;
-    bool matchWorked = robustMatching( matcher, 
-                                      // pass the input intrinsic if they are valid, null otherwise
-                                      (useInputIntrinsics) ? &queryIntrinsics : nullptr,
-                                      matchedRegions,
-                                      matchedIntrinsics,
-                                      param._fDistRatio,
-                                      param._matchingError,
-                                      param._useGuidedMatching,
-                                      imageSize,
-                                      std::make_pair(matchedView->ui_width, matchedView->ui_height), 
-                                      vec_featureMatches);
-    if (!matchWorked)
-    {
-//      POPART_COUT("[matching]\tMatching with " << matchedView->s_Img_path << " failed! Skipping image");
-      continue;
-    }
-    else
-    {
-      POPART_COUT("[matching]\tFound " << vec_featureMatches.size() << " matches");
-    }
-    assert(vec_featureMatches.size()>0);
-    
-    // if debug is enable save the matches between the query image and the current matching image
-    // It saves the feature matches in a folder with the same name as the query
-    // image, if it does not exist it will create it. The final svg file will have
-    // a name like this: queryImage_matchedImage.svg placed in the following directory:
-    // param._visualDebug/queryImage/
-    if(!param._visualDebug.empty() && !imagePath.empty())
-    {
-      namespace bfs = boost::filesystem;
-      const auto &matchedViewIndex = matchedImage.id;
-      const sfm::View *mview = _sfm_data.GetViews().at(matchedViewIndex).get();
-      // the current query image without extension
-      const auto queryImage = bfs::path(imagePath).stem();
-      // the matching image without extension
-      const auto matchedImage = bfs::path(mview->s_Img_path).stem();
-      // the full path of the matching image
-      const auto matchedPath = (bfs::path(_sfm_data.s_root_path) /  bfs::path(mview->s_Img_path)).string();
+      const voctree::SparseHistogram& dbHisto = _database.getSparseHistogramPerImage().at(matchedImage.id);
+      const Reconstructed_RegionsT& dbRegions = _regions_per_view.at(matchedImage.id);
 
-      // the directory where to save the feature matches
-      const auto baseDir = bfs::path(param._visualDebug) / queryImage;
-      if((!bfs::exists(baseDir)))
+      if(dbRegions._associated3dPoint.size() == 0)
+        continue;
+
+      // Matching points
+      std::vector<matching::IndMatch> vec_featureMatches;
+      for(const auto& currentDbLeaf: dbHisto)
       {
-        POPART_COUT("created " << baseDir.string());
-        bfs::create_directories(baseDir);
+        const auto& queryLeafIt = queryHistogram.find(currentDbLeaf.first);
+        // Leaf not in common
+        if (queryLeafIt == queryHistogram.end())
+          continue;
+        // Multiple desc in the same leaf (on one of the 2 histograms)
+        if(currentDbLeaf.second.size() != 1 || queryLeafIt->second.size() != 1)
+          continue;
+
+        double dist = dbRegions._regions.SquaredDescriptorDistance(currentDbLeaf.second[0], &queryRegions, queryLeafIt->second[0]);
+        openMVG::matching::IndMatch currentMatch = openMVG::matching::IndMatch(queryLeafIt->second[0], currentDbLeaf.second[0], dist);
+        vec_featureMatches.push_back(currentMatch);
+      }
+
+      std::vector<IndexT> indexVect;
+      createVectFeatures(dbRegions._regions.GetRegionsPositions(), indexVect);
+      remapFeaturesToFirstIndex(vec_featureMatches, dbRegions._regions.GetRegionsPositions(), queryRegions.GetRegionsPositions());
+
+      // Remove duplicates
+      matching::removeDuplicateMatches(vec_featureMatches);
+      // Remove matches that have the same (X,Y) coordinates
+      matching::IndMatchDecorator<float> matchDeduplicator(vec_featureMatches,
+          dbRegions._regions.GetRegionsPositions(), queryRegions.GetRegionsPositions());
+      matchDeduplicator.getDeduplicated(vec_featureMatches);
+
+      assert(vec_featureMatches.size()>0);
+      // C. recover the 2D-3D associations from the matches
+      // Each matched feature in the current similar image is associated to a 3D point
+      for(const matching::IndMatch& featureMatch : vec_featureMatches)
+      {
+        // the ID of the 3D point
+        if(featureMatch._j > vec_featureMatches.size())
+          continue;
+
+        const IndexT pt3D_id = dbRegions._associated3dPoint[featureMatch._j];
+        const IndexT pt2D_id = featureMatch._i;
+
+        const auto key = std::make_pair(pt3D_id, pt2D_id);
+        if(occurences.count(key))
+        {
+          ++occurences[key];
+        }
+        else
+        {
+          occurences[key] = 1;
+        }
       }
       
-      // damn you, boost, what does it take to make the operator "+"?
-      // the final filename for the output svg file as a composition of the query
-      // image and the matched image
-      auto outputName = baseDir / queryImage;
-      outputName += "_";
-      outputName += matchedImage;
-      outputName += ".svg";
-
-      features::saveMatches2SVG(imagePath,
-                                imageSize,
-                                queryRegions.GetRegionsPositions(),
-                                matchedPath,
-                                std::make_pair(mview->ui_width, mview->ui_height),
-                                _regions_per_view.at(matchedViewIndex)._regions.GetRegionsPositions(),
-                                vec_featureMatches,
-                                outputName.string()); 
-    }
-    
-    // C. recover the 2D-3D associations from the matches 
-    // Each matched feature in the current similar image is associated to a 3D point
-    for(const matching::IndMatch& featureMatch : vec_featureMatches)
-    {
-      // the ID of the 3D point
-      const IndexT pt3D_id = matchedRegions._associated3dPoint[featureMatch._j];
-      const IndexT pt2D_id = featureMatch._i;
-      
-      const auto key = std::make_pair(pt3D_id, pt2D_id);
-      if(occurences.count(key))
+      ++goodMatches;
+      if((param._maxResults !=0) && (goodMatches == param._maxResults))
       {
-        occurences[key]++;
+        // let's say we have enough features
+        POPART_COUT("[matching]\tgot enough point from " << param._maxResults << " images");
+        break;
+      }
+    }
+  }
+  else
+  {
+    //  // just debugging bla bla
+    //  // for each similar image found print score and number of features
+    //  for(const voctree::DocMatch& currMatch : matchedImages )
+    //  {
+    //    // get the view handle
+    //    const std::shared_ptr<sfm::View> matchedView = _sfm_data.views[currMatch.id];
+    //    POPART_COUT( "[database]\t\t match " << matchedView->s_Img_path
+    //            << " [docid: "<< currMatch.id << "]"
+    //            << " with score " << currMatch.score
+    //            << " and it has "  << _regions_per_view[currMatch.id]._regions.RegionCount()
+    //            << " features with 3D points");
+    //  }
+
+    POPART_COUT("[matching]\tBuilding the matcher");
+    // Perform a full match with each reconstructed image
+    matching::Matcher_Regions_Database matcher(param._matcherType, queryRegions);
+
+    std::map< std::pair<IndexT, IndexT>, std::size_t > repeated;
+
+    // B. for each found similar image, try to find the correspondences between the
+    // query image adn the similar image
+    // stop when param._maxResults successful matches have been found
+    std::size_t goodMatches = 0;
+    for(const voctree::DocMatch& matchedImage : matchedImages)
+    {
+      // minimum number of points that allows a reliable 3D reconstruction
+      const size_t minNum3DPoints = 5;
+
+      // the handler to the current view
+      const std::shared_ptr<sfm::View> matchedView = _sfm_data.views.at(matchedImage.id);
+      // its associated reconstructed regions
+      const Reconstructed_RegionsT& matchedRegions = _regions_per_view.at(matchedImage.id);
+
+      // safeguard: we should match the query image with an image that has at least
+      // some 3D points visible --> if this is not true it is likely that it is an
+      // image of the dataset that was not reconstructed
+      if(matchedRegions._regions.RegionCount() < minNum3DPoints)
+      {
+        POPART_COUT("[matching]\tSkipping matching with " << matchedView->s_Img_path << " as it has too few visible 3D points");
+        continue;
+      }
+      POPART_COUT("[matching]\tTrying to match the query image with " << matchedView->s_Img_path);
+
+      // its associated intrinsics
+      // this is just ugly!
+      const cameras::IntrinsicBase *matchedIntrinsicsBase = _sfm_data.intrinsics.at(matchedView->id_intrinsic).get();
+      if ( !isPinhole(matchedIntrinsicsBase->getType()) )
+        throw std::logic_error("Error: Only Pinhole cameras are supported.");
+
+      const cameras::Pinhole_Intrinsic *matchedIntrinsics = (const cameras::Pinhole_Intrinsic*)(matchedIntrinsicsBase);
+
+      std::vector<matching::IndMatch> vec_featureMatches;
+      bool matchWorked = robustMatching( matcher,
+                                        // pass the input intrinsic if they are valid, null otherwise
+                                        (useInputIntrinsics) ? &queryIntrinsics : nullptr,
+                                        matchedRegions,
+                                        matchedIntrinsics,
+                                        param._fDistRatio,
+                                        param._matchingError,
+                                        param._useGuidedMatching,
+                                        imageSize,
+                                        std::make_pair(matchedView->ui_width, matchedView->ui_height),
+                                        vec_featureMatches);
+      if (!matchWorked)
+      {
+  //      POPART_COUT("[matching]\tMatching with " << matchedView->s_Img_path << " failed! Skipping image");
+        continue;
       }
       else
       {
-        occurences[key] = 1;
+        POPART_COUT("[matching]\tFound " << vec_featureMatches.size() << " matches");
+      }
+      assert(vec_featureMatches.size()>0);
+
+      // if debug is enable save the matches between the query image and the current matching image
+      // It saves the feature matches in a folder with the same name as the query
+      // image, if it does not exist it will create it. The final svg file will have
+      // a name like this: queryImage_matchedImage.svg placed in the following directory:
+      // param._visualDebug/queryImage/
+      if(!param._visualDebug.empty() && !imagePath.empty())
+      {
+        namespace bfs = boost::filesystem;
+        const auto &matchedViewIndex = matchedImage.id;
+        const sfm::View *mview = _sfm_data.GetViews().at(matchedViewIndex).get();
+        // the current query image without extension
+        const auto queryImage = bfs::path(imagePath).stem().string();
+        // the matching image without extension
+        const auto matchedImage = bfs::path(mview->s_Img_path).stem().string();
+        // the full path of the matching image
+        const auto matchedPath = (bfs::path(_sfm_data.s_root_path) /  bfs::path(mview->s_Img_path)).string();
+
+        // the directory where to save the feature matches
+        const auto baseDir = bfs::path(param._visualDebug) / queryImage;
+        if((!bfs::exists(baseDir)))
+        {
+          POPART_COUT("created " << baseDir.string());
+          bfs::create_directories(baseDir);
+        }
+
+        // the final filename for the output svg file as a composition of the query
+        // image and the matched image
+        auto outputName = baseDir / (queryImage + "_" + matchedImage + ".svg");
+
+        features::saveMatches2SVG(imagePath,
+                                  imageSize,
+                                  queryRegions.GetRegionsPositions(),
+                                  matchedPath,
+                                  std::make_pair(mview->ui_width, mview->ui_height),
+                                  _regions_per_view.at(matchedViewIndex)._regions.GetRegionsPositions(),
+                                  vec_featureMatches,
+                                  outputName.string());
       }
 
-    }
-    ++goodMatches;
-    if((param._maxResults !=0) && (goodMatches == param._maxResults))
-    { 
-      // let's say we have enough features
-      POPART_COUT("[matching]\tgot enough point from " << param._maxResults << " images");
-      break;
+      // C. recover the 2D-3D associations from the matches
+      // Each matched feature in the current similar image is associated to a 3D point
+      for(const matching::IndMatch& featureMatch : vec_featureMatches)
+      {
+        // the ID of the 3D point
+        const IndexT pt3D_id = matchedRegions._associated3dPoint[featureMatch._j];
+        const IndexT pt2D_id = featureMatch._i;
+
+        const auto key = std::make_pair(pt3D_id, pt2D_id);
+        if(occurences.count(key))
+        {
+          ++occurences[key];
+        }
+        else
+        {
+          occurences[key] = 1;
+        }
+      }
+      ++goodMatches;
+      if((param._maxResults !=0) && (goodMatches == param._maxResults))
+      {
+        // let's say we have enough features
+        POPART_COUT("[matching]\tgot enough point from " << param._maxResults << " images");
+        break;
+      }
     }
   }
-  
+
   const size_t numCollectedPts = occurences.size();
   
   pt2D = Mat2X(2, numCollectedPts);
@@ -933,7 +938,7 @@ void VoctreeLocalizer::getAllAssociations(const features::SIFT_Regions &queryReg
   
 }
 
-bool VoctreeLocalizer::robustMatching(matching::RegionsMatcherT<MatcherT> & matcher, 
+bool VoctreeLocalizer::robustMatching(matching::Matcher_Regions_Database& matcher,
                     const cameras::IntrinsicBase * queryIntrinsicsBase,   // the intrinsics of the image we are using as reference
                     const Reconstructed_RegionsT & matchedRegions,
                     const cameras::IntrinsicBase * matchedIntrinsicsBase,
@@ -980,7 +985,7 @@ bool VoctreeLocalizer::robustMatching(matching::RegionsMatcherT<MatcherT> & matc
   for(int i = 0; i < vec_featureMatches.size(); ++i)
   {
     const matching::IndMatch& match = vec_featureMatches[i];
-    const Vec2 &queryPoint = matcher.getDatabaseRegions()->GetRegionPosition(match._i);
+    const Vec2 &queryPoint = matcher.getRegionsMatcher().getDatabaseRegions()->GetRegionPosition(match._i);
     const Vec2 &matchedPoint = matchedRegions._regions.GetRegionPosition(match._j);
     
     if(canBeUndistorted)
@@ -1037,7 +1042,7 @@ bool VoctreeLocalizer::robustMatching(matching::RegionsMatcherT<MatcherT> & matc
             openMVG::fundamental::kernel::EpipolarDistanceError>(
             geometricFilter.m_F,
             queryIntrinsicsBase, // cameras::IntrinsicBase of the matched image
-            *matcher.getDatabaseRegions(), // features::Regions
+            *matcher.getRegionsMatcher().getDatabaseRegions(), // features::Regions
             matchedIntrinsicsBase, // cameras::IntrinsicBase of the query image
             matchedRegions._regions, // features::Regions
             Square(geometricFilter.m_dPrecision_robust),

@@ -1,5 +1,6 @@
 #include <openMVG/localization/ILocalizer.hpp>
 #include <openMVG/localization/VoctreeLocalizer.hpp>
+#include "openMVG/matching_image_collection/Matcher.hpp"
 #if HAVE_CCTAG
 #include <openMVG/localization/CCTagLocalizer.hpp>
 #endif
@@ -105,6 +106,7 @@ int main(int argc, char** argv)
   bool refineIntrinsics = false;
   double errorMax = 4.0;                    //< the maximum error allowed for resection
   double matchingError = 4.0;               //< the maximum error allowed for image matching with geometric validation
+  std::string sNearestMatchingMethod = "AUTO";
   
   // voctree parameters
   std::string algostring = "AllResults";
@@ -155,6 +157,8 @@ int main(int argc, char** argv)
           "Folder containing the .desc.")
       ("mediafile", po::value<std::string>(&mediaFilepath)->required(), 
           "The folder path or the filename for the media to track")
+      ("matcherType", po::value<std::string>(&sNearestMatchingMethod),
+          "The matcher type")
       ("refineIntrinsics", po::bool_switch(&refineIntrinsics), 
           "Enable/Disable camera intrinsics refinement for each localized image")
       ("reprojectionError", po::value<double>(&errorMax)->default_value(errorMax), 
@@ -273,6 +277,7 @@ int main(int argc, char** argv)
       POPART_COUT("\tmaxResults: " << maxResults);
       POPART_COUT("\tcommon views: " << numCommonViews);
       POPART_COUT("\talgorithm: " << algostring);
+      POPART_COUT("\tmatcherType: " << sNearestMatchingMethod);
       if(matchingError == 0) 
         matchingError = std::numeric_limits<double>::infinity();
       POPART_COUT("\tmatchingError: " << matchingError);
@@ -330,12 +335,17 @@ int main(int argc, char** argv)
     
     localization::VoctreeLocalizer::Parameters *tmpParam = new localization::VoctreeLocalizer::Parameters();
     param.reset(tmpParam);
-    tmpParam->_algorithm = localization::VoctreeLocalizer::initFromString(algostring);;
+    tmpParam->_algorithm = localization::VoctreeLocalizer::initFromString(algostring);
     tmpParam->_numResults = numResults;
     tmpParam->_maxResults = maxResults;
     tmpParam->_numCommonViews = numCommonViews;
     tmpParam->_ccTagUseCuda = false;
     tmpParam->_matchingError = matchingError;
+    if(sNearestMatchingMethod == "VOCTREE")
+    {
+      std::cout << "Using VOCTREE matcher" << std::endl;
+      tmpParam->_matcherType = matching::VOCTREE_MATCHER;
+    }
   }
 #if HAVE_CCTAG
   else
@@ -408,12 +418,14 @@ int main(int argc, char** argv)
     POPART_COUT("******************************");
     localization::LocalizationResult localizationResult;
     auto detect_start = std::chrono::steady_clock::now();
+
     localizer->localize(imageGrey, 
-                       param.get(),
-                       hasIntrinsics /*useInputIntrinsics*/,
-                       queryIntrinsics,
-                       localizationResult,
-                       currentImgName);
+                     param.get(),
+                     hasIntrinsics /*useInputIntrinsics*/,
+                     queryIntrinsics,
+                     localizationResult,
+                     currentImgName);
+
     auto detect_end = std::chrono::steady_clock::now();
     auto detect_elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(detect_end - detect_start);
     POPART_COUT("\nLocalization took  " << detect_elapsed.count() << " [ms]");

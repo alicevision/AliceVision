@@ -12,6 +12,7 @@
 #include "ILocalizer.hpp"
 
 #include <openMVG/features/image_describer.hpp>
+#include "openMVG/matching_image_collection/Matcher.hpp"
 #include <openMVG/sfm/sfm_data.hpp>
 #include <openMVG/sfm/pipelines/localization/SfM_Localizer.hpp>
 #include <openMVG/stl/stlMap.hpp>
@@ -54,6 +55,7 @@ public:
       _maxResults(10),
       _numCommonViews(3),
       _ccTagUseCuda(true),
+      _matcherType(matching::ANN_L2),
       _matchingError(std::numeric_limits<double>::infinity())
     { }
     
@@ -63,7 +65,8 @@ public:
     size_t _maxResults;         //< for algorithm AllResults, it stops the image matching when this number of matched images is reached
     size_t _numCommonViews;     //< number minimum common images in which a point must be seen to be used in cluster tracking
     bool _ccTagUseCuda;         //< ccTag-CUDA cannot process frames at different resolutions ATM, so set to false if localizer is used on images of differing sizes
-    double _matchingError;		//< maximum reprojection error allowed for image matching with geometric validation
+    double _matchingError;	    //< maximum reprojection error allowed for image matching with geometric validation
+    matching::EMatcherType _matcherType;
   };
   
 public:
@@ -219,14 +222,7 @@ private:
                                     const std::string & weightsFilepath,
                                     const std::string & feat_directory);
 
-#if USE_SIFT_FLOAT
-  typedef flann::L2<float> MetricT;
-  typedef matching::ArrayMatcher_Kdtree_Flann<float, MetricT> MatcherT;
-#else
-  typedef flann::L2<unsigned char> MetricT;
-  typedef matching::ArrayMatcher_Kdtree_Flann<unsigned char, MetricT> MatcherT;
-#endif
-  bool robustMatching(matching::RegionsMatcherT<MatcherT> & matcher, 
+  bool robustMatching(matching::Matcher_Regions_Database& matcher,
                       const cameras::IntrinsicBase * queryIntrinsics,// the intrinsics of the image we are using as reference
                       const Reconstructed_RegionsT & regionsToMatch,
                       const cameras::IntrinsicBase * matchedIntrinsics,
@@ -236,16 +232,7 @@ private:
                       const std::pair<size_t,size_t> & imageSizeI,     // size of the first image  
                       const std::pair<size_t,size_t> & imageSizeJ,     // size of the first image
                       std::vector<matching::IndMatch> & vec_featureMatches) const;
-  
-  /**
-   * @brief Load all the Descriptors who have contributed to the reconstruction.
-   * deprecated.. now inside initDatabase
-   */
-  bool loadReconstructionDescriptors(
-    const sfm::SfM_Data & sfm_data,
-    const std::string & feat_directory);
-  
-  
+
 public:
   
   // for each view index, it contains the features and descriptors that have an

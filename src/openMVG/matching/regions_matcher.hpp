@@ -11,6 +11,7 @@
 #include "openMVG/matching/indMatch.hpp"
 #include "openMVG/matching/indMatchDecoratorXY.hpp"
 #include "openMVG/matching/matching_filters.hpp"
+#include "openMVG/matching/indMatch_utils.hpp"
 
 #include "openMVG/numeric/numeric.h"
 #include "openMVG/features/regions.hpp"
@@ -49,7 +50,9 @@ void DistanceRatioMatch
 class RegionsMatcher
 {
   public:
-    
+   RegionsMatcher() : regions_(nullptr) {}
+   RegionsMatcher(const features::Regions& regions) : regions_(&regions) {}
+
    /**
     * @brief The destructor.
     */ 
@@ -79,6 +82,11 @@ class RegionsMatcher
       const features::Regions& query_regions,
       matching::IndMatches & vec_putative_matches
     ) = 0;
+
+    const features::Regions* getDatabaseRegions() const { return regions_; }
+
+  protected:
+    const features::Regions* regions_;
 };
 
 /**
@@ -124,6 +132,8 @@ class Matcher_Regions_Database
       matching::IndMatches & matches // photometric corresponding points
     ) const;
 
+    const RegionsMatcher& getRegionsMatcher() const { return *_matching_interface; }
+
   private:
   // Matcher Type
   matching::EMatcherType _eMatcherType;
@@ -139,7 +149,6 @@ class RegionsMatcherT : public RegionsMatcher
 {
 private:
   ArrayMatcherT matcher_;
-  const features::Regions* regions_;
   bool b_squared_metric_; // Store if the metric is squared or not
 public:
   typedef typename ArrayMatcherT::ScalarT Scalar;
@@ -148,7 +157,7 @@ public:
   /**
    * @brief Empty constructor, by default it initializes the database to an empty database.
    */
-  RegionsMatcherT() : regions_(nullptr) {}
+  RegionsMatcherT() {}
 
   /**
    * @brief Initialize the matcher with a Regions that will be used as database
@@ -158,7 +167,7 @@ public:
    * when matching two Regions.
    */
   RegionsMatcherT(const features::Regions& regions, bool b_squared_metric = false)
-    : regions_(&regions), b_squared_metric_(b_squared_metric)
+    : RegionsMatcher(regions), b_squared_metric_(b_squared_metric)
   {
     if (regions_->RegionCount() == 0)
       return;
