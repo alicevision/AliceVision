@@ -77,7 +77,7 @@ bool MatcherVoctree::Match(const float f_dist_ratio, const features::Regions& qu
   }
   
   // Remove duplicates
-  matching::IndMatch::getDeduplicated(vec_putative_matches);
+  matching::removeDuplicateMatches(vec_putative_matches);
 
   // Remove matches that have the same (X,Y) coordinates
   matching::IndMatchDecorator<float> matchDeduplicator(vec_putative_matches,

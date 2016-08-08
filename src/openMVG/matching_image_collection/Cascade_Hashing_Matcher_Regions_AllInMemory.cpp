@@ -194,7 +194,7 @@ void Match
       }
 
       // Remove duplicates
-      matching::IndMatch::getDeduplicated(vec_putative_matches);
+      matching::removeDuplicateMatches(vec_putative_matches);
 
       // Remove matches that have the same (X,Y) coordinates
       const std::vector<features::PointFeature> pointFeaturesJ = regionsJ.GetRegionsPositions();

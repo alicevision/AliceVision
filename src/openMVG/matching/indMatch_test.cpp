@@ -110,7 +110,7 @@ TEST(IndMatch, DuplicateRemoval_NoRemoval)
   vec_indMatch.push_back(IndMatch(0,1)); // 1
 
   // Check no removal
-  EXPECT_FALSE(IndMatch::getDeduplicated(vec_indMatch));
+  EXPECT_FALSE(removeDuplicateMatches(vec_indMatch));
 
   // Check lexigraphical sorting
   // Due to lexigraphical sorting (0,1) must appears first
@@ -128,7 +128,7 @@ TEST(IndMatch, DuplicateRemoval_Simple)
   vec_indMatch.push_back(IndMatch(1,2)); // 2
   vec_indMatch.push_back(IndMatch(1,2)); // 3: error with addition 2
 
-  EXPECT_TRUE(IndMatch::getDeduplicated(vec_indMatch));
+  EXPECT_TRUE(removeDuplicateMatches(vec_indMatch));
   // Two matches must remain (line 0 and 2)
   EXPECT_EQ(2, vec_indMatch.size());
 }
@@ -146,7 +146,7 @@ TEST(IndMatch, DuplicateRemoval)
   vec_indMatch.push_back(IndMatch(2,3));
   vec_indMatch.push_back(IndMatch(3,3));
 
-  EXPECT_TRUE(IndMatch::getDeduplicated(vec_indMatch));
+  EXPECT_TRUE(removeDuplicateMatches(vec_indMatch));
   // Five matches must remain (one (0,1) must disappear)
   EXPECT_EQ(5, vec_indMatch.size());
 

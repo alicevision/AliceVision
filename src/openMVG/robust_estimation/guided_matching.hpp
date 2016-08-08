@@ -60,7 +60,7 @@ void GuidedMatching(
   }
 
   // Remove duplicates (when multiple points at same position exist)
-  IndMatch::getDeduplicated(vec_corresponding_index);
+  removeDuplicateMatches(vec_corresponding_index);
 }
 
 // Struct to help filtering of correspondence according update of
@@ -160,7 +160,7 @@ void GuidedMatching(
   }
 
   // Remove duplicates (when multiple points at same position exist)
-  IndMatch::getDeduplicated(vec_corresponding_index);
+  removeDuplicateMatches(vec_corresponding_index);
 }
 
 /// Guided Matching (features + descriptors with distance ratio):
@@ -219,7 +219,7 @@ void GuidedMatching(
   }
 
   // Remove duplicates (when multiple points at same position exist)
-  IndMatch::getDeduplicated(vec_corresponding_index);
+  removeDuplicateMatches(vec_corresponding_index);
 }
 
 /// Compute a bucket index from an epipolar point

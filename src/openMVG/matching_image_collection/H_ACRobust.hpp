@@ -155,7 +155,7 @@ struct GeometricFilter_HMatrix_AC
           m_H, xI, xJ, Square(m_dPrecision_robust), matches);
 
         // Remove duplicates
-        matching::IndMatch::getDeduplicated(matches);
+        matching::removeDuplicateMatches(matches);
 
         // Remove matches that have the same (X,Y) coordinates
         matching::IndMatchDecorator<float> matchDeduplicator(matches, pointsFeaturesI, pointsFeaturesJ);

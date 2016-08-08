@@ -53,15 +53,6 @@ struct IndMatch
     return (m1._i < m2._i || (m1._i == m2._i && m1._j < m2._j));
   }
 
-  /// Remove duplicates ((_i, _j) that appears multiple times)
-  static bool getDeduplicated(std::vector<IndMatch> & vec_match)
-  {
-    const size_t sizeBefore = vec_match.size();
-    std::set<IndMatch> set_deduplicated( vec_match.begin(), vec_match.end());
-    vec_match.assign(set_deduplicated.begin(), set_deduplicated.end());
-    return sizeBefore != vec_match.size();
-  }
-
   // Serialization
   template <class Archive>
   void serialize( Archive & ar )  {
@@ -73,6 +64,15 @@ struct IndMatch
   float _distance;
 #endif
 };
+
+/// Remove duplicates ((_i, _j) that appears multiple times)
+inline bool removeDuplicateMatches(std::vector<IndMatch> & vec_match)
+{
+  const size_t sizeBefore = vec_match.size();
+  std::set<IndMatch> set_deduplicated( vec_match.begin(), vec_match.end());
+  vec_match.assign(set_deduplicated.begin(), set_deduplicated.end());
+  return sizeBefore != vec_match.size();
+}
 
 static inline std::ostream& operator<<(std::ostream & out, const IndMatch & obj) {
   return out << obj._i << " " << obj._j;

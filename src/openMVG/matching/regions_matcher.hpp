@@ -271,6 +271,9 @@ public:
     // Remove duplicates
     matching::IndMatch::getDeduplicated(vec_putative_matches);
 
+    // Remove duplicates matches
+    matching::removeDuplicateMatches(vec_putative_matches);
+
     // Remove matches that have the same (X,Y) coordinates
     matching::IndMatchDecorator<float> matchDeduplicator(vec_putative_matches,
       regions_->GetRegionsPositions(), queryregions_.GetRegionsPositions());
