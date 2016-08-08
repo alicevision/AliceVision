@@ -73,7 +73,7 @@ int main(int argc, char **argv)
   SfM_Data sfm_data_gt;
   // READ DATA FROM GT
   std::cout << "Try to read data from GT" << std::endl;
-  if (!Load(sfm_data_gt, sGTFile, ESfM_Data(VIEWS|INTRINSICS|EXTRINSICS)))
+  if(!Load(sfm_data_gt, sGTFile, ESfM_Data(VIEWS|INTRINSICS|EXTRINSICS)))
   {
     std::cerr << "The input SfM_Data file \""<< sComputedFile << "\" cannot be read." << std::endl;
     return EXIT_FAILURE;
@@ -82,7 +82,7 @@ int main(int argc, char **argv)
 
   //-- Load the camera that we have to evaluate
   SfM_Data sfm_data;
-  if (!Load(sfm_data, sComputedFile, ESfM_Data(VIEWS|INTRINSICS|EXTRINSICS)))
+  if(!Load(sfm_data, sComputedFile, ESfM_Data(VIEWS|INTRINSICS|EXTRINSICS)))
   {
     std::cerr << std::endl
       << "The input SfM_Data file \""<< sComputedFile << "\" cannot be read." << std::endl;
@@ -95,7 +95,7 @@ int main(int argc, char **argv)
   for(const auto &iter : sfm_data.GetViews())
   {
     const auto &view = iter.second;
-    // Jump to next view if there is no correponding pose in reconstruction
+    // Jump to next view if there is no corresponding pose in reconstruction
     if(sfm_data.GetPoses().find(view->id_pose) == sfm_data.GetPoses().end())
     {
       std::cout << "no pose in input (" << view->id_pose << ")" << std::endl;

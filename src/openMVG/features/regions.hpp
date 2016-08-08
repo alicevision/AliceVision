@@ -145,7 +145,7 @@ public:
     if(this->_vec_feats.size() != _vec_descs.size())
     {
       std::stringstream ss;
-      ss << "Error while loading features and descriptors: " << this->_vec_feats.size() << " features loaded but " << _vec_descs.size() << " descriptors loaded.";
+      ss << "Error while loading features and descriptors: " << this->_vec_feats.size() << " features loaded but " << _vec_descs.size() << " descriptors loaded for the files " << sfileNameFeats << ", " << sfileNameDescs;
       throw std::runtime_error(ss.str());
     }
     return res;
@@ -216,7 +216,13 @@ public:
     return new Scalar_Regions();
   }
 
-  // Return the L2 distance between two descriptors
+  /**
+   * @brief Return the L2 distance between two descriptors
+   * @param i: index in DB regions
+   * @param regions: query regions
+   * @param j: query index
+   * @return the computed distance
+   */
   double SquaredDescriptorDistance(size_t i, const Regions * regions, size_t j) const
   {
     assert(i < this->_vec_descs.size());
