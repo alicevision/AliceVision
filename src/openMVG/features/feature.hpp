@@ -65,6 +65,7 @@ inline std::istream& operator>>(std::istream& in, PointFeature& obj)
 /**
  * Base class for ScaleInvariant Oriented Point features.
  * Add scale and orientation description to basis PointFeature.
+ * Tilt and phi parameters are used for ASIFT descriptors
  */
 class SIOPointFeature : public PointFeature {
 
@@ -73,20 +74,29 @@ class SIOPointFeature : public PointFeature {
 
 public:
   SIOPointFeature(float x=0.0f, float y=0.0f,
-                  float scale=0.0f, float orient=0.0f)
+                  float scale=0.0f, float orient=0.0f,
+                  float tilt=0.0f, float phi=0.0f)
     : PointFeature(x,y)
     , _scale(scale)
-    , _orientation(orient) {}
+    , _orientation(orient)
+    , _tilt(tilt)
+    , _phi(phi) {}
 
   float scale() const { return _scale; }
   float& scale() { return _scale; }
   float orientation() const { return _orientation; }
   float& orientation() { return _orientation; }
+  float tilt() const { return _tilt; }
+  float& tilt() { return _tilt; }
+  float phi() const { return _phi; }
+  float& phi() { return _phi; }
 
   bool operator ==(const SIOPointFeature& b) const {
     return (_scale == b.scale()) &&
            (_orientation == b.orientation()) &&
-           (x() == b.x()) && (y() == b.y()) ;
+           (x() == b.x()) && (y() == b.y()) &&
+           (tilt() == b.tilt()) &&
+           (phi() == b.phi());
   };
 
   bool operator !=(const SIOPointFeature& b) const {
@@ -97,25 +107,27 @@ public:
   void serialize(Archive & ar)
   {
     PointFeature::serialize(ar);
-    ar(_scale, _orientation);
+    ar(_scale, _orientation, _tilt, _phi);
   }
 
 protected:
   float _scale;        // In pixels.
   float _orientation;  // In radians.
+  float _tilt;
+  float _phi;
 };
 
 //
 inline std::ostream& operator<<(std::ostream& out, const SIOPointFeature& obj)
 {
   const PointFeature *pf = static_cast<const PointFeature*>(&obj);
-  return out << *pf << " " << obj._scale << " " << obj._orientation;
+  return out << *pf << " " << obj._scale << " " << obj._orientation << " " << obj._tilt << " " << obj._phi;
 }
 
 inline std::istream& operator>>(std::istream& in, SIOPointFeature& obj)
 {
   PointFeature *pf = static_cast<PointFeature*>(&obj);
-  return in >> *pf >> obj._scale >> obj._orientation;
+  return in >> *pf >> obj._scale >> obj._orientation >> obj._tilt >> obj._phi;
 }
 
 /// Read feats from file

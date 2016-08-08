@@ -14,7 +14,7 @@
 namespace openMVG {
 namespace features {
 
-/// Define the classic SIFT Keypoint
+/// Define the SIFT/ASIFT Keypoint
 typedef Scalar_Regions<SIOPointFeature,unsigned char,128> SIFT_Regions;
 /// Define the classic SIFT features using float representation
 typedef Scalar_Regions<SIOPointFeature,float,128> SIFT_Float_Regions;
