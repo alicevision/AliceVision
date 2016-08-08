@@ -35,15 +35,11 @@ bool Matcher_Regions_Database::Match
 )const
 {
   if (query_regions.RegionCount() == 0)
-  {
     return false;
-  }
 
-  if (_matching_interface)
-  {
-    return _matching_interface->Match(dist_ratio, query_regions, matches);
-  }
-  return false;
+  assert(_matching_interface);
+
+  return _matching_interface->Match(dist_ratio, query_regions, matches);
 }
 
 Matcher_Regions_Database::Matcher_Regions_Database():
@@ -60,9 +56,9 @@ Matcher_Regions_Database::Matcher_Regions_Database
 {
   // Handle invalid request
   if (database_regions.IsScalar() && eMatcherType == BRUTE_FORCE_HAMMING)
-    return;
+    throw std::logic_error("Error: Incompatible regions type (scalar) and matcher type.");
   if (database_regions.IsBinary() && eMatcherType != BRUTE_FORCE_HAMMING)
-    return;
+    throw std::logic_error("Error: Incompatible regions type (binary) and matcher type.");
 
   // Switch regions type ID, matcher & Metric: initialize the Matcher interface
   if (database_regions.IsScalar())
@@ -101,7 +97,7 @@ Matcher_Regions_Database::Matcher_Regions_Database
         }
         break;
         default:
-          std::cerr << "Using unknown matcher type" << std::endl;
+          throw std::logic_error("Error: Unknown matcher type.");
       }
     }
     else if (database_regions.Type_id() == typeid(float).name())
@@ -131,7 +127,7 @@ Matcher_Regions_Database::Matcher_Regions_Database
         }
         break;
         default:
-          std::cerr << "Using unknown matcher type" << std::endl;
+          throw std::logic_error("Error: Unknown matcher type.");
       }
     }
     else if (database_regions.Type_id() == typeid(double).name())
@@ -155,11 +151,11 @@ Matcher_Regions_Database::Matcher_Regions_Database
         break;
         case CASCADE_HASHING_L2:
         {
-          std::cerr << "Not yet implemented" << std::endl;
+          throw std::logic_error("Error: CASCADE_HASHING_L2 not yet implemented.");
         }
         break;
         default:
-          std::cerr << "Using unknown matcher type" << std::endl;
+          throw std::logic_error("Error: Unknown matcher type.");
       }
     }
   }
@@ -175,13 +171,12 @@ Matcher_Regions_Database::Matcher_Regions_Database
       }
       break;
       default:
-          std::cerr << "Using unknown matcher type" << std::endl;
+        throw std::logic_error("Error: Unknown matcher type.");
     }
   }
   else
   {
-    std::cerr << "Please consider add this region type_id to Matcher_Regions_Database::Match(...)\n"
-      << "typeid: " << database_regions.Type_id() << std::endl;
+    throw std::logic_error("Error: Unknown region type in matching.");
   }
 }
 
