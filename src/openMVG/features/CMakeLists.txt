@@ -49,6 +49,9 @@ target_link_libraries( openMVG_features openMVG_numeric openMVG_image vlsift stl
 if(OpenMVG_USE_CCTAG)
   target_link_libraries( openMVG_features ${CCTAG_LIBRARIES})
 endif()
+if(OpenMVG_USE_OPENCV)
+  target_link_libraries( openMVG_features ${OpenCV_LIBS})
+endif()
 
 SET_TARGET_PROPERTIES(openMVG_features PROPERTIES SOVERSION ${OPENMVG_VERSION_MAJOR} VERSION "${OPENMVG_VERSION_MAJOR}.${OPENMVG_VERSION_MINOR}")
 INSTALL(TARGETS openMVG_features DESTINATION lib EXPORT openMVG-targets)
