@@ -243,13 +243,13 @@ private:
 #endif
   bool robustMatching(matching::RegionsMatcherT<MatcherT> & matcher, 
                       const cameras::IntrinsicBase * queryIntrinsics,// the intrinsics of the image we are using as reference
-                      const Reconstructed_RegionsT & regionsToMatch,
+                      const Reconstructed_RegionsT::RegionsT & regionsToMatch,
                       const cameras::IntrinsicBase * matchedIntrinsics,
                       const float fDistRatio,
                       const double matchingError,
                       const bool b_guided_matching,
-                      const std::pair<size_t,size_t> & imageSizeI,     // size of the first image  
-                      const std::pair<size_t,size_t> & imageSizeJ,     // size of the first image
+                      const std::pair<size_t,size_t> & imageSizeI,     // size of the image in matcher  
+                      const std::pair<size_t,size_t> & imageSizeJ,     // size of the query image
                       std::vector<matching::IndMatch> & vec_featureMatches,
                       robust::EROBUST_ESTIMATOR estimator = robust::ROBUST_ESTIMATOR_ACRANSAC) const;
   

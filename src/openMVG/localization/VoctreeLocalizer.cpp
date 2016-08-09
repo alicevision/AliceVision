@@ -475,7 +475,7 @@ bool VoctreeLocalizer::localizeFirstBestResult(const features::SIFT_Regions &que
     bool matchWorked = robustMatching( matcher, 
                                       // pass the input intrinsic if they are valid, null otherwise
                                       (useInputIntrinsics) ? &queryIntrinsics : nullptr,
-                                      matchedRegions,
+                                      matchedRegions._regions,
                                       matchedIntrinsics,
                                       param._fDistRatio,
                                       param._matchingError,
@@ -811,7 +811,7 @@ void VoctreeLocalizer::getAllAssociations(const features::SIFT_Regions &queryReg
     bool matchWorked = robustMatching( matcher, 
                                       // pass the input intrinsic if they are valid, null otherwise
                                       (useInputIntrinsics) ? &queryIntrinsics : nullptr,
-                                      matchedRegions,
+                                      matchedRegions._regions,
                                       matchedIntrinsics,
                                       param._fDistRatio,
                                       param._matchingError,
@@ -923,7 +923,7 @@ void VoctreeLocalizer::getAllAssociations(const features::SIFT_Regions &queryReg
 
 bool VoctreeLocalizer::robustMatching(matching::RegionsMatcherT<MatcherT> & matcher, 
                                       const cameras::IntrinsicBase * queryIntrinsicsBase,   // the intrinsics of the image we are using as reference
-                                      const Reconstructed_RegionsT & matchedRegions,
+                                      const Reconstructed_RegionsT::RegionsT & matchedRegions,
                                       const cameras::IntrinsicBase * matchedIntrinsicsBase,
                                       const float fDistRatio,
                                       const double matchingError,
@@ -954,7 +954,7 @@ bool VoctreeLocalizer::robustMatching(matching::RegionsMatcherT<MatcherT> & matc
   const bool canBeUndistorted = (queryIntrinsicsBase != nullptr) && (matchedIntrinsicsBase != nullptr);
     
   // A. Putative Features Matching
-  bool matchWorked = matcher.Match(fDistRatio, matchedRegions._regions, vec_featureMatches);
+  bool matchWorked = matcher.Match(fDistRatio, matchedRegions, vec_featureMatches);
   if (!matchWorked)
   {
     POPART_COUT("[matching]\tPutative matching failed.");
@@ -970,7 +970,7 @@ bool VoctreeLocalizer::robustMatching(matching::RegionsMatcherT<MatcherT> & matc
   {
     const matching::IndMatch& match = vec_featureMatches[i];
     const Vec2 &queryPoint = matcher.getDatabaseRegions()->GetRegionPosition(match._i);
-    const Vec2 &matchedPoint = matchedRegions._regions.GetRegionPosition(match._j);
+    const Vec2 &matchedPoint = matchedRegions.GetRegionPosition(match._j);
     
     if(canBeUndistorted)
     {
@@ -1029,7 +1029,7 @@ bool VoctreeLocalizer::robustMatching(matching::RegionsMatcherT<MatcherT> & matc
             queryIntrinsicsBase, // cameras::IntrinsicBase of the matched image
             *matcher.getDatabaseRegions(), // features::Regions
             matchedIntrinsicsBase, // cameras::IntrinsicBase of the query image
-            matchedRegions._regions, // features::Regions
+            matchedRegions, // features::Regions
             Square(geometricFilter.m_dPrecision_robust),
             Square(fDistRatio),
             vec_featureMatches); // output
