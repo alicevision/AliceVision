@@ -52,6 +52,8 @@ public:
   typedef FeatT FeatureT;
   // Region descriptor
   typedef features::Descriptor<T, L> DescriptorT;
+  // Associated Regions
+  typedef features::Scalar_Regions<FeatT, T, L> RegionsT;
   
 //  template<class Archive>
 //  void serialize(Archive & ar)
