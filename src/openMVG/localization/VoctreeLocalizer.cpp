@@ -89,7 +89,7 @@ VoctreeLocalizer::VoctreeLocalizer(const std::string &sfmFilePath,
 #ifdef HAVE_CCTAG
                                    , bool useSIFT_CCTAG
 #endif
-                                  ) : ILocalizer()
+                                  ) : ILocalizer() , _frameBuffer(5)
 {
   using namespace openMVG::features;
   // init the feature extractor
