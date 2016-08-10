@@ -95,13 +95,13 @@ struct SiftParams
     }
     case HIGH_PRESET:
     {
-      _maxTotalKeypoints = 20000;
+      _maxTotalKeypoints = 50000;
       _peak_threshold = 0.01f;
       break;
     }
     case ULTRA_PRESET:
     {
-      _maxTotalKeypoints = 40000;
+      _maxTotalKeypoints = 100000;
       _peak_threshold = 0.01f;
       _first_octave = -1;
       break;
@@ -291,8 +291,7 @@ cerr << "Line " << __LINE__ << " in " << __func__ << endl;
     regionsCasted->Features().swap(sortedFeatures);
     regionsCasted->Descriptors().swap(sortedDescriptors);
   }
-     
-cerr << "Line " << __LINE__ << " in " << __func__ << endl;
+
   // Grid filtering of the keypoints to ensure a global repartition
   if(params._gridSize && params._maxTotalKeypoints)
   {

@@ -23,7 +23,7 @@ class Pinhole_Intrinsic_Brown_T2 : public Pinhole_Intrinsic
 {
     protected:
     // center of distortion is applied by the Intrinsics class
-    std::vector<double> _params; // K1, K2, K3, T1, T2
+    std::vector<double> _distortionParams; // K1, K2, K3, T1, T2
 
     public:
 
@@ -34,15 +34,18 @@ class Pinhole_Intrinsic_Brown_T2 : public Pinhole_Intrinsic
         double t1 = 0.0, double t2 = 0.0)
             :Pinhole_Intrinsic(w, h, focal, ppx, ppy)
     {
-        _params = {k1, k2, k3, t1, t2};
+        _distortionParams = {k1, k2, k3, t1, t2};
     }
 
+    Pinhole_Intrinsic_Brown_T2* clone() const { return new Pinhole_Intrinsic_Brown_T2(*this); }
+    void assign(const IntrinsicBase& other) { *this = dynamic_cast<const Pinhole_Intrinsic_Brown_T2&>(other); }
+  
     EINTRINSIC getType() const { return PINHOLE_CAMERA_BROWN; }
 
     virtual bool have_disto() const { return true;}
 
     virtual Vec2 add_disto(const Vec2 & p) const{
-        return (p + distoFunction(_params, p));
+        return (p + distoFunction(_distortionParams, p));
     }
 
     // numerical approximation based on
@@ -55,7 +58,7 @@ class Pinhole_Intrinsic_Brown_T2 : public Pinhole_Intrinsic
 
         while((add_disto(p_u)-p).lpNorm<1>() > epsilon)//manhattan distance between the two points
         {
-            p_u = p - distoFunction(_params, p_u);
+            p_u = p - distoFunction(_distortionParams, p_u);
         }
 
         return p_u;
@@ -65,28 +68,32 @@ class Pinhole_Intrinsic_Brown_T2 : public Pinhole_Intrinsic
     virtual std::vector<double> getParams() const
     {
         std::vector<double> params = Pinhole_Intrinsic::getParams();
-        params.push_back(_params[0]);
-        params.push_back(_params[1]);
-        params.push_back(_params[2]);
-        params.push_back(_params[3]);
-        params.push_back(_params[4]);
+        params.push_back(_distortionParams[0]);
+        params.push_back(_distortionParams[1]);
+        params.push_back(_distortionParams[2]);
+        params.push_back(_distortionParams[3]);
+        params.push_back(_distortionParams[4]);
         return params;
+    }
+
+    virtual std::vector<double> getDistortionParams() const
+    {
+      return _distortionParams;
     }
 
     // Data wrapper for non linear optimization (update from data)
     virtual bool updateFromParams(const std::vector<double> & params)
     {
-        if (params.size() == 8) {
-          *this = Pinhole_Intrinsic_Brown_T2(
-            _w, _h,
-            params[0], params[1], params[2], // focal, ppx, ppy
-            params[3], params[4], params[5], // K1, K2, K3
-            params[6], params[7]);           // T1, T2
-            return true;
-        }
-        else  {
-            return false;
-        }
+      if (params.size() == 8)
+      {
+        this->setK(params[0], params[1], params[2]);
+        _distortionParams = {
+          params[3], params[4], params[5], // K1, K2, K3
+          params[6], params[7]             // T1, T2
+        };
+        return true;
+      }
+      return false;
     }
 
     /// Return the un-distorted pixel (with removed distortion)
@@ -106,7 +113,7 @@ class Pinhole_Intrinsic_Brown_T2 : public Pinhole_Intrinsic
     void save( Archive & ar) const
     {
       Pinhole_Intrinsic::save(ar);
-      ar(cereal::make_nvp("disto_t2", _params));
+      ar(cereal::make_nvp("disto_t2", _distortionParams));
     }
 
     // Serialization
@@ -114,7 +121,7 @@ class Pinhole_Intrinsic_Brown_T2 : public Pinhole_Intrinsic
     void load( Archive & ar)
     {
       Pinhole_Intrinsic::load(ar);
-      ar(cereal::make_nvp("disto_t2", _params));
+      ar(cereal::make_nvp("disto_t2", _distortionParams));
     }
 
     private:

@@ -1,12 +1,12 @@
 # Rig calibration
-if(OpenMVG_BUILD_VOCTREE)
+if(OpenMVG_USE_BOOST)
 
   ###
   # Calibrate a rig based on CCTag localizers
   ###
   add_executable(openMVG_main_rigCalibration main_rigCalibration.cpp)
   install(TARGETS openMVG_main_rigCalibration DESTINATION bin/)
-  target_link_libraries(openMVG_main_rigCalibration openMVG_rig openMVG_localization  openMVG_dataio openMVG_image openMVG_features glog vlsift ${BOOST_LIBRARIES}) #todo: delete vlsift
+  target_link_libraries(openMVG_main_rigCalibration openMVG_rig openMVG_localization  openMVG_dataio openMVG_image openMVG_features vlsift ${Boost_LIBRARIES}) #todo: delete vlsift
    
   if(OpenMVG_USE_CCTAG)
     target_link_libraries(openMVG_main_rigCalibration
@@ -14,7 +14,7 @@ if(OpenMVG_BUILD_VOCTREE)
       )
   endif(OpenMVG_USE_CCTAG)
 
-endif(OpenMVG_BUILD_VOCTREE)
+endif(OpenMVG_USE_BOOST)
 
 # Camera calibration
 if(OpenCV_FOUND)
