@@ -35,6 +35,40 @@ typedef Reconstructed_Regions<features::SIOPointFeature, float, 128> Reconstruct
 typedef Reconstructed_Regions<features::SIOPointFeature, unsigned char, 128> Reconstructed_RegionsT;
 #endif
 
+struct FrameData
+{
+  FrameData(const LocalizationResult &locResult, const Reconstructed_RegionsT::RegionsT &regions)
+    : _locResult(locResult)
+  {
+    // copy the regions
+    _regionsWith3D._regions = regions;
+    
+    // now we need to filter out and keep only the regions with 3D data associated
+    const auto &associationIDs = _locResult.getIndMatch3D2D();
+    const auto &inliers = _locResult.getInliers();
+    
+    // feature in image are <featureID, point3Did> associations
+    std::vector<FeatureInImage> featuresInImage;
+    featuresInImage.reserve(inliers.size());
+    
+    for(const auto &idx : inliers)
+    {
+      assert(idx < associationIDs.size());
+      // association is a pait <point3dID, point2dID>
+      const auto &association = associationIDs[idx];
+      
+      // add it to featuresInImage
+      featuresInImage.emplace_back(association.second, association.first);
+    }
+    
+    _regionsWith3D.filterRegions(featuresInImage);
+  }
+  
+  LocalizationResult _locResult;
+  Reconstructed_RegionsT _regionsWith3D;
+};
+
+
 
 class VoctreeLocalizer : public ILocalizer
 {
