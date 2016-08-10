@@ -643,6 +643,10 @@ bool VoctreeLocalizer::localizeAllResults(const features::SIFT_Regions &queryReg
     // recopy the associations IDs in the vector
     associationIDs.push_back(ass.first);
   }
+  
+  assert(associationIDs.size() == numCollectedPts);
+  assert(resectionData.pt2D.cols() == numCollectedPts);
+  assert(resectionData.pt3D.cols() == numCollectedPts);
 
   geometry::Pose3 pose;
   
@@ -728,6 +732,14 @@ bool VoctreeLocalizer::localizeAllResults(const features::SIFT_Regions &queryReg
                 << " min = " << std::sqrt(sqrErrors.minCoeff())
                 << " max = " << std::sqrt(sqrErrors.maxCoeff()));
   }
+  
+    
+  if(param._useFrameBufferMatching)
+  {
+    // add everything to the buffer
+    FrameData fi(localizationResult, queryRegions);
+    _frameBuffer.push_back(fi);
+  }
 
   return localizationResult.isValid();
 }
@@ -751,7 +763,7 @@ void VoctreeLocalizer::getAllAssociations(const features::SIFT_Regions &queryReg
   
   // Request closest images from voctree
   _database.find(requestImageWords, (param._numResults==0) ? (_database.size()) : (param._numResults) , matchedImages);
-
+  
 //  // just debugging bla bla
 //  // for each similar image found print score and number of features
 //  for(const voctree::DocMatch& currMatch : matchedImages )
@@ -795,6 +807,7 @@ void VoctreeLocalizer::getAllAssociations(const features::SIFT_Regions &queryReg
       continue;
     }
     POPART_COUT("[matching]\tTrying to match the query image with " << matchedView->s_Img_path);
+    POPART_COUT("[matching]\tit has " << matchedRegions._regions.RegionCount() << " available features to match");
     
     // its associated intrinsics
     // this is just ugly!
@@ -902,7 +915,36 @@ void VoctreeLocalizer::getAllAssociations(const features::SIFT_Regions &queryReg
     }
   }
   
-  const size_t numCollectedPts = occurences.size();
+  if(param._useFrameBufferMatching)
+  {
+    POPART_COUT("[matching]\tUsing frameBuffer matching: matching with the past " 
+            << param._bufferSize << " frames" );
+    getAssociationsFromBuffer(matcher, imageSize, param, useInputIntrinsics, queryIntrinsics, occurences);
+  }
+  
+  const std::size_t numCollectedPts = occurences.size();
+  
+  {
+    // just debugging statistics, this block can be safely removed
+    std::size_t numOccTreated = 0;
+    for(std::size_t value = 1; value < numCollectedPts; ++value)
+    {
+      std::size_t counter = 0;
+      for(const auto &idx : occurences)
+      {
+        if(idx.second == value)
+        {
+          ++counter;
+        }
+      }
+      POPART_COUT("[matching]\tThere are " << counter 
+              <<  " associations occurred " << value << " times ("
+              << 100.0*counter/(double)numCollectedPts << "%)");
+      numOccTreated += counter;
+      if(numOccTreated >= numCollectedPts) 
+        break;
+    }
+  }
   
   pt2D = Mat2X(2, numCollectedPts);
   pt3D = Mat3X(3, numCollectedPts);
@@ -913,6 +955,8 @@ void VoctreeLocalizer::getAllAssociations(const features::SIFT_Regions &queryReg
      // recopy all the points in the matching structure
     const IndexT pt3D_id = idx.first.first;
     const IndexT pt2D_id = idx.first.second;
+    
+//    POPART_COUT("[matching]\tAssociation [" << pt3D_id << "," << pt2D_id << "] occurred " << idx.second << " times");
 
     pt2D.col(index) = queryRegions.GetRegionPosition(pt2D_id);
     pt3D.col(index) = _sfm_data.GetLandmarks().at(pt3D_id).X;
