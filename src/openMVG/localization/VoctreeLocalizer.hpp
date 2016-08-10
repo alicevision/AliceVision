@@ -292,6 +292,14 @@ private:
                       std::vector<matching::IndMatch> & vec_featureMatches,
                       robust::EROBUST_ESTIMATOR estimator = robust::ROBUST_ESTIMATOR_ACRANSAC) const;
   
+  void getAssociationsFromBuffer(matching::RegionsMatcherT<MatcherT> & matcher,
+                                 const std::pair<std::size_t, std::size_t> imageSize,
+                                 const Parameters &param,
+                                 bool useInputIntrinsics,
+                                 const cameras::Pinhole_Intrinsic_Radial_K3 &queryIntrinsics,
+                                 std::map< std::pair<IndexT, IndexT>, std::size_t > &occurences,
+                                 const std::string& imagePath = std::string()) const;
+  
   /**
    * @brief Load all the Descriptors who have contributed to the reconstruction.
    * deprecated.. now inside initDatabase
