@@ -40,6 +40,8 @@ public:
   CCTagLocalizer(const std::string &sfmFilePath,
                  const std::string &descriptorsFolder);
    
+  void setCudaPipe( int i );
+
  /**
    * @brief Just a wrapper around the different localization algorithm, the algorith
    * used to localized is chosen using \p param._algorithm
@@ -153,6 +155,10 @@ private:
    
   // the feature extractor
   features::CCTAG_Image_describer _image_describer;
+
+  // CUDA CCTag supports several parallel pipelines, where each one can
+  // processing different image dimensions.
+  int    _cudaPipe;
   
   //
   //std::map<IndexT, Vec3> _cctagDatabase;

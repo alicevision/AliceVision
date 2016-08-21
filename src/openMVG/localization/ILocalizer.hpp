@@ -46,6 +46,9 @@ class ILocalizer
 {
 public:
     ILocalizer() : _isInit(false) { };
+
+    // Only relevant for the CCTagLocalizer
+    virtual void setCudaPipe(int) { }
     
     bool isInit() {return _isInit;}
     

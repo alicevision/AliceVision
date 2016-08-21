@@ -421,6 +421,7 @@ int main(int argc, char** argv)
       POPART_COUT("******************************");
       auto detect_start = std::chrono::steady_clock::now();
       localization::LocalizationResult localizationResult;
+      localizer->setCudaPipe( idCamera );
       const bool ok = localizer->localize(imageGrey,
                                           param.get(),
                                           hasIntrinsics/*useInputIntrinsics*/,
