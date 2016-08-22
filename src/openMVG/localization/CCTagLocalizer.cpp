@@ -317,7 +317,7 @@ bool CCTagLocalizer::localize(const std::unique_ptr<features::Regions> &genQuery
 //                                 resectionData.pt2D,
 //                                 param._visualDebug + "/" + bfs::path(imagePath).stem().string() + ".associations.svg");
     }
-    localizationResult = LocalizationResult();
+    localizationResult = LocalizationResult(resectionData, associationIDs, pose, queryIntrinsics, matchedImages, bResection);
     return localizationResult.isValid();
   }
   POPART_COUT("[poseEstimation]\tResection SUCCEDED");
@@ -475,7 +475,10 @@ bool CCTagLocalizer::localizeRig_opengv(const std::vector<std::unique_ptr<featur
 {
   const size_t numCams = vec_queryRegions.size();
   assert(numCams == vec_queryIntrinsics.size());
-  assert(numCams == vec_subPoses.size() + 1);   
+  assert(numCams == vec_subPoses.size() + 1);
+  
+  vec_locResults.clear();
+  vec_locResults.reserve(numCams);
 
   const CCTagLocalizer::Parameters *param = static_cast<const CCTagLocalizer::Parameters *>(parameters);
   if(!param)
@@ -512,10 +515,15 @@ bool CCTagLocalizer::localizeRig_opengv(const std::vector<std::unique_ptr<featur
   // @todo Here it could be possible to filter the associations according to their
   // occurrences, eg giving priority to those associations that are more frequent
 
-  const size_t minNumAssociations = 5;  //possible parameter?
+  const size_t minNumAssociations = 4;  //possible parameter?
   if(numAssociations < minNumAssociations)
   {
     POPART_COUT("[poseEstimation]\tonly " << numAssociations << " have been found, not enough to do the resection!");
+    for(std::size_t cam = 0; cam < numCams; ++cam)
+    {
+      // empty result with isValid set to false
+      vec_locResults.emplace_back();
+    }
     return false;
   }
 
@@ -538,15 +546,50 @@ bool CCTagLocalizer::localizeRig_opengv(const std::vector<std::unique_ptr<featur
     return resectionOk;
   }
   
-  const bool refineOk = refineRigPose(vec_pts2D,
-                                      vec_pts3D,
-                                      vec_inliers,
-                                      vec_queryIntrinsics,
-                                      vec_subPoses,
-                                      rigPose);
+  {
+    if(vec_inliers.size() < numCams)
+    {
+      // in general the inlier should be spread among different cameras
+      POPART_CERR("WARNING: RIG Voctree Localizer: Inliers in " 
+              << vec_inliers.size() << " cameras on a RIG of " 
+              << numCams << " cameras.");
+    }
+
+    for(std::size_t camID = 0; camID < vec_inliers.size(); ++camID)
+      POPART_COUT("#inliers for cam " << camID << ": " << vec_inliers[camID].size());
+    
+    POPART_COUT("Pose after resection:");
+    POPART_COUT("Rotation: " << rigPose.rotation());
+    POPART_COUT("Centre: " << rigPose.center());
+    
+    // debugging stats
+    // print the reprojection error for inliers (just debugging purposes)
+    printRigRMSEStats(vec_pts2D, vec_pts3D, vec_queryIntrinsics, vec_subPoses, rigPose, vec_inliers);
+  }
   
-  vec_locResults.clear();
-  vec_locResults.reserve(numCams);
+//  const bool refineOk = refineRigPose(vec_pts2D,
+//                                      vec_pts3D,
+//                                      vec_inliers,
+//                                      vec_queryIntrinsics,
+//                                      vec_subPoses,
+//                                      rigPose);
+  openMVG::system::Timer timer;
+  const std::size_t minNumPoints = 4;
+  const bool refineOk = iterativeRefineRigPose(vec_pts2D,
+                                               vec_pts3D,
+                                               vec_queryIntrinsics,
+                                               vec_subPoses,
+                                               param->_errorMax,
+                                               minNumPoints,
+                                               vec_inliers,
+                                               rigPose);
+  POPART_COUT("Iterative refinement took " << timer.elapsedMs() << "ms");
+  
+  {
+    // debugging stats
+    // print the reprojection error for inliers (just debugging purposes)
+    printRigRMSEStats(vec_pts2D, vec_pts3D, vec_queryIntrinsics, vec_subPoses, rigPose, vec_inliers);
+  }
   
   // create localization results
   for(std::size_t cam = 0; cam < numCams; ++cam)

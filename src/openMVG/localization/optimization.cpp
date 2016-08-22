@@ -8,8 +8,10 @@
 #include "optimization.hpp"
 #include "openMVG/sfm/sfm_data_io.hpp"
 #include <openMVG/sfm/sfm_data_BA_ceres.hpp>
+#include <openMVG/numeric/numeric.h>
 #include <openMVG/rig/rig_BA_ceres.hpp>
 #include <openMVG/logger.hpp>
+#include <openMVG/system/timer.hpp>
 
 
 #include <boost/accumulators/accumulators.hpp>
@@ -147,8 +149,18 @@ bool refineSequence(std::vector<LocalizationResult> & vec_localizationResult,
         {
           // this is weird but it could happen when two features are really close to each other (?)
           POPART_COUT("Point 3D " << landmarkID << " has multiple features " 
-                  << " in the same view " << viewID << " , size of obs: " 
+                  << "in the same view " << viewID << ", current size of obs: " 
                   << tinyScene.structure[landmarkID].obs.size() );
+          POPART_COUT("its associated features are: ");
+          for(std::size_t i = 0; i <  currentIDs.size(); ++i)
+          {
+            auto const &p = currentIDs[i];
+            if(p.first == landmarkID)
+            {
+              const Vec2 &fff = currResult.getPt2D().col(i);
+              POPART_COUT("\tfeatID " << p.second << " " << fff.transpose());
+            }
+          }
           continue;
         }
         
@@ -205,9 +217,13 @@ bool refineSequence(std::vector<LocalizationResult> & vec_localizationResult,
     POPART_COUT("Mean number of observations per point:   " << bacc::mean(stats) );
     POPART_COUT("Max number of observations per point:   " << bacc::max(stats) );
     
-    for( int i = 0; i < hist.size(); i++ ) 
+    std::size_t cumulative = 0;
+    const std::size_t num3DPoints = tinyScene.structure.size();
+    for(std::size_t i = 0; i < hist.size(); i++ ) 
     {
-      POPART_COUT("Points with " << i << " observations: " << hist[i]); 
+      POPART_COUT("Points with " << i << " observations: " << hist[i] 
+              << " (cumulative in %: " << 100*(num3DPoints-cumulative)/float(num3DPoints) << ")"); 
+      cumulative += hist[i];
     }
 
     // just debugging stuff
@@ -364,6 +380,9 @@ bool refineRigPose(const std::vector<geometry::Pose3 > &vec_subPoses,
     // Add a residual block for all inliers
     for(const IndexT iPoint : localizationResult.getInliers())
     {
+      assert(iPoint < points2D.cols());
+      assert(iPoint < points3D.cols());
+      
       // Each Residual block takes a point and a camera as input and outputs a 2
       // dimensional residual. Internally, the cost function stores the observations
       // and the 3D point and compares the reprojection against the observation.
@@ -498,6 +517,11 @@ bool refineRigPose(const std::vector<Mat> &pts2d,
     const Mat & points2D = pts2d[cam];
     assert(points2D.rows() == 2);
 
+    if(inliers[cam].empty())
+    {
+      POPART_COUT("Skipping cam " << cam << " as it has no inliers");
+      continue;
+    }
     // Add a residual block for all inliers
     for(const IndexT iPoint : inliers[cam])
     {
@@ -594,6 +618,221 @@ bool refineRigPose(const std::vector<Mat> &pts2d,
 
   return true;
 }
+
+// rmse, min, max
+std::tuple<double, double, double> computeStatistics(const Mat &pts2D, 
+                                                     const Mat &pts3D,
+                                                     const cameras::Pinhole_Intrinsic_Radial_K3 &currCamera,
+                                                     const std::vector<std::size_t> &currInliers,
+                                                     const geometry::Pose3 &subPoses,
+                                                     const geometry::Pose3 &rigPose)
+{
+  if(currInliers.empty())
+    return std::make_tuple(0., 0., 0.);
+  
+  const std::size_t numPts = pts2D.cols();
+  Mat2X residuals = currCamera.residuals(subPoses*rigPose, pts3D, pts2D);
+
+  auto sqrErrors = (residuals.cwiseProduct(residuals)).colwise().sum();
+
+  //      POPART_COUT("Camera " << camID << " all reprojection errors:");
+  //      POPART_COUT(sqrErrors);
+  //
+  //      POPART_COUT("Camera " << camID << " inliers reprojection errors:");
+
+  double rmse = 0;
+  double rmseMin = std::numeric_limits<double>::max();
+  double rmseMax = 0;
+  for(std::size_t j = 0; j < currInliers.size(); ++j)
+  {
+    //          std::cout << sqrErrors(currInliers[j]) << " ";
+    const double err = sqrErrors(currInliers[j]);
+    rmse += err;
+    if(err > rmseMax)
+      rmseMax = err;
+    if(err < rmseMin)
+      rmseMin = err;
+  }
+  
+  return std::make_tuple(std::sqrt(rmse / currInliers.size()), std::sqrt(rmseMin), std::sqrt(rmseMax));
+}
+
+void printRigRMSEStats(const std::vector<Mat> &vec_pts2D,
+                       const std::vector<Mat> &vec_pts3D,
+                       const std::vector<cameras::Pinhole_Intrinsic_Radial_K3 > &vec_queryIntrinsics,
+                       const std::vector<geometry::Pose3 > &vec_subPoses,
+                       const geometry::Pose3 &rigPose,
+                       const std::vector<std::vector<std::size_t> > &vec_inliers)
+{
+  const std::size_t numCams = vec_pts2D.size();
+  assert(numCams == vec_pts3D.size());
+  assert(numCams == vec_queryIntrinsics.size());
+  assert(numCams == vec_subPoses.size() + 1);
+  
+  // compute the reprojection error for inliers (just debugging purposes)
+  double totalRMSE = 0;
+  std::size_t totalInliers = 0;
+  for(std::size_t camID = 0; camID < numCams; ++camID)
+  { 
+    if(!vec_inliers[camID].empty())
+    {
+      const auto& stats = computeStatistics(vec_pts2D[camID],
+                                            vec_pts3D[camID],
+                                            vec_queryIntrinsics[camID],
+                                            vec_inliers[camID],
+                                            (camID != 0 ) ? vec_subPoses[camID-1] : geometry::Pose3(),
+                                            rigPose);
+      POPART_COUT("\nCam #" << camID 
+              << " RMSE inliers: " << std::get<0>(stats)
+              << " min: " << std::get<1>(stats)
+              << " max: " << std::get<2>(stats));        
+
+    totalRMSE += Square(std::get<0>(stats))*vec_inliers[camID].size();
+    totalInliers += vec_inliers[camID].size();
+    }
+  }
+  POPART_COUT("Overall RMSE: " << std::sqrt(totalRMSE/totalInliers));
+}
+
+std::pair<double, bool> computeInliers(const std::vector<Mat> &vec_pts2d,
+                                       const std::vector<Mat> &vec_pts3d,
+                                       const std::vector<cameras::Pinhole_Intrinsic_Radial_K3 > &vec_queryIntrinsics,
+                                       const std::vector<geometry::Pose3 > &vec_subPoses,
+                                       const double maxReprojectionError,
+                                       const geometry::Pose3 &rigPose,
+                                       std::vector<std::vector<std::size_t> > &vec_inliers)
+{
+  const std::size_t numCams = vec_pts2d.size();
+  assert(numCams == vec_pts3d.size());
+  assert(numCams == vec_queryIntrinsics.size());
+  assert(numCams == vec_subPoses.size() + 1);
+  
+  const double squareThreshold = Square(maxReprojectionError);
+  
+  double rmse = 0;
+  std::size_t numInliers = 0;
+  // number of inlier removed
+  std::size_t numAdded = 0;
+  // number of point that were not inliers and now they are
+  std::size_t numRemoved = 0;
+  
+  std::vector<std::vector<std::size_t> > vec_newInliers(numCams);
+
+  // compute the reprojection error for inliers (just debugging purposes)
+  for(std::size_t camID = 0; camID < numCams; ++camID)
+  {
+    const std::size_t numPts = vec_pts2d[camID].cols();
+    
+    const cameras::Pinhole_Intrinsic_Radial_K3 &currCamera = vec_queryIntrinsics[camID];
+    
+    Mat2X residuals;
+    if(camID != 0)
+      residuals = currCamera.residuals(vec_subPoses[camID - 1] * rigPose, vec_pts3d[camID], vec_pts2d[camID]);
+    else
+      residuals = currCamera.residuals(geometry::Pose3() * rigPose, vec_pts3d[camID], vec_pts2d[camID]);
+
+    auto sqrErrors = (residuals.cwiseProduct(residuals)).colwise().sum();
+
+    auto &currInliers = vec_newInliers[camID];
+    const auto &oldInliers = vec_inliers[camID];
+    currInliers.reserve(numPts);
+    
+    for(std::size_t i = 0; i < numPts; ++i)
+    {
+      // check whether the current point was an inlier
+      const auto occ = std::count(oldInliers.begin(), oldInliers.end(), i);
+      assert(occ == 0 || occ == 1);
+      
+      if(sqrErrors(i) < squareThreshold)
+      {
+        currInliers.push_back(i);
+        
+        // if it was not an inlier mark it as added one
+        if(occ == 0)
+          ++numAdded;
+        
+        rmse += sqrErrors(i);
+        ++numInliers;
+      }
+      else
+      {
+         // if it was an inlier mark it as removed one
+         if(occ == 1)
+          ++numRemoved;       
+      }
+    }
+  }
+  POPART_COUT("Removed " << numRemoved << " inliers, added new " << numAdded << " point");
+  
+  // swap
+  vec_inliers.swap(vec_newInliers);
+  return std::make_pair(std::sqrt(rmse/numInliers), (numRemoved > 0 || numAdded > 0) );
+}
+
+
+bool iterativeRefineRigPose(const std::vector<Mat> &pts2d,
+                            const std::vector<Mat> &pts3d,
+                            const std::vector<cameras::Pinhole_Intrinsic_Radial_K3 > &vec_queryIntrinsics,
+                            const std::vector<geometry::Pose3 > &vec_subPoses,
+                            double maxReprojectionError,
+                            std::size_t minNumPoints,
+                            std::vector<std::vector<std::size_t> > &vec_inliers,
+                            geometry::Pose3 &rigPose,
+                            std::size_t maxIterationNumber)
+
+{
+  geometry::Pose3 optimalPose = rigPose;
+  std::size_t iterationNumber = 1;
+  bool hasChanged = false;
+  
+  do
+  {
+    POPART_COUT("[poseEstimation]\tIteration " << iterationNumber);
+    const bool refineOk = refineRigPose(pts2d,
+                                        pts3d,
+                                        vec_inliers,
+                                        vec_queryIntrinsics,
+                                        vec_subPoses,
+                                        optimalPose);
+    if(!refineOk)
+    {
+      POPART_COUT("[poseEstimation]\tIterative refine rig pose failed");
+      return false;
+    }
+    
+    // recompute the inliers and the RMSE
+    const auto& result = computeInliers(pts2d,
+                                        pts3d,
+                                        vec_queryIntrinsics,
+                                        vec_subPoses,
+                                        maxReprojectionError,
+                                        optimalPose,
+                                        vec_inliers);
+    // if there have been changes in the inlier sets
+    hasChanged = result.second;
+    
+    // if not enough inliers stop?
+    std::size_t numInliers = 0;
+    for(const auto& inliers : vec_inliers)
+      numInliers += inliers.size();
+    
+    if(numInliers <= minNumPoints)
+    {
+      POPART_COUT("[poseEstimation]\tIterative refine rig pose has reached the minimum number of points");
+      return false;
+    }
+    
+    ++iterationNumber;
+    if(iterationNumber > maxIterationNumber)
+      POPART_COUT("Terminating refine because the max number of iterations has been reached");
+  }
+  while(hasChanged && iterationNumber <= maxIterationNumber);
+
+  rigPose = optimalPose;
+
+  return true;
+}
+
 
 } //namespace localization
 } //namespace openMVG

@@ -18,6 +18,7 @@
 #include <openMVG/numeric/numeric.h>
 #include <openMVG/robust_estimation/guided_matching.hpp>
 #include <openMVG/logger.hpp>
+#include <openMVG/system/timer.hpp>
 
 #include <third_party/progress/progress.hpp>
 
@@ -492,7 +493,7 @@ bool VoctreeLocalizer::localizeFirstBestResult(const features::SIFT_Regions &que
     }
     else
     {
-      POPART_COUT("[matching]\tFound " << vec_featureMatches.size() << " matches");
+      POPART_COUT("[matching]\tFound " << vec_featureMatches.size() << " geometrically validated matches");
     }
     assert(vec_featureMatches.size()>0);
     
@@ -676,7 +677,7 @@ bool VoctreeLocalizer::localizeAllResults(const features::SIFT_Regions &queryReg
                                  resectionData.pt2D,
                                  param._visualDebug + "/" + bfs::path(imagePath).stem().string() + ".associations.svg");
     }
-    localizationResult = LocalizationResult();
+    localizationResult = LocalizationResult(resectionData, associationIDs, pose, queryIntrinsics, matchedImages, bResection);
     return localizationResult.isValid();
   }
   POPART_COUT("[poseEstimation]\tResection SUCCEDED");
@@ -915,7 +916,7 @@ void VoctreeLocalizer::getAllAssociations(const features::SIFT_Regions &queryReg
   pt2D = Mat2X(2, numCollectedPts);
   pt3D = Mat3X(3, numCollectedPts);
   
-  size_t index = 0;
+  std::size_t index = 0;
   for(const auto &idx : occurences)
   {
      // recopy all the points in the matching structure
@@ -1132,6 +1133,9 @@ bool VoctreeLocalizer::localizeRig_opengv(const std::vector<std::unique_ptr<feat
   assert(numCams == vec_queryIntrinsics.size());
   assert(numCams == vec_subPoses.size() + 1);   
   
+  vec_locResults.clear();
+  vec_locResults.reserve(numCams);
+  
   const VoctreeLocalizer::Parameters *param = static_cast<const VoctreeLocalizer::Parameters *>(parameters);
   if(!param)
   {
@@ -1180,6 +1184,11 @@ bool VoctreeLocalizer::localizeRig_opengv(const std::vector<std::unique_ptr<feat
   if(numAssociations < minNumAssociations)
   {
     POPART_COUT("[poseEstimation]\tonly " << numAssociations << " have been found, not enough to do the resection!");
+    for(std::size_t cam = 0; cam < numCams; ++cam)
+    {
+      // empty result with isValid set to false
+      vec_locResults.emplace_back();
+    }
     return false;
   }
   
@@ -1228,45 +1237,44 @@ bool VoctreeLocalizer::localizeRig_opengv(const std::vector<std::unique_ptr<feat
     POPART_COUT("Rotation: " << rigPose.rotation());
     POPART_COUT("Centre: " << rigPose.center());
     
-    // compute the reprojection error for inliers (just debugging purposes)
-    for(std::size_t camID = 0; camID < numCams; ++camID)
-    {
-      const std::size_t numPts = vec_pts2D[camID].cols();
-      const cameras::Pinhole_Intrinsic_Radial_K3 &currCamera = vec_queryIntrinsics[camID];
-      Mat2X residuals;
-      if(camID!=0)
-        residuals = currCamera.residuals(vec_subPoses[camID-1]*rigPose, vec_pts3D[camID], vec_pts2D[camID]);
-      else
-        residuals = currCamera.residuals(geometry::Pose3()*rigPose, vec_pts3D[camID], vec_pts2D[camID]);
-
-      auto sqrErrors = (residuals.cwiseProduct(residuals)).colwise().sum();
-
-//      POPART_COUT("Camera " << camID << " all reprojection errors:");
-//      POPART_COUT(sqrErrors);
-//
-//      POPART_COUT("Camera " << camID << " inliers reprojection errors:");
-      const auto &currInliers = vec_inliers[camID];
-
-      double rmse = 0;
-      for(std::size_t j = 0; j < currInliers.size(); ++j)
-      {
-//          std::cout << sqrErrors(currInliers[j]) << " ";
-          rmse += sqrErrors(currInliers[j]);
-      }
-      if(!currInliers.empty())
-        POPART_COUT("\n\nRMSE inliers: " << std::sqrt(rmse/currInliers.size()));
-    }
+    // print the reprojection error for inliers (just debugging purposes)
+    printRigRMSEStats(vec_pts2D, vec_pts3D, vec_queryIntrinsics, vec_subPoses, rigPose, vec_inliers);
   }
 
-  const bool refineOk = refineRigPose(vec_pts2D,
+//  const bool refineOk = refineRigPose(vec_pts2D,
+//                                      vec_pts3D,
+//                                      vec_inliers,
+//                                      vec_queryIntrinsics,
+//                                      vec_subPoses,
+//                                      rigPose);
+  
+  const auto& resInl = computeInliers(vec_pts2D,
                                       vec_pts3D,
-                                      vec_inliers,
                                       vec_queryIntrinsics,
                                       vec_subPoses,
-                                      rigPose);
+                                      param->_errorMax,
+                                      rigPose,
+                                      vec_inliers);
   
-  vec_locResults.clear();
-  vec_locResults.reserve(numCams);
+  POPART_COUT("After first recomputation of inliers with a threshold of "
+          << param->_errorMax << " the RMSE is: " << resInl.first);
+  
+  openMVG::system::Timer timer;
+  const std::size_t minNumPoints = 4;
+  const bool refineOk = iterativeRefineRigPose(vec_pts2D,
+                                               vec_pts3D,
+                                               vec_queryIntrinsics,
+                                               vec_subPoses,
+                                               param->_errorMax,
+                                               minNumPoints,
+                                               vec_inliers,
+                                               rigPose);
+  POPART_COUT("Iterative refinement took " << timer.elapsedMs() << "ms");
+  
+  {
+    // debugging stats
+    printRigRMSEStats(vec_pts2D, vec_pts3D, vec_queryIntrinsics, vec_subPoses, rigPose, vec_inliers);
+  }
   
   // create localization results
   for(std::size_t camID = 0; camID < numCams; ++camID)
@@ -1396,7 +1404,6 @@ bool VoctreeLocalizer::localizeRig_naive(const std::vector<std::unique_ptr<featu
   }
   
   // ** 'easy' cases in which we don't need further processing **
-  
   const std::size_t numLocalizedCam = std::count(isLocalized.begin(), isLocalized.end(), true);
   
   // no camera has be localized
