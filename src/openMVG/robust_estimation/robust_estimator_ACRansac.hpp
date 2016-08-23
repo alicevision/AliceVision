@@ -211,7 +211,7 @@ std::pair<double, double> ACRANSAC(const Kernel &kernel,
   nIter -= nIterReserve;
 
   bool bACRansacMode = (precision == std::numeric_limits<double>::infinity());
-
+  std::cout << "threshold " << precision << std::endl;
   // Main estimation loop.
   for (size_t iter=0; iter < nIter; ++iter)
   {
@@ -238,7 +238,8 @@ std::pair<double, double> ACRANSAC(const Kernel &kernel,
           if (vec_residuals_[i] <= maxThreshold)
             ++nInlier;
         }
-        if (nInlier > 2.5 * sizeSample) // does the model is meaningful
+        //if (nInlier > 2.5 * sizeSample) // does the model is meaningful
+        if(nInlier > sizeSample)  
           bACRansacMode = true;
       }
       if (bACRansacMode)

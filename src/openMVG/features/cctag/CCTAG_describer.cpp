@@ -114,7 +114,8 @@ bool CCTAG_Image_describer::Describe(const image::Image<unsigned char>& image,
         }
         desc[cctag.id()] = (unsigned char) 255;
         regionsCasted->Descriptors().push_back(desc);
-        regionsCasted->Features().push_back(SIOPointFeature(cctag.x(), cctag.y()));
+        const float ellipseRadius = std::max(cctag.rescaledOuterEllipse().a(), cctag.rescaledOuterEllipse().b());
+        regionsCasted->Features().push_back(SIOPointFeature(cctag.x(), cctag.y(), ellipseRadius, cctag.quality()));
       }
     }
 
