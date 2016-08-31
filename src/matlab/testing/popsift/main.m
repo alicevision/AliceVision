@@ -5,10 +5,10 @@ setPath;
 
 datasetPath = '/home/lilian/data/Features_Repeatability/vgg_oxford_feat_eval/';
 
-allAlgos= { 'vlfeat', 'opencv'};%, 'popsift' };
-algoNames= { 'VLFeat', 'OpenCV'}%;, 'popSift'}
+allAlgos= { 'popsift-popsift'};%, 'vlfeat' }; %'vlfeat', 'opencv'};%, 'popsift' };%
+algoNames= { 'popsift'}; % 'VLFeat'};%, 'OpenCV'}%;, 'popSift'};%
 
-datasetNames = {'bark','bikes','graf','leuven','trees','ubc','wall'};
+datasetNames = {'bark','bikes','boat','graf','leuven','trees','ubc','wall'}; %'bark','bikes','boat','graf'
 for i=1:length(datasetNames)
     allFolders{i} = [ datasetPath datasetNames{i} ]
 end

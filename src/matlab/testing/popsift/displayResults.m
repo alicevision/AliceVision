@@ -1,15 +1,19 @@
-function [] = displayResult( datasetName, doSave)
+function [res_rep, res_corr, res_m_score, res_match] = displayResult( datasetName, doSave)
 
 if (nargin == 1)
     doSave = 0;
 end
 
+displayAll = 0;
+
 datasetPath = '/home/lilian/data/Features_Repeatability/vgg_oxford_feat_eval/';
 
 load(sprintf('%s/infos.mat', datasetPath));
 
-%allAlgos= { 'vlfeat', 'opencv', 'popsift' };
-%algoNames= { 'VLFeat', 'OpenCV', 'popSIFT' };
+allAlgos= { 'vlfeat', 'opencv', 'popsift-popsift' };
+algoNames= { 'VLFeat', 'OpenCV', 'popSIFT' };
+
+% datasetNames = {'bark','bikes','boat','graf','leuven','trees','ubc','wall'};
 
 fig = loadFigureSettings(datasetName, doSave);
 
@@ -40,49 +44,53 @@ for iAlgo = 1:length(allAlgos)
     end
 end
 
-h = figure;
+h = figure; hold on;
 for iAlgo = 1:length(allAlgos)
     
-    subplot(2,2,1); hold on;
-    plot(fig.xValues, res_rep(iAlgo,:), fig.style{iAlgo}, ...
-        'LineWidth',fig.lWidth, 'MarkerEdgeColor','k','MarkerSize',fig.mSize);
-    L = legend(algoNames);
-    xlabel(fig.xLabel);
-    ylabel(fig.yLabel1);
-    set(L,'Interpreter','Latex');
-    set(L,'FontSize',fig.lSize);
-    ylim([0 100]);
+    if displayAll
+        subplot(2,2,1); hold on;
+        plot(fig.xValues, res_rep(iAlgo,:), fig.style{iAlgo}, ...
+            'LineWidth',fig.lWidth, 'MarkerEdgeColor','k','MarkerSize',fig.mSize);
+        L = legend(algoNames);
+        xlabel(fig.xLabel);
+        ylabel(fig.yLabel1);
+        set(L,'Interpreter','Latex');
+        set(L,'FontSize',fig.lSize);
+        ylim([0 100]);
+        
+        subplot(2,2,2); hold on;
+        plot(fig.xValues, res_corr(iAlgo,:), fig.style{iAlgo}, ...
+            'LineWidth',fig.lWidth, 'MarkerEdgeColor','k','MarkerSize',fig.mSize);
+        L = legend(algoNames);
+        xlabel(fig.xLabel);
+        ylabel(fig.yLabel2);
+        set(L,'Interpreter','Latex');
+        set(L,'FontSize',fig.lSize);
+        ylim([0 Inf]);
+        
+        subplot(2,2,3); hold on;
+        plot(fig.xValues, res_m_score(iAlgo,:), fig.style{iAlgo}, ...
+            'LineWidth',fig.lWidth, 'MarkerEdgeColor','k','MarkerSize',fig.mSize);
+        L = legend(algoNames);
+        xlabel(fig.xLabel);
+        ylabel(fig.yLabel3);
+        set(L,'Interpreter','Latex');
+        set(L,'FontSize',fig.lSize);
+        ylim([0 100]);
+        
+        subplot(2,2,4); hold on;
+    end
+    % otherwise display only the number of correct matches
     
-    subplot(2,2,2); hold on;
-    plot(fig.xValues, res_corr(iAlgo,:), fig.style{iAlgo}, ...
-        'LineWidth',fig.lWidth, 'MarkerEdgeColor','k','MarkerSize',fig.mSize);
-    L = legend(algoNames);
-    xlabel(fig.xLabel);
-    ylabel(fig.yLabel2);
-    set(L,'Interpreter','Latex');
-    set(L,'FontSize',fig.lSize);
-    ylim([0 Inf]);
-    
-    subplot(2,2,3); hold on;
-    plot(fig.xValues, res_m_score(iAlgo,:), fig.style{iAlgo}, ...
-        'LineWidth',fig.lWidth, 'MarkerEdgeColor','k','MarkerSize',fig.mSize);
-    L = legend(algoNames);
-    xlabel(fig.xLabel);
-    ylabel(fig.yLabel3);
-    set(L,'Interpreter','Latex');
-    set(L,'FontSize',fig.lSize);
-    ylim([0 100]);
-    
-    subplot(2,2,4); hold on;
     plot(fig.xValues, res_match(iAlgo,:), fig.style{iAlgo}, ...
         'LineWidth',fig.lWidth, 'MarkerEdgeColor','k','MarkerSize',fig.mSize);
     L = legend(algoNames);
+    set(gca,'FontSize',fig.tSize);
     xlabel(fig.xLabel);
     ylabel(fig.yLabel4);
     set(L,'Interpreter','Latex');
     set(L,'FontSize',fig.lSize);
     ylim([0 Inf]);
-    
 end
 
 if doSave

@@ -4,9 +4,11 @@ if (nargin == 1)
     doSaveFigure = 0;
 end
 
-fig.yLabel1 = 'repeatability';
+isSubplot = 2; % x 1 id subplot 2x2 used, x 2 if single plot.
+
+fig.yLabel1 = 'repeatability %';
 fig.yLabel2 = '#correspondences';
-fig.yLabel3 = 'matching score';
+fig.yLabel3 = 'matching score %';
 fig.yLabel4 = '#correct matches';
 
 fig.style = { 'mx:',  'ks-.', 'bo-', 'r*--' };
@@ -24,15 +26,15 @@ if ~doSaveFigure
     fig.mSize = 7;
 else
     % Legend properties: set Title, axis size
-    fig.tSize = 10;
+    fig.tSize = 10*isSubplot;
     % Set Legend size
-    fig.lSize = 12;%20
+    fig.lSize = 12*isSubplot;%20
     % Set FontUnit size
-    fig.uSize = 15;
+    fig.uSize = 15*isSubplot;
     % Set line width
-    fig.lWidth = 2;
+    fig.lWidth = 2*isSubplot;
     % Set marker size
-    fig.mSize = 7;
+    fig.mSize = 7*isSubplot;
 end
 
 switch datasetName
