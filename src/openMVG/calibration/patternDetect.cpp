@@ -4,8 +4,12 @@
 
 #include <boost/program_options.hpp>
 #include <boost/algorithm/string/case_conv.hpp>
-
 #include <boost/lexical_cast.hpp>
+
+#include <openMVG/features/cctag/CCTAG_describer.hpp>
+
+#include <cctag/ICCTag.hpp>
+#include <cctag/utils/LogTime.hpp>
 
 #include <string>
 #include <ctime>
@@ -29,8 +33,8 @@ std::istream& operator>>(std::istream &stream, Pattern &pattern)
   else if (token == "ASYMMETRIC_CIRCLES")
     pattern = openMVG::calibration::Pattern::ASYMMETRIC_CIRCLES_GRID;
 #ifdef HAVE_CCTAG
-  else if (token == "CCTAG")
-    pattern = CCTAG_GRID;
+  else if (token == "ASYMMETRIC_CCTAG")
+    pattern = ASYMMETRIC_CCTAG_GRID;
 #endif
   else
     throw boost::program_options::invalid_option_value(std::string("Invalid pattern: ") + token);
@@ -45,72 +49,121 @@ std::ostream& operator<<(std::ostream &stream, const Pattern pattern)
       stream << "CHESSBOARD";
       break;
     case openMVG::calibration::Pattern::CIRCLES_GRID:
-      stream << "CIRCLES_GRID";
+      stream << "CIRCLES";
       break;
     case openMVG::calibration::Pattern::ASYMMETRIC_CIRCLES_GRID:
-      stream << "ASYMMETRIC_CIRCLES_GRID";
+      stream << "ASYMMETRIC_CIRCLES";
       break;
 #ifdef HAVE_CCTAG
-    case openMVG::calibration::Pattern::CCTAG_GRID:
-      stream << "CCTAG_GRID";
+    case openMVG::calibration::Pattern::ASYMMETRIC_CCTAG_GRID:
+      stream << "ASYMMETRIC_CCTAG";
       break;
 #endif
   }
   return stream;
 }
 
-bool findPattern(const Pattern& pattern, const cv::Mat& viewGray, const cv::Size& boardSize, std::vector<cv::Point2f>& pointbuf)
+bool findPattern(const Pattern& pattern, const cv::Mat& viewGray, const cv::Size& boardSize, std::vector<int>& detectedId, std::vector<cv::Point2f>& pointbuf)
 {
   bool found = false;
-  system::Timer durationCh;
+  std::clock_t startCh;
+  double durationCh;
 
   switch (pattern)
   {
-  case CHESSBOARD:
-
-    found = cv::findChessboardCorners(viewGray, boardSize, pointbuf,
-                                      CV_CALIB_CB_ADAPTIVE_THRESH | CV_CALIB_CB_FAST_CHECK | CV_CALIB_CB_NORMALIZE_IMAGE);
-    std::cout << "Find chessboard corners' duration: " << durationCh.elapsedMs() << "ms" << std::endl;
-
-    // improve the found corners' coordinate accuracy
-    if (found)
+    case CHESSBOARD:
     {
-      durationCh.reset();
-      cv::cornerSubPix(viewGray, pointbuf, cv::Size(11, 11), cv::Size(-1, -1),
-                       cv::TermCriteria(CV_TERMCRIT_EPS + CV_TERMCRIT_ITER, 30, 0.1));
+      startCh = std::clock();
 
-      std::cout << "Refine chessboard corners' duration: " << durationCh.elapsedMs() << "ms" << std::endl;
+      found = cv::findChessboardCorners(viewGray, boardSize, pointbuf,
+                                        CV_CALIB_CB_ADAPTIVE_THRESH | CV_CALIB_CB_FAST_CHECK | CV_CALIB_CB_NORMALIZE_IMAGE);
+      durationCh = (std::clock() - startCh) / (double) CLOCKS_PER_SEC;
+      std::cout << "Find chessboard corners' duration: " << durationCh << std::endl;
+
+      // improve the found corners' coordinate accuracy
+      if (found)
+      {
+        startCh = std::clock();
+        cv::cornerSubPix(viewGray, pointbuf, cv::Size(11, 11), cv::Size(-1, -1),
+                         cv::TermCriteria(CV_TERMCRIT_EPS + CV_TERMCRIT_ITER, 30, 0.1));
+
+        durationCh = (std::clock() - startCh) / (double) CLOCKS_PER_SEC;
+        std::cout << "Refine chessboard corners' duration: " << durationCh << std::endl;
+      }
+      break;
     }
-    break;
+    case CIRCLES_GRID:
+    {
+      startCh = std::clock();
 
-  case CIRCLES_GRID:
+      found = cv::findCirclesGrid(viewGray, boardSize, pointbuf);
 
-    found = cv::findCirclesGrid(viewGray, boardSize, pointbuf);
+      durationCh = (std::clock() - startCh) / (double) CLOCKS_PER_SEC;
+      std::cout << "Find circles grid duration: " << durationCh << std::endl;
+      break;
+    }
+    case ASYMMETRIC_CIRCLES_GRID:
+    {
+      startCh = std::clock();
 
-    std::cout << "Find circles grid duration: " << durationCh.elapsedMs() << "ms" << std::endl;
-    break;
+      found = cv::findCirclesGrid(viewGray, boardSize, pointbuf, cv::CALIB_CB_ASYMMETRIC_GRID);
 
-  case ASYMMETRIC_CIRCLES_GRID:
+      durationCh = (std::clock() - startCh) / (double) CLOCKS_PER_SEC;
+      std::cout << "Find asymmetric circles grid duration: " << durationCh << std::endl;
+      break;
+    }
+  #ifdef HAVE_CCTAG
+    case ASYMMETRIC_CCTAG_GRID:
+    {
+      startCh = std::clock();
+      const std::size_t nRings = 3;
+      const int pipeId = 0;
+      const std::size_t frame = 1;
+      cctag::Parameters cctagParams(nRings);
+      boost::ptr_list<cctag::ICCTag> cctags;
+      cctag::logtime::Mgmt durations( 25 );
 
-    found = cv::findCirclesGrid(viewGray, boardSize, pointbuf, cv::CALIB_CB_ASYMMETRIC_GRID);
+      cctag::cctagDetection(cctags, pipeId, frame, viewGray, cctagParams, &durations);
 
-    std::cout << "Find asymmetric circles grid duration: " << durationCh.elapsedMs() << "ms" << std::endl;
-    break;
+      boost::ptr_list<cctag::ICCTag>::iterator iterCCTags = cctags.begin();
+      for(; iterCCTags != cctags.end(); iterCCTags++)
+      {
+        // Ignore CCTags without identification
+        if(iterCCTags->id() < 0)
+          continue;
+        // Store detected Id
+        detectedId.push_back(iterCCTags->id());
 
-#ifdef HAVE_CCTAG
-  case CCTAG_GRID:
-    throw std::invalid_argument("CCTag calibration not implemented.");
-    break;
-#endif
+        // Store pixel coordinates of detected markers
+        cv::Point2f detectedPoint((float) iterCCTags->x(), (float) iterCCTags->y());
+        pointbuf.push_back(detectedPoint);
+      }
+      assert(detectedId.size() == pointbuf.size());
+      found = true;
 
-  default:
-    throw std::logic_error("LensCalibration: Unknown pattern type.");
+      durationCh = (std::clock() - startCh) / (double) CLOCKS_PER_SEC;
+      std::cout << "Find asymmetric CCTag grid duration: " << durationCh << std::endl;
+      break;
+    }
+  #endif
+
+    default:
+      throw std::logic_error("LensCalibration: Unknown pattern type.");
+  }
+
+  if(detectedId.empty())
+  {
+    // default indexes
+    for(std::size_t i = 0; i < pointbuf.size(); ++i)
+    {
+      detectedId.push_back(i);
+    }
   }
   return found;
 }
 
-void calcChessboardCorners(const cv::Size& boardSize, const float& squareSize,
-                           std::vector<cv::Point3f>& corners, Pattern pattern = Pattern::CHESSBOARD)
+void calcChessboardCorners(std::vector<cv::Point3f>& corners, const cv::Size& boardSize,
+                           const float& squareSize, Pattern pattern = Pattern::CHESSBOARD)
 {
   corners.resize(0);
 
@@ -118,23 +171,38 @@ void calcChessboardCorners(const cv::Size& boardSize, const float& squareSize,
   {
     case CHESSBOARD:
     case CIRCLES_GRID:
-      for (int i = 0; i < boardSize.height; i++)
-        for (int j = 0; j < boardSize.width; j++)
-          corners.push_back(cv::Point3f(float(j * squareSize),
-                                        float(i * squareSize), 0));
+    {
+      for (int y = 0; y < boardSize.height; ++y)
+        for (int x = 0; x < boardSize.width; ++x)
+          corners.push_back(cv::Point3f(float(x * squareSize),
+                                        float(y * squareSize), 0));
       break;
-
+    }
     case ASYMMETRIC_CIRCLES_GRID:
-      for (int i = 0; i < boardSize.height; i++)
-        for (int j = 0; j < boardSize.width; j++)
-          corners.push_back(cv::Point3f(float((2 * j + i % 2) * squareSize),
-                                        float(i * squareSize), 0));
+    {
+      for (int y = 0; y < boardSize.height; ++y)
+        for (int x = 0; x < boardSize.width; ++x)
+          corners.push_back(cv::Point3f(float((2 * x + y % 2) * squareSize),
+                                        float(y * squareSize),
+                                        0));
       break;
-
+    }
   #ifdef HAVE_CCTAG
-    case CCTAG_GRID:
-      throw std::invalid_argument("CCTag not implemented.");
+    case ASYMMETRIC_CCTAG_GRID:
+    {
+      // The real number of lines in the cctag asymmetric grid
+      std::size_t height = 2 * boardSize.height - 1;
+      for (int y = 0; y < height; ++y)
+        {
+          // Less markers on odd lines if odd width
+          int width = (y % 2) ? boardSize.width : boardSize.width - (boardSize.width % 2);
+          for (int x = 0; x < width; ++x)
+            corners.push_back(cv::Point3f(float((2 * x + y % 2) * squareSize),
+                                          float(y * squareSize),
+                                          0));
+        }
       break;
+    }
   #endif
 
     default:
@@ -142,23 +210,18 @@ void calcChessboardCorners(const cv::Size& boardSize, const float& squareSize,
   }
 }
 
-void computeObjectPoints(const cv::Size& boardSize,
-                         Pattern pattern,
-                         const float& squareSize,
+void computeObjectPoints(const cv::Size& boardSize, Pattern pattern, const float squareSize,
                          const std::vector<std::vector<cv::Point2f> >& imagePoints,
                          std::vector<std::vector<cv::Point3f> >& objectPoints)
 {
   std::vector<cv::Point3f> templateObjectPoints;
 
   // Generate the object points coordinates
-  calcChessboardCorners(boardSize, squareSize, templateObjectPoints, pattern);
+  calcChessboardCorners(templateObjectPoints, boardSize, squareSize, pattern);
 
-  // Assign the template to all items
+  // Assign the corners to all items
   objectPoints.resize(imagePoints.size(), templateObjectPoints);
 }
 
 }//namespace calibration
 }//namespace openMVG
-
-
-

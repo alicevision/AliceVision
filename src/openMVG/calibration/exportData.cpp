@@ -96,10 +96,10 @@ void exportDebug(const std::string& debugSelectedImgFolder,
   }
 }
 
-void saveCameraParamsToPlainTxt(const std::string& filename,
-                                const cv::Size& imageSize,
+void saveCameraParamsToPlainTxt(const cv::Size& imageSize,
                                 const cv::Mat& cameraMatrix,
-                                const cv::Mat& distCoeffs)
+                                const cv::Mat& distCoeffs,
+                                const std::string& filename)
 {
   std::ofstream fs(filename, std::ios::out);
   if (!fs.is_open())
@@ -224,7 +224,7 @@ void saveCameraParams(const std::string& filename,
     fs << "image_points" << imagePtMat;
   }
   const std::string txtfilename = filename.substr(0, filename.find_last_of(".")) + ".cal.txt";
-  saveCameraParamsToPlainTxt(txtfilename, imageSize, cameraMatrix, distCoeffs);
+  saveCameraParamsToPlainTxt(imageSize, cameraMatrix, distCoeffs, txtfilename);
 }
 
 }//namespace calibration
