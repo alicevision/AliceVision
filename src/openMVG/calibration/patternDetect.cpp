@@ -8,8 +8,10 @@
 
 #include <openMVG/features/cctag/CCTAG_describer.hpp>
 
+#ifdef HAVE_CCTAG
 #include <cctag/ICCTag.hpp>
 #include <cctag/utils/LogTime.hpp>
+#endif
 
 #include <string>
 #include <ctime>
