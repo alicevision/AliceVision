@@ -55,15 +55,15 @@ void computeCellsWeight(const std::vector<std::size_t>& imagesIndexes,
   }
 }
 
-void computeImageScores(const std::vector<std::size_t>& remainingImagesIndexes,
+void computeImageScores(const std::vector<std::size_t>& inputImagesIndexes,
                         const std::vector<std::vector<std::size_t> >& cellIndexesPerImage,
                         const std::map<std::size_t, std::size_t>& cellsWeight,
                         std::vector<std::pair<float, std::size_t> >& imageScores)
 {
   // Compute the score of each image
-  for (std::size_t i = 0; i < remainingImagesIndexes.size(); ++i)
+  for (std::size_t i = 0; i < inputImagesIndexes.size(); ++i)
   {
-    const std::vector<std::size_t>& imageCellIndexes = cellIndexesPerImage[remainingImagesIndexes[i]];
+    const std::vector<std::size_t>& imageCellIndexes = cellIndexesPerImage[inputImagesIndexes[i]];
     float imageScore = 0;
     for (std::size_t cellIndex : imageCellIndexes)
     {
@@ -72,7 +72,7 @@ void computeImageScores(const std::vector<std::size_t>& remainingImagesIndexes,
     // Normalize by the number of checker items.
     // If the detector support occlusions of the checker the number of items may vary.
     imageScore /= float(imageCellIndexes.size());
-    imageScores.emplace_back(imageScore, remainingImagesIndexes[i]);
+    imageScores.emplace_back(imageScore, inputImagesIndexes[i]);
   }
 }
 

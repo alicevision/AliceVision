@@ -229,9 +229,9 @@ int main(int argc, char** argv)
 
   // Select best images based on repartition in images of the calibration landmarks
   openMVG::calibration::selectBestImages(
-      imagePoints, imageSize, maxCalibFrames,
-      validFrames, calibGridSize, calibImageScore,
-      calibInputFrames, calibImagePoints, remainingImagesIndexes);
+      imagePoints, imageSize, maxCalibFrames, validFrames, calibGridSize,
+      calibImageScore, calibInputFrames, calibImagePoints,
+      remainingImagesIndexes);
 
   start = std::clock();
   // Create an object which stores all the checker points of the images

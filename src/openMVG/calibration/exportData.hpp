@@ -36,8 +36,8 @@ void exportImages(openMVG::dataio::FeedProvider& feed,
  * @param[in] debugRejectedImgFolder The path of the export folder for rejected images.
  * @param[in] feed The image provider.
  * @param[in] calibInputFrames The ids of images used for the calibration.
- * @param[in] rejectInputFrames The ids of the images with a detected calibration pattern rejected by the iterative optimization loop.
- * @param[in] remainingImagesIndexes The ids of the images in which we pick up the maxCalibFrames with the best score.
+ * @param[in] rejectedInputFrames The ids of the images with a detected calibration pattern rejected by the iterative optimization loop.
+ * @param[in] unusedImagesIndexes The image indexes not selected during the first selection based on distribution in images.
  * @param[in] cameraMatrix The camera parameters.
  * @param[in] distCoeffs The distortion coefficients.
  * @param[in] imageSize The size of the image.
@@ -46,8 +46,8 @@ void exportDebug(const std::string& debugSelectedImgFolder,
                  const std::string& debugRejectedImgFolder,
                  openMVG::dataio::FeedProvider& feed,
                  const std::vector<std::size_t>& calibInputFrames,
-                 const std::vector<std::size_t>& rejectInputFrames,
-                 const std::vector<std::size_t>& remainingImagesIndexes,
+                 const std::vector<std::size_t>& rejectedInputFrames,
+                 const std::vector<std::size_t>& unusedImagesIndexes,
                  const cv::Mat& cameraMatrix,
                  const cv::Mat& distCoeffs,
                  const cv::Size& imageSize);
@@ -56,7 +56,7 @@ void exportDebug(const std::string& debugSelectedImgFolder,
  * @brief This function saves the parameters' camera into a txt file.
  *
  * @param[in] imageSize The size of the image.
- * @param[in] cameraMatrix The distance between two points of the calibration pattern.
+ * @param[in] cameraMatrix The calibration matrix K of the camera.
  * @param[in] distCoeffs The distortion coefficients.
  * @param[out] filename The name of the camera parameters file. 
  */
@@ -72,7 +72,7 @@ void saveCameraParamsToPlainTxt(const cv::Size& imageSize,
  * @param[in] imageSize The size of the image.
  * @param[in] boardSize The size of the calibration pattern.
  * @param[in] squareSize The distance between two points of the calibration pattern.
- * @param[in] aspectRatio The ratio of the image.
+ * @param[in] aspectRatio The aspect ratio of the image.
  * @param[in] cvCalibFlags The Calibration flags.
  * @param[in] cameraMatrix The camera parameters.
  * @param[in] distCoeffs The distortion coefficients.

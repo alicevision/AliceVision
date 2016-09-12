@@ -9,7 +9,7 @@ namespace calibration{
 /**
  * @brief This function computes the average of the reprojection errors.
  *
- * @param[in] objectPoints Coordinates of the 3D points in each image of the sequence.
+ * @param[in] objectPoints Coordinates of the 3D points associated to the detected points in each image of the sequence.
  * @param[in] imagePoints Coordinates of the 2D points in each image of the sequence.
  * @param[in] rvecs Rotation of the camera of each image.
  * @param[in] tvecs Position of the camera of each image.
@@ -28,10 +28,10 @@ double computeReprojectionErrors(const std::vector<std::vector<cv::Point3f> >& o
  * @brief This function calibrates the camera.
  *
  * @param[in] imagePoints Coordinates of the 2D points in each image of the sequence.
- * @param[in] objectPoints Coordinates of the 3D points in each image of the sequence.
+ * @param[in] objectPoints Coordinates of the 3D points associated to the detected points in each image of the sequence.
  * @param[in] imageSize The size of the image.
- * @param[in] aspectRatio The ratio of the image.
- * @param[in] cvCalibFlags The Calibration flags.
+ * @param[in] aspectRatio The aspect ratio of the image.
+ * @param[in] cvCalibFlags The calibration flags.
  * @param[in] cameraMatrix The camera parameters.
  * @param[in] distCoeffs The distortion coefficients.
  * @param[in] rvecs Rotation of the camera of each image.
@@ -56,8 +56,8 @@ bool runCalibration(const std::vector<std::vector<cv::Point2f> >& imagePoints,
  * @brief This function is the refinement loop of the calibration.
  *
  * @param[in] imageSize The size of the image.
- * @param[in] aspectRatio The ratio of the image.
- * @param[in] cvCalibFlags The Calibration flags.
+ * @param[in] aspectRatio The aspect ratio of the image.
+ * @param[in] cvCalibFlags The calibration flags.
  * @param[in] cameraMatrix The camera parameters.
  * @param[in] distCoeffs The distortion coefficients.
  * @param[in] rvecs Rotation of the camera of each image.

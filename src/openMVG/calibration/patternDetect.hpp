@@ -55,7 +55,7 @@ bool findPattern(const Pattern& pattern, const cv::Mat& viewGray, const cv::Size
  * @param[in] pattern The type of pattern used for the calibration.
  */
 void calcChessboardCorners(std::vector<cv::Point3f>& corners, const cv::Size& boardSize,
-                           const float& squareSize, Pattern pattern);
+                           const float squareSize, Pattern pattern);
 
 /**
  * @brief This function creates an object which stores all the points of the images.

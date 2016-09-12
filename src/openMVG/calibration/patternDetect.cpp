@@ -163,7 +163,7 @@ bool findPattern(const Pattern& pattern, const cv::Mat& viewGray, const cv::Size
 }
 
 void calcChessboardCorners(std::vector<cv::Point3f>& corners, const cv::Size& boardSize,
-                           const float& squareSize, Pattern pattern = Pattern::CHESSBOARD)
+                           const float squareSize, Pattern pattern = Pattern::CHESSBOARD)
 {
   corners.resize(0);
 
