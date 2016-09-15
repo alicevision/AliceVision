@@ -8,10 +8,10 @@
 #include <openMVG/features/regions_factory.hpp>
 
 // popsift include
-#include <popsift/c_util_img.h>
 #include <popsift/popsift.h>
 #include <popsift/sift_pyramid.h>
 #include <popsift/sift_octave.h>
+#include <popsift/common/device_prop.h>
 
 #include <cereal/cereal.hpp>
 
@@ -19,9 +19,6 @@
 #include <numeric>
 
 
-extern char *debug_file_name; // FIXME: get rid of debug_file_name, it is used in popsift and
-                              // openMVG_Samples/main_repeatability_dataset.cpp for quick 
-                              // debugging puposes 
 namespace openMVG {
 namespace features {
 
@@ -29,9 +26,38 @@ class SIFT_popSIFT_describer : public Image_describer
 {
 public:
   SIFT_popSIFT_describer(const SiftParams & params = SiftParams(), bool bOrientation = true)
-    :Image_describer(), _params(params), _bOrientation(bOrientation) {}
+    : Image_describer()
+    , _params(params)
+    , _bOrientation(bOrientation)
+    , _previousImageSize(0, 0)
+  {
+    std::cout << "SIFT_popSIFT_describer" << std::endl;
 
-  ~SIFT_popSIFT_describer() {}
+    // Process SIFT computation
+    cudaDeviceReset();
+
+    popsift::Config config;
+    config.setOctaves(_params._num_octaves);
+    config.setLevels(_params._num_scales);
+    config.setDownsampling(_params._first_octave);
+    config.setThreshold(  _params._peak_threshold);
+    config.setEdgeLimit(  _params._edge_threshold);
+    config.setUseRootSift(_params._root_sift);
+
+    const bool print_dev_info = true;
+
+    popsift::cuda::device_prop_t deviceInfo;
+    deviceInfo.set( 0, print_dev_info );
+    if( print_dev_info ) deviceInfo.print( );
+
+    _popSift.reset( new PopSift(config) );
+  }
+
+  ~SIFT_popSIFT_describer()
+  {
+    if(_previousImageSize.first != 0)
+      _popSift->uninit(0);
+  }
 
   bool Set_configuration_preset(EDESCRIBER_PRESET preset)
   {
@@ -72,108 +98,61 @@ public:
     std::unique_ptr<Regions> &regions,
     const image::Image<unsigned char> * mask = NULL)
   {
-    const int w = image.Width(), h = image.Height();
+    const bool print_time_info = true;
     
-    // Process SIFT computation
-    cudaDeviceReset();
-
-    imgStream inp;
-    inp.width = w;
-    inp.height = h;
-    inp.data_r = new unsigned char [w*h];
-    inp.data_g = nullptr;
-    inp.data_b = nullptr;
-    
-    unsigned char *pixel = inp.data_r;
-    for(int j=0; j<h; j++)
+    if(_previousImageSize.first != image.Width() ||
+       _previousImageSize.second != image.Height())
     {
-      for(int i=0; i<w; i++)
+      if(_previousImageSize.first != 0)
       {
-        *pixel++ = image(j, i);
+        // Only call uninit if we already called init()
+        _popSift->uninit(0);
       }
+      _popSift->init( 0, image.Width(), image.Height(), print_time_info );
+      _previousImageSize.first = image.Width();
+      _previousImageSize.second = image.Height();
     }
 
-    const double sigma = 1.6;
-    
-    popart::Config config;
-    config.setOctaves(_params._num_octaves);
-    config.setLevels(_params._num_scales);
-    config.setDownsampling(_params._first_octave);
-    config.setThreshold(  _params._peak_threshold);
-    config.setEdgeLimit(  _params._edge_threshold);
-    config.setSigma(sigma);
-    
-    PopSift PopSift(config);
-
-    PopSift.init( 0, w, h );
-    PopSift.execute(0, &inp);
+    std::unique_ptr<popsift::Features> popFeatures(_popSift->execute( 0, &image(0,0), print_time_info ));
 
     Allocate(regions); 
 
     // Build alias to cached data
-    SIFT_Float_Regions * regionsCasted = dynamic_cast<SIFT_Float_Regions*>(regions.get()); 
-    regionsCasted->Features().reserve(10000);
-    regionsCasted->Descriptors().reserve(10000);
+    SIFT_Regions * regionsCasted = dynamic_cast<SIFT_Regions*>(regions.get()); 
+    regionsCasted->Features().reserve(popFeatures->getFeatureCount());
+    regionsCasted->Descriptors().reserve(popFeatures->getDescriptorCount());
 
-    popart::Pyramid &pyramid = PopSift.pyramid(0);
-    for( int o=0; o<_params._num_octaves; o++ )
+    std::cout << "popSIFT featurse: " << popFeatures->getFeatureCount() << std::endl;
+    std::cout << "popSIFT featurse: " << popFeatures->getDescriptorCount() << std::endl;
+
+    for(const auto& popFeat: *popFeatures)
     {
-      popart::Octave & octave = pyramid.getOctave(o);
-      // GPU to CPU memory
-      // TODO: the download GPU -> CPU is also done in downloadToVector,
-      // check that we can safely remove downloadDescriptors
-      pyramid.download_descriptors(config, o);
-
-      const float imageScale = static_cast<float>(1 << o);
-      std::vector<popart::Extremum> candidates;
-      std::vector<popart::Descriptor> descriptors;
-      for( int s=0; s<_params._num_scales+3; s++ ) 
+      for(int orientationIndex = 0; orientationIndex < popFeat.num_descs; ++orientationIndex)
       {
-          
-          size_t count = octave.getExtremaCount(s);
-          std::cerr << "Octave " << o << " level " << s
-                    << " #extremas " << count << std::endl;
-          
-          candidates.resize(count);
-          descriptors.resize(count);
-          octave.downloadToVector(s, candidates, descriptors); // This also does GPU to CPU memory transfert
+        const popsift::Descriptor* popDesc = popFeat.desc[orientationIndex];
+        Descriptor<unsigned char, 128> desc;
+        // convertSIFT<unsigned char>(*popDesc, desc);
+        for (int k=0;k<128;++k)
+          desc[k] = static_cast<unsigned char>(popDesc->features[k]);
 
-          // DEBUGGING:
-          //octave.download_and_save_array(debug_file_name, o, s);
+        regionsCasted->Features().emplace_back(
+          popFeat.xpos,
+          popFeat.ypos,
+          popFeat.sigma,
+          popFeat.orientation[orientationIndex]);
 
-          // position scale orientation
-          for(auto &feat : candidates)
-          {
-            // the position of the points we get from popsift are multiplied by two
-            // the 0.5 value is used to move their coordinates to the correct image coordinates
-            regionsCasted->Features().emplace_back(feat.xpos*pow(2.f, o+_params._first_octave), feat.ypos*pow(2.f, o+_params._first_octave), feat.sigma*pow(2.f, o+_params._first_octave), feat.orientation);
-          }
-
-          // Descriptor values
-          for(auto &descIt : descriptors)
-          {
-            Descriptor<float, 128> desc;
-            for(int j = 0; j < 128; j++)
-            {
-              desc[j] = descIt.features[j]; // FIXME: ensure the conversion is correct 
-            }
-            regionsCasted->Descriptors().emplace_back(desc);
-          }
-        }
+        regionsCasted->Descriptors().emplace_back(desc);
+      }
     }
-    // FIXME: do we have to deallocate the image allocated line 78 ?
 
-    PopSift.uninit(0);
-    // FIXME: remove following commented code once the debug is finished
-    //regions->Save("/tmp/features_popsift.txt", "/tmp/descriptors_popsift.txt");    
-    //_exit(0);
-    return true;  // <==
+
+    return true;
   }
 
   /// Allocate Regions type depending of the Image_describer
   void Allocate(std::unique_ptr<Regions> &regions) const
   {
-      regions.reset( new SIFT_Float_Regions );
+      regions.reset( new SIFT_Regions );
   }
 
   template<class Archive>
@@ -187,6 +166,9 @@ public:
 private:
   SiftParams _params;
   bool _bOrientation;
+
+  std::unique_ptr<PopSift> _popSift;
+  std::pair<std::size_t, std::size_t> _previousImageSize;
 };
 
 } // namespace features
