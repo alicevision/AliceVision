@@ -13,6 +13,10 @@
 #include "nonFree/sift/SIFT_describer.hpp"
 #include "nonFree/sift/SIFT_float_describer.hpp"
 
+#if HAVE_POPSIFT
+#include "nonFree/sift/SIFT_popSIFT_describer.hpp"
+#endif
+
 #if HAVE_CCTAG
 #include "openMVG/features/cctag/CCTAG_describer.hpp"
 #include "openMVG/features/cctag/SIFT_CCTAG_describer.hpp"
@@ -258,13 +262,16 @@ int main(int argc, char **argv)
     << "  (method to use to describe an image):\n"
     << "   SIFT (default),\n"
     << "   SIFT_FLOAT to use SIFT stored as float,\n"
+#if HAVE_POPSIFT
+    << "   POPSIFT: SIFT with GPU implementation,\n"
+#endif
     << "   AKAZE_FLOAT: AKAZE with floating point descriptors,\n"
     << "   AKAZE_MLDB:  AKAZE with binary descriptors\n"
 #if HAVE_CCTAG
-      << "   CCTAG3: CCTAG markers with 3 crowns\n"
-      << "   CCTAG3: CCTAG markers with 4 crowns\n"
-      << "   SIFT_CCTAG3: CCTAG markers with 3 crowns\n" 
-      << "   SIFT_CCTAG4: CCTAG markers with 4 crowns\n" 
+    << "   CCTAG3: CCTAG markers with 3 crowns\n"
+    << "   CCTAG3: CCTAG markers with 4 crowns\n"
+    << "   SIFT_CCTAG3: CCTAG markers with 3 crowns\n" 
+    << "   SIFT_CCTAG4: CCTAG markers with 4 crowns\n" 
 #endif
     << "[-u|--upright] Use Upright feature 0 or 1\n"
     << "[-p|--describerPreset]\n"
@@ -282,6 +289,11 @@ int main(int argc, char **argv)
     std::cerr << s << std::endl;
     return EXIT_FAILURE;
 
+  }
+  if (sImage_Describer_Method == "POPSIFT")
+  {
+    // POPSIFT is GPU and should no be parallelized
+   maxJobs = 1; 
   }
 
   std::cout << " You called : " <<std::endl
@@ -403,6 +415,13 @@ int main(int argc, char **argv)
     {
       image_describer.reset(new SIFT_float_describer(SiftParams(), !bUpRight));
     }
+#if HAVE_POPSIFT
+    else
+    if (sImage_Describer_Method == "POPSIFT")
+    {
+      image_describer.reset(new SIFT_popSIFT_describer(SiftParams(), !bUpRight));
+    }
+#endif
 #if HAVE_CCTAG
     else
     if (sImage_Describer_Method == "CCTAG3")
