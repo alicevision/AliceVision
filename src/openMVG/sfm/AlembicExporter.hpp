@@ -4,6 +4,9 @@
 
 #include <openMVG/sfm/sfm_data.hpp>
 #include <openMVG/sfm/sfm_data_io.hpp>
+#include <openMVG/geometry/pose3.hpp>
+#include <openMVG/cameras/Camera_Pinhole.hpp>
+#include <openMVG/types.hpp>
 
 #include <memory>
 #include <string>
