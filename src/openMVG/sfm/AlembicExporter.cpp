@@ -64,10 +64,7 @@ struct AlembicExporter::DataImpl
 
 AlembicExporter::AlembicExporter(const std::string &filename)
 : _data(new DataImpl(filename))
-, counter(0)
-{
-
-}
+{ }
 
 AlembicExporter::~AlembicExporter()
 {

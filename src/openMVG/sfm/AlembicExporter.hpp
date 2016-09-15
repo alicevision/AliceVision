@@ -98,8 +98,6 @@ private:
   struct DataImpl;
   std::unique_ptr<DataImpl> _data;
 
-  unsigned int counter;
-
 };
 
 } // namespace data_io
