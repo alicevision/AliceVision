@@ -78,7 +78,7 @@ inline ICompoundProperty getAbcUserProperties(ABCSCHEMA& schema)
 }
 
 
-bool AlembicImporter::readPointCloud(IObject iObj, M44d mat, sfm::SfM_Data &sfmdata, sfm::ESfM_Data flags_part)
+bool readPointCloud(IObject iObj, M44d mat, sfm::SfM_Data &sfmdata, sfm::ESfM_Data flags_part)
 {
   using namespace openMVG::geometry;
   using namespace openMVG::sfm;
@@ -179,7 +179,7 @@ bool AlembicImporter::readPointCloud(IObject iObj, M44d mat, sfm::SfM_Data &sfmd
   return true;
 }
 
-bool AlembicImporter::readCamera(IObject iObj, M44d mat, sfm::SfM_Data &sfmdata, sfm::ESfM_Data flags_part, const index_t sampleFrame)
+bool readCamera(IObject iObj, M44d mat, sfm::SfM_Data &sfmdata, sfm::ESfM_Data flags_part, const index_t sampleFrame = 0)
 {
   using namespace openMVG::geometry;
   using namespace openMVG::cameras;
@@ -306,7 +306,7 @@ bool AlembicImporter::readCamera(IObject iObj, M44d mat, sfm::SfM_Data &sfmdata,
 
 
 // Top down read of 3d objects
-void AlembicImporter::visitObject(IObject iObj, M44d mat, sfm::SfM_Data &sfmdata, sfm::ESfM_Data flags_part)
+void visitObject(IObject iObj, M44d mat, sfm::SfM_Data &sfmdata, sfm::ESfM_Data flags_part)
 {
   // std::cout << "ABC visit: " << iObj.getFullName() << std::endl;
   
