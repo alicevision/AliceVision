@@ -386,14 +386,14 @@ int main(int argc, char** argv)
   exporter.initAnimatedCamera("rig");
   exporter.addPoints(localizer->getSfMData().GetLandmarks());
   
-  std::vector<dataio::AlembicExporter> cameraExporters;
+  std::vector<std::unique_ptr<dataio::AlembicExporter> > cameraExporters;
   cameraExporters.reserve(numCameras);
   // this contains the full path and the root name of the file without the extension
   const std::string basename = (bfs::path(exportFile).parent_path() / bfs::path(exportFile).stem()).string();
   for(std::size_t i = 0; i < numCameras; ++i)
   {
-    cameraExporters.emplace_back(basename+".cam"+myToString(i, 2)+".abc");
-    cameraExporters.back().initAnimatedCamera("cam"+myToString(i, 2));
+    cameraExporters.emplace_back( std::unique_ptr<dataio::AlembicExporter>( new dataio::AlembicExporter(basename+".cam"+myToString(i, 2)+".abc")));
+    cameraExporters.back()->initAnimatedCamera("cam"+myToString(i, 2));
   }
 #endif
 
@@ -515,7 +515,7 @@ int main(int argc, char** argv)
         POPART_COUT("cam pose" << camIDX << "\n" <<  localizationResults[camIDX].getPose().rotation() << "\n" << localizationResults[camIDX].getPose().center());
         if(camIDX > 0)
           POPART_COUT("cam subpose" << camIDX-1 << "\n" <<  vec_subPoses[camIDX-1].rotation() << "\n" << vec_subPoses[camIDX-1].center());
-        cameraExporters[camIDX].addCameraKeyframe(localizationResults[camIDX].getPose(), &vec_queryIntrinsics[camIDX], mediaPath, frameCounter, frameCounter);
+        cameraExporters[camIDX]->addCameraKeyframe(localizationResults[camIDX].getPose(), &vec_queryIntrinsics[camIDX], mediaPath, frameCounter, frameCounter);
       }
 #endif
     }
@@ -527,7 +527,7 @@ int main(int argc, char** argv)
       assert(cameraExporters.size()==numCameras);
       for(std::size_t camIDX = 0; camIDX < numCameras; ++camIDX)
       {
-        cameraExporters[camIDX].jumpKeyframe();
+        cameraExporters[camIDX]->jumpKeyframe();
       }
 #endif
     }
