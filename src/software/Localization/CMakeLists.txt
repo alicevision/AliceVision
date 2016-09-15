@@ -10,7 +10,7 @@ IF(OpenMVG_USE_BOOST)
                     openMVG_image
                     openMVG_features
                     vlsift
-                    ${BOOST_LIBRARIES})
+                    ${Boost_LIBRARIES})
     if(OpenMVG_USE_ALEMBIC)
         target_link_libraries(openMVG_main_cameraLocalizer openMVG_sfm ${ABC_LIBRARIES})
     endif()
