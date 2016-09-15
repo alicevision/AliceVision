@@ -10,6 +10,7 @@
 
 #include <Alembic/AbcGeom/All.h>
 #include <Alembic/AbcCoreFactory/All.h>
+#include <Alembic/AbcCoreHDF5/All.h>
 
 
 using namespace Alembic::Abc;
@@ -352,6 +353,16 @@ void visitObject(IObject iObj, M44d mat, sfm::SfM_Data &sfmdata, sfm::ESfM_Data 
   }
 }
 
+struct AlembicImporter::ObjImpl
+{
+  ObjImpl(const IObject &obj)
+  {
+    _rootEntity = obj;
+  }
+  
+  IObject _rootEntity;
+};
+
 AlembicImporter::AlembicImporter(const std::string &filename)
 {
   Alembic::AbcCoreFactory::IFactory factory;
@@ -359,14 +370,18 @@ AlembicImporter::AlembicImporter(const std::string &filename)
   Abc::IArchive archive = factory.getArchive(filename, coreType);
 
   // TODO : test if archive is correctly opened
-  _rootEntity = archive.getTop();
+  _objImpl.reset(new ObjImpl(archive.getTop()));
+}
+
+AlembicImporter::~AlembicImporter()
+{
 }
 
 void AlembicImporter::populate(sfm::SfM_Data &sfmdata, sfm::ESfM_Data flags_part)
 {
   // TODO : handle the case where the archive wasn't correctly opened
   M44d xformMat;
-  visitObject(_rootEntity, xformMat, sfmdata, flags_part);
+  visitObject(_objImpl->_rootEntity, xformMat, sfmdata, flags_part);
 
   // TODO: fusion of common intrinsics
 }

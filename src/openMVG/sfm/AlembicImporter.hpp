@@ -8,15 +8,8 @@
         
 #pragma once
 
-#include <Alembic/AbcGeom/All.h>
-#include <Alembic/AbcCoreHDF5/All.h>
-
 #include <openMVG/sfm/sfm_data.hpp>
 #include <openMVG/sfm/sfm_data_io.hpp>
-
-using namespace Alembic::Abc;
-namespace AbcG = Alembic::AbcGeom;
-using namespace AbcG;
 
 namespace openMVG {
 namespace dataio {
@@ -25,13 +18,14 @@ class AlembicImporter
 {
 public:
   explicit AlembicImporter(const std::string &filename);
-  ~AlembicImporter() = default;
+  ~AlembicImporter();
 
   void populate(sfm::SfM_Data &sfmdata, sfm::ESfM_Data flags_part = sfm::ESfM_Data::ALL);
 
 private:
-
-  IObject _rootEntity;
+  
+  struct ObjImpl;
+  std::unique_ptr<ObjImpl> _objImpl;
 };
 
 } // namespace mockup
