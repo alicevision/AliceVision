@@ -526,8 +526,12 @@ SET(OpenMVG_INCLUDE_DIRS
 
 INCLUDE_DIRECTORIES(${OpenMVG_INCLUDE_DIRS})
 
-include(FindProtobuf) #Probably useless
-find_package(Protobuf REQUIRED) #Probably useless
+find_package(Popsift)
+if(POPSIFT_FOUND)
+  ADD_DEFINITIONS(-DHAVE_POPSIFT)
+  INCLUDE_DIRECTORIES(${POPSIFT_INCLUDE_DIR})
+  LINK_DIRECTORIES(${POPSIFT_LIBRARY_DIR})
+endif()
 
 find_package(CUDA 7.0) #use CUDA 7.0 because of nvcc bug with CUB
 
