@@ -67,6 +67,10 @@ env:
     - SS_ROOT=${TRAVIS_BUILD_DIR}/suitesparse
     - SS_SOURCE=${SS_ROOT}/SuiteSparse
     - SS_INSTALL=${SS_ROOT}/install
+    # POPSIFT
+    - POPSIFT_ROOT=${TRAVIS_BUILD_DIR}/popsift
+    - POPSIFT_SOURCE=${POPSIFT_ROOT}/source
+    - POPSIFT_INSTALL=${POPSIFT_ROOT}/install
 
 before_install:
  - gem install coveralls-lcov
@@ -133,6 +137,16 @@ before_install:
       tar -xf ceres-solver-1.11.0.tar.gz;
       cp -r ceres-solver-1.11.0/* $CERES_SOURCE;
     fi
+ # POPSIFT
+ - >
+    if [ "$(ls -A $POPSIFT_INSTALL)" ]; then
+      echo "PopSift found in cache.";
+    else
+      mkdir --parent $POPSIFT_SOURCE
+      mkdir --parent $POPSIFT_BUILD
+      mkdir --parent $POPSIFT_INSTALL
+      git clone https://github.com/poparteu/popsift.git $POPSIFT_SOURCE;
+    fi
 
 install:
   # OPENGV
@@ -189,6 +203,16 @@ install:
      make -j 2 > null;
      make install;
      fi
+  # POPSIFT
+  - >
+    if [ ! "$(ls -A $POPSIFT_INSTALL)" ]; then
+      cd $POPSIFT_BUILD
+      cmake \
+        -DCMAKE_INSTALL_PREFIX=$POPSIFT_INSTALL \
+        $POPSIFT_SOURCE;
+      make -j 2 > null;
+      make install;
+    fi
 
 before_script:
   - export CXX="g++-4.8"
@@ -212,6 +236,7 @@ before_script:
        -DCeres_DIR=$CERES_INSTALL/share/Ceres \
        -DEIGEN_INCLUDE_DIR_HINTS=$EIGEN_INSTALL \
        -DBOOST_ROOT=$BOOST_INSTALL \
+       -DPOPSIFT_ROOT=$POPSIFT_INSTALL \
        . $OPENMVG_SOURCE
   # Build for code coverage evaluation
   #- cmake -DOpenMVG_BUILD_COVERAGE=ON -DOpenMVG_BUILD_TESTS=ON -DOpenMVG_BUILD_EXAMPLES=ON . ../openMVG/src
@@ -260,3 +285,4 @@ cache:
     - $BOOST_INSTALL
     - $EIGEN_INSTALL
     - $SS_INSTALL
+    - $POPSIFT_INSTALL
