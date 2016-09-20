@@ -41,6 +41,11 @@ env:
     - GT_TEST_SOURCE=${GT_TEST_ROOT}/gt_source
     - GT_TEST_RESULTS=${GT_TEST_ROOT}/result.json
     - GT_TEST_OUTPUT=${GT_TEST_ROOT}/gt_output
+    # CMAKE
+    - CMAKE_URL="https://cmake.org/files/v3.4/cmake-3.4.1-Linux-x86_64.tar.gz"
+    - CMAKE_ROOT=${TRAVIS_BUILD_DIR}/cmake
+    - CMAKE_SOURCE=${CMAKE_ROOT}/source
+    - CMAKE_INSTALL=${CMAKE_ROOT}/install
     # OPENCV
     - OPENCV_ROOT=${TRAVIS_BUILD_DIR}/opencv3
     - OPENCV_SOURCE=${OPENCV_ROOT}/source
@@ -74,6 +79,20 @@ env:
 
 before_install:
  - gem install coveralls-lcov
+
+ # CMAKE most recent version
+ - >
+    if [ "$(ls -A ${CMAKE_INSTALL})" ]; then
+      echo "CMake found in cache.";
+      ls -A ${CMAKE_INSTALL};
+    else
+      mkdir --parent ${CMAKE_SOURCE};
+      mkdir --parent ${CMAKE_INSTALL};
+      ls -A ${CMAKE_INSTALL};
+      travis_retry wget --no-check-certificate --quiet -O - ${CMAKE_URL} | tar --strip-components=1 -xz -C ${CMAKE_INSTALL};
+    fi;
+    export PATH=${CMAKE_INSTALL}/bin:${PATH};
+    cmake --version;
  # OPENCV
  - >
     if [ "$(ls -A $OPENCV_INSTALL)" ]; then
