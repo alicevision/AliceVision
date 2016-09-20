@@ -69,6 +69,13 @@ env:
     - SS_INSTALL=${SS_ROOT}/install
 
 before_install:
+ - date -u
+ - uname -a
+ - if [[ ${TRAVIS_OS_NAME} == "linux" ]]; then
+     lsb_release -a;
+   elif [[ ${TRAVIS_OS_NAME} == "osx" ]]; then
+     sw_vers -productVersion;
+   fi
  - ccache -s
  - gem install coveralls-lcov
  # OPENCV
