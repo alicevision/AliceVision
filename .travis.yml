@@ -228,6 +228,7 @@ install:
       cd $POPSIFT_BUILD
       cmake \
         -DCMAKE_INSTALL_PREFIX=$POPSIFT_INSTALL \
+        -DBOOST_ROOT=$BOOST_INSTALL \
         $POPSIFT_SOURCE;
       make -j 2 > null;
       make install;
