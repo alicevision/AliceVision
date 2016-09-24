@@ -200,7 +200,7 @@ install:
          -DCMAKE_INSTALL_PREFIX=$OPENCV_INSTALL \
          -DOPENCV_EXTRA_MODULES_PATH=$OPENCV_CONTRIB/modules \
          $OPENCV_SOURCE;
-     make -j 2 > null;
+     make -j 2;
      make install;
      fi
   # BOOST
