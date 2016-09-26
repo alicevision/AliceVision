@@ -353,9 +353,9 @@ void visitObject(IObject iObj, M44d mat, sfm::SfM_Data &sfmdata, sfm::ESfM_Data 
   }
 }
 
-struct AlembicImporter::ObjImpl
+struct AlembicImporter::DataImpl
 {
-  ObjImpl(const IObject &obj)
+  DataImpl(const IObject &obj)
   {
     _rootEntity = obj;
   }
@@ -370,7 +370,7 @@ AlembicImporter::AlembicImporter(const std::string &filename)
   Abc::IArchive archive = factory.getArchive(filename, coreType);
 
   // TODO : test if archive is correctly opened
-  _objImpl.reset(new ObjImpl(archive.getTop()));
+  _objImpl.reset(new DataImpl(archive.getTop()));
 }
 
 AlembicImporter::~AlembicImporter()

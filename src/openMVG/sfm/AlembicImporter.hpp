@@ -26,8 +26,8 @@ public:
 
 private:
   
-  struct ObjImpl;
-  std::unique_ptr<ObjImpl> _objImpl;
+  struct DataImpl;
+  std::unique_ptr<DataImpl> _objImpl;
 };
 
 } // namespace mockup
