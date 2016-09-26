@@ -11,7 +11,9 @@
 
 #include "nonFree/sift/SIFT_describer.hpp"
 #include "nonFree/sift/SIFT_OPENCV_Image_describer.hpp"
+#ifdef HAVE_POPSIFT
 #include "nonFree/sift/SIFT_popSIFT_describer.hpp"
+#endif
 #include "nonFree/sift/SIFT_float_describer.hpp"
 #include "third_party/stlplus3/filesystemSimplified/file_system.hpp"
 
@@ -42,8 +44,11 @@ int main() {
   // Detect regions thanks to an image_describer
   //--
   using namespace openMVG::features;
+#ifdef HAVE_POPSIFT
   std::unique_ptr<Image_describer> image_describer(new SIFT_popSIFT_describer);
-  //std::unique_ptr<Image_describer> image_describer(new SIFT_float_describer);
+#else
+  std::unique_ptr<Image_describer> image_describer(new SIFT_float_describer);
+#endif
   //std::unique_ptr<Image_describer> image_describer(new SIFT_OPENCV_Image_describer);
   std::map<IndexT, std::unique_ptr<features::Regions> > regions_perImage;
   image_describer->Describe(imageL, regions_perImage[0]);

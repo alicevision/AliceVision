@@ -26,7 +26,9 @@ using namespace std;
 
 #include "nonFree/sift/SIFT_describer.hpp"
 #include "nonFree/sift/SIFT_OPENCV_Image_describer.hpp"
+#ifdef HAVE_POPSIFT
 #include "nonFree/sift/SIFT_popSIFT_describer.hpp"
+#endif
 
 // FIXME: remove debug_file_name global variable, this is only used for debugging purposes
 char *debug_file_name;
@@ -297,11 +299,13 @@ int main(int argc, char **argv)
       }
       else
 #endif
-      if (sImage_Describer_Method == "POP_SIFT")
+#ifdef HAVE_POPSIFT
+      if (sImage_Describer_Method == "POPSIFT")
       {
         image_describer.reset(new SIFT_popSIFT_describer());
       }
       else
+#endif
       if (sImage_Describer_Method == "AKAZE_FLOAT")
       {
         image_describer.reset(new AKAZE_Image_describer(AKAZEParams(AKAZEConfig(), AKAZE_MSURF)));
