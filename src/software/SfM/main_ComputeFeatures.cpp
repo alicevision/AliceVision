@@ -13,7 +13,7 @@
 #include "nonFree/sift/SIFT_describer.hpp"
 #include "nonFree/sift/SIFT_float_describer.hpp"
 
-#if HAVE_POPSIFT
+#ifdef HAVE_POPSIFT
 #include "nonFree/sift/SIFT_popSIFT_describer.hpp"
 #endif
 
@@ -262,7 +262,7 @@ int main(int argc, char **argv)
     << "  (method to use to describe an image):\n"
     << "   SIFT (default),\n"
     << "   SIFT_FLOAT to use SIFT stored as float,\n"
-#if HAVE_POPSIFT
+#ifdef HAVE_POPSIFT
     << "   POPSIFT: SIFT with GPU implementation,\n"
 #endif
     << "   AKAZE_FLOAT: AKAZE with floating point descriptors,\n"
@@ -415,7 +415,7 @@ int main(int argc, char **argv)
     {
       image_describer.reset(new SIFT_float_describer(SiftParams(), !bUpRight));
     }
-#if HAVE_POPSIFT
+#ifdef HAVE_POPSIFT
     else
     if (sImage_Describer_Method == "POPSIFT")
     {
