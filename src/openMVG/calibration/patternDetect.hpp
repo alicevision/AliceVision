@@ -11,9 +11,11 @@ namespace calibration{
 enum Pattern
 {
   CHESSBOARD = 0,
-  CIRCLES_GRID,
-  ASYMMETRIC_CIRCLES_GRID,
-  ASYMMETRIC_CCTAG_GRID
+  CIRCLES_GRID = 1,
+  ASYMMETRIC_CIRCLES_GRID = 2
+#ifdef HAVE_CCTAG
+  , ASYMMETRIC_CCTAG_GRID = 4
+#endif
 };
 
 /**
