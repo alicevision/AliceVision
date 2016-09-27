@@ -2,12 +2,14 @@
 
 #pragma once
 
-
-#include <Alembic/AbcGeom/All.h>
-#include <Alembic/AbcCoreHDF5/All.h>
-
 #include <openMVG/sfm/sfm_data.hpp>
 #include <openMVG/sfm/sfm_data_io.hpp>
+#include <openMVG/geometry/pose3.hpp>
+#include <openMVG/cameras/Camera_Pinhole.hpp>
+#include <openMVG/types.hpp>
+
+#include <memory>
+#include <string>
 
 namespace openMVG {
 namespace dataio {
@@ -83,24 +85,19 @@ public:
    */
   void add(const sfm::SfM_Data &sfmdata, sfm::ESfM_Data flags_part = sfm::ESfM_Data::ALL);
 
+  /**
+   * @brief Return the filename associated to the alembic file.
+   * @return the filename associated to the alembivc file.
+   */
+  std::string getFilename();
+
   virtual ~AlembicExporter();
 
 private:
-  Alembic::Abc::OArchive archive;
-  Alembic::Abc::OObject topObj;
-  Alembic::Abc::OObject mvgRoot;
-  Alembic::Abc::OObject mvgCameras;
-  Alembic::Abc::OObject mvgCloud;
-  Alembic::Abc::OObject mvgPointCloud;
-  unsigned int counter;
-  Alembic::AbcGeom::OXform mxform;
-  Alembic::AbcGeom::OCamera mcamObj;
-  Alembic::AbcGeom::OUInt32ArrayProperty mpropSensorSize_pix;
-  Alembic::AbcGeom::OStringProperty mimagePlane;
-  Alembic::AbcGeom::OUInt32Property mpropViewId;
-  Alembic::AbcGeom::OUInt32Property mpropIntrinsicId;
-  Alembic::AbcGeom::OStringProperty mmvg_intrinsicType;
-  Alembic::AbcGeom::ODoubleArrayProperty mmvg_intrinsicParams;
+  
+  struct DataImpl;
+  std::unique_ptr<DataImpl> _data;
+
 };
 
 } // namespace data_io

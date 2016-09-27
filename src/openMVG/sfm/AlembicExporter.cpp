@@ -8,6 +8,10 @@
 #if HAVE_ALEMBIC
 
 #include "AlembicExporter.hpp"
+
+#include <Alembic/AbcGeom/All.h>
+#include <Alembic/AbcCoreHDF5/All.h>
+
 #include "openMVG/sfm/sfm_view_metadata.hpp"
 #include "openMVG/version.hpp"
 
@@ -19,27 +23,48 @@ using namespace Alembic::Abc;
 namespace AbcG = Alembic::AbcGeom;
 using namespace AbcG;
 
-AlembicExporter::AlembicExporter(const std::string &filename)
-: archive(Alembic::AbcCoreHDF5::WriteArchive(), filename)
-, topObj(archive, Alembic::Abc::kTop)
-, counter(0)
+struct AlembicExporter::DataImpl
 {
-  // Create MVG hierarchy
-  mvgRoot = Alembic::Abc::OObject(topObj, "mvgRoot");
-  mvgCameras = Alembic::Abc::OObject(mvgRoot, "mvgCameras");
-  mvgCloud = Alembic::Abc::OObject(mvgRoot, "mvgCloud");
-  mvgPointCloud = Alembic::Abc::OObject(mvgCloud, "mvgPointCloud"); 
+  DataImpl(const std::string &filename)
+  : _archive(Alembic::AbcCoreHDF5::WriteArchive(), filename)
+  , _topObj(_archive, Alembic::Abc::kTop)
+  {
+    // Create MVG hierarchy
+    _mvgRoot = Alembic::Abc::OObject(_topObj, "mvgRoot");
+    _mvgCameras = Alembic::Abc::OObject(_mvgRoot, "mvgCameras");
+    _mvgCloud = Alembic::Abc::OObject(_mvgRoot, "mvgCloud");
+    _mvgPointCloud = Alembic::Abc::OObject(_mvgCloud, "mvgPointCloud");
 
-  // Add version as custom property
-  auto userProps = mvgRoot.getProperties();
-  OUInt32ArrayProperty propAbcVersion(userProps, "mvg_ABC_version");
-  OUInt32ArrayProperty propOpenMVGVersion(userProps, "mvg_openMVG_version");
-  const std::vector<uint32_t> abcVersion = {1, 0};
-  propAbcVersion.set(abcVersion);
-  const std::vector<uint32_t> openMVGVersion = {OPENMVG_VERSION_MAJOR, OPENMVG_VERSION_MINOR, OPENMVG_VERSION_REVISION};
-  propOpenMVGVersion.set(openMVGVersion);
+    // Add version as custom property
+    auto userProps = _mvgRoot.getProperties();
+    OUInt32ArrayProperty propAbcVersion(userProps, "mvg_ABC_version");
+    OUInt32ArrayProperty propOpenMVGVersion(userProps, "mvg_openMVG_version");
+    const std::vector<uint32_t> abcVersion = {1, 0};
+    propAbcVersion.set(abcVersion);
+    const std::vector<uint32_t> openMVGVersion = {OPENMVG_VERSION_MAJOR, OPENMVG_VERSION_MINOR, OPENMVG_VERSION_REVISION};
+    propOpenMVGVersion.set(openMVGVersion);
+  }
+  
+  Alembic::Abc::OArchive _archive;
+  Alembic::Abc::OObject _topObj;
+  Alembic::Abc::OObject _mvgRoot;
+  Alembic::Abc::OObject _mvgCameras;
+  Alembic::Abc::OObject _mvgCloud;
+  Alembic::Abc::OObject _mvgPointCloud;
+  Alembic::AbcGeom::OXform _mxform;
+  Alembic::AbcGeom::OCamera _mcamObj;
+  Alembic::AbcGeom::OUInt32ArrayProperty _mpropSensorSize_pix;
+  Alembic::AbcGeom::OStringProperty _mimagePlane;
+  Alembic::AbcGeom::OUInt32Property _mpropViewId;
+  Alembic::AbcGeom::OUInt32Property _mpropIntrinsicId;
+  Alembic::AbcGeom::OStringProperty _mmvg_intrinsicType;
+  Alembic::AbcGeom::ODoubleArrayProperty _mmvg_intrinsicParams;
+};
 
-}
+
+AlembicExporter::AlembicExporter(const std::string &filename)
+: _data(new DataImpl(filename))
+{ }
 
 AlembicExporter::~AlembicExporter()
 {
@@ -67,7 +92,7 @@ void AlembicExporter::addPoints(const sfm::Landmarks &landmarks, bool withVisibi
   std::vector<Alembic::Util::uint64_t> ids(positions.size());
   iota(begin(ids), end(ids), 0);
 
-  OPoints partsOut(mvgPointCloud, "particleShape1");
+  OPoints partsOut(_data->_mvgPointCloud, "particleShape1");
   OPointsSchema &pSchema = partsOut.getSchema();
 
   OPointsSchema::Sample psamp(std::move(V3fArraySample(positions)), std::move(UInt64ArraySample(ids)));
@@ -169,7 +194,7 @@ void AlembicExporter::appendCamera(const std::string &cameraName,
   std::stringstream ss;
   ss << std::setfill('0') << std::setw(5) << id_pose;
   ss << "_" << cameraName << "_" << id_view;
-  Alembic::AbcGeom::OXform xform(mvgCameras, "camxform_" + ss.str());
+  Alembic::AbcGeom::OXform xform(_data->_mvgCameras, "camxform_" + ss.str());
   xform.getSchema().set(xformsample);
 
   // Camera intrinsic parameters
@@ -240,27 +265,27 @@ void AlembicExporter::initAnimatedCamera(const std::string& cameraName)
   // Create the camera transform object
   std::stringstream ss;
   ss << cameraName;
-  mxform = Alembic::AbcGeom::OXform(mvgCameras, "animxform_" + ss.str());
-  mxform.getSchema().setTimeSampling(tsp);
+  _data->_mxform = Alembic::AbcGeom::OXform(_data->_mvgCameras, "animxform_" + ss.str());
+  _data->_mxform.getSchema().setTimeSampling(tsp);
   
   // Create the camera parameters object (intrinsics & custom properties)
-  mcamObj = OCamera(mxform, "animcam_" + ss.str());
-  mcamObj.getSchema().setTimeSampling(tsp);
+  _data->_mcamObj = OCamera(_data->_mxform, "animcam_" + ss.str());
+  _data->_mcamObj.getSchema().setTimeSampling(tsp);
   
   // Add the custom properties
-  auto userProps = mcamObj.getSchema().getUserProperties();
+  auto userProps = _data->_mcamObj.getSchema().getUserProperties();
   // Sensor size
-  mpropSensorSize_pix = OUInt32ArrayProperty(userProps, "mvg_sensorSizePix", tsp);
+  _data->_mpropSensorSize_pix = OUInt32ArrayProperty(userProps, "mvg_sensorSizePix", tsp);
   // Image path
-  mimagePlane = OStringProperty(userProps, "mvg_imagePath", tsp);
+  _data->_mimagePlane = OStringProperty(userProps, "mvg_imagePath", tsp);
   // View id
-  mpropViewId = OUInt32Property(userProps, "mvg_viewId", tsp);
+  _data->_mpropViewId = OUInt32Property(userProps, "mvg_viewId", tsp);
   // Intrinsic id
-  mpropIntrinsicId = OUInt32Property(userProps, "mvg_intrinsicId", tsp);
+  _data->_mpropIntrinsicId = OUInt32Property(userProps, "mvg_intrinsicId", tsp);
   // Intrinsic type (ex: PINHOLE_CAMERA_RADIAL3)
-  mmvg_intrinsicType = OStringProperty(userProps, "mvg_intrinsicType", tsp);
+  _data->_mmvg_intrinsicType = OStringProperty(userProps, "mvg_intrinsicType", tsp);
   // Intrinsic parameters
-  mmvg_intrinsicParams = ODoubleArrayProperty(userProps, "mvg_intrinsicParams", tsp);
+  _data->_mmvg_intrinsicParams = ODoubleArrayProperty(userProps, "mvg_intrinsicParams", tsp);
 }
 
 void AlembicExporter::addCameraKeyframe(const geometry::Pose3 &pose,
@@ -302,7 +327,7 @@ void AlembicExporter::addCameraKeyframe(const geometry::Pose3 &pose,
   xformsample.setMatrix(xformMatrix);
   
   // Attach it to the schema of the OXform
-  mxform.getSchema().set(xformsample);
+  _data->_mxform.getSchema().set(xformsample);
   
   // Camera intrinsic parameters
   CameraSample camSample;
@@ -332,37 +357,37 @@ void AlembicExporter::addCameraKeyframe(const geometry::Pose3 &pose,
   
   // Add sensor width (largest image side) in pixels as custom property
   std::vector<uint32_t> sensorSize_pix = {uint32_t(sensorWidth_pix), uint32_t(sensorHeight_pix)};
-  mpropSensorSize_pix.set(sensorSize_pix);
+  _data->_mpropSensorSize_pix.set(sensorSize_pix);
   
   // Set custom attributes
   // Image path
-  mimagePlane.set(imagePath);
+  _data->_mimagePlane.set(imagePath);
 
   // View id
-  mpropViewId.set(id_view);
+  _data->_mpropViewId.set(id_view);
   // Intrinsic id
-  mpropIntrinsicId.set(id_intrinsic);
+  _data->_mpropIntrinsicId.set(id_intrinsic);
   // Intrinsic type
-  mmvg_intrinsicType.set(cam->getTypeStr());
+  _data->_mmvg_intrinsicType.set(cam->getTypeStr());
   // Intrinsic parameters
   std::vector<double> intrinsicParams = cam->getParams();
-  mmvg_intrinsicParams.set(intrinsicParams);
+  _data->_mmvg_intrinsicParams.set(intrinsicParams);
   
   // Attach intrinsic parameters to camera object
-  mcamObj.getSchema().set(camSample);
+  _data->_mcamObj.getSchema().set(camSample);
 }
 
 void AlembicExporter::jumpKeyframe(const std::string &imagePath)
 {
-  if(mxform.getSchema().getNumSamples() == 0)
+  if(_data->_mxform.getSchema().getNumSamples() == 0)
   {
     cameras::Pinhole_Intrinsic default_intrinsic;
     this->addCameraKeyframe(geometry::Pose3(), &default_intrinsic, imagePath, 0, 0);
   }
   else
   {
-    mxform.getSchema().setFromPrevious();
-    mcamObj.getSchema().setFromPrevious();
+    _data->_mxform.getSchema().setFromPrevious();
+    _data->_mcamObj.getSchema().setFromPrevious();
   }
 }
 
@@ -416,6 +441,11 @@ void AlembicExporter::add(const sfm::SfM_Data &sfmdata, sfm::ESfM_Data flags_par
   }
 }
 
+
+std::string AlembicExporter::getFilename()
+{
+  return _data->_archive.getName();
+}
 
 } //namespace dataio
 } //namespace openMVG
