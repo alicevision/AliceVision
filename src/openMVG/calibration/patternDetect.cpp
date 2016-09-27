@@ -34,9 +34,11 @@ std::istream& operator>>(std::istream &stream, Pattern &pattern)
     pattern = openMVG::calibration::Pattern::CIRCLES_GRID;
   else if (token == "ASYMMETRIC_CIRCLES")
     pattern = openMVG::calibration::Pattern::ASYMMETRIC_CIRCLES_GRID;
-#ifdef HAVE_CCTAG
   else if (token == "ASYMMETRIC_CCTAG")
+#ifdef HAVE_CCTAG
     pattern = ASYMMETRIC_CCTAG_GRID;
+#else
+    throw boost::program_options::invalid_option_value("Not builded with CCTag support.");
 #endif
   else
     throw boost::program_options::invalid_option_value(std::string("Invalid pattern: ") + token);
