@@ -6,9 +6,8 @@
 #include <boost/algorithm/string/case_conv.hpp>
 #include <boost/lexical_cast.hpp>
 
-#include <openMVG/features/cctag/CCTAG_describer.hpp>
-
 #ifdef HAVE_CCTAG
+#include <openMVG/features/cctag/CCTAG_describer.hpp>
 #include <cctag/ICCTag.hpp>
 #include <cctag/utils/LogTime.hpp>
 #endif
