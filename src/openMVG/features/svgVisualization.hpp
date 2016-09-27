@@ -8,7 +8,7 @@
 #pragma once
 
 #include "image_describer.hpp"
-#if HAVE_CCTAG
+#ifdef HAVE_CCTAG
 #include "regions_factory.hpp"
 #endif
 #include <openMVG/matching/indMatch.hpp>
@@ -160,7 +160,7 @@ bool lineToBorderPoints(const Vec3 &epiLine,
                         const std::size_t imgH, 
                         std::vector<Vec2> &intersectionPts);
 
-#if HAVE_CCTAG
+#ifdef HAVE_CCTAG
 
 /**
  * @brief It generates a svg file containing the image and its extracted cctags.
