@@ -9,7 +9,7 @@ namespace localization {
 /**
  * @brief This class implements a bounded buffer, a buffer with a given fixed size
  * that allows to push new elements into it. If the buffer is full at the moment
- * of the insertion, the first elemen of the buffer (in a FIFO strategy) is removed
+ * of the insertion, the first element of the buffer (in a FIFO strategy) is removed
  * and the new element is appended at the end of the buffer.
  */
 template<class T>

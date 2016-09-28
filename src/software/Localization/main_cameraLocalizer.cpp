@@ -179,11 +179,11 @@ int main(int argc, char** argv)
   bool noBArefineIntrinsics = false;      ///< It does not refine intrinsics during BA
   std::size_t minPointVisibility = 0;
   
-  std::string visualDebug = "";        ///< whether to save visual debug info
+  std::string visualDebug = "";           ///< whether to save visual debug info
   bool useVoctreeLocalizer = true;        ///< whether to use the voctreeLocalizer or cctagLocalizer
   bool useSIFT_CCTAG = false;             ///< whether to use SIFT_CCTAG
   
-  bool useFrameBufferMatching = true;     ///< enable the matchign with the last N frame of the sequence
+  bool useFrameBufferMatching = true;     ///< enable the matching with the last N frame of the sequence
 
   po::options_description desc(
       "This program takes as input a media (image, image sequence, video) and a database (voctree, 3D structure data) \n"
