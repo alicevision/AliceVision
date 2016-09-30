@@ -43,7 +43,7 @@ int main(int argc, char** argv)
   std::string debugSelectedImgFolder;
   std::string debugRejectedImgFolder;
   std::vector<std::size_t> checkerboardSize;
-  openMVG::calibration::Pattern pattern = openMVG::calibration::Pattern::CHESSBOARD;
+  openMVG::calibration::Pattern patternType = openMVG::calibration::Pattern::CHESSBOARD;
   std::size_t maxNbFrames = 0;
   std::size_t maxCalibFrames = 100;
   std::size_t calibGridSize = 10;
@@ -63,10 +63,10 @@ int main(int argc, char** argv)
            " - video file\n")
           ("output,o", po::value<std::string>(&outputFilename)->required(),
            "Output filename for intrinsic [and extrinsic] parameters.\n")
-          ("pattern,p", po::value<openMVG::calibration::Pattern>(&pattern)->default_value(pattern),
+          ("pattern,p", po::value<openMVG::calibration::Pattern>(&patternType)->default_value(patternType),
            "Type of pattern: 'CHESSBOARD', 'CIRCLES', 'ASYMMETRIC_CIRCLES'"
             #ifdef HAVE_CCTAG
-//                      " or 'CCTAG'"
+                      " or 'ASYMMETRIC_CCTAG'"
             #endif
           ".\n")
           ("size,s", po::value<std::vector < std::size_t >> (&checkerboardSize)->multitoken(),
@@ -160,6 +160,7 @@ int main(int argc, char** argv)
   std::string currentImgName;
   std::size_t iInputFrame = 0;
   std::vector<std::size_t> validFrames;
+  std::vector<std::vector<int> > detectedIdPerFrame;
   double step = 1.0;
 
   // Compute the discretization's step
@@ -197,14 +198,16 @@ int main(int argc, char** argv)
     }
 
     std::vector<cv::Point2f> pointbuf;
+    std::vector<int> detectedId;
     std::cout << "[" << currentFrame << "/" << maxNbFrames << "]" << std::endl;
 
     // Find the chosen pattern in images
-    const bool found = openMVG::calibration::findPattern(pattern, viewGray, boardSize, pointbuf);
+    const bool found = openMVG::calibration::findPattern(patternType, viewGray, boardSize, detectedId, pointbuf);
 
     if (found)
     {
       validFrames.push_back(currentFrame);
+      detectedIdPerFrame.push_back(detectedId);
       imagePoints.push_back(pointbuf);
     }
 
@@ -219,20 +222,41 @@ int main(int argc, char** argv)
   if (imagePoints.empty())
     throw std::logic_error("No checkerboard detected.");
 
-  std::vector<std::size_t> remainingImagesIndexes(validFrames.size());
+  std::vector<std::size_t> remainingImagesIndexes;
   std::vector<float> calibImageScore;
   std::vector<std::size_t> calibInputFrames;
   std::vector<std::vector<cv::Point2f> > calibImagePoints;
 
   // Select best images based on repartition in images of the calibration landmarks
-  openMVG::calibration::selectBestImages(imagePoints, imageSize, remainingImagesIndexes, maxCalibFrames,
-                                         validFrames, calibImageScore, calibInputFrames, calibImagePoints, calibGridSize);
+  openMVG::calibration::selectBestImages(
+      imagePoints, imageSize, maxCalibFrames, validFrames, calibGridSize,
+      calibImageScore, calibInputFrames, calibImagePoints,
+      remainingImagesIndexes);
 
-  std::vector<std::vector<cv::Point3f> > calibObjectPoints;
   start = std::clock();
-
-  openMVG::calibration::computeObjectPoints(boardSize, pattern, squareSize, calibImagePoints, calibObjectPoints);
-
+  // Create an object which stores all the checker points of the images
+  std::vector<std::vector<cv::Point3f> > calibObjectPoints;
+  {
+    std::vector<cv::Point3f> templateObjectPoints;
+    // Generate the object points coordinates
+    openMVG::calibration::calcChessboardCorners(templateObjectPoints, boardSize, squareSize, patternType);
+    // Assign the corners to all items
+    for(std::size_t frame: calibInputFrames)
+    {
+      // For some chessboard (ie. CCTag), we have an identification per point,
+      // and only a sub-part of the corners may be detected.
+      // So we only keep the visible corners from the templateObjectPoints
+      std::vector<int>& pointsId = detectedIdPerFrame[frame];
+      std::vector<cv::Point3f> objectPoints;
+      for(size_t i = 0; i < pointsId.size(); ++i)
+      {
+        objectPoints[i] = templateObjectPoints[pointsId[i]];
+      }
+      calibObjectPoints.push_back(objectPoints);
+    }
+    assert(calibInputFrames.size() == calibImagePoints.size());
+  }
+  
   double totalAvgErr = 0;
   std::vector<cv::Mat> rvecs;
   std::vector<cv::Mat> tvecs;
@@ -241,10 +265,10 @@ int main(int argc, char** argv)
   
   duration.reset();
   // Refinement loop of the calibration
-  openMVG::calibration::calibrationIterativeOptimization(calibImagePoints, calibObjectPoints, imageSize, aspectRatio,
+  openMVG::calibration::calibrationIterativeOptimization(imageSize, aspectRatio,
                         cvCalibFlags, cameraMatrix, distCoeffs, rvecs, tvecs, reprojErrs,
                         totalAvgErr, maxTotalAvgErr, minInputFrames, calibInputFrames,
-                        calibImageScore, rejectInputFrames);
+                        calibImagePoints, calibObjectPoints, calibImageScore, rejectInputFrames);
 
   std::cout << "Calibration duration: " << openMVG::system::prettyTime(duration.elapsedMs()) << std::endl;
 

@@ -58,8 +58,8 @@ void exportDebug(const std::string& debugSelectedImgFolder,
                  const std::string& debugRejectedImgFolder,
                  openMVG::dataio::FeedProvider& feed,
                  const std::vector<std::size_t>& calibInputFrames,
-                 const std::vector<std::size_t>& rejectInputFrames,
-                 const std::vector<std::size_t>& remainingImagesIndexes,
+                 const std::vector<std::size_t>& rejectedInputFrames,
+                 const std::vector<std::size_t>& unusedImagesIndexes,
                  const cv::Mat& cameraMatrix,
                  const cv::Mat& distCoeffs,
                  const cv::Size& imageSize)
@@ -80,7 +80,7 @@ void exportDebug(const std::string& debugSelectedImgFolder,
   if (!debugRejectedImgFolder.empty())
   {
     startDebug = std::clock();
-    exportImages(feed, debugRejectedImgFolder, rejectInputFrames,
+    exportImages(feed, debugRejectedImgFolder, rejectedInputFrames,
                  cameraMatrix, distCoeffs, imageSize, "_rejected_undistort.png");
     durationDebug = (std::clock() - startDebug) / (double) CLOCKS_PER_SEC;
     std::cout << "Export debug of rejected frames, duration: " << durationDebug << std::endl;
@@ -89,17 +89,17 @@ void exportDebug(const std::string& debugSelectedImgFolder,
   if (!debugRejectedImgFolder.empty())
   {
     startDebug = std::clock();
-    exportImages(feed, debugRejectedImgFolder, remainingImagesIndexes,
+    exportImages(feed, debugRejectedImgFolder, unusedImagesIndexes,
                  cameraMatrix, distCoeffs, imageSize, "_not_selected_undistort.png");
     durationDebug = (std::clock() - startDebug) / (double) CLOCKS_PER_SEC;
     std::cout << "Export debug of not selected frames, duration: " << durationDebug << std::endl;
   }
 }
 
-void saveCameraParamsToPlainTxt(const std::string& filename,
-                                const cv::Size& imageSize,
+void saveCameraParamsToPlainTxt(const cv::Size& imageSize,
                                 const cv::Mat& cameraMatrix,
-                                const cv::Mat& distCoeffs)
+                                const cv::Mat& distCoeffs,
+                                const std::string& filename)
 {
   std::ofstream fs(filename, std::ios::out);
   if (!fs.is_open())
@@ -224,7 +224,7 @@ void saveCameraParams(const std::string& filename,
     fs << "image_points" << imagePtMat;
   }
   const std::string txtfilename = filename.substr(0, filename.find_last_of(".")) + ".cal.txt";
-  saveCameraParamsToPlainTxt(txtfilename, imageSize, cameraMatrix, distCoeffs);
+  saveCameraParamsToPlainTxt(imageSize, cameraMatrix, distCoeffs, txtfilename);
 }
 
 }//namespace calibration

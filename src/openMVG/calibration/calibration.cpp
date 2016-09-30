@@ -73,22 +73,23 @@ bool runCalibration(const std::vector<std::vector<cv::Point2f> >& imagePoints,
   return ok;
 }
 
-bool calibrationIterativeOptimization(std::vector<std::vector<cv::Point2f> >& calibImagePoints,
-                                      std::vector<std::vector<cv::Point3f> >& calibObjectPoints,
-                                      const cv::Size& imageSize,
-                                      float aspectRatio,
-                                      int cvCalibFlags,
-                                      cv::Mat& cameraMatrix,
-                                      cv::Mat& distCoeffs,
-                                      std::vector<cv::Mat>& rvecs,
-                                      std::vector<cv::Mat>& tvecs,
-                                      std::vector<float>& reprojErrs,
-                                      double& totalAvgErr,
-                                      const double& maxTotalAvgErr,
-                                      const std::size_t& minInputFrames,
-                                      std::vector<std::size_t>& calibInputFrames,
-                                      std::vector<float>& calibImageScore,
-                                      std::vector<std::size_t>& rejectInputFrames)
+bool calibrationIterativeOptimization(
+                        const cv::Size& imageSize,
+                        float aspectRatio,
+                        int cvCalibFlags,
+                        cv::Mat& cameraMatrix,
+                        cv::Mat& distCoeffs,
+                        std::vector<cv::Mat>& rvecs,
+                        std::vector<cv::Mat>& tvecs,
+                        std::vector<float>& reprojErrs,
+                        double& totalAvgErr,
+                        const double& maxTotalAvgErr,
+                        const std::size_t& minInputFrames,
+                        std::vector<std::size_t>& calibInputFrames,
+                        std::vector<std::vector<cv::Point2f> >& calibImagePoints,
+                        std::vector<std::vector<cv::Point3f> >& calibObjectPoints,
+                        std::vector<float>& calibImageScore,
+                        std::vector<std::size_t>& rejectInputFrames)
 {
   std::size_t calibIteration = 0;
   bool calibSucceeded = false;

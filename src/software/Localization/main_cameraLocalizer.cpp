@@ -1,6 +1,6 @@
 #include <openMVG/localization/ILocalizer.hpp>
 #include <openMVG/localization/VoctreeLocalizer.hpp>
-#if HAVE_CCTAG
+#ifdef HAVE_CCTAG
 #include <openMVG/localization/CCTagLocalizer.hpp>
 #endif
 #include <openMVG/localization/LocalizationResult.hpp>
@@ -41,7 +41,7 @@ using namespace openMVG;
 enum DescriberType
 {
   SIFT
-#if HAVE_CCTAG
+#ifdef HAVE_CCTAG
   ,CCTAG,
   SIFT_CCTAG
 #endif
@@ -51,7 +51,7 @@ inline DescriberType stringToDescriberType(const std::string& describerType)
 {
   if(describerType == "SIFT")
     return DescriberType::SIFT;
-#if HAVE_CCTAG
+#ifdef HAVE_CCTAG
   if (describerType == "CCTAG")
     return DescriberType::CCTAG;
   if(describerType == "SIFT_CCTAG")
@@ -64,7 +64,7 @@ inline std::string describerTypeToString(DescriberType describerType)
 {
   if(describerType == DescriberType::SIFT)
     return "SIFT";
-#if HAVE_CCTAG
+#ifdef HAVE_CCTAG
   if (describerType == DescriberType::CCTAG)
     return "CCTAG";
   if(describerType == DescriberType::SIFT_CCTAG)
@@ -170,7 +170,7 @@ int main(int argc, char** argv)
 #else
   std::string exportFile = "localizationResult.json"; //!< the export file
 #endif
-#if HAVE_CCTAG
+#ifdef HAVE_CCTAG
   // parameters for cctag localizer
   std::size_t nNearestKeyFrames = 5;   
 #endif
@@ -237,7 +237,7 @@ int main(int argc, char** argv)
           "geometric verification. If set to 0 it lets the ACRansac select "
           "an optimal value.")
 // cctag specific options
-#if HAVE_CCTAG
+#ifdef HAVE_CCTAG
       ("nNearestKeyFrames", po::value<size_t>(&nNearestKeyFrames)->default_value(nNearestKeyFrames), 
           "[cctag] Number of images to retrieve in the database")
 #endif
@@ -305,12 +305,12 @@ int main(int argc, char** argv)
   {
     // decide the localizer to use based on the type of feature
     useVoctreeLocalizer = ((DescriberType::SIFT==descriptorType)
-#if HAVE_CCTAG
+#ifdef HAVE_CCTAG
             || (DescriberType::SIFT_CCTAG==descriptorType)
 #endif
             );
     
-#if HAVE_CCTAG   
+#ifdef HAVE_CCTAG   
     // check whether we have to use SIFT and CCTAG together
     useSIFT_CCTAG = (DescriberType::SIFT_CCTAG==descriptorType);
 #endif    
@@ -338,7 +338,7 @@ int main(int argc, char** argv)
       POPART_COUT("\talgorithm: " << algostring);
       POPART_COUT("\tmatchingError: " << matchingErrorMax);
     }
-#if HAVE_CCTAG 
+#ifdef HAVE_CCTAG 
     else
     {
       POPART_COUT("\tnNearestKeyFrames: " << nNearestKeyFrames);
@@ -372,7 +372,7 @@ int main(int argc, char** argv)
   
   // initialize the localizer according to the chosen type of describer
   if((DescriberType::SIFT==descriptorType)
-#if HAVE_CCTAG
+#ifdef HAVE_CCTAG
             ||(DescriberType::SIFT_CCTAG==descriptorType)
 #endif
       )
@@ -396,7 +396,7 @@ int main(int argc, char** argv)
     tmpParam->_ccTagUseCuda = false;
     tmpParam->_matchingError = matchingErrorMax;
   }
-#if HAVE_CCTAG
+#ifdef HAVE_CCTAG
   else
   {
     localization::CCTagLocalizer* tmpLoc = new localization::CCTagLocalizer(sfmFilePath, descriptorsFolder);
