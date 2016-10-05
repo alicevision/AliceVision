@@ -25,6 +25,9 @@ if(OpenMVG_USE_BOOST)
     target_link_libraries(openMVG_main_rigCalibration
       ${CCTAG_LIBRARIES}
       )
+    target_link_libraries(openMVG_main_cameraCalibration
+      ${CCTAG_LIBRARIES}
+      )
   endif(OpenMVG_USE_CCTAG)
 
 endif(OpenMVG_USE_BOOST)
