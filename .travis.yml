@@ -115,7 +115,7 @@ before_install:
     else
       mkdir --parent $BOOST_SOURCE
       mkdir --parent $BOOST_INSTALL
-      wget https://sourceforge.net/projects/boost/files/boost/1.55.0/boost_1_55_0.tar.gz;
+      travis_retry wget https://sourceforge.net/projects/boost/files/boost/1.55.0/boost_1_55_0.tar.gz;
       tar -xf boost_1_55_0.tar.gz;
       cp -r boost_1_55_0/* $BOOST_SOURCE;
     fi
@@ -126,7 +126,7 @@ before_install:
     else
       cd $SS_ROOT;
       mkdir --parent $SS_INSTALL;
-      wget http://faculty.cse.tamu.edu/davis/SuiteSparse/SuiteSparse-4.5.3.tar.gz;
+      travis_retry wget http://faculty.cse.tamu.edu/davis/SuiteSparse/SuiteSparse-4.5.3.tar.gz;
       tar -xf SuiteSparse-4.5.3.tar.gz;
     fi
  # CERES
@@ -137,7 +137,7 @@ before_install:
       mkdir --parent $CERES_SOURCE
       mkdir --parent $CERES_BUILD
       mkdir --parent $CERES_INSTALL
-      wget http://ceres-solver.org/ceres-solver-1.11.0.tar.gz;
+      travis_retry wget http://ceres-solver.org/ceres-solver-1.11.0.tar.gz;
       tar -xf ceres-solver-1.11.0.tar.gz;
       cp -r ceres-solver-1.11.0/* $CERES_SOURCE;
     fi
