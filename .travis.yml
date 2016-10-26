@@ -234,7 +234,7 @@ script:
     if [ "$(ls -A $GT_TEST_SOURCE)" ]; then
       echo "Evaluation benchmark found in cache.";
     else
-      git clone --branch dev https://github.com/caymard/SfM_quality_evaluation.git $GT_TEST_SOURCE;
+      git clone --branch dev https://github.com/poparteu/SfM_quality_evaluation.git $GT_TEST_SOURCE;
     fi
   - cd $GT_TEST_SOURCE
   - git pull
