@@ -19,7 +19,7 @@ TEST(kmeans, kmeanInitializer)
 {
   using namespace openMVG;
   
-  OPENMVG_COUT("Testing kmeanspp Initializer...");
+  OPENMVG_LOG_DEBUG("Testing kmeanspp Initializer...");
 
   const std::size_t DIMENSION = 128;
   const std::size_t FEATURENUMBER = 500;
@@ -76,7 +76,7 @@ TEST(kmeans, kmeanInitializerVarying)
 {
   using namespace openMVG;
   
-  OPENMVG_COUT("Testing kmeanspp Initializer with variable k and DIM...");
+  OPENMVG_LOG_DEBUG("Testing kmeanspp Initializer with variable k and DIM...");
 
   const int FEATURENUMBER = 500;
   const std::size_t numTrial = 3;
@@ -92,7 +92,7 @@ TEST(kmeans, kmeanInitializerVarying)
     const std::size_t DIMENSION = dimGen(generator);
     const std::size_t K = kGen(generator);
     const std::size_t STEP = 5 * K;
-    OPENMVG_COUT("\tTrial " << trial + 1 << "/" << numTrial << " with K = " << K << " and DIMENSION = " << DIMENSION);
+    OPENMVG_LOG_DEBUG("\tTrial " << trial + 1 << "/" << numTrial << " with K = " << K << " and DIMENSION = " << DIMENSION);
 
     typedef Eigen::RowVectorXf FeatureFloat;
     typedef std::vector<FeatureFloat, Eigen::aligned_allocator<FeatureFloat> > FeatureFloatVector;
@@ -129,7 +129,7 @@ TEST(kmeans, kmeanSimple)
 {
   using namespace openMVG;
 
-  OPENMVG_COUT("Testing kmeans...");
+  OPENMVG_LOG_DEBUG("Testing kmeans...");
 
   const std::size_t DIMENSION = 8;
   const std::size_t FEATURENUMBER = 500;
@@ -207,7 +207,7 @@ TEST(kmeans, kmeanSimple)
 TEST(kmeans, kmeanVarying)
 {
   using namespace openMVG;
-  OPENMVG_COUT("Testing kmeans with variable k and DIM...");
+  OPENMVG_LOG_DEBUG("Testing kmeans with variable k and DIM...");
 
   const std::size_t FEATURENUMBER = 300;
   const std::size_t numTrial = 3;
@@ -222,7 +222,7 @@ TEST(kmeans, kmeanVarying)
     const std::size_t DIMENSION = dimGen(generator);
     const std::size_t K = kGen(generator);
     const std::size_t STEP = 5 * K;
-    OPENMVG_COUT("\tTrial " << trial + 1 << "/" << numTrial << " with K = " << K << " and DIMENSION = " << DIMENSION);
+    OPENMVG_LOG_DEBUG("\tTrial " << trial + 1 << "/" << numTrial << " with K = " << K << " and DIMENSION = " << DIMENSION);
 
     typedef Eigen::RowVectorXf FeatureFloat;
     typedef std::vector<FeatureFloat, Eigen::aligned_allocator<FeatureFloat> > FeatureFloatVector;
@@ -274,7 +274,7 @@ TEST(kmeans, kmeanVarying)
       }
       globDist += bestDist;
     }
-    OPENMVG_COUT("center distance " << globDist);
+    OPENMVG_LOG_DEBUG("center distance " << globDist);
 
     std::vector<size_t> h(K, 0);
     for(size_t i = 0; i < membership.size(); ++i)
@@ -283,7 +283,7 @@ TEST(kmeans, kmeanVarying)
     }
     for(size_t i = 0; i < h.size(); ++i)
     {
-//      OPENMVG_COUT(h[i]);
+//      OPENMVG_LOG_DEBUG(h[i]);
       EXPECT_TRUE(h[i] > 0);
       EXPECT_EQ(h[i], FEATURENUMBER);
     }

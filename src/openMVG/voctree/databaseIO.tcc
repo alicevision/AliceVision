@@ -38,7 +38,7 @@ std::size_t populateDatabase(const std::string &fileFullPath,
   std::size_t numDescriptors = 0;
   
   // Read the descriptors
-  OPENMVG_COUT("Reading the descriptors from " << descriptorsFiles.size() <<" files...");
+  OPENMVG_LOG_DEBUG("Reading the descriptors from " << descriptorsFiles.size() <<" files...");
   boost::progress_display display(descriptorsFiles.size());
 
   // Run through the path vector and read the descriptors
@@ -162,7 +162,7 @@ void queryDatabase(const std::string &fileFullPath,
   getListOfDescriptorFiles(fileFullPath, descriptorsFiles);
   
   // Read the descriptors
-  OPENMVG_COUT("queryDatabase: Reading the descriptors from " << descriptorsFiles.size() << " files...");
+  OPENMVG_LOG_DEBUG("queryDatabase: Reading the descriptors from " << descriptorsFiles.size() << " files...");
   boost::progress_display display(descriptorsFiles.size());
 
   #ifdef OPENMVG_USE_OPENMP

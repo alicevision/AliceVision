@@ -70,7 +70,7 @@ struct InitKmeanspp
     // 3. Add one new data point as a center. Each point x is chosen with probability 
     //    proportional to D(x)^2.
     // 4. Repeat Steps 2 and 3 until k centers have been chosen.
-    if(verbose > 0) OPENMVG_COUT("Kmeanspp initialization");
+    if(verbose > 0) OPENMVG_LOG_DEBUG("Kmeanspp initialization");
 
     centers.clear();
     centers.resize(k);
@@ -87,7 +87,7 @@ struct InitKmeanspp
     // add it to the centers
     centers[0] = *features[ randCenter ];
 
-    if(verbose > 2) OPENMVG_COUT("First center picked randomly " << randCenter << ": " << centers[0]);
+    if(verbose > 2) OPENMVG_LOG_DEBUG("First center picked randomly " << randCenter << ": " << centers[0]);
 
     // compute the distances
     for(dstiter = dists.begin(), featiter = features.begin(); dstiter != dists.end(); ++dstiter, ++featiter)
@@ -99,7 +99,7 @@ struct InitKmeanspp
     // iterate k-1 times
     for(int i = 1; i < k; ++i)
     {
-      if(verbose > 1) OPENMVG_COUT("Finding initial center " << i + 1);
+      if(verbose > 1) OPENMVG_LOG_DEBUG("Finding initial center " << i + 1);
 
       squared_distance_type bestSum = std::numeric_limits<squared_distance_type>::max();
       std::size_t bestCenter = -1;
@@ -151,7 +151,7 @@ struct InitKmeanspp
           distsTemp[it] = std::min(distance(*(features[it]), newCenter), dists[it]);
           distSum += distsTemp[it];
         }
-        if(verbose > 2) OPENMVG_COUT("trial " << j << " found feat " << featidx << ": " << *features[ featidx ] << " with sum: " << distSum);
+        if(verbose > 2) OPENMVG_LOG_DEBUG("trial " << j << " found feat " << featidx << ": " << *features[ featidx ] << " with sum: " << distSum);
 
         if(distSum < bestSum)
         {
@@ -162,7 +162,7 @@ struct InitKmeanspp
         }
 
       }
-      if(verbose > 2) OPENMVG_COUT("feature found feat " << bestCenter << ": " << *features[ bestCenter ]);
+      if(verbose > 2) OPENMVG_LOG_DEBUG("feature found feat " << bestCenter << ": " << *features[ bestCenter ]);
 
       // 3. add new data
       centers[i] = *features[ bestCenter ];
@@ -170,7 +170,7 @@ struct InitKmeanspp
       std::swap(dists, distsTempBest);
 
     }
-    if(verbose > 1) OPENMVG_COUT("Done!");
+    if(verbose > 1) OPENMVG_LOG_DEBUG("Done!");
 
   }
 };
@@ -191,7 +191,7 @@ struct InitGiven
 template<class Feature>
 inline void printFeat(const Feature &f)
 {
-  OPENMVG_COUT(f);
+  OPENMVG_LOG_DEBUG(f);
 }
 
 template<class Feature, class FeatureAllocator = typename DefaultAllocator<Feature>::type>
@@ -390,10 +390,10 @@ SimpleKmeans<Feature, Distance, FeatureAllocator>::clusterPointers(const std::ve
   assert(restarts_ > 0);
   for(size_t starts = 0; starts < restarts_; ++starts)
   {
-    if(verbose_ > 0) OPENMVG_COUT("Trial " << starts + 1 << "/" << restarts_);
+    if(verbose_ > 0) OPENMVG_LOG_DEBUG("Trial " << starts + 1 << "/" << restarts_);
     choose_centers_(features, k, new_centers, distance_, verbose_);
     squared_distance_type sse = clusterOnce(features, k, new_centers, new_membership);
-    if(verbose_ > 0) OPENMVG_COUT("End of Trial " << starts + 1 << "/" << restarts_);
+    if(verbose_ > 0) OPENMVG_LOG_DEBUG("End of Trial " << starts + 1 << "/" << restarts_);
     if(sse < least_sse)
     {
       least_sse = sse;
@@ -420,7 +420,7 @@ SimpleKmeans<Feature, Distance, FeatureAllocator>::clusterOnce(const std::vector
   std::vector<Feature, FeatureAllocator> new_centers(k);
   squared_distance_type max_center_shift = std::numeric_limits<squared_distance_type>::max();
 
-  if(verbose_ > 0) OPENMVG_COUT("Iterations");
+  if(verbose_ > 0) OPENMVG_LOG_DEBUG("Iterations");
   for(size_t iter = 0; iter < max_iterations_; ++iter)
   {
     if(verbose_ > 0) std::cout << "*" << std::flush;
@@ -507,10 +507,10 @@ SimpleKmeans<Feature, Distance, FeatureAllocator>::clusterOnce(const std::vector
         // @todo use a better strategy like taking splitting the largest cluster
         unsigned int index = rand() % features.size();
         centers[i] = *features[index];
-        OPENMVG_COUT("Choosing a new center: " << index);
+        OPENMVG_LOG_DEBUG("Choosing a new center: " << index);
       }
     }
-    //			OPENMVG_COUT("max_center_shift: " << max_center_shift);  
+    //			OPENMVG_LOG_DEBUG("max_center_shift: " << max_center_shift);  
     if(max_center_shift <= 10e-10) break;
   }
   if(verbose_ > 0) std::cout << std::endl;

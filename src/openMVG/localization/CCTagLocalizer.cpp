@@ -86,7 +86,7 @@ bool CCTagLocalizer::loadReconstructionDescriptors(const sfm::SfM_Data & sfm_dat
   C_Progress_display my_progress_bar(sfm_data.GetViews().size(),
                                      std::cout, "\n- Regions Loading -\n");
 
-  OPENMVG_COUT("Build observations per view");
+  OPENMVG_LOG_DEBUG("Build observations per view");
   // Build observations per view
   std::map<IndexT, std::vector<FeatureInImage> > observationsPerView;
   for(auto landmarkValue : sfm_data.structure)
@@ -105,7 +105,7 @@ bool CCTagLocalizer::loadReconstructionDescriptors(const sfm::SfM_Data & sfm_dat
     std::sort(featuresInImage.second.begin(), featuresInImage.second.end());
   }
   
-  OPENMVG_COUT("Load Features and Descriptors per view");
+  OPENMVG_LOG_DEBUG("Load Features and Descriptors per view");
   std::vector<bool> presentIds(128,false); // @todo Assume a maximum library size of 128 unique ids.
   std::vector<int> counterCCtagsInImage = {0, 0, 0, 0, 0, 0};
   // Read for each view the corresponding regions and store them
@@ -180,23 +180,23 @@ bool CCTagLocalizer::loadReconstructionDescriptors(const sfm::SfM_Data & sfm_dat
         else
           counterCCtagsInImage[countcctag] += 1;
       }
-      OPENMVG_COUT(ss.str());
+      OPENMVG_LOG_DEBUG(ss.str());
     }
     
     // Display histogram
-    OPENMVG_COUT("Histogram of number of cctags in images :");
+    OPENMVG_LOG_DEBUG("Histogram of number of cctags in images :");
     for(std::size_t i = 0; i < 5; i++)
-      OPENMVG_COUT("Images with " << i << "  CCTags : " << counterCCtagsInImage[i]);
-    OPENMVG_COUT("Images with 5+ CCTags : " << counterCCtagsInImage[5]);
+      OPENMVG_LOG_DEBUG("Images with " << i << "  CCTags : " << counterCCtagsInImage[i]);
+    OPENMVG_LOG_DEBUG("Images with 5+ CCTags : " << counterCCtagsInImage[5]);
 
     // Display the cctag ids over all cctag landmarks present in the database
-    OPENMVG_COUT("Found " << std::count(presentIds.begin(), presentIds.end(), true) 
+    OPENMVG_LOG_DEBUG("Found " << std::count(presentIds.begin(), presentIds.end(), true) 
             << " CCTag in the database with " << _sfm_data.GetLandmarks().size() << " associated 3D points\n"
             "The CCTag id in the database are: ");
     for(std::size_t i = 0; i < presentIds.size(); ++i)
     { 
       if(presentIds[i])
-        OPENMVG_COUT(i + 1);
+        OPENMVG_LOG_DEBUG(i + 1);
     }
 
   }
@@ -219,13 +219,13 @@ bool CCTagLocalizer::localize(const image::Image<unsigned char> & imageGrey,
     throw std::invalid_argument("The CCTag localizer parameters are not in the right format.");
   }
   // extract descriptors and features from image
-  OPENMVG_COUT("[features]\tExtract CCTag from query image");
+  OPENMVG_LOG_DEBUG("[features]\tExtract CCTag from query image");
   std::unique_ptr<features::Regions> tmpQueryRegions(new features::CCTAG_Regions());
 
   _image_describer.setCudaPipe( _cudaPipe );
   _image_describer.Set_configuration_preset(param->_featurePreset);
   _image_describer.Describe(imageGrey, tmpQueryRegions);
-  OPENMVG_COUT("[features]\tExtract CCTAG done: found " << tmpQueryRegions->RegionCount() << " features");
+  OPENMVG_LOG_DEBUG("[features]\tExtract CCTAG done: found " << tmpQueryRegions->RegionCount() << " features");
   
   std::pair<std::size_t, std::size_t> imageSize = std::make_pair(imageGrey.Width(),imageGrey.Height());
   
@@ -282,7 +282,7 @@ bool CCTagLocalizer::localize(const std::unique_ptr<features::Regions> &genQuery
   std::vector<voctree::DocMatch> matchedImages;
   system::Timer timer;
   getAllAssociations(queryRegions, imageSize, *param, occurences, resectionData.pt2D, resectionData.pt3D, matchedImages, imagePath);
-  OPENMVG_COUT("[Matching]\tRetrieving associations took " << timer.elapsedMs() << "ms");
+  OPENMVG_LOG_DEBUG("[Matching]\tRetrieving associations took " << timer.elapsedMs() << "ms");
   
   const std::size_t numCollectedPts = occurences.size();
   
@@ -305,7 +305,7 @@ bool CCTagLocalizer::localize(const std::unique_ptr<features::Regions> &genQuery
   timer.reset();
   // estimate the pose
   resectionData.error_max = param->_errorMax;
-  OPENMVG_COUT("[poseEstimation]\tEstimating camera pose...");
+  OPENMVG_LOG_DEBUG("[poseEstimation]\tEstimating camera pose...");
   const bool bResection = sfm::SfM_Localizer::Localize(imageSize,
                                                       // pass the input intrinsic if they are valid, null otherwise
                                                       (useInputIntrinsics) ? &queryIntrinsics : nullptr,
@@ -315,7 +315,7 @@ bool CCTagLocalizer::localize(const std::unique_ptr<features::Regions> &genQuery
   
   if(!bResection)
   {
-    OPENMVG_COUT("[poseEstimation]\tResection failed");
+    OPENMVG_LOG_DEBUG("[poseEstimation]\tResection failed");
     if(!param->_visualDebug.empty() && !imagePath.empty())
     {
 //      namespace bfs = boost::filesystem;
@@ -327,10 +327,10 @@ bool CCTagLocalizer::localize(const std::unique_ptr<features::Regions> &genQuery
     localizationResult = LocalizationResult(resectionData, associationIDs, pose, queryIntrinsics, matchedImages, bResection);
     return localizationResult.isValid();
   }
-  OPENMVG_COUT("[poseEstimation]\tResection SUCCEDED");
+  OPENMVG_LOG_DEBUG("[poseEstimation]\tResection SUCCEDED");
 
-  OPENMVG_COUT("R est\n" << pose.rotation());
-  OPENMVG_COUT("t est\n" << pose.translation());
+  OPENMVG_LOG_DEBUG("R est\n" << pose.rotation());
+  OPENMVG_LOG_DEBUG("t est\n" << pose.translation());
 
   // if we didn't use the provided intrinsics, estimate K from the projection
   // matrix estimated by the localizer and initialize the queryIntrinsics with
@@ -344,13 +344,13 @@ bool CCTagLocalizer::localize(const std::unique_ptr<features::Regions> &genQuery
     // RQ decomposition
     KRt_From_P(resectionData.projection_matrix, &K_, &R_, &t_);
     queryIntrinsics.setK(K_);
-    OPENMVG_COUT("K estimated\n" << K_);
+    OPENMVG_LOG_DEBUG("K estimated\n" << K_);
     queryIntrinsics.setWidth(imageSize.first);
     queryIntrinsics.setHeight(imageSize.second);
   }
 
   // refine the estimated pose
-  OPENMVG_COUT("[poseEstimation]\tRefining estimated pose");
+  OPENMVG_LOG_DEBUG("[poseEstimation]\tRefining estimated pose");
   const bool b_refine_pose = true;
   const bool refineStatus = sfm::SfM_Localizer::RefinePose(&queryIntrinsics,
                                                             pose,
@@ -358,27 +358,27 @@ bool CCTagLocalizer::localize(const std::unique_ptr<features::Regions> &genQuery
                                                             b_refine_pose,
                                                             param->_refineIntrinsics);
   if(!refineStatus)
-    OPENMVG_COUT("Refine pose failed.");
+    OPENMVG_LOG_DEBUG("Refine pose failed.");
 
   if(!param->_visualDebug.empty() && !imagePath.empty())
   {
     //@todo save image with cctag with different code color for inliers
   }
   
-  OPENMVG_COUT("[poseEstimation]\tPose estimation took " << timer.elapsedMs() << "ms.");
+  OPENMVG_LOG_DEBUG("[poseEstimation]\tPose estimation took " << timer.elapsedMs() << "ms.");
 
   localizationResult = LocalizationResult(resectionData, associationIDs, pose, queryIntrinsics, matchedImages, refineStatus);
 
   {
     // just debugging this block can be safely removed or commented out
-    OPENMVG_COUT("R refined\n" << pose.rotation());
-    OPENMVG_COUT("t refined\n" << pose.translation());
-    OPENMVG_COUT("K refined\n" << queryIntrinsics.K());
+    OPENMVG_LOG_DEBUG("R refined\n" << pose.rotation());
+    OPENMVG_LOG_DEBUG("t refined\n" << pose.translation());
+    OPENMVG_LOG_DEBUG("K refined\n" << queryIntrinsics.K());
 
     const Mat2X residuals = localizationResult.computeInliersResiduals();
 
     const auto sqrErrors = (residuals.cwiseProduct(residuals)).colwise().sum();
-    OPENMVG_COUT("RMSE = " << std::sqrt(sqrErrors.mean())
+    OPENMVG_LOG_DEBUG("RMSE = " << std::sqrt(sqrErrors.mean())
                 << " min = " << std::sqrt(sqrErrors.minCoeff())
                 << " max = " << std::sqrt(sqrErrors.maxCoeff()));
   }
@@ -418,10 +418,10 @@ bool CCTagLocalizer::localizeRig(const std::vector<image::Image<unsigned char> >
   {
     // extract descriptors and features from each image
     vec_queryRegions[i] = std::unique_ptr<features::Regions>(new features::CCTAG_Regions());
-    OPENMVG_COUT("[features]\tExtract CCTag from query image...");
+    OPENMVG_LOG_DEBUG("[features]\tExtract CCTag from query image...");
     _image_describer.Set_configuration_preset(param->_featurePreset);
     _image_describer.Describe(vec_imageGrey[i], vec_queryRegions[i]);
-    OPENMVG_COUT("[features]\tExtract CCTAG done: found " <<  vec_queryRegions[i]->RegionCount() << " features");
+    OPENMVG_LOG_DEBUG("[features]\tExtract CCTAG done: found " <<  vec_queryRegions[i]->RegionCount() << " features");
     // add the image size for this image
     vec_imageSize.emplace_back(vec_imageGrey[i].Width(), vec_imageGrey[i].Height());
   }
@@ -447,7 +447,7 @@ bool CCTagLocalizer::localizeRig(const std::vector<std::unique_ptr<features::Reg
 #ifdef HAVE_OPENGV
   if(!parameters->_useLocalizeRigNaive)
   {
-    OPENMVG_COUT("Using localizeRig_naive()");
+    OPENMVG_LOG_DEBUG("Using localizeRig_naive()");
     return localizeRig_opengv(vec_queryRegions,
                               vec_imageSize,
                               parameters,
@@ -460,7 +460,7 @@ bool CCTagLocalizer::localizeRig(const std::vector<std::unique_ptr<features::Reg
 #endif
   {
     if(!parameters->_useLocalizeRigNaive)
-      OPENMVG_COUT("OpenGV is not available. Fallback to localizeRig_naive().");
+      OPENMVG_LOG_DEBUG("OpenGV is not available. Fallback to localizeRig_naive().");
     return localizeRig_naive(vec_queryRegions,
                              vec_imageSize,
                              parameters,
@@ -525,7 +525,7 @@ bool CCTagLocalizer::localizeRig_opengv(const std::vector<std::unique_ptr<featur
   const size_t minNumAssociations = 4;  //possible parameter?
   if(numAssociations < minNumAssociations)
   {
-    OPENMVG_COUT("[poseEstimation]\tonly " << numAssociations << " have been found, not enough to do the resection!");
+    OPENMVG_LOG_DEBUG("[poseEstimation]\tonly " << numAssociations << " have been found, not enough to do the resection!");
     for(std::size_t cam = 0; cam < numCams; ++cam)
     {
       // empty result with isValid set to false
@@ -563,11 +563,11 @@ bool CCTagLocalizer::localizeRig_opengv(const std::vector<std::unique_ptr<featur
     }
 
     for(std::size_t camID = 0; camID < vec_inliers.size(); ++camID)
-      OPENMVG_COUT("#inliers for cam " << camID << ": " << vec_inliers[camID].size());
+      OPENMVG_LOG_DEBUG("#inliers for cam " << camID << ": " << vec_inliers[camID].size());
     
-    OPENMVG_COUT("Pose after resection:");
-    OPENMVG_COUT("Rotation: " << rigPose.rotation());
-    OPENMVG_COUT("Centre: " << rigPose.center());
+    OPENMVG_LOG_DEBUG("Pose after resection:");
+    OPENMVG_LOG_DEBUG("Rotation: " << rigPose.rotation());
+    OPENMVG_LOG_DEBUG("Centre: " << rigPose.center());
     
     // debugging stats
     // print the reprojection error for inliers (just debugging purposes)
@@ -590,7 +590,7 @@ bool CCTagLocalizer::localizeRig_opengv(const std::vector<std::unique_ptr<featur
                                                minNumPoints,
                                                vec_inliers,
                                                rigPose);
-  OPENMVG_COUT("Iterative refinement took " << timer.elapsedMs() << "ms");
+  OPENMVG_LOG_DEBUG("Iterative refinement took " << timer.elapsedMs() << "ms");
   
   {
     // debugging stats
@@ -646,7 +646,7 @@ bool CCTagLocalizer::localizeRig_opengv(const std::vector<std::unique_ptr<featur
   
   if(!refineOk)
   {
-    OPENMVG_COUT("[poseEstimation]\tRefine failed.");
+    OPENMVG_LOG_DEBUG("[poseEstimation]\tRefine failed.");
     return false;
   }
   
@@ -700,11 +700,11 @@ bool CCTagLocalizer::localizeRig_naive(const std::vector<std::unique_ptr<feature
   // no camera has be localized
   if(numLocalizedCam == 0)
   {
-    OPENMVG_COUT("No camera has been localized!!!");
+    OPENMVG_LOG_DEBUG("No camera has been localized!!!");
     return false;
   }
   
-  OPENMVG_COUT("Localized cameras: " << numLocalizedCam << "/" << numCams);
+  OPENMVG_LOG_DEBUG("Localized cameras: " << numLocalizedCam << "/" << numCams);
   
   // if there is only one camera (the main one)
   if(numCams==1)
@@ -725,7 +725,7 @@ bool CCTagLocalizer::localizeRig_naive(const std::vector<std::unique_ptr<feature
     // better safe than sorry
     assert(idx < isLocalized.size());
     
-    OPENMVG_COUT("Index of the first localized camera: " << idx);
+    OPENMVG_LOG_DEBUG("Index of the first localized camera: " << idx);
     
     // if the only localized camera is the main camera
     if(idx==0)
@@ -751,7 +751,7 @@ bool CCTagLocalizer::localizeRig_naive(const std::vector<std::unique_ptr<feature
   
   if(!refineOk)
   {
-    OPENMVG_COUT("[poseEstimation]\tRig pose refinement failed.");
+    OPENMVG_LOG_DEBUG("[poseEstimation]\tRig pose refinement failed.");
     return false;
   }
   
@@ -791,7 +791,7 @@ void CCTagLocalizer::getAllAssociations(const features::CCTAG_Regions &queryRegi
     // Matching
     std::vector<matching::IndMatch> vec_featureMatches;
     viewMatching(queryRegions, _regions_per_view.at(indexKeyFrame)._regions, vec_featureMatches);
-    OPENMVG_COUT("matching]\tFound "<< vec_featureMatches.size() <<" matches.");
+    OPENMVG_LOG_DEBUG("matching]\tFound "<< vec_featureMatches.size() <<" matches.");
     
     matchedImages.emplace_back(indexKeyFrame, vec_featureMatches.size());
     
@@ -807,7 +807,7 @@ void CCTagLocalizer::getAllAssociations(const features::CCTAG_Regions &queryRegi
       const auto baseDir = bfs::path(param._visualDebug) / queryImage;
       if((!bfs::exists(baseDir)))
       {
-        OPENMVG_COUT("created " << baseDir.string());
+        OPENMVG_LOG_DEBUG("created " << baseDir.string());
         bfs::create_directories(baseDir);
       }
       
@@ -854,7 +854,7 @@ void CCTagLocalizer::getAllAssociations(const features::CCTAG_Regions &queryRegi
   }
       
   const size_t numCollectedPts = occurences.size();
-  OPENMVG_COUT("[matching]\tCollected "<< numCollectedPts <<" associations.");
+  OPENMVG_LOG_DEBUG("[matching]\tCollected "<< numCollectedPts <<" associations.");
   
   {
     // just debugging statistics, this block can be safely removed    
@@ -863,7 +863,7 @@ void CCTagLocalizer::getAllAssociations(const features::CCTAG_Regions &queryRegi
     {
       const auto &key = idx.first;
       const auto &value = idx.second;
-       OPENMVG_COUT("[matching]\tAssociations "
+       OPENMVG_LOG_DEBUG("[matching]\tAssociations "
                << key.first << "," << key.second <<"] found " 
                << value << " times.");
        if(value > maxOcc)
@@ -882,7 +882,7 @@ void CCTagLocalizer::getAllAssociations(const features::CCTAG_Regions &queryRegi
         }
       }
       if(counter>0)
-        OPENMVG_COUT("[matching]\tThere are " << counter
+        OPENMVG_LOG_DEBUG("[matching]\tThere are " << counter
                     << " associations occurred " << value << " times ("
                     << 100.0 * counter / (double) numCollectedPts << "%)");
       numOccTreated += counter;

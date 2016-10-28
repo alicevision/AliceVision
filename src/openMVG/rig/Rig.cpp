@@ -60,7 +60,7 @@ bool Rig::initializeCalibration()
 {
   if(_isInitialized)
   {
-    OPENMVG_COUT("The rig is already initialized");
+    OPENMVG_LOG_DEBUG("The rig is already initialized");
     return _isInitialized;
   }
   // check that there are cameras
@@ -77,7 +77,7 @@ bool Rig::initializeCalibration()
   
     if(shortestSeqLength == 0)
     {
-        OPENMVG_COUT("The calibration results are empty!");
+        OPENMVG_LOG_DEBUG("The calibration results are empty!");
         return false;
     }
   }
@@ -254,7 +254,7 @@ bool Rig::optimizeCalibration()
 {
   if(!_isInitialized)
   {
-    OPENMVG_COUT("The rig is yet initialized");
+    OPENMVG_LOG_DEBUG("The rig is yet initialized");
     return _isInitialized;
   }
   
@@ -484,25 +484,25 @@ bool Rig::optimizeCalibration()
   ceres::Solve(options, &problem, &summary);
   
   if (openMVG_options._bCeres_Summary)
-    OPENMVG_COUT(summary.FullReport());
+    OPENMVG_LOG_DEBUG(summary.FullReport());
 
   // If no error, get back refined parameters
   if (!summary.IsSolutionUsable())
   {
     if (openMVG_options._bVerbose)
-      OPENMVG_COUT("Bundle Adjustment failed.");
+      OPENMVG_LOG_DEBUG("Bundle Adjustment failed.");
     return false;
   }
 
   if (openMVG_options._bVerbose)
   {
     // Display statistics about the minimization
-    OPENMVG_COUT("Bundle Adjustment statistics (approximated RMSE):");
-    OPENMVG_COUT(" #localizers: " << _vLocalizationResults.size());
-    OPENMVG_COUT(" #views: " << _vLocalizationResults[0].size());
-    OPENMVG_COUT(" #residuals: " << summary.num_residuals);
-    OPENMVG_COUT(" Initial RMSE: " << std::sqrt( summary.initial_cost / summary.num_residuals));
-    OPENMVG_COUT(" Final RMSE: " << std::sqrt( summary.final_cost / summary.num_residuals));
+    OPENMVG_LOG_DEBUG("Bundle Adjustment statistics (approximated RMSE):");
+    OPENMVG_LOG_DEBUG(" #localizers: " << _vLocalizationResults.size());
+    OPENMVG_LOG_DEBUG(" #views: " << _vLocalizationResults[0].size());
+    OPENMVG_LOG_DEBUG(" #residuals: " << summary.num_residuals);
+    OPENMVG_LOG_DEBUG(" Initial RMSE: " << std::sqrt( summary.initial_cost / summary.num_residuals));
+    OPENMVG_LOG_DEBUG(" Final RMSE: " << std::sqrt( summary.final_cost / summary.num_residuals));
   }
 
   // Update relative pose after optimization
@@ -652,7 +652,7 @@ bool loadRigCalibration(const std::string &filename, std::vector<geometry::Pose3
   // first read the number of cameras subposes stores
   std::size_t numCameras = 0;
   fs >> numCameras;
-  OPENMVG_COUT("Found " << numCameras << " cameras");
+  OPENMVG_LOG_DEBUG("Found " << numCameras << " cameras");
   subposes.reserve(numCameras);
   
   for(std::size_t cam = 0; cam < numCameras; ++cam)
