@@ -781,11 +781,11 @@ void CCTagLocalizer::getAllAssociations(const features::CCTAG_Regions &queryRegi
   matchedImages.clear();
   matchedImages.reserve(nearestKeyFrames.size());
   
-  OPENMVG_COUT_DEBUG("nearestKeyFrames.size() = " << nearestKeyFrames.size());
+  OPENMVG_LOG_DEBUG("nearestKeyFrames.size() = " << nearestKeyFrames.size());
   for(const IndexT indexKeyFrame : nearestKeyFrames)
   {
-    OPENMVG_COUT_DEBUG(indexKeyFrame);
-    OPENMVG_COUT_DEBUG(_sfm_data.GetViews().at(indexKeyFrame)->s_Img_path);
+    OPENMVG_LOG_DEBUG(indexKeyFrame);
+    OPENMVG_LOG_DEBUG(_sfm_data.GetViews().at(indexKeyFrame)->s_Img_path);
     const Reconstructed_RegionsCCTag& matchedRegions = _regions_per_view.at(indexKeyFrame);
     
     // Matching
