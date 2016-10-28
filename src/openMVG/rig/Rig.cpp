@@ -570,7 +570,7 @@ bool Rig::optimizeCalibration()
 }
 
 
-bool Rig::saveCalibration(std::string &filename)
+bool Rig::saveCalibration(const std::string &filename)
 {
   return saveRigCalibration(filename, _vRelativePoses);
 }
