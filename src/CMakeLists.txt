@@ -34,6 +34,8 @@ IF(OpenMVG_USE_POPART_LOG)
   ADD_DEFINITIONS(-DWANTS_POPART_COUT)
 ENDIF()
 
+OPTION(OPENMVG_REQUIRE_CERES_WITH_SUITESPARSE ON)
+
 # ==============================================================================
 # Opencv is not used by openMVG but some samples show how to use openCV
 #  and openMVG simultaneously
@@ -272,7 +274,14 @@ ADD_DEFINITIONS(-DEIGEN_MPL2_ONLY)
 # - external if CERES_DIR_HINTS and FIND_PACKAGE return a valid Ceres setup
 # ==============================================================================
 MESSAGE(STATUS "Trying to find package Ceres for openMVG: ${CERES_DIR_HINTS}")
-FIND_PACKAGE(Ceres QUIET HINTS ${CERES_DIR_HINTS})
+if(OPENMVG_REQUIRE_CERES_WITH_SUITESPARSE)
+  MESSAGE(STATUS "By default, Ceres required SuiteSparse to ensure best performances. If you explicitly need to build without it, you can use the option: -DOPENMVG_REQUIRE_CERES_WITH_SUITESPARSE=OFF")
+  FIND_PACKAGE(Ceres QUIET HINTS ${CERES_DIR_HINTS}
+                     REQUIRED SuiteSparse)
+else()
+  FIND_PACKAGE(Ceres QUIET HINTS ${CERES_DIR_HINTS})
+endif()
+
 IF(NOT Ceres_FOUND)
   IF(DEFINED OpenMVG_USE_INTERNAL_CERES AND NOT OpenMVG_USE_INTERNAL_CERES)
     MESSAGE(FATAL_ERROR "External CERES not found. Not found in CERES_DIR_HINTS: ${CERES_DIR_HINTS}")
