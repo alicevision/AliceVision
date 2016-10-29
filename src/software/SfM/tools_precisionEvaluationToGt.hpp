@@ -168,12 +168,12 @@ void EvaluteToGT(
 
   std::cout << std::endl << "\nBaseline error statistics : \n ";
   minMaxMeanMedian<double>(vec_baselineErrors.begin(), vec_baselineErrors.end());
-  double minB, maxB, meanB, medianB;
+  double minB = -1., maxB = -1., meanB = -1., medianB = -1.;
   minMaxMeanMedian<double>(vec_baselineErrors.begin(), vec_baselineErrors.end(), minB, maxB, meanB, medianB);
 
   std::cout << std::endl << "\nAngular error statistics : \n ";
   minMaxMeanMedian<double>(vec_angularErrors.begin(), vec_angularErrors.end());
-  double minA, maxA, meanA, medianA;
+  double minA = -1., maxA = -1., meanA = -1., medianA = -1.;
   minMaxMeanMedian<double>(vec_angularErrors.begin(), vec_angularErrors.end(), minA, maxA, meanA, medianA);
 
   // Export camera position (viewable)
