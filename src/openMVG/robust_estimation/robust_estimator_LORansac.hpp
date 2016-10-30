@@ -62,7 +62,7 @@ double iterativeReweightedLeastSquares(const Kernel &kernel,
     inliers.clear();
     if(verbose)
     {
-      std::cerr << "[IRLS] returning cause inliers.size() < min_samples" << std::endl;
+      OPENMVG_LOG_WARNING("[IRLS] returning cause inliers.size() < min_samples");
     }
     return std::numeric_limits<double>::infinity();
   }
@@ -88,13 +88,13 @@ double iterativeReweightedLeastSquares(const Kernel &kernel,
       inliers.clear();
       if(verbose)
       {
-        std::cerr << "[IRLS] returning cause inliers.size() < min_samples" << std::endl;
+        OPENMVG_LOG_WARNING("[IRLS] returning cause inliers.size() < min_samples");
       }
       return std::numeric_limits<double>::infinity();
     }
-//    std::cout << "[IRLS] #" << i 
+//    OPENMVG_LOG_DEBUG("[IRLS] #" << i 
 //            << " theta: " << theta
-//            << " num inliers: " << inliers.size() << std::endl;
+//            << " num inliers: " << inliers.size());
     
     // compute the weights for the inliers
     std::vector<double> weights;
@@ -107,7 +107,7 @@ double iterativeReweightedLeastSquares(const Kernel &kernel,
     {
       if(verbose)
       {
-        std::cerr << "[IRLS] found "<< models.size() << " models, aborting..." << std::endl;
+        OPENMVG_LOG_WARNING("[IRLS] found "<< models.size() << " models, aborting...");
       }
       return std::numeric_limits<double>::infinity();
     }
@@ -122,8 +122,8 @@ double iterativeReweightedLeastSquares(const Kernel &kernel,
   const double score = scorer.Score(kernel, best_model, all_samples, &inliers, theta);
   if(verbose)
   {
-    std::cout << "[IRLS] returning with num inliers: " << inliers.size() 
-            << " and score " << score << std::endl;
+    OPENMVG_LOG_DEBUG("[IRLS] returning with num inliers: " << inliers.size() 
+            << " and score " << score);
   }
   return score;
 }
@@ -191,9 +191,9 @@ double localOptimization(const Kernel &kernel,
   std::size_t bestNumInliers = bestInliers.size();
   if(verbose)
   {
-    std::cout << "[localOptim] so far best num inliers: " << bestNumInliers << std::endl;
-    std::cout << "[localOptim] so far best model:\n" << bestModel << std::endl;
-    std::cout << "[localOptim] so far best score: " << bestScore << std::endl;
+    OPENMVG_LOG_DEBUG("[localOptim] so far best num inliers: " << bestNumInliers);
+    OPENMVG_LOG_DEBUG("[localOptim] so far best model:\n" << bestModel);
+    OPENMVG_LOG_DEBUG("[localOptim] so far best score: " << bestScore);
   }
      
   // find inliers from best model with larger threshold t*m over all the samples
@@ -217,7 +217,7 @@ double localOptimization(const Kernel &kernel,
   {
     if(verbose)
     {
-      std::cout << "breaking cause sampleSize is " << sampleSize << std::endl;
+      OPENMVG_LOG_DEBUG("breaking cause sampleSize is " << sampleSize);
     }
     return bestScore;
   }
@@ -249,7 +249,7 @@ double localOptimization(const Kernel &kernel,
       bestInliers.swap(inliers);
       if(verbose)
       {
-        std::cout << "[localOptim] new best num inliers: " << bestNumInliers << std::endl;
+        OPENMVG_LOG_DEBUG("[localOptim] new best num inliers: " << bestNumInliers);
       }
     }
   }
@@ -330,11 +330,8 @@ typename Kernel::Model LO_RANSAC(const Kernel &kernel,
       double score = scorer.Score(kernel, models[i], all_samples, &inliers);
       if(bVerbose)
       {
-        std::cout << "sample=";
-        std::copy(sample.begin(), sample.end(),
-                      std::ostream_iterator<std::size_t>(std::cout, ","));
-        std::cout << "\nmodel " << i 
-                << " e: " << score << std::endl;
+        OPENMVG_LOG_DEBUG("sample=" << sample);
+        OPENMVG_LOG_DEBUG("model " << i << " e: " << score);
       }
 
       if (bestNumInliers <= inliers.size()) 
@@ -343,12 +340,12 @@ typename Kernel::Model LO_RANSAC(const Kernel &kernel,
         //** LOCAL OPTIMIZATION
         if(bVerbose)
         {
-          std::cout << "Before Optim: num inliers: " << inliers.size() 
+          OPENMVG_LOG_DEBUG("Before Optim: num inliers: " << inliers.size() 
                   << " score: " << score
                   << " Kernel::MINIMUM_LSSAMPLES: " << Kernel::MINIMUM_LSSAMPLES 
-                  << std::endl;
+                 );
 
-          std::cout << "Model:\n" << bestModel << std::endl;
+          OPENMVG_LOG_DEBUG("Model:\n" << bestModel);
         }
         
         if(inliers.size() > Kernel::MINIMUM_LSSAMPLES)
@@ -358,9 +355,9 @@ typename Kernel::Model LO_RANSAC(const Kernel &kernel,
         
         if(bVerbose)
         {
-          std::cout << "After Optim: num inliers: " << inliers.size()
-                  << " score: " << score << std::endl;
-          std::cout << "Model:\n" << bestModel << std::endl;
+          OPENMVG_LOG_DEBUG("After Optim: num inliers: " << inliers.size()
+                  << " score: " << score);
+          OPENMVG_LOG_DEBUG("Model:\n" << bestModel);
         }
         
         bestNumInliers = inliers.size();
@@ -373,13 +370,11 @@ typename Kernel::Model LO_RANSAC(const Kernel &kernel,
 
         if(bVerbose)
         {
-          std::cout << " inliers=" << bestNumInliers << "/" << total_samples
+          OPENMVG_LOG_DEBUG(" inliers=" << bestNumInliers << "/" << total_samples
                     << " (iter=" << iteration
-                    << " ,i=" << i;
-          std::cout << ",sample=";
-          std::copy(sample.begin(), sample.end(),
-                    std::ostream_iterator<std::size_t>(std::cout, ","));
-          std::cout << ")" << std::endl;
+                    << " ,i=" << i
+                    << " ,sample=" << sample
+                    << ")");
         }
         if (bestInlierRatio) 
         {
@@ -389,7 +384,7 @@ typename Kernel::Model LO_RANSAC(const Kernel &kernel,
           // safeguard to not get stuck in a big number of iterations
           max_iterations = std::min(max_iterations, really_max_iterations);
           if(bVerbose)
-            std::cout << " New max_iteration: " << max_iterations << std::endl;
+            OPENMVG_LOG_DEBUG("New max_iteration: " << max_iterations);
         }
       }
     }

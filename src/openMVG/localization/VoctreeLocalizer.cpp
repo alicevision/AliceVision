@@ -1465,7 +1465,7 @@ bool VoctreeLocalizer::localizeRig_opengv(const std::vector<std::unique_ptr<feat
       double rmse = 0;
       for(std::size_t j = 0; j < currInliers.size(); ++j)
       {
-//          std::cout << sqrErrors(currInliers[j]) << " ";
+//          OPENMVG_LOG_DEBUG(sqrErrors(currInliers[j]));
           rmse += sqrErrors(currInliers[j]);
       }
       if(!currInliers.empty())

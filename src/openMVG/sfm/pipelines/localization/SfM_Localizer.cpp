@@ -119,8 +119,8 @@ bool SfM_Localizer::Localize
         {
           // switch to a default value
           resection_data.error_max = 4.0;
-          std::cout << "LORansac: error was set to infinity, a default value of " 
-                  << resection_data.error_max << " is going to be used" << std::endl;
+          OPENMVG_LOG_DEBUG("LORansac: error was set to infinity, a default value of " 
+                  << resection_data.error_max << " is going to be used");
         }
 
         // use the P3P solver for generating the model
@@ -158,9 +158,9 @@ bool SfM_Localizer::Localize
 #ifdef WANTS_OPENMVG_COUT
   if (!bResection) 
   {
-    std::cout << "bResection is false";
-    std::cout << " because resection_data.vec_inliers.size() = " << resection_data.vec_inliers.size();
-    std::cout << " and MINIMUM_SAMPLES = " << MINIMUM_SAMPLES << std::endl;
+    OPENMVG_LOG_DEBUG("bResection is false");
+    OPENMVG_LOG_DEBUG(" because resection_data.vec_inliers.size() = " << resection_data.vec_inliers.size());
+    OPENMVG_LOG_DEBUG(" and MINIMUM_SAMPLES = " << MINIMUM_SAMPLES);
   }
 #endif
 
@@ -173,14 +173,14 @@ bool SfM_Localizer::Localize
     pose = geometry::Pose3(R, -R.transpose() * t);
   }
 #ifdef WANTS_OPENMVG_COUT
-  std::cout << "\n"
-    << "-------------------------------" << "\n"
-    << "-- Robust Resection " << "\n"
-    << "-- Resection status: " << bResection << "\n"
-    << "-- #Points used for Resection: " << resection_data.pt2D.cols() << "\n"
-    << "-- #Points validated by robust Resection: " << resection_data.vec_inliers.size() << "\n"
-    << "-- Threshold: " << resection_data.error_max << "\n"
-    << "-------------------------------" << std::endl;
+  OPENMVG_LOG_DEBUG(
+    "-------------------------------\n"
+    "-- Robust Resection\n"
+    "-- Resection status: " << bResection << "\n"
+    "-- #Points used for Resection: " << resection_data.pt2D.cols() << "\n"
+    "-- #Points validated by robust Resection: " << resection_data.vec_inliers.size() << "\n"
+    "-- Threshold: " << resection_data.error_max << "\n"
+    "-------------------------------");
 #endif
   return bResection;
 }

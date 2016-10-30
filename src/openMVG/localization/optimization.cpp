@@ -581,26 +581,26 @@ bool refineRigPose(const std::vector<Mat> &pts2d,
   ceres::Solve(options, &problem, &summary);
   
   if (openMVG_options._bCeres_Summary)
-    std::cout << summary.FullReport() << std::endl;
+    OPENMVG_LOG_DEBUG(summary.FullReport());
 
   // If no error, get back refined parameters
   if (!summary.IsSolutionUsable())
   {
     if (openMVG_options._bVerbose)
-      std::cout << "Bundle Adjustment failed." << std::endl;
+      OPENMVG_LOG_DEBUG("Bundle Adjustment failed.");
     return false;
   }
 
   if(openMVG_options._bVerbose)
   {
     // Display statistics about the minimization
-    std::cout << std::endl
-            << "Bundle Adjustment statistics (approximated RMSE):\n"
-            << " #cameras: " << numCameras << "\n"
-            << " #residuals: " << summary.num_residuals << "\n"
-            << " Initial RMSE: " << std::sqrt(summary.initial_cost / summary.num_residuals) << "\n"
-            << " Final RMSE: " << std::sqrt(summary.final_cost / summary.num_residuals) << "\n"
-            << std::endl;
+    OPENMVG_LOG_DEBUG(
+            "Bundle Adjustment statistics (approximated RMSE):\n"
+            " #cameras: " << numCameras << "\n"
+            " #residuals: " << summary.num_residuals << "\n"
+            " Initial RMSE: " << std::sqrt(summary.initial_cost / summary.num_residuals) << "\n"
+            " Final RMSE: " << std::sqrt(summary.final_cost / summary.num_residuals)
+           );
   }
 
   // update the rigPose 
@@ -643,7 +643,7 @@ std::tuple<double, double, double> computeStatistics(const Mat &pts2D,
   double rmseMax = 0;
   for(std::size_t j = 0; j < currInliers.size(); ++j)
   {
-    //          std::cout << sqrErrors(currInliers[j]) << " ";
+    // OPENMVG_LOG_DEBUG(sqrErrors(currInliers[j]));
     const double err = sqrErrors(currInliers[j]);
     rmse += err;
     if(err > rmseMax)

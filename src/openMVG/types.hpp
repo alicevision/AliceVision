@@ -7,6 +7,8 @@
 #ifndef OPENMVG_TYPES_H_
 #define OPENMVG_TYPES_H_
 
+#include <openMVG/logger.hpp>
+
 #include <Eigen/Core>
 
 #include <cstdint>

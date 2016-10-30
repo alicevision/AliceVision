@@ -78,8 +78,8 @@ std::set<IndexT> CleanGraph_KeepLargestBiEdge_Nodes(
   // Graph is bi-edge connected, but still many connected components can exist
   // Keep only the largest one
   const int connectedComponentCount = lemon::countConnectedComponents(putativeGraph.g);
-  std::cout << "\n" << "CleanGraph_KeepLargestBiEdge_Nodes():: => connected Component: "
-    << connectedComponentCount << std::endl;
+  OPENMVG_LOG_DEBUG("CleanGraph_KeepLargestBiEdge_Nodes():: => connected Component: "
+    << connectedComponentCount);
   if (connectedComponentCount >= 1)
   {
     // Keep only the largest connected component
@@ -96,7 +96,7 @@ std::set<IndexT> CleanGraph_KeepLargestBiEdge_Nodes(
         count = iter->second.size();
         iterLargestCC = iter;
       }
-      std::cout << "Connected component of size: " << iter->second.size() << std::endl;
+      OPENMVG_LOG_DEBUG("Connected component of size: " << iter->second.size());
     }
 
     //-- Keep only the nodes that are in the largest CC
@@ -139,10 +139,10 @@ std::set<IndexT> CleanGraph_KeepLargestBiEdge_Nodes(
       putativeGraph.g);
   }*/
 
-  std::cout << "\n"
-    << "Cardinal of nodes: " << lemon::countNodes(putativeGraph.g) << "\n"
-    << "Cardinal of edges: " << lemon::countEdges(putativeGraph.g) << std::endl
-    << std::endl;
+  OPENMVG_LOG_DEBUG(
+    "Cardinal of nodes: " << lemon::countNodes(putativeGraph.g) << "\n" <<
+    "Cardinal of edges: " << lemon::countEdges(putativeGraph.g)
+    );
 
   return largestBiEdgeCC;
 }

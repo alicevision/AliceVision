@@ -3,6 +3,7 @@
 #include <openMVG/voctree/vocabulary_tree.hpp>
 #include <openMVG/voctree/descriptor_loader.hpp>
 #include <openMVG/features/descriptor.hpp>
+#include <openMVG/logger.hpp>
 
 #include <Eigen/Core>
 
@@ -12,8 +13,6 @@
 #include <fstream>
 #include <string>
 #include <chrono>
-
-#include <openMVG/logger.hpp>
 
 static const int DIMENSION = 128;
 
@@ -188,7 +187,7 @@ int main(int argc, char** argv)
     // Now query each document (sanity check)
     std::vector<openMVG::voctree::DocMatch> matches;
     size_t wrong = 0; // count the wrong matches
-    double recval = 0;
+    double recval = 0.0;
     OPENMVG_COUT("Sanity check: querying the database with the same documents");
     // for each document
     for(const auto &doc : allSparseHistograms)
@@ -214,18 +213,21 @@ int main(int argc, char** argv)
       if(doc.first != matches[0].id)
       {
         ++wrong;
-        cout << "##### wrong match for document " << doc.first << endl;
+        OPENMVG_COUT("##### wrong match for document " << doc.first);
       }
 
     }
 
     if(wrong)
+    {
       OPENMVG_COUT("there are " << wrong << " wrong matches");
+    }
     else
+    {
       OPENMVG_COUT("Yay! no wrong matches!");
-    OPENMVG_COUT("\nrecval: " << recval / (double) (allSparseHistograms.size()));
+    }
+    OPENMVG_COUT("recval: " << recval / (double) (allSparseHistograms.size()));
   }
-
 
   return EXIT_SUCCESS;
 }

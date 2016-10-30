@@ -67,7 +67,7 @@ struct Regions_Provider
           std::unique_ptr<features::Regions> regions_ptr(region_type->EmptyClone());
           if (!regions_ptr->Load(featFile, descFile))
           {
-            std::cerr << "Invalid regions files for the view: " << sImageName << std::endl;
+            OPENMVG_LOG_WARNING("Invalid regions files for the view: " << sImageName);
 #ifdef OPENMVG_USE_OPENMP
           #pragma omp critical
 #endif

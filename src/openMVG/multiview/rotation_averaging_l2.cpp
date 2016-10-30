@@ -219,7 +219,7 @@ bool L2RotationAveraging_Refine(
   std::vector<openMVG::Mat3> & vec_ApprRotMatrix)
 {
   if (vec_relativeRot.size() == 0 ||vec_ApprRotMatrix.size() == 0 ) {
-    std::cout << "Skip nonlinear rotation optimization, no sufficient data provided " << std::endl;
+    OPENMVG_LOG_DEBUG("Skip nonlinear rotation optimization, no sufficient data provided ");
     return false;
 }
 
@@ -273,7 +273,7 @@ bool L2RotationAveraging_Refine(
 
   ceres::Solver::Summary summary;
   ceres::Solve(solverOptions, &problem, &summary);
-  // std::cout << summary.FullReport() << std::endl;
+  // OPENMVG_LOG_DEBUG(summary.FullReport());
 
   if (summary.IsSolutionUsable())
   {

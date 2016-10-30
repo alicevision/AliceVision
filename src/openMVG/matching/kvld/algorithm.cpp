@@ -42,7 +42,7 @@ std::ofstream& writeDetector( std::ofstream& out, const openMVG::features::SIOPo
   out << feature.x() << " "
     << feature.y() << " "
     << feature.scale() << " "
-    << feature.orientation() <<std::endl;
+    << feature.orientation() << std::endl;
   return out;
 }
 

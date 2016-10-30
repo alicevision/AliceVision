@@ -25,9 +25,6 @@
 #include <chrono>
 #include <iomanip>
 
-#define OPENMVG_COUT(x) std::cout << x << std::endl
-#define OPENMVG_CERR(x) std::cerr << x << std::endl
-
 static const int DIMENSION = 128;
 
 using namespace std;

@@ -31,7 +31,7 @@ Timer::Timer()
   if (!QueryPerformanceFrequency(&freq))
   {
     const char *msg = "Failed to initialize high resolution timer!";
-    std::cerr << msg << std::endl;
+    OPENMVG_LOG_WARNING(msg);
     throw std::runtime_error(msg);
   }
   frequency_ = static_cast<double>(freq.QuadPart);

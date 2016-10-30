@@ -139,12 +139,12 @@ TEST(LoRansacLineFitter, IdealCaseLoRansac)
   LineKernelLoRansac kernel(xy);
   std::vector<size_t> vec_inliers;
   Vec2 model = LO_RANSAC(kernel, ScorerEvaluator<LineKernel>(0.3), &vec_inliers);
-  std::cout << "#inliers found : " << vec_inliers.size() 
-          << " expected: " << NbPoints-nbPtToNoise << std::endl;
-  std::cout << "model[0] found : " << model[0] 
-          << " expected: " << GTModel[0] << std::endl;
-  std::cout << "model[1] found : " << model[1] 
-          << " expected: " << GTModel[1] << std::endl;
+  OPENMVG_LOG_DEBUG("#inliers found : " << vec_inliers.size() 
+          << " expected: " << NbPoints-nbPtToNoise);
+  OPENMVG_LOG_DEBUG("model[0] found : " << model[0] 
+          << " expected: " << GTModel[0]);
+  OPENMVG_LOG_DEBUG("model[1] found : " << model[1] 
+          << " expected: " << GTModel[1]);
   
   CHECK_EQUAL(NbPoints-nbPtToNoise, vec_inliers.size());
   EXPECT_NEAR(GTModel[0], model[0], 1e-9);
@@ -223,12 +223,12 @@ TEST(LoRansacLineFitter, RealCaseLoRansac)
     std::vector<size_t> vec_inliers;
 
     Vec2 model = LO_RANSAC(kernel, ScorerEvaluator<LineKernel>(threshold), &vec_inliers);
-    std::cout << "#inliers found : " << vec_inliers.size()
-            << " expected: " << NbPoints - nbPtToNoise << std::endl;
-    std::cout << "model[0] found : " << model[0]
-            << " expected: " << GTModel[0] << std::endl;
-    std::cout << "model[1] found : " << model[1]
-            << " expected: " << GTModel[1] << std::endl;
+    OPENMVG_LOG_DEBUG("#inliers found : " << vec_inliers.size()
+            << " expected: " << NbPoints - nbPtToNoise);
+    OPENMVG_LOG_DEBUG("model[0] found : " << model[0]
+            << " expected: " << GTModel[0]);
+    OPENMVG_LOG_DEBUG("model[1] found : " << model[1]
+            << " expected: " << GTModel[1]);
 
     drawTest(base + "_LORANSACtrial" + std::to_string(0) + ".svg",
              W, H,

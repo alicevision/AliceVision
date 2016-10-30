@@ -8,6 +8,7 @@
 #ifndef OPENMVG_ROBUST_ESTIMATION_SIMPLE_RANSAC_H_
 #define OPENMVG_ROBUST_ESTIMATION_SIMPLE_RANSAC_H_
 
+#include "openMVG/logger.hpp"
 #include "openMVG/robust_estimation/rand_sampling.hpp"
 #include "openMVG/robust_estimation/robust_ransac_tools.hpp"
 #include <limits>
@@ -94,12 +95,10 @@ typename Kernel::Model RANSAC(
           }
           if(bVerbose)
           {
-            std::cout << " inliers=" << best_num_inliers << "/" << total_samples
-                      << " (iter=" << iteration;
-            std::cout << ",sample=";
-            std::copy(sample.begin(), sample.end(),
-                      std::ostream_iterator<size_t>(std::cout, ","));
-            std::cout << ")";
+            OPENMVG_LOG_DEBUG("inliers=" << best_num_inliers << "/" << total_samples
+                      << " (iter=" << iteration
+                      << ", sample=" << sample
+                      << ")");
         }
           if (best_inlier_ratio) 
           {
@@ -107,7 +106,7 @@ typename Kernel::Model RANSAC(
             outliers_probability,
             best_inlier_ratio);
             if(bVerbose)
-              std::cout << " New max_iteration: " << max_iterations << std::endl;
+              OPENMVG_LOG_DEBUG("New max_iteration: " << max_iterations);
           }
         }
       }

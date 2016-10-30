@@ -49,7 +49,7 @@ struct Features_Provider
         std::unique_ptr<features::Regions> regions(region_type->EmptyClone());
         if (!regions->LoadFeatures(featFile))
         {
-          std::cerr << "Invalid feature file: " << featFile << std::endl;
+          OPENMVG_LOG_WARNING("Invalid feature file: " << featFile);
 #ifdef OPENMVG_USE_OPENMP
       #pragma omp critical
 #endif

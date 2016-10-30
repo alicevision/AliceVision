@@ -123,7 +123,7 @@ std::size_t LocalizationResult::selectBestInliers(double maxReprojectionError)
 {
    const auto &residuals = computeReprojectionErrorPerPoint();
    auto &inliers = _matchData.vec_inliers;
-   std::cout << "Inliers before: " << inliers.size();
+   OPENMVG_LOG_DEBUG("Inliers before: " << inliers.size());
    inliers.clear();
    // at worst they could all be inliers
    inliers.reserve(getPt2D().size());
@@ -135,7 +135,7 @@ std::size_t LocalizationResult::selectBestInliers(double maxReprojectionError)
        inliers.push_back(i);
      }
    }
-   std::cout << " \tafter: " << inliers.size() << std::endl;
+   OPENMVG_LOG_DEBUG(" After: " << inliers.size());
    _matchData.error_max = maxReprojectionError;
    return inliers.size();
 }
@@ -152,7 +152,7 @@ bool load(LocalizationResult & res, const std::string & filename)
   std::ifstream stream(filename, std::ios::binary | std::ios::in);
   if(!stream.is_open())
   {
-    std::cerr << "Unable to load file " << filename << std::endl;
+    OPENMVG_LOG_WARNING("Unable to load file " << filename);
     return false;
   }
   try
@@ -162,7 +162,7 @@ bool load(LocalizationResult & res, const std::string & filename)
   }
   catch (const cereal::Exception & e)
   {
-    std::cerr << e.what() << std::endl;
+    OPENMVG_LOG_WARNING(e.what());
     return false;
   }
   return true;
@@ -175,7 +175,7 @@ bool load(std::vector<LocalizationResult> & res, const std::string & filename)
   std::ifstream stream(filename, std::ios::binary | std::ios::in);
   if(!stream.is_open())
   {
-    std::cerr << "Unable to load file " << filename << std::endl;
+    OPENMVG_LOG_WARNING("Unable to load file " << filename);
     return false;
   }
   try
@@ -185,7 +185,7 @@ bool load(std::vector<LocalizationResult> & res, const std::string & filename)
   }
   catch (const cereal::Exception & e)
   {
-    std::cerr << e.what() << std::endl;
+    OPENMVG_LOG_WARNING(e.what());
     return false;
   }
   return true;
@@ -198,7 +198,7 @@ bool save(const LocalizationResult & res, const std::string & filename)
   std::ofstream stream(filename, std::ios::binary | std::ios::out);
   if(!stream.is_open())
   {
-    std::cerr << "Unable to create file " << filename << std::endl;
+    OPENMVG_LOG_WARNING("Unable to create file " << filename);
     return false;
   }
 
@@ -214,7 +214,7 @@ bool save(const std::vector<LocalizationResult> & res, const std::string & filen
   std::ofstream stream(filename, std::ios::binary | std::ios::out);
   if(!stream.is_open())
   {
-    std::cerr << "Unable to create file " << filename << std::endl;
+    OPENMVG_LOG_WARNING("Unable to create file " << filename);
     return false;
   }
 

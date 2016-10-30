@@ -57,8 +57,8 @@ bool ValidIds(const SfM_Data & sfm_data, ESfM_Data flags_part)
   bool bRet = true;
   if(bCheck_Intrinsic && intrinsicIdsDeclared != intrinsicIdsReferenced)
   {
-    std::cerr << "The number of intrinsics is incoherent:" << std::endl;
-    std::cerr << intrinsicIdsDeclared.size() << " intrinsics declared and " << intrinsicIdsReferenced.size() << " intrinsics used." << std::endl;
+    OPENMVG_LOG_WARNING("The number of intrinsics is incoherent:");
+    OPENMVG_LOG_WARNING(intrinsicIdsDeclared.size() << " intrinsics declared and " << intrinsicIdsReferenced.size() << " intrinsics used.");
     std::set<IndexT> undefinedIntrinsicIds;
     // undefinedIntrinsicIds = intrinsicIdsReferenced - intrinsicIdsDeclared
     std::set_difference(intrinsicIdsReferenced.begin(), intrinsicIdsReferenced.end(),
@@ -73,8 +73,8 @@ bool ValidIds(const SfM_Data & sfm_data, ESfM_Data flags_part)
   
   if (bCheck_Extrinsic && extrinsicIdsDeclared != extrinsicIdsReferenced)
   {
-    std::cerr << "The number of extrinsics is incoherent:" << std::endl;
-    std::cerr << extrinsicIdsDeclared.size() << " extrinsics declared and " << extrinsicIdsReferenced.size() << " extrinsics used." << std::endl;
+    OPENMVG_LOG_WARNING("The number of extrinsics is incoherent:");
+    OPENMVG_LOG_WARNING(extrinsicIdsDeclared.size() << " extrinsics declared and " << extrinsicIdsReferenced.size() << " extrinsics used.");
     std::set<IndexT> undefinedExtrinsicIds;
     // undefinedExtrinsicIds = extrinsicIdsReferenced - extrinsicIdsDeclared
     std::set_difference(extrinsicIdsDeclared.begin(), extrinsicIdsDeclared.end(),
@@ -113,7 +113,7 @@ bool Load(SfM_Data & sfm_data, const std::string & filename, ESfM_Data flags_par
   // It is not a folder or known format, return false
   else
   {
-    std::cerr << "Unknown sfm_data input format: " << ext << std::endl;
+    OPENMVG_LOG_WARNING("Unknown sfm_data input format: " << ext);
     return false;
   }
 
@@ -147,8 +147,8 @@ bool Save(const SfM_Data & sfm_data, const std::string & filename, ESfM_Data fla
     return true;
   }
 #endif // HAVE_ALEMBIC
-  std::cerr << "ERROR: Cannot save the SfM Data: " << filename << ".\n"
-            << "The file extension is not recognized." << std::endl;
+  OPENMVG_LOG_WARNING("ERROR: Cannot save the SfM Data: " << filename << ".\n"
+            << "The file extension is not recognized.");
   return false;
 }
 

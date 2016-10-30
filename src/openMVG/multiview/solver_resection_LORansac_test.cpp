@@ -167,7 +167,7 @@ TEST(P3P_Ransac, noisyFromImagePoints)
         // safeguard against infinite loops
         if(iter > 1000)
         {
-          std::cerr << "Unable to generate a random point, iterations excedeed!";
+          OPENMVG_LOG_WARNING("Unable to generate a random point, iterations excedeed!");
           assert(false);
         }
       }
@@ -177,7 +177,7 @@ TEST(P3P_Ransac, noisyFromImagePoints)
 
   for(std::size_t trial = 0; trial < NUMTRIALS; ++trial)
   {
-    std::cout << "\nTrial #" << trial << std::endl;
+    OPENMVG_LOG_DEBUG("Trial #" << trial);
     typedef openMVG::euclidean_resection::P3PSolver SolverType;
     typedef openMVG::resection::kernel::SixPointResectionSolver SolverLSType;
 
@@ -209,19 +209,19 @@ TEST(P3P_Ransac, noisyFromImagePoints)
     Vec3 Test;
     KRt_From_P(Pest, &Kest, &Rest, &Test);
 
-    std::cout << "Est: Pest:\n" << Pest
+    OPENMVG_LOG_DEBUG("Est: Pest:\n" << Pest
             << "\nRest:\n" << Rest
             << "\nKest:\n" << Kest
-            << "\ntest:\n" << Test << std::endl;
+            << "\ntest:\n" << Test);
     
-    std::cout << "Solution found with " << numInliersFound << " inliers" << std::endl;
-    std::cout << "Expected number of inliers " << numInliersExpected << std::endl;
+    OPENMVG_LOG_DEBUG("Solution found with " << numInliersFound << " inliers");
+    OPENMVG_LOG_DEBUG("Expected number of inliers " << numInliersExpected);
 
     CHECK_EQUAL(numInliersFound, numInliersExpected);
     
     const double angError = R2D(getRotationMagnitude(Rgt * Rest.transpose()));
-    std::cout << "Angular error: " << angError << std::endl
-            << "baseline error: " << (Test - Tgt).squaredNorm() << std::endl;
+    OPENMVG_LOG_DEBUG("Angular error: " << angError);
+    OPENMVG_LOG_DEBUG("Baseline error: " << (Test - Tgt).squaredNorm());
 
     geometry::Pose3 pose = geometry::poseFromRT(Rest, Test);
     refinePoseAsItShouldbe(pts3D,
@@ -234,16 +234,16 @@ TEST(P3P_Ransac, noisyFromImagePoints)
 
     const double angErrorRef = R2D(getRotationMagnitude(Rgt * pose.rotation().transpose()));
     const double baselineErrorRef = (Tgt - pose.translation()).squaredNorm();
-    std::cout << "Final angular error #"<<trial<<" : " << angErrorRef << std::endl
-            << "Final baseline error #"<<trial<<" : " << baselineErrorRef << std::endl;
+    OPENMVG_LOG_DEBUG("Final angular error #"<<trial<<" : " << angErrorRef);
+    OPENMVG_LOG_DEBUG("Final baseline error #"<<trial<<" : " << baselineErrorRef);
     
     EXPECT_NEAR(angErrorRef, 0.0, maxAngularError);
     EXPECT_NEAR(baselineErrorRef, 0.0, maxBaselineError);
 
-    std::cout << "Refined pose:\n"
+    OPENMVG_LOG_DEBUG("Refined pose:\n"
                 << "\nEst: Rest:\n" << pose.rotation()
                 << "\nCest:\n" << pose.center()
-                << "\nTest:\n" << pose.translation() << std::endl;
+                << "\nTest:\n" << pose.translation());
     
     if(withOutliers)
     {
@@ -255,7 +255,7 @@ TEST(P3P_Ransac, noisyFromImagePoints)
                                       inters.begin());
       inters.resize(it-inters.begin());
       if(inters.size()>0)
-        std::cerr << "******* there are " << inters.size() << " outliers considered as inliers" << std::endl;
+        OPENMVG_LOG_WARNING("******* there are " << inters.size() << " outliers considered as inliers");
       CHECK_EQUAL(inters.size(), 0);
     }
   }

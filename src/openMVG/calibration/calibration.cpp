@@ -1,5 +1,6 @@
 #include "openMVG/calibration/calibration.hpp"
 
+#include <openMVG/logger.hpp>
 #include <openMVG/system/timer.hpp>
 
 #include <ctime>
@@ -58,9 +59,9 @@ bool runCalibration(const std::vector<std::vector<cv::Point2f> >& imagePoints,
 
   const double rms = cv::calibrateCamera(objectPoints, imagePoints, imageSize, cameraMatrix,
                                          distCoeffs, rvecs, tvecs, cvCalibFlags | CV_CALIB_FIX_K4 | CV_CALIB_FIX_K5 | CV_CALIB_FIX_K6);
-  std::cout << "\tcalibrateCamera duration: " << system::prettyTime(durationrC.elapsedMs()) << std::endl;
+  OPENMVG_LOG_DEBUG("\tcalibrateCamera duration: " << system::prettyTime(durationrC.elapsedMs()));
 
-  std::cout << "\tRMS error reported by calibrateCamera: " << rms << std::endl;
+  OPENMVG_LOG_DEBUG("\tRMS error reported by calibrateCamera: " << rms);
   bool ok = cv::checkRange(cameraMatrix) && cv::checkRange(distCoeffs);
 
   durationrC.reset();
@@ -68,7 +69,7 @@ bool runCalibration(const std::vector<std::vector<cv::Point2f> >& imagePoints,
   totalAvgErr = computeReprojectionErrors(objectPoints, imagePoints,
                                           rvecs, tvecs, cameraMatrix, distCoeffs, reprojErrs);
 
-  std::cout << "\tcomputeReprojectionErrors duration: " << durationrC.elapsedMs() << "ms" << std::endl;
+  OPENMVG_LOG_DEBUG("\tcomputeReprojectionErrors duration: " << durationrC.elapsedMs() << "ms");
 
   return ok;
 }
@@ -96,19 +97,19 @@ bool calibrationIterativeOptimization(
   do
   {
     // Estimate the camera calibration
-    std::cout << "Calibration iteration " << calibIteration << " with " << calibImagePoints.size() << " frames." << std::endl;
+    OPENMVG_LOG_DEBUG("Calibration iteration " << calibIteration << " with " << calibImagePoints.size() << " frames.");
     calibSucceeded = runCalibration(calibImagePoints, calibObjectPoints, imageSize,
                                     aspectRatio, cvCalibFlags, cameraMatrix, distCoeffs,
                                     rvecs, tvecs, reprojErrs, totalAvgErr);
 
     if (totalAvgErr <= maxTotalAvgErr)
     {
-      std::cout << "The calibration succeed with an average error that respects the maxTotalAvgErr." << std::endl;
+      OPENMVG_LOG_DEBUG("The calibration succeed with an average error that respects the maxTotalAvgErr.");
       break;
     }
     else if (calibInputFrames.size() < minInputFrames)
     {
-      std::cout << "Not enough valid input image (" << calibInputFrames.size() << ") to continue the refinement." << std::endl;
+      OPENMVG_LOG_DEBUG("Not enough valid input image (" << calibInputFrames.size() << ") to continue the refinement.");
       break;
     }
     else if (calibSucceeded)
@@ -124,12 +125,12 @@ bool calibrationIterativeOptimization(
       }
 
       const auto minMaxError = std::minmax_element(globalScores.begin(), globalScores.end());
-      std::cout << "\terror min: " << *minMaxError.first << ", max: " << *minMaxError.second << std::endl;
+      OPENMVG_LOG_DEBUG("\terror min: " << *minMaxError.first << ", max: " << *minMaxError.second);
       if (*minMaxError.first == *minMaxError.second)
       {
-        std::cout << "Same error on all images: " << *minMaxError.first << std::endl;
+        OPENMVG_LOG_DEBUG("Same error on all images: " << *minMaxError.first);
         for (float f : globalScores)
-          std::cout << "f: " << f << std::endl;
+          OPENMVG_LOG_DEBUG("f: " << f);
         break;
       }
       // We only keep the frames with N% of the largest error.
@@ -157,13 +158,13 @@ bool calibrationIterativeOptimization(
       }
       if (filteredImagePoints.size() < minInputFrames)
       {
-        std::cout << "Not enough filtered input images (filtered: " << filteredImagePoints.size() << ", rejected:" << tmpRejectInputFrames.size() << ") to continue the refinement." << std::endl;
+        OPENMVG_LOG_DEBUG("Not enough filtered input images (filtered: " << filteredImagePoints.size() << ", rejected:" << tmpRejectInputFrames.size() << ") to continue the refinement.");
         break;
       }
       if (calibImagePoints.size() == filteredImagePoints.size())
       {
         // Convergence reached
-        std::cout << "Convergence reached." << std::endl;
+        OPENMVG_LOG_DEBUG("Convergence reached.");
         break;
       }
       calibImagePoints.swap(filteredImagePoints);
@@ -176,9 +177,9 @@ bool calibrationIterativeOptimization(
   }
   while (calibSucceeded);
 
-  std::cout << "Calibration done with " << calibIteration << " iterations." << std::endl;
-  std::cout << "Average reprojection error is " << totalAvgErr << std::endl;
-  std::cout << (calibSucceeded ? "Calibration succeeded" : "Calibration failed") << std::endl;
+  OPENMVG_LOG_DEBUG("Calibration done with " << calibIteration << " iterations.");
+  OPENMVG_LOG_DEBUG("Average reprojection error is " << totalAvgErr);
+  OPENMVG_LOG_DEBUG((calibSucceeded ? "Calibration succeeded" : "Calibration failed"));
 
   return calibSucceeded;
 }

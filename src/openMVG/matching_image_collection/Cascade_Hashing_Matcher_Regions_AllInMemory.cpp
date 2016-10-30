@@ -226,7 +226,7 @@ void Cascade_Hashing_Matcher_Regions_AllInMemory::Match
 )const
 {
 #ifdef OPENMVG_USE_OPENMP
-  std::cout << "Using the OPENMP thread interface" << std::endl;
+  OPENMVG_LOG_DEBUG("Using the OPENMP thread interface");
 #endif
 
   if (regions_provider->regions_per_view.empty())
@@ -258,7 +258,7 @@ void Cascade_Hashing_Matcher_Regions_AllInMemory::Match
   }
   else
   {
-    std::cerr << "Matcher not implemented for this region type" << std::endl;
+    OPENMVG_LOG_WARNING("Matcher not implemented for this region type");
   }
 }
 

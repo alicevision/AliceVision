@@ -54,7 +54,7 @@ TEST(connectedComponents, TwoCC_Parsing) {
   EXPECT_EQ(2, connectedComponentCount);
   for (IndexMap::MapIt it(connectedNodeMap); it != INVALID; ++it)
   {
-    std::cout << *it << "\t" << graph.id(it) << "\n";
+    OPENMVG_LOG_DEBUG(*it << "\t" << graph.id(it));
   }
 }
 

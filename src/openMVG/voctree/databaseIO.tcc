@@ -78,7 +78,7 @@ std::size_t populateDatabase(const std::string &fileFullPath,
   std::size_t numDescriptors = 0;
 
   // Read the descriptors
-  std::cout << "Reading the descriptors from " << descriptorsFiles.size() <<" files..." << std::endl;
+  OPENMVG_LOG_DEBUG("Reading the descriptors from " << descriptorsFiles.size() <<" files...");
   boost::progress_display display(descriptorsFiles.size());
 
   // Run through the path vector and read the descriptors
@@ -222,7 +222,7 @@ void voctreeStatistics(
   getListOfDescriptorFiles(fileFullPath, descriptorsFiles);
   
   // Read the descriptors
-  std::cout << "Reading the descriptors from " << descriptorsFiles.size() << " files." << std::endl;
+  OPENMVG_LOG_DEBUG("Reading the descriptors from " << descriptorsFiles.size() << " files.");
 
   // Run through the path vector and read the descriptors
   for(const auto &currentFile : descriptorsFiles)
@@ -250,16 +250,15 @@ void voctreeStatistics(
         localHisto[nb] += 1;   
     }
     
-    std::cout << "Histogram of " << currentFile.first << std::endl;
+    OPENMVG_LOG_DEBUG("Histogram of " << currentFile.first);
     
     for(auto itHisto = localHisto.begin(); itHisto != localHisto.end(); itHisto++)
     {
-      std::cout << itHisto->first << ": " << itHisto->second  << ", ";
+      OPENMVG_LOG_DEBUG_OBJ << itHisto->first << ": " << itHisto->second  << ", ";
     }
-    
     localHisto.clear();
     
-    std::cout << std::endl;
+    OPENMVG_LOG_DEBUG_OBJ << std::endl;
     
   }
 }

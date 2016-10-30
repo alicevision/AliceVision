@@ -29,7 +29,7 @@ struct InitRandom
   template<class Feature, class Distance, class FeatureAllocator>
   void operator()(const std::vector<Feature*>& features, size_t k, std::vector<Feature, FeatureAllocator>& centers, Distance distance, const int verbose = 0)
   {
-    std::cout << "#\t\tRandom initialization\n";
+    OPENMVG_LOG_DEBUG("#\t\tRandom initialization");
     // Construct a random permutation of the features using a Fisher-Yates shuffle
     std::vector<Feature*> features_perm = features;
     for(size_t i = features.size(); i > 1; --i)
@@ -40,7 +40,6 @@ struct InitRandom
     // Take the first k permuted features as the initial centers
     for(size_t i = 0; i < centers.size(); ++i)
       centers[i] = *features_perm[i];
-    std::cout << "*" << std::flush;
   }
 };
 
@@ -423,7 +422,7 @@ SimpleKmeans<Feature, Distance, FeatureAllocator>::clusterOnce(const std::vector
   if(verbose_ > 0) OPENMVG_LOG_DEBUG("Iterations");
   for(size_t iter = 0; iter < max_iterations_; ++iter)
   {
-    if(verbose_ > 0) std::cout << "*" << std::flush;
+    if(verbose_ > 0) OPENMVG_LOG_DEBUG("*");
     // Zero out new centers and counts
     std::fill(new_center_counts.begin(), new_center_counts.end(), 0);
     //		for(size_t i = 0; i < k; checkElements(new_centers[i++], "bef"));
@@ -513,7 +512,7 @@ SimpleKmeans<Feature, Distance, FeatureAllocator>::clusterOnce(const std::vector
     //			OPENMVG_LOG_DEBUG("max_center_shift: " << max_center_shift);  
     if(max_center_shift <= 10e-10) break;
   }
-  if(verbose_ > 0) std::cout << std::endl;
+  if(verbose_ > 0) OPENMVG_LOG_DEBUG("");
 
   // Return the sum squared error
   /// @todo Kahan summation?

@@ -8,6 +8,7 @@
 #include <iostream>
 #include <fstream>
 #include <string>
+#include "openMVG/logger.hpp"
 #include "openMVG/numeric/numeric.h"
 #include "openMVG/numeric/lm.hpp"
 #include "testing/testing.h"
@@ -72,7 +73,7 @@ TEST(LM, MimimaSearchViaLM) {
   // Optimization by using LevenbergMarquardt routine
   int info = lm.minimize(xlm);
   // Get back optimized value
-  std::cout << "info" << info << std::endl;
+  OPENMVG_LOG_DEBUG("info: " << info);
 
   Vec minima = xlm;
   Vec2 GT(-.4999, .9999);

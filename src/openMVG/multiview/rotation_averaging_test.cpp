@@ -271,9 +271,7 @@ TEST ( rotation_averaging, RefineRotationsAvgL1IRLS_CompleteGraph_outliers)
   bool bTest = GlobalRotationsRobust(vec_relativeRotEstimate, vec_globalR, nMainViewID, 0.0f, &vec_inliers);
   EXPECT_TRUE(bTest);
 
-  std::cout << "Inliers: " << std::endl;
-  std::copy(vec_inliers.begin(), vec_inliers.end(), ostream_iterator<bool>(std::cout, " "));
-  std::cout << std::endl;
+  OPENMVG_LOG_DEBUG("Inliers: " << vec_inliers);
 
   // Check inlier list
   CHECK(std::accumulate(vec_inliers.begin(), vec_inliers.end(), 0) == 8);
@@ -384,7 +382,7 @@ bool TestRobustRegressionL1PD()
     << "Test robust regression " << (bPassed?"passed":"FAILED")
     << " : " << nIters << " " << nTotalCorrectSolutions
     << " iterations (" << (float)nTotalCorrectSolutions/nIters << " correct) "
-    << std::endl;
+   );
   return bPassed;
 
 }

@@ -198,7 +198,7 @@ bool solve_translations_problem_softl1
 
   if (!summary.IsSolutionUsable())
   {
-    std::cout << summary.FullReport() << std::endl;
+    OPENMVG_LOG_DEBUG(summary.FullReport());
     return false;
   }
 

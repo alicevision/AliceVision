@@ -9,6 +9,7 @@
 #include <iostream>
 #include <string>
 
+#include "openMVG/logger.hpp"
 #include "openMVG/image/image.hpp"
 #include "testing/testing.h"
 
@@ -231,7 +232,7 @@ TEST(ImageHeader, AllFormats) {
     std::ostringstream os;
     os << "img" << "." << ext_Type[i];
     const std::string filename = os.str();
-    std::cout << "Testing:" << filename << std::endl;
+    OPENMVG_LOG_DEBUG("Testing:" << filename);
 
     // Test for gray images
     {

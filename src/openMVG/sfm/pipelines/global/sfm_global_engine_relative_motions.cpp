@@ -126,7 +126,7 @@ bool GlobalSfMReconstructionEngine_RelativeMotions::Process() {
     const std::set<IndexT> set_remainingIds = graph::CleanGraph_KeepLargestBiEdge_Nodes<Pair_Set, IndexT>(pairs, _sOutDirectory);
     if(set_remainingIds.empty())
     {
-      std::cout << "Invalid input image graph for global SfM" << std::endl;
+      OPENMVG_LOG_DEBUG("Invalid input image graph for global SfM");
       return false;
     }
     KeepOnlyReferencedElement(set_remainingIds, _matches_provider->_pairWise_matches);
@@ -138,23 +138,23 @@ bool GlobalSfMReconstructionEngine_RelativeMotions::Process() {
   Hash_Map<IndexT, Mat3> global_rotations;
   if (!Compute_Global_Rotations(relatives_R, global_rotations))
   {
-    std::cerr << "GlobalSfM:: Rotation Averaging failure!" << std::endl;
+    OPENMVG_LOG_WARNING("GlobalSfM:: Rotation Averaging failure!");
     return false;
   }
   matching::PairWiseMatches  tripletWise_matches;
   if (!Compute_Global_Translations(global_rotations, tripletWise_matches))
   {
-    std::cerr << "GlobalSfM:: Translation Averaging failure!" << std::endl;
+    OPENMVG_LOG_WARNING("GlobalSfM:: Translation Averaging failure!");
     return false;
   }
   if (!Compute_Initial_Structure(tripletWise_matches))
   {
-    std::cerr << "GlobalSfM:: Cannot initialize an initial structure!" << std::endl;
+    OPENMVG_LOG_WARNING("GlobalSfM:: Cannot initialize an initial structure!");
     return false;
   }
   if (!Adjust())
   {
-    std::cerr << "GlobalSfM:: Non-linear adjustment failure!" << std::endl;
+    OPENMVG_LOG_WARNING("GlobalSfM:: Non-linear adjustment failure!");
     return false;
   }
 
@@ -198,10 +198,11 @@ bool GlobalSfMReconstructionEngine_RelativeMotions::Compute_Global_Rotations
       set_pose_ids.insert(relative_R.j);
     }
 
-    std::cout << "\n-------------------------------" << "\n"
-      << " Global rotations computation: " << "\n"
-      << "  #relative rotations: " << relatives_R.size() << "\n"
-      << "  #global rotations: " << set_pose_ids.size() << std::endl;
+    OPENMVG_LOG_DEBUG(
+      "-------------------------------\n"
+      " Global rotations computation: " << "\n"
+      "  #relative rotations: " << relatives_R.size() << "\n"
+      "  #global rotations: " << set_pose_ids.size());
   }
 
   // Global Rotation solver:
@@ -214,7 +215,7 @@ bool GlobalSfMReconstructionEngine_RelativeMotions::Compute_Global_Rotations
     _eRotationAveragingMethod, eRelativeRotationInferenceMethod,
     relatives_R, global_rotations);
 
-  std::cout << "Found #global_rotations: " << global_rotations.size() << std::endl;
+  OPENMVG_LOG_DEBUG("Found #global_rotations: " << global_rotations.size());
 
   if (b_rotation_averaging)
   {
@@ -328,7 +329,7 @@ bool GlobalSfMReconstructionEngine_RelativeMotions::Compute_Initial_Structure
       }
     }
 
-    std::cout << std::endl << "Track stats" << std::endl;
+    OPENMVG_LOG_DEBUG("Track stats");
     {
       std::ostringstream osTrack;
       //-- Display stats:
@@ -353,7 +354,7 @@ bool GlobalSfMReconstructionEngine_RelativeMotions::Compute_Initial_Structure
         osTrack << "\t" << iter->first << "\t" << iter->second << "\n";
       }
       osTrack << "\n";
-      std::cout << osTrack.str();
+      OPENMVG_LOG_DEBUG(osTrack.str());
     }
   }
 
@@ -365,9 +366,9 @@ bool GlobalSfMReconstructionEngine_RelativeMotions::Compute_Initial_Structure
     SfM_Data_Structure_Computation_Blind structure_estimator(true);
     structure_estimator.triangulate(_sfm_data);
 
-    std::cout << "\n#removed tracks (invalid triangulation): " <<
-      trackCountBefore - IndexT(_sfm_data.GetLandmarks().size()) << std::endl;
-    std::cout << std::endl << "  Triangulation took (s): " << timer.elapsed() << std::endl;
+    OPENMVG_LOG_DEBUG("#removed tracks (invalid triangulation): " <<
+      trackCountBefore - IndexT(_sfm_data.GetLandmarks().size()));
+    OPENMVG_LOG_DEBUG("  Triangulation took (s): " << timer.elapsed());
 
     // Export initial structure
     if (!_sLoggingFile.empty())
@@ -424,10 +425,11 @@ bool GlobalSfMReconstructionEngine_RelativeMotions::Adjust()
   const size_t pointcount_pixelresidual_filter = _sfm_data.structure.size();
   RemoveOutliers_AngleError(_sfm_data, 2.0);
   const size_t pointcount_angular_filter = _sfm_data.structure.size();
-  std::cout << "Outlier removal (remaining #points):\n"
-    << "\t initial structure size #3DPoints: " << pointcount_initial << "\n"
-    << "\t\t pixel residual filter  #3DPoints: " << pointcount_pixelresidual_filter << "\n"
-    << "\t\t angular filter         #3DPoints: " << pointcount_angular_filter << std::endl;
+  OPENMVG_LOG_DEBUG(
+    "Outlier removal (remaining #points):\n"
+    "\t initial structure size #3DPoints: " << pointcount_initial << "\n"
+    "\t\t pixel residual filter  #3DPoints: " << pointcount_pixelresidual_filter << "\n"
+    "\t\t angular filter         #3DPoints: " << pointcount_angular_filter);
 
   if (!_sLoggingFile.empty())
   {
@@ -446,8 +448,8 @@ bool GlobalSfMReconstructionEngine_RelativeMotions::Adjust()
     // TODO: must ensure that track graph is producing a single connected component
 
     const size_t pointcount_cleaning = _sfm_data.structure.size();
-    std::cout << "Point_cloud cleaning:\n"
-      << "\t #3DPoints: " << pointcount_cleaning << "\n";
+    OPENMVG_LOG_DEBUG("Point_cloud cleaning:\n"
+      << "\t #3DPoints: " << pointcount_cleaning);
   }
   BA_Refine refineOptions = BA_REFINE_ROTATION | BA_REFINE_TRANSLATION | BA_REFINE_STRUCTURE;
   if(!_bFixedIntrinsics)
@@ -516,7 +518,7 @@ void GlobalSfMReconstructionEngine_RelativeMotions::Compute_Relative_Rotations
       // Select common bearing vectors
       if (match_pairs.size() > 1)
       {
-        std::cerr << "Compute relative pose between more than two view is not supported" << std::endl;
+        OPENMVG_LOG_WARNING("Compute relative pose between more than two view is not supported");
         continue;
       }
 

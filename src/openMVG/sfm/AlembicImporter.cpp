@@ -98,7 +98,7 @@ bool readPointCloud(IObject iObj, M44d mat, sfm::SfM_Data &sfmdata, sfm::ESfM_Da
     propColor.get(sampleColors);
     if(sampleColors->size() != positions->size())
     {
-      std::cerr << "[Alembic Importer] WARNING: colors will be ignored. Color vector size: " << sampleColors->size() << ", positions vector size: " << positions->size() << std::endl;
+      OPENMVG_LOG_WARNING("[Alembic Importer] WARNING: colors will be ignored. Color vector size: " << sampleColors->size() << ", positions vector size: " << positions->size());
       sampleColors.reset();
     }
   }
@@ -138,16 +138,16 @@ bool readPointCloud(IObject iObj, M44d mat, sfm::SfM_Data &sfmdata, sfm::ESfM_Da
 
     if( positions->size() != sampleVisibilitySize->size() )
     {
-      std::cerr << "ABC Error: number of observations per 3D point should be identical to the number of 2D features." << std::endl;
-      std::cerr << "Number of observations per 3D point size is " << sampleVisibilitySize->size() << std::endl;
-      std::cerr << "Number of 3D points is " << positions->size() << std::endl;
+      OPENMVG_LOG_WARNING("ABC Error: number of observations per 3D point should be identical to the number of 2D features.");
+      OPENMVG_LOG_WARNING("Number of observations per 3D point size is " << sampleVisibilitySize->size());
+      OPENMVG_LOG_WARNING("Number of 3D points is " << positions->size());
       return false;
     }
     if( sampleVisibilityIds->size() != sampleFeatPos2d->size() )
     {
-      std::cerr << "ABC Error: visibility Ids and features 2D pos should have the same size." << std::endl;
-      std::cerr << "Visibility Ids size is " << sampleVisibilityIds->size() << std::endl;
-      std::cerr << "Features 2d Pos size is " << sampleFeatPos2d->size() << std::endl;
+      OPENMVG_LOG_WARNING("ABC Error: visibility Ids and features 2D pos should have the same size.");
+      OPENMVG_LOG_WARNING("Visibility Ids size is " << sampleVisibilityIds->size());
+      OPENMVG_LOG_WARNING("Features 2d Pos size is " << sampleFeatPos2d->size());
       return false;
     }
 
@@ -309,7 +309,7 @@ bool readCamera(IObject iObj, M44d mat, sfm::SfM_Data &sfmdata, sfm::ESfM_Data f
 // Top down read of 3d objects
 void visitObject(IObject iObj, M44d mat, sfm::SfM_Data &sfmdata, sfm::ESfM_Data flags_part)
 {
-  // std::cout << "ABC visit: " << iObj.getFullName() << std::endl;
+  // OPENMVG_LOG_DEBUG("ABC visit: " << iObj.getFullName());
   
   const MetaData& md = iObj.getMetaData();
   if(IPoints::matches(md) && (flags_part & sfm::ESfM_Data::STRUCTURE))
@@ -328,7 +328,7 @@ void visitObject(IObject iObj, M44d mat, sfm::SfM_Data &sfmdata, sfm::ESfM_Data 
     // If we have an animated camera we handle it with the xform here
     else
     {
-      std::cout << xform.getSchema().getNumSamples() << " samples found in this animated xform." << std::endl;
+      OPENMVG_LOG_DEBUG(xform.getSchema().getNumSamples() << " samples found in this animated xform.");
       for(index_t frame = 0; frame < xform.getSchema().getNumSamples(); ++frame)
       {
         xform.getSchema().get(xs, ISampleSelector(frame));

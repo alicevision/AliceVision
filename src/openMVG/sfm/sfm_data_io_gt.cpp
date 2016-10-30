@@ -25,7 +25,7 @@ bool read_openMVG_Camera(const std::string & camName, cameras::Pinhole_Intrinsic
     std::ifstream in(camName.c_str(), std::ios::in|std::ios::binary);
     if (!in.is_open())
     {
-      std::cerr << "Error: failed to open file '" << camName << "' for reading" << std::endl;
+      OPENMVG_LOG_ERROR("Failed to open file '" << camName << "' for reading");
       return false;
     }
     val.resize(12);
@@ -41,7 +41,7 @@ bool read_openMVG_Camera(const std::string & camName, cameras::Pinhole_Intrinsic
     std::ifstream ifs;
     ifs.open( camName.c_str(), std::ifstream::in);
     if (!ifs.is_open()) {
-      std::cerr << "Error: failed to open file '" << camName << "' for reading" << std::endl;
+      OPENMVG_LOG_ERROR("Failed to open file '" << camName << "' for reading");
       return false;
     }
     while (ifs.good())
@@ -81,7 +81,7 @@ bool read_Strecha_Camera(const std::string & camName, cameras::Pinhole_Intrinsic
   std::ifstream ifs;
   ifs.open( camName.c_str(), std::ifstream::in);
   if (!ifs.is_open()) {
-    std::cerr << "Error: failed to open file '" << camName << "' for reading" << std::endl;
+    OPENMVG_LOG_ERROR("Failed to open file '" << camName << "' for reading");
     return false;
   }
   std::vector<double> val;
@@ -95,7 +95,7 @@ bool read_Strecha_Camera(const std::string & camName, cameras::Pinhole_Intrinsic
 
   if (!(val.size() == 3*3 +3 +3*3 +3 + 3 || val.size() == 26)) //Strecha cam
   {
-    std::cerr << "File " << camName << " is not in Stretcha format ! " << std::endl;
+    OPENMVG_LOG_ERROR("File " << camName << " is not in Stretcha format ! ");
     return false;
   }
   Mat3 K, R;
@@ -128,7 +128,7 @@ bool readGt(const std::string & sRootPath, SfM_Data & sfm_data, bool useUID)
   const std::string sGTPath = stlplus::folder_down(sRootPath, "gt_dense_cameras");
   if (!stlplus::is_folder(sGTPath))
   {
-    std::cout << std::endl << "There is not valid GT data to read from " << sGTPath << std::endl;
+    OPENMVG_LOG_DEBUG("There is not valid GT data to read from " << sGTPath);
     return false;
   }
 
@@ -137,13 +137,13 @@ bool readGt(const std::string & sRootPath, SfM_Data & sfm_data, bool useUID)
   std::string suffix;
   if (!stlplus::folder_wildcard(sGTPath, "*.bin", true, true).empty())
   {
-    std::cout << "\nusing openMVG Camera";
+    OPENMVG_LOG_TRACE("Using openMVG Camera");
     fcnReadCamPtr = &read_openMVG_Camera;
     suffix = "bin";
   }
   else if (!stlplus::folder_wildcard(sGTPath, "*.camera", true, true).empty())
   {
-    std::cout << "\nusing Strechas Camera";
+    OPENMVG_LOG_TRACE("Using Strechas Camera");
     fcnReadCamPtr = &read_Strecha_Camera;
     suffix = "camera";
   }
@@ -152,7 +152,7 @@ bool readGt(const std::string & sRootPath, SfM_Data & sfm_data, bool useUID)
     throw std::logic_error(std::string("No camera found in ") + sGTPath);
   }
 
-  std::cout << std::endl << "Read rotation and translation estimates" << std::endl;
+  OPENMVG_LOG_TRACE("Read rotation and translation estimates");
   const std::string sImgPath = stlplus::folder_down(sRootPath, "images");
   std::map< std::string, Mat3 > map_R_gt;
   //Try to read .suffix camera (parse camera names)
@@ -161,7 +161,7 @@ bool readGt(const std::string & sRootPath, SfM_Data & sfm_data, bool useUID)
   std::sort(vec_camfilenames.begin(), vec_camfilenames.end());
   if (vec_camfilenames.empty())
   {
-    std::cout << "No camera found in " << sGTPath << std::endl;
+    OPENMVG_LOG_WARNING("No camera found in " << sGTPath);
     return false;
   }
   IndexT index = 0;
@@ -173,7 +173,7 @@ bool readGt(const std::string & sRootPath, SfM_Data & sfm_data, bool useUID)
     bool loaded = fcnReadCamPtr(stlplus::create_filespec(sGTPath, *iter), *pinholeIntrinsic.get(), pose);
     if (!loaded)
     {
-      std::cout << "Failed to load: " << *iter << std::endl;
+      OPENMVG_LOG_ERROR("Failed to load: " << *iter);
       return false;
     }
 

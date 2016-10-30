@@ -71,7 +71,7 @@ TEST(translation_averaging, globalTi_from_tijs) {
   //--
   EXPECT_NEAR(0.0, gamma, 1e-6); // Gamma must be 0, no noise, perfect data have been sent
 
-  std::cout << "Found solution with gamma = " << gamma << std::endl;
+  OPENMVG_LOG_DEBUG("Found solution with gamma = " << gamma);
 
   //-- Get back computed camera translations
   std::vector<double> vec_camTranslation(iNviews*3,0);

@@ -78,7 +78,7 @@ ImageFeed::FeederImpl::FeederImpl(const std::string& imagePath, const std::strin
 , _withCalibration(false)
 {
   namespace bf = boost::filesystem;
-//    std::cout << imagePath << std::endl;
+//    OPENMVG_LOG_DEBUG(imagePath);
   // if it is a json, calibPath is neglected
   if(bf::is_regular_file(imagePath))
   {
@@ -136,7 +136,7 @@ ImageFeed::FeederImpl::FeederImpl(const std::string& imagePath, const std::strin
     {
       filePattern = bf::path(imagePath).filename().string();
       folder = bf::path(imagePath).parent_path().string();
-      std::cout << "filePattern: " << filePattern << std::endl;
+      OPENMVG_LOG_DEBUG("filePattern: " << filePattern);
       std::string regexStr = filePattern;
       // escape "."
       boost::algorithm::replace_all(regexStr, ".", "\\.");
@@ -148,9 +148,9 @@ ImageFeed::FeederImpl::FeederImpl(const std::string& imagePath, const std::strin
     }
     else
     {
-      std::cout << "folder without expression: " << imagePath << std::endl;
+      OPENMVG_LOG_DEBUG("folder without expression: " << imagePath);
     }
-    std::cout << "directory feedImage" << std::endl;
+    OPENMVG_LOG_DEBUG("directory feedImage");
     // if it is a directory, list all the images and add them to the list
     bf::directory_iterator iterator(folder);
     // since some OS will provide the files in a random order, first store them
@@ -207,7 +207,7 @@ bool ImageFeed::FeederImpl::readImage(image::Image<unsigned char> &imageGray,
 {
   if(!_isInit)
   {
-    std::cerr << "Image feed is not initialized " << std::endl;
+    OPENMVG_LOG_WARNING("Image feed is not initialized ");
     return false;
   }
 
@@ -234,10 +234,10 @@ bool ImageFeed::FeederImpl::readImage(image::Image<unsigned char> &imageGray,
       hasIntrinsics = false;
     }
     imageName = _images[_currentImageIndex];
-    std::cout << imageName << std::endl;
+    OPENMVG_LOG_DEBUG(imageName);
     if (!image::ReadImage(imageName.c_str(), &imageGray))
     {
-      std::cerr << "Error while opening image " << imageName << std::endl;
+      OPENMVG_LOG_WARNING("Error while opening image " << imageName);
       throw std::invalid_argument("Error while opening image " + imageName);
     }
     return true;
@@ -261,7 +261,7 @@ bool ImageFeed::FeederImpl::goToFrame(const unsigned int frame)
   if(!_isInit)
   {
     _currentImageIndex = frame;
-    std::cerr << "Image feed is not initialized " << std::endl;
+    OPENMVG_LOG_WARNING("Image feed is not initialized ");
     return false;
   }
   
@@ -271,7 +271,7 @@ bool ImageFeed::FeederImpl::goToFrame(const unsigned int frame)
     if(frame >= _sfmdata.GetViews().size())
     {
       _viewIterator = _sfmdata.GetViews().end();
-      std::cerr << "The current frame is out of the range." << std::endl;
+      OPENMVG_LOG_WARNING("The current frame is out of the range.");
       return false;
     }
 
@@ -284,10 +284,10 @@ bool ImageFeed::FeederImpl::goToFrame(const unsigned int frame)
     // Image list mode
     if(frame >= _images.size())
     {
-      std::cerr << "The current frame is out of the range." << std::endl;
+      OPENMVG_LOG_WARNING("The current frame is out of the range.");
       return false;
     }
-    std::cout << "frame " << frame << std::endl;
+    OPENMVG_LOG_DEBUG("frame " << frame);
   }
   return true;
 }
@@ -305,7 +305,7 @@ bool ImageFeed::FeederImpl::goToNextFrame()
   else
   {
     ++_currentImageIndex;
-    std::cout << "next frame " << _currentImageIndex << std::endl;
+    OPENMVG_LOG_DEBUG("next frame " << _currentImageIndex);
     if(_currentImageIndex >= _images.size())
       return false;
   }
@@ -331,13 +331,13 @@ bool ImageFeed::FeederImpl::feedWithJson(image::Image<unsigned char> &imageGray,
   imageName = (bf::path(rootPath) / bf::path(view->s_Img_path)).string();
   if (!image::ReadImage(imageName.c_str(), &imageGray))
   {
-    std::cerr << "Error while opening image " << imageName << std::endl;
+    OPENMVG_LOG_WARNING("Error while opening image " << imageName);
     return false;
   }
   // get the associated Intrinsics
   if((view->id_intrinsic == UndefinedIndexT) || (!_sfmdata.GetIntrinsics().count(view->id_intrinsic)))
   {
-    std::cout << "Image "<< imageName << " does not have associated intrinsics" << std::endl;
+    OPENMVG_LOG_DEBUG("Image "<< imageName << " does not have associated intrinsics");
     hasIntrinsics = false;
   }
   else
@@ -345,7 +345,7 @@ bool ImageFeed::FeederImpl::feedWithJson(image::Image<unsigned char> &imageGray,
     const cameras::IntrinsicBase * cam = _sfmdata.GetIntrinsics().at(view->id_intrinsic).get();
     if(cam->getType() != cameras::EINTRINSIC::PINHOLE_CAMERA_RADIAL3)
     {
-      std::cerr << "Only Pinhole_Intrinsic_Radial_K3 is supported" << std::endl;
+      OPENMVG_LOG_WARNING("Only Pinhole_Intrinsic_Radial_K3 is supported");
       hasIntrinsics = false;
     }
     else
