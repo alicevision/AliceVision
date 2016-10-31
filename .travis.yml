@@ -16,7 +16,7 @@ addons:
     sources:
       - ubuntu-toolchain-r-test
     packages:
-      - cmake
+      #- cmake # Manually install latest version (>=3.0)
       - lcov
       - libpng-dev
       - libjpeg8-dev
@@ -36,6 +36,11 @@ env:
     - BUILD_PROCESSOR="`uname -p`"
     - OPENMVG_SOURCE=${TRAVIS_BUILD_DIR}/src
     - OPENMVG_BUILD=${TRAVIS_BUILD_DIR}/build
+    # CMAKE
+    - CMAKE_URL="https://cmake.org/files/v3.4/cmake-3.4.1-Linux-x86_64.tar.gz"
+    - CMAKE_ROOT=${TRAVIS_BUILD_DIR}/cmake
+    - CMAKE_SOURCE=${CMAKE_ROOT}/source
+    - CMAKE_INSTALL=${CMAKE_ROOT}/install
     # GT tests
     - GT_TEST_ROOT=${TRAVIS_BUILD_DIR}/gt_test
     - GT_TEST_SOURCE=${GT_TEST_ROOT}/gt_source
@@ -78,6 +83,17 @@ before_install:
    fi
  - ccache -s
  - gem install coveralls-lcov
+ # CMAKE most recent version
+ - >
+    if [ "$(ls -A ${CMAKE_INSTALL})" ]; then
+      echo "CMake found in cache.";
+    else
+      mkdir --parent ${CMAKE_SOURCE}
+      mkdir --parent ${CMAKE_INSTALL}
+      travis_retry wget --no-check-certificate --quiet -O - ${CMAKE_URL} | tar --strip-components=1 -xz -C ${CMAKE_INSTALL}
+    fi
+ - export PATH=${CMAKE_INSTALL}/bin:${PATH};
+ - cmake --version
  # OPENCV
  - >
     if [ "$(ls -A $OPENCV_INSTALL)" ]; then
@@ -269,6 +285,7 @@ cache:
   ccache: true
   # Caching builded dependencies
   directories:
+    - $CMAKE_INSTALL
     - $OPENCV_INSTALL
     - $OPENGV_INSTALL
     - $CERES_INSTALL
