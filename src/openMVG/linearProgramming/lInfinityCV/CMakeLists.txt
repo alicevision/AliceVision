@@ -23,18 +23,12 @@ IF (MSVC)
 ENDIF (MSVC)
 
 ADD_LIBRARY(openMVG_lInftyComputerVision  ${lInftycomputervision_headers} ${lInftycomputervision_cpp})
-SET(LINEAR_PROGRAMMING_LIBRAIRIES 
+TARGET_LINK_LIBRARIES(openMVG_lInftyComputerVision
+  openMVG_linearProgramming
   ${CLP_LIBRARIES}     # clp + solver wrapper
   ${COINUTILS_LIBRARY} # container tools
   ${OSI_LIBRARY}       # generic LP
-)
-IF (MOSEK_FOUND)
-  LIST(APPEND LINEAR_PROGRAMMING_LIBRAIRIES
-    openMVG_linearProgrammingMSK # openMVG Mosek wrapper
-    ${MOSEK_LIB}    # Mosek lib
   )
-ENDIF (MOSEK_FOUND)
-TARGET_LINK_LIBRARIES(openMVG_lInftyComputerVision ${LINEAR_PROGRAMMING_LIBRAIRIES})
 SET_TARGET_PROPERTIES(openMVG_lInftyComputerVision PROPERTIES SOVERSION ${OPENMVG_VERSION_MAJOR} VERSION "${OPENMVG_VERSION_MAJOR}.${OPENMVG_VERSION_MINOR}")
 INSTALL(TARGETS openMVG_lInftyComputerVision DESTINATION lib EXPORT openMVG-targets)
 

@@ -19,13 +19,13 @@ add_library(openMVG_matching
   ${matching_files_header}
   ${matching_files_cpp})
 set_target_properties(openMVG_matching PROPERTIES SOVERSION ${OPENMVG_VERSION_MAJOR} VERSION "${OPENMVG_VERSION_MAJOR}.${OPENMVG_VERSION_MINOR}")
-target_link_libraries(openMVG_matching openMVG_features ${FLANN_LIBRARY})
+target_link_libraries(openMVG_matching openMVG_features stlplus ${FLANN_LIBRARY} ${LOG_LIB})
 set_property(TARGET openMVG_matching PROPERTY FOLDER OpenMVG/OpenMVG)
 install(TARGETS openMVG_matching DESTINATION lib EXPORT openMVG-targets)
 
-UNIT_TEST(openMVG matching "stlplus")
-UNIT_TEST(openMVG matching_filters "stlplus")
-UNIT_TEST(openMVG indMatch "openMVG_matching;stlplus")
-UNIT_TEST(openMVG metric "")
+UNIT_TEST(openMVG matching "openMVG_matching")
+UNIT_TEST(openMVG matching_filters "openMVG_matching")
+UNIT_TEST(openMVG indMatch "openMVG_matching")
+UNIT_TEST(openMVG metric "openMVG_matching")
 
 add_subdirectory(kvld)

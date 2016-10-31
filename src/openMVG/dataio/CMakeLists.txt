@@ -14,7 +14,7 @@ add_library(openMVG_dataio
   ${dataio_header}
   ${dataio_cpp})
 set_property(TARGET openMVG_dataio PROPERTY FOLDER OpenMVG/OpenMVG)
-target_link_libraries( openMVG_dataio openMVG_sfm ${Boost_LIBRARIES})
+target_link_libraries( openMVG_dataio openMVG_sfm ${Boost_LIBRARIES} ${LOG_LIB})
 if(OpenMVG_USE_OPENCV)
   target_link_libraries( openMVG_dataio ${OpenCV_LIBS})
 endif(OpenMVG_USE_OPENCV)
