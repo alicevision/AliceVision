@@ -179,9 +179,11 @@ int main(int argc, char** argv)
   bool noBArefineIntrinsics = false;      ///< It does not refine intrinsics during BA
   std::size_t minPointVisibility = 0;
   
-  std::string visualDebug = "";        ///< whether to save visual debug info
+  std::string visualDebug = "";           ///< whether to save visual debug info
   bool useVoctreeLocalizer = true;        ///< whether to use the voctreeLocalizer or cctagLocalizer
   bool useSIFT_CCTAG = false;             ///< whether to use SIFT_CCTAG
+  
+  bool useFrameBufferMatching = true;     ///< enable the matching with the last N frame of the sequence
 
   po::options_description desc(
       "This program takes as input a media (image, image sequence, video) and a database (voctree, 3D structure data) \n"
@@ -236,6 +238,8 @@ int main(int argc, char** argv)
           "[voctree] Maximum matching error (in pixels) allowed for image matching with "
           "geometric verification. If set to 0 it lets the ACRansac select "
           "an optimal value.")
+      ("useFrameBufferMatching", po::bool_switch(&useFrameBufferMatching), 
+          "[voctree] Enable/Disable the matching with the last N frame of the sequence")
 // cctag specific options
 #ifdef HAVE_CCTAG
       ("nNearestKeyFrames", po::value<size_t>(&nNearestKeyFrames)->default_value(nNearestKeyFrames), 
@@ -337,6 +341,7 @@ int main(int argc, char** argv)
       POPART_COUT("\tcommon views: " << numCommonViews);
       POPART_COUT("\talgorithm: " << algostring);
       POPART_COUT("\tmatchingError: " << matchingErrorMax);
+      POPART_COUT("\tuseFrameBufferMatching: " << useFrameBufferMatching);
     }
 #ifdef HAVE_CCTAG 
     else
@@ -395,6 +400,7 @@ int main(int argc, char** argv)
     tmpParam->_numCommonViews = numCommonViews;
     tmpParam->_ccTagUseCuda = false;
     tmpParam->_matchingError = matchingErrorMax;
+    tmpParam->_useFrameBufferMatching = useFrameBufferMatching;
   }
 #ifdef HAVE_CCTAG
   else

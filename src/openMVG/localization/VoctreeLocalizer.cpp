@@ -91,7 +91,7 @@ VoctreeLocalizer::VoctreeLocalizer(const std::string &sfmFilePath,
 #ifdef HAVE_CCTAG
                                    , bool useSIFT_CCTAG
 #endif
-                                  ) : ILocalizer()
+                                  ) : ILocalizer() , _frameBuffer(5)
 {
   using namespace openMVG::features;
   // init the feature extractor
@@ -477,7 +477,7 @@ bool VoctreeLocalizer::localizeFirstBestResult(const features::SIFT_Regions &que
     bool matchWorked = robustMatching( matcher, 
                                       // pass the input intrinsic if they are valid, null otherwise
                                       (useInputIntrinsics) ? &queryIntrinsics : nullptr,
-                                      matchedRegions,
+                                      matchedRegions._regions,
                                       matchedIntrinsics,
                                       param._fDistRatio,
                                       param._matchingError,
@@ -652,6 +652,10 @@ bool VoctreeLocalizer::localizeAllResults(const features::SIFT_Regions &queryReg
     // recopy the associations IDs in the vector
     associationIDs.push_back(ass.first);
   }
+  
+  assert(associationIDs.size() == numCollectedPts);
+  assert(resectionData.pt2D.cols() == numCollectedPts);
+  assert(resectionData.pt3D.cols() == numCollectedPts);
 
   geometry::Pose3 pose;
   
@@ -737,6 +741,14 @@ bool VoctreeLocalizer::localizeAllResults(const features::SIFT_Regions &queryReg
                 << " min = " << std::sqrt(sqrErrors.minCoeff())
                 << " max = " << std::sqrt(sqrErrors.maxCoeff()));
   }
+  
+    
+  if(param._useFrameBufferMatching)
+  {
+    // add everything to the buffer
+    FrameData fi(localizationResult, queryRegions);
+    _frameBuffer.push_back(fi);
+  }
 
   return localizationResult.isValid();
 }
@@ -804,6 +816,7 @@ void VoctreeLocalizer::getAllAssociations(const features::SIFT_Regions &queryReg
       continue;
     }
     POPART_COUT("[matching]\tTrying to match the query image with " << matchedView->s_Img_path);
+    POPART_COUT("[matching]\tit has " << matchedRegions._regions.RegionCount() << " available features to match");
     
     // its associated intrinsics
     // this is just ugly!
@@ -820,7 +833,7 @@ void VoctreeLocalizer::getAllAssociations(const features::SIFT_Regions &queryReg
     bool matchWorked = robustMatching( matcher, 
                                       // pass the input intrinsic if they are valid, null otherwise
                                       (useInputIntrinsics) ? &queryIntrinsics : nullptr,
-                                      matchedRegions,
+                                      matchedRegions._regions,
                                       matchedIntrinsics,
                                       param._fDistRatio,
                                       param._matchingError,
@@ -911,7 +924,36 @@ void VoctreeLocalizer::getAllAssociations(const features::SIFT_Regions &queryReg
     }
   }
   
-  const size_t numCollectedPts = occurences.size();
+  if(param._useFrameBufferMatching)
+  {
+    POPART_COUT("[matching]\tUsing frameBuffer matching: matching with the past " 
+            << param._bufferSize << " frames" );
+    getAssociationsFromBuffer(matcher, imageSize, param, useInputIntrinsics, queryIntrinsics, occurences);
+  }
+  
+  const std::size_t numCollectedPts = occurences.size();
+  
+  {
+    // just debugging statistics, this block can be safely removed
+    std::size_t numOccTreated = 0;
+    for(std::size_t value = 1; value < numCollectedPts; ++value)
+    {
+      std::size_t counter = 0;
+      for(const auto &idx : occurences)
+      {
+        if(idx.second == value)
+        {
+          ++counter;
+        }
+      }
+      POPART_COUT("[matching]\tThere are " << counter 
+              <<  " associations occurred " << value << " times ("
+              << 100.0*counter/(double)numCollectedPts << "%)");
+      numOccTreated += counter;
+      if(numOccTreated >= numCollectedPts) 
+        break;
+    }
+  }
   
   pt2D = Mat2X(2, numCollectedPts);
   pt3D = Mat3X(3, numCollectedPts);
@@ -922,6 +964,8 @@ void VoctreeLocalizer::getAllAssociations(const features::SIFT_Regions &queryReg
      // recopy all the points in the matching structure
     const IndexT pt3D_id = idx.first.first;
     const IndexT pt2D_id = idx.first.second;
+    
+//    POPART_COUT("[matching]\tAssociation [" << pt3D_id << "," << pt2D_id << "] occurred " << idx.second << " times");
 
     pt2D.col(index) = queryRegions.GetRegionPosition(pt2D_id);
     pt3D.col(index) = _sfm_data.GetLandmarks().at(pt3D_id).X;
@@ -930,9 +974,75 @@ void VoctreeLocalizer::getAllAssociations(const features::SIFT_Regions &queryReg
   
 }
 
+void VoctreeLocalizer::getAssociationsFromBuffer(matching::RegionsMatcherT<MatcherT> & matcher,
+                                                 const std::pair<std::size_t, std::size_t> queryImageSize,
+                                                 const Parameters &param,
+                                                 bool useInputIntrinsics,
+                                                 const cameras::Pinhole_Intrinsic_Radial_K3 &queryIntrinsics,
+                                                 std::map< std::pair<IndexT, IndexT>, std::size_t > &occurences,
+                                                 const std::string& imagePath) const
+{
+  std::size_t frameCounter = 0;
+  // for all the past frames
+  for(const auto& frame : _frameBuffer)
+  {
+    // gather the data
+    const auto &frameReconstructedRegions = frame._regionsWith3D;
+    const auto &frameRegions = frameReconstructedRegions._regions;
+    const auto &frameIntrinsics = frame._locResult.getIntrinsics();
+    const auto frameImageSize = std::make_pair(frameIntrinsics.w(), frameIntrinsics.h());
+    std::vector<matching::IndMatch> vec_featureMatches;
+    
+    // match the query image with the current frame
+    bool matchWorked = robustMatching(matcher, 
+                                      // pass the input intrinsic if they are valid, null otherwise
+                                      (useInputIntrinsics) ? &queryIntrinsics : nullptr,
+                                      frameRegions,
+                                      &frameIntrinsics,
+                                      param._fDistRatio,
+                                      param._matchingError,
+                                      param._useGuidedMatching,
+                                      queryImageSize,
+                                      frameImageSize, 
+                                      vec_featureMatches,
+                                      param._matchingEstimator);
+    if (!matchWorked)
+    {
+      continue;
+    }
+
+    POPART_COUT("[matching]\tFound " << vec_featureMatches.size() << " matches from frame " << frameCounter);
+    assert(vec_featureMatches.size()>0);
+    
+    // recover the 2D-3D associations from the matches 
+    // Each matched feature in the current similar image is associated to a 3D point
+    std::size_t newOccurences = 0;
+    for(const matching::IndMatch& featureMatch : vec_featureMatches)
+    {
+      // the ID of the 3D point
+      const IndexT pt3D_id = frameReconstructedRegions._associated3dPoint[featureMatch._j];
+      const IndexT pt2D_id = featureMatch._i;
+      
+      const auto key = std::make_pair(pt3D_id, pt2D_id);
+      if(occurences.count(key))
+      {
+        occurences[key]++;
+      }
+      else
+      {
+        POPART_COUT("[matching]\tnew association found: [" << pt3D_id << "," << pt2D_id << "]");
+        occurences[key] = 1;
+        ++newOccurences;
+      }
+    }
+    POPART_COUT("[matching]\tFound " << newOccurences << " new associations with the frameBufferMatching");
+    ++frameCounter;
+  }
+}
+
 bool VoctreeLocalizer::robustMatching(matching::RegionsMatcherT<MatcherT> & matcher, 
                                       const cameras::IntrinsicBase * queryIntrinsicsBase,   // the intrinsics of the image we are using as reference
-                                      const Reconstructed_RegionsT & matchedRegions,
+                                      const Reconstructed_RegionsT::RegionsT & matchedRegions,
                                       const cameras::IntrinsicBase * matchedIntrinsicsBase,
                                       const float fDistRatio,
                                       const double matchingError,
@@ -963,7 +1073,7 @@ bool VoctreeLocalizer::robustMatching(matching::RegionsMatcherT<MatcherT> & matc
   const bool canBeUndistorted = (queryIntrinsicsBase != nullptr) && (matchedIntrinsicsBase != nullptr);
     
   // A. Putative Features Matching
-  const bool matchWorked = matcher.Match(fDistRatio, matchedRegions._regions, vec_featureMatches);
+  const bool matchWorked = matcher.Match(fDistRatio, matchedRegions, vec_featureMatches);
   if (!matchWorked)
   {
     POPART_COUT("[matching]\tPutative matching failed.");
@@ -979,7 +1089,7 @@ bool VoctreeLocalizer::robustMatching(matching::RegionsMatcherT<MatcherT> & matc
   {
     const matching::IndMatch& match = vec_featureMatches[i];
     const Vec2 &queryPoint = matcher.getDatabaseRegions()->GetRegionPosition(match._i);
-    const Vec2 &matchedPoint = matchedRegions._regions.GetRegionPosition(match._j);
+    const Vec2 &matchedPoint = matchedRegions.GetRegionPosition(match._j);
     
     if(canBeUndistorted)
     {
@@ -1038,7 +1148,7 @@ bool VoctreeLocalizer::robustMatching(matching::RegionsMatcherT<MatcherT> & matc
             queryIntrinsicsBase, // cameras::IntrinsicBase of the matched image
             *matcher.getDatabaseRegions(), // features::Regions
             matchedIntrinsicsBase, // cameras::IntrinsicBase of the query image
-            matchedRegions._regions, // features::Regions
+            matchedRegions, // features::Regions
             Square(geometricFilter.m_dPrecision_robust),
             Square(fDistRatio),
             vec_featureMatches); // output

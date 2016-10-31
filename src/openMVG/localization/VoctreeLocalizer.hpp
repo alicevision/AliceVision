@@ -10,6 +10,7 @@
 #include "reconstructed_regions.hpp"
 #include "LocalizationResult.hpp"
 #include "ILocalizer.hpp"
+#include "BoundedBuffer.hpp"
 
 #include <openMVG/features/image_describer.hpp>
 #include <openMVG/sfm/sfm_data.hpp>
@@ -35,6 +36,40 @@ typedef Reconstructed_Regions<features::SIOPointFeature, float, 128> Reconstruct
 typedef Reconstructed_Regions<features::SIOPointFeature, unsigned char, 128> Reconstructed_RegionsT;
 #endif
 
+struct FrameData
+{
+  FrameData(const LocalizationResult &locResult, const Reconstructed_RegionsT::RegionsT &regions)
+    : _locResult(locResult)
+  {
+    // copy the regions
+    _regionsWith3D._regions = regions;
+    
+    // now we need to filter out and keep only the regions with 3D data associated
+    const auto &associationIDs = _locResult.getIndMatch3D2D();
+    const auto &inliers = _locResult.getInliers();
+    
+    // feature in image are <featureID, point3Did> associations
+    std::vector<FeatureInImage> featuresInImage;
+    featuresInImage.reserve(inliers.size());
+    
+    for(const auto &idx : inliers)
+    {
+      assert(idx < associationIDs.size());
+      // association is a pait <point3dID, point2dID>
+      const auto &association = associationIDs[idx];
+      
+      // add it to featuresInImage
+      featuresInImage.emplace_back(association.second, association.first);
+    }
+    
+    _regionsWith3D.filterRegions(featuresInImage);
+  }
+  
+  LocalizationResult _locResult;
+  Reconstructed_RegionsT _regionsWith3D;
+};
+
+
 
 class VoctreeLocalizer : public ILocalizer
 {
@@ -54,16 +89,20 @@ public:
       _maxResults(10),
       _numCommonViews(3),
       _ccTagUseCuda(true),
-      _matchingError(std::numeric_limits<double>::infinity())
+      _matchingError(std::numeric_limits<double>::infinity()),
+      _bufferSize(10),
+      _useFrameBufferMatching(false)
     { }
     
-    bool _useGuidedMatching;      //< Enable/disable guided matching when matching images
-    Algorithm _algorithm;         //< algorithm to use for localization
-    std::size_t _numResults;      //< number of best matching images to retrieve from the database
-    std::size_t _maxResults;      //< for algorithm AllResults, it stops the image matching when this number of matched images is reached
-    std::size_t _numCommonViews;  //< number minimum common images in which a point must be seen to be used in cluster tracking
-    bool _ccTagUseCuda;           //< ccTag-CUDA cannot process frames at different resolutions ATM, so set to false if localizer is used on images of differing sizes
-    double _matchingError;	  //< maximum reprojection error allowed for image matching with geometric validation
+    bool _useGuidedMatching;        //< Enable/disable guided matching when matching images
+    Algorithm _algorithm;           //< algorithm to use for localization
+    size_t _numResults;             //< number of best matching images to retrieve from the database
+    size_t _maxResults;             //< for algorithm AllResults, it stops the image matching when this number of matched images is reached
+    size_t _numCommonViews;         //< number minimum common images in which a point must be seen to be used in cluster tracking
+    bool _ccTagUseCuda;             //< ccTag-CUDA cannot process frames at different resolutions ATM, so set to false if localizer is used on images of differing sizes
+    double _matchingError;          //< maximum reprojection error allowed for image matching with geometric validation
+    std::size_t _bufferSize;        //< maximum capacity of the frame buffer
+    bool _useFrameBufferMatching;   //< enable matching with frame buffer
   };
   
 public:
@@ -161,7 +200,7 @@ public:
                           geometry::Pose3 &rigPose,
                           std::vector<LocalizationResult>& vec_locResults);
 #endif
-  
+
   bool localizeRig_naive(const std::vector<std::unique_ptr<features::Regions> > & vec_queryRegions,
                         const std::vector<std::pair<std::size_t, std::size_t> > &imageSize,
                         const LocalizerParameters *parameters,
@@ -169,6 +208,7 @@ public:
                         const std::vector<geometry::Pose3 > &vec_subPoses,
                         geometry::Pose3 &rigPose,
                         std::vector<LocalizationResult>& vec_locResults);
+
 
   /**
    * @brief Try to localize an image in the database: it queries the database to 
@@ -271,15 +311,23 @@ private:
 #endif
   bool robustMatching(matching::RegionsMatcherT<MatcherT> & matcher, 
                       const cameras::IntrinsicBase * queryIntrinsics,// the intrinsics of the image we are using as reference
-                      const Reconstructed_RegionsT & regionsToMatch,
+                      const Reconstructed_RegionsT::RegionsT & regionsToMatch,
                       const cameras::IntrinsicBase * matchedIntrinsics,
                       const float fDistRatio,
                       const double matchingError,
                       const bool b_guided_matching,
-                      const std::pair<size_t,size_t> & imageSizeI,     // size of the first image  
-                      const std::pair<size_t,size_t> & imageSizeJ,     // size of the first image
+                      const std::pair<size_t,size_t> & imageSizeI,     // size of the image in matcher  
+                      const std::pair<size_t,size_t> & imageSizeJ,     // size of the query image
                       std::vector<matching::IndMatch> & vec_featureMatches,
                       robust::EROBUST_ESTIMATOR estimator = robust::ROBUST_ESTIMATOR_ACRANSAC) const;
+  
+  void getAssociationsFromBuffer(matching::RegionsMatcherT<MatcherT> & matcher,
+                                 const std::pair<std::size_t, std::size_t> imageSize,
+                                 const Parameters &param,
+                                 bool useInputIntrinsics,
+                                 const cameras::Pinhole_Intrinsic_Radial_K3 &queryIntrinsics,
+                                 std::map< std::pair<IndexT, IndexT>, std::size_t > &occurences,
+                                 const std::string& imagePath = std::string()) const;
   
   /**
    * @brief Load all the Descriptors who have contributed to the reconstruction.
@@ -308,6 +356,8 @@ public:
   // the database that stores the visual word representation of each image of
   // the original dataset
   voctree::Database _database;
+  
+  BoundedBuffer<FrameData> _frameBuffer;
   
 };
 
