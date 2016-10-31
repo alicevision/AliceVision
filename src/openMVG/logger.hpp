@@ -6,7 +6,7 @@
 #define OPENMVG_CERR(x) std::cerr << x << std::endl
 
 #ifdef WANTS_OPENMVG_COUT
-#ifdef HAVE_BOOST__
+#ifdef HAVE_BOOST
   #define BOOST_LOG_DYN_LINK 1
   #include <boost/log/trivial.hpp>
 
