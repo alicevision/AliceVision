@@ -24,12 +24,26 @@ As openMVG use some C++11 features you must have a c++11 ready compiler:
 - GCC >= 4.7
 
 --------------------------
-General informations
-for openMVG cmake options
+CMake Options
 --------------------------
-OpenMVG_BUILD_TESTS (ON/OFF(default))=> Build openMVG unit tests
-OpenMVG_BUILD_EXAMPLES (ON/OFF(default))=> Build OpenMVG example applications.
-  Does not affect binaries under 'software'
+
+OpenMVG_USE_BOOST (default ON): Use Boost library (enable modules like localization/voctree and other features and optimizations.
+BOOST_NO_CXX11 (default OFF): If your Boost binaries are compiled without C++11 support, you need to set this option to avoid compilation errors.
+                              This is most likely to be the case if you use the system packages to install boost.
+OpenMVG_USE_OPENMP (default ON): Use OpenMP parallelization (huge impact on performances)
+OpenMVG_USE_CCTAG (default ON): Build with CCTag markers support.
+OpenMVG_USE_OPENGV (default OFF): Build with openGV for multi-cameras localization.
+OpenMVG_USE_ALEMBIC (default OFF): Build with Alembic file format support
+OpenMVG_USE_OPENCV (default: OFF): Build with openCV
+OPENMVG_REQUIRE_CERES_WITH_SUITESPARSE (default: ON): By default, openMVG requires Ceres builded with SuiteSparse to ensure best performance, but you can make SuiteSpase optional with this flag.
+
+OpenMVG_BUILD_SHARED (default OFF): Build OpenMVG as shared libs (instead of static libs)
+OpenMVG_BUILD_TESTS (default OFF): Build OpenMVG tests
+OpenMVG_BUILD_DOC (default ON): Build OpenMVG documentation
+OpenMVG_BUILD_EXAMPLES (default: ON): Build OpenMVG samples applications (openMVG softwares are still builded)
+OpenMVG_BUILD_OPENGL_EXAMPLES (default OFF): Build OpenMVG openGL examples
+OpenMVG_BUILD_COVERAGE (default OFF): Enable code coverage generation (gcc only)
+
 
 --------------------------
 General informations
@@ -147,3 +161,4 @@ Specify to CMAKE where OpenMVG have been installed by using the cmake OpenMVG_DI
 -DOpenMVG_DIR:STRING="YourInstallPath"/share/openMVG/cmake
 
 A message will be displayed if OpenMVG is found or not at the cmake configure step.
+
