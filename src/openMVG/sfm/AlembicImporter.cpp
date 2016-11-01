@@ -213,7 +213,7 @@ bool readCamera(IObject iObj, M44d mat, sfm::SfM_Data &sfmdata, sfm::ESfM_Data f
     {
       try {
         getAbcArrayProp<Alembic::Abc::IUInt32ArrayProperty>(userProps, "mvg_sensorSizePix", sampleFrame, sensorSize_pix);
-      } catch(Alembic::Util::v7::Exception&)
+      } catch(Alembic::Util::Exception&)
       {
         getAbcArrayProp<Alembic::Abc::IInt32ArrayProperty>(userProps, "mvg_sensorSizePix", sampleFrame, sensorSize_pix);
       }
@@ -234,7 +234,7 @@ bool readCamera(IObject iObj, M44d mat, sfm::SfM_Data &sfmdata, sfm::ESfM_Data f
     {
       try {
         id_view = getAbcProp<Alembic::Abc::IUInt32Property>(userProps, *propHeader, "mvg_viewId", sampleFrame);
-      } catch(Alembic::Util::v7::Exception&)
+      } catch(Alembic::Util::Exception&)
       {
         id_view = getAbcProp<Alembic::Abc::IInt32Property>(userProps, *propHeader, "mvg_viewId", sampleFrame);
       }
@@ -243,7 +243,7 @@ bool readCamera(IObject iObj, M44d mat, sfm::SfM_Data &sfmdata, sfm::ESfM_Data f
     {
       try {
         id_pose = getAbcProp<Alembic::Abc::IUInt32Property>(userProps, *propHeader, "mvg_poseId", sampleFrame);
-      } catch(Alembic::Util::v7::Exception&)
+      } catch(Alembic::Util::Exception&)
       {
         id_pose = getAbcProp<Alembic::Abc::IInt32Property>(userProps, *propHeader, "mvg_poseId", sampleFrame);
       }
@@ -252,7 +252,7 @@ bool readCamera(IObject iObj, M44d mat, sfm::SfM_Data &sfmdata, sfm::ESfM_Data f
     {
       try {
         id_intrinsic = getAbcProp<Alembic::Abc::IUInt32Property>(userProps, *propHeader, "mvg_intrinsicId", sampleFrame);
-      } catch(Alembic::Util::v7::Exception&)
+      } catch(Alembic::Util::Exception&)
       {
         id_intrinsic = getAbcProp<Alembic::Abc::IInt32Property>(userProps, *propHeader, "mvg_intrinsicId", sampleFrame);
       }
