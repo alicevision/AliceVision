@@ -626,7 +626,7 @@ MESSAGE("** Use OpenCV SIFT features: " ${OpenMVG_USE_OCVSIFT})
 MESSAGE("** Use CCTAG markers: " ${OpenMVG_USE_CCTAG})
 MESSAGE("** Build Alembic exporter: " ${OpenMVG_USE_ALEMBIC})
 MESSAGE("** Use OpenGV for rig localization: " ${OpenMVG_USE_OPENGV})
-MESSAGE("** Use POPART logger: " ${OpenMVG_USE_OPENMVG_LOG})
+MESSAGE("** Use log: " ${OpenMVG_USE_LOG})
 
 MESSAGE("\n")
 
