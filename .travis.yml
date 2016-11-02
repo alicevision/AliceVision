@@ -188,7 +188,7 @@ install:
   - >
      if [ ! "$(ls -A $BOOST_INSTALL)" ]; then
        cd $BOOST_SOURCE
-       ./bootstrap.sh --with-libraries=filesystem,program_options,graph,serialization,thread --prefix=$BOOST_INSTALL;
+       ./bootstrap.sh --with-libraries=filesystem,program_options,graph,serialization,thread,log --prefix=$BOOST_INSTALL;
        ./b2 link=shared install > null;
      fi
   # SUITESPARSE
