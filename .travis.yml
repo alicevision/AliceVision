@@ -36,41 +36,50 @@ env:
     - BUILD_PROCESSOR="`uname -p`"
     - OPENMVG_SOURCE=${TRAVIS_BUILD_DIR}/src
     - OPENMVG_BUILD=${TRAVIS_BUILD_DIR}/build
-    # CMAKE
-    - CMAKE_URL="https://cmake.org/files/v3.4/cmake-3.4.1-Linux-x86_64.tar.gz"
-    - CMAKE_ROOT=${TRAVIS_BUILD_DIR}/cmake
-    - CMAKE_SOURCE=${CMAKE_ROOT}/source
-    - CMAKE_INSTALL=${CMAKE_ROOT}/install
-    # GT tests
+    # GT datasets for tests
     - GT_TEST_ROOT=${TRAVIS_BUILD_DIR}/gt_test
     - GT_TEST_SOURCE=${GT_TEST_ROOT}/gt_source
     - GT_TEST_RESULTS=${GT_TEST_ROOT}/result.json
     - GT_TEST_OUTPUT=${GT_TEST_ROOT}/gt_output
+    # CMAKE
+    - CMAKE_VERSION_SHORT=3.4
+    - CMAKE_VERSION=3.4.1
+    - CMAKE_URL="https://cmake.org/files/v${CMAKE_VERSION_SHORT}/cmake-${CMAKE_VERSION}-Linux-x86_64.tar.gz"
+    - CMAKE_ROOT=${TRAVIS_BUILD_DIR}/cmake-${CMAKE_VERSION}
+    - CMAKE_SOURCE=${CMAKE_ROOT}/source
+    - CMAKE_INSTALL=${CMAKE_ROOT}/install
     # OPENCV
-    - OPENCV_ROOT=${TRAVIS_BUILD_DIR}/opencv3
+    - OPENCV_VERSION=3.0.0
+    - OPENCV_ROOT=${TRAVIS_BUILD_DIR}/opencv-${OPENCV_VERSION}
     - OPENCV_SOURCE=${OPENCV_ROOT}/source
     - OPENCV_CONTRIB=${OPENCV_ROOT}/contrib
     - OPENCV_BUILD=${OPENCV_ROOT}/build
     - OPENCV_INSTALL=${OPENCV_ROOT}/install
     # OPENGV
-    - OPENGV_ROOT=${TRAVIS_BUILD_DIR}/opengv
+    - OPENGV_VERSION=dev
+    - OPENGV_ROOT=${TRAVIS_BUILD_DIR}/opengv-${OPENGV_VERSION}
     - OPENGV_SOURCE=${OPENGV_ROOT}/source
     - OPENGV_BUILD=${OPENGV_ROOT}/build
     - OPENGV_INSTALL=${OPENGV_ROOT}/install
     # EIGEN
-    - EIGEN_INSTALL=${TRAVIS_BUILD_DIR}/eigen
-    # CERES
-    - CERES_ROOT=${TRAVIS_BUILD_DIR}/ceres
-    - CERES_SOURCE=${CERES_ROOT}/source
-    - CERES_BUILD=${CERES_ROOT}/build
-    - CERES_INSTALL=${CERES_ROOT}/install
+    - EIGEN_VERSION=3.2.8
+    - EIGEN_INSTALL=${TRAVIS_BUILD_DIR}/eigen-${EIGEN_VERSION}
     # BOOST
-    - BOOST_ROOT=${TRAVIS_BUILD_DIR}/boost
+    - BOOST_VERSION=1.55.0
+    - BOOST_VERSION_FILENAME=1_55_0
+    - BOOST_ROOT=${TRAVIS_BUILD_DIR}/boost-${BOOST_VERSION}
     - BOOST_SOURCE=${BOOST_ROOT}/source
     - BOOST_INSTALL=${BOOST_ROOT}/install
     # SUITESPARSE
-    - SS_ROOT=${TRAVIS_BUILD_DIR}/suitesparse
+    - SS_VERSION=4.5.3
+    - SS_ROOT=${TRAVIS_BUILD_DIR}/suitesparse-${SS_VERSION}
     - SS_SOURCE=${SS_ROOT}/SuiteSparse
+    # CERES
+    - CERES_VERSION=1.11.0
+    - CERES_ROOT=${TRAVIS_BUILD_DIR}/ceres-${CERES_VERSION}
+    - CERES_SOURCE=${CERES_ROOT}/source
+    - CERES_BUILD=${CERES_ROOT}/build
+    - CERES_INSTALL=${CERES_ROOT}/install
     - SS_INSTALL=${SS_ROOT}/install
 
 before_install:
@@ -103,8 +112,8 @@ before_install:
       mkdir --parent $OPENCV_CONTRIB
       mkdir --parent $OPENCV_BUILD
       mkdir --parent $OPENCV_INSTALL
-      git clone --recursive --branch 3.0.0 --depth 1 https://github.com/Itseez/opencv.git $OPENCV_SOURCE;
-      git clone --branch 3.0.0 --depth 1  https://github.com/Itseez/opencv_contrib.git $OPENCV_CONTRIB;
+      git clone --recursive --branch ${OPENCV_VERSION} --depth 1 https://github.com/Itseez/opencv.git $OPENCV_SOURCE;
+      git clone --branch ${OPENCV_VERSION} --depth 1  https://github.com/Itseez/opencv_contrib.git $OPENCV_CONTRIB;
     fi
  # OPENGV
  - >
@@ -122,7 +131,7 @@ before_install:
       echo "Eigen found in cache.";
     else
       mkdir --parent $EIGEN_INSTALL
-      hg clone -r 3.2.8 https://bitbucket.org/eigen/eigen/ $EIGEN_INSTALL;
+      hg clone -r ${EIGEN_VERSION} https://bitbucket.org/eigen/eigen/ $EIGEN_INSTALL;
     fi 
  # BOOST
  - >
@@ -131,9 +140,9 @@ before_install:
     else
       mkdir --parent $BOOST_SOURCE
       mkdir --parent $BOOST_INSTALL
-      travis_retry wget https://sourceforge.net/projects/boost/files/boost/1.55.0/boost_1_55_0.tar.gz;
-      tar -xf boost_1_55_0.tar.gz;
-      cp -r boost_1_55_0/* $BOOST_SOURCE;
+      travis_retry wget https://sourceforge.net/projects/boost/files/boost/${BOOST_VERSION}/boost_${BOOST_VERSION_FILENAME}.tar.gz;
+      tar -xf boost_${BOOST_VERSION_FILENAME}.tar.gz;
+      cp -r boost_${BOOST_VERSION_FILENAME}/* $BOOST_SOURCE;
     fi
  # SUITESPARSE
  - >
@@ -142,8 +151,8 @@ before_install:
     else
       cd $SS_ROOT;
       mkdir --parent $SS_INSTALL;
-      travis_retry wget http://faculty.cse.tamu.edu/davis/SuiteSparse/SuiteSparse-4.5.3.tar.gz;
-      tar -xf SuiteSparse-4.5.3.tar.gz;
+      travis_retry wget http://faculty.cse.tamu.edu/davis/SuiteSparse/SuiteSparse-${SS_VERSION}.tar.gz;
+      tar -xf SuiteSparse-${SS_VERSION}.tar.gz;
     fi
  # CERES
  - >
@@ -153,9 +162,9 @@ before_install:
       mkdir --parent $CERES_SOURCE
       mkdir --parent $CERES_BUILD
       mkdir --parent $CERES_INSTALL
-      travis_retry wget http://ceres-solver.org/ceres-solver-1.11.0.tar.gz;
-      tar -xf ceres-solver-1.11.0.tar.gz;
-      cp -r ceres-solver-1.11.0/* $CERES_SOURCE;
+      travis_retry wget http://ceres-solver.org/ceres-solver-${CERES_VERSION}.tar.gz;
+      tar -xf ceres-solver-${CERES_VERSION}.tar.gz;
+      cp -r ceres-solver-${CERES_VERSION}/* $CERES_SOURCE;
     fi
 
 install:
