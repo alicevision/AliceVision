@@ -50,8 +50,8 @@ before_install:
 
 
 install:
- - . ./ci/install-cmake.sh
- - . ./ci/install-dependencies.sh
+ - ./ci/install-cmake.sh
+ - ./ci/install-dependencies.sh
 
 
 before_script:
