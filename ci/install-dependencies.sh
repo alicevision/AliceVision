@@ -4,6 +4,7 @@ CURRDIR="$( cd "$( dirname "$( readlink -f "${BASH_SOURCE[0]}" )" )" && pwd )"
 
 . "${CURRDIR}/env.sh"
 
+pushd .
 
 # EIGEN
 if folder_not_empty "$EIGEN_INSTALL"; then
@@ -113,3 +114,4 @@ else
   make install
 fi
 
+popd

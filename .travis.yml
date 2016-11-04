@@ -57,7 +57,7 @@ install:
 
 
 before_script:
-  - . ci/env.sh
+  - . ./ci/env.sh
   - export CXX="g++-4.8"
   - mkdir $OPENMVG_BUILD
   - cd $OPENMVG_BUILD
