@@ -77,20 +77,20 @@ else
   ./b2 link=shared install > /dev/null
 fi
 
-# SUITESPARSE
-if folder_not_empty "$SS_INSTALL"; then
-  echo "SuiteSparse found in cache."
-else
-  echo "Download SuiteSparse."
-  mkdir --parent "$SS_INSTALL"
-  cd "$SS_ROOT"
-  download_files_from_tar "http://faculty.cse.tamu.edu/davis/SuiteSparse/SuiteSparse-${SS_VERSION}.tar.gz" "$SS_SOURCE"
-
-  echo "Build SuiteSparse."
-  cd "$SS_SOURCE"
-  make -j 2
-  make install INSTALL="$SS_INSTALL"
-fi
+# # SUITESPARSE		
+# if folder_not_empty "$SS_INSTALL"; then		
+#   echo "SuiteSparse found in cache."		
+# else		
+#   echo "Download SuiteSparse."		
+#   mkdir --parent "$SS_INSTALL"		
+#   cd "$SS_ROOT"		
+#   download_files_from_tar "http://faculty.cse.tamu.edu/davis/SuiteSparse/SuiteSparse-${SS_VERSION}.tar.gz" "$SS_SOURCE"		
+# 		
+#   echo "Build SuiteSparse."		
+#   cd "$SS_SOURCE"		
+#   make -j 2		
+#   make install INSTALL="$SS_INSTALL"		
+# fi		
 
 # CERES
 if folder_not_empty "$CERES_INSTALL"; then
@@ -107,8 +107,6 @@ else
   cmake \
     -DCMAKE_INSTALL_PREFIX=$CERES_INSTALL \
     -DEIGEN_INCLUDE_DIR=$EIGEN_INSTALL \
-    -DSUITESPARSE_INCLUDE_DIR_HINTS=$SS_INSTALL/include \
-    -DSUITESPARSE_LIBRARY_DIR_HINTS=$SS_INSTALL/lib \
     -DMINIGLOG=ON \
     $CERES_SOURCE
   make -j 2 > /dev/null

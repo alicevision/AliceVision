@@ -93,11 +93,11 @@ export BOOST_VERSION_FILENAME=1_55_0
 export BOOST_ROOT="${TRAVIS_BUILD_DIR}/boost-${BOOST_VERSION}"
 export BOOST_SOURCE="${BOOST_ROOT}/source"
 export BOOST_INSTALL="${BOOST_ROOT}/install"
-# SUITESPARSE
-export SS_VERSION=4.5.3
-export SS_ROOT="${TRAVIS_BUILD_DIR}/suitesparse-${SS_VERSION}"
-export SS_SOURCE="${SS_ROOT}/source"
-export SS_INSTALL="${SS_ROOT}/install"
+## SUITESPARSE		
+# export SS_VERSION=4.5.3		
+# export SS_ROOT="${TRAVIS_BUILD_DIR}/suitesparse-${SS_VERSION}"		
+# export SS_SOURCE="${SS_ROOT}/source"		
+# export SS_INSTALL="${SS_ROOT}/install"
 # CERES
 export CERES_VERSION=1.11.0
 export CERES_ROOT="${TRAVIS_BUILD_DIR}/ceres-${CERES_VERSION}"

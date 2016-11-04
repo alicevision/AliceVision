@@ -27,6 +27,7 @@ addons:
       - libxrandr-dev
       - g++-4.8
       - libatlas-base-dev
+      - libsuitesparse-dev
 
 env:
   global:
@@ -131,4 +132,4 @@ cache:
     - $CERES_INSTALL
     - $BOOST_INSTALL
     - $EIGEN_INSTALL
-    - $SS_INSTALL
+
