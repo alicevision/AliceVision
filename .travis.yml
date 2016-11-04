@@ -15,8 +15,10 @@ addons:
   apt:
     sources:
       - ubuntu-toolchain-r-test
+      - boost-latest
     packages:
       #- cmake # Manually install latest version (>=3.0)
+      - libboost1.55-all-dev
       - lcov
       - libpng-dev
       - libjpeg8-dev
@@ -70,7 +72,6 @@ before_script:
        -DOPENGV_DIR=$OPENGV_INSTALL \
        -DOpenMVG_USE_BOOST=ON \
        -DBOOST_NO_CXX11=ON \
-       -DBOOST_ROOT=$BOOST_INSTALL \
        -DOpenMVG_USE_INTERNAL_CERES=OFF \
        -DCeres_DIR=$CERES_INSTALL/share/Ceres \
        -DEIGEN_INCLUDE_DIR_HINTS=$EIGEN_INSTALL \
@@ -128,6 +129,6 @@ cache:
     - $OPENCV_INSTALL
     - $OPENGV_INSTALL
     - $CERES_INSTALL
-    - $BOOST_INSTALL
+#    - $BOOST_INSTALL
     - $EIGEN_INSTALL
 

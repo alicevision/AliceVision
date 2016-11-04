@@ -87,13 +87,13 @@ export OPENGV_INSTALL="${OPENGV_ROOT}/install"
 export EIGEN_VERSION=3.2.8
 export EIGEN_ROOT="${TRAVIS_BUILD_DIR}/eigen-${EIGEN_VERSION}"
 export EIGEN_INSTALL="${EIGEN_ROOT}/install"
-# BOOST
-export BOOST_VERSION=1.55.0
-export BOOST_VERSION_FILENAME=1_55_0
-export BOOST_ROOT="${TRAVIS_BUILD_DIR}/boost-${BOOST_VERSION}"
-export BOOST_SOURCE="${BOOST_ROOT}/source"
-export BOOST_INSTALL="${BOOST_ROOT}/install"
-## SUITESPARSE		
+# # BOOST
+# export BOOST_VERSION=1.55.0
+# export BOOST_VERSION_FILENAME=1_55_0
+# export BOOST_ROOT="${TRAVIS_BUILD_DIR}/boost-${BOOST_VERSION}"
+# export BOOST_SOURCE="${BOOST_ROOT}/source"
+# export BOOST_INSTALL="${BOOST_ROOT}/install"
+# # SUITESPARSE		
 # export SS_VERSION=4.5.3		
 # export SS_ROOT="${TRAVIS_BUILD_DIR}/suitesparse-${SS_VERSION}"		
 # export SS_SOURCE="${SS_ROOT}/source"		

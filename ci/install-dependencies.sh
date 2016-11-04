@@ -62,20 +62,20 @@ else
   make install
 fi
 
-# BOOST
-if folder_not_empty "$BOOST_INSTALL"; then
-  echo "Boost found in cache."
-else
-  echo "Download Boost."
-  mkdir --parent "$BOOST_INSTALL"
-  cd "$BOOST_ROOT"
-  download_files_from_tar "https://sourceforge.net/projects/boost/files/boost/${BOOST_VERSION}/boost_${BOOST_VERSION_FILENAME}.tar.gz" "$BOOST_SOURCE"
+# # BOOST
+# if folder_not_empty "$BOOST_INSTALL"; then
+#   echo "Boost found in cache."
+# else
+#   echo "Download Boost."
+#   mkdir --parent "$BOOST_INSTALL"
+#   cd "$BOOST_ROOT"
+#   download_files_from_tar "https://sourceforge.net/projects/boost/files/boost/${BOOST_VERSION}/boost_${BOOST_VERSION_FILENAME}.tar.gz" "$BOOST_SOURCE"
 
-  echo "Build Boost."
-  cd "$BOOST_SOURCE"
-  ./bootstrap.sh --with-libraries=filesystem,program_options,graph,serialization,thread,log --prefix="$BOOST_INSTALL"
-  ./b2 link=shared install > /dev/null
-fi
+#   echo "Build Boost."
+#   cd "$BOOST_SOURCE"
+#   ./bootstrap.sh --with-libraries=filesystem,program_options,graph,serialization,thread,log --prefix="$BOOST_INSTALL"
+#   ./b2 link=shared install > /dev/null
+# fi
 
 # # SUITESPARSE		
 # if folder_not_empty "$SS_INSTALL"; then		
