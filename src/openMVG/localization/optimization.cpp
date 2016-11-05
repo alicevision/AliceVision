@@ -633,7 +633,7 @@ std::tuple<double, double, double> computeStatistics(const Mat &pts2D,
   const std::size_t numPts = pts2D.cols();
   Mat2X residuals = currCamera.residuals(subPoses*rigPose, pts3D, pts2D);
 
-  auto sqrErrors = (residuals.cwiseProduct(residuals)).colwise().sum();
+  Vec sqrErrors = (residuals.cwiseProduct(residuals)).colwise().sum();
 
   //      POPART_COUT("Camera " << camID << " all reprojection errors:");
   //      POPART_COUT(sqrErrors);
@@ -731,7 +731,7 @@ std::pair<double, bool> computeInliers(const std::vector<Mat> &vec_pts2d,
     else
       residuals = currCamera.residuals(geometry::Pose3() * rigPose, vec_pts3d[camID], vec_pts2d[camID]);
 
-    auto sqrErrors = (residuals.cwiseProduct(residuals)).colwise().sum();
+    Vec sqrErrors = (residuals.cwiseProduct(residuals)).colwise().sum();
 
     auto &currInliers = vec_newInliers[camID];
     const auto &oldInliers = vec_inliers[camID];
