@@ -81,7 +81,7 @@ public:
    * @return true if everything went ok.
    * @see saveRigCalibration()
    */
-  bool saveCalibration(std::string &filename);
+  bool saveCalibration(const std::string &filename);
   
   /*
    * @brief Visual debug function displaying the reprojected 3D points and their

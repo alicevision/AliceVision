@@ -3,6 +3,7 @@
 #include <openMVG/voctree/vocabulary_tree.hpp>
 #include <openMVG/voctree/descriptor_loader.hpp>
 #include <openMVG/features/descriptor.hpp>
+#include <openMVG/logger.hpp>
 
 #include <Eigen/Core>
 
@@ -12,8 +13,6 @@
 #include <fstream>
 #include <string>
 #include <chrono>
-
-#include <openMVG/logger.hpp>
 
 static const int DIMENSION = 128;
 
@@ -99,38 +98,38 @@ int main(int argc, char** argv)
   std::vector<DescriptorFloat> descriptors;
 
   std::vector<size_t> descRead;
-  POPART_COUT("Reading descriptors from " << keylist);
+  OPENMVG_COUT("Reading descriptors from " << keylist);
   auto detect_start = std::chrono::steady_clock::now();
   size_t numTotDescriptors = openMVG::voctree::readDescFromFiles<DescriptorFloat, DescriptorUChar>(keylist, descriptors, descRead);
   auto detect_end = std::chrono::steady_clock::now();
   auto detect_elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(detect_end - detect_start);
   if(descriptors.size() == 0)
   {
-    POPART_CERR("No descriptors loaded!!");
+    OPENMVG_CERR("No descriptors loaded!!");
     return EXIT_FAILURE;
   }
 
-  POPART_COUT("Done! " << descRead.size() << " sets of descriptors read for a total of " << numTotDescriptors << " features");
-  POPART_COUT("Reading took " << detect_elapsed.count() << " sec");
+  OPENMVG_COUT("Done! " << descRead.size() << " sets of descriptors read for a total of " << numTotDescriptors << " features");
+  OPENMVG_COUT("Reading took " << detect_elapsed.count() << " sec");
 
   // Create tree
   openMVG::voctree::TreeBuilder<DescriptorFloat> builder(DescriptorFloat(0));
   builder.setVerbose(verbosity);
   builder.kmeans().setRestarts(restart);
-  POPART_COUT("Building a tree of L=" << LEVELS << " levels with a branching factor of k=" << K);
+  OPENMVG_COUT("Building a tree of L=" << LEVELS << " levels with a branching factor of k=" << K);
   detect_start = std::chrono::steady_clock::now();
   builder.build(descriptors, K, LEVELS);
   detect_end = std::chrono::steady_clock::now();
   detect_elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(detect_end - detect_start);
-  POPART_COUT("Tree created in " << ((float) detect_elapsed.count()) / 1000 << " sec");
-  POPART_COUT(builder.tree().centers().size() << " centers");
-  POPART_COUT("Saving vocabulary tree as " << treeName);
+  OPENMVG_COUT("Tree created in " << ((float) detect_elapsed.count()) / 1000 << " sec");
+  OPENMVG_COUT(builder.tree().centers().size() << " centers");
+  OPENMVG_COUT("Saving vocabulary tree as " << treeName);
   builder.tree().save(treeName);
 
   openMVG::voctree::SparseHistogramPerImage allSparseHistograms;
   // temporary vector used to save all the visual word for each image before adding them to documents
   std::vector<openMVG::voctree::Word> imgVisualWords;
-  POPART_COUT("Quantizing the features");
+  OPENMVG_COUT("Quantizing the features");
   size_t offset = 0; ///< this is used to align to the features of a given image in 'feature'
   detect_start = std::chrono::steady_clock::now();
   // pass each feature through the vocabulary tree to get the associated visual word
@@ -159,27 +158,27 @@ int main(int argc, char** argv)
   }
   detect_end = std::chrono::steady_clock::now();
   detect_elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(detect_end - detect_start);
-  POPART_COUT("Feature quantization took " << detect_elapsed.count() << " sec");
+  OPENMVG_COUT("Feature quantization took " << detect_elapsed.count() << " sec");
 
 
-  POPART_COUT("Creating the database...");
+  OPENMVG_COUT("Creating the database...");
   // Add each object (document) to the database
   openMVG::voctree::Database db(builder.tree().words());
-  POPART_COUT("\tfound " << allSparseHistograms.size() << " documents");
+  OPENMVG_COUT("\tfound " << allSparseHistograms.size() << " documents");
   for(const auto &doc : allSparseHistograms)
   {
     db.insert(doc.first, doc.second);
   }
-  POPART_COUT("Database created!");
+  OPENMVG_COUT("Database created!");
 
   // Compute and save the word weights
-  POPART_COUT("Computing weights...");
+  OPENMVG_COUT("Computing weights...");
   detect_start = std::chrono::steady_clock::now();
   db.computeTfIdfWeights();
   detect_end = std::chrono::steady_clock::now();
   detect_elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(detect_end - detect_start);
-  POPART_COUT("Computing weights done in " << detect_elapsed.count() << " sec");
-  POPART_COUT("Saving weights as " << weightName);
+  OPENMVG_COUT("Computing weights done in " << detect_elapsed.count() << " sec");
+  OPENMVG_COUT("Saving weights as " << weightName);
   db.saveWeights(weightName);
 
 
@@ -188,8 +187,8 @@ int main(int argc, char** argv)
     // Now query each document (sanity check)
     std::vector<openMVG::voctree::DocMatch> matches;
     size_t wrong = 0; // count the wrong matches
-    double recval = 0;
-    POPART_COUT("Sanity check: querying the database with the same documents");
+    double recval = 0.0;
+    OPENMVG_COUT("Sanity check: querying the database with the same documents");
     // for each document
     for(const auto &doc : allSparseHistograms)
     {
@@ -198,7 +197,7 @@ int main(int argc, char** argv)
       db.find(doc.second, 4, matches);
       detect_end = std::chrono::steady_clock::now();
       detect_elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(detect_end - detect_start);
-      POPART_COUT("query document " << doc.first 
+      OPENMVG_COUT("query document " << doc.first 
 			  << " took " << detect_elapsed.count()
 			  << " ms and has " << matches.size() 
 			  << " matches\tBest " << matches[0].id 
@@ -206,7 +205,7 @@ int main(int argc, char** argv)
       // for each found match print the score, ideally the first one should be the document itself
       for(size_t j = 0; j < matches.size(); ++j)
       {
-        POPART_COUT("\t match " << matches[j].id << " with score " << matches[j].score);
+        OPENMVG_COUT("\t match " << matches[j].id << " with score " << matches[j].score);
         if(matches[j].id / 4 == (doc.first) / 4) recval += 1;
       }
 
@@ -214,18 +213,21 @@ int main(int argc, char** argv)
       if(doc.first != matches[0].id)
       {
         ++wrong;
-        cout << "##### wrong match for document " << doc.first << endl;
+        OPENMVG_COUT("##### wrong match for document " << doc.first);
       }
 
     }
 
     if(wrong)
-      POPART_COUT("there are " << wrong << " wrong matches");
+    {
+      OPENMVG_COUT("there are " << wrong << " wrong matches");
+    }
     else
-      POPART_COUT("Yay! no wrong matches!");
-    POPART_COUT("\nrecval: " << recval / (double) (allSparseHistograms.size()));
+    {
+      OPENMVG_COUT("Yay! no wrong matches!");
+    }
+    OPENMVG_COUT("recval: " << recval / (double) (allSparseHistograms.size()));
   }
-
 
   return EXIT_SUCCESS;
 }

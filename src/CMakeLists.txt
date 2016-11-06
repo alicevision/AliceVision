@@ -5,7 +5,7 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-CMAKE_MINIMUM_REQUIRED(VERSION 2.6)
+CMAKE_MINIMUM_REQUIRED(VERSION 3.0)
 
 PROJECT(openMVG C CXX)
 
@@ -28,10 +28,10 @@ OPTION(OpenMVG_USE_OPENMP "Enable OpenMP parallelization" ON)
 OPTION(OpenMVG_USE_CCTAG "Enable CCTAG markers" ON)
 OPTION(OpenMVG_USE_OPENGV "Enable use of OpenGV algorithms" OFF)
 OPTION(OpenMVG_USE_ALEMBIC "Enable Alembic I/O" OFF)
-OPTION(OpenMVG_USE_POPART_LOG "Enable POPART logger" ON)
+OPTION(OpenMVG_USE_LOG "Enable logger" ON)
 
-IF(OpenMVG_USE_POPART_LOG)
-  ADD_DEFINITIONS(-DWANTS_POPART_COUT)
+IF(OpenMVG_USE_LOG)
+  ADD_DEFINITIONS(-DWANTS_OPENMVG_COUT)
 ENDIF()
 
 OPTION(OPENMVG_REQUIRE_CERES_WITH_SUITESPARSE ON)
@@ -428,7 +428,7 @@ ENDIF(OpenMVG_USE_OPENCV)
 # ==============================================================================
 IF(OpenMVG_USE_BOOST)
   OPTION(BOOST_NO_CXX11 "If Boost is compiled without C++11 support (as it is often the case in OS packages) this must be enabled to avoid symbol conflicts (SCOPED_ENUM)." OFF)
-  FIND_PACKAGE(Boost 1.53.0 QUIET COMPONENTS system filesystem program_options thread serialization)
+  FIND_PACKAGE(Boost 1.53.0 QUIET COMPONENTS system filesystem program_options thread serialization log log_setup)
   IF(Boost_FOUND)
      MESSAGE(STATUS "Boost ${Boost_LIB_VERSION} found")
      add_definitions(-DHAVE_BOOST)
@@ -438,6 +438,7 @@ IF(OpenMVG_USE_BOOST)
      include_directories(${Boost_INCLUDE_DIRS})
      link_directories(${Boost_LIBRARY_DIRS})
      add_definitions(${Boost_DEFINITIONS})
+     set(LOG_LIB ${Boost_LOG_LIBRARY} ${Boost_LOG_SETUP_LIBRARY})
   ELSE()
     MESSAGE(STATUS "Boost not found -- disabling the vocabulary tree")
     UPDATE_CACHE_VARIABLE(OpenMVG_USE_BOOST OFF)
@@ -625,7 +626,7 @@ MESSAGE("** Use OpenCV SIFT features: " ${OpenMVG_USE_OCVSIFT})
 MESSAGE("** Use CCTAG markers: " ${OpenMVG_USE_CCTAG})
 MESSAGE("** Build Alembic exporter: " ${OpenMVG_USE_ALEMBIC})
 MESSAGE("** Use OpenGV for rig localization: " ${OpenMVG_USE_OPENGV})
-MESSAGE("** Use POPART logger: " ${OpenMVG_USE_POPART_LOG})
+MESSAGE("** Use log: " ${OpenMVG_USE_LOG})
 
 MESSAGE("\n")
 

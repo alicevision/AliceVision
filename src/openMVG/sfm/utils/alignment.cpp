@@ -18,10 +18,10 @@ bool computeSimilarity(const SfM_Data & sfmDataA,
   getCommonViewsWithPoses(sfmDataA, sfmDataB, commonViewIds);
   if(commonViewIds.size() < 2)
   {
-    std::cerr << "Cannot compute similarities. Need at least 2 common views." << std::endl;
+    OPENMVG_LOG_WARNING("Cannot compute similarities. Need at least 2 common views.");
     return false;
   }
-  std::cout << "Found " << commonViewIds.size() << " common views." << std::endl;
+  OPENMVG_LOG_DEBUG("Found " << commonViewIds.size() << " common views.");
 
   // Move input point in appropriate container
   Mat xA(3, commonViewIds.size());
@@ -41,7 +41,7 @@ bool computeSimilarity(const SfM_Data & sfmDataA,
   if(!openMVG::geometry::ACRansac_FindRTS(xA, xB, S, t, R, inliers, true))
     return false;
 
-  std::cout << "There are " << commonViewIds.size() << " common cameras and " << inliers.size() << " were used to compute the similarity transform." << std::endl;
+  OPENMVG_LOG_DEBUG("There are " << commonViewIds.size() << " common cameras and " << inliers.size() << " were used to compute the similarity transform.");
 
   *out_S = S;
   *out_R = R;

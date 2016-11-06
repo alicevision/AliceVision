@@ -1,4 +1,5 @@
 #include "bestImages.hpp"
+#include "openMVG/logger.hpp"
 
 #include <limits>
 #include <iostream>
@@ -132,7 +133,7 @@ void selectBestImages(const std::vector<std::vector<cv::Point2f> >& imagePoints,
   }
   else
   {
-    std::cout << "Info: Less valid frames (" << validFrames.size() << ") than specified maxCalibFrames (" << maxCalibFrames << ")." << std::endl;
+    OPENMVG_LOG_DEBUG("Info: Less valid frames (" << validFrames.size() << ") than specified maxCalibFrames (" << maxCalibFrames << ").");
     bestImagesIndexes = validFrames;
     
     std::map<std::size_t, std::size_t> cellsWeight;

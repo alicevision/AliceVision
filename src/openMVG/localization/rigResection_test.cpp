@@ -22,7 +22,7 @@ using namespace openMVG;
 
 Mat3 generateRotation(double x, double y, double z)
 {
-//std::cout << "generateRotation" << std::endl; 
+//OPENMVG_LOG_DEBUG("generateRotation"); 
   Mat3 R1 = Mat3::Identity();
   R1(1,1) = cos(x);
   R1(1,2) = -sin(x);
@@ -51,13 +51,13 @@ Mat3 generateRotation(const Vec3 &angles)
 Mat3 generateRandomRotation(const Vec3 &maxAngles = Vec3::Constant(2*M_PI))
 {
   const Vec3 angles = Vec3::Random().cwiseProduct(maxAngles);
-//  std::cout << "generateRandomRotation" << std::endl; 
+//  OPENMVG_LOG_DEBUG("generateRandomRotation"); 
   return generateRotation(angles);
 }
 
 Vec3 generateRandomTranslation(double maxNorm)
 {
-//  std::cout << "generateRandomTranslation" << std::endl; 
+//  OPENMVG_LOG_DEBUG("generateRandomTranslation"); 
   Vec3 translation = Vec3::Random();
   return maxNorm * (translation / translation.norm());
 }
@@ -94,7 +94,7 @@ Mat3X generateRandomPoints(std::size_t numPts, double thetaMin, double thetaMax,
 
 geometry::Pose3 generateRandomPose(const Vec3 &maxAngles = Vec3::Constant(2*M_PI), double maxNorm = 1)
 {
-//  std::cout << "generateRandomPose" << std::endl; 
+//  OPENMVG_LOG_DEBUG("generateRandomPose"); 
   return geometry::Pose3(generateRandomRotation(maxAngles), generateRandomTranslation(maxNorm));
 }
 
@@ -121,7 +121,7 @@ void generateRandomExperiment(std::size_t numCameras,
 
     // apply random rig pose to points
     const Mat3X points = rigPoseGT(pointsGT);
-    std::cout << "rigPoseGT\n" << rigPoseGT.rotation() << "\n" << rigPoseGT.center()<< std::endl;
+    OPENMVG_LOG_DEBUG("rigPoseGT\n" << rigPoseGT.rotation() << "\n" << rigPoseGT.center());
 
     // generate numCameras random poses and intrinsics
     for(std::size_t cam = 0; cam < numCameras; ++cam)
@@ -135,7 +135,7 @@ void generateRandomExperiment(std::size_t numCameras,
     }
     assert(vec_subPoses.size() == numCameras-1);
   //  for(std::size_t i = 0; i < vec_subPoses.size(); ++i)
-  //    std::cout << "vec_subPoses\n" << vec_subPoses[i].rotation() << "\n" << vec_subPoses[i].center()<< std::endl;;
+  //    OPENMVG_LOG_DEBUG("vec_subPoses\n" << vec_subPoses[i].rotation() << "\n" << vec_subPoses[i].center());
 
     // for each camera generate the features (if 3D point is "in front" of the camera)
     vec_pts3d.reserve(numCameras);
@@ -191,15 +191,15 @@ void generateRandomExperiment(std::size_t numCameras,
         }
       }
 
-//      std::cout << "Cam " << cam << std::endl;
-//      std::cout << "pts2d\n" << pts2d << std::endl;
-//      std::cout << "pts3d\n" << pts3d << std::endl;
-//      std::cout << "pts3dTRA\n" << localPts << std::endl;
+//      OPENMVG_LOG_DEBUG("Cam " << cam);
+//      OPENMVG_LOG_DEBUG("pts2d\n" << pts2d);
+//      OPENMVG_LOG_DEBUG("pts3d\n" << pts3d);
+//      OPENMVG_LOG_DEBUG("pts3dTRA\n" << localPts);
 //      
 //      auto residuals = vec_queryIntrinsics[cam].residuals(geometry::Pose3(), localPts, pts2d);
 //      auto sqrErrors = (residuals.cwiseProduct(residuals)).colwise().sum();
 //      
-//      std::cout << "residuals\n" << sqrErrors << std::endl;
+//      OPENMVG_LOG_DEBUG("residuals\n" << sqrErrors);
 
   //    if(cam!=0)
   //      residuals = vec_queryIntrinsics[cam].residuals(vec_subPoses[cam-1], points, pts2d);
@@ -208,7 +208,7 @@ void generateRandomExperiment(std::size_t numCameras,
   //    
   //    auto sqrErrors2 = (residuals.cwiseProduct(residuals)).colwise().sum();
   //    
-  //    std::cout << "residuals2\n" << sqrErrors2 << std::endl;
+  //    OPENMVG_LOG_DEBUG("residuals2\n" << sqrErrors2);
 
       vec_pts3d.push_back(pts3d);
       vec_pts2d.push_back(pts2d);
@@ -255,12 +255,12 @@ TEST(rigResection, simpleNoNoiseNoOutliers)
                                           rigPose,
                                           inliers));
 
-    std::cout << "rigPose\n" << rigPose.rotation() << "\n" << rigPose.center()<< std::endl;
+    OPENMVG_LOG_DEBUG("rigPose\n" << rigPose.rotation() << "\n" << rigPose.center());
 
     // check result for the pose
     const auto poseDiff = rigPose*rigPoseGT.inverse();
-    std::cout << "diffR\n" << poseDiff.rotation() << std::endl;
-    std::cout << "diffC\n" << poseDiff.center().norm() << std::endl;
+    OPENMVG_LOG_DEBUG("diffR\n" << poseDiff.rotation());
+    OPENMVG_LOG_DEBUG("diffC\n" << poseDiff.center().norm());
     
     // check result for the posediff, how close it is to the identity
     const Mat3 &rot = poseDiff.rotation();
@@ -313,7 +313,7 @@ TEST(rigResection, simpleNoNoiseNoOutliers)
 //        residuals = currCamera.residuals(geometry::Pose3()*rigPose, vec_pts3d[cam], vec_pts2d[cam]);
 //
 //      auto sqrErrors = (residuals.cwiseProduct(residuals)).colwise().sum();
-//      std::cout << sqrErrors << std::endl;
+//      OPENMVG_LOG_DEBUG(sqrErrors);
 //      for(std::size_t j = 0; j < numPts; ++j)
 //      {
 //        EXPECT_TRUE(sqrErrors(j) <= threshold);
@@ -363,11 +363,11 @@ TEST(rigResection, simpleWithNoiseNoOutliers)
                                            inliers,
                                            D2R(0.008)));
 
-    std::cout << "rigPose\n" << rigPose.rotation() << "\n" << rigPose.center()<< std::endl;
+    OPENMVG_LOG_DEBUG("rigPose\n" << rigPose.rotation() << "\n" << rigPose.center());
     
     const auto poseDiff = rigPose*rigPoseGT.inverse();
-    std::cout << "diffR\n" << poseDiff.rotation() << std::endl;
-    std::cout << "diffC\n" << poseDiff.center().norm() << std::endl;
+    OPENMVG_LOG_DEBUG("diffR\n" << poseDiff.rotation());
+    OPENMVG_LOG_DEBUG("diffC\n" << poseDiff.center().norm());
     
     // check result for the posediff, how close it is to the identity
     const Mat3 &rot = poseDiff.rotation();
@@ -446,7 +446,7 @@ TEST(rigResection, simpleNoNoiseWithOutliers)
                                           inliers,
                                           D2R(0.008)));
 
-    std::cout << "rigPose\n" << rigPose.rotation() << "\n" << rigPose.center()<< std::endl;
+    OPENMVG_LOG_DEBUG("rigPose\n" << rigPose.rotation() << "\n" << rigPose.center());
 
     EXPECT_TRUE(localization::refineRigPose(vec_pts2d,
                                             vec_pts3d,
@@ -470,12 +470,12 @@ TEST(rigResection, simpleNoNoiseWithOutliers)
 //  
 //      auto sqrErrors = (residuals.cwiseProduct(residuals)).colwise().sum();
 //
-////      std::cout << sqrErrors << std::endl;
+////      OPENMVG_LOG_DEBUG(sqrErrors);
 //
 //      const auto &currInliers = inliers[cam];
 //      for(std::size_t j = 0; j < currInliers.size(); ++j)
 //      {
-////        std::cout << sqrErrors(currInliers[j]) << std::endl;
+////        OPENMVG_LOG_DEBUG(sqrErrors(currInliers[j]));
 //        EXPECT_TRUE(sqrErrors(currInliers[j]) <= threshold);
 //      }
 //    }

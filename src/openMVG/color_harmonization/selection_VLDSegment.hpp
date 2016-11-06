@@ -81,7 +81,7 @@ class commonDataByPair_VLDSegment  : public commonDataByPair
         vec_score, E, valide, kvldparameters ) )
     {
       kvldparameters.inlierRate /= 2;
-      std::cout<<"low inlier rate, re-select matches with new rate="<<kvldparameters.inlierRate<<std::endl;
+      OPENMVG_LOG_DEBUG("low inlier rate, re-select matches with new rate=" << kvldparameters.inlierRate);
       kvldparameters.K = 2;
       it_num++;
     }

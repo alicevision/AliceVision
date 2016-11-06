@@ -148,7 +148,7 @@ bool rigResection(const std::vector<Mat> &pts2d,
   if(!success)
   {
     if(verbosity)
-      std::cout << "Resection Failed" << std::endl;
+      OPENMVG_LOG_DEBUG("Resection Failed");
     
     return false;
   }
@@ -165,16 +165,16 @@ bool rigResection(const std::vector<Mat> &pts2d,
   
   if(verbosity)
   {
-    std::cout << "\n"
-    << "-------------------------------" << "\n"
-    << "-- Robust Resection " << "\n"
-    << "-- Resection status: " << success << "\n"
-    << "-- #Points used for Resection: " << numTotalPoints << "\n"
-    << "-- #Points validated by robust Resection: " << numInliers << "\n"
-    << "-- #Iterations needed: " << ransac.iterations_ << "\n"
-    << "-- #Thresehold used: " << ransac.threshold_ <<  " (" << R2D(angularThreshold) << "deg)\n"
-    << "-- Time spent in ransac [ms]: " << detect_elapsed.count() << "\n"
-    << "-------------------------------" << std::endl;
+    OPENMVG_LOG_DEBUG(
+      "-------------------------------" << "\n"
+      "-- Robust Resection " << "\n"
+      "-- Resection status: " << success << "\n"
+      "-- #Points used for Resection: " << numTotalPoints << "\n"
+      "-- #Points validated by robust Resection: " << numInliers << "\n"
+      "-- #Iterations needed: " << ransac.iterations_ << "\n"
+      "-- #Thresehold used: " << ransac.threshold_ <<  " (" << R2D(angularThreshold) << "deg)\n"
+      "-- Time spent in ransac [ms]: " << detect_elapsed.count() << "\n"
+      "-------------------------------");
   }
   
   // remap the inliers
@@ -185,15 +185,13 @@ bool rigResection(const std::vector<Mat> &pts2d,
   }
 
 //  for(size_t i = 0; i < ransac.inliers_.size(); i++)
-//    std::cout << ransac.inliers_[i] << " ";
-//  std::cout << std::endl;
+//    OPENMVG_LOG_DEBUG(ransac.inliers_[i]);
 //  
 //  for(size_t i = 0; i < inliers.size(); ++i)
 //  {
-//    std::cout << "Inliers cam " << i << ": ";
+//    OPENMVG_LOG_DEBUG("Inliers cam " << i << ":");
 //    for(size_t j = 0; j < inliers[i].size(); ++j)
-//      std::cout << inliers[i][j] << " ";
-//    std::cout << std::endl;
+//      OPENMVG_LOG_DEBUG(inliers[i][j]);
 //  }
   
   return success;

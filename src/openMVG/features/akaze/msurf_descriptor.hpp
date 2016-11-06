@@ -136,7 +136,7 @@ namespace features {
     typedef Eigen::Matrix<Real, Eigen::Dynamic, 1> VecReal;
     Eigen::Map< VecReal > dataMap( &desc[0], 64);
     dataMap.normalize();
-    //std::cout << dataMap.transpose() << std::endl << std::endl;
+    //OPENMVG_LOG_DEBUG(dataMap.transpose()));
   }
 
   template<typename ImageT>

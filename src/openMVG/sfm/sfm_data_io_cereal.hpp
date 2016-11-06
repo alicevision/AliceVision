@@ -104,7 +104,7 @@ bool Load_Cereal(
   }
   catch (const cereal::Exception & e)
   {
-    std::cerr << e.what() << std::endl;
+    OPENMVG_LOG_WARNING(e.what());
     return false;
   }
   stream.close();

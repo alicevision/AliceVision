@@ -196,7 +196,7 @@ static bool eraseMissingPoses(SfM_Data & sfm_data, const IndexT min_points_per_p
     }
   }
   if(removed_elements)
-    std::cout << "eraseMissingPoses: " << removed_elements << std::endl;
+    OPENMVG_LOG_DEBUG("eraseMissingPoses: " << removed_elements);
   return removed_elements > 0;
 }
 

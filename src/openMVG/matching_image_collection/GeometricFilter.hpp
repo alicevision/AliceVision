@@ -83,7 +83,7 @@ void ImageCollectionGeometricFilter::Robust_model_estimation
         {
           IndMatches guided_geometric_inliers;
           geometricFilter.Geometry_guided_matching(_sfm_data, _regions_provider, iter->first, d_distance_ratio, guided_geometric_inliers);
-          //std::cout << "#before/#after: " << putative_inliers.size() << "/" << guided_geometric_inliers.size() << std::endl;
+          //OPENMVG_LOG_DEBUG("#before/#after: " << putative_inliers.size() << "/" << guided_geometric_inliers.size());
           std::swap(putative_inliers, guided_geometric_inliers);
         }
 

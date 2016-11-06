@@ -79,7 +79,7 @@ bool LoadMatchFile(
   }
   else
   {
-    std::cerr << "Unknown matching file format: " << ext << std::endl;
+    OPENMVG_LOG_WARNING("Unknown matching file format: " << ext);
   }
   return false;
 }
@@ -126,7 +126,7 @@ bool LoadMatchFilePerImage(
       #pragma omp critical
 #endif
       {
-        std::cerr << "Unable to load match file: " << folder << "/" << matchFilename << std::endl;
+        OPENMVG_LOG_WARNING("Unable to load match file: " << folder << "/" << matchFilename);
       }
       continue;
     }
@@ -144,7 +144,7 @@ bool LoadMatchFilePerImage(
   }
   if( nbLoadedMatchFiles == 0 )
   {
-    std::cerr << std::endl << "No matches file loaded in: " << folder << std::endl;
+    OPENMVG_LOG_WARNING("No matches file loaded in: " << folder);
     return false;
   }
   return true;
@@ -271,7 +271,7 @@ public:
         ++match;
       }
       const std::string filepath = m_directory + "/" + std::to_string(key) + "." + m_filename;
-      std::cout << "Export Matches in " << filepath << std::endl;
+      OPENMVG_LOG_DEBUG("Export Matches in: " << filepath);
       
       if(m_ext == "txt")
       {

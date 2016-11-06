@@ -26,6 +26,7 @@ target_link_libraries(
   openMVG_system
   openMVG_matching
   openMVG_exif
+  ${LOG_LIB}
 )
 set_target_properties(openMVG_sfm PROPERTIES SOVERSION ${OPENMVG_VERSION_MAJOR} VERSION "${OPENMVG_VERSION_MAJOR}.${OPENMVG_VERSION_MINOR}")
 

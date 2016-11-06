@@ -252,12 +252,12 @@ inline bool TIterativelyReweightedLeastSquares(
     const MATRIX_TYPE AtF(A.transpose()*e.asDiagonal());
     const Eigen::LDLT<Matrix> solver(AtF*A); // compute the Cholesky decomposition
     if (solver.info() != Eigen::Success) {
-      std::cerr << "error: decomposing linear system failed" << std::endl;
+      OPENMVG_LOG_WARNING("error: decomposing linear system failed");
       return false;
     }
     x = solver.solve(AtF*b);
     if (solver.info() != Eigen::Success) {
-      std::cerr << "error: solving linear system failed" << std::endl;
+      OPENMVG_LOG_WARNING("error: solving linear system failed");
       return false;
     }
     if (++iter > 32)
@@ -665,7 +665,7 @@ bool RefineRotationsAvgL1IRLS(
     _FillErrorMatrix(RelRs, Rs, b);
     // solve the linear system using l1 norm
     if (!RobustRegressionL1PD(A, b, x)) {
-      std::cerr << "error: l1 robust regression failed." << std::endl;
+      OPENMVG_LOG_WARNING("error: l1 robust regression failed.");
       return false;
     }
     ep = e; e = x.norm();
@@ -683,7 +683,7 @@ bool RefineRotationsAvgL1IRLS(
     _FillErrorMatrix(RelRs, Rs, b);
     // solve the linear system using l2 norm
     if (!IterativelyReweightedLeastSquares(A, b, x, sigma)) {
-      std::cerr << "error: l2 iterative regression failed" << std::endl;
+      OPENMVG_LOG_WARNING("error: l2 iterative regression failed");
       return false;
     }
     ep = e; e = x.norm();
@@ -695,10 +695,10 @@ bool RefineRotationsAvgL1IRLS(
 
   REAL fMinAfter, fMaxAfter, fMeanAfter = RelRotationAvgError(RelRs, Rs, &fMinAfter, &fMaxAfter);
 
-  std::cout << "Refine global rotations using L1RA-IRLS and " << nObss << " relative rotations:\n"
+  OPENMVG_LOG_DEBUG("Refine global rotations using L1RA-IRLS and " << nObss << " relative rotations:\n"
     << " error reduced from " << fMeanBefore << "(" <<fMinBefore << " min, " << fMaxBefore << " max)\n"
     << " to " << fMeanAfter << "(" << fMinAfter << "min,"<< fMaxAfter<< "max)\n"
-    << " in " << iter1 << "+" << iter2 << "=" << iter1+iter2 << " iterations" << std::endl;
+    << " in " << iter1 << "+" << iter2 << "=" << iter1+iter2 << " iterations");
 
   return true;
 } // RefineRotationsAvgL1IRLS

@@ -34,7 +34,7 @@ void Matcher_Regions_AllInMemory::Match(
   PairWiseMatches & map_PutativesMatches)const // the pairwise photometric corresponding points
 {
 #ifdef OPENMVG_USE_OPENMP
-  std::cout << "Using the OPENMP thread interface" << std::endl;
+  OPENMVG_LOG_DEBUG("Using the OPENMP thread interface");
 #endif
   const bool b_multithreaded_pair_search = (_eMatcherType == CASCADE_HASHING_L2);
   // -> set to true for CASCADE_HASHING_L2, since OpenMP instructions are not used in this matcher

@@ -1,5 +1,6 @@
 #include "patternDetect.hpp"
 
+#include <openMVG/logger.hpp>
 #include <openMVG/system/timer.hpp>
 
 #include <boost/program_options.hpp>
@@ -81,7 +82,7 @@ bool findPattern(const Pattern& pattern, const cv::Mat& viewGray, const cv::Size
       found = cv::findChessboardCorners(viewGray, boardSize, pointbuf,
                                         CV_CALIB_CB_ADAPTIVE_THRESH | CV_CALIB_CB_FAST_CHECK | CV_CALIB_CB_NORMALIZE_IMAGE);
       durationCh = (std::clock() - startCh) / (double) CLOCKS_PER_SEC;
-      std::cout << "Find chessboard corners' duration: " << durationCh << std::endl;
+      OPENMVG_LOG_DEBUG("Find chessboard corners' duration: " << durationCh);
 
       // improve the found corners' coordinate accuracy
       if (found)
@@ -91,7 +92,7 @@ bool findPattern(const Pattern& pattern, const cv::Mat& viewGray, const cv::Size
                          cv::TermCriteria(CV_TERMCRIT_EPS + CV_TERMCRIT_ITER, 30, 0.1));
 
         durationCh = (std::clock() - startCh) / (double) CLOCKS_PER_SEC;
-        std::cout << "Refine chessboard corners' duration: " << durationCh << std::endl;
+        OPENMVG_LOG_DEBUG("Refine chessboard corners' duration: " << durationCh);
       }
       break;
     }
@@ -102,7 +103,7 @@ bool findPattern(const Pattern& pattern, const cv::Mat& viewGray, const cv::Size
       found = cv::findCirclesGrid(viewGray, boardSize, pointbuf);
 
       durationCh = (std::clock() - startCh) / (double) CLOCKS_PER_SEC;
-      std::cout << "Find circles grid duration: " << durationCh << std::endl;
+      OPENMVG_LOG_DEBUG("Find circles grid duration: " << durationCh);
       break;
     }
     case ASYMMETRIC_CIRCLES_GRID:
@@ -112,7 +113,7 @@ bool findPattern(const Pattern& pattern, const cv::Mat& viewGray, const cv::Size
       found = cv::findCirclesGrid(viewGray, boardSize, pointbuf, cv::CALIB_CB_ASYMMETRIC_GRID);
 
       durationCh = (std::clock() - startCh) / (double) CLOCKS_PER_SEC;
-      std::cout << "Find asymmetric circles grid duration: " << durationCh << std::endl;
+      OPENMVG_LOG_DEBUG("Find asymmetric circles grid duration: " << durationCh);
       break;
     }
   #ifdef HAVE_CCTAG
@@ -145,7 +146,7 @@ bool findPattern(const Pattern& pattern, const cv::Mat& viewGray, const cv::Size
       found = true;
 
       durationCh = (std::clock() - startCh) / (double) CLOCKS_PER_SEC;
-      std::cout << "Find asymmetric CCTag grid duration: " << durationCh << std::endl;
+      OPENMVG_LOG_DEBUG("Find asymmetric CCTag grid duration: " << durationCh);
       break;
     }
   #endif

@@ -455,11 +455,11 @@ void minMaxMeanMedian(DataInputIterator begin, DataInputIterator end)
 {
   Type min, max, mean, median;
   minMaxMeanMedian(begin, end, min, max, mean, median);
-  std::cout << "\n"
-          << "\t min: " << min << "\n"
-          << "\t mean: " << mean << "\n"
-          << "\t median: " << median << std::endl
-          << "\t max: " << max << std::endl;
+  OPENMVG_LOG_DEBUG("\n"
+          "\t min: " << min << "\n"
+          "\t mean: " << mean << "\n"
+          "\t median: " << median << "\n"
+          "\t max: " << max);
 }
 
 /**

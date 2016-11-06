@@ -344,9 +344,9 @@ TEST(RansacLineFitter, ACRANSACSimu)
       std::vector<IndMatchd>::iterator end = std::unique(vec_match.begin(), vec_match.end());
       if(end != vec_match.end())
       {
-        std::cout << "Remove " << std::distance(end, vec_match.end())
+        OPENMVG_LOG_DEBUG("Remove " << std::distance(end, vec_match.end())
                 << "/" << vec_match.size() << " duplicate matches, "
-                << " keeping " << std::distance(vec_match.begin(), end) << std::endl;
+                << " keeping " << std::distance(vec_match.begin(), end));
         vec_match.erase(end, vec_match.end());
       }
 

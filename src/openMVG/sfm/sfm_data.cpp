@@ -98,7 +98,7 @@ bool ColorizeTracks( SfM_Data & sfm_data )
     Image<RGBColor> image;
     if(!ReadImage(sView_filename.c_str(), &image))
     {
-      std::cerr << "Unable to read image: " << sView_filename << std::endl;
+      OPENMVG_LOG_WARNING("Unable to read image: " << sView_filename);
       return false;
     }
 

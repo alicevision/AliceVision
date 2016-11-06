@@ -27,6 +27,7 @@
 
 #include <iostream>
 #include "CppUnitLite/TestHarness.h"
+#include "openMVG/logger.hpp"
 #include "openMVG/numeric/numeric.h"
 #include "testing/testing.h"
 
@@ -37,7 +38,7 @@ using namespace std;
 TEST ( TinyMatrix, print )
 {
   Mat3 testMatrix = Mat3::Identity();
-  std::cout << testMatrix;
+  OPENMVG_LOG_DEBUG(testMatrix);
 }
 
 TEST ( TinyMatrix, checkIdentity )
@@ -49,7 +50,7 @@ TEST ( TinyMatrix, checkIdentity )
   expected(0,0) = expected(1,1) = expected(2,2) = 1.0;
 
   testMatrix.setIdentity();
-  std::cout << std::endl << testMatrix;
+  OPENMVG_LOG_DEBUG(testMatrix);
   //-- Compare expected to the testMatrix.
   EXPECT_MATRIX_NEAR( expected, testMatrix, 1e-8);
 }

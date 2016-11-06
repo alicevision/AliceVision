@@ -65,7 +65,7 @@ TEST(SfM_Data_IO, SAVE_LOAD_JSON) {
     std::ostringstream os;
     os << "SAVE_LOAD" << "." << ext_Type[i];
     const std::string filename = os.str();
-    std::cout << "Testing:" << filename << std::endl;
+    OPENMVG_LOG_DEBUG("Testing:" << filename);
 
   // SAVE
   {
@@ -166,7 +166,7 @@ TEST(SfM_Data_IO, SAVE_PLY) {
     std::ostringstream os;
     os << "SAVE_LOAD" << ".ply";
     const std::string filename = os.str();
-    std::cout << "Testing:" << filename << std::endl;
+    OPENMVG_LOG_DEBUG("Testing:" << filename);
 
     const SfM_Data sfm_data = create_test_scene(2, true);
     ESfM_Data flags_part = ESfM_Data(EXTRINSICS | STRUCTURE);

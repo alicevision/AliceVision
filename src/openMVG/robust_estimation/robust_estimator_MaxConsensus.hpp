@@ -75,8 +75,8 @@ typename Kernel::Model MaxConsensus(const Kernel &kernel,
 
         if (best_num_inliers < inliers.size())
         {
-          //std::cout << "Fit cost: " << cost/inliers.size()
-          //  << ", number of inliers: " << inliers.size() << "\n";
+          //OPENMVG_LOG_DEBUG("Fit cost: " << cost/inliers.size()
+          //  << ", number of inliers: " << inliers.size());
           best_num_inliers = inliers.size();
           best_model = models[i];
           if (best_inliers) 

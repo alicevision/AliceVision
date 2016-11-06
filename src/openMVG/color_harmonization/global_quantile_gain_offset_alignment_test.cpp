@@ -84,7 +84,7 @@ TEST(ColorHarmonisation, Simple_offset) {
     lpSolver.getSolution(vec_solution);
   }
 
-  std::cout << "\n\nFound solution:\n";
+  OPENMVG_LOG_DEBUG("Found solution:");
   std::copy(vec_solution.begin(), vec_solution.end(),
             std::ostream_iterator<double>(std::cout, " "));
 
@@ -148,7 +148,7 @@ TEST(ColorHarmonisation, Offset_gain) {
     lpSolver.getSolution(vec_solution);
   }
 
-  std::cout << "\n\nFound solution:\n";
+  OPENMVG_LOG_DEBUG("Found solution:");
   std::copy(vec_solution.begin(), vec_solution.end(),
             std::ostream_iterator<double>(std::cout, " "));
 

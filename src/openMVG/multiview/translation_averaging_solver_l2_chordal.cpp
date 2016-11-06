@@ -146,7 +146,7 @@ bool solve_translations_problem_l2_chordal(
   Solver::Summary summary;
   Solve(options, &problem, &summary);
 
-  std::cout << summary.FullReport() << "\n";
+  OPENMVG_LOG_DEBUG(summary.FullReport());
 
   if (summary.IsSolutionUsable())
   {

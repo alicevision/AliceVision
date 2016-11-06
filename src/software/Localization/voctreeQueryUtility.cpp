@@ -192,9 +192,9 @@ int main(int argc, char** argv)
   // Load vocabulary tree
   //************************************************
 
-  POPART_COUT("Loading vocabulary tree\n");
+  OPENMVG_COUT("Loading vocabulary tree\n");
   openMVG::voctree::VocabularyTree<DescriptorFloat> tree(treeName);
-  POPART_COUT("tree loaded with\n\t" 
+  OPENMVG_COUT("tree loaded with\n\t" 
           << tree.levels() << " levels\n\t" 
           << tree.splits() << " branching factor");
 
@@ -203,18 +203,18 @@ int main(int argc, char** argv)
   // Create the database
   //************************************************
 
-  POPART_COUT("Creating the database...");
+  OPENMVG_COUT("Creating the database...");
   // Add each object (document) to the database
   openMVG::voctree::Database db(tree.words());
 
   if(withWeights)
   {
-    POPART_COUT("Loading weights...");
+    OPENMVG_COUT("Loading weights...");
     db.loadWeights(weightsName);
   }
   else
   {
-    POPART_COUT("No weights specified, skipping...");
+    OPENMVG_COUT("No weights specified, skipping...");
   }
 
 
@@ -222,7 +222,7 @@ int main(int argc, char** argv)
   // Read the descriptors and populate the database
   //*********************************************************
 
-  POPART_COUT("Reading descriptors from " << keylist);
+  OPENMVG_COUT("Reading descriptors from " << keylist);
   auto detect_start = std::chrono::steady_clock::now();
   size_t numTotFeatures = openMVG::voctree::populateDatabase<DescriptorUChar>(keylist, tree, db, Nmax);
   auto detect_end = std::chrono::steady_clock::now();
@@ -230,12 +230,12 @@ int main(int argc, char** argv)
 
   if(numTotFeatures == 0)
   {
-    POPART_CERR("No descriptors loaded!!");
+    OPENMVG_CERR("No descriptors loaded!!");
     return EXIT_FAILURE;
   }
 
-  POPART_COUT("Done! " << db.getSparseHistogramPerImage().size() << " sets of descriptors read for a total of " << numTotFeatures << " features");
-  POPART_COUT("Reading took " << detect_elapsed.count() << " sec");
+  OPENMVG_COUT("Done! " << db.getSparseHistogramPerImage().size() << " sets of descriptors read for a total of " << numTotFeatures << " features");
+  OPENMVG_COUT("Reading took " << detect_elapsed.count() << " sec");
   
   if(vm.count("saveDocumentMap"))
   {
@@ -246,7 +246,7 @@ int main(int argc, char** argv)
   {
     // If we don't have an input weight file, we compute weights based on the
     // current database.
-    POPART_COUT("Computing weights...");
+    OPENMVG_COUT("Computing weights...");
     db.computeTfIdfWeights();
   }
 
@@ -274,13 +274,13 @@ int main(int argc, char** argv)
   if(!withQuery)
   {
     // do a sanity check
-    POPART_COUT("Sanity check: querying the database with the same documents");
+    OPENMVG_COUT("Sanity check: querying the database with the same documents");
     db.sanityCheck(numImageQuery, allDocMatches);
   }
   else
   {
     // otherwise query the database with the provided query list
-    POPART_COUT("Querying the database with the documents in " << queryList);
+    OPENMVG_COUT("Querying the database with the documents in " << queryList);
     openMVG::voctree::queryDatabase<DescriptorUChar>(queryList, tree, db, numImageQuery, allDocMatches, histograms, distance, Nmax);
   }
 
@@ -289,12 +289,12 @@ int main(int argc, char** argv)
     // load the json for the dataset used to build the database
     if(openMVG::sfm::Load(sfmdata, keylist, openMVG::sfm::ESfM_Data::VIEWS))
     {
-      POPART_COUT("SfM data loaded from " << keylist << " containing: ");
-      POPART_COUT("\tnumber of views      : " << sfmdata.GetViews().size());
+      OPENMVG_COUT("SfM data loaded from " << keylist << " containing: ");
+      OPENMVG_COUT("\tnumber of views      : " << sfmdata.GetViews().size());
     }
     else
     {
-      POPART_CERR("Could not load the sfm_data file " << keylist << "!");
+      OPENMVG_CERR("Could not load the sfm_data file " << keylist << "!");
       return EXIT_FAILURE;
     }
     // load the json for the dataset used to query the database
@@ -303,12 +303,12 @@ int main(int argc, char** argv)
       sfmdataQuery = new openMVG::sfm::SfM_Data();
       if(openMVG::sfm::Load(*sfmdataQuery, queryList, openMVG::sfm::ESfM_Data::VIEWS))
       {
-        POPART_COUT("SfM data loaded from " << queryList << " containing: ");
-        POPART_COUT("\tnumber of views      : " << sfmdataQuery->GetViews().size());
+        OPENMVG_COUT("SfM data loaded from " << queryList << " containing: ");
+        OPENMVG_COUT("\tnumber of views      : " << sfmdataQuery->GetViews().size());
       }
       else
       {
-        POPART_CERR("Could not load the sfm_data file " << queryList << "!");
+        OPENMVG_CERR("Could not load the sfm_data file " << queryList << "!");
         return EXIT_FAILURE;
       }
     }
@@ -321,7 +321,7 @@ int main(int argc, char** argv)
     // create recursively the provided out dir
     if(!bfs::exists(bfs::path(outDir)))
     {
-      //			POPART_COUT("creating directory" << outDir);
+      //			OPENMVG_COUT("creating directory" << outDir);
       bfs::create_directories(bfs::path(outDir));
     }
 
@@ -357,8 +357,8 @@ int main(int argc, char** argv)
   {
     const openMVG::voctree::DocMatches& matches = docMatches.second;
     bfs::path dirname;
-    POPART_COUT("Camera: " << docMatches.first);
-    POPART_COUT("query document " << docMatches.first << " has " << matches.size() << " matches\tBest " << matches[0].id << " with score " << matches[0].score);
+    OPENMVG_COUT("Camera: " << docMatches.first);
+    OPENMVG_COUT("query document " << docMatches.first << " has " << matches.size() << " matches\tBest " << matches[0].id << " with score " << matches[0].score);
     if(withOutput)
     {
       if(!matlabOutput)
@@ -392,7 +392,7 @@ int main(int argc, char** argv)
       else
       {
         // this is very wrong
-        POPART_CERR("Could not find the image file for the document " << docMatches.first << "!");
+        OPENMVG_CERR("Could not find the image file for the document " << docMatches.first << "!");
         return EXIT_FAILURE;
       }
       bfs::create_directories(dirname);
@@ -449,8 +449,8 @@ int main(int argc, char** argv)
     // now parse all the returned matches 
     for(size_t j = 0; j < matches.size(); ++j)
     {
-      POPART_COUT("\t match " << matches[j].id << " with score " << matches[j].score);
-      //			POPART_CERR("" <<  i->first << " " << matches[j].id << " " << matches[j].score);
+      OPENMVG_COUT("\t match " << matches[j].id << " with score " << matches[j].score);
+      //			OPENMVG_CERR("" <<  i->first << " " << matches[j].id << " " << matches[j].score);
       if(withOutput && !matlabOutput) fileout << docMatches.first << " " << matches[j].id << " " << matches[j].score << std::endl;
 
       if(withOutDir)
@@ -472,7 +472,7 @@ int main(int argc, char** argv)
         else
         {
           // this is very wrong
-          POPART_CERR("Could not find the image file for the document " << matches[j].id << "!");
+          OPENMVG_CERR("Could not find the image file for the document " << matches[j].id << "!");
           return EXIT_FAILURE;
         }
         bfs::create_symlink(absoluteFilename, dirname / sylinkName);
@@ -485,7 +485,7 @@ int main(int argc, char** argv)
       if(docMatches.first != matches[0].id)
       {
         ++wrong;
-        POPART_COUT("##### wrong match for document " << docMatches.first);
+        OPENMVG_COUT("##### wrong match for document " << docMatches.first);
       }
     }
   }
@@ -518,9 +518,9 @@ int main(int argc, char** argv)
   if(!withQuery)
   {
     if(wrong)
-      POPART_COUT("there are " << wrong << " wrong matches");
+      OPENMVG_COUT("there are " << wrong << " wrong matches");
     else
-      POPART_COUT("no wrong matches!");
+      OPENMVG_COUT("no wrong matches!");
   }
 
   if(withOutput)

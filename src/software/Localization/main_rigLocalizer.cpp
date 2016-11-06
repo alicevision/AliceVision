@@ -107,7 +107,7 @@ bool checkRobustEstimator(robust::EROBUST_ESTIMATOR e, double &value)
   if(e != robust::EROBUST_ESTIMATOR::ROBUST_ESTIMATOR_LORANSAC &&
      e != robust::EROBUST_ESTIMATOR::ROBUST_ESTIMATOR_ACRANSAC)
   {
-    POPART_CERR("Only " << robust::EROBUST_ESTIMATOR::ROBUST_ESTIMATOR_ACRANSAC 
+    OPENMVG_CERR("Only " << robust::EROBUST_ESTIMATOR::ROBUST_ESTIMATOR_ACRANSAC 
             << " and " << robust::EROBUST_ESTIMATOR::ROBUST_ESTIMATOR_LORANSAC 
             << " are supported.");
     return false;
@@ -124,7 +124,7 @@ bool checkRobustEstimator(robust::EROBUST_ESTIMATOR e, double &value)
     const double minThreshold = 1e-6;
     if(value <= minThreshold)
     {
-      POPART_CERR("Error: errorMax and matchingError cannot be 0 with " 
+      OPENMVG_CERR("Error: errorMax and matchingError cannot be 0 with " 
               << robust::EROBUST_ESTIMATOR::ROBUST_ESTIMATOR_LORANSAC 
               << " estimator.");
       return false;     
@@ -255,7 +255,7 @@ int main(int argc, char** argv)
 
     if(vm.count("help") || (argc == 1))
     {
-      POPART_COUT(desc);
+      OPENMVG_COUT(desc);
       return EXIT_SUCCESS;
     }
 
@@ -263,14 +263,14 @@ int main(int argc, char** argv)
   }
   catch(boost::program_options::required_option& e)
   {
-    POPART_CERR("ERROR: " << e.what() << std::endl);
-    POPART_COUT("Usage:\n\n" << desc);
+    OPENMVG_CERR("ERROR: " << e.what() << std::endl);
+    OPENMVG_COUT("Usage:\n\n" << desc);
     return EXIT_FAILURE;
   }
   catch(boost::program_options::error& e)
   {
-    POPART_CERR("ERROR: " << e.what() << std::endl);
-    POPART_COUT("Usage:\n\n" << desc);
+    OPENMVG_CERR("ERROR: " << e.what() << std::endl);
+    OPENMVG_COUT("Usage:\n\n" << desc);
     return EXIT_FAILURE;
   }
 
@@ -282,22 +282,22 @@ int main(int argc, char** argv)
 
   // just debugging prints, print out all the parameters
   {
-    POPART_COUT("Program called with the following parameters:");
-    POPART_COUT("\tsfmdata: " << sfmFilePath);
-    POPART_COUT("\tpreset: " << featurePreset);
-    POPART_COUT("\tmediapath: " << mediaPath);
-    POPART_COUT("\tcalibration: " << rigCalibPath);
-    POPART_COUT("\tresectionEstimator: " << resectionEstimator);
-    POPART_COUT("\tmatchingEstimator: " << matchingEstimator);
-    POPART_COUT("\tdescriptorPath: " << descriptorsFolder);
-    POPART_COUT("\trefineIntrinsics: " << refineIntrinsics);
-    POPART_COUT("\tuseLocalizeRigNaive: " << useLocalizeRigNaive);
-    POPART_COUT("\treprojectionError: " << resectionErrorMax);
-    POPART_COUT("\tangularThreshold: " << angularThreshold);
-    POPART_COUT("\tnCameras: " << numCameras);
+    OPENMVG_COUT("Program called with the following parameters:");
+    OPENMVG_COUT("\tsfmdata: " << sfmFilePath);
+    OPENMVG_COUT("\tpreset: " << featurePreset);
+    OPENMVG_COUT("\tmediapath: " << mediaPath);
+    OPENMVG_COUT("\tcalibration: " << rigCalibPath);
+    OPENMVG_COUT("\tresectionEstimator: " << resectionEstimator);
+    OPENMVG_COUT("\tmatchingEstimator: " << matchingEstimator);
+    OPENMVG_COUT("\tdescriptorPath: " << descriptorsFolder);
+    OPENMVG_COUT("\trefineIntrinsics: " << refineIntrinsics);
+    OPENMVG_COUT("\tuseLocalizeRigNaive: " << useLocalizeRigNaive);
+    OPENMVG_COUT("\treprojectionError: " << resectionErrorMax);
+    OPENMVG_COUT("\tangularThreshold: " << angularThreshold);
+    OPENMVG_COUT("\tnCameras: " << numCameras);
     if(!filelist.empty())
-      POPART_COUT("\tfilelist: " << filelist);
-    POPART_COUT("\tdescriptors: " << descriptorType);
+      OPENMVG_COUT("\tfilelist: " << filelist);
+    OPENMVG_COUT("\tdescriptors: " << descriptorType);
     if((DescriberType::SIFT==descriptorType)
 #ifdef HAVE_CCTAG
             ||(DescriberType::SIFT_CCTAG==descriptorType)
@@ -305,17 +305,17 @@ int main(int argc, char** argv)
       )
     {
       // parameters for voctree localizer
-      POPART_COUT("\tvoctree: " << vocTreeFilepath);
-      POPART_COUT("\tweights: " << weightsFilepath);
-      POPART_COUT("\tnbImageMatch: " << numResults);
-      POPART_COUT("\tmaxResults: " << maxResults);
-      POPART_COUT("\talgorithm: " << algostring);
-      POPART_COUT("\tmatchingError: " << matchingErrorMax);
+      OPENMVG_COUT("\tvoctree: " << vocTreeFilepath);
+      OPENMVG_COUT("\tweights: " << weightsFilepath);
+      OPENMVG_COUT("\tnbImageMatch: " << numResults);
+      OPENMVG_COUT("\tmaxResults: " << maxResults);
+      OPENMVG_COUT("\talgorithm: " << algostring);
+      OPENMVG_COUT("\tmatchingError: " << matchingErrorMax);
     }
 #ifdef HAVE_CCTAG
     else
     {
-      POPART_COUT("\tnNearestKeyFrames: " << nNearestKeyFrames);
+      OPENMVG_COUT("\tnNearestKeyFrames: " << nNearestKeyFrames);
     }
 #endif
 
@@ -332,7 +332,7 @@ int main(int argc, char** argv)
 #endif
       )
   {
-    POPART_COUT("Localizing sequence using the voctree localizer");
+    OPENMVG_COUT("Localizing sequence using the voctree localizer");
     localization::VoctreeLocalizer* tmpLoc = new localization::VoctreeLocalizer(sfmFilePath,
                                                             descriptorsFolder,
                                                             vocTreeFilepath,
@@ -378,7 +378,7 @@ int main(int argc, char** argv)
 
   if(!localizer->isInit())
   {
-    POPART_CERR("ERROR while initializing the localizer!");
+    OPENMVG_CERR("ERROR while initializing the localizer!");
     return EXIT_FAILURE;
   }
 
@@ -411,7 +411,7 @@ int main(int argc, char** argv)
     feeders[idCamera] = new dataio::FeedProvider(feedPath, calibFile);
     if(!feeders[idCamera]->isInit())
     {
-      POPART_CERR("ERROR while initializing the FeedProvider for the camera " 
+      OPENMVG_CERR("ERROR while initializing the FeedProvider for the camera " 
               << idCamera << " " << feedPath);
       return EXIT_FAILURE;
     }
@@ -459,7 +459,7 @@ int main(int argc, char** argv)
         {
           // this is quite odd, it means that eg the fist camera has an image but
           // one of the others has not image
-          POPART_CERR("This is weird... Camera " << idCamera << " seems not to have any available images while some other cameras do...");
+          OPENMVG_CERR("This is weird... Camera " << idCamera << " seems not to have any available images while some other cameras do...");
           return EXIT_FAILURE;  // a bit harsh but if we are here it's cheesy to say the less
         }
         break;
@@ -468,7 +468,7 @@ int main(int argc, char** argv)
       // for now let's suppose that the cameras are calibrated internally too
       if(!hasIntrinsics)
       {
-        POPART_CERR("For now only internally calibrated cameras are supported!"
+        OPENMVG_CERR("For now only internally calibrated cameras are supported!"
                 << "\nCamera " << idCamera << " does not have calibration for image " << currentImgName);
         return EXIT_FAILURE;  // a bit harsh but if we are here it's cheesy to say the less
       }
@@ -483,9 +483,9 @@ int main(int argc, char** argv)
       break;
     }
     
-    POPART_COUT("******************************");
-    POPART_COUT("FRAME " << myToString(frameCounter, 4));
-    POPART_COUT("******************************");
+    OPENMVG_COUT("******************************");
+    OPENMVG_COUT("FRAME " << myToString(frameCounter, 4));
+    OPENMVG_COUT("******************************");
     auto detect_start = std::chrono::steady_clock::now();
     std::vector<localization::LocalizationResult> localizationResults;
     const bool isLocalized = localizer->localizeRig(vec_imageGrey,
@@ -496,7 +496,7 @@ int main(int argc, char** argv)
                                                     localizationResults);
     auto detect_end = std::chrono::steady_clock::now();
     auto detect_elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(detect_end - detect_start);
-    POPART_COUT("\nLocalization took  " << detect_elapsed.count() << " [ms]");
+    OPENMVG_COUT("Localization took  " << detect_elapsed.count() << " [ms]");
     stats(detect_elapsed.count());
     
     rigResultPerFrame.push_back(localizationResults);
@@ -513,16 +513,16 @@ int main(int argc, char** argv)
       // save the position of all cameras of the rig
       for(std::size_t camIDX = 0; camIDX < numCameras; ++camIDX)
       {
-        POPART_COUT("cam pose" << camIDX << "\n" <<  localizationResults[camIDX].getPose().rotation() << "\n" << localizationResults[camIDX].getPose().center());
+        OPENMVG_COUT("cam pose" << camIDX << "\n" <<  localizationResults[camIDX].getPose().rotation() << "\n" << localizationResults[camIDX].getPose().center());
         if(camIDX > 0)
-          POPART_COUT("cam subpose" << camIDX-1 << "\n" <<  vec_subPoses[camIDX-1].rotation() << "\n" << vec_subPoses[camIDX-1].center());
+          OPENMVG_COUT("cam subpose" << camIDX-1 << "\n" <<  vec_subPoses[camIDX-1].rotation() << "\n" << vec_subPoses[camIDX-1].center());
         cameraExporters[camIDX].addCameraKeyframe(localizationResults[camIDX].getPose(), &vec_queryIntrinsics[camIDX], mediaPath, frameCounter, frameCounter);
       }
 #endif
     }
     else
     {
-     POPART_CERR("Unable to localize frame " << frameCounter);
+     OPENMVG_CERR("Unable to localize frame " << frameCounter);
 #if HAVE_ALEMBIC
       exporter.jumpKeyframe();
       assert(cameraExporters.size()==numCameras);
@@ -537,10 +537,10 @@ int main(int argc, char** argv)
   }
   
   // print out some time stats
-  POPART_COUT("\n\n******************************");
-  POPART_COUT("Localized " << numLocalizedFrames << " / " << frameCounter << " images");
-  POPART_COUT("Processing took " << bacc::sum(stats) / 1000 << " [s] overall");
-  POPART_COUT("Mean time for localization:   " << bacc::mean(stats) << " [ms]");
-  POPART_COUT("Max time for localization:   " << bacc::max(stats) << " [ms]");
-  POPART_COUT("Min time for localization:   " << bacc::min(stats) << " [ms]");
+  OPENMVG_COUT("\n\n******************************");
+  OPENMVG_COUT("Localized " << numLocalizedFrames << " / " << frameCounter << " images");
+  OPENMVG_COUT("Processing took " << bacc::sum(stats) / 1000 << " [s] overall");
+  OPENMVG_COUT("Mean time for localization:   " << bacc::mean(stats) << " [ms]");
+  OPENMVG_COUT("Max time for localization:   " << bacc::max(stats) << " [ms]");
+  OPENMVG_COUT("Min time for localization:   " << bacc::min(stats) << " [ms]");
 }

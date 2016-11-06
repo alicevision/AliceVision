@@ -1,5 +1,7 @@
 #include "IFeed.hpp"
 
+#include "openMVG/logger.hpp"
+
 #include <fstream>
 #include <exception>
 
@@ -20,7 +22,7 @@ void readCalibrationFromFile(const std::string &filename, cameras::Pinhole_Intri
   std::ifstream fs(filename, std::ios::in);
   if(!fs.is_open())
   {
-    std::cerr << "Unable to open the calibration file " << filename << std::endl;
+    OPENMVG_LOG_WARNING("Unable to open the calibration file " << filename);
     throw std::invalid_argument("Unable to open the calibration file "+filename);
   }
   int width = 0;

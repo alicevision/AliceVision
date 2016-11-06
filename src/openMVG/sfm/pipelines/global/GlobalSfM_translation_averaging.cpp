@@ -91,10 +91,11 @@ bool GlobalSfM_Translation_AveragingSolver::Translation_averaging(
     const std::set<IndexT> index = getIndexT(m_vec_initialRijTijEstimates);
 
     const size_t iNview = index.size();
-    std::cout << "\n-------------------------------" << "\n"
-      << " Global translations computation: " << "\n"
-      << "   - Ready to compute " << iNview << " global translations." << "\n"
-      << "     from #relative translations: " << m_vec_initialRijTijEstimates.size() << std::endl;
+    OPENMVG_LOG_DEBUG(
+      "\n-------------------------------\n"
+      " Global translations computation:\n"
+      "   - Ready to compute " << iNview << " global translations." << "\n"
+      "     from #relative translations: " << m_vec_initialRijTijEstimates.size());
 
     if (iNview < 3)
     {
@@ -138,14 +139,14 @@ bool GlobalSfM_Translation_AveragingSolver::Translation_averaging(
           //--
           // Solving
           const bool bFeasible = solverLP.solve();
-          std::cout << " \n Feasibility " << bFeasible << std::endl;
+          OPENMVG_LOG_DEBUG(" Feasibility " << bFeasible);
           //--
           if (bFeasible)  {
             solverLP.getSolution(vec_solution);
             gamma = vec_solution[vec_solution.size()-1];
           }
           else  {
-            std::cerr << "Compute global translations: failed" << std::endl;
+            OPENMVG_LOG_WARNING("Compute global translations: failed");
             return false;
           }
         }
@@ -157,26 +158,23 @@ bool GlobalSfM_Translation_AveragingSolver::Translation_averaging(
           std::ostringstream os;
           os << "Translation fusion statistics.";
           os.str("");
-          os << "-------------------------------" << "\n"
+          os << "-------------------------------\n"
             << "-- #relative estimates: " << vec_initialRijTijEstimates_cpy.size()
             << " converge with gamma: " << gamma << ".\n"
             << " timing (s): " << timeLP_translation << ".\n"
             << "-------------------------------" << "\n";
-          std::cout << os.str() << std::endl;
+          OPENMVG_LOG_DEBUG(os.str());
         }
 
-        std::cout << "Found solution:\n";
-        std::copy(vec_solution.begin(), vec_solution.end(), std::ostream_iterator<double>(std::cout, " "));
+        OPENMVG_LOG_DEBUG("Found solution:\n", vec_solution);
 
         std::vector<double> vec_camTranslation(iNview*3,0);
         std::copy(&vec_solution[0], &vec_solution[iNview*3], &vec_camTranslation[0]);
 
         std::vector<double> vec_camRelLambdas(&vec_solution[iNview*3], &vec_solution[iNview*3 + vec_initialRijTijEstimates_cpy.size()/3]);
-        std::cout << "\ncam position: " << std::endl;
-        std::copy(vec_camTranslation.begin(), vec_camTranslation.end(), std::ostream_iterator<double>(std::cout, " "));
-        std::cout << "\ncam Lambdas: " << std::endl;
-        std::copy(vec_camRelLambdas.begin(), vec_camRelLambdas.end(), std::ostream_iterator<double>(std::cout, " "));
-        std::cout << std::endl;
+
+        OPENMVG_LOG_DEBUG("cam position: " << vec_camTranslation);
+        OPENMVG_LOG_DEBUG("cam Lambdas: " << vec_camRelLambdas);
 
         // Update the view poses according the found camera centers
         for (size_t i = 0; i < iNview; ++i)
@@ -195,7 +193,7 @@ bool GlobalSfM_Translation_AveragingSolver::Translation_averaging(
         if (!solve_translations_problem_softl1(
           vec_initialRijTijEstimates_cpy, true, iNview, vec_translations))
         {
-          std::cerr << "Compute global translations: failed" << std::endl;
+          OPENMVG_LOG_WARNING("Compute global translations: failed");
           return false;
         }
 
@@ -255,7 +253,7 @@ bool GlobalSfM_Translation_AveragingSolver::Translation_averaging(
           function_tolerance,
           parameter_tolerance,
           max_iterations))  {
-            std::cerr << "Compute global translations: failed" << std::endl;
+            OPENMVG_LOG_WARNING("Compute global translations: failed");
             return false;
         }
 
@@ -271,7 +269,7 @@ bool GlobalSfM_Translation_AveragingSolver::Translation_averaging(
       break;
       default:
       {
-        std::cerr << "Unknown translation averaging method" << std::endl;
+        OPENMVG_LOG_WARNING("Unknown translation averaging method");
         return false;
       }
     }
@@ -286,9 +284,10 @@ void GlobalSfM_Translation_AveragingSolver::Compute_translations(
   const Hash_Map<IndexT, Mat3> & map_globalR,
   matching::PairWiseMatches &tripletWise_matches)
 {
-  std::cout << "\n-------------------------------" << "\n"
-    << " Relative translations computation: " << "\n"
-    << "-------------------------------" << std::endl;
+  OPENMVG_LOG_DEBUG(
+    "-------------------------------\n"
+    " Relative translations computation:\n"
+    "-------------------------------");
 
   // Compute relative translations over the graph of global rotations
   //  thanks to an edge coverage algorithm
@@ -343,7 +342,7 @@ void GlobalSfM_Translation_AveragingSolver::ComputePutativeTranslation_EdgesCove
   // List putative triplets (from global rotations Ids)
   const std::vector< graph::Triplet > vec_triplets =
     graph::tripletListing(rotation_pose_id_graph);
-  std::cout << "#Triplets: " << vec_triplets.size() << std::endl;
+  OPENMVG_LOG_DEBUG("#Triplets: " << vec_triplets.size());
 
   {
     // Compute triplets of translations
@@ -590,14 +589,15 @@ void GlobalSfM_Translation_AveragingSolver::ComputePutativeTranslation_EdgesCove
 
 
   const double timeLP_triplet = timerLP_triplet.elapsed();
-  std::cout << "TRIPLET COVERAGE TIMING: " << timeLP_triplet << " seconds" << std::endl;
+  OPENMVG_LOG_DEBUG("TRIPLET COVERAGE TIMING: " << timeLP_triplet << " seconds");
 
-  std::cout << "-------------------------------" << "\n"
-      << "-- #Relative translations estimates: " << m_vec_initialRijTijEstimates.size()/3
-      << " computed from " << vec_triplets.size() << " triplets.\n"
-      << "-- resulting in " << m_vec_initialRijTijEstimates.size() << " translations estimation.\n"
-      << "-- timing to obtain the relative translations: " << timeLP_triplet << " seconds.\n"
-      << "-------------------------------" << std::endl;
+  OPENMVG_LOG_DEBUG(
+      "-------------------------------\n"
+      "-- #Relative translations estimates: " << m_vec_initialRijTijEstimates.size()/3 <<
+      " computed from " << vec_triplets.size() << " triplets.\n"
+      "-- resulting in " << m_vec_initialRijTijEstimates.size() << " translations estimation.\n"
+      "-- timing to obtain the relative translations: " << timeLP_triplet << " seconds.\n"
+      "-------------------------------");
 }
 
 // Robust estimation and refinement of a translation and 3D points of an image triplets.
@@ -789,10 +789,11 @@ bool GlobalSfM_Translation_AveragingSolver::Estimate_T_triplet(
 
 #ifdef DEBUG_TRIPLET
   {
-    std::cout << "Triplet : status: " << bTest
-      << " AC: " << dPrecision
-      << " inliers % " << double(vec_inliers.size()) / tracks.size() * 100.0
-      << " total putative " << tracks.size() << std::endl;
+    OPENMVG_LOG_DEBUG(
+      "Triplet : status: " << bTest <<
+      " AC: " << dPrecision <<
+      " inliers % " << double(vec_inliers.size()) / tracks.size() * 100.0 <<
+      " total putative " << tracks.size());
   }
 #endif
 

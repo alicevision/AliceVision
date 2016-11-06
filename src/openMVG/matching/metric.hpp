@@ -109,8 +109,7 @@ namespace optim_ss2{
     }
     else
     {
-      std::cerr <<"\n/!\\ size is not modulus 4,"
-        << " distance cannot be performed in SSE"<< std::endl;
+      OPENMVG_LOG_WARNING("/!\\ size is not modulus 4, distance cannot be performed in SSE");
       return 0.0f;
     }
   }

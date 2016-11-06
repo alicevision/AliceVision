@@ -24,7 +24,7 @@ endif()
 ADD_LIBRARY(openMVG_localization
   ${localization_files_headers}
   ${localization_files_sources})
-TARGET_LINK_LIBRARIES(openMVG_localization openMVG_sfm openMVG_voctree openMVG_numeric openMVG_system ${Boost_LIBRARIES})
+TARGET_LINK_LIBRARIES(openMVG_localization openMVG_sfm openMVG_voctree openMVG_numeric openMVG_system stlplus ${Boost_LIBRARIES} ${LOG_LIB})
 IF(OpenMVG_USE_CCTAG)
   TARGET_LINK_LIBRARIES(openMVG_localization ${CCTAG_LIBRARIES})
 ENDIF(OpenMVG_USE_CCTAG)
@@ -37,8 +37,8 @@ SET_PROPERTY(TARGET openMVG_localization PROPERTY FOLDER OpenMVG)
 INSTALL(TARGETS openMVG_localization DESTINATION lib EXPORT openMVG-targets)
 
 UNIT_TEST(openMVG LocalizationResult
-  "openMVG_localization;openMVG_sfm;openMVG_system;stlplus")
+  "openMVG_localization")
 IF(OpenMVG_USE_OPENGV)
   UNIT_TEST(openMVG rigResection
-    "openMVG_localization;openMVG_sfm;openMVG_system;stlplus")
+    "openMVG_localization")
 ENDIF(OpenMVG_USE_OPENGV)

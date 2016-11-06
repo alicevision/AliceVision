@@ -72,7 +72,7 @@ TEST(linearProgramming, MOSEK_dense_sample) {
   EXPECT_NEAR( 21.875000, vec_solution[0], 1e-6);
   EXPECT_NEAR( 53.125000, vec_solution[1], 1e-6);
 
-  std::cout << "Solution : " << vec_solution[0] << " " << vec_solution[1] << std::endl;
+  OPENMVG_LOG_DEBUG("Solution : " << vec_solution[0] << " " << vec_solution[1]);
 }
 #endif // OPENMVG_HAVE_MOSEK
 

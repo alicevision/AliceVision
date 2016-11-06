@@ -49,7 +49,7 @@ void SevenPointSolver::Solve(const Mat &x1, const Mat &x2, vector<Mat3> *F) {
     Mat9 A = Mat::Zero(9,9);
     EncodeEpipolarEquation(x1, x2, &A);
 //    Eigen::FullPivLU<Mat9> luA(A);
-//    std::cout << "\n rank(A) = " << luA.rank() << std::endl; 
+//    OPENMVG_LOG_DEBUG("\n rank(A) = " << luA.rank()); 
 //    Eigen::JacobiSVD<Mat9> svdA(A);
 //    cout << "Its singular values are:" << endl << svdA.singularValues() << endl;
     // Find the two F matrices in the nullspace of A.

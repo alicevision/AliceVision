@@ -9,6 +9,7 @@
 
 #include "VideoFeed.hpp"
 
+#include <openMVG/logger.hpp>
 #include <openMVG/image/image_converter.hpp>
 
 #include <opencv2/core.hpp>
@@ -58,7 +59,7 @@ VideoFeed::FeederImpl::FeederImpl(const std::string &videoPath, const std::strin
   _videoCapture.open(videoPath);
   if (!_videoCapture.isOpened())
   {
-    std::cerr << "Unable to open the video : " << videoPath ;
+    OPENMVG_LOG_WARNING("Unable to open the video : " << videoPath);
     throw std::invalid_argument("Unable to open the video : "+videoPath);
   }
   // Grab frame 0, so we can call readImage.
@@ -94,8 +95,8 @@ bool VideoFeed::FeederImpl::readImage(image::Image<unsigned char> &imageGray,
     cv::cvtColor(frame, grey, CV_BGR2GRAY);
     imageGray.resize(grey.cols, grey.rows);
     cv::cv2eigen(grey, imageGray);
-//      std::cout << grey.channels() << " " << grey.rows << " " << grey.cols << std::endl;
-//      std::cout << imageGray.Depth() << " " << imageGray.Height() << " " << imageGray.Width() << std::endl;
+//      OPENMVG_LOG_DEBUG(grey.channels() << " " << grey.rows << " " << grey.cols);
+//      OPENMVG_LOG_DEBUG(imageGray.Depth() << " " << imageGray.Height() << " " << imageGray.Width());
   }
   else
   {
@@ -121,7 +122,7 @@ bool VideoFeed::FeederImpl::goToFrame(const unsigned int frame)
 {
   if (!_videoCapture.isOpened())
   {
-    std::cerr << "We cannot open the video file." << std::endl;
+    OPENMVG_LOG_WARNING("We cannot open the video file.");
     return false;
   }
   

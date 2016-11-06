@@ -7,6 +7,7 @@
 #include <openMVG/calibration/calibration.hpp>
 #include <openMVG/calibration/exportData.hpp>
 #include <openMVG/system/timer.hpp>
+#include <openMVG/logger.hpp>
 
 #include <boost/lexical_cast.hpp>
 #include <boost/program_options.hpp>
@@ -100,7 +101,7 @@ int main(int argc, char** argv)
 
     if (vm.count("help") || (argc == 1))
     {
-      std::cout << desc << std::endl;
+      OPENMVG_COUT(desc);
       return EXIT_SUCCESS;
     }
     
@@ -115,14 +116,14 @@ int main(int argc, char** argv)
   }
   catch (boost::program_options::required_option& e)
   {
-    std::cerr << "ERROR: " << e.what() << std::endl;
-    std::cout << "Usage:\n\n" << desc << std::endl;
+    OPENMVG_CERR("ERROR: " << e.what());
+    OPENMVG_CERR("Usage:\n\n" << desc);
     return EXIT_FAILURE;
   }
   catch (boost::program_options::error& e)
   {
-    std::cerr << "ERROR: " << e.what() << std::endl;
-    std::cout << "Usage:\n\n" << desc << std::endl;
+    OPENMVG_CERR("ERROR: " << e.what());
+    OPENMVG_CERR("Usage:\n\n" << desc);
     return EXIT_FAILURE;
   }
 
@@ -151,7 +152,7 @@ int main(int argc, char** argv)
   openMVG::dataio::FeedProvider feed(inputPath.string());
   if (!feed.isInit())
   {
-    std::cerr << "ERROR while initializing the FeedProvider!" << std::endl;
+    OPENMVG_CERR("ERROR while initializing the FeedProvider!");
     return EXIT_FAILURE;
   }
   openMVG::image::Image<unsigned char> imageGrey;
@@ -199,7 +200,7 @@ int main(int argc, char** argv)
 
     std::vector<cv::Point2f> pointbuf;
     std::vector<int> detectedId;
-    std::cout << "[" << currentFrame << "/" << maxNbFrames << "]" << std::endl;
+    OPENMVG_CERR("[" << currentFrame << "/" << maxNbFrames << "]");
 
     // Find the chosen pattern in images
     const bool found = openMVG::calibration::findPattern(patternType, viewGray, boardSize, detectedId, pointbuf);
@@ -216,8 +217,8 @@ int main(int argc, char** argv)
   }
 
   
-  std::cout << "find points duration: " << openMVG::system::prettyTime(duration.elapsedMs()) << std::endl;
-  std::cout << "Grid detected in " << imagePoints.size() << " images on " << iInputFrame << " input images." << std::endl;
+  OPENMVG_CERR("find points duration: " << openMVG::system::prettyTime(duration.elapsedMs()));
+  OPENMVG_CERR("Grid detected in " << imagePoints.size() << " images on " << iInputFrame << " input images.");
 
   if (imagePoints.empty())
     throw std::logic_error("No checkerboard detected.");
@@ -270,7 +271,7 @@ int main(int argc, char** argv)
                         totalAvgErr, maxTotalAvgErr, minInputFrames, calibInputFrames,
                         calibImagePoints, calibObjectPoints, calibImageScore, rejectInputFrames);
 
-  std::cout << "Calibration duration: " << openMVG::system::prettyTime(duration.elapsedMs()) << std::endl;
+  OPENMVG_COUT("Calibration duration: " << openMVG::system::prettyTime(duration.elapsedMs()));
 
   openMVG::calibration::saveCameraParams(outputFilename, imageSize,
                                          boardSize, squareSize, aspectRatio,
@@ -285,7 +286,7 @@ int main(int argc, char** argv)
                                     feed, calibInputFrames, rejectInputFrames, remainingImagesIndexes,
                                     cameraMatrix, distCoeffs, imageSize);
 
-  std::cout << "Total duration: " << openMVG::system::prettyTime(durationAlgo.elapsedMs()) << std::endl;
+  OPENMVG_COUT("Total duration: " << openMVG::system::prettyTime(durationAlgo.elapsedMs()));
 
   return EXIT_SUCCESS;
 }

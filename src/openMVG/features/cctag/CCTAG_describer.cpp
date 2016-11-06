@@ -104,7 +104,7 @@ bool CCTAG_Image_describer::Describe(const image::Image<unsigned char>& image,
     {
       if ( cctag.getStatus() > 0 )
       {
-        std::cout << " New CCTag: Id" << cctag.id() << " ; Location ( " << cctag.x() << " , " << cctag.y() << " ) " << std::endl;
+        OPENMVG_LOG_DEBUG(" New CCTag: Id" << cctag.id() << " ; Location ( " << cctag.x() << " , " << cctag.y() << " ) ");
 
         // Add its associated descriptor
         Descriptor<unsigned char,128> desc;

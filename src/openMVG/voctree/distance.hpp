@@ -48,7 +48,6 @@ struct L2< Eigen::Matrix<Scalar, Rows, Cols, Options, MaxRows, MaxCols>, Eigen::
 
   result_type operator()(const feature_type& a, const feature_type& b) const
   {
-    //	  std::cout << a << std::endl;
     return (a - b).squaredNorm();
   }
 };

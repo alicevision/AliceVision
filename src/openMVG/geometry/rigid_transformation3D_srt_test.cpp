@@ -42,10 +42,10 @@ TEST(SRT_precision, Experiment_ScaleOnly)
   FindRTS(x1, x2, Sc, tc, Rc);
   Refine_RTS(x1, x2, Sc, tc, Rc);
 
-  std::cout << "\n"
-          << "Scale " << Sc << "\n"
-          << "Rot \n" << Rc << "\n"
-          << "t " << tc.transpose();
+  OPENMVG_LOG_DEBUG(
+          "Scale " << Sc << "\n" <<
+          "Rot \n" << Rc << "\n" <<
+          "t " << tc.transpose());
 }
 
 TEST(SRT_precision, Experiment_ScaleAndRot)
@@ -74,15 +74,15 @@ TEST(SRT_precision, Experiment_ScaleAndRot)
   FindRTS(x1, x2, Sc, tc, Rc);
   Refine_RTS(x1, x2, Sc, tc, Rc);
 
-  std::cout << "\n"
-          << "Scale " << Sc << "\n"
-          << "Rot \n" << Rc << "\n"
-          << "t " << tc.transpose();
+  OPENMVG_LOG_DEBUG(
+          "Scale " << Sc << "\n" <<
+          "Rot \n" << Rc << "\n" <<
+          "t " << tc.transpose());
 
-  std::cout << "\nGT\n"
-          << "Scale " << scale << "\n"
-          << "Rot \n" << rot << "\n"
-          << "t " << t.transpose();
+  OPENMVG_LOG_DEBUG("GT\n" <<
+          "Scale " << scale << "\n" <<
+          "Rot \n" << rot << "\n" <<
+          "t " << t.transpose());
 }
 
 TEST(SRT_precision, Experiment_ScaleRotTranslation)
@@ -111,15 +111,15 @@ TEST(SRT_precision, Experiment_ScaleRotTranslation)
   FindRTS(x1, x2, Sc, tc, Rc);
   Refine_RTS(x1, x2, Sc, tc, Rc);
 
-  std::cout << "\n"
-          << "Scale " << Sc << "\n"
-          << "Rot \n" << Rc << "\n"
-          << "t " << tc.transpose();
+  OPENMVG_LOG_DEBUG(
+          "Scale " << Sc << "\n" <<
+          "Rot \n" << Rc << "\n" <<
+          "t " << tc.transpose());
 
-  std::cout << "\nGT\n"
-          << "Scale " << scale << "\n"
-          << "Rot \n" << rot << "\n"
-          << "t " << t.transpose();
+  OPENMVG_LOG_DEBUG("GT\n" <<
+          "Scale " << scale << "\n" <<
+          "Rot \n" << rot << "\n" <<
+          "t " << t.transpose());
 }
 
 TEST(SRT_precision, ACRANSAC_noNoise)
@@ -151,15 +151,15 @@ TEST(SRT_precision, ACRANSAC_noNoise)
   EXPECT_TRUE(result);
   EXPECT_TRUE(vec_inliers.size() == nbPoints);
 
-  std::cout << "\n"
-          << "Scale " << Sc << "\n"
-          << "Rot \n" << Rc << "\n"
-          << "t " << tc.transpose();
+  OPENMVG_LOG_DEBUG(
+          "Scale " << Sc << "\n" <<
+          "Rot \n" << Rc << "\n" <<
+          "t " << tc.transpose());
 
-  std::cout << "\nGT\n"
-          << "Scale " << scale << "\n"
-          << "Rot \n" << rot << "\n"
-          << "t " << t.transpose();
+  OPENMVG_LOG_DEBUG("GT\n" <<
+          "Scale " << scale << "\n" <<
+          "Rot \n" << rot << "\n" <<
+          "t " << t.transpose());
 
   EXPECT_NEAR(scale, Sc, 1e-9);
   
@@ -204,15 +204,15 @@ TEST(SRT_precision, ACRANSAC_noiseByShuffling)
   std::vector<std::size_t> vec_inliers;
   const bool result = ACRansac_FindRTS(x1, x2, Sc, tc, Rc, vec_inliers, true);
 
-  std::cout << "\n"
-          << "Scale " << Sc << "\n"
-          << "Rot \n" << Rc << "\n"
-          << "t " << tc.transpose();
+  OPENMVG_LOG_DEBUG(
+          "Scale " << Sc << "\n" <<
+          "Rot \n" << Rc << "\n" <<
+          "t " << tc.transpose());
 
-  std::cout << "\nGT\n"
-          << "Scale " << scale << "\n"
-          << "Rot \n" << rot << "\n"
-          << "t " << t.transpose() << "\n";
+  OPENMVG_LOG_DEBUG("GT\n" <<
+          "Scale " << scale << "\n" <<
+          "Rot \n" << rot << "\n" <<
+          "t " << t.transpose());
   
   EXPECT_TRUE(result);
   // all the points must be inliers (no noise)
