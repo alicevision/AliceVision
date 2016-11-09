@@ -46,9 +46,7 @@ TARGET_LINK_LIBRARIES(openMVG_main_ComputeFeatures
   )
 
 IF(OpenMVG_USE_CCTAG)
-TARGET_LINK_LIBRARIES(openMVG_main_ComputeFeatures
-  ${CCTAG_LIBRARIES}
-  )
+TARGET_LINK_LIBRARIES(openMVG_main_ComputeFeatures CCTag::CCTag)
 ENDIF(OpenMVG_USE_CCTAG)
 
 ADD_EXECUTABLE(openMVG_main_ComputeMatches main_ComputeMatches.cpp)
@@ -137,7 +135,7 @@ TARGET_LINK_LIBRARIES(openMVG_main_ComputeCCTagStructureFromKnownPoses
   openMVG_features
   openMVG_sfm
   stlplus
-  ${CCTAG_LIBRARIES}
+  CCTag::CCTag
   ${Boost_LIBRARIES}
   )
 SET_PROPERTY(TARGET openMVG_main_ComputeCCTagStructureFromKnownPoses PROPERTY FOLDER OpenMVG/software)

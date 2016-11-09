@@ -14,7 +14,7 @@ set(localization_files_sources
   rigResection.cpp
 )
 
-if (CCTAG_FOUND)
+if (OpenMVG_USE_CCTAG)
   list(APPEND localization_files_headers 
         CCTagLocalizer.hpp)
   list(APPEND localization_files_sources 
@@ -24,12 +24,19 @@ endif()
 ADD_LIBRARY(openMVG_localization
   ${localization_files_headers}
   ${localization_files_sources})
-TARGET_LINK_LIBRARIES(openMVG_localization openMVG_sfm openMVG_voctree openMVG_numeric openMVG_system stlplus ${Boost_LIBRARIES} ${LOG_LIB})
+TARGET_LINK_LIBRARIES(openMVG_localization 
+      PUBLIC openMVG_sfm 
+             openMVG_voctree 
+             openMVG_numeric 
+      PRIVATE openMVG_system 
+              stlplus 
+              ${Boost_LIBRARIES} 
+              ${LOG_LIB})
 IF(OpenMVG_USE_CCTAG)
-  TARGET_LINK_LIBRARIES(openMVG_localization ${CCTAG_LIBRARIES})
+  TARGET_LINK_LIBRARIES(openMVG_localization PRIVATE CCTag::CCTag)
 ENDIF(OpenMVG_USE_CCTAG)
 IF(OpenMVG_USE_OPENGV)
-  TARGET_LINK_LIBRARIES(openMVG_localization ${OPENGV_LIBRARY})
+  TARGET_LINK_LIBRARIES(openMVG_localization PRIVATE ${OPENGV_LIBRARY})
 ENDIF(OpenMVG_USE_OPENGV)
 
 SET_TARGET_PROPERTIES(openMVG_localization PROPERTIES SOVERSION ${OPENMVG_VERSION_MAJOR} VERSION "${OPENMVG_VERSION_MAJOR}.${OPENMVG_VERSION_MINOR}")

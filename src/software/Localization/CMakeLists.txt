@@ -15,7 +15,7 @@ IF(OpenMVG_USE_BOOST)
         target_link_libraries(openMVG_main_cameraLocalizer openMVG_sfm ${ABC_LIBRARIES})
     endif()
     if(OpenMVG_USE_CCTAG)
-        target_link_libraries(openMVG_main_cameraLocalizer ${CCTAG_LIBRARIES})
+        target_link_libraries(openMVG_main_cameraLocalizer CCTag::CCTag)
     endif()
 
     ###
@@ -56,7 +56,7 @@ IF(OpenMVG_USE_BOOST)
         target_link_libraries(openMVG_main_rigLocalizer openMVG_sfm ${ABC_LIBRARIES})
     endif()
     if(OpenMVG_USE_CCTAG)
-        target_link_libraries(openMVG_main_rigLocalizer ${CCTAG_LIBRARIES})
+        target_link_libraries(openMVG_main_rigLocalizer CCTag::CCTag)
     endif()
 
     ###
