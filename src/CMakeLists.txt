@@ -471,7 +471,6 @@ ADD_SUBDIRECTORY(third_party)
 # CCTag
 # ==============================================================================
 IF(OpenMVG_USE_CCTAG)
-  FIND_PACKAGE(LAPACK)
   FIND_PACKAGE(CCTag)
   IF(NOT CCTAG_FOUND)
     MESSAGE(STATUS "CCTAG package not found, CCTAG will be disabled")
