@@ -207,9 +207,9 @@ int main(int argc, char** argv)
   
   std::cout << "-----------------" << std::endl;
   
-  for(auto itHisto = globalHisto.begin(); itHisto != globalHisto.end(); itHisto++)
+  for(const auto &itHisto : globalHisto)
     {
-      std::cout << itHisto->first << ": " << itHisto->second  << ", ";
+      std::cout << itHisto.first << ": " << itHisto.second  << ", ";
     }
     std::cout << std::endl;
   
