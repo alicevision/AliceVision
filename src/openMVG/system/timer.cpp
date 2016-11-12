@@ -12,6 +12,7 @@
 // ========================================================================== //
 
 #include <openMVG/system/timer.hpp>
+#include <openMVG/logger.hpp>
 #include <cmath>
 
 #ifdef _WIN32
