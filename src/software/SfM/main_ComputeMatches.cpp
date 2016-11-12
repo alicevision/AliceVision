@@ -31,6 +31,7 @@
 
 #include <cstdlib>
 #include <fstream>
+#include <cctype>
 
 using namespace openMVG;
 using namespace openMVG::cameras;
