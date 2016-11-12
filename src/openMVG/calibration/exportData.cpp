@@ -8,7 +8,6 @@
 #include <fstream>
 #include <iostream>
 #include <ctime>
-#include <stdio.h>
 #include <cstdio>
 
 namespace openMVG{
