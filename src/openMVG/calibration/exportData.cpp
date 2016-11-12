@@ -10,6 +10,10 @@
 #include <ctime>
 #include <cstdio>
 
+#ifdef _WIN32
+#include <locale>
+#endif
+
 namespace openMVG{
 namespace calibration{
 
@@ -45,7 +49,15 @@ void exportImages(openMVG::dataio::FeedProvider& feed,
 
     openMVG::cameras::UndistortImage(inputImage, &camera, outputImage, openMVG::image::BLACK);
     const boost::filesystem::path imagePath = boost::filesystem::path(debugFolder) / (std::to_string(currentFrame) + suffix);
-    const bool exportStatus = openMVG::image::WriteImage(imagePath.c_str(), outputImage);
+
+#ifndef _WIN32
+	std::string nativePath = imagePath.native();
+#else
+	std::wstring_convert<boost::filesystem::path::codecvt_type> wsConv(&imagePath.codecvt());
+	std::string nativePath = wsConv.to_bytes(imagePath.native());
+#endif
+
+    const bool exportStatus = openMVG::image::WriteImage(nativePath.c_str(), outputImage);
     if (!exportStatus)
     {
       OPENMVG_LOG_WARNING("Failed to export: " << imagePath);
