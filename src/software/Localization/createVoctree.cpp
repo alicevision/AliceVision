@@ -143,7 +143,7 @@ int main(int argc, char** argv)
     imgVisualWords.resize(descRead[i], 0);
 
     #pragma omp parallel for
-    for(size_t j = 0; j < descRead[i]; ++j)
+    for(ptrdiff_t j = 0; j < static_cast<ptrdiff_t>(descRead[i]); ++j)
     {
       //	store the visual word associated to the feature in the temporary list
       imgVisualWords[j] = builder.tree().quantize(descriptors[ j + offset ]);
