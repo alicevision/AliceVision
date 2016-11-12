@@ -375,7 +375,7 @@ int main(int argc, char** argv)
 
   // check if the output directory exists
   const auto basePath = bfs::path(outfile).parent_path();
-  if(!bfs::exists(basePath))
+  if(!basePath.empty() && !bfs::exists(basePath))
   {
     // then create the missing directory
     if(!bfs::create_directories(basePath))
