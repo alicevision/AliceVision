@@ -37,7 +37,6 @@ env:
     - BUILD_TYPE="Release"
     - BUILD_SYSTEM="`uname -s`"
     - BUILD_PROCESSOR="`uname -p`"
-    - CASHER_TIME_OUT=600
     - CCACHE_COMPRESS=1
     - CCACHE_MAXSIZE=1
 
@@ -124,6 +123,7 @@ before_cache:
   - ccache -s
 
 cache:
+  timeout: 1000
   # Enable compiler cache
   ccache: true
   # Caching builded dependencies
