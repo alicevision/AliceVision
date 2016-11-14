@@ -11,6 +11,7 @@
 #include "openMVG/image/pixel_types.hpp"
 
 namespace openMVG{
+namespace image {
 
 template<typename T>
 // The factor comes from http://www.easyrgb.com/
@@ -91,22 +92,20 @@ void rgb2Float( const ImageIn& imaIn,
 // Float to RGB ( unsigned char or int )
 //--------------------------------------------------------------------------
 
-
-static void convertFloatToInt(
-        const RGBfColor& valIn,
-        RGBColor& valOut,
-        float factor = 255.f)
+static inline
+void convertFloatToInt(
+  const RGBfColor& valIn,
+  RGBColor& valOut,
+  float factor = 255.f)
 {
   for( int channel = 0; channel < 3; ++channel )
     valOut(channel) = (int)(valIn(channel) * factor);
 }
 
-
-//template<typename ImageOut>
-static void rgbFloat2rgbInt(
+static inline void rgbFloat2rgbInt(
         const Image< RGBfColor >& imaIn,
         Image< RGBColor > *imaOut,
-        float factor = 255.f )
+        float factor = 255.f)
 {
   assert( imaIn.Depth() == 3 );
   (*imaOut).resize(imaIn.Width(), imaIn.Height());
@@ -116,6 +115,7 @@ static void rgbFloat2rgbInt(
       convertFloatToInt( imaIn( j, i ), (*imaOut)( j, i ), factor  );
 }
 
+} // namespace image
 } // namespace openMVG
 
 #endif  // OPENMVG_IMAGE_IMAGE_CONVERTER_HPP

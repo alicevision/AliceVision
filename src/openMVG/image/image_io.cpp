@@ -4,6 +4,7 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
+#include "openMVG/logger.hpp"
 #include "openMVG/image/image.hpp"
 
 #include <cstring>
@@ -11,13 +12,15 @@
 #include <cmath>
 
 extern "C" {
-  #include "jpeglib.h"
   #include "png.h"
+  #include "tiffio.h"
+  #include "jpeglib.h"
 }
 
 using namespace std;
 
 namespace openMVG {
+namespace image {
 
 static bool CmpFormatExt(const char *a, const char *b) {
   size_t len_a = strlen(a);
@@ -32,7 +35,7 @@ static bool CmpFormatExt(const char *a, const char *b) {
 Format GetFormat(const char *c) {
   const char *p = strrchr (c, '.');
 
-  if (p == NULL)
+  if (p == nullptr)
     return Unknown;
 
   if (CmpFormatExt(p, ".png")) return Png;
@@ -42,8 +45,9 @@ Format GetFormat(const char *c) {
   if (CmpFormatExt(p, ".pnm")) return Pnm;
   if (CmpFormatExt(p, ".jpg")) return Jpg;
   if (CmpFormatExt(p, ".jpeg")) return Jpg;
+  if (CmpFormatExt(p, ".tif")) return Tiff;
+  if (CmpFormatExt(p, ".tiff")) return Tiff;
 
-  cerr << "Error: Couldn't open " << c << " Unknown file format";
   return Unknown;
 }
 
@@ -52,7 +56,7 @@ int ReadImage(const char *filename,
               int * w,
               int * h,
               int * depth){
-  Format f = GetFormat(filename);
+  const Format f = GetFormat(filename);
 
   switch (f) {
     case Pnm:
@@ -61,6 +65,8 @@ int ReadImage(const char *filename,
       return ReadPng(filename, ptr, w, h, depth);
     case Jpg:
       return ReadJpg(filename, ptr, w, h, depth);
+  	case Tiff:
+      return ReadTiff(filename, ptr, w, h, depth);
     default:
       return 0;
   };
@@ -80,6 +86,8 @@ int WriteImage(const char * filename,
       return WritePng(filename, ptr, w, h, depth);
     case Jpg:
       return WriteJpg(filename, ptr, w, h, depth);
+    case Tiff:
+      return WriteTiff(filename, ptr, w, h, depth);
     default:
       return 0;
   };
@@ -125,6 +133,7 @@ int ReadJpgStream(FILE * file,
   jerr.pub.error_exit = &jpeg_error;
 
   if (setjmp(jerr.setjmp_buffer)) {
+    cerr << "Error JPG: Failed to decompress.";
     jpeg_destroy_decompress(&cinfo);
     return 0;
   }
@@ -246,7 +255,7 @@ int ReadPngStream(FILE *file,
                   int * w,
                   int * h,
                   int * depth)  {
-  
+
   // first check the eight byte PNG signature
   png_byte  pbSig[8];
   size_t readcnt = fread(pbSig, 1, 8, file);
@@ -257,18 +266,18 @@ int ReadPngStream(FILE *file,
   }
 
   // create the two png(-info) structures
-  png_structp png_ptr = NULL;
-  png_ptr = png_create_read_struct(PNG_LIBPNG_VER_STRING, NULL,
-    (png_error_ptr)NULL, (png_error_ptr)NULL);
+  png_structp png_ptr = nullptr;
+  png_ptr = png_create_read_struct(PNG_LIBPNG_VER_STRING, nullptr,
+    (png_error_ptr)nullptr, (png_error_ptr)nullptr);
   if (!png_ptr)
   {
     return 0;
   }
-  png_infop info_ptr = NULL;
+  png_infop info_ptr = nullptr;
   info_ptr = png_create_info_struct(png_ptr);
   if (!info_ptr)
   {
-    png_destroy_read_struct(&png_ptr, NULL, NULL);
+    png_destroy_read_struct(&png_ptr, nullptr, nullptr);
     return 0;
   }
 
@@ -285,7 +294,7 @@ int ReadPngStream(FILE *file,
   int                 iBitDepth;
   int                 iColorType;
   png_get_IHDR(png_ptr, info_ptr, &wPNG, &hPNG, &iBitDepth,
-    &iColorType, NULL, NULL, NULL);
+    &iColorType, nullptr, nullptr, nullptr);
 
   // expand images of all color-type to 8-bit
 
@@ -310,18 +319,18 @@ int ReadPngStream(FILE *file,
   // get again width, height and the new bit-depth and color-type
 
   png_get_IHDR(png_ptr, info_ptr, &wPNG, &hPNG, &iBitDepth,
-    &iColorType, NULL, NULL, NULL);
+    &iColorType, nullptr, nullptr, nullptr);
 
   // Get number of byte along a tow
   png_uint_32         ulRowBytes;
   ulRowBytes = png_get_rowbytes(png_ptr, info_ptr);
- 
+
   // and allocate memory for an array of row-pointers
-  png_byte   **ppbRowPointers = NULL;
+  png_byte   **ppbRowPointers = nullptr;
   if ((ppbRowPointers = (png_bytepp) malloc(hPNG
-    * sizeof(png_bytep))) == NULL)
+    * sizeof(png_bytep))) == nullptr)
   {
-    std::cerr << "PNG: out of memory" << std::endl;
+    OPENMVG_LOG_ERROR("PNG: out of memory");
     return 0;
   }
 
@@ -331,7 +340,7 @@ int ReadPngStream(FILE *file,
 
   // now we can allocate memory to store the image
   ptr->resize((*h)*(*w)*(*depth));
-  
+
   // set the individual row-pointers to point at the correct offsets
   for (int i = 0; i < hPNG; i++)
     ppbRowPointers[i] = &((*ptr)[0]) + i * ulRowBytes;
@@ -340,11 +349,11 @@ int ReadPngStream(FILE *file,
   png_read_image(png_ptr, ppbRowPointers);
 
   // read the additional chunks in the PNG file (not really needed)
-  png_read_end(png_ptr, NULL);
+  png_read_end(png_ptr, nullptr);
 
   free (ppbRowPointers);
-  
-  png_destroy_read_struct(&png_ptr, &info_ptr, NULL);
+
+  png_destroy_read_struct(&png_ptr, &info_ptr, nullptr);
   return 1;
 }
 
@@ -358,7 +367,7 @@ int WritePng(const char * filename,
     cerr << "Error: Couldn't open " << filename << " fopen returned 0";
     return 0;
   }
-  int res = WritePngStream(file, ptr, w, h, depth);
+  const int res = WritePngStream(file, ptr, w, h, depth);
   fclose(file);
   return res;
 }
@@ -369,7 +378,7 @@ int WritePngStream(FILE * file,
                    int h,
                    int depth) {
   png_structp png_ptr =
-      png_create_write_struct(PNG_LIBPNG_VER_STRING, NULL, NULL, NULL);
+      png_create_write_struct(PNG_LIBPNG_VER_STRING, nullptr, nullptr, nullptr);
 
   if (!png_ptr)
     return 0;
@@ -391,24 +400,22 @@ int WritePngStream(FILE * file,
     case 1: colour = PNG_COLOR_TYPE_GRAY;
       break;
     default:
+    {
+      png_destroy_write_struct(&png_ptr, &info_ptr);
       return 0;
+    }
   }
 
   png_set_IHDR(png_ptr, info_ptr, w, h,
       8, colour, PNG_INTERLACE_NONE,
-      PNG_COMPRESSION_TYPE_BASE, PNG_FILTER_TYPE_BASE);
+      PNG_COMPRESSION_TYPE_DEFAULT, PNG_FILTER_TYPE_DEFAULT);
 
   png_write_info(png_ptr, info_ptr);
 
-  png_bytep *row_pointers =
-      (png_bytep*) malloc(sizeof(png_bytep) * depth * h);
-
   for (int y = 0; y < h; ++y)
-    row_pointers[y] = (png_byte*) (&ptr[0]) + w * depth * y;
+    png_write_row(png_ptr, (png_byte*) (&ptr[0]) + w * depth * y);
 
-  png_write_image(png_ptr, row_pointers);
-  free(row_pointers);
-  png_write_end(png_ptr, NULL);
+  png_write_end(png_ptr, nullptr);
   png_destroy_write_struct(&png_ptr, &info_ptr);
   return 1;
 }
@@ -423,7 +430,7 @@ int ReadPnm(const char * filename,
     cerr << "Error: Couldn't open " << filename << " fopen returned 0";
     return 0;
   }
-  int res = ReadPnmStream(file, array, w, h, depth);
+  const int res = ReadPnmStream(file, array, w, h, depth);
   fclose(file);
   return res;
 }
@@ -519,7 +526,7 @@ int WritePnm(const char * filename,
     cerr << "Error: Couldn't open " << filename << " fopen returned 0";
     return 0;
   }
-  int res = WritePnmStream(file, array, w, h, depth);
+  const int res = WritePnmStream(file, array, w, h, depth);
   fclose(file);
   return res;
 }
@@ -530,8 +537,6 @@ int WritePnmStream(FILE * file,
                    int w,
                    int h,
                    int depth) {
-  int res;
-
   // Write magic number.
   if (depth == 1) {
     fprintf(file, "P5\n");
@@ -545,11 +550,310 @@ int WritePnmStream(FILE * file,
   fprintf(file, "%d %d %d\n", w, h, 255);
 
   // Write pixels.
-  res = fwrite( &array[0], 1, static_cast<int>(array.size()), file);
+  const int res = fwrite( &array[0], 1, static_cast<int>(array.size()), file);
   if (res != array.size()) {
     return 0;
   }
   return 1;
 }
 
+int ReadTiff(const char * filename,
+  vector<unsigned char> * ptr,
+  int * w,
+  int * h,
+  int * depth)
+{
+  TIFF* tiff = TIFFOpen(filename, "r");
+  if (!tiff) {
+    OPENMVG_LOG_ERROR("Error: Couldn't open " << filename << " fopen returned 0");
+    return 0;
+  }
+  uint16 bps, spp;
+
+  TIFFGetField(tiff, TIFFTAG_IMAGEWIDTH, w);
+  TIFFGetField(tiff, TIFFTAG_IMAGELENGTH, h);
+  TIFFGetField(tiff, TIFFTAG_BITSPERSAMPLE, &bps);
+  TIFFGetField(tiff, TIFFTAG_SAMPLESPERPIXEL, &spp);
+  *depth = bps * spp / 8;
+
+  ptr->resize((*h)*(*w)*(*depth));
+
+  if (*depth==4) {
+    if (ptr != nullptr) {
+      if (!TIFFReadRGBAImageOriented(tiff, *w, *h, (uint32*)&((*ptr)[0]), ORIENTATION_TOPLEFT, 0)) {
+        TIFFClose(tiff);
+        return 0;
+      }
+    }
+  } else {
+    for (size_t i=0; i<TIFFNumberOfStrips(tiff); ++i) {
+      if (TIFFReadEncodedStrip(tiff, i, ((uint8*)&((*ptr)[0]))+i*TIFFStripSize(tiff),(tsize_t)-1) ==
+        std::numeric_limits<tsize_t>::max()) {
+        TIFFClose(tiff);
+        return 0;
+      }
+    }
+  }
+  TIFFClose(tiff);
+  return 1;
+}
+
+int WriteTiff(const char * filename,
+  const vector<unsigned char> & ptr,
+  int w,
+  int h,
+  int depth)
+{
+  TIFF* tiff = TIFFOpen(filename, "w");
+  if (!tiff) {
+    OPENMVG_LOG_ERROR("Error: Couldn't open " << filename << " fopen returned 0");
+    return 0;
+  }
+  TIFFSetField(tiff, TIFFTAG_IMAGEWIDTH, w);
+  TIFFSetField(tiff, TIFFTAG_IMAGELENGTH, h);
+  TIFFSetField(tiff, TIFFTAG_PLANARCONFIG, PLANARCONFIG_CONTIG);
+  TIFFSetField(tiff, TIFFTAG_PHOTOMETRIC, PHOTOMETRIC_RGB);
+  TIFFSetField(tiff, TIFFTAG_BITSPERSAMPLE, 8);
+  TIFFSetField(tiff, TIFFTAG_SAMPLESPERPIXEL, depth);
+  TIFFSetField(tiff, TIFFTAG_ORIENTATION, ORIENTATION_TOPLEFT);
+  TIFFSetField(tiff, TIFFTAG_COMPRESSION,COMPRESSION_NONE);
+  TIFFSetField(tiff, TIFFTAG_ROWSPERSTRIP, 16);
+  for (uint32 y=0; y < h ; ++y) {
+    if (TIFFWriteScanline(tiff,(tdata_t)(((uint8*)(&ptr[0]))+depth*w*y),y)<0) {
+      TIFFClose(tiff);
+      return 0;
+    }
+  }
+  TIFFClose(tiff);
+  return 1;
+}
+
+bool ReadImageHeader(const char * filename, ImageHeader * imgheader)
+{
+  const Format f = GetFormat(filename);
+
+  switch (f) {
+    case Pnm:
+      return Read_PNM_ImageHeader(filename, imgheader);
+    case Png:
+      return Read_PNG_ImageHeader(filename, imgheader);
+    case Jpg:
+      return Read_JPG_ImageHeader(filename, imgheader);
+  	case Tiff:
+      return Read_TIFF_ImageHeader(filename, imgheader);
+    default:
+      return false;
+  };
+}
+
+bool Read_PNG_ImageHeader(const char * filename, ImageHeader * imgheader)
+{
+  bool bStatus = false;
+  FILE *file = fopen(filename, "rb");
+  if (!file) {
+    return false;
+  }
+
+  // first check the eight byte PNG signature
+  png_byte  pbSig[8];
+  size_t readcnt = fread(pbSig, 1, 8, file);
+  (void) readcnt;
+  if (png_sig_cmp(pbSig, 0, 8)) {
+    fclose(file);
+    return false;
+  }
+
+  // create the two png(-info) structures
+  png_structp png_ptr = nullptr;
+  png_ptr = png_create_read_struct(PNG_LIBPNG_VER_STRING, nullptr,
+    (png_error_ptr)nullptr, (png_error_ptr)nullptr);
+  if (!png_ptr) {
+    fclose(file);
+    return false;
+  }
+  png_infop info_ptr = nullptr;
+  info_ptr = png_create_info_struct(png_ptr);
+  if (!info_ptr)  {
+    png_destroy_read_struct(&png_ptr, nullptr, nullptr);
+    fclose(file);
+    return false;
+  }
+
+  // initialize the png structure
+  png_init_io(png_ptr, file);
+  png_set_sig_bytes(png_ptr, 8);
+
+  // read all PNG info up to image data
+
+  png_read_info(png_ptr, info_ptr);
+
+  // get width, height, bit-depth and color-type
+  png_uint_32 wPNG, hPNG;
+  int iBitDepth;
+  int iColorType;
+  png_get_IHDR(png_ptr, info_ptr, &wPNG, &hPNG, &iBitDepth,
+    &iColorType, nullptr, nullptr, nullptr);
+
+  if (imgheader)
+  {
+    imgheader->width = wPNG;
+    imgheader->height = hPNG;
+    bStatus = true;
+  }
+
+  fclose(file);
+  return bStatus;
+}
+
+bool Read_JPG_ImageHeader(const char * filename, ImageHeader * imgheader)
+{
+  bool bStatus = false;
+
+  FILE *file = fopen(filename, "rb");
+  if (!file) {
+    cerr << "Error: Couldn't open " << filename << " fopen returned 0";
+    return 0;
+  }
+
+  jpeg_decompress_struct cinfo;
+  struct my_error_mgr jerr;
+  cinfo.err = jpeg_std_error(&jerr.pub);
+  jerr.pub.error_exit = &jpeg_error;
+
+  if (setjmp(jerr.setjmp_buffer)) {
+    jpeg_destroy_decompress(&cinfo);
+    fclose(file);
+    return false;
+  }
+
+  jpeg_create_decompress(&cinfo);
+  jpeg_stdio_src(&cinfo, file);
+  jpeg_read_header(&cinfo, TRUE);
+  jpeg_start_decompress(&cinfo);
+
+  if (imgheader)
+  {
+    imgheader->width = cinfo.output_width;
+    imgheader->height = cinfo.output_height;
+    bStatus = true;
+  }
+  fclose(file);
+  return bStatus;
+}
+
+bool Read_PNM_ImageHeader(const char * filename, ImageHeader * imgheader)
+{
+  const int NUM_VALUES = 3;
+  const int INT_BUFFER_SIZE = 256;
+
+  int magicnumber;
+  char intBuffer[INT_BUFFER_SIZE];
+  int values[NUM_VALUES], valuesIndex = 0, intIndex = 0, inToken = 0;
+  size_t res;
+
+  FILE *file = fopen(filename, "rb");
+  if (!file) {
+    return false;
+  }
+
+  // Check magic number.
+  res = size_t(fscanf(file, "P%d", &magicnumber));
+  if (res != 1) {
+    fclose(file);
+    return false;
+  }
+  // Test if we have a Gray or RGB image, else return false
+  switch (magicnumber)
+  {
+    case 5:
+    case 6:
+      break;
+    default:
+      fclose(file);
+      return false;
+  }
+
+  // the following loop parses the PNM header one character at a time, looking
+  // for the int tokens width, height and maxValues (in that order), and
+  // discarding all comment (everything from '#' to '\n' inclusive), where
+  // comments *may occur inside tokens*. Each token must be terminate with a
+  // whitespace character, and only one whitespace char is eaten after the
+  // third int token is parsed.
+  while (valuesIndex < NUM_VALUES) {
+    char nextChar;
+    res = fread(&nextChar,1,1,file);
+    if (res == 0)
+    {
+      fclose(file);
+      return false; // read failed, EOF?
+    }
+
+    if (isspace(nextChar)) {
+      if (inToken) { // we were reading a token, so this white space delimits it
+        inToken = 0;
+        intBuffer[intIndex] = 0 ; // NULL-terminate the string
+        values[valuesIndex++] = atoi(intBuffer);
+        intIndex = 0; // reset for next int token
+        // to conform with current image class
+        if (valuesIndex == 3 && values[2] > 255)  {
+          fclose(file);
+          return false;
+        }
+      }
+    }
+    else if (isdigit(nextChar)) {
+      inToken = 1 ; // in case it's not already set
+      intBuffer[intIndex++] = nextChar ;
+      if (intIndex == INT_BUFFER_SIZE) {// tokens should never be this long
+        fclose(file);
+        return false;
+      }
+    }
+    else if (nextChar == '#') {
+      do { // eat all characters from input stream until newline
+        res = fread(&nextChar,1,1,file);
+      } while (res == 1 && nextChar != '\n');
+      if (res == 0) {
+        fclose(file);
+        return false; // read failed, EOF?
+      }
+    }
+    else {
+      // Encountered a non-whitespace, non-digit outside a comment - bail out.
+      fclose(file);
+      return false;
+    }
+  }
+  fclose(file);
+  if (imgheader)
+  {
+    // Save value and return
+    imgheader->width = values[0];
+    imgheader->height = values[1];
+    return true;
+  }
+  return false;
+}
+
+bool Read_TIFF_ImageHeader(const char * filename, ImageHeader * imgheader)
+{
+  bool bStatus = false;
+
+  TIFF* tiff = TIFFOpen(filename, "r");
+  if (!tiff) {
+    return false;
+  }
+
+  if (imgheader)
+  {
+    TIFFGetField(tiff, TIFFTAG_IMAGEWIDTH, &imgheader->width);
+    TIFFGetField(tiff, TIFFTAG_IMAGELENGTH, &imgheader->height);
+    bStatus = true;
+  }
+
+  TIFFClose(tiff);
+  return bStatus;
+}
+
+}  // namespace image
 }  // namespace openMVG

@@ -9,7 +9,6 @@
 #define OPENMVG_COLOR_HARMONIZATION_ENGINE_GLOBAL_H
 
 #include <openMVG/numeric/numeric.h>
-#include <software/SfM/SfMEngine.hpp>
 #include <openMVG/features/features.hpp>
 #include <openMVG/tracks/tracks.hpp>
 
@@ -17,15 +16,16 @@
 
 namespace openMVG{
 
-class ColorHarmonizationEngineGlobal : public ReconstructionEngine
+class ColorHarmonizationEngineGlobal
 {
 public:
-  ColorHarmonizationEngineGlobal( const std::string & sImagePath,
-                            const std::string & sMatchesPath,
-                            const std::string & sMatchesFile,
-                            const std::string & sOutDirectory,
-                            const int selectionMethod = -1,
-                            const int imgRef = -1);
+  ColorHarmonizationEngineGlobal(
+    const std::string & sSfM_Data_Filename,
+    const std::string & sMatchesPath,
+    const std::string & sMatchesGeometricModel,
+    const std::string & sOutDirectory,
+    const int selectionMethod = -1,
+    const int imgRef = -1);
 
   ~ColorHarmonizationEngineGlobal();
 
@@ -48,18 +48,23 @@ private:
 
   int _selectionMethod;
   int _imgRef;
-  std::string _sMatchesFile;
+  std::string _sMatchesGeometricModel;
 
   // -----
   // Input data
   // ----
 
   std::vector< std::string > _vec_fileNames; // considered images
-  std::map< size_t, std::vector< SIOPointFeature > > _map_feats; // feature per images
+  std::map< size_t, std::vector< features::SIOPointFeature > > _map_feats; // feature per images
 
   std::vector< std::pair< size_t, size_t > > _vec_imageSize; // Size of each image
 
   openMVG::matching::PairWiseMatches _map_Matches; // pairwise geometric matches
+
+  //
+  std::string _sSfM_Data_Path;// Path to the Sfm_Scene
+  std::string _sMatchesPath;  // Path to correspondences and features
+  std::string _sOutDirectory; // Output path where outputs will be stored
 };
 
 

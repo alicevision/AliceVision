@@ -1,27 +1,31 @@
 
-project(matching)
-
 file(
-	GLOB_RECURSE
+	GLOB
 	matching_files_header
 	*.hpp
 )
 file(
-	GLOB_RECURSE
+	GLOB
 	matching_files_cpp
 	*.cpp
 )
-file(GLOB_RECURSE REMOVEFILESUNITTEST *_test.cpp)
+file(GLOB REMOVEFILESUNITTEST *_test.cpp)
 
 #Remove the future main files
 list(REMOVE_ITEM matching_files_cpp ${REMOVEFILESUNITTEST})
 
-set_source_files_properties(${matching_files_header} PROPERTIES LANGUAGE CXX)
 set_source_files_properties(${matching_files_cpp} PROPERTIES LANGUAGE CXX)
+add_library(openMVG_matching
+  ${matching_files_header}
+  ${matching_files_cpp})
+set_target_properties(openMVG_matching PROPERTIES SOVERSION ${OPENMVG_VERSION_MAJOR} VERSION "${OPENMVG_VERSION_MAJOR}.${OPENMVG_VERSION_MINOR}")
+target_link_libraries(openMVG_matching openMVG_features stlplus ${FLANN_LIBRARY} ${LOG_LIB})
+set_property(TARGET openMVG_matching PROPERTY FOLDER OpenMVG/OpenMVG)
+install(TARGETS openMVG_matching DESTINATION lib EXPORT openMVG-targets)
 
-UNIT_TEST(openMVG matching "flann_cpp_s")
-UNIT_TEST(openMVG matching_filters "")
-UNIT_TEST(openMVG indMatch "")
-UNIT_TEST(openMVG metric "")
+UNIT_TEST(openMVG matching "openMVG_matching")
+UNIT_TEST(openMVG matching_filters "openMVG_matching")
+UNIT_TEST(openMVG indMatch "openMVG_matching")
+UNIT_TEST(openMVG metric "openMVG_matching")
 
-ADD_SUBDIRECTORY(kvld)
+add_subdirectory(kvld)

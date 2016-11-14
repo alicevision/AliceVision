@@ -12,6 +12,11 @@
 #include <fstream>
 #include <utility>
 #include <vector>
+
+#ifdef _MSC_VER
+#pragma warning( once : 4267 ) //warning C4267: 'argument' : conversion from 'size_t' to 'const int', possible loss of data
+#endif
+
 //--
 //- Implementation of algorithm from Paper titled :
 //- [1] "Multiple-View Geometry under the L_\infty Norm."
@@ -40,8 +45,8 @@ using namespace linearProgramming;
 //
 
 /// Encode translation and structure linear program
-void EncodeTiXi(const Mat & M, //Scene representation
-                           const std::vector<Mat3> Ri,
+static void EncodeTiXi(const Mat & M, //Scene representation
+                           const std::vector<Mat3> & Ri,
                            double sigma, // Start upper bound
                            sRMat & A, Vec & C,
                            std::vector<LP_Constraints::eLP_SIGN> & vec_sign,
@@ -55,11 +60,11 @@ void EncodeTiXi(const Mat & M, //Scene representation
 
   assert(Ncam == Ri.size());
 
-  A.resize(5*Nobs, 3 * (N3D + Ncam));
+  A.resize(5 * Nobs, 3 * (N3D + Ncam));
 
-  C.resize(5*Nobs, 1);
+  C.resize(5 * Nobs, 1);
   C.fill(0.0);
-  vec_sign.resize(5*Nobs + 3);
+  vec_sign.resize(5 * Nobs + 3);
 
   const size_t transStart  = 0;
   const size_t pointStart  = transStart + 3*Ncam;
@@ -73,7 +78,7 @@ void EncodeTiXi(const Mat & M, //Scene representation
   vec_bounds[0] = vec_bounds[1] = vec_bounds[2] = std::make_pair(0,0);
 
   size_t rowPos = 0;
-  // Add the cheirality conditions (R_i*X_j + T_i)_3 + Z_ij >= 1
+  // Add the cheirality conditions (R_i*X_j + T_i)_3 >= 1
   for (size_t k = 0; k < Nobs; ++k)
   {
     const size_t indexPt3D = M(2,k);

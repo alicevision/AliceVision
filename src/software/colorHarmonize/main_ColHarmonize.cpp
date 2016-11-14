@@ -5,14 +5,14 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-#include <cstdlib>
-#include <memory>
-
 #include "software/colorHarmonize/colorHarmonizeEngineGlobal.hpp"
 
 #include "third_party/cmdLine/cmdLine.h"
 #include "third_party/stlplus3/filesystemSimplified/file_system.hpp"
 #include "openMVG/system/timer.hpp"
+
+#include <cstdlib>
+#include <memory>
 
 using namespace openMVG;
 
@@ -24,17 +24,19 @@ int main( int argc, char **argv )
 
   CmdLine cmd;
 
-  std::string sImaDirectory;
-  std::string sMatchesDir, sMatchesFile;
+  std::string sSfM_Data_Filename;
+  std::string sMatchesDir;
+  std::string sMatchesGeometricModel = "f";
   std::string sOutDir = "";
   int selectionMethod = -1;
   int imgRef = -1;
 
-  cmd.add( make_option( 'i', sImaDirectory, "imagesDirectory" ) );
-  cmd.add( make_option( 'm', sMatchesFile, "matchesFile" ) );
-  cmd.add( make_option( 'o', sOutDir, "outdir" ) );
-  cmd.add( make_option( 's', selectionMethod, "selectionMethod" ) );
-  cmd.add( make_option( 'r', imgRef, "referenceImage" ) );
+  cmd.add( make_option('i', sSfM_Data_Filename, "input_file" ));
+  cmd.add( make_option('m', sMatchesDir, "matchesDir" ));
+  cmd.add( make_option('o', sOutDir, "outdir" ));
+  cmd.add( make_option('s', selectionMethod, "selectionMethod" ));
+  cmd.add( make_option('r', imgRef, "referenceImage" ));
+  cmd.add( make_option('g', sMatchesGeometricModel, "matchesGeometricModel"));
 
   try
   {
@@ -44,20 +46,22 @@ int main( int argc, char **argv )
   catch( const std::string& s )
   {
     std::cerr << "Usage: " << argv[ 0 ] << ' '
-    << "[-i|--imagesDirectory path] "
-    << "[-m|--sMatchesFile path] "
+    << "[-i|--input_file] path to a SfM_Data scene"
+    << "[-m|--matchesDir path] "
     << "[-o|--outdir path] "
     << "[-s|--selectionMethod int] "
     << "[-r|--referenceImage int]"
+    << "\n[Optional]\n"
+    << "[-g|--matchesGeometricModel MODEL] matching geometric model used: 'f' (default), 'e' or 'h'"
     << std::endl;
 
     std::cerr << s << std::endl;
     return EXIT_FAILURE;
   }
 
-  if ( sImaDirectory.empty() )
+  if ( sSfM_Data_Filename.empty() )
   {
-    std::cerr << "\nIt is an invalid output directory" << std::endl;
+    std::cerr << "\nIt is an invalid file input" << std::endl;
     return EXIT_FAILURE;
   }
 
@@ -68,19 +72,15 @@ int main( int argc, char **argv )
   // Harmonization process
   //---------------------------------------
 
-  openMVG::Timer timer;
+  openMVG::system::Timer timer;
 
-  sMatchesDir = stlplus::folder_part(sMatchesFile);
-  std::auto_ptr<ReconstructionEngine> m_colorHarmonizeEngine;
-  {
-    m_colorHarmonizeEngine = std::auto_ptr<ReconstructionEngine>(
-      new ColorHarmonizationEngineGlobal(sImaDirectory,
-      sMatchesDir,
-      sMatchesFile,
-      sOutDir,
-      selectionMethod,
-      imgRef));
-  }
+  std::unique_ptr<ColorHarmonizationEngineGlobal> m_colorHarmonizeEngine(
+    new ColorHarmonizationEngineGlobal(sSfM_Data_Filename,
+    sMatchesDir,
+    sMatchesGeometricModel,
+    sOutDir,
+    selectionMethod,
+    imgRef));
 
   if ( m_colorHarmonizeEngine->Process() )
   {

@@ -15,39 +15,31 @@ SET_SOURCE_FILES_PROPERTIES(${linearProgramming_headers} PROPERTIES LANGUAGE CXX
 #Remove the future main files
 LIST(REMOVE_ITEM linearProgramming_cpp ${REMOVEFILESUNITTEST})
 
-IF (NOT MOSEK_FOUND)
+SET(openMVG_linearProgramming_DEPS
+  ${CLP_LIBRARIES}     # clp + solver wrapper
+  ${COINUTILS_LIBRARY} # container tools
+  ${OSI_LIBRARY}       # generic LP
+)
 
-  FILE(GLOB_RECURSE REMOVEFILESMOSEK *MOSEK*)
-  LIST(REMOVE_ITEM linearProgramming_cpp ${REMOVEFILESMOSEK})
-  LIST(REMOVE_ITEM linearProgramming_headers ${REMOVEFILESMOSEK})
-  
-  SET(openMVG_linearProgramming
-    lib_OsiClpSolver # solver wrapper
-    lib_CoinUtils    # container tools
-    lib_Osi          # generic LP
-    lib_clp          # Solver
-  )
-  
+IF (NOT MOSEK_FOUND)
+  ADD_LIBRARY(openMVG_linearProgramming INTERFACE)
+
+  TARGET_LINK_LIBRARIES(openMVG_linearProgramming INTERFACE ${openMVG_linearProgramming_DEPS})
+
 ELSE (NOT MOSEK_FOUND)
   # MOSEK_FOUND is true
-  ADD_LIBRARY(openMVG_linearProgrammingMSK ${linearProgramming_headers} ${linearProgramming_cpp})
- 
-  SET(openMVG_linearProgramming
-    lib_Osi_Msk      # OSI solver wrapper for the Mosek backend
-    lib_OsiClpSolver # solver wrapper
-    lib_CoinUtils    # container tools
-    lib_Osi          # generic LP
-    lib_clp          # Solver
+  ADD_LIBRARY(openMVG_linearProgramming ${linearProgramming_headers} ${linearProgramming_cpp})
+  SET_PROPERTY(TARGET openMVG_linearProgramming PROPERTY FOLDER OpenMVG/OpenMVG)
 
-    openMVG_linearProgrammingMSK # openMVG Mosek wrapper
+  TARGET_LINK_LIBRARIES(openMVG_linearProgramming
+    ${openMVG_linearProgramming_DEPS}
+    lib_Osi_Msk          # OSI solver wrapper for the Mosek backend
     ${MOSEK_LIB}    # Mosek lib
-  )
-  
-ENDIF (NOT MOSEK_FOUND)
+    )
+ENDIF()
 
-# set the variable in the parent_scope
-SET(openMVG_linearProgramming ${openMVG_linearProgramming} PARENT_SCOPE)
+INSTALL(TARGETS openMVG_linearProgramming DESTINATION lib EXPORT openMVG-targets)
 
-UNIT_TEST(openMVG_linearProgramming linearProgramming "${openMVG_linearProgramming}")
+UNIT_TEST(openMVG_linearProgramming linearProgramming "openMVG_linearProgramming")
 
 ADD_SUBDIRECTORY(lInfinityCV)

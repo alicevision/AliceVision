@@ -8,10 +8,14 @@
 #ifndef OPENMVG_ROBUST_ESTIMATION_SIMPLE_RANSAC_H_
 #define OPENMVG_ROBUST_ESTIMATION_SIMPLE_RANSAC_H_
 
+#include "openMVG/logger.hpp"
 #include "openMVG/robust_estimation/rand_sampling.hpp"
 #include "openMVG/robust_estimation/robust_ransac_tools.hpp"
 #include <limits>
+#include <numeric>
 #include <vector>
+#include <iostream>
+#include <iterator>
 
 namespace openMVG {
 namespace robust{
@@ -32,8 +36,9 @@ template<typename Kernel, typename Scorer>
 typename Kernel::Model RANSAC(
   const Kernel &kernel,
   const Scorer &scorer,
-  std::vector<size_t> *best_inliers = NULL,
-  double *best_score = NULL,
+  std::vector<size_t> *best_inliers = nullptr,
+  double *best_score = nullptr,
+  bool bVerbose = true,
   double outliers_probability = 1e-2)
 {
   assert(outliers_probability < 1.0);
@@ -46,12 +51,12 @@ typename Kernel::Model RANSAC(
   const size_t really_max_iterations = 4096;
 
   size_t best_num_inliers = 0;
-  double best_cost = std::numeric_limits<double>::infinity();
   double best_inlier_ratio = 0.0;
   typename Kernel::Model best_model;
 
   // Test if we have sufficient points for the kernel.
-  if (total_samples < min_samples) {
+  if (total_samples < min_samples) 
+  {
     if (best_inliers) {
       best_inliers->resize(0);
     }
@@ -59,44 +64,59 @@ typename Kernel::Model RANSAC(
   }
 
   // In this robust estimator, the scorer always works on all the data points
-  // at once. So precompute the list ahead of time.
-  std::vector<size_t> all_samples;
-  for (size_t i = 0; i < total_samples; ++i) {
-    all_samples.push_back(i);
-  }
+  // at once. So precompute the list ahead of time [0,..,total_samples].
+  std::vector<size_t> all_samples(total_samples);
+  std::iota(all_samples.begin(), all_samples.end(), 0);
 
   std::vector<size_t> sample;
   for (iteration = 0;
     iteration < max_iterations &&
-    iteration < really_max_iterations; ++iteration) {
+    iteration < really_max_iterations; ++iteration) 
+  {
       UniformSample(min_samples, total_samples, &sample);
 
       std::vector<typename Kernel::Model> models;
       kernel.Fit(sample, &models);
 
-      // Compute costs for each fit.
-      for (size_t i = 0; i < models.size(); ++i) {
+      // Compute the inlier list for each fit.
+      for (size_t i = 0; i < models.size(); ++i) 
+      {
         std::vector<size_t> inliers;
-        double cost = scorer.Score(kernel, models[i], all_samples, &inliers);
+        scorer.Score(kernel, models[i], all_samples, &inliers);
 
-        if (cost < best_cost) {
-          best_cost = cost;
-          best_inlier_ratio = inliers.size() / double(total_samples);
+        if (best_num_inliers < inliers.size()) 
+        {
           best_num_inliers = inliers.size();
+          best_inlier_ratio = inliers.size() / double(total_samples);
           best_model = models[i];
-          if (best_inliers) {
+          if (best_inliers) 
+          {
             best_inliers->swap(inliers);
           }
+          if(bVerbose)
+          {
+            OPENMVG_LOG_DEBUG("inliers=" << best_num_inliers << "/" << total_samples
+                      << " (iter=" << iteration
+                      << ", sample=" << sample
+                      << ")");
         }
-        if (best_inlier_ratio) {
+          if (best_inlier_ratio) 
+          {
           max_iterations = IterationsRequired(min_samples,
             outliers_probability,
             best_inlier_ratio);
+            if(bVerbose)
+              OPENMVG_LOG_DEBUG("New max_iteration: " << max_iterations);
+          }
         }
       }
   }
   if (best_score)
-    *best_score = best_cost;
+    *best_score = best_num_inliers;
+  
+  if(best_num_inliers)
+    kernel.Unnormalize(&best_model);
+  
   return best_model;
 }
 

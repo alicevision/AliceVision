@@ -1,4 +1,3 @@
-
 // Copyright (c) 2012, 2013 Pierre MOULON.
 
 // This Source Code Form is subject to the terms of the Mozilla Public
@@ -14,8 +13,10 @@
 #include <fstream>
 #include <string>
 #include <vector>
+#include <exception>
 
 namespace openMVG {
+namespace features {
 
 /**
  * Class that handle descriptor (a data container of N values of type T).
@@ -27,6 +28,8 @@ template <typename T, std::size_t N>
 class Descriptor
 {
 public:
+  typedef Descriptor<T, N> This;
+  typedef T value_type;
   typedef T bin_type;
   typedef std::size_t size_type;
 
@@ -36,6 +39,12 @@ public:
   /// Constructor
   inline Descriptor() {}
 
+  inline Descriptor(T defaultValue)
+  {
+    for(size_type i = 0; i < N; ++i)
+      data[i] = defaultValue;
+  }
+
   /// capacity
   inline size_type size() const { return N; }
 
@@ -43,12 +52,56 @@ public:
   inline bin_type& operator[](std::size_t i) { return data[i]; }
   inline bin_type operator[](std::size_t i) const { return data[i]; }
 
+  // Atomic addition between two descriptors
+  inline This& operator+=(const This other)
+  {
+    for(size_type i = 0; i < size(); ++i)
+      data[i] += other[i];
+    return *this;
+  }
+
+  // Division between two descriptors
+  inline This operator/(const This other) const
+  {
+    This res;
+    for(size_type i = 0; i < size(); ++i)
+      res[i] = data[i] / other[i];
+    return res;
+  }
+
+  inline This& operator*=(const value_type scalar) 
+  {
+    for(size_type i = 0; i < size(); ++i)
+      data[i] *= scalar;
+    return *this;
+  }
+
+  bool operator==(const Descriptor& other) const
+  {
+    return std::equal(data, data+N, other.data);
+  }
+
   inline bin_type* getData() const {return (bin_type* ) (&data[0]);}
 
   /// Ostream interface
   std::ostream& print(std::ostream& os) const;
   /// Istream interface
   std::istream& read(std::istream& in);
+
+  template<class Archive>
+  void save(Archive & archive) const
+  {
+    std::vector<T> array(data,data+N);
+    archive( array );
+  }
+
+  template<class Archive>
+  void load(Archive & archive)
+  {
+    std::vector<T> array(N);
+    archive( array );
+    std::memcpy(data, array.data(), sizeof(T)*N);
+  }
 
 private:
   bin_type data[N];
@@ -124,11 +177,14 @@ static bool loadDescsFromFile(
   vec_desc.clear();
 
   std::ifstream fileIn(sfileNameDescs.c_str());
+  if (!fileIn.is_open())
+    return false;
+
   std::copy(
     std::istream_iterator<typename DescriptorsT::value_type >(fileIn),
     std::istream_iterator<typename DescriptorsT::value_type >(),
     std::back_inserter(vec_desc));
-  bool bOk = !fileIn.bad();
+  const bool bOk = !fileIn.bad();
   fileIn.close();
   return bOk;
 }
@@ -140,61 +196,125 @@ static bool saveDescsToFile(
   DescriptorsT & vec_desc)
 {
   std::ofstream file(sfileNameDescs.c_str());
+  if (!file.is_open())
+    return false;
   std::copy(vec_desc.begin(), vec_desc.end(),
             std::ostream_iterator<typename DescriptorsT::value_type >(file,"\n"));
-  bool bOk = file.good();
+  const bool bOk = file.good();
   file.close();
   return bOk;
 }
 
-
-/// Read descriptors from file (in binary mode)
-template<typename DescriptorsT >
-static bool loadDescsFromBinFile(
-  const std::string & sfileNameDescs,
-  DescriptorsT & vec_desc)
+/**
+ * @brief Convert descriptor type
+ * @warning No rescale of the values: if you convert from char to float
+ *          you will get values in range (0.0, 255.0)
+ * @param descFrom
+ * @param descTo
+ */
+template<typename DescFrom, typename DescTo>
+void convertDesc(
+  const DescFrom& descFrom,
+  DescTo& descTo)
 {
-  typedef typename DescriptorsT::value_type VALUE;
 
-  vec_desc.clear();
+  typename DescFrom::bin_type* ptrFrom = descFrom.getData();
+  typename DescTo::bin_type* ptrTo = descTo.getData();
+      
+  for (size_t i = 0; i < DescFrom::static_size; ++i)
+  {
+    ptrTo[i] = typename DescTo::value_type(ptrFrom[i]);
+  }
+}
+
+
+/**
+ * @brief It load descriptors from a given binary file (.desc). \p DescriptorT is 
+ * the type of descriptor in which to store the data loaded from the file. \p FileDescriptorT is
+ * the type of descriptors that are stored in the file. Usually the two types should
+ * be the same, but it could be the case in which the descriptor stored in the file
+ * has different type representation: for example the file could contain SIFT descriptors
+ * stored as uchar (the default type) and we want to cast these into SIFT descriptors
+ * stored in memory as floats.
+ * 
+ * @param[in] sfileNameDescs The file name (usually .desc)
+ * @param[out] vec_desc A vector of descriptors that stores the descriptors to load
+ * @param[in] append If true, the loaded descriptors will be appended at the end 
+ * of the vector \p vec_desc
+ * @param[in] Nmax Limit the number of descriptors to load
+ *            (default value is 0 which means all descriptors).
+ * @return true if everything went well
+ */
+template<typename DescriptorT, typename FileDescriptorT = DescriptorT>
+bool loadDescsFromBinFile(
+  const std::string & sfileNameDescs,
+  std::vector<DescriptorT> & vec_desc,
+  bool append = false,
+  const int Nmax = 0)
+{
+  if( !append ) // for compatibility
+    vec_desc.clear();
+
   std::ifstream fileIn(sfileNameDescs.c_str(), std::ios::in | std::ios::binary);
+  if(!fileIn.is_open())
+    return false;
+
   //Read the number of descriptor in the file
   std::size_t cardDesc = 0;
   fileIn.read((char*) &cardDesc,  sizeof(std::size_t));
-  vec_desc.resize(cardDesc);
-  for (typename DescriptorsT::const_iterator iter = vec_desc.begin();
-    iter != vec_desc.end(); ++iter) {
-    fileIn.read((char*) (*iter).getData(),
-      VALUE::static_size*sizeof(typename VALUE::bin_type));
+
+  std::size_t previousSize = vec_desc.size();
+
+  if (Nmax != 0)
+    vec_desc.resize(vec_desc.size() + std::min((int)cardDesc, Nmax));
+  else
+    vec_desc.resize(vec_desc.size() + cardDesc);
+  typename std::vector<DescriptorT>::iterator begin = vec_desc.begin();
+  std::advance(begin, previousSize);
+
+  // Compute the memory size of one descriptor
+  constexpr std::size_t oneDescSize = FileDescriptorT::static_size * sizeof(typename FileDescriptorT::bin_type);
+
+  FileDescriptorT fileDescriptor;
+  for (typename std::vector<DescriptorT>::iterator iter = begin;
+    iter != vec_desc.end(); ++iter)
+  {
+    fileIn.read((char*)fileDescriptor.getData(), oneDescSize);
+    convertDesc<FileDescriptorT, DescriptorT>(fileDescriptor, *iter);
   }
-  bool bOk = !fileIn.bad();
+  const bool bOk = !fileIn.bad();
   fileIn.close();
   return bOk;
 }
 
 /// Write descriptors to file (in binary mode)
 template<typename DescriptorsT >
-static bool saveDescsToBinFile(
+bool saveDescsToBinFile(
   const std::string & sfileNameDescs,
   DescriptorsT & vec_desc)
 {
   typedef typename DescriptorsT::value_type VALUE;
 
   std::ofstream file(sfileNameDescs.c_str(), std::ios::out | std::ios::binary);
+  if (!file.is_open())
+    return false;
   //Write the number of descriptor
   const std::size_t cardDesc = vec_desc.size();
   file.write((const char*) &cardDesc,  sizeof(std::size_t));
   for (typename DescriptorsT::const_iterator iter = vec_desc.begin();
-    iter != vec_desc.end(); ++iter) {
+    iter != vec_desc.end(); ++iter) 
+  {
     file.write((const char*) (*iter).getData(),
       VALUE::static_size*sizeof(typename VALUE::bin_type));
   }
-  bool bOk = file.good();
+  const bool bOk = file.good();
   file.close();
   return bOk;
 }
 
 
-}  // namespace openMVG
+
+} // namespace features
+} // namespace openMVG
 
 #endif  // OPENMVG_FEATURES_DESCRIPTOR_HPP

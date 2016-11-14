@@ -1,6 +1,6 @@
 #include "third_party/cmdLine/cmdLine.h"
 
-#include "ParseDatabase.hpp"
+#include "openMVG/exif/sensor_width_database/ParseDatabase.hpp"
 
 int main(int argc, char ** argv)
 {
@@ -33,16 +33,16 @@ int main(int argc, char ** argv)
             << "--Brand " << sBrand << std::endl
             << "--Model " << sModel << std::endl;
 
-  std::vector<Datasheet> vec_database;
-  Datasheet datasheet;
+  std::vector<openMVG::exif::sensordb::Datasheet> vec_database;
+  openMVG::exif::sensordb::Datasheet datasheet;
 
-  if ( !parseDatabase( sfileDatabase, vec_database ) )
+  if ( !openMVG::exif::sensordb::parseDatabase( sfileDatabase, vec_database ) )
   {
     std::cout << "Database creation failure from the file : " << sfileDatabase  << std::endl;
     return EXIT_FAILURE;
   }
 
-  if ( !getInfo( sBrand, sModel, vec_database, datasheet ) )
+  if ( !openMVG::exif::sensordb::getInfo( sBrand, sModel, vec_database, datasheet ) )
   {
     std::cout << "The camera " << sModel << " doesn't exist in the database" << std::endl;
     return EXIT_FAILURE;

@@ -49,7 +49,7 @@ void BuildLinearProblem(LP_Constraints & cstraint)
   std::fill_n(cstraint._vec_sign.begin(), 3, LP_Constraints::LP_LESS_OR_EQUAL);
   std::fill_n(cstraint._vec_sign.begin()+3, 2, LP_Constraints::LP_GREATER_OR_EQUAL);
 
-  cstraint._vec_bounds = std::vector< std::pair<double,double> >(5);
+  cstraint._vec_bounds = std::vector< std::pair<double,double> >(cstraint._nbParams);
   fill(cstraint._vec_bounds.begin(),cstraint._vec_bounds.end(),
       std::make_pair((double)-1e+30, (double)1e+30));
 }
@@ -72,7 +72,7 @@ TEST(linearProgramming, MOSEK_dense_sample) {
   EXPECT_NEAR( 21.875000, vec_solution[0], 1e-6);
   EXPECT_NEAR( 53.125000, vec_solution[1], 1e-6);
 
-  std::cout << "Solution : " << vec_solution[0] << " " << vec_solution[1] << std::endl;
+  OPENMVG_LOG_DEBUG("Solution : " << vec_solution[0] << " " << vec_solution[1]);
 }
 #endif // OPENMVG_HAVE_MOSEK
 

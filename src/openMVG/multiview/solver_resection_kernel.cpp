@@ -444,7 +444,7 @@ bool EuclideanResectionEPnP(const Mat2X &x_camera,
     rmse(0) = RootMeanSquareError(x_camera, X_world, K, Rs[0], ts[0]);
     bSol = true;
   } else {
-    //std::cerr << "First approximation of beta not good enough.";
+    //OPENMVG_LOG_WARNING("First approximation of beta not good enough.");
     ts[0].setZero();
     rmse(0) = std::numeric_limits<double>::max();
   }
@@ -476,7 +476,7 @@ bool EuclideanResectionEPnP(const Mat2X &x_camera,
     rmse(1) = RootMeanSquareError(x_camera, X_world, K, Rs[1], ts[1]);
     bSol = true;
   } else {
-    //std::cerr << "Second approximation of beta not good enough.";
+    //OPENMVG_LOG_WARNING("Second approximation of beta not good enough.");
     ts[1].setZero();
     rmse(1) = std::numeric_limits<double>::max();
   }
@@ -516,7 +516,7 @@ bool EuclideanResectionEPnP(const Mat2X &x_camera,
     rmse(2) = RootMeanSquareError(x_camera, X_world, K, Rs[2], ts[2]);
     bSol = true;
   } else {
-    //std::cerr << "Third approximation of beta not good enough.";
+    //OPENMVG_LOG_WARNING("Third approximation of beta not good enough.");
     ts[2].setZero();
     rmse(2) = std::numeric_limits<double>::max();
   }

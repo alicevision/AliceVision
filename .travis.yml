@@ -6,45 +6,129 @@ language: cpp
 
 compiler:
   - gcc
-  - clang
+  #- clang: #Consider clang later, since cereal does not build fine on the clang CI version
+  #  - "3.3"
+
+sudo: false
+
+addons:
+  apt:
+    sources:
+      - ubuntu-toolchain-r-test
+      - boost-latest
+    packages:
+      #- cmake # Manually install latest version (>=3.0)
+      - libboost1.55-all-dev
+      - lcov
+      - libpng-dev
+      - libjpeg8-dev
+      - libtiff4-dev
+      - libxxf86vm1
+      - libxxf86vm-dev
+      - x11proto-xf86vidmode-dev
+      - libxrandr-dev
+      - g++-4.8
+      - libatlas-base-dev
+      - libsuitesparse-dev
+
+env:
+  global:
+    - NUM_CPU="`grep processor /proc/cpuinfo | wc -l`"; echo $NUM_CPU
+    - BUILD_TYPE="Release"
+    - BUILD_SYSTEM="`uname -s`"
+    - BUILD_PROCESSOR="`uname -p`"
+
 
 before_install:
- - sudo apt-get update -qq
- - export NUM_CPU="`grep processor /proc/cpuinfo | wc -l`"; echo $NUM_CPU
- - sudo apt-get install lcov
+ - date -u
+ - uname -a
+ - if [[ ${TRAVIS_OS_NAME} == "linux" ]]; then
+     lsb_release -a;
+   elif [[ ${TRAVIS_OS_NAME} == "osx" ]]; then
+     sw_vers -productVersion;
+   fi
+ - ccache -s
  - gem install coveralls-lcov
- 
-install: sudo apt-get install cmake libpng-dev libjpeg8-dev libxxf86vm1 libxxf86vm1 libxxf86vm-dev x11proto-xf86vidmode-dev libxrandr-dev
+
+
+install:
+ - ./ci/install-cmake.sh
+ - ./ci/install-dependencies.sh
+
 
 before_script:
-  - cd ..
-  - mkdir build
-  - cd build
-  # Classic release build
-  #- cmake -DCMAKE_BUILD_TYPE=release -DOpenMVG_BUILD_TESTS=ON -DOpenMVG_BUILD_EXAMPLES=ON . ../openMVG/src
+  - . ./ci/env.sh
+  - export CXX="g++-4.8"
+  - mkdir $OPENMVG_BUILD
+  - cd $OPENMVG_BUILD
+  - >
+     cmake \
+       -DCMAKE_BUILD_TYPE=$BUILD_TYPE \
+       -DOpenMVG_BUILD_TESTS=ON \
+       -DOpenMVG_BUILD_EXAMPLES=ON \
+       -DOpenMVG_USE_OPENCV=ON \
+       -DOpenCV_DIR=$OPENCV_INSTALL/share/OpenCV \
+       -DOpenMVG_USE_OPENGV=ON \
+       -DOPENGV_DIR=$OPENGV_INSTALL \
+       -DOpenMVG_USE_BOOST=ON \
+       -DBOOST_NO_CXX11=ON \
+       -DOpenMVG_USE_INTERNAL_CERES=OFF \
+       -DCeres_DIR=$CERES_INSTALL/share/Ceres \
+       -DEIGEN_INCLUDE_DIR_HINTS=$EIGEN_INSTALL \
+       -DOpenMVG_USE_CCTAG=OFF \
+       . $OPENMVG_SOURCE
   # Build for code coverage evaluation
-  - cmake -DOpenMVG_BUILD_COVERAGE=ON -DOpenMVG_BUILD_TESTS=ON -DOpenMVG_BUILD_EXAMPLES=ON . ../openMVG/src
+  #- cmake -DOpenMVG_BUILD_COVERAGE=ON -DOpenMVG_BUILD_TESTS=ON -DOpenMVG_BUILD_EXAMPLES=ON . ../openMVG/src
 
 script:
 # limit GCC builds to a reduced number of thread for the virtual machine
-  - if [ "$CC" = "gcc" ]; then make -j 2; else make -j 4; fi
+  - make -j 2 VERBOSE=1
 # Perform unit tests only on GCC builds
   - if [ "$CC" = "gcc" ]; then make test; fi
-
-branches:
-  only:
-    - develop
+# Perform benchmark through ground truth tests with many scenes
+  - >
+    if folder_not_empty "$GT_TEST_SOURCE"; then
+      echo "Evaluation benchmark found in cache.";
+    else
+      git clone --branch master https://github.com/poparteu/SfM_quality_evaluation.git $GT_TEST_SOURCE;
+    fi
+  - cd $GT_TEST_SOURCE
+  - git pull
+  - python EvaluationLauncher.py -s "$OPENMVG_BUILD/$BUILD_SYSTEM-$BUILD_PROCESSOR-$BUILD_TYPE" -i Benchmarking_Camera_Calibration_2008/ -o ${GT_TEST_OUTPUT} -r ${GT_TEST_RESULTS} > ../gt_log.log 2>&1
+  - cat ../gt_log.log | tail -n 150
+  - cat ${GT_TEST_RESULTS}
+# Return to root and remove GT huge files to avoid cache problems
+  - cd $TRAVIS_BUILD_DIR
+  - rm -rf $GT_TEST_SOURCE
+  - rm -rf $GT_TEST_OUTPUT
 
 after_success:
-  - cd ../openMVG
+  - du -hs $OPENCV_INSTALL
+  #- cd ../openMVG
   # If GCC: compute code coverage and export it to coveralls
-  - if [ "$CC" = "gcc" ];
-    then
-      lcov --directory ../build/openMVG --base-directory=./src --capture --output-file=coverage.info;
-      lcov --remove coverage.info '/usr*' -o coverage.info;
-      lcov --remove coverage.info '*_test.cpp*' -o coverage.info;
-      lcov --remove coverage.info '*/third_party/*' -o coverage.info;
-      lcov --remove coverage.info '*/src/dependencies/*' -o coverage.info;
-      coveralls-lcov coverage.info;
-    fi
-  
+  #- if [ "$CC" = "gcc" ];
+  #  then
+  #    lcov --directory ../build/openMVG --base-directory=./src --capture --output-file=coverage.info;
+  #    lcov --remove coverage.info '/usr*' -o coverage.info;
+  #    lcov --remove coverage.info '*_test.cpp*' -o coverage.info;
+  #    lcov --remove coverage.info '*/third_party/*' -o coverage.info;
+  #    lcov --remove coverage.info '*/src/dependencies/*' -o coverage.info;
+  #    coveralls-lcov coverage.info;
+  #  fi
+
+# Before uploading the new cache archive
+before_cache:
+  - ccache -s
+
+cache:
+  # Enable compiler cache
+  ccache: true
+  # Caching builded dependencies
+  directories:
+    - $CMAKE_INSTALL
+    - $OPENCV_INSTALL
+    - $OPENGV_INSTALL
+    - $CERES_INSTALL
+#    - $BOOST_INSTALL
+    - $EIGEN_INSTALL
+
