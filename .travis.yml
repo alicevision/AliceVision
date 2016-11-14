@@ -123,7 +123,7 @@ before_cache:
   - ccache -s
 
 cache:
-  timeout: 1000
+  timeout: 550
   # Enable compiler cache
   ccache: true
   # Caching builded dependencies
