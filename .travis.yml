@@ -39,6 +39,7 @@ env:
     - BUILD_PROCESSOR="`uname -p`"
     - CASHER_TIME_OUT=600
     - CCACHE_COMPRESS=1
+    - CCACHE_MAXSIZE=1
 
 
 before_install:
