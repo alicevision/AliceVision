@@ -917,17 +917,15 @@ double SequentialSfMReconstructionEngine::ComputeResidualsHistogram(Histogram<do
   // Collect residuals for each observation
   std::vector<float> vec_residuals;
   vec_residuals.reserve(_sfm_data.structure.size());
-  for(Landmarks::const_iterator iterTracks = _sfm_data.GetLandmarks().begin();
-      iterTracks != _sfm_data.GetLandmarks().end(); ++iterTracks)
+  for(const auto &track : _sfm_data.GetLandmarks())
   {
-    const Observations & obs = iterTracks->second.obs;
-    for(Observations::const_iterator itObs = obs.begin();
-      itObs != obs.end(); ++itObs)
+    const Observations & observations = track.second.obs;
+    for(const auto& obs: observations)
     {
-      const View * view = _sfm_data.GetViews().find(itObs->first)->second.get();
+      const View * view = _sfm_data.GetViews().find(obs.first)->second.get();
       const Pose3 pose = _sfm_data.GetPoseOrDie(view);
       const std::shared_ptr<IntrinsicBase> intrinsic = _sfm_data.GetIntrinsics().find(view->id_intrinsic)->second;
-      const Vec2 residual = intrinsic->residual(pose, iterTracks->second.X, itObs->second.x);
+      const Vec2 residual = intrinsic->residual(pose, track.second.X, obs.second.x);
       vec_residuals.push_back( fabs(residual(0)) );
       vec_residuals.push_back( fabs(residual(1)) );
     }
@@ -963,10 +961,9 @@ double SequentialSfMReconstructionEngine::ComputeTracksLengthsHistogram(Histogra
   std::vector<float> vec_nbTracks;
   vec_nbTracks.reserve(_sfm_data.GetLandmarks().size());
 
-  for(Landmarks::const_iterator iterTracks = _sfm_data.GetLandmarks().begin();
-      iterTracks != _sfm_data.GetLandmarks().end(); ++iterTracks)
+  for(const auto &track : _sfm_data.GetLandmarks())
   {
-    const Observations & obs = iterTracks->second.obs;
+    const Observations & obs = track.second.obs;
     vec_nbTracks.push_back(obs.size());
   }
 
