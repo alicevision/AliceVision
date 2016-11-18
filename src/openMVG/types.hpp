@@ -36,7 +36,7 @@ struct Hash_Map : std::unordered_map<Key, Value> {};
 #else
 template<typename K, typename V>
 struct Hash_Map : std::map<K, V, std::less<K>,
- Eigen::aligned_allocator<std::pair<K,V> > > {};
+ Eigen::aligned_allocator<std::pair<const K,V> > > {};
 #endif
 
 } // namespace openMVG
