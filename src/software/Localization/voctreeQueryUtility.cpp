@@ -383,18 +383,15 @@ int main(int argc, char** argv)
       // get the dirname from the filename
       
       openMVG::sfm::Views::const_iterator it = sfmdataQuery->GetViews().find(docMatches.first);
-      if(it != sfmdataQuery->GetViews().end())
-      {
-        sylinkName = bfs::path(it->second->s_Img_path).filename();
-        dirname = bfs::path(outDir) / sylinkName;
-        absoluteFilename = bfs::path(sfmdataQuery->s_root_path) / sylinkName;
-      }
-      else
+      if(it == sfmdataQuery->GetViews().end())
       {
         // this is very wrong
         OPENMVG_CERR("Could not find the image file for the document " << docMatches.first << "!");
         return EXIT_FAILURE;
       }
+      sylinkName = bfs::path(it->second->s_Img_path).filename();
+      dirname = bfs::path(outDir) / sylinkName;
+      absoluteFilename = bfs::path(sfmdataQuery->s_root_path) / sylinkName;
       bfs::create_directories(dirname);
       bfs::create_symlink(absoluteFilename, dirname / sylinkName);
       
