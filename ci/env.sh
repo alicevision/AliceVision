@@ -49,10 +49,8 @@ folder_empty()
 # download_files_from_tar http://path/to/archive.tar.gz /path/to/source
 download_files_from_tar()
 {
-    if folder_empty "$2"; then
-        mkdir --parent "$2"
-        retry wget --no-check-certificate --quiet -O - "$1" | tar --strip-components=1 -xz -C "$2"
-    fi
+    mkdir --parent "$2"
+    retry wget --no-check-certificate --quiet -O - "$1" | tar --strip-components=1 -xz -C "$2"
     return 0
 }
 
@@ -70,39 +68,5 @@ export CMAKE_VERSION=3.4.1
 export CMAKE_URL="https://cmake.org/files/v${CMAKE_VERSION_SHORT}/cmake-${CMAKE_VERSION}-Linux-x86_64.tar.gz"
 export CMAKE_ROOT="${TRAVIS_BUILD_DIR}/cmake-${CMAKE_VERSION}"
 export CMAKE_INSTALL="${CMAKE_ROOT}/install"
-# OPENCV
-export OPENCV_VERSION=3.0.0
-export OPENCV_ROOT="${TRAVIS_BUILD_DIR}/opencv-${OPENCV_VERSION}"
-export OPENCV_SOURCE="${OPENCV_ROOT}/source"
-export OPENCV_CONTRIB="${OPENCV_ROOT}/contrib"
-export OPENCV_BUILD="${OPENCV_ROOT}/build"
-export OPENCV_INSTALL="${OPENCV_ROOT}/install"
-# OPENGV
-export OPENGV_VERSION=dev
-export OPENGV_ROOT="${TRAVIS_BUILD_DIR}/opengv-${OPENGV_VERSION}"
-export OPENGV_SOURCE="${OPENGV_ROOT}/source"
-export OPENGV_BUILD="${OPENGV_ROOT}/build"
-export OPENGV_INSTALL="${OPENGV_ROOT}/install"
-# EIGEN
-export EIGEN_VERSION=3.2.8
-export EIGEN_ROOT="${TRAVIS_BUILD_DIR}/eigen-${EIGEN_VERSION}"
-export EIGEN_INSTALL="${EIGEN_ROOT}/install"
-# # BOOST
-# export BOOST_VERSION=1.55.0
-# export BOOST_VERSION_FILENAME=1_55_0
-# export BOOST_ROOT="${TRAVIS_BUILD_DIR}/boost-${BOOST_VERSION}"
-# export BOOST_SOURCE="${BOOST_ROOT}/source"
-# export BOOST_INSTALL="${BOOST_ROOT}/install"
-# # SUITESPARSE		
-# export SS_VERSION=4.5.3		
-# export SS_ROOT="${TRAVIS_BUILD_DIR}/suitesparse-${SS_VERSION}"		
-# export SS_SOURCE="${SS_ROOT}/source"		
-# export SS_INSTALL="${SS_ROOT}/install"
-# CERES
-export CERES_VERSION=1.11.0
-export CERES_ROOT="${TRAVIS_BUILD_DIR}/ceres-${CERES_VERSION}"
-export CERES_SOURCE="${CERES_ROOT}/source"
-export CERES_BUILD="${CERES_ROOT}/build"
-export CERES_INSTALL="${CERES_ROOT}/install"
 
 export PATH="${CMAKE_INSTALL}/bin:${PATH}"
