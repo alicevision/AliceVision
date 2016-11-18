@@ -200,7 +200,7 @@ int main(int argc, char** argv)
           "The folder path containing all the synchronised image subfolders "
           "assocated to each camera")
       ("filelist", po::value<std::string>(&filelist),
-          "An optional txt file containing the images to use for calibration. "
+          "An optional txt file containing the images to localize. "
           "This file must have the same name in each camera folder and contains "
           "the list of images to load.")
       ("refineIntrinsics", po::bool_switch(&refineIntrinsics),
