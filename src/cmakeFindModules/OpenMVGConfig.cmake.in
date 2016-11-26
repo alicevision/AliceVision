@@ -52,6 +52,14 @@ MACRO(OPENMVG_REPORT_NOT_FOUND REASON_MSG)
   RETURN()
 ENDMACRO(OPENMVG_REPORT_NOT_FOUND)
 
+# whether it is built with CCTags
+set(OpenMVG_USE_CCTAG @OpenMVG_USE_CCTAG@)
+
+if(OpenMVG_USE_CCTAG)
+  set(CCTag_DIR @CCTag_DIR@)
+  find_dependency(CCTag 1.0.0)
+endif
+
 # Set the version.
 SET(OPENMVG_VERSION @OPENMVG_VERSION@)
 
