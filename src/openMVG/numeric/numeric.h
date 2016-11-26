@@ -430,13 +430,18 @@ inline int is_finite(const double val)
 
 /// Get back the min, mean, median and the max
 ///  values of an iterable sequence.
-
 template <typename Type, typename DataInputIterator>
 void minMaxMeanMedian(DataInputIterator begin, DataInputIterator end,
                       Type & min, Type & max, Type & mean, Type & median)
 {
   if(std::distance(begin, end) < 1)
+  {
+    min = 0;
+    max = 0;
+    mean = 0;
+    median = 0;
     return;
+  }
 
   std::vector<Type> vec_val(begin, end);
   std::sort(vec_val.begin(), vec_val.end());

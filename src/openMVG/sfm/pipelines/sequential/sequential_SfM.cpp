@@ -911,61 +911,64 @@ bool SequentialSfMReconstructionEngine::MakeInitialPair3D(const Pair & current_p
 
 double SequentialSfMReconstructionEngine::ComputeResidualsHistogram(Histogram<double> * histo) const
 {
+  if (_sfm_data.GetLandmarks().empty())
+    return -1.0;
+
   // Collect residuals for each observation
   std::vector<float> vec_residuals;
   vec_residuals.reserve(_sfm_data.structure.size());
-  for(Landmarks::const_iterator iterTracks = _sfm_data.GetLandmarks().begin();
-      iterTracks != _sfm_data.GetLandmarks().end(); ++iterTracks)
+  for(const auto &track : _sfm_data.GetLandmarks())
   {
-    const Observations & obs = iterTracks->second.obs;
-    for(Observations::const_iterator itObs = obs.begin();
-      itObs != obs.end(); ++itObs)
+    const Observations & observations = track.second.obs;
+    for(const auto& obs: observations)
     {
-      const View * view = _sfm_data.GetViews().find(itObs->first)->second.get();
+      const View * view = _sfm_data.GetViews().find(obs.first)->second.get();
       const Pose3 pose = _sfm_data.GetPoseOrDie(view);
       const std::shared_ptr<IntrinsicBase> intrinsic = _sfm_data.GetIntrinsics().find(view->id_intrinsic)->second;
-      const Vec2 residual = intrinsic->residual(pose, iterTracks->second.X, itObs->second.x);
+      const Vec2 residual = intrinsic->residual(pose, track.second.X, obs.second.x);
       vec_residuals.push_back( fabs(residual(0)) );
       vec_residuals.push_back( fabs(residual(1)) );
     }
   }
-  // Display statistics
-  if (vec_residuals.size() > 1)
-  {
-    float dMin, dMax, dMean, dMedian;
-    minMaxMeanMedian<float>(vec_residuals.begin(), vec_residuals.end(),
-                            dMin, dMax, dMean, dMedian);
-    if (histo)  {
-      *histo = Histogram<double>(dMin, dMax, 10);
-      histo->Add(vec_residuals.begin(), vec_residuals.end());
-    }
 
-    OPENMVG_LOG_DEBUG(
-      "\nSequentialSfMReconstructionEngine::ComputeResidualsMSE.\n"
-      "\t-- #Tracks:\t" << _sfm_data.GetLandmarks().size() << "\n"
-      "\t-- Residual min:\t" << dMin << "\n"
-      "\t-- Residual median:\t" << dMedian << "\n"
-      "\t-- Residual max:\t "  << dMax << "\n"
-      "\t-- Residual mean:\t " << dMean);
+  assert(!vec_residuals.empty());
 
-    return dMean;
+  float dMin, dMax, dMean, dMedian;
+  minMaxMeanMedian<float>(vec_residuals.begin(), vec_residuals.end(),
+                          dMin, dMax, dMean, dMedian);
+  if (histo)  {
+    *histo = Histogram<double>(dMin, dMax, 10);
+    histo->Add(vec_residuals.begin(), vec_residuals.end());
   }
-  return -1.0;
+
+  OPENMVG_LOG_DEBUG(
+    "\nSequentialSfMReconstructionEngine::ComputeResidualsMSE.\n"
+    "\t-- #Tracks:\t" << _sfm_data.GetLandmarks().size() << "\n"
+    "\t-- Residual min:\t" << dMin << "\n"
+    "\t-- Residual median:\t" << dMedian << "\n"
+    "\t-- Residual max:\t "  << dMax << "\n"
+    "\t-- Residual mean:\t " << dMean);
+
+  return dMean;
 }
 
 double SequentialSfMReconstructionEngine::ComputeTracksLengthsHistogram(Histogram<double> * histo) const
 {
+  if (_sfm_data.GetLandmarks().empty())
+    return -1.0;
+
   // Collect tracks size: number of 2D observations per 3D points
   std::vector<float> vec_nbTracks;
   vec_nbTracks.reserve(_sfm_data.GetLandmarks().size());
 
-  for(Landmarks::const_iterator iterTracks = _sfm_data.GetLandmarks().begin();
-      iterTracks != _sfm_data.GetLandmarks().end(); ++iterTracks)
+  for(const auto &track : _sfm_data.GetLandmarks())
   {
-    const Observations & obs = iterTracks->second.obs;
+    const Observations & obs = track.second.obs;
     vec_nbTracks.push_back(obs.size());
   }
 
+  assert(!vec_nbTracks.empty());
+  
   float dMin, dMax, dMean, dMedian;
   minMaxMeanMedian<float>(
     vec_nbTracks.begin(), vec_nbTracks.end(),
