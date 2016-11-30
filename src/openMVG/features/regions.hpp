@@ -33,7 +33,8 @@ public:
 
   virtual bool Load(
     const std::string& sfileNameFeats,
-    const std::string& sfileNameDescs) = 0;
+    const std::string& sfileNameDescs,
+    int nMax = 0) = 0;
 
   virtual bool Save(
     const std::string& sfileNameFeats,
@@ -138,10 +139,18 @@ public:
   /// Read from files the regions and their corresponding descriptors.
   bool Load(
     const std::string& sfileNameFeats,
-    const std::string& sfileNameDescs)
+    const std::string& sfileNameDescs,
+    int nMax = 0)
   {
-    return loadFeatsFromFile(sfileNameFeats, this->_vec_feats)
-          & loadDescsFromBinFile(sfileNameDescs, _vec_descs);
+    bool ret = loadFeatsFromFile(sfileNameFeats, this->_vec_feats, nMax)
+          & loadDescsFromBinFile(sfileNameDescs, _vec_descs, false, nMax);
+    if(this->_vec_feats.size() != _vec_descs.size())
+    {
+        this->_vec_feats.clear();
+        this->_vec_descs.clear();
+        throw std::runtime_error("Feature and Descriptor files are not coherent between them.");
+    }
+    return ret;
   }
 
   /// Export in two separate files the regions and their corresponding descriptors.

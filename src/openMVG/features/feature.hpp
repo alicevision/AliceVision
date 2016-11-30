@@ -142,7 +142,8 @@ inline std::istream& operator>>(std::istream& in, SIOPointFeature& obj)
 template<typename FeaturesT >
 static bool loadFeatsFromFile(
   const std::string & sfileNameFeats,
-  FeaturesT & vec_feat)
+  FeaturesT & vec_feat,
+  int nMax = 0)
 {
   vec_feat.clear();
 
@@ -156,6 +157,10 @@ static bool loadFeatsFromFile(
     std::back_inserter(vec_feat));
   const bool bOk = !fileIn.bad();
   fileIn.close();
+  
+  if(nMax != 0 && nMax < vec_feat.size())
+      vec_feat.resize(nMax);
+  
   return bOk;
 }
 

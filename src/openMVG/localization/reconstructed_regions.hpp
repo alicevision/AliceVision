@@ -84,6 +84,8 @@ public:
   
   void filterCCTagRegions(const std::vector<FeatureInImage>& featuresInImage)
   {
+    assert(_regions.Descriptors().size() == _regions.Features().size());
+
     features::Scalar_Regions<FeatT, T, L> newRegions;
     newRegions.Features().reserve(featuresInImage.size());
     newRegions.Descriptors().reserve(featuresInImage.size());
@@ -92,6 +94,11 @@ public:
     {
       const FeatureInImage & feat = featuresInImage[i];  
       // if the descriptor is a CCTag Descriptor, then add the region
+      if(feat._featureIndex >= _regions.Features().size())
+      {
+          // If we have not loaded all features/descriptors, skip the point
+          continue;
+      }
       IndexT cctagId = features::getCCTagId(_regions.Descriptors()[feat._featureIndex]);
       if( cctagId != UndefinedIndexT)
       {
