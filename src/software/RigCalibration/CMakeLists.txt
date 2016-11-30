@@ -15,7 +15,7 @@ if(OpenMVG_USE_BOOST)
     vlsift 
     ${Boost_LIBRARIES}) #todo: delete vlsift
   if(OpenMVG_USE_CCTAG)
-    target_link_libraries(openMVG_main_rigCalibration ${CCTAG_LIBRARIES})
+    target_link_libraries(openMVG_main_rigCalibration CCTag::CCTag)
   endif(OpenMVG_USE_CCTAG)
 
   if(OpenMVG_USE_OPENCV) 
@@ -30,7 +30,7 @@ if(OpenMVG_USE_BOOST)
       ${OpenCV_LIBRARIES}
       ${Boost_LIBRARIES})
     if(OpenMVG_USE_CCTAG)
-      target_link_libraries(openMVG_main_cameraCalibration ${CCTAG_LIBRARIES})
+      target_link_libraries(openMVG_main_cameraCalibration CCTag::CCTag)
     endif()
 
     install(TARGETS openMVG_main_cameraCalibration DESTINATION bin/)

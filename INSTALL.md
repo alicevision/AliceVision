@@ -50,7 +50,7 @@ CMake Options
 
 * OpenMVG_USE_CCTAG (default ON)
   Build with CCTag markers support.
-  `-DCCTAG_DIR=/path/to/cctag/install/share/cmake/` (where FindCCTag.cmake can be found)
+  `-DCCTag_DIR=/path/to/cctag/install/lib/cmake/CCTag` (where CCTagConfig.cmake can be found)
 
 * OpenMVG_USE_OPENGV (default OFF)
   Build with openGV for multi-cameras localization.
