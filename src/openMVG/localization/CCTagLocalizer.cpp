@@ -133,12 +133,18 @@ bool CCTagLocalizer::loadReconstructionDescriptors(const sfm::SfM_Data & sfm_dat
       }
     }
 
-    if(!reconstructedRegion._regions.Load(featFilepath, descFilepath))
+    // CCTagLocalizer only use CCTag, so it is useless and expensive to load
+    // all features and descriptors.
+    // With SIFT_CCTAG_Image_Describer, CCTag are declared in top of the list.
+    // So to speed up the process, we limit to load only the 50 first
+    // features/descriptors as we are sure that we will not have
+    // so much CCTags in one image.
+    if(!reconstructedRegion._regions.Load(featFilepath, descFilepath, 50))
     {
       OPENMVG_CERR("Invalid regions files for the view: " << sImageName);
       return false;
     }
-    
+
     // Filter descriptors to keep only the 3D reconstructed points
     reconstructedRegion.filterCCTagRegions(observationsPerView[id_view]);
     
