@@ -82,6 +82,8 @@ public:
     return Set_configuration_preset(describerPreset_stringToEnum(preset));
   }
 
+  virtual void Set_use_cuda(bool) {}
+
   /**
   @brief Detect regions on the image and compute their attributes (description)
   @param image Image.
