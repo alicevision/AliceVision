@@ -56,9 +56,10 @@ ENDMACRO(OPENMVG_REPORT_NOT_FOUND)
 set(OpenMVG_USE_CCTAG @OpenMVG_USE_CCTAG@)
 
 if(OpenMVG_USE_CCTAG)
+  include(CMakeFindDependencyMacro)
   set(CCTag_DIR @CCTag_DIR@)
   find_dependency(CCTag 1.0.0)
-endif
+endif(OpenMVG_USE_CCTAG)
 
 # Set the version.
 SET(OPENMVG_VERSION @OPENMVG_VERSION@)
