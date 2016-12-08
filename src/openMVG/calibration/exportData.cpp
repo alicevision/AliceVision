@@ -10,10 +10,6 @@
 #include <ctime>
 #include <cstdio>
 
-#ifdef _WIN32
-#include <locale>
-#endif
-
 namespace openMVG{
 namespace calibration{
 
