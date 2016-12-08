@@ -169,7 +169,7 @@ void queryDatabase(const std::string &fileFullPath,
     #pragma omp parallel for
   #endif
   // Run through the path vector and read the descriptors
-  for(std::size_t i = 0; i < descriptorsFiles.size(); ++i)
+  for(ptrdiff_t i = 0; i < static_cast<ptrdiff_t>(descriptorsFiles.size()); ++i)
   {
     std::map<IndexT, std::string>::const_iterator currentFileIt = descriptorsFiles.cbegin();
     std::advance(currentFileIt, i);

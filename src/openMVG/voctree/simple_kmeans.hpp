@@ -145,7 +145,7 @@ struct InitKmeanspp
 
         Feature newCenter = *features[ featidx ];
         #pragma omp parallel for reduction(+:distSum)
-        for(size_t it = 0; it < features.size(); ++it)
+        for(ptrdiff_t it = 0; it < static_cast<ptrdiff_t>(features.size()); ++it)
         {
           distsTemp[it] = std::min(distance(*(features[it]), newCenter), dists[it]);
           distSum += distsTemp[it];
@@ -434,7 +434,7 @@ SimpleKmeans<Feature, Distance, FeatureAllocator>::clusterOnce(const std::vector
 
     // Assign data objects to current centers
     #pragma omp parallel for shared( new_centers, new_center_counts, features, centers, membership)
-    for(size_t i = 0; i < features.size(); ++i)
+    for(ptrdiff_t i = 0; i < static_cast<ptrdiff_t>(features.size()); ++i)
     {
       squared_distance_type d_min = std::numeric_limits<squared_distance_type>::max();
       unsigned int nearest = 0;

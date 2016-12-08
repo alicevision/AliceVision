@@ -113,7 +113,7 @@ bool LoadMatchFilePerImage(
 #ifdef OPENMVG_USE_OPENMP
     #pragma omp parallel for num_threads(3)
 #endif
-  for(size_t i = 0; i < viewsKeys.size(); ++i)
+  for(ptrdiff_t i = 0; i < static_cast<ptrdiff_t>(viewsKeys.size()); ++i)
   {
     std::set<IndexT>::const_iterator it = viewsKeys.begin();
     std::advance(it, i);

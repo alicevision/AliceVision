@@ -8,7 +8,6 @@
 #include <fstream>
 #include <iostream>
 #include <ctime>
-#include <stdio.h>
 #include <cstdio>
 
 namespace openMVG{
@@ -46,7 +45,7 @@ void exportImages(openMVG::dataio::FeedProvider& feed,
 
     openMVG::cameras::UndistortImage(inputImage, &camera, outputImage, openMVG::image::BLACK);
     const boost::filesystem::path imagePath = boost::filesystem::path(debugFolder) / (std::to_string(currentFrame) + suffix);
-    const bool exportStatus = openMVG::image::WriteImage(imagePath.c_str(), outputImage);
+    const bool exportStatus = openMVG::image::WriteImage(imagePath.string().c_str(), outputImage);
     if (!exportStatus)
     {
       OPENMVG_LOG_WARNING("Failed to export: " << imagePath);

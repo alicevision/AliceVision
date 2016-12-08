@@ -1381,7 +1381,7 @@ bool SequentialSfMReconstructionEngine::Resection(const size_t viewIndex)
 #ifdef OPENMVG_USE_OPENMP
     #pragma omp parallel for schedule(dynamic)
 #endif
-    for (std::size_t i = 0; i < valid_views.size(); ++i)
+    for (ptrdiff_t i = 0; i < static_cast<ptrdiff_t>(valid_views.size()); ++i)
     {
       std::set<IndexT>::const_iterator iter = valid_views.begin();
       std::advance(iter, i);

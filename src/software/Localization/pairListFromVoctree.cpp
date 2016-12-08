@@ -332,7 +332,7 @@ int main(int argc, char** argv)
   #ifdef OPENMVG_USE_OPENMP
     #pragma omp parallel for
   #endif
-  for(std::size_t i = 0; i < db.getSparseHistogramPerImage().size(); ++i)
+  for(ptrdiff_t i = 0; i < static_cast<ptrdiff_t>(db.getSparseHistogramPerImage().size()); ++i)
   {
     openMVG::voctree::SparseHistogramPerImage::const_iterator docIt = db.getSparseHistogramPerImage().cbegin();
     std::advance(docIt, i);
