@@ -217,9 +217,9 @@ int main(int argc, char** argv)
           "[voctree] Filename for the vocabulary tree weights")
       ("algorithm", po::value<std::string>(&algostring)->default_value(algostring),
           "[voctree] Algorithm type: {FirstBest,BestResult,AllResults,Cluster}" )
-      ("nbImageMatch", po::value<size_t>(&numResults)->default_value(numResults),
+      ("nbImageMatch", po::value<std::size_t>(&numResults)->default_value(numResults),
           "[voctree] Number of images to retrieve in the database")
-      ("maxResults", po::value<size_t>(&maxResults)->default_value(maxResults), 
+      ("maxResults", po::value<std::size_t>(&maxResults)->default_value(maxResults), 
           "[voctree] For algorithm AllResults, it stops the image matching when "
           "this number of matched images is reached. If 0 it is ignored.")
       ("matchingError", po::value<double>(&matchingErrorMax)->default_value(matchingErrorMax), 
@@ -228,7 +228,7 @@ int main(int argc, char** argv)
           "an optimal value.")
 #ifdef HAVE_CCTAG
   // parameters for cctag localizer
-      ("nNearestKeyFrames", po::value<size_t>(&nNearestKeyFrames)->default_value(nNearestKeyFrames),
+      ("nNearestKeyFrames", po::value<std::size_t>(&nNearestKeyFrames)->default_value(nNearestKeyFrames),
           "[cctag] Number of images to retrieve in database")
 #endif
 #if HAVE_ALEMBIC
