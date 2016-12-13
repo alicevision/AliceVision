@@ -265,13 +265,13 @@ int main(int argc, char** argv)
 
     po::notify(vm);
   }
-  catch(boost::program_options::required_option& e)
+  catch(po::required_option& e)
   {
     OPENMVG_CERR("ERROR: " << e.what() << std::endl);
     OPENMVG_COUT("Usage:\n\n" << desc);
     return EXIT_FAILURE;
   }
-  catch(boost::program_options::error& e)
+  catch(po::error& e)
   {
     OPENMVG_CERR("ERROR: " << e.what() << std::endl);
     OPENMVG_COUT("Usage:\n\n" << desc);
