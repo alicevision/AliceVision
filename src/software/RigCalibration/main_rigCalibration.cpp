@@ -294,10 +294,10 @@ int main(int argc, char** argv)
     OPENMVG_COUT("\tmatchingEstimator: " << matchingEstimator);
     OPENMVG_COUT("\tdescriptorPath: " << descriptorsFolder);
     OPENMVG_COUT("\trefineIntrinsics: " << refineIntrinsics);
-    OPENMVG_COUT("\reprojectionError: " << resectionErrorMax);
     OPENMVG_COUT("\tnCameras: " << numCameras);
     if(!filelist.empty())
       OPENMVG_COUT("\tfilelist: " << filelist);
+    OPENMVG_COUT("\treprojectionError: " << resectionErrorMax);
     OPENMVG_COUT("\tdescriptors: " << descriptorType);
     if((DescriberType::SIFT==descriptorType)
 #ifdef HAVE_CCTAG
