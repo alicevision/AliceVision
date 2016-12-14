@@ -136,47 +136,47 @@ bool checkRobustEstimator(robust::EROBUST_ESTIMATOR e, double &value)
 int main(int argc, char** argv)
 {
   // common parameters
-  //< the OpenMVG .json/abc data file
+  /// the OpenMVG .json/abc data file
   std::string sfmFilePath;
-  //< the the folder containing the descriptors
+  /// the the folder containing the descriptors
   std::string descriptorsFolder;
-  //< the media file to localize
+  /// the media file to localize
   std::vector<std::string> mediaPath;                  
-  //< the calibration file for each camera
+  /// the calibration file for each camera
   std::vector<std::string> cameraIntrinsics;                  
-  //< the name of the file where to store the calibration data
+  /// the name of the file where to store the calibration data
   std::string outputFile;
-  //< the preset for the feature extractor
+  /// the preset for the feature extractor
   features::EDESCRIBER_PRESET featurePreset = features::EDESCRIBER_PRESET::NORMAL_PRESET;     
-  //< the type of features to use for localization
+  /// the type of features to use for localization
   DescriberType descriptorType = DescriberType::SIFT;        
-  //< the estimator to use for resection
+  /// the estimator to use for resection
   robust::EROBUST_ESTIMATOR resectionEstimator = robust::EROBUST_ESTIMATOR::ROBUST_ESTIMATOR_ACRANSAC;        
-  //< the estimator to use for matching
+  /// the estimator to use for matching
   robust::EROBUST_ESTIMATOR matchingEstimator = robust::EROBUST_ESTIMATOR::ROBUST_ESTIMATOR_ACRANSAC;        
-  //< the possible choices for the estimators as strings
+  /// the possible choices for the estimators as strings
   const std::string str_estimatorChoices = ""+robust::EROBUST_ESTIMATOR_enumToString(robust::EROBUST_ESTIMATOR::ROBUST_ESTIMATOR_ACRANSAC)
                                           +","+robust::EROBUST_ESTIMATOR_enumToString(robust::EROBUST_ESTIMATOR::ROBUST_ESTIMATOR_LORANSAC);
   bool refineIntrinsics = false;
 
-  //< the maximum error allowed for resection
+  /// the maximum error allowed for resection
   double resectionErrorMax = 4.0;
-  //< the maximum error allowed for image matching with geometric validation
+  /// the maximum error allowed for image matching with geometric validation
   double matchingErrorMax = 4.0;
 
 
   // parameters for voctree localizer
-  //< the vocabulary tree file
+  /// the vocabulary tree file
   std::string vocTreeFilepath;
-  //< the vocabulary tree weights file
+  /// the vocabulary tree weights file
   std::string weightsFilepath;
-  //< the localization algorithm to use for the voctree localizer
+  /// the localization algorithm to use for the voctree localizer
   std::string algostring = "AllResults";
-  //< number of documents to search when querying the voctree
+  /// number of documents to search when querying the voctree
   std::size_t numResults = 4;
-  //< maximum number of matching documents to retain
+  /// maximum number of matching documents to retain
   std::size_t maxResults = 10;
-  //< parameters for cctag localizer
+  /// parameters for cctag localizer
   std::size_t nNearestKeyFrames = 5;
 
 #if HAVE_ALEMBIC
