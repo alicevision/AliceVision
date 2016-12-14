@@ -208,11 +208,12 @@ int main(int argc, char** argv)
       ("descriptorPath", po::value<std::string>(&descriptorsFolder)->required(),
           "Folder containing the .desc.")
       ("mediapath", po::value<std::vector<std::string> >(&mediaPath)->multitoken()->required(),
-          "The path(s) containing, for each camera of the rig, the video, "
-          "the image folder or a filelist. One for each camera with a space to "
-          "serparate each path")
+          "The path to the video file, the folder of the image sequence or a text "
+          "file (one image path per line) for each camera of the rig "
+          "(eg. --mediapath /path/to/cam1.mov /path/to/cam2.mov).")
       ("cameraIntrinsics", po::value<std::vector<std::string> >(&cameraIntrinsics)->multitoken()->required(),
-          "The file, for each camera, containing the calibration intrinsics.")
+          "The intrinsics calibration file for each camera of the rig. "
+          "(eg. --cameraIntrinsics /path/to/calib1.txt /path/to/calib2.txt).")
       ("refineIntrinsics", po::bool_switch(&refineIntrinsics),
           "Enable/Disable camera intrinsics refinement for each localized image")
       ("reprojectionError", po::value<double>(&resectionErrorMax)->default_value(resectionErrorMax), 
