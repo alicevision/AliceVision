@@ -250,6 +250,7 @@ before_script:
   - mkdir $OPENMVG_BUILD
   - cd $OPENMVG_BUILD
   # Classic release build
+  - export CMAKE_MODULE_PATH=$POPSIFT_SOURCE/cmake
   - >
      cmake \
        -DCMAKE_BUILD_TYPE=$BUILD_TYPE \
