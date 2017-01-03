@@ -1,4 +1,4 @@
-find_package(Popsift)
+find_package(PopSift)
 
 ADD_DEFINITIONS(-DTHIS_SOURCE_DIR="${CMAKE_CURRENT_SOURCE_DIR}")
 
