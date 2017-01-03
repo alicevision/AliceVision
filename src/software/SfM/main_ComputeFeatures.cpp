@@ -13,6 +13,10 @@
 #include "nonFree/sift/SIFT_describer.hpp"
 #include "nonFree/sift/SIFT_float_describer.hpp"
 
+#ifdef HAVE_POPSIFT
+#include "nonFree/sift/SIFT_popSIFT_describer.hpp"
+#endif
+
 #ifdef HAVE_CCTAG
 #include "openMVG/features/cctag/CCTAG_describer.hpp"
 #include "openMVG/features/cctag/SIFT_CCTAG_describer.hpp"
@@ -228,10 +232,7 @@ int main(int argc, char **argv)
   int rangeStart = -1;
   int rangeSize = 1;
 
-  // MAX_JOBS_DEFAULT is the default value for maxJobs which keeps 
-  // the original behavior of the program:
-  constexpr static int MAX_JOBS_DEFAULT = std::numeric_limits<int>::max();
-  int maxJobs = MAX_JOBS_DEFAULT;
+  int maxJobs = 1;
 
   // required
   cmd.add( make_option('i', sSfM_Data_Filename, "input_file") );
@@ -261,6 +262,9 @@ int main(int argc, char **argv)
     << "  (method to use to describe an image):\n"
     << "   SIFT (default),\n"
     << "   SIFT_FLOAT to use SIFT stored as float,\n"
+#ifdef HAVE_POPSIFT
+    << "   POPSIFT: SIFT with GPU implementation,\n"
+#endif
     << "   AKAZE_FLOAT: AKAZE with floating point descriptors,\n"
     << "   AKAZE_MLDB:  AKAZE with binary descriptors\n"
 #ifdef HAVE_CCTAG
@@ -286,6 +290,11 @@ int main(int argc, char **argv)
     return EXIT_FAILURE;
 
   }
+  if (sImage_Describer_Method == "POPSIFT")
+  {
+    // POPSIFT is GPU and should no be parallelized
+   maxJobs = 1; 
+  }
 
   std::cout << " You called : " <<std::endl
             << argv[0] << std::endl
@@ -296,17 +305,14 @@ int main(int argc, char **argv)
             << "--describerPreset " << (sFeaturePreset.empty() ? "NORMAL" : sFeaturePreset) << std::endl
             << "--force " << bForce << std::endl
             << "--range_start " << rangeStart << std::endl
-            << "--range_size " << rangeSize << std::endl;
+            << "--range_size " << rangeSize << std::endl
+            << "--jobs " << maxJobs << std::endl;
 
-  if (maxJobs != MAX_JOBS_DEFAULT)
+  if (maxJobs < 0) 
   {
-    std::cout << "--jobs " << maxJobs << std::endl;
-    if (maxJobs < 0) 
-    {
-      std::cerr << "\nInvalid value for -j option, the value must be >= 0" << std::endl;
-      return EXIT_FAILURE;
-    } 
-  }
+    std::cerr << "\nInvalid value for -j option, the value must be >= 0" << std::endl;
+    return EXIT_FAILURE;
+  } 
 
   if (sOutDir.empty())
   {
@@ -409,6 +415,13 @@ int main(int argc, char **argv)
     {
       image_describer.reset(new SIFT_float_describer(SiftParams(), !bUpRight));
     }
+#ifdef HAVE_POPSIFT
+    else
+    if (sImage_Describer_Method == "POPSIFT")
+    {
+      image_describer.reset(new SIFT_popSIFT_describer(SiftParams(), !bUpRight));
+    }
+#endif
 #ifdef HAVE_CCTAG
     else
     if (sImage_Describer_Method == "CCTAG3")
@@ -531,14 +544,14 @@ int main(int argc, char **argv)
             image_describer->Describe(imageGray, regions);
             image_describer->Save(regions.get(), sFeat, sDesc);
         };
-        if (maxJobs != MAX_JOBS_DEFAULT)
+        if (maxJobs != 1)
           dispatch(maxJobs, computeFunction);
         else
           computeFunction();
       }
     }
 
-    if (maxJobs != MAX_JOBS_DEFAULT) waitForCompletion();
+    if (maxJobs != 1) waitForCompletion();
 
     std::cout << "Task done in (s): " << timer.elapsed() << std::endl;
   }

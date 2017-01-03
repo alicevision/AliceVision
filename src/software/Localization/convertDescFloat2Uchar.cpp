@@ -83,7 +83,6 @@ int main( int argc, char** argv )
     {
       // just copy the file into the output directory
       bfs::copy_file(iterator->path(), bfs::path(outputFolder)/bfs::path(filename), bfs::copy_option::overwrite_if_exists);
-      
       ++countFeat;
     }
     else if(ext == ".desc")

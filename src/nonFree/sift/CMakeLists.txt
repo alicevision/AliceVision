@@ -7,6 +7,8 @@ IF(UNIX)
   SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fPIC")
 ENDIF(UNIX)
 
+include_directories(${CUDA_INCLUDE_DIRS})
+
 INCLUDE_DIRECTORIES(./vl)
 SET(FEATS 
   vl/generic.c
