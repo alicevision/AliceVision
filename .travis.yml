@@ -77,6 +77,7 @@ before_script:
        -DCeres_DIR="${DEPS_INSTALL_PATH}/share/Ceres" \
        -DEIGEN_INCLUDE_DIR_HINTS="${DEPS_INSTALL_PATH}" \
        -DOpenMVG_USE_CCTAG=OFF \
+       -DPOPSIFT_ROOT=$POPSIFT_INSTALL \
        . $OPENMVG_SOURCE
   # Build for code coverage evaluation
   #- cmake -DOpenMVG_BUILD_COVERAGE=ON -DOpenMVG_BUILD_TESTS=ON -DOpenMVG_BUILD_EXAMPLES=ON . ../openMVG/src

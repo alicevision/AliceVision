@@ -4,13 +4,13 @@ IF(OpenMVG_USE_BOOST)
     ###
     ADD_EXECUTABLE(openMVG_main_cameraLocalizer main_cameraLocalizer.cpp)
     INSTALL(TARGETS openMVG_main_cameraLocalizer DESTINATION bin/)
-    TARGET_LINK_LIBRARIES(openMVG_main_cameraLocalizer 
-                    openMVG_localization 
-                    openMVG_dataio  
-                    openMVG_image 
-                    openMVG_features 
-                    vlsift 
-                    ${BOOST_LIBRARIES})
+    TARGET_LINK_LIBRARIES(openMVG_main_cameraLocalizer
+                    openMVG_localization
+                    openMVG_dataio
+                    openMVG_image
+                    openMVG_features
+                    vlsift
+                    ${Boost_LIBRARIES})
     if(OpenMVG_USE_ALEMBIC)
         target_link_libraries(openMVG_main_cameraLocalizer openMVG_sfm ${ABC_LIBRARIES})
     endif()
