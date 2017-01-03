@@ -25,6 +25,10 @@ using namespace svg;
 using namespace std;
 
 #include "nonFree/sift/SIFT_describer.hpp"
+#include "nonFree/sift/SIFT_OPENCV_Image_describer.hpp"
+#ifdef HAVE_POPSIFT
+#include "nonFree/sift/SIFT_popSIFT_describer.hpp"
+#endif
 
 // Class to load images and ground truth homography matrices
 // A reference image
@@ -222,6 +226,12 @@ int main(int argc, char **argv)
       << "  (method to use to describe an image):\n"
       << "   SIFT (default),\n"
       << "   AKAZE_FLOAT: AKAZE with floating point descriptors.\n"
+#ifdef USE_OCVSIFT
+      << "   SIFT_OCV: OpenCV implementation of SIFT.\n"
+#endif
+#ifdef HAVE_POPSIFT
+      << "   POPSIFT: POPSIFT implementation of SIFT.\n"
+#endif
       << "[-p|--describer_preset]\n"
       << "  (used to control the Image_describer configuration):\n"
       << "   LOW,\n"
@@ -279,6 +289,20 @@ int main(int argc, char **argv)
         image_describer.reset(new SIFT_Image_describer(SiftParams()));
       }
       else
+#ifdef USE_OCVSIFT
+      if (sImage_Describer_Method == "SIFT_OCV")
+      {
+        image_describer.reset(new SIFT_OPENCV_Image_describer());
+      }
+      else
+#endif
+#ifdef HAVE_POPSIFT
+      if (sImage_Describer_Method == "POPSIFT")
+      {
+        image_describer.reset(new SIFT_popSIFT_describer());
+      }
+      else
+#endif
       if (sImage_Describer_Method == "AKAZE_FLOAT")
       {
         image_describer.reset(new AKAZE_Image_describer(AKAZEParams(AKAZEConfig(), AKAZE_MSURF)));
@@ -355,7 +379,29 @@ int main(int argc, char **argv)
           const Regions * regions_I = map_regions[i].get();
           const PointFeatures pointsFeatures0 = regions_0->GetRegionsPositions();
           const PointFeatures pointsFeaturesI = regions_I->GetRegionsPositions();
+#if 0 // Compute min and max values of the descriptors
+          const float * desc0 = static_cast<const float*>(regions_0->DescriptorRawData());
+          const float * desc1 = static_cast<const float*>(regions_I->DescriptorRawData());
+          float maxval=0, minval=0;
 
+          auto findMinMax = [&] (const float *desc, size_t nbRegions) 
+          {
+            for (int i=0; i< nbRegions; i++)
+            {
+              for (int j=0; j< 128; j++)
+              {
+                maxval = std::max(maxval, *desc);
+                minval = std::min(minval, *desc);
+                desc++;
+              }
+            }
+          };
+
+          findMinMax(desc0, regions_0->RegionCount());
+          findMinMax(desc1, regions_I->RegionCount());
+        
+          std::cout << "min:" << minval << " max:" << maxval << std::endl;
+#endif
           matching::IndMatches putativesMatches;
           matching::DistanceRatioMatch(
             nndr, matching::BRUTE_FORCE_L2,
