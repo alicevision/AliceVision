@@ -1,12 +1,17 @@
-
-ADD_EXECUTABLE(openMVG_sample_main_repeatability_dataset main_repeatability_dataset.cpp)
-TARGET_LINK_LIBRARIES(openMVG_sample_main_repeatability_dataset
+add_executable(openMVG_sample_main_repeatability_dataset main_repeatability_dataset.cpp)
+target_link_libraries(openMVG_sample_main_repeatability_dataset
   openMVG_image
   openMVG_features
   openMVG_matching
   openMVG_system
   openMVG_multiview
   vlsift
-  stlplus)
+  ${POPSIFT_LIBRARIES}
+  stlplus
+  ${CUDA_LIBRARIES}
+  ${CUDA_CUDADEVRT_LIBRARY}
+  ${OpenCV_LIBS}
+)
 
-SET_PROPERTY(TARGET openMVG_sample_main_repeatability_dataset PROPERTY FOLDER OpenMVG/Samples)
+set_property(TARGET openMVG_sample_main_repeatability_dataset PROPERTY FOLDER OpenMVG/Samples)
+
