@@ -25,9 +25,13 @@ using namespace svg;
 using namespace std;
 
 #include "nonFree/sift/SIFT_describer.hpp"
+#include "nonFree/sift/SIFT_float_describer.hpp"
 #include "nonFree/sift/SIFT_OPENCV_Image_describer.hpp"
 #ifdef HAVE_POPSIFT
 #include "nonFree/sift/SIFT_popSIFT_describer.hpp"
+#endif
+#ifdef HAVE_CUDASIFT
+#include "nonFree/sift/SIFT_cudaSIFT_describer.hpp"
 #endif
 
 // Class to load images and ground truth homography matrices
@@ -300,6 +304,13 @@ int main(int argc, char **argv)
       if (sImage_Describer_Method == "POPSIFT")
       {
         image_describer.reset(new SIFT_popSIFT_describer());
+      }
+      else
+#endif
+#ifdef HAVE_CUDASIFT
+      if (sImage_Describer_Method == "CUDASIFT")
+      {
+        image_describer.reset(new SIFT_cudaSIFT_describer());
       }
       else
 #endif

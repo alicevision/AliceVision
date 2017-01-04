@@ -12,6 +12,9 @@
 #include "nonFree/sift/SIFT_describer.hpp"
 #include "nonFree/sift/SIFT_popSIFT_describer.hpp"
 #include "nonFree/sift/SIFT_OPENCV_Image_describer.hpp"
+#ifdef HAVE_CUDASIFT
+#include "nonFree/sift/SIFT_cudaSIFT_describer.hpp"
+#endif
 #include "third_party/stlplus3/filesystemSimplified/file_system.hpp"
 
 #include "third_party/vectorGraphics/svgDrawer.hpp"
@@ -31,6 +34,7 @@ enum SiftMode
     OPENCVSIFT = 1,
     VLFEAT     = 2,
     POPSIFT    = 3,
+    CUDASIFT   = 4
 };
 
 static int parseargs( int argc, char** argv, string& l, string& r )
@@ -47,6 +51,7 @@ static int parseargs( int argc, char** argv, string& l, string& r )
                       << "       -o : use OpenCV's SIFT" << std::endl
                       << "       -v : use VLFeat SIFT" << std::endl
                       << "       -p : use PopSift (GPU)" << std::endl
+                      << "       -c : use Celebrandil's CudaSIFT (GPU)" << std::endl
                       << "       -l <file> absolute path to \"left\"  file to compare" << std::endl
                       << "       -r <file> absolute path to \"right\" file to compare" << std::endl
                       << std::endl
@@ -54,6 +59,9 @@ static int parseargs( int argc, char** argv, string& l, string& r )
                       << "         " << l << " and" << std::endl
                       << "         " << r << std::endl;
             exit(0);
+            break;
+        case 'c' :
+            choice = CUDASIFT;
             break;
         case 'o' :
             choice = OPENCVSIFT;
@@ -105,6 +113,11 @@ int main( int argc, char** argv )
 #ifdef HAVE_POPSIFT
   case POPSIFT :
     image_describer.reset( new SIFT_popSIFT_describer );
+    break;
+#endif
+#ifdef HAVE_CUDASIFT
+  case CUDASIFT :
+    image_describer.reset( new SIFT_cudaSIFT_describer );
     break;
 #endif
   case VLFEAT :
