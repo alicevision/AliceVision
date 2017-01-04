@@ -43,7 +43,7 @@ TARGET_LINK_LIBRARIES(openMVG_main_ComputeFeatures
   easyexif
   stlplus
   vlsift
-  ${POPSIFT_LIBRARIES}
+  PopSift::popsift # ${POPSIFT_LIBRARIES}
   ${CUDA_LIBRARIES}
   ${CUDA_CUDADEVRT_LIBRARY}
   )

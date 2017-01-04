@@ -8,7 +8,7 @@ TARGET_LINK_LIBRARIES(openMVG_sample_siftPutative PUBLIC
   openMVG_features
   openMVG_matching
   vlsift
-  ${POPSIFT_LIBRARIES}
+  PopSift::popsift
   ${CUDA_LIBRARIES}
   ${CUDA_CUDADEVRT_LIBRARY}
   ${OpenCV_LIBS}
