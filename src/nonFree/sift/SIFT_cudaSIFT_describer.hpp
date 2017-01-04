@@ -89,13 +89,13 @@ public:
 
     float* h_image = new float[w*h];
     for( int x=0; x<w; x++ )
-        for( int y=0; y<h; y++ )
-            h_image[y*w+h] = image(y,x) / 255.0f;
+        for( int y=0; y<h; y++ ) {
+            h_image[y*w+x] = image(y,x);
+        }
 
     CudaImage img;
     img.Allocate( w, h, iAlignUp(w, 128), false, 0, h_image );
     img.Download( );
-    delete [] h_image;
 
     // int num_scales = 3,
     // float peak_threshold = 0.04f,
@@ -151,6 +151,7 @@ public:
         regionsCasted->Descriptors().emplace_back(desc);
     }
 
+    delete [] h_image;
 
     return true;
   }
