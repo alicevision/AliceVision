@@ -6,7 +6,7 @@ target_link_libraries(openMVG_sample_main_repeatability_dataset
   openMVG_system
   openMVG_multiview
   vlsift
-  ${POPSIFT_LIBRARIES}
+  PopSift::popsift # ${POPSIFT_LIBRARIES}
   stlplus
   ${CUDA_LIBRARIES}
   ${CUDA_CUDADEVRT_LIBRARY}
