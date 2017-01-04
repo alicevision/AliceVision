@@ -10,6 +10,8 @@
 #include "openMVG/matching/regions_matcher.hpp"
 
 #include "nonFree/sift/SIFT_describer.hpp"
+#include "nonFree/sift/SIFT_popSIFT_describer.hpp"
+#include "nonFree/sift/SIFT_OPENCV_Image_describer.hpp"
 #include "third_party/stlplus3/filesystemSimplified/file_system.hpp"
 
 #include "third_party/vectorGraphics/svgDrawer.hpp"
@@ -23,13 +25,69 @@ using namespace openMVG::matching;
 using namespace svg;
 using namespace std;
 
-int main() {
+enum SiftMode
+{
+    UNKNOWN    = 0,
+    OPENCVSIFT = 1,
+    VLFEAT     = 2,
+    POPSIFT    = 3,
+};
 
-  Image<RGBColor> image;
+static int parseargs( int argc, char** argv, string& l, string& r )
+{
+    extern char *optarg;
+    extern int optind, opterr, optopt;
+    int opt;
+    int choice = UNKNOWN;
+    while(( opt = getopt(argc, argv, "hcopvl:r:")) != -1 ) {
+        switch(opt) {
+        case 'h' :
+            std::cerr << "Usage: " << argv[0] << " [-h] [-copv] [-l <file> -r <file>]" << std::endl
+                      << "       -h : print usage and quit" << std::endl
+                      << "       -o : use OpenCV's SIFT" << std::endl
+                      << "       -v : use VLFeat SIFT" << std::endl
+                      << "       -p : use PopSift (GPU)" << std::endl
+                      << "       -l <file> absolute path to \"left\"  file to compare" << std::endl
+                      << "       -r <file> absolute path to \"right\" file to compare" << std::endl
+                      << std::endl
+                      << "       All parameters are optional. The default left and right files are" << std::endl
+                      << "         " << l << " and" << std::endl
+                      << "         " << r << std::endl;
+            exit(0);
+            break;
+        case 'o' :
+            choice = OPENCVSIFT;
+            break;
+        case 'p' :
+            choice = POPSIFT;
+            break;
+        case 'v' :
+            choice = VLFEAT;
+            break;
+        case 'l' :
+            l = optarg;
+            break;
+        case 'r' :
+            r = optarg;
+            break;
+        default :
+            choice = UNKNOWN;
+            break;
+        }
+    }
+    return choice;
+}
+
+int main( int argc, char** argv )
+{
   string jpg_filenameL = stlplus::folder_up(string(THIS_SOURCE_DIR))
     + "/imageData/StanfordMobileVisualSearch/Ace_0.png";
   string jpg_filenameR = stlplus::folder_up(string(THIS_SOURCE_DIR))
     + "/imageData/StanfordMobileVisualSearch/Ace_1.png";
+
+  int choice = parseargs( argc, argv, jpg_filenameL, jpg_filenameR );
+
+  Image<RGBColor> image;
 
   Image<unsigned char> imageL, imageR;
   ReadImage(jpg_filenameL.c_str(), &imageL);
@@ -39,7 +97,22 @@ int main() {
   // Detect regions thanks to an image_describer
   //--
   using namespace openMVG::features;
-  std::unique_ptr<Image_describer> image_describer(new SIFT_Image_describer);
+  std::unique_ptr<Image_describer> image_describer;
+  switch( choice ) {
+  case OPENCVSIFT :
+    image_describer.reset( new SIFT_OPENCV_Image_describer );
+    break;
+#ifdef HAVE_POPSIFT
+  case POPSIFT :
+    image_describer.reset( new SIFT_popSIFT_describer );
+    break;
+#endif
+  case VLFEAT :
+  default :
+    image_describer.reset( new SIFT_Image_describer );
+    break;
+  }
+
   std::map<IndexT, std::unique_ptr<features::Regions> > regions_perImage;
   image_describer->Describe(imageL, regions_perImage[0]);
   image_describer->Describe(imageR, regions_perImage[1]);

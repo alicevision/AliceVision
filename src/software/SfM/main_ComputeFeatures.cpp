@@ -263,7 +263,7 @@ int main(int argc, char **argv)
     << "   SIFT (default),\n"
     << "   SIFT_FLOAT to use SIFT stored as float,\n"
 #ifdef HAVE_POPSIFT
-    << "   POPSIFT: SIFT with GPU implementation,\n"
+    << "   POPSIFT: POPART SIFT with GPU implementation,\n"
 #endif
     << "   AKAZE_FLOAT: AKAZE with floating point descriptors,\n"
     << "   AKAZE_MLDB:  AKAZE with binary descriptors\n"

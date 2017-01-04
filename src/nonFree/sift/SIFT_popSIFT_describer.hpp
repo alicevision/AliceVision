@@ -25,10 +25,10 @@ namespace features {
 class SIFT_popSIFT_describer : public Image_describer
 {
 public:
-  SIFT_popSIFT_describer(const SiftParams & params = SiftParams(), bool bOrientation = true)
+  SIFT_popSIFT_describer(const SiftParams & params = SiftParams(), bool bOrientationDummy = true )
     : Image_describer()
     , _params(params)
-    , _bOrientation(bOrientation)
+    /* , _bOrientation(bOrientation) */
     , _previousImageSize(0, 0)
   {
     std::cout << "SIFT_popSIFT_describer" << std::endl;
@@ -160,12 +160,12 @@ public:
   {
     ar(
      cereal::make_nvp("params", _params),
-     cereal::make_nvp("bOrientation", _bOrientation));
+     cereal::make_nvp("bOrientation", true ));
   }
 
 private:
   SiftParams _params;
-  bool _bOrientation;
+  /* bool _bOrientation; */
 
   std::unique_ptr<PopSift> _popSift;
   std::pair<std::size_t, std::size_t> _previousImageSize;

@@ -43,9 +43,7 @@ TARGET_LINK_LIBRARIES(openMVG_main_ComputeFeatures
   easyexif
   stlplus
   vlsift
-  ${POPSIFT_LIBRARIES}
-  ${CUDA_LIBRARIES}
-  ${CUDA_CUDADEVRT_LIBRARY}
+  PopSift::popsift # ${POPSIFT_LIBRARIES}
   )
 
 IF(OpenMVG_USE_CCTAG)
@@ -143,7 +141,7 @@ TARGET_LINK_LIBRARIES(openMVG_main_ComputeCCTagStructureFromKnownPoses
   )
 SET_PROPERTY(TARGET openMVG_main_ComputeCCTagStructureFromKnownPoses PROPERTY FOLDER OpenMVG/software)
 INSTALL(TARGETS openMVG_main_ComputeCCTagStructureFromKnownPoses DESTINATION bin/)
-ENDIF()
+ENDIF(OpenMVG_USE_CCTAG)
 
 ADD_EXECUTABLE(openMVG_main_ComputeSfM_DataColor main_ComputeSfM_DataColor.cpp)
 TARGET_LINK_LIBRARIES(openMVG_main_ComputeSfM_DataColor

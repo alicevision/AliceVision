@@ -9,6 +9,8 @@ CMAKE_MINIMUM_REQUIRED(VERSION 3.0)
 
 PROJECT(openMVG C CXX)
 
+cmake_policy( SET CMP0028 NEW ) # :: in target list means imported target
+
 # guard against in-source builds
 IF(${CMAKE_SOURCE_DIR} STREQUAL ${CMAKE_BINARY_DIR})
   message(FATAL_ERROR "In-source builds not allowed.")
@@ -475,6 +477,7 @@ ADD_SUBDIRECTORY(third_party)
 # CCTag
 # ==============================================================================
 IF(OpenMVG_USE_CCTAG)
+  SET(CUDA_SEPARABLE_COMPILATION ON)
   FIND_PACKAGE(CCTag 1.0.0 CONFIG)
   IF(NOT CCTag_FOUND)
     MESSAGE(STATUS "CCTAG package not found, CCTAG will be disabled")
@@ -527,11 +530,11 @@ SET(OpenMVG_INCLUDE_DIRS
 
 INCLUDE_DIRECTORIES(${OpenMVG_INCLUDE_DIRS})
 
-find_package(Popsift)
-if(POPSIFT_FOUND)
+find_package(PopSift)
+if(PopSift_FOUND)
   ADD_DEFINITIONS(-DHAVE_POPSIFT)
-  INCLUDE_DIRECTORIES(${POPSIFT_INCLUDE_DIR})
-  LINK_DIRECTORIES(${POPSIFT_LIBRARY_DIR})
+  INCLUDE_DIRECTORIES(${PopSift_INCLUDE_DIR})
+  LINK_DIRECTORIES(${PopSift_LIBRARY_DIR})
 endif()
 
 find_package(CUDA 7.0) #use CUDA 7.0 because of nvcc bug with CUB
