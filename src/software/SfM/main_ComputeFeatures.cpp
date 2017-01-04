@@ -16,6 +16,9 @@
 #ifdef HAVE_POPSIFT
 #include "nonFree/sift/SIFT_popSIFT_describer.hpp"
 #endif
+#ifdef HAVE_CUDASIFT
+#include "nonFree/sift/SIFT_cudaSIFT_describer.hpp"
+#endif
 
 #ifdef HAVE_CCTAG
 #include "openMVG/features/cctag/CCTAG_describer.hpp"
@@ -265,6 +268,9 @@ int main(int argc, char **argv)
 #ifdef HAVE_POPSIFT
     << "   POPSIFT: POPART SIFT with GPU implementation,\n"
 #endif
+#ifdef HAVE_CUDASIFT
+    << "   CUDASIFT: Celebrandil's CudaSift with GPU implementation,\n"
+#endif
     << "   AKAZE_FLOAT: AKAZE with floating point descriptors,\n"
     << "   AKAZE_MLDB:  AKAZE with binary descriptors\n"
 #ifdef HAVE_CCTAG
@@ -290,9 +296,9 @@ int main(int argc, char **argv)
     return EXIT_FAILURE;
 
   }
-  if (sImage_Describer_Method == "POPSIFT")
+  if (sImage_Describer_Method == "POPSIFT" || sImage_Describer_Method == "CUDASIFT" )
   {
-    // POPSIFT is GPU and should no be parallelized
+    // POPSIFT is GPU and should no be parallelized (CUDASIFT as well)
    maxJobs = 1; 
   }
 
@@ -420,6 +426,13 @@ int main(int argc, char **argv)
     if (sImage_Describer_Method == "POPSIFT")
     {
       image_describer.reset(new SIFT_popSIFT_describer(SiftParams(), !bUpRight));
+    }
+#endif
+#ifdef HAVE_CUDASIFT
+    else
+    if (sImage_Describer_Method == "CUDASIFT")
+    {
+      image_describer.reset(new SIFT_cudaSIFT_describer(SiftParams(), !bUpRight));
     }
 #endif
 #ifdef HAVE_CCTAG

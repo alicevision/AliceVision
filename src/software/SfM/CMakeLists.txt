@@ -43,7 +43,8 @@ TARGET_LINK_LIBRARIES(openMVG_main_ComputeFeatures
   easyexif
   stlplus
   vlsift
-  PopSift::popsift # ${POPSIFT_LIBRARIES}
+  PopSift::popsift
+  cudaSift::cudasift
   )
 
 IF(OpenMVG_USE_CCTAG)

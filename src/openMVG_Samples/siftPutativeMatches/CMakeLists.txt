@@ -1,4 +1,6 @@
 find_package(PopSift)
+find_package(cudaSift)
+find_package(SiftGPU)
 
 ADD_DEFINITIONS(-DTHIS_SOURCE_DIR="${CMAKE_CURRENT_SOURCE_DIR}")
 
@@ -9,6 +11,7 @@ TARGET_LINK_LIBRARIES(openMVG_sample_siftPutative
   openMVG_matching
   vlsift
   PopSift::popsift
+  cudaSift::cudasift
   ${OpenCV_LIBS}
   stlplus
   )
