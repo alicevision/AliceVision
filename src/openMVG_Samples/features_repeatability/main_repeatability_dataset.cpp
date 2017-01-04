@@ -236,6 +236,9 @@ int main(int argc, char **argv)
 #ifdef HAVE_POPSIFT
       << "   POPSIFT: POPSIFT implementation of SIFT.\n"
 #endif
+#ifdef HAVE_CUDASIFT
+      << "   CUDASIFT: Celebrandil cudaSift implementation of SIFT.\n"
+#endif
       << "[-p|--describer_preset]\n"
       << "  (used to control the Image_describer configuration):\n"
       << "   LOW,\n"
