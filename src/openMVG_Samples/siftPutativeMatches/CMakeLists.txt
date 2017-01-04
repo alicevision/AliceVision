@@ -1,3 +1,4 @@
+find_package(PopSift)
 
 ADD_DEFINITIONS(-DTHIS_SOURCE_DIR="${CMAKE_CURRENT_SOURCE_DIR}")
 
@@ -7,6 +8,9 @@ TARGET_LINK_LIBRARIES(openMVG_sample_siftPutative
   openMVG_features
   openMVG_matching
   vlsift
-  stlplus)
+  PopSift::popsift
+  ${OpenCV_LIBS}
+  stlplus
+  )
 
 SET_PROPERTY(TARGET openMVG_sample_siftPutative PROPERTY FOLDER OpenMVG/Samples)
