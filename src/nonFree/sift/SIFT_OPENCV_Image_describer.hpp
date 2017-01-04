@@ -87,7 +87,10 @@ public:
 class SIFT_OPENCV_Image_describer : public Image_describer
 {
 public:
-  SIFT_OPENCV_Image_describer() : Image_describer() {}
+  SIFT_OPENCV_Image_describer()
+    : Image_describer()
+    , _verbose( false )
+  { }
 
   ~SIFT_OPENCV_Image_describer() {}
 
@@ -118,11 +121,13 @@ public:
       if(!_params.gridSize)  // If no grid filtering, use opencv to limit the number of features
         maxDetect = _params.maxTotalKeypoints;
 
-    std::cout << "maxDetect" << maxDetect << std::endl; // to clean
-    std::cout << "_params.nOctaveLayers" << _params.nOctaveLayers << std::endl;
-    std::cout << "_params.contrastThreshold" << _params.contrastThreshold << std::endl;
-    std::cout << "_params.edgeThreshold" << _params.edgeThreshold << std::endl;
-    std::cout << "_params.sigma" << _params.sigma << std::endl;
+    if( _verbose ) {
+        std::cout << "maxDetect                 " << maxDetect << std::endl; // to clean
+        std::cout << "_params.nOctaveLayers     " << _params.nOctaveLayers << std::endl;
+        std::cout << "_params.contrastThreshold " << _params.contrastThreshold << std::endl;
+        std::cout << "_params.edgeThreshold     " << _params.edgeThreshold << std::endl;
+        std::cout << "_params.sigma             " << _params.sigma << std::endl;
+    }
     
     cv::Ptr<cv::Feature2D> siftdetector = cv::xfeatures2d::SIFT::create(maxDetect, _params.nOctaveLayers, _params.contrastThreshold, _params.edgeThreshold, _params.sigma);
 
@@ -132,11 +137,13 @@ public:
     auto detect_end = std::chrono::steady_clock::now();
     auto detect_elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(detect_end - detect_start);
 
-    std::cout << "SIFT: contrastThreshold: " << _params.contrastThreshold << ", edgeThreshold: " << _params.edgeThreshold << std::endl;
-    std::cout << "Detect SIFT: " << detect_elapsed.count() << " milliseconds." << std::endl;
-    std::cout << "Image size: " << img.cols << " x " << img.rows << std::endl;
-    std::cout << "Grid size: " << _params.gridSize << ", maxTotalKeypoints: " << _params.maxTotalKeypoints << std::endl;
-    std::cout << "Number of detected features: " << v_keypoints.size() << std::endl;
+    if( _verbose ) {
+        std::cout << "SIFT: contrastThreshold: " << _params.contrastThreshold << ", edgeThreshold: " << _params.edgeThreshold << std::endl;
+        std::cout << "Detect SIFT: " << detect_elapsed.count() << " milliseconds." << std::endl;
+        std::cout << "Image size: " << img.cols << " x " << img.rows << std::endl;
+        std::cout << "Grid size: " << _params.gridSize << ", maxTotalKeypoints: " << _params.maxTotalKeypoints << std::endl;
+        std::cout << "Number of detected features: " << v_keypoints.size() << std::endl;
+    }
 
     // cv::KeyPoint::response: the response by which the most strong keypoints have been selected.
     // Can be used for the further sorting or subsampling.
@@ -158,9 +165,11 @@ public:
         const double regionWidth = image.Width() / double(countFeatPerCell.cols);
         const double regionHeight = image.Height() / double(countFeatPerCell.rows);
 
-        std::cout << "Grid filtering -- keypointsPerCell: " << keypointsPerCell
-                  << ", regionWidth: " << regionWidth
-                  << ", regionHeight: " << regionHeight << std::endl;
+        if( _verbose ) {
+            std::cout << "Grid filtering -- keypointsPerCell: " << keypointsPerCell
+                      << ", regionWidth: " << regionWidth
+                      << ", regionHeight: " << regionHeight << std::endl;
+        }
 
         for(const cv::KeyPoint& keypoint: v_keypoints)
         {
@@ -183,21 +192,27 @@ public:
         if( filtered_keypoints.size() < _params.maxTotalKeypoints )
         {
           const std::size_t remainingElements = std::min(rejected_keypoints.size(), _params.maxTotalKeypoints - filtered_keypoints.size());
-          std::cout << "Grid filtering -- Copy remaining points: " << remainingElements << std::endl;
+          if( _verbose ) {
+            std::cout << "Grid filtering -- Copy remaining points: " << remainingElements << std::endl;
+          }
           filtered_keypoints.insert(filtered_keypoints.end(), rejected_keypoints.begin(), rejected_keypoints.begin() + remainingElements);
         }
 
         v_keypoints.swap(filtered_keypoints);
       }
     }
-    std::cout << "Number of features: " << v_keypoints.size() << std::endl;
+    if( _verbose ) {
+        std::cout << "Number of features: " << v_keypoints.size() << std::endl;
+    }
 
     // Compute SIFT descriptors
     auto desc_start = std::chrono::steady_clock::now();
     siftdetector->compute(img, v_keypoints, m_desc);
     auto desc_end = std::chrono::steady_clock::now();
     auto desc_elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(desc_end - desc_start);
-    std::cout << "Compute descriptors: " << desc_elapsed.count() << " milliseconds." << std::endl;
+    if( _verbose ) {
+        std::cout << "Compute descriptors: " << desc_elapsed.count() << " milliseconds." << std::endl;
+    }
 
     Allocate(regions);
 
@@ -245,6 +260,7 @@ public:
 
 private:
   SIFT_OPENCV_Params _params;
+  bool _verbose;
 };
 
 } // namespace features
