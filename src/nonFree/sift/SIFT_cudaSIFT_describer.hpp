@@ -30,7 +30,7 @@ public:
     std::cout << "SIFT_cudaSIFT_describer" << std::endl;
 
     const int  devNum         = 0; // Choose the CUDA device. This should be a parameter.
-    const bool print_dev_info = true;
+    const bool print_dev_info = false;
 
     popsift::cuda::device_prop_t deviceInfo;
     deviceInfo.set( devNum, print_dev_info );
@@ -128,7 +128,7 @@ public:
     regionsCasted->Features().reserve( siftData.numPts );
     regionsCasted->Descriptors().reserve( siftData.numPts );
 
-    std::cout << "cudaSift features: " << siftData.numPts << std::endl;
+    // std::cout << "cudaSift features: " << siftData.numPts << std::endl;
 
     for( int i=0; i<siftData.numPts; i++ )
     {

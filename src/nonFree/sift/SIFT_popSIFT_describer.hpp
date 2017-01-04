@@ -30,8 +30,11 @@ public:
     , _params(params)
     /* , _bOrientation(bOrientation) */
     , _previousImageSize(0, 0)
+    , _verbose( false )
   {
-    std::cout << "SIFT_popSIFT_describer" << std::endl;
+    if( _verbose ) {
+        std::cout << "SIFT_popSIFT_describer" << std::endl;
+    }
 
     // Process SIFT computation
     cudaDeviceReset();
@@ -44,11 +47,9 @@ public:
     config.setEdgeLimit(  _params._edge_threshold);
     config.setUseRootSift(_params._root_sift);
 
-    const bool print_dev_info = true;
-
     popsift::cuda::device_prop_t deviceInfo;
-    deviceInfo.set( 0, print_dev_info );
-    if( print_dev_info ) deviceInfo.print( );
+    deviceInfo.set( 0, _verbose );
+    if( _verbose ) deviceInfo.print( );
 
     _popSift.reset( new PopSift(config) );
   }
@@ -98,8 +99,6 @@ public:
     std::unique_ptr<Regions> &regions,
     const image::Image<unsigned char> * mask = NULL)
   {
-    const bool print_time_info = true;
-    
     if(_previousImageSize.first != image.Width() ||
        _previousImageSize.second != image.Height())
     {
@@ -108,12 +107,12 @@ public:
         // Only call uninit if we already called init()
         _popSift->uninit(0);
       }
-      _popSift->init( 0, image.Width(), image.Height(), print_time_info );
+      _popSift->init( 0, image.Width(), image.Height(), _verbose );
       _previousImageSize.first = image.Width();
       _previousImageSize.second = image.Height();
     }
 
-    std::unique_ptr<popsift::Features> popFeatures(_popSift->execute( 0, &image(0,0), print_time_info ));
+    std::unique_ptr<popsift::Features> popFeatures(_popSift->execute( 0, &image(0,0), _verbose ));
 
     Allocate(regions); 
 
@@ -122,8 +121,10 @@ public:
     regionsCasted->Features().reserve(popFeatures->getFeatureCount());
     regionsCasted->Descriptors().reserve(popFeatures->getDescriptorCount());
 
-    std::cout << "popSIFT featurse: " << popFeatures->getFeatureCount() << std::endl;
-    std::cout << "popSIFT featurse: " << popFeatures->getDescriptorCount() << std::endl;
+    if( _verbose ) {
+        std::cout << "popSIFT features:    " << popFeatures->getFeatureCount() << std::endl;
+        std::cout << "popSIFT descriptors: " << popFeatures->getDescriptorCount() << std::endl;
+    }
 
     for(const auto& popFeat: *popFeatures)
     {
@@ -169,6 +170,8 @@ private:
 
   std::unique_ptr<PopSift> _popSift;
   std::pair<std::size_t, std::size_t> _previousImageSize;
+
+  bool _verbose;
 };
 
 } // namespace features
