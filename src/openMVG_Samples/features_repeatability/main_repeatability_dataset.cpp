@@ -294,26 +294,27 @@ int main(int argc, char **argv)
       if (sImage_Describer_Method == "SIFT")
       {
         image_describer.reset(new SIFT_Image_describer(SiftParams()));
+        // image_describer.reset(new SIFT_float_describer(SiftParams()));
       }
       else
 #ifdef USE_OCVSIFT
       if (sImage_Describer_Method == "SIFT_OCV")
       {
-        image_describer.reset(new SIFT_OPENCV_Image_describer());
+        image_describer.reset( new SIFT_OPENCV_Image_describer() );
       }
       else
 #endif
 #ifdef HAVE_POPSIFT
       if (sImage_Describer_Method == "POPSIFT")
       {
-        image_describer.reset(new SIFT_popSIFT_describer());
+        image_describer.reset(new SIFT_popSIFT_describer(SiftParams()));
       }
       else
 #endif
 #ifdef HAVE_CUDASIFT
       if (sImage_Describer_Method == "CUDASIFT")
       {
-        image_describer.reset(new SIFT_cudaSIFT_describer());
+        image_describer.reset(new SIFT_cudaSIFT_describer(SiftParams()));
       }
       else
 #endif
