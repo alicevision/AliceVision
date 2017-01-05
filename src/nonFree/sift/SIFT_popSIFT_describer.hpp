@@ -80,6 +80,7 @@ public:
     config.setUseRootSift(  _params._root_sift );
     config.setSigma(        _params._sigma );
     config.setInitialBlur(  0.5f );
+    config.setNormalizationMultiplier( 9 ); // x 512 on output
 
     _popSift->configure( config );
 
