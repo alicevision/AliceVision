@@ -40,12 +40,14 @@ public:
     cudaDeviceReset();
 
     popsift::Config config;
+    config.setMode( popsift::Config::PopSift );
     config.setOctaves(_params._num_octaves);
     config.setLevels(_params._num_scales);
     config.setDownsampling(_params._first_octave);
     config.setThreshold(  _params._peak_threshold);
     config.setEdgeLimit(  _params._edge_threshold);
     config.setUseRootSift(_params._root_sift);
+    config.setInitialBlur( 0.5f );
 
     popsift::cuda::device_prop_t deviceInfo;
     deviceInfo.set( 0, _verbose );
