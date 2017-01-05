@@ -43,7 +43,7 @@ public:
     vl_destructor();
   }
 
-  bool Set_configuration_preset(EDESCRIBER_PRESET preset)
+  virtual bool Set_configuration_preset(EDESCRIBER_PRESET preset)
   {
     return _params.setPreset(preset);
   }
