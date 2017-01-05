@@ -58,6 +58,7 @@ public:
   const image::Image<RGBColor>& image(size_t i) const { return vec_image_[i]; }
   const Mat3& H(size_t i) const { return vec_H_[i]; }
   const size_t size() const { return vec_image_.size(); }
+  const string& basename(size_t i) { return vec_image_basename_[i]; }
 
 private:
   /// Load the images of a directory
@@ -65,6 +66,7 @@ private:
   {
     std::cout << "Loading images of the dataset: " << stlplus::folder_part(folderPath_) << std::endl;
     std::vector<std::string> vec_image_basename = stlplus::folder_wildcard( folderPath_, "*.ppm" );
+    vec_image_basename = stlplus::folder_wildcard( folderPath_, "*.ppm" );
     if (vec_image_basename.empty())
       vec_image_basename = stlplus::folder_wildcard( folderPath_, "*.pgm" );
     if (vec_image_basename.empty())
@@ -73,6 +75,7 @@ private:
     vec_image_.resize(vec_image_basename.size());
     for (int i = 0; i < vec_image_basename.size(); ++i)
     {
+      vec_image_basename_.push_back( stlplus::basename_part(vec_image_basename[i]) );
       const std::string path = stlplus::create_filespec(folderPath_, vec_image_basename[i]);
       image::Image<RGBColor> imageRGB;
       const bool bReadOk = image::ReadImage(path.c_str(), &imageRGB);
@@ -138,6 +141,7 @@ private:
 
   std::vector<image::Image<RGBColor> > vec_image_;
   std::vector<Mat3> vec_H_;
+  std::vector<std::string> vec_image_basename_;
 };
 
 
@@ -360,11 +364,19 @@ int main(int argc, char **argv)
           if( map_regions.count(reg) == 0)
             continue;
 
+          std::ostringstream oname;
+          oname << dataset_path
+                << "-" << sImage_Describer_Method
+                << "-" << sFeature_Preset 
+                << "-" << dataset.basename(reg) << ".desc";
+          std::ofstream of( oname.str() );
+
           const Regions* regions             = map_regions[reg].get();
           const PointFeatures pointsFeatures = regions->GetRegionsPositions();
 
           const SIFT_Regions* regionsCasted = dynamic_cast<const SIFT_Regions*>( regions ) ;
           int sz = regionsCasted->Features().size();
+
           for( int i=0; i<sz; i++ ) {
               auto feature = regionsCasted->Features()[i];
               auto desc    = regionsCasted->Descriptors()[i];
@@ -372,15 +384,15 @@ int main(int argc, char **argv)
               float sigval =  1.0f / ( feature.scale() * feature.scale() );
               float ignore = feature.orientation();
 
-              std::cout << feature.x() << " "
-                        << feature.y() << " "
-                        << feature.scale() << " "
-                        << "0 "
-                        << feature.scale() << " ";
+              of << feature.x() << " "
+                 << feature.y() << " "
+                 << feature.scale() << " "
+                 << "0 "
+                 << feature.scale() << " ";
              for( int d=0; d<128; d++ ) {
-                std::cout << int(desc[d]) << " ";
+                of << int(desc[d]) << " ";
              }
-             std::cout << std::endl;
+             of << std::endl;
           }
         }
       }
