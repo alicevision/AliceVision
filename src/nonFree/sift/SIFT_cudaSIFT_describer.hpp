@@ -48,17 +48,11 @@ public:
     switch(preset)
     {
     case LOW_PRESET:
-      _params._peak_threshold = 0.04f;
-      _params._first_octave = 2;
       return false; // not supported by CudaSift
     case MEDIUM_PRESET:
-      _params._peak_threshold = 0.04f;
-      _params._first_octave = 1;
       return false; // not supported by CudaSift
     case NORMAL_PRESET:
-      _params._peak_threshold = 0.04f;
-      _params._first_octave = 0;
-      break;
+      return false; // _params._peak_threshold = 0.04f;
     case HIGH_PRESET:
       _params._peak_threshold = 0.01f;
       _params._first_octave = 0;
@@ -102,8 +96,18 @@ public:
     // // std::size_t maxTotalKeypoints = 1000,
 
     SiftData siftData;
-    float    initBlur = 1.0f;
+    int      numOctaves = _params._num_octaves; // default in CudaSift is 5
+    float    initBlur;
+    float    peak_threshold = 3.5f;
+    if( _params._first_octave == -1 ) {
+        initBlur = 0.25f;
+    } else if( _params._first_octave == 0 ) {
+        initBlur = 0.5f;
+    } else {
+        initBlur = 1.0f;
+    }
     float    lowestScale = 0.0f;
+    // float    edgeLimit   = _params._edge_treshold; - ignore - this is always 10.0f in CudaSift
     bool     scaleUp = ( _params._first_octave == -1 ?  true : false );
     bool     allocSiftPointsHost = true;
     bool     allocSiftPointsDev  = true;
@@ -113,9 +117,9 @@ public:
                   allocSiftPointsDev );
     ExtractSift( siftData,
                  img,
-                 _params._num_octaves,
+                 numOctaves,
                  initBlur,
-                 _params._edge_threshold,
+                 peak_threshold,
                  lowestScale,
                  scaleUp );
 
