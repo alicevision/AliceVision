@@ -4,6 +4,7 @@
 #define	SIFT_OPENCV_IMAGE_DESCRIBER_HPP
 
 /// Feature/Regions & Image describer interfaces
+#include "sift.hpp"
 #include <openMVG/features/descriptor.hpp>
 #include <openMVG/features/image_describer.hpp>
 #include <openMVG/features/regions_factory.hpp>
@@ -12,14 +13,15 @@
 
 /// OpenCV Includes
 #include <opencv2/opencv.hpp>
-#include "opencv2/core/eigen.hpp"
-#include "opencv2/xfeatures2d.hpp"
+#include <opencv2/core/eigen.hpp>
+#include <opencv2/xfeatures2d.hpp>
 
 #include <chrono>
 
 namespace openMVG {
 namespace features {
 
+#if 0
 class SIFT_OPENCV_Params
 {
 public:
@@ -79,6 +81,7 @@ public:
   double sigma = 1.6;
   // bool rootSift = true;
 };
+#endif
 
 ///
 //- Create an Image_describer interface that use and OpenCV extraction method
@@ -96,7 +99,10 @@ public:
 
   bool Set_configuration_preset(EDESCRIBER_PRESET preset)
   {
-    return _params.Set_configuration_preset(preset);
+    if( preset != ULTRA_PRESET ) return false;
+
+    return _params.setPreset(preset);
+    // return _params.Set_configuration_preset(preset);
   }
   /**
   @brief Detect regions on the image and compute their attributes (description)
@@ -116,20 +122,28 @@ public:
     // Create a SIFT detector
     std::vector< cv::KeyPoint > v_keypoints;
     cv::Mat m_desc;
-    std::size_t maxDetect = 0; // No max value by default
-    if(_params.maxTotalKeypoints)
-      if(!_params.gridSize)  // If no grid filtering, use opencv to limit the number of features
-        maxDetect = _params.maxTotalKeypoints;
+    // std::size_t maxDetect = 0; // No max value by default
+    if(_params._maxTotalKeypoints)
+      if(!_params._gridSize)  // If no grid filtering, use opencv to limit the number of features
 
     if( _verbose ) {
-        std::cout << "maxDetect                 " << maxDetect << std::endl; // to clean
-        std::cout << "_params.nOctaveLayers     " << _params.nOctaveLayers << std::endl;
-        std::cout << "_params.contrastThreshold " << _params.contrastThreshold << std::endl;
-        std::cout << "_params.edgeThreshold     " << _params.edgeThreshold << std::endl;
-        std::cout << "_params.sigma             " << _params.sigma << std::endl;
+        // std::cout << "maxDetect                 " << maxDetect << std::endl; // to clean
+        // std::cout << "_params.nOctaveLayers     " << _params.nOctaveLayers << std::endl;
+        // std::cout << "_params.contrastThreshold " << _params.contrastThreshold << std::endl;
+        // std::cout << "_params.edgeThreshold     " << _params.edgeThreshold << std::endl;
+        std::cout << "_params._maxTotalKeypoints " << _params._maxTotalKeypoints << std::endl; // to clean
+        std::cout << "_params._num_octaves       " << _params._num_octaves << std::endl;
+        std::cout << "_params._peak_threshold    " << _params._peak_threshold << std::endl;
+        std::cout << "_params._edge_threshold    " << _params._edge_threshold << std::endl;
+        std::cout << "_params._sigma             " << _params._sigma << std::endl;
     }
     
-    cv::Ptr<cv::Feature2D> siftdetector = cv::xfeatures2d::SIFT::create(maxDetect, _params.nOctaveLayers, _params.contrastThreshold, _params.edgeThreshold, _params.sigma);
+    // cv::Ptr<cv::Feature2D> siftdetector = cv::xfeatures2d::SIFT::create(maxDetect, _params.nOctaveLayers, _params.contrastThreshold, _params.edgeThreshold, _params.sigma);
+    cv::Ptr<cv::Feature2D> siftdetector = cv::xfeatures2d::SIFT::create( _params._maxTotalKeypoints,
+                                                                         _params._num_octaves,
+                                                                         1.6f * 2.0f * _params._peak_threshold,
+                                                                         _params._edge_threshold,
+                                                                         _params._sigma );
 
     // Detect SIFT keypoints
     auto detect_start = std::chrono::steady_clock::now();
@@ -138,10 +152,11 @@ public:
     auto detect_elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(detect_end - detect_start);
 
     if( _verbose ) {
-        std::cout << "SIFT: contrastThreshold: " << _params.contrastThreshold << ", edgeThreshold: " << _params.edgeThreshold << std::endl;
+        // std::cout << "SIFT: contrastThreshold: " << _params.contrastThreshold << ", edgeThreshold: " << _params.edgeThreshold << std::endl;
+        std::cout << "SIFT: contrastThreshold: " << _params._peak_threshold << ", edgeThreshold: " << _params._edge_threshold << std::endl;
         std::cout << "Detect SIFT: " << detect_elapsed.count() << " milliseconds." << std::endl;
         std::cout << "Image size: " << img.cols << " x " << img.rows << std::endl;
-        std::cout << "Grid size: " << _params.gridSize << ", maxTotalKeypoints: " << _params.maxTotalKeypoints << std::endl;
+        std::cout << "Grid size: " << _params._gridSize << ", maxTotalKeypoints: " << _params._maxTotalKeypoints << std::endl;
         std::cout << "Number of detected features: " << v_keypoints.size() << std::endl;
     }
 
@@ -150,18 +165,18 @@ public:
     std::sort(v_keypoints.begin(), v_keypoints.end(), [](const cv::KeyPoint& a, const cv::KeyPoint& b) { return a.size > b.size; });
 
     // Grid filtering of the keypoints to ensure a global repartition
-    if(_params.gridSize && _params.maxTotalKeypoints)
+    if(_params._gridSize && _params._maxTotalKeypoints)
     {
       // Only filter features if we have more features than the maxTotalKeypoints
-      if(v_keypoints.size() > _params.maxTotalKeypoints)
+      if(v_keypoints.size() > _params._maxTotalKeypoints)
       {
         std::vector< cv::KeyPoint > filtered_keypoints;
         std::vector< cv::KeyPoint > rejected_keypoints;
-        filtered_keypoints.reserve(std::min(v_keypoints.size(), _params.maxTotalKeypoints));
+        filtered_keypoints.reserve(std::min(v_keypoints.size(), _params._maxTotalKeypoints));
         rejected_keypoints.reserve(v_keypoints.size());
 
-        cv::Mat countFeatPerCell(_params.gridSize, _params.gridSize, cv::DataType<std::size_t>::type, cv::Scalar(0));
-        const std::size_t keypointsPerCell = _params.maxTotalKeypoints / countFeatPerCell.total();
+        cv::Mat countFeatPerCell(_params._gridSize, _params._gridSize, cv::DataType<std::size_t>::type, cv::Scalar(0));
+        const std::size_t keypointsPerCell = _params._maxTotalKeypoints / countFeatPerCell.total();
         const double regionWidth = image.Width() / double(countFeatPerCell.cols);
         const double regionHeight = image.Height() / double(countFeatPerCell.rows);
 
@@ -173,12 +188,12 @@ public:
 
         for(const cv::KeyPoint& keypoint: v_keypoints)
         {
-          const std::size_t cellX = std::min(std::size_t(keypoint.pt.x / regionWidth), _params.gridSize);
-          const std::size_t cellY = std::min(std::size_t(keypoint.pt.y / regionHeight), _params.gridSize);
+          const std::size_t cellX = std::min(std::size_t(keypoint.pt.x / regionWidth), _params._gridSize);
+          const std::size_t cellY = std::min(std::size_t(keypoint.pt.y / regionHeight), _params._gridSize);
           // std::cout << "- keypoint.pt.x: " << keypoint.pt.x << ", keypoint.pt.y: " << keypoint.pt.y << std::endl;
           // std::cout << "- cellX: " << cellX << ", cellY: " << cellY << std::endl;
           // std::cout << "- countFeatPerCell: " << countFeatPerCell << std::endl;
-          // std::cout << "- gridSize: " << _params.gridSize << std::endl;
+          // std::cout << "- gridSize: " << _params._gridSize << std::endl;
 
           const std::size_t count = countFeatPerCell.at<std::size_t>(cellX, cellY);
           countFeatPerCell.at<std::size_t>(cellX, cellY) = count + 1;
@@ -189,9 +204,9 @@ public:
         }
         // If we don't have enough features (less than maxTotalKeypoints) after the grid filtering (empty regions in the grid for example).
         // We add the best other ones, without repartition constraint.
-        if( filtered_keypoints.size() < _params.maxTotalKeypoints )
+        if( filtered_keypoints.size() < _params._maxTotalKeypoints )
         {
-          const std::size_t remainingElements = std::min(rejected_keypoints.size(), _params.maxTotalKeypoints - filtered_keypoints.size());
+          const std::size_t remainingElements = std::min(rejected_keypoints.size(), _params._maxTotalKeypoints - filtered_keypoints.size());
           if( _verbose ) {
             std::cout << "Grid filtering -- Copy remaining points: " << remainingElements << std::endl;
           }
@@ -259,7 +274,11 @@ public:
   }
 
 private:
+#if 0
   SIFT_OPENCV_Params _params;
+#else
+  SiftParams _params;
+#endif
   bool _verbose;
 };
 
