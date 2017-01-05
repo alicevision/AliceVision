@@ -210,11 +210,13 @@ int main(int argc, char **argv)
   std::string sFeature_Preset = "NORMAL";
   bool bFeature_Repeatability = false;
   bool bMatching_Repeatability = false;
+  bool bOutputFeatures = false;
   cmd.add( make_option('i', sDataset_Path, "input_dataset") );
   cmd.add( make_option('d', sImage_Describer_Method, "describer_method") );
   cmd.add( make_option('p', sFeature_Preset, "describer_preset") );
   cmd.add( make_option('f', bFeature_Repeatability, "feature_repeatability") );
   cmd.add( make_option('m', bMatching_Repeatability, "matching_repeatability") );
+  cmd.add( make_option('o', bOutputFeatures, "output_features") );
   //--
 
   //--
@@ -253,6 +255,10 @@ int main(int argc, char **argv)
       << "[-m|--matching_repeatability]\n"
       << "   1 (default),\n"
       << "   0\n"
+      << "[-o|--output_features]\n"
+      << "   (write computed features to disk):\n"
+      << "   0 (default),\n"
+      << "   1\n"
       << std::endl;
 
       std::cerr << s << std::endl;
@@ -346,6 +352,37 @@ int main(int argc, char **argv)
         image::ConvertPixelType(dataset.image(i), &imageGray);
         image_describer->Describe(imageGray, map_regions[i]);
         std::cout << "image: " << i << "\t #found features: " << map_regions[i]->RegionCount() << std::endl;
+      }
+
+      if( bOutputFeatures ) {
+        for (size_t reg = 0; reg < dataset.size(); ++reg )
+        {
+          if( map_regions.count(reg) == 0)
+            continue;
+
+          const Regions* regions             = map_regions[reg].get();
+          const PointFeatures pointsFeatures = regions->GetRegionsPositions();
+
+          const SIFT_Regions* regionsCasted = dynamic_cast<const SIFT_Regions*>( regions ) ;
+          int sz = regionsCasted->Features().size();
+          for( int i=0; i<sz; i++ ) {
+              auto feature = regionsCasted->Features()[i];
+              auto desc    = regionsCasted->Descriptors()[i];
+
+              float sigval =  1.0f / ( feature.scale() * feature.scale() );
+              float ignore = feature.orientation();
+
+              std::cout << feature.x() << " "
+                        << feature.y() << " "
+                        << feature.scale() << " "
+                        << "0 "
+                        << feature.scale() << " ";
+             for( int d=0; d<128; d++ ) {
+                std::cout << int(desc[d]) << " ";
+             }
+             std::cout << std::endl;
+          }
+        }
       }
 
       // Repeatability evaluation to the first image
