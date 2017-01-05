@@ -39,19 +39,11 @@ public:
     // Process SIFT computation
     cudaDeviceReset();
 
-    popsift::Config config;
-    config.setMode( popsift::Config::PopSift );
-    config.setOctaves(_params._num_octaves);
-    config.setLevels(_params._num_scales);
-    config.setDownsampling(_params._first_octave);
-    config.setThreshold(  _params._peak_threshold);
-    config.setEdgeLimit(  _params._edge_threshold);
-    config.setUseRootSift(_params._root_sift);
-    config.setInitialBlur( 0.5f );
-
     popsift::cuda::device_prop_t deviceInfo;
     deviceInfo.set( 0, _verbose );
     if( _verbose ) deviceInfo.print( );
+
+    popsift::Config config;
 
     _popSift.reset( new PopSift(config) );
   }
@@ -64,30 +56,7 @@ public:
 
   bool Set_configuration_preset(EDESCRIBER_PRESET preset)
   {
-    switch(preset)
-    {
-    case LOW_PRESET:
-      _params._peak_threshold = 0.04f;
-      _params._first_octave = 2;
-    break;
-    case MEDIUM_PRESET:
-      _params._peak_threshold = 0.04f;
-      _params._first_octave = 1;
-    break;
-    case NORMAL_PRESET:
-      _params._peak_threshold = 0.04f;
-    break;
-    case HIGH_PRESET:
-      _params._peak_threshold = 0.01f;
-    break;
-    case ULTRA_PRESET:
-      _params._peak_threshold = 0.01f;
-      _params._first_octave = -1;
-    break;
-    default:
-      return false;
-    }
-    return true;
+    return _params.setPreset(preset);
   }
 
   /**
@@ -101,6 +70,19 @@ public:
     std::unique_ptr<Regions> &regions,
     const image::Image<unsigned char> * mask = NULL)
   {
+    popsift::Config config;
+    config.setMode(         popsift::Config::PopSift );
+    config.setOctaves(      _params._num_octaves );
+    config.setLevels(       _params._num_scales );
+    config.setDownsampling( _params._first_octave );
+    config.setThreshold(    _params._peak_threshold );
+    config.setEdgeLimit(    _params._edge_threshold );
+    config.setUseRootSift(  _params._root_sift );
+    config.setSigma(        _params._sigma );
+    config.setInitialBlur(  0.5f );
+
+    _popSift->configure( config );
+
     if(_previousImageSize.first != image.Width() ||
        _previousImageSize.second != image.Height())
     {
@@ -135,8 +117,10 @@ public:
         const popsift::Descriptor* popDesc = popFeat.desc[orientationIndex];
         Descriptor<unsigned char, 128> desc;
         // convertSIFT<unsigned char>(*popDesc, desc);
-        for (int k=0;k<128;++k)
+        for (int k=0;k<128;++k) {
+          auto x = popDesc->features[k];
           desc[k] = static_cast<unsigned char>(popDesc->features[k]);
+        }
 
         regionsCasted->Features().emplace_back(
           popFeat.xpos,
