@@ -24,9 +24,10 @@ struct SiftParams
     int num_scales = 3,
     float edge_threshold = 10.0f,
     float peak_threshold = 0.04f,
+    float sigma = 1.6f,
     //
     std::size_t gridSize = 4,
-    std::size_t maxTotalKeypoints = 1000,
+    std::size_t maxTotalKeypoints = 30000,
     //
     bool root_sift = true
   ):
@@ -35,6 +36,7 @@ struct SiftParams
     _num_scales(num_scales),
     _edge_threshold(edge_threshold),
     _peak_threshold(peak_threshold),
+    _sigma(sigma),
     //
     _gridSize(gridSize),
     _maxTotalKeypoints(maxTotalKeypoints),
@@ -50,6 +52,7 @@ struct SiftParams
       cereal::make_nvp("num_scales",_num_scales),
       cereal::make_nvp("edge_threshold",_edge_threshold),
       cereal::make_nvp("peak_threshold",_peak_threshold),
+      cereal::make_nvp("sigma",_sigma),
       //
       cereal::make_nvp("grid_size", _gridSize),
       cereal::make_nvp("max_total_keypoints", _maxTotalKeypoints),
@@ -63,6 +66,7 @@ struct SiftParams
   int _num_scales;        // Scales per octave
   float _edge_threshold;  // Max ratio of Hessian eigenvalues
   float _peak_threshold;  // Min contrast
+  float _sigma;           // Sigma
   //
   std::size_t _gridSize;
   std::size_t _maxTotalKeypoints;
@@ -71,6 +75,8 @@ struct SiftParams
   
   bool setPreset(EDESCRIBER_PRESET preset)
   {
+    std::cerr << "Calling setPreset" << std::endl;
+
     switch(preset)
     {
     case LOW_PRESET:
