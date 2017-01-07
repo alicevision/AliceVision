@@ -53,9 +53,10 @@ public:
       return false; // not supported by CudaSift
     case NORMAL_PRESET:
       return false; // _params._peak_threshold = 0.04f;
+                    // @Carsten: why is there a return false ?
     case HIGH_PRESET:
-      _params._peak_threshold = 0.01f;
-      _params._first_octave = 0;
+      _params._peak_threshold = 0.04f; // TEMP, original value: 0.01
+      _params._first_octave = -1; // TEMP, original value: 0 
       break;
     case ULTRA_PRESET:
       _params._peak_threshold = 0.01f;
@@ -97,22 +98,18 @@ public:
 
     SiftData siftData;
     int      numOctaves = _params._num_octaves; // default in CudaSift is 5
-    float    initBlur;
-    float    peak_threshold = 3.5f;
-    if( _params._first_octave == -1 ) {
-        initBlur = 0.25f;
-    } else if( _params._first_octave == 0 ) {
-        initBlur = 0.5f;
-    } else {
-        initBlur = 1.0f;
-    }
+    float    peak_threshold = 3.4f; // TEMP, initial 3.5. I put it to 3.4f because = 255 * 0.04 / 3 where 3 the number of levels/octave 
+                                    // cf. l. 200, nonFree/sift/sift.hpp,
+                                    // Same for openCV: ./xfeatures2d/src/sift.cpp: l. 383 + l. 456
+    float    initBlur = 0.5f * pow (2.0, -_params._first_octave); // -1: 1.0f, 0: 0.5f, 1:0.25f, etc. as not computed in the library
+
     float    lowestScale = 0.0f;
     // float    edgeLimit   = _params._edge_treshold; - ignore - this is always 10.0f in CudaSift
     bool     scaleUp = ( _params._first_octave == -1 ?  true : false );
     bool     allocSiftPointsHost = true;
     bool     allocSiftPointsDev  = true;
     InitSiftData( siftData,
-                  _params._maxTotalKeypoints,
+                  _params._maxTotalKeypoints, // Should be custom
                   allocSiftPointsHost,
                   allocSiftPointsDev );
     ExtractSift( siftData,
