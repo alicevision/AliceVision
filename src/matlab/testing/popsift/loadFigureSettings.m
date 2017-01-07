@@ -11,7 +11,7 @@ fig.yLabel2 = '#correspondences';
 fig.yLabel3 = 'matching score %';
 fig.yLabel4 = '#correct matches';
 
-fig.style = { 'mx:',  'ks-.', 'bo-', 'r*--' };
+fig.style = { 'mx:', 'ks-.', 'bo-', 'r*--', 'gx-' };
 
 if ~doSaveFigure
     % Legend properties: set Title, axis size

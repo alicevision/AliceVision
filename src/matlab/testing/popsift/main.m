@@ -3,12 +3,12 @@ clear all;
 
 setPath;
 
-datasetPath = '/home/lilian/data/Features_Repeatability/vgg_oxford_feat_eval/';
+datasetPath = '/home/lilian/data/Features_Repeatability/vgg_oxford_feat_eval/root/';
 
-allAlgos= { 'popsift-popsift'};%, 'vlfeat' }; %'vlfeat', 'opencv'};%, 'popsift' };%
-algoNames= { 'popsift'}; % 'VLFeat'};%, 'OpenCV'}%;, 'popSift'};%
+allAlgos= { 'openmvg-vlfeat', 'opencv', 'popsift','siftgpu','celebrandil'};%, 'vlfeat' }; %'vlfeat', 'opencv'};%, 'popsift' };%
+algoNames= { 'VLFeat', 'OpenCV', 'popSIFT', 'SiftGPU', 'Celebrandil' }; % 'VLFeat'};%, 'OpenCV'}%;, 'popSift'};%
 
-datasetNames = {'bark','bikes','boat','graf','leuven','trees','ubc','wall'}; %'bark','bikes','boat','graf'
+datasetNames = {'wall'};%{'bark','bikes','boat','graf','leuven','trees','ubc','wall'}; %'bark','bikes','boat','graf'
 for i=1:length(datasetNames)
     allFolders{i} = [ datasetPath datasetNames{i} ]
 end
@@ -22,11 +22,11 @@ indA = listImages(1);
 for algoName = allAlgos
     for folderName=allFolders
         for indB = listImages(indA+1:end)
-            indB
             disp(['Results for ' algoName{1}]);
-            
-            fileA = sprintf('%s/%s/img%d.sift', folderName{1}, algoName{1}, indA)
-            fileB = sprintf('%s/%s/img%d.sift', folderName{1}, algoName{1}, indB)
+            disp(['Processing image #' indB ]);
+                
+            fileA = sprintf('%s/%s/normal/img%d.sift', folderName{1}, algoName{1}, indA)
+            fileB = sprintf('%s/%s/normal/img%d.sift', folderName{1}, algoName{1}, indB)
             
             imgA = sprintf('%s/img%d.ppm', folderName{1}, indA)
             imgB = sprintf('%s/img%d.ppm', folderName{1}, indB)

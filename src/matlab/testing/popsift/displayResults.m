@@ -4,14 +4,14 @@ if (nargin == 1)
     doSave = 0;
 end
 
-displayAll = 0;
+displayAll = 1;
 
-datasetPath = '/home/lilian/data/Features_Repeatability/vgg_oxford_feat_eval/';
+datasetPath = '/home/lilian/data/Features_Repeatability/vgg_oxford_feat_eval/root/';
 
 load(sprintf('%s/infos.mat', datasetPath));
 
-allAlgos= { 'vlfeat', 'opencv', 'popsift-popsift' };
-algoNames= { 'VLFeat', 'OpenCV', 'popSIFT' };
+allAlgos= { 'openmvg-vlfeat', 'opencv', 'popsift','siftgpu','celebrandil' };
+algoNames= { 'VLFeat', 'OpenCV', 'popSIFT', 'SiftGPU', 'Celebrandil' };
 
 % datasetNames = {'bark','bikes','boat','graf','leuven','trees','ubc','wall'};
 
