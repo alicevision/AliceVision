@@ -20,14 +20,14 @@ struct SiftParams
 {
   SiftParams(
     int first_octave = 0,
-    int num_octaves = 6,
+    int num_octaves = 8, // TEMP, default 6
     int num_scales = 3,
     float edge_threshold = 10.0f,
     float peak_threshold = 0.04f,
     float sigma = 1.6f,
     //
-    std::size_t gridSize = 4,
-    std::size_t maxTotalKeypoints = 30000,
+    std::size_t gridSize = 0, // TEMP: don't use GRID, 4 default
+    std::size_t maxTotalKeypoints = 0, // TEMP: don't use GRID, 1000 default
     //
     bool root_sift = true
   ):
@@ -102,7 +102,8 @@ struct SiftParams
     case HIGH_PRESET:
     {
       _maxTotalKeypoints = 50000;
-      _peak_threshold = 0.01f;
+      _peak_threshold = 0.04f; // TEMP, set to 0.01
+      _first_octave = -1; // TEMP, set to the default value by default
       break;
     }
     case ULTRA_PRESET:
@@ -115,6 +116,8 @@ struct SiftParams
     default:
       return false;
     }
+    _maxTotalKeypoints = 0; // TEMP: don't use GRID, line to delete
+    _gridSize = 0; // TEMP: don't use GRID, line to delete
     return true;
   }
   
