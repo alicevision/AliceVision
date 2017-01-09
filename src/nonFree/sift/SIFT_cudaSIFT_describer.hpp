@@ -45,27 +45,7 @@ public:
 
   bool Set_configuration_preset(EDESCRIBER_PRESET preset)
   {
-    switch(preset)
-    {
-    case LOW_PRESET:
-      return false; // not supported by CudaSift
-    case MEDIUM_PRESET:
-      return false; // not supported by CudaSift
-    case NORMAL_PRESET:
-      return false; // _params._peak_threshold = 0.04f;
-                    // @Carsten: why is there a return false ?
-    case HIGH_PRESET:
-      _params._peak_threshold = 0.04f; // TEMP, original value: 0.01
-      _params._first_octave = -1; // TEMP, original value: 0 
-      break;
-    case ULTRA_PRESET:
-      _params._peak_threshold = 0.01f;
-      _params._first_octave = -1;
-      break;
-    default:
-      return false;
-    }
-    return true;
+    return _params.setPreset(preset);
   }
 
   /**
@@ -98,9 +78,10 @@ public:
 
     SiftData siftData;
     int      numOctaves = _params._num_octaves; // default in CudaSift is 5
-    float    peak_threshold = 3.4f; // TEMP, initial 3.5. I put it to 3.4f because = 255 * 0.04 / 3 where 3 the number of levels/octave 
+    // float    peak_threshold = 3.4f; // TEMP, initial 3.5. I put it to 3.4f because = 255 * 0.04 / 3 where 3 the number of levels/octave 
                                     // cf. l. 200, nonFree/sift/sift.hpp,
                                     // Same for openCV: ./xfeatures2d/src/sift.cpp: l. 383 + l. 456
+    float    peak_threshold = 255.0f * _params._peak_threshold / 3.0f;
     float    initBlur = 0.5f * pow (2.0, -_params._first_octave); // -1: 1.0f, 0: 0.5f, 1:0.25f, etc. as not computed in the library
 
     float    lowestScale = 0.0f;
