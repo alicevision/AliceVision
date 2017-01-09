@@ -381,14 +381,14 @@ int main(int argc, char **argv)
               auto feature = regionsCasted->Features()[i];
               auto desc    = regionsCasted->Descriptors()[i];
 
-              float sigval =  1.0f / ( feature.scale() * feature.scale() );
+              float sigval =  1.0f / sqrtf( feature.scale() );
               float ignore = feature.orientation();
 
               of << feature.x() << " "
                  << feature.y() << " "
-                 << feature.scale() << " "
+                 << sigval << " "
                  << "0 "
-                 << feature.scale() << " ";
+                 << sigval << " ";
              for( int d=0; d<128; d++ ) {
                 of << int(desc[d]) << " ";
              }
