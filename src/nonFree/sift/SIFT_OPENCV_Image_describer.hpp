@@ -141,7 +141,7 @@ public:
     // cv::Ptr<cv::Feature2D> siftdetector = cv::xfeatures2d::SIFT::create(maxDetect, _params.nOctaveLayers, _params.contrastThreshold, _params.edgeThreshold, _params.sigma);
     cv::Ptr<cv::Feature2D> siftdetector = cv::xfeatures2d::SIFT::create( _params._maxTotalKeypoints,
                                                                          _params._num_octaves,
-                                                                         1.6f * 2.0f * _params._peak_threshold,
+                                                                         _params._peak_threshold,
                                                                          _params._edge_threshold,
                                                                          _params._sigma );
 
