@@ -7,6 +7,7 @@
 
 #include "openMVG/matching/indMatch.hpp"
 #include "openMVG/matching/indMatch_utils.hpp"
+#include "openMVG/features/svgVisualization.hpp"
 #include "openMVG/image/image.hpp"
 #include "openMVG/sfm/sfm.hpp"
 
@@ -106,29 +107,22 @@ int main(int argc, char ** argv)
 
     const std::pair<size_t, size_t>
       dimImage = std::make_pair(view->ui_width, view->ui_height);
-
-    svgDrawer svgStream( dimImage.first, dimImage.second);
-    svgStream.drawImage(sView_filename,
-      dimImage.first,
-      dimImage.second);
-
-    //-- Draw features
+    
+    // get the features
     const PointFeatures & features = feats_provider->getFeatures(view->id_view);
-    for (size_t i=0; i< features.size(); ++i)  {
-      const PointFeature & feature = features[i];
-      svgStream.drawCircle(feature.x(), feature.y(), 3,
-          svgStyle().stroke("yellow", 2.0));
-    }
 
-    // Write the SVG file
+    // output filename
     std::ostringstream os;
     os << stlplus::folder_append_separator(sOutDir)
       << stlplus::basename_part(sView_filename)
       << "_" << features.size() << "_.svg";
-    std::ofstream svgFile( os.str().c_str() );
-    svgFile << svgStream.closeSvgFile().str();
-    svgFile.close();
+
+    features::saveFeatures2SVG(sView_filename,
+                               dimImage,
+                               features,
+                               os.str());
     ++my_progress_bar;
   }
+  
   return EXIT_SUCCESS;
 }
