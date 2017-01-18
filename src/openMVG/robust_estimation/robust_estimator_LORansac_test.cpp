@@ -154,10 +154,10 @@ TEST(LoRansacLineFitter, IdealCaseLoRansac)
 TEST(LoRansacLineFitter, RealCaseLoRansac)
 {
 
-  const int NbPoints = 3000;
+  const int NbPoints = 300;
   const int outlierRatio = 30;
-  const double gaussianNoiseLevel = 0.1;
-  const std::size_t numTrials = 1;
+  const double gaussianNoiseLevel = 0.01;
+  const std::size_t numTrials = 10;
   
   Mat2X xy(2, NbPoints);
 
