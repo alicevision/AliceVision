@@ -147,8 +147,8 @@ TEST(LoRansacLineFitter, IdealCaseLoRansac)
           << " expected: " << GTModel[1]);
   
   CHECK_EQUAL(NbPoints-nbPtToNoise, vec_inliers.size());
-  EXPECT_NEAR(GTModel[0], model[0], 1e-9);
-  EXPECT_NEAR(GTModel[1], model[1], 1e-9);
+  EXPECT_NEAR(GTModel[0], model[0], 1e-2);
+  EXPECT_NEAR(GTModel[1], model[1], 1e-2);
 }
 
 TEST(LoRansacLineFitter, RealCaseLoRansac)
