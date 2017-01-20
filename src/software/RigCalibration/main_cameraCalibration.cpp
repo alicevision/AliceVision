@@ -230,7 +230,7 @@ int main(int argc, char** argv)
 
   // Select best images based on repartition in images of the calibration landmarks
   openMVG::calibration::selectBestImages(
-      imagePoints, imageSize, maxCalibFrames, validFrames, calibGridSize,
+      imagePoints, imageSize, maxCalibFrames, calibGridSize,
       calibImageScore, calibInputFrames, calibImagePoints,
       remainingImagesIndexes);
 

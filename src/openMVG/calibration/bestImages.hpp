@@ -52,7 +52,6 @@ void computeImageScores(const std::vector<std::size_t>& inputImagesIndexes,
  * @param[in] imagePoints Vector of detected points for each image.
  * @param[in] imageSize Image size (width, height).
  * @param[in] maxCalibFrames Maximum number of images to used for the calibration.
- * @param[in] validFrames Store the id of the detected checkers.
  * @param[in] calibGridSize The number of cells per each image dimension.
  * @param[out] calibImageScore Score for each selected image.
  * @param[out] calibInputFrames Id of selected images.
@@ -62,7 +61,6 @@ void computeImageScores(const std::vector<std::size_t>& inputImagesIndexes,
 void selectBestImages(const std::vector<std::vector<cv::Point2f> >& imagePoints,
                       const cv::Size& imageSize,
                       const std::size_t& maxCalibFrames,
-                      const std::vector<std::size_t>& validFrames,
                       const std::size_t calibGridSize,
                       std::vector<float>& calibImageScore,
                       std::vector<std::size_t>& calibInputFrames,
