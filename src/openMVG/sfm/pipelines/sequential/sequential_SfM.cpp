@@ -1242,7 +1242,7 @@ bool SequentialSfMReconstructionEngine::Resection(const size_t viewIndex)
   // B. Look if intrinsic data is known or not
   View * view_I = _sfm_data.GetViews().at(viewIndex).get();
   std::shared_ptr<cameras::IntrinsicBase> optional_intrinsic (nullptr);
-  if (_sfm_data.GetIntrinsics().count(view_I->id_intrinsic))
+  if (view_I->id_intrinsic != UndefinedIndexT && _sfm_data.GetIntrinsics().count(view_I->id_intrinsic))
   {
     optional_intrinsic = _sfm_data.GetIntrinsics().at(view_I->id_intrinsic);
   }
@@ -1316,15 +1316,16 @@ bool SequentialSfMReconstructionEngine::Resection(const size_t viewIndex)
       const double focal = (K(0,0) + K(1,1))/2.0;
       const Vec2 principal_point(K(0,2), K(1,2));
 
-      if(optional_intrinsic == nullptr)
-      {
-        // Create the new camera intrinsic group
-        optional_intrinsic = createPinholeIntrinsic(_camType, view_I->ui_width, view_I->ui_height, focal, principal_point(0), principal_point(1));
-      }
-      else if(pinhole_cam)
+      if(pinhole_cam)
       {
         // Fill the uninitialized camera intrinsic group
         pinhole_cam->setK(focal, principal_point(0), principal_point(1));
+      }
+      else
+      {
+        assert(optional_intrinsic == nullptr);
+        // Create the new camera intrinsic group
+        optional_intrinsic = createPinholeIntrinsic(_camType, view_I->ui_width, view_I->ui_height, focal, principal_point(0), principal_point(1));
       }
     }
     const std::set<IndexT> reconstructedIntrinsics = Get_Reconstructed_Intrinsics(_sfm_data);
@@ -1339,7 +1340,7 @@ bool SequentialSfMReconstructionEngine::Resection(const size_t viewIndex)
     }
 
     // E. Update the global scene with the new found camera pose, intrinsic (if not defined)
-    if (b_new_intrinsic)
+    if (pinhole_cam == nullptr)
     {
       // Since the view have not yet an intrinsic group before, create a new one
       IndexT new_intrinsic_id = 0;
