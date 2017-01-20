@@ -111,53 +111,57 @@ struct LineKernelLoRansac : public LineKernel
 TEST(LoRansacLineFitter, IdealCaseLoRansac) 
 {
 
-  const int NbPoints = 3000;
-  const int outlierRatio = 30; //works with 40
+  const int NbPoints = 300;
+  const int outlierRatio = 30; 
+  const std::size_t numTrials = 10;
   Mat2X xy(2, NbPoints);
 
   Vec2 GTModel; // y = 2x + 6.3
   GTModel <<  -2.0, 6.3;
-
-  //-- Build the point list according the given model
-  for(std::size_t i = 0; i < NbPoints; ++i)  
-  {
-    xy.col(i) << i, (double)i*GTModel[1] + GTModel[0];
-  }
-
-  //-- Add some noise (for the asked percentage amount)
-  int nbPtToNoise = (int) NbPoints*outlierRatio/100.0;
-  vector<size_t> vec_samples; // Fit with unique random index
-  UniformSample(nbPtToNoise, NbPoints, &vec_samples);
-  for(size_t i = 0; i <vec_samples.size(); ++i)
-  {
-    const size_t randomIndex = vec_samples[i];
-    //Additive random noise
-    xy.col(randomIndex) << xy.col(randomIndex)(0)+rand()%2-3,
-                           xy.col(randomIndex)(1)+rand()%8-6;
-  }
   
-  LineKernelLoRansac kernel(xy);
-  std::vector<size_t> vec_inliers;
-  Vec2 model = LO_RANSAC(kernel, ScorerEvaluator<LineKernel>(0.3), &vec_inliers);
-  OPENMVG_LOG_DEBUG("#inliers found : " << vec_inliers.size() 
-          << " expected: " << NbPoints-nbPtToNoise);
-  OPENMVG_LOG_DEBUG("model[0] found : " << model[0] 
-          << " expected: " << GTModel[0]);
-  OPENMVG_LOG_DEBUG("model[1] found : " << model[1] 
-          << " expected: " << GTModel[1]);
-  
-  CHECK_EQUAL(NbPoints-nbPtToNoise, vec_inliers.size());
-  EXPECT_NEAR(GTModel[0], model[0], 1e-9);
-  EXPECT_NEAR(GTModel[1], model[1], 1e-9);
+  for(std::size_t trial = 0; trial < numTrials; ++trial)
+  {
+    //-- Build the point list according the given model
+    for(std::size_t i = 0; i < NbPoints; ++i)  
+    {
+      xy.col(i) << i, (double)i*GTModel[1] + GTModel[0];
+    }
+
+    //-- Add some noise (for the asked percentage amount)
+    int nbPtToNoise = (int) NbPoints*outlierRatio/100.0;
+    vector<size_t> vec_samples; // Fit with unique random index
+    UniformSample(nbPtToNoise, NbPoints, &vec_samples);
+    for(size_t i = 0; i <vec_samples.size(); ++i)
+    {
+      const size_t randomIndex = vec_samples[i];
+      //Additive random noise
+      xy.col(randomIndex) << xy.col(randomIndex)(0)+rand()%2-3,
+                             xy.col(randomIndex)(1)+rand()%8-6;
+    }
+
+    LineKernelLoRansac kernel(xy);
+    std::vector<size_t> vec_inliers;
+    Vec2 model = LO_RANSAC(kernel, ScorerEvaluator<LineKernel>(0.3), &vec_inliers);
+    OPENMVG_LOG_DEBUG("#inliers found : " << vec_inliers.size() 
+            << " expected: " << NbPoints-nbPtToNoise);
+    OPENMVG_LOG_DEBUG("model[0] found : " << model[0] 
+            << " expected: " << GTModel[0]);
+    OPENMVG_LOG_DEBUG("model[1] found : " << model[1] 
+            << " expected: " << GTModel[1]);
+
+    CHECK_EQUAL(NbPoints-nbPtToNoise, vec_inliers.size());
+    EXPECT_NEAR(GTModel[0], model[0], 1e-2);
+    EXPECT_NEAR(GTModel[1], model[1], 1e-2);
+  }
 }
 
 TEST(LoRansacLineFitter, RealCaseLoRansac)
 {
 
-  const int NbPoints = 3000;
+  const int NbPoints = 300;
   const int outlierRatio = 30;
-  const double gaussianNoiseLevel = 0.1;
-  const std::size_t numTrials = 1;
+  const double gaussianNoiseLevel = 0.01;
+  const std::size_t numTrials = 10;
   
   Mat2X xy(2, NbPoints);
 
