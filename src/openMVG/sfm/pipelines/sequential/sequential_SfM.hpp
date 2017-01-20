@@ -190,6 +190,7 @@ private:
   /// internal cache of precomputed values for the weighting of the pyramid levels
   std::vector<int> _pyramidWeights;
   int _pyramidThreshold;
+  int _newCameraIndex = 0;
 
   // Temporary data
   /// Putative landmark tracks (visibility per potential 3D point)

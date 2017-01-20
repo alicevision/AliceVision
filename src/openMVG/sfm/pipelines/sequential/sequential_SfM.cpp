@@ -692,9 +692,9 @@ bool SequentialSfMReconstructionEngine::MakeInitialPair3D(const Pair & current_p
   const size_t J = max(current_pair.first, current_pair.second);
 
   // a. Assert we have valid pinhole cameras
-  const View * view_I = _sfm_data.GetViews().at(I).get();
+  View * view_I = _sfm_data.GetViews().at(I).get();
   const Intrinsics::const_iterator iterIntrinsic_I = _sfm_data.GetIntrinsics().find(view_I->id_intrinsic);
-  const View * view_J = _sfm_data.GetViews().at(J).get();
+  View * view_J = _sfm_data.GetViews().at(J).get();
   const Intrinsics::const_iterator iterIntrinsic_J = _sfm_data.GetIntrinsics().find(view_J->id_intrinsic);
 
   OPENMVG_LOG_DEBUG("Initial pair is:\n"
@@ -769,6 +769,8 @@ bool SequentialSfMReconstructionEngine::MakeInitialPair3D(const Pair & current_p
     tiny_scene.intrinsics.insert(*_sfm_data.GetIntrinsics().find(view_J->id_intrinsic));
 
     // Init poses
+    view_I->id_pose = _newCameraIndex++;
+    view_J->id_pose = _newCameraIndex++;
     const Pose3 & Pose_I = tiny_scene.poses[view_I->id_pose] = Pose3(Mat3::Identity(), Vec3::Zero());
     const Pose3 & Pose_J = tiny_scene.poses[view_J->id_pose] = relativePose_info.relativePose;
 
@@ -807,6 +809,8 @@ bool SequentialSfMReconstructionEngine::MakeInitialPair3D(const Pair & current_p
     Bundle_Adjustment_Ceres bundle_adjustment_obj(options);
     if (!bundle_adjustment_obj.Adjust(tiny_scene, BA_REFINE_ROTATION | BA_REFINE_TRANSLATION | BA_REFINE_STRUCTURE))
     {
+      view_I->id_pose = UndefinedIndexT;
+      view_J->id_pose = UndefinedIndexT;
       return false;
     }
 
@@ -1236,7 +1240,7 @@ bool SequentialSfMReconstructionEngine::Resection(const size_t viewIndex)
   resection_data.pt3D.resize(3, set_trackIdForResection.size());
 
   // B. Look if intrinsic data is known or not
-  const View * view_I = _sfm_data.GetViews().at(viewIndex).get();
+  View * view_I = _sfm_data.GetViews().at(viewIndex).get();
   std::shared_ptr<cameras::IntrinsicBase> optional_intrinsic (nullptr);
   if (_sfm_data.GetIntrinsics().count(view_I->id_intrinsic))
   {
@@ -1352,9 +1356,15 @@ bool SequentialSfMReconstructionEngine::Resection(const size_t viewIndex)
       _sfm_data.views.at(viewIndex).get()->id_intrinsic = new_intrinsic_id;
       _sfm_data.intrinsics[new_intrinsic_id]= optional_intrinsic;
     }
-    // Update the view pose
+    
+    // Add the new Camera Pose to the scene
+    
+    // Set an incremental index
+    view_I->id_pose = _newCameraIndex++;
+    // set the new Pose
     _sfm_data.poses[view_I->id_pose] = pose;
-    _map_ACThreshold.insert(std::make_pair(viewIndex, resection_data.error_max));
+    // store the Ransac threshold used
+    _map_ACThreshold[viewIndex] = resection_data.error_max;
   }
 
   // F. Update the observations into the global scene structure
