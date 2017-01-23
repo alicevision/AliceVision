@@ -265,7 +265,7 @@ int main(int argc, char **argv)
     << "   AKAZE_MLDB:  AKAZE with binary descriptors\n"
 #ifdef HAVE_CCTAG
       << "   CCTAG3: CCTAG markers with 3 crowns\n"
-      << "   CCTAG3: CCTAG markers with 4 crowns\n"
+      << "   CCTAG4: CCTAG markers with 4 crowns\n"
       << "   SIFT_CCTAG3: CCTAG markers with 3 crowns\n" 
       << "   SIFT_CCTAG4: CCTAG markers with 4 crowns\n" 
 #endif
