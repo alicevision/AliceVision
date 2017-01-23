@@ -69,7 +69,6 @@ bool CCTAG_Image_describer::Describe(const image::Image<unsigned char>& image,
     std::unique_ptr<Regions> &regions,
     const image::Image<unsigned char> * mask)
   {
-    const int w = image.Width(), h = image.Height();
     
     if ( !_doAppend )
       Allocate(regions);  
