@@ -80,11 +80,7 @@ int main(int argc, char** argv)
   string treeName; ///< the filename of the voctree
   string keylist; ///< the file containing the list of features to use to build the database
   string queryList = ""; ///< the file containing the list of features to use as query
-  size_t numImageQuery; ///< the number of matches to retrieve for each image
   string distance;
-
-  openMVG::sfm::SfM_Data sfmdata;
-  openMVG::sfm::SfM_Data *sfmdataQuery;
 
   bpo::options_description desc(programDescription);
   desc.add_options()

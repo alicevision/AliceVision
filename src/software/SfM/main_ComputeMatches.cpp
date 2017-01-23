@@ -94,7 +94,6 @@ int main(int argc, char **argv)
   std::string sPredefinedPairList = "";
   int rangeStart = -1;
   int rangeSize = 0;
-  bool bUpRight = false;
   std::string sNearestMatchingMethod = "AUTO";
   bool bForce = false;
   bool bSavePutativeMatches = false;

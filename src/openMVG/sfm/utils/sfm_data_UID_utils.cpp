@@ -37,7 +37,6 @@ void sanityCheckLandmarks(const Landmarks &landmarks, const Views &views)
     for(const auto &iterObs : currentLandmark.obs)
     {
       const auto idview = iterObs.first;
-      const Observation &obs = iterObs.second;
 
       // there must be a view with that id (in the map) and the view must have 
       // the same id (the member)

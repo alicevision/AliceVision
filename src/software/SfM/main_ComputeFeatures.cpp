@@ -504,7 +504,6 @@ int main(int argc, char **argv)
       std::advance(iterViewsEnd, rangeSize);
     }
 
-    Image<unsigned char> imageGray;
     for(;
       iterViews != iterViewsEnd;
       ++iterViews, ++my_progress_bar)
