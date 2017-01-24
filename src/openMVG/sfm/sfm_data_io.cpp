@@ -102,7 +102,7 @@ bool Load(SfM_Data & sfm_data, const std::string & filename, ESfM_Data flags_par
     bStatus = Load_Cereal<cereal::XMLInputArchive>(sfm_data, filename, flags_part);
 #if HAVE_ALEMBIC
   else if (ext == "abc") {
-    openMVG::dataio::AlembicImporter(filename).populate(sfm_data, flags_part);
+    openMVG::sfm::AlembicImporter(filename).populate(sfm_data, flags_part);
     bStatus = true;
   }
 #endif // HAVE_ALEMBIC
@@ -143,7 +143,7 @@ bool Save(const SfM_Data & sfm_data, const std::string & filename, ESfM_Data fla
 #if HAVE_ALEMBIC
   else if (ext == "abc") // Alembic
   {
-    openMVG::dataio::AlembicExporter(filename).add(sfm_data, flags_part);
+    openMVG::sfm::AlembicExporter(filename).add(sfm_data, flags_part);
     return true;
   }
 #endif // HAVE_ALEMBIC

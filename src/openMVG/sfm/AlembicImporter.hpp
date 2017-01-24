@@ -14,7 +14,7 @@
 #include <string>
 
 namespace openMVG {
-namespace dataio {
+namespace sfm {
 
 class AlembicImporter 
 {
@@ -30,7 +30,7 @@ private:
   std::unique_ptr<DataImpl> _objImpl;
 };
 
-} // namespace mockup
+} // namespace sfm
 } // namespace openMVG
 
 #endif // WITH_ALEMBIC
