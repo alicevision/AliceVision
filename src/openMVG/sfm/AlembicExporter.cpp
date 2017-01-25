@@ -16,7 +16,7 @@
 #include "openMVG/version.hpp"
 
 namespace openMVG {
-namespace dataio {
+namespace sfm {
 
 
 using namespace Alembic::Abc;
@@ -447,7 +447,7 @@ std::string AlembicExporter::getFilename()
   return _data->_archive.getName();
 }
 
-} //namespace dataio
+} //namespace sfm
 } //namespace openMVG
 
 #endif //HAVE_ALEMBIC

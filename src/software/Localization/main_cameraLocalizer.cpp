@@ -442,7 +442,7 @@ int main(int argc, char** argv)
   
 #if HAVE_ALEMBIC
   // init alembic exporter
-  dataio::AlembicExporter exporter( exportFile );
+  sfm::AlembicExporter exporter( exportFile );
   exporter.addPoints(localizer->getSfMData().GetLandmarks());
   exporter.initAnimatedCamera("camera");
 #endif
@@ -538,7 +538,7 @@ int main(int argc, char** argv)
     {
 #if HAVE_ALEMBIC
       // now copy back in a new abc with the same name file and BUNDLE appended at the end
-      dataio::AlembicExporter exporterBA( basename+".BUNDLE.abc" );
+      sfm::AlembicExporter exporterBA( basename+".BUNDLE.abc" );
       exporterBA.initAnimatedCamera("camera");
       std::size_t idx = 0;
       for(const localization::LocalizationResult &res : vec_localizationResults)

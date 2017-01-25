@@ -383,17 +383,17 @@ int main(int argc, char** argv)
   }
 
 #if HAVE_ALEMBIC
-  dataio::AlembicExporter exporter(exportFile);
+  sfm::AlembicExporter exporter(exportFile);
   exporter.initAnimatedCamera("rig");
   exporter.addPoints(localizer->getSfMData().GetLandmarks());
   
-  boost::ptr_vector<dataio::AlembicExporter> cameraExporters;
+  boost::ptr_vector<sfm::AlembicExporter> cameraExporters;
   cameraExporters.reserve(numCameras);
   // this contains the full path and the root name of the file without the extension
   const std::string basename = (bfs::path(exportFile).parent_path() / bfs::path(exportFile).stem()).string();
   for(std::size_t i = 0; i < numCameras; ++i)
   {
-    cameraExporters.push_back( new dataio::AlembicExporter(basename+".cam"+myToString(i, 2)+".abc"));
+    cameraExporters.push_back( new sfm::AlembicExporter(basename+".cam"+myToString(i, 2)+".abc"));
     cameraExporters.back().initAnimatedCamera("cam"+myToString(i, 2));
   }
 #endif

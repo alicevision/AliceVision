@@ -18,7 +18,7 @@ namespace AbcG = Alembic::AbcGeom;
 using namespace AbcG;
 
 namespace openMVG {
-namespace dataio {
+namespace sfm {
 
 template<class AbcArrayProperty, typename T>
 void getAbcArrayProp(ICompoundProperty& userProps, const std::string& id, index_t sampleFrame, T& outputArray)
@@ -386,7 +386,7 @@ void AlembicImporter::populate(sfm::SfM_Data &sfmdata, sfm::ESfM_Data flags_part
   // TODO: fusion of common intrinsics
 }
 
-} // namespace data_io
+} // namespace sfm
 } // namespace openMVG
 
 #endif // WITH_ALEMBIC

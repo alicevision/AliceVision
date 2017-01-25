@@ -386,7 +386,7 @@ int main(int argc, char** argv)
   }
 
 #if HAVE_ALEMBIC
-  dataio::AlembicExporter exporter(exportFile);
+  sfm::AlembicExporter exporter(exportFile);
   exporter.addPoints(localizer->getSfMData().GetLandmarks());
 #endif
 
