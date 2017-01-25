@@ -91,7 +91,7 @@ script:
     if folder_not_empty "$GT_TEST_SOURCE"; then
       echo "Evaluation benchmark found in cache.";
     else
-      git clone --branch master https://github.com/poparteu/SfM_quality_evaluation.git $GT_TEST_SOURCE;
+      git clone --branch master https://github.com/alicevision/SfM_quality_evaluation.git $GT_TEST_SOURCE;
     fi
   - cd $GT_TEST_SOURCE
   - git pull
