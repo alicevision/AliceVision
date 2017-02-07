@@ -100,7 +100,7 @@ bool Load(SfM_Data & sfm_data, const std::string & filename, ESfM_Data flags_par
     bStatus = Load_Cereal<cereal::PortableBinaryInputArchive>(sfm_data, filename, flags_part);
   else if (ext == "xml")
     bStatus = Load_Cereal<cereal::XMLInputArchive>(sfm_data, filename, flags_part);
-#if HAVE_ALEMBIC
+#ifdef HAVE_ALEMBIC
   else if (ext == "abc") {
     openMVG::sfm::AlembicImporter(filename).populate(sfm_data, flags_part);
     bStatus = true;
@@ -140,7 +140,7 @@ bool Save(const SfM_Data & sfm_data, const std::string & filename, ESfM_Data fla
     return Save_PLY(sfm_data, filename, flags_part);
   else if (ext == "baf") // Bundle Adjustment file
     return Save_BAF(sfm_data, filename, flags_part);
-#if HAVE_ALEMBIC
+#ifdef HAVE_ALEMBIC
   else if (ext == "abc") // Alembic
   {
     openMVG::sfm::AlembicExporter(filename).add(sfm_data, flags_part);

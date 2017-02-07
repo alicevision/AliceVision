@@ -1,4 +1,4 @@
-#if HAVE_ALEMBIC
+#ifdef HAVE_ALEMBIC
 
 #pragma once
 

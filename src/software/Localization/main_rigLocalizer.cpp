@@ -26,7 +26,7 @@
 #include <chrono>
 #include <memory>
 
-#if HAVE_ALEMBIC
+#ifdef HAVE_ALEMBIC
 #include <openMVG/sfm/AlembicExporter.hpp>
 #endif // HAVE_ALEMBIC
 
@@ -169,7 +169,7 @@ int main(int argc, char** argv)
   // parameters for cctag localizer
   std::size_t nNearestKeyFrames = 5;           //
 
-#if HAVE_ALEMBIC
+#ifdef HAVE_ALEMBIC
   std::string exportFile = "trackedcameras.abc"; //!< the export file
 #endif
   
@@ -240,7 +240,7 @@ int main(int argc, char** argv)
       ("nNearestKeyFrames", po::value<size_t>(&nNearestKeyFrames)->default_value(nNearestKeyFrames),
         "[cctag] Number of images to retrieve in database")
 #endif
-#if HAVE_ALEMBIC
+#ifdef HAVE_ALEMBIC
       ("output", po::value<std::string>(&exportFile)->default_value(exportFile),
         "Filename for the SfM_Data export file (where camera poses will be stored)."
         " Default : trackedcameras.abc.")
@@ -382,7 +382,7 @@ int main(int argc, char** argv)
     return EXIT_FAILURE;
   }
 
-#if HAVE_ALEMBIC
+#ifdef HAVE_ALEMBIC
   sfm::AlembicExporter exporter(exportFile);
   exporter.initAnimatedCamera("rig");
   exporter.addPoints(localizer->getSfMData().GetLandmarks());
@@ -504,7 +504,7 @@ int main(int argc, char** argv)
     if(isLocalized)
     {
       ++numLocalizedFrames;
-#if HAVE_ALEMBIC
+#ifdef HAVE_ALEMBIC
       // save the position of the main camera
       exporter.addCameraKeyframe(rigPose, &vec_queryIntrinsics[0], mediaPath, frameCounter, frameCounter);
       assert(cameraExporters.size()==numCameras);
@@ -523,7 +523,7 @@ int main(int argc, char** argv)
     else
     {
      OPENMVG_CERR("Unable to localize frame " << frameCounter);
-#if HAVE_ALEMBIC
+#ifdef HAVE_ALEMBIC
       exporter.jumpKeyframe();
       assert(cameraExporters.size()==numCameras);
       for(std::size_t camIDX = 0; camIDX < numCameras; ++camIDX)

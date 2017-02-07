@@ -5,7 +5,7 @@
  * Created on September 28, 2015, 10:35 AM
  */
 
-#if HAVE_OPENCV
+#ifdef HAVE_OPENCV
 
 #pragma once
 
@@ -79,4 +79,4 @@ private:
 }//namespace dataio 
 }//namespace openMVG
 
-#endif //#if HAVE_OPENCV
+#endif //#ifdef HAVE_OPENCV

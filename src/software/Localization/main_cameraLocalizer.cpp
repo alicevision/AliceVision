@@ -27,7 +27,7 @@
 #include <chrono>
 #include <memory>
 
-#if HAVE_ALEMBIC
+#ifdef HAVE_ALEMBIC
 #include <openMVG/sfm/AlembicExporter.hpp>
 #endif // HAVE_ALEMBIC
 
@@ -165,7 +165,7 @@ int main(int argc, char** argv)
   std::string vocTreeFilepath;      //< the vocabulary tree file
   std::string weightsFilepath;      //< the vocabulary tree weights file
   
-#if HAVE_ALEMBIC
+#ifdef HAVE_ALEMBIC
   std::string exportFile = "trackedcameras.abc"; //!< the export file
 #else
   std::string exportFile = "localizationResult.json"; //!< the export file
@@ -260,7 +260,7 @@ int main(int argc, char** argv)
       ("visualDebug", po::value<std::string>(&visualDebug), 
           "If a directory is provided it enables visual debug and saves all the "
           "debugging info in that directory")
-#if HAVE_ALEMBIC
+#ifdef HAVE_ALEMBIC
       ("output", po::value<std::string>(&exportFile)->default_value(exportFile), 
           "Filename for the SfM_Data export file (where camera poses will be stored). "
           "Default : trackedcameras.abc. It will also save the localization "
@@ -440,7 +440,7 @@ int main(int argc, char** argv)
     return EXIT_FAILURE;
   }
   
-#if HAVE_ALEMBIC
+#ifdef HAVE_ALEMBIC
   // init alembic exporter
   sfm::AlembicExporter exporter( exportFile );
   exporter.addPoints(localizer->getSfMData().GetLandmarks());
@@ -489,7 +489,7 @@ int main(int argc, char** argv)
     // save data
     if(localizationResult.isValid())
     {
-#if HAVE_ALEMBIC
+#ifdef HAVE_ALEMBIC
       exporter.addCameraKeyframe(localizationResult.getPose(), &queryIntrinsics, currentImgName, frameCounter, frameCounter);
 #endif
       
@@ -499,7 +499,7 @@ int main(int argc, char** argv)
     else
     {
       OPENMVG_CERR("Unable to localize frame " << frameCounter);
-#if HAVE_ALEMBIC
+#ifdef HAVE_ALEMBIC
       exporter.jumpKeyframe(currentImgName);
 #endif
     }
@@ -536,7 +536,7 @@ int main(int argc, char** argv)
     }
     else
     {
-#if HAVE_ALEMBIC
+#ifdef HAVE_ALEMBIC
       // now copy back in a new abc with the same name file and BUNDLE appended at the end
       sfm::AlembicExporter exporterBA( basename+".BUNDLE.abc" );
       exporterBA.initAnimatedCamera("camera");

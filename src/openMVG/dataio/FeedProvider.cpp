@@ -34,7 +34,7 @@ FeedProvider::FeedProvider(const std::string &feedPath, const std::string &calib
     }
     else 
     {
-#if HAVE_OPENCV
+#ifdef HAVE_OPENCV
       // let's try it with a video
       _feeder.reset(new VideoFeed(feedPath, calibPath));
       _isVideo = true;

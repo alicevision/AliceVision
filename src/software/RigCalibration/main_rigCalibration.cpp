@@ -25,7 +25,7 @@
 #include <chrono>
 #include <memory>
 
-#if HAVE_ALEMBIC
+#ifdef HAVE_ALEMBIC
 #include <openMVG/sfm/AlembicExporter.hpp>
 #endif // HAVE_ALEMBIC
 
@@ -179,7 +179,7 @@ int main(int argc, char** argv)
   /// parameters for cctag localizer
   std::size_t nNearestKeyFrames = 5;
 
-#if HAVE_ALEMBIC
+#ifdef HAVE_ALEMBIC
   //!< the export file
   std::string exportFile = "trackedcameras.abc"; 
 #endif
@@ -242,7 +242,7 @@ int main(int argc, char** argv)
       ("nNearestKeyFrames", po::value<std::size_t>(&nNearestKeyFrames)->default_value(nNearestKeyFrames),
           "[cctag] Number of images to retrieve in database")
 #endif
-#if HAVE_ALEMBIC
+#ifdef HAVE_ALEMBIC
       ("export,e", po::value<std::string>(&exportFile)->default_value(exportFile),
           "Filename for the alembic file containing the rig poses with the 3D points. "
           "It also saves a file for each camera named 'filename.cam##.abc'.")
@@ -385,7 +385,7 @@ int main(int argc, char** argv)
     return EXIT_FAILURE;
   }
 
-#if HAVE_ALEMBIC
+#ifdef HAVE_ALEMBIC
   sfm::AlembicExporter exporter(exportFile);
   exporter.addPoints(localizer->getSfMData().GetLandmarks());
 #endif
@@ -455,7 +455,7 @@ int main(int argc, char** argv)
       OPENMVG_COUT("Localization took  " << detect_elapsed.count() << " [ms]");
       stats(detect_elapsed.count());
       
-#if HAVE_ALEMBIC
+#ifdef HAVE_ALEMBIC
       if(localizationResult.isValid())
       {
         exporter.appendCamera("camera"+std::to_string(idCamera)+"."+myToString(frameCounter,4), localizationResult.getPose(), &queryIntrinsics, subMediaFilepath, frameCounter, frameCounter);
