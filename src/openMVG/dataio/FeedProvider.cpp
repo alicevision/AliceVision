@@ -13,11 +13,15 @@
 
 #include <exception>
 #include <iostream>
+#include <string>
+#include <limits>
+#include <ctype.h>
 
 namespace openMVG{
 namespace dataio{
 
-FeedProvider::FeedProvider(const std::string &feedPath, const std::string &calibPath) : _isVideo(false)
+FeedProvider::FeedProvider(const std::string &feedPath, const std::string &calibPath) 
+: _isVideo(false), _isLiveFeed(false)
 {
   namespace bf = boost::filesystem;
   if(feedPath.empty())
@@ -51,6 +55,16 @@ FeedProvider::FeedProvider(const std::string &feedPath, const std::string &calib
     // Folder or sequence of images
     _feeder.reset(new ImageFeed(feedPath, calibPath));
   }
+#ifdef HAVE_OPENCV
+  else if(isdigit(feedPath[0]))
+  {
+    // let's try it with a video
+    const int deviceNumber =  std::atoi(feedPath.c_str());
+    _feeder.reset(new VideoFeed(deviceNumber, calibPath));
+    _isVideo = true;
+    _isLiveFeed = true;
+  }
+#endif
   else
   {
     throw std::invalid_argument(std::string("Input filepath not supported: ") + feedPath);
@@ -67,6 +81,9 @@ bool FeedProvider::readImage(image::Image<unsigned char> &imageGray,
   
 std::size_t FeedProvider::nbFrames() const
 {
+  if(_isLiveFeed)
+    return std::numeric_limits<std::size_t>::infinity();
+  
   return _feeder->nbFrames();
 }
 

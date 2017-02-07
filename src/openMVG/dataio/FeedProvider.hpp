@@ -70,12 +70,20 @@ public:
    * @return True if the feed is a video.
    */    
   bool isVideo() const {return _isVideo; }
+  
+  /**
+   * @brief Return true if the feed is a live stream (e.g. a  webcam).
+   * 
+   * @return True if the feed is correctly initialized.
+   */    
+  bool isLiveFeed() const {return _isLiveFeed; }
 
   virtual ~FeedProvider();
     
 private:
   std::unique_ptr<IFeed> _feeder;
   bool _isVideo;
+  bool _isLiveFeed;
 
 };
 
