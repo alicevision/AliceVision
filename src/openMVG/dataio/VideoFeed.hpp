@@ -25,7 +25,7 @@ public:
   /**
    * @brief Set up an image feed from a video
    * 
-   * @param[in] imagePath The video source.
+   * @param[in] videoPath The video source.
    * @param[in] calibPath The source for the camera intrinsics. 
    * The format for the file is
    * int #image width
