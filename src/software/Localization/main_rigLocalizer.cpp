@@ -137,20 +137,26 @@ bool checkRobustEstimator(robust::EROBUST_ESTIMATOR e, double &value)
 int main(int argc, char** argv)
 {
   // common parameters
-  std::string sfmFilePath;                //< the OpenMVG .json data file
-  std::string descriptorsFolder;          //< the the folder containing the descriptors
-  std::string mediaPath;                  //< the media file to localize
-  std::string filelist;                  //< the media file to localize
-  std::string rigCalibPath;               //< the file containing the calibration data for the file (subposes)
-  //< the preset for the feature extractor
+  /// the OpenMVG .json data file
+  std::string sfmFilePath;
+  /// the the folder containing the descriptors
+  std::string descriptorsFolder;          
+  /// the media file to localize
+  std::string mediaPath;
+  /// the media file to localize
+  std::string filelist;
+  /// the file containing the calibration data for the file (subposes)
+  std::string rigCalibPath;
+  
+  /// the preset for the feature extractor
   features::EDESCRIBER_PRESET featurePreset = features::EDESCRIBER_PRESET::NORMAL_PRESET;     
-  //< the type of features to use for localization
+  /// the type of features to use for localization
   DescriberType descriptorType = DescriberType::SIFT;        
-  //< the estimator to use for resection
+  /// the estimator to use for resection
   robust::EROBUST_ESTIMATOR resectionEstimator = robust::EROBUST_ESTIMATOR::ROBUST_ESTIMATOR_ACRANSAC;        
-  //< the estimator to use for matching
+  /// the estimator to use for matching
   robust::EROBUST_ESTIMATOR matchingEstimator = robust::EROBUST_ESTIMATOR::ROBUST_ESTIMATOR_ACRANSAC;        
-  //< the possible choices for the estimators as strings
+  /// the possible choices for the estimators as strings
   const std::string str_estimatorChoices = ""+robust::EROBUST_ESTIMATOR_enumToString(robust::EROBUST_ESTIMATOR::ROBUST_ESTIMATOR_ACRANSAC)
                                           +","+robust::EROBUST_ESTIMATOR_enumToString(robust::EROBUST_ESTIMATOR::ROBUST_ESTIMATOR_LORANSAC);
   bool refineIntrinsics = false;
@@ -161,16 +167,23 @@ int main(int argc, char** argv)
 
 
   // parameters for voctree localizer
-  std::string vocTreeFilepath;            //< the vocabulary tree file
-  std::string weightsFilepath;            //< the vocabulary tree weights file
-  std::string algostring = "AllResults";   //< the localization algorithm to use for the voctree localizer
-  std::size_t numResults = 4;              //< number of documents to search when querying the voctree
-  std::size_t maxResults = 10;             //< maximum number of matching documents to retain
+  //< the vocabulary tree file
+  std::string vocTreeFilepath;    
+  /// the vocabulary tree weights file
+  std::string weightsFilepath;
+  /// the localization algorithm to use for the voctree localizer
+  std::string algostring = "AllResults";
+  /// number of documents to search when querying the voctree
+  std::size_t numResults = 4;
+  /// maximum number of matching documents to retain
+  std::size_t maxResults = 10;
+  
   // parameters for cctag localizer
-  std::size_t nNearestKeyFrames = 5;           //
+  std::size_t nNearestKeyFrames = 5;
 
 #ifdef HAVE_ALEMBIC
-  std::string exportFile = "trackedcameras.abc"; //!< the export file
+  /// the export file
+  std::string exportFile = "trackedcameras.abc"; 
 #endif
   
   std::size_t numCameras = 3;

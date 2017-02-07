@@ -138,52 +138,74 @@ bool checkRobustEstimator(robust::EROBUST_ESTIMATOR e, double &value)
 
 int main(int argc, char** argv)
 {
-  std::string calibFile;                    //< the calibration file
-  std::string sfmFilePath;                  //< the OpenMVG .json data file
-  std::string descriptorsFolder;            //< the OpenMVG .json data file
-  std::string mediaFilepath;                //< the media file to localize
-  //< the preset for the feature extractor
+  /// the calibration file
+  std::string calibFile;
+  /// the OpenMVG .json data file
+  std::string sfmFilePath;
+  /// the folder containing the descriptors
+  std::string descriptorsFolder;
+  /// the media file to localize
+  std::string mediaFilepath;
+ 
+  /// the preset for the feature extractor
   features::EDESCRIBER_PRESET featurePreset = features::EDESCRIBER_PRESET::NORMAL_PRESET;     
-  //< the preset for the feature extractor
+  /// the preset for the feature extractor
   DescriberType descriptorType = DescriberType::SIFT;        
-  //< the estimator to use for resection
+  /// the estimator to use for resection
   robust::EROBUST_ESTIMATOR resectionEstimator = robust::EROBUST_ESTIMATOR::ROBUST_ESTIMATOR_ACRANSAC;        
-  //< the estimator to use for matching
+  /// the estimator to use for matching
   robust::EROBUST_ESTIMATOR matchingEstimator = robust::EROBUST_ESTIMATOR::ROBUST_ESTIMATOR_ACRANSAC;        
-  //< the possible choices for the estimators as strings
+  /// the possible choices for the estimators as strings
   const std::string str_estimatorChoices = ""+robust::EROBUST_ESTIMATOR_enumToString(robust::EROBUST_ESTIMATOR::ROBUST_ESTIMATOR_ACRANSAC)
                                           +","+robust::EROBUST_ESTIMATOR_enumToString(robust::EROBUST_ESTIMATOR::ROBUST_ESTIMATOR_LORANSAC);
   bool refineIntrinsics = false;
-  double resectionErrorMax = 4.0;  //< the maximum error allowed for resection
-  double matchingErrorMax = 4.0;   //< the maximum error allowed for image matching with geometric validation
+  /// the maximum reprojection error allowed for resection
+  double resectionErrorMax = 4.0;  
+  /// the maximum reprojection error allowed for image matching with geometric validation
+  double matchingErrorMax = 4.0;   
   
   // voctree parameters
   std::string algostring = "AllResults";
-  std::size_t numResults = 4;       //< number of documents to search when querying the voctree
-  std::size_t maxResults = 10;      //< maximum number of matching documents to retain
+  /// number of similar images to search when querying the voctree
+  std::size_t numResults = 4;
+  /// maximum number of successfully matched similar images
+  std::size_t maxResults = 10;      
   std::size_t numCommonViews = 3;
-  std::string vocTreeFilepath;      //< the vocabulary tree file
-  std::string weightsFilepath;      //< the vocabulary tree weights file
+  /// the vocabulary tree file
+  std::string vocTreeFilepath;
+  /// the vocabulary tree weights file
+  std::string weightsFilepath;  
+  /// enable the matching with the last N frame of the sequence
+  bool useFrameBufferMatching = true;
   
 #ifdef HAVE_ALEMBIC
-  std::string exportFile = "trackedcameras.abc"; //!< the export file
+  /// the export file
+  std::string exportFile = "trackedcameras.abc";
 #else
-  std::string exportFile = "localizationResult.json"; //!< the export file
+  /// the export file
+  std::string exportFile = "localizationResult.json";
 #endif
 #ifdef HAVE_CCTAG
   // parameters for cctag localizer
   std::size_t nNearestKeyFrames = 5;   
 #endif
-  bool globalBundle = false;              ///< If !refineIntrinsics it can run a final global budndle to refine the scene
-  bool noDistortion = false;              ///< It does not count the distortion
-  bool noBArefineIntrinsics = false;      ///< It does not refine intrinsics during BA
+  // parameters for the final bundle adjustment
+  /// If !refineIntrinsics it can run a final global bundle to refine the scene
+  bool globalBundle = false;
+  /// It does not count the distortion
+  bool noDistortion = false;
+  /// It does not refine intrinsics during BA
+  bool noBArefineIntrinsics = false;
+  /// remove the points that does not have a minimum visibility over the sequence
+  /// ie that are seen at least by minPointVisibility frames of the sequence
   std::size_t minPointVisibility = 0;
   
-  std::string visualDebug = "";           ///< whether to save visual debug info
-  bool useVoctreeLocalizer = true;        ///< whether to use the voctreeLocalizer or cctagLocalizer
-  bool useSIFT_CCTAG = false;             ///< whether to use SIFT_CCTAG
-  
-  bool useFrameBufferMatching = true;     ///< enable the matching with the last N frame of the sequence
+  /// whether to save visual debug info
+  std::string visualDebug = "";
+  /// whether to use the voctreeLocalizer or cctagLocalizer
+  bool useVoctreeLocalizer = true;
+  /// whether to use SIFT_CCTAG
+  bool useSIFT_CCTAG = false;
 
   po::options_description desc(
       "This program takes as input a media (image, image sequence, video) and a database (voctree, 3D structure data) \n"

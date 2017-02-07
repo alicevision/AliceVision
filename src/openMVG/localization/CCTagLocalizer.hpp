@@ -32,7 +32,8 @@ class CCTagLocalizer : public ILocalizer
     Parameters() : LocalizerParameters(), 
       _nNearestKeyFrames(4) { }
     
-    size_t _nNearestKeyFrames;         //< number of best matching images to retrieve from the database                
+    /// number of best matching images to retrieve from the database
+    std::size_t _nNearestKeyFrames;
   };
   
 public:
