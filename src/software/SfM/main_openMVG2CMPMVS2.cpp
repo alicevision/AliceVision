@@ -1,6 +1,8 @@
 #include "openMVG/sfm/sfm.hpp"
 #include "openMVG/image/image.hpp"
 #include "openMVG/image/image_converter.hpp"
+#include "openMVG/exif/exif_IO_EasyExif.hpp"
+#include "openMVG/sfm/sfm_view_metadata.hpp"
 
 
 #include "third_party/cmdLine/cmdLine.h"
@@ -17,6 +19,7 @@ using namespace openMVG::cameras;
 using namespace openMVG::geometry;
 using namespace openMVG::image;
 using namespace openMVG::sfm;
+using namespace openMVG::exif;
 
 class point2d
 {
@@ -446,10 +449,12 @@ int main(int argc, char *argv[])
   std::string sSfM_Data_Filename;
   int scale = 2;
   std::string sOutDir = "";
+  std::string sReplaceImagesFolder = "";
 
   cmd.add( make_option('i', sSfM_Data_Filename, "sfmdata") );
   cmd.add( make_option('s', scale, "scale") );
   cmd.add( make_option('o', sOutDir, "outdir") );
+  cmd.add( make_option('r', sReplaceImagesFolder, "replaceImagesFolder") );
 
   try {
       if (argc == 1) throw std::string("Invalid command line parameter.");
@@ -459,6 +464,9 @@ int main(int argc, char *argv[])
       << "[-i|--sfmdata] filename, the SfM_Data file to convert\n"
       << "[-s|--scale] downscale image factor\n"
       << "[-o|--outdir] path\n"
+      << "\n"
+      << "Optionals\n"
+      << "[-r|--replaceImagesFolder] path\n"
       << std::endl;
 
       std::cerr << s << std::endl;
@@ -478,6 +486,68 @@ int main(int argc, char *argv[])
     std::cerr << std::endl
       << "The input SfM_Data file \""<< sSfM_Data_Filename << "\" cannot be read." << std::endl;
     return EXIT_FAILURE;
+  }
+  
+  if(!sReplaceImagesFolder.empty())
+  {
+    std::cout << "Replace images from folder: " << sReplaceImagesFolder << std::endl;
+    const std::vector<std::string> images = stlplus::folder_files(sReplaceImagesFolder);
+    
+    // map<UID, filepath>
+    std::map<std::string, std::string> uidToFilepath;
+    for(const std::string& imageFilename: images)
+    {
+      const std::string imageFilepath = sReplaceImagesFolder + "/" + imageFilename;
+      // Test if the image format is supported:
+      if (openMVG::image::GetFormat(imageFilepath.c_str()) == openMVG::image::Unknown)
+        continue;
+      
+      ImageHeader imgHeader;
+      if (!openMVG::image::ReadImageHeader(imageFilepath.c_str(), &imgHeader))
+        continue; // image cannot be read
+      
+      Exif_IO_EasyExif exifReader;
+      exifReader.open(imageFilepath);
+
+      if(!exifReader.doesHaveExifInfo())
+      {
+        std::cerr << "No metatada for image: " << imageFilepath << std::endl;
+        continue;
+      }
+      // Create serial number
+      const std::string serialNumber = exifReader.getSerialNumber() + exifReader.getLensSerialNumber();
+      
+      if(serialNumber.empty())
+      {
+        std::cerr << "WARNING: No serial number in image metadata: " << imageFilepath << std::endl;
+        continue;
+      }
+      // Add serial number to image path
+      if(uidToFilepath.find(serialNumber) != uidToFilepath.end())
+      {
+        std::cerr << "ERROR: Multiple images with the same UID: " << serialNumber << ", " << imageFilepath << std::endl;
+      }
+      uidToFilepath[serialNumber] = imageFilepath;
+    }
+    if(uidToFilepath.empty())
+    {
+      std::cerr << "No valid images to replace." << std::endl;
+      return EXIT_FAILURE;
+    }
+    
+    for(auto viewIt: sfm_data.views)
+    {
+      View_Metadata* view = dynamic_cast<View_Metadata*>(viewIt.second.get());
+      const std::string serialNumber = view->metadata["serial_number"] + view->metadata["lens_serial_number"];
+      auto remapIt = uidToFilepath.find(serialNumber);
+      if(remapIt == uidToFilepath.end())
+      {
+        std::cout << "Don't remap image: " << viewIt.first << " -> \"" << view->s_Img_path << "\"." << std::endl;
+        continue;
+      }
+      std::cout << viewIt.first << ": \"" << view->s_Img_path << "\" -> \"" << remapIt->second << "\"." << std::endl;
+      view->s_Img_path = remapIt->second;
+    }
   }
 
   if (!exportToCMPMVS2Format(sfm_data, scale, stlplus::filespec_to_path(sOutDir, "_tmp_scale" + std::to_string(scale))))
