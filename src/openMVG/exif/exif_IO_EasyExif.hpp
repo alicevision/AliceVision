@@ -149,6 +149,8 @@ class Exif_IO_EasyExif : public Exif_IO
       os
         << "Camera make       : " << exifInfo_.Make << "\n"
         << "Camera model      : " << exifInfo_.Model << "\n"
+        << "Serial Number     : " << exifInfo_.SerialNumber << "\n"
+        << "Lens Serial Number: " << exifInfo_.LensSerialNumber << "\n"
         << "Software          : " << exifInfo_.Software << "\n"
         << "Bits per sample   : " << exifInfo_.BitsPerSample << "\n"
         << "Image width       : " << exifInfo_.ImageWidth << "\n"
@@ -205,6 +207,10 @@ class Exif_IO_EasyExif : public Exif_IO
         allExifData.emplace("camera_model", exifInfo_.Model);
       if(!exifInfo_.Software.empty())
         allExifData.emplace("software", exifInfo_.Software);
+      if(!exifInfo_.SerialNumber.empty())
+        allExifData.emplace("serial_number", exifInfo_.SerialNumber);
+      if(!exifInfo_.LensSerialNumber.empty())
+        allExifData.emplace("lens_serial_number", exifInfo_.LensSerialNumber);
       if(exifInfo_.BitsPerSample > 0)
         allExifData.emplace("bits_per_sample", std::to_string(exifInfo_.BitsPerSample));
       if(exifInfo_.ImageWidth > 0)
