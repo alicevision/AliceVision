@@ -42,7 +42,7 @@ int main(int argc, char **argv)
   } catch(const std::string& s) {
     std::cerr << "Usage: " << argv[0] << '\n'
       << "[-i|--gt] ground truth path: it could be a json/bin"
-#if HAVE_ALEMBIC
+#ifdef HAVE_ALEMBIC
       << "/abc"
 #endif
       << " file containing\n"

@@ -5,7 +5,7 @@
  * Created on September 24, 2015, 3:57 PM
  */
 
-#if HAVE_ALEMBIC
+#ifdef HAVE_ALEMBIC
 
 #include "AlembicExporter.hpp"
 

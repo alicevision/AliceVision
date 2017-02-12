@@ -31,15 +31,24 @@ struct LocalizerParameters
   _useLocalizeRigNaive(false),
   _angularThreshold(D2R(0.1)) { }
 
-  std::string _visualDebug;                       //< enable visual debugging options
-  bool _refineIntrinsics;                         //< whether or not the Intrinsics of the query camera has to be refined
-  float _fDistRatio;                              //< the ratio distance to use when matching feature with the ratio test
-  features::EDESCRIBER_PRESET _featurePreset;     //< the preset to use for feature extraction of the query image
-  double _errorMax;                               //< maximum reprojection error allowed for resectioning
-  robust::EROBUST_ESTIMATOR _resectionEstimator; 	//< the type of *sac framework to use for resection
-  robust::EROBUST_ESTIMATOR _matchingEstimator; 	//< the type of *sac framework to use for matching
-  bool _useLocalizeRigNaive;                      //< the type of *sac framework to use for matching
-  double _angularThreshold;                       //< in rad, it is the maximum angular error for the opengv rig resection
+  /// enable visual debugging options
+  std::string _visualDebug;  
+  /// whether or not the Intrinsics of the query camera has to be refined
+  bool _refineIntrinsics;
+  /// the ratio distance to use when matching feature with the ratio test
+  float _fDistRatio;
+  /// the preset to use for feature extraction of the query image
+  features::EDESCRIBER_PRESET _featurePreset;
+  /// maximum reprojection error allowed for resectioning
+  double _errorMax;
+  /// the type of *sac framework to use for resection
+  robust::EROBUST_ESTIMATOR _resectionEstimator;
+  /// the type of *sac framework to use for matching
+  robust::EROBUST_ESTIMATOR _matchingEstimator; 	
+  /// force the use of the rig localization without openGV
+  bool _useLocalizeRigNaive;
+  /// in rad, it is the maximum angular error for the opengv rig resection
+  double _angularThreshold;                       
 };
 
 class ILocalizer

@@ -37,10 +37,24 @@ public:
         std::string &mediaPath,
         bool &hasIntrinsics);
 
+  /**
+   * @brief It returns the number of frames contained of the video. It return infinity
+   * if the feed is a live stream.
+   * @return the number of frames of the video or infinity if it is a live stream.
+   */
   std::size_t nbFrames() const;
 
+  /**
+   * @brief It retrieve the given frame number. In case
+   * of live feeds, it just give the next available frame.
+   * @return true if successful.
+   */
   bool goToFrame(const unsigned int frame);
-  
+
+  /**
+   * @brief It acquires the next available frame.
+   * @return true if successful.
+   */  
   bool goToNextFrame();
 
   /**
@@ -49,14 +63,27 @@ public:
    * @return True if the feed is correctly initialized.
    */  
   bool isInit() const;
-  
+
+  /**
+   * @brief Return true if the feed is a video.
+   * 
+   * @return True if the feed is a video.
+   */    
   bool isVideo() const {return _isVideo; }
+  
+  /**
+   * @brief Return true if the feed is a live stream (e.g. a  webcam).
+   * 
+   * @return True if the feed is correctly initialized.
+   */    
+  bool isLiveFeed() const {return _isLiveFeed; }
 
   virtual ~FeedProvider();
     
 private:
   std::unique_ptr<IFeed> _feeder;
   bool _isVideo;
+  bool _isLiveFeed;
 
 };
 

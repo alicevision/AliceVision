@@ -5,7 +5,7 @@
  * Created on September 28, 2015, 10:35 AM
  */
 
-#if HAVE_OPENCV
+#ifdef HAVE_OPENCV
 
 #include "VideoFeed.hpp"
 
@@ -30,6 +30,8 @@ public:
   
   FeederImpl(const std::string &videoPath, const std::string &calibPath);
   
+  FeederImpl(int videoDevice, const std::string &calibPath);
+  
   bool isInit() const {return _isInit;}
   
   bool readImage(image::Image<unsigned char> &imageGray,
@@ -45,6 +47,7 @@ public:
   
 private:
   bool _isInit;
+  bool _isLive;
   bool _withIntrinsics;
   std::string _videoPath;
   cv::VideoCapture _videoCapture;
@@ -53,7 +56,7 @@ private:
 
 
 VideoFeed::FeederImpl::FeederImpl(const std::string &videoPath, const std::string &calibPath)
-: _isInit(false), _withIntrinsics(false), _videoPath(videoPath)
+: _isInit(false), _isLive(false), _withIntrinsics(false), _videoPath(videoPath)
 {
     // load the video
   _videoCapture.open(videoPath);
@@ -65,6 +68,27 @@ VideoFeed::FeederImpl::FeederImpl(const std::string &videoPath, const std::strin
   // Grab frame 0, so we can call readImage.
   goToFrame(0);
 
+  // load the calibration path
+  _withIntrinsics = !calibPath.empty();
+  if(_withIntrinsics)
+    readCalibrationFromFile(calibPath, _camIntrinsics);
+  
+  _isInit = true;
+}
+
+VideoFeed::FeederImpl::FeederImpl(int videoDevice, const std::string &calibPath)
+: _isInit(false), _isLive(true), _withIntrinsics(false), _videoPath(std::to_string(videoDevice))
+{
+    // load the video
+  _videoCapture.open(videoDevice);
+  if (!_videoCapture.isOpened())
+  {
+    OPENMVG_LOG_WARNING("Unable to open the video : " << _videoPath);
+    throw std::invalid_argument("Unable to open the video : "+_videoPath);
+  }
+
+  goToNextFrame();
+  
   // load the calibration path
   _withIntrinsics = !calibPath.empty();
   if(_withIntrinsics)
@@ -126,6 +150,9 @@ bool VideoFeed::FeederImpl::goToFrame(const unsigned int frame)
     return false;
   }
   
+  if(_isLive)
+    return goToNextFrame();
+  
   if(frame > 0)
   {
     _videoCapture.set(cv::CAP_PROP_POS_FRAMES, frame);
@@ -153,6 +180,10 @@ VideoFeed::VideoFeed() : _feeder(new FeederImpl()) { }
 
 VideoFeed::VideoFeed(const std::string &videoPath, const std::string &calibPath) 
   : _feeder(new FeederImpl(videoPath, calibPath))
+{ }
+
+VideoFeed::VideoFeed(int videoDevice, const std::string &calibPath) 
+  : _feeder(new FeederImpl(videoDevice, calibPath))
 { }
 
 bool VideoFeed::readImage(image::Image<unsigned char> &imageGray,
@@ -186,4 +217,4 @@ VideoFeed::~VideoFeed() { }
 }//namespace openMVG
 
 
-#endif //#if HAVE_OPENCV
+#endif //#ifdef HAVE_OPENCV

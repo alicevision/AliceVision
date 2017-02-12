@@ -53,7 +53,7 @@ int main(int argc, char **argv)
         << "[-i|--input_file] path to the input SfM_Data scene\n"
         << "[-o|--output_file] path to the output SfM_Data scene\n"
         << "\t .json, .bin, .xml, .ply, .baf"
-#if HAVE_ALEMBIC
+#ifdef HAVE_ALEMBIC
            ", .abc"
 #endif
            "\n"
