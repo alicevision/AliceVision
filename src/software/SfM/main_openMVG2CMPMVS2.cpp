@@ -367,28 +367,17 @@ bool exportToCMPMVS2Format(
 #endif
     ++my_progress_bar;
   }
-  std::string dirName = stlplus::folder_append_separator(sOutDirectory);
-  std::cout << "CMPMVS configuration filepath is: " << dirName << std::endl;
-//  dirName = replaceAll(dirName, "/s/prods/", "V:\\");
-//  dirName = replaceAll(dirName, "/s/v/", "V:\\");
-//  dirName = replaceAll(dirName, "/", "\\");
-//  std::cout << "Windows path is: " << dirName << std::endl;
 
   // Write the cmpmvs ini file
   std::ostringstream os;
   os << "[global]" << os.widen('\n')
-  << "dirName=\"" << stlplus::folder_up(dirName) << "\"" << os.widen('\n')
+  << "outDir=\"../../meshes\"" << os.widen('\n')
   << "prefix=\"\"" << os.widen('\n')
   << "imgExt=\"jpg\"" << os.widen('\n')
   << "ncams=" << map_viewIdToContiguous.size() << os.widen('\n')
   << "width=" << mostCommonResolution.first << os.widen('\n')
   << "height=" << mostCommonResolution.second << os.widen('\n')
   << "scale=" << scale << os.widen('\n')
-  << "workDirName=\"_tmp_scale" << scale << "\"" << os.widen('\n')
-  << "doPrepareData=FALSE" << os.widen('\n')
-  << "doPrematchSifts=FALSE" << os.widen('\n')
-  << "doPlaneSweepingSGM=TRUE"  << os.widen('\n')
-  << "doFuse=TRUE" << os.widen('\n')
   << "verbose=TRUE" << os.widen('\n')
   << os.widen('\n')
 
