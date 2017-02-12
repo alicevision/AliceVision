@@ -104,8 +104,8 @@ void computeTracksPyramidPerView(
       {
         std::size_t xCell = std::floor(std::max(feature.x(), 0.0f) / cellWidthPerLevel[level]);
         std::size_t yCell = std::floor(std::max(feature.y(), 0.0f) / cellHeightPerLevel[level]);
-        xCell = std::min(xCell, widthPerLevel[level]);
-        yCell = std::min(yCell, widthPerLevel[level]);
+        xCell = std::min(xCell, widthPerLevel[level] - 1);
+        yCell = std::min(yCell, widthPerLevel[level] - 1);
         const std::size_t levelIndex = xCell + yCell * widthPerLevel[level];
         assert(levelIndex < Square(widthPerLevel[level]));
         tracksPyramidIndex[trackId * pyramidDepth + level] = startPerLevel[level] + levelIndex;
