@@ -95,7 +95,10 @@ void retrieveSeedsPerView(
     // all other observations with an angle > minAngle.
     for(const auto& obsA: landmark.obs)
     {
-      int obsACamId = map_viewIdToContiguous.at(obsA.first);
+      const auto& obsACamId_it = map_viewIdToContiguous.find(obsA.first);
+      if(obsACamId_it == map_viewIdToContiguous.end())
+        continue; // this view cannot be exported to cmpmvs, so we skip the observation
+      int obsACamId = obsACamId_it->second;
       const View& viewA = *sfm_data.GetViews().at(obsA.first).get();
       const geometry::Pose3& poseA = sfm_data.GetPoses().at(viewA.id_pose);
       const Pinhole_Intrinsic * intrinsicsA = dynamic_cast<const Pinhole_Intrinsic*>(sfm_data.GetIntrinsics().at(viewA.id_intrinsic).get());
@@ -105,6 +108,9 @@ void retrieveSeedsPerView(
         // don't export itself
         if(obsA.first == obsB.first)
           continue;
+        const auto& obsBCamId_it = map_viewIdToContiguous.find(obsB.first);
+        if(obsBCamId_it == map_viewIdToContiguous.end())
+          continue; // this view cannot be exported to cmpmvs, so we skip the observation
         const View& viewB = *sfm_data.GetViews().at(obsB.first).get();
         const geometry::Pose3& poseB = sfm_data.GetPoses().at(viewB.id_pose);
         const Pinhole_Intrinsic * intrinsicsB = dynamic_cast<const Pinhole_Intrinsic*>(sfm_data.GetIntrinsics().at(viewB.id_intrinsic).get());
@@ -116,7 +122,7 @@ void retrieveSeedsPerView(
           continue;
 
         Seed seed;
-        seed.camId = map_viewIdToContiguous.at(obsB.first) - 1; // Get 0-based index this time
+        seed.camId = obsBCamId_it->second - 1; // Get 0-based index this time
         seed.s.ncams = 1;
         seed.s.segId = landmarkId;
         seed.s.op.p.x = landmark.X(0);
@@ -361,28 +367,17 @@ bool exportToCMPMVS2Format(
 #endif
     ++my_progress_bar;
   }
-  std::string dirName = stlplus::folder_append_separator(sOutDirectory);
-  std::cout << "CMPMVS configuration filepath is: " << dirName << std::endl;
-//  dirName = replaceAll(dirName, "/s/prods/", "V:\\");
-//  dirName = replaceAll(dirName, "/s/v/", "V:\\");
-//  dirName = replaceAll(dirName, "/", "\\");
-//  std::cout << "Windows path is: " << dirName << std::endl;
 
   // Write the cmpmvs ini file
   std::ostringstream os;
   os << "[global]" << os.widen('\n')
-  << "dirName=\"" << stlplus::folder_up(dirName) << "\"" << os.widen('\n')
+  << "outDir=\"../../meshes\"" << os.widen('\n')
   << "prefix=\"\"" << os.widen('\n')
   << "imgExt=\"jpg\"" << os.widen('\n')
   << "ncams=" << map_viewIdToContiguous.size() << os.widen('\n')
   << "width=" << mostCommonResolution.first << os.widen('\n')
   << "height=" << mostCommonResolution.second << os.widen('\n')
   << "scale=" << scale << os.widen('\n')
-  << "workDirName=\"_tmp_scale" << scale << "\"" << os.widen('\n')
-  << "doPrepareData=FALSE" << os.widen('\n')
-  << "doPrematchSifts=FALSE" << os.widen('\n')
-  << "doPlaneSweepingSGM=TRUE"  << os.widen('\n')
-  << "doFuse=TRUE" << os.widen('\n')
   << "verbose=TRUE" << os.widen('\n')
   << os.widen('\n')
 
