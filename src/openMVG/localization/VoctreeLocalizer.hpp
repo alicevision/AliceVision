@@ -327,6 +327,7 @@ private:
                       const cameras::IntrinsicBase * matchedIntrinsics,
                       const float fDistRatio,
                       const double matchingError,
+                      const bool robustMatching,
                       const bool b_guided_matching,
                       const std::pair<size_t,size_t> & imageSizeI,     // size of the image in matcher  
                       const std::pair<size_t,size_t> & imageSizeJ,     // size of the query image
