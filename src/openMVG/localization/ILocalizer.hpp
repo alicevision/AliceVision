@@ -35,7 +35,7 @@ struct LocalizerParameters
   std::string _visualDebug;  
   /// whether or not the Intrinsics of the query camera has to be refined
   bool _refineIntrinsics;
-  /// the ratio distance to use when matching feature with the ratio test
+  /// the distance ratio to use when matching feature with the ratio test
   float _fDistRatio;
   /// the preset to use for feature extraction of the query image
   features::EDESCRIBER_PRESET _featurePreset;

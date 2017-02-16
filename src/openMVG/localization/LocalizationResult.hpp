@@ -4,7 +4,10 @@
 #include <openMVG/voctree/database.hpp>
 
 #include <cereal/cereal.hpp>
+
 #include <vector>
+#include <utility>
+#include <string>
 
 namespace cereal{
 
@@ -40,7 +43,7 @@ void loadMat(Archive & archive, const std::string &name, const std::size_t rows,
 {
   vector<double> vec;
   archive(cereal::make_nvp(name, vec));
-  const size_t cols = vec.size() / rows;
+  const std::size_t cols = vec.size() / rows;
   m = Eigen::Map<openMVG::Mat>(vec.data(), rows, cols);
 }
 
@@ -50,7 +53,7 @@ public:
   LocalizationResult();
   
   LocalizationResult(const sfm::Image_Localizer_Match_Data & matchData,
-                     const std::vector<pair<IndexT, IndexT> > & indMatch3D2D,
+                     const std::vector<std::pair<IndexT, IndexT> > & indMatch3D2D,
                      const geometry::Pose3 & pose,
                      const cameras::Pinhole_Intrinsic_Radial_K3 & intrinsics,
                      const std::vector<voctree::DocMatch>& matchedImages,
@@ -58,7 +61,7 @@ public:
   
   virtual ~LocalizationResult();
   
-  const std::vector<size_t> & getInliers() const 
+  const std::vector<std::size_t> & getInliers() const 
   {
     return _matchData.vec_inliers;
   }
