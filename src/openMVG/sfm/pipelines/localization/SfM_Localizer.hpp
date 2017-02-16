@@ -12,25 +12,32 @@
 #include "openMVG/sfm/pipelines/sfm_regions_provider.hpp"
 #include <openMVG/robust_estimation/robust_estimators.hpp>
 
+#include <cstddef>
+#include <limits>
+
 namespace openMVG {
 namespace sfm {
 
 struct Image_Localizer_Match_Data
 {
-  Mat34 projection_matrix; // 3x4 matrix represented the estimated camera pose.
+  /// 3x4 matrix represented the estimated camera pose.
+  Mat34 projection_matrix; 
   
-  Mat pt3D; // 3xN matrix storing all the 3D points whose images have been found
-            // in the query view through the feature matching procedure.
+  /// 3xN matrix storing all the 3D points whose images have been found
+  /// in the query view through the feature matching procedure.
+  Mat pt3D; 
   
-  Mat pt2D; // 2xN matrix storing all 2D distorted points associated to 3D points (pt3D)
-            // found through the feature matching procedure.
+  /// 2xN matrix storing all 2D distorted points associated to 3D points (pt3D)
+  /// found through the feature matching procedure.
+  Mat pt2D;
   
-  // pt2D and pt3D have the same number of columns.
-  std::vector<size_t> vec_inliers; // Index mask for both pt3D and pt2D whose elements
-                                   // represent the column indices of inliers in  pt2D 
-                                   // and pt3D.
+  /// pt2D and pt3D have the same number of columns.
+  /// Index mask for both pt3D and pt2D whose elements
+  /// represent the column indices of inliers in  pt2D 
+  /// and pt3D.
+  std::vector<std::size_t> vec_inliers;
   
-  // Upper bound pixel(s) tolerance for residual errors
+  /// Upper bound pixel(s) tolerance for residual errors
   double error_max = std::numeric_limits<double>::infinity();
   size_t max_iteration = 4096;
 };
