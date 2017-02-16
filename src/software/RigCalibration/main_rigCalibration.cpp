@@ -141,7 +141,7 @@ int main(int argc, char** argv)
   /// the the folder containing the descriptors
   std::string descriptorsFolder;
   /// the media file to localize
-  std::vector<std::string> mediaPath;                  
+  std::vector<std::string> mediaPath;
   /// the calibration file for each camera
   std::vector<std::string> cameraIntrinsics;                  
   /// the name of the file where to store the calibration data
@@ -176,11 +176,12 @@ int main(int argc, char** argv)
   std::size_t numResults = 4;
   /// maximum number of matching documents to retain
   std::size_t maxResults = 10;
-  /// parameters for cctag localizer
+  
+  // parameters for cctag localizer
   std::size_t nNearestKeyFrames = 5;
 
 #ifdef HAVE_ALEMBIC
-  //!< the export file
+  /// the export file
   std::string exportFile = "trackedcameras.abc"; 
 #endif
   
@@ -426,7 +427,7 @@ int main(int argc, char** argv)
     cameras::Pinhole_Intrinsic_Radial_K3 queryIntrinsics;
     bool hasIntrinsics = false;
 
-    size_t frameCounter = 0;
+    std::size_t frameCounter = 0;
     std::string currentImgName;
 
     // Define an accumulator set for computing the mean and the
