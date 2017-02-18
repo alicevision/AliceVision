@@ -134,7 +134,7 @@ void selectBestImages(const std::vector<std::vector<cv::Point2f> >& imagePoints,
   {
     OPENMVG_LOG_DEBUG("Info: Less valid frames (" << imagePoints.size() << ") than specified maxCalibFrames (" << maxCalibFrames << ").");
     bestImagesIndexes.resize(imagePoints.size());
-    for(std::size_t i = 0; imagePoints.size(); ++i)
+    for(std::size_t i = 0; i < imagePoints.size(); ++i)
     {
       bestImagesIndexes[i] = i;
     }
