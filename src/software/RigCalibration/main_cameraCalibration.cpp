@@ -248,7 +248,7 @@ int main(int argc, char** argv)
       // and only a sub-part of the corners may be detected.
       // So we only keep the visible corners from the templateObjectPoints
       std::vector<int>& pointsId = detectedIdPerFrame[frame];
-      std::vector<cv::Point3f> objectPoints;
+      std::vector<cv::Point3f> objectPoints(pointsId.size());
       for(size_t i = 0; i < pointsId.size(); ++i)
       {
         objectPoints[i] = templateObjectPoints[pointsId[i]];
