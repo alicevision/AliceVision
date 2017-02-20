@@ -130,7 +130,7 @@ int main(int argc, char** argv)
   if (checkerboardSize.size() != 2)
     throw std::logic_error("The size of the checkerboard is not defined");
 
-  if (maxCalibFrames > maxNbFrames || minInputFrames > maxCalibFrames)
+  if ((maxNbFrames != 0 && maxCalibFrames > maxNbFrames) || minInputFrames > maxCalibFrames)
   {
     throw std::logic_error("Check the value for maxFrames, maxCalibFrames & minInputFrames. It must be decreasing.");
   }
@@ -163,18 +163,22 @@ int main(int argc, char** argv)
   std::vector<std::size_t> validFrames;
   std::vector<std::vector<int> > detectedIdPerFrame;
   double step = 1.0;
+  int nbFramesToProcess = feed.nbFrames();
 
   // Compute the discretization's step
   if (maxNbFrames)
   {
-    if (feed.nbFrames() < maxNbFrames)
+    if (feed.nbFrames() > maxNbFrames)
       step = feed.nbFrames() / (double) maxNbFrames;
+    else
+      nbFramesToProcess = maxNbFrames;
   }
+  OPENMVG_COUT("Input video length is " << feed.nbFrames() << ".");
 
   openMVG::system::Timer durationAlgo;
   openMVG::system::Timer duration;
   
-  while (feed.readImage(imageGrey, queryIntrinsics, currentImgName, hasIntrinsics) && iInputFrame < maxNbFrames)
+  while (feed.readImage(imageGrey, queryIntrinsics, currentImgName, hasIntrinsics) && iInputFrame < nbFramesToProcess)
   {
     
     std::size_t currentFrame = std::floor(iInputFrame * step);
@@ -200,7 +204,7 @@ int main(int argc, char** argv)
 
     std::vector<cv::Point2f> pointbuf;
     std::vector<int> detectedId;
-    OPENMVG_CERR("[" << currentFrame << "/" << maxNbFrames << "]");
+    OPENMVG_CERR("[" << currentFrame << "/" << nbFramesToProcess << "]");
 
     // Find the chosen pattern in images
     const bool found = openMVG::calibration::findPattern(patternType, viewGray, boardSize, detectedId, pointbuf);
