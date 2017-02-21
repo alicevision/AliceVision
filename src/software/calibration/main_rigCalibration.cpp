@@ -438,7 +438,7 @@ int main(int argc, char** argv)
     }
 
     double step = 1.0;
-    int nbFrames = feed.nbFrames();
+    const int nbFrames = feed.nbFrames();
     int nbFramesToProcess = nbFrames;
 
     // Compute the discretization's step

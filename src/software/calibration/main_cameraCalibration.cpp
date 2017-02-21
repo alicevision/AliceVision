@@ -163,7 +163,8 @@ int main(int argc, char** argv)
   std::vector<std::size_t> validFrames;
   std::vector<std::vector<int> > detectedIdPerFrame;
   double step = 1.0;
-  int nbFramesToProcess = feed.nbFrames();
+  const int nbFrames = feed.nbFrames();
+  int nbFramesToProcess = nbFrames;
 
   // Compute the discretization's step
   if (maxNbFrames && feed.nbFrames() > maxNbFrames)
@@ -201,7 +202,7 @@ int main(int argc, char** argv)
 
     std::vector<cv::Point2f> pointbuf;
     std::vector<int> detectedId;
-    OPENMVG_CERR("[" << currentFrame << "/" << nbFramesToProcess << "]");
+    OPENMVG_CERR("[" << currentFrame << "/" << nbFrames << "] (" << iInputFrame << "/" << nbFramesToProcess << ")");
 
     // Find the chosen pattern in images
     const bool found = openMVG::calibration::findPattern(patternType, viewGray, boardSize, detectedId, pointbuf);
