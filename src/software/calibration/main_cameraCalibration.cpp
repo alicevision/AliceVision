@@ -166,12 +166,10 @@ int main(int argc, char** argv)
   int nbFramesToProcess = feed.nbFrames();
 
   // Compute the discretization's step
-  if (maxNbFrames)
+  if (maxNbFrames && feed.nbFrames() > maxNbFrames)
   {
-    if (feed.nbFrames() > maxNbFrames)
-      step = feed.nbFrames() / (double) maxNbFrames;
-    else
-      nbFramesToProcess = maxNbFrames;
+    step = feed.nbFrames() / (double) maxNbFrames;
+    nbFramesToProcess = maxNbFrames;
   }
   OPENMVG_COUT("Input video length is " << feed.nbFrames() << ".");
 
