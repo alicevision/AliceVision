@@ -478,6 +478,7 @@ bool VoctreeLocalizer::localizeFirstBestResult(const features::SIFT_Regions &que
                                       matchedIntrinsics,
                                       param._fDistRatio,
                                       param._matchingError,
+                                      param._useRobustMatching,
                                       param._useGuidedMatching,
                                       queryImageSize,
                                       std::make_pair(matchedView->ui_width, matchedView->ui_height), 
@@ -827,13 +828,14 @@ void VoctreeLocalizer::getAllAssociations(const features::SIFT_Regions &queryReg
     const cameras::Pinhole_Intrinsic *matchedIntrinsics = (const cameras::Pinhole_Intrinsic*)(matchedIntrinsicsBase);
      
     std::vector<matching::IndMatch> vec_featureMatches;
-    bool matchWorked = robustMatching( matcher, 
+    const bool matchWorked = robustMatching( matcher, 
                                       // pass the input intrinsic if they are valid, null otherwise
                                       (useInputIntrinsics) ? &queryIntrinsics : nullptr,
                                       matchedRegions._regions,
                                       matchedIntrinsics,
                                       param._fDistRatio,
                                       param._matchingError,
+                                      param._useRobustMatching,
                                       param._useGuidedMatching,
                                       imageSize,
                                       std::make_pair(matchedView->ui_width, matchedView->ui_height), 
@@ -998,6 +1000,7 @@ void VoctreeLocalizer::getAssociationsFromBuffer(matching::RegionsMatcherT<Match
                                       &frameIntrinsics,
                                       param._fDistRatio,
                                       param._matchingError,
+                                      param._useRobustMatching,
                                       param._useGuidedMatching,
                                       queryImageSize,
                                       frameImageSize, 
@@ -1043,9 +1046,10 @@ bool VoctreeLocalizer::robustMatching(matching::RegionsMatcherT<MatcherT> & matc
                                       const cameras::IntrinsicBase * matchedIntrinsicsBase,
                                       const float fDistRatio,
                                       const double matchingError,
+                                      const bool robustMatching,
                                       const bool b_guided_matching,
-                                      const std::pair<size_t,size_t> & imageSizeI,     // size of the first image @fixme change the API of the kernel!! 
-                                      const std::pair<size_t,size_t> & imageSizeJ,     // size of the first image
+                                      const std::pair<std::size_t,std::size_t> & imageSizeI,     // size of the first image @fixme change the API of the kernel!! 
+                                      const std::pair<std::size_t,std::size_t> & imageSizeJ,     // size of the first image
                                       std::vector<matching::IndMatch> & vec_featureMatches,
                                       robust::EROBUST_ESTIMATOR estimator /*= robust::ROBUST_ESTIMATOR_ACRANSAC*/) const
 {
@@ -1077,6 +1081,13 @@ bool VoctreeLocalizer::robustMatching(matching::RegionsMatcherT<MatcherT> & matc
     return false;
   }
   assert(vec_featureMatches.size()>0);
+  
+  if(!robustMatching)
+  {
+    // nothing else to do
+    return true;
+  }
+  
   // prepare the data for geometric filtering: for each matched pair of features,
   // store them in two matrices
   Mat featuresI(2, vec_featureMatches.size());
@@ -1123,7 +1134,7 @@ bool VoctreeLocalizer::robustMatching(matching::RegionsMatcherT<MatcherT> & matc
     // a temporary vector.
     std::vector<matching::IndMatch> vec_robustFeatureMatches;
     vec_robustFeatureMatches.reserve(vec_matchingInliers.size());
-    for(const size_t idx : vec_matchingInliers)
+    for(const std::size_t idx : vec_matchingInliers)
     {
       // use the index stored in vec_matchingInliers to get the indices of the 
       // original matching features and store them in vec_robustFeatureMatches

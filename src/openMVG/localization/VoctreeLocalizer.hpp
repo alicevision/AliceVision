@@ -84,6 +84,7 @@ public:
 
     Parameters() : LocalizerParameters(), 
       _useGuidedMatching(false),
+      _useRobustMatching(true),
       _algorithm(Algorithm::AllResults),
       _numResults(4),
       _maxResults(10),
@@ -96,13 +97,15 @@ public:
     
     /// Enable/disable guided matching when matching images
     bool _useGuidedMatching;
+    /// Enable/disable robust feature matching (geometric validation)
+    bool _useRobustMatching;
     /// algorithm to use for localization
     Algorithm _algorithm;
     /// number of best matching images to retrieve from the database
     std::size_t _numResults;
     /// for algorithm AllResults, it stops the image matching when this number of matched images is reached
     std::size_t _maxResults;
-    //? number minimum common images in which a point must be seen to be used in cluster tracking
+    /// number minimum common images in which a point must be seen to be used in cluster tracking
     std::size_t _numCommonViews;
     /// ccTag-CUDA cannot process frames at different resolutions ATM, so set to false if localizer is used on images of differing sizes
     bool _ccTagUseCuda;
@@ -324,6 +327,7 @@ private:
                       const cameras::IntrinsicBase * matchedIntrinsics,
                       const float fDistRatio,
                       const double matchingError,
+                      const bool robustMatching,
                       const bool b_guided_matching,
                       const std::pair<size_t,size_t> & imageSizeI,     // size of the image in matcher  
                       const std::pair<size_t,size_t> & imageSizeJ,     // size of the query image

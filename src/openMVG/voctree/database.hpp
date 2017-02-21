@@ -11,6 +11,8 @@
 #include <openMVG/types.hpp>
 
 #include <map>
+#include <cstddef>
+#include <string>
 
 namespace openMVG{
 namespace voctree{
@@ -88,7 +90,7 @@ public:
    * @param[in] N The number of matches to return.
    * @param[out] matches IDs and scores for the top N matching database documents.
    */
-   void sanityCheck(size_t N, std::map<size_t, DocMatches>& matches) const;
+   void sanityCheck(std::size_t N, std::map<std::size_t, DocMatches>& matches) const;
 
   /**
    * @brief Find the top N matches in the database for the query document.
@@ -98,7 +100,7 @@ public:
    * @param[in] distanceMethod distance method (norm L1, etc.)
    * @param[out] matches  IDs and scores for the top N matching database documents.
    */
-  void find(const std::vector<Word>& document, size_t N, std::vector<DocMatch>& matches, const std::string &distanceMethod = "strongCommonPoints") const;
+  void find(const std::vector<Word>& document, std::size_t N, std::vector<DocMatch>& matches, const std::string &distanceMethod = "strongCommonPoints") const;
   
     /**
    * @brief Find the top N matches in the database for the query document.
@@ -108,7 +110,7 @@ public:
    * @param[in] distanceMethod distance method (norm L1, etc.)
    * @param[out] matches  IDs and scores for the top N matching database documents.
    */
-  void find(const SparseHistogram& query, size_t N, std::vector<DocMatch>& matches, const std::string &distanceMethod = "strongCommonPoints") const;
+  void find(const SparseHistogram& query, std::size_t N, std::vector<DocMatch>& matches, const std::string &distanceMethod = "strongCommonPoints") const;
 
   /**
    * @brief Compute the TF-IDF weights of all the words. To be called after inserting a corpus of
@@ -122,7 +124,7 @@ public:
    * @brief Return the size of the database in terms of number of documents
    * @return the number of documents
    */
-  size_t size() const;
+  std::size_t size() const;
 
   /// Save the vocabulary word weights to a file.
   void saveWeights(const std::string& file) const;
