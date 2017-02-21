@@ -2,6 +2,7 @@
 #include "openMVG/logger.hpp"
 
 #include <limits>
+#include <numeric>
 #include <iostream>
 #include <assert.h>
 
@@ -93,8 +94,7 @@ void selectBestImages(const std::vector<std::vector<cv::Point2f> >& imagePoints,
 
   // Init with 0, 1, 2, ...
   remainingImagesIndexes.resize(imagePoints.size());
-  for (std::size_t i = 0; i < remainingImagesIndexes.size(); ++i)
-    remainingImagesIndexes[i] = i;
+  std::iota(remainingImagesIndexes.begin(), remainingImagesIndexes.end(), 0);
 
   std::vector<std::size_t> bestImagesIndexes;
   if (maxCalibFrames < imagePoints.size())
@@ -134,10 +134,7 @@ void selectBestImages(const std::vector<std::vector<cv::Point2f> >& imagePoints,
   {
     OPENMVG_LOG_DEBUG("Info: Less valid frames (" << imagePoints.size() << ") than specified maxCalibFrames (" << maxCalibFrames << ").");
     bestImagesIndexes.resize(imagePoints.size());
-    for(std::size_t i = 0; i < imagePoints.size(); ++i)
-    {
-      bestImagesIndexes[i] = i;
-    }
+    std::iota(bestImagesIndexes.begin(), bestImagesIndexes.end(), 0);
     
     std::map<std::size_t, std::size_t> cellsWeight;
     computeCellsWeight(remainingImagesIndexes, cellIndexesPerImage, calibGridSize, cellsWeight);
