@@ -130,7 +130,7 @@ int main(int argc, char** argv)
   if (checkerboardSize.size() != 2)
     throw std::logic_error("The size of the checkerboard is not defined");
 
-  if (maxCalibFrames > maxNbFrames || minInputFrames > maxCalibFrames)
+  if ((maxNbFrames != 0 && maxCalibFrames > maxNbFrames) || minInputFrames > maxCalibFrames)
   {
     throw std::logic_error("Check the value for maxFrames, maxCalibFrames & minInputFrames. It must be decreasing.");
   }
@@ -163,21 +163,23 @@ int main(int argc, char** argv)
   std::vector<std::size_t> validFrames;
   std::vector<std::vector<int> > detectedIdPerFrame;
   double step = 1.0;
+  const int nbFrames = feed.nbFrames();
+  int nbFramesToProcess = nbFrames;
 
   // Compute the discretization's step
-  if (maxNbFrames)
+  if (maxNbFrames && feed.nbFrames() > maxNbFrames)
   {
-    if (feed.nbFrames() < maxNbFrames)
-      step = feed.nbFrames() / (double) maxNbFrames;
+    step = feed.nbFrames() / (double) maxNbFrames;
+    nbFramesToProcess = maxNbFrames;
   }
+  OPENMVG_COUT("Input video length is " << feed.nbFrames() << ".");
 
   openMVG::system::Timer durationAlgo;
   openMVG::system::Timer duration;
   
-  while (feed.readImage(imageGrey, queryIntrinsics, currentImgName, hasIntrinsics) && iInputFrame < maxNbFrames)
+  std::size_t currentFrame = 0;
+  while (feed.readImage(imageGrey, queryIntrinsics, currentImgName, hasIntrinsics))
   {
-    
-    std::size_t currentFrame = std::floor(iInputFrame * step);
     cv::Mat viewGray;
     cv::eigen2cv(imageGrey.GetMat(), viewGray);
 
@@ -200,7 +202,7 @@ int main(int argc, char** argv)
 
     std::vector<cv::Point2f> pointbuf;
     std::vector<int> detectedId;
-    OPENMVG_CERR("[" << currentFrame << "/" << maxNbFrames << "]");
+    OPENMVG_CERR("[" << currentFrame << "/" << nbFrames << "] (" << iInputFrame << "/" << nbFramesToProcess << ")");
 
     // Find the chosen pattern in images
     const bool found = openMVG::calibration::findPattern(patternType, viewGray, boardSize, detectedId, pointbuf);
@@ -213,7 +215,8 @@ int main(int argc, char** argv)
     }
 
     ++iInputFrame;
-    feed.goToFrame(std::floor(currentFrame));
+    currentFrame = std::floor(iInputFrame * step);
+    feed.goToFrame(currentFrame);
   }
 
   
@@ -230,7 +233,7 @@ int main(int argc, char** argv)
 
   // Select best images based on repartition in images of the calibration landmarks
   openMVG::calibration::selectBestImages(
-      imagePoints, imageSize, maxCalibFrames, validFrames, calibGridSize,
+      imagePoints, imageSize, maxCalibFrames, calibGridSize,
       calibImageScore, calibInputFrames, calibImagePoints,
       remainingImagesIndexes);
 
@@ -248,7 +251,7 @@ int main(int argc, char** argv)
       // and only a sub-part of the corners may be detected.
       // So we only keep the visible corners from the templateObjectPoints
       std::vector<int>& pointsId = detectedIdPerFrame[frame];
-      std::vector<cv::Point3f> objectPoints;
+      std::vector<cv::Point3f> objectPoints(pointsId.size());
       for(size_t i = 0; i < pointsId.size(); ++i)
       {
         objectPoints[i] = templateObjectPoints[pointsId[i]];

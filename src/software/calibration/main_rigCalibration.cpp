@@ -163,6 +163,8 @@ int main(int argc, char** argv)
   double resectionErrorMax = 4.0;
   /// the maximum error allowed for image matching with geometric validation
   double matchingErrorMax = 4.0;
+  /// the maximum number of frames in input
+  int maxInputFrames = 0;
 
 
   // parameters for voctree localizer
@@ -227,7 +229,9 @@ int main(int argc, char** argv)
           "Enable/Disable camera intrinsics refinement for each localized image")
       ("reprojectionError", po::value<double>(&resectionErrorMax)->default_value(resectionErrorMax), 
           "Maximum reprojection error (in pixels) allowed for resectioning. If set "
-          "to 0 it lets the ACRansac select an optimal value.");
+          "to 0 it lets the ACRansac select an optimal value.")
+      ("maxInputFrames", po::value<int>(&maxInputFrames)->default_value(maxInputFrames), 
+          "Maximum number of frames to read in input. 0 means no limit.");
 
   // parameters for voctree localizer
   po::options_description voctreeParams("Parameters specific for the vocabulary tree-based localizer");
@@ -433,6 +437,18 @@ int main(int argc, char** argv)
       return EXIT_FAILURE;
     }
 
+    double step = 1.0;
+    const int nbFrames = feed.nbFrames();
+    int nbFramesToProcess = nbFrames;
+
+    // Compute the discretization's step
+    if (maxInputFrames && feed.nbFrames() > maxInputFrames)
+    {
+      step = feed.nbFrames() / (double) maxInputFrames;
+      nbFramesToProcess = maxInputFrames;
+    }
+    OPENMVG_COUT("Input stream length is " << feed.nbFrames() << ".");
+
     //std::string featureFile, cameraResultFile, pointsFile;
     //featureFile = subMediaFilepath + "/cctag" + std::to_string(nRings) + "CC.out";
     //cameraResultFile = inputFolder + "/" + std::to_string(i) + "/cameras.txt";
@@ -444,7 +460,7 @@ int main(int argc, char** argv)
     cameras::Pinhole_Intrinsic_Radial_K3 queryIntrinsics;
     bool hasIntrinsics = false;
 
-    std::size_t frameCounter = 0;
+    std::size_t iInputFrame = 0;
     std::string currentImgName;
 
     // Define an accumulator set for computing the mean and the
@@ -453,10 +469,11 @@ int main(int argc, char** argv)
 
     // used to collect the match data result
     std::vector<localization::LocalizationResult> vLocalizationResults;
+    std::size_t currentFrame = 0;
     while(feed.readImage(imageGrey, queryIntrinsics, currentImgName, hasIntrinsics))
     {
       OPENMVG_COUT("******************************");
-      OPENMVG_COUT("FRAME " << myToString(frameCounter, 4));
+      OPENMVG_COUT("Stream " << idCamera << " Frame " << myToString(currentFrame, 4) << "/" << nbFrames << " : (" << iInputFrame << "/" << nbFramesToProcess << ")");
       OPENMVG_COUT("******************************");
       auto detect_start = std::chrono::steady_clock::now();
       localization::LocalizationResult localizationResult;
@@ -476,23 +493,24 @@ int main(int argc, char** argv)
 #ifdef HAVE_ALEMBIC
       if(localizationResult.isValid())
       {
-        exporter.appendCamera("camera"+std::to_string(idCamera)+"."+myToString(frameCounter,4), localizationResult.getPose(), &queryIntrinsics, subMediaFilepath, frameCounter, frameCounter);
+        exporter.appendCamera("camera"+std::to_string(idCamera)+"."+myToString(currentFrame,4), localizationResult.getPose(), &queryIntrinsics, subMediaFilepath, currentFrame, currentFrame);
       }
       else
       {
         // @fixme for now just add a fake camera so that it still can be see in MAYA
-        exporter.appendCamera("camera"+std::to_string(idCamera)+".V."+myToString(frameCounter,4), geometry::Pose3(), &queryIntrinsics, subMediaFilepath, frameCounter, frameCounter);
+        exporter.appendCamera("camera"+std::to_string(idCamera)+".V."+myToString(currentFrame,4), geometry::Pose3(), &queryIntrinsics, subMediaFilepath, currentFrame, currentFrame);
       }
 #endif
-      ++frameCounter;
-      feed.goToNextFrame();
+      ++iInputFrame;
+      currentFrame = std::floor(iInputFrame * step);
+      feed.goToFrame(currentFrame);
     }
 
     rig.setTrackingResult(vLocalizationResults, idCamera);
 
     // print out some time stats
     OPENMVG_COUT("\n\n******************************");
-    OPENMVG_COUT("Processed " << frameCounter << " images for camera " << idCamera);
+    OPENMVG_COUT("Processed " << iInputFrame << " images for camera " << idCamera);
     OPENMVG_COUT("Processing took " << bacc::sum(stats) / 1000 << " [s] overall");
     OPENMVG_COUT("Mean time for localization:   " << bacc::mean(stats) << " [ms]");
     OPENMVG_COUT("Max time for localization:   " << bacc::max(stats) << " [ms]");

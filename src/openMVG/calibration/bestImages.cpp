@@ -2,6 +2,7 @@
 #include "openMVG/logger.hpp"
 
 #include <limits>
+#include <numeric>
 #include <iostream>
 #include <assert.h>
 
@@ -80,7 +81,6 @@ void computeImageScores(const std::vector<std::size_t>& inputImagesIndexes,
 void selectBestImages(const std::vector<std::vector<cv::Point2f> >& imagePoints,
                       const cv::Size& imageSize,
                       const std::size_t& maxCalibFrames,
-                      const std::vector<std::size_t>& validFrames,
                       const std::size_t calibGridSize,
                       std::vector<float>& calibImageScore,
                       std::vector<std::size_t>& calibInputFrames,
@@ -93,12 +93,11 @@ void selectBestImages(const std::vector<std::vector<cv::Point2f> >& imagePoints,
   precomputeCellIndexes(imagePoints, imageSize, calibGridSize, cellIndexesPerImage);
 
   // Init with 0, 1, 2, ...
-  remainingImagesIndexes.resize(validFrames.size());
-  for (std::size_t i = 0; i < remainingImagesIndexes.size(); ++i)
-    remainingImagesIndexes[i] = i;
+  remainingImagesIndexes.resize(imagePoints.size());
+  std::iota(remainingImagesIndexes.begin(), remainingImagesIndexes.end(), 0);
 
   std::vector<std::size_t> bestImagesIndexes;
-  if (maxCalibFrames < validFrames.size())
+  if (maxCalibFrames < imagePoints.size())
   {
     while (bestImagesIndexes.size() < maxCalibFrames )
     {
@@ -133,8 +132,9 @@ void selectBestImages(const std::vector<std::vector<cv::Point2f> >& imagePoints,
   }
   else
   {
-    OPENMVG_LOG_DEBUG("Info: Less valid frames (" << validFrames.size() << ") than specified maxCalibFrames (" << maxCalibFrames << ").");
-    bestImagesIndexes = validFrames;
+    OPENMVG_LOG_DEBUG("Info: Less valid frames (" << imagePoints.size() << ") than specified maxCalibFrames (" << maxCalibFrames << ").");
+    bestImagesIndexes.resize(imagePoints.size());
+    std::iota(bestImagesIndexes.begin(), bestImagesIndexes.end(), 0);
     
     std::map<std::size_t, std::size_t> cellsWeight;
     computeCellsWeight(remainingImagesIndexes, cellIndexesPerImage, calibGridSize, cellsWeight);
@@ -148,13 +148,13 @@ void selectBestImages(const std::vector<std::vector<cv::Point2f> >& imagePoints,
     }
   }
 
-  assert(bestImagesIndexes.size() == std::min(maxCalibFrames, validFrames.size()));
+  assert(bestImagesIndexes.size() == std::min(maxCalibFrames, imagePoints.size()));
 
   for(std::size_t i = 0; i < bestImagesIndexes.size(); ++i)
   {
     const std::size_t origI = bestImagesIndexes[i];
     calibImagePoints.push_back(imagePoints[origI]);
-    calibInputFrames.push_back(validFrames[origI]);
+    calibInputFrames.push_back(origI);
   }
 }
 
