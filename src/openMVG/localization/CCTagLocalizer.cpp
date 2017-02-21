@@ -791,7 +791,7 @@ void CCTagLocalizer::getAllAssociations(const features::CCTAG_Regions &queryRegi
     // Matching
     std::vector<matching::IndMatch> vec_featureMatches;
     viewMatching(queryRegions, _regions_per_view.at(indexKeyFrame)._regions, vec_featureMatches);
-    OPENMVG_LOG_DEBUG("matching]\tFound "<< vec_featureMatches.size() <<" matches.");
+    OPENMVG_LOG_DEBUG("[matching]\tFound "<< vec_featureMatches.size() <<" matches.");
     
     matchedImages.emplace_back(indexKeyFrame, vec_featureMatches.size());
     

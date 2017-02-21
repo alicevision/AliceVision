@@ -31,7 +31,7 @@ bool rigResection(const std::vector<Mat> &pts2d,
                   geometry::Pose3 &rigPose,
                   std::vector<std::vector<std::size_t> > &inliers,
                   double angularThreshold,
-                  size_t maxIterations /*= 100*/,
+                  std::size_t maxIterations /*= 100*/,
                   bool verbosity /*= true*/)
 {
   const std::size_t numCameras = pts2d.size();

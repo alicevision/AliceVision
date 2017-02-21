@@ -15,6 +15,8 @@
 #include "openMVG/sfm/sfm_view_metadata.hpp"
 #include "openMVG/version.hpp"
 
+#include <numeric>
+
 namespace openMVG {
 namespace sfm {
 
@@ -90,7 +92,7 @@ void AlembicExporter::addPoints(const sfm::Landmarks &landmarks, bool withVisibi
   }
 
   std::vector<Alembic::Util::uint64_t> ids(positions.size());
-  iota(begin(ids), end(ids), 0);
+  std::iota(begin(ids), end(ids), 0);
 
   OPoints partsOut(_data->_mvgPointCloud, "particleShape1");
   OPointsSchema &pSchema = partsOut.getSchema();
