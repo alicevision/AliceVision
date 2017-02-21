@@ -178,10 +178,9 @@ int main(int argc, char** argv)
   openMVG::system::Timer durationAlgo;
   openMVG::system::Timer duration;
   
-  while (feed.readImage(imageGrey, queryIntrinsics, currentImgName, hasIntrinsics) && iInputFrame < nbFramesToProcess)
+  std::size_t currentFrame = 0;
+  while (feed.readImage(imageGrey, queryIntrinsics, currentImgName, hasIntrinsics))
   {
-    
-    std::size_t currentFrame = std::floor(iInputFrame * step);
     cv::Mat viewGray;
     cv::eigen2cv(imageGrey.GetMat(), viewGray);
 
@@ -217,7 +216,8 @@ int main(int argc, char** argv)
     }
 
     ++iInputFrame;
-    feed.goToFrame(std::floor(currentFrame));
+    currentFrame = std::floor(iInputFrame * step);
+    feed.goToFrame(currentFrame);
   }
 
   
