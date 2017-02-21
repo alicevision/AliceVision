@@ -177,9 +177,9 @@ int main(int argc, char** argv)
   std::string weightsFilepath;  
   /// enable the matching with the last N frame of the sequence
   bool useFrameBufferMatching = true;
-  /// disable the robust matching (geometric validation) when matching query image
+  /// enable/disable the robust matching (geometric validation) when matching query image
   /// and databases images
-  bool noRobustMatching = false;
+  bool robustMatching = true;
   
 #ifdef HAVE_ALEMBIC
   /// the export file
@@ -273,8 +273,8 @@ int main(int argc, char** argv)
           "an optimal value.")
       ("useFrameBufferMatching", po::bool_switch(&useFrameBufferMatching), 
           "[voctree] Enable/Disable the matching with the last N frame of the sequence")
-      ("noRobustMatching", po::bool_switch(&noRobustMatching), 
-          "[voctree] disable the robust matching between query and database images, "
+      ("robustMatching", po::value<bool>(&robustMatching)->default_value(robustMatching), 
+          "[voctree] Enable/Disable the robust matching between query and database images, "
           "all putative matches will be considered.")
 // cctag specific options
 #ifdef HAVE_CCTAG
@@ -389,7 +389,7 @@ int main(int argc, char** argv)
       OPENMVG_COUT("\talgorithm: " << algostring);
       OPENMVG_COUT("\tmatchingError: " << matchingErrorMax);
       OPENMVG_COUT("\tuseFrameBufferMatching: " << useFrameBufferMatching);
-      OPENMVG_COUT("\tnoRobustMatching: " << noRobustMatching);
+      OPENMVG_COUT("\trobustMatching: " << robustMatching);
     }
 #ifdef HAVE_CCTAG 
     else
@@ -449,7 +449,7 @@ int main(int argc, char** argv)
     tmpParam->_ccTagUseCuda = false;
     tmpParam->_matchingError = matchingErrorMax;
     tmpParam->_useFrameBufferMatching = useFrameBufferMatching;
-    tmpParam->_useRobustMatching = !noRobustMatching;
+    tmpParam->_useRobustMatching = robustMatching;
   }
 #ifdef HAVE_CCTAG
   else
