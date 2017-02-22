@@ -165,7 +165,7 @@ bool GlobalSfM_Translation_AveragingSolver::Translation_averaging(
           OPENMVG_LOG_DEBUG(os.str());
         }
 
-        OPENMVG_LOG_DEBUG("Found solution:\n", vec_solution);
+        OPENMVG_LOG_DEBUG("Found solution:\n" << vec_solution);
 
         std::vector<double> vec_camTranslation(iNview*3,0);
         std::copy(&vec_solution[0], &vec_solution[iNview*3], &vec_camTranslation[0]);
