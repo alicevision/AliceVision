@@ -86,7 +86,6 @@ bool GlobalSfM_Translation_AveragingSolver::Translation_averaging(
     openMVG::graph::CleanGraph_KeepLargestBiEdge_Nodes<Pair_Set, IndexT>(pairs, "./");
   KeepOnlyReferencedElement(set_remainingIds, m_vec_initialRijTijEstimates);
 
-  const std::string _sOutDirectory("./");
   {
     const std::set<IndexT> index = getIndexT(m_vec_initialRijTijEstimates);
 
@@ -166,7 +165,7 @@ bool GlobalSfM_Translation_AveragingSolver::Translation_averaging(
           OPENMVG_LOG_DEBUG(os.str());
         }
 
-        OPENMVG_LOG_DEBUG("Found solution:\n", vec_solution);
+        OPENMVG_LOG_DEBUG("Found solution:\n" << vec_solution);
 
         std::vector<double> vec_camTranslation(iNview*3,0);
         std::copy(&vec_solution[0], &vec_solution[iNview*3], &vec_camTranslation[0]);

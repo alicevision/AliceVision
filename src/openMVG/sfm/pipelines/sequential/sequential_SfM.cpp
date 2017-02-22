@@ -287,8 +287,8 @@ bool SequentialSfMReconstructionEngine::Process()
   if (!MakeInitialPair3D(_initialpair))
     return false;
 
-  std::set<size_t> reconstructedViewIds;
-  std::set<size_t> rejectedViewIds;
+  std::set<std::size_t> reconstructedViewIds;
+  std::set<std::size_t> rejectedViewIds;
   std::size_t nbRejectedLoops = 0;
   do
   {
@@ -302,7 +302,7 @@ bool SequentialSfMReconstructionEngine::Process()
       reconstructedViewIds,
       rejectedViewIds);
     // Remove all reconstructed views from the remaining views
-    for(const size_t v: reconstructedViewIds)
+    for(const std::size_t v: reconstructedViewIds)
     {
       _set_remainingViewId.erase(v);
     }
@@ -688,8 +688,8 @@ bool SequentialSfMReconstructionEngine::MakeInitialPair3D(const Pair & current_p
 {
   // Compute robust Essential matrix for ImageId [I,J]
   // use min max to have I < J
-  const size_t I = min(current_pair.first, current_pair.second);
-  const size_t J = max(current_pair.first, current_pair.second);
+  const std::size_t I = min(current_pair.first, current_pair.second);
+  const std::size_t J = max(current_pair.first, current_pair.second);
 
   // a. Assert we have valid pinhole cameras
   const View * view_I = _sfm_data.GetViews().at(I).get();
@@ -719,20 +719,20 @@ bool SequentialSfMReconstructionEngine::MakeInitialPair3D(const Pair & current_p
   // b. Get common features between the two view
   // use the track to have a more dense match correspondence set
   openMVG::tracks::STLMAPTracks map_tracksCommon;
-  const std::set<size_t> set_imageIndex= {I, J};
+  const std::set<std::size_t> set_imageIndex= {I, J};
   tracks::TracksUtilsMap::GetTracksInImagesFast(set_imageIndex, _map_tracks, _map_tracksPerView, map_tracksCommon);
 
   //-- Copy point to arrays
-  const size_t n = map_tracksCommon.size();
+  const std::size_t n = map_tracksCommon.size();
   Mat xI(2,n), xJ(2,n);
-  size_t cptIndex = 0;
+  std::size_t cptIndex = 0;
   for (openMVG::tracks::STLMAPTracks::const_iterator
     iterT = map_tracksCommon.begin(); iterT != map_tracksCommon.end();
     ++iterT, ++cptIndex)
   {
     tracks::submapTrack::const_iterator iter = iterT->second.begin();
-    const size_t i = iter->second;
-    const size_t j = (++iter)->second;
+    const std::size_t i = iter->second;
+    const std::size_t j = (++iter)->second;
 
     Vec2 feat = _features_provider->feats_per_view[I][i].coords().cast<double>();
     xI.col(cptIndex) = cam_I->get_ud_pixel(feat);
@@ -744,8 +744,8 @@ bool SequentialSfMReconstructionEngine::MakeInitialPair3D(const Pair & current_p
   // c. Robust estimation of the relative pose
   RelativePose_Info relativePose_info;
 
-  const std::pair<size_t, size_t> imageSize_I(cam_I->w(), cam_I->h());
-  const std::pair<size_t, size_t> imageSize_J(cam_J->w(), cam_J->h());
+  const std::pair<std::size_t, std::size_t> imageSize_I(cam_I->w(), cam_I->h());
+  const std::pair<std::size_t, std::size_t> imageSize_J(cam_J->w(), cam_J->h());
 
   if (!robustRelativePose(
     cam_I->K(), cam_J->K(), xI, xJ, relativePose_info, imageSize_I, imageSize_J, 4096))
@@ -1190,7 +1190,7 @@ bool SequentialSfMReconstructionEngine::FindNextImagesGroupForResection(
  * F. Update the observations into the global scene structure
  * G. Triangulate new possible 2D tracks
  */
-bool SequentialSfMReconstructionEngine::Resection(const size_t viewIndex)
+bool SequentialSfMReconstructionEngine::Resection(const std::size_t viewIndex)
 {
   using namespace tracks;
 
@@ -1199,13 +1199,13 @@ bool SequentialSfMReconstructionEngine::Resection(const size_t viewIndex)
   const openMVG::tracks::TrackIdSet& set_tracksIds = _map_tracksPerView.at(viewIndex);
 
   // A2. intersects the track list with the reconstructed
-  std::set<size_t> reconstructed_trackId;
+  std::set<std::size_t> reconstructed_trackId;
   std::transform(_sfm_data.GetLandmarks().begin(), _sfm_data.GetLandmarks().end(),
     std::inserter(reconstructed_trackId, reconstructed_trackId.begin()),
     stl::RetrieveKey());
 
   // Get the ids of the already reconstructed tracks
-  std::set<size_t> set_trackIdForResection;
+  std::set<std::size_t> set_trackIdForResection;
   std::set_intersection(set_tracksIds.begin(), set_tracksIds.end(),
     reconstructed_trackId.begin(),
     reconstructed_trackId.end(),
@@ -1224,7 +1224,7 @@ bool SequentialSfMReconstructionEngine::Resection(const size_t viewIndex)
 
   // Get back featId associated to a tracksID already reconstructed.
   // These 2D/3D associations will be used for the resection.
-  std::vector<size_t> vec_featIdForResection;
+  std::vector<std::size_t> vec_featIdForResection;
   TracksUtilsMap::GetFeatIndexPerViewAndTrackId(_map_tracks,
     set_trackIdForResection,
     viewIndex,
@@ -1243,9 +1243,9 @@ bool SequentialSfMReconstructionEngine::Resection(const size_t viewIndex)
     optional_intrinsic = _sfm_data.GetIntrinsics().at(view_I->id_intrinsic);
   }
 
-  size_t cpt = 0;
-  std::set<size_t>::const_iterator iterTrackId = set_trackIdForResection.begin();
-  for (std::vector<size_t>::const_iterator iterfeatId = vec_featIdForResection.begin();
+  std::size_t cpt = 0;
+  std::set<std::size_t>::const_iterator iterTrackId = set_trackIdForResection.begin();
+  for (std::vector<std::size_t>::const_iterator iterfeatId = vec_featIdForResection.begin();
     iterfeatId != vec_featIdForResection.end();
     ++iterfeatId, ++iterTrackId, ++cpt)
   {
@@ -1360,7 +1360,7 @@ bool SequentialSfMReconstructionEngine::Resection(const size_t viewIndex)
   // F. Update the observations into the global scene structure
   // - Add the new 2D observations to the reconstructed tracks
   iterTrackId = set_trackIdForResection.begin();
-  for (size_t i = 0; i < resection_data.pt2D.cols(); ++i, ++iterTrackId)
+  for (std::size_t i = 0; i < resection_data.pt2D.cols(); ++i, ++iterTrackId)
   {
     const Vec3 X = resection_data.pt3D.col(i);
     const Vec2 x = resection_data.pt2D.col(i);
@@ -1391,11 +1391,11 @@ bool SequentialSfMReconstructionEngine::Resection(const size_t viewIndex)
       if (indexI == viewIndex)
         continue;
 
-      const size_t I = std::min((IndexT)viewIndex, indexI);
-      const size_t J = std::max((IndexT)viewIndex, indexI);
+      const std::size_t I = std::min((IndexT)viewIndex, indexI);
+      const std::size_t J = std::max((IndexT)viewIndex, indexI);
 
       // Find track correspondences between I and J
-      const std::set<size_t> set_viewIndex = { I,J };
+      const std::set<std::size_t> set_viewIndex = { I,J };
       openMVG::tracks::STLMAPTracks map_tracksCommonIJ;
       TracksUtilsMap::GetTracksInImagesFast(set_viewIndex, _map_tracks, _map_tracksPerView, map_tracksCommonIJ);
 
@@ -1406,10 +1406,10 @@ bool SequentialSfMReconstructionEngine::Resection(const size_t viewIndex)
       const Pose3 pose_I = _sfm_data.GetPoseOrDie(view_I);
       const Pose3 pose_J = _sfm_data.GetPoseOrDie(view_J);
 
-      size_t new_putative_track = 0, new_added_track = 0, extented_track = 0;
-      for (const std::pair< size_t, tracks::submapTrack >& trackIt : map_tracksCommonIJ)
+      std::size_t new_putative_track = 0, new_added_track = 0, extented_track = 0;
+      for (const std::pair<std::size_t, tracks::submapTrack >& trackIt : map_tracksCommonIJ)
       {
-        const size_t trackId = trackIt.first;
+        const std::size_t trackId = trackIt.first;
         const tracks::submapTrack & track = trackIt.second;
 
         const Vec2 xI = _features_provider->feats_per_view.at(I)[track.at(I)].coords().cast<double>();
@@ -1530,10 +1530,10 @@ bool SequentialSfMReconstructionEngine::BundleAdjustment()
  *
  * @return True if more than 'count' outliers have been removed.
  */
-size_t SequentialSfMReconstructionEngine::badTrackRejector(double dPrecision, size_t count)
+std::size_t SequentialSfMReconstructionEngine::badTrackRejector(double dPrecision, std::size_t count)
 {
-  const size_t nbOutliers_residualErr = RemoveOutliers_PixelResidualError(_sfm_data, dPrecision, 2);
-  const size_t nbOutliers_angleErr = RemoveOutliers_AngleError(_sfm_data, 2.0);
+  const std::size_t nbOutliers_residualErr = RemoveOutliers_PixelResidualError(_sfm_data, dPrecision, 2);
+  const std::size_t nbOutliers_angleErr = RemoveOutliers_AngleError(_sfm_data, 2.0);
 
   OPENMVG_LOG_DEBUG("badTrackRejector: nbOutliers_residualErr: " << nbOutliers_residualErr << ", nbOutliers_angleErr: " << nbOutliers_angleErr);
   return (nbOutliers_residualErr + nbOutliers_angleErr) > count;
