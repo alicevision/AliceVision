@@ -18,7 +18,7 @@ endmacro()
 
 # Sets the appropriate flag to enable C++11 support
 macro(enable_cxx11)
-  if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang" OR CMAKE_COMPILER_IS_GNUCXX)
+  if (${CMAKE_CXX_COMPILER_ID} STREQUAL "Clang" OR CMAKE_COMPILER_IS_GNUCXX)
     include(CheckCXXCompilerFlag)
     check_cxx_compiler_flag(--std=c++11 SUPPORTS_STD_CXX11)
     check_cxx_compiler_flag(--std=c++0x SUPPORTS_STD_CXX01)
