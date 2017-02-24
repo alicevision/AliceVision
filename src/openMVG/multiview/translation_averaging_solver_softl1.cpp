@@ -9,6 +9,7 @@
 #include "openMVG/multiview/translation_averaging_solver.hpp"
 #include "openMVG/numeric/numeric.h"
 #include "openMVG/types.hpp"
+#include <openMVG/config.hpp>
 
 #include "ceres/ceres.h"
 #include "ceres/rotation.h"

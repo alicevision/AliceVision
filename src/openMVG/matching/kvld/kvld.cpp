@@ -16,6 +16,7 @@ the terms of the BSD license ( see the COPYING file).
 #include <functional>
 #include <numeric>
 #include <openMVG/image/image.hpp>
+#include <openMVG/config.hpp>
 
 using namespace std;
 using namespace openMVG;

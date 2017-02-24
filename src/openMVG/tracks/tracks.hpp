@@ -38,6 +38,7 @@
 #include "openMVG/matching/indMatch.hpp"
 #include "openMVG/stl/flatMap.hpp"
 #include "openMVG/stl/flatSet.hpp"
+#include <openMVG/config.hpp>
 
 #include <algorithm>
 #include <iostream>

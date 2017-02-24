@@ -1,6 +1,7 @@
 #include "openMVG/sfm/sfm.hpp"
 #include "openMVG/image/image.hpp"
 #include "openMVG/image/image_converter.hpp"
+#include <openMVG/config.hpp>
 
 
 #include "third_party/cmdLine/cmdLine.h"

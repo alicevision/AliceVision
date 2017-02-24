@@ -11,6 +11,8 @@
 #include <openMVG/types.hpp>
 #include <openMVG/sfm/sfm_data.hpp>
 #include <openMVG/features/features.hpp>
+#include <openMVG/config.hpp>
+
 #include "third_party/progress/progress.hpp"
 
 #include <memory>

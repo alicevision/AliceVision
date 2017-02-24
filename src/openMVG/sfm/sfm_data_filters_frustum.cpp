@@ -9,6 +9,7 @@
 #include "openMVG/sfm/sfm.hpp"
 #include "openMVG/types.hpp"
 #include "openMVG/geometry/half_space_intersection.hpp"
+#include <openMVG/config.hpp>
 
 #include <fstream>
 

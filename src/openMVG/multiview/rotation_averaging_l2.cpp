@@ -6,6 +6,8 @@
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 #include "openMVG/multiview/rotation_averaging_l2.hpp"
+#include <openMVG/config.hpp>
+
 #include <vector>
 #include <map>
 

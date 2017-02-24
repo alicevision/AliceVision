@@ -8,6 +8,7 @@
 #define OPENMVG_IMAGE_IMAGE_CONVOLUTION_HPP_
 
 #include "openMVG/numeric/accumulator_trait.hpp"
+#include <openMVG/config.hpp>
 
 /**
  ** @file Standard 2D image convolution functions :

@@ -7,6 +7,7 @@
 
 #include "openMVG/sfm/pipelines/global/sfm_global_engine_relative_motions.hpp"
 #include "openMVG/sfm/sfm_data.hpp"
+#include <openMVG/config.hpp>
 #include "third_party/htmlDoc/htmlDoc.hpp"
 
 #include "openMVG/multiview/triangulation.hpp"

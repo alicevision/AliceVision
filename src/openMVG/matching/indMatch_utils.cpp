@@ -1,6 +1,7 @@
 #include "indMatch_utils.hpp"
 
 #include "openMVG/matching/indMatch.hpp"
+#include <openMVG/config.hpp>
 
 #include <cereal/archives/portable_binary.hpp>
 #include <cereal/types/map.hpp>

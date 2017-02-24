@@ -8,6 +8,7 @@
 #include <openMVG/config.hpp>
 #include "openMVG/image/image.hpp"
 #include "openMVG/sfm/sfm.hpp"
+#include <openMVG/config.hpp>
 
 /// Feature/Regions & Image describer interfaces
 #include "openMVG/features/features.hpp"

@@ -1,6 +1,7 @@
 #include <openMVG/voctree/database.hpp>
 #include <openMVG/voctree/vocabulary_tree.hpp>
 #include <openMVG/voctree/databaseIO.hpp>
+#include <openMVG/config.hpp>
 
 #include <Eigen/Core>
 

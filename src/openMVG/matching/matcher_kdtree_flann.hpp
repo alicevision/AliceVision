@@ -8,7 +8,10 @@
 #define OPENMVG_MATCHING_ARRAYMATCHER_KDTREE_FLANN_H_
 
 #include "openMVG/matching/matching_interface.hpp"
+#include <openMVG/config.hpp>
+
 #include "flann/flann.hpp"
+
 #include <memory>
 
 namespace openMVG {

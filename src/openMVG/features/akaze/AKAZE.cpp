@@ -5,6 +5,7 @@
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 #include "openMVG/features/akaze/AKAZE.hpp"
+#include <openMVG/config.hpp>
 
 namespace openMVG {
 namespace features {

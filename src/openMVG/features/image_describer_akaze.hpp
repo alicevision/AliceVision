@@ -16,6 +16,7 @@
 #include "openMVG/features/akaze/msurf_descriptor.hpp"
 #include "openMVG/features/akaze/mldb_descriptor.hpp"
 #include "openMVG/features/liop/liop_descriptor.hpp"
+#include <openMVG/config.hpp>
 #include <cereal/cereal.hpp>
 
 using namespace std;

@@ -5,6 +5,7 @@
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 #include "openMVG/sfm/sfm_data_BA_ceres.hpp"
+#include <openMVG/config.hpp>
 
 #include "ceres/rotation.h"
 

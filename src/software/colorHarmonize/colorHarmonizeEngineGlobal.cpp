@@ -16,6 +16,7 @@
 
 #include "openMVG/sfm/sfm.hpp"
 #include "openMVG/graph/graph.hpp"
+#include <openMVG/config.hpp>
 
 #include "third_party/stlplus3/filesystemSimplified/file_system.hpp"
 #include "third_party/vectorGraphics/svgDrawer.hpp"

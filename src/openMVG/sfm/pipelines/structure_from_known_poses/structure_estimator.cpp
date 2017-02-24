@@ -13,6 +13,7 @@
 #include "openMVG/graph/graph.hpp"
 #include "openMVG/tracks/tracks.hpp"
 #include "openMVG/sfm/sfm_data_triangulation.hpp"
+#include <openMVG/config.hpp>
 
 #include "third_party/progress/progress.hpp"
 

@@ -8,6 +8,8 @@
 #ifndef OPENMVG_IMAGE_HOMOGRAPHY_WARP
 #define OPENMVG_IMAGE_HOMOGRAPHY_WARP
 
+#include <openMVG/config.hpp>
+
 namespace openMVG{
 namespace image{
 

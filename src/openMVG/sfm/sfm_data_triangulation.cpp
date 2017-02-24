@@ -8,6 +8,8 @@
 
 #include "openMVG/multiview/triangulation_nview.hpp"
 #include "openMVG/robust_estimation/rand_sampling.hpp"
+#include <openMVG/config.hpp>
+
 #include "third_party/progress/progress.hpp"
 
 #include <deque>

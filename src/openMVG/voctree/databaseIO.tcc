@@ -2,6 +2,7 @@
 
 #include <openMVG/logger.hpp>
 #include <openMVG/sfm/sfm_data_io.hpp>
+#include <openMVG/config.hpp>
 
 #include <boost/filesystem.hpp>
 #include <boost/algorithm/string/case_conv.hpp>

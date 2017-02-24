@@ -11,6 +11,7 @@
 #include "openMVG/matching/matching_interface.hpp"
 #include "openMVG/matching/metric.hpp"
 #include "openMVG/stl/indexed_sort.hpp"
+#include <openMVG/config.hpp>
 #include <memory>
 #include <iostream>
 

@@ -7,6 +7,8 @@
 #ifndef OPENMVG_IMAGE_IMAGE_DIFFUSION_HPP_
 #define OPENMVG_IMAGE_IMAGE_DIFFUSION_HPP_
 
+#include <openMVG/config.hpp>
+
 #ifdef _MSC_VER
 #pragma warning(once:4244)
 #endif
