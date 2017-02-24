@@ -19,6 +19,8 @@
 #include "openMVG/sfm/AlembicExporter.hpp"
 #include "openMVG/sfm/AlembicImporter.hpp"
 
+#include "openMVG/config.hpp"
+
 namespace openMVG {
 namespace sfm {
 

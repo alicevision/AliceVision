@@ -6,6 +6,8 @@
 
 #include "openMVG/sfm/sfm.hpp"
 #include "openMVG/sfm/utils/sfm_data_UID_utils.hpp"
+#include <openMVG/config.hpp>
+
 
 #include "third_party/cmdLine/cmdLine.h"
 #include "third_party/stlplus3/filesystemSimplified/file_system.hpp"
