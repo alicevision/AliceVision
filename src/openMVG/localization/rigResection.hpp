@@ -1,5 +1,5 @@
 #pragma once
-
+#include <openMVG/config.hpp>
 #include <openMVG/types.hpp>
 #include <openMVG/cameras/Camera_Pinhole_Radial.hpp>
 #include <openMVG/geometry/pose3.hpp>

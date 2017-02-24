@@ -11,7 +11,7 @@
 #include "LocalizationResult.hpp"
 #include "ILocalizer.hpp"
 #include "BoundedBuffer.hpp"
-
+#include <openMVG/config.hpp>
 #include <openMVG/features/image_describer.hpp>
 #include <openMVG/sfm/sfm_data.hpp>
 #include <openMVG/sfm/pipelines/localization/SfM_Localizer.hpp>

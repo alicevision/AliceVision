@@ -6,6 +6,7 @@
  */
 
 #include "rigResection.hpp"
+#include <openMVG/config.hpp>
 #ifdef HAVE_OPENGV
 #include <Eigen/Eigen>
 #include <opengv/absolute_pose/methods.hpp>

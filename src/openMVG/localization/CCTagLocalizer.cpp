@@ -3,6 +3,7 @@
 #include "optimization.hpp"
 #include "rigResection.hpp"
 
+#include <openMVG/config.hpp>
 #include <openMVG/features/svgVisualization.hpp>
 #include <openMVG/sfm/sfm_data_io.hpp>
 #include <openMVG/matching/indMatch.hpp>

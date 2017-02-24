@@ -1,7 +1,7 @@
 #include "VoctreeLocalizer.hpp"
 #include "rigResection.hpp"
 #include "optimization.hpp"
-
+#include <openMVG/config.hpp>
 #include <openMVG/sfm/sfm_data_io.hpp>
 #include <openMVG/sfm/pipelines/sfm_robust_model_estimation.hpp>
 #include <openMVG/sfm/sfm_data_BA_ceres.hpp>
