@@ -291,7 +291,7 @@ bool GlobalSfMReconstructionEngine_RelativeMotions::Compute_Initial_Structure
   {
     using namespace openMVG::tracks;
     TracksBuilder tracksBuilder;
-#if defined USE_ALL_VALID_MATCHES // not used by default
+#ifdef USE_ALL_VALID_MATCHES // not used by default
     matching::PairWiseMatches pose_supported_matches;
     for (const std::pair< Pair, IndMatches > & match_info :  _matches_provider->_pairWise_matches)
     {

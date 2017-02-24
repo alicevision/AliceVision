@@ -109,7 +109,7 @@ void SfM_Data_Structure_Estimation_From_Known_Poses::match(
       const Mat3 F_lr = F_from_P(P_L, P_R);
       const double thresholdF = 4.0;
 
-    #if defined(EXHAUSTIVE_MATCHING)
+  #ifdef EXHAUSTIVE_MATCHING
       geometry_aware::GuidedMatching
         <Mat3, openMVG::fundamental::kernel::EpipolarDistanceError>
         (
@@ -121,7 +121,7 @@ void SfM_Data_Structure_Estimation_From_Known_Poses::match(
           Square(thresholdF), Square(0.8),
           vec_corresponding_indexes
         );
-    #else
+  #else
       const Vec3 epipole2  = epipole_from_P(P_R, poseL);
 
       const features::Regions * regions = regions_provider->regions_per_view.at(it->first).get();
