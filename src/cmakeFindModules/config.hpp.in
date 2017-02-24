@@ -8,6 +8,10 @@
 #cmakedefine OPENMVG_USE_OPENMP
 #endif
 
+#ifndef OPENMVG_USE_SSE
+#cmakedefine OPENMVG_USE_SSE
+#endif
+
 #ifndef OPENMVG_HAVE_MOSEK
 #cmakedefine OPENMVG_HAVE_MOSEK
 #endif

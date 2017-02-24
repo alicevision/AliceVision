@@ -10,6 +10,8 @@
 
 #include "openMVG/matching/metric_hamming.hpp"
 #include "openMVG/numeric/accumulator_trait.hpp"
+#include <openMVG/config.hpp>
+
 #ifdef OPENMVG_USE_SSE
 #include <openMVG/logger.hpp>
 #include <xmmintrin.h>
