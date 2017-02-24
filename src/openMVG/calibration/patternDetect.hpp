@@ -1,5 +1,7 @@
 #pragma once
 
+#include <openMVG/config.hpp>
+
 #include <vector>
 #include <iostream>
 

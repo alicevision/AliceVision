@@ -1,4 +1,5 @@
 #include "svgVisualization.hpp"
+#include <openMVG/config.hpp>
 #ifdef HAVE_CCTAG
 #include "cctag/CCTAG_describer.hpp"
 #endif

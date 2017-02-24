@@ -8,6 +8,7 @@
 #include <openMVG/calibration/exportData.hpp>
 #include <openMVG/system/timer.hpp>
 #include <openMVG/logger.hpp>
+#include <openMVG/config.hpp>
 
 #include <boost/lexical_cast.hpp>
 #include <boost/program_options.hpp>
@@ -206,7 +207,7 @@ int main(int argc, char** argv)
 
     // Find the chosen pattern in images
     const bool found = openMVG::calibration::findPattern(patternType, viewGray, boardSize, detectedId, pointbuf);
-
+    
     if (found)
     {
       validFrames.push_back(currentFrame);

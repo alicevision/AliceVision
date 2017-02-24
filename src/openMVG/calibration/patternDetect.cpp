@@ -1,5 +1,6 @@
 #include "patternDetect.hpp"
 
+#include <openMVG/config.hpp>
 #include <openMVG/logger.hpp>
 #include <openMVG/system/timer.hpp>
 

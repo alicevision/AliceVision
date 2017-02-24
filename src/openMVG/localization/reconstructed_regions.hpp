@@ -7,6 +7,7 @@
 
 #pragma once
 
+#include "openMVG/config.hpp"
 #include "openMVG/types.hpp"
 #include "openMVG/numeric/numeric.h"
 #include "openMVG/features/feature.hpp"

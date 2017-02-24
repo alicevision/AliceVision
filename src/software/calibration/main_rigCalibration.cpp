@@ -1,3 +1,4 @@
+#include <openMVG/config.hpp>
 #include <openMVG/localization/VoctreeLocalizer.hpp>
 #ifdef HAVE_CCTAG
 #include <openMVG/localization/CCTagLocalizer.hpp>
@@ -164,7 +165,7 @@ int main(int argc, char** argv)
   /// the maximum error allowed for image matching with geometric validation
   double matchingErrorMax = 4.0;
   /// the maximum number of frames in input
-  int maxInputFrames = 0;
+  std::size_t maxInputFrames = 0;
 
 
   // parameters for voctree localizer
@@ -230,7 +231,7 @@ int main(int argc, char** argv)
       ("reprojectionError", po::value<double>(&resectionErrorMax)->default_value(resectionErrorMax), 
           "Maximum reprojection error (in pixels) allowed for resectioning. If set "
           "to 0 it lets the ACRansac select an optimal value.")
-      ("maxInputFrames", po::value<int>(&maxInputFrames)->default_value(maxInputFrames), 
+      ("maxInputFrames", po::value<std::size_t>(&maxInputFrames)->default_value(maxInputFrames), 
           "Maximum number of frames to read in input. 0 means no limit.");
 
   // parameters for voctree localizer

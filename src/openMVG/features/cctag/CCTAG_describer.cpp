@@ -107,7 +107,7 @@ bool CCTAG_Image_describer::Describe(const image::Image<unsigned char>& image,
 
         // Add its associated descriptor
         Descriptor<unsigned char,128> desc;
-        for(int i=0; i< desc.size(); ++i)
+        for(std::size_t i=0; i< desc.size(); ++i)
         {
           desc[i] = (unsigned char) 0;
         }

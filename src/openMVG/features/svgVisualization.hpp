@@ -7,6 +7,7 @@
 
 #pragma once
 
+#include <openMVG/config.hpp>
 #include "image_describer.hpp"
 #ifdef HAVE_CCTAG
 #include "regions_factory.hpp"

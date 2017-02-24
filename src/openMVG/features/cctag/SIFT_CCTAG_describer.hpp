@@ -1,4 +1,3 @@
-#ifdef HAVE_CCTAG
 
 #pragma once
 
@@ -75,4 +74,3 @@ private:
 #include <cereal/archives/json.hpp>
 CEREAL_REGISTER_TYPE_WITH_NAME(openMVG::features::SIFT_CCTAG_Image_describer, "SIFT_CCTAG_Image_describer");
 
-#endif //HAVE_CCTAG

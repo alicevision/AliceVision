@@ -1,3 +1,4 @@
+#include <openMVG/config.hpp>
 #include <openMVG/localization/ILocalizer.hpp>
 #include <openMVG/localization/VoctreeLocalizer.hpp>
 #ifdef HAVE_CCTAG
