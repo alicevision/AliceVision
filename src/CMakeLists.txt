@@ -30,8 +30,10 @@ OPTION(OpenMVG_USE_OPENGV "Enable use of OpenGV algorithms" OFF)
 OPTION(OpenMVG_USE_ALEMBIC "Enable Alembic I/O" OFF)
 OPTION(OpenMVG_USE_LOG "Enable logger" ON)
 
+set(WANTS_OPENMVG_COUT OFF)
 IF(OpenMVG_USE_LOG)
   ADD_DEFINITIONS(-DWANTS_OPENMVG_COUT)
+  set(WANTS_OPENMVG_COUT ON)
 ENDIF()
 
 OPTION(OPENMVG_REQUIRE_CERES_WITH_SUITESPARSE ON)
@@ -147,12 +149,14 @@ ENDIF(CXX11_COMPILER)
 # ==============================================================================
 # OpenMP detection
 # ==============================================================================
+set(OPENMVG_USE_OPENMP OFF)
 IF (OpenMVG_USE_OPENMP)
   FIND_PACKAGE(OpenMP)
   IF (OPENMP_FOUND)
     SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
     OPTION(OpenMVG_USE_OPENMP "Use OpenMP for parallelization" ON)
     ADD_DEFINITIONS(-DOPENMVG_USE_OPENMP)
+    set(OPENMVG_USE_OPENMP ON)
     IF (NOT MSVC)
       IF ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
         # for those using the clang with OpenMP support
@@ -208,9 +212,11 @@ ENDIF (OpenMVG_BUILD_OPENGL_EXAMPLES)
 
 #- Mosek (linear programming interface)
 #===============================================================================
+set(OPENMVG_HAVE_MOSEK OFF)
 FIND_PACKAGE(Mosek)
 IF(MOSEK_FOUND)
   ADD_DEFINITIONS(-DOPENMVG_HAVE_MOSEK)
+  set(OPENMVG_HAVE_MOSEK OFF)
   SET(LP_INCLUDE_DIRS
     ${MOSEK_INCLUDE}
     ${CMAKE_CURRENT_SOURCE_DIR}/dependencies/osi_clp/Osi/src/OsiMsk/
@@ -405,6 +411,8 @@ ENDIF()
 # ==============================================================================
 # - only external and enabled only if OpenMVG_USE_OPENCV is set to ON
 # ==============================================================================
+set(HAVE_OPENCV OFF)
+set(USE_OCVSIFT OFF)
 IF(OpenMVG_USE_OPENCV)
   FIND_PACKAGE(OpenCV REQUIRED core imgproc video imgcodecs videoio features2d xfeatures2d)
 
@@ -416,8 +424,10 @@ IF(OpenMVG_USE_OPENCV)
     INCLUDE_DIRECTORIES(${OpenCV_INCLUDE_DIRS})
     # add a definition that allows the conditional compiling
     ADD_DEFINITIONS(-DHAVE_OPENCV)
+    set(HAVE_OPENCV ON)
     IF(OpenMVG_USE_OCVSIFT)
       ADD_DEFINITIONS(-DUSE_OCVSIFT)
+      set(USE_OCVSIFT ON)
     ENDIF(OpenMVG_USE_OCVSIFT)
   ENDIF(NOT OpenCV_FOUND)
 ENDIF(OpenMVG_USE_OPENCV)
@@ -427,12 +437,14 @@ ENDIF(OpenMVG_USE_OPENCV)
 # ==============================================================================
 # - optional, it allows to compile the vocabulary tree
 # ==============================================================================
+set(HAVE_BOOST OFF)
 IF(OpenMVG_USE_BOOST)
   OPTION(BOOST_NO_CXX11 "If Boost is compiled without C++11 support (as it is often the case in OS packages) this must be enabled to avoid symbol conflicts (SCOPED_ENUM)." OFF)
   FIND_PACKAGE(Boost 1.53.0 QUIET COMPONENTS system filesystem program_options thread serialization log log_setup)
   IF(Boost_FOUND)
      MESSAGE(STATUS "Boost ${Boost_LIB_VERSION} found")
      add_definitions(-DHAVE_BOOST)
+     set(HAVE_BOOST ON)
      if(BOOST_NO_CXX11)
        add_definitions(-DBOOST_NO_CXX11_SCOPED_ENUMS)
      endif(BOOST_NO_CXX11)
@@ -454,12 +466,14 @@ ENDIF(OpenMVG_USE_BOOST)
 # ==============================================================================
 # - optional, it allows to use the classes to export data in alembic format
 # ==============================================================================
+set(HAVE_ALEMBIC OFF)
 IF(OpenMVG_USE_ALEMBIC)
   FIND_PACKAGE(Alembic)
   IF(ALEMBIC_FOUND)
     MESSAGE(STATUS "Alembic found")
     include_directories(${ABC_INCLUDE_DIR})
     add_definitions(-DHAVE_ALEMBIC)
+    set(HAVE_ALEMBIC ON)
   ELSE()
     MESSAGE(STATUS "Alembic not found -- disabling I/O exporter")
     UPDATE_CACHE_VARIABLE(OpenMVG_USE_ALEMBIC OFF)
@@ -474,6 +488,7 @@ ADD_SUBDIRECTORY(third_party)
 # ==============================================================================
 # CCTag
 # ==============================================================================
+set(HAVE_CCTAG OFF)
 IF(OpenMVG_USE_CCTAG)
   FIND_PACKAGE(CCTag 1.0.0 CONFIG)
   IF(NOT CCTag_FOUND)
@@ -482,6 +497,7 @@ IF(OpenMVG_USE_CCTAG)
   ELSE(NOT CCTag_FOUND)
     MESSAGE(STATUS "CCTAG package version ${CCTag_VERSION} found")
     ADD_DEFINITIONS(-DHAVE_CCTAG)
+    set(HAVE_CCTAG ON)
   ENDIF(NOT CCTag_FOUND)
 ENDIF(OpenMVG_USE_CCTAG)
 
@@ -490,6 +506,7 @@ ENDIF(OpenMVG_USE_CCTAG)
 # ==============================================================================
 # - optional, it allows to use the generic camera PnP algorithms for rig localization
 # ==============================================================================
+set(HAVE_OPENGV OFF)
 IF(OpenMVG_USE_OPENGV)
   FIND_PACKAGE(OpenGV)
   IF(OPENGV_FOUND)
@@ -497,6 +514,7 @@ IF(OpenMVG_USE_OPENGV)
     INCLUDE_DIRECTORIES(${OPENGV_INCLUDE_DIR})
     LINK_DIRECTORIES(${OPENGV_LIBRARY_DIR})
     ADD_DEFINITIONS(-DHAVE_OPENGV)
+    set(HAVE_OPENGV ON)
   ELSE()
     MESSAGE(STATUS "OpenGV not found -- disabling some rig localization algorithms")
     UPDATE_CACHE_VARIABLE(OpenMVG_USE_OPENGV OFF)
@@ -506,8 +524,12 @@ ENDIF(OpenMVG_USE_OPENGV)
 # ==============================================================================
 # Include directories
 # ==============================================================================
+set(generatedDir "${CMAKE_CURRENT_BINARY_DIR}/generated")
+message("generatedDir: ${generatedDir}")
 SET(OpenMVG_INCLUDE_DIRS
-  ${CMAKE_CURRENT_SOURCE_DIR}
+  ${CMAKE_CURRENT_SOURCE_DIR} 
+  ${generatedDir}
+  ${CMAKE_CURRENT_SOURCE_DIR}/
   ${JPEG_INCLUDE_DIR}
   ${PNG_INCLUDE_DIRS}
   ${TIFF_INCLUDE_DIR}
@@ -522,7 +544,6 @@ SET(OpenMVG_INCLUDE_DIRS
   ${COINUTILS_INCLUDE_DIRS}
   ${CLP_INCLUDE_DIRS}
   ${OSI_INCLUDE_DIRS}
-  CACHE PATH "include directories for openMVG and its dependencies"
 )
 
 INCLUDE_DIRECTORIES(${OpenMVG_INCLUDE_DIRS})
@@ -703,12 +724,14 @@ SET(OpenMVG_INCLUDE_DIRS
   "${OpenMVG_INCLUDE_DIRS}"
   "${CMAKE_INSTALL_PREFIX}/include/openMVG")
 
+list(REMOVE_ITEM OpenMVG_INCLUDE_DIRS ${generatedDir})
 STRING(REGEX REPLACE
   "${CMAKE_CURRENT_SOURCE_DIR}"
   "${CMAKE_INSTALL_PREFIX}/include"
   OpenMVG_INCLUDE_DIRS
   "${OpenMVG_INCLUDE_DIRS}"
 )
+
 STRING(REGEX REPLACE
   "third_party"
   "openMVG/third_party"
@@ -736,6 +759,7 @@ IF (OpenMVG_USE_INTERNAL_CERES)
   )
 ENDIF(OpenMVG_USE_INTERNAL_CERES)
 
+
 # Create a OpenMVGConfig.cmake file. <name>Config.cmake files are searched by
 # FIND_PACKAGE() automatically. We configure that file so that we can put any
 # information we want in it, e.g. version numbers, include directories, etc.
@@ -745,6 +769,13 @@ CONFIGURE_FILE("${CMAKE_SOURCE_DIR}/cmakeFindModules/OpenMVGConfig.cmake.in"
 INSTALL(FILES "${CMAKE_CURRENT_BINARY_DIR}/OpenMVGConfig.cmake"
         DESTINATION share/openMVG/cmake)
 
+set(configfile "${generatedDir}/openMVG/config.hpp")
+CONFIGURE_FILE("${CMAKE_SOURCE_DIR}/cmakeFindModules/config.hpp.in"
+               "${configfile}" @ONLY)
+
+INSTALL(FILES "${configfile}"
+        DESTINATION "include/openMVG")
+
 ########### Add uninstall target ###############
 CONFIGURE_FILE(
   "${CMAKE_CURRENT_SOURCE_DIR}/cmakeFindModules/cmake_uninstall.cmake.in"
@@ -752,4 +783,3 @@ CONFIGURE_FILE(
   IMMEDIATE @ONLY)
 ADD_CUSTOM_TARGET(uninstall
   "${CMAKE_COMMAND}" -P "${CMAKE_CURRENT_BINARY_DIR}/cmakeFindModules/cmake_uninstall.cmake")
-

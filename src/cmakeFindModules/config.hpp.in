@@ -1,0 +1,37 @@
+#pragma once
+
+#ifndef WANTS_OPENMVG_COUT
+#cmakedefine WANTS_OPENMVG_COUT
+#endif
+
+#ifndef OPENMVG_USE_OPENMP
+#cmakedefine OPENMVG_USE_OPENMP
+#endif
+
+#ifndef OPENMVG_HAVE_MOSEK
+#cmakedefine OPENMVG_HAVE_MOSEK
+#endif
+
+#ifndef HAVE_OPENCV
+#cmakedefine HAVE_OPENCV
+#endif
+
+#ifndef USE_OCVSIFT
+#cmakedefine USE_OCVSIFT
+#endif
+
+#ifndef HAVE_BOOST
+#cmakedefine HAVE_BOOST
+#endif
+
+#ifndef HAVE_ALEMBIC
+#cmakedefine HAVE_ALEMBIC
+#endif
+
+#ifndef HAVE_CCTAG
+#cmakedefine HAVE_CCTAG
+#endif
+
+#ifndef HAVE_OPENGV
+#cmakedefine HAVE_OPENGV
+#endif
