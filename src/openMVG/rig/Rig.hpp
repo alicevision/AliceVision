@@ -3,6 +3,7 @@
 #include <openMVG/localization/LocalizationResult.hpp>
 #include <openMVG/geometry/pose3.hpp>
 #include <openMVG/numeric/numeric.h>
+#include <openMVG/config.hpp>
 
 #include <Eigen/Dense>
 

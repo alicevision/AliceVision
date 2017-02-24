@@ -9,6 +9,8 @@
 #include "ImageFeed.hpp"
 #include "VideoFeed.hpp"
 
+#include <openMVG/config.hpp>
+
 #include <boost/filesystem.hpp>
 
 #include <exception>
