@@ -1,5 +1,7 @@
 #pragma once
 
+#include <openMVG/config.hpp>
+
 #ifdef HAVE_BOOST
 #include <boost/container/flat_set.hpp>
 #endif
