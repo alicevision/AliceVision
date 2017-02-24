@@ -131,20 +131,12 @@ endif()
 # ==============================================================================
 INCLUDE(CXX11)
 check_for_cxx11_compiler(CXX11_COMPILER)
-# If a C++11 compiler is available, then set the appropriate flags
-IF(CXX11_COMPILER)
-  ADD_DEFINITIONS(-DOPENMVG_USE_CXX11)
-  enable_cxx11()
-  INCLUDE(CheckIncludeFileCXX)
-  CHECK_INCLUDE_FILE_CXX(thread HAVE_CXX11_THREAD)
-  IF (HAVE_CXX11_THREAD)
-    ADD_DEFINITIONS(-DHAVE_CXX11_THREAD)
-  ENDIF(HAVE_CXX11_THREAD)
-    CHECK_INCLUDE_FILE_CXX(chrono HAVE_CXX11_CHRONO)
-  IF (HAVE_CXX11_CHRONO)
-    ADD_DEFINITIONS(-DHAVE_CXX11_CHRONO)
-  ENDIF(HAVE_CXX11_CHRONO)
-ENDIF(CXX11_COMPILER)
+
+if(NOT CXX11_COMPILER)
+  message(FATAL_ERROR "The compiler does not support the CXX11 standard.")
+endif(CXX11_COMPILER)
+set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 # ==============================================================================
 # OpenMP detection
