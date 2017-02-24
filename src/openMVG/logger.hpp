@@ -1,5 +1,6 @@
 #pragma once
 
+#include <openMVG/config.hpp>
 #include "prettyprint.hpp"
 
 #define OPENMVG_COUT(x) std::cout << x << std::endl

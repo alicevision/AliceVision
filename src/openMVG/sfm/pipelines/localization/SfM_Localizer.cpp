@@ -16,6 +16,7 @@
 #include <openMVG/robust_estimation/robust_estimator_LORansacKernelAdaptor.hpp>
 #include <openMVG/robust_estimation/score_evaluator.hpp>
 
+#include <openMVG/config.hpp>
 namespace openMVG {
 namespace sfm {
 
