@@ -1,7 +1,7 @@
 #pragma once
 
-#ifndef WANTS_OPENMVG_COUT
-#cmakedefine WANTS_OPENMVG_COUT
+#ifndef OPENMVG_WITH_COUT
+#cmakedefine OPENMVG_WITH_COUT
 #endif
 
 #ifndef OPENMVG_USE_OPENMP
