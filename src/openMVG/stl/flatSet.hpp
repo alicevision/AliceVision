@@ -2,13 +2,13 @@
 
 #include <openMVG/config.hpp>
 
-#ifdef HAVE_BOOST
+#ifdef OPENMVG_HAVE_BOOST
 #include <boost/container/flat_set.hpp>
 #endif
 
 namespace stl
 {
-#ifdef HAVE_BOOST
+#ifdef OPENMVG_HAVE_BOOST
   template <class Key
          ,class Compare  = std::less<Key>
          ,class Allocator = std::allocator<Key> >

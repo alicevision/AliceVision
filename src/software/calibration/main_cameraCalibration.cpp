@@ -67,7 +67,7 @@ int main(int argc, char** argv)
            "Output filename for intrinsic [and extrinsic] parameters.\n")
           ("pattern,p", po::value<openMVG::calibration::Pattern>(&patternType)->default_value(patternType),
            "Type of pattern: 'CHESSBOARD', 'CIRCLES', 'ASYMMETRIC_CIRCLES'"
-            #ifdef HAVE_CCTAG
+            #ifdef OPENMVG_HAVE_CCTAG
                       " or 'ASYMMETRIC_CCTAG'"
             #endif
           ".\n")

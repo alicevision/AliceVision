@@ -2,7 +2,7 @@
 
 #include <openMVG/config.hpp>
 
-#ifdef HAVE_BOOST
+#ifdef OPENMVG_HAVE_BOOST
 #include <boost/container/flat_map.hpp>
 #include <cereal/types/map.hpp>
 
@@ -27,7 +27,7 @@ namespace cereal
 
 namespace stl
 {
-#ifdef HAVE_BOOST
+#ifdef OPENMVG_HAVE_BOOST
   template <class Key
          ,class T
          ,class Compare = std::less<Key>

@@ -7,7 +7,7 @@
 
 #include "rigResection.hpp"
 #include <openMVG/config.hpp>
-#ifdef HAVE_OPENGV
+#ifdef OPENMVG_HAVE_OPENGV
 #include <Eigen/Eigen>
 #include <opengv/absolute_pose/methods.hpp>
 #include <opengv/absolute_pose/NoncentralAbsoluteAdapter.hpp>
@@ -23,7 +23,7 @@
 namespace openMVG{
 namespace localization{
 
-#ifdef HAVE_OPENGV
+#ifdef OPENMVG_HAVE_OPENGV
 
 bool rigResection(const std::vector<Mat> &pts2d, 
                   const std::vector<Mat> &pts3d,
@@ -197,7 +197,7 @@ bool rigResection(const std::vector<Mat> &pts2d,
   return success;
 }
 
-#endif // #ifdef HAVE_OPENGV
+#endif // #ifdef OPENMVG_HAVE_OPENGV
 
 }
 }

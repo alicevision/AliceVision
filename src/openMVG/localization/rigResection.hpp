@@ -10,7 +10,7 @@
 namespace openMVG{
 namespace localization{
 
-#ifdef HAVE_OPENGV
+#ifdef OPENMVG_HAVE_OPENGV
 
 /**
  * @brief It computes the pose of a camera rig given the 2d-3d associations of 

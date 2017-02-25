@@ -14,7 +14,7 @@
 #include "nonFree/sift/SIFT_describer.hpp"
 #include "nonFree/sift/SIFT_float_describer.hpp"
 
-#ifdef HAVE_CCTAG
+#ifdef OPENMVG_HAVE_CCTAG
 #include "openMVG/features/cctag/CCTAG_describer.hpp"
 #include "openMVG/features/cctag/SIFT_CCTAG_describer.hpp"
 #endif
@@ -264,7 +264,7 @@ int main(int argc, char **argv)
     << "   SIFT_FLOAT to use SIFT stored as float,\n"
     << "   AKAZE_FLOAT: AKAZE with floating point descriptors,\n"
     << "   AKAZE_MLDB:  AKAZE with binary descriptors\n"
-#ifdef HAVE_CCTAG
+#ifdef OPENMVG_HAVE_CCTAG
       << "   CCTAG3: CCTAG markers with 3 crowns\n"
       << "   CCTAG4: CCTAG markers with 4 crowns\n"
       << "   SIFT_CCTAG3: CCTAG markers with 3 crowns\n" 
@@ -410,7 +410,7 @@ int main(int argc, char **argv)
     {
       image_describer.reset(new SIFT_float_describer(SiftParams(), !bUpRight));
     }
-#ifdef HAVE_CCTAG
+#ifdef OPENMVG_HAVE_CCTAG
     else
     if (sImage_Describer_Method == "CCTAG3")
     {
@@ -431,7 +431,7 @@ int main(int argc, char **argv)
     {
       image_describer.reset(new SIFT_CCTAG_Image_describer(SiftParams(), !bUpRight, 4));
     }
-#endif //HAVE_CCTAG   
+#endif //OPENMVG_HAVE_CCTAG   
     else
     if (sImage_Describer_Method == "AKAZE_FLOAT")
     {

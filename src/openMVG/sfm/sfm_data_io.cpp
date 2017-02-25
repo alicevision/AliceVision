@@ -102,12 +102,12 @@ bool Load(SfM_Data & sfm_data, const std::string & filename, ESfM_Data flags_par
     bStatus = Load_Cereal<cereal::PortableBinaryInputArchive>(sfm_data, filename, flags_part);
   else if (ext == "xml")
     bStatus = Load_Cereal<cereal::XMLInputArchive>(sfm_data, filename, flags_part);
-#ifdef HAVE_ALEMBIC
+#ifdef OPENMVG_HAVE_ALEMBIC
   else if (ext == "abc") {
     openMVG::sfm::AlembicImporter(filename).populate(sfm_data, flags_part);
     bStatus = true;
   }
-#endif // HAVE_ALEMBIC
+#endif // OPENMVG_HAVE_ALEMBIC
   else if (stlplus::folder_exists(filename))
   {
     bStatus = readGt(filename, sfm_data);
@@ -142,13 +142,13 @@ bool Save(const SfM_Data & sfm_data, const std::string & filename, ESfM_Data fla
     return Save_PLY(sfm_data, filename, flags_part);
   else if (ext == "baf") // Bundle Adjustment file
     return Save_BAF(sfm_data, filename, flags_part);
-#ifdef HAVE_ALEMBIC
+#ifdef OPENMVG_HAVE_ALEMBIC
   else if (ext == "abc") // Alembic
   {
     openMVG::sfm::AlembicExporter(filename).add(sfm_data, flags_part);
     return true;
   }
-#endif // HAVE_ALEMBIC
+#endif // OPENMVG_HAVE_ALEMBIC
   OPENMVG_LOG_WARNING("ERROR: Cannot save the SfM Data: " << filename << ".\n"
             << "The file extension is not recognized.");
   return false;

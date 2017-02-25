@@ -1,7 +1,7 @@
 #include <openMVG/config.hpp>
 #include <openMVG/localization/ILocalizer.hpp>
 #include <openMVG/localization/VoctreeLocalizer.hpp>
-#ifdef HAVE_CCTAG
+#ifdef OPENMVG_HAVE_CCTAG
 #include <openMVG/localization/CCTagLocalizer.hpp>
 #endif
 #include <openMVG/localization/LocalizationResult.hpp>
@@ -28,9 +28,9 @@
 #include <chrono>
 #include <memory>
 
-#ifdef HAVE_ALEMBIC
+#ifdef OPENMVG_HAVE_ALEMBIC
 #include <openMVG/sfm/AlembicExporter.hpp>
-#endif // HAVE_ALEMBIC
+#endif // OPENMVG_HAVE_ALEMBIC
 
 
 namespace bfs = boost::filesystem;
@@ -42,7 +42,7 @@ using namespace openMVG;
 enum DescriberType
 {
   SIFT
-#ifdef HAVE_CCTAG
+#ifdef OPENMVG_HAVE_CCTAG
   ,CCTAG,
   SIFT_CCTAG
 #endif
@@ -52,7 +52,7 @@ inline DescriberType stringToDescriberType(const std::string& describerType)
 {
   if(describerType == "SIFT")
     return DescriberType::SIFT;
-#ifdef HAVE_CCTAG
+#ifdef OPENMVG_HAVE_CCTAG
   if (describerType == "CCTAG")
     return DescriberType::CCTAG;
   if(describerType == "SIFT_CCTAG")
@@ -65,7 +65,7 @@ inline std::string describerTypeToString(DescriberType describerType)
 {
   if(describerType == DescriberType::SIFT)
     return "SIFT";
-#ifdef HAVE_CCTAG
+#ifdef OPENMVG_HAVE_CCTAG
   if (describerType == DescriberType::CCTAG)
     return "CCTAG";
   if(describerType == DescriberType::SIFT_CCTAG)
@@ -182,14 +182,14 @@ int main(int argc, char** argv)
   /// and databases images
   bool robustMatching = true;
   
-#ifdef HAVE_ALEMBIC
+#ifdef OPENMVG_HAVE_ALEMBIC
   /// the export file
   std::string exportFile = "trackedcameras.abc";
 #else
   /// the export file
   std::string exportFile = "localizationResult.json";
 #endif
-#ifdef HAVE_CCTAG
+#ifdef OPENMVG_HAVE_CCTAG
   // parameters for cctag localizer
   std::size_t nNearestKeyFrames = 5;   
 #endif
@@ -230,7 +230,7 @@ int main(int argc, char** argv)
   commonParams.add_options()
       ("descriptors", po::value<DescriberType>(&descriptorType)->default_value(descriptorType), 
           "Type of descriptors to use {SIFT"
-#ifdef HAVE_CCTAG
+#ifdef OPENMVG_HAVE_CCTAG
           ", CCTAG, SIFT_CCTAG"
 #endif
           "}")
@@ -278,7 +278,7 @@ int main(int argc, char** argv)
           "[voctree] Enable/Disable the robust matching between query and database images, "
           "all putative matches will be considered.")
 // cctag specific options
-#ifdef HAVE_CCTAG
+#ifdef OPENMVG_HAVE_CCTAG
       ("nNearestKeyFrames", po::value<size_t>(&nNearestKeyFrames)->default_value(nNearestKeyFrames), 
           "[cctag] Number of images to retrieve in the database")
 #endif
@@ -306,7 +306,7 @@ int main(int argc, char** argv)
       ("visualDebug", po::value<std::string>(&visualDebug), 
           "If a directory is provided it enables visual debug and saves all the "
           "debugging info in that directory")
-#ifdef HAVE_ALEMBIC
+#ifdef OPENMVG_HAVE_ALEMBIC
       ("output", po::value<std::string>(&exportFile)->default_value(exportFile), 
           "Filename for the SfM_Data export file (where camera poses will be stored). "
           "Default : trackedcameras.abc. It will also save the localization "
@@ -357,12 +357,12 @@ int main(int argc, char** argv)
   {
     // decide the localizer to use based on the type of feature
     useVoctreeLocalizer = ((DescriberType::SIFT==descriptorType)
-#ifdef HAVE_CCTAG
+#ifdef OPENMVG_HAVE_CCTAG
             || (DescriberType::SIFT_CCTAG==descriptorType)
 #endif
             );
     
-#ifdef HAVE_CCTAG   
+#ifdef OPENMVG_HAVE_CCTAG   
     // check whether we have to use SIFT and CCTAG together
     useSIFT_CCTAG = (DescriberType::SIFT_CCTAG==descriptorType);
 #endif    
@@ -392,7 +392,7 @@ int main(int argc, char** argv)
       OPENMVG_COUT("\tuseFrameBufferMatching: " << useFrameBufferMatching);
       OPENMVG_COUT("\trobustMatching: " << robustMatching);
     }
-#ifdef HAVE_CCTAG 
+#ifdef OPENMVG_HAVE_CCTAG 
     else
     {
       OPENMVG_COUT("\tnNearestKeyFrames: " << nNearestKeyFrames);
@@ -426,7 +426,7 @@ int main(int argc, char** argv)
   
   // initialize the localizer according to the chosen type of describer
   if((DescriberType::SIFT==descriptorType)
-#ifdef HAVE_CCTAG
+#ifdef OPENMVG_HAVE_CCTAG
             ||(DescriberType::SIFT_CCTAG==descriptorType)
 #endif
       )
@@ -435,7 +435,7 @@ int main(int argc, char** argv)
                                                    descriptorsFolder,
                                                    vocTreeFilepath,
                                                    weightsFilepath
-#ifdef HAVE_CCTAG
+#ifdef OPENMVG_HAVE_CCTAG
                                                     , useSIFT_CCTAG
 #endif
                                                   );
@@ -452,7 +452,7 @@ int main(int argc, char** argv)
     tmpParam->_useFrameBufferMatching = useFrameBufferMatching;
     tmpParam->_useRobustMatching = robustMatching;
   }
-#ifdef HAVE_CCTAG
+#ifdef OPENMVG_HAVE_CCTAG
   else
   {
     localization::CCTagLocalizer* tmpLoc = new localization::CCTagLocalizer(sfmFilePath, descriptorsFolder);
@@ -490,7 +490,7 @@ int main(int argc, char** argv)
     return EXIT_FAILURE;
   }
   
-#ifdef HAVE_ALEMBIC
+#ifdef OPENMVG_HAVE_ALEMBIC
   // init alembic exporter
   sfm::AlembicExporter exporter( exportFile );
   exporter.addPoints(localizer->getSfMData().GetLandmarks());
@@ -539,7 +539,7 @@ int main(int argc, char** argv)
     // save data
     if(localizationResult.isValid())
     {
-#ifdef HAVE_ALEMBIC
+#ifdef OPENMVG_HAVE_ALEMBIC
       exporter.addCameraKeyframe(localizationResult.getPose(), &queryIntrinsics, currentImgName, frameCounter, frameCounter);
 #endif
       
@@ -549,7 +549,7 @@ int main(int argc, char** argv)
     else
     {
       OPENMVG_CERR("Unable to localize frame " << frameCounter);
-#ifdef HAVE_ALEMBIC
+#ifdef OPENMVG_HAVE_ALEMBIC
       exporter.jumpKeyframe(currentImgName);
 #endif
     }
@@ -586,7 +586,7 @@ int main(int argc, char** argv)
     }
     else
     {
-#ifdef HAVE_ALEMBIC
+#ifdef OPENMVG_HAVE_ALEMBIC
       // now copy back in a new abc with the same name file and BUNDLE appended at the end
       sfm::AlembicExporter exporterBA( basename+".BUNDLE.abc" );
       exporterBA.initAnimatedCamera("camera");

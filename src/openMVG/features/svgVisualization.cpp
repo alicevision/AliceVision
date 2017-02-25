@@ -1,6 +1,6 @@
 #include "svgVisualization.hpp"
 #include <openMVG/config.hpp>
-#ifdef HAVE_CCTAG
+#ifdef OPENMVG_HAVE_CCTAG
 #include "cctag/CCTAG_describer.hpp"
 #endif
 #include "third_party/vectorGraphics/svgDrawer.hpp"
@@ -360,7 +360,7 @@ void saveMatchesAsMotion(const std::string &imagePath,
   svgFile.close();
 }
 
-#ifdef HAVE_CCTAG
+#ifdef OPENMVG_HAVE_CCTAG
 
 void saveCCTag2SVG(const std::string &inputImagePath,
                       const std::pair<size_t,size_t> & imageSize,

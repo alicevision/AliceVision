@@ -16,26 +16,26 @@
 #cmakedefine OPENMVG_HAVE_MOSEK
 #endif
 
-#ifndef HAVE_OPENCV
-#cmakedefine HAVE_OPENCV
+#ifndef OPENMVG_HAVE_OPENCV
+#cmakedefine OPENMVG_HAVE_OPENCV
 #endif
 
 #ifndef OPENMVG_USE_OCVSIFT
 #cmakedefine OPENMVG_USE_OCVSIFT
 #endif
 
-#ifndef HAVE_BOOST
-#cmakedefine HAVE_BOOST
+#ifndef OPENMVG_HAVE_BOOST
+#cmakedefine OPENMVG_HAVE_BOOST
 #endif
 
-#ifndef HAVE_ALEMBIC
-#cmakedefine HAVE_ALEMBIC
+#ifndef OPENMVG_HAVE_ALEMBIC
+#cmakedefine OPENMVG_HAVE_ALEMBIC
 #endif
 
-#ifndef HAVE_CCTAG
-#cmakedefine HAVE_CCTAG
+#ifndef OPENMVG_HAVE_CCTAG
+#cmakedefine OPENMVG_HAVE_CCTAG
 #endif
 
-#ifndef HAVE_OPENGV
-#cmakedefine HAVE_OPENGV
+#ifndef OPENMVG_HAVE_OPENGV
+#cmakedefine OPENMVG_HAVE_OPENGV
 #endif

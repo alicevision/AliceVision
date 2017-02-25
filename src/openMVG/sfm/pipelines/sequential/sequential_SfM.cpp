@@ -25,7 +25,7 @@
 #include "third_party/htmlDoc/htmlDoc.hpp"
 #include "third_party/progress/progress.hpp"
 
-#ifdef HAVE_BOOST
+#ifdef OPENMVG_HAVE_BOOST
 #include <boost/format.hpp>
 #endif
 
@@ -74,7 +74,7 @@ void computeTracksPyramidPerView(
     start += Square(widthPerLevel[level]);
   }
 
-#ifdef HAVE_BOOST
+#ifdef OPENMVG_HAVE_BOOST
   tracksPyramidPerView.reserve(tracksPerView.size());
   for(const auto& viewTracks: tracksPerView)
   {
@@ -660,7 +660,7 @@ bool SequentialSfMReconstructionEngine::AutomaticInitialPairChoice(Pair & initia
   const std::size_t nBestScores = std::min(std::size_t(50), scoring_per_pair.size());
   std::partial_sort(scoring_per_pair.begin(), scoring_per_pair.begin() + nBestScores, scoring_per_pair.end(), std::greater<ImagePairScore>());
   OPENMVG_LOG_DEBUG(scoring_per_pair.size() << " possible image pairs. " << nBestScores << " best possibles image pairs are:");
-#ifdef HAVE_BOOST
+#ifdef OPENMVG_HAVE_BOOST
   OPENMVG_LOG_DEBUG(boost::format("%=15s | %=15s | %=15s | %=15s | %=15s") % "Pair" % "Score" % "ImagePairScore" % "Angle" % "NbMatches");
   OPENMVG_LOG_DEBUG(std::string(15*5+3*3, '-'));
   for(std::size_t i = 0; i < nBestScores; ++i)
