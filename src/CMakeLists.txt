@@ -136,7 +136,7 @@ check_for_cxx11_compiler(CXX11_COMPILER)
 
 if(NOT CXX11_COMPILER)
   message(FATAL_ERROR "The compiler does not support the CXX11 standard.")
-endif(CXX11_COMPILER)
+endif(NOT CXX11_COMPILER)
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
@@ -406,7 +406,7 @@ ENDIF()
 # - only external and enabled only if OpenMVG_USE_OPENCV is set to ON
 # ==============================================================================
 set(HAVE_OPENCV OFF)
-set(USE_OCVSIFT OFF)
+set(OPENMVG_USE_OCVSIFT OFF)
 IF(OpenMVG_USE_OPENCV)
   FIND_PACKAGE(OpenCV REQUIRED core imgproc video imgcodecs videoio features2d xfeatures2d)
 
@@ -420,8 +420,8 @@ IF(OpenMVG_USE_OPENCV)
     ADD_DEFINITIONS(-DHAVE_OPENCV)
     set(HAVE_OPENCV ON)
     IF(OpenMVG_USE_OCVSIFT)
-      ADD_DEFINITIONS(-DUSE_OCVSIFT)
-      set(USE_OCVSIFT ON)
+      ADD_DEFINITIONS(-DOPENMVG_USE_OCVSIFT)
+      set(OPENMVG_USE_OCVSIFT ON)
     ENDIF(OpenMVG_USE_OCVSIFT)
   ENDIF(NOT OpenCV_FOUND)
 ENDIF(OpenMVG_USE_OPENCV)

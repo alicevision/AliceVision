@@ -20,8 +20,8 @@
 #cmakedefine HAVE_OPENCV
 #endif
 
-#ifndef USE_OCVSIFT
-#cmakedefine USE_OCVSIFT
+#ifndef OPENMVG_USE_OCVSIFT
+#cmakedefine OPENMVG_USE_OCVSIFT
 #endif
 
 #ifndef HAVE_BOOST
