@@ -409,11 +409,11 @@ void GlobalSfM_Translation_AveragingSolver::ComputePutativeTranslation_EdgesCove
       std::cout,
       "\nRelative translations computation (edge coverage algorithm)\n");
 
-#  ifdef OPENMVG_USE_OPENMP
+#if OPENMVG_IS_DEFINED(OPENMVG_USE_OPENMP)
     std::vector< RelativeInfo_Vec > initial_estimates(omp_get_max_threads());
-#  else
+#else
     std::vector< RelativeInfo_Vec > initial_estimates(1);
-#  endif
+#endif
 
     const bool bVerbose = false;
 
