@@ -7,7 +7,7 @@
 #include <openMVG/sfm/sfm_data_BA_ceres.hpp>
 #include <openMVG/features/io_regions_type.hpp>
 #include <openMVG/features/svgVisualization.hpp>
-#ifdef OPENMVG_HAVE_CCTAG
+#if OPENMVG_IS_DEFINED(OPENMVG_HAVE_CCTAG)
 #include <openMVG/features/cctag/SIFT_CCTAG_describer.hpp>
 #endif
 #include <nonFree/sift/SIFT_float_describer.hpp>
@@ -87,14 +87,14 @@ VoctreeLocalizer::VoctreeLocalizer(const std::string &sfmFilePath,
                                    const std::string &descriptorsFolder,
                                    const std::string &vocTreeFilepath,
                                    const std::string &weightsFilepath
-#ifdef OPENMVG_HAVE_CCTAG
+#if OPENMVG_IS_DEFINED(OPENMVG_HAVE_CCTAG)
                                    , bool useSIFT_CCTAG
 #endif
                                   ) : ILocalizer() , _frameBuffer(5)
 {
   using namespace openMVG::features;
   // init the feature extractor
-#ifdef OPENMVG_HAVE_CCTAG
+#if OPENMVG_IS_DEFINED(OPENMVG_HAVE_CCTAG)
   if(useSIFT_CCTAG)
   {
     OPENMVG_LOG_DEBUG("SIFT_CCTAG_Image_describer");
@@ -1209,7 +1209,7 @@ bool VoctreeLocalizer::localizeRig(const std::vector<std::unique_ptr<features::R
                                    geometry::Pose3 &rigPose,
                                    std::vector<LocalizationResult>& vec_locResults)
 {
-#ifdef OPENMVG_HAVE_OPENGV
+#if OPENMVG_IS_DEFINED(OPENMVG_HAVE_OPENGV)
   if(!parameters->_useLocalizeRigNaive)
   {
     OPENMVG_LOG_DEBUG("Using localizeRig_naive()");
@@ -1237,7 +1237,7 @@ bool VoctreeLocalizer::localizeRig(const std::vector<std::unique_ptr<features::R
 }
 
 
-#ifdef OPENMVG_HAVE_OPENGV
+#if OPENMVG_IS_DEFINED(OPENMVG_HAVE_OPENGV)
 
 bool VoctreeLocalizer::localizeRig_opengv(const std::vector<std::unique_ptr<features::Regions> > & vec_queryRegions,
                                           const std::vector<std::pair<std::size_t, std::size_t> > &vec_imageSize,

@@ -16,7 +16,7 @@
 
 #include "openMVG/linearProgramming/linearProgrammingInterface.hpp"
 #include "openMVG/linearProgramming/linearProgrammingOSI_X.hpp"
-#ifdef OPENMVG_HAVE_MOSEK
+#if OPENMVG_IS_DEFINED(OPENMVG_HAVE_MOSEK)
 #include "openMVG/linearProgramming/linearProgrammingMOSEK.hpp"
 #endif // OPENMVG_HAVE_MOSEK
 #include "openMVG/linearProgramming/bisectionLP.hpp"
@@ -92,7 +92,7 @@ TEST(Resection_L_Infinity, OSICLP) {
   d2.ExportToPLY("test_After_Infinity.ply");
 }
 
-#ifdef OPENMVG_HAVE_MOSEK
+#if OPENMVG_IS_DEFINED(OPENMVG_HAVE_MOSEK)
 TEST(Resection_L_Infinity, MOSEK) {
 
   const int nViews = 3;
@@ -149,7 +149,7 @@ TEST(Resection_L_Infinity, MOSEK) {
   }
   d2.ExportToPLY("test_After_Infinity.ply");
 }
-#endif // #ifdef OPENMVG_HAVE_MOSEK
+#endif // #if OPENMVG_IS_DEFINED(OPENMVG_HAVE_MOSEK)
 
 /* ************************************************************************* */
 int main() { TestResult tr; return TestRegistry::runAllTests(tr);}

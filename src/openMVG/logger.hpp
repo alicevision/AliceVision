@@ -6,8 +6,8 @@
 #define OPENMVG_COUT(x) std::cout << x << std::endl
 #define OPENMVG_CERR(x) std::cerr << x << std::endl
 
-#ifdef OPENMVG_WITH_COUT
-#ifdef OPENMVG_HAVE_BOOST
+#if OPENMVG_IS_DEFINED(OPENMVG_WITH_COUT)
+#if OPENMVG_IS_DEFINED(OPENMVG_HAVE_BOOST)
   #define BOOST_LOG_DYN_LINK 1
   #include <boost/log/trivial.hpp>
 

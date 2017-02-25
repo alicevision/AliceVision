@@ -48,13 +48,13 @@ struct Regions_Provider
     // Read for each view the corresponding regions and store them
     bool bContinue = true;
 
-#ifdef OPENMVG_USE_OPENMP
+#if OPENMVG_IS_DEFINED(OPENMVG_USE_OPENMP)
     #pragma omp parallel num_threads(3)
 #endif
     for (Views::const_iterator iter = sfm_data.GetViews().begin();
       iter != sfm_data.GetViews().end() && bContinue; ++iter)
     {
-#ifdef OPENMVG_USE_OPENMP
+#if OPENMVG_IS_DEFINED(OPENMVG_USE_OPENMP)
     #pragma omp single nowait
 #endif
       {
@@ -70,12 +70,12 @@ struct Regions_Provider
           if (!regions_ptr->Load(featFile, descFile))
           {
             OPENMVG_LOG_WARNING("Invalid regions files for the view: " << sImageName);
-#ifdef OPENMVG_USE_OPENMP
+#if OPENMVG_IS_DEFINED(OPENMVG_USE_OPENMP)
           #pragma omp critical
 #endif
             bContinue = false;
           }
-#ifdef OPENMVG_USE_OPENMP
+#if OPENMVG_IS_DEFINED(OPENMVG_USE_OPENMP)
           #pragma omp critical
 #endif
           {

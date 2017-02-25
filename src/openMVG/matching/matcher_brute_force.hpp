@@ -120,7 +120,7 @@ class ArrayMatcherBruteForce  : public ArrayMatcher<Scalar, Metric>
 
     pvec_distances->resize(nbQuery * NN);
     pvec_indices->resize(nbQuery * NN);
-#ifdef OPENMVG_USE_OPENMP
+#if OPENMVG_IS_DEFINED(OPENMVG_USE_OPENMP)
 #pragma omp parallel for schedule(dynamic)
 #endif
     for (int queryIndex=0; queryIndex < nbQuery; ++queryIndex) 

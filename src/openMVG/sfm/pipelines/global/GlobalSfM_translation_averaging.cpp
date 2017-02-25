@@ -124,7 +124,7 @@ bool GlobalSfM_Translation_AveragingSolver::Translation_averaging(
         {
           vec_solution.resize(iNview*3 + vec_initialRijTijEstimates_cpy.size()/3 + 1);
           using namespace openMVG::linearProgramming;
-          #ifdef OPENMVG_HAVE_MOSEK
+          #if OPENMVG_IS_DEFINED(OPENMVG_HAVE_MOSEK)
             MOSEK_SolveWrapper solverLP(vec_solution.size());
           #else
             OSI_CLP_SolverWrapper solverLP(vec_solution.size());
@@ -351,7 +351,7 @@ void GlobalSfM_Translation_AveragingSolver::ComputePutativeTranslation_EdgesCove
 
     //-- precompute the number of track per triplet:
     Hash_Map<IndexT, IndexT> map_tracksPerTriplets;
-    #ifdef OPENMVG_USE_OPENMP
+    #if OPENMVG_IS_DEFINED(OPENMVG_USE_OPENMP)
       #pragma omp parallel for schedule(dynamic)
     #endif
     for (int i = 0; i < (int)vec_triplets.size(); ++i)
@@ -379,7 +379,7 @@ void GlobalSfM_Translation_AveragingSolver::ComputePutativeTranslation_EdgesCove
         openMVG::tracks::TracksBuilder tracksBuilder;
         tracksBuilder.Build(map_triplet_matches);
         tracksBuilder.Filter(3);
-        #ifdef OPENMVG_USE_OPENMP
+        #if OPENMVG_IS_DEFINED(OPENMVG_USE_OPENMP)
           #pragma omp critical
         #endif
         map_tracksPerTriplets[i] = tracksBuilder.NbTracks(); //count the # of matches in the UF tree
@@ -417,13 +417,13 @@ void GlobalSfM_Translation_AveragingSolver::ComputePutativeTranslation_EdgesCove
 
     const bool bVerbose = false;
 
-    #ifdef OPENMVG_USE_OPENMP
+    #if OPENMVG_IS_DEFINED(OPENMVG_USE_OPENMP)
       #pragma omp parallel for schedule(dynamic)
     #endif
     for (int k = 0; k < vec_edges.size(); ++k)
     {
       const myEdge & edge = vec_edges[k];
-      #ifdef OPENMVG_USE_OPENMP
+      #if OPENMVG_IS_DEFINED(OPENMVG_USE_OPENMP)
         #pragma omp critical
       #endif
       {
@@ -515,7 +515,7 @@ void GlobalSfM_Translation_AveragingSolver::ComputePutativeTranslation_EdgesCove
               Vec3 tik;
               RelativeCameraMotion(RI, ti, RK, tk, &Rik, &tik);
 
-              #ifdef OPENMVG_USE_OPENMP
+              #if OPENMVG_IS_DEFINED(OPENMVG_USE_OPENMP)
                 const int thread_id = omp_get_thread_num();
               #else
                 const int thread_id = 0;
@@ -530,7 +530,7 @@ void GlobalSfM_Translation_AveragingSolver::ComputePutativeTranslation_EdgesCove
 
               //--- ATOMIC
 
-              #ifdef OPENMVG_USE_OPENMP
+              #if OPENMVG_IS_DEFINED(OPENMVG_USE_OPENMP)
                  #pragma omp critical
               #endif
               {

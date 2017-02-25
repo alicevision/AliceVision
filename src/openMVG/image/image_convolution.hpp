@@ -196,7 +196,7 @@ static void SeparableConvolution2d(const RowMatrixXf& image,
   // multiply i.e. kernel_y^t * rows. This will give us the convoled value for
   // each row. However, care must be taken at the top and bottom borders.
   const Eigen::Matrix<float, 1, Eigen::Dynamic> reverse_kernel_y = kernel_y.reverse();
-#ifdef OPENMVG_USE_OPENMP
+#if OPENMVG_IS_DEFINED(OPENMVG_USE_OPENMP)
 #pragma omp parallel for schedule(dynamic)
 #endif
   for (int i = 0; i < half_sigma_y; i++) {
@@ -217,7 +217,7 @@ static void SeparableConvolution2d(const RowMatrixXf& image,
   }
 
   // Applying the rest of the y filter.
-#ifdef OPENMVG_USE_OPENMP
+#if OPENMVG_IS_DEFINED(OPENMVG_USE_OPENMP)
 #pragma omp parallel for schedule(dynamic)
 #endif
   for (int row = half_sigma_y; row < image.rows() - half_sigma_y; row++) {
@@ -232,7 +232,7 @@ static void SeparableConvolution2d(const RowMatrixXf& image,
   // filter. We prepend and append the proper border values so that we are sure
   // to end up with the correct convolved values.
   Eigen::RowVectorXf temp_row(image.cols() + sigma_x - 1);
-#ifdef OPENMVG_USE_OPENMP
+#if OPENMVG_IS_DEFINED(OPENMVG_USE_OPENMP)
 #pragma omp parallel for firstprivate(temp_row), schedule(dynamic)
 #endif
   for (int row = 0; row < out->rows(); row++) {

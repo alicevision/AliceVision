@@ -1,41 +1,24 @@
 #pragma once
 
-#ifndef OPENMVG_WITH_COUT
-#cmakedefine OPENMVG_WITH_COUT
-#endif
+// Function used to safely check defines
+#define OPENMVG_IS_DEFINED(F) F() == 1
 
-#ifndef OPENMVG_USE_OPENMP
-#cmakedefine OPENMVG_USE_OPENMP
-#endif
+#define OPENMVG_WITH_COUT() @OPENMVG_WITH_COUT@
 
-#ifndef OPENMVG_USE_SSE
-#cmakedefine OPENMVG_USE_SSE
-#endif
+#define OPENMVG_USE_OPENMP() @OPENMVG_USE_OPENMP@
 
-#ifndef OPENMVG_HAVE_MOSEK
-#cmakedefine OPENMVG_HAVE_MOSEK
-#endif
+#define OPENMVG_USE_SSE() @OPENMVG_USE_SSE@
 
-#ifndef OPENMVG_HAVE_OPENCV
-#cmakedefine OPENMVG_HAVE_OPENCV
-#endif
+#define OPENMVG_HAVE_MOSEK() @OPENMVG_HAVE_MOSEK@
 
-#ifndef OPENMVG_USE_OCVSIFT
-#cmakedefine OPENMVG_USE_OCVSIFT
-#endif
+#define OPENMVG_HAVE_OPENCV() @OPENMVG_HAVE_OPENCV@
 
-#ifndef OPENMVG_HAVE_BOOST
-#cmakedefine OPENMVG_HAVE_BOOST
-#endif
+#define OPENMVG_USE_OCVSIFT() @OPENMVG_USE_OCVSIFT@
 
-#ifndef OPENMVG_HAVE_ALEMBIC
-#cmakedefine OPENMVG_HAVE_ALEMBIC
-#endif
+#define OPENMVG_HAVE_BOOST() @OPENMVG_HAVE_BOOST@
 
-#ifndef OPENMVG_HAVE_CCTAG
-#cmakedefine OPENMVG_HAVE_CCTAG
-#endif
+#define OPENMVG_HAVE_ALEMBIC() @OPENMVG_HAVE_ALEMBIC@
 
-#ifndef OPENMVG_HAVE_OPENGV
-#cmakedefine OPENMVG_HAVE_OPENGV
-#endif
+#define OPENMVG_HAVE_CCTAG() @OPENMVG_HAVE_CCTAG@
+
+#define OPENMVG_HAVE_OPENGV() @OPENMVG_HAVE_OPENGV@

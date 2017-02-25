@@ -330,7 +330,7 @@ int main(int argc, char** argv)
   OPENMVG_COUT("Query all documents");
   detect_start = std::chrono::steady_clock::now();
   // Now query each document
-  #ifdef OPENMVG_USE_OPENMP
+  #if OPENMVG_IS_DEFINED(OPENMVG_USE_OPENMP)
     #pragma omp parallel for
   #endif
   for(ptrdiff_t i = 0; i < static_cast<ptrdiff_t>(db.getSparseHistogramPerImage().size()); ++i)
@@ -352,7 +352,7 @@ int main(int argc, char** argv)
     {
       idMatches.push_back(m.id);
     }
-    #ifdef OPENMVG_USE_OPENMP
+    #if OPENMVG_IS_DEFINED(OPENMVG_USE_OPENMP)
       #pragma omp critical
     #endif
     {

@@ -241,7 +241,7 @@ bool exportToCMPMVS2Format(
   //   - 00001_c.png (undistorted & scaled colored image)
   //   - 00001_g.png (undistorted & scaled grayscale image)
   //   - 00001_seeds.bin (3d points visible in this image)
-#ifdef OPENMVG_USE_OPENMP
+#if OPENMVG_IS_DEFINED(OPENMVG_USE_OPENMP)
   #pragma omp parallel for num_threads(3)
 #endif
   for(int i = 0; i < map_viewIdToContiguous.size(); ++i)
@@ -363,7 +363,7 @@ bool exportToCMPMVS2Format(
       }
       seedsFile.close();
     }
-#ifdef OPENMVG_USE_OPENMP
+#if OPENMVG_IS_DEFINED(OPENMVG_USE_OPENMP)
    #pragma omp critical
 #endif
     ++my_progress_bar;

@@ -40,20 +40,20 @@ void SfM_Data_Structure_Computation_Blind::triangulate(SfM_Data & sfm_data) cons
     sfm_data.structure.size(),
     std::cout,
     "Blind triangulation progress:\n" ));
-#ifdef OPENMVG_USE_OPENMP
+#if OPENMVG_IS_DEFINED(OPENMVG_USE_OPENMP)
   #pragma omp parallel
 #endif
   for(Landmarks::iterator iterTracks = sfm_data.structure.begin();
     iterTracks != sfm_data.structure.end();
     ++iterTracks)
   {
-#ifdef OPENMVG_USE_OPENMP
+#if OPENMVG_IS_DEFINED(OPENMVG_USE_OPENMP)
   #pragma omp single nowait
 #endif
     {
       if (_bConsoleVerbose)
       {
-#ifdef OPENMVG_USE_OPENMP
+#if OPENMVG_IS_DEFINED(OPENMVG_USE_OPENMP)
   #pragma omp critical
 #endif
         ++(*my_progress_bar);
@@ -76,7 +76,7 @@ void SfM_Data_Structure_Computation_Blind::triangulate(SfM_Data & sfm_data) cons
       }
       if (trianObj.size() < 2)
       {
-#ifdef OPENMVG_USE_OPENMP
+#if OPENMVG_IS_DEFINED(OPENMVG_USE_OPENMP)
         #pragma omp critical
 #endif
         {
@@ -93,7 +93,7 @@ void SfM_Data_Structure_Computation_Blind::triangulate(SfM_Data & sfm_data) cons
         }
         else
         {
-#ifdef OPENMVG_USE_OPENMP
+#if OPENMVG_IS_DEFINED(OPENMVG_USE_OPENMP)
           #pragma omp critical
 #endif
           {
@@ -132,20 +132,20 @@ void SfM_Data_Structure_Computation_Robust::robust_triangulation(SfM_Data & sfm_
     sfm_data.structure.size(),
     std::cout,
     "Robust triangulation progress:\n" ));
-#ifdef OPENMVG_USE_OPENMP
+#if OPENMVG_IS_DEFINED(OPENMVG_USE_OPENMP)
   #pragma omp parallel
 #endif
   for(Landmarks::iterator iterTracks = sfm_data.structure.begin();
     iterTracks != sfm_data.structure.end();
     ++iterTracks)
   {
-#ifdef OPENMVG_USE_OPENMP
+#if OPENMVG_IS_DEFINED(OPENMVG_USE_OPENMP)
   #pragma omp single nowait
 #endif
     {
       if (_bConsoleVerbose)
       {
-#ifdef OPENMVG_USE_OPENMP
+#if OPENMVG_IS_DEFINED(OPENMVG_USE_OPENMP)
   #pragma omp critical
 #endif
         ++(*my_progress_bar);
@@ -156,7 +156,7 @@ void SfM_Data_Structure_Computation_Robust::robust_triangulation(SfM_Data & sfm_
       }
       else {
         iterTracks->second.X = Vec3::Zero();
-#ifdef OPENMVG_USE_OPENMP
+#if OPENMVG_IS_DEFINED(OPENMVG_USE_OPENMP)
   #pragma omp critical
 #endif
         {

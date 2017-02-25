@@ -30,7 +30,7 @@ void UndistortImage(
   {
     image_ud.resize(imageIn.Width(), imageIn.Height(), true, fillcolor);
     const image::Sampler2d<image::SamplerLinear> sampler;
-#ifdef OPENMVG_USE_OPENMP
+#if OPENMVG_IS_DEFINED(OPENMVG_USE_OPENMP)
     #pragma omp parallel for
 #endif
     for (int j = 0; j < imageIn.Height(); ++j)

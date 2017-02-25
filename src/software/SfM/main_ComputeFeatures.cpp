@@ -14,7 +14,7 @@
 #include "nonFree/sift/SIFT_describer.hpp"
 #include "nonFree/sift/SIFT_float_describer.hpp"
 
-#ifdef OPENMVG_HAVE_CCTAG
+#if OPENMVG_IS_DEFINED(OPENMVG_HAVE_CCTAG)
 #include "openMVG/features/cctag/CCTAG_describer.hpp"
 #include "openMVG/features/cctag/SIFT_CCTAG_describer.hpp"
 #endif
@@ -146,7 +146,7 @@ void dispatch(const int &maxJobs, std::function<void()> compute)
   }
   else if(pid == 0)
   {
-#ifdef OPENMVG_USE_OPENMP
+#if OPENMVG_IS_DEFINED(OPENMVG_USE_OPENMP)
     // Disable OpenMP as we dispatch the work on multiple sub processes
     // and we don't want that each subprocess use all the cpu ressource
     omp_set_num_threads(1); 
@@ -204,7 +204,7 @@ void waitForCompletion()
 
 void dispatch(const int &maxJobs, std::function<void()> compute)
 {
-#ifdef OPENMVG_USE_OPENMP
+#if OPENMVG_IS_DEFINED(OPENMVG_USE_OPENMP)
     omp_set_num_threads(maxJobs);
 #endif
     compute();
@@ -264,7 +264,7 @@ int main(int argc, char **argv)
     << "   SIFT_FLOAT to use SIFT stored as float,\n"
     << "   AKAZE_FLOAT: AKAZE with floating point descriptors,\n"
     << "   AKAZE_MLDB:  AKAZE with binary descriptors\n"
-#ifdef OPENMVG_HAVE_CCTAG
+#if OPENMVG_IS_DEFINED(OPENMVG_HAVE_CCTAG)
       << "   CCTAG3: CCTAG markers with 3 crowns\n"
       << "   CCTAG4: CCTAG markers with 4 crowns\n"
       << "   SIFT_CCTAG3: CCTAG markers with 3 crowns\n" 
@@ -410,7 +410,7 @@ int main(int argc, char **argv)
     {
       image_describer.reset(new SIFT_float_describer(SiftParams(), !bUpRight));
     }
-#ifdef OPENMVG_HAVE_CCTAG
+#if OPENMVG_IS_DEFINED(OPENMVG_HAVE_CCTAG)
     else
     if (sImage_Describer_Method == "CCTAG3")
     {

@@ -14,7 +14,7 @@
 
 #include "openMVG/linearProgramming/linearProgrammingInterface.hpp"
 #include "openMVG/linearProgramming/linearProgrammingOSI_X.hpp"
-#ifdef OPENMVG_HAVE_MOSEK
+#if OPENMVG_IS_DEFINED(OPENMVG_HAVE_MOSEK)
 #include "openMVG/linearProgramming/linearProgrammingMOSEK.hpp"
 #endif
 
@@ -201,7 +201,7 @@ TEST(Translation_Structure_L_Infinity, OSICLP_SOLVER_K) {
   d2.ExportToPLY("test_After_Infinity.ply");
 }
 
-#ifdef OPENMVG_HAVE_MOSEK
+#if OPENMVG_IS_DEFINED(OPENMVG_HAVE_MOSEK)
 TEST(Translation_Structure_L_Infinity, MOSEK) {
 
   const size_t nViews = 3;

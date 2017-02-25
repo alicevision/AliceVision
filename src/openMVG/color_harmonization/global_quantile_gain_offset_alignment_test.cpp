@@ -69,7 +69,7 @@ TEST(ColorHarmonisation, Simple_offset) {
   //-- First image will be considered as reference and don't move
   std::vector<size_t> vec_indexToFix(1,0);
 
-#ifdef OPENMVG_HAVE_MOSEK
+#if OPENMVG_IS_DEFINED(OPENMVG_HAVE_MOSEK)
   typedef MOSEK_SolveWrapper SOLVER_LP_T;
 #else
   typedef OSI_CLP_SolverWrapper SOLVER_LP_T;
@@ -133,7 +133,7 @@ TEST(ColorHarmonisation, Offset_gain) {
   //-- First image will be considered as reference and don't move
   std::vector<size_t> vec_indexToFix(1,0);
 
-#ifdef OPENMVG_HAVE_MOSEK
+#if OPENMVG_IS_DEFINED(OPENMVG_HAVE_MOSEK)
   typedef MOSEK_SolveWrapper SOLVER_LP_T;
 #else
   typedef OSI_CLP_SolverWrapper SOLVER_LP_T;

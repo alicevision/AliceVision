@@ -111,7 +111,7 @@ bool LoadMatchFilePerImage(
 {
   int nbLoadedMatchFiles = 0;
   // Load one match file per image
-#ifdef OPENMVG_USE_OPENMP
+#if OPENMVG_IS_DEFINED(OPENMVG_USE_OPENMP)
     #pragma omp parallel for num_threads(3)
 #endif
   for(ptrdiff_t i = 0; i < static_cast<ptrdiff_t>(viewsKeys.size()); ++i)
@@ -123,7 +123,7 @@ bool LoadMatchFilePerImage(
     PairWiseMatches fileMatches;
     if(!LoadMatchFile(fileMatches, folder, matchFilename))
     {
-#ifdef OPENMVG_USE_OPENMP
+#if OPENMVG_IS_DEFINED(OPENMVG_USE_OPENMP)
       #pragma omp critical
 #endif
       {
@@ -131,7 +131,7 @@ bool LoadMatchFilePerImage(
       }
       continue;
     }
-#ifdef OPENMVG_USE_OPENMP
+#if OPENMVG_IS_DEFINED(OPENMVG_USE_OPENMP)
       #pragma omp critical
 #endif
     {

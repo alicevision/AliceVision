@@ -125,7 +125,7 @@ bool solve_translations_problem_l2_chordal(
 
   // solve
   Solver::Options options;
-#ifdef OPENMVG_USE_OPENMP
+#if OPENMVG_IS_DEFINED(OPENMVG_USE_OPENMP)
   options.num_threads = omp_get_max_threads();
   options.num_linear_solver_threads = omp_get_max_threads();
 #endif // OPENMVG_USE_OPENMP

@@ -36,13 +36,13 @@ struct Features_Provider
       std::cout, "\n- Features Loading -\n" );
     // Read for each view the corresponding features and store them as PointFeatures
     bool bContinue = true;
-#ifdef OPENMVG_USE_OPENMP
+#if OPENMVG_IS_DEFINED(OPENMVG_USE_OPENMP)
     #pragma omp parallel
 #endif
     for (Views::const_iterator iter = sfm_data.GetViews().begin();
       iter != sfm_data.GetViews().end() && bContinue; ++iter)
     {
-#ifdef OPENMVG_USE_OPENMP
+#if OPENMVG_IS_DEFINED(OPENMVG_USE_OPENMP)
     #pragma omp single nowait
 #endif
       {
@@ -52,12 +52,12 @@ struct Features_Provider
         if (!regions->LoadFeatures(featFile))
         {
           OPENMVG_LOG_WARNING("Invalid feature file: " << featFile);
-#ifdef OPENMVG_USE_OPENMP
+#if OPENMVG_IS_DEFINED(OPENMVG_USE_OPENMP)
       #pragma omp critical
 #endif
           bContinue = false;
         }
-#ifdef OPENMVG_USE_OPENMP
+#if OPENMVG_IS_DEFINED(OPENMVG_USE_OPENMP)
       #pragma omp critical
 #endif
         {

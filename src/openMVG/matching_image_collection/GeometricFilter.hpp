@@ -63,7 +63,7 @@ void ImageCollectionGeometricFilter::Robust_model_estimation
 {
   C_Progress_display my_progress_bar( putative_matches.size() );
 
-#ifdef OPENMVG_USE_OPENMP
+#if OPENMVG_IS_DEFINED(OPENMVG_USE_OPENMP)
 #pragma omp parallel for schedule(dynamic)
 #endif
   for (int i = 0; i < (int)putative_matches.size(); ++i)
@@ -88,7 +88,7 @@ void ImageCollectionGeometricFilter::Robust_model_estimation
           std::swap(putative_inliers, guided_geometric_inliers);
         }
 
-#ifdef OPENMVG_USE_OPENMP
+#if OPENMVG_IS_DEFINED(OPENMVG_USE_OPENMP)
 #pragma omp critical
 #endif
         {
@@ -96,7 +96,7 @@ void ImageCollectionGeometricFilter::Robust_model_estimation
         }
       }
     }
-#ifdef OPENMVG_USE_OPENMP
+#if OPENMVG_IS_DEFINED(OPENMVG_USE_OPENMP)
 #pragma omp critical
 #endif
     {

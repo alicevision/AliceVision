@@ -80,7 +80,7 @@ Pair_Set Frustum_Filter::getFrustumIntersectionPairs() const
     std::cout, "\nCompute frustum intersection\n");
 
   // Exhaustive comparison (use the fact that the intersect function is symmetric)
-#ifdef OPENMVG_USE_OPENMP
+#if OPENMVG_IS_DEFINED(OPENMVG_USE_OPENMP)
   #pragma omp parallel for
 #endif
   for (int i = 0; i < (int)viewIds.size(); ++i)
@@ -89,7 +89,7 @@ Pair_Set Frustum_Filter::getFrustumIntersectionPairs() const
     {
       if (frustum_perView.at(viewIds[i]).intersect(frustum_perView.at(viewIds[j])))
       {
-#ifdef OPENMVG_USE_OPENMP
+#if OPENMVG_IS_DEFINED(OPENMVG_USE_OPENMP)
         #pragma omp critical
 #endif
         {
@@ -97,7 +97,7 @@ Pair_Set Frustum_Filter::getFrustumIntersectionPairs() const
         }
       }
       // Progress bar update
-#ifdef OPENMVG_USE_OPENMP
+#if OPENMVG_IS_DEFINED(OPENMVG_USE_OPENMP)
       #pragma omp critical
 #endif
       {

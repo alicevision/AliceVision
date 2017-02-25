@@ -10,7 +10,7 @@
 #include <vector>
 #include <map>
 
-#ifdef OPENMVG_HAVE_OPENCV
+#if OPENMVG_IS_DEFINED(OPENMVG_HAVE_OPENCV)
 //#define VISUAL_DEBUG_MODE
 #endif
 

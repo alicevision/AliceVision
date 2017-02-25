@@ -16,7 +16,7 @@
 
 #include "openMVG/linearProgramming/linearProgrammingInterface.hpp"
 #include "openMVG/linearProgramming/linearProgrammingOSI_X.hpp"
-#ifdef OPENMVG_HAVE_MOSEK
+#if OPENMVG_IS_DEFINED(OPENMVG_HAVE_MOSEK)
 #include "openMVG/linearProgramming/linearProgrammingMOSEK.hpp"
 #endif
 
@@ -86,7 +86,7 @@ TEST(lInfinityCV, Triangulation_OSICLPSOLVER) {
   d2.ExportToPLY("test_After_Infinity_Triangulation_OSICLP.ply");
 }
 
-#ifdef OPENMVG_HAVE_MOSEK
+#if OPENMVG_IS_DEFINED(OPENMVG_HAVE_MOSEK)
 TEST(computervision, Triangulation_MOSEK) {
 
   NViewDataSet d = NRealisticCamerasRing(6, 10,

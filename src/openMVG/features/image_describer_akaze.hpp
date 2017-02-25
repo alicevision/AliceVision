@@ -113,7 +113,7 @@ public:
         regionsCasted->Features().resize(kpts.size());
         regionsCasted->Descriptors().resize(kpts.size());
 
-      #ifdef OPENMVG_USE_OPENMP
+      #if OPENMVG_IS_DEFINED(OPENMVG_USE_OPENMP)
         #pragma omp parallel for
       #endif
         for (int i = 0; i < static_cast<int>(kpts.size()); ++i)
@@ -154,7 +154,7 @@ public:
         // Init LIOP extractor
         LIOP::Liop_Descriptor_Extractor liop_extractor;
 
-      #ifdef OPENMVG_USE_OPENMP
+      #if OPENMVG_IS_DEFINED(OPENMVG_USE_OPENMP)
         #pragma omp parallel for
       #endif
         for (int i = 0; i < static_cast<int>(kpts.size()); ++i)
@@ -201,7 +201,7 @@ public:
         regionsCasted->Features().resize(kpts.size());
         regionsCasted->Descriptors().resize(kpts.size());
 
-      #ifdef OPENMVG_USE_OPENMP
+      #if OPENMVG_IS_DEFINED(OPENMVG_USE_OPENMP)
         #pragma omp parallel for
       #endif
         for (int i = 0; i < static_cast<int>(kpts.size()); ++i)

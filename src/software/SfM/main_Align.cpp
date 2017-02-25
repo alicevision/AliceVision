@@ -43,7 +43,7 @@ int main(int argc, char **argv)
         << "[-i|--input_file] path to the input SfM_Data scene to align.\n"
         << "[-o|--output_file] path to the output SfM_Data scene\n"
         << "\t .json, .bin, .xml, .ply, .baf"
-#ifdef OPENMVG_HAVE_ALEMBIC
+#if OPENMVG_IS_DEFINED(OPENMVG_HAVE_ALEMBIC)
            ", .abc"
 #endif
            "\n"

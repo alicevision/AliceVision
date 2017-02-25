@@ -2,13 +2,13 @@
 
 #include <openMVG/config.hpp>
 
-#ifdef OPENMVG_HAVE_BOOST
+#if OPENMVG_IS_DEFINED(OPENMVG_HAVE_BOOST)
 #include <boost/container/flat_set.hpp>
 #endif
 
 namespace stl
 {
-#ifdef OPENMVG_HAVE_BOOST
+#if OPENMVG_IS_DEFINED(OPENMVG_HAVE_BOOST)
   template <class Key
          ,class Compare  = std::less<Key>
          ,class Allocator = std::allocator<Key> >

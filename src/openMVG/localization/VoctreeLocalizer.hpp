@@ -137,7 +137,7 @@ public:
                    const std::string &descriptorsFolder,
                    const std::string &vocTreeFilepath,
                    const std::string &weightsFilepath
-#ifdef OPENMVG_HAVE_CCTAG
+#if OPENMVG_IS_DEFINED(OPENMVG_HAVE_CCTAG)
                    , bool useSIFT_CCTAG
 #endif
                   );
@@ -203,7 +203,7 @@ public:
                    std::vector<LocalizationResult>& vec_locResults);
 
 
-#ifdef OPENMVG_HAVE_OPENGV
+#if OPENMVG_IS_DEFINED(OPENMVG_HAVE_OPENGV)
   bool localizeRig_opengv(const std::vector<std::unique_ptr<features::Regions> > & vec_queryRegions,
                           const std::vector<std::pair<std::size_t, std::size_t> > &imageSize,
                           const LocalizerParameters *parameters,

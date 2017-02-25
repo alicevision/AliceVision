@@ -124,7 +124,7 @@ class ArrayMatcher_Kdtree_Flann : public ArrayMatcher<Scalar, Metric>
     flann::Matrix<Scalar> queries((Scalar*)query, nbQuery, _dimension);
     // do a knn search, using 128 checks
     flann::SearchParams params(128);
-#ifdef OPENMVG_USE_OPENMP
+#if OPENMVG_IS_DEFINED(OPENMVG_USE_OPENMP)
     params.cores = omp_get_max_threads();
 #endif
     if (_index->knnSearch(queries, indices, dists, NN, params) <= 0)

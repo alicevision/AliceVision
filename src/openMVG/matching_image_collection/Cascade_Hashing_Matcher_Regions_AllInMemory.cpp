@@ -96,7 +96,7 @@ void Match
   }
 
   // Index the input regions
-#ifdef OPENMVG_USE_OPENMP
+#if OPENMVG_IS_DEFINED(OPENMVG_USE_OPENMP)
   #pragma omp parallel for schedule(dynamic)
 #endif
   for (int i =0; i < used_index.size(); ++i)
@@ -112,7 +112,7 @@ void Match
     Eigen::Map<BaseMat> mat_I( (ScalarT*)tabI, regionsI.RegionCount(), dimension);
     HashedDescriptions hashed_description = cascade_hasher.CreateHashedDescriptions(mat_I,
       zero_mean_descriptor);
-#ifdef OPENMVG_USE_OPENMP
+#if OPENMVG_IS_DEFINED(OPENMVG_USE_OPENMP)
     #pragma omp critical
 #endif
     {
@@ -140,7 +140,7 @@ void Match
     const size_t dimension = regionsI.DescriptorLength();
     Eigen::Map<BaseMat> mat_I( (ScalarT*)tabI, regionsI.RegionCount(), dimension);
 
-#ifdef OPENMVG_USE_OPENMP
+#if OPENMVG_IS_DEFINED(OPENMVG_USE_OPENMP)
     #pragma omp parallel for schedule(dynamic)
 #endif
     for (int j = 0; j < (int)indexToCompare.size(); ++j)
@@ -151,7 +151,7 @@ void Match
       if (regions_provider.regions_per_view.count(J) == 0
           || regionsI.Type_id() != regionsJ.Type_id())
       {
-#ifdef OPENMVG_USE_OPENMP
+#if OPENMVG_IS_DEFINED(OPENMVG_USE_OPENMP)
         #pragma omp critical
 #endif
         ++my_progress_bar;
@@ -203,7 +203,7 @@ void Match
         pointFeaturesI, pointFeaturesJ);
       matchDeduplicator.getDeduplicated(vec_putative_matches);
 
-#ifdef OPENMVG_USE_OPENMP
+#if OPENMVG_IS_DEFINED(OPENMVG_USE_OPENMP)
 #pragma omp critical
 #endif
       {
@@ -226,7 +226,7 @@ void Cascade_Hashing_Matcher_Regions_AllInMemory::Match
   PairWiseMatches & map_PutativesMatches // the pairwise photometric corresponding points
 )const
 {
-#ifdef OPENMVG_USE_OPENMP
+#if OPENMVG_IS_DEFINED(OPENMVG_USE_OPENMP)
   OPENMVG_LOG_DEBUG("Using the OPENMP thread interface");
 #endif
 
