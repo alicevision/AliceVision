@@ -9,6 +9,8 @@
 
 #include "openMVG/multiview/test_data_sets.hpp"
 #include "openMVG/multiview/projection.hpp"
+#include <openMVG/config.hpp>
+
 #include "CppUnitLite/TestHarness.h"
 #include "testing/testing.h"
 

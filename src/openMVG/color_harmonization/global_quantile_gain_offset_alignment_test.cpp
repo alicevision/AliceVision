@@ -15,6 +15,8 @@
 #include "openMVG/color_harmonization/global_quantile_gain_offset_alignment.hpp"
 
 #include "openMVG/image/image.hpp"
+#include <openMVG/config.hpp>
+
 #include "testing/testing.h"
 
 #include "third_party/histogram/histogram.hpp"

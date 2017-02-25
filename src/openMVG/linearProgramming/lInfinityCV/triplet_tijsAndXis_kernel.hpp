@@ -8,6 +8,7 @@
 #pragma once
 
 #include "openMVG/numeric/numeric.h"
+#include <openMVG/config.hpp>
 
 #include "openMVG/multiview/conditioning.hpp"
 #include "openMVG/multiview/triangulation_nview.hpp"

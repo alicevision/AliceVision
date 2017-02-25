@@ -9,8 +9,11 @@
 #include <iostream>
 #include <vector>
 
+#include <openMVG/config.hpp>
 #include "testing/testing.h"
+#ifdef OPENMVG_HAVE_MOSEK
 #include "openMVG/linearProgramming/linearProgrammingMOSEK.hpp"
+#endif
 #include "openMVG/linearProgramming/linearProgrammingOSI_X.hpp"
 
 

@@ -6,6 +6,7 @@
 
 #include "openMVG/multiview/test_data_sets.hpp"
 #include "openMVG/numeric/numeric.h"
+#include <openMVG/config.hpp>
 #include "CppUnitLite/TestHarness.h"
 #include "testing/testing.h"
 
@@ -13,7 +14,9 @@
 
 #include "openMVG/linearProgramming/linearProgrammingInterface.hpp"
 #include "openMVG/linearProgramming/linearProgrammingOSI_X.hpp"
+#ifdef OPENMVG_HAVE_MOSEK
 #include "openMVG/linearProgramming/linearProgrammingMOSEK.hpp"
+#endif
 
 #include "openMVG/linearProgramming/bisectionLP.hpp"
 #include "openMVG/linearProgramming/lInfinityCV/tijsAndXis_From_xi_Ri.hpp"

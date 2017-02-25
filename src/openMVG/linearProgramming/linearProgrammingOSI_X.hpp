@@ -8,6 +8,8 @@
 #define MIMATTE_LINEAR_PROGRAMMING_INTERFACE_OSICLP_H_
 
 #include "OsiClpSolverInterface.hpp"
+#include <openMVG/config.hpp>
+
 #ifdef OPENMVG_HAVE_MOSEK
 #include "OsiMskSolverInterface.hpp"
 #endif
