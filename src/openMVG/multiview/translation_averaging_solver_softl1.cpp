@@ -10,6 +10,7 @@
 #include "openMVG/numeric/numeric.h"
 #include "openMVG/types.hpp"
 #include <openMVG/config.hpp>
+#include <openMVG/openmvg_omp.hpp>
 
 #include "ceres/ceres.h"
 #include "ceres/rotation.h"

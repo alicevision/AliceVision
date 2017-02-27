@@ -6,6 +6,7 @@
 
 #include "openMVG/sfm/sfm_data_BA_ceres.hpp"
 #include <openMVG/config.hpp>
+#include <openMVG/openmvg_omp.hpp>
 
 #include "ceres/rotation.h"
 

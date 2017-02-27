@@ -9,6 +9,7 @@
 
 #include "openMVG/matching/matching_interface.hpp"
 #include <openMVG/config.hpp>
+#include <openMVG/openmvg_omp.hpp>
 
 #include "flann/flann.hpp"
 
