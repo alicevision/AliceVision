@@ -547,18 +547,14 @@ bool SequentialSfMReconstructionEngine::AutomaticInitialPairChoice(Pair & initia
     std::cout,
     "Automatic selection of an initial pair:\n" );
 
-#if OPENMVG_IS_DEFINED(OPENMVG_USE_OPENMP)
   #pragma omp parallel for schedule(dynamic)
-#endif
   for (int i = 0; i < _matches_provider->_pairWise_matches.size(); ++i)
   {
     matching::PairWiseMatches::const_iterator iter = _matches_provider->_pairWise_matches.begin();
     std::advance(iter, i);
     const std::pair< Pair, IndMatches > & match_pair = *iter;
 
-#if OPENMVG_IS_DEFINED(OPENMVG_USE_OPENMP)
     #pragma omp critical
-#endif
     ++my_progress_bar;
 
     const Pair current_pair = match_pair.first;
@@ -649,9 +645,8 @@ bool SequentialSfMReconstructionEngine::AutomaticInitialPairChoice(Pair & initia
       {
         const double imagePairScore = std::min(computeImageScore(I, validCommonTracksIds), computeImageScore(J, validCommonTracksIds));
         const double score = scoring_angle * imagePairScore;
-#if OPENMVG_IS_DEFINED(OPENMVG_USE_OPENMP)
+
         #pragma omp critical
-#endif
         scoring_per_pair.emplace_back(score, imagePairScore, scoring_angle, relativePose_info.vec_inliers.size(), current_pair);
       }
     }
@@ -1031,9 +1026,7 @@ bool SequentialSfMReconstructionEngine::FindConnectedViews(
   
   const std::set<IndexT> reconstructedIntrinsics = Get_Reconstructed_Intrinsics(_sfm_data);
 
-  #if OPENMVG_IS_DEFINED(OPENMVG_USE_OPENMP)
-    #pragma omp parallel for
-  #endif
+  #pragma omp parallel for
   for (int i = 0; i < remainingViewIds.size(); ++i)
   {
     std::set<size_t>::const_iterator iter = remainingViewIds.cbegin();
@@ -1062,10 +1055,7 @@ bool SequentialSfMReconstructionEngine::FindConnectedViews(
     // Compute an image score based on the number of matches to the 3D scene
     // and the repartition of these features in the image.
     std::size_t score = computeImageScore(viewId, vec_trackIdForResection);
-
-#if OPENMVG_IS_DEFINED(OPENMVG_USE_OPENMP)
-      #pragma omp critical
-#endif
+    #pragma omp critical
     {
       out_connectedViews.emplace_back(viewId, vec_trackIdForResection.size(), score, isIntrinsicsReconstructed);
     }
@@ -1378,9 +1368,8 @@ bool SequentialSfMReconstructionEngine::Resection(const std::size_t viewIndex)
   {
     // For all reconstructed images look for common content in the tracks.
     const std::set<IndexT> valid_views = Get_Valid_Views(_sfm_data);
-#if OPENMVG_IS_DEFINED(OPENMVG_USE_OPENMP)
+
     #pragma omp parallel for schedule(dynamic)
-#endif
     for (ptrdiff_t i = 0; i < static_cast<ptrdiff_t>(valid_views.size()); ++i)
     {
       std::set<IndexT>::const_iterator iter = valid_views.begin();
@@ -1424,9 +1413,7 @@ bool SequentialSfMReconstructionEngine::Resection(const std::size_t viewIndex)
         if (trackIdExists)
         {
           // 3D point triangulated before, only add image observation if needed
-#if OPENMVG_IS_DEFINED(OPENMVG_USE_OPENMP)
           #pragma omp critical
-#endif
           {
             Landmark & landmark = _sfm_data.structure[trackId];
             if (landmark.obs.count(I) == 0)
@@ -1452,9 +1439,7 @@ bool SequentialSfMReconstructionEngine::Resection(const std::size_t viewIndex)
         else
         {
           // A new 3D point must be added
-#if OPENMVG_IS_DEFINED(OPENMVG_USE_OPENMP)
           #pragma omp critical
-#endif
           {
             ++new_putative_track;
           }
@@ -1477,9 +1462,7 @@ bool SequentialSfMReconstructionEngine::Resection(const std::size_t viewIndex)
             residual_I.norm() < std::max(4.0, _map_ACThreshold.at(I)) &&
             residual_J.norm() < std::max(4.0, _map_ACThreshold.at(J)))
           {
-#if OPENMVG_IS_DEFINED(OPENMVG_USE_OPENMP)
             #pragma omp critical
-#endif
             {
               // Add a new track
               Landmark & landmark = _sfm_data.structure[trackId];

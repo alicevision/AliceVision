@@ -70,15 +70,12 @@ void GlobalSfMReconstructionEngine_RelativeMotions::SetFeaturesProvider(Features
 
   // Copy features and save a normalized version
   _normalized_features_provider = std::make_shared<Features_Provider>(*provider);
-#if OPENMVG_IS_DEFINED(OPENMVG_USE_OPENMP)
+
   #pragma omp parallel
-#endif
   for (Hash_Map<IndexT, PointFeatures>::iterator iter = _normalized_features_provider->feats_per_view.begin();
     iter != _normalized_features_provider->feats_per_view.end(); ++iter)
   {
-#if OPENMVG_IS_DEFINED(OPENMVG_USE_OPENMP)
     #pragma omp single nowait
-#endif
     {
       // get the related view & camera intrinsic and compute the corresponding bearing vectors
       const View * view = _sfm_data.GetViews().at(iter->first).get();
@@ -490,16 +487,11 @@ void GlobalSfMReconstructionEngine_RelativeMotions::Compute_Relative_Rotations
 
   C_Progress_display my_progress_bar( poseWiseMatches.size(),
       std::cout, "\n- Relative pose computation -\n" );
-
-#if OPENMVG_IS_DEFINED(OPENMVG_USE_OPENMP)
   #pragma omp parallel for schedule(dynamic)
-#endif
   // Compute the relative pose from pairwise point matches:
   for (int i = 0; i < poseWiseMatches.size(); ++i)
   {
-#if OPENMVG_IS_DEFINED(OPENMVG_USE_OPENMP)
     #pragma omp critical
-#endif
     {
       ++my_progress_bar;
     }
@@ -617,9 +609,7 @@ void GlobalSfMReconstructionEngine_RelativeMotions::Compute_Relative_Rotations
           relativePose_info.relativePose = Pose3(Rrel, -Rrel.transpose() * trel);
         }
       }
-#if OPENMVG_IS_DEFINED(OPENMVG_USE_OPENMP)
       #pragma omp critical
-#endif
       {
         // Add the relative rotation to the relative 'rotation' pose graph
         using namespace openMVG::rotation_averaging;

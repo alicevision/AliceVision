@@ -35,9 +35,7 @@ void Warp(const Image &im, const Mat3 & H, Image &out)
 
   const Sampler2d<SamplerLinear> sampler;
   for (int j = 0; j < hOut; ++j)
-#if OPENMVG_IS_DEFINED(OPENMVG_USE_OPENMP)
-  #pragma omp parallel for
-#endif
+    #pragma omp parallel for
     for (int i = 0; i < wOut; ++i)
     {
       double xT = i, yT = j;

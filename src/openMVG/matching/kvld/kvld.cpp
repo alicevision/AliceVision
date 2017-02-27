@@ -36,10 +36,8 @@ ImageScale::ImageScale( const Image< float >& I, double r )
 
   GradAndNorm( I, angles[ 0 ], magnitudes[ 0 ] );
   ratios[ 0 ] = 1;
-
-#if OPENMVG_IS_DEFINED(OPENMVG_USE_OPENMP)
-#pragma omp parallel for
-#endif
+  
+  #pragma omp parallel for
   for( int k = 1; k < number; k++ )
   {
     Image< float > I2;
@@ -66,13 +64,12 @@ void ImageScale::GradAndNorm( const Image< float >& I, Image< float >& angle, Im
   m = Image< float >( I.Width(), I.Height() );
   angle.fill( 0 );
   m.fill( 0 );
-#if OPENMVG_IS_DEFINED(OPENMVG_USE_OPENMP)
-#pragma omp parallel for
-#endif
+  
+  #pragma omp parallel for
   for( int y = 1; y < I.Height() - 1; y++ )
   {
-  for( int x = 1; x < I.Width() - 1; x++ )
-  {
+    for( int x = 1; x < I.Width() - 1; x++ )
+    {
       const float gx = I( y, x + 1 ) - I( y, x - 1 );
       const float gy = I( y + 1, x ) - I( y - 1, x );
 

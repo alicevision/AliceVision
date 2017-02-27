@@ -267,9 +267,7 @@ void AKAZE::Feature_Detection(std::vector<AKAZEKeypoint>& kpts) const
 {
   std::vector< std::vector< std::pair<AKAZEKeypoint, bool> > > vec_kpts_perSlice(options_.iNbOctave*options_.iNbSlicePerOctave);
 
-#if OPENMVG_IS_DEFINED(OPENMVG_USE_OPENMP)
-#pragma omp parallel for schedule(dynamic)
-#endif
+  #pragma omp parallel for schedule(dynamic)
   for( int p = 0 ; p < options_.iNbOctave ; ++p )
   {
     const float ratio = (float) (1 << p);
@@ -371,17 +369,13 @@ void AKAZE::Do_Subpixel_Refinement(std::vector<AKAZEKeypoint>& kpts) const
   kpts_cpy.swap(kpts);
   kpts.reserve(kpts_cpy.size());
 
-#if OPENMVG_IS_DEFINED(OPENMVG_USE_OPENMP)
   #pragma omp parallel for schedule(dynamic)
-#endif
   for (int i = 0; i < static_cast<int>(kpts_cpy.size()); ++i)
   {
     AKAZEKeypoint & pt = kpts_cpy[i];
     if (Do_Subpixel_Refinement(pt, this->evolution_[pt.class_id].Lhess))
     {
-#if OPENMVG_IS_DEFINED(OPENMVG_USE_OPENMP)
-  #pragma omp critical
-#endif
+      #pragma omp critical
       kpts.emplace_back(pt);
     }
   }

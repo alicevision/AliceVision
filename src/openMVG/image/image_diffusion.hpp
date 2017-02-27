@@ -103,10 +103,9 @@ void ImageFEDCentralCPPThread( const Image & src , const Image & diff , const ty
   std::vector< int > range;
   SplitRange( 1 , (int) ( src.rows() - 1 ) , nb_thread , range ) ;
 
-#if OPENMVG_IS_DEFINED(OPENMVG_USE_OPENMP)
-#pragma omp parallel for schedule(dynamic)
-#endif
-  for( int i = 1 ; i < static_cast<int>(range.size()) ; ++i ) {
+  #pragma omp parallel for schedule(dynamic)
+  for( int i = 1 ; i < static_cast<int>(range.size()) ; ++i )
+  {
     ImageFEDCentral( src, diff, half_t, out, range[i-1] , range[i]) ;
   }
 }

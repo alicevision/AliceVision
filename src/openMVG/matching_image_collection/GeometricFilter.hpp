@@ -62,10 +62,8 @@ void ImageCollectionGeometricFilter::Robust_model_estimation
 )
 {
   C_Progress_display my_progress_bar( putative_matches.size() );
-
-#if OPENMVG_IS_DEFINED(OPENMVG_USE_OPENMP)
-#pragma omp parallel for schedule(dynamic)
-#endif
+  
+  #pragma omp parallel for schedule(dynamic)
   for (int i = 0; i < (int)putative_matches.size(); ++i)
   {
     PairWiseMatches::const_iterator iter = putative_matches.begin();
@@ -87,18 +85,13 @@ void ImageCollectionGeometricFilter::Robust_model_estimation
           //OPENMVG_LOG_DEBUG("#before/#after: " << putative_inliers.size() << "/" << guided_geometric_inliers.size());
           std::swap(putative_inliers, guided_geometric_inliers);
         }
-
-#if OPENMVG_IS_DEFINED(OPENMVG_USE_OPENMP)
-#pragma omp critical
-#endif
+        #pragma omp critical
         {
           _map_GeometricMatches.insert(std::make_pair(current_pair, std::move(putative_inliers)));
         }
       }
     }
-#if OPENMVG_IS_DEFINED(OPENMVG_USE_OPENMP)
-#pragma omp critical
-#endif
+    #pragma omp critical
     {
       ++my_progress_bar;
     }

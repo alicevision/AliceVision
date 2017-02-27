@@ -96,9 +96,7 @@ void Match
   }
 
   // Index the input regions
-#if OPENMVG_IS_DEFINED(OPENMVG_USE_OPENMP)
   #pragma omp parallel for schedule(dynamic)
-#endif
   for (int i =0; i < used_index.size(); ++i)
   {
     std::set<IndexT>::const_iterator iter = used_index.begin();
@@ -112,9 +110,7 @@ void Match
     Eigen::Map<BaseMat> mat_I( (ScalarT*)tabI, regionsI.RegionCount(), dimension);
     HashedDescriptions hashed_description = cascade_hasher.CreateHashedDescriptions(mat_I,
       zero_mean_descriptor);
-#if OPENMVG_IS_DEFINED(OPENMVG_USE_OPENMP)
     #pragma omp critical
-#endif
     {
       hashed_base_[I] = std::move(hashed_description);
     }
@@ -139,10 +135,7 @@ void Match
       reinterpret_cast<const ScalarT*>(regionsI.DescriptorRawData());
     const size_t dimension = regionsI.DescriptorLength();
     Eigen::Map<BaseMat> mat_I( (ScalarT*)tabI, regionsI.RegionCount(), dimension);
-
-#if OPENMVG_IS_DEFINED(OPENMVG_USE_OPENMP)
     #pragma omp parallel for schedule(dynamic)
-#endif
     for (int j = 0; j < (int)indexToCompare.size(); ++j)
     {
       size_t J = indexToCompare[j];
@@ -151,9 +144,7 @@ void Match
       if (regions_provider.regions_per_view.count(J) == 0
           || regionsI.Type_id() != regionsJ.Type_id())
       {
-#if OPENMVG_IS_DEFINED(OPENMVG_USE_OPENMP)
         #pragma omp critical
-#endif
         ++my_progress_bar;
         continue;
       }
@@ -203,9 +194,7 @@ void Match
         pointFeaturesI, pointFeaturesJ);
       matchDeduplicator.getDeduplicated(vec_putative_matches);
 
-#if OPENMVG_IS_DEFINED(OPENMVG_USE_OPENMP)
-#pragma omp critical
-#endif
+      #pragma omp critical
       {
         ++my_progress_bar;
         if (!vec_putative_matches.empty())

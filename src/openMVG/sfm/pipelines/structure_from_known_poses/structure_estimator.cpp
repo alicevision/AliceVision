@@ -77,14 +77,11 @@ void SfM_Data_Structure_Estimation_From_Known_Poses::match(
 {
   C_Progress_display my_progress_bar( pairs.size(), std::cout,
     "Compute pairwise fundamental guided matching:\n" );
-#if OPENMVG_IS_DEFINED(OPENMVG_USE_OPENMP)
+
   #pragma omp parallel
-#endif // OPENMVG_USE_OPENMP
   for (Pair_Set::const_iterator it = pairs.begin(); it != pairs.end(); ++it)
   {
-#if OPENMVG_IS_DEFINED(OPENMVG_USE_OPENMP)
     #pragma omp single nowait
-#endif // OPENMVG_USE_OPENMP
     {
     // --
     // Perform GUIDED MATCHING
@@ -139,10 +136,7 @@ void SfM_Data_Structure_Estimation_From_Known_Poses::match(
           vec_corresponding_indexes
         );
   #endif
-
-  #if OPENMVG_IS_DEFINED(OPENMVG_USE_OPENMP)
-      #pragma omp critical
-  #endif // OPENMVG_USE_OPENMP
+        #pragma omp critical
         {
           ++my_progress_bar;
           for (size_t i = 0; i < vec_corresponding_indexes.size(); ++i)
@@ -168,18 +162,12 @@ void SfM_Data_Structure_Estimation_From_Known_Poses::filter(
 
   C_Progress_display my_progress_bar( triplets.size(), std::cout,
     "Per triplet tracks validation (discard spurious correspondences):\n" );
-#if OPENMVG_IS_DEFINED(OPENMVG_USE_OPENMP)
-    #pragma omp parallel
-#endif // OPENMVG_USE_OPENMP
+  #pragma omp parallel
   for( Triplets::const_iterator it = triplets.begin(); it != triplets.end(); ++it)
   {
-#if OPENMVG_IS_DEFINED(OPENMVG_USE_OPENMP)
     #pragma omp single nowait
-#endif // OPENMVG_USE_OPENMP
     {
-      #if OPENMVG_IS_DEFINED(OPENMVG_USE_OPENMP)
-        #pragma omp critical
-      #endif // OPENMVG_USE_OPENMP
+      #pragma omp critical
       {++my_progress_bar;}
 
       const graph::Triplet & triplet = *it;
@@ -223,9 +211,7 @@ void SfM_Data_Structure_Estimation_From_Known_Poses::filter(
             if (trianObj.minDepth() > 0 && trianObj.error()/(double)trianObj.size() < 4.0)
             // TODO: Add an angular check ?
             {
-              #if OPENMVG_IS_DEFINED(OPENMVG_USE_OPENMP)
-                #pragma omp critical
-              #endif // OPENMVG_USE_OPENMP
+              #pragma omp critical
               {
                 openMVG::tracks::submapTrack::const_iterator iterI, iterJ, iterK;
                 iterI = iterJ = iterK = subTrack.begin();

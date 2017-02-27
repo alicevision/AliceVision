@@ -217,9 +217,7 @@ bool extractSIFT(const image::Image<unsigned char>& image,
     // Update gradient before launching parallel extraction
     vl_sift_update_gradient(filt);
 
-    #if OPENMVG_IS_DEFINED(OPENMVG_USE_OPENMP)
     #pragma omp parallel for private(vlFeatDescriptor, descriptor)
-    #endif
     for (int i = 0; i < nkeys; ++i)
     {
 
@@ -245,9 +243,8 @@ bool extractSIFT(const image::Image<unsigned char>& image,
           keys[i].sigma, static_cast<float>(angles[q]));
 
         convertSIFT<T>(&vlFeatDescriptor[0], descriptor, params._root_sift);
-        #if OPENMVG_IS_DEFINED(OPENMVG_USE_OPENMP)
+        
         #pragma omp critical
-        #endif
         {
           regionsCasted->Descriptors().push_back(descriptor);
           regionsCasted->Features().push_back(fp);

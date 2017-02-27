@@ -166,9 +166,7 @@ void queryDatabase(const std::string &fileFullPath,
   OPENMVG_LOG_DEBUG("queryDatabase: Reading the descriptors from " << descriptorsFiles.size() << " files...");
   boost::progress_display display(descriptorsFiles.size());
 
-  #if OPENMVG_IS_DEFINED(OPENMVG_USE_OPENMP)
-    #pragma omp parallel for
-  #endif
+  #pragma omp parallel for
   // Run through the path vector and read the descriptors
   for(ptrdiff_t i = 0; i < static_cast<ptrdiff_t>(descriptorsFiles.size()); ++i)
   {
@@ -185,10 +183,7 @@ void queryDatabase(const std::string &fileFullPath,
     openMVG::voctree::DocMatches docMatches;
     // query the database
     db.find(query, numResults, docMatches, distanceMethod);
-
-    #if OPENMVG_IS_DEFINED(OPENMVG_USE_OPENMP)
-      #pragma omp critical
-    #endif
+    #pragma omp critical
     {
       // add the vector to the documents
       documents[currentFileIt->first] = query;

@@ -48,15 +48,11 @@ struct Regions_Provider
     // Read for each view the corresponding regions and store them
     bool bContinue = true;
 
-#if OPENMVG_IS_DEFINED(OPENMVG_USE_OPENMP)
     #pragma omp parallel num_threads(3)
-#endif
     for (Views::const_iterator iter = sfm_data.GetViews().begin();
       iter != sfm_data.GetViews().end() && bContinue; ++iter)
     {
-#if OPENMVG_IS_DEFINED(OPENMVG_USE_OPENMP)
-    #pragma omp single nowait
-#endif
+      #pragma omp single nowait
       {
         const std::string sImageName = stlplus::create_filespec(sfm_data.s_root_path, std::to_string(iter->second.get()->id_view));
         const std::string basename = stlplus::basename_part(sImageName);
@@ -70,14 +66,10 @@ struct Regions_Provider
           if (!regions_ptr->Load(featFile, descFile))
           {
             OPENMVG_LOG_WARNING("Invalid regions files for the view: " << sImageName);
-#if OPENMVG_IS_DEFINED(OPENMVG_USE_OPENMP)
-          #pragma omp critical
-#endif
+            #pragma omp critical
             bContinue = false;
           }
-#if OPENMVG_IS_DEFINED(OPENMVG_USE_OPENMP)
           #pragma omp critical
-#endif
           {
             regions_per_view[iter->second.get()->id_view] = std::move(regions_ptr);
             ++my_progress_bar;

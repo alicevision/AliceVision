@@ -67,9 +67,7 @@ void Matcher_Regions_AllInMemory::Match(
     // Initialize the matching interface
     matching::Matcher_Regions_Database matcher(_eMatcherType, regionsI);
 
-#if OPENMVG_IS_DEFINED(OPENMVG_USE_OPENMP)
     #pragma omp parallel for schedule(dynamic) if(b_multithreaded_pair_search)
-#endif
     for (int j = 0; j < (int)indexToCompare.size(); ++j)
     {
       const size_t J = indexToCompare[j];
@@ -78,19 +76,14 @@ void Matcher_Regions_AllInMemory::Match(
       if (regionsJ.RegionCount() == 0
           || regionsI.Type_id() != regionsJ.Type_id())
       {
-#if OPENMVG_IS_DEFINED(OPENMVG_USE_OPENMP)
-  #pragma omp critical
-#endif
+        #pragma omp critical
         ++my_progress_bar;
         continue;
       }
 
       IndMatches vec_putatives_matches;
       matcher.Match(_f_dist_ratio, regionsJ, vec_putatives_matches);
-
-#if OPENMVG_IS_DEFINED(OPENMVG_USE_OPENMP)
-  #pragma omp critical
-#endif
+      #pragma omp critical
       {
         ++my_progress_bar;
         if (!vec_putatives_matches.empty())

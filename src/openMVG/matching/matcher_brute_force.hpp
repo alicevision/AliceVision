@@ -120,9 +120,8 @@ class ArrayMatcherBruteForce  : public ArrayMatcher<Scalar, Metric>
 
     pvec_distances->resize(nbQuery * NN);
     pvec_indices->resize(nbQuery * NN);
-#if OPENMVG_IS_DEFINED(OPENMVG_USE_OPENMP)
-#pragma omp parallel for schedule(dynamic)
-#endif
+
+    #pragma omp parallel for schedule(dynamic)
     for (int queryIndex=0; queryIndex < nbQuery; ++queryIndex) 
     {
       std::vector<DistanceType> vec_distance((*memMapping).rows(), 0.0);

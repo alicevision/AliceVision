@@ -112,10 +112,8 @@ public:
         AKAZE_Float_Regions * regionsCasted = dynamic_cast<AKAZE_Float_Regions*>(regions.get());
         regionsCasted->Features().resize(kpts.size());
         regionsCasted->Descriptors().resize(kpts.size());
-
-      #if OPENMVG_IS_DEFINED(OPENMVG_USE_OPENMP)
+        
         #pragma omp parallel for
-      #endif
         for (int i = 0; i < static_cast<int>(kpts.size()); ++i)
         {
           AKAZEKeypoint ptAkaze = kpts[i];
@@ -154,9 +152,7 @@ public:
         // Init LIOP extractor
         LIOP::Liop_Descriptor_Extractor liop_extractor;
 
-      #if OPENMVG_IS_DEFINED(OPENMVG_USE_OPENMP)
         #pragma omp parallel for
-      #endif
         for (int i = 0; i < static_cast<int>(kpts.size()); ++i)
         {
           AKAZEKeypoint ptAkaze = kpts[i];
@@ -201,9 +197,7 @@ public:
         regionsCasted->Features().resize(kpts.size());
         regionsCasted->Descriptors().resize(kpts.size());
 
-      #if OPENMVG_IS_DEFINED(OPENMVG_USE_OPENMP)
         #pragma omp parallel for
-      #endif
         for (int i = 0; i < static_cast<int>(kpts.size()); ++i)
         {
           AKAZEKeypoint ptAkaze = kpts[i];
