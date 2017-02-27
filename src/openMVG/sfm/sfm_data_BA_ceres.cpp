@@ -53,9 +53,9 @@ Bundle_Adjustment_Ceres::BA_options::BA_options(const bool bVerbose, bool bmulti
   :_bVerbose(bVerbose),
    _nbThreads(1)
 {
-  #if OPENMVG_IS_DEFINED(OPENMVG_USE_OPENMP)
-    _nbThreads = omp_get_max_threads();
-  #endif // OPENMVG_USE_OPENMP
+  // set number of threads, 1 if openMP is not enabled
+  _nbThreads = omp_get_max_threads();
+
   if (!bmultithreaded)
     _nbThreads = 1;
 

@@ -269,10 +269,10 @@ bool L2RotationAveraging_Refine(
   {
     solverOptions.linear_solver_type = ceres::DENSE_NORMAL_CHOLESKY;
   }
-#if OPENMVG_IS_DEFINED(OPENMVG_USE_OPENMP)
+  // set number of threads, 1 if openMP is not enabled
   solverOptions.num_threads = omp_get_max_threads();
   solverOptions.num_linear_solver_threads = omp_get_max_threads();
-#endif // OPENMVG_USE_OPENMP
+
 
   ceres::Solver::Summary summary;
   ceres::Solve(solverOptions, &problem, &summary);

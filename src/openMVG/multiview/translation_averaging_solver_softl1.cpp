@@ -191,10 +191,11 @@ bool solve_translations_problem_softl1
   options.max_num_iterations = std::max(50, (int)(nb_scales * 2));
   options.minimizer_progress_to_stdout = false;
   options.logging_type = ceres::SILENT;
-#if OPENMVG_IS_DEFINED(OPENMVG_USE_OPENMP)
+
+  // set number of threads, 1 if openMP is not enabled
   options.num_threads = omp_get_max_threads();
   options.num_linear_solver_threads = omp_get_max_threads();
-#endif // OPENMVG_USE_OPENMP
+
   ceres::Solver::Summary summary;
   ceres::Solve(options, &problem, &summary);
 

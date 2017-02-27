@@ -94,11 +94,7 @@ void ImageFEDCentral( const Image & src , const Image & diff , const typename Im
 template< typename Image >
 void ImageFEDCentralCPPThread( const Image & src , const Image & diff , const typename Image::Tpixel half_t , Image & out )
 {
-#if OPENMVG_IS_DEFINED(OPENMVG_USE_OPENMP)
   const int nb_thread = omp_get_max_threads();
-#else
-  const int nb_thread = 1 ;
-#endif
 
   // Compute ranges
   std::vector< int > range;

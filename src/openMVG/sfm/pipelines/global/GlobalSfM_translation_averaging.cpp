@@ -409,12 +409,8 @@ void GlobalSfM_Translation_AveragingSolver::ComputePutativeTranslation_EdgesCove
       std::cout,
       "\nRelative translations computation (edge coverage algorithm)\n");
 
-#if OPENMVG_IS_DEFINED(OPENMVG_USE_OPENMP)
+    // set number of threads, 1 if openMP is not enabled  
     std::vector< RelativeInfo_Vec > initial_estimates(omp_get_max_threads());
-#else
-    std::vector< RelativeInfo_Vec > initial_estimates(1);
-#endif
-
     const bool bVerbose = false;
 
     #pragma omp parallel for schedule(dynamic)
@@ -511,11 +507,8 @@ void GlobalSfM_Translation_AveragingSolver::ComputePutativeTranslation_EdgesCove
               Vec3 tik;
               RelativeCameraMotion(RI, ti, RK, tk, &Rik, &tik);
 
-              #if OPENMVG_IS_DEFINED(OPENMVG_USE_OPENMP)
-                const int thread_id = omp_get_thread_num();
-              #else
-                const int thread_id = 0;
-              #endif
+              // set number of threads, 1 if openMP is not enabled
+              const int thread_id = omp_get_thread_num();
 
               initial_estimates[thread_id].emplace_back(
                 std::make_pair(triplet.i, triplet.j), std::make_pair(Rij, tij));
