@@ -39,20 +39,28 @@ struct BoundingBox {
     U8Descriptor max;
 };
 
-constexpr int SPLIT_DIMENSION_COUNT = 5;    // Count of dimensions with highest variance to randomly split against
-using SplitDimensions = std::array<unsigned char, SPLIT_DIMENSION_COUNT>;
-
 // The code crashes unless this is correct.
 static_assert(sizeof(unsigned) == 4, "Unsupported unsigned int size.");
 static_assert(alignof(U8Descriptor) >= 32 && alignof(BoundingBox) >= 32, "Invalid alignment.");
 static_assert(sizeof(U8Descriptor) == 128 && sizeof(BoundingBox) == 256, "Invalid size.");
 
+void VerifyL2DistanceAVX(); // Self-test method.
+unsigned L1Distance(const U8Descriptor&, const U8Descriptor&);
+unsigned L1Distance(const U8Descriptor&, const BoundingBox&);
+unsigned L2DistanceSquared(const U8Descriptor&, const U8Descriptor&);
+unsigned L2DistanceSquared(const U8Descriptor&, const BoundingBox&);
+BoundingBox Union(const BoundingBox& a, const BoundingBox& b);
+
 /////////////////////////////////////////////////////////////////////////////
+
+constexpr int SPLIT_DIMENSION_COUNT = 5;    // Count of dimensions with highest variance to randomly split against
+using SplitDimensions = std::array<unsigned char, SPLIT_DIMENSION_COUNT>;
 
 //! KDTree.  Node 0 is the root node.
 class KDTree {
-    friend std::unique_ptr<KDTree> Build(const U8Descriptor* descriptors, size_t dcount, unsigned leaf_size);
 public:
+    static std::unique_ptr<KDTree> Build(const U8Descriptor* descriptors, const unsigned short* image_indexes, size_t dcount, unsigned leaf_size);
+
     KDTree(const KDTree&) = delete;
     KDTree& operator=(const KDTree&) = delete;
 
@@ -151,7 +159,7 @@ private:
     // Used by Build
     unsigned _leaf_size;
 
-    KDTree(const U8Descriptor* descriptors, size_t dcount);
+    KDTree(const U8Descriptor* descriptors, const unsigned short* image_indexes, size_t dcount);
     void Build(unsigned leaf_size);
     void Build(unsigned node_index,  unsigned lelem, unsigned relem);
     unsigned Partition(Node& node, unsigned lelem, unsigned relem);
@@ -161,9 +169,15 @@ private:
             const_cast<DescriptorAssociation*>(_list.data() + l),
             const_cast<DescriptorAssociation*>(_list.data() + r));
     }
+
+    static BoundingBox GetBoundingBox(const U8Descriptor*, const DescriptorAssociation*, size_t);
+    static std::pair<SplitDimensions, SplitDimensions> GetSplitDimensions(const U8Descriptor*, const DescriptorAssociation*, size_t);
 };
 
 using KDTreePtr = std::unique_ptr<KDTree>;
+
+std::vector<KDTreePtr> Build(const U8Descriptor* descriptors, const unsigned short* image_indexes, size_t descriptor_count, size_t tree_count, unsigned leaf_size);
+std::pair<unsigned, unsigned> Query2NN(const std::vector<KDTreePtr>& trees, const U8Descriptor& descriptor, size_t max_descriptors);
 
 /////////////////////////////////////////////////////////////////////////////
 
@@ -203,19 +217,6 @@ struct Q2NNAccumulator
 
 /////////////////////////////////////////////////////////////////////////////
 
-unsigned L1Distance(const U8Descriptor&, const U8Descriptor&);
-unsigned L1Distance(const U8Descriptor&, const BoundingBox&);
-unsigned L2DistanceSquared(const U8Descriptor&, const U8Descriptor&);
-unsigned L2DistanceSquared(const U8Descriptor&, const BoundingBox&);
-
-void VerifyL2DistanceAVX();
-
-std::pair<SplitDimensions, SplitDimensions> GetSplitDimensions(const U8Descriptor* descriptors, const unsigned* indexes, size_t count);
-BoundingBox GetBoundingBox(const U8Descriptor* descriptors, const unsigned* indexes, size_t count);
-BoundingBox Union(const BoundingBox& a, const BoundingBox& b);
-KDTreePtr Build(const U8Descriptor* descriptors, size_t dcount, unsigned leaf_size);
-std::vector<KDTreePtr> Build(const U8Descriptor* descriptors, size_t descriptor_count, size_t tree_count, unsigned leaf_size);
-std::pair<unsigned, unsigned> Query2NN(const std::vector<KDTreePtr>& trees, const U8Descriptor& descriptor, size_t max_descriptors);
 
 }   // kdtree
 }   // popsift
