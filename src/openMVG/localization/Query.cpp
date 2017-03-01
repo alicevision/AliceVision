@@ -10,6 +10,40 @@
 namespace popsift {
 namespace kdtree {
 
+//! Used by 2NN queries.
+struct Q2NNAccumulator
+{
+    unsigned distance[2];
+    unsigned index[2];
+
+    Q2NNAccumulator()
+    {
+        distance[0] = distance[1] = std::numeric_limits<unsigned>::max();
+        index[0] = index[1] = -1;
+    }
+
+    void Update(unsigned d, unsigned i)
+    {
+        if (d < distance[0]) {
+            distance[1] = distance[0]; distance[0] = d;
+            index[1] = index[0]; index[0] = i;
+        }
+        else if (d != distance[0] && d < distance[1]) {
+            distance[1] = d;
+            index[1] = i;
+        }
+        Validate();
+    }
+
+    Q2NNAccumulator Combine(const Q2NNAccumulator& other) const;
+
+    void Validate() const
+    {
+        POPSIFT_KDASSERT(distance[0] < distance[1]);
+        POPSIFT_KDASSERT(index[0] != index[1]);
+    }
+};
+
 Q2NNAccumulator Q2NNAccumulator::Combine(const Q2NNAccumulator& other) const
 {
     Q2NNAccumulator r;
