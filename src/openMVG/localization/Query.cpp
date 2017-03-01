@@ -185,8 +185,8 @@ void Q2NNquery::ProcessLeaf(const KDTree& tree, unsigned node)
 
     _found_descriptors += list.second - list.first;
     for (; list.first != list.second; ++list.first) {
-        unsigned d = DISTANCE_CHECK(_descriptor, tree.Descriptors()[*list.first]);
-        _result.Update(d, *list.first);
+        unsigned d = DISTANCE_CHECK(_descriptor, tree.Descriptors()[list.first->descriptor_index]);
+        _result.Update(d, list.first->descriptor_index);
     }
 }
 
