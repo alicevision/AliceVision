@@ -56,7 +56,12 @@ public:
     KDTree(const KDTree&) = delete;
     KDTree& operator=(const KDTree&) = delete;
 
-    using Leaf = std::pair<const unsigned*, const unsigned*>;
+    struct DescriptorAssociation {
+        unsigned int   descriptor_index;
+        unsigned short image_index;
+    };
+
+    using Leaf = std::pair<const DescriptorAssociation*, DescriptorAssociation*>;
 
     unsigned Root() const
     {
@@ -137,11 +142,11 @@ private:
     static_assert(sizeof(Node) == 8, "Invalid size.");
 
     const std::uniform_int_distribution<int> _split_dim_gen;
-    const U8Descriptor *_descriptors;   // Descriptor data
-    const unsigned _dcount;             // Count of descriptors
-    std::vector<BoundingBox> _bb;       // BBs of all nodes; packed linearly to not waste cache lines
-    std::vector<Node> _nodes;           // Link nodes
-    std::vector<unsigned> _list;        // Elements in leaf nodes; consecutive in range [left,right)
+    const U8Descriptor *_descriptors;           // Descriptor data
+    const unsigned _dcount;                     // Count of descriptors
+    std::vector<BoundingBox> _bb;               // BBs of all nodes; packed linearly to not waste cache lines
+    std::vector<Node> _nodes;                   // Link nodes
+    std::vector<DescriptorAssociation> _list;   // Elements in leaf nodes; consecutive in range [left,right)
 
     // Used by Build
     unsigned _leaf_size;
@@ -151,10 +156,10 @@ private:
     void Build(unsigned node_index,  unsigned lelem, unsigned relem);
     unsigned Partition(Node& node, unsigned lelem, unsigned relem);
 
-    std::pair<unsigned*, unsigned*> List(unsigned l, unsigned r) const {
+    std::pair<DescriptorAssociation*, DescriptorAssociation*> List(unsigned l, unsigned r) const {
         return std::make_pair(
-            const_cast<unsigned*>(_list.data() + l),
-            const_cast<unsigned*>(_list.data() + r));
+            const_cast<DescriptorAssociation*>(_list.data() + l),
+            const_cast<DescriptorAssociation*>(_list.data() + r));
     }
 };
 
