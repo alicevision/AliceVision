@@ -176,30 +176,6 @@ public:
   /**
    * @brief Try to localize an image in the database: it queries the database to 
    * retrieve \p numResults matching images and it tries to localize the query image
-   * wrt the retrieve images in order of their score taking the first best result.
-   *
-   * @param[in] siftQueryRegions The input features of the query image
-   * @param[in] imageSize The size of the input image
-   * @param[in] param The parameters for the localization
-   * @param[in] useInputIntrinsics Uses the \p queryIntrinsics as known calibration
-   * @param[in,out] queryIntrinsics Intrinsic parameters of the camera, they are used if the
-   * flag useInputIntrinsics is set to true, otherwise they are estimated from the correspondences.
-   * @param[out] pose The camera pose
-   * @param[out] resection_data the 2D-3D correspondences used to compute the pose
-   * @param[out] associationIDs the ids of the 2D-3D correspondences used to compute the pose
-   * @return true if the localization is successful
-   */
-  bool localizeFirstBestResult(const features::SIFT_Regions &siftQueryRegions,
-                               const std::pair<std::size_t, std::size_t> imageSize,
-                               const Parameters &param,
-                               bool useInputIntrinsics,
-                               cameras::Pinhole_Intrinsic_Radial_K3 &queryIntrinsics,
-                               LocalizationResult &localizationResult,
-                               const std::string& imagePath = std::string());
-
-  /**
-   * @brief Try to localize an image in the database: it queries the database to 
-   * retrieve \p numResults matching images and it tries to localize the query image
    * wrt the retrieve images in order of their score, collecting all the 2d-3d correspondences
    * and performing the resection with all these correspondences
    *
@@ -270,14 +246,6 @@ private:
                       const std::pair<size_t,size_t> & imageSizeJ,     // size of the query image
                       std::vector<matching::IndMatch> & vec_featureMatches,
                       robust::EROBUST_ESTIMATOR estimator = robust::ROBUST_ESTIMATOR_ACRANSAC) const;
-  
-  void getAssociationsFromBuffer(matching::RegionsMatcherT<MatcherT> & matcher,
-                                 const std::pair<std::size_t, std::size_t> imageSize,
-                                 const Parameters &param,
-                                 bool useInputIntrinsics,
-                                 const cameras::Pinhole_Intrinsic_Radial_K3 &queryIntrinsics,
-                                 std::map< std::pair<IndexT, IndexT>, std::size_t > &occurences,
-                                 const std::string& imagePath = std::string()) const;
   
 public:
   // the feature extractor

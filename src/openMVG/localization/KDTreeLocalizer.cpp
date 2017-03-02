@@ -94,47 +94,32 @@ bool KDTreeLocalizer::localize(const std::unique_ptr<features::Regions> &genQuer
                                 LocalizationResult & localizationResult,
                                 const std::string& imagePath)
 {
-  const Parameters *voctreeParam = static_cast<const Parameters *>(param);
-  if(!voctreeParam)
-  {
-    // error!
-    throw std::invalid_argument("The parameters are not in the right format!!");
-  }
+    const Parameters *voctreeParam = static_cast<const Parameters *>(param);
+    if (!voctreeParam)
+    {
+        // error!
+        throw std::invalid_argument("The parameters are not in the right format!!");
+    }
 
 #if USE_SIFT_FLOAT  
-  features::SIFT_Float_Regions *queryRegions = dynamic_cast<features::SIFT_Float_Regions*> (genQueryRegions.get());
+    features::SIFT_Float_Regions *queryRegions = dynamic_cast<features::SIFT_Float_Regions*> (genQueryRegions.get());
 #else
-  features::SIFT_Regions *queryRegions = dynamic_cast<features::SIFT_Regions*> (genQueryRegions.get());
+    features::SIFT_Regions *queryRegions = dynamic_cast<features::SIFT_Regions*> (genQueryRegions.get());
 #endif
-  
-  if(!queryRegions)
-  {
-    // error, the casting did not work
-    throw std::invalid_argument("Error while converting the input Regions. Only SIFT regions are allowed for the voctree localizer.");
-  }
-  
-  switch(voctreeParam->_algorithm)
-  {
-    case Algorithm::FirstBest:
-    return localizeFirstBestResult(*queryRegions,
-                                   imageSize,
-                                   *voctreeParam,
-                                   useInputIntrinsics,
-                                   queryIntrinsics,
-                                   localizationResult,
-                                   imagePath);
-    case Algorithm::BestResult: throw std::invalid_argument("BestResult not yet implemented");
-    case Algorithm::AllResults:
+
+    if (!queryRegions)
+    {
+        // error, the casting did not work
+        throw std::invalid_argument("Error while converting the input Regions. Only SIFT regions are allowed for the voctree localizer.");
+    }
+
     return localizeAllResults(*queryRegions,
-                              imageSize,
-                              *voctreeParam,
-                              useInputIntrinsics,
-                              queryIntrinsics,
-                              localizationResult,
-                              imagePath);
-    case Algorithm::Cluster: throw std::invalid_argument("Cluster not yet implemented");
-    default: throw std::invalid_argument("Unknown algorithm type");
-  }
+        imageSize,
+        *voctreeParam,
+        useInputIntrinsics,
+        queryIntrinsics,
+        localizationResult,
+        imagePath);
 }
 
 bool KDTreeLocalizer::localize(const image::Image<unsigned char> & imageGrey,
@@ -262,228 +247,6 @@ bool KDTreeLocalizer::initDatabase(const std::string & feat_directory)
   _kdtrees = popsift::kdtree::Build(globalDescriptorDB.data(), globalDescriptorAssoc.data(), globalDescriptorDB.size(), 10, _leafSize);
   return true;
 }
-
-bool KDTreeLocalizer::localizeFirstBestResult(const features::SIFT_Regions &queryRegions,
-                                               const std::pair<std::size_t, std::size_t> queryImageSize,
-                                               const Parameters &param,
-                                               bool useInputIntrinsics,
-                                               cameras::Pinhole_Intrinsic_Radial_K3 &queryIntrinsics,
-                                               LocalizationResult &localizationResult,
-                                               const std::string& imagePath /*= std::string()*/)
-{
-  // A. Find the (visually) similar images in the database 
-  OPENMVG_LOG_DEBUG("[database]\tRequest closest images from voctree");
-  // pass the descriptors through the vocabulary tree to get the visual words
-  // associated to each feature
-  std::vector<voctree::Word> requestImageWords = _voctree.quantize(queryRegions.Descriptors());
-  
-  // Request closest images from voctree
-  std::vector<voctree::DocMatch> matchedImages;
-  _database.find(requestImageWords, param._numResults, matchedImages);
-  
-//  // just debugging bla bla
-//  // for each similar image found print score and number of features
-//  for(const voctree::DocMatch & currMatch : matchedImages )
-//  {
-//    // get the corresponding index of the view
-//    const IndexT matchedViewIndex = currMatch.id;
-//    // get the view handle
-//    const std::shared_ptr<sfm::View> matchedView = _sfm_data.views[matchedViewIndex];
-//    OPENMVG_LOG_DEBUG( "[database]\t\t match " << matchedView->s_Img_path 
-//            << " [docid: "<< currMatch.id << "]"
-//            << " with score " << currMatch.score 
-//            << " and it has "  << _regions_per_view[matchedViewIndex]._regions.RegionCount() 
-//            << " features with 3D points");
-//  }
-
-  OPENMVG_LOG_DEBUG("[matching]\tBuilding the matcher");
-  matching::RegionsMatcherT<MatcherT> matcher(queryRegions);
-  
-  sfm::Image_Localizer_Match_Data resectionData;
-  std::vector<pair<IndexT, IndexT> > associationIDs;
-  geometry::Pose3 pose;
- 
-  // B. for each found similar image, try to find the correspondences between the 
-  // query image and the similar image
-  for(const voctree::DocMatch& matchedImage : matchedImages)
-  {
-    // minimum number of points that allows a reliable 3D reconstruction
-    const size_t minNum3DPoints = 5;
-    
-    // the view index of the current matched image
-    const IndexT matchedViewIndex = matchedImage.id;
-    // the handler to the current view
-    const std::shared_ptr<sfm::View> matchedView = _sfm_data.views[matchedViewIndex];
-    
-    // safeguard: we should match the query image with an image that has at least
-    // some 3D points visible --> if it has 0 3d points it is likely that it is an
-    // image of the dataset that was not reconstructed
-    if(_regions_per_view[matchedViewIndex]._regions.RegionCount() < minNum3DPoints)
-    {
-      OPENMVG_LOG_DEBUG("[matching]\tSkipping matching with " << matchedView->s_Img_path << " as it has too few visible 3D points (" << _regions_per_view[matchedViewIndex]._regions.RegionCount() << ")");
-      continue;
-    }
-    else
-    {
-      OPENMVG_LOG_DEBUG("[matching]\tTrying to match the query image with " << matchedView->s_Img_path);
-    }
-    
-    // its associated reconstructed regions
-    const Reconstructed_RegionsT& matchedRegions = _regions_per_view[matchedViewIndex];
-    // its associated intrinsics
-    // this is just ugly!
-    const cameras::IntrinsicBase *matchedIntrinsicsBase = _sfm_data.intrinsics[matchedView->id_intrinsic].get();
-    if ( !isPinhole(matchedIntrinsicsBase->getType()) )
-    {
-      //@fixme maybe better to throw something here
-      OPENMVG_CERR("Only Pinhole cameras are supported!");
-      return false;
-    }
-    const cameras::Pinhole_Intrinsic *matchedIntrinsics = (const cameras::Pinhole_Intrinsic*)(matchedIntrinsicsBase);
-     
-    std::vector<matching::IndMatch> vec_featureMatches;
-    bool matchWorked = robustMatching( matcher, 
-                                      // pass the input intrinsic if they are valid, null otherwise
-                                      (useInputIntrinsics) ? &queryIntrinsics : nullptr,
-                                      matchedRegions._regions,
-                                      matchedIntrinsics,
-                                      param._fDistRatio,
-                                      param._matchingError,
-                                      param._useRobustMatching,
-                                      param._useGuidedMatching,
-                                      queryImageSize,
-                                      std::make_pair(matchedView->ui_width, matchedView->ui_height), 
-                                      vec_featureMatches,
-                                      param._matchingEstimator);
-    if (!matchWorked)
-    {
-      OPENMVG_LOG_DEBUG("[matching]\tMatching with " << matchedView->s_Img_path << " failed! Skipping image");
-      continue;
-    }
-    else
-    {
-      OPENMVG_LOG_DEBUG("[matching]\tFound " << vec_featureMatches.size() << " geometrically validated matches");
-    }
-    assert(vec_featureMatches.size()>0);
-    
-    if(!param._visualDebug.empty() && !imagePath.empty())
-    {
-      namespace bfs = boost::filesystem;
-      const sfm::View *mview = _sfm_data.GetViews().at(matchedViewIndex).get();
-      const std::string queryimage = bfs::path(imagePath).stem().string();
-      const std::string matchedImage = bfs::path(mview->s_Img_path).stem().string();
-      const std::string matchedPath = (bfs::path(_sfm_data.s_root_path) /  bfs::path(mview->s_Img_path)).string();
-      
-      features::saveMatches2SVG(imagePath,
-                      queryImageSize,
-                      queryRegions.GetRegionsPositions(),
-                      matchedPath,
-                      std::make_pair(mview->ui_width, mview->ui_height),
-                      _regions_per_view[matchedViewIndex]._regions.GetRegionsPositions(),
-                      vec_featureMatches,
-                      param._visualDebug + "/" + queryimage + "_" + matchedImage + ".svg"); 
-    }
-    
-    // C. recover the 2D-3D associations from the matches 
-    // Each matched feature in the current similar image is associated to a 3D point,
-    // hence we can recover the 2D-3D associations to estimate the pose
-    // Prepare data for resection
-    resectionData = sfm::Image_Localizer_Match_Data();
-    resectionData.pt2D = Mat2X(2, vec_featureMatches.size());
-    resectionData.pt3D = Mat3X(3, vec_featureMatches.size());
-    associationIDs.clear();
-    associationIDs.reserve(vec_featureMatches.size());
-
-    // Get the 3D points associated to each matched feature
-    std::size_t index = 0;
-    for(const matching::IndMatch& featureMatch : vec_featureMatches)
-    {
-      assert(vec_featureMatches.size()>index);
-      // the ID of the 3D point
-      const IndexT trackId3D = matchedRegions._associated3dPoint[featureMatch._j];
-
-      // prepare data for resectioning
-      resectionData.pt3D.col(index) = _sfm_data.GetLandmarks().at(trackId3D).X;
-
-      const Vec2 feat = queryRegions.GetRegionPosition(featureMatch._i);
-      resectionData.pt2D.col(index) = feat;
-      
-      associationIDs.emplace_back(trackId3D, featureMatch._i);
-
-      ++index;
-    }
-    // estimate the pose
-    // Do the resectioning: compute the camera pose.
-    resectionData.error_max = param._errorMax;
-    OPENMVG_LOG_DEBUG("[poseEstimation]\tEstimating camera pose...");
-    bool bResection = sfm::SfM_Localizer::Localize(queryImageSize,
-                                                   // pass the input intrinsic if they are valid, null otherwise
-                                                   (useInputIntrinsics) ? &queryIntrinsics : nullptr,
-                                                   resectionData,
-                                                   pose,
-                                                   param._resectionEstimator);
-
-    if(!bResection)
-    {
-      OPENMVG_LOG_DEBUG("[poseEstimation]\tResection failed");
-      // try next one
-      continue;
-    }
-    OPENMVG_LOG_DEBUG("[poseEstimation]\tResection SUCCEDED");
-       
-    OPENMVG_LOG_DEBUG("R est\n" << pose.rotation());
-    OPENMVG_LOG_DEBUG("t est\n" << pose.translation());
-
-    // if we didn't use the provided intrinsics, estimate K from the projection
-    // matrix estimated by the localizer and initialize the queryIntrinsics with
-    // it and the image size. This will provide a first guess for the refine function
-    if(!useInputIntrinsics)
-    {
-      // Decompose P matrix
-      Mat3 K_, R_;
-      Vec3 t_;
-      // Decompose the projection matrix  to get K, R and t using 
-      // RQ decomposition
-      KRt_From_P(resectionData.projection_matrix, &K_, &R_, &t_);
-      OPENMVG_LOG_DEBUG("K estimated\n" << K_);
-      queryIntrinsics.setK(K_);
-      queryIntrinsics.setWidth(queryImageSize.first);
-      queryIntrinsics.setHeight(queryImageSize.second);
-    }
-
-    // D. refine the estimated pose
-    OPENMVG_LOG_DEBUG("[poseEstimation]\tRefining estimated pose");
-    bool refineStatus = sfm::SfM_Localizer::RefinePose(&queryIntrinsics, 
-                                                       pose, 
-                                                       resectionData, 
-                                                       true /*b_refine_pose*/, 
-                                                       param._refineIntrinsics /*b_refine_intrinsic*/);
-    if(!refineStatus)
-    {
-      OPENMVG_LOG_DEBUG("[poseEstimation]\tRefine pose failed.");
-      // try next one
-      continue;
-    }
-    
-    {
-      // just temporary code to evaluate the estimated pose @todo remove it
-      const geometry::Pose3 &referencePose = _sfm_data.poses[matchedViewIndex];
-      OPENMVG_LOG_DEBUG("R refined\n" << pose.rotation());
-      OPENMVG_LOG_DEBUG("t refined\n" << pose.translation());
-      OPENMVG_LOG_DEBUG("K refined\n" << queryIntrinsics.K());
-      OPENMVG_LOG_DEBUG("R_gt\n" << referencePose.rotation());
-      OPENMVG_LOG_DEBUG("t_gt\n" << referencePose.translation());
-      OPENMVG_LOG_DEBUG("angular difference: " << R2D(getRotationMagnitude(pose.rotation()*referencePose.rotation().inverse())) << "deg");
-      OPENMVG_LOG_DEBUG("center difference: " << (pose.center()-referencePose.center()).norm());
-      OPENMVG_LOG_DEBUG("err = [err; " << R2D(getRotationMagnitude(pose.rotation()*referencePose.rotation().inverse())) << ", "<< (pose.center()-referencePose.center()).norm() << "];");
-    }
-    localizationResult = LocalizationResult(resectionData, associationIDs, pose, queryIntrinsics, matchedImages, refineStatus);
-    break;
-  }
-  //@todo deal with unsuccesful case...
-  return localizationResult.isValid();
-  
- } 
 
 bool KDTreeLocalizer::localizeAllResults(const features::SIFT_Regions &queryRegions,
                                           const std::pair<std::size_t, std::size_t> queryImageSize,
@@ -842,73 +605,6 @@ void KDTreeLocalizer::getAllAssociations(const features::SIFT_Regions &queryRegi
      ++index;
   }
   
-}
-
-void KDTreeLocalizer::getAssociationsFromBuffer(matching::RegionsMatcherT<MatcherT> & matcher,
-                                                 const std::pair<std::size_t, std::size_t> queryImageSize,
-                                                 const Parameters &param,
-                                                 bool useInputIntrinsics,
-                                                 const cameras::Pinhole_Intrinsic_Radial_K3 &queryIntrinsics,
-                                                 std::map< std::pair<IndexT, IndexT>, std::size_t > &occurences,
-                                                 const std::string& imagePath) const
-{
-  std::size_t frameCounter = 0;
-  // for all the past frames
-  for(const auto& frame : _frameBuffer)
-  {
-    // gather the data
-    const auto &frameReconstructedRegions = frame._regionsWith3D;
-    const auto &frameRegions = frameReconstructedRegions._regions;
-    const auto &frameIntrinsics = frame._locResult.getIntrinsics();
-    const auto frameImageSize = std::make_pair(frameIntrinsics.w(), frameIntrinsics.h());
-    std::vector<matching::IndMatch> vec_featureMatches;
-    
-    // match the query image with the current frame
-    bool matchWorked = robustMatching(matcher, 
-                                      // pass the input intrinsic if they are valid, null otherwise
-                                      (useInputIntrinsics) ? &queryIntrinsics : nullptr,
-                                      frameRegions,
-                                      &frameIntrinsics,
-                                      param._fDistRatio,
-                                      param._matchingError,
-                                      param._useRobustMatching,
-                                      param._useGuidedMatching,
-                                      queryImageSize,
-                                      frameImageSize, 
-                                      vec_featureMatches,
-                                      param._matchingEstimator);
-    if (!matchWorked)
-    {
-      continue;
-    }
-
-    OPENMVG_LOG_DEBUG("[matching]\tFound " << vec_featureMatches.size() << " matches from frame " << frameCounter);
-    assert(vec_featureMatches.size()>0);
-    
-    // recover the 2D-3D associations from the matches 
-    // Each matched feature in the current similar image is associated to a 3D point
-    std::size_t newOccurences = 0;
-    for(const matching::IndMatch& featureMatch : vec_featureMatches)
-    {
-      // the ID of the 3D point
-      const IndexT pt3D_id = frameReconstructedRegions._associated3dPoint[featureMatch._j];
-      const IndexT pt2D_id = featureMatch._i;
-      
-      const auto key = std::make_pair(pt3D_id, pt2D_id);
-      if(occurences.count(key))
-      {
-        occurences[key]++;
-      }
-      else
-      {
-        OPENMVG_LOG_DEBUG("[matching]\tnew association found: [" << pt3D_id << "," << pt2D_id << "]");
-        occurences[key] = 1;
-        ++newOccurences;
-      }
-    }
-    OPENMVG_LOG_DEBUG("[matching]\tFound " << newOccurences << " new associations with the frameBufferMatching");
-    ++frameCounter;
-  }
 }
 
 bool KDTreeLocalizer::robustMatching(matching::RegionsMatcherT<MatcherT> & matcher, 
