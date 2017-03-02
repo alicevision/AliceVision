@@ -27,7 +27,7 @@ inline void assert_fail(const char* expr, const char* file, int line) {
     throw std::logic_error(std::string("KDTree assertion failed: ") + expr + " @ " + file + std::to_string(line));
 }
 
-ALIGNED32 struct U8Descriptor {
+struct ALIGNED32 U8Descriptor {
     union {
         __m256i features[4];
         std::array<unsigned char, 128> ufeatures;
