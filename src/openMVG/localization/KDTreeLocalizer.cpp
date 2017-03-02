@@ -1,4 +1,4 @@
-#include "VoctreeLocalizer.hpp"
+#include "KDTreeLocalizer.hpp"
 #include "rigResection.hpp"
 #include "optimization.hpp"
 
@@ -11,10 +11,6 @@
 #include <openMVG/features/cctag/SIFT_CCTAG_describer.hpp>
 #endif
 #include <nonFree/sift/SIFT_float_describer.hpp>
-#include <openMVG/matching/regions_matcher.hpp>
-#include <openMVG/matching_image_collection/Matcher.hpp>
-#include <openMVG/matching/matcher_kdtree_flann.hpp>
-#include <openMVG/matching_image_collection/F_ACRobust.hpp>
 #include <openMVG/numeric/numeric.h>
 #include <openMVG/robust_estimation/guided_matching.hpp>
 #include <openMVG/logger.hpp>
@@ -30,67 +26,11 @@
 namespace openMVG {
 namespace localization {
 
-std::ostream& operator<<( std::ostream& os, const voctree::Document &doc )	
-{
-  os << "[ ";
-  for( const voctree::Word &w : doc )
-  {
-          os << w << ", ";
-  }
-  os << "];\n";
-  return os;
-}
-
-std::ostream& operator<<(std::ostream& os, VoctreeLocalizer::Algorithm a)
-{
-  switch(a)
-  {
-  case VoctreeLocalizer::Algorithm::FirstBest: os << "FirstBest";
-    break;
-  case VoctreeLocalizer::Algorithm::BestResult: os << "BestResult";
-    break;
-  case VoctreeLocalizer::Algorithm::AllResults: os << "AllResults";
-    break;
-  case VoctreeLocalizer::Algorithm::Cluster: os << "Cluster";
-    break;
-  default: 
-    os << "Unknown algorithm!";
-    throw std::invalid_argument("Unrecognized algorithm!");
-  }
-  return os;
-}
-
-std::istream& operator>>(std::istream &in, VoctreeLocalizer::Algorithm &a)
-{
-  int i;
-  in >> i;
-  a = static_cast<VoctreeLocalizer::Algorithm> (i);
-  return in;
-}	
-
-VoctreeLocalizer::Algorithm VoctreeLocalizer::initFromString(const std::string &value)
-{
-  if(value=="FirstBest")
-    return VoctreeLocalizer::Algorithm::FirstBest;
-  else if(value=="AllResults")
-    return VoctreeLocalizer::Algorithm::AllResults;
-  else if(value=="BestResult")
-    throw std::invalid_argument("BestResult not yet implemented");
-  else if(value=="Cluster")
-    throw std::invalid_argument("Cluster not yet implemented");
-  else
-    throw std::invalid_argument("Unrecognized algorithm \"" + value + "\"!");
-}
-
-
-VoctreeLocalizer::VoctreeLocalizer(const std::string &sfmFilePath,
-                                   const std::string &descriptorsFolder,
-                                   const std::string &vocTreeFilepath,
-                                   const std::string &weightsFilepath
+KDTreeLocalizer::KDTreeLocalizer(const std::string &sfmFilePath, const std::string &descriptorsFolder, size_t leafSize
 #ifdef HAVE_CCTAG
                                    , bool useSIFT_CCTAG
 #endif
-                                  ) : ILocalizer() , _frameBuffer(5)
+                                  ) : _leafSize(leafSize)
 {
   using namespace openMVG::features;
   // init the feature extractor
@@ -143,10 +83,10 @@ VoctreeLocalizer::VoctreeLocalizer(const std::string &sfmFilePath,
   // then we can store only those associated to 3D points
   //? can we use Feature_Provider to load the features and filter them later?
 
-  _isInit = initDatabase(vocTreeFilepath, weightsFilepath, descriptorsFolder);
+  _isInit = initDatabase(descriptorsFolder);
 }
 
-bool VoctreeLocalizer::localize(const std::unique_ptr<features::Regions> &genQueryRegions,
+bool KDTreeLocalizer::localize(const std::unique_ptr<features::Regions> &genQueryRegions,
                                 const std::pair<std::size_t, std::size_t> &imageSize,
                                 const LocalizerParameters *param,
                                 bool useInputIntrinsics,
@@ -197,7 +137,7 @@ bool VoctreeLocalizer::localize(const std::unique_ptr<features::Regions> &genQue
   }
 }
 
-bool VoctreeLocalizer::localize(const image::Image<unsigned char> & imageGrey,
+bool KDTreeLocalizer::localize(const image::Image<unsigned char> & imageGrey,
                                 const LocalizerParameters *param,
                                 bool useInputIntrinsics,
                                 cameras::Pinhole_Intrinsic_Radial_K3 &queryIntrinsics,
@@ -239,91 +179,12 @@ bool VoctreeLocalizer::localize(const image::Image<unsigned char> & imageGrey,
                   imagePath);
 }
 
-//@fixme deprecated.. now inside initDatabase
-
-bool VoctreeLocalizer::loadReconstructionDescriptors(const sfm::SfM_Data & sfm_data,
-                                                     const std::string & feat_directory)
-{
-  C_Progress_display my_progress_bar(sfm_data.GetViews().size(),
-                                     std::cout, "\n- Regions Loading -\n");
-
-  OPENMVG_LOG_DEBUG("Build observations per view");
-  // Build observations per view
-  std::map<IndexT, std::vector<FeatureInImage> > observationsPerView;
-  for(auto landmarkValue : sfm_data.structure)
-  {
-    IndexT trackId = landmarkValue.first;
-    sfm::Landmark& landmark = landmarkValue.second;
-    for(auto obs : landmark.obs)
-    {
-      const IndexT viewId = obs.first;
-      const sfm::Observation& obs2d = obs.second;
-      observationsPerView[viewId].push_back(FeatureInImage(obs2d.id_feat, trackId));
-    }
-  }
-  for(auto featuresInImage : observationsPerView)
-  {
-    std::sort(featuresInImage.second.begin(), featuresInImage.second.end());
-  }
-
-  OPENMVG_LOG_DEBUG("Load Features and Descriptors per view");
-  // Read for each view the corresponding regions and store them
-  for(sfm::Views::const_iterator iter = sfm_data.GetViews().begin();
-          iter != sfm_data.GetViews().end(); ++iter, ++my_progress_bar)
-  {
-    const IndexT id_view = iter->second->id_view;
-    Reconstructed_RegionsT& reconstructedRegion = _regions_per_view[id_view];
-
-    const std::string sImageName = stlplus::create_filespec(sfm_data.s_root_path, iter->second.get()->s_Img_path);
-    const std::string basename = stlplus::basename_part(sImageName);
-    const std::string featFilepath = stlplus::create_filespec(feat_directory, basename, ".feat");
-    const std::string descFilepath = stlplus::create_filespec(feat_directory, basename, ".desc");
-
-    if(!reconstructedRegion._regions.Load(featFilepath, descFilepath))
-    {
-      OPENMVG_CERR("Invalid regions files for the view: " << sImageName);
-      return false;
-    }
-
-    // Filter descriptors to keep only the 3D reconstructed points
-    reconstructedRegion.filterRegions(observationsPerView[id_view]);
-  }
-  return true;
-}
-
 /**
  * @brief Initialize the database...
  */
-bool VoctreeLocalizer::initDatabase(const std::string & vocTreeFilepath,
-                                    const std::string & weightsFilepath,
-                                    const std::string & feat_directory)
+bool KDTreeLocalizer::initDatabase(const std::string & feat_directory)
 {
-
-  bool withWeights = !weightsFilepath.empty();
-
-  // Load vocabulary tree
-  OPENMVG_LOG_DEBUG("Loading vocabulary tree...");
-
-  _voctree.load(vocTreeFilepath);
-  OPENMVG_LOG_DEBUG("tree loaded with " << _voctree.levels() << " levels and " 
-          << _voctree.splits() << " branching factors");
-
-  OPENMVG_LOG_DEBUG("Creating the database...");
-  // Add each object (document) to the database
-  _database = voctree::Database(_voctree.words());
-  if(withWeights)
-  {
-    OPENMVG_LOG_DEBUG("Loading weights...");
-    _database.loadWeights(weightsFilepath);
-  }
-  else
-  {
-    OPENMVG_LOG_DEBUG("No weights specified, skipping...");
-  }
-  
-  // Load the descriptors and the features related to the images
-  // for every image, pass the descriptors through the vocabulary tree and
-  // add its visual words to the database.
+  // Load the descriptors and the features related to the images for every image.
   // then only store the feature and descriptors that have a 3D point associated
   OPENMVG_LOG_DEBUG("Build observations per view");
   C_Progress_display my_progress_bar(_sfm_data.GetViews().size(),
@@ -347,12 +208,15 @@ bool VoctreeLocalizer::initDatabase(const std::string & vocTreeFilepath,
     std::sort(featuresInImage.second.begin(), featuresInImage.second.end());
   }
 
+  std::vector<popsift::kdtree::U8Descriptor> globalDescriptorDB;
+  std::vector<unsigned short> globalDescriptorAssoc;
+
   // Read for each view the corresponding Regions and store them
   for(const auto &iter : _sfm_data.GetViews())
   {
     const std::shared_ptr<sfm::View> currView = iter.second;
     const IndexT id_view = currView->id_view;
-    Reconstructed_RegionsT& currRecoRegions = _regions_per_view[id_view];
+    Reconstructed_RegionsT currRecoRegions;
 
     const std::string sImageName = stlplus::create_filespec(_sfm_data.s_root_path, currView.get()->s_Img_path);
     std::string featFilepath = stlplus::create_filespec(feat_directory, std::to_string(iter.first), ".feat");
@@ -379,20 +243,27 @@ bool VoctreeLocalizer::initDatabase(const std::string & vocTreeFilepath,
       return false;
     }
     
-    voctree::SparseHistogram histo;
-    std::vector<voctree::Word> words = _voctree.quantize(currRecoRegions._regions.Descriptors());
-    voctree::computeSparseHistogram(words, histo);
-    _database.insert(id_view, histo);
-
     // Filter descriptors to keep only the 3D reconstructed points
     currRecoRegions.filterRegions(observationsPerView[id_view]);
+
+    // Insert them into the global DB.
+    if (size_t addCount = currRecoRegions._regions.RegionCount()) {
+        size_t oldCount = globalDescriptorDB.size();
+        globalDescriptorDB.resize(oldCount + addCount);
+        memcpy(&globalDescriptorDB[oldCount], currRecoRegions._regions.DescriptorRawData(), addCount * sizeof(popsift::kdtree::U8Descriptor));
+        globalDescriptorAssoc.insert(globalDescriptorAssoc.end(), addCount, static_cast<unsigned short>(id_view));
+    }
+
     ++my_progress_bar;
   }
-  
+
+  // Grow the forest.
+  assert(globalDescriptorAssoc.size() == globalDescriptorDB.size());
+  _kdtrees = popsift::kdtree::Build(globalDescriptorDB.data(), globalDescriptorAssoc.data(), globalDescriptorDB.size(), 10, _leafSize);
   return true;
 }
 
-bool VoctreeLocalizer::localizeFirstBestResult(const features::SIFT_Regions &queryRegions,
+bool KDTreeLocalizer::localizeFirstBestResult(const features::SIFT_Regions &queryRegions,
                                                const std::pair<std::size_t, std::size_t> queryImageSize,
                                                const Parameters &param,
                                                bool useInputIntrinsics,
@@ -614,7 +485,7 @@ bool VoctreeLocalizer::localizeFirstBestResult(const features::SIFT_Regions &que
   
  } 
 
-bool VoctreeLocalizer::localizeAllResults(const features::SIFT_Regions &queryRegions,
+bool KDTreeLocalizer::localizeAllResults(const features::SIFT_Regions &queryRegions,
                                           const std::pair<std::size_t, std::size_t> queryImageSize,
                                           const Parameters &param,
                                           bool useInputIntrinsics,
@@ -751,7 +622,7 @@ bool VoctreeLocalizer::localizeAllResults(const features::SIFT_Regions &queryReg
   return localizationResult.isValid();
 }
 
-void VoctreeLocalizer::getAllAssociations(const features::SIFT_Regions &queryRegions,
+void KDTreeLocalizer::getAllAssociations(const features::SIFT_Regions &queryRegions,
                                           const std::pair<std::size_t, std::size_t> &imageSize,
                                           const Parameters &param,
                                           bool useInputIntrinsics,
@@ -973,7 +844,7 @@ void VoctreeLocalizer::getAllAssociations(const features::SIFT_Regions &queryReg
   
 }
 
-void VoctreeLocalizer::getAssociationsFromBuffer(matching::RegionsMatcherT<MatcherT> & matcher,
+void KDTreeLocalizer::getAssociationsFromBuffer(matching::RegionsMatcherT<MatcherT> & matcher,
                                                  const std::pair<std::size_t, std::size_t> queryImageSize,
                                                  const Parameters &param,
                                                  bool useInputIntrinsics,
@@ -1040,7 +911,7 @@ void VoctreeLocalizer::getAssociationsFromBuffer(matching::RegionsMatcherT<Match
   }
 }
 
-bool VoctreeLocalizer::robustMatching(matching::RegionsMatcherT<MatcherT> & matcher, 
+bool KDTreeLocalizer::robustMatching(matching::RegionsMatcherT<MatcherT> & matcher, 
                                       const cameras::IntrinsicBase * queryIntrinsicsBase,   // the intrinsics of the image we are using as reference
                                       const Reconstructed_RegionsT::RegionsT & matchedRegions,
                                       const cameras::IntrinsicBase * matchedIntrinsicsBase,
@@ -1164,7 +1035,7 @@ bool VoctreeLocalizer::robustMatching(matching::RegionsMatcherT<MatcherT> & matc
   return true;
 }
 
-bool VoctreeLocalizer::localizeRig(const std::vector<image::Image<unsigned char> > & vec_imageGrey,
+bool KDTreeLocalizer::localizeRig(const std::vector<image::Image<unsigned char> > & vec_imageGrey,
                                    const LocalizerParameters *parameters,
                                    std::vector<cameras::Pinhole_Intrinsic_Radial_K3 > &vec_queryIntrinsics,
                                    const std::vector<geometry::Pose3 > &vec_subPoses,
@@ -1201,7 +1072,7 @@ bool VoctreeLocalizer::localizeRig(const std::vector<image::Image<unsigned char>
 }
 
 
-bool VoctreeLocalizer::localizeRig(const std::vector<std::unique_ptr<features::Regions> > & vec_queryRegions,
+bool KDTreeLocalizer::localizeRig(const std::vector<std::unique_ptr<features::Regions> > & vec_queryRegions,
                                    const std::vector<std::pair<std::size_t, std::size_t> > &vec_imageSize,
                                    const LocalizerParameters *parameters,
                                    std::vector<cameras::Pinhole_Intrinsic_Radial_K3 > &vec_queryIntrinsics,
@@ -1239,7 +1110,7 @@ bool VoctreeLocalizer::localizeRig(const std::vector<std::unique_ptr<features::R
 
 #ifdef HAVE_OPENGV
 
-bool VoctreeLocalizer::localizeRig_opengv(const std::vector<std::unique_ptr<features::Regions> > & vec_queryRegions,
+bool KDTreeLocalizer::localizeRig_opengv(const std::vector<std::unique_ptr<features::Regions> > & vec_queryRegions,
                                           const std::vector<std::pair<std::size_t, std::size_t> > &vec_imageSize,
                                           const LocalizerParameters *parameters,
                                           std::vector<cameras::Pinhole_Intrinsic_Radial_K3 > &vec_queryIntrinsics,
@@ -1254,7 +1125,7 @@ bool VoctreeLocalizer::localizeRig_opengv(const std::vector<std::unique_ptr<feat
   vec_locResults.clear();
   vec_locResults.reserve(numCams);
   
-  const VoctreeLocalizer::Parameters *param = static_cast<const VoctreeLocalizer::Parameters *>(parameters);
+  const KDTreeLocalizer::Parameters *param = static_cast<const KDTreeLocalizer::Parameters *>(parameters);
   if(!param)
   {
     // error!
@@ -1491,7 +1362,7 @@ bool VoctreeLocalizer::localizeRig_opengv(const std::vector<std::unique_ptr<feat
 
 // subposes is n-1 as we consider the first camera as the main camera and the 
 // reference frame of the grid
-bool VoctreeLocalizer::localizeRig_naive(const std::vector<std::unique_ptr<features::Regions> > & vec_queryRegions,
+bool KDTreeLocalizer::localizeRig_naive(const std::vector<std::unique_ptr<features::Regions> > & vec_queryRegions,
                                           const std::vector<std::pair<std::size_t, std::size_t> > &vec_imageSize,
                                           const LocalizerParameters *parameters,
                                           std::vector<cameras::Pinhole_Intrinsic_Radial_K3 > &vec_queryIntrinsics,

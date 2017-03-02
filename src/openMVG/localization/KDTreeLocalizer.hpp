@@ -7,6 +7,7 @@
 
 #pragma once
 
+#include "KDTree.h"
 #include "reconstructed_regions.hpp"
 #include "LocalizationResult.hpp"
 #include "ILocalizer.hpp"
@@ -14,15 +15,9 @@
 #include <openMVG/features/image_describer.hpp>
 #include <openMVG/sfm/sfm_data.hpp>
 #include <openMVG/sfm/pipelines/localization/SfM_Localizer.hpp>
-#include <openMVG/stl/stlMap.hpp>
-#include <openMVG/voctree/vocabulary_tree.hpp>
-#include <openMVG/voctree/database.hpp>
-#include <openMVG/matching/matcher_kdtree_flann.hpp>
 #include <openMVG/matching/regions_matcher.hpp>
-#include <flann/algorithms/dist.h>
 
 #define USE_SIFT_FLOAT 0
-
 
 namespace openMVG {
 namespace localization {
@@ -37,11 +32,6 @@ typedef Reconstructed_Regions<features::SIOPointFeature, unsigned char, 128> Rec
 
 class KDTreeLocalizer : public ILocalizer
 {
-
-public:
-  enum Algorithm : int { FirstBest=0, BestResult=1, AllResults=2, Cluster=3};
-  static Algorithm initFromString(const std::string &value);
-  
 public:
   struct Parameters : LocalizerParameters
   {
@@ -49,7 +39,7 @@ public:
     Parameters() : LocalizerParameters(), 
       _useGuidedMatching(false),
       _useRobustMatching(true),
-      _algorithm(Algorithm::AllResults),
+      //_algorithm(Algorithm::AllResults),
       _numResults(4),
       _maxResults(10),
       _numCommonViews(3),
@@ -63,8 +53,6 @@ public:
     bool _useGuidedMatching;
     /// Enable/disable robust feature matching (geometric validation)
     bool _useRobustMatching;
-    /// algorithm to use for localization
-    Algorithm _algorithm;
     /// number of best matching images to retrieve from the database
     std::size_t _numResults;
     /// for algorithm AllResults, it stops the image matching when this number of matched images is reached
@@ -98,9 +86,8 @@ public:
    * It enable the use of combined SIFT and CCTAG features.
    */
   KDTreeLocalizer(const std::string &sfmFilePath,
-                   const std::string &descriptorsFolder,
-                   const std::string &vocTreeFilepath,
-                   const std::string &weightsFilepath
+                  const std::string &descriptorsFolder,
+                  size_t leafSize
 #ifdef HAVE_CCTAG
                    , bool useSIFT_CCTAG
 #endif
@@ -262,29 +249,15 @@ public:
                           const std::string& imagePath = std::string()) const;
 
 private:
-  /**
-   * @brief Load the vocabulary tree.
+    size_t _leafSize;
+    std::vector<popsift::kdtree::KDTreePtr> _kdtrees;
 
-   * @param[in] vocTreeFilepath The path to the directory containing the features 
-   * of the scene (.desc and .feat files).
-   * @param[in] weightsFilepath weightsFilepath Optional path to the weights of the vocabulary 
-   * tree (usually a .weights file), if not provided the weights will be recomputed 
-   * when all the documents are added.
-   * @param[in] feat_directory The path to the directory containing the features 
-   * of the scene (.desc and .feat files).
+  /**
+   * @brief Load descriptors and build KD-tree(s) with descriptor->image associations.
    * @return true if everything went ok
    */
-  bool initDatabase(const std::string & vocTreeFilepath,
-                                    const std::string & weightsFilepath,
-                                    const std::string & feat_directory);
+  bool initDatabase(const std::string & feat_directory);
 
-#if USE_SIFT_FLOAT
-  typedef flann::L2<float> MetricT;
-  typedef matching::ArrayMatcher_Kdtree_Flann<float, MetricT> MatcherT;
-#else
-  typedef flann::L2<unsigned char> MetricT;
-  typedef matching::ArrayMatcher_Kdtree_Flann<unsigned char, MetricT> MatcherT;
-#endif
   bool robustMatching(matching::RegionsMatcherT<MatcherT> & matcher, 
                       const cameras::IntrinsicBase * queryIntrinsics,// the intrinsics of the image we are using as reference
                       const Reconstructed_RegionsT::RegionsT & regionsToMatch,
@@ -306,37 +279,12 @@ private:
                                  std::map< std::pair<IndexT, IndexT>, std::size_t > &occurences,
                                  const std::string& imagePath = std::string()) const;
   
-  /**
-   * @brief Load all the Descriptors who have contributed to the reconstruction.
-   * deprecated.. now inside initDatabase
-   */
-  bool loadReconstructionDescriptors(
-    const sfm::SfM_Data & sfm_data,
-    const std::string & feat_directory);
-  
-  
 public:
-  
-  // for each view index, it contains the features and descriptors that have an
-  // associated 3D point
-  Hash_Map<IndexT, Reconstructed_RegionsT > _regions_per_view;
-  
   // the feature extractor
   // @fixme do we want a generic image describer?
 //  features::SIFT_float_describer _image_describer;
   features::Image_describer* _image_describer;
 };
-
-/**
- * @brief Print the name of the algorithm
- */
-std::ostream& operator<<(std::ostream& os, KDTreeLocalizer::Algorithm a);
-
-/**
- * @brief Get the type of algorithm from an integer
- */
-std::istream& operator>>(std::istream &in, KDTreeLocalizer::Algorithm &a);
-
 
 } // localization
 } // openMVG
