@@ -10,6 +10,14 @@
 namespace popsift {
 namespace kdtree {
 
+/////////////////////////////////////////////////////////////////////////////
+
+// 1-NN query across all images /////////////////////////////////////////////
+
+std::vector<std::pair<unsigned, unsigned>> Query(const std::vector<KDTreePtr>& trees, const U8Descriptor& descriptor, size_t max_descriptors);
+
+// 2-NN query ///////////////////////////////////////////////////////////////
+
 //! Used by 2NN queries.
 struct Q2NNAccumulator
 {
