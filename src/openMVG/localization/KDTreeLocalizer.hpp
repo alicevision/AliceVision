@@ -227,6 +227,7 @@ public:
 private:
     size_t _leafSize;
     std::vector<popsift::kdtree::KDTreePtr> _kdtrees;
+    Hash_Map<IndexT, Reconstructed_RegionsT > _regions_per_view;
 
   /**
    * @brief Load descriptors and build KD-tree(s) with descriptor->image associations.

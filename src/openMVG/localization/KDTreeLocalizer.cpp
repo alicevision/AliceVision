@@ -201,7 +201,7 @@ bool KDTreeLocalizer::initDatabase(const std::string & feat_directory)
   {
     const std::shared_ptr<sfm::View> currView = iter.second;
     const IndexT id_view = currView->id_view;
-    Reconstructed_RegionsT currRecoRegions;
+    Reconstructed_RegionsT& currRecoRegions = _regions_per_view[id_view];
 
     const std::string sImageName = stlplus::create_filespec(_sfm_data.s_root_path, currView.get()->s_Img_path);
     std::string featFilepath = stlplus::create_filespec(feat_directory, std::to_string(iter.first), ".feat");
