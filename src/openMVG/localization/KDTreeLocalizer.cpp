@@ -373,14 +373,6 @@ bool KDTreeLocalizer::localizeAllResults(const features::SIFT_Regions &queryRegi
                 << " min = " << std::sqrt(sqrErrors.minCoeff())
                 << " max = " << std::sqrt(sqrErrors.maxCoeff()));
   }
-  
-    
-  if(param._useFrameBufferMatching)
-  {
-    // add everything to the buffer
-    FrameData fi(localizationResult, queryRegions);
-    _frameBuffer.push_back(fi);
-  }
 
   return localizationResult.isValid();
 }
@@ -396,14 +388,9 @@ void KDTreeLocalizer::getAllAssociations(const features::SIFT_Regions &queryRegi
                                           std::vector<voctree::DocMatch>& matchedImages,
                                           const std::string& imagePath) const
 {
-  // A. Find the (visually) similar images in the database 
-  // pass the descriptors through the vocabulary tree to get the visual words
-  // associated to each feature
-  OPENMVG_LOG_DEBUG("[database]\tRequest closest images from voctree");
-  std::vector<voctree::Word> requestImageWords = _voctree.quantize(queryRegions.Descriptors());
-  
-  // Request closest images from voctree
-  _database.find(requestImageWords, (param._numResults==0) ? (_database.size()) : (param._numResults) , matchedImages);
+    // A. 1-ANN search in the global db for matches.
+    // matches[i] contains descriptor index and image index for the ith input descriptor.
+    auto matches
 
 //  // just debugging bla bla
 //  // for each similar image found print score and number of features
@@ -555,13 +542,6 @@ void KDTreeLocalizer::getAllAssociations(const features::SIFT_Regions &queryRegi
       OPENMVG_LOG_DEBUG("[matching]\tgot enough point from " << param._maxResults << " images");
       break;
     }
-  }
-  
-  if(param._useFrameBufferMatching)
-  {
-    OPENMVG_LOG_DEBUG("[matching]\tUsing frameBuffer matching: matching with the past " 
-            << param._bufferSize << " frames" );
-    getAssociationsFromBuffer(matcher, imageSize, param, useInputIntrinsics, queryIntrinsics, occurences);
   }
   
   const std::size_t numCollectedPts = occurences.size();
