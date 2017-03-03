@@ -176,12 +176,13 @@ private:
 
 using KDTreePtr = std::unique_ptr<KDTree>;
 
-std::vector<KDTreePtr> Build(const U8Descriptor* descriptors, const unsigned short* image_indexes, size_t descriptor_count, size_t tree_count, unsigned leaf_size);
-std::vector<std::pair<unsigned, unsigned>> Query(const std::vector<KDTreePtr>& trees, const U8Descriptor& descriptor, size_t max_descriptors);
-std::pair<unsigned, unsigned> Query2NN(const std::vector<KDTreePtr>& trees, const U8Descriptor& descriptor, size_t max_descriptors);
+std::vector<KDTreePtr>
+Build(const U8Descriptor* descriptors, const unsigned short* image_indexes,
+    size_t descriptor_count, size_t tree_count, unsigned leaf_size);
 
-/////////////////////////////////////////////////////////////////////////////
-
+std::vector<KDTree::DescriptorAssociation>
+Query(const std::vector<KDTreePtr>& trees, size_t max_candidates,
+    const U8Descriptor* descriptors, size_t descriptor_count);
 
 }   // kdtree
 }   // popsift
