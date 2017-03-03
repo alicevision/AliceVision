@@ -90,7 +90,7 @@ void NNQuery::ProcessLeaf(const KDTree& tree, unsigned node)
 
     _found_candidates += list.second - list.first;
     for (; list.first != list.second; ++list.first) {
-        unsigned d = DISTANCE_CHECK(_descriptor, tree.Descriptors()[list.first->descriptor_index]);
+        unsigned d = DISTANCE_CHECK(_descriptor, tree.Descriptors()[list.first->global_index]);
         if (d < _best_distance) {
             _best_distance = d;
             _result = *list.first;

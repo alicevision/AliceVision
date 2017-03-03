@@ -65,9 +65,12 @@ public:
     KDTree& operator=(const KDTree&) = delete;
 
     struct DescriptorAssociation {
-        unsigned int   descriptor_index;
-        unsigned short image_index;
+        unsigned int   global_index;        // index in the global kdtree DB
+        unsigned short image_index;         // image it belongs to
+        unsigned short local_index;         // index within image
     };
+
+    static_assert(sizeof(DescriptorAssociation) == 8, "Structure not packed.");
 
     using Leaf = std::pair<const DescriptorAssociation*, DescriptorAssociation*>;
 
