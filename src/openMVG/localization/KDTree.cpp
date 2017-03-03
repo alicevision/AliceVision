@@ -59,7 +59,9 @@ KDTreePtr KDTree::Build(const U8Descriptor* descriptors, const unsigned short* i
     return ret;
 }
 
-std::vector<KDTreePtr> Build(const U8Descriptor* descriptors, const unsigned short* image_indexes, size_t descriptor_count, size_t tree_count, unsigned leaf_size)
+std::vector<KDTreePtr>
+Build(const U8Descriptor* descriptors, const unsigned short* image_indexes,
+    size_t descriptor_count, size_t tree_count, unsigned leaf_size)
 {
     std::vector<KDTreePtr> ret(tree_count);
 
