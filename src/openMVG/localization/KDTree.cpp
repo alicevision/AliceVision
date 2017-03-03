@@ -24,8 +24,8 @@ static void Validate(const KDTree& kdt, unsigned n, size_t& sum)
         auto range = kdt.List(n);
         POPSIFT_KDASSERT(range.first < range.second);
         for (; range.first != range.second; ++range.first) {
-            POPSIFT_KDASSERT(range.first->descriptor_index < kdt.DescriptorCount());
-            sum += range.first->descriptor_index;
+            POPSIFT_KDASSERT(range.first->global_index < kdt.DescriptorCount());
+            sum += range.first->global_index;
         }
     }
     else {
@@ -73,6 +73,7 @@ Build(const U8Descriptor* descriptors, const unsigned short* image_indexes,
 
 /////////////////////////////////////////////////////////////////////////////
 
+// @note image_indexes need not be sorted, but indexes and descriptors for a single image must be contiguous.
 KDTree::KDTree(const U8Descriptor* descriptors, const unsigned short* image_indexes, size_t dcount) :
     _split_dim_gen(0, SPLIT_DIMENSION_COUNT-1),
     _descriptors(descriptors),
@@ -80,8 +81,13 @@ KDTree::KDTree(const U8Descriptor* descriptors, const unsigned short* image_inde
     _list(dcount)
 {
     POPSIFT_KDASSERT(dcount < std::numeric_limits<unsigned>::max() / 2);
-    for (unsigned i = 0; i < _dcount; ++i)
-        _list[i] = DescriptorAssociation{ i, image_indexes[i] };
+
+    size_t lindex_base;
+    for (unsigned i = 0; i < _dcount; ++i) {
+        if (i == 0 || image_indexes[i] != image_indexes[i - 1])
+            lindex_base = i;
+        _list[i] = DescriptorAssociation{ i, image_indexes[i], static_cast<unsigned short>(i - lindex_base) };
+    }
 }
 
 // XXX: TODO: Partition() has a static random_engine.  We should explicitly pass it to build.
@@ -163,9 +169,9 @@ unsigned KDTree::Partition(Node& node, unsigned lelem, unsigned relem)
     for (int retry_count = 0; retry_count < 16; ++retry_count) {
         const auto mm = std::minmax_element(list.first, list.second,
             [&](const DescriptorAssociation& a, const DescriptorAssociation& b) {
-            return proj(a.descriptor_index) < proj(b.descriptor_index);
+            return proj(a.global_index) < proj(b.global_index);
         });
-        if (proj(mm.second->descriptor_index) == proj(mm.first->descriptor_index))
+        if (proj(mm.second->global_index) == proj(mm.first->global_index))
             goto fail;
 #if 0
         {
@@ -177,7 +183,7 @@ unsigned KDTree::Partition(Node& node, unsigned lelem, unsigned relem)
 #endif
 
         const DescriptorAssociation* mit = std::partition(list.first, list.second,
-            [&, this](const DescriptorAssociation& da) { return proj(da.descriptor_index) < split_val; });
+            [&, this](const DescriptorAssociation& da) { return proj(da.global_index) < split_val; });
         if (mit == list.first || mit == list.second)
             goto fail;
 
@@ -201,8 +207,8 @@ BoundingBox KDTree::GetBoundingBox(const U8Descriptor* descriptors, const Descri
     }
     for (size_t i = 0; i < count; ++i)
         for (int j = 0; j < 4; ++j) {
-            min.features[j] = _mm256_min_epu8(min.features[j], descriptors[dassoc[i].descriptor_index].features[j]);
-            max.features[j] = _mm256_max_epu8(max.features[j], descriptors[dassoc[i].descriptor_index].features[j]);
+            min.features[j] = _mm256_min_epu8(min.features[j], descriptors[dassoc[i].global_index].features[j]);
+            max.features[j] = _mm256_max_epu8(max.features[j], descriptors[dassoc[i].global_index].features[j]);
         }
 #else
     for (int x = 0; x < 128; x++) {
@@ -211,8 +217,8 @@ BoundingBox KDTree::GetBoundingBox(const U8Descriptor* descriptors, const Descri
     }
     for (size_t i = 0; i < count; ++i)
         for (int j = 0; j < 128; ++j) {
-            min.ufeatures[j] = std::min(min.ufeatures[j], descriptors[dassoc[i].descriptor_index].ufeatures[j]);
-            max.ufeatures[j] = std::max(max.ufeatures[j], descriptors[dassoc[i].descriptor_index].ufeatures[j]);
+            min.ufeatures[j] = std::min(min.ufeatures[j], descriptors[dassoc[i].global_index].ufeatures[j]);
+            max.ufeatures[j] = std::max(max.ufeatures[j], descriptors[dassoc[i].global_index].ufeatures[j]);
         }
 #endif
     return BoundingBox{ min, max };
@@ -223,19 +229,19 @@ KDTree::GetSplitDimensions(const U8Descriptor* descriptors, const DescriptorAsso
 {
     using namespace Eigen;
 
-    using U8Point = Map<Array<unsigned char, 1, 128>, Aligned32>;
+    using U8Point = Map<Array<unsigned char, 1, 128>>;
     using DPoint = Array<double, 1, 128>;
 
     DPoint mean = DPoint::Zero();
     for (size_t i = 0; i < count; ++i) {
-        unsigned char* p = const_cast<unsigned char*>(descriptors[dassoc[i].descriptor_index].ufeatures.data());
+        unsigned char* p = const_cast<unsigned char*>(descriptors[dassoc[i].global_index].ufeatures.data());
         mean += U8Point(p).cast<double>();
     }
     mean /= count;
 
     DPoint var = DPoint::Zero();
     for (size_t i = 0; i < count; ++i) {
-        unsigned char* p = const_cast<unsigned char*>(descriptors[dassoc[i].descriptor_index].ufeatures.data());
+        unsigned char* p = const_cast<unsigned char*>(descriptors[dassoc[i].global_index].ufeatures.data());
         auto d = U8Point(p).cast<double>() - mean;
         var += d*d;
     }
