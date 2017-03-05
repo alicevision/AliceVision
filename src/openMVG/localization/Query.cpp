@@ -128,8 +128,7 @@ void Q2NNquery::ProcessLeaf(const KDTree& tree, unsigned node)
     }
 }
 
-std::vector<std::pair<DescriptorAssociation, DescriptorAssociation>>
-Query2NN(const std::vector<KDTreePtr>& trees, size_t max_candidates,
+QueryResult Query2NN(const std::vector<KDTreePtr>& trees, size_t max_candidates,
     const U8Descriptor* queries, size_t query_count)
 {
     // Sanity check: all trees must be built with the same descriptors.
@@ -138,11 +137,11 @@ Query2NN(const std::vector<KDTreePtr>& trees, size_t max_candidates,
         for (const auto& t : trees) POPSIFT_KDASSERT(t->Descriptors() == tree_descriptors);
     }
 
-    std::vector<std::pair<DescriptorAssociation, DescriptorAssociation>> result(query_count);
+    QueryResult result(query_count);
     tbb::parallel_for(size_t(0), query_count, [&](size_t i) {
         Q2NNquery q(trees, queries[i], max_candidates);
         auto r = q.Run();
-        result[i] = std::make_pair(*r.first, *r.second);
+        result[i] = std::make_tuple(i, *r.first, *r.second);
     });
     return result;
 }

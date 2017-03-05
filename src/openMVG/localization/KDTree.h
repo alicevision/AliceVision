@@ -7,6 +7,7 @@
 #include <string>
 #include <memory>
 #include <limits>
+#include <tuple>
 #undef min
 #undef max
 
@@ -184,8 +185,9 @@ std::vector<KDTreePtr>
 Build(const U8Descriptor* descriptors, const unsigned short* image_indexes,
     size_t descriptor_count, size_t tree_count, unsigned leaf_size);
 
-std::vector<std::pair<DescriptorAssociation, DescriptorAssociation>>
-Query2NN(const std::vector<KDTreePtr>& trees, size_t max_candidates,
+// The tuple contains query descriptor index and the 2NNs
+using QueryResult = std::vector<std::tuple<unsigned, DescriptorAssociation, DescriptorAssociation>>;
+QueryResult Query2NN(const std::vector<KDTreePtr>& trees, size_t max_candidates,
     const U8Descriptor* queries, size_t query_count);
 
 }   // kdtree
