@@ -62,6 +62,8 @@ struct DescriptorAssociation {
     unsigned short local_index;         // index within image
 };
 
+static_assert(sizeof(DescriptorAssociation) == 8, "Structure not packed.");
+
 //! KDTree.  Node 0 is the root node.
 class KDTree {
 public:
@@ -70,8 +72,6 @@ public:
     KDTree(const KDTree&) = delete;
     KDTree& operator=(const KDTree&) = delete;
 
-
-    static_assert(sizeof(DescriptorAssociation) == 8, "Structure not packed.");
 
     using Leaf = std::pair<const DescriptorAssociation*, DescriptorAssociation*>;
 
