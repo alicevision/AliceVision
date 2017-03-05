@@ -186,7 +186,7 @@ Build(const U8Descriptor* descriptors, const unsigned short* image_indexes,
 
 std::vector<std::pair<DescriptorAssociation, DescriptorAssociation>>
 Query2NN(const std::vector<KDTreePtr>& trees, size_t max_candidates,
-    const U8Descriptor* descriptors, size_t descriptor_count);
+    const U8Descriptor* queries, size_t query_count);
 
 }   // kdtree
 }   // popsift
