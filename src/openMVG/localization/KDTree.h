@@ -56,6 +56,12 @@ BoundingBox Union(const BoundingBox& a, const BoundingBox& b);
 constexpr int SPLIT_DIMENSION_COUNT = 5;    // Count of dimensions with highest variance to randomly split against
 using SplitDimensions = std::array<unsigned char, SPLIT_DIMENSION_COUNT>;
 
+struct DescriptorAssociation {
+    unsigned int   global_index;        // index in the global kdtree DB
+    unsigned short image_index;         // image it belongs to
+    unsigned short local_index;         // index within image
+};
+
 //! KDTree.  Node 0 is the root node.
 class KDTree {
 public:
@@ -64,11 +70,6 @@ public:
     KDTree(const KDTree&) = delete;
     KDTree& operator=(const KDTree&) = delete;
 
-    struct DescriptorAssociation {
-        unsigned int   global_index;        // index in the global kdtree DB
-        unsigned short image_index;         // image it belongs to
-        unsigned short local_index;         // index within image
-    };
 
     static_assert(sizeof(DescriptorAssociation) == 8, "Structure not packed.");
 
@@ -183,8 +184,8 @@ std::vector<KDTreePtr>
 Build(const U8Descriptor* descriptors, const unsigned short* image_indexes,
     size_t descriptor_count, size_t tree_count, unsigned leaf_size);
 
-std::vector<KDTree::DescriptorAssociation>
-Query(const std::vector<KDTreePtr>& trees, size_t max_candidates,
+std::vector<std::pair<DescriptorAssociation, DescriptorAssociation>>
+Query2NN(const std::vector<KDTreePtr>& trees, size_t max_candidates,
     const U8Descriptor* descriptors, size_t descriptor_count);
 
 }   // kdtree
