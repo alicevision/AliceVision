@@ -185,6 +185,35 @@ std::vector<KDTreePtr>
 Build(const U8Descriptor* descriptors, const unsigned short* image_indexes,
     size_t descriptor_count, size_t tree_count, unsigned leaf_size);
 
+/////////////////////////////////////////////////////////////////////////////
+
+//! Used by 2NN queries.
+struct Q2NNAccumulator
+{
+    std::array<const DescriptorAssociation*, 2> index = { nullptr, nullptr };
+    std::array<unsigned, 2> distance = { -1U, -1U };
+
+    void Update(unsigned d, const DescriptorAssociation* i)
+    {
+        if (d < distance[0]) {
+            distance[1] = distance[0]; distance[0] = d;
+            index[1] = index[0]; index[0] = i;
+        }
+        else if (d != distance[0] && d < distance[1]) {
+            distance[1] = d;
+            index[1] = i;
+        }
+        Validate();
+    }
+
+private:
+    void Validate() const
+    {
+        POPSIFT_KDASSERT(distance[0] < distance[1]);
+        POPSIFT_KDASSERT(index[0] && index[0] != index[1]);
+    }
+};
+
 // The tuple contains query descriptor index and the 2NNs
 using QueryResult = std::vector<std::tuple<unsigned, DescriptorAssociation, DescriptorAssociation>>;
 QueryResult Query2NN(const std::vector<KDTreePtr>& trees, size_t max_candidates,
