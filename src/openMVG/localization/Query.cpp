@@ -12,33 +12,6 @@ namespace kdtree {
 
 // 2-NN query ///////////////////////////////////////////////////////////////
 
-//! Used by 2NN queries.
-struct Q2NNAccumulator
-{
-    std::array<const DescriptorAssociation*, 2> index = { nullptr, nullptr };
-    std::array<unsigned, 2> distance = { -1U, -1U };
-
-    void Update(unsigned d, const DescriptorAssociation* i)
-    {
-        if (d < distance[0]) {
-            distance[1] = distance[0]; distance[0] = d;
-            index[1] = index[0]; index[0] = i;
-        }
-        else if (d != distance[0] && d < distance[1]) {
-            distance[1] = d;
-            index[1] = i;
-        }
-        Validate();
-    }
-
-private:
-    void Validate() const
-    {
-        POPSIFT_KDASSERT(distance[0] < distance[1]);
-        POPSIFT_KDASSERT(index[0] && index[0] != index[1]);
-    }
-};
-
 class Q2NNquery
 {
     struct PQEntry {
