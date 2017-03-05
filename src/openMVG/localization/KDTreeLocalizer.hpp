@@ -235,18 +235,28 @@ private:
    */
   bool initDatabase(const std::string & feat_directory);
 
-  bool robustMatching(matching::RegionsMatcherT<MatcherT> & matcher, 
-                      const cameras::IntrinsicBase * queryIntrinsics,// the intrinsics of the image we are using as reference
-                      const Reconstructed_RegionsT::RegionsT & regionsToMatch,
-                      const cameras::IntrinsicBase * matchedIntrinsics,
-                      const float fDistRatio,
-                      const double matchingError,
-                      const bool robustMatching,
-                      const bool b_guided_matching,
-                      const std::pair<size_t,size_t> & imageSizeI,     // size of the image in matcher  
-                      const std::pair<size_t,size_t> & imageSizeJ,     // size of the query image
-                      std::vector<matching::IndMatch> & vec_featureMatches,
-                      robust::EROBUST_ESTIMATOR estimator = robust::ROBUST_ESTIMATOR_ACRANSAC) const;
+  bool Filter2NN(
+      const Parameters& param,
+      const features::SIFT_Regions &queryRegions,
+      popsift::kdtree::QueryResult::iterator& itNNBegin, 
+      popsift::kdtree::QueryResult::iterator& itNNEnd,
+      const Reconstructed_RegionsT::RegionsT& regionsToMatch) const;
+
+  bool robustMatching(
+      const Parameters& param,
+      const features::SIFT_Regions &queryRegions,
+      popsift::kdtree::QueryResult::iterator itNNBegin,
+      popsift::kdtree::QueryResult::iterator itNNEbd,
+      const cameras::IntrinsicBase * queryIntrinsics,// the intrinsics of the image we are using as reference
+      const Reconstructed_RegionsT::RegionsT & regionsToMatch,
+      const cameras::IntrinsicBase * matchedIntrinsics,
+      const double matchingError,
+      const bool robustMatching,
+      const bool b_guided_matching,
+      const std::pair<size_t,size_t> & imageSizeI,     // size of the image in matcher  
+      const std::pair<size_t,size_t> & imageSizeJ,     // size of the query image
+      std::vector<matching::IndMatch> & vec_featureMatches,
+      robust::EROBUST_ESTIMATOR estimator = robust::ROBUST_ESTIMATOR_ACRANSAC) const;
   
 public:
   // the feature extractor
