@@ -10,12 +10,6 @@
 namespace popsift {
 namespace kdtree {
 
-/////////////////////////////////////////////////////////////////////////////
-
-// 1-NN query across all images /////////////////////////////////////////////
-
-std::vector<std::pair<unsigned, unsigned>> Query(const std::vector<KDTreePtr>& trees, const U8Descriptor& descriptor, size_t max_descriptors);
-
 // 2-NN query ///////////////////////////////////////////////////////////////
 
 //! Used by 2NN queries.
@@ -26,8 +20,8 @@ struct Q2NNAccumulator
 
     Q2NNAccumulator()
     {
-        distance[0] = distance[1] = std::numeric_limits<unsigned>::max();
-        index[0] = index[1] = -1;
+        distance[0] = distance[1] = -1U;
+        index[0] = index[1] = -1U;
     }
 
     void Update(unsigned d, unsigned i)
@@ -43,62 +37,13 @@ struct Q2NNAccumulator
         Validate();
     }
 
-    Q2NNAccumulator Combine(const Q2NNAccumulator& other) const;
-
+private:
     void Validate() const
     {
         POPSIFT_KDASSERT(distance[0] < distance[1]);
         POPSIFT_KDASSERT(index[0] != index[1]);
     }
 };
-
-Q2NNAccumulator Q2NNAccumulator::Combine(const Q2NNAccumulator& other) const
-{
-    Q2NNAccumulator r;
-
-    if (distance[0] == other.distance[0]) {
-        r.distance[0] = distance[0];
-        r.index[0] = index[0];
-
-        if (distance[1] < other.distance[1]) {
-            r.distance[1] = distance[1];
-            r.index[1] = index[1];
-        }
-        else {
-            r.distance[1] = other.distance[1];
-            r.index[1] = other.index[1];
-        }
-    }
-    else if (distance[0] < other.distance[0]) {
-        r.distance[0] = distance[0];
-        r.index[0] = index[0];
-
-        if (other.distance[0] < distance[1]) {
-            r.distance[1] = other.distance[0];
-            r.index[1] = other.index[0];
-        }
-        else {
-            r.distance[1] = distance[1];
-            r.index[1] = index[1];
-        }
-    }
-    else {
-        r.distance[0] = other.distance[0];
-        r.index[0] = other.index[0];
-
-        if (distance[0] < other.distance[1]) {
-            r.distance[1] = distance[0];
-            r.index[1] = index[0];
-        }
-        else {
-            r.distance[1] = other.distance[1];
-            r.index[1] = other.index[1];
-        }
-    }
-
-    r.Validate();
-    return r;
-}
 
 class Q2NNpq    // std::priority_queue doesn't support preallocation
 {
@@ -227,8 +172,8 @@ void Q2NNquery::ProcessLeaf(const KDTree& tree, unsigned node)
 
     _found_descriptors += list.second - list.first;
     for (; list.first != list.second; ++list.first) {
-        unsigned d = DISTANCE_CHECK(_descriptor, tree.Descriptors()[list.first->descriptor_index]);
-        _result.Update(d, list.first->descriptor_index);
+        unsigned d = DISTANCE_CHECK(_descriptor, tree.Descriptors()[list.first->global_index]);
+        _result.Update(d, list.first->global_index);
     }
 }
 
