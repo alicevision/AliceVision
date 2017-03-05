@@ -407,6 +407,196 @@ struct Q2NNAccumulator
     }
 };
 
+void KDTreeLocalizer::getAllAssociations(const features::SIFT_Regions &queryRegions,
+                                          const std::pair<std::size_t, std::size_t> &imageSize,
+                                          const Parameters &param,
+                                          bool useInputIntrinsics,
+                                          const cameras::Pinhole_Intrinsic_Radial_K3 &queryIntrinsics,
+                                          std::map< std::pair<IndexT, IndexT>, std::size_t > &occurences,
+                                          Mat &pt2D,
+                                          Mat &pt3D,
+                                          std::vector<voctree::DocMatch>& matchedImages,
+                                          const std::string& imagePath) const
+{
+    using std::get;
+    static constexpr size_t MAX_SEARCH_CANDIDATES = 1000;  // ~60% 1NN and ~33% 2NN accuracy on SIFT1M dataset
+
+    // A. 2-ANN search in the global db for matches.
+    auto descriptorMatches = popsift::kdtree::Query2NN(_kdtrees, MAX_SEARCH_CANDIDATES,
+        static_cast<const popsift::kdtree::U8Descriptor*>(queryRegions.DescriptorRawData()),
+        queryRegions.RegionCount());
+
+    // Group matches by DB image id on 1-NN.
+    std::sort(descriptorMatches.begin(), descriptorMatches.end(), [](
+        const popsift::kdtree::QueryResult::value_type& a1,
+        const popsift::kdtree::QueryResult::value_type& a2)
+    {
+        return get<1>(a1).image_index < get<1>(a2).image_index;
+    });
+
+    // B. for each found similar image, try to find the correspondences between the 
+    // query image adn the similar image
+    // stop when param._maxResults successful matches have been found
+    std::size_t goodMatches = 0;
+    popsift::kdtree::QueryResult::iterator
+        itMatchingImageBegin = descriptorMatches.begin(), itMatchingImageEnd;
+
+    // Iterate over groups of matches within the same image.
+    for (; itMatchingImageBegin != descriptorMatches.end(); itMatchingImageBegin = itMatchingImageEnd) {
+        // [itMatchingImageBegin,itMatchingImageEnd) are now all matches for the same DB image.
+        const std::shared_ptr<sfm::View> matchedView = _sfm_data.views.at(get<1>(*itMatchingImageBegin).image_index);
+        const Reconstructed_RegionsT& matchedRegions = _regions_per_view.at(get<1>(*itMatchingImageBegin).image_index);
+
+        // Find the end of current range having the 1-NN in the same image.
+        itMatchingImageEnd = std::find_if(itMatchingImageBegin, descriptorMatches.end(),
+            [&](const popsift::kdtree::QueryResult::value_type& a) {
+            return get<1>(a).image_index != get<1>(*itMatchingImageBegin).image_index;
+        });
+
+        // safeguard: we should match the query image with an image that has at least
+        // some 3D points visible --> if this is not true it is likely that it is an
+        // image of the dataset that was not reconstructed.  This should never happen
+        // since we never insert descriptors from images having < 5 points.
+        if (matchedRegions._regions.RegionCount() < 5)  // XXX: hard-coded! minimum number of points that allows a reliable 3D reconstruction
+        {
+            OPENMVG_LOG_DEBUG("[matching]\tSkipping matching with " << matchedView->s_Img_path << " as it has too few visible 3D points");
+            continue;
+        }
+        OPENMVG_LOG_DEBUG("[matching]\tTrying to match the query image with " << matchedView->s_Img_path);
+        OPENMVG_LOG_DEBUG("[matching]\tIt has " << matchedRegions._regions.RegionCount() << " available features to match");
+
+        // its associated intrinsics; XXX: this is just ugly!
+        const cameras::IntrinsicBase *matchedIntrinsicsBase = _sfm_data.intrinsics.at(matchedView->id_intrinsic).get();
+        const cameras::Pinhole_Intrinsic *matchedIntrinsics = (const cameras::Pinhole_Intrinsic*)(matchedIntrinsicsBase);
+        if (!isPinhole(matchedIntrinsicsBase->getType()))
+        {
+            //@fixme maybe better to throw something here
+            OPENMVG_CERR("Only Pinhole cameras are supported!");
+            return;
+        }
+
+        // TODO! Parallelize the rest...
+
+        std::vector<matching::IndMatch> vec_featureMatches;
+        const bool matchWorked = robustMatching(
+            param,
+            queryRegions,
+            itMatchingImageBegin,
+            itMatchingImageEnd,
+            (useInputIntrinsics) ? &queryIntrinsics : nullptr,
+            matchedRegions._regions,
+            matchedIntrinsics,
+            param._matchingError,
+            param._useRobustMatching,
+            param._useGuidedMatching,
+            imageSize,
+            std::make_pair(matchedView->ui_width, matchedView->ui_height),
+            vec_featureMatches,
+            param._matchingEstimator);
+        if (!matchWorked) {
+            OPENMVG_LOG_DEBUG("[matching]\tMatching with " << matchedView->s_Img_path << " failed! Skipping image");
+            continue;
+        }
+        else {
+            OPENMVG_LOG_DEBUG("[matching]\tFound " << vec_featureMatches.size() << " geometrically validated matches");
+        }
+        assert(vec_featureMatches.size() > 0);
+
+        // if debug is enable save the matches between the query image and the current matching image
+        // It saves the feature matches in a folder with the same name as the query
+        // image, if it does not exist it will create it. The final svg file will have
+        // a name like this: queryImage_matchedImage.svg placed in the following directory:
+        // param._visualDebug/queryImage/
+        if (!param._visualDebug.empty() && !imagePath.empty())
+        {
+            namespace bfs = boost::filesystem;
+            // the current query image without extension
+            const auto queryImage = bfs::path(imagePath).stem();
+            // the matching image without extension
+            const auto matchedImage = bfs::path(matchedView->s_Img_path).stem();
+            // the full path of the matching image
+            const auto matchedPath = (bfs::path(_sfm_data.s_root_path) / bfs::path(matchedView->s_Img_path)).string();
+
+            // the directory where to save the feature matches
+            const auto baseDir = bfs::path(param._visualDebug) / queryImage;
+            if ((!bfs::exists(baseDir)))
+            {
+                OPENMVG_LOG_DEBUG("created " << baseDir.string());
+                bfs::create_directories(baseDir);
+            }
+
+            // damn you, boost, what does it take to make the operator "+"?
+            // the final filename for the output svg file as a composition of the query
+            // image and the matched image
+            auto outputName = baseDir / queryImage;
+            outputName += "_";
+            outputName += matchedImage;
+            outputName += ".svg";
+
+            features::saveMatches2SVG(imagePath,
+                imageSize,
+                queryRegions.GetRegionsPositions(),
+                matchedPath,
+                std::make_pair(matchedView->ui_width, matchedView->ui_height),
+                _regions_per_view.at(matchedView->id_view)._regions.GetRegionsPositions(),
+                vec_featureMatches,
+                outputName.string());
+        }
+
+        // C. recover the 2D-3D associations from the matches 
+        // Each matched feature in the current similar image is associated to a 3D point
+        for (const matching::IndMatch& featureMatch : vec_featureMatches) {
+            // the ID of the 3D point
+            const IndexT pt3D_id = matchedRegions._associated3dPoint[featureMatch._j];
+            const IndexT pt2D_id = featureMatch._i;
+
+            const auto key = std::make_pair(pt3D_id, pt2D_id);
+            ++occurences[key];  // size_t is default-constructed to 0
+        }
+        ++goodMatches;
+        if ((param._maxResults != 0) && (goodMatches == param._maxResults))
+        {
+            // let's say we have enough features
+            OPENMVG_LOG_DEBUG("[matching]\tgot enough point from " << param._maxResults << " images");
+            break;
+        }
+    }
+    const std::size_t numCollectedPts = occurences.size();
+
+    {
+        // just debugging statistics, this block can be safely removed
+        std::size_t numOccTreated = 0;
+        for (std::size_t value = 1; value < numCollectedPts; ++value) {
+            std::size_t counter = 0;
+            for (const auto &idx : occurences)
+                counter += idx.second == value;
+            OPENMVG_LOG_DEBUG("[matching]\tThere are " << counter
+                << " associations occurred " << value << " times ("
+                << 100.0*counter / (double)numCollectedPts << "%)");
+            numOccTreated += counter;
+            if (numOccTreated >= numCollectedPts)
+                break;
+            }
+        }
+
+    pt2D = Mat2X(2, numCollectedPts);
+    pt3D = Mat3X(3, numCollectedPts);
+
+    std::size_t index = 0;
+    for (const auto &idx : occurences)
+    {
+        // recopy all the points in the matching structure
+        const IndexT pt3D_id = idx.first.first;
+        const IndexT pt2D_id = idx.first.second;
+
+        //    OPENMVG_LOG_DEBUG("[matching]\tAssociation [" << pt3D_id << "," << pt2D_id << "] occurred " << idx.second << " times");
+
+        pt2D.col(index) = queryRegions.GetRegionPosition(pt2D_id);
+        pt3D.col(index) = _sfm_data.GetLandmarks().at(pt3D_id).X;
+        ++index;
+    }
+}
+
 // Filter out 2NN pairs not belonging to the same image, OR not satisfying distance ratio check.
 // Modifies itNNEnd so that [itNNBegin,itNNEnd) is the new range of matched descriptors.
 bool KDTreeLocalizer::Filter2NN(
@@ -433,222 +623,6 @@ bool KDTreeLocalizer::Filter2NN(
 
     itNNEnd = std::remove_if(itNNBegin, itNNEnd, reject);
     return itNNBegin != itNNEnd;
-}
-
-void KDTreeLocalizer::getAllAssociations(const features::SIFT_Regions &queryRegions,
-                                          const std::pair<std::size_t, std::size_t> &imageSize,
-                                          const Parameters &param,
-                                          bool useInputIntrinsics,
-                                          const cameras::Pinhole_Intrinsic_Radial_K3 &queryIntrinsics,
-                                          std::map< std::pair<IndexT, IndexT>, std::size_t > &occurences,
-                                          Mat &pt2D,
-                                          Mat &pt3D,
-                                          std::vector<voctree::DocMatch>& matchedImages,
-                                          const std::string& imagePath) const
-{
-    using std::get;
-    static constexpr size_t MAX_SEARCH_CANDIDATES = 1000;  // ~60% 1NN and ~33% 2NN accuracy on SIFT1M dataset
-
-    // A. 2-ANN search in the global db for matches.
-    auto descriptorMatches = popsift::kdtree::Query2NN(_kdtrees, MAX_SEARCH_CANDIDATES,
-        static_cast<const popsift::kdtree::U8Descriptor*>(queryRegions.DescriptorRawData()),
-        queryRegions.RegionCount());
-
-    // Group matches by DB image id on 1-NN.
-    std::sort(descriptorMatches.begin(), descriptorMatches.end(), [](
-        const popsift::kdtree::QueryResult::value_type& a1,
-        const popsift::kdtree::QueryResult::value_type& a2)
-        {
-            return get<1>(a1).image_index < get<1>(a2).image_index;
-        });
-
-    // B. for each found similar image, try to find the correspondences between the 
-    // query image adn the similar image
-    // stop when param._maxResults successful matches have been found
-    std::size_t goodMatches = 0;
-    popsift::kdtree::QueryResult::iterator
-        itMatchingImageBegin = descriptorMatches.begin(), itMatchingImageEnd;
-
-    // Iterate over groups of matches within the same image.
-    for (; itMatchingImageBegin != descriptorMatches.end(); itMatchingImageBegin = itMatchingImageEnd) {
-        // [itMatchingImageBegin,itMatchingImageEnd) are now all matches for the same DB image.
-        const std::shared_ptr<sfm::View> matchedView = _sfm_data.views.at(get<1>(*itMatchingImageBegin).image_index);
-        const Reconstructed_RegionsT& matchedRegions = _regions_per_view.at(get<1>(*itMatchingImageBegin).image_index);
-
-        // Find the end of current range having the 1-NN in the same image.
-        itMatchingImageEnd = std::find(itMatchingImageBegin, descriptorMatches.end(),
-            [&](const popsift::kdtree::QueryResult::value_type& a) {
-                return get<1>(a).image_index != get<1>(*itMatchingImageBegin).image_index;
-            });
-
-        // safeguard: we should match the query image with an image that has at least
-        // some 3D points visible --> if this is not true it is likely that it is an
-        // image of the dataset that was not reconstructed.  This should never happen
-        // since we never insert descriptors from images having < 5 points.
-        if (matchedRegions._regions.RegionCount() < 5)  // XXX: hard-coded! minimum number of points that allows a reliable 3D reconstruction
-        {
-            OPENMVG_LOG_DEBUG("[matching]\tSkipping matching with " << matchedView->s_Img_path << " as it has too few visible 3D points");
-            continue;
-        }
-        OPENMVG_LOG_DEBUG("[matching]\tTrying to match the query image with " << matchedView->s_Img_path);
-        OPENMVG_LOG_DEBUG("[matching]\tIt has " << matchedRegions._regions.RegionCount() << " available features to match");
-
-        // its associated intrinsics; XXX: this is just ugly!
-        const cameras::IntrinsicBase *matchedIntrinsicsBase = _sfm_data.intrinsics.at(matchedView->id_intrinsic).get();
-        const cameras::Pinhole_Intrinsic *matchedIntrinsics = (const cameras::Pinhole_Intrinsic*)(matchedIntrinsicsBase);
-        if (!isPinhole(matchedIntrinsicsBase->getType()))
-        {
-            //@fixme maybe better to throw something here
-            OPENMVG_CERR("Only Pinhole cameras are supported!");
-            return;
-        }
-
-        // TODO! Parallelize the rest...
-
-        if (!Filter2NN(param, queryRegions, itMatchingImageBegin, itMatchingImageEnd, matchedRegions._regions)) {
-            OPENMVG_LOG_DEBUG("[matching]\Putative matching failed with " << matchedView->s_Img_path);
-            continue;
-        }
-
-        std::vector<matching::IndMatch> vec_featureMatches;
-        const bool matchWorked = robustMatching(
-            queryRegions,
-            itMatchingImageBegin, itMatchingImageEnd,
-            (useInputIntrinsics) ? &queryIntrinsics : nullptr,
-            matchedRegions._regions, matchedIntrinsics, param._matchingError,
-            param._useRobustMatching, param._useGuidedMatching, imageSize,
-            std::make_pair(matchedView->ui_width, matchedView->ui_height), 
-            vec_featureMatches, param._matchingEstimator);
-        if (!matchWorked) {
-            OPENMVG_LOG_DEBUG("[matching]\tMatching with " << matchedView->s_Img_path << " failed! Skipping image");
-            continue;
-        }
-        else {
-          OPENMVG_LOG_DEBUG("[matching]\tFound " << vec_featureMatches.size() << " geometrically validated matches");
-        }
-        assert(vec_featureMatches.size()>0);
-    }
-
-
-#if 0
-  for(const voctree::DocMatch& matchedImage : matchedImages)
-  {
-    
-     
-    
-    // if debug is enable save the matches between the query image and the current matching image
-    // It saves the feature matches in a folder with the same name as the query
-    // image, if it does not exist it will create it. The final svg file will have
-    // a name like this: queryImage_matchedImage.svg placed in the following directory:
-    // param._visualDebug/queryImage/
-    if(!param._visualDebug.empty() && !imagePath.empty())
-    {
-      namespace bfs = boost::filesystem;
-      const auto &matchedViewIndex = matchedImage.id;
-      const sfm::View *mview = _sfm_data.GetViews().at(matchedViewIndex).get();
-      // the current query image without extension
-      const auto queryImage = bfs::path(imagePath).stem();
-      // the matching image without extension
-      const auto matchedImage = bfs::path(mview->s_Img_path).stem();
-      // the full path of the matching image
-      const auto matchedPath = (bfs::path(_sfm_data.s_root_path) /  bfs::path(mview->s_Img_path)).string();
-
-      // the directory where to save the feature matches
-      const auto baseDir = bfs::path(param._visualDebug) / queryImage;
-      if((!bfs::exists(baseDir)))
-      {
-        OPENMVG_LOG_DEBUG("created " << baseDir.string());
-        bfs::create_directories(baseDir);
-      }
-      
-      // damn you, boost, what does it take to make the operator "+"?
-      // the final filename for the output svg file as a composition of the query
-      // image and the matched image
-      auto outputName = baseDir / queryImage;
-      outputName += "_";
-      outputName += matchedImage;
-      outputName += ".svg";
-
-      features::saveMatches2SVG(imagePath,
-                                imageSize,
-                                queryRegions.GetRegionsPositions(),
-                                matchedPath,
-                                std::make_pair(mview->ui_width, mview->ui_height),
-                                _regions_per_view.at(matchedViewIndex)._regions.GetRegionsPositions(),
-                                vec_featureMatches,
-                                outputName.string()); 
-    }
-    
-    // C. recover the 2D-3D associations from the matches 
-    // Each matched feature in the current similar image is associated to a 3D point
-    for(const matching::IndMatch& featureMatch : vec_featureMatches)
-    {
-      // the ID of the 3D point
-      const IndexT pt3D_id = matchedRegions._associated3dPoint[featureMatch._j];
-      const IndexT pt2D_id = featureMatch._i;
-      
-      const auto key = std::make_pair(pt3D_id, pt2D_id);
-      if(occurences.count(key))
-      {
-        occurences[key]++;
-      }
-      else
-      {
-        occurences[key] = 1;
-      }
-
-    }
-    ++goodMatches;
-    if((param._maxResults !=0) && (goodMatches == param._maxResults))
-    { 
-      // let's say we have enough features
-      OPENMVG_LOG_DEBUG("[matching]\tgot enough point from " << param._maxResults << " images");
-      break;
-    }
-  }
-#endif
-
-  const std::size_t numCollectedPts = occurences.size();
-  
-  {
-    // just debugging statistics, this block can be safely removed
-    std::size_t numOccTreated = 0;
-    for(std::size_t value = 1; value < numCollectedPts; ++value)
-    {
-      std::size_t counter = 0;
-      for(const auto &idx : occurences)
-      {
-        if(idx.second == value)
-        {
-          ++counter;
-        }
-      }
-      OPENMVG_LOG_DEBUG("[matching]\tThere are " << counter 
-              <<  " associations occurred " << value << " times ("
-              << 100.0*counter/(double)numCollectedPts << "%)");
-      numOccTreated += counter;
-      if(numOccTreated >= numCollectedPts) 
-        break;
-    }
-  }
-  
-  pt2D = Mat2X(2, numCollectedPts);
-  pt3D = Mat3X(3, numCollectedPts);
-  
-  std::size_t index = 0;
-  for(const auto &idx : occurences)
-  {
-     // recopy all the points in the matching structure
-    const IndexT pt3D_id = idx.first.first;
-    const IndexT pt2D_id = idx.first.second;
-    
-//    OPENMVG_LOG_DEBUG("[matching]\tAssociation [" << pt3D_id << "," << pt2D_id << "] occurred " << idx.second << " times");
-
-    pt2D.col(index) = queryRegions.GetRegionPosition(pt2D_id);
-    pt3D.col(index) = _sfm_data.GetLandmarks().at(pt3D_id).X;
-     ++index;
-  }
-  
 }
 
 bool KDTreeLocalizer::robustMatching(
@@ -685,8 +659,10 @@ bool KDTreeLocalizer::robustMatching(
   const cameras::Pinhole_Intrinsic *matchedIntrinsics = (const cameras::Pinhole_Intrinsic*)(matchedIntrinsicsBase);
   const bool canBeUndistorted = (queryIntrinsicsBase != nullptr) && (matchedIntrinsicsBase != nullptr);
     
-  if (itNNBegin == itNNEnd) // XXX: should never be called.
+  if (!Filter2NN(param, queryRegions, itNNBegin, itNNEnd, matchedRegions)) {
+      OPENMVG_LOG_DEBUG("[matching]\Putative matching failed");
       return false;
+  }
 
   // Populate vec_featureMatches. I: query, J: image index.
   for (auto it = itNNBegin; it != itNNEnd; ++it) {
