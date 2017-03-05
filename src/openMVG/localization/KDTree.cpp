@@ -90,7 +90,6 @@ KDTree::KDTree(const U8Descriptor* descriptors, const unsigned short* image_inde
     }
 }
 
-// XXX: TODO: Partition() has a static random_engine.  We should explicitly pass it to build.
 void KDTree::Build(unsigned leaf_size)
 {
     _leaf_size = leaf_size + 16;    // Don't make too small leafs
@@ -154,7 +153,7 @@ void KDTree::Build(unsigned node_index, unsigned lelem, unsigned relem)
 // Otherwise returns the partition index and fills in partitioning data in node, marking it internal.
 unsigned KDTree::Partition(Node& node, unsigned lelem, unsigned relem)
 {
-    static std::mt19937_64 rng_engine;  // XXX! NOT MT-SAFE!
+    static thread_local std::mt19937_64 rng_engine(reinterpret_cast<uint64_t>(&tbb::task::self()));
 
     POPSIFT_KDASSERT(node.leaf);
 
