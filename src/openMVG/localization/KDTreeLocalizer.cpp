@@ -611,8 +611,6 @@ bool KDTreeLocalizer::Filter2NN(
 
     const U8Descriptor* descriptors = _kdtrees[0]->Descriptors();
     const auto reject = [&,this](const QueryResult::value_type& v) {
-        if (get<1>(v).image_index != get<2>(v).image_index)
-            return true;
         const U8Descriptor& nn1 = descriptors[get<1>(v).global_index];
         const U8Descriptor& nn2 = descriptors[get<2>(v).global_index];
         const U8Descriptor& q = static_cast<const U8Descriptor*>(queryRegions.DescriptorRawData())[get<0>(v)];
