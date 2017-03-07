@@ -521,7 +521,6 @@ message("generatedDir: ${generatedDir}")
 SET(OpenMVG_INCLUDE_DIRS
   ${CMAKE_CURRENT_SOURCE_DIR} 
   ${generatedDir}
-  ${CMAKE_CURRENT_SOURCE_DIR}/
   ${JPEG_INCLUDE_DIR}
   ${PNG_INCLUDE_DIRS}
   ${TIFF_INCLUDE_DIR}
