@@ -760,6 +760,7 @@ CONFIGURE_FILE("${CMAKE_SOURCE_DIR}/cmakeFindModules/OpenMVGConfig.cmake.in"
 INSTALL(FILES "${CMAKE_CURRENT_BINARY_DIR}/OpenMVGConfig.cmake"
         DESTINATION share/openMVG/cmake)
 
+# create the config.hpp file containing all the preprocessor definitions
 set(configfile "${generatedDir}/openMVG/config.hpp")
 CONFIGURE_FILE("${CMAKE_SOURCE_DIR}/cmakeFindModules/config.hpp.in"
                "${configfile}" @ONLY)
