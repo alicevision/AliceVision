@@ -35,6 +35,38 @@ As openMVG use some C++11 features you must have a c++11 ready compiler:
 --------------------------
 
 
+Building using external dependencies
+--------------------------
+
+OpenMVG source tree contains all the mandatory dependencies that are needed to build the library, and which will be built together with the libray. In order to build the library with existing versions of the dependencies (e.g. system installed libraries or user built libraries), and thus reduce the compilation time and favour the modularization, the paths where to find such libraries can be given at cmake command line. In particular:
+
+* For Ceres solver library, `Ceres_DIR` can be passed pointing to where CeresConfig.cmake can be found.
+  e.g. `-DCeres_DIR:PATH=/path/to/cctag/install/share/Ceres/`
+
+* For FLANN library, `FLANN_INCLUDE_DIR_HINTS` can be passed pointing to the include directory, e.g.
+  `-DFLANN_INCLUDE_DIR_HINTS:PATH=/path/to/flann/1.8.4/include/`
+
+* For Eigen library, `EIGEN_INCLUDE_DIR_HINTS` can be passed pointing to the include directory, e.g.
+  `-DEIGEN_INCLUDE_DIR_HINTS:PATH=/usr/local/include/eigen3`
+
+At the end of the cmake process, a report shows for each library which version (internal/external) will be used in the building process, e.g.:
+
+```
+-- EIGEN: 3.2.4 (external)
+-- CERES: 1.10.0 (external)
+-- FLANN: 1.8.4 (external)
+-- LIBTIFF: 4.0.4 (external)
+-- LIBPNG: 1.6.18 (external)
+-- LIBJPEG (external)
+-- CLP: 1.15.11 (internal)
+-- COINUTILS: 2.9.3 (internal)
+-- OSI: 0.106.10 (internal)
+-- LEMON: 1.3 (internal)
+```
+
+--------------------------
+
+
 CMake Options
 --------------------------
 
