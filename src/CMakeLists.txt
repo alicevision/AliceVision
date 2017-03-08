@@ -270,20 +270,19 @@ ENDIF(EIGEN_FOUND)
 # Ceres
 # ==============================================================================
 # - internal by default (ceres-solver+cxsparse+miniglog),
-# - external if CERES_DIR_HINTS and FIND_PACKAGE return a valid Ceres setup
+# - external if Ceres_DIR and FIND_PACKAGE return a valid Ceres setup
 # ==============================================================================
-MESSAGE(STATUS "Trying to find package Ceres for openMVG: ${CERES_DIR_HINTS}")
+MESSAGE(STATUS "Trying to find package Ceres for openMVG: ${Ceres_DIR}")
 if(OPENMVG_REQUIRE_CERES_WITH_SUITESPARSE)
   MESSAGE(STATUS "By default, Ceres required SuiteSparse to ensure best performances. If you explicitly need to build without it, you can use the option: -DOPENMVG_REQUIRE_CERES_WITH_SUITESPARSE=OFF")
-  FIND_PACKAGE(Ceres QUIET HINTS ${CERES_DIR_HINTS}
-                     REQUIRED SuiteSparse)
+  FIND_PACKAGE(Ceres QUIET REQUIRED SuiteSparse CONFIG)
 else()
-  FIND_PACKAGE(Ceres QUIET HINTS ${CERES_DIR_HINTS})
+  FIND_PACKAGE(Ceres CONFIG QUIET CONFIG)
 endif()
 
 IF(NOT Ceres_FOUND)
   IF(DEFINED OpenMVG_USE_INTERNAL_CERES AND NOT OpenMVG_USE_INTERNAL_CERES)
-    MESSAGE(FATAL_ERROR "External CERES not found. Not found in CERES_DIR_HINTS: ${CERES_DIR_HINTS}")
+    MESSAGE(FATAL_ERROR "External CERES not found. Not found in Ceres_DIR: ${Ceres_DIR}")
   ENDIF()
 
   MESSAGE(STATUS "No external CERES detected, using the embedded one.")
