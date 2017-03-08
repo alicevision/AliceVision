@@ -98,7 +98,7 @@ CMake Options
   `-DOpenCV_DIR:PATH=/path/to/opencv/install/share/OpenCV/` (where OpenCVConfig.cmake can be found)
 
 * `OPENMVG_REQUIRE_CERES_WITH_SUITESPARSE` (default: `ON`)
-  By default, openMVG requires Ceres builded with SuiteSparse to ensure best performances but you can make SuiteSparse optional with this flag.
+  By default, openMVG requires Ceres built with SuiteSparse to ensure best performances but you can make SuiteSparse optional with this flag.
 
 * `OpenMVG_BUILD_SHARED` (default `OFF`)
   Build OpenMVG as shared libs (instead of static libs)
@@ -110,7 +110,7 @@ CMake Options
   Build OpenMVG documentation
 
 * `OpenMVG_BUILD_EXAMPLES` (default `ON`)
-  Build OpenMVG samples applications (openMVG softwares are still builded)
+  Build OpenMVG samples applications (openMVG software are still built)
 
 * `OpenMVG_BUILD_OPENGL_EXAMPLES` (default `OFF`)
   Build OpenMVG openGL examples
