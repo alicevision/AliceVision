@@ -268,7 +268,7 @@ struct TracksBuilder
     size_t cptClass = 0;
     for ( lemon::UnionFindEnum< IndexMap >::ClassIt cit(*_tracksUF); cit != INVALID; ++cit, ++cptClass) {
       std::pair<STLMAPTracks::iterator, bool> ret =
-        map_tracks.insert(std::pair<size_t, submapTrack >(cptClass, submapTrack()));
+        map_tracks.insert(std::make_pair(cptClass, submapTrack()));
       STLMAPTracks::iterator iterN = ret.first;
 
       for (lemon::UnionFindEnum< IndexMap >::ItemIt iit(*_tracksUF, cit); iit != INVALID; ++iit) {
