@@ -447,7 +447,7 @@ bool CCTagLocalizer::localizeRig(const std::vector<std::unique_ptr<features::Reg
 #ifdef HAVE_OPENGV
   if(!parameters->_useLocalizeRigNaive)
   {
-    OPENMVG_LOG_DEBUG("Using localizeRig_naive()");
+    OPENMVG_LOG_DEBUG("Using localizeRig_opengv()");
     return localizeRig_opengv(vec_queryRegions,
                               vec_imageSize,
                               parameters,
