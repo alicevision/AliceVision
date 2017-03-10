@@ -1474,9 +1474,8 @@ bool SequentialSfMReconstructionEngine::Resection(const std::size_t viewIndex)
           } // 3D point is valid
         } // else (New 3D point)
       }// For all correspondences
-//#if OPENMVG_IS_DEFINED(OPENMVG_USE_OPENMP)
+      
 //        #pragma omp critical
-//#endif
 //        if (!map_tracksCommonIJ.empty())
 //        {
 //          OPENMVG_LOG_DEBUG(
