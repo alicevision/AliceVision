@@ -56,7 +56,7 @@ TEST(Tracks, Simple) {
   //0, {(0,0) (1,0) (2,0)}
   //1, {(0,1) (1,1) (2,6)}
   //2, {(0,2) (1,3)}
-  const std::pair<size_t,size_t> GT_Tracks[] =
+  const std::pair<std::size_t,std::size_t> GT_Tracks[] =
   {
     std::make_pair(0,0), std::make_pair(1,0), std::make_pair(2,0),
     std::make_pair(0,1), std::make_pair(1,1), std::make_pair(2,6),
@@ -64,7 +64,7 @@ TEST(Tracks, Simple) {
   };
 
   CHECK_EQUAL(3,  map_tracks.size());
-  size_t cpt = 0, i = 0;
+  std::size_t cpt = 0, i = 0;
   for (STLMAPTracks::const_iterator iterT = map_tracks.begin();
     iterT != map_tracks.end();
     ++iterT, ++i)
@@ -153,12 +153,12 @@ TEST(Tracks, Conflict) {
 
   //0, {(0,0) (1,0) (2,0)}
   //1, {(0,1) (1,1) (2,6)}
-  const std::pair<size_t,size_t> GT_Tracks[] =
+  const std::pair<std::size_t,std::size_t> GT_Tracks[] =
     {std::make_pair(0,0), std::make_pair(1,0), std::make_pair(2,0),
      std::make_pair(0,1), std::make_pair(1,1), std::make_pair(2,6)};
 
   CHECK_EQUAL(2,  map_tracks.size());
-  size_t cpt = 0, i = 0;
+  std::size_t cpt = 0, i = 0;
   for (STLMAPTracks::const_iterator iterT = map_tracks.begin();
     iterT != map_tracks.end();
     ++iterT, ++i)
@@ -177,10 +177,10 @@ TEST(Tracks, Conflict) {
 TEST(Tracks, GetCommonTracksInImages)
 {
   {
-    std::set<size_t> set_imageIndex {15, 20};
+    std::set<std::size_t> set_imageIndex {15, 20};
     TracksPerView map_tracksPerView;
 
-    std::vector<size_t> base{1,2,3,4};
+    std::vector<std::size_t> base{1,2,3,4};
     map_tracksPerView[10] = base;
     map_tracksPerView[15] = base;
     map_tracksPerView[20] = base;
@@ -188,15 +188,19 @@ TEST(Tracks, GetCommonTracksInImages)
     map_tracksPerView[15].push_back(5);
     map_tracksPerView[20].push_back(6);
 
-    std::set<size_t> set_visibleTracks;
+    std::set<std::size_t> set_visibleTracks;
     TracksUtilsMap::GetCommonTracksInImages(set_imageIndex, map_tracksPerView, set_visibleTracks);
     CHECK_EQUAL(base.size(), set_visibleTracks.size());
+    set_visibleTracks.clear();
+    // test non-existing view index
+    TracksUtilsMap::GetCommonTracksInImages({15, 50}, map_tracksPerView, set_visibleTracks);
+    CHECK(set_visibleTracks.empty());
   }
   {
-    std::set<size_t> set_imageIndex {15, 20, 10, 40};
+    std::set<std::size_t> set_imageIndex {15, 20, 10, 40};
     TracksPerView map_tracksPerView;
 
-    std::vector<size_t> base{1,2,3,4};
+    std::vector<std::size_t> base{1,2,3,4};
     map_tracksPerView[10] = base;
     map_tracksPerView[15] = base;
     map_tracksPerView[20] = base;
@@ -213,7 +217,7 @@ TEST(Tracks, GetCommonTracksInImages)
     map_tracksPerView[15].push_back(5);
     map_tracksPerView[20].push_back(6);
 
-    std::set<size_t> set_visibleTracks;
+    std::set<std::size_t> set_visibleTracks;
     TracksUtilsMap::GetCommonTracksInImages(set_imageIndex, map_tracksPerView, set_visibleTracks);
     CHECK_EQUAL(base.size(), set_visibleTracks.size());
   }
