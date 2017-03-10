@@ -191,6 +191,10 @@ TEST(Tracks, GetCommonTracksInImages)
     std::set<std::size_t> set_visibleTracks;
     TracksUtilsMap::GetCommonTracksInImages(set_imageIndex, map_tracksPerView, set_visibleTracks);
     CHECK_EQUAL(base.size(), set_visibleTracks.size());
+    set_visibleTracks.clear();
+    // test non-existing view index
+    TracksUtilsMap::GetCommonTracksInImages({15, 50}, map_tracksPerView, set_visibleTracks);
+    CHECK(set_visibleTracks.empty());
   }
   {
     std::set<std::size_t> set_imageIndex {15, 20, 10, 40};
