@@ -832,10 +832,7 @@ bool SequentialSfMReconstructionEngine::MakeInitialPair3D(const Pair & current_p
       std::advance(iterObs_xJ, 1);
 
       const Observation & ob_xI = iterObs_xI->second;
-      const IndexT & viewId_xI = iterObs_xI->first;
-
       const Observation & ob_xJ = iterObs_xJ->second;
-      const IndexT & viewId_xJ = iterObs_xJ->first;
 
       const double angle = AngleBetweenRay(
         pose_I, cam_I, pose_J, cam_J, ob_xI.x, ob_xJ.x);
