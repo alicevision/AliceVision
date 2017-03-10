@@ -732,6 +732,7 @@ bool SequentialSfMReconstructionEngine::MakeInitialPair3D(const Pair & current_p
     iterT = map_tracksCommon.begin(); iterT != map_tracksCommon.end();
     ++iterT, ++cptIndex)
   {
+    assert(iterT->second.size() == 2);
     tracks::submapTrack::const_iterator iter = iterT->second.begin();
     const std::size_t i = iter->second;
     const std::size_t j = (++iter)->second;
