@@ -661,12 +661,14 @@ bool SequentialSfMReconstructionEngine::AutomaticInitialPairChoice(Pair & initia
   std::partial_sort(scoring_per_pair.begin(), scoring_per_pair.begin() + nBestScores, scoring_per_pair.end(), std::greater<ImagePairScore>());
   OPENMVG_LOG_DEBUG(scoring_per_pair.size() << " possible image pairs. " << nBestScores << " best possibles image pairs are:");
 #ifdef HAVE_BOOST
-  OPENMVG_LOG_DEBUG(boost::format("%=15s | %=15s | %=15s | %=15s")  % "Score" % "ImagePairScore" % "Angle" % "NbMatches");
-  OPENMVG_LOG_DEBUG(std::string(15*4+3*3, '-'));
+  OPENMVG_LOG_DEBUG(boost::format("%=15s | %=15s | %=15s | %=15s | %=15s") % "Pair" % "Score" % "ImagePairScore" % "Angle" % "NbMatches");
+  OPENMVG_LOG_DEBUG(std::string(15*5+3*3, '-'));
   for(std::size_t i = 0; i < nBestScores; ++i)
   {
     const ImagePairScore& s = scoring_per_pair[i];
-    OPENMVG_LOG_DEBUG(boost::format("%+15.1f | %+15.1f | %+15.1f | %+15f") % std::get<0>(s) % std::get<1>(s) % std::get<2>(s) % std::get<3>(s));
+    const Pair& currPair = std::get<4>(s);
+    const std::string pairIdx = std::to_string(currPair.first) + ", " + std::to_string(currPair.second);
+    OPENMVG_LOG_DEBUG(boost::format("%=15s | %+15.1f | %+15.1f | %+15.1f | %+15f") % pairIdx % std::get<0>(s) % std::get<1>(s) % std::get<2>(s) % std::get<3>(s));
   }
 #endif
   if (!scoring_per_pair.empty())
