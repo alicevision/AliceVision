@@ -330,7 +330,11 @@ struct TracksUtilsMap
     {
       TracksPerView::const_iterator tracksPerViewIt = map_tracksPerView.find(*it);
       if(tracksPerViewIt == map_tracksPerView.end())
+      {
+        // One image is not present in the tracksPerView, so there is no track in common
+        set_visibleTracks.clear();
         return;
+      }
       const TrackIdSet& imageTracks = tracksPerViewIt->second;
       set_visibleTracks.insert(imageTracks.cbegin(), imageTracks.cend());
     }
@@ -339,7 +343,11 @@ struct TracksUtilsMap
     {
       TracksPerView::const_iterator tracksPerViewIt = map_tracksPerView.find(*it);
       if(tracksPerViewIt == map_tracksPerView.end())
+      {
+        // One image is not present in the tracksPerView, so there is no track in common
+        set_visibleTracks.clear();
         return;
+      }
       const TrackIdSet& imageTracks = tracksPerViewIt->second;
       std::set<size_t> tmp;
       std::set_intersection(
