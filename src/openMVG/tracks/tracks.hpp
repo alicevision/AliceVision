@@ -318,6 +318,13 @@ struct TracksUtilsMap
     return !map_tracksOut.empty();
   }
   
+  /**
+   * @brief Find common tracks among a set of images.
+   *
+   * @param[in] set_imageIndex: set of images we are looking for common tracks.
+   * @param[in] map_tracksPerView: for each view it contains the list of visible tracks. *The tracks ids must be ordered*.
+   * @param[out] set_visibleTracks: output with only the common tracks.
+   */  
   static void GetCommonTracksInImages(
     const std::set<std::size_t> & set_imageIndex,
     const TracksPerView & map_tracksPerView,
@@ -330,6 +337,8 @@ struct TracksUtilsMap
     std::set<std::size_t>::const_iterator it = set_imageIndex.cbegin();
     {
       TracksPerView::const_iterator tracksPerViewIt = map_tracksPerView.find(*it);
+      // if there are no tracks for the first view just return as there will not be
+      // any common track
       if(tracksPerViewIt == map_tracksPerView.end())
       {
         // One image is not present in the tracksPerView, so there is no track in common
@@ -337,11 +346,14 @@ struct TracksUtilsMap
         return;
       }
       const TrackIdSet& imageTracks = tracksPerViewIt->second;
+      // copy all the visible tracks by the first image
       set_visibleTracks.insert(imageTracks.cbegin(), imageTracks.cend());
     }
     ++it;
+    // for each of the remaining view
     for(; it != set_imageIndex.cend(); ++it)
     {
+      // if there are no tracks for this view just return
       TracksPerView::const_iterator tracksPerViewIt = map_tracksPerView.find(*it);
       if(tracksPerViewIt == map_tracksPerView.end())
       {
@@ -360,11 +372,12 @@ struct TracksUtilsMap
   }
   
   /**
-   * @brief Find common tracks between images.
+   * @brief Find common tracks among images.
    *
-   * @param[in] set_imageIndex: set of images we are looking for common tracks
-   * @param[in] map_tracksIn: all tracks of the scene
-   * @param[out] map_tracksOut: output with only the common tracks
+   * @param[in] set_imageIndex: set of images we are looking for common tracks.
+   * @param[in] map_tracksIn: all tracks of the scene.
+   * @param[in] map_tracksPerView: for each view the id of the visible tracks.
+   * @param[out] map_tracksOut: output with only the common tracks.
    */
   static bool GetTracksInImagesFast(
     const std::set<std::size_t> & set_imageIndex,
