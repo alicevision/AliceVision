@@ -307,10 +307,10 @@ bool SequentialSfMReconstructionEngine::Process()
       _set_remainingViewId.erase(v);
     }
 
-    OPENMVG_LOG_DEBUG("SequenctiamSfM -- nbRejectedLoops: " << nbRejectedLoops);
-    OPENMVG_LOG_DEBUG("SequenctiamSfM -- reconstructedViewIds: " << reconstructedViewIds.size());
-    OPENMVG_LOG_DEBUG("SequenctiamSfM -- rejectedViewIds: " << rejectedViewIds.size());
-    OPENMVG_LOG_DEBUG("SequenctiamSfM -- _set_remainingViewId: " << _set_remainingViewId.size());
+    OPENMVG_LOG_DEBUG("SequentialSfM -- nbRejectedLoops: " << nbRejectedLoops);
+    OPENMVG_LOG_DEBUG("SequentialSfM -- reconstructedViewIds: " << reconstructedViewIds.size());
+    OPENMVG_LOG_DEBUG("SequentialSfM -- rejectedViewIds: " << rejectedViewIds.size());
+    OPENMVG_LOG_DEBUG("SequentialSfM -- _set_remainingViewId: " << _set_remainingViewId.size());
 
     ++nbRejectedLoops;
     // Retry to perform the resectioning of all the rejected views,
