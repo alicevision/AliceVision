@@ -405,6 +405,7 @@ struct TracksUtilsMap
         if(trackFeatsInIt != trackFeatsIn.end())
           trackFeatsOut[imageIndex] = trackFeatsInIt->second;
       }
+      assert(trackFeatsOut.size() == set_imageIndex.size());
     }
     return !map_tracksOut.empty();
   }
