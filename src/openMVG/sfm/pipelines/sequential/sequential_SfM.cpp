@@ -1416,7 +1416,12 @@ bool SequentialSfMReconstructionEngine::Resection(const std::size_t viewIndex)
         const Vec2 xJ = _features_provider->feats_per_view.at(J)[track.at(J)].coords().cast<double>();
 
         // test if the track already exists in 3D
-        if (_sfm_data.structure.count(trackId) != 0)
+        bool trackIdExists;
+#pragma omp critical
+        {
+            trackIdExists = _sfm_data.structure.find(trackId) != _sfm_data.structure.end();
+        }
+        if (trackIdExists)
         {
           // 3D point triangulated before, only add image observation if needed
 #ifdef OPENMVG_USE_OPENMP
