@@ -178,7 +178,7 @@ void SequentialSfMReconstructionEngine::RobustResectionOfImages(
   while (FindNextImagesGroupForResection(vec_possible_resection_indexes, set_remainingViewId))
   {
     auto chrono_start = std::chrono::steady_clock::now();
-    OPENMVG_LOG_DEBUG("Resection group start " << resectionGroupIndex << " with " << vec_possible_resection_indexes.size() << " images.\n";
+    OPENMVG_LOG_DEBUG("Resection group start " << resectionGroupIndex << " with " << vec_possible_resection_indexes.size() << " images.\n");
     bool bImageAdded = false;
     // Add images to the 3D reconstruction
     for (const size_t possible_resection_index: vec_possible_resection_indexes )
@@ -389,9 +389,7 @@ bool SequentialSfMReconstructionEngine::ChooseInitialPair(Pair & initialPairInde
 
     if (_sfm_data.GetIntrinsics().empty() || valid_views.empty())
     {
-      std::cerr
-        << "There is no defined intrinsic data in order to compute an essential matrix for the initial pair."
-       );
+      std::cerr << "There is no defined intrinsic data in order to compute an essential matrix for the initial pair.";
       return false;
     }
 
