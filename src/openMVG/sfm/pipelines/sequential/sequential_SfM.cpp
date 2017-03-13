@@ -389,7 +389,8 @@ bool SequentialSfMReconstructionEngine::ChooseInitialPair(Pair & initialPairInde
 
     if (_sfm_data.GetIntrinsics().empty() || valid_views.empty())
     {
-      std::cerr << "There is no defined intrinsic data in order to compute an essential matrix for the initial pair.";
+
+      OPENMVG_CERR("There is no defined intrinsic data in order to compute an essential matrix for the initial pair.");
       return false;
     }
 
