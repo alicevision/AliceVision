@@ -15,6 +15,7 @@
 #include <fstream>
 #include <vector>
 #include <iterator>
+#include <utility>
 
 using namespace openMVG;
 using namespace openMVG::rotation_averaging;
@@ -61,14 +62,13 @@ TEST ( rotation_averaging, RotationLeastSquare_3_Camera)
   using namespace std;
 
   //--
-  // Setup 3 camera that have a relative orientation of 120°
+  // Setup 3 camera that have a relative orientation of 120ï¿½
   // Set Z axis as UP Vector for the rotation
   // They are in the same plane and looking in O={0,0,0}
   //--
-  Mat3 R01 = RotationAroundZ(2.*M_PI/3.0); //120°
-  Mat3 R12 = RotationAroundZ(2.*M_PI/3.0); //120°
-  Mat3 R20 = RotationAroundZ(2.*M_PI/3.0); //120°
-  Mat3 Id = Mat3::Identity();
+  Mat3 R01 = RotationAroundZ(2.*M_PI/3.0); //120deg
+  Mat3 R12 = RotationAroundZ(2.*M_PI/3.0); //120deg
+  Mat3 R20 = RotationAroundZ(2.*M_PI/3.0); //120deg
 
   std::vector<RelativeRotation > vec_relativeRotEstimate;
   vec_relativeRotEstimate.push_back( RelativeRotation(0,1, R01));
@@ -104,13 +104,13 @@ TEST ( rotation_averaging, RefineRotationsAvgL1IRLS_SimpleTriplet)
   using namespace std;
 
   //--
-  // Setup 3 camera that have a relative orientation of 120°
+  // Setup 3 camera that have a relative orientation of 120ï¿½
   // Set Z axis as UP Vector for the rotation
   // They are in the same plane and looking in O={0,0,0}
   //--
-  Mat3 R01 = RotationAroundZ(2.*M_PI/3.0); //120°
-  Mat3 R12 = RotationAroundZ(2.*M_PI/3.0); //120°
-  Mat3 R20 = RotationAroundZ(2.*M_PI/3.0); //120°
+  Mat3 R01 = RotationAroundZ(2.*M_PI/3.0); //120ï¿½
+  Mat3 R12 = RotationAroundZ(2.*M_PI/3.0); //120ï¿½
+  Mat3 R20 = RotationAroundZ(2.*M_PI/3.0); //120ï¿½
   Mat3 Id = Mat3::Identity();
 
   // Setup the relative motions (relative rotations)
@@ -121,7 +121,7 @@ TEST ( rotation_averaging, RefineRotationsAvgL1IRLS_SimpleTriplet)
 
   //- Solve the global rotation estimation problem :
   Matrix3x3Arr vec_globalR(3);
-  size_t nMainViewID = 0;
+  std::size_t nMainViewID = 0;
   EXPECT_TRUE(GlobalRotationsRobust(vec_relativeRotEstimate, vec_globalR, nMainViewID, 0.0f, NULL));
 
   // Check that the loop is closing
@@ -154,11 +154,11 @@ TEST ( rotation_averaging, RefineRotationsAvgL1IRLS_CompleteGraph)
 
   //Link each camera to the two next ones
   RelativeRotations vec_relativeRotEstimate;
-  for (size_t i = 0; i < iNviews; ++i)
+  for (std::size_t i = 0; i < iNviews; ++i)
   {
-    size_t index0 = i;
-    size_t index1 = (i+1)%iNviews;
-    size_t index2 = (i+2)%iNviews;
+    std::size_t index0 = i;
+    std::size_t index1 = (i+1)%iNviews;
+    std::size_t index2 = (i+2)%iNviews;
 
     //-- compute true relative rotations of the triplet
     // (index0->index1), (index1,index2), (index0->index2)
@@ -176,13 +176,13 @@ TEST ( rotation_averaging, RefineRotationsAvgL1IRLS_CompleteGraph)
 
   //- Solve the global rotation estimation problem :
   Matrix3x3Arr vec_globalR(iNviews);
-  size_t nMainViewID = 0;
+  std::size_t nMainViewID = 0;
   bool bTest = GlobalRotationsRobust(vec_relativeRotEstimate, vec_globalR, nMainViewID, 0.0f, NULL);
   EXPECT_TRUE(bTest);
 
   // Check that the loop is closing
   Mat3 rotCumul = Mat3::Identity();
-  for (size_t i = 0; i < iNviews; ++i)
+  for (std::size_t i = 0; i < iNviews; ++i)
   {
     rotCumul*= vec_globalR[i];
   }
@@ -192,12 +192,12 @@ TEST ( rotation_averaging, RefineRotationsAvgL1IRLS_CompleteGraph)
     Mat3 Rrel;
     Vec3 trel;
     RelativeCameraMotion(vec_globalR[0], Vec3::Zero(), d._R[0], Vec3::Zero(), &Rrel, &trel);
-    for (size_t i = 0; i < iNviews; ++i)
+    for (std::size_t i = 0; i < iNviews; ++i)
       vec_globalR[i] *= Rrel;
   }
 
   // Check that each global rotations is near the true ones
-  for (size_t i = 0; i < iNviews; ++i)
+  for (std::size_t i = 0; i < iNviews; ++i)
   {
     EXPECT_NEAR(0.0, FrobeniusDistance(d._R[i], vec_globalR[i]), 1e-8);
   }
@@ -215,12 +215,12 @@ TEST ( rotation_averaging, RefineRotationsAvgL1IRLS_CompleteGraph_outliers)
 
   //Link each camera to the two next ones
   RelativeRotations vec_relativeRotEstimate;
-  std::vector<std::pair<size_t,size_t> > vec_unique;
-  for (size_t i = 0; i < iNviews; ++i)
+  std::vector<std::pair<std::size_t,std::size_t> > vec_unique;
+  for (std::size_t i = 0; i < iNviews; ++i)
   {
-    size_t index0 = i;
-    size_t index1 = (i+1)%iNviews;
-    size_t index2 = (i+2)%iNviews;
+    std::size_t index0 = i;
+    std::size_t index1 = (i+1)%iNviews;
+    std::size_t index2 = (i+2)%iNviews;
 
     //-- compute true relative rotations of the triplet
     // (index0->index1), (index1,index2), (index0->index2)
@@ -233,7 +233,7 @@ TEST ( rotation_averaging, RefineRotationsAvgL1IRLS_CompleteGraph_outliers)
     {
       RelativeCameraMotion(d._R[index0], d._t[index0], d._R[index1], d._t[index1], &Rrel, &trel);
       vec_relativeRotEstimate.push_back(RelativeRotation(index0, index1, Rrel, 1));
-      vec_unique.push_back(make_pair(index0, index1));
+      vec_unique.push_back(std::make_pair(index0, index1));
     }
 
     if ( std::find(vec_unique.begin(), vec_unique.end(), std::make_pair(index1, index2)) == vec_unique.end()
@@ -241,7 +241,7 @@ TEST ( rotation_averaging, RefineRotationsAvgL1IRLS_CompleteGraph_outliers)
     {
       RelativeCameraMotion(d._R[index1], d._t[index1], d._R[index2], d._t[index2], &Rrel, &trel);
       vec_relativeRotEstimate.push_back(RelativeRotation(index1, index2, Rrel, 1));
-      vec_unique.push_back(make_pair(index1, index2));
+      vec_unique.push_back(std::make_pair(index1, index2));
     }
 
     if ( std::find(vec_unique.begin(), vec_unique.end(), std::make_pair(index0, index2)) == vec_unique.end()
@@ -249,13 +249,13 @@ TEST ( rotation_averaging, RefineRotationsAvgL1IRLS_CompleteGraph_outliers)
     {
       RelativeCameraMotion(d._R[index0], d._t[index0], d._R[index2], d._t[index2], &Rrel, &trel);
       vec_relativeRotEstimate.push_back(RelativeRotation(index0, index2, Rrel, 1));
-      vec_unique.push_back(make_pair(index0, index2));
+      vec_unique.push_back(std::make_pair(index0, index2));
     }
   }
 
   // Add 2 outliers rotations between (0->1), (2->3)
   // (use a smaller weight since those rotations are less accurate)
-  for (size_t i = 0; i < vec_relativeRotEstimate.size(); ++i)
+  for (std::size_t i = 0; i < vec_relativeRotEstimate.size(); ++i)
   {
     if( vec_relativeRotEstimate[i].i == 0 && vec_relativeRotEstimate[i].j == 1)
       vec_relativeRotEstimate[i] = RelativeRotation(0, 1, RotationAroundX(D2R(0.1)), 0.5);
@@ -266,7 +266,7 @@ TEST ( rotation_averaging, RefineRotationsAvgL1IRLS_CompleteGraph_outliers)
   //- Solve the global rotation estimation problem :
   Matrix3x3Arr vec_globalR(iNviews);
   vec_globalR = d._R;
-  size_t nMainViewID = 0;
+  std::size_t nMainViewID = 0;
   std::vector<bool> vec_inliers;
   bool bTest = GlobalRotationsRobust(vec_relativeRotEstimate, vec_globalR, nMainViewID, 0.0f, &vec_inliers);
   EXPECT_TRUE(bTest);
@@ -281,7 +281,7 @@ TEST ( rotation_averaging, RefineRotationsAvgL1IRLS_CompleteGraph_outliers)
 
   // Remove outliers and refine
   RelativeRotations vec_relativeRotEstimateTemp;
-  for (size_t i = 0; i < vec_inliers.size(); ++i)
+  for (std::size_t i = 0; i < vec_inliers.size(); ++i)
   {
     if( vec_inliers[i] == 1)
       vec_relativeRotEstimateTemp.push_back(vec_relativeRotEstimate[i]);
@@ -291,7 +291,7 @@ TEST ( rotation_averaging, RefineRotationsAvgL1IRLS_CompleteGraph_outliers)
 
   // Check that the loop is closing
   Mat3 rotCumul = vec_globalR[0];
-  for (size_t i = 1; i < iNviews; ++i)
+  for (std::size_t i = 1; i < iNviews; ++i)
   {
     rotCumul*= vec_globalR[i];
   }
@@ -303,12 +303,12 @@ TEST ( rotation_averaging, RefineRotationsAvgL1IRLS_CompleteGraph_outliers)
     Mat3 Rrel;
     Vec3 trel;
     RelativeCameraMotion(vec_globalR[0], Vec3::Zero(), d._R[0], Vec3::Zero(), &Rrel, &trel);
-    for (size_t i = 0; i < iNviews; ++i)
+    for (std::size_t i = 0; i < iNviews; ++i)
       vec_globalR[i] *= Rrel;
   }
 
   // Check that each global rotations is near the true ones
-  for (size_t i = 0; i < iNviews; ++i)
+  for (std::size_t i = 0; i < iNviews; ++i)
   {
     EXPECT_NEAR(0.0, FrobeniusDistance(d._R[i], vec_globalR[i]), 1e-8);
   }
