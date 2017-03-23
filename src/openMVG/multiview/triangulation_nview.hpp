@@ -30,6 +30,8 @@
 
 #include "openMVG/numeric/numeric.h"
 
+#include <vector>
+
 namespace openMVG {
 
 /// Compute a 3D position of a point from several images of it. In particular,
@@ -52,7 +54,7 @@ class Triangulation
 {
 public:
 
-  size_t size() const {	return views.size();}
+  std::size_t size() const {	return views.size();}
 
   void clear()  { views.clear();}
 
