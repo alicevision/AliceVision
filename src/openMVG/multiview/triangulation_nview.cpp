@@ -30,31 +30,35 @@
 
 namespace openMVG {
 
-  void TriangulateNView(const Mat2X &x,
-    const std::vector< Mat34 > &Ps,
-    Vec4 *X) {
-      Mat2X::Index nviews = x.cols();
-      assert(nviews == Ps.size());
+void TriangulateNView(const Mat2X &x,
+                      const std::vector< Mat34 > &Ps,
+                      Vec4 *X)
+{
+  Mat2X::Index nviews = x.cols();
+  assert(nviews == Ps.size());
 
-      Mat design = Mat::Zero(3*nviews, 4 + nviews);
-      for (int i = 0; i < nviews; i++) {
-        design.block<3, 4>(3*i, 0) = -Ps[i];
-        design(3*i + 0, 4 + i) = x(0, i);
-        design(3*i + 1, 4 + i) = x(1, i);
-        design(3*i + 2, 4 + i) = 1.0;
-      }
-      Vec X_and_alphas;
-      Nullspace(&design, &X_and_alphas);
-      *X = X_and_alphas.head(4);
+  Mat design = Mat::Zero(3 * nviews, 4 + nviews);
+  for(int i = 0; i < nviews; i++)
+  {
+    design.block<3, 4>(3 * i, 0) = -Ps[i];
+    design(3 * i + 0, 4 + i) = x(0, i);
+    design(3 * i + 1, 4 + i) = x(1, i);
+    design(3 * i + 2, 4 + i) = 1.0;
   }
+  Vec X_and_alphas;
+  Nullspace(&design, &X_and_alphas);
+  *X = X_and_alphas.head(4);
+}
 
-  typedef Eigen::Matrix<double, 2, 3> Mat23;
-  inline Mat23 SkewMatMinimal(const Vec2 &x) {
-    Mat23 skew;
-    skew <<
-      0, -1,  x(1),
-      1, 0, -x(0);
-    return skew;
+typedef Eigen::Matrix<double, 2, 3> Mat23;
+
+inline Mat23 SkewMatMinimal(const Vec2 &x)
+{
+  Mat23 skew;
+  skew <<
+          0, -1, x(1),
+          1, 0, -x(0);
+  return skew;
 }
 
 void TriangulateNViewAlgebraic(const Mat2X &x,

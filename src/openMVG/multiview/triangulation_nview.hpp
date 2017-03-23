@@ -54,7 +54,7 @@ class Triangulation
 {
 public:
 
-  std::size_t size() const {	return views.size();}
+  std::size_t size() const { return views.size();}
 
   void clear()  { views.clear();}
 

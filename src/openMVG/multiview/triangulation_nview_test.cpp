@@ -114,7 +114,7 @@ TEST(Triangulate_NViewIterative, FiveViews)
 
     Triangulation triangulationObj;
     for (int j = 0; j < nviews; ++j)
-    triangulationObj.add(d.P(j), d._x[j].col(i));
+      triangulationObj.add(d.P(j), d._x[j].col(i));
 
     const Vec3 X = triangulationObj.compute();
     // Check reprojection error. Should be nearly zero.
