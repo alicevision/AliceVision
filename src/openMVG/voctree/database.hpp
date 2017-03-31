@@ -188,16 +188,6 @@ private:
    * @param[in/out] v the unnormalized histogram of visual words
    */
   void normalize(SparseHistogram& v) const;
-
-  /**
-   * @brief compute the sparse distance between two histograms according to the chosen distance method.
-   * 
-   * @param v1 The first sparse histogram
-   * @param v2 The second sparse histogram
-   * @param distanceMethod distance method (norm L1, etc.)
-   * @return the distance of the two histograms
-   */
-  float sparseDistance(const SparseHistogram& v1, const SparseHistogram& v2, const std::string &distanceMethod = "classic") const;
 };
 
 }//namespace voctree

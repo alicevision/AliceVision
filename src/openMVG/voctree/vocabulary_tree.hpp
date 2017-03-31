@@ -295,6 +295,17 @@ void VocabularyTree<Feature, Distance, FeatureAllocator>::setNodeCounts()
   }
 }
 
+/**
+ * @brief compute the sparse distance between two histograms according to the chosen distance method.
+ * 
+ * @param v1 The first sparse histogram
+ * @param v2 The second sparse histogram
+ * @param distanceMethod distance method (norm L1, etc.)
+ * @param word_weights 
+ * @return the distance of the two histograms
+ */
+float sparseDistance(const SparseHistogram& v1, const SparseHistogram& v2, const std::string &distanceMethod = "classic", const std::vector<float>& word_weights = std::vector<float>());
+
 }
 }
 #endif //OPENMVG_VOCABULARY_TREE_VOCABULARY_TREE_HPP
