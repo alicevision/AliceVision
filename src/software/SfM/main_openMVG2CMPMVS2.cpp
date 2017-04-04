@@ -172,48 +172,6 @@ bool exportToCMPMVS2Format(
   // Since CMPMVS requires contiguous camera indexes and some views may not have a pose,
   // we reindex the poses to ensure a contiguous pose list.
   Hash_Map<IndexT, IndexT> map_viewIdToContiguous;
-
-  // CMPMVS only support images of the same resolution,
-  // so select the most used resolution and only export those images.
-  std::pair<size_t, size_t> mostCommonResolution;
-  {
-    std::map<std::pair<size_t, size_t>, size_t> imgResolutions;
-    std::size_t nbValidImages = 0;
-    for(const auto &iter : sfm_data.GetViews())
-    {
-      const View * view = iter.second.get();
-      if (!sfm_data.IsPoseAndIntrinsicDefined(view))
-        continue;
-      Intrinsics::const_iterator iterIntrinsic = sfm_data.GetIntrinsics().find(view->id_intrinsic);
-      const IntrinsicBase * cam = iterIntrinsic->second.get();
-      if(!cam->isValid())
-        continue;
-      ++nbValidImages;
-      std::pair<size_t, size_t> imgResolution = std::make_pair(cam->w(), cam->h());
-      if(imgResolutions.find(imgResolution) == imgResolutions.end())
-      {
-        imgResolutions[imgResolution] = 1;
-      }
-      else
-      {
-        ++imgResolutions[imgResolution];
-      }
-    }
-    std::size_t s = 0;
-    for(auto& r: imgResolutions)
-    {
-      if(r.second > s)
-      {
-        mostCommonResolution = r.first;
-        s = r.second;
-      }
-    }
-    if(imgResolutions.size() > 1)
-    {
-      std::cerr << "CMPMVS only supports images of the same size, so we export the most common resolution: " << mostCommonResolution.first << "x" << mostCommonResolution.second << std::endl;
-      std::cerr << "We will only export " << s << " cameras from a dataset of " << nbValidImages << " cameras." << std::endl;
-    }
-  }
   // Export valid views as Projective Cameras:
   for(const auto &iter : sfm_data.GetViews())
   {
@@ -222,8 +180,6 @@ bool exportToCMPMVS2Format(
       continue;
     Intrinsics::const_iterator iterIntrinsic = sfm_data.GetIntrinsics().find(view->id_intrinsic);
     const IntrinsicBase * cam = iterIntrinsic->second.get();
-    if(cam->w() != mostCommonResolution.first || cam->h() != mostCommonResolution.second)
-      continue;
     // View Id re-indexing
     // Need to start at 1 for CMPMVS
     map_viewIdToContiguous.insert(std::make_pair(view->id_view, map_viewIdToContiguous.size() + 1));
@@ -375,8 +331,6 @@ bool exportToCMPMVS2Format(
   << "prefix=\"\"" << os.widen('\n')
   << "imgExt=\"jpg\"" << os.widen('\n')
   << "ncams=" << map_viewIdToContiguous.size() << os.widen('\n')
-  << "width=" << mostCommonResolution.first << os.widen('\n')
-  << "height=" << mostCommonResolution.second << os.widen('\n')
   << "scale=" << scale << os.widen('\n')
   << "verbose=TRUE" << os.widen('\n')
   << os.widen('\n')
