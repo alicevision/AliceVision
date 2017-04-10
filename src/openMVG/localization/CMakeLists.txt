@@ -1,3 +1,4 @@
+if(OpenMVG_USE_BOOST)
 
 set(localization_files_headers
   LocalizationResult.hpp
@@ -49,3 +50,5 @@ IF(OpenMVG_USE_OPENGV)
   UNIT_TEST(openMVG rigResection
     "openMVG_localization")
 ENDIF(OpenMVG_USE_OPENGV)
+
+endif(OpenMVG_USE_BOOST)

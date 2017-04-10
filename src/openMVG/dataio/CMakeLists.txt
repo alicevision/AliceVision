@@ -1,3 +1,5 @@
+if(OpenMVG_USE_BOOST)
+
 file(
   GLOB_RECURSE
   dataio_header
@@ -21,3 +23,5 @@ endif(OpenMVG_USE_OPENCV)
 set_target_properties(openMVG_dataio PROPERTIES SOVERSION ${OPENMVG_VERSION_MAJOR} VERSION "${OPENMVG_VERSION_MAJOR}.${OPENMVG_VERSION_MINOR}")
 
 install(TARGETS openMVG_dataio DESTINATION lib/ EXPORT openMVG-targets)
+
+endif(OpenMVG_USE_BOOST)

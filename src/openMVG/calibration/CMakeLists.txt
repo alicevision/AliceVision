@@ -1,3 +1,5 @@
+if(OpenMVG_USE_OPENCV AND OpenMVG_USE_BOOST)
+
 set(calibration_files_headers
   calibration.hpp
   bestImages.hpp
@@ -28,3 +30,5 @@ ENDIF(OpenMVG_USE_CCTAG)
 SET_PROPERTY(TARGET openMVG_calibration PROPERTY FOLDER OpenMVG)
 
 INSTALL(TARGETS openMVG_calibration DESTINATION lib EXPORT openMVG-targets)
+
+endif(OpenMVG_USE_OPENCV AND OpenMVG_USE_BOOST)
