@@ -59,9 +59,24 @@ public:
    * @see readCalibrationFromFile()
    */    
   VideoFeed(int videoDevice, const std::string &calibPath);
+  
+  /**
+   * @brief Provide a new RGB image from the feed
+   * 
+   * @param[out] imageRGB The new RGB image from the feed.
+   * @param[out] camIntrinsics The associated camera intrinsics.
+   * @param[out] mediaPath The original video path.
+   * @param[out] hasIntrinsics True if \p camIntrinsics is valid, otherwise there
+   * is no intrinsics associated to \p imageRGB.
+   * @return True if there is a new image, false otherwise.
+   */
+  bool readImage(image::Image<image::RGBColor> &imageRGB,
+            cameras::Pinhole_Intrinsic_Radial_K3 &camIntrinsics,
+            std::string &mediaPath,
+            bool &hasIntrinsics);
 
   /**
-   * @brief Provide a new image from the feed
+   * @brief Provide a new grayscale image from the feed
    * 
    * @param[out] imageGray The new image from the feed.
    * @param[out] camIntrinsics The associated camera intrinsics.

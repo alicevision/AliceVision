@@ -27,6 +27,11 @@ public:
   FeederImpl() : _isInit(false) {}
   
   FeederImpl(const std::string& imagePath, const std::string& calibPath);
+  
+  bool readImage(image::Image<image::RGBColor> &imageRGB, 
+                   cameras::Pinhole_Intrinsic_Radial_K3 &camIntrinsics,
+                   std::string &imageName,
+                   bool &hasIntrinsics);
 
   bool readImage(image::Image<unsigned char> &imageGray, 
                      cameras::Pinhole_Intrinsic_Radial_K3 &camIntrinsics,
@@ -197,6 +202,51 @@ ImageFeed::FeederImpl::FeederImpl(const std::string& imagePath, const std::strin
     readCalibrationFromFile(calibPath, _camIntrinsics);
   }
 }
+
+  bool ImageFeed::FeederImpl::readImage(image::Image<image::RGBColor> &imageRGB,
+            cameras::Pinhole_Intrinsic_Radial_K3 &camIntrinsics,
+            std::string &imageName,
+            bool &hasIntrinsics)
+  {
+    if(!_isInit)
+    {
+      OPENMVG_LOG_WARNING("Image feed is not initialized ");
+      return false;
+    }
+    
+    if(_images.empty())
+      return false;
+    
+    if(_currentImageIndex >= _images.size())
+      return false;
+    
+    imageName = _images[_currentImageIndex];
+    OPENMVG_LOG_DEBUG(imageName);
+    
+    if(_sfmMode)
+    {
+      OPENMVG_LOG_WARNING("Error can't use SfM mode on RGB image " << imageName);
+      throw std::invalid_argument("Error can't use SfM mode on RGB image " + imageName);
+    }
+
+    if(_withCalibration)
+    {
+      // get the calibration
+      camIntrinsics = _camIntrinsics;
+      hasIntrinsics = true;
+    }
+    else
+    {
+      hasIntrinsics = false;
+    }
+
+    if (!image::ReadImage(imageName.c_str(), &imageRGB))
+    {
+      OPENMVG_LOG_WARNING("Error while opening image " << imageName);
+      throw std::invalid_argument("Error while opening image " + imageName);
+    }
+    return true;
+  }
 
 
 
@@ -372,6 +422,14 @@ ImageFeed::ImageFeed() : _imageFeed(new FeederImpl()) { }
 
 ImageFeed::ImageFeed(const std::string& imagePath, const std::string& calibPath)  
     : _imageFeed( new FeederImpl(imagePath, calibPath) ) { }
+
+bool ImageFeed::readImage(image::Image<image::RGBColor> &imageRGB, 
+                     cameras::Pinhole_Intrinsic_Radial_K3 &camIntrinsics,
+                     std::string &mediaPath,
+                     bool &hasIntrinsics)
+{
+  return(_imageFeed->readImage(imageRGB, camIntrinsics, mediaPath, hasIntrinsics));
+}
 
 bool ImageFeed::readImage(image::Image<unsigned char> &imageGray, 
                      cameras::Pinhole_Intrinsic_Radial_K3 &camIntrinsics,
