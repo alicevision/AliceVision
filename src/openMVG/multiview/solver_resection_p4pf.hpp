@@ -423,7 +423,11 @@ namespace openMVG {
 			A[90] = -M[6247];	A[91] = -M[6246];	A[92] = -M[6245];	A[93] = -M[6244];	A[94] = -M[6243];	A[95] = -M[6242];	A[96] = -M[6241];	A[97] = -M[6240];	A[98] = -M[6239];	A[99] = -M[6238];
 		}
 
-		bool isNan(Eigen::MatrixXcd *A) {
+		bool isNan
+		(
+			Eigen::MatrixXcd *A
+		) 
+		{
 			Mat B = A->real();
 			for (int i = 0; i < B.cols() * B.rows(); i++) {
 				if (isnan(B.data()[i])) return true;
@@ -431,7 +435,12 @@ namespace openMVG {
 			return false;
 		}
 
-		bool validSol(Eigen::MatrixXcd *sol, Mat *vSol) {
+		bool validSol
+		(
+			Eigen::MatrixXcd *sol,
+			Mat *vSol
+		) 
+		{
 			Mat imSol = sol->imag();
 			Mat reSol = sol->real();
 			std::vector<int> correct;
@@ -459,32 +468,31 @@ namespace openMVG {
 			return true;
 		}
 
-		void getRigidTransform(Mat *pp1, Mat *pp2, Mat *R, Vec3 *t) {
+		void getRigidTransform
+		(
+			Mat *pp1, 
+			Mat *pp2, 
+			Mat *R, 
+			Vec3 *t
+		) 
+		{
 			Mat p1mean, p2mean, u1, u2;
 			Mat p1(*pp1);
 			Mat p2(*pp2);
-			//std::cout << "p1:\n" << p1 << "\n\n";
-			//std::cout << "p2:\n" << p2 << "\n\n";
 
 			// shift centers of gravity to the origin
 			p1mean = p1.rowwise().sum() * 0.25;
 			p2mean = p2.rowwise().sum() * 0.25;
-			//std::cout << "p1mean:\n" << p1mean << "\n\n";
-			//std::cout << "p2mean:\n" << p2mean << "\n\n";
 			for (int i = 0; i < 4; i++) {
 				p1.block(0, i, 3, 1) = p1.block(0, i, 3, 1) - p1mean;
 				p2.block(0, i, 3, 1) = p2.block(0, i, 3, 1) - p2mean;
 			}
-			//std::cout << "p1:\n" << p1 << "\n\n";
-			//std::cout << "p2:\n" << p2 << "\n\n";
 
 			// normalize to unit size
 			u1 = p1;
 			u1 *= p1.colwise().norm().cwiseInverse().asDiagonal();
 			u2 = p2;
 			u2 *= p2.colwise().norm().cwiseInverse().asDiagonal();
-			//std::cout << "u1:\n" << u1 << "\n\n";
-			//std::cout << "u2:\n" << u2 << "\n\n";
 
 			// calc rotation
 			Mat C = u2 * u1.transpose();
@@ -492,20 +500,14 @@ namespace openMVG {
 			Mat S = svd.singularValues();
 			Mat U = svd.matrixU();
 			Mat V = svd.matrixV();
-			//std::cout << "S:\n" << S << "\n\n";
-			//std::cout << "U:\n" << U << "\n\n";
-			//std::cout << "V:\n" << V << "\n\n";
 
 			// fit to rotation space
 			S(0) = (S(0) >= 0 ? 1 : -1);
 			S(1) = (S(1) >= 0 ? 1 : -1);
 			S(2) = ((U*V.transpose()).determinant() >= 0 ? 1 : -1);
-			//std::cout << "S adjusted:\n" << S << "\n\n";
 
 			*R = U * S.asDiagonal() * V.transpose();
 			*t = -(*R) * p1mean + p2mean;
-			//std::cout << "R:\n" << (*R) << "\n\n";
-			//std::cout << "t:\n" << (*t) << "\n\n";
 		}
 
 		// The structure M contain one output model
@@ -543,12 +545,10 @@ namespace openMVG {
 		*
 		*       Input: featureVectors: 3x4 matrix with feature vectors with subtracted principal point (each column is a vector)
 		*              worldPoints: 3x4 matrix with corresponding 3D world points (each column is a point)
-		*              solutions: M x n vector that will contain the each solution in structure M 
-		8						  (rotation matrix M._R, translation vector M._t, focal length M._f)
-		*                         following equation holds for each solution:
-		*						     lambda*pt2D = diag([f(i) f(i) 1])*[R(:, : , i) t(:, i)] * pt3D
-		*      Output: bool: true if correct execution
-		*                    false if world points aligned
+		*              
+		*      Output: solutions: M x n vector that will contain the each solution in structure M (rotation matrix M._R, 
+		*						  translation vector M._t, focal length M._f). Following equation holds for each solution:
+		*						  lambda*pt2D = diag([M._f M._f 1])*[M._R M._t] * pt3D
 		*/
 		struct P4PfSolver {
 			enum { MINIMUM_SAMPLES = 4 };
@@ -561,8 +561,6 @@ namespace openMVG {
 				std::vector<M> *models
 			)
 			{
-				//std::cout << "pt2Dx: \n" << pt2Dx << "\n\n";
-				//std::cout << "pt3Dx: \n" << pt3Dx << "\n\n";
 				Mat pt2D(pt2Dx);
 				Mat pt3D(pt3Dx);
 				assert(2 == pt2D.rows());
@@ -571,20 +569,15 @@ namespace openMVG {
 
 				double tol = 2.2204e-10;
 				Vec3 mean3d = pt3D.rowwise().mean();
-				//std::cout << mean3d << "\n\n";
 				
 				Mat ones = Mat(1, 4);
 				ones << 1, 1, 1, 1;
 				pt3D = pt3D - (mean3d * ones);
-				//std::cout << pt3D << "\n\n";
 
 				double var = pt3D.colwise().norm().sum() / 4;
 				pt3D *= (1 / var);
-				//std::cout << pt3D << "\n\n";
-
 				double var2d = pt2D.colwise().norm().sum() / 4;
 				pt2D *= (1 / var2d);			
-				//std::cout << pt2D << "\n\n";
 
 				double glab = (pt3D.col(0) - pt3D.col(1)).squaredNorm();
 				double glac = (pt3D.col(0) - pt3D.col(2)).squaredNorm();
@@ -592,7 +585,7 @@ namespace openMVG {
 				double glbc = (pt3D.col(1) - pt3D.col(2)).squaredNorm();
 				double glbd = (pt3D.col(1) - pt3D.col(3)).squaredNorm();
 				double glcd = (pt3D.col(2) - pt3D.col(3)).squaredNorm();
-				//std::cout << "AB:" << glab << ", AC:" << glac << ", AD:" << glad << ", BC:" << glbc << " BD:" << glbd << " CD:" << glcd << "\n\n";
+
 
 				// initial solution degeneracy - invalid input
 				if (glab*glac*glad*glbc*glbd*glcd < tol) 
@@ -606,16 +599,12 @@ namespace openMVG {
 				double *d1 = pt2D.col(3).data();
 
 				compute_p4pf_poses(gl, a1, b1, c1, d1, A.data());
-				//std::cout << A << "\n\n";
 
 				Eigen::EigenSolver<Mat> es(A.transpose());
 				Eigen::MatrixXcd sol = es.eigenvectors();
-				//std::cout <<  "Eig. A: \n" << sol << "\n\n";
 				Eigen::MatrixXcd diag = sol.row(0).cwiseInverse().asDiagonal();
-				//std::cout << "Eig. diag: \n" << diag << "\n\n";
 
 				sol = sol.block(1, 0, 4, 10) * diag;
-				//std::cout << "Eig. A(2,3,4,5,:): \n" << sol << "\n\n";
 
 				// contain at least one NaN
 				if (isNan(&sol))
@@ -625,7 +614,6 @@ namespace openMVG {
 				Mat vSol;
 				if (!validSol(&sol, &vSol))
 					return;
-				//std::cout << "Valid solutions: " << vSol << "\n\n";
 
 				// recover camera rotation and translation
 				for ( int i = 0; i < vSol.cols(); i++ ){
@@ -640,8 +628,6 @@ namespace openMVG {
 							pt2D(1, 0), zb*pt2D(1, 1), zc*pt2D(1, 2), zd*pt2D(1, 3), 
 							f,          zb*f,          zc*f,          zd*f;
 
-					//std::cout << "p3dc: \n" << p3dc << "\n\n";
-
 					// fix scale(recover 'za')
 					Mat d = Mat(6,1); 
 					d(0,0) = sqrt(glab / (p3dc.col(0) - p3dc.col(1)).squaredNorm());
@@ -651,13 +637,10 @@ namespace openMVG {
 					d(4,0) = sqrt(glbd / (p3dc.col(1) - p3dc.col(3)).squaredNorm());
 					d(5,0) = sqrt(glcd / (p3dc.col(2) - p3dc.col(3)).squaredNorm());
 					// all d(i) should be equal...
-					//std::cout << "d: \n" << d << "\n\n";
-
+					
 					//gta = median(d);
 					double gta = d.sum() / 6;
-
 					p3dc = gta * p3dc;
-					//std::cout << "p3dc: \n" << p3dc << "\n\n";
 
 					// calc camera
 					Mat Rr;
@@ -665,10 +648,8 @@ namespace openMVG {
 					getRigidTransform(&pt3D, &p3dc, &Rr, &tt);
 					Vec3 t = var*tt - Rr*mean3d;
 					f *= var2d;
-					//std::cout << "R: \n" << Rr << "\n\n";
-					//std::cout << "t: \n" << t << "\n\n";
-					//std::cout << "f: \n" << f << "\n\n";
 					
+					// output
 					M model(Rr, t, f);
 					models->push_back(model);
 				}
@@ -683,80 +664,6 @@ namespace openMVG {
 			)
 			{
 				return (pt2D - Project(model.getP(), pt3D)).norm();
-			}
-
-			// Test the P4Pf solver 
-			static bool Test() {
-				// ----------------------------------- ONE RESULT -----------------------------------
-				// DATA
-				Mat pt2D_1 = Mat(2, 4);
-				pt2D_1 <<	-493.1500, 1051.9100, 176.9500, -1621.9800,
-							-878.4550, -984.7530, -381.4300, -543.3450;
-				Mat pt3D_1 = Mat(3, 4);
-				pt3D_1 <<   2.7518,		2.2375,		1.1940,	    2.5778,
-							0.1336,     -0.3709,    0.2048,     -0.9147,
-							-0.5491,	-2.0511,    1.1480,	    -1.6151;
-				
-				// RESULT
-				Mat R_1 = Mat(3,3); R_1 << -0.97189, 0.05884, -0.22797, -0.02068, -0.98586, -0.16631, -0.23454, -0.15692, 0.95936;
-				Vec3 t_1; t_1 << 2.00322, -1.27420, 2.92685;
-				M sol_1(R_1, t_1, 887.17549);
-				
-				// PROCESS
-				std::vector<M> models_1;
-				Solve(pt2D_1, pt3D_1, &models_1);
-
-				if (!(models_1.size() == 1 && models_1.at(0).isEqual(sol_1)))
-					return false;
-				// ----------------------------------- /ONE RESULT -----------------------------------
-				// ----------------------------------- MORE RESULTS -----------------------------------
-				// DATA
-				Mat pt2D_2 = Mat(2, 4);
-				pt2D_2 <<	774.88000, -772.31000, -1661.63300, -1836.57300, 
-							-534.74500, -554.09400, -585.53300, -430.03000;
-				Mat pt3D_2 = Mat(3, 4);
-				pt3D_2 <<	2.01852, 1.00709, 0.74051, 0.61962, 
-							0.02133, 0.30770, 0.16656, 0.11249, 
-							-1.68077, 0.81502, 1.21056, 1.22624;
-				// RESULTS
-				Mat R_21 = Mat(3, 3);  R_21 << 0.74908, 0.58601, -0.30898, 0.65890, -0.61061, 0.43933, 0.06879, -0.53268, -0.84352;
-				Mat R_22 = Mat(3, 3);  R_22 << 0.06352, -0.56461, -0.82291, -0.97260, 0.14975, -0.17781, 0.22362, 0.81166, -0.53963;
-				Mat R_23 = Mat(3, 3);  R_23 << 0.02362, -0.60298, -0.79741, -0.96400, 0.19758, -0.17796, 0.26486, 0.77290, -0.57661;
-				Vec3 t_21; t_21 << -1.17794, -1.17674, 3.57853;
-				Vec3 t_22; t_22 << 0.08257, 0.57753, 1.04335;
-				Vec3 t_23; t_23 << 0.16029, 0.58720, 1.07571;
-				M sol_21(R_21, t_21, 4571.95746);
-				M sol_22(R_22, t_22, 1193.30606);
-				M sol_23(R_23, t_23, 1315.17564);
-
-				// PROCESS
-				std::vector<M> models_2;
-				Solve(pt2D_2, pt3D_2, &models_2);
-
-				if (!(	models_2.size() == 3
-						&& models_2.at(0).isEqual(sol_21)
-						&& models_2.at(1).isEqual(sol_22)
-						&& models_2.at(2).isEqual(sol_23)) )
-					return false;
-				// ----------------------------------- /MORE RESULTS -----------------------------------
-				// ----------------------------------- DON'T HAVE ANY RESULTS -----------------------------------
-				// DATA
-				Mat pt2D_3 = Mat(2, 4);
-				pt2D_3 <<	 774.88000, -570.41000, -1881.86960, 1529.54000, 
-							-534.74500, -834.63100, -167.32000, -1203.28000;
-				Mat pt3D_3 = Mat(3, 4);
-				pt3D_3 <<	2.01852, 1.28149, 0.55264, 2.29633,
-							0.02133, 0.26101, 0.14578, -1.80998,
-							-1.68077, 0.70813, 1.22217, -1.76850;
-
-				// PROCESS
-				std::vector<M> models_3;
-				Solve(pt2D_3, pt3D_3, &models_3);
-				if ( models_3.size() != 0 )
-					return false;
-				// ----------------------------------- DON'T HAVE ANY RESULTS -----------------------------------
-				
-				return true;
 			}
 		};
 
