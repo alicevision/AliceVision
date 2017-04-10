@@ -377,6 +377,32 @@ TARGET_LINK_LIBRARIES(openMVG_main_evalQuality
 SET_PROPERTY(TARGET openMVG_main_evalQuality PROPERTY FOLDER OpenMVG/software)
 INSTALL(TARGETS openMVG_main_evalQuality DESTINATION bin/)
 
+
+###
+# SfM tools to prepare picture to a future SfM process
+#
+###
+
+
+# - Export keyframes from a video file / image sequence directory
+# -
+if(OpenMVG_USE_BOOST AND OpenMVG_USE_OIIO)
+
+ADD_EXECUTABLE(openMVG_main_keyframeSelection main_keyframeSelection.cpp)
+TARGET_LINK_LIBRARIES(openMVG_main_keyframeSelection
+  openMVG_system
+  openMVG_keyframe
+  ${OpenImageIO_LIBRARY}
+  ${Boost_LIBRARIES}
+  )
+
+#installation rules
+SET_PROPERTY(TARGET openMVG_main_keyframeSelection PROPERTY FOLDER OpenMVG/software)
+INSTALL(TARGETS openMVG_main_keyframeSelection DESTINATION bin/)
+
+endif(OpenMVG_USE_BOOST AND OpenMVG_USE_OIIO)
+
+
 ##
 # Export tutorial with valid path thanks to a configuration file
 ##

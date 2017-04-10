@@ -504,6 +504,19 @@ IF(OpenMVG_USE_OPENGV)
 ENDIF(OpenMVG_USE_OPENGV)
 
 # ==============================================================================
+# OpenImageIO
+# ==============================================================================
+# - optional, it allows to use keyframe selection
+# ==============================================================================
+IF(OpenMVG_USE_OIIO)
+  FIND_PACKAGE(OpenImageIO)
+  INCLUDE_DIRECTORIES(${OpenImageIO_INCLUDE_DIR})
+  LINK_DIRECTORIES(${OpenImageIO_LIBRARY})
+  ADD_DEFINITIONS(-DHAVE_OIIO)
+ENDIF(OpenMVG_USE_OIIO)
+
+
+# ==============================================================================
 # Include directories
 # ==============================================================================
 SET(OpenMVG_INCLUDE_DIRS
