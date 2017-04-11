@@ -32,11 +32,12 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-#ifndef OPENMVG_MULTIVIEW_RESECTION_P4PF_HPP
-#define OPENMVG_MULTIVIEW_RESECTION_P4PF_HPP
+#ifndef OPENMVG_MULTIVIEW_RESECTION_P4PF_CPP
+#define OPENMVG_MULTIVIEW_RESECTION_P4PF_CPP
 
 #include "openMVG/multiview/projection.hpp"
 #include "openMVG/numeric/numeric.h"
+#include "openMVG/multiview/solver_resection_p4pf.hpp"
 
 #include <cmath>
 #include <iostream>
@@ -44,23 +45,12 @@
 namespace openMVG {
 	namespace resection {
 
-		double dabs
-		(
-			double a
-		)
-		{
+		double dabs(double a) {
 			if (a > 0) return a;
 			return -a;
 		}
 
-		void GJ
-		(
-			double *A,
-			int rcnt,
-			int ccnt,
-			double tol
-		)
-		{
+		void GJ(double *A, int rcnt, int ccnt, double tol) {
 			int r = 0;      // row
 			int c = 0;      // col
 			int k;
@@ -184,16 +174,7 @@ namespace openMVG {
 		}
 
 		// prepare polynomial coefficients
-		void CalcCoefs
-		(
-			double const *src1,
-			double const *src2,
-			double const *src3,
-			double const *src4,
-			double const *src5,
-			double *dst1
-		)
-		{
+		void CalcCoefs(double const *src1, double const *src2, double const *src3, double const *src4, double const *src5, double *dst1) {
 			//	symbolic names.
 #define glab (src1[0])
 #define glac (src1[1])
@@ -345,16 +326,7 @@ namespace openMVG {
 		//  d1 (d2) = x (resp y) measurement of the fourth 2D point
 		//
 		// output *A - 10x10 action matrix
-		void compute_p4pf_poses
-		(
-			double *glab,
-			double *a1,
-			double *b1,
-			double *c1,
-			double *d1,
-			double *A
-		)
-		{
+		void compute_p4pf_poses(double *glab, double *a1, double *b1, double *c1, double *d1, double *A) {
 			// precalculate polynomial equations coefficients
 			double M[6864];
 			double coefs[42];
@@ -423,11 +395,7 @@ namespace openMVG {
 			A[90] = -M[6247];	A[91] = -M[6246];	A[92] = -M[6245];	A[93] = -M[6244];	A[94] = -M[6243];	A[95] = -M[6242];	A[96] = -M[6241];	A[97] = -M[6240];	A[98] = -M[6239];	A[99] = -M[6238];
 		}
 
-		bool isNan
-		(
-			Eigen::MatrixXcd *A
-		)
-		{
+		bool isNan(Eigen::MatrixXcd *A) {
 			Mat B = A->real();
 			for (int i = 0; i < B.cols() * B.rows(); i++) {
 				if (isnan(B.data()[i])) return true;
@@ -435,12 +403,7 @@ namespace openMVG {
 			return false;
 		}
 
-		bool validSol
-		(
-			Eigen::MatrixXcd *sol,
-			Mat *vSol
-		)
-		{
+		bool validSol(Eigen::MatrixXcd *sol, Mat *vSol) {
 			Mat imSol = sol->imag();
 			Mat reSol = sol->real();
 			std::vector<int> correct;
@@ -468,14 +431,7 @@ namespace openMVG {
 			return true;
 		}
 
-		void getRigidTransform
-		(
-			Mat *pp1,
-			Mat *pp2,
-			Mat *R,
-			Vec3 *t
-		)
-		{
+		void getRigidTransform(Mat *pp1, Mat *pp2, Mat *R, Vec3 *t) {
 			Mat p1mean, p2mean, u1, u2;
 			Mat p1(*pp1);
 			Mat p2(*pp2);
@@ -510,158 +466,109 @@ namespace openMVG {
 			*t = -(*R) * p1mean + p2mean;
 		}
 
-		// The structure M contain one output model
-		struct M {
-			double _f;
-			Mat _R;
-			Vec3 _t;
 
-			M(Mat R, Vec3 t, double f) : _R(R), _t(t), _f(f) {}
+		// Solve the problem of camera pose.
+		void P4PfSolver::Solve(const Mat &pt2Dx, const Mat &pt3Dx, std::vector<M> *models) {
+			Mat pt2D(pt2Dx);
+			Mat pt3D(pt3Dx);
+			assert(2 == pt2D.rows());
+			assert(3 == pt3D.rows());
+			assert(pt2D.cols() == pt3D.cols());
 
-			Mat34 getP() const {
-				Mat34 P;
-				Mat K = Mat(3, 3);
-				K << _f, 0, 0,
-					0, _f, 0,
-					0, 0, 1;
-				P.block(0, 0, 3, 3) = K*_R;
-				P.block(0, 3, 3, 1) = K*_t;
-				return P;
+			double tol = 2.2204e-10;
+			Vec3 mean3d = pt3D.rowwise().mean();
+
+			Mat ones = Mat(1, 4);
+			ones << 1, 1, 1, 1;
+			pt3D = pt3D - (mean3d * ones);
+
+			double var = pt3D.colwise().norm().sum() / 4;
+			pt3D *= (1 / var);
+			double var2d = pt2D.colwise().norm().sum() / 4;
+			pt2D *= (1 / var2d);
+
+			double glab = (pt3D.col(0) - pt3D.col(1)).squaredNorm();
+			double glac = (pt3D.col(0) - pt3D.col(2)).squaredNorm();
+			double glad = (pt3D.col(0) - pt3D.col(3)).squaredNorm();
+			double glbc = (pt3D.col(1) - pt3D.col(2)).squaredNorm();
+			double glbd = (pt3D.col(1) - pt3D.col(3)).squaredNorm();
+			double glcd = (pt3D.col(2) - pt3D.col(3)).squaredNorm();
+
+
+			// initial solution degeneracy - invalid input
+			if (glab*glac*glad*glbc*glbd*glcd < tol)
+				return;
+
+			Mat A = Mat::Zero(10, 10);
+			double gl[] = { glab,glac,glad,glbc,glbd,glcd };
+			double *a1 = pt2D.col(0).data();
+			double *b1 = pt2D.col(1).data();
+			double *c1 = pt2D.col(2).data();
+			double *d1 = pt2D.col(3).data();
+
+			compute_p4pf_poses(gl, a1, b1, c1, d1, A.data());
+
+			Eigen::EigenSolver<Mat> es(A.transpose());
+			Eigen::MatrixXcd sol = es.eigenvectors();
+			Eigen::MatrixXcd diag = sol.row(0).cwiseInverse().asDiagonal();
+
+			sol = sol.block(1, 0, 4, 10) * diag;
+
+			// contain at least one NaN
+			if (isNan(&sol))
+				return;
+
+			// separarte valid solutions
+			Mat vSol;
+			if (!validSol(&sol, &vSol))
+				return;
+
+			// recover camera rotation and translation
+			for (int i = 0; i < vSol.cols(); i++) {
+				double f = sqrt(vSol(3, i));
+				double zd = vSol(0, i);
+				double zc = vSol(1, i);
+				double zb = vSol(2, i);
+
+				// create p3d points in a camera coordinate system(using depths)
+				Mat p3dc = Mat(3, 4);
+				p3dc << pt2D(0, 0), zb*pt2D(0, 1), zc*pt2D(0, 2), zd*pt2D(0, 3),
+					pt2D(1, 0), zb*pt2D(1, 1), zc*pt2D(1, 2), zd*pt2D(1, 3),
+					f, zb*f, zc*f, zd*f;
+
+				// fix scale(recover 'za')
+				Mat d = Mat(6, 1);
+				d(0, 0) = sqrt(glab / (p3dc.col(0) - p3dc.col(1)).squaredNorm());
+				d(1, 0) = sqrt(glac / (p3dc.col(0) - p3dc.col(2)).squaredNorm());
+				d(2, 0) = sqrt(glad / (p3dc.col(0) - p3dc.col(3)).squaredNorm());
+				d(3, 0) = sqrt(glbc / (p3dc.col(1) - p3dc.col(2)).squaredNorm());
+				d(4, 0) = sqrt(glbd / (p3dc.col(1) - p3dc.col(3)).squaredNorm());
+				d(5, 0) = sqrt(glcd / (p3dc.col(2) - p3dc.col(3)).squaredNorm());
+				// all d(i) should be equal...
+
+				//gta = median(d);
+				double gta = d.sum() / 6;
+				p3dc = gta * p3dc;
+
+				// calc camera
+				Mat Rr;
+				Vec3 tt;
+				getRigidTransform(&pt3D, &p3dc, &Rr, &tt);
+				Vec3 t = var*tt - Rr*mean3d;
+				f *= var2d;
+
+				// output
+				M model(Rr, t, f);
+				models->push_back(model);
 			}
-		};
+		}
 
-		/*
-		*      Author: Martin Bujnak, adapted to openMVG by Michal Polic
-		* Description: Compute the absolute pose and focal length of a camera using three 3D-to-2D correspondences
-		*   Reference: [1] A general solution to the p4p
-		*              Bujnak, M., Kukelova, Z., and Pajdla T.
-		*              CVPR 2008
-		*
-		*       Input: featureVectors: 2x4 matrix with feature vectors with principal point at [0; 0] (each column is a vector)
-		*              worldPoints: 3x4 matrix with corresponding 3D world points (each column is a point)
-		*
-		*      Output: solutions: M x n vector that will contain the each solution in structure M (rotation matrix M._R,
-		*						  translation vector M._t, focal length M._f). Following equation holds for each solution:
-		*						  lambda*pt2D = diag([M._f M._f 1])*[M._R M._t] * pt3D
-		*/
-		struct P4PfSolver {
-			enum { MINIMUM_SAMPLES = 4 };
-			enum { MAX_MODELS = 10 };
-			// Solve the problem of camera pose.
-			static void Solve
-			(
-				const Mat &pt2Dx,
-				const Mat &pt3Dx,
-				std::vector<M> *models
-			)
-			{
-				Mat pt2D(pt2Dx);
-				Mat pt3D(pt3Dx);
-				assert(2 == pt2D.rows());
-				assert(3 == pt3D.rows());
-				assert(pt2D.cols() == pt3D.cols());
-
-				double tol = 2.2204e-10;
-				Vec3 mean3d = pt3D.rowwise().mean();
-
-				Mat ones = Mat(1, 4);
-				ones << 1, 1, 1, 1;
-				pt3D = pt3D - (mean3d * ones);
-
-				double var = pt3D.colwise().norm().sum() / 4;
-				pt3D *= (1 / var);
-				double var2d = pt2D.colwise().norm().sum() / 4;
-				pt2D *= (1 / var2d);
-
-				double glab = (pt3D.col(0) - pt3D.col(1)).squaredNorm();
-				double glac = (pt3D.col(0) - pt3D.col(2)).squaredNorm();
-				double glad = (pt3D.col(0) - pt3D.col(3)).squaredNorm();
-				double glbc = (pt3D.col(1) - pt3D.col(2)).squaredNorm();
-				double glbd = (pt3D.col(1) - pt3D.col(3)).squaredNorm();
-				double glcd = (pt3D.col(2) - pt3D.col(3)).squaredNorm();
-
-
-				// initial solution degeneracy - invalid input
-				if (glab*glac*glad*glbc*glbd*glcd < tol)
-					return;
-
-				Mat A = Mat::Zero(10, 10);
-				double gl[] = { glab,glac,glad,glbc,glbd,glcd };
-				double *a1 = pt2D.col(0).data();
-				double *b1 = pt2D.col(1).data();
-				double *c1 = pt2D.col(2).data();
-				double *d1 = pt2D.col(3).data();
-
-				compute_p4pf_poses(gl, a1, b1, c1, d1, A.data());
-
-				Eigen::EigenSolver<Mat> es(A.transpose());
-				Eigen::MatrixXcd sol = es.eigenvectors();
-				Eigen::MatrixXcd diag = sol.row(0).cwiseInverse().asDiagonal();
-
-				sol = sol.block(1, 0, 4, 10) * diag;
-
-				// contain at least one NaN
-				if (isNan(&sol))
-					return;
-
-				// separarte valid solutions
-				Mat vSol;
-				if (!validSol(&sol, &vSol))
-					return;
-
-				// recover camera rotation and translation
-				for (int i = 0; i < vSol.cols(); i++) {
-					double f = sqrt(vSol(3, i));
-					double zd = vSol(0, i);
-					double zc = vSol(1, i);
-					double zb = vSol(2, i);
-
-					// create p3d points in a camera coordinate system(using depths)
-					Mat p3dc = Mat(3, 4);
-					p3dc << pt2D(0, 0), zb*pt2D(0, 1), zc*pt2D(0, 2), zd*pt2D(0, 3),
-						pt2D(1, 0), zb*pt2D(1, 1), zc*pt2D(1, 2), zd*pt2D(1, 3),
-						f, zb*f, zc*f, zd*f;
-
-					// fix scale(recover 'za')
-					Mat d = Mat(6, 1);
-					d(0, 0) = sqrt(glab / (p3dc.col(0) - p3dc.col(1)).squaredNorm());
-					d(1, 0) = sqrt(glac / (p3dc.col(0) - p3dc.col(2)).squaredNorm());
-					d(2, 0) = sqrt(glad / (p3dc.col(0) - p3dc.col(3)).squaredNorm());
-					d(3, 0) = sqrt(glbc / (p3dc.col(1) - p3dc.col(2)).squaredNorm());
-					d(4, 0) = sqrt(glbd / (p3dc.col(1) - p3dc.col(3)).squaredNorm());
-					d(5, 0) = sqrt(glcd / (p3dc.col(2) - p3dc.col(3)).squaredNorm());
-					// all d(i) should be equal...
-
-					//gta = median(d);
-					double gta = d.sum() / 6;
-					p3dc = gta * p3dc;
-
-					// calc camera
-					Mat Rr;
-					Vec3 tt;
-					getRigidTransform(&pt3D, &p3dc, &Rr, &tt);
-					Vec3 t = var*tt - Rr*mean3d;
-					f *= var2d;
-
-					// output
-					M model(Rr, t, f);
-					models->push_back(model);
-				}
-			}
-
-			// Compute the residual of the projection distance(pt2D, Project(P,pt3D))
-			static double Error
-			(
-				const M & model,
-				const Vec2 & pt2D,
-				const Vec3 & pt3D
-			)
-			{
-				return (pt2D - Project(model.getP(), pt3D)).norm();
-			}
-		};
+		// Compute the residual of the projection distance(pt2D, Project(P,pt3D))
+		double P4PfSolver::Error(const M & model, const Vec2 & pt2D, const Vec3 & pt3D) {
+			return (pt2D - Project(model.getP(), pt3D)).norm();
+		}
 
 	}  // namespace resection
 }  // namespace openMVG
 
-#endif // OPENMVG_MULTIVIEW_RESECTION_P3P_HPP
+#endif // OPENMVG_MULTIVIEW_RESECTION_P4PF_CPP

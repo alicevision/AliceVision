@@ -72,7 +72,16 @@ namespace openMVG {
 
 			M(Mat R, Vec3 t, double f) : _R(R), _t(t), _f(f) {}
 
-			Mat34 getP() const;
+			Mat34 getP() const {
+				Mat34 P;
+				Mat K = Mat(3, 3);
+				K << _f, 0, 0,
+					0, _f, 0,
+					0, 0, 1;
+				P.block(0, 0, 3, 3) = K*_R;
+				P.block(0, 3, 3, 1) = K*_t;
+				return P;
+			}
 		};
 
 		/*
