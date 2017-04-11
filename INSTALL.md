@@ -41,7 +41,7 @@ Building using external dependencies
 OpenMVG source tree contains all the mandatory dependencies that are needed to build the library, and which will be built together with the libray. In order to build the library with existing versions of the dependencies (e.g. system installed libraries or user built libraries), and thus reduce the compilation time and favour the modularization, the paths where to find such libraries can be given at cmake command line. In particular:
 
 * For Ceres solver library, `Ceres_DIR` can be passed pointing to where CeresConfig.cmake can be found.
-  e.g. `-DCeres_DIR:PATH=/path/to/cctag/install/share/Ceres/`
+  e.g. `-DCeres_DIR:PATH=/path/to/ceres/install/share/Ceres/`
 
 * For FLANN library, `FLANN_INCLUDE_DIR_HINTS` can be passed pointing to the include directory, e.g.
   `-DFLANN_INCLUDE_DIR_HINTS:PATH=/path/to/flann/1.8.4/include/`
