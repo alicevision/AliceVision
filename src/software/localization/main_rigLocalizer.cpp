@@ -29,7 +29,7 @@
 
 #if OPENMVG_IS_DEFINED(OPENMVG_HAVE_ALEMBIC)
 #include <openMVG/sfm/AlembicExporter.hpp>
-#endif // OPENMVG_HAVE_ALEMBIC
+#endif
 
 
 namespace bfs = boost::filesystem;
@@ -487,7 +487,7 @@ int main(int argc, char** argv)
     vec_queryIntrinsics.reserve(numCameras);
            
     // for each camera get the image and the associated internal parameters
-    for(int idCamera = 0; idCamera < numCameras; ++idCamera)
+    for(std::size_t idCamera = 0; idCamera < numCameras; ++idCamera)
     {
       image::Image<unsigned char> imageGrey;
       cameras::Pinhole_Intrinsic_Radial_K3 queryIntrinsics;
