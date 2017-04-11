@@ -45,17 +45,28 @@
 namespace openMVG {
 	namespace resection {
 
-
-
 		// Solve the resection problem with unknown R,t,r,f
 		void P5PfrSolver::Solve(const Mat &pt2Dx, const Mat &pt3Dx, std::vector<M> *models){
 			Mat pt2D(pt2Dx);
 			Mat pt3D(pt3Dx);
 			assert(2 == pt2D.rows());
 			assert(3 == pt3D.rows());
-			assert(pt2D.cols() == pt3D.cols());
+			assert(5 == pt3D.cols());
+			assert(5 == pt2D.cols());
+
+			// Eliminate all linear stuff
+			Mat A = Mat(5, 8); 
+			for (int i = 0; i < 5; ++i) {
+				Mat X = Mat(1, 8);
+				X << -pt2D(1, i)*pt3D(0, i), -pt2D(1, i)*pt3D(1, i), -pt2D(1, i)*pt3D(2, i), -pt2D(1, i), pt2D(0, i)*pt3D(0, i), pt2D(0, i)*pt3D(1, i), pt2D(0, i)*pt3D(2, i), pt2D(0, i);
+				A.block(i, 0, 1, 8) = X;
+			}
+			std::cout << "A:\n" << A << "\n\n";
+						
 
 
+
+			double end = 0;
 		}
 
 		// Compute the residual of the projection distance(pt2D, Project(M,pt3D))
