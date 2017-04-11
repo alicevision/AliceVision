@@ -82,7 +82,7 @@ namespace openMVG {
 		*              Bujnak, M., Kukelova, Z., and Pajdla T.
 		*              CVPR 2008
 		*
-		*       Input: featureVectors: 3x4 matrix with feature vectors with subtracted principal point (each column is a vector)
+		*       Input: featureVectors: 2x4 matrix with feature vectors with subtracted principal point (each column is a vector)
 		*              worldPoints: 3x4 matrix with corresponding 3D world points (each column is a point)
 		*
 		*      Output: solutions: M x n vector that will contain the each solution in structure M (rotation matrix M._R,
