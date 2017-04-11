@@ -548,6 +548,11 @@ int main(int argc, char **argv)
       const std::size_t uid = computeUID(exifReader, imageFilename);
       id_view = (IndexT)uid;
     }
+    if(views.count(id_view))
+    {
+      OPENMVG_LOG_WARNING("Skip duplicated image in input (" << imageAbsFilepath << ")");
+      continue;
+    }
 
     // Build the view corresponding to the image
     std::shared_ptr<View> currentView;
