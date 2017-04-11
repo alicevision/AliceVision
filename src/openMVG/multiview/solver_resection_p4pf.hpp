@@ -73,8 +73,6 @@ namespace openMVG {
 			M(Mat R, Vec3 t, double f) : _R(R), _t(t), _f(f) {}
 
 			Mat34 getP() const;
-
-			bool isEqual(const M sec) const; 
 		};
 
 		/*

@@ -528,12 +528,6 @@ namespace openMVG {
 				P.block(0, 3, 3, 1) = K*_t;
 				return P;
 			}
-
-			bool isEqual(const M sec) const {
-				return	((sec._R - _R).norm() < _R.maxCoeff()*1e-3 &&
-					(sec._t - _t).norm() < _t.maxCoeff()*1e-3 &&
-					abs(sec._f - _f) < _f*1e-3);
-			}
 		};
 
 		/*
