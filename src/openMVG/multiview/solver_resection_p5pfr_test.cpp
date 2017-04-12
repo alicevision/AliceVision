@@ -1,4 +1,3 @@
-
 // Copyright (c) 2010 libmv authors.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -41,7 +40,7 @@ TEST(Resection_P5Pfr, RealExample) {
 	pt3D << 3.17536, 2.53122, 2.42089, 0.75785, 3.88086, -0.46800, 0.19650, -1.86325, 0.16480, 0.41775, -0.86051, -1.50740, -1.82808, 1.20881, 0.29809;
 
 	// PROCESS
-	std::vector<M> models;
+	std::vector<resection::M> models;
 	resection::P5PfrSolver::Solve(pt2D, pt3D, &models);
 
 

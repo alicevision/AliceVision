@@ -45,9 +45,9 @@ namespace openMVG {
 			double _f;
 			Mat _R;
 			Vec3 _t;
-			Vec2 _r;
+			double _r;
 
-			M(Mat R, Vec3 t, Vec2 r, double f) : _R(R), _t(t), _r(r), _f(f) {}
+			M(Mat R, Vec3 t, double r, double f) : _R(R), _t(t), _r(r), _f(f) {}
 		};
 
 		/*
