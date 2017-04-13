@@ -3,6 +3,7 @@
 #include "optimization.hpp"
 #include "rigResection.hpp"
 
+#include <openMVG/config.hpp>
 #include <openMVG/features/svgVisualization.hpp>
 #include <openMVG/sfm/sfm_data_io.hpp>
 #include <openMVG/matching/indMatch.hpp>
@@ -444,7 +445,7 @@ bool CCTagLocalizer::localizeRig(const std::vector<std::unique_ptr<features::Reg
                                  geometry::Pose3 &rigPose,
                                  std::vector<LocalizationResult>& vec_locResults)
 {
-#ifdef HAVE_OPENGV
+#if OPENMVG_IS_DEFINED(OPENMVG_HAVE_OPENGV)
   if(!parameters->_useLocalizeRigNaive)
   {
     OPENMVG_LOG_DEBUG("Using localizeRig_opengv()");
@@ -471,7 +472,7 @@ bool CCTagLocalizer::localizeRig(const std::vector<std::unique_ptr<features::Reg
   }
 }
 
-#ifdef HAVE_OPENGV
+#if OPENMVG_IS_DEFINED(OPENMVG_HAVE_OPENGV)
 bool CCTagLocalizer::localizeRig_opengv(const std::vector<std::unique_ptr<features::Regions> > & vec_queryRegions,
                                  const std::vector<std::pair<std::size_t, std::size_t> > &imageSize,
                                  const LocalizerParameters *parameters,
@@ -654,7 +655,7 @@ bool CCTagLocalizer::localizeRig_opengv(const std::vector<std::unique_ptr<featur
   
 }
   
-#endif //HAVE_OPENGV
+#endif //OPENMVG_HAVE_OPENGV
 
 // subposes is n-1 as we consider the first camera as the main camera and the 
 // reference frame of the grid

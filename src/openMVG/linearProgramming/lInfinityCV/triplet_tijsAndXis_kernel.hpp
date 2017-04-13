@@ -8,6 +8,7 @@
 #pragma once
 
 #include "openMVG/numeric/numeric.h"
+#include <openMVG/config.hpp>
 
 #include "openMVG/multiview/conditioning.hpp"
 #include "openMVG/multiview/triangulation_nview.hpp"
@@ -15,7 +16,7 @@
 // Linear programming solver(s)
 #include "openMVG/linearProgramming/linearProgrammingInterface.hpp"
 #include "openMVG/linearProgramming/linearProgrammingOSI_X.hpp"
-#ifdef OPENMVG_HAVE_MOSEK
+#if OPENMVG_IS_DEFINED(OPENMVG_HAVE_MOSEK)
 #include "openMVG/linearProgramming/linearProgrammingMOSEK.hpp"
 #endif
 
@@ -84,7 +85,7 @@ struct translations_Triplet_Solver {
 
     using namespace openMVG::lInfinityCV;
 
-#ifdef OPENMVG_HAVE_MOSEK
+#if OPENMVG_IS_DEFINED(OPENMVG_HAVE_MOSEK)
     MOSEK_SolveWrapper LPsolver(static_cast<int>(vec_solution.size()));
 #else
     OSI_CLP_SolverWrapper LPsolver(static_cast<int>(vec_solution.size()));

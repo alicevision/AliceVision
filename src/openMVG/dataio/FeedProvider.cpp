@@ -9,6 +9,8 @@
 #include "ImageFeed.hpp"
 #include "VideoFeed.hpp"
 
+#include <openMVG/config.hpp>
+
 #include <boost/filesystem.hpp>
 
 #include <exception>
@@ -38,7 +40,7 @@ FeedProvider::FeedProvider(const std::string &feedPath, const std::string &calib
     }
     else 
     {
-#ifdef HAVE_OPENCV
+#if OPENMVG_IS_DEFINED(OPENMVG_HAVE_OPENCV)
       // let's try it with a video
       _feeder.reset(new VideoFeed(feedPath, calibPath));
       _isVideo = true;
@@ -55,7 +57,7 @@ FeedProvider::FeedProvider(const std::string &feedPath, const std::string &calib
     // Folder or sequence of images
     _feeder.reset(new ImageFeed(feedPath, calibPath));
   }
-#ifdef HAVE_OPENCV
+#if OPENMVG_IS_DEFINED(OPENMVG_HAVE_OPENCV)
   else if(isdigit(feedPath[0]))
   {
     // let's try it with a video

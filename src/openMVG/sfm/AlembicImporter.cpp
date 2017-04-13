@@ -4,8 +4,6 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-#ifdef HAVE_ALEMBIC
-
 #include "AlembicImporter.hpp"
 
 #include <Alembic/AbcGeom/All.h>
@@ -388,6 +386,3 @@ void AlembicImporter::populate(sfm::SfM_Data &sfmdata, sfm::ESfM_Data flags_part
 
 } // namespace sfm
 } // namespace openMVG
-
-#endif // WITH_ALEMBIC
-

@@ -9,6 +9,7 @@
 #include "openMVG/matching/matcher_cascade_hashing.hpp"
 #include "openMVG/matching/indMatchDecoratorXY.hpp"
 #include "openMVG/matching/matching_filters.hpp"
+#include <openMVG/config.hpp>
 
 #include "third_party/stlplus3/filesystemSimplified/file_system.hpp"
 #include "third_party/progress/progress.hpp"
@@ -95,9 +96,7 @@ void Match
   }
 
   // Index the input regions
-#ifdef OPENMVG_USE_OPENMP
   #pragma omp parallel for schedule(dynamic)
-#endif
   for (int i =0; i < used_index.size(); ++i)
   {
     std::set<IndexT>::const_iterator iter = used_index.begin();
@@ -111,9 +110,7 @@ void Match
     Eigen::Map<BaseMat> mat_I( (ScalarT*)tabI, regionsI.RegionCount(), dimension);
     HashedDescriptions hashed_description = cascade_hasher.CreateHashedDescriptions(mat_I,
       zero_mean_descriptor);
-#ifdef OPENMVG_USE_OPENMP
     #pragma omp critical
-#endif
     {
       hashed_base_[I] = std::move(hashed_description);
     }
@@ -138,10 +135,7 @@ void Match
       reinterpret_cast<const ScalarT*>(regionsI.DescriptorRawData());
     const size_t dimension = regionsI.DescriptorLength();
     Eigen::Map<BaseMat> mat_I( (ScalarT*)tabI, regionsI.RegionCount(), dimension);
-
-#ifdef OPENMVG_USE_OPENMP
     #pragma omp parallel for schedule(dynamic)
-#endif
     for (int j = 0; j < (int)indexToCompare.size(); ++j)
     {
       size_t J = indexToCompare[j];
@@ -150,9 +144,7 @@ void Match
       if (regions_provider.regions_per_view.count(J) == 0
           || regionsI.Type_id() != regionsJ.Type_id())
       {
-#ifdef OPENMVG_USE_OPENMP
         #pragma omp critical
-#endif
         ++my_progress_bar;
         continue;
       }
@@ -202,9 +194,7 @@ void Match
         pointFeaturesI, pointFeaturesJ);
       matchDeduplicator.getDeduplicated(vec_putative_matches);
 
-#ifdef OPENMVG_USE_OPENMP
-#pragma omp critical
-#endif
+      #pragma omp critical
       {
         ++my_progress_bar;
         if (!vec_putative_matches.empty())
@@ -225,7 +215,7 @@ void Cascade_Hashing_Matcher_Regions_AllInMemory::Match
   PairWiseMatches & map_PutativesMatches // the pairwise photometric corresponding points
 )const
 {
-#ifdef OPENMVG_USE_OPENMP
+#if OPENMVG_IS_DEFINED(OPENMVG_USE_OPENMP)
   OPENMVG_LOG_DEBUG("Using the OPENMP thread interface");
 #endif
 

@@ -14,9 +14,7 @@
 #ifndef OPENMVG_SYSTEM_TIMER_HPP
 #define OPENMVG_SYSTEM_TIMER_HPP
 
-#ifdef HAVE_CXX11_CHRONO
 #include <chrono>
-#endif
 #include <iostream>
 #include <string>
 
@@ -37,14 +35,7 @@ namespace system {
     double elapsedMs() const;
   private:
 
-#ifdef HAVE_CXX11_CHRONO
     std::chrono::high_resolution_clock::time_point start_;
-#else
-    double start_;
-#ifdef _WIN32
-    double frequency_;
-#endif
-#endif // HAVE_CXX11_CHRONO
   };
   
   // print the elapsed time

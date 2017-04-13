@@ -1,12 +1,14 @@
 #pragma once
 
-#ifdef HAVE_BOOST
+#include <openMVG/config.hpp>
+
+#if OPENMVG_IS_DEFINED(OPENMVG_HAVE_BOOST)
 #include <boost/container/flat_set.hpp>
 #endif
 
 namespace stl
 {
-#ifdef HAVE_BOOST
+#if OPENMVG_IS_DEFINED(OPENMVG_HAVE_BOOST)
   template <class Key
          ,class Compare  = std::less<Key>
          ,class Allocator = std::allocator<Key> >

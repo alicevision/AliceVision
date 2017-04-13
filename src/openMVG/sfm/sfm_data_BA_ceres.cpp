@@ -5,6 +5,8 @@
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 #include "openMVG/sfm/sfm_data_BA_ceres.hpp"
+#include <openMVG/config.hpp>
+#include <openMVG/openmvg_omp.hpp>
 
 #include "ceres/rotation.h"
 
@@ -51,9 +53,9 @@ Bundle_Adjustment_Ceres::BA_options::BA_options(const bool bVerbose, bool bmulti
   :_bVerbose(bVerbose),
    _nbThreads(1)
 {
-  #ifdef OPENMVG_USE_OPENMP
-    _nbThreads = omp_get_max_threads();
-  #endif // OPENMVG_USE_OPENMP
+  // set number of threads, 1 if openMP is not enabled
+  _nbThreads = omp_get_max_threads();
+
   if (!bmultithreaded)
     _nbThreads = 1;
 

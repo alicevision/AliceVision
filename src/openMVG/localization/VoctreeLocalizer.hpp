@@ -11,7 +11,7 @@
 #include "LocalizationResult.hpp"
 #include "ILocalizer.hpp"
 #include "BoundedBuffer.hpp"
-
+#include <openMVG/config.hpp>
 #include <openMVG/features/image_describer.hpp>
 #include <openMVG/sfm/sfm_data.hpp>
 #include <openMVG/sfm/pipelines/localization/SfM_Localizer.hpp>
@@ -137,7 +137,7 @@ public:
                    const std::string &descriptorsFolder,
                    const std::string &vocTreeFilepath,
                    const std::string &weightsFilepath
-#ifdef HAVE_CCTAG
+#if OPENMVG_IS_DEFINED(OPENMVG_HAVE_CCTAG)
                    , bool useSIFT_CCTAG
 #endif
                   );
@@ -203,7 +203,7 @@ public:
                    std::vector<LocalizationResult>& vec_locResults);
 
 
-#ifdef HAVE_OPENGV
+#if OPENMVG_IS_DEFINED(OPENMVG_HAVE_OPENGV)
   bool localizeRig_opengv(const std::vector<std::unique_ptr<features::Regions> > & vec_queryRegions,
                           const std::vector<std::pair<std::size_t, std::size_t> > &imageSize,
                           const LocalizerParameters *parameters,

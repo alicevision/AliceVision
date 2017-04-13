@@ -8,6 +8,8 @@
 #ifndef OPENMVG_IMAGE_HOMOGRAPHY_WARP
 #define OPENMVG_IMAGE_HOMOGRAPHY_WARP
 
+#include <openMVG/config.hpp>
+
 namespace openMVG{
 namespace image{
 
@@ -33,9 +35,7 @@ void Warp(const Image &im, const Mat3 & H, Image &out)
 
   const Sampler2d<SamplerLinear> sampler;
   for (int j = 0; j < hOut; ++j)
-#ifdef OPENMVG_USE_OPENMP
-  #pragma omp parallel for
-#endif
+    #pragma omp parallel for
     for (int i = 0; i < wOut; ++i)
     {
       double xT = i, yT = j;

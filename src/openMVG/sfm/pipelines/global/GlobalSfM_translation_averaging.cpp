@@ -23,6 +23,9 @@
 #include "openMVG/multiview/translation_averaging_common.hpp"
 #include "openMVG/multiview/translation_averaging_solver.hpp"
 #include "openMVG/sfm/pipelines/global/triplet_t_ACRansac_kernelAdaptator.hpp"
+#include <openMVG/config.hpp>
+#include <openMVG/openmvg_omp.hpp>
+
 #include "third_party/histogram/histogram.hpp"
 #include "third_party/progress/progress.hpp"
 #include "third_party/stlplus3/filesystemSimplified/file_system.hpp"
@@ -123,7 +126,7 @@ bool GlobalSfM_Translation_AveragingSolver::Translation_averaging(
         {
           vec_solution.resize(iNview*3 + vec_initialRijTijEstimates_cpy.size()/3 + 1);
           using namespace openMVG::linearProgramming;
-          #ifdef OPENMVG_HAVE_MOSEK
+          #if OPENMVG_IS_DEFINED(OPENMVG_HAVE_MOSEK)
             MOSEK_SolveWrapper solverLP(vec_solution.size());
           #else
             OSI_CLP_SolverWrapper solverLP(vec_solution.size());
@@ -350,9 +353,8 @@ void GlobalSfM_Translation_AveragingSolver::ComputePutativeTranslation_EdgesCove
 
     //-- precompute the number of track per triplet:
     Hash_Map<IndexT, IndexT> map_tracksPerTriplets;
-    #ifdef OPENMVG_USE_OPENMP
-      #pragma omp parallel for schedule(dynamic)
-    #endif
+
+    #pragma omp parallel for schedule(dynamic)
     for (int i = 0; i < (int)vec_triplets.size(); ++i)
     {
       // List matches that belong to the triplet of poses
@@ -378,9 +380,8 @@ void GlobalSfM_Translation_AveragingSolver::ComputePutativeTranslation_EdgesCove
         openMVG::tracks::TracksBuilder tracksBuilder;
         tracksBuilder.Build(map_triplet_matches);
         tracksBuilder.Filter(3);
-        #ifdef OPENMVG_USE_OPENMP
-          #pragma omp critical
-        #endif
+
+        #pragma omp critical
         map_tracksPerTriplets[i] = tracksBuilder.NbTracks(); //count the # of matches in the UF tree
       }
     }
@@ -408,23 +409,15 @@ void GlobalSfM_Translation_AveragingSolver::ComputePutativeTranslation_EdgesCove
       std::cout,
       "\nRelative translations computation (edge coverage algorithm)\n");
 
-#  ifdef OPENMVG_USE_OPENMP
+    // set number of threads, 1 if openMP is not enabled  
     std::vector< RelativeInfo_Vec > initial_estimates(omp_get_max_threads());
-#  else
-    std::vector< RelativeInfo_Vec > initial_estimates(1);
-#  endif
-
     const bool bVerbose = false;
 
-    #ifdef OPENMVG_USE_OPENMP
-      #pragma omp parallel for schedule(dynamic)
-    #endif
+    #pragma omp parallel for schedule(dynamic)
     for (int k = 0; k < vec_edges.size(); ++k)
     {
       const myEdge & edge = vec_edges[k];
-      #ifdef OPENMVG_USE_OPENMP
-        #pragma omp critical
-      #endif
+      #pragma omp critical
       {
         ++my_progress_bar;
       }
@@ -514,11 +507,8 @@ void GlobalSfM_Translation_AveragingSolver::ComputePutativeTranslation_EdgesCove
               Vec3 tik;
               RelativeCameraMotion(RI, ti, RK, tk, &Rik, &tik);
 
-              #ifdef OPENMVG_USE_OPENMP
-                const int thread_id = omp_get_thread_num();
-              #else
-                const int thread_id = 0;
-              #endif
+              // set number of threads, 1 if openMP is not enabled
+              const int thread_id = omp_get_thread_num();
 
               initial_estimates[thread_id].emplace_back(
                 std::make_pair(triplet.i, triplet.j), std::make_pair(Rij, tij));
@@ -528,10 +518,7 @@ void GlobalSfM_Translation_AveragingSolver::ComputePutativeTranslation_EdgesCove
                 std::make_pair(triplet.i, triplet.k), std::make_pair(Rik, tik));
 
               //--- ATOMIC
-
-              #ifdef OPENMVG_USE_OPENMP
-                 #pragma omp critical
-              #endif
+              #pragma omp critical
               {
                 // Add inliers as valid pairwise matches
                 for (std::vector<size_t>::const_iterator iterInliers = vec_inliers.begin();

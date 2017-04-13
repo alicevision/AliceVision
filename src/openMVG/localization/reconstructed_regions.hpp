@@ -7,6 +7,7 @@
 
 #pragma once
 
+#include "openMVG/config.hpp"
 #include "openMVG/types.hpp"
 #include "openMVG/numeric/numeric.h"
 #include "openMVG/features/feature.hpp"
@@ -14,7 +15,7 @@
 #include "openMVG/features/regions.hpp"
 #include "openMVG/matching/metric.hpp"
 
-#ifdef HAVE_CCTAG
+#if OPENMVG_IS_DEFINED(OPENMVG_HAVE_CCTAG)
 #include "openMVG/features/cctag/CCTAG_describer.hpp"
 #endif
 
@@ -80,7 +81,7 @@ public:
   }
   
   
-#ifdef HAVE_CCTAG
+#if OPENMVG_IS_DEFINED(OPENMVG_HAVE_CCTAG)
   
   void filterCCTagRegions(const std::vector<FeatureInImage>& featuresInImage)
   {

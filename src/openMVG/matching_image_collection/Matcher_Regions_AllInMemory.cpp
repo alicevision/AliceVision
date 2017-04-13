@@ -11,6 +11,7 @@
 #include "openMVG/matching/matcher_cascade_hashing.hpp"
 #include "openMVG/matching/regions_matcher.hpp"
 #include "openMVG/matching_image_collection/Matcher.hpp"
+#include <openMVG/config.hpp>
 
 #include "third_party/stlplus3/filesystemSimplified/file_system.hpp"
 #include "third_party/progress/progress.hpp"
@@ -33,7 +34,7 @@ void Matcher_Regions_AllInMemory::Match(
   const Pair_Set & pairs,
   PairWiseMatches & map_PutativesMatches)const // the pairwise photometric corresponding points
 {
-#ifdef OPENMVG_USE_OPENMP
+#if OPENMVG_IS_DEFINED(OPENMVG_USE_OPENMP)
   OPENMVG_LOG_DEBUG("Using the OPENMP thread interface");
 #endif
   const bool b_multithreaded_pair_search = (_eMatcherType == CASCADE_HASHING_L2);
@@ -66,9 +67,7 @@ void Matcher_Regions_AllInMemory::Match(
     // Initialize the matching interface
     matching::Matcher_Regions_Database matcher(_eMatcherType, regionsI);
 
-#ifdef OPENMVG_USE_OPENMP
     #pragma omp parallel for schedule(dynamic) if(b_multithreaded_pair_search)
-#endif
     for (int j = 0; j < (int)indexToCompare.size(); ++j)
     {
       const size_t J = indexToCompare[j];
@@ -77,19 +76,14 @@ void Matcher_Regions_AllInMemory::Match(
       if (regionsJ.RegionCount() == 0
           || regionsI.Type_id() != regionsJ.Type_id())
       {
-#ifdef OPENMVG_USE_OPENMP
-  #pragma omp critical
-#endif
+        #pragma omp critical
         ++my_progress_bar;
         continue;
       }
 
       IndMatches vec_putatives_matches;
       matcher.Match(_f_dist_ratio, regionsJ, vec_putatives_matches);
-
-#ifdef OPENMVG_USE_OPENMP
-  #pragma omp critical
-#endif
+      #pragma omp critical
       {
         ++my_progress_bar;
         if (!vec_putatives_matches.empty())

@@ -1,5 +1,6 @@
+#include <openMVG/config.hpp>
 #include <openMVG/localization/VoctreeLocalizer.hpp>
-#ifdef HAVE_CCTAG
+#if OPENMVG_IS_DEFINED(OPENMVG_HAVE_CCTAG)
 #include <openMVG/localization/CCTagLocalizer.hpp>
 #endif
 #include <openMVG/rig/Rig.hpp>
@@ -26,9 +27,9 @@
 #include <chrono>
 #include <memory>
 
-#ifdef HAVE_ALEMBIC
+#if OPENMVG_IS_DEFINED(OPENMVG_HAVE_ALEMBIC)
 #include <openMVG/sfm/AlembicExporter.hpp>
-#endif // HAVE_ALEMBIC
+#endif
 
 
 namespace bfs = boost::filesystem;
@@ -40,7 +41,7 @@ using namespace openMVG;
 enum DescriberType
 {
   SIFT
-#ifdef HAVE_CCTAG
+#if OPENMVG_IS_DEFINED(OPENMVG_HAVE_CCTAG)
   ,CCTAG,
   SIFT_CCTAG
 #endif
@@ -50,7 +51,7 @@ inline DescriberType stringToDescriberType(const std::string& describerType)
 {
   if(describerType == "SIFT")
     return DescriberType::SIFT;
-#ifdef HAVE_CCTAG
+#if OPENMVG_IS_DEFINED(OPENMVG_HAVE_CCTAG)
   if (describerType == "CCTAG")
     return DescriberType::CCTAG;
   if(describerType == "SIFT_CCTAG")
@@ -63,7 +64,7 @@ inline std::string describerTypeToString(DescriberType describerType)
 {
   if(describerType == DescriberType::SIFT)
     return "SIFT";
-#ifdef HAVE_CCTAG
+#if OPENMVG_IS_DEFINED(OPENMVG_HAVE_CCTAG)
   if (describerType == DescriberType::CCTAG)
     return "CCTAG";
   if(describerType == DescriberType::SIFT_CCTAG)
@@ -184,7 +185,7 @@ int main(int argc, char** argv)
   // parameters for cctag localizer
   std::size_t nNearestKeyFrames = 5;
 
-#ifdef HAVE_ALEMBIC
+#if OPENMVG_IS_DEFINED(OPENMVG_HAVE_ALEMBIC)
   /// the export file
   std::string exportFile = "trackedcameras.abc"; 
 #endif
@@ -212,7 +213,7 @@ int main(int argc, char** argv)
   commonParams.add_options()
       ("descriptors", po::value<DescriberType>(&descriptorType)->default_value(descriptorType), 
         "Type of descriptors to use {SIFT"
-#ifdef HAVE_CCTAG
+#if OPENMVG_IS_DEFINED(OPENMVG_HAVE_CCTAG)
         ", CCTAG, SIFT_CCTAG"
 #endif
         "}")
@@ -256,7 +257,7 @@ int main(int argc, char** argv)
           "[voctree] Maximum matching error (in pixels) allowed for image matching with "
           "geometric verification. If set to 0 it lets the ACRansac select "
           "an optimal value.")
-#ifdef HAVE_CCTAG
+#if OPENMVG_IS_DEFINED(OPENMVG_HAVE_CCTAG)
   // parameters for cctag localizer
       ("nNearestKeyFrames", po::value<std::size_t>(&nNearestKeyFrames)->default_value(nNearestKeyFrames),
           "[cctag] Number of images to retrieve in database")
@@ -267,7 +268,7 @@ int main(int argc, char** argv)
   po::options_description outputParams("Options for the output of the localizer");
   outputParams.add_options()  
       ("help,h", "Print this message")
-#ifdef HAVE_ALEMBIC
+#if OPENMVG_IS_DEFINED(OPENMVG_HAVE_ALEMBIC)
       ("output", po::value<std::string>(&exportFile)->default_value(exportFile),
         "Filename for the SfM_Data export file (where camera poses will be stored)."
         " Default : trackedcameras.abc.")
@@ -335,7 +336,7 @@ int main(int argc, char** argv)
     OPENMVG_COUT("\tnCameras: " << numCameras);
     OPENMVG_COUT("\tdescriptors: " << descriptorType);
     if((DescriberType::SIFT==descriptorType)
-#ifdef HAVE_CCTAG
+#if OPENMVG_IS_DEFINED(OPENMVG_HAVE_CCTAG)
             ||(DescriberType::SIFT_CCTAG==descriptorType)
 #endif
       )
@@ -348,7 +349,7 @@ int main(int argc, char** argv)
       OPENMVG_COUT("\talgorithm: " << algostring);
       OPENMVG_COUT("\tmatchingError: " << matchingErrorMax);
     }
-#ifdef HAVE_CCTAG
+#if OPENMVG_IS_DEFINED(OPENMVG_HAVE_CCTAG)
     else
     {
       OPENMVG_COUT("\tnNearestKeyFrames: " << nNearestKeyFrames);
@@ -363,7 +364,7 @@ int main(int argc, char** argv)
   
   // initialize the localizer according to the chosen type of describer
   if((DescriberType::SIFT==descriptorType)
-#ifdef HAVE_CCTAG
+#if OPENMVG_IS_DEFINED(OPENMVG_HAVE_CCTAG)
             ||(DescriberType::SIFT_CCTAG==descriptorType)
 #endif
       )
@@ -373,7 +374,7 @@ int main(int argc, char** argv)
                                                             descriptorsFolder,
                                                             vocTreeFilepath,
                                                             weightsFilepath
-#ifdef HAVE_CCTAG
+#if OPENMVG_IS_DEFINED(OPENMVG_HAVE_CCTAG)
                                                             , DescriberType::SIFT_CCTAG==descriptorType
 #endif
                                                             );
@@ -388,7 +389,7 @@ int main(int argc, char** argv)
     tmpParam->_matchingError = matchingErrorMax;
     
   }
-#ifdef HAVE_CCTAG
+#if OPENMVG_IS_DEFINED(OPENMVG_HAVE_CCTAG)
   else
   {
     localization::CCTagLocalizer* tmpLoc = new localization::CCTagLocalizer(sfmFilePath, descriptorsFolder);
@@ -418,7 +419,7 @@ int main(int argc, char** argv)
     return EXIT_FAILURE;
   }
 
-#ifdef HAVE_ALEMBIC
+#if OPENMVG_IS_DEFINED(OPENMVG_HAVE_ALEMBIC)
   sfm::AlembicExporter exporter(exportFile);
   exporter.initAnimatedCamera("rig");
   exporter.addPoints(localizer->getSfMData().GetLandmarks());
@@ -486,7 +487,7 @@ int main(int argc, char** argv)
     vec_queryIntrinsics.reserve(numCameras);
            
     // for each camera get the image and the associated internal parameters
-    for(int idCamera = 0; idCamera < numCameras; ++idCamera)
+    for(std::size_t idCamera = 0; idCamera < numCameras; ++idCamera)
     {
       image::Image<unsigned char> imageGrey;
       cameras::Pinhole_Intrinsic_Radial_K3 queryIntrinsics;
@@ -546,7 +547,7 @@ int main(int argc, char** argv)
     if(isLocalized)
     {
       ++numLocalizedFrames;
-#ifdef HAVE_ALEMBIC
+#if OPENMVG_IS_DEFINED(OPENMVG_HAVE_ALEMBIC)
       // save the position of the main camera
       exporter.addCameraKeyframe(rigPose, &vec_queryIntrinsics[0], subMediaFilepath[0], frameCounter, frameCounter);
       assert(cameraExporters.size()==numCameras);
@@ -565,7 +566,7 @@ int main(int argc, char** argv)
     else
     {
      OPENMVG_CERR("Unable to localize frame " << frameCounter);
-#ifdef HAVE_ALEMBIC
+#if OPENMVG_IS_DEFINED(OPENMVG_HAVE_ALEMBIC)
       exporter.jumpKeyframe();
       assert(cameraExporters.size()==numCameras);
       for(std::size_t camIDX = 0; camIDX < numCameras; ++camIDX)

@@ -1,5 +1,6 @@
+#include <openMVG/config.hpp>
 #include <openMVG/localization/VoctreeLocalizer.hpp>
-#ifdef HAVE_CCTAG
+#if OPENMVG_IS_DEFINED(OPENMVG_HAVE_CCTAG)
 #include <openMVG/localization/CCTagLocalizer.hpp>
 #endif
 #include <openMVG/rig/Rig.hpp>
@@ -25,9 +26,9 @@
 #include <chrono>
 #include <memory>
 
-#ifdef HAVE_ALEMBIC
+#if OPENMVG_IS_DEFINED(OPENMVG_HAVE_ALEMBIC)
 #include <openMVG/sfm/AlembicExporter.hpp>
-#endif // HAVE_ALEMBIC
+#endif // OPENMVG_HAVE_ALEMBIC
 
 
 namespace bfs = boost::filesystem;
@@ -39,7 +40,7 @@ using namespace openMVG;
 enum DescriberType
 {
   SIFT
-#ifdef HAVE_CCTAG
+#if OPENMVG_IS_DEFINED(OPENMVG_HAVE_CCTAG)
   ,CCTAG,
   SIFT_CCTAG
 #endif
@@ -49,7 +50,7 @@ inline DescriberType stringToDescriberType(const std::string& describerType)
 {
   if(describerType == "SIFT")
     return DescriberType::SIFT;
-#ifdef HAVE_CCTAG
+#if OPENMVG_IS_DEFINED(OPENMVG_HAVE_CCTAG)
   if (describerType == "CCTAG")
     return DescriberType::CCTAG;
   if(describerType == "SIFT_CCTAG")
@@ -62,7 +63,7 @@ inline std::string describerTypeToString(DescriberType describerType)
 {
   if(describerType == DescriberType::SIFT)
     return "SIFT";
-#ifdef HAVE_CCTAG
+#if OPENMVG_IS_DEFINED(OPENMVG_HAVE_CCTAG)
   if (describerType == DescriberType::CCTAG)
     return "CCTAG";
   if(describerType == DescriberType::SIFT_CCTAG)
@@ -164,7 +165,7 @@ int main(int argc, char** argv)
   /// the maximum error allowed for image matching with geometric validation
   double matchingErrorMax = 4.0;
   /// the maximum number of frames in input
-  int maxInputFrames = 0;
+  std::size_t maxInputFrames = 0;
 
 
   // parameters for voctree localizer
@@ -182,7 +183,7 @@ int main(int argc, char** argv)
   // parameters for cctag localizer
   std::size_t nNearestKeyFrames = 5;
 
-#ifdef HAVE_ALEMBIC
+#if OPENMVG_IS_DEFINED(OPENMVG_HAVE_ALEMBIC)
   /// the export file
   std::string exportFile = "trackedcameras.abc"; 
 #endif
@@ -212,7 +213,7 @@ int main(int argc, char** argv)
   commonParams.add_options()
       ("descriptors", po::value<DescriberType>(&descriptorType)->default_value(descriptorType), 
         "Type of descriptors to use {SIFT"
-#ifdef HAVE_CCTAG
+#if OPENMVG_IS_DEFINED(OPENMVG_HAVE_CCTAG)
         ", CCTAG, SIFT_CCTAG"
 #endif
         "}")
@@ -230,7 +231,7 @@ int main(int argc, char** argv)
       ("reprojectionError", po::value<double>(&resectionErrorMax)->default_value(resectionErrorMax), 
           "Maximum reprojection error (in pixels) allowed for resectioning. If set "
           "to 0 it lets the ACRansac select an optimal value.")
-      ("maxInputFrames", po::value<int>(&maxInputFrames)->default_value(maxInputFrames), 
+      ("maxInputFrames", po::value<std::size_t>(&maxInputFrames)->default_value(maxInputFrames), 
           "Maximum number of frames to read in input. 0 means no limit.");
 
   // parameters for voctree localizer
@@ -251,7 +252,7 @@ int main(int argc, char** argv)
           "[voctree] Maximum matching error (in pixels) allowed for image matching with "
           "geometric verification. If set to 0 it lets the ACRansac select "
           "an optimal value.")
-#ifdef HAVE_CCTAG
+#if OPENMVG_IS_DEFINED(OPENMVG_HAVE_CCTAG)
   // parameters for cctag localizer
       ("nNearestKeyFrames", po::value<std::size_t>(&nNearestKeyFrames)->default_value(nNearestKeyFrames),
           "[cctag] Number of images to retrieve in database")
@@ -262,7 +263,7 @@ int main(int argc, char** argv)
   po::options_description outputParams("Options for the output of the localizer");
   outputParams.add_options()  
       ("help,h", "Print this message")
-#ifdef HAVE_ALEMBIC
+#if OPENMVG_IS_DEFINED(OPENMVG_HAVE_ALEMBIC)
       ("export,e", po::value<std::string>(&exportFile)->default_value(exportFile),
           "Filename for the alembic file containing the rig poses with the 3D points. "
           "It also saves a file for each camera named 'filename.cam##.abc'.")
@@ -326,7 +327,7 @@ int main(int argc, char** argv)
     OPENMVG_COUT("\treprojectionError: " << resectionErrorMax);
     OPENMVG_COUT("\tdescriptors: " << descriptorType);
     if((DescriberType::SIFT==descriptorType)
-#ifdef HAVE_CCTAG
+#if OPENMVG_IS_DEFINED(OPENMVG_HAVE_CCTAG)
             ||(DescriberType::SIFT_CCTAG==descriptorType)
 #endif
       )
@@ -339,7 +340,7 @@ int main(int argc, char** argv)
       OPENMVG_COUT("\talgorithm: " << algostring);
       OPENMVG_COUT("\tmatchingError: " << matchingErrorMax);
     }
-#ifdef HAVE_CCTAG
+#if OPENMVG_IS_DEFINED(OPENMVG_HAVE_CCTAG)
     else
     {
       OPENMVG_COUT("\tnNearestKeyFrames: " << nNearestKeyFrames);
@@ -354,7 +355,7 @@ int main(int argc, char** argv)
   
   // initialize the localizer according to the chosen type of describer
   if((DescriberType::SIFT==descriptorType)
-#ifdef HAVE_CCTAG
+#if OPENMVG_IS_DEFINED(OPENMVG_HAVE_CCTAG)
             ||(DescriberType::SIFT_CCTAG==descriptorType)
 #endif
       )
@@ -364,7 +365,7 @@ int main(int argc, char** argv)
                                                             descriptorsFolder,
                                                             vocTreeFilepath,
                                                             weightsFilepath
-#ifdef HAVE_CCTAG
+#if OPENMVG_IS_DEFINED(OPENMVG_HAVE_CCTAG)
                                                             , DescriberType::SIFT_CCTAG==descriptorType
 #endif
                                                             );
@@ -379,7 +380,7 @@ int main(int argc, char** argv)
     tmpParam->_matchingError = matchingErrorMax;
     
   }
-#ifdef HAVE_CCTAG
+#if OPENMVG_IS_DEFINED(OPENMVG_HAVE_CCTAG)
   else
   {
     localization::CCTagLocalizer* tmpLoc = new localization::CCTagLocalizer(sfmFilePath, descriptorsFolder);
@@ -407,7 +408,7 @@ int main(int argc, char** argv)
     return EXIT_FAILURE;
   }
 
-#ifdef HAVE_ALEMBIC
+#if OPENMVG_IS_DEFINED(OPENMVG_HAVE_ALEMBIC)
   sfm::AlembicExporter exporter(exportFile);
   exporter.addPoints(localizer->getSfMData().GetLandmarks());
 #endif
@@ -490,7 +491,7 @@ int main(int argc, char** argv)
       OPENMVG_COUT("Localization took  " << detect_elapsed.count() << " [ms]");
       stats(detect_elapsed.count());
       
-#ifdef HAVE_ALEMBIC
+#if OPENMVG_IS_DEFINED(OPENMVG_HAVE_ALEMBIC)
       if(localizationResult.isValid())
       {
         exporter.appendCamera("camera"+std::to_string(idCamera)+"."+myToString(currentFrame,4), localizationResult.getPose(), &queryIntrinsics, subMediaFilepath, currentFrame, currentFrame);

@@ -9,6 +9,7 @@
 #define OPENMVG_CAMERA_UNDISTORT_IMAGE_HPP
 
 #include "openMVG/image/image.hpp"
+#include <openMVG/config.hpp>
 
 namespace openMVG {
 namespace cameras {
@@ -29,19 +30,18 @@ void UndistortImage(
   {
     image_ud.resize(imageIn.Width(), imageIn.Height(), true, fillcolor);
     const image::Sampler2d<image::SamplerLinear> sampler;
-#ifdef OPENMVG_USE_OPENMP
+
     #pragma omp parallel for
-#endif
     for (int j = 0; j < imageIn.Height(); ++j)
-    for (int i = 0; i < imageIn.Width(); ++i)
-    {
-      const Vec2 undisto_pix(i,j);
-      // compute coordinates with distortion
-      const Vec2 disto_pix = cam->get_d_pixel(undisto_pix);
-      // pick pixel if it is in the image domain
-      if ( imageIn.Contains(disto_pix(1), disto_pix(0)) )
-        image_ud( j, i ) = sampler(imageIn, disto_pix(1), disto_pix(0));
-    }
+      for (int i = 0; i < imageIn.Width(); ++i)
+      {
+        const Vec2 undisto_pix(i,j);
+        // compute coordinates with distortion
+        const Vec2 disto_pix = cam->get_d_pixel(undisto_pix);
+        // pick pixel if it is in the image domain
+        if ( imageIn.Contains(disto_pix(1), disto_pix(0)) )
+          image_ud( j, i ) = sampler(imageIn, disto_pix(1), disto_pix(0));
+      }
   }
 }
 

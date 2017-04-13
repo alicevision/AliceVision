@@ -2,6 +2,7 @@
 
 #include <openMVG/logger.hpp>
 #include <openMVG/sfm/sfm_data_io.hpp>
+#include <openMVG/config.hpp>
 
 #include <boost/filesystem.hpp>
 #include <boost/algorithm/string/case_conv.hpp>
@@ -165,9 +166,7 @@ void queryDatabase(const std::string &fileFullPath,
   OPENMVG_LOG_DEBUG("queryDatabase: Reading the descriptors from " << descriptorsFiles.size() << " files...");
   boost::progress_display display(descriptorsFiles.size());
 
-  #ifdef OPENMVG_USE_OPENMP
-    #pragma omp parallel for
-  #endif
+  #pragma omp parallel for
   // Run through the path vector and read the descriptors
   for(ptrdiff_t i = 0; i < static_cast<ptrdiff_t>(descriptorsFiles.size()); ++i)
   {
@@ -184,10 +183,7 @@ void queryDatabase(const std::string &fileFullPath,
     openMVG::voctree::DocMatches docMatches;
     // query the database
     db.find(query, numResults, docMatches, distanceMethod);
-
-    #ifdef OPENMVG_USE_OPENMP
-      #pragma omp critical
-    #endif
+    #pragma omp critical
     {
       // add the vector to the documents
       documents[currentFileIt->first] = query;

@@ -20,11 +20,12 @@
 #include "openMVG/graph/connectedComponent.hpp"
 #include "openMVG/stl/stl.hpp"
 #include "openMVG/system/timer.hpp"
+#include <openMVG/config.hpp>
 
 #include "third_party/htmlDoc/htmlDoc.hpp"
 #include "third_party/progress/progress.hpp"
 
-#ifdef HAVE_BOOST
+#if OPENMVG_IS_DEFINED(OPENMVG_HAVE_BOOST)
 #include <boost/format.hpp>
 #endif
 
@@ -73,7 +74,7 @@ void computeTracksPyramidPerView(
     start += Square(widthPerLevel[level]);
   }
 
-#ifdef HAVE_BOOST
+#if OPENMVG_IS_DEFINED(OPENMVG_HAVE_BOOST)
   tracksPyramidPerView.reserve(tracksPerView.size());
   for(const auto& viewTracks: tracksPerView)
   {
@@ -546,18 +547,14 @@ bool SequentialSfMReconstructionEngine::AutomaticInitialPairChoice(Pair & initia
     std::cout,
     "Automatic selection of an initial pair:\n" );
 
-#ifdef OPENMVG_USE_OPENMP
   #pragma omp parallel for schedule(dynamic)
-#endif
   for (int i = 0; i < _matches_provider->_pairWise_matches.size(); ++i)
   {
     matching::PairWiseMatches::const_iterator iter = _matches_provider->_pairWise_matches.begin();
     std::advance(iter, i);
     const std::pair< Pair, IndMatches > & match_pair = *iter;
 
-#ifdef OPENMVG_USE_OPENMP
     #pragma omp critical
-#endif
     ++my_progress_bar;
 
     const Pair current_pair = match_pair.first;
@@ -648,9 +645,8 @@ bool SequentialSfMReconstructionEngine::AutomaticInitialPairChoice(Pair & initia
       {
         const double imagePairScore = std::min(computeImageScore(I, validCommonTracksIds), computeImageScore(J, validCommonTracksIds));
         const double score = scoring_angle * imagePairScore;
-#ifdef OPENMVG_USE_OPENMP
+
         #pragma omp critical
-#endif
         scoring_per_pair.emplace_back(score, imagePairScore, scoring_angle, relativePose_info.vec_inliers.size(), current_pair);
       }
     }
@@ -659,7 +655,7 @@ bool SequentialSfMReconstructionEngine::AutomaticInitialPairChoice(Pair & initia
   const std::size_t nBestScores = std::min(std::size_t(50), scoring_per_pair.size());
   std::partial_sort(scoring_per_pair.begin(), scoring_per_pair.begin() + nBestScores, scoring_per_pair.end(), std::greater<ImagePairScore>());
   OPENMVG_LOG_DEBUG(scoring_per_pair.size() << " possible image pairs. " << nBestScores << " best possibles image pairs are:");
-#ifdef HAVE_BOOST
+#if OPENMVG_IS_DEFINED(OPENMVG_HAVE_BOOST)
   OPENMVG_LOG_DEBUG(boost::format("%=15s | %=15s | %=15s | %=15s | %=15s") % "Pair" % "Score" % "ImagePairScore" % "Angle" % "NbMatches");
   OPENMVG_LOG_DEBUG(std::string(15*5+3*3, '-'));
   for(std::size_t i = 0; i < nBestScores; ++i)
@@ -1030,9 +1026,7 @@ bool SequentialSfMReconstructionEngine::FindConnectedViews(
   
   const std::set<IndexT> reconstructedIntrinsics = Get_Reconstructed_Intrinsics(_sfm_data);
 
-  #ifdef OPENMVG_USE_OPENMP
-    #pragma omp parallel for
-  #endif
+  #pragma omp parallel for
   for (int i = 0; i < remainingViewIds.size(); ++i)
   {
     std::set<size_t>::const_iterator iter = remainingViewIds.cbegin();
@@ -1061,10 +1055,7 @@ bool SequentialSfMReconstructionEngine::FindConnectedViews(
     // Compute an image score based on the number of matches to the 3D scene
     // and the repartition of these features in the image.
     std::size_t score = computeImageScore(viewId, vec_trackIdForResection);
-
-#ifdef OPENMVG_USE_OPENMP
-      #pragma omp critical
-#endif
+    #pragma omp critical
     {
       out_connectedViews.emplace_back(viewId, vec_trackIdForResection.size(), score, isIntrinsicsReconstructed);
     }
@@ -1377,9 +1368,8 @@ bool SequentialSfMReconstructionEngine::Resection(const std::size_t viewIndex)
   {
     // For all reconstructed images look for common content in the tracks.
     const std::set<IndexT> valid_views = Get_Valid_Views(_sfm_data);
-#ifdef OPENMVG_USE_OPENMP
+
     #pragma omp parallel for schedule(dynamic)
-#endif
     for (ptrdiff_t i = 0; i < static_cast<ptrdiff_t>(valid_views.size()); ++i)
     {
       std::set<IndexT>::const_iterator iter = valid_views.begin();
@@ -1423,9 +1413,7 @@ bool SequentialSfMReconstructionEngine::Resection(const std::size_t viewIndex)
         if (trackIdExists)
         {
           // 3D point triangulated before, only add image observation if needed
-#ifdef OPENMVG_USE_OPENMP
           #pragma omp critical
-#endif
           {
             Landmark & landmark = _sfm_data.structure[trackId];
             if (landmark.obs.count(I) == 0)
@@ -1451,9 +1439,7 @@ bool SequentialSfMReconstructionEngine::Resection(const std::size_t viewIndex)
         else
         {
           // A new 3D point must be added
-#ifdef OPENMVG_USE_OPENMP
           #pragma omp critical
-#endif
           {
             ++new_putative_track;
           }
@@ -1476,9 +1462,7 @@ bool SequentialSfMReconstructionEngine::Resection(const std::size_t viewIndex)
             residual_I.norm() < std::max(4.0, _map_ACThreshold.at(I)) &&
             residual_J.norm() < std::max(4.0, _map_ACThreshold.at(J)))
           {
-#ifdef OPENMVG_USE_OPENMP
             #pragma omp critical
-#endif
             {
               // Add a new track
               Landmark & landmark = _sfm_data.structure[trackId];
@@ -1490,9 +1474,8 @@ bool SequentialSfMReconstructionEngine::Resection(const std::size_t viewIndex)
           } // 3D point is valid
         } // else (New 3D point)
       }// For all correspondences
-//#ifdef OPENMVG_USE_OPENMP
+      
 //        #pragma omp critical
-//#endif
 //        if (!map_tracksCommonIJ.empty())
 //        {
 //          OPENMVG_LOG_DEBUG(
