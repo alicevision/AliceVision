@@ -15,7 +15,7 @@
 #include "openMVG/matching/indMatch.hpp"
 #include "openMVG/matching/indMatchDecoratorXY.hpp"
 #include "openMVG/sfm/sfm_data.hpp"
-#include "openMVG/sfm/pipelines/sfm_regions_provider.hpp"
+#include "openMVG/sfm/pipelines/RegionsPerView.hpp"
 #include "openMVG/matching_image_collection/Geometric_Filter_utils.hpp"
 
 namespace openMVG {
@@ -34,7 +34,7 @@ struct GeometricFilter_HMatrix_AC
   template<typename Regions_or_Features_ProviderT>
   bool Robust_estimation(
     const sfm::SfM_Data * sfm_data,
-    const std::shared_ptr<Regions_or_Features_ProviderT> & regions_provider,
+    const std::shared_ptr<Regions_or_Features_ProviderT> & regionsPerView,
     const Pair pairIndex,
     const matching::IndMatches & vec_PutativeMatches,
     matching::IndMatches & geometric_inliers)
@@ -52,7 +52,7 @@ struct GeometricFilter_HMatrix_AC
     //--
 
     Mat xI,xJ;
-    MatchesPairToMat(pairIndex, vec_PutativeMatches, sfm_data, regions_provider, xI, xJ);
+    MatchesPairToMat(pairIndex, vec_PutativeMatches, sfm_data, regionsPerView, xI, xJ);
 
     //--
     // Robust estimation
@@ -119,7 +119,7 @@ struct GeometricFilter_HMatrix_AC
   bool Geometry_guided_matching
   (
     const sfm::SfM_Data * sfm_data,
-    const std::shared_ptr<sfm::Regions_Provider> & regions_provider,
+    const std::shared_ptr<sfm::RegionsPerView>& regionsPerView,
     const Pair pairIndex,
     const double dDistanceRatio,
     matching::IndMatches & matches
@@ -145,8 +145,8 @@ struct GeometricFilter_HMatrix_AC
       if (dDistanceRatio < 0)
       {
         // Filtering based only on region positions
-        const features::PointFeatures pointsFeaturesI = regions_provider->regions_per_view.at(iIndex)->GetRegionsPositions();
-        const features::PointFeatures pointsFeaturesJ = regions_provider->regions_per_view.at(jIndex)->GetRegionsPositions();
+        const features::PointFeatures pointsFeaturesI = regionsPerView->getRegions(iIndex).GetRegionsPositions();
+        const features::PointFeatures pointsFeaturesJ = regionsPerView->getRegions(jIndex).GetRegionsPositions();
         Mat xI, xJ;
         PointsToMat(cam_I, pointsFeaturesI, xI);
         PointsToMat(cam_J, pointsFeaturesJ, xJ);
@@ -168,8 +168,8 @@ struct GeometricFilter_HMatrix_AC
         geometry_aware::GuidedMatching
           <Mat3, openMVG::homography::kernel::AsymmetricError>(
           m_H,
-          cam_I, *regions_provider->regions_per_view.at(iIndex),
-          cam_J, *regions_provider->regions_per_view.at(jIndex),
+          cam_I, regionsPerView->getRegions(iIndex),
+          cam_J, regionsPerView->getRegions(jIndex),
           Square(m_dPrecision_robust), Square(dDistanceRatio),
           matches);
       }

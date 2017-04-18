@@ -19,7 +19,7 @@ namespace openMVG {
 namespace matching {
 
 bool LoadMatchFile(
-  PairWiseMatches & matches,
+  PairWiseSimpleMatches & matches,
   const std::string & folder,
   const std::string & filename)
 {
@@ -60,7 +60,7 @@ bool LoadMatchFile(
       return false;
 
     cereal::PortableBinaryInputArchive archive(stream);
-    PairWiseMatches loadMatches;
+    PairWiseSimpleMatches loadMatches;
     archive(loadMatches);
     stream.close();
     if(matches.empty())
@@ -85,11 +85,11 @@ bool LoadMatchFile(
 }
 
 void filterMatches(
-  PairWiseMatches & matches,
+  PairWiseSimpleMatches & matches,
   const std::set<IndexT> & viewsKeys)
 {
-  matching::PairWiseMatches filteredMatches;
-  for (matching::PairWiseMatches::const_iterator iter = matches.begin();
+  matching::PairWiseSimpleMatches filteredMatches;
+  for (matching::PairWiseSimpleMatches::const_iterator iter = matches.begin();
     iter != matches.end();
     ++iter)
   {
@@ -103,7 +103,7 @@ void filterMatches(
 }
 
 bool LoadMatchFilePerImage(
-  PairWiseMatches & matches,
+  PairWiseSimpleMatches & matches,
   const std::set<IndexT> & viewsKeys,
   const std::string & folder,
   const std::string & basename)
@@ -119,7 +119,7 @@ bool LoadMatchFilePerImage(
     std::advance(it, i);
     const IndexT idView = *it;
     const std::string matchFilename = std::to_string(idView) + "." + basename;
-    PairWiseMatches fileMatches;
+    PairWiseSimpleMatches fileMatches;
     if(!LoadMatchFile(fileMatches, folder, matchFilename))
     {
 #ifdef OPENMVG_USE_OPENMP
@@ -151,7 +151,7 @@ bool LoadMatchFilePerImage(
 }
 
 bool Load(
-  PairWiseMatches & matches,
+  PairWiseSimpleMatches & matches,
   const std::set<IndexT> & viewsKeys,
   const std::string & folder,
   const std::string & mode)
@@ -189,11 +189,11 @@ class MatchExporter
 private:
   void saveTxt(
     const std::string & filepath,
-    const PairWiseMatches::const_iterator& matchBegin,
-    const PairWiseMatches::const_iterator& matchEnd)
+    const PairWiseSimpleMatches::const_iterator& matchBegin,
+    const PairWiseSimpleMatches::const_iterator& matchEnd)
   {
     std::ofstream stream(filepath.c_str(), std::ios::out);
-    for(PairWiseMatches::const_iterator match = matchBegin;
+    for(PairWiseSimpleMatches::const_iterator match = matchBegin;
       match != matchEnd;
       ++match)
     {
@@ -209,19 +209,19 @@ private:
   }
   void saveBinary(
     const std::string & filepath,
-    const PairWiseMatches::const_iterator& matchBegin,
-    const PairWiseMatches::const_iterator& matchEnd)
+    const PairWiseSimpleMatches::const_iterator& matchBegin,
+    const PairWiseSimpleMatches::const_iterator& matchEnd)
   {
     std::ofstream stream(filepath.c_str(), std::ios::out | std::ios::binary);
     cereal::PortableBinaryOutputArchive archive(stream);
-    const PairWiseMatches matchesToExport(matchBegin, matchEnd);
+    const PairWiseSimpleMatches matchesToExport(matchBegin, matchEnd);
     archive(matchesToExport);
     stream.close();
   }
 
 public:
   MatchExporter(
-    const PairWiseMatches& matches,
+    const PairWiseSimpleMatches& matches,
     const std::string& folder,
     const std::string& filename)
     : m_matches(matches)
@@ -259,13 +259,13 @@ public:
     std::transform(
         m_matches.begin(), m_matches.end(),
         std::inserter(keys, keys.begin()),
-        [](const PairWiseMatches::value_type &v) { return v.first.first; });
+        [](const PairWiseSimpleMatches::value_type &v) { return v.first.first; });
 
-    PairWiseMatches::const_iterator matchBegin = m_matches.begin();
-    PairWiseMatches::const_iterator matchEnd = m_matches.end();
+    PairWiseSimpleMatches::const_iterator matchBegin = m_matches.begin();
+    PairWiseSimpleMatches::const_iterator matchEnd = m_matches.end();
     for(IndexT key: keys)
     {
-      PairWiseMatches::const_iterator match = matchBegin;
+      PairWiseSimpleMatches::const_iterator match = matchBegin;
       while(match->first.first == key && match != matchEnd)
       {
         ++match;
@@ -290,7 +290,7 @@ public:
   }
 
 public:
-  const PairWiseMatches& m_matches;
+  const PairWiseSimpleMatches& m_matches;
   const std::string m_ext;
   std::string m_directory;
   std::string m_filename;
@@ -298,7 +298,7 @@ public:
 
 
 bool Save(
-  const PairWiseMatches & matches,
+  const PairWiseSimpleMatches & matches,
   const std::string & folder,
   const std::string & mode,
   const std::string & extension,

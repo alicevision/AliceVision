@@ -29,9 +29,9 @@ Matcher_Regions_AllInMemory::Matcher_Regions_AllInMemory(
 
 void Matcher_Regions_AllInMemory::Match(
   const sfm::SfM_Data & sfm_data,
-  const std::shared_ptr<sfm::Regions_Provider> & regions_provider,
+  const sfm::RegionsPerView& regionsPerView,
   const Pair_Set & pairs,
-  PairWiseMatches & map_PutativesMatches)const // the pairwise photometric corresponding points
+  PairWiseSimpleMatches & map_PutativesMatches)const // the pairwise photometric corresponding points
 {
 #ifdef OPENMVG_USE_OPENMP
   OPENMVG_LOG_DEBUG("Using the OPENMP thread interface");
@@ -56,7 +56,7 @@ void Matcher_Regions_AllInMemory::Match(
     const size_t I = iter->first;
     const std::vector<size_t> & indexToCompare = iter->second;
 
-    const features::Regions & regionsI = *regions_provider->regions_per_view.at(I).get();
+    const features::Regions & regionsI = regionsPerView.getRegions(I);
     if (regionsI.RegionCount() == 0)
     {
       my_progress_bar += indexToCompare.size();
@@ -73,7 +73,7 @@ void Matcher_Regions_AllInMemory::Match(
     {
       const size_t J = indexToCompare[j];
 
-      const features::Regions &regionsJ = *regions_provider->regions_per_view.at(J).get();
+      const features::Regions &regionsJ = regionsPerView.getRegions(J);
       if (regionsJ.RegionCount() == 0
           || regionsI.Type_id() != regionsJ.Type_id())
       {

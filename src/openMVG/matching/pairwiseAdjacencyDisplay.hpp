@@ -18,7 +18,7 @@ namespace matching {
 
 /// Display pair wises matches as an Adjacency matrix in svg format
 void PairWiseMatchingToAdjacencyMatrixSVG(const size_t NbImages,
-  const matching::PairWiseMatches & map_Matches,
+  const matching::PairWiseSimpleMatches & map_Matches,
   const std::string & sOutName)
 {
   if ( !map_Matches.empty())
@@ -29,7 +29,7 @@ void PairWiseMatchingToAdjacencyMatrixSVG(const size_t NbImages,
     for (size_t I = 0; I < NbImages; ++I) {
       for (size_t J = 0; J < NbImages; ++J) {
         // If the pair have matches display a blue boxes at I,J position.
-        matching::PairWiseMatches::const_iterator iterSearch =
+        matching::PairWiseSimpleMatches::const_iterator iterSearch =
           map_Matches.find(std::make_pair(I,J));
         if (iterSearch != map_Matches.end() && !iterSearch->second.empty())
         {

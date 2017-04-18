@@ -13,29 +13,6 @@ using namespace openMVG::sfm;
 #include <random>
 #include <iostream>
 
-// Create from a synthetic scene (NViewDataSet) some SfM pipelines data provider:
-//  - for each view store the observations point as PointFeatures
-struct Synthetic_Features_Provider : public Features_Provider
-{
-  template <typename NoiseGenerator>
-  bool load(
-    const NViewDataSet & synthetic_data, NoiseGenerator & noise)
-  {
-    std::default_random_engine generator;
-    // For each view
-    for (int j = 0; j < synthetic_data._n; ++j)
-    {
-      // For each new point visibility
-      for (int i = 0; i < synthetic_data._x[j].cols(); ++i)
-      {
-        const Vec2 pt = synthetic_data._x[j].col(i);
-        feats_per_view[j].push_back(
-          features::PointFeature(pt(0)+noise(generator), pt(1)+noise(generator)));
-      }
-    }
-    return true;
-  }
-};
 
 // Create from a synthetic scene (NViewDataSet) some SfM pipelines data provider:
 //  - for contiguous triplets store the corresponding observations indexes

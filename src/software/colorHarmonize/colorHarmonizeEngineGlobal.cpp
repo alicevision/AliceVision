@@ -103,7 +103,7 @@ bool ColorHarmonizationEngineGlobal::Process()
 
   //-- Remove EG with poor support:
 
-  for (matching::PairWiseMatches::iterator iter = _map_Matches.begin();
+  for (matching::PairWiseSimpleMatches::iterator iter = _map_Matches.begin();
     iter != _map_Matches.end();
     ++iter)
   {
@@ -171,7 +171,7 @@ bool ColorHarmonizationEngineGlobal::Process()
   std::set<size_t> set_indeximage;
   for (size_t i = 0; i < _map_Matches.size(); ++i)
   {
-    matching::PairWiseMatches::const_iterator iter = _map_Matches.begin();
+    matching::PairWiseSimpleMatches::const_iterator iter = _map_Matches.begin();
     std::advance(iter, i);
 
     const size_t I = iter->first.first;
@@ -202,7 +202,7 @@ bool ColorHarmonizationEngineGlobal::Process()
 
   for (size_t i = 0; i < _map_Matches.size(); ++i)
   {
-    matching::PairWiseMatches::const_iterator iter = _map_Matches.begin();
+    matching::PairWiseSimpleMatches::const_iterator iter = _map_Matches.begin();
     std::advance(iter, i);
 
     const size_t I = iter->first.first;
@@ -560,7 +560,7 @@ bool ColorHarmonizationEngineGlobal::CleanGraph()
           putativeGraph.g.erase(e);
           const IndexT Idu = (*putativeGraph.map_nodeMapIndex)[putativeGraph.g.target(e)];
           const IndexT Idv = (*putativeGraph.map_nodeMapIndex)[putativeGraph.g.source(e)];
-          matching::PairWiseMatches::iterator iterM = _map_Matches.find(std::make_pair(Idu,Idv));
+          matching::PairWiseSimpleMatches::iterator iterM = _map_Matches.find(std::make_pair(Idu,Idv));
           if( iterM != _map_Matches.end())
           {
             _map_Matches.erase(iterM);

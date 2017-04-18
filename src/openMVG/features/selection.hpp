@@ -16,14 +16,14 @@ namespace features {
 /**
 * @brief Compute the n best matches.
 * @param[in] inputMatches Set of indices for (putative) matches.
-* @param[in] regionsI Pointer to the regions of the left image.
-* @param[in] regionsJ Pointer to the regions of the right image.
+* @param[in] regionsI Reference to the regions of the left image.
+* @param[in] regionsJ Reference to the regions of the right image.
 * @param[out] outputMatches Subset of inputMatches containing the best n matches, sorted.
 */
 void sortMatches(
 	const openMVG::matching::IndMatches& inputMatches,
-	const openMVG::features::Feat_Regions<openMVG::features::SIOPointFeature> *regionsI,
-	const openMVG::features::Feat_Regions<openMVG::features::SIOPointFeature> *regionsJ,
+	const openMVG::features::Feat_Regions<openMVG::features::SIOPointFeature>& regionsI,
+	const openMVG::features::Feat_Regions<openMVG::features::SIOPointFeature>& regionsJ,
 	openMVG::matching::IndMatches& outputMatches);
 
 
@@ -50,8 +50,8 @@ void thresholdMatches(openMVG::matching::IndMatches& outputMatches, const std::s
  * @param[in] sfm_data The sfm data file
  * @param[out] outMatches The remaining matches
  */
-void matchesGridFiltering(const openMVG::features::Feat_Regions<openMVG::features::SIOPointFeature>* lRegions, 
-        const openMVG::features::Feat_Regions<openMVG::features::SIOPointFeature>* rRegions, 
+void matchesGridFiltering(const openMVG::features::Feat_Regions<openMVG::features::SIOPointFeature>& lRegions, 
+        const openMVG::features::Feat_Regions<openMVG::features::SIOPointFeature>& rRegions, 
         const openMVG::Pair& indexImagePair,
         const openMVG::sfm::SfM_Data sfm_data, 
         openMVG::matching::IndMatches& outMatches);

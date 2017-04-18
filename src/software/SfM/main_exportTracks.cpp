@@ -30,11 +30,13 @@ int main(int argc, char ** argv)
   CmdLine cmd;
 
   std::string sSfM_Data_Filename;
+  std::string describerMethod = "SIFT";
   std::string sMatchesDir;
   std::string sMatchGeometricModel = "f";
   std::string sOutDir = "";
 
   cmd.add( make_option('i', sSfM_Data_Filename, "input_file") );
+  cmd.add( make_option('m', describerMethod, "describerMethod") );
   cmd.add( make_option('d', sMatchesDir, "matchdir") );
   cmd.add( make_option('g', sMatchGeometricModel, "geometric_model") );
   cmd.add( make_option('o', sOutDir, "outdir") );
@@ -45,6 +47,18 @@ int main(int argc, char ** argv)
   } catch(const std::string& s) {
       std::cerr << "Export pairwise tracks.\nUsage: " << argv[0] << "\n"
       << "[-i|--input_file file] path to a SfM_Data scene\n"
+      << "[-m|--describerMethod]\n"
+      << "  (methods to use to describe an image):\n"
+      << "   SIFT (default),\n"
+      << "   SIFT_FLOAT to use SIFT stored as float,\n"
+      << "   AKAZE_FLOAT: AKAZE with floating point descriptors,\n"
+      << "   AKAZE_MLDB:  AKAZE with binary descriptors\n"
+#ifdef HAVE_CCTAG
+      << "   CCTAG3: CCTAG markers with 3 crowns\n"
+      << "   CCTAG4: CCTAG markers with 4 crowns\n"
+      << "   SIFT_CCTAG3: CCTAG markers with 3 crowns\n" 
+      << "   SIFT_CCTAG4: CCTAG markers with 4 crowns\n" 
+#endif
       << "[-d|--matchdir PATH] path to the folder with all features and match files\n"
       << "[-g|--geometric_model MODEL] model used for the matching:\n"
       << "   f: (default) fundamental matrix,\n"
@@ -76,25 +90,19 @@ int main(int argc, char ** argv)
   //---------------------------------------
   // Load SfM Scene regions
   //---------------------------------------
-  // Init the regions_type from the image describer file (used for image regions extraction)
   using namespace openMVG::features;
-  const std::string sImage_describer = stlplus::create_filespec(sMatchesDir, "image_describer", "json");
-  std::unique_ptr<Regions> regions_type = Init_region_type_from_file(sImage_describer);
-  if (!regions_type)
-  {
-    std::cerr << "Invalid: "
-      << sImage_describer << " regions type file." << std::endl;
-    return EXIT_FAILURE;
-  }
+  
+  // Get imageDescriberMethodType
+  EImageDescriberType describerMethodType = EImageDescriberType_stringToEnum(describerMethod);
 
   // Read the features
-  std::shared_ptr<Features_Provider> feats_provider = std::make_shared<Features_Provider>();
-  if (!feats_provider->load(sfm_data, sMatchesDir, regions_type))
-  {
+  FeaturesPerView featuresPerView;
+  if (!loadFeaturesPerView(featuresPerView, sfm_data, sMatchesDir, describerMethodType)) {
     std::cerr << std::endl
       << "Invalid features." << std::endl;
     return EXIT_FAILURE;
   }
+
   // Read the matches
   std::shared_ptr<Matches_Provider> matches_provider = std::make_shared<Matches_Provider>();
   if (!matches_provider->load(sfm_data, sMatchesDir, sMatchGeometricModel))
@@ -108,7 +116,7 @@ int main(int argc, char ** argv)
   //---------------------------------------
   tracks::STLMAPTracks map_tracks;
   {
-    const openMVG::matching::PairWiseMatches & map_Matches = matches_provider->_pairWise_matches;
+    const openMVG::matching::PairWiseSimpleMatches & map_Matches = matches_provider->_pairWise_matches;
     tracks::TracksBuilder tracksBuilder;
     tracksBuilder.Build(map_Matches);
     tracksBuilder.Filter();
@@ -158,8 +166,8 @@ int main(int argc, char ** argv)
           dimImage_J.first,
           dimImage_J.second, dimImage_I.first);
 
-        const PointFeatures & vec_feat_I = feats_provider->getFeatures(view_I->id_view);
-        const PointFeatures & vec_feat_J = feats_provider->getFeatures(view_J->id_view);
+        const PointFeatures & vec_feat_I = featuresPerView.getFeatures(view_I->id_view);
+        const PointFeatures & vec_feat_J = featuresPerView.getFeatures(view_J->id_view);
         //-- Draw link between features :
         for (tracks::STLMAPTracks::const_iterator iterT = map_tracksCommon.begin();
           iterT != map_tracksCommon.end(); ++ iterT)  {

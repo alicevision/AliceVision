@@ -30,9 +30,9 @@ class Matcher_Regions_AllInMemory : public Matcher
   void Match
   (
     const sfm::SfM_Data & sfm_data,
-    const std::shared_ptr<sfm::Regions_Provider> & regions_provider,
+    const sfm::RegionsPerView& regionsPerView,
     const Pair_Set & pairs,
-    matching::PairWiseMatches & map_PutativesMatches // the pairwise photometric corresponding points
+    matching::PairWiseSimpleMatches & map_PutativesMatches // the pairwise photometric corresponding points
   )const;
 
   private:

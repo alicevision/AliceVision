@@ -9,7 +9,7 @@
 
 #include "openMVG/sfm/sfm_data_io.hpp"
 #include "openMVG/sfm/pipelines/sfm_engine.hpp"
-#include "openMVG/sfm/pipelines/sfm_features_provider.hpp"
+#include "openMVG/sfm/pipelines/FeaturesPerView.hpp"
 #include "openMVG/sfm/pipelines/sfm_matches_provider.hpp"
 #include "openMVG/tracks/tracks.hpp"
 
@@ -31,7 +31,7 @@ public:
 
   ~SequentialSfMReconstructionEngine();
 
-  void SetFeaturesProvider(Features_Provider * provider);
+  void SetFeaturesProvider(FeaturesPerView * featuresPerView);
   void SetMatchesProvider(Matches_Provider * provider);
 
   void RobustResectionOfImages(
@@ -181,7 +181,7 @@ private:
   int _minPointsPerPose = 30;
   
   //-- Data provider
-  Features_Provider  * _features_provider;
+  FeaturesPerView  * _featuresPerView;
   Matches_Provider  * _matches_provider;
 
   // Pyramid scoring

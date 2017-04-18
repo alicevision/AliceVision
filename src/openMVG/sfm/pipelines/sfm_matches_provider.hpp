@@ -20,7 +20,7 @@ namespace sfm {
 /// Return the matches loaded from a provided matches file
 struct Matches_Provider
 {
-  matching::PairWiseMatches _pairWise_matches;
+  matching::PairWiseSimpleMatches _pairWise_matches;
 
   // Load matches from the provided matches file
   virtual bool load(const SfM_Data & sfm_data, const std::string & folder, const std::string & matchesMode)
@@ -39,7 +39,7 @@ struct Matches_Provider
   {
     return matching::getPairs(_pairWise_matches);
   }
-}; // Features_Provider
+}; // Matches_Provider
 
 } // namespace sfm
 } // namespace openMVG

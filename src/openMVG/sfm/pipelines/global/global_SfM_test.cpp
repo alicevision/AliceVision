@@ -50,19 +50,19 @@ TEST(GLOBAL_SFM, RotationAveragingL2_TranslationAveragingL1) {
     "./",
     stlplus::create_filespec("./", "Reconstruction_Report.html"));
 
-  // Configure the features_provider & the matches_provider from the synthetic dataset
-  std::shared_ptr<Features_Provider> feats_provider =
-    std::make_shared<Synthetic_Features_Provider>();
+  // Configure the featuresPerView & the matches_provider from the synthetic dataset
+  FeaturesPerView featuresPerView;
+  
   // Add a tiny noise in 2D observations to make data more realistic
   std::normal_distribution<double> distribution(0.0,0.5);
-  dynamic_cast<Synthetic_Features_Provider*>(feats_provider.get())->load(d,distribution);
+  featuresPerView.createSyntheticData(d,distribution);
 
   std::shared_ptr<Matches_Provider> matches_provider =
     std::make_shared<Synthetic_Matches_Provider>();
   dynamic_cast<Synthetic_Matches_Provider*>(matches_provider.get())->load(d);
 
   // Configure data provider (Features and Matches)
-  sfmEngine.SetFeaturesProvider(feats_provider.get());
+  sfmEngine.SetFeaturesProvider(&featuresPerView);
   sfmEngine.SetMatchesProvider(matches_provider.get());
 
   // Configure reconstruction parameters
@@ -101,19 +101,20 @@ TEST(GLOBAL_SFM, RotationAveragingL1_TranslationAveragingL1) {
     "./",
     stlplus::create_filespec("./", "Reconstruction_Report.html"));
 
-  // Configure the features_provider & the matches_provider from the synthetic dataset
-  std::shared_ptr<Features_Provider> feats_provider =
-    std::make_shared<Synthetic_Features_Provider>();
+  // Configure the featuresPerView & the matches_provider from the synthetic dataset
+  FeaturesPerView featuresPerView;
+  
   // Add a tiny noise in 2D observations to make data more realistic
   std::normal_distribution<double> distribution(0.0,0.5);
-  dynamic_cast<Synthetic_Features_Provider*>(feats_provider.get())->load(d,distribution);
+  featuresPerView.createSyntheticData(d,distribution);
+
 
   std::shared_ptr<Matches_Provider> matches_provider =
     std::make_shared<Synthetic_Matches_Provider>();
   dynamic_cast<Synthetic_Matches_Provider*>(matches_provider.get())->load(d);
 
   // Configure data provider (Features and Matches)
-  sfmEngine.SetFeaturesProvider(feats_provider.get());
+  sfmEngine.SetFeaturesProvider(&featuresPerView);
   sfmEngine.SetMatchesProvider(matches_provider.get());
 
   // Configure reconstruction parameters
@@ -152,19 +153,18 @@ TEST(GLOBAL_SFM, RotationAveragingL2_TranslationAveragingL2_Chordal) {
     "./",
     stlplus::create_filespec("./", "Reconstruction_Report.html"));
 
-  // Configure the features_provider & the matches_provider from the synthetic dataset
-  std::shared_ptr<Features_Provider> feats_provider =
-    std::make_shared<Synthetic_Features_Provider>();
+  // Configure the featuresPerView & the matches_provider from the synthetic dataset
+  FeaturesPerView featuresPerView;
   // Add a tiny noise in 2D observations to make data more realistic
   std::normal_distribution<double> distribution(0.0,0.5);
-  dynamic_cast<Synthetic_Features_Provider*>(feats_provider.get())->load(d,distribution);
+  featuresPerView.createSyntheticData(d,distribution);
 
   std::shared_ptr<Matches_Provider> matches_provider =
     std::make_shared<Synthetic_Matches_Provider>();
   dynamic_cast<Synthetic_Matches_Provider*>(matches_provider.get())->load(d);
 
   // Configure data provider (Features and Matches)
-  sfmEngine.SetFeaturesProvider(feats_provider.get());
+  sfmEngine.SetFeaturesProvider(&featuresPerView);
   sfmEngine.SetMatchesProvider(matches_provider.get());
 
   // Configure reconstruction parameters
@@ -203,19 +203,19 @@ TEST(GLOBAL_SFM, RotationAveragingL2_TranslationAveragingSoftL1) {
     "./",
     stlplus::create_filespec("./", "Reconstruction_Report.html"));
 
-  // Configure the features_provider & the matches_provider from the synthetic dataset
-  std::shared_ptr<Features_Provider> feats_provider =
-    std::make_shared<Synthetic_Features_Provider>();
+  // Configure the featuresPerView & the matches_provider from the synthetic dataset
+  FeaturesPerView featuresPerView;
+  
   // Add a tiny noise in 2D observations to make data more realistic
   std::normal_distribution<double> distribution(0.0,0.5);
-  dynamic_cast<Synthetic_Features_Provider*>(feats_provider.get())->load(d,distribution);
+   featuresPerView.createSyntheticData(d,distribution);
 
   std::shared_ptr<Matches_Provider> matches_provider =
     std::make_shared<Synthetic_Matches_Provider>();
   dynamic_cast<Synthetic_Matches_Provider*>(matches_provider.get())->load(d);
 
   // Configure data provider (Features and Matches)
-  sfmEngine.SetFeaturesProvider(feats_provider.get());
+  sfmEngine.SetFeaturesProvider(&featuresPerView);
   sfmEngine.SetMatchesProvider(matches_provider.get());
 
   // Configure reconstruction parameters

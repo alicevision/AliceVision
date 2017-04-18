@@ -17,7 +17,7 @@
 
 #include "openMVG/matching/indMatch.hpp"
 #include "openMVG/sfm/sfm_data.hpp"
-#include "openMVG/sfm/pipelines/sfm_regions_provider.hpp"
+#include "openMVG/sfm/pipelines/RegionsPerView.hpp"
 #include "openMVG/matching_image_collection/Geometric_Filter_utils.hpp"
 
 namespace openMVG {
@@ -36,7 +36,7 @@ struct GeometricFilter_EMatrix_AC
   template<typename Regions_or_Features_ProviderT>
   bool Robust_estimation(
     const sfm::SfM_Data * sfm_data,
-    const std::shared_ptr<Regions_or_Features_ProviderT> & regions_provider,
+    const Regions_or_Features_ProviderT& regionsPerView,
     const Pair pairIndex,
     const matching::IndMatches & vec_PutativeMatches,
     matching::IndMatches & geometric_inliers)
@@ -52,7 +52,6 @@ struct GeometricFilter_EMatrix_AC
     //--
     // Reject pair with missing Intrinsic information
     //--
-
     const sfm::View * view_I = sfm_data->views.at(iIndex).get();
     const sfm::View * view_J = sfm_data->views.at(jIndex).get();
 
@@ -74,7 +73,7 @@ struct GeometricFilter_EMatrix_AC
     //--
 
     Mat xI,xJ;
-    MatchesPairToMat(pairIndex, vec_PutativeMatches, sfm_data, regions_provider, xI, xJ);
+    MatchesPairToMat(pairIndex, vec_PutativeMatches, sfm_data, regionsPerView, xI, xJ);
 
     //--
     // Robust estimation
@@ -120,7 +119,7 @@ struct GeometricFilter_EMatrix_AC
   bool Geometry_guided_matching
   (
     const sfm::SfM_Data * sfm_data,
-    const std::shared_ptr<sfm::Regions_Provider> & regions_provider,
+    const sfm::RegionsPerView& regionsPerView,
     const Pair pairIndex,
     const double dDistanceRatio,
     matching::IndMatches & matches
@@ -160,8 +159,8 @@ struct GeometricFilter_EMatrix_AC
         openMVG::fundamental::kernel::EpipolarDistanceError>(
         //openMVG::fundamental::kernel::SymmetricEpipolarDistanceError>(
         F,
-        cam_I, *regions_provider->regions_per_view.at(iIndex),
-        cam_J, *regions_provider->regions_per_view.at(jIndex),
+        cam_I, regionsPerView.getRegions(iIndex),
+        cam_J, regionsPerView.getRegions(jIndex),
         Square(m_dPrecision_robust), Square(dDistanceRatio),
         matches);
     }

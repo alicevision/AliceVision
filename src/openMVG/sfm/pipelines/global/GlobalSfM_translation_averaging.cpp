@@ -37,16 +37,16 @@ using namespace openMVG::geometry;
 bool GlobalSfM_Translation_AveragingSolver::Run(
   ETranslationAveragingMethod eTranslationAveragingMethod,
   SfM_Data & sfm_data,
-  const Features_Provider * normalized_features_provider,
+  const FeaturesPerView * normalizedFeaturesPerView,
   const Matches_Provider * matches_provider,
   const Hash_Map<IndexT, Mat3> & map_globalR,
-  matching::PairWiseMatches & tripletWise_matches
+  matching::PairWiseSimpleMatches & tripletWise_matches
 )
 {
   // Compute the relative translations and save them to vec_initialRijTijEstimates:
   Compute_translations(
     sfm_data,
-    normalized_features_provider,
+    normalizedFeaturesPerView,
     matches_provider,
     map_globalR,
     tripletWise_matches);
@@ -278,10 +278,10 @@ bool GlobalSfM_Translation_AveragingSolver::Translation_averaging(
 
 void GlobalSfM_Translation_AveragingSolver::Compute_translations(
   const SfM_Data & sfm_data,
-  const Features_Provider * normalized_features_provider,
+  const FeaturesPerView * normalizedFeaturesPerView,
   const Matches_Provider * matches_provider,
   const Hash_Map<IndexT, Mat3> & map_globalR,
-  matching::PairWiseMatches &tripletWise_matches)
+  matching::PairWiseSimpleMatches &tripletWise_matches)
 {
   OPENMVG_LOG_DEBUG(
     "-------------------------------\n"
@@ -293,7 +293,7 @@ void GlobalSfM_Translation_AveragingSolver::Compute_translations(
   ComputePutativeTranslation_EdgesCoverage(
     sfm_data,
     map_globalR,
-    normalized_features_provider,
+    normalizedFeaturesPerView,
     matches_provider,
     m_vec_initialRijTijEstimates,
     tripletWise_matches);
@@ -304,10 +304,10 @@ void GlobalSfM_Translation_AveragingSolver::Compute_translations(
 void GlobalSfM_Translation_AveragingSolver::ComputePutativeTranslation_EdgesCoverage(
   const SfM_Data & sfm_data,
   const Hash_Map<IndexT, Mat3> & map_globalR,
-  const Features_Provider * normalized_features_provider,
+  const FeaturesPerView * normalizedFeaturesPerView,
   const Matches_Provider * matches_provider,
   RelativeInfo_Vec & vec_initialEstimates,
-  matching::PairWiseMatches & newpairMatches)
+  matching::PairWiseSimpleMatches & newpairMatches)
 {
   openMVG::system::Timer timerLP_triplet;
 
@@ -357,7 +357,7 @@ void GlobalSfM_Translation_AveragingSolver::ComputePutativeTranslation_EdgesCove
     {
       // List matches that belong to the triplet of poses
       const graph::Triplet & triplet = vec_triplets[i];
-      PairWiseMatches map_triplet_matches;
+      PairWiseSimpleMatches map_triplet_matches;
       const std::set<IndexT> set_triplet_pose_ids = {triplet.i, triplet.j, triplet.k};
       // List shared correspondences (pairs) between the triplet poses
       for (const auto & match_iterator : matches_provider->_pairWise_matches)
@@ -475,7 +475,7 @@ void GlobalSfM_Translation_AveragingSolver::ComputePutativeTranslation_EdgesCove
           const bool bTriplet_estimation = Estimate_T_triplet(
               sfm_data,
               map_globalR,
-              normalized_features_provider,
+              normalizedFeaturesPerView,
               matches_provider,
               triplet,
               vec_tis,
@@ -603,7 +603,7 @@ void GlobalSfM_Translation_AveragingSolver::ComputePutativeTranslation_EdgesCove
 bool GlobalSfM_Translation_AveragingSolver::Estimate_T_triplet(
   const SfM_Data & sfm_data,
   const Hash_Map<IndexT, Mat3> & map_globalR,
-  const Features_Provider * normalized_features_provider,
+  const FeaturesPerView * normalizedFeaturesPerView,
   const Matches_Provider * matches_provider,
   const graph::Triplet & poses_id,
   std::vector<Vec3> & vec_tis,
@@ -613,7 +613,7 @@ bool GlobalSfM_Translation_AveragingSolver::Estimate_T_triplet(
   const std::string & sOutDirectory) const
 {
   // List matches that belong to the triplet of poses
-  PairWiseMatches map_triplet_matches;
+  PairWiseSimpleMatches map_triplet_matches;
   const std::set<IndexT> set_pose_ids = {poses_id.i, poses_id.j, poses_id.k};
   // List shared correspondences (pairs) between poses
   for (const auto & match_iterator : matches_provider->_pairWise_matches)
@@ -652,7 +652,7 @@ bool GlobalSfM_Translation_AveragingSolver::Estimate_T_triplet(
     size_t index = 0;
     for (tracks::submapTrack::const_iterator iter = subTrack.begin(); iter != subTrack.end(); ++iter, ++index) {
       const size_t idx_view = iter->first;
-      const features::PointFeature pt = normalized_features_provider->getFeatures(idx_view)[iter->second];
+      const features::PointFeature pt = normalizedFeaturesPerView->getFeatures(idx_view)[iter->second];
       xxx[index]->col(cpt) = pt.coords().cast<double>();
       const View * view = sfm_data.views.at(idx_view).get();
       intrinsic_ids.insert(view->id_intrinsic);
@@ -753,7 +753,7 @@ bool GlobalSfM_Translation_AveragingSolver::Estimate_T_triplet(
       const Vec2 principal_point = intrinsicPtr->principal_point();
 
       // get normalized feature
-      const features::PointFeature & pt = normalized_features_provider->feats_per_view.at(viewIndex)[featIndex];
+      const features::PointFeature & pt = normalizedFeaturesPerView->getFeatures(viewIndex)[featIndex];
       const Vec2 pt_unnormalized (cam->cam2ima(pt.coords().cast<double>()));
       obs[viewIndex] = Observation(pt_unnormalized, featIndex);
     }

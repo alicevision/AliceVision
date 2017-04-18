@@ -59,20 +59,20 @@ static void PointsToMat(
 void SfM_Data_Structure_Estimation_From_Known_Poses::run(
   SfM_Data & sfm_data,
   const Pair_Set & pairs,
-  const std::shared_ptr<Regions_Provider> & regions_provider)
+  const RegionsPerView& regionsPerView)
 {
   sfm_data.structure.clear();
 
-  match(sfm_data, pairs, regions_provider);
-  filter(sfm_data, pairs, regions_provider);
-  triangulate(sfm_data, regions_provider);
+  match(sfm_data, pairs, regionsPerView);
+  filter(sfm_data, pairs, regionsPerView);
+  triangulate(sfm_data, regionsPerView);
 }
 
 /// Use guided matching to find corresponding 2-view correspondences
 void SfM_Data_Structure_Estimation_From_Known_Poses::match(
   const SfM_Data & sfm_data,
   const Pair_Set & pairs,
-  const std::shared_ptr<Regions_Provider> & regions_provider)
+  const RegionsPerView& regionsPerView)
 {
   C_Progress_display my_progress_bar( pairs.size(), std::cout,
     "Compute pairwise fundamental guided matching:\n" );
@@ -114,25 +114,25 @@ void SfM_Data_Structure_Estimation_From_Known_Poses::match(
         (
           F_lr,
           iterIntrinsicL->second.get(),
-          *regions_provider->regions_per_view.at(it->first),
+          regionsPerView.getRegions(it->first),
           iterIntrinsicR->second.get(),
-          *regions_provider->regions_per_view.at(it->second),
+          regionsPerView.getRegions(it->second),
           Square(thresholdF), Square(0.8),
           vec_corresponding_indexes
         );
     #else
       const Vec3 epipole2  = epipole_from_P(P_R, poseL);
 
-      const features::Regions * regions = regions_provider->regions_per_view.at(it->first).get();
+      //const features::Regions& regions = regionsPerView.getRegions(it->first);
       geometry_aware::GuidedMatching_Fundamental_Fast
         <openMVG::fundamental::kernel::EpipolarDistanceError>
         (
           F_lr,
           epipole2,
           iterIntrinsicL->second.get(),
-          *regions_provider->regions_per_view.at(it->first),
+          regionsPerView.getRegions(it->first),
           iterIntrinsicR->second.get(),
-          *regions_provider->regions_per_view.at(it->second),
+          regionsPerView.getRegions(it->second),
           iterIntrinsicR->second->w(), iterIntrinsicR->second->h(),
           Square(thresholdF), Square(0.8),
           vec_corresponding_indexes
@@ -156,7 +156,7 @@ void SfM_Data_Structure_Estimation_From_Known_Poses::match(
 void SfM_Data_Structure_Estimation_From_Known_Poses::filter(
   const SfM_Data & sfm_data,
   const Pair_Set & pairs,
-  const std::shared_ptr<Regions_Provider> & regions_provider)
+  const RegionsPerView& regionsPerView)
 {
   // Compute triplets
   // Triangulate triplet tracks
@@ -187,7 +187,7 @@ void SfM_Data_Structure_Estimation_From_Known_Poses::filter(
       openMVG::tracks::STLMAPTracks map_tracksCommon;
       openMVG::tracks::TracksBuilder tracksBuilder;
       {
-        PairWiseMatches map_matchesIJK;
+        PairWiseSimpleMatches map_matchesIJK;
         if (putatives_matches.count(std::make_pair(I,J)))
           map_matchesIJK.insert(*putatives_matches.find(std::make_pair(I,J)));
 
@@ -215,7 +215,7 @@ void SfM_Data_Structure_Estimation_From_Known_Poses::filter(
               const View * view = sfm_data.GetViews().at(imaIndex).get();
               const IntrinsicBase * cam = sfm_data.GetIntrinsics().at(view->id_intrinsic).get();
               const Pose3 pose = sfm_data.GetPoseOrDie(view);
-              const Vec2 pt = regions_provider->regions_per_view.at(imaIndex)->GetRegionPosition(featIndex);
+              const Vec2 pt = regionsPerView.getRegions(imaIndex).GetRegionPosition(featIndex);
               trianObj.add(cam->get_projective_equivalent(pose), cam->get_ud_pixel(pt));
             }
             const Vec3 Xs = trianObj.compute();
@@ -242,20 +242,20 @@ void SfM_Data_Structure_Estimation_From_Known_Poses::filter(
     }
   }
   // Clear putatives matches since they are no longer required
-  matching::PairWiseMatches().swap(putatives_matches);
+  matching::PairWiseSimpleMatches().swap(putatives_matches);
 }
 
 /// Init & triangulate landmark observations from validated 3-view correspondences
 void SfM_Data_Structure_Estimation_From_Known_Poses::triangulate(
   SfM_Data & sfm_data,
-  const std::shared_ptr<Regions_Provider> & regions_provider)
+  const RegionsPerView& regionsPerView)
 {
   openMVG::tracks::STLMAPTracks map_tracksCommon;
   openMVG::tracks::TracksBuilder tracksBuilder;
   tracksBuilder.Build(triplets_matches);
   tracksBuilder.Filter(3);
   tracksBuilder.ExportToSTL(map_tracksCommon);
-  matching::PairWiseMatches().swap(triplets_matches);
+  matching::PairWiseSimpleMatches().swap(triplets_matches);
 
   // Generate new Structure tracks
   sfm_data.structure.clear();
@@ -274,7 +274,7 @@ void SfM_Data_Structure_Estimation_From_Known_Poses::triangulate(
     {
       const size_t imaIndex = it->first;
       const size_t featIndex = it->second;
-      const Vec2 pt = regions_provider->regions_per_view.at(imaIndex)->GetRegionPosition(featIndex);
+      const Vec2 pt = regionsPerView.getRegions(imaIndex).GetRegionPosition(featIndex);
       obs[imaIndex] = Observation(pt, featIndex);
     }
   }

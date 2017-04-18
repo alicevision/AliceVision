@@ -16,14 +16,16 @@ set(features_files_headers
   features.hpp
   selection.hpp
   keypointSet.hpp
-  svgVisualization.hpp)
+  svgVisualization.hpp
+  ImageDescriberCommon.hpp)
 
 set( features_files_sources
   selection.cpp
   image_describer.cpp
   akaze/AKAZE.cpp
   liop/liop_descriptor.cpp
-  svgVisualization.cpp)
+  svgVisualization.cpp
+  ImageDescriberCommon.cpp)
 
 if (OpenMVG_USE_CCTAG)
   list(APPEND features_files_headers 

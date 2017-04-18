@@ -77,6 +77,11 @@ public:
     }
     return true;
   }
+  
+  void setUpRight(bool upRight)
+  {
+    _bOrientation = !upRight;
+  }
 
   /**
   @brief Detect regions on the image and compute their attributes (description)

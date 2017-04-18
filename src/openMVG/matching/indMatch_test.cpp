@@ -16,7 +16,7 @@ TEST(IndMatch, IO)
 {
   {
     std::set<IndexT> viewsKeys;
-    PairWiseMatches matches;
+    PairWiseSimpleMatches matches;
 
     // Test save + load of empty data
     EXPECT_TRUE(Save(matches, ".", "test1", "txt", false));
@@ -29,7 +29,7 @@ TEST(IndMatch, IO)
   }
   {
     std::set<IndexT> viewsKeys;
-    PairWiseMatches matches;
+    PairWiseSimpleMatches matches;
 
     // Test save + load of empty data
     EXPECT_TRUE(Save(matches, ".", "test3", "txt", true));
@@ -42,7 +42,7 @@ TEST(IndMatch, IO)
   }
   {
     std::set<IndexT> viewsKeys = {0, 1, 2};
-    PairWiseMatches matches;
+    PairWiseSimpleMatches matches;
     // Test export with not empty data
     matches[std::make_pair(0,1)] = {{0,0},{1,1}};
     matches[std::make_pair(1,2)] = {{0,0},{1,1}, {2,2}};
@@ -58,7 +58,7 @@ TEST(IndMatch, IO)
   }
   {
     std::set<IndexT> viewsKeys = {0, 1, 2};
-    PairWiseMatches matches;
+    PairWiseSimpleMatches matches;
     // Test export with not empty data
     matches[std::make_pair(0,1)] = {{0,0},{1,1}};
     matches[std::make_pair(1,2)] = {{0,0},{1,1}, {2,2}};
@@ -73,7 +73,7 @@ TEST(IndMatch, IO)
   }
   {
     std::set<IndexT> viewsKeys = {0, 1, 2};
-    PairWiseMatches matches;
+    PairWiseSimpleMatches matches;
     matches[std::make_pair(0,1)] = {{0,0},{1,1}};
     matches[std::make_pair(1,2)] = {{0,0},{1,1}, {2,2}};
 
@@ -87,7 +87,7 @@ TEST(IndMatch, IO)
   }
   {
     std::set<IndexT> viewsKeys = {0, 1, 2};
-    PairWiseMatches matches;
+    PairWiseSimpleMatches matches;
     matches[std::make_pair(0,1)] = {{0,0},{1,1}};
     matches[std::make_pair(1,2)] = {{0,0},{1,1}, {2,2}};
 

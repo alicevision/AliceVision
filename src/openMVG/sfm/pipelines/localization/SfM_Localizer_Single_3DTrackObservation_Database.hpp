@@ -29,13 +29,13 @@ public:
   * @brief Build the retrieval database (3D points descriptors)
   *
   * @param[in] sfm_data the SfM scene that have to be described
-  * @param[in] region_provider regions provider
+  * @param[in] regionPerView regions provider
   * @return True if the database has been correctly setup
   */
   bool Init
   (
     const SfM_Data & sfm_data,
-    const Regions_Provider & regions_provider
+    const RegionsPerView & regionsPerView
   );
 
   /**

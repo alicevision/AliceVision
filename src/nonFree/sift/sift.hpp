@@ -69,7 +69,7 @@ struct SiftParams
   //
   bool _root_sift;        // see [1]
   
-  bool setPreset(EDESCRIBER_PRESET preset)
+  bool setPreset(EDESCRIBER_PRESET preset) // TODO: void
   {
     switch(preset)
     {
@@ -107,7 +107,7 @@ struct SiftParams
       break;
     }
     default:
-      return false;
+      return false; // TODO: throw
     }
     return true;
   }

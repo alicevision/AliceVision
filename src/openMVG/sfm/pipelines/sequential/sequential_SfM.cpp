@@ -58,7 +58,7 @@ void computeTracksPyramidPerView(
     const tracks::TracksPerView& tracksPerView,
     const tracks::STLMAPTracks& map_tracks,
     const Views& views,
-    const Features_Provider& featuresProvider,
+    const FeaturesPerView& featuresProvider,
     const std::size_t pyramidBase,
     const std::size_t pyramidDepth,
     tracks::TracksPyramidPerView& tracksPyramidPerView)
@@ -94,7 +94,7 @@ void computeTracksPyramidPerView(
       cellWidthPerLevel[level] = (double)view.ui_width / (double)widthPerLevel[level];
       cellHeightPerLevel[level] = (double)view.ui_height / (double)widthPerLevel[level];
     }
-    const auto& features = featuresProvider.feats_per_view.at(viewId);
+    const auto& features = featuresProvider.getFeatures(viewId);
     for(std::size_t i = 0; i < viewTracks.second.size(); ++i)
     {
       const std::size_t trackId = viewTracks.second[i];
@@ -154,9 +154,9 @@ SequentialSfMReconstructionEngine::~SequentialSfMReconstructionEngine()
   }
 }
 
-void SequentialSfMReconstructionEngine::SetFeaturesProvider(Features_Provider * provider)
+void SequentialSfMReconstructionEngine::SetFeaturesProvider(FeaturesPerView * featuresPerView)
 {
-  _features_provider = provider;
+  _featuresPerView = featuresPerView;
 }
 
 void SequentialSfMReconstructionEngine::SetMatchesProvider(Matches_Provider * provider)
@@ -408,9 +408,9 @@ bool SequentialSfMReconstructionEngine::ChooseInitialPair(Pair & initialPairInde
     //  - valid intrinsics,
     //  - valid estimated Fundamental matrix.
     std::vector< size_t > vec_NbMatchesPerPair;
-    std::vector<openMVG::matching::PairWiseMatches::const_iterator> vec_MatchesIterator;
-    const openMVG::matching::PairWiseMatches & map_Matches = _matches_provider->_pairWise_matches;
-    for (openMVG::matching::PairWiseMatches::const_iterator
+    std::vector<openMVG::matching::PairWiseSimpleMatches::const_iterator> vec_MatchesIterator;
+    const openMVG::matching::PairWiseSimpleMatches & map_Matches = _matches_provider->_pairWise_matches;
+    for (openMVG::matching::PairWiseSimpleMatches::const_iterator
       iter = map_Matches.begin();
       iter != map_Matches.end(); ++iter)
     {
@@ -429,7 +429,7 @@ bool SequentialSfMReconstructionEngine::ChooseInitialPair(Pair & initialPairInde
 
     for (size_t i = 0; i < std::min((size_t)10, vec_NbMatchesPerPair.size()); ++i) {
       const size_t index = packet_vec[i].index;
-      openMVG::matching::PairWiseMatches::const_iterator iter = vec_MatchesIterator[index];
+      openMVG::matching::PairWiseSimpleMatches::const_iterator iter = vec_MatchesIterator[index];
       OPENMVG_COUT("(" << iter->first.first << "," << iter->first.second <<")\t\t"
         << iter->second.size() << " matches");
     }
@@ -447,8 +447,8 @@ bool SequentialSfMReconstructionEngine::ChooseInitialPair(Pair & initialPairInde
       << "," << initialPairIndex.second << ")");
 
   // Check validity of the initial pair indices:
-  if (_features_provider->feats_per_view.find(initialPairIndex.first) == _features_provider->feats_per_view.end() ||
-      _features_provider->feats_per_view.find(initialPairIndex.second) == _features_provider->feats_per_view.end())
+  if (!_featuresPerView->viewExist(initialPairIndex.first)  ||
+      !_featuresPerView->viewExist(initialPairIndex.second))
   {
     OPENMVG_LOG_WARNING("At least one of the initial pair indices is invalid.");
     return false;
@@ -463,7 +463,7 @@ bool SequentialSfMReconstructionEngine::InitLandmarkTracks()
 
   {
     // List of features matches for each couple of images
-    const openMVG::matching::PairWiseMatches & map_Matches = _matches_provider->_pairWise_matches;
+    const openMVG::matching::PairWiseSimpleMatches & map_Matches = _matches_provider->_pairWise_matches;
     OPENMVG_LOG_DEBUG("Track building");
 
     tracksBuilder.Build(map_Matches);
@@ -477,7 +477,7 @@ bool SequentialSfMReconstructionEngine::InitLandmarkTracks()
     tracks::TracksUtilsMap::computeTracksPerView(_map_tracks, _map_tracksPerView);
     OPENMVG_LOG_DEBUG("Build tracks pyramid per view");
     computeTracksPyramidPerView(
-            _map_tracksPerView, _map_tracks, _sfm_data.views, *_features_provider, _pyramidBase, _pyramidDepth, _map_featsPyramidPerView);
+            _map_tracksPerView, _map_tracks, _sfm_data.views, *_featuresPerView, _pyramidBase, _pyramidDepth, _map_featsPyramidPerView);
 
     OPENMVG_LOG_DEBUG("Track stats");
     {
@@ -552,7 +552,7 @@ bool SequentialSfMReconstructionEngine::AutomaticInitialPairChoice(Pair & initia
 #endif
   for (int i = 0; i < _matches_provider->_pairWise_matches.size(); ++i)
   {
-    matching::PairWiseMatches::const_iterator iter = _matches_provider->_pairWise_matches.begin();
+    matching::PairWiseSimpleMatches::const_iterator iter = _matches_provider->_pairWise_matches.begin();
     std::advance(iter, i);
     const std::pair< Pair, IndMatches > & match_pair = *iter;
 
@@ -587,8 +587,8 @@ bool SequentialSfMReconstructionEngine::AutomaticInitialPairChoice(Pair & initia
     Mat xI(2,n), xJ(2,n);
     size_t cptIndex = 0;
     std::vector<std::size_t> commonTracksIds(n);
-    auto& viewI = _features_provider->feats_per_view[I];
-    auto& viewJ = _features_provider->feats_per_view[J];
+    const auto& viewI = _featuresPerView->getFeatures(I);
+    const auto& viewJ = _featuresPerView->getFeatures(J);
     for (openMVG::tracks::STLMAPTracks::const_iterator
       iterT = map_tracksCommon.begin(); iterT != map_tracksCommon.end();
       ++iterT, ++cptIndex)
@@ -630,8 +630,8 @@ bool SequentialSfMReconstructionEngine::AutomaticInitialPairChoice(Pair & initia
         TriangulateDLT(PI, xI.col(inlier_idx), PJ, xJ.col(inlier_idx), &X);
         IndexT trackId = commonTracksIds[inlier_idx];
         tracks::submapTrack::const_iterator iter = map_tracksCommon[trackId].begin();
-        const Vec2 featI = _features_provider->feats_per_view[I][iter->second].coords().cast<double>();
-        const Vec2 featJ = _features_provider->feats_per_view[J][(++iter)->second].coords().cast<double>();
+        const Vec2 featI = _featuresPerView->getFeatures(I)[iter->second].coords().cast<double>();
+        const Vec2 featJ = _featuresPerView->getFeatures(J)[(++iter)->second].coords().cast<double>();
         vec_angles[i] = AngleBetweenRay(pose_I, cam_I, pose_J, cam_J, featI, featJ);
         validCommonTracksIds[i] = trackId;
         ++i;
@@ -737,9 +737,9 @@ bool SequentialSfMReconstructionEngine::MakeInitialPair3D(const Pair & current_p
     const std::size_t i = iter->second;
     const std::size_t j = (++iter)->second;
 
-    Vec2 feat = _features_provider->feats_per_view[I][i].coords().cast<double>();
+    Vec2 feat = _featuresPerView->getFeatures(I)[i].coords().cast<double>();
     xI.col(cptIndex) = cam_I->get_ud_pixel(feat);
-    feat = _features_provider->feats_per_view[J][j].coords().cast<double>();
+    feat = _featuresPerView->getFeatures(J)[j].coords().cast<double>();
     xJ.col(cptIndex) = cam_J->get_ud_pixel(feat);
   }
   OPENMVG_LOG_DEBUG(n << " matches in the image pair for the initial pose estimation.");
@@ -790,8 +790,8 @@ bool SequentialSfMReconstructionEngine::MakeInitialPair3D(const Pair & current_p
       const size_t i = iter->second;
       const size_t j = (++iter)->second;
 
-      const Vec2 x1_ = _features_provider->feats_per_view[I][i].coords().cast<double>();
-      const Vec2 x2_ = _features_provider->feats_per_view[J][j].coords().cast<double>();
+      const Vec2 x1_ = _featuresPerView->getFeatures(I)[i].coords().cast<double>();
+      const Vec2 x2_ = _featuresPerView->getFeatures(J)[j].coords().cast<double>();
 
       Vec3 X;
       TriangulateDLT(P1, x1_, P2, x2_, &X);
@@ -1250,7 +1250,7 @@ bool SequentialSfMReconstructionEngine::Resection(const std::size_t viewIndex)
     ++iterfeatId, ++iterTrackId, ++cpt)
   {
     resection_data.pt3D.col(cpt) = _sfm_data.GetLandmarks().at(*iterTrackId).X;
-    resection_data.pt2D.col(cpt) = _features_provider->feats_per_view.at(viewIndex)[*iterfeatId].coords().cast<double>();
+    resection_data.pt2D.col(cpt) = _featuresPerView->getFeatures(viewIndex)[*iterfeatId].coords().cast<double>();
   }
 
   // C. Do the resectioning: compute the camera pose.
@@ -1412,8 +1412,8 @@ bool SequentialSfMReconstructionEngine::Resection(const std::size_t viewIndex)
         const std::size_t trackId = trackIt.first;
         const tracks::submapTrack & track = trackIt.second;
 
-        const Vec2 xI = _features_provider->feats_per_view.at(I)[track.at(I)].coords().cast<double>();
-        const Vec2 xJ = _features_provider->feats_per_view.at(J)[track.at(J)].coords().cast<double>();
+        const Vec2 xI = _featuresPerView->getFeatures(I)[track.at(I)].coords().cast<double>();
+        const Vec2 xJ = _featuresPerView->getFeatures(J)[track.at(J)].coords().cast<double>();
 
         // test if the track already exists in 3D
         if (_sfm_data.structure.count(trackId) != 0)

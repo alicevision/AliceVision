@@ -81,6 +81,13 @@ public:
   {
     return Set_configuration_preset(describerPreset_stringToEnum(preset));
   }
+  
+  /**
+   @brief Set image describer always upRight
+   @param upRight
+   */
+  void setUpRight(bool upRight)
+  {}
 
   /**
   @brief Detect regions on the image and compute their attributes (description)

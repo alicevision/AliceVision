@@ -23,7 +23,7 @@ enum ETranslationAveragingMethod
 
 #include "openMVG/sfm/sfm_data.hpp"
 #include "openMVG/multiview/translation_averaging_common.hpp"
-#include "openMVG/sfm/pipelines/sfm_features_provider.hpp"
+#include "openMVG/sfm/pipelines/FeaturesPerView.hpp"
 #include "openMVG/sfm/pipelines/sfm_matches_provider.hpp"
 #include "openMVG/tracks/tracks.hpp"
 #include "openMVG/graph/graph.hpp"
@@ -41,10 +41,10 @@ public:
   bool Run(
     ETranslationAveragingMethod eTranslationAveragingMethod,
     SfM_Data & sfm_data,
-    const Features_Provider * normalized_features_provider,
+    const FeaturesPerView * normalizedFeaturesPerView,
     const Matches_Provider * matches_provider,
     const Hash_Map<IndexT, Mat3> & map_globalR,
-    matching::PairWiseMatches & tripletWise_matches
+    matching::PairWiseSimpleMatches & tripletWise_matches
   );
 
 private:
@@ -55,10 +55,10 @@ private:
 
   void Compute_translations(
     const SfM_Data & sfm_data,
-    const Features_Provider * normalized_features_provider,
+    const FeaturesPerView * normalizedFeaturesPerView,
     const Matches_Provider * matches_provider,
     const Hash_Map<IndexT, Mat3> & map_globalR,
-    matching::PairWiseMatches &tripletWise_matches);
+    matching::PairWiseSimpleMatches &tripletWise_matches);
 
   //-- Compute the relative translations on the rotations graph.
   // Compute relative translations by using triplets of poses.
@@ -67,16 +67,16 @@ private:
   void ComputePutativeTranslation_EdgesCoverage(
     const SfM_Data & sfm_data,
     const Hash_Map<IndexT, Mat3> & map_globalR,
-    const Features_Provider * normalized_features_provider,
+    const FeaturesPerView * normalizedFeaturesPerView,
     const Matches_Provider * matches_provider,
     RelativeInfo_Vec & vec_initialEstimates,
-    matching::PairWiseMatches & newpairMatches);
+    matching::PairWiseSimpleMatches & newpairMatches);
 
   // Robust estimation and refinement of a translation and 3D points of an image triplets.
   bool Estimate_T_triplet(
     const SfM_Data & sfm_data,
     const Hash_Map<IndexT, Mat3> & map_globalR,
-    const Features_Provider * normalized_features_provider,
+    const FeaturesPerView * normalizedFeaturesPerView,
     const Matches_Provider * matches_provider,
     const graph::Triplet & poses_id,
     std::vector<Vec3> & vec_tis,

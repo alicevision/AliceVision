@@ -18,7 +18,7 @@
 
 #include "openMVG/matching/indMatch.hpp"
 #include "openMVG/sfm/sfm_data.hpp"
-#include "openMVG/sfm/pipelines/sfm_regions_provider.hpp"
+#include "openMVG/sfm/pipelines/RegionsPerView.hpp"
 #include "openMVG/matching_image_collection/Geometric_Filter_utils.hpp"
 
 
@@ -38,7 +38,7 @@ struct GeometricFilter_FMatrix_AC
   template<typename Regions_or_Features_ProviderT>
   bool Robust_estimation(
     const sfm::SfM_Data * sfm_data,
-    const std::shared_ptr<Regions_or_Features_ProviderT> & regions_provider,
+    const Regions_or_Features_ProviderT & regionsProvider,
     const Pair pairIndex,
     const matching::IndMatches & vec_PutativeMatches,
     matching::IndMatches & geometric_inliers)
@@ -56,7 +56,7 @@ struct GeometricFilter_FMatrix_AC
     //--
 
     Mat xI,xJ;
-    MatchesPairToMat(pairIndex, vec_PutativeMatches, sfm_data, regions_provider, xI, xJ);
+    MatchesPairToMat(pairIndex, vec_PutativeMatches, sfm_data, regionsProvider, xI, xJ);
 
     std::vector<size_t> vec_inliers;
     bool valid = Robust_estimation(
@@ -179,7 +179,7 @@ struct GeometricFilter_FMatrix_AC
   bool Geometry_guided_matching
   (
     const sfm::SfM_Data * sfm_data,
-    const std::shared_ptr<sfm::Regions_Provider> & regions_provider,
+    const std::shared_ptr<sfm::RegionsPerView>& regionsPerView,
     const Pair pairIndex,
     const double dDistanceRatio,
     matching::IndMatches & matches
@@ -209,9 +209,9 @@ struct GeometricFilter_FMatrix_AC
         //openMVG::fundamental::kernel::SymmetricEpipolarDistanceError>(
         m_F,
         cam_I, // cameras::IntrinsicBase
-        *regions_provider->regions_per_view.at(iIndex), // features::Regions
+        regionsPerView->getRegions(iIndex), // features::Regions
         cam_J, // cameras::IntrinsicBase
-        *regions_provider->regions_per_view.at(jIndex), // features::Regions
+        regionsPerView->getRegions(jIndex), // features::Regions
         Square(m_dPrecision_robust), Square(dDistanceRatio),
         matches);
     }

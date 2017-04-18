@@ -16,6 +16,7 @@
 using namespace openMVG;
 using namespace openMVG::cameras;
 using namespace openMVG::sfm;
+using namespace openMVG::features;
 
 /**
  * @brief Retrieve the view id in the sfmData from the image filename.
@@ -83,6 +84,7 @@ int main(int argc, char **argv)
   CmdLine cmd;
 
   std::string sSfM_Data_Filename;
+  std::string describerMethod = "SIFT";
   std::string sMatchesDir;
   std::string sOutDir = "";
   std::string sOutSfMDataFilepath = "";
@@ -94,6 +96,7 @@ int main(int argc, char **argv)
   bool allowUserInteraction = true;
 
   cmd.add( make_option('i', sSfM_Data_Filename, "input_file") );
+  cmd.add( make_option('d', describerMethod, "describerMethod") );
   cmd.add( make_option('m', sMatchesDir, "matchdir") );
   cmd.add( make_option('o', sOutDir, "outdir") );
   cmd.add( make_option('s', sOutSfMDataFilepath, "out_sfmdata_file") );
@@ -111,6 +114,18 @@ int main(int argc, char **argv)
   } catch(const std::string& s) {
     std::cerr << "Usage: " << argv[0] << '\n'
     << "[-i|--input_file] path to a SfM_Data scene\n"
+    << "[-d|--describerMethod]\n"
+    << "  (methods to use to describe an image):\n"
+    << "   SIFT (default),\n"
+    << "   SIFT_FLOAT to use SIFT stored as float,\n"
+    << "   AKAZE_FLOAT: AKAZE with floating point descriptors,\n"
+    << "   AKAZE_MLDB:  AKAZE with binary descriptors\n"
+#ifdef HAVE_CCTAG
+    << "   CCTAG3: CCTAG markers with 3 crowns\n"
+    << "   CCTAG4: CCTAG markers with 4 crowns\n"
+    << "   SIFT_CCTAG3: CCTAG markers with 3 crowns\n" 
+    << "   SIFT_CCTAG4: CCTAG markers with 4 crowns\n" 
+#endif
     << "[-m|--matchdir] path to the matches that corresponds to the provided SfM_Data scene\n"
     << "[-o|--outdir] path where the output data will be stored\n"
     << "[-s|--out_sfmdata_file] path of the output sfmdata file (default: $outdir/sfm_data.json)\n"
@@ -146,24 +161,17 @@ int main(int argc, char **argv)
     return EXIT_FAILURE;
   }
 
-  // Init the regions_type from the image describer file (used for image regions extraction)
-  using namespace openMVG::features;
-  const std::string sImage_describer = stlplus::create_filespec(sMatchesDir, "image_describer", "json");
-  std::unique_ptr<Regions> regions_type = Init_region_type_from_file(sImage_describer);
-  if (!regions_type)
-  {
-    std::cerr << "Invalid: "
-      << sImage_describer << " regions type file." << std::endl;
-    return EXIT_FAILURE;
-  }
+  // Get imageDescriberMethodType
+  EImageDescriberType describerMethodType = EImageDescriberType_stringToEnum(describerMethod);
 
   // Features reading
-  std::shared_ptr<Features_Provider> feats_provider = std::make_shared<Features_Provider>();
-  if (!feats_provider->load(sfm_data, sMatchesDir, regions_type)) {
+  FeaturesPerView featuresPerView;
+  if (!loadFeaturesPerView(featuresPerView, sfm_data, sMatchesDir, describerMethodType)) {
     std::cerr << std::endl
       << "Invalid features." << std::endl;
     return EXIT_FAILURE;
   }
+  
   // Matches reading
   std::shared_ptr<Matches_Provider> matches_provider = std::make_shared<Matches_Provider>();
 
@@ -192,8 +200,8 @@ int main(int argc, char **argv)
     sOutDir,
     stlplus::create_filespec(sOutDir, "Reconstruction_Report.html"));
 
-  // Configure the features_provider & the matches_provider
-  sfmEngine.SetFeaturesProvider(feats_provider.get());
+  // Configure the featuresPerView & the matches_provider
+  sfmEngine.SetFeaturesProvider(&featuresPerView);
   sfmEngine.SetMatchesProvider(matches_provider.get());
 
   // Configure reconstruction parameters

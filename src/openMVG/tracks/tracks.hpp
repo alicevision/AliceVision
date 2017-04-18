@@ -17,7 +17,7 @@
 // From map< [imageI,ImageJ], [indexed matches array] > it builds tracks.
 //
 // Usage :
-//  PairWiseMatches map_Matches;
+//  PairWiseSimpleMatches map_Matches;
 //  PairedIndMatchImport(sMatchFile, map_Matches); // Load series of pairwise matches
 //  //---------------------------------------
 //  // Compute tracks from matches
@@ -82,9 +82,11 @@ private:
 
 namespace tracks {
 
+// TODO: struct KeypointID { EKeypointType type; std::size_t index; }
+
 /// Data structure to store a track: collection of {ImageId,FeatureId}
 ///  The corresponding image points with their imageId and FeatureId.
-typedef stl::flat_map<std::size_t, std::size_t> submapTrack;
+typedef stl::flat_map<std::size_t, std::size_t> submapTrack; // TODO: stl::flat_map<std::size_t, KeypointID>
 /// A track is a collection of {trackId, submapTrack}
 typedef stl::flat_map<std::size_t, submapTrack > STLMAPTracks;
 typedef std::vector<size_t> TrackIdSet;
@@ -113,7 +115,7 @@ typedef stl::flat_map<std::size_t, TrackIdSet > TracksPerView;
 
 struct TracksBuilder
 {
-  typedef std::pair<std::size_t, std::size_t> indexedFeaturePair;
+  typedef std::pair<std::size_t, std::size_t> indexedFeaturePair; // TODO: std::pair<std::size_t, KeypointID>
   typedef ListDigraph::NodeMap<std::size_t> IndexMap;
   typedef lemon::UnionFindEnum< IndexMap > UnionFindObject;
 
@@ -129,13 +131,13 @@ struct TracksBuilder
   const MapNodeToIndex & getReverseMap() const {return _map_nodeToIndex;}
 
   /// Build tracks for a given series of pairWise matches
-  bool Build( const PairWiseMatches &  map_pair_wise_matches)
+  bool Build( const PairWiseSimpleMatches &  map_pair_wise_matches)
   {
     typedef std::set<indexedFeaturePair> SetIndexedPair;
     // Set of all features of all images: (imageIndex, featureIndex)
     SetIndexedPair allFeatures;
     // For each couple of images
-    for (PairWiseMatches::const_iterator iter = map_pair_wise_matches.begin();
+    for (PairWiseSimpleMatches::const_iterator iter = map_pair_wise_matches.begin();
       iter != map_pair_wise_matches.end();
       ++iter)
     {
@@ -177,7 +179,7 @@ struct TracksBuilder
     }
 
     // Make the union according the pair matches
-    for (PairWiseMatches::const_iterator iter = map_pair_wise_matches.begin();
+    for (PairWiseSimpleMatches::const_iterator iter = map_pair_wise_matches.begin();
       iter != map_pair_wise_matches.end();
       ++iter)
     {

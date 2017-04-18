@@ -8,7 +8,7 @@
 #pragma once
 
 #include "openMVG/features/feature.hpp"
-#include "openMVG/sfm/pipelines/sfm_regions_provider.hpp"
+#include "openMVG/sfm/pipelines/RegionsPerView.hpp"
 #include "openMVG/matching/indMatch.hpp"
 
 #include "third_party/stlplus3/filesystemSimplified/file_system.hpp"
@@ -26,36 +26,34 @@ using namespace openMVG::matching;
 /// -> It discards pairs that do not lead to a valid robust model estimation
 struct ImageCollectionGeometricFilter
 {
-  ImageCollectionGeometricFilter
-  (
+  ImageCollectionGeometricFilter(
     const sfm::SfM_Data * sfm_data,
-    const std::shared_ptr<sfm::Regions_Provider> & regions_provider
-  ):_sfm_data(sfm_data), _regions_provider(regions_provider)
+    const sfm::RegionsPerView & regionsPerView
+  ):_sfm_data(sfm_data), _regionsPerView(regionsPerView)
   {}
 
   /// Perform robust model estimation (with optional guided_matching) for all the pairs and regions correspondences contained in the putative_matches set.
   template<typename GeometryFunctor>
-  void Robust_model_estimation
-  (
+  void Robust_model_estimation(
     const GeometryFunctor & functor,
-    const PairWiseMatches & putative_matches,
+    const PairWiseSimpleMatches & putative_matches,
     const bool b_guided_matching = false,
     const double d_distance_ratio = 0.6
   );
 
-  const PairWiseMatches & Get_geometric_matches() const {return _map_GeometricMatches;}
+  const PairWiseSimpleMatches & Get_geometric_matches() const {return _map_GeometricMatches;}
 
   // Data
   const sfm::SfM_Data * _sfm_data;
-  const std::shared_ptr<sfm::Regions_Provider> & _regions_provider;
-  PairWiseMatches _map_GeometricMatches;
+  const sfm::RegionsPerView & _regionsPerView;
+  PairWiseSimpleMatches _map_GeometricMatches;
 };
 
 template<typename GeometryFunctor>
 void ImageCollectionGeometricFilter::Robust_model_estimation
 (
   const GeometryFunctor & functor,
-  const PairWiseMatches & putative_matches,
+  const PairWiseSimpleMatches & putative_matches,
   const bool b_guided_matching,
   const double d_distance_ratio
 )
@@ -67,7 +65,7 @@ void ImageCollectionGeometricFilter::Robust_model_estimation
 #endif
   for (int i = 0; i < (int)putative_matches.size(); ++i)
   {
-    PairWiseMatches::const_iterator iter = putative_matches.begin();
+    PairWiseSimpleMatches::const_iterator iter = putative_matches.begin();
     advance(iter,i);
 
     Pair current_pair = iter->first;
@@ -77,12 +75,12 @@ void ImageCollectionGeometricFilter::Robust_model_estimation
     {
       IndMatches putative_inliers;
       GeometryFunctor geometricFilter = functor; // use a copy since we are in a multi-thread context
-      if (geometricFilter.Robust_estimation(_sfm_data, _regions_provider, iter->first, vec_PutativeMatches, putative_inliers))
+      if (geometricFilter.Robust_estimation(_sfm_data, _regionsPerView, iter->first, vec_PutativeMatches, putative_inliers))
       {
         if (b_guided_matching)
         {
           IndMatches guided_geometric_inliers;
-          geometricFilter.Geometry_guided_matching(_sfm_data, _regions_provider, iter->first, d_distance_ratio, guided_geometric_inliers);
+          geometricFilter.Geometry_guided_matching(_sfm_data, _regionsPerView, iter->first, d_distance_ratio, guided_geometric_inliers);
           //OPENMVG_LOG_DEBUG("#before/#after: " << putative_inliers.size() << "/" << guided_geometric_inliers.size());
           std::swap(putative_inliers, guided_geometric_inliers);
         }

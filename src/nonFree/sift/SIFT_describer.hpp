@@ -47,6 +47,11 @@ public:
   {
     return _params.setPreset(preset);
   }
+  
+  void setUpRight(bool upRight)
+  {
+    _bOrientation = !upRight;
+  }
 
   /**
   @brief Detect regions on the image and compute their attributes (description)

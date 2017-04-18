@@ -7,7 +7,7 @@
 
 #pragma once
 
-#include <openMVG/sfm/pipelines/sfm_features_provider.hpp>
+#include <openMVG/sfm/pipelines/FeaturesPerView.hpp>
 
 namespace openMVG {
 namespace matching_image_collection {
@@ -58,11 +58,11 @@ void MatchesPointsToMat
 }
 
 /**
-* @brief Get un-distorted feature positions for the pair pairIndex from the Regions_Provider interface
+* @brief Get un-distorted feature positions for the pair pairIndex from the RegionsPerView interface
 * @param[in] pairIndex Pair from which you need to extract the corresponding points
 * @param[in] putativeMatches Matches of the 'pairIndex' pair
 * @param[in] sfm_data SfM_Data scene container
-* @param[in] regions_provider Interface that provides the features positions
+* @param[in] regionsPerView Interface that provides the features positions
 * @param[out] x_I Pixel perfect features from the Inth image putativeMatches matches
 * @param[out] x_J Pixel perfect features from the Jnth image putativeMatches matches
 */
@@ -72,7 +72,7 @@ void MatchesPairToMat
   const Pair pairIndex,
   const matching::IndMatches & putativeMatches,
   const sfm::SfM_Data * sfm_data,
-  const std::shared_ptr<sfm::Regions_Provider> & regions_provider,
+  const std::shared_ptr<sfm::RegionsPerView>& regionsPerView,
   MatT & x_I, MatT & x_J
 )
 {
@@ -88,8 +88,8 @@ void MatchesPairToMat
       sfm_data->GetIntrinsics().at(view_J->id_intrinsic).get() : nullptr;
 
   // Load features of Inth and Jnth images
-  const features::PointFeatures feature_I = regions_provider->regions_per_view.at(pairIndex.first)->GetRegionsPositions();
-  const features::PointFeatures feature_J = regions_provider->regions_per_view.at(pairIndex.second)->GetRegionsPositions();
+  const features::PointFeatures feature_I = regionsPerView->getRegions(pairIndex.first).GetRegionsPositions();
+  const features::PointFeatures feature_J = regionsPerView->getRegions(pairIndex.second).GetRegionsPositions();
 
   MatchesPointsToMat(
     putativeMatches,
@@ -103,7 +103,7 @@ void MatchesPairToMat
 * @param[in] pairIndex Pair from which you need to extract the corresponding points
 * @param[in] putativeMatches Matches of the 'pairIndex' pair
 * @param[in] sfm_data SfM_Data scene container
-* @param[in] features_provider Interface that provides the features positions
+* @param[in] featuresProvider Interface that provides the features positions
 * @param[out] x_I Pixel perfect features from the Inth image putativeMatches matches
 * @param[out] x_J Pixel perfect features from the Jnth image putativeMatches matches
 */
@@ -113,7 +113,7 @@ void MatchesPairToMat
   const Pair pairIndex,
   const matching::IndMatches & putativeMatches,
   const sfm::SfM_Data * sfm_data,
-  const std::shared_ptr<sfm::Features_Provider> & features_provider,
+  const sfm::FeaturesPerView& featuresProvider,
   MatT & x_I, MatT & x_J
 )
 {
@@ -129,8 +129,8 @@ void MatchesPairToMat
       sfm_data->GetIntrinsics().at(view_J->id_intrinsic).get() : nullptr;
 
   // Load features of Inth and Jnth images
-  const features::PointFeatures feature_I = features_provider->feats_per_view.at(pairIndex.first);
-  const features::PointFeatures feature_J = features_provider->feats_per_view.at(pairIndex.second);
+  const features::PointFeatures& feature_I = featuresProvider.getFeatures(pairIndex.first);
+  const features::PointFeatures& feature_J = featuresProvider.getFeatures(pairIndex.second);
 
   MatchesPointsToMat(
     putativeMatches,

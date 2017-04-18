@@ -33,7 +33,7 @@ GlobalSfMReconstructionEngine_RelativeMotions::GlobalSfMReconstructionEngine_Rel
   const SfM_Data & sfm_data,
   const std::string & soutDirectory,
   const std::string & sloggingFile)
-  : ReconstructionEngine(sfm_data, soutDirectory), _sLoggingFile(sloggingFile), _normalized_features_provider(nullptr) {
+  : ReconstructionEngine(sfm_data, soutDirectory), _sLoggingFile(sloggingFile), _normalizedFeaturesPerView(nullptr) {
 
   if (!_sLoggingFile.empty())
   {
@@ -63,17 +63,17 @@ GlobalSfMReconstructionEngine_RelativeMotions::~GlobalSfMReconstructionEngine_Re
   }
 }
 
-void GlobalSfMReconstructionEngine_RelativeMotions::SetFeaturesProvider(Features_Provider * provider)
+void GlobalSfMReconstructionEngine_RelativeMotions::SetFeaturesProvider(FeaturesPerView * featuresPerView)
 {
-  _features_provider = provider;
+  _featuresPerView = featuresPerView;
 
   // Copy features and save a normalized version
-  _normalized_features_provider = std::make_shared<Features_Provider>(*provider);
+  _normalizedFeaturesPerView = std::make_shared<FeaturesPerView>(*featuresPerView);
 #ifdef OPENMVG_USE_OPENMP
   #pragma omp parallel
 #endif
-  for (Hash_Map<IndexT, PointFeatures>::iterator iter = _normalized_features_provider->feats_per_view.begin();
-    iter != _normalized_features_provider->feats_per_view.end(); ++iter)
+  for (Hash_Map<IndexT, PointFeatures>::iterator iter = _normalizedFeaturesPerView->getData().begin();
+    iter != _normalizedFeaturesPerView->getData().end(); ++iter)
   {
 #ifdef OPENMVG_USE_OPENMP
     #pragma omp single nowait
@@ -141,7 +141,7 @@ bool GlobalSfMReconstructionEngine_RelativeMotions::Process() {
     OPENMVG_LOG_WARNING("GlobalSfM:: Rotation Averaging failure!");
     return false;
   }
-  matching::PairWiseMatches  tripletWise_matches;
+  matching::PairWiseSimpleMatches  tripletWise_matches;
   if (!Compute_Global_Translations(global_rotations, tripletWise_matches))
   {
     OPENMVG_LOG_WARNING("GlobalSfM:: Translation Averaging failure!");
@@ -257,7 +257,7 @@ bool GlobalSfMReconstructionEngine_RelativeMotions::Compute_Global_Rotations
 bool GlobalSfMReconstructionEngine_RelativeMotions::Compute_Global_Translations
 (
   const Hash_Map<IndexT, Mat3> & global_rotations,
-  matching::PairWiseMatches & tripletWise_matches
+  matching::PairWiseSimpleMatches & tripletWise_matches
 )
 {
   // Translation averaging (compute translations & update them to a global common coordinates system)
@@ -265,7 +265,7 @@ bool GlobalSfMReconstructionEngine_RelativeMotions::Compute_Global_Translations
   const bool bTranslationAveraging = translation_averaging_solver.Run(
     _eTranslationAveragingMethod,
     _sfm_data,
-    _normalized_features_provider.get(),
+    _normalizedFeaturesPerView.get(),
     _matches_provider,
     global_rotations,
     tripletWise_matches);
@@ -283,7 +283,7 @@ bool GlobalSfMReconstructionEngine_RelativeMotions::Compute_Global_Translations
 /// Compute the initial structure of the scene
 bool GlobalSfMReconstructionEngine_RelativeMotions::Compute_Initial_Structure
 (
-  matching::PairWiseMatches & tripletWise_matches
+  matching::PairWiseSimpleMatches & tripletWise_matches
 )
 {
   // Build tracks from selected triplets (Union of all the validated triplet tracks (_tripletWise_matches))
@@ -291,7 +291,7 @@ bool GlobalSfMReconstructionEngine_RelativeMotions::Compute_Initial_Structure
     using namespace openMVG::tracks;
     TracksBuilder tracksBuilder;
 #if defined USE_ALL_VALID_MATCHES // not used by default
-    matching::PairWiseMatches pose_supported_matches;
+    matching::PairWiseSimpleMatches pose_supported_matches;
     for (const std::pair< Pair, IndMatches > & match_info :  _matches_provider->_pairWise_matches)
     {
       const View * vI = _sfm_data.GetViews().at(match_info.first.first).get();
@@ -324,7 +324,7 @@ bool GlobalSfMReconstructionEngine_RelativeMotions::Compute_Initial_Structure
       {
         const size_t imaIndex = it->first;
         const size_t featIndex = it->second;
-        const PointFeature & pt = _features_provider->feats_per_view.at(imaIndex)[featIndex];
+        const PointFeature & pt = _featuresPerView->getFeatures(imaIndex)[featIndex];
         obs[imaIndex] = Observation(pt.coords().cast<double>(), featIndex);
       }
     }
@@ -478,7 +478,7 @@ void GlobalSfMReconstructionEngine_RelativeMotions::Compute_Relative_Rotations
 
   // List shared correspondences (pairs) between poses
   PoseWiseMatches poseWiseMatches;
-  for (PairWiseMatches::const_iterator iterMatches = _matches_provider->_pairWise_matches.begin();
+  for (PairWiseSimpleMatches::const_iterator iterMatches = _matches_provider->_pairWise_matches.begin();
     iterMatches != _matches_provider->_pairWise_matches.end(); ++iterMatches)
   {
     const Pair pair = iterMatches->first;
@@ -542,8 +542,8 @@ void GlobalSfMReconstructionEngine_RelativeMotions::Compute_Relative_Rotations
       nbBearing = 0;
       for (const auto & match : matches)
       {
-        x1.col(nbBearing) = _normalized_features_provider->feats_per_view[I][match._i].coords().cast<double>();
-        x2.col(nbBearing++) = _normalized_features_provider->feats_per_view[J][match._j].coords().cast<double>();
+        x1.col(nbBearing) = _normalizedFeaturesPerView->getFeatures(I)[match._i].coords().cast<double>();
+        x2.col(nbBearing++) = _normalizedFeaturesPerView->getFeatures(J)[match._j].coords().cast<double>();
       }
 
       const IntrinsicBase * cam_I = _sfm_data.GetIntrinsics().at(view_I->id_intrinsic).get();
@@ -583,8 +583,8 @@ void GlobalSfMReconstructionEngine_RelativeMotions::Compute_Relative_Rotations
         const Mat34 P2 = cam_J->get_projective_equivalent(Pose_J);
         Landmarks & landmarks = tiny_scene.structure;
         for (size_t k = 0; k < x1.cols(); ++k) {
-          const Vec2 x1_ = _features_provider->feats_per_view[I][matches[k]._i].coords().cast<double>();
-          const Vec2 x2_ = _features_provider->feats_per_view[J][matches[k]._j].coords().cast<double>();
+          const Vec2 x1_ = _featuresPerView->getFeatures(I)[matches[k]._i].coords().cast<double>();
+          const Vec2 x2_ = _featuresPerView->getFeatures(J)[matches[k]._j].coords().cast<double>();
           Vec3 X;
           TriangulateDLT(P1, x1_, P2, x2_, &X);
           Observations obs;

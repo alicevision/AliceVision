@@ -21,10 +21,10 @@ namespace sfm {
   SfM_Localization_Single_3DTrackObservation_Database::Init
   (
     const SfM_Data & sfm_data,
-    const Regions_Provider & regions_provider
+    const RegionsPerView & regionsPerView
   )
   {
-    if (regions_provider.regions_per_view.empty())
+    if (regionsPerView.isEmpty())
     {
       return false;
     }
@@ -40,8 +40,8 @@ namespace sfm {
     // - each view observation leads to a new regions
     // - link each observation region to a track id to ease 2D-3D correspondences search
 
-    const features::Regions * regions_type = std::begin(regions_provider.regions_per_view)->second.get();
-    landmark_observations_descriptors_.reset(regions_type->EmptyClone());
+    const features::Regions& regionsType = regionsPerView.getFirstViewRegions();
+    landmark_observations_descriptors_.reset(regionsType.EmptyClone());
     for (const auto & landmark : sfm_data.GetLandmarks())
     {
       for (const auto & observation : landmark.second.obs)
@@ -49,8 +49,8 @@ namespace sfm {
         if (observation.second.id_feat != UndefinedIndexT)
         {
           // copy the feature/descriptor to landmark_observations_descriptors
-          const features::Regions * view_regions = regions_provider.regions_per_view.at(observation.first).get();
-          view_regions->CopyRegion(observation.second.id_feat, landmark_observations_descriptors_.get());
+          const features::Regions& viewRegions = regionsPerView.getRegions(observation.first);
+          viewRegions.CopyRegion(observation.second.id_feat, landmark_observations_descriptors_.get());
           // link this descriptor to the track Id
           index_to_landmark_id_.push_back(landmark.first);
         }
