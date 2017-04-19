@@ -1,4 +1,3 @@
-#ifdef HAVE_CCTAG
 
 #include "SIFT_CCTAG_describer.hpp"
 
@@ -33,12 +32,12 @@ bool SIFT_CCTAG_Image_describer::Describe(const image::Image<unsigned char>& ima
 {
   std::unique_ptr<Regions> siftRegionsPtr;
   // Sift description
-  std::cout << "SIFT description" << std::endl;
+  OPENMVG_LOG_DEBUG("SIFT description");
   _siftDescriber.Describe(image, siftRegionsPtr);
   SIFT_Regions* siftRegions = (SIFT_Regions*) siftRegionsPtr.get();
 
   // CCTag description
-  std::cout << "CCTag description" << std::endl;
+  OPENMVG_LOG_DEBUG("CCTag description");
   _cctagDescriber.Describe(image, regions);
   
   SIFT_Regions* outRegions = (SIFT_Regions*) regions.get();
@@ -56,4 +55,3 @@ bool SIFT_CCTAG_Image_describer::Describe(const image::Image<unsigned char>& ima
 } // features
 } // openMVG
 
-#endif //HAVE_CCTAG

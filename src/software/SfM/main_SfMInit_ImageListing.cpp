@@ -146,7 +146,7 @@ int main(int argc, char **argv)
 
   std::string i_User_camera_model;
 
-  int b_Group_camera_model = 0;
+  int b_Group_camera_model = 1;
   bool b_use_UID = false;
   bool b_storeMetadata = false;
 
@@ -248,10 +248,10 @@ int main(int argc, char **argv)
     return EXIT_FAILURE;
   }
 
-  std::vector<Datasheet> vec_database;
+  std::vector<sensordb::Datasheet> vec_database;
   if (!sfileDatabase.empty())
   {
-    if ( !parseDatabase( sfileDatabase, vec_database ) )
+    if ( !sensordb::parseDatabase( sfileDatabase, vec_database ) )
     {
       std::cerr
        << "\nInvalid input database: " << sfileDatabase
@@ -399,7 +399,7 @@ int main(int argc, char **argv)
       const std::string sCamName = exifReader.getBrand();
       const std::string sCamModel = exifReader.getModel();
 
-      Datasheet datasheet;
+      openMVG::exif::sensordb::Datasheet datasheet;
       if ( getInfo( sCamName, sCamModel, vec_database, datasheet ))
       {
         // The camera model was found in the database so we can compute it's approximated focal length
@@ -547,6 +547,11 @@ int main(int argc, char **argv)
     {
       const std::size_t uid = computeUID(exifReader, imageFilename);
       id_view = (IndexT)uid;
+    }
+    if(views.count(id_view))
+    {
+      OPENMVG_LOG_WARNING("Skip duplicated image in input (" << imageAbsFilepath << ")");
+      continue;
     }
 
     // Build the view corresponding to the image

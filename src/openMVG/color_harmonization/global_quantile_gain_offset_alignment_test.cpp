@@ -15,6 +15,8 @@
 #include "openMVG/color_harmonization/global_quantile_gain_offset_alignment.hpp"
 
 #include "openMVG/image/image.hpp"
+#include <openMVG/config.hpp>
+
 #include "testing/testing.h"
 
 #include "third_party/histogram/histogram.hpp"
@@ -67,7 +69,7 @@ TEST(ColorHarmonisation, Simple_offset) {
   //-- First image will be considered as reference and don't move
   std::vector<size_t> vec_indexToFix(1,0);
 
-#ifdef OPENMVG_HAVE_MOSEK
+#if OPENMVG_IS_DEFINED(OPENMVG_HAVE_MOSEK)
   typedef MOSEK_SolveWrapper SOLVER_LP_T;
 #else
   typedef OSI_CLP_SolverWrapper SOLVER_LP_T;
@@ -84,7 +86,7 @@ TEST(ColorHarmonisation, Simple_offset) {
     lpSolver.getSolution(vec_solution);
   }
 
-  std::cout << "\n\nFound solution:\n";
+  OPENMVG_LOG_DEBUG("Found solution:");
   std::copy(vec_solution.begin(), vec_solution.end(),
             std::ostream_iterator<double>(std::cout, " "));
 
@@ -131,7 +133,7 @@ TEST(ColorHarmonisation, Offset_gain) {
   //-- First image will be considered as reference and don't move
   std::vector<size_t> vec_indexToFix(1,0);
 
-#ifdef OPENMVG_HAVE_MOSEK
+#if OPENMVG_IS_DEFINED(OPENMVG_HAVE_MOSEK)
   typedef MOSEK_SolveWrapper SOLVER_LP_T;
 #else
   typedef OSI_CLP_SolverWrapper SOLVER_LP_T;
@@ -148,7 +150,7 @@ TEST(ColorHarmonisation, Offset_gain) {
     lpSolver.getSolution(vec_solution);
   }
 
-  std::cout << "\n\nFound solution:\n";
+  OPENMVG_LOG_DEBUG("Found solution:");
   std::copy(vec_solution.begin(), vec_solution.end(),
             std::ostream_iterator<double>(std::cout, " "));
 

@@ -14,9 +14,12 @@
 //- Conference: CVMP.
 
 //-- Linear programming
+#include <openMVG/config.hpp>
 #include "openMVG/linearProgramming/linearProgrammingInterface.hpp"
 #include "openMVG/linearProgramming/linearProgrammingOSI_X.hpp"
+#if OPENMVG_IS_DEFINED(OPENMVG_HAVE_MOSEK)
 #include "openMVG/linearProgramming/linearProgrammingMOSEK.hpp"
+#endif
 #include "openMVG/linearProgramming/bisectionLP.hpp"
 
 namespace openMVG {

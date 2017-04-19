@@ -7,6 +7,8 @@
 #ifndef OPENMVG_TYPES_H_
 #define OPENMVG_TYPES_H_
 
+#include <openMVG/logger.hpp>
+
 #include <Eigen/Core>
 
 #include <cstdint>
@@ -15,7 +17,7 @@
 #include <set>
 #include <vector>
 
-#if defined OPENMVG_STD_UNORDERED_MAP
+#ifdef OPENMVG_STD_UNORDERED_MAP
 #include <unordered_map>
 #endif
 
@@ -28,13 +30,13 @@ typedef std::pair<IndexT,IndexT> Pair;
 typedef std::set<Pair> Pair_Set;
 typedef std::vector<Pair> Pair_Vec;
 
-#if defined OPENMVG_UNORDERED_MAP
+#ifdef OPENMVG_UNORDERED_MAP
 template<typename Key, typename Value>
 struct Hash_Map : std::unordered_map<Key, Value> {};
 #else
 template<typename K, typename V>
 struct Hash_Map : std::map<K, V, std::less<K>,
- Eigen::aligned_allocator<std::pair<K,V> > > {};
+ Eigen::aligned_allocator<std::pair<const K,V> > > {};
 #endif
 
 } // namespace openMVG

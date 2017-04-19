@@ -4,8 +4,6 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-#ifdef OPENMVG_HAVE_MOSEK
-
 #include "openMVG/linearProgramming/linearProgrammingMOSEK.hpp"
 #include <iostream>
 
@@ -18,7 +16,7 @@ using namespace std;
 static void MSKAPI printstr(void *handle,
                             char str[])
 {
-  std::cout << str;
+  OPENMVG_LOG_DEBUG(str);
 }
 
 MSKenv_t     env = nullptr;
@@ -33,7 +31,7 @@ MOSEK_SolveWrapper::MOSEK_SolveWrapper(int nbParams) : LP_Solver(nbParams)
   // Create the mosek environment.
   /*MSKrescodee r = MSK_makeenv(&env,nullptr,nullptr,nullptr,nullptr);
   if ( r!=MSK_RES_OK )  {
-    std::cerr << "Cannot create the MOSEK environment" << std::endl;
+    OPENMVG_LOG_WARNING("Cannot create the MOSEK environment");
   }*/
   if (env == nullptr)
   {
@@ -47,7 +45,7 @@ MOSEK_SolveWrapper::MOSEK_SolveWrapper(int nbParams) : LP_Solver(nbParams)
     if ( r==MSK_RES_OK )
       r = MSK_initenv(env);
     else  {
-      std::cerr << "Cannot create the MOSEK environment" << std::endl;
+      OPENMVG_LOG_WARNING("Cannot create the MOSEK environment");
     }
   }
 
@@ -73,7 +71,7 @@ inline MSKboundkey_enum convertSign(LP_Constraints::eLP_SIGN sign) {
     case LP_Constraints::LP_FREE:
       return MSK_BK_FR;
     default:
-      std::cerr << "Error unknow constraint sign : " << sign << "\n";
+      OPENMVG_LOG_WARNING("Error unknow constraint sign : " << sign << "\n";
   }
 }
 
@@ -412,8 +410,8 @@ bool MOSEK_SolveWrapper::getSolution(std::vector<double> & estimatedParams)
 
       /*printf("Optimal primal solution\n");
       for(size_t j=0; j<estimatedParams.size(); ++j)
-        std::cout << estimatedParams[j] << " ";
-      std::cout << std::endl;*/
+        OPENMVG_LOG_DEBUG(estimatedParams[j] << " ";
+      OPENMVG_LOG_DEBUG(std::endl;*/
 
       break;
     case MSK_SOL_STA_DUAL_INFEAS_CER:
@@ -435,5 +433,3 @@ bool MOSEK_SolveWrapper::getSolution(std::vector<double> & estimatedParams)
 
 } //namespace linearProgramming
 } //namespace openMVG
-
-#endif // OPENMVG_HAVE_MOSEK

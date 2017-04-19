@@ -3,6 +3,8 @@
 #include <cereal/archives/portable_binary.hpp>
 #include <cereal/types/utility.hpp>  // needed to serialize std::pair
 
+#include <limits>
+
 namespace openMVG {
 namespace localization {
 
@@ -13,38 +15,32 @@ LocalizationResult::LocalizationResult() :
 
 LocalizationResult::LocalizationResult(
         const sfm::Image_Localizer_Match_Data & matchData,
-        const std::vector<pair<IndexT, IndexT> > & indMatch3D2D,
+        const std::vector<std::pair<IndexT, IndexT> > & indMatch3D2D,
         const geometry::Pose3 & pose,
         const cameras::Pinhole_Intrinsic_Radial_K3 & intrinsics,
+        const std::vector<voctree::DocMatch>& matchedImages,
         bool isValid) :
         _matchData(matchData),
         _indMatch3D2D(indMatch3D2D),
         _pose(pose),
         _intrinsics(intrinsics),
+        _matchedImages(matchedImages),
         _isValid(isValid)
 {
+  // verify data consistency
+  assert(_matchData.pt2D.cols() == _matchData.pt3D.cols());
+  assert(_matchData.pt2D.cols() == _indMatch3D2D.size());
 }
         
 LocalizationResult::~LocalizationResult()
 {
 }
 
-// Accessor
-const std::vector<size_t> & LocalizationResult::getInliers() const 
-{
-  return _matchData.vec_inliers;
-}
-
-const Mat & LocalizationResult::getPt2D() const 
-{
-  return _matchData.pt2D;
-}
-
-const Mat LocalizationResult::getUndistortedPt2D() const
+const Mat LocalizationResult::retrieveUndistortedPt2D() const
 {
   const auto &intrinsics =  getIntrinsics();
   const auto &distorted = getPt2D();
-  if(!intrinsics.have_disto())
+  if(!intrinsics.have_disto() || !intrinsics.isValid())
   {
     return getPt2D();
   }
@@ -57,52 +53,17 @@ const Mat LocalizationResult::getUndistortedPt2D() const
   return pt2Dundistorted;
 }
 
-const Mat & LocalizationResult::getPt3D() const 
+Mat2X LocalizationResult::computeAllResiduals() const 
 {
-  return _matchData.pt3D;
+  const Mat2X &orig2d = getPt2D();
+  const Mat3X &orig3d = getPt3D();
+  assert(orig2d.cols()==orig3d.cols());
+  
+  const auto &intrinsics = getIntrinsics();
+  return intrinsics.residuals(getPose(), orig3d, orig2d);
 }
 
- const Mat34 & LocalizationResult::getProjection() const
- {
-   return _matchData.projection_matrix;
- }
-
-const std::vector<pair<IndexT, IndexT> > & LocalizationResult::getIndMatch3D2D() const
-{
-  return _indMatch3D2D;
-}
-        
-const geometry::Pose3 & LocalizationResult::getPose() const
-{
-  return _pose;
-}
-
-void LocalizationResult::setPose(const geometry::Pose3 & pose)
-{
-  _pose = pose;
-}
-
-const cameras::Pinhole_Intrinsic_Radial_K3 & LocalizationResult::getIntrinsics() const
-{
-  return _intrinsics;
-}
-
-cameras::Pinhole_Intrinsic_Radial_K3 & LocalizationResult::getIntrinsics()
-{
-  return _intrinsics;
-}
-
-void LocalizationResult::updateIntrinsics(const std::vector<double> & params)
-{
-  _intrinsics.updateFromParams(params);
-}
-
-bool LocalizationResult::isValid() const
-{
-  return _isValid;
-}
-
-Mat2X LocalizationResult::computeResiduals() const 
+Mat2X LocalizationResult::computeInliersResiduals() const 
 {
   // get the inliers.
   const auto &currInliers = getInliers();
@@ -124,7 +85,68 @@ Mat2X LocalizationResult::computeResiduals() const
   return intrinsics.residuals(getPose(), inliers3d, inliers2d);
 }
 
+double LocalizationResult::computeInliersRMSE() const 
+{
+  const auto& residuals = computeInliersResiduals();
+  // squared residual for each point
+  const auto sqrErrors = (residuals.cwiseProduct(residuals)).colwise().sum();
+  //RMSE
+  return std::sqrt(sqrErrors.mean());
+}
 
+double LocalizationResult::computeAllRMSE() const 
+{
+  const auto& residuals = computeAllResiduals();
+  // squared residual for each point
+  const auto sqrErrors = (residuals.cwiseProduct(residuals)).colwise().sum();
+  //RMSE
+  return std::sqrt(sqrErrors.mean());
+}
+
+Vec LocalizationResult::computeReprojectionErrorPerInlier() const 
+{
+  const auto& residuals = computeInliersResiduals();
+  // squared residual for each point
+  const Vec sqrErrors = (residuals.cwiseProduct(residuals)).colwise().sum();
+  //RMSE
+  return sqrErrors.array().sqrt();
+}
+
+Vec LocalizationResult::computeReprojectionErrorPerPoint() const
+{
+  const auto& residuals = computeAllResiduals();
+  // squared residual for each point
+  const Vec sqrErrors = (residuals.cwiseProduct(residuals)).colwise().sum();
+  //RMSE
+  return sqrErrors.array().sqrt();
+}
+
+std::size_t LocalizationResult::selectBestInliers(double maxReprojectionError)
+{
+   const auto &residuals = computeReprojectionErrorPerPoint();
+   auto &inliers = _matchData.vec_inliers;
+   OPENMVG_LOG_DEBUG("Inliers before: " << inliers.size());
+   inliers.clear();
+   // at worst they could all be inliers
+   inliers.reserve(getPt2D().size());
+   
+   for(std::size_t i = 0; i < residuals.size(); ++i )
+   {
+     if(residuals[i] < maxReprojectionError)
+     {
+       inliers.push_back(i);
+     }
+   }
+   OPENMVG_LOG_DEBUG(" After: " << inliers.size());
+   _matchData.error_max = maxReprojectionError;
+   return inliers.size();
+}
+
+std::size_t LocalizationResult::selectBestInliers()
+{  
+   const auto threshold = _matchData.error_max;
+   return selectBestInliers(threshold);
+}
 
 bool load(LocalizationResult & res, const std::string & filename)
 {
@@ -132,7 +154,7 @@ bool load(LocalizationResult & res, const std::string & filename)
   std::ifstream stream(filename, std::ios::binary | std::ios::in);
   if(!stream.is_open())
   {
-    std::cerr << "Unable to load file " << filename << std::endl;
+    OPENMVG_LOG_WARNING("Unable to load file " << filename);
     return false;
   }
   try
@@ -142,7 +164,7 @@ bool load(LocalizationResult & res, const std::string & filename)
   }
   catch (const cereal::Exception & e)
   {
-    std::cerr << e.what() << std::endl;
+    OPENMVG_LOG_WARNING(e.what());
     return false;
   }
   return true;
@@ -155,7 +177,7 @@ bool load(std::vector<LocalizationResult> & res, const std::string & filename)
   std::ifstream stream(filename, std::ios::binary | std::ios::in);
   if(!stream.is_open())
   {
-    std::cerr << "Unable to load file " << filename << std::endl;
+    OPENMVG_LOG_WARNING("Unable to load file " << filename);
     return false;
   }
   try
@@ -165,7 +187,7 @@ bool load(std::vector<LocalizationResult> & res, const std::string & filename)
   }
   catch (const cereal::Exception & e)
   {
-    std::cerr << e.what() << std::endl;
+    OPENMVG_LOG_WARNING(e.what());
     return false;
   }
   return true;
@@ -178,7 +200,7 @@ bool save(const LocalizationResult & res, const std::string & filename)
   std::ofstream stream(filename, std::ios::binary | std::ios::out);
   if(!stream.is_open())
   {
-    std::cerr << "Unable to create file " << filename << std::endl;
+    OPENMVG_LOG_WARNING("Unable to create file " << filename);
     return false;
   }
 
@@ -194,7 +216,7 @@ bool save(const std::vector<LocalizationResult> & res, const std::string & filen
   std::ofstream stream(filename, std::ios::binary | std::ios::out);
   if(!stream.is_open())
   {
-    std::cerr << "Unable to create file " << filename << std::endl;
+    OPENMVG_LOG_WARNING("Unable to create file " << filename);
     return false;
   }
 
@@ -204,6 +226,38 @@ bool save(const std::vector<LocalizationResult> & res, const std::string & filen
   return true;  
 }
 
+
+
+void updateRigPoses(std::vector<LocalizationResult>& vec_localizationResults,
+                    const geometry::Pose3 &rigPose,
+                    const std::vector<geometry::Pose3 > &vec_subPoses)
+{
+  const std::size_t numCams = vec_localizationResults.size();
+  assert(numCams==vec_subPoses.size()+1);
+  
+  // update localization result poses
+  for(std::size_t camID = 0; camID < numCams; ++camID)
+  {
+    geometry::Pose3 pose;
+    if(camID == 0)
+    {
+      pose = rigPose;
+    }
+    else
+    {
+      // main camera: q1 ~ [R1 t1] Q = [I 0] A   where A = [R1 t1] Q  
+      // another camera: q2 ~ [R2 t2] Q = [R2 t2]*inv([R1 t1]) A 
+      // and subPose12 = [R12 t12] = [R2 t2]*inv([R1 t1])
+      // With rigResection() we compute [R1 t1] (aka rigPose), hence:
+      // subPose12 = [R12 t12] = [R2 t2]*inv([R1 t1]) and we need [R2 t2], ie the absolute pose
+      // => [R1 t1] * subPose12 = [R2 t2]
+      // => rigPose * subPose12 = [R2 t2]
+      pose = vec_subPoses[camID-1] * rigPose;
+    }
+    
+    vec_localizationResults[camID].setPose(pose);
+  }
+}
 
 } // localization
 } // openMVG

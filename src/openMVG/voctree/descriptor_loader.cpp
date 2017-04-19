@@ -1,6 +1,8 @@
 #include "descriptor_loader.hpp"
 #include <boost/algorithm/string/predicate.hpp>
 
+#include <openMVG/logger.hpp>
+
 namespace openMVG {
 namespace voctree {
 
@@ -16,8 +18,8 @@ void getInfoBinFile(const std::string &path, int dim, size_t &numDescriptors, in
 
   if(!fs.is_open())
   {
-    std::cerr << "Error while opening " << path << std::endl;
-    std::cerr << "Error while opening " + path << std::endl;
+    OPENMVG_CERR("Error while opening " << path);
+    OPENMVG_CERR("Error while opening " + path);
   }
 
   // go to the end of the file
@@ -72,8 +74,8 @@ void getListOfDescriptorFiles(const std::string &fileFullPath, std::map<IndexT, 
   
   if(!bp.has_extension())
   {
-    std::cerr << "File without extension not recognized! " << fileFullPath << std::endl;
-    std::cerr << "The file  " + fileFullPath + " is neither a JSON nor a txt file" << std::endl;
+    OPENMVG_CERR("File without extension not recognized! " << fileFullPath);
+    OPENMVG_CERR("The file  " + fileFullPath + " is neither a JSON nor a txt file");
     throw std::invalid_argument("Unrecognized extension for " + fileFullPath);
   }
 
@@ -96,7 +98,7 @@ void getListOfDescriptorFiles(const std::string &fileFullPath, std::map<IndexT, 
     fs.open(fileFullPath, std::ios::in);
     if(!fs.is_open())
     {
-      std::cerr << "Error while opening " << fileFullPath << std::endl;
+      OPENMVG_CERR("Error while opening " << fileFullPath);
       throw std::invalid_argument("Error while opening " + fileFullPath);
     }
 
@@ -126,7 +128,7 @@ void getListOfDescriptorFiles(const std::string &fileFullPath, std::map<IndexT, 
 
     if(numberOfFiles == 0)
     {
-      std::cout << "It seems like there are no views in " << fileFullPath << std::endl;
+      OPENMVG_CERR("It seems like there are no views in " << fileFullPath);
       return;
     }
 

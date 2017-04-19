@@ -1,4 +1,3 @@
-=====================================
 OpenMVG (open Multiple View Geometry)
 =====================================
 
@@ -18,7 +17,7 @@ All the features and modules are unit tested. This test driven development ensur
 Building
 --------
 
-See [BUILD](https://github.com/openMVG/openMVG/raw/master/BUILD) text file
+See [INSTALL.md](INSTALL.md) text file
 
 Continuous integration [![Build Status](https://travis-ci.org/openMVG/openMVG.png?branch=develop)](https://travis-ci.org/openMVG/openMVG) [![Coverage Status](https://coveralls.io/repos/openMVG/openMVG/badge.png?branch=develop)](https://coveralls.io/r/openMVG/openMVG?branch=develop):
  - develop branch: BUILD + UNIT TESTING
@@ -35,7 +34,7 @@ See [LICENSE MPL2](https://github.com/openMVG/openMVG/raw/master/license.openMVG
 Authors
 -------
 
-See [Authors](https://github.com/openMVG/openMVG/raw/master/AUTHORS) text file
+See [Authors](AUTHORS) text file
 
 -------
 Documentation

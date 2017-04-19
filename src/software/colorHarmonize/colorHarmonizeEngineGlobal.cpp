@@ -16,6 +16,7 @@
 
 #include "openMVG/sfm/sfm.hpp"
 #include "openMVG/graph/graph.hpp"
+#include <openMVG/config.hpp>
 
 #include "third_party/stlplus3/filesystemSimplified/file_system.hpp"
 #include "third_party/vectorGraphics/svgDrawer.hpp"
@@ -332,7 +333,7 @@ bool ColorHarmonizationEngineGlobal::Process()
 
   openMVG::system::Timer timer;
 
-  #ifdef OPENMVG_HAVE_MOSEK
+  #if OPENMVG_IS_DEFINED(OPENMVG_HAVE_MOSEK)
   typedef MOSEK_SolveWrapper SOLVER_LP_T;
   #else
   typedef OSI_CLP_SolverWrapper SOLVER_LP_T;
@@ -419,9 +420,7 @@ bool ColorHarmonizationEngineGlobal::Process()
     Image< RGBColor > image_c;
     ReadImage( _vec_fileNames[ imaNum ].c_str(), &image_c );
 
-#ifdef OPENMVG_USE_OPENMP
-#pragma omp parallel for
-#endif
+    #pragma omp parallel for
     for( int j = 0; j < image_c.Height(); ++j )
     {
       for( int i = 0; i < image_c.Width(); ++i )

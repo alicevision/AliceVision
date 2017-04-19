@@ -5,8 +5,6 @@
  * Created on September 28, 2015, 10:35 AM
  */
 
-#if HAVE_OPENCV
-
 #pragma once
 
 #include "IFeed.hpp"
@@ -25,7 +23,7 @@ public:
   /**
    * @brief Set up an image feed from a video
    * 
-   * @param[in] imagePath The video source.
+   * @param[in] videoPath The video source.
    * @param[in] calibPath The source for the camera intrinsics. 
    * The format for the file is
    * int #image width
@@ -42,6 +40,25 @@ public:
   VideoFeed(const std::string &videoPath, const std::string &calibPath);
 
   /**
+   * @brief Set up an image feed from a video
+   * 
+   * @param[in] videoDevice The device id from which capture the live feed.
+   * @param[in] calibPath The source for the camera intrinsics. 
+   * The format for the file is
+   * int #image width
+   * int #image height
+   * double #focal
+   * double #ppx principal point x-coord
+   * double #ppy principal point y-coord
+   * double #k0
+   * double #k1
+   * double #k2
+   * 
+   * @see readCalibrationFromFile()
+   */    
+  VideoFeed(int videoDevice, const std::string &calibPath);
+
+  /**
    * @brief Provide a new image from the feed
    * 
    * @param[out] imageGray The new image from the feed.
@@ -51,10 +68,17 @@ public:
    * is no intrinsics associated to \p imageGray.
    * @return True if there is a new image, false otherwise.
    */
-  bool next(image::Image<unsigned char> &imageGray,
+  bool readImage(image::Image<unsigned char> &imageGray,
             cameras::Pinhole_Intrinsic_Radial_K3 &camIntrinsics,
             std::string &mediaPath,
             bool &hasIntrinsics);
+  
+  std::size_t nbFrames() const;
+  
+  bool goToFrame(const unsigned int frame);
+  
+  bool goToNextFrame();
+  
   /**
    * @brief Return true if the feed is correctly initialized.
    * 
@@ -71,5 +95,3 @@ private:
 
 }//namespace dataio 
 }//namespace openMVG
-
-#endif //#if HAVE_OPENCV

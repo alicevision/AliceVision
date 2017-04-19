@@ -76,7 +76,7 @@ static double RMSE(const SfM_Data & sfm_data)
       const geometry::Pose3 pose = sfm_data.GetPoseOrDie(view);
       const std::shared_ptr<cameras::IntrinsicBase> intrinsic = sfm_data.GetIntrinsics().at(view->id_intrinsic);
       const Vec2 residual = intrinsic->residual(pose, iterTracks->second.X, itObs->second.x);
-      //std::cout << residual << " ";
+      //OPENMVG_LOG_DEBUG(residual);
       vec.push_back( residual(0) );
       vec.push_back( residual(1) );
     }
@@ -138,7 +138,7 @@ SfM_Data getInputScene
           (w, h, config._fx, config._cx, config._cy, 0., 0., 0.);
       break;
       default:
-        std::cout << "Not yet supported" << std::endl;
+        OPENMVG_LOG_DEBUG("Not yet supported");
     }
   }
 

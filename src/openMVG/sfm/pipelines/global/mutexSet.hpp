@@ -7,18 +7,11 @@
 
 #pragma once
 
-#ifdef OPENMVG_USE_CXX11
 #include <mutex>
-using namespace std;
+#include <set>
+
 typedef std::mutex mutexT;
 typedef std::lock_guard<mutexT> lock_guardT;
-#else // OPENMVG_USE_CXX11
-#include "third_party/tinythread/fast_mutex.h"
-#include "third_party/tinythread/tinythread.h"
-using namespace tthread;
-typedef tthread::fast_mutex mutexT;
-typedef tthread::lock_guard<mutexT> lock_guardT;
-#endif
 
 namespace openMVG {
 namespace sfm{
@@ -38,7 +31,7 @@ public:
       return m_Set.count(value);
     }
 
-    size_t size() const {
+    std::size_t size() const {
       lock_guardT guard(m_Mutex);
       return m_Set.size();
     }

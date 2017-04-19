@@ -11,6 +11,8 @@
 #include <openMVG/types.hpp>
 #include <openMVG/sfm/sfm_data.hpp>
 #include <openMVG/features/features.hpp>
+#include <openMVG/config.hpp>
+
 #include "third_party/progress/progress.hpp"
 
 #include <memory>
@@ -34,30 +36,23 @@ struct Features_Provider
       std::cout, "\n- Features Loading -\n" );
     // Read for each view the corresponding features and store them as PointFeatures
     bool bContinue = true;
-#ifdef OPENMVG_USE_OPENMP
+
     #pragma omp parallel
-#endif
     for (Views::const_iterator iter = sfm_data.GetViews().begin();
       iter != sfm_data.GetViews().end() && bContinue; ++iter)
     {
-#ifdef OPENMVG_USE_OPENMP
-    #pragma omp single nowait
-#endif
+      #pragma omp single nowait
       {
         const std::string featFile = stlplus::create_filespec(feat_directory, std::to_string(iter->second->id_view), ".feat");
 
         std::unique_ptr<features::Regions> regions(region_type->EmptyClone());
         if (!regions->LoadFeatures(featFile))
         {
-          std::cerr << "Invalid feature file: " << featFile << std::endl;
-#ifdef OPENMVG_USE_OPENMP
-      #pragma omp critical
-#endif
+          OPENMVG_LOG_WARNING("Invalid feature file: " << featFile);
+          #pragma omp critical
           bContinue = false;
         }
-#ifdef OPENMVG_USE_OPENMP
-      #pragma omp critical
-#endif
+        #pragma omp critical
         {
           // save loaded Features as PointFeature
           feats_per_view[iter->second.get()->id_view] = regions->GetRegionsPositions();

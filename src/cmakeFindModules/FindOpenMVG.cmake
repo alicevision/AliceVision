@@ -29,32 +29,53 @@ ELSE()
   MESSAGE(STATUS "NOT FOUND")
 ENDIF (OPENMVG_INCLUDE_DIR)
 
-SET(OPENMVG_LIBRARIES_NAMES  
-  openMVG_numeric
-  openMVG_system
+SET(OPENMVG_LIBRARIES_NAMES
+  openMVG_exif
+  openMVG_features
   openMVG_image
-  openMVG_kvld
-  openMVG_lInftyComputerVision
+  openMVG_linearProgramming
+    openMVG_lInftyComputerVision
+  openMVG_matching
+    openMVG_kvld
+  openMVG_matching_image_collection
   openMVG_multiview
+  openMVG_numeric
+  openMVG_sfm
+  openMVG_system
+
   #third_party libraries
   ceres
   flann_cpp_s
   lemon
   stlplus
   easyexif
+
   #optional third_party
   vlsift
   jpeg
   png
   tiff
-  zlib)
+  zlib
+  )
+
+IF(OpenMVG_USE_BOOST)
+  list(APPEND OPENMVG_LIBRARIES_NAMES
+    openMVG_dataio 
+    openMVG_voctree 
+    openMVG_localization
+    openMVG_rig)
+  IF(OpenMVG_USE_OPENCV)
+    list(APPEND OPENMVG_LIBRARIES_NAMES
+      openMVG_calibration)
+  ENDIF()
+ENDIF()
 
 FIND_LIBRARY(OPENMVG_LIBRARY NAMES ${OPENMVG_LIBRARIES_NAMES}
   HINTS
-  $ENV{OPENMVG_DIR}/lib
-  ${OPENMVG_DIR}/lib
+    $ENV{OPENMVG_DIR}/lib
+    ${OPENMVG_DIR}/lib
   PATH_SUFFIXES
-  openMVG
+    openMVG
 )
 GET_FILENAME_COMPONENT(OPENMVG_LIBRARY_DIR "${OPENMVG_LIBRARY}" PATH)
 

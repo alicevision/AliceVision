@@ -7,6 +7,9 @@
 #ifndef OPENMVG_IMAGE_IMAGE_DIFFUSION_HPP_
 #define OPENMVG_IMAGE_IMAGE_DIFFUSION_HPP_
 
+#include <openMVG/config.hpp>
+#include <openMVG/openmvg_omp.hpp>
+
 #ifdef _MSC_VER
 #pragma warning(once:4244)
 #endif
@@ -91,20 +94,15 @@ void ImageFEDCentral( const Image & src , const Image & diff , const typename Im
 template< typename Image >
 void ImageFEDCentralCPPThread( const Image & src , const Image & diff , const typename Image::Tpixel half_t , Image & out )
 {
-#ifdef OPENMVG_USE_OPENMP
   const int nb_thread = omp_get_max_threads();
-#else
-  const int nb_thread = 1 ;
-#endif
 
   // Compute ranges
   std::vector< int > range;
   SplitRange( 1 , (int) ( src.rows() - 1 ) , nb_thread , range ) ;
 
-#ifdef OPENMVG_USE_OPENMP
-#pragma omp parallel for schedule(dynamic)
-#endif
-  for( int i = 1 ; i < static_cast<int>(range.size()) ; ++i ) {
+  #pragma omp parallel for schedule(dynamic)
+  for( int i = 1 ; i < static_cast<int>(range.size()) ; ++i )
+  {
     ImageFEDCentral( src, diff, half_t, out, range[i-1] , range[i]) ;
   }
 }

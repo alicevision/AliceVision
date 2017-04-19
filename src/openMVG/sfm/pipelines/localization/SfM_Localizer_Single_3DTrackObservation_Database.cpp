@@ -31,8 +31,7 @@ namespace sfm {
 
     if (sfm_data.GetPoses().empty() || sfm_data.GetLandmarks().empty())
     {
-      std::cerr << std::endl
-        << "The input SfM_Data file have not 3D content to match with." << std::endl;
+      OPENMVG_LOG_WARNING("The input SfM_Data file have not 3D content to match with.");
       return false;
     }
 
@@ -57,12 +56,12 @@ namespace sfm {
         }
       }
     }
-    std::cout << "Init retrieval database ... " << std::endl;
+    OPENMVG_LOG_DEBUG("Init retrieval database ... ");
     matching_interface_.reset(new
       matching::Matcher_Regions_Database(matching::ANN_L2, *landmark_observations_descriptors_));
-    std::cout << "Retrieval database initialized\n"
-      << "#landmark: " << sfm_data.GetLandmarks().size() << "\n"
-      << "#descriptor initialized: " << landmark_observations_descriptors_->RegionCount() << std::endl;
+    OPENMVG_LOG_DEBUG("Retrieval database initialized\n"
+      "#landmark: " << sfm_data.GetLandmarks().size() << "\n"
+      "#descriptor initialized: " << landmark_observations_descriptors_->RegionCount());
 
     sfm_data_ = &sfm_data;
 
@@ -90,7 +89,7 @@ namespace sfm {
       return false;
     }
 
-    std::cout << "#3D2d putative correspondences: " << vec_putative_matches.size() << std::endl;
+    OPENMVG_LOG_DEBUG("#3D2d putative correspondences: " << vec_putative_matches.size());
     // Init the 3D-2d correspondences array
     Image_Localizer_Match_Data resection_data;
     if (resection_data_ptr)

@@ -12,6 +12,8 @@
 #include <openMVG/image/image_container.hpp>
 #include <openMVG/features/image_describer.hpp>
 #include <openMVG/cameras/Camera_Pinhole_Radial.hpp>
+#include <openMVG/robust_estimation/robust_estimators.hpp>
+#include <openMVG/numeric/numeric.h>
 
 namespace openMVG {
 namespace localization {
@@ -23,19 +25,39 @@ struct LocalizerParameters
   _refineIntrinsics(false),
   _fDistRatio(0.8),
   _featurePreset(features::EDESCRIBER_PRESET::ULTRA_PRESET),
-  _errorMax(std::numeric_limits<double>::infinity()) { }
+  _errorMax(std::numeric_limits<double>::infinity()),
+  _resectionEstimator(robust::ROBUST_ESTIMATOR_ACRANSAC),
+  _matchingEstimator(robust::ROBUST_ESTIMATOR_ACRANSAC),
+  _useLocalizeRigNaive(false),
+  _angularThreshold(D2R(0.1)) { }
 
-  std::string _visualDebug;          //< enable visual debugging options
-  bool _refineIntrinsics;     //< whether or not the Intrinsics of the query camera has to be refined
-  float _fDistRatio;          //< the ratio distance to use when matching feature with the ratio test
-  features::EDESCRIBER_PRESET _featurePreset; //< the preset to use for feature extraction of the query image
-  double _errorMax;				//< maximum reprojection error allowed for resectioning
+  /// enable visual debugging options
+  std::string _visualDebug;  
+  /// whether or not the Intrinsics of the query camera has to be refined
+  bool _refineIntrinsics;
+  /// the distance ratio to use when matching feature with the ratio test
+  float _fDistRatio;
+  /// the preset to use for feature extraction of the query image
+  features::EDESCRIBER_PRESET _featurePreset;
+  /// maximum reprojection error allowed for resectioning
+  double _errorMax;
+  /// the type of *sac framework to use for resection
+  robust::EROBUST_ESTIMATOR _resectionEstimator;
+  /// the type of *sac framework to use for matching
+  robust::EROBUST_ESTIMATOR _matchingEstimator; 	
+  /// force the use of the rig localization without openGV
+  bool _useLocalizeRigNaive;
+  /// in rad, it is the maximum angular error for the opengv rig resection
+  double _angularThreshold;                       
 };
 
 class ILocalizer
 {
 public:
     ILocalizer() : _isInit(false) { };
+
+    // Only relevant for the CCTagLocalizer
+    virtual void setCudaPipe(int) { }
     
     bool isInit() {return _isInit;}
     
@@ -72,7 +94,16 @@ public:
                            const LocalizerParameters *param,
                            std::vector<cameras::Pinhole_Intrinsic_Radial_K3 > &vec_queryIntrinsics,
                            const std::vector<geometry::Pose3 > &vec_subPoses,
-                           geometry::Pose3 rigPose)=0;
+                           geometry::Pose3 &rigPose, 
+                           std::vector<LocalizationResult>& vec_locResults)=0;
+    
+  virtual bool localizeRig(const std::vector<std::unique_ptr<features::Regions> > & vec_queryRegions,
+                           const std::vector<std::pair<std::size_t, std::size_t> > &imageSize,
+                           const LocalizerParameters *param,
+                           std::vector<cameras::Pinhole_Intrinsic_Radial_K3 > &vec_queryIntrinsics,
+                           const std::vector<geometry::Pose3 > &vec_subPoses,
+                           geometry::Pose3 &rigPose,
+                           std::vector<LocalizationResult>& vec_locResults)=0;
    
   virtual ~ILocalizer( ) { } ;
 protected:

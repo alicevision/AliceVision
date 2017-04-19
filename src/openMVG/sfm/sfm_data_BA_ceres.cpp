@@ -5,6 +5,8 @@
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 #include "openMVG/sfm/sfm_data_BA_ceres.hpp"
+#include <openMVG/config.hpp>
+#include <openMVG/openmvg_omp.hpp>
 
 #include "ceres/rotation.h"
 
@@ -51,9 +53,9 @@ Bundle_Adjustment_Ceres::BA_options::BA_options(const bool bVerbose, bool bmulti
   :_bVerbose(bVerbose),
    _nbThreads(1)
 {
-  #ifdef OPENMVG_USE_OPENMP
-    _nbThreads = omp_get_max_threads();
-  #endif // OPENMVG_USE_OPENMP
+  // set number of threads, 1 if openMP is not enabled
+  _nbThreads = omp_get_max_threads();
+
   if (!bmultithreaded)
     _nbThreads = 1;
 
@@ -68,7 +70,7 @@ void Bundle_Adjustment_Ceres::BA_options::setDenseBA()
   // Default configuration use a DENSE representation
   _preconditioner_type = ceres::JACOBI;
   _linear_solver_type = ceres::DENSE_SCHUR;
-    std::cout << "Bundle_Adjustment_Ceres: DENSE_SCHUR" << std::endl;
+    OPENMVG_LOG_DEBUG("Bundle_Adjustment_Ceres: DENSE_SCHUR");
 }
 
 void Bundle_Adjustment_Ceres::BA_options::setSparseBA()
@@ -80,24 +82,24 @@ void Bundle_Adjustment_Ceres::BA_options::setSparseBA()
   {
     _sparse_linear_algebra_library_type = ceres::SUITE_SPARSE;
     _linear_solver_type = ceres::SPARSE_SCHUR;
-    std::cout << "Bundle_Adjustment_Ceres: SPARSE_SCHUR, SUITE_SPARSE" << std::endl;
+    OPENMVG_LOG_DEBUG("Bundle_Adjustment_Ceres: SPARSE_SCHUR, SUITE_SPARSE");
   }
   else if (ceres::IsSparseLinearAlgebraLibraryTypeAvailable(ceres::CX_SPARSE))
   {
     _sparse_linear_algebra_library_type = ceres::CX_SPARSE;
     _linear_solver_type = ceres::SPARSE_SCHUR;
-    std::cout << "Bundle_Adjustment_Ceres: SPARSE_SCHUR, CX_SPARSE" << std::endl;
+    OPENMVG_LOG_DEBUG("Bundle_Adjustment_Ceres: SPARSE_SCHUR, CX_SPARSE");
   }
   else if (ceres::IsSparseLinearAlgebraLibraryTypeAvailable(ceres::EIGEN_SPARSE))
   {
     _sparse_linear_algebra_library_type = ceres::EIGEN_SPARSE;
     _linear_solver_type = ceres::SPARSE_SCHUR;
-    std::cout << "Bundle_Adjustment_Ceres: SPARSE_SCHUR, EIGEN_SPARSE" << std::endl;
+    OPENMVG_LOG_DEBUG("Bundle_Adjustment_Ceres: SPARSE_SCHUR, EIGEN_SPARSE");
   }
   else
   {
     _linear_solver_type = ceres::DENSE_SCHUR;
-    std::cout << "Bundle_Adjustment_Ceres: no sparse BA available, fallback to dense BA." << std::endl;
+    OPENMVG_LOG_WARNING("Bundle_Adjustment_Ceres: no sparse BA available, fallback to dense BA.");
   }
 }
 
@@ -349,12 +351,12 @@ bool Bundle_Adjustment_Ceres::Adjust(
   ceres::Solver::Summary summary;
   ceres::Solve(options, &problem, &summary);
   if (_openMVG_options._bCeres_Summary)
-    std::cout << summary.FullReport() << std::endl;
+    OPENMVG_LOG_DEBUG(summary.FullReport());
 
   // If no error, get back refined parameters
   if (!summary.IsSolutionUsable())
   {
-    std::cout << "WARNING: Bundle Adjustment failed." << std::endl;
+    OPENMVG_LOG_WARNING("Bundle Adjustment failed.");
     return false;
   }
 
@@ -362,17 +364,17 @@ bool Bundle_Adjustment_Ceres::Adjust(
   if (_openMVG_options._bVerbose)
   {
     // Display statistics about the minimization
-    std::cout << std::endl
-      << "Bundle Adjustment statistics (approximated RMSE):\n"
-      << " #views: " << sfm_data.views.size() << "\n"
-      << " #poses: " << sfm_data.poses.size() << "\n"
-      << " #intrinsics: " << sfm_data.intrinsics.size() << "\n"
-      << " #tracks: " << sfm_data.structure.size() << "\n"
-      << " #residuals: " << summary.num_residuals << "\n"
-      << " Initial RMSE: " << std::sqrt( summary.initial_cost / summary.num_residuals) << "\n"
-      << " Final RMSE: " << std::sqrt( summary.final_cost / summary.num_residuals) << "\n"
-      << " Time (s): " << summary.total_time_in_seconds << "\n"
-      << std::endl;
+    OPENMVG_LOG_DEBUG(
+      "Bundle Adjustment statistics (approximated RMSE):\n"
+      " #views: " << sfm_data.views.size() << "\n"
+      " #poses: " << sfm_data.poses.size() << "\n"
+      " #intrinsics: " << sfm_data.intrinsics.size() << "\n"
+      " #tracks: " << sfm_data.structure.size() << "\n"
+      " #residuals: " << summary.num_residuals << "\n"
+      " Initial RMSE: " << std::sqrt( summary.initial_cost / summary.num_residuals) << "\n"
+      " Final RMSE: " << std::sqrt( summary.final_cost / summary.num_residuals) << "\n"
+      " Time (s): " << summary.total_time_in_seconds << "\n"
+      );
   }
 
   // Update camera poses with refined data

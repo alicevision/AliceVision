@@ -14,10 +14,9 @@
 #ifndef OPENMVG_SYSTEM_TIMER_HPP
 #define OPENMVG_SYSTEM_TIMER_HPP
 
-#ifdef HAVE_CXX11_CHRONO
 #include <chrono>
-#endif
 #include <iostream>
+#include <string>
 
 namespace openMVG {
 namespace system {
@@ -36,18 +35,20 @@ namespace system {
     double elapsedMs() const;
   private:
 
-#ifdef HAVE_CXX11_CHRONO
     std::chrono::high_resolution_clock::time_point start_;
-#else
-    double start_;
-#ifdef _WIN32
-    double frequency_;
-#endif
-#endif // HAVE_CXX11_CHRONO
   };
   
   // print the elapsed time
   std::ostream& operator << (std::ostream&, const Timer&);
+  
+/**
+ * @brief Prints the duration in the format #d #h #m #s #ms starting from the non-zero
+ * most significant entity (ie it does not print #d if d is 0 and so on...).
+ * 
+ * @param durationMs the duration in milliseconds.
+ * @return a formatted string
+ */  
+std::string prettyTime(double durationMs);
 
 } // namespace system
 } // namespace openMVG

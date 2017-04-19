@@ -4,15 +4,19 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
+#include "openMVG/logger.hpp"
 #include "openMVG/multiview/test_data_sets.hpp"
 #include "openMVG/numeric/numeric.h"
+#include <openMVG/config.hpp>
 #include "testing/testing.h"
 
 #include "openMVG/multiview/projection.hpp"
 
 #include "openMVG/linearProgramming/linearProgrammingInterface.hpp"
 #include "openMVG/linearProgramming/linearProgrammingOSI_X.hpp"
+#if OPENMVG_IS_DEFINED(OPENMVG_HAVE_MOSEK)
 #include "openMVG/linearProgramming/linearProgrammingMOSEK.hpp"
+#endif
 
 #include "openMVG/linearProgramming/bisectionLP.hpp"
 #include "openMVG/linearProgramming/lInfinityCV/tijsAndXis_From_xi_Ri_noise.hpp"
@@ -83,16 +87,15 @@ TEST(Translation_Structure_L_Infinity_Noisy, Outlier_OSICLP_SOLVER) {
     std::vector<double> vec_solution((nViews + nbPoints + megaMat.cols())*3);
     OSI_CLP_SolverWrapper wrapperOSICLPSolver(vec_solution.size());
     TiXi_withNoise_L1_ConstraintBuilder cstBuilder( vec_KRotation, megaMat);
-    std::cout << std::endl << "Bisection returns : " << std::endl;
-    std::cout<< BisectionLP<TiXi_withNoise_L1_ConstraintBuilder, LP_Constraints_Sparse>(
+    const bool bisectionRes = BisectionLP<TiXi_withNoise_L1_ConstraintBuilder, LP_Constraints_Sparse>(
             wrapperOSICLPSolver,
             cstBuilder,
             &vec_solution,
             admissibleResidual,
             0.0, 1e-8);
+    OPENMVG_LOG_DEBUG("Bisection returns : " << bisectionRes);
 
-    std::cout << "Found solution:\n";
-    std::copy(vec_solution.begin(), vec_solution.end(), std::ostream_iterator<double>(std::cout, " "));
+    OPENMVG_LOG_DEBUG("Found solution:" << vec_solution);
 
     //-- First the ti and after the Xi :
 
@@ -109,16 +112,16 @@ TEST(Translation_Structure_L_Infinity_Noisy, Outlier_OSICLP_SOLVER) {
     }
 
     // Compute residuals L2 from estimated parameter values :
-    std::cout << std::endl << "Residual : " << std::endl;
+    OPENMVG_LOG_DEBUG("Residual : ");
     Vec2 xk;
     double xsum = 0.0;
     for (int i = 0; i < d2._n; ++i) {
-        std::cout << "\nCamera : " << i << " \t:";
+        OPENMVG_LOG_DEBUG_OBJ << "Camera : " << i << " \t:";
         for(int k = 0; k < d._x[0].cols(); ++k)
         {
           xk = Project(d2.P(i),  Vec3(d2._X.col(k)));
           double residual = (xk - d2._x[i].col(k)).norm();
-          std::cout << Vec2(( xk - d2._x[i].col(k)).array().pow(2)).array().sqrt().mean() <<"\t";
+          OPENMVG_LOG_DEBUG_OBJ << Vec2(( xk - d2._x[i].col(k)).array().pow(2)).array().sqrt().mean() <<"\t";
           //-- Check that were measurement are not noisy the residual is small
           //  check were the measurement are noisy, the residual is important
           //if ((i != 0 && k != 0) || (i!=3 && k !=3))
@@ -127,10 +130,10 @@ TEST(Translation_Structure_L_Infinity_Noisy, Outlier_OSICLP_SOLVER) {
             xsum += residual;
           }
         }
-        std::cout << std::endl;
+        OPENMVG_LOG_DEBUG_OBJ << std::endl;
     }
     double dResidual = xsum / (d2._n*d._x[0].cols());
-    std::cout << std::endl << "Residual mean in not noisy measurement: " << dResidual << std::endl;
+    OPENMVG_LOG_DEBUG(std::endl << "Residual mean in not noisy measurement: " << dResidual);
     // Check that 2D re-projection and 3D point are near to GT.
     EXPECT_NEAR(0.0, dResidual, 1e-1);
   }
@@ -138,7 +141,7 @@ TEST(Translation_Structure_L_Infinity_Noisy, Outlier_OSICLP_SOLVER) {
   d2.ExportToPLY("test_After_Infinity.ply");
 }
 
-#ifdef OPENMVG_HAVE_MOSEK
+#if OPENMVG_IS_DEFINED(OPENMVG_HAVE_MOSEK)
 TEST(Translation_Structure_L_Infinity_Noisy, Outlier_MOSEK) {
 
   const int nViews = 5;
@@ -197,15 +200,15 @@ TEST(Translation_Structure_L_Infinity_Noisy, Outlier_MOSEK) {
     std::vector<double> vec_solution((nViews + nbPoints + megaMat.cols())*3);
     MOSEK_SolveWrapper wrapperMosek(vec_solution.size());
     TiXi_withNoise_L1_ConstraintBuilder cstBuilder( vec_KRotation, megaMat);
-    std::cout << std::endl << "Bisection returns : " << std::endl;
-    std::cout<< BisectionLP<TiXi_withNoise_L1_ConstraintBuilder, LP_Constraints_Sparse>(
+    OPENMVG_LOG_DEBUG(std::endl << "Bisection returns : ");
+    OPENMVG_LOG_DEBUG( BisectionLP<TiXi_withNoise_L1_ConstraintBuilder, LP_Constraints_Sparse>(
             wrapperMosek,
             cstBuilder,
             &vec_solution,
             admissibleResidual,
             0.0, 1e-8);
 
-    std::cout << "Found solution:\n";
+    OPENMVG_LOG_DEBUG("Found solution:\n";
     std::copy(vec_solution.begin(), vec_solution.end(), std::ostream_iterator<double>(std::cout, " "));
 
     //-- First the ti and after the Xi :
@@ -223,16 +226,16 @@ TEST(Translation_Structure_L_Infinity_Noisy, Outlier_MOSEK) {
     }
 
     // Compute residuals L2 from estimated parameter values :
-    std::cout << std::endl << "Residual : " << std::endl;
+    OPENMVG_LOG_DEBUG(std::endl << "Residual : ");
     Vec2 xk;
     double xsum = 0.0;
     for (int i = 0; i < d2._n; ++i) {
-        std::cout << "\nCamera : " << i << " \t:";
+        OPENMVG_LOG_DEBUG("\nCamera : " << i << " \t:";
         for(int k = 0; k < d._x[0].cols(); ++k)
         {
           xk = Project(d2.P(i),  Vec3(d2._X.col(k)));
           double residual = (xk - d2._x[i].col(k)).norm();
-          std::cout << Vec2(( xk - d2._x[i].col(k)).array().pow(2)).array().sqrt().mean() <<"\t";
+          OPENMVG_LOG_DEBUG(Vec2(( xk - d2._x[i].col(k)).array().pow(2)).array().sqrt().mean() <<"\t";
           //-- Check that were measurement are not noisy the residual is small
           //  check were the measurement are noisy, the residual is important
           //if ((i != 0 && k != 0) || (i!=3 && k !=3))
@@ -241,10 +244,10 @@ TEST(Translation_Structure_L_Infinity_Noisy, Outlier_MOSEK) {
             xsum += residual;
           }
         }
-        std::cout << std::endl;
+        OPENMVG_LOG_DEBUG(std::endl;
     }
     double dResidual = xsum / (d2._n*d._x[0].cols());
-    std::cout << std::endl << "Residual mean in not noisy measurement: " << dResidual << std::endl;
+    OPENMVG_LOG_DEBUG(std::endl << "Residual mean in not noisy measurement: " << dResidual);
     // Check that 2D re-projection and 3D point are near to GT.
     EXPECT_NEAR(0.0, dResidual, 1e-1);
   }

@@ -5,6 +5,7 @@
 #include "feature_allocator.hpp"
 
 #include <openMVG/types.hpp>
+#include <openMVG/logger.hpp>
 
 #include <stdint.h>
 #include <vector>
@@ -186,13 +187,12 @@ template<class Feature, template<typename, typename> class Distance, class Featu
 template<class DescriptorT>
 std::vector<Word> VocabularyTree<Feature, Distance, FeatureAllocator>::quantize(const std::vector<DescriptorT>& features) const
 {
-//  std::cout << std::endl;
-//  std::cout << "VocabularyTree quantize: " << features.size() << std::endl;
+  // OPENMVG_LOG_DEBUG("VocabularyTree quantize: " << features.size());
   std::vector<Word> imgVisualWords(features.size(), 0);
 
   // quantize the features
   #pragma omp parallel for
-  for(size_t j = 0; j < features.size(); ++j)
+  for(ptrdiff_t j = 0; j < static_cast<ptrdiff_t>(features.size()); ++j)
   {
     // store the visual word associated to the feature in the temporary list
     imgVisualWords[j] = quantize<DescriptorT>(features[j]);

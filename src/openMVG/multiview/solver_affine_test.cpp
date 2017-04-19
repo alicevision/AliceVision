@@ -27,6 +27,7 @@
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 #include "testing/testing.h"
+#include "openMVG/logger.hpp"
 #include "openMVG/multiview/solver_affine.hpp"
 
 using namespace openMVG;
@@ -42,7 +43,7 @@ TEST(Affine2DTest, TranslationX) {
 
   Mat3 AffineMat;
   EXPECT_TRUE(Affine2DFromCorrespondencesLinear(x1, x2, &AffineMat));
-  std::cout << "Mat Affine2D "<< std::endl <<AffineMat;
+  OPENMVG_LOG_DEBUG("Mat Affine2D:\n" << AffineMat);
   Mat3 ground_truth;
   ground_truth << 1,0,1,
                   0,1,0,
@@ -61,7 +62,7 @@ TEST(Affine2DTest, TranslationXY) {
 
   Mat3 affine_mat;
   EXPECT_TRUE(Affine2DFromCorrespondencesLinear(x1, x2, &affine_mat));
-  std::cout << "Mat Affine2D "<< std::endl << affine_mat;
+  OPENMVG_LOG_DEBUG("Mat Affine2D:\n" << affine_mat);
   Mat3 ground_truth;
   ground_truth << 1,0,1,
                   0,1,1,
@@ -86,7 +87,7 @@ TEST(Affine2DTest, Rotation45) {
 
   Mat3 affine_mat;
   EXPECT_TRUE(Affine2DFromCorrespondencesLinear(x1, x2, &affine_mat));
-  std::cout << "Mat Affine2D " << affine_mat<< std::endl;
+  OPENMVG_LOG_DEBUG("Mat Affine2D " << affine_mat);
   EXPECT_MATRIX_NEAR(affine_mat, rot, 1e-8);
 }
 
@@ -110,7 +111,7 @@ TEST(Affine2DTest, Rotation45AndTranslationXY) {
 
   Mat3 affine_mat;
   EXPECT_TRUE(Affine2DFromCorrespondencesLinear(x1, x2, &affine_mat));
-  std::cout << "Mat Affine2D "<< std::endl << affine_mat;
+  OPENMVG_LOG_DEBUG("Mat Affine2D:\n" << affine_mat);
   EXPECT_MATRIX_NEAR(affine_mat, rot, 1e-8);
 }
 
@@ -132,7 +133,7 @@ TEST(Affine2DTest, AffineGeneral) {
 
   Mat3 affine_mat;
   EXPECT_TRUE(Affine2DFromCorrespondencesLinear(x1, x2, &affine_mat));
-  std::cout << "Mat Affine2D "<< std::endl << affine_mat;
+  OPENMVG_LOG_DEBUG("Mat Affine2D:\n" << affine_mat);
   EXPECT_MATRIX_NEAR(affine_mat, m, 1e-8);
 }
 
@@ -149,7 +150,7 @@ TEST(Affine3DTest, TranslationZ) {
 
   Mat4 AffineMat;
   EXPECT_TRUE(Affine3DFromCorrespondencesLinear(x1, x2, &AffineMat));
-  std::cout << "Mat Affine3D "<< std::endl <<AffineMat;
+  OPENMVG_LOG_DEBUG("Mat Affine3D:\n" << AffineMat);
   Mat4 ground_truth;
   ground_truth << 1,0,0,0,
                   0,1,0,0,
@@ -171,7 +172,7 @@ TEST(Affine3DTest, TranslationXYZ) {
 
   Mat4 affine_mat;
   EXPECT_TRUE(Affine3DFromCorrespondencesLinear(x1, x2, &affine_mat));
-  std::cout << "Mat Affine3D "<< std::endl << affine_mat;
+  OPENMVG_LOG_DEBUG("Mat Affine3D:\n" << affine_mat);
   Mat4 ground_truth;
   ground_truth << 1,0,0, 2,
                   0,1,0,-1,
@@ -224,7 +225,7 @@ TEST(Affine3DTest, RotationAndTranslationXYZ) {
 
   Mat4 affine_mat;
   EXPECT_TRUE(Affine3DFromCorrespondencesLinear(x1, x2, &affine_mat));
-  std::cout << "Mat Affine3D " << affine_mat<< std::endl;
+  OPENMVG_LOG_DEBUG("Mat Affine3D:\n" << affine_mat);
   EXPECT_MATRIX_NEAR(affine_mat, M, 1e-8);
 }
 
@@ -248,7 +249,7 @@ TEST(Affine3DTest, AffineGeneral) {
 
   Mat4 affine_mat;
   EXPECT_TRUE(Affine3DFromCorrespondencesLinear(x1, x2, &affine_mat));
-  std::cout << "Mat Affine3D "<< std::endl << affine_mat;
+  OPENMVG_LOG_DEBUG("Mat Affine3D:\n" << affine_mat);
   EXPECT_MATRIX_NEAR(affine_mat, m, 1e-8);
 }
 

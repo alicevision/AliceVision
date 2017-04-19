@@ -78,7 +78,7 @@ class ArrayMatcherCascadeHashing  : public ArrayMatcher<Scalar, Metric>
   bool SearchNeighbour( const Scalar * query,
                         int * indice, DistanceType * distance)
   {
-    std::cerr << "This matcher is not made to match a single query" << std::endl;
+    OPENMVG_LOG_WARNING("This matcher is not made to match a single query");
     return false;
   }
 

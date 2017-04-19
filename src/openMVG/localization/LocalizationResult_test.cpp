@@ -32,10 +32,9 @@ localization::LocalizationResult generateRandomResult(std::size_t numPts)
   const sfm::Image_Localizer_Match_Data &data = generateRandomMatch_Data(numPts);
   
   // random indMatch3D2D
-  const std::size_t numInliers = data.vec_inliers.size();
   std::vector<pair<IndexT, IndexT> > indMatch3D2D;
-  indMatch3D2D.reserve(numInliers);
-  for(std::size_t i = 0; i < numInliers; ++i)
+  indMatch3D2D.reserve(numPts);
+  for(std::size_t i = 0; i < numPts; ++i)
   {
     indMatch3D2D.emplace_back(i,i);
   }
@@ -47,9 +46,13 @@ localization::LocalizationResult generateRandomResult(std::size_t numPts)
   cameras::Pinhole_Intrinsic_Radial_K3 intrinsics = cameras::Pinhole_Intrinsic_Radial_K3(640, 480, 1400, 320.5, 240.5, 0.001, -0.05, 0.00003);
   
   // random valid
-  const bool valid = (numInliers % 2 == 0);
-  //
-  return localization::LocalizationResult(data, indMatch3D2D, pose, intrinsics, valid);
+  const bool valid = (numPts % 2 == 0);
+
+  std::vector<voctree::DocMatch> matchedImages;
+  matchedImages.push_back(voctree::DocMatch(2, 0.5));
+  matchedImages.push_back(voctree::DocMatch(3, 0.8));
+
+  return localization::LocalizationResult(data, indMatch3D2D, pose, intrinsics, matchedImages, valid);
 }
 
 // generate a random localization result, save it to binary file, load it again
@@ -109,6 +112,15 @@ TEST(LocalizationResult, LoadSaveBinSingle)
   EXPECT_MATRIX_NEAR(res.getPt2D(), check.getPt2D(), threshold);
   EXPECT_MATRIX_NEAR(res.getProjection(), check.getProjection(), threshold);
 
+    // same matchedImages
+  EXPECT_TRUE(res.getMatchedImages().size() == check.getMatchedImages().size());
+  const std::vector<voctree::DocMatch>& matchedImagesGT = res.getMatchedImages();
+  const std::vector<voctree::DocMatch>& matchedImages = check.getMatchedImages();
+  for(std::size_t i = 0; i < res.getMatchedImages().size(); ++i)
+  {
+    EXPECT_TRUE(matchedImagesGT[i] == matchedImages[i]);
+  }
+
   stlplus::file_delete(filename);
 }
 
@@ -166,25 +178,34 @@ TEST(LocalizationResult, LoadSaveBinVector)
     const auto idx = check.getIndMatch3D2D();
     EXPECT_TRUE(idxGT.size() == idx.size());
     const std::size_t numpts = idxGT.size();
-    for(std::size_t i = 0; i < numpts; ++i)
+    for(std::size_t j = 0; j < numpts; ++j)
     {
-      EXPECT_TRUE(idxGT[i].first == idx[i].first);
-      EXPECT_TRUE(idxGT[i].second == idx[i].second);
+      EXPECT_TRUE(idxGT[j].first == idx[j].first);
+      EXPECT_TRUE(idxGT[j].second == idx[j].second);
     }
 
     // same _matchData
     EXPECT_TRUE(res.getInliers().size() == check.getInliers().size());
     const auto inliersGT = res.getInliers();
     const auto inliers = check.getInliers();
-    for(std::size_t i = 0; i < res.getInliers().size(); ++i)
+    for(std::size_t j = 0; j < res.getInliers().size(); ++j)
     {
-      EXPECT_TRUE(inliersGT[i] == inliers[i]);
+      EXPECT_TRUE(inliersGT[j] == inliers[j]);
     }
 
     EXPECT_MATRIX_NEAR(res.getPt3D(), check.getPt3D(), threshold);
     EXPECT_MATRIX_NEAR(res.getPt2D(), check.getPt2D(), threshold);
     EXPECT_MATRIX_NEAR(res.getProjection(), check.getProjection(), threshold);
     
+    // same matchedImages
+    EXPECT_TRUE(res.getMatchedImages().size() == check.getMatchedImages().size());
+    const auto matchedImagesGT = res.getMatchedImages();
+    const auto matchedImages = check.getMatchedImages();
+    for(std::size_t j = 0; j < res.getMatchedImages().size(); ++j)
+    {
+      EXPECT_TRUE(matchedImagesGT[j] == matchedImages[j]);
+    }
+
     stlplus::file_delete(filename);
   }
 }

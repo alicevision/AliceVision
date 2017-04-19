@@ -9,6 +9,7 @@
 #include "openMVG/sfm/sfm.hpp"
 #include "openMVG/types.hpp"
 #include "openMVG/geometry/half_space_intersection.hpp"
+#include <openMVG/config.hpp>
 
 #include <fstream>
 
@@ -79,26 +80,20 @@ Pair_Set Frustum_Filter::getFrustumIntersectionPairs() const
     std::cout, "\nCompute frustum intersection\n");
 
   // Exhaustive comparison (use the fact that the intersect function is symmetric)
-#ifdef OPENMVG_USE_OPENMP
   #pragma omp parallel for
-#endif
   for (int i = 0; i < (int)viewIds.size(); ++i)
   {
     for (size_t j = i+1; j < viewIds.size(); ++j)
     {
       if (frustum_perView.at(viewIds[i]).intersect(frustum_perView.at(viewIds[j])))
       {
-#ifdef OPENMVG_USE_OPENMP
         #pragma omp critical
-#endif
         {
           pairs.insert(std::make_pair(viewIds[i], viewIds[j]));
         }
       }
       // Progress bar update
-#ifdef OPENMVG_USE_OPENMP
       #pragma omp critical
-#endif
       {
         ++my_progress_bar;
       }

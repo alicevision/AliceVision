@@ -3,13 +3,14 @@
 #include <openMVG/localization/LocalizationResult.hpp>
 #include <openMVG/geometry/pose3.hpp>
 #include <openMVG/numeric/numeric.h>
+#include <openMVG/config.hpp>
 
 #include <Eigen/Dense>
 
 #include <vector>
 #include <map>
 
-#ifdef HAVE_OPENCV
+#if OPENMVG_IS_DEFINED(OPENMVG_HAVE_OPENCV)
 //#define VISUAL_DEBUG_MODE
 #endif
 
@@ -81,7 +82,7 @@ public:
    * @return true if everything went ok.
    * @see saveRigCalibration()
    */
-  bool saveCalibration(std::string &filename);
+  bool saveCalibration(const std::string &filename);
   
   /*
    * @brief Visual debug function displaying the reprojected 3D points and their

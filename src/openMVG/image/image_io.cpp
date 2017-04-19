@@ -4,6 +4,7 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
+#include "openMVG/logger.hpp"
 #include "openMVG/image/image.hpp"
 
 #include <cstring>
@@ -329,7 +330,7 @@ int ReadPngStream(FILE *file,
   if ((ppbRowPointers = (png_bytepp) malloc(hPNG
     * sizeof(png_bytep))) == nullptr)
   {
-    std::cerr << "PNG: out of memory" << std::endl;
+    OPENMVG_LOG_ERROR("PNG: out of memory");
     return 0;
   }
 
@@ -564,7 +565,7 @@ int ReadTiff(const char * filename,
 {
   TIFF* tiff = TIFFOpen(filename, "r");
   if (!tiff) {
-    std::cerr << "Error: Couldn't open " << filename << " fopen returned 0";
+    OPENMVG_LOG_ERROR("Error: Couldn't open " << filename << " fopen returned 0");
     return 0;
   }
   uint16 bps, spp;
@@ -605,7 +606,7 @@ int WriteTiff(const char * filename,
 {
   TIFF* tiff = TIFFOpen(filename, "w");
   if (!tiff) {
-    std::cerr << "Error: Couldn't open " << filename << " fopen returned 0";
+    OPENMVG_LOG_ERROR("Error: Couldn't open " << filename << " fopen returned 0");
     return 0;
   }
   TIFFSetField(tiff, TIFFTAG_IMAGEWIDTH, w);

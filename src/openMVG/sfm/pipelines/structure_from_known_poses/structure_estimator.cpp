@@ -13,6 +13,7 @@
 #include "openMVG/graph/graph.hpp"
 #include "openMVG/tracks/tracks.hpp"
 #include "openMVG/sfm/sfm_data_triangulation.hpp"
+#include <openMVG/config.hpp>
 
 #include "third_party/progress/progress.hpp"
 
@@ -76,14 +77,11 @@ void SfM_Data_Structure_Estimation_From_Known_Poses::match(
 {
   C_Progress_display my_progress_bar( pairs.size(), std::cout,
     "Compute pairwise fundamental guided matching:\n" );
-#ifdef OPENMVG_USE_OPENMP
+
   #pragma omp parallel
-#endif // OPENMVG_USE_OPENMP
   for (Pair_Set::const_iterator it = pairs.begin(); it != pairs.end(); ++it)
   {
-#ifdef OPENMVG_USE_OPENMP
     #pragma omp single nowait
-#endif // OPENMVG_USE_OPENMP
     {
     // --
     // Perform GUIDED MATCHING
@@ -108,7 +106,7 @@ void SfM_Data_Structure_Estimation_From_Known_Poses::match(
       const Mat3 F_lr = F_from_P(P_L, P_R);
       const double thresholdF = 4.0;
 
-    #if defined(EXHAUSTIVE_MATCHING)
+  #ifdef EXHAUSTIVE_MATCHING
       geometry_aware::GuidedMatching
         <Mat3, openMVG::fundamental::kernel::EpipolarDistanceError>
         (
@@ -120,7 +118,7 @@ void SfM_Data_Structure_Estimation_From_Known_Poses::match(
           Square(thresholdF), Square(0.8),
           vec_corresponding_indexes
         );
-    #else
+  #else
       const Vec3 epipole2  = epipole_from_P(P_R, poseL);
 
       const features::Regions * regions = regions_provider->regions_per_view.at(it->first).get();
@@ -138,10 +136,7 @@ void SfM_Data_Structure_Estimation_From_Known_Poses::match(
           vec_corresponding_indexes
         );
   #endif
-
-  #ifdef OPENMVG_USE_OPENMP
-      #pragma omp critical
-  #endif // OPENMVG_USE_OPENMP
+        #pragma omp critical
         {
           ++my_progress_bar;
           for (size_t i = 0; i < vec_corresponding_indexes.size(); ++i)
@@ -167,18 +162,12 @@ void SfM_Data_Structure_Estimation_From_Known_Poses::filter(
 
   C_Progress_display my_progress_bar( triplets.size(), std::cout,
     "Per triplet tracks validation (discard spurious correspondences):\n" );
-#ifdef OPENMVG_USE_OPENMP
-    #pragma omp parallel
-#endif // OPENMVG_USE_OPENMP
+  #pragma omp parallel
   for( Triplets::const_iterator it = triplets.begin(); it != triplets.end(); ++it)
   {
-#ifdef OPENMVG_USE_OPENMP
     #pragma omp single nowait
-#endif // OPENMVG_USE_OPENMP
     {
-      #ifdef OPENMVG_USE_OPENMP
-        #pragma omp critical
-      #endif // OPENMVG_USE_OPENMP
+      #pragma omp critical
       {++my_progress_bar;}
 
       const graph::Triplet & triplet = *it;
@@ -222,9 +211,7 @@ void SfM_Data_Structure_Estimation_From_Known_Poses::filter(
             if (trianObj.minDepth() > 0 && trianObj.error()/(double)trianObj.size() < 4.0)
             // TODO: Add an angular check ?
             {
-              #ifdef OPENMVG_USE_OPENMP
-                #pragma omp critical
-              #endif // OPENMVG_USE_OPENMP
+              #pragma omp critical
               {
                 openMVG::tracks::submapTrack::const_iterator iterI, iterJ, iterK;
                 iterI = iterJ = iterK = subTrack.begin();

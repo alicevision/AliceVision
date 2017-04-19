@@ -1,8 +1,8 @@
 // This Source Code Form is subject to the terms of the Mozilla Public
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
-#ifndef OPENMVG_CAMERA_PINHOLE_FISHEYE1_HPP
-#define OPENMVG_CAMERA_PINHOLE_FISHEYE1_HPP
+
+#pragma once
 
 #include "openMVG/numeric/numeric.h"
 #include "openMVG/cameras/Camera_Common.hpp"
@@ -15,16 +15,16 @@ namespace cameras {
 /**
  * Implement a simple Fish-eye camera model with only one parameter
  * 
- * "Straight lines have to be straight: automatic calibration and
- * removal of distortion from scenes of structured enviroments"
- * by Frederic Devernay and Olivier Faugeras
- * https://hal.inria.fr/inria-00267247/document
+ * Fredreric Devernay and Olivier Faugeras. 2001. Straight lines have to be 
+ * straight: automatic calibration and removal of distortion from scenes of 
+ * structured environments. Mach. Vision Appl. 13, 1 (August 2001), 14-24. 
+ * DOI: 10.1007/PL00013269 https://hal.inria.fr/inria-00267247/document
  */
 class Pinhole_Intrinsic_Fisheye1 : public Pinhole_Intrinsic
 {
 protected:
   // center of distortion is applied by the Intrinsics class
-  std::vector<double> _params; // K1
+  std::vector<double> _distortionParams; // K1
 
 public:
 
@@ -34,7 +34,7 @@ public:
     double k1 = 0.0)
         :Pinhole_Intrinsic(w, h, focal, ppx, ppy)
   {
-    _params = {k1};
+    _distortionParams = {k1};
   }
 
   Pinhole_Intrinsic_Fisheye1* clone() const { return new Pinhole_Intrinsic_Fisheye1(*this); }
@@ -46,7 +46,7 @@ public:
 
   virtual Vec2 add_disto(const Vec2 & p) const
   {
-    const double k1 = _params[0];
+    const double k1 = _distortionParams[0];
     const double r = std::sqrt(p(0)*p(0) + p(1)*p(1));
     const double coef = (std::atan(2.0 * r * std::tan(0.5 * k1)) / k1) / r;
     return  p * coef;
@@ -54,7 +54,7 @@ public:
 
   virtual Vec2 remove_disto(const Vec2 & p) const
   {
-    const double k1 = _params[0];
+    const double k1 = _distortionParams[0];
     const double r = std::sqrt(p(0)*p(0) + p(1)*p(1));
     const double coef = 0.5 * std::tan(r * k1) / (std::tan(0.5 * k1) * r);
     return  p * coef;
@@ -64,8 +64,13 @@ public:
   virtual std::vector<double> getParams() const
   {
     std::vector<double> params = Pinhole_Intrinsic::getParams();
-    params.push_back(_params[0]);
+    params.push_back(_distortionParams[0]);
     return params;
+  }
+
+  virtual std::vector<double> getDistortionParams() const
+  {
+    return _distortionParams;
   }
 
   // Data wrapper for non linear optimization (update from data)
@@ -74,7 +79,7 @@ public:
     if (params.size() == 7)
     {
       this->setK(params[0], params[1], params[2]);
-      _params = {params[3]};
+      _distortionParams = {params[3]};
       return true;
     }
     return false;
@@ -97,7 +102,7 @@ public:
   void save( Archive & ar) const
   {
     Pinhole_Intrinsic::save(ar);
-    ar(cereal::make_nvp("fisheye1", _params));
+    ar(cereal::make_nvp("fisheye1", _distortionParams));
   }
 
   // Serialization
@@ -105,7 +110,7 @@ public:
   void load( Archive & ar)
   {
     Pinhole_Intrinsic::load(ar);
-    ar(cereal::make_nvp("fisheye1", _params));
+    ar(cereal::make_nvp("fisheye1", _distortionParams));
   }
 };
 
@@ -116,5 +121,3 @@ public:
 #include <cereal/types/vector.hpp>
 
 CEREAL_REGISTER_TYPE_WITH_NAME(openMVG::cameras::Pinhole_Intrinsic_Fisheye1, "fisheye1");
-
-#endif // #ifndef OPENMVG_CAMERA_PINHOLE_FISHEYE1_HPP

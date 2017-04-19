@@ -19,6 +19,8 @@
 #include "openMVG/sfm/AlembicExporter.hpp"
 #include "openMVG/sfm/AlembicImporter.hpp"
 
+#include "openMVG/config.hpp"
+
 namespace openMVG {
 namespace sfm {
 
@@ -57,8 +59,8 @@ bool ValidIds(const SfM_Data & sfm_data, ESfM_Data flags_part)
   bool bRet = true;
   if(bCheck_Intrinsic && intrinsicIdsDeclared != intrinsicIdsReferenced)
   {
-    std::cerr << "The number of intrinsics is incoherent:" << std::endl;
-    std::cerr << intrinsicIdsDeclared.size() << " intrinsics declared and " << intrinsicIdsReferenced.size() << " intrinsics used." << std::endl;
+    OPENMVG_LOG_WARNING("The number of intrinsics is incoherent:");
+    OPENMVG_LOG_WARNING(intrinsicIdsDeclared.size() << " intrinsics declared and " << intrinsicIdsReferenced.size() << " intrinsics used.");
     std::set<IndexT> undefinedIntrinsicIds;
     // undefinedIntrinsicIds = intrinsicIdsReferenced - intrinsicIdsDeclared
     std::set_difference(intrinsicIdsReferenced.begin(), intrinsicIdsReferenced.end(),
@@ -73,8 +75,8 @@ bool ValidIds(const SfM_Data & sfm_data, ESfM_Data flags_part)
   
   if (bCheck_Extrinsic && extrinsicIdsDeclared != extrinsicIdsReferenced)
   {
-    std::cerr << "The number of extrinsics is incoherent:" << std::endl;
-    std::cerr << extrinsicIdsDeclared.size() << " extrinsics declared and " << extrinsicIdsReferenced.size() << " extrinsics used." << std::endl;
+    OPENMVG_LOG_WARNING("The number of extrinsics is incoherent:");
+    OPENMVG_LOG_WARNING(extrinsicIdsDeclared.size() << " extrinsics declared and " << extrinsicIdsReferenced.size() << " extrinsics used.");
     std::set<IndexT> undefinedExtrinsicIds;
     // undefinedExtrinsicIds = extrinsicIdsReferenced - extrinsicIdsDeclared
     std::set_difference(extrinsicIdsDeclared.begin(), extrinsicIdsDeclared.end(),
@@ -100,12 +102,12 @@ bool Load(SfM_Data & sfm_data, const std::string & filename, ESfM_Data flags_par
     bStatus = Load_Cereal<cereal::PortableBinaryInputArchive>(sfm_data, filename, flags_part);
   else if (ext == "xml")
     bStatus = Load_Cereal<cereal::XMLInputArchive>(sfm_data, filename, flags_part);
-#if HAVE_ALEMBIC
+#if OPENMVG_IS_DEFINED(OPENMVG_HAVE_ALEMBIC)
   else if (ext == "abc") {
-    openMVG::dataio::AlembicImporter(filename).populate(sfm_data, flags_part);
+    openMVG::sfm::AlembicImporter(filename).populate(sfm_data, flags_part);
     bStatus = true;
   }
-#endif // HAVE_ALEMBIC
+#endif // OPENMVG_HAVE_ALEMBIC
   else if (stlplus::folder_exists(filename))
   {
     bStatus = readGt(filename, sfm_data);
@@ -113,7 +115,7 @@ bool Load(SfM_Data & sfm_data, const std::string & filename, ESfM_Data flags_par
   // It is not a folder or known format, return false
   else
   {
-    std::cerr << "Unknown sfm_data input format: " << ext << std::endl;
+    OPENMVG_LOG_WARNING("Unknown sfm_data input format: " << ext);
     return false;
   }
 
@@ -140,15 +142,15 @@ bool Save(const SfM_Data & sfm_data, const std::string & filename, ESfM_Data fla
     return Save_PLY(sfm_data, filename, flags_part);
   else if (ext == "baf") // Bundle Adjustment file
     return Save_BAF(sfm_data, filename, flags_part);
-#if HAVE_ALEMBIC
+#if OPENMVG_IS_DEFINED(OPENMVG_HAVE_ALEMBIC)
   else if (ext == "abc") // Alembic
   {
-    openMVG::dataio::AlembicExporter(filename).add(sfm_data, flags_part);
+    openMVG::sfm::AlembicExporter(filename).add(sfm_data, flags_part);
     return true;
   }
-#endif // HAVE_ALEMBIC
-  std::cerr << "ERROR: Cannot save the SfM Data: " << filename << ".\n"
-            << "The file extension is not recognized." << std::endl;
+#endif // OPENMVG_HAVE_ALEMBIC
+  OPENMVG_LOG_WARNING("ERROR: Cannot save the SfM Data: " << filename << ".\n"
+            << "The file extension is not recognized.");
   return false;
 }
 

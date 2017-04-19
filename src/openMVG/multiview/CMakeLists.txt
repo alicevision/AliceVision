@@ -23,7 +23,7 @@ ADD_LIBRARY(openMVG_multiview
   ${multiview_files_cpp})
 SET_PROPERTY(TARGET openMVG_multiview PROPERTY FOLDER OpenMVG)
 INSTALL(TARGETS openMVG_multiview DESTINATION lib EXPORT openMVG-targets)
-TARGET_LINK_LIBRARIES(openMVG_multiview ${LEMON_LIBRARY})
+TARGET_LINK_LIBRARIES(openMVG_multiview ${LEMON_LIBRARY} ${LOG_LIB})
 
 #Make multiview library integrate numeric library
 ADD_LIBRARY(openMVG_multiview_test_data ${MULTIVIEWTESTDATA})
@@ -43,6 +43,7 @@ UNIT_TEST(openMVG solver_essential_kernel "openMVG_multiview;openMVG_multiview_t
 UNIT_TEST(openMVG solver_homography_kernel "openMVG_multiview;openMVG_multiview_test_data")
 UNIT_TEST(openMVG solver_essential_five_point "openMVG_multiview;openMVG_multiview_test_data")
 UNIT_TEST(openMVG solver_resection_kernel "openMVG_multiview;openMVG_multiview_test_data")
+UNIT_TEST(openMVG solver_resection_LORansac "openMVG_multiview;openMVG_features;openMVG_sfm;openMVG_multiview_test_data;${CERES_LIBRARIES}")
 UNIT_TEST(openMVG solver_translation_knownRotation_kernel "openMVG_multiview;openMVG_multiview_test_data")
 
 # Averaging routines

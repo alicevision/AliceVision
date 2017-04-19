@@ -3,12 +3,13 @@
 #include "ILocalizer.hpp"
 #include "LocalizationResult.hpp"
 #include "VoctreeLocalizer.hpp"
-
+#include <openMVG/config.hpp>
 #include <openMVG/features/features.hpp>
 #include <openMVG/features/image_describer.hpp>
 #include <openMVG/features/cctag/CCTAG_describer.hpp>
 #include <openMVG/sfm/sfm_data.hpp>
 #include <openMVG/sfm/pipelines/localization/SfM_Localizer.hpp>
+#include <openMVG/voctree/database.hpp>
 
 #include <iostream>
 #include <bitset>
@@ -31,7 +32,8 @@ class CCTagLocalizer : public ILocalizer
     Parameters() : LocalizerParameters(), 
       _nNearestKeyFrames(4) { }
     
-    size_t _nNearestKeyFrames;         //< number of best matching images to retrieve from the database                
+    /// number of best matching images to retrieve from the database
+    std::size_t _nNearestKeyFrames;
   };
   
 public:
@@ -39,6 +41,8 @@ public:
   CCTagLocalizer(const std::string &sfmFilePath,
                  const std::string &descriptorsFolder);
    
+  void setCudaPipe( int i );
+
  /**
    * @brief Just a wrapper around the different localization algorithm, the algorith
    * used to localized is chosen using \p param._algorithm
@@ -65,6 +69,7 @@ public:
                 cameras::Pinhole_Intrinsic_Radial_K3 &queryIntrinsics,
                 LocalizationResult & localizationResult,
                 const std::string& imagePath = std::string());
+
   /**
    * @brief Naive implementation of the localizer using the rig. Each image from
    * the rig is localized and then a bundle adjustment is run for optimizing the 
@@ -78,34 +83,67 @@ public:
    * @return true if the rig has been successfully localized.
    */
   bool localizeRig(const std::vector<image::Image<unsigned char> > & vec_imageGrey,
-                const LocalizerParameters *parameters,
-                std::vector<cameras::Pinhole_Intrinsic_Radial_K3 > &vec_queryIntrinsics,
-                const std::vector<geometry::Pose3 > &vec_subPoses,
-                geometry::Pose3 rigPose);
+                   const LocalizerParameters *parameters,
+                   std::vector<cameras::Pinhole_Intrinsic_Radial_K3 > &vec_queryIntrinsics,
+                   const std::vector<geometry::Pose3 > &vec_subPoses,
+                   geometry::Pose3 &rigPose,
+                   std::vector<LocalizationResult> & vec_locResults);
   
+
+  bool localizeRig(const std::vector<std::unique_ptr<features::Regions> > & vec_queryRegions,
+                   const std::vector<std::pair<std::size_t, std::size_t> > &imageSize,
+                   const LocalizerParameters *param,
+                   std::vector<cameras::Pinhole_Intrinsic_Radial_K3 > &vec_queryIntrinsics,
+                   const std::vector<geometry::Pose3 > &vec_subPoses,
+                   geometry::Pose3 &rigPose,
+                   std::vector<LocalizationResult>& vec_locResults);
   
-  // @todo THESE ARE UNSTABLE / TO FIX
+#if OPENMVG_IS_DEFINED(OPENMVG_HAVE_OPENGV)
+  bool localizeRig_opengv(const std::vector<std::unique_ptr<features::Regions> > & vec_queryRegions,
+                          const std::vector<std::pair<std::size_t, std::size_t> > &imageSize,
+                          const LocalizerParameters *parameters,
+                          std::vector<cameras::Pinhole_Intrinsic_Radial_K3 > &vec_queryIntrinsics,
+                          const std::vector<geometry::Pose3 > &vec_subPoses,
+                          geometry::Pose3 &rigPose,
+                          std::vector<LocalizationResult>& vec_locResults);
+#endif
   
-  // @simone this is not even implemented, this should be the localizeRig counterpart using regions as input
-//  bool localize(const std::vector<std::unique_ptr<features::Regions> > & vec_queryRegions,
-//              const Parameters &param,
-//              const std::vector<cameras::Pinhole_Intrinsic_Radial_K3 > &vec_queryIntrinsics,
-//              const std::vector<geometry::Pose3 > &vec_subPoses,
-//              geometry::Pose3 rigPose);
+  bool localizeRig_naive(const std::vector<std::unique_ptr<features::Regions> > & vec_queryRegions,
+                        const std::vector<std::pair<std::size_t, std::size_t> > &imageSize,
+                        const LocalizerParameters *parameters,
+                        std::vector<cameras::Pinhole_Intrinsic_Radial_K3 > &vec_queryIntrinsics,
+                        const std::vector<geometry::Pose3 > &vec_subPoses,
+                        geometry::Pose3 &rigPose,
+                        std::vector<LocalizationResult>& vec_locResults);
+
+  /**
+   * @brief Given the input Regions, it retrieves all the 2D-3D associations from
+   * the nearest k-frames in the database. The associations are retrieved in terms
+   * of region index and 3D point index along with the number of times (\p occurrences) that the 
+   * pair has been found. \p pt2D and \p pt3D contains the coordinates of the corresponding
+   * points of the associations, in the same order as in \p occurences.
+   * 
+   * @param[in] queryRegions The input query regions containing the extracted 
+   * markers from the query image.
+   * @param[in] imageSize The size of the query image.
+   * @param[in] param The parameters to use.
+   * @param[out] occurences A map containing for each pair <pt3D_id, pt2D_id> 
+   * the number of times that the association has been seen
+   * @param[out] pt2D The set of 2D points of the associations as they are given in \p queryRegions.
+   * @param[out] pt3D The set of 3D points of the associations.
+   * @param[in] The optional path to the query image file, used for debugging.
+   */
+  void getAllAssociations(const features::CCTAG_Regions &queryRegions,
+                          const std::pair<std::size_t, std::size_t> &imageSize,
+                          const CCTagLocalizer::Parameters &param,
+                          std::map< std::pair<IndexT, IndexT>, std::size_t > &occurences,
+                          Mat &pt2D,
+                          Mat &pt3D,
+                          std::vector<voctree::DocMatch>& matchedImages,
+                          const std::string& imagePath = std::string()) const;
   
-  // this is the wrong implementation of localizeRig, we need openGV for this
-  bool localizeAllAssociations(const std::vector<std::unique_ptr<features::Regions> > & vec_queryRegions,
-                const Parameters &param,
-                const std::vector<cameras::Pinhole_Intrinsic_Radial_K3 > &vec_queryIntrinsics,
-                const std::vector<geometry::Pose3 > &vec_subPoses,
-                geometry::Pose3 rigPose);
- 
   virtual ~CCTagLocalizer();
-   
-  void getAllAssociationsFromNearestKFrames(const features::CCTAG_Regions &queryRegions,
-                                            const CCTagLocalizer::Parameters &param,
-                                            std::map< pair<IndexT, IndexT>, pair<Vec3, Vec2> > &associations) const;
-  
+
 private:
   
   bool loadReconstructionDescriptors(
@@ -118,6 +156,10 @@ private:
    
   // the feature extractor
   features::CCTAG_Image_describer _image_describer;
+
+  // CUDA CCTag supports several parallel pipelines, where each one can
+  // processing different image dimensions.
+  int    _cudaPipe;
   
   //
   //std::map<IndexT, Vec3> _cctagDatabase;
