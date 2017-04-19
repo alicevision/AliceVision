@@ -59,6 +59,17 @@ IF(OpenMVG_USE_BOOST)
         target_link_libraries(openMVG_main_rigLocalizer CCTag::CCTag)
     endif()
 
+    if(OpenMVG_USE_ALEMBIC)
+    ADD_EXECUTABLE(openMVG_main_rigTransform main_rigTransform.cpp)
+    INSTALL(TARGETS openMVG_main_rigTransform DESTINATION bin/)
+    TARGET_LINK_LIBRARIES(openMVG_main_rigTransform
+                            openMVG_localization
+                            openMVG_dataio
+                            openMVG_rig
+                            ${BOOST_LIBRARIES})
+        target_link_libraries(openMVG_main_rigTransform openMVG_sfm ${ABC_LIBRARIES})
+    endif()
+
     ###
     # utility to convert float descriptors to char
     ###
