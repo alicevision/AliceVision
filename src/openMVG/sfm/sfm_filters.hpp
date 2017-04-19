@@ -30,7 +30,7 @@ static void KeepOnlyReferencedElement(
   const std::set<IndexT> & Ids,
   T & toFilter)
 {
-  std::cout << "Must be specialized for your type" << std::endl;
+  OPENMVG_LOG_ERROR("Must be specialized for your type");
 }
 
 // Specialization for RelativeInfo_Map

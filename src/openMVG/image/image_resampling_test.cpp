@@ -4,6 +4,7 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
+#include "openMVG/logger.hpp"
 #include "openMVG/image/image.hpp"
 #include "testing/testing.h"
 
@@ -17,7 +18,7 @@ TEST(Ressampling,SampleSamePosition)
 {
   Image<unsigned char> image;
   std::string png_filename = std::string(THIS_SOURCE_DIR) + "/image_test/lena.png";
-  std::cout << png_filename << std::endl ;
+  OPENMVG_LOG_DEBUG(png_filename);
   EXPECT_TRUE(ReadImage(png_filename.c_str(), &image));
 
 
@@ -109,7 +110,7 @@ TEST(Ressampling,SampleRotate)
   Image<RGBColor> image;
 
   std::string png_filename = std::string(THIS_SOURCE_DIR) + "/image_test/lena.png";
-  std::cout << png_filename << std::endl ;
+  OPENMVG_LOG_DEBUG(png_filename);
   EXPECT_TRUE(ReadImage(png_filename.c_str(), &image));
 
   EXPECT_TRUE(ImageRotation(image, Sampler2d< SamplerNearest >(), "SamplerNearest"));

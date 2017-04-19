@@ -1,6 +1,7 @@
 #include "indMatch_utils.hpp"
 
 #include "openMVG/matching/indMatch.hpp"
+#include <openMVG/config.hpp>
 
 #include <cereal/archives/portable_binary.hpp>
 #include <cereal/types/map.hpp>
@@ -79,7 +80,7 @@ bool LoadMatchFile(
   }
   else
   {
-    std::cerr << "Unknown matching file format: " << ext << std::endl;
+    OPENMVG_LOG_WARNING("Unknown matching file format: " << ext);
   }
   return false;
 }
@@ -110,10 +111,8 @@ bool LoadMatchFilePerImage(
 {
   int nbLoadedMatchFiles = 0;
   // Load one match file per image
-#ifdef OPENMVG_USE_OPENMP
-    #pragma omp parallel for num_threads(3)
-#endif
-  for(size_t i = 0; i < viewsKeys.size(); ++i)
+  #pragma omp parallel for num_threads(3)
+  for(ptrdiff_t i = 0; i < static_cast<ptrdiff_t>(viewsKeys.size()); ++i)
   {
     std::set<IndexT>::const_iterator it = viewsKeys.begin();
     std::advance(it, i);
@@ -122,17 +121,13 @@ bool LoadMatchFilePerImage(
     PairWiseMatches fileMatches;
     if(!LoadMatchFile(fileMatches, folder, matchFilename))
     {
-#ifdef OPENMVG_USE_OPENMP
       #pragma omp critical
-#endif
       {
-        std::cerr << "Unable to load match file: " << folder << "/" << matchFilename << std::endl;
+        OPENMVG_LOG_WARNING("Unable to load match file: " << folder << "/" << matchFilename);
       }
       continue;
     }
-#ifdef OPENMVG_USE_OPENMP
-      #pragma omp critical
-#endif
+    #pragma omp critical
     {
       ++nbLoadedMatchFiles;
       // merge the loaded matches into the output
@@ -144,7 +139,7 @@ bool LoadMatchFilePerImage(
   }
   if( nbLoadedMatchFiles == 0 )
   {
-    std::cerr << std::endl << "No matches file loaded in: " << folder << std::endl;
+    OPENMVG_LOG_WARNING("No matches file loaded in: " << folder);
     return false;
   }
   return true;
@@ -271,7 +266,7 @@ public:
         ++match;
       }
       const std::string filepath = m_directory + "/" + std::to_string(key) + "." + m_filename;
-      std::cout << "Export Matches in " << filepath << std::endl;
+      OPENMVG_LOG_DEBUG("Export Matches in: " << filepath);
       
       if(m_ext == "txt")
       {

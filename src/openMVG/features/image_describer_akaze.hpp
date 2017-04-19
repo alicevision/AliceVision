@@ -16,6 +16,7 @@
 #include "openMVG/features/akaze/msurf_descriptor.hpp"
 #include "openMVG/features/akaze/mldb_descriptor.hpp"
 #include "openMVG/features/liop/liop_descriptor.hpp"
+#include <openMVG/config.hpp>
 #include <cereal/cereal.hpp>
 
 using namespace std;
@@ -111,10 +112,8 @@ public:
         AKAZE_Float_Regions * regionsCasted = dynamic_cast<AKAZE_Float_Regions*>(regions.get());
         regionsCasted->Features().resize(kpts.size());
         regionsCasted->Descriptors().resize(kpts.size());
-
-      #ifdef OPENMVG_USE_OPENMP
+        
         #pragma omp parallel for
-      #endif
         for (int i = 0; i < static_cast<int>(kpts.size()); ++i)
         {
           AKAZEKeypoint ptAkaze = kpts[i];
@@ -153,9 +152,7 @@ public:
         // Init LIOP extractor
         LIOP::Liop_Descriptor_Extractor liop_extractor;
 
-      #ifdef OPENMVG_USE_OPENMP
         #pragma omp parallel for
-      #endif
         for (int i = 0; i < static_cast<int>(kpts.size()); ++i)
         {
           AKAZEKeypoint ptAkaze = kpts[i];
@@ -200,9 +197,7 @@ public:
         regionsCasted->Features().resize(kpts.size());
         regionsCasted->Descriptors().resize(kpts.size());
 
-      #ifdef OPENMVG_USE_OPENMP
         #pragma omp parallel for
-      #endif
         for (int i = 0; i < static_cast<int>(kpts.size()); ++i)
         {
           AKAZEKeypoint ptAkaze = kpts[i];

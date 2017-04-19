@@ -5,6 +5,8 @@
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 #include "openMVG/sfm/sfm_data_BA_ceres.hpp"
+#include <openMVG/config.hpp>
+#include <openMVG/openmvg_omp.hpp>
 
 #include "ceres/rotation.h"
 
@@ -51,9 +53,9 @@ Bundle_Adjustment_Ceres::BA_options::BA_options(const bool bVerbose, bool bmulti
   :_bVerbose(bVerbose),
    _nbThreads(1)
 {
-  #ifdef OPENMVG_USE_OPENMP
-    _nbThreads = omp_get_max_threads();
-  #endif // OPENMVG_USE_OPENMP
+  // set number of threads, 1 if openMP is not enabled
+  _nbThreads = omp_get_max_threads();
+
   if (!bmultithreaded)
     _nbThreads = 1;
 
@@ -68,7 +70,7 @@ void Bundle_Adjustment_Ceres::BA_options::setDenseBA()
   // Default configuration use a DENSE representation
   _preconditioner_type = ceres::JACOBI;
   _linear_solver_type = ceres::DENSE_SCHUR;
-    std::cout << "Bundle_Adjustment_Ceres: DENSE_SCHUR" << std::endl;
+    OPENMVG_LOG_DEBUG("Bundle_Adjustment_Ceres: DENSE_SCHUR");
 }
 
 void Bundle_Adjustment_Ceres::BA_options::setSparseBA()
@@ -80,24 +82,24 @@ void Bundle_Adjustment_Ceres::BA_options::setSparseBA()
   {
     _sparse_linear_algebra_library_type = ceres::SUITE_SPARSE;
     _linear_solver_type = ceres::SPARSE_SCHUR;
-    std::cout << "Bundle_Adjustment_Ceres: SPARSE_SCHUR, SUITE_SPARSE" << std::endl;
+    OPENMVG_LOG_DEBUG("Bundle_Adjustment_Ceres: SPARSE_SCHUR, SUITE_SPARSE");
   }
   else if (ceres::IsSparseLinearAlgebraLibraryTypeAvailable(ceres::CX_SPARSE))
   {
     _sparse_linear_algebra_library_type = ceres::CX_SPARSE;
     _linear_solver_type = ceres::SPARSE_SCHUR;
-    std::cout << "Bundle_Adjustment_Ceres: SPARSE_SCHUR, CX_SPARSE" << std::endl;
+    OPENMVG_LOG_DEBUG("Bundle_Adjustment_Ceres: SPARSE_SCHUR, CX_SPARSE");
   }
   else if (ceres::IsSparseLinearAlgebraLibraryTypeAvailable(ceres::EIGEN_SPARSE))
   {
     _sparse_linear_algebra_library_type = ceres::EIGEN_SPARSE;
     _linear_solver_type = ceres::SPARSE_SCHUR;
-    std::cout << "Bundle_Adjustment_Ceres: SPARSE_SCHUR, EIGEN_SPARSE" << std::endl;
+    OPENMVG_LOG_DEBUG("Bundle_Adjustment_Ceres: SPARSE_SCHUR, EIGEN_SPARSE");
   }
   else
   {
     _linear_solver_type = ceres::DENSE_SCHUR;
-    std::cout << "Bundle_Adjustment_Ceres: no sparse BA available, fallback to dense BA." << std::endl;
+    OPENMVG_LOG_WARNING("Bundle_Adjustment_Ceres: no sparse BA available, fallback to dense BA.");
   }
 }
 
@@ -111,6 +113,10 @@ bool Bundle_Adjustment_Ceres::Adjust(
   SfM_Data & sfm_data,     // the SfM scene to refine
   BA_Refine refineOptions)
 {
+  // Ensure we are not using incompatible options:
+  //  - BA_REFINE_INTRINSICS_OPTICALCENTER_ALWAYS and BA_REFINE_INTRINSICS_OPTICALCENTER_IF_ENOUGH_DATA cannot be used at the same time
+  assert(!((refineOptions & BA_REFINE_INTRINSICS_OPTICALCENTER_ALWAYS) && (refineOptions & BA_REFINE_INTRINSICS_OPTICALCENTER_IF_ENOUGH_DATA)));
+  
   //----------
   // Add camera parameters
   // - intrinsics
@@ -123,7 +129,6 @@ bool Bundle_Adjustment_Ceres::Adjust(
   ceres::Problem problem;
 
   // Data wrapper for refinement:
-  Hash_Map<IndexT, std::vector<double> > map_intrinsics;
   Hash_Map<IndexT, std::vector<double> > map_poses;
   
   // Setup Poses data & subparametrization
@@ -180,27 +185,120 @@ bool Bundle_Adjustment_Ceres::Adjust(
     }
   }
 
+  Hash_Map<IndexT, std::size_t> intrinsicsUsage;
+
   // Setup Intrinsics data & subparametrization
-  for (Intrinsics::const_iterator itIntrinsic = sfm_data.intrinsics.begin();
-    itIntrinsic != sfm_data.intrinsics.end(); ++itIntrinsic)
+  const bool refineIntrinsicsOpticalCenter = (refineOptions & BA_REFINE_INTRINSICS_OPTICALCENTER_ALWAYS) || (refineOptions & BA_REFINE_INTRINSICS_OPTICALCENTER_IF_ENOUGH_DATA);
+  const bool refineIntrinsics = (refineOptions & BA_REFINE_INTRINSICS_FOCAL) ||
+                                (refineOptions & BA_REFINE_INTRINSICS_DISTORTION) ||
+                                refineIntrinsicsOpticalCenter;
+  for(const auto& itView: sfm_data.GetViews())
   {
-    const IndexT indexCam = itIntrinsic->first;
-
-    if (isValid(itIntrinsic->second->getType()))
+    const View* v = itView.second.get();
+    if (sfm_data.IsPoseAndIntrinsicDefined(v))
     {
-      map_intrinsics[indexCam] = itIntrinsic->second->getParams();
-
-      double * parameter_block = &map_intrinsics[indexCam][0];
-      problem.AddParameterBlock(parameter_block, map_intrinsics[indexCam].size());
-      if (!(refineOptions & BA_REFINE_INTRINSICS))
-      {
-        //set the whole parameter block as constant for best performance.
-        problem.SetParameterBlockConstant(parameter_block);
-      }
+      if(intrinsicsUsage.find(v->id_intrinsic) == intrinsicsUsage.end())
+        intrinsicsUsage[v->id_intrinsic] = 1;
+      else
+        ++intrinsicsUsage[v->id_intrinsic];
     }
     else
     {
-      std::cerr << "Unsupported camera type." << std::endl;
+      if(intrinsicsUsage.find(v->id_intrinsic) == intrinsicsUsage.end())
+        intrinsicsUsage[v->id_intrinsic] = 0;
+    }
+  }
+
+  Hash_Map<IndexT, std::vector<double> > map_intrinsics;
+  // Setup Intrinsics data & subparametrization
+  for(const auto& itIntrinsic: sfm_data.GetIntrinsics())
+  {
+    const IndexT idIntrinsics = itIntrinsic.first;
+    if(intrinsicsUsage[idIntrinsics] == 0)
+    {
+      continue;
+    }
+    assert(isValid(itIntrinsic.second->getType()));
+    map_intrinsics[idIntrinsics] = itIntrinsic.second->getParams();
+
+    double * parameter_block = &map_intrinsics[idIntrinsics][0];
+    problem.AddParameterBlock(parameter_block, map_intrinsics[idIntrinsics].size());
+    if (!refineIntrinsics)
+    {
+      // Nothing to refine in the intrinsics,
+      // so set the whole parameter block as constant with better performances.
+      problem.SetParameterBlockConstant(parameter_block);
+    }
+    else
+    {
+      std::vector<int> vec_constant_params;
+      // Focal length
+      if(refineOptions & BA_REFINE_INTRINSICS_FOCAL)
+      {
+        // Refine the focal length
+        if(itIntrinsic.second->initialFocalLengthPix() > 0)
+        {
+          // If we have an initial guess, we only authorize a margin around this value.
+          assert(map_intrinsics[idIntrinsics].size() >= 1);
+          const unsigned int maxFocalErr = 0.2 * std::max(itIntrinsic.second->w(), itIntrinsic.second->h());
+          problem.SetParameterLowerBound(parameter_block, 0, (double)itIntrinsic.second->initialFocalLengthPix() - maxFocalErr);
+          problem.SetParameterUpperBound(parameter_block, 0, (double)itIntrinsic.second->initialFocalLengthPix() + maxFocalErr);
+        }
+        else // no initial guess
+        {
+          // We don't have an initial guess, but we assume that we use
+          // a converging lens, so the focal length should be positive.
+          problem.SetParameterLowerBound(parameter_block, 0, 0.0);
+        }
+      }
+      else
+      {
+        // Set focal length as constant
+        vec_constant_params.push_back(0);
+      }
+
+      const std::size_t minImagesForOpticalCenter = 3;
+
+      // Optical center
+      if((refineOptions & BA_REFINE_INTRINSICS_OPTICALCENTER_ALWAYS) ||
+         ((refineOptions & BA_REFINE_INTRINSICS_OPTICALCENTER_IF_ENOUGH_DATA) && intrinsicsUsage[idIntrinsics] > minImagesForOpticalCenter)
+         )
+      {
+        // Refine optical center within 10% of the image size.
+        assert(map_intrinsics[idIntrinsics].size() >= 3);
+        
+        const double opticalCenterMinPercent = 0.45;
+        const double opticalCenterMaxPercent = 0.55;
+        
+        // Add bounds to the principal point
+        problem.SetParameterLowerBound(parameter_block, 1, opticalCenterMinPercent * itIntrinsic.second->w());
+        problem.SetParameterUpperBound(parameter_block, 1, opticalCenterMaxPercent * itIntrinsic.second->w());
+
+        problem.SetParameterLowerBound(parameter_block, 2, opticalCenterMinPercent * itIntrinsic.second->h());
+        problem.SetParameterUpperBound(parameter_block, 2, opticalCenterMaxPercent * itIntrinsic.second->h());
+      }
+      else
+      {
+        // Don't refine the optical center
+        vec_constant_params.push_back(1);
+        vec_constant_params.push_back(2);
+      }
+
+      // Lens distortion
+      if(!(refineOptions & BA_REFINE_INTRINSICS_DISTORTION))
+      {
+        for(std::size_t i = 3; i < map_intrinsics[idIntrinsics].size(); ++i)
+        {
+          vec_constant_params.push_back(i);
+        }
+      }
+
+      if(!vec_constant_params.empty())
+      {
+        ceres::SubsetParameterization *subset_parameterization =
+          new ceres::SubsetParameterization(map_intrinsics[idIntrinsics].size(), vec_constant_params);
+        problem.SetParameterization(parameter_block, subset_parameterization);
+      }
     }
   }
 
@@ -253,12 +351,12 @@ bool Bundle_Adjustment_Ceres::Adjust(
   ceres::Solver::Summary summary;
   ceres::Solve(options, &problem, &summary);
   if (_openMVG_options._bCeres_Summary)
-    std::cout << summary.FullReport() << std::endl;
+    OPENMVG_LOG_DEBUG(summary.FullReport());
 
   // If no error, get back refined parameters
   if (!summary.IsSolutionUsable())
   {
-    std::cout << "WARNING: Bundle Adjustment failed." << std::endl;
+    OPENMVG_LOG_WARNING("Bundle Adjustment failed.");
     return false;
   }
 
@@ -266,17 +364,17 @@ bool Bundle_Adjustment_Ceres::Adjust(
   if (_openMVG_options._bVerbose)
   {
     // Display statistics about the minimization
-    std::cout << std::endl
-      << "Bundle Adjustment statistics (approximated RMSE):\n"
-      << " #views: " << sfm_data.views.size() << "\n"
-      << " #poses: " << sfm_data.poses.size() << "\n"
-      << " #intrinsics: " << sfm_data.intrinsics.size() << "\n"
-      << " #tracks: " << sfm_data.structure.size() << "\n"
-      << " #residuals: " << summary.num_residuals << "\n"
-      << " Initial RMSE: " << std::sqrt( summary.initial_cost / summary.num_residuals) << "\n"
-      << " Final RMSE: " << std::sqrt( summary.final_cost / summary.num_residuals) << "\n"
-      << " Time (s): " << summary.total_time_in_seconds << "\n"
-      << std::endl;
+    OPENMVG_LOG_DEBUG(
+      "Bundle Adjustment statistics (approximated RMSE):\n"
+      " #views: " << sfm_data.views.size() << "\n"
+      " #poses: " << sfm_data.poses.size() << "\n"
+      " #intrinsics: " << sfm_data.intrinsics.size() << "\n"
+      " #tracks: " << sfm_data.structure.size() << "\n"
+      " #residuals: " << summary.num_residuals << "\n"
+      " Initial RMSE: " << std::sqrt( summary.initial_cost / summary.num_residuals) << "\n"
+      " Final RMSE: " << std::sqrt( summary.final_cost / summary.num_residuals) << "\n"
+      " Time (s): " << summary.total_time_in_seconds << "\n"
+      );
   }
 
   // Update camera poses with refined data
@@ -297,15 +395,11 @@ bool Bundle_Adjustment_Ceres::Adjust(
   }
 
   // Update camera intrinsics with refined data
-  if ((refineOptions & BA_REFINE_INTRINSICS))
+  if (refineIntrinsics)
   {
-    for (Intrinsics::iterator itIntrinsic = sfm_data.intrinsics.begin();
-      itIntrinsic != sfm_data.intrinsics.end(); ++itIntrinsic)
+    for (const auto& intrinsicsV: map_intrinsics)
     {
-      const IndexT indexCam = itIntrinsic->first;
-
-      const std::vector<double> & vec_params = map_intrinsics[indexCam];
-      itIntrinsic->second.get()->updateFromParams(vec_params);
+      sfm_data.intrinsics[intrinsicsV.first]->updateFromParams(intrinsicsV.second);
     }
   }
   return true;

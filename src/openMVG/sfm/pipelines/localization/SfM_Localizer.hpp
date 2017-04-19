@@ -10,26 +10,34 @@
 #include "openMVG/numeric/numeric.h"
 #include "openMVG/sfm/sfm_data.hpp"
 #include "openMVG/sfm/pipelines/sfm_regions_provider.hpp"
+#include <openMVG/robust_estimation/robust_estimators.hpp>
+
+#include <cstddef>
+#include <limits>
 
 namespace openMVG {
 namespace sfm {
 
 struct Image_Localizer_Match_Data
 {
-  Mat34 projection_matrix; // 3x4 matrix represented the estimated camera pose.
+  /// 3x4 matrix represented the estimated camera pose.
+  Mat34 projection_matrix; 
   
-  Mat pt3D; // 3xN matrix storing all the 3D points whose images have been found
-            // in the query view through the feature matching procedure.
+  /// 3xN matrix storing all the 3D points whose images have been found
+  /// in the query view through the feature matching procedure.
+  Mat pt3D; 
   
-  Mat pt2D; // 2xN matrix storing all 2D distorted points associated to 3D points (pt3D)
-            // found through the feature matching procedure.
+  /// 2xN matrix storing all 2D distorted points associated to 3D points (pt3D)
+  /// found through the feature matching procedure.
+  Mat pt2D;
   
-  // pt2D and pt3D have the same number of columns.
-  std::vector<size_t> vec_inliers; // Index mask for both pt3D and pt2D whose elements
-                                   // represent the column indices of inliers in  pt2D 
-                                   // and pt3D.
+  /// pt2D and pt3D have the same number of columns.
+  /// Index mask for both pt3D and pt2D whose elements
+  /// represent the column indices of inliers in  pt2D 
+  /// and pt3D.
+  std::vector<std::size_t> vec_inliers;
   
-  // Upper bound pixel(s) tolerance for residual errors
+  /// Upper bound pixel(s) tolerance for residual errors
   double error_max = std::numeric_limits<double>::infinity();
   size_t max_iteration = 4096;
 };
@@ -80,6 +88,8 @@ public:
   * @param[in,out] resection_data matching data (with filled 2D-3D correspondences). 
    * The 2D points are supposed to be the original distorted image points
   * @param[out] pose found pose
+  * @param[in] estimator The type of robust estimator to use. The only supported 
+   * frameworks are ROBUST_ESTIMATOR_ACRANSAC and ROBUST_ESTIMATOR_LORANSAC.
   * @return True if a putative pose has been estimated
   */
   static bool Localize
@@ -87,7 +97,8 @@ public:
     const Pair & image_size,
     const cameras::IntrinsicBase * optional_intrinsics,
     Image_Localizer_Match_Data & resection_data,
-    geometry::Pose3 & pose
+    geometry::Pose3 & pose,
+    robust::EROBUST_ESTIMATOR estimator = robust::ROBUST_ESTIMATOR_ACRANSAC
   );
 
   /**
@@ -109,6 +120,7 @@ public:
     bool b_refine_intrinsic
   );
 };
+
 
 } // namespace sfm
 } // namespace openMVG

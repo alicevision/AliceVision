@@ -1,9 +1,12 @@
-#ifndef DATASHEET_HPP
-#define DATASHEET_HPP
+#pragma once
 
 #include "openMVG/stl/split.hpp"
 #include <iterator>
 #include <algorithm>
+
+namespace openMVG {
+namespace exif {
+namespace sensordb {
 
 // Database structure
 struct Datasheet
@@ -36,7 +39,7 @@ struct Datasheet
       std::string brandlower2 = *iter_brand;
       std::transform(brandlower2.begin(), brandlower2.end(),
         brandlower2.begin(), ::tolower);
-      //std::cout << brandlower << "\t" << brandlower2 << std::endl;
+      //OPENMVG_LOG_DEBUG(brandlower << "\t" << brandlower2);
       if ( brandlower.compare( brandlower2 ) == 0 )
       {
         std::vector<std::string> vec_model1;
@@ -98,6 +101,6 @@ struct Datasheet
   double _sensorSize;
 };
 
-
-#endif // DATASHEET_HPP
-
+}
+}
+}

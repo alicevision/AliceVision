@@ -6,6 +6,7 @@
  */
 
 #include <openMVG/voctree/tree_builder.hpp>
+#include <openMVG/logger.hpp>
 
 #include <testing/testing.h>
 
@@ -55,27 +56,9 @@ TEST(voctree, voctreeBuilder)
   voctree::TreeBuilder<FeatureFloat> builder(FeatureFloat::Zero());
   builder.setVerbose(0);
   builder.kmeans().setRestarts(10);
-  std::cout << "Building a tree of L = " << LEVELS << " levels with a branching factor of k = " << K << std::endl;
+  OPENMVG_LOG_DEBUG("Building a tree of L = " << LEVELS << " levels with a branching factor of k = " << K);
   builder.build(features, K, LEVELS);
-  std::cout << builder.tree().centers().size() << " centers" << std::endl;
-
-//  // if we quantize the features, considering each created cluster as a document, 
-//  // every feature in the cluster should be assigned to the same visual word
-//  for(std::size_t i = 0; i < LEAVESNUMBER; ++i)
-//  {
-//    // get the visual word of the first element
-//    const voctree::Word &vword = builder.tree().quantize(features[i * FEATURENUMBER ]);
-//    for(std::size_t j = 1; j < FEATURENUMBER; ++j)
-//    {
-//      // it should be true but it is not always the case
-////      BOOST_WARN_NE(vword, builder.tree().quantize(features[i * FEATURENUMBER + j ]));
-//      if(vword != builder.tree().quantize(features[i * FEATURENUMBER + j ]))
-//      {
-//        std::cerr << "Warning: feature " << j << " not assigned to his visual word " 
-//                << i << " (visual word "<< vword << " instead)" << std::endl; 
-//      }
-//    }
-//  }
+  OPENMVG_LOG_DEBUG(builder.tree().centers().size() << " centers");
 
   // the centers should all be valid in this configuration
   std::vector<uint8_t> valid = builder.tree().validCenters();

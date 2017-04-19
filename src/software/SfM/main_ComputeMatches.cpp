@@ -31,6 +31,7 @@
 
 #include <cstdlib>
 #include <fstream>
+#include <cctype>
 
 using namespace openMVG;
 using namespace openMVG::cameras;
@@ -93,7 +94,6 @@ int main(int argc, char **argv)
   std::string sPredefinedPairList = "";
   int rangeStart = -1;
   int rangeSize = 0;
-  bool bUpRight = false;
   std::string sNearestMatchingMethod = "AUTO";
   bool bForce = false;
   bool bSavePutativeMatches = false;
@@ -328,11 +328,9 @@ int main(int argc, char **argv)
   {
     vec_fileNames.reserve(sfm_data.GetViews().size());
     vec_imagesSize.reserve(sfm_data.GetViews().size());
-    for(Views::const_iterator iter = sfm_data.GetViews().begin();
-      iter != sfm_data.GetViews().end();
-      ++iter)
+    for(const auto& iter : sfm_data.GetViews())
     {
-      const View * v = iter->second.get();
+      const View * v = iter.second.get();
       vec_fileNames.push_back(stlplus::create_filespec(sfm_data.s_root_path,
           std::to_string(v->id_view)));
       vec_imagesSize.push_back( std::make_pair( v->ui_width, v->ui_height) );

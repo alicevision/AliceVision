@@ -9,13 +9,16 @@
 
 #include "openMVG/multiview/test_data_sets.hpp"
 #include "openMVG/numeric/numeric.h"
+#include <openMVG/config.hpp>
 #include "testing/testing.h"
 
 #include "openMVG/multiview/projection.hpp"
 
 #include "openMVG/linearProgramming/linearProgrammingInterface.hpp"
 #include "openMVG/linearProgramming/linearProgrammingOSI_X.hpp"
+#if OPENMVG_IS_DEFINED(OPENMVG_HAVE_MOSEK)
 #include "openMVG/linearProgramming/linearProgrammingMOSEK.hpp"
+#endif
 
 #include "openMVG/linearProgramming/bisectionLP.hpp"
 #include "openMVG/linearProgramming/lInfinityCV/triangulation.hpp"
@@ -83,7 +86,7 @@ TEST(lInfinityCV, Triangulation_OSICLPSOLVER) {
   d2.ExportToPLY("test_After_Infinity_Triangulation_OSICLP.ply");
 }
 
-#ifdef OPENMVG_HAVE_MOSEK
+#if OPENMVG_IS_DEFINED(OPENMVG_HAVE_MOSEK)
 TEST(computervision, Triangulation_MOSEK) {
 
   NViewDataSet d = NRealisticCamerasRing(6, 10,

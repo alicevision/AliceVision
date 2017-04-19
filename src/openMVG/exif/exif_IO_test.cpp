@@ -5,6 +5,7 @@
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 #include "exif_IO_EasyExif.hpp"
+#include "openMVG/logger.hpp"
 
 #include "testing/testing.h"
 #include "third_party/stlplus3/filesystemSimplified/file_system.hpp"
@@ -33,11 +34,11 @@ TEST(Matching, Exif_IO_easyexif_ReadData)
 {
   std::unique_ptr<Exif_IO> exif_io(new Exif_IO_EasyExif(sImg));
 
-  std::cout << "Read Metadata of file: " << sImg << std::endl;
+  OPENMVG_LOG_DEBUG("Read Metadata of file: " << sImg);
 
-  std::cout << "-----" << std::endl;
-  std::cout << exif_io->getExifDataString() << std::endl;
-  std::cout << "-----" << std::endl;
+  OPENMVG_LOG_DEBUG("-----");
+  OPENMVG_LOG_DEBUG(exif_io->getExifDataString());
+  OPENMVG_LOG_DEBUG("-----");
 
   EXPECT_TRUE(exif_io->doesHaveExifInfo());
 

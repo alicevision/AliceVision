@@ -46,9 +46,7 @@ TARGET_LINK_LIBRARIES(openMVG_main_ComputeFeatures
   )
 
 IF(OpenMVG_USE_CCTAG)
-TARGET_LINK_LIBRARIES(openMVG_main_ComputeFeatures
-  ${CCTAG_LIBRARIES}
-  )
+TARGET_LINK_LIBRARIES(openMVG_main_ComputeFeatures CCTag::CCTag)
 ENDIF(OpenMVG_USE_CCTAG)
 
 ADD_EXECUTABLE(openMVG_main_ComputeMatches main_ComputeMatches.cpp)
@@ -95,13 +93,16 @@ TARGET_LINK_LIBRARIES(openMVG_main_GlobalSfM
   stlplus
   )
 
-ADD_EXECUTABLE(openMVG_main_ConvertSfM_DataFormat main_ConvertSfM_DataFormat.cpp)
-TARGET_LINK_LIBRARIES(openMVG_main_ConvertSfM_DataFormat
+add_executable(openMVG_main_ConvertSfM_DataFormat main_ConvertSfM_DataFormat.cpp)
+target_link_libraries(openMVG_main_ConvertSfM_DataFormat
   openMVG_system
   openMVG_features
   openMVG_sfm
   stlplus
   )
+if(Boost_FOUND)
+target_link_libraries(openMVG_main_ConvertSfM_DataFormat ${Boost_LIBRARIES})
+endif()
 
 ADD_EXECUTABLE(openMVG_main_Align main_Align.cpp)
 TARGET_LINK_LIBRARIES(openMVG_main_Align
@@ -134,7 +135,8 @@ TARGET_LINK_LIBRARIES(openMVG_main_ComputeCCTagStructureFromKnownPoses
   openMVG_features
   openMVG_sfm
   stlplus
-  ${CCTAG_LIBRARIES}
+  CCTag::CCTag
+  ${Boost_LIBRARIES}
   )
 SET_PROPERTY(TARGET openMVG_main_ComputeCCTagStructureFromKnownPoses PROPERTY FOLDER OpenMVG/software)
 INSTALL(TARGETS openMVG_main_ComputeCCTagStructureFromKnownPoses DESTINATION bin/)
@@ -160,6 +162,15 @@ TARGET_LINK_LIBRARIES(openMVG_main_rigTransform
     target_link_libraries(openMVG_main_rigTransform openMVG_sfm ${ABC_LIBRARIES})
 endif()
 
+IF(OpenMVG_USE_ALEMBIC)
+  ADD_EXECUTABLE(openMVG_main_ConvertAnimatedCamera main_ConvertAnimatedCamera.cpp)
+  TARGET_LINK_LIBRARIES(openMVG_main_ConvertAnimatedCamera
+    openMVG_system
+    openMVG_features
+    openMVG_sfm
+    stlplus
+  )
+ENDIF(OpenMVG_USE_ALEMBIC)
 
 # Installation rules
 SET_PROPERTY(TARGET openMVG_main_IncrementalSfM PROPERTY FOLDER OpenMVG/software)
@@ -176,6 +187,10 @@ SET_PROPERTY(TARGET openMVG_main_ComputeStructureFromKnownPoses PROPERTY FOLDER 
 INSTALL(TARGETS openMVG_main_ComputeStructureFromKnownPoses DESTINATION bin/)
 SET_PROPERTY(TARGET openMVG_main_ComputeSfM_DataColor PROPERTY FOLDER OpenMVG/software)
 INSTALL(TARGETS openMVG_main_ComputeSfM_DataColor DESTINATION bin/)
+IF(OpenMVG_USE_ALEMBIC)
+  SET_PROPERTY(TARGET openMVG_main_ConvertAnimatedCamera PROPERTY FOLDER OpenMVG/software)
+  INSTALL(TARGETS openMVG_main_ConvertAnimatedCamera DESTINATION bin/)
+ENDIF(OpenMVG_USE_ALEMBIC)
 
 ###
 # SfM tools to visualize feature tracking data
@@ -263,6 +278,17 @@ TARGET_LINK_LIBRARIES(openMVG_main_openMVG2CMPMVS
   stlplus
   )
 
+# - Export a SfM openMVG scene to CMPMVS format
+#
+ADD_EXECUTABLE(openMVG_main_openMVG2CMPMVS2 main_openMVG2CMPMVS2.cpp)
+TARGET_LINK_LIBRARIES(openMVG_main_openMVG2CMPMVS2
+  openMVG_system
+  openMVG_image
+  openMVG_features
+  openMVG_sfm
+  stlplus
+  )
+
 
 # - Export a SfM openMVG scene to MVE(v2) format
 #
@@ -312,6 +338,8 @@ SET_PROPERTY(TARGET openMVG_main_openMVG2PMVS PROPERTY FOLDER OpenMVG/software)
 INSTALL(TARGETS openMVG_main_openMVG2PMVS DESTINATION bin/)
 SET_PROPERTY(TARGET openMVG_main_openMVG2CMPMVS PROPERTY FOLDER OpenMVG/software)
 INSTALL(TARGETS openMVG_main_openMVG2CMPMVS DESTINATION bin/)
+SET_PROPERTY(TARGET openMVG_main_openMVG2CMPMVS2 PROPERTY FOLDER OpenMVG/software)
+INSTALL(TARGETS openMVG_main_openMVG2CMPMVS2 DESTINATION bin/)
 SET_PROPERTY(TARGET openMVG_main_openMVG2MESHLAB PROPERTY FOLDER OpenMVG/software)
 INSTALL(TARGETS openMVG_main_openMVG2MESHLAB DESTINATION bin/)
 SET_PROPERTY(TARGET openMVG_main_openMVG2MVSTEXTURING PROPERTY FOLDER OpenMVG/software)

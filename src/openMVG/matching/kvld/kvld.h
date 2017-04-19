@@ -121,30 +121,17 @@ public:
 
 		diff[ 0 ] *= 0.36;
 		diff[ 1 ] *= 0.64 / ( binNum );
-    //std::cout<<"diff = "<<diff[0]<<" "<<diff[1]<<std::endl;
+    //OPENMVG_LOG_DEBUG("diff = "<<diff[0]<<" "<<diff[1]);
 		return diff[ 0 ] + diff[ 1 ];
 	}
 
   inline void test() const
   {
-    std::cout << "contrast = " << contrast << std::endl;
-    std::cout << std::endl << "distance= " << distance << std::endl;
+    OPENMVG_LOG_DEBUG("contrast: " << contrast);
+    OPENMVG_LOG_DEBUG("distance: " << distance);
 
-    std::cout << "weights   : ";
-    for( int i = 0; i < dimension; i++ )
-    {
-      std::cout << weight[ i ] << " ";
-    }
-    std::cout << std::endl;
-    for( int i = 0; i < dimension; i++ )
-    {
-      //cout<<"principle= "<<principleAngle[i]<<endl;
-      for( int j = 0; j < subdirection; j++ )
-      {
-        std::cout << descriptor[ i * subdirection + j ] << " ";
-      }
-      std::cout << std::endl;
-    }
+    OPENMVG_LOG_DEBUG("weights: " << weight);
+    OPENMVG_LOG_DEBUG("descriptor: " << descriptor);
   }
 
 };

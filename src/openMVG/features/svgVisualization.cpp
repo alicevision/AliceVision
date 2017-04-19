@@ -1,5 +1,6 @@
 #include "svgVisualization.hpp"
-#if HAVE_CCTAG
+#include <openMVG/config.hpp>
+#if OPENMVG_IS_DEFINED(OPENMVG_HAVE_CCTAG)
 #include "cctag/CCTAG_describer.hpp"
 #endif
 #include "third_party/vectorGraphics/svgDrawer.hpp"
@@ -81,10 +82,9 @@ void saveKeypoints2SVG(const std::string &inputImagePath,
     if(richKeypoint)
     {
       // compute the coordinate of the point on the circle used to draw the orientation line
-      const float pointX = kpt.x()+std::cos(kpt.orientation())*kpt.scale()*radius;
-      const float pointY = kpt.y()+std::sin(kpt.orientation())*kpt.scale()*radius;
+      const Vec2f point = kpt.coords() + kpt.getScaledOrientationVector() * radius;
       svgStream.drawLine(kpt.x(), kpt.y(), 
-                         pointX, pointY,
+                         point(0), point(1),
                          svg::svgStyle().stroke("yellow", strokeWidth));
     }
   }
@@ -254,16 +254,16 @@ void saveEpipolarGeometry2SVG(const std::string &imagePath,
       epiLine = Fmat * Vec3(other.x(), other.y(), 1.0);
     }
 
-    //    std::cout << "test 1 o*F*p " << (Fmat*Vec3(p.x(), p.y(), 1.0)).transpose()*Vec3(other.x(), other.y(), 1.0) << std::endl;
-    //    std::cout << "test 2 p*F*o " << (Fmat.transpose()*Vec3(p.x(), p.y(), 1.0)).transpose()*Vec3(other.x(), other.y(), 1.0) << std::endl;
-    //    std::cout << "epiline\n" << epiLine << " dotprod " << (epiLine.dot(Vec3(p.x(), p.y(), 1.0))) << std::endl;
+    //    OPENMVG_LOG_DEBUG("test 1 o*F*p " << (Fmat*Vec3(p.x(), p.y(), 1.0)).transpose()*Vec3(other.x(), other.y(), 1.0));
+    //    OPENMVG_LOG_DEBUG("test 2 p*F*o " << (Fmat.transpose()*Vec3(p.x(), p.y(), 1.0)).transpose()*Vec3(other.x(), other.y(), 1.0));
+    //    OPENMVG_LOG_DEBUG("epiline\n" << epiLine << " dotprod " << (epiLine.dot(Vec3(p.x(), p.y(), 1.0))));
     std::vector<Vec2> pts;
     if(lineToBorderPoints(epiLine, imageSize.first, imageSize.second, pts))
     {
-      //      std::cout << "pt1*epiline " << (epiLine.transpose()*Vec3(pts[0](0), pts[0](1), 1)) << std::endl;
-      //      std::cout << "pt1 " << pts[0] << std::endl;
-      //      std::cout << "pt2*epiline " << (epiLine.transpose()*Vec3(pts[1](0), pts[1](1), 1)) << std::endl;
-      //      std::cout << "pt2 " << pts[1] << std::endl;
+      //      OPENMVG_LOG_DEBUG("pt1*epiline " << (epiLine.transpose()*Vec3(pts[0](0), pts[0](1), 1)));
+      //      OPENMVG_LOG_DEBUG("pt1 " << pts[0]);
+      //      OPENMVG_LOG_DEBUG("pt2*epiline " << (epiLine.transpose()*Vec3(pts[1](0), pts[1](1), 1)));
+      //      OPENMVG_LOG_DEBUG("pt2 " << pts[1]);
       if(count > 7)
         svgStream.drawLine(pts[0](0), pts[0](1), pts[1](0), pts[1](1), svg::svgStyle().stroke("green", strokeWidth));
       else
@@ -271,11 +271,11 @@ void saveEpipolarGeometry2SVG(const std::string &imagePath,
     }
     else
     {
-      std::cerr << "********** pts size: " << pts.size() << " epiline " << epiLine << " out of image" << std::endl;
+      OPENMVG_LOG_DEBUG("********** pts size: " << pts.size() << " epiline " << epiLine << " out of image");
       if(pts.size() > 0)
       {
         svgStream.drawLine(pts[0](0), pts[0](1), p.x(), p.y(), svg::svgStyle().stroke("red", 10 * strokeWidth));
-        std::cerr << "********** pts: " << pts[0].transpose() << std::endl;
+        OPENMVG_LOG_DEBUG("********** pts: " << pts[0].transpose());
       }
     }
     ++count;
@@ -292,27 +292,27 @@ void saveEpipolarGeometry2SVG(const std::string &imagePath,
 
   if(epipole.cols() > 1)
   {
-    std::cerr << "F has kernel of size " << epipole.cols() << std::endl << epipole << std::endl;
+    OPENMVG_LOG_WARNING("F has kernel of size " << epipole.cols() << ":\n" << epipole);
   }
   else
   {
     // normalize coordinates
     Vec3 point = epipole.col(0);
-    std::cout << "epipole:\n" << point << std::endl;
+    OPENMVG_LOG_DEBUG("epipole:\n" << point);
     //@todo check 0
     point /= point(2);
-    std::cout << "epipole normalized:\n" << point << std::endl;
+    OPENMVG_LOG_DEBUG("epipole normalized:\n" << point);
     // check if the point is inside the image
     if(!((point(0) > 0 && point(0) < imageSize.first) &&
             (point(1) > 0 && point(1) < imageSize.second)))
     {
-      std::cout << "epipole outside the image:\n" << point << std::endl;
+      OPENMVG_LOG_DEBUG("epipole outside the image:\n" << point);
       // point outside the image, clamp it to the borders
       if(point(0) < 0) point(0) = 0;
       if(point(0) > imageSize.first) point(0) = imageSize.first;
       if(point(1) < 0) point(1) = 0;
       if(point(1) > imageSize.second) point(0) = imageSize.second;
-      std::cout << "clamped epipole:\n" << point << std::endl;
+      OPENMVG_LOG_DEBUG("clamped epipole:\n" << point);
     }
     svgStream.drawCircle(point(0), point(1), 3 * radius, svg::svgStyle().stroke("red", strokeWidth).fill("red"));
   }
@@ -360,7 +360,7 @@ void saveMatchesAsMotion(const std::string &imagePath,
   svgFile.close();
 }
 
-#if HAVE_CCTAG
+#if OPENMVG_IS_DEFINED(OPENMVG_HAVE_CCTAG)
 
 void saveCCTag2SVG(const std::string &inputImagePath,
                       const std::pair<size_t,size_t> & imageSize,
@@ -436,7 +436,7 @@ void saveCCTagMatches2SVG(const std::string &imagePathLeft,
     const IndexT cctagIdRight = features::getCCTagId(descRight[m._j]);
     if ( cctagIdLeft == UndefinedIndexT || cctagIdRight == UndefinedIndexT )
     {
-      std::cerr << "[svg]\tWarning! cctagIdLeft " << cctagIdLeft << " " << "cctagIdRight " << cctagIdRight << std::endl;
+      OPENMVG_LOG_WARNING("[svg]\tWarning! cctagIdLeft " << cctagIdLeft << " " << "cctagIdRight " << cctagIdRight);
       continue;
     }
     

@@ -94,7 +94,7 @@ Matcher_Regions_Database::Matcher_Regions_Database
         }
         break;
         default:
-          std::cerr << "Using unknown matcher type" << std::endl;
+          OPENMVG_LOG_WARNING("Using unknown matcher type");
       }
     }
     else if (database_regions.Type_id() == typeid(float).name())
@@ -124,7 +124,7 @@ Matcher_Regions_Database::Matcher_Regions_Database
         }
         break;
         default:
-          std::cerr << "Using unknown matcher type" << std::endl;
+          OPENMVG_LOG_WARNING("Using unknown matcher type");
       }
     }
     else if (database_regions.Type_id() == typeid(double).name())
@@ -148,11 +148,11 @@ Matcher_Regions_Database::Matcher_Regions_Database
         break;
         case CASCADE_HASHING_L2:
         {
-          std::cerr << "Not yet implemented" << std::endl;
+          OPENMVG_LOG_WARNING("Not yet implemented");
         }
         break;
         default:
-          std::cerr << "Using unknown matcher type" << std::endl;
+          OPENMVG_LOG_WARNING("Using unknown matcher type");
       }
     }
   }
@@ -168,13 +168,13 @@ Matcher_Regions_Database::Matcher_Regions_Database
       }
       break;
       default:
-          std::cerr << "Using unknown matcher type" << std::endl;
+          OPENMVG_LOG_WARNING("Using unknown matcher type");
     }
   }
   else
   {
-    std::cerr << "Please consider add this region type_id to Matcher_Regions_Database::Match(...)\n"
-      << "typeid: " << database_regions.Type_id() << std::endl;
+    OPENMVG_LOG_WARNING("Please consider add this region type_id to Matcher_Regions_Database::Match(...)\n"
+      << "typeid: " << database_regions.Type_id());
   }
 }
 

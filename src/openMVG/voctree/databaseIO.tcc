@@ -1,6 +1,8 @@
 #include "descriptor_loader.hpp"
 
+#include <openMVG/logger.hpp>
 #include <openMVG/sfm/sfm_data_io.hpp>
+#include <openMVG/config.hpp>
 
 #include <boost/filesystem.hpp>
 #include <boost/algorithm/string/case_conv.hpp>
@@ -16,7 +18,10 @@ namespace voctree {
 /**
  * @brief Given a vocabulary tree and a set of features it builds a database
  *
- * @param[in] fileFullPath A file containing the path the features to load, it could be a .txt or an OpenMVG .json
+ * @param[in] fileFullPath A file containing the path the features to load, 
+ * it could be a .txt or an OpenMVG .json or the path to a directory containing
+ * the feature. In the case of a json, it is assumed that the descriptors are
+ * in the same folder as the file. 
  * @param[in] tree The vocabulary tree to be used for feature quantization
  * @param[out] db The built database
  * @param[out] documents A map containing for each image the list of associated visual words
@@ -34,7 +39,7 @@ std::size_t populateDatabase(const std::string &fileFullPath,
   std::size_t numDescriptors = 0;
   
   // Read the descriptors
-  std::cout << "Reading the descriptors from " << descriptorsFiles.size() <<" files..." << std::endl;
+  OPENMVG_LOG_DEBUG("Reading the descriptors from " << descriptorsFiles.size() <<" files...");
   boost::progress_display display(descriptorsFiles.size());
 
   // Run through the path vector and read the descriptors
@@ -74,7 +79,7 @@ std::size_t populateDatabase(const std::string &fileFullPath,
   std::size_t numDescriptors = 0;
 
   // Read the descriptors
-  std::cout << "Reading the descriptors from " << descriptorsFiles.size() <<" files..." << std::endl;
+  OPENMVG_LOG_DEBUG("Reading the descriptors from " << descriptorsFiles.size() <<" files...");
   boost::progress_display display(descriptorsFiles.size());
 
   // Run through the path vector and read the descriptors
@@ -158,14 +163,12 @@ void queryDatabase(const std::string &fileFullPath,
   getListOfDescriptorFiles(fileFullPath, descriptorsFiles);
   
   // Read the descriptors
-  std::cout << "queryDatabase: Reading the descriptors from " << descriptorsFiles.size() <<" files..." << std::endl;
+  OPENMVG_LOG_DEBUG("queryDatabase: Reading the descriptors from " << descriptorsFiles.size() << " files...");
   boost::progress_display display(descriptorsFiles.size());
 
-  #ifdef OPENMVG_USE_OPENMP
-    #pragma omp parallel for
-  #endif
+  #pragma omp parallel for
   // Run through the path vector and read the descriptors
-  for(std::size_t i = 0; i < descriptorsFiles.size(); ++i)
+  for(ptrdiff_t i = 0; i < static_cast<ptrdiff_t>(descriptorsFiles.size()); ++i)
   {
     std::map<IndexT, std::string>::const_iterator currentFileIt = descriptorsFiles.cbegin();
     std::advance(currentFileIt, i);
@@ -180,10 +183,7 @@ void queryDatabase(const std::string &fileFullPath,
     openMVG::voctree::DocMatches docMatches;
     // query the database
     db.find(query, numResults, docMatches, distanceMethod);
-
-    #ifdef OPENMVG_USE_OPENMP
-      #pragma omp critical
-    #endif
+    #pragma omp critical
     {
       // add the vector to the documents
       documents[currentFileIt->first] = query;
@@ -218,7 +218,7 @@ void voctreeStatistics(
   getListOfDescriptorFiles(fileFullPath, descriptorsFiles);
   
   // Read the descriptors
-  std::cout << "Reading the descriptors from " << descriptorsFiles.size() << " files." << std::endl;
+  OPENMVG_LOG_DEBUG("Reading the descriptors from " << descriptorsFiles.size() << " files.");
 
   // Run through the path vector and read the descriptors
   for(const auto &currentFile : descriptorsFiles)
@@ -246,16 +246,15 @@ void voctreeStatistics(
         localHisto[nb] += 1;   
     }
     
-    std::cout << "Histogram of " << currentFile.first << std::endl;
+    OPENMVG_LOG_DEBUG("Histogram of " << currentFile.first);
     
     for(auto itHisto = localHisto.begin(); itHisto != localHisto.end(); itHisto++)
     {
-      std::cout << itHisto->first << ": " << itHisto->second  << ", ";
+      OPENMVG_LOG_DEBUG_OBJ << itHisto->first << ": " << itHisto->second  << ", ";
     }
-    
     localHisto.clear();
     
-    std::cout << std::endl;
+    OPENMVG_LOG_DEBUG_OBJ << std::endl;
     
   }
 }

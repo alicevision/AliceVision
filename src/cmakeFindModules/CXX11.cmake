@@ -6,7 +6,7 @@ endif ()
 macro(check_for_cxx11_compiler _VAR)
   message(STATUS "Checking for C++11 compiler")
   set(${_VAR})
-  if((MSVC AND (MSVC10 OR MSVC11 OR MSVC12)) OR
+  if((MSVC AND (MSVC_VERSION GREATER 1700)) OR	# MSVC 1800: VS 12
      (CMAKE_COMPILER_IS_GNUCXX AND NOT ${CMAKE_CXX_COMPILER_VERSION} VERSION_LESS 4.6) OR
      (CMAKE_CXX_COMPILER_ID STREQUAL "Clang" AND NOT ${CMAKE_CXX_COMPILER_VERSION} VERSION_LESS 3.1))
     set(${_VAR} 1)
@@ -18,7 +18,7 @@ endmacro()
 
 # Sets the appropriate flag to enable C++11 support
 macro(enable_cxx11)
-  if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang" OR CMAKE_COMPILER_IS_GNUCXX)
+  if (${CMAKE_CXX_COMPILER_ID} STREQUAL "Clang" OR CMAKE_COMPILER_IS_GNUCXX)
     include(CheckCXXCompilerFlag)
     check_cxx_compiler_flag(--std=c++11 SUPPORTS_STD_CXX11)
     check_cxx_compiler_flag(--std=c++0x SUPPORTS_STD_CXX01)

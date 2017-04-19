@@ -44,7 +44,8 @@
 #include <numeric>
 #include <vector>
 
-#include "openMVG/robust_estimation/rand_sampling.hpp"
+#include <openMVG/robust_estimation/rand_sampling.hpp>
+#include <openMVG/logger.hpp>
 
 namespace openMVG {
 namespace robust{
@@ -274,15 +275,13 @@ std::pair<double, double> ACRANSAC(const Kernel &kernel,
 
           if(bVerbose)
           {
-            std::cout << "  nfa=" << minNFA
+            OPENMVG_LOG_DEBUG("  nfa=" << minNFA
               << " inliers=" << best.second << "/" << nData
               << " precisionNormalized=" << errorMax
               << " precision=" << kernel.unormalizeError(errorMax)
-              << " (iter=" << iter;
-            std::cout << ",sample=";
-            std::copy(vec_sample.begin(), vec_sample.end(),
-              std::ostream_iterator<size_t>(std::cout, ","));
-            std::cout << ")" <<std::endl;
+              << " (iter=" << iter
+              << ",sample=" << vec_sample
+              << ")");
           }
         }
       } //if(bACRansacMode)

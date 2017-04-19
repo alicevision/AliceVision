@@ -9,6 +9,7 @@
 #define OPENMVG_SFM_MATCHES_PROVIDER_HPP
 
 #include <openMVG/types.hpp>
+#include <openMVG/logger.hpp>
 #include <openMVG/sfm/sfm_data.hpp>
 #include <openMVG/matching/indMatch.hpp>
 #include <openMVG/matching/indMatch_utils.hpp>
@@ -24,10 +25,10 @@ struct Matches_Provider
   // Load matches from the provided matches file
   virtual bool load(const SfM_Data & sfm_data, const std::string & folder, const std::string & matchesMode)
   {
-    std::cout << "- Loading matches..." << std::endl;
+    OPENMVG_LOG_DEBUG("- Loading matches...");
     if (!matching::Load(_pairWise_matches, sfm_data.GetViewsKeys(), folder, matchesMode))
     {
-      std::cerr<< "Unable to read the matches file(s) from: " << folder << " (mode: " << matchesMode << ")" << std::endl;
+      OPENMVG_LOG_WARNING("Unable to read the matches file(s) from: " << folder << " (mode: " << matchesMode << ")");
       return false;
     }
     return true;

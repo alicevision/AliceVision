@@ -7,6 +7,7 @@
 
 #include "openMVG/matching/indMatch.hpp"
 #include "openMVG/matching/indMatch_utils.hpp"
+#include "openMVG/features/svgVisualization.hpp"
 #include "openMVG/image/image.hpp"
 #include "openMVG/sfm/sfm.hpp"
 
@@ -98,38 +99,30 @@ int main(int argc, char ** argv)
   stlplus::folder_create(sOutDir);
   std::cout << "\n Export extracted keypoints for all images" << std::endl;
   C_Progress_display my_progress_bar( sfm_data.views.size() );
-  for(Views::const_iterator iterViews = sfm_data.views.begin();
-        iterViews != sfm_data.views.end();
-        ++iterViews, ++my_progress_bar)
+  for(const auto &iterViews : sfm_data.views)
   {
-    const View * view = iterViews->second.get();
+    const View * view = iterViews.second.get();
     const std::string sView_filename = stlplus::create_filespec(sfm_data.s_root_path,
       view->s_Img_path);
 
     const std::pair<size_t, size_t>
       dimImage = std::make_pair(view->ui_width, view->ui_height);
-
-    svgDrawer svgStream( dimImage.first, dimImage.second);
-    svgStream.drawImage(sView_filename,
-      dimImage.first,
-      dimImage.second);
-
-    //-- Draw features
+    
+    // get the features
     const PointFeatures & features = feats_provider->getFeatures(view->id_view);
-    for (size_t i=0; i< features.size(); ++i)  {
-      const PointFeature & feature = features[i];
-      svgStream.drawCircle(feature.x(), feature.y(), 3,
-          svgStyle().stroke("yellow", 2.0));
-    }
 
-    // Write the SVG file
+    // output filename
     std::ostringstream os;
     os << stlplus::folder_append_separator(sOutDir)
       << stlplus::basename_part(sView_filename)
       << "_" << features.size() << "_.svg";
-    std::ofstream svgFile( os.str().c_str() );
-    svgFile << svgStream.closeSvgFile().str();
-    svgFile.close();
+
+    features::saveFeatures2SVG(sView_filename,
+                               dimImage,
+                               features,
+                               os.str());
+    ++my_progress_bar;
   }
+  
   return EXIT_SUCCESS;
 }

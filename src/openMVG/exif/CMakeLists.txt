@@ -20,7 +20,7 @@ list(REMOVE_ITEM exif_files_sources ${REMOVEFILESUNITTEST})
 			
 set_source_files_properties(${exif_files_sources} PROPERTIES LANGUAGE CXX)
 ADD_LIBRARY(openMVG_exif ${exif_files_sources} ${exif_files_headers})
-TARGET_LINK_LIBRARIES(openMVG_exif stlplus easyexif)
+TARGET_LINK_LIBRARIES(openMVG_exif stlplus easyexif ${LOG_LIB})
 
 SET_TARGET_PROPERTIES(openMVG_exif PROPERTIES SOVERSION ${OPENMVG_VERSION_MAJOR} VERSION "${OPENMVG_VERSION_MAJOR}.${OPENMVG_VERSION_MINOR}")
 INSTALL(TARGETS openMVG_exif DESTINATION lib EXPORT openMVG-targets)

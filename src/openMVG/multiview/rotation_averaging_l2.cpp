@@ -6,6 +6,9 @@
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 #include "openMVG/multiview/rotation_averaging_l2.hpp"
+#include <openMVG/config.hpp>
+#include <openMVG/openmvg_omp.hpp>
+
 #include <vector>
 #include <map>
 
@@ -219,7 +222,7 @@ bool L2RotationAveraging_Refine(
   std::vector<openMVG::Mat3> & vec_ApprRotMatrix)
 {
   if (vec_relativeRot.size() == 0 ||vec_ApprRotMatrix.size() == 0 ) {
-    std::cout << "Skip nonlinear rotation optimization, no sufficient data provided " << std::endl;
+    OPENMVG_LOG_DEBUG("Skip nonlinear rotation optimization, no sufficient data provided ");
     return false;
 }
 
@@ -266,14 +269,14 @@ bool L2RotationAveraging_Refine(
   {
     solverOptions.linear_solver_type = ceres::DENSE_NORMAL_CHOLESKY;
   }
-#ifdef OPENMVG_USE_OPENMP
+  // set number of threads, 1 if openMP is not enabled
   solverOptions.num_threads = omp_get_max_threads();
   solverOptions.num_linear_solver_threads = omp_get_max_threads();
-#endif // OPENMVG_USE_OPENMP
+
 
   ceres::Solver::Summary summary;
   ceres::Solve(solverOptions, &problem, &summary);
-  // std::cout << summary.FullReport() << std::endl;
+  // OPENMVG_LOG_DEBUG(summary.FullReport());
 
   if (summary.IsSolutionUsable())
   {

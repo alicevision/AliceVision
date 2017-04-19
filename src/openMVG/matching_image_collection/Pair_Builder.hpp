@@ -92,8 +92,7 @@ static bool loadPairs(
   std::ifstream in(sFileName.c_str());
   if(!in.is_open())
   {
-    std::cerr << std::endl
-      << "loadPairs: Impossible to read the specified file: \"" << sFileName << "\"." << std::endl;
+    OPENMVG_LOG_WARNING("loadPairs: Impossible to read the specified file: \"" << sFileName << "\".");
     return false;
   }
   std::size_t nbLine = 0;
@@ -113,7 +112,7 @@ static bool loadPairs(
     const size_t str_size = vec_str.size();
     if (str_size < 2)
     {
-      std::cerr << "loadPairs: Invalid input file: \"" << sFileName << "\"." << std::endl;
+      OPENMVG_LOG_WARNING("loadPairs: Invalid input file: \"" << sFileName << "\".");
       return false;
     }
     std::stringstream oss;
@@ -126,14 +125,14 @@ static bool loadPairs(
       oss >> J;
       if( I == J )
       {
-        std::cerr << "loadPairs: Invalid input file. Image " << I << " see itself. File: \"" << sFileName << "\"." << std::endl;
+        OPENMVG_LOG_WARNING("loadPairs: Invalid input file. Image " << I << " see itself. File: \"" << sFileName << "\".");
         return false;
       }
       Pair pairToInsert = (I < J) ? std::make_pair(I, J) : std::make_pair(J, I);
       if(pairs.find(pairToInsert) != pairs.end())
       {
         // There is no reason to have the same image pair twice in the list of image pairs to match.
-        std::cerr << "loadPairs: Image pair " << I << ", " << J << " already added. File: \"" << sFileName << "\"." << std::endl;
+        OPENMVG_LOG_WARNING("loadPairs: Image pair " << I << ", " << J << " already added. File: \"" << sFileName << "\".");
       }
       pairs.insert(pairToInsert);
     }
@@ -150,8 +149,7 @@ static bool savePairs(const std::string &sFileName, const Pair_Set & pairs)
 {
   std::ofstream outStream(sFileName.c_str());
   if(!outStream.is_open())  {
-    std::cerr << std::endl
-      << "savePairs: Impossible to open the output specified file: \"" << sFileName << "\"." << std::endl;
+    OPENMVG_LOG_WARNING("savePairs: Impossible to open the output specified file: \"" << sFileName << "\".");
     return false;
   }
   for (Pair_Set::const_iterator iterP = pairs.begin();

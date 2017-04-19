@@ -75,7 +75,7 @@ TEST(SEQUENTIAL_SFM, Known_Intrinsics) {
   EXPECT_TRUE (sfmEngine.Process());
 
   const double dResidual = RMSE(sfmEngine.Get_SfM_Data());
-  std::cout << "RMSE residual: " << dResidual << std::endl;
+  OPENMVG_LOG_DEBUG("RMSE residual: " << dResidual);
   EXPECT_TRUE( dResidual < 0.5);
   EXPECT_TRUE( sfmEngine.Get_SfM_Data().GetPoses().size() == nviews);
   EXPECT_TRUE( sfmEngine.Get_SfM_Data().GetLandmarks().size() == npoints);
@@ -136,10 +136,10 @@ TEST(SEQUENTIAL_SFM, Partially_Known_Intrinsics) {
   EXPECT_TRUE (sfmEngine.Process());
 
   const double dResidual = RMSE(sfmEngine.Get_SfM_Data());
-  std::cout << "RMSE residual: " << dResidual << std::endl;
+  OPENMVG_LOG_DEBUG("RMSE residual: " << dResidual);
   EXPECT_TRUE( dResidual < 0.5);
-  EXPECT_TRUE( sfmEngine.Get_SfM_Data().GetPoses().size() == nviews);
-  EXPECT_TRUE( sfmEngine.Get_SfM_Data().GetLandmarks().size() == npoints);
+  EXPECT_EQ(nviews, sfmEngine.Get_SfM_Data().GetPoses().size());
+  EXPECT_EQ(npoints, sfmEngine.Get_SfM_Data().GetLandmarks().size());
 }
 
 /* ************************************************************************* */

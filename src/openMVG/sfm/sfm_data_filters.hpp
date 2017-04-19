@@ -72,8 +72,8 @@ static Pair_Set Pair_filter
   return kept_pairs;
 }
 
-// Remove tracks that have a small angle (tracks with tiny angle leads to instable 3D points)
-// Return the number of removed tracks
+/// Remove observations with too large reprojection error.
+/// Return the number of removed tracks.
 static IndexT RemoveOutliers_PixelResidualError
 (
   SfM_Data & sfm_data,
@@ -196,7 +196,7 @@ static bool eraseMissingPoses(SfM_Data & sfm_data, const IndexT min_points_per_p
     }
   }
   if(removed_elements)
-    std::cout << "eraseMissingPoses: " << removed_elements << std::endl;
+    OPENMVG_LOG_DEBUG("eraseMissingPoses: " << removed_elements);
   return removed_elements > 0;
 }
 
