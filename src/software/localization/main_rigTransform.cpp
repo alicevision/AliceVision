@@ -41,7 +41,7 @@ int main(int argc, char** argv)
   std::string calibFile = "";
   std::vector<openMVG::geometry::Pose3> extrinsics;  // the rig subposes
   
-  po::options_description desc("This program is used to transform cameras localized with a rig file.");
+  po::options_description desc("If you have localized a single camera from an acquisition with a RIG of cameras, you can use this program to deduce the pose of the other cameras of the RIG.");
   desc.add_options()
         ("help,h", "Print this message")
         ("input,i", po::value<std::string>(&importFile)->required(),
