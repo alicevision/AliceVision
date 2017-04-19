@@ -73,7 +73,6 @@ target_link_libraries(
   openMVG_lInftyComputerVision
   openMVG_system
   openMVG_matching
-  openMVG_dataio
   openMVG_exif
   ${LOG_LIB}
 )
