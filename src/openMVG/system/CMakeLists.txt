@@ -1,7 +1,14 @@
 
-set(system_files_header timer.hpp)
+set(system_files_header
+  cpu.hpp
+  memoryInfo.hpp
+  system.hpp
+  timer.hpp)
 
-set(system_files_cpp timer.cpp)
+set(system_files_cpp
+  cpu.cpp
+  memoryInfo.cpp
+  timer.cpp)
 
 add_library(openMVG_system ${system_files_cpp})
 

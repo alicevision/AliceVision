@@ -20,6 +20,8 @@
 #include "openMVG/graph/connectedComponent.hpp"
 #include "openMVG/stl/stl.hpp"
 #include "openMVG/system/timer.hpp"
+#include "openMVG/system/cpu.hpp"
+#include "openMVG/system/memoryInfo.hpp"
 #include <openMVG/config.hpp>
 
 #include "third_party/htmlDoc/htmlDoc.hpp"
@@ -1578,33 +1580,13 @@ void SequentialSfMReconstructionEngine::exportStatistics(double time_sfm)
   // Add process time
   _tree.put("sfm.time", time_sfm);
 
-  #ifdef __linux__
-    // Add CPU/RAM infos
-    char values[20];
-    std::ifstream ifs;
+  // CPU frequency
+  _tree.put("hardware.cpu.freq", system::cpu_clock_by_os());
 
-    // CPU cores
-    _tree.put("hardware.cpu.cores", sysconf(_SC_NPROCESSORS_ONLN));
+  // CPU cores
+  _tree.put("hardware.cpu.cores", system::get_total_cpus());
 
-    // CPU frequency
-    if(!std::system("lscpu | grep \"CPU MHz\" | awk '{print $3}' >values.txt"))
-    {
-      ifs.open("values.txt");
-      if(ifs.is_open())
-      {
-        ifs.get(values, 20, '\n');
-        ifs.close();
-        _tree.put("hardware.cpu.freq", values);
-      }
-    }
-
-    // RAM size
-    struct sysinfo sys_info;
-    sysinfo(&sys_info);
-    _tree.put("hardware.ram.size", sys_info.totalram);
-
-    std::system("rm values.txt");
-  #endif
+  _tree.put("hardware.ram.size", system::getMemoryInfo().totalRam);
 
   // Write json on disk
   pt::write_json(stlplus::folder_append_separator(_sOutDirectory)+"stats.json", _tree);
