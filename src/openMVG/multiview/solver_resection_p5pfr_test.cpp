@@ -77,11 +77,6 @@ bool testSolutions(std::vector<resection::M> &solutions, std::vector<resection::
 		return false;
 	
 	for (int i = 0; i < models.size(); ++i) {
-		//std::cout << "f: \n" << solutions.at(i)._f << " / " << models.at(i)._f << "\n=> " << checkNear(solutions.at(i)._f, models.at(i)._f, eps) << "\n\n";
-		//std::cout << "R: \n" << solutions.at(i)._R << " \n\n " << models.at(i)._R << "\n=> " << checkNear(solutions.at(i)._f, models.at(i)._f, eps) << "\n\n";
-		//std::cout << "t: \n" << solutions.at(i)._t << " \n\n " << models.at(i)._t << "\n=> " << checkNear(solutions.at(i)._t, models.at(i)._t, eps) << "\n\n";
-		//std::cout << "r: \n" << solutions.at(i)._r << " \n\n " << models.at(i)._r << "\n=> " << checkNear(solutions.at(i)._r, models.at(i)._r, eps) << "\n\n";
-
 		if ( !checkNear(solutions.at(i)._f, models.at(i)._f, eps) ) 
 			return false;
 		if ( !checkNear(solutions.at(i)._R, models.at(i)._R, eps) )
