@@ -64,7 +64,7 @@ namespace openMVG {
 		*
 		*	   Output: Co = camera description with polynomial radial distoriton parameters 'KRCp'
 		*/
-		static bool rddiv2pol(std::vector<M> *solutions, double dmax, Mat di);
+		void rddiv2pol(M *model, double dmax, Mat di);
 
 		/*
 		*      Author: Tomas Pajdla, adapted to openMVG by Michal Polic
@@ -80,16 +80,16 @@ namespace openMVG {
 		*      Output: solutions: M x n vector that will contain the each solution in structure M (M._R - rotation matrix,
 		*						  M._t - translation vector, M._r - the radial division undistortion parameters, M._f - focal length).
 		*/
-		static bool compute_P5Pfr_Poses_RD(const Mat & featureVectors, const Mat & worldPoints, const int numOfRadialCoeff, std::vector<M> *solutions);
+		bool compute_P5Pfr_Poses_RD(const Mat & featureVectors, const Mat & worldPoints, const int numOfRadialCoeff, std::vector<M> *solutions);
 
 		// Compute compute_P5Pfr_Poses_RD and transform the radial division undistortion to Brown polynomial distortion model
-		static bool compute_P5Pfr_Poses_RP(const Mat & featureVectors, const Mat & worldPoints, const int numOfRadialCoeff, std::vector<M> *solutions);
+		bool compute_P5Pfr_Poses_RP(const Mat & featureVectors, const Mat & worldPoints, const int numOfRadialCoeff, std::vector<M> *solutions);
 		
 		// Compute the reprojection error for the radial division undistortion model
-		static double reproj_error_RD(const M & m, const Vec2 & pt2D, const Vec3 & pt3D);
+		double reproj_error_RD(const M & m, const Vec2 & pt2D, const Vec3 & pt3D);
 
 		// Compute the reprojection error for Brown polynomial distortion model
-		static double reproj_error_RP(const M & m, const Vec2 & pt2D, const Vec3 & pt3D);
+		double reproj_error_RP(const M & m, const Vec2 & pt2D, const Vec3 & pt3D);
 
 
 		struct P5PfrSolver {

@@ -77,10 +77,10 @@ bool testSolutions(std::vector<resection::M> &solutions, std::vector<resection::
 		return false;
 	
 	for (int i = 0; i < models.size(); ++i) {
-		std::cout << "f: \n" << solutions.at(i)._f << " / " << models.at(i)._f << "\n=> " << checkNear(solutions.at(i)._f, models.at(i)._f, eps) << "\n\n";
-		std::cout << "R: \n" << solutions.at(i)._R << " \n\n " << models.at(i)._R << "\n=> " << checkNear(solutions.at(i)._f, models.at(i)._f, eps) << "\n\n";
-		std::cout << "t: \n" << solutions.at(i)._t << " \n\n " << models.at(i)._t << "\n=> " << checkNear(solutions.at(i)._t, models.at(i)._t, eps) << "\n\n";
-		std::cout << "r: \n" << solutions.at(i)._r << " \n\n " << models.at(i)._r << "\n=> " << checkNear(solutions.at(i)._r, models.at(i)._r, eps) << "\n\n";
+		//std::cout << "f: \n" << solutions.at(i)._f << " / " << models.at(i)._f << "\n=> " << checkNear(solutions.at(i)._f, models.at(i)._f, eps) << "\n\n";
+		//std::cout << "R: \n" << solutions.at(i)._R << " \n\n " << models.at(i)._R << "\n=> " << checkNear(solutions.at(i)._f, models.at(i)._f, eps) << "\n\n";
+		//std::cout << "t: \n" << solutions.at(i)._t << " \n\n " << models.at(i)._t << "\n=> " << checkNear(solutions.at(i)._t, models.at(i)._t, eps) << "\n\n";
+		//std::cout << "r: \n" << solutions.at(i)._r << " \n\n " << models.at(i)._r << "\n=> " << checkNear(solutions.at(i)._r, models.at(i)._r, eps) << "\n\n";
 
 		if ( !checkNear(solutions.at(i)._f, models.at(i)._f, eps) ) 
 			return false;
@@ -381,8 +381,61 @@ TEST(Resection_P5Pfr, ReprojectionErrRD) {
 	for (int i = 0; i < 5; ++i){
 		Mat ui = u.col(i);
 		Mat Xi = X.col(i);
-		EXPECT_TRUE(resection::P5PfrSolver::Error(m1, Map<Vec2>(ui.data(),2), Map<Vec3>(Xi.data(),3)) < eps );
+		EXPECT_TRUE( resection::reproj_error_RD(m1, Map<Vec2>(ui.data(),2), Map<Vec3>(Xi.data(),3)) < eps );
 	}
+}
+
+TEST(Resection_P5Pfr, ReprojectionErrRP) {
+	// DATA
+	Mat R1 = Mat(3, 3);     R1 << -9.992060000000000e-01, -9.115130000000000e-04, -3.984260000000000e-02, -2.467660000000000e-03, 9.992350000000000e-01, 3.902560000000000e-02, 3.977660000000000e-02, 3.909300000000000e-02, -9.984440000000000e-01;
+	Vec3 t1;                t1 << -9.757978898639005e-02, -1.432719535106094e+00, -7.429114914010337e-02;
+	double                  f1 = 4.003890000000000e+03;
+	Vec r1 = Vec(2);        r1 << 2.609980000000000e-01, -8.600540000000000e-01;
+	resection::M m1(R1, t1, r1, f1);
+	Mat X = Mat(3, 5);
+	X << -1.789980000000000e+00, 3.126420000000000e-02, -8.818300000000000e-01, 4.003490000000000e-01, -2.801120000000000e-01, 5.379380000000000e-01, 2.120090000000000e+00, 7.626530000000000e-01, -2.713720000000000e-01, -5.288820000000000e-01, 7.695280000000000e+00, 8.668390000000001e+00, 8.591100000000001e+00, 8.153530000000000e+00, 6.836970000000000e+00;
+
+	// SOLUTION
+	Mat u = Mat(2, 5);
+	u << -7.157065483965156e+02, 2.214390204167765e+02, -2.039687171099566e+02, 4.045162808436347e+02, 5.240453162355445e+01, 3.053701505359891e+02, -4.762317643178445e+02, 1.542630206562505e+02, 6.822162604030057e+02, 9.904720783975658e+02;
+
+	// PROCESS & TEST
+	double eps = 1e-3;
+	for (int i = 0; i < 1; ++i) {
+		Mat ui = u.col(i);
+		Mat Xi = X.col(i);
+		EXPECT_TRUE( resection::reproj_error_RP(m1, Map<Vec2>(ui.data(), 2), Map<Vec3>(Xi.data(), 3)) < eps);
+	}
+}
+
+TEST(Resection_P5Pfr, ConversionRD2RP) {
+	// DATA
+	Mat pt2D = Mat(2, 5);
+	pt2D << 4.811200000000001e+02, 3.067499999999998e+02, -6.962300000000000e+02, 1.242750000000000e+03, 6.765399999999997e+02, -1.153199999999999e+02, -9.486730000000000e+02, -9.567130000000000e+02, -8.622940000000000e+02, -1.491675000000000e+03;
+	Mat R1 = Mat(3, 3);     R1 << -2.147969435011516e-01, -6.504746055378523e-01, -7.285225189470387e-01, -8.724048025820075e-01, 4.631236449953824e-01, -1.562893146636694e-01, 4.390582347416017e-01, 6.019960772268922e-01, -6.669547132369798e-01;
+	Vec3 t1;                t1 << 5.835566436335433e-01, 5.556535697883296e-01, 8.118408025611844e-01;
+	double                  f1 = 1.769320983964984e+03;
+	Vec r1 = Vec(1);        r1 << -2.905907042217655e-01;
+	resection::M m1(R1, t1, r1, f1);
+	Mat R2 = Mat(3, 3);     R2 << -5.147789719583958e-01, -2.194669622313594e-01, -8.287562141657801e-01, -5.244123822170940e-01, -6.841333275746363e-01, 5.069055567648162e-01, -6.782287692267632e-01, 6.955543419392871e-01, 2.370862585696515e-01;
+	Vec3 t2;                t2 << 1.273608583413997e+00, 2.506813631576317e-01, 2.141229474304712e+00;
+	double                  f2 = 2.687625629669230e+03;
+	Vec r2 = Vec(1);        r2 << -3.992521126906051e+00;
+	resection::M m2(R2, t2, r2, f2);
+
+	// SOLUTIONS ( EXPECTED VALUES )
+	Vec e_r1 = Vec(3);		e_r1 << -2.767886578664726e-01, 1.084793023180692e-01, -2.249627924724677e-02;
+	Vec e_r2 = Vec(3);		e_r2 << -2.058719740812550e+00, 9.689085352978840e-01, -1.271067176405148e-01;
+
+	// PROCESS & TESTS ( ACTUAL VALUES )
+	double eps = 1e-4;
+	Mat pt2D_radius = pt2D.colwise().norm();
+	
+	rddiv2pol( &m1, pt2D_radius.maxCoeff(), (1 / f1) * pt2D_radius );
+	EXPECT_TRUE(checkNear(m1._r, e_r1, eps));
+
+	rddiv2pol(&m2, pt2D_radius.maxCoeff(), (1 / f2) * pt2D_radius);
+	EXPECT_TRUE(checkNear(m2._r, e_r2, eps));
 }
 
 
