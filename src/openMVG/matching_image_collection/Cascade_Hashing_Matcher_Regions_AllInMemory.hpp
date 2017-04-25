@@ -31,9 +31,10 @@ class Cascade_Hashing_Matcher_Regions_AllInMemory : public Matcher
   void Match
   (
     const sfm::SfM_Data & sfm_data,
-    const sfm::RegionsPerView& regionsPerView,
+    const features::RegionsPerView& regionsPerView,
     const Pair_Set & pairs,
-    matching::PairWiseSimpleMatches & map_PutativesMatches // the pairwise photometric corresponding points
+    features::EImageDescriberType descType,
+    matching::PairwiseMatches & map_PutativesMatches // the pairwise photometric corresponding points
   )const;
 
   private:

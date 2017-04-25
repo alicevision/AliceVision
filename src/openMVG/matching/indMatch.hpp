@@ -9,6 +9,7 @@
 #define OPENMVG_MATCHING_IND_MATCH_H
 
 #include "openMVG/types.hpp"
+#include "openMVG/features/ImageDescriberCommon.hpp"
 
 #include <cereal/cereal.hpp> // Serialization
 
@@ -84,21 +85,41 @@ static inline std::istream& operator>>(std::istream & in, IndMatch & obj) {
 
 typedef std::vector<matching::IndMatch> IndMatches;
 
-//typedef std::map<E, IndMatches> IndMatchesPerDescType; //TODO
+struct MatchesPerDescType: public std::map<features::EImageDescriberType, IndMatches>
+{
+    int getNbMatches(features::EImageDescriberType descType) const
+    {
+        const auto& it = this->find(descType);
+        if(it == this->end())
+            return 0;
+        return it->second.size();
+    }
+    int getNbAllMatches() const
+    {
+        int nbMatches = 0;
+        for(const auto& matches: *this)
+        {
+            nbMatches += matches.second.size();
+        }
+        return nbMatches;
+    }
+};
 
 /// Pairwise matches (indexed matches for a pair <I,J>)
 /// The structure used to store corresponding point indexes per images pairs
 
-typedef std::map<Pair, IndMatches> PairWiseSimpleMatches;
-//typedef std::map<Pair, IndMatchesPerDescType> PairWiseMatches //TODO
+typedef std::map<Pair, MatchesPerDescType> PairwiseMatches;
 
-static inline Pair_Set getPairs(const PairWiseSimpleMatches & matches)
+typedef std::map<Pair, IndMatches> PairwiseSimpleMatches;
+
+inline Pair_Set getImagePairs(const PairwiseMatches & matches)
 {
   Pair_Set pairs;
-  for(PairWiseSimpleMatches::const_iterator it = matches.begin(); it != matches.end(); ++it)
+  for(PairwiseMatches::const_iterator it = matches.begin(); it != matches.end(); ++it)
     pairs.insert(it->first);
   return pairs;
 }
+
 
 }  // namespace matching
 }  // namespace openMVG

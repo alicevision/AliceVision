@@ -7,6 +7,26 @@
 namespace openMVG {
 namespace features {
 
+std::string describerTypeColor(const features::EImageDescriberType descType )
+{
+  switch(descType)
+  {
+    case features::EImageDescriberType::SIFT: return "yellow";
+    case features::EImageDescriberType::SIFT_FLOAT: return "yellow";
+    case features::EImageDescriberType::AKAZE_FLOAT: return "purple";
+    case features::EImageDescriberType::AKAZE_LIOP: return "purple";
+    case features::EImageDescriberType::AKAZE_MLDB: return "purple";
+#ifdef HAVE_CCTAG
+    case features::EImageDescriberType::CCTAG3: return "blue";
+    case features::EImageDescriberType::CCTAG4: return "blue";
+    case features::EImageDescriberType::SIFT_CCTAG3: return "green";
+    case features::EImageDescriberType::SIFT_CCTAG4: return "green";
+#endif
+    case features::EImageDescriberType::UNKNOWN: return "red";
+  }
+  return "magenta";
+}
+
 float getRadiusEstimate(const std::pair<size_t,size_t> & imgSize)
 {
   // heuristic for the radius of the feature according to the size of the image
@@ -95,8 +115,8 @@ void saveKeypoints2SVG(const std::string &inputImagePath,
 
 void saveFeatures2SVG(const std::string &inputImagePath,
                       const std::pair<size_t,size_t> & imageSize,
-                      const std::vector<features::PointFeature> &keypoints,
-                      const std::string &outputSVGPath)
+                      const features::MapFeaturesPerDesc & keypoints,
+                      const std::string & outputSVGPath)
 {
   svg::svgDrawer svgStream( imageSize.first, imageSize.second);
   svgStream.drawImage(inputImagePath, imageSize.first, imageSize.second);
@@ -106,10 +126,14 @@ void saveFeatures2SVG(const std::string &inputImagePath,
   // the image size
   const float radius = getRadiusEstimate(imageSize);
   const float strokeWidth = getStrokeEstimate(imageSize);
-  
-  for(const features::PointFeature &kpt : keypoints) 
+
+  for(const auto& keypointPerDesc: keypoints)
   {
-    svgStream.drawCircle(kpt.x(), kpt.y(), radius, svg::svgStyle().stroke("yellow", strokeWidth));
+    const std::string featColor = describerTypeColor(keypointPerDesc.first);
+    for(const features::PointFeature &kpt : keypointPerDesc.second)
+    {
+      svgStream.drawCircle(kpt.x(), kpt.y(), radius, svg::svgStyle().stroke(featColor, strokeWidth));
+    }
   }
  
   std::ofstream svgFile( outputSVGPath );

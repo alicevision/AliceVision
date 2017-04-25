@@ -8,6 +8,8 @@
 #include "openMVG/matching/indMatch_utils.hpp"
 #include "openMVG/image/image.hpp"
 #include "openMVG/sfm/sfm.hpp"
+#include "openMVG/sfm/pipelines/RegionsIO.hpp"
+#include "openMVG/features/svgVisualization.hpp"
 
 #include "third_party/cmdLine/cmdLine.h"
 #include "third_party/stlplus3/filesystemSimplified/file_system.hpp"
@@ -56,18 +58,19 @@ inline float hue2rgb(float p, float q, float t){
   }
 }
 
+
 int main(int argc, char ** argv)
 {
   CmdLine cmd;
 
   std::string sSfM_Data_Filename;
-  std::string describerMethod = "SIFT";
-  std::string sMatchesDir;
+  std::string describerMethods = "SIFT";
+  std::string sMatchesDir = "";
   std::string sMatchGeometricModel = "f";
   std::string sOutDir = "";
 
   cmd.add( make_option('i', sSfM_Data_Filename, "input_file") );
-  cmd.add( make_option('m', describerMethod, "describerMethod") );
+  cmd.add( make_option('m', describerMethods, "describerMethods") );
   cmd.add( make_option('d', sMatchesDir, "matchdir") );
   cmd.add( make_option('g', sMatchGeometricModel, "geometric_model") );
   cmd.add( make_option('o', sOutDir, "outdir") );
@@ -78,7 +81,7 @@ int main(int argc, char ** argv)
   } catch(const std::string& s) {
       std::cerr << "Export pairwise matches.\nUsage: " << argv[0] << "\n"
       << "[-i|--input_file FILE] path to a SfM_Data scene\n"
-      << "[-m|--describerMethod]\n"
+      << "[-m|--describerMethods]\n"
       << "  (methods to use to describe an image):\n"
       << "   SIFT (default),\n"
       << "   SIFT_FLOAT to use SIFT stored as float,\n"
@@ -122,18 +125,19 @@ int main(int argc, char ** argv)
   // Load SfM Scene regions
   //---------------------------------------
   // Get imageDescriberMethodType
-  EImageDescriberType describerMethodType = EImageDescriberType_stringToEnum(describerMethod);
+  std::vector<EImageDescriberType> describerMethodTypes = EImageDescriberType_stringToEnums(describerMethods);
 
   // Read the features
-  FeaturesPerView featuresPerView;
-  if (!loadFeaturesPerView(featuresPerView, sfm_data, sMatchesDir, describerMethodType)) {
+  features::FeaturesPerView featuresPerView;
+  if(!sfm::loadFeaturesPerView(featuresPerView, sfm_data, sMatchesDir, describerMethodTypes))
+  {
     std::cerr << std::endl
       << "Invalid features." << std::endl;
     return EXIT_FAILURE;
   }
-    
-  std::shared_ptr<Matches_Provider> matches_provider = std::make_shared<Matches_Provider>();
-  if (!matches_provider->load(sfm_data, sMatchesDir, sMatchGeometricModel))
+
+  matching::PairwiseMatches pairwiseMatches;
+  if(!sfm::loadPairwiseMatches(pairwiseMatches, sfm_data, sMatchesDir, describerMethodTypes, sMatchGeometricModel))
   {
     std::cerr << "\nInvalid matches file." << std::endl;
     return EXIT_FAILURE;
@@ -145,7 +149,7 @@ int main(int argc, char ** argv)
 
   stlplus::folder_create(sOutDir);
   std::cout << "\n Export pairwise matches" << std::endl;
-  const Pair_Set pairs = matches_provider->getPairs();
+  const Pair_Set pairs = matching::getImagePairs(pairwiseMatches);
   C_Progress_display my_progress_bar( pairs.size() );
   for (Pair_Set::const_iterator iter = pairs.begin();
     iter != pairs.end();
@@ -173,40 +177,57 @@ int main(int argc, char ** argv)
       dimImage_J.first,
       dimImage_J.second, dimImage_I.first);
 
-    const vector<IndMatch> & vec_FilteredMatches = matches_provider->_pairWise_matches.at(*iter);
+    const matching::MatchesPerDescType& vec_FilteredMatches = pairwiseMatches.at(*iter);
 
-    if (!vec_FilteredMatches.empty()) {
+    std::cout << "nb describer : " << vec_FilteredMatches.size() << std::endl;
 
-      const PointFeatures & vec_feat_I = featuresPerView.getFeatures(view_I->id_view);
-      const PointFeatures & vec_feat_J = featuresPerView.getFeatures(view_J->id_view);
+    if(vec_FilteredMatches.empty())
+      continue;
+
+    for(const auto& matchesIt: vec_FilteredMatches)
+    {
+      const features::EImageDescriberType descType = matchesIt.first;
+      const matching::IndMatches& matches = matchesIt.second;
+      std::cout << EImageDescriberType_enumToString(matchesIt.first) << ": " << matches.size() << " matches" << std::endl;
+
+      const PointFeatures& vec_feat_I = featuresPerView.getFeatures(view_I->id_view, descType);
+      const PointFeatures& vec_feat_J = featuresPerView.getFeatures(view_J->id_view, descType);
 
       //-- Draw link between features :
-      for (size_t i=0; i< vec_FilteredMatches.size(); ++i)  {
-        const PointFeature & imaA = vec_feat_I[vec_FilteredMatches[i]._i];
-        const PointFeature & imaB = vec_feat_J[vec_FilteredMatches[i]._j];
+      for(std::size_t i = 0; i < matches.size(); ++i)
+      {
+        // std::cout << "link : " << i << " --  I: " << matches[i]._i << " / " << vec_feat_I.size() <<  ", J: " << matches[i]._j << " / " << vec_feat_J.size() << std::endl;
+        const PointFeature & imaA = vec_feat_I[matches[i]._i];
+        const PointFeature & imaB = vec_feat_J[matches[i]._j];
+
+         //std::cout << "draw line : " << i << std::endl;
         // Compute a flashy colour for the correspondence
         unsigned char r,g,b;
-        hslToRgb( (rand()%360) / 360., 1.0, .5, r, g, b);
+        hslToRgb( (rand() % 360) / 360., 1.0, .5, r, g, b);
         std::ostringstream osCol;
         osCol << "rgb(" << (int)r <<',' << (int)g << ',' << (int)b <<")";
         svgStream.drawLine(imaA.x(), imaA.y(),
           imaB.x()+dimImage_I.first, imaB.y(), svgStyle().stroke(osCol.str(), 2.0));
       }
 
+      const std::string featColor = describerTypeColor(descType);
       //-- Draw features (in two loop, in order to have the features upper the link, svg layer order):
-      for (size_t i=0; i< vec_FilteredMatches.size(); ++i)  {
-        const PointFeature & imaA = vec_feat_I[vec_FilteredMatches[i]._i];
-        const PointFeature & imaB = vec_feat_J[vec_FilteredMatches[i]._j];
-        svgStream.drawCircle(imaA.x(), imaA.y(), 3.0,
-          svgStyle().stroke("yellow", 2.0));
-        svgStream.drawCircle(imaB.x() + dimImage_I.first, imaB.y(), 3.0,
-          svgStyle().stroke("yellow", 2.0));
+      for(std::size_t i=0; i< matches.size(); ++i)
+      {
+        //std::cout << "draw circle : " << i << std::endl;
+        const PointFeature & imaA = vec_feat_I[matches[i]._i];
+        const PointFeature & imaB = vec_feat_J[matches[i]._j];
+        svgStream.drawCircle(imaA.x(), imaA.y(), 5.0,
+          svgStyle().stroke(featColor, 2.0));
+        svgStream.drawCircle(imaB.x() + dimImage_I.first, imaB.y(), 5.0,
+          svgStyle().stroke(featColor, 2.0));
       }
     }
+
     std::ostringstream os;
     os << stlplus::folder_append_separator(sOutDir)
       << iter->first << "_" << iter->second
-      << "_" << vec_FilteredMatches.size() << "_.svg";
+      << "_" << vec_FilteredMatches.getNbAllMatches() << "_.svg";
     ofstream svgFile( os.str().c_str() );
     svgFile << svgStream.closeSvgFile().str();
     svgFile.close();

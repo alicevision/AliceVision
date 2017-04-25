@@ -7,6 +7,7 @@
 #ifndef OPENMVG_SFM_LANDMARK_HPP
 #define OPENMVG_SFM_LANDMARK_HPP
 
+#include "openMVG/features/ImageDescriberCommon.hpp"
 #include "openMVG/image/pixel_types.hpp"
 #include "openMVG/numeric/numeric.h"
 #include "openMVG/stl/flatMap.hpp"
@@ -15,7 +16,9 @@
 namespace openMVG {
 namespace sfm {
 
-/// Define 3D-2D tracking data: 3D landmark with it's 2D observations
+/**
+ * @brief 2D observation of a 3D landmark.
+ */
 struct Observation
 {
   Observation():id_feat(UndefinedIndexT) {  }
@@ -57,24 +60,30 @@ typedef stl::flat_map<IndexT, Observation> Observations;
  */
 struct Landmark
 {
-  Landmark() : rgb(image::WHITE) {}
-  Landmark(const Vec3& pos3d, 
-           const Observations& observations = Observations(), 
+  Landmark() {}
+  Landmark(features::EImageDescriberType descType)
+  : descType(descType)
+  {}
+  Landmark(const Vec3& pos3d,
+           features::EImageDescriberType descType,
+           const Observations& observations = Observations(),
            const image::RGBColor &color = image::WHITE)
     : X(pos3d)
-    , obs(observations)
+    , descType(descType)
+    , observations(observations)
     , rgb(color)
   {}
 
   Vec3 X;
-  Observations obs;
-  image::RGBColor rgb;    //!> the color associated to the point
+  features::EImageDescriberType descType = features::EImageDescriberType::UNKNOWN;
+  Observations observations;
+  image::RGBColor rgb = image::WHITE;    //!> the color associated to the point
   
   bool operator==(const Landmark& other) const
   {
     return AreVecNearEqual(X, other.X, 1e-3) &&
            AreVecNearEqual(rgb, other.rgb, 1e-3) &&
-            obs == other.obs;
+            observations == other.observations;
   }
 
   // Serialization
@@ -83,9 +92,10 @@ struct Landmark
   {
     const std::vector<double> point = { X(0), X(1), X(2) };
     ar(cereal::make_nvp("X", point ));
+    ar(cereal::make_nvp("descType", descType));
     const std::vector<unsigned char> color = { rgb.r(), rgb.g(), rgb.b() };
     ar(cereal::make_nvp("rgb", color ));
-    ar(cereal::make_nvp("observations", obs));
+    ar(cereal::make_nvp("observations", observations));
   }
 
   template <class Archive>
@@ -95,6 +105,7 @@ struct Landmark
     std::vector<unsigned char> color(3);
     ar(cereal::make_nvp("X", point ));
     X = Eigen::Map<const Vec3>(&point[0]);
+    ar(cereal::make_nvp("descType", descType));
     try
     {
       // compatibility with older versions
@@ -106,7 +117,7 @@ struct Landmark
       // if it fails just use a default color
       rgb = openMVG::image::WHITE;
     }
-    ar(cereal::make_nvp("observations", obs));
+    ar(cereal::make_nvp("observations", observations));
   }
 };
 

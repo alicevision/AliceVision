@@ -5,7 +5,14 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-#include <openMVG/features/image_describer.hpp>
+#include "image_describer.hpp"
+
+#include "openMVG/features/image_describer_akaze.hpp"
+#include "openMVG/features/cctag/CCTAG_describer.hpp"
+#include "openMVG/features/cctag/SIFT_CCTAG_describer.hpp"
+
+#include "nonFree/sift/SIFT_describer.hpp"
+#include "nonFree/sift/SIFT_float_describer.hpp"
 
 #include <exception>
 
@@ -53,6 +60,31 @@ std::istream& operator>>(std::istream& in, EDESCRIBER_PRESET& p)
     in >> token;
     p = describerPreset_stringToEnum(token);
     return in;
+}
+
+std::unique_ptr<Image_describer> createImageDescriber(EImageDescriberType imageDescriberType)
+{
+  std::unique_ptr<Image_describer> describerPtr;
+  
+  switch(imageDescriberType)
+  {
+    case EImageDescriberType::SIFT:        describerPtr.reset(new SIFT_Image_describer(SiftParams())); break;
+    case EImageDescriberType::SIFT_FLOAT:  describerPtr.reset(new SIFT_float_describer(SiftParams())); break;
+    case EImageDescriberType::AKAZE_FLOAT: describerPtr.reset(new AKAZE_Image_describer(AKAZEParams(AKAZEConfig(), features::AKAZE_MSURF))); break;
+    case EImageDescriberType::AKAZE_MLDB:  describerPtr.reset(new AKAZE_Image_describer(AKAZEParams(AKAZEConfig(), features::AKAZE_MLDB))); break;
+    
+#ifdef HAVE_CCTAG
+    case EImageDescriberType::CCTAG3:      describerPtr.reset(new CCTAG_Image_describer(3)); break;
+    case EImageDescriberType::CCTAG4:      describerPtr.reset(new CCTAG_Image_describer(4)); break;
+    case EImageDescriberType::SIFT_CCTAG3: describerPtr.reset(new SIFT_CCTAG_Image_describer(SiftParams(), true, 3)); break;
+    case EImageDescriberType::SIFT_CCTAG4: describerPtr.reset(new SIFT_CCTAG_Image_describer(SiftParams(), true, 4)); break;
+#endif //HAVE_CCTAG
+    
+    default: throw std::out_of_range("Invalid imageDescriber enum");
+  }       
+  assert(describerPtr != nullptr);
+  
+  return describerPtr;
 }
 
 }//namespace features

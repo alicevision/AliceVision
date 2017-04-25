@@ -21,7 +21,7 @@ namespace sfm {
   SfM_Localization_Single_3DTrackObservation_Database::Init
   (
     const SfM_Data & sfm_data,
-    const RegionsPerView & regionsPerView
+    const features::RegionsPerView & regionsPerView
   )
   {
     if (regionsPerView.isEmpty())
@@ -34,6 +34,8 @@ namespace sfm {
       OPENMVG_LOG_WARNING("The input SfM_Data file have not 3D content to match with.");
       return false;
     }
+    /*
+    TODO: DELI
 
     // Setup the database
     // A collection of regions
@@ -49,7 +51,7 @@ namespace sfm {
         if (observation.second.id_feat != UndefinedIndexT)
         {
           // copy the feature/descriptor to landmark_observations_descriptors
-          const features::Regions& viewRegions = regionsPerView.getRegions(observation.first);
+          const features::Regions& viewRegions = regionsPerView.getRegions(observation.first, landmark.second.descType);
           viewRegions.CopyRegion(observation.second.id_feat, landmark_observations_descriptors_.get());
           // link this descriptor to the track Id
           index_to_landmark_id_.push_back(landmark.first);
@@ -64,7 +66,7 @@ namespace sfm {
       "#descriptor initialized: " << landmark_observations_descriptors_->RegionCount());
 
     sfm_data_ = &sfm_data;
-
+    */
     return true;
   }
 

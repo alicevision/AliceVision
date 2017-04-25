@@ -6,11 +6,13 @@
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 #include "openMVG/sfm/sfm.hpp"
+#include "openMVG/sfm/pipelines/RegionsIO.hpp"
 #include "openMVG/system/timer.hpp"
 #include "openMVG/features/ImageDescriberCommon.hpp"
 #include "openMVG/features/regions_factory.hpp"
 #include "openMVG/features/svgVisualization.hpp"
 #include "openMVG/features/cctag/CCTAG_describer.hpp"
+#include "openMVG/matching/indMatch.hpp"
 
 #include "boost/filesystem.hpp"
 #include "third_party/cmdLine/cmdLine.h"
@@ -105,7 +107,8 @@ int main(int argc, char **argv)
 
   // Prepare the Regions provider
   RegionsPerView regionsPerView;
-  if (!loadRegionsPerView(regionsPerView, reconstructionSfmData, sMatchesDir, describerMethodType)) {
+  if (!sfm::loadRegionsPerView(regionsPerView, reconstructionSfmData, sMatchesDir, {describerMethodType}))
+  {
     std::cerr << std::endl
       << "Invalid regions." << std::endl;
     return EXIT_FAILURE;
@@ -122,13 +125,13 @@ int main(int argc, char **argv)
     Pair_Set viewPairs;
     if (sUseSfmVisibility)
     {
-      PairWiseSimpleMatches matches;
-      if (!matching::Load(matches, reconstructionSfmData.GetViewsKeys(), sMatchesDir, "f"))
+      matching::PairwiseMatches matches;
+      if (!matching::Load(matches, reconstructionSfmData.GetViewsKeys(), sMatchesDir, {describerMethodType}, "f"))
       {
         std::cerr<< "Unable to read the matches file." << std::endl;
         return EXIT_FAILURE;
       }
-      viewPairs = getPairs(matches);
+      viewPairs = matching::getImagePairs(matches);
 
       // Keep only Pairs that belong to valid view indexes.
       viewPairs = Pair_filter(viewPairs, Get_Valid_Views(reconstructionSfmData));
@@ -164,7 +167,7 @@ int main(int argc, char **argv)
         std::cout << "Ignore unreconstructed view (viewId: " << view->id_view << ", poseId: " << view->id_pose << ")" << std::endl;
         continue;
       }
-      const features::Regions* regions = regionForView.second.get();
+      const features::Regions* regions = regionForView.second.at(describerMethodType).get();
       const features::SIFT_Regions* siftRegions = dynamic_cast<const features::SIFT_Regions*>(regions);
       if(siftRegions == nullptr)
       {
@@ -244,7 +247,7 @@ int main(int argc, char **argv)
         // landmark.X; keep default value, will be set by triangulation in the next step.
         for(IndexT iObsViewId: cctagSubGroup)
         {
-          landmark.obs[iObsViewId] = cctagsObservations[std::make_pair(cctagVisibility.first, iObsViewId)];
+          landmark.observations[iObsViewId] = cctagsObservations[std::make_pair(cctagVisibility.first, iObsViewId)];
         }
         ++landmarkIndex;
       }
@@ -279,8 +282,8 @@ int main(int argc, char **argv)
     // Copy non-CCTag landmarks
     for(const auto& landmarkById: reconstructionSfmData.GetLandmarks())
     {
-      const auto firstObs = landmarkById.second.obs.cbegin();
-      const features::Regions& regions = regionsPerView.getRegions(firstObs->first);
+      const auto firstObs = landmarkById.second.observations.cbegin();
+      const features::Regions& regions = regionsPerView.getRegions(firstObs->first, describerMethodType);
       const features::SIFT_Regions* siftRegions = nullptr;
       try {
         siftRegions = &dynamic_cast<const SIFT_Regions&>(regions);

@@ -20,20 +20,19 @@ namespace matching_image_collection {
 class Matcher_Regions_AllInMemory : public Matcher
 {
   public:
-  Matcher_Regions_AllInMemory
-  (
+  Matcher_Regions_AllInMemory(
     float dist_ratio,
     matching::EMatcherType eMatcherType
   );
 
   /// Find corresponding points between some pair of view Ids
-  void Match
-  (
+  void Match(
     const sfm::SfM_Data & sfm_data,
-    const sfm::RegionsPerView& regionsPerView,
+    const features::RegionsPerView& regionsPerView,
     const Pair_Set & pairs,
-    matching::PairWiseSimpleMatches & map_PutativesMatches // the pairwise photometric corresponding points
-  )const;
+    features::EImageDescriberType descType,
+    matching::PairwiseMatches & map_PutativesMatches // the pairwise photometric corresponding points
+    ) const;
 
   private:
   // Distance ratio used to discard spurious correspondence

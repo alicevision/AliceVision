@@ -33,10 +33,11 @@ template <typename ScalarT>
 void Match
 (
   const sfm::SfM_Data & sfm_data,
-  const sfm::RegionsPerView& regionsPerView,
+  const features::RegionsPerView& regionsPerView,
   const Pair_Set & pairs,
+  EImageDescriberType descType,
   float fDistRatio,
-  PairWiseSimpleMatches & map_PutativesMatches // the pairwise photometric corresponding points
+  PairwiseMatches & map_PutativesMatches // the pairwise photometric corresponding points
 )
 {
   C_Progress_display my_progress_bar( pairs.size() );
@@ -60,7 +61,7 @@ void Match
   if (!used_index.empty())
   {
     const IndexT I = *used_index.begin();
-    const features::Regions &regionsI = regionsPerView.getRegions(I);
+    const features::Regions &regionsI = regionsPerView.getRegions(I, descType);
     const size_t dimension = regionsI.DescriptorLength();
     cascade_hasher.Init(dimension);
   }
@@ -76,7 +77,7 @@ void Match
       std::set<IndexT>::const_iterator iter = used_index.begin();
       std::advance(iter, i);
       const IndexT I = *iter;
-      const features::Regions &regionsI = regionsPerView.getRegions(I);
+      const features::Regions &regionsI = regionsPerView.getRegions(I, descType);
       const ScalarT * tabI =
         reinterpret_cast<const ScalarT*>(regionsI.DescriptorRawData());
       const size_t dimension = regionsI.DescriptorLength();
@@ -103,7 +104,7 @@ void Match
     std::set<IndexT>::const_iterator iter = used_index.begin();
     std::advance(iter, i);
     const IndexT I = *iter;
-    const features::Regions &regionsI = regionsPerView.getRegions(I);
+    const features::Regions &regionsI = regionsPerView.getRegions(I, descType);
     const ScalarT * tabI =
       reinterpret_cast<const ScalarT*>(regionsI.DescriptorRawData());
     const size_t dimension = regionsI.DescriptorLength();
@@ -126,7 +127,7 @@ void Match
     const IndexT I = iter->first;
     const std::vector<IndexT> & indexToCompare = iter->second;
 
-    const features::Regions &regionsI = regionsPerView.getRegions(I);
+    const features::Regions &regionsI = regionsPerView.getRegions(I, descType);
     if (regionsI.RegionCount() == 0)
     {
       my_progress_bar += indexToCompare.size();
@@ -145,7 +146,7 @@ void Match
     for (int j = 0; j < (int)indexToCompare.size(); ++j)
     {
       size_t J = indexToCompare[j];
-      const features::Regions &regionsJ = regionsPerView.getRegions(I);
+      const features::Regions &regionsJ = regionsPerView.getRegions(I, descType);
 
       if (!regionsPerView.viewExist(J)
           || regionsI.Type_id() != regionsJ.Type_id())
@@ -209,7 +210,7 @@ void Match
         ++my_progress_bar;
         if (!vec_putative_matches.empty())
         {
-          map_PutativesMatches.insert( make_pair( make_pair(I,J), std::move(vec_putative_matches) ));
+          map_PutativesMatches[std::make_pair(I,J)].emplace(descType, std::move(vec_putative_matches));
         }
       }
     }
@@ -220,10 +221,11 @@ void Match
 void Cascade_Hashing_Matcher_Regions_AllInMemory::Match
 (
   const sfm::SfM_Data & sfm_data,
-  const sfm::RegionsPerView& regionsPerView,
+  const features::RegionsPerView& regionsPerView,
   const Pair_Set & pairs,
-  PairWiseSimpleMatches & map_PutativesMatches // the pairwise photometric corresponding points
-)const
+  features::EImageDescriberType descType,
+  PairwiseMatches & map_PutativesMatches // the pairwise photometric corresponding points
+) const
 {
 #ifdef OPENMVG_USE_OPENMP
   OPENMVG_LOG_DEBUG("Using the OPENMP thread interface");
@@ -232,7 +234,7 @@ void Cascade_Hashing_Matcher_Regions_AllInMemory::Match
   if (regionsPerView.isEmpty())
     return;
 
-  const features::Regions& regions = regionsPerView.getFirstViewRegions();
+  const features::Regions& regions = regionsPerView.getFirstViewRegions(descType);
 
   if (regions.IsBinary())
     return;
@@ -243,6 +245,7 @@ void Cascade_Hashing_Matcher_Regions_AllInMemory::Match
       sfm_data,
       regionsPerView,
       pairs,
+      descType,
       f_dist_ratio_,
       map_PutativesMatches);
   }
@@ -253,6 +256,7 @@ void Cascade_Hashing_Matcher_Regions_AllInMemory::Match
       sfm_data,
       regionsPerView,
       pairs,
+      descType,
       f_dist_ratio_,
       map_PutativesMatches);
   }

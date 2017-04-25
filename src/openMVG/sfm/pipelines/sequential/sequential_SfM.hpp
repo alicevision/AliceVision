@@ -9,7 +9,7 @@
 
 #include "openMVG/sfm/sfm_data_io.hpp"
 #include "openMVG/sfm/pipelines/sfm_engine.hpp"
-#include "openMVG/sfm/pipelines/FeaturesPerView.hpp"
+#include "openMVG/features/FeaturesPerView.hpp"
 #include "openMVG/sfm/pipelines/sfm_matches_provider.hpp"
 #include "openMVG/tracks/tracks.hpp"
 
@@ -31,8 +31,15 @@ public:
 
   ~SequentialSfMReconstructionEngine();
 
-  void SetFeaturesProvider(FeaturesPerView * featuresPerView);
-  void SetMatchesProvider(Matches_Provider * provider);
+  void setFeatures(features::FeaturesPerView * featuresPerView)
+  {
+    _featuresPerView = featuresPerView;
+  }
+
+  void setMatches(matching::PairwiseMatches * pairwiseMatches)
+  {
+    _pairwiseMatches = pairwiseMatches;
+  }
 
   void RobustResectionOfImages(
     const std::set<size_t>& viewIds,
@@ -181,8 +188,8 @@ private:
   int _minPointsPerPose = 30;
   
   //-- Data provider
-  FeaturesPerView  * _featuresPerView;
-  Matches_Provider  * _matches_provider;
+  features::FeaturesPerView  * _featuresPerView;
+  matching::PairwiseMatches  * _pairwiseMatches;
 
   // Pyramid scoring
   const int _pyramidBase = 2;
@@ -193,7 +200,7 @@ private:
 
   // Temporary data
   /// Putative landmark tracks (visibility per potential 3D point)
-  tracks::STLMAPTracks _map_tracks;
+  tracks::TracksMap _map_tracks;
   /// Putative tracks per view
   tracks::TracksPerView _map_tracksPerView;
   /// Precomputed pyramid index for each trackId of each viewId.

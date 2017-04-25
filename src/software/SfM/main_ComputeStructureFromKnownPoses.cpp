@@ -6,6 +6,8 @@
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 #include "openMVG/sfm/sfm.hpp"
+#include "openMVG/sfm/pipelines/RegionsIO.hpp"
+#include "openMVG/matching/indMatch.hpp"
 #include "openMVG/system/timer.hpp"
 
 #include "third_party/cmdLine/cmdLine.h"
@@ -23,14 +25,14 @@ int main(int argc, char **argv)
   CmdLine cmd;
 
   std::string sSfM_Data_Filename;
-  std::string describerMethod = "SIFT";
+  std::string describerMethods = "SIFT"; // TODO DELI
   std::string sFeaturesDir;
   std::string sMatchesDir;
   std::string sMatchesGeometricModel = "f";
   std::string sOutFile = "";
 
   cmd.add( make_option('i', sSfM_Data_Filename, "input_file") );
-  cmd.add( make_option('d', describerMethod, "describerMethod") );
+  cmd.add( make_option('d', describerMethods, "describerMethods") );
   cmd.add( make_option('f', sFeaturesDir, "feat_dir") );
   cmd.add( make_option('m', sMatchesDir, "match_dir") );
   cmd.add( make_option('o', sOutFile, "output_file") );
@@ -42,7 +44,7 @@ int main(int argc, char **argv)
   } catch(const std::string& s) {
     std::cerr << "Usage: " << argv[0] << "\n"
         "[-i|--input_file] path to a SfM_Data scene\n"
-        "[-d|--describerMethod]\n"
+        "[-d|--describerMethods]\n"
         "  (methods to use to describe an image):\n"
         "   SIFT (default),\n"
         "   SIFT_FLOAT to use SIFT stored as float,\n"
@@ -80,11 +82,12 @@ int main(int argc, char **argv)
   using namespace openMVG::features;
   
   // Get imageDescriberMethodType
-  EImageDescriberType describerMethodType = EImageDescriberType_stringToEnum(describerMethod);
+  std::vector<EImageDescriberType> describerMethodTypes = EImageDescriberType_stringToEnums(describerMethods);
 
   // Prepare the Regions provider
   RegionsPerView regionsPerView;
-  if (!loadRegionsPerView(regionsPerView, sfm_data, sMatchesDir, describerMethodType)) {
+  if(!sfm::loadRegionsPerView(regionsPerView, sfm_data, sMatchesDir, describerMethodTypes))
+  {
     std::cerr << std::endl
       << "Invalid regions." << std::endl;
     return EXIT_FAILURE;
@@ -106,13 +109,13 @@ int main(int argc, char **argv)
   else
   {
     // Load pre-computed matches
-    PairWiseSimpleMatches matches;
-    if (!matching::Load(matches, sfm_data.GetViewsKeys(), sMatchesDir, sMatchesGeometricModel))
+    matching::PairwiseMatches matches;
+    if (!matching::Load(matches, sfm_data.GetViewsKeys(), sMatchesDir, describerMethodTypes, sMatchesGeometricModel))
     {
       std::cerr<< "Unable to read the matches file." << std::endl;
       return EXIT_FAILURE;
     }
-    pairs = getPairs(matches);
+    pairs = matching::getImagePairs(matches);
     // Keep only Pairs that belong to valid view indexes.
     const std::set<IndexT> valid_viewIdx = Get_Valid_Views(sfm_data);
     pairs = Pair_filter(pairs, valid_viewIdx);
@@ -143,7 +146,8 @@ int main(int argc, char **argv)
     << "\nStructure estimation took (s): " << timer.elapsed() << "." << std::endl
     << "#landmark found: " << sfm_data.GetLandmarks().size() << std::endl;
 
-  if (stlplus::extension_part(sOutFile) != "ply") {
+  if (stlplus::extension_part(sOutFile) != "ply")
+  {
     Save(sfm_data,
       stlplus::create_filespec(
         stlplus::folder_part(sOutFile),

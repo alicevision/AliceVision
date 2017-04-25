@@ -17,7 +17,9 @@ set(features_files_headers
   selection.hpp
   keypointSet.hpp
   svgVisualization.hpp
-  ImageDescriberCommon.hpp)
+  ImageDescriberCommon.hpp
+  RegionsPerView.hpp
+  FeaturesPerView.hpp)
 
 set( features_files_sources
   selection.cpp

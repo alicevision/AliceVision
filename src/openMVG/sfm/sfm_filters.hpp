@@ -79,17 +79,17 @@ void KeepOnlyReferencedElement(
   relative_info.swap(relatives_infered);
 }
 
-// Specialization for PairWiseSimpleMatches
+// Specialization for PairwiseMatches
 template<>
 #ifdef _MSC_VER
 static
 #endif
 void KeepOnlyReferencedElement(
   const std::set<IndexT> & set_remainingIds,
-  openMVG::matching::PairWiseSimpleMatches& map_matches)
+  openMVG::matching::PairwiseMatches& map_matches)
 {
-  openMVG::matching::PairWiseSimpleMatches map_matches_E_infered;
-  for (openMVG::matching::PairWiseSimpleMatches::const_iterator iter = map_matches.begin();
+  openMVG::matching::PairwiseMatches map_matches_E_infered;
+  for (openMVG::matching::PairwiseMatches::const_iterator iter = map_matches.begin();
     iter != map_matches.end(); ++iter)
   {
     if (set_remainingIds.find(iter->first.first) != set_remainingIds.end() &&

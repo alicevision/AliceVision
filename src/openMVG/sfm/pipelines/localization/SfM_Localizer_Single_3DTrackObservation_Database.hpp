@@ -7,6 +7,7 @@
 
 #pragma once
 
+#include "openMVG/features/FeaturesPerView.hpp"
 #include "openMVG/sfm/pipelines/localization/SfM_Localizer.hpp"
 #include "openMVG/matching/regions_matcher.hpp"
 
@@ -35,7 +36,7 @@ public:
   bool Init
   (
     const SfM_Data & sfm_data,
-    const RegionsPerView & regionsPerView
+    const features::RegionsPerView & regionsPerView
   );
 
   /**

@@ -7,7 +7,6 @@
 
 #pragma once
 
-#include "openMVG/matching/matcher_type.hpp"
 #include <string>
 
 namespace openMVG {

@@ -59,7 +59,7 @@ private:
 
   std::vector< std::pair< size_t, size_t > > _vec_imageSize; // Size of each image
 
-  openMVG::matching::PairWiseSimpleMatches _map_Matches; // pairwise geometric matches
+  openMVG::matching::PairwiseMatches _map_Matches; // pairwise geometric matches
 
   //
   std::string _sSfM_Data_Path;// Path to the Sfm_Scene

@@ -9,7 +9,7 @@
 
 #include "openMVG/numeric/numeric.h"
 #include "openMVG/sfm/sfm_data.hpp"
-#include "openMVG/sfm/pipelines/RegionsPerView.hpp"
+#include "openMVG/features/RegionsPerView.hpp"
 #include <openMVG/robust_estimation/robust_estimators.hpp>
 
 #include <cstddef>
@@ -57,7 +57,7 @@ public:
   virtual bool Init
   (
     const SfM_Data & sfm_data,
-    const RegionsPerView & regionPerView
+    const features::RegionsPerView & regionPerView
   ) = 0;
 
   /**

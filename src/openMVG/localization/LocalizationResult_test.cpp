@@ -32,7 +32,7 @@ localization::LocalizationResult generateRandomResult(std::size_t numPts)
   const sfm::Image_Localizer_Match_Data &data = generateRandomMatch_Data(numPts);
   
   // random indMatch3D2D
-  std::vector<pair<IndexT, IndexT> > indMatch3D2D;
+  std::vector<std::pair<IndexT, IndexT> > indMatch3D2D;
   indMatch3D2D.reserve(numPts);
   for(std::size_t i = 0; i < numPts; ++i)
   {

@@ -20,13 +20,15 @@
 #endif
 
 #include "openMVG/exif/exif_IO_EasyExif.hpp"
+#include "openMVG/stl/split.hpp"
 
-#include <cereal/archives/json.hpp>
 #include "openMVG/system/timer.hpp"
 
 #include "third_party/cmdLine/cmdLine.h"
 #include "third_party/stlplus3/filesystemSimplified/file_system.hpp"
 #include "third_party/progress/progress.hpp"
+
+#include <cereal/archives/json.hpp>
 
 #include <cstdlib>
 #include <fstream>
@@ -227,7 +229,7 @@ int main(int argc, char **argv)
 
   std::string sfmDataFilename;
   std::string outDirectory = "";
-  std::string featurePreset = "";
+  std::string featurePreset = "NORMAL";
   std::string describerMethods = "SIFT";
   bool describersAreUpRight = false;
   int rangeStart = -1;
@@ -385,15 +387,15 @@ int main(int argc, char **argv)
       std::cerr << "\nError: describerMethods argument is empty." << std::endl;
       return EXIT_FAILURE;
     }
-    
-    std::istringstream stream(describerMethods);
-    std::string methodName;
-    
-    while(stream >> methodName)
+    std::vector<EImageDescriberType> describerMethodsVec = EImageDescriberType_stringToEnums(describerMethods);
+    std::cout << "describerMethodsVec: " << describerMethodsVec.size() << std::endl;
+
+    for(const auto& describerMethod: describerMethodsVec)
     {
       DescriberMethod method;
-      method.typeName = methodName;
-      method.type = EImageDescriberType_stringToEnum(methodName);
+      method.typeName = EImageDescriberType_enumToString(describerMethod); // TODO: DELI ?
+      std::cout << "describerMethod: " << method.typeName << std::endl;
+      method.type = describerMethod;
       method.describer = createImageDescriber(method.type);
       method.describer->Set_configuration_preset(featurePreset);
       method.describer->setUpRight(describersAreUpRight);
@@ -446,6 +448,7 @@ int main(int argc, char **argv)
     {
       const View* view = iterViews->second.get();
       const std::string viewFilename = stlplus::create_filespec(sfm_data.s_root_path, view->s_Img_path);
+      std::cout << "Extract features in view: " << viewFilename << std::endl;
       
       std::vector<DescriberComputeMethod> computeMethods;
       
@@ -458,9 +461,10 @@ int main(int argc, char **argv)
         computeMethod.descFilename = stlplus::create_filespec(outDirectory,
               stlplus::basename_part(std::to_string(view->id_view)), imageDescribers[i].typeName + ".desc");
       
-        if (!stlplus::file_exists(computeMethod.featFilename) 
-              || !stlplus::file_exists(computeMethod.descFilename))
+        if (stlplus::file_exists(computeMethod.featFilename) &&
+            stlplus::file_exists(computeMethod.descFilename))
         {
+          // Skip the feature extraction as the results are already computed.
           continue;
         }
         

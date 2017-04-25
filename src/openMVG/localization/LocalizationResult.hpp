@@ -14,14 +14,14 @@ namespace cereal{
 template<class Archive>
 void save(Archive & archive, openMVG::Mat34 const & mat)
 { 
-  vector<double> vec(mat.data(), mat.data() + mat.rows() * mat.cols());
+  std::vector<double> vec(mat.data(), mat.data() + mat.rows() * mat.cols());
   archive(vec); 
 }
 
 template<class Archive>
 void load(Archive & archive, openMVG::Mat34 & m)
 {
-  vector<double> vec(12);
+  std::vector<double> vec(12);
   archive(vec); 
   m = Eigen::Map<openMVG::Mat34>(vec.data(), 3, 4);
 }
@@ -34,14 +34,14 @@ namespace localization {
 template<class Archive>
 void saveMat(Archive & archive, const std::string &name, Mat const & mat)
 { 
-  vector<double> vec(mat.data(), mat.data() + mat.rows() * mat.cols());
+  std::vector<double> vec(mat.data(), mat.data() + mat.rows() * mat.cols());
   archive(cereal::make_nvp(name, vec)); 
 }
 
 template<class Archive>
 void loadMat(Archive & archive, const std::string &name, const std::size_t rows, openMVG::Mat & m)
 {
-  vector<double> vec;
+  std::vector<double> vec;
   archive(cereal::make_nvp(name, vec));
   const std::size_t cols = vec.size() / rows;
   m = Eigen::Map<openMVG::Mat>(vec.data(), rows, cols);

@@ -10,11 +10,15 @@
 
 #include "openMVG/tracks/tracks.hpp"
 #include "openMVG/matching/indMatch.hpp"
-using namespace openMVG::tracks;
-using namespace openMVG::matching;
 
 #include <vector>
 #include <utility>
+
+
+using namespace openMVG::features;
+using namespace openMVG::tracks;
+using namespace openMVG::matching;
+
 
 TEST(Tracks, Simple) {
 
@@ -27,7 +31,7 @@ TEST(Tracks, Simple) {
   //2 -> 3
 
   // Create the input pairwise correspondences
-  PairWiseSimpleMatches map_pairwisematches;
+  PairwiseMatches map_pairwisematches;
 
   const IndMatch testAB[] = {IndMatch(0,0), IndMatch(1,1), IndMatch(2,3)};
   const IndMatch testBC[] = {IndMatch(0,0), IndMatch(1,6)};
@@ -37,8 +41,8 @@ TEST(Tracks, Simple) {
   const int A = 0;
   const int B = 1;
   const int C = 2;
-  map_pairwisematches[ std::make_pair(A,B) ] = ab;
-  map_pairwisematches[ std::make_pair(B,C) ] = bc;
+  map_pairwisematches[ std::make_pair(A, B) ][EImageDescriberType::UNKNOWN] = ab;
+  map_pairwisematches[ std::make_pair(B, C) ][EImageDescriberType::UNKNOWN] = bc;
 
   //-- Build tracks using the interface tracksbuilder
   TracksBuilder trackBuilder;
@@ -46,7 +50,7 @@ TEST(Tracks, Simple) {
 
   trackBuilder.ExportToStream(std::cout);
 
-  STLMAPTracks map_tracks;
+  TracksMap map_tracks;
   trackBuilder.ExportToSTL(map_tracks);
 
   //-------------------
@@ -65,13 +69,13 @@ TEST(Tracks, Simple) {
 
   CHECK_EQUAL(3,  map_tracks.size());
   std::size_t cpt = 0, i = 0;
-  for (STLMAPTracks::const_iterator iterT = map_tracks.begin();
+  for (TracksMap::const_iterator iterT = map_tracks.begin();
     iterT != map_tracks.end();
     ++iterT, ++i)
   {
     CHECK_EQUAL(i, iterT->first);
-    for (submapTrack::const_iterator iter = iterT->second.begin();
-      iter != iterT->second.end();
+    for (auto iter = iterT->second.featPerView.begin();
+      iter != iterT->second.featPerView.end();
       ++iter)
     {
       CHECK( GT_Tracks[cpt] == std::make_pair(iter->first, iter->second));
@@ -90,7 +94,7 @@ TEST(Tracks, filter_3viewAtLeast) {
   //
 
   // Create the input pairwise correspondences
-  PairWiseSimpleMatches map_pairwisematches;
+  PairwiseMatches map_pairwisematches;
 
   IndMatch testAB[] = {IndMatch(0,0), IndMatch(1,1), IndMatch(2,3)};
   IndMatch testBC[] = {IndMatch(0,0), IndMatch(1,6)};
@@ -101,8 +105,8 @@ TEST(Tracks, filter_3viewAtLeast) {
   const int A = 0;
   const int B = 1;
   const int C = 2;
-  map_pairwisematches[ std::make_pair(A,B) ] = ab;
-  map_pairwisematches[ std::make_pair(B,C) ] = bc;
+  map_pairwisematches[ std::make_pair(A,B) ][EImageDescriberType::UNKNOWN] = ab;
+  map_pairwisematches[ std::make_pair(B,C) ][EImageDescriberType::UNKNOWN] = bc;
 
   //-- Build tracks using the interface tracksbuilder
   TracksBuilder trackBuilder;
@@ -123,7 +127,7 @@ TEST(Tracks, Conflict) {
   //
 
   // Create the input pairwise correspondences
-  PairWiseSimpleMatches map_pairwisematches;
+  PairwiseMatches map_pairwisematches;
 
   const IndMatch testAB[] = {IndMatch(0,0), IndMatch(1,1), IndMatch(2,3)};
   const IndMatch testBC[] = {IndMatch(0,0), IndMatch(1,6), IndMatch(3,2), IndMatch(3,8)};
@@ -133,8 +137,8 @@ TEST(Tracks, Conflict) {
   const int A = 0;
   const int B = 1;
   const int C = 2;
-  map_pairwisematches[ std::make_pair(A,B) ] = ab;
-  map_pairwisematches[ std::make_pair(B,C) ] = bc;
+  map_pairwisematches[ std::make_pair(A,B) ][EImageDescriberType::UNKNOWN] = ab;
+  map_pairwisematches[ std::make_pair(B,C) ][EImageDescriberType::UNKNOWN] = bc;
 
   //-- Build tracks using the interface tracksbuilder
   TracksBuilder trackBuilder;
@@ -144,7 +148,7 @@ TEST(Tracks, Conflict) {
   trackBuilder.Filter(); // Key feature tested here to kill the conflicted track
   CHECK_EQUAL(2, trackBuilder.NbTracks());
 
-  STLMAPTracks map_tracks;
+  TracksMap map_tracks;
   trackBuilder.ExportToSTL(map_tracks);
 
   //-------------------
@@ -159,13 +163,13 @@ TEST(Tracks, Conflict) {
 
   CHECK_EQUAL(2,  map_tracks.size());
   std::size_t cpt = 0, i = 0;
-  for (STLMAPTracks::const_iterator iterT = map_tracks.begin();
+  for (TracksMap::const_iterator iterT = map_tracks.begin();
     iterT != map_tracks.end();
     ++iterT, ++i)
   {
     CHECK_EQUAL(i, iterT->first);
-    for (submapTrack::const_iterator iter = iterT->second.begin();
-      iter != iterT->second.end();
+    for (auto iter = iterT->second.featPerView.begin();
+      iter != iterT->second.featPerView.end();
       ++iter)
     {
       CHECK( GT_Tracks[cpt] == std::make_pair(iter->first, iter->second));

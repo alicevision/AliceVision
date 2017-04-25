@@ -55,7 +55,7 @@ TEST(GLOBAL_SFM, RotationAveragingL2_TranslationAveragingL1) {
   
   // Add a tiny noise in 2D observations to make data more realistic
   std::normal_distribution<double> distribution(0.0,0.5);
-  featuresPerView.createSyntheticData(d,distribution);
+  featuresPerView.createSyntheticData(features::EImageDescriberType::UNKNOWN, d, distribution);
 
   std::shared_ptr<Matches_Provider> matches_provider =
     std::make_shared<Synthetic_Matches_Provider>();
@@ -106,7 +106,7 @@ TEST(GLOBAL_SFM, RotationAveragingL1_TranslationAveragingL1) {
   
   // Add a tiny noise in 2D observations to make data more realistic
   std::normal_distribution<double> distribution(0.0,0.5);
-  featuresPerView.createSyntheticData(d,distribution);
+  featuresPerView.createSyntheticData(features::EImageDescriberType::UNKNOWN, d, distribution);
 
 
   std::shared_ptr<Matches_Provider> matches_provider =
@@ -157,7 +157,7 @@ TEST(GLOBAL_SFM, RotationAveragingL2_TranslationAveragingL2_Chordal) {
   FeaturesPerView featuresPerView;
   // Add a tiny noise in 2D observations to make data more realistic
   std::normal_distribution<double> distribution(0.0,0.5);
-  featuresPerView.createSyntheticData(d,distribution);
+  featuresPerView.createSyntheticData(features::EImageDescriberType::UNKNOWN, d, distribution);
 
   std::shared_ptr<Matches_Provider> matches_provider =
     std::make_shared<Synthetic_Matches_Provider>();
@@ -208,7 +208,7 @@ TEST(GLOBAL_SFM, RotationAveragingL2_TranslationAveragingSoftL1) {
   
   // Add a tiny noise in 2D observations to make data more realistic
   std::normal_distribution<double> distribution(0.0,0.5);
-   featuresPerView.createSyntheticData(d,distribution);
+   featuresPerView.createSyntheticData(features::EImageDescriberType::UNKNOWN, d, distribution);
 
   std::shared_ptr<Matches_Provider> matches_provider =
     std::make_shared<Synthetic_Matches_Provider>();

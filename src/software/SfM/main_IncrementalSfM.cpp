@@ -7,7 +7,9 @@
 
 #include <cstdlib>
 
+#include "openMVG/features/ImageDescriberCommon.hpp"
 #include "openMVG/sfm/sfm.hpp"
+#include "openMVG/sfm/pipelines/RegionsIO.hpp"
 #include "openMVG/system/timer.hpp"
 
 #include "third_party/cmdLine/cmdLine.h"
@@ -84,7 +86,7 @@ int main(int argc, char **argv)
   CmdLine cmd;
 
   std::string sSfM_Data_Filename;
-  std::string describerMethod = "SIFT";
+  std::string describerMethods = "SIFT"; //TODO multiple desc DELI
   std::string sMatchesDir;
   std::string sOutDir = "";
   std::string sOutSfMDataFilepath = "";
@@ -96,7 +98,7 @@ int main(int argc, char **argv)
   bool allowUserInteraction = true;
 
   cmd.add( make_option('i', sSfM_Data_Filename, "input_file") );
-  cmd.add( make_option('d', describerMethod, "describerMethod") );
+  cmd.add( make_option('d', describerMethods, "describerMethods") );
   cmd.add( make_option('m', sMatchesDir, "matchdir") );
   cmd.add( make_option('o', sOutDir, "outdir") );
   cmd.add( make_option('s', sOutSfMDataFilepath, "out_sfmdata_file") );
@@ -162,20 +164,21 @@ int main(int argc, char **argv)
   }
 
   // Get imageDescriberMethodType
-  EImageDescriberType describerMethodType = EImageDescriberType_stringToEnum(describerMethod);
+  const std::vector<features::EImageDescriberType> describerTypes = features::EImageDescriberType_stringToEnums(describerMethods);
 
   // Features reading
-  FeaturesPerView featuresPerView;
-  if (!loadFeaturesPerView(featuresPerView, sfm_data, sMatchesDir, describerMethodType)) {
+  features::FeaturesPerView featuresPerView;
+  if(!sfm::loadFeaturesPerView(featuresPerView, sfm_data, sMatchesDir, describerTypes))
+  {
     std::cerr << std::endl
       << "Invalid features." << std::endl;
     return EXIT_FAILURE;
   }
   
   // Matches reading
-  std::shared_ptr<Matches_Provider> matches_provider = std::make_shared<Matches_Provider>();
+  matching::PairwiseMatches pairwiseMatches;
 
-  if(!matches_provider->load(sfm_data, sMatchesDir, "f"))
+  if(!loadPairwiseMatches(pairwiseMatches, sfm_data, sMatchesDir, describerTypes, "f"))
   {
     std::cerr << std::endl << "Unable to load matches file from: " << sMatchesDir << std::endl;
     return EXIT_FAILURE;
@@ -201,8 +204,8 @@ int main(int argc, char **argv)
     stlplus::create_filespec(sOutDir, "Reconstruction_Report.html"));
 
   // Configure the featuresPerView & the matches_provider
-  sfmEngine.SetFeaturesProvider(&featuresPerView);
-  sfmEngine.SetMatchesProvider(matches_provider.get());
+  sfmEngine.setFeatures(&featuresPerView);
+  sfmEngine.setMatches(&pairwiseMatches);
 
   // Configure reconstruction parameters
   sfmEngine.Set_bFixedIntrinsics(!bRefineIntrinsics);

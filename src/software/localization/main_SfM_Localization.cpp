@@ -6,19 +6,20 @@
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 #include <openMVG/sfm/sfm.hpp>
+#include <openMVG/sfm/pipelines/RegionsIO.hpp>
 #include <openMVG/features/features.hpp>
-#include <nonFree/sift/SIFT_describer.hpp>
 #include <openMVG/image/image.hpp>
-
 #include <openMVG/system/timer.hpp>
 
-using namespace openMVG;
-using namespace openMVG::sfm;
+#include <nonFree/sift/SIFT_describer.hpp>
 
 #include "third_party/cmdLine/cmdLine.h"
 #include "third_party/stlplus3/filesystemSimplified/file_system.hpp"
 
 #include <cstdlib>
+
+using namespace openMVG;
+using namespace openMVG::sfm;
 
 // ---------------------------------------------------------------------------
 // Image localization API sample:
@@ -109,27 +110,28 @@ int main(int argc, char **argv)
   EImageDescriberType describerType = EImageDescriberType_stringToEnum(describerMethod);
   
   // Get imageDecriber fom type
-  std::unique_ptr<Image_describer> imageDescriber = createImageDescriber(describerType);
+  std::unique_ptr<Image_describer> imageDescribers = createImageDescriber(describerType);
 
   // Load the SfM_Data region's views
-  
-    //-
-    //-- Localization
-    // - init the retrieval database
-    // - Go along the sfm_data view
-    // - extract the regions of the view
-    // - try to locate the image
-    //-
+  //-
+  //-- Localization
+  // - init the retrieval database
+  // - Go along the sfm_data view
+  // - extract the regions of the view
+  // - try to locate the image
+  //-
   sfm::SfM_Localization_Single_3DTrackObservation_Database localizer;
   {
     RegionsPerView regionsPerView;
 
-    if (!loadRegionsPerView(regionsPerView, sfm_data, sMatchesDir, describerType)) {
+    if (!sfm::loadRegionsPerView(regionsPerView, sfm_data, sMatchesDir, {describerType}))
+    {
       std::cerr << std::endl << "Invalid regions." << std::endl;
       return EXIT_FAILURE;
     }
 
-    if (sOutDir.empty())  {
+    if (sOutDir.empty())
+    {
       std::cerr << "\nIt is an invalid output directory" << std::endl;
       return EXIT_FAILURE;
     }
@@ -157,7 +159,7 @@ int main(int argc, char **argv)
         return EXIT_FAILURE;
       }
       // Compute features and descriptors
-      imageDescriber->Describe(imageGray, query_regions);
+      imageDescribers->Describe(imageGray, query_regions);
       std::cout << "#regions detected in query image: " << query_regions->RegionCount() << std::endl;
     }
 
@@ -224,7 +226,7 @@ int main(int argc, char **argv)
       std::cout << "SfM::localization => try with image: " << sImagePath << std::endl;
 
       std::unique_ptr<Regions> query_regions;
-      imageDescriber->Allocate(query_regions);
+      imageDescribers->Allocate(query_regions);
       const std::string basename = stlplus::basename_part(sImagePath);
       const std::string featFile = stlplus::create_filespec(sMatchesDir, basename, ".feat");
       const std::string descFile = stlplus::create_filespec(sMatchesDir, basename, ".desc");

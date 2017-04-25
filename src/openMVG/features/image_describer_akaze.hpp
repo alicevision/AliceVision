@@ -16,6 +16,7 @@
 #include "openMVG/features/akaze/msurf_descriptor.hpp"
 #include "openMVG/features/akaze/mldb_descriptor.hpp"
 #include "openMVG/features/liop/liop_descriptor.hpp"
+#include "ImageDescriberCommon.hpp"
 #include <cereal/cereal.hpp>
 
 using namespace std;
@@ -56,7 +57,20 @@ public:
     bool bOrientation = true
   ):Image_describer(), _params(params), _bOrientation(bOrientation) {}
 
-
+  virtual EImageDescriberType getDescriberType()
+  {
+    switch(_params._eAkazeDescriptor)
+    {
+      case AKAZE_MSURF:
+        return EImageDescriberType::AKAZE_FLOAT;
+      case AKAZE_LIOP:
+        return EImageDescriberType::AKAZE_LIOP;
+      case AKAZE_MLDB:
+        return EImageDescriberType::AKAZE_MLDB;
+    }
+    throw std::logic_error("Unknown AKAZE type.");
+  }
+  
   bool Set_configuration_preset(EDESCRIBER_PRESET preset)
   {
     switch(preset)

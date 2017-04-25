@@ -1,25 +1,25 @@
 #pragma once
 
-#include "openMVG/features/image_describer.hpp"
-
 #include <string>
-#include <memory>
+#include <vector>
 
 namespace openMVG {
 namespace features {
 
 enum class EImageDescriberType
 {
-  SIFT,             
-  SIFT_FLOAT,        
+  UNKNOWN = 0,
+  SIFT = 1,
+  SIFT_FLOAT = 2,
 #ifdef HAVE_CCTAG
-  CCTAG3,            
-  CCTAG4,
-  SIFT_CCTAG3,
-  SIFT_CCTAG4,
-#endif //HAVE_CCTAG
-  AKAZE_FLOAT,
-  AKAZE_MLDB
+  CCTAG3 = 3,
+  CCTAG4 = 4,
+  SIFT_CCTAG3 = 5,
+  SIFT_CCTAG4 = 6,
+#endif
+  AKAZE_FLOAT = 7,
+  AKAZE_LIOP = 8,
+  AKAZE_MLDB = 9
 };
   
 /**
@@ -37,10 +37,12 @@ std::string EImageDescriberType_enumToString(EImageDescriberType imageDescriberT
  */
  EImageDescriberType EImageDescriberType_stringToEnum(const std::string& imageDescriberType);
 
-
- // Create the desired Image_describer method.
- // Don't use a factory, perform direct allocation
-std::unique_ptr<Image_describer> createImageDescriber(EImageDescriberType imageDescriberType);
+ /**
+  * @brief EImageDescriberType_stringToEnums
+  * @param describerMethods
+  * @return
+  */
+ std::vector<EImageDescriberType> EImageDescriberType_stringToEnums(const std::string& describerMethods);
 
   
 } // namespace features

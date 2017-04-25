@@ -223,10 +223,13 @@ bool VoctreeLocalizer::localize(const image::Image<unsigned char> & imageGrey,
   // if debugging is enable save the svg image with the extracted features
   if(!param->_visualDebug.empty() && !imagePath.empty())
   {
+    features::MapFeaturesPerDesc extractedFeatures;
+    extractedFeatures[_image_describer->getDescriberType()] = tmpQueryRegions->GetRegionsPositions();
+
     namespace bfs = boost::filesystem;
-    saveFeatures2SVG(imagePath,
+    features::saveFeatures2SVG(imagePath,
                      queryImageSize,
-                     tmpQueryRegions->GetRegionsPositions(),
+                     extractedFeatures,
                      param->_visualDebug + "/" + bfs::path(imagePath).stem().string() + ".svg");
   }
 
@@ -239,60 +242,17 @@ bool VoctreeLocalizer::localize(const image::Image<unsigned char> & imageGrey,
                   imagePath);
 }
 
-//@fixme deprecated.. now inside initDatabase
-
 bool VoctreeLocalizer::loadReconstructionDescriptors(const sfm::SfM_Data & sfm_data,
                                                      const std::string & feat_directory)
 {
-  C_Progress_display my_progress_bar(sfm_data.GetViews().size(),
-                                     std::cout, "\n- Regions Loading -\n");
-
-  OPENMVG_LOG_DEBUG("Build observations per view");
-  // Build observations per view
-  std::map<IndexT, std::vector<FeatureInImage> > observationsPerView;
-  for(auto landmarkValue : sfm_data.structure)
-  {
-    IndexT trackId = landmarkValue.first;
-    sfm::Landmark& landmark = landmarkValue.second;
-    for(auto obs : landmark.obs)
-    {
-      const IndexT viewId = obs.first;
-      const sfm::Observation& obs2d = obs.second;
-      observationsPerView[viewId].push_back(FeatureInImage(obs2d.id_feat, trackId));
-    }
-  }
-  for(auto featuresInImage : observationsPerView)
-  {
-    std::sort(featuresInImage.second.begin(), featuresInImage.second.end());
-  }
-
-  OPENMVG_LOG_DEBUG("Load Features and Descriptors per view");
-  // Read for each view the corresponding regions and store them
-  for(sfm::Views::const_iterator iter = sfm_data.GetViews().begin();
-          iter != sfm_data.GetViews().end(); ++iter, ++my_progress_bar)
-  {
-    const IndexT id_view = iter->second->id_view;
-    Reconstructed_RegionsT& reconstructedRegion = _regions_per_view[id_view];
-
-    const std::string sImageName = stlplus::create_filespec(sfm_data.s_root_path, iter->second.get()->s_Img_path);
-    const std::string basename = stlplus::basename_part(sImageName);
-    const std::string featFilepath = stlplus::create_filespec(feat_directory, basename, ".feat");
-    const std::string descFilepath = stlplus::create_filespec(feat_directory, basename, ".desc");
-
-    if(!reconstructedRegion._regions.Load(featFilepath, descFilepath))
-    {
-      OPENMVG_CERR("Invalid regions files for the view: " << sImageName);
-      return false;
-    }
-
-    // Filter descriptors to keep only the 3D reconstructed points
-    reconstructedRegion.filterRegions(observationsPerView[id_view]);
-  }
+  //@fixme deprecated: now inside initDatabase
+  throw std::logic_error("loadReconstructionDescriptors is deprecated, use initDatabase instead.");
   return true;
 }
 
 /**
- * @brief Initialize the database...
+ * @brief Initialize the database: load features & descriptors for reconstructed landmarks,
+ *        and create voctree image desc.
  */
 bool VoctreeLocalizer::initDatabase(const std::string & vocTreeFilepath,
                                     const std::string & weightsFilepath,
@@ -335,7 +295,7 @@ bool VoctreeLocalizer::initDatabase(const std::string & vocTreeFilepath,
   {
     IndexT trackId = landmarkValue.first;
     sfm::Landmark& landmark = landmarkValue.second;
-    for(auto obs : landmark.obs)
+    for(auto obs : landmark.observations)
     {
       const IndexT viewId = obs.first;
       const sfm::Observation& obs2d = obs.second;
@@ -355,16 +315,17 @@ bool VoctreeLocalizer::initDatabase(const std::string & vocTreeFilepath,
     Reconstructed_RegionsT& currRecoRegions = _regions_per_view[id_view];
 
     const std::string sImageName = stlplus::create_filespec(_sfm_data.s_root_path, currView.get()->s_Img_path);
-    std::string featFilepath = stlplus::create_filespec(feat_directory, std::to_string(iter.first), ".feat");
-    std::string descFilepath = stlplus::create_filespec(feat_directory, std::to_string(iter.first), ".desc");
+    const std::string descTypeStr = "." + EImageDescriberType_enumToString(_image_describer->getDescriberType());
+    std::string featFilepath = stlplus::create_filespec(feat_directory, std::to_string(iter.first), descTypeStr + ".feat");
+    std::string descFilepath = stlplus::create_filespec(feat_directory, std::to_string(iter.first), descTypeStr + ".desc");
 
     if(!(stlplus::is_file(featFilepath) && stlplus::is_file(descFilepath)))
     {
       // legacy compatibility, if the features are not named using the UID convention
       // let's try with the old-fashion naming convention
       const std::string basename = stlplus::basename_part(sImageName);
-      featFilepath = stlplus::create_filespec(feat_directory, basename, ".feat");
-      descFilepath = stlplus::create_filespec(feat_directory, basename, ".desc");
+      featFilepath = stlplus::create_filespec(feat_directory, basename, descTypeStr + ".feat");
+      descFilepath = stlplus::create_filespec(feat_directory, basename, descTypeStr + ".desc");
       if(!(stlplus::is_file(featFilepath) && stlplus::is_file(descFilepath)))
       {
         OPENMVG_CERR("Cannot find the features for image " << sImageName 
@@ -398,7 +359,7 @@ bool VoctreeLocalizer::localizeFirstBestResult(const features::SIFT_Regions &que
                                                bool useInputIntrinsics,
                                                cameras::Pinhole_Intrinsic_Radial_K3 &queryIntrinsics,
                                                LocalizationResult &localizationResult,
-                                               const std::string& imagePath /*= std::string()*/)
+                                               const std::string& imagePath)
 {
   // A. Find the (visually) similar images in the database 
   OPENMVG_LOG_DEBUG("[database]\tRequest closest images from voctree");
@@ -442,7 +403,7 @@ bool VoctreeLocalizer::localizeFirstBestResult(const features::SIFT_Regions &que
     // the view index of the current matched image
     const IndexT matchedViewIndex = matchedImage.id;
     // the handler to the current view
-    const std::shared_ptr<sfm::View> matchedView = _sfm_data.views[matchedViewIndex];
+    const std::shared_ptr<sfm::View> matchedView = _sfm_data.views[matchedViewIndex]; // TODO: at()
     
     // safeguard: we should match the query image with an image that has at least
     // some 3D points visible --> if it has 0 3d points it is likely that it is an
@@ -458,10 +419,10 @@ bool VoctreeLocalizer::localizeFirstBestResult(const features::SIFT_Regions &que
     }
     
     // its associated reconstructed regions
-    const Reconstructed_RegionsT& matchedRegions = _regions_per_view[matchedViewIndex];
+    const Reconstructed_RegionsT& matchedRegions = _regions_per_view[matchedViewIndex]; // TODO: at()
     // its associated intrinsics
     // this is just ugly!
-    const cameras::IntrinsicBase *matchedIntrinsicsBase = _sfm_data.intrinsics[matchedView->id_intrinsic].get();
+    const cameras::IntrinsicBase *matchedIntrinsicsBase = _sfm_data.intrinsics[matchedView->id_intrinsic].get(); // TODO: at()
     if ( !isPinhole(matchedIntrinsicsBase->getType()) )
     {
       //@fixme maybe better to throw something here
@@ -469,7 +430,7 @@ bool VoctreeLocalizer::localizeFirstBestResult(const features::SIFT_Regions &que
       return false;
     }
     const cameras::Pinhole_Intrinsic *matchedIntrinsics = (const cameras::Pinhole_Intrinsic*)(matchedIntrinsicsBase);
-     
+    
     std::vector<matching::IndMatch> vec_featureMatches;
     bool matchWorked = robustMatching( matcher, 
                                       // pass the input intrinsic if they are valid, null otherwise

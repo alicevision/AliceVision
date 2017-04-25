@@ -110,7 +110,7 @@ bool readPointCloud(IObject iObj, M44d mat, sfm::SfM_Data &sfmdata, sfm::ESfM_Da
       ++point3d_i)
   {
     const P3fArraySamplePtr::element_type::value_type & pos_i = positions->get()[point3d_i];
-    Landmark& landmark = sfmdata.structure[nbPointsInit + point3d_i] = Landmark(Vec3(pos_i.x, pos_i.y, pos_i.z));
+    Landmark& landmark = sfmdata.structure[nbPointsInit + point3d_i] = Landmark(Vec3(pos_i.x, pos_i.y, pos_i.z), features::EImageDescriberType::UNKNOWN); // TODO: DELI
     if(sampleColors)
     {
       const P3fArraySamplePtr::element_type::value_type & color_i = sampleColors->get()[point3d_i];
@@ -167,13 +167,13 @@ bool readPointCloud(IObject iObj, M44d mat, sfm::SfM_Data &sfmdata, sfm::ESfM_Da
 
         const int viewID = (*sampleVisibilityIds)[obsGlobal_i];
         const int featID = (*sampleVisibilityIds)[obsGlobal_i+1];
-        Observation& obs = landmark.obs[viewID];
-        obs.id_feat = featID;
+        Observation& observations = landmark.observations[viewID];
+        observations.id_feat = featID;
 
         const float posX = (*sampleFeatPos2d)[obsGlobal_i];
         const float posY = (*sampleFeatPos2d)[obsGlobal_i+1];
-        obs.x[0] = posX;
-        obs.x[1] = posY;
+        observations.x[0] = posX;
+        observations.x[1] = posY;
       }
     }
   }

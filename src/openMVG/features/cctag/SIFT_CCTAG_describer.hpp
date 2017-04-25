@@ -31,6 +31,12 @@ public:
   SIFT_CCTAG_Image_describer(const SiftParams & params = SiftParams(), bool bOrientation = true, std::size_t nRings = 3);
 
   ~SIFT_CCTAG_Image_describer();
+  
+  virtual EImageDescriberType getDescriberType()
+  {
+    // TODO: check nRings to decide between SIFT_CCTAG3 and SIFT_CCTAG4
+    return EImageDescriberType::SIFT_CCTAG3;
+  }
 
   bool Set_configuration_preset(EDESCRIBER_PRESET preset);
 

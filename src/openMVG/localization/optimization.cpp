@@ -127,7 +127,7 @@ bool refineSequence(std::vector<LocalizationResult> & vec_localizationResult,
     }
     
     // structure data (2D-3D correspondences)
-    const vector<pair<IndexT, IndexT> > &currentIDs = currResult.getIndMatch3D2D();
+    const std::vector<std::pair<IndexT, IndexT> > &currentIDs = currResult.getIndMatch3D2D();
     
     for(const size_t idx : currResult.getInliers() )
     {
@@ -145,12 +145,12 @@ bool refineSequence(std::vector<LocalizationResult> & vec_localizationResult,
       {
         // normally there should be no other features already associated to this
         // 3D point in this view
-        if(tinyScene.structure[landmarkID].obs.count(viewID) != 0)
+        if(tinyScene.structure[landmarkID].observations.count(viewID) != 0)
         {
           // this is weird but it could happen when two features are really close to each other (?)
           OPENMVG_LOG_DEBUG("Point 3D " << landmarkID << " has multiple features " 
                   << "in the same view " << viewID << ", current size of obs: " 
-                  << tinyScene.structure[landmarkID].obs.size() );
+                  << tinyScene.structure[landmarkID].observations.size() );
           OPENMVG_LOG_DEBUG("its associated features are: ");
           for(std::size_t i = 0; i <  currentIDs.size(); ++i)
           {
@@ -165,14 +165,14 @@ bool refineSequence(std::vector<LocalizationResult> & vec_localizationResult,
         }
         
         // the 3D point exists already, add the observation
-        tinyScene.structure[landmarkID].obs[viewID] =  sfm::Observation(feature, featID);
+        tinyScene.structure[landmarkID].observations[viewID] =  sfm::Observation(feature, featID);
       }
       else
       {
         // create a new 3D point
         sfm::Landmark landmark;
         landmark.X = currResult.getPt3D().col(idx);
-        landmark.obs[viewID] = sfm::Observation(feature, featID);
+        landmark.observations[viewID] = sfm::Observation(feature, featID);
         tinyScene.structure[landmarkID] = std::move(landmark);
       }
     }
@@ -183,7 +183,7 @@ bool refineSequence(std::vector<LocalizationResult> & vec_localizationResult,
 //    sfm::Landmarks &landmarks = tinyScene.structure;
 //    for(sfm::Landmarks::iterator it = landmarks.begin(), ite = landmarks.end(); it != ite;)
 //    {
-//      if(it->second.obs.size() < 5)
+//      if(it->second.observations.size() < 5)
 //      {
 //         it = landmarks.erase(it);
 //      }
@@ -200,15 +200,15 @@ bool refineSequence(std::vector<LocalizationResult> & vec_localizationResult,
     std::size_t maxObs = 0;
     for(const auto landmark : tinyScene.GetLandmarks() )
     {
-      if(landmark.second.obs.size() > maxObs)
-        maxObs = landmark.second.obs.size();
+      if(landmark.second.observations.size() > maxObs)
+        maxObs = landmark.second.observations.size();
     }
     namespace bacc = boost::accumulators;
     bacc::accumulator_set<std::size_t, bacc::stats<bacc::tag::mean, bacc::tag::min, bacc::tag::max, bacc::tag::sum > > stats;
     std::vector<std::size_t> hist(maxObs+1, 0);
     for(const auto landmark : tinyScene.GetLandmarks() )
     {
-      const std::size_t nobs = landmark.second.obs.size();
+      const std::size_t nobs = landmark.second.observations.size();
       assert(nobs < hist.size());
       stats(nobs);
       hist[nobs]++;
@@ -245,7 +245,7 @@ bool refineSequence(std::vector<LocalizationResult> & vec_localizationResult,
 
     for(; iter != endIter;)
     {
-      if(iter->second.obs.size() < minPointVisibility)
+      if(iter->second.observations.size() < minPointVisibility)
       {
         iter = landmarks.erase(iter);
       }

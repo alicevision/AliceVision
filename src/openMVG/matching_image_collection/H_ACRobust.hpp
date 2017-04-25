@@ -15,7 +15,7 @@
 #include "openMVG/matching/indMatch.hpp"
 #include "openMVG/matching/indMatchDecoratorXY.hpp"
 #include "openMVG/sfm/sfm_data.hpp"
-#include "openMVG/sfm/pipelines/RegionsPerView.hpp"
+#include "openMVG/features/RegionsPerView.hpp"
 #include "openMVG/matching_image_collection/Geometric_Filter_utils.hpp"
 
 namespace openMVG {
@@ -30,137 +30,207 @@ struct GeometricFilter_HMatrix_AC
     : m_dPrecision(dPrecision), m_stIteration(iteration), m_H(Mat3::Identity()),
       m_dPrecision_robust(std::numeric_limits<double>::infinity()){};
 
-  /// Robust fitting of the HOMOGRAPHY matrix
+  /**
+   * @brief Given two sets of image points, it estimates the homography matrix
+   * relating them using a robust method (like A Contrario Ransac).
+   */
   template<typename Regions_or_Features_ProviderT>
   bool Robust_estimation(
-    const sfm::SfM_Data * sfm_data,
-    const std::shared_ptr<Regions_or_Features_ProviderT> & regionsPerView,
+    const sfm::SfM_Data * sfmData,
+    const Regions_or_Features_ProviderT& regionsPerView,
     const Pair pairIndex,
-    const matching::IndMatches & vec_PutativeMatches,
-    matching::IndMatches & geometric_inliers)
+    const matching::MatchesPerDescType & putativeMatchesPerType,
+    matching::MatchesPerDescType & geometricInliersPerType)
   {
     using namespace openMVG;
     using namespace openMVG::robust;
-    geometric_inliers.clear();
+    geometricInliersPerType.clear();
 
     // Get back corresponding view index
     const IndexT iIndex = pairIndex.first;
     const IndexT jIndex = pairIndex.second;
 
-    //--
-    // Get corresponding point regions arrays
-    //--
+    const std::vector<features::EImageDescriberType> descTypes = regionsPerView.getCommonDescTypes(pairIndex);
+    if(descTypes.empty())
+      return false;
 
-    Mat xI,xJ;
-    MatchesPairToMat(pairIndex, vec_PutativeMatches, sfm_data, regionsPerView, xI, xJ);
-
-    //--
-    // Robust estimation
-    //--
+    // Retrieve all 2D features as undistorted positions into flat arrays
+    Mat xI, xJ;
+    MatchesPairToMat(pairIndex, putativeMatchesPerType, sfmData, regionsPerView, descTypes, xI, xJ);
 
     // Define the AContrario adapted Homography matrix solver
     typedef ACKernelAdaptor<
-      openMVG::homography::kernel::FourPointSolver,
-      openMVG::homography::kernel::AsymmetricError,
-      UnnormalizerI,
-      Mat3>
-      KernelType;
+        openMVG::homography::kernel::FourPointSolver,
+        openMVG::homography::kernel::AsymmetricError,
+        UnnormalizerI,
+        Mat3>
+        KernelType;
 
     KernelType kernel(
-      xI, sfm_data->GetViews().at(iIndex)->ui_width, sfm_data->GetViews().at(iIndex)->ui_height,
-      xJ, sfm_data->GetViews().at(jIndex)->ui_width, sfm_data->GetViews().at(jIndex)->ui_height,
+      xI, sfmData->GetViews().at(iIndex)->ui_width, sfmData->GetViews().at(iIndex)->ui_height,
+      xJ, sfmData->GetViews().at(jIndex)->ui_width, sfmData->GetViews().at(jIndex)->ui_height,
       false); // configure as point to point error model.
 
     // Robustly estimate the Homography matrix with A Contrario ransac
     const double upper_bound_precision = Square(m_dPrecision);
-    std::vector<size_t> vec_inliers;
-    const std::pair<double,double> ACRansacOut =
-      ACRANSAC(kernel, vec_inliers, m_stIteration, &m_H, upper_bound_precision);
 
-    if (vec_inliers.size() > KernelType::MINIMUM_SAMPLES * OPENMVG_MINIMUM_SAMPLES_COEF)  {
-      m_dPrecision_robust = ACRansacOut.first;
-      // update geometric_inliers
-      geometric_inliers.reserve(vec_inliers.size());
-      for ( const size_t & index : vec_inliers)  {
-        geometric_inliers.push_back( vec_PutativeMatches[index] );
-      }
-      return true;
-    }
-    else  {
-      vec_inliers.clear();
+    std::vector<size_t> inliers;
+    const std::pair<double,double> ACRansacOut = ACRANSAC(kernel, inliers, m_stIteration, &m_H, upper_bound_precision);
+
+    if (inliers.size() <= KernelType::MINIMUM_SAMPLES * OPENMVG_MINIMUM_SAMPLES_COEF)
+    {
+      inliers.clear();
       return false;
     }
+
+    m_dPrecision_robust = ACRansacOut.first;
+
+    // Fill geometricInliersPerType with inliers from putativeMatchesPerType
+    copyInlierMatches(
+          inliers,
+          putativeMatchesPerType,
+          descTypes,
+          geometricInliersPerType);
+
     return true;
   }
 
-  /// Export point feature based vector to a matrix [(x,y)'T, (x,y)'T]
-  /// Use the camera intrinsics in order to get undistorted pixel coordinates
+  /**
+   * @brief Export point feature based vector to a matrix [(x,y)'T, (x,y)'T].
+   * Use the camera intrinsics in order to get undistorted pixel coordinates
+   */
   template<typename MatT >
-  static void PointsToMat(
+  static void fillMatricesWithUndistortFeatures(
     const cameras::IntrinsicBase * cam,
     const features::PointFeatures & vec_feats,
     MatT & m)
   {
-    m.resize(2, vec_feats.size());
-    typedef typename MatT::Scalar Scalar; // Output matrix type
+    using Scalar = typename MatT::Scalar; // Output matrix type
 
     const bool hasValidIntrinsics = cam && cam->isValid();
     size_t i = 0;
-    for( features::PointFeatures::const_iterator iter = vec_feats.begin();
-      iter != vec_feats.end(); ++iter, ++i)
+
+    if (hasValidIntrinsics)
     {
-      if (hasValidIntrinsics)
-        m.col(i) = cam->get_ud_pixel(Vec2(iter->x(), iter->y()));
-      else
-        m.col(i) = iter->coords().cast<Scalar>();
+      for( features::PointFeatures::const_iterator iter = vec_feats.begin();
+        iter != vec_feats.end(); ++iter, ++i)
+      {
+          m.col(i) = cam->get_ud_pixel(Vec2(iter->x(), iter->y()));
+      }
+    }
+    else
+    {
+      for( features::PointFeatures::const_iterator iter = vec_feats.begin();
+        iter != vec_feats.end(); ++iter, ++i)
+      {
+          m.col(i) = iter->coords().cast<Scalar>();
+        }
     }
   }
 
+  template<typename MatT >
+  static void createMatricesWithUndistortFeatures(
+    const cameras::IntrinsicBase * cam,
+    const features::MapRegionsPerDesc & regionsPerDesc,
+    MatT & m)
+  {
+    size_t nbRegions = 0;
+    for(const auto regions: regionsPerDesc)
+    {
+      nbRegions += regions.second->RegionCount();
+    }
+    m.resize(2, nbRegions);
+
+    size_t y = 0;
+    for(const auto regions: regionsPerDesc)
+    {
+      fillMatricesWithUndistortFeatures(
+            cam,
+            regions.second,
+            m.block(0, y, 2, regions.second->RegionCount()));
+      y += regions.second->RegionCount();
+    }
+  }
+
+  template<typename MatT >
+  static void createMatricesWithUndistortFeatures(
+    const cameras::IntrinsicBase * cam,
+    const features::PointFeatures & vec_feats,
+    MatT & m)
+  {
+    size_t nbRegions = vec_feats.size();
+    m.resize(2, nbRegions);
+
+    fillMatricesWithUndistortFeatures(
+          cam,
+          vec_feats,
+          m);
+  }
+
+  /**
+   * @brief Geometry_guided_matching
+   * @param sfm_data
+   * @param regionsPerView
+   * @param pairIndex
+   * @param dDistanceRatio
+   * @param matches
+   * @return
+   */
   bool Geometry_guided_matching
   (
-    const sfm::SfM_Data * sfm_data,
-    const std::shared_ptr<sfm::RegionsPerView>& regionsPerView,
-    const Pair pairIndex,
+    const sfm::SfM_Data * sfmData,
+    const features::RegionsPerView& regionsPerView,
+    const Pair imageIdsPair,
     const double dDistanceRatio,
-    matching::IndMatches & matches
+    matching::MatchesPerDescType & matches
   )
   {
     if (m_dPrecision_robust != std::numeric_limits<double>::infinity())
     {
-      // Get back corresponding view index
-      const IndexT iIndex = pairIndex.first;
-      const IndexT jIndex = pairIndex.second;
+      const std::vector<features::EImageDescriberType> descTypes = regionsPerView.getCommonDescTypes(imageIdsPair);
+      if(descTypes.empty())
+        return false;
 
-      const sfm::View * view_I = sfm_data->views.at(iIndex).get();
-      const sfm::View * view_J = sfm_data->views.at(jIndex).get();
+      // Get back corresponding view index
+      const IndexT viewId_I = imageIdsPair.first;
+      const IndexT viewId_J = imageIdsPair.second;
+
+      const sfm::View * view_I = sfmData->views.at(viewId_I).get();
+      const sfm::View * view_J = sfmData->views.at(viewId_J).get();
 
       // Retrieve corresponding pair camera intrinsic if any
       const cameras::IntrinsicBase * cam_I =
-        sfm_data->GetIntrinsics().count(view_I->id_intrinsic) ?
-          sfm_data->GetIntrinsics().at(view_I->id_intrinsic).get() : nullptr;
+        sfmData->GetIntrinsics().count(view_I->id_intrinsic) ?
+          sfmData->GetIntrinsics().at(view_I->id_intrinsic).get() : nullptr;
       const cameras::IntrinsicBase * cam_J =
-        sfm_data->GetIntrinsics().count(view_J->id_intrinsic) ?
-          sfm_data->GetIntrinsics().at(view_J->id_intrinsic).get() : nullptr;
+        sfmData->GetIntrinsics().count(view_J->id_intrinsic) ?
+          sfmData->GetIntrinsics().at(view_J->id_intrinsic).get() : nullptr;
 
       if (dDistanceRatio < 0)
       {
-        // Filtering based only on region positions
-        const features::PointFeatures pointsFeaturesI = regionsPerView->getRegions(iIndex).GetRegionsPositions();
-        const features::PointFeatures pointsFeaturesJ = regionsPerView->getRegions(jIndex).GetRegionsPositions();
-        Mat xI, xJ;
-        PointsToMat(cam_I, pointsFeaturesI, xI);
-        PointsToMat(cam_J, pointsFeaturesJ, xJ);
+        for(const features::EImageDescriberType descType: descTypes)
+        {
+          matching::IndMatches localMatches;
 
-        geometry_aware::GuidedMatching
-          <Mat3, openMVG::homography::kernel::AsymmetricError>(
-          m_H, xI, xJ, Square(m_dPrecision_robust), matches);
+          const features::Regions& regions_I = regionsPerView.getRegions(viewId_I, descType);
+          const features::Regions& regions_J = regionsPerView.getRegions(viewId_J, descType);
+          const features::PointFeatures pointsFeaturesI = regions_I.GetRegionsPositions();
+          const features::PointFeatures pointsFeaturesJ = regions_J.GetRegionsPositions();
 
-        // Remove duplicates
-        matching::IndMatch::getDeduplicated(matches);
+          // Filtering based only on region positions
+          Mat xI, xJ;
+          createMatricesWithUndistortFeatures(cam_I, pointsFeaturesI, xI);
+          createMatricesWithUndistortFeatures(cam_J, pointsFeaturesJ, xJ);
 
-        // Remove matches that have the same (X,Y) coordinates
-        matching::IndMatchDecorator<float> matchDeduplicator(matches, pointsFeaturesI, pointsFeaturesJ);
-        matchDeduplicator.getDeduplicated(matches);
+          geometry_aware::GuidedMatching
+            <Mat3, openMVG::homography::kernel::AsymmetricError>(
+            m_H, xI, xJ, Square(m_dPrecision_robust), localMatches);
+
+          // Remove matches that have the same (X,Y) coordinates
+          matching::IndMatchDecorator<float> matchDeduplicator(localMatches, pointsFeaturesI, pointsFeaturesJ);
+          matchDeduplicator.getDeduplicated(localMatches);
+          matches[descType] = localMatches;
+        }
       }
       else
       {
@@ -168,13 +238,13 @@ struct GeometricFilter_HMatrix_AC
         geometry_aware::GuidedMatching
           <Mat3, openMVG::homography::kernel::AsymmetricError>(
           m_H,
-          cam_I, regionsPerView->getRegions(iIndex),
-          cam_J, regionsPerView->getRegions(jIndex),
+          cam_I, regionsPerView.getAllRegions(viewId_I),
+          cam_J, regionsPerView.getAllRegions(viewId_J),
           Square(m_dPrecision_robust), Square(dDistanceRatio),
           matches);
       }
     }
-    return matches.size() != 0;
+    return matches.getNbAllMatches() != 0;
   }
 
   double m_dPrecision;  //upper_bound precision used for robust estimation

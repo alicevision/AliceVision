@@ -17,7 +17,7 @@
 
 #include "openMVG/matching/indMatch.hpp"
 #include "openMVG/sfm/sfm_data.hpp"
-#include "openMVG/sfm/pipelines/RegionsPerView.hpp"
+#include "openMVG/features/RegionsPerView.hpp"
 #include "openMVG/matching_image_collection/Geometric_Filter_utils.hpp"
 
 namespace openMVG {
@@ -30,54 +30,53 @@ struct GeometricFilter_EMatrix_AC
     double dPrecision = std::numeric_limits<double>::infinity(),
     size_t iteration = 1024)
     : m_dPrecision(dPrecision), m_stIteration(iteration), m_E(Mat3::Identity()),
-      m_dPrecision_robust(std::numeric_limits<double>::infinity()){};
+      m_dPrecision_robust(std::numeric_limits<double>::infinity())
+  {}
 
-  /// Robust fitting of the ESSENTIAL matrix
+  /**
+   * @brief Given two sets of image points, it estimates the essential matrix
+   * relating them using a robust method (like A Contrario Ransac).
+   */
   template<typename Regions_or_Features_ProviderT>
   bool Robust_estimation(
-    const sfm::SfM_Data * sfm_data,
+    const sfm::SfM_Data * sfmData,
     const Regions_or_Features_ProviderT& regionsPerView,
     const Pair pairIndex,
-    const matching::IndMatches & vec_PutativeMatches,
-    matching::IndMatches & geometric_inliers)
+    const matching::MatchesPerDescType & putativeMatchesPerType,
+    matching::MatchesPerDescType & geometricInliersPerType)
   {
     using namespace openMVG;
     using namespace openMVG::robust;
-    geometric_inliers.clear();
+    geometricInliersPerType.clear();
 
     // Get back corresponding view index
     const IndexT iIndex = pairIndex.first;
     const IndexT jIndex = pairIndex.second;
 
-    //--
-    // Reject pair with missing Intrinsic information
-    //--
-    const sfm::View * view_I = sfm_data->views.at(iIndex).get();
-    const sfm::View * view_J = sfm_data->views.at(jIndex).get();
+    const std::vector<features::EImageDescriberType> descTypes = regionsPerView.getCommonDescTypes(pairIndex);
+    if(descTypes.empty())
+      return false;
 
-     // Check that valid cameras can be retrieved for the pair of views
+    // Reject pair with missing Intrinsic information
+    const sfm::View * view_I = sfmData->views.at(iIndex).get();
+    const sfm::View * view_J = sfmData->views.at(jIndex).get();
+
+    // Check that valid cameras can be retrieved for the pair of views
     const cameras::IntrinsicBase * cam_I =
-      sfm_data->GetIntrinsics().count(view_I->id_intrinsic) ?
-        sfm_data->GetIntrinsics().at(view_I->id_intrinsic).get() : nullptr;
+      sfmData->GetIntrinsics().count(view_I->id_intrinsic) ?
+        sfmData->GetIntrinsics().at(view_I->id_intrinsic).get() : nullptr;
     const cameras::IntrinsicBase * cam_J =
-      sfm_data->GetIntrinsics().count(view_J->id_intrinsic) ?
-        sfm_data->GetIntrinsics().at(view_J->id_intrinsic).get() : nullptr;
+      sfmData->GetIntrinsics().count(view_J->id_intrinsic) ?
+        sfmData->GetIntrinsics().at(view_J->id_intrinsic).get() : nullptr;
 
     if (!cam_I || !cam_J)
       return false;
     if ( !isPinhole(cam_I->getType()) || !isPinhole(cam_J->getType()))
       return false;
 
-    //--
     // Get corresponding point regions arrays
-    //--
-
     Mat xI,xJ;
-    MatchesPairToMat(pairIndex, vec_PutativeMatches, sfm_data, regionsPerView, xI, xJ);
-
-    //--
-    // Robust estimation
-    //--
+    MatchesPairToMat(pairIndex, putativeMatchesPerType, sfmData, regionsPerView, descTypes, xI, xJ);
 
     // Define the AContrario adapted Essential matrix solver
     typedef ACKernelAdaptorEssential<
@@ -91,56 +90,68 @@ struct GeometricFilter_EMatrix_AC
     const cameras::Pinhole_Intrinsic * ptrPinhole_J = (const cameras::Pinhole_Intrinsic*)(cam_J);
 
     KernelType kernel(
-      xI, sfm_data->GetViews().at(iIndex)->ui_width, sfm_data->GetViews().at(iIndex)->ui_height,
-      xJ, sfm_data->GetViews().at(jIndex)->ui_width, sfm_data->GetViews().at(jIndex)->ui_height,
+      xI, sfmData->GetViews().at(iIndex)->ui_width, sfmData->GetViews().at(iIndex)->ui_height,
+      xJ, sfmData->GetViews().at(jIndex)->ui_width, sfmData->GetViews().at(jIndex)->ui_height,
       ptrPinhole_I->K(), ptrPinhole_J->K());
 
     // Robustly estimate the Essential matrix with A Contrario ransac
     const double upper_bound_precision = Square(m_dPrecision);
-    std::vector<size_t> vec_inliers;
-    const std::pair<double,double> ACRansacOut =
-      ACRANSAC(kernel, vec_inliers, m_stIteration, &m_E, upper_bound_precision);
 
-    if (vec_inliers.size() > KernelType::MINIMUM_SAMPLES * OPENMVG_MINIMUM_SAMPLES_COEF)  {  
-      m_dPrecision_robust = ACRansacOut.first;
-      // update geometric_inliers
-      geometric_inliers.reserve(vec_inliers.size());
-      for ( const size_t & index : vec_inliers)  {
-        geometric_inliers.push_back( vec_PutativeMatches[index] );
-      }
-      return true;
-    }
-    else  {
-      vec_inliers.clear();
+    std::vector<size_t> inliers;
+    const std::pair<double,double> ACRansacOut = ACRANSAC(kernel, inliers, m_stIteration, &m_E, upper_bound_precision);
+
+    if (inliers.size() <= KernelType::MINIMUM_SAMPLES * OPENMVG_MINIMUM_SAMPLES_COEF)
+    {
+      inliers.clear();
       return false;
     }
+
+    m_dPrecision_robust = ACRansacOut.first;
+
+    // Fill geometricInliersPerType with inliers from putativeMatchesPerType
+    copyInlierMatches(
+          inliers,
+          putativeMatchesPerType,
+          descTypes,
+          geometricInliersPerType);
+
+    return true;
   }
 
+  /**
+   * @brief Geometry_guided_matching
+   * @param sfmData
+   * @param regionsPerView
+   * @param imageIdsPair
+   * @param dDistanceRatio
+   * @param matches
+   * @return
+   */
   bool Geometry_guided_matching
   (
-    const sfm::SfM_Data * sfm_data,
-    const sfm::RegionsPerView& regionsPerView,
-    const Pair pairIndex,
+    const sfm::SfM_Data * sfmData,
+    const features::RegionsPerView& regionsPerView,
+    const Pair imageIdsPair,
     const double dDistanceRatio,
-    matching::IndMatches & matches
+    matching::MatchesPerDescType & matches
   )
   {
     if (m_dPrecision_robust != std::numeric_limits<double>::infinity())
     {
       // Get back corresponding view index
-      const IndexT iIndex = pairIndex.first;
-      const IndexT jIndex = pairIndex.second;
+      const IndexT viewId_I = imageIdsPair.first;
+      const IndexT viewId_J = imageIdsPair.second;
 
-      const sfm::View * view_I = sfm_data->views.at(iIndex).get();
-      const sfm::View * view_J = sfm_data->views.at(jIndex).get();
+      const sfm::View * view_I = sfmData->views.at(viewId_I).get();
+      const sfm::View * view_J = sfmData->views.at(viewId_J).get();
 
       // Check that valid cameras can be retrieved for the pair of views
       const cameras::IntrinsicBase * cam_I =
-        sfm_data->GetIntrinsics().count(view_I->id_intrinsic) ?
-          sfm_data->GetIntrinsics().at(view_I->id_intrinsic).get() : nullptr;
+        sfmData->GetIntrinsics().count(view_I->id_intrinsic) ?
+          sfmData->GetIntrinsics().at(view_I->id_intrinsic).get() : nullptr;
       const cameras::IntrinsicBase * cam_J =
-        sfm_data->GetIntrinsics().count(view_J->id_intrinsic) ?
-          sfm_data->GetIntrinsics().at(view_J->id_intrinsic).get() : nullptr;
+        sfmData->GetIntrinsics().count(view_J->id_intrinsic) ?
+          sfmData->GetIntrinsics().at(view_J->id_intrinsic).get() : nullptr;
 
       if (!cam_I || !cam_J)
         return false;
@@ -154,17 +165,16 @@ struct GeometricFilter_EMatrix_AC
       Mat3 F;
       FundamentalFromEssential(m_E, ptrPinhole_I->K(), ptrPinhole_J->K(), &F);
 
-      geometry_aware::GuidedMatching
-        <Mat3,
-        openMVG::fundamental::kernel::EpipolarDistanceError>(
-        //openMVG::fundamental::kernel::SymmetricEpipolarDistanceError>(
+      geometry_aware::GuidedMatching<Mat3,
+            openMVG::fundamental::kernel::EpipolarDistanceError>(
+            //openMVG::fundamental::kernel::SymmetricEpipolarDistanceError>(
         F,
-        cam_I, regionsPerView.getRegions(iIndex),
-        cam_J, regionsPerView.getRegions(jIndex),
+        cam_I, regionsPerView.getAllRegions(viewId_I),
+        cam_J, regionsPerView.getAllRegions(viewId_J),
         Square(m_dPrecision_robust), Square(dDistanceRatio),
         matches);
     }
-    return matches.size() != 0;
+    return matches.getNbAllMatches() != 0;
   }
 
   double m_dPrecision;  //upper_bound precision used for robust estimation

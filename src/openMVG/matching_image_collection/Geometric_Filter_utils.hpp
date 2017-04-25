@@ -7,13 +7,17 @@
 
 #pragma once
 
-#include <openMVG/sfm/pipelines/FeaturesPerView.hpp>
+#include <openMVG/matching/indMatch.hpp>
+
+#include <openMVG/features/FeaturesPerView.hpp>
+
 
 namespace openMVG {
 namespace matching_image_collection {
 
 /**
-* @brief Get "image perfect" features (un-distorted feature positions)
+* @brief Fill matrices with un-distorted feature positions ("image perfect" features)
+*
 * @param[in] putativeMatches Selected corresponding features id (match)
 * @param[in] cam_I Inth Camera interface
 * @param[in] feature_I Inth view features
@@ -23,37 +27,50 @@ namespace matching_image_collection {
 * @param[out] x_J Pixel perfect features from the Jnth image putativeMatches matches
 */
 template<typename MatT >
-void MatchesPointsToMat
-(
+void fillMatricesWithUndistortFeaturesMatches(
   const matching::IndMatches & putativeMatches,
   const cameras::IntrinsicBase * cam_I,
   const features::PointFeatures & feature_I,
   const cameras::IntrinsicBase * cam_J,
   const features::PointFeatures & feature_J,
-  MatT & x_I, MatT & x_J
-)
+  MatT & x_I, MatT & x_J)
 {
-  const size_t n = putativeMatches.size();
-  x_I.resize(2, n);
-  x_J.resize(2, n);
   typedef typename MatT::Scalar Scalar; // Output matrix type
 
   const bool I_hasValidIntrinsics = cam_I && cam_I->isValid();
   const bool J_hasValidIntrinsics = cam_J && cam_J->isValid();
 
-  for (size_t i=0; i < putativeMatches.size(); ++i)
+  if (I_hasValidIntrinsics)
   {
-    const features::PointFeature & pt_I = feature_I[putativeMatches[i]._i];
-    const features::PointFeature & pt_J = feature_J[putativeMatches[i]._j];
-    if (I_hasValidIntrinsics)
+    for (size_t i=0; i < putativeMatches.size(); ++i)
+    {
+      const features::PointFeature & pt_I = feature_I[putativeMatches[i]._i];
       x_I.col(i) = cam_I->get_ud_pixel(pt_I.coords().cast<double>());
-    else
+    }
+  }
+  else
+  {
+    for (size_t i=0; i < putativeMatches.size(); ++i)
+    {
+      const features::PointFeature & pt_I = feature_I[putativeMatches[i]._i];
       x_I.col(i) = pt_I.coords().cast<double>();
-
-    if (J_hasValidIntrinsics)
+    }
+  }
+  if (J_hasValidIntrinsics)
+  {
+    for (size_t i=0; i < putativeMatches.size(); ++i)
+    {
+      const features::PointFeature & pt_J = feature_J[putativeMatches[i]._j];
       x_J.col(i) = cam_J->get_ud_pixel(pt_J.coords().cast<double>());
-    else
+    }
+  }
+  else
+  {
+    for (size_t i=0; i < putativeMatches.size(); ++i)
+    {
+      const features::PointFeature & pt_J = feature_J[putativeMatches[i]._j];
       x_J.col(i) = pt_J.coords().cast<double>();
+    }
   }
 }
 
@@ -67,35 +84,53 @@ void MatchesPointsToMat
 * @param[out] x_J Pixel perfect features from the Jnth image putativeMatches matches
 */
 template<typename MatT >
-void MatchesPairToMat
-(
+void MatchesPairToMat(
   const Pair pairIndex,
-  const matching::IndMatches & putativeMatches,
-  const sfm::SfM_Data * sfm_data,
-  const std::shared_ptr<sfm::RegionsPerView>& regionsPerView,
-  MatT & x_I, MatT & x_J
-)
+  const matching::MatchesPerDescType & putativeMatchesPerType,
+  const sfm::SfM_Data * sfmData,
+  const features::RegionsPerView& regionsPerView,
+  const std::vector<features::EImageDescriberType>& descTypes,
+  MatT & x_I, MatT & x_J)
 {
-  const sfm::View * view_I = sfm_data->views.at(pairIndex.first).get();
-  const sfm::View * view_J = sfm_data->views.at(pairIndex.second).get();
+  const sfm::View * view_I = sfmData->views.at(pairIndex.first).get();
+  const sfm::View * view_J = sfmData->views.at(pairIndex.second).get();
 
   // Retrieve corresponding pair camera intrinsic if any
   const cameras::IntrinsicBase * cam_I =
-    sfm_data->GetIntrinsics().count(view_I->id_intrinsic) ?
-      sfm_data->GetIntrinsics().at(view_I->id_intrinsic).get() : nullptr;
+    sfmData->GetIntrinsics().count(view_I->id_intrinsic) ?
+      sfmData->GetIntrinsics().at(view_I->id_intrinsic).get() : nullptr;
   const cameras::IntrinsicBase * cam_J =
-    sfm_data->GetIntrinsics().count(view_J->id_intrinsic) ?
-      sfm_data->GetIntrinsics().at(view_J->id_intrinsic).get() : nullptr;
+    sfmData->GetIntrinsics().count(view_J->id_intrinsic) ?
+      sfmData->GetIntrinsics().at(view_J->id_intrinsic).get() : nullptr;
 
-  // Load features of Inth and Jnth images
-  const features::PointFeatures feature_I = regionsPerView->getRegions(pairIndex.first).GetRegionsPositions();
-  const features::PointFeatures feature_J = regionsPerView->getRegions(pairIndex.second).GetRegionsPositions();
+  // Create the output matrices with all matched features for images I and J
+  const size_t n = putativeMatchesPerType.getNbAllMatches();
+  x_I.resize(2, n);
+  x_J.resize(2, n);
 
-  MatchesPointsToMat(
-    putativeMatches,
-    cam_I, feature_I,
-    cam_J, feature_J,
-    x_I, x_J);
+  size_t startM = 0;
+  for(size_t d = 0; d < descTypes.size(); ++d)
+  {
+    const features::EImageDescriberType& descType = descTypes[d];
+    const matching::IndMatches& putativeMatches = putativeMatchesPerType.at(descType);
+
+    const features::PointFeatures feature_I = regionsPerView.getRegions(pairIndex.first, descType).GetRegionsPositions();
+    const features::PointFeatures feature_J = regionsPerView.getRegions(pairIndex.second, descType).GetRegionsPositions();
+
+    // fill subpart of the matrices with undistorted features
+
+    auto subpart_I = x_I.block(0, startM, 2, putativeMatches.size());
+    auto subpart_J = x_J.block(0, startM, 2, putativeMatches.size());
+
+    fillMatricesWithUndistortFeaturesMatches(
+      putativeMatches,
+      cam_I, feature_I,
+      cam_J, feature_J,
+      subpart_I,
+      subpart_J);
+
+    startM += putativeMatches.size();
+  }
 }
 
 /**
@@ -108,35 +143,78 @@ void MatchesPairToMat
 * @param[out] x_J Pixel perfect features from the Jnth image putativeMatches matches
 */
 template<typename MatT >
-void MatchesPairToMat
-(
+void MatchesPairToMat(
   const Pair pairIndex,
-  const matching::IndMatches & putativeMatches,
-  const sfm::SfM_Data * sfm_data,
-  const sfm::FeaturesPerView& featuresProvider,
-  MatT & x_I, MatT & x_J
-)
+  const matching::MatchesPerDescType & putativeMatchesPerType,
+  const sfm::SfM_Data * sfmData,
+  const features::FeaturesPerView& featuresPerView,
+  const std::vector<features::EImageDescriberType>& descTypes,
+  MatT & x_I, MatT & x_J)
 {
-  const sfm::View * view_I = sfm_data->views.at(pairIndex.first).get();
-  const sfm::View * view_J = sfm_data->views.at(pairIndex.second).get();
+  const sfm::View * view_I = sfmData->views.at(pairIndex.first).get();
+  const sfm::View * view_J = sfmData->views.at(pairIndex.second).get();
 
   // Retrieve corresponding pair camera intrinsic if any
   const cameras::IntrinsicBase * cam_I =
-    sfm_data->GetIntrinsics().count(view_I->id_intrinsic) ?
-      sfm_data->GetIntrinsics().at(view_I->id_intrinsic).get() : nullptr;
+    sfmData->GetIntrinsics().count(view_I->id_intrinsic) ?
+      sfmData->GetIntrinsics().at(view_I->id_intrinsic).get() : nullptr;
   const cameras::IntrinsicBase * cam_J =
-    sfm_data->GetIntrinsics().count(view_J->id_intrinsic) ?
-      sfm_data->GetIntrinsics().at(view_J->id_intrinsic).get() : nullptr;
+    sfmData->GetIntrinsics().count(view_J->id_intrinsic) ?
+      sfmData->GetIntrinsics().at(view_J->id_intrinsic).get() : nullptr;
 
-  // Load features of Inth and Jnth images
-  const features::PointFeatures& feature_I = featuresProvider.getFeatures(pairIndex.first);
-  const features::PointFeatures& feature_J = featuresProvider.getFeatures(pairIndex.second);
+  // Create the output matrices with all matched features for images I and J
+  const size_t n = putativeMatchesPerType.getNbAllMatches();
+  x_I.resize(2, n);
+  x_J.resize(2, n);
 
-  MatchesPointsToMat(
-    putativeMatches,
-    cam_I, feature_I,
-    cam_J, feature_J,
-    x_I, x_J);
+  size_t y = 0;
+  for(size_t d = 0; d < descTypes.size(); ++d)
+  {
+    const features::EImageDescriberType& descType = descTypes[d];
+    const matching::IndMatches& putativeMatches = putativeMatchesPerType.at(descType);
+
+    const features::PointFeatures feature_I = featuresPerView.getFeatures(pairIndex.first, descType);
+    const features::PointFeatures feature_J = featuresPerView.getFeatures(pairIndex.second, descType);
+
+    // fill subpart of the matrices with undistorted features
+    fillMatricesWithUndistortFeaturesMatches(
+      putativeMatches,
+      cam_I, feature_I,
+      cam_J, feature_J,
+      x_I.block(y, 0, putativeMatches.size(), 2), x_J.block(y, 0, putativeMatches.size(), 2));
+
+    y += putativeMatches.size();
+  }
+}
+
+/**
+ * @brief copyInlierMatches
+ * @param[in] inliers
+ * @param[in] putativeMatchesPerType
+ * @param[in] descTypes
+ * @param[out] out_geometricInliersPerType
+ */
+void copyInlierMatches(
+  const std::vector<size_t>& inliers,
+  const matching::MatchesPerDescType & putativeMatchesPerType,
+  const std::vector<features::EImageDescriberType> descTypes,
+  matching::MatchesPerDescType & out_geometricInliersPerType)
+{
+  size_t currentDescType = 0;
+  size_t currentDescTypeStartIndex = 0;
+  size_t currentDescTypeMaxLength = putativeMatchesPerType.getNbMatches(descTypes[currentDescType]);
+  for(const size_t globalInlierIndex : inliers)
+  {
+    while(globalInlierIndex >= currentDescTypeMaxLength)
+    {
+      ++currentDescType;
+      currentDescTypeStartIndex = currentDescTypeMaxLength;
+      currentDescTypeMaxLength += putativeMatchesPerType.getNbMatches(descTypes[currentDescType]);
+    }
+    const size_t localIndex = globalInlierIndex - currentDescTypeStartIndex;
+    const auto descType = descTypes[currentDescType];
+    out_geometricInliersPerType[descType].push_back( putativeMatchesPerType.at(descType)[localIndex] );
+  }
 }
 
 } // namespace openMVG

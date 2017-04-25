@@ -30,8 +30,8 @@ public:
 
   ~GlobalSfMReconstructionEngine_RelativeMotions();
 
-  void SetFeaturesProvider(FeaturesPerView * featuresPerView);
-  void SetMatchesProvider(Matches_Provider * provider);
+  void SetFeaturesProvider(features::FeaturesPerView * featuresPerView);
+  void SetMatchesProvider(matching::PairwiseMatches * provider);
 
   void SetRotationAveragingMethod(ERotationAveragingMethod eRotationAveragingMethod);
   void SetTranslationAveragingMethod(ETranslationAveragingMethod _eTranslationAveragingMethod);
@@ -50,13 +50,13 @@ protected:
   bool Compute_Global_Translations
   (
     const Hash_Map<IndexT, Mat3> & global_rotations,
-    matching::PairWiseSimpleMatches & tripletWise_matches
+    matching::PairwiseMatches & tripletWise_matches
   );
 
   /// Compute the initial structure of the scene
   bool Compute_Initial_Structure
   (
-    matching::PairWiseSimpleMatches & tripletWise_matches
+    matching::PairwiseMatches & tripletWise_matches
   );
 
   // Adjust the scene (& remove outliers)
@@ -82,10 +82,10 @@ private:
   ETranslationAveragingMethod _eTranslationAveragingMethod;
 
   //-- Data provider
-  FeaturesPerView  * _featuresPerView;
-  Matches_Provider  * _matches_provider;
+  features::FeaturesPerView  * _featuresPerView;
+  matching::PairwiseMatches  * _matches_provider;
 
-  std::shared_ptr<FeaturesPerView> _normalizedFeaturesPerView;
+  std::shared_ptr<features::FeaturesPerView> _normalizedFeaturesPerView;
 };
 
 } // namespace sfm

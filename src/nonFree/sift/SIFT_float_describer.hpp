@@ -40,6 +40,11 @@ public:
     vl_destructor();
   }
 
+  virtual EImageDescriberType getDescriberType()
+  {
+    return EImageDescriberType::SIFT_FLOAT;
+  }
+  
   bool Set_configuration_preset(EDESCRIBER_PRESET preset)
   {
     return _params.setPreset(preset);

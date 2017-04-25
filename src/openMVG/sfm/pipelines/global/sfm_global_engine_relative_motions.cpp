@@ -63,7 +63,7 @@ GlobalSfMReconstructionEngine_RelativeMotions::~GlobalSfMReconstructionEngine_Re
   }
 }
 
-void GlobalSfMReconstructionEngine_RelativeMotions::SetFeaturesProvider(FeaturesPerView * featuresPerView)
+void GlobalSfMReconstructionEngine_RelativeMotions::SetFeaturesProvider(features::FeaturesPerView * featuresPerView)
 {
   _featuresPerView = featuresPerView;
 
@@ -320,7 +320,7 @@ bool GlobalSfMReconstructionEngine_RelativeMotions::Compute_Initial_Structure
       const submapTrack & track = itTracks->second;
       structure[idx] = Landmark();
       Observations & obs = structure.at(idx).obs;
-      for (submapTrack::const_iterator it = track.begin(); it != track.end(); ++it)
+      for (submapTrack::const_iterator it = track.featPerView.begin(); it != track.featPerView.end(); ++it)
       {
         const size_t imaIndex = it->first;
         const size_t featIndex = it->second;

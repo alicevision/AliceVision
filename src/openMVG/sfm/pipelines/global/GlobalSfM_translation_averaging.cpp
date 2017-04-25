@@ -37,7 +37,7 @@ using namespace openMVG::geometry;
 bool GlobalSfM_Translation_AveragingSolver::Run(
   ETranslationAveragingMethod eTranslationAveragingMethod,
   SfM_Data & sfm_data,
-  const FeaturesPerView * normalizedFeaturesPerView,
+  const features::FeaturesPerView * normalizedFeaturesPerView,
   const Matches_Provider * matches_provider,
   const Hash_Map<IndexT, Mat3> & map_globalR,
   matching::PairWiseSimpleMatches & tripletWise_matches
@@ -278,7 +278,7 @@ bool GlobalSfM_Translation_AveragingSolver::Translation_averaging(
 
 void GlobalSfM_Translation_AveragingSolver::Compute_translations(
   const SfM_Data & sfm_data,
-  const FeaturesPerView * normalizedFeaturesPerView,
+  const features::FeaturesPerView * normalizedFeaturesPerView,
   const Matches_Provider * matches_provider,
   const Hash_Map<IndexT, Mat3> & map_globalR,
   matching::PairWiseSimpleMatches &tripletWise_matches)
@@ -304,7 +304,7 @@ void GlobalSfM_Translation_AveragingSolver::Compute_translations(
 void GlobalSfM_Translation_AveragingSolver::ComputePutativeTranslation_EdgesCoverage(
   const SfM_Data & sfm_data,
   const Hash_Map<IndexT, Mat3> & map_globalR,
-  const FeaturesPerView * normalizedFeaturesPerView,
+  const features::FeaturesPerView * normalizedFeaturesPerView,
   const Matches_Provider * matches_provider,
   RelativeInfo_Vec & vec_initialEstimates,
   matching::PairWiseSimpleMatches & newpairMatches)
@@ -543,9 +543,9 @@ void GlobalSfM_Translation_AveragingSolver::ComputePutativeTranslation_EdgesCove
                   const submapTrack & subTrack = it_tracks->second;
 
                   // create pairwise matches from inlier track
-                  for (size_t index_I = 0; index_I < subTrack.size() ; ++index_I)
+                  for (size_t index_I = 0; index_I < subTrack.featPerView.size() ; ++index_I)
                   {
-                    submapTrack::const_iterator iter_I = subTrack.begin();
+                    submapTrack::const_iterator iter_I = subTrack.featPerView.begin();
                     std::advance(iter_I, index_I);
 
                     // extract camera indexes
@@ -553,9 +553,9 @@ void GlobalSfM_Translation_AveragingSolver::ComputePutativeTranslation_EdgesCove
                     const size_t id_feat_I = iter_I->second;
 
                     // loop on subtracks
-                    for (size_t index_J = index_I+1; index_J < subTrack.size() ; ++index_J)
+                    for (size_t index_J = index_I+1; index_J < subTrack.featPerView.size() ; ++index_J)
                     {
-                      submapTrack::const_iterator iter_J = subTrack.begin();
+                      submapTrack::const_iterator iter_J = subTrack.featPerView.begin();
                       std::advance(iter_J, index_J);
 
                       // extract camera indexes
@@ -603,7 +603,7 @@ void GlobalSfM_Translation_AveragingSolver::ComputePutativeTranslation_EdgesCove
 bool GlobalSfM_Translation_AveragingSolver::Estimate_T_triplet(
   const SfM_Data & sfm_data,
   const Hash_Map<IndexT, Mat3> & map_globalR,
-  const FeaturesPerView * normalizedFeaturesPerView,
+  const features::FeaturesPerView * normalizedFeaturesPerView,
   const Matches_Provider * matches_provider,
   const graph::Triplet & poses_id,
   std::vector<Vec3> & vec_tis,

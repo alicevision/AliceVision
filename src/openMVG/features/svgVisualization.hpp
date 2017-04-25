@@ -11,12 +11,15 @@
 #ifdef HAVE_CCTAG
 #include "regions_factory.hpp"
 #endif
+#include <openMVG/features/FeaturesPerView.hpp>
 #include <openMVG/matching/indMatch.hpp>
 
 #include <vector>
 
 namespace openMVG {
 namespace features {
+
+std::string describerTypeColor(const features::EImageDescriberType descType);
 
 /**
  * @brief It saves a svg file containing two images (as linked images) and their
@@ -73,8 +76,8 @@ void saveKeypoints2SVG(const std::string &inputImagePath,
  **/
 void saveFeatures2SVG(const std::string &inputImagePath,
                       const std::pair<size_t,size_t> & imageSize,
-                      const std::vector<features::PointFeature> &keypoints,
-                      const std::string &outputSVGPath);
+                      const features::MapFeaturesPerDesc & keypoints,
+                      const std::string & outputSVGPath);
 
 /**
  * @brief It saves a svg file containing an image (as linked image) and its detected

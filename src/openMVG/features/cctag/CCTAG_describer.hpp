@@ -23,6 +23,12 @@ public:
   CCTAG_Image_describer(const std::size_t nRings = 3);
   ~CCTAG_Image_describer();
 
+  virtual EImageDescriberType getDescriberType()
+  {
+    // TODO: check nRings to decide between CCTAG3 and CCTAG4
+    return EImageDescriberType::CCTAG3;
+  }
+  
   bool Set_configuration_preset(EDESCRIBER_PRESET preset);
 
   void Set_use_cuda(bool);

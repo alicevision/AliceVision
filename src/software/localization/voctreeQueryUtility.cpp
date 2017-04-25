@@ -1,4 +1,5 @@
 #include <openMVG/sfm/sfm_data_io.hpp>
+#include <openMVG/sfm/pipelines/RegionsIO.hpp>
 #include <openMVG/voctree/database.hpp>
 #include <openMVG/voctree/databaseIO.hpp>
 #include <openMVG/voctree/vocabulary_tree.hpp>
@@ -9,9 +10,10 @@
 #include <openMVG/voctree/databaseIO.hpp>
 #include <openMVG/sfm/sfm_data.hpp>
 #include <openMVG/sfm/sfm_data_io.hpp>
+#include <openMVG/sfm/pipelines/RegionsIO.hpp>
 #include <openMVG/sfm/pipelines/sfm_engine.hpp>
-#include <openMVG/sfm/pipelines/FeaturesPerView.hpp>
-#include <openMVG/sfm/pipelines/RegionsPerView.hpp>
+#include <openMVG/features/FeaturesPerView.hpp>
+#include <openMVG/features/RegionsPerView.hpp>
 
 #include <Eigen/Core>
 
@@ -357,14 +359,14 @@ int main(int argc, char** argv)
   }
   
   
-  openMVG::sfm::RegionsPerView regionsPerView;
-  if(!loadRegionsPerView(regionsPerView, sfmData, matchDir, describerType)) 
+  openMVG::features::RegionsPerView regionsPerView;
+  if(!openMVG::sfm::loadRegionsPerView(regionsPerView, sfmData, matchDir, {describerType}))
   {
     OPENMVG_CERR("Invalid regions." << std::endl);
     return EXIT_FAILURE;
   }
   
-  openMVG::matching::PairWiseSimpleMatches allMatches;
+  openMVG::matching::PairwiseSimpleMatches allMatches;
 
   for(auto docMatches: allDocMatches)
   {
@@ -435,8 +437,8 @@ int main(int argc, char** argv)
             if(leafRightIt->second.size() != 1)
               continue;
 
-            const Regions& siftRegionsLeft = regionsPerView.getRegions(docMatches.first);
-            const Regions& siftRegionsRight = regionsPerView.getRegions(comparedPicture.id);
+            const Regions& siftRegionsLeft = regionsPerView.getRegions(docMatches.first, describerType);
+            const Regions& siftRegionsRight = regionsPerView.getRegions(comparedPicture.id, describerType);
 
             double dist = siftRegionsLeft.SquaredDescriptorDistance(currentLeaf.second[0], &siftRegionsRight, leafRightIt->second[0]);
             openMVG::matching::IndMatch currentMatch = openMVG::matching::IndMatch( currentLeaf.second[0], leafRightIt->second[0]

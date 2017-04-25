@@ -10,6 +10,8 @@
 #include <openMVG/system/timer.hpp>
 #include <openMVG/logger.hpp>
 
+#include <third_party/progress/progress.hpp>
+
 #include <cctag/ICCTag.hpp>
 
 #include <boost/filesystem.hpp>
@@ -93,7 +95,7 @@ bool CCTagLocalizer::loadReconstructionDescriptors(const sfm::SfM_Data & sfm_dat
   {
     IndexT trackId = landmarkValue.first;
     sfm::Landmark& landmark = landmarkValue.second;
-    for(auto obs : landmark.obs)
+    for(auto obs : landmark.observations)
     {
       const IndexT viewId = obs.first;
       const sfm::Observation& obs2d = obs.second;

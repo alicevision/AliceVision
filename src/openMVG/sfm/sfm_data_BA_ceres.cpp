@@ -306,32 +306,30 @@ bool Bundle_Adjustment_Ceres::Adjust(
   // TODO: make the LOSS function and the parameter an option
 
   // For all visibility add reprojections errors:
-  for (Landmarks::iterator iterTracks = sfm_data.structure.begin();
-    iterTracks!= sfm_data.structure.end(); ++iterTracks)
+  for(auto& landmarkIt: sfm_data.structure)
   {
-    const Observations & obs = iterTracks->second.obs;
-
-    for (Observations::const_iterator itObs = obs.begin();
-      itObs != obs.end(); ++itObs)
+    const Observations & observations = landmarkIt.second.observations;
+    // Iterate over 2D observation associated to the 3D landmark
+    for (const auto& observationIt: observations)
     {
       // Build the residual block corresponding to the track observation:
-      const View * view = sfm_data.views.at(itObs->first).get();
+      const View * view = sfm_data.views.at(observationIt.first).get();
 
       // Each Residual block takes a point and a camera as input and outputs a 2
       // dimensional residual. Internally, the cost function stores the observed
       // image location and compares the reprojection against the observation.
       ceres::CostFunction* cost_function =
-        IntrinsicsToCostFunction(sfm_data.intrinsics[view->id_intrinsic].get(), itObs->second.x);
+        IntrinsicsToCostFunction(sfm_data.intrinsics[view->id_intrinsic].get(), observationIt.second.x);
 
       if (cost_function)
         problem.AddResidualBlock(cost_function,
           p_LossFunction,
           &map_intrinsics[view->id_intrinsic][0],
           &map_poses[view->id_pose][0],
-          iterTracks->second.X.data()); //Do we need to copy 3D point to avoid false motion, if failure ?
+          landmarkIt.second.X.data()); //Do we need to copy 3D point to avoid false motion, if failure ?
     }
     if (!(refineOptions & BA_REFINE_STRUCTURE))
-      problem.SetParameterBlockConstant(iterTracks->second.X.data());
+      problem.SetParameterBlockConstant( landmarkIt.second.X.data());
   }
 
   // Configure a BA engine and run it

@@ -10,6 +10,7 @@
 #include "openMVG/features/svgVisualization.hpp"
 #include "openMVG/image/image.hpp"
 #include "openMVG/sfm/sfm.hpp"
+#include "openMVG/sfm/pipelines/RegionsIO.hpp"
 
 #include "third_party/cmdLine/cmdLine.h"
 #include "third_party/stlplus3/filesystemSimplified/file_system.hpp"
@@ -33,12 +34,12 @@ int main(int argc, char ** argv)
   CmdLine cmd;
 
   std::string sSfM_Data_Filename;
-  std::string describerMethod = "SIFT";
-  std::string sMatchesDir;
+  std::string describerMethods = "SIFT";
+  std::string sMatchesDir = "";
   std::string sOutDir = "";
 
   cmd.add( make_option('i', sSfM_Data_Filename, "input_file") );
-  cmd.add( make_option('m', describerMethod, "describerMethod") );
+  cmd.add( make_option('m', describerMethods, "describerMethods") );
   cmd.add( make_option('d', sMatchesDir, "matchdir") );
   cmd.add( make_option('o', sOutDir, "outdir") );
 
@@ -48,7 +49,7 @@ int main(int argc, char ** argv)
   } catch(const std::string& s) {
       std::cerr << "Export pairwise matches.\nUsage: " << argv[0] << "\n"
       << "[-i|--input_file file] path to a SfM_Data scene\n"
-      << "[-m|--describerMethod]\n"
+      << "[-m|--describerMethods]\n"
       << "  (methods to use to describe an image):\n"
       << "   SIFT (default),\n"
       << "   SIFT_FLOAT to use SIFT stored as float,\n"
@@ -68,7 +69,8 @@ int main(int argc, char ** argv)
       return EXIT_FAILURE;
   }
 
-  if (sOutDir.empty())  {
+  if (sOutDir.empty())
+  {
     std::cerr << "\nIt is an invalid output directory" << std::endl;
     return EXIT_FAILURE;
   }
@@ -90,11 +92,11 @@ int main(int argc, char ** argv)
   using namespace openMVG::features;
   
   // Get imageDescriberMethodType
-  EImageDescriberType describerMethodType = EImageDescriberType_stringToEnum(describerMethod);
+  std::vector<EImageDescriberType> describerMethodTypes = EImageDescriberType_stringToEnums(describerMethods);
 
   // Read the features
-  FeaturesPerView featuresPerView;
-  if (!loadFeaturesPerView(featuresPerView, sfm_data, sMatchesDir, describerMethodType)) {
+  features::FeaturesPerView featuresPerView;
+  if (!sfm::loadFeaturesPerView(featuresPerView, sfm_data, sMatchesDir, describerMethodTypes)) {
     std::cerr << std::endl
       << "Invalid features." << std::endl;
     return EXIT_FAILURE;
@@ -115,20 +117,20 @@ int main(int argc, char ** argv)
 
     const std::pair<size_t, size_t>
       dimImage = std::make_pair(view->ui_width, view->ui_height);
-    
-    // get the features
-    const PointFeatures& features = featuresPerView.getFeatures(view->id_view);
+
+    const MapFeaturesPerDesc& features = featuresPerView.getData().at(view->id_view);
 
     // output filename
     std::ostringstream os;
     os << stlplus::folder_append_separator(sOutDir)
       << stlplus::basename_part(sView_filename)
-      << "_" << features.size() << "_.svg";
+      << "_" << features.size() << "_.svg"; //TO CHECK
 
     features::saveFeatures2SVG(sView_filename,
                                dimImage,
-                               features,
+                               featuresPerView.getData().at(view->id_view),
                                os.str());
+
     ++my_progress_bar;
   }
   
