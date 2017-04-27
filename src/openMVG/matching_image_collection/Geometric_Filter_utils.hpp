@@ -200,10 +200,13 @@ void copyInlierMatches(
   const std::vector<features::EImageDescriberType> descTypes,
   matching::MatchesPerDescType & out_geometricInliersPerType)
 {
+  std::vector<size_t> orderedInliers = inliers;
+  std::sort(orderedInliers.begin(), orderedInliers.end());
+
   size_t currentDescType = 0;
   size_t currentDescTypeStartIndex = 0;
   size_t currentDescTypeMaxLength = putativeMatchesPerType.getNbMatches(descTypes[currentDescType]);
-  for(const size_t globalInlierIndex : inliers)
+  for(const size_t globalInlierIndex : orderedInliers)
   {
     while(globalInlierIndex >= currentDescTypeMaxLength)
     {

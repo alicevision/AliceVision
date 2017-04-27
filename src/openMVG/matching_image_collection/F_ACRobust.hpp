@@ -55,14 +55,15 @@ struct GeometricFilter_FMatrix_AC
     const IndexT jIndex = pairIndex.second;
 
     const std::vector<features::EImageDescriberType> descTypes = regionsPerView.getCommonDescTypes(pairIndex);
+
     if(descTypes.empty())
       return false;
 
     // Retrieve all 2D features as undistorted positions into flat arrays
     Mat xI, xJ;
     MatchesPairToMat(pairIndex, putativeMatchesPerType, sfmData, regionsPerView, descTypes, xI, xJ);
-
     std::vector<size_t> inliers;
+
     bool valid = Robust_estimation(
         xI, xJ,
         std::make_pair(sfmData->GetViews().at(iIndex)->ui_width, sfmData->GetViews().at(iIndex)->ui_height),
@@ -72,7 +73,6 @@ struct GeometricFilter_FMatrix_AC
     if (!valid)
       return false;
 
-    std::sort(inliers.begin(), inliers.end());
     // Fill geometricInliersPerType with inliers from putativeMatchesPerType
     copyInlierMatches(
           inliers,
