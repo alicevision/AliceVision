@@ -432,9 +432,10 @@ struct TracksUtilsMap
         continue;
       const Track& trackFeatsIn = itTrackIn->second;
       Track& trackFeatsOut = map_tracksOut[visibleTrack];
+      trackFeatsOut.descType = trackFeatsIn.descType;
       for (std::size_t imageIndex: set_imageIndex)
       {
-        auto trackFeatsInIt = trackFeatsIn.featPerView.find(imageIndex); //TODO : fix descType
+        auto trackFeatsInIt = trackFeatsIn.featPerView.find(imageIndex);
         if(trackFeatsInIt != trackFeatsIn.featPerView.end())
           trackFeatsOut.featPerView[imageIndex] = trackFeatsInIt->second;
       }
