@@ -112,6 +112,9 @@ void MatchesPairToMat(
   for(size_t d = 0; d < descTypes.size(); ++d)
   {
     const features::EImageDescriberType& descType = descTypes[d];
+
+    if(!putativeMatchesPerType.count(descType))
+      continue; // we may have 0 feature for some descriptor types
     const matching::IndMatches& putativeMatches = putativeMatchesPerType.at(descType);
 
     const features::PointFeatures feature_I = regionsPerView.getRegions(pairIndex.first, descType).GetRegionsPositions();
@@ -163,6 +166,7 @@ void MatchesPairToMat(
       sfmData->GetIntrinsics().at(view_J->id_intrinsic).get() : nullptr;
 
   // Create the output matrices with all matched features for images I and J
+
   const size_t n = putativeMatchesPerType.getNbAllMatches();
   x_I.resize(2, n);
   x_J.resize(2, n);
@@ -171,7 +175,11 @@ void MatchesPairToMat(
   for(size_t d = 0; d < descTypes.size(); ++d)
   {
     const features::EImageDescriberType& descType = descTypes[d];
+
+    if(!putativeMatchesPerType.count(descType))
+      continue; // we may have 0 feature for some descriptor types
     const matching::IndMatches& putativeMatches = putativeMatchesPerType.at(descType);
+
 
     const features::PointFeatures feature_I = featuresPerView.getFeatures(pairIndex.first, descType);
     const features::PointFeatures feature_J = featuresPerView.getFeatures(pairIndex.second, descType);
