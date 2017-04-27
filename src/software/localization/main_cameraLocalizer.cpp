@@ -150,7 +150,7 @@ int main(int argc, char** argv)
   /// the preset for the feature extractor
   features::EDESCRIBER_PRESET featurePreset = features::EDESCRIBER_PRESET::NORMAL_PRESET;     
   /// the preset for the feature extractor
-  DescriberType descriptorType = DescriberType::SIFT;        
+  DescriberType descriptorType = DescriberType::SIFT;
   /// the estimator to use for resection
   robust::EROBUST_ESTIMATOR resectionEstimator = robust::EROBUST_ESTIMATOR::ROBUST_ESTIMATOR_ACRANSAC;        
   /// the estimator to use for matching

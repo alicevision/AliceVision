@@ -196,11 +196,9 @@ int main(int argc, char ** argv)
       //-- Draw link between features :
       for(std::size_t i = 0; i < matches.size(); ++i)
       {
-        // std::cout << "link : " << i << " --  I: " << matches[i]._i << " / " << vec_feat_I.size() <<  ", J: " << matches[i]._j << " / " << vec_feat_J.size() << std::endl;
         const PointFeature & imaA = vec_feat_I[matches[i]._i];
         const PointFeature & imaB = vec_feat_J[matches[i]._j];
 
-         //std::cout << "draw line : " << i << std::endl;
         // Compute a flashy colour for the correspondence
         unsigned char r,g,b;
         hslToRgb( (rand() % 360) / 360., 1.0, .5, r, g, b);
@@ -214,7 +212,6 @@ int main(int argc, char ** argv)
       //-- Draw features (in two loop, in order to have the features upper the link, svg layer order):
       for(std::size_t i=0; i< matches.size(); ++i)
       {
-        //std::cout << "draw circle : " << i << std::endl;
         const PointFeature & imaA = vec_feat_I[matches[i]._i];
         const PointFeature & imaB = vec_feat_J[matches[i]._j];
         svgStream.drawCircle(imaA.x(), imaA.y(), 5.0,

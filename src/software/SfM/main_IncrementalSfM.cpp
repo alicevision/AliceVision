@@ -86,7 +86,7 @@ int main(int argc, char **argv)
   CmdLine cmd;
 
   std::string sSfM_Data_Filename;
-  std::string describerMethods = "SIFT"; //TODO multiple desc DELI
+  std::string describerMethods = "SIFT";
   std::string sMatchesDir;
   std::string sOutDir = "";
   std::string sOutSfMDataFilepath = "";
@@ -116,7 +116,7 @@ int main(int argc, char **argv)
   } catch(const std::string& s) {
     std::cerr << "Usage: " << argv[0] << '\n'
     << "[-i|--input_file] path to a SfM_Data scene\n"
-    << "[-d|--describerMethod]\n"
+    << "[-d|--describerMethods]\n"
     << "  (methods to use to describe an image):\n"
     << "   SIFT (default),\n"
     << "   SIFT_FLOAT to use SIFT stored as float,\n"

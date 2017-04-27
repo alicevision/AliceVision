@@ -388,13 +388,11 @@ int main(int argc, char **argv)
       return EXIT_FAILURE;
     }
     std::vector<EImageDescriberType> describerMethodsVec = EImageDescriberType_stringToEnums(describerMethods);
-    std::cout << "describerMethodsVec: " << describerMethodsVec.size() << std::endl;
 
     for(const auto& describerMethod: describerMethodsVec)
     {
       DescriberMethod method;
       method.typeName = EImageDescriberType_enumToString(describerMethod); // TODO: DELI ?
-      std::cout << "describerMethod: " << method.typeName << std::endl;
       method.type = describerMethod;
       method.describer = createImageDescriber(method.type);
       method.describer->Set_configuration_preset(featurePreset);
@@ -484,7 +482,7 @@ int main(int argc, char **argv)
             for(auto& compute : computeMethods)
             {
               // Compute features and descriptors and export them to files
-              std::cout << "Extracting features from image " << view->id_view << std::endl;
+              std::cout << "Extracting "<< imageDescribers[compute.methodIndex].typeName  << " features from image " << view->id_view << std::endl;
               std::unique_ptr<Regions> regions;
               imageDescribers[compute.methodIndex].describer->Describe(imageGray, regions);
               imageDescribers[compute.methodIndex].describer->Save(regions.get(), compute.featFilename, compute.descFilename);
