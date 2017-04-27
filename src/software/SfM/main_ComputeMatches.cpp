@@ -559,7 +559,7 @@ int main(int argc, char **argv)
   //-- Export geometric filtered matches
   //---------------------------------------
   std::cout << "Save geometric matches." << std::endl;
-  Save(finalMatches, matchesDirectory, geometricMode, "txt", matchFilePerImage);
+  Save(finalMatches, matchesDirectory, geometricMode, "bin", matchFilePerImage);
 
   std::cout << "Task done in (s): " << timer.elapsed() << std::endl;
 
