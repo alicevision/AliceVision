@@ -4,9 +4,7 @@
 #include <openMVG/sfm/sfm_data.hpp>
 #include <openMVG/sfm/sfm_data_io.hpp>
 
-#if HAVE_ALEMBIC
 #include <openMVG/sfm/AlembicExporter.hpp>
-#endif // HAVE_ALEMBIC
 
 #include <boost/filesystem.hpp>
 #include <boost/progress.hpp>
@@ -109,7 +107,6 @@ int main(int argc, char** argv)
   openMVG::cameras::Pinhole_Intrinsic_Radial_K3 intrinsics = openMVG::cameras::Pinhole_Intrinsic_Radial_K3(v[0], v[1], v[2], v[3], v[4], v[5], v[6], v[7]);
 
   // Export to abc
-#if HAVE_ALEMBIC
   dataio::AlembicExporter exporter( exportFile );
   exporter.initAnimatedCamera("camera");
 
@@ -121,7 +118,6 @@ int main(int argc, char** argv)
     ++idx;
   }
   exporter.addPoints(sfmData.GetLandmarks());
-#endif
 
   OPENMVG_COUT("Done.");
 }
