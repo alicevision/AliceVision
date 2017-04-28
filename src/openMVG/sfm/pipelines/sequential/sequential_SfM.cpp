@@ -518,13 +518,13 @@ bool SequentialSfMReconstructionEngine::InitLandmarkTracks()
       std::map<size_t, size_t> map_Occurence_TrackLength;
       tracks::TracksUtilsMap::TracksLength(_map_tracks, map_Occurence_TrackLength);
       osTrack << "TrackLength, Occurrence" << "\n";
-      for (std::map<size_t, size_t>::const_iterator iter = map_Occurence_TrackLength.begin();
-        iter != map_Occurence_TrackLength.end(); ++iter)  {
-        osTrack << "\t" << iter->first << "\t" << iter->second << "\n";
+      for(const auto& iter: map_Occurence_TrackLength)
+      {
+        osTrack << "\t" << iter.first << "\t" << iter.second << "\n";
         #if OPENMVG_IS_DEFINED(OPENMVG_HAVE_BOOST)
           // Add input tracks histogram
           _tree.add("sfm.inputtracks_histogram."
-            + std::to_string(iter->first), iter->second);
+            + std::to_string(iter.first), iter.second);
         #endif
       }
       osTrack << "\n";
