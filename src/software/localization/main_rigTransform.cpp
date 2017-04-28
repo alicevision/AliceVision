@@ -63,7 +63,7 @@ int main(int argc, char** argv)
 
     if(vm.count("help") || (argc == 1))
     {
-      POPART_COUT(desc);
+      OPENMVG_COUT(desc);
       return EXIT_SUCCESS;
     }
 
@@ -71,23 +71,23 @@ int main(int argc, char** argv)
   }
   catch(boost::program_options::required_option& e)
   {
-    POPART_CERR("ERROR: " << e.what() << std::endl);
-    POPART_COUT("Usage:\n\n" << desc);
+    OPENMVG_CERR("ERROR: " << e.what() << std::endl);
+    OPENMVG_COUT("Usage:\n\n" << desc);
     return EXIT_FAILURE;
   }
   catch(boost::program_options::error& e)
   {
-    POPART_CERR("ERROR: " << e.what() << std::endl);
-    POPART_COUT("Usage:\n\n" << desc);
+    OPENMVG_CERR("ERROR: " << e.what() << std::endl);
+    OPENMVG_COUT("Usage:\n\n" << desc);
     return EXIT_FAILURE;
   }
   // just debugging prints
   {
-    POPART_COUT("Program called with the following parameters:");
-    POPART_COUT("\timportFile: " << importFile);
-    POPART_COUT("\texportFile: " << exportFile);
-    POPART_COUT("\trigFile: " << rigFile);
-    POPART_COUT("\tcalibFile: " << calibFile);
+    OPENMVG_COUT("Program called with the following parameters:");
+    OPENMVG_COUT("\timportFile: " << importFile);
+    OPENMVG_COUT("\texportFile: " << exportFile);
+    OPENMVG_COUT("\trigFile: " << rigFile);
+    OPENMVG_COUT("\tcalibFile: " << calibFile);
 
   }
 
@@ -123,5 +123,5 @@ int main(int argc, char** argv)
   exporter.addPoints(sfmData.GetLandmarks());
 #endif
 
-  POPART_COUT("Done.");
+  OPENMVG_COUT("Done.");
 }
