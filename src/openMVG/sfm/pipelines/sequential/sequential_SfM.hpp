@@ -16,7 +16,7 @@
 #include "third_party/htmlDoc/htmlDoc.hpp"
 #include "third_party/histogram/histogram.hpp"
 
-#ifdef USE_BOOST
+#if OPENMVG_IS_DEFINED(OPENMVG_HAVE_BOOST)
   #include <boost/property_tree/ptree.hpp>
   #include <boost/property_tree/json_parser.hpp>
   #include <boost/lexical_cast.hpp>
@@ -167,7 +167,7 @@ private:
   /// Discard track with too large residual error
   size_t badTrackRejector(double dPrecision, size_t count = 0);
 
-  #ifdef USE_BOOST
+  #if OPENMVG_IS_DEFINED(OPENMVG_HAVE_BOOST)
   /// Export statistics in a JSON file
   void exportStatistics(double time_sfm);
   #endif
@@ -203,7 +203,7 @@ private:
   std::vector<int> _pyramidWeights;
   int _pyramidThreshold;
 
-  #ifdef USE_BOOST
+  #if OPENMVG_IS_DEFINED(OPENMVG_HAVE_BOOST)
     // Property tree for json stats export
     pt::ptree _tree;
   #endif

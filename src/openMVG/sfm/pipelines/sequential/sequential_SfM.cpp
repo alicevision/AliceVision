@@ -380,7 +380,7 @@ bool SequentialSfMReconstructionEngine::Process()
     _htmlDocStream->pushXYChart(xBinTracks, hTracks.GetHist(),"3DtoTracksSize");
   }
 
-  #ifdef USE_BOOST
+  #if OPENMVG_IS_DEFINED(OPENMVG_HAVE_BOOST)
     exportStatistics(time_sfm);
   #endif
   return true;
@@ -521,7 +521,7 @@ bool SequentialSfMReconstructionEngine::InitLandmarkTracks()
       for (std::map<size_t, size_t>::const_iterator iter = map_Occurence_TrackLength.begin();
         iter != map_Occurence_TrackLength.end(); ++iter)  {
         osTrack << "\t" << iter->first << "\t" << iter->second << "\n";
-        #ifdef USE_BOOST
+        #if OPENMVG_IS_DEFINED(OPENMVG_HAVE_BOOST)
           // Add input tracks histogram
           _tree.add("sfm.inputtracks_histogram."
             + boost::lexical_cast<std::string>(iter->first), iter->second);
@@ -1554,7 +1554,7 @@ std::size_t SequentialSfMReconstructionEngine::badTrackRejector(double dPrecisio
  *
  * @param[in] time_sfm time in seconds of the reconstruction process
  */
-#ifdef USE_BOOST
+#if OPENMVG_IS_DEFINED(OPENMVG_HAVE_BOOST)
 void SequentialSfMReconstructionEngine::exportStatistics(double time_sfm)
 {
   // Put nb images, nb poses, nb points
