@@ -93,7 +93,7 @@ int main(int argc, char** argv)
   if(!rig::loadRigCalibration(rigFile, extrinsics))
   {
     cerr << "unable to open " << rigFile << endl;
-    exit(1);
+    return EXIT_FAILURE;
   }
   assert(!extrinsics.empty());
 
@@ -120,4 +120,6 @@ int main(int argc, char** argv)
   exporter.addPoints(sfmData.GetLandmarks());
 
   OPENMVG_COUT("Done.");
+  return EXIT_SUCCESS;
 }
+
