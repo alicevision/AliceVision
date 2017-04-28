@@ -6,7 +6,6 @@
 
 #include <boost/program_options.hpp>
 #include <boost/algorithm/string/case_conv.hpp>
-#include <boost/lexical_cast.hpp>
 
 #if OPENMVG_IS_DEFINED(OPENMVG_HAVE_CCTAG)
 #include <openMVG/features/cctag/CCTAG_describer.hpp>

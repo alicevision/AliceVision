@@ -10,7 +10,6 @@
 #include <openMVG/logger.hpp>
 #include <openMVG/config.hpp>
 
-#include <boost/lexical_cast.hpp>
 #include <boost/program_options.hpp>
 #include <boost/filesystem.hpp>
 #include <boost/filesystem/path.hpp>

@@ -76,6 +76,12 @@ target_link_libraries(
   openMVG_exif
   ${LOG_LIB}
 )
+IF(Boost_FOUND)
+  target_link_libraries(
+    openMVG_sfm
+    ${Boost_LIBRARIES}
+  )
+ENDIF(Boost_FOUND)
 set_target_properties(openMVG_sfm PROPERTIES SOVERSION ${OPENMVG_VERSION_MAJOR} VERSION "${OPENMVG_VERSION_MAJOR}.${OPENMVG_VERSION_MINOR}")
 
 if(OpenMVG_USE_ALEMBIC)

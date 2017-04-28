@@ -16,6 +16,12 @@
 #include "third_party/htmlDoc/htmlDoc.hpp"
 #include "third_party/histogram/histogram.hpp"
 
+#if OPENMVG_IS_DEFINED(OPENMVG_HAVE_BOOST)
+  #include <boost/property_tree/ptree.hpp>
+  #include <boost/property_tree/json_parser.hpp>
+  namespace pt = boost::property_tree;
+#endif
+
 namespace openMVG {
 namespace sfm {
 
@@ -160,6 +166,11 @@ private:
   /// Discard track with too large residual error
   size_t badTrackRejector(double dPrecision, size_t count = 0);
 
+  #if OPENMVG_IS_DEFINED(OPENMVG_HAVE_BOOST)
+  /// Export statistics in a JSON file
+  void exportStatistics(double time_sfm);
+  #endif
+
   //----
   //-- Data
   //----
@@ -190,6 +201,11 @@ private:
   /// internal cache of precomputed values for the weighting of the pyramid levels
   std::vector<int> _pyramidWeights;
   int _pyramidThreshold;
+
+  #if OPENMVG_IS_DEFINED(OPENMVG_HAVE_BOOST)
+    // Property tree for json stats export
+    pt::ptree _tree;
+  #endif
 
   // Temporary data
   /// Putative landmark tracks (visibility per potential 3D point)

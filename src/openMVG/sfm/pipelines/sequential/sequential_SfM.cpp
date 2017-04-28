@@ -20,6 +20,8 @@
 #include "openMVG/graph/connectedComponent.hpp"
 #include "openMVG/stl/stl.hpp"
 #include "openMVG/system/timer.hpp"
+#include "openMVG/system/cpu.hpp"
+#include "openMVG/system/memoryInfo.hpp"
 #include <openMVG/config.hpp>
 
 #include "third_party/htmlDoc/htmlDoc.hpp"
@@ -288,6 +290,9 @@ bool SequentialSfMReconstructionEngine::Process()
   if (!MakeInitialPair3D(_initialpair))
     return false;
 
+  // timer for stats
+  openMVG::system::Timer timer_sfm;
+
   std::set<std::size_t> reconstructedViewIds;
   std::set<std::size_t> rejectedViewIds;
   std::size_t nbRejectedLoops = 0;
@@ -317,6 +322,9 @@ bool SequentialSfMReconstructionEngine::Process()
     // Retry to perform the resectioning of all the rejected views,
     // as long as new views are successfully added.
   } while( !reconstructedViewIds.empty() && !_set_remainingViewId.empty() );
+
+  // timer for stats
+  const double time_sfm = timer_sfm.elapsed();
 
   //-- Reconstruction done.
   //-- Display some statistics
@@ -365,6 +373,9 @@ bool SequentialSfMReconstructionEngine::Process()
     _htmlDocStream->pushXYChart(xBinTracks, hTracks.GetHist(),"3DtoTracksSize");
   }
 
+  #if OPENMVG_IS_DEFINED(OPENMVG_HAVE_BOOST)
+    exportStatistics(time_sfm);
+  #endif
   return true;
 }
 
@@ -500,9 +511,14 @@ bool SequentialSfMReconstructionEngine::InitLandmarkTracks()
       std::map<size_t, size_t> map_Occurence_TrackLength;
       tracks::TracksUtilsMap::TracksLength(_map_tracks, map_Occurence_TrackLength);
       osTrack << "TrackLength, Occurrence" << "\n";
-      for (std::map<size_t, size_t>::const_iterator iter = map_Occurence_TrackLength.begin();
-        iter != map_Occurence_TrackLength.end(); ++iter)  {
-        osTrack << "\t" << iter->first << "\t" << iter->second << "\n";
+      for(const auto& iter: map_Occurence_TrackLength)
+      {
+        osTrack << "\t" << iter.first << "\t" << iter.second << "\n";
+        #if OPENMVG_IS_DEFINED(OPENMVG_HAVE_BOOST)
+          // Add input tracks histogram
+          _tree.add("sfm.inputtracks_histogram."
+            + std::to_string(iter.first), iter.second);
+        #endif
       }
       osTrack << "\n";
       OPENMVG_LOG_DEBUG(osTrack.str());
@@ -1525,6 +1541,51 @@ std::size_t SequentialSfMReconstructionEngine::badTrackRejector(double dPrecisio
   OPENMVG_LOG_DEBUG("badTrackRejector: nbOutliers_residualErr: " << nbOutliers_residualErr << ", nbOutliers_angleErr: " << nbOutliers_angleErr);
   return (nbOutliers_residualErr + nbOutliers_angleErr) > count;
 }
+
+/**
+ * @brief Export a JSON file containing various statistics about the SfM reconstruction
+ *
+ * @param[in] time_sfm time in seconds of the reconstruction process
+ */
+#if OPENMVG_IS_DEFINED(OPENMVG_HAVE_BOOST)
+void SequentialSfMReconstructionEngine::exportStatistics(double time_sfm)
+{
+  // Put nb images, nb poses, nb points
+  _tree.put("sfm.views", _sfm_data.GetViews().size());
+  _tree.put("sfm.poses", _sfm_data.GetPoses().size());
+  _tree.put("sfm.points", _sfm_data.GetLandmarks().size());
+
+  // Add observations histogram
+  std::map<std::size_t, std::size_t> obsHistogram;
+  for (const auto & iterTracks : _sfm_data.GetLandmarks())
+  {
+    const Observations & obs = iterTracks.second.obs;
+    if(obsHistogram.count(obs.size()))
+      obsHistogram[obs.size()]++;
+    else
+      obsHistogram[obs.size()] = 1;
+  }
+  for(std::size_t i = 2; i < obsHistogram.size(); i++)
+  {
+    _tree.add("sfm.observationsHistogram."
+      + std::to_string(i), obsHistogram[i]);
+  }
+
+  // Add process time
+  _tree.put("sfm.time", time_sfm);
+
+  // CPU frequency
+  _tree.put("hardware.cpu.freq", system::cpu_clock_by_os());
+
+  // CPU cores
+  _tree.put("hardware.cpu.cores", system::get_total_cpus());
+
+  _tree.put("hardware.ram.size", system::getMemoryInfo().totalRam);
+
+  // Write json on disk
+  pt::write_json(stlplus::folder_append_separator(_sOutDirectory)+"stats.json", _tree);
+}
+#endif
 
 } // namespace sfm
 } // namespace openMVG
