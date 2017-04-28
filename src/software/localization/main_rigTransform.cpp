@@ -107,7 +107,7 @@ int main(int argc, char** argv)
   openMVG::cameras::Pinhole_Intrinsic_Radial_K3 intrinsics = openMVG::cameras::Pinhole_Intrinsic_Radial_K3(v[0], v[1], v[2], v[3], v[4], v[5], v[6], v[7]);
 
   // Export to abc
-  dataio::AlembicExporter exporter( exportFile );
+  openMVG::sfm::AlembicExporter exporter( exportFile );
   exporter.initAnimatedCamera("camera");
 
   size_t idx = 0;
