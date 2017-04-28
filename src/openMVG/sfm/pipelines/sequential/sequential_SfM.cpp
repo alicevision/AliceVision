@@ -1563,18 +1563,19 @@ void SequentialSfMReconstructionEngine::exportStatistics(double time_sfm)
   _tree.put("sfm.points", _sfm_data.GetLandmarks().size());
 
   // Add observations histogram
-  std::vector<int> obs_histogram;
+  std::map<std::size_t, std::size_t> obsHistogram;
   for (const auto & iterTracks : _sfm_data.GetLandmarks())
   {
     const Observations & obs = iterTracks.second.obs;
-    if(obs_histogram.size() < obs.size() + 1)
-      obs_histogram.resize(obs.size() + 1, 0);
-    obs_histogram[obs.size()]++;
+    if(obsHistogram.count(obs.size()))
+      obsHistogram[obs.size()]++;
+    else
+      obsHistogram[obs.size()] = 1;
   }
-  for(std::size_t i = 2; i < obs_histogram.size(); i++)
+  for(std::size_t i = 2; i < obsHistogram.size(); i++)
   {
-    _tree.add("sfm.observations_histogram."
-      + std::to_string(i), obs_histogram[i]);
+    _tree.add("sfm.observationsHistogram."
+      + std::to_string(i), obsHistogram[i]);
   }
 
   // Add process time
