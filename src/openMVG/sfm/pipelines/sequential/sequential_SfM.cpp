@@ -524,7 +524,7 @@ bool SequentialSfMReconstructionEngine::InitLandmarkTracks()
         #if OPENMVG_IS_DEFINED(OPENMVG_HAVE_BOOST)
           // Add input tracks histogram
           _tree.add("sfm.inputtracks_histogram."
-            + boost::lexical_cast<std::string>(iter->first), iter->second);
+            + std::to_string(iter->first), iter->second);
         #endif
       }
       osTrack << "\n";
@@ -1574,7 +1574,7 @@ void SequentialSfMReconstructionEngine::exportStatistics(double time_sfm)
   for(std::size_t i = 2; i < obs_histogram.size(); i++)
   {
     _tree.add("sfm.observations_histogram."
-      + boost::lexical_cast<std::string>(i), obs_histogram[i]);
+      + std::to_string(i), obs_histogram[i]);
   }
 
   // Add process time

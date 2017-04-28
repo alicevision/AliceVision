@@ -19,7 +19,6 @@
 #if OPENMVG_IS_DEFINED(OPENMVG_HAVE_BOOST)
   #include <boost/property_tree/ptree.hpp>
   #include <boost/property_tree/json_parser.hpp>
-  #include <boost/lexical_cast.hpp>
   namespace pt = boost::property_tree;
 #endif
 
