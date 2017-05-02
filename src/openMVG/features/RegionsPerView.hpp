@@ -48,11 +48,14 @@ public:
   // TODO: to remove
   const features::Regions& getFirstViewRegions(features::EImageDescriberType descType) const
   {
+    assert(descType != features::EImageDescriberType::UNINITIALIZED);
     return *(_data.begin()->second.at(descType).get());
   }
+
   
   const features::Regions& getRegions(IndexT viewId, features::EImageDescriberType descType) const
   {
+    assert(descType != features::EImageDescriberType::UNINITIALIZED);
     return *(_data.at(viewId).at(descType).get());
   }
   
@@ -73,6 +76,7 @@ public:
   
   void addRegions(IndexT viewId, features::EImageDescriberType descType, features::Regions* regionsPtr)
   {
+    assert(descType != features::EImageDescriberType::UNINITIALIZED);
     _data[viewId][descType].reset(regionsPtr);
   }
 

@@ -210,6 +210,7 @@ struct GeometricFilter_HMatrix_AC
       {
         for(const features::EImageDescriberType descType: descTypes)
         {
+          assert(descType != features::EImageDescriberType::UNINITIALIZED);
           matching::IndMatches localMatches;
 
           const features::Regions& regions_I = regionsPerView.getRegions(viewId_I, descType);

@@ -187,6 +187,7 @@ int main(int argc, char ** argv)
     for(const auto& matchesIt: vec_FilteredMatches)
     {
       const features::EImageDescriberType descType = matchesIt.first;
+      assert(descType != features::EImageDescriberType::UNINITIALIZED);
       const matching::IndMatches& matches = matchesIt.second;
       std::cout << EImageDescriberType_enumToString(matchesIt.first) << ": " << matches.size() << " matches" << std::endl;
 

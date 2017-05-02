@@ -363,6 +363,7 @@ int main(int argc, char **argv)
 
   for(const features::EImageDescriberType descType : describerTypes)
   {
+    assert(descType != features::EImageDescriberType::UNINITIALIZED);
     std::cout << "-> " << EImageDescriberType_enumToString(descType) << " Regions Matching" << std::endl;
 
     // Photometric matching of putative pairs
@@ -518,6 +519,7 @@ int main(int argc, char **argv)
       for(const auto& match: matchesPerDesc)
       {
         const features::EImageDescriberType descType = match.first;
+        assert(descType != features::EImageDescriberType::UNINITIALIZED);
         const openMVG::matching::IndMatches& inputMatches = match.second;
 
         const features::Feat_Regions<features::SIOPointFeature>* rRegions = dynamic_cast<const features::Feat_Regions<features::SIOPointFeature>*>(&regionPerView.getRegions(indexImagePair.second, descType));

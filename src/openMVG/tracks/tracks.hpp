@@ -67,7 +67,7 @@ struct Track
   Track() {}
 
   /// Descriptor type
-  features::EImageDescriberType descType = features::EImageDescriberType::UNKNOWN;
+  features::EImageDescriberType descType = features::EImageDescriberType::UNINITIALIZED;
   /// Collection of matched features between views: {ViewId, FeatureId}
   FeatureIdPerView featPerView;
 };
@@ -117,7 +117,7 @@ struct KeypointId
     return descType < other.descType;
   }
 
-  features::EImageDescriberType descType = features::EImageDescriberType::UNKNOWN;
+  features::EImageDescriberType descType = features::EImageDescriberType::UNINITIALIZED;
   std::size_t featIndex = 0;
 };
 

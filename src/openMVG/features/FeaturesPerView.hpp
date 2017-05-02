@@ -21,12 +21,15 @@ namespace features {
 using MapFeaturesPerDesc = Hash_Map<features::EImageDescriberType, features::PointFeatures>;
 using MapFeaturesPerView = Hash_Map<IndexT, MapFeaturesPerDesc>;
 
+
+
 /**
  * @brief Container for all Features for each View.
  */
 class FeaturesPerView
 {
 public:
+
   /**
    * @brief Get the PointFeatures belonging to the View, 
    * if the view does not exist it returns an empty PointFeatures.
@@ -36,6 +39,7 @@ public:
    */
   const features::PointFeatures& getFeatures(IndexT viewId, features::EImageDescriberType descType) const
   {
+    assert(descType != features::EImageDescriberType::UNINITIALIZED);
     // Have an empty feature set in order to deal with non existing view_id
     static const features::PointFeatures emptyFeats = features::PointFeatures();
 
@@ -98,6 +102,7 @@ public:
    */
   void addFeatures(IndexT viewId, features::EImageDescriberType descType, features::PointFeatures pointFeatures)
   {
+    assert(descType != features::EImageDescriberType::UNINITIALIZED);
     _data[viewId][descType] = pointFeatures;
   }
   
@@ -113,6 +118,7 @@ public:
   template <typename NoiseGenerator>
   bool createSyntheticData(features::EImageDescriberType descType, const NViewDataSet & synthetic_data, NoiseGenerator & noise)
   {
+    assert(descType != features::EImageDescriberType::UNINITIALIZED);
     std::default_random_engine generator;
 
     for (int j = 0; j < synthetic_data._n; ++j) // For each view
@@ -130,7 +136,7 @@ public:
    * 
    * @return 
    */
-  MapFeaturesPerView& getData()
+  features::MapFeaturesPerView& getData()
   {
     return _data;
   }

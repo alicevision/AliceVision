@@ -22,7 +22,8 @@ std::string describerTypeColor(const features::EImageDescriberType descType )
     case features::EImageDescriberType::SIFT_CCTAG3: return "green";
     case features::EImageDescriberType::SIFT_CCTAG4: return "green";
 #endif
-    case features::EImageDescriberType::UNKNOWN: return "red";
+  case features::EImageDescriberType::UNKNOWN: return "red";
+  case features::EImageDescriberType::UNINITIALIZED: return "fuchsia";
   }
   return "magenta";
 }

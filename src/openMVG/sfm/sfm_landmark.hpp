@@ -75,7 +75,7 @@ struct Landmark
   {}
 
   Vec3 X;
-  features::EImageDescriberType descType = features::EImageDescriberType::UNKNOWN;
+  features::EImageDescriberType descType = features::EImageDescriberType::UNINITIALIZED;
   Observations observations;
   image::RGBColor rgb = image::WHITE;    //!> the color associated to the point
   

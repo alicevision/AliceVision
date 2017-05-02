@@ -173,6 +173,7 @@ int main(int argc, char ** argv)
           tracksIt != map_tracksCommon.end(); ++tracksIt)
         {
           const features::EImageDescriberType descType = tracksIt->second.descType;
+          assert(descType != features::EImageDescriberType::UNINITIALIZED);
           tracks::Track::FeatureIdPerView::const_iterator obsIt = tracksIt->second.featPerView.begin();
 
           const PointFeatures& vec_feat_I = featuresPerView.getFeatures(view_I->id_view, descType);
@@ -192,6 +193,7 @@ int main(int argc, char ** argv)
           tracksIt != map_tracksCommon.end(); ++ tracksIt)
         {
           const features::EImageDescriberType descType = tracksIt->second.descType;
+          assert(descType != features::EImageDescriberType::UNINITIALIZED);
           tracks::Track::FeatureIdPerView::const_iterator obsIt = tracksIt->second.featPerView.begin();
 
           const PointFeatures& vec_feat_I = featuresPerView.getFeatures(view_I->id_view, descType);

@@ -27,6 +27,7 @@ std::string EImageDescriberType_enumToString(EImageDescriberType imageDescriberT
     case EImageDescriberType::SIFT_CCTAG4: return "SIFT_CCTAG4";
 #endif //HAVE_CCTAG
     case EImageDescriberType::UNKNOWN: return "UNKNOWN";
+    case EImageDescriberType::UNINITIALIZED: break; // Should throw an error.
   }
   throw std::out_of_range("Invalid imageDescriber enum");
 }
@@ -46,6 +47,7 @@ EImageDescriberType EImageDescriberType_stringToEnum(const std::string& imageDes
   if(imageDescriberType == "SIFT_CCTAG4") return EImageDescriberType::SIFT_CCTAG4;
 #endif //HAVE_CCTAG
   if(imageDescriberType == "UNKNOWN") return EImageDescriberType::UNKNOWN;
+  // UNINITIALIZED should throw an error.
   throw std::out_of_range("Invalid imageDescriber : " + imageDescriberType);
 }
 

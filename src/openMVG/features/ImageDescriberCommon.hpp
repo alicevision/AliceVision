@@ -9,17 +9,18 @@ namespace features {
 enum class EImageDescriberType
 {
   UNKNOWN = 0,
-  SIFT = 1,
-  SIFT_FLOAT = 2,
+  UNINITIALIZED = 1,
+  SIFT = 2,
+  SIFT_FLOAT = 3,
 #ifdef HAVE_CCTAG
-  CCTAG3 = 3,
-  CCTAG4 = 4,
-  SIFT_CCTAG3 = 5,
-  SIFT_CCTAG4 = 6,
+  CCTAG3 = 4,
+  CCTAG4 = 5,
+  SIFT_CCTAG3 = 6,
+  SIFT_CCTAG4 = 7,
 #endif
-  AKAZE_FLOAT = 7,
-  AKAZE_LIOP = 8,
-  AKAZE_MLDB = 9
+  AKAZE_FLOAT = 8,
+  AKAZE_LIOP = 9,
+  AKAZE_MLDB = 10
 };
   
 /**
