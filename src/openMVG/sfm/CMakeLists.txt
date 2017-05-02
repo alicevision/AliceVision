@@ -2,12 +2,12 @@
 set(sfm_files_header
   AlembicExporter.hpp
   AlembicImporter.hpp
-#  pipelines/global/GlobalSfM_rotation_averaging.hpp
-#  pipelines/global/GlobalSfM_translation_averaging.hpp
-#  pipelines/global/mutexSet.hpp
-#  pipelines/global/sfm_global_engine_relative_motions.hpp
-#  pipelines/global/sfm_global_reindex.hpp
-#  pipelines/global/triplet_t_ACRansac_kernelAdaptator.hpp
+  pipelines/global/GlobalSfM_rotation_averaging.hpp
+  pipelines/global/GlobalSfM_translation_averaging.hpp
+  pipelines/global/mutexSet.hpp
+  pipelines/global/sfm_global_engine_relative_motions.hpp
+  pipelines/global/sfm_global_reindex.hpp
+  pipelines/global/triplet_t_ACRansac_kernelAdaptator.hpp
   pipelines/localization/SfM_Localizer.hpp
   pipelines/localization/SfM_Localizer_Single_3DTrackObservation_Database.hpp
   pipelines/sequential/sequential_SfM.hpp
@@ -41,9 +41,9 @@ set(sfm_files_header
 set(sfm_files_cpp
   AlembicExporter.cpp
   AlembicImporter.cpp
-#  pipelines/global/GlobalSfM_rotation_averaging.cpp
-#  pipelines/global/GlobalSfM_translation_averaging.cpp
-#  pipelines/global/sfm_global_engine_relative_motions.cpp
+  pipelines/global/GlobalSfM_rotation_averaging.cpp
+  pipelines/global/GlobalSfM_translation_averaging.cpp
+  pipelines/global/sfm_global_engine_relative_motions.cpp
   pipelines/localization/SfM_Localizer.cpp
   pipelines/localization/SfM_Localizer_Single_3DTrackObservation_Database.cpp
   pipelines/sequential/sequential_SfM.cpp
@@ -52,7 +52,7 @@ set(sfm_files_cpp
   pipelines/structure_from_known_poses/structure_estimator.cpp
   sfm_data.cpp
   sfm_data_BA_ceres.cpp
- #sfm_data_BA_test.cpp
+  #sfm_data_BA_test.cpp
   sfm_data_filters_frustum.cpp
   sfm_data_io.cpp
   #sfm_data_io_test.cpp

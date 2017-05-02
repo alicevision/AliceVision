@@ -84,14 +84,14 @@ TARGET_LINK_LIBRARIES(openMVG_main_IncrementalSfM
   stlplus
   )
 
-#ADD_EXECUTABLE(openMVG_main_GlobalSfM main_GlobalSfM.cpp)
-#TARGET_LINK_LIBRARIES(openMVG_main_GlobalSfM
-#  openMVG_system
-#  openMVG_image
-#  openMVG_features
-#  openMVG_sfm
-#  stlplus
-#  )
+ADD_EXECUTABLE(openMVG_main_GlobalSfM main_GlobalSfM.cpp)
+TARGET_LINK_LIBRARIES(openMVG_main_GlobalSfM
+  openMVG_system
+  openMVG_image
+  openMVG_features
+  openMVG_sfm
+  stlplus
+  )
 
 add_executable(openMVG_main_ConvertSfM_DataFormat main_ConvertSfM_DataFormat.cpp)
 target_link_libraries(openMVG_main_ConvertSfM_DataFormat
@@ -164,8 +164,8 @@ ENDIF(OpenMVG_USE_ALEMBIC)
 # Installation rules
 SET_PROPERTY(TARGET openMVG_main_IncrementalSfM PROPERTY FOLDER OpenMVG/software)
 INSTALL(TARGETS openMVG_main_IncrementalSfM DESTINATION bin/)
-#SET_PROPERTY(TARGET openMVG_main_GlobalSfM PROPERTY FOLDER OpenMVG/software)
-#INSTALL(TARGETS openMVG_main_GlobalSfM DESTINATION bin/)
+SET_PROPERTY(TARGET openMVG_main_GlobalSfM PROPERTY FOLDER OpenMVG/software)
+INSTALL(TARGETS openMVG_main_GlobalSfM DESTINATION bin/)
 SET_PROPERTY(TARGET openMVG_main_ConvertSfM_DataFormat PROPERTY FOLDER OpenMVG/software)
 INSTALL(TARGETS openMVG_main_ConvertSfM_DataFormat DESTINATION bin/)
 SET_PROPERTY(TARGET openMVG_main_Align PROPERTY FOLDER OpenMVG/software)

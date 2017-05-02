@@ -83,7 +83,7 @@ private:
 
   //-- Data provider
   features::FeaturesPerView  * _featuresPerView;
-  matching::PairwiseMatches  * _matches_provider;
+  matching::PairwiseMatches  * _pairwiseMatches;
 
   std::shared_ptr<features::FeaturesPerView> _normalizedFeaturesPerView;
 };

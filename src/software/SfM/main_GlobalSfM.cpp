@@ -7,6 +7,7 @@
 
 #include <cstdlib>
 
+#include "openMVG/sfm/pipelines/RegionsIO.hpp"
 #include "openMVG/features/ImageDescriberCommon.hpp"
 #include "openMVG/sfm/pipelines/global/sfm_global_engine_relative_motions.hpp"
 #include "openMVG/system/timer.hpp"
@@ -38,7 +39,7 @@ int main(int argc, char **argv)
   CmdLine cmd;
 
   std::string sSfM_Data_Filename;
-  std::string describerMethod = "SIFT";
+  std::string describerMethods = "SIFT";
   std::string sMatchesDir;
   std::string sOutDir = "";
   std::string sOutSfMDataFilepath = "";
@@ -47,7 +48,7 @@ int main(int argc, char **argv)
   bool bRefineIntrinsics = true;
 
   cmd.add( make_option('i', sSfM_Data_Filename, "input_file") );
-  cmd.add( make_option('d', describerMethod, "describerMethod") );
+  cmd.add( make_option('d', describerMethods, "describerMethods") );
   cmd.add( make_option('m', sMatchesDir, "matchdir") );
   cmd.add( make_option('o', sOutDir, "outdir") );
   cmd.add( make_option('s', sOutSfMDataFilepath, "out_sfmdata_file") );
@@ -61,7 +62,7 @@ int main(int argc, char **argv)
   } catch(const std::string& s) {
     std::cerr << "Usage: " << argv[0] << '\n'
     << "[-i|--input_file] path to a SfM_Data scene\n"
-    << "[-d|--describerMethod]\n"
+    << "[-d|--describerMethods]\n"
     << "  (methods to use to describe an image):\n"
     << "   SIFT (default),\n"
     << "   SIFT_FLOAT to use SIFT stored as float,\n"
@@ -109,27 +110,28 @@ int main(int argc, char **argv)
   }
 
   // Load input SfM_Data scene
-  SfM_Data sfm_data;
-  if (!Load(sfm_data, sSfM_Data_Filename, ESfM_Data(VIEWS|INTRINSICS))) {
+  SfM_Data sfmData;
+  if (!Load(sfmData, sSfM_Data_Filename, ESfM_Data(VIEWS|INTRINSICS))) {
     std::cerr << std::endl
       << "The input SfM_Data file \""<< sSfM_Data_Filename << "\" cannot be read." << std::endl;
     return EXIT_FAILURE;
   }
 
-  // Get imageDescriberMethodType
-  EImageDescriberType describerMethodType = EImageDescriberType_stringToEnum(describerMethod);
+  // Get describerTypes
+  const std::vector<features::EImageDescriberType> describerTypes = features::EImageDescriberType_stringToEnums(describerMethods);
 
   // Features reading
   FeaturesPerView featuresPerView;
-  if (!loadFeaturesPerView(featuresPerView, sfm_data, sMatchesDir, describerMethodType)) {
+  if (!sfm::loadFeaturesPerView(featuresPerView, sfmData, sMatchesDir, describerTypes)) {
     std::cerr << std::endl
       << "Invalid features." << std::endl;
     return EXIT_FAILURE;
   }
   // Matches reading
-  std::shared_ptr<Matches_Provider> matches_provider = std::make_shared<Matches_Provider>();
+  matching::PairwiseMatches pairwiseMatches;
   // Load the match file (try to read the two matches file formats)
-  if(!(matches_provider->load(sfm_data, sMatchesDir, "e")))
+
+  if(!sfm::loadPairwiseMatches(pairwiseMatches, sfmData, sMatchesDir, describerTypes, "e"))
   {
     std::cerr << std::endl << "Unable to load matches files from: " << sMatchesDir << std::endl;
     return EXIT_FAILURE;
@@ -150,13 +152,13 @@ int main(int argc, char **argv)
 
   openMVG::system::Timer timer;
   GlobalSfMReconstructionEngine_RelativeMotions sfmEngine(
-    sfm_data,
+    sfmData,
     sOutDir,
     stlplus::create_filespec(sOutDir, "Reconstruction_Report.html"));
 
   // Configure the featuresPerView & the matches_provider
   sfmEngine.SetFeaturesProvider(&featuresPerView);
-  sfmEngine.SetMatchesProvider(matches_provider.get());
+  sfmEngine.SetMatchesProvider(&pairwiseMatches);
 
   // Configure reconstruction parameters
   sfmEngine.Set_bFixedIntrinsics(!bRefineIntrinsics);
@@ -167,7 +169,7 @@ int main(int argc, char **argv)
   sfmEngine.SetTranslationAveragingMethod(
     ETranslationAveragingMethod(iTranslationAveragingMethod));
 
-  if (sfmEngine.Process())
+  if (!sfmEngine.Process())
   {
     return EXIT_FAILURE;
   }

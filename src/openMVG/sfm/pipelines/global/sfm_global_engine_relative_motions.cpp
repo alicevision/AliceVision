@@ -72,7 +72,7 @@ void GlobalSfMReconstructionEngine_RelativeMotions::SetFeaturesProvider(features
 #ifdef OPENMVG_USE_OPENMP
   #pragma omp parallel
 #endif
-  for (Hash_Map<IndexT, PointFeatures>::iterator iter = _normalizedFeaturesPerView->getData().begin();
+  for (MapFeaturesPerView::iterator iter = _normalizedFeaturesPerView->getData().begin();
     iter != _normalizedFeaturesPerView->getData().end(); ++iter)
   {
 #ifdef OPENMVG_USE_OPENMP
@@ -84,20 +84,23 @@ void GlobalSfMReconstructionEngine_RelativeMotions::SetFeaturesProvider(features
       if (_sfm_data.GetIntrinsics().count(view->id_intrinsic))
       {
         const std::shared_ptr<IntrinsicBase> cam = _sfm_data.GetIntrinsics().find(view->id_intrinsic)->second;
-        for (PointFeatures::iterator iterPt = iter->second.begin();
-          iterPt != iter->second.end(); ++iterPt)
+        for(auto& iterFeatPerDesc: iter->second)
         {
-          const Vec3 bearingVector = (*cam)(cam->get_ud_pixel(iterPt->coords().cast<double>()));
-          iterPt->coords() << (bearingVector.head(2) / bearingVector(2)).cast<float>();
+          for (PointFeatures::iterator iterPt = iterFeatPerDesc.second.begin();
+            iterPt != iterFeatPerDesc.second.end(); ++iterPt)
+          {
+            const Vec3 bearingVector = (*cam)(cam->get_ud_pixel(iterPt->coords().cast<double>()));
+            iterPt->coords() << (bearingVector.head(2) / bearingVector(2)).cast<float>();
+          }
         }
       }
     }
   }
 }
 
-void GlobalSfMReconstructionEngine_RelativeMotions::SetMatchesProvider(Matches_Provider * provider)
+void GlobalSfMReconstructionEngine_RelativeMotions::SetMatchesProvider(matching::PairwiseMatches * provider)
 {
-  _matches_provider = provider;
+  _pairwiseMatches = provider;
 }
 
 void GlobalSfMReconstructionEngine_RelativeMotions::SetRotationAveragingMethod
@@ -122,14 +125,14 @@ bool GlobalSfMReconstructionEngine_RelativeMotions::Process() {
   // Keep only the largest biedge connected subgraph
   //-------------------
   {
-    const Pair_Set pairs = _matches_provider->getPairs();
+    const Pair_Set pairs = matching::getImagePairs(*_pairwiseMatches);
     const std::set<IndexT> set_remainingIds = graph::CleanGraph_KeepLargestBiEdge_Nodes<Pair_Set, IndexT>(pairs, _sOutDirectory);
     if(set_remainingIds.empty())
     {
       OPENMVG_LOG_DEBUG("Invalid input image graph for global SfM");
       return false;
     }
-    KeepOnlyReferencedElement(set_remainingIds, _matches_provider->_pairWise_matches);
+    KeepOnlyReferencedElement(set_remainingIds, *_pairwiseMatches);
   }
 
   openMVG::rotation_averaging::RelativeRotations relatives_R;
@@ -141,7 +144,7 @@ bool GlobalSfMReconstructionEngine_RelativeMotions::Process() {
     OPENMVG_LOG_WARNING("GlobalSfM:: Rotation Averaging failure!");
     return false;
   }
-  matching::PairWiseSimpleMatches  tripletWise_matches;
+  matching::PairwiseMatches tripletWise_matches;
   if (!Compute_Global_Translations(global_rotations, tripletWise_matches))
   {
     OPENMVG_LOG_WARNING("GlobalSfM:: Translation Averaging failure!");
@@ -257,7 +260,7 @@ bool GlobalSfMReconstructionEngine_RelativeMotions::Compute_Global_Rotations
 bool GlobalSfMReconstructionEngine_RelativeMotions::Compute_Global_Translations
 (
   const Hash_Map<IndexT, Mat3> & global_rotations,
-  matching::PairWiseSimpleMatches & tripletWise_matches
+  matching::PairwiseMatches & tripletWise_matches
 )
 {
   // Translation averaging (compute translations & update them to a global common coordinates system)
@@ -265,8 +268,8 @@ bool GlobalSfMReconstructionEngine_RelativeMotions::Compute_Global_Translations
   const bool bTranslationAveraging = translation_averaging_solver.Run(
     _eTranslationAveragingMethod,
     _sfm_data,
-    _normalizedFeaturesPerView.get(),
-    _matches_provider,
+    *_normalizedFeaturesPerView.get(),
+    *_pairwiseMatches,
     global_rotations,
     tripletWise_matches);
 
@@ -283,7 +286,7 @@ bool GlobalSfMReconstructionEngine_RelativeMotions::Compute_Global_Translations
 /// Compute the initial structure of the scene
 bool GlobalSfMReconstructionEngine_RelativeMotions::Compute_Initial_Structure
 (
-  matching::PairWiseSimpleMatches & tripletWise_matches
+  matching::PairwiseMatches & tripletWise_matches
 )
 {
   // Build tracks from selected triplets (Union of all the validated triplet tracks (_tripletWise_matches))
@@ -307,24 +310,25 @@ bool GlobalSfMReconstructionEngine_RelativeMotions::Compute_Initial_Structure
     tracksBuilder.Build(tripletWise_matches);
 #endif
     tracksBuilder.Filter(3);
-    STLMAPTracks map_selectedTracks; // reconstructed track (visibility per 3D point)
+    TracksMap map_selectedTracks; // reconstructed track (visibility per 3D point)
     tracksBuilder.ExportToSTL(map_selectedTracks);
 
     // Fill sfm_data with the computed tracks (no 3D yet)
     Landmarks & structure = _sfm_data.structure;
     IndexT idx(0);
-    for (STLMAPTracks::const_iterator itTracks = map_selectedTracks.begin();
+    for (TracksMap::const_iterator itTracks = map_selectedTracks.begin();
       itTracks != map_selectedTracks.end();
       ++itTracks, ++idx)
     {
-      const submapTrack & track = itTracks->second;
-      structure[idx] = Landmark();
-      Observations & obs = structure.at(idx).obs;
-      for (submapTrack::const_iterator it = track.featPerView.begin(); it != track.featPerView.end(); ++it)
+      const Track & track = itTracks->second;
+      Landmark& newLandmark = structure[idx];
+      newLandmark.descType = track.descType;
+      Observations & obs = newLandmark.observations;
+      for (Track::FeatureIdPerView::const_iterator it = track.featPerView.begin(); it != track.featPerView.end(); ++it)
       {
         const size_t imaIndex = it->first;
         const size_t featIndex = it->second;
-        const PointFeature & pt = _featuresPerView->getFeatures(imaIndex)[featIndex];
+        const PointFeature & pt = _featuresPerView->getFeatures(imaIndex, track.descType)[featIndex];
         obs[imaIndex] = Observation(pt.coords().cast<double>(), featIndex);
       }
     }
@@ -478,8 +482,8 @@ void GlobalSfMReconstructionEngine_RelativeMotions::Compute_Relative_Rotations
 
   // List shared correspondences (pairs) between poses
   PoseWiseMatches poseWiseMatches;
-  for (PairWiseSimpleMatches::const_iterator iterMatches = _matches_provider->_pairWise_matches.begin();
-    iterMatches != _matches_provider->_pairWise_matches.end(); ++iterMatches)
+  for (matching::PairwiseMatches::const_iterator iterMatches = _pairwiseMatches->begin();
+    iterMatches != _pairwiseMatches->end(); ++iterMatches)
   {
     const Pair pair = iterMatches->first;
     const View * v1 = _sfm_data.GetViews().at(pair.first).get();
@@ -536,15 +540,24 @@ void GlobalSfMReconstructionEngine_RelativeMotions::Compute_Relative_Rotations
         continue;
 
       // Setup corresponding bearing vector
-      const matching::IndMatches & matches = _matches_provider->_pairWise_matches.at(pairIterator);
-      size_t nbBearing = matches.size();
+      const matching::MatchesPerDescType & matchesPerDesc = _pairwiseMatches->at(pairIterator);
+      const size_t nbBearing = matchesPerDesc.getNbAllMatches();
+      size_t iBearing = 0;
       Mat x1(2, nbBearing), x2(2, nbBearing);
-      nbBearing = 0;
-      for (const auto & match : matches)
+
+      for(const auto& matchesPerDescIt: matchesPerDesc)
       {
-        x1.col(nbBearing) = _normalizedFeaturesPerView->getFeatures(I)[match._i].coords().cast<double>();
-        x2.col(nbBearing++) = _normalizedFeaturesPerView->getFeatures(J)[match._j].coords().cast<double>();
+        const features::EImageDescriberType descType = matchesPerDescIt.first;
+        assert(descType != features::EImageDescriberType::UNINITIALIZED);
+        const matching::IndMatches & matches = matchesPerDescIt.second;
+
+        for (const auto & match : matches)
+        {
+          x1.col(iBearing) = _normalizedFeaturesPerView->getFeatures(I, descType)[match._i].coords().cast<double>();
+          x2.col(iBearing++) = _normalizedFeaturesPerView->getFeatures(J, descType)[match._j].coords().cast<double>();
+        }
       }
+      assert(nbBearing == iBearing);
 
       const IntrinsicBase * cam_I = _sfm_data.GetIntrinsics().at(view_I->id_intrinsic).get();
       const IntrinsicBase * cam_J = _sfm_data.GetIntrinsics().at(view_J->id_intrinsic).get();
@@ -582,16 +595,29 @@ void GlobalSfMReconstructionEngine_RelativeMotions::Compute_Relative_Rotations
         const Mat34 P1 = cam_I->get_projective_equivalent(Pose_I);
         const Mat34 P2 = cam_J->get_projective_equivalent(Pose_J);
         Landmarks & landmarks = tiny_scene.structure;
-        for (size_t k = 0; k < x1.cols(); ++k) {
-          const Vec2 x1_ = _featuresPerView->getFeatures(I)[matches[k]._i].coords().cast<double>();
-          const Vec2 x2_ = _featuresPerView->getFeatures(J)[matches[k]._j].coords().cast<double>();
-          Vec3 X;
-          TriangulateDLT(P1, x1_, P2, x2_, &X);
-          Observations obs;
-          obs[view_I->id_view] = Observation(x1_, matches[k]._i);
-          obs[view_J->id_view] = Observation(x2_, matches[k]._j);
-          landmarks[k].obs = obs;
-          landmarks[k].X = X;
+
+        size_t landmarkId = 0;
+        for(const auto& matchesPerDescIt: matchesPerDesc)
+        {
+          const features::EImageDescriberType descType = matchesPerDescIt.first;
+          assert(descType != features::EImageDescriberType::UNINITIALIZED);
+          if(descType == features::EImageDescriberType::UNINITIALIZED) // TODO DELI
+            throw std::logic_error("descType UNINITIALIZED");
+          const matching::IndMatches & matches = matchesPerDescIt.second;
+          for (const matching::IndMatch& match: matches)
+          {
+            const Vec2 x1_ = _featuresPerView->getFeatures(I, descType)[match._i].coords().cast<double>();
+            const Vec2 x2_ = _featuresPerView->getFeatures(J, descType)[match._j].coords().cast<double>();
+            Vec3 X;
+            TriangulateDLT(P1, x1_, P2, x2_, &X);
+            Observations obs;
+            obs[view_I->id_view] = Observation(x1_, match._i);
+            obs[view_J->id_view] = Observation(x2_, match._j);
+            Landmark& newLandmark = landmarks[landmarkId++];
+            newLandmark.descType = descType;
+            newLandmark.observations = obs;
+            newLandmark.X = X;
+          }
         }
         // - refine only Structure and Rotations & translations (keep intrinsic constant)
         Bundle_Adjustment_Ceres::BA_options options(false, false);
@@ -654,7 +680,7 @@ void GlobalSfMReconstructionEngine_RelativeMotions::Compute_Relative_Rotations
       std::set<IndexT> set_ViewIds;
       std::transform(_sfm_data.GetViews().begin(), _sfm_data.GetViews().end(),
         std::inserter(set_ViewIds, set_ViewIds.begin()), stl::RetrieveKey());
-      graph::indexedGraph putativeGraph(set_ViewIds, getPairs(_matches_provider->_pairWise_matches));
+      graph::indexedGraph putativeGraph(set_ViewIds, getImagePairs(*_pairwiseMatches));
       graph::exportToGraphvizData(
         stlplus::create_filespec(_sOutDirectory, "global_relative_rotation_view_graph"),
         putativeGraph.g);

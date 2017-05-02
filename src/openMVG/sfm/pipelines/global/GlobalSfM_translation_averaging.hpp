@@ -41,8 +41,8 @@ public:
   bool Run(
     ETranslationAveragingMethod eTranslationAveragingMethod,
     SfM_Data & sfm_data,
-    const features::FeaturesPerView * normalizedFeaturesPerView,
-    const matching::PairwiseMatches * matches_provider,
+    const features::FeaturesPerView & normalizedFeaturesPerView,
+    const matching::PairwiseMatches & matches_provider,
     const Hash_Map<IndexT, Mat3> & map_globalR,
     matching::PairwiseMatches & tripletWise_matches
   );
@@ -55,8 +55,8 @@ private:
 
   void Compute_translations(
     const SfM_Data & sfm_data,
-    const features::FeaturesPerView * normalizedFeaturesPerView,
-    const matching::PairwiseMatches * matches_provider,
+    const features::FeaturesPerView & normalizedFeaturesPerView,
+    const matching::PairwiseMatches & matches_provider,
     const Hash_Map<IndexT, Mat3> & map_globalR,
     matching::PairwiseMatches &tripletWise_matches);
 
@@ -67,8 +67,8 @@ private:
   void ComputePutativeTranslation_EdgesCoverage(
     const SfM_Data & sfm_data,
     const Hash_Map<IndexT, Mat3> & map_globalR,
-    const features::FeaturesPerView * normalizedFeaturesPerView,
-    const matching::PairwiseMatches * matches_provider,
+    const features::FeaturesPerView & normalizedFeaturesPerView,
+    const matching::PairwiseMatches & matches_provider,
     RelativeInfo_Vec & vec_initialEstimates,
     matching::PairwiseMatches & newpairMatches);
 
@@ -76,8 +76,8 @@ private:
   bool Estimate_T_triplet(
     const SfM_Data & sfm_data,
     const Hash_Map<IndexT, Mat3> & map_globalR,
-    const features::FeaturesPerView * normalizedFeaturesPerView,
-    const matching::PairwiseMatches * matches_provider,
+    const features::FeaturesPerView & normalizedFeaturesPerView,
+    const matching::PairwiseMatches & matches_provider,
     const graph::Triplet & poses_id,
     std::vector<Vec3> & vec_tis,
     double & dPrecision, // UpperBound of the precision found by the AContrario estimator
