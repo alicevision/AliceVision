@@ -324,7 +324,7 @@ bool exportToCMPMVS2Format(
 
   std::ofstream file2(
     stlplus::create_filespec(stlplus::folder_append_separator(sOutDirectory),
-    "cmpmvs_scale" + std::to_string(scale), "ini").c_str());
+    "mvs", "ini").c_str());
   file2 << os.str();
   file2.close();
 
