@@ -289,16 +289,6 @@ bool exportToCMPMVS2Format(
         image_ud_scaled = image_ud;
       }
       WriteImage(dstColorImage.c_str(), image_ud_scaled);
-
-      // Export Gray image
-      {
-        std::string dstGrayImage = stlplus::create_filespec(
-          stlplus::folder_append_separator(sOutDirectory), baseFilename + "._g", "png");
-        
-        Image<unsigned char> image_ud_scaled_g;
-        ConvertPixelType(image_ud_scaled, &image_ud_scaled_g);
-        WriteImage(dstGrayImage.c_str(), image_ud_scaled_g);
-      }
     }
     
     // Export Seeds
