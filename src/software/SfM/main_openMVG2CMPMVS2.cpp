@@ -190,7 +190,8 @@ bool exportToCMPMVS2Format(
   retrieveSeedsPerView(sfm_data, map_viewIdToContiguous, seedsPerView);
   
   // Export data
-  C_Progress_display my_progress_bar(map_viewIdToContiguous.size());
+  C_Progress_display my_progress_bar(map_viewIdToContiguous.size(),
+                                     std::cout, "\n- Exporting Data -\n");
 
   // Export views:
   //   - 00001_P.txt (Pose of the reconstructed camera)
@@ -208,8 +209,6 @@ bool exportToCMPMVS2Format(
     IndexT contiguousViewIndex = map_viewIdToContiguous[view->id_view];
     Intrinsics::const_iterator iterIntrinsic = sfm_data.GetIntrinsics().find(view->id_intrinsic);
     // We have a valid view with a corresponding camera & pose
-    std::cout << "map_viewIdToContiguous: " << map_viewIdToContiguous[view->id_view] << std::endl;
-    std::cout << "i: " << i << std::endl;
     assert(map_viewIdToContiguous[view->id_view] == i + 1);
 
     std::ostringstream baseFilenameSS;
@@ -289,16 +288,6 @@ bool exportToCMPMVS2Format(
         image_ud_scaled = image_ud;
       }
       WriteImage(dstColorImage.c_str(), image_ud_scaled);
-
-      // Export Gray image
-      {
-        std::string dstGrayImage = stlplus::create_filespec(
-          stlplus::folder_append_separator(sOutDirectory), baseFilename + "._g", "png");
-        
-        Image<unsigned char> image_ud_scaled_g;
-        ConvertPixelType(image_ud_scaled, &image_ud_scaled_g);
-        WriteImage(dstGrayImage.c_str(), image_ud_scaled_g);
-      }
     }
     
     // Export Seeds
@@ -308,7 +297,6 @@ bool exportToCMPMVS2Format(
       std::ofstream seedsFile(seedsFilepath, std::ios::binary);
       
       const int nbSeeds = seedsPerView[contiguousViewIndex].size();
-      std::cout << "Nb seeds for view " << contiguousViewIndex << ": " << nbSeeds << std::endl;
       seedsFile.write((char*)&nbSeeds, sizeof(int));
       
       for(const Seed& seed: seedsPerView[contiguousViewIndex])
@@ -325,57 +313,18 @@ bool exportToCMPMVS2Format(
   std::ostringstream os;
   os << "[global]" << os.widen('\n')
   << "outDir=\"../../meshes\"" << os.widen('\n')
-  << "prefix=\"\"" << os.widen('\n')
-  << "imgExt=\"jpg\"" << os.widen('\n')
   << "ncams=" << map_viewIdToContiguous.size() << os.widen('\n')
   << "scale=" << scale << os.widen('\n')
   << "verbose=TRUE" << os.widen('\n')
   << os.widen('\n')
 
-  << "[uvatlas]" << os.widen('\n')
-  << "texSide=8192" << os.widen('\n')
-  << "scale=2" << os.widen('\n')
-  << os.widen('\n')
-
-  << "[hallucinationsFiltering]" << os.widen('\n')
-  << "useSkyPrior=FALSE" << os.widen('\n')
-  << "doLeaveLargestFullSegmentOnly=FALSE" << os.widen('\n')
-  << "doRemoveHugeTriangles=FALSE" << os.widen('\n')
-  << os.widen('\n')
-
-  << "[delanuaycut]" << os.widen('\n')
-  << "saveMeshTextured=TRUE" << os.widen('\n')
-  << os.widen('\n')
-
-  << "[largeScale]" << os.widen('\n')
-  << "workDirName=\"largeScaleMaxPts01024\"" << os.widen('\n')
-  << "# doReconstructSpaceAccordingToVoxelsArray=TRUE" << os.widen('\n')
-  << "doGenerateAndReconstructSpaceMaxPts=TRUE" << os.widen('\n')
-  << "doGenerateSpace=FALSE" << os.widen('\n')
-  << "planMaxPts=30000000" << os.widen('\n')
-  << "planMaxPtsPerVoxel=30000000" << os.widen('\n')
-  // << "doComputeDEMandOrtoPhoto=FALSE" << os.widen('\n')
-  // << "doGenerateVideoFrames=FALSE" << os.widen('\n')
-  << "nGridHelperVolumePointsDim=10" << os.widen('\n')
-  << "joinMeshesSaveTextured=TRUE" << os.widen('\n')
-  << "doSavePartWrlBin=FALSE" << os.widen('\n')
-  << os.widen('\n')
-  << "[meshEnergyOpt]" << os.widen('\n')
-  << "doOptimizeOrSmoothMesh=FALSE" << os.widen('\n')
-  << os.widen('\n')
-  << "[semiGlobalMatching]" << os.widen('\n')
-  << "wsh=4" << os.widen('\n')
-  << os.widen('\n')
-  << "[refineRc]" << os.widen('\n')
-  << "wsh=4" << os.widen('\n')
-  << os.widen('\n')
   << "#EOF" << os.widen('\n')
   << os.widen('\n')
   << os.widen('\n');
 
   std::ofstream file2(
     stlplus::create_filespec(stlplus::folder_append_separator(sOutDirectory),
-    "cmpmvs_scale" + std::to_string(scale), "ini").c_str());
+    "mvs", "ini").c_str());
   file2 << os.str();
   file2.close();
 
@@ -384,15 +333,6 @@ bool exportToCMPMVS2Format(
 
 int main(int argc, char *argv[])
 {
-  std::cout << "sizeof(unsigned long): " << sizeof(unsigned long) << std::endl;
-  std::cout << "sizeof(float): " << sizeof(float) << std::endl;
-  std::cout << "sizeof(seed_io_block): " << sizeof(seed_io_block) << std::endl;
-  std::cout << "sizeof(orientedPoint): " << sizeof(orientedPoint) << std::endl;
-  std::cout << "sizeof(point2d): " << sizeof(point2d) << std::endl;
-  std::cout << "sizeof(point3d): " << sizeof(point3d) << std::endl;
-  std::cout << "sizeof(Seed): " << sizeof(Seed) << std::endl;
-  std::cout << "sizeof(unsigned short): " << sizeof(unsigned short) << std::endl;
-  
   CmdLine cmd;
   std::string sSfM_Data_Filename;
   int scale = 2;
