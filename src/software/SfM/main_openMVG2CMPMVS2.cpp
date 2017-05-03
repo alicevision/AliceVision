@@ -190,7 +190,8 @@ bool exportToCMPMVS2Format(
   retrieveSeedsPerView(sfm_data, map_viewIdToContiguous, seedsPerView);
   
   // Export data
-  C_Progress_display my_progress_bar(map_viewIdToContiguous.size());
+  C_Progress_display my_progress_bar(map_viewIdToContiguous.size(),
+                                     std::cout, "\n- Exporting Data -\n");
 
   // Export views:
   //   - 00001_P.txt (Pose of the reconstructed camera)
@@ -208,8 +209,6 @@ bool exportToCMPMVS2Format(
     IndexT contiguousViewIndex = map_viewIdToContiguous[view->id_view];
     Intrinsics::const_iterator iterIntrinsic = sfm_data.GetIntrinsics().find(view->id_intrinsic);
     // We have a valid view with a corresponding camera & pose
-    std::cout << "map_viewIdToContiguous: " << map_viewIdToContiguous[view->id_view] << std::endl;
-    std::cout << "i: " << i << std::endl;
     assert(map_viewIdToContiguous[view->id_view] == i + 1);
 
     std::ostringstream baseFilenameSS;
@@ -298,7 +297,6 @@ bool exportToCMPMVS2Format(
       std::ofstream seedsFile(seedsFilepath, std::ios::binary);
       
       const int nbSeeds = seedsPerView[contiguousViewIndex].size();
-      std::cout << "Nb seeds for view " << contiguousViewIndex << ": " << nbSeeds << std::endl;
       seedsFile.write((char*)&nbSeeds, sizeof(int));
       
       for(const Seed& seed: seedsPerView[contiguousViewIndex])
@@ -335,15 +333,6 @@ bool exportToCMPMVS2Format(
 
 int main(int argc, char *argv[])
 {
-  std::cout << "sizeof(unsigned long): " << sizeof(unsigned long) << std::endl;
-  std::cout << "sizeof(float): " << sizeof(float) << std::endl;
-  std::cout << "sizeof(seed_io_block): " << sizeof(seed_io_block) << std::endl;
-  std::cout << "sizeof(orientedPoint): " << sizeof(orientedPoint) << std::endl;
-  std::cout << "sizeof(point2d): " << sizeof(point2d) << std::endl;
-  std::cout << "sizeof(point3d): " << sizeof(point3d) << std::endl;
-  std::cout << "sizeof(Seed): " << sizeof(Seed) << std::endl;
-  std::cout << "sizeof(unsigned short): " << sizeof(unsigned short) << std::endl;
-  
   CmdLine cmd;
   std::string sSfM_Data_Filename;
   int scale = 2;
