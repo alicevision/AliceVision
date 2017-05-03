@@ -62,7 +62,7 @@ public:
     switch(_params._eAkazeDescriptor)
     {
       case AKAZE_MSURF:
-        return EImageDescriberType::AKAZE_FLOAT;
+        return EImageDescriberType::AKAZE;
       case AKAZE_LIOP:
         return EImageDescriberType::AKAZE_LIOP;
       case AKAZE_MLDB:

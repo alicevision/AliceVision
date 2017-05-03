@@ -13,7 +13,7 @@ std::string describerTypeColor(const features::EImageDescriberType descType )
   {
     case features::EImageDescriberType::SIFT: return "yellow";
     case features::EImageDescriberType::SIFT_FLOAT: return "yellow";
-    case features::EImageDescriberType::AKAZE_FLOAT: return "purple";
+    case features::EImageDescriberType::AKAZE: return "purple";
     case features::EImageDescriberType::AKAZE_LIOP: return "purple";
     case features::EImageDescriberType::AKAZE_MLDB: return "purple";
 #ifdef HAVE_CCTAG

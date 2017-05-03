@@ -18,7 +18,7 @@ enum class EImageDescriberType
   SIFT_CCTAG3 = 6,
   SIFT_CCTAG4 = 7,
 #endif
-  AKAZE_FLOAT = 8,
+  AKAZE = 8,
   AKAZE_LIOP = 9,
   AKAZE_MLDB = 10
 };

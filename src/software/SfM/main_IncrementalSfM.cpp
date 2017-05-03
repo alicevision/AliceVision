@@ -120,7 +120,7 @@ int main(int argc, char **argv)
     << "  (methods to use to describe an image):\n"
     << "   SIFT (default),\n"
     << "   SIFT_FLOAT to use SIFT stored as float,\n"
-    << "   AKAZE_FLOAT: AKAZE with floating point descriptors,\n"
+    << "   AKAZE: AKAZE with floating point descriptors,\n"
     << "   AKAZE_MLDB:  AKAZE with binary descriptors\n"
 #ifdef HAVE_CCTAG
     << "   CCTAG3: CCTAG markers with 3 crowns\n"

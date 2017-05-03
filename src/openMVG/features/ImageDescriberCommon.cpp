@@ -16,7 +16,7 @@ std::string EImageDescriberType_enumToString(EImageDescriberType imageDescriberT
   {
     case EImageDescriberType::SIFT:        return "SIFT";
     case EImageDescriberType::SIFT_FLOAT:  return "SIFT_FLOAT";
-    case EImageDescriberType::AKAZE_FLOAT: return "AKAZE_FLOAT";
+    case EImageDescriberType::AKAZE:       return "AKAZE";
     case EImageDescriberType::AKAZE_LIOP:  return "AKAZE_LIOP";
     case EImageDescriberType::AKAZE_MLDB:  return "AKAZE_MLDB";
     
@@ -36,7 +36,7 @@ EImageDescriberType EImageDescriberType_stringToEnum(const std::string& imageDes
 {
   if(imageDescriberType == "SIFT")        return EImageDescriberType::SIFT;
   if(imageDescriberType == "SIFT_FLOAT")  return EImageDescriberType::SIFT_FLOAT;
-  if(imageDescriberType == "AKAZE_FLOAT") return EImageDescriberType::AKAZE_FLOAT;
+  if(imageDescriberType == "AKAZE_FLOAT") return EImageDescriberType::AKAZE;
   if(imageDescriberType == "AKAZE_LIOP")  return EImageDescriberType::AKAZE_LIOP;
   if(imageDescriberType == "AKAZE_MLDB")  return EImageDescriberType::AKAZE_MLDB;
   

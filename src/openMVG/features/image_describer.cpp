@@ -70,7 +70,7 @@ std::unique_ptr<Image_describer> createImageDescriber(EImageDescriberType imageD
   {
     case EImageDescriberType::SIFT:        describerPtr.reset(new SIFT_Image_describer(SiftParams())); break;
     case EImageDescriberType::SIFT_FLOAT:  describerPtr.reset(new SIFT_float_describer(SiftParams())); break;
-    case EImageDescriberType::AKAZE_FLOAT: describerPtr.reset(new AKAZE_Image_describer(AKAZEParams(AKAZEConfig(), features::AKAZE_MSURF))); break;
+    case EImageDescriberType::AKAZE: describerPtr.reset(new AKAZE_Image_describer(AKAZEParams(AKAZEConfig(), features::AKAZE_MSURF))); break;
     case EImageDescriberType::AKAZE_MLDB:  describerPtr.reset(new AKAZE_Image_describer(AKAZEParams(AKAZEConfig(), features::AKAZE_MLDB))); break;
     
 #ifdef HAVE_CCTAG
