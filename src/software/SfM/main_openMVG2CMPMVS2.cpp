@@ -326,7 +326,6 @@ bool exportToCMPMVS2Format(
   os << "[global]" << os.widen('\n')
   << "outDir=\"../../meshes\"" << os.widen('\n')
   << "prefix=\"\"" << os.widen('\n')
-  << "imgExt=\"jpg\"" << os.widen('\n')
   << "ncams=" << map_viewIdToContiguous.size() << os.widen('\n')
   << "scale=" << scale << os.widen('\n')
   << "verbose=TRUE" << os.widen('\n')
