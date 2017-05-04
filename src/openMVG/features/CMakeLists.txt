@@ -30,12 +30,24 @@ set( features_files_sources
   ImageDescriberCommon.cpp)
 
 if (OpenMVG_USE_CCTAG)
-  list(APPEND features_files_headers 
-        cctag/CCTAG_describer.hpp 
-        cctag/SIFT_CCTAG_describer.hpp)
-  list(APPEND features_files_sources 
-        cctag/SIFT_CCTAG_describer.cpp
-        cctag/CCTAG_describer.cpp)
+  list(APPEND features_files_headers
+    cctag/CCTAG_describer.hpp
+    cctag/SIFT_CCTAG_describer.hpp) #TODO Remove
+  list(APPEND features_files_sources
+    cctag/CCTAG_describer.cpp
+    cctag/SIFT_CCTAG_describer.cpp) #TODO Remove
+endif()
+
+if(OpenMVG_USE_OPENCV)
+
+  list(APPEND features_files_headers openCV/AKAZE_openCV_describer.hpp)
+  list(APPEND features_files_sources openCV/AKAZE_openCV_describer.cpp)
+
+  if(OpenMVG_USE_OCVSIFT)
+    list(APPEND features_files_headers openCV/SIFT_openCV_describer.hpp)
+    list(APPEND features_files_sources openCV/SIFT_openCV_describer.cpp)
+  endif()
+
 endif()
 
 set_source_files_properties(${features_files_sources} PROPERTIES LANGUAGE CXX)
@@ -48,8 +60,13 @@ target_link_libraries( openMVG_features
                vlsift 
                stlplus 
                ${LOG_LIB})
+
 if(OpenMVG_USE_CCTAG)
   target_link_libraries( openMVG_features PUBLIC CCTag::CCTag)
+endif()
+
+if(OpenMVG_USE_OPENCV)
+  target_link_libraries( openMVG_features PUBLIC ${OpenCV_LIBS})
 endif()
 
 SET_TARGET_PROPERTIES(openMVG_features PROPERTIES SOVERSION ${OPENMVG_VERSION_MAJOR} VERSION "${OPENMVG_VERSION_MAJOR}.${OPENMVG_VERSION_MINOR}")

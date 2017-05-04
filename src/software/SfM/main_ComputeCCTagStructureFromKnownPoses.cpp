@@ -67,8 +67,6 @@ int main(int argc, char **argv)
 #ifdef HAVE_CCTAG
     << "   CCTAG3: CCTAG markers with 3 crowns\n"
     << "   CCTAG4: CCTAG markers with 4 crowns\n"
-    << "   SIFT_CCTAG3: CCTAG markers with 3 crowns\n" 
-    << "   SIFT_CCTAG4: CCTAG markers with 4 crowns\n" 
 #endif
     << "[-m|--match_dir] path to the features and descriptor that "
     << " corresponds to the provided SfM_Data scene\n"
@@ -97,9 +95,7 @@ int main(int argc, char **argv)
   EImageDescriberType describerMethodType = EImageDescriberType_stringToEnum(describerMethod);
   
   if((describerMethodType != EImageDescriberType::CCTAG3) &&
-    (describerMethodType != EImageDescriberType::CCTAG4) &&
-    (describerMethodType != EImageDescriberType::SIFT_CCTAG3) &&
-    (describerMethodType != EImageDescriberType::SIFT_CCTAG4))
+    (describerMethodType != EImageDescriberType::CCTAG4))
   {
     std::cerr << "Invalid describer method." << std::endl;
     return EXIT_FAILURE;

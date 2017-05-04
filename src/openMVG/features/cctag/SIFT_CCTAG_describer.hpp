@@ -35,7 +35,7 @@ public:
   virtual EImageDescriberType getDescriberType()
   {
     // TODO: check nRings to decide between SIFT_CCTAG3 and SIFT_CCTAG4
-    return EImageDescriberType::SIFT_CCTAG3;
+    return EImageDescriberType::UNKNOWN;
   }
 
   bool Set_configuration_preset(EDESCRIBER_PRESET preset);

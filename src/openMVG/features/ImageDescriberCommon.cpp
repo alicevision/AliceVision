@@ -14,19 +14,25 @@ std::string EImageDescriberType_enumToString(EImageDescriberType imageDescriberT
 {
   switch(imageDescriberType)
   {
-    case EImageDescriberType::SIFT:        return "SIFT";
-    case EImageDescriberType::SIFT_FLOAT:  return "SIFT_FLOAT";
-    case EImageDescriberType::AKAZE:       return "AKAZE";
-    case EImageDescriberType::AKAZE_LIOP:  return "AKAZE_LIOP";
-    case EImageDescriberType::AKAZE_MLDB:  return "AKAZE_MLDB";
+    case EImageDescriberType::SIFT:          return "SIFT";
+    case EImageDescriberType::SIFT_FLOAT:    return "SIFT_FLOAT";
+    case EImageDescriberType::AKAZE:         return "AKAZE";
+    case EImageDescriberType::AKAZE_LIOP:    return "AKAZE_LIOP";
+    case EImageDescriberType::AKAZE_MLDB:    return "AKAZE_MLDB";
     
 #ifdef HAVE_CCTAG
-    case EImageDescriberType::CCTAG3:      return "CCTAG3";
-    case EImageDescriberType::CCTAG4:      return "CCTAG4";
-    case EImageDescriberType::SIFT_CCTAG3: return "SIFT_CCTAG3";
-    case EImageDescriberType::SIFT_CCTAG4: return "SIFT_CCTAG4";
+    case EImageDescriberType::CCTAG3:        return "CCTAG3";
+    case EImageDescriberType::CCTAG4:        return "CCTAG4";
 #endif //HAVE_CCTAG
-    case EImageDescriberType::UNKNOWN: return "UNKNOWN";
+
+#ifdef HAVE_OPENCV
+#ifdef USE_OCVSIFT
+    case EImageDescriberType::SIFT_OCV:      return "SIFT_OCV";
+#endif
+    case EImageDescriberType::AKAZE_OCV:     return "AKAZE_OCV";
+#endif//HAVE_OPENCV
+
+    case EImageDescriberType::UNKNOWN:       return "UNKNOWN";
     case EImageDescriberType::UNINITIALIZED: break; // Should throw an error.
   }
   throw std::out_of_range("Invalid imageDescriber enum");
@@ -43,10 +49,16 @@ EImageDescriberType EImageDescriberType_stringToEnum(const std::string& imageDes
 #ifdef HAVE_CCTAG
   if(imageDescriberType == "CCTAG3")      return EImageDescriberType::CCTAG3;
   if(imageDescriberType == "CCTAG4")      return EImageDescriberType::CCTAG4;
-  if(imageDescriberType == "SIFT_CCTAG3") return EImageDescriberType::SIFT_CCTAG3;
-  if(imageDescriberType == "SIFT_CCTAG4") return EImageDescriberType::SIFT_CCTAG4;
 #endif //HAVE_CCTAG
-  if(imageDescriberType == "UNKNOWN") return EImageDescriberType::UNKNOWN;
+
+#ifdef HAVE_OPENCV
+#ifdef USE_OCVSIFT
+  if(imageDescriberType == "SIFT_OCV")    return EImageDescriberType::SIFT_OCV;
+#endif
+  if(imageDescriberType == "AKAZE_OCV")   return EImageDescriberType::AKAZE_OCV;
+#endif//HAVE_OPENCV
+
+  if(imageDescriberType == "UNKNOWN")     return EImageDescriberType::UNKNOWN;
   // UNINITIALIZED should throw an error.
   throw std::out_of_range("Invalid imageDescriber : " + imageDescriberType);
 }

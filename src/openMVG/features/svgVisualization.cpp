@@ -11,19 +11,25 @@ std::string describerTypeColor(const features::EImageDescriberType descType )
 {
   switch(descType)
   {
-    case features::EImageDescriberType::SIFT: return "yellow";
-    case features::EImageDescriberType::SIFT_FLOAT: return "yellow";
-    case features::EImageDescriberType::AKAZE: return "purple";
-    case features::EImageDescriberType::AKAZE_LIOP: return "purple";
-    case features::EImageDescriberType::AKAZE_MLDB: return "purple";
+    case features::EImageDescriberType::SIFT:           return "yellow";
+    case features::EImageDescriberType::SIFT_FLOAT:     return "yellow";
+    case features::EImageDescriberType::AKAZE:          return "purple";
+    case features::EImageDescriberType::AKAZE_LIOP:     return "purple";
+    case features::EImageDescriberType::AKAZE_MLDB:     return "purple";
 #ifdef HAVE_CCTAG
-    case features::EImageDescriberType::CCTAG3: return "blue";
-    case features::EImageDescriberType::CCTAG4: return "blue";
-    case features::EImageDescriberType::SIFT_CCTAG3: return "green";
-    case features::EImageDescriberType::SIFT_CCTAG4: return "green";
+    case features::EImageDescriberType::CCTAG3:         return "blue";
+    case features::EImageDescriberType::CCTAG4:         return "blue";
 #endif
-  case features::EImageDescriberType::UNKNOWN: return "red";
-  case features::EImageDescriberType::UNINITIALIZED: return "fuchsia";
+
+#ifdef HAVE_OPENCV
+#ifdef USE_OCVSIFT
+    case features::EImageDescriberType::SIFT_OCV:       return "orange";
+#endif
+    case features::EImageDescriberType::AKAZE_OCV:      return "indigo";
+#endif
+
+    case features::EImageDescriberType::UNKNOWN:        return "red";
+    case features::EImageDescriberType::UNINITIALIZED:  return "fuchsia";
   }
   return "magenta";
 }

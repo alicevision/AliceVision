@@ -6,44 +6,50 @@
 namespace openMVG {
 namespace features {
 
-enum class EImageDescriberType
+enum class EImageDescriberType: unsigned char
 {
-  UNKNOWN = 0,
-  UNINITIALIZED = 1,
-  SIFT = 2,
-  SIFT_FLOAT = 3,
+  UNKNOWN = 0
+  , UNINITIALIZED = 1
+  , SIFT = 10
+  , SIFT_FLOAT = 11
+
+  , AKAZE = 20
+  , AKAZE_LIOP = 21
+  , AKAZE_MLDB = 22
+
 #ifdef HAVE_CCTAG
-  CCTAG3 = 4,
-  CCTAG4 = 5,
-  SIFT_CCTAG3 = 6,
-  SIFT_CCTAG4 = 7,
+  , CCTAG3 = 30
+  , CCTAG4 = 31
 #endif
-  AKAZE = 8,
-  AKAZE_LIOP = 9,
-  AKAZE_MLDB = 10
+
+#ifdef HAVE_OPENCV
+#ifdef USE_OCVSIFT
+  , SIFT_OCV = 40
+#endif
+  , AKAZE_OCV = 41
+#endif
 };
-  
+
 /**
- * @brief convert an enum EImageDescriberType to it's corresponding string
+ * @brief convert an enum EImageDescriberType to its corresponding string
  * @param EImageDescriberType 
  * @return String
  */
 std::string EImageDescriberType_enumToString(EImageDescriberType imageDescriberType);
 
-
 /**
- * @brief convert a string imageDescriber to it's corresponding enum EImageDescriberType
+ * @brief convert a string imageDescriber to its corresponding enum EImageDescriberType
  * @param String
  * @return EImageDescriberType
  */
- EImageDescriberType EImageDescriberType_stringToEnum(const std::string& imageDescriberType);
+EImageDescriberType EImageDescriberType_stringToEnum(const std::string& imageDescriberType);
 
  /**
   * @brief EImageDescriberType_stringToEnums
   * @param describerMethods
   * @return
   */
- std::vector<EImageDescriberType> EImageDescriberType_stringToEnums(const std::string& describerMethods);
+std::vector<EImageDescriberType> EImageDescriberType_stringToEnums(const std::string& describerMethods);
 
   
 } // namespace features

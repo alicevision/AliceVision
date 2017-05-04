@@ -53,8 +53,12 @@ int main(int argc, char **argv)
 #ifdef HAVE_CCTAG
         "   CCTAG3: CCTAG markers with 3 crowns\n"
         "   CCTAG4: CCTAG markers with 4 crowns\n"
-        "   SIFT_CCTAG3: CCTAG markers with 3 crowns\n" 
-        "   SIFT_CCTAG4: CCTAG markers with 4 crowns\n" 
+#endif
+#ifdef HAVE_OPENCV
+#ifdef USE_OCVSIFT
+        "   SIFT_OCV: OpenCV SIFT\n"
+#endif
+        "   AKAZE_OCV: OpenCV AKAZE\n"
 #endif
         "[-o|--output_file] file where the output data will be stored "
            "(i.e. path/sfm_data_structure.bin)\n"
