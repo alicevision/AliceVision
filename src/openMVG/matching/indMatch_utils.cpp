@@ -124,11 +124,9 @@ void filterMatchesByDesc(
   PairwiseMatches & allMatches,
   const std::vector<features::EImageDescriberType>& descTypesFilter)
 {
-  std::cout << "filter load nb describer : " << descTypesFilter.size() << std::endl;
   matching::PairwiseMatches filteredMatches;
   for(const auto& matchesPerDesc: allMatches)
   {
-    std::cout << "nb describers for image pair: " << matchesPerDesc.second.size() << std::endl;
     for(const auto& matches: matchesPerDesc.second)
     {
       const IndMatches& m = matches.second;
@@ -186,6 +184,17 @@ bool LoadMatchFilePerImage(
     OPENMVG_LOG_WARNING("No matches file loaded in: " << folder);
     return false;
   }
+  OPENMVG_LOG_DEBUG("Matches per image pair");
+  for(const auto& imagePairIt: matches)
+  {
+    std::stringstream ss;
+    ss << " * " << imagePairIt.first.first << "-" << imagePairIt.first.second << ": " << imagePairIt.second.getNbAllMatches() << "    ";
+    for(const auto& matchesPerDeskIt: imagePairIt.second)
+    {
+       ss << " [" << features::EImageDescriberType_enumToString(matchesPerDeskIt.first) << ": " << matchesPerDeskIt.second.size() << "]";
+    }
+    OPENMVG_LOG_DEBUG(ss.str());
+  }
   return true;
 }
 
@@ -222,6 +231,18 @@ bool Load(
 
   if(!descTypesFilter.empty())
     filterMatchesByDesc(matches, descTypesFilter);
+
+  OPENMVG_LOG_DEBUG("Matches per image pair");
+  for(const auto& imagePairIt: matches)
+  {
+    std::stringstream ss;
+    ss << " * " << imagePairIt.first.first << "-" << imagePairIt.first.second << ": " << imagePairIt.second.getNbAllMatches() << "    ";
+    for(const auto& matchesPerDeskIt: imagePairIt.second)
+    {
+       ss << " [" << features::EImageDescriberType_enumToString(matchesPerDeskIt.first) << ": " << matchesPerDeskIt.second.size() << "]";
+    }
+    OPENMVG_LOG_DEBUG(ss.str());
+  }
 
   return res;
 }
