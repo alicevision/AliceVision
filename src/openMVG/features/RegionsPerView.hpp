@@ -52,7 +52,11 @@ public:
     return *(_data.begin()->second.at(descType).get());
   }
 
-  
+  const features::MapRegionsPerDesc& getRegionsPerDesc(IndexT viewId) const
+  {
+    return _data.at(viewId);
+  }
+
   const features::Regions& getRegions(IndexT viewId, features::EImageDescriberType descType) const
   {
     assert(descType != features::EImageDescriberType::UNINITIALIZED);

@@ -18,14 +18,14 @@ namespace color_harmonization {
 class commonDataByPair_VLDSegment  : public commonDataByPair
 {
   public:
-  commonDataByPair_VLDSegment( const std::string & sLeftImage,
-                               const std::string & sRightImage,
-                               const std::vector< matching::IndMatch >& vec_PutativeMatches,
-                               const vector< features::SIOPointFeature >& vec_featsL,
-                               const vector< features::SIOPointFeature >& vec_featsR):
+  commonDataByPair_VLDSegment( const std::string& sLeftImage,
+                               const std::string& sRightImage,
+                               const matching::IndMatches& matchesPerDesc,
+                               const std::vector<features::SIOPointFeature>& featsL,
+                               const std::vector<features::SIOPointFeature>& featsR):
            commonDataByPair( sLeftImage, sRightImage ),
-           _vec_PutativeMatches( vec_PutativeMatches ),
-           _vec_featsL( vec_featsL ), _vec_featsR( vec_featsR )
+           _matches( matchesPerDesc ),
+           _featsL( featsL ), _featsR( featsR )
   {}
 
   virtual ~commonDataByPair_VLDSegment()
@@ -43,7 +43,7 @@ class commonDataByPair_VLDSegment  : public commonDataByPair
     image::Image< unsigned char > & maskLeft,
     image::Image< unsigned char > & maskRight )
   {
-    std::vector< matching::IndMatch > vec_KVLDMatches;
+    //std::vector< matching::IndMatch > vec_KVLDMatches;
 
     image::Image< unsigned char > imageL, imageR;
     image::ReadImage( _sLeftImage.c_str(), &imageL );
@@ -54,19 +54,17 @@ class commonDataByPair_VLDSegment  : public commonDataByPair
 
     std::vector< Pair > matchesFiltered, matchesPair;
 
-    for( std::vector< matching::IndMatch >::const_iterator iter_match = _vec_PutativeMatches.begin();
-          iter_match != _vec_PutativeMatches.end();
-          ++iter_match )
+    for(const matching::IndMatch& match : _matches)
     {
-      matchesPair.push_back( std::make_pair( iter_match->_i, iter_match->_j ) );
+      matchesPair.push_back( std::make_pair( match._i, match._j ) );
     }
 
     std::vector< double > vec_score;
 
     //In order to illustrate the gvld(or vld)-consistant neighbors, the following two parameters has been externalized as inputs of the function KVLD.
-    openMVG::Mat E = openMVG::Mat::Ones( _vec_PutativeMatches.size(), _vec_PutativeMatches.size() ) * ( -1 );
+    openMVG::Mat E = openMVG::Mat::Ones( _matches.size(), _matches.size() ) * ( -1 );
     // gvld-consistancy matrix, intitialized to -1,  >0 consistancy value, -1=unknow, -2=false
-    std::vector< bool > valide( _vec_PutativeMatches.size(), true );// indices of match in the initial matches, if true at the end of KVLD, a match is kept.
+    std::vector< bool > valide( _matches.size(), true );// indices of match in the initial matches, if true at the end of KVLD, a match is kept.
 
     size_t it_num = 0;
     KvldParameters kvldparameters;//initial parameters of KVLD
@@ -76,7 +74,7 @@ class commonDataByPair_VLDSegment  : public commonDataByPair
       kvldparameters.inlierRate >
       KVLD(
         imgA, imgB,
-        _vec_featsL, _vec_featsR,
+        _featsL, _featsR,
         matchesPair, matchesFiltered,
         vec_score, E, valide, kvldparameters ) )
     {
@@ -86,31 +84,26 @@ class commonDataByPair_VLDSegment  : public commonDataByPair
       it_num++;
     }
 
-    bool bOk = false;
-    if( !matchesPair.empty())
-    {
-      // Get mask
-      getKVLDMask(
-        &maskLeft, &maskRight,
-        _vec_featsL, _vec_featsR,
-        matchesPair,
-        valide,
-        E);
-      bOk = true;
-    }
-    else{
-      maskLeft.fill( 0 );
-      maskRight.fill( 0 );
-    }
+    if(matchesPair.empty())
+      return false;
 
-    return bOk;
+    // Get mask
+    getKVLDMask(
+      &maskLeft, &maskRight,
+      _featsL, _featsR,
+      matchesPair,
+      valide,
+      E);
+
+    return true;
   }
 
 private:
   // Left and Right features
-  std::vector< features::SIOPointFeature > _vec_featsL, _vec_featsR;
+  const vector<features::SIOPointFeature>& _featsL;
+  const vector<features::SIOPointFeature>& _featsR;
   // Left and Right corresponding index (putatives matches)
-  std::vector< matching::IndMatch > _vec_PutativeMatches;
+  matching::IndMatches _matches;
 };
 
 }  // namespace color_harmonization

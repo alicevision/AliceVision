@@ -117,6 +117,16 @@ public:
 
 };
 
+inline const std::vector<SIOPointFeature>& getSIOPointFeatures(const Regions& regions)
+{
+  static const std::vector<SIOPointFeature> emptyFeats;
+
+  const Feat_Regions<SIOPointFeature>* sioFeatures = dynamic_cast<const Feat_Regions<SIOPointFeature>*>(&regions);
+  if(sioFeatures == nullptr)
+    return emptyFeats;
+  return sioFeatures->Features();
+}
+
 
 template<typename FeatT, typename T, size_t L>
 class FeatDesc_Regions : public Feat_Regions<FeatT>

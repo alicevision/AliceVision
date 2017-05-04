@@ -21,8 +21,6 @@ namespace features {
 using MapFeaturesPerDesc = Hash_Map<features::EImageDescriberType, features::PointFeatures>;
 using MapFeaturesPerView = Hash_Map<IndexT, MapFeaturesPerDesc>;
 
-
-
 /**
  * @brief Container for all Features for each View.
  */
