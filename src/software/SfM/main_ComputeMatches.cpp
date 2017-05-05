@@ -116,7 +116,7 @@ int main(int argc, char **argv)
   cmd.add( make_option('d', rangeSize, "range_size") );
   cmd.add( make_option('n', sNearestMatchingMethod, "nearest_matching_method") );
   cmd.add( make_option('f', bForce, "force") );
-  cmd.add( make_option('f', bSavePutativeMatches, "save_putative_matches") );
+  cmd.add( make_option('p', bSavePutativeMatches, "save_putative_matches") );
   cmd.add( make_option('m', bGuided_matching, "guided_matching") );
   cmd.add( make_option('I', imax_iteration, "max_iteration") );
   cmd.add( make_option('x', matchFilePerImage, "match_file_per_image") );
