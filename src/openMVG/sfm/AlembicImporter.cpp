@@ -103,6 +103,18 @@ bool readPointCloud(IObject iObj, M44d mat, sfm::SfM_Data &sfmdata, sfm::ESfM_Da
     }
   }
 
+  UInt32ArraySamplePtr sampleDescs;
+  if(userProps && userProps.getPropertyHeader("mvg_describerType"))
+  {
+    IUInt32ArrayProperty propDesc(userProps, "mvg_describerType");
+    propDesc.get(sampleDescs);
+    if(sampleDescs->size() != positions->size())
+    {
+      OPENMVG_LOG_WARNING("[Alembic Importer] WARNING: describer type will be ignored. describerType vector size: " << sampleDescs->size() << ", positions vector size: " << positions->size());
+      sampleDescs.reset();
+    }
+  }
+
   // Number of points before adding the Alembic data
   const std::size_t nbPointsInit = sfmdata.structure.size();
   for(std::size_t point3d_i = 0;
@@ -111,10 +123,17 @@ bool readPointCloud(IObject iObj, M44d mat, sfm::SfM_Data &sfmdata, sfm::ESfM_Da
   {
     const P3fArraySamplePtr::element_type::value_type & pos_i = positions->get()[point3d_i];
     Landmark& landmark = sfmdata.structure[nbPointsInit + point3d_i] = Landmark(Vec3(pos_i.x, pos_i.y, pos_i.z), features::EImageDescriberType::UNKNOWN); // TODO: DELI
+
     if(sampleColors)
     {
       const P3fArraySamplePtr::element_type::value_type & color_i = sampleColors->get()[point3d_i];
       landmark.rgb = image::RGBColor(color_i[0], color_i[1], color_i[2]);
+    }
+
+    if(sampleDescs)
+    {
+      const UInt32ArraySamplePtr::element_type::value_type & descType_i = sampleDescs->get()[point3d_i];
+      landmark.descType = static_cast<features::EImageDescriberType>(descType_i); // TODO FACA descType check ?
     }
   }
 

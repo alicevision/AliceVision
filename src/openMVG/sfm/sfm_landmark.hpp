@@ -83,7 +83,8 @@ struct Landmark
   {
     return AreVecNearEqual(X, other.X, 1e-3) &&
            AreVecNearEqual(rgb, other.rgb, 1e-3) &&
-            observations == other.observations;
+           observations == other.observations &&
+           descType == other.descType;
   }
 
   // Serialization
