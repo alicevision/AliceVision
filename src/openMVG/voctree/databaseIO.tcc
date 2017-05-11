@@ -1,7 +1,6 @@
 #include "descriptor_loader.hpp"
 
 #include <openMVG/logger.hpp>
-#include <openMVG/sfm/sfm_data_io.hpp>
 
 #include <boost/filesystem.hpp>
 #include <boost/algorithm/string/case_conv.hpp>

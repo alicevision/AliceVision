@@ -26,7 +26,7 @@ public:
    * @brief Get the corresponding EImageDescriberType
    * @return EImageDescriberType
    */
-  virtual EImageDescriberType getDescriberType()
+  virtual EImageDescriberType getDescriberType() const override
   {
     return EImageDescriberType::AKAZE_OCV;
   }
@@ -36,7 +36,7 @@ public:
    * @param preset The preset configuration
    * @return True if configuration succeed. (here always false)
    */
-  bool Set_configuration_preset(EDESCRIBER_PRESET preset)
+  bool Set_configuration_preset(EDESCRIBER_PRESET preset) override
   {
     return false;
   }
@@ -57,7 +57,7 @@ public:
    * @brief Allocate Regions type depending of the Image_describer
    * @param regions
    */
-  void Allocate(std::unique_ptr<Regions> &regions) const
+  void Allocate(std::unique_ptr<Regions> &regions) const override
   {
     regions.reset( new AKAZE_Float_Regions );
   }

@@ -17,10 +17,28 @@ namespace openMVG {
 namespace features {
 
 /// Regions per ViewId of the considered SfM_Data container
-using MapRegionsPerDesc = Hash_Map<features::EImageDescriberType, std::unique_ptr<features::Regions>>;
-using MapRegionsPerView = Hash_Map<IndexT, MapRegionsPerDesc>;
+class MapRegionsPerDesc : public std::map<features::EImageDescriberType, std::unique_ptr<features::Regions>>
+{
+public:
+  std::size_t getNbAllRegions() const
+  {
+    std::size_t nb = 0;
+    for(const auto& it: *this)
+      nb += it.second->RegionCount();
+    return nb;
+  }
 
-inline std::vector<features::EImageDescriberType> getCommonDescTypes(const MapRegionsPerDesc& regionsA, const MapRegionsPerDesc& regionsB)
+  template<class T>
+  T getRegions(features::EImageDescriberType descType) { return dynamic_cast<T&>(*this->at(descType)); }
+
+  template<class T>
+  const T getRegions(features::EImageDescriberType descType) const { return dynamic_cast<const T&>(*this->at(descType)); }
+};
+
+using MapRegionsPerView = std::map<IndexT, MapRegionsPerDesc>;
+
+template<class MapFeatOrRegionsPerDesc>
+inline std::vector<features::EImageDescriberType> getCommonDescTypes(const MapFeatOrRegionsPerDesc& regionsA, const MapFeatOrRegionsPerDesc& regionsB)
 {
   std::vector<features::EImageDescriberType> descTypes;
   for(const auto& regionsPerDesc : regionsA)
@@ -40,11 +58,16 @@ inline std::vector<features::EImageDescriberType> getCommonDescTypes(const MapRe
 class RegionsPerView
 {
 public:
+  MapRegionsPerView& getData()
+  {
+    return _data;
+  }
+
   const MapRegionsPerView& getData() const
   {
     return _data;
   }
-  
+
   // TODO: to remove
   const features::Regions& getFirstViewRegions(features::EImageDescriberType descType) const
   {
@@ -53,6 +76,10 @@ public:
   }
 
   const features::MapRegionsPerDesc& getRegionsPerDesc(IndexT viewId) const
+  {
+    return _data.at(viewId);
+  }
+  const features::MapRegionsPerDesc& getDataPerDesc(IndexT viewId) const
   {
     return _data.at(viewId);
   }

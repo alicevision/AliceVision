@@ -148,10 +148,14 @@ int main(int argc, char** argv)
   /// the file containing the calibration data for the file (subposes)
   std::string rigCalibPath;
   
+  /// the describer types name to use for the matching
+  std::string matchDescTypeNames = features::EImageDescriberType_enumToString(features::EImageDescriberType::SIFT);
   /// the preset for the feature extractor
   features::EDESCRIBER_PRESET featurePreset = features::EDESCRIBER_PRESET::NORMAL_PRESET;     
+  /// the describer types to use for the matching
+  std::vector<features::EImageDescriberType> matchDescTypes;
   /// the type of features to use for localization
-  DescriberType descriptorType = DescriberType::SIFT;        
+  DescriberType descriptorType = DescriberType::SIFT; //TODO : Remove
   /// the estimator to use for resection
   robust::EROBUST_ESTIMATOR resectionEstimator = robust::EROBUST_ESTIMATOR::ROBUST_ESTIMATOR_ACRANSAC;        
   /// the estimator to use for matching
@@ -170,6 +174,8 @@ int main(int argc, char** argv)
 
 
   // parameters for voctree localizer
+  /// whether to use the voctreeLocalizer or cctagLocalizer
+  bool useVoctreeLocalizer = true;
   /// the vocabulary tree file
   std::string vocTreeFilepath;
   /// the vocabulary tree weights file
@@ -210,6 +216,8 @@ int main(int argc, char** argv)
   
   po::options_description commonParams("Common optional parameters for the localizer");
   commonParams.add_options()
+      ("matchDescTypes", po::value<std::string>(&matchDescTypeNames)->default_value(matchDescTypeNames),
+          "The describer types to use for the matching")
       ("descriptors", po::value<DescriberType>(&descriptorType)->default_value(descriptorType), 
         "Type of descriptors to use {SIFT"
 #ifdef HAVE_CCTAG
@@ -317,6 +325,15 @@ int main(int argc, char** argv)
   }
   numCameras = mediaPath.size();
 
+  // Init descTypes from command-line string
+  matchDescTypes = features::EImageDescriberType_stringToEnums(matchDescTypeNames);
+
+#ifdef HAVE_CCTAG
+  useVoctreeLocalizer = (matchDescTypes.size() == 1 &&
+                        ((matchDescTypes.front() == features::EImageDescriberType::CCTAG3) ||
+                        (matchDescTypes.front() == features::EImageDescriberType::CCTAG4)));
+#endif
+
   // just debugging prints, print out all the parameters
   {
     OPENMVG_COUT("Program called with the following parameters:");
@@ -334,11 +351,8 @@ int main(int argc, char** argv)
     OPENMVG_COUT("\tangularThreshold: " << angularThreshold);
     OPENMVG_COUT("\tnCameras: " << numCameras);
     OPENMVG_COUT("\tdescriptors: " << descriptorType);
-    if((DescriberType::SIFT==descriptorType)
-#ifdef HAVE_CCTAG
-            ||(DescriberType::SIFT_CCTAG==descriptorType)
-#endif
-      )
+    OPENMVG_COUT("\tmatching descriptor types: " << matchDescTypeNames);
+    if(useVoctreeLocalizer)
     {
       // parameters for voctree localizer
       OPENMVG_COUT("\tvoctree: " << vocTreeFilepath);
@@ -362,20 +376,14 @@ int main(int argc, char** argv)
   std::unique_ptr<localization::ILocalizer> localizer;
   
   // initialize the localizer according to the chosen type of describer
-  if((DescriberType::SIFT==descriptorType)
-#ifdef HAVE_CCTAG
-            ||(DescriberType::SIFT_CCTAG==descriptorType)
-#endif
-      )
+  if(useVoctreeLocalizer)
   {
     OPENMVG_COUT("Localizing sequence using the voctree localizer");
     localization::VoctreeLocalizer* tmpLoc = new localization::VoctreeLocalizer(sfmFilePath,
                                                             descriptorsFolder,
                                                             vocTreeFilepath,
-                                                            weightsFilepath
-#ifdef HAVE_CCTAG
-                                                            , DescriberType::SIFT_CCTAG==descriptorType
-#endif
+                                                            weightsFilepath,
+                                                            matchDescTypes
                                                             );
     localizer.reset(tmpLoc);
     

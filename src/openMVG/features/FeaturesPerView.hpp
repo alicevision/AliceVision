@@ -55,6 +55,21 @@ public:
     return emptyFeats;
   }
 
+  MapFeaturesPerDesc& getFeaturesPerDesc(IndexT viewId)
+  {
+    return _data.at(viewId);
+  }
+
+  const MapFeaturesPerDesc& getFeaturesPerDesc(IndexT viewId) const
+  {
+    return _data.at(viewId);
+  }
+
+  const MapFeaturesPerDesc& getDataPerDesc(IndexT viewId) const
+  {
+    return _data.at(viewId);
+  }
+
   std::vector<features::EImageDescriberType> getCommonDescTypes(const Pair& pair) const
   {
     std::vector<features::EImageDescriberType> descTypes;

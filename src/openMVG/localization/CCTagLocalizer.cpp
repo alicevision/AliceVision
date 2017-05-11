@@ -4,9 +4,11 @@
 #include "rigResection.hpp"
 
 #include <openMVG/features/svgVisualization.hpp>
-#include <openMVG/sfm/sfm_data_io.hpp>
 #include <openMVG/matching/indMatch.hpp>
+#include <openMVG/sfm/sfm_data_io.hpp>
+#include <openMVG/sfm/pipelines/RegionsIO.hpp>
 #include <openMVG/sfm/pipelines/sfm_robust_model_estimation.hpp>
+
 #include <openMVG/system/timer.hpp>
 #include <openMVG/logger.hpp>
 
@@ -85,12 +87,9 @@ CCTagLocalizer::CCTagLocalizer(const std::string &sfmFilePath,
 bool CCTagLocalizer::loadReconstructionDescriptors(const sfm::SfM_Data & sfm_data,
                                                    const std::string & feat_directory)
 {
-  C_Progress_display my_progress_bar(sfm_data.GetViews().size(),
-                                     std::cout, "\n- Regions Loading -\n");
-
   OPENMVG_LOG_DEBUG("Build observations per view");
   // Build observations per view
-  std::map<IndexT, std::vector<FeatureInImage> > observationsPerView;
+  std::map<IndexT, std::vector<features::FeatureInImage> > observationsPerView;
   for(auto landmarkValue : sfm_data.structure)
   {
     IndexT trackId = landmarkValue.first;
@@ -99,7 +98,7 @@ bool CCTagLocalizer::loadReconstructionDescriptors(const sfm::SfM_Data & sfm_dat
     {
       const IndexT viewId = obs.first;
       const sfm::Observation& obs2d = obs.second;
-      observationsPerView[viewId].push_back(FeatureInImage(obs2d.id_feat, trackId));
+      observationsPerView[viewId].push_back(features::FeatureInImage(obs2d.id_feat, trackId));
     }
   }
   for(auto featuresInImage : observationsPerView)
@@ -108,75 +107,45 @@ bool CCTagLocalizer::loadReconstructionDescriptors(const sfm::SfM_Data & sfm_dat
   }
   
   OPENMVG_LOG_DEBUG("Load Features and Descriptors per view");
-  std::vector<bool> presentIds(128,false); // @todo Assume a maximum library size of 128 unique ids.
-  std::vector<int> counterCCtagsInImage = {0, 0, 0, 0, 0, 0};
   // Read for each view the corresponding regions and store them
-  for(const auto &iter : sfm_data.GetViews())
-  {
-    const IndexT id_view = iter.second->id_view;
-    Reconstructed_RegionsCCTag& reconstructedRegion = _regions_per_view[id_view];
-
-    const std::string &sImageName = iter.second.get()->s_Img_path;
-    std::string featFilepath = stlplus::create_filespec(feat_directory, std::to_string(iter.first), ".feat");
-    std::string descFilepath = stlplus::create_filespec(feat_directory, std::to_string(iter.first), ".desc");
-
-    if(!(stlplus::is_file(featFilepath) && stlplus::is_file(descFilepath)))
-    {
-      // legacy compatibility, if the features are not named using the UID convention
-      // let's try with the old-fashion naming convention
-      const std::string basename = stlplus::basename_part(sImageName);
-      featFilepath = stlplus::create_filespec(feat_directory, basename, ".feat");
-      descFilepath = stlplus::create_filespec(feat_directory, basename, ".desc");
-      if(!(stlplus::is_file(featFilepath) && stlplus::is_file(descFilepath)))
-      {
-        OPENMVG_CERR("Cannot find the features for image " << sImageName 
-                << " neither using the UID naming convention nor the image name based convention");
-        return false;
-      }
-    }
-
-    if(!reconstructedRegion._regions.Load(featFilepath, descFilepath))
-    {
-      OPENMVG_CERR("Invalid regions files for the view: " << sImageName);
-      return false;
-    }
-    
-    // Filter descriptors to keep only the 3D reconstructed points
-    reconstructedRegion.filterCCTagRegions(observationsPerView[id_view]);
-    
-    // Update the visibility mask
-    reconstructedRegion.updateLandmarksVisibility(presentIds);
-    
-    ++my_progress_bar;
-  }
+  sfm::loadRegionsPerView(_regionsPerView,
+              sfm_data,
+              feat_directory,
+              {_cctagDescType});
 
   {
+    std::set<int> presentCCtagIds;
+    std::vector<int> counterCCtagsInImage = {0, 0, 0, 0, 0, 0};
     // just debugging stuff -- print for each image the visible reconstructed cctag
     // and create an histogram of cctags per image
     for(const auto &iter : sfm_data.GetViews())
     {
       const IndexT id_view = iter.second->id_view;
-      Reconstructed_RegionsCCTag& reconstructedRegion = _regions_per_view[id_view];
+      const features::Regions& regions = _regionsPerView.getRegions(id_view, _cctagDescType);
       const std::string &sImageName = iter.second.get()->s_Img_path;
       std::stringstream ss;
 
       ss << "Image " << sImageName;
-      if(reconstructedRegion._regions.Descriptors().size() == 0 )
+      if(regions.RegionCount() == 0 )
       {
-        counterCCtagsInImage[0] +=1;
+        counterCCtagsInImage[0] += 1;
         ss << " does not contain any cctag!!!";
       }
       else
       {
         ss << " contains CCTag Id: ";
-        for(const auto &desc : reconstructedRegion._regions.Descriptors())
+        const features::CCTAG_Regions& cctagRegions = dynamic_cast<const features::CCTAG_Regions&>(regions);
+        for(const auto &desc : cctagRegions.Descriptors())
         {
           const IndexT cctagIdA = features::getCCTagId(desc);
           if(cctagIdA != UndefinedIndexT)
+          {
+            presentCCtagIds.insert(cctagIdA);
             ss << cctagIdA << " ";
+          }
         }
         // Update histogram
-        int countcctag = reconstructedRegion._regions.Descriptors().size();
+        int countcctag = cctagRegions.Descriptors().size();
         if(countcctag >= 5)
           counterCCtagsInImage[5] +=1;
         else
@@ -192,17 +161,14 @@ bool CCTagLocalizer::loadReconstructionDescriptors(const sfm::SfM_Data & sfm_dat
     OPENMVG_LOG_DEBUG("Images with 5+ CCTags : " << counterCCtagsInImage[5]);
 
     // Display the cctag ids over all cctag landmarks present in the database
-    OPENMVG_LOG_DEBUG("Found " << std::count(presentIds.begin(), presentIds.end(), true) 
-            << " CCTag in the database with " << _sfm_data.GetLandmarks().size() << " associated 3D points\n"
-            "The CCTag id in the database are: ");
-    for(std::size_t i = 0; i < presentIds.size(); ++i)
-    { 
-      if(presentIds[i])
-        OPENMVG_LOG_DEBUG(i + 1);
+    OPENMVG_LOG_DEBUG("Found " << presentCCtagIds.size() << " different CCTag ids in the database with " << _sfm_data.GetLandmarks().size() << " associated 3D points\n"
+            "The CCTag ids in the database are: ");
+    for(int cctagId: presentCCtagIds)
+    {
+      OPENMVG_LOG_DEBUG(cctagId);
     }
-
   }
-  
+
   return true;
 }
 
@@ -222,24 +188,24 @@ bool CCTagLocalizer::localize(const image::Image<unsigned char> & imageGrey,
   }
   // extract descriptors and features from image
   OPENMVG_LOG_DEBUG("[features]\tExtract CCTag from query image");
-  std::unique_ptr<features::Regions> tmpQueryRegions(new features::CCTAG_Regions());
+  features::MapRegionsPerDesc tmpQueryRegions;
 
-  _image_describer.setCudaPipe( _cudaPipe );
-  _image_describer.Set_configuration_preset(param->_featurePreset);
-  _image_describer.Describe(imageGrey, tmpQueryRegions);
-  OPENMVG_LOG_DEBUG("[features]\tExtract CCTAG done: found " << tmpQueryRegions->RegionCount() << " features");
+  _imageDescriber.setCudaPipe( _cudaPipe );
+  _imageDescriber.Set_configuration_preset(param->_featurePreset);
+  _imageDescriber.Describe(imageGrey, tmpQueryRegions[_cctagDescType]);
+  OPENMVG_LOG_DEBUG("[features]\tExtract CCTAG done: found " << tmpQueryRegions.at(_cctagDescType)->RegionCount() << " features");
   
   std::pair<std::size_t, std::size_t> imageSize = std::make_pair(imageGrey.Width(),imageGrey.Height());
   
   if(!param->_visualDebug.empty() && !imagePath.empty())
   {
     // it automatically throws an exception if the cast does not work
-    features::CCTAG_Regions &queryRegions = *dynamic_cast<features::CCTAG_Regions*> (tmpQueryRegions.get());
+    const features::CCTAG_Regions & cctagQueryRegions = tmpQueryRegions.getRegions<features::CCTAG_Regions>(_cctagDescType);
     
     // just debugging -- save the svg image with detected cctag
     features::saveCCTag2SVG(imagePath, 
                             imageSize, 
-                            queryRegions, 
+                            cctagQueryRegions,
                             param->_visualDebug+"/"+bfs::path(imagePath).stem().string()+".svg");
   }
   return localize(tmpQueryRegions,
@@ -256,7 +222,7 @@ void CCTagLocalizer::setCudaPipe( int i )
     _cudaPipe = i;
 }
 
-bool CCTagLocalizer::localize(const std::unique_ptr<features::Regions> &genQueryRegions,
+bool CCTagLocalizer::localize(const features::MapRegionsPerDesc & genQueryRegions,
                               const std::pair<std::size_t, std::size_t> &imageSize,
                               const LocalizerParameters *parameters,
                               bool useInputIntrinsics,
@@ -266,18 +232,18 @@ bool CCTagLocalizer::localize(const std::unique_ptr<features::Regions> &genQuery
 {
   namespace bfs = boost::filesystem;
   
-  const CCTagLocalizer::Parameters *param = static_cast<const CCTagLocalizer::Parameters *>(parameters);
+  const CCTagLocalizer::Parameters *param = dynamic_cast<const CCTagLocalizer::Parameters *>(parameters);
   if(!param)
   {
     throw std::invalid_argument("The CCTag localizer parameters are not in the right format.");
   }
   
   // it automatically throws an exception if the cast does not work
-  features::CCTAG_Regions &queryRegions = *dynamic_cast<features::CCTAG_Regions*> (genQueryRegions.get());
+  const features::CCTAG_Regions &queryRegions = genQueryRegions.getRegions<features::CCTAG_Regions>(_cctagDescType);
   
   // a map containing for each pair <pt3D_id, pt2D_id> the number of times that 
   // the association has been seen
-  std::map< std::pair<IndexT, IndexT>, std::size_t > occurences;
+  std::map<IndMatch3D2D, std::size_t > occurences;
   sfm::Image_Localizer_Match_Data resectionData;
   
 
@@ -289,7 +255,7 @@ bool CCTagLocalizer::localize(const std::unique_ptr<features::Regions> &genQuery
   const std::size_t numCollectedPts = occurences.size();
   
   // create an vector of <feat3D_id, feat2D_id>
-  std::vector<pair<IndexT, IndexT> > associationIDs;
+  std::vector<IndMatch3D2D> associationIDs;
   associationIDs.reserve(numCollectedPts);
 
   for(const auto &ass : occurences)
@@ -412,18 +378,17 @@ bool CCTagLocalizer::localizeRig(const std::vector<image::Image<unsigned char> >
   assert(numCams == vec_queryIntrinsics.size());
   assert(numCams == vec_subPoses.size() + 1);
 
-  std::vector<std::unique_ptr<features::Regions> > vec_queryRegions(numCams);
+  std::vector<features::MapRegionsPerDesc> vec_queryRegions(numCams);
   std::vector<std::pair<std::size_t, std::size_t> > vec_imageSize;
   
   //@todo parallelize?
   for(size_t i = 0; i < numCams; ++i)
   {
     // extract descriptors and features from each image
-    vec_queryRegions[i] = std::unique_ptr<features::Regions>(new features::CCTAG_Regions());
     OPENMVG_LOG_DEBUG("[features]\tExtract CCTag from query image...");
-    _image_describer.Set_configuration_preset(param->_featurePreset);
-    _image_describer.Describe(vec_imageGrey[i], vec_queryRegions[i]);
-    OPENMVG_LOG_DEBUG("[features]\tExtract CCTAG done: found " <<  vec_queryRegions[i]->RegionCount() << " features");
+    _imageDescriber.Set_configuration_preset(param->_featurePreset);
+    _imageDescriber.Describe(vec_imageGrey[i], vec_queryRegions[i][_imageDescriber.getDescriberType()]);
+    OPENMVG_LOG_DEBUG("[features]\tExtract CCTAG done: found " <<  vec_queryRegions[i].at(_imageDescriber.getDescriberType())->RegionCount() << " features");
     // add the image size for this image
     vec_imageSize.emplace_back(vec_imageGrey[i].Width(), vec_imageGrey[i].Height());
   }
@@ -438,7 +403,7 @@ bool CCTagLocalizer::localizeRig(const std::vector<image::Image<unsigned char> >
                      vec_locResults);
 }
 
-bool CCTagLocalizer::localizeRig(const std::vector<std::unique_ptr<features::Regions> > & vec_queryRegions,
+bool CCTagLocalizer::localizeRig(const std::vector<features::MapRegionsPerDesc> & vec_queryRegions,
                                  const std::vector<std::pair<std::size_t, std::size_t> > &vec_imageSize,
                                  const LocalizerParameters *parameters,
                                  std::vector<cameras::Pinhole_Intrinsic_Radial_K3 > &vec_queryIntrinsics,
@@ -474,7 +439,7 @@ bool CCTagLocalizer::localizeRig(const std::vector<std::unique_ptr<features::Reg
 }
 
 #ifdef HAVE_OPENGV
-bool CCTagLocalizer::localizeRig_opengv(const std::vector<std::unique_ptr<features::Regions> > & vec_queryRegions,
+bool CCTagLocalizer::localizeRig_opengv(const std::vector<features::MapRegionsPerDesc> & vec_queryRegions,
                                  const std::vector<std::pair<std::size_t, std::size_t> > &imageSize,
                                  const LocalizerParameters *parameters,
                                  std::vector<cameras::Pinhole_Intrinsic_Radial_K3 > &vec_queryIntrinsics,
@@ -498,7 +463,7 @@ bool CCTagLocalizer::localizeRig_opengv(const std::vector<std::unique_ptr<featur
   // each element of the vector is a map containing for each pair <pt3D_id, pt2D_id> 
   // the number of times that the association has been seen. One element fo the 
   // vector for each camera.
-  std::vector<std::map< pair<IndexT, IndexT>, std::size_t > > vec_occurrences(numCams);
+  std::vector<OccurenceMap> vec_occurrences(numCams);
   std::vector<Mat> vec_pts3D(numCams);
   std::vector<Mat> vec_pts2D(numCams);
   std::vector<std::vector<voctree::DocMatch> > vec_matchedImages(numCams);
@@ -508,7 +473,6 @@ bool CCTagLocalizer::localizeRig_opengv(const std::vector<std::unique_ptr<featur
   size_t numAssociations = 0;
   for( size_t i = 0; i < numCams; ++i )
   {
-
     // this map is used to collect the 2d-3d associations as we go through the images
     // the key is a pair <Id3D, Id2d>
     // the element is the pair 3D point - 2D point
@@ -516,7 +480,7 @@ bool CCTagLocalizer::localizeRig_opengv(const std::vector<std::unique_ptr<featur
     auto &matchedImages = vec_matchedImages[i];
     Mat &pts3D = vec_pts3D[i];
     Mat &pts2D = vec_pts2D[i];
-    features::CCTAG_Regions &queryRegions = *dynamic_cast<features::CCTAG_Regions*> (vec_queryRegions[i].get());
+    const features::CCTAG_Regions &queryRegions = vec_queryRegions[i].getRegions<features::CCTAG_Regions>(_cctagDescType);
     getAllAssociations(queryRegions, imageSize[i],*param, occurrences, pts2D, pts3D, matchedImages);
     numAssociations += occurrences.size();
   }
@@ -634,7 +598,7 @@ bool CCTagLocalizer::localizeRig_opengv(const std::vector<std::unique_ptr<featur
     matchData.pt3D = vec_pts3D[cam];
     
     // create indMatch3D2D
-    std::vector<pair<IndexT, IndexT> > indMatch3D2D;
+    std::vector<IndMatch3D2D> indMatch3D2D;
     indMatch3D2D.reserve(matchData.pt2D.cols());
     const auto &occurrences = vec_occurrences[cam];
     for(const auto &ass : occurrences)
@@ -660,7 +624,7 @@ bool CCTagLocalizer::localizeRig_opengv(const std::vector<std::unique_ptr<featur
 
 // subposes is n-1 as we consider the first camera as the main camera and the 
 // reference frame of the grid
-bool CCTagLocalizer::localizeRig_naive(const std::vector<std::unique_ptr<features::Regions> > & vec_queryRegions,
+bool CCTagLocalizer::localizeRig_naive(const std::vector<features::MapRegionsPerDesc> & vec_queryRegions,
                                  const std::vector<std::pair<std::size_t, std::size_t> > &imageSize,
                                  const LocalizerParameters *parameters,
                                  std::vector<cameras::Pinhole_Intrinsic_Radial_K3 > &vec_queryIntrinsics,
@@ -668,7 +632,7 @@ bool CCTagLocalizer::localizeRig_naive(const std::vector<std::unique_ptr<feature
                                  geometry::Pose3 &rigPose,
                                  std::vector<LocalizationResult>& vec_localizationResults)
 {
-  const CCTagLocalizer::Parameters *param = static_cast<const CCTagLocalizer::Parameters *>(parameters);
+  const CCTagLocalizer::Parameters *param = dynamic_cast<const CCTagLocalizer::Parameters *>(parameters);
   if(!param)
   {
     throw std::invalid_argument("The CCTag localizer parameters are not in the right format.");
@@ -766,7 +730,7 @@ bool CCTagLocalizer::localizeRig_naive(const std::vector<std::unique_ptr<feature
 void CCTagLocalizer::getAllAssociations(const features::CCTAG_Regions &queryRegions,
                                         const std::pair<std::size_t, std::size_t> &imageSize,
                                         const CCTagLocalizer::Parameters &param,
-                                        std::map< std::pair<IndexT, IndexT>, std::size_t > &occurences, 
+                                        OccurenceMap & occurences,
                                         Mat &pt2D,
                                         Mat &pt3D,
                                         std::vector<voctree::DocMatch>& matchedImages,
@@ -776,7 +740,8 @@ void CCTagLocalizer::getAllAssociations(const features::CCTAG_Regions &queryRegi
   nearestKeyFrames.reserve(param._nNearestKeyFrames);
   
   kNearestKeyFrames(queryRegions,
-                    _regions_per_view,
+                    _cctagDescType,
+                    _regionsPerView,
                     param._nNearestKeyFrames,
                     nearestKeyFrames);
   
@@ -784,23 +749,25 @@ void CCTagLocalizer::getAllAssociations(const features::CCTAG_Regions &queryRegi
   matchedImages.reserve(nearestKeyFrames.size());
   
   OPENMVG_LOG_DEBUG("nearestKeyFrames.size() = " << nearestKeyFrames.size());
-  for(const IndexT indexKeyFrame : nearestKeyFrames)
+  for(const IndexT keyframeId : nearestKeyFrames)
   {
-    OPENMVG_LOG_DEBUG(indexKeyFrame);
-    OPENMVG_LOG_DEBUG(_sfm_data.GetViews().at(indexKeyFrame)->s_Img_path);
-    const Reconstructed_RegionsCCTag& matchedRegions = _regions_per_view.at(indexKeyFrame);
-    
+    OPENMVG_LOG_DEBUG(keyframeId);
+    OPENMVG_LOG_DEBUG(_sfm_data.GetViews().at(keyframeId)->s_Img_path);
+    const features::Regions& matchedRegions = _regionsPerView.getRegions(keyframeId, _cctagDescType);
+    const ReconstructedRegionsMapping& regionsMapping = _reconstructedRegionsMappingPerView.at(keyframeId).at(_cctagDescType);
+    const features::CCTAG_Regions & matchedCCtagRegions = dynamic_cast<const features::CCTAG_Regions &>(matchedRegions);
+
     // Matching
     std::vector<matching::IndMatch> vec_featureMatches;
-    viewMatching(queryRegions, _regions_per_view.at(indexKeyFrame)._regions, vec_featureMatches);
+    viewMatching(queryRegions, matchedCCtagRegions, vec_featureMatches);
     OPENMVG_LOG_DEBUG("[matching]\tFound "<< vec_featureMatches.size() <<" matches.");
     
-    matchedImages.emplace_back(indexKeyFrame, vec_featureMatches.size());
+    matchedImages.emplace_back(keyframeId, vec_featureMatches.size());
     
     if(!param._visualDebug.empty() && !imagePath.empty())
     {
       namespace bfs = boost::filesystem;
-      const sfm::View *mview = _sfm_data.GetViews().at(indexKeyFrame).get();
+      const sfm::View *mview = _sfm_data.GetViews().at(keyframeId).get();
       const std::string queryImage = bfs::path(imagePath).stem().string();
       const std::string matchedImage = bfs::path(mview->s_Img_path).stem().string();
       const std::string matchedPath = (bfs::path(_sfm_data.s_root_path) /  bfs::path(mview->s_Img_path)).string();
@@ -826,7 +793,7 @@ void CCTagLocalizer::getAllAssociations(const features::CCTAG_Regions &queryRegi
                                      queryRegions,
                                      matchedPath,
                                      std::make_pair(mview->ui_width, mview->ui_height), 
-                                     _regions_per_view.at(indexKeyFrame)._regions,
+                                     matchedCCtagRegions,
                                      vec_featureMatches,
                                      outputName.string(),
                                      showNotMatched ); 
@@ -840,10 +807,10 @@ void CCTagLocalizer::getAllAssociations(const features::CCTAG_Regions &queryRegi
     for(const matching::IndMatch& featureMatch : vec_featureMatches)
     {
       // the ID of the 3D point
-      const IndexT pt3D_id = matchedRegions._associated3dPoint[featureMatch._j];
+      const IndexT pt3D_id = regionsMapping._associated3dPoint[featureMatch._j];
       const IndexT pt2D_id = featureMatch._i;
       
-      const auto key = std::make_pair(pt3D_id, pt2D_id);
+      const IndMatch3D2D key(pt3D_id, _cctagDescType, pt2D_id);
       if(occurences.count(key))
       {
         occurences[key]++;
@@ -866,7 +833,8 @@ void CCTagLocalizer::getAllAssociations(const features::CCTAG_Regions &queryRegi
       const auto &key = idx.first;
       const auto &value = idx.second;
        OPENMVG_LOG_DEBUG("[matching]\tAssociations "
-               << key.first << "," << key.second <<"] found " 
+               << features::EImageDescriberType_enumToString(key.descType) << " "
+               << key.landmarkId << "," << key.featId <<" found "
                << value << " times.");
        if(value > maxOcc)
          maxOcc = value;
@@ -895,44 +863,43 @@ void CCTagLocalizer::getAllAssociations(const features::CCTAG_Regions &queryRegi
 
   pt2D = Mat2X(2, numCollectedPts);
   pt3D = Mat3X(3, numCollectedPts);
-      
+
   size_t index = 0;
   for(const auto &idx : occurences)
   {
     // recopy all the points in the matching structure
-    const IndexT pt3D_id = idx.first.first;
-    const IndexT pt2D_id = idx.first.second;
+    const IndexT pt3D_id = idx.first.landmarkId;
+    const IndexT pt2D_id = idx.first.featId;
       
     pt2D.col(index) = queryRegions.GetRegionPosition(pt2D_id);
     pt3D.col(index) = _sfm_data.GetLandmarks().at(pt3D_id).X;
-      ++index;
+    ++index;
   }
 }
 
 
-
-
-
 void kNearestKeyFrames(const features::CCTAG_Regions & queryRegions,
-                       const CCTagRegionsPerViews & regionsPerView,
+                       features::EImageDescriberType cctagDescType,
+                       const features::RegionsPerView & regionsPerView,
                        std::size_t nNearestKeyFrames,
-                       std::vector<IndexT> & kNearestFrames,
+                       std::vector<IndexT> & out_kNearestFrames,
                        const float similarityThreshold /*=.0f*/)
 {
-  kNearestFrames.clear();
+  out_kNearestFrames.clear();
   
   // A std::multimap is used instead of a std::map because is very likely that the
   // similarity measure is equal for a subset of views in the CCTag regions case.
   std::multimap<float, IndexT> sortedViewSimilarities;
   
-  for(const auto & keyFrame : regionsPerView)
+  for(const auto & keyFrame : regionsPerView.getData())
   {
-    const float similarity = viewSimilarity(queryRegions, keyFrame.second._regions);
+    const features::CCTAG_Regions& keyFrameCCTagRegions = keyFrame.second.getRegions<features::CCTAG_Regions>(cctagDescType);
+    const float similarity = viewSimilarity(queryRegions, keyFrameCCTagRegions);
     sortedViewSimilarities.emplace(similarity, keyFrame.first);
   }
   
   std::size_t counter = 0;
-  kNearestFrames.reserve(nNearestKeyFrames);
+  out_kNearestFrames.reserve(nNearestKeyFrames);
   for (auto rit = sortedViewSimilarities.crbegin(); rit != sortedViewSimilarities.crend(); ++rit)
   {
     if(rit->first < similarityThreshold)
@@ -940,7 +907,7 @@ void kNearestKeyFrames(const features::CCTAG_Regions & queryRegions,
       // there won't be other useful kframes
       break;
     
-    kNearestFrames.push_back(rit->second);
+    out_kNearestFrames.push_back(rit->second);
     ++counter;
     
     if (counter == nNearestKeyFrames)
@@ -950,9 +917,9 @@ void kNearestKeyFrames(const features::CCTAG_Regions & queryRegions,
  
 void viewMatching(const features::CCTAG_Regions & regionsA,
                   const features::CCTAG_Regions & regionsB,
-                  std::vector<matching::IndMatch> & vec_featureMatches)
+                  std::vector<matching::IndMatch> & out_featureMatches)
 {
-  vec_featureMatches.clear();
+  out_featureMatches.clear();
   
   for(std::size_t i=0 ; i < regionsA.Descriptors().size() ; ++i)
   {
@@ -965,7 +932,7 @@ void viewMatching(const features::CCTAG_Regions & regionsA,
       const IndexT cctagIdB = features::getCCTagId(regionsB.Descriptors()[j]);
       if ( cctagIdA == cctagIdB )
       {
-        vec_featureMatches.emplace_back(i,j);
+        out_featureMatches.emplace_back(i,j);
         break;
       }
     }
@@ -986,7 +953,7 @@ float viewSimilarity(const features::CCTAG_Regions & regionsA,
   return (descriptorViewA & descriptorViewB).count();
 }
 
-std::bitset<128> constructCCTagViewDescriptor(const std::vector<CCTagDescriptor> & vCCTagDescriptors)
+std::bitset<128> constructCCTagViewDescriptor(const std::vector<features::CCTAG_Regions::DescriptorT> & vCCTagDescriptors)
 {
   std::bitset<128> descriptorView;
   for(const auto & cctagDescriptor : vCCTagDescriptors )

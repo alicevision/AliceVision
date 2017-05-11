@@ -103,6 +103,7 @@ int main(int argc, char **argv)
   int rangeStart = -1;
   int rangeSize = 0;
   std::string nearestMatchingMethod = "ANN_L2";
+  std::string geometricEstimatorStr = robust::EROBUST_ESTIMATOR_enumToString(robust::ROBUST_ESTIMATOR_ACRANSAC);
   bool savePutativeMatches = false;
   bool guidedMatching = false;
   int maxIteration = 2048;
@@ -123,6 +124,7 @@ int main(int argc, char **argv)
   cmd.add( make_option('s', rangeStart, "range_start") );
   cmd.add( make_option('d', rangeSize, "range_size") );
   cmd.add( make_option('n', nearestMatchingMethod, "nearest_matching_method") );
+  cmd.add( make_option('G', geometricEstimatorStr, "geometricEstimator") );
   cmd.add( make_option('f', savePutativeMatches, "save_putative_matches") );
   cmd.add( make_option('M', guidedMatching, "guided_matching") );
   cmd.add( make_option('I', maxIteration, "max_iteration") );
@@ -174,12 +176,12 @@ int main(int argc, char **argv)
       << "   X: with match 0 with (1->X), ...]\n"
       << "   2: will match 0 with (1,2), 1 with (2,3), ...\n"
       << "   3: will match 0 with (1,2,3), 1 with (2,3,4), ...\n"
-      << "[-l]--pair_list] filepath\n"
+      << "[-l|--pair_list] filepath\n"
       << "  A file which contains the list of matches to perform.\n"
-      << "[-s]--range_start] range image index start\n"
+      << "[-s|--range_start] range image index start\n"
       << "  To compute only the matches for specified range.\n"
       << "  This allows to compute different matches on different computers in parallel.\n"
-      << "[-d]--range_size] range size\n"
+      << "[-d|--range_size] range size\n"
       << "  To compute only the matches for specified range.\n"
       << "  This allows to compute different matches on different computers in parallel.\n"
       << "[-n|--nearest_matching_method]\n"
@@ -192,6 +194,9 @@ int main(int argc, char **argv)
       << "     (faster than CASCADE_HASHING_L2 but use more memory).\n"
       << "  For Binary based descriptor:\n"
       << "    BRUTE_FORCE_HAMMING: BruteForce Hamming matching.\n"
+      << "[-G|--geometricEstimator] Geometric estimator\n"
+      << "  " << robust::EROBUST_ESTIMATOR_enumToString(robust::ROBUST_ESTIMATOR_ACRANSAC) << ": A-Contrario Ransac (default),\n"
+      << "  " << robust::EROBUST_ESTIMATOR_enumToString(robust::ROBUST_ESTIMATOR_LORANSAC) << ": LO-Ransac (only available for fundamental matrix)\n"
       << "[-M|--guided_matching]\n"
       << "  use the found model to improve the pairwise correspondences.\n"
       << "[-I|--max_iteration]\n"
@@ -273,6 +278,7 @@ int main(int argc, char **argv)
       std::cerr << "Unknown geometric model: " << geometricMode << std::endl;
       return EXIT_FAILURE;
   }
+  robust::EROBUST_ESTIMATOR geometricEstimator = robust::EROBUST_ESTIMATOR_stringToEnum(geometricEstimatorStr);
 
   // -----------------------------
   // - Load SfM_Data Views & intrinsics data
@@ -347,7 +353,7 @@ int main(int argc, char **argv)
 
   // Allocate the right Matcher according the Matching requested method
   EMatcherType collectionMatcherType = EMatcherType_stringToEnum(nearestMatchingMethod);
-  std::unique_ptr<Matcher> collectionMatcher = createMatcher(collectionMatcherType, distRatio);
+  std::unique_ptr<IImageCollectionMatcher> imageCollectionMatcher = createImageCollectionMatcher(collectionMatcherType, distRatio);
   
   const std::vector<features::EImageDescriberType> describerTypes = features::EImageDescriberType_stringToEnums(describerMethods);
   
@@ -371,7 +377,7 @@ int main(int argc, char **argv)
     std::cout << "-> " << EImageDescriberType_enumToString(descType) << " Regions Matching" << std::endl;
 
     // Photometric matching of putative pairs
-    collectionMatcher->Match(sfmData, regionPerView, pairs, descType, mapPutativesMatches);
+    imageCollectionMatcher->Match(sfmData, regionPerView, pairs, descType, mapPutativesMatches);
 
     // TODO: DELI
     // if(!guided_matching) regionPerView.clearDescriptors()
@@ -436,14 +442,7 @@ int main(int argc, char **argv)
   //    - Use an upper bound for the a contrario estimated threshold
   //---------------------------------------
 
-  std::unique_ptr<ImageCollectionGeometricFilter> filter_ptr(
-    new ImageCollectionGeometricFilter(&sfmData, regionPerView));
-
-  if(!filter_ptr)
-  {
-    std::cerr << "An error occurred while generating the geometric filter! Aborting..." << std::endl;
-    return EXIT_FAILURE;
-  }
+  ImageCollectionGeometricFilter geometricFilter(&sfmData, regionPerView);
 
   timer.reset();
   std::cout << std::endl << " - Geometric filtering - " << std::endl;
@@ -454,24 +453,24 @@ int main(int argc, char **argv)
     case HOMOGRAPHY_MATRIX:
     {
       const bool bGeometric_only_guided_matching = true;
-      filter_ptr->Robust_model_estimation(GeometricFilter_HMatrix_AC(std::numeric_limits<double>::infinity(), maxIteration),
+      geometricFilter.Robust_model_estimation(GeometricFilter_HMatrix_AC(std::numeric_limits<double>::infinity(), maxIteration),
         mapPutativesMatches, guidedMatching,
         bGeometric_only_guided_matching ? -1.0 : 0.6);
-      map_GeometricMatches = filter_ptr->Get_geometric_matches();
+      map_GeometricMatches = geometricFilter.Get_geometric_matches();
     }
     break;
     case FUNDAMENTAL_MATRIX:
     {
-      filter_ptr->Robust_model_estimation(GeometricFilter_FMatrix_AC(std::numeric_limits<double>::infinity(), maxIteration),
+      geometricFilter.Robust_model_estimation(GeometricFilter_FMatrix(std::numeric_limits<double>::infinity(), maxIteration, geometricEstimator),
         mapPutativesMatches, guidedMatching);
-      map_GeometricMatches = filter_ptr->Get_geometric_matches();
+      map_GeometricMatches = geometricFilter.Get_geometric_matches();
     }
     break;
     case ESSENTIAL_MATRIX:
     {
-      filter_ptr->Robust_model_estimation(GeometricFilter_EMatrix_AC(std::numeric_limits<double>::infinity(), maxIteration),
+      geometricFilter.Robust_model_estimation(GeometricFilter_EMatrix_AC(std::numeric_limits<double>::infinity(), maxIteration),
         mapPutativesMatches, guidedMatching);
-      map_GeometricMatches = filter_ptr->Get_geometric_matches();
+      map_GeometricMatches = geometricFilter.Get_geometric_matches();
 
       //-- Perform an additional check to remove pairs with poor overlap
       std::vector<PairwiseMatches::key_type> vec_toRemove;

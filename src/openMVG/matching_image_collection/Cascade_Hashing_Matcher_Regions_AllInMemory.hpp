@@ -12,30 +12,31 @@
 namespace openMVG {
 namespace matching_image_collection {
 
-/// Implementation of an Image Collection Matcher
-/// Compute putative matches between a collection of pictures
-/// Spurious correspondences are discarded by using the
-///  a threshold over the distance ratio of the 2 nearest neighbours.
-/// Using a Cascade Hashing matching
-/// Cascade hashing tables are computed once and used for all the regions.
-///
-class Cascade_Hashing_Matcher_Regions_AllInMemory : public Matcher
+/**
+ * @brief Compute putative matches between a collection of pictures.
+ *
+ * Spurious correspondences are discarded by using the
+ * a threshold over the distance ratio of the 2 nearest neighbours.
+ *
+ * @note: Cascade hashing tables are computed once and used for all the regions.
+ * @warning: all descriptors are loaded in memory. You need to ensure that it can fit in RAM.
+ */
+class ImageCollectionMatcher_CascadeHashing : public IImageCollectionMatcher
 {
   public:
-  Cascade_Hashing_Matcher_Regions_AllInMemory
+  ImageCollectionMatcher_CascadeHashing
   (
     float dist_ratio
   );
 
   /// Find corresponding points between some pair of view Ids
-  void Match
-  (
+  void Match(
     const sfm::SfM_Data & sfm_data,
     const features::RegionsPerView& regionsPerView,
     const Pair_Set & pairs,
     features::EImageDescriberType descType,
     matching::PairwiseMatches & map_PutativesMatches // the pairwise photometric corresponding points
-  )const;
+  ) const;
 
   private:
   // Distance ratio used to discard spurious correspondence

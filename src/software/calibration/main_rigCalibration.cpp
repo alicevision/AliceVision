@@ -36,55 +36,6 @@ namespace po = boost::program_options;
 
 using namespace openMVG;
 
-enum DescriberType
-{
-  SIFT
-#ifdef HAVE_CCTAG
-  ,CCTAG,
-  SIFT_CCTAG
-#endif
-};
-
-inline DescriberType stringToDescriberType(const std::string& describerType)
-{
-  if(describerType == "SIFT")
-    return DescriberType::SIFT;
-#ifdef HAVE_CCTAG
-  if (describerType == "CCTAG")
-    return DescriberType::CCTAG;
-  if(describerType == "SIFT_CCTAG")
-    return DescriberType::SIFT_CCTAG;
-#endif
-  throw std::invalid_argument("Unsupported describer type "+describerType);
-}
-
-inline std::string describerTypeToString(DescriberType describerType)
-{
-  if(describerType == DescriberType::SIFT)
-    return "SIFT";
-#ifdef HAVE_CCTAG
-  if (describerType == DescriberType::CCTAG)
-    return "CCTAG";
-  if(describerType == DescriberType::SIFT_CCTAG)
-    return "SIFT_CCTAG";
-#endif
-  throw std::invalid_argument("Unrecognized DescriberType "+std::to_string(describerType));
-}
-
-std::ostream& operator<<(std::ostream& os, const DescriberType describerType)
-{
-  os << describerTypeToString(describerType);
-  return os;
-}
-
-std::istream& operator>>(std::istream &in, DescriberType &describerType)
-{
-  std::string token;
-  in >> token;
-  describerType = stringToDescriberType(token);
-  return in;
-}
-
 std::string myToString(std::size_t i, std::size_t zeroPadding)
 {
   std::stringstream ss;
@@ -146,10 +97,12 @@ int main(int argc, char** argv)
   std::vector<std::string> cameraIntrinsics;                  
   /// the name of the file where to store the calibration data
   std::string outputFile;
+  /// the describer types name to use for the matching
+  std::string matchDescTypeNames = features::EImageDescriberType_enumToString(features::EImageDescriberType::SIFT);
   /// the preset for the feature extractor
   features::EDESCRIBER_PRESET featurePreset = features::EDESCRIBER_PRESET::NORMAL_PRESET;     
-  /// the type of features to use for localization
-  DescriberType descriptorType = DescriberType::SIFT;        
+  /// the describer types to use for the matching
+  std::vector<features::EImageDescriberType> matchDescTypes;
   /// the estimator to use for resection
   robust::EROBUST_ESTIMATOR resectionEstimator = robust::EROBUST_ESTIMATOR::ROBUST_ESTIMATOR_ACRANSAC;        
   /// the estimator to use for matching
@@ -168,6 +121,8 @@ int main(int argc, char** argv)
 
 
   // parameters for voctree localizer
+  /// whether to use the voctreeLocalizer or cctagLocalizer
+  bool useVoctreeLocalizer = true;
   /// the vocabulary tree file
   std::string vocTreeFilepath;
   /// the vocabulary tree weights file
@@ -210,12 +165,8 @@ int main(int argc, char** argv)
    
   po::options_description commonParams("Common optional parameters for the localizer");
   commonParams.add_options()
-      ("descriptors", po::value<DescriberType>(&descriptorType)->default_value(descriptorType), 
-        "Type of descriptors to use {SIFT"
-#ifdef HAVE_CCTAG
-        ", CCTAG, SIFT_CCTAG"
-#endif
-        "}")
+      ("matchDescTypes", po::value<std::string>(&matchDescTypeNames)->default_value(matchDescTypeNames),
+          "The describer types to use for the matching")
       ("preset", po::value<features::EDESCRIBER_PRESET>(&featurePreset)->default_value(featurePreset), 
           "Preset for the feature extractor when localizing a new image "
           "{LOW,MEDIUM,NORMAL,HIGH,ULTRA}")
@@ -312,10 +263,21 @@ int main(int argc, char** argv)
   }
   numCameras = mediaPath.size();
 
+  // Init descTypes from command-line string
+  matchDescTypes = features::EImageDescriberType_stringToEnums(matchDescTypeNames);
+
+  // decide the localizer to use based on the type of feature
+#ifdef HAVE_CCTAG
+  useVoctreeLocalizer = (matchDescTypes.size() == 1 &&
+                        ((matchDescTypes.front() == features::EImageDescriberType::CCTAG3) ||
+                        (matchDescTypes.front() == features::EImageDescriberType::CCTAG4)));
+#endif
+
   // just debugging prints, print out all the parameters
   {
     OPENMVG_COUT("Program called with the following parameters:");
     OPENMVG_COUT("\tsfmdata: " << sfmFilePath);
+    OPENMVG_COUT("\tmatching descriptor types: " << matchDescTypeNames);
     OPENMVG_COUT("\tpreset: " << featurePreset);
     OPENMVG_COUT("\tmediapath: " << mediaPath);
     OPENMVG_COUT("\tcameraIntrinsics: " << cameraIntrinsics);
@@ -324,12 +286,7 @@ int main(int argc, char** argv)
     OPENMVG_COUT("\tdescriptorPath: " << descriptorsFolder);
     OPENMVG_COUT("\trefineIntrinsics: " << refineIntrinsics);
     OPENMVG_COUT("\treprojectionError: " << resectionErrorMax);
-    OPENMVG_COUT("\tdescriptors: " << descriptorType);
-    if((DescriberType::SIFT==descriptorType)
-#ifdef HAVE_CCTAG
-            ||(DescriberType::SIFT_CCTAG==descriptorType)
-#endif
-      )
+    if(useVoctreeLocalizer)
     {
       // parameters for voctree localizer
       OPENMVG_COUT("\tvoctree: " << vocTreeFilepath);
@@ -353,21 +310,14 @@ int main(int argc, char** argv)
   std::unique_ptr<localization::ILocalizer> localizer;
   
   // initialize the localizer according to the chosen type of describer
-  if((DescriberType::SIFT==descriptorType)
-#ifdef HAVE_CCTAG
-            ||(DescriberType::SIFT_CCTAG==descriptorType)
-#endif
-      )
+  if(useVoctreeLocalizer)
   {
     OPENMVG_COUT("Calibrating sequence using the voctree localizer");
     localization::VoctreeLocalizer* tmpLoc = new localization::VoctreeLocalizer(sfmFilePath,
                                                             descriptorsFolder,
                                                             vocTreeFilepath,
-                                                            weightsFilepath
-#ifdef HAVE_CCTAG
-                                                            , DescriberType::SIFT_CCTAG==descriptorType
-#endif
-                                                            );
+                                                            weightsFilepath,
+                                                            matchDescTypes);
     localizer.reset(tmpLoc);
     
     localization::VoctreeLocalizer::Parameters *tmpParam = new localization::VoctreeLocalizer::Parameters();

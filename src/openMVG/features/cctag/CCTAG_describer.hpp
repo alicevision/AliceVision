@@ -23,13 +23,13 @@ public:
   CCTAG_Image_describer(const std::size_t nRings = 3);
   ~CCTAG_Image_describer();
 
-  virtual EImageDescriberType getDescriberType()
+  EImageDescriberType getDescriberType() const override
   {
     // TODO: check nRings to decide between CCTAG3 and CCTAG4
     return EImageDescriberType::CCTAG3;
   }
   
-  bool Set_configuration_preset(EDESCRIBER_PRESET preset);
+  bool Set_configuration_preset(EDESCRIBER_PRESET preset) override;
 
   void Set_use_cuda(bool);
 
@@ -47,7 +47,7 @@ public:
     const image::Image<unsigned char> * mask = nullptr);
 
   /// Allocate Regions type depending of the Image_describer
-  void Allocate(std::unique_ptr<Regions> &regions) const;
+  void Allocate(std::unique_ptr<Regions> &regions) const override;
 
   template<class Archive>
   void serialize( Archive & ar )

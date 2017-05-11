@@ -11,6 +11,7 @@
 #ifdef HAVE_CCTAG
 #include "regions_factory.hpp"
 #endif
+#include <openMVG/features/RegionsPerView.hpp>
 #include <openMVG/features/FeaturesPerView.hpp>
 #include <openMVG/matching/indMatch.hpp>
 
@@ -35,16 +36,16 @@ std::string describerTypeColor(const features::EImageDescriberType descType);
  * saved as a link, no image data is stored in the svg.
  * @param[in] imageSizeRight The size of the image <width,height>.
  * @param[in] keypointsRight The keypoints of the right image.
- * @param[in] matches The vector containing the indices of matching cctags.
+ * @param[in] matches The vector containing the indices of matching features for each descriptor type.
  * @param[in] outputSVGPath The name of the svg file to generate.
  */
 void saveMatches2SVG(const std::string &imagePathLeft,
                      const std::pair<size_t,size_t> & imageSizeLeft,
-                     const std::vector<features::PointFeature> &keypointsLeft,
+                     const features::MapRegionsPerDesc &keypointsLeft,
                      const std::string &imagePathRight,
                      const std::pair<size_t,size_t> & imageSizeRight,
-                     const std::vector<features::PointFeature> &keypointsRight,
-                     const matching::IndMatches &matches,
+                     const features::MapRegionsPerDesc &keypointsRight,
+                     const matching::MatchesPerDescType & matches,
                      const std::string &outputSVGPath);
 
 /**

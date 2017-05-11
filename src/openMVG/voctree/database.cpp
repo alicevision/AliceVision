@@ -105,9 +105,8 @@ void Database::find(const std::vector<Word>& document, size_t N, std::vector<Doc
 void Database::find( const SparseHistogram& query, size_t N, std::vector<DocMatch>& matches, const std::string &distanceMethod) const
 {
   // Accumulate the best N matches
-  using namespace boost::accumulators;
-  typedef tag::tail<left> bestN_tag;
-  accumulator_set<DocMatch, features<bestN_tag> > acc(bestN_tag::cache_size = N);
+  typedef boost::accumulators::tag::tail<boost::accumulators::left> bestN_tag;
+  boost::accumulators::accumulator_set<DocMatch, boost::accumulators::features<bestN_tag> > acc(bestN_tag::cache_size = N);
 
   /// @todo Try only computing distances against documents sharing at least one word
   for(const auto& document: database_)
@@ -119,7 +118,7 @@ void Database::find( const SparseHistogram& query, size_t N, std::vector<DocMatc
   }
 
   // extract the best N
-  extractor<bestN_tag> bestN;
+  boost::accumulators::extractor<bestN_tag> bestN;
   matches.resize(std::min(N, database_.size()));
   std::copy(bestN(acc).begin(), bestN(acc).end(), matches.begin());
 }

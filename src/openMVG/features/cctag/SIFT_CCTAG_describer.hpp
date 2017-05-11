@@ -32,13 +32,13 @@ public:
 
   ~SIFT_CCTAG_Image_describer();
   
-  virtual EImageDescriberType getDescriberType()
+  virtual EImageDescriberType getDescriberType() const override
   {
-    // TODO: check nRings to decide between SIFT_CCTAG3 and SIFT_CCTAG4
+    // TODO: CLASS TO REMOVE
     return EImageDescriberType::UNKNOWN;
   }
 
-  bool Set_configuration_preset(EDESCRIBER_PRESET preset);
+  bool Set_configuration_preset(EDESCRIBER_PRESET preset) override;
 
   void Set_cctag_use_cuda(bool use_cuda)
   {
@@ -46,18 +46,19 @@ public:
   }
 
   /**
-  @brief Detect regions on the image and compute their attributes (description)
-  @param image Image.
-  @param regions The detected regions and attributes (the caller must delete the allocated data)
-  @param mask 8-bit gray image for keypoint filtering (optional).
-     Non-zero values depict the region of interest.
-  */
+   * @brief Detect regions on the image and compute their attributes (description)
+   * @param[in] image Image.
+   * @param[out] regions The detected regions and attributes (the caller must delete the allocated data)
+   * @param[in] mask 8-bit gray image for keypoint filtering (optional).
+   *
+   * Non-zero values depict the region of interest.
+   */
   bool Describe(const image::Image<unsigned char>& image,
     std::unique_ptr<Regions> &regions,
     const image::Image<unsigned char> * mask = nullptr);
 
   /// Allocate Regions type depending of the Image_describer
-  void Allocate(std::unique_ptr<Regions> &regions) const
+  void Allocate(std::unique_ptr<Regions> &regions) const override
   {
     regions.reset( new SIFT_Regions );
   }

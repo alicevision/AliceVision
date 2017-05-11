@@ -53,6 +53,18 @@ struct SfM_Data
   const Views & GetViews() const {return views;}
   const Poses & GetPoses() const {return poses;}
   const Intrinsics & GetIntrinsics() const {return intrinsics;}
+
+  /**
+   * @brief Return a pointer to an intrinsic if available or nullptr otherwise.
+   * @param intrinsicId
+   */
+  const cameras::IntrinsicBase * GetIntrinsicPtr(IndexT intrinsicId) const
+  {
+    if(intrinsics.count(intrinsicId))
+      return intrinsics.at(intrinsicId).get();
+    return nullptr;
+  }
+
   const Landmarks & GetLandmarks() const {return structure;}
   const Landmarks & GetControl_Points() const {return control_points;}
 

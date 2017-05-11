@@ -14,137 +14,133 @@
 namespace openMVG {
 namespace matching {
 
-void DistanceRatioMatch
-(
+void DistanceRatioMatch(
   float f_dist_ratio,
   matching::EMatcherType eMatcherType,
   const features::Regions & regions_I, // database
   const features::Regions & regions_J, // query
-  matching::IndMatches & matches // photometric corresponding points
-)
+  matching::IndMatches & matches)
 {
-  Matcher_Regions_Database matcher(eMatcherType, regions_I);
+  RegionsDatabaseMatcher matcher(eMatcherType, regions_I);
   matcher.Match(f_dist_ratio, regions_J, matches);
 }
 
-bool Matcher_Regions_Database::Match
-(
-  float dist_ratio, // Distance ratio used to discard spurious correspondence
-  const features::Regions & query_regions,
-  matching::IndMatches & matches // photometric corresponding points
-)const
+bool RegionsDatabaseMatcher::Match(
+  float distRatio,
+  const features::Regions & queryRegions,
+  matching::IndMatches & matches) const
 {
-  if (query_regions.RegionCount() == 0)
-  {
+  if (queryRegions.RegionCount() == 0)
     return false;
-  }
 
-  if (_matching_interface)
-  {
-    _matching_interface->Match(dist_ratio, query_regions, matches);
-    return true;
-  }
-  return false;
+  if (!_regionsMatcher)
+    return false;
+
+  return _regionsMatcher->Match(distRatio, queryRegions, matches);
 }
 
-Matcher_Regions_Database::Matcher_Regions_Database():
-  _eMatcherType(BRUTE_FORCE_L2),
-  _matching_interface(nullptr)
+RegionsDatabaseMatcher::RegionsDatabaseMatcher():
+  _matcherType(BRUTE_FORCE_L2),
+  _regionsMatcher(nullptr)
 {}
 
-Matcher_Regions_Database::Matcher_Regions_Database
-(
-  matching::EMatcherType eMatcherType,
-  const features::Regions & database_regions // database
-):
-  _eMatcherType(eMatcherType)
+
+RegionsDatabaseMatcher::RegionsDatabaseMatcher(
+  matching::EMatcherType matcherType,
+  const features::Regions & databaseRegions)
+  : _matcherType(matcherType)
 {
+  _regionsMatcher = createRegionsMatcher(databaseRegions, matcherType);
+}
+
+
+std::unique_ptr<IRegionsMatcher> createRegionsMatcher(const features::Regions & regions, matching::EMatcherType matcherType)
+{
+  std::unique_ptr<IRegionsMatcher> out;
+
   // Handle invalid request
-  if (database_regions.IsScalar() && eMatcherType == BRUTE_FORCE_HAMMING)
-    return;
-  if (database_regions.IsBinary() && eMatcherType != BRUTE_FORCE_HAMMING)
-    return;
+  if (regions.IsScalar() && matcherType == BRUTE_FORCE_HAMMING)
+    return out;
+  if (regions.IsBinary() && matcherType != BRUTE_FORCE_HAMMING)
+    return out;
 
   // Switch regions type ID, matcher & Metric: initialize the Matcher interface
-  if (database_regions.IsScalar())
+  if (regions.IsScalar())
   {
-    if (database_regions.Type_id() == typeid(unsigned char).name())
+    if (regions.Type_id() == typeid(unsigned char).name())
     {
       // Build on the fly unsigned char based Matcher
-      switch (_eMatcherType)
+      switch (matcherType)
       {
         case BRUTE_FORCE_L2:
         {
           typedef L2_Vectorized<unsigned char> MetricT;
           typedef ArrayMatcherBruteForce<unsigned char, MetricT> MatcherT;
-          _matching_interface.reset(new matching::RegionsMatcherT<MatcherT>(database_regions, true));
+          out.reset(new matching::RegionsMatcher<MatcherT>(regions, true));
         }
         break;
         case ANN_L2:
         {
-          typedef flann::L2<unsigned char> MetricT;
-          typedef ArrayMatcher_Kdtree_Flann<unsigned char, MetricT> MatcherT;
-          _matching_interface.reset(new matching::RegionsMatcherT<MatcherT>(database_regions, true));
+          typedef ArrayMatcher_Kdtree_Flann<unsigned char> MatcherT;
+          out.reset(new matching::RegionsMatcher<MatcherT>(regions, true));
         }
         break;
         case CASCADE_HASHING_L2:
         {
           typedef L2_Vectorized<unsigned char> MetricT;
           typedef ArrayMatcherCascadeHashing<unsigned char, MetricT> MatcherT;
-          _matching_interface.reset(new matching::RegionsMatcherT<MatcherT>(database_regions, true));
+          out.reset(new matching::RegionsMatcher<MatcherT>(regions, true));
         }
         break;
         default:
           OPENMVG_LOG_WARNING("Using unknown matcher type");
       }
     }
-    else if (database_regions.Type_id() == typeid(float).name())
+    else if (regions.Type_id() == typeid(float).name())
     {
       // Build on the fly float based Matcher
-      switch (eMatcherType)
+      switch (matcherType)
       {
         case BRUTE_FORCE_L2:
         {
           typedef L2_Vectorized<float> MetricT;
           typedef ArrayMatcherBruteForce<float, MetricT> MatcherT;
-          _matching_interface.reset(new matching::RegionsMatcherT<MatcherT>(database_regions, true));
+          out.reset(new matching::RegionsMatcher<MatcherT>(regions, true));
         }
         break;
         case ANN_L2:
         {
-          typedef flann::L2<float> MetricT;
-          typedef ArrayMatcher_Kdtree_Flann<float, MetricT> MatcherT;
-          _matching_interface.reset(new matching::RegionsMatcherT<MatcherT>(database_regions, true));
+          typedef ArrayMatcher_Kdtree_Flann<float> MatcherT;
+          out.reset(new matching::RegionsMatcher<MatcherT>(regions, true));
         }
         break;
         case CASCADE_HASHING_L2:
         {
           typedef L2_Vectorized<float> MetricT;
           typedef ArrayMatcherCascadeHashing<float, MetricT> MatcherT;
-          _matching_interface.reset(new matching::RegionsMatcherT<MatcherT>(database_regions, true));
+          out.reset(new matching::RegionsMatcher<MatcherT>(regions, true));
         }
         break;
         default:
           OPENMVG_LOG_WARNING("Using unknown matcher type");
       }
     }
-    else if (database_regions.Type_id() == typeid(double).name())
+    else if (regions.Type_id() == typeid(double).name())
     {
       // Build on the fly double based Matcher
-      switch (eMatcherType)
+      switch (matcherType)
       {
         case BRUTE_FORCE_L2:
         {
           typedef L2_Vectorized<double> MetricT;
           typedef ArrayMatcherBruteForce<double, MetricT> MatcherT;
-          _matching_interface.reset(new matching::RegionsMatcherT<MatcherT>(database_regions, true));
+          out.reset(new matching::RegionsMatcher<MatcherT>(regions, true));
         }
         break;
         case ANN_L2:
         {
-          typedef flann::L2<double> MetricT;
-          typedef ArrayMatcher_Kdtree_Flann<double, MetricT> MatcherT;
-          _matching_interface.reset(new matching::RegionsMatcherT<MatcherT>(database_regions, true));
+          typedef ArrayMatcher_Kdtree_Flann<double> MatcherT;
+          out.reset(new matching::RegionsMatcher<MatcherT>(regions, true));
         }
         break;
         case CASCADE_HASHING_L2:
@@ -157,15 +153,15 @@ Matcher_Regions_Database::Matcher_Regions_Database
       }
     }
   }
-  else if (database_regions.IsBinary() && database_regions.Type_id() == typeid(unsigned char).name())
+  else if (regions.IsBinary() && regions.Type_id() == typeid(unsigned char).name())
   {
-    switch (eMatcherType)
+    switch (matcherType)
     {
       case BRUTE_FORCE_HAMMING:
       {
         typedef Hamming<unsigned char> Metric;
         typedef ArrayMatcherBruteForce<unsigned char, Metric> MatcherT;
-        _matching_interface.reset(new matching::RegionsMatcherT<MatcherT>(database_regions, false));
+        out.reset(new matching::RegionsMatcher<MatcherT>(regions, false));
       }
       break;
       default:
@@ -175,9 +171,11 @@ Matcher_Regions_Database::Matcher_Regions_Database
   else
   {
     OPENMVG_LOG_WARNING("Please consider add this region type_id to Matcher_Regions_Database::Match(...)\n"
-      << "typeid: " << database_regions.Type_id());
+      << "typeid: " << regions.Type_id());
   }
+  return out;
 }
+
 
 }  // namespace matching
 }  // namespace openMVG

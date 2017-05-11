@@ -71,7 +71,7 @@ public:
   Image_describer() {}
   virtual ~Image_describer() {}
   
-  virtual EImageDescriberType getDescriberType() = 0;
+  virtual EImageDescriberType getDescriberType() const = 0;
 
   /**
   @brief Use a preset to control the number of detected regions

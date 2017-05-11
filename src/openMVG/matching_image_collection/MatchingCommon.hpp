@@ -11,7 +11,7 @@ namespace matching_image_collection {
  * @param matcherType
  * @return 
  */
-std::unique_ptr<Matcher> createMatcher(matching::EMatcherType matcherType, float distRatio);
+std::unique_ptr<IImageCollectionMatcher> createImageCollectionMatcher(matching::EMatcherType matcherType, float distRatio);
 
 
 } // namespace matching

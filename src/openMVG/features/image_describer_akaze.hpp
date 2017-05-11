@@ -57,7 +57,7 @@ public:
     bool bOrientation = true
   ):Image_describer(), _params(params), _bOrientation(bOrientation) {}
 
-  virtual EImageDescriberType getDescriberType()
+  virtual EImageDescriberType getDescriberType() const override
   {
     switch(_params._eAkazeDescriptor)
     {

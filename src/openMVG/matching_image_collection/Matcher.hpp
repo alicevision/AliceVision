@@ -20,14 +20,17 @@
 namespace openMVG {
 namespace matching_image_collection {
 
-/// Implementation of an Image Collection Matcher
-/// Compute putative matches between a collection of pictures
-class Matcher
+/**
+ * @brief Image Collection Matcher interface.
+ *
+ * Compute putative matches between a collection of pictures
+ */
+class IImageCollectionMatcher
 {
   public:
-  Matcher() {};
+  IImageCollectionMatcher() {};
 
-  virtual ~Matcher() {};
+  virtual ~IImageCollectionMatcher() {}
 
   /// Find corresponding points between some pair of view Ids
   virtual void Match(
@@ -36,7 +39,7 @@ class Matcher
     const Pair_Set & pairs, // list of pair to consider for matching
     features::EImageDescriberType descType,
     matching::PairwiseMatches & map_putatives_matches // the output pairwise photometric corresponding points
-    )const = 0;
+    ) const = 0;
 };
 
 } // namespace openMVG

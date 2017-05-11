@@ -10,19 +10,19 @@ namespace openMVG {
 namespace matching_image_collection {
   
 
-std::unique_ptr<Matcher> createMatcher(matching::EMatcherType matcherType, float distRatio)
+std::unique_ptr<IImageCollectionMatcher> createImageCollectionMatcher(matching::EMatcherType matcherType, float distRatio)
 {
-  std::unique_ptr<Matcher> matcherPtr;
+  std::unique_ptr<IImageCollectionMatcher> matcherPtr;
   
   switch(matcherType)
   {
-    case matching::BRUTE_FORCE_L2:          matcherPtr.reset(new Matcher_Regions_AllInMemory(distRatio, matching::BRUTE_FORCE_L2)); break;
-    case matching::ANN_L2:                  matcherPtr.reset(new Matcher_Regions_AllInMemory(distRatio, matching::ANN_L2)); break;
-    case matching::CASCADE_HASHING_L2:      matcherPtr.reset(new Matcher_Regions_AllInMemory(distRatio, matching::CASCADE_HASHING_L2)); break;
-    case matching::FAST_CASCADE_HASHING_L2: matcherPtr.reset(new Cascade_Hashing_Matcher_Regions_AllInMemory(distRatio)); break;
-    case matching::BRUTE_FORCE_HAMMING:     matcherPtr.reset(new Matcher_Regions_AllInMemory(distRatio, matching::BRUTE_FORCE_HAMMING)); break;
+    case matching::BRUTE_FORCE_L2:          matcherPtr.reset(new ImageCollectionMatcher_Generic(distRatio, matching::BRUTE_FORCE_L2)); break;
+    case matching::ANN_L2:                  matcherPtr.reset(new ImageCollectionMatcher_Generic(distRatio, matching::ANN_L2)); break;
+    case matching::CASCADE_HASHING_L2:      matcherPtr.reset(new ImageCollectionMatcher_Generic(distRatio, matching::CASCADE_HASHING_L2)); break;
+    case matching::FAST_CASCADE_HASHING_L2: matcherPtr.reset(new ImageCollectionMatcher_CascadeHashing(distRatio)); break;
+    case matching::BRUTE_FORCE_HAMMING:     matcherPtr.reset(new ImageCollectionMatcher_Generic(distRatio, matching::BRUTE_FORCE_HAMMING)); break;
     
-    default: throw std::out_of_range("Invalid imageDescriber enum");
+    default: throw std::out_of_range("Invalid matcherType enum");
   }
   assert(matcherPtr != nullptr);
   

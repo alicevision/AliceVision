@@ -62,7 +62,7 @@ public:
    * @brief Get the corresponding EImageDescriberType
    * @return EImageDescriberType
    */
-  virtual EImageDescriberType getDescriberType()
+  EImageDescriberType getDescriberType() const override
   {
     return EImageDescriberType::SIFT_OCV;
   }
@@ -72,7 +72,7 @@ public:
    * @param preset The preset configuration
    * @return True if configuration succeed.
    */
-  bool Set_configuration_preset(EDESCRIBER_PRESET preset)
+  bool Set_configuration_preset(EDESCRIBER_PRESET preset) override
   {
     return _params.Set_configuration_preset(preset);
   }

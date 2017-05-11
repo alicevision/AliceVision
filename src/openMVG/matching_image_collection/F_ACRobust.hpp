@@ -26,48 +26,91 @@ namespace openMVG {
 namespace matching_image_collection {
 
 //-- A contrario fundamental matrix estimation template functor used for filter pair of putative correspondences
-struct GeometricFilter_FMatrix_AC
+struct GeometricFilter_FMatrix
 {
-  GeometricFilter_FMatrix_AC(
+  GeometricFilter_FMatrix(
     double dPrecision = std::numeric_limits<double>::infinity(),
-    size_t iteration = 1024)
-    : m_dPrecision(dPrecision), m_stIteration(iteration), m_F(Mat3::Identity()),
-      m_dPrecision_robust(std::numeric_limits<double>::infinity()){};
+    size_t iteration = 1024,
+    robust::EROBUST_ESTIMATOR estimator = robust::ROBUST_ESTIMATOR_ACRANSAC)
+    : m_dPrecision(dPrecision)
+    , m_stIteration(iteration)
+    , m_F(Mat3::Identity())
+    , m_dPrecision_robust(std::numeric_limits<double>::infinity())
+    , m_estimator(estimator)
+  {}
 
   /**
    * @brief Given two sets of image points, it estimates the fundamental matrix
    * relating them using a robust method (like A Contrario Ransac).
    */
-  template<typename Regions_or_Features_ProviderT>
+  template<class Regions_or_Features_ProviderT>
   bool Robust_estimation(
     const sfm::SfM_Data * sfmData,
     const Regions_or_Features_ProviderT & regionsPerView,
     const Pair pairIndex,
     const matching::MatchesPerDescType & putativeMatchesPerType,
-    matching::MatchesPerDescType & geometricInliersPerType)
+    matching::MatchesPerDescType & out_geometricInliersPerType)
   {
     using namespace openMVG;
     using namespace openMVG::robust;
-    geometricInliersPerType.clear();
+    out_geometricInliersPerType.clear();
 
     // Get back corresponding view index
     const IndexT iIndex = pairIndex.first;
     const IndexT jIndex = pairIndex.second;
 
-    const std::vector<features::EImageDescriberType> descTypes = regionsPerView.getCommonDescTypes(pairIndex);
+    const sfm::View * view_I = sfmData->views.at(iIndex).get();
+    const sfm::View * view_J = sfmData->views.at(jIndex).get();
+
+    const cameras::IntrinsicBase * cam_I = sfmData->GetIntrinsicPtr(view_I->id_intrinsic);
+    const cameras::IntrinsicBase * cam_J = sfmData->GetIntrinsicPtr(view_J->id_intrinsic);
+
+    const std::pair<size_t,size_t> imageSizeI(sfmData->GetViews().at(iIndex)->ui_width, sfmData->GetViews().at(iIndex)->ui_height);
+    const std::pair<size_t,size_t> imageSizeJ(sfmData->GetViews().at(jIndex)->ui_width, sfmData->GetViews().at(jIndex)->ui_height);
+
+    return Robust_estimation(
+        regionsPerView.getDataPerDesc(pairIndex.first), regionsPerView.getDataPerDesc(pairIndex.second),
+        cam_I, cam_J,
+        imageSizeI, imageSizeJ,
+        putativeMatchesPerType,
+        out_geometricInliersPerType);
+  }
+
+  /**
+   * @brief Given two sets of image points, it estimates the fundamental matrix
+   * relating them using a robust method (like A Contrario Ransac).
+   */
+  template<class MapFeatOrRegionsPerDesc>
+  bool Robust_estimation(
+      const MapFeatOrRegionsPerDesc& region_I,
+      const MapFeatOrRegionsPerDesc& region_J,
+      const cameras::IntrinsicBase * cam_I,
+      const cameras::IntrinsicBase * cam_J,
+      const std::pair<size_t,size_t> & imageSizeI,     // size of the first image
+      const std::pair<size_t,size_t> & imageSizeJ,     // size of the first image
+      const matching::MatchesPerDescType & putativeMatchesPerType,
+      matching::MatchesPerDescType & out_geometricInliersPerType)
+  {
+    using namespace openMVG;
+    using namespace openMVG::robust;
+    out_geometricInliersPerType.clear();
+
+    const std::vector<features::EImageDescriberType> descTypes = getCommonDescTypes(region_I, region_J);
 
     if(descTypes.empty())
       return false;
 
     // Retrieve all 2D features as undistorted positions into flat arrays
     Mat xI, xJ;
-    MatchesPairToMat(pairIndex, putativeMatchesPerType, sfmData, regionsPerView, descTypes, xI, xJ);
+    MatchesPairToMat(putativeMatchesPerType, cam_I, cam_J,
+                     region_I, region_J,
+                     descTypes, xI, xJ);
     std::vector<size_t> inliers;
 
     bool valid = Robust_estimation(
         xI, xJ,
-        std::make_pair(sfmData->GetViews().at(iIndex)->ui_width, sfmData->GetViews().at(iIndex)->ui_height),
-        std::make_pair(sfmData->GetViews().at(jIndex)->ui_width, sfmData->GetViews().at(jIndex)->ui_height),
+        imageSizeI,
+        imageSizeJ,
         inliers);
 
     if (!valid)
@@ -78,7 +121,7 @@ struct GeometricFilter_FMatrix_AC
           inliers,
           putativeMatchesPerType,
           descTypes,
-          geometricInliersPerType);
+          out_geometricInliersPerType);
 
     return true;
   }
@@ -101,14 +144,13 @@ struct GeometricFilter_FMatrix_AC
     const Mat& xJ,       // points of the second image
     const std::pair<size_t,size_t> & imageSizeI,     // size of the first image  
     const std::pair<size_t,size_t> & imageSizeJ,     // size of the first image
-    std::vector<size_t> &vec_inliers,
-    robust::EROBUST_ESTIMATOR estimator = robust::ROBUST_ESTIMATOR_ACRANSAC)
+    std::vector<size_t> &vec_inliers)
   {
     using namespace openMVG;
     using namespace openMVG::robust;
     vec_inliers.clear();
 
-    switch(estimator)
+    switch(m_estimator)
     {
       case ROBUST_ESTIMATOR_ACRANSAC:
       {
@@ -228,6 +270,7 @@ struct GeometricFilter_FMatrix_AC
   //-- Stored data
   Mat3 m_F;
   double m_dPrecision_robust;
+  robust::EROBUST_ESTIMATOR m_estimator;
 };
 
 } // namespace openMVG

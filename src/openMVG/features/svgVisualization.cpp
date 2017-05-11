@@ -50,11 +50,11 @@ float getStrokeEstimate(const std::pair<size_t,size_t> & imgSize)
 
 void saveMatches2SVG(const std::string &imagePathLeft,
                      const std::pair<size_t,size_t> & imageSizeLeft,
-                     const std::vector<features::PointFeature> &keypointsLeft,
+                     const features::MapRegionsPerDesc &keypointsLeft,
                      const std::string &imagePathRight,
                      const std::pair<size_t,size_t> & imageSizeRight,
-                     const std::vector<features::PointFeature> &keypointsRight,
-                     const matching::IndMatches &matches,
+                     const features::MapRegionsPerDesc &keypointsRight,
+                     const matching::MatchesPerDescType & matches,
                      const std::string &outputSVGPath)
 {
   svg::svgDrawer svgStream( imageSizeLeft.first + imageSizeRight.first, std::max(imageSizeLeft.second, imageSizeRight.second));
@@ -69,16 +69,21 @@ void saveMatches2SVG(const std::string &imagePathLeft,
   const float radiusRight = getRadiusEstimate(imageSizeRight);
   const float strokeLeft = getStrokeEstimate(imageSizeLeft);
   const float strokeRight = getStrokeEstimate(imageSizeRight);
- 
-  
-  for(const matching::IndMatch &m : matches) 
+
+  for(const auto& descMatches : matches)
   {
-    //Get back linked feature, draw a circle and link them by a line
-    const features::PointFeature & L = keypointsLeft[m._i];
-    const features::PointFeature & R = keypointsRight[m._j];
-    svgStream.drawLine(L.x(), L.y(), R.x()+imageSizeLeft.first, R.y(), svg::svgStyle().stroke("green", std::min(strokeRight,strokeLeft)));
-    svgStream.drawCircle(L.x(), L.y(), radiusLeft, svg::svgStyle().stroke("yellow", strokeLeft));
-    svgStream.drawCircle(R.x()+imageSizeLeft.first, R.y(), radiusRight, svg::svgStyle().stroke("yellow", strokeRight));
+    features::EImageDescriberType descType = descMatches.first;
+    for(const matching::IndMatch &m : descMatches.second)
+    {
+      //Get back linked feature, draw a circle and link them by a line
+      const features::PointFeature & L = keypointsLeft.at(descType)->GetRegionsPositions()[m._i];
+      const features::PointFeature & R = keypointsRight.at(descType)->GetRegionsPositions()[m._j];
+
+      const std::string descColor = describerTypeColor(descType);
+      svgStream.drawLine(L.x(), L.y(), R.x()+imageSizeLeft.first, R.y(), svg::svgStyle().stroke("green", std::min(strokeRight,strokeLeft)));
+      svgStream.drawCircle(L.x(), L.y(), radiusLeft, svg::svgStyle().stroke(descColor, strokeLeft));
+      svgStream.drawCircle(R.x()+imageSizeLeft.first, R.y(), radiusRight, svg::svgStyle().stroke(descColor, strokeRight));
+    }
   }
  
   std::ofstream svgFile( outputSVGPath.c_str() );

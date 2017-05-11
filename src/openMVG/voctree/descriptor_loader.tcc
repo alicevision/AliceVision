@@ -1,5 +1,4 @@
 #include <openMVG/features/descriptor.hpp>
-#include <openMVG/sfm/sfm_data_io.hpp>
 #include <openMVG/logger.hpp>
 
 #include <boost/filesystem.hpp>

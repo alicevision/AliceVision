@@ -45,7 +45,7 @@ class ArrayMatcherBruteForce  : public ArrayMatcher<Scalar, Metric>
     }
     memMapping.reset(new Eigen::Map<BaseMat>( (Scalar*)dataset, nbRows, dimension) );
     return true;
-  };
+  }
 
   /**
    * Search the nearest Neighbor of the scalar array query.
@@ -66,7 +66,7 @@ class ArrayMatcherBruteForce  : public ArrayMatcher<Scalar, Metric>
       //matrix representation of the input data;
       Eigen::Map<BaseMat> mat_query((Scalar*)query, 1, (*memMapping).cols() );
       Metric metric;
-      vector<DistanceType> vec_dist((*memMapping).rows(), 0.0);
+      std::vector<DistanceType> vec_dist((*memMapping).rows(), 0.0);
     for (int i = 0; i < (*memMapping).rows(); ++i)
     {
         // Compute Distance Metric
@@ -75,10 +75,10 @@ class ArrayMatcherBruteForce  : public ArrayMatcher<Scalar, Metric>
       if (!vec_dist.empty())
       {
         // Find the minimum distance :
-        typename vector<DistanceType>::const_iterator min_iter =
+        typename std::vector<DistanceType>::const_iterator min_iter =
           min_element( vec_dist.begin(), vec_dist.end());
         *indice =std::distance(
-          typename vector<DistanceType>::const_iterator(vec_dist.begin()),
+          typename std::vector<DistanceType>::const_iterator(vec_dist.begin()),
           min_iter);
         *distance = static_cast<DistanceType>(*min_iter);
       }
@@ -137,7 +137,7 @@ class ArrayMatcherBruteForce  : public ArrayMatcher<Scalar, Metric>
       // Find the N minimum distances:
       const int maxMinFound = (int) std::min( size_t(NN), vec_distance.size());
       using namespace stl::indexed_sort;
-      vector< sort_index_packet_ascend< DistanceType, int> > packet_vec(vec_distance.size());
+      std::vector< sort_index_packet_ascend< DistanceType, int> > packet_vec(vec_distance.size());
       sort_index_helper(packet_vec, &vec_distance[0], maxMinFound);
 
       for (int i = 0; i < maxMinFound; ++i)

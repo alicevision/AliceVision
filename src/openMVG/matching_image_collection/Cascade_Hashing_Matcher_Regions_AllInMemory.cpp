@@ -19,11 +19,11 @@ namespace matching_image_collection {
 using namespace openMVG::matching;
 using namespace openMVG::features;
 
-Cascade_Hashing_Matcher_Regions_AllInMemory
-::Cascade_Hashing_Matcher_Regions_AllInMemory
+ImageCollectionMatcher_CascadeHashing
+::ImageCollectionMatcher_CascadeHashing
 (
   float distRatio
-):Matcher(), f_dist_ratio_(distRatio)
+):IImageCollectionMatcher(), f_dist_ratio_(distRatio)
 {
 }
 
@@ -218,7 +218,7 @@ void Match
 }
 } // namespace impl
 
-void Cascade_Hashing_Matcher_Regions_AllInMemory::Match
+void ImageCollectionMatcher_CascadeHashing::Match
 (
   const sfm::SfM_Data & sfm_data,
   const features::RegionsPerView& regionsPerView,

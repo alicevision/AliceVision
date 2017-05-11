@@ -32,11 +32,11 @@ localization::LocalizationResult generateRandomResult(std::size_t numPts)
   const sfm::Image_Localizer_Match_Data &data = generateRandomMatch_Data(numPts);
   
   // random indMatch3D2D
-  std::vector<std::pair<IndexT, IndexT> > indMatch3D2D;
+  std::vector<localization::IndMatch3D2D> indMatch3D2D;
   indMatch3D2D.reserve(numPts);
   for(std::size_t i = 0; i < numPts; ++i)
   {
-    indMatch3D2D.emplace_back(i,i);
+    indMatch3D2D.emplace_back(i, features::EImageDescriberType::UNKNOWN, i);
   }
   
   // random pose
@@ -94,8 +94,8 @@ TEST(LocalizationResult, LoadSaveBinSingle)
   const std::size_t numpts = idxGT.size();
   for(std::size_t i = 0; i < numpts; ++i)
   {
-    EXPECT_TRUE(idxGT[i].first == idx[i].first);
-    EXPECT_TRUE(idxGT[i].second == idx[i].second);
+    EXPECT_TRUE(idxGT[i].landmarkId == idx[i].landmarkId);
+    EXPECT_TRUE(idxGT[i].featId == idx[i].featId);
   }
 
   // same _matchData
@@ -180,8 +180,8 @@ TEST(LocalizationResult, LoadSaveBinVector)
     const std::size_t numpts = idxGT.size();
     for(std::size_t j = 0; j < numpts; ++j)
     {
-      EXPECT_TRUE(idxGT[j].first == idx[j].first);
-      EXPECT_TRUE(idxGT[j].second == idx[j].second);
+      EXPECT_TRUE(idxGT[j].landmarkId == idx[j].landmarkId);
+      EXPECT_TRUE(idxGT[j].featId == idx[j].featId);
     }
 
     // same _matchData

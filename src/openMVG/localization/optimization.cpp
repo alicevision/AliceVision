@@ -127,53 +127,54 @@ bool refineSequence(std::vector<LocalizationResult> & vec_localizationResult,
     }
     
     // structure data (2D-3D correspondences)
-    const std::vector<std::pair<IndexT, IndexT> > &currentIDs = currResult.getIndMatch3D2D();
+    const std::vector<IndMatch3D2D> &matches = currResult.getIndMatch3D2D();
     
     for(const size_t idx : currResult.getInliers() )
     {
       // the idx should be in the size range of the data
       assert(idx < currResult.getPt3D().cols());
-      // get the corresponding 3D point (landmark) ID
-      const IndexT landmarkID = currentIDs[idx].first;
-      // get the corresponding 2D point ID
-      const IndexT featID = currentIDs[idx].second;
+      const IndMatch3D2D& match = matches[idx];
 //      OPENMVG_LOG_DEBUG("inlier " << idx << " is land " << landmarkID << " and feat " << featID);
       // get the corresponding feature
       const Vec2 &feature = currResult.getPt2D().col(idx);
       // check if the point exists already
-      if(tinyScene.structure.count(landmarkID))
+      if(tinyScene.structure.count(match.landmarkId))
       {
+        sfm::Landmark& landmark = tinyScene.structure.at(match.landmarkId);
+        assert(landmark.descType == match.descType);
         // normally there should be no other features already associated to this
         // 3D point in this view
-        if(tinyScene.structure[landmarkID].observations.count(viewID) != 0)
+        if(landmark.observations.count(viewID) != 0)
         {
           // this is weird but it could happen when two features are really close to each other (?)
-          OPENMVG_LOG_DEBUG("Point 3D " << landmarkID << " has multiple features " 
+          OPENMVG_LOG_DEBUG("Point 3D " << match.landmarkId << " has multiple features "
                   << "in the same view " << viewID << ", current size of obs: " 
-                  << tinyScene.structure[landmarkID].observations.size() );
+                  << landmark.observations.size() );
           OPENMVG_LOG_DEBUG("its associated features are: ");
-          for(std::size_t i = 0; i <  currentIDs.size(); ++i)
+          for(std::size_t i = 0; i <  matches.size(); ++i)
           {
-            auto const &p = currentIDs[i];
-            if(p.first == landmarkID)
+            auto const &p = matches[i];
+            if(p.landmarkId == match.landmarkId)
             {
+              assert(p.descType == match.descType);
               const Vec2 &fff = currResult.getPt2D().col(i);
-              OPENMVG_LOG_DEBUG("\tfeatID " << p.second << " " << fff.transpose());
+              OPENMVG_LOG_DEBUG("\tfeatID " << features::EImageDescriberType_enumToString(p.descType) << " " << p.featId << " " << fff.transpose());
             }
           }
           continue;
         }
-        
+
         // the 3D point exists already, add the observation
-        tinyScene.structure[landmarkID].observations[viewID] =  sfm::Observation(feature, featID);
+        landmark.observations[viewID] =  sfm::Observation(feature, match.featId);
       }
       else
       {
         // create a new 3D point
-        sfm::Landmark landmark;
-        landmark.X = currResult.getPt3D().col(idx);
-        landmark.observations[viewID] = sfm::Observation(feature, featID);
-        tinyScene.structure[landmarkID] = std::move(landmark);
+        sfm::Landmark newLandmark;
+        newLandmark.descType = match.descType;
+        newLandmark.X = currResult.getPt3D().col(idx);
+        newLandmark.observations[viewID] = sfm::Observation(feature, match.featId);
+        tinyScene.structure[match.landmarkId] = std::move(newLandmark);
       }
     }
   }

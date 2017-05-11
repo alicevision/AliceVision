@@ -21,13 +21,15 @@ namespace matching_image_collection {
 using namespace openMVG::matching;
 using namespace openMVG::features;
 
-Matcher_Regions_AllInMemory::Matcher_Regions_AllInMemory(
-  float distRatio, EMatcherType eMatcherType)
-  :Matcher(), _f_dist_ratio(distRatio), _eMatcherType(eMatcherType)
+ImageCollectionMatcher_Generic::ImageCollectionMatcher_Generic(
+  float distRatio, EMatcherType matcherType)
+  : IImageCollectionMatcher()
+  , _f_dist_ratio(distRatio)
+  , _matcherType(matcherType)
 {
 }
 
-void Matcher_Regions_AllInMemory::Match(
+void ImageCollectionMatcher_Generic::Match(
   const sfm::SfM_Data & sfm_data,
   const features::RegionsPerView& regionsPerView,
   const Pair_Set & pairs,
@@ -37,7 +39,7 @@ void Matcher_Regions_AllInMemory::Match(
 #ifdef OPENMVG_USE_OPENMP
   OPENMVG_LOG_DEBUG("Using the OPENMP thread interface");
 #endif
-  const bool b_multithreaded_pair_search = (_eMatcherType == CASCADE_HASHING_L2);
+  const bool b_multithreaded_pair_search = (_matcherType == CASCADE_HASHING_L2);
   // -> set to true for CASCADE_HASHING_L2, since OpenMP instructions are not used in this matcher
 
   C_Progress_display my_progress_bar( pairs.size() );
@@ -65,7 +67,7 @@ void Matcher_Regions_AllInMemory::Match(
     }
 
     // Initialize the matching interface
-    matching::Matcher_Regions_Database matcher(_eMatcherType, regionsI);
+    matching::RegionsDatabaseMatcher matcher(_matcherType, regionsI);
 
 #ifdef OPENMVG_USE_OPENMP
     #pragma omp parallel for schedule(dynamic) if(b_multithreaded_pair_search)

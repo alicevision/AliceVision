@@ -40,12 +40,12 @@ public:
     vl_destructor();
   }
 
-  virtual EImageDescriberType getDescriberType()
+  virtual EImageDescriberType getDescriberType() const override
   {
     return EImageDescriberType::SIFT_FLOAT;
   }
   
-  bool Set_configuration_preset(EDESCRIBER_PRESET preset)
+  bool Set_configuration_preset(EDESCRIBER_PRESET preset) override
   {
     return _params.setPreset(preset);
   }
@@ -69,12 +69,6 @@ public:
     return extractSIFT<float>(image, regions, _params, _bOrientation, mask);
   }
 
-  /*/// Allocate Regions type depending of the Image_describer
-  void Allocate(std::unique_ptr<Regions> &regions) const
-  {
-      regions.reset( new SIFT_Float_Regions );
-  }*/
-
   template<class Archive>
   void serialize( Archive & ar )
   {
@@ -83,7 +77,7 @@ public:
      cereal::make_nvp("bOrientation", _bOrientation));
   }
   
-  void Allocate(std::unique_ptr<Regions>& regions) const
+  void Allocate(std::unique_ptr<Regions>& regions) const override
   {
     regions.reset(new SIFT_Float_Regions);
   }
