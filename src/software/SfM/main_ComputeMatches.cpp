@@ -88,6 +88,7 @@ int main(int argc, char **argv)
 
   std::string sSfM_Data_Filename;
   std::string sMatchesDirectory = "";
+  std::string sFeaturesDir = "";
   std::string sGeometricModel = "f";
   float fDistRatio = 0.8f;
   int iMatchingVideoMode = -1;
@@ -108,6 +109,7 @@ int main(int argc, char **argv)
   cmd.add( make_option('i', sSfM_Data_Filename, "input_file") );
   cmd.add( make_option('o', sMatchesDirectory, "out_dir") );
   // Options
+  cmd.add( make_option('F', sFeaturesDir, "featuresDir"));
   cmd.add( make_option('r', fDistRatio, "ratio") );
   cmd.add( make_option('g', sGeometricModel, "geometric_model") );
   cmd.add( make_option('v', iMatchingVideoMode, "video_mode_matching") );
@@ -116,7 +118,7 @@ int main(int argc, char **argv)
   cmd.add( make_option('d', rangeSize, "range_size") );
   cmd.add( make_option('n', sNearestMatchingMethod, "nearest_matching_method") );
   cmd.add( make_option('f', bForce, "force") );
-  cmd.add( make_option('f', bSavePutativeMatches, "save_putative_matches") );
+  cmd.add( make_option('p', bSavePutativeMatches, "save_putative_matches") );
   cmd.add( make_option('m', bGuided_matching, "guided_matching") );
   cmd.add( make_option('I', imax_iteration, "max_iteration") );
   cmd.add( make_option('x', matchFilePerImage, "match_file_per_image") );
@@ -133,9 +135,9 @@ int main(int argc, char **argv)
   {
     std::cerr << "Usage: " << argv[0] << '\n'
       << "[-i|--input_file] a SfM_Data file\n"
-      << "[-o|--out_dir path]\n"
-      << "   path of the directory containing the extracted features and in which computed matches will be stored\n"
+      << "[-o|--out_dir path] path to directory in which computed matches will be stored \n"
       << "\n[Optional]\n"
+      << "[-F|--featuresDir] Path to directory containing the extracted features (default: $out_dir)\n"
       << "[-f|--force] Force to recompute data\n"
       << "[-p|--save_putative_matches] Save putative matches\n"
       << "[-r|--ratio] Distance ratio to discard non meaningful matches\n"
@@ -190,6 +192,7 @@ int main(int argc, char **argv)
             << "--input_file " << sSfM_Data_Filename << "\n"
             << "--out_dir " << sMatchesDirectory << "\n"
             << "Optional parameters:" << "\n"
+            << "--featuresDir " << sFeaturesDir
             << "--force " << bForce << "\n"
             << "--save_putative_matches " << bSavePutativeMatches << "\n"
             << "--ratio " << fDistRatio << "\n"
@@ -204,7 +207,7 @@ int main(int argc, char **argv)
             << "--max_matches " << uNumMatchesToKeep  << "\n"
             << "--use_grid_sort " << bUseGridSort << "\n"
             << "--max_iteration " << imax_iteration << "\n"
-            << "--export_debug_files " << bExportDebugFiles
+            << "--export_debug_files " << bExportDebugFiles << "\n"
             << std::endl;
 
   EPairMode ePairmode = (iMatchingVideoMode == -1 ) ? PAIR_EXHAUSTIVE : PAIR_CONTIGUOUS;
@@ -220,6 +223,10 @@ int main(int argc, char **argv)
   if(sMatchesDirectory.empty() || !stlplus::is_folder(sMatchesDirectory))  {
     std::cerr << "\nIt is an invalid output directory" << std::endl;
     return EXIT_FAILURE;
+  }
+
+  if(sFeaturesDir.empty()) {
+    sFeaturesDir = sMatchesDirectory;
   }
 
   EGeometricModel eGeometricModelToCompute = FUNDAMENTAL_MATRIX;
@@ -267,7 +274,7 @@ int main(int argc, char **argv)
   //---------------------------------------
   // Init the regions_type from the image describer file (used for image regions extraction)
   using namespace openMVG::features;
-  const std::string sImage_describer = stlplus::create_filespec(sMatchesDirectory, "image_describer", "json");
+  const std::string sImage_describer = stlplus::create_filespec(sFeaturesDir, "image_describer", "json");
   std::unique_ptr<Regions> regions_type = Init_region_type_from_file(sImage_describer);
   if(!regions_type)
   {
@@ -314,7 +321,7 @@ int main(int argc, char **argv)
   
   // Load the corresponding view regions
   std::shared_ptr<Regions_Provider> regions_provider = std::make_shared<Regions_Provider>();  
-  if(!regions_provider->load(sfm_data, sMatchesDirectory, regions_type, filter)) {
+  if(!regions_provider->load(sfm_data, sFeaturesDir, regions_type, filter)) {
     std::cerr << std::endl << "Invalid regions." << std::endl;
     return EXIT_FAILURE;
   }
