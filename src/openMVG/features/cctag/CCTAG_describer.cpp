@@ -60,9 +60,9 @@ bool CCTAG_Image_describer::Set_configuration_preset(EDESCRIBER_PRESET preset)
   return _params.setPreset(preset);
 }
 
-void CCTAG_Image_describer::Set_use_cuda(bool use_cuda)
+void CCTAG_Image_describer::setUseCuda(bool useCuda)
 {
-  _params._internalParams->_useCuda = use_cuda;
+  _params._internalParams->_useCuda = useCuda;
 }
 
 bool CCTAG_Image_describer::Describe(const image::Image<unsigned char>& image,

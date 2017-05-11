@@ -25,7 +25,7 @@ public:
 
   bool Set_configuration_preset(EDESCRIBER_PRESET preset);
 
-  void Set_use_cuda(bool);
+  void setUseCuda(bool) override;
 
   void setCudaPipe(int pipe) override { _cudaPipe = pipe; }
 

@@ -33,9 +33,9 @@ public:
 
   bool Set_configuration_preset(EDESCRIBER_PRESET preset);
 
-  void Set_cctag_use_cuda(bool use_cuda)
+  void setUseCuda(bool useCuda) override
   {
-    _cctagDescriber.Set_use_cuda(use_cuda);
+    _cctagDescriber.setUseCuda(useCuda);
   }
 
   /**
