@@ -77,6 +77,8 @@ public:
   */
   virtual bool Set_configuration_preset(EDESCRIBER_PRESET preset) = 0;
 
+  virtual void setCudaPipe(int pipe) {}
+
   bool Set_configuration_preset(const std::string& preset)
   {
     return Set_configuration_preset(describerPreset_stringToEnum(preset));

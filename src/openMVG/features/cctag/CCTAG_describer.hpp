@@ -27,7 +27,7 @@ public:
 
   void Set_use_cuda(bool);
 
-  void setCudaPipe(int pipe) { _cudaPipe = pipe; }
+  void setCudaPipe(int pipe) override { _cudaPipe = pipe; }
 
   /**
   @brief Detect regions on the image and compute their attributes (description)
