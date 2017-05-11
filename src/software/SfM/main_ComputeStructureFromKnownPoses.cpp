@@ -90,7 +90,7 @@ int main(int argc, char **argv)
 
   // Prepare the Regions provider
   RegionsPerView regionsPerView;
-  if(!sfm::loadRegionsPerView(regionsPerView, sfm_data, sMatchesDir, describerMethodTypes))
+  if(!sfm::loadRegionsPerView(regionsPerView, sfm_data, sFeaturesDir, describerMethodTypes))
   {
     std::cerr << std::endl
       << "Invalid regions." << std::endl;
