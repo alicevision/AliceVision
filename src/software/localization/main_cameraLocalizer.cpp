@@ -38,21 +38,6 @@ namespace bacc = boost::accumulators;
 namespace po = boost::program_options;
 
 using namespace openMVG;
-/*
-std::ostream& operator<<(std::ostream& os, const DescriberType describerType)
-{
-  os << describerTypeToString(describerType);
-  return os;
-}
-
-std::istream& operator>>(std::istream &in, DescriberType &describerType)
-{
-  std::string token;
-  in >> token;
-  describerType = stringToDescriberType(token);
-  return in;
-}
-*/
 
 std::string myToString(std::size_t i, std::size_t zeroPadding)
 {
@@ -131,6 +116,8 @@ int main(int argc, char** argv)
   double resectionErrorMax = 4.0;  
   /// the maximum reprojection error allowed for image matching with geometric validation
   double matchingErrorMax = 4.0;   
+  /// whether to use the voctreeLocalizer or cctagLocalizer
+  bool useVoctreeLocalizer = true;
   
   // voctree parameters
   std::string algostring = "AllResults";
@@ -149,13 +136,11 @@ int main(int argc, char** argv)
   /// and databases images
   bool robustMatching = true;
   
-#ifdef HAVE_ALEMBIC
-  /// the export file
-  std::string exportFile = "trackedcameras.abc";
-#else
-  /// the export file
-  std::string exportFile = "localizationResult.json";
-#endif
+  /// the Alembic export file
+  std::string exportAlembicFile = "trackedcameras.abc";
+  /// the Binary export file
+  std::string exportBinaryFile = "";
+
 #ifdef HAVE_CCTAG
   // parameters for cctag localizer
   std::size_t nNearestKeyFrames = 5;   
@@ -173,9 +158,6 @@ int main(int argc, char** argv)
   
   /// whether to save visual debug info
   std::string visualDebug = "";
-  /// whether to use the voctreeLocalizer or cctagLocalizer
-  bool useVoctreeLocalizer = true;
-
 
   po::options_description allParams(
       "This program takes as input a media (image, image sequence, video) and a database (vocabulary tree, 3D scene data) \n"
@@ -268,16 +250,15 @@ int main(int argc, char** argv)
       ("visualDebug", po::value<std::string>(&visualDebug), 
           "If a directory is provided it enables visual debug and saves all the "
           "debugging info in that directory")
+
 #ifdef HAVE_ALEMBIC
-      ("output", po::value<std::string>(&exportFile)->default_value(exportFile), 
+      ("outputAlembic", po::value<std::string>(&exportAlembicFile)->default_value(exportAlembicFile),
           "Filename for the SfM_Data export file (where camera poses will be stored). "
-          "Default : trackedcameras.abc. It will also save the localization "
-          "results (raw data) as .json with the same name")
-#else
-      ("output", po::value<std::string>(&exportFile)->default_value(exportFile), 
-          "Filename for the SfM_Data export file containing the localization "
-          "results. Default : localizationResult.json.")
+          "Default : trackedcameras.abc.")
 #endif
+      ("outputBinary", po::value<std::string>(&exportBinaryFile)->default_value(exportBinaryFile),
+          "Filename for the localization results (raw data) as .bin")
+
       ;
   
   allParams.add(inputParams).add(outputParams).add(commonParams).add(voctreeParams).add(bundleParams);
@@ -362,6 +343,10 @@ int main(int argc, char** argv)
     OPENMVG_COUT("\tglobalBundle: " << globalBundle);
     OPENMVG_COUT("\tnoDistortion: " << noDistortion);
     OPENMVG_COUT("\tnoBArefineIntrinsics: " << noBArefineIntrinsics);
+#ifdef HAVE_ALEMBIC
+    OPENMVG_COUT("\toutputAlembic: " << exportAlembicFile);
+#endif
+    OPENMVG_COUT("\toutputBinary: " << exportBinaryFile);
     OPENMVG_COUT("\tvisualDebug: " << visualDebug);
   }
 
@@ -373,8 +358,16 @@ int main(int argc, char** argv)
   }
  
   // this contains the full path and the root name of the file without the extension
-  const std::string basename = (bfs::path(exportFile).parent_path() / bfs::path(exportFile).stem()).string();
-  
+  const bool wantsBinaryOutput = exportBinaryFile.empty();
+#ifdef HAVE_ALEMBIC
+  std::string basenameAlembic = (bfs::path(exportBinaryFile).parent_path() / bfs::path(exportBinaryFile).stem()).string();
+#endif
+  std::string basenameBinary;
+  if(wantsBinaryOutput)
+  {
+    basenameBinary = (bfs::path(exportBinaryFile).parent_path() / bfs::path(exportBinaryFile).stem()).string();
+  }
+
   
   //***********************************************************************
   // Localizer initialization
@@ -446,8 +439,7 @@ int main(int argc, char** argv)
   
 #ifdef HAVE_ALEMBIC
   // init alembic exporter
-  sfm::AlembicExporter exporter( exportFile );
-  exporter.addPoints(localizer->getSfMData().GetLandmarks());
+  sfm::AlembicExporter exporter( exportAlembicFile );
   exporter.initAnimatedCamera("camera");
 #endif
   
@@ -510,9 +502,12 @@ int main(int argc, char** argv)
     ++frameCounter;
     feed.goToNextFrame();
   }
-  localization::save(vec_localizationResults, basename+".localizationData.bin");
-  
-  
+
+  if(wantsBinaryOutput)
+  {
+    localization::save(vec_localizationResults, basenameBinary + ".bin");
+  }
+
   //***********************************************************************
   // Global bundle
   //***********************************************************************
@@ -532,7 +527,7 @@ int main(int argc, char** argv)
                                                        noDistortion, 
                                                        b_refinePose,
                                                        b_refineStructure,
-                                                       basename+".sfmdata.BUNDLE",
+                                                       basenameBinary + ".sfmdata.BUNDLE",
                                                        minPointVisibility);
     if(!BAresult)
     {
@@ -542,7 +537,7 @@ int main(int argc, char** argv)
     {
 #ifdef HAVE_ALEMBIC
       // now copy back in a new abc with the same name file and BUNDLE appended at the end
-      sfm::AlembicExporter exporterBA( basename+".BUNDLE.abc" );
+      sfm::AlembicExporter exporterBA( basenameAlembic +".BUNDLE.abc" );
       exporterBA.initAnimatedCamera("camera");
       std::size_t idx = 0;
       for(const localization::LocalizationResult &res : vec_localizationResults)
@@ -558,9 +553,13 @@ int main(int argc, char** argv)
         }
         idx++;
       }
-      exporterBA.addPoints(localizer->getSfMData().GetLandmarks());
+
 #endif
-      localization::save(vec_localizationResults, basename+".localizationData.BUNDLE.bin");
+      if(wantsBinaryOutput)
+      {
+        localization::save(vec_localizationResults, basenameBinary +".BUNDLE.bin");
+      }
+
     }
   }
   

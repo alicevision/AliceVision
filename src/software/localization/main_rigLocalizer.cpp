@@ -190,11 +190,9 @@ int main(int argc, char** argv)
   // parameters for cctag localizer
   std::size_t nNearestKeyFrames = 5;
 
-#ifdef HAVE_ALEMBIC
-  /// the export file
-  std::string exportFile = "trackedcameras.abc"; 
-#endif
-  
+  /// the Alembic export file
+  std::string exportAlembicFile = "trackedcameras.abc";
+
   std::size_t numCameras = 0;
   po::options_description allParams("This program is used to localize a camera rig composed of internally calibrated cameras");
   
@@ -276,9 +274,9 @@ int main(int argc, char** argv)
   outputParams.add_options()  
       ("help,h", "Print this message")
 #ifdef HAVE_ALEMBIC
-      ("output", po::value<std::string>(&exportFile)->default_value(exportFile),
-        "Filename for the SfM_Data export file (where camera poses will be stored)."
-        " Default : trackedcameras.abc.")
+      ("outputAlembic", po::value<std::string>(&exportAlembicFile)->default_value(exportAlembicFile),
+          "Filename for the SfM_Data export file (where camera poses will be stored). "
+          "Default : trackedcameras.abc.")
 #endif
           ;
 
@@ -368,7 +366,9 @@ int main(int argc, char** argv)
       OPENMVG_COUT("\tnNearestKeyFrames: " << nNearestKeyFrames);
     }
 #endif
-
+#ifdef HAVE_ALEMBIC
+    OPENMVG_COUT("\toutputAlembic: " << exportAlembicFile);
+#endif
   }
 
   std::unique_ptr<localization::LocalizerParameters> param;
@@ -427,14 +427,16 @@ int main(int argc, char** argv)
   }
 
 #ifdef HAVE_ALEMBIC
-  sfm::AlembicExporter exporter(exportFile);
+  sfm::AlembicExporter exporter(exportAlembicFile);
   exporter.initAnimatedCamera("rig");
   exporter.addPoints(localizer->getSfMData().GetLandmarks());
   
   boost::ptr_vector<sfm::AlembicExporter> cameraExporters;
   cameraExporters.reserve(numCameras);
+
   // this contains the full path and the root name of the file without the extension
-  const std::string basename = (bfs::path(exportFile).parent_path() / bfs::path(exportFile).stem()).string();
+  const std::string basename = (bfs::path(exportAlembicFile).parent_path() / bfs::path(exportAlembicFile).stem()).string();
+
   for(std::size_t i = 0; i < numCameras; ++i)
   {
     cameraExporters.push_back( new sfm::AlembicExporter(basename+".cam"+myToString(i, 2)+".abc"));
