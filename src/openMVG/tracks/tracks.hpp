@@ -39,6 +39,7 @@
 #include "openMVG/matching/indMatch.hpp"
 #include "openMVG/stl/flatMap.hpp"
 #include "openMVG/stl/flatSet.hpp"
+#include <openMVG/config.hpp>
 
 #include <algorithm>
 #include <iostream>
@@ -231,13 +232,11 @@ struct TracksBuilder
     // - track with id conflicts (many times the same image index)
 
     std::set<int> set_classToErase;
-#ifdef OPENMVG_USE_OPENMP
+
     #pragma omp parallel if(bMultithread)
-#endif
     for ( lemon::UnionFindEnum< IndexMap >::ClassIt cit(*_tracksUF); cit != INVALID; ++cit) {
-#ifdef OPENMVG_USE_OPENMP
-    #pragma omp single nowait
-#endif
+
+      #pragma omp single nowait
       {
         size_t cpt = 0;
         std::set<size_t> myset;
@@ -247,9 +246,7 @@ struct TracksBuilder
         }
         if (myset.size() != cpt || myset.size() < nLengthSupTo)
         {
-#ifdef OPENMVG_USE_OPENMP
           #pragma omp critical
-#endif
           set_classToErase.insert(cit.operator int());
         }
       }
@@ -472,9 +469,8 @@ struct TracksUtilsMap
       }
     }
     // sort tracks Ids in each view
-#ifdef OPENMVG_USE_OPENMP
+
     #pragma omp parallel for
-#endif
     for(int i = 0; i < map_tracksPerView.size(); ++i)
     {
       TracksPerView::iterator it = map_tracksPerView.begin();

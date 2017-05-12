@@ -33,6 +33,8 @@
 
 #include "openMVG/multiview/translation_averaging_common.hpp"
 #include "openMVG/multiview/translation_averaging_solver.hpp"
+#include <openMVG/config.hpp>
+#include <openMVG/openmvg_omp.hpp>
 
 #include "ceres/ceres.h"
 
@@ -124,10 +126,10 @@ bool solve_translations_problem_l2_chordal(
 
   // solve
   Solver::Options options;
-#ifdef OPENMVG_USE_OPENMP
+  // set number of threads, 1 if openMP is not enabled
   options.num_threads = omp_get_max_threads();
   options.num_linear_solver_threads = omp_get_max_threads();
-#endif // OPENMVG_USE_OPENMP
+
   //options.minimizer_progress_to_stdout = true;
   options.max_num_iterations = max_iterations;
   options.function_tolerance = function_tolerance;

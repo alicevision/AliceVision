@@ -5,8 +5,6 @@
  * Created on September 24, 2015, 3:57 PM
  */
 
-#ifdef HAVE_ALEMBIC
-
 #include "AlembicExporter.hpp"
 
 #include <Alembic/AbcGeom/All.h>
@@ -460,5 +458,3 @@ std::string AlembicExporter::getFilename()
 
 } //namespace sfm
 } //namespace openMVG
-
-#endif //HAVE_ALEMBIC

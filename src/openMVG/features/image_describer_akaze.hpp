@@ -7,17 +7,18 @@
 #ifndef OPENMVG_FEATURES_AKAZE_IMAGE_DESCRIBER_HPP
 #define OPENMVG_FEATURES_AKAZE_IMAGE_DESCRIBER_HPP
 
-#include <iostream>
-#include <numeric>
-
+#include "ImageDescriberCommon.hpp"
 #include "openMVG/features/image_describer.hpp"
 #include "openMVG/features/regions_factory.hpp"
 #include "openMVG/features/akaze/AKAZE.hpp"
 #include "openMVG/features/akaze/msurf_descriptor.hpp"
 #include "openMVG/features/akaze/mldb_descriptor.hpp"
 #include "openMVG/features/liop/liop_descriptor.hpp"
-#include "ImageDescriberCommon.hpp"
+#include <openMVG/config.hpp>
 #include <cereal/cereal.hpp>
+
+#include <iostream>
+#include <numeric>
 
 using namespace std;
 
@@ -130,10 +131,8 @@ public:
         AKAZE_Float_Regions * regionsCasted = dynamic_cast<AKAZE_Float_Regions*>(regions.get());
         regionsCasted->Features().resize(kpts.size());
         regionsCasted->Descriptors().resize(kpts.size());
-
-      #ifdef OPENMVG_USE_OPENMP
+        
         #pragma omp parallel for
-      #endif
         for (int i = 0; i < static_cast<int>(kpts.size()); ++i)
         {
           AKAZEKeypoint ptAkaze = kpts[i];
@@ -172,9 +171,7 @@ public:
         // Init LIOP extractor
         LIOP::Liop_Descriptor_Extractor liop_extractor;
 
-      #ifdef OPENMVG_USE_OPENMP
         #pragma omp parallel for
-      #endif
         for (int i = 0; i < static_cast<int>(kpts.size()); ++i)
         {
           AKAZEKeypoint ptAkaze = kpts[i];
@@ -219,9 +216,7 @@ public:
         regionsCasted->Features().resize(kpts.size());
         regionsCasted->Descriptors().resize(kpts.size());
 
-      #ifdef OPENMVG_USE_OPENMP
         #pragma omp parallel for
-      #endif
         for (int i = 0; i < static_cast<int>(kpts.size()); ++i)
         {
           AKAZEKeypoint ptAkaze = kpts[i];

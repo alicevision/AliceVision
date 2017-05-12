@@ -88,6 +88,7 @@ int main(int argc, char **argv)
   std::string sSfM_Data_Filename;
   std::string describerMethods = "SIFT";
   std::string sMatchesDir;
+  std::string sFeaturesDir;
   std::string sOutDir = "";
   std::string sOutSfMDataFilepath = "";
   std::string sOutInterFileExtension = ".ply";
@@ -100,6 +101,7 @@ int main(int argc, char **argv)
   cmd.add( make_option('i', sSfM_Data_Filename, "input_file") );
   cmd.add( make_option('d', describerMethods, "describerMethods") );
   cmd.add( make_option('m', sMatchesDir, "matchdir") );
+  cmd.add( make_option('F', sFeaturesDir, "featuresDir") );
   cmd.add( make_option('o', sOutDir, "outdir") );
   cmd.add( make_option('s', sOutSfMDataFilepath, "out_sfmdata_file") );
   cmd.add( make_option('e', sOutInterFileExtension, "inter_file_extension") );
@@ -122,17 +124,18 @@ int main(int argc, char **argv)
     << "   SIFT_FLOAT to use SIFT stored as float,\n"
     << "   AKAZE: AKAZE with floating point descriptors,\n"
     << "   AKAZE_MLDB:  AKAZE with binary descriptors\n"
-#ifdef HAVE_CCTAG
+#if OPENMVG_IS_DEFINED(OPENMVG_HAVE_CCTAG)
     << "   CCTAG3: CCTAG markers with 3 crowns\n"
     << "   CCTAG4: CCTAG markers with 4 crowns\n"
-#endif
-#ifdef HAVE_OPENCV
-#ifdef USE_OCVSIFT
+#endif //OPENMVG_HAVE_CCTAG
+#if OPENMVG_IS_DEFINED(OPENMVG_HAVE_OPENCV)
+#if OPENMVG_IS_DEFINED(OPENMVG_USE_OCVSIFT)
     << "   SIFT_OCV: OpenCV SIFT\n"
-#endif
+#endif //OPENMVG_USE_OCVSIFT
     << "   AKAZE_OCV: OpenCV AKAZE\n"
-#endif
+#endif //OPENMVG_HAVE_OPENCV
     << "[-m|--matchdir] path to the matches that corresponds to the provided SfM_Data scene\n"
+    << "[-F|--featuresDir] path to directory containing the extracted features (default: $matchdir)\n"
     << "[-o|--outdir] path where the output data will be stored\n"
     << "[-s|--out_sfmdata_file] path of the output sfmdata file (default: $outdir/sfm_data.json)\n"
     << "[-e|--inter_file_extension] extension of the intermediate file export (default: .ply)\n"
@@ -167,12 +170,16 @@ int main(int argc, char **argv)
     return EXIT_FAILURE;
   }
 
+  if(sFeaturesDir.empty()) {
+    sFeaturesDir = sMatchesDir;
+  }
+
   // Get imageDescriberMethodType
   const std::vector<features::EImageDescriberType> describerTypes = features::EImageDescriberType_stringToEnums(describerMethods);
 
   // Features reading
   features::FeaturesPerView featuresPerView;
-  if(!sfm::loadFeaturesPerView(featuresPerView, sfm_data, sMatchesDir, describerTypes))
+  if(!sfm::loadFeaturesPerView(featuresPerView, sfm_data, sFeaturesDir, describerTypes))
   {
     std::cerr << std::endl
       << "Invalid features." << std::endl;

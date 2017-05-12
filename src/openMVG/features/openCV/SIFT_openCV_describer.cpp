@@ -45,11 +45,11 @@ bool SIFT_openCV_ImageDescriber::Describe(const image::Image<unsigned char>& ima
                                           std::unique_ptr<Regions> &regions,
                                           const image::Image<unsigned char> * mask)
 {
-  /// Convert for opencv
+  // Convert for opencv
   cv::Mat img;
   cv::eigen2cv(image.GetMat(), img);
 
-  /// Create a SIFT detector
+  // Create a SIFT detector
   std::vector< cv::KeyPoint > v_keypoints;
   cv::Mat m_desc;
   std::size_t maxDetect = 0; //< No max value by default
@@ -59,7 +59,7 @@ bool SIFT_openCV_ImageDescriber::Describe(const image::Image<unsigned char>& ima
 
   cv::Ptr<cv::Feature2D> siftdetector = cv::xfeatures2d::SIFT::create(maxDetect, _params.nOctaveLayers, _params.contrastThreshold, _params.edgeThreshold, _params.sigma);
 
-  /// Detect SIFT keypoints
+  // Detect SIFT keypoints
   auto detect_start = std::chrono::steady_clock::now();
   siftdetector->detect(img, v_keypoints);
   auto detect_end = std::chrono::steady_clock::now();
@@ -71,14 +71,14 @@ bool SIFT_openCV_ImageDescriber::Describe(const image::Image<unsigned char>& ima
   std::cout << "Grid size: " << _params.gridSize << ", maxTotalKeypoints: " << _params.maxTotalKeypoints << std::endl;
   std::cout << "Number of detected features: " << v_keypoints.size() << std::endl;
 
-  /// cv::KeyPoint::response: the response by which the most strong keypoints have been selected.
-  /// Can be used for the further sorting or subsampling.
+  // cv::KeyPoint::response: the response by which the most strong keypoints have been selected.
+  // Can be used for the further sorting or subsampling.
   std::sort(v_keypoints.begin(), v_keypoints.end(), [](const cv::KeyPoint& a, const cv::KeyPoint& b) { return a.size > b.size; });
 
-  /// Grid filtering of the keypoints to ensure a global repartition
+  // Grid filtering of the keypoints to ensure a global repartition
   if(_params.gridSize && _params.maxTotalKeypoints)
   {
-    /// Only filter features if we have more features than the maxTotalKeypoints
+    // Only filter features if we have more features than the maxTotalKeypoints
     if(v_keypoints.size() > _params.maxTotalKeypoints)
     {
       std::vector< cv::KeyPoint > filtered_keypoints;
@@ -111,8 +111,8 @@ bool SIFT_openCV_ImageDescriber::Describe(const image::Image<unsigned char>& ima
         else
           rejected_keypoints.push_back(keypoint);
       }
-      /// If we don't have enough features (less than maxTotalKeypoints) after the grid filtering (empty regions in the grid for example).
-      /// We add the best other ones, without repartition constraint.
+      // If we don't have enough features (less than maxTotalKeypoints) after the grid filtering (empty regions in the grid for example).
+      // We add the best other ones, without repartition constraint.
       if( filtered_keypoints.size() < _params.maxTotalKeypoints )
       {
         const std::size_t remainingElements = std::min(rejected_keypoints.size(), _params.maxTotalKeypoints - filtered_keypoints.size());
@@ -125,7 +125,7 @@ bool SIFT_openCV_ImageDescriber::Describe(const image::Image<unsigned char>& ima
   }
   std::cout << "Number of features: " << v_keypoints.size() << std::endl;
 
-  /// Compute SIFT descriptors
+  // Compute SIFT descriptors
   auto desc_start = std::chrono::steady_clock::now();
   siftdetector->compute(img, v_keypoints, m_desc);
   auto desc_end = std::chrono::steady_clock::now();
@@ -134,17 +134,17 @@ bool SIFT_openCV_ImageDescriber::Describe(const image::Image<unsigned char>& ima
 
   Allocate(regions);
 
-  /// Build alias to cached data
+  // Build alias to cached data
   SIFT_Regions * regionsCasted = dynamic_cast<SIFT_Regions*>(regions.get());
-  /// Reserve some memory for faster keypoint saving
+  // Reserve some memory for faster keypoint saving
   regionsCasted->Features().reserve(v_keypoints.size());
   regionsCasted->Descriptors().reserve(v_keypoints.size());
 
-  /// Prepare a column vector with the sum of each descriptor
+  // Prepare a column vector with the sum of each descriptor
   cv::Mat m_siftsum;
   cv::reduce(m_desc, m_siftsum, 1, cv::REDUCE_SUM);
 
-  /// Copy keypoints and descriptors in the regions
+  // Copy keypoints and descriptors in the regions
   int cpt = 0;
   for(std::vector< cv::KeyPoint >::const_iterator i_kp = v_keypoints.begin();
       i_kp != v_keypoints.end();

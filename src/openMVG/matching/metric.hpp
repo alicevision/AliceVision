@@ -10,6 +10,13 @@
 
 #include "openMVG/matching/metric_hamming.hpp"
 #include "openMVG/numeric/accumulator_trait.hpp"
+#include <openMVG/config.hpp>
+
+#if OPENMVG_IS_DEFINED(OPENMVG_USE_SSE)
+#include <openMVG/logger.hpp>
+#include <xmmintrin.h>
+#endif
+
 #include <cstddef>
 
 namespace openMVG {
@@ -69,11 +76,9 @@ struct L2_Vectorized
   }
 };
 
-#ifdef OPENVMG_USE_SSE
+#if OPENMVG_IS_DEFINED(OPENMVG_USE_SSE)
 
 namespace optim_ss2{
-
-#include <xmmintrin.h>
 
   /// Union to switch between SSE and float array
   union sseRegisterHelper
@@ -83,7 +88,7 @@ namespace optim_ss2{
   };
 
   // Euclidean distance (SSE method) (squared result)
-  inline float l2_sse(float * b1, float * b2, int size)
+  inline float l2_sse(const float * b1, const float * b2, int size)
   {
     float* b1Pt = (float*)b1;
     float* b2Pt = (float*)b2;
@@ -130,7 +135,7 @@ struct L2_Vectorized<float>
   }
 };
 
-#endif // OPENVMG_USE_SSE
+#endif // OPENMVG_USE_SSE
 
 }  // namespace matching
 }  // namespace openMVG

@@ -1,5 +1,6 @@
 #pragma once
 
+#include <openMVG/features/ImageDescriberCommon.hpp>
 #include <openMVG/features/image_describer.hpp>
 #include <openMVG/features/regions_factory.hpp>
 #include <openMVG/types.hpp>
@@ -31,9 +32,9 @@ public:
   
   bool Set_configuration_preset(EDESCRIBER_PRESET preset) override;
 
-  void Set_use_cuda(bool);
+  void setUseCuda(bool) override;
 
-  void setCudaPipe(int pipe) { _cudaPipe = pipe; }
+  void setCudaPipe(int pipe) override { _cudaPipe = pipe; }
 
   /**
   @brief Detect regions on the image and compute their attributes (description)
@@ -84,7 +85,7 @@ template <class DescriptorT>
 IndexT getCCTagId(const DescriptorT & desc)
 {
   std::size_t cctagId = UndefinedIndexT;
-  for (int i = 0; i < desc.size(); ++i)
+  for (std::size_t i = 0; i < desc.size(); ++i)
   {
     if (desc.getData()[i] == (unsigned char) 255)
     {

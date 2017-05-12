@@ -25,10 +25,10 @@ bool AKAZE_openCV_ImageDescriber::Describe(const image::Image<unsigned char>& im
   {
     Allocate(regions);
 
-    /// Build alias to cached data
+    // Build alias to cached data
     AKAZE_Float_Regions* regionsCasted = dynamic_cast<AKAZE_Float_Regions*>(regions.get());
 
-    /// Reserve some memory for faster keypoint saving
+    // Reserve some memory for faster keypoint saving
     regionsCasted->Features().reserve(vec_keypoints.size());
     regionsCasted->Descriptors().reserve(vec_keypoints.size());
 

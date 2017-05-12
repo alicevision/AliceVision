@@ -5,6 +5,7 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
+#include "openMVG/config.hpp"
 #include "openMVG/sfm/sfm.hpp"
 #include "openMVG/sfm/pipelines/RegionsIO.hpp"
 #include "openMVG/matching/indMatch.hpp"
@@ -50,12 +51,12 @@ int main(int argc, char **argv)
         "   SIFT_FLOAT to use SIFT stored as float,\n"
         "   AKAZE: AKAZE with floating point descriptors,\n"
         "   AKAZE_MLDB:  AKAZE with binary descriptors\n"
-#ifdef HAVE_CCTAG
+#if OPENMVG_IS_DEFINED(OPENMVG_HAVE_CCTAG)
         "   CCTAG3: CCTAG markers with 3 crowns\n"
         "   CCTAG4: CCTAG markers with 4 crowns\n"
 #endif
-#ifdef HAVE_OPENCV
-#ifdef USE_OCVSIFT
+#if OPENMVG_IS_DEFINED(OPENMVG_HAVE_OPENCV)
+#if OPENMVG_IS_DEFINED(OPENMVG_USE_OCVSIFT)
         "   SIFT_OCV: OpenCV SIFT\n"
 #endif
         "   AKAZE_OCV: OpenCV AKAZE\n"

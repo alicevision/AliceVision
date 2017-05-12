@@ -1,4 +1,3 @@
-#ifdef HAVE_CCTAG
 
 #include "SIFT_CCTAG_describer.hpp"
 
@@ -56,4 +55,3 @@ bool SIFT_CCTAG_Image_describer::Describe(const image::Image<unsigned char>& ima
 } // features
 } // openMVG
 
-#endif //HAVE_CCTAG

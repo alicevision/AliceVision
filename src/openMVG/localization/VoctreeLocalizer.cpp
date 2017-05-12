@@ -1,17 +1,13 @@
 #include "VoctreeLocalizer.hpp"
 #include "rigResection.hpp"
 #include "optimization.hpp"
-
+#include <openMVG/config.hpp>
 #include <openMVG/sfm/sfm_data_io.hpp>
 #include <openMVG/sfm/pipelines/sfm_robust_model_estimation.hpp>
 #include <openMVG/sfm/sfm_data_BA_ceres.hpp>
 #include <openMVG/sfm/pipelines/RegionsIO.hpp>
 #include <openMVG/features/io_regions_type.hpp>
 #include <openMVG/features/svgVisualization.hpp>
-#ifdef HAVE_CCTAG
-#include <openMVG/features/cctag/SIFT_CCTAG_describer.hpp>
-#endif
-#include <nonFree/sift/SIFT_float_describer.hpp>
 #include <openMVG/matching/regions_matcher.hpp>
 #include <openMVG/matching_image_collection/Matcher.hpp>
 #include <openMVG/matching/matcher_kdtree_flann.hpp>
@@ -1112,7 +1108,7 @@ bool VoctreeLocalizer::localizeRig(const std::vector<features::MapRegionsPerDesc
                                    geometry::Pose3 &rigPose,
                                    std::vector<LocalizationResult>& vec_locResults)
 {
-#ifdef HAVE_OPENGV
+#if OPENMVG_IS_DEFINED(OPENMVG_HAVE_OPENGV)
   if(!parameters->_useLocalizeRigNaive)
   {
     OPENMVG_LOG_DEBUG("Using localizeRig_naive()");
@@ -1140,7 +1136,7 @@ bool VoctreeLocalizer::localizeRig(const std::vector<features::MapRegionsPerDesc
 }
 
 
-#ifdef HAVE_OPENGV
+#if OPENMVG_IS_DEFINED(OPENMVG_HAVE_OPENGV)
 
 bool VoctreeLocalizer::localizeRig_opengv(const std::vector<features::MapRegionsPerDesc> & vec_queryRegions,
                                           const std::vector<std::pair<std::size_t, std::size_t> > &vec_imageSize,
@@ -1389,7 +1385,7 @@ bool VoctreeLocalizer::localizeRig_opengv(const std::vector<features::MapRegions
   return true;
 }
 
-#endif // HAVE_OPENGV
+#endif // OPENMVG_HAVE_OPENGV
 
 // subposes is n-1 as we consider the first camera as the main camera and the 
 // reference frame of the grid

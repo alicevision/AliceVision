@@ -95,6 +95,7 @@ int main(int argc, char **argv)
 
   std::string sfmDataFilename;
   std::string matchesDirectory = "";
+  std::string sFeaturesDir = "";
   std::string geometricModel = "f";
   std::string describerMethods = "SIFT";
   float distRatio = 0.8f;
@@ -116,6 +117,7 @@ int main(int argc, char **argv)
   cmd.add( make_option('i', sfmDataFilename, "input_file") );
   cmd.add( make_option('o', matchesDirectory, "out_dir") );
   // Options
+  cmd.add( make_option('F', sFeaturesDir, "featuresDir"));
   cmd.add( make_option('m', describerMethods, "describerMethods") );
   cmd.add( make_option('r', distRatio, "ratio") );
   cmd.add( make_option('g', geometricModel, "geometric_model") );
@@ -140,30 +142,30 @@ int main(int argc, char **argv)
   }
   catch(const std::string& s)
   {
-    // TODO
     std::cerr << "Usage: " << argv[0] << '\n'
       << "[-i|--input_file] a SfM_Data file\n"
-      << "[-o|--out_dir path]\n"
-      << "   path of the directory containing the extracted features and in which computed matches will be stored\n"
+      << "[-o|--out_dir path] path to directory in which computed matches will be stored \n"
       << "\n[Optional]\n"
-      << "[-f|--save_putative_matches] Save putative matches\n"
       << "[-m|--describerMethods]\n"
       << "  (methods to use to describe an image):\n"
       << "   SIFT (default),\n"
       << "   SIFT_FLOAT to use SIFT stored as float,\n"
       << "   AKAZE: AKAZE with floating point descriptors,\n"
       << "   AKAZE_MLDB:  AKAZE with binary descriptors\n"
-  #ifdef HAVE_CCTAG
+  #if OPENMVG_IS_DEFINED(OPENMVG_HAVE_CCTAG)
       << "   CCTAG3: CCTAG markers with 3 crowns\n"
       << "   CCTAG4: CCTAG markers with 4 crowns\n"
   #endif
-  #ifdef HAVE_OPENCV
-  #ifdef USE_OCVSIFT
+  #if OPENMVG_IS_DEFINED(OPENMVG_HAVE_OPENCV)
+  #if OPENMVG_IS_DEFINED(OPENMVG_USE_OCVSIFT)
       << "   SIFT_OCV: OpenCV SIFT\n"
   #endif
       << "   AKAZE_OCV: OpenCV AKAZE\n"
   #endif
-      << "  use the found model to improve the pairwise correspondences.\n"  
+      << "  use the found model to improve the pairwise correspondences.\n"
+      << "[-F|--featuresDir] Path to directory containing the extracted features (default: $out_dir)\n"
+      << "[-f|--force] Force to recompute data\n"
+      << "[-p|--save_putative_matches] Save putative matches\n"
       << "[-r|--ratio] Distance ratio to discard non meaningful matches\n"
       << "   0.8: (default).\n"
       << "[-g|--geometric_model]\n"
@@ -218,6 +220,7 @@ int main(int argc, char **argv)
             << "--input_file " << sfmDataFilename << "\n"
             << "--out_dir " << matchesDirectory << "\n"
             << "Optional parameters:" << "\n"
+            << "--featuresDir " << sFeaturesDir
             << "--save_putative_matches " << savePutativeMatches << "\n"
             << "--describerMethods " << describerMethods << "\n"
             << "--ratio " << distRatio << "\n"
@@ -254,6 +257,10 @@ int main(int argc, char **argv)
   {
     std::cerr << "\nError: describerMethods argument is empty." << std::endl;
     return EXIT_FAILURE;
+  }
+
+  if(sFeaturesDir.empty()) {
+    sFeaturesDir = matchesDirectory;
   }
 
   EGeometricModel geometricModelToCompute = FUNDAMENTAL_MATRIX;
@@ -365,7 +372,7 @@ int main(int argc, char **argv)
   // Perform the matching
   system::Timer timer;
 
-  if(!sfm::loadRegionsPerView(regionPerView, sfmData, matchesDirectory, describerTypes, filter))
+  if(!sfm::loadRegionsPerView(regionPerView, sfmData, sFeaturesDir, describerTypes, filter))
   {
     std::cerr << std::endl << "Invalid regions." << std::endl;
     return EXIT_FAILURE;

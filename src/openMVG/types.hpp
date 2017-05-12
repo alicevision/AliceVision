@@ -17,7 +17,7 @@
 #include <set>
 #include <vector>
 
-#if defined OPENMVG_STD_UNORDERED_MAP
+#ifdef OPENMVG_STD_UNORDERED_MAP
 #include <unordered_map>
 #endif
 
@@ -30,7 +30,7 @@ typedef std::pair<IndexT,IndexT> Pair;
 typedef std::set<Pair> Pair_Set;
 typedef std::vector<Pair> Pair_Vec;
 
-#if defined OPENMVG_UNORDERED_MAP
+#ifdef OPENMVG_UNORDERED_MAP
 template<typename Key, typename Value>
 struct Hash_Map : std::unordered_map<Key, Value> {};
 #else

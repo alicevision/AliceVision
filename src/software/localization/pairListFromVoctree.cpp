@@ -1,6 +1,7 @@
 #include <openMVG/voctree/database.hpp>
 #include <openMVG/voctree/vocabulary_tree.hpp>
 #include <openMVG/voctree/databaseIO.hpp>
+#include <openMVG/config.hpp>
 
 #include <Eigen/Core>
 
@@ -329,9 +330,7 @@ int main(int argc, char** argv)
   OPENMVG_COUT("Query all documents");
   detect_start = std::chrono::steady_clock::now();
   // Now query each document
-  #ifdef OPENMVG_USE_OPENMP
-    #pragma omp parallel for
-  #endif
+  #pragma omp parallel for
   for(ptrdiff_t i = 0; i < static_cast<ptrdiff_t>(db.getSparseHistogramPerImage().size()); ++i)
   {
     openMVG::voctree::SparseHistogramPerImage::const_iterator docIt = db.getSparseHistogramPerImage().cbegin();
@@ -351,9 +350,7 @@ int main(int argc, char** argv)
     {
       idMatches.push_back(m.id);
     }
-    #ifdef OPENMVG_USE_OPENMP
       #pragma omp critical
-    #endif
     {
       allMatches[ docIt->first ] = idMatches;
     }

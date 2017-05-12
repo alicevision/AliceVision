@@ -16,6 +16,7 @@
 #include <openMVG/robust_estimation/robust_estimator_LORansacKernelAdaptor.hpp>
 #include <openMVG/robust_estimation/score_evaluator.hpp>
 
+#include <openMVG/config.hpp>
 namespace openMVG {
 namespace sfm {
 
@@ -155,7 +156,7 @@ bool SfM_Localizer::Localize
 
   // Test if the mode support some points (more than those required for estimation)
   const bool bResection = (resection_data.vec_inliers.size() > MINIMUM_SAMPLES * OPENMVG_MINIMUM_SAMPLES_COEF);
-#ifdef WANTS_OPENMVG_COUT
+#if OPENMVG_IS_DEFINED(OPENMVG_WITH_COUT)
   if (!bResection) 
   {
     OPENMVG_LOG_DEBUG("bResection is false");
@@ -172,7 +173,7 @@ bool SfM_Localizer::Localize
     KRt_From_P(P, &K, &R, &t);
     pose = geometry::Pose3(R, -R.transpose() * t);
   }
-#ifdef WANTS_OPENMVG_COUT
+#if OPENMVG_IS_DEFINED(OPENMVG_WITH_COUT)
   OPENMVG_LOG_DEBUG(
     "-------------------------------\n"
     "-- Robust Resection\n"

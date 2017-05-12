@@ -10,9 +10,9 @@
 #include "openMVG/features/image_describer_akaze.hpp"
 #include "openMVG/features/cctag/CCTAG_describer.hpp"
 #include "openMVG/features/openCV/AKAZE_openCV_describer.hpp"
-#ifdef USE_OCVSIFT
+#if OPENMVG_IS_DEFINED(OPENMVG_USE_OCVSIFT)
 #include "openMVG/features/openCV/SIFT_openCV_describer.hpp"
-#endif
+#endif //OPENMVG_USE_OCVSIFT
 
 #include "nonFree/sift/SIFT_describer.hpp"
 #include "nonFree/sift/SIFT_float_describer.hpp"
@@ -77,17 +77,17 @@ std::unique_ptr<Image_describer> createImageDescriber(EImageDescriberType imageD
     case EImageDescriberType::AKAZE_MLDB:  describerPtr.reset(new AKAZE_Image_describer(AKAZEParams(AKAZEConfig(), features::AKAZE_MLDB))); break;
     case EImageDescriberType::AKAZE_LIOP:  describerPtr.reset(new AKAZE_Image_describer(AKAZEParams(AKAZEConfig(), features::AKAZE_LIOP))); break;
 
-#ifdef HAVE_CCTAG
+#if OPENMVG_IS_DEFINED(OPENMVG_HAVE_CCTAG)
     case EImageDescriberType::CCTAG3:      describerPtr.reset(new CCTAG_Image_describer(3)); break;
     case EImageDescriberType::CCTAG4:      describerPtr.reset(new CCTAG_Image_describer(4)); break;
-#endif //HAVE_CCTAG
+#endif //OPENMVG_HAVE_CCTAG
 
-#ifdef HAVE_OPENCV
-#ifdef USE_OCVSIFT
+#if OPENMVG_IS_DEFINED(OPENMVG_HAVE_OPENCV)
+#if OPENMVG_IS_DEFINED(OPENMVG_USE_OCVSIFT)
   case EImageDescriberType::SIFT_OCV:      describerPtr.reset(new SIFT_openCV_ImageDescriber()); break;
-#endif
+#endif //OPENMVG_USE_OCVSIFT
   case EImageDescriberType::AKAZE_OCV:     describerPtr.reset(new AKAZE_openCV_ImageDescriber()); break;
-#endif //HAVE_OPENCV
+#endif //OPENMVG_HAVE_OPENCV
     
     default: throw std::out_of_range("Invalid imageDescriber enum");
   }

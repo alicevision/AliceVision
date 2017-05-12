@@ -64,10 +64,10 @@ int main(int argc, char **argv)
     << "[-i|--input_file] path to a SfM_Data scene\n"
     << "[-M|--describerMethod]\n"
     << "  (methods to use to describe an image):\n"
-#ifdef HAVE_CCTAG
+#if OPENMVG_IS_DEFINED(OPENMVG_HAVE_CCTAG)
     << "   CCTAG3: CCTAG markers with 3 crowns\n"
     << "   CCTAG4: CCTAG markers with 4 crowns\n"
-#endif
+#endif //OPENMVG_HAVE_CCTAG
     << "[-m|--match_dir] path to the features and descriptor that "
     << " corresponds to the provided SfM_Data scene\n"
     << "[-f|--match_file] (opt.) path to a matches file (used pairs will be used)\n"

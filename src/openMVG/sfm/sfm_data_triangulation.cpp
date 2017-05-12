@@ -8,6 +8,8 @@
 
 #include "openMVG/multiview/triangulation_nview.hpp"
 #include "openMVG/robust_estimation/rand_sampling.hpp"
+#include <openMVG/config.hpp>
+
 #include "third_party/progress/progress.hpp"
 
 #include <deque>
@@ -38,22 +40,16 @@ void SfM_Data_Structure_Computation_Blind::triangulate(SfM_Data & sfm_data) cons
     sfm_data.structure.size(),
     std::cout,
     "Blind triangulation progress:\n" ));
-#ifdef OPENMVG_USE_OPENMP
   #pragma omp parallel
-#endif
   for(Landmarks::iterator iterTracks = sfm_data.structure.begin();
     iterTracks != sfm_data.structure.end();
     ++iterTracks)
   {
-#ifdef OPENMVG_USE_OPENMP
-  #pragma omp single nowait
-#endif
+    #pragma omp single nowait
     {
       if (_bConsoleVerbose)
       {
-#ifdef OPENMVG_USE_OPENMP
-  #pragma omp critical
-#endif
+        #pragma omp critical
         ++(*my_progress_bar);
       }
       // Triangulate each landmark
@@ -74,9 +70,7 @@ void SfM_Data_Structure_Computation_Blind::triangulate(SfM_Data & sfm_data) cons
       }
       if (trianObj.size() < 2)
       {
-#ifdef OPENMVG_USE_OPENMP
         #pragma omp critical
-#endif
         {
           rejectedId.push_front(iterTracks->first);
         }
@@ -91,9 +85,7 @@ void SfM_Data_Structure_Computation_Blind::triangulate(SfM_Data & sfm_data) cons
         }
         else
         {
-#ifdef OPENMVG_USE_OPENMP
           #pragma omp critical
-#endif
           {
             rejectedId.push_front(iterTracks->first);
           }
@@ -130,22 +122,16 @@ void SfM_Data_Structure_Computation_Robust::robust_triangulation(SfM_Data & sfm_
     sfm_data.structure.size(),
     std::cout,
     "Robust triangulation progress:\n" ));
-#ifdef OPENMVG_USE_OPENMP
   #pragma omp parallel
-#endif
   for(Landmarks::iterator iterTracks = sfm_data.structure.begin();
     iterTracks != sfm_data.structure.end();
     ++iterTracks)
   {
-#ifdef OPENMVG_USE_OPENMP
-  #pragma omp single nowait
-#endif
+    #pragma omp single nowait
     {
       if (_bConsoleVerbose)
       {
-#ifdef OPENMVG_USE_OPENMP
-  #pragma omp critical
-#endif
+        #pragma omp critical
         ++(*my_progress_bar);
       }
       Vec3 X;
@@ -154,9 +140,7 @@ void SfM_Data_Structure_Computation_Robust::robust_triangulation(SfM_Data & sfm_
       }
       else {
         iterTracks->second.X = Vec3::Zero();
-#ifdef OPENMVG_USE_OPENMP
-  #pragma omp critical
-#endif
+        #pragma omp critical
         {
           rejectedId.push_front(iterTracks->first);
         }

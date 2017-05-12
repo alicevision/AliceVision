@@ -7,7 +7,6 @@
 #ifndef MIMATTE_LINEAR_PROGRAMMING_INTERFACE_MOSEK_H_
 #define MIMATTE_LINEAR_PROGRAMMING_INTERFACE_MOSEK_H_
 
-#ifdef OPENMVG_HAVE_MOSEK
 
 #include "openMVG/numeric/numeric.h"
 #include "openMVG/linearProgramming/linearProgrammingInterface.hpp"
@@ -50,4 +49,4 @@ private :
 
 #endif // MIMATTE_LINEAR_PROGRAMMING_INTERFACE_MOSEK_H_
 
-#endif // OPENMVG_HAVE_MOSEK
+

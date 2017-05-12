@@ -1,20 +1,18 @@
 
-file(
-  GLOB_RECURSE
-  system_files_header
-  *.hpp
-)
-file(
-  GLOB_RECURSE
-  system_files_cpp
-  *.cpp
-)
+set(system_files_header
+  cpu.hpp
+  memoryInfo.hpp
+  system.hpp
+  timer.hpp)
 
-ADD_LIBRARY(openMVG_system
-  ${sytem_files_header}
-  ${system_files_cpp})
-TARGET_LINK_LIBRARIES(openMVG_system ${LOG_LIB})
-SET_TARGET_PROPERTIES(openMVG_system PROPERTIES SOVERSION ${OPENMVG_VERSION_MAJOR} VERSION "${OPENMVG_VERSION_MAJOR}.${OPENMVG_VERSION_MINOR}")
-SET_PROPERTY(TARGET openMVG_system PROPERTY FOLDER OpenMVG/OpenMVG)
-INSTALL(TARGETS openMVG_system DESTINATION lib/ EXPORT openMVG-targets)
+set(system_files_cpp
+  cpu.cpp
+  memoryInfo.cpp
+  timer.cpp)
+
+add_library(openMVG_system ${system_files_cpp})
+
+set_target_properties(openMVG_system PROPERTIES SOVERSION ${OPENMVG_VERSION_MAJOR} VERSION "${OPENMVG_VERSION_MAJOR}.${OPENMVG_VERSION_MINOR}")
+set_propertY(TARGET openMVG_system PROPERTY FOLDER OpenMVG/OpenMVG)
+install(TARGETS openMVG_system DESTINATION lib/ EXPORT openMVG-targets)
 

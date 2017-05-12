@@ -3,7 +3,7 @@
 #include "ILocalizer.hpp"
 #include "LocalizationResult.hpp"
 #include "VoctreeLocalizer.hpp"
-
+#include <openMVG/config.hpp>
 #include <openMVG/features/features.hpp>
 #include <openMVG/features/image_describer.hpp>
 #include <openMVG/features/cctag/CCTAG_describer.hpp>
@@ -94,7 +94,7 @@ public:
                    geometry::Pose3 &rigPose,
                    std::vector<LocalizationResult>& vec_locResults) override;
   
-#ifdef HAVE_OPENGV
+#if OPENMVG_IS_DEFINED(OPENMVG_HAVE_OPENGV)
   bool localizeRig_opengv(const std::vector<features::MapRegionsPerDesc> & vec_queryRegions,
                           const std::vector<std::pair<std::size_t, std::size_t> > &imageSize,
                           const LocalizerParameters *parameters,

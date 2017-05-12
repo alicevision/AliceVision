@@ -1,5 +1,3 @@
-#ifdef HAVE_ALEMBIC
-
 #pragma once
 
 #include <openMVG/sfm/sfm_data.hpp>
@@ -102,6 +100,4 @@ private:
 
 } // namespace sfm
 } // namespace openMVG
-
-#endif // HAVE_ALEMBIC
 

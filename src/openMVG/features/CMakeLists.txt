@@ -32,10 +32,12 @@ set( features_files_sources
 if (OpenMVG_USE_CCTAG)
   list(APPEND features_files_headers
     cctag/CCTAG_describer.hpp
-    cctag/SIFT_CCTAG_describer.hpp) #TODO Remove
+    #cctag/SIFT_CCTAG_describer.hpp #TODO Remove
+    )
   list(APPEND features_files_sources
     cctag/CCTAG_describer.cpp
-    cctag/SIFT_CCTAG_describer.cpp) #TODO Remove
+    #cctag/SIFT_CCTAG_describer.cpp #TODO Remove
+    )
 endif()
 
 if(OpenMVG_USE_OPENCV)

@@ -1,6 +1,7 @@
 #include "indMatch_utils.hpp"
 
 #include "openMVG/matching/indMatch.hpp"
+#include <openMVG/config.hpp>
 
 #include <cereal/archives/portable_binary.hpp>
 #include <cereal/types/map.hpp>
@@ -147,9 +148,7 @@ bool LoadMatchFilePerImage(
 {
   int nbLoadedMatchFiles = 0;
   // Load one match file per image
-#ifdef OPENMVG_USE_OPENMP
-    #pragma omp parallel for num_threads(3)
-#endif
+  #pragma omp parallel for num_threads(3)
   for(ptrdiff_t i = 0; i < static_cast<ptrdiff_t>(viewsKeys.size()); ++i)
   {
     std::set<IndexT>::const_iterator it = viewsKeys.begin();
@@ -159,17 +158,13 @@ bool LoadMatchFilePerImage(
     PairwiseMatches fileMatches;
     if(!LoadMatchFile(fileMatches, folder, matchFilename))
     {
-#ifdef OPENMVG_USE_OPENMP
       #pragma omp critical
-#endif
       {
         OPENMVG_LOG_WARNING("Unable to load match file: " << folder << "/" << matchFilename);
       }
       continue;
     }
-#ifdef OPENMVG_USE_OPENMP
-      #pragma omp critical
-#endif
+    #pragma omp critical
     {
       ++nbLoadedMatchFiles;
       // merge the loaded matches into the output

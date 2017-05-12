@@ -20,17 +20,17 @@ std::string EImageDescriberType_enumToString(EImageDescriberType imageDescriberT
     case EImageDescriberType::AKAZE_LIOP:    return "AKAZE_LIOP";
     case EImageDescriberType::AKAZE_MLDB:    return "AKAZE_MLDB";
     
-#ifdef HAVE_CCTAG
+#if OPENMVG_IS_DEFINED(OPENMVG_HAVE_CCTAG)
     case EImageDescriberType::CCTAG3:        return "CCTAG3";
     case EImageDescriberType::CCTAG4:        return "CCTAG4";
-#endif //HAVE_CCTAG
+#endif //OPENMVG_HAVE_CCTAG
 
-#ifdef HAVE_OPENCV
-#ifdef USE_OCVSIFT
+#if OPENMVG_IS_DEFINED(OPENMVG_HAVE_OPENCV)
+#if OPENMVG_IS_DEFINED(OPENMVG_USE_OCVSIFT)
     case EImageDescriberType::SIFT_OCV:      return "SIFT_OCV";
-#endif
+#endif //OPENMVG_USE_OCVSIFT
     case EImageDescriberType::AKAZE_OCV:     return "AKAZE_OCV";
-#endif//HAVE_OPENCV
+#endif //OPENMVG_HAVE_OPENCV
 
     case EImageDescriberType::UNKNOWN:       return "UNKNOWN";
     case EImageDescriberType::UNINITIALIZED: break; // Should throw an error.
@@ -46,17 +46,17 @@ EImageDescriberType EImageDescriberType_stringToEnum(const std::string& imageDes
   if(imageDescriberType == "AKAZE_LIOP")  return EImageDescriberType::AKAZE_LIOP;
   if(imageDescriberType == "AKAZE_MLDB")  return EImageDescriberType::AKAZE_MLDB;
   
-#ifdef HAVE_CCTAG
+#if OPENMVG_IS_DEFINED(OPENMVG_HAVE_CCTAG)
   if(imageDescriberType == "CCTAG3")      return EImageDescriberType::CCTAG3;
   if(imageDescriberType == "CCTAG4")      return EImageDescriberType::CCTAG4;
-#endif //HAVE_CCTAG
+#endif //OPENMVG_HAVE_CCTAG
 
-#ifdef HAVE_OPENCV
-#ifdef USE_OCVSIFT
+#if OPENMVG_IS_DEFINED(OPENMVG_HAVE_OPENCV)
+#if OPENMVG_IS_DEFINED(OPENMVG_USE_OCVSIFT)
   if(imageDescriberType == "SIFT_OCV")    return EImageDescriberType::SIFT_OCV;
-#endif
+#endif //OPENMVG_HAVE_OPENCV
   if(imageDescriberType == "AKAZE_OCV")   return EImageDescriberType::AKAZE_OCV;
-#endif//HAVE_OPENCV
+#endif //OPENMVG_USE_OCVSIFT
 
   if(imageDescriberType == "UNKNOWN")     return EImageDescriberType::UNKNOWN;
   // UNINITIALIZED should throw an error.

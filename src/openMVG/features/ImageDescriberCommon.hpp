@@ -1,5 +1,6 @@
 #pragma once
 
+#include <openMVG/config.hpp>
 #include <string>
 #include <vector>
 
@@ -17,13 +18,13 @@ enum class EImageDescriberType: unsigned char
   , AKAZE_LIOP = 21
   , AKAZE_MLDB = 22
 
-#ifdef HAVE_CCTAG
+#if OPENMVG_IS_DEFINED(OPENMVG_HAVE_CCTAG)
   , CCTAG3 = 30
   , CCTAG4 = 31
 #endif
 
-#ifdef HAVE_OPENCV
-#ifdef USE_OCVSIFT
+#if OPENMVG_IS_DEFINED(OPENMVG_HAVE_OPENCV)
+#if OPENMVG_IS_DEFINED(OPENMVG_USE_OCVSIFT)
   , SIFT_OCV = 40
 #endif
   , AKAZE_OCV = 41

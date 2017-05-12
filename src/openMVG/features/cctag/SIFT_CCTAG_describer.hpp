@@ -1,4 +1,3 @@
-#ifdef HAVE_CCTAG
 
 #pragma once
 
@@ -40,9 +39,9 @@ public:
 
   bool Set_configuration_preset(EDESCRIBER_PRESET preset) override;
 
-  void Set_cctag_use_cuda(bool use_cuda)
+  void setUseCuda(bool useCuda) override
   {
-    _cctagDescriber.Set_use_cuda(use_cuda);
+    _cctagDescriber.setUseCuda(useCuda);
   }
 
   /**
@@ -82,4 +81,3 @@ private:
 #include <cereal/archives/json.hpp>
 CEREAL_REGISTER_TYPE_WITH_NAME(openMVG::features::SIFT_CCTAG_Image_describer, "SIFT_CCTAG_Image_describer");
 
-#endif //HAVE_CCTAG

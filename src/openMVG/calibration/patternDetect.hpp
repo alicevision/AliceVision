@@ -1,5 +1,7 @@
 #pragma once
 
+#include <openMVG/config.hpp>
+
 #include <vector>
 #include <iostream>
 
@@ -13,7 +15,7 @@ enum Pattern
   CHESSBOARD = 0,
   CIRCLES_GRID = 1,
   ASYMMETRIC_CIRCLES_GRID = 2
-#ifdef HAVE_CCTAG
+#if OPENMVG_IS_DEFINED(OPENMVG_HAVE_CCTAG)
   , ASYMMETRIC_CCTAG_GRID = 4
 #endif
 };

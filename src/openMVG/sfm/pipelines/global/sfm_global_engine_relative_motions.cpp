@@ -7,6 +7,7 @@
 
 #include "openMVG/sfm/pipelines/global/sfm_global_engine_relative_motions.hpp"
 #include "openMVG/sfm/sfm_data.hpp"
+#include <openMVG/config.hpp>
 #include "third_party/htmlDoc/htmlDoc.hpp"
 
 #include "openMVG/multiview/triangulation.hpp"
@@ -69,15 +70,11 @@ void GlobalSfMReconstructionEngine_RelativeMotions::SetFeaturesProvider(features
 
   // Copy features and save a normalized version
   _normalizedFeaturesPerView = std::make_shared<FeaturesPerView>(*featuresPerView);
-#ifdef OPENMVG_USE_OPENMP
   #pragma omp parallel
-#endif
   for (MapFeaturesPerView::iterator iter = _normalizedFeaturesPerView->getData().begin();
     iter != _normalizedFeaturesPerView->getData().end(); ++iter)
   {
-#ifdef OPENMVG_USE_OPENMP
     #pragma omp single nowait
-#endif
     {
       // get the related view & camera intrinsic and compute the corresponding bearing vectors
       const View * view = _sfm_data.GetViews().at(iter->first).get();
@@ -293,7 +290,7 @@ bool GlobalSfMReconstructionEngine_RelativeMotions::Compute_Initial_Structure
   {
     using namespace openMVG::tracks;
     TracksBuilder tracksBuilder;
-#if defined USE_ALL_VALID_MATCHES // not used by default
+#ifdef USE_ALL_VALID_MATCHES // not used by default
     matching::PairWiseSimpleMatches pose_supported_matches;
     for (const std::pair< Pair, IndMatches > & match_info :  _matches_provider->_pairWise_matches)
     {
@@ -493,16 +490,11 @@ void GlobalSfMReconstructionEngine_RelativeMotions::Compute_Relative_Rotations
 
   C_Progress_display my_progress_bar( poseWiseMatches.size(),
       std::cout, "\n- Relative pose computation -\n" );
-
-#ifdef OPENMVG_USE_OPENMP
   #pragma omp parallel for schedule(dynamic)
-#endif
   // Compute the relative pose from pairwise point matches:
   for (int i = 0; i < poseWiseMatches.size(); ++i)
   {
-#ifdef OPENMVG_USE_OPENMP
     #pragma omp critical
-#endif
     {
       ++my_progress_bar;
     }
@@ -642,9 +634,7 @@ void GlobalSfMReconstructionEngine_RelativeMotions::Compute_Relative_Rotations
           relativePose_info.relativePose = Pose3(Rrel, -Rrel.transpose() * trel);
         }
       }
-#ifdef OPENMVG_USE_OPENMP
       #pragma omp critical
-#endif
       {
         // Add the relative rotation to the relative 'rotation' pose graph
         using namespace openMVG::rotation_averaging;

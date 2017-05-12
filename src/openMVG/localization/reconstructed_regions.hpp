@@ -7,6 +7,7 @@
 
 #pragma once
 
+#include "openMVG/config.hpp"
 #include "openMVG/types.hpp"
 #include "openMVG/features/regions.hpp"
 #include "openMVG/features/descriptor.hpp"

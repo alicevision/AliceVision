@@ -11,6 +11,7 @@
 #include "openMVG/matching/matching_interface.hpp"
 #include "openMVG/matching/metric.hpp"
 #include "openMVG/stl/indexed_sort.hpp"
+#include <openMVG/config.hpp>
 #include <memory>
 #include <iostream>
 
@@ -119,9 +120,8 @@ class ArrayMatcherBruteForce  : public ArrayMatcher<Scalar, Metric>
 
     pvec_distances->resize(nbQuery * NN);
     pvec_indices->resize(nbQuery * NN);
-#ifdef OPENMVG_USE_OPENMP
-#pragma omp parallel for schedule(dynamic)
-#endif
+
+    #pragma omp parallel for schedule(dynamic)
     for (int queryIndex=0; queryIndex < nbQuery; ++queryIndex) 
     {
       std::vector<DistanceType> vec_distance((*memMapping).rows(), 0.0);

@@ -338,17 +338,17 @@ inline std::unique_ptr<IVocabularyTree> createVoctreeForDescriberType(features::
     case EImageDescriberType::AKAZE:      res.reset(new VocabularyTree<AKAZE_Float_Regions::DescriptorT>); break;
     case EImageDescriberType::AKAZE_MLDB: res.reset(new VocabularyTree<AKAZE_Binary_Regions::DescriptorT>); break;
 
-#ifdef HAVE_CCTAG
+#if OPENMVG_IS_DEFINED(OPENMVG_HAVE_CCTAG)
     case EImageDescriberType::CCTAG3:
     case EImageDescriberType::CCTAG4:     res.reset(new VocabularyTree<CCTAG_Regions::DescriptorT>); break;
-#endif //HAVE_CCTAG
+#endif //OPENMVG_HAVE_CCTAG
 
-#ifdef HAVE_OPENCV
-#ifdef USE_OCVSIFT
+#if OPENMVG_IS_DEFINED(OPENMVG_HAVE_OPENCV)
+#if OPENMVG_IS_DEFINED(OPENMVG_USE_OCVSIFT)
   case EImageDescriberType::SIFT_OCV:     res.reset(new VocabularyTree<SIFT_Regions::DescriptorT>); break;
-#endif
+#endif //OPENMVG_USE_OCVSIFT
   case EImageDescriberType::AKAZE_OCV:    res.reset(new VocabularyTree<AKAZE_Float_Regions::DescriptorT>); break;
-#endif //HAVE_OPENCV
+#endif //OPENMVG_HAVE_OPENCV
 
     default: throw std::out_of_range("Invalid imageDescriber enum");
   }

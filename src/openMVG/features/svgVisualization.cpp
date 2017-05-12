@@ -1,5 +1,6 @@
 #include "svgVisualization.hpp"
-#ifdef HAVE_CCTAG
+#include <openMVG/config.hpp>
+#if OPENMVG_IS_DEFINED(OPENMVG_HAVE_CCTAG)
 #include "cctag/CCTAG_describer.hpp"
 #endif
 #include "third_party/vectorGraphics/svgDrawer.hpp"
@@ -16,13 +17,13 @@ std::string describerTypeColor(const features::EImageDescriberType descType )
     case features::EImageDescriberType::AKAZE:          return "purple";
     case features::EImageDescriberType::AKAZE_LIOP:     return "purple";
     case features::EImageDescriberType::AKAZE_MLDB:     return "purple";
-#ifdef HAVE_CCTAG
+#if OPENMVG_IS_DEFINED(OPENMVG_HAVE_CCTAG)
     case features::EImageDescriberType::CCTAG3:         return "blue";
     case features::EImageDescriberType::CCTAG4:         return "blue";
 #endif
 
-#ifdef HAVE_OPENCV
-#ifdef USE_OCVSIFT
+#if OPENMVG_IS_DEFINED(OPENMVG_HAVE_OPENCV)
+#if OPENMVG_IS_DEFINED(OPENMVG_USE_OCVSIFT)
     case features::EImageDescriberType::SIFT_OCV:       return "orange";
 #endif
     case features::EImageDescriberType::AKAZE_OCV:      return "indigo";
@@ -395,7 +396,7 @@ void saveMatchesAsMotion(const std::string &imagePath,
   svgFile.close();
 }
 
-#ifdef HAVE_CCTAG
+#if OPENMVG_IS_DEFINED(OPENMVG_HAVE_CCTAG)
 
 void saveCCTag2SVG(const std::string &inputImagePath,
                       const std::pair<size_t,size_t> & imageSize,

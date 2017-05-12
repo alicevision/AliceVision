@@ -10,6 +10,7 @@
 #include "openMVG/features/feature.hpp"
 #include "openMVG/features/RegionsPerView.hpp"
 #include "openMVG/matching/indMatch.hpp"
+#include <openMVG/config.hpp>
 
 #include "third_party/stlplus3/filesystemSimplified/file_system.hpp"
 #include "third_party/progress/progress.hpp"
@@ -57,10 +58,8 @@ void ImageCollectionGeometricFilter::Robust_model_estimation(
   const double d_distance_ratio)
 {
   C_Progress_display my_progress_bar( putative_matches.size() );
-
-#ifdef OPENMVG_USE_OPENMP
-#pragma omp parallel for schedule(dynamic)
-#endif
+  
+  #pragma omp parallel for schedule(dynamic)
   for (int i = 0; i < (int)putative_matches.size(); ++i)
   {
     PairwiseMatches::const_iterator iter = putative_matches.begin();
@@ -83,18 +82,13 @@ void ImageCollectionGeometricFilter::Robust_model_estimation(
           //OPENMVG_LOG_DEBUG("#before/#after: " << putative_inliers.size() << "/" << guided_geometric_inliers.size());
           std::swap(inliers, guided_geometric_inliers);
         }
-
-#ifdef OPENMVG_USE_OPENMP
-#pragma omp critical
-#endif
+        #pragma omp critical
         {
           _map_GeometricMatches.insert(std::make_pair(current_pair, std::move(inliers)));
         }
       }
     }
-#ifdef OPENMVG_USE_OPENMP
-#pragma omp critical
-#endif
+    #pragma omp critical
     {
       ++my_progress_bar;
     }

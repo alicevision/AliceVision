@@ -1,6 +1,7 @@
+#include <openMVG/config.hpp>
 #include <openMVG/localization/ILocalizer.hpp>
 #include <openMVG/localization/VoctreeLocalizer.hpp>
-#ifdef HAVE_CCTAG
+#if OPENMVG_IS_DEFINED(OPENMVG_HAVE_CCTAG)
 #include <openMVG/localization/CCTagLocalizer.hpp>
 #endif
 #include <openMVG/localization/LocalizationResult.hpp>
@@ -28,9 +29,9 @@
 #include <chrono>
 #include <memory>
 
-#ifdef HAVE_ALEMBIC
+#if OPENMVG_IS_DEFINED(OPENMVG_HAVE_ALEMBIC)
 #include <openMVG/sfm/AlembicExporter.hpp>
-#endif // HAVE_ALEMBIC
+#endif // OPENMVG_HAVE_ALEMBIC
 
 
 namespace bfs = boost::filesystem;
@@ -38,6 +39,7 @@ namespace bacc = boost::accumulators;
 namespace po = boost::program_options;
 
 using namespace openMVG;
+
 
 std::string myToString(std::size_t i, std::size_t zeroPadding)
 {
@@ -141,7 +143,7 @@ int main(int argc, char** argv)
   /// the Binary export file
   std::string exportBinaryFile = "";
 
-#ifdef HAVE_CCTAG
+#if OPENMVG_IS_DEFINED(OPENMVG_HAVE_CCTAG)
   // parameters for cctag localizer
   std::size_t nNearestKeyFrames = 5;   
 #endif
@@ -222,7 +224,7 @@ int main(int argc, char** argv)
           "[voctree] Enable/Disable the robust matching between query and database images, "
           "all putative matches will be considered.")
 // cctag specific options
-#ifdef HAVE_CCTAG
+#if OPENMVG_IS_DEFINED(OPENMVG_HAVE_CCTAG)
       ("nNearestKeyFrames", po::value<size_t>(&nNearestKeyFrames)->default_value(nNearestKeyFrames), 
           "[cctag] Number of images to retrieve in the database")
 #endif
@@ -251,7 +253,7 @@ int main(int argc, char** argv)
           "If a directory is provided it enables visual debug and saves all the "
           "debugging info in that directory")
 
-#ifdef HAVE_ALEMBIC
+#if OPENMVG_IS_DEFINED(OPENMVG_HAVE_ALEMBIC)
       ("outputAlembic", po::value<std::string>(&exportAlembicFile)->default_value(exportAlembicFile),
           "Filename for the SfM_Data export file (where camera poses will be stored). "
           "Default : trackedcameras.abc.")
@@ -300,7 +302,7 @@ int main(int argc, char** argv)
   matchDescTypes = features::EImageDescriberType_stringToEnums(matchDescTypeNames);
 
   // decide the localizer to use based on the type of feature
-#ifdef HAVE_CCTAG
+#if OPENMVG_IS_DEFINED(OPENMVG_HAVE_CCTAG)
   useVoctreeLocalizer = !(matchDescTypes.size() == 1 &&
                         ((matchDescTypes.front() == features::EImageDescriberType::CCTAG3) ||
                         (matchDescTypes.front() == features::EImageDescriberType::CCTAG4)));
@@ -333,7 +335,7 @@ int main(int argc, char** argv)
       OPENMVG_COUT("\tuseFrameBufferMatching: " << useFrameBufferMatching);
       OPENMVG_COUT("\trobustMatching: " << robustMatching);
     }
-#ifdef HAVE_CCTAG 
+#if OPENMVG_IS_DEFINED(OPENMVG_HAVE_CCTAG) 
     else
     {
       OPENMVG_COUT("\tnNearestKeyFrames: " << nNearestKeyFrames);
@@ -343,7 +345,7 @@ int main(int argc, char** argv)
     OPENMVG_COUT("\tglobalBundle: " << globalBundle);
     OPENMVG_COUT("\tnoDistortion: " << noDistortion);
     OPENMVG_COUT("\tnoBArefineIntrinsics: " << noBArefineIntrinsics);
-#ifdef HAVE_ALEMBIC
+#if OPENMVG_IS_DEFINED(OPENMVG_HAVE_ALEMBIC)
     OPENMVG_COUT("\toutputAlembic: " << exportAlembicFile);
 #endif
     OPENMVG_COUT("\toutputBinary: " << exportBinaryFile);
@@ -359,7 +361,7 @@ int main(int argc, char** argv)
  
   // this contains the full path and the root name of the file without the extension
   const bool wantsBinaryOutput = exportBinaryFile.empty();
-#ifdef HAVE_ALEMBIC
+#if OPENMVG_IS_DEFINED(OPENMVG_HAVE_ALEMBIC)
   std::string basenameAlembic = (bfs::path(exportBinaryFile).parent_path() / bfs::path(exportBinaryFile).stem()).string();
 #endif
   std::string basenameBinary;
@@ -378,7 +380,8 @@ int main(int argc, char** argv)
   std::unique_ptr<localization::ILocalizer> localizer;
   
   // initialize the localizer according to the chosen type of describer
-#ifdef HAVE_CCTAG
+
+#if OPENMVG_IS_DEFINED(OPENMVG_HAVE_CCTAG)
   if(!useVoctreeLocalizer)
   {
     localization::CCTagLocalizer* tmpLoc = new localization::CCTagLocalizer(sfmFilePath, descriptorsFolder);
@@ -396,6 +399,7 @@ int main(int argc, char** argv)
                                                    vocTreeFilepath,
                                                    weightsFilepath,
                                                    matchDescTypes);
+
     localizer.reset(tmpLoc);
     
     localization::VoctreeLocalizer::Parameters *tmpParam = new localization::VoctreeLocalizer::Parameters();
@@ -409,8 +413,7 @@ int main(int argc, char** argv)
     tmpParam->_useFrameBufferMatching = useFrameBufferMatching;
     tmpParam->_useRobustMatching = robustMatching;
   }
-
-   
+  
   assert(localizer);
   assert(param);
   
@@ -437,7 +440,7 @@ int main(int argc, char** argv)
     return EXIT_FAILURE;
   }
   
-#ifdef HAVE_ALEMBIC
+#if OPENMVG_IS_DEFINED(OPENMVG_HAVE_ALEMBIC)
   // init alembic exporter
   sfm::AlembicExporter exporter( exportAlembicFile );
   exporter.initAnimatedCamera("camera");
@@ -485,7 +488,7 @@ int main(int argc, char** argv)
     // save data
     if(localizationResult.isValid())
     {
-#ifdef HAVE_ALEMBIC
+#if OPENMVG_IS_DEFINED(OPENMVG_HAVE_ALEMBIC)
       exporter.addCameraKeyframe(localizationResult.getPose(), &queryIntrinsics, currentImgName, frameCounter, frameCounter);
 #endif
       
@@ -495,7 +498,7 @@ int main(int argc, char** argv)
     else
     {
       OPENMVG_CERR("Unable to localize frame " << frameCounter);
-#ifdef HAVE_ALEMBIC
+#if OPENMVG_IS_DEFINED(OPENMVG_HAVE_ALEMBIC)
       exporter.jumpKeyframe(currentImgName);
 #endif
     }
@@ -535,7 +538,7 @@ int main(int argc, char** argv)
     }
     else
     {
-#ifdef HAVE_ALEMBIC
+#if OPENMVG_IS_DEFINED(OPENMVG_HAVE_ALEMBIC)
       // now copy back in a new abc with the same name file and BUNDLE appended at the end
       sfm::AlembicExporter exporterBA( basenameAlembic +".BUNDLE.abc" );
       exporterBA.initAnimatedCamera("camera");
@@ -545,7 +548,7 @@ int main(int argc, char** argv)
         if(res.isValid())
         {
           assert(idx < vec_localizationResults.size());
-          exporterBA.addCameraKeyframe(res.getPose(), &res.getIntrinsics(), currentImgName, frameCounter, frameCounter);
+          exporterBA.addCameraKeyframe(res.getPose(), &res.getIntrinsics(), currentImgName, idx, idx);
         }
         else
         {

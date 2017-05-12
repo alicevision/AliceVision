@@ -4,8 +4,6 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-#ifdef OPENMVG_HAVE_MOSEK
-
 #include "openMVG/linearProgramming/linearProgrammingMOSEK.hpp"
 #include <iostream>
 
@@ -435,5 +433,3 @@ bool MOSEK_SolveWrapper::getSolution(std::vector<double> & estimatedParams)
 
 } //namespace linearProgramming
 } //namespace openMVG
-
-#endif // OPENMVG_HAVE_MOSEK

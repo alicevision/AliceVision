@@ -8,8 +8,8 @@
 #include <openMVG/calibration/exportData.hpp>
 #include <openMVG/system/timer.hpp>
 #include <openMVG/logger.hpp>
+#include <openMVG/config.hpp>
 
-#include <boost/lexical_cast.hpp>
 #include <boost/program_options.hpp>
 #include <boost/filesystem.hpp>
 #include <boost/filesystem/path.hpp>
@@ -66,7 +66,7 @@ int main(int argc, char** argv)
            "Output filename for intrinsic [and extrinsic] parameters.\n")
           ("pattern,p", po::value<openMVG::calibration::Pattern>(&patternType)->default_value(patternType),
            "Type of pattern: 'CHESSBOARD', 'CIRCLES', 'ASYMMETRIC_CIRCLES'"
-            #ifdef HAVE_CCTAG
+            #if OPENMVG_IS_DEFINED(OPENMVG_HAVE_CCTAG)
                       " or 'ASYMMETRIC_CCTAG'"
             #endif
           ".\n")
@@ -206,7 +206,7 @@ int main(int argc, char** argv)
 
     // Find the chosen pattern in images
     const bool found = openMVG::calibration::findPattern(patternType, viewGray, boardSize, detectedId, pointbuf);
-
+    
     if (found)
     {
       validFrames.push_back(currentFrame);
