@@ -556,13 +556,16 @@ int main(int argc, char **argv)
 
     // Build the view corresponding to the image
     std::shared_ptr<View> currentView;
+    // Create a unique ID for the intrinsics of each camera.
+    // The values will be fused at the end and the index will be regenerated.
+    const IndexT idIntrinsics = id_view;
     if(!b_storeMetadata)
     {
-      currentView.reset(new View(*iter_image, id_view, views.size(), views.size(), width, height));
+      currentView.reset(new View(*iter_image, id_view, idIntrinsics, UndefinedIndexT, width, height));
     }
     else
     {
-      currentView.reset(new View_Metadata(*iter_image, id_view, views.size(), views.size(), width, height, allExifData));
+      currentView.reset(new View_Metadata(*iter_image, id_view, idIntrinsics, UndefinedIndexT, width, height, allExifData));
     }
 
     // Add intrinsic related to the image (if any)

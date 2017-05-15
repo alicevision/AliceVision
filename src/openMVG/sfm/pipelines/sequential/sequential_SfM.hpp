@@ -201,6 +201,7 @@ private:
   /// internal cache of precomputed values for the weighting of the pyramid levels
   std::vector<int> _pyramidWeights;
   int _pyramidThreshold;
+  int _newCameraIndex = 0;
 
   #if OPENMVG_IS_DEFINED(OPENMVG_HAVE_BOOST)
     // Property tree for json stats export

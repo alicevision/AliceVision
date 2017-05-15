@@ -43,6 +43,8 @@ TEST(SEQUENTIAL_SFM, Known_Intrinsics) {
 
   // Remove poses and structure
   SfM_Data sfm_data_2 = sfm_data;
+  for(auto& v: sfm_data_2.views)
+    v.second->id_pose = UndefinedIndexT;
   sfm_data_2.poses.clear();
   sfm_data_2.structure.clear();
 
@@ -94,6 +96,8 @@ TEST(SEQUENTIAL_SFM, Partially_Known_Intrinsics) {
 
   // Remove poses and structure
   SfM_Data sfm_data_2 = sfm_data;
+  for(auto& v: sfm_data_2.views)
+    v.second->id_pose = UndefinedIndexT;
   sfm_data_2.poses.clear();
   sfm_data_2.structure.clear();
   // Only the first two views will have valid intrinsics

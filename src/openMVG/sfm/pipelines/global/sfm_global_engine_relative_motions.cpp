@@ -115,6 +115,13 @@ void GlobalSfMReconstructionEngine_RelativeMotions::SetTranslationAveragingMetho
 }
 
 bool GlobalSfMReconstructionEngine_RelativeMotions::Process() {
+  
+  // Initialize undefined poses to a unique value
+  for(auto& v: _sfm_data.views)
+  {
+    if(v.second->id_pose == UndefinedIndexT)
+      v.second->id_pose = v.second->id_view;
+  }
 
   //-------------------
   // Keep only the largest biedge connected subgraph
