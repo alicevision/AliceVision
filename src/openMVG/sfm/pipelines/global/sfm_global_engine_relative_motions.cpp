@@ -291,14 +291,14 @@ bool GlobalSfMReconstructionEngine_RelativeMotions::Compute_Initial_Structure
     using namespace openMVG::tracks;
     TracksBuilder tracksBuilder;
 #ifdef USE_ALL_VALID_MATCHES // not used by default
-    matching::PairWiseSimpleMatches pose_supported_matches;
-    for (const std::pair< Pair, IndMatches > & match_info :  _matches_provider->_pairWise_matches)
+    matching::PairwiseMatches pose_supported_matches;
+    for (const auto & pairwiseMatchesIt :  *_pairwiseMatches)
     {
-      const View * vI = _sfm_data.GetViews().at(match_info.first.first).get();
-      const View * vJ = _sfm_data.GetViews().at(match_info.first.second).get();
+      const View * vI = _sfm_data.GetViews().at(pairwiseMatchesIt.first.first).get();
+      const View * vJ = _sfm_data.GetViews().at(pairwiseMatchesIt.first.second).get();
       if (_sfm_data.IsPoseAndIntrinsicDefined(vI) && _sfm_data.IsPoseAndIntrinsicDefined(vJ))
       {
-        pose_supported_matches.insert(match_info);
+        pose_supported_matches.insert(pairwiseMatchesIt);
       }
     }
     tracksBuilder.Build(pose_supported_matches);
