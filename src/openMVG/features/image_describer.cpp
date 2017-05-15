@@ -8,7 +8,9 @@
 #include "image_describer.hpp"
 
 #include "openMVG/features/image_describer_akaze.hpp"
+#if OPENMVG_IS_DEFINED(OPENMVG_HAVE_CCTAG)
 #include "openMVG/features/cctag/CCTAG_describer.hpp"
+#endif //OPENMVG_HAVE_CCTAG
 #include "openMVG/features/openCV/AKAZE_openCV_describer.hpp"
 #if OPENMVG_IS_DEFINED(OPENMVG_USE_OCVSIFT)
 #include "openMVG/features/openCV/SIFT_openCV_describer.hpp"
