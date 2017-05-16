@@ -55,8 +55,7 @@ public:
   /**
    * @brief The destructor.
    */
-  ~IRegionsMatcher()
-  {}
+  virtual ~IRegionsMatcher() = 0;
 
   IRegionsMatcher(const features::Regions& regions)
     : regions_(&regions)
@@ -90,6 +89,8 @@ public:
   const features::Regions& getDatabaseRegions() const { assert(regions_); return *regions_; }
 };
 
+inline IRegionsMatcher::~IRegionsMatcher()
+{}
 
 /**
  * Match two Regions with one stored as a "database" according a Template ArrayMatcher.
