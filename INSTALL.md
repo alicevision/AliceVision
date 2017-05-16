@@ -16,13 +16,13 @@ Required tools:
 Getting the sources:
 
 ```bash
-git clone --recursive https://github.com/openMVG/openMVG.git
+git clone --recursive https://github.com/alicevision/openMVG.git
 ```
 
 or
 
 ```bash
-git clone https://github.com/openMVG/openMVG.git
+git clone https://github.com/alicevision/openMVG.git
 cd openMVG
 git submodule init
 git submodule update
@@ -87,7 +87,7 @@ CMake Options
 * `OpenMVG_USE_OPENGV` (default `OFF`)
   Build with openGV for multi-cameras localization.
   `-DOPENGV_DIR:PATH=/path/to/opengv/install/` (where "include" and "lib" folders can be found)
-  We recommend: `git clone https://github.com/poparteu/opengv.git --branch=cmake_fix_install`
+  We recommend: `git clone https://github.com/alicevision/opengv.git --branch=cmake_fix_install`
 
 * `OpenMVG_USE_ALEMBIC` (default `OFF`)
   Build with Alembic file format support.
@@ -144,7 +144,7 @@ Linux compilation
 ### Clone and configure the project:
 
 ```bash
- git clone --recursive https://github.com/openMVG/openMVG.git
+ git clone --recursive https://github.com/alicevision/openMVG.git
  mkdir openMVG_Build
  cd openMVG_Build
  cmake -DCMAKE_BUILD_TYPE=RELEASE . ../openMVG/src/
@@ -201,7 +201,7 @@ Windows compilation
 -------------------
 
 * Checkout the project
-  `git clone --recursive https://github.com/openMVG/openMVG.git`
+  `git clone --recursive https://github.com/alicevision/openMVG.git`
 * Open cmake-gui
   * Fill the source path with the src openMVG path.
   * Fill the build path with a new directory
@@ -216,7 +216,7 @@ Windows compilation
 Mac OSX compilation
 -------------------
 ```bash
-git clone --recursive https://github.com/openMVG/openMVG.git
+git clone --recursive https://github.com/alicevision/openMVG.git
 mkdir openMVG_Build
 cd openMVG_Build
 cmake -DCMAKE_BUILD_TYPE=RELEASE -G "Xcode" . ../openMVG/src/
