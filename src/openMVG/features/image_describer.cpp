@@ -7,6 +7,7 @@
 
 #include "image_describer.hpp"
 
+#include <openMVG/config.hpp>
 #include "openMVG/features/image_describer_akaze.hpp"
 #if OPENMVG_IS_DEFINED(OPENMVG_HAVE_CCTAG)
 #include "openMVG/features/cctag/CCTAG_describer.hpp"
