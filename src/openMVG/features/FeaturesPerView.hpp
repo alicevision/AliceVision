@@ -113,7 +113,7 @@ public:
    * @param viewId
    * @param regionsPtr
    */
-  void addFeatures(IndexT viewId, features::EImageDescriberType descType, features::PointFeatures pointFeatures)
+  void addFeatures(IndexT viewId, features::EImageDescriberType descType, const features::PointFeatures& pointFeatures)
   {
     assert(descType != features::EImageDescriberType::UNINITIALIZED);
     _data[viewId][descType] = pointFeatures;
