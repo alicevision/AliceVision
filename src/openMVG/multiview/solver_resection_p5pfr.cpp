@@ -158,7 +158,7 @@ bool compute_P5Pfr_Poses_RD(const Mat & featureVectors, const Mat & worldPoints,
   std::vector<double> vec_g1_real;
   for(int i = 0; i < 4; ++i)
   {
-    if(abs(g1_im(i, 0)) < eps)
+    if(std::abs(g1_im(i, 0)) < eps)
       vec_g1_real.push_back(g1_re(i, 0));
   }
   if(vec_g1_real.size() == 0)
