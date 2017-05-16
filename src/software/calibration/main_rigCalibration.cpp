@@ -269,7 +269,7 @@ int main(int argc, char** argv)
 
   // decide the localizer to use based on the type of feature
 #if OPENMVG_IS_DEFINED(OPENMVG_HAVE_CCTAG)
-  useVoctreeLocalizer = (matchDescTypes.size() == 1 &&
+  useVoctreeLocalizer = !(matchDescTypes.size() == 1 &&
                         ((matchDescTypes.front() == features::EImageDescriberType::CCTAG3) ||
                         (matchDescTypes.front() == features::EImageDescriberType::CCTAG4)));
 #endif
