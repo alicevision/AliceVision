@@ -78,7 +78,7 @@ bool checkNear(double expect, double actual, double eps)
   return true;
 }
 
-bool sortM(resection::M &i, resection::M &j)
+bool sortM(const resection::M &i, const resection::M &j)
 {
   return (i._f < j._f);
 }
