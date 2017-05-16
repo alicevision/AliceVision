@@ -1,8 +1,6 @@
-=====================================
+
 OpenMVG (open Multiple View Geometry)
 =====================================
-
-------------------
 
 
 Build instructions
