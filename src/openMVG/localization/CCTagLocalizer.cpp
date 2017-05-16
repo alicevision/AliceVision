@@ -40,17 +40,6 @@ CCTagLocalizer::CCTagLocalizer(const std::string &sfmFilePath,
         "polymorphic Views. You can run the python script convertSfmData.py to update an existing sfmdata.");
     throw std::invalid_argument("The input SfM_Data file "+ sfmFilePath + " cannot be read.");
   }
-
-  // this block is used to get the type of features (by default SIFT) used
-  // for the reconstruction
-  const std::string sImage_describer = stlplus::create_filespec(descriptorsFolder, "image_describer", "json");
-  std::unique_ptr<Regions> regions_type = Init_region_type_from_file(sImage_describer);
-  if(!regions_type)
-  {
-    OPENMVG_CERR("Invalid: "
-            << sImage_describer << " regions type file.");
-    throw std::invalid_argument("Invalid: "+ sImage_describer + " regions type file.");
-  }
   
   bool loadSuccessful = loadReconstructionDescriptors(_sfm_data, descriptorsFolder);
   
@@ -89,30 +78,62 @@ bool CCTagLocalizer::loadReconstructionDescriptors(const sfm::SfM_Data & sfm_dat
                                                    const std::string & feat_directory)
 {
   OPENMVG_LOG_DEBUG("Build observations per view");
+
+  // Read for each view the corresponding regions and store them
+//  sfm::loadRegionsPerView(_regionsPerView,
+//              sfm_data,
+//              feat_directory,
+//              {_cctagDescType});
+
   // Build observations per view
-  std::map<IndexT, std::vector<features::FeatureInImage> > observationsPerView;
-  for(auto landmarkValue : sfm_data.structure)
+  std::map<IndexT, std::map<features::EImageDescriberType, std::vector<features::FeatureInImage>>> observationsPerView;
+  for(const auto& landmarkValue : _sfm_data.structure)
   {
     IndexT trackId = landmarkValue.first;
-    sfm::Landmark& landmark = landmarkValue.second;
-    for(auto obs : landmark.observations)
+    const sfm::Landmark& landmark = landmarkValue.second;
+
+    for(const auto& obs : landmark.observations)
     {
       const IndexT viewId = obs.first;
       const sfm::Observation& obs2d = obs.second;
-      observationsPerView[viewId].push_back(features::FeatureInImage(obs2d.id_feat, trackId));
+      observationsPerView[viewId][landmark.descType].emplace_back(obs2d.id_feat, trackId);
     }
   }
-  for(auto featuresInImage : observationsPerView)
+  for(auto& featuresPerTypeInImage : observationsPerView)
   {
-    std::sort(featuresInImage.second.begin(), featuresInImage.second.end());
+    for(auto& featuresInImage : featuresPerTypeInImage.second)
+    {
+      std::sort(featuresInImage.second.begin(), featuresInImage.second.end());
+    }
   }
-  
+
   OPENMVG_LOG_DEBUG("Load Features and Descriptors per view");
-  // Read for each view the corresponding regions and store them
-  sfm::loadRegionsPerView(_regionsPerView,
-              sfm_data,
-              feat_directory,
-              {_cctagDescType});
+
+  // Read for each view the corresponding Regions and store them
+  for(const auto &iter : _sfm_data.GetViews())
+  {
+    const IndexT id_view = iter.second->id_view;
+    if(observationsPerView.count(id_view) == 0)
+      continue;
+    const auto& observations = observationsPerView.at(id_view);
+    {
+      const features::EImageDescriberType descType = _imageDescriber.getDescriberType();
+
+      if(observations.count(descType) == 0)
+      {
+        // no descriptor of this type reconstructed in this View
+        _imageDescriber.Allocate(_regionsPerView.getData()[id_view][descType]);
+        continue;
+      }
+
+      // Load from files
+      std::unique_ptr<features::Regions> currRegions = sfm::loadRegions(feat_directory, id_view, _imageDescriber);
+
+      // Filter descriptors to keep only the 3D reconstructed points
+      _regionsPerView.getData()[id_view][descType] = createFilteredRegions(*currRegions, observations.at(descType), _reconstructedRegionsMappingPerView[id_view][descType]);
+    }
+  }
+
 
   {
     std::set<int> presentCCtagIds;

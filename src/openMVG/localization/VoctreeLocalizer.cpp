@@ -257,7 +257,7 @@ bool VoctreeLocalizer::initDatabase(const std::string & vocTreeFilepath,
   {
     OPENMVG_LOG_DEBUG("No weights specified, skipping...");
   }
-  
+
   // Load the descriptors and the features related to the images
   // for every image, pass the descriptors through the vocabulary tree and
   // add its visual words to the database.
@@ -291,10 +291,13 @@ bool VoctreeLocalizer::initDatabase(const std::string & vocTreeFilepath,
   // Read for each view the corresponding Regions and store them
   for(const auto &iter : _sfm_data.GetViews())
   {
+    const IndexT id_view = iter.second->id_view;
+    if(observationsPerView.count(id_view) == 0)
+      continue;
+    const auto& observations = observationsPerView.at(id_view);
     for(const auto& imageDescriber: _imageDescribers)
     {
-      features::EImageDescriberType descType = imageDescriber->getDescriberType();
-      const IndexT id_view = iter.second->id_view;
+      const features::EImageDescriberType descType = imageDescriber->getDescriberType();
 
       // Load from files
       std::unique_ptr<features::Regions> currRegions = sfm::loadRegions(feat_directory, id_view, *imageDescriber);
@@ -305,8 +308,15 @@ bool VoctreeLocalizer::initDatabase(const std::string & vocTreeFilepath,
         _database.insert(id_view, histo);
       }
 
+      if(observations.count(descType) == 0)
+      {
+        // no descriptor of this type in this View
+        _regionsPerView.getData()[id_view][descType] = std::unique_ptr<features::Regions>();
+        continue;
+      }
+
       // Filter descriptors to keep only the 3D reconstructed points
-      _regionsPerView.getData()[id_view][descType] = createFilteredRegions(*currRegions, observationsPerView.at(id_view).at(descType), _reconstructedRegionsMappingPerView[id_view][descType]);
+      _regionsPerView.getData()[id_view][descType] = createFilteredRegions(*currRegions, observations.at(descType), _reconstructedRegionsMappingPerView[id_view][descType]);
     }
     ++my_progress_bar;
   }
@@ -683,6 +693,11 @@ void VoctreeLocalizer::getAllAssociations(const features::MapRegionsPerDesc &que
   // pass the descriptors through the vocabulary tree to get the visual words
   // associated to each feature
   OPENMVG_LOG_DEBUG("[database]\tRequest closest images from voctree");
+  if(queryRegions.count(_voctreeDescType) == 0)
+  {
+    OPENMVG_LOG_WARNING("[database]\t No feature type " << features::EImageDescriberType_enumToString(_voctreeDescType) << " in query region.");
+    return;
+  }
   voctree::SparseHistogram requestImageWords = _voctree->quantizeToSparse(queryRegions.at(_voctreeDescType)->blindDescriptors());
   
   // Request closest images from voctree

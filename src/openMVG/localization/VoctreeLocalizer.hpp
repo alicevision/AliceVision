@@ -22,8 +22,6 @@
 #include <openMVG/matching/regions_matcher.hpp>
 #include <flann/algorithms/dist.h>
 
-#define USE_SIFT_FLOAT 0
-
 
 namespace openMVG {
 namespace localization {
@@ -37,6 +35,7 @@ struct FrameData
     const auto &associationIDs = _locResult.getIndMatch3D2D();
     const auto &inliers = _locResult.getInliers();
 
+    // Regions for each describer type
     for(const auto& regionsIt : regions)
     {
       // feature in image are <featureID, point3Did> associations
@@ -46,7 +45,6 @@ struct FrameData
       for(const auto &idx : inliers)
       {
         assert(idx < associationIDs.size());
-        // association is a pait <point3dID, point2dID>
         const auto &association = associationIDs[idx];
         if(association.descType != regionsIt.first)
           continue;

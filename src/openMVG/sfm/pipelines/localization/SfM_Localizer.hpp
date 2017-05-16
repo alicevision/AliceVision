@@ -36,6 +36,8 @@ struct Image_Localizer_Match_Data
   /// represent the column indices of inliers in  pt2D 
   /// and pt3D.
   std::vector<std::size_t> vec_inliers;
+
+  std::vector<features::EImageDescriberType> vec_descType;
   
   /// Upper bound pixel(s) tolerance for residual errors
   double error_max = std::numeric_limits<double>::infinity();

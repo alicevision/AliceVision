@@ -149,7 +149,7 @@ private:
   // for each view index, it contains the cctag features and descriptors that have an
   // associated 3D point
   features::RegionsPerView _regionsPerView;
-  ReconstructedRegionsMappingPerView _reconstructedRegionsMappingPerView; // TODO: DELI check if it can be removed
+  ReconstructedRegionsMappingPerView _reconstructedRegionsMappingPerView;
 
   // the feature extractor
   features::CCTAG_Image_describer _imageDescriber;
@@ -181,7 +181,7 @@ void kNearestKeyFrames(
           const features::RegionsPerView & regionsPerView,
           std::size_t nNearestKeyFrames,
           std::vector<IndexT> & out_kNearestFrames,
-          const float similarityThreshold = .0f);
+          const float similarityThreshold = 1.0f);
 
 /**
  * @brief Given a set of CCTag descriptors seen in a view, it creates a descriptor for the view: the
