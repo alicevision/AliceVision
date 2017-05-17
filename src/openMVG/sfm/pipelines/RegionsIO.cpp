@@ -50,15 +50,12 @@ bool loadRegionsPerView(features::RegionsPerView& regionsPerView,
     imageDescribers[i] = createImageDescriber(imageDescriberTypes[i]);
   }
 
-#ifdef OPENMVG_USE_OPENMP
-  #pragma omp parallel num_threads(3)
-#endif
+
+#pragma omp parallel num_threads(3)
  for (auto iter = sfmData.GetViews().begin();
    iter != sfmData.GetViews().end() && !invalid; ++iter)
  {
-#ifdef OPENMVG_USE_OPENMP
   #pragma omp single nowait
-#endif
    {
      for(std::size_t i = 0; i < imageDescriberTypes.size(); ++i)
      {
@@ -68,9 +65,7 @@ bool loadRegionsPerView(features::RegionsPerView& regionsPerView,
 
          if(regionsPtr)
          {
-#ifdef OPENMVG_USE_OPENMP
   #pragma omp critical
-#endif
            {
              regionsPerView.addRegions(iter->second.get()->id_view, imageDescriberTypes[i], regionsPtr.release());
              ++my_progress_bar;
@@ -106,15 +101,11 @@ bool loadFeaturesPerView(features::FeaturesPerView& featuresPerView,
     imageDescribers[i] = createImageDescriber(imageDescriberTypes[i]);
   }
 
-#ifdef OPENMVG_USE_OPENMP
-  #pragma omp parallel
-#endif
+#pragma omp parallel
   for (auto iter = sfmData.GetViews().begin();
     (iter != sfmData.GetViews().end()) && (!invalid); ++iter)
   {
-#ifdef OPENMVG_USE_OPENMP
-  #pragma omp single nowait
-#endif
+#pragma omp single nowait
     {
       for(std::size_t i = 0; i < imageDescriberTypes.size(); ++i)
       {
@@ -133,9 +124,7 @@ bool loadFeaturesPerView(features::FeaturesPerView& featuresPerView,
           invalid = true;
         }
 
-#ifdef OPENMVG_USE_OPENMP
-  #pragma omp critical
-#endif
+#pragma omp critical
         {
           // save loaded Features as PointFeature
           featuresPerView.addFeatures(iter->second.get()->id_view, imageDescriberTypes[i], regionsPtr->GetRegionsPositions());
