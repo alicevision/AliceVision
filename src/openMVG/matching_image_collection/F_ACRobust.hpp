@@ -44,7 +44,7 @@ struct GeometricFilter_FMatrix
    * relating them using a robust method (like A Contrario Ransac).
    */
   template<class Regions_or_Features_ProviderT>
-  bool Robust_estimation(
+  bool geometricEstimation(
     const sfm::SfM_Data * sfmData,
     const Regions_or_Features_ProviderT & regionsPerView,
     const Pair pairIndex,
@@ -68,7 +68,7 @@ struct GeometricFilter_FMatrix
     const std::pair<size_t,size_t> imageSizeI(sfmData->GetViews().at(iIndex)->ui_width, sfmData->GetViews().at(iIndex)->ui_height);
     const std::pair<size_t,size_t> imageSizeJ(sfmData->GetViews().at(jIndex)->ui_width, sfmData->GetViews().at(jIndex)->ui_height);
 
-    return Robust_estimation(
+    return geometricEstimation(
         regionsPerView.getDataPerDesc(pairIndex.first), regionsPerView.getDataPerDesc(pairIndex.second),
         cam_I, cam_J,
         imageSizeI, imageSizeJ,
@@ -81,7 +81,7 @@ struct GeometricFilter_FMatrix
    * relating them using a robust method (like A Contrario Ransac).
    */
   template<class MapFeatOrRegionsPerDesc>
-  bool Robust_estimation(
+  bool geometricEstimation(
       const MapFeatOrRegionsPerDesc& region_I,
       const MapFeatOrRegionsPerDesc& region_J,
       const cameras::IntrinsicBase * cam_I,
@@ -107,7 +107,7 @@ struct GeometricFilter_FMatrix
                      descTypes, xI, xJ);
     std::vector<size_t> inliers;
 
-    bool valid = Robust_estimation(
+    bool valid = geometricEstimation_Mat(
         xI, xJ,
         imageSizeI,
         imageSizeJ,
@@ -139,7 +139,7 @@ struct GeometricFilter_FMatrix
    * namely if there are at least KernelType::MINIMUM_SAMPLES *2.5 points supporting
    * the estimated fundamental matrix 
    */
-  bool Robust_estimation(
+  bool geometricEstimation_Mat(
     const Mat& xI,       // points of the first image
     const Mat& xJ,       // points of the second image
     const std::pair<size_t,size_t> & imageSizeI,     // size of the first image  
@@ -184,7 +184,7 @@ struct GeometricFilter_FMatrix
         // just a safeguard
         if(m_dPrecision == std::numeric_limits<double>::infinity())
         {
-          throw std::invalid_argument("[GeometricFilter_FMatrix_AC::Robust_estimation] the threshold of the LORANSAC is set to infinity!");
+          throw std::invalid_argument("[GeometricFilter_FMatrix_AC::geometricEstimation] the threshold of the LORANSAC is set to infinity!");
         }
 
         typedef KernelAdaptorLoRansac<
@@ -212,7 +212,7 @@ struct GeometricFilter_FMatrix
         return valid;
       }
     default:
-      throw std::runtime_error("[GeometricFilter_FMatrix_AC::Robust_estimation] only ACRansac and LORansac are supported!");
+      throw std::runtime_error("[GeometricFilter_FMatrix_AC::geometricEstimation] only ACRansac and LORansac are supported!");
     }
     return false;
   }

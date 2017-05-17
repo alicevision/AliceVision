@@ -35,7 +35,7 @@ struct GeometricFilter_HMatrix_AC
    * relating them using a robust method (like A Contrario Ransac).
    */
   template<typename Regions_or_Features_ProviderT>
-  bool Robust_estimation(
+  bool geometricEstimation(
     const sfm::SfM_Data * sfmData,
     const Regions_or_Features_ProviderT& regionsPerView,
     const Pair pairIndex,

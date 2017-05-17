@@ -73,7 +73,7 @@ void ImageCollectionGeometricFilter::Robust_model_estimation(
     {
       MatchesPerDescType inliers;
       GeometryFunctor geometricFilter = functor; // use a copy since we are in a multi-thread context
-      if (geometricFilter.Robust_estimation(_sfm_data, _regionsPerView, imagePair, putativeMatchesPerType, inliers))
+      if (geometricFilter.geometricEstimation(_sfm_data, _regionsPerView, imagePair, putativeMatchesPerType, inliers))
       {
         if (b_guided_matching)
         {

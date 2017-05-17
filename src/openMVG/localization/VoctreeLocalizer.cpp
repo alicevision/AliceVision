@@ -1033,7 +1033,7 @@ bool VoctreeLocalizer::robustMatching(matching::RegionsDatabaseMatcherPerDesc & 
   matching_image_collection::GeometricFilter_FMatrix geometricFilter(matchingError, 5000, estimator);
 
   matching::MatchesPerDescType geometricInliersPerType;
-  bool valid = geometricFilter.Robust_estimation(
+  bool valid = geometricFilter.geometricEstimation(
         matchers.getDatabaseRegionsPerDesc(),
         matchedRegions,
         queryIntrinsics,
