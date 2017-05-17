@@ -289,9 +289,12 @@ bool VoctreeLocalizer::initDatabase(const std::string & vocTreeFilepath,
   }
 
   // Read for each view the corresponding Regions and store them
-  for(const auto &iter : _sfm_data.GetViews())
+#pragma omp parallel for num_threads(3)
+  for(int i = 0; i < _sfm_data.GetViews().size(); ++i)
   {
-    const IndexT id_view = iter.second->id_view;
+    auto iter = _sfm_data.GetViews().cbegin();
+    std::advance(iter, i);
+    const IndexT id_view = iter->second->id_view;
     if(observationsPerView.count(id_view) == 0)
       continue;
     const auto& observations = observationsPerView.at(id_view);
@@ -299,24 +302,43 @@ bool VoctreeLocalizer::initDatabase(const std::string & vocTreeFilepath,
     {
       const features::EImageDescriberType descType = imageDescriber->getDescriberType();
 
+      ReconstructedRegionsMapping mapping;
+      if(observations.count(descType) == 0)
+      {
+        // no descriptor of this type in this View
+#pragma omp critical
+        {
+          // We always initialize objects with empty structures,
+          // so all views and descTypes always exist in the map.
+          // It simplifies the code based on these data structures,
+          // so you have a data structure with 0 element and you don't need to add
+          // special cases everywhere for empty elements.
+          _reconstructedRegionsMappingPerView[id_view][descType] = std::move(mapping);
+          imageDescriber->Allocate(_regionsPerView.getData()[id_view][descType]);
+        }
+        continue;
+      }
+
       // Load from files
       std::unique_ptr<features::Regions> currRegions = sfm::loadRegions(feat_directory, id_view, *imageDescriber);
 
       if(descType == _voctreeDescType)
       {
         voctree::SparseHistogram histo = _voctree->quantizeToSparse(currRegions->blindDescriptors());
-        _database.insert(id_view, histo);
+#pragma omp critical
+        {
+          _database.insert(id_view, histo);
+        }
       }
 
-      if(observations.count(descType) == 0)
-      {
-        // no descriptor of this type in this View
-        _regionsPerView.getData()[id_view][descType] = std::unique_ptr<features::Regions>();
-        continue;
-      }
 
       // Filter descriptors to keep only the 3D reconstructed points
-      _regionsPerView.getData()[id_view][descType] = createFilteredRegions(*currRegions, observations.at(descType), _reconstructedRegionsMappingPerView[id_view][descType]);
+      std::unique_ptr<features::Regions> filteredRegions = createFilteredRegions(*currRegions, observations.at(descType), mapping);
+#pragma omp critical
+      {
+        _reconstructedRegionsMappingPerView[id_view][descType] = std::move(mapping);
+        _regionsPerView.getData()[id_view][descType] = std::move(filteredRegions);
+      }
     }
     ++my_progress_bar;
   }
@@ -1126,7 +1148,7 @@ bool VoctreeLocalizer::localizeRig(const std::vector<features::MapRegionsPerDesc
 #if OPENMVG_IS_DEFINED(OPENMVG_HAVE_OPENGV)
   if(!parameters->_useLocalizeRigNaive)
   {
-    OPENMVG_LOG_DEBUG("Using localizeRig_naive()");
+    OPENMVG_LOG_DEBUG("Using localizeRig_opengv()");
     return localizeRig_opengv(vec_queryRegions,
                               vec_imageSize,
                               parameters,
