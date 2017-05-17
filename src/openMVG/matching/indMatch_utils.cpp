@@ -179,7 +179,7 @@ bool LoadMatchFilePerImage(
     OPENMVG_LOG_WARNING("No matches file loaded in: " << folder);
     return false;
   }
-  OPENMVG_LOG_DEBUG("Matches per image pair");
+  OPENMVG_LOG_TRACE("Matches per image pair");
   for(const auto& imagePairIt: matches)
   {
     std::stringstream ss;
@@ -188,7 +188,7 @@ bool LoadMatchFilePerImage(
     {
        ss << " [" << features::EImageDescriberType_enumToString(matchesPerDeskIt.first) << ": " << matchesPerDeskIt.second.size() << "]";
     }
-    OPENMVG_LOG_DEBUG(ss.str());
+    OPENMVG_LOG_TRACE(ss.str());
   }
   return true;
 }
@@ -227,7 +227,7 @@ bool Load(
   if(!descTypesFilter.empty())
     filterMatchesByDesc(matches, descTypesFilter);
 
-  OPENMVG_LOG_DEBUG("Matches per image pair");
+  OPENMVG_LOG_TRACE("Matches per image pair");
   for(const auto& imagePairIt: matches)
   {
     std::stringstream ss;
@@ -236,7 +236,7 @@ bool Load(
     {
        ss << " [" << features::EImageDescriberType_enumToString(matchesPerDeskIt.first) << ": " << matchesPerDeskIt.second.size() << "]";
     }
-    OPENMVG_LOG_DEBUG(ss.str());
+    OPENMVG_LOG_TRACE(ss.str());
   }
 
   return res;

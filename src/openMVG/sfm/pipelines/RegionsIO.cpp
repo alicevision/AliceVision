@@ -15,19 +15,20 @@ std::unique_ptr<features::Regions> loadRegions(const std::string& folder, IndexT
 
   const std::string featFilename = stlplus::create_filespec(folder, basename, imageDescriberTypeName + ".feat");
   const std::string descFilename = stlplus::create_filespec(folder, basename, imageDescriberTypeName + ".desc");
-  OPENMVG_LOG_WARNING("featFilename: " << featFilename);
-  OPENMVG_LOG_WARNING("descFilename: " << descFilename);
+  OPENMVG_LOG_TRACE("featFilename: " << featFilename);
+  OPENMVG_LOG_TRACE("descFilename: " << descFilename);
 
   std::unique_ptr<features::Regions> regionsPtr;
   imageDescriber.Allocate(regionsPtr);
 
   if (!regionsPtr->Load(featFilename, descFilename))
   {
-    OPENMVG_LOG_WARNING("Invalid " << imageDescriberTypeName << " regions files for the view : " << basename << ", describer type: " << imageDescriberTypeName);
-    OPENMVG_LOG_WARNING("See features and descriptors files: " << featFilename << "\n" << descFilename);
-    return std::unique_ptr<features::Regions>();
+    std::stringstream ss;
+    ss << "Invalid " << imageDescriberTypeName << " regions files for the view : " << basename << ", describer type: " << imageDescriberTypeName << "\n";
+    ss << "See features and descriptors files: " << featFilename << "\n" << descFilename << "\n";
+    throw std::runtime_error(ss.str());
   }
-  OPENMVG_LOG_WARNING("RegionCount: " << regionsPtr->RegionCount());
+  OPENMVG_LOG_TRACE("RegionCount: " << regionsPtr->RegionCount());
   return regionsPtr;
 }
 
@@ -113,7 +114,7 @@ bool loadFeaturesPerView(features::FeaturesPerView& featuresPerView,
                 std::to_string(iter->second->id_view),
                 EImageDescriberType_enumToString(imageDescriberTypes[i]) + ".feat");
 
-        OPENMVG_LOG_WARNING("featFilename: " << featFile);
+        OPENMVG_LOG_TRACE("featFilename: " << featFile);
 
         std::unique_ptr<features::Regions> regionsPtr;
         imageDescribers[i]->Allocate(regionsPtr);

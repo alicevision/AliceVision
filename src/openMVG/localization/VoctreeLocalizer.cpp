@@ -744,8 +744,8 @@ void VoctreeLocalizer::getAllAssociations(const features::MapRegionsPerDesc &que
       OPENMVG_LOG_DEBUG("[matching]\tSkipping matching with " << matchedView->s_Img_path << " as it has too few visible 3D points");
       continue;
     }
-    OPENMVG_LOG_DEBUG("[matching]\tTrying to match the query image with " << matchedView->s_Img_path);
-    OPENMVG_LOG_DEBUG("[matching]\tIt has " << matchedRegions.getNbAllRegions() << " available features to match");
+    OPENMVG_LOG_TRACE("[matching]\tTrying to match the query image with " << matchedView->s_Img_path);
+    OPENMVG_LOG_TRACE("[matching]\tIt has " << matchedRegions.getNbAllRegions() << " available features to match");
     
     // its associated intrinsics
     // this is just ugly!
