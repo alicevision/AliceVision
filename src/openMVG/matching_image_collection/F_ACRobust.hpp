@@ -6,6 +6,9 @@
 
 #pragma once
 
+#include "openMVG/matching_image_collection/GeometricFilterMatrix.hpp"
+#include "openMVG/matching_image_collection/Geometric_Filter_utils.hpp"
+#include "openMVG/matching/indMatch.hpp"
 #include "openMVG/multiview/solver_fundamental_kernel.hpp"
 #include "openMVG/multiview/essential.hpp"
 #include "openMVG/robust_estimation/robust_estimators.hpp"
@@ -15,27 +18,21 @@
 #include "openMVG/robust_estimation/robust_estimator_LORansacKernelAdaptor.hpp"
 #include "openMVG/robust_estimation/score_evaluator.hpp"
 #include "openMVG/robust_estimation/guided_matching.hpp"
-
-#include "openMVG/matching/indMatch.hpp"
 #include "openMVG/sfm/sfm_data.hpp"
 #include "openMVG/features/RegionsPerView.hpp"
-#include "openMVG/matching_image_collection/Geometric_Filter_utils.hpp"
-
 
 namespace openMVG {
 namespace matching_image_collection {
 
 //-- A contrario fundamental matrix estimation template functor used for filter pair of putative correspondences
-struct GeometricFilter_FMatrix
+struct GeometricFilter_FMatrix: public GeometricFilterMatrix
 {
   GeometricFilter_FMatrix(
     double dPrecision = std::numeric_limits<double>::infinity(),
     size_t iteration = 1024,
     robust::EROBUST_ESTIMATOR estimator = robust::ROBUST_ESTIMATOR_ACRANSAC)
-    : m_dPrecision(dPrecision)
-    , m_stIteration(iteration)
+    : GeometricFilterMatrix(dPrecision, std::numeric_limits<double>::infinity(), iteration)
     , m_F(Mat3::Identity())
-    , m_dPrecision_robust(std::numeric_limits<double>::infinity())
     , m_estimator(estimator)
   {}
 
@@ -44,7 +41,7 @@ struct GeometricFilter_FMatrix
    * relating them using a robust method (like A Contrario Ransac).
    */
   template<class Regions_or_Features_ProviderT>
-  bool geometricEstimation(
+  EstimationState geometricEstimation(
     const sfm::SfM_Data * sfmData,
     const Regions_or_Features_ProviderT & regionsPerView,
     const Pair pairIndex,
@@ -81,7 +78,7 @@ struct GeometricFilter_FMatrix
    * relating them using a robust method (like A Contrario Ransac).
    */
   template<class MapFeatOrRegionsPerDesc>
-  bool geometricEstimation(
+  EstimationState geometricEstimation(
       const MapFeatOrRegionsPerDesc& region_I,
       const MapFeatOrRegionsPerDesc& region_J,
       const cameras::IntrinsicBase * cam_I,
@@ -98,7 +95,7 @@ struct GeometricFilter_FMatrix
     const std::vector<features::EImageDescriberType> descTypes = getCommonDescTypes(region_I, region_J);
 
     if(descTypes.empty())
-      return false;
+      return EstimationState(false, false);
 
     // Retrieve all 2D features as undistorted positions into flat arrays
     Mat xI, xJ;
@@ -107,14 +104,17 @@ struct GeometricFilter_FMatrix
                      descTypes, xI, xJ);
     std::vector<size_t> inliers;
 
-    bool valid = geometricEstimation_Mat(
+    std::pair<bool, std::size_t> estimationPair = geometricEstimation_Mat(
         xI, xJ,
         imageSizeI,
         imageSizeJ,
         inliers);
 
-    if (!valid)
-      return false;
+    if (!estimationPair.first) // estimation is not valid
+    {
+      assert(inliers.empty());
+      return EstimationState(false, false);
+    }
 
     // Fill geometricInliersPerType with inliers from putativeMatchesPerType
     copyInlierMatches(
@@ -123,7 +123,10 @@ struct GeometricFilter_FMatrix
           descTypes,
           out_geometricInliersPerType);
 
-    return true;
+    // If matches has strong support
+    const bool hasStrongSupport = robust::hasStrongSupport(out_geometricInliersPerType, estimationPair.second);
+
+    return EstimationState(true, hasStrongSupport);
   }
 
   /**
@@ -135,20 +138,18 @@ struct GeometricFilter_FMatrix
    * @param[in] imageSizeI The size of the first image (used for normalizing the points)
    * @param[in] imageSizeJ The size of the second image
    * @param[out] geometric_inliers A vector containing the indices of the inliers
-   * @return true if the estimated fundamental matrix is supported by enough points,
-   * namely if there are at least KernelType::MINIMUM_SAMPLES *2.5 points supporting
-   * the estimated fundamental matrix 
+   * @return true if geometric_inliers is not empty
    */
-  bool geometricEstimation_Mat(
+  std::pair<bool, std::size_t> geometricEstimation_Mat(
     const Mat& xI,       // points of the first image
     const Mat& xJ,       // points of the second image
     const std::pair<size_t,size_t> & imageSizeI,     // size of the first image  
     const std::pair<size_t,size_t> & imageSizeJ,     // size of the first image
-    std::vector<size_t> &vec_inliers)
+    std::vector<size_t> & out_inliers)
   {
     using namespace openMVG;
     using namespace openMVG::robust;
-    vec_inliers.clear();
+    out_inliers.clear();
 
     switch(m_estimator)
     {
@@ -170,14 +171,14 @@ struct GeometricFilter_FMatrix
         // Robustly estimate the Fundamental matrix with A Contrario ransac
         const double upper_bound_precision = Square(m_dPrecision);
         const std::pair<double,double> ACRansacOut =
-          ACRANSAC(kernel, vec_inliers, m_stIteration, &m_F, upper_bound_precision);
+          ACRANSAC(kernel, out_inliers, m_stIteration, &m_F, upper_bound_precision);
 
-        bool valid = ( (vec_inliers.size() > KernelType::MINIMUM_SAMPLES * OPENMVG_MINIMUM_SAMPLES_COEF) );
+        if(out_inliers.empty())
+          return std::make_pair(false, KernelType::MINIMUM_SAMPLES);
 
-        // if the estimation has enough support set its precision
-        if(valid) m_dPrecision_robust = ACRansacOut.first;
+        m_dPrecision_robust = ACRansacOut.first;
 
-        return valid;
+        return std::make_pair(true, KernelType::MINIMUM_SAMPLES);
       }
       case ROBUST_ESTIMATOR_LORANSAC:
       {
@@ -202,19 +203,19 @@ struct GeometricFilter_FMatrix
         const double normalizedThreshold = Square(m_dPrecision * kernel.normalizer2()(0, 0));
         ScorerEvaluator<KernelType> scorer(normalizedThreshold);
 
-        m_F = LO_RANSAC(kernel, scorer, &vec_inliers);
+        m_F = LO_RANSAC(kernel, scorer, &out_inliers);
 
-        bool valid = ( (vec_inliers.size() > KernelType::MINIMUM_SAMPLES * OPENMVG_MINIMUM_SAMPLES_COEF) );
+        if(out_inliers.empty())
+          return std::make_pair(false, KernelType::MINIMUM_SAMPLES);
 
-        // for LORansac the robust precision is the same as the threshold
-        if(valid) m_dPrecision_robust = m_dPrecision;
+        m_dPrecision_robust = m_dPrecision;
 
-        return valid;
+        return std::make_pair(true, KernelType::MINIMUM_SAMPLES);
       }
     default:
       throw std::runtime_error("[GeometricFilter_FMatrix_AC::geometricEstimation] only ACRansac and LORansac are supported!");
     }
-    return false;
+    return std::make_pair(false, 0);;
   }
   
   /**
@@ -231,7 +232,7 @@ struct GeometricFilter_FMatrix
     const features::RegionsPerView& regionsPerView,
     const Pair imageIdsPair,
     const double dDistanceRatio,
-    matching::MatchesPerDescType & matches)
+    matching::MatchesPerDescType & matches) override
   {
     if (m_dPrecision_robust != std::numeric_limits<double>::infinity())
     {
@@ -264,14 +265,11 @@ struct GeometricFilter_FMatrix
     return matches.getNbAllMatches() != 0;
   }
   
-  double m_dPrecision;  //upper_bound precision used for robust estimation
-  size_t m_stIteration; //maximal number of iteration for robust estimation
   //
   //-- Stored data
   Mat3 m_F;
-  double m_dPrecision_robust;
   robust::EROBUST_ESTIMATOR m_estimator;
 };
 
+} // namespace matching_image_collection
 } // namespace openMVG
-} //namespace matching_image_collection

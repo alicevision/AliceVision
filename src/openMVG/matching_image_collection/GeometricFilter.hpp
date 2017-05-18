@@ -7,10 +7,11 @@
 
 #pragma once
 
+#include <openMVG/config.hpp>
 #include "openMVG/features/feature.hpp"
 #include "openMVG/features/RegionsPerView.hpp"
 #include "openMVG/matching/indMatch.hpp"
-#include <openMVG/config.hpp>
+#include "openMVG/matching_image_collection/GeometricFilterMatrix.hpp"
 
 #include "third_party/stlplus3/filesystemSimplified/file_system.hpp"
 #include "third_party/progress/progress.hpp"
@@ -73,7 +74,8 @@ void ImageCollectionGeometricFilter::Robust_model_estimation(
     {
       MatchesPerDescType inliers;
       GeometryFunctor geometricFilter = functor; // use a copy since we are in a multi-thread context
-      if (geometricFilter.geometricEstimation(_sfm_data, _regionsPerView, imagePair, putativeMatchesPerType, inliers))
+      const matching_image_collection::EstimationState state = geometricFilter.geometricEstimation(_sfm_data, _regionsPerView, imagePair, putativeMatchesPerType, inliers);
+      if (state.hasStrongSupport)
       {
         if (b_guided_matching)
         {

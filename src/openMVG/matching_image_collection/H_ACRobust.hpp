@@ -16,35 +16,36 @@
 #include "openMVG/matching/indMatchDecoratorXY.hpp"
 #include "openMVG/sfm/sfm_data.hpp"
 #include "openMVG/features/RegionsPerView.hpp"
-#include "openMVG/matching_image_collection/Geometric_Filter_utils.hpp"
+#include "openMVG/matching_image_collection/GeometricFilterMatrix.hpp"
 
 namespace openMVG {
 namespace matching_image_collection {
 
 //-- A contrario homography matrix estimation template functor used for filter pair of putative correspondences
-struct GeometricFilter_HMatrix_AC
+struct GeometricFilter_HMatrix_AC : public GeometricFilterMatrix
 {
   GeometricFilter_HMatrix_AC(
     double dPrecision = std::numeric_limits<double>::infinity(),
     size_t iteration = 1024)
-    : m_dPrecision(dPrecision), m_stIteration(iteration), m_H(Mat3::Identity()),
-      m_dPrecision_robust(std::numeric_limits<double>::infinity()){};
+    : GeometricFilterMatrix(dPrecision, std::numeric_limits<double>::infinity(), iteration)
+    , m_H(Mat3::Identity())
+  {}
 
   /**
    * @brief Given two sets of image points, it estimates the homography matrix
    * relating them using a robust method (like A Contrario Ransac).
    */
   template<typename Regions_or_Features_ProviderT>
-  bool geometricEstimation(
+  EstimationState geometricEstimation(
     const sfm::SfM_Data * sfmData,
     const Regions_or_Features_ProviderT& regionsPerView,
     const Pair pairIndex,
     const matching::MatchesPerDescType & putativeMatchesPerType,
-    matching::MatchesPerDescType & geometricInliersPerType)
+    matching::MatchesPerDescType & out_geometricInliersPerType)
   {
     using namespace openMVG;
     using namespace openMVG::robust;
-    geometricInliersPerType.clear();
+    out_geometricInliersPerType.clear();
 
     // Get back corresponding view index
     const IndexT iIndex = pairIndex.first;
@@ -52,7 +53,7 @@ struct GeometricFilter_HMatrix_AC
 
     const std::vector<features::EImageDescriberType> descTypes = regionsPerView.getCommonDescTypes(pairIndex);
     if(descTypes.empty())
-      return false;
+      return EstimationState(false, false);
 
     // Retrieve all 2D features as undistorted positions into flat arrays
     Mat xI, xJ;
@@ -77,11 +78,8 @@ struct GeometricFilter_HMatrix_AC
     std::vector<size_t> inliers;
     const std::pair<double,double> ACRansacOut = ACRANSAC(kernel, inliers, m_stIteration, &m_H, upper_bound_precision);
 
-    if (inliers.size() <= KernelType::MINIMUM_SAMPLES * OPENMVG_MINIMUM_SAMPLES_COEF)
-    {
-      inliers.clear();
-      return false;
-    }
+    if (inliers.empty())
+      return EstimationState(false, false);
 
     m_dPrecision_robust = ACRansacOut.first;
 
@@ -90,9 +88,12 @@ struct GeometricFilter_HMatrix_AC
           inliers,
           putativeMatchesPerType,
           descTypes,
-          geometricInliersPerType);
+          out_geometricInliersPerType);
 
-    return true;
+    // Check if resection has strong support
+    const bool hasStrongSupport = robust::hasStrongSupport(out_geometricInliersPerType, KernelType::MINIMUM_SAMPLES);
+
+    return EstimationState(true, hasStrongSupport);
   }
 
   /**
@@ -182,8 +183,7 @@ struct GeometricFilter_HMatrix_AC
     const features::RegionsPerView& regionsPerView,
     const Pair imageIdsPair,
     const double dDistanceRatio,
-    matching::MatchesPerDescType & matches
-  )
+    matching::MatchesPerDescType & matches) override
   {
     if (m_dPrecision_robust != std::numeric_limits<double>::infinity())
     {
@@ -248,15 +248,12 @@ struct GeometricFilter_HMatrix_AC
     return matches.getNbAllMatches() != 0;
   }
 
-  double m_dPrecision;  //upper_bound precision used for robust estimation
-  size_t m_stIteration; //maximal number of iteration for robust estimation
   //
   //-- Stored data
   Mat3 m_H;
-  double m_dPrecision_robust;
 };
 
+} // namespace matching_image_collection
 } // namespace openMVG
-} //namespace matching_image_collection
 
 

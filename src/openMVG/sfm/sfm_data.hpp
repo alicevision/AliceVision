@@ -65,6 +65,24 @@ struct SfM_Data
     return nullptr;
   }
 
+  /**
+   * @brief Return a pointer to an intrinsic if available or nullptr otherwise.
+   * @param intrinsicId
+   */
+  cameras::IntrinsicBase * GetIntrinsicPtr(IndexT intrinsicId)
+  {
+    if(intrinsics.count(intrinsicId))
+      return intrinsics.at(intrinsicId).get();
+    return nullptr;
+  }
+
+  std::shared_ptr<cameras::IntrinsicBase> GetIntrinsicSharedPtr(IndexT intrinsicId)
+  {
+    if(intrinsics.count(intrinsicId))
+      return intrinsics.at(intrinsicId);
+    return nullptr;
+  }
+
   const Landmarks & GetLandmarks() const {return structure;}
   const Landmarks & GetControl_Points() const {return control_points;}
 

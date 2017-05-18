@@ -1234,14 +1234,11 @@ bool SequentialSfMReconstructionEngine::Resection(const std::size_t viewIndex)
   Image_Localizer_Match_Data resection_data;
   resection_data.pt2D.resize(2, set_trackIdForResection.size());
   resection_data.pt3D.resize(3, set_trackIdForResection.size());
+  resection_data.vec_descType.resize(set_trackIdForResection.size());
 
   // B. Look if intrinsic data is known or not
   const View * view_I = _sfm_data.GetViews().at(viewIndex).get();
-  std::shared_ptr<cameras::IntrinsicBase> optional_intrinsic (nullptr);
-  if (_sfm_data.GetIntrinsics().count(view_I->id_intrinsic))
-  {
-    optional_intrinsic = _sfm_data.GetIntrinsics().at(view_I->id_intrinsic);
-  }
+  std::shared_ptr<cameras::IntrinsicBase> optionalIntrinsic = _sfm_data.GetIntrinsicSharedPtr(view_I->id_intrinsic);
 
   std::size_t cpt = 0;
   std::set<std::size_t>::const_iterator iterTrackId = set_trackIdForResection.begin();
@@ -1249,8 +1246,10 @@ bool SequentialSfMReconstructionEngine::Resection(const std::size_t viewIndex)
     iterfeatId != vec_featIdForResection.end();
     ++iterfeatId, ++iterTrackId, ++cpt)
   {
+    const features::EImageDescriberType descType = iterfeatId->first;
     resection_data.pt3D.col(cpt) = _sfm_data.GetLandmarks().at(*iterTrackId).X;
-    resection_data.pt2D.col(cpt) = _featuresPerView->getFeatures(viewIndex, iterfeatId->first)[iterfeatId->second].coords().cast<double>();
+    resection_data.pt2D.col(cpt) = _featuresPerView->getFeatures(viewIndex, descType)[iterfeatId->second].coords().cast<double>();
+    resection_data.vec_descType.at(cpt) = descType;
   }
 
   // C. Do the resectioning: compute the camera pose.
@@ -1259,13 +1258,12 @@ bool SequentialSfMReconstructionEngine::Resection(const std::size_t viewIndex)
     "-- Robust Resection of view: " << viewIndex);
 
   geometry::Pose3 pose;
-  const bool bResection = sfm::SfM_Localizer::Localize
-  (
-    Pair(view_I->ui_width, view_I->ui_height),
-    optional_intrinsic.get(),
-    resection_data,
-    pose
-  );
+  const bool bResection = sfm::SfM_Localizer::Localize(
+      Pair(view_I->ui_width, view_I->ui_height),
+      optionalIntrinsic.get(),
+      resection_data,
+      pose
+    );
 
   if (!_sLoggingFile.empty())
   {
@@ -1296,8 +1294,8 @@ bool SequentialSfMReconstructionEngine::Resection(const std::size_t viewIndex)
   // D. Refine the pose of the found camera.
   // We use a local scene with only the 3D points and the new camera.
   {
-    cameras::Pinhole_Intrinsic * pinhole_cam = dynamic_cast<cameras::Pinhole_Intrinsic *>(optional_intrinsic.get());
-    const bool b_new_intrinsic = (optional_intrinsic == nullptr) || (pinhole_cam && !pinhole_cam->isValid());
+    cameras::Pinhole_Intrinsic * pinhole_cam = dynamic_cast<cameras::Pinhole_Intrinsic *>(optionalIntrinsic.get());
+    const bool b_new_intrinsic = (optionalIntrinsic == nullptr) || (pinhole_cam && !pinhole_cam->isValid());
     // A valid pose has been found (try to refine it):
     // If no valid intrinsic as input:
     //  init a new one from the projection matrix decomposition
@@ -1312,10 +1310,10 @@ bool SequentialSfMReconstructionEngine::Resection(const std::size_t viewIndex)
       const double focal = (K(0,0) + K(1,1))/2.0;
       const Vec2 principal_point(K(0,2), K(1,2));
 
-      if(optional_intrinsic == nullptr)
+      if(optionalIntrinsic == nullptr)
       {
         // Create the new camera intrinsic group
-        optional_intrinsic = createPinholeIntrinsic(_camType, view_I->ui_width, view_I->ui_height, focal, principal_point(0), principal_point(1));
+        optionalIntrinsic = createPinholeIntrinsic(_camType, view_I->ui_width, view_I->ui_height, focal, principal_point(0), principal_point(1));
       }
       else if(pinhole_cam)
       {
@@ -1328,7 +1326,7 @@ bool SequentialSfMReconstructionEngine::Resection(const std::size_t viewIndex)
     const bool intrinsicsFirstUsage = (reconstructedIntrinsics.count(view_I->id_intrinsic) == 0);
 
     if(!sfm::SfM_Localizer::RefinePose(
-      optional_intrinsic.get(), pose,
+      optionalIntrinsic.get(), pose,
       resection_data, true, b_new_intrinsic || intrinsicsFirstUsage))
     {
       return false;
@@ -1350,7 +1348,7 @@ bool SequentialSfMReconstructionEngine::Resection(const std::size_t viewIndex)
         new_intrinsic_id = (*existing_intrinsicId.rbegin())+1;
       }
       _sfm_data.views.at(viewIndex).get()->id_intrinsic = new_intrinsic_id;
-      _sfm_data.intrinsics[new_intrinsic_id]= optional_intrinsic;
+      _sfm_data.intrinsics[new_intrinsic_id]= optionalIntrinsic;
     }
     // Update the view pose
     _sfm_data.poses[view_I->id_pose] = pose;
@@ -1364,7 +1362,7 @@ bool SequentialSfMReconstructionEngine::Resection(const std::size_t viewIndex)
   {
     const Vec3 X = resection_data.pt3D.col(i);
     const Vec2 x = resection_data.pt2D.col(i);
-    const Vec2 residual = optional_intrinsic->residual(pose, X, x);
+    const Vec2 residual = optionalIntrinsic->residual(pose, X, x);
     if (residual.norm() < resection_data.error_max &&
         pose.depth(X) > 0)
     {

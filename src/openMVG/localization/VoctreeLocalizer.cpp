@@ -12,6 +12,7 @@
 #include <openMVG/matching_image_collection/Matcher.hpp>
 #include <openMVG/matching/matcher_kdtree_flann.hpp>
 #include <openMVG/matching_image_collection/F_ACRobust.hpp>
+#include <openMVG/matching_image_collection/GeometricFilterMatrix.hpp>
 #include <openMVG/numeric/numeric.h>
 #include <openMVG/robust_estimation/guided_matching.hpp>
 #include <openMVG/logger.hpp>
@@ -1055,7 +1056,7 @@ bool VoctreeLocalizer::robustMatching(matching::RegionsDatabaseMatcherPerDesc & 
   matching_image_collection::GeometricFilter_FMatrix geometricFilter(matchingError, 5000, estimator);
 
   matching::MatchesPerDescType geometricInliersPerType;
-  bool valid = geometricFilter.geometricEstimation(
+  matching_image_collection::EstimationState estimationState = geometricFilter.geometricEstimation(
         matchers.getDatabaseRegionsPerDesc(),
         matchedRegions,
         queryIntrinsics,
@@ -1065,9 +1066,15 @@ bool VoctreeLocalizer::robustMatching(matching::RegionsDatabaseMatcherPerDesc & 
         putativeFeatureMatches,
         geometricInliersPerType);
 
-  if(!valid)
+  if(!estimationState.isValid)
   {
     OPENMVG_LOG_DEBUG("[matching]\tGeometric validation failed.");
+    return false;
+  }
+
+  if(!estimationState.hasStrongSupport)
+  {
+    OPENMVG_LOG_DEBUG("[matching]\tGeometric validation hasn't strong support.");
     return false;
   }
 

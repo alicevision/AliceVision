@@ -3,6 +3,7 @@
 #include <openMVG/config.hpp>
 #include <string>
 #include <vector>
+#include <stdexcept>
 
 namespace openMVG {
 namespace features {
@@ -48,10 +49,42 @@ EImageDescriberType EImageDescriberType_stringToEnum(const std::string& imageDes
  /**
   * @brief EImageDescriberType_stringToEnums
   * @param describerMethods
-  * @return
+  * @return EImageDescriberType vector
   */
 std::vector<EImageDescriberType> EImageDescriberType_stringToEnums(const std::string& describerMethods);
 
-  
+/**
+ * @brief getStrongSupportCoeff
+ * @param imageDescriberType
+ * @return strong support coeff score
+ */
+inline float getStrongSupportCoeff(EImageDescriberType imageDescriberType)
+{
+  switch(imageDescriberType)
+  {
+    case EImageDescriberType::SIFT:          return 0.14f;
+    case EImageDescriberType::SIFT_FLOAT:    return 0.14f;
+    case EImageDescriberType::AKAZE:         return 0.14f;
+    case EImageDescriberType::AKAZE_LIOP:    return 0.14f;
+    case EImageDescriberType::AKAZE_MLDB:    return 0.14f;
+
+#if OPENMVG_IS_DEFINED(OPENMVG_HAVE_CCTAG)
+    case EImageDescriberType::CCTAG3:        return 1.0f;
+    case EImageDescriberType::CCTAG4:        return 1.0f;
+#endif
+
+#if OPENMVG_IS_DEFINED(OPENMVG_HAVE_OPENCV)
+#if OPENMVG_IS_DEFINED(OPENMVG_USE_OCVSIFT)
+    case EImageDescriberType::SIFT_OCV:      return 0.14f;
+#endif //OPENMVG_USE_OCVSIFT
+    case EImageDescriberType::AKAZE_OCV:     return 0.14f;
+#endif //OPENMVG_HAVE_OPENCV
+
+    case EImageDescriberType::UNKNOWN:
+    case EImageDescriberType::UNINITIALIZED: break; // Should throw an error.
+  }
+  throw std::out_of_range("Invalid imageDescriber enum");
+}
+
 } // namespace features
 } // namespace openMVG

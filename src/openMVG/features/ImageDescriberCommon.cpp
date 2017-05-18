@@ -3,7 +3,6 @@
 #include "openMVG/types.hpp"
 #include "openMVG/stl/split.hpp"
 
-#include <exception>
 #include <cassert>
 
 
@@ -23,7 +22,7 @@ std::string EImageDescriberType_enumToString(EImageDescriberType imageDescriberT
 #if OPENMVG_IS_DEFINED(OPENMVG_HAVE_CCTAG)
     case EImageDescriberType::CCTAG3:        return "CCTAG3";
     case EImageDescriberType::CCTAG4:        return "CCTAG4";
-#endif //OPENMVG_HAVE_CCTAG
+#endif
 
 #if OPENMVG_IS_DEFINED(OPENMVG_HAVE_OPENCV)
 #if OPENMVG_IS_DEFINED(OPENMVG_USE_OCVSIFT)
@@ -49,7 +48,7 @@ EImageDescriberType EImageDescriberType_stringToEnum(const std::string& imageDes
 #if OPENMVG_IS_DEFINED(OPENMVG_HAVE_CCTAG)
   if(imageDescriberType == "CCTAG3")      return EImageDescriberType::CCTAG3;
   if(imageDescriberType == "CCTAG4")      return EImageDescriberType::CCTAG4;
-#endif //OPENMVG_HAVE_CCTAG
+#endif
 
 #if OPENMVG_IS_DEFINED(OPENMVG_HAVE_OPENCV)
 #if OPENMVG_IS_DEFINED(OPENMVG_USE_OCVSIFT)
