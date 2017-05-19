@@ -38,7 +38,7 @@ struct GeometricFilter_EMatrix_AC : public GeometricFilterMatrix
    * relating them using a robust method (like A Contrario Ransac).
    */
   template<typename Regions_or_Features_ProviderT>
-  EstimationState geometricEstimation(
+  EstimationStatus geometricEstimation(
     const sfm::SfM_Data * sfmData,
     const Regions_or_Features_ProviderT& regionsPerView,
     const Pair pairIndex,
@@ -55,7 +55,7 @@ struct GeometricFilter_EMatrix_AC : public GeometricFilterMatrix
 
     const std::vector<features::EImageDescriberType> descTypes = regionsPerView.getCommonDescTypes(pairIndex);
     if(descTypes.empty())
-      return EstimationState(false, false);
+      return EstimationStatus(false, false);
 
     // Reject pair with missing Intrinsic information
     const sfm::View * view_I = sfmData->views.at(iIndex).get();
@@ -66,9 +66,9 @@ struct GeometricFilter_EMatrix_AC : public GeometricFilterMatrix
     const cameras::IntrinsicBase * cam_J = sfmData->GetIntrinsicPtr(view_J->id_intrinsic);
 
     if (!cam_I || !cam_J)
-      return EstimationState(false, false);
+      return EstimationStatus(false, false);
     if ( !isPinhole(cam_I->getType()) || !isPinhole(cam_J->getType()))
-      return EstimationState(false, false);
+      return EstimationStatus(false, false);
 
     // Get corresponding point regions arrays
     Mat xI,xJ;
@@ -97,7 +97,7 @@ struct GeometricFilter_EMatrix_AC : public GeometricFilterMatrix
     const std::pair<double,double> ACRansacOut = ACRANSAC(kernel, inliers, m_stIteration, &m_E, upper_bound_precision);
 
     if (inliers.empty())
-      return EstimationState(false, false);
+      return EstimationStatus(false, false);
 
     m_dPrecision_robust = ACRansacOut.first;
 
@@ -111,7 +111,7 @@ struct GeometricFilter_EMatrix_AC : public GeometricFilterMatrix
     // Check if resection has strong support
     const bool hasStrongSupport = robust::hasStrongSupport(out_geometricInliersPerType, KernelType::MINIMUM_SAMPLES);
 
-    return EstimationState(true, hasStrongSupport);
+    return EstimationStatus(true, hasStrongSupport);
   }
 
   /**

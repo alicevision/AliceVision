@@ -74,7 +74,7 @@ void ImageCollectionGeometricFilter::Robust_model_estimation(
     {
       MatchesPerDescType inliers;
       GeometryFunctor geometricFilter = functor; // use a copy since we are in a multi-thread context
-      const matching_image_collection::EstimationState state = geometricFilter.geometricEstimation(_sfm_data, _regionsPerView, imagePair, putativeMatchesPerType, inliers);
+      const EstimationStatus state = geometricFilter.geometricEstimation(_sfm_data, _regionsPerView, imagePair, putativeMatchesPerType, inliers);
       if (state.hasStrongSupport)
       {
         if (b_guided_matching)

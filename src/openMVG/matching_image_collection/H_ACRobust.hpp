@@ -36,7 +36,7 @@ struct GeometricFilter_HMatrix_AC : public GeometricFilterMatrix
    * relating them using a robust method (like A Contrario Ransac).
    */
   template<typename Regions_or_Features_ProviderT>
-  EstimationState geometricEstimation(
+  EstimationStatus geometricEstimation(
     const sfm::SfM_Data * sfmData,
     const Regions_or_Features_ProviderT& regionsPerView,
     const Pair pairIndex,
@@ -53,7 +53,7 @@ struct GeometricFilter_HMatrix_AC : public GeometricFilterMatrix
 
     const std::vector<features::EImageDescriberType> descTypes = regionsPerView.getCommonDescTypes(pairIndex);
     if(descTypes.empty())
-      return EstimationState(false, false);
+      return EstimationStatus(false, false);
 
     // Retrieve all 2D features as undistorted positions into flat arrays
     Mat xI, xJ;
@@ -79,7 +79,7 @@ struct GeometricFilter_HMatrix_AC : public GeometricFilterMatrix
     const std::pair<double,double> ACRansacOut = ACRANSAC(kernel, inliers, m_stIteration, &m_H, upper_bound_precision);
 
     if (inliers.empty())
-      return EstimationState(false, false);
+      return EstimationStatus(false, false);
 
     m_dPrecision_robust = ACRansacOut.first;
 
@@ -93,7 +93,7 @@ struct GeometricFilter_HMatrix_AC : public GeometricFilterMatrix
     // Check if resection has strong support
     const bool hasStrongSupport = robust::hasStrongSupport(out_geometricInliersPerType, KernelType::MINIMUM_SAMPLES);
 
-    return EstimationState(true, hasStrongSupport);
+    return EstimationStatus(true, hasStrongSupport);
   }
 
   /**

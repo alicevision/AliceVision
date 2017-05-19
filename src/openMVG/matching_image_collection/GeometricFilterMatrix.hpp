@@ -38,16 +38,6 @@ struct GeometricFilterMatrix
   std::size_t m_stIteration; //maximal number of iteration for robust estimation
 };
 
-struct EstimationState
-{
-  EstimationState(bool valid, bool strongSupport)
-    : isValid(valid)
-    , hasStrongSupport(strongSupport)
-  {}
-
-  bool isValid = false;
-  bool hasStrongSupport = false;
-};
 
 } // namespace matching_image_collection
 } // namespace openMVG

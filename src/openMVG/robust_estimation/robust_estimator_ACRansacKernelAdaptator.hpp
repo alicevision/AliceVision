@@ -38,7 +38,7 @@ namespace robust {
 
 #define OPENMVG_MINIMUM_SAMPLES_COEF 7 //TODO: TO REMOVE
 
-inline bool hasStrongSupport(std::vector<std::size_t>& inliers, const std::vector<features::EImageDescriberType>& descTypes, std::size_t minimumSamples)
+inline bool hasStrongSupport(const std::vector<std::size_t>& inliers, const std::vector<features::EImageDescriberType>& descTypes, std::size_t minimumSamples)
 {
   assert(inliers.size() <= descTypes.size());
 
@@ -47,6 +47,28 @@ inline bool hasStrongSupport(std::vector<std::size_t>& inliers, const std::vecto
   {
     score += features::getStrongSupportCoeff(descTypes[inlier]);
   }
+  return (score > minimumSamples);
+}
+
+inline bool hasStrongSupport(const std::vector<std::vector<std::size_t>>& inliersPerCamera, const std::vector<std::vector<features::EImageDescriberType>>& descTypesPerCamera, std::size_t minimumSamples)
+{
+  assert(inliersPerCamera.size() == descTypesPerCamera.size()); //same number of cameras
+
+  float score = 0;
+
+  for(std::size_t camIdx = 0; camIdx < inliersPerCamera.size(); ++camIdx)
+  {
+    const auto& inliers = inliersPerCamera.at(camIdx);
+    const auto& descTypes = descTypesPerCamera.at(camIdx);
+
+    assert(inliers.size() <= descTypes.size());
+
+    for(const std::size_t inlier : inliers)
+    {
+      score += features::getStrongSupportCoeff(descTypes[inlier]);
+    }
+  }
+
   return (score > minimumSamples);
 }
 

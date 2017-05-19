@@ -523,22 +523,23 @@ bool CCTagLocalizer::localizeRig_opengv(const std::vector<features::MapRegionsPe
   }
 
   std::vector<std::vector<std::size_t> > vec_inliers;
-  const bool resectionOk = rigResection(vec_pts2D,
+  const EstimationStatus status = rigResection(vec_pts2D,
                                         vec_pts3D,
                                         vec_queryIntrinsics,
                                         vec_subPoses,
+                                        nullptr,
                                         rigPose,
                                         vec_inliers,
                                         param->_angularThreshold);
 
-  if(!resectionOk)
+  if(!status.isValid)
   {
     for(std::size_t cam = 0; cam < numCams; ++cam)
     {
       // empty result with isValid set to false
       vec_locResults.emplace_back();
     }
-    return resectionOk;
+    return false;
   }
   
   {

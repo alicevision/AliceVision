@@ -41,7 +41,7 @@ struct GeometricFilter_FMatrix: public GeometricFilterMatrix
    * relating them using a robust method (like A Contrario Ransac).
    */
   template<class Regions_or_Features_ProviderT>
-  EstimationState geometricEstimation(
+  EstimationStatus geometricEstimation(
     const sfm::SfM_Data * sfmData,
     const Regions_or_Features_ProviderT & regionsPerView,
     const Pair pairIndex,
@@ -78,7 +78,7 @@ struct GeometricFilter_FMatrix: public GeometricFilterMatrix
    * relating them using a robust method (like A Contrario Ransac).
    */
   template<class MapFeatOrRegionsPerDesc>
-  EstimationState geometricEstimation(
+  EstimationStatus geometricEstimation(
       const MapFeatOrRegionsPerDesc& region_I,
       const MapFeatOrRegionsPerDesc& region_J,
       const cameras::IntrinsicBase * cam_I,
@@ -95,7 +95,7 @@ struct GeometricFilter_FMatrix: public GeometricFilterMatrix
     const std::vector<features::EImageDescriberType> descTypes = getCommonDescTypes(region_I, region_J);
 
     if(descTypes.empty())
-      return EstimationState(false, false);
+      return EstimationStatus(false, false);
 
     // Retrieve all 2D features as undistorted positions into flat arrays
     Mat xI, xJ;
@@ -113,7 +113,7 @@ struct GeometricFilter_FMatrix: public GeometricFilterMatrix
     if (!estimationPair.first) // estimation is not valid
     {
       assert(inliers.empty());
-      return EstimationState(false, false);
+      return EstimationStatus(false, false);
     }
 
     // Fill geometricInliersPerType with inliers from putativeMatchesPerType
@@ -126,7 +126,7 @@ struct GeometricFilter_FMatrix: public GeometricFilterMatrix
     // If matches has strong support
     const bool hasStrongSupport = robust::hasStrongSupport(out_geometricInliersPerType, estimationPair.second);
 
-    return EstimationState(true, hasStrongSupport);
+    return EstimationStatus(true, hasStrongSupport);
   }
 
   /**

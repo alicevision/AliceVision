@@ -10,6 +10,7 @@
 #include <openMVG/features/svgVisualization.hpp>
 #include <openMVG/matching/regions_matcher.hpp>
 #include <openMVG/matching_image_collection/Matcher.hpp>
+#include <openMVG/matching_image_collection/GeometricFilterMatrix.hpp>
 #include <openMVG/matching/matcher_kdtree_flann.hpp>
 #include <openMVG/matching_image_collection/F_ACRobust.hpp>
 #include <openMVG/matching_image_collection/GeometricFilterMatrix.hpp>
@@ -590,6 +591,7 @@ bool VoctreeLocalizer::localizeAllResults(const features::MapRegionsPerDesc &que
                      occurences,
                      resectionData.pt2D,
                      resectionData.pt3D,
+                     resectionData.vec_descType,
                      matchedImages,
                      imagePath);
 
@@ -709,9 +711,12 @@ void VoctreeLocalizer::getAllAssociations(const features::MapRegionsPerDesc &que
                                           OccurenceMap &out_occurences,
                                           Mat &out_pt2D,
                                           Mat &out_pt3D,
+                                          std::vector<features::EImageDescriberType>& out_descTypes,
                                           std::vector<voctree::DocMatch>& out_matchedImages,
                                           const std::string& imagePath) const
 {
+  assert(out_descTypes.size() == 0);
+
   // A. Find the (visually) similar images in the database 
   // pass the descriptors through the vocabulary tree to get the visual words
   // associated to each feature
@@ -914,17 +919,21 @@ void VoctreeLocalizer::getAllAssociations(const features::MapRegionsPerDesc &que
   out_pt2D = Mat2X(2, numCollectedPts);
   out_pt3D = Mat3X(3, numCollectedPts);
   
+
+  out_descTypes.resize(out_occurences.size());
+
   std::size_t index = 0;
   for(const auto &idx : out_occurences)
   {
      // recopy all the points in the matching structure
-    const IndexT pt3D_id = idx.first.landmarkId;
     const IndexT pt2D_id = idx.first.featId;
+    const sfm::Landmark& landmark = _sfm_data.GetLandmarks().at(idx.first.landmarkId);
     
-//    OPENMVG_LOG_DEBUG("[matching]\tAssociation [" << pt3D_id << "," << pt2D_id << "] occurred " << idx.second << " times");
+//    OPENMVG_LOG_DEBUG("[matching]\tAssociation [" << idx.first.landmarkId << "," << pt2D_id << "] occurred " << idx.second << " times");
 
     out_pt2D.col(index) = queryRegions.at(idx.first.descType)->GetRegionPosition(pt2D_id);
-    out_pt3D.col(index) = _sfm_data.GetLandmarks().at(pt3D_id).X;
+    out_pt3D.col(index) = landmark.X;
+    out_descTypes.at(index) = landmark.descType;
      ++index;
   }
   
@@ -1056,7 +1065,7 @@ bool VoctreeLocalizer::robustMatching(matching::RegionsDatabaseMatcherPerDesc & 
   matching_image_collection::GeometricFilter_FMatrix geometricFilter(matchingError, 5000, estimator);
 
   matching::MatchesPerDescType geometricInliersPerType;
-  matching_image_collection::EstimationState estimationState = geometricFilter.geometricEstimation(
+  EstimationStatus estimationState = geometricFilter.geometricEstimation(
         matchers.getDatabaseRegionsPerDesc(),
         matchedRegions,
         queryIntrinsics,
@@ -1206,6 +1215,7 @@ bool VoctreeLocalizer::localizeRig_opengv(const std::vector<features::MapRegions
 
   std::vector<OccurenceMap> vec_occurrences(numCams);
   std::vector<std::vector<voctree::DocMatch> > vec_matchedImages(numCams);
+  std::vector< std::vector<features::EImageDescriberType> > descTypesPerCamera(numCams);
   std::vector<Mat> vec_pts3D(numCams);
   std::vector<Mat> vec_pts2D(numCams);
 
@@ -1220,6 +1230,7 @@ bool VoctreeLocalizer::localizeRig_opengv(const std::vector<features::MapRegions
     // the element is the pair 3D point - 2D point
     auto &occurrences = vec_occurrences[camID];
     auto &matchedImages = vec_matchedImages[camID];
+    auto &descTypes = descTypesPerCamera[camID];
     auto &imageSize = vec_imageSize[camID];
     Mat &pts3D = vec_pts3D[camID];
     Mat &pts2D = vec_pts2D[camID];
@@ -1233,6 +1244,7 @@ bool VoctreeLocalizer::localizeRig_opengv(const std::vector<features::MapRegions
                        occurrences,
                        pts2D,
                        pts3D,
+                       descTypes,
                        matchedImages);
     numAssociations += occurrences.size();
   }
@@ -1261,15 +1273,16 @@ bool VoctreeLocalizer::localizeRig_opengv(const std::vector<features::MapRegions
   }
   
   std::vector<std::vector<std::size_t> > vec_inliers;
-  const bool resectionOk = rigResection(vec_pts2D,
+  const EstimationStatus resectionEstimation = rigResection(vec_pts2D,
                                         vec_pts3D,
                                         vec_queryIntrinsics,
                                         vec_subPoses,
+                                        &descTypesPerCamera,
                                         rigPose,
                                         vec_inliers,
                                         param->_angularThreshold);
 
-  if(!resectionOk)
+  if(!resectionEstimation.isValid)
   {
     for(std::size_t camID = 0; camID < numCams; ++camID)
     {
@@ -1277,9 +1290,14 @@ bool VoctreeLocalizer::localizeRig_opengv(const std::vector<features::MapRegions
       vec_locResults.emplace_back();
     }
     OPENMVG_LOG_DEBUG("Resection failed.");
-    return resectionOk;
+    return false;
   }
   
+  if(!resectionEstimation.hasStrongSupport)
+  {
+    OPENMVG_LOG_DEBUG("Resection hasn't a strong support.");
+  }
+
   { // just debugging stuff, this block can be removed
     
     if(vec_inliers.size() < numCams)

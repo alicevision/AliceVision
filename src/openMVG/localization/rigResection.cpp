@@ -6,7 +6,7 @@
  */
 
 #include "rigResection.hpp"
-#include <openMVG/config.hpp>
+#include "openMVG/robust_estimation/robust_estimator_ACRansacKernelAdaptator.hpp"
 #if OPENMVG_IS_DEFINED(OPENMVG_HAVE_OPENGV)
 #include <Eigen/Eigen>
 #include <opengv/absolute_pose/methods.hpp>
@@ -25,10 +25,11 @@ namespace localization{
 
 #if OPENMVG_IS_DEFINED(OPENMVG_HAVE_OPENGV)
 
-bool rigResection(const std::vector<Mat> &pts2d, 
+EstimationStatus rigResection(const std::vector<Mat> &pts2d,
                   const std::vector<Mat> &pts3d,
                   const std::vector<cameras::Pinhole_Intrinsic_Radial_K3 > &vec_queryIntrinsics,
                   const std::vector<geometry::Pose3 > &vec_subPoses,
+                  const std::vector< std::vector<features::EImageDescriberType> > * descTypesPerCamera,
                   geometry::Pose3 &rigPose,
                   std::vector<std::vector<std::size_t> > &inliers,
                   double angularThreshold,
@@ -150,9 +151,9 @@ bool rigResection(const std::vector<Mat> &pts2d,
     if(verbosity)
       OPENMVG_LOG_DEBUG("Resection Failed");
     
-    return false;
+    return EstimationStatus(false, false);
   }
-  
+
   const auto &sol = ransac.model_coefficients_;
   // again, the output is a real pose, with the center and the rotation expressed
   // wrt the world frame, ie we need to take the transpose/inverse of the rotation
@@ -160,6 +161,8 @@ bool rigResection(const std::vector<Mat> &pts2d,
 
   // copy the inliers
   const std::size_t numInliers = ransac.inliers_.size();
+  assert(numInliers >= 3);
+
   inliers.clear();
   inliers.resize(numCameras);
   
@@ -183,7 +186,6 @@ bool rigResection(const std::vector<Mat> &pts2d,
     const auto idx = absoluteToLocal.at(ransac.inliers_[i]);
     inliers[idx.first].emplace_back(idx.second);
   }
-
 //  for(size_t i = 0; i < ransac.inliers_.size(); i++)
 //    OPENMVG_LOG_DEBUG(ransac.inliers_[i]);
 //  
@@ -193,8 +195,14 @@ bool rigResection(const std::vector<Mat> &pts2d,
 //    for(size_t j = 0; j < inliers[i].size(); ++j)
 //      OPENMVG_LOG_DEBUG(inliers[i][j]);
 //  }
-  
-  return success;
+
+  bool hasStrongSupport = true;
+  if(descTypesPerCamera)
+  {
+    // Check if estimation has strong support
+    hasStrongSupport = robust::hasStrongSupport(inliers, *descTypesPerCamera, 3);
+  }
+  return EstimationStatus(true, hasStrongSupport);
 }
 
 #endif // #if OPENMVG_IS_DEFINED(OPENMVG_HAVE_OPENGV)

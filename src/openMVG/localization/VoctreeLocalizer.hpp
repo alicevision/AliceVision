@@ -275,6 +275,7 @@ public:
    * @param[out] out_occurences
    * @param[out] out_pt2D output matrix of 2D points
    * @param[out] out_pt3D output matrix of 3D points
+   * @param[out] out_descTypes output vector of describerType
    * @param[out] out_matchedImages image matches output
    * @param[in] imagePath
    */
@@ -286,6 +287,7 @@ public:
                           OccurenceMap & out_occurences,
                           Mat &out_pt2D,
                           Mat &out_pt3D,
+                          std::vector<features::EImageDescriberType>& out_descTypes,
                           std::vector<voctree::DocMatch>& out_matchedImages,
                           const std::string& imagePath = std::string()) const;
 
