@@ -84,8 +84,7 @@ public:
       _numCommonViews(3),
       _ccTagUseCuda(true),
       _matchingError(std::numeric_limits<double>::infinity()),
-      _bufferSize(10),
-      _useFrameBufferMatching(false)
+      _nbFrameBufferMatching(10)
     { }
     
     /// Enable/disable guided matching when matching images
@@ -105,9 +104,7 @@ public:
     /// maximum reprojection error allowed for image matching with geometric validation
     double _matchingError;
     /// maximum capacity of the frame buffer
-    std::size_t _bufferSize;
-    /// enable matching with frame buffer
-    bool _useFrameBufferMatching;
+    std::size_t _nbFrameBufferMatching;
   };
   
 public:

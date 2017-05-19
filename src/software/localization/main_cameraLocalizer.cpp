@@ -131,9 +131,9 @@ int main(int argc, char** argv)
   /// the vocabulary tree file
   std::string vocTreeFilepath;
   /// the vocabulary tree weights file
-  std::string weightsFilepath;  
-  /// enable the matching with the last N frame of the sequence
-  bool useFrameBufferMatching = true;
+  std::string weightsFilepath;
+  /// Number of previous frame of the sequence to use for matching
+  std::size_t nbFrameBufferMatching = 10;
   /// enable/disable the robust matching (geometric validation) when matching query image
   /// and databases images
   bool robustMatching = true;
@@ -218,8 +218,9 @@ int main(int argc, char** argv)
           "[voctree] Maximum matching error (in pixels) allowed for image matching with "
           "geometric verification. If set to 0 it lets the ACRansac select "
           "an optimal value.")
-      ("useFrameBufferMatching", po::bool_switch(&useFrameBufferMatching), 
-          "[voctree] Enable/Disable the matching with the last N frame of the sequence")
+      ("nbFrameBufferMatching", po::value<std::size_t>(&nbFrameBufferMatching)->default_value(nbFrameBufferMatching),
+          "[voctree] Number of previous frame of the sequence to use for matching "
+          "(0 = Disable)")
       ("robustMatching", po::value<bool>(&robustMatching)->default_value(robustMatching), 
           "[voctree] Enable/Disable the robust matching between query and database images, "
           "all putative matches will be considered.")
@@ -332,7 +333,7 @@ int main(int argc, char** argv)
       OPENMVG_COUT("\tcommon views: " << numCommonViews);
       OPENMVG_COUT("\talgorithm: " << algostring);
       OPENMVG_COUT("\tmatchingError: " << matchingErrorMax);
-      OPENMVG_COUT("\tuseFrameBufferMatching: " << useFrameBufferMatching);
+      OPENMVG_COUT("\tnbFrameBufferMatching: " << nbFrameBufferMatching);
       OPENMVG_COUT("\trobustMatching: " << robustMatching);
     }
 #if OPENMVG_IS_DEFINED(OPENMVG_HAVE_CCTAG) 
@@ -410,7 +411,7 @@ int main(int argc, char** argv)
     tmpParam->_numCommonViews = numCommonViews;
     tmpParam->_ccTagUseCuda = false;
     tmpParam->_matchingError = matchingErrorMax;
-    tmpParam->_useFrameBufferMatching = useFrameBufferMatching;
+    tmpParam->_nbFrameBufferMatching = nbFrameBufferMatching;
     tmpParam->_useRobustMatching = robustMatching;
   }
   

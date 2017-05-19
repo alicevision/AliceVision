@@ -692,7 +692,7 @@ bool VoctreeLocalizer::localizeAllResults(const features::MapRegionsPerDesc &que
                 << " max = " << std::sqrt(sqrErrors.maxCoeff()));
   }
 
-  if(param._useFrameBufferMatching)
+  if(param._nbFrameBufferMatching > 0)
   {
     // add everything to the buffer
     _frameBuffer.emplace_back(localizationResult, queryRegions);
@@ -880,10 +880,10 @@ void VoctreeLocalizer::getAllAssociations(const features::MapRegionsPerDesc &que
     }
   }
   
-  if(param._useFrameBufferMatching)
+  if(param._nbFrameBufferMatching > 0)
   {
     OPENMVG_LOG_DEBUG("[matching]\tUsing frameBuffer matching: matching with the past " 
-            << param._bufferSize << " frames" );
+            << param._nbFrameBufferMatching << " frames" );
     getAssociationsFromBuffer(matchers, imageSize, param, useInputIntrinsics, queryIntrinsics, out_occurences);
   }
   
