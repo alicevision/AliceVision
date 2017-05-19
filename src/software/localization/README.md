@@ -10,7 +10,7 @@ a combination of feature types [depending on you build options].
 ```
    -h [ --help ]                      Print this message
   --descriptors arg (=SIFT)          Type of descriptors to use 
-                                     {"SIFT", "CCTAG", "SIFT,CCTAG"}
+                                     {"SIFT", "CCTAG3", "SIFT,CCTAG3"}
   
   --preset arg (=NORMAL)             Preset for the feature extractor when 
                                      localizing a new image 
