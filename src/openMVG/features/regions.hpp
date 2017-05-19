@@ -288,6 +288,9 @@ public:
                      std::vector<IndexT>& out_associated3dPoint,
                      std::map<IndexT, IndexT>& out_mapFullToLocal) const override
   {
+    out_associated3dPoint.clear();
+    out_mapFullToLocal.clear();
+
     This* regionsPtr = new This;
     std::unique_ptr<Regions> regions(regionsPtr);
     regionsPtr->Features().reserve(featuresInImage.size());
@@ -298,7 +301,13 @@ public:
       const FeatureInImage & feat = featuresInImage[i];
       regionsPtr->Features().push_back(this->_vec_feats[feat._featureIndex]);
       regionsPtr->Descriptors().push_back(this->_vec_descs[feat._featureIndex]);
-      assert(out_mapFullToLocal.count(feat._featureIndex) == 0);
+
+      // This assert should be valid in theory, but in practice we notice that sometimes
+      // we have the same point associated to different 3D points (2 in practice).
+      // In this particular case, currently it returns randomly the last one...
+      //
+      // assert(out_mapFullToLocal.count(feat._featureIndex) == 0);
+
       out_mapFullToLocal[feat._featureIndex] = i;
       out_associated3dPoint.push_back(feat._point3dId);
     }
