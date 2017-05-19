@@ -80,7 +80,7 @@ inline float getStrongSupportCoeff(EImageDescriberType imageDescriberType)
     case EImageDescriberType::AKAZE_OCV:     return 0.14f;
 #endif //OPENMVG_HAVE_OPENCV
 
-    case EImageDescriberType::UNKNOWN:
+    case EImageDescriberType::UNKNOWN:       return 1.0f;
     case EImageDescriberType::UNINITIALIZED: break; // Should throw an error.
   }
   throw std::out_of_range("Invalid imageDescriber enum");
