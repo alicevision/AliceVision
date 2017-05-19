@@ -1,6 +1,21 @@
 #pragma once
 
 namespace openMVG {
+
+
+namespace features {
+class RegionsPerView;
+}
+
+namespace matching {
+class MatchesPerDescType;
+}
+
+namespace sfm {
+class SfM_Data;
+}
+
+
 namespace matching_image_collection {
 
 
