@@ -66,7 +66,7 @@ public:
     // Only relevant for CCTagLocalizer
     virtual void setCudaPipe(int) { }
     
-    bool isInit() {return _isInit;}
+    bool isInit() const {return _isInit;}
     
     const sfm::SfM_Data& getSfMData() const {return _sfm_data; }
     
