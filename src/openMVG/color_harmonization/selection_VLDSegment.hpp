@@ -22,10 +22,11 @@ class commonDataByPair_VLDSegment  : public commonDataByPair
                                const std::string& sRightImage,
                                const matching::IndMatches& matchesPerDesc,
                                const std::vector<features::SIOPointFeature>& featsL,
-                               const std::vector<features::SIOPointFeature>& featsR):
-           commonDataByPair( sLeftImage, sRightImage ),
-           _matches( matchesPerDesc ),
-           _featsL( featsL ), _featsR( featsR )
+                               const std::vector<features::SIOPointFeature>& featsR)
+           : commonDataByPair( sLeftImage, sRightImage )
+           , _matches( matchesPerDesc )
+           , _featsL( featsL )
+           , _featsR( featsR )
   {}
 
   virtual ~commonDataByPair_VLDSegment()
@@ -43,8 +44,6 @@ class commonDataByPair_VLDSegment  : public commonDataByPair
     image::Image< unsigned char > & maskLeft,
     image::Image< unsigned char > & maskRight )
   {
-    //std::vector< matching::IndMatch > vec_KVLDMatches;
-
     image::Image< unsigned char > imageL, imageR;
     image::ReadImage( _sLeftImage.c_str(), &imageL );
     image::ReadImage( _sRightImage.c_str(), &imageR );
@@ -56,15 +55,17 @@ class commonDataByPair_VLDSegment  : public commonDataByPair
 
     for(const matching::IndMatch& match : _matches)
     {
-      matchesPair.push_back( std::make_pair( match._i, match._j ) );
+      matchesPair.emplace_back(match._i, match._j);
     }
 
     std::vector< double > vec_score;
 
     //In order to illustrate the gvld(or vld)-consistant neighbors, the following two parameters has been externalized as inputs of the function KVLD.
-    openMVG::Mat E = openMVG::Mat::Ones( _matches.size(), _matches.size() ) * ( -1 );
     // gvld-consistancy matrix, intitialized to -1,  >0 consistancy value, -1=unknow, -2=false
-    std::vector< bool > valide( _matches.size(), true );// indices of match in the initial matches, if true at the end of KVLD, a match is kept.
+    openMVG::Mat E = openMVG::Mat::Ones( _matches.size(), _matches.size() ) * ( -1 );
+
+    // indices of match in the initial matches, if true at the end of KVLD, a match is kept.
+    std::vector< bool > valid( _matches.size(), true );
 
     size_t it_num = 0;
     KvldParameters kvldparameters;//initial parameters of KVLD
@@ -76,7 +77,7 @@ class commonDataByPair_VLDSegment  : public commonDataByPair
         imgA, imgB,
         _featsL, _featsR,
         matchesPair, matchesFiltered,
-        vec_score, E, valide, kvldparameters ) )
+        vec_score, E, valid, kvldparameters ) )
     {
       kvldparameters.inlierRate /= 2;
       OPENMVG_LOG_DEBUG("low inlier rate, re-select matches with new rate=" << kvldparameters.inlierRate);
@@ -85,14 +86,18 @@ class commonDataByPair_VLDSegment  : public commonDataByPair
     }
 
     if(matchesPair.empty())
+    {
+      maskLeft.fill(0);
+      maskRight.fill(0);
       return false;
+    }
 
     // Get mask
     getKVLDMask(
       &maskLeft, &maskRight,
       _featsL, _featsR,
       matchesPair,
-      valide,
+      valid,
       E);
 
     return true;

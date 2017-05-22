@@ -25,10 +25,12 @@ public:
                                  const matching::MatchesPerDescType& matchesPerDesc,
                                  const features::MapRegionsPerDesc& regionsL,
                                  const features::MapRegionsPerDesc& regionsR,
-                                 const size_t radius = 1 ):
-     commonDataByPair( sLeftImage, sRightImage ),
-     _matchesPerDesc( matchesPerDesc ),
-     _regionsL( regionsL ), _regionsR( regionsR ), _radius( radius )
+                                 const size_t radius = 1 )
+     : commonDataByPair( sLeftImage, sRightImage )
+     , _matchesPerDesc( matchesPerDesc )
+     , _regionsL( regionsL )
+     , _regionsR( regionsR )
+     , _radius( radius )
   {}
 
   virtual ~commonDataByPair_MatchedPoints()
