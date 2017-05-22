@@ -28,43 +28,12 @@ namespace localization {
 
 struct FrameData
 {
-  FrameData(const LocalizationResult &locResult, const features::MapRegionsPerDesc& regionsPerDesc)
-    : _locResult(locResult)
-  {
-    // now we need to filter out and keep only the regions with 3D data associated
-    const auto &associationIDs = _locResult.getIndMatch3D2D();
-    const auto &inliers = _locResult.getInliers();
-
-    // Regions for each describer type
-    for(const auto& regionsPerDescIt : regionsPerDesc)
-    {
-      // feature in image are <featureID, point3Did> associations
-      std::vector<features::FeatureInImage> featuresInImage;
-      featuresInImage.reserve(inliers.size());
-
-      assert(inliers.size() <= associationIDs.size());
-      for(const auto &idx : inliers)
-      {
-        assert(idx < associationIDs.size());
-        const auto &association = associationIDs[idx];
-        assert(association.descType != features::EImageDescriberType::UNINITIALIZED);
-        if(association.descType != regionsPerDescIt.first)
-          continue;
-
-       // add it to featuresInImage
-        featuresInImage.emplace_back(association.featId, association.landmarkId);
-      }
-
-      _regions[regionsPerDescIt.first] = createFilteredRegions(*regionsPerDescIt.second, featuresInImage, _regionsWith3D[regionsPerDescIt.first]);
-    }
-  }
+  FrameData(const LocalizationResult &locResult, const features::MapRegionsPerDesc& regionsPerDesc);
   
   LocalizationResult _locResult;
   ReconstructedRegionsMappingPerDesc _regionsWith3D;
   features::MapRegionsPerDesc _regions;
 };
-
-
 
 class VoctreeLocalizer : public ILocalizer
 {
@@ -357,21 +326,21 @@ private:
   
 public:
   
-  // for each view index, it contains the features and descriptors that have an
-  // associated 3D point
+  /// for each view index, it contains the features and descriptors that have an
+  /// associated 3D point
   features::RegionsPerView _regionsPerView;
   ReconstructedRegionsMappingPerView _reconstructedRegionsMappingPerView;
   
-  // the feature extractor
+  /// the feature extractor
   std::vector<std::unique_ptr<features::Image_describer>> _imageDescribers;
   
-  // the vocabulary tree used to generate the database and the visual images for
-  // the query images
+  /// the vocabulary tree used to generate the database and the visual images for
+  /// the query images
   std::unique_ptr<voctree::IVocabularyTree> _voctree;
   features::EImageDescriberType _voctreeDescType = features::EImageDescriberType::UNINITIALIZED;
   
-  // the database that stores the visual word representation of each image of
-  // the original dataset
+  /// the database that stores the visual word representation of each image of
+  /// the original dataset
   voctree::Database _database;
   
   /// Last frames buffer

@@ -79,12 +79,6 @@ bool CCTagLocalizer::loadReconstructionDescriptors(const sfm::SfM_Data & sfm_dat
 {
   OPENMVG_LOG_DEBUG("Build observations per view");
 
-  // Read for each view the corresponding regions and store them
-//  sfm::loadRegionsPerView(_regionsPerView,
-//              sfm_data,
-//              feat_directory,
-//              {_cctagDescType});
-
   // Build observations per view
   std::map<IndexT, std::map<features::EImageDescriberType, std::vector<features::FeatureInImage>>> observationsPerView;
   for(const auto& landmarkValue : _sfm_data.structure)

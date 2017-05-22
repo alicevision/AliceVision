@@ -67,6 +67,37 @@ std::istream& operator>>(std::istream &in, VoctreeLocalizer::Algorithm &a)
   return in;
 }	
 
+FrameData::FrameData(const LocalizationResult &locResult, const features::MapRegionsPerDesc& regionsPerDesc)
+  : _locResult(locResult)
+{
+  // now we need to filter out and keep only the regions with 3D data associated
+  const auto &associationIDs = _locResult.getIndMatch3D2D();
+  const auto &inliers = _locResult.getInliers();
+
+  // Regions for each describer type
+  for(const auto& regionsPerDescIt : regionsPerDesc)
+  {
+    // feature in image are <featureID, point3Did> associations
+    std::vector<features::FeatureInImage> featuresInImage;
+    featuresInImage.reserve(inliers.size());
+
+    assert(inliers.size() <= associationIDs.size());
+    for(const auto &idx : inliers)
+    {
+      assert(idx < associationIDs.size());
+      const auto &association = associationIDs[idx];
+      assert(association.descType != features::EImageDescriberType::UNINITIALIZED);
+      if(association.descType != regionsPerDescIt.first)
+        continue;
+
+     // add it to featuresInImage
+      featuresInImage.emplace_back(association.featId, association.landmarkId);
+    }
+
+    _regions[regionsPerDescIt.first] = createFilteredRegions(*regionsPerDescIt.second, featuresInImage, _regionsWith3D[regionsPerDescIt.first]);
+  }
+}
+
 VoctreeLocalizer::Algorithm VoctreeLocalizer::initFromString(const std::string &value)
 {
   if(value=="FirstBest")
@@ -182,13 +213,11 @@ bool VoctreeLocalizer::localize(const image::Image<unsigned char> & imageGrey,
 
     imageDescriber->Allocate(queryRegions);
 
-    auto detect_start = std::chrono::steady_clock::now();
+    system::Timer timer;
     imageDescriber->Set_configuration_preset(param->_featurePreset);
     imageDescriber->Describe(imageGrey, queryRegions, nullptr);
-    auto detect_end = std::chrono::steady_clock::now();
-    auto detect_elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(detect_end - detect_start);
 
-    OPENMVG_LOG_DEBUG("[features]\tExtract " << features::EImageDescriberType_enumToString(descType) << " done: found " << queryRegions->RegionCount() << " features in " << detect_elapsed.count() << " [ms]");
+    OPENMVG_LOG_DEBUG("[features]\tExtract " << features::EImageDescriberType_enumToString(descType) << " done: found " << queryRegions->RegionCount() << " features in " << timer.elapsedMs() << " [ms]");
   }
 
   const std::pair<std::size_t, std::size_t> queryImageSize = std::make_pair(imageGrey.Width(), imageGrey.Height());
@@ -342,9 +371,11 @@ bool VoctreeLocalizer::initDatabase(const std::string & vocTreeFilepath,
         _regionsPerView.getData()[id_view][descType] = std::move(filteredRegions);
       }
     }
-    ++my_progress_bar;
+#pragma omp critical
+    {
+      ++my_progress_bar;
+    }
   }
-  
   return true;
 }
 
