@@ -86,5 +86,34 @@ inline float getStrongSupportCoeff(EImageDescriberType imageDescriberType)
   throw std::out_of_range("Invalid imageDescriber enum");
 }
 
+inline std::ostream& operator<<(std::ostream& os, const EImageDescriberType imageDescriberType)
+{
+  os << EImageDescriberType_enumToString(imageDescriberType);
+  return os;
+}
+
+inline std::istream& operator>>(std::istream& in, EImageDescriberType &imageDescriberType)
+{
+  std::string token;
+  in >> token;
+  imageDescriberType = EImageDescriberType_stringToEnum(token);
+  return in;
+}
+
+inline std::ostream& operator<<(std::ostream& os, const std::vector<EImageDescriberType> &imageDescriberTypes)
+{
+  for(const EImageDescriberType descType : imageDescriberTypes)
+    os << descType;
+  return os;
+}
+
+inline std::istream& operator>>(std::istream &in, std::vector<EImageDescriberType> &imageDescriberTypes)
+{
+  std::string token;
+  in >> token;
+  imageDescriberTypes = EImageDescriberType_stringToEnums(token);
+  return in;
+}
+
 } // namespace features
 } // namespace openMVG
