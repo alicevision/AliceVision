@@ -32,6 +32,7 @@
 #ifndef OPENMVG_TRACKS_H_
 #define OPENMVG_TRACKS_H_
 
+#include "openMVG/config.hpp"
 #include "lemon/list_graph.h"
 #include "lemon/unionfind.h"
 
@@ -181,7 +182,7 @@ struct TracksBuilder
 
     // Build the node indirection for each referenced feature
     MapIndexToNode map_indexToNode;
-#ifdef HAVE_BOOST
+#if OPENMVG_IS_DEFINED(OPENMVG_HAVE_BOOST)
     map_indexToNode.reserve(allFeatures.size());
     _map_nodeToIndex.reserve(allFeatures.size());
 #endif

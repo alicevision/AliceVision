@@ -1,6 +1,7 @@
 #ifndef OPENMVG_VOCABULARY_TREE_VOCABULARY_TREE_HPP
 #define OPENMVG_VOCABULARY_TREE_VOCABULARY_TREE_HPP
 
+#include <openMVG/config.hpp>
 #include "distance.hpp"
 #include "feature_allocator.hpp"
 
