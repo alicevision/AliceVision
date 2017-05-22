@@ -45,22 +45,22 @@ bool LoadMatchFile(
     // descType matchesCount
     // idx idx
     // ...
-    size_t I = 0;
-    size_t J = 0;
-    size_t nbDescType = 0;
+    std::size_t I = 0;
+    std::size_t J = 0;
+    std::size_t nbDescType = 0;
     while(stream >> I >> J >> nbDescType)
     {
-      for(int i =0; i < nbDescType; ++i)
+      for(std::size_t i = 0; i < nbDescType; ++i)
       {
         std::string descTypeStr;
-        size_t nbMatches = 0;
+        std::size_t nbMatches = 0;
         // Read descType and number of matches
         stream >> descTypeStr >> nbMatches;
 
         features::EImageDescriberType descType = features::EImageDescriberType_stringToEnum(descTypeStr);
         std::vector<IndMatch> matchesPerDesc(nbMatches);
         // Read all matches
-        for (size_t i = 0; i < nbMatches; ++i)
+        for (std::size_t i = 0; i < nbMatches; ++i)
         {
           stream >> matchesPerDesc[i];
         }
@@ -256,8 +256,8 @@ private:
       match != matchEnd;
       ++match)
     {
-      const size_t I = match->first.first;
-      const size_t J = match->first.second;
+      const std::size_t I = match->first.first;
+      const std::size_t J = match->first.second;
       const MatchesPerDescType & matchesPerDesc = match->second;
       stream << I << " " << J << '\n'
              << matchesPerDesc.size() << '\n';

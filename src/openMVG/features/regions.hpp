@@ -15,6 +15,7 @@
 #include "openMVG/matching/metric.hpp"
 #include "cereal/types/vector.hpp"
 #include <string>
+#include <cstddef>
 #include <typeinfo>
 
 namespace openMVG {
@@ -70,14 +71,14 @@ public:
 
   /// basis element used for description
   virtual std::string Type_id() const = 0;
-  virtual size_t DescriptorLength() const = 0;
+  virtual std::size_t DescriptorLength() const = 0;
 
   //-- Assume that a region can always be represented at least by a 2D positions
   virtual PointFeatures GetRegionsPositions() const = 0;
-  virtual Vec2 GetRegionPosition(size_t i) const = 0;
+  virtual Vec2 GetRegionPosition(std::size_t i) const = 0;
 
   /// Return the number of defined regions
-  virtual size_t RegionCount() const = 0;
+  virtual std::size_t RegionCount() const = 0;
 
   /**
    * @brief Return a blind pointer to the container of the descriptors array.
@@ -99,10 +100,10 @@ public:
   // A default metric is used according the descriptor type:
   // - Scalar: L2,
   // - Binary: Hamming
-  virtual double SquaredDescriptorDistance(size_t i, const Regions *, size_t j) const = 0;
+  virtual double SquaredDescriptorDistance(std::size_t i, const Regions *, std::size_t j) const = 0;
 
   /// Add the Inth region to another Region container
-  virtual void CopyRegion(size_t i, Regions *) const = 0;
+  virtual void CopyRegion(std::size_t i, Regions *) const = 0;
 
   virtual Regions * EmptyClone() const = 0;
 
@@ -140,13 +141,13 @@ public:
     return PointFeatures(_vec_feats.begin(), _vec_feats.end());
   }
 
-  Vec2 GetRegionPosition(size_t i) const
+  Vec2 GetRegionPosition(std::size_t i) const
   {
     return Vec2f(_vec_feats[i].coords()).cast<double>();
   }
 
   /// Return the number of defined regions
-  size_t RegionCount() const {return _vec_feats.size();}
+  std::size_t RegionCount() const {return _vec_feats.size();}
 
   /// Mutable and non-mutable FeatureT getters.
   inline std::vector<FeatureT> & Features() { return _vec_feats; }
@@ -187,7 +188,7 @@ struct SquaredMetric<T, ERegionType::Binary>
 };
 
 
-template<typename FeatT, typename T, size_t L, ERegionType regionType>
+template<typename FeatT, typename T, std::size_t L, ERegionType regionType>
 class FeatDesc_Regions : public Feat_Regions<FeatT>
 {
 public:
@@ -202,7 +203,7 @@ protected:
 
 public:
   std::string Type_id() const {return typeid(T).name();}
-  size_t DescriptorLength() const {return static_cast<size_t>(L);}
+  std::size_t DescriptorLength() const {return static_cast<std::size_t>(L);}
 
   bool IsScalar() const { return regionType == ERegionType::Scalar; }
   bool IsBinary() const { return regionType == ERegionType::Binary; }
@@ -252,7 +253,7 @@ public:
   }
 
   // Return the distance between two descriptors
-  double SquaredDescriptorDistance(size_t i, const Regions * genericRegions, size_t j) const
+  double SquaredDescriptorDistance(std::size_t i, const Regions * genericRegions, std::size_t j) const
   {
     assert(i < this->_vec_descs.size());
     assert(genericRegions);
@@ -268,7 +269,7 @@ public:
    * @param[in] i: index of the region to copy
    * @param[out] outRegionContainer: the output region group to add the region
    */
-  void CopyRegion(size_t i, Regions * outRegionContainer) const
+  void CopyRegion(std::size_t i, Regions * outRegionContainer) const
   {
     assert(i < this->_vec_feats.size() && i < this->_vec_descs.size());
     static_cast<This*>(outRegionContainer)->_vec_feats.push_back(this->_vec_feats[i]);
@@ -323,10 +324,10 @@ public:
 };
 
 
-template<typename FeatT, typename T, size_t L>
+template<typename FeatT, typename T, std::size_t L>
 using Scalar_Regions = FeatDesc_Regions<FeatT, T, L, ERegionType::Scalar>;
 
-template<typename FeatT, size_t L>
+template<typename FeatT, std::size_t L>
 using Binary_Regions = FeatDesc_Regions<FeatT, unsigned char, L, ERegionType::Binary>;
 
 

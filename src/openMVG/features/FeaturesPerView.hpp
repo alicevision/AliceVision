@@ -103,9 +103,9 @@ public:
     assert(descType != features::EImageDescriberType::UNINITIALIZED);
     std::default_random_engine generator;
 
-    for (int j = 0; j < synthetic_data._n; ++j) // For each view
+    for (std::size_t j = 0; j < synthetic_data._n; ++j) // For each view
     {
-      for (int i = 0; i < synthetic_data._x[j].cols(); ++i) // For each new point visibility
+      for (Mat::Index i = 0; i < synthetic_data._x[j].cols(); ++i) // For each new point visibility
       {
         const Vec2 pt = synthetic_data._x[j].col(i);
         _data[j][descType].push_back(features::PointFeature(pt(0) + noise(generator), pt(1) + noise(generator)));

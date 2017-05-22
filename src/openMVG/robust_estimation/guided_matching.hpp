@@ -41,11 +41,11 @@ void GuidedMatching(
 
   // Looking for the corresponding points that have
   //  the smallest distance (smaller than the provided Threshold)
-  for (std::size_t i = 0; i < xLeft.cols(); ++i)
+  for (Mat::Index i = 0; i < xLeft.cols(); ++i)
   {
     double min = std::numeric_limits<double>::max();
     IndMatch match;
-    for (std::size_t j = 0; j < xRight.cols(); ++j)
+    for (Mat::Index j = 0; j < xRight.cols(); ++j)
     {
       // Compute the geometric error: error to the model
       const double err = ErrorArg::Error(
