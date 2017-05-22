@@ -29,7 +29,7 @@ inline bool generateSyntheticMatches(
     {
       for (int idx = 0; idx < synthetic_data._x[j].cols(); ++idx)
       {
-        pairwiseMatches[Pair(j,(jj)%synthetic_data._n)][descType].push_back(matching::IndMatch(idx,idx));
+        pairwiseMatches[Pair(j,(jj)%synthetic_data._n)][descType].emplace_back(idx,idx);
       }
     }
   }

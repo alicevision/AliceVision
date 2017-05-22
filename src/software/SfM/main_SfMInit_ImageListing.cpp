@@ -157,7 +157,7 @@ int main(int argc, char **argv)
   cmd.add( make_option('i', sImageDir, "imageDirectory") );
   cmd.add( make_option('j', sJsonFile, "jsonFile") );
   cmd.add( make_option('d', sfileDatabase, "sensorWidthDatabase") );
-  cmd.add( make_option('o', sOutputDir, "outputDirectory") ); // TODO: outputSfmData
+  cmd.add( make_option('o', sOutputDir, "outputDirectory") );
   cmd.add( make_option('f', userFocalLengthPixel, "focal") );
   cmd.add( make_option('s', userSensorWidth, "sensorWidth") );
   cmd.add( make_option('k', sKmatrix, "intrinsics") );
@@ -600,7 +600,7 @@ int main(int argc, char **argv)
   // Store SfM_Data views & intrinsic data
   if (!Save(
     sfm_data,
-    stlplus::create_filespec( sOutputDir, "sfm_data.json" ).c_str(), // TODO
+    stlplus::create_filespec( sOutputDir, "sfm_data.json" ).c_str(),
     ESfM_Data(VIEWS|INTRINSICS)))
   {
     return EXIT_FAILURE;

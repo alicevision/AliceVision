@@ -21,6 +21,10 @@
 namespace openMVG {
 namespace features {
 
+
+/**
+ * @brief Store a featureIndes and the associated point3dId
+ */
 struct FeatureInImage
 {
   FeatureInImage(IndexT featureIndex, IndexT point3dId)
@@ -278,11 +282,9 @@ public:
 
   /**
    * @brief Duplicate only reconstructed regions.
-   *
-   * @param genericRegions list of input regions from the image extraction
-   * @param featuresInImage list of features with an associated 3D point Id
-   * @param out_associated3dPoint
-   * @param out_mapFullToLocal
+   * @param[in] featuresInImage list of features with an associated 3D point Id
+   * @param[out] out_associated3dPoint
+   * @param[out] out_mapFullToLocal
    */
   std::unique_ptr<Regions> createFilteredRegions(
                      const std::vector<FeatureInImage>& featuresInImage,

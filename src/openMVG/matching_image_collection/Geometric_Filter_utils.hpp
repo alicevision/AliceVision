@@ -8,9 +8,7 @@
 #pragma once
 
 #include <openMVG/matching/indMatch.hpp>
-
 #include <openMVG/features/FeaturesPerView.hpp>
-
 
 namespace openMVG {
 namespace matching_image_collection {
@@ -27,7 +25,7 @@ inline Vec2 getFeaturePosition(const features::PointFeatures& features, std::siz
 }
 
 /**
-* @brief Fill matrices with un-distorted feature positions ("image perfect" features)
+* @brief Fill matrices with un-distorted feature positions
 *
 * @param[in] putativeMatches Selected corresponding features id (match)
 * @param[in] cam_I Inth Camera interface
@@ -173,40 +171,6 @@ void MatchesPairToMat(
       regionsPerView.getRegionsPerDesc(pairIndex.second),
       descTypes,
       x_I, x_J);
-
-  /*
-  // TODO DELI: TO REMOVE
-  // Create the output matrices with all matched features for images I and J
-  const size_t n = putativeMatchesPerType.getNbAllMatches();
-  x_I.resize(2, n);
-  x_J.resize(2, n);
-
-  size_t startM = 0;
-  for(size_t d = 0; d < descTypes.size(); ++d)
-  {
-    const features::EImageDescriberType& descType = descTypes[d];
-
-    if(!putativeMatchesPerType.count(descType))
-      continue; // we may have 0 feature for some descriptor types
-    const matching::IndMatches& putativeMatches = putativeMatchesPerType.at(descType);
-
-    const features::PointFeatures feature_I = regionsPerView.getRegions(pairIndex.first, descType).GetRegionsPositions();
-    const features::PointFeatures feature_J = regionsPerView.getRegions(pairIndex.second, descType).GetRegionsPositions();
-
-    // fill subpart of the matrices with undistorted features
-    auto subpart_I = x_I.block(0, startM, 2, putativeMatches.size());
-    auto subpart_J = x_J.block(0, startM, 2, putativeMatches.size());
-
-    fillMatricesWithUndistortFeaturesMatches(
-      putativeMatches,
-      cam_I, feature_I,
-      cam_J, feature_J,
-      subpart_I,
-      subpart_J);
-
-    startM += putativeMatches.size();
-  }
-  */
 }
 
 /**

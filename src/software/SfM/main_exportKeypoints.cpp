@@ -128,7 +128,7 @@ int main(int argc, char ** argv)
     std::ostringstream os;
     os << stlplus::folder_append_separator(sOutDir)
       << stlplus::basename_part(sView_filename)
-      << "_" << features.size() << "_.svg"; //TO CHECK
+      << "_" << features.size() << "_.svg";
 
     features::saveFeatures2SVG(sView_filename,
                                dimImage,

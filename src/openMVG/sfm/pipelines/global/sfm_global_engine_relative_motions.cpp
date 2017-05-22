@@ -593,7 +593,7 @@ void GlobalSfMReconstructionEngine_RelativeMotions::Compute_Relative_Rotations
         {
           const features::EImageDescriberType descType = matchesPerDescIt.first;
           assert(descType != features::EImageDescriberType::UNINITIALIZED);
-          if(descType == features::EImageDescriberType::UNINITIALIZED) // TODO DELI
+          if(descType == features::EImageDescriberType::UNINITIALIZED)
             throw std::logic_error("descType UNINITIALIZED");
           const matching::IndMatches & matches = matchesPerDescIt.second;
           for (const matching::IndMatch& match: matches)

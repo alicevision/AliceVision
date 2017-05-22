@@ -32,7 +32,7 @@ std::unique_ptr<features::Regions> loadRegions(const std::string& folder, IndexT
  * @param storageDirectory
  * @param imageDescriberType
  * @param filter: to load Regions only for a sub-set of the views contained in the sfmData
- * @return 
+ * @return true if the regions are correctlty loaded
  */
 bool loadRegionsPerView(features::RegionsPerView& regionsPerView,
             const SfM_Data& sfmData,
@@ -47,7 +47,7 @@ bool loadRegionsPerView(features::RegionsPerView& regionsPerView,
  * @param sfmData
  * @param folder
  * @param imageDescriberType
- * @return
+ * @return true if the features are correctlty loaded
  */
 bool loadFeaturesPerView(features::FeaturesPerView& featuresPerView,
                     const SfM_Data& sfmData,

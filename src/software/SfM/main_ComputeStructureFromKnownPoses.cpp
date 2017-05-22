@@ -26,7 +26,7 @@ int main(int argc, char **argv)
   CmdLine cmd;
 
   std::string sSfM_Data_Filename;
-  std::string describerMethods = "SIFT"; // TODO DELI
+  std::string describerMethods = "SIFT";
   std::string sFeaturesDir;
   std::string sMatchesDir;
   std::string sMatchesGeometricModel = "f";
