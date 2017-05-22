@@ -15,7 +15,7 @@ class Image;
 namespace features {
 
 /**
- * @brief Create an Image_describer interface that use an OpenCV feature extraction method
+ * @brief Create an Image_describer interface for OpenCV AKAZE feature extractor
  * Regions is the same as AKAZE floating point
  */
 class AKAZE_openCV_ImageDescriber : public Image_describer
@@ -33,7 +33,7 @@ public:
 
   /**
    * @brief Use a preset to control the number of detected regions
-   * @param preset The preset configuration
+   * @param[in] preset The preset configuration
    * @return True if configuration succeed. (here always false)
    */
   bool Set_configuration_preset(EDESCRIBER_PRESET preset) override
@@ -43,9 +43,9 @@ public:
 
   /**
    * @brief Detect regions on the image and compute their attributes (description)
-   * @param image Image.
-   * @param regions The detected regions and attributes (the caller must delete the allocated data)
-   * @param mask 8-bit gray image for keypoint filtering (optional).
+   * @param[in] image Image.
+   * @param[out] regions The detected regions and attributes (the caller must delete the allocated data)
+   * @param[in] mask 8-bit gray image for keypoint filtering (optional).
    *    Non-zero values depict the region of interest.
    * @return True if detection succed.
    */
@@ -55,7 +55,7 @@ public:
 
   /**
    * @brief Allocate Regions type depending of the Image_describer
-   * @param regions
+   * @param[in,out] regions
    */
   void Allocate(std::unique_ptr<Regions> &regions) const override
   {

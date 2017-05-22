@@ -17,9 +17,6 @@
 #include <openMVG/config.hpp>
 #include <cereal/cereal.hpp>
 
-#include <iostream>
-#include <numeric>
-
 using namespace std;
 
 namespace openMVG {

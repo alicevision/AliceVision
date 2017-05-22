@@ -21,33 +21,35 @@ bool AKAZE_openCV_ImageDescriber::Describe(const image::Image<unsigned char>& im
   cv::Ptr<cv::Feature2D> extractor = cv::AKAZE::create(cv::AKAZE::DESCRIPTOR_KAZE);
   extractor->detectAndCompute(img, cv::Mat(), vec_keypoints, m_desc);
 
-  if (!vec_keypoints.empty())
+  if (vec_keypoints.empty())
   {
-    Allocate(regions);
+    return false;
+  }
 
-    // Build alias to cached data
-    AKAZE_Float_Regions* regionsCasted = dynamic_cast<AKAZE_Float_Regions*>(regions.get());
+  Allocate(regions);
 
-    // Reserve some memory for faster keypoint saving
-    regionsCasted->Features().reserve(vec_keypoints.size());
-    regionsCasted->Descriptors().reserve(vec_keypoints.size());
+  // Build alias to cached data
+  AKAZE_Float_Regions* regionsCasted = dynamic_cast<AKAZE_Float_Regions*>(regions.get());
 
-    typedef Descriptor<float, 64> DescriptorT;
-    DescriptorT descriptor;
-    int cpt = 0;
+  // Reserve some memory for faster keypoint saving
+  regionsCasted->Features().reserve(vec_keypoints.size());
+  regionsCasted->Descriptors().reserve(vec_keypoints.size());
 
-    for(std::vector< cv::KeyPoint >::const_iterator i_keypoint = vec_keypoints.begin();
-      i_keypoint != vec_keypoints.end(); ++i_keypoint, ++cpt)
-    {
-      SIOPointFeature feat((*i_keypoint).pt.x, (*i_keypoint).pt.y, (*i_keypoint).size, (*i_keypoint).angle);
-      regionsCasted->Features().push_back(feat);
+  typedef Descriptor<float, 64> DescriptorT;
+  DescriptorT descriptor;
+  int cpt = 0;
 
-      memcpy(descriptor.getData(),
-             m_desc.ptr<typename DescriptorT::bin_type>(cpt),
-             DescriptorT::static_size*sizeof(DescriptorT::bin_type));
+  for(const auto& i_keypoint : vec_keypoints)
+  {
+    SIOPointFeature feat(i_keypoint.pt.x, i_keypoint.pt.y, i_keypoint.size, i_keypoint.angle);
+    regionsCasted->Features().push_back(feat);
 
-      regionsCasted->Descriptors().push_back(descriptor);
-    }
+    memcpy(descriptor.getData(),
+           m_desc.ptr<typename DescriptorT::bin_type>(cpt),
+           DescriptorT::static_size*sizeof(DescriptorT::bin_type));
+
+    regionsCasted->Descriptors().push_back(descriptor);
+    ++cpt;
   }
 
   return true;

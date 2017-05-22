@@ -2,6 +2,7 @@
 
 #include "openMVG/image/image.hpp"
 #include "openMVG/system/timer.hpp"
+#include "openMVG/logger.hpp"
 
 #include <opencv2/opencv.hpp>
 #include <opencv2/core/eigen.hpp>
@@ -57,7 +58,11 @@ bool SIFT_openCV_ImageDescriber::Describe(const image::Image<unsigned char>& ima
     if(!_params.gridSize) //< If no grid filtering, use opencv to limit the number of features
       maxDetect = _params.maxTotalKeypoints;
 
-  cv::Ptr<cv::Feature2D> siftdetector = cv::xfeatures2d::SIFT::create(maxDetect, _params.nOctaveLayers, _params.contrastThreshold, _params.edgeThreshold, _params.sigma);
+  cv::Ptr<cv::Feature2D> siftdetector = cv::xfeatures2d::SIFT::create(maxDetect,
+                                                                      _params.nOctaveLayers,
+                                                                      _params.contrastThreshold,
+                                                                      _params.edgeThreshold,
+                                                                      _params.sigma);
 
   // Detect SIFT keypoints
   auto detect_start = std::chrono::steady_clock::now();
@@ -65,11 +70,11 @@ bool SIFT_openCV_ImageDescriber::Describe(const image::Image<unsigned char>& ima
   auto detect_end = std::chrono::steady_clock::now();
   auto detect_elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(detect_end - detect_start);
 
-  std::cout << "SIFT: contrastThreshold: " << _params.contrastThreshold << ", edgeThreshold: " << _params.edgeThreshold << std::endl;
-  std::cout << "Detect SIFT: " << detect_elapsed.count() << " milliseconds." << std::endl;
-  std::cout << "Image size: " << img.cols << " x " << img.rows << std::endl;
-  std::cout << "Grid size: " << _params.gridSize << ", maxTotalKeypoints: " << _params.maxTotalKeypoints << std::endl;
-  std::cout << "Number of detected features: " << v_keypoints.size() << std::endl;
+  OPENMVG_LOG_TRACE("SIFT: contrastThreshold: " << _params.contrastThreshold << ", edgeThreshold: " << _params.edgeThreshold << std::endl);
+  OPENMVG_LOG_TRACE("Detect SIFT: " << detect_elapsed.count() << " milliseconds." << std::endl);
+  OPENMVG_LOG_TRACE("Image size: " << img.cols << " x " << img.rows << std::endl);
+  OPENMVG_LOG_TRACE("Grid size: " << _params.gridSize << ", maxTotalKeypoints: " << _params.maxTotalKeypoints << std::endl);
+  OPENMVG_LOG_TRACE("Number of detected features: " << v_keypoints.size() << std::endl);
 
   // cv::KeyPoint::response: the response by which the most strong keypoints have been selected.
   // Can be used for the further sorting or subsampling.
@@ -91,9 +96,9 @@ bool SIFT_openCV_ImageDescriber::Describe(const image::Image<unsigned char>& ima
       const double regionWidth = image.Width() / double(countFeatPerCell.cols);
       const double regionHeight = image.Height() / double(countFeatPerCell.rows);
 
-      std::cout << "Grid filtering -- keypointsPerCell: " << keypointsPerCell
-                << ", regionWidth: " << regionWidth
-                << ", regionHeight: " << regionHeight << std::endl;
+      OPENMVG_LOG_TRACE ("Grid filtering -- keypointsPerCell: " << keypointsPerCell
+                        << ", regionWidth: " << regionWidth
+                        << ", regionHeight: " << regionHeight << std::endl);
 
       for(const cv::KeyPoint& keypoint: v_keypoints)
       {
@@ -116,21 +121,21 @@ bool SIFT_openCV_ImageDescriber::Describe(const image::Image<unsigned char>& ima
       if( filtered_keypoints.size() < _params.maxTotalKeypoints )
       {
         const std::size_t remainingElements = std::min(rejected_keypoints.size(), _params.maxTotalKeypoints - filtered_keypoints.size());
-        std::cout << "Grid filtering -- Copy remaining points: " << remainingElements << std::endl;
+        OPENMVG_LOG_TRACE("Grid filtering -- Copy remaining points: " << remainingElements << std::endl);
         filtered_keypoints.insert(filtered_keypoints.end(), rejected_keypoints.begin(), rejected_keypoints.begin() + remainingElements);
       }
 
       v_keypoints.swap(filtered_keypoints);
     }
   }
-  std::cout << "Number of features: " << v_keypoints.size() << std::endl;
+  OPENMVG_LOG_TRACE("Number of features: " << v_keypoints.size() << std::endl);
 
   // Compute SIFT descriptors
   auto desc_start = std::chrono::steady_clock::now();
   siftdetector->compute(img, v_keypoints, m_desc);
   auto desc_end = std::chrono::steady_clock::now();
   auto desc_elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(desc_end - desc_start);
-  std::cout << "Compute descriptors: " << desc_elapsed.count() << " milliseconds." << std::endl;
+  OPENMVG_LOG_TRACE("Compute descriptors: " << desc_elapsed.count() << " milliseconds." << std::endl);
 
   Allocate(regions);
 
@@ -146,19 +151,18 @@ bool SIFT_openCV_ImageDescriber::Describe(const image::Image<unsigned char>& ima
 
   // Copy keypoints and descriptors in the regions
   int cpt = 0;
-  for(std::vector< cv::KeyPoint >::const_iterator i_kp = v_keypoints.begin();
-      i_kp != v_keypoints.end();
-      ++i_kp, ++cpt)
+  for(const auto& i_kp : v_keypoints)
   {
-    SIOPointFeature feat((*i_kp).pt.x, (*i_kp).pt.y, (*i_kp).size, (*i_kp).angle);
+    SIOPointFeature feat(i_kp.pt.x, i_kp.pt.y, i_kp.size, i_kp.angle);
     regionsCasted->Features().push_back(feat);
 
     Descriptor<unsigned char, 128> desc;
-    for(int j = 0; j < 128; j++)
+    for(std::size_t j = 0; j < 128; ++j)
     {
       desc[j] = static_cast<unsigned char>(512.0*sqrt(m_desc.at<float>(cpt, j)/m_siftsum.at<float>(cpt, 0)));
     }
     regionsCasted->Descriptors().push_back(desc);
+    ++cpt;
   }
 
   return true;
