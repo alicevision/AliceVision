@@ -340,7 +340,6 @@ struct TracksUtilsMap
             break; // at least one request image is not in the track
         map_temp.featPerView[iterSearch->first] = iterSearch->second;
       }
-      //TODO : fix descType
       // if we have a feature for each input image
       // we can add it to the output tracks.
       if (map_temp.featPerView.size() == set_imageIndex.size())
@@ -433,7 +432,7 @@ struct TracksUtilsMap
       trackFeatsOut.descType = trackFeatsIn.descType;
       for (std::size_t imageIndex: set_imageIndex)
       {
-        auto trackFeatsInIt = trackFeatsIn.featPerView.find(imageIndex);
+        const auto trackFeatsInIt = trackFeatsIn.featPerView.find(imageIndex);
         if(trackFeatsInIt != trackFeatsIn.featPerView.end())
           trackFeatsOut.featPerView[imageIndex] = trackFeatsInIt->second;
       }
@@ -451,7 +450,7 @@ struct TracksUtilsMap
     set_tracksIds->clear();
     for (auto& track: map_tracks)
     {
-      auto iterSearch = track.second.featPerView.find(imageIndex); //TODO : fix descType
+      const auto iterSearch = track.second.featPerView.find(imageIndex);
       if (iterSearch != track.second.featPerView.end())
         set_tracksIds->insert(track.first);
     }
@@ -459,9 +458,9 @@ struct TracksUtilsMap
 
   static void computeTracksPerView(const TracksMap & map_tracks, TracksPerView& map_tracksPerView)
   {
-    for (auto& track: map_tracks)
+    for (const auto& track: map_tracks)
     {
-      for (auto& feat: track.second.featPerView)
+      for (const auto& feat: track.second.featPerView)
       {
         TrackIdSet& tracksSet = map_tracksPerView[feat.first];
         if(tracksSet.empty())
