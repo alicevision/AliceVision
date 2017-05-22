@@ -200,6 +200,7 @@ void Match
         ++my_progress_bar;
         if (!vec_putative_matches.empty())
         {
+          assert(map_PutativesMatches.count(std::make_pair(I,J)) == 0);
           map_PutativesMatches[std::make_pair(I,J)].emplace(descType, std::move(vec_putative_matches));
         }
       }
