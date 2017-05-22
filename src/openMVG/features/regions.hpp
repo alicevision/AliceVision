@@ -305,9 +305,9 @@ public:
       regionsPtr->Features().push_back(this->_vec_feats[feat._featureIndex]);
       regionsPtr->Descriptors().push_back(this->_vec_descs[feat._featureIndex]);
 
-      // This assert should be valid in theory, but in practice we notice that sometimes
-      // we have the same point associated to different 3D points (2 in practice).
-      // In this particular case, currently it returns randomly the last one...
+      // This assert should be valid in theory, but in the context of CameraLocalization
+      // we can have the same 2D feature associated to different 3D points (2 in practice).
+      // In this particular case, currently it returns the last one...
       //
       // assert(out_mapFullToLocal.count(feat._featureIndex) == 0);
 

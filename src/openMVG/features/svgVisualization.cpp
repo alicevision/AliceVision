@@ -74,13 +74,13 @@ void saveMatches2SVG(const std::string &imagePathLeft,
   for(const auto& descMatches : matches)
   {
     features::EImageDescriberType descType = descMatches.first;
+    const std::string descColor = describerTypeColor(descType);
     for(const matching::IndMatch &m : descMatches.second)
     {
       //Get back linked feature, draw a circle and link them by a line
       const features::PointFeature & L = keypointsLeft.at(descType)->GetRegionsPositions()[m._i];
       const features::PointFeature & R = keypointsRight.at(descType)->GetRegionsPositions()[m._j];
 
-      const std::string descColor = describerTypeColor(descType);
       svgStream.drawLine(L.x(), L.y(), R.x()+imageSizeLeft.first, R.y(), svg::svgStyle().stroke("green", std::min(strokeRight,strokeLeft)));
       svgStream.drawCircle(L.x(), L.y(), radiusLeft, svg::svgStyle().stroke(descColor, strokeLeft));
       svgStream.drawCircle(R.x()+imageSizeLeft.first, R.y(), radiusRight, svg::svgStyle().stroke(descColor, strokeRight));
