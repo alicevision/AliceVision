@@ -13,6 +13,7 @@ extern "C" {
 
 #include <iostream>
 #include <numeric>
+#include <stdexcept>
 
 namespace openMVG {
 namespace features {
@@ -108,7 +109,7 @@ struct SiftParams
       break;
     }
     default:
-      return false; // TODO: throw
+      throw std::out_of_range("Invalid Preset enum");
     }
     return true;
   }
