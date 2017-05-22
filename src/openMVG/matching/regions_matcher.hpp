@@ -50,7 +50,7 @@ void DistanceRatioMatch
 class IRegionsMatcher
 {
 public:
-  const features::Regions* regions_ = nullptr;
+  const features::Regions& regions_;
 
   /**
    * @brief The destructor.
@@ -58,17 +58,10 @@ public:
   virtual ~IRegionsMatcher() = 0;
 
   IRegionsMatcher(const features::Regions& regions)
-    : regions_(&regions)
+    : regions_(regions)
   {
 
   }
-
-  /**
-   * @brief Initialize the matcher by setting one region as a "database".
-   *
-   * @param[in] regions The Regions to be used as reference when matching another Region.
-   */
-  virtual void Init_database(const features::Regions& regions) = 0;
 
   /**
    * @brief Match a Regions to the internal database using the test ratio to improve
@@ -86,7 +79,7 @@ public:
     matching::IndMatches & vec_putative_matches
   ) = 0;
 
-  const features::Regions& getDatabaseRegions() const { assert(regions_); return *regions_; }
+  const features::Regions& getDatabaseRegions() const { return regions_; }
 };
 
 inline IRegionsMatcher::~IRegionsMatcher()
@@ -120,26 +113,11 @@ public:
   RegionsMatcher(const features::Regions& regions, bool b_squared_metric = false)
     : IRegionsMatcher(regions), b_squared_metric_(b_squared_metric)
   {
-    if (regions_->RegionCount() == 0)
+    if (regions_.RegionCount() == 0)
       return;
 
-    const Scalar * tab = reinterpret_cast<const Scalar *>(regions_->DescriptorRawData());
-    matcher_.Build(tab, regions_->RegionCount(), regions_->DescriptorLength());
-  }
-
-  /**
-   * @brief Initialize the matcher with a Regions that will be used as database
-   * 
-   * @param regions The Regions to be used as database.
-   */
-  void Init_database(const features::Regions& regions)
-  {
-    regions_ = &regions;
-    if (regions_->RegionCount() == 0)
-      return;
-
-    const Scalar * tab = reinterpret_cast<const Scalar *>(regions_->DescriptorRawData());
-    matcher_.Build(tab, regions_->RegionCount(), regions_->DescriptorLength());
+    const Scalar * tab = reinterpret_cast<const Scalar *>(regions_.DescriptorRawData());
+    matcher_.Build(tab, regions_.RegionCount(), regions_.DescriptorLength());
   }
 
   /**
@@ -157,8 +135,6 @@ public:
     const features::Regions& queryregions_,
     matching::IndMatches & vec_putative_matches)
   {
-    if (regions_ == nullptr)
-      return false;
 
     const Scalar * queries = reinterpret_cast<const Scalar *>(queryregions_.DescriptorRawData());
 
@@ -198,7 +174,7 @@ public:
 
     // Remove matches that have the same (X,Y) coordinates
     matching::IndMatchDecorator<float> matchDeduplicator(vec_putative_matches,
-      regions_->GetRegionsPositions(), queryregions_.GetRegionsPositions());
+      regions_.GetRegionsPositions(), queryregions_.GetRegionsPositions());
     matchDeduplicator.getDeduplicated(vec_putative_matches);
 
     return (!vec_putative_matches.empty());
