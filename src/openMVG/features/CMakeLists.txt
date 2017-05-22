@@ -27,7 +27,8 @@ set( features_files_sources
   akaze/AKAZE.cpp
   liop/liop_descriptor.cpp
   svgVisualization.cpp
-  ImageDescriberCommon.cpp)
+  ImageDescriberCommon.cpp
+  FeaturesPerView.cpp)
 
 if (OpenMVG_USE_CCTAG)
   list(APPEND features_files_headers

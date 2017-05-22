@@ -35,25 +35,7 @@ public:
    * @param viewId
    * @return PointFeatures or an empty PointFeatures.
    */
-  const features::PointFeatures& getFeatures(IndexT viewId, features::EImageDescriberType descType) const
-  {
-    assert(descType != features::EImageDescriberType::UNINITIALIZED);
-    // Have an empty feature set in order to deal with non existing view_id
-    static const features::PointFeatures emptyFeats = features::PointFeatures();
-
-    MapFeaturesPerView::const_iterator itView = _data.find(viewId);
-    
-    if (itView != _data.end())
-    {
-      MapFeaturesPerDesc::const_iterator itDesc = itView->second.find(descType);
-      
-      if(itDesc != itView->second.end())
-      {
-        return itDesc->second;
-      }
-    }
-    return emptyFeats;
-  }
+  const features::PointFeatures& getFeatures(IndexT viewId, features::EImageDescriberType descType) const;
 
   MapFeaturesPerDesc& getFeaturesPerDesc(IndexT viewId)
   {
@@ -70,29 +52,17 @@ public:
     return _data.at(viewId);
   }
 
-  std::vector<features::EImageDescriberType> getCommonDescTypes(const Pair& pair) const
-  {
-    std::vector<features::EImageDescriberType> descTypes;
-
-    const auto& featuresA = _data.at(pair.first);
-    const auto& featuresB = _data.at(pair.second);
-
-    for(const auto& featuresPerDesc : featuresA)
-    {
-      const auto desc = featuresPerDesc.first;
-      if ( featuresB.count(desc) > 0 )
-      {
-        descTypes.push_back(desc);
-      }
-    }
-
-    return descTypes;
-  }
+  /**
+   * @brief Get the list of common describerTypes between two views
+   * @param pair
+   * @return vector of describerType
+   */
+  std::vector<features::EImageDescriberType> getCommonDescTypes(const Pair& pair) const;
   
   /**
-   * 
+   * @brief Return true if the given viewId is present in the container
    * @param viewId
-   * @return 
+   * @return boolean
    */
   bool viewExist(IndexT viewId) const
   {
@@ -100,8 +70,8 @@ public:
   }
   
   /**
-   * 
-   * @return 
+   * @brief Return true if the container is empty
+   * @return boolean
    */
   bool isEmpty() const
   {
@@ -109,7 +79,7 @@ public:
   }
   
   /**
-   * 
+   * @brief Add a list of features for a given view and describerType
    * @param viewId
    * @param regionsPtr
    */
@@ -120,11 +90,10 @@ public:
   }
   
   /**
-   * 
-   * @param FeaturesPerView
+   * @brief Add synthtic data into the container for the given describerType
    * @param synthetic_data
    * @param noise
-   * @return 
+   * @return true if success
    */
   // Create from a synthetic scene (NViewDataSet) some SfM pipelines data provider:
 //  - for each view store the observations point as PointFeatures
@@ -146,8 +115,8 @@ public:
   }
   
   /**
-   * 
-   * @return 
+   * @brief Get a reference of private container data
+   * @return MapFeaturesPerView reference
    */
   features::MapFeaturesPerView& getData()
   {
