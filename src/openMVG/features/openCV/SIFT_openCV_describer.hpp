@@ -3,8 +3,6 @@
 #include "openMVG/features/image_describer.hpp"
 #include "openMVG/features/regions_factory.hpp"
 
-#include <cereal/cereal.hpp>
-
 namespace openMVG {
 
 namespace image {
@@ -26,19 +24,6 @@ public:
    * @return True if configuration succeed.
    */
   bool Set_configuration_preset(EDESCRIBER_PRESET preset);
-
-  template<class Archive>
-  void serialize( Archive & ar )
-  {
-    ar(
-      cereal::make_nvp("grid_size", gridSize),
-      cereal::make_nvp("max_total_keypoints", maxTotalKeypoints),
-      cereal::make_nvp("n_octave_layers", nOctaveLayers),
-      cereal::make_nvp("contrast_threshold", contrastThreshold),
-      cereal::make_nvp("edge_threshold", edgeThreshold),
-      cereal::make_nvp("sigma", sigma));
-      //cereal::make_nvp("root_sift", root_sift));
-  }
 
   /// Parameters
   std::size_t gridSize = 4;
@@ -87,21 +72,15 @@ public:
    */
   bool Describe(const image::Image<unsigned char>& image,
                 std::unique_ptr<Regions> &regions,
-                const image::Image<unsigned char> * mask = NULL);
+                const image::Image<unsigned char> * mask = NULL) override;
 
   /**
    * @brief Allocate Regions type depending of the Image_describer
    * @param[in,out] regions
    */
-  void Allocate(std::unique_ptr<Regions> &regions) const
+  void Allocate(std::unique_ptr<Regions> &regions) const override
   {
     regions.reset( new SIFT_Regions );
-  }
-
-  template<class Archive>
-  void serialize(Archive & ar)
-  {
-    ar(cereal::make_nvp("params", _params));
   }
 
 private:
@@ -109,8 +88,4 @@ private:
 };
 
 } //namespace features
-} //namespace openMVG
-
-#include <cereal/types/polymorphic.hpp>
-#include <cereal/archives/json.hpp>
-CEREAL_REGISTER_TYPE_WITH_NAME(openMVG::features::SIFT_openCV_ImageDescriber, "SIFT_OPENCV_Image_describer");
+} //namespace openMV

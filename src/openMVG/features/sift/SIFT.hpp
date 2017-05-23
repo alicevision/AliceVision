@@ -9,14 +9,18 @@ extern "C" {
 #include "nonFree/sift/vl/sift.h"
 }
 
-#include <cereal/cereal.hpp>
-
 #include <iostream>
 #include <numeric>
 #include <stdexcept>
 
 namespace openMVG {
 namespace features {
+
+/**
+ * Bibliography:
+ * [1] R. Arandjelović, A. Zisserman.
+ * Three things everyone should know to improve object retrieval. CVPR2012.
+ */
 
 struct SiftParams
 {
@@ -42,22 +46,6 @@ struct SiftParams
     _maxTotalKeypoints(maxTotalKeypoints),
     //
     _root_sift(root_sift) {}
-
-  template<class Archive>
-  void serialize( Archive & ar )
-  {
-    ar(
-      cereal::make_nvp("first_octave", _first_octave),      
-      cereal::make_nvp("num_octaves",_num_octaves),
-      cereal::make_nvp("num_scales",_num_scales),
-      cereal::make_nvp("edge_threshold",_edge_threshold),
-      cereal::make_nvp("peak_threshold",_peak_threshold),
-      //
-      cereal::make_nvp("grid_size", _gridSize),
-      cereal::make_nvp("max_total_keypoints", _maxTotalKeypoints),
-      //
-      cereal::make_nvp("root_sift",_root_sift));
-  }
 
   // Parameters
   int _first_octave;      // Use original image, or perform an upscale if == -1

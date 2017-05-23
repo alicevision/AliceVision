@@ -11,8 +11,6 @@
 #include <openMVG/image/image.hpp>
 #include <openMVG/system/timer.hpp>
 
-#include <nonFree/sift/SIFT_describer.hpp>
-
 #include "third_party/cmdLine/cmdLine.h"
 #include "third_party/stlplus3/filesystemSimplified/file_system.hpp"
 

@@ -273,15 +273,6 @@ public:
     }
   }
 
-  template<class Archive>
-  void serialize(Archive & ar)
-  {
-    ar(
-     cereal::make_nvp("params", _params),
-     cereal::make_nvp("bOrientation", _bOrientation));
-  }
-
-
 private:
   AKAZEParams _params;
   bool _bOrientation;
@@ -289,9 +280,5 @@ private:
 
 } // namespace features
 } // namespace openMVG
-
-#include <cereal/types/polymorphic.hpp>
-#include <cereal/archives/json.hpp>
-CEREAL_REGISTER_TYPE_WITH_NAME(openMVG::features::AKAZE_Image_describer, "AKAZE_Image_describer");
 
 #endif // OPENMVG_FEATURES_AKAZE_IMAGE_DESCRIBER_HPP
