@@ -9,6 +9,7 @@
 #include <openMVG/image/image_io.hpp>
 #include <openMVG/dataio/FeedProvider.hpp>
 #include <openMVG/features/image_describer.hpp>
+#include <openMVG/features/ImageDescriberCommon.hpp>
 #include <openMVG/robust_estimation/robust_estimators.hpp>
 #include <openMVG/logger.hpp>
 
@@ -39,55 +40,6 @@ namespace po = boost::program_options;
 
 using namespace openMVG;
 
-enum DescriberType
-{
-  SIFT
-#if OPENMVG_IS_DEFINED(OPENMVG_HAVE_CCTAG)
-  ,CCTAG,
-  SIFT_CCTAG
-#endif
-};
-
-inline DescriberType stringToDescriberType(const std::string& describerType)
-{
-  if(describerType == "SIFT")
-    return DescriberType::SIFT;
-#if OPENMVG_IS_DEFINED(OPENMVG_HAVE_CCTAG)
-  if (describerType == "CCTAG")
-    return DescriberType::CCTAG;
-  if(describerType == "SIFT_CCTAG")
-    return DescriberType::SIFT_CCTAG;
-#endif
-  throw std::invalid_argument("Unsupported describer type "+describerType);
-}
-
-inline std::string describerTypeToString(DescriberType describerType)
-{
-  if(describerType == DescriberType::SIFT)
-    return "SIFT";
-#if OPENMVG_IS_DEFINED(OPENMVG_HAVE_CCTAG)
-  if (describerType == DescriberType::CCTAG)
-    return "CCTAG";
-  if(describerType == DescriberType::SIFT_CCTAG)
-    return "SIFT_CCTAG";
-#endif
-  throw std::invalid_argument("Unrecognized DescriberType "+std::to_string(describerType));
-}
-
-std::ostream& operator<<(std::ostream& os, const DescriberType describerType)
-{
-  os << describerTypeToString(describerType);
-  return os;
-}
-
-std::istream& operator>>(std::istream &in, DescriberType &describerType)
-{
-  std::string token;
-  in >> token;
-  describerType = stringToDescriberType(token);
-  return in;
-}
-
 
 std::string myToString(std::size_t i, std::size_t zeroPadding)
 {
@@ -111,7 +63,7 @@ bool checkRobustEstimator(robust::EROBUST_ESTIMATOR e, double &value)
      e != robust::EROBUST_ESTIMATOR::ROBUST_ESTIMATOR_ACRANSAC)
   {
     OPENMVG_CERR("Only " << robust::EROBUST_ESTIMATOR::ROBUST_ESTIMATOR_ACRANSAC 
-            << " and " << robust::EROBUST_ESTIMATOR::ROBUST_ESTIMATOR_LORANSAC 
+            << " and " << robust::EROBUST_ESTIMATOR::ROBUST_ESTIMATOR_LORANSAC
             << " are supported.");
     return false;
   }
@@ -148,10 +100,12 @@ int main(int argc, char** argv)
   /// the media file to localize
   std::string mediaFilepath;
  
+  /// the describer types name to use for the matching
+  std::string matchDescTypeNames = features::EImageDescriberType_enumToString(features::EImageDescriberType::SIFT);
   /// the preset for the feature extractor
   features::EDESCRIBER_PRESET featurePreset = features::EDESCRIBER_PRESET::NORMAL_PRESET;     
-  /// the preset for the feature extractor
-  DescriberType descriptorType = DescriberType::SIFT;        
+  /// the describer types to use for the matching
+  std::vector<features::EImageDescriberType> matchDescTypes;
   /// the estimator to use for resection
   robust::EROBUST_ESTIMATOR resectionEstimator = robust::EROBUST_ESTIMATOR::ROBUST_ESTIMATOR_ACRANSAC;        
   /// the estimator to use for matching
@@ -164,6 +118,8 @@ int main(int argc, char** argv)
   double resectionErrorMax = 4.0;  
   /// the maximum reprojection error allowed for image matching with geometric validation
   double matchingErrorMax = 4.0;   
+  /// whether to use the voctreeLocalizer or cctagLocalizer
+  bool useVoctreeLocalizer = true;
   
   // voctree parameters
   std::string algostring = "AllResults";
@@ -175,20 +131,18 @@ int main(int argc, char** argv)
   /// the vocabulary tree file
   std::string vocTreeFilepath;
   /// the vocabulary tree weights file
-  std::string weightsFilepath;  
-  /// enable the matching with the last N frame of the sequence
-  bool useFrameBufferMatching = true;
+  std::string weightsFilepath;
+  /// Number of previous frame of the sequence to use for matching
+  std::size_t nbFrameBufferMatching = 10;
   /// enable/disable the robust matching (geometric validation) when matching query image
   /// and databases images
   bool robustMatching = true;
   
-#if OPENMVG_IS_DEFINED(OPENMVG_HAVE_ALEMBIC)
-  /// the export file
-  std::string exportFile = "trackedcameras.abc";
-#else
-  /// the export file
-  std::string exportFile = "localizationResult.json";
-#endif
+  /// the Alembic export file
+  std::string exportAlembicFile = "trackedcameras.abc";
+  /// the Binary export file
+  std::string exportBinaryFile = "";
+
 #if OPENMVG_IS_DEFINED(OPENMVG_HAVE_CCTAG)
   // parameters for cctag localizer
   std::size_t nNearestKeyFrames = 5;   
@@ -206,10 +160,6 @@ int main(int argc, char** argv)
   
   /// whether to save visual debug info
   std::string visualDebug = "";
-  /// whether to use the voctreeLocalizer or cctagLocalizer
-  bool useVoctreeLocalizer = true;
-  /// whether to use SIFT_CCTAG
-  bool useSIFT_CCTAG = false;
 
   po::options_description allParams(
       "This program takes as input a media (image, image sequence, video) and a database (vocabulary tree, 3D scene data) \n"
@@ -220,7 +170,7 @@ int main(int argc, char** argv)
   inputParams.add_options()
       ("sfmdata", po::value<std::string>(&sfmFilePath)->required(), 
           "The sfm_data.json kind of file generated by OpenMVG.")
-      ("descriptorPath", po::value<std::string>(&descriptorsFolder)->required(), 
+      ("descriptorPath", po::value<std::string>(&descriptorsFolder)->required(),
           "Folder containing the descriptors for all the images (ie the *.desc.)")
       ("mediafile", po::value<std::string>(&mediaFilepath)->required(), 
           "The folder path or the filename for the media to track");
@@ -228,12 +178,8 @@ int main(int argc, char** argv)
   po::options_description commonParams(
       "Common optional parameters for the localizer");
   commonParams.add_options()
-      ("descriptors", po::value<DescriberType>(&descriptorType)->default_value(descriptorType), 
-          "Type of descriptors to use {SIFT"
-#if OPENMVG_IS_DEFINED(OPENMVG_HAVE_CCTAG)
-          ", CCTAG, SIFT_CCTAG"
-#endif
-          "}")
+      ("matchDescTypes", po::value<std::string>(&matchDescTypeNames)->default_value(matchDescTypeNames),
+          "The describer types to use for the matching")
       ("preset", po::value<features::EDESCRIBER_PRESET>(&featurePreset)->default_value(featurePreset), 
           "Preset for the feature extractor when localizing a new image "
           "{LOW,MEDIUM,NORMAL,HIGH,ULTRA}")
@@ -272,8 +218,9 @@ int main(int argc, char** argv)
           "[voctree] Maximum matching error (in pixels) allowed for image matching with "
           "geometric verification. If set to 0 it lets the ACRansac select "
           "an optimal value.")
-      ("useFrameBufferMatching", po::bool_switch(&useFrameBufferMatching), 
-          "[voctree] Enable/Disable the matching with the last N frame of the sequence")
+      ("nbFrameBufferMatching", po::value<std::size_t>(&nbFrameBufferMatching)->default_value(nbFrameBufferMatching),
+          "[voctree] Number of previous frame of the sequence to use for matching "
+          "(0 = Disable)")
       ("robustMatching", po::value<bool>(&robustMatching)->default_value(robustMatching), 
           "[voctree] Enable/Disable the robust matching between query and database images, "
           "all putative matches will be considered.")
@@ -306,16 +253,15 @@ int main(int argc, char** argv)
       ("visualDebug", po::value<std::string>(&visualDebug), 
           "If a directory is provided it enables visual debug and saves all the "
           "debugging info in that directory")
+
 #if OPENMVG_IS_DEFINED(OPENMVG_HAVE_ALEMBIC)
-      ("output", po::value<std::string>(&exportFile)->default_value(exportFile), 
+      ("outputAlembic", po::value<std::string>(&exportAlembicFile)->default_value(exportAlembicFile),
           "Filename for the SfM_Data export file (where camera poses will be stored). "
-          "Default : trackedcameras.abc. It will also save the localization "
-          "results (raw data) as .json with the same name")
-#else
-      ("output", po::value<std::string>(&exportFile)->default_value(exportFile), 
-          "Filename for the SfM_Data export file containing the localization "
-          "results. Default : localizationResult.json.")
+          "Default : trackedcameras.abc.")
 #endif
+      ("outputBinary", po::value<std::string>(&exportBinaryFile)->default_value(exportBinaryFile),
+          "Filename for the localization results (raw data) as .bin")
+
       ;
   
   allParams.add(inputParams).add(outputParams).add(commonParams).add(voctreeParams).add(bundleParams);
@@ -352,26 +298,24 @@ int main(int argc, char** argv)
   {
     return EXIT_FAILURE;
   }
+
+  // Init descTypes from command-line string
+  matchDescTypes = features::EImageDescriberType_stringToEnums(matchDescTypeNames);
+
+  // decide the localizer to use based on the type of feature
+#if OPENMVG_IS_DEFINED(OPENMVG_HAVE_CCTAG)
+  useVoctreeLocalizer = !(matchDescTypes.size() == 1 &&
+                        ((matchDescTypes.front() == features::EImageDescriberType::CCTAG3) ||
+                        (matchDescTypes.front() == features::EImageDescriberType::CCTAG4)));
+#endif
   
   // just for debugging purpose, print out all the parameters
   {
-    // decide the localizer to use based on the type of feature
-    useVoctreeLocalizer = ((DescriberType::SIFT==descriptorType)
-#if OPENMVG_IS_DEFINED(OPENMVG_HAVE_CCTAG)
-            || (DescriberType::SIFT_CCTAG==descriptorType)
-#endif
-            );
-    
-#if OPENMVG_IS_DEFINED(OPENMVG_HAVE_CCTAG)   
-    // check whether we have to use SIFT and CCTAG together
-    useSIFT_CCTAG = (DescriberType::SIFT_CCTAG==descriptorType);
-#endif    
-    
     // the bundle adjustment can be run for now only if the refine intrinsics option is not set
     globalBundle = (globalBundle && !refineIntrinsics);
     OPENMVG_COUT("Program called with the following parameters:");
     OPENMVG_COUT("\tsfmdata: " << sfmFilePath);
-    OPENMVG_COUT("\tdescriptors: " << descriptorType);
+    OPENMVG_COUT("\tmatching descriptor types: " << matchDescTypeNames);
     OPENMVG_COUT("\tpreset: " << featurePreset);
     OPENMVG_COUT("\tresectionEstimator: " << resectionEstimator);
     OPENMVG_COUT("\tmatchingEstimator: " << matchingEstimator);
@@ -389,7 +333,7 @@ int main(int argc, char** argv)
       OPENMVG_COUT("\tcommon views: " << numCommonViews);
       OPENMVG_COUT("\talgorithm: " << algostring);
       OPENMVG_COUT("\tmatchingError: " << matchingErrorMax);
-      OPENMVG_COUT("\tuseFrameBufferMatching: " << useFrameBufferMatching);
+      OPENMVG_COUT("\tnbFrameBufferMatching: " << nbFrameBufferMatching);
       OPENMVG_COUT("\trobustMatching: " << robustMatching);
     }
 #if OPENMVG_IS_DEFINED(OPENMVG_HAVE_CCTAG) 
@@ -402,6 +346,10 @@ int main(int argc, char** argv)
     OPENMVG_COUT("\tglobalBundle: " << globalBundle);
     OPENMVG_COUT("\tnoDistortion: " << noDistortion);
     OPENMVG_COUT("\tnoBArefineIntrinsics: " << noBArefineIntrinsics);
+#if OPENMVG_IS_DEFINED(OPENMVG_HAVE_ALEMBIC)
+    OPENMVG_COUT("\toutputAlembic: " << exportAlembicFile);
+#endif
+    OPENMVG_COUT("\toutputBinary: " << exportBinaryFile);
     OPENMVG_COUT("\tvisualDebug: " << visualDebug);
   }
 
@@ -413,8 +361,16 @@ int main(int argc, char** argv)
   }
  
   // this contains the full path and the root name of the file without the extension
-  const std::string basename = (bfs::path(exportFile).parent_path() / bfs::path(exportFile).stem()).string();
-  
+  const bool wantsBinaryOutput = exportBinaryFile.empty();
+#if OPENMVG_IS_DEFINED(OPENMVG_HAVE_ALEMBIC)
+  std::string basenameAlembic = (bfs::path(exportBinaryFile).parent_path() / bfs::path(exportBinaryFile).stem()).string();
+#endif
+  std::string basenameBinary;
+  if(wantsBinaryOutput)
+  {
+    basenameBinary = (bfs::path(exportBinaryFile).parent_path() / bfs::path(exportBinaryFile).stem()).string();
+  }
+
   
   //***********************************************************************
   // Localizer initialization
@@ -425,20 +381,26 @@ int main(int argc, char** argv)
   std::unique_ptr<localization::ILocalizer> localizer;
   
   // initialize the localizer according to the chosen type of describer
-  if((DescriberType::SIFT==descriptorType)
+
 #if OPENMVG_IS_DEFINED(OPENMVG_HAVE_CCTAG)
-            ||(DescriberType::SIFT_CCTAG==descriptorType)
+  if(!useVoctreeLocalizer)
+  {
+    localization::CCTagLocalizer* tmpLoc = new localization::CCTagLocalizer(sfmFilePath, descriptorsFolder);
+    localizer.reset(tmpLoc);
+
+    localization::CCTagLocalizer::Parameters* tmpParam = new localization::CCTagLocalizer::Parameters();
+    param.reset(tmpParam);
+    tmpParam->_nNearestKeyFrames = nNearestKeyFrames;
+  }
+  else
 #endif
-      )
   {
     localization::VoctreeLocalizer* tmpLoc = new localization::VoctreeLocalizer(sfmFilePath,
                                                    descriptorsFolder,
                                                    vocTreeFilepath,
-                                                   weightsFilepath
-#if OPENMVG_IS_DEFINED(OPENMVG_HAVE_CCTAG)
-                                                    , useSIFT_CCTAG
-#endif
-                                                  );
+                                                   weightsFilepath,
+                                                   matchDescTypes);
+
     localizer.reset(tmpLoc);
     
     localization::VoctreeLocalizer::Parameters *tmpParam = new localization::VoctreeLocalizer::Parameters();
@@ -449,21 +411,10 @@ int main(int argc, char** argv)
     tmpParam->_numCommonViews = numCommonViews;
     tmpParam->_ccTagUseCuda = false;
     tmpParam->_matchingError = matchingErrorMax;
-    tmpParam->_useFrameBufferMatching = useFrameBufferMatching;
+    tmpParam->_nbFrameBufferMatching = nbFrameBufferMatching;
     tmpParam->_useRobustMatching = robustMatching;
   }
-#if OPENMVG_IS_DEFINED(OPENMVG_HAVE_CCTAG)
-  else
-  {
-    localization::CCTagLocalizer* tmpLoc = new localization::CCTagLocalizer(sfmFilePath, descriptorsFolder);
-    localizer.reset(tmpLoc);
-    
-    localization::CCTagLocalizer::Parameters* tmpParam = new localization::CCTagLocalizer::Parameters();
-    param.reset(tmpParam);
-    tmpParam->_nNearestKeyFrames = nNearestKeyFrames;
-  }
-#endif 
-   
+  
   assert(localizer);
   assert(param);
   
@@ -492,8 +443,7 @@ int main(int argc, char** argv)
   
 #if OPENMVG_IS_DEFINED(OPENMVG_HAVE_ALEMBIC)
   // init alembic exporter
-  sfm::AlembicExporter exporter( exportFile );
-  exporter.addPoints(localizer->getSfMData().GetLandmarks());
+  sfm::AlembicExporter exporter( exportAlembicFile );
   exporter.initAnimatedCamera("camera");
 #endif
   
@@ -556,9 +506,12 @@ int main(int argc, char** argv)
     ++frameCounter;
     feed.goToNextFrame();
   }
-  localization::save(vec_localizationResults, basename+".locres.json");
-  
-  
+
+  if(wantsBinaryOutput)
+  {
+    localization::save(vec_localizationResults, basenameBinary + ".bin");
+  }
+
   //***********************************************************************
   // Global bundle
   //***********************************************************************
@@ -578,7 +531,7 @@ int main(int argc, char** argv)
                                                        noDistortion, 
                                                        b_refinePose,
                                                        b_refineStructure,
-                                                       basename+".sfmdata.BUNDLE",
+                                                       basenameBinary + ".sfmdata.BUNDLE",
                                                        minPointVisibility);
     if(!BAresult)
     {
@@ -588,7 +541,7 @@ int main(int argc, char** argv)
     {
 #if OPENMVG_IS_DEFINED(OPENMVG_HAVE_ALEMBIC)
       // now copy back in a new abc with the same name file and BUNDLE appended at the end
-      sfm::AlembicExporter exporterBA( basename+".BUNDLE.abc" );
+      sfm::AlembicExporter exporterBA( basenameAlembic +".BUNDLE.abc" );
       exporterBA.initAnimatedCamera("camera");
       std::size_t idx = 0;
       for(const localization::LocalizationResult &res : vec_localizationResults)
@@ -604,9 +557,13 @@ int main(int argc, char** argv)
         }
         idx++;
       }
-      exporterBA.addPoints(localizer->getSfMData().GetLandmarks());
+
 #endif
-      localization::save(vec_localizationResults, basename+".locres.BUNDLE.json");
+      if(wantsBinaryOutput)
+      {
+        localization::save(vec_localizationResults, basenameBinary +".BUNDLE.bin");
+      }
+
     }
   }
   

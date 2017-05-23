@@ -78,7 +78,9 @@ void AlembicExporter::addPoints(const sfm::Landmarks &landmarks, bool withVisibi
   // Fill vector with the values taken from OpenMVG 
   std::vector<V3f> positions;
   std::vector<Imath::C3f> colors;
+  std::vector<Alembic::Util::uint32_t> descTypes;
   positions.reserve(landmarks.size());
+  descTypes.reserve(landmarks.size());
 
   // For all the 3d points in the hash_map
   for(const auto landmark : landmarks)
@@ -87,6 +89,7 @@ void AlembicExporter::addPoints(const sfm::Landmarks &landmarks, bool withVisibi
     const openMVG::image::RGBColor& color = landmark.second.rgb;
     positions.emplace_back(pt[0], pt[1], pt[2]);
     colors.emplace_back(color.r()/255.f, color.g()/255.f, color.b()/255.f);
+    descTypes.emplace_back(static_cast<Alembic::Util::uint8_t>(landmark.second.descType));
   }
 
   std::vector<Alembic::Util::uint64_t> ids(positions.size());
@@ -98,20 +101,26 @@ void AlembicExporter::addPoints(const sfm::Landmarks &landmarks, bool withVisibi
   OPointsSchema::Sample psamp(std::move(V3fArraySample(positions)), std::move(UInt64ArraySample(ids)));
   pSchema.set(psamp);
 
-  C3fArraySample val_samp(&colors[0], colors.size());
-  OC3fGeomParam::Sample color_samp(val_samp, kVertexScope);
   OCompoundProperty arbGeom = pSchema.getArbGeomParams();
+
+  C3fArraySample cval_samp(&colors[0], colors.size());
+  OC3fGeomParam::Sample color_samp(cval_samp, kVertexScope);
+
   OC3fGeomParam rgbOut(arbGeom, "color", false, kVertexScope, 1);
   rgbOut.set(color_samp);
 
+  OCompoundProperty userProps = pSchema.getUserProperties();
+
+  OUInt32ArrayProperty descTypeOut(userProps, "mvg_describerType");
+  descTypeOut.set(descTypes);
+
   if(withVisibility)
   {
-    OCompoundProperty userProps = pSchema.getUserProperties();
     std::vector<::uint32_t> visibilitySize;
     visibilitySize.reserve(positions.size());
     for(const auto landmark : landmarks)
     {
-      visibilitySize.emplace_back(landmark.second.obs.size());
+      visibilitySize.emplace_back(landmark.second.observations.size());
     }
     std::size_t nbObservations = std::accumulate(visibilitySize.begin(), visibilitySize.end(), 0);
     
@@ -125,7 +134,7 @@ void AlembicExporter::addPoints(const sfm::Landmarks &landmarks, bool withVisibi
     for(sfm::Landmarks::const_iterator itLandmark = landmarks.cbegin(), itLandmarkEnd = landmarks.cend();
        itLandmark != itLandmarkEnd; ++itLandmark)
     {
-      const sfm::Observations& observations = itLandmark->second.obs;
+      const sfm::Observations& observations = itLandmark->second.observations;
       for(const auto vObs: observations )
       {
         const sfm::Observation& obs = vObs.second;

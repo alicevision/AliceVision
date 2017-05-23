@@ -219,11 +219,11 @@ bool exportToMVE2Format(
       out << 250 << " " << 100 << " " << 150 << "\n";  // Write arbitrary RGB color, see above note
 
       // Tally set of feature observations
-      const Observations & obs = iterLandmarks->second.obs;
-      const size_t featureCount = std::distance(obs.begin(), obs.end());
+      const Observations & observations = iterLandmarks->second.observations;
+      const size_t featureCount = std::distance(observations.begin(), observations.end());
       out << featureCount;
 
-      for (Observations::const_iterator itObs = obs.begin(); itObs != obs.end(); ++itObs)
+      for (Observations::const_iterator itObs = observations.begin(); itObs != observations.end(); ++itObs)
       {
           const IndexT viewId = itObs->first;
           const IndexT viewIndex = viewIdToviewIndex[viewId];

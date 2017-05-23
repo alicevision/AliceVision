@@ -7,6 +7,7 @@ set(sfm_files_cpp
     pipelines/sequential/sequential_SfM.cpp
     pipelines/sfm_robust_model_estimation.cpp
     pipelines/structure_from_known_poses/structure_estimator.cpp
+    pipelines/RegionsIO.cpp
     sfm_data.cpp
     sfm_data_BA_ceres.cpp
     sfm_data_filters_frustum.cpp
@@ -28,11 +29,10 @@ set(sfm_files_header
     pipelines/localization/SfM_Localizer_Single_3DTrackObservation_Database.hpp
     pipelines/sequential/sequential_SfM.hpp
     pipelines/sfm_engine.hpp
-    pipelines/sfm_features_provider.hpp
     pipelines/sfm_matches_provider.hpp
-    pipelines/sfm_regions_provider.hpp
     pipelines/sfm_robust_model_estimation.hpp
     pipelines/structure_from_known_poses/structure_estimator.hpp
+    pipelines/RegionsIO.hpp
     sfm.hpp
     sfm_data.hpp
     sfm_data_BA.hpp
@@ -73,6 +73,7 @@ target_link_libraries(
   openMVG_lInftyComputerVision
   openMVG_system
   openMVG_matching
+  openMVG_features
   openMVG_exif
   ${LOG_LIB}
 )

@@ -8,16 +8,39 @@
 #ifndef OPENMVG_FEATURES_REGIONS_HPP
 #define OPENMVG_FEATURES_REGIONS_HPP
 
+#include "openMVG/types.hpp"
 #include "openMVG/numeric/numeric.h"
 #include "openMVG/features/feature.hpp"
 #include "openMVG/features/descriptor.hpp"
 #include "openMVG/matching/metric.hpp"
 #include "cereal/types/vector.hpp"
 #include <string>
+#include <cstddef>
 #include <typeinfo>
 
 namespace openMVG {
 namespace features {
+
+
+/**
+ * @brief Store a featureIndes and the associated point3dId
+ */
+struct FeatureInImage
+{
+  FeatureInImage(IndexT featureIndex, IndexT point3dId)
+    : _featureIndex(featureIndex)
+    , _point3dId(point3dId)
+  {}
+
+  IndexT _featureIndex;
+  IndexT _point3dId;
+
+  bool operator<(const FeatureInImage& other) const
+  {
+    return _featureIndex < other._featureIndex;
+  }
+};
+
 
 /// Describe an image a set of regions (position, ...) + attributes
 /// Each region is described by a set of attributes (descriptor)
@@ -25,7 +48,7 @@ class Regions
 {
 public:
 
-  virtual ~Regions() {}
+  virtual ~Regions() = 0;
 
   //--
   // IO - one file for region features, one file for region descriptors
@@ -52,17 +75,27 @@ public:
 
   /// basis element used for description
   virtual std::string Type_id() const = 0;
-  virtual size_t DescriptorLength() const = 0;
+  virtual std::size_t DescriptorLength() const = 0;
 
   //-- Assume that a region can always be represented at least by a 2D positions
   virtual PointFeatures GetRegionsPositions() const = 0;
-  virtual Vec2 GetRegionPosition(size_t i) const = 0;
+  virtual Vec2 GetRegionPosition(std::size_t i) const = 0;
 
   /// Return the number of defined regions
-  virtual size_t RegionCount() const = 0;
+  virtual std::size_t RegionCount() const = 0;
 
-  /// Return a pointer to the first value of the descriptor array
-  // Used to avoid complex template imbrication
+  /**
+   * @brief Return a blind pointer to the container of the descriptors array.
+   *
+   * @note: Descriptors are always stored as an std::vector<DescType>.
+   */
+  virtual const void* blindDescriptors() const = 0;
+
+  /**
+   * @brief Return a pointer to the first value of the descriptor array.
+   *
+   * @note: Descriptors are always stored as a flat array of descriptors.
+   */
   virtual const void * DescriptorRawData() const = 0;
 
   virtual void clearDescriptors() = 0;
@@ -71,14 +104,21 @@ public:
   // A default metric is used according the descriptor type:
   // - Scalar: L2,
   // - Binary: Hamming
-  virtual double SquaredDescriptorDistance(size_t i, const Regions *, size_t j) const = 0;
+  virtual double SquaredDescriptorDistance(std::size_t i, const Regions *, std::size_t j) const = 0;
 
   /// Add the Inth region to another Region container
-  virtual void CopyRegion(size_t i, Regions *) const = 0;
+  virtual void CopyRegion(std::size_t i, Regions *) const = 0;
 
   virtual Regions * EmptyClone() const = 0;
 
+  virtual std::unique_ptr<Regions> createFilteredRegions(
+                     const std::vector<FeatureInImage>& featuresInImage,
+                     std::vector<IndexT>& out_associated3dPoint,
+                     std::map<IndexT, IndexT>& out_mapFullToLocal) const = 0;
+
 };
+
+inline Regions::~Regions() {}
 
 template<typename FeatT>
 class Feat_Regions : public Regions
@@ -88,6 +128,8 @@ public:
   typedef FeatT FeatureT;
   /// Container for multiple regions
   typedef std::vector<FeatureT> FeatsT;
+
+  virtual ~Feat_Regions() {}
 
 protected:
   std::vector<FeatureT> _vec_feats;    // region features
@@ -103,38 +145,78 @@ public:
     return PointFeatures(_vec_feats.begin(), _vec_feats.end());
   }
 
-  Vec2 GetRegionPosition(size_t i) const
+  Vec2 GetRegionPosition(std::size_t i) const
   {
     return Vec2f(_vec_feats[i].coords()).cast<double>();
   }
 
   /// Return the number of defined regions
-  size_t RegionCount() const {return _vec_feats.size();}
+  std::size_t RegionCount() const {return _vec_feats.size();}
 
   /// Mutable and non-mutable FeatureT getters.
   inline std::vector<FeatureT> & Features() { return _vec_feats; }
   inline const std::vector<FeatureT> & Features() const { return _vec_feats; }
+};
 
+inline const std::vector<SIOPointFeature>& getSIOPointFeatures(const Regions& regions)
+{
+  static const std::vector<SIOPointFeature> emptyFeats;
+
+  const Feat_Regions<SIOPointFeature>* sioFeatures = dynamic_cast<const Feat_Regions<SIOPointFeature>*>(&regions);
+  if(sioFeatures == nullptr)
+    return emptyFeats;
+  return sioFeatures->Features();
+}
+
+
+enum class ERegionType: bool
+{
+  Binary = 0,
+  Scalar = 1
 };
 
 
-template<typename FeatT, typename T, size_t L>
+template<typename T, ERegionType regionType>
+struct SquaredMetric;
+
+template<typename T>
+struct SquaredMetric<T, ERegionType::Scalar>
+{
+  using Metric = matching::L2_Vectorized<T>;
+};
+
+template<typename T>
+struct SquaredMetric<T, ERegionType::Binary>
+{
+  using Metric = matching::SquaredHamming<T>;
+};
+
+
+template<typename FeatT, typename T, std::size_t L, ERegionType regionType>
 class FeatDesc_Regions : public Feat_Regions<FeatT>
 {
 public:
-  typedef FeatDesc_Regions<FeatT, T, L> This;
+  typedef FeatDesc_Regions<FeatT, T, L, regionType> This;
   /// Region descriptor
   typedef Descriptor<T, L> DescriptorT;
   /// Container for multiple regions description
-  typedef std::vector<DescriptorT > DescsT;
+  typedef std::vector<DescriptorT> DescsT;
 
 protected:
   std::vector<DescriptorT> _vec_descs; // region descriptions
 
 public:
   std::string Type_id() const {return typeid(T).name();}
-  size_t DescriptorLength() const {return static_cast<size_t>(L);}
-  
+  std::size_t DescriptorLength() const {return static_cast<std::size_t>(L);}
+
+  bool IsScalar() const { return regionType == ERegionType::Scalar; }
+  bool IsBinary() const { return regionType == ERegionType::Binary; }
+
+  Regions * EmptyClone() const
+  {
+    return new This();
+  }
+
   /// Read from files the regions and their corresponding descriptors.
   bool Load(
     const std::string& sfileNameFeats,
@@ -162,14 +244,28 @@ public:
   inline std::vector<DescriptorT> & Descriptors() { return _vec_descs; }
   inline const std::vector<DescriptorT> & Descriptors() const { return _vec_descs; }
 
-  const void * DescriptorRawData() const { return &_vec_descs[0];}
+  inline const void* blindDescriptors() const override { return &_vec_descs; }
 
-  void clearDescriptors() { _vec_descs.clear(); }
+  inline const void* DescriptorRawData() const override { return &_vec_descs[0];}
 
-  void swap(This& other)
+  inline void clearDescriptors() override { _vec_descs.clear(); }
+
+  inline void swap(This& other)
   {
     this->_vec_feats.swap(other._vec_feats);
     _vec_descs.swap(other._vec_descs);
+  }
+
+  // Return the distance between two descriptors
+  double SquaredDescriptorDistance(std::size_t i, const Regions * genericRegions, std::size_t j) const
+  {
+    assert(i < this->_vec_descs.size());
+    assert(genericRegions);
+    assert(j < genericRegions->RegionCount());
+
+    const This * regionsT = dynamic_cast<const This*>(genericRegions);
+    static typename SquaredMetric<T, regionType>::Metric metric;
+    return metric(this->_vec_descs[i].getData(), regionsT->_vec_descs[j].getData(), DescriptorT::static_size);
   }
 
   /**
@@ -177,11 +273,48 @@ public:
    * @param[in] i: index of the region to copy
    * @param[out] outRegionContainer: the output region group to add the region
    */
-  void CopyRegion(size_t i, Regions * outRegionContainer) const
+  void CopyRegion(std::size_t i, Regions * outRegionContainer) const
   {
     assert(i < this->_vec_feats.size() && i < this->_vec_descs.size());
     static_cast<This*>(outRegionContainer)->_vec_feats.push_back(this->_vec_feats[i]);
     static_cast<This*>(outRegionContainer)->_vec_descs.push_back(this->_vec_descs[i]);
+  }
+
+  /**
+   * @brief Duplicate only reconstructed regions.
+   * @param[in] featuresInImage list of features with an associated 3D point Id
+   * @param[out] out_associated3dPoint
+   * @param[out] out_mapFullToLocal
+   */
+  std::unique_ptr<Regions> createFilteredRegions(
+                     const std::vector<FeatureInImage>& featuresInImage,
+                     std::vector<IndexT>& out_associated3dPoint,
+                     std::map<IndexT, IndexT>& out_mapFullToLocal) const override
+  {
+    out_associated3dPoint.clear();
+    out_mapFullToLocal.clear();
+
+    This* regionsPtr = new This;
+    std::unique_ptr<Regions> regions(regionsPtr);
+    regionsPtr->Features().reserve(featuresInImage.size());
+    regionsPtr->Descriptors().reserve(featuresInImage.size());
+    out_associated3dPoint.reserve(featuresInImage.size());
+    for(std::size_t i = 0; i < featuresInImage.size(); ++i)
+    {
+      const FeatureInImage & feat = featuresInImage[i];
+      regionsPtr->Features().push_back(this->_vec_feats[feat._featureIndex]);
+      regionsPtr->Descriptors().push_back(this->_vec_descs[feat._featureIndex]);
+
+      // This assert should be valid in theory, but in the context of CameraLocalization
+      // we can have the same 2D feature associated to different 3D points (2 in practice).
+      // In this particular case, currently it returns the last one...
+      //
+      // assert(out_mapFullToLocal.count(feat._featureIndex) == 0);
+
+      out_mapFullToLocal[feat._featureIndex] = i;
+      out_associated3dPoint.push_back(feat._point3dId);
+    }
+    return regions;
   }
 
   template<class Archive>
@@ -192,78 +325,14 @@ public:
   }
 };
 
-/// Specialization of the abstract Regions class to handle Scalar descriptors
-template<typename FeatT, typename T, size_t L>
-class Scalar_Regions : public FeatDesc_Regions<FeatT, T, L>
-{
-public:
-  typedef FeatDesc_Regions<FeatT, T, L> Parent;
-  typedef typename Parent::DescriptorT DescriptorT;
 
-public:
-  bool IsScalar() const {return true;}
-  bool IsBinary() const {return false;}
+template<typename FeatT, typename T, std::size_t L>
+using Scalar_Regions = FeatDesc_Regions<FeatT, T, L, ERegionType::Scalar>;
 
-  Regions * EmptyClone() const
-  {
-    return new Scalar_Regions();
-  }
+template<typename FeatT, std::size_t L>
+using Binary_Regions = FeatDesc_Regions<FeatT, unsigned char, L, ERegionType::Binary>;
 
-  // Return the L2 distance between two descriptors
-  double SquaredDescriptorDistance(size_t i, const Regions * regions, size_t j) const
-  {
-    assert(i < this->_vec_descs.size());
-    assert(regions);
-    assert(j < regions->RegionCount());
 
-    const Scalar_Regions<FeatT, T, L> * regionsT = dynamic_cast<const Scalar_Regions<FeatT, T, L> *>(regions);
-    static matching::L2_Vectorized<T> metric;
-    return metric(this->_vec_descs[i].getData(), regionsT->_vec_descs[j].getData(), DescriptorT::static_size);
-  }
-
-  /// Add the Inth region to another Region container
-  void CopyRegion(size_t i, Regions * region_container) const
-  {
-    assert(i < this->_vec_feats.size() && i < this->_vec_descs.size());
-    static_cast<Scalar_Regions<FeatT, T, L> *>(region_container)->_vec_feats.push_back(this->_vec_feats[i]);
-    static_cast<Scalar_Regions<FeatT, T, L> *>(region_container)->_vec_descs.push_back(this->_vec_descs[i]);
-  }
-};
-
-/// Binary_Regions represented as uchar based array
-/// It's better to set L as a valid %8 value
-///  for memory alignement and performance issue
-template<typename FeatT, size_t L>
-class Binary_Regions : public FeatDesc_Regions<FeatT, unsigned char, L>
-{
-public:
-  typedef unsigned char T;
-  typedef FeatDesc_Regions<FeatT, T, L> Parent;
-  typedef typename Parent::DescriptorT DescriptorT;
-
-public:
-  bool IsScalar() const {return false;}
-  bool IsBinary() const {return true;}
-
-  Regions * EmptyClone() const
-  {
-    return new Binary_Regions();
-  }
-
-  // Return the squared Hamming distance between two descriptors
-  double SquaredDescriptorDistance(size_t i, const Regions * regions, size_t j) const
-  {
-    assert(i < this->_vec_descs.size());
-    assert(regions);
-    assert(j < regions->RegionCount());
-
-    const Binary_Regions<FeatT, L> * regionsT = dynamic_cast<const Binary_Regions<FeatT, L> *>(regions);
-    static matching::Hamming<unsigned char> metric;
-    const typename matching::Hamming<unsigned char>::ResultType descDist =
-      metric(this->_vec_descs[i].getData(), regionsT->_vec_descs[j].getData(), DescriptorT::static_size);
-    return descDist * descDist;
-  }
-};
 
 } // namespace features
 } // namespace openMVG

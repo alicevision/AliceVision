@@ -1,5 +1,6 @@
 #pragma once
 
+#include <openMVG/features/ImageDescriberCommon.hpp>
 #include <openMVG/features/image_describer.hpp>
 #include <openMVG/features/regions_factory.hpp>
 #include <openMVG/types.hpp>
@@ -23,7 +24,13 @@ public:
   CCTAG_Image_describer(const std::size_t nRings = 3);
   ~CCTAG_Image_describer();
 
-  bool Set_configuration_preset(EDESCRIBER_PRESET preset);
+  EImageDescriberType getDescriberType() const override
+  {
+    // TODO: check nRings to decide between CCTAG3 and CCTAG4
+    return EImageDescriberType::CCTAG3;
+  }
+  
+  bool Set_configuration_preset(EDESCRIBER_PRESET preset) override;
 
   void setUseCuda(bool) override;
 
@@ -41,7 +48,7 @@ public:
     const image::Image<unsigned char> * mask = nullptr);
 
   /// Allocate Regions type depending of the Image_describer
-  void Allocate(std::unique_ptr<Regions> &regions) const;
+  void Allocate(std::unique_ptr<Regions> &regions) const override;
 
   template<class Archive>
   void serialize( Archive & ar )

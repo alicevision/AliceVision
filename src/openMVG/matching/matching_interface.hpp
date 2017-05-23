@@ -16,7 +16,6 @@
 namespace openMVG {
 namespace matching {
 
-using namespace std;
 
 template < typename Scalar, typename Metric >
 class ArrayMatcher

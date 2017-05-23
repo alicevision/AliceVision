@@ -31,6 +31,8 @@ struct LocalizerParameters
   _useLocalizeRigNaive(false),
   _angularThreshold(D2R(0.1)) { }
 
+  virtual ~LocalizerParameters() = 0;
+
   /// enable visual debugging options
   std::string _visualDebug;  
   /// whether or not the Intrinsics of the query camera has to be refined
@@ -51,15 +53,20 @@ struct LocalizerParameters
   double _angularThreshold;                       
 };
 
+inline LocalizerParameters::~LocalizerParameters() {}
+
+using OccurenceKey = IndMatch3D2D;
+using OccurenceMap = std::map<OccurenceKey, std::size_t>;
+
 class ILocalizer
 {
 public:
     ILocalizer() : _isInit(false) { };
 
-    // Only relevant for the CCTagLocalizer
+    // Only relevant for CCTagLocalizer
     virtual void setCudaPipe(int) { }
     
-    bool isInit() {return _isInit;}
+    bool isInit() const {return _isInit;}
     
     const sfm::SfM_Data& getSfMData() const {return _sfm_data; }
     
@@ -82,7 +89,7 @@ public:
                         LocalizationResult & localizationResult,
                         const std::string& imagePath = std::string()) = 0;
 
-  virtual bool localize(const std::unique_ptr<features::Regions> &queryRegions,
+  virtual bool localize(const features::MapRegionsPerDesc &queryRegions,
                         const std::pair<std::size_t, std::size_t> &imageSize,
                         const LocalizerParameters *param,
                         bool useInputIntrinsics,
@@ -97,7 +104,7 @@ public:
                            geometry::Pose3 &rigPose, 
                            std::vector<LocalizationResult>& vec_locResults)=0;
     
-  virtual bool localizeRig(const std::vector<std::unique_ptr<features::Regions> > & vec_queryRegions,
+  virtual bool localizeRig(const std::vector<features::MapRegionsPerDesc> & vec_queryRegions,
                            const std::vector<std::pair<std::size_t, std::size_t> > &imageSize,
                            const LocalizerParameters *param,
                            std::vector<cameras::Pinhole_Intrinsic_Radial_K3 > &vec_queryIntrinsics,
@@ -105,7 +112,8 @@ public:
                            geometry::Pose3 &rigPose,
                            std::vector<LocalizationResult>& vec_locResults)=0;
    
-  virtual ~ILocalizer( ) { } ;
+  virtual ~ILocalizer( ) {}
+
 protected:
   bool _isInit;
   sfm::SfM_Data _sfm_data;

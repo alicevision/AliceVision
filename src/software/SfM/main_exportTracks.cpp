@@ -11,6 +11,8 @@
 #include "openMVG/features/features.hpp"
 #include "openMVG/tracks/tracks.hpp"
 #include "openMVG/sfm/sfm.hpp"
+#include "openMVG/sfm/pipelines/RegionsIO.hpp"
+#include "openMVG/features/svgVisualization.hpp"
 
 #include "software/SfM/SfMIOHelper.hpp"
 #include "third_party/cmdLine/cmdLine.h"
@@ -30,11 +32,13 @@ int main(int argc, char ** argv)
   CmdLine cmd;
 
   std::string sSfM_Data_Filename;
+  std::string describerMethods = "SIFT";
   std::string sMatchesDir;
   std::string sMatchGeometricModel = "f";
   std::string sOutDir = "";
 
   cmd.add( make_option('i', sSfM_Data_Filename, "input_file") );
+  cmd.add( make_option('m', describerMethods, "describerMethods") );
   cmd.add( make_option('d', sMatchesDir, "matchdir") );
   cmd.add( make_option('g', sMatchGeometricModel, "geometric_model") );
   cmd.add( make_option('o', sOutDir, "outdir") );
@@ -45,6 +49,22 @@ int main(int argc, char ** argv)
   } catch(const std::string& s) {
       std::cerr << "Export pairwise tracks.\nUsage: " << argv[0] << "\n"
       << "[-i|--input_file file] path to a SfM_Data scene\n"
+      << "[-m|--describerMethods]\n"
+      << "  (methods to use to describe an image):\n"
+      << "   SIFT (default),\n"
+      << "   SIFT_FLOAT to use SIFT stored as float,\n"
+      << "   AKAZE: AKAZE with floating point descriptors,\n"
+      << "   AKAZE_MLDB:  AKAZE with binary descriptors\n"
+#if OPENMVG_IS_DEFINED(OPENMVG_HAVE_CCTAG)
+      << "   CCTAG3: CCTAG markers with 3 crowns\n"
+      << "   CCTAG4: CCTAG markers with 4 crowns\n"
+#endif //OPENMVG_HAVE_CCTAG
+#if OPENMVG_IS_DEFINED(OPENMVG_HAVE_OPENCV)
+#if OPENMVG_IS_DEFINED(OPENMVG_USE_OCVSIFT)
+      << "   SIFT_OCV: OpenCV SIFT\n"
+#endif //OPENMVG_USE_OCVSIFT
+      << "   AKAZE_OCV: OpenCV AKAZE\n"
+#endif //OPENMVG_HAVE_OPENCV
       << "[-d|--matchdir PATH] path to the folder with all features and match files\n"
       << "[-g|--geometric_model MODEL] model used for the matching:\n"
       << "   f: (default) fundamental matrix,\n"
@@ -76,28 +96,22 @@ int main(int argc, char ** argv)
   //---------------------------------------
   // Load SfM Scene regions
   //---------------------------------------
-  // Init the regions_type from the image describer file (used for image regions extraction)
   using namespace openMVG::features;
-  const std::string sImage_describer = stlplus::create_filespec(sMatchesDir, "image_describer", "json");
-  std::unique_ptr<Regions> regions_type = Init_region_type_from_file(sImage_describer);
-  if (!regions_type)
-  {
-    std::cerr << "Invalid: "
-      << sImage_describer << " regions type file." << std::endl;
-    return EXIT_FAILURE;
-  }
+  
+  // Get imageDescriberMethodType
+  std::vector<EImageDescriberType> describerMethodTypes = EImageDescriberType_stringToEnums(describerMethods);
 
   // Read the features
-  std::shared_ptr<Features_Provider> feats_provider = std::make_shared<Features_Provider>();
-  if (!feats_provider->load(sfm_data, sMatchesDir, regions_type))
-  {
+  features::FeaturesPerView featuresPerView;
+  if (!sfm::loadFeaturesPerView(featuresPerView, sfm_data, sMatchesDir, describerMethodTypes)) {
     std::cerr << std::endl
       << "Invalid features." << std::endl;
     return EXIT_FAILURE;
   }
+
   // Read the matches
-  std::shared_ptr<Matches_Provider> matches_provider = std::make_shared<Matches_Provider>();
-  if (!matches_provider->load(sfm_data, sMatchesDir, sMatchGeometricModel))
+  matching::PairwiseMatches pairwiseMatches;
+  if (!loadPairwiseMatches(pairwiseMatches, sfm_data, sMatchesDir, describerMethodTypes, sMatchGeometricModel))
   {
     std::cerr << "\nInvalid matches file." << std::endl;
     return EXIT_FAILURE;
@@ -106,9 +120,9 @@ int main(int argc, char ** argv)
   //---------------------------------------
   // Compute tracks from matches
   //---------------------------------------
-  tracks::STLMAPTracks map_tracks;
+  tracks::TracksMap map_tracks;
   {
-    const openMVG::matching::PairWiseMatches & map_Matches = matches_provider->_pairWise_matches;
+    const openMVG::matching::PairwiseMatches & map_Matches = pairwiseMatches;
     tracks::TracksBuilder tracksBuilder;
     tracksBuilder.Build(map_Matches);
     tracksBuilder.Filter();
@@ -142,7 +156,7 @@ int main(int argc, char ** argv)
         dimImage_J = std::make_pair(view_J->ui_width, view_J->ui_height);
 
       //Get common tracks between view I and J
-      tracks::STLMAPTracks map_tracksCommon;
+      tracks::TracksMap map_tracksCommon;
       std::set<size_t> set_imageIndex;
       set_imageIndex.insert(I);
       set_imageIndex.insert(J);
@@ -158,15 +172,20 @@ int main(int argc, char ** argv)
           dimImage_J.first,
           dimImage_J.second, dimImage_I.first);
 
-        const PointFeatures & vec_feat_I = feats_provider->getFeatures(view_I->id_view);
-        const PointFeatures & vec_feat_J = feats_provider->getFeatures(view_J->id_view);
         //-- Draw link between features :
-        for (tracks::STLMAPTracks::const_iterator iterT = map_tracksCommon.begin();
-          iterT != map_tracksCommon.end(); ++ iterT)  {
+        for (tracks::TracksMap::const_iterator tracksIt = map_tracksCommon.begin();
+          tracksIt != map_tracksCommon.end(); ++tracksIt)
+        {
+          const features::EImageDescriberType descType = tracksIt->second.descType;
+          assert(descType != features::EImageDescriberType::UNINITIALIZED);
+          tracks::Track::FeatureIdPerView::const_iterator obsIt = tracksIt->second.featPerView.begin();
 
-          tracks::submapTrack::const_iterator iter = iterT->second.begin();
-          const PointFeature & imaA = vec_feat_I[ iter->second];  ++iter;
-          const PointFeature& imaB = vec_feat_J[ iter->second];
+          const PointFeatures& vec_feat_I = featuresPerView.getFeatures(view_I->id_view, descType);
+          const PointFeatures& vec_feat_J = featuresPerView.getFeatures(view_J->id_view, descType);
+
+          const PointFeature& imaA = vec_feat_I[obsIt->second];
+          ++obsIt;
+          const PointFeature& imaB = vec_feat_J[obsIt->second];
 
           svgStream.drawLine(imaA.x(), imaA.y(),
             imaB.x()+dimImage_I.first, imaB.y(),
@@ -174,17 +193,26 @@ int main(int argc, char ** argv)
         }
 
         //-- Draw features (in two loop, in order to have the features upper the link, svg layer order):
-        for (tracks::STLMAPTracks::const_iterator iterT = map_tracksCommon.begin();
-          iterT != map_tracksCommon.end(); ++ iterT)  {
+        for (tracks::TracksMap::const_iterator tracksIt = map_tracksCommon.begin();
+          tracksIt != map_tracksCommon.end(); ++ tracksIt)
+        {
+          const features::EImageDescriberType descType = tracksIt->second.descType;
+          assert(descType != features::EImageDescriberType::UNINITIALIZED);
+          tracks::Track::FeatureIdPerView::const_iterator obsIt = tracksIt->second.featPerView.begin();
 
-          tracks::submapTrack::const_iterator iter = iterT->second.begin();
-          const PointFeature & imaA = vec_feat_I[ iter->second];  ++iter;
-          const PointFeature& imaB = vec_feat_J[ iter->second];
+          const PointFeatures& vec_feat_I = featuresPerView.getFeatures(view_I->id_view, descType);
+          const PointFeatures& vec_feat_J = featuresPerView.getFeatures(view_J->id_view, descType);
+
+          const PointFeature& imaA = vec_feat_I[obsIt->second];
+          ++obsIt;
+          const PointFeature& imaB = vec_feat_J[obsIt->second];
+
+          const std::string featColor = describerTypeColor(descType);
 
           svgStream.drawCircle(imaA.x(), imaA.y(),
-            3.0, svgStyle().stroke("yellow", 2.0));
+            3.0, svgStyle().stroke(featColor, 2.0));
           svgStream.drawCircle(imaB.x() + dimImage_I.first,imaB.y(),
-            3.0, svgStyle().stroke("yellow", 2.0));
+            3.0, svgStyle().stroke(featColor, 2.0));
         }
         std::ostringstream os;
         os << stlplus::folder_append_separator(sOutDir)

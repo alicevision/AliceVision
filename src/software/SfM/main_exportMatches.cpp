@@ -8,6 +8,8 @@
 #include "openMVG/matching/indMatch_utils.hpp"
 #include "openMVG/image/image.hpp"
 #include "openMVG/sfm/sfm.hpp"
+#include "openMVG/sfm/pipelines/RegionsIO.hpp"
+#include "openMVG/features/svgVisualization.hpp"
 
 #include "third_party/cmdLine/cmdLine.h"
 #include "third_party/stlplus3/filesystemSimplified/file_system.hpp"
@@ -56,16 +58,19 @@ inline float hue2rgb(float p, float q, float t){
   }
 }
 
+
 int main(int argc, char ** argv)
 {
   CmdLine cmd;
 
   std::string sSfM_Data_Filename;
-  std::string sMatchesDir;
+  std::string describerMethods = "SIFT";
+  std::string sMatchesDir = "";
   std::string sMatchGeometricModel = "f";
   std::string sOutDir = "";
 
   cmd.add( make_option('i', sSfM_Data_Filename, "input_file") );
+  cmd.add( make_option('m', describerMethods, "describerMethods") );
   cmd.add( make_option('d', sMatchesDir, "matchdir") );
   cmd.add( make_option('g', sMatchGeometricModel, "geometric_model") );
   cmd.add( make_option('o', sOutDir, "outdir") );
@@ -76,6 +81,22 @@ int main(int argc, char ** argv)
   } catch(const std::string& s) {
       std::cerr << "Export pairwise matches.\nUsage: " << argv[0] << "\n"
       << "[-i|--input_file FILE] path to a SfM_Data scene\n"
+      << "[-m|--describerMethods]\n"
+      << "  (methods to use to describe an image):\n"
+      << "   SIFT (default),\n"
+      << "   SIFT_FLOAT to use SIFT stored as float,\n"
+      << "   AKAZE: AKAZE with floating point descriptors,\n"
+      << "   AKAZE_MLDB:  AKAZE with binary descriptors\n"
+#if OPENMVG_IS_DEFINED(OPENMVG_HAVE_CCTAG)
+      << "   CCTAG3: CCTAG markers with 3 crowns\n"
+      << "   CCTAG4: CCTAG markers with 4 crowns\n"
+#endif //OPENMVG_HAVE_CCTAG
+#if OPENMVG_IS_DEFINED(OPENMVG_HAVE_OPENCV)
+#if OPENMVG_IS_DEFINED(OPENMVG_USE_OCVSIFT)
+      << "   SIFT_OCV: OpenCV SIFT\n"
+#endif //OPENMVG_USE_OCVSIFT
+      << "   AKAZE_OCV: OpenCV AKAZE\n"
+#endif //OPENMVG_HAVE_OPENCV
       << "[-d|--matchdir PATH] path to the folder with all features and match files\n"
       << "[-g|--geometric_model MODEL] model used for the matching:\n"
       << "   f: (default) fundamental matrix,\n"
@@ -107,25 +128,20 @@ int main(int argc, char ** argv)
   //---------------------------------------
   // Load SfM Scene regions
   //---------------------------------------
-  // Init the regions_type from the image describer file (used for image regions extraction)
-  const std::string sImage_describer = stlplus::create_filespec(sMatchesDir, "image_describer", "json");
-  std::unique_ptr<Regions> regions_type = Init_region_type_from_file(sImage_describer);
-  if (!regions_type)
-  {
-    std::cerr << "Invalid: "
-      << sImage_describer << " regions type file." << std::endl;
-    return EXIT_FAILURE;
-  }
+  // Get imageDescriberMethodType
+  std::vector<EImageDescriberType> describerMethodTypes = EImageDescriberType_stringToEnums(describerMethods);
 
   // Read the features
-  std::shared_ptr<Features_Provider> feats_provider = std::make_shared<Features_Provider>();
-  if (!feats_provider->load(sfm_data, sMatchesDir, regions_type)) {
+  features::FeaturesPerView featuresPerView;
+  if(!sfm::loadFeaturesPerView(featuresPerView, sfm_data, sMatchesDir, describerMethodTypes))
+  {
     std::cerr << std::endl
       << "Invalid features." << std::endl;
     return EXIT_FAILURE;
   }
-  std::shared_ptr<Matches_Provider> matches_provider = std::make_shared<Matches_Provider>();
-  if (!matches_provider->load(sfm_data, sMatchesDir, sMatchGeometricModel))
+
+  matching::PairwiseMatches pairwiseMatches;
+  if(!sfm::loadPairwiseMatches(pairwiseMatches, sfm_data, sMatchesDir, describerMethodTypes, sMatchGeometricModel))
   {
     std::cerr << "\nInvalid matches file." << std::endl;
     return EXIT_FAILURE;
@@ -137,7 +153,7 @@ int main(int argc, char ** argv)
 
   stlplus::folder_create(sOutDir);
   std::cout << "\n Export pairwise matches" << std::endl;
-  const Pair_Set pairs = matches_provider->getPairs();
+  const Pair_Set pairs = matching::getImagePairs(pairwiseMatches);
   C_Progress_display my_progress_bar( pairs.size() );
   for (Pair_Set::const_iterator iter = pairs.begin();
     iter != pairs.end();
@@ -165,40 +181,55 @@ int main(int argc, char ** argv)
       dimImage_J.first,
       dimImage_J.second, dimImage_I.first);
 
-    const vector<IndMatch> & vec_FilteredMatches = matches_provider->_pairWise_matches.at(*iter);
+    const matching::MatchesPerDescType& vec_FilteredMatches = pairwiseMatches.at(*iter);
 
-    if (!vec_FilteredMatches.empty()) {
+    std::cout << "nb describer : " << vec_FilteredMatches.size() << std::endl;
 
-      const PointFeatures & vec_feat_I = feats_provider->getFeatures(view_I->id_view);
-      const PointFeatures & vec_feat_J = feats_provider->getFeatures(view_J->id_view);
+    if(vec_FilteredMatches.empty())
+      continue;
+
+    for(const auto& matchesIt: vec_FilteredMatches)
+    {
+      const features::EImageDescriberType descType = matchesIt.first;
+      assert(descType != features::EImageDescriberType::UNINITIALIZED);
+      const matching::IndMatches& matches = matchesIt.second;
+      std::cout << EImageDescriberType_enumToString(matchesIt.first) << ": " << matches.size() << " matches" << std::endl;
+
+      const PointFeatures& vec_feat_I = featuresPerView.getFeatures(view_I->id_view, descType);
+      const PointFeatures& vec_feat_J = featuresPerView.getFeatures(view_J->id_view, descType);
 
       //-- Draw link between features :
-      for (size_t i=0; i< vec_FilteredMatches.size(); ++i)  {
-        const PointFeature & imaA = vec_feat_I[vec_FilteredMatches[i]._i];
-        const PointFeature & imaB = vec_feat_J[vec_FilteredMatches[i]._j];
+      for(std::size_t i = 0; i < matches.size(); ++i)
+      {
+        const PointFeature & imaA = vec_feat_I[matches[i]._i];
+        const PointFeature & imaB = vec_feat_J[matches[i]._j];
+
         // Compute a flashy colour for the correspondence
         unsigned char r,g,b;
-        hslToRgb( (rand()%360) / 360., 1.0, .5, r, g, b);
+        hslToRgb( (rand() % 360) / 360., 1.0, .5, r, g, b);
         std::ostringstream osCol;
         osCol << "rgb(" << (int)r <<',' << (int)g << ',' << (int)b <<")";
         svgStream.drawLine(imaA.x(), imaA.y(),
           imaB.x()+dimImage_I.first, imaB.y(), svgStyle().stroke(osCol.str(), 2.0));
       }
 
+      const std::string featColor = describerTypeColor(descType);
       //-- Draw features (in two loop, in order to have the features upper the link, svg layer order):
-      for (size_t i=0; i< vec_FilteredMatches.size(); ++i)  {
-        const PointFeature & imaA = vec_feat_I[vec_FilteredMatches[i]._i];
-        const PointFeature & imaB = vec_feat_J[vec_FilteredMatches[i]._j];
-        svgStream.drawCircle(imaA.x(), imaA.y(), 3.0,
-          svgStyle().stroke("yellow", 2.0));
-        svgStream.drawCircle(imaB.x() + dimImage_I.first, imaB.y(), 3.0,
-          svgStyle().stroke("yellow", 2.0));
+      for(std::size_t i=0; i< matches.size(); ++i)
+      {
+        const PointFeature & imaA = vec_feat_I[matches[i]._i];
+        const PointFeature & imaB = vec_feat_J[matches[i]._j];
+        svgStream.drawCircle(imaA.x(), imaA.y(), 5.0,
+          svgStyle().stroke(featColor, 2.0));
+        svgStream.drawCircle(imaB.x() + dimImage_I.first, imaB.y(), 5.0,
+          svgStyle().stroke(featColor, 2.0));
       }
     }
+
     std::ostringstream os;
     os << stlplus::folder_append_separator(sOutDir)
       << iter->first << "_" << iter->second
-      << "_" << vec_FilteredMatches.size() << "_.svg";
+      << "_" << vec_FilteredMatches.getNbAllMatches() << "_.svg";
     ofstream svgFile( os.str().c_str() );
     svgFile << svgStream.closeSvgFile().str();
     svgFile.close();

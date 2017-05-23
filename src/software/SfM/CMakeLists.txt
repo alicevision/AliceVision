@@ -128,19 +128,19 @@ TARGET_LINK_LIBRARIES(openMVG_main_ComputeStructureFromKnownPoses
   stlplus
   )
 
-IF(OpenMVG_USE_CCTAG)
-ADD_EXECUTABLE(openMVG_main_ComputeCCTagStructureFromKnownPoses main_ComputeCCTagStructureFromKnownPoses.cpp)
-TARGET_LINK_LIBRARIES(openMVG_main_ComputeCCTagStructureFromKnownPoses
-  openMVG_system
-  openMVG_features
-  openMVG_sfm
-  stlplus
-  CCTag::CCTag
-  ${Boost_LIBRARIES}
-  )
-SET_PROPERTY(TARGET openMVG_main_ComputeCCTagStructureFromKnownPoses PROPERTY FOLDER OpenMVG/software)
-INSTALL(TARGETS openMVG_main_ComputeCCTagStructureFromKnownPoses DESTINATION bin/)
-ENDIF()
+#IF(OpenMVG_USE_CCTAG)
+#ADD_EXECUTABLE(openMVG_main_ComputeCCTagStructureFromKnownPoses main_ComputeCCTagStructureFromKnownPoses.cpp)
+#TARGET_LINK_LIBRARIES(openMVG_main_ComputeCCTagStructureFromKnownPoses
+#  openMVG_system
+#  openMVG_features
+#  openMVG_sfm
+#  stlplus
+#  CCTag::CCTag
+#  ${Boost_LIBRARIES}
+#  )
+#SET_PROPERTY(TARGET openMVG_main_ComputeCCTagStructureFromKnownPoses PROPERTY FOLDER OpenMVG/software)
+#INSTALL(TARGETS openMVG_main_ComputeCCTagStructureFromKnownPoses DESTINATION bin/)
+#ENDIF()
 
 ADD_EXECUTABLE(openMVG_main_ComputeSfM_DataColor main_ComputeSfM_DataColor.cpp)
 TARGET_LINK_LIBRARIES(openMVG_main_ComputeSfM_DataColor
@@ -341,24 +341,24 @@ INSTALL(TARGETS openMVG_main_ExportCameraFrustums DESTINATION bin/)
 # -
 # Use openCV Feature detector to describe the images
 # -
-IF(OpenMVG_USE_OPENCV)
-  ADD_EXECUTABLE(openMVG_main_ComputeFeatures_OpenCV
-      main_ComputeFeatures_OpenCV.cpp)
-  TARGET_LINK_LIBRARIES(openMVG_main_ComputeFeatures_OpenCV
-      openMVG_system
-      openMVG_image
-      openMVG_features
-      openMVG_multiview
-      openMVG_sfm
-      stlplus
-      vlsift
-      ${OpenCV_LIBS})
-
-  SET_PROPERTY(TARGET openMVG_main_ComputeFeatures_OpenCV PROPERTY FOLDER OpenMVG/software)
-  SET_PROPERTY(TARGET openMVG_main_ComputeFeatures_OpenCV PROPERTY INSTALL_RPATH_USE_LINK_PATH TRUE)
-  INSTALL(TARGETS openMVG_main_ComputeFeatures_OpenCV DESTINATION bin/)
-ENDIF(OpenMVG_USE_OPENCV)
-
+#IF(OpenMVG_USE_OPENCV)
+#  ADD_EXECUTABLE(openMVG_main_ComputeFeatures_OpenCV
+#      main_ComputeFeatures_OpenCV.cpp)
+#  TARGET_LINK_LIBRARIES(openMVG_main_ComputeFeatures_OpenCV
+#      openMVG_system
+#      openMVG_image
+#      openMVG_features
+#      openMVG_multiview
+#      openMVG_sfm
+#      stlplus
+#      vlsift
+#      ${OpenCV_LIBS})"
+#
+#  SET_PROPERTY(TARGET openMVG_main_ComputeFeatures_OpenCV PROPERTY FOLDER OpenMVG/software)
+#  SET_PROPERTY(TARGET openMVG_main_ComputeFeatures_OpenCV PROPERTY INSTALL_RPATH_USE_LINK_PATH TRUE)
+#  INSTALL(TARGETS openMVG_main_ComputeFeatures_OpenCV DESTINATION bin/)
+# ENDIF(OpenMVG_USE_OPENCV)
+#
 
 ###
 # SfM Research tools

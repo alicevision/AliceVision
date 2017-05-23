@@ -43,9 +43,19 @@ public:
     vl_destructor();
   }
 
-  bool Set_configuration_preset(EDESCRIBER_PRESET preset)
+  EImageDescriberType getDescriberType() const override
+  {
+    return EImageDescriberType::SIFT;
+  }
+  
+  bool Set_configuration_preset(EDESCRIBER_PRESET preset) override
   {
     return _params.setPreset(preset);
+  }
+  
+  void setUpRight(bool upRight)
+  {
+    _bOrientation = !upRight;
   }
 
   /**
@@ -76,7 +86,7 @@ public:
      cereal::make_nvp("bOrientation", _bOrientation));
   }
   
-  void Allocate(std::unique_ptr<Regions>& regions) const
+  void Allocate(std::unique_ptr<Regions>& regions) const override
   {
     regions.reset(new SIFT_Regions);
   }

@@ -14,6 +14,7 @@
 
 #include "openMVG/numeric/numeric.h"
 #include "openMVG/features/regions.hpp"
+#include "openMVG/features/RegionsPerView.hpp"
 
 #include <vector>
 
@@ -46,100 +47,52 @@ void DistanceRatioMatch
  * as a "database". The other region is then a query that is matched with respect
  * to the database.
  */
-class RegionsMatcher
+class IRegionsMatcher
 {
-  public:
-    
-   /**
-    * @brief The destructor.
-    */ 
-   ~RegionsMatcher() {}
+public:
+  const features::Regions& regions_;
 
+  /**
+   * @brief The destructor.
+   */
+  virtual ~IRegionsMatcher() = 0;
 
-    /**
-     * @brief Initialize the matcher by setting one region as a "database".
-     * 
-     * @param[in] regions The Regions to be used as reference when matching another Region.
-     */
-    virtual void Init_database(const features::Regions& regions) = 0;
+  IRegionsMatcher(const features::Regions& regions)
+    : regions_(regions)
+  {
 
-    /**
-     * @brief Match a Regions to the internal database using the test ratio to improve
-     * the robustness of the match.
-     * 
-     * @param[in] f_dist_ratio The threshold for the ratio test.
-     * @param[in] query_regions The Regions to match.
-     * @param[out] vec_putative_matches It contains the indices of the matching features
-     * of the database and the query Regions.
-     * @return True if everything went well.
-     */
-    virtual bool Match
-    (
-      const float f_dist_ratio,
-      const features::Regions& query_regions,
-      matching::IndMatches & vec_putative_matches
-    ) = 0;
+  }
+
+  /**
+   * @brief Match a Regions to the internal database using the test ratio to improve
+   * the robustness of the match.
+   *
+   * @param[in] f_dist_ratio The threshold for the ratio test.
+   * @param[in] query_regions The Regions to match.
+   * @param[out] vec_putative_matches It contains the indices of the matching features
+   * of the database and the query Regions.
+   * @return True if everything went well.
+   */
+  virtual bool Match(
+    const float f_dist_ratio,
+    const features::Regions& query_regions,
+    matching::IndMatches & vec_putative_matches
+  ) = 0;
+
+  const features::Regions& getDatabaseRegions() const { return regions_; }
 };
 
-/**
- * @brief A simple class that allows to match Regions with respect a given Regions
- * used as "database".
- */
-class Matcher_Regions_Database
-{
-  public:
-
-    /**
-     * @brief Empty constructor, by default it initializes the matcher to BRUTE_FORCE_L2
-     * and the database to an empty database.
-     */
-    Matcher_Regions_Database();
-
-    /**
-     * @brief Initialize the internal database
-     * 
-     * @param[in] eMatcherType The type of matcher to use to match the Regions.
-     * @param[in] database_regions The Regions that will be used as database to 
-     * match other Regions (query).
-     */
-    Matcher_Regions_Database
-    (
-      matching::EMatcherType eMatcherType,
-      const features::Regions & database_regions // database
-    );
-
-    /**
-     * @brief Find corresponding points between the query Regions and the database one
-     * 
-     * @param[in] dist_ratio The threshold for the ratio test.
-     * @param[in] query_regions The Regions to match.
-     * @param[out] matches It contains the indices of the matching features
-     * of the database and the query Regions.
-     * @return True if everything went well.
-     */
-    bool Match
-    (
-    float dist_ratio, // Distance ratio used to discard spurious correspondence
-      const features::Regions & query_regions,
-    matching::IndMatches & matches // photometric corresponding points
-    )const;
-
-  private:
-  // Matcher Type
-  matching::EMatcherType _eMatcherType;
-  // The matching interface
-  std::unique_ptr<RegionsMatcher> _matching_interface;
-};
+inline IRegionsMatcher::~IRegionsMatcher()
+{}
 
 /**
  * Match two Regions with one stored as a "database" according a Template ArrayMatcher.
  */
 template < class ArrayMatcherT >
-class RegionsMatcherT : public RegionsMatcher
+class RegionsMatcher : public IRegionsMatcher
 {
 private:
   ArrayMatcherT matcher_;
-  const features::Regions* regions_;
   bool b_squared_metric_; // Store if the metric is squared or not
 public:
   typedef typename ArrayMatcherT::ScalarT Scalar;
@@ -148,7 +101,7 @@ public:
   /**
    * @brief Empty constructor, by default it initializes the database to an empty database.
    */
-  RegionsMatcherT() : regions_(nullptr) {}
+  RegionsMatcher() {}
 
   /**
    * @brief Initialize the matcher with a Regions that will be used as database
@@ -157,41 +110,23 @@ public:
    * @param b_squared_metric Whether to use a squared metric for the ratio test 
    * when matching two Regions.
    */
-  RegionsMatcherT(const features::Regions& regions, bool b_squared_metric = false)
-    : regions_(&regions), b_squared_metric_(b_squared_metric)
+  RegionsMatcher(const features::Regions& regions, bool b_squared_metric = false)
+    : IRegionsMatcher(regions), b_squared_metric_(b_squared_metric)
   {
-    if (regions_->RegionCount() == 0)
+    if (regions_.RegionCount() == 0)
       return;
 
-    const Scalar * tab = reinterpret_cast<const Scalar *>(regions_->DescriptorRawData());
-    matcher_.Build(tab, regions_->RegionCount(), regions_->DescriptorLength());
-  }
-
-  /**
-   * @brief Initialize the matcher with a Regions that will be used as database
-   * 
-   * @param regions The Regions to be used as database.
-   */
-  void Init_database
-  (
-    const features::Regions& regions
-  )
-  {
-    regions_ = &regions;
-    if (regions_->RegionCount() == 0)
-      return;
-
-    const Scalar * tab = reinterpret_cast<const Scalar *>(regions_->DescriptorRawData());
-    matcher_.Build(tab, regions_->RegionCount(), regions_->DescriptorLength());
+    const Scalar * tab = reinterpret_cast<const Scalar *>(regions_.DescriptorRawData());
+    matcher_.Build(tab, regions_.RegionCount(), regions_.DescriptorLength());
   }
 
   /**
    * @brief Match a Regions to the internal database using the test ratio to improve
    * the robustness of the match.
    * 
-   * @param f_dist_ratio The threshold for the ratio test.
-   * @param query_regions The Regions to match.
-   * @param vec_putative_matches It contains the indices of the matching features
+   * @param[in] f_dist_ratio The threshold for the ratio test.
+   * @param[in] query_regions The Regions to match.
+   * @param[out] vec_putative_matches It contains the indices of the matching features
      * of the database and the query Regions.
    * @return True if everything went well.
    */
@@ -200,8 +135,6 @@ public:
     const features::Regions& queryregions_,
     matching::IndMatches & vec_putative_matches)
   {
-    if (regions_ == nullptr)
-      return false;
 
     const Scalar * queries = reinterpret_cast<const Scalar *>(queryregions_.DescriptorRawData());
 
@@ -241,17 +174,105 @@ public:
 
     // Remove matches that have the same (X,Y) coordinates
     matching::IndMatchDecorator<float> matchDeduplicator(vec_putative_matches,
-      regions_->GetRegionsPositions(), queryregions_.GetRegionsPositions());
+      regions_.GetRegionsPositions(), queryregions_.GetRegionsPositions());
     matchDeduplicator.getDeduplicated(vec_putative_matches);
 
     return (!vec_putative_matches.empty());
   }
-  
-  
-  
-  const features::Regions* getDatabaseRegions() const { return regions_; } 
-  
+
 };
+
+
+/**
+ * @brief A simple class that allows to match Regions with respect a given Regions
+ * used as "database".
+ */
+class RegionsDatabaseMatcher
+{
+  public:
+    /**
+     * @brief Empty constructor, by default it initializes the matcher to BRUTE_FORCE_L2
+     * and the database to an empty database.
+     */
+    RegionsDatabaseMatcher();
+
+    /**
+     * @brief Initialize the internal database
+     *
+     * @param[in] matcherType The type of matcher to use to match the Regions.
+     * @param[in] database_regions The Regions that will be used as database to
+     * match other Regions (query).
+     */
+    RegionsDatabaseMatcher(
+      matching::EMatcherType matcherType,
+      const features::Regions & database_regions);
+
+    /**
+     * @brief Find corresponding points between the query Regions and the database one
+     *
+     * @param[in] distRatio The threshold for the ratio test used to discard spurious correspondence.
+     * @param[in] queryRegions The Regions to match.
+     * @param[out] matches It contains the indices of the matching features (photometric corresponding points)
+     *                     of the database and the query Regions.
+     * @return True if everything went well.
+     */
+    bool Match(
+      float distRatio,
+      const features::Regions & queryRegions,
+      matching::IndMatches & matches) const;
+
+    const features::Regions& getDatabaseRegions() const { return _regionsMatcher->getDatabaseRegions(); }
+
+  private:
+  // Matcher Type
+  matching::EMatcherType _matcherType;
+  // The matching interface
+  std::unique_ptr<IRegionsMatcher> _regionsMatcher;
+};
+
+class RegionsDatabaseMatcherPerDesc
+{
+public:
+  RegionsDatabaseMatcherPerDesc(
+      matching::EMatcherType matcherType,
+      const features::MapRegionsPerDesc & queryRegions)
+    : _databaseRegions(queryRegions)
+  {
+    for(const auto& queryRegionsIt: queryRegions)
+    {
+      _mapMatchers[queryRegionsIt.first] = RegionsDatabaseMatcher(matcherType, *queryRegionsIt.second);
+    }
+  }
+
+  bool Match(
+    float distRatio,
+    const features::MapRegionsPerDesc & matchedRegions,
+    matching::MatchesPerDescType & out_putativeFeatureMatches)
+  {
+    bool res = false;
+    for(auto& matcherIt: _mapMatchers)
+    {
+      const features::EImageDescriberType descType = matcherIt.first;
+      res |= matcherIt.second.Match(
+            distRatio,
+            *matchedRegions.at(descType),
+            out_putativeFeatureMatches[descType]);
+    }
+    return res;
+  }
+
+  const features::MapRegionsPerDesc & getDatabaseRegionsPerDesc() const { return _databaseRegions; }
+
+  const features::Regions & getDatabaseRegions(features::EImageDescriberType descType) const { return _mapMatchers.at(descType).getDatabaseRegions(); }
+
+  std::map<features::EImageDescriberType, RegionsDatabaseMatcher> & getData() { return _mapMatchers; }
+
+private:
+  const features::MapRegionsPerDesc & _databaseRegions;
+  std::map<features::EImageDescriberType, RegionsDatabaseMatcher> _mapMatchers;
+};
+
+std::unique_ptr<IRegionsMatcher> createRegionsMatcher(const features::Regions & regions, matching::EMatcherType matcherType);
 
 }  // namespace matching
 }  // namespace openMVG

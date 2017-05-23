@@ -5,7 +5,10 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
+#include "openMVG/config.hpp"
 #include "openMVG/sfm/sfm.hpp"
+#include "openMVG/sfm/pipelines/RegionsIO.hpp"
+#include "openMVG/matching/indMatch.hpp"
 #include "openMVG/system/timer.hpp"
 
 #include "third_party/cmdLine/cmdLine.h"
@@ -23,12 +26,14 @@ int main(int argc, char **argv)
   CmdLine cmd;
 
   std::string sSfM_Data_Filename;
+  std::string describerMethods = "SIFT";
   std::string sFeaturesDir;
   std::string sMatchesDir;
   std::string sMatchesGeometricModel = "f";
   std::string sOutFile = "";
 
   cmd.add( make_option('i', sSfM_Data_Filename, "input_file") );
+  cmd.add( make_option('d', describerMethods, "describerMethods") );
   cmd.add( make_option('f', sFeaturesDir, "feat_dir") );
   cmd.add( make_option('m', sMatchesDir, "match_dir") );
   cmd.add( make_option('o', sOutFile, "output_file") );
@@ -39,15 +44,31 @@ int main(int argc, char **argv)
     cmd.process(argc, argv);
   } catch(const std::string& s) {
     std::cerr << "Usage: " << argv[0] << "\n"
-       "[-i|--input_file] path to a SfM_Data scene\n"
-       "[-o|--output_file] file where the output data will be stored "
-          "(i.e. path/sfm_data_structure.bin)\n"
-       "[-f|--feat_dir] path to the features and descriptors that "
-          "corresponds to the provided SfM_Data scene\n"
-       "\n[Optional]\n"
-       "[-m|--match_dir] path to the matches files "
-       "(if not provided the images connections will be computed from Frustrums intersections)\n"
-       "[-g|--matchesGeometricModel MODEL] matching geometric model used: 'f' (default), 'e' or 'h'"
+        "[-i|--input_file] path to a SfM_Data scene\n"
+        "[-d|--describerMethods]\n"
+        "  (methods to use to describe an image):\n"
+        "   SIFT (default),\n"
+        "   SIFT_FLOAT to use SIFT stored as float,\n"
+        "   AKAZE: AKAZE with floating point descriptors,\n"
+        "   AKAZE_MLDB:  AKAZE with binary descriptors\n"
+#if OPENMVG_IS_DEFINED(OPENMVG_HAVE_CCTAG)
+        "   CCTAG3: CCTAG markers with 3 crowns\n"
+        "   CCTAG4: CCTAG markers with 4 crowns\n"
+#endif
+#if OPENMVG_IS_DEFINED(OPENMVG_HAVE_OPENCV)
+#if OPENMVG_IS_DEFINED(OPENMVG_USE_OCVSIFT)
+        "   SIFT_OCV: OpenCV SIFT\n"
+#endif
+        "   AKAZE_OCV: OpenCV AKAZE\n"
+#endif
+        "[-o|--output_file] file where the output data will be stored "
+           "(i.e. path/sfm_data_structure.bin)\n"
+        "[-f|--feat_dir] path to the features and descriptors that "
+           "corresponds to the provided SfM_Data scene\n"
+        "\n[Optional]\n"
+        "[-m|--match_dir] path to the matches files "
+        "(if not provided the images connections will be computed from Frustrums intersections)\n"
+        "[-g|--matchesGeometricModel MODEL] matching geometric model used: 'f' (default), 'e' or 'h'"
     << std::endl;
 
     std::cerr << s << std::endl;
@@ -64,18 +85,14 @@ int main(int argc, char **argv)
 
   // Init the regions_type from the image describer file (used for image regions extraction)
   using namespace openMVG::features;
-  const std::string sImage_describer = stlplus::create_filespec(sFeaturesDir, "image_describer", "json");
-  std::unique_ptr<Regions> regions_type = Init_region_type_from_file(sImage_describer);
-  if (!regions_type)
-  {
-    std::cerr << "Invalid: "
-      << sImage_describer << " regions type file." << std::endl;
-    return EXIT_FAILURE;
-  }
+  
+  // Get imageDescriberMethodType
+  std::vector<EImageDescriberType> describerMethodTypes = EImageDescriberType_stringToEnums(describerMethods);
 
   // Prepare the Regions provider
-  std::shared_ptr<Regions_Provider> regions_provider = std::make_shared<Regions_Provider>();
-  if (!regions_provider->load(sfm_data, sFeaturesDir, regions_type)) {
+  RegionsPerView regionsPerView;
+  if(!sfm::loadRegionsPerView(regionsPerView, sfm_data, sFeaturesDir, describerMethodTypes))
+  {
     std::cerr << std::endl
       << "Invalid regions." << std::endl;
     return EXIT_FAILURE;
@@ -97,13 +114,13 @@ int main(int argc, char **argv)
   else
   {
     // Load pre-computed matches
-    PairWiseMatches matches;
-    if (!matching::Load(matches, sfm_data.GetViewsKeys(), sMatchesDir, sMatchesGeometricModel))
+    matching::PairwiseMatches matches;
+    if (!matching::Load(matches, sfm_data.GetViewsKeys(), sMatchesDir, describerMethodTypes, sMatchesGeometricModel))
     {
       std::cerr<< "Unable to read the matches file." << std::endl;
       return EXIT_FAILURE;
     }
-    pairs = getPairs(matches);
+    pairs = matching::getImagePairs(matches);
     // Keep only Pairs that belong to valid view indexes.
     const std::set<IndexT> valid_viewIdx = Get_Valid_Views(sfm_data);
     pairs = Pair_filter(pairs, valid_viewIdx);
@@ -118,15 +135,15 @@ int main(int argc, char **argv)
   // Compute Structure from known camera poses
   //------------------------------------------
   SfM_Data_Structure_Estimation_From_Known_Poses structure_estimator;
-  structure_estimator.match(sfm_data, pairs, regions_provider);
+  structure_estimator.match(sfm_data, pairs, regionsPerView);
 
   // Unload descriptors before triangulation
-  regions_provider->clearDescriptors();
+  regionsPerView.clearDescriptors();
 
   // Filter matches
-  structure_estimator.filter(sfm_data, pairs, regions_provider);
+  structure_estimator.filter(sfm_data, pairs, regionsPerView);
   // Create 3D landmarks
-  structure_estimator.triangulate(sfm_data, regions_provider);
+  structure_estimator.triangulate(sfm_data, regionsPerView);
 
   RemoveOutliers_AngleError(sfm_data, 2.0);
 
@@ -134,7 +151,8 @@ int main(int argc, char **argv)
     << "\nStructure estimation took (s): " << timer.elapsed() << "." << std::endl
     << "#landmark found: " << sfm_data.GetLandmarks().size() << std::endl;
 
-  if (stlplus::extension_part(sOutFile) != "ply") {
+  if (stlplus::extension_part(sOutFile) != "ply")
+  {
     Save(sfm_data,
       stlplus::create_filespec(
         stlplus::folder_part(sOutFile),

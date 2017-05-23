@@ -9,6 +9,7 @@
 #define OPENMVG_FEATURES_IMAGE_DESCRIBER_HPP
 
 #include "openMVG/numeric/numeric.h"
+#include "openMVG/features/ImageDescriberCommon.hpp"
 #include "openMVG/features/regions.hpp"
 #include "openMVG/image/image_container.hpp"
 #include <memory>
@@ -69,6 +70,8 @@ class Image_describer
 public:
   Image_describer() {}
   virtual ~Image_describer() {}
+  
+  virtual EImageDescriberType getDescriberType() const = 0;
 
   /**
   @brief Use a preset to control the number of detected regions
@@ -84,6 +87,13 @@ public:
   {
     return Set_configuration_preset(describerPreset_stringToEnum(preset));
   }
+  
+  /**
+   @brief Set image describer always upRight
+   @param upRight
+   */
+  void setUpRight(bool upRight)
+  {}
 
   /**
   @brief Detect regions on the image and compute their attributes (description)
@@ -123,6 +133,14 @@ public:
     return regions->LoadFeatures(sfileNameFeats);
   }
 };
+
+
+/**
+ * @brief Create the desired Image_describer method.
+ * Don't use a factory, perform direct allocation.
+ */
+std::unique_ptr<Image_describer> createImageDescriber(EImageDescriberType imageDescriberType);
+
 
 } // namespace features
 } // namespace openMVG

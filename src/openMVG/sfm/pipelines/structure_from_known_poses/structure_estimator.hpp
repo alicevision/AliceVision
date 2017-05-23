@@ -6,7 +6,9 @@
 
 #pragma once
 
-#include "openMVG/sfm/pipelines/sfm_regions_provider.hpp"
+#include "openMVG/sfm/sfm_data.hpp"
+
+#include "openMVG/features/RegionsPerView.hpp"
 #include "openMVG/matching/indMatch.hpp"
 
 namespace openMVG {
@@ -20,7 +22,7 @@ public:
   void run(
     SfM_Data & sfm_data,
     const Pair_Set & pairs,
-    const std::shared_ptr<Regions_Provider> & regions_provider);
+    const features::RegionsPerView& regionsPerView);
 
 public:
 
@@ -28,25 +30,25 @@ public:
   void match(
     const SfM_Data & sfm_data,
     const Pair_Set & pairs,
-    const std::shared_ptr<Regions_Provider> & regions_provider);
+    const features::RegionsPerView& regionsPerView);
 
   /// Filter inconsistent correspondences by using 3-view correspondences on view triplets
   void filter(
     const SfM_Data & sfm_data,
     const Pair_Set & pairs,
-    const std::shared_ptr<Regions_Provider> & regions_provider);
+    const features::RegionsPerView& regionsPerView);
 
   /// Init & triangulate landmark observations from validated 3-view correspondences
   void triangulate(
     SfM_Data & sfm_data,
-    const std::shared_ptr<Regions_Provider> & regions_provider);
+    const features::RegionsPerView& regionsPerView);
 
 private:
   //--
   // DATA (temporary)
   //--
-  matching::PairWiseMatches putatives_matches;
-  matching::PairWiseMatches triplets_matches;
+  matching::PairwiseMatches _putativeMatches;
+  matching::PairwiseMatches _tripletMatches;
 };
 
 } // namespace sfm

@@ -13,51 +13,29 @@ using namespace openMVG::sfm;
 #include <random>
 #include <iostream>
 
-// Create from a synthetic scene (NViewDataSet) some SfM pipelines data provider:
-//  - for each view store the observations point as PointFeatures
-struct Synthetic_Features_Provider : public Features_Provider
-{
-  template <typename NoiseGenerator>
-  bool load(
-    const NViewDataSet & synthetic_data, NoiseGenerator & noise)
-  {
-    std::default_random_engine generator;
-    // For each view
-    for (int j = 0; j < synthetic_data._n; ++j)
-    {
-      // For each new point visibility
-      for (int i = 0; i < synthetic_data._x[j].cols(); ++i)
-      {
-        const Vec2 pt = synthetic_data._x[j].col(i);
-        feats_per_view[j].push_back(
-          features::PointFeature(pt(0)+noise(generator), pt(1)+noise(generator)));
-      }
-    }
-    return true;
-  }
-};
 
 // Create from a synthetic scene (NViewDataSet) some SfM pipelines data provider:
 //  - for contiguous triplets store the corresponding observations indexes
-struct Synthetic_Matches_Provider : public Matches_Provider
+
+inline bool generateSyntheticMatches(
+  matching::PairwiseMatches& pairwiseMatches,
+  const NViewDataSet & synthetic_data,
+  features::EImageDescriberType descType)
 {
-  virtual bool load(
-    const NViewDataSet & synthetic_data)
+  // For each view
+  for (int j = 0; j < synthetic_data._n; ++j)
   {
-    // For each view
-    for (int j = 0; j < synthetic_data._n; ++j)
+    for (int jj = j+1; jj < j+3 ; ++jj)
     {
-      for (int jj = j+1; jj < j+3 ; ++jj)
+      for (int idx = 0; idx < synthetic_data._x[j].cols(); ++idx)
       {
-        for (int idx = 0; idx < synthetic_data._x[j].cols(); ++idx)
-        {
-          _pairWise_matches[Pair(j,(jj)%synthetic_data._n)].push_back(IndMatch(idx,idx));
-        }
+        pairwiseMatches[Pair(j,(jj)%synthetic_data._n)][descType].emplace_back(idx,idx);
       }
     }
-    return true;
   }
-};
+  return true;
+}
+
 
 /// Compute the Root Mean Square Error of the residuals
 static double RMSE(const SfM_Data & sfm_data)
@@ -68,7 +46,7 @@ static double RMSE(const SfM_Data & sfm_data)
       iterTracks != sfm_data.GetLandmarks().end();
       ++iterTracks)
   {
-    const Observations & obs = iterTracks->second.obs;
+    const Observations & obs = iterTracks->second.observations;
     for(Observations::const_iterator itObs = obs.begin();
       itObs != obs.end(); ++itObs)
     {
@@ -149,7 +127,7 @@ SfM_Data getInputScene
     landmark.X = d._X.col(i);
     for (int j = 0; j < nviews; ++j) {
       const Vec2 pt = d._x[j].col(i);
-      landmark.obs[j] = Observation(pt, i);
+      landmark.observations[j] = Observation(pt, i);
     }
     sfm_data.structure[i] = landmark;
   }

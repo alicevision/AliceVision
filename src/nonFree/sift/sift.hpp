@@ -13,6 +13,7 @@ extern "C" {
 
 #include <iostream>
 #include <numeric>
+#include <stdexcept>
 
 namespace openMVG {
 namespace features {
@@ -70,7 +71,7 @@ struct SiftParams
   //
   bool _root_sift;        // see [1]
   
-  bool setPreset(EDESCRIBER_PRESET preset)
+  bool setPreset(EDESCRIBER_PRESET preset) // TODO: void
   {
     switch(preset)
     {
@@ -108,7 +109,7 @@ struct SiftParams
       break;
     }
     default:
-      return false;
+      throw std::out_of_range("Invalid Preset enum");
     }
     return true;
   }
