@@ -111,16 +111,16 @@ template < typename TOut >
 inline void convertSIFT(
   const vl_sift_pix* descr,
   Descriptor<TOut,128> & descriptor,
-  bool brootSift = false
+  bool rootSift
   );
 
 template <> 
 inline void convertSIFT<float>(
   const vl_sift_pix* descr,
   Descriptor<float,128> &descriptor,
-  bool brootSift)
+  bool rootSift)
 {
-  if(brootSift)
+  if(rootSift)
   {
     const float sum = std::accumulate(descr, descr + 128, 0.0f);
     for(int k = 0; k < 128; ++k)
@@ -137,9 +137,9 @@ template <>
 inline void convertSIFT<unsigned char>(
   const vl_sift_pix* descr,
   Descriptor<unsigned char,128> & descriptor,
-  bool brootSift)
+  bool rootSift)
 {
-  if (brootSift)
+  if (rootSift)
   {
     // rootsift = sqrt( sift / sum(sift) );
     const float sum = std::accumulate(descr, descr+128, 0.0f);

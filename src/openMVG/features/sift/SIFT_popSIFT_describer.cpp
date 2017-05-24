@@ -4,18 +4,12 @@
 namespace openMVG {
 namespace features {
 
+std::unique_ptr<PopSift> SIFT_popSIFT_ImageDescriber::_popSift = nullptr;
+
 bool SIFT_popSIFT_ImageDescriber::Describe(const image::Image<unsigned char>& image,
                                       std::unique_ptr<Regions>& regions,
                                       const image::Image<unsigned char>* mask)
 {
-  popsift::cuda::device_prop_t deviceInfo;
-  deviceInfo.set(_cudaPipeIndex, _cudaInfo_printFirstTime);
-  if(_cudaInfo_printFirstTime)
-  {
-    deviceInfo.print();
-    _cudaInfo_printFirstTime = false; // only the first time!
-  }
-
   std::unique_ptr<SiftJob> job(_popSift->enqueue(image.Width(), image.Height(), &image(0,0)));
   std::unique_ptr<popsift::Features> popFeatures(job->get());
 
@@ -35,7 +29,8 @@ bool SIFT_popSIFT_ImageDescriber::Describe(const image::Image<unsigned char>& im
       const popsift::Descriptor* popDesc = popFeat.desc[orientationIndex];
       Descriptor<unsigned char, 128> desc;
 
-      // convertSIFT<unsigned char>(*popDesc, desc);
+      //convertSIFT<unsigned char>(*popDesc, desc, _params._root_sift);
+      // root sift is done inside popsift, so we only need to cast the result
       for (std::size_t k = 0; k < 128; ++k)
         desc[k] = static_cast<unsigned char>(popDesc->features[k]);
 

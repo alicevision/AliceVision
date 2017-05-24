@@ -11,6 +11,7 @@ class SIFT_ImageDescriber : public Image_describer
 {
 public:
   SIFT_ImageDescriber(const SiftParams& params = SiftParams(), bool isOriented = true)
+    : _params(params)
   {
     // TODO: detect if CUDA is available on the computer
     setUseCuda(false);

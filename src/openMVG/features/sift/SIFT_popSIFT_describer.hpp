@@ -38,6 +38,12 @@ public:
     config.setThreshold(  _params._peak_threshold);
     config.setEdgeLimit(  _params._edge_threshold);
     config.setUseRootSift(_params._root_sift);
+    config.setNormalizationMultiplier(9); // 2^9 = 512
+
+    popsift::cuda::device_prop_t deviceInfo;
+
+    deviceInfo.set(0, true); //Use only the first device
+    deviceInfo.print();
 
     _popSift.reset( new PopSift(config) );
   }
@@ -70,11 +76,6 @@ public:
     _isOriented = !upRight;
   }
 
-  void setCudaPipe(int pipe) override
-  {
-    _cudaPipeIndex = pipe;
-  }
-
   /**
    * @brief Detect regions on the image and compute their attributes (description)
    * @param[in] image Image.
@@ -99,10 +100,8 @@ public:
 private:
   SiftParams _params;
   bool _isOriented = true;
-  int _cudaPipeIndex = 0;
-  bool _cudaInfo_printFirstTime = true; //< toggle to print only the first time
 
-  std::unique_ptr<PopSift> _popSift;
+  static std::unique_ptr<PopSift> _popSift;
 };
 
 } // namespace features
