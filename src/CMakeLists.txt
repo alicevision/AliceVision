@@ -26,6 +26,7 @@ OPTION(OpenMVG_BUILD_COVERAGE "Enable code coverage generation (gcc only)" OFF)
 OPTION(OpenMVG_USE_BOOST "Build code depending on Boost (localization/voctree)" ON)
 OPTION(OpenMVG_USE_OPENMP "Enable OpenMP parallelization" ON)
 OPTION(OpenMVG_USE_CCTAG "Enable CCTAG markers" ON)
+OPTION(OpenMVG_USE_POPSIFT "Enable GPU SIFT implementation" ON)
 OPTION(OpenMVG_USE_OPENGV "Enable use of OpenGV algorithms" OFF)
 OPTION(OpenMVG_USE_ALEMBIC "Enable Alembic I/O" OFF)
 OPTION(OpenMVG_USE_LOG "Enable logger" ON)
@@ -482,6 +483,21 @@ IF(OpenMVG_USE_CCTAG)
     set(OPENMVG_HAVE_CCTAG 1)
   ENDIF(NOT CCTag_FOUND)
 ENDIF(OpenMVG_USE_CCTAG)
+
+# ==============================================================================
+# PopSift
+# ==============================================================================
+set(OPENMVG_HAVE_POPSIFT 0)
+IF(OpenMVG_USE_POPSIFT)
+  FIND_PACKAGE(PopSift CONFIG)
+  IF(PopSift_FOUND)
+     MESSAGE(STATUS "PopSift found")
+     set(OPENMVG_HAVE_POPSIFT 1)
+  ELSE()
+    MESSAGE(STATUS "PopSift package not found, PopSift will be disabled")
+    UPDATE_CACHE_VARIABLE(OpenMVG_USE_POPSIFT OFF)
+  ENDIF()
+ENDIF(OpenMVG_USE_POPSIFT)
 
 # ==============================================================================
 # OpenGV

@@ -8,19 +8,18 @@
 #include "image_describer.hpp"
 
 #include <openMVG/config.hpp>
-#include "openMVG/features/image_describer_akaze.hpp"
+#include <openMVG/features/image_describer_akaze.hpp>
+#include <openMVG/features/sift/SIFT_describer.hpp>
+#include <openMVG/features/sift/SIFT_vlfeat_float_describer.hpp>
 #if OPENMVG_IS_DEFINED(OPENMVG_HAVE_CCTAG)
-#include "openMVG/features/cctag/CCTAG_describer.hpp"
+#include <openMVG/features/cctag/CCTAG_describer.hpp>
 #endif //OPENMVG_HAVE_CCTAG
-#include "openMVG/features/openCV/AKAZE_openCV_describer.hpp"
+#include <openMVG/features/openCV/AKAZE_openCV_describer.hpp>
 #if OPENMVG_IS_DEFINED(OPENMVG_USE_OCVSIFT)
-#include "openMVG/features/openCV/SIFT_openCV_describer.hpp"
+#include <openMVG/features/openCV/SIFT_openCV_describer.hpp>
 #endif //OPENMVG_USE_OCVSIFT
 
-#include "nonFree/sift/SIFT_describer.hpp"
-#include "nonFree/sift/SIFT_float_describer.hpp"
-
-#include <exception>
+#include <stdexcept>
 
 namespace openMVG{
 namespace features{
@@ -74,8 +73,8 @@ std::unique_ptr<Image_describer> createImageDescriber(EImageDescriberType imageD
   
   switch(imageDescriberType)
   {
-    case EImageDescriberType::SIFT:        describerPtr.reset(new SIFT_Image_describer(SiftParams())); break;
-    case EImageDescriberType::SIFT_FLOAT:  describerPtr.reset(new SIFT_float_describer(SiftParams())); break;
+    case EImageDescriberType::SIFT:        describerPtr.reset(new SIFT_ImageDescriber(SiftParams())); break;
+    case EImageDescriberType::SIFT_FLOAT:  describerPtr.reset(new SIFT_vlfeat_float_ImageDescriber(SiftParams())); break;
     case EImageDescriberType::AKAZE:       describerPtr.reset(new AKAZE_Image_describer(AKAZEParams(AKAZEConfig(), features::AKAZE_MSURF))); break;
     case EImageDescriberType::AKAZE_MLDB:  describerPtr.reset(new AKAZE_Image_describer(AKAZEParams(AKAZEConfig(), features::AKAZE_MLDB))); break;
     case EImageDescriberType::AKAZE_LIOP:  describerPtr.reset(new AKAZE_Image_describer(AKAZEParams(AKAZEConfig(), features::AKAZE_LIOP))); break;

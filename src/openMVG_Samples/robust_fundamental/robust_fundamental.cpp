@@ -7,13 +7,13 @@
 
 #include "openMVG/image/image.hpp"
 #include "openMVG/features/features.hpp"
+#include "openMVG/features/sift/SIFT_describer.hpp"
 #include "openMVG/matching/regions_matcher.hpp"
 #include "openMVG/multiview/solver_fundamental_kernel.hpp"
 #include "openMVG/multiview/conditioning.hpp"
 #include "openMVG/robust_estimation/robust_estimator_ACRansac.hpp"
 #include "openMVG/robust_estimation/robust_estimator_ACRansacKernelAdaptator.hpp"
 
-#include "nonFree/sift/SIFT_describer.hpp"
 #include "third_party/cmdLine/cmdLine.h"
 
 #include "third_party/stlplus3/filesystemSimplified/file_system.hpp"
@@ -75,7 +75,7 @@ int main(int argc, char **argv)
   // Detect regions thanks to an image_describer
   //--
   using namespace openMVG::features;
-  std::unique_ptr<Image_describer> image_describer(new SIFT_Image_describer);
+  std::unique_ptr<Image_describer> image_describer(new SIFT_ImageDescriber);
   if (!sFeaturePreset.empty())
   {
     if (!image_describer->Set_configuration_preset(sFeaturePreset))

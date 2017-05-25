@@ -51,7 +51,7 @@ public:
    */
   bool Describe(const image::Image<unsigned char>& image,
                 std::unique_ptr<Regions> &regions,
-                const image::Image<unsigned char> * mask = NULL);
+                const image::Image<unsigned char> * mask = NULL) override;
 
   /**
    * @brief Allocate Regions type depending of the Image_describer
@@ -62,16 +62,7 @@ public:
     regions.reset( new AKAZE_Float_Regions );
   }
 
-  template<class Archive>
-  void serialize(Archive & ar)
-  {}
-
 };
 
 } //namespace features
 } //namespace openMVG
-
-#include <cereal/cereal.hpp>
-#include <cereal/types/polymorphic.hpp>
-#include <cereal/archives/json.hpp>
-CEREAL_REGISTER_TYPE_WITH_NAME(openMVG::features::AKAZE_openCV_ImageDescriber, "AKAZE_OCV_Image_describer");

@@ -70,7 +70,15 @@ set(OpenMVG_USE_CCTAG @OpenMVG_USE_CCTAG@)
 if(OpenMVG_USE_CCTAG)
   set(CCTag_DIR @CCTag_DIR@)
   find_dependency(CCTag 1.0.0)
-endif(OpenMVG_USE_CCTAG)
+endif()
+
+# whether it is built with CCTags
+set(OpenMVG_USE_POPSIFT @OpenMVG_USE_POPSIFT@)
+
+if(OpenMVG_USE_POPSIFT)
+  find_dependency(PopSift 1.0.0)
+endif()
+
 
 # whether it is built with CCTags
 set(OpenMVG_USE_OPENCV @OpenMVG_USE_OPENCV@)

@@ -13,7 +13,6 @@
 #include "openMVG/features/regions.hpp"
 #include "openMVG/image/image_container.hpp"
 #include <memory>
-#include <cereal/cereal.hpp> // Serialization
 
 #include <string>
 #include <iostream>
@@ -92,8 +91,7 @@ public:
    @brief Set image describer always upRight
    @param upRight
    */
-  void setUpRight(bool upRight)
-  {}
+  virtual void setUpRight(bool upRight) {}
 
   /**
   @brief Detect regions on the image and compute their attributes (description)
@@ -125,7 +123,7 @@ public:
     const std::string& sfileNameDescs) const
   {
     return regions->Save(sfileNameFeats, sfileNameDescs);
-  };
+  }
 
   virtual bool LoadFeatures(Regions * regions,
     const std::string& sfileNameFeats) const
