@@ -396,6 +396,20 @@ AlembicImporter::~AlembicImporter()
 
 void AlembicImporter::populate(sfm::SfM_Data &sfmdata, sfm::ESfM_Data flags_part)
 {
+  const index_t sampleFrame = 0;
+  IObject rootObj = _objImpl->_rootEntity.getChild("mvgRoot");
+  ICompoundProperty userProps = rootObj.getProperties();
+  if(const Alembic::Abc::PropertyHeader *propHeader = userProps.getPropertyHeader("mvg_featureFolder"))
+  {
+    const std::string featureFolder = getAbcProp<Alembic::Abc::IStringProperty>(userProps, *propHeader, "mvg_featureFolder", sampleFrame);
+    sfmdata.setFeatureFolder(featureFolder);
+  }
+  if(const Alembic::Abc::PropertyHeader *propHeader = userProps.getPropertyHeader("mvg_matchingFolder"))
+  {
+    const std::string matchingFolder = getAbcProp<Alembic::Abc::IStringProperty>(userProps, *propHeader, "mvg_matchingFolder", sampleFrame);
+    sfmdata.setMatchingFolder(matchingFolder);
+  }
+
   // TODO : handle the case where the archive wasn't correctly opened
   M44d xformMat;
   visitObject(_objImpl->_rootEntity, xformMat, sfmdata, flags_part);

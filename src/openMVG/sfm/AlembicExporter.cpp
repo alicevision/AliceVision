@@ -39,7 +39,7 @@ struct AlembicExporter::DataImpl
     auto userProps = _mvgRoot.getProperties();
     OUInt32ArrayProperty propAbcVersion(userProps, "mvg_ABC_version");
     OUInt32ArrayProperty propOpenMVGVersion(userProps, "mvg_openMVG_version");
-    const std::vector<::uint32_t> abcVersion = {1, 0};
+    const std::vector<::uint32_t> abcVersion = {1, 1};
     propAbcVersion.set(abcVersion);
     const std::vector<::uint32_t> openMVGVersion = {OPENMVG_VERSION_MAJOR, OPENMVG_VERSION_MINOR, OPENMVG_VERSION_REVISION};
     propOpenMVGVersion.set(openMVGVersion);
@@ -51,14 +51,14 @@ struct AlembicExporter::DataImpl
   Alembic::Abc::OObject _mvgCameras;
   Alembic::Abc::OObject _mvgCloud;
   Alembic::Abc::OObject _mvgPointCloud;
-  Alembic::AbcGeom::OXform _mxform;
-  Alembic::AbcGeom::OCamera _mcamObj;
-  Alembic::AbcGeom::OUInt32ArrayProperty _mpropSensorSize_pix;
-  Alembic::AbcGeom::OStringProperty _mimagePlane;
-  Alembic::AbcGeom::OUInt32Property _mpropViewId;
-  Alembic::AbcGeom::OUInt32Property _mpropIntrinsicId;
-  Alembic::AbcGeom::OStringProperty _mmvg_intrinsicType;
-  Alembic::AbcGeom::ODoubleArrayProperty _mmvg_intrinsicParams;
+  Alembic::AbcGeom::OXform _xform;
+  Alembic::AbcGeom::OCamera _camObj;
+  Alembic::AbcGeom::OUInt32ArrayProperty _propSensorSize_pix;
+  Alembic::AbcGeom::OStringProperty _imagePlane;
+  Alembic::AbcGeom::OUInt32Property _propViewId;
+  Alembic::AbcGeom::OUInt32Property _propIntrinsicId;
+  Alembic::AbcGeom::OStringProperty _mvgIntrinsicType;
+  Alembic::AbcGeom::ODoubleArrayProperty _mvgIntrinsicParams;
 };
 
 
@@ -274,27 +274,27 @@ void AlembicExporter::initAnimatedCamera(const std::string& cameraName)
   // Create the camera transform object
   std::stringstream ss;
   ss << cameraName;
-  _data->_mxform = Alembic::AbcGeom::OXform(_data->_mvgCameras, "animxform_" + ss.str());
-  _data->_mxform.getSchema().setTimeSampling(tsp);
+  _data->_xform = Alembic::AbcGeom::OXform(_data->_mvgCameras, "animxform_" + ss.str());
+  _data->_xform.getSchema().setTimeSampling(tsp);
   
   // Create the camera parameters object (intrinsics & custom properties)
-  _data->_mcamObj = OCamera(_data->_mxform, "animcam_" + ss.str());
-  _data->_mcamObj.getSchema().setTimeSampling(tsp);
+  _data->_camObj = OCamera(_data->_xform, "animcam_" + ss.str());
+  _data->_camObj.getSchema().setTimeSampling(tsp);
   
   // Add the custom properties
-  auto userProps = _data->_mcamObj.getSchema().getUserProperties();
+  auto userProps = _data->_camObj.getSchema().getUserProperties();
   // Sensor size
-  _data->_mpropSensorSize_pix = OUInt32ArrayProperty(userProps, "mvg_sensorSizePix", tsp);
+  _data->_propSensorSize_pix = OUInt32ArrayProperty(userProps, "mvg_sensorSizePix", tsp);
   // Image path
-  _data->_mimagePlane = OStringProperty(userProps, "mvg_imagePath", tsp);
+  _data->_imagePlane = OStringProperty(userProps, "mvg_imagePath", tsp);
   // View id
-  _data->_mpropViewId = OUInt32Property(userProps, "mvg_viewId", tsp);
+  _data->_propViewId = OUInt32Property(userProps, "mvg_viewId", tsp);
   // Intrinsic id
-  _data->_mpropIntrinsicId = OUInt32Property(userProps, "mvg_intrinsicId", tsp);
+  _data->_propIntrinsicId = OUInt32Property(userProps, "mvg_intrinsicId", tsp);
   // Intrinsic type (ex: PINHOLE_CAMERA_RADIAL3)
-  _data->_mmvg_intrinsicType = OStringProperty(userProps, "mvg_intrinsicType", tsp);
+  _data->_mvgIntrinsicType = OStringProperty(userProps, "mvg_intrinsicType", tsp);
   // Intrinsic parameters
-  _data->_mmvg_intrinsicParams = ODoubleArrayProperty(userProps, "mvg_intrinsicParams", tsp);
+  _data->_mvgIntrinsicParams = ODoubleArrayProperty(userProps, "mvg_intrinsicParams", tsp);
 }
 
 void AlembicExporter::addCameraKeyframe(const geometry::Pose3 &pose,
@@ -336,7 +336,7 @@ void AlembicExporter::addCameraKeyframe(const geometry::Pose3 &pose,
   xformsample.setMatrix(xformMatrix);
   
   // Attach it to the schema of the OXform
-  _data->_mxform.getSchema().set(xformsample);
+  _data->_xform.getSchema().set(xformsample);
   
   // Camera intrinsic parameters
   CameraSample camSample;
@@ -366,42 +366,47 @@ void AlembicExporter::addCameraKeyframe(const geometry::Pose3 &pose,
   
   // Add sensor width (largest image side) in pixels as custom property
   std::vector<::uint32_t> sensorSize_pix = {::uint32_t(sensorWidth_pix), ::uint32_t(sensorHeight_pix)};
-  _data->_mpropSensorSize_pix.set(sensorSize_pix);
+  _data->_propSensorSize_pix.set(sensorSize_pix);
   
   // Set custom attributes
   // Image path
-  _data->_mimagePlane.set(imagePath);
+  _data->_imagePlane.set(imagePath);
 
   // View id
-  _data->_mpropViewId.set(id_view);
+  _data->_propViewId.set(id_view);
   // Intrinsic id
-  _data->_mpropIntrinsicId.set(id_intrinsic);
+  _data->_propIntrinsicId.set(id_intrinsic);
   // Intrinsic type
-  _data->_mmvg_intrinsicType.set(cam->getTypeStr());
+  _data->_mvgIntrinsicType.set(cam->getTypeStr());
   // Intrinsic parameters
   std::vector<double> intrinsicParams = cam->getParams();
-  _data->_mmvg_intrinsicParams.set(intrinsicParams);
+  _data->_mvgIntrinsicParams.set(intrinsicParams);
   
   // Attach intrinsic parameters to camera object
-  _data->_mcamObj.getSchema().set(camSample);
+  _data->_camObj.getSchema().set(camSample);
 }
 
 void AlembicExporter::jumpKeyframe(const std::string &imagePath)
 {
-  if(_data->_mxform.getSchema().getNumSamples() == 0)
+  if(_data->_xform.getSchema().getNumSamples() == 0)
   {
     cameras::Pinhole_Intrinsic default_intrinsic;
     this->addCameraKeyframe(geometry::Pose3(), &default_intrinsic, imagePath, 0, 0);
   }
   else
   {
-    _data->_mxform.getSchema().setFromPrevious();
-    _data->_mcamObj.getSchema().setFromPrevious();
+    _data->_xform.getSchema().setFromPrevious();
+    _data->_camObj.getSchema().setFromPrevious();
   }
 }
 
 void AlembicExporter::add(const sfm::SfM_Data &sfmdata, sfm::ESfM_Data flags_part)
 {
+  auto userProps = _data->_mvgRoot.getProperties();
+  OStringProperty propFeatureFolder(userProps, "mvg_featureFolder");
+  propFeatureFolder.set(sfmdata.getFeatureFolder());
+  OStringProperty propMatchingFolder(userProps, "mvg_matchingFolder");
+  propMatchingFolder.set(sfmdata.getMatchingFolder());
 
   if(flags_part & sfm::ESfM_Data::VIEWS || flags_part & sfm::ESfM_Data::EXTRINSICS)
   {
@@ -427,6 +432,8 @@ void AlembicExporter::add(const sfm::SfM_Data &sfmdata, sfm::ESfM_Data flags_par
       }
       const std::string cameraName = stlplus::basename_part(view->s_Img_path);
       const std::string sView_filename = stlplus::create_filespec(sfmdata.s_root_path, view->s_Img_path);
+      
+      // TODO: store full metadata
       
       // Use a common sensor width if we don't have this information.
       // We chose a full frame 24x36 camera

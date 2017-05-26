@@ -256,6 +256,9 @@ int main(int argc, char **argv)
   {
     std::cerr << "Colorize failed!" << std::endl;
   }
+  
+  sfmEngine.Get_SfM_Data().setFeatureFolder(sFeaturesDir);
+  sfmEngine.Get_SfM_Data().setMatchingFolder(sMatchesDir);
 
   std::cout << std::endl << " Total Ac-Sfm took (s): " << timer.elapsed() << std::endl;
 

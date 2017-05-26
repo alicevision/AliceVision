@@ -40,8 +40,10 @@ CCTagLocalizer::CCTagLocalizer(const std::string &sfmFilePath,
         "polymorphic Views. You can run the python script convertSfmData.py to update an existing sfmdata.");
     throw std::invalid_argument("The input SfM_Data file "+ sfmFilePath + " cannot be read.");
   }
+
+  const std::string descFolder = descriptorsFolder.empty() ? _sfm_data.getFeatureFolder() : descriptorsFolder;
   
-  bool loadSuccessful = loadReconstructionDescriptors(_sfm_data, descriptorsFolder);
+  bool loadSuccessful = loadReconstructionDescriptors(_sfm_data, descFolder);
   
   if(!loadSuccessful)
   {
