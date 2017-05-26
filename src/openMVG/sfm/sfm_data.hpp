@@ -46,6 +46,8 @@ struct SfM_Data
 
   /// Root Views path
   std::string s_root_path;
+  std::string _featureFolder;
+  std::string _matchingFolder;
 
   //--
   // Accessors
@@ -115,6 +117,17 @@ struct SfM_Data
   {
     return poses.at(view->id_pose);
   }
+
+  void setFeatureFolder(const std::string& featureFolder)
+  {
+    _featureFolder = featureFolder;
+  }
+  void setMatchingFolder(const std::string& matchingFolder)
+  {
+    _matchingFolder = matchingFolder;
+  }
+  const std::string& getFeatureFolder() const { return _featureFolder; }
+  const std::string& getMatchingFolder() const { return _matchingFolder; }
 
   bool operator==(const SfM_Data& other) const {
 
