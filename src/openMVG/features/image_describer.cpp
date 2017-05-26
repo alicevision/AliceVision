@@ -14,10 +14,12 @@
 #if OPENMVG_IS_DEFINED(OPENMVG_HAVE_CCTAG)
 #include <openMVG/features/cctag/CCTAG_describer.hpp>
 #endif //OPENMVG_HAVE_CCTAG
+#if OPENMVG_IS_DEFINED(OPENMVG_HAVE_OPENCV)
 #include <openMVG/features/openCV/AKAZE_openCV_describer.hpp>
 #if OPENMVG_IS_DEFINED(OPENMVG_USE_OCVSIFT)
 #include <openMVG/features/openCV/SIFT_openCV_describer.hpp>
 #endif //OPENMVG_USE_OCVSIFT
+#endif //OPENMVG_HAVE_OPENCV
 
 #include <stdexcept>
 
