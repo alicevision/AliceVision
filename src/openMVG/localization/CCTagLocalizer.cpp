@@ -268,6 +268,8 @@ bool CCTagLocalizer::localize(const features::MapRegionsPerDesc & genQueryRegion
   std::vector<voctree::DocMatch> matchedImages;
   system::Timer timer;
   getAllAssociations(queryRegions, imageSize, *param, occurences, resectionData.pt2D, resectionData.pt3D, matchedImages, imagePath);
+  
+  resectionData.vec_descType.resize(resectionData.pt2D.cols(), _cctagDescType);
   OPENMVG_LOG_DEBUG("[Matching]\tRetrieving associations took " << timer.elapsedMs() << "ms");
   
   const std::size_t numCollectedPts = occurences.size();
