@@ -370,7 +370,7 @@ int main(int argc, char *argv[])
     return EXIT_FAILURE;
   }
 
-  if (!exportToCMPMVS2Format(sfm_data, scale, stlplus::filespec_to_path(sOutDir, "_tmp_scale" + std::to_string(scale))))
+  if (!exportToCMPMVS2Format(sfm_data, scale, stlplus::filespec_to_path(sOutDir)))
     return EXIT_FAILURE;
 
   return EXIT_SUCCESS;
