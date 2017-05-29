@@ -268,6 +268,8 @@ bool CCTagLocalizer::localize(const features::MapRegionsPerDesc & genQueryRegion
   std::vector<voctree::DocMatch> matchedImages;
   system::Timer timer;
   getAllAssociations(queryRegions, imageSize, *param, occurences, resectionData.pt2D, resectionData.pt3D, matchedImages, imagePath);
+  
+  resectionData.vec_descType.resize(resectionData.pt2D.cols(), _cctagDescType);
   OPENMVG_LOG_DEBUG("[Matching]\tRetrieving associations took " << timer.elapsedMs() << "ms");
   
   const std::size_t numCollectedPts = occurences.size();
@@ -749,10 +751,10 @@ bool CCTagLocalizer::localizeRig_naive(const std::vector<features::MapRegionsPer
 void CCTagLocalizer::getAllAssociations(const features::CCTAG_Regions &queryRegions,
                                         const std::pair<std::size_t, std::size_t> &imageSize,
                                         const CCTagLocalizer::Parameters &param,
-                                        OccurenceMap & occurences,
-                                        Mat &pt2D,
-                                        Mat &pt3D,
-                                        std::vector<voctree::DocMatch>& matchedImages,
+                                        OccurenceMap & out_occurences,
+                                        Mat &out_pt2D,
+                                        Mat &out_pt3D,
+                                        std::vector<voctree::DocMatch>& out_matchedImages,
                                         const std::string& imagePath) const
 {
   std::vector<IndexT> nearestKeyFrames;
@@ -764,8 +766,8 @@ void CCTagLocalizer::getAllAssociations(const features::CCTAG_Regions &queryRegi
                     param._nNearestKeyFrames,
                     nearestKeyFrames);
   
-  matchedImages.clear();
-  matchedImages.reserve(nearestKeyFrames.size());
+  out_matchedImages.clear();
+  out_matchedImages.reserve(nearestKeyFrames.size());
   
   OPENMVG_LOG_DEBUG("nearestKeyFrames.size() = " << nearestKeyFrames.size());
   for(const IndexT keyframeId : nearestKeyFrames)
@@ -781,7 +783,7 @@ void CCTagLocalizer::getAllAssociations(const features::CCTAG_Regions &queryRegi
     viewMatching(queryRegions, matchedCCtagRegions, vec_featureMatches);
     OPENMVG_LOG_DEBUG("[matching]\tFound "<< vec_featureMatches.size() <<" matches.");
     
-    matchedImages.emplace_back(keyframeId, vec_featureMatches.size());
+    out_matchedImages.emplace_back(keyframeId, vec_featureMatches.size());
     
     if(!param._visualDebug.empty() && !imagePath.empty())
     {
@@ -830,24 +832,24 @@ void CCTagLocalizer::getAllAssociations(const features::CCTAG_Regions &queryRegi
       const IndexT pt2D_id = featureMatch._i;
       
       const IndMatch3D2D key(pt3D_id, _cctagDescType, pt2D_id);
-      if(occurences.count(key))
+      if(out_occurences.count(key))
       {
-        occurences[key]++;
+        out_occurences[key]++;
       }
       else
       {
-        occurences[key] = 1;
+        out_occurences[key] = 1;
       }
     }
   }
       
-  const size_t numCollectedPts = occurences.size();
+  const size_t numCollectedPts = out_occurences.size();
   OPENMVG_LOG_DEBUG("[matching]\tCollected "<< numCollectedPts <<" associations.");
   
   {
     // just debugging statistics, this block can be safely removed    
     std::size_t maxOcc = 0;
-    for(const auto &idx : occurences)
+    for(const auto &idx : out_occurences)
     {
       const auto &key = idx.first;
       const auto &value = idx.second;
@@ -863,7 +865,7 @@ void CCTagLocalizer::getAllAssociations(const features::CCTAG_Regions &queryRegi
     for(std::size_t value = 1; value < maxOcc; ++value)
     {
       std::size_t counter = 0;
-      for(const auto &idx : occurences)
+      for(const auto &idx : out_occurences)
       {
         if(idx.second == value)
         {
@@ -880,18 +882,18 @@ void CCTagLocalizer::getAllAssociations(const features::CCTAG_Regions &queryRegi
     }
   }
 
-  pt2D = Mat2X(2, numCollectedPts);
-  pt3D = Mat3X(3, numCollectedPts);
+  out_pt2D = Mat2X(2, numCollectedPts);
+  out_pt3D = Mat3X(3, numCollectedPts);
 
   size_t index = 0;
-  for(const auto &idx : occurences)
+  for(const auto &idx : out_occurences)
   {
     // recopy all the points in the matching structure
     const IndexT pt3D_id = idx.first.landmarkId;
     const IndexT pt2D_id = idx.first.featId;
       
-    pt2D.col(index) = queryRegions.GetRegionPosition(pt2D_id);
-    pt3D.col(index) = _sfm_data.GetLandmarks().at(pt3D_id).X;
+    out_pt2D.col(index) = queryRegions.GetRegionPosition(pt2D_id);
+    out_pt3D.col(index) = _sfm_data.GetLandmarks().at(pt3D_id).X;
     ++index;
   }
 }
