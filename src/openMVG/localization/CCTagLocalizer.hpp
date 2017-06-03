@@ -132,10 +132,10 @@ public:
   void getAllAssociations(const features::CCTAG_Regions &queryRegions,
                           const std::pair<std::size_t, std::size_t> &imageSize,
                           const CCTagLocalizer::Parameters &param,
-                          OccurenceMap &occurences,
-                          Mat &pt2D,
-                          Mat &pt3D,
-                          std::vector<voctree::DocMatch>& matchedImages,
+                          OccurenceMap & out_occurences,
+                          Mat &out_pt2D,
+                          Mat &out_pt3D,
+                          std::vector<voctree::DocMatch>& out_matchedImages,
                           const std::string& imagePath = std::string()) const;
   
   virtual ~CCTagLocalizer();
