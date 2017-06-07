@@ -40,7 +40,6 @@
 namespace openMVG {
 namespace resection {
 
-double dabs(double a);
 
 void GJ(double *A, int rcnt, int ccnt, double tol);
 

@@ -45,11 +45,6 @@
 namespace openMVG {
 namespace resection {
 
-double dabs(double a)
-{
-  if(a > 0) return a;
-  return -a;
-}
 
 void GJ(double *A, int rcnt, int ccnt, double tol)
 {
@@ -78,11 +73,11 @@ void GJ(double *A, int rcnt, int ccnt, double tol)
     for(k = r; k < rcnt; k++)
     {
       // pivot selection criteria here !
-      if(dabs(*(A + pofs)) > apivot)
+      if(std::abs(*(A + pofs)) > apivot)
       {
 
         pivot = *(A + pofs);
-        apivot = dabs(pivot);
+        apivot = std::abs(pivot);
         pivot_r = k;
       }
       pofs += ccnt;
@@ -132,7 +127,7 @@ void GJ(double *A, int rcnt, int ccnt, double tol)
       pofs = ofs + ccnt;
       for(k = r + 1; k < rcnt; k++)
       {
-        if(dabs(*(A + pofs)) > tol)
+        if(std::abs(*(A + pofs)) > tol)
         {
           // nonzero row
           b = *(A + pofs);
@@ -153,7 +148,7 @@ void GJ(double *A, int rcnt, int ccnt, double tol)
       pofs = c;
       for(k = 0; k < r; k++)
       {
-        if(dabs(*(A + pofs)) > tol)
+        if(std::abs(*(A + pofs)) > tol)
         {
           // nonzero row
           b = *(A + pofs);
@@ -340,7 +335,7 @@ void compute_p4pf_poses(double *glab, double *a1, double *b1, double *c1, double
   double coefs[42];
 
   CalcCoefs(glab, a1, b1, c1, d1, coefs);
-  memset(M, 0, 6864 * sizeof (double));
+  std::memset(M, 0, 6864 * sizeof (double));
 
   M[64] = coefs[0];
   M[403] = coefs[0];
@@ -1083,7 +1078,7 @@ void compute_p4pf_poses(double *glab, double *a1, double *b1, double *c1, double
   GJ(M, 78, 88, 2.2204e-11);
 
   // action matrix
-  memset(A, 0, sizeof (double) * 100);
+  std::memset(A, 0, sizeof (double) * 100);
 
   A[1] = 1;
   A[15] = 1;
@@ -1147,7 +1142,7 @@ bool isNan(Eigen::MatrixXcd *A)
   Mat B = A->real();
   for(int i = 0; i < B.cols() * B.rows(); i++)
   {
-    if(isnan(B.data()[i])) return true;
+    if(std::isnan(B.data()[i])) return true;
   }
   return false;
 }
@@ -1180,7 +1175,7 @@ bool validSol(Eigen::MatrixXcd *sol, Mat *vSol)
   else
   {
     *vSol = Mat(4, correct.size());
-    for(int i = 0; i < correct.size(); i++)
+    for(std::size_t i = 0; i < correct.size(); ++i)
     {
       vSol->block(0, i, 4, 1) = reSol.block(0, correct.at(i), 4, 1);
     }
@@ -1236,7 +1231,6 @@ void P4PfSolver::Solve(const Mat &pt2Dx, const Mat &pt3Dx, std::vector<M> *model
   assert(3 == pt3D.rows());
   assert(pt2D.cols() == pt3D.cols());
 
-  double tol = 2.2204e-10;
   Vec3 mean3d = pt3D.rowwise().mean();
 
   Mat ones = Mat(1, 4);
@@ -1255,6 +1249,7 @@ void P4PfSolver::Solve(const Mat &pt2Dx, const Mat &pt3Dx, std::vector<M> *model
   double glbd = (pt3D.col(1) - pt3D.col(3)).squaredNorm();
   double glcd = (pt3D.col(2) - pt3D.col(3)).squaredNorm();
 
+  const double tol = std::numeric_limits<double>::epsilon();
 
   // initial solution degeneracy - invalid input
   if(glab * glac * glad * glbc * glbd * glcd < tol)
