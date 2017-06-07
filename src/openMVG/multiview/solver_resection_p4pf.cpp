@@ -1,55 +1,19 @@
-
-/*
- * Copyright (c) 2011, Laurent Kneip, ETH Zurich
- * All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are met:
- *     * Redistributions of source code must retain the above copyright
- *       notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above copyright
- *       notice, this list of conditions and the following disclaimer in the
- *       documentation and/or other materials provided with the distribution.
- *     * Neither the name of ETH Zurich nor the
- *       names of its contributors may be used to endorse or promote products
- *       derived from this software without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
- * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
- * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
- * DISCLAIMED. IN NO EVENT SHALL ETH ZURICH BE LIABLE FOR ANY
- * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
- * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
- * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
- * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- */
-
-// Copyright (c) 2012, 2013 Pierre MOULON.
-
-// This Source Code Form is subject to the terms of the Mozilla Public
-// License, v. 2.0. If a copy of the MPL was not distributed with this
-// file, You can obtain one at http://mozilla.org/MPL/2.0/.
-
-#ifndef OPENMVG_MULTIVIEW_RESECTION_P4PF_CPP
-#define OPENMVG_MULTIVIEW_RESECTION_P4PF_CPP
-
 #include "openMVG/multiview/projection.hpp"
 #include "openMVG/numeric/numeric.h"
 #include "openMVG/multiview/solver_resection_p4pf.hpp"
 
 #include <cmath>
+#include <cstring>
+#include <limits>
 #include <iostream>
 
 namespace openMVG {
 namespace resection {
 
-
 void GJ(double *A, int rcnt, int ccnt, double tol)
 {
-  int r = 0; // row
-  int c = 0; // col
+  int row = 0;
+  int col = 0;
   int k;
   int l;
   int dstofs;
@@ -62,7 +26,7 @@ void GJ(double *A, int rcnt, int ccnt, double tol)
   // gj
   ofs = 0;
   pofs = 0;
-  while(r < rcnt && c < ccnt)
+  while(row < rcnt && col < ccnt)
   {
     // find pivot
     double apivot = 0;
@@ -70,7 +34,7 @@ void GJ(double *A, int rcnt, int ccnt, double tol)
     int pivot_r = -1;
 
     pofs = ofs;
-    for(k = r; k < rcnt; k++)
+    for(k = row; k < rcnt; k++)
     {
       // pivot selection criteria here !
       if(std::abs(*(A + pofs)) > apivot)
@@ -86,7 +50,7 @@ void GJ(double *A, int rcnt, int ccnt, double tol)
     if(apivot < tol)
     {
       // empty col - shift to next col (or jump)
-      c++;
+      col++;
       ofs++;
 
     }
@@ -97,10 +61,10 @@ void GJ(double *A, int rcnt, int ccnt, double tol)
 
       // exchange pivot and selected rows
       // + divide row
-      if(pivot_r == r)
+      if(pivot_r == row)
       {
         srcofs = ofs;
-        for(l = c; l < ccnt; l++)
+        for(l = col; l < ccnt; l++)
         {
 
           *(A + srcofs) = *(A + srcofs) * pivot_i;
@@ -111,8 +75,8 @@ void GJ(double *A, int rcnt, int ccnt, double tol)
       else
       {
         srcofs = ofs;
-        dstofs = ccnt * pivot_r + c;
-        for(l = c; l < ccnt; l++)
+        dstofs = ccnt * pivot_r + col;
+        for(l = col; l < ccnt; l++)
         {
           b = *(A + srcofs);
           *(A + srcofs) = *(A + dstofs) * pivot_i;
@@ -125,7 +89,7 @@ void GJ(double *A, int rcnt, int ccnt, double tol)
 
       // zero bottom
       pofs = ofs + ccnt;
-      for(k = r + 1; k < rcnt; k++)
+      for(k = row + 1; k < rcnt; k++)
       {
         if(std::abs(*(A + pofs)) > tol)
         {
@@ -133,7 +97,7 @@ void GJ(double *A, int rcnt, int ccnt, double tol)
           b = *(A + pofs);
           dstofs = pofs + 1;
           srcofs = ofs + 1;
-          for(l = c + 1; l < ccnt; l++)
+          for(l = col + 1; l < ccnt; l++)
           {
             *(A + dstofs) = (*(A + dstofs) - *(A + srcofs) * b);
             dstofs++;
@@ -145,8 +109,8 @@ void GJ(double *A, int rcnt, int ccnt, double tol)
       }
 
       // zero top
-      pofs = c;
-      for(k = 0; k < r; k++)
+      pofs = col;
+      for(k = 0; k < row; k++)
       {
         if(std::abs(*(A + pofs)) > tol)
         {
@@ -154,7 +118,7 @@ void GJ(double *A, int rcnt, int ccnt, double tol)
           b = *(A + pofs);
           dstofs = pofs + 1;
           srcofs = ofs + 1;
-          for(l = c + 1; l < ccnt; l++)
+          for(l = col + 1; l < ccnt; l++)
           {
             *(A + dstofs) = (*(A + dstofs) - *(A + srcofs) * b);
             dstofs++;
@@ -165,104 +129,69 @@ void GJ(double *A, int rcnt, int ccnt, double tol)
         pofs += ccnt;
       }
 
-      r++;
-      c++;
+      row++;
+      col++;
       ofs += ccnt + 1;
     }
   }
 }
 
-// prepare polynomial coefficients
-
-void CalcCoefs(double const *src1, double const *src2, double const *src3, double const *src4, double const *src5, double *dst1)
+void computeCoefficients(const double *src1, const double *src2, const double *src3, const double *src4, const double *src5, double *dst1)
 {
-// symbolic names.
-#define glab (src1[0])
-#define glac (src1[1])
-#define glad (src1[2])
-#define glbc (src1[3])
-#define glbd (src1[4])
-#define glcd (src1[5])
-#define a1 (src2[0])
-#define a2 (src2[1])
-#define b1 (src3[0])
-#define b2 (src3[1])
-#define c1 (src4[0])
-#define c2 (src4[1])
-#define d1 (src5[0])
-#define d2 (src5[1])
+  // symbolic names.
+  const double glab = src1[0];
+  const double glac = src1[1];
+  const double glad = src1[2];
+  const double glbc = src1[3];
+  const double glbd = src1[4];
+  const double glcd = src1[5];
+  const double a1 = src2[0];
+  const double a2 = src2[1];
+  const double b1 = src3[0];
+  const double b2 = src3[1];
+  const double c1 = src4[0];
+  const double c2 = src4[1];
+  const double d1 = src5[0];
+  const double d2 = src5[1];
 
-  double t1;
-  double t11;
-  double t12;
-  double t13;
-  double t14;
-  double t16;
-  double t2;
-  double t24;
-  double t27;
-  double t28;
-  double t3;
-  double t32;
-  double t33;
-  double t34;
-  double t35;
-  double t37;
-  double t39;
-  double t4;
-  double t41;
-  double t42;
-  double t43;
-  double t46;
-  double t5;
-  double t51;
-  double t53;
-  double t56;
-  double t59;
-  double t60;
-  double t67;
-  double t84;
-  double t9;
-
-  // destination group 1 	
-  t1 = 1 / glad;
-  t2 = t1*glbc;
-  t3 = glab*t1;
-  t4 = glac*t1;
-  t5 = t2 - t3 - t4;
-  t9 = d2*d2;
-  t11 = t3*t9;
-  t12 = t4*t9;
-  t13 = d1*d1;
-  t14 = t4*t13;
-  t16 = t3*t13;
-  t24 = -a2 * b2 - b1*a1;
-  t27 = -c1 * a1 - c2*a2;
-  t28 = a1*t1;
-  t32 = t1*d1;
-  t33 = a1 * glac*t32;
-  t34 = a2*d2;
-  t35 = t4*t34;
-  t37 = a1 * glab*t32;
-  t39 = t3*t34;
-  t41 = a2*a2;
-  t42 = a1*a1;
-  t43 = t4*t41;
-  t46 = t42 * glac*t1;
-  t51 = t42 * glab*t1;
-  t53 = t42*t1;
-  t56 = t3*t41;
-  t59 = c1*c1;
-  t60 = c2*c2;
-  t67 = t1*glbd;
-  t84 = glcd*t1;
+  const double t1 = 1 / glad;
+  const double t2 = t1 * glbc;
+  const double t3 = glab * t1;
+  const double t4 = glac * t1;
+  const double t5 = t2 - t3 - t4;
+  const double t9 = d2 * d2;
+  const double t11 = t3 * t9;
+  const double t12 = t4 * t9;
+  const double t13 = d1 * d1;
+  const double t14 = t4 * t13;
+  const double t16 = t3 * t13;
+  const double t24 = -a2 * b2 - b1 * a1;
+  const double t27 = -c1 * a1 - c2 * a2;
+  const double t28 = a1 * t1;
+  const double t32 = t1 * d1;
+  const double t33 = a1 * glac * t32;
+  const double t34 = a2 * d2;
+  const double t35 = t4 * t34;
+  const double t37 = a1 * glab * t32;
+  const double t39 = t3 * t34;
+  const double t41 = a2 * a2;
+  const double t42 = a1 * a1;
+  const double t43 = t4 * t41;
+  const double t46 = t42 * glac * t1;
+  const double t51 = t42 * glab * t1;
+  const double t53 = t42 * t1;
+  const double t56 = t3 * t41;
+  const double t59 = c1 * c1;
+  const double t60 = c2 * c2;
+  const double t67 = t1 * glbd;
+  const double t84 = glcd * t1;
 
   // destination group 1 	
   dst1[0] = 1.0;
   dst1[1] = t5 / 2.0;
   dst1[2] = -1.0;
   dst1[3] = -1.0;
-  dst1[4] = c2 * b2 + c1*b1;
+  dst1[4] = c2 * b2 + c1 * b1;
   dst1[5] = -t5;
   dst1[6] = t2 * t9 / 2.0 - t11 / 2.0 - t12 / 2.0 - t14 / 2.0 + t2 * t13 / 2.0 - t16 / 2.0;
   dst1[7] = 1.0 - t4 / 2.0 - t3 / 2.0 + t2 / 2.0;
@@ -288,7 +217,7 @@ void CalcCoefs(double const *src1, double const *src2, double const *src3, doubl
   dst1[27] = -t11 / 2.0 - t16 / 2.0 + t67 * t9 / 2.0 + t67 * t13 / 2.0 - t9 / 2.0 - t13 / 2.0;
   dst1[28] = -t3 / 2.0 + t67 / 2.0 + 1.0 / 2.0;
   dst1[29] = t24;
-  dst1[30] = -t28 * glbd * d1 + t37 + t39 - t67*t34;
+  dst1[30] = -t28 * glbd * d1 + t37 + t39 - t67 * t34;
   dst1[31] = t67 * t41 / 2.0 + t53 * glbd / 2.0 - t56 / 2.0 - t51 / 2.0 + t42 / 2.0 + t41 / 2.0;
   dst1[32] = 1.0;
   dst1[33] = -t4 / 2.0 + t84 / 2.0 - 1.0 / 2.0;
@@ -298,43 +227,19 @@ void CalcCoefs(double const *src1, double const *src2, double const *src3, doubl
   dst1[37] = t84 * t13 / 2.0 - t12 / 2.0 - t14 / 2.0 - t13 / 2.0 - t9 / 2.0 + t84 * t9 / 2.0;
   dst1[38] = -t4 / 2.0 + 1.0 / 2.0 + t84 / 2.0;
   dst1[39] = t27;
-  dst1[40] = t35 + t33 - t84 * t34 - glcd * a1*t32;
+  dst1[40] = t35 + t33 - t84 * t34 - glcd * a1 * t32;
   dst1[41] = t42 / 2.0 + t41 / 2.0 - t43 / 2.0 + glcd * t42 * t1 / 2.0 - t46 / 2.0 + t84 * t41 / 2.0;
-
-
-// destination group 2 	
-#undef glab
-#undef glac
-#undef glad
-#undef glbc
-#undef glbd
-#undef glcd
-#undef a1
-#undef a2
-#undef b1
-#undef b2
-#undef c1
-#undef c2
-#undef d1
-#undef d2
 }
 
-// [glab, glac, glad, glbc, glbd, glcd], [a1; a2], [b1; b2], [c1; c2], [d1;d2]
-//  glXY - ||X-Y||^2 - quadratic distances between 3D points X and Y
-//  a1 (a2) = x (resp y) measurement of the first 2D point
-//  b1 (b2) = x (resp y) measurement of the second 2D point
-//  c1 (c2) = x (resp y) measurement of the third 2D point
-//  d1 (d2) = x (resp y) measurement of the fourth 2D point
-//
-// output *A - 10x10 action matrix
-
-void compute_p4pf_poses(double *glab, double *a1, double *b1, double *c1, double *d1, double *A)
+void computeP4pfPoses(const double *glab, const double *a1, const double *b1, const double *c1, const double *d1, double *A)
 {
   // precalculate polynomial equations coefficients
   double M[6864];
   double coefs[42];
 
-  CalcCoefs(glab, a1, b1, c1, d1, coefs);
+  // prepare polynomial coefficients
+  computeCoefficients(glab, a1, b1, c1, d1, coefs);
+
   std::memset(M, 0, 6864 * sizeof (double));
 
   M[64] = coefs[0];
@@ -1137,25 +1042,27 @@ void compute_p4pf_poses(double *glab, double *a1, double *b1, double *c1, double
   A[99] = -M[6238];
 }
 
-bool isNan(Eigen::MatrixXcd *A)
+bool isNan(const Eigen::MatrixXcd &A)
 {
-  Mat B = A->real();
-  for(int i = 0; i < B.cols() * B.rows(); i++)
+  const Mat B = A.real();
+  for(Mat::Index i = 0; i < B.cols() * B.rows(); ++i)
   {
     if(std::isnan(B.data()[i])) return true;
   }
   return false;
 }
 
-bool validSol(Eigen::MatrixXcd *sol, Mat *vSol)
+bool validSol(const Eigen::MatrixXcd &sol, Mat &vSol)
 {
-  Mat imSol = sol->imag();
-  Mat reSol = sol->real();
-  std::vector<int> correct;
-  for(int i = 0; i < 10; ++i)
+  assert(sol.cols() == 10 && sol.rows() == 4);
+
+  Mat imSol = sol.imag();
+  Mat reSol = sol.real();
+  std::vector<Mat::Index> correct;
+  for(Mat::Index i = 0; i < 10; ++i)
   {
     bool isReal = true;
-    for(int j = 0; j < 4; ++j)
+    for(Mat::Index j = 0; j < 4; ++j)
     {
       if(imSol(j, i) != 0)
       {
@@ -1174,124 +1081,121 @@ bool validSol(Eigen::MatrixXcd *sol, Mat *vSol)
   }
   else
   {
-    *vSol = Mat(4, correct.size());
+    vSol = Mat(4, correct.size());
     for(std::size_t i = 0; i < correct.size(); ++i)
     {
-      vSol->block(0, i, 4, 1) = reSol.block(0, correct.at(i), 4, 1);
+      vSol.block(0, i, 4, 1) = reSol.block(0, correct.at(i), 4, 1);
     }
   }
   return true;
 }
 
-void getRigidTransform(Mat *pp1, Mat *pp2, Mat *R, Vec3 *t)
+void getRigidTransform(const Mat &pp1, const Mat &pp2, Mat &R, Vec3 &t)
 {
-  Mat p1mean, p2mean, u1, u2;
-  Mat p1(*pp1);
-  Mat p2(*pp2);
+  Mat p1(pp1);
+  Mat p2(pp2);
 
   // shift centers of gravity to the origin
-  p1mean = p1.rowwise().sum() * 0.25;
-  p2mean = p2.rowwise().sum() * 0.25;
-  for(int i = 0; i < 4; i++)
+  const Mat p1mean = p1.rowwise().sum() * 0.25;
+  const Mat p2mean = p2.rowwise().sum() * 0.25;
+  for(Mat::Index i = 0; i < 4; i++)
   {
-    p1.block(0, i, 3, 1) = p1.block(0, i, 3, 1) - p1mean;
-    p2.block(0, i, 3, 1) = p2.block(0, i, 3, 1) - p2mean;
+    p1.block(0, i, 3, 1) -= p1mean;
+    p2.block(0, i, 3, 1) -= p2mean;
   }
 
   // normalize to unit size
-  u1 = p1;
-  u1 *= p1.colwise().norm().cwiseInverse().asDiagonal();
-  u2 = p2;
-  u2 *= p2.colwise().norm().cwiseInverse().asDiagonal();
+  const Mat u1 = p1 * p1.colwise().norm().cwiseInverse().asDiagonal();
+  const Mat u2 = p2 * p2.colwise().norm().cwiseInverse().asDiagonal();
 
   // calc rotation
-  Mat C = u2 * u1.transpose();
+  const Mat C = u2 * u1.transpose();
   Eigen::JacobiSVD<Mat> svd(C, Eigen::ComputeThinU | Eigen::ComputeThinV);
+  const Mat U = svd.matrixU();
+  const Mat V = svd.matrixV();
   Mat S = svd.singularValues();
-  Mat U = svd.matrixU();
-  Mat V = svd.matrixV();
 
   // fit to rotation space
   S(0) = (S(0) >= 0 ? 1 : -1);
   S(1) = (S(1) >= 0 ? 1 : -1);
   S(2) = ((U * V.transpose()).determinant() >= 0 ? 1 : -1);
 
-  *R = U * S.asDiagonal() * V.transpose();
-  *t = -(*R) * p1mean + p2mean;
+  R = U * S.asDiagonal() * V.transpose();
+  t = -R * p1mean + p2mean;
 }
 
-
-// Solve the problem of camera pose.
-
-void P4PfSolver::Solve(const Mat &pt2Dx, const Mat &pt3Dx, std::vector<M> *models)
+void P4PfSolver::solve(const Mat &pt2Dx, const Mat &pt3Dx, std::vector<p4fSolution> *models)
 {
   Mat pt2D(pt2Dx);
   Mat pt3D(pt3Dx);
+
   assert(2 == pt2D.rows());
   assert(3 == pt3D.rows());
   assert(pt2D.cols() == pt3D.cols());
 
-  Vec3 mean3d = pt3D.rowwise().mean();
+  const Vec3 mean3d = pt3D.rowwise().mean();
 
-  Mat ones = Mat(1, 4);
-  ones << 1, 1, 1, 1;
-  pt3D = pt3D - (mean3d * ones);
+  pt3D = pt3D - (mean3d * Mat::Constant(1, 4, 1.0));
 
-  double var = pt3D.colwise().norm().sum() / 4;
+  const double var = pt3D.colwise().norm().sum() / 4;
+  const double var2d = pt2D.colwise().norm().sum() / 4;
+
   pt3D *= (1 / var);
-  double var2d = pt2D.colwise().norm().sum() / 4;
   pt2D *= (1 / var2d);
 
-  double glab = (pt3D.col(0) - pt3D.col(1)).squaredNorm();
-  double glac = (pt3D.col(0) - pt3D.col(2)).squaredNorm();
-  double glad = (pt3D.col(0) - pt3D.col(3)).squaredNorm();
-  double glbc = (pt3D.col(1) - pt3D.col(2)).squaredNorm();
-  double glbd = (pt3D.col(1) - pt3D.col(3)).squaredNorm();
-  double glcd = (pt3D.col(2) - pt3D.col(3)).squaredNorm();
-
   const double tol = std::numeric_limits<double>::epsilon();
+  const double glab = (pt3D.col(0) - pt3D.col(1)).squaredNorm();
+  const double glac = (pt3D.col(0) - pt3D.col(2)).squaredNorm();
+  const double glad = (pt3D.col(0) - pt3D.col(3)).squaredNorm();
+  const double glbc = (pt3D.col(1) - pt3D.col(2)).squaredNorm();
+  const double glbd = (pt3D.col(1) - pt3D.col(3)).squaredNorm();
+  const double glcd = (pt3D.col(2) - pt3D.col(3)).squaredNorm();
 
   // initial solution degeneracy - invalid input
   if(glab * glac * glad * glbc * glbd * glcd < tol)
     return;
 
   Mat A = Mat::Zero(10, 10);
-  double gl[] = {glab, glac, glad, glbc, glbd, glcd};
-  double *a1 = pt2D.col(0).data();
-  double *b1 = pt2D.col(1).data();
-  double *c1 = pt2D.col(2).data();
-  double *d1 = pt2D.col(3).data();
+  {
+    const double gl[] = {glab, glac, glad, glbc, glbd, glcd};
+    const double *a1 = pt2D.col(0).data();
+    const double *b1 = pt2D.col(1).data();
+    const double *c1 = pt2D.col(2).data();
+    const double *d1 = pt2D.col(3).data();
 
-  compute_p4pf_poses(gl, a1, b1, c1, d1, A.data());
+    computeP4pfPoses(gl, a1, b1, c1, d1, A.data());
+  }
 
-  Eigen::EigenSolver<Mat> es(A.transpose());
-  Eigen::MatrixXcd sol = es.eigenvectors();
-  Eigen::MatrixXcd diag = sol.row(0).cwiseInverse().asDiagonal();
-
-  sol = sol.block(1, 0, 4, 10) * diag;
-
-  // contain at least one NaN
-  if(isNan(&sol))
-    return;
-
-  // separarte valid solutions
   Mat vSol;
-  if(!validSol(&sol, &vSol))
-    return;
+  {
+    Eigen::EigenSolver<Mat> es(A.transpose());
+    Eigen::MatrixXcd sol = es.eigenvectors();
+    Eigen::MatrixXcd diag = sol.row(0).cwiseInverse().asDiagonal();
+
+    sol = sol.block(1, 0, 4, 10) * diag;
+
+    // contain at least one NaN
+    if(isNan(sol))
+      return;
+
+    // separarte valid solutions
+    if(!validSol(sol, vSol))
+      return;
+  }
 
   // recover camera rotation and translation
-  for(int i = 0; i < vSol.cols(); i++)
+  for(Mat::Index i = 0; i < vSol.cols(); ++i)
   {
-    double f = sqrt(vSol(3, i));
-    double zd = vSol(0, i);
-    double zc = vSol(1, i);
-    double zb = vSol(2, i);
+    const double f = sqrt(vSol(3, i));
+    const double zd = vSol(0, i);
+    const double zc = vSol(1, i);
+    const double zb = vSol(2, i);
 
     // create p3d points in a camera coordinate system(using depths)
     Mat p3dc = Mat(3, 4);
     p3dc << pt2D(0, 0), zb * pt2D(0, 1), zc * pt2D(0, 2), zd * pt2D(0, 3),
             pt2D(1, 0), zb * pt2D(1, 1), zc * pt2D(1, 2), zd * pt2D(1, 3),
-            f, zb*f, zc*f, zd*f;
+            f, zb * f, zc * f, zd * f;
 
     // fix scale(recover 'za')
     Mat d = Mat(6, 1);
@@ -1304,30 +1208,24 @@ void P4PfSolver::Solve(const Mat &pt2Dx, const Mat &pt3Dx, std::vector<M> *model
     // all d(i) should be equal...
 
     //gta = median(d);
-    double gta = d.sum() / 6;
+    const double gta = d.sum() / 6;
     p3dc = gta * p3dc;
 
     // calc camera
     Mat Rr;
     Vec3 tt;
-    getRigidTransform(&pt3D, &p3dc, &Rr, &tt);
-    Vec3 t = var * tt - Rr*mean3d;
-    f *= var2d;
+    getRigidTransform(pt3D, p3dc, Rr, tt);
+    const Vec3 t = var * tt - Rr * mean3d;
 
     // output
-    M model(Rr, t, f);
-    models->push_back(model);
+    models->emplace_back(Rr, t, f * var2d);
   }
 }
 
-// Compute the residual of the projection distance(pt2D, Project(P,pt3D))
-
-double P4PfSolver::Error(const M & model, const Vec2 & pt2D, const Vec3 & pt3D)
+double P4PfSolver::error(const p4fSolution & model, const Vec2 & pt2D, const Vec3 & pt3D)
 {
   return (pt2D - Project(model.getP(), pt3D)).norm();
 }
 
 } // namespace resection
 } // namespace openMVG
-
-#endif // OPENMVG_MULTIVIEW_RESECTION_P4PF_CPP

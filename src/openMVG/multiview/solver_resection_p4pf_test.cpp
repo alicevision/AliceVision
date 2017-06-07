@@ -1,31 +1,3 @@
-
-// Copyright (c) 2010 libmv authors.
-//
-// Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to
-// deal in the Software without restriction, including without limitation the
-// rights to use, copy, modify, merge, publish, distribute, sublicense, and/or
-// sell copies of the Software, and to permit persons to whom the Software is
-// furnished to do so, subject to the following conditions:
-//
-// The above copyright notice and this permission notice shall be included in
-// all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-// IN THE SOFTWARE.
-
-
-// Copyright (c) 2012, 2013 Pierre MOULON.
-
-// This Source Code Form is subject to the terms of the Mozilla Public
-// License, v. 2.0. If a copy of the MPL was not distributed with this
-// file, You can obtain one at http://mozilla.org/MPL/2.0/.
-
 #include "openMVG/multiview/solver_resection_kernel.hpp"
 #include "openMVG/multiview/solver_resection_p4pf.hpp"
 #include "openMVG/multiview/test_data_sets.hpp"
@@ -36,7 +8,7 @@
 
 using namespace openMVG;
 
-bool isEqual(const resection::M first, const resection::M second)
+bool isEqual(const resection::p4fSolution first, const resection::p4fSolution second)
 {
   double eps = 1e-3;
   return ((first._R - second._R).norm() < first._R.maxCoeff() * eps &&
@@ -60,11 +32,11 @@ TEST(Resection_P4Pf, AssignmentWithOneResult)
   R_1 << -0.97189, 0.05884, -0.22797, -0.02068, -0.98586, -0.16631, -0.23454, -0.15692, 0.95936;
   Vec3 t_1;
   t_1 << 2.00322, -1.27420, 2.92685;
-  resection::M sol_1(R_1, t_1, 887.17549);
+  resection::p4fSolution sol_1(R_1, t_1, 887.17549);
 
   // PROCESS THE RESECTION P4Pf
-  std::vector<resection::M> models_1;
-  resection::P4PfSolver::Solve(pt2D_1, pt3D_1, &models_1);
+  std::vector<resection::p4fSolution> models_1;
+  resection::P4PfSolver::solve(pt2D_1, pt3D_1, &models_1);
 
   bool pass = true;
   if(!(models_1.size() == 1 && isEqual(models_1.at(0), sol_1)))
@@ -96,13 +68,13 @@ TEST(Resection_P4Pf, AssignmentWithMoreResults)
   t_22 << 0.08257, 0.57753, 1.04335;
   Vec3 t_23;
   t_23 << 0.16029, 0.58720, 1.07571;
-  resection::M sol_21(R_21, t_21, 4571.95746);
-  resection::M sol_22(R_22, t_22, 1193.30606);
-  resection::M sol_23(R_23, t_23, 1315.17564);
+  resection::p4fSolution sol_21(R_21, t_21, 4571.95746);
+  resection::p4fSolution sol_22(R_22, t_22, 1193.30606);
+  resection::p4fSolution sol_23(R_23, t_23, 1315.17564);
 
   // PROCESS
-  std::vector<resection::M> models_2;
-  resection::P4PfSolver::Solve(pt2D_2, pt3D_2, &models_2);
+  std::vector<resection::p4fSolution> models_2;
+  resection::P4PfSolver::solve(pt2D_2, pt3D_2, &models_2);
 
   bool pass = true;
   if(!(models_2.size() == 3
@@ -125,8 +97,8 @@ TEST(Resection_P4Pf, AssignmentWithNoResults)
           -1.68077, 0.70813, 1.22217, -1.76850;
 
   // PROCESS
-  std::vector<resection::M> models_3;
-  resection::P4PfSolver::Solve(pt2D_3, pt3D_3, &models_3);
+  std::vector<resection::p4fSolution> models_3;
+  resection::P4PfSolver::solve(pt2D_3, pt3D_3, &models_3);
 
   bool pass = true;
   if(models_3.size() != 0)
