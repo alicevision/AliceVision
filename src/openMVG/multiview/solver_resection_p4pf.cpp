@@ -34,7 +34,7 @@ void GJ(double *A, int rcnt, int ccnt, double tol)
     int pivot_r = -1;
 
     pofs = ofs;
-    for(k = row; k < rcnt; k++)
+    for(k = row; k < rcnt; ++k)
     {
       // pivot selection criteria here !
       if(std::abs(*(A + pofs)) > apivot)
@@ -50,8 +50,8 @@ void GJ(double *A, int rcnt, int ccnt, double tol)
     if(apivot < tol)
     {
       // empty col - shift to next col (or jump)
-      col++;
-      ofs++;
+      ++col;
+      ++ofs;
 
     }
     else
@@ -64,7 +64,7 @@ void GJ(double *A, int rcnt, int ccnt, double tol)
       if(pivot_r == row)
       {
         srcofs = ofs;
-        for(l = col; l < ccnt; l++)
+        for(l = col; l < ccnt; ++l)
         {
 
           *(A + srcofs) = *(A + srcofs) * pivot_i;
@@ -76,20 +76,20 @@ void GJ(double *A, int rcnt, int ccnt, double tol)
       {
         srcofs = ofs;
         dstofs = ccnt * pivot_r + col;
-        for(l = col; l < ccnt; l++)
+        for(l = col; l < ccnt; ++l)
         {
           b = *(A + srcofs);
           *(A + srcofs) = *(A + dstofs) * pivot_i;
           *(A + dstofs) = b;
 
-          srcofs++;
-          dstofs++;
+          ++srcofs;
+          ++dstofs;
         }
       }
 
       // zero bottom
       pofs = ofs + ccnt;
-      for(k = row + 1; k < rcnt; k++)
+      for(k = row + 1; k < rcnt; ++k)
       {
         if(std::abs(*(A + pofs)) > tol)
         {
@@ -97,11 +97,11 @@ void GJ(double *A, int rcnt, int ccnt, double tol)
           b = *(A + pofs);
           dstofs = pofs + 1;
           srcofs = ofs + 1;
-          for(l = col + 1; l < ccnt; l++)
+          for(l = col + 1; l < ccnt; ++l)
           {
             *(A + dstofs) = (*(A + dstofs) - *(A + srcofs) * b);
-            dstofs++;
-            srcofs++;
+            ++dstofs;
+            ++srcofs;
           }
           *(A + pofs) = 0;
         }
@@ -110,7 +110,7 @@ void GJ(double *A, int rcnt, int ccnt, double tol)
 
       // zero top
       pofs = col;
-      for(k = 0; k < row; k++)
+      for(k = 0; k < row; ++k)
       {
         if(std::abs(*(A + pofs)) > tol)
         {
@@ -118,19 +118,19 @@ void GJ(double *A, int rcnt, int ccnt, double tol)
           b = *(A + pofs);
           dstofs = pofs + 1;
           srcofs = ofs + 1;
-          for(l = col + 1; l < ccnt; l++)
+          for(l = col + 1; l < ccnt; ++l)
           {
             *(A + dstofs) = (*(A + dstofs) - *(A + srcofs) * b);
-            dstofs++;
-            srcofs++;
+            ++dstofs;
+            ++srcofs;
           }
           *(A + pofs) = 0;
         }
         pofs += ccnt;
       }
 
-      row++;
-      col++;
+      ++row;
+      ++col;
       ofs += ccnt + 1;
     }
   }
