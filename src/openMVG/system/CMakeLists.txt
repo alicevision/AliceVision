@@ -1,18 +1,33 @@
-
-set(system_files_header
+# Headers
+set(system_files_headers
   cpu.hpp
   memoryInfo.hpp
   system.hpp
-  timer.hpp)
+  timer.hpp
+)
 
-set(system_files_cpp
+# Sources
+set(system_files_sources
   cpu.cpp
   memoryInfo.cpp
-  timer.cpp)
+  timer.cpp
+)
 
-add_library(openMVG_system ${system_files_cpp})
+add_library(openMVG_system
+  ${system_files_sources}
+)
 
-set_target_properties(openMVG_system PROPERTIES SOVERSION ${OPENMVG_VERSION_MAJOR} VERSION "${OPENMVG_VERSION_MAJOR}.${OPENMVG_VERSION_MINOR}")
-set_propertY(TARGET openMVG_system PROPERTY FOLDER OpenMVG/OpenMVG)
-install(TARGETS openMVG_system DESTINATION lib/ EXPORT openMVG-targets)
+set_target_properties(openMVG_system
+  PROPERTIES SOVERSION ${OPENMVG_VERSION_MAJOR}
+  VERSION "${OPENMVG_VERSION_MAJOR}.${OPENMVG_VERSION_MINOR}"
+)
+
+set_property(TARGET openMVG_system
+  PROPERTY FOLDER OpenMVG/OpenMVG
+)
+
+install(TARGETS openMVG_system
+  DESTINATION lib/
+  EXPORT openMVG-targets
+)
 

@@ -23,26 +23,28 @@ set(features_files_headers
   svgVisualization.hpp
   ImageDescriberCommon.hpp
   RegionsPerView.hpp
-  FeaturesPerView.hpp)
+  FeaturesPerView.hpp
+)
 
 # Sources
-set( features_files_sources
+set(features_files_sources
   selection.cpp
   image_describer.cpp
   akaze/AKAZE.cpp
   liop/liop_descriptor.cpp
   svgVisualization.cpp
   ImageDescriberCommon.cpp
-  FeaturesPerView.cpp)
+  FeaturesPerView.cpp
+)
 
 # CCTAG imageDescriber
-if (OpenMVG_USE_CCTAG)
+if(OpenMVG_USE_CCTAG)
   list(APPEND features_files_headers cctag/CCTAG_describer.hpp)
   list(APPEND features_files_sources cctag/CCTAG_describer.cpp)
 endif()
 
 # PopSIFT imageDescriber
-if (OpenMVG_USE_POPSIFT)
+if(OpenMVG_USE_POPSIFT)
   list(APPEND features_files_headers sift/SIFT_popSIFT_describer.hpp)
   list(APPEND features_files_sources sift/SIFT_popSIFT_describer.cpp)
 endif()
@@ -53,7 +55,7 @@ if(OpenMVG_USE_OPENCV)
   list(APPEND features_files_headers openCV/AKAZE_openCV_describer.hpp)
   list(APPEND features_files_sources openCV/AKAZE_openCV_describer.cpp)
 
-  if(OpenMVG_USE_OCVSIFT)
+  if(OPENMVG_USE_OCVSIFT)
     list(APPEND features_files_headers openCV/SIFT_openCV_describer.hpp)
     list(APPEND features_files_sources openCV/SIFT_openCV_describer.cpp)
   endif()
@@ -61,15 +63,20 @@ if(OpenMVG_USE_OPENCV)
 endif()
 
 set_source_files_properties(${features_files_sources} PROPERTIES LANGUAGE CXX)
-ADD_LIBRARY(openMVG_features ${features_files_sources} ${features_files_headers})
+
+add_library(openMVG_features
+  ${features_files_headers}
+  ${features_files_sources}
+)
 
 target_link_libraries( openMVG_features 
-        PUBLIC openMVG_numeric 
-               openMVG_image 
-               openMVG_multiview 
-               vlsift 
-               stlplus 
-               ${LOG_LIB})
+  PUBLIC openMVG_numeric
+         openMVG_image
+         openMVG_multiview
+         vlsift
+         stlplus
+         ${LOG_LIB}
+)
 
 # Link CCTAG library
 if(OpenMVG_USE_CCTAG)
@@ -77,7 +84,7 @@ if(OpenMVG_USE_CCTAG)
 endif()
 
 # Link PopSIFT library
-if (OpenMVG_USE_POPSIFT)
+if(OpenMVG_USE_POPSIFT)
   target_link_libraries(openMVG_features PUBLIC PopSift::popsift)
 endif()
 
@@ -86,9 +93,18 @@ if(OpenMVG_USE_OPENCV)
   target_link_libraries(openMVG_features PUBLIC ${OpenCV_LIBS})
 endif()
 
-SET_TARGET_PROPERTIES(openMVG_features PROPERTIES SOVERSION ${OPENMVG_VERSION_MAJOR} VERSION "${OPENMVG_VERSION_MAJOR}.${OPENMVG_VERSION_MINOR}")
-INSTALL(TARGETS openMVG_features DESTINATION lib EXPORT openMVG-targets)
-SET_PROPERTY(TARGET openMVG_features PROPERTY FOLDER OpenMVG/OpenMVG)
+set_target_properties(openMVG_features
+  PROPERTIES SOVERSION ${OPENMVG_VERSION_MAJOR}
+  VERSION "${OPENMVG_VERSION_MAJOR}.${OPENMVG_VERSION_MINOR}"
+)
+
+install(TARGETS openMVG_features
+  DESTINATION lib
+  EXPORT openMVG-targets
+)
+
+set_property(TARGET openMVG_features
+  PROPERTY FOLDER OpenMVG/OpenMVG
+)
 
 UNIT_TEST(openMVG features "openMVG_features")
-
