@@ -1,9 +1,12 @@
-PROJECT (easyexif CXX)
+project(easyexif CXX)
 
-CMAKE_MINIMUM_REQUIRED(VERSION 2.8)
+cmake_minimum_required(VERSION 2.8)
 
-ADD_LIBRARY (easyexif exif.h exif.cpp)
-SET_PROPERTY(TARGET easyexif PROPERTY FOLDER OpenMVG/3rdParty)
+add_library(easyexif exif.h exif.cpp)
+
+set_property(TARGET easyexif
+  PROPERTY FOLDER OpenMVG/3rdParty
+)
 
 if(EASYEXIF_INCLUDE_INSTALL_DIR)
   set(INCLUDE_INSTALL_DIR ${EASYEXIF_INCLUDE_INSTALL_DIR})
@@ -11,11 +14,15 @@ else()
   set(INCLUDE_INSTALL_DIR "${CMAKE_INSTALL_PREFIX}/include/easyexif")
 endif()
 
-INSTALL(
+install(
   DIRECTORY .
   DESTINATION ${INCLUDE_INSTALL_DIR}
   COMPONENT headers
   FILES_MATCHING PATTERN "*.h"
 )
-INSTALL(TARGETS easyexif DESTINATION lib EXPORT openMVG-targets)
+
+install(TARGETS easyexif
+  DESTINATION lib
+  EXPORT openMVG-targets
+)
 
