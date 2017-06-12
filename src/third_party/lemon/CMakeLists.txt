@@ -1,24 +1,24 @@
-CMAKE_MINIMUM_REQUIRED(VERSION 2.6)
+cmake_minimum_required(VERSION 2.6)
 
-SET(PROJECT_NAME "LEMON")
+set(PROJECT_NAME "LEMON")
 
-IF (COMMAND cmake_policy)
-  IF(POLICY CMP0048)
+if (COMMAND cmake_policy)
+  if(POLICY CMP0048)
     CMAKE_POLICY(SET CMP0048 NEW)
-  ENDIF(POLICY CMP0048)
-ENDIF (COMMAND cmake_policy)
+  endif(POLICY CMP0048)
+endif (COMMAND cmake_policy)
 
-PROJECT(${PROJECT_NAME})
+project(${PROJECT_NAME})
 
-INCLUDE(FindPythonInterp)
-INCLUDE(FindWget)
+include(FindPythonInterp)
+include(FindWget)
 
-IF(EXISTS ${PROJECT_SOURCE_DIR}/cmake/version.cmake)
+if(EXISTS ${PROJECT_SOURCE_DIR}/cmake/version.cmake)
   INCLUDE(${PROJECT_SOURCE_DIR}/cmake/version.cmake)
-ELSEIF(DEFINED ENV{LEMON_VERSION})
-  SET(LEMON_VERSION $ENV{LEMON_VERSION} CACHE STRING "LEMON version string.")
-ELSE()
-  EXECUTE_PROCESS(
+elseif(DEFINED ENV{LEMON_VERSION})
+  set(LEMON_VERSION $ENV{LEMON_VERSION} CACHE STRING "LEMON version string.")
+else()
+  execute_process(
     COMMAND
     hg log -r. --template "{latesttag}"
     WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
@@ -26,7 +26,7 @@ ELSE()
     ERROR_QUIET
     OUTPUT_STRIP_TRAILING_WHITESPACE
   )
-  EXECUTE_PROCESS(
+  execute_process(
     COMMAND
     hg log -r. --template "{latesttagdistance}"
     WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
@@ -34,7 +34,7 @@ ELSE()
     ERROR_QUIET
     OUTPUT_STRIP_TRAILING_WHITESPACE
   )
-  EXECUTE_PROCESS(
+  execute_process(
     COMMAND
     hg log -r. --template "{node|short}"
     WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
@@ -43,112 +43,112 @@ ELSE()
     OUTPUT_STRIP_TRAILING_WHITESPACE
   )
 
-  IF(HG_REVISION_TAG STREQUAL "")
-    SET(HG_REVISION_ID "hg-tip")
-  ELSE()
-    IF(HG_REVISION_TAG STREQUAL "null")
-      SET(HG_REVISION_TAG "trunk")
-    ELSEIF(HG_REVISION_TAG MATCHES "^r")
-      STRING(SUBSTRING ${HG_REVISION_TAG} 1 -1 HG_REVISION_TAG)
-    ENDIF()
-    IF(HG_REVISION_DIST STREQUAL "0")
-      SET(HG_REVISION ${HG_REVISION_TAG})
-    ELSE()
-      SET(HG_REVISION
+  if(HG_REVISION_TAG STREQUAL "")
+    set(HG_REVISION_ID "hg-tip")
+  else()
+    if(HG_REVISION_TAG STREQUAL "null")
+      set(HG_REVISION_TAG "trunk")
+    elseif(HG_REVISION_TAG MATCHES "^r")
+      string(SUBSTRING ${HG_REVISION_TAG} 1 -1 HG_REVISION_TAG)
+    endif()
+    if(HG_REVISION_DIST STREQUAL "0")
+      set(HG_REVISION ${HG_REVISION_TAG})
+    else()
+      set(HG_REVISION
 	"${HG_REVISION_TAG}+${HG_REVISION_DIST}-${HG_REVISION_ID}")
-    ENDIF()
-  ENDIF()
+    endif()
+  endif()
 
-  SET(LEMON_VERSION ${HG_REVISION} CACHE STRING "LEMON version string.")
-ENDIF()
+  set(LEMON_VERSION ${HG_REVISION} CACHE STRING "LEMON version string.")
+endif()
 
-SET(PROJECT_VERSION ${LEMON_VERSION})
+set(PROJECT_VERSION ${LEMON_VERSION})
 
-SET(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake)
+set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake)
 
-FIND_PACKAGE(Doxygen)
-FIND_PACKAGE(Ghostscript)
+find_package(Doxygen)
+find_package(Ghostscript)
 
-SET(LEMON_ENABLE_GLPK YES CACHE STRING "Enable GLPK solver backend.")
-SET(LEMON_ENABLE_ILOG YES CACHE STRING "Enable ILOG (CPLEX) solver backend.")
-SET(LEMON_ENABLE_COIN YES CACHE STRING "Enable COIN solver backend.")
-SET(LEMON_ENABLE_SOPLEX YES CACHE STRING "Enable SoPlex solver backend.")
+set(LEMON_ENABLE_GLPK YES CACHE STRING "Enable GLPK solver backend.")
+set(LEMON_ENABLE_ILOG YES CACHE STRING "Enable ILOG (CPLEX) solver backend.")
+set(LEMON_ENABLE_COIN YES CACHE STRING "Enable COIN solver backend.")
+set(LEMON_ENABLE_SOPLEX YES CACHE STRING "Enable SoPlex solver backend.")
 
-IF(LEMON_ENABLE_GLPK) 
-  FIND_PACKAGE(GLPK 4.33)
-ENDIF(LEMON_ENABLE_GLPK)
-IF(LEMON_ENABLE_ILOG)
-  FIND_PACKAGE(ILOG)
-ENDIF(LEMON_ENABLE_ILOG)
-IF(LEMON_ENABLE_COIN)
-  FIND_PACKAGE(COIN)
-ENDIF(LEMON_ENABLE_COIN)
-IF(LEMON_ENABLE_SOPLEX)
-  FIND_PACKAGE(SOPLEX)
-ENDIF(LEMON_ENABLE_SOPLEX)
+if(LEMON_ENABLE_GLPK)
+  find_package(GLPK 4.33)
+endif(LEMON_ENABLE_GLPK)
+if(LEMON_ENABLE_ILOG)
+  find_package(ILOG)
+endif(LEMON_ENABLE_ILOG)
+if(LEMON_ENABLE_COIN)
+  find_package(COIN)
+endif(LEMON_ENABLE_COIN)
+if(LEMON_ENABLE_SOPLEX)
+  find_package(SOPLEX)
+endif(LEMON_ENABLE_SOPLEX)
 
-IF(GLPK_FOUND)
-  SET(LEMON_HAVE_LP TRUE)
-  SET(LEMON_HAVE_MIP TRUE)
-  SET(LEMON_HAVE_GLPK TRUE)
-ENDIF(GLPK_FOUND)
-IF(ILOG_FOUND)
-  SET(LEMON_HAVE_LP TRUE)
-  SET(LEMON_HAVE_MIP TRUE)
-  SET(LEMON_HAVE_CPLEX TRUE)
-ENDIF(ILOG_FOUND)
-IF(COIN_FOUND)
-  SET(LEMON_HAVE_LP TRUE)
-  SET(LEMON_HAVE_MIP TRUE)
-  SET(LEMON_HAVE_CLP TRUE)
-  SET(LEMON_HAVE_CBC TRUE)
-ENDIF(COIN_FOUND)
-IF(SOPLEX_FOUND)
-  SET(LEMON_HAVE_LP TRUE)
-  SET(LEMON_HAVE_SOPLEX TRUE)
-ENDIF(SOPLEX_FOUND)
+if(GLPK_FOUND)
+  set(LEMON_HAVE_LP TRUE)
+  set(LEMON_HAVE_MIP TRUE)
+  set(LEMON_HAVE_GLPK TRUE)
+endif(GLPK_FOUND)
+if(ILOG_FOUND)
+  set(LEMON_HAVE_LP TRUE)
+  set(LEMON_HAVE_MIP TRUE)
+  set(LEMON_HAVE_CPLEX TRUE)
+endif(ILOG_FOUND)
+if(COIN_FOUND)
+  set(LEMON_HAVE_LP TRUE)
+  set(LEMON_HAVE_MIP TRUE)
+  set(LEMON_HAVE_CLP TRUE)
+  set(LEMON_HAVE_CBC TRUE)
+endif(COIN_FOUND)
+if(SOPLEX_FOUND)
+  set(LEMON_HAVE_LP TRUE)
+  set(LEMON_HAVE_SOPLEX TRUE)
+endif(SOPLEX_FOUND)
 
-IF(ILOG_FOUND)
-  SET(DEFAULT_LP "CPLEX")
-  SET(DEFAULT_MIP "CPLEX")
-ELSEIF(COIN_FOUND)
-  SET(DEFAULT_LP "CLP")
-  SET(DEFAULT_MIP "CBC")
-ELSEIF(GLPK_FOUND)
-  SET(DEFAULT_LP "GLPK")
-  SET(DEFAULT_MIP "GLPK")
-ELSEIF(SOPLEX_FOUND)
-  SET(DEFAULT_LP "SOPLEX")
-ENDIF()
+if(ILOG_FOUND)
+  set(DEFAULT_LP "CPLEX")
+  set(DEFAULT_MIP "CPLEX")
+elseif(COIN_FOUND)
+  set(DEFAULT_LP "CLP")
+  set(DEFAULT_MIP "CBC")
+elseif(GLPK_FOUND)
+  set(DEFAULT_LP "GLPK")
+  set(DEFAULT_MIP "GLPK")
+elseif(SOPLEX_FOUND)
+  set(DEFAULT_LP "SOPLEX")
+endif()
 
-IF(NOT LEMON_DEFAULT_LP OR
+if(NOT LEMON_DEFAULT_LP OR
     (NOT ILOG_FOUND AND (LEMON_DEFAULT_LP STREQUAL "CPLEX")) OR
     (NOT COIN_FOUND AND (LEMON_DEFAULT_LP STREQUAL "CLP")) OR
     (NOT GLPK_FOUND AND (LEMON_DEFAULT_LP STREQUAL "GLPK")) OR
     (NOT SOPLEX_FOUND AND (LEMON_DEFAULT_LP STREQUAL "SOPLEX")))
-  SET(LEMON_DEFAULT_LP ${DEFAULT_LP} CACHE STRING
+  set(LEMON_DEFAULT_LP ${DEFAULT_LP} CACHE STRING
     "Default LP solver backend (GLPK, CPLEX, CLP or SOPLEX)" FORCE)
-ENDIF()
-IF(NOT LEMON_DEFAULT_MIP OR
+endif()
+if(NOT LEMON_DEFAULT_MIP OR
     (NOT ILOG_FOUND AND (LEMON_DEFAULT_MIP STREQUAL "CPLEX")) OR
     (NOT COIN_FOUND AND (LEMON_DEFAULT_MIP STREQUAL "CBC")) OR
     (NOT GLPK_FOUND AND (LEMON_DEFAULT_MIP STREQUAL "GLPK")))
-  SET(LEMON_DEFAULT_MIP ${DEFAULT_MIP} CACHE STRING
+  set(LEMON_DEFAULT_MIP ${DEFAULT_MIP} CACHE STRING
     "Default MIP solver backend (GLPK, CPLEX or CBC)" FORCE)
-ENDIF()
+endif()
 
 
-IF(DEFINED ENV{LEMON_CXX_WARNING})
-  SET(CXX_WARNING $ENV{LEMON_CXX_WARNING})
-ELSE()
-  IF(CMAKE_COMPILER_IS_GNUCXX)
-    SET(CXX_WARNING "-Wall -W -Wunused -Wformat=2 -Wctor-dtor-privacy -Wnon-virtual-dtor -Wno-char-subscripts -Wwrite-strings -Wno-char-subscripts -Wreturn-type -Wcast-qual -Wcast-align -Wsign-promo -Woverloaded-virtual -fno-strict-aliasing -Wold-style-cast -Wno-unknown-pragmas")
-    SET(CMAKE_CXX_FLAGS_DEBUG CACHE STRING "-ggdb")
-    SET(CMAKE_C_FLAGS_DEBUG CACHE STRING "-ggdb")
-  ELSEIF(MSVC)
+if(DEFINED ENV{LEMON_CXX_WARNING})
+  set(CXX_WARNING $ENV{LEMON_CXX_WARNING})
+else()
+  if(CMAKE_COMPILER_IS_GNUCXX)
+    set(CXX_WARNING "-Wall -W -Wunused -Wformat=2 -Wctor-dtor-privacy -Wnon-virtual-dtor -Wno-char-subscripts -Wwrite-strings -Wno-char-subscripts -Wreturn-type -Wcast-qual -Wcast-align -Wsign-promo -Woverloaded-virtual -fno-strict-aliasing -Wold-style-cast -Wno-unknown-pragmas")
+    set(CMAKE_CXX_FLAGS_DEBUG CACHE STRING "-ggdb")
+    set(CMAKE_C_FLAGS_DEBUG CACHE STRING "-ggdb")
+  elseif(MSVC)
     # This part is unnecessary 'casue the same is set by the lemon/core.h.
     # Still keep it as an example.
-    SET(CXX_WARNING "/wd4250 /wd4355 /wd4503 /wd4800 /wd4996")
+    set(CXX_WARNING "/wd4250 /wd4355 /wd4503 /wd4800 /wd4996")
     # Suppressed warnings:
     # C4250: 'class1' : inherits 'class2::member' via dominance
     # C4355: 'this' : used in base member initializer list
@@ -156,130 +156,131 @@ ELSE()
     # C4800: 'type' : forcing value to bool 'true' or 'false'
     #        (performance warning)
     # C4996: 'function': was declared deprecated
-  ELSE()
-    SET(CXX_WARNING "-Wall")
-  ENDIF()
-ENDIF()
-SET(LEMON_CXX_WARNING_FLAGS ${CXX_WARNING} CACHE STRING "LEMON warning flags.")
+  else()
+    set(CXX_WARNING "-Wall")
+  endif()
+endif()
+set(LEMON_CXX_WARNING_FLAGS ${CXX_WARNING} CACHE STRING "LEMON warning flags.")
 
-SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${LEMON_CXX_WARNING_FLAGS}")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${LEMON_CXX_WARNING_FLAGS}")
 
-IF(MSVC)
-  SET( CMAKE_CXX_FLAGS_MAINTAINER "/WX ${CMAKE_CXX_FLAGS_DEBUG}" CACHE STRING
+if(MSVC)
+  set( CMAKE_CXX_FLAGS_MAINTAINER "/WX ${CMAKE_CXX_FLAGS_DEBUG}" CACHE STRING
     "Flags used by the C++ compiler during maintainer builds."
     )
-  SET( CMAKE_C_FLAGS_MAINTAINER "/WX ${CMAKE_CXX_FLAGS_DEBUG}" CACHE STRING
+  set( CMAKE_C_FLAGS_MAINTAINER "/WX ${CMAKE_CXX_FLAGS_DEBUG}" CACHE STRING
     "Flags used by the C compiler during maintainer builds."
     )
-  SET( CMAKE_EXE_LINKER_FLAGS_MAINTAINER
+  set( CMAKE_EXE_LINKER_FLAGS_MAINTAINER
     "${CMAKE_EXE_LINKER_FLAGS_DEBUG}" CACHE STRING
     "Flags used for linking binaries during maintainer builds."
     )
-  SET( CMAKE_SHARED_LINKER_FLAGS_MAINTAINER
+  set( CMAKE_SHARED_LINKER_FLAGS_MAINTAINER
     "${CMAKE_SHARED_LINKER_FLAGS_DEBUG}" CACHE STRING
     "Flags used by the shared libraries linker during maintainer builds."
     )
-ELSE()
-  SET( CMAKE_CXX_FLAGS_MAINTAINER "-Werror -ggdb -O0" CACHE STRING
+else()
+  set( CMAKE_CXX_FLAGS_MAINTAINER "-Werror -ggdb -O0" CACHE STRING
     "Flags used by the C++ compiler during maintainer builds."
     )
-  SET( CMAKE_C_FLAGS_MAINTAINER "-Werror -O0" CACHE STRING
+  set( CMAKE_C_FLAGS_MAINTAINER "-Werror -O0" CACHE STRING
     "Flags used by the C compiler during maintainer builds."
     )
-  SET( CMAKE_EXE_LINKER_FLAGS_MAINTAINER
+  set( CMAKE_EXE_LINKER_FLAGS_MAINTAINER
     "-Wl,--warn-unresolved-symbols,--warn-once" CACHE STRING
     "Flags used for linking binaries during maintainer builds."
     )
-  SET( CMAKE_SHARED_LINKER_FLAGS_MAINTAINER
+  set( CMAKE_SHARED_LINKER_FLAGS_MAINTAINER
     "-Wl,--warn-unresolved-symbols,--warn-once" CACHE STRING
     "Flags used by the shared libraries linker during maintainer builds."
     )
-ENDIF()
+endif()
 
-MARK_AS_ADVANCED(
+mark_as_advanced(
     CMAKE_CXX_FLAGS_MAINTAINER
     CMAKE_C_FLAGS_MAINTAINER
     CMAKE_EXE_LINKER_FLAGS_MAINTAINER
-    CMAKE_SHARED_LINKER_FLAGS_MAINTAINER )
+    CMAKE_SHARED_LINKER_FLAGS_MAINTAINER
+)
 
-IF(CMAKE_CONFIGURATION_TYPES)
-  LIST(APPEND CMAKE_CONFIGURATION_TYPES Maintainer)
-  LIST(REMOVE_DUPLICATES CMAKE_CONFIGURATION_TYPES)
-  SET(CMAKE_CONFIGURATION_TYPES "${CMAKE_CONFIGURATION_TYPES}" CACHE STRING
+if(CMAKE_CONFIGURATION_TYPES)
+  list(APPEND CMAKE_CONFIGURATION_TYPES Maintainer)
+  list(REMOVE_DUPLICATES CMAKE_CONFIGURATION_TYPES)
+  set(CMAKE_CONFIGURATION_TYPES "${CMAKE_CONFIGURATION_TYPES}" CACHE STRING
       "Add the configurations that we need"
       FORCE)
- endif()
+endif()
 
-IF(NOT CMAKE_BUILD_TYPE)
-  SET(CMAKE_BUILD_TYPE "Release")
-ENDIF()
+if(NOT CMAKE_BUILD_TYPE)
+  set(CMAKE_BUILD_TYPE "Release")
+endif()
 
-SET( CMAKE_BUILD_TYPE "${CMAKE_BUILD_TYPE}" CACHE STRING
+set( CMAKE_BUILD_TYPE "${CMAKE_BUILD_TYPE}" CACHE STRING
     "Choose the type of build, options are: None(CMAKE_CXX_FLAGS or CMAKE_C_FLAGS used) Debug Release RelWithDebInfo MinSizeRel Maintainer."
-    FORCE )
+    FORCE)
 
 
-INCLUDE(CheckTypeSize)
+include(CheckTypeSize)
 CHECK_TYPE_SIZE("long long" LONG_LONG)
-SET(LEMON_HAVE_LONG_LONG ${HAVE_LONG_LONG})
+set(LEMON_HAVE_LONG_LONG ${HAVE_LONG_LONG})
 
-INCLUDE(FindThreads)
+include(FindThreads)
 
-IF(NOT LEMON_THREADING)
-  IF(CMAKE_USE_PTHREADS_INIT)
-    SET(LEMON_THREADING "Pthread")
-  ELSEIF(CMAKE_USE_WIN32_THREADS_INIT)
-    SET(LEMON_THREADING "Win32")
-  ELSE()
-    SET(LEMON_THREADING "None")
-  ENDIF()
-ENDIF()
+if(NOT LEMON_THREADING)
+  if(CMAKE_USE_PTHREADS_INIT)
+    set(LEMON_THREADING "Pthread")
+  elseif(CMAKE_USE_WIN32_THREADS_INIT)
+    set(LEMON_THREADING "Win32")
+  else()
+    set(LEMON_THREADING "None")
+  endif()
+endif()
 
-SET( LEMON_THREADING "${LEMON_THREADING}" CACHE STRING
+set( LEMON_THREADING "${LEMON_THREADING}" CACHE STRING
   "Choose the threading library, options are: Pthread Win32 None."
   FORCE )
 
-IF(LEMON_THREADING STREQUAL "Pthread")
-  SET(LEMON_USE_PTHREAD TRUE)
-ELSEIF(LEMON_THREADING STREQUAL "Win32")
-  SET(LEMON_USE_WIN32_THREADS TRUE)
-ENDIF()
+if(LEMON_THREADING STREQUAL "Pthread")
+  set(LEMON_USE_PTHREAD TRUE)
+elseif(LEMON_THREADING STREQUAL "Win32")
+  set(LEMON_USE_WIN32_THREADS TRUE)
+endif()
 
-ENABLE_TESTING()
+enable_testing()
 
-IF(${CMAKE_BUILD_TYPE} STREQUAL "Maintainer")
-  ADD_CUSTOM_TARGET(check ALL COMMAND ${CMAKE_CTEST_COMMAND})
-ELSE()
-  ADD_CUSTOM_TARGET(check COMMAND ${CMAKE_CTEST_COMMAND})
-ENDIF()
+if(${CMAKE_BUILD_TYPE} STREQUAL "Maintainer")
+  add_custom_target(check ALL COMMAND ${CMAKE_CTEST_COMMAND})
+else()
+  add_custom_target(check COMMAND ${CMAKE_CTEST_COMMAND})
+endif()
 
-ADD_SUBDIRECTORY(lemon)
-IF(${CMAKE_SOURCE_DIR} STREQUAL ${PROJECT_SOURCE_DIR})
-  ADD_SUBDIRECTORY(contrib)
-  ADD_SUBDIRECTORY(demo)
-  ADD_SUBDIRECTORY(tools)
-  ADD_SUBDIRECTORY(doc)
-  ADD_SUBDIRECTORY(test)
-ENDIF()
+add_subdirectory(lemon)
+if(${CMAKE_SOURCE_DIR} STREQUAL ${PROJECT_SOURCE_DIR})
+  add_subdirectory(contrib)
+  add_subdirectory(demo)
+  add_subdirectory(tools)
+  add_subdirectory(doc)
+  add_subdirectory(test)
+endif()
 
-CONFIGURE_FILE(
+configure_file(
   ${PROJECT_SOURCE_DIR}/cmake/LEMONConfig.cmake.in
   ${PROJECT_BINARY_DIR}/cmake/LEMONConfig.cmake
   @ONLY
 )
-IF(UNIX)
-  INSTALL(
+if(UNIX)
+  install(
     FILES ${PROJECT_BINARY_DIR}/cmake/LEMONConfig.cmake
     DESTINATION share/lemon/cmake
   )
-ELSEIF(WIN32)
-  INSTALL(
+elseif(WIN32)
+  install(
     FILES ${PROJECT_BINARY_DIR}/cmake/LEMONConfig.cmake
     DESTINATION cmake
   )
-ENDIF()
+endif()
 
-CONFIGURE_FILE(
+configure_file(
   ${PROJECT_SOURCE_DIR}/cmake/version.cmake.in
   ${PROJECT_BINARY_DIR}/cmake/version.cmake
   @ONLY
