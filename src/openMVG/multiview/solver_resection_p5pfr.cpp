@@ -155,10 +155,10 @@ bool computeP5PfrPosesRD(const Mat &featureVectors,
   Vec g1 = Map<Vec>(vec_g1_real.data(), vec_g1_real.size());
 
   //get g2 : Sg1 * <g2 ^ 3, g2 ^ 2, g2, 1 >= 0
-  //   SG1 : = << C14 | C12*g1 + C15	| C11*g1 ^ 2 + C13*g1 + C16 | 0							>,
-  //	           <  0 | C14			| C12*g1 + C15				| C11*g1 ^ 2 + C13*g1 + C16	>,
-  //	           <C24 | C22*g1 + C25	| C21*g1 ^ 2 + C23*g1 + C26 | 0							>,
-  //	           <  0 | C24			| C22*g1 + C25				| C21*g1 ^ 2 + C23*g1 + C26 >> ;
+  //   SG1 : = << C14 | C12*g1 + C15  | C11*g1 ^ 2 + C13*g1 + C16 | 0              >,
+  //             <  0 | C14      | C12*g1 + C15        | C11*g1 ^ 2 + C13*g1 + C16  >,
+  //             <C24 | C22*g1 + C25  | C21*g1 ^ 2 + C23*g1 + C26 | 0              >,
+  //             <  0 | C24      | C22*g1 + C25        | C21*g1 ^ 2 + C23*g1 + C26 >> ;
   Mat g2 = Mat(g1.rows(), g1.cols());
   for(Mat::Index i = 0; i < g1.rows(); ++i)
   {
@@ -250,7 +250,7 @@ bool computeP5PfrPosesRD(const Mat &featureVectors,
     }
     B = B * U;
 
-    // find the right 1D null space		
+    // find the right 1D null space
     const Mat NBfull = nullspace(B);
     const Mat NB = NBfull.col(NBfull.cols() - 1);
     const Mat V = NB.col(NB.cols() - 1);

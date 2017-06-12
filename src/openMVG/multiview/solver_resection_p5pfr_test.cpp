@@ -693,14 +693,14 @@ TEST(Resection_P5Pfr, ConversionRD2RP)
 //TEST(Resection_P5Pfr, RandomRealExample) {
 //
 //
-//	// PROCESS
-//	std::vector<resection::M> models;
-//	resection::P5PfrSolver::Solve(pt2D, pt3D, &models);
-//	std::sort(models.begin(), models.end(), sortM);
+//  // PROCESS
+//  std::vector<resection::M> models;
+//  resection::P5PfrSolver::Solve(pt2D, pt3D, &models);
+//  std::sort(models.begin(), models.end(), sortM);
 //
-//	// TEST
-//	double eps = 1e-4;
-//	EXPECT_TRUE(testSolutions(solutions, models, eps));
+//  // TEST
+//  double eps = 1e-4;
+//  EXPECT_TRUE(testSolutions(solutions, models, eps));
 //}
 
 /* ************************************************************************* */
