@@ -1,11 +1,14 @@
-ADD_SUBDIRECTORY(SfM)
-ADD_SUBDIRECTORY(localization)
-ADD_SUBDIRECTORY(calibration)
-#ADD_SUBDIRECTORY(opencv)
+add_subdirectory(SfM)
+add_subdirectory(localization)
+add_subdirectory(colorHarmonize)
+#add_subdirectory(opencv)
 
-IF (OpenMVG_BUILD_OPENGL_EXAMPLES)
-  ADD_SUBDIRECTORY(SfMViewer)
-ENDIF (OpenMVG_BUILD_OPENGL_EXAMPLES)
+if(OpenMVG_USE_BOOST)
+ add_subdirectory(calibration)
+endif()
 
-ADD_SUBDIRECTORY(colorHarmonize)
+if(OpenMVG_BUILD_OPENGL_EXAMPLES)
+  add_subdirectory(SfMViewer)
+endif()
+
 
