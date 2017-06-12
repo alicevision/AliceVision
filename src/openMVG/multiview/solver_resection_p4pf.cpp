@@ -15,7 +15,6 @@ void GJ(double *A, int rcnt, int ccnt, double tol)
   int row = 0;
   int col = 0;
   int ofs = 0;
-  int pofs = 0;
 
   while(row < rcnt && col < ccnt)
   {
@@ -24,7 +23,7 @@ void GJ(double *A, int rcnt, int ccnt, double tol)
     double pivot = 0;
     int pivot_r = -1;
 
-    pofs = ofs;
+    int pofs = ofs;
     for(int k = row; k < rcnt; ++k)
     {
       // pivot selection criteria here !
