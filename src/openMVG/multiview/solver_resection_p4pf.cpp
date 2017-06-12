@@ -14,18 +14,9 @@ void GJ(double *A, int rcnt, int ccnt, double tol)
 {
   int row = 0;
   int col = 0;
-  int k;
-  int l;
-  int dstofs;
-  int srcofs;
   int ofs = 0;
   int pofs = 0;
-  double pivot_i;
-  double b;
 
-  // gj
-  ofs = 0;
-  pofs = 0;
   while(row < rcnt && col < ccnt)
   {
     // find pivot
@@ -34,12 +25,11 @@ void GJ(double *A, int rcnt, int ccnt, double tol)
     int pivot_r = -1;
 
     pofs = ofs;
-    for(k = row; k < rcnt; ++k)
+    for(int k = row; k < rcnt; ++k)
     {
       // pivot selection criteria here !
       if(std::abs(*(A + pofs)) > apivot)
       {
-
         pivot = *(A + pofs);
         apivot = std::abs(pivot);
         pivot_r = k;
@@ -52,33 +42,30 @@ void GJ(double *A, int rcnt, int ccnt, double tol)
       // empty col - shift to next col (or jump)
       ++col;
       ++ofs;
-
     }
     else
     {
       // process rows
-      pivot_i = 1.0 / pivot;
+      double pivot_i = 1.0 / pivot;
 
       // exchange pivot and selected rows
       // + divide row
       if(pivot_r == row)
       {
-        srcofs = ofs;
-        for(l = col; l < ccnt; ++l)
+        int srcofs = ofs;
+        for(int c = col; c < ccnt; ++c)
         {
-
           *(A + srcofs) = *(A + srcofs) * pivot_i;
           srcofs++;
         }
-
       }
       else
       {
-        srcofs = ofs;
-        dstofs = ccnt * pivot_r + col;
-        for(l = col; l < ccnt; ++l)
+        int srcofs = ofs;
+        int dstofs = ccnt * pivot_r + col;
+        for(int c = col; c < ccnt; ++c)
         {
-          b = *(A + srcofs);
+          double b = *(A + srcofs);
           *(A + srcofs) = *(A + dstofs) * pivot_i;
           *(A + dstofs) = b;
 
@@ -89,15 +76,15 @@ void GJ(double *A, int rcnt, int ccnt, double tol)
 
       // zero bottom
       pofs = ofs + ccnt;
-      for(k = row + 1; k < rcnt; ++k)
+      for(int k = row + 1; k < rcnt; ++k)
       {
         if(std::abs(*(A + pofs)) > tol)
         {
           // nonzero row
-          b = *(A + pofs);
-          dstofs = pofs + 1;
-          srcofs = ofs + 1;
-          for(l = col + 1; l < ccnt; ++l)
+          double b = *(A + pofs);
+          int dstofs = pofs + 1;
+          int srcofs = ofs + 1;
+          for(int c = col + 1; c < ccnt; ++c)
           {
             *(A + dstofs) = (*(A + dstofs) - *(A + srcofs) * b);
             ++dstofs;
@@ -110,15 +97,15 @@ void GJ(double *A, int rcnt, int ccnt, double tol)
 
       // zero top
       pofs = col;
-      for(k = 0; k < row; ++k)
+      for(int k = 0; k < row; ++k)
       {
         if(std::abs(*(A + pofs)) > tol)
         {
           // nonzero row
-          b = *(A + pofs);
-          dstofs = pofs + 1;
-          srcofs = ofs + 1;
-          for(l = col + 1; l < ccnt; ++l)
+          double b = *(A + pofs);
+          int dstofs = pofs + 1;
+          int srcofs = ofs + 1;
+          for(int c = col + 1; c < ccnt; ++c)
           {
             *(A + dstofs) = (*(A + dstofs) - *(A + srcofs) * b);
             ++dstofs;
