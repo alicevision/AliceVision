@@ -172,7 +172,7 @@ void computeCoefficients(const double *src1, const double *src2, const double *s
   const double t67 = t1 * glbd;
   const double t84 = glcd * t1;
 
-  // destination group 1 	
+  // destination group 1   
   dst1[0] = 1.0;
   dst1[1] = t5 / 2.0;
   dst1[2] = -1.0;
