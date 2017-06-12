@@ -1,5 +1,5 @@
 if (NOT CMAKE_CXX_COMPILER_LOADED)
-    message(FATAL_ERROR "CheckCXX11Features modules only works if language CXX is enabled")
+  message(FATAL_ERROR "CheckCXX11Features modules only works if language CXX is enabled")
 endif ()
 
 # Determines whether or not the compiler supports C++11
