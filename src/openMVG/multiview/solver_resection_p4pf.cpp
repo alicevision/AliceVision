@@ -1121,7 +1121,7 @@ void P4PfSolver::solve(const Mat &pt2Dx, const Mat &pt3Dx, std::vector<p4fSoluti
 
   const Vec3 mean3d = pt3D.rowwise().mean();
 
-  pt3D = pt3D - (mean3d * Mat::Constant(1, 4, 1.0));
+  pt3D -= (mean3d * Mat::Constant(1, 4, 1.0));
 
   const double var = pt3D.colwise().norm().sum() / 4;
   const double var2d = pt2D.colwise().norm().sum() / 4;
