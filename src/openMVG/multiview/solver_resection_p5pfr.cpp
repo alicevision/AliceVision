@@ -352,7 +352,7 @@ double reprojectionErrorRP(const p5pfrModel &m,
   double t = 1; // the final radius parameter
   const double r = sqrt(v(0) * v(0) + v(1) * v(1));
   for(Mat::Index i = 0; i < m._r.rows(); ++i)
-    t = t + m._r(i) * pow(r, 2 * (i + 1));
+    t += m._r(i) * pow(r, 2 * (i + 1));
 
   Vec2 u;
   u << v(0) * t, v(1) * t;
