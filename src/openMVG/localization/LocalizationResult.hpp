@@ -14,14 +14,14 @@ namespace cereal{
 template<class Archive>
 void save(Archive & archive, openMVG::Mat34 const & mat)
 { 
-  vector<double> vec(mat.data(), mat.data() + mat.rows() * mat.cols());
+  std::vector<double> vec(mat.data(), mat.data() + mat.rows() * mat.cols());
   archive(vec); 
 }
 
 template<class Archive>
 void load(Archive & archive, openMVG::Mat34 & m)
 {
-  vector<double> vec(12);
+  std::vector<double> vec(12);
   archive(vec); 
   m = Eigen::Map<openMVG::Mat34>(vec.data(), 3, 4);
 }
@@ -34,26 +34,55 @@ namespace localization {
 template<class Archive>
 void saveMat(Archive & archive, const std::string &name, Mat const & mat)
 { 
-  vector<double> vec(mat.data(), mat.data() + mat.rows() * mat.cols());
+  std::vector<double> vec(mat.data(), mat.data() + mat.rows() * mat.cols());
   archive(cereal::make_nvp(name, vec)); 
 }
 
 template<class Archive>
 void loadMat(Archive & archive, const std::string &name, const std::size_t rows, openMVG::Mat & m)
 {
-  vector<double> vec;
+  std::vector<double> vec;
   archive(cereal::make_nvp(name, vec));
   const std::size_t cols = vec.size() / rows;
   m = Eigen::Map<openMVG::Mat>(vec.data(), rows, cols);
 }
 
-class LocalizationResult {
+struct IndMatch3D2D
+{
+  IndMatch3D2D() {}
+  IndMatch3D2D(IndexT landmarkId,
+      features::EImageDescriberType descType,
+      IndexT featId)
+    : landmarkId(landmarkId)
+    , descType(descType)
+    , featId(featId)
+  {}
+
+  bool operator<(const IndMatch3D2D& other) const
+  {
+    return landmarkId < other.landmarkId;
+  }
+
+  template <class Archive>
+  void serialize( Archive & ar )
+  {
+    ar(landmarkId, descType, featId);
+  }
+
+  IndexT landmarkId = UndefinedIndexT;
+  features::EImageDescriberType descType = features::EImageDescriberType::UNINITIALIZED;
+  IndexT featId = UndefinedIndexT;
+};
+
+
+class LocalizationResult
+{
 public:
   
   LocalizationResult();
   
   LocalizationResult(const sfm::Image_Localizer_Match_Data & matchData,
-                     const std::vector<std::pair<IndexT, IndexT> > & indMatch3D2D,
+                     const std::vector<IndMatch3D2D> & indMatch3D2D,
                      const geometry::Pose3 & pose,
                      const cameras::Pinhole_Intrinsic_Radial_K3 & intrinsics,
                      const std::vector<voctree::DocMatch>& matchedImages,
@@ -85,7 +114,7 @@ public:
   
   const sfm::Image_Localizer_Match_Data& getMatchData() const { return _matchData; }
 
-  const std::vector<std::pair<IndexT, IndexT> > & getIndMatch3D2D() const
+  const std::vector<IndMatch3D2D> & getIndMatch3D2D() const
   {
     return _indMatch3D2D;
   }
@@ -223,7 +252,7 @@ private:
   /// 3D to 2D index matches in the global index system,
   /// i.e. the set of pair (landmark id, index of the associated 2D point).
   /// It must have the same size of _matchData.pt3D (and pt2D)
-  std::vector<std::pair<IndexT, IndexT> > _indMatch3D2D; 
+  std::vector<IndMatch3D2D> _indMatch3D2D;
                                                     
   /// Computed camera pose
   geometry::Pose3 _pose; 

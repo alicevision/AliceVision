@@ -7,16 +7,21 @@
 
 #pragma once
 
+#include <openMVG/config.hpp>
 #include "image_describer.hpp"
-#ifdef HAVE_CCTAG
+#if OPENMVG_IS_DEFINED(OPENMVG_HAVE_CCTAG)
 #include "regions_factory.hpp"
 #endif
+#include <openMVG/features/RegionsPerView.hpp>
+#include <openMVG/features/FeaturesPerView.hpp>
 #include <openMVG/matching/indMatch.hpp>
 
 #include <vector>
 
 namespace openMVG {
 namespace features {
+
+std::string describerTypeColor(const features::EImageDescriberType descType);
 
 /**
  * @brief It saves a svg file containing two images (as linked images) and their
@@ -32,16 +37,16 @@ namespace features {
  * saved as a link, no image data is stored in the svg.
  * @param[in] imageSizeRight The size of the image <width,height>.
  * @param[in] keypointsRight The keypoints of the right image.
- * @param[in] matches The vector containing the indices of matching cctags.
+ * @param[in] matches The vector containing the indices of matching features for each descriptor type.
  * @param[in] outputSVGPath The name of the svg file to generate.
  */
 void saveMatches2SVG(const std::string &imagePathLeft,
                      const std::pair<size_t,size_t> & imageSizeLeft,
-                     const std::vector<features::PointFeature> &keypointsLeft,
+                     const features::MapRegionsPerDesc &keypointsLeft,
                      const std::string &imagePathRight,
                      const std::pair<size_t,size_t> & imageSizeRight,
-                     const std::vector<features::PointFeature> &keypointsRight,
-                     const matching::IndMatches &matches,
+                     const features::MapRegionsPerDesc &keypointsRight,
+                     const matching::MatchesPerDescType & matches,
                      const std::string &outputSVGPath);
 
 /**
@@ -73,8 +78,8 @@ void saveKeypoints2SVG(const std::string &inputImagePath,
  **/
 void saveFeatures2SVG(const std::string &inputImagePath,
                       const std::pair<size_t,size_t> & imageSize,
-                      const std::vector<features::PointFeature> &keypoints,
-                      const std::string &outputSVGPath);
+                      const features::MapFeaturesPerDesc & keypoints,
+                      const std::string & outputSVGPath);
 
 /**
  * @brief It saves a svg file containing an image (as linked image) and its detected
@@ -160,7 +165,7 @@ bool lineToBorderPoints(const Vec3 &epiLine,
                         const std::size_t imgH, 
                         std::vector<Vec2> &intersectionPts);
 
-#ifdef HAVE_CCTAG
+#if OPENMVG_IS_DEFINED(OPENMVG_HAVE_CCTAG)
 
 /**
  * @brief It generates a svg file containing the image and its extracted cctags.

@@ -7,14 +7,13 @@
 
 #include "openMVG/image/image.hpp"
 #include "openMVG/features/features.hpp"
+#include "openMVG/features/sift/SIFT_describer.hpp"
 #include "openMVG/matching/matching_filters.hpp"
 #include "openMVG/matching/regions_matcher.hpp"
 
 #include "third_party/stlplus3/filesystemSimplified/file_system.hpp"
 #include "third_party/vectorGraphics/svgDrawer.hpp"
 #include "third_party/cmdLine/cmdLine.h"
-
-#include "nonFree/sift/SIFT_describer.hpp"
 
 #include <string>
 #include <iostream>
@@ -77,7 +76,7 @@ int main(int argc, char **argv) {
   using namespace openMVG::features;
   std::shared_ptr<Image_describer> image_describer;
   if (sImage_describer_type == "SIFT")
-    image_describer = std::make_shared<SIFT_Image_describer>(SiftParams());
+    image_describer = std::make_shared<SIFT_ImageDescriber>(SiftParams());
   else if (sImage_describer_type == "AKAZE")
     image_describer = std::make_shared<AKAZE_Image_describer>(AKAZEParams(AKAZEConfig(), AKAZE_MSURF));
   else if (sImage_describer_type == "AKAZE_MLDB")

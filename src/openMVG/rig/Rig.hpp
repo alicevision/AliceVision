@@ -3,13 +3,14 @@
 #include <openMVG/localization/LocalizationResult.hpp>
 #include <openMVG/geometry/pose3.hpp>
 #include <openMVG/numeric/numeric.h>
+#include <openMVG/config.hpp>
 
 #include <Eigen/Dense>
 
 #include <vector>
 #include <map>
 
-#ifdef HAVE_OPENCV
+#if OPENMVG_IS_DEFINED(OPENMVG_HAVE_OPENCV)
 //#define VISUAL_DEBUG_MODE
 #endif
 

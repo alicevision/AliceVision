@@ -1,19 +1,13 @@
-FILE(
-	GLOB
-	linearProgramming_headers
-	*.hpp
-)
-FILE(
-	GLOB
-	linearProgramming_cpp
-	*.cpp
-)
-FILE(GLOB_RECURSE REMOVEFILESUNITTEST *_test.cpp)
+set(linearProgramming_headers
+    bisectionLP.hpp
+    linearProgramming.hpp
+    linearProgrammingInterface.hpp
+    linearProgrammingOSI_X.hpp)
+
+set(linearProgramming_cpp "")
+
 
 SET_SOURCE_FILES_PROPERTIES(${linearProgramming_headers} PROPERTIES LANGUAGE CXX)
-
-#Remove the future main files
-LIST(REMOVE_ITEM linearProgramming_cpp ${REMOVEFILESUNITTEST})
 
 SET(openMVG_linearProgramming_DEPS
   ${CLP_LIBRARIES}     # clp + solver wrapper
@@ -27,6 +21,10 @@ IF (NOT MOSEK_FOUND)
   TARGET_LINK_LIBRARIES(openMVG_linearProgramming INTERFACE ${openMVG_linearProgramming_DEPS})
 
 ELSE (NOT MOSEK_FOUND)
+  # Add MOSEK related sources
+  list(APPEND linearProgramming_cpp linearProgrammingMOSEK.cpp)
+  list(APPEND linearProgramming_headers linearProgrammingMOSEK.hpp)
+
   # MOSEK_FOUND is true
   ADD_LIBRARY(openMVG_linearProgramming ${linearProgramming_headers} ${linearProgramming_cpp})
   SET_PROPERTY(TARGET openMVG_linearProgramming PROPERTY FOLDER OpenMVG/OpenMVG)

@@ -142,9 +142,9 @@ double RMSE(const SfM_Data & sfm_data)
       iterTracks != sfm_data.GetLandmarks().end();
       ++iterTracks)
   {
-    const Observations & obs = iterTracks->second.obs;
-    for(Observations::const_iterator itObs = obs.begin();
-      itObs != obs.end(); ++itObs)
+    const Observations & observations = iterTracks->second.observations;
+    for(Observations::const_iterator itObs = observations.begin();
+      itObs != observations.end(); ++itObs)
     {
       const View * view = sfm_data.GetViews().find(itObs->first)->second.get();
       const Pose3 pose = sfm_data.GetPoseOrDie(view);
@@ -207,7 +207,7 @@ SfM_Data getInputScene(const NViewDataSet & d, const nViewDatasetConfigurator & 
       pt(0) += rand()/RAND_MAX - .5;
       pt(1) += rand()/RAND_MAX - .5;
 
-      landmark.obs[j] = Observation(pt, i);
+      landmark.observations[j] = Observation(pt, i);
     }
     sfm_data.structure[i] = landmark;
   }

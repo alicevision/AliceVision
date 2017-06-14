@@ -10,11 +10,20 @@
 
 #include <openMVG/numeric/numeric.h>
 #include <openMVG/features/features.hpp>
+#include <openMVG/features/RegionsPerView.hpp>
 #include <openMVG/tracks/tracks.hpp>
 
 #include <memory>
 
-namespace openMVG{
+namespace openMVG {
+
+enum EHistogramSelectionMethod
+{
+    eHistogramHarmonizeFullFrame     = 0,
+    eHistogramHarmonizeMatchedPoints = 1,
+    eHistogramHarmonizeVLDSegment    = 2,
+};
+
 
 class ColorHarmonizationEngineGlobal
 {
@@ -24,8 +33,9 @@ public:
     const std::string & sMatchesPath,
     const std::string & sMatchesGeometricModel,
     const std::string & sOutDirectory,
-    const int selectionMethod = -1,
-    const int imgRef = -1);
+    const std::vector<features::EImageDescriberType>& descTypes,
+    int selectionMethod = -1,
+    int imgRef = -1);
 
   ~ColorHarmonizationEngineGlobal();
 
@@ -46,7 +56,7 @@ public:
 
 private:
 
-  int _selectionMethod;
+  EHistogramSelectionMethod _selectionMethod;
   int _imgRef;
   std::string _sMatchesGeometricModel;
 
@@ -55,11 +65,13 @@ private:
   // ----
 
   std::vector< std::string > _vec_fileNames; // considered images
-  std::map< size_t, std::vector< features::SIOPointFeature > > _map_feats; // feature per images
 
+  features::RegionsPerView _regionsPerView;
   std::vector< std::pair< size_t, size_t > > _vec_imageSize; // Size of each image
 
-  openMVG::matching::PairWiseMatches _map_Matches; // pairwise geometric matches
+  openMVG::matching::PairwiseMatches _pairwiseMatches; // pairwise geometric matches
+
+  std::vector<features::EImageDescriberType> _descTypes; //< describer type use for color harmonizations
 
   //
   std::string _sSfM_Data_Path;// Path to the Sfm_Scene

@@ -1,6 +1,8 @@
 #pragma once
 
-#ifdef HAVE_BOOST
+#include <openMVG/config.hpp>
+
+#if OPENMVG_IS_DEFINED(OPENMVG_HAVE_BOOST)
 #include <boost/container/flat_map.hpp>
 #include <cereal/types/map.hpp>
 
@@ -25,7 +27,7 @@ namespace cereal
 
 namespace stl
 {
-#ifdef HAVE_BOOST
+#if OPENMVG_IS_DEFINED(OPENMVG_HAVE_BOOST)
   template <class Key
          ,class T
          ,class Compare = std::less<Key>

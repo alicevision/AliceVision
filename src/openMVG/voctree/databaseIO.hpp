@@ -3,9 +3,6 @@
 #include "database.hpp"
 #include "vocabulary_tree.hpp"
 
-#include <openMVG/features/descriptor.hpp>
-#include <openMVG/sfm/sfm_data_io.hpp>
-
 #include <string>
 
 namespace openMVG {

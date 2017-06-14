@@ -8,6 +8,7 @@
 #define OPENMVG_IMAGE_IMAGE_CONVOLUTION_HPP_
 
 #include "openMVG/numeric/accumulator_trait.hpp"
+#include <openMVG/config.hpp>
 
 /**
  ** @file Standard 2D image convolution functions :
@@ -195,10 +196,10 @@ static void SeparableConvolution2d(const RowMatrixXf& image,
   // multiply i.e. kernel_y^t * rows. This will give us the convoled value for
   // each row. However, care must be taken at the top and bottom borders.
   const Eigen::Matrix<float, 1, Eigen::Dynamic> reverse_kernel_y = kernel_y.reverse();
-#if defined(OPENMVG_USE_OPENMP)
-#pragma omp parallel for schedule(dynamic)
-#endif
-  for (int i = 0; i < half_sigma_y; i++) {
+  
+  #pragma omp parallel for schedule(dynamic)
+  for (int i = 0; i < half_sigma_y; i++)
+  {
     const int forward_size = i + half_sigma_y + 1;
     const int reverse_size = sigma_y - forward_size;
     out->row(i) = kernel_y.tail(forward_size) *
@@ -216,10 +217,9 @@ static void SeparableConvolution2d(const RowMatrixXf& image,
   }
 
   // Applying the rest of the y filter.
-#if defined(OPENMVG_USE_OPENMP)
-#pragma omp parallel for schedule(dynamic)
-#endif
-  for (int row = half_sigma_y; row < image.rows() - half_sigma_y; row++) {
+  #pragma omp parallel for schedule(dynamic)
+  for (int row = half_sigma_y; row < image.rows() - half_sigma_y; row++) 
+  {
     out->row(row) =  kernel_y * image.block(row - half_sigma_y, 0, sigma_y, out->cols());
   }
 
@@ -231,10 +231,10 @@ static void SeparableConvolution2d(const RowMatrixXf& image,
   // filter. We prepend and append the proper border values so that we are sure
   // to end up with the correct convolved values.
   Eigen::RowVectorXf temp_row(image.cols() + sigma_x - 1);
-#if defined(OPENMVG_USE_OPENMP)
-#pragma omp parallel for firstprivate(temp_row), schedule(dynamic)
-#endif
-  for (int row = 0; row < out->rows(); row++) {
+
+  #pragma omp parallel for firstprivate(temp_row), schedule(dynamic)
+  for (int row = 0; row < out->rows(); row++)
+  {
     temp_row.head(half_sigma_x) =
       out->row(row).segment(1, half_sigma_x).reverse();
     temp_row.segment(half_sigma_x, image.cols()) = out->row(row);

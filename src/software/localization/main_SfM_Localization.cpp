@@ -6,19 +6,18 @@
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 #include <openMVG/sfm/sfm.hpp>
+#include <openMVG/sfm/pipelines/RegionsIO.hpp>
 #include <openMVG/features/features.hpp>
-#include <nonFree/sift/SIFT_describer.hpp>
 #include <openMVG/image/image.hpp>
-
 #include <openMVG/system/timer.hpp>
-
-using namespace openMVG;
-using namespace openMVG::sfm;
 
 #include "third_party/cmdLine/cmdLine.h"
 #include "third_party/stlplus3/filesystemSimplified/file_system.hpp"
 
 #include <cstdlib>
+
+using namespace openMVG;
+using namespace openMVG::sfm;
 
 // ---------------------------------------------------------------------------
 // Image localization API sample:
@@ -41,12 +40,14 @@ int main(int argc, char **argv)
   CmdLine cmd;
 
   std::string sSfM_Data_Filename;
+  std::string describerMethod = "SIFT";
   std::string sMatchesDir;
   std::string sOutDir = "";
   std::string sQueryImage;
   double dMaxResidualError = std::numeric_limits<double>::infinity();
 
   cmd.add( make_option('i', sSfM_Data_Filename, "input_file") );
+  cmd.add( make_option('d', describerMethod, "describerMethod") );
   cmd.add( make_option('m', sMatchesDir, "match_dir") );
   cmd.add( make_option('o', sOutDir, "out_dir") );
   cmd.add( make_option('q', sQueryImage, "query_image"));
@@ -58,6 +59,22 @@ int main(int argc, char **argv)
   } catch(const std::string& s) {
     std::cerr << "Usage: " << argv[0] << '\n'
     << "[-i|--input_file] path to a SfM_Data scene\n"
+    << "[-d|--describerMethod]\n"
+    << "  (methods to use to describe an image):\n"
+    << "   SIFT (default),\n"
+    << "   SIFT_FLOAT to use SIFT stored as float,\n"
+    << "   AKAZE: AKAZE with floating point descriptors,\n"
+    << "   AKAZE_MLDB:  AKAZE with binary descriptors\n"
+#if OPENMVG_IS_DEFINED(OPENMVG_HAVE_CCTAG)
+    << "   CCTAG3: CCTAG markers with 3 crowns\n"
+    << "   CCTAG4: CCTAG markers with 4 crowns\n"
+#endif //OPENMVG_HAVE_CCTAG
+#if OPENMVG_IS_DEFINED(OPENMVG_HAVE_OPENCV)
+#if OPENMVG_IS_DEFINED(OPENMVG_USE_OCVSIFT)
+    << "   SIFT_OCV: OpenCV SIFT\n"
+#endif //OPENMVG_USE_OCVSIFT
+    << "   AKAZE_OCV: OpenCV AKAZE\n"
+#endif //OPENMVG_HAVE_OPENCV
     << "[-m|--match_dir] path to the matches that corresponds to the provided SfM_Data scene\n"
     << "[-o|--out_dir] path where the output data will be stored\n"
     << "(optional)\n"
@@ -90,58 +107,14 @@ int main(int argc, char **argv)
 
   // Init the regions_type from the image describer file (used for image regions extraction)
   using namespace openMVG::features;
-  const std::string sImage_describer = stlplus::create_filespec(sMatchesDir, "image_describer", "json");
-  std::unique_ptr<Regions> regions_type = Init_region_type_from_file(sImage_describer);
-  if (!regions_type)
-  {
-    std::cerr << "Invalid: "
-      << sImage_describer << " regions type file." << std::endl;
-    return EXIT_FAILURE;
-  }
 
-  // Init the feature extractor that have been used for the reconstruction
-  using namespace openMVG::features;
-  std::unique_ptr<Image_describer> image_describer;
-  if (stlplus::is_file(sImage_describer))
-  {
-    // Dynamically load the image_describer from the file (will restore old used settings)
-    std::ifstream stream(sImage_describer.c_str());
-    if (!stream.is_open())
-      return false;
-
-    try
-    {
-      cereal::JSONInputArchive archive(stream);
-      archive(cereal::make_nvp("image_describer", image_describer));
-    }
-    catch (const cereal::Exception & e)
-    {
-      std::cerr << e.what() << std::endl
-        << "Cannot dynamically allocate the Image_describer interface." << std::endl;
-      return EXIT_FAILURE;
-    }
-  }
-  else
-  {
-    std::cerr << "Expected file image_describer.json cannot be opened." << std::endl;
-    return EXIT_FAILURE;
-  }
+  // Get imageDescriberMethodType
+  EImageDescriberType describerType = EImageDescriberType_stringToEnum(describerMethod);
+  
+  // Get imageDecriber fom type
+  std::unique_ptr<Image_describer> imageDescribers = createImageDescriber(describerType);
 
   // Load the SfM_Data region's views
-  std::shared_ptr<Regions_Provider> regions_provider = std::make_shared<Regions_Provider>();
-  if (!regions_provider->load(sfm_data, sMatchesDir, regions_type)) {
-    std::cerr << std::endl << "Invalid regions." << std::endl;
-    return EXIT_FAILURE;
-  }
-
-  if (sOutDir.empty())  {
-    std::cerr << "\nIt is an invalid output directory" << std::endl;
-    return EXIT_FAILURE;
-  }
-
-  if (!stlplus::folder_exists(sOutDir))
-    stlplus::folder_create(sOutDir);
-
   //-
   //-- Localization
   // - init the retrieval database
@@ -149,16 +122,32 @@ int main(int argc, char **argv)
   // - extract the regions of the view
   // - try to locate the image
   //-
-
-  std::vector<Vec3> vec_found_poses;
-
   sfm::SfM_Localization_Single_3DTrackObservation_Database localizer;
-  if (!localizer.Init(sfm_data, *regions_provider.get()))
   {
-    std::cerr << "Cannot initialize the SfM localizer" << std::endl;
+    RegionsPerView regionsPerView;
+
+    if (!sfm::loadRegionsPerView(regionsPerView, sfm_data, sMatchesDir, {describerType}))
+    {
+      std::cerr << std::endl << "Invalid regions." << std::endl;
+      return EXIT_FAILURE;
+    }
+
+    if (sOutDir.empty())
+    {
+      std::cerr << "\nIt is an invalid output directory" << std::endl;
+      return EXIT_FAILURE;
+    }
+
+    if (!stlplus::folder_exists(sOutDir))
+      stlplus::folder_create(sOutDir);
+    
+    if (!localizer.Init(sfm_data, regionsPerView))
+    {
+      std::cerr << "Cannot initialize the SfM localizer" << std::endl;
+    }
   }
-  // Since we have copied interesting data, release some memory
-  regions_provider.reset();
+  
+  std::vector<Vec3> vec_found_poses;
 
   if (!sQueryImage.empty())
   {
@@ -172,7 +161,7 @@ int main(int argc, char **argv)
         return EXIT_FAILURE;
       }
       // Compute features and descriptors
-      image_describer->Describe(imageGray, query_regions);
+      imageDescribers->Describe(imageGray, query_regions);
       std::cout << "#regions detected in query image: " << query_regions->RegionCount() << std::endl;
     }
 
@@ -238,7 +227,8 @@ int main(int argc, char **argv)
 
       std::cout << "SfM::localization => try with image: " << sImagePath << std::endl;
 
-      std::unique_ptr<Regions> query_regions(regions_type->EmptyClone());
+      std::unique_ptr<Regions> query_regions;
+      imageDescribers->Allocate(query_regions);
       const std::string basename = stlplus::basename_part(sImagePath);
       const std::string featFile = stlplus::create_filespec(sMatchesDir, basename, ".feat");
       const std::string descFile = stlplus::create_filespec(sMatchesDir, basename, ".desc");

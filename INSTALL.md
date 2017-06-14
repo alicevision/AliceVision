@@ -1,8 +1,6 @@
-=====================================
+
 OpenMVG (open Multiple View Geometry)
 =====================================
-
-------------------
 
 
 Build instructions
@@ -16,13 +14,13 @@ Required tools:
 Getting the sources:
 
 ```bash
-git clone --recursive https://github.com/openMVG/openMVG.git
+git clone --recursive https://github.com/alicevision/openMVG.git
 ```
 
 or
 
 ```bash
-git clone https://github.com/openMVG/openMVG.git
+git clone https://github.com/alicevision/openMVG.git
 cd openMVG
 git submodule init
 git submodule update
@@ -35,55 +33,87 @@ As openMVG use some C++11 features you must have a c++11 ready compiler:
 --------------------------
 
 
+Building using external dependencies
+--------------------------
+
+OpenMVG source tree contains all the mandatory dependencies that are needed to build the library, and which will be built together with the libray. In order to build the library with existing versions of the dependencies (e.g. system installed libraries or user built libraries), and thus reduce the compilation time and favour the modularization, the paths where to find such libraries can be given at cmake command line. In particular:
+
+* For Ceres solver library, `Ceres_DIR` can be passed pointing to where CeresConfig.cmake can be found.
+  e.g. `-DCeres_DIR:PATH=/path/to/ceres/install/share/Ceres/`
+
+* For FLANN library, `FLANN_INCLUDE_DIR_HINTS` can be passed pointing to the include directory, e.g.
+  `-DFLANN_INCLUDE_DIR_HINTS:PATH=/path/to/flann/1.8.4/include/`
+
+* For Eigen library, `EIGEN_INCLUDE_DIR_HINTS` can be passed pointing to the include directory, e.g.
+  `-DEIGEN_INCLUDE_DIR_HINTS:PATH=/usr/local/include/eigen3`
+
+At the end of the cmake process, a report shows for each library which version (internal/external) will be used in the building process, e.g.:
+
+```
+-- EIGEN: 3.2.4 (external)
+-- CERES: 1.10.0 (external)
+-- FLANN: 1.8.4 (external)
+-- LIBTIFF: 4.0.4 (external)
+-- LIBPNG: 1.6.18 (external)
+-- LIBJPEG (external)
+-- CLP: 1.15.11 (internal)
+-- COINUTILS: 2.9.3 (internal)
+-- OSI: 0.106.10 (internal)
+-- LEMON: 1.3 (internal)
+```
+
+--------------------------
+
+
 CMake Options
 --------------------------
 
-* OpenMVG_USE_BOOST (default ON)
+* `OpenMVG_USE_BOOST` (default `ON`)
   Use Boost library (enable modules like localization/voctree and other features and optimizations.
 
-* BOOST_NO_CXX11 (default OFF)
+* `BOOST_NO_CXX11` (default `OFF`)
   If your Boost binaries are compiled without C++11 support, you need to set this option to avoid compilation errors.
   This is most likely to be the case if you use the system packages to install boost.
 
-* OpenMVG_USE_OPENMP (default ON)
+* `OpenMVG_USE_OPENMP` (default `ON`)
   Use OpenMP parallelization (huge impact on performances)
 
-* OpenMVG_USE_CCTAG (default ON)
+* `OpenMVG_USE_CCTAG` (default `ON`)
   Build with CCTag markers support.
-  `-DCCTag_DIR=/path/to/cctag/install/lib/cmake/CCTag` (where CCTagConfig.cmake can be found)
+  `-DCCTag_DIR:PATH=/path/to/cctag/install/lib/cmake/CCTag` (where CCTagConfig.cmake can be found)
 
-* OpenMVG_USE_OPENGV (default OFF)
+* `OpenMVG_USE_OPENGV` (default `OFF`)
   Build with openGV for multi-cameras localization.
-  `-DOPENGV_DIR=/path/to/opengv/install/` (where "include" and "lib" folders can be found)
-  We recommend: `git clone https://github.com/poparteu/opengv.git --branch=cmake_fix_install`
+  `-DOPENGV_DIR:PATH=/path/to/opengv/install/` (where "include" and "lib" folders can be found)
+  We recommend: `git clone https://github.com/alicevision/opengv.git --branch=cmake_fix_install`
 
-* OpenMVG_USE_ALEMBIC (default OFF)
+* `OpenMVG_USE_ALEMBIC` (default `OFF`)
   Build with Alembic file format support.
-  `-DAlembic_DIR=/path/to/alembic/install/lib/cmake/Alembic/` (where AlembicConfig.cmake can be found)
-  With old Alembic versions (<1.6), you need to set many variables: ALEMBIC_ROOT, ALEMBIC_HDF5_ROOT, ALEMBIC_ILMBASE_ROOT, ALEMBIC_OPENEXR_ROOT.
+  `-DAlembic_DIR:PATH=/path/to/alembic/install/lib/cmake/Alembic/` (where AlembicConfig.cmake can be found)
+  With old Alembic versions (<1.6), you need to set many variables: `ALEMBIC_ROOT`, `ALEMBIC_HDF5_ROOT`, `ALEMBIC_ILMBASE_ROOT`, `ALEMBIC_OPENEXR_ROOT`.
 
-* OpenMVG_USE_OPENCV (default: OFF): Build with openCV
-  `-DOpenCV_DIR=/path/to/opencv/install/share/OpenCV/` (where OpenCVConfig.cmake can be found)
+* `OpenMVG_USE_OPENCV` (default: `OFF`): Build with openCV
+  `-DOpenCV_DIR:PATH=/path/to/opencv/install/share/OpenCV/` (where OpenCVConfig.cmake can be found)
 
-* OPENMVG_REQUIRE_CERES_WITH_SUITESPARSE (default: ON)
-  By default, openMVG requires Ceres builded with SuiteSparse to ensure best performances but you can make SuiteSparse optional with this flag.
+* `OPENMVG_REQUIRE_CERES_WITH_SUITESPARSE` (default: `ON`)
+  By default, openMVG requires Ceres built with SuiteSparse to ensure best performances but you can make SuiteSparse optional with this flag.
 
-* OpenMVG_BUILD_SHARED (default OFF)
+* `OpenMVG_BUILD_SHARED` (default `OFF`)
   Build OpenMVG as shared libs (instead of static libs)
 
-* OpenMVG_BUILD_TESTS (default OFF)
+* `OpenMVG_BUILD_TESTS` (default `OFF`)
   Build OpenMVG tests
 
-* OpenMVG_BUILD_DOC (default ON)
+* `OpenMVG_BUILD_DOC` (default `ON`)
   Build OpenMVG documentation
 
-* OpenMVG_BUILD_EXAMPLES (default ON)
-  Build OpenMVG samples applications (openMVG softwares are still builded)
+* `OpenMVG_BUILD_EXAMPLES` (default `ON`)
+  Build OpenMVG samples applications (openMVG software are still built)
 
-* OpenMVG_BUILD_OPENGL_EXAMPLES (default OFF)
+* `OpenMVG_BUILD_OPENGL_EXAMPLES` (default `OFF`)
   Build OpenMVG openGL examples
 
-* OpenMVG_BUILD_COVERAGE (default OFF)
+* `OpenMVG_BUILD_COVERAGE` (default `OFF`)
   Enable code coverage generation (gcc only)
 
 
@@ -112,7 +142,7 @@ Linux compilation
 ### Clone and configure the project:
 
 ```bash
- git clone --recursive https://github.com/openMVG/openMVG.git
+ git clone --recursive https://github.com/alicevision/openMVG.git
  mkdir openMVG_Build
  cd openMVG_Build
  cmake -DCMAKE_BUILD_TYPE=RELEASE . ../openMVG/src/
@@ -169,7 +199,7 @@ Windows compilation
 -------------------
 
 * Checkout the project
-  `git clone --recursive https://github.com/openMVG/openMVG.git`
+  `git clone --recursive https://github.com/alicevision/openMVG.git`
 * Open cmake-gui
   * Fill the source path with the src openMVG path.
   * Fill the build path with a new directory
@@ -184,7 +214,7 @@ Windows compilation
 Mac OSX compilation
 -------------------
 ```bash
-git clone --recursive https://github.com/openMVG/openMVG.git
+git clone --recursive https://github.com/alicevision/openMVG.git
 mkdir openMVG_Build
 cd openMVG_Build
 cmake -DCMAKE_BUILD_TYPE=RELEASE -G "Xcode" . ../openMVG/src/

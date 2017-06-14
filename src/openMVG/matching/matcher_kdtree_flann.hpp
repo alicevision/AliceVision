@@ -8,7 +8,11 @@
 #define OPENMVG_MATCHING_ARRAYMATCHER_KDTREE_FLANN_H_
 
 #include "openMVG/matching/matching_interface.hpp"
+#include <openMVG/config.hpp>
+#include <openMVG/openmvg_omp.hpp>
+
 #include "flann/flann.hpp"
+
 #include <memory>
 
 namespace openMVG {
@@ -121,9 +125,8 @@ class ArrayMatcher_Kdtree_Flann : public ArrayMatcher<Scalar, Metric>
     flann::Matrix<Scalar> queries((Scalar*)query, nbQuery, _dimension);
     // do a knn search, using 128 checks
     flann::SearchParams params(128);
-#ifdef OPENMVG_USE_OPENMP
     params.cores = omp_get_max_threads();
-#endif
+
     if (_index->knnSearch(queries, indices, dists, NN, params) <= 0)
       return false;
 

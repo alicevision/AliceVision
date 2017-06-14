@@ -51,7 +51,7 @@ struct RelativePose_Info
 };
 
 /**
- * @brief Estimate the Relative pose between two view from point matches and K matrices
+ * @brief Estimate the Relative pose between two views from point matches and K matrices
  *  by using a robust essential matrix estimation.
  *
  * @param[in] K1 camera 1 intrinsics

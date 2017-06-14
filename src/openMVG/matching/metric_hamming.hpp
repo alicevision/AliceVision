@@ -166,6 +166,20 @@ struct Hamming
   }
 };
 
+
+template<typename T>
+struct SquaredHamming
+{
+  // Size must be equal to number of ElementType
+  template <typename Iterator1, typename Iterator2>
+  inline double operator()(Iterator1 a, Iterator2 b, size_t size) const
+  {
+    Hamming<T> metric;
+    typename Hamming<T>::ResultType h = metric(a, b, size);
+    return h*h;
+  }
+};
+
 }  // namespace matching
 }  // namespace openMVG
 

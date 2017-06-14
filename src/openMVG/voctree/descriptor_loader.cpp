@@ -1,7 +1,10 @@
 #include "descriptor_loader.hpp"
-#include <boost/algorithm/string/predicate.hpp>
+
+#include <openMVG/sfm/sfm_data_io.hpp>
 
 #include <openMVG/logger.hpp>
+
+#include <boost/algorithm/string/predicate.hpp>
 
 namespace openMVG {
 namespace voctree {
@@ -120,8 +123,8 @@ void getListOfDescriptorFiles(const std::string &fileFullPath, std::map<IndexT, 
     // processing a JSON file containing sfm_data
 
     // open the sfm_data file
-    openMVG::sfm::SfM_Data sfmdata;
-    openMVG::sfm::Load(sfmdata, fileFullPath, openMVG::sfm::ESfM_Data::VIEWS);
+    sfm::SfM_Data sfmdata;
+    sfm::Load(sfmdata, fileFullPath, sfm::ESfM_Data::VIEWS);
 
     // get the number of files to load
     size_t numberOfFiles = sfmdata.GetViews().size();

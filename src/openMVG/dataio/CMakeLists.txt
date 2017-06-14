@@ -1,13 +1,17 @@
-file(
-  GLOB_RECURSE
-  dataio_header
-  *.hpp
-)
-file(
-  GLOB_RECURSE
-  dataio_cpp
-  *.cpp
-)
+set(dataio_header
+    FeedProvider.hpp
+    IFeed.hpp
+    ImageFeed.hpp)
+
+set(dataio_cpp
+    FeedProvider.cpp
+    IFeed.cpp
+    ImageFeed.cpp)
+
+if(OpenMVG_USE_OPENCV)
+    list(APPEND dataio_header VideoFeed.hpp)
+    list(APPEND dataio_cpp VideoFeed.cpp)
+endif(OpenMVG_USE_OPENCV)
 
 set_source_files_properties(${dataio_cpp} PROPERTIES LANGUAGE CXX)
 add_library(openMVG_dataio

@@ -9,6 +9,8 @@
 #include "software/SfM/SfMIOHelper.hpp"
 
 #include "openMVG/image/image.hpp"
+//-- Load features per view
+#include <openMVG/sfm/pipelines/RegionsIO.hpp>
 //-- Feature matches
 #include <openMVG/matching/indMatch.hpp>
 #include "openMVG/matching/indMatch_utils.hpp"
@@ -16,6 +18,7 @@
 
 #include "openMVG/sfm/sfm.hpp"
 #include "openMVG/graph/graph.hpp"
+#include <openMVG/config.hpp>
 
 #include "third_party/stlplus3/filesystemSimplified/file_system.hpp"
 #include "third_party/vectorGraphics/svgDrawer.hpp"
@@ -40,7 +43,7 @@
 #include <sstream>
 
 
-namespace openMVG{
+namespace openMVG {
 
 using namespace lemon;
 using namespace openMVG::image;
@@ -56,19 +59,43 @@ ColorHarmonizationEngineGlobal::ColorHarmonizationEngineGlobal(
   const string & sMatchesPath,
   const std::string & sMatchesGeometricModel,
   const string & sOutDirectory,
-  const int selectionMethod,
-  const int imgRef):
+  const std::vector<features::EImageDescriberType>& descTypes,
+  int selectionMethod,
+  int imgRef):
   _sSfM_Data_Path(sSfM_Data_Filename),
   _sMatchesPath(sMatchesPath),
+  _sMatchesGeometricModel(sMatchesGeometricModel),
   _sOutDirectory(sOutDirectory),
-  _selectionMethod( selectionMethod ),
-  _imgRef( imgRef ),
-  _sMatchesGeometricModel(sMatchesGeometricModel)
+  _descTypes(descTypes)
 {
   if( !stlplus::folder_exists( sOutDirectory ) )
   {
     stlplus::folder_create( sOutDirectory );
   }
+
+  //Choose image reference
+  while(imgRef < 0 || imgRef >= _vec_fileNames.size())
+  {
+      cout << "Choose your reference image:\n";
+      for( int i = 0; i < _vec_fileNames.size(); ++i )
+      {
+        cout << "id: " << i << "\t" << _vec_fileNames[ i ] << endl;
+      }
+      cin >> imgRef;
+  }
+  _imgRef = imgRef;
+
+  //Choose selection method
+  while(selectionMethod < 0 || selectionMethod > 2)
+  {
+    cout << "Choose your selection method:\n"
+      << "- FullFrame: 0\n"
+      << "- Matched Points: 1\n"
+      << "- VLD Segment: 2\n";
+    cin >> selectionMethod;
+  }
+  _selectionMethod = static_cast<EHistogramSelectionMethod>(selectionMethod);
+
 }
 
 ColorHarmonizationEngineGlobal::~ColorHarmonizationEngineGlobal()
@@ -95,27 +122,29 @@ bool ColorHarmonizationEngineGlobal::Process()
 
   if( !ReadInputData() )
     return false;
-  if( _map_Matches.size() == 0 )
+  if( _pairwiseMatches.size() == 0 )
   {
     cout << endl << "Matches file is empty" << endl;
     return false;
   }
 
   //-- Remove EG with poor support:
-
-  for (matching::PairWiseMatches::iterator iter = _map_Matches.begin();
-    iter != _map_Matches.end();
-    ++iter)
+  for (matching::PairwiseMatches::iterator matchesPerViewIt = _pairwiseMatches.begin();
+       matchesPerViewIt != _pairwiseMatches.end();
+       )
   {
-    if (iter->second.size() < 120)
+    if (matchesPerViewIt->second.getNbAllMatches() < 120)
     {
-      _map_Matches.erase(iter);
-      iter = _map_Matches.begin();
+      matchesPerViewIt = _pairwiseMatches.erase(matchesPerViewIt);
+    }
+    else
+    {
+      ++matchesPerViewIt;
     }
   }
 
   {
-    graph::indexedGraph putativeGraph(getPairs(_map_Matches));
+    graph::indexedGraph putativeGraph(matching::getImagePairs(_pairwiseMatches));
 
     // Save the graph before cleaning:
     graph::exportToGraphvizData(
@@ -133,45 +162,16 @@ bool ColorHarmonizationEngineGlobal::Process()
   }
 
   //-------------------
-  //-- Color Harmonization
-  //-------------------
-
-  //Choose image reference
-  if( _imgRef == -1 )
-  {
-    do
-    {
-      cout << "Choose your reference image:\n";
-      for( int i = 0; i < _vec_fileNames.size(); ++i )
-      {
-        cout << "id: " << i << "\t" << _vec_fileNames[ i ] << endl;
-      }
-    }while( !( cin >> _imgRef ) || _imgRef < 0 || _imgRef >= _vec_fileNames.size() );
-  }
-
-  //Choose selection method
-  if( _selectionMethod == -1 )
-  {
-    cout << "Choose your selection method:\n"
-      << "- FullFrame: 0\n"
-      << "- Matched Points: 1\n"
-      << "- VLD Segment: 2\n";
-    while( ! ( cin >> _selectionMethod ) || _selectionMethod < 0 || _selectionMethod > 2 )
-    {
-      cout << _selectionMethod << " is not accepted.\nTo use: \n- FullFrame enter: 0\n- Matched Points enter: 1\n- VLD Segment enter: 2\n";
-    }
-  }
-
-  //-------------------
   // Compute remaining camera node Id
   //-------------------
 
   std::map<size_t, size_t> map_cameraNodeToCameraIndex; // graph node Id to 0->Ncam
   std::map<size_t, size_t> map_cameraIndexTocameraNode; // 0->Ncam correspondance to graph node Id
   std::set<size_t> set_indeximage;
-  for (size_t i = 0; i < _map_Matches.size(); ++i)
+
+  for (size_t i = 0; i < _pairwiseMatches.size(); ++i)
   {
-    matching::PairWiseMatches::const_iterator iter = _map_Matches.begin();
+    matching::PairwiseMatches::const_iterator iter = _pairwiseMatches.begin();
     std::advance(iter, i);
 
     const size_t I = iter->first.first;
@@ -196,40 +196,34 @@ bool ColorHarmonizationEngineGlobal::Process()
 
   // For each edge computes the selection masks and histograms (for the RGB channels)
   std::vector<relativeColorHistogramEdge> map_relativeHistograms[3];
-  map_relativeHistograms[0].resize(_map_Matches.size());
-  map_relativeHistograms[1].resize(_map_Matches.size());
-  map_relativeHistograms[2].resize(_map_Matches.size());
+  map_relativeHistograms[0].resize(_pairwiseMatches.size());
+  map_relativeHistograms[1].resize(_pairwiseMatches.size());
+  map_relativeHistograms[2].resize(_pairwiseMatches.size());
 
-  for (size_t i = 0; i < _map_Matches.size(); ++i)
+  for (size_t i = 0; i < _pairwiseMatches.size(); ++i)
   {
-    matching::PairWiseMatches::const_iterator iter = _map_Matches.begin();
+    matching::PairwiseMatches::const_iterator iter = _pairwiseMatches.begin();
     std::advance(iter, i);
 
-    const size_t I = iter->first.first;
-    const size_t J = iter->first.second;
+    const size_t viewI = iter->first.first;
+    const size_t viewJ = iter->first.second;
 
-    const std::vector<IndMatch> & vec_matchesInd = iter->second;
+    //
+    const MatchesPerDescType& matchesPerDesc = iter->second;
 
     //-- Edges names:
     std::pair< std::string, std::string > p_imaNames;
-    p_imaNames = make_pair( _vec_fileNames[ I ], _vec_fileNames[ J ] );
+    p_imaNames = make_pair( _vec_fileNames[ viewI ], _vec_fileNames[ viewJ ] );
     std::cout << "Current edge : "
       << stlplus::filename_part(p_imaNames.first) << "\t"
       << stlplus::filename_part(p_imaNames.second) << std::endl;
 
     //-- Compute the masks from the data selection:
-    Image< unsigned char > maskI ( _vec_imageSize[ I ].first, _vec_imageSize[ I ].second );
-    Image< unsigned char > maskJ ( _vec_imageSize[ J ].first, _vec_imageSize[ J ].second );
+    Image< unsigned char > maskI ( _vec_imageSize[ viewI ].first, _vec_imageSize[ viewI ].second );
+    Image< unsigned char > maskJ ( _vec_imageSize[ viewJ ].first, _vec_imageSize[ viewJ ].second );
 
     switch(_selectionMethod)
     {
-      enum EHistogramSelectionMethod
-      {
-          eHistogramHarmonizeFullFrame     = 0,
-          eHistogramHarmonizeMatchedPoints = 1,
-          eHistogramHarmonizeVLDSegment    = 2,
-      };
-
       case eHistogramHarmonizeFullFrame:
       {
         color_harmonization::commonDataByPair_FullFrame  dataSelector(
@@ -244,23 +238,31 @@ bool ColorHarmonizationEngineGlobal::Process()
         color_harmonization::commonDataByPair_MatchedPoints dataSelector(
           p_imaNames.first,
           p_imaNames.second,
-          vec_matchesInd,
-          _map_feats[ I ],
-          _map_feats[ J ],
+          matchesPerDesc,
+          _regionsPerView.getRegionsPerDesc(viewI),
+          _regionsPerView.getRegionsPerDesc(viewJ),
           circleSize);
         dataSelector.computeMask( maskI, maskJ );
       }
       break;
       case eHistogramHarmonizeVLDSegment:
       {
-        color_harmonization::commonDataByPair_VLDSegment dataSelector(
-          p_imaNames.first,
-          p_imaNames.second,
-          vec_matchesInd,
-          _map_feats[ I ],
-          _map_feats[ J ]);
+        maskI.fill(0);
+        maskJ.fill(0);
 
-        dataSelector.computeMask( maskI, maskJ );
+        for(const auto& matchesIt: matchesPerDesc)
+        {
+          const features::EImageDescriberType descType = matchesIt.first;
+          const IndMatches& matches = matchesIt.second;
+          color_harmonization::commonDataByPair_VLDSegment dataSelector(
+            p_imaNames.first,
+            p_imaNames.second,
+            matches,
+            features::getSIOPointFeatures(_regionsPerView.getRegions(viewI, descType)),
+            features::getSIOPointFeatures(_regionsPerView.getRegions(viewJ, descType)));
+
+          dataSelector.computeMask( maskI, maskJ );
+        }
       }
       break;
       default:
@@ -272,7 +274,7 @@ bool ColorHarmonizationEngineGlobal::Process()
     bool bExportMask = false;
     if (bExportMask)
     {
-      string sEdge = _vec_fileNames[ I ] + "_" + _vec_fileNames[ J ];
+      string sEdge = _vec_fileNames[ viewI ] + "_" + _vec_fileNames[ viewJ ];
       sEdge = stlplus::create_filespec( _sOutDirectory, sEdge );
       if( !stlplus::folder_exists( sEdge ) )
         stlplus::folder_create( sEdge );
@@ -299,7 +301,7 @@ bool ColorHarmonizationEngineGlobal::Process()
     color_harmonization::commonDataByPair::computeHisto( histoI, maskI, channelIndex, imageI );
     color_harmonization::commonDataByPair::computeHisto( histoJ, maskJ, channelIndex, imageJ );
     relativeColorHistogramEdge & edgeR = map_relativeHistograms[channelIndex][i];
-    edgeR = relativeColorHistogramEdge(map_cameraNodeToCameraIndex[I], map_cameraNodeToCameraIndex[J],
+    edgeR = relativeColorHistogramEdge(map_cameraNodeToCameraIndex[viewI], map_cameraNodeToCameraIndex[viewJ],
       histoI.GetHist(), histoJ.GetHist());
 
     histoI = histoJ = Histogram< double >( minvalue, maxvalue, bin);
@@ -307,7 +309,7 @@ bool ColorHarmonizationEngineGlobal::Process()
     color_harmonization::commonDataByPair::computeHisto( histoI, maskI, channelIndex, imageI );
     color_harmonization::commonDataByPair::computeHisto( histoJ, maskJ, channelIndex, imageJ );
     relativeColorHistogramEdge & edgeG = map_relativeHistograms[channelIndex][i];
-    edgeG = relativeColorHistogramEdge(map_cameraNodeToCameraIndex[I], map_cameraNodeToCameraIndex[J],
+    edgeG = relativeColorHistogramEdge(map_cameraNodeToCameraIndex[viewI], map_cameraNodeToCameraIndex[viewJ],
       histoI.GetHist(), histoJ.GetHist());
 
     histoI = histoJ = Histogram< double >( minvalue, maxvalue, bin);
@@ -315,7 +317,7 @@ bool ColorHarmonizationEngineGlobal::Process()
     color_harmonization::commonDataByPair::computeHisto( histoI, maskI, channelIndex, imageI );
     color_harmonization::commonDataByPair::computeHisto( histoJ, maskJ, channelIndex, imageJ );
     relativeColorHistogramEdge & edgeB = map_relativeHistograms[channelIndex][i];
-    edgeB = relativeColorHistogramEdge(map_cameraNodeToCameraIndex[I], map_cameraNodeToCameraIndex[J],
+    edgeB = relativeColorHistogramEdge(map_cameraNodeToCameraIndex[viewI], map_cameraNodeToCameraIndex[viewJ],
       histoI.GetHist(), histoJ.GetHist());
   }
 
@@ -332,7 +334,7 @@ bool ColorHarmonizationEngineGlobal::Process()
 
   openMVG::system::Timer timer;
 
-  #ifdef OPENMVG_HAVE_MOSEK
+  #if OPENMVG_IS_DEFINED(OPENMVG_HAVE_MOSEK)
   typedef MOSEK_SolveWrapper SOLVER_LP_T;
   #else
   typedef OSI_CLP_SolverWrapper SOLVER_LP_T;
@@ -372,7 +374,7 @@ bool ColorHarmonizationEngineGlobal::Process()
   }
 
   std::cout << std::endl
-    << " ColorHarmonization solving on a graph with: " << _map_Matches.size() << " edges took (s): "
+    << " ColorHarmonization solving on a graph with: " << _pairwiseMatches.size() << " edges took (s): "
     << timer.elapsed() << std::endl
     << "LInfinity fitting error: \n"
     << "- for the red channel is: " << vec_solution_r.back() << " gray level(s)" <<std::endl
@@ -419,9 +421,7 @@ bool ColorHarmonizationEngineGlobal::Process()
     Image< RGBColor > image_c;
     ReadImage( _vec_fileNames[ imaNum ].c_str(), &image_c );
 
-#ifdef OPENMVG_USE_OPENMP
-#pragma omp parallel for
-#endif
+    #pragma omp parallel for
     for( int j = 0; j < image_c.Height(); ++j )
     {
       for( int i = 0; i < image_c.Width(); ++i )
@@ -478,28 +478,21 @@ bool ColorHarmonizationEngineGlobal::ReadInputData()
   }
 
   // b. Read matches
-  if ( !matching::Load(_map_Matches, sfm_data.GetViewsKeys(), _sMatchesPath, _sMatchesGeometricModel) )
+  if ( !matching::Load(_pairwiseMatches, sfm_data.GetViewsKeys(), _sMatchesPath, _descTypes, _sMatchesGeometricModel) )
   {
     cerr<< "Unable to read the geometric matrix matches" << endl;
     return false;
   }
 
   // Read features:
-  for ( size_t i = 0; i < _vec_fileNames.size(); ++i )
+  if(!sfm::loadRegionsPerView(_regionsPerView, sfm_data, _sMatchesPath, _descTypes))
   {
-    const size_t camIndex = i;
-    if ( !loadFeatsFromFile(
-            stlplus::create_filespec( _sMatchesPath,
-                                      stlplus::basename_part( _vec_fileNames[ camIndex ] ),
-                                      ".feat" ),
-            _map_feats[ camIndex ] ) )
-    {
-      cerr << "Bad reading of feature files" << endl;
-      return false;
-    }
+    cerr << "Can't load feature files" << endl;
+    return false;
   }
 
-  graph::indexedGraph putativeGraph(getPairs(_map_Matches));
+
+  graph::indexedGraph putativeGraph(getImagePairs(_pairwiseMatches));
 
   // Save the graph before cleaning:
   graph::exportToGraphvizData(
@@ -514,7 +507,7 @@ bool ColorHarmonizationEngineGlobal::CleanGraph()
   // Create a graph from pairwise correspondences:
   // - keep the largest connected component.
 
-  graph::indexedGraph putativeGraph(getPairs(_map_Matches));
+  graph::indexedGraph putativeGraph(getImagePairs(_pairwiseMatches));
 
   // Save the graph before cleaning:
   graph::exportToGraphvizData(
@@ -560,16 +553,16 @@ bool ColorHarmonizationEngineGlobal::CleanGraph()
           putativeGraph.g.erase(e);
           const IndexT Idu = (*putativeGraph.map_nodeMapIndex)[putativeGraph.g.target(e)];
           const IndexT Idv = (*putativeGraph.map_nodeMapIndex)[putativeGraph.g.source(e)];
-          matching::PairWiseMatches::iterator iterM = _map_Matches.find(std::make_pair(Idu,Idv));
-          if( iterM != _map_Matches.end())
+          matching::PairwiseMatches::iterator iterM = _pairwiseMatches.find(std::make_pair(Idu,Idv));
+          if( iterM != _pairwiseMatches.end())
           {
-            _map_Matches.erase(iterM);
+            _pairwiseMatches.erase(iterM);
           }
           else // Try to find the opposite directed edge
           {
-            iterM = _map_Matches.find(std::make_pair(Idv,Idu));
-            if( iterM != _map_Matches.end())
-              _map_Matches.erase(iterM);
+            iterM = _pairwiseMatches.find(std::make_pair(Idv,Idu));
+            if( iterM != _pairwiseMatches.end())
+              _pairwiseMatches.erase(iterM);
           }
         }
       }

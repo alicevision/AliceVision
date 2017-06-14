@@ -9,10 +9,9 @@
 #include "openMVG/sfm/sfm.hpp"
 #include "openMVG/image/image.hpp"
 #include "openMVG/features/features.hpp"
+#include "openMVG/features/sift/SIFT_describer.hpp"
 #include "openMVG/matching/regions_matcher.hpp"
 #include "openMVG/multiview/triangulation.hpp"
-
-#include "nonFree/sift/SIFT_describer.hpp"
 
 #include "third_party/stlplus3/filesystemSimplified/file_system.hpp"
 #include "third_party/vectorGraphics/svgDrawer.hpp"
@@ -54,7 +53,7 @@ int main() {
   // Detect regions thanks to an image_describer
   //--
   using namespace openMVG::features;
-  std::unique_ptr<Image_describer> image_describer(new SIFT_Image_describer);
+  std::unique_ptr<Image_describer> image_describer(new SIFT_ImageDescriber);
   std::map<IndexT, std::unique_ptr<features::Regions> > regions_perImage;
   image_describer->Describe(imageL, regions_perImage[0]);
   image_describer->Describe(imageR, regions_perImage[1]);

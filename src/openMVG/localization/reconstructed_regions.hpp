@@ -7,122 +7,36 @@
 
 #pragma once
 
+#include "openMVG/config.hpp"
 #include "openMVG/types.hpp"
-#include "openMVG/numeric/numeric.h"
-#include "openMVG/features/feature.hpp"
-#include "openMVG/features/descriptor.hpp"
 #include "openMVG/features/regions.hpp"
-#include "openMVG/matching/metric.hpp"
+#include "openMVG/features/descriptor.hpp"
+#include "openMVG/features/ImageDescriberCommon.hpp"
 
-#ifdef HAVE_CCTAG
-#include "openMVG/features/cctag/CCTAG_describer.hpp"
-#endif
-
-#include "cereal/types/vector.hpp"
-
-#include <string>
-#include <typeinfo>
+#include <vector>
+#include <map>
+#include <memory>
 
 namespace openMVG {
 namespace localization {
 
-struct FeatureInImage
+
+struct ReconstructedRegionsMapping
 {
-  FeatureInImage(IndexT featureIndex, IndexT point3dId)
-    : _featureIndex(featureIndex)
-    , _point3dId(point3dId)
-  {}
-  
-  IndexT _featureIndex;
-  IndexT _point3dId;
-  
-  bool operator<(const FeatureInImage& other) const
-  {
-    return _featureIndex < other._featureIndex;
-  }
-};
-
-
-/// Specialization of the abstract Regions class to handle Scalar descriptors
-template<typename FeatT, typename T, size_t L>
-class Reconstructed_Regions
-{
-public:
-  // Region type
-  typedef FeatT FeatureT;
-  // Region descriptor
-  typedef features::Descriptor<T, L> DescriptorT;
-  // Associated Regions
-  typedef features::Scalar_Regions<FeatT, T, L> RegionsT;
-  
-//  template<class Archive>
-//  void serialize(Archive & ar)
-//  {
-//    ar(_vec_feats);
-//    ar(_vec_descs);
-//  }
-  
-  void filterRegions(const std::vector<FeatureInImage>& featuresInImage)
-  {
-    features::Scalar_Regions<FeatT, T, L> newRegions;
-    newRegions.Features().reserve(featuresInImage.size());
-    newRegions.Descriptors().reserve(featuresInImage.size());
-    _associated3dPoint.reserve(featuresInImage.size());
-    for(std::size_t i = 0; i < featuresInImage.size(); ++i)
-    {
-      const FeatureInImage & feat = featuresInImage[i];
-      newRegions.Features().push_back(_regions.Features()[feat._featureIndex]);
-      newRegions.Descriptors().push_back(_regions.Descriptors()[feat._featureIndex]);
-      _mapFullToLocal[feat._featureIndex] = i; //todo@Simone check if map is already initialized
-      _associated3dPoint.push_back(feat._point3dId);
-    }
-    _regions.swap(newRegions);
-  }
-  
-  
-#ifdef HAVE_CCTAG
-  
-  void filterCCTagRegions(const std::vector<FeatureInImage>& featuresInImage)
-  {
-    features::Scalar_Regions<FeatT, T, L> newRegions;
-    newRegions.Features().reserve(featuresInImage.size());
-    newRegions.Descriptors().reserve(featuresInImage.size());
-    _associated3dPoint.reserve(featuresInImage.size());
-    for(std::size_t i = 0; i < featuresInImage.size(); ++i)
-    {
-      const FeatureInImage & feat = featuresInImage[i];  
-      // if the descriptor is a CCTag Descriptor, then add the region
-      IndexT cctagId = features::getCCTagId(_regions.Descriptors()[feat._featureIndex]);
-      if( cctagId != UndefinedIndexT)
-      {
-        newRegions.Features().push_back(_regions.Features()[feat._featureIndex]);
-        newRegions.Descriptors().push_back(_regions.Descriptors()[feat._featureIndex]);
-        _mapFullToLocal[feat._featureIndex] = i; //@TODO check if map is already initialized
-        _associated3dPoint.push_back(feat._point3dId); 
-      }
-    }
-    _regions.swap(newRegions);
-  }
-  
-  void updateLandmarksVisibility(std::vector<bool> & presentIds) const
-  {
-    assert(presentIds.size()==128);
-    for (const auto & desc : _regions.Descriptors())
-    {
-      IndexT cctagId = features::getCCTagId(desc);
-      if( cctagId != UndefinedIndexT) // todo put an assert instead ?
-        presentIds[cctagId] = true;
-    }
-  }
-#endif    
-
-public:
-  //--
-  //-- internal data
-  features::Scalar_Regions<FeatT, T, L> _regions;
   std::vector<IndexT> _associated3dPoint;
-  std::map<IndexT, IndexT> _mapFullToLocal; 
+  std::map<IndexT, IndexT> _mapFullToLocal;
 };
+
+
+inline std::unique_ptr<features::Regions> createFilteredRegions(const features::Regions& regions, const std::vector<features::FeatureInImage>& featuresInImage, ReconstructedRegionsMapping& out_mapping)
+{
+  return regions.createFilteredRegions(featuresInImage, out_mapping._associated3dPoint, out_mapping._mapFullToLocal);
+}
+
+using ReconstructedRegionsMappingPerDesc = std::map<features::EImageDescriberType, ReconstructedRegionsMapping>;
+
+using ReconstructedRegionsMappingPerView = std::map<IndexT, ReconstructedRegionsMappingPerDesc>;
+
 
 } // namespace features
 } // namespace openMVG

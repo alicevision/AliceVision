@@ -7,6 +7,7 @@
 
 #include "openMVG/image/image.hpp"
 #include "openMVG/features/features.hpp"
+#include "openMVG/features/sift/SIFT_describer.hpp"
 #include "openMVG/robust_estimation/guided_matching.hpp"
 #include "openMVG/multiview/solver_homography_kernel.hpp"
 #include "openMVG/matching/regions_matcher.hpp"
@@ -23,8 +24,6 @@ using namespace openMVG::image;
 using namespace openMVG::matching;
 using namespace svg;
 using namespace std;
-
-#include "nonFree/sift/SIFT_describer.hpp"
 
 // Class to load images and ground truth homography matrices
 // A reference image
@@ -276,7 +275,7 @@ int main(int argc, char **argv)
       std::unique_ptr<Image_describer> image_describer;
       if (sImage_Describer_Method == "SIFT")
       {
-        image_describer.reset(new SIFT_Image_describer(SiftParams()));
+        image_describer.reset(new SIFT_ImageDescriber(SiftParams()));
       }
       else
       if (sImage_Describer_Method == "AKAZE_FLOAT")

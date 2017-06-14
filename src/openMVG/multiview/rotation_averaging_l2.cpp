@@ -6,6 +6,9 @@
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 #include "openMVG/multiview/rotation_averaging_l2.hpp"
+#include <openMVG/config.hpp>
+#include <openMVG/openmvg_omp.hpp>
+
 #include <vector>
 #include <map>
 
@@ -266,10 +269,10 @@ bool L2RotationAveraging_Refine(
   {
     solverOptions.linear_solver_type = ceres::DENSE_NORMAL_CHOLESKY;
   }
-#ifdef OPENMVG_USE_OPENMP
+  // set number of threads, 1 if openMP is not enabled
   solverOptions.num_threads = omp_get_max_threads();
   solverOptions.num_linear_solver_threads = omp_get_max_threads();
-#endif // OPENMVG_USE_OPENMP
+
 
   ceres::Solver::Summary summary;
   ceres::Solve(solverOptions, &problem, &summary);

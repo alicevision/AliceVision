@@ -1,13 +1,13 @@
 #include "patternDetect.hpp"
 
+#include <openMVG/config.hpp>
 #include <openMVG/logger.hpp>
 #include <openMVG/system/timer.hpp>
 
 #include <boost/program_options.hpp>
 #include <boost/algorithm/string/case_conv.hpp>
-#include <boost/lexical_cast.hpp>
 
-#ifdef HAVE_CCTAG
+#if OPENMVG_IS_DEFINED(OPENMVG_HAVE_CCTAG)
 #include <openMVG/features/cctag/CCTAG_describer.hpp>
 #include <cctag/ICCTag.hpp>
 #include <cctag/utils/LogTime.hpp>
@@ -35,7 +35,7 @@ std::istream& operator>>(std::istream &stream, Pattern &pattern)
   else if (token == "ASYMMETRIC_CIRCLES")
     pattern = openMVG::calibration::Pattern::ASYMMETRIC_CIRCLES_GRID;
   else if (token == "ASYMMETRIC_CCTAG")
-#ifdef HAVE_CCTAG
+#if OPENMVG_IS_DEFINED(OPENMVG_HAVE_CCTAG)
     pattern = ASYMMETRIC_CCTAG_GRID;
 #else
     throw boost::program_options::invalid_option_value("Not builded with CCTag support.");
@@ -58,7 +58,7 @@ std::ostream& operator<<(std::ostream &stream, const Pattern pattern)
     case openMVG::calibration::Pattern::ASYMMETRIC_CIRCLES_GRID:
       stream << "ASYMMETRIC_CIRCLES";
       break;
-#ifdef HAVE_CCTAG
+#if OPENMVG_IS_DEFINED(OPENMVG_HAVE_CCTAG)
     case openMVG::calibration::Pattern::ASYMMETRIC_CCTAG_GRID:
       stream << "ASYMMETRIC_CCTAG";
       break;
@@ -116,7 +116,7 @@ bool findPattern(const Pattern& pattern, const cv::Mat& viewGray, const cv::Size
       OPENMVG_LOG_DEBUG("Find asymmetric circles grid duration: " << durationCh);
       break;
     }
-  #ifdef HAVE_CCTAG
+  #if OPENMVG_IS_DEFINED(OPENMVG_HAVE_CCTAG)
     case ASYMMETRIC_CCTAG_GRID:
     {
       startCh = std::clock();
@@ -191,7 +191,7 @@ void calcChessboardCorners(std::vector<cv::Point3f>& corners, const cv::Size& bo
                                         0));
       break;
     }
-  #ifdef HAVE_CCTAG
+  #if OPENMVG_IS_DEFINED(OPENMVG_HAVE_CCTAG)
     case ASYMMETRIC_CCTAG_GRID:
     {
       // The real number of lines in the cctag asymmetric grid

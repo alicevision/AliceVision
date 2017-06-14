@@ -29,6 +29,11 @@ TARGET_LINK_LIBRARIES(openMVG_lInftyComputerVision
   ${COINUTILS_LIBRARY} # container tools
   ${OSI_LIBRARY}       # generic LP
   )
+
+if(MOSEK_FOUND)  
+    target_link_libraries(openMVG_lInftyComputerVision ${MOSEK_LIB})
+endif()
+
 SET_TARGET_PROPERTIES(openMVG_lInftyComputerVision PROPERTIES SOVERSION ${OPENMVG_VERSION_MAJOR} VERSION "${OPENMVG_VERSION_MAJOR}.${OPENMVG_VERSION_MINOR}")
 INSTALL(TARGETS openMVG_lInftyComputerVision DESTINATION lib EXPORT openMVG-targets)
 

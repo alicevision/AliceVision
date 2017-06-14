@@ -10,6 +10,7 @@
 #include "openMVG/features/svgVisualization.hpp"
 #include "openMVG/image/image.hpp"
 #include "openMVG/sfm/sfm.hpp"
+#include "openMVG/sfm/pipelines/RegionsIO.hpp"
 
 #include "third_party/cmdLine/cmdLine.h"
 #include "third_party/stlplus3/filesystemSimplified/file_system.hpp"
@@ -33,10 +34,12 @@ int main(int argc, char ** argv)
   CmdLine cmd;
 
   std::string sSfM_Data_Filename;
-  std::string sMatchesDir;
+  std::string describerMethods = "SIFT";
+  std::string sMatchesDir = "";
   std::string sOutDir = "";
 
   cmd.add( make_option('i', sSfM_Data_Filename, "input_file") );
+  cmd.add( make_option('m', describerMethods, "describerMethods") );
   cmd.add( make_option('d', sMatchesDir, "matchdir") );
   cmd.add( make_option('o', sOutDir, "outdir") );
 
@@ -46,6 +49,22 @@ int main(int argc, char ** argv)
   } catch(const std::string& s) {
       std::cerr << "Export pairwise matches.\nUsage: " << argv[0] << "\n"
       << "[-i|--input_file file] path to a SfM_Data scene\n"
+      << "[-m|--describerMethods]\n"
+      << "  (methods to use to describe an image):\n"
+      << "   SIFT (default),\n"
+      << "   SIFT_FLOAT to use SIFT stored as float,\n"
+      << "   AKAZE: AKAZE with floating point descriptors,\n"
+      << "   AKAZE_MLDB:  AKAZE with binary descriptors\n"
+#if OPENMVG_IS_DEFINED(OPENMVG_HAVE_CCTAG)
+      << "   CCTAG3: CCTAG markers with 3 crowns\n"
+      << "   CCTAG4: CCTAG markers with 4 crowns\n"
+#endif //OPENMVG_HAVE_CCTAG
+#if OPENMVG_IS_DEFINED(OPENMVG_HAVE_OPENCV)
+#if OPENMVG_IS_DEFINED(OPENMVG_USE_OCVSIFT)
+      << "   SIFT_OCV: OpenCV SIFT\n"
+#endif //OPENMVG_USE_OCVSIFT
+      << "   AKAZE_OCV: OpenCV AKAZE\n"
+#endif //OPENMVG_HAVE_OPENCV
       << "[-d|--matchdir path]\n"
       << "[-o|--outdir path]\n"
       << std::endl;
@@ -54,7 +73,8 @@ int main(int argc, char ** argv)
       return EXIT_FAILURE;
   }
 
-  if (sOutDir.empty())  {
+  if (sOutDir.empty())
+  {
     std::cerr << "\nIt is an invalid output directory" << std::endl;
     return EXIT_FAILURE;
   }
@@ -73,20 +93,14 @@ int main(int argc, char ** argv)
   //---------------------------------------
   // Load SfM Scene regions
   //---------------------------------------
-  // Init the regions_type from the image describer file (used for image regions extraction)
   using namespace openMVG::features;
-  const std::string sImage_describer = stlplus::create_filespec(sMatchesDir, "image_describer", "json");
-  std::unique_ptr<Regions> regions_type = Init_region_type_from_file(sImage_describer);
-  if (!regions_type)
-  {
-    std::cerr << "Invalid: "
-      << sImage_describer << " regions type file." << std::endl;
-    return EXIT_FAILURE;
-  }
+  
+  // Get imageDescriberMethodType
+  std::vector<EImageDescriberType> describerMethodTypes = EImageDescriberType_stringToEnums(describerMethods);
 
   // Read the features
-  std::shared_ptr<Features_Provider> feats_provider = std::make_shared<Features_Provider>();
-  if (!feats_provider->load(sfm_data, sMatchesDir, regions_type)) {
+  features::FeaturesPerView featuresPerView;
+  if (!sfm::loadFeaturesPerView(featuresPerView, sfm_data, sMatchesDir, describerMethodTypes)) {
     std::cerr << std::endl
       << "Invalid features." << std::endl;
     return EXIT_FAILURE;
@@ -107,9 +121,8 @@ int main(int argc, char ** argv)
 
     const std::pair<size_t, size_t>
       dimImage = std::make_pair(view->ui_width, view->ui_height);
-    
-    // get the features
-    const PointFeatures & features = feats_provider->getFeatures(view->id_view);
+
+    const MapFeaturesPerDesc& features = featuresPerView.getData().at(view->id_view);
 
     // output filename
     std::ostringstream os;
@@ -119,8 +132,9 @@ int main(int argc, char ** argv)
 
     features::saveFeatures2SVG(sView_filename,
                                dimImage,
-                               features,
+                               featuresPerView.getData().at(view->id_view),
                                os.str());
+
     ++my_progress_bar;
   }
   

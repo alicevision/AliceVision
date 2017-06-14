@@ -7,6 +7,7 @@
 
 #pragma once
 
+#include "openMVG/features/FeaturesPerView.hpp"
 #include "openMVG/sfm/pipelines/localization/SfM_Localizer.hpp"
 #include "openMVG/matching/regions_matcher.hpp"
 
@@ -29,13 +30,13 @@ public:
   * @brief Build the retrieval database (3D points descriptors)
   *
   * @param[in] sfm_data the SfM scene that have to be described
-  * @param[in] region_provider regions provider
+  * @param[in] regionPerView regions provider
   * @return True if the database has been correctly setup
   */
   bool Init
   (
     const SfM_Data & sfm_data,
-    const Regions_Provider & regions_provider
+    const features::RegionsPerView & regionsPerView
   );
 
   /**
@@ -66,7 +67,7 @@ private:
   std::vector<IndexT> index_to_landmark_id_;
   /// A matching interface to find matches between 2D descriptor matches
   ///  and 3D points observation descriptors
-  std::unique_ptr<matching::Matcher_Regions_Database> matching_interface_;
+  std::unique_ptr<matching::RegionsDatabaseMatcher> matching_interface_;
 };
 
 } // namespace sfm

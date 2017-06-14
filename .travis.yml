@@ -85,6 +85,7 @@ script:
 # limit GCC builds to a reduced number of thread for the virtual machine
   - make -j 2 VERBOSE=1
 # Perform unit tests only on GCC builds
+  - export OMP_NUM_THREADS=4
   - if [ "$CC" = "gcc" ]; then make test; fi
 # Perform benchmark through ground truth tests with many scenes
   - >
