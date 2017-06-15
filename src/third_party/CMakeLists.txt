@@ -11,7 +11,7 @@ if(UNIX)
 endif(UNIX)
 
 # Unit test library
-if(OpenMVG_BUILD_TESTS)
+if(OPENMVG_BUILD_TESTS)
   add_subdirectory(CppUnitLite)
 endif()
 
@@ -20,7 +20,7 @@ set(STLPLUS_INCLUDE_INSTALL_DIR ${CMAKE_INSTALL_PREFIX}/include/openMVG/third_pa
 add_subdirectory(stlplus3)
 
 # Add graph library
-if(DEFINED OpenMVG_USE_INTERNAL_LEMON)
+if(DEFINED OPENMVG_USE_INTERNAL_LEMON)
   add_subdirectory(lemon)
   set_property(TARGET lemon
     PROPERTY FOLDER OpenMVG/3rdParty/lemon
@@ -34,7 +34,7 @@ endif()
 # Image I/O
 ##
 if(NOT JPEG_FOUND)
-  set(OpenMVG_USE_INTERNAL_JPEG ON PARENT_SCOPE)
+  set(OPENMVG_USE_INTERNAL_JPEG ON PARENT_SCOPE)
   set(JPEG_INCLUDE_INSTALL_DIR ${CMAKE_INSTALL_PREFIX}/include/openMVG/third_party/jpeg)
   add_subdirectory(jpeg)
   list(APPEND JPEG_INCLUDE_DIRECTORIES ${CMAKE_CURRENT_SOURCE_DIR}/jpeg ${CMAKE_CURRENT_BINARY_DIR}/jpeg/config)
@@ -49,7 +49,7 @@ if(NOT PNG_FOUND OR NOT TIFF_FOUND)
 endif()
 
 if(NOT PNG_FOUND)
-  set(OpenMVG_USE_INTERNAL_PNG ON PARENT_SCOPE)
+  set(OPENMVG_USE_INTERNAL_PNG ON PARENT_SCOPE)
   set(ZLIB_INCLUDE_INSTALL_DIR ${CMAKE_INSTALL_PREFIX}/include/openMVG/third_party/zlib)
   set(PNG_INCLUDE_INSTALL_DIR ${CMAKE_INSTALL_PREFIX}/include/openMVG/third_party/png)
   add_subdirectory(png)
@@ -61,7 +61,7 @@ if(NOT PNG_FOUND)
 endif()
 
 if(NOT TIFF_FOUND)
-  set(OpenMVG_USE_INTERNAL_TIFF ON PARENT_SCOPE)
+  set(OPENMVG_USE_INTERNAL_TIFF ON PARENT_SCOPE)
   set(TIFF_INCLUDE_INSTALL_DIR ${CMAKE_INSTALL_PREFIX}/include/openMVG/third_party/tiff)
   add_subdirectory(tiff)
   list(APPEND TIFF_INCLUDE_DIRECTORIES ${CMAKE_CURRENT_SOURCE_DIR}/tiff ${CMAKE_CURRENT_BINARY_DIR}/tiff)
@@ -78,7 +78,7 @@ endif()
 add_subdirectory(vectorGraphics)
 
 # Add ceres-solver (A Nonlinear Least Squares Minimizer)
-if(OpenMVG_USE_INTERNAL_CERES)
+if(OPENMVG_USE_INTERNAL_CERES)
   set(CXSPARSE_INCLUDE_INSTALL_DIR ${CMAKE_INSTALL_PREFIX}/include/openMVG/third_party/cxsparse)
   add_subdirectory(cxsparse)
   set(CERES_INCLUDE_INSTALL_DIR ${CMAKE_INSTALL_PREFIX}/include/openMVG/third_party/ceres)
@@ -92,7 +92,7 @@ if(OpenMVG_USE_INTERNAL_CERES)
 endif()
 
 # Add an Approximate Nearest Neighbor library
-if(DEFINED OpenMVG_USE_INTERNAL_FLANN)
+if(DEFINED OPENMVG_USE_INTERNAL_FLANN)
   set(FLANN_INCLUDE_INSTALL_DIR ${CMAKE_INSTALL_PREFIX}/include/openMVG/third_party/flann/src/cpp)
   add_subdirectory(flann)
   set_property(TARGET flann_cpp_s
@@ -107,7 +107,7 @@ add_subdirectory(easyexif)
 ##
 # Install Header only libraries if necessary
 ## 
-if(DEFINED OpenMVG_USE_INTERNAL_EIGEN)
+if(DEFINED OPENMVG_USE_INTERNAL_EIGEN)
   # Configure Eigen install
   set(EIGEN_INCLUDE_INSTALL_DIR ${CMAKE_INSTALL_PREFIX}/include/openMVG/third_party/eigen)
   add_subdirectory(eigen)

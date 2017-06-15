@@ -28,7 +28,7 @@ target_link_libraries(openMVG_calibration
           ${LOG_LIB}
 )
 
-if(OpenMVG_USE_CCTAG)
+if(OPENMVG_HAVE_CCTAG)
   target_link_libraries(openMVG_calibration
     PRIVATE CCTag::CCTag
   )

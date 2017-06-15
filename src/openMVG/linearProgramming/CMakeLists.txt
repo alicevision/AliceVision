@@ -27,7 +27,7 @@ if (NOT MOSEK_FOUND)
     INTERFACE ${openMVG_linearProgramming_DEPS}
   )
 
-else (NOT MOSEK_FOUND)
+else ()
 
   # Add MOSEK related sources
   list(APPEND linearProgramming_cpp linearProgrammingMOSEK.cpp)

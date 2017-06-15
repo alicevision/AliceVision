@@ -13,11 +13,11 @@ target_link_libraries(openMVG_main_rigCalibration
   ${Boost_LIBRARIES}
 )
 
-if(OpenMVG_USE_CCTAG)
+if(OPENMVG_HAVE_CCTAG)
   target_link_libraries(openMVG_main_rigCalibration CCTag::CCTag)
 endif()
 
-if(OpenMVG_USE_OPENCV)
+if(OPENMVG_HAVE_OPENCV)
 
   add_executable(openMVG_main_cameraCalibration main_cameraCalibration.cpp)
   # target_include_directories(openMVG_main_cameraCalibration PUBLIC ${Boost_INCLUDE_DIRS} ${OpenCV_INCLUDE_DIRS})
@@ -29,7 +29,7 @@ if(OpenMVG_USE_OPENCV)
     ${OpenCV_LIBRARIES}
     ${Boost_LIBRARIES})
 
-  if(OpenMVG_USE_CCTAG)
+  if(OPENMVG_HAVE_CCTAG)
     target_link_libraries(openMVG_main_cameraCalibration CCTag::CCTag)
   endif()
 

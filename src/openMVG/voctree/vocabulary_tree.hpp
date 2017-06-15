@@ -345,9 +345,9 @@ inline std::unique_ptr<IVocabularyTree> createVoctreeForDescriberType(features::
 #endif //OPENMVG_HAVE_CCTAG
 
 #if OPENMVG_IS_DEFINED(OPENMVG_HAVE_OPENCV)
-#if OPENMVG_IS_DEFINED(OPENMVG_USE_OCVSIFT)
+#if OPENMVG_IS_DEFINED(OPENMVG_HAVE_OCVSIFT)
   case EImageDescriberType::SIFT_OCV:     res.reset(new VocabularyTree<SIFT_Regions::DescriptorT>); break;
-#endif //OPENMVG_USE_OCVSIFT
+#endif //OPENMVG_HAVE_OCVSIFT
   case EImageDescriberType::AKAZE_OCV:    res.reset(new VocabularyTree<AKAZE_Float_Regions::DescriptorT>); break;
 #endif //OPENMVG_HAVE_OPENCV
 

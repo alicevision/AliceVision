@@ -12,10 +12,10 @@ set(dataio_sources
     ImageFeed.cpp
 )
 
-if(OpenMVG_USE_OPENCV)
+if(OPENMVG_HAVE_OPENCV)
     list(APPEND dataio_headers VideoFeed.hpp)
     list(APPEND dataio_sources VideoFeed.cpp)
-endif(OpenMVG_USE_OPENCV)
+endif()
 
 set_source_files_properties(${dataio_sources} PROPERTIES LANGUAGE CXX)
 
@@ -34,7 +34,7 @@ target_link_libraries(openMVG_dataio
   ${LOG_LIB}
 )
 
-if(OpenMVG_USE_OPENCV)
+if(OPENMVG_HAVE_OPENCV)
   target_link_libraries(openMVG_dataio ${OpenCV_LIBS})
 endif()
 

@@ -38,24 +38,24 @@ set(features_files_sources
 )
 
 # CCTAG imageDescriber
-if(OpenMVG_USE_CCTAG)
+if(OPENMVG_HAVE_CCTAG)
   list(APPEND features_files_headers cctag/CCTAG_describer.hpp)
   list(APPEND features_files_sources cctag/CCTAG_describer.cpp)
 endif()
 
 # PopSIFT imageDescriber
-if(OpenMVG_USE_POPSIFT)
+if(OPENMVG_HAVE_POPSIFT)
   list(APPEND features_files_headers sift/SIFT_popSIFT_describer.hpp)
   list(APPEND features_files_sources sift/SIFT_popSIFT_describer.cpp)
 endif()
 
 # OpenCV imageDescriber
-if(OpenMVG_USE_OPENCV)
+if(OPENMVG_HAVE_OPENCV)
 
   list(APPEND features_files_headers openCV/AKAZE_openCV_describer.hpp)
   list(APPEND features_files_sources openCV/AKAZE_openCV_describer.cpp)
 
-  if(OPENMVG_USE_OCVSIFT)
+  if(OPENMVG_HAVE_OCVSIFT)
     list(APPEND features_files_headers openCV/SIFT_openCV_describer.hpp)
     list(APPEND features_files_sources openCV/SIFT_openCV_describer.cpp)
   endif()
@@ -79,17 +79,17 @@ target_link_libraries( openMVG_features
 )
 
 # Link CCTAG library
-if(OpenMVG_USE_CCTAG)
+if(OPENMVG_HAVE_CCTAG)
   target_link_libraries(openMVG_features PUBLIC CCTag::CCTag)
 endif()
 
 # Link PopSIFT library
-if(OpenMVG_USE_POPSIFT)
+if(OPENMVG_HAVE_POPSIFT)
   target_link_libraries(openMVG_features PUBLIC PopSift::popsift)
 endif()
 
 # Link OpenCV library
-if(OpenMVG_USE_OPENCV)
+if(OPENMVG_HAVE_OPENCV)
   target_link_libraries(openMVG_features PUBLIC ${OpenCV_LIBS})
 endif()
 

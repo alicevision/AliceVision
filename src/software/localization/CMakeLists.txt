@@ -1,4 +1,4 @@
-if(OpenMVG_USE_BOOST)
+if(OPENMVG_HAVE_BOOST)
 
   ###
   # Test the localization class
@@ -14,11 +14,11 @@ if(OpenMVG_USE_BOOST)
     ${BOOST_LIBRARIES}
   )
 
-  if(OpenMVG_USE_ALEMBIC)
+  if(OPENMVG_HAVE_ALEMBIC)
       target_link_libraries(openMVG_main_cameraLocalizer openMVG_sfm ${ABC_LIBRARIES})
   endif()
 
-  if(OpenMVG_USE_CCTAG)
+  if(OPENMVG_HAVE_CCTAG)
       target_link_libraries(openMVG_main_cameraLocalizer CCTag::CCTag)
   endif()
 
@@ -84,15 +84,15 @@ if(OpenMVG_USE_BOOST)
     ${Boost_LIBRARIES}
   )
 
-  if(OpenMVG_USE_ALEMBIC)
+  if(OPENMVG_HAVE_ALEMBIC)
       target_link_libraries(openMVG_main_rigLocalizer openMVG_sfm ${ABC_LIBRARIES})
   endif()
 
-  if(OpenMVG_USE_CCTAG)
+  if(OPENMVG_HAVE_CCTAG)
       target_link_libraries(openMVG_main_rigLocalizer CCTag::CCTag)
   endif()
 
-  if(OpenMVG_USE_ALEMBIC)
+  if(OPENMVG_HAVE_ALEMBIC)
 
     add_executable(openMVG_main_rigTransform main_rigTransform.cpp)
 

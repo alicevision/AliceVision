@@ -55,9 +55,9 @@ endmacro(OPENMVG_REPORT_NOT_FOUND)
 ## Public dependencies that needs to be propagated
 include(CMakeFindDependencyMacro)
 
-set(OpenMVG_USE_INTERNAL_CERES @OpenMVG_USE_INTERNAL_CERES@)
+set(OPENMVG_USE_INTERNAL_CERES @OPENMVG_USE_INTERNAL_CERES@)
 
-if(OpenMVG_USE_INTERNAL_CERES)
+if(OPENMVG_USE_INTERNAL_CERES)
   set(Ceres_DIR @CMAKE_INSTALL_PREFIX@/share/Ceres/)
 else()
   set(Ceres_DIR @Ceres_DIR@)
@@ -65,48 +65,48 @@ endif()
 find_dependency(Ceres)
 
 # whether it is built with CCTags
-set(OpenMVG_USE_CCTAG @OpenMVG_USE_CCTAG@)
+set(OPENMVG_USE_CCTAG @OPENMVG_USE_CCTAG@)
 
-if(OpenMVG_USE_CCTAG)
+if(OPENMVG_USE_CCTAG)
   set(CCTag_DIR @CCTag_DIR@)
   find_dependency(CCTag 1.0.0)
 endif()
 
 # whether it is built with CCTags
-set(OpenMVG_USE_POPSIFT @OpenMVG_USE_POPSIFT@)
+set(OPENMVG_USE_POPSIFT @OPENMVG_USE_POPSIFT@)
 
-if(OpenMVG_USE_POPSIFT)
+if(OPENMVG_USE_POPSIFT)
   find_dependency(PopSift 1.0.0)
 endif()
 
 
 # whether it is built with CCTags
-set(OpenMVG_USE_OPENCV @OpenMVG_USE_OPENCV@)
+set(OPENMVG_USE_OPENCV @OPENMVG_USE_OPENCV@)
 
-if(OpenMVG_USE_OPENCV)
+if(OPENMVG_USE_OPENCV)
   set(OpenCV_DIR @OpenCV_DIR@)
   find_dependency(OpenCV)
-endif(OpenMVG_USE_OPENCV)
+endif(OPENMVG_USE_OPENCV)
 
-set(OpenMVG_USE_OPENMP @OpenMVG_USE_OPENMP@)
+set(OPENMVG_USE_OPENMP @OPENMVG_USE_OPENMP@)
 
-if(OpenMVG_USE_OPENMP)
+if(OPENMVG_USE_OPENMP)
   find_dependency(OpenMP)
   # TODO: this would not be necessary if the flags were declared properly for each target
   set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
-endif(OpenMVG_USE_OPENMP)
+endif(OPENMVG_USE_OPENMP)
 
-set(OpenMVG_USE_BOOST @OpenMVG_USE_BOOST@)
+set(OPENMVG_USE_BOOST @OPENMVG_USE_BOOST@)
 set(BOOST_NO_CXX11 @BOOST_NO_CXX11@)
 if(BOOST_NO_CXX11)
  add_definitions(-DBOOST_NO_CXX11_SCOPED_ENUMS)
 endif(BOOST_NO_CXX11)
 
 # propagate other building options
-set(OpenMVG_USE_OPENGV @OpenMVG_USE_OPENGV@)
-set(OpenMVG_USE_ALEMBIC @OpenMVG_USE_ALEMBIC@)
-set(OpenMVG_USE_LOG @OpenMVG_USE_LOG@)
+set(OPENMVG_USE_OPENGV @OPENMVG_USE_OPENGV@)
+set(OPENMVG_USE_ALEMBIC @OPENMVG_USE_ALEMBIC@)
+set(OPENMVG_USE_LOG @OPENMVG_USE_LOG@)
 
 # Set the version.
 set(OPENMVG_VERSION @OPENMVG_VERSION@)
@@ -142,13 +142,13 @@ endif(NOT EXISTS ${CURRENT_ROOT_INSTALL_DIR}/include/openMVG/version.hpp)
 
 # Set the include directories for OpenMVG (itself) and all (potentially optional)
 # dependencies with which OpenMVG was compiled.
-set(OPENMVG_INCLUDE_DIRS "@OpenMVG_INCLUDE_DIRS@")
+set(OPENMVG_INCLUDE_DIRS "@OPENMVG_INCLUDE_DIRS@")
 
 ##### the libraries themselves come in via OpenMVGTargets-<release/debug>.cmake
 # as link libraries rules as target.
 
 # Import exported OpenMVG targets
-set(OPENMVG_LIBRARIES @OpenMVG_LIBRARIES@)
+set(OPENMVG_LIBRARIES @OPENMVG_LIBRARIES@)
 include(${CURRENT_CONFIG_INSTALL_DIR}/OpenMVGTargets.cmake)
 
 # As we use OPENMVG_REPORT_NOT_FOUND() to abort, if we reach this point we have

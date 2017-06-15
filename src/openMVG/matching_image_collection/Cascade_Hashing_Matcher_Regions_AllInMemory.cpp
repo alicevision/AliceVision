@@ -218,7 +218,7 @@ void ImageCollectionMatcher_CascadeHashing::Match
   PairwiseMatches & map_PutativesMatches // the pairwise photometric corresponding points
 ) const
 {
-#if OPENMVG_IS_DEFINED(OPENMVG_USE_OPENMP)
+#if OPENMVG_IS_DEFINED(OPENMVG_HAVE_OPENMP)
   OPENMVG_LOG_DEBUG("Using the OPENMP thread interface");
 #endif
 

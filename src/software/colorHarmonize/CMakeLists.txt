@@ -13,7 +13,8 @@ target_link_libraries(openMVG_main_ColHarmonize
   openMVG_features
   openMVG_sfm
   stlplus
-  ${CLP_LIBRARIES} ${COINUTILS_LIBRARY}
+  ${CLP_LIBRARIES}
+  ${COINUTILS_LIBRARY}
   ${OSI_LIBRARY}
 )
 

@@ -59,7 +59,7 @@ set(sfm_files_sources
   utils/sfm_data_UID_utils.cpp
 )
 
-if(OpenMVG_USE_ALEMBIC)
+if(OPENMVG_HAVE_ALEMBIC)
   list(APPEND sfm_files_headers
     AlembicExporter.hpp
     AlembicImporter.hpp
@@ -98,7 +98,7 @@ set_target_properties(openMVG_sfm
   VERSION "${OPENMVG_VERSION_MAJOR}.${OPENMVG_VERSION_MINOR}"
 )
 
-if(OpenMVG_USE_ALEMBIC)
+if(OPENMVG_HAVE_ALEMBIC)
   target_link_libraries(openMVG_sfm
     ${ABC_LIBRARIES}
   )
@@ -113,7 +113,7 @@ UNIT_TEST(openMVG sfm_data_io    "openMVG_features;openMVG_sfm;openMVG_system;st
 UNIT_TEST(openMVG sfm_data_BA    "openMVG_multiview_test_data;openMVG_features;openMVG_multiview;openMVG_sfm;openMVG_system;stlplus")
 UNIT_TEST(openMVG sfm_data_utils "openMVG_features;openMVG_multiview;openMVG_system;openMVG_sfm;stlplus")
 
-if(OpenMVG_USE_ALEMBIC)
+if(OPENMVG_HAVE_ALEMBIC)
   UNIT_TEST(openMVG AlembicImporter "openMVG_sfm;${ABC_LIBRARIES}")
 endif()
 

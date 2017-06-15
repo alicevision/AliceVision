@@ -17,7 +17,7 @@ set(localization_files_sources
 )
 
 
-if (OpenMVG_USE_CCTAG)
+if (OPENMVG_HAVE_CCTAG)
   list(APPEND localization_files_headers CCTagLocalizer.hpp)
   list(APPEND localization_files_sources CCTagLocalizer.cpp)
 endif()
@@ -37,11 +37,11 @@ target_link_libraries(openMVG_localization
           ${LOG_LIB}
 )
 
-if(OpenMVG_USE_CCTAG)
+if(OPENMVG_HAVE_CCTAG)
   target_link_libraries(openMVG_localization PRIVATE CCTag::CCTag)
 endif()
 
-if(OpenMVG_USE_OPENGV)
+if(OPENMVG_HAVE_OPENGV)
   target_link_libraries(openMVG_localization PRIVATE ${OPENGV_LIBRARY})
 endif()
 
@@ -61,6 +61,6 @@ install(TARGETS openMVG_localization
 
 UNIT_TEST(openMVG LocalizationResult "openMVG_localization")
 
-if(OpenMVG_USE_OPENGV)
+if(OPENMVG_HAVE_OPENGV)
   UNIT_TEST(openMVG rigResection  "openMVG_localization")
 endif()

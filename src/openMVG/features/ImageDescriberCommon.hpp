@@ -25,7 +25,7 @@ enum class EImageDescriberType: unsigned char
 #endif
 
 #if OPENMVG_IS_DEFINED(OPENMVG_HAVE_OPENCV)
-#if OPENMVG_IS_DEFINED(OPENMVG_USE_OCVSIFT)
+#if OPENMVG_IS_DEFINED(OPENMVG_HAVE_OCVSIFT)
   , SIFT_OCV = 40
 #endif
   , AKAZE_OCV = 41
@@ -74,9 +74,9 @@ inline float getStrongSupportCoeff(EImageDescriberType imageDescriberType)
 #endif
 
 #if OPENMVG_IS_DEFINED(OPENMVG_HAVE_OPENCV)
-#if OPENMVG_IS_DEFINED(OPENMVG_USE_OCVSIFT)
+#if OPENMVG_IS_DEFINED(OPENMVG_HAVE_OCVSIFT)
     case EImageDescriberType::SIFT_OCV:      return 0.14f;
-#endif //OPENMVG_USE_OCVSIFT
+#endif //OPENMVG_HAVE_OCVSIFT
     case EImageDescriberType::AKAZE_OCV:     return 0.14f;
 #endif //OPENMVG_HAVE_OPENCV
 

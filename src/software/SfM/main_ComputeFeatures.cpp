@@ -259,7 +259,7 @@ int main(int argc, char **argv)
     << "   CCTAG4: CCTAG markers with 4 crowns\n"
 #endif
 #if OPENMVG_IS_DEFINED(OPENMVG_HAVE_OPENCV)
-#if OPENMVG_IS_DEFINED(OPENMVG_USE_OCVSIFT)
+#if OPENMVG_IS_DEFINED(OPENMVG_HAVE_OCVSIFT)
     << "   SIFT_OCV: OpenCV SIFT\n"
 #endif
     << "   AKAZE_OCV: OpenCV AKAZE\n"

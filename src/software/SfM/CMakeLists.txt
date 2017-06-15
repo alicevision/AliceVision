@@ -58,7 +58,7 @@ target_link_libraries(openMVG_main_ComputeFeatures
   vlsift
 )
 
-if(OpenMVG_USE_CCTAG)
+if(OPENMVG_HAVE_CCTAG)
   target_link_libraries(openMVG_main_ComputeFeatures CCTag::CCTag)
 endif()
 
@@ -169,7 +169,7 @@ target_link_libraries(openMVG_main_ComputeSfM_DataColor
   stlplus
 )
 
-if(OpenMVG_USE_ALEMBIC)
+if(OPENMVG_HAVE_ALEMBIC)
   add_executable(openMVG_main_ConvertAnimatedCamera main_ConvertAnimatedCamera.cpp)
 
   target_link_libraries(openMVG_main_ConvertAnimatedCamera
@@ -237,7 +237,7 @@ install(TARGETS openMVG_main_ComputeSfM_DataColor
   DESTINATION bin/
 )
 
-if(OpenMVG_USE_ALEMBIC)
+if(OPENMVG_HAVE_ALEMBIC)
   set_property(TARGET openMVG_main_ConvertAnimatedCamera
     PROPERTY FOLDER OpenMVG/software
   )
