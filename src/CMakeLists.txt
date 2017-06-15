@@ -202,7 +202,7 @@ endif()
 if(NOT APPLE)
   find_package(JPEG QUIET)
   find_package(PNG QUIET)
-  find_package(TifF QUIET)
+  find_package(TIFF QUIET)
 endif()
 
 # Folders
@@ -424,7 +424,7 @@ if(OPENMVG_USE_OPENCV STREQUAL "OFF")
   set(OPENMVG_HAVE_OPENCV 0)
   set(OPENMVG_HAVE_OCVSIFT 0)
 else() # ON OR AUTO
-  find_package(OpenCV REQUIRED core imgproc video imgcodecs videoio features2d xfeatures2d)
+  find_package(OpenCV COMPONENTS core imgproc video imgcodecs videoio features2d xfeatures2d)
 
   if(OpenCV_FOUND)
     set(OPENMVG_HAVE_OPENCV 1)
@@ -589,7 +589,7 @@ set(OPENMVG_INCLUDE_DIRS
   ${generatedDir}
   ${JPEG_INCLUDE_DIR}
   ${PNG_INCLUDE_DIRS}
-  ${TifF_INCLUDE_DIR}
+  ${TIFF_INCLUDE_DIR}
   ${CMAKE_CURRENT_SOURCE_DIR}/third_party
   ${CMAKE_CURRENT_SOURCE_DIR}/dependencies
   ${CMAKE_CURRENT_SOURCE_DIR}/dependencies/cereal/include
@@ -723,10 +723,10 @@ else()
   message(STATUS "FLANN: " ${FLANN_VERSION} " (external)")
 endif()
 
-if(OPENMVG_USE_INTERNAL_TifF)
-  message(STATUS "LIBTifF: " ${TifF_VERSION_STRING} " (internal)")
+if(OPENMVG_USE_INTERNAL_TIFF)
+  message(STATUS "LIBTIFF: " ${TIFF_VERSION_STRING} " (internal)")
 else()
-  message(STATUS "LIBTifF: " ${TifF_VERSION_STRING} " (external)")
+  message(STATUS "LIBTIFF: " ${TIFF_VERSION_STRING} " (external)")
 endif()
 
 if(OPENMVG_USE_INTERNAL_PNG)

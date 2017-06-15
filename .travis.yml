@@ -68,7 +68,7 @@ before_script:
        -DOPENMVG_BUILD_TESTS=ON \
        -DOPENMVG_BUILD_EXAMPLES=ON \
        -DOPENMVG_USE_OPENCV=ON \
-       -DOPENCV_DIR="${DEPS_INSTALL_PATH}/share/OpenCV" \
+       -DOpenCV_DIR="${DEPS_INSTALL_PATH}/share/OpenCV" \
        -DOPENMVG_USE_OPENGV=ON \
        -DOPENGV_DIR="${DEPS_INSTALL_PATH}" \
        -DOPENMVG_USE_BOOST=ON \
