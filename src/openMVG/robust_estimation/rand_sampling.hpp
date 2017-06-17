@@ -36,27 +36,28 @@ namespace openMVG {
 namespace robust{
 
 /**
-* Pick a random subset of the integers [0, total), in random order.
+* Pick a random subset of the integers in the range [0, total), in random order.
 *
 * This uses a quadratic rejection strategy and should only be used for small
 * num_samples.
 *
-* \param num_samples   The number of samples to produce.
-* \param total_samples The number of samples available.
-* \param samples       num_samples of numbers in [0, total_samples) is placed
+* @param num_samples   The number of samples to produce.
+* @param upperBound    The upper bound of the range.
+* @param samples       num_samples of numbers in [0, total_samples) is placed
 *                      here on return.
-* \warning Argument values should respect: num_samples <= total_samples
+* @warning Argument values should respect: num_samples <= total_samples
 */
 template<typename IntT>
 static void UniformSample(
   std::size_t num_samples,
-  std::size_t total_samples,
+  std::size_t upperBound,
   std::set<IntT> *samples)
 {
-  assert(num_samples <= total_samples);
+  assert(num_samples <= upperBound);
+  static_assert(std::is_integral<IntT>::value, "Only integer types are supported");
   std::random_device rd;
   std::default_random_engine e1(rd());
-  std::uniform_int_distribution<IntT> uniform_dist(0, total_samples-1);
+  std::uniform_int_distribution<IntT> uniform_dist(0, upperBound-1);
   while (samples->size() < num_samples)
   {
     IntT sample = uniform_dist(e1);
@@ -65,27 +66,27 @@ static void UniformSample(
 }
 
 /**
- * @brief Generate a unique random samples in the range [start end).
- * @param[in] begin The value at the beginning of the range.
- * @param[in] end The value at the end of the range (not included).
+ * @brief Generate a unique random samples in the range [lowerBound upperBound).
+ * @param[in] lowerBound The lower bound of the range.
+ * @param[in] upperBound The upper bound of the range (not included).
  * @param[in] num_samples Number of unique samples to draw.
  * @param[out] samples The vector containing the samples.
  */
 template<typename IntT>
 static void UniformSample(
-  std::size_t begin,
-  std::size_t end,
+  std::size_t lowerBound,
+  std::size_t upperBound,
   std::size_t num_samples,
   std::vector<IntT> *samples)
 {
-  assert(begin < end);
-  assert(num_samples <= (begin-end));
+  assert(lowerBound < upperBound);
+  assert(num_samples <= (lowerBound-upperBound));
   static_assert(std::is_integral<IntT>::value, "Only integer types are supported");
   samples->resize(0);
   samples->reserve(num_samples);
   std::random_device rd;
   std::default_random_engine e1(rd());
-  std::uniform_int_distribution<IntT> uniform_dist(begin, end-1);
+  std::uniform_int_distribution<IntT> uniform_dist(lowerBound, upperBound-1);
   std::set<IntT> set_samples;
   while (set_samples.size() < num_samples)
   {
@@ -100,27 +101,27 @@ static void UniformSample(
 }
 
 /**
- * @brief Generate a unique random samples in the range [0 total_samples).
+ * @brief Generate a unique random samples in the range [0 upperBound).
  * @param[in] num_samples Number of unique samples to draw.
- * @param[in] total_samples The value at the end of the range (not included).
+ * @param[in] upperBound The value at the end of the range (not included).
  * @param[out] samples The vector containing the samples.
  */
 template<typename IntT>
 static void UniformSample(
   std::size_t num_samples,
-  std::size_t total_samples,
+  std::size_t upperBound,
   std::vector<IntT> *samples)
 {
-  UniformSample(0, total_samples, num_samples, samples);
+  UniformSample(0, upperBound, num_samples, samples);
 }
 
 /// Get a (sorted) random sample of size X in [0:n-1]
-static void random_sample(std::size_t X, std::size_t n, std::vector<std::size_t> *samples)
+static void random_sample(std::size_t X, std::size_t upperBound, std::vector<std::size_t> *samples)
 {
   samples->resize(X);
   for(std::size_t i=0; i < X; ++i)
   {
-    std::size_t r = (std::rand()>>3)%(n-i), j;
+    std::size_t r = (std::rand()>>3)%(upperBound-i), j;
     for(j=0; j<i && r>=(*samples)[j]; ++j)
     {
       ++r;
