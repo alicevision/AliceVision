@@ -178,9 +178,9 @@ int main(int argc, char **argv) {
   std::vector<Pair> matchesFiltered;
   std::vector<Pair> matchesPair;
 
-  for (std::vector<IndMatch>::const_iterator i_match = vec_PutativeMatches.begin();
-        i_match != vec_PutativeMatches.end(); ++i_match){
-    matchesPair.push_back(std::make_pair(i_match->_i, i_match->_j));
+  for(const auto &i_match : vec_PutativeMatches)
+  {
+    matchesPair.emplace_back(i_match._i, i_match._j);
   }
   std::vector<double> vec_score;
 
