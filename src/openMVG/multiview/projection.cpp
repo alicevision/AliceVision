@@ -217,17 +217,14 @@ Mat2X Project(const Mat34 &P, const Mat4X &X)
 
 void HomogeneousToEuclidean(const Vec4 &H, Vec3 *X)
 {
-  double w = H(3);
-  *X << H(0) / w, H(1) / w, H(2) / w;
+  assert(X != nullptr);
+  *X = H.hnormalized();
 }
 
 void EuclideanToHomogeneous(const Mat &X, Mat *H)
 {
-  Mat::Index d = X.rows();
-  Mat::Index n = X.cols();
-  H->resize(d + 1, n);
-  H->block(0, 0, d, n) = X;
-  H->row(d).setOnes();
+  assert(H != nullptr);
+  *H = X.colwise().homogeneous();  
 }
 
 double Depth(const Mat3 &R, const Vec3 &t, const Vec3 &X)
@@ -237,52 +234,42 @@ double Depth(const Mat3 &R, const Vec3 &t, const Vec3 &X)
 
 Vec3 EuclideanToHomogeneous(const Vec2 &x)
 {
-  return Vec3(x(0), x(1), 1.0);
+  return x.homogeneous();
 }
 
 void HomogeneousToEuclidean(const Mat &H, Mat *X)
 {
-  const Mat::Index d = H.rows() - 1;
-  const Mat::Index n = H.cols();
-  X->resize(d, n);
-  for (Mat::Index i = 0; i < n; ++i)
-  {
-    const double h = H(d, i);
-    for (int j = 0; j < d; ++j)
-    {
-      (*X)(j, i) = H(j, i) / h;
-    }
-  }
+  assert(X != nullptr);
+  *X = H.colwise().hnormalized();
 }
 
 Mat3X EuclideanToHomogeneous(const Mat2X &x)
 {
-  Mat3X h(3, x.cols());
-  h.block(0, 0, 2, x.cols()) = x;
-  h.row(2).setOnes();
-  return h;
+  return x.colwise().homogeneous();
 }
 
-void EuclideanToHomogeneous(const Mat2X &x, Mat3X *h) {
-  h->resize(3, x.cols());
-  h->block(0, 0, 2, x.cols()) = x;
-  h->row(2).setOnes();
+void EuclideanToHomogeneous(const Mat2X &x, Mat3X *h)
+{
+  assert(h != nullptr);
+  *h = x.colwise().homogeneous();
 }
 
-void HomogeneousToEuclidean(const Mat3X &h, Mat2X *e) {
-  e->resize(2, h.cols());
-  e->row(0) = h.row(0).array() / h.row(2).array();
-  e->row(1) = h.row(1).array() / h.row(2).array();
+void HomogeneousToEuclidean(const Mat3X &h, Mat2X *e)
+{
+  assert(e != nullptr);
+  *e = h.colwise().hnormalized();
 }
 
-void EuclideanToNormalizedCamera(const Mat2X &x, const Mat3 &K, Mat2X *n) {
+void EuclideanToNormalizedCamera(const Mat2X &x, const Mat3 &K, Mat2X *n)
+{
   Mat3X x_image_h;
   EuclideanToHomogeneous(x, &x_image_h);
   Mat3X x_camera_h = K.inverse() * x_image_h;
   HomogeneousToEuclidean(x_camera_h, n);
 }
 
-void HomogeneousToNormalizedCamera(const Mat3X &x, const Mat3 &K, Mat2X *n) {
+void HomogeneousToNormalizedCamera(const Mat3X &x, const Mat3 &K, Mat2X *n)
+{
   Mat3X x_camera_h = K.inverse() * x;
   HomogeneousToEuclidean(x_camera_h, n);
 }
