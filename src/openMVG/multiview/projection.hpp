@@ -25,8 +25,7 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-#ifndef OPENMVG_MULTIVIEW_PROJECTION_H_
-#define OPENMVG_MULTIVIEW_PROJECTION_H_
+#pragma once
 
 #include "openMVG/numeric/numeric.h"
 
@@ -35,7 +34,9 @@
 namespace openMVG {
 
 /// Compute P = K[R|t]
-void P_From_KRt(const Mat3 &K, const Mat3 &R, const Vec3 &t,Mat34 *P);
+void P_From_KRt(const Mat3 &K, const Mat3 &R, const Vec3 &t, Mat34 *P);
+
+Mat34 P_From_KRt(const Mat3 &K, const Mat3 &R, const Vec3 &t);
 
 /// Decompose using the RQ decomposition HZ A4.1.1 pag.579.
 void KRt_From_P(const Mat34 &P, Mat3 *Kp, Mat3 *Rp, Vec3 *tp);
@@ -97,5 +98,3 @@ double RootMeanSquareError(const Mat2X &x_image,
   const Vec3 &t);
 
 } // namespace openMVG
-
-#endif //OPENMVG_MULTIVIEW_PROJECTION_H_

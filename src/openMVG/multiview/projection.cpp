@@ -33,11 +33,19 @@ namespace openMVG {
 void P_From_KRt(const Mat3 &K,  const Mat3 &R,  const Vec3 &t, Mat34 *P)
 {
   assert(P != nullptr);
-  *P = K * HStack(R,t);
+  *P = P_From_KRt(K, R, t);
+}
+
+Mat34 P_From_KRt(const Mat3 &K, const Mat3 &R, const Vec3 &t)
+{
+  return K * HStack(R,t);
 }
 
 void KRt_From_P(const Mat34 &P, Mat3 *Kp, Mat3 *Rp, Vec3 *tp)
 {
+  assert(Kp != nullptr);
+  assert(Rp != nullptr);
+  assert(tp != nullptr);
   // Decompose using the RQ decomposition HZ A4.1.1 pag.579.
   Mat3 K = P.block(0, 0, 3, 3);
 
