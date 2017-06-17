@@ -32,6 +32,7 @@ namespace openMVG {
 /// Compute P = K[R|t]
 void P_From_KRt(const Mat3 &K,  const Mat3 &R,  const Vec3 &t, Mat34 *P)
 {
+  assert(P != nullptr);
   *P = K * HStack(R,t);
 }
 
@@ -184,6 +185,7 @@ Vec2 Project(const Mat34 &P, const Vec3 &X)
 
 void Project(const Mat34 &P, const Mat3X &X, Mat2X *x)
 {
+  assert(x != nullptr);
   x->resize(2, X.cols());
   for (size_t c = 0; c < static_cast<size_t>(X.cols()); ++c)
   {
@@ -193,6 +195,7 @@ void Project(const Mat34 &P, const Mat3X &X, Mat2X *x)
 
 void Project(const Mat34 &P, const Mat4X &X, Mat2X *x)
 {
+  assert(x != nullptr);
   x->resize(2, X.cols());
   for (Mat4X::Index c = 0; c < X.cols(); ++c)
   {
@@ -262,6 +265,7 @@ void HomogeneousToEuclidean(const Mat3X &h, Mat2X *e)
 
 void EuclideanToNormalizedCamera(const Mat2X &x, const Mat3 &K, Mat2X *n)
 {
+  assert(n != nullptr);
   Mat3X x_image_h;
   EuclideanToHomogeneous(x, &x_image_h);
   Mat3X x_camera_h = K.inverse() * x_image_h;
@@ -270,6 +274,7 @@ void EuclideanToNormalizedCamera(const Mat2X &x, const Mat3 &K, Mat2X *n)
 
 void HomogeneousToNormalizedCamera(const Mat3X &x, const Mat3 &K, Mat2X *n)
 {
+  assert(n != nullptr);
   Mat3X x_camera_h = K.inverse() * x;
   HomogeneousToEuclidean(x_camera_h, n);
 }
