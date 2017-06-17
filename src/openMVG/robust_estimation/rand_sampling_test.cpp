@@ -15,14 +15,15 @@ using namespace openMVG::robust;
 // Assert that each time exactly N random number are picked (no repetition)
 TEST(UniformSampleTest, NoRepetions) {
 
-  std::vector<size_t> samples;
-  for (size_t total = 1; total < 500; total *= 2)
-  { //Size of the data set
-    for (size_t num_samples = 1; num_samples <= total; num_samples *= 2)
+  std::vector<std::size_t> samples;
+  for (std::size_t total = 1; total < 500; total *= 2)
+  { 
+    //Size of the data set
+    for (std::size_t num_samples = 1; num_samples <= total; num_samples *= 2)
     { //Size of the consensus set
       UniformSample(num_samples, total, &samples);
-      std::set<size_t> myset;
-      for (size_t i = 0; i < num_samples; ++i) 
+      std::set<std::size_t> myset;
+      for (std::size_t i = 0; i < num_samples; ++i) 
       {
         myset.insert(samples[i]);
       }
@@ -34,16 +35,16 @@ TEST(UniformSampleTest, NoRepetions) {
 // Assert that each time exactly N random number are picked (no repetition)
 TEST(RandomSampleTest, NoRepetions) {
 
-  std::vector<size_t> samples;
-  for (size_t total = 1; total < 500; total *= 2) 
+  std::vector<std::size_t> samples;
+  for (std::size_t total = 1; total < 500; total *= 2) 
   { 
     //Size of the data set
-    for (size_t num_samples = 1; num_samples <= total; num_samples *= 2) 
+    for (std::size_t num_samples = 1; num_samples <= total; num_samples *= 2) 
     { 
       //Size of the consensus set
       random_sample(num_samples, total, &samples);
-      std::set<size_t> myset;
-      for (size_t i = 0; i < num_samples; ++i)
+      std::set<std::size_t> myset;
+      for (std::size_t i = 0; i < num_samples; ++i)
       {
         myset.insert(samples[i]);
       }
