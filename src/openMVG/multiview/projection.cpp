@@ -46,6 +46,7 @@ void KRt_From_P(const Mat34 &P, Mat3 *Kp, Mat3 *Rp, Vec3 *tp)
   assert(Kp != nullptr);
   assert(Rp != nullptr);
   assert(tp != nullptr);
+  
   // Decompose using the RQ decomposition HZ A4.1.1 pag.579.
   Mat3 K = P.block(0, 0, 3, 3);
 
@@ -185,45 +186,29 @@ Mat3 F_from_P(const Mat34 & P1, const Mat34 & P2)
 
 Vec2 Project(const Mat34 &P, const Vec3 &X)
 {
-  Vec4 HX;
-  HX << X, 1.0;
-  Vec3 hx = P * HX;
-  return hx.head<2>() / hx(2);
+  return Vec3(P * X.homogeneous()).hnormalized();
 }
 
 void Project(const Mat34 &P, const Mat3X &X, Mat2X *x)
 {
   assert(x != nullptr);
-  x->resize(2, X.cols());
-  for (size_t c = 0; c < static_cast<size_t>(X.cols()); ++c)
-  {
-    x->col(c) = Project(P, Vec3(X.col(c)));
-  }
+  Project(P, Mat4X(X.colwise().homogeneous()), x);
 }
 
 void Project(const Mat34 &P, const Mat4X &X, Mat2X *x)
 {
   assert(x != nullptr);
-  x->resize(2, X.cols());
-  for (Mat4X::Index c = 0; c < X.cols(); ++c)
-  {
-    Vec3 hx = P * X.col(c);
-    x->col(c) = hx.head<2>() / hx(2);
-  }
+  *x = Project(P, X);
 }
 
 Mat2X Project(const Mat34 &P, const Mat3X &X)
 {
-  Mat2X x(2, X.cols());
-  Project(P, X, &x);
-  return x;
+  return Project(P, Mat4X(X.colwise().homogeneous()));
 }
 
 Mat2X Project(const Mat34 &P, const Mat4X &X)
 {
-  Mat2X x(2, X.cols());
-  Project(P, X, &x);
-  return x;
+  return Mat3X(P * X).colwise().hnormalized();
 }
 
 void HomogeneousToEuclidean(const Vec4 &H, Vec3 *X)
@@ -274,17 +259,13 @@ void HomogeneousToEuclidean(const Mat3X &h, Mat2X *e)
 void EuclideanToNormalizedCamera(const Mat2X &x, const Mat3 &K, Mat2X *n)
 {
   assert(n != nullptr);
-  Mat3X x_image_h;
-  EuclideanToHomogeneous(x, &x_image_h);
-  Mat3X x_camera_h = K.inverse() * x_image_h;
-  HomogeneousToEuclidean(x_camera_h, n);
+  HomogeneousToNormalizedCamera(x.colwise().homogeneous(), K, n);
 }
 
 void HomogeneousToNormalizedCamera(const Mat3X &x, const Mat3 &K, Mat2X *n)
 {
   assert(n != nullptr);
-  Mat3X x_camera_h = K.inverse() * x;
-  HomogeneousToEuclidean(x_camera_h, n);
+  *n = (K.inverse() * x).colwise().hnormalized();
 }
 
 /// Estimates the root mean square error (2D)
@@ -306,9 +287,7 @@ double RootMeanSquareError(const Mat2X &x_image,
 {
     Mat34 P;
     P_From_KRt(K, R, t, &P);
-    const std::size_t num_points = x_image.cols();
-    const Mat2X dx = Project(P, X_world) - x_image;
-    return dx.norm() / num_points;
+    return RootMeanSquareError(x_image, X_world.colwise().homogeneous(), P);
 }
 
 } // namespace openMVG
