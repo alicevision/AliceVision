@@ -14,6 +14,8 @@ set(multiview_files_headers
   solver_homography_kernel.hpp
   solver_resection_kernel.hpp
   solver_resection_p3p.hpp
+  solver_resection_p4pf.hpp
+  solver_resection_p5pfr.hpp
   solver_translation_knownRotation_kernel.hpp
   translation_averaging_common.hpp
   translation_averaging_solver.hpp
@@ -36,6 +38,8 @@ set(multiview_files_sources
   solver_homography_kernel.cpp
   solver_resection_kernel.cpp
   solver_resection_p3p.cpp
+  solver_resection_p4pf.cpp
+  solver_resection_p5pfr.cpp
   translation_averaging_solver_l2_chordal.cpp
   translation_averaging_solver_softl1.cpp
   triangulation_nview.cpp
