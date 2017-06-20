@@ -131,6 +131,7 @@ if(UNIX AND NOT OPENMVG_BUILD_COVERAGE)
   set(CMAKE_C_FLAGS_RELEASE "-O3")
   set(CMAKE_CXX_FLAGS_RELEASE "-O3")
 endif()
+include(UpdateCacheVariable)
 
 if(CMAKE_COMPILER_IS_GNUCXX)
   include(AddCompilerFlag)
