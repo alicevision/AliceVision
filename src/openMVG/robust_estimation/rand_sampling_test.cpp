@@ -84,27 +84,6 @@ TEST(UniformSampleTest, randSample) {
   }
 }
 
-// Assert that each time exactly N random number are picked (no repetition)
-TEST(RandomSampleTest, NoRepetions) {
-
-  std::vector<std::size_t> samples;
-  for (std::size_t total = 1; total < 500; total *= 2) 
-  { 
-    //Size of the data set
-    for (std::size_t num_samples = 1; num_samples <= total; num_samples *= 2) 
-    { 
-      //Size of the consensus set
-      random_sample(num_samples, total, &samples);
-      std::set<std::size_t> myset;
-      for (std::size_t i = 0; i < num_samples; ++i)
-      {
-        myset.insert(samples[i]);
-      }
-      CHECK_EQUAL(num_samples, myset.size());
-    }
-  }
-}
-
 
 /* ************************************************************************* */
 int main() { TestResult tr; return TestRegistry::runAllTests(tr);}

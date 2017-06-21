@@ -172,27 +172,6 @@ inline void UniformSample(
   UniformSample(0, upperBound, num_samples, samples);
 }
 
-/// Get a (sorted) random sample of size X in [0:n-1]
-inline void random_sample(std::size_t X, std::size_t upperBound, std::vector<std::size_t> *samples)
-{
-  samples->resize(X);
-  for(std::size_t i=0; i < X; ++i)
-  {
-    std::size_t r = (std::rand()>>3)%(upperBound-i), j;
-    for(j=0; j<i && r>=(*samples)[j]; ++j)
-    {
-      ++r;
-    }
-    std::size_t j0 = j;
-    for(j=i; j > j0; --j)
-    {
-      (*samples)[j] = (*samples)[j-1];
-    }
-    (*samples)[j0] = r;
-  }
-}
-
-
 /**
  * @brief 
  * @param sizeSample The size of the sample.
