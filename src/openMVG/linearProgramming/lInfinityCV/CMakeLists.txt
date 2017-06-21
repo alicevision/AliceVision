@@ -1,61 +1,75 @@
-
-FILE(
-	GLOB
-	lInftycomputervision_headers
-	*.hpp
+# Headers
+set(lInftycomputervision_headers
+  lInfinityCV.hpp
+  resection.hpp
+  resection_kernel.hpp
+  triangulation.hpp
+  global_translations_fromTij.hpp
+  global_translations_fromTriplets.hpp
+  tijsAndXis_From_xi_Ri.hpp
+  tijsAndXis_From_xi_Ri_noise.hpp
+  triplet_tijsAndXis_kernel.hpp
 )
 
-FILE(
-	GLOB
-	lInftycomputervision_cpp
-	*.cpp
+# Sources
+set(lInftycomputervision_sources
+  resection_kernel.cpp
 )
-
-FILE(GLOB_RECURSE REMOVEFILESUNITTEST *_test.cpp)
-
-# Remove the future main files
-LIST(REMOVE_ITEM lInftycomputervision_cpp ${REMOVEFILESUNITTEST})
 
 # Disable some warnings on MSVC.
-IF (MSVC)
+if (MSVC)
   # Disable Warning	C4267: conversion from 'size_t' to 'int', possible loss of data
-  ADD_DEFINITIONS("/wd4267")
-ENDIF (MSVC)
+  add_definitions("/wd4267")
+endif()
 
-ADD_LIBRARY(openMVG_lInftyComputerVision  ${lInftycomputervision_headers} ${lInftycomputervision_cpp})
-TARGET_LINK_LIBRARIES(openMVG_lInftyComputerVision
+add_library(openMVG_lInftyComputerVision
+  ${lInftycomputervision_headers}
+  ${lInftycomputervision_sources}
+)
+
+target_link_libraries(openMVG_lInftyComputerVision
   openMVG_linearProgramming
   ${CLP_LIBRARIES}     # clp + solver wrapper
   ${COINUTILS_LIBRARY} # container tools
   ${OSI_LIBRARY}       # generic LP
-  )
+)
 
 if(MOSEK_FOUND)  
     target_link_libraries(openMVG_lInftyComputerVision ${MOSEK_LIB})
 endif()
 
-SET_TARGET_PROPERTIES(openMVG_lInftyComputerVision PROPERTIES SOVERSION ${OPENMVG_VERSION_MAJOR} VERSION "${OPENMVG_VERSION_MAJOR}.${OPENMVG_VERSION_MINOR}")
-INSTALL(TARGETS openMVG_lInftyComputerVision DESTINATION lib EXPORT openMVG-targets)
+set_target_properties(openMVG_lInftyComputerVision
+  PROPERTIES SOVERSION ${OPENMVG_VERSION_MAJOR}
+  VERSION "${OPENMVG_VERSION_MAJOR}.${OPENMVG_VERSION_MINOR}"
+)
 
-SET(LOCAL_LIBS
+install(TARGETS openMVG_lInftyComputerVision
+  DESTINATION lib
+  EXPORT openMVG-targets
+)
+
+set(LOCAL_LIBS
   openMVG_multiview_test_data
   openMVG_multiview
-  openMVG_lInftyComputerVision)
+  openMVG_lInftyComputerVision
+)
 
 # Linfinity Triangulation
 UNIT_TEST(openMVG_lInftyCV triangulation "${LOCAL_LIBS}")
 
 # Linfinity Pose/Resection estimation
-UNIT_TEST(openMVG_lInftyCV resection "${LOCAL_LIBS}")
+UNIT_TEST(openMVG_lInftyCV resection        "${LOCAL_LIBS}")
 UNIT_TEST(openMVG_lInftyCV resection_robust "${LOCAL_LIBS}")
 
 # Linfinity Global translations from triplets of heading directions
 UNIT_TEST(openMVG_lInftyCV global_translations_fromTriplets "${LOCAL_LIBS}")
+
 # Linfinity Global translations from heading directions
 UNIT_TEST(openMVG_lInftyCV global_translations_fromTij "${LOCAL_LIBS}")
 
 # Linfinity Translation and Structure 
 UNIT_TEST(openMVG_lInftyCV tijsAndXis "${LOCAL_LIBS}")
+
 # Linfinity Translation and Structure with noise handling
 UNIT_TEST(openMVG_lInftyCV tijsAndXis_outlier "${LOCAL_LIBS}")
 

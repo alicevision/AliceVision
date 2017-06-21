@@ -1,29 +1,54 @@
+add_definitions(-DTHIS_SOURCE_DIR="${CMAKE_CURRENT_SOURCE_DIR}")
 
-ADD_DEFINITIONS(-DTHIS_SOURCE_DIR="${CMAKE_CURRENT_SOURCE_DIR}")
-
-file(
-	GLOB_RECURSE
-	image_files_header
-	*.hpp
+# Headers
+set(image_files_headers
+  image.hpp
+  image_concat.hpp
+  image_container.hpp
+  image_converter.hpp
+  image_convolution_base.hpp
+  image_convolution.hpp
+  image_diffusion.hpp
+  image_drawing.hpp
+  image_filtering.hpp
+  image_io.hpp
+  image_resampling.hpp
+  image_warping.hpp
+  pixel_types.hpp
+  sample.hpp
 )
-file(
-	GLOB_RECURSE
-	image_files_cpp
-	*.cpp
+
+# Sources
+set(image_files_sources
+  image_io.cpp
 )
-file(GLOB_RECURSE REMOVEFILESUNITTEST *_test.cpp)
 
-#Remove the future main files
-list(REMOVE_ITEM image_files_cpp ${REMOVEFILESUNITTEST})
+add_library(openMVG_image
+  ${image_files_headers}
+  ${image_files_sources}
+)
 
-ADD_LIBRARY(openMVG_image ${image_files_header} ${image_files_cpp})
-TARGET_LINK_LIBRARIES(openMVG_image openMVG_numeric ${PNG_LIBRARIES} ${JPEG_LIBRARIES} ${TIFF_LIBRARIES} ${LOG_LIB})
-SET_TARGET_PROPERTIES(openMVG_image PROPERTIES SOVERSION ${OPENMVG_VERSION_MAJOR} VERSION "${OPENMVG_VERSION_MAJOR}.${OPENMVG_VERSION_MINOR}")
-INSTALL(TARGETS openMVG_image DESTINATION lib EXPORT openMVG-targets)
+target_link_libraries(openMVG_image
+  openMVG_numeric
+  ${PNG_LIBRARIES}
+  ${JPEG_LIBRARIES}
+  ${TIFF_LIBRARIES}
+  ${LOG_LIB}
+)
 
-UNIT_TEST(openMVG image "openMVG_image")
-UNIT_TEST(openMVG image_drawing "openMVG_image")
-UNIT_TEST(openMVG image_io "openMVG_image")
-UNIT_TEST(openMVG image_filtering "openMVG_image")
+set_target_properties(openMVG_image
+  PROPERTIES SOVERSION ${OPENMVG_VERSION_MAJOR}
+  VERSION "${OPENMVG_VERSION_MAJOR}.${OPENMVG_VERSION_MINOR}"
+)
+
+install(TARGETS openMVG_image
+  DESTINATION lib
+  EXPORT openMVG-targets
+)
+
+UNIT_TEST(openMVG image            "openMVG_image")
+UNIT_TEST(openMVG image_drawing    "openMVG_image")
+UNIT_TEST(openMVG image_io         "openMVG_image")
+UNIT_TEST(openMVG image_filtering  "openMVG_image")
 UNIT_TEST(openMVG image_resampling "openMVG_image")
 

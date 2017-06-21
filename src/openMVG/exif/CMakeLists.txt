@@ -1,31 +1,47 @@
-ADD_DEFINITIONS(-DTHIS_SOURCE_DIR="${CMAKE_CURRENT_SOURCE_DIR}")
+add_definitions(-DTHIS_SOURCE_DIR="${CMAKE_CURRENT_SOURCE_DIR}")
 
 project(exif)
 
-file(
-	GLOB_RECURSE
-	exif_files_headers
-	*.hpp
+# Headers
+set(exif_files_headers
+  exif_IO_EasyExif.hpp
+  exif_IO.hpp
+  sensor_width_database/datasheet.hpp
+  sensor_width_database/ParseDatabase.hpp
 )
 
-file(
-	GLOB_RECURSE
-	exif_files_sources
-	*.cpp
+# Sources
+set(exif_files_sources
+  exif_IO.cpp
 )
 
-file(GLOB_RECURSE REMOVEFILESUNITTEST *_test.cpp)
-#Remove the future main files
-list(REMOVE_ITEM exif_files_sources ${REMOVEFILESUNITTEST})
-			
 set_source_files_properties(${exif_files_sources} PROPERTIES LANGUAGE CXX)
-ADD_LIBRARY(openMVG_exif ${exif_files_sources} ${exif_files_headers})
-TARGET_LINK_LIBRARIES(openMVG_exif stlplus easyexif ${LOG_LIB})
 
-SET_TARGET_PROPERTIES(openMVG_exif PROPERTIES SOVERSION ${OPENMVG_VERSION_MAJOR} VERSION "${OPENMVG_VERSION_MAJOR}.${OPENMVG_VERSION_MINOR}")
-INSTALL(TARGETS openMVG_exif DESTINATION lib EXPORT openMVG-targets)
-SET_PROPERTY(TARGET openMVG_exif PROPERTY FOLDER OpenMVG/OpenMVG)
+add_library(openMVG_exif
+  ${exif_files_headers}
+  ${exif_files_sources}
+)
+
+target_link_libraries(openMVG_exif
+  stlplus
+  easyexif
+  ${LOG_LIB}
+)
+
+set_target_properties(openMVG_exif
+  PROPERTIES SOVERSION ${OPENMVG_VERSION_MAJOR}
+  VERSION "${OPENMVG_VERSION_MAJOR}.${OPENMVG_VERSION_MINOR}"
+)
+
+install(TARGETS openMVG_exif
+  DESTINATION lib
+  EXPORT openMVG-targets
+)
+
+set_property(TARGET openMVG_exif
+  PROPERTY FOLDER OpenMVG/OpenMVG
+)
 
 UNIT_TEST(openMVG exif_IO "openMVG_exif")
 
-ADD_SUBDIRECTORY(sensor_width_database)
+add_subdirectory(sensor_width_database)

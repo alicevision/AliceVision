@@ -141,11 +141,9 @@ void dispatch(const int &maxJobs, std::function<void()> compute)
   }
   else if(pid == 0)
   {
-#if OPENMVG_IS_DEFINED(OPENMVG_USE_OPENMP)
     // Disable OpenMP as we dispatch the work on multiple sub processes
     // and we don't want that each subprocess use all the cpu ressource
     omp_set_num_threads(1); 
-#endif
     compute();
     _exit(EXIT_SUCCESS);
   }
@@ -199,9 +197,7 @@ void waitForCompletion()
 
 void dispatch(const int &maxJobs, std::function<void()> compute)
 {
-#if OPENMVG_IS_DEFINED(OPENMVG_USE_OPENMP)
     omp_set_num_threads(maxJobs);
-#endif
     compute();
 }
 void waitForCompletion() {}
@@ -263,7 +259,7 @@ int main(int argc, char **argv)
     << "   CCTAG4: CCTAG markers with 4 crowns\n"
 #endif
 #if OPENMVG_IS_DEFINED(OPENMVG_HAVE_OPENCV)
-#if OPENMVG_IS_DEFINED(OPENMVG_USE_OCVSIFT)
+#if OPENMVG_IS_DEFINED(OPENMVG_HAVE_OCVSIFT)
     << "   SIFT_OCV: OpenCV SIFT\n"
 #endif
     << "   AKAZE_OCV: OpenCV AKAZE\n"

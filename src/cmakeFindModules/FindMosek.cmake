@@ -1,33 +1,31 @@
-
 # MOSEK library detection
-FIND_PATH(MOSEK_INCLUDE NAMES mosek.h PATHS ${MOSEK_SEARCH_HEADER})
-FIND_LIBRARY(MOSEK_LIB NAMES libmosek libmosek.so libmosek64 libmosek64.so PATHS ${MOSEK_SEARCH_LIB})
+find_path(MOSEK_INCLUDE NAMES mosek.h PATHS ${MOSEK_SEARCH_HEADER})
+find_library(MOSEK_LIB NAMES libmosek libmosek.so libmosek64 libmosek64.so PATHS ${MOSEK_SEARCH_LIB})
 
-IF (EXISTS ${MOSEK_INCLUDE} AND EXISTS ${MOSEK_LIB})
-
-  SET(MOSEK_FOUND   true  CACHE BOOL "USE MOSEK library")
-  MESSAGE("-- Found Mosek header in: ${MOSEK_INCLUDE}")
-  MESSAGE("-- Found Mosek library: ${MOSEK_LIB}")
+if(EXISTS ${MOSEK_INCLUDE} AND EXISTS ${MOSEK_LIB})
+  set(MOSEK_FOUND   true  CACHE BOOL "USE MOSEK library")
+  message("-- Found Mosek header in: ${MOSEK_INCLUDE}")
+  message("-- Found Mosek library: ${MOSEK_LIB}")
 #  INCLUDE_DIRECTORIES( ${MOSEK_INCLUDE} )
 
-  IF (${UNIX})
-    FIND_PACKAGE(Threads REQUIRED)
-    SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${CMAKE_THREAD_LIBS_INIT}")
-    LIST(APPEND ${MOSEK_LIB} pthread)
-  ENDIF (${UNIX})
+  if(${UNIX})
+    find_package(Threads REQUIRED)
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${CMAKE_THREAD_LIBS_INIT}")
+    list(APPEND ${MOSEK_LIB} pthread)
+  endif(${UNIX})
 
 #  ADD_DEFINITIONS(-DOPENMVG_HAVE_MOSEK)
 
-ELSE (EXISTS ${MOSEK_INCLUDE} AND EXISTS ${MOSEK_LIB})
-  MESSAGE("-- Did not find MOSEK header")
-  IF (NOT EXISTS ${MOSEK_LIB})
-    MESSAGE("-- Did not find MOSEK library")
-  ENDIF ()
-ENDIF (EXISTS ${MOSEK_INCLUDE} AND EXISTS ${MOSEK_LIB})
+else(EXISTS ${MOSEK_INCLUDE} AND EXISTS ${MOSEK_LIB})
+  message("-- Did not find MOSEK header")
+  if(NOT EXISTS ${MOSEK_LIB})
+    message("-- Did not find MOSEK library")
+  endif()
+endif(EXISTS ${MOSEK_INCLUDE} AND EXISTS ${MOSEK_LIB})
 
-IF(NOT MOSEK_FOUND)
-      MESSAGE(STATUS "Could not find mosek library on this machine.")
-ENDIF(NOT MOSEK_FOUND)
+if(NOT MOSEK_FOUND)
+  message(STATUS "Could not find mosek library on this machine.")
+endif()
 
-MARK_AS_ADVANCED(MOSEK_FOUND)
+mark_as_advanced(MOSEK_FOUND)
 

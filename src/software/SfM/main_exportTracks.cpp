@@ -60,9 +60,9 @@ int main(int argc, char ** argv)
       << "   CCTAG4: CCTAG markers with 4 crowns\n"
 #endif //OPENMVG_HAVE_CCTAG
 #if OPENMVG_IS_DEFINED(OPENMVG_HAVE_OPENCV)
-#if OPENMVG_IS_DEFINED(OPENMVG_USE_OCVSIFT)
+#if OPENMVG_IS_DEFINED(OPENMVG_HAVE_OCVSIFT)
       << "   SIFT_OCV: OpenCV SIFT\n"
-#endif //OPENMVG_USE_OCVSIFT
+#endif //OPENMVG_HAVE_OCVSIFT
       << "   AKAZE_OCV: OpenCV AKAZE\n"
 #endif //OPENMVG_HAVE_OPENCV
       << "[-d|--matchdir PATH] path to the folder with all features and match files\n"

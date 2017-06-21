@@ -25,9 +25,9 @@ std::string EImageDescriberType_enumToString(EImageDescriberType imageDescriberT
 #endif
 
 #if OPENMVG_IS_DEFINED(OPENMVG_HAVE_OPENCV)
-#if OPENMVG_IS_DEFINED(OPENMVG_USE_OCVSIFT)
+#if OPENMVG_IS_DEFINED(OPENMVG_HAVE_OCVSIFT)
     case EImageDescriberType::SIFT_OCV:      return "SIFT_OCV";
-#endif //OPENMVG_USE_OCVSIFT
+#endif //OPENMVG_HAVE_OCVSIFT
     case EImageDescriberType::AKAZE_OCV:     return "AKAZE_OCV";
 #endif //OPENMVG_HAVE_OPENCV
 
@@ -51,11 +51,11 @@ EImageDescriberType EImageDescriberType_stringToEnum(const std::string& imageDes
 #endif
 
 #if OPENMVG_IS_DEFINED(OPENMVG_HAVE_OPENCV)
-#if OPENMVG_IS_DEFINED(OPENMVG_USE_OCVSIFT)
+#if OPENMVG_IS_DEFINED(OPENMVG_HAVE_OCVSIFT)
   if(imageDescriberType == "SIFT_OCV")    return EImageDescriberType::SIFT_OCV;
-#endif //OPENMVG_HAVE_OPENCV
+#endif //OPENMVG_HAVE_OCVSIFT
   if(imageDescriberType == "AKAZE_OCV")   return EImageDescriberType::AKAZE_OCV;
-#endif //OPENMVG_USE_OCVSIFT
+#endif //OPENMVG_HAVE_OPENCV
 
   if(imageDescriberType == "UNKNOWN")     return EImageDescriberType::UNKNOWN;
   // UNINITIALIZED should throw an error.

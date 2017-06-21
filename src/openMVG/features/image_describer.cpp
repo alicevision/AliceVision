@@ -16,9 +16,9 @@
 #endif //OPENMVG_HAVE_CCTAG
 #if OPENMVG_IS_DEFINED(OPENMVG_HAVE_OPENCV)
 #include <openMVG/features/openCV/AKAZE_openCV_describer.hpp>
-#if OPENMVG_IS_DEFINED(OPENMVG_USE_OCVSIFT)
+#if OPENMVG_IS_DEFINED(OPENMVG_HAVE_OCVSIFT)
 #include <openMVG/features/openCV/SIFT_openCV_describer.hpp>
-#endif //OPENMVG_USE_OCVSIFT
+#endif //OPENMVG_HAVE_OCVSIFT
 #endif //OPENMVG_HAVE_OPENCV
 
 #include <stdexcept>
@@ -87,9 +87,9 @@ std::unique_ptr<Image_describer> createImageDescriber(EImageDescriberType imageD
 #endif //OPENMVG_HAVE_CCTAG
 
 #if OPENMVG_IS_DEFINED(OPENMVG_HAVE_OPENCV)
-#if OPENMVG_IS_DEFINED(OPENMVG_USE_OCVSIFT)
+#if OPENMVG_IS_DEFINED(OPENMVG_HAVE_OCVSIFT)
   case EImageDescriberType::SIFT_OCV:      describerPtr.reset(new SIFT_openCV_ImageDescriber()); break;
-#endif //OPENMVG_USE_OCVSIFT
+#endif //OPENMVG_HAVE_OCVSIFT
   case EImageDescriberType::AKAZE_OCV:     describerPtr.reset(new AKAZE_openCV_ImageDescriber()); break;
 #endif //OPENMVG_HAVE_OPENCV
     

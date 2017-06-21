@@ -1,9 +1,12 @@
+# Headers
 set(calibration_files_headers
   calibration.hpp
   bestImages.hpp
   patternDetect.hpp
   exportData.hpp
 )
+
+# Sources
 set(calibration_files_sources
   calibration.cpp
   bestImages.cpp
@@ -11,20 +14,31 @@ set(calibration_files_sources
   exportData.cpp
 )
 
-ADD_LIBRARY(openMVG_calibration
+add_library(openMVG_calibration
   ${calibration_files_headers}
-  ${calibration_files_sources})
-TARGET_LINK_LIBRARIES(openMVG_calibration 
-        PUBLIC ${OpenCV_LIBS} 
-        PRIVATE openMVG_image 
-                openMVG_system 
-                openMVG_dataio
-                ${BOOST_LIBRARIES}
-                ${LOG_LIB})
-IF(OpenMVG_USE_CCTAG)
-  TARGET_LINK_LIBRARIES(openMVG_calibration PRIVATE CCTag::CCTag)
-ENDIF(OpenMVG_USE_CCTAG)
+  ${calibration_files_sources}
+)
 
-SET_PROPERTY(TARGET openMVG_calibration PROPERTY FOLDER OpenMVG)
+target_link_libraries(openMVG_calibration
+  PUBLIC ${OpenCV_LIBS}
+  PRIVATE openMVG_image
+          openMVG_system
+          openMVG_dataio
+          ${BOOST_LIBRARIES}
+          ${LOG_LIB}
+)
 
-INSTALL(TARGETS openMVG_calibration DESTINATION lib EXPORT openMVG-targets)
+if(OPENMVG_HAVE_CCTAG)
+  target_link_libraries(openMVG_calibration
+    PRIVATE CCTag::CCTag
+  )
+endif()
+
+set_property(TARGET openMVG_calibration
+  PROPERTY FOLDER OpenMVG
+)
+
+install(TARGETS openMVG_calibration
+  DESTINATION lib
+  EXPORT openMVG-targets
+)

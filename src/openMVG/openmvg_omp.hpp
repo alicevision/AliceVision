@@ -2,7 +2,7 @@
 
 #include <openMVG/config.hpp>
 
-#if OPENMVG_IS_DEFINED(OPENMVG_USE_OPENMP)
+#if OPENMVG_IS_DEFINED(OPENMVG_HAVE_OPENMP)
 
 #include <omp.h>
 

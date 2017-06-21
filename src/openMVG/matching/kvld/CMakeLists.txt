@@ -1,5 +1,31 @@
+# Headers
+set(kvld_files_headers
+  kvld.h
+  kvld_draw.h
+  algorithm.h
+)
 
-ADD_LIBRARY(openMVG_kvld kvld.cpp kvld.h algorithm.cpp algorithm.h)
-SET_TARGET_PROPERTIES(openMVG_kvld PROPERTIES SOVERSION ${OPENMVG_VERSION_MAJOR} VERSION "${OPENMVG_VERSION_MAJOR}.${OPENMVG_VERSION_MINOR}")
-SET_PROPERTY(TARGET openMVG_kvld PROPERTY FOLDER OpenMVG/OpenMVG)
-INSTALL(TARGETS openMVG_kvld DESTINATION lib EXPORT openMVG-targets)
+# Sources
+set(kvld_files_sources
+  kvld.cpp
+  algorithm.cpp
+)
+
+add_library(openMVG_kvld
+  ${kvld_files_headers}
+  ${kvld_files_sources}
+)
+
+set_target_properties(openMVG_kvld
+  PROPERTIES SOVERSION ${OPENMVG_VERSION_MAJOR}
+  VERSION "${OPENMVG_VERSION_MAJOR}.${OPENMVG_VERSION_MINOR}"
+)
+
+set_property(TARGET openMVG_kvld
+  PROPERTY FOLDER OpenMVG/OpenMVG
+)
+
+install(TARGETS openMVG_kvld
+  DESTINATION lib
+  EXPORT openMVG-targets
+)

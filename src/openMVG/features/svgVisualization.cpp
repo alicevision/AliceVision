@@ -23,7 +23,7 @@ std::string describerTypeColor(const features::EImageDescriberType descType )
 #endif
 
 #if OPENMVG_IS_DEFINED(OPENMVG_HAVE_OPENCV)
-#if OPENMVG_IS_DEFINED(OPENMVG_USE_OCVSIFT)
+#if OPENMVG_IS_DEFINED(OPENMVG_HAVE_OCVSIFT)
     case features::EImageDescriberType::SIFT_OCV:       return "orange";
 #endif
     case features::EImageDescriberType::AKAZE_OCV:      return "indigo";
