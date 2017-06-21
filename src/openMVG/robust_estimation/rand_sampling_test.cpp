@@ -32,7 +32,28 @@ TEST(UniformSampleTest, NoRepetions) {
         CHECK(s >= 0);
         CHECK(s < upperBound);
       }
-      CHECK_EQUAL(num_samples, myset.size());
+      CHECK_EQUAL(numSamples, myset.size());
+    }
+  }
+}
+
+TEST(UniformSampleTest, UniformSampleSet) {
+
+  for(std::size_t upperBound = 1; upperBound < 513; upperBound *= 2)
+  { 
+    //Size of the data set
+    for(std::size_t numSample = 1; numSample <= upperBound; numSample *= 2)
+    { 
+      //Size of the consensus set
+      std::cout << "Upper " << upperBound << " Lower " << 0 << " numSamples " << numSample << "\n";
+      std::set<std::size_t> samples;
+      UniformSample(numSample, upperBound, &samples);
+      CHECK_EQUAL(numSample, samples.size());
+      for(const auto& s : samples) 
+      {
+        CHECK(s >= 0);
+        CHECK(s < upperBound);
+      }
     }
   }
 }
