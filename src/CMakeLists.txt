@@ -35,7 +35,7 @@ option(OPENMVG_BUILD_EXAMPLES "Build OpenMVG samples applications." ON)
 option(OPENMVG_BUILD_OPENGL_EXAMPLES "Build OpenMVG openGL examples" OFF)
 option(OPENMVG_BUILD_COVERAGE "Enable code coverage generation (gcc only)" OFF)
 
-trilean_option(OPENMVG_BUILD_DOC "Build OpenMVG documentation" ON)
+trilean_option(OPENMVG_BUILD_DOC "Build OpenMVG documentation" AUTO)
 trilean_option(OPENMVG_USE_BOOST "Build code depending on Boost (localization/voctree)" ON)
 trilean_option(OPENMVG_USE_OPENMP "Enable OpenMP parallelization" AUTO)
 trilean_option(OPENMVG_USE_CCTAG "Enable CCTAG markers" AUTO)
