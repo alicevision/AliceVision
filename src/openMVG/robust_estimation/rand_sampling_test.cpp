@@ -70,7 +70,7 @@ TEST(UniformSampleTest, NoRepetionsBeginEnd) {
       const std::size_t begin = upperBound-numSamples;
       std::cout << "Upper " << upperBound << " Lower " << begin << " numSamples " << numSamples << "\n";
       std::vector<std::size_t> samples;
-      UniformSample(begin, upperBound, numSamples, &samples);
+      UniformSample(begin, upperBound, numSamples, samples);
       std::set<std::size_t> myset;
       for(const auto& s : samples) 
       {

@@ -125,46 +125,26 @@ inline void UniformSample(std::size_t numSamples,
  * @param[out] samples The vector containing the samples.
  */
 template<typename IntT>
-inline void UniformSample(
-  std::size_t lowerBound,
-  std::size_t upperBound,
-  std::size_t num_samples,
-  std::vector<IntT> *samples)
+inline void UniformSample(std::size_t lowerBound,
+                          std::size_t upperBound,
+                          std::size_t numSamples,
+                          std::vector<IntT> &samples)
 {
-  assert(lowerBound < upperBound);
-  assert(num_samples <= (lowerBound-upperBound));
-  static_assert(std::is_integral<IntT>::value, "Only integer types are supported");
-  samples->resize(0);
-  samples->reserve(num_samples);
-  std::random_device rd;
-  std::default_random_engine e1(rd());
-  std::uniform_int_distribution<IntT> uniform_dist(lowerBound, upperBound-1);
-  std::set<IntT> set_samples;
-  while (set_samples.size() < num_samples)
-  {
-    IntT sample = uniform_dist(e1);
-    if(set_samples.count(sample) == 0)
-    {
-      set_samples.insert(sample);
-      samples->push_back(sample);
-    }
-  }
-  assert(samples->size() == num_samples);
+  samples = randSample<IntT>(lowerBound, upperBound, numSamples);
 }
 
 /**
  * @brief Generate a unique random samples in the range [0 upperBound).
- * @param[in] num_samples Number of unique samples to draw.
+ * @param[in] numSamples Number of unique samples to draw.
  * @param[in] upperBound The value at the end of the range (not included).
  * @param[out] samples The vector containing the samples.
  */
 template<typename IntT>
-inline void UniformSample(
-  std::size_t num_samples,
-  std::size_t upperBound,
-  std::vector<IntT> *samples)
+inline void UniformSample(std::size_t numSamples,
+                          std::size_t upperBound,
+                          std::vector<IntT> *samples)
 {
-  UniformSample(0, upperBound, num_samples, samples);
+  UniformSample(0, upperBound, numSamples, *samples);
 }
 
 /**
