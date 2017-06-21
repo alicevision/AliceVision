@@ -55,17 +55,16 @@ void SfM_Data_Structure_Computation_Blind::triangulate(SfM_Data & sfm_data) cons
       // Triangulate each landmark
       Triangulation trianObj;
       const Observations & obs = iterTracks->second.obs;
-      for(Observations::const_iterator itObs = obs.begin();
-        itObs != obs.end(); ++itObs)
+      for(const auto& itObs : obs)
       {
-        const View * view = sfm_data.views.at(itObs->first).get();
+        const View * view = sfm_data.views.at(itObs.first).get();
         if (sfm_data.IsPoseAndIntrinsicDefined(view))
         {
           const IntrinsicBase * cam = sfm_data.GetIntrinsics().at(view->id_intrinsic).get();
           const Pose3 pose = sfm_data.GetPoseOrDie(view);
           trianObj.add(
             cam->get_projective_equivalent(pose),
-            cam->get_ud_pixel(itObs->second.x));
+            cam->get_ud_pixel(itObs.second.x));
         }
       }
       if (trianObj.size() < 2)
@@ -193,7 +192,8 @@ bool SfM_Data_Structure_Computation_Robust::robust_triangulation(
 
     // Chierality (Check the point is in front of the sampled cameras)
     bool bChierality = true;
-    for (auto& it : samples){
+    for (auto& it : samples)
+    {
       Observations::const_iterator itObs = obs.begin();
       std::advance(itObs, it);
       const View * view = sfm_data.views.at(itObs->first).get();
@@ -209,17 +209,16 @@ bool SfM_Data_Structure_Computation_Robust::robust_triangulation(
     std::set<IndexT> inlier_set;
     double current_error = 0.0;
     // Classification as inlier/outlier according pixel residual errors.
-    for (Observations::const_iterator itObs = obs.begin();
-        itObs != obs.end(); ++itObs)
+    for (const auto& itObs : obs )
     {
-      const View * view = sfm_data.views.at(itObs->first).get();
+      const View * view = sfm_data.views.at(itObs.first).get();
       const IntrinsicBase * intrinsic = sfm_data.GetIntrinsics().at(view->id_intrinsic).get();
       const Pose3 pose = sfm_data.GetPoseOrDie(view);
-      const Vec2 residual = intrinsic->residual(pose, current_model, itObs->second.x);
+      const Vec2 residual = intrinsic->residual(pose, current_model, itObs.second.x);
       const double residual_d = residual.norm();
       if (residual_d < dThresholdPixel)
       {
-        inlier_set.insert(itObs->first);
+        inlier_set.insert(itObs.first);
         current_error += residual_d;
       }
       else
