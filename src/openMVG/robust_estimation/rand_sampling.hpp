@@ -192,5 +192,25 @@ inline void random_sample(std::size_t X, std::size_t upperBound, std::vector<std
   }
 }
 
+
+/**
+ * @brief 
+ * @param sizeSample The size of the sample.
+ * @param vec_index The possible data indices.
+ * @param sample The random sample of sizeSample indices (output).
+ */
+inline void UniformSample(std::size_t sampleSize,
+                          const std::vector<std::size_t>& vec_index,
+                          std::vector<std::size_t>& sample)
+{
+  sample.resize(sampleSize);
+  sample = randSample<std::size_t>(0, vec_index.size(), sampleSize);
+  assert(sample.size() == sampleSize);
+  for(auto &element : sample)
+  {
+    element = vec_index[ element ];
+  }
+}
+
 } // namespace robust
 } // namespace openMVG

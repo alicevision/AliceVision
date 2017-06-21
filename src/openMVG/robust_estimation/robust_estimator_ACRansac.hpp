@@ -145,19 +145,6 @@ static ErrorIndex bestNFA(
   return bestIndex;
 }
 
-/// Pick a random sample
-/// \param sizeSample The size of the sample.
-/// \param vec_index  The possible data indices.
-/// \param sample The random sample of sizeSample indices (output).
-static void UniformSample(int sizeSample,
-  const std::vector<size_t> &vec_index,
-  std::vector<size_t> *sample)
-{
-  sample->resize(sizeSample);
-  random_sample(sizeSample, vec_index.size(), sample);
-  for(int i = 0; i < sizeSample; ++i)
-    (*sample)[i] = vec_index[ (*sample)[i] ];
-}
 
 /**
  * @brief ACRANSAC routine (ErrorThreshold, NFA)
@@ -217,7 +204,7 @@ std::pair<double, double> ACRANSAC(const Kernel &kernel,
   for (size_t iter=0; iter < nIter; ++iter)
   {
     if (bACRansacMode)
-      UniformSample(sizeSample, vec_index, &vec_sample); // Get random sample
+      UniformSample(sizeSample, vec_index, vec_sample); // Get random sample
     else
       UniformSample(sizeSample, nData, &vec_sample); // Get random sample
 

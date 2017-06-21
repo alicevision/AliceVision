@@ -226,7 +226,7 @@ double localOptimization(const Kernel &kernel,
   for(std::size_t i = 0; i < numRep; ++i)
   {
     std::vector<std::size_t> sample;
-    UniformSample(sampleSize, inliersBase, &sample);
+    UniformSample(sampleSize, inliersBase, sample);
     assert(sampleSize > Kernel::MINIMUM_LSSAMPLES);
     assert(sample.size() > Kernel::MINIMUM_LSSAMPLES);
   

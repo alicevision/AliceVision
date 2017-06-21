@@ -8,8 +8,9 @@
 #include <iterator>
 #include <random>
 
-#include "openMVG/robust_estimation/robust_estimator_lineKernel_test.hpp"
-#include "openMVG/robust_estimation/robust_estimator_ACRansac.hpp"
+#include <openMVG/robust_estimation/robust_estimator_lineKernel_test.hpp>
+#include <openMVG/robust_estimation/robust_estimator_ACRansac.hpp>
+#include <openMVG/robust_estimation/rand_sampling.hpp>
 
 #include "testing/testing.h"
 
