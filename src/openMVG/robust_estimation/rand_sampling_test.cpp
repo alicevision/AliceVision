@@ -66,7 +66,7 @@ TEST(UniformSampleTest, NoRepetionsBeginEnd) {
     for(std::size_t numSamples = 1; numSamples <= upperBound; numSamples *= 2)
     { 
       //Size of the consensus set
-      assert((upperBound-numSamples) >= 0);
+      assert(upperBound >= numSamples);
       const std::size_t begin = upperBound-numSamples;
       std::cout << "Upper " << upperBound << " Lower " << begin << " numSamples " << numSamples << "\n";
       std::vector<std::size_t> samples;
@@ -89,7 +89,7 @@ TEST(UniformSampleTest, randSample) {
   { 
     for(std::size_t numSamples = 1; numSamples <= upperBound; numSamples *= 2)
     { 
-      assert((upperBound-numSamples) >= 0);
+      assert(upperBound >= numSamples);
       const std::size_t lowerBound = upperBound-numSamples;
       const auto samples = randSample<std::size_t>(lowerBound, upperBound, numSamples);
       
