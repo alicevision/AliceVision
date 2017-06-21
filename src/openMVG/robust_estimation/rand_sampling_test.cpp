@@ -58,6 +58,32 @@ TEST(UniformSampleTest, NoRepetionsBeginEnd) {
   }
 }
 
+TEST(UniformSampleTest, randSample) {
+  
+  for (std::size_t upperBound = 1; upperBound < 501; upperBound *= 2)
+  { 
+    for (std::size_t numSamples = 1; numSamples <= upperBound; numSamples *= 2)
+    { 
+      assert((upperBound-numSamples) >= 0);
+      const std::size_t lowerBound = upperBound-numSamples;
+      const auto samples = randSample<std::size_t>(lowerBound, upperBound, numSamples);
+      
+      std::set<std::size_t> myset;
+//      std::cout << "Upper " << upperBound << " Lower " << lowerBound << " numSamples " << numSamples << "\n";
+      for (std::size_t i = 0; i < numSamples; ++i) 
+      {
+//        std::cout << samples[i] << " ";
+        myset.insert(samples[i]);
+        CHECK(samples[i] >= lowerBound);
+        CHECK(samples[i] < upperBound);
+      }
+//      std::cout  << "\n";
+      // this verifies no repetitions
+      CHECK_EQUAL(numSamples, myset.size());
+    }
+  }
+}
+
 // Assert that each time exactly N random number are picked (no repetition)
 TEST(RandomSampleTest, NoRepetions) {
 

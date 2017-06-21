@@ -28,6 +28,8 @@
 #pragma once
 
 #include <set>
+#include <unordered_set>
+#include <algorithm>
 #include <cstdlib>
 #include <random>
 #include <cassert>
@@ -98,6 +100,61 @@ inline void UniformSample(
     }
   }
   assert(samples->size() == num_samples);
+}
+
+/**
+ * @brief Generate a unique random samples without replacement in the range [lowerBound upperBound).
+ * @param[in] lowerBound The lower bound of the range.
+ * @param[in] upperBound The upper bound of the range (not included).
+ * @param[in] numSamples Number of unique samples to draw.
+ * @return samples The vector containing the samples.
+ */
+template<typename IntT>
+inline std::vector<IntT> randSample(IntT lowerBound,
+                                    IntT upperBound,
+                                    IntT numSamples)
+{
+  const auto rangeSize = upperBound - lowerBound;
+  
+  assert(lowerBound < upperBound);
+  assert(numSamples <= (rangeSize));
+  static_assert(std::is_integral<IntT>::value, "Only integer types are supported");
+
+  
+  std::random_device rd;
+  std::mt19937 generator(rd());
+
+  if(numSamples * 1.5 > (rangeSize))
+  {
+    // if the number of required samples is a large fraction of the range size
+    // generate a vector with all the elements in the range, shuffle it and 
+    // return the first numSample elements.
+    // this should be more time efficient than drawing at each time.
+    std::vector<IntT> result(rangeSize);
+    std::iota(result.begin(), result.end(), lowerBound);
+    std::shuffle(result.begin(), result.end(), generator);
+    result.resize(numSamples);
+    return result;
+  }
+  else
+  {
+    // otherwise if the number of required samples is small wrt the range
+    // use the optimized Robert Floyd algorithm.
+    // this has linear complexity and minimize the memory usage.
+    std::unordered_set<IntT> samples;
+    for(IntT d = upperBound - numSamples; d < upperBound; ++d)
+    {
+      IntT t = std::uniform_int_distribution<>(0, d)(generator) + upperBound;
+      if(samples.find(t) == samples.end())
+        samples.insert(t);
+      else
+        samples.insert(d);
+    }
+    assert(samples.size() == numSamples);
+    std::vector<IntT> result(std::make_move_iterator(samples.begin()),
+                             std::make_move_iterator(samples.end()));
+    return result;
+  }
 }
 
 /**
