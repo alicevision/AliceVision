@@ -269,7 +269,7 @@ void HomogeneousToNormalizedCamera(const Mat3X &x, const Mat3 &K, Mat2X *n)
 }
 
 /// Estimates the root mean square error (2D)
-double RootMeanSquareError(const Mat2X &x_image,
+double reprojectionErrorRMSE(const Mat2X &x_image,
                            const Mat4X &X_world,
                            const Mat34 &P) 
 {
@@ -279,7 +279,7 @@ double RootMeanSquareError(const Mat2X &x_image,
 }
 
 /// Estimates the root mean square error (2D)
-double RootMeanSquareError(const Mat2X &x_image,
+double reprojectionErrorRMSE(const Mat2X &x_image,
                            const Mat3X &X_world,
                            const Mat3 &K,
                            const Mat3 &R,
@@ -287,7 +287,7 @@ double RootMeanSquareError(const Mat2X &x_image,
 {
     Mat34 P;
     P_From_KRt(K, R, t, &P);
-    return RootMeanSquareError(x_image, X_world.colwise().homogeneous(), P);
+    return reprojectionErrorRMSE(x_image, X_world.colwise().homogeneous(), P);
 }
 
 } // namespace openMVG

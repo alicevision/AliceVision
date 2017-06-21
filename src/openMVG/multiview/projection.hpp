@@ -86,12 +86,12 @@ void EuclideanToNormalizedCamera(const Mat2X &x, const Mat3 &K, Mat2X *n);
 void HomogeneousToNormalizedCamera(const Mat3X &x, const Mat3 &K, Mat2X *n);
 
 /// Estimates the root mean square error (2D)
-double RootMeanSquareError(const Mat2X &x_image,
+double reprojectionErrorRMSE(const Mat2X &x_image,
   const Mat4X &X_world,
   const Mat34 &P);
 
 /// Estimates the root mean square error (2D)
-double RootMeanSquareError(const Mat2X &x_image,
+double reprojectionErrorRMSE(const Mat2X &x_image,
   const Mat3X &X_world,
   const Mat3 &K,
   const Mat3 &R,
