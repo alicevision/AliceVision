@@ -142,9 +142,9 @@ inline void UniformSample(std::size_t lowerBound,
 template<typename IntT>
 inline void UniformSample(std::size_t numSamples,
                           std::size_t upperBound,
-                          std::vector<IntT> *samples)
+                          std::vector<IntT> &samples)
 {
-  UniformSample(0, upperBound, numSamples, *samples);
+  UniformSample(0, upperBound, numSamples, samples);
 }
 
 /**

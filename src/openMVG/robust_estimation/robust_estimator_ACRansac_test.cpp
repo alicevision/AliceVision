@@ -222,7 +222,7 @@ TEST(RansacLineFitter, RealisticCase)
   //-- Simulate outliers (for the asked percentage amount of the datum)
   const int nbPtToNoise = (int) NbPoints * inlierPourcentAmount / 100.0;
   vector<std::size_t> vec_samples; // Fit with unique random index
-  UniformSample(nbPtToNoise, NbPoints, &vec_samples);
+  UniformSample(nbPtToNoise, NbPoints, vec_samples);
   for(std::size_t i = 0; i < vec_samples.size(); ++i)
   {
     const std::size_t randomIndex = vec_samples[i];

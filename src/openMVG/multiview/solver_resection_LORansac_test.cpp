@@ -152,7 +152,7 @@ TEST(P3P_Ransac, noisyFromImagePoints)
   {
     // take a random sample to be used as outliers
     const std::size_t NUMOUTLIERS = std::size_t(OUTLIERSRATIO*nbPoints);
-    robust::UniformSample(NUMOUTLIERS, nbPoints, &vec_outliers);
+    robust::UniformSample(NUMOUTLIERS, nbPoints, vec_outliers);
     std::sort(vec_outliers.begin(), vec_outliers.end());
     
     // add outliers

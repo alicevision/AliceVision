@@ -206,7 +206,7 @@ std::pair<double, double> ACRANSAC(const Kernel &kernel,
     if (bACRansacMode)
       UniformSample(sizeSample, vec_index, vec_sample); // Get random sample
     else
-      UniformSample(sizeSample, nData, &vec_sample); // Get random sample
+      UniformSample(sizeSample, nData, vec_sample); // Get random sample
 
     std::vector<typename Kernel::Model> vec_models; // Up to max_models solutions
     kernel.Fit(vec_sample, &vec_models);

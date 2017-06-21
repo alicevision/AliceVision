@@ -130,7 +130,7 @@ TEST(LoRansacLineFitter, IdealCaseLoRansac)
     //-- Add some noise (for the asked percentage amount)
     int nbPtToNoise = (int) NbPoints*outlierRatio/100.0;
     vector<size_t> vec_samples; // Fit with unique random index
-    UniformSample(nbPtToNoise, NbPoints, &vec_samples);
+    UniformSample(nbPtToNoise, NbPoints, vec_samples);
     for(size_t i = 0; i <vec_samples.size(); ++i)
     {
       const size_t randomIndex = vec_samples[i];
@@ -194,7 +194,7 @@ TEST(LoRansacLineFitter, RealCaseLoRansac)
     std::iota(vec_inliersGT.begin(), vec_inliersGT.end(), 0);
 
     vector<std::size_t> vec_outliers; // Fit with unique random index
-    UniformSample(nbPtToNoise, NbPoints, &vec_outliers);
+    UniformSample(nbPtToNoise, NbPoints, vec_outliers);
 
     for(std::size_t i = 0; i < vec_outliers.size(); ++i)
     {

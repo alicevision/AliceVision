@@ -24,7 +24,7 @@ TEST(UniformSampleTest, NoRepetions) {
       //Size of the consensus set
       std::vector<std::size_t> samples;
       std::cout << "Upper " << upperBound << " Lower " << 0 << " numSamples " << numSamples << "\n";
-      UniformSample(numSamples, upperBound, &samples);
+      UniformSample(numSamples, upperBound, samples);
       std::set<std::size_t> myset;
       for(const auto& s : samples) 
       {

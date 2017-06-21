@@ -48,7 +48,7 @@ template <typename Kernel>
 	for (size_t i=0; i < N; i++) {
 
     // Get Samples indexes
-    UniformSample(min_samples, total_samples, &vec_sample);
+    UniformSample(min_samples, total_samples, vec_sample);
 
     // Estimate parameters: the solutions are stored in a vector
     std::vector<typename Kernel::Model> models;
