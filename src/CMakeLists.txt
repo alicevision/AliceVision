@@ -31,11 +31,11 @@ endfunction()
 # ==============================================================================
 option(OPENMVG_BUILD_SHARED "Build OpenMVG shared libs" OFF)
 option(OPENMVG_BUILD_TESTS "Build OpenMVG tests" OFF)
-option(OPENMVG_BUILD_DOC "Build OpenMVG documentation" ON)
 option(OPENMVG_BUILD_EXAMPLES "Build OpenMVG samples applications." ON)
 option(OPENMVG_BUILD_OPENGL_EXAMPLES "Build OpenMVG openGL examples" OFF)
 option(OPENMVG_BUILD_COVERAGE "Enable code coverage generation (gcc only)" OFF)
 
+trilean_option(OPENMVG_BUILD_DOC "Build OpenMVG documentation" ON)
 trilean_option(OPENMVG_USE_BOOST "Build code depending on Boost (localization/voctree)" ON)
 trilean_option(OPENMVG_USE_OPENMP "Enable OpenMP parallelization" AUTO)
 trilean_option(OPENMVG_USE_CCTAG "Enable CCTAG markers" AUTO)
@@ -131,7 +131,6 @@ if(UNIX AND NOT OPENMVG_BUILD_COVERAGE)
   set(CMAKE_C_FLAGS_RELEASE "-O3")
   set(CMAKE_CXX_FLAGS_RELEASE "-O3")
 endif()
-include(UpdateCacheVariable)
 
 if(CMAKE_COMPILER_IS_GNUCXX)
   include(AddCompilerFlag)
@@ -661,15 +660,19 @@ add_subdirectory(nonFree)
 # --------------------------
 # Sphinx detection
 # ==============================================================================
-if(OPENMVG_BUILD_DOC)
+if(OPENMVG_BUILD_DOC STREQUAL "OFF")
+  set(OPENMVG_HAVE_DOC 0)
+else()
   find_package(Sphinx)
+
   if (EXISTS ${SPHINX_EXECUTABLE})
     set(SPHINX_HTML_DIR "${CMAKE_CURRENT_BINARY_DIR}/htmlDoc")
 
     configure_file(
       "${CMAKE_CURRENT_SOURCE_DIR}/../docs/sphinx/rst/conf.py"
       "${CMAKE_CURRENT_BINARY_DIR}/conf.py"
-      @ONLY)
+      @ONLY
+    )
 
     add_custom_target(doc ALL
       ${SPHINX_EXECUTABLE}
@@ -681,9 +684,11 @@ if(OPENMVG_BUILD_DOC)
     set_property(TARGET doc
       PROPERTY FOLDER OpenMVG
     )
+    set(OPENMVG_HAVE_DOC 1)
+    message(STATUS "Sphinx found.")
   else()
-    message("Sphinx need to be installed to generate the documentation")
-      UPDATE_CACHE_VARIABLE(OPENMVG_BUILD_DOC OFF)
+    set(OPENMVG_HAVE_DOC 0)
+    message(SEND_ERROR "Failed to find Sphinx.\nSphinx need to be installed to generate the documentation")
   endif()
 endif()
 
@@ -691,9 +696,9 @@ message("\n")
 message("** OpenMVG version: " ${OPENMVG_VERSION})
 message("** Build Shared libs: " ${OPENMVG_BUILD_SHARED})
 message("** Build OpenMVG tests: " ${OPENMVG_BUILD_TESTS})
-message("** Build OpenMVG documentation: " ${OPENMVG_BUILD_DOC})
 message("** Build OpenMVG samples applications: " ${OPENMVG_BUILD_EXAMPLES})
 message("** Build OpenMVG openGL examples: " ${OPENMVG_BUILD_OPENGL_EXAMPLES})
+message("** Build OpenMVG documentation: " ${OPENMVG_HAVE_DOC})
 message("** Build the voctree and localization module: " ${OPENMVG_HAVE_BOOST})
 message("** Enable code coverage generation: " ${OPENMVG_BUILD_COVERAGE})
 message("** Enable OpenMP parallelization: " ${OPENMVG_HAVE_OPENMP})
