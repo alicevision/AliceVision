@@ -65,47 +65,47 @@ endif()
 find_dependency(Ceres)
 
 # whether it is built with CCTags
-set(OPENMVG_USE_CCTAG @OPENMVG_USE_CCTAG@)
+set(OPENMVG_HAVE_CCTAG @OPENMVG_HAVE_CCTAG@)
 
-if(OPENMVG_USE_CCTAG)
+if(OPENMVG_HAVE_CCTAG)
   set(CCTag_DIR @CCTag_DIR@)
   find_dependency(CCTag 1.0.0)
 endif()
 
 # whether it is built with CCTags
-set(OPENMVG_USE_POPSIFT @OPENMVG_USE_POPSIFT@)
+set(OPENMVG_HAVE_POPSIFT @OPENMVG_HAVE_POPSIFT@)
 
-if(OPENMVG_USE_POPSIFT)
+if(OPENMVG_HAVE_POPSIFT)
   find_dependency(PopSift 1.0.0)
 endif()
 
 
 # whether it is built with CCTags
-set(OPENMVG_USE_OPENCV @OPENMVG_USE_OPENCV@)
+set(OPENMVG_HAVE_OPENCV @OPENMVG_HAVE_OPENCV@)
 
-if(OPENMVG_USE_OPENCV)
+if(OPENMVG_HAVE_OPENCV)
   set(OpenCV_DIR @OpenCV_DIR@)
   find_dependency(OpenCV)
-endif(OPENMVG_USE_OPENCV)
+endif()
 
-set(OPENMVG_USE_OPENMP @OPENMVG_USE_OPENMP@)
+set(OPENMVG_HAVE_OPENMP @OPENMVG_HAVE_OPENMP@)
 
-if(OPENMVG_USE_OPENMP)
+if(OPENMVG_HAVE_OPENMP)
   find_dependency(OpenMP)
   # TODO: this would not be necessary if the flags were declared properly for each target
   set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
-endif(OPENMVG_USE_OPENMP)
+endif()
 
-set(OPENMVG_USE_BOOST @OPENMVG_USE_BOOST@)
+set(OPENMVG_HAVE_BOOST @OPENMVG_HAVE_BOOST@)
 set(BOOST_NO_CXX11 @BOOST_NO_CXX11@)
 if(BOOST_NO_CXX11)
  add_definitions(-DBOOST_NO_CXX11_SCOPED_ENUMS)
-endif(BOOST_NO_CXX11)
+endif()
 
 # propagate other building options
-set(OPENMVG_USE_OPENGV @OPENMVG_USE_OPENGV@)
-set(OPENMVG_USE_ALEMBIC @OPENMVG_USE_ALEMBIC@)
+set(OPENMVG_HAVE_OPENGV @OPENMVG_HAVE_OPENGV@)
+set(OPENMVG_HAVE_ALEMBIC @OPENMVG_HAVE_ALEMBIC@)
 set(OPENMVG_USE_LOG @OPENMVG_USE_LOG@)
 
 # Set the version.
@@ -131,14 +131,14 @@ if(NOT EXISTS ${CURRENT_ROOT_INSTALL_DIR})
     "OpenMVG install root: ${CURRENT_ROOT_INSTALL_DIR}, "
     "determined from relative path from OpenMVGConfig.cmake install location: "
     "${CMAKE_MODULE_PATH}, does not exist.")
-endif(NOT EXISTS ${CURRENT_ROOT_INSTALL_DIR})
+endif()
 
 # Check if OpenMVG header is installed
 if(NOT EXISTS ${CURRENT_ROOT_INSTALL_DIR}/include/openMVG/version.hpp)
   OPENMVG_REPORT_NOT_FOUND(
     "OpenMVG install root: ${CMAKE_MODULE_PATH}. "
     "Cannot find openMVG include files.")
-endif(NOT EXISTS ${CURRENT_ROOT_INSTALL_DIR}/include/openMVG/version.hpp)
+endif()
 
 # Set the include directories for OpenMVG (itself) and all (potentially optional)
 # dependencies with which OpenMVG was compiled.
