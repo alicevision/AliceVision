@@ -275,7 +275,7 @@ double reprojectionErrorRMSE(const Mat2X &x_image,
 {
     const std::size_t num_points = x_image.cols();
     const Mat2X dx = Project(P, X_world) - x_image;
-    return dx.norm() / num_points;
+    return std::sqrt(dx.squaredNorm() / num_points);
 }
 
 /// Estimates the root mean square error (2D)
