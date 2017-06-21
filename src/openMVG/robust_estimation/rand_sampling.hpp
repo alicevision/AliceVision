@@ -48,7 +48,7 @@ namespace robust{
 * @warning Argument values should respect: num_samples <= total_samples
 */
 template<typename IntT>
-static void UniformSample(
+inline void UniformSample(
   std::size_t num_samples,
   std::size_t upperBound,
   std::set<IntT> *samples)
@@ -73,7 +73,7 @@ static void UniformSample(
  * @param[out] samples The vector containing the samples.
  */
 template<typename IntT>
-static void UniformSample(
+inline void UniformSample(
   std::size_t lowerBound,
   std::size_t upperBound,
   std::size_t num_samples,
@@ -107,7 +107,7 @@ static void UniformSample(
  * @param[out] samples The vector containing the samples.
  */
 template<typename IntT>
-static void UniformSample(
+inline void UniformSample(
   std::size_t num_samples,
   std::size_t upperBound,
   std::vector<IntT> *samples)
@@ -116,7 +116,7 @@ static void UniformSample(
 }
 
 /// Get a (sorted) random sample of size X in [0:n-1]
-static void random_sample(std::size_t X, std::size_t upperBound, std::vector<std::size_t> *samples)
+inline void random_sample(std::size_t X, std::size_t upperBound, std::vector<std::size_t> *samples)
 {
   samples->resize(X);
   for(std::size_t i=0; i < X; ++i)
