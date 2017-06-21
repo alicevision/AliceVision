@@ -25,7 +25,9 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-#include "openMVG/multiview/projection.hpp"
+#include <openMVG/multiview/projection.hpp>
+
+#include <cmath>
 
 namespace openMVG {
 
@@ -58,9 +60,9 @@ void KRt_From_P(const Mat34 &P, Mat3 *Kp, Mat3 *Rp, Vec3 *tp)
   {
     double c = -K(2,2);
     double s = K(2,1);
-    const double l = sqrt(c * c + s * s);
-    c /= l; 
-    s /= l;
+    const double lenght = std::sqrt(c * c + s * s);
+    c /= lenght; 
+    s /= lenght;
     Mat3 Qx;
     Qx << 1, 0, 0,
           0, c, -s,
@@ -73,9 +75,9 @@ void KRt_From_P(const Mat34 &P, Mat3 *Kp, Mat3 *Rp, Vec3 *tp)
   {
     double c = K(2,2);
     double s = K(2,0);
-    const double l = sqrt(c * c + s * s);
-    c /= l; 
-    s /= l;
+    const double length = std::sqrt(c * c + s * s);
+    c /= length; 
+    s /= length;
     Mat3 Qy;
     Qy << c, 0, s,
           0, 1, 0,
@@ -88,9 +90,9 @@ void KRt_From_P(const Mat34 &P, Mat3 *Kp, Mat3 *Rp, Vec3 *tp)
   {
     double c = -K(1,1);
     double s = K(1,0);
-    const double l = sqrt(c * c + s * s);
-    c /= l; 
-    s /= l;
+    const double length = sqrt(c * c + s * s);
+    c /= length; 
+    s /= length;
     Mat3 Qz;
     Qz << c,-s, 0,
           s, c, 0,
