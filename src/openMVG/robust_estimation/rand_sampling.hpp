@@ -104,18 +104,17 @@ inline std::vector<IntT> randSample(IntT lowerBound,
 template<typename IntT>
 inline void UniformSample(std::size_t numSamples,
                           std::size_t upperBound,
-                          std::set<IntT> *samples)
+                          std::set<IntT> &samples)
 {
   assert(numSamples <= upperBound);
-  assert(samples != nullptr);
   static_assert(std::is_integral<IntT>::value, "Only integer types are supported");
   
   const auto vecSamples = randSample<IntT>(0, upperBound, numSamples);
   for(const auto& s : vecSamples)
   {
-    samples->insert(s);
+    samples.insert(s);
   }
-  assert(samples->size() == numSamples);
+  assert(samples.size() == numSamples);
 }
 
 /**

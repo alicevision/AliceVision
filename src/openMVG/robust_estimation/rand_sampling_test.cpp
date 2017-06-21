@@ -47,7 +47,7 @@ TEST(UniformSampleTest, UniformSampleSet) {
       //Size of the consensus set
       std::cout << "Upper " << upperBound << " Lower " << 0 << " numSamples " << numSample << "\n";
       std::set<std::size_t> samples;
-      UniformSample(numSample, upperBound, &samples);
+      UniformSample(numSample, upperBound, samples);
       CHECK_EQUAL(numSample, samples.size());
       for(const auto& s : samples) 
       {

@@ -182,7 +182,7 @@ bool SfM_Data_Structure_Computation_Robust::robust_triangulation(
   for (IndexT i = 0; i < nbIter; ++i)
   {
     std::set<IndexT> samples;
-    robust::UniformSample(std::min(std::size_t(min_sample_index), obs.size()), obs.size(), &samples);
+    robust::UniformSample(std::min(std::size_t(min_sample_index), obs.size()), obs.size(), samples);
 
     // Hypothesis generation.
     const Vec3 current_model = track_sample_triangulation(sfm_data, obs, samples);
