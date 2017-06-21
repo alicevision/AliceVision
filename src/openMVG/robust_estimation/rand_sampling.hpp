@@ -117,14 +117,14 @@ inline std::vector<IntT> randSample(IntT lowerBound,
   const auto rangeSize = upperBound - lowerBound;
   
   assert(lowerBound < upperBound);
-  assert(numSamples <= (rangeSize));
+  assert(numSamples <= rangeSize);
   static_assert(std::is_integral<IntT>::value, "Only integer types are supported");
 
   
   std::random_device rd;
   std::mt19937 generator(rd());
 
-  if(numSamples * 1.5 > (rangeSize))
+  if(numSamples * 1.5 > rangeSize)
   {
     // if the number of required samples is a large fraction of the range size
     // generate a vector with all the elements in the range, shuffle it and 
@@ -173,21 +173,22 @@ inline void UniformSample(
 }
 
 /**
- * @brief 
- * @param sizeSample The size of the sample.
- * @param vec_index The possible data indices.
- * @param sample The random sample of sizeSample indices (output).
+ * @brief Generate a random sequence containing a sampling without replacement of
+ * of the elements of the input vector.
+ * 
+ * @param[in] sizeSample The size of the sample to generate.
+ * @param[in] vec_index The possible data indices.
+ * @param[out] sample The random sample of sizeSample indices.
  */
 inline void UniformSample(std::size_t sampleSize,
-                          const std::vector<std::size_t>& vec_index,
+                          const std::vector<std::size_t>& elements,
                           std::vector<std::size_t>& sample)
 {
-  sample.resize(sampleSize);
-  sample = randSample<std::size_t>(0, vec_index.size(), sampleSize);
+  sample = randSample<std::size_t>(0, elements.size(), sampleSize);
   assert(sample.size() == sampleSize);
-  for(auto &element : sample)
+  for(auto& s : sample)
   {
-    element = vec_index[ element ];
+    s = elements[ s ];
   }
 }
 
