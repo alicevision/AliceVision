@@ -144,7 +144,7 @@ inline std::vector<IntT> randSample(IntT lowerBound,
     std::unordered_set<IntT> samples;
     for(IntT d = upperBound - numSamples; d < upperBound; ++d)
     {
-      IntT t = std::uniform_int_distribution<>(0, d)(generator) + upperBound;
+      IntT t = std::uniform_int_distribution<>(0, d)(generator) + lowerBound;
       if(samples.find(t) == samples.end())
         samples.insert(t);
       else
