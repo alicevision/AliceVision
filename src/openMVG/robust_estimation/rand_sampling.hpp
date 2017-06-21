@@ -37,70 +37,6 @@
 namespace openMVG {
 namespace robust{
 
-/**
-* Pick a random subset of the integers in the range [0, total), in random order.
-*
-* This uses a quadratic rejection strategy and should only be used for small
-* num_samples.
-*
-* @param num_samples   The number of samples to produce.
-* @param upperBound    The upper bound of the range.
-* @param samples       num_samples of numbers in [0, total_samples) is placed
-*                      here on return.
-* @warning Argument values should respect: num_samples <= total_samples
-*/
-template<typename IntT>
-inline void UniformSample(
-  std::size_t num_samples,
-  std::size_t upperBound,
-  std::set<IntT> *samples)
-{
-  assert(num_samples <= upperBound);
-  static_assert(std::is_integral<IntT>::value, "Only integer types are supported");
-  std::random_device rd;
-  std::default_random_engine e1(rd());
-  std::uniform_int_distribution<IntT> uniform_dist(0, upperBound-1);
-  while (samples->size() < num_samples)
-  {
-    IntT sample = uniform_dist(e1);
-    samples->insert(sample);
-  }
-}
-
-/**
- * @brief Generate a unique random samples in the range [lowerBound upperBound).
- * @param[in] lowerBound The lower bound of the range.
- * @param[in] upperBound The upper bound of the range (not included).
- * @param[in] num_samples Number of unique samples to draw.
- * @param[out] samples The vector containing the samples.
- */
-template<typename IntT>
-inline void UniformSample(
-  std::size_t lowerBound,
-  std::size_t upperBound,
-  std::size_t num_samples,
-  std::vector<IntT> *samples)
-{
-  assert(lowerBound < upperBound);
-  assert(num_samples <= (lowerBound-upperBound));
-  static_assert(std::is_integral<IntT>::value, "Only integer types are supported");
-  samples->resize(0);
-  samples->reserve(num_samples);
-  std::random_device rd;
-  std::default_random_engine e1(rd());
-  std::uniform_int_distribution<IntT> uniform_dist(lowerBound, upperBound-1);
-  std::set<IntT> set_samples;
-  while (set_samples.size() < num_samples)
-  {
-    IntT sample = uniform_dist(e1);
-    if(set_samples.count(sample) == 0)
-    {
-      set_samples.insert(sample);
-      samples->push_back(sample);
-    }
-  }
-  assert(samples->size() == num_samples);
-}
 
 /**
  * @brief Generate a unique random samples without replacement in the range [lowerBound upperBound).
@@ -155,6 +91,66 @@ inline std::vector<IntT> randSample(IntT lowerBound,
                              std::make_move_iterator(samples.end()));
     return result;
   }
+}
+
+/**
+* @brief Pick a random subset of the integers in the range [0, total), in random order.
+*
+* @param numSamples   The number of samples to produce.
+* @param upperBound    The upper bound of the range.
+* @param samples       num_samples of numbers in [0, total_samples) is placed
+*                      here on return.
+*/
+template<typename IntT>
+inline void UniformSample(std::size_t numSamples,
+                          std::size_t upperBound,
+                          std::set<IntT> *samples)
+{
+  assert(numSamples <= upperBound);
+  assert(samples != nullptr);
+  static_assert(std::is_integral<IntT>::value, "Only integer types are supported");
+  
+  const auto vecSamples = randSample<IntT>(0, upperBound, numSamples);
+  for(const auto& s : vecSamples)
+  {
+    samples->insert(s);
+  }
+  assert(samples->size() == numSamples);
+}
+
+/**
+ * @brief Generate a unique random samples in the range [lowerBound upperBound).
+ * @param[in] lowerBound The lower bound of the range.
+ * @param[in] upperBound The upper bound of the range (not included).
+ * @param[in] num_samples Number of unique samples to draw.
+ * @param[out] samples The vector containing the samples.
+ */
+template<typename IntT>
+inline void UniformSample(
+  std::size_t lowerBound,
+  std::size_t upperBound,
+  std::size_t num_samples,
+  std::vector<IntT> *samples)
+{
+  assert(lowerBound < upperBound);
+  assert(num_samples <= (lowerBound-upperBound));
+  static_assert(std::is_integral<IntT>::value, "Only integer types are supported");
+  samples->resize(0);
+  samples->reserve(num_samples);
+  std::random_device rd;
+  std::default_random_engine e1(rd());
+  std::uniform_int_distribution<IntT> uniform_dist(lowerBound, upperBound-1);
+  std::set<IntT> set_samples;
+  while (set_samples.size() < num_samples)
+  {
+    IntT sample = uniform_dist(e1);
+    if(set_samples.count(sample) == 0)
+    {
+      set_samples.insert(sample);
+      samples->push_back(sample);
+    }
+  }
+  assert(samples->size() == num_samples);
 }
 
 /**
