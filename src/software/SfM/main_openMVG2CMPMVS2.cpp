@@ -94,7 +94,7 @@ void retrieveSeedsPerView(
     const Landmark& landmark = s.second;
     // For each observation of a 3D landmark, we will export
     // all other observations with an angle > minAngle.
-    for(const auto& obsA: landmark.obs)
+    for(const auto& obsA: landmark.observations)
     {
       const auto& obsACamId_it = map_viewIdToContiguous.find(obsA.first);
       if(obsACamId_it == map_viewIdToContiguous.end())
@@ -104,7 +104,7 @@ void retrieveSeedsPerView(
       const geometry::Pose3& poseA = sfm_data.GetPoses().at(viewA.id_pose);
       const Pinhole_Intrinsic * intrinsicsA = dynamic_cast<const Pinhole_Intrinsic*>(sfm_data.GetIntrinsics().at(viewA.id_intrinsic).get());
       
-      for(const auto& obsB: landmark.obs)
+      for(const auto& obsB: landmark.observations)
       {
         // don't export itself
         if(obsA.first == obsB.first)
@@ -195,8 +195,7 @@ bool exportToCMPMVS2Format(
 
   // Export views:
   //   - 00001_P.txt (Pose of the reconstructed camera)
-  //   - 00001_c.png (undistorted & scaled colored image)
-  //   - 00001_g.png (undistorted & scaled grayscale image)
+  //   - 00001._c.png (undistorted & scaled colored image)
   //   - 00001_seeds.bin (3d points visible in this image)
   #pragma omp parallel for num_threads(3)
   for(int i = 0; i < map_viewIdToContiguous.size(); ++i)

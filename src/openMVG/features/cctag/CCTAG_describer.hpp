@@ -1,10 +1,10 @@
 #pragma once
 
+#include <openMVG/features/ImageDescriberCommon.hpp>
 #include <openMVG/features/image_describer.hpp>
 #include <openMVG/features/regions_factory.hpp>
 #include <openMVG/types.hpp>
 
-#include <cereal/cereal.hpp>
 #include <iostream>
 #include <numeric>
 
@@ -23,11 +23,17 @@ public:
   CCTAG_Image_describer(const std::size_t nRings = 3);
   ~CCTAG_Image_describer();
 
-  bool Set_configuration_preset(EDESCRIBER_PRESET preset);
+  EImageDescriberType getDescriberType() const override
+  {
+    // TODO: check nRings to decide between CCTAG3 and CCTAG4
+    return EImageDescriberType::CCTAG3;
+  }
+  
+  bool Set_configuration_preset(EDESCRIBER_PRESET preset) override;
 
-  void Set_use_cuda(bool);
+  void setUseCuda(bool) override;
 
-  void setCudaPipe(int pipe) { _cudaPipe = pipe; }
+  void setCudaPipe(int pipe) override { _cudaPipe = pipe; }
 
   /**
   @brief Detect regions on the image and compute their attributes (description)
@@ -41,15 +47,7 @@ public:
     const image::Image<unsigned char> * mask = nullptr);
 
   /// Allocate Regions type depending of the Image_describer
-  void Allocate(std::unique_ptr<Regions> &regions) const;
-
-  template<class Archive>
-  void serialize( Archive & ar )
-  {
-    ar(
-     cereal::make_nvp("cannyThrLow", _params._cannyThrLow),
-     cereal::make_nvp("cannyThrHigh", _params._cannyThrHigh));
-  }
+  void Allocate(std::unique_ptr<Regions> &regions) const override;
 
   struct CCTagParameters
   {
@@ -98,7 +96,3 @@ IndexT getCCTagId(const DescriptorT & desc)
 
 } // namespace features
 } // namespace openMVG
-
-#include <cereal/types/polymorphic.hpp>
-#include <cereal/archives/json.hpp>
-CEREAL_REGISTER_TYPE_WITH_NAME(openMVG::features::CCTAG_Image_describer, "CCTAG_Image_describer");

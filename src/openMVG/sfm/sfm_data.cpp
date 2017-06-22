@@ -66,9 +66,9 @@ bool ColorizeTracks( SfM_Data & sfm_data )
       ++iterT)
     {
       const size_t trackId = *iterT;
-      const Observations & obs = sfm_data.GetLandmarks().at(trackId).obs;
-      for( Observations::const_iterator iterObs = obs.begin();
-        iterObs != obs.end(); ++iterObs)
+      const Observations & observations = sfm_data.GetLandmarks().at(trackId).observations;
+      for( Observations::const_iterator iterObs = observations.begin();
+        iterObs != observations.end(); ++iterObs)
       {
         const size_t viewId = iterObs->first;
         if (map_IndexCardinal.find(viewId) == map_IndexCardinal.end())
@@ -111,10 +111,10 @@ bool ColorizeTracks( SfM_Data & sfm_data )
       ++iterT)
     {
       const size_t trackId = *iterT;
-      const Observations & obs = sfm_data.GetLandmarks().at(trackId).obs;
-      Observations::const_iterator it = obs.find(view_index);
+      const Observations & observations = sfm_data.GetLandmarks().at(trackId).observations;
+      Observations::const_iterator it = observations.find(view_index);
 
-      if (it != obs.end())
+      if (it != observations.end())
       {
         // Color the track
         Vec2 pt = it->second.x;

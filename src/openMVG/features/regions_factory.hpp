@@ -24,6 +24,7 @@ typedef Scalar_Regions<SIOPointFeature,unsigned char,128> CCTAG_Regions;
 typedef Scalar_Regions<SIOPointFeature,float,64> AKAZE_Float_Regions;
 /// Define the AKAZE Keypoint (with a LIOP descriptor)
 typedef Scalar_Regions<SIOPointFeature,unsigned char,144> AKAZE_Liop_Regions;
+
 /// Define the AKAZE Keypoint (with a binary descriptor saved in an uchar array)
 typedef Binary_Regions<SIOPointFeature,64> AKAZE_Binary_Regions;
 

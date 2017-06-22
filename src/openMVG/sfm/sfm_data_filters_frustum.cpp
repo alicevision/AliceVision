@@ -11,6 +11,8 @@
 #include "openMVG/geometry/half_space_intersection.hpp"
 #include <openMVG/config.hpp>
 
+#include "third_party/progress/progress.hpp"
+
 #include <fstream>
 
 namespace openMVG {
@@ -190,8 +192,8 @@ void Frustum_Filter::init_z_near_z_far_depth(const SfM_Data & sfm_data,
     {
       const Landmark & landmark = itL->second;
       const Vec3 & X = landmark.X;
-      for (Observations::const_iterator iterO = landmark.obs.begin();
-        iterO != landmark.obs.end(); ++iterO)
+      for (Observations::const_iterator iterO = landmark.observations.begin();
+        iterO != landmark.observations.end(); ++iterO)
       {
         const IndexT id_view = iterO->first;
         const Observation & ob = iterO->second;

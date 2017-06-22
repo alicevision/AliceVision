@@ -7,11 +7,12 @@
 
 #pragma once
 
+#include "openMVG/features/ImageDescriberCommon.hpp"
 #include "openMVG/matching/matcher_type.hpp"
 #include "openMVG/matching/indMatch.hpp"
 #include "openMVG/matching_image_collection/Pair_Builder.hpp"
 #include "openMVG/sfm/sfm_data.hpp"
-#include "openMVG/sfm/pipelines/sfm_regions_provider.hpp"
+#include "openMVG/features/RegionsPerView.hpp"
 
 #include <string>
 #include <vector>
@@ -19,22 +20,26 @@
 namespace openMVG {
 namespace matching_image_collection {
 
-/// Implementation of an Image Collection Matcher
-/// Compute putative matches between a collection of pictures
-class Matcher
+/**
+ * @brief Image Collection Matcher interface.
+ *
+ * Compute putative matches between a collection of pictures
+ */
+class IImageCollectionMatcher
 {
   public:
-  Matcher() {};
+  IImageCollectionMatcher() {};
 
-  virtual ~Matcher() {};
+  virtual ~IImageCollectionMatcher() {}
 
   /// Find corresponding points between some pair of view Ids
   virtual void Match(
     const sfm::SfM_Data & sfm_data,
-    const std::shared_ptr<sfm::Regions_Provider> & regions_provider,
+    const features::RegionsPerView& regionsPerView,
     const Pair_Set & pairs, // list of pair to consider for matching
-    matching::PairWiseMatches & map_putatives_matches // the output pairwise photometric corresponding points
-    )const = 0;
+    features::EImageDescriberType descType,
+    matching::PairwiseMatches & map_putatives_matches // the output pairwise photometric corresponding points
+    ) const = 0;
 };
 
 } // namespace openMVG

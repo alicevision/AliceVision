@@ -92,10 +92,10 @@ static bool Save_BAF(
       // X Y Z #observations id_cam id_pose x y ...
       const double * X = iterLandmarks->second.X.data();
       std::copy(X, X+3, std::ostream_iterator<double>(stream, " "));
-      const Observations & obs = iterLandmarks->second.obs;
-      stream << obs.size() << " ";
-      for (Observations::const_iterator iterOb = obs.begin();
-        iterOb != obs.end(); ++iterOb)
+      const Observations & observations = iterLandmarks->second.observations;
+      stream << observations.size() << " ";
+      for (Observations::const_iterator iterOb = observations.begin();
+        iterOb != observations.end(); ++iterOb)
       {
         const IndexT id_view = iterOb->first;
         const View * v = sfm_data.GetViews().at(id_view).get();

@@ -74,7 +74,7 @@ bool SfM_Localizer::Localize
     resection_data.error_max = ACRansacOut.first;
   }
   else
-  { 
+  {
     // undistort the points if the camera has a distortion model
     Mat pt2Dundistorted;
     const bool has_disto = pinhole_cam->have_disto();
@@ -154,16 +154,14 @@ bool SfM_Localizer::Localize
     }
   }
 
-  // Test if the mode support some points (more than those required for estimation)
-  const bool bResection = (resection_data.vec_inliers.size() > MINIMUM_SAMPLES * OPENMVG_MINIMUM_SAMPLES_COEF);
-#if OPENMVG_IS_DEFINED(OPENMVG_WITH_COUT)
-  if (!bResection) 
+  const bool bResection = robust::hasStrongSupport(resection_data.vec_inliers, resection_data.vec_descType, MINIMUM_SAMPLES);
+
+  if (!bResection)
   {
     OPENMVG_LOG_DEBUG("bResection is false");
     OPENMVG_LOG_DEBUG(" because resection_data.vec_inliers.size() = " << resection_data.vec_inliers.size());
     OPENMVG_LOG_DEBUG(" and MINIMUM_SAMPLES = " << MINIMUM_SAMPLES);
   }
-#endif
 
   if (bResection)
   {
@@ -173,7 +171,6 @@ bool SfM_Localizer::Localize
     KRt_From_P(P, &K, &R, &t);
     pose = geometry::Pose3(R, -R.transpose() * t);
   }
-#if OPENMVG_IS_DEFINED(OPENMVG_WITH_COUT)
   OPENMVG_LOG_DEBUG(
     "-------------------------------\n"
     "-- Robust Resection\n"
@@ -182,7 +179,6 @@ bool SfM_Localizer::Localize
     "-- #Points validated by robust Resection: " << resection_data.vec_inliers.size() << "\n"
     "-- Threshold: " << resection_data.error_max << "\n"
     "-------------------------------");
-#endif
   return bResection;
 }
 
@@ -210,7 +206,7 @@ bool SfM_Localizer::RefinePose
     const size_t idx = matching_data.vec_inliers[i];
     Landmark landmark;
     landmark.X = matching_data.pt3D.col(idx);
-    landmark.obs[0] = Observation(matching_data.pt2D.col(idx), UndefinedIndexT);
+    landmark.observations[0] = Observation(matching_data.pt2D.col(idx), UndefinedIndexT);
     sfm_data.structure[i] = std::move(landmark);
   }
 

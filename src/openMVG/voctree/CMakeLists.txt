@@ -1,28 +1,49 @@
-IF(OpenMVG_USE_BOOST)
-file(
-  GLOB_RECURSE
-  voctree_header
-  *.hpp
+# Headers
+set(voctree_headers
+  database.hpp
+  databaseIO.hpp
+  descriptor_loader.hpp
+  descriptor_loader.tcc
+  distance.hpp
+  feature_allocator.hpp
+  mutable_tree.hpp
+  simple_kmeans.hpp
+  tree_builder.hpp
+  vocabulary_tree.hpp
 )
-file(
-  GLOB_RECURSE
-  voctree_cpp
-  *.cpp
+
+# Sources
+set(voctree_sources
+  database.cpp
+  descriptor_loader.cpp
 )
 
-file(GLOB_RECURSE REMOVE_FILES_UNIT_TEST *_test.cpp)
-list(REMOVE_ITEM voctree_cpp ${REMOVE_FILES_UNIT_TEST})
+add_library(openMVG_voctree
+  ${voctree_headers}
+  ${voctree_sources}
+)
 
-ADD_LIBRARY(openMVG_voctree
-  ${voctree_header}
-  ${voctree_cpp})
-SET_PROPERTY(TARGET openMVG_voctree PROPERTY FOLDER OpenMVG/OpenMVG)
-TARGET_LINK_LIBRARIES( openMVG_voctree openMVG_features openMVG_sfm ${Boost_LIBRARIES} ${LOG_LIB})
-SET_TARGET_PROPERTIES(openMVG_voctree PROPERTIES SOVERSION ${OPENMVG_VERSION_MAJOR} VERSION "${OPENMVG_VERSION_MAJOR}.${OPENMVG_VERSION_MINOR}")
-INSTALL(TARGETS openMVG_voctree DESTINATION lib/ EXPORT openMVG-targets)
+set_property(TARGET openMVG_voctree
+  PROPERTY FOLDER OpenMVG/OpenMVG
+)
 
-UNIT_TEST(openMVG voctree "openMVG_voctree")
-UNIT_TEST(openMVG kmeans "openMVG_voctree")
+target_link_libraries(openMVG_voctree
+  openMVG_features
+  openMVG_sfm
+  ${Boost_LIBRARIES}
+  ${LOG_LIB}
+)
+
+set_target_properties(openMVG_voctree
+  PROPERTIES SOVERSION ${OPENMVG_VERSION_MAJOR}
+  VERSION "${OPENMVG_VERSION_MAJOR}.${OPENMVG_VERSION_MINOR}"
+)
+
+install(TARGETS openMVG_voctree
+  DESTINATION lib/
+  EXPORT openMVG-targets
+)
+
+UNIT_TEST(openMVG voctree      "openMVG_voctree")
+UNIT_TEST(openMVG kmeans       "openMVG_voctree")
 UNIT_TEST(openMVG voctreebuild "openMVG_voctree")
-
-ENDIF(OpenMVG_USE_BOOST)

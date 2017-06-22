@@ -139,6 +139,13 @@ inline int ReadImage(const char * path, Image<RGBColor> * im)
     ConvertPixelType(rgbaColIm, im);
   }
   else
+  if(res == 1 && depth == 1){
+    Image<unsigned char> grayscaleImage;
+    grayscaleImage = Eigen::Map<Image<unsigned char>::Base>(&ptr[0], h, w);
+    //convert Grayscale to RGB
+    ConvertPixelType(grayscaleImage, im);
+  }
+  else
     return 0;
   return res;
 }

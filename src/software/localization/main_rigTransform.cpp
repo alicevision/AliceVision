@@ -22,7 +22,7 @@ using namespace openMVG::sfm;
 
 static std::vector<double> ReadIntrinsicsFile(const std::string& fname)
 {
-  cout << "reading intrinsics: " << fname << endl;
+  std::cout << "reading intrinsics: " << fname << std::endl;
 
   std::vector<double> v(8);
   std::ifstream ifs(fname);
@@ -92,7 +92,7 @@ int main(int argc, char** argv)
   // Load rig calibration file
   if(!rig::loadRigCalibration(rigFile, extrinsics))
   {
-    cerr << "unable to open " << rigFile << endl;
+    std::cerr << "unable to open " << rigFile << std::endl;
     return EXIT_FAILURE;
   }
   assert(!extrinsics.empty());

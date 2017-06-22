@@ -17,16 +17,12 @@
 namespace openMVG {
 namespace localization {
 
-typedef Reconstructed_Regions<features::SIOPointFeature, unsigned char, 128> Reconstructed_RegionsCCTag; 
-typedef Reconstructed_RegionsCCTag::DescriptorT CCTagDescriptor;
-typedef Reconstructed_RegionsCCTag::FeatureT CCTagKeypoint;
-typedef Hash_Map<IndexT, Reconstructed_RegionsCCTag > CCTagRegionsPerViews;
 
 class CCTagLocalizer : public ILocalizer
 {
   
   public:
-  struct Parameters : LocalizerParameters
+  struct Parameters : public LocalizerParameters
   {
 
     Parameters() : LocalizerParameters(), 
@@ -60,15 +56,15 @@ public:
                 const LocalizerParameters *parameters,
                 bool useInputIntrinsics,
                 cameras::Pinhole_Intrinsic_Radial_K3 &queryIntrinsics,
-                LocalizationResult & localizationResult, const std::string& imagePath = std::string());
+                LocalizationResult & localizationResult, const std::string& imagePath = std::string()) override;
 
-  bool localize(const std::unique_ptr<features::Regions> &queryRegions,
+  bool localize(const features::MapRegionsPerDesc &queryRegions,
                 const std::pair<std::size_t, std::size_t> &imageSize,
                 const LocalizerParameters *parameters,
                 bool useInputIntrinsics,
                 cameras::Pinhole_Intrinsic_Radial_K3 &queryIntrinsics,
                 LocalizationResult & localizationResult,
-                const std::string& imagePath = std::string());
+                const std::string& imagePath = std::string()) override;
 
   /**
    * @brief Naive implementation of the localizer using the rig. Each image from
@@ -87,19 +83,19 @@ public:
                    std::vector<cameras::Pinhole_Intrinsic_Radial_K3 > &vec_queryIntrinsics,
                    const std::vector<geometry::Pose3 > &vec_subPoses,
                    geometry::Pose3 &rigPose,
-                   std::vector<LocalizationResult> & vec_locResults);
+                   std::vector<LocalizationResult> & vec_locResults) override;
   
 
-  bool localizeRig(const std::vector<std::unique_ptr<features::Regions> > & vec_queryRegions,
+  bool localizeRig(const std::vector<features::MapRegionsPerDesc> & vec_queryRegions,
                    const std::vector<std::pair<std::size_t, std::size_t> > &imageSize,
                    const LocalizerParameters *param,
                    std::vector<cameras::Pinhole_Intrinsic_Radial_K3 > &vec_queryIntrinsics,
                    const std::vector<geometry::Pose3 > &vec_subPoses,
                    geometry::Pose3 &rigPose,
-                   std::vector<LocalizationResult>& vec_locResults);
+                   std::vector<LocalizationResult>& vec_locResults) override;
   
 #if OPENMVG_IS_DEFINED(OPENMVG_HAVE_OPENGV)
-  bool localizeRig_opengv(const std::vector<std::unique_ptr<features::Regions> > & vec_queryRegions,
+  bool localizeRig_opengv(const std::vector<features::MapRegionsPerDesc> & vec_queryRegions,
                           const std::vector<std::pair<std::size_t, std::size_t> > &imageSize,
                           const LocalizerParameters *parameters,
                           std::vector<cameras::Pinhole_Intrinsic_Radial_K3 > &vec_queryIntrinsics,
@@ -108,7 +104,7 @@ public:
                           std::vector<LocalizationResult>& vec_locResults);
 #endif
   
-  bool localizeRig_naive(const std::vector<std::unique_ptr<features::Regions> > & vec_queryRegions,
+  bool localizeRig_naive(const std::vector<features::MapRegionsPerDesc> & vec_queryRegions,
                         const std::vector<std::pair<std::size_t, std::size_t> > &imageSize,
                         const LocalizerParameters *parameters,
                         std::vector<cameras::Pinhole_Intrinsic_Radial_K3 > &vec_queryIntrinsics,
@@ -136,10 +132,10 @@ public:
   void getAllAssociations(const features::CCTAG_Regions &queryRegions,
                           const std::pair<std::size_t, std::size_t> &imageSize,
                           const CCTagLocalizer::Parameters &param,
-                          std::map< std::pair<IndexT, IndexT>, std::size_t > &occurences,
-                          Mat &pt2D,
-                          Mat &pt3D,
-                          std::vector<voctree::DocMatch>& matchedImages,
+                          OccurenceMap & out_occurences,
+                          Mat &out_pt2D,
+                          Mat &out_pt3D,
+                          std::vector<voctree::DocMatch>& out_matchedImages,
                           const std::string& imagePath = std::string()) const;
   
   virtual ~CCTagLocalizer();
@@ -152,14 +148,17 @@ private:
   
   // for each view index, it contains the cctag features and descriptors that have an
   // associated 3D point
-  CCTagRegionsPerViews _regions_per_view;
-   
+  features::RegionsPerView _regionsPerView;
+  ReconstructedRegionsMappingPerView _reconstructedRegionsMappingPerView;
+
   // the feature extractor
-  features::CCTAG_Image_describer _image_describer;
+  features::CCTAG_Image_describer _imageDescriber;
+  /// @warning: descType needs to be a CCTAG_Regions
+  features::EImageDescriberType _cctagDescType = features::EImageDescriberType::CCTAG3;
 
   // CUDA CCTag supports several parallel pipelines, where each one can
   // processing different image dimensions.
-  int    _cudaPipe;
+  int _cudaPipe = 0;
   
   //
   //std::map<IndexT, Vec3> _cctagDatabase;
@@ -170,18 +169,20 @@ private:
    *        consisting in a set of CCTag regions.
    * 
    * @param[in] queryRegions Set of CCTag regions in the query.
-   * @param[in] Collection of views containing a set of cctag regions.
+   * @param[in] regionsPerView Collection of views containing a set of cctag regions.
    * @param[in] nNearestKeyFrames Number of nearest neighbours to return.
-   * @param[out] kNearestFrames Set of computed indices associated to the k nearest views.
+   * @param[out] out_kNearestFrames Set of computed indices associated to the k nearest views.
    * @param[in] similarityThreshold A threshold to retrieve only the kframes having 
   *  at least \p similarityThreshold similarity score.
    */
 void kNearestKeyFrames(
           const features::CCTAG_Regions & queryRegions,
-          const CCTagRegionsPerViews & _regions_per_view,
+          features::EImageDescriberType descType,
+          const features::RegionsPerView & regionsPerView,
           std::size_t nNearestKeyFrames,
-          std::vector<IndexT> & kNearestFrames,
-          const float similarityThreshold = .0f);
+          std::vector<IndexT> & out_kNearestFrames,
+          const float similarityThreshold = 1.0f);
+
 /**
  * @brief Given a set of CCTag descriptors seen in a view, it creates a descriptor for the view: the
  * view descriptor is a 128 bit array (ie the number of possible markers) whose 
@@ -193,7 +194,7 @@ void kNearestKeyFrames(
  * each possible marker for that view.
  */
 std::bitset<128> constructCCTagViewDescriptor(
-        const std::vector<CCTagDescriptor> & vCCTagDescriptors);
+        const std::vector<features::CCTAG_Regions::DescriptorT> & vCCTagDescriptors);
 
 float viewSimilarity(
         const features::CCTAG_Regions & regionsA,
@@ -202,7 +203,7 @@ float viewSimilarity(
 void viewMatching(
         const features::CCTAG_Regions & regionsA,
         const features::CCTAG_Regions & regionsB,
-        std::vector<matching::IndMatch> & vec_featureMatches);
+        std::vector<matching::IndMatch> & out_featureMatches);
 
 } // namespace localization
 } // openMVG

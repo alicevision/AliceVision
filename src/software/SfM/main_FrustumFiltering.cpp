@@ -26,12 +26,12 @@ Pair_Set BuildPairsFromStructureObservations(const SfM_Data & sfm_data)
     itL != sfm_data.GetLandmarks().end(); ++itL)
   {
     const Landmark & landmark = itL->second;
-    for(const auto& iterI : landmark.obs)
+    for(const auto& iterI : landmark.observations)
     {
       const IndexT id_viewI = iterI.first;
-      Observations::const_iterator iterJ = landmark.obs.begin();
+      Observations::const_iterator iterJ = landmark.observations.begin();
       std::advance(iterJ, 1);
-      for (; iterJ != landmark.obs.end(); ++iterJ)
+      for (; iterJ != landmark.observations.end(); ++iterJ)
       {
         const IndexT id_viewJ = iterJ->first;
         pairs.insert( std::make_pair(id_viewI,id_viewJ));

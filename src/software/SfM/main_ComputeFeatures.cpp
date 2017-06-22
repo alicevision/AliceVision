@@ -10,26 +10,21 @@
 #include "openMVG/sfm/sfm.hpp"
 
 /// Feature/Regions & Image describer interfaces
+#include "openMVG/features/ImageDescriberCommon.hpp"
 #include "openMVG/features/features.hpp"
-#include "nonFree/sift/SIFT_describer.hpp"
-#include "nonFree/sift/SIFT_float_describer.hpp"
-
-#if OPENMVG_IS_DEFINED(OPENMVG_HAVE_CCTAG)
-#include "openMVG/features/cctag/CCTAG_describer.hpp"
-#include "openMVG/features/cctag/SIFT_CCTAG_describer.hpp"
-#endif
 
 #include "openMVG/exif/exif_IO_EasyExif.hpp"
-
-#include <cereal/archives/json.hpp>
+#include "openMVG/stl/split.hpp"
 #include "openMVG/system/timer.hpp"
 
 #include "third_party/cmdLine/cmdLine.h"
 #include "third_party/stlplus3/filesystemSimplified/file_system.hpp"
 #include "third_party/progress/progress.hpp"
 
+#include <cereal/archives/json.hpp>
 #include <cstdlib>
 #include <fstream>
+#include <sstream>
 #include <iostream>
 #include <functional>
 #include <limits>
@@ -146,11 +141,9 @@ void dispatch(const int &maxJobs, std::function<void()> compute)
   }
   else if(pid == 0)
   {
-#if OPENMVG_IS_DEFINED(OPENMVG_USE_OPENMP)
     // Disable OpenMP as we dispatch the work on multiple sub processes
     // and we don't want that each subprocess use all the cpu ressource
     omp_set_num_threads(1); 
-#endif
     compute();
     _exit(EXIT_SUCCESS);
   }
@@ -204,9 +197,7 @@ void waitForCompletion()
 
 void dispatch(const int &maxJobs, std::function<void()> compute)
 {
-#if OPENMVG_IS_DEFINED(OPENMVG_USE_OPENMP)
     omp_set_num_threads(maxJobs);
-#endif
     compute();
 }
 void waitForCompletion() {}
@@ -218,30 +209,29 @@ int remainingJobSlots(unsigned long jobMemoryRequirement) {return 1;}
 /// - Export computed data
 int main(int argc, char **argv)
 {
-  CmdLine cmd;
-
-  std::string sSfM_Data_Filename;
-  std::string sOutDir = "";
-  bool bUpRight = false;
-  std::string sImage_Describer_Method = "SIFT";
-  bool bForce = false;
-  std::string sFeaturePreset = "";
-  int rangeStart = -1;
-  int rangeSize = 1;
-
   // MAX_JOBS_DEFAULT is the default value for maxJobs which keeps 
   // the original behavior of the program:
   constexpr static int MAX_JOBS_DEFAULT = std::numeric_limits<int>::max();
+
+  CmdLine cmd;
+
+  std::string sfmDataFilename;
+  std::string outDirectory = "";
+  std::string featurePreset = "NORMAL";
+  std::string describerMethods = "SIFT";
+  bool describersAreUpRight = false;
+  int rangeStart = -1;
+  int rangeSize = 1;
   int maxJobs = MAX_JOBS_DEFAULT;
 
   // required
-  cmd.add( make_option('i', sSfM_Data_Filename, "input_file") );
-  cmd.add( make_option('o', sOutDir, "outdir") );
+  cmd.add( make_option('i', sfmDataFilename, "input_file") );
+  cmd.add( make_option('o', outDirectory, "outdir") );
+  
   // Optional
-  cmd.add( make_option('m', sImage_Describer_Method, "describerMethod") );
-  cmd.add( make_option('u', bUpRight, "upright") );
-  cmd.add( make_option('f', bForce, "force") );
-  cmd.add( make_option('p', sFeaturePreset, "describerPreset") );
+  cmd.add( make_option('m', describerMethods, "describerMethods") );
+  cmd.add( make_option('u', describersAreUpRight, "upright") );
+  cmd.add( make_option('p', featurePreset, "describerPreset") );
   cmd.add( make_option('s', rangeStart, "range_start") );
   cmd.add( make_option('r', rangeSize, "range_size") );
   cmd.add( make_option('j', maxJobs, "jobs") );
@@ -258,17 +248,21 @@ int main(int argc, char **argv)
     << "[-o|--outdir path] output path for the features and descriptors files (*.feat, *.desc)\n"
     << "\n[Optional]\n"
     << "[-f|--force] Force to recompute data\n"
-    << "[-m|--describerMethod]\n"
-    << "  (method to use to describe an image):\n"
+    << "[-m|--describerMethods]\n"
+    << "  (methods to use to describe an image):\n"
     << "   SIFT (default),\n"
     << "   SIFT_FLOAT to use SIFT stored as float,\n"
-    << "   AKAZE_FLOAT: AKAZE with floating point descriptors,\n"
+    << "   AKAZE: AKAZE with floating point descriptors,\n"
     << "   AKAZE_MLDB:  AKAZE with binary descriptors\n"
 #if OPENMVG_IS_DEFINED(OPENMVG_HAVE_CCTAG)
-      << "   CCTAG3: CCTAG markers with 3 crowns\n"
-      << "   CCTAG4: CCTAG markers with 4 crowns\n"
-      << "   SIFT_CCTAG3: CCTAG markers with 3 crowns\n" 
-      << "   SIFT_CCTAG4: CCTAG markers with 4 crowns\n" 
+    << "   CCTAG3: CCTAG markers with 3 crowns\n"
+    << "   CCTAG4: CCTAG markers with 4 crowns\n"
+#endif
+#if OPENMVG_IS_DEFINED(OPENMVG_HAVE_OPENCV)
+#if OPENMVG_IS_DEFINED(OPENMVG_HAVE_OCVSIFT)
+    << "   SIFT_OCV: OpenCV SIFT\n"
+#endif
+    << "   AKAZE_OCV: OpenCV AKAZE\n"
 #endif
     << "[-u|--upright] Use Upright feature 0 or 1\n"
     << "[-p|--describerPreset]\n"
@@ -290,12 +284,11 @@ int main(int argc, char **argv)
 
   std::cout << " You called : " <<std::endl
             << argv[0] << std::endl
-            << "--input_file " << sSfM_Data_Filename << std::endl
-            << "--outdir " << sOutDir << std::endl
-            << "--describerMethod " << sImage_Describer_Method << std::endl
-            << "--upright " << bUpRight << std::endl
-            << "--describerPreset " << (sFeaturePreset.empty() ? "NORMAL" : sFeaturePreset) << std::endl
-            << "--force " << bForce << std::endl
+            << "--input_file " << sfmDataFilename << std::endl
+            << "--outdir " << outDirectory << std::endl
+            << "--describerMethods " << describerMethods << std::endl
+            << "--upright " << describersAreUpRight << std::endl
+            << "--describerPreset " << (featurePreset.empty() ? "NORMAL" : featurePreset) << std::endl
             << "--range_start " << rangeStart << std::endl
             << "--range_size " << rangeSize << std::endl;
 
@@ -309,16 +302,16 @@ int main(int argc, char **argv)
     } 
   }
 
-  if (sOutDir.empty())
+  if (outDirectory.empty())
   {
     std::cerr << "\nIt is an invalid output directory" << std::endl;
     return EXIT_FAILURE;
   }
 
   // Create output dir
-  if (!stlplus::folder_exists(sOutDir))
+  if (!stlplus::folder_exists(outDirectory))
   {
-    if (!stlplus::folder_create(sOutDir))
+    if (!stlplus::folder_create(outDirectory))
     {
       std::cerr << "Cannot create output directory" << std::endl;
       return EXIT_FAILURE;
@@ -329,32 +322,32 @@ int main(int argc, char **argv)
   // a. Load input scene
   //---------------------------------------
   SfM_Data sfm_data;
-  if(sSfM_Data_Filename.empty())
+  if(sfmDataFilename.empty())
   {
     std::cerr << "\nError: The input file argument is required." << std::endl;
     return EXIT_FAILURE;
   }
-  else if(stlplus::is_file( sSfM_Data_Filename))
+  else if(stlplus::is_file( sfmDataFilename))
   {
-    if(!Load(sfm_data, sSfM_Data_Filename, ESfM_Data(VIEWS|INTRINSICS)))
+    if(!Load(sfm_data, sfmDataFilename, ESfM_Data(VIEWS|INTRINSICS)))
     {
       std::cerr << std::endl
-        << "The input file \""<< sSfM_Data_Filename << "\" cannot be read" << std::endl;
+        << "The input file \""<< sfmDataFilename << "\" cannot be read" << std::endl;
       return EXIT_FAILURE;
     }
   }
-  else if(stlplus::is_folder(sSfM_Data_Filename))
+  else if(stlplus::is_folder(sfmDataFilename))
   {
     // Retrieve image paths
     std::vector<std::string> vec_images;
     const std::vector<std::string> supportedExtensions {"jpg", "jpeg"};
     
-    vec_images = stlplus::folder_files(sSfM_Data_Filename);
+    vec_images = stlplus::folder_files(sfmDataFilename);
     std::sort(vec_images.begin(), vec_images.end());
     
     sfm_data.s_root_path = "";
-    if(!sSfM_Data_Filename.empty())
-      sfm_data.s_root_path = sSfM_Data_Filename; // Setup main image root_path
+    if(!sfmDataFilename.empty())
+      sfm_data.s_root_path = sfmDataFilename; // Setup main image root_path
     Views & views = sfm_data.views;
     
     for(const auto &imageName : vec_images)
@@ -370,109 +363,37 @@ int main(int argc, char **argv)
     }
   }
 
-  // b. Init the image_describer
-  // - retrieve the used one in case of pre-computed features
-  // - else create the desired one
+  // b. Init vector of imageDescriber 
+  
+  struct DescriberMethod
+  {
+    std::string typeName;
+    EImageDescriberType type;
+    std::shared_ptr<Image_describer> describer; //TODO
+  };
+  std::vector<DescriberMethod> imageDescribers;
+  
+  {
+    if(describerMethods.empty())
+    {
+      std::cerr << "\nError: describerMethods argument is empty." << std::endl;
+      return EXIT_FAILURE;
+    }
+    std::vector<EImageDescriberType> describerMethodsVec = EImageDescriberType_stringToEnums(describerMethods);
+
+    for(const auto& describerMethod: describerMethodsVec)
+    {
+      DescriberMethod method;
+      method.typeName = EImageDescriberType_enumToString(describerMethod); // TODO: DELI ?
+      method.type = describerMethod;
+      method.describer = createImageDescriber(method.type);
+      method.describer->Set_configuration_preset(featurePreset);
+      method.describer->setUpRight(describersAreUpRight);
+      imageDescribers.push_back(method);
+    }
+  }
 
   using namespace openMVG::features;
-  std::unique_ptr<Image_describer> image_describer;
-
-  const std::string sImage_describer = stlplus::create_filespec(sOutDir, "image_describer", "json");
-  if (!bForce && stlplus::is_file(sImage_describer))
-  {
-    // Dynamically load the image_describer from the file (will restore old used settings)
-    std::ifstream stream(sImage_describer.c_str());
-    if (!stream.is_open())
-      return EXIT_FAILURE;
-
-    try
-    {
-      cereal::JSONInputArchive archive(stream);
-      archive(cereal::make_nvp("image_describer", image_describer));
-    }
-    catch (const cereal::Exception & e)
-    {
-      std::cerr << e.what() << std::endl
-        << "Cannot dynamically allocate the Image_describer interface." << std::endl;
-      return EXIT_FAILURE;
-    }
-  }
-  else
-  {
-    // Create the desired Image_describer method.
-    // Don't use a factory, perform direct allocation
-    if (sImage_Describer_Method == "SIFT")
-    {
-      image_describer.reset(new SIFT_Image_describer(SiftParams(), !bUpRight));
-    }
-    else
-    if (sImage_Describer_Method == "SIFT_FLOAT")
-    {
-      image_describer.reset(new SIFT_float_describer(SiftParams(), !bUpRight));
-    }
-#if OPENMVG_IS_DEFINED(OPENMVG_HAVE_CCTAG)
-    else
-    if (sImage_Describer_Method == "CCTAG3")
-    {
-      image_describer.reset(new CCTAG_Image_describer(3));
-    }
-    else
-    if (sImage_Describer_Method == "CCTAG4")
-    {
-      image_describer.reset(new CCTAG_Image_describer(4));
-    }
-    else
-    if (sImage_Describer_Method == "SIFT_CCTAG3")
-    {
-      image_describer.reset(new SIFT_CCTAG_Image_describer(SiftParams(), !bUpRight, 3));
-    }
-    else
-    if (sImage_Describer_Method == "SIFT_CCTAG4")
-    {
-      image_describer.reset(new SIFT_CCTAG_Image_describer(SiftParams(), !bUpRight, 4));
-    }
-#endif //OPENMVG_HAVE_CCTAG   
-    else
-    if (sImage_Describer_Method == "AKAZE_FLOAT")
-    {
-      image_describer.reset(new AKAZE_Image_describer(AKAZEParams(AKAZEConfig(), AKAZE_MSURF), !bUpRight));
-    }
-    else
-    if (sImage_Describer_Method == "AKAZE_MLDB")
-    {
-      image_describer.reset(new AKAZE_Image_describer(AKAZEParams(AKAZEConfig(), AKAZE_MLDB), !bUpRight));
-    }
-    //image_describer.reset(new AKAZE_Image_describer(AKAZEParams(AKAZEConfig(), AKAZE_LIOP), !bUpRight));
-    if (!image_describer)
-    {
-      std::cerr << "Cannot create the designed Image_describer:"
-        << sImage_Describer_Method << "." << std::endl;
-      return EXIT_FAILURE;
-    }
-    else
-    {
-      if (!sFeaturePreset.empty())
-      if (!image_describer->Set_configuration_preset(sFeaturePreset))
-      {
-        std::cerr << "Preset configuration failed." << std::endl;
-        return EXIT_FAILURE;
-      }
-    }
-
-    // Export the used Image_describer and region type for:
-    // - dynamic future regions computation and/or loading
-    {
-      std::ofstream stream(sImage_describer.c_str());
-      if (!stream.is_open())
-        return false;
-
-      cereal::JSONOutputArchive archive(stream);
-      archive(cereal::make_nvp("image_describer", image_describer));
-      std::unique_ptr<Regions> regionsType;
-      image_describer->Allocate(regionsType);
-      archive(cereal::make_nvp("regions_type", regionsType));
-    }
-  }
 
   // Feature extraction routines
   // For each View of the SfM_Data container:
@@ -485,6 +406,7 @@ int main(int argc, char **argv)
 
     Views::const_iterator iterViews = sfm_data.views.begin();
     Views::const_iterator iterViewsEnd = sfm_data.views.end();
+    
     if(rangeStart != -1)
     {
       if(rangeStart < 0 || rangeStart > sfm_data.views.size())
@@ -504,33 +426,61 @@ int main(int argc, char **argv)
       iterViewsEnd = iterViews;
       std::advance(iterViewsEnd, rangeSize);
     }
-
-    for(;
-      iterViews != iterViewsEnd;
-      ++iterViews, ++my_progress_bar)
+    
+    struct DescriberComputeMethod
     {
-      const View * view = iterViews->second.get();
-      const std::string sView_filename = stlplus::create_filespec(sfm_data.s_root_path,
-        view->s_Img_path);
-      const std::string sFeat = stlplus::create_filespec(sOutDir,
-        stlplus::basename_part(std::to_string(view->id_view)), "feat");
-      const std::string sDesc = stlplus::create_filespec(sOutDir,
-        stlplus::basename_part(std::to_string(view->id_view)), "desc");
-
-      //If features or descriptors file are missing, compute them
-      if (bForce || !stlplus::file_exists(sFeat) || !stlplus::file_exists(sDesc))
+      std::size_t methodIndex;
+      std::string featFilename;
+      std::string descFilename;
+    };
+    
+    for(; iterViews != iterViewsEnd; ++iterViews, ++my_progress_bar)
+    {
+      const View* view = iterViews->second.get();
+      const std::string viewFilename = stlplus::create_filespec(sfm_data.s_root_path, view->s_Img_path);
+      std::cout << "Extract features in view: " << viewFilename << std::endl;
+      
+      std::vector<DescriberComputeMethod> computeMethods;
+      
+      for(std::size_t i = 0; i < imageDescribers.size(); ++i)
+      {
+        DescriberComputeMethod computeMethod;
+        
+        computeMethod.featFilename = stlplus::create_filespec(outDirectory,
+              stlplus::basename_part(std::to_string(view->id_view)), imageDescribers[i].typeName + ".feat");
+        computeMethod.descFilename = stlplus::create_filespec(outDirectory,
+              stlplus::basename_part(std::to_string(view->id_view)), imageDescribers[i].typeName + ".desc");
+      
+        if (stlplus::file_exists(computeMethod.featFilename) &&
+            stlplus::file_exists(computeMethod.descFilename))
+        {
+          // Skip the feature extraction as the results are already computed.
+          continue;
+        }
+        
+        computeMethod.methodIndex = i;
+        
+        // If features or descriptors file are missing, compute and export them
+        computeMethods.push_back(computeMethod);
+      }
+      
+      if(!computeMethods.empty())
       {
         auto computeFunction = [&]() {
             Image<unsigned char> imageGray;
-            if (!ReadImage(sView_filename.c_str(), &imageGray))
+            if (!ReadImage(viewFilename.c_str(), &imageGray))
               return;
 
-            // Compute features and descriptors and export them to files
-            std::cout << "Extracting features from image " << view->id_view << std::endl;
-            std::unique_ptr<Regions> regions;
-            image_describer->Describe(imageGray, regions);
-            image_describer->Save(regions.get(), sFeat, sDesc);
+            for(auto& compute : computeMethods)
+            {
+              // Compute features and descriptors and export them to files
+              std::cout << "Extracting "<< imageDescribers[compute.methodIndex].typeName  << " features from image " << view->id_view << std::endl;
+              std::unique_ptr<Regions> regions;
+              imageDescribers[compute.methodIndex].describer->Describe(imageGray, regions);
+              imageDescribers[compute.methodIndex].describer->Save(regions.get(), compute.featFilename, compute.descFilename);
+            }
         };
+        
         if (maxJobs != MAX_JOBS_DEFAULT)
           dispatch(maxJobs, computeFunction);
         else

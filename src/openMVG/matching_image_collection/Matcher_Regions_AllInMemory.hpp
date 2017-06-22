@@ -12,34 +12,36 @@
 namespace openMVG {
 namespace matching_image_collection {
 
-/// Implementation of an Image Collection Matcher
-/// Compute putative matches between a collection of pictures
-/// Spurious correspondences are discarded by using the
-///  a threshold over the distance ratio of the 2 nearest neighbours.
-///
-class Matcher_Regions_AllInMemory : public Matcher
+/**
+ * @brief Compute putative matches between a collection of pictures.
+ *
+ * Spurious correspondences are discarded by using the
+ * a threshold over the distance ratio of the 2 nearest neighbours.
+ *
+ * @warning: all descriptors are loaded in memory. You need to ensure that it can fit in RAM.
+ */
+class ImageCollectionMatcher_Generic : public IImageCollectionMatcher
 {
   public:
-  Matcher_Regions_AllInMemory
-  (
+  ImageCollectionMatcher_Generic(
     float dist_ratio,
-    matching::EMatcherType eMatcherType
+    matching::EMatcherType matcherType
   );
 
   /// Find corresponding points between some pair of view Ids
-  void Match
-  (
+  void Match(
     const sfm::SfM_Data & sfm_data,
-    const std::shared_ptr<sfm::Regions_Provider> & regions_provider,
+    const features::RegionsPerView& regionsPerView,
     const Pair_Set & pairs,
-    matching::PairWiseMatches & map_PutativesMatches // the pairwise photometric corresponding points
-  )const;
+    features::EImageDescriberType descType,
+    matching::PairwiseMatches & map_PutativesMatches // the pairwise photometric corresponding points
+    ) const;
 
   private:
   // Distance ratio used to discard spurious correspondence
   float _f_dist_ratio;
   // Matcher Type
-  matching::EMatcherType _eMatcherType;
+  matching::EMatcherType _matcherType;
 };
 
 } // namespace openMVG

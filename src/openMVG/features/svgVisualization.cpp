@@ -8,6 +8,33 @@
 namespace openMVG {
 namespace features {
 
+std::string describerTypeColor(const features::EImageDescriberType descType )
+{
+  switch(descType)
+  {
+    case features::EImageDescriberType::SIFT:           return "yellow";
+    case features::EImageDescriberType::SIFT_FLOAT:     return "yellow";
+    case features::EImageDescriberType::AKAZE:          return "purple";
+    case features::EImageDescriberType::AKAZE_LIOP:     return "purple";
+    case features::EImageDescriberType::AKAZE_MLDB:     return "purple";
+#if OPENMVG_IS_DEFINED(OPENMVG_HAVE_CCTAG)
+    case features::EImageDescriberType::CCTAG3:         return "blue";
+    case features::EImageDescriberType::CCTAG4:         return "blue";
+#endif
+
+#if OPENMVG_IS_DEFINED(OPENMVG_HAVE_OPENCV)
+#if OPENMVG_IS_DEFINED(OPENMVG_HAVE_OCVSIFT)
+    case features::EImageDescriberType::SIFT_OCV:       return "orange";
+#endif
+    case features::EImageDescriberType::AKAZE_OCV:      return "indigo";
+#endif
+
+    case features::EImageDescriberType::UNKNOWN:        return "red";
+    case features::EImageDescriberType::UNINITIALIZED:  return "fuchsia";
+  }
+  return "magenta";
+}
+
 float getRadiusEstimate(const std::pair<size_t,size_t> & imgSize)
 {
   // heuristic for the radius of the feature according to the size of the image
@@ -24,11 +51,11 @@ float getStrokeEstimate(const std::pair<size_t,size_t> & imgSize)
 
 void saveMatches2SVG(const std::string &imagePathLeft,
                      const std::pair<size_t,size_t> & imageSizeLeft,
-                     const std::vector<features::PointFeature> &keypointsLeft,
+                     const features::MapRegionsPerDesc &keypointsLeft,
                      const std::string &imagePathRight,
                      const std::pair<size_t,size_t> & imageSizeRight,
-                     const std::vector<features::PointFeature> &keypointsRight,
-                     const matching::IndMatches &matches,
+                     const features::MapRegionsPerDesc &keypointsRight,
+                     const matching::MatchesPerDescType & matches,
                      const std::string &outputSVGPath)
 {
   svg::svgDrawer svgStream( imageSizeLeft.first + imageSizeRight.first, std::max(imageSizeLeft.second, imageSizeRight.second));
@@ -43,16 +70,21 @@ void saveMatches2SVG(const std::string &imagePathLeft,
   const float radiusRight = getRadiusEstimate(imageSizeRight);
   const float strokeLeft = getStrokeEstimate(imageSizeLeft);
   const float strokeRight = getStrokeEstimate(imageSizeRight);
- 
-  
-  for(const matching::IndMatch &m : matches) 
+
+  for(const auto& descMatches : matches)
   {
-    //Get back linked feature, draw a circle and link them by a line
-    const features::PointFeature & L = keypointsLeft[m._i];
-    const features::PointFeature & R = keypointsRight[m._j];
-    svgStream.drawLine(L.x(), L.y(), R.x()+imageSizeLeft.first, R.y(), svg::svgStyle().stroke("green", std::min(strokeRight,strokeLeft)));
-    svgStream.drawCircle(L.x(), L.y(), radiusLeft, svg::svgStyle().stroke("yellow", strokeLeft));
-    svgStream.drawCircle(R.x()+imageSizeLeft.first, R.y(), radiusRight, svg::svgStyle().stroke("yellow", strokeRight));
+    features::EImageDescriberType descType = descMatches.first;
+    const std::string descColor = describerTypeColor(descType);
+    for(const matching::IndMatch &m : descMatches.second)
+    {
+      //Get back linked feature, draw a circle and link them by a line
+      const features::PointFeature & L = keypointsLeft.at(descType)->GetRegionsPositions()[m._i];
+      const features::PointFeature & R = keypointsRight.at(descType)->GetRegionsPositions()[m._j];
+
+      svgStream.drawLine(L.x(), L.y(), R.x()+imageSizeLeft.first, R.y(), svg::svgStyle().stroke("green", std::min(strokeRight,strokeLeft)));
+      svgStream.drawCircle(L.x(), L.y(), radiusLeft, svg::svgStyle().stroke(descColor, strokeLeft));
+      svgStream.drawCircle(R.x()+imageSizeLeft.first, R.y(), radiusRight, svg::svgStyle().stroke(descColor, strokeRight));
+    }
   }
  
   std::ofstream svgFile( outputSVGPath.c_str() );
@@ -96,8 +128,8 @@ void saveKeypoints2SVG(const std::string &inputImagePath,
 
 void saveFeatures2SVG(const std::string &inputImagePath,
                       const std::pair<size_t,size_t> & imageSize,
-                      const std::vector<features::PointFeature> &keypoints,
-                      const std::string &outputSVGPath)
+                      const features::MapFeaturesPerDesc & keypoints,
+                      const std::string & outputSVGPath)
 {
   svg::svgDrawer svgStream( imageSize.first, imageSize.second);
   svgStream.drawImage(inputImagePath, imageSize.first, imageSize.second);
@@ -107,10 +139,14 @@ void saveFeatures2SVG(const std::string &inputImagePath,
   // the image size
   const float radius = getRadiusEstimate(imageSize);
   const float strokeWidth = getStrokeEstimate(imageSize);
-  
-  for(const features::PointFeature &kpt : keypoints) 
+
+  for(const auto& keypointPerDesc: keypoints)
   {
-    svgStream.drawCircle(kpt.x(), kpt.y(), radius, svg::svgStyle().stroke("yellow", strokeWidth));
+    const std::string featColor = describerTypeColor(keypointPerDesc.first);
+    for(const features::PointFeature &kpt : keypointPerDesc.second)
+    {
+      svgStream.drawCircle(kpt.x(), kpt.y(), radius, svg::svgStyle().stroke(featColor, strokeWidth));
+    }
   }
  
   std::ofstream svgFile( outputSVGPath );

@@ -101,6 +101,18 @@ bool readPointCloud(IObject iObj, M44d mat, sfm::SfM_Data &sfmdata, sfm::ESfM_Da
     }
   }
 
+  UInt32ArraySamplePtr sampleDescs;
+  if(userProps && userProps.getPropertyHeader("mvg_describerType"))
+  {
+    IUInt32ArrayProperty propDesc(userProps, "mvg_describerType");
+    propDesc.get(sampleDescs);
+    if(sampleDescs->size() != positions->size())
+    {
+      OPENMVG_LOG_WARNING("[Alembic Importer] WARNING: describer type will be ignored. describerType vector size: " << sampleDescs->size() << ", positions vector size: " << positions->size());
+      sampleDescs.reset();
+    }
+  }
+
   // Number of points before adding the Alembic data
   const std::size_t nbPointsInit = sfmdata.structure.size();
   for(std::size_t point3d_i = 0;
@@ -108,11 +120,18 @@ bool readPointCloud(IObject iObj, M44d mat, sfm::SfM_Data &sfmdata, sfm::ESfM_Da
       ++point3d_i)
   {
     const P3fArraySamplePtr::element_type::value_type & pos_i = positions->get()[point3d_i];
-    Landmark& landmark = sfmdata.structure[nbPointsInit + point3d_i] = Landmark(Vec3(pos_i.x, pos_i.y, pos_i.z));
+    Landmark& landmark = sfmdata.structure[nbPointsInit + point3d_i] = Landmark(Vec3(pos_i.x, pos_i.y, pos_i.z), features::EImageDescriberType::UNKNOWN);
+
     if(sampleColors)
     {
       const P3fArraySamplePtr::element_type::value_type & color_i = sampleColors->get()[point3d_i];
       landmark.rgb = image::RGBColor(color_i[0], color_i[1], color_i[2]);
+    }
+
+    if(sampleDescs)
+    {
+      const UInt32ArraySamplePtr::element_type::value_type & descType_i = sampleDescs->get()[point3d_i];
+      landmark.descType = static_cast<features::EImageDescriberType>(descType_i);
     }
   }
 
@@ -165,13 +184,13 @@ bool readPointCloud(IObject iObj, M44d mat, sfm::SfM_Data &sfmdata, sfm::ESfM_Da
 
         const int viewID = (*sampleVisibilityIds)[obsGlobal_i];
         const int featID = (*sampleVisibilityIds)[obsGlobal_i+1];
-        Observation& obs = landmark.obs[viewID];
-        obs.id_feat = featID;
+        Observation& observations = landmark.observations[viewID];
+        observations.id_feat = featID;
 
         const float posX = (*sampleFeatPos2d)[obsGlobal_i];
         const float posY = (*sampleFeatPos2d)[obsGlobal_i+1];
-        obs.x[0] = posX;
-        obs.x[1] = posY;
+        observations.x[0] = posX;
+        observations.x[1] = posY;
       }
     }
   }
@@ -377,6 +396,20 @@ AlembicImporter::~AlembicImporter()
 
 void AlembicImporter::populate(sfm::SfM_Data &sfmdata, sfm::ESfM_Data flags_part)
 {
+  const index_t sampleFrame = 0;
+  IObject rootObj = _objImpl->_rootEntity.getChild("mvgRoot");
+  ICompoundProperty userProps = rootObj.getProperties();
+  if(const Alembic::Abc::PropertyHeader *propHeader = userProps.getPropertyHeader("mvg_featureFolder"))
+  {
+    const std::string featureFolder = getAbcProp<Alembic::Abc::IStringProperty>(userProps, *propHeader, "mvg_featureFolder", sampleFrame);
+    sfmdata.setFeatureFolder(featureFolder);
+  }
+  if(const Alembic::Abc::PropertyHeader *propHeader = userProps.getPropertyHeader("mvg_matchingFolder"))
+  {
+    const std::string matchingFolder = getAbcProp<Alembic::Abc::IStringProperty>(userProps, *propHeader, "mvg_matchingFolder", sampleFrame);
+    sfmdata.setMatchingFolder(matchingFolder);
+  }
+
   // TODO : handle the case where the archive wasn't correctly opened
   M44d xformMat;
   visitObject(_objImpl->_rootEntity, xformMat, sfmdata, flags_part);

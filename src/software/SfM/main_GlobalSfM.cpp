@@ -7,11 +7,14 @@
 
 #include <cstdlib>
 
+#include "openMVG/sfm/pipelines/RegionsIO.hpp"
+#include "openMVG/features/ImageDescriberCommon.hpp"
 #include "openMVG/sfm/pipelines/global/sfm_global_engine_relative_motions.hpp"
 #include "openMVG/system/timer.hpp"
 
 using namespace openMVG;
 using namespace openMVG::sfm;
+using namespace openMVG::features;
 
 #include "third_party/cmdLine/cmdLine.h"
 #include "third_party/stlplus3/filesystemSimplified/file_system.hpp"
@@ -36,6 +39,7 @@ int main(int argc, char **argv)
   CmdLine cmd;
 
   std::string sSfM_Data_Filename;
+  std::string describerMethods = "SIFT";
   std::string sMatchesDir;
   std::string sOutDir = "";
   std::string sOutSfMDataFilepath = "";
@@ -44,6 +48,7 @@ int main(int argc, char **argv)
   bool bRefineIntrinsics = true;
 
   cmd.add( make_option('i', sSfM_Data_Filename, "input_file") );
+  cmd.add( make_option('d', describerMethods, "describerMethods") );
   cmd.add( make_option('m', sMatchesDir, "matchdir") );
   cmd.add( make_option('o', sOutDir, "outdir") );
   cmd.add( make_option('s', sOutSfMDataFilepath, "out_sfmdata_file") );
@@ -57,6 +62,22 @@ int main(int argc, char **argv)
   } catch(const std::string& s) {
     std::cerr << "Usage: " << argv[0] << '\n'
     << "[-i|--input_file] path to a SfM_Data scene\n"
+    << "[-d|--describerMethods]\n"
+    << "  (methods to use to describe an image):\n"
+    << "   SIFT (default),\n"
+    << "   SIFT_FLOAT to use SIFT stored as float,\n"
+    << "   AKAZE: AKAZE with floating point descriptors,\n"
+    << "   AKAZE_MLDB:  AKAZE with binary descriptors\n"
+#if OPENMVG_IS_DEFINED(OPENMVG_HAVE_CCTAG)
+    << "   CCTAG3: CCTAG markers with 3 crowns\n"
+    << "   CCTAG4: CCTAG markers with 4 crowns\n"
+#endif //OPENMVG_HAVE_CCTAG
+#if OPENMVG_IS_DEFINED(OPENMVG_HAVE_OPENCV)
+#if OPENMVG_IS_DEFINED(OPENMVG_HAVE_OCVSIFT)
+    << "   SIFT_OCV: OpenCV SIFT\n"
+#endif //OPENMVG_HAVE_OCVSIFT
+    << "   AKAZE_OCV: OpenCV AKAZE\n"
+#endif //OPENMVG_HAVE_OPENCV
     << "[-m|--matchdir] path to the matches that corresponds to the provided SfM_Data scene\n"
     << "[-o|--outdir] path where the output data will be stored\n"
     << "\n[Optional]\n"
@@ -93,35 +114,28 @@ int main(int argc, char **argv)
   }
 
   // Load input SfM_Data scene
-  SfM_Data sfm_data;
-  if (!Load(sfm_data, sSfM_Data_Filename, ESfM_Data(VIEWS|INTRINSICS))) {
+  SfM_Data sfmData;
+  if (!Load(sfmData, sSfM_Data_Filename, ESfM_Data(VIEWS|INTRINSICS))) {
     std::cerr << std::endl
       << "The input SfM_Data file \""<< sSfM_Data_Filename << "\" cannot be read." << std::endl;
     return EXIT_FAILURE;
   }
 
-  // Init the regions_type from the image describer file (used for image regions extraction)
-  using namespace openMVG::features;
-  const std::string sImage_describer = stlplus::create_filespec(sMatchesDir, "image_describer", "json");
-  std::unique_ptr<Regions> regions_type = Init_region_type_from_file(sImage_describer);
-  if (!regions_type)
-  {
-    std::cerr << "Invalid: "
-      << sImage_describer << " regions type file." << std::endl;
-    return EXIT_FAILURE;
-  }
+  // Get describerTypes
+  const std::vector<features::EImageDescriberType> describerTypes = features::EImageDescriberType_stringToEnums(describerMethods);
 
   // Features reading
-  std::shared_ptr<Features_Provider> feats_provider = std::make_shared<Features_Provider>();
-  if (!feats_provider->load(sfm_data, sMatchesDir, regions_type)) {
+  FeaturesPerView featuresPerView;
+  if (!sfm::loadFeaturesPerView(featuresPerView, sfmData, sMatchesDir, describerTypes)) {
     std::cerr << std::endl
       << "Invalid features." << std::endl;
     return EXIT_FAILURE;
   }
   // Matches reading
-  std::shared_ptr<Matches_Provider> matches_provider = std::make_shared<Matches_Provider>();
+  matching::PairwiseMatches pairwiseMatches;
   // Load the match file (try to read the two matches file formats)
-  if(!(matches_provider->load(sfm_data, sMatchesDir, "e")))
+
+  if(!sfm::loadPairwiseMatches(pairwiseMatches, sfmData, sMatchesDir, describerTypes, "e"))
   {
     std::cerr << std::endl << "Unable to load matches files from: " << sMatchesDir << std::endl;
     return EXIT_FAILURE;
@@ -142,13 +156,13 @@ int main(int argc, char **argv)
 
   openMVG::system::Timer timer;
   GlobalSfMReconstructionEngine_RelativeMotions sfmEngine(
-    sfm_data,
+    sfmData,
     sOutDir,
     stlplus::create_filespec(sOutDir, "Reconstruction_Report.html"));
 
-  // Configure the features_provider & the matches_provider
-  sfmEngine.SetFeaturesProvider(feats_provider.get());
-  sfmEngine.SetMatchesProvider(matches_provider.get());
+  // Configure the featuresPerView & the matches_provider
+  sfmEngine.SetFeaturesProvider(&featuresPerView);
+  sfmEngine.SetMatchesProvider(&pairwiseMatches);
 
   // Configure reconstruction parameters
   sfmEngine.Set_bFixedIntrinsics(!bRefineIntrinsics);
@@ -159,7 +173,7 @@ int main(int argc, char **argv)
   sfmEngine.SetTranslationAveragingMethod(
     ETranslationAveragingMethod(iTranslationAveragingMethod));
 
-  if (sfmEngine.Process())
+  if (!sfmEngine.Process())
   {
     return EXIT_FAILURE;
   }

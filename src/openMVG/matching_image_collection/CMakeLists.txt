@@ -1,25 +1,48 @@
-
-file(
-  GLOB_RECURSE
-  matching_collection_images_files_header
-  *.hpp
+# Headers
+set(matching_collection_images_files_headers
+  Matcher.hpp
+  MatchingCommon.hpp
+  Matcher_Regions_AllInMemory.hpp
+  Cascade_Hashing_Matcher_Regions_AllInMemory.hpp
+  E_ACRobust.hpp
+  F_ACRobust.hpp
+  H_ACRobust.hpp
+  GeometricFilter.hpp
+  GeometricFilterMatrix.hpp
+  Geometric_Filter_utils.hpp
+  Pair_Builder.hpp
 )
-file(
-  GLOB_RECURSE
-  matching_collection_images_files_cpp
-  *.cpp
+
+# Sources
+set(matching_collection_images_files_sources
+  Matcher.hpp
+  MatchingCommon.cpp
+  Matcher_Regions_AllInMemory.cpp
+  Cascade_Hashing_Matcher_Regions_AllInMemory.cpp
 )
-file(GLOB_RECURSE REMOVEFILESUNITTEST *_test.cpp)
 
-#Remove the unit test files (not been used by the library)
-list(REMOVE_ITEM matching_collection_images_files_cpp ${REMOVEFILESUNITTEST})
+add_library(openMVG_matching_image_collection
+  ${matching_collection_images_files_headers}
+  ${matching_collection_images_files_sources}
+)
 
-ADD_LIBRARY(openMVG_matching_image_collection
-  ${matching_collection_images_files_header}
-  ${matching_collection_images_files_cpp})
-TARGET_LINK_LIBRARIES(openMVG_matching_image_collection openMVG_matching ${LOG_LIB})
-SET_TARGET_PROPERTIES(openMVG_matching_image_collection PROPERTIES SOVERSION ${OPENMVG_VERSION_MAJOR} VERSION "${OPENMVG_VERSION_MAJOR}.${OPENMVG_VERSION_MINOR}")
-SET_PROPERTY(TARGET openMVG_matching_image_collection PROPERTY FOLDER OpenMVG)
-INSTALL(TARGETS openMVG_matching_image_collection DESTINATION lib EXPORT openMVG-targets)
+target_link_libraries(openMVG_matching_image_collection
+  openMVG_matching
+  ${LOG_LIB}
+)
+
+set_target_properties(openMVG_matching_image_collection
+  PROPERTIES SOVERSION ${OPENMVG_VERSION_MAJOR}
+  VERSION "${OPENMVG_VERSION_MAJOR}.${OPENMVG_VERSION_MINOR}"
+)
+
+set_property(TARGET openMVG_matching_image_collection
+  PROPERTY FOLDER OpenMVG
+)
+
+install(TARGETS openMVG_matching_image_collection
+  DESTINATION lib
+  EXPORT openMVG-targets
+)
 
 UNIT_TEST(openMVG Pair_Builder "openMVG_matching_image_collection")

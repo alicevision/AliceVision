@@ -7,9 +7,7 @@
 #ifndef OPENMVG_FEATURES_AKAZE_IMAGE_DESCRIBER_HPP
 #define OPENMVG_FEATURES_AKAZE_IMAGE_DESCRIBER_HPP
 
-#include <iostream>
-#include <numeric>
-
+#include "ImageDescriberCommon.hpp"
 #include "openMVG/features/image_describer.hpp"
 #include "openMVG/features/regions_factory.hpp"
 #include "openMVG/features/akaze/AKAZE.hpp"
@@ -57,7 +55,20 @@ public:
     bool bOrientation = true
   ):Image_describer(), _params(params), _bOrientation(bOrientation) {}
 
-
+  virtual EImageDescriberType getDescriberType() const override
+  {
+    switch(_params._eAkazeDescriptor)
+    {
+      case AKAZE_MSURF:
+        return EImageDescriberType::AKAZE;
+      case AKAZE_LIOP:
+        return EImageDescriberType::AKAZE_LIOP;
+      case AKAZE_MLDB:
+        return EImageDescriberType::AKAZE_MLDB;
+    }
+    throw std::logic_error("Unknown AKAZE type.");
+  }
+  
   bool Set_configuration_preset(EDESCRIBER_PRESET preset)
   {
     switch(preset)
@@ -77,6 +88,11 @@ public:
       return false;
     }
     return true;
+  }
+  
+  void setUpRight(bool upRight)
+  {
+    _bOrientation = !upRight;
   }
 
   /**
@@ -257,15 +273,6 @@ public:
     }
   }
 
-  template<class Archive>
-  void serialize(Archive & ar)
-  {
-    ar(
-     cereal::make_nvp("params", _params),
-     cereal::make_nvp("bOrientation", _bOrientation));
-  }
-
-
 private:
   AKAZEParams _params;
   bool _bOrientation;
@@ -273,9 +280,5 @@ private:
 
 } // namespace features
 } // namespace openMVG
-
-#include <cereal/types/polymorphic.hpp>
-#include <cereal/archives/json.hpp>
-CEREAL_REGISTER_TYPE_WITH_NAME(openMVG::features::AKAZE_Image_describer, "AKAZE_Image_describer");
 
 #endif // OPENMVG_FEATURES_AKAZE_IMAGE_DESCRIBER_HPP

@@ -39,6 +39,18 @@ struct Hash_Map : std::map<K, V, std::less<K>,
  Eigen::aligned_allocator<std::pair<const K,V> > > {};
 #endif
 
+
+struct EstimationStatus
+{
+  EstimationStatus(bool valid, bool strongSupport)
+    : isValid(valid)
+    , hasStrongSupport(strongSupport)
+  {}
+
+  bool isValid = false;
+  bool hasStrongSupport = false;
+};
+
 } // namespace openMVG
 
 #endif  // OPENMVG_TYPES_H_

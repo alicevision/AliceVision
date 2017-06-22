@@ -10,6 +10,7 @@
 #define OPENMVG_SFM_DATA_IO_CEREAL_HPP
 
 #include "openMVG/sfm/sfm_data_io.hpp"
+#include "openMVG/stl/split.hpp"
 
 #include <cereal/archives/portable_binary.hpp>
 #include <cereal/archives/xml.hpp>
@@ -55,10 +56,24 @@ bool Load_Cereal(
   {
     archiveType archive(stream);
 
-    std::string version;
-    archive(cereal::make_nvp("sfm_data_version", version));
+    std::string versionStr;
+    archive(cereal::make_nvp("sfm_data_version", versionStr));
+    
+    std::vector<int> versions;
+    {
+      std::vector<std::string> versionsStr;
+      stl::split(versionStr, ".", versionsStr);
+      for(auto& v: versionsStr)
+        versions.push_back(std::stoi(v));
+    }
     archive(cereal::make_nvp("root_path", data.s_root_path));
 
+    if(versions[1] > 2) // version > 0.2
+    {
+      archive(cereal::make_nvp("featureFolder", data._featureFolder));
+      archive(cereal::make_nvp("matchingFolder", data._matchingFolder));
+    }
+    
     if (b_views)
       archive(cereal::make_nvp("views", data.views));
     else
@@ -91,7 +106,7 @@ bool Load_Cereal(
         archive(cereal::make_nvp("structure", structure));
       }
 
-    if (version != "0.1") // fast check to assert we are at least using version 0.2
+    if (versions[1] > 1) // version > 0.1
     {
       if (b_control_point)
         archive(cereal::make_nvp("control_points", data.control_points));
@@ -138,9 +153,11 @@ bool Save_Cereal(
     archiveType archive(stream);
     // since OpenMVG 0.9, the sfm_data version 0.2 is introduced
     //  - it adds control_points storage
-    const std::string version = "0.2";
+    const std::string version = "0.3.0";
     archive(cereal::make_nvp("sfm_data_version", version));
     archive(cereal::make_nvp("root_path", data.s_root_path));
+    archive(cereal::make_nvp("featureFolder", data._featureFolder));
+    archive(cereal::make_nvp("matchingFolder", data._matchingFolder));
 
     if (b_views)
       archive(cereal::make_nvp("views", data.views));
@@ -163,13 +180,11 @@ bool Save_Cereal(
     else
       archive(cereal::make_nvp("structure", Landmarks()));
 
-    if (version != "0.1") // fast check to assert we are at least using version 0.2
-    {
-      if (b_control_point)
-        archive(cereal::make_nvp("control_points", data.control_points));
-      else
-        archive(cereal::make_nvp("control_points", Landmarks()));
-    }
+    if (b_control_point)
+      archive(cereal::make_nvp("control_points", data.control_points));
+    else
+      archive(cereal::make_nvp("control_points", Landmarks()));
+
   }
   stream.close();
   return true;

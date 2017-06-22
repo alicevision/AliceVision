@@ -8,13 +8,13 @@
 
 #include "openMVG/image/image.hpp"
 #include "openMVG/features/features.hpp"
+#include "openMVG/features/sift/SIFT_describer.hpp"
 #include "openMVG/matching/regions_matcher.hpp"
 #include "openMVG/multiview/essential.hpp"
 #include "openMVG/robust_estimation/robust_estimator_ACRansac.hpp"
 #include "openMVG/multiview/conditioning.hpp"
 #include "openMVG/robust_estimation/robust_estimator_ACRansacKernelAdaptator.hpp"
 
-#include "nonFree/sift/SIFT_describer.hpp"
 #include "openMVG_Samples/robust_essential_spherical/spherical_cam.hpp"
 
 #include "software/SfM/SfMPlyHelper.hpp"
@@ -52,7 +52,7 @@ int main() {
   // Detect regions thanks to an image_describer
   //--
   using namespace openMVG::features;
-  std::unique_ptr<Image_describer> image_describer(new SIFT_Image_describer(SiftParams(-1)));
+  std::unique_ptr<Image_describer> image_describer(new SIFT_ImageDescriber(SiftParams(-1)));
   std::map<IndexT, std::unique_ptr<features::Regions> > regions_perImage;
   image_describer->Describe(imageL, regions_perImage[0]);
   image_describer->Describe(imageR, regions_perImage[1]);

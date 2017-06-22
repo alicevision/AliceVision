@@ -22,22 +22,25 @@ namespace matching_image_collection {
 using namespace openMVG::matching;
 using namespace openMVG::features;
 
-Matcher_Regions_AllInMemory::Matcher_Regions_AllInMemory(
-  float distRatio, EMatcherType eMatcherType)
-  :Matcher(), _f_dist_ratio(distRatio), _eMatcherType(eMatcherType)
+ImageCollectionMatcher_Generic::ImageCollectionMatcher_Generic(
+  float distRatio, EMatcherType matcherType)
+  : IImageCollectionMatcher()
+  , _f_dist_ratio(distRatio)
+  , _matcherType(matcherType)
 {
 }
 
-void Matcher_Regions_AllInMemory::Match(
+void ImageCollectionMatcher_Generic::Match(
   const sfm::SfM_Data & sfm_data,
-  const std::shared_ptr<sfm::Regions_Provider> & regions_provider,
+  const features::RegionsPerView& regionsPerView,
   const Pair_Set & pairs,
-  PairWiseMatches & map_PutativesMatches)const // the pairwise photometric corresponding points
+  features::EImageDescriberType descType,
+  matching::PairwiseMatches & map_PutativesMatches)const // the pairwise photometric corresponding points
 {
-#if OPENMVG_IS_DEFINED(OPENMVG_USE_OPENMP)
+#if OPENMVG_IS_DEFINED(OPENMVG_HAVE_OPENMP)
   OPENMVG_LOG_DEBUG("Using the OPENMP thread interface");
 #endif
-  const bool b_multithreaded_pair_search = (_eMatcherType == CASCADE_HASHING_L2);
+  const bool b_multithreaded_pair_search = (_matcherType == CASCADE_HASHING_L2);
   // -> set to true for CASCADE_HASHING_L2, since OpenMP instructions are not used in this matcher
 
   C_Progress_display my_progress_bar( pairs.size() );
@@ -57,7 +60,7 @@ void Matcher_Regions_AllInMemory::Match(
     const size_t I = iter->first;
     const std::vector<size_t> & indexToCompare = iter->second;
 
-    const features::Regions & regionsI = *regions_provider->regions_per_view.at(I).get();
+    const features::Regions & regionsI = regionsPerView.getRegions(I, descType);
     if (regionsI.RegionCount() == 0)
     {
       my_progress_bar += indexToCompare.size();
@@ -65,14 +68,14 @@ void Matcher_Regions_AllInMemory::Match(
     }
 
     // Initialize the matching interface
-    matching::Matcher_Regions_Database matcher(_eMatcherType, regionsI);
+    matching::RegionsDatabaseMatcher matcher(_matcherType, regionsI);
 
     #pragma omp parallel for schedule(dynamic) if(b_multithreaded_pair_search)
     for (int j = 0; j < (int)indexToCompare.size(); ++j)
     {
       const size_t J = indexToCompare[j];
 
-      const features::Regions &regionsJ = *regions_provider->regions_per_view.at(J).get();
+      const features::Regions &regionsJ = regionsPerView.getRegions(J, descType);
       if (regionsJ.RegionCount() == 0
           || regionsI.Type_id() != regionsJ.Type_id())
       {
@@ -88,7 +91,7 @@ void Matcher_Regions_AllInMemory::Match(
         ++my_progress_bar;
         if (!vec_putatives_matches.empty())
         {
-          map_PutativesMatches.insert( make_pair( make_pair(I,J), std::move(vec_putatives_matches) ));
+          map_PutativesMatches[std::make_pair(I,J)].emplace(descType, std::move(vec_putatives_matches));
         }
       }
     }

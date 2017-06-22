@@ -29,9 +29,9 @@ static bool Generate_SfM_Report
     ++iterTracks
   )
   {
-    const Observations & obs = iterTracks->second.obs;
-    for (Observations::const_iterator itObs = obs.begin();
-      itObs != obs.end(); ++itObs)
+    const Observations & observations = iterTracks->second.observations;
+    for (Observations::const_iterator itObs = observations.begin();
+      itObs != observations.end(); ++itObs)
     {
       const View * view = sfm_data.GetViews().at(itObs->first).get();
       const geometry::Pose3 pose = sfm_data.GetPoseOrDie(view);

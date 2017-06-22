@@ -46,6 +46,8 @@ struct SfM_Data
 
   /// Root Views path
   std::string s_root_path;
+  std::string _featureFolder;
+  std::string _matchingFolder;
 
   //--
   // Accessors
@@ -53,6 +55,36 @@ struct SfM_Data
   const Views & GetViews() const {return views;}
   const Poses & GetPoses() const {return poses;}
   const Intrinsics & GetIntrinsics() const {return intrinsics;}
+
+  /**
+   * @brief Return a pointer to an intrinsic if available or nullptr otherwise.
+   * @param intrinsicId
+   */
+  const cameras::IntrinsicBase * GetIntrinsicPtr(IndexT intrinsicId) const
+  {
+    if(intrinsics.count(intrinsicId))
+      return intrinsics.at(intrinsicId).get();
+    return nullptr;
+  }
+
+  /**
+   * @brief Return a pointer to an intrinsic if available or nullptr otherwise.
+   * @param intrinsicId
+   */
+  cameras::IntrinsicBase * GetIntrinsicPtr(IndexT intrinsicId)
+  {
+    if(intrinsics.count(intrinsicId))
+      return intrinsics.at(intrinsicId).get();
+    return nullptr;
+  }
+
+  std::shared_ptr<cameras::IntrinsicBase> GetIntrinsicSharedPtr(IndexT intrinsicId)
+  {
+    if(intrinsics.count(intrinsicId))
+      return intrinsics.at(intrinsicId);
+    return nullptr;
+  }
+
   const Landmarks & GetLandmarks() const {return structure;}
   const Landmarks & GetControl_Points() const {return control_points;}
 
@@ -85,6 +117,17 @@ struct SfM_Data
   {
     return poses.at(view->id_pose);
   }
+
+  void setFeatureFolder(const std::string& featureFolder)
+  {
+    _featureFolder = featureFolder;
+  }
+  void setMatchingFolder(const std::string& matchingFolder)
+  {
+    _matchingFolder = matchingFolder;
+  }
+  const std::string& getFeatureFolder() const { return _featureFolder; }
+  const std::string& getMatchingFolder() const { return _matchingFolder; }
 
   bool operator==(const SfM_Data& other) const {
 

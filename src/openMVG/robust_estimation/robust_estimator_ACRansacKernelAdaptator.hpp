@@ -26,13 +26,65 @@
 // Mainly it add correct data normalization and define the function required
 //  by the generic ACRANSAC routine.
 //
+#include <openMVG/config.hpp>
 #include <openMVG/numeric/numeric.h>
 #include <openMVG/multiview/conditioning.hpp>
+#include <openMVG/features/ImageDescriberCommon.hpp>
+#include <openMVG/matching/indMatch.hpp>
+#include <vector>
 
 namespace openMVG {
 namespace robust {
 
-#define OPENMVG_MINIMUM_SAMPLES_COEF 7
+#define OPENMVG_MINIMUM_SAMPLES_COEF 7 //TODO: TO REMOVE
+
+inline bool hasStrongSupport(const std::vector<std::size_t>& inliers, const std::vector<features::EImageDescriberType>& descTypes, std::size_t minimumSamples)
+{
+  assert(inliers.size() <= descTypes.size());
+
+  float score = 0;
+  for(const std::size_t inlier : inliers)
+  {
+    score += features::getStrongSupportCoeff(descTypes[inlier]);
+  }
+  return (score > minimumSamples);
+}
+
+inline bool hasStrongSupport(const std::vector<std::vector<std::size_t>>& inliersPerCamera, const std::vector<std::vector<features::EImageDescriberType>>& descTypesPerCamera, std::size_t minimumSamples)
+{
+  assert(inliersPerCamera.size() == descTypesPerCamera.size()); //same number of cameras
+
+  float score = 0;
+
+  for(std::size_t camIdx = 0; camIdx < inliersPerCamera.size(); ++camIdx)
+  {
+    const auto& inliers = inliersPerCamera.at(camIdx);
+    const auto& descTypes = descTypesPerCamera.at(camIdx);
+
+    assert(inliers.size() <= descTypes.size());
+
+    for(const std::size_t inlier : inliers)
+    {
+      score += features::getStrongSupportCoeff(descTypes[inlier]);
+    }
+  }
+
+  return (score > minimumSamples);
+}
+
+inline bool hasStrongSupport(const matching::MatchesPerDescType& matchesPerDesc, std::size_t minimumSamples)
+{
+  float score = 0;
+  for(const auto& matchesIt : matchesPerDesc)
+  {
+    const features::EImageDescriberType descType = matchesIt.first;
+    const matching::IndMatches& descMatches = matchesIt.second;
+
+    score += features::getStrongSupportCoeff(descType) * descMatches.size();
+  }
+  return (score > minimumSamples);
+}
+
 
 /// Two view Kernel adapter for the A contrario model estimator
 /// Handle data normalization and compute the corresponding logalpha 0

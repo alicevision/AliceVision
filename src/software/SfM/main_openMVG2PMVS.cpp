@@ -156,14 +156,14 @@ bool exportToPMVSFormat(
         itL != sfm_data.GetLandmarks().end(); ++itL)
       {
         const Landmark & landmark = itL->second;
-        const Observations & obs = landmark.obs;
-        for (Observations::const_iterator itOb = obs.begin();
-          itOb != obs.end(); ++itOb)
+        const Observations & observations = landmark.observations;
+        for (Observations::const_iterator itOb = observations.begin();
+          itOb != observations.end(); ++itOb)
         {
           const IndexT viewId = itOb->first;
           Observations::const_iterator itOb2 = itOb;
           ++itOb2;
-          for (; itOb2 != obs.end(); ++itOb2)
+          for (; itOb2 != observations.end(); ++itOb2)
           {
             const IndexT viewId2 = itOb2->first;
             view_shared[map_viewIdToContiguous[viewId]].insert(map_viewIdToContiguous[viewId2]);
@@ -279,14 +279,14 @@ bool exportToBundlerFormat(
       iter != sfm_data.GetLandmarks().end(); ++iter)
     {
       const Landmark & landmark = iter->second;
-      const Observations & obs = landmark.obs;
+      const Observations & observations = landmark.observations;
       const Vec3 & X = landmark.X;
       // X, color, obsCount
       os << X[0] << " " << X[1] << " " << X[2] << os.widen('\n')
          <<  "255 255 255" << os.widen('\n')
-         << obs.size() << " ";
-      for(Observations::const_iterator iterObs = obs.begin();
-        iterObs != obs.end(); ++iterObs)
+         << observations.size() << " ";
+      for(Observations::const_iterator iterObs = observations.begin();
+        iterObs != observations.end(); ++iterObs)
       {
         const Observation & ob = iterObs->second;
         // ViewId, FeatId, x, y

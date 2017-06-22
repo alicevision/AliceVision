@@ -12,7 +12,7 @@
 #include "openMVG/numeric/accumulator_trait.hpp"
 #include <openMVG/config.hpp>
 
-#if OPENMVG_IS_DEFINED(OPENMVG_USE_SSE)
+#if OPENMVG_IS_DEFINED(OPENMVG_HAVE_SSE)
 #include <openMVG/logger.hpp>
 #include <xmmintrin.h>
 #endif
@@ -76,7 +76,7 @@ struct L2_Vectorized
   }
 };
 
-#if OPENMVG_IS_DEFINED(OPENMVG_USE_SSE)
+#if OPENMVG_IS_DEFINED(OPENMVG_HAVE_SSE)
 
 namespace optim_ss2{
 
@@ -135,7 +135,7 @@ struct L2_Vectorized<float>
   }
 };
 
-#endif // OPENMVG_USE_SSE
+#endif // OPENMVG_HAVE_SSE
 
 }  // namespace matching
 }  // namespace openMVG

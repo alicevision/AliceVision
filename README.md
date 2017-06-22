@@ -19,7 +19,7 @@ Building
 
 See [INSTALL.md](INSTALL.md) text file
 
-Continuous integration [![Build Status](https://travis-ci.org/openMVG/openMVG.png?branch=develop)](https://travis-ci.org/openMVG/openMVG) [![Coverage Status](https://coveralls.io/repos/openMVG/openMVG/badge.png?branch=develop)](https://coveralls.io/r/openMVG/openMVG?branch=develop):
+Continuous integration [![Build Status](https://travis-ci.org/alicevision/openMVG.png?branch=popart_develop)](https://travis-ci.org/alicevision/openMVG) [![Coverage Status](https://coveralls.io/repos/github/alicevision/openMVG/badge.png?branch=popart_develop)](https://coveralls.io/github/alicevision/openMVG?branch=popart_develop):
  - develop branch: BUILD + UNIT TESTING
  - linux 64 bits (GCC + clang).
 

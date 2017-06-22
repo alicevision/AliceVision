@@ -1,8 +1,12 @@
 #ifndef OPENMVG_VOCABULARY_TREE_VOCABULARY_TREE_HPP
 #define OPENMVG_VOCABULARY_TREE_VOCABULARY_TREE_HPP
 
+#include <openMVG/config.hpp>
 #include "distance.hpp"
 #include "feature_allocator.hpp"
+
+#include <openMVG/features/ImageDescriberCommon.hpp>
+#include <openMVG/features/regions_factory.hpp>
 
 #include <openMVG/types.hpp>
 #include <openMVG/logger.hpp>
@@ -48,6 +52,37 @@ inline void computeSparseHistogram(const std::vector<Word>& document, SparseHist
   }
 }
 
+class IVocabularyTree
+{
+public:
+  virtual ~IVocabularyTree() = 0;
+
+  /// Save vocabulary to a file.
+  virtual void save(const std::string& file) const = 0;
+  /// Load vocabulary from a file.
+  virtual void load(const std::string& file) = 0;
+
+  /**
+   * @brief Create a SparseHistogram from a blind vector of descriptors.
+   * @param blindDescriptors
+   * @return
+   */
+  virtual SparseHistogram quantizeToSparse(const void* blindDescriptors) const = 0;
+
+  /// Get the depth (number of levels) of the tree.
+  virtual uint32_t levels() const = 0;
+  /// Get the branching factor (max splits at each node) of the tree.
+  virtual uint32_t splits() const = 0;
+  /// Get the number of words the tree contains.
+  virtual uint32_t words() const = 0;
+
+  /// Clears vocabulary, leaving an empty tree.
+  virtual void clear() = 0;
+
+};
+
+inline IVocabularyTree::~IVocabularyTree() {}
+
 /**
  * @brief Optimized vocabulary tree quantizer, templated on feature type and distance metric
  * for maximum efficiency.
@@ -60,27 +95,16 @@ inline void computeSparseHistogram(const std::vector<Word>& document, SparseHist
  *
  * \c FeatureAllocator is an STL-compatible allocator used to allocate Features internally.
  */
-
-
-template<class Feature, template<typename, typename> class Distance = L2,
+template<class Feature, template<typename, typename> class Distance = L2, // TODO: rename Feature into Descriptor
 class FeatureAllocator = typename DefaultAllocator<Feature>::type>
-class VocabularyTree
+class VocabularyTree : public IVocabularyTree
 {
 public:
-  /**
-   * @brief Constructor, empty tree.
-   *
-   * @param d Functor for computing the distance between two features
-   *
-   * @todo Allocator parameter, also in MutableVocabularyTree, TreeBuilder...
-   */
   VocabularyTree();
 
   /**
-   * @brief Constructor, loads vocabulary from file.
-   *
-   * @param file Saved vocabulary file
-   * @param d    Functor for computing the distance between two features
+   * @brief Create from vocabulary file.
+   * @param file vocabulary file path
    */
   VocabularyTree(const std::string& file);
 
@@ -91,24 +115,31 @@ public:
   /// Quantizes a set of features into visual words.
   template<class DescriptorT>
   std::vector<Word> quantize(const std::vector<DescriptorT>& features) const;
+
   /// Quantizes a set of features into sparse histogram of visual words.
   template<class DescriptorT>
   SparseHistogram quantizeToSparse(const std::vector<DescriptorT>& features) const;
 
+  SparseHistogram quantizeToSparse(const void* blindDescriptors) const
+  {
+    const std::vector<Feature>* descriptors = static_cast<const std::vector<Feature>*>(blindDescriptors);
+    return quantizeToSparse(*descriptors);
+  }
+
   /// Get the depth (number of levels) of the tree.
-  uint32_t levels() const;
+  uint32_t levels() const override;
   /// Get the branching factor (max splits at each node) of the tree.
-  uint32_t splits() const;
+  uint32_t splits() const override;
   /// Get the number of words the tree contains.
-  uint32_t words() const;
+  uint32_t words() const override;
 
   /// Clears vocabulary, leaving an empty tree.
-  void clear();
+  void clear() override;
 
   /// Save vocabulary to a file.
-  void save(const std::string& file) const;
+  void save(const std::string& file) const override;
   /// Load vocabulary from a file.
-  void load(const std::string& file);
+  void load(const std::string& file) override;
 
   bool operator==(const VocabularyTree& other) const
   {
@@ -119,6 +150,7 @@ public:
         (num_words_ == other.num_words_) &&
         (word_start_ == other.word_start_);
   }
+
 protected:
   std::vector<Feature, FeatureAllocator> centers_;
   std::vector<uint8_t> valid_centers_; /// @todo Consider bit-vector
@@ -295,6 +327,54 @@ void VocabularyTree<Feature, Distance, FeatureAllocator>::setNodeCounts()
   }
 }
 
+inline std::unique_ptr<IVocabularyTree> createVoctreeForDescriberType(features::EImageDescriberType imageDescriberType)
+{
+  using namespace openMVG::features;
+  std::unique_ptr<IVocabularyTree> res;
+
+  switch(imageDescriberType)
+  {
+    case EImageDescriberType::SIFT:       res.reset(new VocabularyTree<SIFT_Regions::DescriptorT>); break;
+    case EImageDescriberType::SIFT_FLOAT: res.reset(new VocabularyTree<SIFT_Float_Regions::DescriptorT>); break;
+    case EImageDescriberType::AKAZE:      res.reset(new VocabularyTree<AKAZE_Float_Regions::DescriptorT>); break;
+    case EImageDescriberType::AKAZE_MLDB: res.reset(new VocabularyTree<AKAZE_Binary_Regions::DescriptorT>); break;
+
+#if OPENMVG_IS_DEFINED(OPENMVG_HAVE_CCTAG)
+    case EImageDescriberType::CCTAG3:
+    case EImageDescriberType::CCTAG4:     res.reset(new VocabularyTree<CCTAG_Regions::DescriptorT>); break;
+#endif //OPENMVG_HAVE_CCTAG
+
+#if OPENMVG_IS_DEFINED(OPENMVG_HAVE_OPENCV)
+#if OPENMVG_IS_DEFINED(OPENMVG_HAVE_OCVSIFT)
+  case EImageDescriberType::SIFT_OCV:     res.reset(new VocabularyTree<SIFT_Regions::DescriptorT>); break;
+#endif //OPENMVG_HAVE_OCVSIFT
+  case EImageDescriberType::AKAZE_OCV:    res.reset(new VocabularyTree<AKAZE_Float_Regions::DescriptorT>); break;
+#endif //OPENMVG_HAVE_OPENCV
+
+    default: throw std::out_of_range("Invalid imageDescriber enum");
+  }
+
+  return res;
+}
+
+inline void load(std::unique_ptr<IVocabularyTree>& out_voctree, features::EImageDescriberType& out_descType, const std::string& filepath)
+{
+  std::size_t lastDot = filepath.find_last_of(".");
+  if(lastDot == std::string::npos)
+    throw std::invalid_argument("Unrecognized Vocabulary tree filename (no extension): " + filepath);
+  std::size_t secondLastDot = filepath.find_last_of(".", lastDot-1);
+  if(secondLastDot == std::string::npos)
+    throw std::invalid_argument("Unrecognized Vocabulary tree filename (no descType in extension): " + filepath);
+
+  const std::string descTypeStr = filepath.substr((secondLastDot+1), lastDot - (secondLastDot+1));
+
+  out_descType = features::EImageDescriberType_stringToEnum(descTypeStr);
+  out_voctree = createVoctreeForDescriberType(out_descType);
+  out_voctree->load(filepath);
+}
+
+
 }
 }
+
 #endif //OPENMVG_VOCABULARY_TREE_VOCABULARY_TREE_HPP

@@ -28,36 +28,36 @@
 # Called if we failed to find Ceres or any of it's required dependencies,
 # unsets all public (designed to be used externally) variables and reports
 # error message at priority depending upon [REQUIRED/QUIET/<NONE>] argument.
-MACRO(OPENMVG_REPORT_NOT_FOUND REASON_MSG)
+macro(OPENMVG_REPORT_NOT_FOUND REASON_MSG)
   # FindPackage() only references Ceres_FOUND, and requires it to be
   # explicitly set FALSE to denote not found (not merely undefined).
-  SET(OPENMVG_FOUND FALSE)
-  UNSET(OPENMVG_INCLUDE_DIRS)
-  UNSET(OPENMVG_LIBRARIES)
+  set(OPENMVG_FOUND FALSE)
+  unset(OPENMVG_INCLUDE_DIRS)
+  unset(OPENMVG_LIBRARIES)
 
   # Reset the CMake module path to its state when this script was called.
-  SET(CMAKE_MODULE_PATH ${CALLERS_CMAKE_MODULE_PATH})
+  set(CMAKE_MODULE_PATH ${CALLERS_CMAKE_MODULE_PATH})
 
   # Note <package>_FIND_[REQUIRED/QUIETLY] variables defined by
   # FindPackage() use the camelcase library name, not uppercase.
-  IF (OPENMVG_FIND_QUIETLY)
-    MESSAGE(STATUS "Failed to find OPENMVG - " ${REASON_MSG} ${ARGN})
-  ELSE (OPENMVG_FIND_REQUIRED)
-    MESSAGE(FATAL_ERROR "Failed to find OPENMVG - " ${REASON_MSG} ${ARGN})
-  ELSE()
+  if(OPENMVG_FIND_QUIETLY)
+    message(STATUS "Failed to find OPENMVG - " ${REASON_MSG} ${ARGN})
+  else(OPENMVG_FIND_REQUIRED)
+    message(FATAL_ERROR "Failed to find OPENMVG - " ${REASON_MSG} ${ARGN})
+  else()
     # Neither QUIETLY nor REQUIRED, use SEND_ERROR which emits an error
     # that prevents generation, but continues configuration.
-    MESSAGE(SEND_ERROR "Failed to find OPENMVG - " ${REASON_MSG} ${ARGN})
-  ENDIF ()
-  RETURN()
-ENDMACRO(OPENMVG_REPORT_NOT_FOUND)
+    message(SEND_ERROR "Failed to find OPENMVG - " ${REASON_MSG} ${ARGN})
+  endif()
+  return()
+endmacro(OPENMVG_REPORT_NOT_FOUND)
 
 ## Public dependencies that needs to be propagated
 include(CMakeFindDependencyMacro)
 
-set(OpenMVG_USE_INTERNAL_CERES @OpenMVG_USE_INTERNAL_CERES@)
+set(OPENMVG_USE_INTERNAL_CERES @OPENMVG_USE_INTERNAL_CERES@)
 
-if(OpenMVG_USE_INTERNAL_CERES)
+if(OPENMVG_USE_INTERNAL_CERES)
   set(Ceres_DIR @CMAKE_INSTALL_PREFIX@/share/Ceres/)
 else()
   set(Ceres_DIR @Ceres_DIR@)
@@ -65,96 +65,104 @@ endif()
 find_dependency(Ceres)
 
 # whether it is built with CCTags
-set(OpenMVG_USE_CCTAG @OpenMVG_USE_CCTAG@)
+set(OPENMVG_HAVE_CCTAG @OPENMVG_HAVE_CCTAG@)
 
-if(OpenMVG_USE_CCTAG)
+if(OPENMVG_HAVE_CCTAG)
   set(CCTag_DIR @CCTag_DIR@)
   find_dependency(CCTag 1.0.0)
-endif(OpenMVG_USE_CCTAG)
+endif()
 
 # whether it is built with CCTags
-set(OpenMVG_USE_OPENCV @OpenMVG_USE_OPENCV@)
+set(OPENMVG_HAVE_POPSIFT @OPENMVG_HAVE_POPSIFT@)
 
-if(OpenMVG_USE_OPENCV)
+if(OPENMVG_HAVE_POPSIFT)
+  find_dependency(PopSift 1.0.0)
+endif()
+
+
+# whether it is built with CCTags
+set(OPENMVG_HAVE_OPENCV @OPENMVG_HAVE_OPENCV@)
+
+if(OPENMVG_HAVE_OPENCV)
   set(OpenCV_DIR @OpenCV_DIR@)
   find_dependency(OpenCV)
-endif(OpenMVG_USE_OPENCV)
+endif()
 
-set(OpenMVG_USE_OPENMP @OpenMVG_USE_OPENMP@)
+set(OPENMVG_HAVE_OPENMP @OPENMVG_HAVE_OPENMP@)
 
-if(OpenMVG_USE_OPENMP)
+if(OPENMVG_HAVE_OPENMP)
   find_dependency(OpenMP)
   # TODO: this would not be necessary if the flags were declared properly for each target
   set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
-endif(OpenMVG_USE_OPENMP)
+endif()
 
-set(OpenMVG_USE_BOOST @OpenMVG_USE_BOOST@)
+set(OPENMVG_HAVE_BOOST @OPENMVG_HAVE_BOOST@)
 set(BOOST_NO_CXX11 @BOOST_NO_CXX11@)
 if(BOOST_NO_CXX11)
  add_definitions(-DBOOST_NO_CXX11_SCOPED_ENUMS)
-endif(BOOST_NO_CXX11)
+endif()
 
 # propagate other building options
-set(OpenMVG_USE_OPENGV @OpenMVG_USE_OPENGV@)
-set(OpenMVG_USE_ALEMBIC @OpenMVG_USE_ALEMBIC@)
-set(OpenMVG_USE_LOG @OpenMVG_USE_LOG@)
+set(OPENMVG_HAVE_OPENGV @OPENMVG_HAVE_OPENGV@)
+set(OPENMVG_HAVE_ALEMBIC @OPENMVG_HAVE_ALEMBIC@)
+set(OPENMVG_USE_LOG @OPENMVG_USE_LOG@)
 
 # Set the version.
-SET(OPENMVG_VERSION @OPENMVG_VERSION@)
+set(OPENMVG_VERSION @OPENMVG_VERSION@)
 
 # Get the (current, i.e. installed) directory containing this file.
-GET_FILENAME_COMPONENT(CURRENT_CONFIG_INSTALL_DIR
+get_filename_component(CURRENT_CONFIG_INSTALL_DIR
   "${CMAKE_CURRENT_LIST_FILE}" PATH)
 
 # Record the state of the CMake module path when this script was
 # called so that we can ensure that we leave it in the same state on
 # exit as it was on entry, but modify it locally.
-SET(CALLERS_CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH})
+set(CALLERS_CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH})
 # Reset CMake module path to the installation directory of this
 # script.
-SET(CMAKE_MODULE_PATH ${CURRENT_CONFIG_INSTALL_DIR})
+set(CMAKE_MODULE_PATH ${CURRENT_CONFIG_INSTALL_DIR})
 
 # Build the absolute root install directory as a relative path
-GET_FILENAME_COMPONENT(CURRENT_ROOT_INSTALL_DIR
+get_filename_component(CURRENT_ROOT_INSTALL_DIR
   ${CMAKE_MODULE_PATH}/../../../ ABSOLUTE)
-IF (NOT EXISTS ${CURRENT_ROOT_INSTALL_DIR})
+if(NOT EXISTS ${CURRENT_ROOT_INSTALL_DIR})
   OPENMVG_REPORT_NOT_FOUND(
     "OpenMVG install root: ${CURRENT_ROOT_INSTALL_DIR}, "
     "determined from relative path from OpenMVGConfig.cmake install location: "
     "${CMAKE_MODULE_PATH}, does not exist.")
-ENDIF (NOT EXISTS ${CURRENT_ROOT_INSTALL_DIR})
+endif()
 
 # Check if OpenMVG header is installed
-IF (NOT EXISTS ${CURRENT_ROOT_INSTALL_DIR}/include/openMVG/version.hpp)
+if(NOT EXISTS ${CURRENT_ROOT_INSTALL_DIR}/include/openMVG/version.hpp)
   OPENMVG_REPORT_NOT_FOUND(
     "OpenMVG install root: ${CMAKE_MODULE_PATH}. "
     "Cannot find openMVG include files.")
-ENDIF (NOT EXISTS ${CURRENT_ROOT_INSTALL_DIR}/include/openMVG/version.hpp)
+endif()
 
 # Set the include directories for OpenMVG (itself) and all (potentially optional)
 # dependencies with which OpenMVG was compiled.
-SET(OPENMVG_INCLUDE_DIRS "@OpenMVG_INCLUDE_DIRS@")
+set(OPENMVG_INCLUDE_DIRS "@OPENMVG_INCLUDE_DIRS@")
 
 ##### the libraries themselves come in via OpenMVGTargets-<release/debug>.cmake
 # as link libraries rules as target.
 
 # Import exported OpenMVG targets
-SET(OPENMVG_LIBRARIES @OpenMVG_LIBRARIES@)
-INCLUDE(${CURRENT_CONFIG_INSTALL_DIR}/OpenMVGTargets.cmake)
+set(OPENMVG_LIBRARIES @OPENMVG_LIBRARIES@)
+include(${CURRENT_CONFIG_INSTALL_DIR}/OpenMVGTargets.cmake)
 
 # As we use OPENMVG_REPORT_NOT_FOUND() to abort, if we reach this point we have
 # found OpenMVG and all required dependencies.
-MESSAGE(STATUS "----")
-MESSAGE(STATUS "OpenMVG Find_Package")
-MESSAGE(STATUS "----")
-MESSAGE(STATUS "Found OpenMVG version: ${OPENMVG_VERSION}")
-MESSAGE(STATUS "Installed in: ${CURRENT_ROOT_INSTALL_DIR}")
-MESSAGE(STATUS "Used OpenMVG libraries: ${OPENMVG_LIBRARIES}")
-MESSAGE(STATUS "----")
+message(STATUS "----")
+message(STATUS "OpenMVG Find_Package")
+message(STATUS "----")
+message(STATUS "Found OpenMVG version: ${OPENMVG_VERSION}")
+message(STATUS "Installed in: ${CURRENT_ROOT_INSTALL_DIR}")
+message(STATUS "Used OpenMVG libraries: ${OPENMVG_LIBRARIES}")
+message(STATUS "----")
 
-SET(OPENMVG_FOUND TRUE)
+set(OPENMVG_FOUND TRUE)
 
 # Reset the CMake module path to its state when this script was called.
-SET(CMAKE_MODULE_PATH ${CALLERS_CMAKE_MODULE_PATH})
+set(CMAKE_MODULE_PATH ${CALLERS_CMAKE_MODULE_PATH})
 

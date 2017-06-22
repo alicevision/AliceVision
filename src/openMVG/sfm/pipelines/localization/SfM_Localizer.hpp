@@ -9,7 +9,7 @@
 
 #include "openMVG/numeric/numeric.h"
 #include "openMVG/sfm/sfm_data.hpp"
-#include "openMVG/sfm/pipelines/sfm_regions_provider.hpp"
+#include "openMVG/features/RegionsPerView.hpp"
 #include <openMVG/robust_estimation/robust_estimators.hpp>
 
 #include <cstddef>
@@ -36,6 +36,8 @@ struct Image_Localizer_Match_Data
   /// represent the column indices of inliers in  pt2D 
   /// and pt3D.
   std::vector<std::size_t> vec_inliers;
+
+  std::vector<features::EImageDescriberType> vec_descType;
   
   /// Upper bound pixel(s) tolerance for residual errors
   double error_max = std::numeric_limits<double>::infinity();
@@ -51,13 +53,13 @@ public:
   * @brief Build the retrieval database (3D points descriptors)
   *
   * @param[in] sfm_data the SfM scene that have to be described
-  * @param[in] region_provider regions provider
+  * @param[in] regionPerView regions provider
   * @return True if the database has been correctly setup
   */
   virtual bool Init
   (
     const SfM_Data & sfm_data,
-    const Regions_Provider & region_provider
+    const features::RegionsPerView & regionPerView
   ) = 0;
 
   /**

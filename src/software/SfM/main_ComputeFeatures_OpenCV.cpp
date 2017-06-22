@@ -12,6 +12,7 @@
 #include <openMVG/config.hpp>
 
 /// Feature/Regions & Image describer interfaces
+#include "openMVG/features/ImageDescriberCommon.hpp"
 #include "openMVG/features/features.hpp"
 #include <cereal/archives/json.hpp>
 
@@ -66,7 +67,11 @@ class AKAZE_OCV_Image_describer : public Image_describer
 public:
   AKAZE_OCV_Image_describer():Image_describer(){}
 
-
+  virtual features::EImageDescriberType getDescriberType()
+  {
+    return features::EImageDescriberType::UNKNOWN; // TODO DELI 
+  }
+  
   bool Set_configuration_preset(EDESCRIBER_PRESET preset)
   {
     return false;
@@ -207,6 +212,11 @@ public:
   SIFT_OPENCV_Image_describer() : Image_describer() {}
 
   ~SIFT_OPENCV_Image_describer() {}
+  
+  virtual features::EImageDescriberType getDescriberType()
+  {
+    return features::EImageDescriberType::UNKNOWN; // TODO DELI 
+  }
 
   bool Set_configuration_preset(EDESCRIBER_PRESET preset)
   {
