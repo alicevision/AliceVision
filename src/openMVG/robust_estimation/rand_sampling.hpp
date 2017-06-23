@@ -129,7 +129,7 @@ inline void UniformSample(std::size_t numSamples,
  * 
  * @param[in] lowerBound The lower bound of the range.
  * @param[in] upperBound The upper bound of the range (not included).
- * @param[in] num_samples Number of unique samples to draw.
+ * @param[in] numSamples Number of unique samples to draw.
  * @param[out] samples The vector containing the samples.
  */
 template<typename IntT>
@@ -160,8 +160,8 @@ inline void UniformSample(std::size_t numSamples,
  * @brief Generate a random sequence containing a sampling without replacement of
  * of the elements of the input vector.
  * 
- * @param[in] sizeSample The size of the sample to generate.
- * @param[in] vec_index The possible data indices.
+ * @param[in] sampleSize The size of the sample to generate.
+ * @param[in] elements The possible data indices.
  * @param[out] sample The random sample of sizeSample indices.
  */
 inline void UniformSample(std::size_t sampleSize,
