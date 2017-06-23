@@ -179,7 +179,6 @@ std::pair<double, double> ACRANSAC(const Kernel &kernel,
 
   std::vector<ErrorIndex> vec_residuals(nData); // [residual,index]
   std::vector<double> vec_residuals_(nData);
-  std::vector<size_t> vec_sample(sizeSample); // Sample indices
 
   // Possible sampling indices [0,..,nData] (will change in the optimization phase)
   std::vector<size_t> vec_index(nData);
@@ -203,6 +202,7 @@ std::pair<double, double> ACRANSAC(const Kernel &kernel,
   // Main estimation loop.
   for (size_t iter=0; iter < nIter; ++iter)
   {
+    std::vector< std::size_t> vec_sample(sizeSample); // Sample indices
     if (bACRansacMode)
       UniformSample(sizeSample, vec_index, vec_sample); // Get random sample
     else

@@ -37,7 +37,6 @@ double LeastMedianOfSquares(const Kernel &kernel,
   const std::size_t total_samples = kernel.NumSamples();
 
   std::vector<double> residuals(total_samples); // Array for storing residuals
-  std::vector<std::size_t> vec_sample(min_samples);
 
   double dBestMedian = std::numeric_limits<double>::max();
 
@@ -48,6 +47,7 @@ double LeastMedianOfSquares(const Kernel &kernel,
   for(std::size_t i = 0; i < N; i++)
   {
 
+    std::vector<std::size_t> vec_sample(min_samples);
     // Get Samples indexes
     UniformSample(min_samples, total_samples, vec_sample);
 

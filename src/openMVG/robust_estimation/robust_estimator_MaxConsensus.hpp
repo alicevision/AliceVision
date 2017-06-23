@@ -59,9 +59,9 @@ typename Kernel::Model MaxConsensus(const Kernel &kernel,
       all_samples.push_back(i);
     }
 
-    std::vector<std::size_t> sample;
     for(std::size_t iteration = 0;  iteration < max_iteration; ++iteration) 
     {
+      std::vector<std::size_t> sample;
       UniformSample(min_samples, total_samples, sample);
 
       std::vector<typename Kernel::Model> models;

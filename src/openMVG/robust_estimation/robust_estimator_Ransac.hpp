@@ -68,11 +68,11 @@ typename Kernel::Model RANSAC(
   std::vector<size_t> all_samples(total_samples);
   std::iota(all_samples.begin(), all_samples.end(), 0);
 
-  std::vector<size_t> sample;
   for (iteration = 0;
     iteration < max_iterations &&
     iteration < really_max_iterations; ++iteration) 
   {
+      std::vector<size_t> sample;
       UniformSample(min_samples, total_samples, sample);
 
       std::vector<typename Kernel::Model> models;
