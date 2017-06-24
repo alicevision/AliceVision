@@ -96,9 +96,9 @@ void generateLine(std::size_t numPoints,
     if(withNoise)
     {
       const double theta = realDist(gen)*2 * M_PI;
-      std::cout << theta << std::endl;
+//      std::cout << theta << std::endl;
       const double radius = d(gen);
-      std::cout << radius << std::endl;
+//      std::cout << radius << std::endl;
       outPoints.col(i) += radius * openMVG::Vec2(std::cos(theta), std::sin(theta));
     }
   }
