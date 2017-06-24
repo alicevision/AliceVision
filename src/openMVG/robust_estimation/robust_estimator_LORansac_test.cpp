@@ -108,18 +108,29 @@ struct LineKernelLoRansac : public LineKernel
   }
 };
 
-void lineFittingTest(std::size_t numPoints,
-                double outlierRatio,
-                double gaussianNoiseLevel,
-                const Vec2 &GTModel,
-                std::mt19937 &gen,
-                Vec2 &estimatedModel,
-                vector<std::size_t> &vec_inliers)
+/**
+ * @brief Generate a set of point fitting a line with the given amount of noise
+ * and outliers.
+ * @param[in] numPoints Number of points to generate.
+ * @param[in] outlierRatio Fraction of outliers to generate.
+ * @param[in] gaussianNoiseLevel Amount of noise to add to the (inlier) points.
+ * @param[in] GTModel The parameters (a, b) of the line, as in y = ax + b.
+ * @param[in] gen The random generator.
+ * @param[out] xy The 2 x numPoints matrix containing the generated points.
+ * @param[out] vec_inliersGT The indices of the inliers.
+ */
+void generateLine(std::size_t numPoints,
+                    double outlierRatio,
+                    double gaussianNoiseLevel,
+                    const Vec2& GTModel,
+                    std::mt19937& gen,
+                    Mat2X& outPoints,
+                    vector<std::size_t>& outInliers)
 {
   assert(outlierRatio >= 0 && outlierRatio < 1);
   assert(gaussianNoiseLevel >= 0);
+  assert(numPoints == outPoints.cols());
   
-  Mat2X xy(2, numPoints);
   std::normal_distribution<> d(0, gaussianNoiseLevel);
   std::uniform_real_distribution<double> realDist(0, 1.0);
   const bool withNoise = (gaussianNoiseLevel > std::numeric_limits<double>::epsilon());
@@ -127,35 +138,35 @@ void lineFittingTest(std::size_t numPoints,
   //-- Build the point list according the given model adding some noise
   for(std::size_t i = 0; i < numPoints; ++i)
   {
-    xy.col(i) << i, (double) i * GTModel[1] + GTModel[0];
+    outPoints.col(i) << i, (double) i * GTModel[1] + GTModel[0];
     if(withNoise)
     {
       const double theta = realDist(gen)*2 * M_PI;
       std::cout << theta << std::endl;
       const double radius = d(gen);
       std::cout << radius << std::endl;
-      xy.col(i) += radius * Vec2(std::cos(theta), std::sin(theta));
+      outPoints.col(i) += radius * Vec2(std::cos(theta), std::sin(theta));
     }
   }
-  const int W = std::abs(xy(0, 0) - xy(0, numPoints - 1));
-  const int H = (int) std::fabs(xy(1, 0) - xy(1, numPoints - 1));
+  const int W = std::abs(outPoints(0, 0) - outPoints(0, numPoints - 1));
+  const int H = (int) std::fabs(outPoints(1, 0) - outPoints(1, numPoints - 1));
 
   //-- Add some outliers (for the asked percentage amount)
   const std::size_t nbPtToNoise = (std::size_t) numPoints * outlierRatio;
-  vector<std::size_t> vec_inliersGT(numPoints);
-  std::iota(vec_inliersGT.begin(), vec_inliersGT.end(), 0);
+  outInliers.resize(numPoints);
+  std::iota(outInliers.begin(), outInliers.end(), 0);
 
   vector<std::size_t> vec_outliers(nbPtToNoise); 
   std::iota(vec_outliers.begin(), vec_outliers.end(), 0);
-  cout << "xy\n" << xy << std::endl;
-  cout << "idx\n";
-  std::copy(vec_outliers.begin(), vec_outliers.end(), std::ostream_iterator<int>(std::cout, " "));
+//  cout << "xy\n" << xy << std::endl;
+//  cout << "idx\n";
+//  std::copy(vec_outliers.begin(), vec_outliers.end(), std::ostream_iterator<int>(std::cout, " "));
   std::size_t total = 0;
   for(std::size_t i = 0; i < vec_outliers.size(); ++i)
   {
     const std::size_t randomIndex = vec_outliers[i];
 
-    vec_inliersGT.erase(std::remove(vec_inliersGT.begin(), vec_inliersGT.end(), randomIndex), vec_inliersGT.end());
+    outInliers.erase(std::remove(outInliers.begin(), outInliers.end(), randomIndex), outInliers.end());
 
     Vec2 pt;
     double distance = 0;
@@ -170,25 +181,46 @@ void lineFittingTest(std::size_t numPoints,
       distance = pointToLineError::Error(GTModel, pt);
       ++timeToStop;
     }
-    total += timeToStop;
+//    total += timeToStop;
 
-    xy.col(randomIndex) = pt;
+    outPoints.col(randomIndex) = pt;
   }
-  std::cout << "\nTotal attempts: " << total << std::endl;
-  assert(numPoints - nbPtToNoise == vec_inliersGT.size());
+//  std::cout << "\nTotal attempts: " << total << std::endl;
+  assert(numPoints - nbPtToNoise == outInliers.size());
 
+}
+
+void lineFittingTest(std::size_t numPoints,
+                    double outlierRatio,
+                    double gaussianNoiseLevel,
+                    const Vec2 &GTModel,
+                    std::mt19937 &gen,
+                    Vec2 &estimatedModel,
+                    vector<std::size_t> &vec_inliers)
+{
+  assert(outlierRatio >= 0 && outlierRatio < 1);
+  assert(gaussianNoiseLevel >= 0);
+  
+  Mat2X xy(2, numPoints);
+  vector<std::size_t> vec_inliersGT;
+  generateLine(numPoints, outlierRatio, gaussianNoiseLevel, GTModel, gen, xy, vec_inliersGT);
+
+  const bool withNoise = (gaussianNoiseLevel > std::numeric_limits<double>::epsilon());
+  const std::size_t expectedInliers = numPoints - (std::size_t) numPoints * outlierRatio;
   const double threshold = (withNoise) ? 3 * gaussianNoiseLevel : 0.3;
   LineKernelLoRansac kernel(xy);
 
   estimatedModel = LO_RANSAC(kernel, ScorerEvaluator<LineKernel>(threshold), &vec_inliers);
   OPENMVG_LOG_DEBUG("#inliers found : " << vec_inliers.size()
-          << " expected: " << numPoints - nbPtToNoise);
+          << " expected: " << numPoints - expectedInliers);
   OPENMVG_LOG_DEBUG("model[0] found : " << estimatedModel[0]
           << " expected: " << GTModel[0]);
   OPENMVG_LOG_DEBUG("model[1] found : " << estimatedModel[1]
           << " expected: " << GTModel[1]);
 
   const std::string base = "testRansac_line_t" + std::to_string(threshold) + "_n" + std::to_string(gaussianNoiseLevel);
+  const int W = std::abs(xy(0, 0) - xy(0, numPoints - 1));
+  const int H = (int) std::fabs(xy(1, 0) - xy(1, numPoints - 1));
   drawTest(base + "_LORANSACtrial" + std::to_string(0) + ".svg",
            W, H,
            GTModel,
