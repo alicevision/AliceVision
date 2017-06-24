@@ -91,22 +91,22 @@ TEST(MaxConsensusLineFitter, TooFewPoints) {
 //  Check that the number of inliers and the model are correct.
 TEST(MaxConsensusLineFitter, RealisticCase) {
 
-  const int NbPoints = 30;
-  const int inlierPourcentAmount = 30; //works with 40
-  Mat2X xy(2, NbPoints);
+  const int numPoints = 30;
+  const int outlierRatio = 30; //works with 40
+  Mat2X xy(2, numPoints);
 
   Vec2 GTModel; // y = 2x + 1
   GTModel <<  -2.0, 6.3;
 
   //-- Build the point list according the given model
-  for(int i = 0; i < NbPoints; ++i)  {
+  for(int i = 0; i < numPoints; ++i)  {
     xy.col(i) << i, (double)i*GTModel[1] + GTModel[0];
   }
 
   //-- Add some noise (for the asked percentage amount)
-  int nbPtToNoise = (int) NbPoints*inlierPourcentAmount/100.0;
+  int nbPtToNoise = (int) numPoints*outlierRatio/100.0;
   vector<size_t> vec_samples; // Fit with unique random index
-  UniformSample(nbPtToNoise, NbPoints, vec_samples);
+  UniformSample(nbPtToNoise, numPoints, vec_samples);
   for(size_t i = 0; i <vec_samples.size(); ++i)
   {
     const size_t randomIndex = vec_samples[i];
@@ -119,7 +119,7 @@ TEST(MaxConsensusLineFitter, RealisticCase) {
   std::vector<size_t> vec_inliers;
   Vec2 model = MaxConsensus(kernel,
     ScorerEvaluator<LineKernel>(0.3), &vec_inliers);
-  CHECK_EQUAL(NbPoints-nbPtToNoise, vec_inliers.size());
+  CHECK_EQUAL(numPoints-nbPtToNoise, vec_inliers.size());
   EXPECT_NEAR(-2.0, model[0], 1e-9);
   EXPECT_NEAR( 6.3, model[1], 1e-9);
 }
