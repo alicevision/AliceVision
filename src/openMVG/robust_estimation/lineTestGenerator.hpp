@@ -115,7 +115,6 @@ void generateLine(std::size_t numPoints,
 //  cout << "xy\n" << xy << std::endl;
 //  cout << "idx\n";
 //  std::copy(vec_outliers.begin(), vec_outliers.end(), std::ostream_iterator<int>(std::cout, " "));
-  std::size_t total = 0;
   for(std::size_t i = 0; i < vec_outliers.size(); ++i)
   {
     const std::size_t randomIndex = vec_outliers[i];
