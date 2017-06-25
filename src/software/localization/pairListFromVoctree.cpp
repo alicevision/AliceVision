@@ -336,11 +336,11 @@ int main(int argc, char** argv)
     std::vector<openMVG::voctree::DocMatch> matches;
     
     db.find(docIt->second, numImageQuery, matches);
-//    OPENMVG_COUT("query document " << docIt->first
-//			<< " took " << detect_elapsed.count() 
-//			<< " ms and has " << matches.size() 
-//			<< " matches\tBest " << matches[0].id 
-//			<< " with score " << matches[0].score);
+    //    OPENMVG_COUT("query document " << docIt->first
+    //                  << " took " << detect_elapsed.count() 
+    //                  << " ms and has " << matches.size() 
+    //                  << " matches\tBest " << matches[0].id 
+    //                  << " with score " << matches[0].score);
 
     ListOfImageID idMatches;
     idMatches.reserve(matches.size());

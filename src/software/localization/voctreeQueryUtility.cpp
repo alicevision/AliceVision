@@ -351,7 +351,7 @@ int main(int argc, char** argv)
     // create recursively the provided out dir
     if(!bfs::exists(bfs::path(outDir)))
     {
-      //			OPENMVG_COUT("creating directory" << outDir);
+//      OPENMVG_COUT("creating directory" << outDir);
       bfs::create_directories(bfs::path(outDir));
     }
 
@@ -446,8 +446,8 @@ int main(int argc, char** argv)
         openMVG::Pair indexImagePair = openMVG::Pair(docMatches.first, comparedPicture.id);
         
         //Get the regions for the current view pair.
-		    //const openMVG::features::SIFT_Regions& lRegions = dynamic_cast<openMVG::features::SIFT_Regions>(regionsPerView->getRegions(indexImagePair.first);
-		    //const openMVG::features::SIFT_Regions& rRegions = dynamic_cast<openMVG::features::SIFT_Regions>(regionsPerView->getRegions(indexImagePair.second);
+//        const openMVG::features::SIFT_Regions& lRegions = dynamic_cast<openMVG::features::SIFT_Regions>(regionsPerView->getRegions(indexImagePair.first);
+//        const openMVG::features::SIFT_Regions& rRegions = dynamic_cast<openMVG::features::SIFT_Regions>(regionsPerView->getRegions(indexImagePair.second);
         
         //Distances Vector
         //const std::vector<float> distances;
@@ -489,8 +489,9 @@ int main(int argc, char** argv)
     for(std::size_t j = 0; j < matches.size(); ++j)
     {
       OPENMVG_COUT("\t match " << matches[j].id << " with score " << matches[j].score);
-      //			OPENMVG_CERR("" <<  i->first << " " << matches[j].id << " " << matches[j].score);
-      if(withOutput && !matlabOutput) fileout << docMatches.first << " " << matches[j].id << " " << matches[j].score << std::endl;
+//      OPENMVG_CERR("" << i->first << " " << matches[j].id << " " << matches[j].score);
+      if(withOutput && !matlabOutput) 
+        fileout << docMatches.first << " " << matches[j].id << " " << matches[j].score << std::endl;
 
       if(withOutDir)
       {
