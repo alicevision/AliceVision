@@ -59,10 +59,10 @@ double LeastMedianOfSquares(const Kernel &kernel,
     for(std::size_t k = 0; k < models.size(); ++k)
     {
       //Compute Residuals :
-      for(std::size_t l = 0; l < total_samples; ++l)
+      for(std::size_t sampleIdx = 0; sampleIdx < total_samples; ++sampleIdx)
       {
-        double error = kernel.Error(l, models[k]);
-        residuals[l] = error;
+        double error = kernel.Error(sampleIdx, models[k]);
+        residuals[sampleIdx] = error;
       }
 
       // Compute median
