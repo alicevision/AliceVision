@@ -5,6 +5,6 @@ target_link_libraries(openMVG_graph
             ${LOG_LIB}
 )
 
-UNIT_TEST(openMVG graph_connectedComponent "openMVG_graph")
-UNIT_TEST(openMVG graph_triplet_finder     "openMVG_graph")
+UNIT_TEST(openMVG connectedComponent "openMVG_graph")
+UNIT_TEST(openMVG triplet_finder     "openMVG_graph")
 
