@@ -55,21 +55,21 @@ set(LOCAL_LIBS
 )
 
 # Linfinity Triangulation
-UNIT_TEST(openMVG_lInftyCV triangulation "${LOCAL_LIBS}")
+UNIT_TEST(openMVG lInftyCV_triangulation "${LOCAL_LIBS}")
 
 # Linfinity Pose/Resection estimation
-UNIT_TEST(openMVG_lInftyCV resection        "${LOCAL_LIBS}")
-UNIT_TEST(openMVG_lInftyCV resection_robust "${LOCAL_LIBS}")
+UNIT_TEST(openMVG lInftyCV_resection        "${LOCAL_LIBS}")
+UNIT_TEST(openMVG lInftyCV_resection_robust "${LOCAL_LIBS}")
 
 # Linfinity Global translations from triplets of heading directions
-UNIT_TEST(openMVG_lInftyCV global_translations_fromTriplets "${LOCAL_LIBS}")
+UNIT_TEST(openMVG lInftyCV_global_translations_fromTriplets "${LOCAL_LIBS}")
 
 # Linfinity Global translations from heading directions
-UNIT_TEST(openMVG_lInftyCV global_translations_fromTij "${LOCAL_LIBS}")
+UNIT_TEST(openMVG lInftyCV_global_translations_fromTij "${LOCAL_LIBS}")
 
 # Linfinity Translation and Structure 
-UNIT_TEST(openMVG_lInftyCV tijsAndXis "${LOCAL_LIBS}")
+UNIT_TEST(openMVG lInftyCV_tijsAndXis "${LOCAL_LIBS}")
 
 # Linfinity Translation and Structure with noise handling
-UNIT_TEST(openMVG_lInftyCV tijsAndXis_outlier "${LOCAL_LIBS}")
+UNIT_TEST(openMVG lInftyCV_tijsAndXis_outlier "${LOCAL_LIBS}")
 
