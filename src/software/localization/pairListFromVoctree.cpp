@@ -202,8 +202,6 @@ int main(int argc, char** argv)
   std::size_t nbMaxDescriptors = 0;
   /// the file in which to save the results
   std::string outfile = "pairList.txt";
-  /// flag for the optional output file
-  bool withOutput = false;
   /// the number of matches to retrieve for each image
   std::size_t numImageQuery = 10;
 
@@ -254,15 +252,6 @@ int main(int argc, char** argv)
     std::cerr << "ERROR: " << e.what() << std::endl << std::endl;
     std::cout << "Usage:\n\n" << desc << std::endl;
     return EXIT_FAILURE;
-  }
-
-  if(vm.count("weights"))
-  {
-    withWeights = true;
-  }
-  if(vm.count("outfile"))
-  {
-    withOutput = true;
   }
 
   //**********************************************************
