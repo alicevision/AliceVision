@@ -12,72 +12,63 @@
 namespace openMVG {
 namespace keyframe {
 
-float computeSharpness(const image::Image<unsigned char>& imageGray, 
-                        const unsigned int tileHeight, 
-                        const unsigned int tileWidth, 
-                        const unsigned int sharpSubset)
-{
-  image::Image<float> image;
-  image::Image<float> scharrXDer;
-  image::Image<float> scharrYDer;
-  
-  image::ConvertPixelType(imageGray, &image);
-  image::ImageScharrXDerivative(image, scharrXDer); // normalized
-  image::ImageScharrYDerivative(image, scharrYDer); // normalized
-
-  scharrXDer = scharrXDer.cwiseAbs(); //absolute value
-  scharrYDer = scharrYDer.cwiseAbs(); //absolute value
-  
-  // image tiles 
-  std::vector<float> averageTileIntensity; 
-  const float tileSizeInv = 1 / static_cast<float>(tileHeight * tileWidth);
-  
-  for(size_t y =  0; y < imageGray.Height(); y += tileHeight)
-  {
-    for(size_t x =  0; x < imageGray.Width(); x += tileWidth)
-    {
-      const auto sum = scharrXDer.block(y, x, tileHeight, tileWidth).sum() + scharrYDer.block(y, x, tileHeight, tileWidth).sum();
-
-      averageTileIntensity.push_back(sum * tileSizeInv);
-    }
-  }
-  
-  // sort tiles average pixel intensity 
-  std::sort(averageTileIntensity.begin(), averageTileIntensity.end()); 
-
-  // return the sum of the subset average pixel intensity
-  return std::accumulate(averageTileIntensity.end() - sharpSubset, averageTileIntensity.end(), 0.0f) / sharpSubset;
-}
-
-
-KeyframeSelector::KeyframeSelector(const std::string& mediaFilePath,
-                                    const std::string& sensorDbPath,
-                                    const std::string& voctreeFilePath,
-                                    const std::string& outputDirectory)
- : _mediaFilePath(mediaFilePath)
- , _sensorDbPath(sensorDbPath)
- , _voctreeFilePath(voctreeFilePath)
- , _outputDirectory(outputDirectory)
- , _feed(_mediaFilePath)
+KeyframeSelector::KeyframeSelector(const std::vector<std::string>& mediaPaths,
+                                   const std::string& sensorDbPath,
+                                   const std::string& voctreeFilePath,
+                                   const std::string& outputDirectory)
+  : _mediaPaths(mediaPaths)
+  , _sensorDbPath(sensorDbPath)
+  , _voctreeFilePath(voctreeFilePath)
+  , _outputDirectory(outputDirectory)
 {
   // load vocabulary tree
   _voctree.reset(new openMVG::voctree::VocabularyTree<DescriptorFloat>(voctreeFilePath));
-  
+
   {
-      OPENMVG_COUT("vocabulary tree loaded with" << endl);
-      OPENMVG_COUT("\t" << _voctree->levels() << " levels" << std::endl);
-      OPENMVG_COUT("\t" << _voctree->splits() << " branching factor" << std::endl);
+      OPENMVG_COUT("vocabulary tree loaded with :");
+      OPENMVG_COUT(" - " << _voctree->levels() << " levels");
+      OPENMVG_COUT(" - " << _voctree->splits() << " branching factor");
+  }
+
+  // check number of input media filePaths
+  if(mediaPaths.empty())
+  {
+    OPENMVG_CERR("ERROR : can't create KeyframeSelector without media file path !");
+    throw std::invalid_argument("ERROR : can't create KeyframeSelector without media file path !");
+  }
+
+  // resize mediasInfo container
+  _mediasInfo.resize(mediaPaths.size());
+
+  // create feeds and count minimum number of frames
+  std::size_t nbFrames = std::numeric_limits<std::size_t>::max();
+  for(const auto& path : _mediaPaths)
+  {
+    // create a feed provider per mediaPaths
+    _feeds.emplace_back(new dataio::FeedProvider(path));
+
+    const auto& feed = *_feeds.back();
+
+    // check if feed is initialized
+    if(!feed.isInit())
+    {
+      OPENMVG_CERR("ERROR : while initializing the FeedProvider with " << path);
+      throw std::invalid_argument("ERROR : while initializing the FeedProvider with " + path);
+    }
+
+    // update minimum number of frames
+    nbFrames = std::min(nbFrames, feed.nbFrames());
   }
   
-  // load media 
-  if(!_feed.isInit())
+  // check if minimum number of frame is zero
+  if(nbFrames == 0)
   {
-    OPENMVG_CERR("ERROR while initializing the FeedProvider !");
-    throw std::invalid_argument("ERROR while initializing the FeedProvider with " + _mediaFilePath);
+    OPENMVG_CERR("ERROR : one or multiple medias are empty (no frames) !");
+    throw std::invalid_argument("ERROR : one or multiple medias are empty (no frames) !");
   }
-  
+
   // resize selection data vector
-  _selectionData.resize(_feed.nbFrames());
+  _framesData.resize(nbFrames);
 
   // create SIFT image describer
   _imageDescriber.reset(new features::SIFT_Image_describer());
@@ -91,190 +82,279 @@ void KeyframeSelector::process()
   bool hasIntrinsics = false;                           // true if queryIntrinsics is valid
   std::string currentImgName;                           // current image name
   
-  // first frame
-  if(!_feed.readImage(image, queryIntrinsics, currentImgName, hasIntrinsics))
-  {
-    OPENMVG_CERR("ERROR can't read media first frame !");
-    throw std::invalid_argument("ERROR can't read media first frame of " + _mediaFilePath);
-  }
-  
-  // algorithm variable
-  const int halfHeight = image.Height() / 2;
-  const int halfWidth = image.Width() / 2;
-  
-  const unsigned int tileSharpSubset =  (_nbTileSide * _nbTileSide) / _sharpSubset;
-  const unsigned int tileHeight = halfHeight / _nbTileSide;
-  const unsigned int tileWidth = halfWidth / _nbTileSide;
+  // process variables
   const unsigned int frameStep = _maxFrameStep - _minFrameStep;
+  const unsigned int tileSharpSubset =  (_nbTileSide * _nbTileSide) / _sharpSubset;
   
-  // define output image metadata
-  
-  if(!_focalIsMM)
+  for(std::size_t mediaIndex = 0 ; mediaIndex < _feeds.size(); ++mediaIndex)
   {
-    convertFocalLengthInMM(image.Width());
-  }
-  
-  oiio::ImageSpec spec(image.Width(), image.Height(), 3, oiio::TypeDesc::UINT8); //always jpeg
-  spec.attribute ("oiio:ColorSpace", "sRGB");
-  spec.attribute("Make", _brand);
-  spec.attribute("Model", _model);
-  spec.attribute("Exif:FocalLength", _focalLength);
-  
-  // selection
-  
-  _keyframeIndexes.clear();
-  size_t currentFrameStep = _minFrameStep; //begin directly
-  size_t currentFrameIndex = 0;
+    // first frame
+    if(!_feeds.at(mediaIndex)->readImage(image, queryIntrinsics, currentImgName, hasIntrinsics))
+    {
+      OPENMVG_CERR("ERROR : can't read media first frame " << _mediaPaths[mediaIndex]);
+      throw std::invalid_argument("ERROR : can't read media first frame " + _mediaPaths[mediaIndex]);
+    }
 
-  while(_feed.readImage(image, queryIntrinsics, currentImgName, hasIntrinsics))
+    // define output image metadata
+    if(!_cameraInfos.at(mediaIndex).focalIsMM)
+    {
+      convertFocalLengthInMM(_cameraInfos.at(mediaIndex), image.Width());
+    }
+
+    // define media informations variables
+    auto& mediaInfo =  _mediasInfo.at(mediaIndex);
+    mediaInfo.halfHeight = image.Height() / 2;
+    mediaInfo.halfWidth = image.Width() / 2;
+    mediaInfo.tileHeight = mediaInfo.halfHeight / _nbTileSide;
+    mediaInfo.tileWidth = mediaInfo.halfWidth / _nbTileSide;
+    mediaInfo.spec = oiio::ImageSpec(image.Width(), image.Height(), 3, oiio::TypeDesc::UINT8); // always jpeg
+    mediaInfo.spec.attribute("CompressionQuality", 100);   // always best compression quality
+    mediaInfo.spec.attribute("jpeg:subsampling", "4:4:4"); // always subsampling 4:4:4
+    mediaInfo.spec.attribute("oiio:ColorSpace", "sRGB");   // always sRGB
+    mediaInfo.spec.attribute("Make",  _cameraInfos[mediaIndex].brand);
+    mediaInfo.spec.attribute("Model", _cameraInfos[mediaIndex].model);
+    mediaInfo.spec.attribute("Exif:FocalLength", _cameraInfos[mediaIndex].focalLength);
+  }
+
+  // iteration process
+  _keyframeIndexes.clear();
+  std::size_t currentFrameStep = _minFrameStep; // start directly (dont skip minFrameStep first frames)
+  
+  for(std::size_t frameIndex = 0; frameIndex < _framesData.size(); ++frameIndex)
   {
-    OPENMVG_COUT("frame : " << currentFrameIndex <<  std::endl);
-    
-    // compute sharpness and sparse distance
-    computeFrameData(image, currentFrameIndex, tileSharpSubset, tileHeight, tileWidth);
-    
-    if(currentFrameStep >= _maxFrameStep) // evaluation
+    OPENMVG_COUT("frame : " << frameIndex <<  std::endl);
+    bool selected = true;
+    auto& frameData = _framesData.at(frameIndex);
+    frameData.mediasData.resize(_feeds.size());
+
+    for(std::size_t mediaIndex = 0; mediaIndex < _feeds.size(); ++mediaIndex)
+    {   
+      OPENMVG_COUT("media : " << _mediaPaths.at(mediaIndex) << std::endl);
+
+      auto& feed = *_feeds.at(mediaIndex);
+
+      if(!feed.readImage(image, queryIntrinsics, currentImgName, hasIntrinsics))
+      {
+        OPENMVG_CERR("ERROR  : can't read frame '" << currentImgName << "' !");
+        throw std::invalid_argument("ERROR : can't read frame '" + currentImgName + "' !");
+      }
+
+      // compute sharpness and sparse distance
+      if(!computeFrameData(image, frameIndex, mediaIndex, tileSharpSubset))
+      {
+        selected = false;
+        break;
+      }
+
+      feed.goToNextFrame();
+    }
+
+    {
+      if(selected)
+      {
+        OPENMVG_COUT(" > selected "  <<  std::endl);
+        frameData.selected = true;
+        frameData.computeAvgSharpness();
+      }
+      else
+      {
+        OPENMVG_COUT(" > skipped "  <<  std::endl);
+        frameData.mediasData.clear(); // remove unselected mediasData
+      }
+    }
+
+    // selection process
+    if(currentFrameStep >= _maxFrameStep)
     {
       currentFrameStep = _minFrameStep;
-      size_t maxIndex = 0; 
+      std::size_t keyframeIndex = 0;
       float maxSharpness = 0;
-      
-      //find the sharpest selected frame 
-      for(size_t index = currentFrameIndex - (frameStep - 1); index <= currentFrameIndex; ++index)
+
+      // find the sharpest selected frame
+      for(std::size_t index = frameIndex - (frameStep - 1); index <= frameIndex; ++index)
       {
-        if(_selectionData[index].selected && (_selectionData[index].sharpness > maxSharpness))
+        if(_framesData[index].selected && (_framesData[index].avgSharpness > maxSharpness))
         {
-          maxIndex = index;
-          maxSharpness = _selectionData[index].sharpness;
+          keyframeIndex = index;
+          maxSharpness = _framesData[index].avgSharpness;
         }
       }
-      
-      OPENMVG_COUT("-> keyframe choice : " << maxIndex <<  std::endl);
-      
-      if(maxIndex != 0)
+
+      OPENMVG_COUT("--> keyframe choice : " << keyframeIndex <<  std::endl);
+
+      // save keyframe
+      if(keyframeIndex != 0)
       {
-        currentFrameIndex = maxIndex; 
-        _feed.goToFrame(currentFrameIndex);  
-        _feed.readImage(image, queryIntrinsics, currentImgName, hasIntrinsics);
-        if(_maxOutFrame == 0) //no limit of keyframes
+        if(_maxOutFrame == 0) // no limit of keyframes (direct evaluation)
         {
-          writeKeyframe(image, spec, currentFrameIndex);
-          //WriteImage((_outputDirectory + "/frame_" + to_string(currentFrameIndex) + ".jpg").c_str() , image); //write without metadata
+          // write keyframe
+          for(std::size_t mediaIndex = 0; mediaIndex < _feeds.size(); ++mediaIndex)
+          {
+            auto& feed = *_feeds.at(mediaIndex);
+
+            feed.goToFrame(keyframeIndex);
+            feed.readImage(image, queryIntrinsics, currentImgName, hasIntrinsics);
+
+            writeKeyframe(image, keyframeIndex, mediaIndex);
+          }
         }
-        _selectionData[currentFrameIndex].keyframe = true;
-        _keyframeIndexes.push_back(currentFrameIndex);
-        currentFrameIndex += _minFrameStep - 1;
+        _framesData[keyframeIndex].keyframe = true;
+        _keyframeIndexes.push_back(keyframeIndex);
+
+        frameIndex = keyframeIndex + _minFrameStep - 1;
       }
     }
-    
-    ++currentFrameIndex;
     ++currentFrameStep;
-    _feed.goToFrame(currentFrameIndex); 
   }
-  
-  if(_maxOutFrame == 0) //no limit of keyframes
+
+  if(_maxOutFrame == 0) // no limit of keyframes (evaluation and write already done)
   {
-    return; 
+    return;
   }
-  
-  // if limited number of keyframe select smallest sparse distance 
+
+  // if limited number of keyframe select smallest sparse distance
   {
-    std::vector< std::tuple<float, float, size_t> > keyframes;
-    
-    for(size_t i = 0; i < _selectionData.size(); ++i)
+    std::vector< std::tuple<float, float, std::size_t> > keyframes;
+
+    for(std::size_t i = 0; i < _framesData.size(); ++i)
     {
-      if((_selectionData[i].keyframe) && (_selectionData[i].sharpness != 0.0f))
+      if(_framesData[i].keyframe)
       {
-        keyframes.emplace_back(_selectionData[i].distScore, 1 / _selectionData[i].sharpness, i);
+        keyframes.emplace_back(_framesData[i].minDistScore, 1 / _framesData[i].avgSharpness, i);
       }
     }
-    std::sort(keyframes.begin(), keyframes.end()); 
-    
-    for(size_t i = 0; i < _maxOutFrame; ++i)
+    std::sort(keyframes.begin(), keyframes.end());
+
+    for(std::size_t i = 0; i < _maxOutFrame; ++i)
     {
-        _feed.goToFrame(i);  
-        _feed.readImage(image, queryIntrinsics, currentImgName, hasIntrinsics);
-        writeKeyframe(image, spec, currentFrameIndex);
-        //WriteImage((_outputDirectory + "/frame_" + to_string(currentFrameIndex) + ".jpg").c_str() , image); //write without metadata
+      const std::size_t frameIndex = std::get<2>(keyframes.at(i));
+      for(std::size_t mediaIndex = 0; mediaIndex < _feeds.size(); ++mediaIndex)
+      {
+        auto& feed = *_feeds.at(mediaIndex);
+        feed.goToFrame(frameIndex);
+        feed.readImage(image, queryIntrinsics, currentImgName, hasIntrinsics);
+        writeKeyframe(image, frameIndex, mediaIndex);
+      }
     }
   }
 }
 
-void KeyframeSelector::computeFrameData(const image::Image<image::RGBColor>& image, 
-        size_t frameIndex, 
-        unsigned int tileSharpSubset,
-        unsigned int tileHeight,
-        unsigned int tileWidth
-        )
+float KeyframeSelector::computeSharpness(const image::Image<unsigned char>& imageGray,
+                                         const unsigned int tileHeight,
+                                         const unsigned int tileWidth,
+                                         const unsigned int tileSharpSubset) const
+{
+  image::Image<float> image;
+  image::Image<float> scharrXDer;
+  image::Image<float> scharrYDer;
+
+  image::ConvertPixelType(imageGray, &image);
+  image::ImageScharrXDerivative(image, scharrXDer); // normalized
+  image::ImageScharrYDerivative(image, scharrYDer); // normalized
+
+  scharrXDer = scharrXDer.cwiseAbs(); // absolute value
+  scharrYDer = scharrYDer.cwiseAbs(); // absolute value
+
+  // image tiles
+  std::vector<float> averageTileIntensity;
+  const float tileSizeInv = 1 / static_cast<float>(tileHeight * tileWidth);
+
+  for(std::size_t y =  0; y < (_nbTileSide * tileHeight); y += tileHeight)
+  {
+    for(std::size_t x =  0; x < (_nbTileSide * tileWidth); x += tileWidth)
+    {
+      const auto sum = scharrXDer.block(y, x, tileHeight, tileWidth).sum() + scharrYDer.block(y, x, tileHeight, tileWidth).sum();
+      averageTileIntensity.push_back(sum * tileSizeInv);
+    }
+  }
+
+  // sort tiles average pixel intensity
+  std::sort(averageTileIntensity.begin(), averageTileIntensity.end());
+
+  // return the sum of the subset average pixel intensity
+  return std::accumulate(averageTileIntensity.end() - tileSharpSubset, averageTileIntensity.end(), 0.0f) / tileSharpSubset;
+}
+
+
+bool KeyframeSelector::computeFrameData(const image::Image<image::RGBColor>& image,
+                                        std::size_t frameIndex,
+                                        std::size_t mediaIndex,
+                                        unsigned int tileSharpSubset)
 {
   image::Image<unsigned char> imageGray;                // grayscale image
   image::Image<unsigned char> imageGrayHalfSample;      // half resolution grayscale image
   
-  auto& frameData = _selectionData[frameIndex];
+  const auto& currMediaInfo = _mediasInfo.at(mediaIndex);
+  auto& currMediaData = _framesData.at(frameIndex).mediasData.at(mediaIndex);
 
   // get grayscale image and resize
   image::ConvertPixelType(image, &imageGray);
   image::ImageHalfSample(imageGray, imageGrayHalfSample);
 
   // compute sharpness
-  frameData.sharpness = computeSharpness(imageGrayHalfSample, tileHeight, tileWidth, tileSharpSubset);
-  OPENMVG_COUT( " - sharpness : " << frameData.sharpness <<  std::endl);
+  currMediaData.sharpness = computeSharpness(imageGrayHalfSample,
+                                             currMediaInfo.tileHeight,
+                                             currMediaInfo.tileWidth,
+                                             tileSharpSubset);
 
-  if(frameData.sharpness > _sharpnessThreshold) 
+  OPENMVG_COUT( " - sharpness : " << currMediaData.sharpness <<  std::endl);
+
+  if(currMediaData.sharpness > _sharpnessThreshold)
   {
     bool noKeyframe = (_keyframeIndexes.empty());
+
     // compute current frame sparse histogram
     std::unique_ptr<features::Regions> regions;
     _imageDescriber->Describe(imageGrayHalfSample, regions);
-    frameData.histogram.reset( new voctree::SparseHistogram(_voctree->quantizeToSparse(dynamic_cast<features::SIFT_Regions*>(regions.get())->Descriptors())));
+    currMediaData.histogram = voctree::SparseHistogram(_voctree->quantizeToSparse(dynamic_cast<features::SIFT_Regions*>(regions.get())->Descriptors()));
 
     // compute sparseDistance
     if(!noKeyframe)
     {
       unsigned int nbKeyframetoCompare = (_keyframeIndexes.size() < _nbKeyFrameDist)? _keyframeIndexes.size() : _nbKeyFrameDist;
-      
-      for(size_t i = _keyframeIndexes.size() - nbKeyframetoCompare; i < _keyframeIndexes.size(); ++i)
-      {
-        frameData.distScore = std::min(frameData.distScore, std::abs(voctree::sparseDistance(*(_selectionData[i].histogram), *(frameData.histogram), "strongCommonPoints"))); 
-      }
 
-      OPENMVG_COUT(" - distScore : " << frameData.distScore <<  std::endl);
+      for(std::size_t i = _keyframeIndexes.size() - nbKeyframetoCompare; i < _keyframeIndexes.size(); ++i)
+      {
+        for(auto& media : _framesData.at(_keyframeIndexes.at(i)).mediasData)
+        {
+          currMediaData.distScore = std::min(currMediaData.distScore, std::abs(voctree::sparseDistance(media.histogram, currMediaData.histogram, "strongCommonPoints")));
+        }
+      }
+      OPENMVG_COUT(" - distScore : " << currMediaData.distScore <<  std::endl);
     }
-    
-    if(noKeyframe || (frameData.distScore < _distScoreMax))
+
+    if(noKeyframe || (currMediaData.distScore < _distScoreMax))
     {
-      OPENMVG_COUT(" - selected "  <<  std::endl);
-      frameData.selected = true;
+      return true;
     }
-    else
-    {
-      frameData.histogram->clear(); //clear unselected frame histogram  
-    }
-  }
+  } 
+  return false;
 }
 
 void KeyframeSelector::writeKeyframe(const image::Image<image::RGBColor>& image, 
-                                      const oiio::ImageSpec& spec,
-                                      size_t frameIndex)
+                                     std::size_t frameIndex,
+                                     std::size_t mediaIndex)
 {
-  const auto filepath = _outputDirectory + "/frame_" + to_string(frameIndex) + ".jpg";
+  const auto& mediaInfo = _mediasInfo.at(mediaIndex);
+  const auto filepath = _outputDirectory + "/frame_" + to_string(frameIndex) + "_media_" + to_string(mediaIndex) + ".jpg";
+
   std::unique_ptr<oiio::ImageOutput> out(oiio::ImageOutput::create(filepath));
   
   if(out.get() == nullptr)
   {
-      throw std::invalid_argument("ERROR can't create image file : " + filepath);
+    throw std::invalid_argument("ERROR : can't create image file : " + filepath);
   }
   
-  if(!out->open(filepath, spec))
+  if(!out->open(filepath, mediaInfo.spec))
   {
-      throw std::invalid_argument("ERROR can't open image file : " + filepath);
+    throw std::invalid_argument("ERROR : can't open image file : " + filepath);
   }
 
-  out->write_image(oiio::TypeDesc::UINT8, image.data()); //always jpeg
+  out->write_image(oiio::TypeDesc::UINT8, image.data()); // always jpeg
   out->close();
 }
 
-void KeyframeSelector::convertFocalLengthInMM(int imageWidth)
+void KeyframeSelector::convertFocalLengthInMM(CameraInfo& cameraInfo, int imageWidth)
 {
   assert(imageWidth > 0);
   
@@ -282,15 +362,15 @@ void KeyframeSelector::convertFocalLengthInMM(int imageWidth)
   std::vector<exif::sensordb::Datasheet> vecDatabase;
   exif::sensordb::parseDatabase(_sensorDbPath, vecDatabase);
 
-  if(exif::sensordb::getInfo(_brand, _model, vecDatabase, find))
+  if(exif::sensordb::getInfo(cameraInfo.brand, cameraInfo.model, vecDatabase, find))
   {
-    _focalLength = (_focalLength * find._sensorSize) / imageWidth;
-    _focalIsMM = true;
-    OPENMVG_COUT("Focal length converted in mm : " << _focalLength << std::endl);
+    cameraInfo.focalLength = (cameraInfo.focalLength * find._sensorSize) / imageWidth;
+    cameraInfo.focalIsMM = true;
+    OPENMVG_COUT("INFO : Focal length converted in mm : " << cameraInfo.focalLength << std::endl);
   }
   else
   {
-    OPENMVG_COUT("WARNING can't convert focal length in mm  : " << _brand << " / " << _model <<  std::endl);
+    OPENMVG_COUT("WARNING : can't convert focal length in mm  : " << cameraInfo.brand << " / " << cameraInfo.model <<  std::endl);
   }
 }
 
