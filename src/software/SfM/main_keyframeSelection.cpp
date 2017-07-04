@@ -67,7 +67,7 @@ int main(int argc, char** argv)
       ("minFrameStep", po::value<unsigned int>(&minFrameStep)->default_value(minFrameStep), 
         "minimum number of frames between two keyframes")
       ("maxFrameStep", po::value<unsigned int>(&maxFrameStep)->default_value(maxFrameStep), 
-        "maximum number of frames for trying to select a keyframe")
+        "maximum number of frames after which a keyframe can be taken")
       ("maxNbOutFrame", po::value<unsigned int>(&maxNbOutFrame)->default_value(maxNbOutFrame), 
         "maximum number of output frames (0 = no limit)");
 

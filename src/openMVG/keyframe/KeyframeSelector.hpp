@@ -117,7 +117,7 @@ public:
 
   /**
    * @brief Set max frame step for process algorithm
-   * @param[in] frameStep maximum number of frames for evaluation
+   * @param[in] frameStep maximum number of frames after which a keyframe can be taken
    */
   void setMaxFrameStep(unsigned int frameStep)
   {
