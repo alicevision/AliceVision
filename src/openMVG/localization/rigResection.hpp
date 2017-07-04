@@ -1,16 +1,17 @@
 #pragma once
-
+#include <openMVG/config.hpp>
 #include <openMVG/types.hpp>
+#include <openMVG/features/ImageDescriberCommon.hpp>
 #include <openMVG/cameras/Camera_Pinhole_Radial.hpp>
 #include <openMVG/geometry/pose3.hpp>
 #include <openMVG/numeric/numeric.h>
 
 #include <vector>
 
-namespace openMVG{
+namespace openMVG {
 namespace localization{
 
-#ifdef HAVE_OPENGV
+#if OPENMVG_IS_DEFINED(OPENMVG_HAVE_OPENGV)
 
 /**
  * @brief It computes the pose of a camera rig given the 2d-3d associations of 
@@ -27,6 +28,8 @@ namespace localization{
  * camera of the rig.
  * @param[in] vec_subPoses A vector containing the subposes of the cameras wrt 
  * the main one, ie the camera 0. This vector has numCameras-1 elements.
+ * @param[in] descTypesPerCamera optional vector of describer types per camera.
+ * It is used in the weighting stategy to decide if the resection is strongly supported.
  * @param[out] rigPose The rig pose referred to the position of the main camera.
  * @param[out] inliers A vector of the same size as the number of cameras c
  * ontaining the indices of inliers.
@@ -38,10 +41,11 @@ namespace localization{
  * @param[in] verbosity Mute/unmute the debugging messages.
  * @return true if the ransac has success.
  */
-bool rigResection(const std::vector<Mat> &vec_pts2d, 
+EstimationStatus rigResection(const std::vector<Mat> &vec_pts2d,
                   const std::vector<Mat> &vec_pts3d,
                   const std::vector<cameras::Pinhole_Intrinsic_Radial_K3 > &vec_queryIntrinsics,
                   const std::vector<geometry::Pose3 > &vec_subPoses,
+                  const std::vector< std::vector<features::EImageDescriberType> > * descTypesPerCamera,
                   geometry::Pose3 &rigPose,
                   std::vector<std::vector<std::size_t> > &inliers,
                   double threshold = D2R(0.1),

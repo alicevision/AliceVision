@@ -3,7 +3,6 @@
 #include "database.hpp"
 #include "vocabulary_tree.hpp"
 #include <openMVG/types.hpp>
-#include <openMVG/features/descriptor.hpp>
 
 #include <string>
 

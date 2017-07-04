@@ -8,6 +8,8 @@
 
 #include "openMVG/multiview/triangulation_nview.hpp"
 #include "openMVG/robust_estimation/rand_sampling.hpp"
+#include <openMVG/config.hpp>
+
 #include "third_party/progress/progress.hpp"
 
 #include <deque>
@@ -38,29 +40,23 @@ void SfM_Data_Structure_Computation_Blind::triangulate(SfM_Data & sfm_data) cons
     sfm_data.structure.size(),
     std::cout,
     "Blind triangulation progress:\n" ));
-#ifdef OPENMVG_USE_OPENMP
   #pragma omp parallel
-#endif
   for(Landmarks::iterator iterTracks = sfm_data.structure.begin();
     iterTracks != sfm_data.structure.end();
     ++iterTracks)
   {
-#ifdef OPENMVG_USE_OPENMP
-  #pragma omp single nowait
-#endif
+    #pragma omp single nowait
     {
       if (_bConsoleVerbose)
       {
-#ifdef OPENMVG_USE_OPENMP
-  #pragma omp critical
-#endif
+        #pragma omp critical
         ++(*my_progress_bar);
       }
       // Triangulate each landmark
       Triangulation trianObj;
-      const Observations & obs = iterTracks->second.obs;
-      for(Observations::const_iterator itObs = obs.begin();
-        itObs != obs.end(); ++itObs)
+      const Observations & observations = iterTracks->second.observations;
+      for(Observations::const_iterator itObs = observations.begin();
+        itObs != observations.end(); ++itObs)
       {
         const View * view = sfm_data.views.at(itObs->first).get();
         if (sfm_data.IsPoseAndIntrinsicDefined(view))
@@ -74,9 +70,7 @@ void SfM_Data_Structure_Computation_Blind::triangulate(SfM_Data & sfm_data) cons
       }
       if (trianObj.size() < 2)
       {
-#ifdef OPENMVG_USE_OPENMP
         #pragma omp critical
-#endif
         {
           rejectedId.push_front(iterTracks->first);
         }
@@ -91,9 +85,7 @@ void SfM_Data_Structure_Computation_Blind::triangulate(SfM_Data & sfm_data) cons
         }
         else
         {
-#ifdef OPENMVG_USE_OPENMP
           #pragma omp critical
-#endif
           {
             rejectedId.push_front(iterTracks->first);
           }
@@ -130,33 +122,25 @@ void SfM_Data_Structure_Computation_Robust::robust_triangulation(SfM_Data & sfm_
     sfm_data.structure.size(),
     std::cout,
     "Robust triangulation progress:\n" ));
-#ifdef OPENMVG_USE_OPENMP
   #pragma omp parallel
-#endif
   for(Landmarks::iterator iterTracks = sfm_data.structure.begin();
     iterTracks != sfm_data.structure.end();
     ++iterTracks)
   {
-#ifdef OPENMVG_USE_OPENMP
-  #pragma omp single nowait
-#endif
+    #pragma omp single nowait
     {
       if (_bConsoleVerbose)
       {
-#ifdef OPENMVG_USE_OPENMP
-  #pragma omp critical
-#endif
+        #pragma omp critical
         ++(*my_progress_bar);
       }
       Vec3 X;
-      if (robust_triangulation(sfm_data, iterTracks->second.obs, X)) {
+      if (robust_triangulation(sfm_data, iterTracks->second.observations, X)) {
         iterTracks->second.X = X;
       }
       else {
         iterTracks->second.X = Vec3::Zero();
-#ifdef OPENMVG_USE_OPENMP
-  #pragma omp critical
-#endif
+        #pragma omp critical
         {
           rejectedId.push_front(iterTracks->first);
         }
@@ -175,19 +159,19 @@ void SfM_Data_Structure_Computation_Robust::robust_triangulation(SfM_Data & sfm_
 /// Return true for a successful triangulation
 bool SfM_Data_Structure_Computation_Robust::robust_triangulation(
   const SfM_Data & sfm_data,
-  const Observations & obs,
+  const Observations & observations,
   Vec3 & X,
   const IndexT min_required_inliers,
   const IndexT min_sample_index) const
 {
-  if (obs.size() < 3)
+  if (observations.size() < 3)
   {
     return false;
   }
 
   const double dThresholdPixel = 4.0; // TODO: make this parameter customizable
 
-  const IndexT nbIter = obs.size(); // TODO: automatic computation of the number of iterations?
+  const IndexT nbIter = observations.size(); // TODO: automatic computation of the number of iterations?
 
   // - Ransac variables
   Vec3 best_model;
@@ -198,10 +182,10 @@ bool SfM_Data_Structure_Computation_Robust::robust_triangulation(
   for (IndexT i = 0; i < nbIter; ++i)
   {
     std::set<IndexT> samples;
-    robust::UniformSample(std::min(std::size_t(min_sample_index), obs.size()), obs.size(), &samples);
+    robust::UniformSample(std::min(std::size_t(min_sample_index), observations.size()), observations.size(), &samples);
 
     // Hypothesis generation.
-    const Vec3 current_model = track_sample_triangulation(sfm_data, obs, samples);
+    const Vec3 current_model = track_sample_triangulation(sfm_data, observations, samples);
 
     // Test validity of the hypothesis
     // - chierality (for the samples)
@@ -210,7 +194,7 @@ bool SfM_Data_Structure_Computation_Robust::robust_triangulation(
     // Chierality (Check the point is in front of the sampled cameras)
     bool bChierality = true;
     for (auto& it : samples){
-      Observations::const_iterator itObs = obs.begin();
+      Observations::const_iterator itObs = observations.begin();
       std::advance(itObs, it);
       const View * view = sfm_data.views.at(itObs->first).get();
       const IntrinsicBase * cam = sfm_data.GetIntrinsics().at(view->id_intrinsic).get();
@@ -225,8 +209,8 @@ bool SfM_Data_Structure_Computation_Robust::robust_triangulation(
     std::set<IndexT> inlier_set;
     double current_error = 0.0;
     // Classification as inlier/outlier according pixel residual errors.
-    for (Observations::const_iterator itObs = obs.begin();
-        itObs != obs.end(); ++itObs)
+    for (Observations::const_iterator itObs = observations.begin();
+        itObs != observations.end(); ++itObs)
     {
       const View * view = sfm_data.views.at(itObs->first).get();
       const IntrinsicBase * intrinsic = sfm_data.GetIntrinsics().at(view->id_intrinsic).get();
@@ -258,14 +242,14 @@ bool SfM_Data_Structure_Computation_Robust::robust_triangulation(
 /// Triangulate a given track from a selection of observations
 Vec3 SfM_Data_Structure_Computation_Robust::track_sample_triangulation(
   const SfM_Data & sfm_data,
-  const Observations & obs,
+  const Observations & observations,
   const std::set<IndexT> & samples) const
 {
   Triangulation trianObj;
   for (const IndexT idx : samples)
   {
-    assert(idx < obs.size());
-    Observations::const_iterator itObs = obs.begin();
+    assert(idx < observations.size());
+    Observations::const_iterator itObs = observations.begin();
     std::advance(itObs, idx);
     const View * view = sfm_data.views.at(itObs->first).get();
     const IntrinsicBase * cam = sfm_data.GetIntrinsics().at(view->id_intrinsic).get();

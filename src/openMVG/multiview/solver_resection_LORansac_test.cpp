@@ -57,7 +57,7 @@ bool refinePoseAsItShouldbe(const Mat & pt3D,
     const size_t idx = vec_inliers[i];
     Landmark landmark;
     landmark.X = pt3D.col(idx);
-    landmark.obs[0] = Observation(pt2D.col(idx), UndefinedIndexT);
+    landmark.observations[0] = Observation(pt2D.col(idx), UndefinedIndexT);
     sfm_data.structure[i] = std::move(landmark);
   }
 

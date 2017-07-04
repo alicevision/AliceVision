@@ -1,10 +1,8 @@
 #include "KeyframeSelector.hpp"
-
-#include <openMVG/exif/sensor_width_database/ParseDatabase.hpp>
-#include <openMVG/logger.hpp>
-
-#include <nonFree/sift/SIFT_describer.hpp>
-#include <nonFree/sift/SIFT_float_describer.hpp>
+#include "openMVG/image/image.hpp"
+#include "openMVG/features/sift/SIFT_describer.hpp"
+#include "openMVG/exif/sensor_width_database/ParseDatabase.hpp"
+#include "openMVG/logger.hpp"
 
 #include <tuple>
 #include <cassert>
@@ -33,8 +31,8 @@ KeyframeSelector::KeyframeSelector(const std::vector<std::string>& mediaPaths,
   // check number of input media filePaths
   if(mediaPaths.empty())
   {
-    OPENMVG_CERR("ERROR : can't create KeyframeSelector without media file path !");
-    throw std::invalid_argument("ERROR : can't create KeyframeSelector without media file path !");
+    OPENMVG_CERR("ERROR : can't create KeyframeSelector without a media file path !");
+    throw std::invalid_argument("ERROR : can't create KeyframeSelector without a media file path !");
   }
 
   // resize mediasInfo container
@@ -71,7 +69,7 @@ KeyframeSelector::KeyframeSelector(const std::vector<std::string>& mediaPaths,
   _framesData.resize(nbFrames);
 
   // create SIFT image describer
-  _imageDescriber.reset(new features::SIFT_Image_describer());
+  _imageDescriber.reset(new features::SIFT_ImageDescriber());
 }
 
 void KeyframeSelector::process()

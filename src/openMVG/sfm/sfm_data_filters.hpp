@@ -85,9 +85,9 @@ static IndexT RemoveOutliers_PixelResidualError
   Landmarks::iterator iterTracks = sfm_data.structure.begin();
   while (iterTracks != sfm_data.structure.end())
   {
-    Observations & obs = iterTracks->second.obs;
-    Observations::iterator itObs = obs.begin();
-    while (itObs != obs.end())
+    Observations & observations = iterTracks->second.observations;
+    Observations::iterator itObs = observations.begin();
+    while (itObs != observations.end())
     {
       const View * view = sfm_data.views.at(itObs->first).get();
       const geometry::Pose3 pose = sfm_data.GetPoseOrDie(view);
@@ -96,12 +96,12 @@ static IndexT RemoveOutliers_PixelResidualError
       if (residual.norm() > dThresholdPixel)
       {
         ++outlier_count;
-        itObs = obs.erase(itObs);
+        itObs = observations.erase(itObs);
       }
       else
         ++itObs;
     }
-    if (obs.empty() || obs.size() < minTrackLength)
+    if (observations.empty() || observations.size() < minTrackLength)
       iterTracks = sfm_data.structure.erase(iterTracks);
     else
       ++iterTracks;
@@ -121,10 +121,10 @@ static IndexT RemoveOutliers_AngleError
   Landmarks::iterator iterTracks = sfm_data.structure.begin();
   while (iterTracks != sfm_data.structure.end())
   {
-    Observations & obs = iterTracks->second.obs;
+    Observations & observations = iterTracks->second.observations;
     double max_angle = 0.0;
-    for (Observations::const_iterator itObs1 = obs.begin();
-      itObs1 != obs.end(); ++itObs1)
+    for (Observations::const_iterator itObs1 = observations.begin();
+      itObs1 != observations.end(); ++itObs1)
     {
       const View * view1 = sfm_data.views.at(itObs1->first).get();
       const geometry::Pose3 pose1 = sfm_data.GetPoseOrDie(view1);
@@ -132,7 +132,7 @@ static IndexT RemoveOutliers_AngleError
 
       Observations::const_iterator itObs2 = itObs1;
       ++itObs2;
-      for (; itObs2 != obs.end(); ++itObs2)
+      for (; itObs2 != observations.end(); ++itObs2)
       {
         const View * view2 = sfm_data.views.at(itObs2->first).get();
         const geometry::Pose3 pose2 = sfm_data.GetPoseOrDie(view2);
@@ -173,9 +173,9 @@ static bool eraseMissingPoses(SfM_Data & sfm_data, const IndexT min_points_per_p
   for (Landmarks::const_iterator itLandmarks = landmarks.begin();
     itLandmarks != landmarks.end(); ++itLandmarks)
   {
-    const Observations & obs = itLandmarks->second.obs;
-    for (Observations::const_iterator itObs = obs.begin();
-      itObs != obs.end(); ++itObs)
+    const Observations & observations = itLandmarks->second.observations;
+    for (Observations::const_iterator itObs = observations.begin();
+      itObs != observations.end(); ++itObs)
     {
       const IndexT ViewId = itObs->first;
       const View * v = sfm_data.GetViews().at(ViewId).get();
@@ -213,21 +213,21 @@ static bool eraseObservationsWithMissingPoses(SfM_Data & sfm_data, const IndexT 
   Landmarks::iterator itLandmarks = sfm_data.structure.begin();
   while (itLandmarks != sfm_data.structure.end())
   {
-    Observations & obs = itLandmarks->second.obs;
-    Observations::iterator itObs = obs.begin();
-    while (itObs != obs.end())
+    Observations & observations = itLandmarks->second.observations;
+    Observations::iterator itObs = observations.begin();
+    while (itObs != observations.end())
     {
       const IndexT ViewId = itObs->first;
       const View * v = sfm_data.GetViews().at(ViewId).get();
       if (reconstructedPoseIndexes.count(v->id_pose) == 0)
       {
-        itObs = obs.erase(itObs);
+        itObs = observations.erase(itObs);
         ++removed_elements;
       }
       else
         ++itObs;
     }
-    if (obs.empty() || obs.size() < min_points_per_landmark)
+    if (observations.empty() || observations.size() < min_points_per_landmark)
       itLandmarks = sfm_data.structure.erase(itLandmarks);
     else
       ++itLandmarks;

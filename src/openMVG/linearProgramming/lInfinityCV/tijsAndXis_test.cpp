@@ -6,6 +6,7 @@
 
 #include "openMVG/multiview/test_data_sets.hpp"
 #include "openMVG/numeric/numeric.h"
+#include <openMVG/config.hpp>
 #include "CppUnitLite/TestHarness.h"
 #include "testing/testing.h"
 
@@ -13,7 +14,9 @@
 
 #include "openMVG/linearProgramming/linearProgrammingInterface.hpp"
 #include "openMVG/linearProgramming/linearProgrammingOSI_X.hpp"
+#if OPENMVG_IS_DEFINED(OPENMVG_HAVE_MOSEK)
 #include "openMVG/linearProgramming/linearProgrammingMOSEK.hpp"
+#endif
 
 #include "openMVG/linearProgramming/bisectionLP.hpp"
 #include "openMVG/linearProgramming/lInfinityCV/tijsAndXis_From_xi_Ri.hpp"
@@ -198,7 +201,7 @@ TEST(Translation_Structure_L_Infinity, OSICLP_SOLVER_K) {
   d2.ExportToPLY("test_After_Infinity.ply");
 }
 
-#ifdef OPENMVG_HAVE_MOSEK
+#if OPENMVG_IS_DEFINED(OPENMVG_HAVE_MOSEK)
 TEST(Translation_Structure_L_Infinity, MOSEK) {
 
   const size_t nViews = 3;

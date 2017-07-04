@@ -9,12 +9,18 @@
 
 #include "openMVG/sfm/sfm_data_io.hpp"
 #include "openMVG/sfm/pipelines/sfm_engine.hpp"
-#include "openMVG/sfm/pipelines/sfm_features_provider.hpp"
+#include "openMVG/features/FeaturesPerView.hpp"
 #include "openMVG/sfm/pipelines/sfm_matches_provider.hpp"
 #include "openMVG/tracks/tracks.hpp"
 
 #include "third_party/htmlDoc/htmlDoc.hpp"
 #include "third_party/histogram/histogram.hpp"
+
+#if OPENMVG_IS_DEFINED(OPENMVG_HAVE_BOOST)
+  #include <boost/property_tree/ptree.hpp>
+  #include <boost/property_tree/json_parser.hpp>
+  namespace pt = boost::property_tree;
+#endif
 
 namespace openMVG {
 namespace sfm {
@@ -31,8 +37,15 @@ public:
 
   ~SequentialSfMReconstructionEngine();
 
-  void SetFeaturesProvider(Features_Provider * provider);
-  void SetMatchesProvider(Matches_Provider * provider);
+  void setFeatures(features::FeaturesPerView * featuresPerView)
+  {
+    _featuresPerView = featuresPerView;
+  }
+
+  void setMatches(matching::PairwiseMatches * pairwiseMatches)
+  {
+    _pairwiseMatches = pairwiseMatches;
+  }
 
   void RobustResectionOfImages(
     const std::set<size_t>& viewIds,
@@ -160,6 +173,11 @@ private:
   /// Discard track with too large residual error
   size_t badTrackRejector(double dPrecision, size_t count = 0);
 
+  #if OPENMVG_IS_DEFINED(OPENMVG_HAVE_BOOST)
+  /// Export statistics in a JSON file
+  void exportStatistics(double time_sfm);
+  #endif
+
   //----
   //-- Data
   //----
@@ -181,8 +199,8 @@ private:
   int _minPointsPerPose = 30;
   
   //-- Data provider
-  Features_Provider  * _features_provider;
-  Matches_Provider  * _matches_provider;
+  features::FeaturesPerView  * _featuresPerView;
+  matching::PairwiseMatches  * _pairwiseMatches;
 
   // Pyramid scoring
   const int _pyramidBase = 2;
@@ -191,9 +209,14 @@ private:
   std::vector<int> _pyramidWeights;
   int _pyramidThreshold;
 
+  #if OPENMVG_IS_DEFINED(OPENMVG_HAVE_BOOST)
+    // Property tree for json stats export
+    pt::ptree _tree;
+  #endif
+
   // Temporary data
   /// Putative landmark tracks (visibility per potential 3D point)
-  tracks::STLMAPTracks _map_tracks;
+  tracks::TracksMap _map_tracks;
   /// Putative tracks per view
   tracks::TracksPerView _map_tracksPerView;
   /// Precomputed pyramid index for each trackId of each viewId.

@@ -55,22 +55,11 @@ struct AKAZEConfig
   {
   }
 
-  template<class Archive>
-  void serialize(Archive & ar)
-  {
-    ar(
-      cereal::make_nvp("iNbOctave", iNbOctave),
-      cereal::make_nvp("iNbSlicePerOctave", iNbSlicePerOctave),
-      cereal::make_nvp("fSigma0", fSigma0),
-      cereal::make_nvp("fThreshold", fThreshold),
-      cereal::make_nvp("fDesc_factor", fDesc_factor));
-  }
-
-  int iNbOctave; ///< Octave to process
-  int iNbSlicePerOctave; ///< Levels per octave
-  float fSigma0; ///< Initial sigma offset (used to suppress low level noise)
-  float fThreshold;  ///< Hessian determinant threshold
-  float fDesc_factor;   ///< Magnifier used to describe an interest point
+  int iNbOctave;          ///< Octave to process
+  int iNbSlicePerOctave;  ///< Levels per octave
+  float fSigma0;          ///< Initial sigma offset (used to suppress low level noise)
+  float fThreshold;       ///< Hessian determinant threshold
+  float fDesc_factor;     ///< Magnifier used to describe an interest point
 };
 
 struct AKAZEKeypoint{

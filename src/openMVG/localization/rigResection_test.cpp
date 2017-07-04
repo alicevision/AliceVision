@@ -247,13 +247,16 @@ TEST(rigResection, simpleNoNoiseNoOutliers)
 
     // call the GPNP
     std::vector<std::vector<std::size_t> > inliers;
+
     geometry::Pose3 rigPose;
-    EXPECT_TRUE(localization::rigResection(vec_pts2d,
+    const EstimationStatus status = localization::rigResection(vec_pts2d,
                                           vec_pts3d,
                                           vec_queryIntrinsics,
                                           vec_subPoses,
+                                          nullptr,
                                           rigPose,
-                                          inliers));
+                                          inliers);
+    EXPECT_TRUE(status.isValid);
 
     OPENMVG_LOG_DEBUG("rigPose\n" << rigPose.rotation() << "\n" << rigPose.center());
 
@@ -355,13 +358,15 @@ TEST(rigResection, simpleWithNoiseNoOutliers)
     // call the GPNP
     std::vector<std::vector<std::size_t> > inliers;
     geometry::Pose3 rigPose;
-    EXPECT_TRUE(localization::rigResection(vec_pts2d,
+    const EstimationStatus status = localization::rigResection(vec_pts2d,
                                            vec_pts3d,
                                            vec_queryIntrinsics,
                                            vec_subPoses,
+                                           nullptr,
                                            rigPose,
                                            inliers,
-                                           D2R(0.008)));
+                                           D2R(0.008));
+    EXPECT_TRUE(status.isValid);
 
     OPENMVG_LOG_DEBUG("rigPose\n" << rigPose.rotation() << "\n" << rigPose.center());
     
@@ -438,13 +443,15 @@ TEST(rigResection, simpleNoNoiseWithOutliers)
     // call the GPNP
     std::vector<std::vector<std::size_t> > inliers;
     geometry::Pose3 rigPose;
-    EXPECT_TRUE(localization::rigResection(vec_pts2d,
+    const EstimationStatus status = localization::rigResection(vec_pts2d,
                                           vec_pts3d,
                                           vec_queryIntrinsics,
                                           vec_subPoses,
+                                          nullptr,
                                           rigPose,
                                           inliers,
-                                          D2R(0.008)));
+                                          D2R(0.008));
+    EXPECT_TRUE(status.hasStrongSupport);
 
     OPENMVG_LOG_DEBUG("rigPose\n" << rigPose.rotation() << "\n" << rigPose.center());
 

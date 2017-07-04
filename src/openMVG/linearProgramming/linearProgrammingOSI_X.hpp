@@ -8,7 +8,9 @@
 #define MIMATTE_LINEAR_PROGRAMMING_INTERFACE_OSICLP_H_
 
 #include "OsiClpSolverInterface.hpp"
-#ifdef OPENMVG_HAVE_MOSEK
+#include <openMVG/config.hpp>
+
+#if OPENMVG_IS_DEFINED(OPENMVG_HAVE_MOSEK)
 #include "OsiMskSolverInterface.hpp"
 #endif
 
@@ -49,7 +51,7 @@ private :
 
 
 typedef OSI_X_SolverWrapper<OsiClpSolverInterface> OSI_CLP_SolverWrapper;
-#ifdef OPENMVG_HAVE_MOSEK
+#if OPENMVG_IS_DEFINED(OPENMVG_HAVE_MOSEK)
 typedef OSI_X_SolverWrapper<OsiMskSolverInterface> OSI_MOSEK_SolverWrapper;
 #endif // OPENMVG_HAVE_MOSEK
 
@@ -62,7 +64,7 @@ OSI_X_SolverWrapper<SOLVERINTERFACE>::OSI_X_SolverWrapper(int nbParams) : LP_Sol
   si->setLogLevel(0);
 }
 
-#ifdef OPENMVG_HAVE_MOSEK
+#if OPENMVG_IS_DEFINED(OPENMVG_HAVE_MOSEK)
 template<>
 OSI_X_SolverWrapper<OsiMskSolverInterface>::OSI_X_SolverWrapper(int nbParams) : LP_Solver(nbParams)
 {

@@ -2,6 +2,8 @@
 
 #include <string>
 #include <iostream>
+#include <algorithm>
+#include <stdexcept>
 
 namespace openMVG {
 namespace keyframe {
@@ -24,7 +26,7 @@ enum class ESharpnessSelectionPreset : std::uint8_t
  * @param ESharpnessSelectionPreset
  * @return String
  */
-std::string ESharpnessSelectionPreset_enumToString(ESharpnessSelectionPreset sharpnessPreset)
+inline std::string ESharpnessSelectionPreset_enumToString(ESharpnessSelectionPreset sharpnessPreset)
 {
   switch(sharpnessPreset)
   {
@@ -43,7 +45,7 @@ std::string ESharpnessSelectionPreset_enumToString(ESharpnessSelectionPreset sha
  * @param String
  * @return ESharpnessSelectionPreset
  */
-ESharpnessSelectionPreset ESharpnessSelectionPreset_stringToEnum(const std::string& sharpnessPreset)
+inline ESharpnessSelectionPreset ESharpnessSelectionPreset_stringToEnum(const std::string& sharpnessPreset)
 {
   std::string preset = sharpnessPreset;
   std::transform(preset.begin(), preset.end(), preset.begin(), ::tolower); //tolower

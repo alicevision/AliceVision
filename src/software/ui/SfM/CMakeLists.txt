@@ -1,2 +1,0 @@
-ADD_SUBDIRECTORY(control_points_registration)
-

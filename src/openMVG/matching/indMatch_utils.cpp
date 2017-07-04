@@ -1,6 +1,7 @@
 #include "indMatch_utils.hpp"
 
 #include "openMVG/matching/indMatch.hpp"
+#include <openMVG/config.hpp>
 
 #include <cereal/archives/portable_binary.hpp>
 #include <cereal/types/map.hpp>
@@ -19,7 +20,7 @@ namespace openMVG {
 namespace matching {
 
 bool LoadMatchFile(
-  PairWiseMatches & matches,
+  PairwiseMatches & matches,
   const std::string & folder,
   const std::string & filename)
 {
@@ -37,18 +38,34 @@ bool LoadMatchFile(
 
     // Read from the text file
     // I J
-    // #matches count
+    // nbDescType
+    // descType matchesCount
     // idx idx
     // ...
-    size_t I, J, number;
-    while (stream >> I >> J >> number)
+    // descType matchesCount
+    // idx idx
+    // ...
+    std::size_t I = 0;
+    std::size_t J = 0;
+    std::size_t nbDescType = 0;
+    while(stream >> I >> J >> nbDescType)
     {
-      std::vector<IndMatch> read_matches(number);
-      for (size_t i = 0; i < number; ++i)
+      for(std::size_t i = 0; i < nbDescType; ++i)
       {
-        stream >> read_matches[i];
+        std::string descTypeStr;
+        std::size_t nbMatches = 0;
+        // Read descType and number of matches
+        stream >> descTypeStr >> nbMatches;
+
+        features::EImageDescriberType descType = features::EImageDescriberType_stringToEnum(descTypeStr);
+        std::vector<IndMatch> matchesPerDesc(nbMatches);
+        // Read all matches
+        for (std::size_t i = 0; i < nbMatches; ++i)
+        {
+          stream >> matchesPerDesc[i];
+        }
+        matches[std::make_pair(I,J)][descType] = std::move(matchesPerDesc);
       }
-      matches[std::make_pair(I,J)] = std::move(read_matches);
     }
     stream.close();
     return true;
@@ -60,20 +77,20 @@ bool LoadMatchFile(
       return false;
 
     cereal::PortableBinaryInputArchive archive(stream);
-    PairWiseMatches loadMatches;
+    PairwiseMatches loadMatches;
     archive(loadMatches);
     stream.close();
     if(matches.empty())
     {
-        matches.swap(loadMatches);
+      matches.swap(loadMatches);
     }
     else
     {
-        // merge the loaded matches into the output
-        for(const auto& v: loadMatches)
-        {
-            matches[v.first] = v.second;
-        }
+      // merge the loaded matches into the output
+      for(const auto& v: loadMatches)
+      {
+        matches[v.first] = v.second;
+      }
     }
     return true;
   }
@@ -84,12 +101,13 @@ bool LoadMatchFile(
   return false;
 }
 
-void filterMatches(
-  PairWiseMatches & matches,
+
+void filterMatchesByViews(
+  PairwiseMatches & matches,
   const std::set<IndexT> & viewsKeys)
 {
-  matching::PairWiseMatches filteredMatches;
-  for (matching::PairWiseMatches::const_iterator iter = matches.begin();
+  matching::PairwiseMatches filteredMatches;
+  for (matching::PairwiseMatches::const_iterator iter = matches.begin();
     iter != matches.end();
     ++iter)
   {
@@ -102,43 +120,57 @@ void filterMatches(
   matches.swap(filteredMatches);
 }
 
+
+void filterMatchesByDesc(
+  PairwiseMatches & allMatches,
+  const std::vector<features::EImageDescriberType>& descTypesFilter)
+{
+  matching::PairwiseMatches filteredMatches;
+  for(const auto& matchesPerDesc: allMatches)
+  {
+    for(const auto& matches: matchesPerDesc.second)
+    {
+      const IndMatches& m = matches.second;
+      // if current descType in descTypesFilter
+      if(std::find(descTypesFilter.begin(), descTypesFilter.end(), matches.first) != descTypesFilter.end())
+        filteredMatches[matchesPerDesc.first][matches.first] = m;
+    }
+  }
+  allMatches.swap(filteredMatches);
+}
+
+
 bool LoadMatchFilePerImage(
-  PairWiseMatches & matches,
+  PairwiseMatches & matches,
   const std::set<IndexT> & viewsKeys,
   const std::string & folder,
   const std::string & basename)
 {
   int nbLoadedMatchFiles = 0;
   // Load one match file per image
-#ifdef OPENMVG_USE_OPENMP
-    #pragma omp parallel for num_threads(3)
-#endif
+  #pragma omp parallel for num_threads(3)
   for(ptrdiff_t i = 0; i < static_cast<ptrdiff_t>(viewsKeys.size()); ++i)
   {
     std::set<IndexT>::const_iterator it = viewsKeys.begin();
     std::advance(it, i);
     const IndexT idView = *it;
     const std::string matchFilename = std::to_string(idView) + "." + basename;
-    PairWiseMatches fileMatches;
+    PairwiseMatches fileMatches;
     if(!LoadMatchFile(fileMatches, folder, matchFilename))
     {
-#ifdef OPENMVG_USE_OPENMP
       #pragma omp critical
-#endif
       {
         OPENMVG_LOG_WARNING("Unable to load match file: " << folder << "/" << matchFilename);
       }
       continue;
     }
-#ifdef OPENMVG_USE_OPENMP
-      #pragma omp critical
-#endif
+    #pragma omp critical
     {
       ++nbLoadedMatchFiles;
       // merge the loaded matches into the output
       for(const auto& v: fileMatches)
       {
-          matches[v.first] = v.second;
+        matches[v.first] = v.second;
       }
     }
   }
@@ -147,13 +179,25 @@ bool LoadMatchFilePerImage(
     OPENMVG_LOG_WARNING("No matches file loaded in: " << folder);
     return false;
   }
+  OPENMVG_LOG_TRACE("Matches per image pair");
+  for(const auto& imagePairIt: matches)
+  {
+    std::stringstream ss;
+    ss << " * " << imagePairIt.first.first << "-" << imagePairIt.first.second << ": " << imagePairIt.second.getNbAllMatches() << "    ";
+    for(const auto& matchesPerDeskIt: imagePairIt.second)
+    {
+       ss << " [" << features::EImageDescriberType_enumToString(matchesPerDeskIt.first) << ": " << matchesPerDeskIt.second.size() << "]";
+    }
+    OPENMVG_LOG_TRACE(ss.str());
+  }
   return true;
 }
 
 bool Load(
-  PairWiseMatches & matches,
-  const std::set<IndexT> & viewsKeys,
+  PairwiseMatches & matches,
+  const std::set<IndexT> & viewsKeysFilter,
   const std::string & folder,
+  const std::vector<features::EImageDescriberType>& descTypesFilter,
   const std::string & mode)
 {
   bool res = false;
@@ -168,17 +212,32 @@ bool Load(
   }
   else if(!stlplus::folder_wildcard(folder, "*."+basename+".txt", false, true).empty())
   {
-    res = LoadMatchFilePerImage(matches, viewsKeys, folder, basename + ".txt");
+    res = LoadMatchFilePerImage(matches, viewsKeysFilter, folder, basename + ".txt");
   }
   else if(!stlplus::folder_wildcard(folder, "*."+basename+".bin", false, true).empty())
   {
-    res = LoadMatchFilePerImage(matches, viewsKeys, folder, basename + ".bin");
+    res = LoadMatchFilePerImage(matches, viewsKeysFilter, folder, basename + ".bin");
   }
   if(!res)
     return res;
 
-  if(!viewsKeys.empty())
-    filterMatches(matches, viewsKeys);
+  if(!viewsKeysFilter.empty())
+    filterMatchesByViews(matches, viewsKeysFilter);
+
+  if(!descTypesFilter.empty())
+    filterMatchesByDesc(matches, descTypesFilter);
+
+  OPENMVG_LOG_TRACE("Matches per image pair");
+  for(const auto& imagePairIt: matches)
+  {
+    std::stringstream ss;
+    ss << " * " << imagePairIt.first.first << "-" << imagePairIt.first.second << ": " << imagePairIt.second.getNbAllMatches() << "    ";
+    for(const auto& matchesPerDeskIt: imagePairIt.second)
+    {
+       ss << " [" << features::EImageDescriberType_enumToString(matchesPerDeskIt.first) << ": " << matchesPerDeskIt.second.size() << "]";
+    }
+    OPENMVG_LOG_TRACE(ss.str());
+  }
 
   return res;
 }
@@ -189,39 +248,43 @@ class MatchExporter
 private:
   void saveTxt(
     const std::string & filepath,
-    const PairWiseMatches::const_iterator& matchBegin,
-    const PairWiseMatches::const_iterator& matchEnd)
+    const PairwiseMatches::const_iterator& matchBegin,
+    const PairwiseMatches::const_iterator& matchEnd)
   {
     std::ofstream stream(filepath.c_str(), std::ios::out);
-    for(PairWiseMatches::const_iterator match = matchBegin;
+    for(PairwiseMatches::const_iterator match = matchBegin;
       match != matchEnd;
       ++match)
     {
-      const size_t I = match->first.first;
-      const size_t J = match->first.second;
-      const std::vector<IndMatch> & pair_matches = match->second;
+      const std::size_t I = match->first.first;
+      const std::size_t J = match->first.second;
+      const MatchesPerDescType & matchesPerDesc = match->second;
       stream << I << " " << J << '\n'
-             << pair_matches.size() << '\n';
-      
-      copy(pair_matches.begin(), pair_matches.end(),
-           std::ostream_iterator<IndMatch>(stream, "\n"));
+             << matchesPerDesc.size() << '\n';
+      for(const auto& m: matchesPerDesc)
+      {
+        stream << features::EImageDescriberType_enumToString(m.first) << " " << m.second.size() << '\n';
+        copy(m.second.begin(), m.second.end(),
+             std::ostream_iterator<IndMatch>(stream, "\n"));
+      }
     }
   }
+
   void saveBinary(
     const std::string & filepath,
-    const PairWiseMatches::const_iterator& matchBegin,
-    const PairWiseMatches::const_iterator& matchEnd)
+    const PairwiseMatches::const_iterator& matchBegin,
+    const PairwiseMatches::const_iterator& matchEnd)
   {
     std::ofstream stream(filepath.c_str(), std::ios::out | std::ios::binary);
     cereal::PortableBinaryOutputArchive archive(stream);
-    const PairWiseMatches matchesToExport(matchBegin, matchEnd);
+    const PairwiseMatches matchesToExport(matchBegin, matchEnd);
     archive(matchesToExport);
     stream.close();
   }
 
 public:
   MatchExporter(
-    const PairWiseMatches& matches,
+    const PairwiseMatches& matches,
     const std::string& folder,
     const std::string& filename)
     : m_matches(matches)
@@ -259,13 +322,13 @@ public:
     std::transform(
         m_matches.begin(), m_matches.end(),
         std::inserter(keys, keys.begin()),
-        [](const PairWiseMatches::value_type &v) { return v.first.first; });
+        [](const PairwiseMatches::value_type &v) { return v.first.first; });
 
-    PairWiseMatches::const_iterator matchBegin = m_matches.begin();
-    PairWiseMatches::const_iterator matchEnd = m_matches.end();
+    PairwiseMatches::const_iterator matchBegin = m_matches.begin();
+    PairwiseMatches::const_iterator matchEnd = m_matches.end();
     for(IndexT key: keys)
     {
-      PairWiseMatches::const_iterator match = matchBegin;
+      PairwiseMatches::const_iterator match = matchBegin;
       while(match->first.first == key && match != matchEnd)
       {
         ++match;
@@ -290,7 +353,7 @@ public:
   }
 
 public:
-  const PairWiseMatches& m_matches;
+  const PairwiseMatches& m_matches;
   const std::string m_ext;
   std::string m_directory;
   std::string m_filename;
@@ -298,7 +361,7 @@ public:
 
 
 bool Save(
-  const PairWiseMatches & matches,
+  const PairwiseMatches & matches,
   const std::string & folder,
   const std::string & mode,
   const std::string & extension,

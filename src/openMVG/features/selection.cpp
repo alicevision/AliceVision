@@ -10,22 +10,18 @@ const size_t gridSize = 3;
 /**
 * @brief Sort the matches.
 * @param[in] inputMatches Set of indices for (putative) matches.
-* @param[in] regionsI Pointer to the regions of the left image.
-* @param[in] regionsJ Pointer to the regions of the right image.
+* @param[in] regionsI Reference to the regions of the left image.
+* @param[in] regionsJ Reference to the regions of the right image.
 * @param[out] outputMatches Subset of inputMatches containing the best n matches, sorted.
 */
 void sortMatches(
 	const openMVG::matching::IndMatches& inputMatches,
-	const openMVG::features::Feat_Regions<openMVG::features::SIOPointFeature> *regionsI,
-	const openMVG::features::Feat_Regions<openMVG::features::SIOPointFeature> *regionsJ,
+	const openMVG::features::Feat_Regions<openMVG::features::SIOPointFeature>& regionsI,
+	const openMVG::features::Feat_Regions<openMVG::features::SIOPointFeature>& regionsJ,
 	openMVG::matching::IndMatches& outputMatches)
 {
-	if (!regionsI || !regionsJ)
-  {
-    throw std::runtime_error("Can't sort matches: One or both regions provided were NULL.");
-	}
-	const std::vector<openMVG::features::SIOPointFeature>& vecFeatureI = regionsI->Features();
-	const std::vector<openMVG::features::SIOPointFeature>& vecFeatureJ = regionsJ->Features();
+	const std::vector<openMVG::features::SIOPointFeature>& vecFeatureI = regionsI.Features();
+	const std::vector<openMVG::features::SIOPointFeature>& vecFeatureJ = regionsJ.Features();
 
 	//outputMatches will contain the sorted matches if inputMatches.
 	outputMatches.reserve(inputMatches.size());
@@ -81,8 +77,8 @@ void thresholdMatches(openMVG::matching::IndMatches& outputMatches, const std::s
  * @param[in] sfm_data The sfm data file
  * @param[out] outMatches The remaining matches
  */
-void matchesGridFiltering(const openMVG::features::Feat_Regions<openMVG::features::SIOPointFeature>* lRegions, 
-        const openMVG::features::Feat_Regions<openMVG::features::SIOPointFeature>* rRegions, 
+void matchesGridFiltering(const openMVG::features::Feat_Regions<openMVG::features::SIOPointFeature>& lRegions, 
+        const openMVG::features::Feat_Regions<openMVG::features::SIOPointFeature>& rRegions, 
         const openMVG::Pair& indexImagePair,
         const openMVG::sfm::SfM_Data sfm_data, 
         openMVG::matching::IndMatches& outMatches)
@@ -106,8 +102,8 @@ void matchesGridFiltering(const openMVG::features::Feat_Regions<openMVG::feature
   // Split matches in grid cells
   for(const auto& match: outMatches)
   {
-    const openMVG::features::SIOPointFeature& leftPoint = lRegions->Features()[match._i];
-    const openMVG::features::SIOPointFeature& rightPoint = rRegions->Features()[match._j];
+    const openMVG::features::SIOPointFeature& leftPoint = lRegions.Features()[match._i];
+    const openMVG::features::SIOPointFeature& rightPoint = rRegions.Features()[match._j];
     
     const float leftGridIndex_f = std::floor(leftPoint.x() / (float)leftCellWidth) + std::floor(leftPoint.y() / (float)leftCellHeight) * gridSize;
     const float rightGridIndex_f = std::floor(rightPoint.x() / (float)rightCellWidth) + std::floor(rightPoint.y() / (float)rightCellHeight) * gridSize;

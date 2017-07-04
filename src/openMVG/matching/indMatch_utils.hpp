@@ -24,7 +24,7 @@ namespace matching {
  * @param[in] mode: type of matching, it could be: "f", "e" or "putative".
  */
 bool LoadMatchFile(
-  PairWiseMatches & matches,
+  PairwiseMatches & matches,
   const std::string & folder,
   const std::string & filename);
 
@@ -36,7 +36,7 @@ bool LoadMatchFile(
  * @param[in] mode: type of matching, it could be: "f", "e" or "putative".
  */
 bool LoadMatchFilePerImage(
-  PairWiseMatches & matches,
+  PairwiseMatches & matches,
   const std::set<IndexT> & viewsKeys,
   const std::string & folder,
   const std::string & mode);
@@ -47,19 +47,21 @@ bool LoadMatchFilePerImage(
  * @param[out] matches: container for the output matches
  * @param[in] sfm_data
  * @param[in] folder: folder containing the match files
+ * @param[in] descTypes
  * @param[in] mode: type of matching, it could be: "f", "e" or "putative".
  */
 bool Load(
-  PairWiseMatches & matches,
-  const std::set<IndexT> & viewsKeys,
+  PairwiseMatches & matches,
+  const std::set<IndexT> & viewsKeysFilter,
   const std::string & folder,
+  const std::vector<features::EImageDescriberType>& descTypesFilter,
   const std::string & mode);
 
 /**
  * @brief Filter to keep only specific viewIds.
  */
-void filterMatches(
-  PairWiseMatches & matches,
+void filterMatchesByViews(
+  PairwiseMatches & matches,
   const std::set<IndexT> & viewsKeys);
 
 /**
@@ -74,7 +76,7 @@ void filterMatches(
  *            or one match file per image
  */
 bool Save(
-  const PairWiseMatches & matches,
+  const PairwiseMatches & matches,
   const std::string & folder,
   const std::string & mode,
   const std::string & extension,

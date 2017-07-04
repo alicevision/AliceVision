@@ -15,7 +15,7 @@ void updateStructureWithNewUID(Landmarks &landmarks, const std::map<std::size_t,
     // (needed as the key of the map is the idview)
     Observations newObservations;
     
-    for(const auto &iterObs : currentLandmark.obs)
+    for(const auto &iterObs : currentLandmark.observations)
     {
       const auto idview = iterObs.first;
       const Observation &obs = iterObs.second;
@@ -23,8 +23,8 @@ void updateStructureWithNewUID(Landmarks &landmarks, const std::map<std::size_t,
       newObservations.emplace(oldIdToNew.at(idview), obs);
     }
     
-    assert(currentLandmark.obs.size() == newObservations.size());
-    currentLandmark.obs.swap(newObservations);
+    assert(currentLandmark.observations.size() == newObservations.size());
+    currentLandmark.observations.swap(newObservations);
   }  
 }
 
@@ -34,7 +34,7 @@ void sanityCheckLandmarks(const Landmarks &landmarks, const Views &views)
   for(const auto &iter : landmarks)
   {
     const Landmark& currentLandmark = iter.second;
-    for(const auto &iterObs : currentLandmark.obs)
+    for(const auto &iterObs : currentLandmark.observations)
     {
       const auto idview = iterObs.first;
 

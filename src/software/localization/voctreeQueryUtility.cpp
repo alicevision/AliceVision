@@ -1,4 +1,5 @@
 #include <openMVG/sfm/sfm_data_io.hpp>
+#include <openMVG/sfm/pipelines/RegionsIO.hpp>
 #include <openMVG/voctree/database.hpp>
 #include <openMVG/voctree/databaseIO.hpp>
 #include <openMVG/voctree/vocabulary_tree.hpp>
@@ -9,9 +10,10 @@
 #include <openMVG/voctree/databaseIO.hpp>
 #include <openMVG/sfm/sfm_data.hpp>
 #include <openMVG/sfm/sfm_data_io.hpp>
+#include <openMVG/sfm/pipelines/RegionsIO.hpp>
 #include <openMVG/sfm/pipelines/sfm_engine.hpp>
-#include <openMVG/sfm/pipelines/sfm_features_provider.hpp>
-#include <openMVG/sfm/pipelines/sfm_regions_provider.hpp>
+#include <openMVG/features/FeaturesPerView.hpp>
+#include <openMVG/features/RegionsPerView.hpp>
 
 #include <Eigen/Core>
 
@@ -36,7 +38,6 @@ namespace bfs = boost::filesystem;
 
 typedef openMVG::features::Descriptor<float, DIMENSION> DescriptorFloat;
 typedef openMVG::features::Descriptor<unsigned char, DIMENSION> DescriptorUChar;
-
 
 std::ostream& operator<<(std::ostream& os, const openMVG::voctree::DocMatches &matches)
 {
@@ -110,6 +111,7 @@ int main(int argc, char** argv)
   string outfile; ///< the file in which to save the results
   string outDir; ///< the directory in which save the symlinks of the similar images
   string documentMapFile; ///< the file where to save the document map in matlab format
+  std::string describerMethod = "SIFT";
   bool withOutput = false; ///< flag for the optional output file
   bool withOutDir = false; ///< flag for the optional output directory to save the symlink of the similar images
   bool withQuery = false; ///< it produces an output readable by matlab
@@ -131,6 +133,7 @@ int main(int argc, char** argv)
           ("querylist,q", bpo::value<string>(&queryList), "Path to the list file to be used for querying the database")
           ("saveDocumentMap", bpo::value<string>(&documentMapFile), "A matlab file .m where to save the document map of the created database.")
           ("outdir", bpo::value<string>(&outDir), "Path to the directory in which save the symlinks of the similar images (it will be create if it does not exist)")
+          ("describerMethod,m", bpo::value<string>(&describerMethod)->default_value(describerMethod), "method to use to describe an image")   
           ("results,r", bpo::value<size_t>(&numImageQuery)->default_value(10), "The number of matches to retrieve for each image, 0 to retrieve all the images")
           ("matlab,", bpo::bool_switch(&matlabOutput)->default_value(matlabOutput), "It produces an output readable by matlab")
           ("outfile,o", bpo::value<string>(&outfile), "Name of the output file")
@@ -327,8 +330,8 @@ int main(int argc, char** argv)
 
   }
 
-  openMVG::sfm::SfM_Data sfm_data;
-  if (!openMVG::sfm::Load(sfm_data, queryList, openMVG::sfm::ESfM_Data(openMVG::sfm::VIEWS|openMVG::sfm::INTRINSICS))) {
+  openMVG::sfm::SfM_Data sfmData;
+  if (!openMVG::sfm::Load(sfmData, queryList, openMVG::sfm::ESfM_Data(openMVG::sfm::VIEWS|openMVG::sfm::INTRINSICS))) {
     std::cerr << std::endl
       << "The input SfM_Data file \""<< queryList << "\" cannot be read." << std::endl;
     return EXIT_FAILURE;
@@ -344,14 +347,26 @@ int main(int argc, char** argv)
       << sImage_describer << " regions type file." << std::endl;
     return EXIT_FAILURE;
   }
-  // Load the corresponding view regions
-  std::shared_ptr<openMVG::sfm::Regions_Provider> regions_provider = std::make_shared<openMVG::sfm::Regions_Provider>();
-  if (!regions_provider->load(sfm_data, matchDir, regions_type)) {
-    std::cerr << std::endl << "Invalid regions." << std::endl;
+  // Load the corresponding RegionsPerView
+  // Get imageDescriberMethodType
+  EImageDescriberType describerType = EImageDescriberType_stringToEnum(describerMethod);
+  
+  if((describerType != EImageDescriberType::SIFT) &&
+      (describerType != EImageDescriberType::SIFT_FLOAT))
+  {
+    OPENMVG_CERR("Invalid describer method." << std::endl);
     return EXIT_FAILURE;
   }
-
-  openMVG::matching::PairWiseMatches allMatches;
+  
+  
+  openMVG::features::RegionsPerView regionsPerView;
+  if(!openMVG::sfm::loadRegionsPerView(regionsPerView, sfmData, matchDir, {describerType}))
+  {
+    OPENMVG_CERR("Invalid regions." << std::endl);
+    return EXIT_FAILURE;
+  }
+  
+  openMVG::matching::PairwiseSimpleMatches allMatches;
 
   for(auto docMatches: allDocMatches)
   {
@@ -404,8 +419,8 @@ int main(int argc, char** argv)
         openMVG::Pair indexImagePair = openMVG::Pair(docMatches.first, comparedPicture.id);
         
         //Get the regions for the current view pair.
-		    //openMVG::features::SIFT_Regions* lRegions = dynamic_cast<openMVG::features::SIFT_Regions*>(regions_provider->regions_per_view[indexImagePair.first].get());
-		    //openMVG::features::SIFT_Regions* rRegions = dynamic_cast<openMVG::features::SIFT_Regions*>(regions_provider->regions_per_view[indexImagePair.second].get());
+		    //const openMVG::features::SIFT_Regions& lRegions = dynamic_cast<openMVG::features::SIFT_Regions>(regionsPerView->getRegions(indexImagePair.first);
+		    //const openMVG::features::SIFT_Regions& rRegions = dynamic_cast<openMVG::features::SIFT_Regions>(regionsPerView->getRegions(indexImagePair.second);
         
         //Distances Vector
         //const std::vector<float> distances;
@@ -422,10 +437,10 @@ int main(int argc, char** argv)
             if(leafRightIt->second.size() != 1)
               continue;
 
-            Regions* siftRegionsLeft = regions_provider->regions_per_view[docMatches.first].get();
-            Regions* siftRegionsRight = regions_provider->regions_per_view[comparedPicture.id].get();
+            const Regions& siftRegionsLeft = regionsPerView.getRegions(docMatches.first, describerType);
+            const Regions& siftRegionsRight = regionsPerView.getRegions(comparedPicture.id, describerType);
 
-            double dist = siftRegionsLeft->SquaredDescriptorDistance(currentLeaf.second[0], siftRegionsRight, leafRightIt->second[0]);
+            double dist = siftRegionsLeft.SquaredDescriptorDistance(currentLeaf.second[0], &siftRegionsRight, leafRightIt->second[0]);
             openMVG::matching::IndMatch currentMatch = openMVG::matching::IndMatch( currentLeaf.second[0], leafRightIt->second[0]
 #ifdef OPENMVG_DEBUG_MATCHING
                     , dist

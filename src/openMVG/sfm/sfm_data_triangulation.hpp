@@ -54,7 +54,7 @@ struct SfM_Data_Structure_Computation_Robust: public SfM_Data_Structure_Computat
   /// Return true for a successful triangulation
   bool robust_triangulation(
     const SfM_Data & sfm_data,
-    const Observations & obs,
+    const Observations & observations,
     Vec3 & X,
     const IndexT min_required_inliers = 3,
     const IndexT min_sample_index = 3) const;
@@ -63,7 +63,7 @@ private:
   /// Triangulate a given track from a selection of observations
   Vec3 track_sample_triangulation(
     const SfM_Data & sfm_data,
-    const Observations & obs,
+    const Observations & observations,
     const std::set<IndexT> & samples) const;
 };
 

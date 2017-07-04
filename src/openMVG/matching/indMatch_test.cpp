@@ -10,95 +10,96 @@
 #include "openMVG/matching/indMatch_utils.hpp"
 
 using namespace openMVG;
-using namespace matching;
+using namespace openMVG::matching;
+using namespace openMVG::features;
 
 TEST(IndMatch, IO)
 {
   {
     std::set<IndexT> viewsKeys;
-    PairWiseMatches matches;
+    PairwiseMatches matches;
 
     // Test save + load of empty data
     EXPECT_TRUE(Save(matches, ".", "test1", "txt", false));
-    EXPECT_TRUE(Load(matches, viewsKeys, ".", "test1"));
+    EXPECT_TRUE(Load(matches, viewsKeys, ".", {},"test1"));
     EXPECT_EQ(0, matches.size());
 
     EXPECT_TRUE(Save(matches, ".", "test2", "bin", false));
-    EXPECT_TRUE(Load(matches, viewsKeys, ".", "test2"));
+    EXPECT_TRUE(Load(matches, viewsKeys, ".", {},  "test2"));
     EXPECT_EQ(0, matches.size());
   }
   {
     std::set<IndexT> viewsKeys;
-    PairWiseMatches matches;
+    PairwiseMatches matches;
 
     // Test save + load of empty data
     EXPECT_TRUE(Save(matches, ".", "test3", "txt", true));
-    EXPECT_FALSE(Load(matches, viewsKeys, ".", "test3"));
+    EXPECT_FALSE(Load(matches, viewsKeys, ".", {}, "test3"));
     EXPECT_EQ(0, matches.size());
 
     EXPECT_TRUE(Save(matches, ".", "test4", "bin", true));
-    EXPECT_FALSE(Load(matches, viewsKeys, ".", "test4"));
+    EXPECT_FALSE(Load(matches, viewsKeys, ".", {}, "test4"));
     EXPECT_EQ(0, matches.size());
   }
   {
     std::set<IndexT> viewsKeys = {0, 1, 2};
-    PairWiseMatches matches;
+    PairwiseMatches matches;
     // Test export with not empty data
-    matches[std::make_pair(0,1)] = {{0,0},{1,1}};
-    matches[std::make_pair(1,2)] = {{0,0},{1,1}, {2,2}};
+    matches[std::make_pair(0,1)][EImageDescriberType::UNKNOWN] = {{0,0},{1,1}};
+    matches[std::make_pair(1,2)][EImageDescriberType::UNKNOWN] = {{0,0},{1,1}, {2,2}};
 
     EXPECT_TRUE(Save(matches, ".", "test5", "txt", false));
     matches.clear();
-    EXPECT_TRUE(Load(matches, viewsKeys, ".", "test5"));
+    EXPECT_TRUE(Load(matches, viewsKeys, ".", {EImageDescriberType::UNKNOWN}, "test5"));
     EXPECT_EQ(2, matches.size());
     EXPECT_EQ(1, matches.count(std::make_pair(0,1)));
     EXPECT_EQ(1, matches.count(std::make_pair(1,2)));
-    EXPECT_EQ(2, matches.at(std::make_pair(0,1)).size());
-    EXPECT_EQ(3, matches.at(std::make_pair(1,2)).size());
+    EXPECT_EQ(2, matches.at(std::make_pair(0,1)).at(EImageDescriberType::UNKNOWN).size());
+    EXPECT_EQ(3, matches.at(std::make_pair(1,2)).at(EImageDescriberType::UNKNOWN).size());
   }
   {
     std::set<IndexT> viewsKeys = {0, 1, 2};
-    PairWiseMatches matches;
+    PairwiseMatches matches;
     // Test export with not empty data
-    matches[std::make_pair(0,1)] = {{0,0},{1,1}};
-    matches[std::make_pair(1,2)] = {{0,0},{1,1}, {2,2}};
+    matches[std::make_pair(0,1)][EImageDescriberType::UNKNOWN] = {{0,0},{1,1}};
+    matches[std::make_pair(1,2)][EImageDescriberType::UNKNOWN] = {{0,0},{1,1}, {2,2}};
 
     EXPECT_TRUE(Save(matches, ".", "test6", "txt", true));
-    EXPECT_TRUE(Load(matches, viewsKeys, ".", "test6"));
+    EXPECT_TRUE(Load(matches, viewsKeys, ".", {EImageDescriberType::UNKNOWN}, "test6"));
     EXPECT_EQ(2, matches.size());
     EXPECT_EQ(1, matches.count(std::make_pair(0,1)));
     EXPECT_EQ(1, matches.count(std::make_pair(1,2)));
-    EXPECT_EQ(2, matches.at(std::make_pair(0,1)).size());
-    EXPECT_EQ(3, matches.at(std::make_pair(1,2)).size());
+    EXPECT_EQ(2, matches.at(std::make_pair(0,1)).at(EImageDescriberType::UNKNOWN).size());
+    EXPECT_EQ(3, matches.at(std::make_pair(1,2)).at(EImageDescriberType::UNKNOWN).size());
   }
   {
     std::set<IndexT> viewsKeys = {0, 1, 2};
-    PairWiseMatches matches;
-    matches[std::make_pair(0,1)] = {{0,0},{1,1}};
-    matches[std::make_pair(1,2)] = {{0,0},{1,1}, {2,2}};
+    PairwiseMatches matches;
+    matches[std::make_pair(0,1)][EImageDescriberType::UNKNOWN] = {{0,0},{1,1}};
+    matches[std::make_pair(1,2)][EImageDescriberType::UNKNOWN] = {{0,0},{1,1}, {2,2}};
 
     EXPECT_TRUE(Save(matches, ".", "test7", "bin", false));
-    EXPECT_TRUE(Load(matches, viewsKeys, ".", "test7"));
+    EXPECT_TRUE(Load(matches, viewsKeys, ".", {EImageDescriberType::UNKNOWN}, "test7"));
     EXPECT_EQ(2, matches.size());
     EXPECT_EQ(1, matches.count(std::make_pair(0,1)));
     EXPECT_EQ(1, matches.count(std::make_pair(1,2)));
-    EXPECT_EQ(2, matches.at(std::make_pair(0,1)).size());
-    EXPECT_EQ(3, matches.at(std::make_pair(1,2)).size());
+    EXPECT_EQ(2, matches.at(std::make_pair(0,1)).at(EImageDescriberType::UNKNOWN).size());
+    EXPECT_EQ(3, matches.at(std::make_pair(1,2)).at(EImageDescriberType::UNKNOWN).size());
   }
   {
     std::set<IndexT> viewsKeys = {0, 1, 2};
-    PairWiseMatches matches;
-    matches[std::make_pair(0,1)] = {{0,0},{1,1}};
-    matches[std::make_pair(1,2)] = {{0,0},{1,1}, {2,2}};
+    PairwiseMatches matches;
+    matches[std::make_pair(0,1)][EImageDescriberType::UNKNOWN] = {{0,0},{1,1}};
+    matches[std::make_pair(1,2)][EImageDescriberType::UNKNOWN] = {{0,0},{1,1}, {2,2}};
 
     EXPECT_TRUE(Save(matches, ".", "test8", "bin", true));
     matches.clear();
-    EXPECT_TRUE(Load(matches, viewsKeys, ".", "test8"));
+    EXPECT_TRUE(Load(matches, viewsKeys, ".", {EImageDescriberType::UNKNOWN}, "test8"));
     EXPECT_EQ(2, matches.size());
     EXPECT_EQ(1, matches.count(std::make_pair(0,1)));
     EXPECT_EQ(1, matches.count(std::make_pair(1,2)));
-    EXPECT_EQ(2, matches.at(std::make_pair(0,1)).size());
-    EXPECT_EQ(3, matches.at(std::make_pair(1,2)).size());
+    EXPECT_EQ(2, matches.at(std::make_pair(0,1)).at(EImageDescriberType::UNKNOWN).size());
+    EXPECT_EQ(3, matches.at(std::make_pair(1,2)).at(EImageDescriberType::UNKNOWN).size());
   }
 }
 

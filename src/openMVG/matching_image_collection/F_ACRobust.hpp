@@ -6,6 +6,9 @@
 
 #pragma once
 
+#include "openMVG/matching_image_collection/GeometricFilterMatrix.hpp"
+#include "openMVG/matching_image_collection/Geometric_Filter_utils.hpp"
+#include "openMVG/matching/indMatch.hpp"
 #include "openMVG/multiview/solver_fundamental_kernel.hpp"
 #include "openMVG/multiview/essential.hpp"
 #include "openMVG/robust_estimation/robust_estimators.hpp"
@@ -15,216 +18,258 @@
 #include "openMVG/robust_estimation/robust_estimator_LORansacKernelAdaptor.hpp"
 #include "openMVG/robust_estimation/score_evaluator.hpp"
 #include "openMVG/robust_estimation/guided_matching.hpp"
-
-#include "openMVG/matching/indMatch.hpp"
 #include "openMVG/sfm/sfm_data.hpp"
-#include "openMVG/sfm/pipelines/sfm_regions_provider.hpp"
-#include "openMVG/matching_image_collection/Geometric_Filter_utils.hpp"
-
+#include "openMVG/features/RegionsPerView.hpp"
 
 namespace openMVG {
 namespace matching_image_collection {
 
 //-- A contrario fundamental matrix estimation template functor used for filter pair of putative correspondences
-struct GeometricFilter_FMatrix_AC
+struct GeometricFilter_FMatrix: public GeometricFilterMatrix
 {
-  GeometricFilter_FMatrix_AC(
+  GeometricFilter_FMatrix(
     double dPrecision = std::numeric_limits<double>::infinity(),
-    size_t iteration = 1024)
-    : m_dPrecision(dPrecision), m_stIteration(iteration), m_F(Mat3::Identity()),
-      m_dPrecision_robust(std::numeric_limits<double>::infinity()){};
+    size_t iteration = 1024,
+    robust::EROBUST_ESTIMATOR estimator = robust::ROBUST_ESTIMATOR_ACRANSAC)
+    : GeometricFilterMatrix(dPrecision, std::numeric_limits<double>::infinity(), iteration)
+    , m_F(Mat3::Identity())
+    , m_estimator(estimator)
+  {}
 
-  /// Robust fitting of the FUNDAMENTAL matrix
-  template<typename Regions_or_Features_ProviderT>
-  bool Robust_estimation(
-    const sfm::SfM_Data * sfm_data,
-    const std::shared_ptr<Regions_or_Features_ProviderT> & regions_provider,
+  /**
+   * @brief Given two sets of image points, it estimates the fundamental matrix
+   * relating them using a robust method (like A Contrario Ransac).
+   */
+  template<class Regions_or_Features_ProviderT>
+  EstimationStatus geometricEstimation(
+    const sfm::SfM_Data * sfmData,
+    const Regions_or_Features_ProviderT & regionsPerView,
     const Pair pairIndex,
-    const matching::IndMatches & vec_PutativeMatches,
-    matching::IndMatches & geometric_inliers)
+    const matching::MatchesPerDescType & putativeMatchesPerType,
+    matching::MatchesPerDescType & out_geometricInliersPerType)
   {
     using namespace openMVG;
     using namespace openMVG::robust;
-    geometric_inliers.clear();
+    out_geometricInliersPerType.clear();
 
     // Get back corresponding view index
     const IndexT iIndex = pairIndex.first;
     const IndexT jIndex = pairIndex.second;
 
-    //--
-    // Get corresponding point regions arrays
-    //--
+    const sfm::View * view_I = sfmData->views.at(iIndex).get();
+    const sfm::View * view_J = sfmData->views.at(jIndex).get();
 
-    Mat xI,xJ;
-    MatchesPairToMat(pairIndex, vec_PutativeMatches, sfm_data, regions_provider, xI, xJ);
+    const cameras::IntrinsicBase * cam_I = sfmData->GetIntrinsicPtr(view_I->id_intrinsic);
+    const cameras::IntrinsicBase * cam_J = sfmData->GetIntrinsicPtr(view_J->id_intrinsic);
 
-    std::vector<size_t> vec_inliers;
-    bool valid = Robust_estimation(
-        xI, xJ,
-        std::make_pair(sfm_data->GetViews().at(iIndex)->ui_width, sfm_data->GetViews().at(iIndex)->ui_height),
-        std::make_pair(sfm_data->GetViews().at(jIndex)->ui_width, sfm_data->GetViews().at(jIndex)->ui_height),
-        vec_inliers);
+    const std::pair<size_t,size_t> imageSizeI(sfmData->GetViews().at(iIndex)->ui_width, sfmData->GetViews().at(iIndex)->ui_height);
+    const std::pair<size_t,size_t> imageSizeJ(sfmData->GetViews().at(jIndex)->ui_width, sfmData->GetViews().at(jIndex)->ui_height);
 
-    if (!valid)
-    {
-      return false;
-    }
-
-    // update geometric_inliers
-    geometric_inliers.reserve(vec_inliers.size());
-    for ( const size_t & index : vec_inliers)  
-    {
-      geometric_inliers.push_back( vec_PutativeMatches[index] );
-    }
-    return true;
+    return geometricEstimation(
+        regionsPerView.getDataPerDesc(pairIndex.first), regionsPerView.getDataPerDesc(pairIndex.second),
+        cam_I, cam_J,
+        imageSizeI, imageSizeJ,
+        putativeMatchesPerType,
+        out_geometricInliersPerType);
   }
-  
-    /// Robust fitting of the FUNDAMENTAL matrix
+
   /**
    * @brief Given two sets of image points, it estimates the fundamental matrix
-   * relating them using a robust method (A Contrario Ransac)
+   * relating them using a robust method (like A Contrario Ransac).
+   */
+  template<class MapFeatOrRegionsPerDesc>
+  EstimationStatus geometricEstimation(
+      const MapFeatOrRegionsPerDesc& region_I,
+      const MapFeatOrRegionsPerDesc& region_J,
+      const cameras::IntrinsicBase * cam_I,
+      const cameras::IntrinsicBase * cam_J,
+      const std::pair<size_t,size_t> & imageSizeI,     // size of the first image
+      const std::pair<size_t,size_t> & imageSizeJ,     // size of the first image
+      const matching::MatchesPerDescType & putativeMatchesPerType,
+      matching::MatchesPerDescType & out_geometricInliersPerType)
+  {
+    using namespace openMVG;
+    using namespace openMVG::robust;
+    out_geometricInliersPerType.clear();
+
+    const std::vector<features::EImageDescriberType> descTypes = getCommonDescTypes(region_I, region_J);
+
+    if(descTypes.empty())
+      return EstimationStatus(false, false);
+
+    // Retrieve all 2D features as undistorted positions into flat arrays
+    Mat xI, xJ;
+    MatchesPairToMat(putativeMatchesPerType, cam_I, cam_J,
+                     region_I, region_J,
+                     descTypes, xI, xJ);
+    std::vector<size_t> inliers;
+
+    std::pair<bool, std::size_t> estimationPair = geometricEstimation_Mat(
+        xI, xJ,
+        imageSizeI,
+        imageSizeJ,
+        inliers);
+
+    if (!estimationPair.first) // estimation is not valid
+    {
+      assert(inliers.empty());
+      return EstimationStatus(false, false);
+    }
+
+    // Fill geometricInliersPerType with inliers from putativeMatchesPerType
+    copyInlierMatches(
+          inliers,
+          putativeMatchesPerType,
+          descTypes,
+          out_geometricInliersPerType);
+
+    // If matches has strong support
+    const bool hasStrongSupport = robust::hasStrongSupport(out_geometricInliersPerType, estimationPair.second);
+
+    return EstimationStatus(true, hasStrongSupport);
+  }
+
+  /**
+   * @brief Given two sets of image points, it estimates the fundamental matrix
+   * relating them using a robust method (like A Contrario Ransac).
    * 
    * @param[in] xI The first set of points
    * @param[in] xJ The second set of points
    * @param[in] imageSizeI The size of the first image (used for normalizing the points)
    * @param[in] imageSizeJ The size of the second image
    * @param[out] geometric_inliers A vector containing the indices of the inliers
-   * @return true if the estimated fundamental matrix is supported by enough points,
-   * namely if there are at least KernelType::MINIMUM_SAMPLES *2.5 points supporting
-   * the estimated fundamental matrix 
+   * @return true if geometric_inliers is not empty
    */
-  bool Robust_estimation(
+  std::pair<bool, std::size_t> geometricEstimation_Mat(
     const Mat& xI,       // points of the first image
     const Mat& xJ,       // points of the second image
     const std::pair<size_t,size_t> & imageSizeI,     // size of the first image  
     const std::pair<size_t,size_t> & imageSizeJ,     // size of the first image
-    std::vector<size_t> &vec_inliers,
-    robust::EROBUST_ESTIMATOR estimator = robust::ROBUST_ESTIMATOR_ACRANSAC)
+    std::vector<size_t> & out_inliers)
   {
     using namespace openMVG;
     using namespace openMVG::robust;
-    vec_inliers.clear();
+    out_inliers.clear();
 
-    //--
-    // Robust estimation
-    //--
-
-    if(estimator == ROBUST_ESTIMATOR_ACRANSAC)
+    switch(m_estimator)
     {
-
-      // Define the AContrario adapted Fundamental matrix solver
-      typedef ACKernelAdaptor<
-        openMVG::fundamental::kernel::SevenPointSolver,
-        openMVG::fundamental::kernel::SimpleError,
-        //openMVG::fundamental::kernel::SymmetricEpipolarDistanceError,
-        UnnormalizerT,
-        Mat3>
-        KernelType;
-
-      const KernelType kernel(
-        xI, imageSizeI.first, imageSizeI.second,
-        xJ, imageSizeJ.first, imageSizeJ.second, true);
-      
-      // Robustly estimate the Fundamental matrix with A Contrario ransac
-      const double upper_bound_precision = Square(m_dPrecision);
-      const std::pair<double,double> ACRansacOut =
-        ACRANSAC(kernel, vec_inliers, m_stIteration, &m_F, upper_bound_precision);
-
-      bool valid = ( (vec_inliers.size() > KernelType::MINIMUM_SAMPLES * OPENMVG_MINIMUM_SAMPLES_COEF) );
-
-      // if the estimation has enough support set its precision
-      if(valid) m_dPrecision_robust = ACRansacOut.first;
-
-      return valid;
-    }
-    else if(estimator == ROBUST_ESTIMATOR_LORANSAC)
-    {
-      // just a safeguard
-      if(m_dPrecision == std::numeric_limits<double>::infinity())
+      case ROBUST_ESTIMATOR_ACRANSAC:
       {
-        throw std::invalid_argument("[GeometricFilter_FMatrix_AC::Robust_estimation] the threshold of the LORANSAC is set to infinity!");
+        // Define the AContrario adapted Fundamental matrix solver
+        typedef ACKernelAdaptor<
+          openMVG::fundamental::kernel::SevenPointSolver,
+          openMVG::fundamental::kernel::SimpleError,
+          //openMVG::fundamental::kernel::SymmetricEpipolarDistanceError,
+          UnnormalizerT,
+          Mat3>
+          KernelType;
+
+        const KernelType kernel(
+          xI, imageSizeI.first, imageSizeI.second,
+          xJ, imageSizeJ.first, imageSizeJ.second, true);
+
+        // Robustly estimate the Fundamental matrix with A Contrario ransac
+        const double upper_bound_precision = Square(m_dPrecision);
+        const std::pair<double,double> ACRansacOut =
+          ACRANSAC(kernel, out_inliers, m_stIteration, &m_F, upper_bound_precision);
+
+        if(out_inliers.empty())
+          return std::make_pair(false, KernelType::MINIMUM_SAMPLES);
+
+        m_dPrecision_robust = ACRansacOut.first;
+
+        return std::make_pair(true, KernelType::MINIMUM_SAMPLES);
       }
-      
-      typedef KernelAdaptorLoRansac<
-              openMVG::fundamental::kernel::SevenPointSolver,
-              openMVG::fundamental::kernel::SymmetricEpipolarDistanceError,
-              UnnormalizerT,
-              Mat3,
-              openMVG::fundamental::kernel::EightPointSolver>
-              KernelType;
+      case ROBUST_ESTIMATOR_LORANSAC:
+      {
+        // just a safeguard
+        if(m_dPrecision == std::numeric_limits<double>::infinity())
+        {
+          throw std::invalid_argument("[GeometricFilter_FMatrix_AC::geometricEstimation] the threshold of the LORANSAC is set to infinity!");
+        }
 
-      const KernelType kernel(xI, imageSizeI.first, imageSizeI.second,
-                              xJ, imageSizeJ.first, imageSizeJ.second, true);
+        typedef KernelAdaptorLoRansac<
+                openMVG::fundamental::kernel::SevenPointSolver,
+                openMVG::fundamental::kernel::SymmetricEpipolarDistanceError,
+                UnnormalizerT,
+                Mat3,
+                openMVG::fundamental::kernel::EightPointSolver>
+                KernelType;
 
-      //@fixme scorer should be using the pixel error, not the squared version, refactoring needed
-      const double normalizedThreshold = Square(m_dPrecision * kernel.normalizer2()(0, 0));
-      ScorerEvaluator<KernelType> scorer(normalizedThreshold);
+        const KernelType kernel(xI, imageSizeI.first, imageSizeI.second,
+                                xJ, imageSizeJ.first, imageSizeJ.second, true);
 
-      m_F = LO_RANSAC(kernel, scorer, &vec_inliers);
-      
-      bool valid = ( (vec_inliers.size() > KernelType::MINIMUM_SAMPLES * OPENMVG_MINIMUM_SAMPLES_COEF) );
+        //@fixme scorer should be using the pixel error, not the squared version, refactoring needed
+        const double normalizedThreshold = Square(m_dPrecision * kernel.normalizer2()(0, 0));
+        ScorerEvaluator<KernelType> scorer(normalizedThreshold);
 
-      // for LORansac the robust precision is the same as the threshold
-      if(valid) m_dPrecision_robust = m_dPrecision;
+        m_F = LO_RANSAC(kernel, scorer, &out_inliers);
 
-      return valid;
+        if(out_inliers.empty())
+          return std::make_pair(false, KernelType::MINIMUM_SAMPLES);
+
+        m_dPrecision_robust = m_dPrecision;
+
+        return std::make_pair(true, KernelType::MINIMUM_SAMPLES);
+      }
+    default:
+      throw std::runtime_error("[GeometricFilter_FMatrix_AC::geometricEstimation] only ACRansac and LORansac are supported!");
     }
-    else
-    {
-      throw std::runtime_error("[GeometricFilter_FMatrix_AC::Robust_estimation] only ACRansac and LORansac are supported!");
-    }
+    return std::make_pair(false, 0);;
   }
   
-
-  bool Geometry_guided_matching
-  (
-    const sfm::SfM_Data * sfm_data,
-    const std::shared_ptr<sfm::Regions_Provider> & regions_provider,
-    const Pair pairIndex,
+  /**
+   * @brief Geometry_guided_matching
+   * @param sfmData
+   * @param regionsPerView
+   * @param imagesPair
+   * @param dDistanceRatio
+   * @param matches
+   * @return
+   */
+  bool Geometry_guided_matching(
+    const sfm::SfM_Data * sfmData,
+    const features::RegionsPerView& regionsPerView,
+    const Pair imageIdsPair,
     const double dDistanceRatio,
-    matching::IndMatches & matches
-  )
+    matching::MatchesPerDescType & matches) override
   {
     if (m_dPrecision_robust != std::numeric_limits<double>::infinity())
     {
       // Get back corresponding view index
-      const IndexT iIndex = pairIndex.first;
-      const IndexT jIndex = pairIndex.second;
+      const IndexT viewId_I = imageIdsPair.first;
+      const IndexT viewId_J = imageIdsPair.second;
 
-      const sfm::View * view_I = sfm_data->views.at(iIndex).get();
-      const sfm::View * view_J = sfm_data->views.at(jIndex).get();
+      const sfm::View * view_I = sfmData->views.at(viewId_I).get();
+      const sfm::View * view_J = sfmData->views.at(viewId_J).get();
 
       // Retrieve corresponding pair camera intrinsic if any
       const cameras::IntrinsicBase * cam_I =
-        sfm_data->GetIntrinsics().count(view_I->id_intrinsic) ?
-          sfm_data->GetIntrinsics().at(view_I->id_intrinsic).get() : nullptr;
+        sfmData->GetIntrinsics().count(view_I->id_intrinsic) ?
+          sfmData->GetIntrinsics().at(view_I->id_intrinsic).get() : nullptr;
       const cameras::IntrinsicBase * cam_J =
-        sfm_data->GetIntrinsics().count(view_J->id_intrinsic) ?
-          sfm_data->GetIntrinsics().at(view_J->id_intrinsic).get() : nullptr;
+        sfmData->GetIntrinsics().count(view_J->id_intrinsic) ?
+          sfmData->GetIntrinsics().at(view_J->id_intrinsic).get() : nullptr;
 
       // Check the features correspondences that agree in the geometric and photometric domain
-      geometry_aware::GuidedMatching
-        <Mat3,
-        openMVG::fundamental::kernel::EpipolarDistanceError>(
-        //openMVG::fundamental::kernel::SymmetricEpipolarDistanceError>(
+      geometry_aware::GuidedMatching<Mat3,
+                                     fundamental::kernel::EpipolarDistanceError>(
         m_F,
         cam_I, // cameras::IntrinsicBase
-        *regions_provider->regions_per_view.at(iIndex), // features::Regions
+        regionsPerView.getAllRegions(viewId_I), // features::Regions
         cam_J, // cameras::IntrinsicBase
-        *regions_provider->regions_per_view.at(jIndex), // features::Regions
+        regionsPerView.getAllRegions(viewId_J), // features::Regions
         Square(m_dPrecision_robust), Square(dDistanceRatio),
         matches);
     }
-    return matches.size() != 0;
+    return matches.getNbAllMatches() != 0;
   }
   
-  double m_dPrecision;  //upper_bound precision used for robust estimation
-  size_t m_stIteration; //maximal number of iteration for robust estimation
   //
   //-- Stored data
   Mat3 m_F;
-  double m_dPrecision_robust;
+  robust::EROBUST_ESTIMATOR m_estimator;
 };
 
+} // namespace matching_image_collection
 } // namespace openMVG
-} //namespace matching_image_collection

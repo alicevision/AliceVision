@@ -71,15 +71,16 @@ public:
    * the first element is removed before the insertion (FIFO strategy).
    * @param[in] fm The element to add.
    */
-  void push_back(const T &fm)
-  { 
+  template <typename... Args>
+  void emplace_back(Args&&... args)
+  {
     assert(_buffer.size() <= _maxSize);
-    
-    if(_buffer.size() == _maxSize) 
+
+    if(_buffer.size() == _maxSize)
     {
       _buffer.pop_front();
     }
-    _buffer.push_back(fm);
+    _buffer.emplace_back(args...);
   }
 
 };

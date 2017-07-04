@@ -3,14 +3,14 @@
 `openMVG_main_cameraLocalization` is used to localize a camera. It can take as 
 input a video, a list of images in the form of a simple txt file or a json file. 
 It can localize a camera using natural features (SIFT), circular markers (CCTAG) or
-both of them (SIFT_CCTAG) [depending on you build options].
+a combination of feature types [depending on you build options].
 
 ### Usage:
 
 ```
    -h [ --help ]                      Print this message
   --descriptors arg (=SIFT)          Type of descriptors to use 
-                                     {SIFT,CCTAG,SIFT_CCTAG}
+                                     {"SIFT", "CCTAG3", "SIFT,CCTAG3"}
   
   --preset arg (=NORMAL)             Preset for the feature extractor when 
                                      localizing a new image 

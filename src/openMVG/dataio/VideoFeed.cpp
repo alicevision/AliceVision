@@ -5,8 +5,6 @@
  * Created on September 28, 2015, 10:35 AM
  */
 
-#ifdef HAVE_OPENCV
-
 #include "VideoFeed.hpp"
 
 #include <openMVG/logger.hpp>
@@ -272,6 +270,3 @@ VideoFeed::~VideoFeed() { }
 
 }//namespace dataio 
 }//namespace openMVG
-
-
-#endif //#ifdef HAVE_OPENCV

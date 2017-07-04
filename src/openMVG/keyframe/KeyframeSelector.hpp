@@ -1,12 +1,11 @@
 #pragma once
-
-#include <openMVG/image/image.hpp> //TODO : class forward declaration
-#include <openMVG/voctree/vocabulary_tree.hpp> //TODO : class forward declaration
-#include <openMVG/features/features.hpp> //TODO : class forward declaration
-#include <openMVG/dataio/FeedProvider.hpp>
 #include "SharpnessSelectionPreset.hpp"
+#include "openMVG/features/features.hpp"
+#include "openMVG/voctree/vocabulary_tree.hpp"
+#include "openMVG/dataio/FeedProvider.hpp"
 
-#include <OpenImageIO/imageio.h>  
+#include <OpenImageIO/imageio.h>
+
 #include <string>
 #include <vector>
 #include <memory>
@@ -15,12 +14,20 @@
 namespace oiio = OpenImageIO;
 
 namespace openMVG {
+
+namespace image {
+
+template<typename T>
+class Image;
+
+} // namespace image
+
 namespace keyframe {
 
 class KeyframeSelector
 {
 private:
-  // descriptor definition
+  // SIFT descriptor definition
   const static std::size_t _dimension = 128;
   using DescriptorFloat = openMVG::features::Descriptor<float, _dimension>;
   
@@ -34,7 +41,7 @@ public:
     std::string brand = "Pinhole";
     /// Camera model
     std::string model = "Pinhole";
-    /// FocalLength in mm or px
+    /// Focal length in mm or px
     float focalLength = 1.2f;
     /// If focalIsMM is false, focalLength is in px
     bool focalIsMM = true;

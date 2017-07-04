@@ -27,6 +27,13 @@ inline void Convert(const Tin& valin, Tout& out) {
 }
 
 template<>
+inline void Convert<unsigned char, RGBColor>(
+  const unsigned char& valin, RGBColor& valOut)
+{
+  valOut = RGBColor(valin);
+}
+
+template<>
 inline void Convert<RGBColor, unsigned char>(
   const RGBColor& valin, unsigned char& valOut)
 {

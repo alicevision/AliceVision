@@ -48,10 +48,10 @@ SfM_Data create_test_scene(IndexT viewsCount, bool bSharedIntrinsic)
   }
 
   // Fill with not meaningful tracks
-  Observations obs;
-  obs[0] = Observation( Vec2(10,20), 0);
-  obs[1] = Observation( Vec2(30,10), 1);
-  sfm_data.structure[0].obs = obs;
+  Observations observations;
+  observations[0] = Observation( Vec2(10,20), 0);
+  observations[1] = Observation( Vec2(30,10), 1);
+  sfm_data.structure[0].observations = observations;
   sfm_data.structure[0].X = Vec3(11,22,33);
   return sfm_data;
 }

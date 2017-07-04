@@ -9,6 +9,7 @@
 #include "openMVG/cameras/cameras.hpp"
 #include "openMVG/image/image.hpp"
 #include "openMVG/features/features.hpp"
+#include "openMVG/features/sift/SIFT_describer.hpp"
 #include "openMVG/sfm/sfm.hpp"
 
 #include "openMVG/matching/matcher_brute_force.hpp"
@@ -16,8 +17,6 @@
 #include "openMVG/multiview/triangulation.hpp"
 
 #include "openMVG/matching/regions_matcher.hpp"
-
-#include "nonFree/sift/SIFT_describer.hpp"
 
 #include "third_party/stlplus3/filesystemSimplified/file_system.hpp"
 #include "third_party/vectorGraphics/svgDrawer.hpp"
@@ -61,7 +60,7 @@ int main() {
   // Detect regions thanks to an image_describer
   //--
   using namespace openMVG::features;
-  std::unique_ptr<Image_describer> image_describer(new SIFT_Image_describer);
+  std::unique_ptr<Image_describer> image_describer(new SIFT_ImageDescriber);
   std::map<IndexT, std::unique_ptr<features::Regions> > regions_perImage;
   image_describer->Describe(imageL, regions_perImage[0]);
   image_describer->Describe(imageR, regions_perImage[1]);
@@ -248,8 +247,8 @@ int main() {
       if (pose0.depth(X) < 0 && pose1.depth(X) < 0)
           continue;
       // Add a new landmark (3D point with it's 2d observations)
-      landmarks[i].obs[tiny_scene.views[0]->id_view] = Observation(LL.coords().cast<double>(), vec_PutativeMatches[relativePose_info.vec_inliers[i]]._i);
-      landmarks[i].obs[tiny_scene.views[1]->id_view] = Observation(RR.coords().cast<double>(), vec_PutativeMatches[relativePose_info.vec_inliers[i]]._j);
+      landmarks[i].observations[tiny_scene.views[0]->id_view] = Observation(LL.coords().cast<double>(), vec_PutativeMatches[relativePose_info.vec_inliers[i]]._i);
+      landmarks[i].observations[tiny_scene.views[1]->id_view] = Observation(RR.coords().cast<double>(), vec_PutativeMatches[relativePose_info.vec_inliers[i]]._j);
       landmarks[i].X = X;
     }
     Save(tiny_scene, "EssentialGeometry_start.ply", ESfM_Data(ALL));

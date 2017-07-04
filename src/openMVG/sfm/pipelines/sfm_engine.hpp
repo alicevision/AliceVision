@@ -35,7 +35,8 @@ public:
   bool Get_bFixedIntrinsics() const {return _bFixedIntrinsics;}
   void Set_bFixedIntrinsics(bool bVal) {_bFixedIntrinsics = bVal;}
 
-  const SfM_Data & Get_SfM_Data() const {return _sfm_data;}
+  SfM_Data & Get_SfM_Data() { return _sfm_data; }
+  const SfM_Data & Get_SfM_Data() const { return _sfm_data; }
 
   bool Colorize() { return ColorizeTracks(_sfm_data); }
 
