@@ -239,8 +239,8 @@ private:
   {
     /// sharpness score
     float sharpness = 0;
-    /// minimum distance score with keyframe media histograms
-    float distScore = std::numeric_limits<float>::max();
+    /// maximum distance score with keyframe media histograms
+    float distScore = 0;
     /// sparseHistogram
     voctree::SparseHistogram histogram;
   };
@@ -252,8 +252,8 @@ private:
   {
     /// average sharpness score of all media
     float avgSharpness = 0;
-    /// minimum voctree distance score of all media
-    float minDistScore = std::numeric_limits<float>::max();
+    /// maximum voctree distance score of all media
+    float maxDistScore = 0;
     /// frame (or set of frames) selected for evaluation
     bool selected = false;
     /// frame is a keyframe

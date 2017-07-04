@@ -121,34 +121,35 @@ void KeyframeSelector::process()
   for(std::size_t frameIndex = 0; frameIndex < _framesData.size(); ++frameIndex)
   {
     OPENMVG_COUT("frame : " << frameIndex <<  std::endl);
-    bool selected = true;
+    bool frameSelected = true;
     auto& frameData = _framesData.at(frameIndex);
     frameData.mediasData.resize(_feeds.size());
 
     for(std::size_t mediaIndex = 0; mediaIndex < _feeds.size(); ++mediaIndex)
-    {   
+    {
       OPENMVG_COUT("media : " << _mediaPaths.at(mediaIndex) << std::endl);
-
       auto& feed = *_feeds.at(mediaIndex);
 
-      if(!feed.readImage(image, queryIntrinsics, currentImgName, hasIntrinsics))
+      if(frameSelected) // false if a camera of a rig is not selected
       {
-        OPENMVG_CERR("ERROR  : can't read frame '" << currentImgName << "' !");
-        throw std::invalid_argument("ERROR : can't read frame '" + currentImgName + "' !");
-      }
+        if(!feed.readImage(image, queryIntrinsics, currentImgName, hasIntrinsics))
+        {
+          OPENMVG_CERR("ERROR  : can't read frame '" << currentImgName << "' !");
+          throw std::invalid_argument("ERROR : can't read frame '" + currentImgName + "' !");
+        }
 
-      // compute sharpness and sparse distance
-      if(!computeFrameData(image, frameIndex, mediaIndex, tileSharpSubset))
-      {
-        selected = false;
-        break;
+        // compute sharpness and sparse distance
+        if(!computeFrameData(image, frameIndex, mediaIndex, tileSharpSubset))
+        {
+          frameSelected = false;
+        }
       }
 
       feed.goToNextFrame();
     }
 
     {
-      if(selected)
+      if(frameSelected)
       {
         OPENMVG_COUT(" > selected "  <<  std::endl);
         frameData.selected = true;
@@ -218,7 +219,7 @@ void KeyframeSelector::process()
     {
       if(_framesData[i].keyframe)
       {
-        keyframes.emplace_back(_framesData[i].minDistScore, 1 / _framesData[i].avgSharpness, i);
+        keyframes.emplace_back(_framesData[i].maxDistScore, 1 / _framesData[i].avgSharpness, i);
       }
     }
     std::sort(keyframes.begin(), keyframes.end());
@@ -283,7 +284,8 @@ bool KeyframeSelector::computeFrameData(const image::Image<image::RGBColor>& ima
   image::Image<unsigned char> imageGrayHalfSample;      // half resolution grayscale image
   
   const auto& currMediaInfo = _mediasInfo.at(mediaIndex);
-  auto& currMediaData = _framesData.at(frameIndex).mediasData.at(mediaIndex);
+  auto& currframeData = _framesData.at(frameIndex);
+  auto& currMediaData = currframeData.mediasData.at(mediaIndex);
 
   // get grayscale image and resize
   image::ConvertPixelType(image, &imageGray);
@@ -315,9 +317,10 @@ bool KeyframeSelector::computeFrameData(const image::Image<image::RGBColor>& ima
       {
         for(auto& media : _framesData.at(_keyframeIndexes.at(i)).mediasData)
         {
-          currMediaData.distScore = std::min(currMediaData.distScore, std::abs(voctree::sparseDistance(media.histogram, currMediaData.histogram, "strongCommonPoints")));
+          currMediaData.distScore = std::max(currMediaData.distScore, std::abs(voctree::sparseDistance(media.histogram, currMediaData.histogram, "strongCommonPoints")));
         }
       }
+      currframeData.maxDistScore = std::max(currframeData.maxDistScore, currMediaData.distScore);
       OPENMVG_COUT(" - distScore : " << currMediaData.distScore <<  std::endl);
     }
 
