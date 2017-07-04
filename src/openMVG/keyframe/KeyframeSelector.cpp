@@ -166,6 +166,7 @@ void KeyframeSelector::process()
     if(currentFrameStep >= _maxFrameStep)
     {
       currentFrameStep = _minFrameStep;
+      bool hasKeyframe = false;
       std::size_t keyframeIndex = 0;
       float maxSharpness = 0;
 
@@ -174,16 +175,16 @@ void KeyframeSelector::process()
       {
         if(_framesData[index].selected && (_framesData[index].avgSharpness > maxSharpness))
         {
+          hasKeyframe = true;
           keyframeIndex = index;
           maxSharpness = _framesData[index].avgSharpness;
         }
       }
 
-      OPENMVG_COUT("--> keyframe choice : " << keyframeIndex <<  std::endl);
-
       // save keyframe
-      if(keyframeIndex != 0)
+      if(hasKeyframe)
       {
+        OPENMVG_COUT("--> keyframe choice : " << keyframeIndex <<  std::endl);
         if(_maxOutFrame == 0) // no limit of keyframes (direct evaluation)
         {
           // write keyframe
@@ -201,6 +202,10 @@ void KeyframeSelector::process()
         _keyframeIndexes.push_back(keyframeIndex);
 
         frameIndex = keyframeIndex + _minFrameStep - 1;
+      }
+      else
+      {
+        OPENMVG_COUT("--> keyframe choice : none");
       }
     }
     ++currentFrameStep;
