@@ -127,13 +127,13 @@ int main(int argc, char **argv)
   cmd.add( make_option('d', rangeSize, "range_size") );
   cmd.add( make_option('n', nearestMatchingMethod, "nearest_matching_method") );
   cmd.add( make_option('G', geometricEstimatorStr, "geometricEstimator") );
-  cmd.add( make_option('f', savePutativeMatches, "save_putative_matches") );
+  cmd.add( make_option('p', savePutativeMatches, "save_putative_matches") );
   cmd.add( make_option('M', guidedMatching, "guided_matching") );
   cmd.add( make_option('I', maxIteration, "max_iteration") );
   cmd.add( make_option('x', matchFilePerImage, "match_file_per_image") );
-  cmd.add(make_option('u', numMatchesToKeep, "max_matches"));
-  cmd.add(make_option('y', useGridSort, "use_grid_sort"));
-  cmd.add(make_option('e', exportDebugFiles, "export_debug_files"));
+  cmd.add( make_option('u', numMatchesToKeep, "max_matches"));
+  cmd.add( make_option('y', useGridSort, "use_grid_sort"));
+  cmd.add( make_option('e', exportDebugFiles, "export_debug_files"));
 
   try
   {
@@ -164,7 +164,6 @@ int main(int argc, char **argv)
   #endif
       << "  use the found model to improve the pairwise correspondences.\n"
       << "[-F|--featuresDir] Path to directory containing the extracted features (default: $out_dir)\n"
-      << "[-f|--force] Force to recompute data\n"
       << "[-p|--save_putative_matches] Save putative matches\n"
       << "[-r|--ratio] Distance ratio to discard non meaningful matches\n"
       << "   0.8: (default).\n"
@@ -252,7 +251,7 @@ int main(int argc, char **argv)
     std::cerr << "\nIt is an invalid output directory" << std::endl;
     return EXIT_FAILURE;
   }
-  
+
   if(describerMethods.empty())
   {
     std::cerr << "\nError: describerMethods argument is empty." << std::endl;
@@ -330,16 +329,16 @@ int main(int argc, char **argv)
       }
       break;
   }
-  
+
   if(pairs.empty())
   {
     std::cout << "No image pair to match." << std::endl;
     // If we only compute a selection of matches, we may have no match.
     return rangeSize ? EXIT_SUCCESS : EXIT_FAILURE;
-  }  
-  
+  }
+
   std::cout << "Number of pairs: " << pairs.size() << std::endl;
-  
+
   //Creation of the filter
   for(const auto& pair: pairs)
   {
@@ -361,11 +360,11 @@ int main(int argc, char **argv)
   // Allocate the right Matcher according the Matching requested method
   EMatcherType collectionMatcherType = EMatcherType_stringToEnum(nearestMatchingMethod);
   std::unique_ptr<IImageCollectionMatcher> imageCollectionMatcher = createImageCollectionMatcher(collectionMatcherType, distRatio);
-  
+
   const std::vector<features::EImageDescriberType> describerTypes = features::EImageDescriberType_stringToEnums(describerMethods);
-  
+
   std::cout << "There are " << sfmData.GetViews().size() << " views and " << pairs.size() << " image pairs." << std::endl;
-  
+
   // Load the corresponding view regions
   RegionsPerView regionPerView;
 
@@ -435,7 +434,7 @@ int main(int argc, char **argv)
     }
   }
   */
-  
+
 #ifdef OPENMVG_DEBUG_MATCHING
     {
       std::cout << "PUTATIVE" << std::endl;

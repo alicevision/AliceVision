@@ -83,8 +83,6 @@ if __name__ == '__main__':
                                 help='The robust framework to use for estimating the geometric model (default: %(default)s)')
     computeMatches.add_argument('--guided_matching', action='store_true',
                                 help='Use the estimated geometric model to improve the pairwise correspondences')
-    computeMatches.add_argument('--force', action='store_true',
-                                help='Force to recompute data')
     computeMatches.add_argument('--video_mode_matching',default='-1',
                                 help='Sequence matching with an overlap of X images, X=-1 means disabled (default: %(default)s)')
 
@@ -139,8 +137,6 @@ if __name__ == '__main__':
 
     print ("3. Compute matches")
     command = [os.path.join(binary_dir, "openMVG_main_ComputeMatches"),  "-i", matches_dir+"/sfm_data.json", "-o", matches_dir, "--describerMethods", ",".join(args.describerMethods), "--ratio", args.ratio, "--geometric_model", args.geometric_model, "--nearest_matching_method", args.nearest_matching_method, "--geometricEstimator", args.geometricEstimator, "--video_mode_matching", args.video_mode_matching]
-    if args.force:
-      command += ["-f", "1"]
     if args.guided_matching:
       command += ["--guided_matching", "1"]
     print " ".join(command)
