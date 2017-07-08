@@ -50,6 +50,8 @@ if __name__ == '__main__':
                         help='The reconstruction pipeline to use (default: %(default)s)')
     parser.add_argument('--computeStructureFromKnownPoses', action='store_true',
                         help='At the end it will recompute the 3D points using the estimated camera poses')
+    parser.add_argument('--cmpmvs_dir',
+                        help='The directory where CMPMVS binary can be found. If set it will attempt to launch CMPMVS once the openMVG SfM process is done')
     parser.add_argument('--dry', action='store_true',
                         help='It just prints the command lines to execute without launching them')
 
@@ -171,7 +173,25 @@ if __name__ == '__main__':
     if args.computeStructureFromKnownPoses:
       print ("6. Structure from Known Poses (robust triangulation)")
       command = [os.path.join(binary_dir, "openMVG_main_ComputeStructureFromKnownPoses"),  "-i", reconstruction_dir+"/sfm_data.json", "-m", matches_dir, "-f", os.path.join(matches_dir, "matches.f.bin"), "-o", os.path.join(reconstruction_dir,"robust.json")]
-      print command
+      print " ".join(command)
       if not args.dry:
         pRecons = subprocess.Popen( command )
         pRecons.wait()
+
+    # optional CMPMVS step
+    if args.cmpmvs_dir:
+        # first generate the ini file
+        print ("7. Export data into CMPMVS format")
+        command = [os.path.join(binary_dir, "openMVG_main_openMVG2CMPMVS2"),  "-i", reconstruction_dir+"/sfm_data.json",  "-o", os.path.join(reconstruction_dir,"cmpmvs.ini")]
+        print " ".join(command)
+        if not args.dry:
+          pRecons = subprocess.Popen( command )
+          pRecons.wait()
+
+        # call CMPMVS
+        print ("8. Multiview stereo with CMPMVS")
+        command = [os.path.join(args.cmpmvs_dir, "CMPMVS"),  "--all", os.path.join(reconstruction_dir,"cmpmvs.ini")]
+        print " ".join(command)
+        if not args.dry:
+          pRecons = subprocess.Popen( command )
+          pRecons.wait()
