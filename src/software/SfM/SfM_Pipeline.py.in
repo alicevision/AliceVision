@@ -1,0 +1,177 @@
+#!/usr/bin/python
+#! -*- encoding: utf-8 -*-
+
+# Python implementation of the bash script written by Romuald Perrot
+# Created by @vins31
+# Modified by Pierre Moulon
+#
+# This script ease the call to the 3D reconstruction pipelines.
+#
+# Usage : python SfM_Pipeline.py --image_dir imageDIR --output_dir outputDir
+#
+# imageDIR is the input directory where images are located
+# outputDir is where the project will be saved
+#
+# The SfM method to use, incremental or global can be chosen by passing
+# --pipeline {incremental, global}
+#
+# Launch
+#    SfM_Pipeline --help
+# for a complete description of the parameters for each step
+#
+# The script can be run without requiring the installation (ie make install), in that
+# case you need to provide the directory containing the openMVG binaries (--binary_dir)
+# and the sensor database file (--sensorWidthDatabase), which is normally the file
+# sensor_width_camera_database.txt included in openMVG/src/openMVG/exif
+
+import commands
+import os
+import subprocess
+import sys
+import argparse
+
+# the openMVG binary directory
+OPENMVG_SFM_BIN = "@OPENMVG_SOFTWARE_SFM_BUILD_DIR@"
+
+# the openMVG camera sensor width directory
+CAMERA_SENSOR_WIDTH_DIRECTORY = "@OPENMVG_SOFTWARE_SFM_SRC_DIR@"
+
+camera_file_params = os.path.join(CAMERA_SENSOR_WIDTH_DIRECTORY, "sensor_width_camera_database.txt")
+
+if __name__ == '__main__':
+
+    parser = argparse.ArgumentParser(description='Launcher for the 3D reconstruction pipelines \n Usage : '+__file__+' --image_dir imageDIR --output_dir outputDir')
+    # general parameters
+    parser.add_argument('--image_dir', help='The directory containing the images.')
+    parser.add_argument('--output_dir', help='The directory where the recontruction files are saved')
+    parser.add_argument('--binary_dir',  default=OPENMVG_SFM_BIN,
+                        help='The directory where openMVG binaries are installed (default: %(default)s)')
+    parser.add_argument('--pipeline',  default='incremental', choices=['incremental', 'global'],
+                        help='The reconstruction pipeline to use (default: %(default)s)')
+    parser.add_argument('--computeStructureFromKnownPoses', action='store_true',
+                        help='At the end it will recompute the 3D points using the estimated camera poses')
+    parser.add_argument('--dry', action='store_true',
+                        help='It just prints the command lines to execute without launching them')
+
+    # intrinsics analysis parameters
+    intrinsicsAnalysis = parser.add_argument_group('Intrinsics Analysis step', 'The parameters for the intrinsics analysis step')
+    intrinsicsAnalysis.add_argument('--sensorWidthDatabase', default=camera_file_params,
+                                    help='The file containing the database of sensor widths (default: %(default)s)')
+    intrinsicsAnalysis.add_argument('--noUID', action='store_true',
+                                    help='Disable the use of UID (unique identifier) for each view, using the image index instead')
+    intrinsicsAnalysis.add_argument('--camera_model',  choices=['pinhole', 'radial1', 'radial3', 'brown', 'fisheye4'],
+                                    help='Tha camera projection model to use, if not provided a proper model is chosen according to the EXIF info')
+
+    # Compute features parameters
+    computeFeatures = parser.add_argument_group('Computer features step', 'The parameters for the compute features step')
+    computeFeatures.add_argument('--preset',  default='NORMAL', choices=['LOW', 'MEDIUM', 'NORMAL', 'HIGH', 'ULTRA'],
+                                 help='The settings for the feature extractor(s) (default: %(default)s)')
+    computeFeatures.add_argument('--describerMethods', nargs='+', default='SIFT', choices=['SIFT', 'AKAZE', 'AKAZE_MLDB', 'CCTAG3', 'CCTAG4', 'SIFT_OCV', 'AKAZE_OCV'],
+                                 help='The feature extractor(s) to use (default: %(default)s). When using multiple describers, separate them with spaces, ie --describerMethods SIFT AKAZE')
+
+    # Compute matches parameters
+    computeMatches = parser.add_argument_group('Computer matches step', 'The parameters for the compute matches step')
+    computeMatches.add_argument('--ratio', default='0.8',
+                                help='Distance ratio to discard non meaningful matches')
+    computeMatches.add_argument('--geometric_model', default='f', choices=['f', 'e', 'h'],
+                                help='Geometric model used to filter out incorrect matches, it can be the (f)undamental, the (e)ssential or the (h)omography model (default: %(default)s)')
+    computeMatches.add_argument('--nearest_matching_method', default='ANN_L2', choices=['BRUTE_FORCE_L2', 'ANN_L2', 'CASCADE_HASHING_L2', 'FAST_CASCADE_HASHING_L2', 'BRUTE_FORCE_HAMMING'],
+                                help='The method used for matching the descriptors. BRUTE_FORCE_HAMMING only works for binary descriptors (default: %(default)s)')
+    computeMatches.add_argument('--geometricEstimator', default='acransac', choices=['acransac', 'loransac'],
+                                help='The robust framework to use for estimating the geometric model (default: %(default)s)')
+    computeMatches.add_argument('--guided_matching', action='store_true',
+                                help='Use the estimated geometric model to improve the pairwise correspondences')
+    computeMatches.add_argument('--force', action='store_true',
+                                help='Force to recompute data')
+    computeMatches.add_argument('--video_mode_matching',default='-1',
+                                help='Sequence matching with an overlap of X images, X=-1 means disabled (default: %(default)s)')
+
+    # Reconstruction parameters
+    reconstructionParameters = parser.add_argument_group('Reconstruction step', 'The parameters for the  reconstruction step, some parameters are in common for both reconstruction methods')
+    reconstructionParameters.add_argument('--inter_file_extension', default='.ply', choices=['.json','.ply','.abc','.xml','.baf'],
+                                           help='[incremental] Extension of the intermediate file export (default: %(default)s)')
+    reconstructionParameters.add_argument('--initialPairA',
+                                           help='[incremental] Filename of the first image (without path)')
+    reconstructionParameters.add_argument('--initialPairB',
+                                           help='[incremental] Filename of the second image (without path)')
+    reconstructionParameters.add_argument('--minInputTrackLength', default='2',
+                                           help='[incremental] Minimum track length in input of SfM (default: %(default)s)')
+    args = parser.parse_args()
+
+    input_dir = args.image_dir
+    output_dir = args.output_dir
+    binary_dir = args.binary_dir
+    matches_dir = os.path.join(output_dir, "matches")
+    reconstruction_dir = os.path.join(output_dir, "reconstruction_"+args.pipeline)
+    camera_file_params = args.sensorWidthDatabase
+
+
+    print ("Using input dir  : ", input_dir)
+    print ("      output_dir : ", output_dir)
+
+    # Create the ouput/matches folder if not present
+    if not os.path.exists(output_dir):
+      os.mkdir(output_dir)
+    if not os.path.exists(matches_dir):
+      os.mkdir(matches_dir)
+
+    print ("1. Intrinsics analysis")
+    command = [os.path.join(binary_dir, "openMVG_main_SfMInit_ImageListing"),  "-i", input_dir, "-o", matches_dir, "-d", camera_file_params]
+    if not args.noUID:
+      command += ["--use_UID", "0"]
+    if args.camera_model:
+      command += ["--camera_model", args.camera_model]
+    print " ".join(command)
+    if not args.dry:
+      pIntrisics = subprocess.Popen( command )
+      pIntrisics.wait()
+
+    print ("2. Compute features")
+    command = [os.path.join(binary_dir, "openMVG_main_ComputeFeatures"),  "-i", matches_dir+"/sfm_data.json", "-o", matches_dir, "--describerMethods", ",".join(args.describerMethods)]
+    print " ".join(command)
+    if not args.dry:
+      pFeatures = subprocess.Popen( command )
+      pFeatures.wait()
+
+    print ("3. Compute matches")
+    command = [os.path.join(binary_dir, "openMVG_main_ComputeMatches"),  "-i", matches_dir+"/sfm_data.json", "-o", matches_dir, "--describerMethods", ",".join(args.describerMethods), "--ratio", args.ratio, "--geometric_model", args.geometric_model, "--nearest_matching_method", args.nearest_matching_method, "--geometricEstimator", args.geometricEstimator, "--video_mode_matching", args.video_mode_matching]
+    if args.force:
+      command += ["-f", "1"]
+    if args.guided_matching:
+      command += ["--guided_matching", "1"]
+    print " ".join(command)
+    if not args.dry:
+      pMatches = subprocess.Popen( command )
+      pMatches.wait()
+
+    # Create the reconstruction if not present
+    if not os.path.exists(reconstruction_dir):
+        os.mkdir(reconstruction_dir)
+
+    print ("4. Perform SfM with the "+args.pipeline+" method")
+    if args.pipeline == 'incremental':
+        pipelineBinary = 'openMVG_main_IncrementalSfM'
+    else:
+        pipelineBinary = 'openMVG_main_GlobalSfM'
+    command = [os.path.join(binary_dir, pipelineBinary),  "-i", matches_dir+"/sfm_data.json", "-m", matches_dir, "-o", reconstruction_dir, "--describerMethods", ",".join(args.describerMethods)]
+    # specific args for incremental pipeline
+    if args.pipeline == 'incremental':
+      command += ["--minInputTrackLength", args.minInputTrackLength, "--inter_file_extension", args.inter_file_extension]
+      if args.initialPairA and args.initialPairB:
+          command += ["--initialPairA", args.initialPairA, "--initialPairB", args.initialPairB]
+      if bool(args.initialPairA) != bool(args.initialPairB):
+          raise NameError('Both images of the initial pair must be provided')
+
+    print " ".join(command)
+    if not args.dry:
+      pRecons = subprocess.Popen( command )
+      pRecons.wait()
+
+    # optional, compute final valid structure from the known camera poses
+    if args.computeStructureFromKnownPoses:
+      print ("6. Structure from Known Poses (robust triangulation)")
+      command = [os.path.join(binary_dir, "openMVG_main_ComputeStructureFromKnownPoses"),  "-i", reconstruction_dir+"/sfm_data.json", "-m", matches_dir, "-f", os.path.join(matches_dir, "matches.f.bin"), "-o", os.path.join(reconstruction_dir,"robust.json")]
+      print command
+      if not args.dry:
+        pRecons = subprocess.Popen( command )
+        pRecons.wait()
