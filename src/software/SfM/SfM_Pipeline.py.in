@@ -176,7 +176,7 @@ if __name__ == '__main__':
     # optional, compute final valid structure from the known camera poses
     if args.computeStructureFromKnownPoses:
       print ("6. Structure from Known Poses (robust triangulation)")
-      command = [os.path.join(binary_dir, "openMVG_main_ComputeStructureFromKnownPoses"),  "-i", reconstruction_dir+"/sfm_data.json", "-m", matches_dir, "-f", os.path.join(matches_dir, "matches.f.bin"), "-o", os.path.join(reconstruction_dir,"robust.json")]
+      command = [os.path.join(binary_dir, "openMVG_main_ComputeStructureFromKnownPoses"),  "-i", reconstruction_dir+"/sfm_data.json", "-m", matches_dir, "-f", matches_dir, "-o", os.path.join(reconstruction_dir,"robust.json")]
       print " ".join(command)
       if not args.dry:
         pRecons = subprocess.Popen( command )
