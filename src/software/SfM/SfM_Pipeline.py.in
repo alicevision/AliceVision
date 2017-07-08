@@ -40,7 +40,7 @@ camera_file_params = os.path.join(CAMERA_SENSOR_WIDTH_DIRECTORY, "sensor_width_c
 
 if __name__ == '__main__':
 
-    parser = argparse.ArgumentParser(description='Launcher for the 3D reconstruction pipelines \n Usage : '+__file__+' --image_dir imageDIR --output_dir outputDir')
+    parser = argparse.ArgumentParser(description='Launcher for the SfM pipelines', usage= __file__+' --image_dir imageDIR --output_dir outputDir [options]\n\nIf the script is run as .in (cmake template), --binary_dir can be used to point to the directory containing\n openMVG binaries, and --sensorWidthDatabase to point to the camera sensor database (usually the file\nsensor_width_camera_database.txt included in openMVG/src/openMVG/exif)')
     # general parameters
     parser.add_argument('--image_dir', help='The directory containing the images.')
     parser.add_argument('--output_dir', help='The directory where the recontruction files are saved')
@@ -74,7 +74,7 @@ if __name__ == '__main__':
     # Compute matches parameters
     computeMatches = parser.add_argument_group('Computer matches step', 'The parameters for the compute matches step')
     computeMatches.add_argument('--ratio', default='0.8',
-                                help='Distance ratio to discard non meaningful matches')
+                                help='Distance ratio to discard non meaningful matches (default: %(default)s).')
     computeMatches.add_argument('--geometric_model', default='f', choices=['f', 'e', 'h'],
                                 help='Geometric model used to filter out incorrect matches, it can be the (f)undamental, the (e)ssential or the (h)omography model (default: %(default)s)')
     computeMatches.add_argument('--nearest_matching_method', default='ANN_L2', choices=['BRUTE_FORCE_L2', 'ANN_L2', 'CASCADE_HASHING_L2', 'FAST_CASCADE_HASHING_L2', 'BRUTE_FORCE_HAMMING'],
