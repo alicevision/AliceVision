@@ -105,6 +105,11 @@ if __name__ == '__main__':
     reconstruction_dir = os.path.join(output_dir, "reconstruction_"+args.pipeline)
     camera_file_params = args.sensorWidthDatabase
 
+    # check if the provided sensor database file is valid
+    # just a safeguard to remind to set it when using the scrip in template form
+    if not os.path.isfile(camera_file_params):
+        print('\nCamera sensor database '+camera_file_params+' not found, please provide a valid file with --sensorWidthDatabase')
+        sys.exit(-1)
 
     print ("Using input dir  : ", input_dir)
     print ("      output_dir : ", output_dir)
