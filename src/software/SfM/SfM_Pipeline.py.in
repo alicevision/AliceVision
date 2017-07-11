@@ -128,55 +128,55 @@ if __name__ == '__main__':
 
     # Create the ouput/matches folder if not present
     if not os.path.exists(output_dir):
-      os.mkdir(output_dir)
+        os.mkdir(output_dir)
     if not os.path.exists(matches_dir):
-      os.mkdir(matches_dir)
+        os.mkdir(matches_dir)
 
     print ("1. Intrinsics analysis")
     command = [os.path.join(binary_dir, "openMVG_main_SfMInit_ImageListing"),  "-i", input_dir, "-o", matches_dir, "-d", camera_file_params]
     if not args.noUID:
-      command += ["--use_UID", "0"]
+        command += ["--use_UID", "0"]
     if args.camera_model:
-      command += ["--camera_model", args.camera_model]
+        command += ["--camera_model", args.camera_model]
     print " ".join(command)
     if not args.dry:
-      pIntrisics = subprocess.Popen( command )
-      if pIntrisics.wait() != 0:
-          sys.exit(-1)
+        pIntrisics = subprocess.Popen( command )
+        if pIntrisics.wait() != 0:
+            sys.exit(-1)
 
     print ("2. Compute features")
     command = [os.path.join(binary_dir, "openMVG_main_ComputeFeatures"),  "-i", sfmDataFilename, "-o", matches_dir, "--describerMethods", ",".join(args.describerMethods)]
     print " ".join(command)
     if not args.dry:
-      pFeatures = subprocess.Popen( command )
-      if pFeatures.wait() != 0:
-          sys.exit(-1)
+        pFeatures = subprocess.Popen( command )
+        if pFeatures.wait() != 0:
+            sys.exit(-1)
 
     print ("3. Compute matches")
     # if a vocabulary tree is passed first do the pair list computation
     if args.voctreeFile:
-      pairListFile = os.path.join(matches_dir, 'voctreePairList.txt')
-      command = [os.path.join(binary_dir, "openMVG_main_generatePairList"),  "--tree", args.voctreeFile, "--keylist", sfmDataFilename, "-r", args.voctreeMaxImageMatches, "--nbMaxDescriptors", args.voctreeMaxDescriptors, "--outfile", pairListFile]
-      if args.voctreeWeights:
-          command += ["--weights", args.voctreeWeights]
+        pairListFile = os.path.join(matches_dir, 'voctreePairList.txt')
+        command = [os.path.join(binary_dir, "openMVG_main_generatePairList"),  "--tree", args.voctreeFile, "--keylist", sfmDataFilename, "-r", args.voctreeMaxImageMatches, "--nbMaxDescriptors", args.voctreeMaxDescriptors, "--outfile", pairListFile]
+        if args.voctreeWeights:
+            command += ["--weights", args.voctreeWeights]
 
-      print " ".join(command)
-      if not args.dry:
-        pMatches = subprocess.Popen( command )
-        if pMatches.wait() != 0:
-            sys.exit(-1)
+        print " ".join(command)
+        if not args.dry:
+            pMatches = subprocess.Popen( command )
+            if pMatches.wait() != 0:
+                sys.exit(-1)
 
     # perform feature matching
     command = [os.path.join(binary_dir, "openMVG_main_ComputeMatches"),  "-i", sfmDataFilename, "-o", matches_dir, "--describerMethods", ",".join(args.describerMethods), "--ratio", args.ratio, "--geometric_model", args.geometric_model, "--nearest_matching_method", args.nearest_matching_method, "--geometricEstimator", args.geometricEstimator, "--video_mode_matching", args.video_mode_matching]
     if args.guided_matching:
-      command += ["--guided_matching", "1"]
+        command += ["--guided_matching", "1"]
     if args.voctreeFile:
-      command += ["--pair_list", pairListFile]
+        command += ["--pair_list", pairListFile]
     print " ".join(command)
     if not args.dry:
-      pMatches = subprocess.Popen( command )
-      if pMatches.wait() != 0:
-          sys.exit(-1)
+        pMatches = subprocess.Popen( command )
+        if pMatches.wait() != 0:
+            sys.exit(-1)
 
     # Create the reconstruction if not present
     if not os.path.exists(reconstruction_dir):
@@ -190,28 +190,28 @@ if __name__ == '__main__':
     command = [os.path.join(binary_dir, pipelineBinary),  "-i", sfmDataFilename, "-m", matches_dir, "-o", reconstruction_dir, "--describerMethods", ",".join(args.describerMethods)]
     # specific args for incremental pipeline
     if args.pipeline == 'incremental':
-      command += ["--minInputTrackLength", args.minInputTrackLength, "--inter_file_extension", args.inter_file_extension]
-      if args.initialPairA and args.initialPairB:
-          command += ["--initialPairA", args.initialPairA, "--initialPairB", args.initialPairB]
-      if bool(args.initialPairA) != bool(args.initialPairB):
-          raise NameError('Both images of the initial pair must be provided')
+        command += ["--minInputTrackLength", args.minInputTrackLength, "--inter_file_extension", args.inter_file_extension]
+    if args.initialPairA and args.initialPairB:
+        command += ["--initialPairA", args.initialPairA, "--initialPairB", args.initialPairB]
+    if bool(args.initialPairA) != bool(args.initialPairB):
+        raise NameError('Both images of the initial pair must be provided')
 
     print " ".join(command)
     if not args.dry:
-      pRecons = subprocess.Popen( command )
-      if pRecons.wait() != 0:
-          sys.exit(-1)
-
-    # optional, compute final valid structure from the known camera poses
-    if args.computeStructureFromKnownPoses:
-      print ("6. Structure from Known Poses (robust triangulation)")
-      sfmDataStructureFromKnownPoses = os.path.join(reconstruction_dir, "/sfm_data.json")
-      command = [os.path.join(binary_dir, "openMVG_main_ComputeStructureFromKnownPoses"),  "-i", sfmDataStructureFromKnownPoses, "-m", matches_dir, "-f", matches_dir, "-o", os.path.join(reconstruction_dir,"robust.json")]
-      print " ".join(command)
-      if not args.dry:
         pRecons = subprocess.Popen( command )
         if pRecons.wait() != 0:
             sys.exit(-1)
+
+    # optional, compute final valid structure from the known camera poses
+    if args.computeStructureFromKnownPoses:
+        print ("6. Structure from Known Poses (robust triangulation)")
+        sfmDataStructureFromKnownPoses = os.path.join(reconstruction_dir, "/sfm_data.json")
+        command = [os.path.join(binary_dir, "openMVG_main_ComputeStructureFromKnownPoses"),  "-i", sfmDataStructureFromKnownPoses, "-m", matches_dir, "-f", matches_dir, "-o", os.path.join(reconstruction_dir,"robust.json")]
+        print " ".join(command)
+        if not args.dry:
+            pRecons = subprocess.Popen( command )
+            if pRecons.wait() != 0:
+                sys.exit(-1)
 
     # optional CMPMVS step
     if args.cmpmvs_dir:
@@ -227,15 +227,15 @@ if __name__ == '__main__':
 
         print " ".join(command)
         if not args.dry:
-          pRecons = subprocess.Popen( command )
-          if pRecons.wait() != 0:
-            sys.exit(-1)
+            pRecons = subprocess.Popen( command )
+            if pRecons.wait() != 0:
+                sys.exit(-1)
 
         # call CMPMVS
         print ("8. Multiview stereo with CMPMVS")
         command = [os.path.join(args.cmpmvs_dir, "CMPMVS"),  "--all", os.path.join(reconstruction_dir, "cmpmvs.ini")]
         print " ".join(command)
         if not args.dry:
-          pRecons = subprocess.Popen( command )
-          if pRecons.wait() != 0:
-            sys.exit(-1)
+            pRecons = subprocess.Popen( command )
+            if pRecons.wait() != 0:
+                sys.exit(-1)
