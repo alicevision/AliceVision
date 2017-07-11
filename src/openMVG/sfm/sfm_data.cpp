@@ -20,6 +20,70 @@ using namespace openMVG::geometry;
 using namespace openMVG::cameras;
 using namespace openMVG::image;
 
+bool SfM_Data::operator==(const SfM_Data& other) const {
+
+  // Views
+  if(views.size() != other.views.size())
+    return false;
+  for(Views::const_iterator it = views.begin(); it != views.end(); ++it)
+  {
+      const View& view1 = *(it->second.get());
+      const View& view2 = *(other.views.at(it->first).get());
+      if(!(view1 == view2))
+        return false;
+
+      // Image paths
+      if(s_root_path + view1.s_Img_path != other.s_root_path + view2.s_Img_path)
+        return false;
+  }
+
+  // Poses
+  if((poses != other.poses))
+    return false;
+
+  // Intrinsics
+  if(intrinsics.size() != other.intrinsics.size())
+    return false;
+
+  Intrinsics::const_iterator it = intrinsics.begin();
+  Intrinsics::const_iterator otherIt = other.intrinsics.begin();
+  for(; it != intrinsics.end() && otherIt != other.intrinsics.end(); ++it, ++otherIt)
+  {
+      // Index
+      if(it->first != otherIt->first)
+        return false;
+
+      // Intrinsic
+      cameras::IntrinsicBase& intrinsic1 = *(it->second.get());
+      cameras::IntrinsicBase& intrinsic2 = *(otherIt->second.get());
+      if(!(intrinsic1 == intrinsic2))
+        return false;
+  }
+
+  // Points IDs are not preserved
+  if(structure.size() != other.structure.size())
+    return false;
+  Landmarks::const_iterator landMarkIt = structure.begin();
+  Landmarks::const_iterator otherLandmarkIt = other.structure.begin();
+  for(; landMarkIt != structure.end() && otherLandmarkIt != other.structure.end(); ++landMarkIt, ++otherLandmarkIt)
+  {
+      // Points IDs are not preserved
+      // Landmark
+      const Landmark& landmark1 = landMarkIt->second;
+      const Landmark& landmark2 = otherLandmarkIt->second;
+      if(!(landmark1 == landmark2))
+        return false;
+  }
+
+  // Control points
+  if(control_points != other.control_points)
+    return false;
+
+  // Root path can be reseted during exports
+
+  return true;
+
+}
 
 /// Find the color of the SfM_Data Landmarks/structure
 bool ColorizeTracks( SfM_Data & sfm_data )
