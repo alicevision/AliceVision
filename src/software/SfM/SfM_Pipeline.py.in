@@ -205,7 +205,8 @@ if __name__ == '__main__':
     # optional, compute final valid structure from the known camera poses
     if args.computeStructureFromKnownPoses:
       print ("6. Structure from Known Poses (robust triangulation)")
-      command = [os.path.join(binary_dir, "openMVG_main_ComputeStructureFromKnownPoses"),  "-i", reconstruction_dir+"/sfm_data.json", "-m", matches_dir, "-f", matches_dir, "-o", os.path.join(reconstruction_dir,"robust.json")]
+      sfmDataStructureFromKnownPoses = os.path.join(reconstruction_dir, "/sfm_data.json")
+      command = [os.path.join(binary_dir, "openMVG_main_ComputeStructureFromKnownPoses"),  "-i", sfmDataStructureFromKnownPoses, "-m", matches_dir, "-f", matches_dir, "-o", os.path.join(reconstruction_dir,"robust.json")]
       print " ".join(command)
       if not args.dry:
         pRecons = subprocess.Popen( command )
@@ -216,7 +217,14 @@ if __name__ == '__main__':
     if args.cmpmvs_dir:
         # first generate the ini file
         print ("7. Export data into CMPMVS format")
-        command = [os.path.join(binary_dir, "openMVG_main_openMVG2CMPMVS2"),  "-i", reconstruction_dir+"/sfm_data.json",  "-o", os.path.join(reconstruction_dir,"cmpmvs.ini")]
+        command = [os.path.join(binary_dir, "openMVG_main_openMVG2CMPMVS2"),  "-o", os.path.join(reconstruction_dir, "cmpmvs.ini")]
+
+        # use the output of computeStructureFromKnownPoses if it exists
+        if args.computeStructureFromKnownPoses:
+            command += ["-i", sfmDataStructureFromKnownPoses]
+        else:
+            command += ["-i", sfmDataFilename]
+
         print " ".join(command)
         if not args.dry:
           pRecons = subprocess.Popen( command )
@@ -225,7 +233,7 @@ if __name__ == '__main__':
 
         # call CMPMVS
         print ("8. Multiview stereo with CMPMVS")
-        command = [os.path.join(args.cmpmvs_dir, "CMPMVS"),  "--all", os.path.join(reconstruction_dir,"cmpmvs.ini")]
+        command = [os.path.join(args.cmpmvs_dir, "CMPMVS"),  "--all", os.path.join(reconstruction_dir, "cmpmvs.ini")]
         print " ".join(command)
         if not args.dry:
           pRecons = subprocess.Popen( command )
