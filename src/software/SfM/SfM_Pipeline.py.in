@@ -5,7 +5,7 @@
 # Created by @vins31
 # Modified by Pierre Moulon
 #
-# This script ease the call to the 3D reconstruction pipelines.
+# This script eases the call to the 3D reconstruction pipelines.
 #
 # Usage : python SfM_Pipeline.py --image_dir imageDIR --output_dir outputDir
 #
