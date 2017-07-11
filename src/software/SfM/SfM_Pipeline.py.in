@@ -72,7 +72,16 @@ if __name__ == '__main__':
                                  help='The feature extractor(s) to use (default: %(default)s). When using multiple describers, separate them with spaces, ie --describerMethods SIFT AKAZE')
 
     # Compute matches parameters
-    computeMatches = parser.add_argument_group('Computer matches step', 'The parameters for the compute matches step')
+    computeMatches = parser.add_argument_group('Computer matches step', 'The parameters for the compute matches step. Optionally, a vocabulary tree file can be provided to generate the list of images to match.')
+
+    computeMatches.add_argument('--voctreeFile',
+                                help='The vocabulary tree file (*.tree). If provided, the matching step will first use the vocabulary tree to find matching images.')
+    computeMatches.add_argument('--voctreeWeights',
+                                help='The vocabulary tree file (*.weights). If not provided, the weights of the vocabulary tree will be computed on the database built with the provided set.')
+    computeMatches.add_argument('--voctreeMaxDescriptors', default='0',
+                                help='Limit the number of descriptors you load per image. Zero means no limit (default: %(default)s).')
+    computeMatches.add_argument('--voctreeMaxImageMatches', default='20',
+                                help='The number of matches to retrieve for each image, if 0 it will retrieve all the matches). (default: %(default)s).')
     computeMatches.add_argument('--ratio', default='0.8',
                                 help='Distance ratio to discard non meaningful matches (default: %(default)s).')
     computeMatches.add_argument('--geometric_model', default='f', choices=['f', 'e', 'h'],
@@ -141,9 +150,25 @@ if __name__ == '__main__':
           sys.exit(-1)
 
     print ("3. Compute matches")
+    # if a vocabulary tree is passed first do the pair list computation
+    if args.voctreeFile:
+      pairListFile = os.path.join(matches_dir, 'voctreePairList.txt')
+      command = [os.path.join(binary_dir, "openMVG_main_generatePairList"),  "--tree", args.voctreeFile, "--keylist", matches_dir+"/sfm_data.json", "-r", args.voctreeMaxImageMatches, "--nbMaxDescriptors", args.voctreeMaxDescriptors, "--outfile", pairListFile]
+      if args.voctreeWeights:
+          command += ["--weights", args.voctreeWeights]
+
+      print " ".join(command)
+      if not args.dry:
+        pMatches = subprocess.Popen( command )
+        if pMatches.wait() != 0:
+            sys.exit(-1)
+
+    # perform feature matching
     command = [os.path.join(binary_dir, "openMVG_main_ComputeMatches"),  "-i", matches_dir+"/sfm_data.json", "-o", matches_dir, "--describerMethods", ",".join(args.describerMethods), "--ratio", args.ratio, "--geometric_model", args.geometric_model, "--nearest_matching_method", args.nearest_matching_method, "--geometricEstimator", args.geometricEstimator, "--video_mode_matching", args.video_mode_matching]
     if args.guided_matching:
       command += ["--guided_matching", "1"]
+    if args.voctreeFile:
+      command += ["--pair_list", pairListFile]
     print " ".join(command)
     if not args.dry:
       pMatches = subprocess.Popen( command )
