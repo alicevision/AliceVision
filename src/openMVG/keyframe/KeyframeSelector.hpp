@@ -220,10 +220,6 @@ private:
    */
   struct MediaInfo
   {
-    /// half height of the images
-    int halfHeight = 0;
-    /// half width of the images
-    int halfWidth = 0;
     /// height of the tile
     unsigned int tileHeight = 0;
     /// width of the tile

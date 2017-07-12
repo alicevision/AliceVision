@@ -101,10 +101,8 @@ void KeyframeSelector::process()
 
     // define media informations variables
     auto& mediaInfo =  _mediasInfo.at(mediaIndex);
-    mediaInfo.halfHeight = image.Height() / 2;
-    mediaInfo.halfWidth = image.Width() / 2;
-    mediaInfo.tileHeight = mediaInfo.halfHeight / _nbTileSide;
-    mediaInfo.tileWidth = mediaInfo.halfWidth / _nbTileSide;
+    mediaInfo.tileHeight = (image.Height() / 2) / _nbTileSide;
+    mediaInfo.tileWidth = (image.Width() / 2) / _nbTileSide;
     mediaInfo.spec = oiio::ImageSpec(image.Width(), image.Height(), 3, oiio::TypeDesc::UINT8); // always jpeg
     mediaInfo.spec.attribute("CompressionQuality", 100);   // always best compression quality
     mediaInfo.spec.attribute("jpeg:subsampling", "4:4:4"); // always subsampling 4:4:4
