@@ -11,6 +11,7 @@
 #include "sfm_view.hpp"
 
 #include "openMVG/stl/stl.hpp"
+#include <openMVG/system/Logger.hpp>
 #include <iterator>
 
 namespace openMVG {

@@ -15,7 +15,7 @@
 #include <set>
 #include <chrono>
 
-#include <openMVG/logger.hpp>
+#include <openMVG/system/Logger.hpp>
 
 static const int DIMENSION = 128;
 

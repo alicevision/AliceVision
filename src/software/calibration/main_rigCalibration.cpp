@@ -8,7 +8,7 @@
 #include <openMVG/dataio/FeedProvider.hpp>
 #include <openMVG/features/image_describer.hpp>
 #include <openMVG/robust_estimation/robust_estimators.hpp>
-#include <openMVG/logger.hpp>
+#include <openMVG/system/Logger.hpp>
 
 #include <boost/filesystem.hpp>
 #include <boost/progress.hpp>

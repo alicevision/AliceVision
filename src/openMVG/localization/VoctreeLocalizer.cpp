@@ -16,7 +16,7 @@
 #include <openMVG/matching_image_collection/GeometricFilterMatrix.hpp>
 #include <openMVG/numeric/numeric.h>
 #include <openMVG/robust_estimation/guided_matching.hpp>
-#include <openMVG/logger.hpp>
+#include <openMVG/system/Logger.hpp>
 #include <openMVG/system/timer.hpp>
 
 #include <third_party/progress/progress.hpp>

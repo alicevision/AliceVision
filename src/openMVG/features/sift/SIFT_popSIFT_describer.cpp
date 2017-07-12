@@ -1,5 +1,5 @@
 #include "SIFT_popSIFT_describer.hpp"
-#include <openMVG/logger.hpp>
+#include <openMVG/system/Logger.hpp>
 
 namespace openMVG {
 namespace features {

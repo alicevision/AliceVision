@@ -11,7 +11,7 @@
 #include <openMVG/sfm/pipelines/sfm_robust_model_estimation.hpp>
 
 #include <openMVG/system/timer.hpp>
-#include <openMVG/logger.hpp>
+#include <openMVG/system/Logger.hpp>
 
 #include <third_party/progress/progress.hpp>
 

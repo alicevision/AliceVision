@@ -35,6 +35,7 @@
 #include "openMVG/multiview/translation_averaging_solver.hpp"
 #include <openMVG/config.hpp>
 #include <openMVG/openmvg_omp.hpp>
+#include <openMVG/system/Logger.hpp>
 
 #include "ceres/ceres.h"
 

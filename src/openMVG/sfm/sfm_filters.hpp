@@ -7,9 +7,10 @@
 #ifndef OPENMVG_SFM_FILTERS_HPP
 #define OPENMVG_SFM_FILTERS_HPP
 
-#include "openMVG/multiview/rotation_averaging_common.hpp"
-#include "openMVG/multiview/translation_averaging_common.hpp"
-#include "openMVG/matching/indMatch.hpp"
+#include <openMVG/multiview/rotation_averaging_common.hpp>
+#include <openMVG/multiview/translation_averaging_common.hpp>
+#include <openMVG/matching/indMatch.hpp>
+#include <openMVG/system/Logger.hpp>
 
 namespace openMVG {
 namespace sfm { 

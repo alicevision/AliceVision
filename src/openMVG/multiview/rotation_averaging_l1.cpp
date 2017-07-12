@@ -6,6 +6,7 @@
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 #include "openMVG/multiview/rotation_averaging_l1.hpp"
+#include <openMVG/system/Logger.hpp>
 
 #ifdef OPENMVG_ROTATION_AVERAGING_WITH_BOOST
 #include <boost/graph/adjacency_list.hpp>

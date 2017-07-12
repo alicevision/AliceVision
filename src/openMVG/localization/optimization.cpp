@@ -10,7 +10,7 @@
 #include <openMVG/sfm/sfm_data_BA_ceres.hpp>
 #include <openMVG/numeric/numeric.h>
 #include <openMVG/rig/rig_BA_ceres.hpp>
-#include <openMVG/logger.hpp>
+#include <openMVG/system/Logger.hpp>
 #include <openMVG/system/timer.hpp>
 
 

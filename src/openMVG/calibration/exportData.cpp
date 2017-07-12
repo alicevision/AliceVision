@@ -1,6 +1,6 @@
 #include "exportData.hpp"
 
-#include <openMVG/logger.hpp>
+#include <openMVG/system/Logger.hpp>
 #include <openMVG/cameras/Camera_undistort_image.hpp>
 
 #include <boost/filesystem/path.hpp>

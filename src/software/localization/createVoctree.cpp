@@ -3,7 +3,7 @@
 #include <openMVG/voctree/vocabulary_tree.hpp>
 #include <openMVG/voctree/descriptor_loader.hpp>
 #include <openMVG/features/descriptor.hpp>
-#include <openMVG/logger.hpp>
+#include <openMVG/system/Logger.hpp>
 
 #include <Eigen/Core>
 

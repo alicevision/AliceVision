@@ -2,7 +2,7 @@
 
 #include <openMVG/sfm/sfm_data_io.hpp>
 
-#include <openMVG/logger.hpp>
+#include <openMVG/system/Logger.hpp>
 
 #include <boost/algorithm/string/predicate.hpp>
 

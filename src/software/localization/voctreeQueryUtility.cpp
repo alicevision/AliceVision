@@ -5,7 +5,7 @@
 #include <openMVG/voctree/vocabulary_tree.hpp>
 #include <openMVG/voctree/descriptor_loader.hpp>
 #include <openMVG/matching/indMatch.hpp>
-#include <openMVG/logger.hpp>
+#include <openMVG/system/Logger.hpp>
 #include <openMVG/types.hpp>
 #include <openMVG/voctree/databaseIO.hpp>
 #include <openMVG/sfm/sfm_data.hpp>

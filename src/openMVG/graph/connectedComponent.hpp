@@ -8,6 +8,7 @@
 #define OPENMVG_GRAPH_CONNECTED_COMPONENT_H_
 
 #include <openMVG/types.hpp>
+#include <openMVG/system/Logger.hpp>
 #include <openMVG/graph/graph.hpp>
 #include <set>
 

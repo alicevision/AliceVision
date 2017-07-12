@@ -7,7 +7,7 @@
 #include <openMVG/calibration/calibration.hpp>
 #include <openMVG/calibration/exportData.hpp>
 #include <openMVG/system/timer.hpp>
-#include <openMVG/logger.hpp>
+#include <openMVG/system/Logger.hpp>
 #include <openMVG/config.hpp>
 
 #include <boost/program_options.hpp>

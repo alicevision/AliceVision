@@ -10,7 +10,7 @@
 #include <openMVG/exif/exif_IO_EasyExif.hpp>
 #include <openMVG/exif/sensor_width_database/ParseDatabase.hpp>
 #include <openMVG/stl/split.hpp>
-#include <openMVG/logger.hpp>
+#include <openMVG/system/Logger.hpp>
 
 #include <third_party/cmdLine/cmdLine.h>
 #include <third_party/stlplus3/filesystemSimplified/file_system.hpp>

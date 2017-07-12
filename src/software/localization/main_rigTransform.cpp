@@ -1,5 +1,5 @@
 #include <openMVG/rig/Rig.hpp>
-#include <openMVG/logger.hpp>
+#include <openMVG/system/Logger.hpp>
 
 #include <openMVG/sfm/sfm_data.hpp>
 #include <openMVG/sfm/sfm_data_io.hpp>
