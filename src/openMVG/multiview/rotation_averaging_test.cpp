@@ -104,13 +104,13 @@ TEST ( rotation_averaging, RefineRotationsAvgL1IRLS_SimpleTriplet)
   using namespace std;
 
   //--
-  // Setup 3 camera that have a relative orientation of 120�
+  // Setup 3 camera that have a relative orientation of 120deg
   // Set Z axis as UP Vector for the rotation
   // They are in the same plane and looking in O={0,0,0}
   //--
-  Mat3 R01 = RotationAroundZ(2.*M_PI/3.0); //120�
-  Mat3 R12 = RotationAroundZ(2.*M_PI/3.0); //120�
-  Mat3 R20 = RotationAroundZ(2.*M_PI/3.0); //120�
+  Mat3 R01 = RotationAroundZ(2.*M_PI/3.0); //120deg
+  Mat3 R12 = RotationAroundZ(2.*M_PI/3.0); //120deg
+  Mat3 R20 = RotationAroundZ(2.*M_PI/3.0); //120deg
   Mat3 Id = Mat3::Identity();
 
   // Setup the relative motions (relative rotations)
