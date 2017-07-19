@@ -60,9 +60,9 @@ void KRt_From_P(const Mat34 &P, Mat3 *Kp, Mat3 *Rp, Vec3 *tp)
   {
     double c = -K(2,2);
     double s = K(2,1);
-    const double lenght = std::sqrt(c * c + s * s);
-    c /= lenght; 
-    s /= lenght;
+    const double length = std::sqrt(c * c + s * s);
+    c /= length; 
+    s /= length;
     Mat3 Qx;
     Qx << 1, 0, 0,
           0, c, -s,
