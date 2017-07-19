@@ -48,7 +48,7 @@ class Pinhole_Intrinsic_Fisheye : public Pinhole_Intrinsic
   {
     const double eps = 1e-8;
     const double k1 = _distortionParams[0], k2 = _distortionParams[1], k3 = _distortionParams[2], k4 = _distortionParams[3];
-    const double r = std::sqrt(p(0)*p(0) + p(1)*p(1));
+    const double r = std::hypot(p(0), p(1));
     const double theta = std::atan(r);
     const double
       theta2 = theta*theta,
@@ -69,7 +69,7 @@ class Pinhole_Intrinsic_Fisheye : public Pinhole_Intrinsic
   {
     const double eps = 1e-8;
     double scale = 1.0;
-    const double theta_dist = std::sqrt(p[0]*p[0] + p[1]*p[1]);
+    const double theta_dist = std::hypot(p[0], p[1]);
     if (theta_dist > eps)
     {
       double theta = theta_dist;
