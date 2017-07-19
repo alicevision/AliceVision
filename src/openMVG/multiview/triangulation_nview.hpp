@@ -60,7 +60,7 @@ public:
 
   void add(const Mat34& projMatrix, const Vec2 & p)
   {
-    views.push_back(std::pair<Mat34, Vec2>(projMatrix, p));
+    views.emplace_back(projMatrix, p);
   }
 
   // Return squared L2 sum of error

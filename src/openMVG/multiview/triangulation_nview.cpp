@@ -65,11 +65,13 @@ void TriangulateNViewAlgebraic(const Mat2X &x,
                                const std::vector< Mat34 > &Ps,
                                Vec4 *X)
 {
+  assert(X != nullptr);
   Mat2X::Index nviews = x.cols();
   assert(nviews == Ps.size());
 
   Mat design(2 * nviews, 4);
   for(int i = 0; i < nviews; i++)
+  for(Mat2X::Index i = 0; i < nviews; ++i)
   {
     design.block<2, 4>(2 * i, 0) = SkewMatMinimal(x.col(i)) * Ps[i];
   }
@@ -79,7 +81,7 @@ void TriangulateNViewAlgebraic(const Mat2X &x,
 double Triangulation::error(const Vec3 &X) const
 {
   double squared_reproj_error = 0.0;
-  for(std::size_t i = 0; i < views.size(); i++)
+  for(std::size_t i = 0; i < views.size(); ++i)
   {
     const Mat34& PMat = views[i].first;
     const Vec2 & xy = views[i].second;
@@ -111,7 +113,7 @@ Vec3 Triangulation::compute(int iter) const
       const double w = weights[i];
 
       Vec3 v1, v2;
-      for(int j = 0; j < 3; j++)
+      for(Mat::Index j = 0; j < 3; ++j)
       {
         v1[j] = w * (PMat(0, j) - p(0) * PMat(2, j));
         v2[j] = w * (PMat(1, j) - p(1) * PMat(2, j));
@@ -119,9 +121,9 @@ Vec3 Triangulation::compute(int iter) const
                 + v2[j] * (p(1) * PMat(2, 3) - PMat(1, 3)));
       }
 
-      for(int k = 0; k < 3; k++)
+      for(Mat::Index k = 0; k < 3; ++k)
       {
-        for(int j = 0; j <= k; j++)
+        for(Mat::Index j = 0; j <= k; ++j)
         {
           const double v = v1[j] * v1[k] + v2[j] * v2[k];
           AtA(j, k) += v;
