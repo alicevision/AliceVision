@@ -92,19 +92,20 @@ TEST(MaxConsensusLineFitter, TooFewPoints) {
 TEST(MaxConsensusLineFitter, RealisticCase) {
 
   const int numPoints = 30;
-  const int outlierRatio = 30; //works with 40
+  const float outlierRatio = .3; //works with .4
   Mat2X xy(2, numPoints);
 
   Vec2 GTModel; // y = 2x + 1
   GTModel <<  -2.0, 6.3;
 
   //-- Build the point list according the given model
-  for(int i = 0; i < numPoints; ++i)  {
+  for(Mat::Index i = 0; i < numPoints; ++i)
+  {
     xy.col(i) << i, (double)i*GTModel[1] + GTModel[0];
   }
 
   //-- Add some noise (for the asked percentage amount)
-  int nbPtToNoise = (int) numPoints*outlierRatio/100.0;
+  int nbPtToNoise = (int) numPoints * outlierRatio;
   vector<size_t> vec_samples; // Fit with unique random index
   UniformSample(nbPtToNoise, numPoints, vec_samples);
   for(size_t i = 0; i <vec_samples.size(); ++i)

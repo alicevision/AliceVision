@@ -203,14 +203,14 @@ TEST(RansacLineFitter, RealisticCase)
 {
 
   const int NbPoints = 100;
-  const int inlierPourcentAmount = 30;
+  const float outlierRatio = .3;
   Mat2X xy(2, NbPoints);
 
   Vec2 GTModel; // y = 6.3 x + (-2.0)
   GTModel << -2.0, 6.3;
 
   //-- Build the point list according the given model
-  for(int i = 0; i < NbPoints; ++i)
+  for(Mat::Index i = 0; i < NbPoints; ++i)
   {
     xy.col(i) << i, (double) i * GTModel[1] + GTModel[0];
   }
@@ -220,7 +220,7 @@ TEST(RansacLineFitter, RealisticCase)
   std::normal_distribution<> d(0, 5); // More or less 5 units
 
   //-- Simulate outliers (for the asked percentage amount of the datum)
-  const int nbPtToNoise = (int) NbPoints * inlierPourcentAmount / 100.0;
+  const int nbPtToNoise = (int) NbPoints * outlierRatio;
   std::vector<std::size_t> vec_samples(nbPtToNoise); // Fit with unique random index
   std::iota(vec_samples.begin(), vec_samples.end(), 0);
   for(std::size_t i = 0; i < vec_samples.size(); ++i)
