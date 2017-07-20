@@ -48,6 +48,14 @@ class Bundle_Adjustment_Ceres : public Bundle_Adjustment
   bool Adjust(
     SfM_Data & sfm_data,
     BA_Refine refineOptions = BA_REFINE_ALL);
+
+  /**
+   * @see Bundle_Adjustment::AdjustPartialReconstruction
+   * @brief Ajust parameters according to the reconstruction graph.
+   */
+  bool AdjustPartialReconstruction(
+    SfM_Data & sfm_data,
+    BA_Refine refineOptions = BA_REFINE_ALL);
 };
 
 } // namespace sfm

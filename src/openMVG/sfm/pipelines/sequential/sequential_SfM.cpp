@@ -1514,7 +1514,8 @@ bool SequentialSfMReconstructionEngine::BundleAdjustment()
   BA_Refine refineOptions = BA_REFINE_ROTATION | BA_REFINE_TRANSLATION | BA_REFINE_STRUCTURE;
   if(!_bFixedIntrinsics)
     refineOptions |= BA_REFINE_INTRINSICS_ALL;
-  return bundle_adjustment_obj.Adjust(_sfm_data, refineOptions);
+//  return bundle_adjustment_obj.Adjust(_sfm_data, refineOptions);
+  return bundle_adjustment_obj.AdjustPartialReconstruction(_sfm_data, refineOptions);
 }
 
 /**
