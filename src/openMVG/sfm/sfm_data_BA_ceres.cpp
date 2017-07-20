@@ -403,7 +403,7 @@ bool Bundle_Adjustment_Ceres::Adjust(
   return true;
 }
 
-bool Bundle_Adjustment_Ceres::AdjustPartialReconstruction(SfM_Data & sfm_data)
+bool Bundle_Adjustment_Ceres::adjustPartialReconstruction(SfM_Data & sfm_data)
 {
   // Ensure we are not using incompatible options:
   //  - BA_REFINE_INTRINSICS_OPTICALCENTER_ALWAYS and BA_REFINE_INTRINSICS_OPTICALCENTER_IF_ENOUGH_DATA cannot be used at the same time
@@ -422,9 +422,83 @@ bool Bundle_Adjustment_Ceres::AdjustPartialReconstruction(SfM_Data & sfm_data)
   
   // Data wrapper for refinement:
   Hash_Map<IndexT, std::vector<double> > map_poses;
+  Hash_Map<IndexT, std::vector<double> > map_intrinsics;
+    
+  // Setup Poses data as Parameter blocks to Ceres
+  map_poses = addPosesToCeresProblem(sfm_data.poses, problem);
   
-  // Setup Poses data & subparametrization
-  for (Poses::const_iterator itPose = sfm_data.poses.begin(); itPose != sfm_data.poses.end(); ++itPose)
+  // Setup Intrinsics data as Parameter blocks to Ceres
+  map_intrinsics = addIntrinsicsToCeresProblem(sfm_data, problem);
+     
+  // Set a LossFunction to be less penalized by false measurements
+  //  - set it to NULL if you don't want use a lossFunction.
+  ceres::LossFunction * p_LossFunction = new ceres::HuberLoss(Square(4.0));
+  // TODO: make the LOSS function and the parameter an option
+  
+  // For all visibility add reprojections errors:
+  for(auto& landmarkIt: sfm_data.structure)
+  {
+    const Observations & observations = landmarkIt.second.observations;
+    // Iterate over 2D observation associated to the 3D landmark
+    for (const auto& observationIt: observations)
+    {
+      // Build the residual block corresponding to the track observation:
+      const View * view = sfm_data.views.at(observationIt.first).get();
+      
+      // Each Residual block takes a point and a camera as input and outputs a 2
+      // dimensional residual. Internally, the cost function stores the observed
+      // image location and compares the reprojection against the observation.
+      ceres::CostFunction* cost_function =
+          IntrinsicsToCostFunction(sfm_data.intrinsics[view->id_intrinsic].get(), observationIt.second.x);
+      
+      if (cost_function)
+        problem.AddResidualBlock(cost_function,
+                                 p_LossFunction,
+                                 &map_intrinsics[view->id_intrinsic][0],
+                                 &map_poses[view->id_pose][0],
+                                 landmarkIt.second.X.data()); //Do we need to copy 3D point to avoid false motion, if failure ?
+    }
+  }
+  
+  ceres::Solver::Summary summary;
+  if (!solveBA(problem, summary))
+    return false;
+      
+  // Solution is usable
+  if (_openMVG_options._bVerbose)
+  {
+    // Display statistics about the minimization
+    OPENMVG_LOG_DEBUG(
+      "Bundle Adjustment statistics (approximated RMSE):\n"
+      " #views: " << sfm_data.views.size() << "\n"
+      " #poses: " << sfm_data.poses.size() << "\n"
+      " #intrinsics: " << sfm_data.intrinsics.size() << "\n"
+      " #tracks: " << sfm_data.structure.size() << "\n"
+      " #residuals: " << summary.num_residuals << "\n"
+      " Initial RMSE: " << std::sqrt( summary.initial_cost / summary.num_residuals) << "\n"
+      " Final RMSE: " << std::sqrt( summary.final_cost / summary.num_residuals) << "\n"
+      " Time (s): " << summary.total_time_in_seconds << "\n"
+      );
+  }
+  
+  // Update camera poses with refined data
+  updateCameraPoses(map_poses, sfm_data.poses);
+
+  // Update camera intrinsics with refined data
+  updateCameraIntrinsics(map_intrinsics, sfm_data.intrinsics);
+
+  return true;
+}
+
+Hash_Map<IndexT, std::vector<double> > Bundle_Adjustment_Ceres::addPosesToCeresProblem(
+  const Poses & poses,
+  ceres::Problem & problem)
+{
+  // Data wrapper for refinement:
+  Hash_Map<IndexT, std::vector<double> > map_poses;
+  
+  // Setup Poses data 
+  for (Poses::const_iterator itPose = poses.begin(); itPose != poses.end(); ++itPose)
   {
     const IndexT indexPose = itPose->first;
     
@@ -445,7 +519,13 @@ bool Bundle_Adjustment_Ceres::AdjustPartialReconstruction(SfM_Data & sfm_data)
     double * parameter_block = &map_poses[indexPose][0];
     problem.AddParameterBlock(parameter_block, 6);
   }
-  
+  return map_poses;
+}
+
+Hash_Map<IndexT, std::vector<double>> Bundle_Adjustment_Ceres::addIntrinsicsToCeresProblem(
+  const SfM_Data & sfm_data,
+  ceres::Problem & problem)
+{
   Hash_Map<IndexT, std::size_t> intrinsicsUsage;
   
   // Setup Intrinsics data
@@ -466,8 +546,7 @@ bool Bundle_Adjustment_Ceres::AdjustPartialReconstruction(SfM_Data & sfm_data)
     }
   }
   
-  Hash_Map<IndexT, std::vector<double> > map_intrinsics;
-  // Setup Intrinsics data 
+  Hash_Map<IndexT, std::vector<double>> map_intrinsics;
   for(const auto& itIntrinsic: sfm_data.GetIntrinsics())
   {
     const IndexT idIntrinsics = itIntrinsic.first;
@@ -513,37 +592,11 @@ bool Bundle_Adjustment_Ceres::AdjustPartialReconstruction(SfM_Data & sfm_data)
     problem.SetParameterLowerBound(parameter_block, 2, opticalCenterMinPercent * itIntrinsic.second->h());
     problem.SetParameterUpperBound(parameter_block, 2, opticalCenterMaxPercent * itIntrinsic.second->h());
   }
-  
-  // Set a LossFunction to be less penalized by false measurements
-  //  - set it to NULL if you don't want use a lossFunction.
-  ceres::LossFunction * p_LossFunction = new ceres::HuberLoss(Square(4.0));
-  // TODO: make the LOSS function and the parameter an option
-  
-  // For all visibility add reprojections errors:
-  for(auto& landmarkIt: sfm_data.structure)
-  {
-    const Observations & observations = landmarkIt.second.observations;
-    // Iterate over 2D observation associated to the 3D landmark
-    for (const auto& observationIt: observations)
-    {
-      // Build the residual block corresponding to the track observation:
-      const View * view = sfm_data.views.at(observationIt.first).get();
-      
-      // Each Residual block takes a point and a camera as input and outputs a 2
-      // dimensional residual. Internally, the cost function stores the observed
-      // image location and compares the reprojection against the observation.
-      ceres::CostFunction* cost_function =
-          IntrinsicsToCostFunction(sfm_data.intrinsics[view->id_intrinsic].get(), observationIt.second.x);
-      
-      if (cost_function)
-        problem.AddResidualBlock(cost_function,
-                                 p_LossFunction,
-                                 &map_intrinsics[view->id_intrinsic][0],
-            &map_poses[view->id_pose][0],
-            landmarkIt.second.X.data()); //Do we need to copy 3D point to avoid false motion, if failure ?
-    }
-  }
-  
+  return map_intrinsics;
+} 
+
+bool Bundle_Adjustment_Ceres::solveBA(ceres::Problem & problem, ceres::Solver::Summary & summary)
+{
   // Configure a BA engine and run it
   //  Make Ceres automatically detect the bundle structure.
   ceres::Solver::Options options;
@@ -556,7 +609,7 @@ bool Bundle_Adjustment_Ceres::AdjustPartialReconstruction(SfM_Data & sfm_data)
   options.num_linear_solver_threads = _openMVG_options._nbThreads;
   
   // Solve BA
-  ceres::Solver::Summary summary;
+  
   ceres::Solve(options, &problem, &summary);
   if (_openMVG_options._bCeres_Summary)
     OPENMVG_LOG_DEBUG(summary.FullReport());
@@ -567,46 +620,37 @@ bool Bundle_Adjustment_Ceres::AdjustPartialReconstruction(SfM_Data & sfm_data)
     OPENMVG_LOG_WARNING("Bundle Adjustment failed.");
     return false;
   }
-  
-  // Solution is usable
-  if (_openMVG_options._bVerbose)
-  {
-    // Display statistics about the minimization
-    OPENMVG_LOG_DEBUG(
-      "Bundle Adjustment statistics (approximated RMSE):\n"
-      " #views: " << sfm_data.views.size() << "\n"
-      " #poses: " << sfm_data.poses.size() << "\n"
-      " #intrinsics: " << sfm_data.intrinsics.size() << "\n"
-      " #tracks: " << sfm_data.structure.size() << "\n"
-      " #residuals: " << summary.num_residuals << "\n"
-      " Initial RMSE: " << std::sqrt( summary.initial_cost / summary.num_residuals) << "\n"
-      " Final RMSE: " << std::sqrt( summary.final_cost / summary.num_residuals) << "\n"
-      " Time (s): " << summary.total_time_in_seconds << "\n"
-      );
-  }
-  
-  // Update camera poses with refined data
-  for (Poses::iterator itPose = sfm_data.poses.begin();
-       itPose != sfm_data.poses.end(); ++itPose)
+  return true;
+}
+
+void Bundle_Adjustment_Ceres::updateCameraPoses(
+  const Hash_Map<IndexT, std::vector<double>> & map_poses,
+  Poses & poses)
+{
+  for (Poses::iterator itPose = poses.begin();
+         itPose != poses.end(); ++itPose)
   {
     const IndexT indexPose = itPose->first;
     
     Mat3 R_refined;
-    ceres::AngleAxisToRotationMatrix(&map_poses[indexPose][0], R_refined.data());
-    Vec3 t_refined(map_poses[indexPose][3], map_poses[indexPose][4], map_poses[indexPose][5]);
+    ceres::AngleAxisToRotationMatrix(&map_poses.at(indexPose)[0], R_refined.data());
+    Vec3 t_refined(map_poses.at(indexPose)[3], map_poses.at(indexPose)[4], map_poses.at(indexPose)[5]);
     // Update the pose
     Pose3 & pose = itPose->second;
     pose = Pose3(R_refined, -R_refined.transpose() * t_refined);
   }
- 
-  // Update camera intrinsics with refined data
+}
+  
+void Bundle_Adjustment_Ceres::updateCameraIntrinsics(
+  const Hash_Map<IndexT, std::vector<double>> & map_intrinsics,
+  Intrinsics & intrinsics)
+{
   for (const auto& intrinsicsV: map_intrinsics)
   {
-    sfm_data.intrinsics[intrinsicsV.first]->updateFromParams(intrinsicsV.second);
+    intrinsics[intrinsicsV.first]->updateFromParams(intrinsicsV.second);
   }
-  return true;
 }
-
+  
 } // namespace sfm
 } // namespace openMVG
 

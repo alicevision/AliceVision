@@ -54,7 +54,28 @@ class Bundle_Adjustment_Ceres : public Bundle_Adjustment
    * @brief Ajust parameters according to the reconstruction graph or refine everything
    * if graph is empty.
    */
-  bool AdjustPartialReconstruction(SfM_Data & sfm_data);
+  bool adjustPartialReconstruction(SfM_Data & sfm_data);
+  
+  private:
+  
+  Hash_Map<IndexT, std::vector<double>> addPosesToCeresProblem(
+    const Poses & poses, 
+    ceres::Problem & problem);
+    
+  Hash_Map<IndexT, std::vector<double>> addIntrinsicsToCeresProblem(
+    const SfM_Data & sfm_data, 
+    ceres::Problem & problem);
+  
+  bool solveBA(ceres::Problem & problem, ceres::Solver::Summary &summary);
+
+  void updateCameraPoses(
+    const Hash_Map<IndexT, std::vector<double>> & map_poses,
+    Poses & poses);
+    
+  void updateCameraIntrinsics(
+    const Hash_Map<IndexT, std::vector<double>> & map_intrinsics,
+    Intrinsics & intrinsics);
+
 };
 
 } // namespace sfm
