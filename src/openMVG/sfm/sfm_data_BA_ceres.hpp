@@ -51,11 +51,10 @@ class Bundle_Adjustment_Ceres : public Bundle_Adjustment
 
   /**
    * @see Bundle_Adjustment::AdjustPartialReconstruction
-   * @brief Ajust parameters according to the reconstruction graph.
+   * @brief Ajust parameters according to the reconstruction graph or refine everything
+   * if graph is empty.
    */
-  bool AdjustPartialReconstruction(
-    SfM_Data & sfm_data,
-    BA_Refine refineOptions = BA_REFINE_ALL);
+  bool AdjustPartialReconstruction(SfM_Data & sfm_data);
 };
 
 } // namespace sfm
