@@ -52,9 +52,9 @@ class Bundle_Adjustment_Ceres : public Bundle_Adjustment
   /**
    * @see Bundle_Adjustment::AdjustPartialReconstruction
    * @brief Ajust parameters according to the reconstruction graph or refine everything
-   * if graph is empty.
+   * if graph is empty. 
    */
-  bool adjustPartialReconstruction(SfM_Data & sfm_data);
+  bool adjustPartialReconstruction(SfM_Data & sfm_data, BAStats &baStats);
   
   private:
   

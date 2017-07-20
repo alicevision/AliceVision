@@ -29,6 +29,33 @@ typedef Hash_Map<IndexT, std::shared_ptr<cameras::IntrinsicBase> > Intrinsics;
 /// Define a collection of landmarks are indexed by their TrackId
 typedef Hash_Map<IndexT, Landmark> Landmarks;
 
+/// Contain all the information about a Bundle Adjustment loop
+struct BAStats
+{
+  double time = 0.0;                         // spent time to solve the BA (s)
+  std::size_t numSuccessfullIterations = 0;   // number of successfull iterations
+  std::size_t numUnsuccessfullIterations = 0; // number of unsuccessfull iterations
+  
+  std::size_t numRefinedPoses = 0;           // number of refined poses among all the estimated views          
+  std::size_t numConstantPoses = 0;          // number of poses set constant in the BA solver
+  std::size_t numIgnoredPoses = 0;           // number of not added poses to the BA solver
+  std::size_t numRefinedIntrinsics = 0;      // num. of refined intrinsics
+  std::size_t numConstantIntrinsics = 0;     // num. of intrinsics set constant in the BA solver
+  std::size_t numIgnoredIntrinsics = 0;      // num. of not added intrinsicsto the BA solver
+  std::size_t numRefinedLandmarks = 0;       // num. of refined landmarks
+  std::size_t numConstantLandmarks = 0;      // num. of landmarks set constant in the BA solver
+  std::size_t numIgnoredLandmarks = 0;       // num. of not added landmarks to the BA solver
+  
+  double RMSEinitial = 0.0; // sqrt(initial_cost / num_residuals)
+  double RMSEfinal = 0.0;   // sqrt(final_cost / num_residuals)
+  
+  std::map<IndexT, std::size_t> map_distance_numCameras; // distribution of the cameras for each graph distance
+  
+//  std::size_t idBadTrackRejector = 0; // how many times the 'badTrackRejector' run BA again
+  
+//  std::set<IndexT> newViewsId;  // index of the new views added (newly resected)
+};
+
 /// Generic SfM data container
 /// Store structure and camera properties:
 struct SfM_Data

@@ -403,7 +403,7 @@ bool Bundle_Adjustment_Ceres::Adjust(
   return true;
 }
 
-bool Bundle_Adjustment_Ceres::adjustPartialReconstruction(SfM_Data & sfm_data)
+bool Bundle_Adjustment_Ceres::adjustPartialReconstruction(SfM_Data & sfm_data, BAStats & baStats)
 {
   // Ensure we are not using incompatible options:
   //  - BA_REFINE_INTRINSICS_OPTICALCENTER_ALWAYS and BA_REFINE_INTRINSICS_OPTICALCENTER_IF_ENOUGH_DATA cannot be used at the same time
@@ -419,7 +419,7 @@ bool Bundle_Adjustment_Ceres::adjustPartialReconstruction(SfM_Data & sfm_data)
   //----------
   
   ceres::Problem problem;
-  
+
   // Data wrapper for refinement:
   Hash_Map<IndexT, std::vector<double> > map_poses;
   Hash_Map<IndexT, std::vector<double> > map_intrinsics;
@@ -480,6 +480,18 @@ bool Bundle_Adjustment_Ceres::adjustPartialReconstruction(SfM_Data & sfm_data)
       " Time (s): " << summary.total_time_in_seconds << "\n"
       );
   }
+  
+  // Add statitics about the BA loop:
+  baStats.time = summary.total_time_in_seconds;
+  baStats.numSuccessfullIterations = summary.num_successful_steps;
+  baStats.numUnsuccessfullIterations = summary.num_unsuccessful_steps;
+  baStats.RMSEinitial = std::sqrt( summary.initial_cost / summary.num_residuals);
+  baStats.RMSEfinal = std::sqrt( summary.final_cost / summary.num_residuals);
+    
+  // TEMP: all the parameters are refined
+  baStats.numRefinedPoses = sfm_data.poses.size();
+  baStats.numRefinedIntrinsics =  sfm_data.intrinsics.size();
+  baStats.numRefinedLandmarks = sfm_data.structure.size();
   
   // Update camera poses with refined data
   updateCameraPoses(map_poses, sfm_data.poses);

@@ -173,10 +173,14 @@ private:
   /// Discard track with too large residual error
   size_t badTrackRejector(double dPrecision, size_t count = 0);
 
+  /// Export statistics about bundle adjustment in a TXT file
+  bool exportStatistics(BAStats& baStats);
+  
   #if OPENMVG_IS_DEFINED(OPENMVG_HAVE_BOOST)
   /// Export statistics in a JSON file
   void exportStatistics(double time_sfm);
   #endif
+  
 
   //----
   //-- Data

@@ -1514,9 +1514,33 @@ bool SequentialSfMReconstructionEngine::BundleAdjustment()
   BA_Refine refineOptions = BA_REFINE_ROTATION | BA_REFINE_TRANSLATION | BA_REFINE_STRUCTURE;
   if(!_bFixedIntrinsics)
     refineOptions |= BA_REFINE_INTRINSICS_ALL;
-//  return bundle_adjustment_obj.Adjust(_sfm_data, refineOptions);
-  return bundle_adjustment_obj.adjustPartialReconstruction(_sfm_data);
+  
+  BAStats baStats;
+  bool isBaSucceed = bundle_adjustment_obj.adjustPartialReconstruction(_sfm_data, baStats);
+  exportStatistics(baStats);
+  
+  return isBaSucceed;
 }
+
+///// Bundle adjustment to refine Structure; Motion and Intrinsics
+//bool SequentialSfMReconstructionEngine::BundleAdjustment()
+//{
+//  Bundle_Adjustment_Ceres::BA_options options;
+//  if (_sfm_data.GetPoses().size() > 100)
+//  {
+//    options.setSparseBA();
+//  }
+//  else
+//  {
+//    options.setDenseBA();
+//  }
+//  Bundle_Adjustment_Ceres bundle_adjustment_obj(options);
+//  BA_Refine refineOptions = BA_REFINE_ROTATION | BA_REFINE_TRANSLATION | BA_REFINE_STRUCTURE;
+//  if(!_bFixedIntrinsics)
+//    refineOptions |= BA_REFINE_INTRINSICS_ALL;
+//  return bundle_adjustment_obj.Adjust(_sfm_data, refineOptions);
+//  return bundle_adjustment_obj.adjustPartialReconstruction(_sfm_data);
+//}
 
 /**
  * @brief Discard tracks with too large residual error
@@ -1534,6 +1558,96 @@ std::size_t SequentialSfMReconstructionEngine::badTrackRejector(double dPrecisio
 
   OPENMVG_LOG_DEBUG("badTrackRejector: nbOutliers_residualErr: " << nbOutliers_residualErr << ", nbOutliers_angleErr: " << nbOutliers_angleErr);
   return (nbOutliers_residualErr + nbOutliers_angleErr) > count;
+}
+
+bool SequentialSfMReconstructionEngine::exportStatistics(BAStats& baStats)
+{
+  std::string filename = stlplus::folder_append_separator(_sOutDirectory)+"BaStats.txt";
+  ofstream os;
+  os.open(filename, ios::app);
+  os.seekp(0, ios::end); //put the cursor at the end
+  if (!os.is_open())
+  {
+    OPENMVG_LOG_DEBUG("Unable to open the Bundle adjustment stat file '" << filename << "'.");
+    return false;
+  }
+    
+  if (os.tellp() == 0) // 'tellp' return the cursor's position
+  {
+    // If the file does't exist: add a header.
+    std::vector<std::string> header;
+    header.push_back("Time/BA(s)");
+    header.push_back("RefinedPose"); header.push_back("ConstPose");  header.push_back("IgnoredPose");
+    header.push_back("RefinedPts");  header.push_back("ConstPts");   header.push_back("IgnoredPts");
+    header.push_back("RefinedK");    header.push_back("ConstK");     header.push_back("IgnoredK");
+    header.push_back("SuccessIter"); header.push_back("BadIter");
+    header.push_back("InitRMSE"); header.push_back("FinalRMSE");
+    header.push_back("dAR=0"); header.push_back("dAR=1"); header.push_back("dAR=2");
+    header.push_back("dAR=3"); header.push_back("dAR=4"); header.push_back("dAR=5");   
+    header.push_back("dAR=6"); header.push_back("dAR=7"); header.push_back("dAR=8"); 
+    header.push_back("dAR=9"); header.push_back("dAR=10+");
+    
+//    header.push_back("IdBadTrackRejector");
+//    header.push_back("newViewsId");
+    
+    for (string & head : header)
+      os << head << "\t";
+    os << "\n"; 
+     
+    
+  }
+  
+  // Add the 'baStats' contents:
+  // Compute the number of poses with a distanceToRecenteCameras > 10
+  std::size_t posesWthDistUpperThanTen = 0;
+  if (baStats.map_distance_numCameras.size() >= 10)
+  {
+    for (int i=10; i<baStats.map_distance_numCameras.size(); ++i)
+    {
+      posesWthDistUpperThanTen += baStats.map_distance_numCameras.at(i);
+    }
+  }
+  
+  os << baStats.time << "\t"
+  
+     << baStats.numRefinedPoses << "\t"
+     << baStats.numConstantPoses << "\t"
+     << baStats.numIgnoredPoses << "\t"
+     << baStats.numRefinedLandmarks << "\t"
+     << baStats.numConstantLandmarks << "\t"
+     << baStats.numIgnoredLandmarks << "\t"
+     << baStats.numRefinedIntrinsics << "\t"
+     << baStats.numConstantIntrinsics << "\t"
+     << baStats.numIgnoredIntrinsics << "\t"
+        
+     << baStats.numSuccessfullIterations << "\t"
+     << baStats.numUnsuccessfullIterations << "\t"
+        
+     << baStats.RMSEinitial << "\t"
+     << baStats.RMSEfinal << "\t"
+        
+     << baStats.map_distance_numCameras[0] << "\t"
+     << baStats.map_distance_numCameras[1] << "\t"
+     << baStats.map_distance_numCameras[2] << "\t"
+     << baStats.map_distance_numCameras[3] << "\t"
+     << baStats.map_distance_numCameras[4] << "\t"
+     << baStats.map_distance_numCameras[5] << "\t"
+     << baStats.map_distance_numCameras[6] << "\t"
+     << baStats.map_distance_numCameras[7] << "\t"
+     << baStats.map_distance_numCameras[8] << "\t"
+     << baStats.map_distance_numCameras[9] << "\t"
+     << posesWthDistUpperThanTen << "\t";
+        
+//     << baStats.idBadTrackRejector << "\t";
+  
+//  for (const IndexT id : baStats.newViewsId)
+//  {
+//    os << id << "\t";
+//  }
+  os << "\n";
+  os.close();
+  
+  return true;
 }
 
 /**
