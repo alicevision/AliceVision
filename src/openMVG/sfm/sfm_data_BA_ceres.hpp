@@ -28,6 +28,8 @@ class Bundle_Adjustment_Ceres : public Bundle_Adjustment
     bool _bVerbose;
     unsigned int _nbThreads;
     bool _bCeres_Summary;
+    bool useParametersOrdering; 
+    bool useLocalBA;
     ceres::LinearSolverType _linear_solver_type;
     ceres::PreconditionerType _preconditioner_type;
     ceres::SparseLinearAlgebraLibraryType _sparse_linear_algebra_library_type;
@@ -35,6 +37,11 @@ class Bundle_Adjustment_Ceres : public Bundle_Adjustment
     BA_options(const bool bVerbose = true, bool bmultithreaded = true);
     void setDenseBA();
     void setSparseBA();
+    void enableLocalBA() {useLocalBA = true;}
+    void disableLocalBA() {useLocalBA = false;}
+    void enableParametersOrdering() {useParametersOrdering = true;}
+    void disableParametersOrdering() {useParametersOrdering = false;}
+    
   };
   private:
     BA_options _openMVG_options;
@@ -58,15 +65,22 @@ class Bundle_Adjustment_Ceres : public Bundle_Adjustment
   
   private:
   
+  void setSolverOptions(ceres::Solver::Options& solver_options);
+  
   Hash_Map<IndexT, std::vector<double>> addPosesToCeresProblem(
     const Poses & poses, 
-    ceres::Problem & problem);
+    ceres::Problem & problem, 
+    ceres::Solver::Options &options);
     
   Hash_Map<IndexT, std::vector<double>> addIntrinsicsToCeresProblem(
     const SfM_Data & sfm_data, 
-    ceres::Problem & problem);
+    ceres::Problem & problem,
+    ceres::Solver::Options& options);
   
-  bool solveBA(ceres::Problem & problem, ceres::Solver::Summary &summary);
+  bool solveBA(
+    ceres::Problem & problem, 
+    ceres::Solver::Options &options, 
+    ceres::Solver::Summary &summary);
 
   void updateCameraPoses(
     const Hash_Map<IndexT, std::vector<double>> & map_poses,

@@ -1502,6 +1502,8 @@ bool SequentialSfMReconstructionEngine::Resection(const std::size_t viewIndex)
 bool SequentialSfMReconstructionEngine::BundleAdjustment()
 {
   Bundle_Adjustment_Ceres::BA_options options;
+  options.enableLocalBA();
+  options.enableParametersOrdering();
   if (_sfm_data.GetPoses().size() > 100)
   {
     options.setSparseBA();

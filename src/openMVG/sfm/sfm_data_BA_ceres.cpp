@@ -60,6 +60,8 @@ Bundle_Adjustment_Ceres::BA_options::BA_options(const bool bVerbose, bool bmulti
     _nbThreads = 1;
 
   _bCeres_Summary = false;
+  useParametersOrdering = false;
+  useLocalBA = false;
   
   // Use dense BA by default
   setDenseBA();
@@ -102,7 +104,6 @@ void Bundle_Adjustment_Ceres::BA_options::setSparseBA()
     OPENMVG_LOG_WARNING("Bundle_Adjustment_Ceres: no sparse BA available, fallback to dense BA.");
   }
 }
-
 
 Bundle_Adjustment_Ceres::Bundle_Adjustment_Ceres(
   Bundle_Adjustment_Ceres::BA_options options)
@@ -418,17 +419,21 @@ bool Bundle_Adjustment_Ceres::adjustPartialReconstruction(SfM_Data & sfm_data, B
   // parameters for cameras and points are added automatically.
   //----------
   
+  ceres::Solver::Options solver_options;
+  setSolverOptions(solver_options);
   ceres::Problem problem;
-
+ 
+  ceres::ParameterBlockOrdering* parameter_ordering = solver_options.linear_solver_ordering.get();
+  
   // Data wrapper for refinement:
   Hash_Map<IndexT, std::vector<double> > map_poses;
   Hash_Map<IndexT, std::vector<double> > map_intrinsics;
     
   // Setup Poses data as Parameter blocks to Ceres
-  map_poses = addPosesToCeresProblem(sfm_data.poses, problem);
+  map_poses = addPosesToCeresProblem(sfm_data.poses, problem, solver_options);
   
   // Setup Intrinsics data as Parameter blocks to Ceres
-  map_intrinsics = addIntrinsicsToCeresProblem(sfm_data, problem);
+  map_intrinsics = addIntrinsicsToCeresProblem(sfm_data, problem, solver_options);
      
   // Set a LossFunction to be less penalized by false measurements
   //  - set it to NULL if you don't want use a lossFunction.
@@ -452,16 +457,20 @@ bool Bundle_Adjustment_Ceres::adjustPartialReconstruction(SfM_Data & sfm_data, B
           IntrinsicsToCostFunction(sfm_data.intrinsics[view->id_intrinsic].get(), observationIt.second.x);
       
       if (cost_function)
+      {
         problem.AddResidualBlock(cost_function,
                                  p_LossFunction,
                                  &map_intrinsics[view->id_intrinsic][0],
                                  &map_poses[view->id_pose][0],
                                  landmarkIt.second.X.data()); //Do we need to copy 3D point to avoid false motion, if failure ?
+        if (_openMVG_options.useParametersOrdering)
+          solver_options.linear_solver_ordering.get()->AddElementToGroup(landmarkIt.second.X.data(), 0);
+      }
     }
   }
-  
+ 
   ceres::Solver::Summary summary;
-  if (!solveBA(problem, summary))
+  if (!solveBA(problem, solver_options, summary))
     return false;
       
   // Solution is usable
@@ -504,7 +513,8 @@ bool Bundle_Adjustment_Ceres::adjustPartialReconstruction(SfM_Data & sfm_data, B
 
 Hash_Map<IndexT, std::vector<double> > Bundle_Adjustment_Ceres::addPosesToCeresProblem(
   const Poses & poses,
-  ceres::Problem & problem)
+  ceres::Problem & problem,
+  ceres::Solver::Options& options)
 {
   // Data wrapper for refinement:
   Hash_Map<IndexT, std::vector<double> > map_poses;
@@ -530,13 +540,15 @@ Hash_Map<IndexT, std::vector<double> > Bundle_Adjustment_Ceres::addPosesToCeresP
     
     double * parameter_block = &map_poses[indexPose][0];
     problem.AddParameterBlock(parameter_block, 6);
+    if (_openMVG_options.useParametersOrdering)
+      options.linear_solver_ordering.get()->AddElementToGroup(parameter_block, 2);
   }
   return map_poses;
 }
 
-Hash_Map<IndexT, std::vector<double>> Bundle_Adjustment_Ceres::addIntrinsicsToCeresProblem(
-  const SfM_Data & sfm_data,
-  ceres::Problem & problem)
+Hash_Map<IndexT, std::vector<double>> Bundle_Adjustment_Ceres::addIntrinsicsToCeresProblem(const SfM_Data & sfm_data,
+  ceres::Problem & problem, 
+  ceres::Solver::Options &options)
 {
   Hash_Map<IndexT, std::size_t> intrinsicsUsage;
   
@@ -571,7 +583,9 @@ Hash_Map<IndexT, std::vector<double>> Bundle_Adjustment_Ceres::addIntrinsicsToCe
     
     double * parameter_block = &map_intrinsics[idIntrinsics][0];
     problem.AddParameterBlock(parameter_block, map_intrinsics[idIntrinsics].size());
-    
+    if (_openMVG_options.useParametersOrdering)
+      options.linear_solver_ordering.get()->AddElementToGroup(parameter_block, 1);
+
     // Refine the focal length
     if(itIntrinsic.second->initialFocalLengthPix() > 0)
     {
@@ -607,19 +621,26 @@ Hash_Map<IndexT, std::vector<double>> Bundle_Adjustment_Ceres::addIntrinsicsToCe
   return map_intrinsics;
 } 
 
-bool Bundle_Adjustment_Ceres::solveBA(ceres::Problem & problem, ceres::Solver::Summary & summary)
+/// Transfert the BA options from OpenMVG to Ceres
+void Bundle_Adjustment_Ceres::setSolverOptions(ceres::Solver::Options& solver_options)
+{
+  solver_options.preconditioner_type = _openMVG_options._preconditioner_type;
+  solver_options.linear_solver_type = _openMVG_options._linear_solver_type;
+  solver_options.sparse_linear_algebra_library_type = _openMVG_options._sparse_linear_algebra_library_type;
+  solver_options.minimizer_progress_to_stdout = _openMVG_options._bVerbose;
+  solver_options.logging_type = ceres::SILENT;
+  solver_options.num_threads = _openMVG_options._nbThreads;
+  solver_options.num_linear_solver_threads = _openMVG_options._nbThreads;
+  if (_openMVG_options.useParametersOrdering)
+    solver_options.linear_solver_ordering.reset(new ceres::ParameterBlockOrdering);
+}
+
+bool Bundle_Adjustment_Ceres::solveBA(
+  ceres::Problem& problem, 
+  ceres::Solver::Options& options, 
+  ceres::Solver::Summary& summary)
 {
   // Configure a BA engine and run it
-  //  Make Ceres automatically detect the bundle structure.
-  ceres::Solver::Options options;
-  options.preconditioner_type = _openMVG_options._preconditioner_type;
-  options.linear_solver_type = _openMVG_options._linear_solver_type;
-  options.sparse_linear_algebra_library_type = _openMVG_options._sparse_linear_algebra_library_type;
-  options.minimizer_progress_to_stdout = _openMVG_options._bVerbose;
-  options.logging_type = ceres::SILENT;
-  options.num_threads = _openMVG_options._nbThreads;
-  options.num_linear_solver_threads = _openMVG_options._nbThreads;
-  
   // Solve BA
   
   ceres::Solve(options, &problem, &summary);
