@@ -57,9 +57,8 @@ TEST(Resection_L_Infinity, Robust_OutlierFree) {
     d2._t[nResectionCameraIndex] = t;
 
     //CHeck matrix to GT, and residual
-    EXPECT_NEAR( 0.0, FrobeniusDistance(GT_ProjectionMatrix, COMPUTED_ProjectionMatrix), 1e-2 );
-    Mat pt4D = VStack(pt3D, Mat(Vec::Ones(pt3D.cols()).transpose()));
-    EXPECT_NEAR( 0.0, RootMeanSquareError(pt2D, pt4D, COMPUTED_ProjectionMatrix), 1e-2);
+    EXPECT_NEAR( 0.0, FrobeniusDistance(GT_ProjectionMatrix, COMPUTED_ProjectionMatrix), 1e-1 );
+    EXPECT_NEAR( 0.0, reprojectionErrorRMSE(pt2D, pt3D.colwise().homogeneous(), COMPUTED_ProjectionMatrix), 1e-1);
   }
 }
 
@@ -100,7 +99,7 @@ TEST(Resection_L_Infinity, Robust_OneOutlier) {
     // Check that Projection matrix is near to the GT :
     Mat34 GT_ProjectionMatrix = d.P(nResectionCameraIndex).array()
       / d.P(nResectionCameraIndex).norm();
-    Mat34 COMPUTED_ProjectionMatrix = P.array() / P.norm();
+    Mat34 estimatedProjectionMatrix = P.array() / P.norm();
 
     // Extract K[R|t]
     Mat3 R,K;
@@ -111,9 +110,8 @@ TEST(Resection_L_Infinity, Robust_OneOutlier) {
     d2._t[nResectionCameraIndex] = t;
 
     //CHeck matrix to GT, and residual
-    EXPECT_NEAR( 0.0, FrobeniusDistance(GT_ProjectionMatrix, COMPUTED_ProjectionMatrix), 1e-3 );
-    Mat pt4D = VStack(pt3D, Mat(Vec::Ones(pt3D.cols()).transpose()));
-    EXPECT_NEAR( 0.0, RootMeanSquareError(pt2D, pt4D, COMPUTED_ProjectionMatrix), 1e-1);
+    EXPECT_NEAR( 0.0, FrobeniusDistance(GT_ProjectionMatrix, estimatedProjectionMatrix), 1e-1 );
+    EXPECT_NEAR( 0.0, reprojectionErrorRMSE(pt2D, pt3D.colwise().homogeneous(), estimatedProjectionMatrix), 0.75);
   }
   d2.ExportToPLY("test_After_Infinity.ply");
 }

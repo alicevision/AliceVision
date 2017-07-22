@@ -206,13 +206,13 @@ protected:
   std::vector<DescriptorT> _vec_descs; // region descriptions
 
 public:
-  std::string Type_id() const {return typeid(T).name();}
-  std::size_t DescriptorLength() const {return static_cast<std::size_t>(L);}
+  std::string Type_id() const override {return typeid(T).name();}
+  std::size_t DescriptorLength() const override {return static_cast<std::size_t>(L);}
 
-  bool IsScalar() const { return regionType == ERegionType::Scalar; }
-  bool IsBinary() const { return regionType == ERegionType::Binary; }
+  bool IsScalar() const override { return regionType == ERegionType::Scalar; }
+  bool IsBinary() const override { return regionType == ERegionType::Binary; }
 
-  Regions * EmptyClone() const
+  Regions * EmptyClone() const override
   {
     return new This();
   }
@@ -220,7 +220,7 @@ public:
   /// Read from files the regions and their corresponding descriptors.
   bool Load(
     const std::string& sfileNameFeats,
-    const std::string& sfileNameDescs)
+    const std::string& sfileNameDescs) override
   {
     return loadFeatsFromFile(sfileNameFeats, this->_vec_feats)
           & loadDescsFromBinFile(sfileNameDescs, _vec_descs);
@@ -229,13 +229,13 @@ public:
   /// Export in two separate files the regions and their corresponding descriptors.
   bool Save(
     const std::string& sfileNameFeats,
-    const std::string& sfileNameDescs) const
+    const std::string& sfileNameDescs) const override
   {
     return saveFeatsToFile(sfileNameFeats, this->_vec_feats)
           & saveDescsToBinFile(sfileNameDescs, _vec_descs);
   }
 
-  bool SaveDesc(const std::string& sfileNameDescs) const
+  bool SaveDesc(const std::string& sfileNameDescs) const override
   {
     return saveDescsToBinFile(sfileNameDescs, _vec_descs);
   }
@@ -257,7 +257,7 @@ public:
   }
 
   // Return the distance between two descriptors
-  double SquaredDescriptorDistance(std::size_t i, const Regions * genericRegions, std::size_t j) const
+  double SquaredDescriptorDistance(std::size_t i, const Regions * genericRegions, std::size_t j) const override
   {
     assert(i < this->_vec_descs.size());
     assert(genericRegions);
@@ -273,7 +273,7 @@ public:
    * @param[in] i: index of the region to copy
    * @param[out] outRegionContainer: the output region group to add the region
    */
-  void CopyRegion(std::size_t i, Regions * outRegionContainer) const
+  void CopyRegion(std::size_t i, Regions * outRegionContainer) const override
   {
     assert(i < this->_vec_feats.size() && i < this->_vec_descs.size());
     static_cast<This*>(outRegionContainer)->_vec_feats.push_back(this->_vec_feats[i]);

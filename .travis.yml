@@ -3,7 +3,7 @@
 #
 
 language: cpp
-
+dist: precise 
 compiler:
   - gcc
   #- clang: #Consider clang later, since cereal does not build fine on the clang CI version
