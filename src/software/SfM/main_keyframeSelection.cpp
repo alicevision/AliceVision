@@ -54,7 +54,7 @@ int main(int argc, char** argv)
         "Camera models.")
       ("mmFocals", po::value< std::vector<float> >(&mmFocals)->default_value(mmFocals)->multitoken(),
         "Focals in mm (will be use if not 0).")
-      ("pxFocals", po::value< std::vector<float> >(&mmFocals)->default_value(mmFocals)->multitoken(),
+      ("pxFocals", po::value< std::vector<float> >(&pxFocals)->default_value(pxFocals)->multitoken(),
         "Focals in px (will be use and convert in mm if not 0).");
   
   po::options_description algorithmParams("Algorithm parameters");
@@ -161,7 +161,7 @@ int main(int argc, char** argv)
     KeyframeSelector::CameraInfo& metadata = cameraInfos.at(i);
 
     const std::string& brand = brands.at(i);
-    const std::string& model = brands.at(i);
+    const std::string& model = models.at(i);
     const float mmFocal = mmFocals.at(i);
     const float pxFocal = pxFocals.at(i);
 
