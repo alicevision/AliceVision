@@ -39,6 +39,7 @@ class Bundle_Adjustment_Ceres : public Bundle_Adjustment
     void setSparseBA();
     void enableLocalBA() {useLocalBA = true;}
     void disableLocalBA() {useLocalBA = false;}
+    bool isLocalBAEnabled() {return useLocalBA;}
     void enableParametersOrdering() {useParametersOrdering = true;}
     void disableParametersOrdering() {useParametersOrdering = false;}
     

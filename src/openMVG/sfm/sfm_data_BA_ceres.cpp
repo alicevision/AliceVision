@@ -404,7 +404,7 @@ bool Bundle_Adjustment_Ceres::Adjust(
   return true;
 }
 
-bool Bundle_Adjustment_Ceres::adjustPartialReconstruction(SfM_Data & sfm_data, BAStats & baStats)
+bool Bundle_Adjustment_Ceres::adjustPartialReconstruction(SfM_Data& sfm_data, BAStats& baStats)
 {
   // Ensure we are not using incompatible options:
   //  - BA_REFINE_INTRINSICS_OPTICALCENTER_ALWAYS and BA_REFINE_INTRINSICS_OPTICALCENTER_IF_ENOUGH_DATA cannot be used at the same time
@@ -422,8 +422,6 @@ bool Bundle_Adjustment_Ceres::adjustPartialReconstruction(SfM_Data & sfm_data, B
   ceres::Solver::Options solver_options;
   setSolverOptions(solver_options);
   ceres::Problem problem;
- 
-  ceres::ParameterBlockOrdering* parameter_ordering = solver_options.linear_solver_ordering.get();
   
   // Data wrapper for refinement:
   Hash_Map<IndexT, std::vector<double> > map_poses;
@@ -683,7 +681,7 @@ void Bundle_Adjustment_Ceres::updateCameraIntrinsics(
     intrinsics[intrinsicsV.first]->updateFromParams(intrinsicsV.second);
   }
 }
-  
+
 } // namespace sfm
 } // namespace openMVG
 

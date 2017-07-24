@@ -126,7 +126,8 @@ SequentialSfMReconstructionEngine::SequentialSfMReconstructionEngine(
   : ReconstructionEngine(sfm_data, soutDirectory),
     _sLoggingFile(sloggingFile),
     _initialpair(Pair(0,0)),
-    _camType(EINTRINSIC(PINHOLE_CAMERA_RADIAL3))
+    _camType(EINTRINSIC(PINHOLE_CAMERA_RADIAL3)),
+    nodeMap(reconstructionGraph)
 {
   if (!_sLoggingFile.empty())
   {
@@ -175,6 +176,8 @@ void SequentialSfMReconstructionEngine::RobustResectionOfImages(
     auto chrono_start = std::chrono::steady_clock::now();
     OPENMVG_LOG_DEBUG("Resection group start " << resectionGroupIndex << " with " << vec_possible_resection_indexes.size() << " images.\n");
     bool bImageAdded = false;
+    std::set<IndexT> set_newReconstructedViewId; // will contains all the recently resected cameras
+    
     // Add images to the 3D reconstruction
     for (const size_t possible_resection_index: vec_possible_resection_indexes )
     {
@@ -189,7 +192,8 @@ void SequentialSfMReconstructionEngine::RobustResectionOfImages(
       }
       else
       {
-        set_reconstructedViewId.insert(possible_resection_index);
+        set_reconstructedViewId.insert(possible_resection_index); // contains all the resected views (from the beginning of the reconstruction)
+        set_newReconstructedViewId.insert(possible_resection_index); // contains the new resected views 
         OPENMVG_LOG_DEBUG("Resection of image: " << currentIndex << " ID=" << possible_resection_index << " succeed.");
       }
       set_remainingViewId.erase(possible_resection_index);
@@ -215,7 +219,9 @@ void SequentialSfMReconstructionEngine::RobustResectionOfImages(
       do
       {
         auto chrono2_start = std::chrono::steady_clock::now();
-        BundleAdjustment();
+
+//        BundleAdjustment();
+        LocalBundleAdjustment(set_newReconstructedViewId);
         OPENMVG_LOG_DEBUG("Resection group index: " << resectionGroupIndex << ", bundle iteration: " << bundleAdjustmentIteration
                   << " took " << std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - chrono2_start).count() << " msec.");
         ++bundleAdjustmentIteration;
@@ -1499,11 +1505,152 @@ bool SequentialSfMReconstructionEngine::Resection(const std::size_t viewIndex)
 }
 
 /// Bundle adjustment to refine Structure; Motion and Intrinsics
+bool SequentialSfMReconstructionEngine::LocalBundleAdjustment(const std::set<IndexT>& newReconstructedViewIds)
+{
+  Bundle_Adjustment_Ceres::BA_options options;
+  //  options.enableParametersOrdering();
+  if (_sfm_data.GetPoses().size() > 5) 
+  {
+    options.setSparseBA();
+    options.enableLocalBA();
+  }
+  else
+  {
+    options.setDenseBA();
+  }
+  
+  if (options.isLocalBAEnabled())
+  {
+    updateDistancesGraph(newReconstructedViewIds);
+    computeDistancesMap(newReconstructedViewIds);
+    
+    {    
+      OPENMVG_LOG_INFO("-- Distance map:  ([X]: new cameras)");
+      for (auto & itMap: map_distancePerViewId)
+      {
+        auto itSet = newReconstructedViewIds.find(itMap.first);
+        std::string tagNew;
+        if (itSet != newReconstructedViewIds.end())
+          tagNew = "[X] ";
+        else
+          tagNew = "[ ] ";
+        OPENMVG_LOG_INFO( tagNew << itMap.first << " -> " << itMap.second);
+      }
+    }   
+     
+  }
+  
+  // Run Bundle Adjustment:
+  Bundle_Adjustment_Ceres bundle_adjustment_obj(options);
+  BAStats baStats;
+  bool isBaSucceed = bundle_adjustment_obj.adjustPartialReconstruction(_sfm_data, baStats);
+  exportStatistics(baStats);
+  
+  return isBaSucceed;
+}
+
+void SequentialSfMReconstructionEngine::updateDistancesGraph(const std::set<IndexT>& newViewIds)
+{
+  std::set<IndexT> viewIdsAddedToTheGraph;
+  
+  // -- Add nodes (= views)
+  // Identify the view we need to add to the graph:
+  if (invNodeMap.empty()) // is the fisrt Local BA
+  {
+    for (auto & it : _sfm_data.GetPoses())
+      viewIdsAddedToTheGraph.insert(it.first);
+  }
+  else // not the first Local BA
+    viewIdsAddedToTheGraph = newViewIds; 
+  
+  // Add the views as nodes to the graph:
+  for (auto& viewId : viewIdsAddedToTheGraph)
+  {
+    ListGraph::Node newNode = reconstructionGraph.addNode();
+    nodeMap.set(newNode, viewId);
+    invNodeMap[viewId] = newNode;  
+  }
+      
+  // -- Add edge.
+  // An edge is created between 2 views when they share at least 'L' landmarks (by default L=100).
+  // At first, we need to count the number of shared landmarks between all the new views 
+  // and each already resected cameras (already in the graph)
+  std::map<Pair, std::size_t> map_nbSharedLandmarksPerImagesPair;
+  
+  std::set<IndexT> landmarkIds;
+  std::transform(_sfm_data.GetLandmarks().begin(), _sfm_data.GetLandmarks().end(),
+    std::inserter(landmarkIds, landmarkIds.begin()),
+    stl::RetrieveKey());
+
+  for(const auto& viewId: viewIdsAddedToTheGraph)
+  {
+    const openMVG::tracks::TrackIdSet& newView_trackIds = _map_tracksPerView.at(viewId);
+
+    // Retrieve the common track Ids
+    std::vector<IndexT> newView_landmarks; // all landmarks (already reconstructed) visible from the new view
+    newView_landmarks.reserve(newView_trackIds.size());
+    std::set_intersection(newView_trackIds.begin(), newView_trackIds.end(),
+      landmarkIds.begin(), landmarkIds.end(),
+      std::back_inserter(newView_landmarks));
+
+    for(auto landmark: newView_landmarks)
+    {
+      for(auto viewObs: _sfm_data.structure.at(landmark).observations)
+      {
+        if (viewObs.first == viewId) continue; // do not compare an observation with itself
+
+        // Increment the number of common landmarks between the new view and the already 
+        // reconstructed cameras (observations).
+        // format: pair<min_viewid, max_viewid>
+        auto viewPair = std::make_pair(std::min(viewId, viewObs.first), std::max(viewId, viewObs.first));
+        auto it = map_nbSharedLandmarksPerImagesPair.find(viewPair);
+        if(it == map_nbSharedLandmarksPerImagesPair.end())  // the first common landmark
+          map_nbSharedLandmarksPerImagesPair[viewPair] = 1;
+        else
+          it->second++;
+      }
+    }
+  }
+  // add edges in the graph
+  for(auto& it: map_nbSharedLandmarksPerImagesPair)
+  {
+    std::size_t L = 100; // typically: 100
+    if(it.second > L) // ensure a minimum number of landmarks in common to consider the link
+    {
+      reconstructionGraph.addEdge(invNodeMap.at(it.first.first), invNodeMap.at(it.first.second));
+    }
+  }
+}
+
+void SequentialSfMReconstructionEngine::computeDistancesMap(const std::set<IndexT>& newViewIds)
+{
+  // Reset the map contents
+  map_distancePerViewId.clear();
+
+  // Setup Breadth First Search using Lemon
+  lemon::Bfs<lemon::ListGraph> bfs(reconstructionGraph);
+  bfs.init();
+
+  // Add source views for the bfs visit of the _reconstructionGraph
+  for(const IndexT viewId: newViewIds)
+  {
+    bfs.addSource(invNodeMap.find(viewId)->second);
+  }
+  bfs.start();
+
+  // Handle bfs results (distances)
+  for(auto it: invNodeMap)
+  {
+    auto& node = it.second;
+    int d = bfs.dist(node);
+    map_distancePerViewId[it.first] = d;
+  }
+}
+
+///// Bundle adjustment to refine Structure; Motion and Intrinsics
 bool SequentialSfMReconstructionEngine::BundleAdjustment()
 {
   Bundle_Adjustment_Ceres::BA_options options;
-  options.enableLocalBA();
-  options.enableParametersOrdering();
   if (_sfm_data.GetPoses().size() > 100)
   {
     options.setSparseBA();
@@ -1516,33 +1663,8 @@ bool SequentialSfMReconstructionEngine::BundleAdjustment()
   BA_Refine refineOptions = BA_REFINE_ROTATION | BA_REFINE_TRANSLATION | BA_REFINE_STRUCTURE;
   if(!_bFixedIntrinsics)
     refineOptions |= BA_REFINE_INTRINSICS_ALL;
-  
-  BAStats baStats;
-  bool isBaSucceed = bundle_adjustment_obj.adjustPartialReconstruction(_sfm_data, baStats);
-  exportStatistics(baStats);
-  
-  return isBaSucceed;
+  return bundle_adjustment_obj.Adjust(_sfm_data, refineOptions);
 }
-
-///// Bundle adjustment to refine Structure; Motion and Intrinsics
-//bool SequentialSfMReconstructionEngine::BundleAdjustment()
-//{
-//  Bundle_Adjustment_Ceres::BA_options options;
-//  if (_sfm_data.GetPoses().size() > 100)
-//  {
-//    options.setSparseBA();
-//  }
-//  else
-//  {
-//    options.setDenseBA();
-//  }
-//  Bundle_Adjustment_Ceres bundle_adjustment_obj(options);
-//  BA_Refine refineOptions = BA_REFINE_ROTATION | BA_REFINE_TRANSLATION | BA_REFINE_STRUCTURE;
-//  if(!_bFixedIntrinsics)
-//    refineOptions |= BA_REFINE_INTRINSICS_ALL;
-//  return bundle_adjustment_obj.Adjust(_sfm_data, refineOptions);
-//  return bundle_adjustment_obj.adjustPartialReconstruction(_sfm_data);
-//}
 
 /**
  * @brief Discard tracks with too large residual error
