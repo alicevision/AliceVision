@@ -16,6 +16,7 @@ enum class ESharpnessSelectionPreset : std::uint8_t
   ULTRA
   , HIGH
   , NORMAL
+  , MEDIUM
   , LOW
   , VERY_LOW
   , NONE
@@ -33,6 +34,7 @@ inline std::string ESharpnessSelectionPreset_enumToString(ESharpnessSelectionPre
     case ESharpnessSelectionPreset::ULTRA:    return "ultra";
     case ESharpnessSelectionPreset::HIGH:     return "high";
     case ESharpnessSelectionPreset::NORMAL:   return "normal";
+    case ESharpnessSelectionPreset::MEDIUM:   return "medium";
     case ESharpnessSelectionPreset::LOW:      return "low";
     case ESharpnessSelectionPreset::VERY_LOW: return "very_low";
     case ESharpnessSelectionPreset::NONE:     return "none";
@@ -53,6 +55,7 @@ inline ESharpnessSelectionPreset ESharpnessSelectionPreset_stringToEnum(const st
   if(preset == "ultra")    return ESharpnessSelectionPreset::ULTRA;
   if(preset == "high")     return ESharpnessSelectionPreset::HIGH;
   if(preset == "normal")   return ESharpnessSelectionPreset::NORMAL;
+  if(preset == "medium")   return ESharpnessSelectionPreset::MEDIUM;
   if(preset == "low")      return ESharpnessSelectionPreset::LOW;
   if(preset == "very_low") return ESharpnessSelectionPreset::VERY_LOW;
   if(preset == "none")     return ESharpnessSelectionPreset::NONE;

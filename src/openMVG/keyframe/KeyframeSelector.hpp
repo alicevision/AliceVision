@@ -90,6 +90,7 @@ public:
       case ESharpnessSelectionPreset::ULTRA:    _sharpnessThreshold = 20.0f;  break;
       case ESharpnessSelectionPreset::HIGH:     _sharpnessThreshold = 17.0f;  break;
       case ESharpnessSelectionPreset::NORMAL:   _sharpnessThreshold = 15.0f;  break;
+      case ESharpnessSelectionPreset::MEDIUM:   _sharpnessThreshold = 10.0f;  break;
       case ESharpnessSelectionPreset::LOW:      _sharpnessThreshold =  8.0f;  break;
       case ESharpnessSelectionPreset::VERY_LOW: _sharpnessThreshold =  6.0f;  break;
       case ESharpnessSelectionPreset::NONE:     _sharpnessThreshold =   .0f;  break;
