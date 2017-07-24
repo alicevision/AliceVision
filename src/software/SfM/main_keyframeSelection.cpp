@@ -87,13 +87,13 @@ int main(int argc, char** argv)
   }
   catch(boost::program_options::required_option& e)
   {
-    OPENMVG_CERR("ERROR: " << e.what() << std::endl);
+    OPENMVG_CERR("ERROR: " << e.what());
     OPENMVG_COUT("Usage:\n\n" << allParams);
     return EXIT_FAILURE;
   }
   catch(boost::program_options::error& e)
   {
-    OPENMVG_CERR("ERROR: " << e.what() << std::endl);
+    OPENMVG_CERR("ERROR: " << e.what());
     OPENMVG_COUT("Usage:\n\n" << allParams);
     return EXIT_FAILURE;
   }
@@ -104,7 +104,7 @@ int main(int argc, char** argv)
     outputDirectory = outDir.string();
     if(!bfs::is_directory(outDir))
     {
-      OPENMVG_CERR("ERROR: can't find directory " << outputDirectory << std::endl);
+      OPENMVG_CERR("ERROR: can't find directory " << outputDirectory);
       return EXIT_FAILURE;
     }
   }
@@ -113,7 +113,7 @@ int main(int argc, char** argv)
 
   if(nbCameras < 1)
   {
-    OPENMVG_CERR("ERROR: program need at least one media path" << std::endl);
+    OPENMVG_CERR("ERROR: program need at least one media path");
     return EXIT_FAILURE;
   }
 

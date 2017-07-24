@@ -1,8 +1,8 @@
 #include "KeyframeSelector.hpp"
-#include "openMVG/image/image.hpp"
-#include "openMVG/features/sift/SIFT_describer.hpp"
-#include "openMVG/exif/sensor_width_database/ParseDatabase.hpp"
-#include "openMVG/logger.hpp"
+#include <openMVG/image/image.hpp>
+#include <openMVG/features/sift/SIFT_describer.hpp>
+#include <openMVG/exif/sensor_width_database/ParseDatabase.hpp>
+#include <openMVG/logger.hpp>
 
 #include <tuple>
 #include <cassert>
@@ -118,14 +118,14 @@ void KeyframeSelector::process()
   
   for(std::size_t frameIndex = 0; frameIndex < _framesData.size(); ++frameIndex)
   {
-    OPENMVG_COUT("frame : " << frameIndex <<  std::endl);
+    OPENMVG_COUT("frame : " << frameIndex);
     bool frameSelected = true;
     auto& frameData = _framesData.at(frameIndex);
     frameData.mediasData.resize(_feeds.size());
 
     for(std::size_t mediaIndex = 0; mediaIndex < _feeds.size(); ++mediaIndex)
     {
-      OPENMVG_COUT("media : " << _mediaPaths.at(mediaIndex) << std::endl);
+      OPENMVG_COUT("media : " << _mediaPaths.at(mediaIndex));
       auto& feed = *_feeds.at(mediaIndex);
 
       if(frameSelected) // false if a camera of a rig is not selected
@@ -149,13 +149,13 @@ void KeyframeSelector::process()
     {
       if(frameSelected)
       {
-        OPENMVG_COUT(" > selected "  <<  std::endl);
+        OPENMVG_COUT(" > selected");
         frameData.selected = true;
         frameData.computeAvgSharpness();
       }
       else
       {
-        OPENMVG_COUT(" > skipped "  <<  std::endl);
+        OPENMVG_COUT(" > skipped");
         frameData.mediasData.clear(); // remove unselected mediasData
       }
     }
@@ -182,7 +182,7 @@ void KeyframeSelector::process()
       // save keyframe
       if(hasKeyframe)
       {
-        OPENMVG_COUT("--> keyframe choice : " << keyframeIndex <<  std::endl);
+        OPENMVG_COUT("--> keyframe choice : " << keyframeIndex);
         if(_maxOutFrame == 0) // no limit of keyframes (direct evaluation)
         {
           // write keyframe
@@ -300,7 +300,7 @@ bool KeyframeSelector::computeFrameData(const image::Image<image::RGBColor>& ima
                                              currMediaInfo.tileWidth,
                                              tileSharpSubset);
 
-  OPENMVG_COUT( " - sharpness : " << currMediaData.sharpness <<  std::endl);
+  OPENMVG_COUT( " - sharpness : " << currMediaData.sharpness);
 
   if(currMediaData.sharpness > _sharpnessThreshold)
   {
@@ -324,7 +324,7 @@ bool KeyframeSelector::computeFrameData(const image::Image<image::RGBColor>& ima
         }
       }
       currframeData.maxDistScore = std::max(currframeData.maxDistScore, currMediaData.distScore);
-      OPENMVG_COUT(" - distScore : " << currMediaData.distScore <<  std::endl);
+      OPENMVG_COUT(" - distScore : " << currMediaData.distScore);
     }
 
     if(noKeyframe || (currMediaData.distScore < _distScoreMax))
@@ -370,11 +370,11 @@ void KeyframeSelector::convertFocalLengthInMM(CameraInfo& cameraInfo, int imageW
   {
     cameraInfo.focalLength = (cameraInfo.focalLength * find._sensorSize) / imageWidth;
     cameraInfo.focalIsMM = true;
-    OPENMVG_COUT("INFO : Focal length converted in mm : " << cameraInfo.focalLength << std::endl);
+    OPENMVG_COUT("INFO : Focal length converted in mm : " << cameraInfo.focalLength);
   }
   else
   {
-    OPENMVG_COUT("WARNING : can't convert focal length in mm  : " << cameraInfo.brand << " / " << cameraInfo.model <<  std::endl);
+    OPENMVG_COUT("WARNING : can't convert focal length in mm  : " << cameraInfo.brand << " / " << cameraInfo.model);
   }
 }
 

@@ -1,8 +1,8 @@
 #pragma once
-#include "SharpnessSelectionPreset.hpp"
-#include "openMVG/features/features.hpp"
-#include "openMVG/voctree/vocabulary_tree.hpp"
-#include "openMVG/dataio/FeedProvider.hpp"
+#include <openMVG/keyframe/SharpnessSelectionPreset.hpp>
+#include <openMVG/features/features.hpp>
+#include <openMVG/dataio/FeedProvider.hpp>
+#include <openMVG/voctree/vocabulary_tree.hpp>
 
 #include <OpenImageIO/imageio.h>
 
@@ -81,7 +81,7 @@ public:
 
   /**
    * @brief Set Sharpness selection preset
-   * @param sharpnessPreset enum
+   * @param[in] sharpnessPreset enum
    */
   void setSharpnessSelectionPreset(ESharpnessSelectionPreset sharpnessPreset)
   {
