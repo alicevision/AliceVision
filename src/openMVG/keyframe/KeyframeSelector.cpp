@@ -182,17 +182,18 @@ void KeyframeSelector::process()
       // save keyframe
       if(hasKeyframe)
       {
-        OPENMVG_LOG_INFO("keyframe choice : " << keyframeIndex);
-        if(_maxOutFrame == 0) // no limit of keyframes (direct evaluation)
+        OPENMVG_LOG_INFO("keyframe choice : " << keyframeIndex << std::endl);
+
+        // write keyframe
+        for(std::size_t mediaIndex = 0; mediaIndex < _feeds.size(); ++mediaIndex)
         {
-          // write keyframe
-          for(std::size_t mediaIndex = 0; mediaIndex < _feeds.size(); ++mediaIndex)
+          auto& feed = *_feeds.at(mediaIndex);
+
+          feed.goToFrame(keyframeIndex);
+
+          if(_maxOutFrame == 0) // no limit of keyframes (direct evaluation)
           {
-            auto& feed = *_feeds.at(mediaIndex);
-
-            feed.goToFrame(keyframeIndex);
             feed.readImage(image, queryIntrinsics, currentImgName, hasIntrinsics);
-
             writeKeyframe(image, keyframeIndex, mediaIndex);
           }
         }
@@ -227,7 +228,9 @@ void KeyframeSelector::process()
     }
     std::sort(keyframes.begin(), keyframes.end());
 
-    for(std::size_t i = 0; i < _maxOutFrame; ++i)
+    const std::size_t nbOutFrames = std::min(static_cast<std::size_t>(_maxOutFrame), keyframes.size());
+
+    for(std::size_t i = 0; i < nbOutFrames; ++i)
     {
       const std::size_t frameIndex = std::get<2>(keyframes.at(i));
       for(std::size_t mediaIndex = 0; mediaIndex < _feeds.size(); ++mediaIndex)
