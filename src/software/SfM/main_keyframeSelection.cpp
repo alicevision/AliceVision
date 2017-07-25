@@ -133,21 +133,21 @@ int main(int argc, char** argv)
 
     for(std::size_t i = 0; i < nbCameras; ++i)
     {
-      OPENMVG_COUT("\tcamera : "        << mediaPaths.at(i));
-      OPENMVG_COUT("\t - brand : "      << brands.at(i));
-      OPENMVG_COUT("\t - model : "      << models.at(i));
-      OPENMVG_COUT("\t - focal (mm) : " << mmFocals.at(i));
-      OPENMVG_COUT("\t - focal (px) : " << pxFocals.at(i));
+      OPENMVG_COUT("\tcamera : "           << mediaPaths.at(i) << std::endl
+                   << "\t - brand : "      << brands.at(i)     << std::endl
+                   << "\t - model : "      << models.at(i)     << std::endl
+                   << "\t - focal (mm) : " << mmFocals.at(i)   << std::endl
+                   << "\t - focal (px) : " << pxFocals.at(i)   << std::endl);
     }
 
-    OPENMVG_COUT("\tsensor database file path : "  << sensorDbPath);
-    OPENMVG_COUT("\tvocabulary tree file path : "  << voctreeFilePath);
-    OPENMVG_COUT("\toutput directory : "           << outputDirectory);
-    OPENMVG_COUT("\tsharpness selection preset : " << sharpnessPreset);
-    OPENMVG_COUT("\tsharp subset : "               << sharpSubset);
-    OPENMVG_COUT("\tmin frame step : "             << minFrameStep);
-    OPENMVG_COUT("\tmax frame step : "             << maxFrameStep);
-    OPENMVG_COUT("\tmax nb out frame : "           << maxNbOutFrame);
+    OPENMVG_COUT("\tsensor database file path : "     << sensorDbPath    << std::endl
+                 << "\tvocabulary tree file path : "  << voctreeFilePath << std::endl
+                 << "\toutput directory : "           << outputDirectory << std::endl
+                 << "\tsharpness selection preset : " << sharpnessPreset << std::endl
+                 << "\tsharp subset : "               << sharpSubset     << std::endl
+                 << "\tmin frame step : "             << minFrameStep    << std::endl
+                 << "\tmax frame step : "             << maxFrameStep    << std::endl
+                 << "\tmax nb out frame : "           << maxNbOutFrame   << std::endl);
   }
 
   // initialize KeyframeSelector

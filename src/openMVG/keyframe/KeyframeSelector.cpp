@@ -61,8 +61,8 @@ KeyframeSelector::KeyframeSelector(const std::vector<std::string>& mediaPaths,
   // check if minimum number of frame is zero
   if(nbFrames == 0)
   {
-    OPENMVG_LOG_ERROR("ERROR : one or multiple medias are empty (no frames) !");
-    throw std::invalid_argument("ERROR : one or multiple medias are empty (no frames) !");
+    OPENMVG_LOG_ERROR("ERROR : one or multiple medias can't be found or empty !");
+    throw std::invalid_argument("ERROR : one or multiple medias can't be found or empty !");
   }
 
   // resize selection data vector
@@ -149,13 +149,13 @@ void KeyframeSelector::process()
     {
       if(frameSelected)
       {
-        OPENMVG_LOG_TRACE(" > selected");
+        OPENMVG_LOG_TRACE(" > selected" << std::endl);
         frameData.selected = true;
         frameData.computeAvgSharpness();
       }
       else
       {
-        OPENMVG_LOG_TRACE(" > skipped");
+        OPENMVG_LOG_TRACE(" > skipped" << std::endl);
         frameData.mediasData.clear(); // remove unselected mediasData
       }
     }
@@ -203,7 +203,7 @@ void KeyframeSelector::process()
       }
       else
       {
-        OPENMVG_LOG_INFO("keyframe choice : none");
+        OPENMVG_LOG_INFO("keyframe choice : none" << std::endl);
       }
     }
     ++currentFrameStep;
