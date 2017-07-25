@@ -522,6 +522,7 @@ void Bundle_Adjustment_Ceres::applyRefinementRules(const SfM_Data & sfm_data, co
       }
     }
     break;
+    
     default:
     {
       // ----------------------------------------------------
@@ -553,9 +554,6 @@ void Bundle_Adjustment_Ceres::applyRefinementRules(const SfM_Data & sfm_data, co
 
 bool Bundle_Adjustment_Ceres::adjustPartialReconstruction(SfM_Data& sfm_data, BAStats& baStats)
 {
-  // Define the refinement rules:
-  // TODO
-  
   //----------
   // Add camera parameters
   // - intrinsics
@@ -574,19 +572,35 @@ bool Bundle_Adjustment_Ceres::adjustPartialReconstruction(SfM_Data& sfm_data, BA
   Hash_Map<IndexT, std::vector<double> > map_intrinsics;
     
   // Setup Poses data as Parameter blocks to Ceres
-  map_poses = addPosesToCeresProblem(sfm_data.poses, problem, solver_options);
+  map_poses = addPosesToCeresProblem(sfm_data.poses, problem, solver_options, baStats);
   
   // Setup Intrinsics data as Parameter blocks to Ceres
-  map_intrinsics = addIntrinsicsToCeresProblem(sfm_data, problem, solver_options);
+  map_intrinsics = addIntrinsicsToCeresProblem(sfm_data, problem, solver_options, baStats);
      
   // Set a LossFunction to be less penalized by false measurements
   //  - set it to NULL if you don't want use a lossFunction.
   ceres::LossFunction * p_LossFunction = new ceres::HuberLoss(Square(4.0));
   // TODO: make the LOSS function and the parameter an option
-  
+
   // For all visibility add reprojections errors:
   for(auto& landmarkIt: sfm_data.structure)
-  {
+  {             
+  
+    if (_openMVG_options.isLocalBAEnabled() && getLandmarkBAState(landmarkIt.first) == constant)
+    {
+      ++baStats.numConstantLandmarks;
+      problem.SetParameterBlockConstant(landmarkIt.second.X.data());
+    }
+    if (_openMVG_options.isLocalBAEnabled() &&getLandmarkBAState(landmarkIt.first) == ignored) 
+    {
+      // Do not refine a landmark set as Ignored by the Local BA strategy
+      ++baStats.numIgnoredLandmarks;
+      continue;
+    }
+      
+    if (_openMVG_options.useParametersOrdering)
+      solver_options.linear_solver_ordering.get()->AddElementToGroup(landmarkIt.second.X.data(), 0);
+  
     const Observations & observations = landmarkIt.second.observations;
     // Iterate over 2D observation associated to the 3D landmark
     for (const auto& observationIt: observations)
@@ -594,6 +608,14 @@ bool Bundle_Adjustment_Ceres::adjustPartialReconstruction(SfM_Data& sfm_data, BA
       // Build the residual block corresponding to the track observation:
       const View * view = sfm_data.views.at(observationIt.first).get();
       
+      if (_openMVG_options.isLocalBAEnabled())
+      {
+        // Do not refine the Block if the pose or the intrinsic of the observation 
+        // has been set as Ignored by the Local BA strategy
+        if (getPoseBAState(view->id_pose) == ignored) continue;
+        if (getIntrinsicsBAState(view->id_intrinsic)== ignored) continue;
+      }
+ 
       // Each Residual block takes a point and a camera as input and outputs a 2
       // dimensional residual. Internally, the cost function stores the observed
       // image location and compares the reprojection against the observation.
@@ -607,8 +629,6 @@ bool Bundle_Adjustment_Ceres::adjustPartialReconstruction(SfM_Data& sfm_data, BA
                                  &map_intrinsics[view->id_intrinsic][0],
                                  &map_poses[view->id_pose][0],
                                  landmarkIt.second.X.data()); //Do we need to copy 3D point to avoid false motion, if failure ?
-        if (_openMVG_options.useParametersOrdering)
-          solver_options.linear_solver_ordering.get()->AddElementToGroup(landmarkIt.second.X.data(), 0);
       }
     }
   }
@@ -640,11 +660,26 @@ bool Bundle_Adjustment_Ceres::adjustPartialReconstruction(SfM_Data& sfm_data, BA
   baStats.numUnsuccessfullIterations = summary.num_unsuccessful_steps;
   baStats.RMSEinitial = std::sqrt( summary.initial_cost / summary.num_residuals);
   baStats.RMSEfinal = std::sqrt( summary.final_cost / summary.num_residuals);
-    
-  // TEMP: all the parameters are refined
-  baStats.numRefinedPoses = sfm_data.poses.size();
-  baStats.numRefinedIntrinsics =  sfm_data.intrinsics.size();
-  baStats.numRefinedLandmarks = sfm_data.structure.size();
+  baStats.numRefinedPoses = sfm_data.poses.size() - baStats.numConstantPoses - baStats.numIgnoredPoses;
+  baStats.numRefinedIntrinsics =  sfm_data.intrinsics.size() - baStats.numConstantIntrinsics - baStats.numIgnoredIntrinsics;
+  baStats.numRefinedLandmarks = sfm_data.structure.size() - baStats.numConstantLandmarks - baStats.numIgnoredLandmarks;
+  
+  if (_openMVG_options._bVerbose && _openMVG_options.isLocalBAEnabled())
+  {
+    // Display statistics about the Local BA
+    OPENMVG_LOG_DEBUG(
+      "Local BA statistics:\n"
+      " #poses: " << baStats.numRefinedPoses << " refined, " 
+        << baStats.numConstantPoses << " constant, "
+        << baStats.numIgnoredPoses << " ignored.\n"
+      " #intrinsics: " << baStats.numRefinedIntrinsics << " refined, " 
+        << baStats.numConstantIntrinsics << " constant, "
+        << baStats.numIgnoredIntrinsics<< " ignored.\n"   
+      " #landmarks: " << baStats.numRefinedLandmarks << " refined, " 
+        << baStats.numConstantLandmarks << " constant, "
+        << baStats.numIgnoredLandmarks << " ignored.\n"
+    );
+  }
   
   // Update camera poses with refined data
   updateCameraPoses(map_poses, sfm_data.poses);
@@ -658,7 +693,8 @@ bool Bundle_Adjustment_Ceres::adjustPartialReconstruction(SfM_Data& sfm_data, BA
 Hash_Map<IndexT, std::vector<double> > Bundle_Adjustment_Ceres::addPosesToCeresProblem(
   const Poses & poses,
   ceres::Problem & problem,
-  ceres::Solver::Options& options)
+  ceres::Solver::Options& options,
+  BAStats& baStats)
 {
   // Data wrapper for refinement:
   Hash_Map<IndexT, std::vector<double> > map_poses;
@@ -666,7 +702,14 @@ Hash_Map<IndexT, std::vector<double> > Bundle_Adjustment_Ceres::addPosesToCeresP
   // Setup Poses data 
   for (Poses::const_iterator itPose = poses.begin(); itPose != poses.end(); ++itPose)
   {
-    const IndexT indexPose = itPose->first;
+    const IndexT idPose = itPose->first;
+    
+    // Do not refine a pose set as Ignored by the local BA strategy  
+    if (_openMVG_options.isLocalBAEnabled() && getPoseBAState(idPose) == ignored)
+    {
+      ++baStats.numIgnoredPoses;
+      continue;
+    }
     
     const Pose3 & pose = itPose->second;
     const Mat3 R = pose.rotation();
@@ -674,16 +717,23 @@ Hash_Map<IndexT, std::vector<double> > Bundle_Adjustment_Ceres::addPosesToCeresP
     
     double angleAxis[3];
     ceres::RotationMatrixToAngleAxis((const double*)R.data(), angleAxis);
-    map_poses[indexPose].reserve(6); //angleAxis + translation
-    map_poses[indexPose].push_back(angleAxis[0]);
-    map_poses[indexPose].push_back(angleAxis[1]);
-    map_poses[indexPose].push_back(angleAxis[2]);
-    map_poses[indexPose].push_back(t(0));
-    map_poses[indexPose].push_back(t(1));
-    map_poses[indexPose].push_back(t(2));
+    map_poses[idPose].reserve(6); //angleAxis + translation
+    map_poses[idPose].push_back(angleAxis[0]);
+    map_poses[idPose].push_back(angleAxis[1]);
+    map_poses[idPose].push_back(angleAxis[2]);
+    map_poses[idPose].push_back(t(0));
+    map_poses[idPose].push_back(t(1));
+    map_poses[idPose].push_back(t(2));
     
-    double * parameter_block = &map_poses[indexPose][0];
+    double * parameter_block = &map_poses[idPose][0];
     problem.AddParameterBlock(parameter_block, 6);
+    
+    if (_openMVG_options.isLocalBAEnabled() && getPoseBAState(idPose) == constant)
+    {
+      ++baStats.numConstantPoses;
+      problem.SetParameterBlockConstant(parameter_block);
+    }
+
     if (_openMVG_options.useParametersOrdering)
       options.linear_solver_ordering.get()->AddElementToGroup(parameter_block, 2);
 
@@ -693,11 +743,13 @@ Hash_Map<IndexT, std::vector<double> > Bundle_Adjustment_Ceres::addPosesToCeresP
 
 Hash_Map<IndexT, std::vector<double>> Bundle_Adjustment_Ceres::addIntrinsicsToCeresProblem(const SfM_Data & sfm_data,
   ceres::Problem & problem, 
-  ceres::Solver::Options &options)
+  ceres::Solver::Options &options,
+  BAStats& baStats)
 {
   Hash_Map<IndexT, std::size_t> intrinsicsUsage;
   
-  // Setup Intrinsics data
+  // Setup Intrinsics data 
+  // Count how many posed views use each intrinsic
   for(const auto& itView: sfm_data.GetViews())
   {
     const View* v = itView.second.get();
@@ -719,15 +771,30 @@ Hash_Map<IndexT, std::vector<double>> Bundle_Adjustment_Ceres::addIntrinsicsToCe
   for(const auto& itIntrinsic: sfm_data.GetIntrinsics())
   {
     const IndexT idIntrinsics = itIntrinsic.first;
+    
+    // Do not refine an intrinsic does not used by any reconstructed view
     if(intrinsicsUsage[idIntrinsics] == 0)
+      continue;
+      
+    // Do not refine a intrinsic set as Ignored by the local BA strategy  
+    if (_openMVG_options.isLocalBAEnabled() && getPoseBAState(idIntrinsics) == ignored)
     {
+      ++baStats.numIgnoredIntrinsics;
       continue;
     }
+
     assert(isValid(itIntrinsic.second->getType()));
     map_intrinsics[idIntrinsics] = itIntrinsic.second->getParams();
     
     double * parameter_block = &map_intrinsics[idIntrinsics][0];
     problem.AddParameterBlock(parameter_block, map_intrinsics[idIntrinsics].size());
+    
+    if (_openMVG_options.isLocalBAEnabled() && getPoseBAState(idIntrinsics) == constant)
+    {
+      ++baStats.numConstantIntrinsics;
+      problem.SetParameterBlockConstant(parameter_block);
+    }
+      
     if (_openMVG_options.useParametersOrdering)
       options.linear_solver_ordering.get()->AddElementToGroup(parameter_block, 1);
 
@@ -808,11 +875,20 @@ void Bundle_Adjustment_Ceres::updateCameraPoses(
   for (Poses::iterator itPose = poses.begin();
          itPose != poses.end(); ++itPose)
   {
-    const IndexT indexPose = itPose->first;
+    const IndexT idPose = itPose->first;
     
+    // Do not update a camera pose set as Ignored or Constant in the Local BA strategy
+    if (_openMVG_options.isLocalBAEnabled() )
+    {
+      if (getPoseBAState(idPose) == ignored) 
+        continue;
+      if (getPoseBAState(idPose) == constant) 
+        continue;
+    }
+
     Mat3 R_refined;
-    ceres::AngleAxisToRotationMatrix(&map_poses.at(indexPose)[0], R_refined.data());
-    Vec3 t_refined(map_poses.at(indexPose)[3], map_poses.at(indexPose)[4], map_poses.at(indexPose)[5]);
+    ceres::AngleAxisToRotationMatrix(&map_poses.at(idPose)[0], R_refined.data());
+    Vec3 t_refined(map_poses.at(idPose)[3], map_poses.at(idPose)[4], map_poses.at(idPose)[5]);
     // Update the pose
     Pose3 & pose = itPose->second;
     pose = Pose3(R_refined, -R_refined.transpose() * t_refined);
@@ -825,7 +901,18 @@ void Bundle_Adjustment_Ceres::updateCameraIntrinsics(
 {
   for (const auto& intrinsicsV: map_intrinsics)
   {
-    intrinsics[intrinsicsV.first]->updateFromParams(intrinsicsV.second);
+    const IndexT idIntrinsic = intrinsicsV.first;
+    
+    // Do not update an camera intrinsic set as Ignored or Constant in the Local BA strategy
+    if (_openMVG_options.isLocalBAEnabled() )
+    {
+      if (getIntrinsicsBAState(idIntrinsic) == ignored) 
+        continue;
+      if (getIntrinsicsBAState(idIntrinsic) == constant) 
+        continue;
+    }
+    
+    intrinsics[idIntrinsic]->updateFromParams(intrinsicsV.second);
   }
 }
 

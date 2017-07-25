@@ -64,9 +64,12 @@ class Bundle_Adjustment_Ceres : public Bundle_Adjustment
   std::map<IndexT, LocalBAState> map_intrinsicId_BAState;
   std::map<IndexT, LocalBAState> map_landmarkId_BAState;
   
+  LocalBAState getPoseBAState(const IndexT poseId) {return map_poseId_BAState.find(poseId)->second;}
+  LocalBAState getIntrinsicsBAState(const IndexT intrinsicId) {return map_intrinsicId_BAState.find(intrinsicId)->second;}
+  LocalBAState getLandmarkBAState(const IndexT landmarkId) {return map_landmarkId_BAState.find(landmarkId)->second;}
+    
   void setMapDistancePerViewId(const std::map<IndexT, int>& map) {map_viewId_distanceToRecentCameras = map;}
   void setMapDistancePerPoseId(const std::map<IndexT, int>& map) {map_poseId_distanceToRecentCameras = map;}
-  
   void applyRefinementRules(const SfM_Data & sfm_data, const IndexT strategyId=0);
 
   /**
@@ -83,12 +86,14 @@ class Bundle_Adjustment_Ceres : public Bundle_Adjustment
   Hash_Map<IndexT, std::vector<double>> addPosesToCeresProblem(
     const Poses & poses, 
     ceres::Problem & problem, 
-    ceres::Solver::Options &options);
+    ceres::Solver::Options &options,
+    BAStats& baStats);
     
   Hash_Map<IndexT, std::vector<double>> addIntrinsicsToCeresProblem(
     const SfM_Data & sfm_data, 
     ceres::Problem & problem,
-    ceres::Solver::Options& options);
+    ceres::Solver::Options& options,
+    BAStats& baStats);
   
   bool solveBA(
     ceres::Problem & problem, 

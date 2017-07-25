@@ -1508,9 +1508,10 @@ bool SequentialSfMReconstructionEngine::Resection(const std::size_t viewIndex)
 bool SequentialSfMReconstructionEngine::localBundleAdjustment(const std::set<IndexT>& newReconstructedViewIds)
 {
   Bundle_Adjustment_Ceres::BA_options options;
-  options.enableParametersOrdering();
   
-  if (_sfm_data.GetPoses().size() > 100) 
+//  options.enableParametersOrdering();
+  
+  if (_sfm_data.GetPoses().size() > 100) // default value: 100 
   {
     options.setSparseBA();
     options.enableLocalBA();
@@ -1529,7 +1530,7 @@ bool SequentialSfMReconstructionEngine::localBundleAdjustment(const std::set<Ind
     computeDistancesMaps(newReconstructedViewIds, map_distancePerViewId, map_distancePerPoseId);
     bundle_adjustment_obj.setMapDistancePerViewId(map_distancePerViewId);
     bundle_adjustment_obj.setMapDistancePerPoseId(map_distancePerPoseId);
-    bundle_adjustment_obj.applyRefinementRules(_sfm_data, 2);
+    bundle_adjustment_obj.applyRefinementRules(_sfm_data, 3);
   }
   
   BAStats baStats;
