@@ -171,7 +171,7 @@ private:
   bool BundleAdjustment();  
   
   /// Bundle adjustment to refine a few Structure, Motion and Intrinsics parameter
-  bool LocalBundleAdjustment(const std::set<IndexT> &newReconstructedViewIds);
+  bool localBundleAdjustment(const std::set<IndexT> &newReconstructedViewIds);
 
   /// Discard track with too large residual error
   size_t badTrackRejector(double dPrecision, size_t count = 0);
@@ -181,7 +181,10 @@ private:
 
   /// Compute the distance/connexity to the new cameras 'newViewIds' for each resected cameras. 
   /// The result is stored in 'map_distancePerViewId'
-  void computeDistancesMap(const std::set<IndexT>& newViewIds);
+  void computeDistancesMaps(
+    const std::set<IndexT>& newViewIds,
+    std::map<IndexT, int>& map_distancePerViewId, 
+    std::map<IndexT, int>& map_distancePerPoseId);
   
   /// Export statistics about bundle adjustment in a TXT file
   bool exportStatistics(BAStats& baStats);
@@ -220,7 +223,6 @@ private:
   lemon::ListGraph reconstructionGraph;
   lemon::ListGraph::NodeMap<IndexT> nodeMap; // <node, viewId>
   std::map<IndexT, lemon::ListGraph::Node> invNodeMap; // <viewId, node>
-  std::map<IndexT, int> map_distancePerViewId;
   
   // Pyramid scoring
   const int _pyramidBase = 2;

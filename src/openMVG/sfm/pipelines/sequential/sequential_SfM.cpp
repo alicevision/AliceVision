@@ -221,7 +221,7 @@ void SequentialSfMReconstructionEngine::RobustResectionOfImages(
         auto chrono2_start = std::chrono::steady_clock::now();
 
 //        BundleAdjustment();
-        LocalBundleAdjustment(set_newReconstructedViewId);
+        localBundleAdjustment(set_newReconstructedViewId);
         OPENMVG_LOG_DEBUG("Resection group index: " << resectionGroupIndex << ", bundle iteration: " << bundleAdjustmentIteration
                   << " took " << std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - chrono2_start).count() << " msec.");
         ++bundleAdjustmentIteration;
@@ -1505,11 +1505,12 @@ bool SequentialSfMReconstructionEngine::Resection(const std::size_t viewIndex)
 }
 
 /// Bundle adjustment to refine Structure; Motion and Intrinsics
-bool SequentialSfMReconstructionEngine::LocalBundleAdjustment(const std::set<IndexT>& newReconstructedViewIds)
+bool SequentialSfMReconstructionEngine::localBundleAdjustment(const std::set<IndexT>& newReconstructedViewIds)
 {
   Bundle_Adjustment_Ceres::BA_options options;
-  //  options.enableParametersOrdering();
-  if (_sfm_data.GetPoses().size() > 5) 
+  options.enableParametersOrdering();
+  
+  if (_sfm_data.GetPoses().size() > 100) 
   {
     options.setSparseBA();
     options.enableLocalBA();
@@ -1519,29 +1520,18 @@ bool SequentialSfMReconstructionEngine::LocalBundleAdjustment(const std::set<Ind
     options.setDenseBA();
   }
   
-  if (options.isLocalBAEnabled())
-  {
-    updateDistancesGraph(newReconstructedViewIds);
-    computeDistancesMap(newReconstructedViewIds);
-    
-    {    
-      OPENMVG_LOG_INFO("-- Distance map:  ([X]: new cameras)");
-      for (auto & itMap: map_distancePerViewId)
-      {
-        auto itSet = newReconstructedViewIds.find(itMap.first);
-        std::string tagNew;
-        if (itSet != newReconstructedViewIds.end())
-          tagNew = "[X] ";
-        else
-          tagNew = "[ ] ";
-        OPENMVG_LOG_INFO( tagNew << itMap.first << " -> " << itMap.second);
-      }
-    }   
-     
-  }
-  
   // Run Bundle Adjustment:
   Bundle_Adjustment_Ceres bundle_adjustment_obj(options);
+
+  if (options.isLocalBAEnabled())
+  {
+    std::map<IndexT, int> map_distancePerViewId, map_distancePerPoseId;
+    computeDistancesMaps(newReconstructedViewIds, map_distancePerViewId, map_distancePerPoseId);
+    bundle_adjustment_obj.setMapDistancePerViewId(map_distancePerViewId);
+    bundle_adjustment_obj.setMapDistancePerPoseId(map_distancePerPoseId);
+    bundle_adjustment_obj.applyRefinementRules(_sfm_data, 2);
+  }
+  
   BAStats baStats;
   bool isBaSucceed = bundle_adjustment_obj.adjustPartialReconstruction(_sfm_data, baStats);
   exportStatistics(baStats);
@@ -1622,10 +1612,13 @@ void SequentialSfMReconstructionEngine::updateDistancesGraph(const std::set<Inde
   }
 }
 
-void SequentialSfMReconstructionEngine::computeDistancesMap(const std::set<IndexT>& newViewIds)
-{
-  // Reset the map contents
-  map_distancePerViewId.clear();
+void SequentialSfMReconstructionEngine::computeDistancesMaps(
+  const std::set<IndexT>& newViewIds,
+  std::map<IndexT, int>& map_distancePerViewId, 
+  std::map<IndexT, int>& map_distancePerPoseId)
+{  
+  // Update the 'reconstructionGraph' using the recently added cameras
+  updateDistancesGraph(newViewIds);
 
   // Setup Breadth First Search using Lemon
   lemon::Bfs<lemon::ListGraph> bfs(reconstructionGraph);
@@ -1645,6 +1638,37 @@ void SequentialSfMReconstructionEngine::computeDistancesMap(const std::set<Index
     int d = bfs.dist(node);
     map_distancePerViewId[it.first] = d;
   }
+
+  // Re-mapping: from <ViewId, distance> to <PoseId, distance>:
+  for(auto it: map_distancePerViewId)
+  {
+    // Get the poseId of the camera no. viewId
+    IndexT idPose = _sfm_data.GetViews().at(it.first)->id_pose; // PoseId of a resected camera
+
+    auto poseIt = map_distancePerPoseId.find(idPose);
+    // If multiple views share the same pose
+    if(poseIt != map_distancePerPoseId.end())
+      poseIt->second = std::min(poseIt->second, it.second);
+    else
+      map_distancePerPoseId[idPose] = it.second;
+  } 
+   
+   
+  // Display result: 
+  {    
+    OPENMVG_LOG_INFO("-- View distance map:  ([X]: new cameras)");
+    for (auto & itMap: map_distancePerViewId)
+    {
+      auto itSet = newViewIds.find(itMap.first);
+      std::string tagNew;
+      if (itSet != newViewIds.end())
+        tagNew = "[X] ";
+      else
+        tagNew = "[ ] ";
+      OPENMVG_LOG_INFO( tagNew << itMap.first << " -> " << itMap.second);
+    }
+  }
+     
 }
 
 ///// Bundle adjustment to refine Structure; Motion and Intrinsics

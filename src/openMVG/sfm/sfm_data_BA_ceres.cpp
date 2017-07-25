@@ -404,11 +404,157 @@ bool Bundle_Adjustment_Ceres::Adjust(
   return true;
 }
 
+void Bundle_Adjustment_Ceres::applyRefinementRules(const SfM_Data & sfm_data, const IndexT strategyId)
+{
+  int kThresholdActiveRegion = 2;
+  
+  // reset the maps
+  map_poseId_BAState.clear();
+  map_intrinsicId_BAState.clear();
+  map_landmarkId_BAState.clear();
+
+  switch(strategyId)
+  {
+    case 1:
+    {
+      // ----------------------------------------------------
+      // -- Strategy 1 : (2017.07.14)
+      //  D = 1
+      //  - cameras:
+      //    - dist <= D: refined
+      //    - else fixed
+      //  - all intrinsics refined
+      //  - landmarks:
+      //    - connected to a refined camera: refined
+      //    - else ignored
+      // ----------------------------------------------------
+      // -- Poses
+      for (Poses::const_iterator itPose = sfm_data.poses.begin(); itPose != sfm_data.poses.end(); ++itPose)
+      {
+        const IndexT poseId = itPose->first;
+        int dist = map_poseId_distanceToRecentCameras.at(poseId);
+        if (dist <= kThresholdActiveRegion) // 0 or 1
+          map_poseId_BAState[poseId] = LocalBAState::refined;
+        else
+          map_poseId_BAState[poseId] = LocalBAState::constant;
+      }
+
+      // -- Instrinsics
+      for(const auto& itIntrinsic: sfm_data.GetIntrinsics())
+      {
+        const IndexT intrinsicId = itIntrinsic.first;
+        map_intrinsicId_BAState[intrinsicId] = LocalBAState::refined;
+      }
+
+      // -- Landmarks
+      for(const auto& itLandmark: sfm_data.structure)
+      {
+        const IndexT landmarkId = itLandmark.first;
+        const Observations & observations = itLandmark.second.observations;
+
+        map_landmarkId_BAState[landmarkId] = LocalBAState::ignored;
+
+        for(const auto& observationIt: observations)
+        {
+          int dist = map_viewId_distanceToRecentCameras.at(observationIt.first);
+          if(dist <= kThresholdActiveRegion)
+          {
+            map_landmarkId_BAState[landmarkId] = LocalBAState::refined;
+            continue;
+          }
+        }
+      }
+    }
+    break;
+
+    case 2 :
+    {
+      // ----------------------------------------------------
+      // -- Strategy 2 : (2017.07.19)
+      //  D = 1
+      //  - cameras:
+      //    - dist <= D: refined
+      //    - dist == D+1: fixed
+      //    - else ignored
+      //  - all intrinsics refined
+      //  - landmarks:
+      //    - connected to a refined camera: refined
+      //    - else ignored
+      // ----------------------------------------------------
+
+      // -- Poses
+      for (Poses::const_iterator itPose = sfm_data.poses.begin(); itPose != sfm_data.poses.end(); ++itPose)
+      {
+        const IndexT poseId = itPose->first;
+        int dist = map_poseId_distanceToRecentCameras.at(poseId);
+        if (dist <= kThresholdActiveRegion) // 0 or 1
+          map_poseId_BAState[poseId] = LocalBAState::refined;
+        else if (dist == kThresholdActiveRegion + 1)
+          map_poseId_BAState[poseId] = LocalBAState::constant;
+        else
+          map_poseId_BAState[poseId] = LocalBAState::ignored;
+      }
+
+      // -- Instrinsics
+      for(const auto& itIntrinsic: sfm_data.GetIntrinsics())
+      {
+        const IndexT intrinsicId = itIntrinsic.first;
+        map_intrinsicId_BAState[intrinsicId] = LocalBAState::refined;
+      }
+
+      // -- Landmarks
+      for(const auto& itLandmark: sfm_data.structure)
+      {
+        const IndexT landmarkId = itLandmark.first;
+        const Observations & observations = itLandmark.second.observations;
+
+        map_landmarkId_BAState[landmarkId] = LocalBAState::ignored;
+
+        for(const auto& observationIt: observations)
+        {
+          int dist = map_viewId_distanceToRecentCameras.at(observationIt.first);
+          if(dist <= kThresholdActiveRegion)
+          {
+            map_landmarkId_BAState[landmarkId] = LocalBAState::refined;
+            continue;
+          }
+        }
+      }
+    }
+    break;
+    default:
+    {
+      // ----------------------------------------------------
+      // -- All parameters are refined = NO LOCAL BA
+      // ----------------------------------------------------
+      // Poses
+      for (Poses::const_iterator itPose = sfm_data.poses.begin(); itPose != sfm_data.poses.end(); ++itPose)
+      {
+        const IndexT poseId = itPose->first;
+        map_poseId_BAState[poseId] = LocalBAState::refined;
+      }
+      // Instrinsics
+      for(const auto& itIntrinsic: sfm_data.GetIntrinsics())
+      {
+        const IndexT intrinsicId = itIntrinsic.first;
+        map_intrinsicId_BAState[intrinsicId] = LocalBAState::refined;
+      }
+      // Landmarks
+      for(const auto& itLandmark: sfm_data.structure)
+      {
+        const IndexT landmarkId = itLandmark.first;
+        map_landmarkId_BAState[landmarkId] = LocalBAState::refined;
+      }
+    }
+    break;
+  }
+}
+
+
 bool Bundle_Adjustment_Ceres::adjustPartialReconstruction(SfM_Data& sfm_data, BAStats& baStats)
 {
-  // Ensure we are not using incompatible options:
-  //  - BA_REFINE_INTRINSICS_OPTICALCENTER_ALWAYS and BA_REFINE_INTRINSICS_OPTICALCENTER_IF_ENOUGH_DATA cannot be used at the same time
-  //  assert(!((refineOptions & BA_REFINE_INTRINSICS_OPTICALCENTER_ALWAYS) && (refineOptions & BA_REFINE_INTRINSICS_OPTICALCENTER_IF_ENOUGH_DATA)));
+  // Define the refinement rules:
+  // TODO
   
   //----------
   // Add camera parameters
@@ -540,6 +686,7 @@ Hash_Map<IndexT, std::vector<double> > Bundle_Adjustment_Ceres::addPosesToCeresP
     problem.AddParameterBlock(parameter_block, 6);
     if (_openMVG_options.useParametersOrdering)
       options.linear_solver_ordering.get()->AddElementToGroup(parameter_block, 2);
+
   }
   return map_poses;
 }

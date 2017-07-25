@@ -37,12 +37,11 @@ class Bundle_Adjustment_Ceres : public Bundle_Adjustment
     BA_options(const bool bVerbose = true, bool bmultithreaded = true);
     void setDenseBA();
     void setSparseBA();
+    void enableParametersOrdering() {useParametersOrdering = true;}
+    void disableParametersOrdering() {useParametersOrdering = false;}
     void enableLocalBA() {useLocalBA = true;}
     void disableLocalBA() {useLocalBA = false;}
     bool isLocalBAEnabled() {return useLocalBA;}
-    void enableParametersOrdering() {useParametersOrdering = true;}
-    void disableParametersOrdering() {useParametersOrdering = false;}
-    
   };
   private:
     BA_options _openMVG_options;
@@ -57,17 +56,30 @@ class Bundle_Adjustment_Ceres : public Bundle_Adjustment
     SfM_Data & sfm_data,
     BA_Refine refineOptions = BA_REFINE_ALL);
 
+  // Used for Local BA strategy: 
+  enum LocalBAState{ refined, constant, ignored };
+  std::map<IndexT, int> map_viewId_distanceToRecentCameras;
+  std::map<IndexT, int> map_poseId_distanceToRecentCameras;
+  std::map<IndexT, LocalBAState> map_poseId_BAState;
+  std::map<IndexT, LocalBAState> map_intrinsicId_BAState;
+  std::map<IndexT, LocalBAState> map_landmarkId_BAState;
+  
+  void setMapDistancePerViewId(const std::map<IndexT, int>& map) {map_viewId_distanceToRecentCameras = map;}
+  void setMapDistancePerPoseId(const std::map<IndexT, int>& map) {map_poseId_distanceToRecentCameras = map;}
+  
+  void applyRefinementRules(const SfM_Data & sfm_data, const IndexT strategyId=0);
+
   /**
    * @see Bundle_Adjustment::AdjustPartialReconstruction
    * @brief Ajust parameters according to the reconstruction graph or refine everything
    * if graph is empty. 
    */
   bool adjustPartialReconstruction(SfM_Data & sfm_data, BAStats &baStats);
-  
+
   private:
-  
+
   void setSolverOptions(ceres::Solver::Options& solver_options);
-  
+
   Hash_Map<IndexT, std::vector<double>> addPosesToCeresProblem(
     const Poses & poses, 
     ceres::Problem & problem, 
