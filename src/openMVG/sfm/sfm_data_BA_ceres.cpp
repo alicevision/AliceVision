@@ -746,7 +746,7 @@ bool Bundle_Adjustment_Ceres::adjustPartialReconstruction(SfM_Data& sfm_data, BA
                                  intrinsicBlock,
                                  poseBlock,
                                  landmarkBlock); //Do we need to copy 3D point to avoid false motion, if failure ?
-        
+
         // Set to constant parameters previoously set as Constant by the Local BA strategy
         if (_openMVG_options.isLocalBAEnabled())
         {
@@ -767,7 +767,7 @@ bool Bundle_Adjustment_Ceres::adjustPartialReconstruction(SfM_Data& sfm_data, BA
       }
     }
   }
- 
+  
   ceres::Solver::Summary summary;
   if (!solveBA(problem, solver_options, summary))
     return false;
@@ -793,6 +793,7 @@ bool Bundle_Adjustment_Ceres::adjustPartialReconstruction(SfM_Data& sfm_data, BA
   baStats.time = summary.total_time_in_seconds;
   baStats.numSuccessfullIterations = summary.num_successful_steps;
   baStats.numUnsuccessfullIterations = summary.num_unsuccessful_steps;
+  baStats.numResidualBlocks = summary.num_residuals;
   baStats.RMSEinitial = std::sqrt( summary.initial_cost / summary.num_residuals);
   baStats.RMSEfinal = std::sqrt( summary.final_cost / summary.num_residuals);
   

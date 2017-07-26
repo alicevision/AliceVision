@@ -32,10 +32,17 @@ typedef Hash_Map<IndexT, Landmark> Landmarks;
 /// Contain all the information about a Bundle Adjustment loop
 struct BAStats
 {
-  double time = 0.0;                         // spent time to solve the BA (s)
+  // Parameters returned by Ceres:
+  double time = 0.0;                          // spent time to solve the BA (s)
   std::size_t numSuccessfullIterations = 0;   // number of successfull iterations
   std::size_t numUnsuccessfullIterations = 0; // number of unsuccessfull iterations
   
+  std::size_t numResidualBlocks = 0;          // num. of resiudal block in the Ceres problem
+  
+  double RMSEinitial = 0.0; // sqrt(initial_cost / num_residuals)
+  double RMSEfinal = 0.0;   // sqrt(final_cost / num_residuals)
+  
+  // Parameters specifically used by Local BA:
   std::size_t numRefinedPoses = 0;           // number of refined poses among all the estimated views          
   std::size_t numConstantPoses = 0;          // number of poses set constant in the BA solver
   std::size_t numIgnoredPoses = 0;           // number of not added poses to the BA solver
@@ -46,12 +53,11 @@ struct BAStats
   std::size_t numConstantLandmarks = 0;      // num. of landmarks set constant in the BA solver
   std::size_t numIgnoredLandmarks = 0;       // num. of not added landmarks to the BA solver
   
-  double RMSEinitial = 0.0; // sqrt(initial_cost / num_residuals)
-  double RMSEfinal = 0.0;   // sqrt(final_cost / num_residuals)
-  
   std::map<IndexT, std::size_t> map_distance_numCameras; // distribution of the cameras for each graph distance
   
   std::set<IndexT> newViewsId;  // index of the new views added (newly resected)
+  
+
 };
 
 /// Generic SfM data container

@@ -1722,6 +1722,7 @@ bool SequentialSfMReconstructionEngine::exportStatistics(BAStats& baStats)
     header.push_back("RefinedPose"); header.push_back("ConstPose");  header.push_back("IgnoredPose");
     header.push_back("RefinedPts");  header.push_back("ConstPts");   header.push_back("IgnoredPts");
     header.push_back("RefinedK");    header.push_back("ConstK");     header.push_back("IgnoredK");
+    header.push_back("ResidualBlocks");
     header.push_back("SuccessIter"); header.push_back("BadIter");
     header.push_back("InitRMSE"); header.push_back("FinalRMSE");
     header.push_back("dAR=0"); header.push_back("dAR=1"); header.push_back("dAR=2");
@@ -1758,6 +1759,7 @@ bool SequentialSfMReconstructionEngine::exportStatistics(BAStats& baStats)
      << baStats.numConstantIntrinsics << "\t"
      << baStats.numIgnoredIntrinsics << "\t"
         
+     << baStats.numResidualBlocks << "\t"
      << baStats.numSuccessfullIterations << "\t"
      << baStats.numUnsuccessfullIterations << "\t"
         
