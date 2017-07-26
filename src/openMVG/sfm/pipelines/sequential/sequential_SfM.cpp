@@ -1530,7 +1530,7 @@ bool SequentialSfMReconstructionEngine::localBundleAdjustment(const std::set<Ind
     computeDistancesMaps(newReconstructedViewIds, map_distancePerViewId, map_distancePerPoseId);
     bundle_adjustment_obj.setMapDistancePerViewId(map_distancePerViewId);
     bundle_adjustment_obj.setMapDistancePerPoseId(map_distancePerPoseId);
-    bundle_adjustment_obj.applyRefinementRules(_sfm_data, 3);
+    bundle_adjustment_obj.applyRefinementRules(_sfm_data, 2, 1);
   }
   
   BAStats baStats;
@@ -1654,7 +1654,6 @@ void SequentialSfMReconstructionEngine::computeDistancesMaps(
       map_distancePerPoseId[idPose] = it.second;
   } 
    
-   
   // Display result: 
   {    
     OPENMVG_LOG_INFO("-- View distance map:  ([X]: new cameras)");
@@ -1669,7 +1668,6 @@ void SequentialSfMReconstructionEngine::computeDistancesMaps(
       OPENMVG_LOG_INFO( tagNew << itMap.first << " -> " << itMap.second);
     }
   }
-     
 }
 
 ///// Bundle adjustment to refine Structure; Motion and Intrinsics

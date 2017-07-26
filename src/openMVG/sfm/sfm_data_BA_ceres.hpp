@@ -70,7 +70,7 @@ class Bundle_Adjustment_Ceres : public Bundle_Adjustment
     
   void setMapDistancePerViewId(const std::map<IndexT, int>& map) {map_viewId_distanceToRecentCameras = map;}
   void setMapDistancePerPoseId(const std::map<IndexT, int>& map) {map_poseId_distanceToRecentCameras = map;}
-  void applyRefinementRules(const SfM_Data & sfm_data, const IndexT strategyId=0);
+  void applyRefinementRules(const SfM_Data & sfm_data, const IndexT strategyId=0, const std::size_t distanceLimit=1);
 
   /**
    * @see Bundle_Adjustment::AdjustPartialReconstruction
