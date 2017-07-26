@@ -685,6 +685,11 @@ bool Bundle_Adjustment_Ceres::adjustPartialReconstruction(SfM_Data& sfm_data, BA
       if (getPoseBAState(poseId) == ignored)  ++baStats.numIgnoredPoses;
     }
   }   
+  else
+  {
+    baStats.numRefinedPoses = map_posesBlocks.size();
+    baStats.numRefinedIntrinsics = map_intrinsicsBlocks.size();
+  }
   
   // Set a LossFunction to be less penalized by false measurements
   //  - set it to NULL if you don't want use a lossFunction.
@@ -793,6 +798,22 @@ bool Bundle_Adjustment_Ceres::adjustPartialReconstruction(SfM_Data& sfm_data, BA
   
    if (_openMVG_options._bVerbose && _openMVG_options.isLocalBAEnabled())
   {
+    // Generate the histogram <distance, NbOfPoses>
+    for (auto it: map_poseId_distanceToRecentCameras) // distanceToRecentPoses: <poseId, distance>
+    {
+      auto itHisto = baStats.map_distance_numCameras.find(it.second);
+      if(itHisto != baStats.map_distance_numCameras.end())
+        ++baStats.map_distance_numCameras.at(it.second);
+      else // first pose with this specific distance
+          baStats.map_distance_numCameras[it.second] = 1;
+    }
+//    // [Optionnal] Display the histogram:
+//    std::cout << "Histrogramme des distances :" << std::endl;
+//    for (auto it: baStats.map_distance_numCameras)
+//    {
+//      std::cout << '[' << it.first << "] " << it.second << " poses" << std::endl;
+//    }
+    
     // Display statistics about the Local BA
     OPENMVG_LOG_DEBUG(
       "Local BA statistics:\n"

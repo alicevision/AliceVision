@@ -51,9 +51,7 @@ struct BAStats
   
   std::map<IndexT, std::size_t> map_distance_numCameras; // distribution of the cameras for each graph distance
   
-//  std::size_t idBadTrackRejector = 0; // how many times the 'badTrackRejector' run BA again
-  
-//  std::set<IndexT> newViewsId;  // index of the new views added (newly resected)
+  std::set<IndexT> newViewsId;  // index of the new views added (newly resected)
 };
 
 /// Generic SfM data container

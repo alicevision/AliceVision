@@ -1511,7 +1511,7 @@ bool SequentialSfMReconstructionEngine::localBundleAdjustment(const std::set<Ind
   
 //  options.enableParametersOrdering();
   
-  if (_sfm_data.GetPoses().size() > 100) // default value: 100 
+  if (_sfm_data.GetPoses().size() > 5) // default value: 100 
   {
     options.setSparseBA();
     options.enableLocalBA();
@@ -1526,7 +1526,7 @@ bool SequentialSfMReconstructionEngine::localBundleAdjustment(const std::set<Ind
 
   if (options.isLocalBAEnabled())
   {
-    std::map<IndexT, int> map_distancePerViewId, map_distancePerPoseId;
+    std::map<IndexT, std::size_t> map_distancePerViewId, map_distancePerPoseId;
     computeDistancesMaps(newReconstructedViewIds, map_distancePerViewId, map_distancePerPoseId);
     bundle_adjustment_obj.setMapDistancePerViewId(map_distancePerViewId);
     bundle_adjustment_obj.setMapDistancePerPoseId(map_distancePerPoseId);
@@ -1534,6 +1534,7 @@ bool SequentialSfMReconstructionEngine::localBundleAdjustment(const std::set<Ind
   }
   
   BAStats baStats;
+  baStats.newViewsId = newReconstructedViewIds;
   bool isBaSucceed = bundle_adjustment_obj.adjustPartialReconstruction(_sfm_data, baStats);
   exportStatistics(baStats);
   
@@ -1615,8 +1616,8 @@ void SequentialSfMReconstructionEngine::updateDistancesGraph(const std::set<Inde
 
 void SequentialSfMReconstructionEngine::computeDistancesMaps(
   const std::set<IndexT>& newViewIds,
-  std::map<IndexT, int>& map_distancePerViewId, 
-  std::map<IndexT, int>& map_distancePerPoseId)
+  std::map<IndexT, std::size_t>& map_distancePerViewId, 
+  std::map<IndexT, std::size_t>& map_distancePerPoseId)
 {  
   // Update the 'reconstructionGraph' using the recently added cameras
   updateDistancesGraph(newViewIds);
@@ -1654,18 +1655,12 @@ void SequentialSfMReconstructionEngine::computeDistancesMaps(
       map_distancePerPoseId[idPose] = it.second;
   } 
    
-  // Display result: 
+  // Display result: viewId -> distance to recent cameras
   {    
-    OPENMVG_LOG_INFO("-- View distance map:  ([X]: new cameras)");
+    OPENMVG_LOG_INFO("-- View distance map: ");
     for (auto & itMap: map_distancePerViewId)
     {
-      auto itSet = newViewIds.find(itMap.first);
-      std::string tagNew;
-      if (itSet != newViewIds.end())
-        tagNew = "[X] ";
-      else
-        tagNew = "[ ] ";
-      OPENMVG_LOG_INFO( tagNew << itMap.first << " -> " << itMap.second);
+      OPENMVG_LOG_INFO( itMap.first << " -> " << itMap.second);
     }
   }
 }
@@ -1733,15 +1728,11 @@ bool SequentialSfMReconstructionEngine::exportStatistics(BAStats& baStats)
     header.push_back("dAR=3"); header.push_back("dAR=4"); header.push_back("dAR=5");   
     header.push_back("dAR=6"); header.push_back("dAR=7"); header.push_back("dAR=8"); 
     header.push_back("dAR=9"); header.push_back("dAR=10+");
-    
-//    header.push_back("IdBadTrackRejector");
-//    header.push_back("newViewsId");
+    header.push_back("New Views");
     
     for (string & head : header)
       os << head << "\t";
     os << "\n"; 
-     
-    
   }
   
   // Add the 'baStats' contents:
@@ -1784,13 +1775,11 @@ bool SequentialSfMReconstructionEngine::exportStatistics(BAStats& baStats)
      << baStats.map_distance_numCameras[8] << "\t"
      << baStats.map_distance_numCameras[9] << "\t"
      << posesWthDistUpperThanTen << "\t";
-        
-//     << baStats.idBadTrackRejector << "\t";
   
-//  for (const IndexT id : baStats.newViewsId)
-//  {
-//    os << id << "\t";
-//  }
+  for (const IndexT id : baStats.newViewsId)
+  {
+    os << id << "\t";
+  }
   os << "\n";
   os.close();
   

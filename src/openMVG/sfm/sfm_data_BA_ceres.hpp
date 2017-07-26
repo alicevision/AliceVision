@@ -58,8 +58,8 @@ class Bundle_Adjustment_Ceres : public Bundle_Adjustment
 
   // Used for Local BA strategy: 
   enum LocalBAState{ refined, constant, ignored };
-  std::map<IndexT, int> map_viewId_distanceToRecentCameras;
-  std::map<IndexT, int> map_poseId_distanceToRecentCameras;
+  std::map<IndexT, std::size_t> map_viewId_distanceToRecentCameras;
+  std::map<IndexT, std::size_t> map_poseId_distanceToRecentCameras;
   std::map<IndexT, LocalBAState> map_poseId_BAState;
   std::map<IndexT, LocalBAState> map_intrinsicId_BAState;
   std::map<IndexT, LocalBAState> map_landmarkId_BAState;
@@ -68,8 +68,8 @@ class Bundle_Adjustment_Ceres : public Bundle_Adjustment
   LocalBAState getIntrinsicsBAState(const IndexT intrinsicId) {return map_intrinsicId_BAState.find(intrinsicId)->second;}
   LocalBAState getLandmarkBAState(const IndexT landmarkId) {return map_landmarkId_BAState.find(landmarkId)->second;}
     
-  void setMapDistancePerViewId(const std::map<IndexT, int>& map) {map_viewId_distanceToRecentCameras = map;}
-  void setMapDistancePerPoseId(const std::map<IndexT, int>& map) {map_poseId_distanceToRecentCameras = map;}
+  void setMapDistancePerViewId(const std::map<IndexT, std::size_t>& map) {map_viewId_distanceToRecentCameras = map;}
+  void setMapDistancePerPoseId(const std::map<IndexT, std::size_t>& map) {map_poseId_distanceToRecentCameras = map;}
   void applyRefinementRules(const SfM_Data & sfm_data, const IndexT strategyId=0, const std::size_t distanceLimit=1);
 
   /**

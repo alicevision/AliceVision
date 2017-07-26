@@ -181,10 +181,9 @@ private:
 
   /// Compute the distance/connexity to the new cameras 'newViewIds' for each resected cameras. 
   /// The result is stored in 'map_distancePerViewId'
-  void computeDistancesMaps(
-    const std::set<IndexT>& newViewIds,
-    std::map<IndexT, int>& map_distancePerViewId, 
-    std::map<IndexT, int>& map_distancePerPoseId);
+  void computeDistancesMaps(const std::set<IndexT>& newViewIds,
+    std::map<IndexT, size_t> &map_distancePerViewId, 
+    std::map<IndexT, size_t> &map_distancePerPoseId);
   
   /// Export statistics about bundle adjustment in a TXT file
   bool exportStatistics(BAStats& baStats);
