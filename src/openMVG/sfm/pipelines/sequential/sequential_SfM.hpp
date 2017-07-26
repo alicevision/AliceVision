@@ -179,13 +179,22 @@ private:
   /// Add the new views 'newViewIds' to the graph 'reconstructionGraph' used to the distances computation 
   void updateDistancesGraph(const std::set<IndexT>& newViewIds);
 
-  /// Compute the distance/connexity to the new cameras 'newViewIds' for each resected cameras. 
-  /// The result is stored in 'map_distancePerViewId'
+  /**
+   * @brief Compute the distance/connexity to the new cameras for each resected cameras. 
+   * It updates the graph @p _reconstructionGraph and run a Breadth First Search on it.
+   * The distances for each pose and view is stored.
+   * @param[in] newViewIds: indexes of the recently added views to the reconstruction. They are used
+   * as root of the Breadth First Search.
+   * @param[out] map_distancePerViewId: a map storing the distance of each resected view to the new cameras 
+   * @param[out] map_distancePerPoseId: a map storing the distance of each resected pose to the new cameras 
+   */
   void computeDistancesMaps(const std::set<IndexT>& newViewIds,
     std::map<IndexT, size_t> &map_distancePerViewId, 
     std::map<IndexT, size_t> &map_distancePerPoseId);
   
-  /// Export statistics about bundle adjustment in a TXT file
+  /// Export statistics about bundle adjustment in a TXT file ("BaStats.txt")
+  /// The contents of the file have been writen such that it is easy to handle it with
+  /// a Python script or any spreadsheets (e.g. by copy/past the full content to LibreOffice) 
   bool exportStatistics(BAStats& baStats);
   
   #if OPENMVG_IS_DEFINED(OPENMVG_HAVE_BOOST)
@@ -219,9 +228,9 @@ private:
   matching::PairwiseMatches  * _pairwiseMatches;
   
   // Local BA data
-  lemon::ListGraph reconstructionGraph;
-  lemon::ListGraph::NodeMap<IndexT> nodeMap; // <node, viewId>
-  std::map<IndexT, lemon::ListGraph::Node> invNodeMap; // <viewId, node>
+  lemon::ListGraph _reconstructionGraph;
+  lemon::ListGraph::NodeMap<IndexT> _nodeMap; // <node, viewId>
+  std::map<IndexT, lemon::ListGraph::Node> _invNodeMap; // <viewId, node>
   
   // Pyramid scoring
   const int _pyramidBase = 2;

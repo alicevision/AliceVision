@@ -127,7 +127,7 @@ SequentialSfMReconstructionEngine::SequentialSfMReconstructionEngine(
     _sLoggingFile(sloggingFile),
     _initialpair(Pair(0,0)),
     _camType(EINTRINSIC(PINHOLE_CAMERA_RADIAL3)),
-    nodeMap(reconstructionGraph)
+    _nodeMap(_reconstructionGraph)
 {
   if (!_sLoggingFile.empty())
   {
@@ -1547,7 +1547,7 @@ void SequentialSfMReconstructionEngine::updateDistancesGraph(const std::set<Inde
   
   // -- Add nodes (= views)
   // Identify the view we need to add to the graph:
-  if (invNodeMap.empty()) // is the fisrt Local BA
+  if (_invNodeMap.empty()) // is the fisrt Local BA
   {
     for (auto & it : _sfm_data.GetPoses())
       viewIdsAddedToTheGraph.insert(it.first);
@@ -1558,9 +1558,9 @@ void SequentialSfMReconstructionEngine::updateDistancesGraph(const std::set<Inde
   // Add the views as nodes to the graph:
   for (auto& viewId : viewIdsAddedToTheGraph)
   {
-    ListGraph::Node newNode = reconstructionGraph.addNode();
-    nodeMap.set(newNode, viewId);
-    invNodeMap[viewId] = newNode;  
+    ListGraph::Node newNode = _reconstructionGraph.addNode();
+    _nodeMap.set(newNode, viewId);
+    _invNodeMap[viewId] = newNode;  
   }
       
   // -- Add edge.
@@ -1609,7 +1609,7 @@ void SequentialSfMReconstructionEngine::updateDistancesGraph(const std::set<Inde
     std::size_t L = 100; // typically: 100
     if(it.second > L) // ensure a minimum number of landmarks in common to consider the link
     {
-      reconstructionGraph.addEdge(invNodeMap.at(it.first.first), invNodeMap.at(it.first.second));
+      _reconstructionGraph.addEdge(_invNodeMap.at(it.first.first), _invNodeMap.at(it.first.second));
     }
   }
 }
@@ -1623,18 +1623,18 @@ void SequentialSfMReconstructionEngine::computeDistancesMaps(
   updateDistancesGraph(newViewIds);
 
   // Setup Breadth First Search using Lemon
-  lemon::Bfs<lemon::ListGraph> bfs(reconstructionGraph);
+  lemon::Bfs<lemon::ListGraph> bfs(_reconstructionGraph);
   bfs.init();
 
   // Add source views for the bfs visit of the _reconstructionGraph
   for(const IndexT viewId: newViewIds)
   {
-    bfs.addSource(invNodeMap.find(viewId)->second);
+    bfs.addSource(_invNodeMap.find(viewId)->second);
   }
   bfs.start();
 
   // Handle bfs results (distances)
-  for(auto it: invNodeMap)
+  for(auto it: _invNodeMap)
   {
     auto& node = it.second;
     int d = bfs.dist(node);

@@ -28,8 +28,6 @@ class Bundle_Adjustment_Ceres : public Bundle_Adjustment
     bool _bVerbose;
     unsigned int _nbThreads;
     bool _bCeres_Summary;
-    bool useParametersOrdering; 
-    bool useLocalBA;
     ceres::LinearSolverType _linear_solver_type;
     ceres::PreconditionerType _preconditioner_type;
     ceres::SparseLinearAlgebraLibraryType _sparse_linear_algebra_library_type;
@@ -37,8 +35,12 @@ class Bundle_Adjustment_Ceres : public Bundle_Adjustment
     BA_options(const bool bVerbose = true, bool bmultithreaded = true);
     void setDenseBA();
     void setSparseBA();
+    
+    bool useParametersOrdering; 
     void enableParametersOrdering() {useParametersOrdering = true;}
     void disableParametersOrdering() {useParametersOrdering = false;}
+    
+    bool useLocalBA;
     void enableLocalBA() {useLocalBA = true;}
     void disableLocalBA() {useLocalBA = false;}
     bool isLocalBAEnabled() {return useLocalBA;}
@@ -64,9 +66,9 @@ class Bundle_Adjustment_Ceres : public Bundle_Adjustment
   std::map<IndexT, LocalBAState> map_intrinsicId_BAState;
   std::map<IndexT, LocalBAState> map_landmarkId_BAState;
   
-  LocalBAState getPoseBAState(const IndexT poseId) {return map_poseId_BAState.find(poseId)->second;}
+  LocalBAState getPoseBAState(const IndexT poseId)            {return map_poseId_BAState.find(poseId)->second;}
   LocalBAState getIntrinsicsBAState(const IndexT intrinsicId) {return map_intrinsicId_BAState.find(intrinsicId)->second;}
-  LocalBAState getLandmarkBAState(const IndexT landmarkId) {return map_landmarkId_BAState.find(landmarkId)->second;}
+  LocalBAState getLandmarkBAState(const IndexT landmarkId)    {return map_landmarkId_BAState.find(landmarkId)->second;}
     
   void setMapDistancePerViewId(const std::map<IndexT, std::size_t>& map) {map_viewId_distanceToRecentCameras = map;}
   void setMapDistancePerPoseId(const std::map<IndexT, std::size_t>& map) {map_poseId_distanceToRecentCameras = map;}

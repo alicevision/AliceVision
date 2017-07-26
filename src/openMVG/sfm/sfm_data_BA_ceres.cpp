@@ -673,16 +673,16 @@ bool Bundle_Adjustment_Ceres::adjustPartialReconstruction(SfM_Data& sfm_data, BA
     for (auto it : map_intrinsicsBlocks)
     {
       IndexT intrinsicId = it.first;
-      if (getIntrinsicsBAState(intrinsicId) == refined)  ++baStats.numRefinedIntrinsics;
-      if (getIntrinsicsBAState(intrinsicId) == constant) ++baStats.numConstantIntrinsics;
-      if (getIntrinsicsBAState(intrinsicId) == ignored)  ++baStats.numIgnoredIntrinsics;
+      if (getIntrinsicsBAState(intrinsicId) == LocalBAState::refined)  ++baStats.numRefinedIntrinsics;
+      if (getIntrinsicsBAState(intrinsicId) == LocalBAState::constant) ++baStats.numConstantIntrinsics;
+      if (getIntrinsicsBAState(intrinsicId) == LocalBAState::ignored)  ++baStats.numIgnoredIntrinsics;
     }
     for (auto it : map_posesBlocks)
     {
       IndexT poseId = it.first;
-      if (getPoseBAState(poseId) == refined)  ++baStats.numRefinedPoses;
-      if (getPoseBAState(poseId) == constant) ++baStats.numConstantPoses;
-      if (getPoseBAState(poseId) == ignored)  ++baStats.numIgnoredPoses;
+      if (getPoseBAState(poseId) == LocalBAState::refined)  ++baStats.numRefinedPoses;
+      if (getPoseBAState(poseId) == LocalBAState::constant) ++baStats.numConstantPoses;
+      if (getPoseBAState(poseId) == LocalBAState::ignored)  ++baStats.numIgnoredPoses;
     }
   }   
   else
@@ -690,7 +690,6 @@ bool Bundle_Adjustment_Ceres::adjustPartialReconstruction(SfM_Data& sfm_data, BA
     baStats.numRefinedPoses = map_posesBlocks.size();
     baStats.numRefinedIntrinsics = map_intrinsicsBlocks.size();
   }
-
   
   // Set a LossFunction to be less penalized by false measurements
   //  - set it to NULL if you don't want use a lossFunction.
@@ -703,9 +702,9 @@ bool Bundle_Adjustment_Ceres::adjustPartialReconstruction(SfM_Data& sfm_data, BA
     IndexT landmarkId = landmarkIt.first;
     
     // Count the number of Refined, Constant & Ignored landmarks
-    if (getLandmarkBAState(landmarkId) == refined)  ++baStats.numRefinedLandmarks;
-    if (getLandmarkBAState(landmarkId) == constant) ++baStats.numConstantLandmarks;
-    if (getLandmarkBAState(landmarkId) == ignored)  ++baStats.numIgnoredLandmarks;
+    if (getLandmarkBAState(landmarkId) == LocalBAState::refined)  ++baStats.numRefinedLandmarks;
+    if (getLandmarkBAState(landmarkId) == LocalBAState::constant) ++baStats.numConstantLandmarks;
+    if (getLandmarkBAState(landmarkId) == LocalBAState::ignored)  ++baStats.numIgnoredLandmarks;
             
     const Observations & observations = landmarkIt.second.observations;
     // Iterate over 2D observation associated to the 3D landmark
@@ -720,9 +719,9 @@ bool Bundle_Adjustment_Ceres::adjustPartialReconstruction(SfM_Data& sfm_data, BA
       // have been set as Ignored by the Local BA strategy
       if (_openMVG_options.isLocalBAEnabled())
       {
-        if (getPoseBAState(poseId) == ignored 
-          || getIntrinsicsBAState(intrinsicId) == ignored 
-          || getLandmarkBAState(landmarkId) == ignored)
+        if (getPoseBAState(poseId) == LocalBAState::ignored 
+          || getIntrinsicsBAState(intrinsicId) == LocalBAState::ignored 
+          || getLandmarkBAState(landmarkId) == LocalBAState::ignored)
         {
           continue;
         }
@@ -751,9 +750,9 @@ bool Bundle_Adjustment_Ceres::adjustPartialReconstruction(SfM_Data& sfm_data, BA
         // Set to constant parameters previoously set as Constant by the Local BA strategy
         if (_openMVG_options.isLocalBAEnabled())
         {
-          if (getIntrinsicsBAState(intrinsicId) == constant) problem.SetParameterBlockConstant(intrinsicBlock);        
-          if (getPoseBAState(poseId) == constant)            problem.SetParameterBlockConstant(poseBlock);
-          if (getLandmarkBAState(landmarkId) == constant)    problem.SetParameterBlockConstant(landmarkBlock);
+          if (getIntrinsicsBAState(intrinsicId) == LocalBAState::constant) problem.SetParameterBlockConstant(intrinsicBlock);        
+          if (getPoseBAState(poseId) == LocalBAState::constant)            problem.SetParameterBlockConstant(poseBlock);
+          if (getLandmarkBAState(landmarkId) == LocalBAState::constant)    problem.SetParameterBlockConstant(landmarkBlock);
         } 
         
         // Apply a specific parameter ordering: 
@@ -808,12 +807,6 @@ bool Bundle_Adjustment_Ceres::adjustPartialReconstruction(SfM_Data& sfm_data, BA
       else // first pose with this specific distance
           baStats.map_distance_numCameras[it.second] = 1;
     }
-//    // [Optionnal] Display the histogram:
-//    std::cout << "Histrogramme des distances :" << std::endl;
-//    for (auto it: baStats.map_distance_numCameras)
-//    {
-//      std::cout << '[' << it.first << "] " << it.second << " poses" << std::endl;
-//    }
     
     // Display statistics about the Local BA
     OPENMVG_LOG_DEBUG(
