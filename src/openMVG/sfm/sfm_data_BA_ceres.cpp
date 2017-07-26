@@ -690,6 +690,7 @@ bool Bundle_Adjustment_Ceres::adjustPartialReconstruction(SfM_Data& sfm_data, BA
     baStats.numRefinedPoses = map_posesBlocks.size();
     baStats.numRefinedIntrinsics = map_intrinsicsBlocks.size();
   }
+
   
   // Set a LossFunction to be less penalized by false measurements
   //  - set it to NULL if you don't want use a lossFunction.

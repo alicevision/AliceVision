@@ -1654,7 +1654,7 @@ void SequentialSfMReconstructionEngine::computeDistancesMaps(
     else
       map_distancePerPoseId[idPose] = it.second;
   } 
-   
+
   // Display result: viewId -> distance to recent cameras
   {    
     OPENMVG_LOG_INFO("-- View distance map: ");
