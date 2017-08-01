@@ -311,7 +311,7 @@ bool exportToCMPMVS2Format(
   // Write the cmpmvs ini file
   std::ostringstream os;
   os << "[global]" << os.widen('\n')
-  << "outDir=\"../../meshes\"" << os.widen('\n')
+  << "outDir=../../meshes" << os.widen('\n')
   << "ncams=" << map_viewIdToContiguous.size() << os.widen('\n')
   << "scale=" << scale << os.widen('\n')
   << "verbose=TRUE" << os.widen('\n')
