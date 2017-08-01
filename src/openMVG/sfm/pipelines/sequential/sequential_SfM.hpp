@@ -29,7 +29,6 @@ namespace sfm {
 class SequentialSfMReconstructionEngine : public ReconstructionEngine
 {
 public:
-
   SequentialSfMReconstructionEngine(
     const SfM_Data & sfm_data,
     const std::string & soutDirectory,
@@ -56,7 +55,7 @@ public:
 
   void setInitialPair(const Pair & initialPair)
   {
-    _initialpair = initialPair;
+    _userInitialImagePair = initialPair;
   }
 
   /// Initialize tracks
@@ -69,7 +68,7 @@ public:
   bool MakeInitialPair3D(const Pair & initialPair);
 
   /// Automatic initial pair selection (based on a 'baseline' computation score)
-  bool AutomaticInitialPairChoice(Pair & initialPair) const;
+  bool getBestInitialImagePairs(std::vector<Pair>& out_bestImagePairs) const;
 
   /**
    * Set the default lens distortion type to use if it is declared unknown
@@ -192,7 +191,7 @@ private:
 
   // Parameter
   bool _userInteraction = true;
-  Pair _initialpair;
+  Pair _userInitialImagePair;
   cameras::EINTRINSIC _camType; // The camera type for the unknown cameras
   int _minInputTrackLength = 2;
   int _minTrackLength = 2;
