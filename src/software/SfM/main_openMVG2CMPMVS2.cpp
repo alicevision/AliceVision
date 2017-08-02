@@ -202,10 +202,10 @@ bool exportToCMPMVS2Format(
   {
     auto viewIdToContiguous = map_viewIdToContiguous.cbegin();
     std::advance(viewIdToContiguous, i);
-    IndexT viewId = viewIdToContiguous->first;
+    const IndexT viewId = viewIdToContiguous->first;
     const View * view = sfm_data.GetViews().at(viewId).get();
     assert(view->id_view == viewId);
-    IndexT contiguousViewIndex = viewIdToContiguous->second;
+    const IndexT contiguousViewIndex = viewIdToContiguous->second;
     Intrinsics::const_iterator iterIntrinsic = sfm_data.GetIntrinsics().find(view->id_intrinsic);
     // We have a valid view with a corresponding camera & pose
     assert(viewIdToContiguous->second == i + 1);
@@ -317,11 +317,11 @@ bool exportToCMPMVS2Format(
   << "verbose=TRUE" << os.widen('\n')
   << os.widen('\n')
   << "[imageResolutions]" << os.widen('\n');
-  for(auto viewIdToContiguous: map_viewIdToContiguous)
+  for(const auto& viewIdToContiguous: map_viewIdToContiguous)
   {
-    IndexT viewId = viewIdToContiguous.first;
+    const IndexT viewId = viewIdToContiguous.first;
     const View * view = sfm_data.GetViews().at(viewId).get();
-    IndexT contiguousViewIndex = viewIdToContiguous.second;
+    const IndexT contiguousViewIndex = viewIdToContiguous.second;
 
     std::ostringstream baseFilenameSS;
     baseFilenameSS << std::setw(5) << std::setfill('0') << contiguousViewIndex;

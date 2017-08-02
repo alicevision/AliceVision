@@ -285,7 +285,7 @@ bool SequentialSfMReconstructionEngine::Process()
 
   bool successfullInitialization = false;
   // Initial pair Essential Matrix and [R|t] estimation.
-  for(auto& initialPairCandidate: initialImagePairCandidates)
+  for(const auto& initialPairCandidate: initialImagePairCandidates)
   {
     if(MakeInitialPair3D(initialPairCandidate))
     {
