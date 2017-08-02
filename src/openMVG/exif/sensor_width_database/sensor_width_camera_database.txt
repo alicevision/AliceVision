@@ -46,6 +46,13 @@ AgfaPhoto;AgfaPhoto DC-8330i;5.75
 AgfaPhoto;AgfaPhoto DC-8338i;5.75
 AgfaPhoto;AgfaPhoto DC-833m;5.75
 AgfaPhoto;AgfaPhoto DC-8428s;7.11
+AgfaPhoto;AgfaPhoto ePhoto 1280;6.16
+AgfaPhoto;AgfaPhoto ePhoto 1680;6.16
+AgfaPhoto;AgfaPhoto ePhoto CL18;6.16
+AgfaPhoto;AgfaPhoto ePhoto CL30;6.16
+AgfaPhoto;AgfaPhoto ePhoto CL30 Clik!;6.16
+AgfaPhoto;AgfaPhoto ePhoto CL45;6.16
+AgfaPhoto;AgfaPhoto ePhoto CL50;6.16
 AgfaPhoto;AgfaPhoto Optima 1;6.08
 AgfaPhoto;AgfaPhoto Optima 100;6.08
 AgfaPhoto;AgfaPhoto Optima 102;6.08
@@ -57,13 +64,6 @@ AgfaPhoto;AgfaPhoto Optima 1438m;6.08
 AgfaPhoto;AgfaPhoto Optima 3;6.16
 AgfaPhoto;AgfaPhoto Optima 830UW;5.75
 AgfaPhoto;AgfaPhoto Optima 8328m;5.75
-AgfaPhoto;AgfaPhoto ePhoto 1280;6.16
-AgfaPhoto;AgfaPhoto ePhoto 1680;6.16
-AgfaPhoto;AgfaPhoto ePhoto CL18;6.16
-AgfaPhoto;AgfaPhoto ePhoto CL30;6.16
-AgfaPhoto;AgfaPhoto ePhoto CL30 Clik!;6.16
-AgfaPhoto;AgfaPhoto ePhoto CL45;6.16
-AgfaPhoto;AgfaPhoto ePhoto CL50;6.16
 AgfaPhoto;AgfaPhoto sensor 505-D;5.75
 AgfaPhoto;AgfaPhoto sensor 505-X;5.75
 AgfaPhoto;AgfaPhoto sensor 530s;5.75
@@ -206,12 +206,12 @@ Canon;Canon Digital IXUS 960 IS;7.53
 Canon;Canon Digital IXUS 970 IS;6.16
 Canon;Canon Digital IXUS 980 IS;7.53
 Canon;Canon Digital IXUS 990 IS;6.16
-Canon;Canon Digital IXUS II;5.33
-Canon;Canon Digital IXUS IIs;5.33
-Canon;Canon Digital IXUS V;5.33
 Canon;Canon Digital IXUS i;5.75
 Canon;Canon Digital IXUS i Zoom;5.75
 Canon;Canon Digital IXUS i7;5.75
+Canon;Canon Digital IXUS II;5.33
+Canon;Canon Digital IXUS IIs;5.33
+Canon;Canon Digital IXUS V;5.33
 Canon;Canon Digital IXUS v2;5.33
 Canon;Canon Digital IXUS v3;5.33
 Canon;Canon EOS 1000D;22.2
@@ -272,18 +272,36 @@ Canon;Canon IXUS 500 HS;6.16
 Canon;Canon IXUS 510 HS;6.16
 Canon;Canon PowerShot 350;4.8
 Canon;Canon PowerShot 600;4.8
+Canon;Canon Powershot A10;5.33
+Canon;Canon Powershot A100;4.5
 Canon;Canon PowerShot A1000 IS;6.16
+Canon;Canon Powershot A1100 IS;6.16
+Canon;Canon Powershot A1200;6.16
 Canon;Canon PowerShot A1300;6.16
 Canon;Canon PowerShot A1400;6.16
+Canon;Canon Powershot A20;5.33
+Canon;Canon Powershot A200;4.5
 Canon;Canon PowerShot A2000 IS;6.16
+Canon;Canon Powershot A2100 IS;6.16
+Canon;Canon Powershot A2200;6.16
 Canon;Canon PowerShot A2300;6.16
 Canon;Canon PowerShot A2400 IS;6.16
 Canon;Canon PowerShot A2500;6.16
 Canon;Canon PowerShot A2600;6.16
+Canon;Canon Powershot A30;5.33
+Canon;Canon Powershot A300;5.33
+Canon;Canon Powershot A3000 IS;6.16
+Canon;Canon Powershot A310;5.33
+Canon;Canon Powershot A3100 IS;6.16
+Canon;Canon Powershot A3200 IS;6.16
+Canon;Canon Powershot A3300 IS;6.16
 Canon;Canon PowerShot A3400 IS;6.16
 Canon;Canon PowerShot A3500 IS;6.16
+Canon;Canon Powershot A40;5.33
 Canon;Canon PowerShot A400;4.5
 Canon;Canon PowerShot A4000 IS;6.16
+Canon;Canon Powershot A410;4.5
+Canon;Canon Powershot A420;4.8
 Canon;Canon PowerShot A430;4.8
 Canon;Canon PowerShot A450;4.8
 Canon;Canon PowerShot A460;4.8
@@ -294,19 +312,27 @@ Canon;Canon PowerShot A495;6.16
 Canon;Canon PowerShot A5;4.8
 Canon;Canon PowerShot A5 Zoom;4.8
 Canon;Canon PowerShot A50;4.8
+Canon;Canon Powershot A510;5.33
+Canon;Canon Powershot A520;5.75
 Canon;Canon PowerShot A530;5.75
+Canon;Canon Powershot A540;5.75
 Canon;Canon PowerShot A550;5.75
 Canon;Canon PowerShot A560;5.75
 Canon;Canon PowerShot A570 IS;5.75
 Canon;Canon PowerShot A580;5.75
 Canon;Canon PowerShot A590 IS;5.75
+Canon;Canon Powershot A60;5.33
+Canon;Canon Powershot A610;7.11
 Canon;Canon PowerShot A620;7.11
 Canon;Canon PowerShot A630;7.11
 Canon;Canon PowerShot A640;7.11
 Canon;Canon PowerShot A650 IS;7.53
+Canon;Canon Powershot A70;5.33
 Canon;Canon PowerShot A700;5.75
 Canon;Canon PowerShot A710 IS;5.75
 Canon;Canon PowerShot A720 IS;5.75
+Canon;Canon Powershot A75;5.33
+Canon;Canon Powershot A80;7.11
 Canon;Canon PowerShot A800;6.16
 Canon;Canon PowerShot A810;6.16
 Canon;Canon PowerShot A85;5.33
@@ -326,11 +352,15 @@ Canon;Canon PowerShot ELPH 500 HS;6.16
 Canon;Canon PowerShot ELPH 510 HS;6.16
 Canon;Canon PowerShot ELPH 520 HS;6.16
 Canon;Canon PowerShot Elph 530 HS;6.16
+Canon;Canon Powershot G1;7.11
 Canon;Canon PowerShot G1 X;18.7
 Canon;Canon PowerShot G10;7.53
 Canon;Canon PowerShot G11;7.53
 Canon;Canon PowerShot G12;7.53
 Canon;Canon PowerShot G15;7.53
+Canon;Canon Powershot G2;7.11
+Canon;Canon Powershot G3;7.11
+Canon;Canon Powershot G5;7.11
 Canon;Canon PowerShot G6;7.11
 Canon;Canon PowerShot G7;7.11
 Canon;Canon PowerShot G9;7.53
@@ -338,20 +368,29 @@ Canon;Canon PowerShot N;6.16
 Canon;Canon PowerShot Pro1;8.8
 Canon;Canon PowerShot Pro70;6.4
 Canon;Canon PowerShot Pro90 IS;7.11
+Canon;Canon Powershot S1 IS;5.33
+Canon;Canon Powershot S10;6.4
 Canon;Canon PowerShot S100;7.53
 Canon;Canon PowerShot S100 Digital IXUS;5.33
 Canon;Canon PowerShot S110;7.53
+Canon;Canon Powershot S2 IS;5.75
+Canon;Canon Powershot S20;7.11
 Canon;Canon PowerShot S200;5.33
 Canon;Canon PowerShot S230;5.33
 Canon;Canon PowerShot S3 IS;5.75
+Canon;Canon Powershot S30;7.11
 Canon;Canon PowerShot S300;5.33
 Canon;Canon PowerShot S330;5.33
+Canon;Canon Powershot S40;7.11
 Canon;Canon PowerShot S400;7.11
 Canon;Canon PowerShot S410;7.11
+Canon;Canon Powershot S45;7.11
 Canon;Canon PowerShot S5 IS;5.75
+Canon;Canon Powershot S50;7.11
 Canon;Canon PowerShot S500;7.11
 Canon;Canon PowerShot S60;7.11
 Canon;Canon PowerShot S70;7.11
+Canon;Canon Powershot S80;7.11
 Canon;Canon PowerShot S90;7.53
 Canon;Canon PowerShot S95;7.53
 Canon;Canon PowerShot SD10;5.75
@@ -416,45 +455,6 @@ Canon;Canon PowerShot SX40 HS;6.16
 Canon;Canon PowerShot SX50 HS;6.16
 Canon;Canon PowerShot SX500 IS;6.16
 Canon;Canon PowerShot TX1;5.75
-Canon;Canon Powershot A10;5.33
-Canon;Canon Powershot A100;4.5
-Canon;Canon Powershot A1100 IS;6.16
-Canon;Canon Powershot A1200;6.16
-Canon;Canon Powershot A20;5.33
-Canon;Canon Powershot A200;4.5
-Canon;Canon Powershot A2100 IS;6.16
-Canon;Canon Powershot A2200;6.16
-Canon;Canon Powershot A30;5.33
-Canon;Canon Powershot A300;5.33
-Canon;Canon Powershot A3000 IS;6.16
-Canon;Canon Powershot A310;5.33
-Canon;Canon Powershot A3100 IS;6.16
-Canon;Canon Powershot A3200 IS;6.16
-Canon;Canon Powershot A3300 IS;6.16
-Canon;Canon Powershot A40;5.33
-Canon;Canon Powershot A410;4.5
-Canon;Canon Powershot A420;4.8
-Canon;Canon Powershot A510;5.33
-Canon;Canon Powershot A520;5.75
-Canon;Canon Powershot A540;5.75
-Canon;Canon Powershot A60;5.33
-Canon;Canon Powershot A610;7.11
-Canon;Canon Powershot A70;5.33
-Canon;Canon Powershot A75;5.33
-Canon;Canon Powershot A80;7.11
-Canon;Canon Powershot G1;7.11
-Canon;Canon Powershot G2;7.11
-Canon;Canon Powershot G3;7.11
-Canon;Canon Powershot G5;7.11
-Canon;Canon Powershot S1 IS;5.33
-Canon;Canon Powershot S10;6.4
-Canon;Canon Powershot S2 IS;5.75
-Canon;Canon Powershot S20;7.11
-Canon;Canon Powershot S30;7.11
-Canon;Canon Powershot S40;7.11
-Canon;Canon Powershot S45;7.11
-Canon;Canon Powershot S50;7.11
-Canon;Canon Powershot S80;7.11
 Canon;Canon Pro90 IS;7.11
 Canon;Canon SX220 HS;6.16
 Casio;Casio EX-N1;6.16
@@ -484,14 +484,20 @@ Casio;Casio EXILIM EX-JE10;6.16
 Casio;Casio EXILIM EX-M1;5.33
 Casio;Casio EXILIM EX-M2;7.11
 Casio;Casio EXILIM EX-M20;5.33
+Casio;Casio Exilim EX-P505;5.75
+Casio;Casio Exilim EX-P600;7.11
+Casio;Casio Exilim EX-P700;7.11
 Casio;Casio EXILIM EX-S1;5.33
 Casio;Casio EXILIM EX-S10;6.16
+Casio;Casio Exilim EX-S100;4.5
 Casio;Casio EXILIM EX-S12;6.16
 Casio;Casio EXILIM EX-S2;7.11
 Casio;Casio EXILIM EX-S20;5.33
 Casio;Casio EXILIM EX-S200;6.16
 Casio;Casio EXILIM EX-S3;7.11
 Casio;Casio EXILIM EX-S5;6.16
+Casio;Casio Exilim EX-S500;5.75
+Casio;Casio Exilim EX-S600;5.75
 Casio;Casio EXILIM EX-S600D;5.75
 Casio;Casio EXILIM EX-S7;6.16
 Casio;Casio EXILIM EX-S770;5.75
@@ -510,6 +516,7 @@ Casio;Casio EXILIM EX-Z1050;7.31
 Casio;Casio EXILIM EX-Z1080;7.31
 Casio;Casio EXILIM EX-Z110;5.75
 Casio;Casio EXILIM EX-Z120;7.11
+Casio;Casio Exilim EX-Z1200 SR;7.53
 Casio;Casio EXILIM EX-Z150;5.75
 Casio;Casio EXILIM EX-Z16;6.16
 Casio;Casio EXILIM EX-Z19;5.75
@@ -537,8 +544,10 @@ Casio;Casio EXILIM EX-Z400;6.16
 Casio;Casio EXILIM EX-Z450;6.16
 Casio;Casio EXILIM EX-Z5;5.75
 Casio;Casio EXILIM EX-Z50;5.75
+Casio;Casio Exilim EX-Z500;5.75
 Casio;Casio EXILIM EX-Z55;5.75
 Casio;Casio EXILIM EX-Z550;6.16
+Casio;Casio Exilim EX-Z57;5.75
 Casio;Casio EXILIM EX-Z6;5.75
 Casio;Casio EXILIM EX-Z60;7.11
 Casio;Casio EXILIM EX-Z600;5.75
@@ -547,6 +556,7 @@ Casio;Casio EXILIM EX-Z7;5.75
 Casio;Casio EXILIM EX-Z70;5.75
 Casio;Casio EXILIM EX-Z700;5.75
 Casio;Casio EXILIM EX-Z75;5.75
+Casio;Casio Exilim EX-Z750;7.11
 Casio;Casio EXILIM EX-Z77;5.75
 Casio;Casio EXILIM EX-Z8;5.75
 Casio;Casio EXILIM EX-Z80;5.75
@@ -557,6 +567,7 @@ Casio;Casio EXILIM EX-Z9;5.75
 Casio;Casio EXILIM EX-Z90;6.16
 Casio;Casio EXILIM EX-ZR10;6.16
 Casio;Casio EXILIM EX-ZR100;6.16
+Casio;Casio Exilim EX-ZR1000;6.16
 Casio;Casio EXILIM EX-ZR15;6.16
 Casio;Casio EXILIM EX-ZR20;6.16
 Casio;Casio EXILIM EX-ZR200;6.16
@@ -567,21 +578,10 @@ Casio;Casio EXILIM EX-ZS12;6.16
 Casio;Casio EXILIM EX-ZS15;6.16
 Casio;Casio EXILIM EX-ZS150;6.16
 Casio;Casio EXILIM EX-ZS20;6.16
+Casio;Casio Exilim EX-ZS5;6.16
 Casio;Casio EXILIM EX-ZS6;6.16
 Casio;Casio EXILIM Pro EX-F1;7.11
 Casio;Casio EXILIM QV-R100;6.16
-Casio;Casio Exilim EX-P505;5.75
-Casio;Casio Exilim EX-P600;7.11
-Casio;Casio Exilim EX-P700;7.11
-Casio;Casio Exilim EX-S100;4.5
-Casio;Casio Exilim EX-S500;5.75
-Casio;Casio Exilim EX-S600;5.75
-Casio;Casio Exilim EX-Z1200 SR;7.53
-Casio;Casio Exilim EX-Z500;5.75
-Casio;Casio Exilim EX-Z57;5.75
-Casio;Casio Exilim EX-Z750;7.11
-Casio;Casio Exilim EX-ZR1000;6.16
-Casio;Casio Exilim EX-ZS5;6.16
 Casio;Casio Exilim TRYX;6.16
 Casio;Casio GV-10;4.5
 Casio;Casio GV-20;4.5
@@ -651,11 +651,11 @@ Concord;Concord Eye-Q Duo LCD;6.4
 Concord;Concord Eye-Q Go 2000;7.11
 Concord;Concord Eye-Q Go LCD;6.4
 Concord;Concord Eye-Q Go Wireless;7.11
+Contax;Contax i4R;5.33
 Contax;Contax N Digital;36
 Contax;Contax SL300R T;5.33
 Contax;Contax TVS Digital;7.11
 Contax;Contax U4R;5.33
-Contax;Contax i4R;5.33
 Epson;Epson L-500V;5.75
 Epson;Epson PhotoPC 3000 Zoom;7.11
 Epson;Epson PhotoPC 3100 Zoom;7.11
@@ -678,9 +678,9 @@ Epson;Epson RD-1s;23.7
 Fujifilm;Fujifilm A850;5.75
 Fujifilm;Fujifilm Bigjob HD-3W;5.75
 Fujifilm;Fujifilm Bigjob HD1;5.33
+Fujifilm;Fujifilm Digital Q1;6.4
 Fujifilm;Fujifilm DS-260HD;6.4
 Fujifilm;Fujifilm DS-300;8.8
-Fujifilm;Fujifilm Digital Q1;6.4
 Fujifilm;Fujifilm FinePix 1300;5.33
 Fujifilm;Fujifilm FinePix 1400z;5.33
 Fujifilm;Fujifilm FinePix 2300;5.33
@@ -688,6 +688,7 @@ Fujifilm;Fujifilm FinePix 2400 Zoom;5.33
 Fujifilm;Fujifilm FinePix 2600 Zoom;5.33
 Fujifilm;Fujifilm FinePix 2650;5.33
 Fujifilm;Fujifilm FinePix 2800 Zoom;5.33
+Fujifilm;Fujifilm Finepix 30i;5.33
 Fujifilm;Fujifilm FinePix 3800;5.33
 Fujifilm;Fujifilm FinePix 40i;5.33
 Fujifilm;Fujifilm FinePix 4700 Zoom;7.53
@@ -1002,7 +1003,6 @@ Fujifilm;Fujifilm FinePix Z900EXR;6.4
 Fujifilm;Fujifilm FinePix Z909EXR;6.4
 Fujifilm;Fujifilm FinePix Z91;6.16
 Fujifilm;Fujifilm FinePix Z950EXR;6.4
-Fujifilm;Fujifilm Finepix 30i;5.33
 Fujifilm;Fujifilm MX-1200;6.4
 Fujifilm;Fujifilm MX-1400;5.33
 Fujifilm;Fujifilm MX-1500;6.4
@@ -1078,8 +1078,6 @@ HP;HP CA350;6.16
 HP;HP CB350;6.16
 HP;HP CW450;6.16
 HP;HP CW450t;6.16
-HP;HP PW460t;6.16
-HP;HP PW550;6.16
 HP;HP Photosmart 120;6.4
 HP;HP Photosmart 318;5.33
 HP;HP Photosmart 320;5.33
@@ -1139,12 +1137,12 @@ HP;HP Photosmart R847;5.75
 HP;HP Photosmart R927;7.11
 HP;HP Photosmart R937;5.75
 HP;HP Photosmart R967;7.11
+HP;HP PW460t;6.16
+HP;HP PW550;6.16
 HP;HP R607 BMW;5.75
 HP;HP R607 Harajuku;5.75
 HP;HP SB360;6.16
 HP;HP SW450;6.16
-JVC;JVC GC-QX3HD;7.11
-JVC;JVC GC-QX5HD;7.11
 Jenoptik;Jenoptik JD 1300 D;6.4
 Jenoptik;Jenoptik JD 1300 F;6.4
 Jenoptik;Jenoptik JD 1500 z3;6.4
@@ -1179,8 +1177,8 @@ Jenoptik;Jenoptik JD 5.2 z3 MPEG4;7.11
 Jenoptik;Jenoptik JD 5.2 zoom;5.75
 Jenoptik;Jenoptik JD 5200 z3;7.11
 Jenoptik;Jenoptik JD 6.0 z3;7.11
-Jenoptik;Jenoptik JD 6.0 z3 MPEG4;7.11
 Jenoptik;Jenoptik JD 6.0 z3 exclusiv;7.11
+Jenoptik;Jenoptik JD 6.0 z3 MPEG4;7.11
 Jenoptik;Jenoptik JD 8.0 exclusiv;7.11
 Jenoptik;Jenoptik JD 8.0z3 EasyShot;7.11
 Jenoptik;Jenoptik JD C 1.3 LCD;6.4
@@ -1193,6 +1191,8 @@ Jenoptik;Jenoptik JD C 3.1 LI;6.4
 Jenoptik;Jenoptik JD C 3.1 SL;6.4
 Jenoptik;Jenoptik JD C 3.1 z3;6.4
 Jenoptik;Jenoptik JD C 5.0 SL;7.11
+JVC;JVC GC-QX3HD;7.11
+JVC;JVC GC-QX5HD;7.11
 Kodak;Kodak DC200;27.65
 Kodak;Kodak DC200 plus;27.65
 Kodak;Kodak DC210 plus;27.65
@@ -1323,15 +1323,16 @@ Kodak;Kodak EasyShare M863;5.75
 Kodak;Kodak EasyShare M873;5.75
 Kodak;Kodak EasyShare M883;5.75
 Kodak;Kodak EasyShare M893 IS;5.75
+Kodak;Kodak EasyShare Max Z990;6.08
 Kodak;Kodak EasyShare MD1063;6.08
 Kodak;Kodak EasyShare MD30;6.08
 Kodak;Kodak EasyShare MD41;6.08
 Kodak;Kodak EasyShare MD81;6.08
 Kodak;Kodak EasyShare MD853;5.75
 Kodak;Kodak EasyShare MD863;5.75
-Kodak;Kodak EasyShare MX1063;6.08
-Kodak;Kodak EasyShare Max Z990;6.08
 Kodak;Kodak EasyShare Mini;4.8
+Kodak;Kodak EasyShare MX1063;6.08
+Kodak;Kodak Easyshare One;5.75
 Kodak;Kodak EasyShare P712;5.75
 Kodak;Kodak EasyShare P850;5.75
 Kodak;Kodak EasyShare P880;7.11
@@ -1378,7 +1379,6 @@ Kodak;Kodak EasyShare ZD15;6.16
 Kodak;Kodak EasyShare ZD710;5.75
 Kodak;Kodak EasyShare ZD8612 IS;5.75
 Kodak;Kodak EasyShare-One 6MP;5.75
-Kodak;Kodak Easyshare One;5.75
 Kodak;Kodak LS420;36
 Kodak;Kodak LS443;5.33
 Kodak;Kodak LS633;5.75
@@ -1386,8 +1386,8 @@ Kodak;Kodak LS743;7.11
 Kodak;Kodak LS753;7.11
 Kodak;Kodak LS755;5.75
 Kodak;Kodak M590;4.8
-Kodak;Kodak Slice;6.16
 Kodak;Kodak mc3;27.65
+Kodak;Kodak Slice;6.16
 Konica;Konica DG-2;5.33
 Konica;Konica DG-3Z;5.33
 Konica;Konica Q-M100;4.8
@@ -1746,8 +1746,8 @@ Nikon;Nikon D3000;23.6
 Nikon;Nikon D300s;23.6
 Nikon;Nikon D3100;23.1
 Nikon;Nikon D3200;23.2
-Nikon;Nikon D3X;35.9
 Nikon;Nikon D3s;36
+Nikon;Nikon D3X;35.9
 Nikon;Nikon D4;36
 Nikon;Nikon D40;23.7
 Nikon;Nikon D40x;23.6
@@ -1766,8 +1766,8 @@ Nikon;Nikon D80;23.6
 Nikon;Nikon D800;35.9
 Nikon;Nikon D800E;35.9
 Nikon;Nikon D90;23.6
-Nikon;Nikon E2Ns;8.8
 Nikon;Nikon E2n;8.8
+Nikon;Nikon E2Ns;8.8
 Nikon;Nikon E2s;8.8
 Nikon;Nikon E3;8.8
 Nikon;Nikon E3s;8.8
@@ -1933,9 +1933,14 @@ Olympus;Olympus FE-5040;6.16
 Olympus;Olympus FE-5050;6.16
 Olympus;Olympus IR 500;5.33
 Olympus;Olympus IR-300;5.75
+Olympus;Olympus m:robe MR 500i;3.2
 Olympus;Olympus Mju 1060;6.08
+Olympus;Olympus mju 400 Digital Ferrari;5.75
 Olympus;Olympus Mju 5000;6.08
 Olympus;Olympus Mju 7050;6.16
+Olympus;Olympus mju 800 black;7.11
+Olympus;Olympus mju mini Digital;5.75
+Olympus;Olympus mju mini Digital S;5.75
 Olympus;Olympus OM-D E-M1;17.3
 Olympus;Olympus OM-D E-M5;17.3
 Olympus;Olympus PEN E-P1;17.3
@@ -1970,15 +1975,6 @@ Olympus;Olympus SP-565UZ;6.08
 Olympus;Olympus SP-610UZ;6.16
 Olympus;Olympus SP-620 UZ;6.16
 Olympus;Olympus SP-720UZ;6.16
-Olympus;Olympus SZ-10;6.16
-Olympus;Olympus SZ-11;6.16
-Olympus;Olympus SZ-12;6.16
-Olympus;Olympus SZ-14;6.16
-Olympus;Olympus SZ-15;6.16
-Olympus;Olympus SZ-16;6.16
-Olympus;Olympus SZ-20;6.16
-Olympus;Olympus SZ-30MR;6.16
-Olympus;Olympus SZ-31MR iHS;6.16
 Olympus;Olympus Stylus 1000;7.11
 Olympus;Olympus Stylus 1010;6.08
 Olympus;Olympus Stylus 1020;6.08
@@ -2025,6 +2021,15 @@ Olympus;Olympus Stylus Tough-3000;6.08
 Olympus;Olympus Stylus Verve;5.75
 Olympus;Olympus Stylus Verve S;5.75
 Olympus;Olympus Stylus XZ-10;6.16
+Olympus;Olympus SZ-10;6.16
+Olympus;Olympus SZ-11;6.16
+Olympus;Olympus SZ-12;6.16
+Olympus;Olympus SZ-14;6.16
+Olympus;Olympus SZ-15;6.16
+Olympus;Olympus SZ-16;6.16
+Olympus;Olympus SZ-20;6.16
+Olympus;Olympus SZ-30MR;6.16
+Olympus;Olympus SZ-31MR iHS;6.16
 Olympus;Olympus T-10;6.16
 Olympus;Olympus T-100;6.16
 Olympus;Olympus T-110;6.16
@@ -2063,11 +2068,6 @@ Olympus;Olympus X-905;6.16
 Olympus;Olympus X-920;6.16
 Olympus;Olympus XZ-1;7.85
 Olympus;Olympus XZ-2 iHS;7.53
-Olympus;Olympus m:robe MR 500i;3.2
-Olympus;Olympus mju 400 Digital Ferrari;5.75
-Olympus;Olympus mju 800 black;7.11
-Olympus;Olympus mju mini Digital;5.75
-Olympus;Olympus mju mini Digital S;5.75
 Panasonic;Panasonic D-snap SV-AS10;4.5
 Panasonic;Panasonic D-snap SV-AS3;4.5
 Panasonic;Panasonic D-snap SV-AS30;4.5
@@ -2288,10 +2288,10 @@ Pentax;Pentax *ist DL2;23.5
 Pentax;Pentax *ist DS;23.5
 Pentax;Pentax *ist DS2;23.5
 Pentax;Pentax 645D;44
+Pentax;Pentax Efina;6.16
 Pentax;Pentax EI-100;4.5
 Pentax;Pentax EI-200;5.33
 Pentax;Pentax EI-2000;8.8
-Pentax;Pentax Efina;6.16
 Pentax;Pentax K-01;23.7
 Pentax;Pentax K-30;23.7
 Pentax;Pentax K-5;23.6
@@ -2467,13 +2467,12 @@ Praktica;Praktica DCZ 7.4;5.75
 Praktica;Praktica DCZ 8.1;5.75
 Praktica;Praktica DCZ 8.2;5.75
 Praktica;Praktica DCZ 8.3;5.75
-Praktica;Praktica DMMC;4.8
-Praktica;Praktica DMMC 4;4.8
-Praktica;Praktica DVC 6.1;5.75
 Praktica;Praktica Digi 3;6.4
 Praktica;Praktica Digi 3 LM;6.4
 Praktica;Praktica Digi 30;6.4
 Praktica;Praktica Digicam 3;6.4
+Praktica;Praktica DMMC;4.8
+Praktica;Praktica DMMC 4;4.8
 Praktica;Praktica Dpix 1000z;6.16
 Praktica;Praktica Dpix 1100z;5.75
 Praktica;Praktica Dpix 1220z;6.08
@@ -2491,6 +2490,7 @@ Praktica;Praktica Dpix 810z;5.75
 Praktica;Praktica Dpix 820z;5.75
 Praktica;Praktica Dpix 9000;6.16
 Praktica;Praktica Dpix 910z;6.4
+Praktica;Praktica DVC 6.1;5.75
 Praktica;Praktica Exakta DC 4200;7.11
 Praktica;Praktica G2.0;6.4
 Praktica;Praktica G3.2;6.4
@@ -2547,12 +2547,6 @@ PtGrey;PtGrey Grasshopper3 1920x1440;6.73
 PtGrey;PtGrey Grasshopper3 2048x1536;7.18
 Red;Red Dragon 4K HD;19.19
 Red;Red Mysterium-X 4K HD;20.74
-Ricoh;Ricoh CX1;6.16
-Ricoh;Ricoh CX2;6.16
-Ricoh;Ricoh CX3;6.16
-Ricoh;Ricoh CX4;6.16
-Ricoh;Ricoh CX5;6.16
-Ricoh;Ricoh CX6;6.16
 Ricoh;Ricoh Caplio 400G Wide;5.33
 Ricoh;Ricoh Caplio 500G;7.11
 Ricoh;Ricoh Caplio 500G Wide;7.11
@@ -2588,6 +2582,12 @@ Ricoh;Ricoh Caplio RR750;5.75
 Ricoh;Ricoh Caplio RR770;5.75
 Ricoh;Ricoh Caplio RX;5.33
 Ricoh;Ricoh Caplio RZ1;5.75
+Ricoh;Ricoh CX1;6.16
+Ricoh;Ricoh CX2;6.16
+Ricoh;Ricoh CX3;6.16
+Ricoh;Ricoh CX4;6.16
+Ricoh;Ricoh CX5;6.16
+Ricoh;Ricoh CX6;6.16
 Ricoh;Ricoh G600;6.16
 Ricoh;Ricoh G700;6.16
 Ricoh;Ricoh G700SE;6.16
@@ -2643,6 +2643,38 @@ Rollei;Rollei Compactline 55;6.16
 Rollei;Rollei Compactline 80;5.75
 Rollei;Rollei Compactline 81;5.75
 Rollei;Rollei Compactline 90;6.16
+Rollei;Rollei d20 motion;7.11
+Rollei;Rollei d210 motion;4.5
+Rollei;Rollei d23 com;7.53
+Rollei;Rollei d33 com;7.11
+Rollei;Rollei d330 motion;5.33
+Rollei;Rollei d41 com;7.11
+Rollei;Rollei d530 flex;8.8
+Rollei;Rollei da10;5.75
+Rollei;Rollei da1325 Prego;5.75
+Rollei;Rollei da5324;5.75
+Rollei;Rollei da5325 Prego;5.75
+Rollei;Rollei da6324;5.75
+Rollei;Rollei da7325 Prego;5.75
+Rollei;Rollei da8324;5.75
+Rollei;Rollei dc 3100;5.33
+Rollei;Rollei dcx 310;7.11
+Rollei;Rollei dcx 400;7.11
+Rollei;Rollei dk 3000;5.33
+Rollei;Rollei dk4010;5.33
+Rollei;Rollei dp 300;5.33
+Rollei;Rollei dp 3210;5.33
+Rollei;Rollei dp6500;7.11
+Rollei;Rollei dpx 310;5.33
+Rollei;Rollei dr 5;5.75
+Rollei;Rollei dr 5100;7.11
+Rollei;Rollei ds6;5.75
+Rollei;Rollei dsx 410;5.75
+Rollei;Rollei dt 3200;5.75
+Rollei;Rollei dt 4000;5.75
+Rollei;Rollei dt 4200;5.75
+Rollei;Rollei dt6 Tribute;5.75
+Rollei;Rollei dx63;5.75
 Rollei;Rollei Flexline 100;5.75
 Rollei;Rollei Flexline 100 iT;5.75
 Rollei;Rollei Flexline 140;6.08
@@ -2703,38 +2735,6 @@ Rollei;Rollei XS-10;5.75
 Rollei;Rollei XS-10 inTouch;6.16
 Rollei;Rollei XS-8;5.75
 Rollei;Rollei XS-8 Crystal;5.75
-Rollei;Rollei d20 motion;7.11
-Rollei;Rollei d210 motion;4.5
-Rollei;Rollei d23 com;7.53
-Rollei;Rollei d33 com;7.11
-Rollei;Rollei d330 motion;5.33
-Rollei;Rollei d41 com;7.11
-Rollei;Rollei d530 flex;8.8
-Rollei;Rollei da10;5.75
-Rollei;Rollei da1325 Prego;5.75
-Rollei;Rollei da5324;5.75
-Rollei;Rollei da5325 Prego;5.75
-Rollei;Rollei da6324;5.75
-Rollei;Rollei da7325 Prego;5.75
-Rollei;Rollei da8324;5.75
-Rollei;Rollei dc 3100;5.33
-Rollei;Rollei dcx 310;7.11
-Rollei;Rollei dcx 400;7.11
-Rollei;Rollei dk 3000;5.33
-Rollei;Rollei dk4010;5.33
-Rollei;Rollei dp 300;5.33
-Rollei;Rollei dp 3210;5.33
-Rollei;Rollei dp6500;7.11
-Rollei;Rollei dpx 310;5.33
-Rollei;Rollei dr 5;5.75
-Rollei;Rollei dr 5100;7.11
-Rollei;Rollei ds6;5.75
-Rollei;Rollei dsx 410;5.75
-Rollei;Rollei dt 3200;5.75
-Rollei;Rollei dt 4000;5.75
-Rollei;Rollei dt 4200;5.75
-Rollei;Rollei dt6 Tribute;5.75
-Rollei;Rollei dx63;5.75
 Samsung;Samsung AQ100;6.08
 Samsung;Samsung CL5;5.75
 Samsung;Samsung CL65;6.08
@@ -2743,8 +2743,6 @@ Samsung;Samsung D75;5.75
 Samsung;Samsung D830;7.11
 Samsung;Samsung D85;5.75
 Samsung;Samsung D860;5.75
-Samsung;Samsung DV150F;6.16
-Samsung;Samsung DV300F;6.16
 Samsung;Samsung Digimax 101;6.4
 Samsung;Samsung Digimax 130;4.5
 Samsung;Samsung Digimax 200;5.33
@@ -2778,6 +2776,9 @@ Samsung;Samsung Digimax A55W;5.75
 Samsung;Samsung Digimax A6;7.11
 Samsung;Samsung Digimax A7;7.11
 Samsung;Samsung Digimax D103;7.11
+Samsung;Samsung Digimax i5;5.75
+Samsung;Samsung Digimax i50 MP3;5.75
+Samsung;Samsung Digimax i6;5.75
 Samsung;Samsung Digimax L50;5.75
 Samsung;Samsung Digimax L55W;5.75
 Samsung;Samsung Digimax L60;5.75
@@ -2805,9 +2806,8 @@ Samsung;Samsung Digimax V600;7.11
 Samsung;Samsung Digimax V70;7.11
 Samsung;Samsung Digimax V700;7.11
 Samsung;Samsung Digimax V800;7.11
-Samsung;Samsung Digimax i5;5.75
-Samsung;Samsung Digimax i50 MP3;5.75
-Samsung;Samsung Digimax i6;5.75
+Samsung;Samsung DV150F;6.16
+Samsung;Samsung DV300F;6.16
 Samsung;Samsung ES10;5.75
 Samsung;Samsung ES15;6.08
 Samsung;Samsung ES17;6.08
@@ -2826,17 +2826,23 @@ Samsung;Samsung ES80;6.16
 Samsung;Samsung ES95;6.16
 Samsung;Samsung EX1;7.53
 Samsung;Samsung EX2F;7.53
+Samsung;Samsung Galaxy Camera;6.16
 Samsung;Samsung GX-10;23.5
 Samsung;Samsung GX-1L;23.5
 Samsung;Samsung GX-1S;23.5
 Samsung;Samsung GX-20;23.4
-Samsung;Samsung Galaxy Camera;6.16
 Samsung;Samsung HZ10W;6.08
 Samsung;Samsung HZ15W;6.08
 Samsung;Samsung HZ25W;6.08
 Samsung;Samsung HZ30W;6.16
 Samsung;Samsung HZ35W;6.16
 Samsung;Samsung HZ50W;6.16
+Samsung;Samsung i100;6.08
+Samsung;Samsung i7;5.75
+Samsung;Samsung i70;5.75
+Samsung;Samsung i8;5.75
+Samsung;Samsung i80;5.75
+Samsung;Samsung i85;5.75
 Samsung;Samsung IT100;6.08
 Samsung;Samsung L100;5.75
 Samsung;Samsung L110;5.75
@@ -2855,10 +2861,10 @@ Samsung;Samsung L80;7.11
 Samsung;Samsung L830;5.75
 Samsung;Samsung L83T;5.75
 Samsung;Samsung M100;5.75
-Samsung;Samsung MV800;6.16
 Samsung;Samsung Miniket VP-MS10;5.75
 Samsung;Samsung Miniket VP-MS11;5.75
 Samsung;Samsung Miniket VP-MS15;5.75
+Samsung;Samsung MV800;6.16
 Samsung;Samsung NV10;7.11
 Samsung;Samsung NV100 HD;7.44
 Samsung;Samsung NV11;7.11
@@ -2993,12 +2999,6 @@ Samsung;Samsung WB750;6.08
 Samsung;Samsung WB800F;6.16
 Samsung;Samsung WB850F;6.16
 Samsung;Samsung WP10;6.08
-Samsung;Samsung i100;6.08
-Samsung;Samsung i7;5.75
-Samsung;Samsung i70;5.75
-Samsung;Samsung i8;5.75
-Samsung;Samsung i80;5.75
-Samsung;Samsung i85;5.75
 Samsung;Samsung-SGH-I537;3.0
 Sanyo;Sanyo DSC S1;5.33
 Sanyo;Sanyo DSC S3;5.33
@@ -3120,9 +3120,6 @@ Sony;Sony Alpha NEX-7;23.5
 Sony;Sony Alpha NEX-C3;23.4
 Sony;Sony Alpha NEX-F3;23.4
 Sony;Sony Cyber-shot DSC-RX1;35.8
-Sony;Sony CyberShot DSC HX100V;6.16
-Sony;Sony CyberShot DSC HX7V;6.16
-Sony;Sony CyberShot DSC HX9V;6.16
 Sony;Sony Cybershot DSC D700;6.4
 Sony;Sony Cybershot DSC D770;6.4
 Sony;Sony Cybershot DSC F505;6.4
@@ -3152,12 +3149,15 @@ Sony;Sony Cybershot DSC H70;6.16
 Sony;Sony Cybershot DSC H9;5.75
 Sony;Sony Cybershot DSC H90;6.16
 Sony;Sony Cybershot DSC HX1;5.9
+Sony;Sony CyberShot DSC HX100V;6.16
 Sony;Sony Cybershot DSC HX10V;6.16
 Sony;Sony Cybershot DSC HX200V;6.16
 Sony;Sony Cybershot DSC HX20V;6.16
 Sony;Sony Cybershot DSC HX30V;6.16
 Sony;Sony Cybershot DSC HX5;5.9
 Sony;Sony Cybershot DSC HX50;6.16
+Sony;Sony CyberShot DSC HX7V;6.16
+Sony;Sony CyberShot DSC HX9V;6.16
 Sony;Sony Cybershot DSC J10;6.16
 Sony;Sony Cybershot DSC L1;5.33
 Sony;Sony Cybershot DSC M1;5.9

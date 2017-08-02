@@ -16,7 +16,7 @@ file.close()
 
 # process
 sensors = [entry.split(';')  for entry in database]
-sensors.sort()
+sensors.sort(key=lambda t : tuple(s.lower() if isinstance(s,basestring) else s for s in t))
 outDatabase = ""
 for entry in sensors:
 	outDatabase += ';'.join(entry)
