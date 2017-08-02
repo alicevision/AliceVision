@@ -38,9 +38,9 @@ public:
    */
   struct CameraInfo {
     /// Camera brand
-    std::string brand = "Pinhole";
+    std::string brand = "Custom";
     /// Camera model
-    std::string model = "Pinhole";
+    std::string model = "radial3";
     /// Focal length in mm or px
     float focalLength = 1.2f;
     /// If focalIsMM is false, focalLength is in px
@@ -87,6 +87,7 @@ public:
   {
     switch(sharpnessPreset)
     {
+      // arbitrary thresholds
       case ESharpnessSelectionPreset::ULTRA:    _sharpnessThreshold = 20.0f;  break;
       case ESharpnessSelectionPreset::HIGH:     _sharpnessThreshold = 17.0f;  break;
       case ESharpnessSelectionPreset::NORMAL:   _sharpnessThreshold = 15.0f;  break;
