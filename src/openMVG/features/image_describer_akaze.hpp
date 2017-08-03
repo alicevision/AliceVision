@@ -69,7 +69,7 @@ public:
     throw std::logic_error("Unknown AKAZE type.");
   }
   
-  bool Set_configuration_preset(EDESCRIBER_PRESET preset)
+  bool Set_configuration_preset(EDESCRIBER_PRESET preset) override
   {
     switch(preset)
     {
@@ -90,7 +90,7 @@ public:
     return true;
   }
   
-  void setUpRight(bool upRight)
+  void setUpRight(bool upRight) override
   {
     _bOrientation = !upRight;
   }
@@ -104,7 +104,7 @@ public:
   */
   bool Describe(const image::Image<unsigned char>& image,
     std::unique_ptr<Regions> &regions,
-    const image::Image<unsigned char> * mask = nullptr)
+    const image::Image<unsigned char> * mask = nullptr) override
   {
     _params._options.fDesc_factor =
       (_params._eAkazeDescriptor == AKAZE_MSURF ||
@@ -258,7 +258,7 @@ public:
   };
 
   /// Allocate Regions type depending of the Image_describer
-  void Allocate(std::unique_ptr<Regions> &regions) const
+  void Allocate(std::unique_ptr<Regions> &regions) const override
   {
     switch(_params._eAkazeDescriptor)
     {

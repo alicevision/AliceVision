@@ -226,7 +226,7 @@ double localOptimization(const Kernel &kernel,
   for(std::size_t i = 0; i < numRep; ++i)
   {
     std::vector<std::size_t> sample;
-    UniformSample(sampleSize, inliersBase, &sample);
+    UniformSample(sampleSize, inliersBase, sample);
     assert(sampleSize > Kernel::MINIMUM_LSSAMPLES);
     assert(sample.size() > Kernel::MINIMUM_LSSAMPLES);
   
@@ -315,10 +315,10 @@ typename Kernel::Model LO_RANSAC(const Kernel &kernel,
   std::vector<std::size_t> all_samples(total_samples);
   std::iota(all_samples.begin(), all_samples.end(), 0);
 
-  std::vector<std::size_t> sample;
   for(iteration = 0; iteration < max_iterations; ++iteration) 
   {
-    UniformSample(min_samples, total_samples, &sample);
+    std::vector<std::size_t> sample;
+    UniformSample(min_samples, total_samples, sample);
 
     std::vector<typename Kernel::Model> models;
     kernel.Fit(sample, &models);

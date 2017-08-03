@@ -136,14 +136,14 @@ struct GeometricFilter_HMatrix_AC : public GeometricFilterMatrix
     MatT & m)
   {
     size_t nbRegions = 0;
-    for(const auto regions: regionsPerDesc)
+    for(const auto &regions: regionsPerDesc)
     {
       nbRegions += regions.second->RegionCount();
     }
     m.resize(2, nbRegions);
 
     size_t y = 0;
-    for(const auto regions: regionsPerDesc)
+    for(const auto &regions: regionsPerDesc)
     {
       fillMatricesWithUndistortFeatures(
             cam,

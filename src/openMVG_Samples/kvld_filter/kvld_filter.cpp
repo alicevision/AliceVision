@@ -178,9 +178,9 @@ int main(int argc, char **argv) {
   std::vector<Pair> matchesFiltered;
   std::vector<Pair> matchesPair;
 
-  for (std::vector<IndMatch>::const_iterator i_match = vec_PutativeMatches.begin();
-        i_match != vec_PutativeMatches.end(); ++i_match){
-    matchesPair.push_back(std::make_pair(i_match->_i, i_match->_j));
+  for(const auto &i_match : vec_PutativeMatches)
+  {
+    matchesPair.emplace_back(i_match._i, i_match._j);
   }
   std::vector<double> vec_score;
 
@@ -216,9 +216,12 @@ int main(int argc, char **argv) {
     svgStream.drawImage(jpg_filenameR, imageR.Width(), imageR.Height(), imageL.Width());
 
 
-    for (int it1=0; it1<matchesPair.size()-1;it1++){
-      for (int it2=it1+1; it2<matchesPair.size();it2++){
-         if (valide[it1] && valide[it2] && E(it1,it2)>=0){
+    for(std::size_t it1 = 0; it1 < matchesPair.size() - 1; ++it1)
+    {
+      for(std::size_t it2 = it1 + 1; it2 < matchesPair.size(); ++it2)
+      {
+        if(valide[it1] && valide[it2] && E(it1, it2) >= 0)
+         {
 
           const PointFeature & l1 = featsL[matchesPair[it1].first];
           const PointFeature & r1 = featsR[matchesPair[it1].second];
@@ -238,7 +241,7 @@ int main(int argc, char **argv) {
       }
     }
     string out_filename = "05_KVLD_Matches.svg";
-      out_filename = stlplus::create_filespec(sOutDir, out_filename);
+    out_filename = stlplus::create_filespec(sOutDir, out_filename);
     ofstream svgFile( out_filename.c_str() );
     svgFile << svgStream.closeSvgFile().str();
     svgFile.close();
@@ -253,15 +256,17 @@ int main(int argc, char **argv) {
     svgStream.drawImage(jpg_filenameL, imageL.Width(), imageL.Height());
     svgStream.drawImage(jpg_filenameR, imageR.Width(), imageR.Height(), imageL.Width());
 
-    for (int it=0; it<matchesPair.size();it++){
-       if (valide[it]){
+    for(std::size_t it = 0; it < matchesPair.size(); ++it)
+    {
+       if (valide[it])
+       {
 
-        const PointFeature & l = featsL[matchesPair[it].first];
-        const PointFeature & r = featsR[matchesPair[it].second];
+        const PointFeature & left = featsL[matchesPair[it].first];
+        const PointFeature & right = featsR[matchesPair[it].second];
 
         // ".svg"
-        svgStream.drawCircle(l.x(), l.y(), 10, svgStyle().stroke("yellow", 2.0));
-        svgStream.drawCircle(r.x() + imageL.Width(), r.y(), 10, svgStyle().stroke("yellow", 2.0));
+        svgStream.drawCircle(left.x(), left.y(), 10, svgStyle().stroke("yellow", 2.0));
+        svgStream.drawCircle(right.x() + imageL.Width(), right.y(), 10, svgStyle().stroke("yellow", 2.0));
       }
     }
     string out_filename = "06_KVLD_Keypoints.svg";

@@ -37,7 +37,7 @@ public:
   CCTagLocalizer(const std::string &sfmFilePath,
                  const std::string &descriptorsFolder);
    
-  void setCudaPipe( int i );
+  void setCudaPipe( int i ) override;
 
  /**
    * @brief Just a wrapper around the different localization algorithm, the algorith

@@ -1457,7 +1457,7 @@ bool VoctreeLocalizer::localizeRig_opengv(const std::vector<features::MapRegions
       else
         residuals = currCamera.residuals(geometry::Pose3()*rigPose, vec_pts3D[camID], vec_pts2D[camID]);
 
-      auto sqrErrors = (residuals.cwiseProduct(residuals)).colwise().sum();
+      const Vec sqrErrors = (residuals.cwiseProduct(residuals)).colwise().sum();
 
 //      OPENMVG_LOG_DEBUG("Camera " << camID << " all reprojection errors after BA:");
 //      OPENMVG_LOG_DEBUG(sqrErrors);

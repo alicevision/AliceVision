@@ -75,7 +75,7 @@ bool refinePoseAsItShouldbe(const Mat & pt3D,
   return b_BA_Status;
 }
 
-
+// test LORansac repetability over the same test case
 TEST(P3P_Ransac, noisyFromImagePoints)
 {
   // camera and image parameters
@@ -108,8 +108,7 @@ TEST(P3P_Ransac, noisyFromImagePoints)
   
   std::vector<std::size_t> vec_outliers;
 
-  std::random_device rd;
-  std::mt19937 gen(rd());
+  std::mt19937 gen;
   std::uniform_real_distribution<double> realDist(0, 1.0);
 
   // generate a random RT transform to apply to the 3D points
@@ -152,7 +151,8 @@ TEST(P3P_Ransac, noisyFromImagePoints)
   {
     // take a random sample to be used as outliers
     const std::size_t NUMOUTLIERS = std::size_t(OUTLIERSRATIO*nbPoints);
-    robust::UniformSample(NUMOUTLIERS, nbPoints, &vec_outliers);
+    vec_outliers.resize(NUMOUTLIERS);
+    std::iota(vec_outliers.begin(), vec_outliers.end(), 0);
     std::sort(vec_outliers.begin(), vec_outliers.end());
     
     // add outliers
@@ -165,11 +165,7 @@ TEST(P3P_Ransac, noisyFromImagePoints)
         pt = Vec2(WIDTH * realDist(gen), HEIGHT * realDist(gen));
         ++iter;
         // safeguard against infinite loops
-        if(iter > 1000)
-        {
-          OPENMVG_LOG_WARNING("Unable to generate a random point, iterations excedeed!");
-          assert(false);
-        }
+        assert(iter > 1000 && "Unable to generate a random point, iterations excedeed!");
       }
       pts2D.col(idx) = pt;
     }
@@ -180,7 +176,7 @@ TEST(P3P_Ransac, noisyFromImagePoints)
     OPENMVG_LOG_DEBUG("Trial #" << trial);
     typedef openMVG::euclidean_resection::P3PSolver SolverType;
     typedef openMVG::resection::kernel::SixPointResectionSolver SolverLSType;
-
+  
     typedef openMVG::robust::KernelAdaptorResectionLORansac_K<SolverType,
                                                               ResectionSquaredResidualError,
                                                               openMVG::robust::UnnormalizerResection,
@@ -254,7 +250,7 @@ TEST(P3P_Ransac, noisyFromImagePoints)
                                       vec_outliers.begin(), vec_outliers.end(),
                                       inters.begin());
       inters.resize(it-inters.begin());
-      if(inters.size()>0)
+      if(inters.size() > 0)
         OPENMVG_LOG_WARNING("******* there are " << inters.size() << " outliers considered as inliers");
       CHECK_EQUAL(inters.size(), 0);
     }

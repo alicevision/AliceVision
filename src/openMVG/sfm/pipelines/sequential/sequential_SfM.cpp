@@ -531,11 +531,11 @@ bool SequentialSfMReconstructionEngine::AutomaticInitialPairChoice(Pair & initia
 
   // List Views that support valid intrinsic (view that could be used for Essential matrix computation)
   std::set<IndexT> valid_views;
-  for (Views::const_iterator it = _sfm_data.GetViews().begin();
-    it != _sfm_data.GetViews().end(); ++it)
+  for(const auto& it : _sfm_data.GetViews())
   {
-    const View * v = it->second.get();
-    if (_sfm_data.GetIntrinsics().count(v->id_intrinsic))
+    const View * v = it.second.get();
+    if (_sfm_data.GetIntrinsics().count(v->id_intrinsic) && 
+        _sfm_data.GetIntrinsics().at(v->id_intrinsic)->isValid())
       valid_views.insert(v->id_view);
   }
 
@@ -715,13 +715,13 @@ bool SequentialSfMReconstructionEngine::MakeInitialPair3D(const Pair & current_p
 
   const Pinhole_Intrinsic * cam_I = dynamic_cast<const Pinhole_Intrinsic*>(iterIntrinsic_I->second.get());
   const Pinhole_Intrinsic * cam_J = dynamic_cast<const Pinhole_Intrinsic*>(iterIntrinsic_J->second.get());
-  if (cam_I == nullptr || cam_J == nullptr)
+  if (cam_I == nullptr || cam_J == nullptr || !cam_I->isValid() || !cam_J->isValid() )
   {
     OPENMVG_LOG_WARNING("Can't find initial image pair intrinsics (NULL ptr): " << view_I->id_intrinsic << ", "  << view_J->id_intrinsic);
     return false;
   }
 
-  // b. Get common features between the two view
+  // b. Get common features between the two views
   // use the track to have a more dense match correspondence set
   openMVG::tracks::TracksMap map_tracksCommon;
   const std::set<std::size_t> set_imageIndex= {I, J};

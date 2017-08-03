@@ -120,7 +120,7 @@ public:
   template<class DescriptorT>
   SparseHistogram quantizeToSparse(const std::vector<DescriptorT>& features) const;
 
-  SparseHistogram quantizeToSparse(const void* blindDescriptors) const
+  SparseHistogram quantizeToSparse(const void* blindDescriptors) const override
   {
     const std::vector<Feature>* descriptors = static_cast<const std::vector<Feature>*>(blindDescriptors);
     return quantizeToSparse(*descriptors);
