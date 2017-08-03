@@ -1,11 +1,12 @@
+#!/usr/bin/python
 import argparse
 
 # command line
-parser = argparse.ArgumentParser(description='Sort sensor width camera database')
-parser.add_argument('-i', '--input', metavar='inputSensorDatabase.txt',required=True , type=str, 
-					help='input sensor width camera database')
-parser.add_argument('-o', '--output', metavar='outputSensorDatabase.txt', required=True , type=str,
-                    help='sorted output sensor width camera database')
+parser = argparse.ArgumentParser(description='Sort sensor width camera database by the brand / model name')
+parser.add_argument('-i', '--input', metavar='inputSensorDatabase.txt', required=True, type=str,
+          help='File containing the original database of camera sensor widths')
+parser.add_argument('-o', '--output', metavar='outputSensorDatabase.txt', required=True, type=str,
+          help='File containing the sorted database of camera sensor widths')
 
 args = parser.parse_args()
 
