@@ -121,7 +121,8 @@ if(OPENMVG_HAVE_BOOST)
   )
 
   target_link_libraries(openMVG_main_convertDescFloat2Uchar
-    openMVG_localization openMVG_features
+    openMVG_localization
+    openMVG_features
     ${Boost_LIBRARIES}
   )
 

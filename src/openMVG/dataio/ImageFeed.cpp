@@ -27,11 +27,54 @@ public:
   FeederImpl() : _isInit(false) {}
   
   FeederImpl(const std::string& imagePath, const std::string& calibPath);
+  
+  template<typename T>
+  bool readImage(image::Image<T> &image,
+                   cameras::Pinhole_Intrinsic_Radial_K3 &camIntrinsics,
+                   std::string &imageName,
+                   bool &hasIntrinsics)
+  {
+    if(!_isInit)
+    {
+      OPENMVG_LOG_WARNING("Image feed is not initialized ");
+      return false;
+    }
 
-  bool readImage(image::Image<unsigned char> &imageGray, 
-                     cameras::Pinhole_Intrinsic_Radial_K3 &camIntrinsics,
-                     std::string &imageName,
-                     bool &hasIntrinsics);
+    // dealing with SFM mode
+    if(_sfmMode)
+    {
+      return feedWithJson(image, camIntrinsics, imageName, hasIntrinsics);
+    }
+    else
+    {
+      if(_images.empty())
+        return false;
+      if(_currentImageIndex >= _images.size())
+        return false;
+
+      if(_withCalibration)
+      {
+        // get the calibration
+        camIntrinsics = _camIntrinsics;
+        hasIntrinsics = true;
+      }
+      else
+      {
+        hasIntrinsics = false;
+      }
+      imageName = _images[_currentImageIndex];
+
+      OPENMVG_LOG_DEBUG(imageName);
+
+      if (!image::ReadImage(imageName.c_str(), &image))
+      {
+        OPENMVG_LOG_WARNING("Error while opening image " << imageName);
+        throw std::invalid_argument("Error while opening image " + imageName);
+      }
+      return true;
+    }
+    return true;
+  }
   
   std::size_t nbFrames() const;
   
@@ -43,10 +86,55 @@ public:
   
 private:
   
-  bool feedWithJson(image::Image<unsigned char> &imageGray, 
+  template<typename T>
+  bool feedWithJson(image::Image<T> &image,
                      cameras::Pinhole_Intrinsic_Radial_K3 &camIntrinsics,
                      std::string &imageName,
-                     bool &hasIntrinsics);
+                     bool &hasIntrinsics)
+  {
+    // if there are no more images to process
+    if(_viewIterator == _sfmdata.GetViews().end())
+    {
+      return false;
+    }
+
+    namespace bf = boost::filesystem;
+
+    // get the image
+    const std::string rootPath = _sfmdata.s_root_path;
+    const sfm::View *view = _viewIterator->second.get();
+    imageName = (bf::path(rootPath) / bf::path(view->s_Img_path)).string();
+    if (!image::ReadImage(imageName.c_str(), &image))
+    {
+      OPENMVG_LOG_WARNING("Error while opening image " << imageName);
+      return false;
+    }
+    // get the associated Intrinsics
+    if((view->id_intrinsic == UndefinedIndexT) || (!_sfmdata.GetIntrinsics().count(view->id_intrinsic)))
+    {
+      OPENMVG_LOG_DEBUG("Image "<< imageName << " does not have associated intrinsics");
+      hasIntrinsics = false;
+    }
+    else
+    {
+      const cameras::IntrinsicBase * cam = _sfmdata.GetIntrinsics().at(view->id_intrinsic).get();
+      if(cam->getType() != cameras::EINTRINSIC::PINHOLE_CAMERA_RADIAL3)
+      {
+        OPENMVG_LOG_WARNING("Only Pinhole_Intrinsic_Radial_K3 is supported");
+        hasIntrinsics = false;
+      }
+      else
+      {
+        const cameras::Pinhole_Intrinsic_Radial_K3 * intrinsics = dynamic_cast<const cameras::Pinhole_Intrinsic_Radial_K3*>(cam) ;
+
+        // simply copy values
+        camIntrinsics = *intrinsics;
+        hasIntrinsics = true;
+      }
+    }
+    ++_viewIterator;
+    return true;
+  }
   
 private:
   static const std::vector<std::string> supportedExtensions;
@@ -198,53 +286,6 @@ ImageFeed::FeederImpl::FeederImpl(const std::string& imagePath, const std::strin
   }
 }
 
-
-
-bool ImageFeed::FeederImpl::readImage(image::Image<unsigned char> &imageGray, 
-                   cameras::Pinhole_Intrinsic_Radial_K3 &camIntrinsics,
-                   std::string &imageName,
-                   bool &hasIntrinsics)
-{
-  if(!_isInit)
-  {
-    OPENMVG_LOG_WARNING("Image feed is not initialized ");
-    return false;
-  }
-
-  // dealing with SFM mode
-  if(_sfmMode)
-  {
-    return feedWithJson(imageGray, camIntrinsics, imageName, hasIntrinsics);
-  }
-  else
-  {
-    if(_images.empty())
-      return false;
-    if(_currentImageIndex >= _images.size())
-      return false;
-
-    if(_withCalibration)
-    {
-      // get the calibration
-      camIntrinsics = _camIntrinsics;
-      hasIntrinsics = true;
-    }
-    else
-    {
-      hasIntrinsics = false;
-    }
-    imageName = _images[_currentImageIndex];
-    OPENMVG_LOG_DEBUG(imageName);
-    if (!image::ReadImage(imageName.c_str(), &imageGray))
-    {
-      OPENMVG_LOG_WARNING("Error while opening image " << imageName);
-      throw std::invalid_argument("Error while opening image " + imageName);
-    }
-    return true;
-  }
-  return true;
-}
-
 std::size_t ImageFeed::FeederImpl::nbFrames() const
 {
   if(!_isInit)
@@ -312,58 +353,6 @@ bool ImageFeed::FeederImpl::goToNextFrame()
   return true;
 }
 
-bool ImageFeed::FeederImpl::feedWithJson(image::Image<unsigned char> &imageGray, 
-                   cameras::Pinhole_Intrinsic_Radial_K3 &camIntrinsics,
-                   std::string &imageName,
-                   bool &hasIntrinsics)
-{
-  // if there are no more images to process
-  if(_viewIterator == _sfmdata.GetViews().end())
-  {
-    return false;
-  }
-
-  namespace bf = boost::filesystem;
-
-  // get the image
-  const std::string rootPath = _sfmdata.s_root_path;
-  const sfm::View *view = _viewIterator->second.get();
-  imageName = (bf::path(rootPath) / bf::path(view->s_Img_path)).string();
-  if (!image::ReadImage(imageName.c_str(), &imageGray))
-  {
-    OPENMVG_LOG_WARNING("Error while opening image " << imageName);
-    return false;
-  }
-  // get the associated Intrinsics
-  if((view->id_intrinsic == UndefinedIndexT) || (!_sfmdata.GetIntrinsics().count(view->id_intrinsic)))
-  {
-    OPENMVG_LOG_DEBUG("Image "<< imageName << " does not have associated intrinsics");
-    hasIntrinsics = false;
-  }
-  else
-  {
-    const cameras::IntrinsicBase * cam = _sfmdata.GetIntrinsics().at(view->id_intrinsic).get();
-    if(cam->getType() != cameras::EINTRINSIC::PINHOLE_CAMERA_RADIAL3)
-    {
-      OPENMVG_LOG_WARNING("Only Pinhole_Intrinsic_Radial_K3 is supported");
-      hasIntrinsics = false;
-    }
-    else
-    {
-      const cameras::Pinhole_Intrinsic_Radial_K3 * intrinsics = dynamic_cast<const cameras::Pinhole_Intrinsic_Radial_K3*>(cam) ;
-
-      // simply copy values
-      camIntrinsics = *intrinsics;
-      hasIntrinsics = true;
-    }
-  }
-  ++_viewIterator;
-  return true;
-}
-
-
-
-
 /*******************************************************************************/
 /*                     ImageFeed                                               */
 /*******************************************************************************/
@@ -372,6 +361,14 @@ ImageFeed::ImageFeed() : _imageFeed(new FeederImpl()) { }
 
 ImageFeed::ImageFeed(const std::string& imagePath, const std::string& calibPath)  
     : _imageFeed( new FeederImpl(imagePath, calibPath) ) { }
+
+bool ImageFeed::readImage(image::Image<image::RGBColor> &imageRGB, 
+                     cameras::Pinhole_Intrinsic_Radial_K3 &camIntrinsics,
+                     std::string &mediaPath,
+                     bool &hasIntrinsics)
+{
+  return(_imageFeed->readImage(imageRGB, camIntrinsics, mediaPath, hasIntrinsics));
+}
 
 bool ImageFeed::readImage(image::Image<unsigned char> &imageGray, 
                      cameras::Pinhole_Intrinsic_Radial_K3 &camIntrinsics,

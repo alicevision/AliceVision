@@ -501,6 +501,35 @@ install(TARGETS openMVG_main_evalQuality
   DESTINATION bin/
 )
 
+
+###
+# SfM tools to prepare picture to a future SfM process
+###
+
+# - Export keyframes from video files / image sequence directories
+# -
+if(OPENMVG_HAVE_BOOST AND OPENMVG_HAVE_OIIO)
+
+add_executable(openMVG_main_keyframeSelection main_keyframeSelection.cpp)
+target_link_libraries(openMVG_main_keyframeSelection
+  openMVG_system
+  openMVG_keyframe
+  ${OPENIMAGEIO_LIBRARIES}
+  ${Boost_LIBRARIES}
+)
+
+#installation rules
+set_property(TARGET openMVG_main_keyframeSelection
+  PROPERTY FOLDER OpenMVG/software
+)
+
+install(TARGETS openMVG_main_keyframeSelection
+  DESTINATION bin/
+)
+
+endif()
+
+
 ##
 # Export tutorial with valid path thanks to a configuration file
 ##

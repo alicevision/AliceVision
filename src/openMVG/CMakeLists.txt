@@ -27,8 +27,11 @@ if(OPENMVG_HAVE_BOOST)
     add_subdirectory(calibration)
   endif()
 
-endif()
+  if(OPENMVG_HAVE_OIIO)
+    add_subdirectory(keyframe)
+  endif()
 
+endif()
 
 #Install rules
 install(
