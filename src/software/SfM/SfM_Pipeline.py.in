@@ -42,8 +42,8 @@ if __name__ == '__main__':
 
     parser = argparse.ArgumentParser(description='Launcher for the SfM pipelines', usage= __file__+' --image_dir imageDIR --output_dir outputDir [options]\n\nIf the script is run as .in (cmake template), --binary_dir can be used to point to the directory containing\n openMVG binaries, and --sensorWidthDatabase to point to the camera sensor database (usually the file\nsensor_width_camera_database.txt included in openMVG/src/openMVG/exif)')
     # general parameters
-    parser.add_argument('--image_dir', help='The directory containing the images.')
-    parser.add_argument('--output_dir', help='The directory where the recontruction files are saved')
+    parser.add_argument('--image_dir', required=True, help='The directory containing the images.')
+    parser.add_argument('--output_dir', required=True, help='The directory where the recontruction files are saved')
     parser.add_argument('--binary_dir',  default=OPENMVG_SFM_BIN,
                         help='The directory where openMVG binaries are installed (default: %(default)s)')
     parser.add_argument('--pipeline',  default='incremental', choices=['incremental', 'global'],
@@ -78,7 +78,7 @@ if __name__ == '__main__':
                                 help='The vocabulary tree file (*.tree). If provided, the matching step will first use the vocabulary tree to find matching images.')
     computeMatches.add_argument('--voctreeWeights',
                                 help='The vocabulary tree file (*.weights). If not provided, the weights of the vocabulary tree will be computed on the database built with the provided set.')
-    computeMatches.add_argument('--voctreeMaxDescriptors', default='0',
+    computeMatches.add_argument('--voctreeMaxDescriptors', default='500',
                                 help='Limit the number of descriptors you load per image. Zero means no limit (default: %(default)s).')
     computeMatches.add_argument('--voctreeMaxImageMatches', default='20',
                                 help='The number of matches to retrieve for each image, if 0 it will retrieve all the matches). (default: %(default)s).')
