@@ -97,7 +97,7 @@ if __name__ == '__main__':
                                 help='Sequence matching with an overlap of X images, X=-1 means disabled (default: %(default)s)')
 
     # Reconstruction parameters
-    reconstructionParameters = parser.add_argument_group('Reconstruction step', 'The parameters for the  reconstruction step, some parameters are in common for both reconstruction methods')
+    reconstructionParameters = parser.add_argument_group('Reconstruction step', 'The parameters for the reconstruction step, some parameters are in common for both reconstruction methods')
     reconstructionParameters.add_argument('--inter_file_extension', default='.ply', choices=['.json','.ply','.abc','.xml','.baf'],
                                            help='[incremental] Extension of the intermediate file export (default: %(default)s)')
     reconstructionParameters.add_argument('--initialPairA',
@@ -106,6 +106,10 @@ if __name__ == '__main__':
                                            help='[incremental] Filename of the second image (without path)')
     reconstructionParameters.add_argument('--minInputTrackLength', default='2',
                                            help='[incremental] Minimum track length in input of SfM (default: %(default)s)')
+
+    # Reconstruction parameters
+    mvsParameters = parser.add_argument_group('Optional MVS step', 'The parameters for the multiview stereo reconstruction')
+    mvsParameters.add_argument('--scale', default='2', help='[mvs] The rescaling factor (default: %(default)s)')
 
     args = parser.parse_args()
 
@@ -217,7 +221,7 @@ if __name__ == '__main__':
     if args.cmpmvs_dir:
         # first generate the ini file
         print ("7. Export data into CMPMVS format")
-        command = [os.path.join(binary_dir, "openMVG_main_openMVG2CMPMVS2"),  "-o", os.path.join(reconstruction_dir, "cmpmvs.ini")]
+        command = [os.path.join(binary_dir, "openMVG_main_openMVG2CMPMVS2"),  "-o", reconstruction_dir, "-s", args.scale]
 
         # use the output of computeStructureFromKnownPoses if it exists
         if args.computeStructureFromKnownPoses:
@@ -233,7 +237,7 @@ if __name__ == '__main__':
 
         # call CMPMVS
         print ("8. Multiview stereo with CMPMVS")
-        command = [os.path.join(args.cmpmvs_dir, "CMPMVS"),  "--all", os.path.join(reconstruction_dir, "cmpmvs.ini")]
+        command = [os.path.join(args.cmpmvs_dir, "CMPMVS"),  "--all", os.path.join(reconstruction_dir, "mvs.ini")]
         print " ".join(command)
         if not args.dry:
             pRecons = subprocess.Popen( command )
