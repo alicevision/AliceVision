@@ -215,6 +215,7 @@ bool VoctreeLocalizer::localize(const image::Image<unsigned char> & imageGrey,
     imageDescriber->Allocate(queryRegions);
 
     system::Timer timer;
+    imageDescriber->setCudaPipe(_cudaPipe);
     imageDescriber->Set_configuration_preset(param->_featurePreset);
     imageDescriber->Describe(imageGrey, queryRegions, nullptr);
 
