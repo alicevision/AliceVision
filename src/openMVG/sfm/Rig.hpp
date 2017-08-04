@@ -4,9 +4,10 @@
 #include <openMVG/geometry/pose3.hpp>
 
 #include <cereal/cereal.hpp>
-#include <cereal/types/map.hpp>
+#include <cereal/types/vector.hpp>
 
-#include <map>
+#include <vector>
+#include <cassert>
 
 namespace openMVG {
 namespace sfm {
@@ -20,8 +21,21 @@ enum class ERigSubPoseStatus: std::uint8_t
 
 struct RigSubPose
 {
+  /// status of the sub-pose
   ERigSubPoseStatus status = ERigSubPoseStatus::UNINITIALIZED;
+  /// relative pose of the sub-pose
   geometry::Pose3 pose;
+
+  /**
+   * @brief RigSubPose constructor
+   * @param pose The relative pose of the sub-pose
+   * @param status The status of the sub-pose
+   */
+  RigSubPose(const geometry::Pose3& pose = geometry::Pose3(),
+             ERigSubPoseStatus status = ERigSubPoseStatus::UNINITIALIZED)
+    : pose(pose)
+    , status(status)
+  {}
 
   /**
    * @brief cereal serialize method
@@ -39,18 +53,51 @@ class Rig
 {
 public:
 
-  Rig(unsigned int nbCameras = 0)
+  /**
+   * @brief Rig constructor
+   * @param nbSubPoses The number of sub-poses of the rig
+   */
+  Rig(unsigned int nbSubPoses = 0)
   {
-    for(unsigned int i = 0; i < nbCameras; ++i)
-    {
-      _subPoses[i] = RigSubPose();
-    }
+    _subPoses.resize(nbSubPoses);
   }
 
   /**
-   * @brief Get the subPose for the given subPose index
-   * @param index The subPose index
-   * @return corresponding RigSubPose
+   * @brief Check if the rig has at least one sub-pose initialized
+   * @return true if at least one subpose initialized
+   */
+  bool isInitialized() const
+  {
+    for(const RigSubPose& subPose : _subPoses)
+    {
+      if(subPose.status != ERigSubPoseStatus::UNINITIALIZED)
+        return true;
+    }
+    return false;
+  }
+
+  /**
+   * @brief Get the number of sub-poses in the rig
+   * @return number of sub-poses in the rig
+   */
+  std::size_t getNbSubPoses() const
+  {
+    return _subPoses.size();
+  }
+
+  /**
+   * @brief Get the sub-poses const vector
+   * @return rig sub-poses
+   */
+  const std::vector<RigSubPose>& getSubPoses() const
+  {
+    return _subPoses;
+  }
+
+  /**
+   * @brief Get the sub-pose for the given sub-pose index
+   * @param index The sub-pose index
+   * @return corresponding rig sub-pose
    */
   const RigSubPose& getSubPose(IndexT index) const
   {
@@ -58,13 +105,24 @@ public:
   }
 
   /**
-   * @brief Get the subPose for the given subPose index
-   * @param index The subPose index
-   * @return corresponding RigSubPose
+   * @brief Get the sub-pose for the given sub-pose index
+   * @param index The sub-pose index
+   * @return corresponding rig sub-pose
    */
   RigSubPose& getSubPose(IndexT index)
   {
     return _subPoses.at(index);
+  }
+
+  /**
+   * @brief Set the given sub-pose for the given sub-pose index
+   * @param index The sub-pose index
+   * @param rigSubPose The rig sub-pose
+   */
+  void setSubPose(IndexT index, const RigSubPose& rigSubPose)
+  {
+    assert(_subPoses.size() > index);
+    _subPoses[index] = rigSubPose;
   }
 
   /**
@@ -78,7 +136,9 @@ public:
   }
 
 private:
-  std::map<IndexT, RigSubPose> _subPoses;
+
+  /// rig sub-poses
+  std::vector<RigSubPose> _subPoses;
 };
 
 } // namespace sfm
