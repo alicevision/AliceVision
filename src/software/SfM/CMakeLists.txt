@@ -544,11 +544,6 @@ set(OPENMVG_TUTORIAL_IN_FILE "${CMAKE_CURRENT_LIST_DIR}/tutorial_demo.py.in")
 configure_file(${OPENMVG_TUTORIAL_IN_FILE}
     "${CMAKE_CURRENT_BINARY_DIR}/tutorial_demo.py" @ONLY)
 
-set(OPENMVG_TUTORIAL_IN_FILE "${CMAKE_CURRENT_LIST_DIR}/SfM_GlobalPipeline.py.in")
+set(OPENMVG_TUTORIAL_IN_FILE "${CMAKE_CURRENT_LIST_DIR}/SfM_Pipeline.py.in")
 configure_file(${OPENMVG_TUTORIAL_IN_FILE}
-    "${CMAKE_CURRENT_BINARY_DIR}/SfM_GlobalPipeline.py" @ONLY)
-
-set(OPENMVG_TUTORIAL_IN_FILE "${CMAKE_CURRENT_LIST_DIR}/SfM_SequentialPipeline.py.in")
-configure_file(${OPENMVG_TUTORIAL_IN_FILE}
-    "${CMAKE_CURRENT_BINARY_DIR}/SfM_SequentialPipeline.py" @ONLY)
-
+    "${CMAKE_CURRENT_BINARY_DIR}/SfM_Pipeline.py" @ONLY)
