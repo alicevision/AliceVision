@@ -5,7 +5,6 @@
 #include <third_party/stlplus3/filesystemSimplified/file_system.hpp>
 
 #include <cereal/cereal.hpp>
-#include <cereal/types/utility.hpp>
 
 #include <string>
 #include <utility>
@@ -17,22 +16,9 @@ namespace sfm {
  * @brief A view define an image by a string and unique indexes for
  * the view, the camera intrinsic, the pose and the subpose if the camera is part of a rig
  */
-struct View
+class View
 {
-  /// image path on disk
-  std::string s_Img_path;
-
-  /// id of the view
-  IndexT id_view;
-
-  /// index of intrinsics
-  IndexT id_intrinsic;
-
-  /// either the pose of the rig or the pose of the camera if there's no rig
-  IndexT id_pose;
-
-  /// image size
-  IndexT ui_width, ui_height;
+public:
 
   /// Constructor (use unique index for the view_id)
   View(const std::string & sImgPath = "",
@@ -56,9 +42,10 @@ struct View
     return id_view == other.id_view &&
             id_intrinsic == other.id_intrinsic &&
             id_pose == other.id_pose &&
-            id_rigSubPose == other.id_rigSubPose &&
             ui_width == other.ui_width &&
-            ui_height == other.ui_height;
+            ui_height == other.ui_height &&
+            _rigId == other._rigId &&
+            _subPoseId == other._subPoseId;
   }
 
   /**
@@ -67,7 +54,7 @@ struct View
    */
   bool isPartOfRig() const
   {
-    return id_rigSubPose.first != UndefinedIndexT;
+    return _rigId != UndefinedIndexT;
   }
 
   /**
@@ -76,7 +63,7 @@ struct View
    */
   IndexT getRigId() const
   {
-    return id_rigSubPose.first;
+    return _rigId;
   }
 
   /**
@@ -85,7 +72,7 @@ struct View
    */
   IndexT getSubPoseId() const
   {
-    return id_rigSubPose.second;
+    return _subPoseId;
   }
 
   /**
@@ -95,7 +82,8 @@ struct View
    */
   void setRigSubPose(IndexT rigId, IndexT subPoseId)
   {
-    id_rigSubPose = std::make_pair(rigId, subPoseId);
+    _rigId = rigId;
+    _subPoseId = subPoseId;
   }
 
   /**
@@ -116,7 +104,8 @@ struct View
        cereal::make_nvp("id_view", id_view),
        cereal::make_nvp("id_intrinsic", id_intrinsic),
        cereal::make_nvp("id_pose", id_pose),
-       cereal::make_nvp("id_rig_subpose", id_rigSubPose));
+       cereal::make_nvp("id_rig", _rigId),
+       cereal::make_nvp("id_subpose", _subPoseId));
   }
 
   /**
@@ -140,21 +129,35 @@ struct View
     // try to load from file id_rig_subpose
     try
     {
-      ar(cereal::make_nvp("id_rig_subpose", id_rigSubPose));
+      ar(cereal::make_nvp("id_rig", _rigId),
+         cereal::make_nvp("id_subpose", _subPoseId));
     }
     catch(cereal::Exception const &)
     {
-      id_rigSubPose = std::make_pair(UndefinedIndexT, UndefinedIndexT);
+      _rigId = UndefinedIndexT;
+      _subPoseId = UndefinedIndexT;
     }
 
     s_Img_path = stlplus::create_filespec(localPath, filename);
   }
 
+  /// image path on disk
+  std::string s_Img_path;
+  /// id of the view
+  IndexT id_view;
+  /// index of intrinsics
+  IndexT id_intrinsic;
+  /// either the pose of the rig or the pose of the camera if there's no rig
+  IndexT id_pose;
+  /// image size
+  IndexT ui_width, ui_height;
+
 private:
 
-  /// rig and subpose indexes
-  std::pair<IndexT, IndexT> id_rigSubPose = std::make_pair(UndefinedIndexT, UndefinedIndexT);
-
+  /// corresponding rig Id or undefined
+  IndexT _rigId = UndefinedIndexT;
+  /// corresponding subPose Id or undefined
+  IndexT _subPoseId = UndefinedIndexT;
 };
 
 } // namespace sfm

@@ -14,10 +14,9 @@ namespace sfm {
 /**
  * @brief A view with all the input image metadata
  */
-struct View_Metadata : public View
+class View_Metadata : public View
 {
-  /// map for metadata
-  std::map<std::string, std::string> metadata;
+public:
 
   /// constructor (use unique index for the view_id)
   View_Metadata(const std::string& sImgPath = "",
@@ -51,6 +50,9 @@ struct View_Metadata : public View
     View::load(ar);
     ar(cereal::make_nvp("metadata", metadata));
   }
+
+  /// map for metadata
+  std::map<std::string, std::string> metadata;
 };
 
 } // namespace sfm
