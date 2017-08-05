@@ -117,7 +117,7 @@ if __name__ == '__main__':
     output_dir = args.output_dir
     binary_dir = args.binary_dir
     matches_dir = os.path.join(output_dir, "matches")
-    sfmDataFilename = os.path.join(matches_dir, "/sfm_data.json")
+    sfmDataFilename = os.path.join(matches_dir, "sfm_data.json")
     reconstruction_dir = os.path.join(output_dir, "reconstruction_"+args.pipeline)
     camera_file_params = args.sensorWidthDatabase
 
