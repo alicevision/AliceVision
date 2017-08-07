@@ -134,7 +134,7 @@ bool exportToCMPMVSFormat(
       
       // Export camera pose
       {
-        const Pose3 pose = sfm_data.GetPoseOrDie(view);
+        const Pose3 pose = sfm_data.getPose(*view);
         const Mat34 P = iterIntrinsic->second.get()->get_projective_equivalent(pose);
         std::ostringstream os;
         os << std::setw(5) << std::setfill('0') << map_viewIdToContiguous[view->id_view] << "_P";

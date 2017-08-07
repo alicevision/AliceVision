@@ -89,7 +89,7 @@ int main(int argc, char **argv) {
           continue;
 
         // OpenMVG Camera
-        const openMVG::geometry::Pose3 pose = sfm_data.GetPoseOrDie(view);
+        const openMVG::geometry::Pose3 pose = sfm_data.getPose(*view);
         auto iterIntrinsic = sfm_data.GetIntrinsics().find(view->id_intrinsic);
         openMVG::cameras::Pinhole_Intrinsic *cam = static_cast<openMVG::cameras::Pinhole_Intrinsic*>(iterIntrinsic->second.get());
         openMVG::Mat34 P = cam->get_projective_equivalent(pose);

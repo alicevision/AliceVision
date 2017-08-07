@@ -17,7 +17,7 @@ using namespace openMVG::cameras;
 using namespace openMVG::geometry;
 
 /// Create the appropriate cost functor according the provided input camera intrinsic model
-ceres::CostFunction * IntrinsicsToCostFunction(IntrinsicBase * intrinsic, const Vec2 & observation)
+ceres::CostFunction * createCostFunctionFromIntrinsics(IntrinsicBase * intrinsic, const Vec2 & observation)
 {
   switch(intrinsic->getType())
   {
@@ -39,19 +39,103 @@ ceres::CostFunction * IntrinsicsToCostFunction(IntrinsicBase * intrinsic, const 
     break;
     case PINHOLE_CAMERA_FISHEYE:
       return new ceres::AutoDiffCostFunction<ResidualErrorFunctor_Pinhole_Intrinsic_Fisheye, 2, 7, 6, 3>(
-              new ResidualErrorFunctor_Pinhole_Intrinsic_Fisheye(observation.data()));
+        new ResidualErrorFunctor_Pinhole_Intrinsic_Fisheye(observation.data()));
     case PINHOLE_CAMERA_FISHEYE1:
       return new ceres::AutoDiffCostFunction<ResidualErrorFunctor_Pinhole_Intrinsic_Fisheye1, 2, 4, 6, 3>(
-              new ResidualErrorFunctor_Pinhole_Intrinsic_Fisheye1(observation.data()));
+        new ResidualErrorFunctor_Pinhole_Intrinsic_Fisheye1(observation.data()));
     default:
-      return nullptr;
+      throw std::logic_error("Unrecognized intrinsic type in BA.");
+  }
+}
+
+/// Create the appropriate cost functor according the provided input rig camera intrinsic model
+ceres::CostFunction * createRigCostFunctionFromIntrinsics(IntrinsicBase * intrinsic, const Vec2 & observation)
+{
+  switch(intrinsic->getType())
+  {
+    case PINHOLE_CAMERA:
+      return new ceres::AutoDiffCostFunction<ResidualErrorFunctor_Pinhole_Intrinsic, 2, 3, 6, 6, 3>(
+        new ResidualErrorFunctor_Pinhole_Intrinsic(observation.data()));
+    break;
+    case PINHOLE_CAMERA_RADIAL1:
+      return new ceres::AutoDiffCostFunction<ResidualErrorFunctor_Pinhole_Intrinsic_Radial_K1, 2, 4, 6, 6, 3>(
+        new ResidualErrorFunctor_Pinhole_Intrinsic_Radial_K1(observation.data()));
+    break;
+    case PINHOLE_CAMERA_RADIAL3:
+      return new ceres::AutoDiffCostFunction<ResidualErrorFunctor_Pinhole_Intrinsic_Radial_K3, 2, 6, 6, 6, 3>(
+        new ResidualErrorFunctor_Pinhole_Intrinsic_Radial_K3(observation.data()));
+    break;
+    case PINHOLE_CAMERA_BROWN:
+      return new ceres::AutoDiffCostFunction<ResidualErrorFunctor_Pinhole_Intrinsic_Brown_T2, 2, 8, 6, 6, 3>(
+        new ResidualErrorFunctor_Pinhole_Intrinsic_Brown_T2(observation.data()));
+    break;
+    case PINHOLE_CAMERA_FISHEYE:
+      return new ceres::AutoDiffCostFunction<ResidualErrorFunctor_Pinhole_Intrinsic_Fisheye, 2, 7, 6, 6, 3>(
+        new ResidualErrorFunctor_Pinhole_Intrinsic_Fisheye(observation.data()));
+    case PINHOLE_CAMERA_FISHEYE1:
+      return new ceres::AutoDiffCostFunction<ResidualErrorFunctor_Pinhole_Intrinsic_Fisheye1, 2, 4, 6, 6, 3>(
+        new ResidualErrorFunctor_Pinhole_Intrinsic_Fisheye1(observation.data()));
+    default:
+      throw std::logic_error("Unrecognized intrinsic type in BA.");
   }
 }
 
 
+void addPose(ceres::Problem& problem,
+             BA_Refine refineOptions,
+             const Pose3 & pose,
+             std::vector<double>& out_poseParams)
+{
+  const Mat3 R = pose.rotation();
+  const Vec3 t = pose.translation();
+
+  double angleAxis[3];
+  ceres::RotationMatrixToAngleAxis((const double*)R.data(), angleAxis);
+  out_poseParams.reserve(6); //angleAxis + translation
+  out_poseParams.push_back(angleAxis[0]);
+  out_poseParams.push_back(angleAxis[1]);
+  out_poseParams.push_back(angleAxis[2]);
+  out_poseParams.push_back(t(0));
+  out_poseParams.push_back(t(1));
+  out_poseParams.push_back(t(2));
+
+  double * parameter_block = &out_poseParams[0];
+  problem.AddParameterBlock(parameter_block, 6);
+  // Keep the camera extrinsics constants
+  if (!(refineOptions & BA_REFINE_TRANSLATION) && !(refineOptions & BA_REFINE_ROTATION))
+  {
+    //set the whole parameter block as constant for best performance.
+    problem.SetParameterBlockConstant(parameter_block);
+  }
+  else
+  {
+    // Subset parametrization
+    std::vector<int> vec_constant_extrinsic;
+    // Don't refine rotations (if BA_REFINE_ROTATION is not specified)
+    if(!(refineOptions & BA_REFINE_ROTATION))
+    {
+      vec_constant_extrinsic.push_back(0);
+      vec_constant_extrinsic.push_back(1);
+      vec_constant_extrinsic.push_back(2);
+    }
+    // Don't refine translations (if BA_REFINE_TRANSLATION is not specified)
+    if(!(refineOptions & BA_REFINE_TRANSLATION))
+    {
+      vec_constant_extrinsic.push_back(3);
+      vec_constant_extrinsic.push_back(4);
+      vec_constant_extrinsic.push_back(5);
+    }
+    if (!vec_constant_extrinsic.empty())
+    {
+      ceres::SubsetParameterization *subset_parameterization =
+        new ceres::SubsetParameterization(6, vec_constant_extrinsic);
+      problem.SetParameterization(parameter_block, subset_parameterization);
+    }
+  }
+}
+
 Bundle_Adjustment_Ceres::BA_options::BA_options(const bool bVerbose, bool bmultithreaded)
-  :_bVerbose(bVerbose),
-   _nbThreads(1)
+  :_bVerbose(bVerbose)
 {
   // set number of threads, 1 if openMP is not enabled
   _nbThreads = omp_get_max_threads();
@@ -135,53 +219,29 @@ bool Bundle_Adjustment_Ceres::Adjust(
   for (Poses::const_iterator itPose = sfm_data.poses.begin(); itPose != sfm_data.poses.end(); ++itPose)
   {
     const IndexT indexPose = itPose->first;
+    const Pose3& pose = itPose->second;
 
-    const Pose3 & pose = itPose->second;
-    const Mat3 R = pose.rotation();
-    const Vec3 t = pose.translation();
+    OPENMVG_LOG_DEBUG("[BA] declare pose: " << indexPose);
+    addPose(problem, refineOptions, pose, map_poses[indexPose]);
+  }
 
-    double angleAxis[3];
-    ceres::RotationMatrixToAngleAxis((const double*)R.data(), angleAxis);
-    map_poses[indexPose].reserve(6); //angleAxis + translation
-    map_poses[indexPose].push_back(angleAxis[0]);
-    map_poses[indexPose].push_back(angleAxis[1]);
-    map_poses[indexPose].push_back(angleAxis[2]);
-    map_poses[indexPose].push_back(t(0));
-    map_poses[indexPose].push_back(t(1));
-    map_poses[indexPose].push_back(t(2));
+  // Setup rig sub-poses
+  Hash_Map<IndexT, Hash_Map<IndexT, std::vector<double>>> map_subposes;
+  for(const auto& rigIt : sfm_data.rigs)
+  {
+    const IndexT rigId = rigIt.first;
+    const Rig& rig = rigIt.second;
+    const std::size_t nbSubPoses = rig.getNbSubPoses();
 
-    double * parameter_block = &map_poses[indexPose][0];
-    problem.AddParameterBlock(parameter_block, 6);
-    // Keep the camera extrinsics constants
-    if (!(refineOptions & BA_REFINE_TRANSLATION) && !(refineOptions & BA_REFINE_ROTATION))
+    for(std::size_t subPoseId = 0 ; subPoseId < nbSubPoses; ++subPoseId)
     {
-      //set the whole parameter block as constant for best performance.
-      problem.SetParameterBlockConstant(parameter_block);
-    }
-    else
-    {
-      // Subset parametrization
-      std::vector<int> vec_constant_extrinsic;
-      // Don't refine rotations (if BA_REFINE_ROTATION is not specified)
-      if(!(refineOptions & BA_REFINE_ROTATION))
-      {
-        vec_constant_extrinsic.push_back(0);
-        vec_constant_extrinsic.push_back(1);
-        vec_constant_extrinsic.push_back(2);
-      }
-      // Don't refine translations (if BA_REFINE_TRANSLATION is not specified)
-      if(!(refineOptions & BA_REFINE_TRANSLATION))
-      {
-        vec_constant_extrinsic.push_back(3);
-        vec_constant_extrinsic.push_back(4);
-        vec_constant_extrinsic.push_back(5);
-      }
-      if (!vec_constant_extrinsic.empty())
-      {
-        ceres::SubsetParameterization *subset_parameterization =
-          new ceres::SubsetParameterization(6, vec_constant_extrinsic);
-        problem.SetParameterization(parameter_block, subset_parameterization);
-      }
+      const RigSubPose& rigSubPose = rig.getSubPose(subPoseId);
+
+      if(rigSubPose.status == ERigSubPoseStatus::UNINITIALIZED)
+        continue;
+
+      OPENMVG_LOG_DEBUG("[BA] declare RIG: " << rigId << ", " << subPoseId);
+      addPose(problem, refineOptions, rigSubPose.pose, map_subposes[rigId][subPoseId]);
     }
   }
 
@@ -295,6 +355,7 @@ bool Bundle_Adjustment_Ceres::Adjust(
 
       if(!vec_constant_params.empty())
       {
+        OPENMVG_LOG_DEBUG("[BA] declare intrinsic: " << idIntrinsics);
         ceres::SubsetParameterization *subset_parameterization =
           new ceres::SubsetParameterization(map_intrinsics[idIntrinsics].size(), vec_constant_params);
         problem.SetParameterization(parameter_block, subset_parameterization);
@@ -306,6 +367,7 @@ bool Bundle_Adjustment_Ceres::Adjust(
   //  - set it to NULL if you don't want use a lossFunction.
   ceres::LossFunction * p_LossFunction = new ceres::HuberLoss(Square(4.0));
   // TODO: make the LOSS function and the parameter an option
+
 
   // For all visibility add reprojections errors:
   for(auto& landmarkIt: sfm_data.structure)
@@ -320,18 +382,40 @@ bool Bundle_Adjustment_Ceres::Adjust(
       // Each Residual block takes a point and a camera as input and outputs a 2
       // dimensional residual. Internally, the cost function stores the observed
       // image location and compares the reprojection against the observation.
-      ceres::CostFunction* cost_function =
-        IntrinsicsToCostFunction(sfm_data.intrinsics[view->id_intrinsic].get(), observationIt.second.x);
 
-      if (cost_function)
-        problem.AddResidualBlock(cost_function,
+      if(view->isPartOfRig())
+      {
+        ceres::CostFunction* costFunction = createRigCostFunctionFromIntrinsics(sfm_data.intrinsics[view->id_intrinsic].get(), observationIt.second.x);
+
+        const Rig& rig = sfm_data.rigs.at(view->getRigId());
+        const RigSubPose& rigSubPose = rig.getSubPose(view->getSubPoseId());
+        assert(rigSubPose.status != ERigSubPoseStatus::UNINITIALIZED);
+
+        double* subpose_ptr = &map_subposes.at(view->getRigId()).at(view->getSubPoseId())[0];
+
+        OPENMVG_LOG_DEBUG("[BA] declare landmark: " << landmarkIt.first << ", RIG observation: " << view->getRigId() << ", " << view->getSubPoseId());
+        problem.AddResidualBlock(
+          costFunction,
+          p_LossFunction,
+          &map_intrinsics[view->id_intrinsic][0],
+          &map_poses[view->id_pose][0],
+          subpose_ptr, // subpose of the cameras rig
+          landmarkIt.second.X.data()); //Do we need to copy 3D point to avoid false motion, if failure ?
+      }
+      else
+      {
+        ceres::CostFunction* costFunction = createCostFunctionFromIntrinsics(sfm_data.intrinsics[view->id_intrinsic].get(), observationIt.second.x);
+
+        problem.AddResidualBlock(
+          costFunction,
           p_LossFunction,
           &map_intrinsics[view->id_intrinsic][0],
           &map_poses[view->id_pose][0],
           landmarkIt.second.X.data()); //Do we need to copy 3D point to avoid false motion, if failure ?
+      }
     }
     if (!(refineOptions & BA_REFINE_STRUCTURE))
-      problem.SetParameterBlockConstant( landmarkIt.second.X.data());
+      problem.SetParameterBlockConstant(landmarkIt.second.X.data());
   }
 
   // Configure a BA engine and run it
@@ -388,7 +472,24 @@ bool Bundle_Adjustment_Ceres::Adjust(
       Vec3 t_refined(map_poses[indexPose][3], map_poses[indexPose][4], map_poses[indexPose][5]);
       // Update the pose
       Pose3 & pose = itPose->second;
-      pose = Pose3(R_refined, -R_refined.transpose() * t_refined);
+      pose = poseFromRT(R_refined, t_refined);
+    }
+
+    for(const auto& rigIt : map_subposes)
+    {
+      Rig& rig = sfm_data.rigs.at(rigIt.first);
+
+      for(const auto& subPoseit : rigIt.second)
+      {
+        RigSubPose& subpose = rig.getSubPose(subPoseit.first);
+
+        Mat3 R_refined;
+        ceres::AngleAxisToRotationMatrix(&subPoseit.second[0], R_refined.data());
+        Vec3 t_refined(subPoseit.second[3], subPoseit.second[4], subPoseit.second[5]);
+
+        // Update the pose
+        subpose.pose = poseFromRT(R_refined, t_refined);
+      }
     }
   }
 

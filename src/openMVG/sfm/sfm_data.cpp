@@ -85,6 +85,84 @@ bool SfM_Data::operator==(const SfM_Data& other) const {
 
 }
 
+std::set<IndexT> SfM_Data::getValidViews() const
+{
+  std::set<IndexT> valid_idx;
+  for (Views::const_iterator it = views.begin();
+    it != views.end(); ++it)
+  {
+    const View * v = it->second.get();
+    if (IsPoseAndIntrinsicDefined(v))
+    {
+      valid_idx.insert(v->id_view);
+    }
+  }
+  return valid_idx;
+}
+
+std::set<IndexT> SfM_Data::getReconstructedIntrinsics() const
+{
+  std::set<IndexT> valid_idx;
+  for (Views::const_iterator it = views.begin();
+    it != views.end(); ++it)
+  {
+    const View * v = it->second.get();
+    if (IsPoseAndIntrinsicDefined(v))
+    {
+      valid_idx.insert(v->id_intrinsic);
+    }
+  }
+  return valid_idx;
+}
+
+void SfM_Data::setPose(const View& view, const geometry::Pose3& absolutePose)
+{
+  const bool knownPose = (poses.find(view.id_pose) != poses.end());
+  Pose3& viewPose = poses[view.id_pose];
+
+  // view is not part of a rig
+  if(!view.isPartOfRig())
+  {
+    viewPose = absolutePose;
+    return;
+  }
+
+  // view is part of a rig
+  const Rig& rig = rigs.at(view.getRigId());
+  RigSubPose& subPose = getRigSubPose(view);
+
+  if(!rig.isInitialized())
+  {
+    // rig not initialized
+    subPose.status = ERigSubPoseStatus::ESTIMATED;
+    subPose.pose = Pose3();  // the first sub-pose is set to identity
+    viewPose = absolutePose; // so the pose of the rig is the same than the pose
+    OPENMVG_LOG_TRACE("TOREMOVE: CASE rig not initialized");
+  }
+  else
+  {
+    if(knownPose)
+    {
+      // rig has a Pose (at least one image of the rig is localized), RigSubPose not initialized
+      assert(subPose.status == ERigSubPoseStatus::UNINITIALIZED);
+      subPose.status = ERigSubPoseStatus::ESTIMATED;
+
+      // convert absolute pose to RigSubPose
+      subPose.pose = absolutePose * viewPose.inverse();
+      OPENMVG_LOG_TRACE("TOREMOVE: CASE rig has a Pose, RigSubPose not initialized");
+    }
+    else
+    {
+      // rig has no Pose but RigSubPose is known
+      assert(subPose.status != ERigSubPoseStatus::UNINITIALIZED);
+
+      //convert absolute pose to rig Pose
+      viewPose = subPose.pose.inverse() * absolutePose;
+      OPENMVG_LOG_TRACE("TOREMOVE: CASE rig has no Pose but RigSubPose is known");
+    }
+  }
+}
+
 /// Find the color of the SfM_Data Landmarks/structure
 bool ColorizeTracks( SfM_Data & sfm_data )
 {

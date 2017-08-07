@@ -69,7 +69,7 @@ int main(int argc, char **argv)
         continue;
     
     // Valid view, we can ask a pose & intrinsic data
-    const Pose3 pose = sfm_data.GetPoseOrDie(view);
+    const Pose3 pose = sfm_data.getPose(*view);
     Intrinsics::const_iterator iterIntrinsic = sfm_data.GetIntrinsics().find(view->id_intrinsic);
     const IntrinsicBase * cam = iterIntrinsic->second.get();
     

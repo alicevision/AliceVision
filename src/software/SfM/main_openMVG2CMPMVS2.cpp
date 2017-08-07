@@ -216,7 +216,7 @@ bool exportToCMPMVS2Format(
 
     // Export camera pose
     {
-      const Pose3 pose = sfm_data.GetPoseOrDie(view);
+      const Pose3 pose = sfm_data.getPose(*view);
       Mat34 P = iterIntrinsic->second.get()->get_projective_equivalent(pose);
       std::ofstream file(
         stlplus::create_filespec(stlplus::folder_append_separator(sOutDirectory),

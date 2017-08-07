@@ -91,10 +91,10 @@ void SfM_Data_Structure_Estimation_From_Known_Poses::match(
     // - by considering geometric error and descriptor distance ratio.
 
     const View * viewL = sfm_data.GetViews().at(it->first).get();
-    const Pose3 poseL = sfm_data.GetPoseOrDie(viewL);
+    const Pose3 poseL = sfm_data.getPose(*viewL);
     const Intrinsics::const_iterator iterIntrinsicL = sfm_data.GetIntrinsics().find(viewL->id_intrinsic);
     const View * viewR = sfm_data.GetViews().at(it->second).get();
-    const Pose3 poseR = sfm_data.GetPoseOrDie(viewR);
+    const Pose3 poseR = sfm_data.getPose(*viewR);
     const Intrinsics::const_iterator iterIntrinsicR = sfm_data.GetIntrinsics().find(viewR->id_intrinsic);
 
     if (sfm_data.GetIntrinsics().count(viewL->id_intrinsic) != 0 ||
@@ -213,7 +213,7 @@ void SfM_Data_Structure_Estimation_From_Known_Poses::filter(
               const size_t featIndex = iter->second;
               const View * view = sfm_data.GetViews().at(imaIndex).get();
               const IntrinsicBase * cam = sfm_data.GetIntrinsics().at(view->id_intrinsic).get();
-              const Pose3 pose = sfm_data.GetPoseOrDie(view);
+              const Pose3 pose = sfm_data.getPose(*view);
               const Vec2 pt = regionsPerView.getRegions(imaIndex, subTrack.descType).GetRegionPosition(featIndex);
               trianObj.add(cam->get_projective_equivalent(pose), cam->get_ud_pixel(pt));
             }

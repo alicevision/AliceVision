@@ -90,7 +90,7 @@ int main(int argc, char **argv)
     if (!sfm_data.IsPoseAndIntrinsicDefined(view))
       continue;
 
-    const Pose3 pose = sfm_data.GetPoseOrDie(view);
+    const Pose3 pose = sfm_data.getPose(*view);
     Intrinsics::const_iterator iterIntrinsic = sfm_data.GetIntrinsics().find(view->id_intrinsic);
 
     // We have a valid view with a corresponding camera & pose

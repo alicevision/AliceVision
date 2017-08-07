@@ -17,44 +17,6 @@
 namespace openMVG {
 namespace sfm {
 
-/// List the view indexes that have valid camera intrinsic and pose.
-static std::set<IndexT> Get_Valid_Views
-(
-  const SfM_Data & sfm_data
-)
-{
-  std::set<IndexT> valid_idx;
-  for (Views::const_iterator it = sfm_data.GetViews().begin();
-    it != sfm_data.GetViews().end(); ++it)
-  {
-    const View * v = it->second.get();
-    if (sfm_data.IsPoseAndIntrinsicDefined(v))
-    {
-      valid_idx.insert(v->id_view);
-    }
-  }
-  return valid_idx;
-}
-
-/// List the view indexes that have valid camera intrinsic and pose.
-static std::set<IndexT> Get_Reconstructed_Intrinsics
-(
-  const SfM_Data & sfm_data
-)
-{
-  std::set<IndexT> valid_idx;
-  for (Views::const_iterator it = sfm_data.GetViews().begin();
-    it != sfm_data.GetViews().end(); ++it)
-  {
-    const View * v = it->second.get();
-    if (sfm_data.IsPoseAndIntrinsicDefined(v))
-    {
-      valid_idx.insert(v->id_intrinsic);
-    }
-  }
-  return valid_idx;
-}
-
 /// Filter a list of pair: Keep only the pair that are defined in index list
 template <typename IterablePairs, typename IterableIndex>
 static Pair_Set Pair_filter
@@ -91,7 +53,7 @@ static IndexT RemoveOutliers_PixelResidualError
     while (itObs != observations.end())
     {
       const View * view = sfm_data.views.at(itObs->first).get();
-      const geometry::Pose3 pose = sfm_data.GetPoseOrDie(view);
+      const geometry::Pose3 pose = sfm_data.getPose(*view);
       const cameras::IntrinsicBase * intrinsic = sfm_data.intrinsics.at(view->id_intrinsic).get();
       const Vec2 residual = intrinsic->residual(pose, iterTracks->second.X, itObs->second.x);
       if (residual.norm() > dThresholdPixel)
@@ -128,7 +90,7 @@ static IndexT RemoveOutliers_AngleError
       itObs1 != observations.end(); ++itObs1)
     {
       const View * view1 = sfm_data.views.at(itObs1->first).get();
-      const geometry::Pose3 pose1 = sfm_data.GetPoseOrDie(view1);
+      const geometry::Pose3 pose1 = sfm_data.getPose(*view1);
       const cameras::IntrinsicBase * intrinsic1 = sfm_data.intrinsics.at(view1->id_intrinsic).get();
 
       Observations::const_iterator itObs2 = itObs1;
@@ -136,7 +98,7 @@ static IndexT RemoveOutliers_AngleError
       for (; itObs2 != observations.end(); ++itObs2)
       {
         const View * view2 = sfm_data.views.at(itObs2->first).get();
-        const geometry::Pose3 pose2 = sfm_data.GetPoseOrDie(view2);
+        const geometry::Pose3 pose2 = sfm_data.getPose(*view2);
         const cameras::IntrinsicBase * intrinsic2 = sfm_data.intrinsics.at(view2->id_intrinsic).get();
 
         const double angle = AngleBetweenRay(
@@ -156,13 +118,13 @@ static IndexT RemoveOutliers_AngleError
   return removedTrack_count;
 }
 
-static bool eraseMissingPoses(SfM_Data & sfm_data, const IndexT min_points_per_pose)
+static bool eraseUnstablePoses(SfM_Data & sfm_data, const IndexT min_points_per_pose)
 {
   IndexT removed_elements = 0;
   const Landmarks & landmarks = sfm_data.structure;
 
   // Count the observation poses occurrence
-  Hash_Map<IndexT, IndexT> map_PoseId_Count;
+  Hash_Map<IndexT, IndexT> map_PoseId_Count; // TODO: add subpose
   // Init with 0 count (in order to be able to remove non referenced elements)
   for (Poses::const_iterator itPoses = sfm_data.GetPoses().begin();
     itPoses != sfm_data.GetPoses().end(); ++itPoses)
@@ -197,7 +159,7 @@ static bool eraseMissingPoses(SfM_Data & sfm_data, const IndexT min_points_per_p
     }
   }
   if(removed_elements)
-    OPENMVG_LOG_DEBUG("eraseMissingPoses: " << removed_elements);
+    OPENMVG_LOG_DEBUG("eraseUnstablePoses: " << removed_elements);
   return removed_elements > 0;
 }
 
@@ -247,7 +209,7 @@ static bool eraseUnstablePosesAndObservations(
   do
   {
     bRemovedContent = false;
-    if (eraseMissingPoses(sfm_data, min_points_per_pose))
+    if (eraseUnstablePoses(sfm_data, min_points_per_pose))
     {
       bRemovedContent = eraseObservationsWithMissingPoses(sfm_data, min_points_per_landmark);
       // Erase some observations can make some Poses index disappear so perform the process in a loop

@@ -418,7 +418,7 @@ void AlembicExporter::add(const sfm::SfM_Data &sfmdata, sfm::ESfM_Data flags_par
       if(sfmdata.IsPoseAndIntrinsicDefined(view))
       {
         // OpenMVG Camera
-        pose = sfmdata.GetPoseOrDie(view);
+        pose = sfmdata.getPose(*view);
         cam = sfmdata.GetIntrinsics().at(view->id_intrinsic);
       }
       // else if(!(flags_part & sfm::ESfM_Data::VIEWS))

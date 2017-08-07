@@ -207,7 +207,7 @@ static void draw(void)
 
     // then apply current camera transformation
     const View * view = sfm_data.GetViews().at(vec_cameras[current_cam]).get();
-    const Pose3 pose = sfm_data.GetPoseOrDie(view);
+    const Pose3 pose = sfm_data.getPose(*view);
     const openMVG::Mat4 l2w = l2w_Camera(pose.rotation(), pose.translation());
 
     glPushMatrix();
@@ -235,7 +235,7 @@ static void draw(void)
     for (int i_cam=0; i_cam < vec_cameras.size(); ++i_cam)
     {
       const View * view = sfm_data.GetViews().at(vec_cameras[i_cam]).get();
-      const Pose3 pose = sfm_data.GetPoseOrDie(view);
+      const Pose3 pose = sfm_data.getPose(*view);
       const IntrinsicBase * cam = sfm_data.GetIntrinsics().at(view->id_intrinsic).get();
       if (isPinhole(cam->getType()))
       {

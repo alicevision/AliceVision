@@ -122,7 +122,7 @@ int main(int argc, char **argv)
     }
     pairs = matching::getImagePairs(matches);
     // Keep only Pairs that belong to valid view indexes.
-    const std::set<IndexT> valid_viewIdx = Get_Valid_Views(sfm_data);
+    const std::set<IndexT> valid_viewIdx = sfm_data.getValidViews();
     pairs = Pair_filter(pairs, valid_viewIdx);
   }
 

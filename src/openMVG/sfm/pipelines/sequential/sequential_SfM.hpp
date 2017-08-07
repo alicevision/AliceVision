@@ -164,14 +164,26 @@ private:
     std::vector<size_t>& out_selectedViewIds,
     const std::set<size_t>& remainingViewIds) const;
 
-  /// Add a single Image to the scene and triangulate new possible tracks.
+  /**
+   * @brief Add a single Image to the scene and triangulate new possible tracks.
+   * @param imageIndex
+   * @return false if resection failed
+   */
   bool Resection(const size_t imageIndex);
+
+  /**
+   * @brief  Triangulate new possible 2D tracks
+   * List tracks that share content with this view and add observations and new 3D track if required.
+   * @param previousReconstructedViews
+   * @param newReconstructedViews
+   */
+  void triangulate(const std::set<IndexT>& previousReconstructedViews, const std::set<IndexT>& newReconstructedViews);
 
   /// Bundle adjustment to refine Structure; Motion and Intrinsics
   bool BundleAdjustment();
 
   /// Discard track with too large residual error
-  size_t badTrackRejector(double dPrecision, size_t count = 0);
+  bool badTrackRejector(double dPrecision, size_t count = 0);
 
   #if OPENMVG_IS_DEFINED(OPENMVG_HAVE_BOOST)
   /// Export statistics in a JSON file
