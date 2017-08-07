@@ -256,6 +256,13 @@ public:
                         !_cameraBrand.empty() &&
                         !_cameraModel.empty());
 
+    if(_cameraBrand.empty() || _cameraModel.empty())
+    {
+      _cameraBrand = "Custom";
+      _cameraModel = EINTRINSIC_enumToString(EINTRINSIC::PINHOLE_CAMERA_RADIAL3);
+      _mmFocalLength = 1.2f;
+    }
+
     if(_haveValidMetadata)
       _exifData = exifReader.getExifData();
 
@@ -388,8 +395,7 @@ public:
     if(!_haveValidMetadata)
     {
       OPENMVG_LOG_WARNING("Warning: No metadata in image '" << stlplus::filename_part(_imageAbsPath) << "'." << std::endl
-                          << "Can't compute sensor width." << std::endl);
-      return true;
+                          << "Use default sensor width." << std::endl);
     }
 
     openMVG::exif::sensordb::Datasheet datasheet;
@@ -410,23 +416,16 @@ public:
   {
     if(_pxFocalLength == -1.0) // focal length (px) unset
     {
-      if(_haveValidMetadata)
+      // handle case where focal length (mm) is equal to 0
+      if(_mmFocalLength <= .0f)
       {
-        // handle case where focal length (mm) is equal to 0
-        if(_mmFocalLength <= .0f)
-        {
-          OPENMVG_LOG_WARNING("Warning: image '" << stlplus::filename_part(_imageAbsPath) << "' focal length (in mm) metadata is missing." << std::endl
-                              << "Can't compute focal length (in px)." << std::endl);
-        }
-        else if(_ccdw != -1.0)
-        {
-          // Retrieve the focal from the metadata in mm and convert to pixel.
-          _pxFocalLength = std::max(_metadataImageWidth, _metadataImageHeight) * _mmFocalLength / _ccdw;
-        }
+        OPENMVG_LOG_WARNING("Warning: image '" << stlplus::filename_part(_imageAbsPath) << "' focal length (in mm) metadata is missing." << std::endl
+                            << "Can't compute focal length (in px)." << std::endl);
       }
-      else
+      else if(_ccdw != -1.0)
       {
-        OPENMVG_LOG_WARNING("Warning: No metadata in image '" << stlplus::filename_part(_imageAbsPath) << "'.\nUser needs to provide focal information." << std::endl);
+        // Retrieve the focal from the metadata in mm and convert to pixel.
+        _pxFocalLength = std::max(_metadataImageWidth, _metadataImageHeight) * _mmFocalLength / _ccdw;
       }
     }
 
@@ -435,7 +434,12 @@ public:
     {
       // use standard lens with radial distortion by default
       _intrinsicType = PINHOLE_CAMERA_RADIAL3;
-      if(_isResized)
+
+      if(_cameraBrand == "Custom")
+      {
+        _intrinsicType = EINTRINSIC_stringToEnum(_cameraModel);
+      }
+      else if(_isResized)
       {
         // if the image has been resized, we assume that it has been undistorted
         // and we use a camera without lens distortion.
@@ -443,6 +447,7 @@ public:
       }
       else if(_mmFocalLength > 0.0 && _mmFocalLength < 15)
       {
+
         // if the focal lens is short, the fisheye model should fit better.
         _intrinsicType = PINHOLE_CAMERA_FISHEYE;
       }
@@ -507,7 +512,7 @@ private:
   double _ppy = -1.0;
   double _ccdw = -1.0;
   double _pxFocalLength = -1.0;
-  float _mmFocalLength;
+  float _mmFocalLength = -1.0f;
   bool _haveValidMetadata;
   bool _isResized;
   EINTRINSIC _intrinsicType = PINHOLE_CAMERA_START;
@@ -535,6 +540,7 @@ int main(int argc, char **argv)
 
   bool wantsMetadata = false;
   bool useUid = false;
+  std::string verboseLevel = system::EVerboseLevel_enumToString(system::Logger::getDefaultVerboseLevel());
 
   cmd.add( make_option('i', imageDir, "imageDirectory") );
   cmd.add( make_option('j', jsonFile, "jsonFile") );
@@ -547,6 +553,7 @@ int main(int argc, char **argv)
   cmd.add( make_option('g', userGroupCameraModel, "group_camera_model") );
   cmd.add( make_option('m', wantsMetadata, "storeMetadata") );
   cmd.add( make_option('u', useUid, "use_UID") );
+  cmd.add( make_option('v', verboseLevel, "verboseLevel") );
 
   try
   {
@@ -572,7 +579,14 @@ int main(int argc, char **argv)
       << "\t 1-> (default) view share camera intrinsic parameters based on metadata, if no metadata each view has its own camera intrinsic parameters\n"
       << "\t 2-> view share camera intrinsic parameters based on metadata, if no metadata they are grouped by folder\n"
       << "[-m|--storeMetadata] Store image metadata in the sfm data\n"
-      << "[-u|--use_UID] Generate a UID (unique identifier) for each view. By default, the key is the image index.");
+      << "[-u|--use_UID] Generate a UID (unique identifier) for each view. By default, the key is the image index.\n"
+      << "[-v|--verboseLevel]\n"
+      << "\t fatal\n"
+      << "\t error\n"
+      << "\t warning\n"
+      << "\t info\n"
+      << "\t debug\n"
+      << "\t trace\n");
 
     OPENMVG_CERR(s);
 
@@ -590,10 +604,14 @@ int main(int argc, char **argv)
                 << "\t--intrinsics " << userKMatrix << std::endl
                 << "\t--camera_model " << userCameraModelName << std::endl
                 << "\t--group_camera_model " << userGroupCameraModel << std::endl
+                << "\t--storeMetadata " << wantsMetadata << std::endl
                 << "\t--use_UID " << useUid << std::endl
-                << "\t--storeMetadata " << wantsMetadata);
+                << "\t--verboseLevel " << verboseLevel);
 
+  // set verbose level
+  system::Logger::get()->setLogLevel(verboseLevel);
 
+  // set user camera model
   EINTRINSIC userCameraModel = PINHOLE_CAMERA_START;
 
   if(!userCameraModelName.empty())
@@ -760,6 +778,7 @@ int main(int argc, char **argv)
   Rigs& rigs = sfm_data.rigs;
 
   std::size_t rigId = 0;
+  std::size_t poseId = 0;
   std::size_t intrinsicId = 0;
   std::size_t nbCurrImages = 0;
 
@@ -781,13 +800,13 @@ int main(int argc, char **argv)
 
   OPENMVG_LOG_TRACE("Start image listing :" << std::endl);
 
-  for(std::size_t groupId = 0; groupId < allImagePaths.size(); ++groupId)
+  for(std::size_t groupId = 0; groupId < allImagePaths.size(); ++groupId) // intrinsic group or rig
   {
     const auto& groupImagePaths = allImagePaths.at(groupId);
     const std::size_t nbCameras = groupImagePaths.size();
     const bool isRig = (nbCameras > 1);
 
-    for(std::size_t cameraId = 0; cameraId < nbCameras; ++cameraId)
+    for(std::size_t cameraId = 0; cameraId < nbCameras; ++cameraId) // camera in the group (cameraId always 0 if single image)
     {
       bool isCameraFirstImage = true;
       double cameraWidth = .0;
@@ -799,13 +818,14 @@ int main(int argc, char **argv)
 
       const auto& cameraImagePaths = groupImagePaths.at(cameraId);
       const std::size_t nbImages = cameraImagePaths.size();
+      const bool isGroup = (nbImages > 1);
 
       if(isRig)
       {
         rigs[rigId] = Rig(nbCameras);
       }
 
-      for(std::size_t frameId = 0; frameId < nbImages; ++frameId)
+      for(std::size_t frameId = 0; frameId < nbImages; ++frameId) //view in the group (always 0 if single image)
       {
         const std::string& imagePath = cameraImagePaths.at(frameId);
 
@@ -822,7 +842,6 @@ int main(int argc, char **argv)
         }
 
         IndexT viewId = views.size();
-        IndexT poseId = (isRig) ? frameId : cameraId;
 
         const std::string imageAbsPath = (imageDir.empty()) ? imagePath : stlplus::create_filespec(imageDir, imagePath);
         const std::string imageFolder = stlplus::folder_part(imageAbsPath);
@@ -857,7 +876,7 @@ int main(int argc, char **argv)
           continue;
         }
 
-        if(isCameraFirstImage)
+        if(isCameraFirstImage) // get intrinsic and metadata from first view of the group
         {
           // set camera dimensions
           cameraWidth = width;
@@ -896,11 +915,24 @@ int main(int argc, char **argv)
           // retrieve intrinsic
           std::shared_ptr<IntrinsicBase> intrinsic = imageMetadata.computeIntrinsic();
 
-          // when we have no metadata at all, we create one intrinsic group per folder.
-          // the use case is images extracted from a video without metadata and assumes fixed intrinsics in the video.
-          if(!imageMetadata.haveValidExifMetadata() && (userGroupCameraModel == 2))
+          if(!imageMetadata.haveValidExifMetadata())
           {
-            intrinsic->setSerialNumber(imageFolder);
+
+            if(userGroupCameraModel == 2)
+            {
+              // when we have no metadata at all, we create one intrinsic group per folder.
+              // the use case is images extracted from a video without metadata and assumes fixed intrinsics in the video.
+              intrinsic->setSerialNumber(imageFolder);
+            }
+            else if(isRig)
+            {
+              // when we have no metadata for rig images, we create an intrinsic per camera.
+              intrinsic->setSerialNumber("no_metadata_rig_" + std::to_string(groupId) + "_" + std::to_string(cameraId));
+            }
+            else if(isGroup)
+            {
+              intrinsic->setSerialNumber("no_metadata_intrincic_group_" + std::to_string(groupId));
+            }
           }
 
           // add the intrinsic to the sfm_container
@@ -910,7 +942,7 @@ int main(int argc, char **argv)
         }
         else
         {
-          if((width  != cameraWidth) && (height != cameraHeight))
+          if((width != cameraWidth) && (height != cameraHeight))
           {
             // if not the first image check dimensions
             OPENMVG_LOG_ERROR("Error: rig camera images don't have the same dimensions" << std::endl);
@@ -936,19 +968,24 @@ int main(int argc, char **argv)
         }
 
         // build the view corresponding to the image and add to the sfm_container
+        const std::size_t cameraPoseId = (isRig) ? poseId + frameId : poseId;
         auto& currView = views[viewId];
         if(!wantsMetadata)
         {
-          currView = std::make_shared<View>(imagePath, viewId, cameraIntrincicId, poseId, width, height);
+          currView = std::make_shared<View>(imagePath, viewId, cameraIntrincicId, cameraPoseId, width, height);
         }
         else
         {
-          currView = std::make_shared<View_Metadata>(imagePath, viewId, cameraIntrincicId, poseId, width, height, cameraExifData);
+          currView = std::make_shared<View_Metadata>(imagePath, viewId, cameraIntrincicId, cameraPoseId, width, height, cameraExifData);
         }
 
         if(isRig)
         {
           currView->setRigSubPose(rigId, cameraId);
+        }
+        else
+        {
+          ++poseId; // one pose per view
         }
 
         ++nbCurrImages;
@@ -958,6 +995,7 @@ int main(int argc, char **argv)
     if(isRig)
     {
       ++rigId;
+      poseId += groupImagePaths.front().size(); // one pose for all camera for a given time
     }
   }
 
@@ -974,7 +1012,7 @@ int main(int argc, char **argv)
   if(!unknownSensorImages.empty())
   {
     unknownSensorImages.erase(unique(unknownSensorImages.begin(), unknownSensorImages.end()), unknownSensorImages.end());
-    OPENMVG_LOG_ERROR("Error: Sensor width don't exist in the database for image(s) :");
+    OPENMVG_LOG_ERROR("Error: Sensor width doesn't exist in the database for image(s) :");
 
     for(const auto& unknownSensor : unknownSensorImages)
     {
