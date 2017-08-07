@@ -85,7 +85,7 @@ bool Load_Cereal(
     {
       // Binary file require read all the member
       archive(cereal::make_nvp("extrinsics", Poses()));
-      archive(cereal::make_nvp("tigd", Rigs()));
+      archive(cereal::make_nvp("rigs", Rigs()));
     }
 
     if (b_structure)
