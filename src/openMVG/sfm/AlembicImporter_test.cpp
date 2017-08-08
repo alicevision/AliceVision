@@ -31,7 +31,7 @@ SfM_Data create_test_scene(const IndexT viewsCount, const IndexT pointCount, con
     // Add poses
     const Mat3 r = Mat3::Random();
     const Vec3 c = Vec3::Random();
-    sfm_data.poses[i] = geometry::Pose3(r, c);
+    sfm_data.setAbsolutePose(i, geometry::Pose3(r, c));
     // sfm_data.poses[i] = Pose3();
 
     // Add intrinsics
@@ -163,7 +163,7 @@ TEST(AlembicImporter, importExport) {
     {
         EXPECT_TRUE(Load(sfmJsonToABC, jsonFile3, ESfM_Data(flags)));
         EXPECT_EQ( sfm_data.views.size(), sfmJsonToABC.views.size());
-        EXPECT_EQ( sfm_data.poses.size(), sfmJsonToABC.poses.size());
+        EXPECT_EQ( sfm_data.GetPoses().size(), sfmJsonToABC.GetPoses().size());
         EXPECT_EQ( sfm_data.intrinsics.size(), sfmJsonToABC.intrinsics.size());
         EXPECT_EQ( sfm_data.structure.size(), sfmJsonToABC.structure.size());
         EXPECT_EQ( sfm_data.control_points.size(), sfmJsonToABC.control_points.size());
@@ -183,7 +183,7 @@ TEST(AlembicImporter, importExport) {
     {
         EXPECT_TRUE(Load(sfmJsonToABC2, abcFile3, ESfM_Data(flags)));
         EXPECT_EQ( sfm_data.views.size(), sfmJsonToABC2.views.size());
-        EXPECT_EQ( sfm_data.poses.size(), sfmJsonToABC2.poses.size());
+        EXPECT_EQ( sfm_data.GetPoses().size(), sfmJsonToABC2.GetPoses().size());
         EXPECT_EQ( sfm_data.intrinsics.size(), sfmJsonToABC2.intrinsics.size());
         EXPECT_EQ( sfm_data.structure.size(), sfmJsonToABC2.structure.size());
         EXPECT_EQ( sfm_data.control_points.size(), sfmJsonToABC2.control_points.size());
@@ -203,7 +203,7 @@ TEST(AlembicImporter, importExport) {
     {
         EXPECT_TRUE(Load(sfmJsonToABC3, abcFile4, ESfM_Data(flags)));
         EXPECT_EQ( sfm_data.views.size(), sfmJsonToABC3.views.size());
-        EXPECT_EQ( sfm_data.poses.size(), sfmJsonToABC3.poses.size());
+        EXPECT_EQ( sfm_data.GetPoses().size(), sfmJsonToABC3.GetPoses().size());
         EXPECT_EQ( sfm_data.intrinsics.size(), sfmJsonToABC3.intrinsics.size());
         EXPECT_EQ( sfm_data.structure.size(), sfmJsonToABC3.structure.size());
         EXPECT_EQ( sfm_data.control_points.size(), sfmJsonToABC3.control_points.size());

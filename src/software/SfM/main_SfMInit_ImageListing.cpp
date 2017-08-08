@@ -775,7 +775,7 @@ int main(int argc, char **argv)
 
   Views& views = sfm_data.views;
   Intrinsics& intrinsics = sfm_data.intrinsics;
-  Rigs& rigs = sfm_data.rigs;
+  Rigs& rigs = sfm_data.getRigs();
 
   std::size_t rigId = 0;
   std::size_t poseId = 0;

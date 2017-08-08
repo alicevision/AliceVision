@@ -111,7 +111,7 @@ int main(int argc, char** argv)
   exporter.initAnimatedCamera("camera");
 
   size_t idx = 0;
-  for (auto &p : sfmData.poses)
+  for (auto &p : sfmData.GetPoses())
   {
     const openMVG::geometry::Pose3 rigPose = extrinsics[0].inverse() * p.second;
     exporter.addCameraKeyframe(rigPose, &intrinsics, "", idx, idx);

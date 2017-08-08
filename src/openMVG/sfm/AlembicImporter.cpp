@@ -316,7 +316,7 @@ bool readCamera(IObject iObj, M44d mat, sfm::SfM_Data &sfmdata, sfm::ESfM_Data f
 
   // Add imported data to the SfM_Data container TODO use UID
   sfmdata.views.emplace(id_view, std::make_shared<View>(imagePath, id_view, id_intrinsic, id_view, imgWidth, imgHeight));
-  sfmdata.poses.emplace(id_view, pose);
+  sfmdata.setPose(*sfmdata.views.at(id_view), pose);
   sfmdata.intrinsics.emplace(id_intrinsic, pinholeIntrinsic);
 
   return true;

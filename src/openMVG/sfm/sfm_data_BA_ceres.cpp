@@ -216,7 +216,7 @@ bool Bundle_Adjustment_Ceres::Adjust(
   Hash_Map<IndexT, std::vector<double> > map_poses;
   
   // Setup Poses data & subparametrization
-  for (Poses::const_iterator itPose = sfm_data.poses.begin(); itPose != sfm_data.poses.end(); ++itPose)
+  for (Poses::const_iterator itPose = sfm_data.GetPoses().begin(); itPose != sfm_data.GetPoses().end(); ++itPose)
   {
     const IndexT indexPose = itPose->first;
     const Pose3& pose = itPose->second;
@@ -227,7 +227,7 @@ bool Bundle_Adjustment_Ceres::Adjust(
 
   // Setup rig sub-poses
   Hash_Map<IndexT, Hash_Map<IndexT, std::vector<double>>> map_subposes;
-  for(const auto& rigIt : sfm_data.rigs)
+  for(const auto& rigIt : sfm_data.getRigs())
   {
     const IndexT rigId = rigIt.first;
     const Rig& rig = rigIt.second;
@@ -387,7 +387,7 @@ bool Bundle_Adjustment_Ceres::Adjust(
       {
         ceres::CostFunction* costFunction = createRigCostFunctionFromIntrinsics(sfm_data.intrinsics[view->id_intrinsic].get(), observationIt.second.x);
 
-        const Rig& rig = sfm_data.rigs.at(view->getRigId());
+        const Rig& rig = sfm_data.getRig(*view);
         const RigSubPose& rigSubPose = rig.getSubPose(view->getSubPoseId());
         assert(rigSubPose.status != ERigSubPoseStatus::UNINITIALIZED);
 
@@ -449,7 +449,7 @@ bool Bundle_Adjustment_Ceres::Adjust(
     OPENMVG_LOG_DEBUG(
       "Bundle Adjustment statistics (approximated RMSE):\n"
       " #views: " << sfm_data.views.size() << "\n"
-      " #poses: " << sfm_data.poses.size() << "\n"
+      " #poses: " << sfm_data.GetPoses().size() << "\n"
       " #intrinsics: " << sfm_data.intrinsics.size() << "\n"
       " #tracks: " << sfm_data.structure.size() << "\n"
       " #residuals: " << summary.num_residuals << "\n"
@@ -462,8 +462,8 @@ bool Bundle_Adjustment_Ceres::Adjust(
   // Update camera poses with refined data
   if ((refineOptions & BA_REFINE_ROTATION) || (refineOptions & BA_REFINE_TRANSLATION))
   {
-    for (Poses::iterator itPose = sfm_data.poses.begin();
-      itPose != sfm_data.poses.end(); ++itPose)
+    for (Poses::iterator itPose = sfm_data.GetPoses().begin();
+      itPose != sfm_data.GetPoses().end(); ++itPose)
     {
       const IndexT indexPose = itPose->first;
 
@@ -477,7 +477,7 @@ bool Bundle_Adjustment_Ceres::Adjust(
 
     for(const auto& rigIt : map_subposes)
     {
-      Rig& rig = sfm_data.rigs.at(rigIt.first);
+      Rig& rig = sfm_data.getRigs().at(rigIt.first);
 
       for(const auto& subPoseit : rigIt.second)
       {

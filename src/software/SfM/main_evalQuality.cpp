@@ -79,7 +79,7 @@ int main(int argc, char **argv)
     std::cerr << "The input SfM_Data file \""<< sComputedFile << "\" cannot be read." << std::endl;
     return EXIT_FAILURE;
   }
-  std::cout << sfm_data_gt.poses.size() << " gt cameras have been found" << std::endl;
+  std::cout << sfm_data_gt.GetPoses().size() << " gt cameras have been found" << std::endl;
 
   //-- Load the camera that we have to evaluate
   SfM_Data sfm_data;

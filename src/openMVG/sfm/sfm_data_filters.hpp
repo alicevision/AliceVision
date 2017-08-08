@@ -154,7 +154,7 @@ static bool eraseUnstablePoses(SfM_Data & sfm_data, const IndexT min_points_per_
   {
     if (it->second < min_points_per_pose)
     {
-      sfm_data.poses.erase(it->first);
+      sfm_data.erasePose(it->first);
       ++removed_elements;
     }
   }
@@ -168,7 +168,7 @@ static bool eraseObservationsWithMissingPoses(SfM_Data & sfm_data, const IndexT 
   IndexT removed_elements = 0;
 
   std::set<IndexT> reconstructedPoseIndexes;
-  std::transform(sfm_data.poses.begin(), sfm_data.poses.end(),
+  std::transform(sfm_data.GetPoses().begin(), sfm_data.GetPoses().end(),
     std::inserter(reconstructedPoseIndexes, reconstructedPoseIndexes.begin()), stl::RetrieveKey());
 
   // For each landmark:

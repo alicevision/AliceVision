@@ -580,8 +580,11 @@ void GlobalSfMReconstructionEngine_RelativeMotions::Compute_Relative_Rotations
         tiny_scene.intrinsics.insert(*_sfm_data.GetIntrinsics().find(view_J->id_intrinsic));
 
         // Init poses
-        const Pose3 & Pose_I = tiny_scene.poses[view_I->id_pose] = Pose3(Mat3::Identity(), Vec3::Zero());
-        const Pose3 & Pose_J = tiny_scene.poses[view_J->id_pose] = relativePose_info.relativePose;
+        const Pose3& Pose_I = Pose3(Mat3::Identity(), Vec3::Zero());
+        const Pose3& Pose_J = relativePose_info.relativePose;
+
+        tiny_scene.setPose(*view_I, Pose_I);
+        tiny_scene.setPose(*view_J, Pose_J);
 
         // Init structure
         const Mat34 P1 = cam_I->get_projective_equivalent(Pose_I);
@@ -622,10 +625,14 @@ void GlobalSfMReconstructionEngine_RelativeMotions::Compute_Relative_Rotations
           // os << relative_pose_pair.first << "_" << relative_pose_pair.second << ".ply";
           // Save(tiny_scene, os.str(), ESfM_Data(STRUCTURE | EXTRINSICS));
           //
-          const Mat3 R1 = tiny_scene.poses[view_I->id_pose].rotation();
-          const Mat3 R2 = tiny_scene.poses[view_J->id_pose].rotation();
-          const Vec3 t1 = tiny_scene.poses[view_I->id_pose].translation();
-          const Vec3 t2 = tiny_scene.poses[view_J->id_pose].translation();
+
+          const geometry::Pose3& poseI = tiny_scene.getPose(*view_I);
+          const geometry::Pose3& poseJ = tiny_scene.getPose(*view_J);
+
+          const Mat3 R1 = poseI.rotation();
+          const Mat3 R2 = poseJ.rotation();
+          const Vec3 t1 = poseI.translation();
+          const Vec3 t2 = poseJ.translation();
           // Compute relative motion and save it
           Mat3 Rrel;
           Vec3 trel;

@@ -38,7 +38,7 @@ bool SfM_Data::operator==(const SfM_Data& other) const {
   }
 
   // Poses
-  if((poses != other.poses))
+  if((_poses != other._poses))
     return false;
 
   // Intrinsics
@@ -117,8 +117,8 @@ std::set<IndexT> SfM_Data::getReconstructedIntrinsics() const
 
 void SfM_Data::setPose(const View& view, const geometry::Pose3& absolutePose)
 {
-  const bool knownPose = (poses.find(view.id_pose) != poses.end());
-  Pose3& viewPose = poses[view.id_pose];
+  const bool knownPose = existsPose(view);
+  Pose3& viewPose = _poses[view.id_pose];
 
   // view is not part of a rig
   if(!view.isPartOfRig())
@@ -128,7 +128,7 @@ void SfM_Data::setPose(const View& view, const geometry::Pose3& absolutePose)
   }
 
   // view is part of a rig
-  const Rig& rig = rigs.at(view.getRigId());
+  const Rig& rig = _rigs.at(view.getRigId());
   RigSubPose& subPose = getRigSubPose(view);
 
   if(!rig.isInitialized())

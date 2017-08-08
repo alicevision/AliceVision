@@ -78,8 +78,8 @@ bool Load_Cereal(
 
     if (b_extrinsics)
     {
-      archive(cereal::make_nvp("extrinsics", data.poses));
-      archive(cereal::make_nvp("rigs", data.rigs));
+      archive(cereal::make_nvp("extrinsics", data.GetPoses()));
+      archive(cereal::make_nvp("rigs", data.getRigs()));
     }
     else if (bBinary)
     {
@@ -155,8 +155,8 @@ bool Save_Cereal(
 
     if (b_extrinsics)
     {
-      archive(cereal::make_nvp("extrinsics", data.poses));
-      archive(cereal::make_nvp("rigs", data.rigs));
+      archive(cereal::make_nvp("extrinsics", data.GetPoses()));
+      archive(cereal::make_nvp("rigs", data.getRigs()));
     }
     else
     {

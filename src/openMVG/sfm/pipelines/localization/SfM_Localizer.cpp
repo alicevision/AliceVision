@@ -193,13 +193,18 @@ bool SfM_Localizer::RefinePose
 {
   // Setup a tiny SfM scene with the corresponding 2D-3D data
   SfM_Data sfm_data;
+
   // view
-  sfm_data.views.insert( std::make_pair(0, std::make_shared<View>("",0, 0, 0)));
+  std::shared_ptr<View> view = std::make_shared<View>("", 0, 0, 0);
+  sfm_data.views.insert( std::make_pair(0, view));
+
   // pose
-  sfm_data.poses[0] = pose;
+  sfm_data.setPose(*view, pose);
+
   // intrinsic (the shared_ptr does not take the ownership, will not release the input pointer)
   std::shared_ptr<cameras::IntrinsicBase> localIntrinsics(intrinsics->clone());
   sfm_data.intrinsics[0] = localIntrinsics;
+
   // structure data (2D-3D correspondences)
   for (size_t i = 0; i < matching_data.vec_inliers.size(); ++i)
   {
@@ -221,7 +226,7 @@ bool SfM_Localizer::RefinePose
   if (!b_BA_Status)
     return false;
 
-  pose = sfm_data.poses[0];
+  pose = sfm_data.getPose(*view);
   if(b_refine_intrinsic)
     intrinsics->assign(*localIntrinsics);
   return true;

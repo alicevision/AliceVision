@@ -201,8 +201,8 @@ void SequentialSfMReconstructionEngine::RobustResectionOfImages(
           }
 
           // We cannot localize a view if it is part of an initialized RIG with unknown Rig Pose
-          const bool knownPose = (_sfm_data.poses.find(view.id_pose) != _sfm_data.poses.end());
-          const Rig& rig = _sfm_data.rigs.at(view.getRigId());
+          const bool knownPose = _sfm_data.existsPose(view);
+          const Rig& rig = _sfm_data.getRig(view);
           const RigSubPose& subpose = rig.getSubPose(view.getSubPoseId());
 
           if(rig.isInitialized() &&
@@ -826,23 +826,24 @@ bool SequentialSfMReconstructionEngine::MakeInitialPair3D(const Pair& current_pa
 
   {
     // Refine the defined scene
-    SfM_Data tiny_scene;
-    tiny_scene.rigs = _sfm_data.rigs;
-    tiny_scene.views.insert(*_sfm_data.GetViews().find(viewI->id_view));
-    tiny_scene.views.insert(*_sfm_data.GetViews().find(viewJ->id_view));
-    tiny_scene.intrinsics.insert(*_sfm_data.GetIntrinsics().find(viewI->id_intrinsic));
-    tiny_scene.intrinsics.insert(*_sfm_data.GetIntrinsics().find(viewJ->id_intrinsic));
+    SfM_Data tinyScene;
+    tinyScene.getRigs() = _sfm_data.getRigs();
+    tinyScene.views.insert(*_sfm_data.GetViews().find(viewI->id_view));
+    tinyScene.views.insert(*_sfm_data.GetViews().find(viewJ->id_view));
+    tinyScene.intrinsics.insert(*_sfm_data.GetIntrinsics().find(viewI->id_intrinsic));
+    tinyScene.intrinsics.insert(*_sfm_data.GetIntrinsics().find(viewJ->id_intrinsic));
 
     // Init poses
     const Pose3& initPoseI = Pose3(Mat3::Identity(), Vec3::Zero());
-    tiny_scene.setPose(*viewI, initPoseI);
     const Pose3& initPoseJ = relativePose_info.relativePose;
-    tiny_scene.setPose(*viewJ, initPoseJ);
+
+    tinyScene.setPose(*viewI, initPoseI);
+    tinyScene.setPose(*viewJ, initPoseJ);
 
     // Init structure
     const Mat34 P1 = camI->get_projective_equivalent(initPoseI);
     const Mat34 P2 = camJ->get_projective_equivalent(initPoseJ);
-    Landmarks & landmarks = tiny_scene.structure;
+    Landmarks & landmarks = tinyScene.structure;
 
     for (const auto& trackIt: map_tracksCommon)
     {
@@ -867,24 +868,29 @@ bool SequentialSfMReconstructionEngine::MakeInitialPair3D(const Pair& current_pa
       landmark.X = X;
     }
 
-    Save(tiny_scene, stlplus::create_filespec(_sOutDirectory, "initialPair", _sfmdataInterFileExtension), _sfmdataInterFilter);
+    Save(tinyScene, stlplus::create_filespec(_sOutDirectory, "initialPair", _sfmdataInterFileExtension), _sfmdataInterFilter);
 
     // - refine only Structure and Rotations & translations (keep intrinsic constant)
     Bundle_Adjustment_Ceres::BA_options options(true);
     options.setDenseBA();
     Bundle_Adjustment_Ceres bundle_adjustment_obj(options);
-    if (!bundle_adjustment_obj.Adjust(tiny_scene, BA_REFINE_ROTATION | BA_REFINE_TRANSLATION | BA_REFINE_STRUCTURE))
+    if (!bundle_adjustment_obj.Adjust(tinyScene, BA_REFINE_ROTATION | BA_REFINE_TRANSLATION | BA_REFINE_STRUCTURE))
     {
       OPENMVG_LOG_WARNING("BA of initial pair " << current_pair.first << ", " << current_pair.second << " failed.");
       return false;
     }
 
-    Save(tiny_scene, stlplus::create_filespec(_sOutDirectory, "initialPair_afterBA", _sfmdataInterFileExtension), _sfmdataInterFilter);
+    Save(tinyScene, stlplus::create_filespec(_sOutDirectory, "initialPair_afterBA", _sfmdataInterFileExtension), _sfmdataInterFilter);
 
     // Save computed data
-    _sfm_data.rigs = tiny_scene.rigs;
-    const Pose3 poseI = _sfm_data.poses[viewI->id_pose] = tiny_scene.poses[viewI->id_pose]; //TODO : use setPose ?
-    const Pose3 poseJ = _sfm_data.poses[viewJ->id_pose] = tiny_scene.poses[viewJ->id_pose];
+    _sfm_data.getRigs() = tinyScene.getRigs();
+
+    const Pose3 poseI = tinyScene.getPose(*viewI);
+    const Pose3 poseJ = tinyScene.getPose(*viewJ);
+
+    _sfm_data.setPose(*viewI, poseI);
+    _sfm_data.setPose(*viewJ, poseJ);
+
     _map_ACThreshold.insert(std::make_pair(I, relativePose_info.found_residual_precision));
     _map_ACThreshold.insert(std::make_pair(J, relativePose_info.found_residual_precision));
     _set_remainingViewId.erase(viewI->id_view);
@@ -893,8 +899,8 @@ bool SequentialSfMReconstructionEngine::MakeInitialPair3D(const Pair& current_pa
     static const double minAngle = 3.0;
     
     // List inliers and save them
-    for (Landmarks::const_iterator iter = tiny_scene.GetLandmarks().begin();
-      iter != tiny_scene.GetLandmarks().end(); ++iter)
+    for (Landmarks::const_iterator iter = tinyScene.GetLandmarks().begin();
+      iter != tinyScene.GetLandmarks().end(); ++iter)
     {
       const IndexT trackId = iter->first;
       const Landmark & landmark = iter->second;
@@ -1134,8 +1140,8 @@ bool SequentialSfMReconstructionEngine::FindConnectedViews(
         }
 
         // We cannot localize a view if it is part of an initialized RIG with unknown Rig Pose
-        const bool knownPose = (_sfm_data.poses.find(view.id_pose) != _sfm_data.poses.end());
-        const Rig& rig = _sfm_data.rigs.at(view.getRigId());
+        const bool knownPose = _sfm_data.existsPose(view);
+        const Rig& rig = _sfm_data.getRig(view);
         const RigSubPose& subpose = rig.getSubPose(view.getSubPoseId());
 
         if(rig.isInitialized() &&

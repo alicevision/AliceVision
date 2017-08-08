@@ -45,7 +45,7 @@ TEST(SEQUENTIAL_SFM, Known_Intrinsics) {
 
   // Remove poses and structure
   SfM_Data sfm_data_2 = sfm_data;
-  sfm_data_2.poses.clear();
+  sfm_data_2.GetPoses().clear();
   sfm_data_2.structure.clear();
 
   SequentialSfMReconstructionEngine sfmEngine(
@@ -95,7 +95,7 @@ TEST(SEQUENTIAL_SFM, Partially_Known_Intrinsics) {
 
   // Remove poses and structure
   SfM_Data sfm_data_2 = sfm_data;
-  sfm_data_2.poses.clear();
+  sfm_data_2.GetPoses().clear();
   sfm_data_2.structure.clear();
   // Only the first two views will have valid intrinsics
   // Remaining one will have undefined intrinsics

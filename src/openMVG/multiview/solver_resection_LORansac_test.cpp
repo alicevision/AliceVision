@@ -46,7 +46,7 @@ bool refinePoseAsItShouldbe(const Mat & pt3D,
   // view
   sfm_data.views.insert(std::make_pair(0, std::make_shared<View>("", 0, 0, 0)));
   // pose
-  sfm_data.poses[0] = pose;
+  sfm_data.setAbsolutePose(0, pose);
   // intrinsic (the shared_ptr does not take the ownership, will not release the input pointer)
   sfm_data.intrinsics[0] = std::shared_ptr<cameras::IntrinsicBase>(intrinsics, [](cameras::IntrinsicBase*)
   {
@@ -70,7 +70,7 @@ bool refinePoseAsItShouldbe(const Mat & pt3D,
   const bool b_BA_Status = bundle_adjustment_obj.Adjust(sfm_data, refineOptions);
   if(b_BA_Status)
   {
-    pose = sfm_data.poses[0];
+    sfm_data.setAbsolutePose(0, pose);
   }
   return b_BA_Status;
 }

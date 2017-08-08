@@ -581,7 +581,7 @@ bool VoctreeLocalizer::localizeFirstBestResult(const features::MapRegionsPerDesc
     
     {
       // just temporary code to evaluate the estimated pose @todo remove it
-      const geometry::Pose3 &referencePose = _sfm_data.poses[matchedViewId];
+      const geometry::Pose3 &referencePose = _sfm_data.getPose(*_sfm_data.views.at(matchedViewId));
       OPENMVG_LOG_DEBUG("R refined\n" << pose.rotation());
       OPENMVG_LOG_DEBUG("t refined\n" << pose.translation());
       OPENMVG_LOG_DEBUG("K refined\n" << queryIntrinsics.K());
