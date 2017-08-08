@@ -32,7 +32,6 @@ endfunction()
 option(OPENMVG_BUILD_SHARED "Build OpenMVG shared libs" OFF)
 option(OPENMVG_BUILD_TESTS "Build OpenMVG tests" OFF)
 option(OPENMVG_BUILD_EXAMPLES "Build OpenMVG samples applications." ON)
-option(OPENMVG_BUILD_OPENGL_EXAMPLES "Build OpenMVG openGL examples" OFF)
 option(OPENMVG_BUILD_COVERAGE "Enable code coverage generation (gcc only)" OFF)
 
 trilean_option(OPENMVG_BUILD_DOC "Build OpenMVG documentation" AUTO)
@@ -211,18 +210,6 @@ set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 # ==============================================================================
 # SUBMODULE CONFIGURATION
 # ==============================================================================
-#- glfw
-# ==============================================================================
-if(OPENMVG_BUILD_OPENGL_EXAMPLES)
-  set(GLFW_BUILD_EXAMPLES OFF CACHE BOOL "Do not build the GLFW example programs")
-  set(GLFW_BUILD_TESTS    OFF CACHE BOOL "Do not build the GLFW tests programs")
-  set(GLFW_BUILD_DOCS     OFF CACHE BOOL "Do not build the GLFW documentation")
-  set(GLFW_INSTALL        OFF CACHE BOOL "Do not generate the GLFW installation target")
-  add_subdirectory(dependencies/glfw)
-  include_directories(SYSTEM dependencies/glfw/include)
-  set_property(TARGET glfw PROPERTY FOLDER OpenMVG/3rdParty/glfw)
-endif()
-
 #- Mosek (linear programming interface)
 #===============================================================================
 set(OPENMVG_HAVE_MOSEK 0)
@@ -727,7 +714,6 @@ message("** OpenMVG version: " ${OPENMVG_VERSION})
 message("** Build Shared libs: " ${OPENMVG_BUILD_SHARED})
 message("** Build OpenMVG tests: " ${OPENMVG_BUILD_TESTS})
 message("** Build OpenMVG samples applications: " ${OPENMVG_BUILD_EXAMPLES})
-message("** Build OpenMVG openGL examples: " ${OPENMVG_BUILD_OPENGL_EXAMPLES})
 message("** Build OpenMVG documentation: " ${OPENMVG_HAVE_DOC})
 message("** Build the voctree and localization module: " ${OPENMVG_HAVE_BOOST})
 message("** Build the keyframeSelection module: " ${OPENMVG_HAVE_OIIO})
