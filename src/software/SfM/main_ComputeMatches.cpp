@@ -112,6 +112,7 @@ int main(int argc, char **argv)
   size_t numMatchesToKeep = 0;
   bool useGridSort = false;
   bool exportDebugFiles = false;
+  std::string fileExtension = "bin";
 
   //required
   cmd.add( make_option('i', sfmDataFilename, "input_file") );
@@ -134,6 +135,7 @@ int main(int argc, char **argv)
   cmd.add( make_option('u', numMatchesToKeep, "max_matches"));
   cmd.add( make_option('y', useGridSort, "use_grid_sort"));
   cmd.add( make_option('e', exportDebugFiles, "export_debug_files"));
+  cmd.add( make_option('t', fileExtension, "fileExtension"));
 
   try
   {
@@ -207,7 +209,8 @@ int main(int argc, char **argv)
       << "[-u|--max_matches]\n"
       << "[-y|--use_grid_sort]\n"
       << "  Use matching grid sort\n"
-      << "[-e|--export_debug_files] Export debug files (svg, dot)"
+      << "[-e|--export_debug_files] Export debug files (svg, dot)\n"
+      << "[-t|--fileExtension] File extension to store matches: bin (default), txt\n"
       << std::endl;
 
     std::cerr << s << std::endl;
@@ -407,7 +410,7 @@ int main(int argc, char **argv)
   //-- Export putative matches
   //---------------------------------------
   if(savePutativeMatches)
-    Save(mapPutativesMatches, matchesDirectory, "putative", "txt", matchFilePerImage);
+    Save(mapPutativesMatches, matchesDirectory, "putative", fileExtension, matchFilePerImage);
 
   std::cout << "Task (Regions Matching) done in (s): " << timer.elapsed() << std::endl;
 
@@ -570,7 +573,7 @@ int main(int argc, char **argv)
   //-- Export geometric filtered matches
   //---------------------------------------
   std::cout << "Save geometric matches." << std::endl;
-  Save(finalMatches, matchesDirectory, geometricMode, "bin", matchFilePerImage);
+  Save(finalMatches, matchesDirectory, geometricMode, fileExtension, matchFilePerImage);
 
   std::cout << "Task done in (s): " << timer.elapsed() << std::endl;
 
