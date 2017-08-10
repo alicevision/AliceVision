@@ -197,13 +197,12 @@ bool readPointCloud(IObject iObj, M44d mat, sfm::SfM_Data &sfmdata, sfm::ESfM_Da
   return true;
 }
 
-bool readCamera(IObject iObj, M44d mat, sfm::SfM_Data &sfmdata, sfm::ESfM_Data flags_part, const index_t sampleFrame = 0)
+bool readCamera(const ICamera& camera, const M44d& mat, sfm::SfM_Data &sfmData, sfm::ESfM_Data flags_part, const index_t sampleFrame = 0)
 {
   using namespace openMVG::geometry;
   using namespace openMVG::cameras;
   using namespace openMVG::sfm;
 
-  ICamera camera(iObj, kWrapExisting);
   ICameraSchema cs = camera.getSchema();
   CameraSample camSample;
   if(sampleFrame == 0)
@@ -217,9 +216,12 @@ bool readCamera(IObject iObj, M44d mat, sfm::SfM_Data &sfmdata, sfm::ESfM_Data f
   std::vector<unsigned int> sensorSize_pix = {2048, 2048};
   std::string mvg_intrinsicType = EINTRINSIC_enumToString(PINHOLE_CAMERA);
   std::vector<double> mvg_intrinsicParams;
-  IndexT id_view = sfmdata.GetViews().size();
-  IndexT id_pose = sfmdata.GetViews().size();
-  IndexT id_intrinsic = sfmdata.GetIntrinsics().size();
+  IndexT viewId = sfmData.GetViews().size();
+  IndexT poseId = sfmData.GetViews().size();
+  IndexT intrinsicId = sfmData.GetIntrinsics().size();
+  IndexT rigId = UndefinedIndexT;
+  IndexT subPoseId = UndefinedIndexT;
+
   if(userProps)
   {
     if(const Alembic::Abc::PropertyHeader *propHeader = userProps.getPropertyHeader("mvg_imagePath"))
@@ -250,53 +252,72 @@ bool readCamera(IObject iObj, M44d mat, sfm::SfM_Data &sfmdata, sfm::ESfM_Data f
     if(const Alembic::Abc::PropertyHeader *propHeader = userProps.getPropertyHeader("mvg_viewId"))
     {
       try {
-        id_view = getAbcProp<Alembic::Abc::IUInt32Property>(userProps, *propHeader, "mvg_viewId", sampleFrame);
+        viewId = getAbcProp<Alembic::Abc::IUInt32Property>(userProps, *propHeader, "mvg_viewId", sampleFrame);
       } catch(Alembic::Util::Exception&)
       {
-        id_view = getAbcProp<Alembic::Abc::IInt32Property>(userProps, *propHeader, "mvg_viewId", sampleFrame);
+        viewId = getAbcProp<Alembic::Abc::IInt32Property>(userProps, *propHeader, "mvg_viewId", sampleFrame);
       }
     }
     if(const Alembic::Abc::PropertyHeader *propHeader = userProps.getPropertyHeader("mvg_poseId"))
     {
       try {
-        id_pose = getAbcProp<Alembic::Abc::IUInt32Property>(userProps, *propHeader, "mvg_poseId", sampleFrame);
+        poseId = getAbcProp<Alembic::Abc::IUInt32Property>(userProps, *propHeader, "mvg_poseId", sampleFrame);
       } catch(Alembic::Util::Exception&)
       {
-        id_pose = getAbcProp<Alembic::Abc::IInt32Property>(userProps, *propHeader, "mvg_poseId", sampleFrame);
+        poseId = getAbcProp<Alembic::Abc::IInt32Property>(userProps, *propHeader, "mvg_poseId", sampleFrame);
       }
     }
     if(const Alembic::Abc::PropertyHeader *propHeader = userProps.getPropertyHeader("mvg_intrinsicId"))
     {
       try {
-        id_intrinsic = getAbcProp<Alembic::Abc::IUInt32Property>(userProps, *propHeader, "mvg_intrinsicId", sampleFrame);
+        intrinsicId = getAbcProp<Alembic::Abc::IUInt32Property>(userProps, *propHeader, "mvg_intrinsicId", sampleFrame);
       } catch(Alembic::Util::Exception&)
       {
-        id_intrinsic = getAbcProp<Alembic::Abc::IInt32Property>(userProps, *propHeader, "mvg_intrinsicId", sampleFrame);
+        intrinsicId = getAbcProp<Alembic::Abc::IInt32Property>(userProps, *propHeader, "mvg_intrinsicId", sampleFrame);
+      }
+    }
+    if(const Alembic::Abc::PropertyHeader *propHeader = userProps.getPropertyHeader("mvg_rigId"))
+    {
+      try {
+        rigId = getAbcProp<Alembic::Abc::IUInt32Property>(userProps, *propHeader, "mvg_rigId", sampleFrame);
+      } catch(Alembic::Util::Exception&)
+      {
+        rigId = getAbcProp<Alembic::Abc::IInt32Property>(userProps, *propHeader, "mvg_rigId", sampleFrame);
+      }
+    }
+    if(const Alembic::Abc::PropertyHeader *propHeader = userProps.getPropertyHeader("mvg_subPoseId"))
+    {
+      try {
+        subPoseId = getAbcProp<Alembic::Abc::IUInt32Property>(userProps, *propHeader, "mvg_subPoseId", sampleFrame);
+      } catch(Alembic::Util::Exception&)
+      {
+        subPoseId = getAbcProp<Alembic::Abc::IInt32Property>(userProps, *propHeader, "mvg_subPoseId", sampleFrame);
       }
     }
   }
 
   // OpenMVG Camera
-  Mat3 cam_r;
-  cam_r(0,0) = mat[0][0];
-  cam_r(0,1) = mat[0][1];
-  cam_r(0,2) = mat[0][2];
-  cam_r(1,0) = mat[1][0];
-  cam_r(1,1) = mat[1][1];
-  cam_r(1,2) = mat[1][2];
-  cam_r(2,0) = mat[2][0];
-  cam_r(2,1) = mat[2][1];
-  cam_r(2,2) = mat[2][2];
-  Vec3 cam_t;
-  cam_t(0) = mat[3][0];
-  cam_t(1) = mat[3][1];
-  cam_t(2) = mat[3][2];
+  Mat3 camR;
+  camR(0,0) = mat[0][0];
+  camR(0,1) = mat[0][1];
+  camR(0,2) = mat[0][2];
+  camR(1,0) = mat[1][0];
+  camR(1,1) = mat[1][1];
+  camR(1,2) = mat[1][2];
+  camR(2,0) = mat[2][0];
+  camR(2,1) = mat[2][1];
+  camR(2,2) = mat[2][2];
+
+  Vec3 camT;
+  camT(0) = mat[3][0];
+  camT(1) = mat[3][1];
+  camT(2) = mat[3][2];
 
   // Correct camera orientation from alembic
   const Mat3 scale = Vec3(1,-1,-1).asDiagonal();
-  cam_r = scale*cam_r;
+  camR = scale * camR;
 
-  Pose3 pose(cam_r, cam_t);
+  Pose3 pose(camR, camT);
 
   // Get known values from alembic
   const float haperture_cm = camSample.getHorizontalAperture();
@@ -310,18 +331,147 @@ bool readCamera(IObject iObj, M44d mat, sfm::SfM_Data &sfmdata, sfm::ESfM_Data f
 
   // Create intrinsic parameters object
   std::shared_ptr<Pinhole_Intrinsic> pinholeIntrinsic = createPinholeIntrinsic(EINTRINSIC_stringToEnum(mvg_intrinsicType));
+
   pinholeIntrinsic->setWidth(imgWidth);
   pinholeIntrinsic->setHeight(imgHeight);
   pinholeIntrinsic->updateFromParams(mvg_intrinsicParams);
 
   // Add imported data to the SfM_Data container TODO use UID
-  sfmdata.views.emplace(id_view, std::make_shared<View>(imagePath, id_view, id_intrinsic, id_view, imgWidth, imgHeight));
-  sfmdata.setPose(*sfmdata.views.at(id_view), pose);
-  sfmdata.intrinsics.emplace(id_intrinsic, pinholeIntrinsic);
+  std::shared_ptr<View> view = std::make_shared<View>(imagePath,
+                                                      viewId,
+                                                      intrinsicId,
+                                                      poseId,
+                                                      imgWidth,
+                                                      imgHeight,
+                                                      rigId,
+                                                      subPoseId);
+
+  sfmData.views[viewId] = view;
+
+  if(view->isPartOfRig())
+  {
+    Rig& rig = sfmData.getRigs().at(view->getRigId());
+    RigSubPose& subPose = rig.getSubPose(view->getSubPoseId());
+    if(subPose.status == ERigSubPoseStatus::UNINITIALIZED)
+    {
+      subPose.status = ERigSubPoseStatus::ESTIMATED;
+      subPose.pose = pose;
+    }
+
+  }
+  else
+  {
+    sfmData.setPose(*view, pose);
+  }
+
+  sfmData.intrinsics[intrinsicId] = pinholeIntrinsic;
 
   return true;
 }
 
+bool readXform(IXform& xform, M44d& mat, sfm::SfM_Data& sfmData, sfm::ESfM_Data flags_part)
+{
+  using namespace openMVG::geometry;
+  using namespace openMVG::cameras;
+  using namespace openMVG::sfm;
+
+  IXformSchema schema = xform.getSchema();
+  XformSample xsample;
+
+  schema.get(xsample);
+
+  // If we have an animated camera we handle it with the xform here
+  if(xform.getSchema().getNumSamples() != 1)
+  {
+    OPENMVG_LOG_DEBUG(xform.getSchema().getNumSamples() << " samples found in this animated xform.");
+    for(index_t frame = 0; frame < xform.getSchema().getNumSamples(); ++frame)
+    {
+      xform.getSchema().get(xsample, ISampleSelector(frame));
+      readCamera(ICamera(xform.getChild(0), kWrapExisting) , mat * xsample.getMatrix(), sfmData, flags_part, frame);
+    }
+    return true;
+  }
+
+  mat *= xsample.getMatrix();
+
+  if( !(flags_part & sfm::ESfM_Data::EXTRINSICS) )
+    return true;
+
+  ICompoundProperty userProps = getAbcUserProperties(schema);
+
+  // Check if it is a rig node
+  IndexT rigId = UndefinedIndexT;
+  IndexT poseId = UndefinedIndexT;
+  std::size_t nbSubPoses = 0;
+
+  if(userProps)
+  {
+    if(const Alembic::Abc::PropertyHeader *propHeader = userProps.getPropertyHeader("mvg_rigId"))
+    {
+      try
+      {
+        rigId = getAbcProp<Alembic::Abc::IUInt32Property>(userProps, *propHeader, "mvg_rigId", 0);
+      }
+      catch(Alembic::Util::Exception&)
+      {
+        rigId = getAbcProp<Alembic::Abc::IInt32Property>(userProps, *propHeader, "mvg_rigId", 0);
+      }
+    }
+
+    if(const Alembic::Abc::PropertyHeader *propHeader = userProps.getPropertyHeader("mvg_poseId"))
+    {
+      try
+      {
+        poseId = getAbcProp<Alembic::Abc::IUInt32Property>(userProps, *propHeader, "mvg_poseId", 0);
+      }
+      catch(Alembic::Util::Exception&)
+      {
+        poseId = getAbcProp<Alembic::Abc::IInt32Property>(userProps, *propHeader, "mvg_poseId", 0);
+      }
+    }
+
+    if(const Alembic::Abc::PropertyHeader *propHeader = userProps.getPropertyHeader("mvg_nbSubPoses"))
+    {
+      try
+      {
+        nbSubPoses = getAbcProp<Alembic::Abc::IUInt16Property>(userProps, *propHeader, "mvg_nbSubPoses", 0);
+      }
+      catch(Alembic::Util::Exception&)
+      {
+        nbSubPoses = getAbcProp<Alembic::Abc::IInt16Property>(userProps, *propHeader, "mvg_nbSubPoses", 0);
+      }
+    }
+  }
+
+  if((rigId == UndefinedIndexT) && (poseId == UndefinedIndexT))
+  {
+    return true; //not a rig
+  }
+
+  Mat3 matR;
+  matR(0,0) = mat[0][0];
+  matR(0,1) = mat[0][1];
+  matR(0,2) = mat[0][2];
+  matR(1,0) = mat[1][0];
+  matR(1,1) = mat[1][1];
+  matR(1,2) = mat[1][2];
+  matR(2,0) = mat[2][0];
+  matR(2,1) = mat[2][1];
+  matR(2,2) = mat[2][2];
+
+  Vec3 matT;
+  matT(0) = mat[3][0];
+  matT(1) = mat[3][1];
+  matT(2) = mat[3][2];
+
+  Pose3 pose(matR, matT);
+
+  sfmData.GetPoses().emplace(poseId, pose);
+  sfmData.getRigs().emplace(rigId, Rig(nbSubPoses));
+
+  mat.makeIdentity();
+  return true;
+}
 
 // Top down read of 3d objects
 void visitObject(IObject iObj, M44d mat, sfm::SfM_Data &sfmdata, sfm::ESfM_Data flags_part)
@@ -336,22 +486,7 @@ void visitObject(IObject iObj, M44d mat, sfm::SfM_Data &sfmdata, sfm::ESfM_Data 
   else if(IXform::matches(md))
   {
     IXform xform(iObj, kWrapExisting);
-    XformSample xs;
-    if(xform.getSchema().getNumSamples() == 1)
-    {
-      xform.getSchema().get(xs);
-      mat *= xs.getMatrix();
-    }
-    // If we have an animated camera we handle it with the xform here
-    else
-    {
-      OPENMVG_LOG_DEBUG(xform.getSchema().getNumSamples() << " samples found in this animated xform.");
-      for(index_t frame = 0; frame < xform.getSchema().getNumSamples(); ++frame)
-      {
-        xform.getSchema().get(xs, ISampleSelector(frame));
-        readCamera(iObj.getChild(0), mat * xs.getMatrix(), sfmdata, flags_part, frame);
-      }
-    }
+    readXform(xform, mat, sfmdata, flags_part);
   }
   else if(ICamera::matches(md) && (flags_part & sfm::ESfM_Data::EXTRINSICS))
   {
@@ -359,7 +494,7 @@ void visitObject(IObject iObj, M44d mat, sfm::SfM_Data &sfmdata, sfm::ESfM_Data 
     // If it's not an animated camera we add it here
     if(check_cam.getSchema().getNumSamples() == 1)
     {
-      readCamera(iObj, mat, sfmdata, flags_part);
+      readCamera(check_cam, mat, sfmdata, flags_part);
     }
   }
 

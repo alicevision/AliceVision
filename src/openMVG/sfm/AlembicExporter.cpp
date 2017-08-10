@@ -160,18 +160,109 @@ void AlembicExporter::addPoints(const sfm::Landmarks &landmarks, bool withVisibi
   }
 }
 
-void AlembicExporter::appendCamera(const std::string &cameraName, 
-                                   const geometry::Pose3 &pose,
-                                   const cameras::Pinhole_Intrinsic *cam,
-                                   const std::string &imagePath,
-                                   const IndexT id_view,
-                                   const IndexT id_intrinsic,
-                                   const float sensorWidth_mm,
-                                   const IndexT id_pose)
+
+void AlembicExporter::appendCameraRig(IndexT rigId,
+                                      IndexT rigPoseId,
+                                      const std::vector<View>& views,
+                                      const std::vector<std::string>& viewsImagePaths,
+                                      const std::vector<cameras::Pinhole_Intrinsic*>& intrinsics,
+                                      const geometry::Pose3& rigPose,
+                                      const std::vector<RigSubPose> subPoses)
 {
+  assert(views.size() == viewsImagePaths.size());
+  assert(subPoses.size() == intrinsics.size());
+
+  const std::size_t nbSubPoses = views.size();
+
+  // rig pose
+  const openMVG::Mat3& R = rigPose.rotation();
+  const openMVG::Vec3& center = rigPose.center();
+
+  // Compensate translation with rotation
+  // Build transform matrix
+  Abc::M44d xformMatrix;
+  xformMatrix[0][0] = R(0, 0);
+  xformMatrix[0][1] = R(0, 1);
+  xformMatrix[0][2] = R(0, 2);
+  xformMatrix[1][0] = R(1, 0);
+  xformMatrix[1][1] = R(1, 1);
+  xformMatrix[1][2] = R(1, 2);
+  xformMatrix[2][0] = R(2, 0);
+  xformMatrix[2][1] = R(2, 1);
+  xformMatrix[2][2] = R(2, 2);
+  xformMatrix[3][0] = center(0);
+  xformMatrix[3][1] = center(1);
+  xformMatrix[3][2] = center(2);
+  xformMatrix[3][3] = 1.0;
+
+  XformSample xformsample;
+  xformsample.setMatrix(xformMatrix);
+
+  std::stringstream ss;
+  ss << std::setfill('0') << std::setw(5) << rigId << "_" << rigPoseId;
+
+  Alembic::AbcGeom::OXform xform(_data->_mvgCameras, "rigxform_" + ss.str());
+  xform.getSchema().set(xformsample);
+
+  auto userProps = xform.getSchema().getUserProperties();
+
+  OUInt32Property propRigId(userProps, "mvg_rigId");
+  propRigId.set(rigId);
+
+  OUInt32Property propPoseId(userProps, "mvg_poseId");
+  propPoseId.set(rigPoseId);
+
+  OUInt16Property propNbSubPoses(userProps, "mvg_nbSubPoses");
+  propNbSubPoses.set(nbSubPoses);
+
+  for(std::size_t i = 0; i < nbSubPoses; ++i)
+  {
+    appendCamera(stlplus::basename_part(viewsImagePaths.at(i)),
+                 views.at(i),
+                 viewsImagePaths.at(i),
+                 intrinsics.at(i),
+                 subPoses.at(i).pose,
+                 xform);
+  }
+}
+
+void AlembicExporter::appendCamera(const std::string& cameraName,
+                                   const View& view,
+                                   const std::string& viewImagePath,
+                                   const cameras::Pinhole_Intrinsic* intrinsic,
+                                   const geometry::Pose3& pose)
+{
+  appendCamera(cameraName,
+               view,
+               viewImagePath,
+               intrinsic,
+               pose,
+               _data->_mvgCameras);
+}
+
+void AlembicExporter::appendCamera(const std::string& cameraName,
+                                   const View& view,
+                                   const std::string& viewImagePath,
+                                   const cameras::Pinhole_Intrinsic* intrinsic,
+                                   const geometry::Pose3& pose,
+                                   Alembic::Abc::OObject& parent)
+{
+  // Use a common sensor width if we don't have this information.
+  // We chose a full frame 24x36 camera
+  float sensorWidth_mm = 36.0;
+
+  const sfm::View_Metadata* viewMetadata = dynamic_cast<const sfm::View_Metadata*>(&view);
+  if(viewMetadata)
+  {
+    static const std::string kSensorWidth("sensor_width");
+    if(viewMetadata->metadata.find(kSensorWidth) != viewMetadata->metadata.end())
+      sensorWidth_mm = std::stof(viewMetadata->metadata.at(kSensorWidth));
+  }
+
+  // pose
   const openMVG::Mat3 R = pose.rotation();
   const openMVG::Vec3 center = pose.center();
-  // POSE
+
   // Compensate translation with rotation
   // Build transform matrix
   Abc::M44d xformMatrix;
@@ -195,15 +286,16 @@ void AlembicExporter::appendCamera(const std::string &cameraName,
   scale[1][1] = -1;
   scale[2][2] = -1;
 
-  xformMatrix = scale*xformMatrix;
+  xformMatrix = scale * xformMatrix;
 
   XformSample xformsample;
   xformsample.setMatrix(xformMatrix);
 
   std::stringstream ss;
-  ss << std::setfill('0') << std::setw(5) << id_pose;
-  ss << "_" << cameraName << "_" << id_view;
-  Alembic::AbcGeom::OXform xform(_data->_mvgCameras, "camxform_" + ss.str());
+  ss << std::setfill('0') << std::setw(5) << view.getPoseId();
+  ss << "_" << cameraName << "_" << view.getViewId();
+
+  Alembic::AbcGeom::OXform xform(parent, "camxform_" + ss.str());
   xform.getSchema().set(xformsample);
 
   // Camera intrinsic parameters
@@ -212,14 +304,13 @@ void AlembicExporter::appendCamera(const std::string &cameraName,
   CameraSample camSample;
 
   // Take the max of the image size to handle the case where the image is in portrait mode 
-  const float imgWidth = cam->w();
-  const float imgHeight = cam->h();
+  const float imgWidth = intrinsic->w();
+  const float imgHeight = intrinsic->h();
   const float sensorWidth_pix = std::max(imgWidth, imgHeight);
   const float sensorHeight_pix = std::min(imgWidth, imgHeight);
-  const float imgRatio = sensorHeight_pix / sensorWidth_pix;
-  const float focalLength_pix = cam->focal();
-
-  const float sensorHeight_mm = sensorWidth_mm * imgRatio;
+  //const float imgRatio = sensorHeight_pix / sensorWidth_pix;
+  const float focalLength_pix = intrinsic->focal();
+  //const float sensorHeight_mm = sensorWidth_mm * imgRatio;
   const float focalLength_mm = sensorWidth_mm * focalLength_pix / sensorWidth_pix;
   const float pix2mm = sensorWidth_mm / sensorWidth_pix;
 
@@ -238,30 +329,36 @@ void AlembicExporter::appendCamera(const std::string &cameraName,
   std::vector<::uint32_t> sensorSize_pix = {::uint32_t(sensorWidth_pix), ::uint32_t(sensorHeight_pix)};
   propSensorSize_pix.set(sensorSize_pix);
 
-  // Add image path as custom property
-  if(!imagePath.empty())
+  // Add viewImagePath as custom property
+  if(!viewImagePath.empty())
   {
     // Set camera image plane 
     OStringProperty imagePlane(userProps, "mvg_imagePath");
-    imagePlane.set(imagePath.c_str());
+    imagePlane.set(viewImagePath.c_str());
   }
 
   OUInt32Property propViewId(userProps, "mvg_viewId");
-  propViewId.set(id_view);
+  propViewId.set(view.getViewId());
 
   OUInt32Property propPoseId(userProps, "mvg_poseId");
-  propPoseId.set(id_pose);
+  propPoseId.set(view.getPoseId());
 
   OUInt32Property propIntrinsicId(userProps, "mvg_intrinsicId");
-  propIntrinsicId.set(id_intrinsic);
+  propIntrinsicId.set(view.getIntrinsicId());
   
   OStringProperty mvg_intrinsicType(userProps, "mvg_intrinsicType");
-  mvg_intrinsicType.set(cam->getTypeStr());
+  mvg_intrinsicType.set(intrinsic->getTypeStr());
   
-  std::vector<double> intrinsicParams = cam->getParams();
+  std::vector<double> intrinsicParams = intrinsic->getParams();
   ODoubleArrayProperty mvg_intrinsicParams(userProps, "mvg_intrinsicParams");
   mvg_intrinsicParams.set(intrinsicParams);
+
+  OUInt32Property propRigId(userProps, "mvg_rigId");
+  propRigId.set(view.getRigId());
   
+  OUInt32Property propSubPoseId(userProps, "mvg_subPoseId");
+  propSubPoseId.set(view.getSubPoseId());
+
   camObj.getSchema().set(camSample);
 }
 
@@ -346,11 +443,9 @@ void AlembicExporter::addCameraKeyframe(const geometry::Pose3 &pose,
   const float imgHeight = cam->h();
   const float sensorWidth_pix = std::max(imgWidth, imgHeight);
   const float sensorHeight_pix = std::min(imgWidth, imgHeight);
-  const float imgRatio = sensorHeight_pix / sensorWidth_pix;
+  //const float imgRatio = sensorHeight_pix / sensorWidth_pix;
   const float focalLength_pix = cam->focal();
-  
-
-  const float sensorHeight_mm = sensorWidth_mm * imgRatio;
+  //const float sensorHeight_mm = sensorWidth_mm * imgRatio;
   const float focalLength_mm = sensorWidth_mm * focalLength_pix / sensorWidth_pix;
   const float pix2mm = sensorWidth_mm / sensorWidth_pix;
 
@@ -400,60 +495,99 @@ void AlembicExporter::jumpKeyframe(const std::string &imagePath)
   }
 }
 
-void AlembicExporter::add(const sfm::SfM_Data &sfmdata, sfm::ESfM_Data flags_part)
+void AlembicExporter::add(const sfm::SfM_Data& sfmData, sfm::ESfM_Data flags_part)
 {
   auto userProps = _data->_mvgRoot.getProperties();
+
   OStringProperty propFeatureFolder(userProps, "mvg_featureFolder");
-  propFeatureFolder.set(sfmdata.getFeatureFolder());
+  propFeatureFolder.set(sfmData.getFeatureFolder());
+
   OStringProperty propMatchingFolder(userProps, "mvg_matchingFolder");
-  propMatchingFolder.set(sfmdata.getMatchingFolder());
+  propMatchingFolder.set(sfmData.getMatchingFolder());
 
   if(flags_part & sfm::ESfM_Data::VIEWS || flags_part & sfm::ESfM_Data::EXTRINSICS)
   {
-    for(const auto it : sfmdata.GetViews())
+    std::map<IndexT, std::map<IndexT, std::vector<View>>> viewRigs;
+
+    for(const auto it : sfmData.GetViews())
     {
-      const sfm::View * view = it.second.get();
-      openMVG::geometry::Pose3 pose;
-      std::shared_ptr<cameras::IntrinsicBase> cam = std::make_shared<cameras::Pinhole_Intrinsic>();
-      if(sfmdata.IsPoseAndIntrinsicDefined(view))
+      const sfm::View* view = it.second.get();
+      openMVG::cameras::Pinhole_Intrinsic* intrinsic = nullptr;
+      geometry::Pose3 pose;
+
+      if(sfmData.IsPoseAndIntrinsicDefined(view))
       {
-        // OpenMVG Camera
-        pose = sfmdata.getPose(*view);
-        cam = sfmdata.GetIntrinsics().at(view->id_intrinsic);
+        // Rig
+        if(view->isPartOfRig())
+        {
+          const Rig& rig = sfmData.getRig(*view);
+
+          auto& currViewRig = viewRigs[view->getRigId()];
+
+          if(currViewRig.find(view->getPoseId()) == currViewRig.end())
+          {
+            currViewRig[view->getPoseId()].resize(rig.getNbSubPoses());
+          }
+
+          currViewRig[view->getPoseId()][view->getSubPoseId()] = *view;
+
+          continue;
+        }
+
+        // OpenMVG single Camera
+        intrinsic = dynamic_cast<openMVG::cameras::Pinhole_Intrinsic*>(sfmData.GetIntrinsics().at(view->getIntrinsicId()).get());
+        pose = sfmData.getPose(*view);
       }
-      // else if(!(flags_part & sfm::ESfM_Data::VIEWS))
-      // {
-      //   // If we don't export views, skip cameras without valid pose.
-      //   continue;
-      // }
-      else{
+      else
+      {
         // If there is no intrinsic/pose defined, skip camera
         continue;
       }
-      const std::string cameraName = stlplus::basename_part(view->s_Img_path);
-      const std::string sView_filename = stlplus::create_filespec(sfmdata.s_root_path, view->s_Img_path);
+
+      const std::string viewImagePath = stlplus::create_filespec(sfmData.s_root_path, view->s_Img_path);
       
       // TODO: store full metadata
-      
-      // Use a common sensor width if we don't have this information.
-      // We chose a full frame 24x36 camera
-      float sensorWidth_mm = 36.0;
-      const sfm::View_Metadata* viewMetadata = dynamic_cast<const sfm::View_Metadata*>(view);
-      if(viewMetadata)
+      appendCamera(stlplus::basename_part(view->s_Img_path),
+                   *view,
+                   viewImagePath,
+                   intrinsic,
+                   pose);
+    }
+
+    for(const auto rigIt : viewRigs)
+    {
+      const IndexT rigId = rigIt.first;
+
+      for(const auto& rigPoseIt : rigIt.second)
       {
-        static const std::string kSensorWidth("sensor_width");
-        if(viewMetadata->metadata.find(kSensorWidth) != viewMetadata->metadata.end())
-          sensorWidth_mm = std::stof(viewMetadata->metadata.at(kSensorWidth));
+        const std::vector<View> views = rigPoseIt.second;
+        const Rig& rig = sfmData.getRig(views.front());
+        const IndexT rigPoseId = rigPoseIt.first;
+
+        std::vector<std::string> viewsImagePaths;
+        std::vector<cameras::Pinhole_Intrinsic*> intrinsics;
+
+        for(std::size_t i = 0; i < rig.getNbSubPoses(); ++i)
+        {
+          const View& view = views.at(i);
+
+          viewsImagePaths.push_back(stlplus::create_filespec(sfmData.s_root_path, view.s_Img_path));
+          intrinsics.push_back(dynamic_cast<openMVG::cameras::Pinhole_Intrinsic*>(sfmData.GetIntrinsics().at(view.getIntrinsicId()).get()));
+        }
+
+         appendCameraRig(rigId,
+                         rigPoseId,
+                         views,
+                         viewsImagePaths,
+                         intrinsics,
+                         sfmData.getPose(views.front()),
+                         rig.getSubPoses());
       }
-      appendCamera(cameraName, pose,
-            dynamic_cast<openMVG::cameras::Pinhole_Intrinsic*>(cam.get()),
-            sView_filename, view->id_view, view->id_intrinsic,
-            sensorWidth_mm, view->id_pose);
     }
   }
   if(flags_part & sfm::ESfM_Data::STRUCTURE)
   {
-    addPoints(sfmdata.GetLandmarks(), (flags_part & sfm::ESfM_Data::OBSERVATIONS));
+    addPoints(sfmData.GetLandmarks(), (flags_part & sfm::ESfM_Data::OBSERVATIONS));
   }
 }
 

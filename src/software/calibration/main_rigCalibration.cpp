@@ -446,12 +446,20 @@ int main(int argc, char** argv)
 #if OPENMVG_IS_DEFINED(OPENMVG_HAVE_ALEMBIC)
       if(localizationResult.isValid())
       {
-        exporter.appendCamera("camera"+std::to_string(idCamera)+"."+myToString(currentFrame,4), localizationResult.getPose(), &queryIntrinsics, subMediaFilepath, currentFrame, currentFrame);
+        exporter.appendCamera("camera"+std::to_string(idCamera)+"."+myToString(currentFrame,4),
+                              sfm::View(subMediaFilepath, currentFrame, currentFrame),
+                              subMediaFilepath,
+                              &queryIntrinsics,
+                              localizationResult.getPose());
       }
       else
       {
         // @fixme for now just add a fake camera so that it still can be see in MAYA
-        exporter.appendCamera("camera"+std::to_string(idCamera)+".V."+myToString(currentFrame,4), geometry::Pose3(), &queryIntrinsics, subMediaFilepath, currentFrame, currentFrame);
+        exporter.appendCamera("camera"+std::to_string(idCamera)+".V."+myToString(currentFrame,4),
+                              sfm::View(subMediaFilepath, currentFrame, currentFrame),
+                              subMediaFilepath,
+                              &queryIntrinsics,
+                              localizationResult.getPose());
       }
 #endif
       ++iInputFrame;

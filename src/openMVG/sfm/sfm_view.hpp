@@ -26,13 +26,17 @@ public:
        IndexT intrinsic_id = UndefinedIndexT,
        IndexT pose_id = UndefinedIndexT,
        IndexT width = UndefinedIndexT,
-       IndexT height = UndefinedIndexT)
+       IndexT height = UndefinedIndexT,
+       IndexT rigId = UndefinedIndexT,
+       IndexT subPoseId = UndefinedIndexT)
     : s_Img_path(sImgPath)
     , id_view(view_id)
     , id_intrinsic(intrinsic_id)
     , id_pose(pose_id)
     , ui_width(width)
     , ui_height(height)
+    , _rigId(rigId)
+    , _subPoseId(subPoseId)
   {}
 
   virtual ~View() {}
@@ -55,6 +59,33 @@ public:
   bool isPartOfRig() const
   {
     return _rigId != UndefinedIndexT;
+  }
+
+  /**
+   * @brief Get the viewId
+   * @return viewId
+   */
+  IndexT getViewId() const
+  {
+    return id_view;
+  }
+
+  /**
+   * @brief Get the intrinsicId
+   * @return intrinsicId
+   */
+  IndexT getIntrinsicId() const
+  {
+    return id_intrinsic;
+  }
+
+  /**
+   * @brief Get the view poseId
+   * @return poseId
+   */
+  IndexT getPoseId() const
+  {
+    return id_pose;
   }
 
   /**
@@ -155,9 +186,9 @@ public:
 private:
 
   /// corresponding rig Id or undefined
-  IndexT _rigId = UndefinedIndexT;
+  IndexT _rigId;
   /// corresponding subPose Id or undefined
-  IndexT _subPoseId = UndefinedIndexT;
+  IndexT _subPoseId;
 };
 
 } // namespace sfm
