@@ -25,6 +25,7 @@ bool SfM_Data::operator==(const SfM_Data& other) const {
   // Views
   if(views.size() != other.views.size())
     return false;
+
   for(Views::const_iterator it = views.begin(); it != views.end(); ++it)
   {
       const View& view1 = *(it->second.get());
@@ -39,6 +40,10 @@ bool SfM_Data::operator==(const SfM_Data& other) const {
 
   // Poses
   if((_poses != other._poses))
+    return false;
+
+  // Rigs
+  if(_rigs != other._rigs)
     return false;
 
   // Intrinsics
@@ -63,6 +68,7 @@ bool SfM_Data::operator==(const SfM_Data& other) const {
   // Points IDs are not preserved
   if(structure.size() != other.structure.size())
     return false;
+
   Landmarks::const_iterator landMarkIt = structure.begin();
   Landmarks::const_iterator otherLandmarkIt = other.structure.begin();
   for(; landMarkIt != structure.end() && otherLandmarkIt != other.structure.end(); ++landMarkIt, ++otherLandmarkIt)

@@ -217,7 +217,7 @@ public:
    */
   void setAbsolutePose(IndexT poseId, const geometry::Pose3& pose)
   {
-    _poses.at(poseId) = pose;
+    _poses[poseId] = pose;
   }
 
   /**

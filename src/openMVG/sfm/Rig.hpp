@@ -38,6 +38,17 @@ struct RigSubPose
   {}
 
   /**
+   * @brief operator ==
+   * @param other the other RigSubPose
+   * @return true if the current RigSubPose and the other are identical.
+   */
+  bool operator==(const RigSubPose& other) const
+  {
+    return (status == other.status &&
+            pose == other.pose);
+  }
+
+  /**
    * @brief cereal serialize method
    * @param ar The archive
    */
@@ -60,6 +71,17 @@ public:
   Rig(unsigned int nbSubPoses = 0)
   {
     _subPoses.resize(nbSubPoses);
+  }
+
+
+  /**
+   * @brief operator ==
+   * @param other the other Rig
+   * @return true if the current rig and the other are identical.
+   */
+  bool operator==(const Rig& other) const
+  {
+    return _subPoses == other._subPoses;
   }
 
   /**

@@ -94,7 +94,7 @@ SfM_Data getInputScene
   // 2. Poses
   for (int i = 0; i < nviews; ++i)
   {
-    sfm_data.setAbsolutePose(i, geometry::Pose3(d._R[i], d._C[i]));
+    sfm_data.setPose(*sfm_data.views.at(i), geometry::Pose3(d._R[i], d._C[i]));
   }
 
   // 3. Intrinsic data (shared, so only one camera intrinsic is defined)
