@@ -172,8 +172,33 @@ void SequentialSfMReconstructionEngine::RobustResectionOfImages(
   std::vector<size_t> vec_possible_resection_indexes;
   while (FindNextImagesGroupForResection(vec_possible_resection_indexes, set_remainingViewId))
   {
-    auto chrono_start = std::chrono::steady_clock::now();
+    // The beginning of the incremental SfM is a well known risky and
+    // unstable step which has a big impact on the final result.
+    // The Bundle Adjustment is an intensive computing step so we only use it
+    // every N cameras.
+    // We make an exception for the first 'nbFirstUnstableCameras' cameras
+    // and perform a BA for each camera because it makes the results
+    // more stable and it's quite cheap because we have few data.
+    static const std::size_t nbFirstUnstableCameras = 30;
+
+    if (_sfm_data.GetPoses().size() < nbFirstUnstableCameras)
+    {
+      // Add images one by one to reconstruct the first cameras.
+      OPENMVG_LOG_DEBUG("RobustResectionOfImages : beginning of the incremental SfM" << std::endl
+                        << "Only the first image of the resection group is used." << std::endl
+                        << "# unstable poses : " << _sfm_data.GetPoses().size() << " / " << nbFirstUnstableCameras << std::endl);
+
+      vec_possible_resection_indexes.resize(1);
+    }
+
+    // Limit to a maximum number of images per group to ensure that
+    // we don't add too much data in one step without bundle adjustment.
+    static const std::size_t maxImagesPerGroup = 30;
+    vec_possible_resection_indexes.resize(std::min(maxImagesPerGroup, vec_possible_resection_indexes.size()));
+
+
     OPENMVG_LOG_DEBUG("Resection group start " << resectionGroupIndex << " with " << vec_possible_resection_indexes.size() << " images.\n");
+    auto chrono_start = std::chrono::steady_clock::now();
     bool bImageAdded = false;
 
     // get reconstructed views before resection
@@ -1191,7 +1216,7 @@ bool SequentialSfMReconstructionEngine::FindNextImagesGroupForResection(
     return false;
 
   // Impose a minimal number of points to ensure that it makes sense to try the pose estimation.
-  std::size_t minPointsThreshold = 30;
+  static const std::size_t minPointsThreshold = 30;
 
   OPENMVG_LOG_DEBUG("FindNextImagesGroupForResection -- Scores (features): ");
   // print the 30 best scores
@@ -1221,27 +1246,6 @@ bool SequentialSfMReconstructionEngine::FindNextImagesGroupForResection(
     return false;
   }
 
-  // Add the image view index with the best score
-  out_selectedViewIds.push_back(std::get<0>(vec_viewsScore[0]));
-
-  // The beginning of the incremental SfM is a well known risky and
-  // unstable step which has a big impact on the final result.
-  // The Bundle Adjustment is an intensive computing step so we only use it
-  // every N cameras.
-  // We make an exception for the first 'nbFirstUnstableCameras' cameras
-  // and perform a BA for each camera because it makes the results
-  // more stable and it's quite cheap because we have few data.
-  static const std::size_t nbFirstUnstableCameras = 30;
-
-  if (_sfm_data.GetPoses().size() < nbFirstUnstableCameras)
-  {
-    // Add images one by one to reconstruct the first cameras.
-    OPENMVG_LOG_DEBUG(
-      "FindNextImagesGroupForResection with few images. " << " images took: " << std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - chrono_start).count() << " msec\n"
-      " - Scores: " << std::get<2>(vec_viewsScore.front()) << "\n"
-      " - Features: " << std::get<1>(vec_viewsScore.front()));
-    return true;
-  }
 #ifdef OPENMVG_NEXTBESTVIEW_WITHOUT_SCORE
   static const float dThresholdGroup = 0.75f;
   // Number of 2D-3D correspondences for the best view.
@@ -1251,11 +1255,8 @@ bool SequentialSfMReconstructionEngine::FindNextImagesGroupForResection(
 #else
   const size_t scoreThreshold = _pyramidThreshold;
 #endif
-  // Limit to a maximum number of images per group to ensure that
-  // we don't add too much data in one step without bundle adjustment.
-  const std::size_t maxImagesPerGroup = 30;
-  for (size_t i = 1;
-       i < maxImagesPerGroup &&
+
+  for (size_t i = 0;
        i < vec_viewsScore.size() &&
        std::get<1>(vec_viewsScore[i]) > minPointsThreshold && // ensure min number of points
        std::get<2>(vec_viewsScore[i]) > scoreThreshold; // ensure score level
