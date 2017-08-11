@@ -1,4 +1,3 @@
-
 // Copyright (c) 2015 Pierre MOULON.
 
 // This Source Code Form is subject to the terms of the Mozilla Public
@@ -140,31 +139,43 @@ void SfM_Data::setPose(const View& view, const geometry::Pose3& absolutePose)
   if(!rig.isInitialized())
   {
     // rig not initialized
-    subPose.status = ERigSubPoseStatus::ESTIMATED;
+    OPENMVG_LOG_TRACE("TOREMOVE: CASE rig not initialized");
+
+    subPose.status = ERigSubPoseStatus::ESTIMATED; // sub-pose initialized
     subPose.pose = Pose3();  // the first sub-pose is set to identity
     viewPose = absolutePose; // so the pose of the rig is the same than the pose
-    OPENMVG_LOG_TRACE("TOREMOVE: CASE rig not initialized");
   }
   else
   {
     if(knownPose)
     {
       // rig has a Pose (at least one image of the rig is localized), RigSubPose not initialized
-      assert(subPose.status == ERigSubPoseStatus::UNINITIALIZED);
+      OPENMVG_LOG_TRACE("TOREMOVE: CASE rig has a Pose, RigSubPose not initialized");
+
+      if(subPose.status != ERigSubPoseStatus::UNINITIALIZED)
+      {
+        throw std::logic_error("Can't set the pose of an already initialized rig sub-pose");
+      }
+
+      // initialize sub-pose
       subPose.status = ERigSubPoseStatus::ESTIMATED;
 
       // convert absolute pose to RigSubPose
       subPose.pose = absolutePose * viewPose.inverse();
-      OPENMVG_LOG_TRACE("TOREMOVE: CASE rig has a Pose, RigSubPose not initialized");
+
     }
     else
     {
       // rig has no Pose but RigSubPose is known
-      assert(subPose.status != ERigSubPoseStatus::UNINITIALIZED);
+      OPENMVG_LOG_TRACE("TOREMOVE: CASE rig has no Pose but RigSubPose is known");
+
+      if(subPose.status == ERigSubPoseStatus::UNINITIALIZED)
+      {
+        throw std::logic_error("Can't set the pose of an uninitialized rig sub-pose when rig pose is unknown");
+      }
 
       //convert absolute pose to rig Pose
       viewPose = subPose.pose.inverse() * absolutePose;
-      OPENMVG_LOG_TRACE("TOREMOVE: CASE rig has no Pose but RigSubPose is known");
     }
   }
 }
