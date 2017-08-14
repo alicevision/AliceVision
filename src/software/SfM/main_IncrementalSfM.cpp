@@ -46,17 +46,17 @@ bool retrieveViewIdFromImageName(
     
     if(isName)
     {
-      filename = stlplus::filename_part(v->s_Img_path);
+      filename = stlplus::filename_part(v->getImagePath());
     }
     else
     {
-      if(stlplus::is_full_path(v->s_Img_path))
+      if(stlplus::is_full_path(v->getImagePath()))
       {
-        filename = v->s_Img_path;
+        filename = v->getImagePath();
       }
       else
       {
-        filename = sfm_data.s_root_path + v->s_Img_path;
+        filename = sfm_data.s_root_path + v->getImagePath();
       }
     }
     
@@ -64,7 +64,7 @@ bool retrieveViewIdFromImageName(
     {
       if(out_viewId == UndefinedIndexT)
       {
-          out_viewId = v->id_view;
+          out_viewId = v->getViewId();
       }
       else
       {

@@ -41,7 +41,7 @@ void sanityCheckLandmarks(const Landmarks &landmarks, const Views &views)
       // there must be a view with that id (in the map) and the view must have 
       // the same id (the member)
       assert(views.count(idview) == 1);
-      assert(views.at(idview)->id_view == idview);
+      assert(views.at(idview)->getViewId() == idview);
     }
   }  
 }
@@ -75,7 +75,7 @@ void regenerateViewUIDs(Views &views, std::map<std::size_t, std::size_t> &oldIdT
   for(auto const &iter : views)
   {
     const View& currentView = *iter.second.get();
-    const auto &imageName = currentView.s_Img_path;
+    const auto &imageName = currentView.getImagePath();
     
     exif::Exif_IO_EasyExif exifReader(imageName);
 
@@ -83,13 +83,13 @@ void regenerateViewUIDs(Views &views, std::map<std::size_t, std::size_t> &oldIdT
     const std::size_t uid = exif::computeUID(exifReader, imageName);
 
     // update the mapping
-    assert(oldIdToNew.count(currentView.id_view) == 0);
-    oldIdToNew.emplace(currentView.id_view, uid);
+    assert(oldIdToNew.count(currentView.getViewId()) == 0);
+    oldIdToNew.emplace(currentView.getViewId(), uid);
     
     // add the view to the new map using the uid as key and change the id
     assert(newViews.count(uid) == 0);
     newViews.emplace(uid, iter.second);
-    newViews[uid]->id_view = uid;
+    newViews[uid]->setViewId(uid);
   }
   
   assert(newViews.size() == views.size());

@@ -101,8 +101,8 @@ void retrieveSeedsPerView(
         continue; // this view cannot be exported to cmpmvs, so we skip the observation
       int obsACamId = obsACamId_it->second;
       const View& viewA = *sfm_data.GetViews().at(obsA.first).get();
-      const geometry::Pose3& poseA = sfm_data.GetPoses().at(viewA.id_pose);
-      const Pinhole_Intrinsic * intrinsicsA = dynamic_cast<const Pinhole_Intrinsic*>(sfm_data.GetIntrinsics().at(viewA.id_intrinsic).get());
+      const geometry::Pose3& poseA = sfm_data.GetPoses().at(viewA.getPoseId());
+      const Pinhole_Intrinsic * intrinsicsA = dynamic_cast<const Pinhole_Intrinsic*>(sfm_data.GetIntrinsics().at(viewA.getIntrinsicId()).get());
       
       for(const auto& obsB: landmark.observations)
       {
@@ -113,8 +113,8 @@ void retrieveSeedsPerView(
         if(obsBCamId_it == map_viewIdToContiguous.end())
           continue; // this view cannot be exported to cmpmvs, so we skip the observation
         const View& viewB = *sfm_data.GetViews().at(obsB.first).get();
-        const geometry::Pose3& poseB = sfm_data.GetPoses().at(viewB.id_pose);
-        const Pinhole_Intrinsic * intrinsicsB = dynamic_cast<const Pinhole_Intrinsic*>(sfm_data.GetIntrinsics().at(viewB.id_intrinsic).get());
+        const geometry::Pose3& poseB = sfm_data.GetPoses().at(viewB.getPoseId());
+        const Pinhole_Intrinsic * intrinsicsB = dynamic_cast<const Pinhole_Intrinsic*>(sfm_data.GetIntrinsics().at(viewB.getIntrinsicId()).get());
 
         const double angle = AngleBetweenRay(
           poseA, intrinsicsA, poseB, intrinsicsB, obsA.second.x, obsB.second.x);
@@ -179,11 +179,11 @@ bool exportToCMPMVS2Format(
     const View * view = iter.second.get();
     if (!sfm_data.IsPoseAndIntrinsicDefined(view))
       continue;
-    Intrinsics::const_iterator iterIntrinsic = sfm_data.GetIntrinsics().find(view->id_intrinsic);
+    Intrinsics::const_iterator iterIntrinsic = sfm_data.GetIntrinsics().find(view->getIntrinsicId());
     const IntrinsicBase * cam = iterIntrinsic->second.get();
     // View Id re-indexing
     // Need to start at 1 for CMPMVS
-    map_viewIdToContiguous.insert(std::make_pair(view->id_view, map_viewIdToContiguous.size() + 1));
+    map_viewIdToContiguous.insert(std::make_pair(view->getViewId(), map_viewIdToContiguous.size() + 1));
   }
 
   SeedsPerView seedsPerView;
@@ -204,11 +204,11 @@ bool exportToCMPMVS2Format(
     std::advance(viewIdToContiguous, i);
     IndexT viewId = viewIdToContiguous->first;
     const View * view = sfm_data.GetViews().at(viewId).get();
-    assert(view->id_view == viewId);
-    IndexT contiguousViewIndex = map_viewIdToContiguous[view->id_view];
-    Intrinsics::const_iterator iterIntrinsic = sfm_data.GetIntrinsics().find(view->id_intrinsic);
+    assert(view->getViewId() == viewId);
+    IndexT contiguousViewIndex = map_viewIdToContiguous[view->getViewId()];
+    Intrinsics::const_iterator iterIntrinsic = sfm_data.GetIntrinsics().find(view->getIntrinsicId());
     // We have a valid view with a corresponding camera & pose
-    assert(map_viewIdToContiguous[view->id_view] == i + 1);
+    assert(map_viewIdToContiguous[view->getViewId()] == i + 1);
 
     std::ostringstream baseFilenameSS;
     baseFilenameSS << std::setw(5) << std::setfill('0') << contiguousViewIndex;
@@ -230,7 +230,7 @@ bool exportToCMPMVS2Format(
     
     // Export undistort image
     {
-      const std::string srcImage = stlplus::create_filespec(sfm_data.s_root_path, view->s_Img_path);
+      const std::string srcImage = stlplus::create_filespec(sfm_data.s_root_path, view->getImagePath());
 
       std::string dstColorImage = stlplus::create_filespec(
         stlplus::folder_append_separator(sOutDirectory), baseFilename + "._c", "png");

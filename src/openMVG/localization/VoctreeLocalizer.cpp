@@ -326,7 +326,7 @@ bool VoctreeLocalizer::initDatabase(const std::string & vocTreeFilepath,
   {
     auto iter = _sfm_data.GetViews().cbegin();
     std::advance(iter, i);
-    const IndexT id_view = iter->second->id_view;
+    const IndexT id_view = iter->second->getViewId();
     if(observationsPerView.count(id_view) == 0)
       continue;
     const auto& observations = observationsPerView.at(id_view);
@@ -406,7 +406,7 @@ bool VoctreeLocalizer::localizeFirstBestResult(const features::MapRegionsPerDesc
 //    const IndexT matchedViewIndex = currMatch.id;
 //    // get the view handle
 //    const std::shared_ptr<sfm::View> matchedView = _sfm_data.views[matchedViewIndex];
-//    OPENMVG_LOG_DEBUG( "[database]\t\t match " << matchedView->s_Img_path 
+//    OPENMVG_LOG_DEBUG( "[database]\t\t match " << matchedView->getImagePath()
 //            << " [docid: "<< currMatch.id << "]"
 //            << " with score " << currMatch.score 
 //            << " and it has "  << _regions_per_view[matchedViewIndex]._regions.RegionCount() 
@@ -437,13 +437,13 @@ bool VoctreeLocalizer::localizeFirstBestResult(const features::MapRegionsPerDesc
     // image of the dataset that was not reconstructed
     if(_regionsPerView.getRegionsPerDesc(matchedViewId).getNbAllRegions() < minNum3DPoints)
     {
-      OPENMVG_LOG_DEBUG("[matching]\tSkipping matching with " << matchedView->s_Img_path << " as it has too few visible 3D points (" << _regionsPerView.getRegionsPerDesc(matchedViewId).getNbAllRegions() << ")");
+      OPENMVG_LOG_DEBUG("[matching]\tSkipping matching with " << matchedView->getImagePath() << " as it has too few visible 3D points (" << _regionsPerView.getRegionsPerDesc(matchedViewId).getNbAllRegions() << ")");
       continue;
     }
-    OPENMVG_LOG_DEBUG("[matching]\tTrying to match the query image with " << matchedView->s_Img_path);
+    OPENMVG_LOG_DEBUG("[matching]\tTrying to match the query image with " << matchedView->getImagePath());
 
     // its associated intrinsics
-    const cameras::IntrinsicBase *matchedIntrinsicsBase = _sfm_data.GetIntrinsicPtr(matchedView->id_intrinsic);
+    const cameras::IntrinsicBase *matchedIntrinsicsBase = _sfm_data.GetIntrinsicPtr(matchedView->getIntrinsicId());
     if ( !isPinhole(matchedIntrinsicsBase->getType()) )
       throw std::logic_error("Unsupported intrinsic: " + EINTRINSIC_enumToString(matchedIntrinsicsBase->getType()) + " (only Pinhole cameras are supported for localization).");
 
@@ -460,12 +460,12 @@ bool VoctreeLocalizer::localizeFirstBestResult(const features::MapRegionsPerDesc
                                       param._useRobustMatching,
                                       param._useGuidedMatching,
                                       queryImageSize,
-                                      std::make_pair(matchedView->ui_width, matchedView->ui_height), 
+                                      std::make_pair(matchedView->getWidth(), matchedView->getHeight()),
                                       featureMatches,
                                       param._matchingEstimator);
     if (!matchWorked)
     {
-      OPENMVG_LOG_DEBUG("[matching]\tMatching with " << matchedView->s_Img_path << " failed! Skipping image");
+      OPENMVG_LOG_DEBUG("[matching]\tMatching with " << matchedView->getImagePath() << " failed! Skipping image");
       continue;
     }
 
@@ -478,14 +478,14 @@ bool VoctreeLocalizer::localizeFirstBestResult(const features::MapRegionsPerDesc
       namespace bfs = boost::filesystem;
       const sfm::View *mview = _sfm_data.GetViews().at(matchedViewId).get();
       const std::string queryimage = bfs::path(imagePath).stem().string();
-      const std::string matchedImage = bfs::path(mview->s_Img_path).stem().string();
-      const std::string matchedPath = (bfs::path(_sfm_data.s_root_path) /  bfs::path(mview->s_Img_path)).string();
+      const std::string matchedImage = bfs::path(mview->getImagePath()).stem().string();
+      const std::string matchedPath = (bfs::path(_sfm_data.s_root_path) /  bfs::path(mview->getImagePath())).string();
       
       features::saveMatches2SVG(imagePath,
                       queryImageSize,
                       queryRegions,
                       matchedPath,
-                      std::make_pair(mview->ui_width, mview->ui_height),
+                      std::make_pair(mview->getWidth(), mview->getHeight()),
                       _regionsPerView.getRegionsPerDesc(matchedViewId),
                       featureMatches,
                       param._visualDebug + "/" + queryimage + "_" + matchedImage + ".svg"); 
@@ -769,7 +769,7 @@ void VoctreeLocalizer::getAllAssociations(const features::MapRegionsPerDesc &que
 //  {
 //    // get the view handle
 //    const std::shared_ptr<sfm::View> matchedView = _sfm_data.views[currMatch.id];
-//    OPENMVG_LOG_DEBUG( "[database]\t\t match " << matchedView->s_Img_path 
+//    OPENMVG_LOG_DEBUG( "[database]\t\t match " << matchedView->getImagePath()
 //            << " [docid: "<< currMatch.id << "]"
 //            << " with score " << currMatch.score 
 //            << " and it has "  << _regions_per_view[currMatch.id]._regions.RegionCount() 
@@ -801,15 +801,15 @@ void VoctreeLocalizer::getAllAssociations(const features::MapRegionsPerDesc &que
     // image of the dataset that was not reconstructed
     if(matchedRegions.getNbAllRegions() < minNum3DPoints)
     {
-      OPENMVG_LOG_DEBUG("[matching]\tSkipping matching with " << matchedView->s_Img_path << " as it has too few visible 3D points");
+      OPENMVG_LOG_DEBUG("[matching]\tSkipping matching with " << matchedView->getImagePath() << " as it has too few visible 3D points");
       continue;
     }
-    OPENMVG_LOG_TRACE("[matching]\tTrying to match the query image with " << matchedView->s_Img_path);
+    OPENMVG_LOG_TRACE("[matching]\tTrying to match the query image with " << matchedView->getImagePath());
     OPENMVG_LOG_TRACE("[matching]\tIt has " << matchedRegions.getNbAllRegions() << " available features to match");
     
     // its associated intrinsics
     // this is just ugly!
-    const cameras::IntrinsicBase *matchedIntrinsicsBase = _sfm_data.intrinsics.at(matchedView->id_intrinsic).get();
+    const cameras::IntrinsicBase *matchedIntrinsicsBase = _sfm_data.intrinsics.at(matchedView->getIntrinsicId()).get();
     if ( !isPinhole(matchedIntrinsicsBase->getType()) )
     {
       //@fixme maybe better to throw something here
@@ -829,12 +829,12 @@ void VoctreeLocalizer::getAllAssociations(const features::MapRegionsPerDesc &que
                                       param._useRobustMatching,
                                       param._useGuidedMatching,
                                       imageSize,
-                                      std::make_pair(matchedView->ui_width, matchedView->ui_height), 
+                                      std::make_pair(matchedView->getWidth(), matchedView->getHeight()),
                                       featureMatches,
                                       param._matchingEstimator);
     if (!matchWorked)
     {
-//      OPENMVG_LOG_DEBUG("[matching]\tMatching with " << matchedView->s_Img_path << " failed! Skipping image");
+//      OPENMVG_LOG_DEBUG("[matching]\tMatching with " << matchedView->getImagePath() << " failed! Skipping image");
       continue;
     }
 
@@ -853,9 +853,9 @@ void VoctreeLocalizer::getAllAssociations(const features::MapRegionsPerDesc &que
       // the current query image without extension
       const auto queryImage = bfs::path(imagePath).stem();
       // the matching image without extension
-      const auto matchedImage = bfs::path(mview->s_Img_path).stem();
+      const auto matchedImage = bfs::path(mview->getImagePath()).stem();
       // the full path of the matching image
-      const auto matchedPath = (bfs::path(_sfm_data.s_root_path) /  bfs::path(mview->s_Img_path)).string();
+      const auto matchedPath = (bfs::path(_sfm_data.s_root_path) /  bfs::path(mview->getImagePath())).string();
 
       // the directory where to save the feature matches
       const auto baseDir = bfs::path(param._visualDebug) / queryImage;
@@ -877,7 +877,7 @@ void VoctreeLocalizer::getAllAssociations(const features::MapRegionsPerDesc &que
                                 imageSize,
                                 queryRegions,
                                 matchedPath,
-                                std::make_pair(mview->ui_width, mview->ui_height),
+                                std::make_pair(mview->getWidth(), mview->getHeight()),
                                 _regionsPerView.getRegionsPerDesc(matchedViewId),
                                 featureMatches,
                                 outputName.string()); 

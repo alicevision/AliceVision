@@ -237,8 +237,8 @@ int main() {
     tinyScene.setPose(*tinyScene.views.at(1), pose1);
 
     // Init structure by inlier triangulation
-    const Mat34 P1 = tinyScene.intrinsics[tinyScene.views[0]->id_intrinsic]->get_projective_equivalent(pose0);
-    const Mat34 P2 = tinyScene.intrinsics[tinyScene.views[1]->id_intrinsic]->get_projective_equivalent(pose1);
+    const Mat34 P1 = tinyScene.intrinsics[tinyScene.views[0]->getIntrinsicId()]->get_projective_equivalent(pose0);
+    const Mat34 P2 = tinyScene.intrinsics[tinyScene.views[1]->getIntrinsicId()]->get_projective_equivalent(pose1);
     Landmarks & landmarks = tinyScene.structure;
     for (size_t i = 0; i < relativePose_info.vec_inliers.size(); ++i)  {
       const SIOPointFeature & LL = regionsL->Features()[vec_PutativeMatches[relativePose_info.vec_inliers[i]]._i];
@@ -250,8 +250,8 @@ int main() {
       if (pose0.depth(X) < 0 && pose1.depth(X) < 0)
           continue;
       // Add a new landmark (3D point with it's 2d observations)
-      landmarks[i].observations[tinyScene.views[0]->id_view] = Observation(LL.coords().cast<double>(), vec_PutativeMatches[relativePose_info.vec_inliers[i]]._i);
-      landmarks[i].observations[tinyScene.views[1]->id_view] = Observation(RR.coords().cast<double>(), vec_PutativeMatches[relativePose_info.vec_inliers[i]]._j);
+      landmarks[i].observations[tinyScene.views[0]->getViewId()] = Observation(LL.coords().cast<double>(), vec_PutativeMatches[relativePose_info.vec_inliers[i]]._i);
+      landmarks[i].observations[tinyScene.views[1]->getViewId()] = Observation(RR.coords().cast<double>(), vec_PutativeMatches[relativePose_info.vec_inliers[i]]._j);
       landmarks[i].X = X;
     }
     Save(tinyScene, "EssentialGeometry_start.ply", ESfM_Data(ALL));

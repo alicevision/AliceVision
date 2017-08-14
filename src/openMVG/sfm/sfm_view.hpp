@@ -22,19 +22,19 @@ public:
 
   /// Constructor (use unique index for the view_id)
   View(const std::string & sImgPath = "",
-       IndexT view_id = UndefinedIndexT,
-       IndexT intrinsic_id = UndefinedIndexT,
-       IndexT pose_id = UndefinedIndexT,
-       IndexT width = UndefinedIndexT,
-       IndexT height = UndefinedIndexT,
+       IndexT viewId = UndefinedIndexT,
+       IndexT intrinsicId = UndefinedIndexT,
+       IndexT poseId = UndefinedIndexT,
+       std::size_t width = 0,
+       std::size_t height = 0,
        IndexT rigId = UndefinedIndexT,
        IndexT subPoseId = UndefinedIndexT)
-    : s_Img_path(sImgPath)
-    , id_view(view_id)
-    , id_intrinsic(intrinsic_id)
-    , id_pose(pose_id)
-    , ui_width(width)
-    , ui_height(height)
+    : _imagePath(sImgPath)
+    , _viewId(viewId)
+    , _intrinsicId(intrinsicId)
+    , _poseId(poseId)
+    , _width(width)
+    , _height(height)
     , _rigId(rigId)
     , _subPoseId(subPoseId)
   {}
@@ -43,22 +43,41 @@ public:
 
   bool operator==(const View& other) const {
     // Image paths can be different
-    return id_view == other.id_view &&
-            id_intrinsic == other.id_intrinsic &&
-            id_pose == other.id_pose &&
-            ui_width == other.ui_width &&
-            ui_height == other.ui_height &&
+    return _viewId == other._viewId &&
+            _intrinsicId == other._intrinsicId &&
+            _poseId == other._poseId &&
+            _width == other._width &&
+            _height == other._height &&
             _rigId == other._rigId &&
             _subPoseId == other._subPoseId;
   }
 
+
   /**
-   * @brief Return if true or false the view is part of a rig
-   * @return true if the view is part of a rig
+   * @brief Get view image path
+   * @return image path
    */
-  bool isPartOfRig() const
+  const std::string& getImagePath() const
   {
-    return _rigId != UndefinedIndexT;
+    return _imagePath;
+  }
+
+  /**
+   * @brief Get view image width
+   * @return width
+   */
+  const std::size_t getWidth() const
+  {
+    return _width;
+  }
+
+  /**
+   * @brief Get view image height
+   * @return height
+   */
+  const std::size_t getHeight() const
+  {
+    return _height;
   }
 
   /**
@@ -67,7 +86,7 @@ public:
    */
   IndexT getViewId() const
   {
-    return id_view;
+    return _viewId;
   }
 
   /**
@@ -76,16 +95,16 @@ public:
    */
   IndexT getIntrinsicId() const
   {
-    return id_intrinsic;
+    return _intrinsicId;
   }
 
   /**
-   * @brief Get the view poseId
+   * @brief Get the poseId
    * @return poseId
    */
   IndexT getPoseId() const
   {
-    return id_pose;
+    return _poseId;
   }
 
   /**
@@ -107,6 +126,33 @@ public:
   }
 
   /**
+   * @brief Return if true or false the view is part of a rig
+   * @return true if the view is part of a rig
+   */
+  bool isPartOfRig() const
+  {
+    return _rigId != UndefinedIndexT;
+  }
+
+  /**
+   * @brief Set the viewId
+   * @return viewId
+   */
+  void setViewId(IndexT viewId)
+  {
+    _viewId = viewId;
+  }
+
+  /**
+   * @brief Set the intrinsicId
+   * @return intrinsicId
+   */
+  void setIntrinsicId(IndexT intrinsicId)
+  {
+    _intrinsicId = intrinsicId;
+  }
+
+  /**
    * @brief Set rig Id and subPose Id
    * @param rigId
    * @param subPoseId
@@ -125,16 +171,16 @@ public:
   void save(Archive& ar) const
   {
     //Define a view with two string (base_path & basename)
-    const std::string localPath = stlplus::folder_append_separator(stlplus::folder_part(s_Img_path));
-    const std::string filename = stlplus::filename_part(s_Img_path);
+    const std::string localPath = stlplus::folder_append_separator(stlplus::folder_part(_imagePath));
+    const std::string filename = stlplus::filename_part(_imagePath);
 
     ar(cereal::make_nvp("local_path", localPath),
        cereal::make_nvp("filename", filename),
-       cereal::make_nvp("width", ui_width),
-       cereal::make_nvp("height", ui_height),
-       cereal::make_nvp("id_view", id_view),
-       cereal::make_nvp("id_intrinsic", id_intrinsic),
-       cereal::make_nvp("id_pose", id_pose),
+       cereal::make_nvp("width", _width),
+       cereal::make_nvp("height", _height),
+       cereal::make_nvp("id_view", _viewId),
+       cereal::make_nvp("id_intrinsic", _intrinsicId),
+       cereal::make_nvp("id_pose", _poseId),
        cereal::make_nvp("id_rig", _rigId),
        cereal::make_nvp("id_subpose", _subPoseId));
   }
@@ -151,11 +197,11 @@ public:
 
     ar(cereal::make_nvp("local_path", localPath),
        cereal::make_nvp("filename", filename),
-       cereal::make_nvp("width", ui_width),
-       cereal::make_nvp("height", ui_height),
-       cereal::make_nvp("id_view", id_view),
-       cereal::make_nvp("id_intrinsic", id_intrinsic),
-       cereal::make_nvp("id_pose", id_pose));
+       cereal::make_nvp("width", _width),
+       cereal::make_nvp("height", _height),
+       cereal::make_nvp("id_view", _viewId),
+       cereal::make_nvp("id_intrinsic", _intrinsicId),
+       cereal::make_nvp("id_pose", _poseId));
 
     // try to load from file id_rig_subpose
     try
@@ -169,22 +215,23 @@ public:
       _subPoseId = UndefinedIndexT;
     }
 
-    s_Img_path = stlplus::create_filespec(localPath, filename);
+    _imagePath = stlplus::create_filespec(localPath, filename);
   }
-
-  /// image path on disk
-  std::string s_Img_path;
-  /// id of the view
-  IndexT id_view;
-  /// index of intrinsics
-  IndexT id_intrinsic;
-  /// either the pose of the rig or the pose of the camera if there's no rig
-  IndexT id_pose;
-  /// image size
-  IndexT ui_width, ui_height;
 
 private:
 
+  /// image path on disk
+  std::string _imagePath;
+  /// image width
+  std::size_t _width;
+  /// image height
+  std::size_t _height;
+  /// id of the view
+  IndexT _viewId;
+  /// index of intrinsics
+  IndexT _intrinsicId;
+  /// either the pose of the rig or the pose of the camera if there's no rig
+  IndexT _poseId;
   /// corresponding rig Id or undefined
   IndexT _rigId;
   /// corresponding subPose Id or undefined

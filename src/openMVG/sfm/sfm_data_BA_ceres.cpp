@@ -257,15 +257,15 @@ bool Bundle_Adjustment_Ceres::Adjust(
     const View* v = itView.second.get();
     if (sfm_data.IsPoseAndIntrinsicDefined(v))
     {
-      if(intrinsicsUsage.find(v->id_intrinsic) == intrinsicsUsage.end())
-        intrinsicsUsage[v->id_intrinsic] = 1;
+      if(intrinsicsUsage.find(v->getIntrinsicId()) == intrinsicsUsage.end())
+        intrinsicsUsage[v->getIntrinsicId()] = 1;
       else
-        ++intrinsicsUsage[v->id_intrinsic];
+        ++intrinsicsUsage[v->getIntrinsicId()];
     }
     else
     {
-      if(intrinsicsUsage.find(v->id_intrinsic) == intrinsicsUsage.end())
-        intrinsicsUsage[v->id_intrinsic] = 0;
+      if(intrinsicsUsage.find(v->getIntrinsicId()) == intrinsicsUsage.end())
+        intrinsicsUsage[v->getIntrinsicId()] = 0;
     }
   }
 
@@ -385,7 +385,7 @@ bool Bundle_Adjustment_Ceres::Adjust(
 
       if(view->isPartOfRig())
       {
-        ceres::CostFunction* costFunction = createRigCostFunctionFromIntrinsics(sfm_data.intrinsics[view->id_intrinsic].get(), observationIt.second.x);
+        ceres::CostFunction* costFunction = createRigCostFunctionFromIntrinsics(sfm_data.intrinsics[view->getIntrinsicId()].get(), observationIt.second.x);
 
         const Rig& rig = sfm_data.getRig(*view);
         const RigSubPose& rigSubPose = rig.getSubPose(view->getSubPoseId());
@@ -397,20 +397,20 @@ bool Bundle_Adjustment_Ceres::Adjust(
         problem.AddResidualBlock(
           costFunction,
           p_LossFunction,
-          &map_intrinsics[view->id_intrinsic][0],
-          &map_poses[view->id_pose][0],
+          &map_intrinsics[view->getIntrinsicId()][0],
+          &map_poses[view->getPoseId()][0],
           subpose_ptr, // subpose of the cameras rig
           landmarkIt.second.X.data()); //Do we need to copy 3D point to avoid false motion, if failure ?
       }
       else
       {
-        ceres::CostFunction* costFunction = createCostFunctionFromIntrinsics(sfm_data.intrinsics[view->id_intrinsic].get(), observationIt.second.x);
+        ceres::CostFunction* costFunction = createCostFunctionFromIntrinsics(sfm_data.intrinsics[view->getIntrinsicId()].get(), observationIt.second.x);
 
         problem.AddResidualBlock(
           costFunction,
           p_LossFunction,
-          &map_intrinsics[view->id_intrinsic][0],
-          &map_poses[view->id_pose][0],
+          &map_intrinsics[view->getIntrinsicId()][0],
+          &map_poses[view->getPoseId()][0],
           landmarkIt.second.X.data()); //Do we need to copy 3D point to avoid false motion, if failure ?
       }
     }

@@ -61,7 +61,7 @@ void load_textures()
     "\n", " " , "Textures loading, Please wait...\n" );
 	for ( int i_cam=0; i_cam < nbCams; ++i_cam, ++my_progress_bar) {
     const View * view = sfm_data.GetViews().at(vec_cameras[i_cam]).get();
-    const std::string srcImage = stlplus::create_filespec(sfm_data.s_root_path, view->s_Img_path);
+    const std::string srcImage = stlplus::create_filespec(sfm_data.s_root_path, view->getImagePath());
 
 		std::vector<unsigned char> img;
 		int w,h,depth;
@@ -236,7 +236,7 @@ static void draw(void)
     {
       const View * view = sfm_data.GetViews().at(vec_cameras[i_cam]).get();
       const Pose3 pose = sfm_data.getPose(*view);
-      const IntrinsicBase * cam = sfm_data.GetIntrinsics().at(view->id_intrinsic).get();
+      const IntrinsicBase * cam = sfm_data.GetIntrinsics().at(view->getIntrinsicId()).get();
       if (isPinhole(cam->getType()))
       {
         const Pinhole_Intrinsic * camPinhole = dynamic_cast<const Pinhole_Intrinsic*>(cam);

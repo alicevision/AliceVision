@@ -223,7 +223,7 @@ int main(int argc, char **argv)
     {
       const View * view = viewIter.second.get();
       // Load an image, extract the regions and match
-      const std::string sImagePath = sfm_data.s_root_path + view->s_Img_path;
+      const std::string sImagePath = sfm_data.s_root_path + view->getImagePath();
 
       std::cout << "SfM::localization => try with image: " << sImagePath << std::endl;
 
@@ -240,9 +240,9 @@ int main(int argc, char **argv)
 
       // Initialize intrinsics data for the view if any
       std::shared_ptr<cameras::IntrinsicBase> optional_intrinsic (nullptr);
-      if (sfm_data.GetIntrinsics().count(view->id_intrinsic))
+      if (sfm_data.GetIntrinsics().count(view->getIntrinsicId()))
       {
-        optional_intrinsic = sfm_data.GetIntrinsics().at(view->id_intrinsic);
+        optional_intrinsic = sfm_data.GetIntrinsics().at(view->getIntrinsicId());
       }
 
       geometry::Pose3 pose;
@@ -251,7 +251,7 @@ int main(int argc, char **argv)
 
       // Try to localize the image in the database thanks to its regions
       if (!localizer.Localize(
-        Pair(view->ui_width, view->ui_height),
+        Pair(view->getWidth(), view->getHeight()),
         optional_intrinsic.get(),
         *(query_regions.get()),
         pose,
@@ -276,7 +276,7 @@ int main(int argc, char **argv)
           const double focal = (K(0,0) + K(1,1))/2.0;
           const Vec2 principal_point(K(0,2), K(1,2));
           optional_intrinsic = std::make_shared<cameras::Pinhole_Intrinsic_Radial_K3>(
-            view->ui_width, view->ui_height,
+            view->getWidth(), view->getHeight(),
             focal, principal_point(0), principal_point(1));
         }
         sfm::SfM_Localizer::RefinePose

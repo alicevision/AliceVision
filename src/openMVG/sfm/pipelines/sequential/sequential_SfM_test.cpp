@@ -104,7 +104,7 @@ TEST(SEQUENTIAL_SFM, Partially_Known_Intrinsics) {
   {
     if (std::distance(sfm_data_2.views.begin(),iterV) >1)
     {
-      iterV->second.get()->id_intrinsic = UndefinedIndexT;
+      iterV->second.get()->setIntrinsicId(UndefinedIndexT);
     }
   }
 

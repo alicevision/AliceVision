@@ -230,7 +230,7 @@ bool GlobalSfM_Translation_AveragingSolver::Translation_averaging(
           // (use the backward indexing to retrieve the second global rotation)
           const IndexT secondId = _reindexBackward[rel.first.second];
           const View * view = sfm_data.views.at(secondId).get();
-          const Mat3 & Ri = map_globalR.at(view->id_pose);
+          const Mat3 & Ri = map_globalR.at(view->getPoseId());
           const Vec3 direction = -(Ri.transpose() * rel.second.second.normalized());
 
           vec_poses.push_back(direction(0));
@@ -334,12 +334,12 @@ void GlobalSfM_Translation_AveragingSolver::ComputePutativeTranslation_EdgesCove
     const View * v2 = sfm_data.GetViews().at(pair.second).get();
 
     if (// Consider the pair iff it is supported by the rotation graph
-        (v1->id_pose != v2->id_pose)
-        && set_pose_ids.count(v1->id_pose)
-        && set_pose_ids.count(v2->id_pose))
+        (v1->getPoseId() != v2->getPoseId())
+        && set_pose_ids.count(v1->getPoseId())
+        && set_pose_ids.count(v2->getPoseId()))
     {
       rotation_pose_id_graph.insert(
-        std::make_pair(v1->id_pose, v2->id_pose));
+        std::make_pair(v1->getPoseId(), v2->getPoseId()));
     }
   }
   // List putative triplets (from global rotations Ids)
@@ -369,9 +369,9 @@ void GlobalSfM_Translation_AveragingSolver::ComputePutativeTranslation_EdgesCove
         const View * v1 = sfm_data.GetViews().at(pair.first).get();
         const View * v2 = sfm_data.GetViews().at(pair.second).get();
         if (// Consider the pair iff it is supported by the triplet graph & 2 different pose id
-            (v1->id_pose != v2->id_pose)
-            && set_triplet_pose_ids.count(v1->id_pose)
-            && set_triplet_pose_ids.count(v2->id_pose))
+            (v1->getPoseId() != v2->getPoseId())
+            && set_triplet_pose_ids.count(v1->getPoseId())
+            && set_triplet_pose_ids.count(v2->getPoseId()))
         {
           map_triplet_matches.insert( match_iterator );
         }
@@ -609,9 +609,9 @@ bool GlobalSfM_Translation_AveragingSolver::Estimate_T_triplet(
     const View * v1 = sfm_data.GetViews().at(pair.first).get();
     const View * v2 = sfm_data.GetViews().at(pair.second).get();
     if (// Consider the pair iff it is supported by the triplet graph & 2 different pose id
-        (v1->id_pose != v2->id_pose)
-        && set_pose_ids.count(v1->id_pose)
-        && set_pose_ids.count(v2->id_pose))
+        (v1->getPoseId() != v2->getPoseId())
+        && set_pose_ids.count(v1->getPoseId())
+        && set_pose_ids.count(v2->getPoseId()))
     {
       map_triplet_matches.insert( match_iterator );
     }
@@ -644,7 +644,7 @@ bool GlobalSfM_Translation_AveragingSolver::Estimate_T_triplet(
       const features::PointFeature pt = normalizedFeaturesPerView.getFeatures(idx_view, track.descType)[iter->second];
       xxx[index]->col(cpt) = pt.coords().cast<double>();
       const View * view = sfm_data.views.at(idx_view).get();
-      intrinsic_ids.insert(view->id_intrinsic);
+      intrinsic_ids.insert(view->getIntrinsicId());
     }
   }
   // Retrieve the smallest focal value, for threshold normalization
@@ -718,8 +718,8 @@ bool GlobalSfM_Translation_AveragingSolver::Estimate_T_triplet(
     // add intrinsics
     const View * view_I = sfm_data.GetViews().at(I).get();
     const View * view_J = sfm_data.GetViews().at(J).get();
-    tiny_scene.intrinsics.insert(*sfm_data.GetIntrinsics().find(view_I->id_intrinsic));
-    tiny_scene.intrinsics.insert(*sfm_data.GetIntrinsics().find(view_J->id_intrinsic));
+    tiny_scene.intrinsics.insert(*sfm_data.GetIntrinsics().find(view_I->getIntrinsicId()));
+    tiny_scene.intrinsics.insert(*sfm_data.GetIntrinsics().find(view_J->getIntrinsicId()));
   }
 
   // Fill sfm_data with the inliers tracks. Feed image observations: no 3D yet.
@@ -737,7 +737,7 @@ bool GlobalSfM_Translation_AveragingSolver::Estimate_T_triplet(
 
       // initialize view and get intrinsics
       const View * view = sfm_data.GetViews().at(viewIndex).get();
-      const cameras::IntrinsicBase *  cam = sfm_data.GetIntrinsics().find(view->id_intrinsic)->second.get();
+      const cameras::IntrinsicBase *  cam = sfm_data.GetIntrinsics().find(view->getIntrinsicId())->second.get();
       const cameras::Pinhole_Intrinsic * intrinsicPtr = dynamic_cast< const cameras::Pinhole_Intrinsic * >(cam);
       const Vec2 principal_point = intrinsicPtr->principal_point();
 

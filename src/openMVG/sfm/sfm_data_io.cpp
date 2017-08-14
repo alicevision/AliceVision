@@ -43,10 +43,10 @@ bool ValidIds(const SfM_Data & sfm_data, ESfM_Data flags_part)
   std::set<IndexT> extrinsicIdsReferenced;
   for(const auto& v: sfm_data.GetViews())
   {
-    const IndexT id_intrinsic = v.second.get()->id_intrinsic;
+    const IndexT id_intrinsic = v.second.get()->getIntrinsicId();
     intrinsicIdsReferenced.insert(id_intrinsic);
 
-    const IndexT id_pose = v.second.get()->id_pose;
+    const IndexT id_pose = v.second.get()->getPoseId();
     extrinsicIdsReferenced.insert(id_pose);
   }
 

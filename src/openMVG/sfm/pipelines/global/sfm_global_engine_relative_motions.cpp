@@ -78,9 +78,9 @@ void GlobalSfMReconstructionEngine_RelativeMotions::SetFeaturesProvider(features
     {
       // get the related view & camera intrinsic and compute the corresponding bearing vectors
       const View * view = _sfm_data.GetViews().at(iter->first).get();
-      if (_sfm_data.GetIntrinsics().count(view->id_intrinsic))
+      if (_sfm_data.GetIntrinsics().count(view->getIntrinsicId()))
       {
-        const std::shared_ptr<IntrinsicBase> cam = _sfm_data.GetIntrinsics().find(view->id_intrinsic)->second;
+        const std::shared_ptr<IntrinsicBase> cam = _sfm_data.GetIntrinsics().find(view->getIntrinsicId())->second;
         for(auto& iterFeatPerDesc: iter->second)
         {
           for (PointFeatures::iterator iterPt = iterFeatPerDesc.second.begin();
@@ -228,7 +228,7 @@ bool GlobalSfMReconstructionEngine_RelativeMotions::Compute_Global_Rotations
         Pair_Set relative_pose_pairs;
         for (const auto & view : _sfm_data.GetViews())
         {
-          const IndexT pose_id = view.second->id_pose;
+          const IndexT pose_id = view.second->getPoseId();
           set_pose_ids.insert(pose_id);
         }
         const std::string sGraph_name = "global_relative_rotation_pose_graph_final";
@@ -485,7 +485,7 @@ void GlobalSfMReconstructionEngine_RelativeMotions::Compute_Relative_Rotations
     const Pair pair = iterMatches->first;
     const View * v1 = _sfm_data.GetViews().at(pair.first).get();
     const View * v2 = _sfm_data.GetViews().at(pair.second).get();
-    poseWiseMatches[Pair(v1->id_pose, v2->id_pose)].insert(pair);
+    poseWiseMatches[Pair(v1->getPoseId(), v2->getPoseId())].insert(pair);
   }
 
   C_Progress_display my_progress_bar( poseWiseMatches.size(),
@@ -527,8 +527,8 @@ void GlobalSfMReconstructionEngine_RelativeMotions::Compute_Relative_Rotations
       const View * view_J = _sfm_data.views[J].get();
 
       // Check that valid cameras are existing for the pair of view
-      if (_sfm_data.GetIntrinsics().count(view_I->id_intrinsic) == 0 ||
-        _sfm_data.GetIntrinsics().count(view_J->id_intrinsic) == 0)
+      if (_sfm_data.GetIntrinsics().count(view_I->getIntrinsicId()) == 0 ||
+        _sfm_data.GetIntrinsics().count(view_J->getIntrinsicId()) == 0)
         continue;
 
       // Setup corresponding bearing vector
@@ -551,8 +551,8 @@ void GlobalSfMReconstructionEngine_RelativeMotions::Compute_Relative_Rotations
       }
       assert(nbBearing == iBearing);
 
-      const IntrinsicBase * cam_I = _sfm_data.GetIntrinsics().at(view_I->id_intrinsic).get();
-      const IntrinsicBase * cam_J = _sfm_data.GetIntrinsics().at(view_J->id_intrinsic).get();
+      const IntrinsicBase * cam_I = _sfm_data.GetIntrinsics().at(view_I->getIntrinsicId()).get();
+      const IntrinsicBase * cam_J = _sfm_data.GetIntrinsics().at(view_J->getIntrinsicId()).get();
 
       RelativePose_Info relativePose_info;
       // Compute max authorized error as geometric mean of camera plane tolerated residual error
@@ -574,10 +574,10 @@ void GlobalSfMReconstructionEngine_RelativeMotions::Compute_Relative_Rotations
       {
         // Refine the defined scene
         SfM_Data tiny_scene;
-        tiny_scene.views.insert(*_sfm_data.GetViews().find(view_I->id_view));
-        tiny_scene.views.insert(*_sfm_data.GetViews().find(view_J->id_view));
-        tiny_scene.intrinsics.insert(*_sfm_data.GetIntrinsics().find(view_I->id_intrinsic));
-        tiny_scene.intrinsics.insert(*_sfm_data.GetIntrinsics().find(view_J->id_intrinsic));
+        tiny_scene.views.insert(*_sfm_data.GetViews().find(view_I->getViewId()));
+        tiny_scene.views.insert(*_sfm_data.GetViews().find(view_J->getViewId()));
+        tiny_scene.intrinsics.insert(*_sfm_data.GetIntrinsics().find(view_I->getIntrinsicId()));
+        tiny_scene.intrinsics.insert(*_sfm_data.GetIntrinsics().find(view_J->getIntrinsicId()));
 
         // Init poses
         const Pose3& Pose_I = Pose3(Mat3::Identity(), Vec3::Zero());
@@ -606,8 +606,8 @@ void GlobalSfMReconstructionEngine_RelativeMotions::Compute_Relative_Rotations
             Vec3 X;
             TriangulateDLT(P1, x1_, P2, x2_, &X);
             Observations obs;
-            obs[view_I->id_view] = Observation(x1_, match._i);
-            obs[view_J->id_view] = Observation(x2_, match._j);
+            obs[view_I->getViewId()] = Observation(x1_, match._i);
+            obs[view_J->getViewId()] = Observation(x2_, match._j);
             Landmark& newLandmark = landmarks[landmarkId++];
             newLandmark.descType = descType;
             newLandmark.observations = obs;

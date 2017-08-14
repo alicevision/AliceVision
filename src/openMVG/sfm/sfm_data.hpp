@@ -36,7 +36,7 @@ class SfM_Data
 public:
   /// Considered views
   Views views;
-  /// Considered camera intrinsics (indexed by view.id_intrinsic)
+  /// Considered camera intrinsics (indexed by view.getIntrinsicId())
   Intrinsics intrinsics;
   /// Structure (3D points with their 2D observations)
   Landmarks structure;
@@ -133,11 +133,11 @@ public:
     if (view == nullptr)
       return false;
     return (
-      view->id_intrinsic != UndefinedIndexT &&
-      view->id_pose != UndefinedIndexT &&
+      view->getIntrinsicId() != UndefinedIndexT &&
+      view->getPoseId() != UndefinedIndexT &&
       (!view->isPartOfRig() || getRigSubPose(*view).status != ERigSubPoseStatus::UNINITIALIZED) &&
-      intrinsics.find(view->id_intrinsic) != intrinsics.end() &&
-      _poses.find(view->id_pose) != _poses.end());
+      intrinsics.find(view->getIntrinsicId()) != intrinsics.end() &&
+      _poses.find(view->getPoseId()) != _poses.end());
   }
   
   /**
@@ -157,7 +157,7 @@ public:
    */
   bool existsPose(const View& view) const
   {
-     return (_poses.find(view.id_pose) != _poses.end());
+     return (_poses.find(view.getPoseId()) != _poses.end());
   }
 
   /**
@@ -169,7 +169,7 @@ public:
     // check the view has valid pose / rig etc
     if(!view.isPartOfRig())
     {
-      return _poses.at(view.id_pose);
+      return _poses.at(view.getPoseId());
     }
 
     // get the pose of the rig and the subpose of the camera
@@ -235,7 +235,7 @@ public:
 
 private:
 
-  /// Considered poses (indexed by view.id_pose)
+  /// Considered poses (indexed by view.getPoseId())
   Poses _poses;
   /// Considered rigs
   Rigs _rigs;
@@ -247,7 +247,7 @@ private:
    */
   const geometry::Pose3& getRigPose(const View& view) const
   {
-    return _poses.at(view.id_pose);
+    return _poses.at(view.getPoseId());
   }
 
   /**
@@ -269,7 +269,7 @@ private:
    */
   geometry::Pose3& getRigPose(const View& view)
   {
-    return _poses.at(view.id_pose);
+    return _poses.at(view.getPoseId());
   }
 
   /**

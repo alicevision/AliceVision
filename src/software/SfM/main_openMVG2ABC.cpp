@@ -90,7 +90,7 @@ int main(int argc, char **argv) {
 
         // OpenMVG Camera
         const openMVG::geometry::Pose3 pose = sfm_data.getPose(*view);
-        auto iterIntrinsic = sfm_data.GetIntrinsics().find(view->id_intrinsic);
+        auto iterIntrinsic = sfm_data.GetIntrinsics().find(view->getIntrinsicId());
         openMVG::cameras::Pinhole_Intrinsic *cam = static_cast<openMVG::cameras::Pinhole_Intrinsic*>(iterIntrinsic->second.get());
         openMVG::Mat34 P = cam->get_projective_equivalent(pose);
 
@@ -132,7 +132,7 @@ int main(int argc, char **argv) {
         xformsample.setMatrix(xformMatrix);
 
         stringstream ss;
-        ss << stlplus::basename_part(view->s_Img_path); 
+        ss << stlplus::basename_part(view->getImagePath());
         Alembic::AbcGeom::OXform xform(topObj, "camxform_" + ss.str());
         xform.getSchema().set(xformsample);
 

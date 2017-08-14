@@ -52,7 +52,7 @@ static double RMSE(const SfM_Data & sfm_data)
     {
       const View * view = sfm_data.GetViews().find(itObs->first)->second.get();
       const geometry::Pose3 pose = sfm_data.getPose(*view);
-      const std::shared_ptr<cameras::IntrinsicBase> intrinsic = sfm_data.GetIntrinsics().at(view->id_intrinsic);
+      const std::shared_ptr<cameras::IntrinsicBase> intrinsic = sfm_data.GetIntrinsics().at(view->getIntrinsicId());
       const Vec2 residual = intrinsic->residual(pose, iterTracks->second.X, itObs->second.x);
       //OPENMVG_LOG_DEBUG(residual);
       vec.push_back( residual(0) );

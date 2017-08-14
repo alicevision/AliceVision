@@ -541,10 +541,10 @@ void AlembicExporter::add(const sfm::SfM_Data& sfmData, sfm::ESfM_Data flags_par
         continue;
       }
 
-      const std::string viewImagePath = stlplus::create_filespec(sfmData.s_root_path, view->s_Img_path);
+      const std::string viewImagePath = stlplus::create_filespec(sfmData.s_root_path, view->getImagePath());
       
       // TODO: store full metadata
-      appendCamera(stlplus::basename_part(view->s_Img_path),
+      appendCamera(stlplus::basename_part(view->getImagePath()),
                    *view,
                    viewImagePath,
                    intrinsic,
@@ -570,7 +570,7 @@ void AlembicExporter::add(const sfm::SfM_Data& sfmData, sfm::ESfM_Data flags_par
           const IndexT subPoseId = subPoseIt.first;
           const View& view = subPoseIt.second;
 
-          viewsImagePaths.at(subPoseId) = stlplus::create_filespec(sfmData.s_root_path, view.s_Img_path);
+          viewsImagePaths.at(subPoseId) = stlplus::create_filespec(sfmData.s_root_path, view.getImagePath());
           intrinsics.at(subPoseId) = dynamic_cast<openMVG::cameras::Pinhole_Intrinsic*>(sfmData.GetIntrinsics().at(view.getIntrinsicId()).get());
         }
 

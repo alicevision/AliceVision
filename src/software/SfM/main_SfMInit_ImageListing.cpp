@@ -1042,7 +1042,7 @@ int main(int argc, char **argv)
 
   for(const auto& viewValue: sfm_data.GetViews())
   {
-    if(viewValue.second->id_intrinsic == UndefinedIndexT)
+    if(viewValue.second->getIntrinsicId() == UndefinedIndexT)
       ++viewsWithoutIntrinsic;
   }
 

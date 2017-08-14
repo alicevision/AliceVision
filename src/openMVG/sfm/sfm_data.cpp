@@ -33,7 +33,7 @@ bool SfM_Data::operator==(const SfM_Data& other) const {
         return false;
 
       // Image paths
-      if(s_root_path + view1.s_Img_path != other.s_root_path + view2.s_Img_path)
+      if(s_root_path + view1.getImagePath() != other.s_root_path + view2.getImagePath())
         return false;
   }
 
@@ -99,7 +99,7 @@ std::set<IndexT> SfM_Data::getValidViews() const
     const View * v = it->second.get();
     if (IsPoseAndIntrinsicDefined(v))
     {
-      valid_idx.insert(v->id_view);
+      valid_idx.insert(v->getViewId());
     }
   }
   return valid_idx;
@@ -114,7 +114,7 @@ std::set<IndexT> SfM_Data::getReconstructedIntrinsics() const
     const View * v = it->second.get();
     if (IsPoseAndIntrinsicDefined(v))
     {
-      valid_idx.insert(v->id_intrinsic);
+      valid_idx.insert(v->getIntrinsicId());
     }
   }
   return valid_idx;
@@ -123,7 +123,7 @@ std::set<IndexT> SfM_Data::getReconstructedIntrinsics() const
 void SfM_Data::setPose(const View& view, const geometry::Pose3& absolutePose)
 {
   const bool knownPose = existsPose(view);
-  Pose3& viewPose = _poses[view.id_pose];
+  Pose3& viewPose = _poses[view.getPoseId()];
 
   // view is not part of a rig
   if(!view.isPartOfRig())
@@ -253,7 +253,7 @@ bool ColorizeTracks( SfM_Data & sfm_data )
     const size_t view_index = iterTT->first;
     const View * view = sfm_data.GetViews().at(view_index).get();
     const std::string sView_filename = stlplus::create_filespec(sfm_data.s_root_path,
-      view->s_Img_path);
+      view->getImagePath());
     Image<RGBColor> image;
     if(!ReadImage(sView_filename.c_str(), &image))
     {
