@@ -6,7 +6,6 @@
 
 #include <openMVG/image/image.hpp>
 #include <openMVG/sfm/sfm.hpp>
-#include <openMVG/sfm/sfm_view_metadata.hpp>
 #include <openMVG/exif/exif_IO_EasyExif.hpp>
 #include <openMVG/exif/sensor_width_database/ParseDatabase.hpp>
 #include <openMVG/stl/split.hpp>
@@ -327,6 +326,16 @@ public:
   std::string getCameraModel() const
   {
     return _cameraModel;
+  }
+
+
+  /**
+   * @brief Get Exif metadata
+   * @return Exif metadata
+   */
+  const ExifData& getExifData() const
+  {
+    return _exifData;
   }
 
   /**
@@ -935,6 +944,8 @@ int main(int argc, char **argv)
             }
           }
 
+          cameraExifData = imageMetadata.getExifData();
+
           // add the intrinsic to the sfm_container
           intrinsics[cameraIntrincicId] = intrinsic;
 
@@ -970,18 +981,17 @@ int main(int argc, char **argv)
         // build the view corresponding to the image and add to the sfm_container
         const std::size_t cameraPoseId = (isRig) ? poseId + frameId : poseId;
         auto& currView = views[viewId];
-        if(!wantsMetadata)
+
+        currView = std::make_shared<View>(imagePath, viewId, cameraIntrincicId, cameraPoseId, width, height);
+
+        if(wantsMetadata)
         {
-          currView = std::make_shared<View>(imagePath, viewId, cameraIntrincicId, cameraPoseId, width, height);
-        }
-        else
-        {
-          currView = std::make_shared<View_Metadata>(imagePath, viewId, cameraIntrincicId, cameraPoseId, width, height, cameraExifData);
+          currView->setMetadata(cameraExifData);
         }
 
         if(isRig)
         {
-          currView->setRigSubPose(rigId, cameraId);
+          currView->setRigAndSubPoseId(rigId, cameraId);
         }
         else
         {

@@ -20,16 +20,28 @@ class View
 {
 public:
 
-  /// Constructor (use unique index for the view_id)
-  View(const std::string & sImgPath = "",
+  /**
+   * @brief View Constructor
+   * @param[in] imagePath The image path on disk
+   * @param[in] viewId The view id (use unique index)
+   * @param[in] intrinsicId The intrinsic id
+   * @param[in] poseId The pose id (or the rig pose id)
+   * @param[in] width The image width
+   * @param[in] height The image height
+   * @param[in] rigId The rig id (or undefined)
+   * @param[in] subPoseId The sub-pose id (or undefined)
+   * @param[in] metadata The image metadata
+   */
+  View(const std::string& imagePath = "",
        IndexT viewId = UndefinedIndexT,
        IndexT intrinsicId = UndefinedIndexT,
        IndexT poseId = UndefinedIndexT,
        std::size_t width = 0,
        std::size_t height = 0,
        IndexT rigId = UndefinedIndexT,
-       IndexT subPoseId = UndefinedIndexT)
-    : _imagePath(sImgPath)
+       IndexT subPoseId = UndefinedIndexT,
+       const std::map<std::string, std::string>& metadata = std::map<std::string, std::string>())
+    : _imagePath(imagePath)
     , _viewId(viewId)
     , _intrinsicId(intrinsicId)
     , _poseId(poseId)
@@ -37,21 +49,20 @@ public:
     , _height(height)
     , _rigId(rigId)
     , _subPoseId(subPoseId)
+    , _metadata(metadata)
   {}
 
-  virtual ~View() {}
-
-  bool operator==(const View& other) const {
-    // Image paths can be different
+  bool operator==(const View& other) const
+  {
+    // image paths can be different
     return _viewId == other._viewId &&
-            _intrinsicId == other._intrinsicId &&
-            _poseId == other._poseId &&
-            _width == other._width &&
-            _height == other._height &&
-            _rigId == other._rigId &&
-            _subPoseId == other._subPoseId;
+           _intrinsicId == other._intrinsicId &&
+           _poseId == other._poseId &&
+           _width == other._width &&
+           _height == other._height &&
+           _rigId == other._rigId &&
+           _subPoseId == other._subPoseId;
   }
-
 
   /**
    * @brief Get view image path
@@ -64,7 +75,7 @@ public:
 
   /**
    * @brief Get view image width
-   * @return width
+   * @return image width
    */
   const std::size_t getWidth() const
   {
@@ -73,7 +84,7 @@ public:
 
   /**
    * @brief Get view image height
-   * @return height
+   * @return image height
    */
   const std::size_t getHeight() const
   {
@@ -81,8 +92,8 @@ public:
   }
 
   /**
-   * @brief Get the viewId
-   * @return viewId
+   * @brief Get the view id
+   * @return view id
    */
   IndexT getViewId() const
   {
@@ -90,8 +101,8 @@ public:
   }
 
   /**
-   * @brief Get the intrinsicId
-   * @return intrinsicId
+   * @brief Get the intrinsic id
+   * @return intrinsic id
    */
   IndexT getIntrinsicId() const
   {
@@ -99,8 +110,8 @@ public:
   }
 
   /**
-   * @brief Get the poseId
-   * @return poseId
+   * @brief Get the pose id
+   * @return pose id
    */
   IndexT getPoseId() const
   {
@@ -108,8 +119,8 @@ public:
   }
 
   /**
-   * @brief Get the Rig Id
-   * @return Rig Id or UndefinedIndexT
+   * @brief Get the rig id
+   * @return rig id or undefined
    */
   IndexT getRigId() const
   {
@@ -117,8 +128,8 @@ public:
   }
 
   /**
-   * @brief Get the SubPose Id
-   * @return SubPose Id or UndefinedIndexT
+   * @brief Get the sub-pose id
+   * @return sup-pose id or undefined
    */
   IndexT getSubPoseId() const
   {
@@ -135,8 +146,29 @@ public:
   }
 
   /**
-   * @brief Set the viewId
-   * @return viewId
+   * @brief Return true if the given metadata name exists
+   * @param[in] name The metadata name
+   * @return true if the corresponding metadata value exists
+   */
+  bool hasMetadata(const std::string& name) const
+  {
+    return (_metadata.find(name) != _metadata.end());
+  }
+
+  /**
+   * @brief Get the corresponding metadata value for the given name
+   * @param[in] name The metadata name
+   * @return the metadata value string
+   */
+  const std::string& getMetadata(const std::string& name) const
+  {
+    assert(hasMetadata(name));
+    return _metadata.at(name);
+  }
+
+  /**
+   * @brief Set the given view id
+   * @param[in] viewId The given view id
    */
   void setViewId(IndexT viewId)
   {
@@ -144,8 +176,8 @@ public:
   }
 
   /**
-   * @brief Set the intrinsicId
-   * @return intrinsicId
+   * @brief Set the given intrinsic id
+   * @param[in] intrinsicId The given intrinsic id
    */
   void setIntrinsicId(IndexT intrinsicId)
   {
@@ -153,19 +185,28 @@ public:
   }
 
   /**
-   * @brief Set rig Id and subPose Id
-   * @param rigId
-   * @param subPoseId
+   * @brief Set the given rig id and the given sub-pose id
+   * @param[in] rigId The given rig id
+   * @param[in] subPoseId The given sub-pose id
    */
-  void setRigSubPose(IndexT rigId, IndexT subPoseId)
+  void setRigAndSubPoseId(IndexT rigId, IndexT subPoseId)
   {
     _rigId = rigId;
     _subPoseId = subPoseId;
   }
 
   /**
-   * @brief cereal save method
-   * @param ar The archive
+   * @brief Set view metadata
+   * @param[in] metadata The metadata map
+   */
+  void setMetadata(const std::map<std::string, std::string>& metadata)
+  {
+    _metadata = metadata;
+  }
+
+  /**
+   * @brief Cereal save method
+   * @param[in,out] ar The archive
    */
   template<class Archive>
   void save(Archive& ar) const
@@ -182,12 +223,13 @@ public:
        cereal::make_nvp("id_intrinsic", _intrinsicId),
        cereal::make_nvp("id_pose", _poseId),
        cereal::make_nvp("id_rig", _rigId),
-       cereal::make_nvp("id_subpose", _subPoseId));
+       cereal::make_nvp("id_subpose", _subPoseId),
+       cereal::make_nvp("metadata", _metadata));
   }
 
   /**
-   * @brief cereal load method
-   * @param ar The archive
+   * @brief Cereal load method
+   * @param[in,out] ar The archive
    */
   template<class Archive>
   void load(Archive& ar)
@@ -203,16 +245,18 @@ public:
        cereal::make_nvp("id_intrinsic", _intrinsicId),
        cereal::make_nvp("id_pose", _poseId));
 
-    // try to load from file id_rig_subpose
+    // try to load from file rig id, sub-pose id and metadata
     try
     {
       ar(cereal::make_nvp("id_rig", _rigId),
-         cereal::make_nvp("id_subpose", _subPoseId));
+         cereal::make_nvp("id_subpose", _subPoseId),
+         cereal::make_nvp("metadata", _metadata));
     }
     catch(cereal::Exception const &)
     {
       _rigId = UndefinedIndexT;
       _subPoseId = UndefinedIndexT;
+      _metadata = std::map<std::string, std::string>();
     }
 
     _imagePath = stlplus::create_filespec(localPath, filename);
@@ -226,16 +270,18 @@ private:
   std::size_t _width;
   /// image height
   std::size_t _height;
-  /// id of the view
+  /// view id
   IndexT _viewId;
-  /// index of intrinsics
+  /// intrinsics id
   IndexT _intrinsicId;
   /// either the pose of the rig or the pose of the camera if there's no rig
   IndexT _poseId;
-  /// corresponding rig Id or undefined
+  /// corresponding rig id or undefined
   IndexT _rigId;
-  /// corresponding subPose Id or undefined
+  /// corresponding sub-pose id or undefined
   IndexT _subPoseId;
+  /// map for metadata
+  std::map<std::string, std::string> _metadata;
 };
 
 } // namespace sfm

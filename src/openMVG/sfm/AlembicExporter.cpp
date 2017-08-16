@@ -10,7 +10,6 @@
 #include <Alembic/AbcGeom/All.h>
 #include <Alembic/AbcCoreHDF5/All.h>
 
-#include "openMVG/sfm/sfm_view_metadata.hpp"
 #include "openMVG/version.hpp"
 
 #include <numeric>
@@ -251,13 +250,9 @@ void AlembicExporter::appendCamera(const std::string& cameraName,
   // We chose a full frame 24x36 camera
   float sensorWidth_mm = 36.0;
 
-  const sfm::View_Metadata* viewMetadata = dynamic_cast<const sfm::View_Metadata*>(&view);
-  if(viewMetadata)
-  {
-    static const std::string kSensorWidth("sensor_width");
-    if(viewMetadata->metadata.find(kSensorWidth) != viewMetadata->metadata.end())
-      sensorWidth_mm = std::stof(viewMetadata->metadata.at(kSensorWidth));
-  }
+  static const std::string kSensorWidth("sensor_width");
+  if(view.hasMetadata(kSensorWidth))
+    sensorWidth_mm = std::stof(view.getMetadata(kSensorWidth));
 
   // pose
   const openMVG::Mat3 R = pose.rotation();

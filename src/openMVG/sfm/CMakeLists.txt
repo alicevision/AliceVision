@@ -32,7 +32,6 @@ set(sfm_files_headers
   sfm_landmark.hpp
   sfm_report.hpp
   sfm_view.hpp
-  sfm_view_metadata.hpp
   Rig.hpp
   utils/alignment.hpp
   utils/sfm_data_UID_utils.hpp

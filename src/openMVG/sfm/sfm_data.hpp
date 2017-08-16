@@ -2,7 +2,6 @@
 
 #include <openMVG/types.hpp>
 #include <openMVG/sfm/sfm_view.hpp>
-#include <openMVG/sfm/sfm_view_metadata.hpp>
 #include <openMVG/sfm/Rig.hpp>
 #include <openMVG/sfm/sfm_landmark.hpp>
 #include <openMVG/geometry/pose3.hpp>
