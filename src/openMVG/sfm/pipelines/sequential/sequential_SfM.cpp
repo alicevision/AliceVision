@@ -166,6 +166,8 @@ void SequentialSfMReconstructionEngine::RobustResectionOfImages(
   std::set<size_t>& set_reconstructedViewId,
   std::set<size_t>& set_rejectedViewId)
 {
+  static const std::size_t maxImagesPerGroup = 30;
+
   size_t imageIndex = 0;
   size_t resectionGroupIndex = 0;
   std::set<size_t> set_remainingViewId(viewIds);
@@ -190,12 +192,6 @@ void SequentialSfMReconstructionEngine::RobustResectionOfImages(
 
       vec_possible_resection_indexes.resize(1);
     }
-
-    // Limit to a maximum number of images per group to ensure that
-    // we don't add too much data in one step without bundle adjustment.
-    static const std::size_t maxImagesPerGroup = 30;
-    vec_possible_resection_indexes.resize(std::min(maxImagesPerGroup, vec_possible_resection_indexes.size()));
-
 
     OPENMVG_LOG_DEBUG("Resection group start " << resectionGroupIndex << " with " << vec_possible_resection_indexes.size() << " images.\n");
     auto chrono_start = std::chrono::steady_clock::now();
@@ -257,6 +253,13 @@ void SequentialSfMReconstructionEngine::RobustResectionOfImages(
         OPENMVG_LOG_DEBUG("Resection of image: " << currentIndex << " ID=" << possible_resection_index << " succeed.");
       }
       set_remainingViewId.erase(possible_resection_index);
+
+      // Limit to a maximum number of cameras added to ensure that
+      // we don't add too much data in one step without bundle adjustment.
+      if(_sfm_data.getValidViews().size() - prevReconstructedViews.size() > maxImagesPerGroup)
+      {
+        break;
+      }
     }
     OPENMVG_LOG_DEBUG("Resection of " << vec_possible_resection_indexes.size() << " new images took " << std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - chrono_start).count() << " msec.");
 
