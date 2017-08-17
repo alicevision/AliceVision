@@ -328,6 +328,14 @@ public:
     return _cameraModel;
   }
 
+  /**
+   * @brief Get focal length (px)
+   * @return focal length (px)
+   */
+  double getFocalLengthPx() const
+  {
+    return _pxFocalLength;
+  }
 
   /**
    * @brief Get Exif metadata
@@ -706,10 +714,16 @@ int main(int argc, char **argv)
     std::vector<std::string> imagePaths = stlplus::folder_files(imageDir);
     if(!imagePaths.empty())
     {
-      allImagePaths.resize(1);
-      auto& groupImagePaths = allImagePaths.front();
       std::sort(imagePaths.begin(), imagePaths.end());
-      groupImagePaths.push_back(imagePaths);
+      for(const std::string& imagePath : imagePaths)
+      {
+        allImagePaths.push_back({{imagePath}});
+      }
+    }
+    else
+    {
+      OPENMVG_LOG_ERROR("Error: Can't find image paths in '" << imageDir << "'");
+      return EXIT_FAILURE;
     }
   }
 
@@ -910,7 +924,9 @@ int main(int argc, char **argv)
           }
           else
           {
-            if(!imageMetadata.computeSensorWidth(database))
+            if(!imageMetadata.computeSensorWidth(database) &&
+                imageMetadata.haveValidExifMetadata() &&
+               (imageMetadata.getFocalLengthPx() == -1))
             {
               unknownSensorImages.push_back({imagePath, imageMetadata.getCameraBrand(), imageMetadata.getCameraModel()});
             }
