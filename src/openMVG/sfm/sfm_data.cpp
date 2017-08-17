@@ -139,7 +139,6 @@ void SfM_Data::setPose(const View& view, const geometry::Pose3& absolutePose)
   if(!rig.isInitialized())
   {
     // rig not initialized
-    OPENMVG_LOG_TRACE("TOREMOVE: CASE rig not initialized");
 
     subPose.status = ERigSubPoseStatus::ESTIMATED; // sub-pose initialized
     subPose.pose = Pose3();  // the first sub-pose is set to identity
@@ -150,7 +149,6 @@ void SfM_Data::setPose(const View& view, const geometry::Pose3& absolutePose)
     if(knownPose)
     {
       // rig has a Pose (at least one image of the rig is localized), RigSubPose not initialized
-      OPENMVG_LOG_TRACE("TOREMOVE: CASE rig has a Pose, RigSubPose not initialized");
 
       if(subPose.status != ERigSubPoseStatus::UNINITIALIZED)
       {
@@ -167,7 +165,6 @@ void SfM_Data::setPose(const View& view, const geometry::Pose3& absolutePose)
     else
     {
       // rig has no Pose but RigSubPose is known
-      OPENMVG_LOG_TRACE("TOREMOVE: CASE rig has no Pose but RigSubPose is known");
 
       if(subPose.status == ERigSubPoseStatus::UNINITIALIZED)
       {

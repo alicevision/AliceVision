@@ -68,7 +68,7 @@ public:
    * @brief Rig constructor
    * @param nbSubPoses The number of sub-poses of the rig
    */
-  Rig(unsigned int nbSubPoses = 0)
+  explicit Rig(unsigned int nbSubPoses = 0)
   {
     _subPoses.resize(nbSubPoses);
   }

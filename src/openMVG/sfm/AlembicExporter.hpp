@@ -45,7 +45,7 @@ public:
                        const std::vector<std::string>& viewsImagePaths,
                        const std::vector<cameras::Pinhole_Intrinsic*>& intrinsics,
                        const geometry::Pose3& rigPose,
-                       const std::vector<RigSubPose> subPoses);
+                       const std::vector<RigSubPose>& subPoses);
 
 
   /**

@@ -166,7 +166,7 @@ void AlembicExporter::appendCameraRig(IndexT rigId,
                                       const std::vector<std::string>& viewsImagePaths,
                                       const std::vector<cameras::Pinhole_Intrinsic*>& intrinsics,
                                       const geometry::Pose3& rigPose,
-                                      const std::vector<RigSubPose> subPoses)
+                                      const std::vector<RigSubPose>& subPoses)
 {
   const std::size_t nbSubPoses = views.size();
 
@@ -518,8 +518,6 @@ void AlembicExporter::add(const sfm::SfM_Data& sfmData, sfm::ESfM_Data flags_par
         // Rig
         if(view->isPartOfRig())
         {
-          const Rig& rig = sfmData.getRig(*view);
-
           auto& currViewRig = viewRigs[view->getRigId()];
           currViewRig[view->getPoseId()][view->getSubPoseId()] = *view;
 
