@@ -29,9 +29,9 @@ public:
     union {
         struct
         {
-            float x, y;
+            double x, y;
         };
-        float m[2];
+        double m[2];
     };
 };
 
@@ -45,9 +45,9 @@ public:
     union {
         struct
         {
-            float x, y, z;
+            double x, y, z;
         };
-        float m[3];
+        double m[3];
     };
 };
 
