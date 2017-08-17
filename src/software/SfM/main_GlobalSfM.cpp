@@ -121,6 +121,14 @@ int main(int argc, char **argv)
     return EXIT_FAILURE;
   }
 
+  if(sfmData.getRigs().size() > 0)
+  {
+    std::cerr << "Rigs are not currently supported in Global SfM." << std::endl
+              << "Please use Incremental SfM. Aborted" << std::endl;
+
+    return EXIT_FAILURE;
+  }
+
   // Get describerTypes
   const std::vector<features::EImageDescriberType> describerTypes = features::EImageDescriberType_stringToEnums(describerMethods);
 
