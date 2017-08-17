@@ -6,10 +6,11 @@
  */
 
 #include "FeedProvider.hpp"
-#include "ImageFeed.hpp"
-#include "VideoFeed.hpp"
-
 #include <openMVG/config.hpp>
+#include "ImageFeed.hpp"
+#if OPENMVG_IS_DEFINED(OPENMVG_HAVE_OPENCV)
+#include "VideoFeed.hpp"
+#endif
 
 #include <boost/filesystem.hpp>
 
@@ -71,6 +72,14 @@ FeedProvider::FeedProvider(const std::string &feedPath, const std::string &calib
   {
     throw std::invalid_argument(std::string("Input filepath not supported: ") + feedPath);
   }
+}
+
+bool FeedProvider::readImage(image::Image<image::RGBColor> &imageRGB,
+      cameras::Pinhole_Intrinsic_Radial_K3 &camIntrinsics,
+      std::string &mediaPath,
+      bool &hasIntrinsics)
+{
+  return(_feeder->readImage(imageRGB, camIntrinsics, mediaPath, hasIntrinsics));
 }
 
 bool FeedProvider::readImage(image::Image<unsigned char> &imageGray,

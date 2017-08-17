@@ -88,8 +88,6 @@ bool solve_translations_problem_l2_chordal(
   double parameter_tolerance,
   int max_iterations)
 {
-  // seed the random number generator
-  std::srand( std::time( nullptr ) );
 
   // re index the edges to be a sequential set
   std::vector<int> _edges(edges, edges+2*num_edges);
@@ -98,9 +96,13 @@ bool solve_translations_problem_l2_chordal(
   const int num_nodes = reindex_lookup.size();
 
   // Init with a random guess solution
-  std::vector<double> x(3*num_nodes);
-  for (int i=0; i<3*num_nodes; ++i)
-    x[i] = (double)rand() / RAND_MAX;
+  const std::size_t guessSize = 3*num_nodes;
+  std::vector<double> x(guessSize);
+  Mat randGuesses = Mat::Random(1, guessSize);
+  for (std::size_t i = 0; i < guessSize; ++i)
+  {
+    x[i] = randGuesses(0, i);
+  }
 
   // add the parameter blocks (a 3-vector for each node)
   Problem problem;

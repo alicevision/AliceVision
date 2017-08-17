@@ -34,20 +34,18 @@
 
 namespace openMVG {
 
-using namespace std;
-
 // A N-view metric dataset.
 // All points are seen by all cameras.
 struct NViewDataSet {
-  vector<Mat3> _K;   // Internal parameters (fx, fy, etc).
-  vector<Mat3> _R;   // Rotation.
-  vector<Vec3> _t;   // Translation.
-  vector<Vec3> _C;   // Camera centers.
+  std::vector<Mat3> _K;   // Internal parameters (fx, fy, etc).
+  std::vector<Mat3> _R;   // Rotation.
+  std::vector<Vec3> _t;   // Translation.
+  std::vector<Vec3> _C;   // Camera centers.
   Mat3X _X;          // 3D points.
-  vector<Mat2X> _x;  // Projected points; may have noise added.
-  vector<Vecu>  _x_ids;// Indexes of points corresponding to the projections
+  std::vector<Mat2X> _x;  // Projected points; may have noise added.
+  std::vector<Vecu>  _x_ids;// Indexes of points corresponding to the projections
 
-  size_t _n;  // Actual number of cameras.
+  std::size_t _n;  // Actual number of cameras.
 
   //-- Return P=K*[R|t] for the Inth camera
   Mat34 P(size_t i) const;
@@ -72,12 +70,12 @@ struct nViewDatasetConfigurator
 };
 
 /// Place cameras on a circle with point in the center
-NViewDataSet NRealisticCamerasRing(size_t nviews, size_t npoints,
+NViewDataSet NRealisticCamerasRing(std::size_t nviews, std::size_t npoints,
                                    const nViewDatasetConfigurator
                                      config = nViewDatasetConfigurator());
 
 /// Place cameras on cardiod shape with point in the center
-NViewDataSet NRealisticCamerasCardioid(size_t nviews, size_t npoints,
+NViewDataSet NRealisticCamerasCardioid(std::size_t nviews, std::size_t npoints,
                                        const nViewDatasetConfigurator
                                         config = nViewDatasetConfigurator());
 

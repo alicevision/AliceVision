@@ -68,52 +68,49 @@ At the end of the cmake process, a report shows for each library which version (
 CMake Options
 --------------------------
 
-* `OpenMVG_USE_BOOST` (default `ON`)
+* `OPENMVG_USE_BOOST` (default `ON`)
   Use Boost library (enable modules like localization/voctree and other features and optimizations.
 
 * `BOOST_NO_CXX11` (default `OFF`)
   If your Boost binaries are compiled without C++11 support, you need to set this option to avoid compilation errors.
   This is most likely to be the case if you use the system packages to install boost.
 
-* `OpenMVG_USE_OPENMP` (default `ON`)
+* `OPENMVG_USE_OPENMP` (default `ON`)
   Use OpenMP parallelization (huge impact on performances)
 
-* `OpenMVG_USE_CCTAG` (default `ON`)
+* `OPENMVG_USE_CCTAG` (default `ON`)
   Build with CCTag markers support.
   `-DCCTag_DIR:PATH=/path/to/cctag/install/lib/cmake/CCTag` (where CCTagConfig.cmake can be found)
 
-* `OpenMVG_USE_OPENGV` (default `OFF`)
+* `OPENMVG_USE_OPENGV` (default `OFF`)
   Build with openGV for multi-cameras localization.
   `-DOPENGV_DIR:PATH=/path/to/opengv/install/` (where "include" and "lib" folders can be found)
   We recommend: `git clone https://github.com/alicevision/opengv.git --branch=cmake_fix_install`
 
-* `OpenMVG_USE_ALEMBIC` (default `OFF`)
+* `OPENMVG_USE_ALEMBIC` (default `OFF`)
   Build with Alembic file format support.
   `-DAlembic_DIR:PATH=/path/to/alembic/install/lib/cmake/Alembic/` (where AlembicConfig.cmake can be found)
   With old Alembic versions (<1.6), you need to set many variables: `ALEMBIC_ROOT`, `ALEMBIC_HDF5_ROOT`, `ALEMBIC_ILMBASE_ROOT`, `ALEMBIC_OPENEXR_ROOT`.
 
-* `OpenMVG_USE_OPENCV` (default: `OFF`): Build with openCV
+* `OPENMVG_USE_OPENCV` (default: `OFF`): Build with openCV
   `-DOpenCV_DIR:PATH=/path/to/opencv/install/share/OpenCV/` (where OpenCVConfig.cmake can be found)
 
 * `OPENMVG_REQUIRE_CERES_WITH_SUITESPARSE` (default: `ON`)
   By default, openMVG requires Ceres built with SuiteSparse to ensure best performances but you can make SuiteSparse optional with this flag.
 
-* `OpenMVG_BUILD_SHARED` (default `OFF`)
+* `OPENMVG_BUILD_SHARED` (default `OFF`)
   Build OpenMVG as shared libs (instead of static libs)
 
-* `OpenMVG_BUILD_TESTS` (default `OFF`)
+* `OPENMVG_BUILD_TESTS` (default `OFF`)
   Build OpenMVG tests
 
-* `OpenMVG_BUILD_DOC` (default `ON`)
+* `OPENMVG_BUILD_DOC` (default `ON`)
   Build OpenMVG documentation
 
-* `OpenMVG_BUILD_EXAMPLES` (default `ON`)
+* `OPENMVG_BUILD_EXAMPLES` (default `ON`)
   Build OpenMVG samples applications (openMVG software are still built)
 
-* `OpenMVG_BUILD_OPENGL_EXAMPLES` (default `OFF`)
-  Build OpenMVG openGL examples
-
-* `OpenMVG_BUILD_COVERAGE` (default `OFF`)
+* `OPENMVG_BUILD_COVERAGE` (default `OFF`)
   Enable code coverage generation (gcc only)
 
 

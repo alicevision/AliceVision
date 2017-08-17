@@ -56,6 +56,6 @@ install(TARGETS openMVG_linearProgramming
   EXPORT openMVG-targets
 )
 
-UNIT_TEST(openMVG_linearProgramming linearProgramming "openMVG_linearProgramming")
+UNIT_TEST(openMVG linearProgramming "openMVG_linearProgramming")
 
 add_subdirectory(lInfinityCV)

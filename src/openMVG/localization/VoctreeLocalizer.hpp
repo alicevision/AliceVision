@@ -103,6 +103,11 @@ public:
                    const std::vector<features::EImageDescriberType>& matchingDescTypes
                   );
   
+  void setCudaPipe( int i ) override
+  {
+      _cudaPipe = i;
+  }
+  
   /**
    * @brief Just a wrapper around the different localization algorithm, the algorithm
    * used to localized is chosen using \p param._algorithm. This version extract the
@@ -333,6 +338,10 @@ public:
   
   /// the feature extractor
   std::vector<std::unique_ptr<features::Image_describer>> _imageDescribers;
+  
+  // CUDA CCTag supports several parallel pipelines, where each one can
+  // processing different image dimensions.
+  int _cudaPipe = 0;
   
   /// the vocabulary tree used to generate the database and the visual images for
   /// the query images

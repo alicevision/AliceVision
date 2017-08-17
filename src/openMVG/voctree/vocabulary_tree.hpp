@@ -120,7 +120,7 @@ public:
   template<class DescriptorT>
   SparseHistogram quantizeToSparse(const std::vector<DescriptorT>& features) const;
 
-  SparseHistogram quantizeToSparse(const void* blindDescriptors) const
+  SparseHistogram quantizeToSparse(const void* blindDescriptors) const override
   {
     const std::vector<Feature>* descriptors = static_cast<const std::vector<Feature>*>(blindDescriptors);
     return quantizeToSparse(*descriptors);
@@ -326,6 +326,17 @@ void VocabularyTree<Feature, Distance, FeatureAllocator>::setNodeCounts()
     num_words_ *= k_;
   }
 }
+
+/**
+ * @brief compute the sparse distance between two histograms according to the chosen distance method.
+ * 
+ * @param v1 The first sparse histogram
+ * @param v2 The second sparse histogram
+ * @param distanceMethod distance method (norm L1, etc.)
+ * @param word_weights 
+ * @return the distance of the two histograms
+ */
+float sparseDistance(const SparseHistogram& v1, const SparseHistogram& v2, const std::string &distanceMethod = "classic", const std::vector<float>& word_weights = std::vector<float>());
 
 inline std::unique_ptr<IVocabularyTree> createVoctreeForDescriberType(features::EImageDescriberType imageDescriberType)
 {

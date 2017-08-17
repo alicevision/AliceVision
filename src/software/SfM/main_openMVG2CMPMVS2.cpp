@@ -202,13 +202,14 @@ bool exportToCMPMVS2Format(
   {
     auto viewIdToContiguous = map_viewIdToContiguous.cbegin();
     std::advance(viewIdToContiguous, i);
-    IndexT viewId = viewIdToContiguous->first;
+    const IndexT viewId = viewIdToContiguous->first;
     const View * view = sfm_data.GetViews().at(viewId).get();
+
     assert(view->getViewId() == viewId);
-    IndexT contiguousViewIndex = map_viewIdToContiguous[view->getViewId()];
+    const IndexT contiguousViewIndex = viewIdToContiguous->second;
     Intrinsics::const_iterator iterIntrinsic = sfm_data.GetIntrinsics().find(view->getIntrinsicId());
     // We have a valid view with a corresponding camera & pose
-    assert(map_viewIdToContiguous[view->getViewId()] == i + 1);
+    assert(viewIdToContiguous->second == i + 1);
 
     std::ostringstream baseFilenameSS;
     baseFilenameSS << std::setw(5) << std::setfill('0') << contiguousViewIndex;
@@ -311,15 +312,25 @@ bool exportToCMPMVS2Format(
   // Write the cmpmvs ini file
   std::ostringstream os;
   os << "[global]" << os.widen('\n')
-  << "outDir=\"../../meshes\"" << os.widen('\n')
+  << "outDir=../../meshes" << os.widen('\n')
   << "ncams=" << map_viewIdToContiguous.size() << os.widen('\n')
   << "scale=" << scale << os.widen('\n')
   << "verbose=TRUE" << os.widen('\n')
   << os.widen('\n')
+  << "[imageResolutions]" << os.widen('\n');
+  for(const auto& viewIdToContiguous: map_viewIdToContiguous)
+  {
+    const IndexT viewId = viewIdToContiguous.first;
+    const View * view = sfm_data.GetViews().at(viewId).get();
+    const IndexT contiguousViewIndex = viewIdToContiguous.second;
 
-  << "#EOF" << os.widen('\n')
-  << os.widen('\n')
-  << os.widen('\n');
+    std::ostringstream baseFilenameSS;
+    baseFilenameSS << std::setw(5) << std::setfill('0') << contiguousViewIndex;
+    const std::string baseFilename = baseFilenameSS.str();
+
+    os << baseFilename << "=" << view->getWidth() / (double)scale << "x" << view->getHeight() / (double)scale << os.widen('\n');
+  }
+
 
   std::ofstream file2(
     stlplus::create_filespec(stlplus::folder_append_separator(sOutDirectory),

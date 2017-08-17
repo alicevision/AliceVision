@@ -32,11 +32,11 @@ endfunction()
 option(OPENMVG_BUILD_SHARED "Build OpenMVG shared libs" OFF)
 option(OPENMVG_BUILD_TESTS "Build OpenMVG tests" OFF)
 option(OPENMVG_BUILD_EXAMPLES "Build OpenMVG samples applications." ON)
-option(OPENMVG_BUILD_OPENGL_EXAMPLES "Build OpenMVG openGL examples" OFF)
 option(OPENMVG_BUILD_COVERAGE "Enable code coverage generation (gcc only)" OFF)
 
 trilean_option(OPENMVG_BUILD_DOC "Build OpenMVG documentation" AUTO)
 trilean_option(OPENMVG_USE_BOOST "Build code depending on Boost (localization/voctree)" ON)
+trilean_option(OPENMVG_USE_OIIO "Build code depending on OpenImageIO (keyframeSelection)" AUTO)
 trilean_option(OPENMVG_USE_OPENMP "Enable OpenMP parallelization" AUTO)
 trilean_option(OPENMVG_USE_CCTAG "Enable CCTAG markers" AUTO)
 trilean_option(OPENMVG_USE_POPSIFT "Enable GPU SIFT implementation" AUTO)
@@ -210,18 +210,6 @@ set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 # ==============================================================================
 # SUBMODULE CONFIGURATION
 # ==============================================================================
-#- glfw
-# ==============================================================================
-if(OPENMVG_BUILD_OPENGL_EXAMPLES)
-  set(GLFW_BUILD_EXAMPLES OFF CACHE BOOL "Do not build the GLFW example programs")
-  set(GLFW_BUILD_TESTS    OFF CACHE BOOL "Do not build the GLFW tests programs")
-  set(GLFW_BUILD_DOCS     OFF CACHE BOOL "Do not build the GLFW documentation")
-  set(GLFW_INSTALL        OFF CACHE BOOL "Do not generate the GLFW installation target")
-  add_subdirectory(dependencies/glfw)
-  include_directories(SYSTEM dependencies/glfw/include)
-  set_property(TARGET glfw PROPERTY FOLDER OpenMVG/3rdParty/glfw)
-endif()
-
 #- Mosek (linear programming interface)
 #===============================================================================
 set(OPENMVG_HAVE_MOSEK 0)
@@ -520,14 +508,21 @@ add_subdirectory(third_party)
 if(OPENMVG_USE_CCTAG STREQUAL "OFF")
   set(OPENMVG_HAVE_CCTAG 0)
 else() # ON OR AUTO
-  find_package(CCTag 1.0.0 CONFIG)
+  if(OPENMVG_HAVE_OPENCV) #
+    find_package(CCTag 1.0.0 CONFIG)
 
-  if(CCTag_FOUND)
-    set(OPENMVG_HAVE_CCTAG 1)
-    message(STATUS "CCTAG ${CCTag_VERSION} found.")
+    if(CCTag_FOUND)
+      set(OPENMVG_HAVE_CCTAG 1)
+      message(STATUS "CCTAG ${CCTag_VERSION} found.")
+    elseif(OPENMVG_USE_CCTAG STREQUAL "ON")
+      set(OPENMVG_HAVE_CCTAG 0)
+      message(SEND_ERROR "Failed to find CCTAG.")
+    else()
+      set(OPENMVG_HAVE_CCTAG 0)
+    endif()
   elseif(OPENMVG_USE_CCTAG STREQUAL "ON")
     set(OPENMVG_HAVE_CCTAG 0)
-    message(SEND_ERROR "Failed to find CCTAG.")
+    message(SEND_ERROR "Can't use CCTAG without OPENCV.")
   else()
     set(OPENMVG_HAVE_CCTAG 0)
   endif()
@@ -576,6 +571,26 @@ endif()
 if(OPENMVG_HAVE_OPENGV)
   include_directories(${OPENGV_INCLUDE_DIR})
   link_directories(${OPENGV_LIBRARY_DIR})
+endif()
+
+# ==============================================================================
+# OpenImageIO
+# ==============================================================================
+# - optional, it allows to use keyframeSelection
+# ==============================================================================
+if(OPENMVG_USE_OIIO STREQUAL "OFF")
+  set(OPENMVG_HAVE_OIIO 0)
+else() # ON OR AUTO
+  find_package(OpenImageIO)
+  if(OPENIMAGEIO_FOUND)
+    set(OPENMVG_HAVE_OIIO 1)
+    message(STATUS "OpenImageIO found.")
+  elseif(OPENMVG_USE_OIIO STREQUAL "ON")
+    set(OPENMVG_HAVE_OIIO 0)
+    message(SEND_ERROR "Failed to find OpenImageIO.")
+  else()
+    set(OPENMVG_HAVE_OIIO 0)
+  endif()
 endif()
 
 # ==============================================================================
@@ -699,9 +714,9 @@ message("** OpenMVG version: " ${OPENMVG_VERSION})
 message("** Build Shared libs: " ${OPENMVG_BUILD_SHARED})
 message("** Build OpenMVG tests: " ${OPENMVG_BUILD_TESTS})
 message("** Build OpenMVG samples applications: " ${OPENMVG_BUILD_EXAMPLES})
-message("** Build OpenMVG openGL examples: " ${OPENMVG_BUILD_OPENGL_EXAMPLES})
 message("** Build OpenMVG documentation: " ${OPENMVG_HAVE_DOC})
 message("** Build the voctree and localization module: " ${OPENMVG_HAVE_BOOST})
+message("** Build the keyframeSelection module: " ${OPENMVG_HAVE_OIIO})
 message("** Enable code coverage generation: " ${OPENMVG_BUILD_COVERAGE})
 message("** Enable OpenMP parallelization: " ${OPENMVG_HAVE_OPENMP})
 message("** Build OpenCV+OpenMVG samples programs: " ${OPENMVG_HAVE_OPENCV})

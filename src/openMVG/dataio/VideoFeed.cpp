@@ -32,6 +32,11 @@ public:
   
   bool isInit() const {return _isInit;}
   
+  bool readImage(image::Image<image::RGBColor> &imageRGB,
+                   cameras::Pinhole_Intrinsic_Radial_K3 &camIntrinsics,
+                   std::string &mediaPath,
+                   bool &hasIntrinsics);
+  
   bool readImage(image::Image<unsigned char> &imageGray,
                      cameras::Pinhole_Intrinsic_Radial_K3 &camIntrinsics,
                      std::string &mediaPath,
@@ -95,6 +100,50 @@ VideoFeed::FeederImpl::FeederImpl(int videoDevice, const std::string &calibPath)
   _isInit = true;
 }
 
+bool VideoFeed::FeederImpl::readImage(image::Image<image::RGBColor> &imageRGB,
+          cameras::Pinhole_Intrinsic_Radial_K3 &camIntrinsics,
+          std::string &mediaPath,
+          bool &hasIntrinsics)
+{
+  cv::Mat frame;
+  const bool grabStatus = _videoCapture.retrieve(frame);
+
+  if(!grabStatus || !frame.data)
+  {
+    return false;
+  }
+  
+  if(frame.channels() == 3)
+  {
+    cv::Mat color;
+    resize(frame, color, cv::Size(frame.cols, frame.rows));
+    
+    cv::cvtColor(frame, color, CV_BGR2RGB);
+    imageRGB.resize(color.cols, color.rows);
+    
+    unsigned char* pixelPtr = (unsigned char*)color.data;
+    for(int i = 0; i < color.rows; i++)
+    {
+      for(int j = 0; j < color.cols; j++)
+      {
+        const size_t index = i*color.cols*3 + j*3;
+        imageRGB(i,j) = image::RGBColor(pixelPtr[index], pixelPtr[index + 1], pixelPtr[index + 2]);
+      }
+    }
+  }
+  else
+  {
+    OPENMVG_LOG_WARNING("Error can't read RGB frame " << _videoPath);
+    throw std::invalid_argument("Error can't read RGB frame " + _videoPath);
+  }
+  
+  hasIntrinsics = _withIntrinsics;
+  if(_withIntrinsics)
+    camIntrinsics = _camIntrinsics;
+
+  mediaPath = _videoPath;
+  return true;
+}
 
 
 bool VideoFeed::FeederImpl::readImage(image::Image<unsigned char> &imageGray,
@@ -183,6 +232,14 @@ VideoFeed::VideoFeed(const std::string &videoPath, const std::string &calibPath)
 VideoFeed::VideoFeed(int videoDevice, const std::string &calibPath) 
   : _feeder(new FeederImpl(videoDevice, calibPath))
 { }
+
+bool VideoFeed::readImage(image::Image<image::RGBColor> &imageRGB,
+                     cameras::Pinhole_Intrinsic_Radial_K3 &camIntrinsics,
+                     std::string &mediaPath,
+                     bool &hasIntrinsics)
+{
+  return(_feeder->readImage(imageRGB, camIntrinsics, mediaPath, hasIntrinsics));
+}
 
 bool VideoFeed::readImage(image::Image<unsigned char> &imageGray,
                      cameras::Pinhole_Intrinsic_Radial_K3 &camIntrinsics,

@@ -54,9 +54,9 @@ TEST(EightPointsRelativePose, EightPointsRelativePose_Kernel_IdFocal) {
 
   for(int i=0; i <iNviews; ++i)
   {
-    vector<Mat3> Es; // Essential,
-    vector<Mat3> Rs;  // Rotation matrix.
-    vector<Vec3> ts;  // Translation matrix.
+    std::vector<Mat3> Es; // Essential,
+    std::vector<Mat3> Rs;  // Rotation matrix.
+    std::vector<Vec3> ts;  // Translation matrix.
     essential::kernel::EightPointRelativePoseSolver::Solve(d._x[i], d._x[(i+1)%iNviews], &Es);
 
     // Recover rotation and translation from E.
@@ -80,7 +80,7 @@ TEST(EightPointsRelativePose, EightPointsRelativePose_Kernel_IdFocal) {
 
     // Assert that found relative motion is correct for almost one model.
     bool bsolution_found = false;
-    for (size_t nModel = 0; nModel < Es.size(); ++nModel) {
+    for (std::size_t nModel = 0; nModel < Es.size(); ++nModel) {
 
       // Check that E holds the essential matrix constraints.
       EXPECT_ESSENTIAL_MATRIX_PROPERTIES(Es[nModel], 1e-8);
@@ -110,8 +110,8 @@ TEST(EightPointsRelativePose, EightPointsRelativePose_Kernel) {
 
   for(int i=0; i <iNviews; ++i)
   {
-    vector<Mat3> Es, Rs;  // Essential, Rotation matrix.
-    vector<Vec3> ts;      // Translation matrix.
+    std::vector<Mat3> Es, Rs;  // Essential, Rotation matrix.
+    std::vector<Vec3> ts;      // Translation matrix.
 
     // Direct value do not work.
     // As we use reference, it cannot convert Mat2X& to Mat&
@@ -119,8 +119,8 @@ TEST(EightPointsRelativePose, EightPointsRelativePose_Kernel) {
     Mat x1 = d._x[(i+1)%iNviews];
 
     Kernel kernel(x0, x1, d._K[i], d._K[(i+1)%iNviews]);
-    vector<size_t> samples;
-    for (size_t k = 0; k < Kernel::MINIMUM_SAMPLES; ++k) {
+    std::vector<std::size_t> samples;
+    for (std::size_t k = 0; k < Kernel::MINIMUM_SAMPLES; ++k) {
       samples.push_back(k);
     }
     kernel.Fit(samples, &Es);
@@ -146,7 +146,7 @@ TEST(EightPointsRelativePose, EightPointsRelativePose_Kernel) {
 
     // Assert that found relative motion is correct for almost one model.
     bool bsolution_found = false;
-    for (size_t nModel = 0; nModel < Es.size(); ++nModel) {
+    for (std::size_t nModel = 0; nModel < Es.size(); ++nModel) {
 
       // Check that E holds the essential matrix constraints.
       EXPECT_ESSENTIAL_MATRIX_PROPERTIES(Es[nModel], 1e-8);
@@ -173,11 +173,11 @@ TEST(FivePointKernelTest, KernelError) {
   Kernel kernel(x1,x2, Mat3::Identity(), Mat3::Identity());
 
   bool bOk = true;
-  vector<size_t> samples;
-  for (size_t i = 0; i < x1.cols(); ++i) {
+  std::vector<std::size_t> samples;
+  for (std::size_t i = 0; i < x1.cols(); ++i) {
     samples.push_back(i);
   }
-  vector<Mat3> Es;
+  std::vector<Mat3> Es;
   kernel.Fit(samples, &Es);
 
   bOk &= (!Es.empty());
@@ -199,11 +199,11 @@ TEST(FivePointKernelTest, FivePointsRelativePose_Kernel) {
   NViewDataSet d = NRealisticCamerasRing(iNviews, Kernel::MINIMUM_SAMPLES,
     nViewDatasetConfigurator(focal,focal,principal_Point,principal_Point,5,0)); // Suppose a camera with Unit matrix as K
 
-  size_t found = 0;
+  std::size_t found = 0;
   for(int i=1; i <iNviews; ++i)
   {
-    vector<Mat3> Es, Rs;  // Essential, Rotation matrix.
-    vector<Vec3> ts;      // Translation matrix.
+    std::vector<Mat3> Es, Rs;  // Essential, Rotation matrix.
+    std::vector<Vec3> ts;      // Translation matrix.
 
     // Direct value do not work.
     // As we use reference, it cannot convert Mat2X& to Mat&
@@ -211,8 +211,8 @@ TEST(FivePointKernelTest, FivePointsRelativePose_Kernel) {
     Mat x1 = d._x[i];
 
     Kernel kernel(x0, x1, d._K[0], d._K[1]);
-    vector<size_t> samples;
-    for (size_t k = 0; k < Kernel::MINIMUM_SAMPLES; ++k) {
+    std::vector<std::size_t> samples;
+    for (std::size_t k = 0; k < Kernel::MINIMUM_SAMPLES; ++k) {
       samples.push_back(k);
     }
     kernel.Fit(samples, &Es);
@@ -238,7 +238,7 @@ TEST(FivePointKernelTest, FivePointsRelativePose_Kernel) {
 
     // Assert that found relative motion is correct for almost one model.
     bool bsolution_found = false;
-    for (size_t nModel = 0; nModel < Es.size(); ++nModel) {
+    for (std::size_t nModel = 0; nModel < Es.size(); ++nModel) {
 
       // Check that E holds the essential matrix constraints.
       EXPECT_ESSENTIAL_MATRIX_PROPERTIES(Es[nModel], 1e-4);

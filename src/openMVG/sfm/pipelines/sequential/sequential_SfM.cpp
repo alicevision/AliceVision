@@ -125,7 +125,7 @@ SequentialSfMReconstructionEngine::SequentialSfMReconstructionEngine(
   const std::string & sloggingFile)
   : ReconstructionEngine(sfm_data, soutDirectory),
     _sLoggingFile(sloggingFile),
-    _initialpair(Pair(0,0)),
+    _userInitialImagePair(Pair(0,0)),
     _camType(EINTRINSIC(PINHOLE_CAMERA_RADIAL3))
 {
   if (!_sLoggingFile.empty())
@@ -348,14 +348,15 @@ bool SequentialSfMReconstructionEngine::Process()
     return false;
 
   // Initial pair choice
-  if(_initialpair == Pair(0,0))
+  std::vector<Pair> initialImagePairCandidates;
+  if(_userInitialImagePair == Pair(0,0))
   {
-    if(!AutomaticInitialPairChoice(_initialpair))
+    if(!getBestInitialImagePairs(initialImagePairCandidates))
     {
       if(_userInteraction)
       {
         // Cannot find a valid initial pair, try to set it by hand?
-        if(!ChooseInitialPair(_initialpair))
+        if(!ChooseInitialPair(_userInitialImagePair))
           return false;
       }
       else
@@ -364,12 +365,30 @@ bool SequentialSfMReconstructionEngine::Process()
       }
     }
   }
-  // Else a starting pair was already initialized before
+  if(_userInitialImagePair != Pair(0,0))
+  {
+    //double, double, double, std::size_t, Pair
+    initialImagePairCandidates.emplace_back(_userInitialImagePair);
+  }
 
+  bool successfullInitialization = false;
   // Initial pair Essential Matrix and [R|t] estimation.
-  if (!MakeInitialPair3D(_initialpair))
+  for(const auto& initialPairCandidate: initialImagePairCandidates)
+  {
+    if(MakeInitialPair3D(initialPairCandidate))
+    {
+      // Successfully found an initial image pair
+      OPENMVG_LOG_DEBUG("Initial pair is: " << initialPairCandidate.first << ", " << initialPairCandidate.second);
+      successfullInitialization = true;
+      break;
+    }
+  }
+  if(!successfullInitialization)
+  {
+    OPENMVG_LOG_ERROR("Initialization failed after trying all possible initial image pairs.");
     return false;
-
+  }
+  
   // timer for stats
   openMVG::system::Timer timer_sfm;
 
@@ -462,10 +481,10 @@ bool SequentialSfMReconstructionEngine::Process()
 /// Select a candidate initial pair
 bool SequentialSfMReconstructionEngine::ChooseInitialPair(Pair & initialPairIndex) const
 {
-  if (_initialpair != Pair(0,0))
+  if (_userInitialImagePair != Pair(0,0))
   {
     // Internal initial pair is already initialized (so return it)
-    initialPairIndex = _initialpair;
+    initialPairIndex = _userInitialImagePair;
   }
   else
   {
@@ -606,7 +625,7 @@ bool SequentialSfMReconstructionEngine::InitLandmarkTracks()
   return _map_tracks.size() > 0;
 }
 
-bool SequentialSfMReconstructionEngine::AutomaticInitialPairChoice(Pair & initial_pair) const
+bool SequentialSfMReconstructionEngine::getBestInitialImagePairs(std::vector<Pair>& out_bestImagePairs) const
 {
   // From the k view pairs with the highest number of verified matches
   // select a pair that have the largest baseline (mean angle between its bearing vectors).
@@ -619,11 +638,12 @@ bool SequentialSfMReconstructionEngine::AutomaticInitialPairChoice(Pair & initia
 
   // List Views that support valid intrinsic (view that could be used for Essential matrix computation)
   std::set<IndexT> valid_views;
-  for (Views::const_iterator it = _sfm_data.GetViews().begin();
-    it != _sfm_data.GetViews().end(); ++it)
+  for(const auto& it : _sfm_data.GetViews())
   {
-    const View * v = it->second.get();
-    if (_sfm_data.GetIntrinsics().count(v->getIntrinsicId()))
+
+    const View * v = it.second.get();
+    if (_sfm_data.GetIntrinsics().count(v->getIntrinsicId()) &&
+        _sfm_data.GetIntrinsics().at(v->getIntrinsicId())->isValid())
       valid_views.insert(v->getViewId());
   }
 
@@ -632,10 +652,11 @@ bool SequentialSfMReconstructionEngine::AutomaticInitialPairChoice(Pair & initia
     OPENMVG_LOG_WARNING("Failed to find an initial pair automatically. There is no view with valid intrinsics.");
     return false;
   }
-  // ImagePairScore contains <imagePairScore*scoring_angle, imagePairScore, scoring_angle, numberOfInliers, imagePair>
+  
+    /// ImagePairScore contains <imagePairScore*scoring_angle, imagePairScore, scoring_angle, numberOfInliers, imagePair>
   typedef std::tuple<double, double, double, std::size_t, Pair> ImagePairScore;
-  std::vector<ImagePairScore> scoring_per_pair;
-  scoring_per_pair.reserve(_pairwiseMatches->size());
+  std::vector<ImagePairScore> bestImagePairs;
+  bestImagePairs.reserve(_pairwiseMatches->size());
 
   // Compute the relative pose & the 'baseline score'
   C_Progress_display my_progress_bar( _pairwiseMatches->size(),
@@ -743,37 +764,35 @@ bool SequentialSfMReconstructionEngine::AutomaticInitialPairChoice(Pair & initia
         const double score = scoring_angle * imagePairScore;
 
         #pragma omp critical
-        scoring_per_pair.emplace_back(score, imagePairScore, scoring_angle, relativePose_info.vec_inliers.size(), current_pair);
+        bestImagePairs.emplace_back(score, imagePairScore, scoring_angle, relativePose_info.vec_inliers.size(), current_pair);
       }
     }
   }
   // We print the N best scores and return the best one.
-  const std::size_t nBestScores = std::min(std::size_t(50), scoring_per_pair.size());
-  std::partial_sort(scoring_per_pair.begin(), scoring_per_pair.begin() + nBestScores, scoring_per_pair.end(), std::greater<ImagePairScore>());
-  OPENMVG_LOG_DEBUG(scoring_per_pair.size() << " possible image pairs. " << nBestScores << " best possibles image pairs are:");
+  const std::size_t nBestScores = std::min(std::size_t(50), bestImagePairs.size());
+  std::sort(bestImagePairs.begin(), bestImagePairs.end(), std::greater<ImagePairScore>());
+  OPENMVG_LOG_DEBUG(bestImagePairs.size() << " possible image pairs. " << nBestScores << " best possibles image pairs are:");
 #if OPENMVG_IS_DEFINED(OPENMVG_HAVE_BOOST)
   OPENMVG_LOG_DEBUG(boost::format("%=15s | %=15s | %=15s | %=15s | %=15s") % "Pair" % "Score" % "ImagePairScore" % "Angle" % "NbMatches");
   OPENMVG_LOG_DEBUG(std::string(15*5+3*3, '-'));
   for(std::size_t i = 0; i < nBestScores; ++i)
   {
-    const ImagePairScore& s = scoring_per_pair[i];
+    const ImagePairScore& s = bestImagePairs[i];
     const Pair& currPair = std::get<4>(s);
     const std::string pairIdx = std::to_string(currPair.first) + ", " + std::to_string(currPair.second);
     OPENMVG_LOG_DEBUG(boost::format("%=15s | %+15.1f | %+15.1f | %+15.1f | %+15f") % pairIdx % std::get<0>(s) % std::get<1>(s) % std::get<2>(s) % std::get<3>(s));
   }
 #endif
-  if (!scoring_per_pair.empty())
+  if (bestImagePairs.empty())
   {
-    initial_pair = std::get<4>(*scoring_per_pair.begin());
-    OPENMVG_LOG_DEBUG("Initial pair is: " << initial_pair.first << ", " << initial_pair.second);
-    OPENMVG_LOG_DEBUG(" - score: " << std::get<0>(*scoring_per_pair.begin()));
-    OPENMVG_LOG_DEBUG(" - imagePairScore: " << std::get<1>(*scoring_per_pair.begin()));
-    OPENMVG_LOG_DEBUG(" - angle: " << std::get<2>(*scoring_per_pair.begin()));
-    OPENMVG_LOG_DEBUG(" - nb matches: " << std::get<3>(*scoring_per_pair.begin()));
-    return true;
+    OPENMVG_LOG_DEBUG("No valid initial pair found automatically.");
+    return false;
   }
-  OPENMVG_LOG_DEBUG("No valid initial pair found automatically.");
-  return false;
+  out_bestImagePairs.reserve(bestImagePairs.size());
+  for(const auto& imagePair: bestImagePairs)
+    out_bestImagePairs.push_back(std::get<4>(imagePair));
+
+  return true;
 }
 
 /// Compute the initial 3D seed (First camera t=0; R=Id, second estimated by 5 point algorithm)
@@ -803,13 +822,13 @@ bool SequentialSfMReconstructionEngine::MakeInitialPair3D(const Pair& current_pa
 
   const Pinhole_Intrinsic * camI = dynamic_cast<const Pinhole_Intrinsic*>(iterIntrinsicI->second.get());
   const Pinhole_Intrinsic * camJ = dynamic_cast<const Pinhole_Intrinsic*>(iterIntrinsicJ->second.get());
-  if (camI == nullptr || camJ == nullptr)
+  if (camI == nullptr || camJ == nullptr || !camI->isValid() || !camJ->isValid())
   {
     OPENMVG_LOG_WARNING("Can't find initial image pair intrinsics (NULL ptr): " << viewI->getIntrinsicId() << ", "  << viewJ->getIntrinsicId());
     return false;
   }
 
-  // b. Get common features between the two view
+  // b. Get common features between the two views
   // use the track to have a more dense match correspondence set
   openMVG::tracks::TracksMap map_tracksCommon;
   const std::set<std::size_t> set_imageIndex= {I, J};

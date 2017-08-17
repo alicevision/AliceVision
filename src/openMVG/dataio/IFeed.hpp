@@ -9,6 +9,7 @@
 
 #include <openMVG/cameras/Camera_Pinhole_Radial.hpp>
 #include <openMVG/image/image_container.hpp>
+#include <openMVG/image/pixel_types.hpp>
 
 namespace openMVG{
 namespace dataio{
@@ -24,8 +25,22 @@ public:
    */
   virtual bool isInit() const = 0;
   
+    /**
+   * @brief Provide a new RGB image from the feed
+   * @param[out] imageRGB The new RGB image from the feed.
+   * @param[out] camIntrinsics The associated camera intrinsics.
+   * @param[out] mediaPath The original media path.
+   * @param[out] hasIntrinsics True if \p camIntrinsics is valid, otherwise there
+   * is no intrinsics associated to \p imageRGB.
+   * @return True if there is a new image, false otherwise.
+   */
+  virtual bool readImage(image::Image<image::RGBColor> &imageRGB,
+                    cameras::Pinhole_Intrinsic_Radial_K3 &camIntrinsics,
+                    std::string &mediaPath,
+                    bool &hasIntrinsics) = 0;
+  
   /**
-   * @brief Provide a new image from the feed
+   * @brief Provide a new grayscale image from the feed
    * @param[out] imageGray The new image from the feed.
    * @param[out] camIntrinsics The associated camera intrinsics.
    * @param[out] mediaPath The original media path.

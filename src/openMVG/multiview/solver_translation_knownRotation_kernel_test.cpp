@@ -36,16 +36,16 @@ TEST(Translation_knownRotation_Kernel, Multiview) {
 
     openMVG::translation::kernel::TranslationFromKnowRotationKernel kernel(x0, xCam, R_GT);
 
-    size_t samples_[2]={0,1};
-    vector<size_t> samples(samples_,samples_+2);
-    vector<Vec3> vec_t;
+    std::size_t samples_[2]={0,1};
+    std::vector<std::size_t> samples(samples_,samples_+2);
+    std::vector<Vec3> vec_t;
     kernel.Fit(samples, &vec_t);
 
     CHECK_EQUAL(1, vec_t.size());
 
     // Check that the fitted model is compatible with the data
     // Here the distance to the epipolar line is used
-    for (size_t i = 0; i < x0.cols(); ++i) {
+    for (std::size_t i = 0; i < x0.cols(); ++i) {
       EXPECT_NEAR(0.0, kernel.Error(i, vec_t[0]), 1e-8);
     }
 

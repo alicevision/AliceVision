@@ -441,7 +441,7 @@ bool EuclideanResectionEPnP(const Mat2X &x_camera,
     betas << b4(0), b4(1) / b4(0), b4(2) / b4(0), b4(3) / b4(0);
     ComputePointsCoordinatesInCameraFrame(alphas, betas, u2, &X_camera);
     AbsoluteOrientation(X_world, X_camera, &Rs[0], &ts[0]);
-    rmse(0) = RootMeanSquareError(x_camera, X_world, K, Rs[0], ts[0]);
+    rmse(0) = reprojectionErrorRMSE(x_camera, X_world, K, Rs[0], ts[0]);
     bSol = true;
   } else {
     //OPENMVG_LOG_WARNING("First approximation of beta not good enough.");
@@ -473,7 +473,7 @@ bool EuclideanResectionEPnP(const Mat2X &x_camera,
     betas(3) = 0;
     ComputePointsCoordinatesInCameraFrame(alphas, betas, u2, &X_camera);
     AbsoluteOrientation(X_world, X_camera, &Rs[1], &ts[1]);
-    rmse(1) = RootMeanSquareError(x_camera, X_world, K, Rs[1], ts[1]);
+    rmse(1) = reprojectionErrorRMSE(x_camera, X_world, K, Rs[1], ts[1]);
     bSol = true;
   } else {
     //OPENMVG_LOG_WARNING("Second approximation of beta not good enough.");
@@ -513,7 +513,7 @@ bool EuclideanResectionEPnP(const Mat2X &x_camera,
     betas(3) = 0;
     ComputePointsCoordinatesInCameraFrame(alphas, betas, u2, &X_camera);
     AbsoluteOrientation(X_world, X_camera, &Rs[2], &ts[2]);
-    rmse(2) = RootMeanSquareError(x_camera, X_world, K, Rs[2], ts[2]);
+    rmse(2) = reprojectionErrorRMSE(x_camera, X_world, K, Rs[2], ts[2]);
     bSol = true;
   } else {
     //OPENMVG_LOG_WARNING("Third approximation of beta not good enough.");
