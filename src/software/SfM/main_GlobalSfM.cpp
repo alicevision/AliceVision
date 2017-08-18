@@ -121,7 +121,7 @@ int main(int argc, char **argv)
     return EXIT_FAILURE;
   }
 
-  if(sfmData.getRigs().size() > 0)
+  if(!sfmData.getRigs().empty() > 0)
   {
     std::cerr << "Rigs are not currently supported in Global SfM." << std::endl
               << "Please use Incremental SfM. Aborted" << std::endl;
