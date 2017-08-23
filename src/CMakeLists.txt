@@ -511,6 +511,28 @@ if(OPENMVG_HAVE_ALEMBIC)
 endif()
 
 # ==============================================================================
+# libavcodec
+# ==============================================================================
+# - optional, used to extract frames from HEVC videos
+# ==============================================================================
+
+if(OPENMVG_USE_LIBAV STREQUAL "OFF")
+  set(OPENMVG_HAVE_LIBAV 0)
+else()
+  find_package(LibAV COMPONENTS REQUIRED avcodec avformat swscale avutil)
+
+  if(LIBAV_FOUND)
+    set(OPENMVG_HAVE_LIBAV 1)
+    message(STATUS "LibAV found.")
+  elseif(OPENMVG_USE_LIBAV STREQUAL "ON")
+    set(OPENMVG_HAVE_LIBAV 0)
+    message(STATUS "Failed to find LibAV.")
+  else()
+    set(OPENMVG_HAVE_LIBAV 0)
+  endif()
+endif()
+
+# ==============================================================================
 # Third-party libraries:
 # ==============================================================================
 add_subdirectory(third_party)

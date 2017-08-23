@@ -529,6 +529,34 @@ install(TARGETS openMVG_main_keyframeSelection
 
 endif()
 
+###
+# Support tool that converts an input video to a series of JPG or PNG files.
+# Optionally writing XML files to add basic EXIF information.
+###
+
+if(OPENMVG_HAVE_LIBAV)
+
+  add_executable(openMVG_main_convertVid2Img main_convertVid2Img.cpp)
+  target_link_libraries(openMVG_main_convertVid2Img
+    openMVG_image
+    ${LIBAV_LIBRARIES}
+    stlplus
+  )
+
+  target_include_directories(openMVG_main_convertVid2Img
+    PRIVATE ${LIBAV_INCLUDE_DIRS}
+  )
+
+  #installation rules
+  set_property(TARGET openMVG_main_convertVid2Img
+    PROPERTY FOLDER OpenMVG/software
+  )
+
+  install(TARGETS openMVG_main_convertVid2Img
+    DESTINATION bin/
+  )
+
+endif(OPENMVG_HAVE_LIBAV)
 
 ##
 # Export tutorial with valid path thanks to a configuration file
