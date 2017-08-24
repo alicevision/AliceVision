@@ -29,11 +29,32 @@ enum cam_mode_360_t
     CUBEMAP
 };
 
+enum cam_cube_conf_t
+{
+    undefined,
+    cam_cube_conf_6x1,
+    cam_cube_conf_3x2,
+    cam_cube_conf_2x3,
+    cam_cube_conf_1x6
+};
+
 enum img_format_t
 {
     JPG,
     PNG
 };
+
+static const char* cam_cube_conf_names[5] =
+{
+    "undefined",
+    "6x1",
+    "3x2",
+    "2x3",
+    "1x6"
+};
+
+// R-right L-left U-up D-down F-front B-back
+static char cam_cube_order[7] = "RLUDFB";
 
 static cam_mode_360_t stringToMode( const string& mode )
 {
@@ -49,6 +70,13 @@ static img_format_t stringToImgFormat( const string& mode )
     return img_format_t::PNG;
 }
 
+static const char* cubeConfToString( cam_cube_conf_t mode )
+{
+    return cam_cube_conf_names[mode];
+}
+
+static bool verbose = false;
+
 class ConvertVideo
 {
   const string         _filename;
@@ -56,6 +84,8 @@ class ConvertVideo
   const img_format_t   _img_format;
   const cam_mode_360_t _mode_360;
   const bool           _print_exif;
+  const bool           _split_cube;
+  cam_cube_conf_t      _conf_360;
   char                 errbuf[1000];
   AVFormatContext*     ctx;
   AVCodecContext*      videoCtx;
@@ -67,12 +97,14 @@ public:
                 const string& outputDirectory,
                 img_format_t   img_format,
                 cam_mode_360_t mode,
-                bool print_exif )
+                bool print_exif,
+                bool split_cube )
     : _filename( filename )
     , _outputDirectory( outputDirectory )
     , _img_format( img_format )
     , _mode_360( mode )
     , _print_exif( print_exif )
+    , _split_cube( split_cube )
     , ctx( 0 )
     , videoCtx( 0 )
     , videoCodec( 0 )
@@ -83,13 +115,13 @@ public:
 
   bool convert( )
   {
-    cout << "Trying to open file " << _filename.c_str() << endl;
+    if(verbose) cout << "Trying to open file " << _filename.c_str() << endl;
     int err = avformat_open_input( &ctx, _filename.c_str(), 0, 0 );
     if( err )
     {
       err = av_strerror( err, errbuf, 1000 );
       if( err != 0 ) strcpy( errbuf, "Reason unknown" );
-      cout << "Failed to open input file " << _filename << " -- Reason: " << errbuf << endl;
+      cerr << "Failed to open input file " << _filename << " -- Reason: " << errbuf << endl;
       return false;
     }
     else
@@ -107,7 +139,7 @@ private:
 
     if( err >= 0 )
     {
-      cout << "Found " << ctx->nb_streams << " streams in " << _filename << endl;
+      if(verbose) cout << "Found " << ctx->nb_streams << " streams in " << _filename << endl;
 
       bool retval;
       for( int i=0; i<ctx->nb_streams; i++ )
@@ -118,12 +150,13 @@ private:
           return true;
         }
       }
+      cerr << "Found not video streams in file " << _filename << endl;
       return false;
     }
 
     err = av_strerror( err, errbuf, 1000 );
     if( err != 0 ) strcpy( errbuf, "Reason unknown" );
-    cout << "Failed to find stream info in file " << _filename << " -- Reason: " << errbuf << endl;
+    cerr << "Failed to find stream info in file " << _filename << " -- Reason: " << errbuf << endl;
     return false;
   }
 
@@ -134,7 +167,7 @@ private:
       videoCtx = ctx->streams[i]->codec;
       if( !videoCtx )
       {
-        cout << "Video stream " << i << " has type media but no video context" << endl;
+        if(verbose) cout << "Video stream " << i << " has type media but no video context" << endl;
         return false;
       }
 
@@ -142,11 +175,11 @@ private:
       desc = avcodec_descriptor_get( videoCtx->codec_id );
       if( desc )
       {
-        cout << "Found codec " << desc->name << " for stream, " << desc->long_name << endl;
+        if(verbose) cout << "Found codec " << desc->name << " for stream, " << desc->long_name << endl;
       }
       else
       {
-        cout << "Found no codec descriptor for video stream " << i << endl;
+        if(verbose) cout << "Found no codec descriptor for video stream " << i << endl;
         return false;
       }
 
@@ -157,7 +190,7 @@ private:
       }
       else
       {
-        cout << "Found video codec descriptor but not codec for stream " << i << endl;
+        if(verbose) cout << "Found video codec descriptor but not codec for stream " << i << endl;
         return false;
       }
     }
@@ -183,8 +216,25 @@ private:
       base_time_unit = av_q2d( ctx->streams[videoStreamIndex]->time_base );
       duration       = ctx->streams[videoStreamIndex]->duration * ( fps * base_time_unit );
 
-      cout << "Detect frames with WxH " << _width << "x" << _height << endl;
-      cout << "Stream has " << fps << " fps and " << duration << " second duration" << endl;
+      if(verbose) cout << "Detect frames with WxH " << _width << "x" << _height << endl;
+      if( _mode_360 == cam_mode_360_t::CUBEMAP )
+      {
+        if( _width == 6 * _height ) {
+          _conf_360 = cam_cube_conf_6x1;
+        } else if( _width * 2 == _height * 3 ) {
+          _conf_360 = cam_cube_conf_3x2;
+        } else if( _width * 3 == _height * 2 ) {
+          _conf_360 = cam_cube_conf_2x3;
+        } else if( _width * 6 == _height ) {
+          _conf_360 = cam_cube_conf_1x6;
+        } else {
+          cerr << "Image should consist of cuba-shaped subframes for CubeMaps but doesn't" << endl;
+          avcodec_close( videoCtx );
+          return false;
+        }
+        if(verbose) cout << "CUBE format: " << cubeConfToString( _conf_360 ) << endl;
+      }
+      if(verbose) cout << "Stream has " << fps << " fps and " << duration << " second duration" << endl;
 
       bool retval = read_data( videoStreamIndex );
 
@@ -194,7 +244,7 @@ private:
         
     err = av_strerror( err, errbuf, 1000 );
     if( err != 0 ) strcpy( errbuf, "Reason unknown" );
-    cout << "Failed to open video codec for stream -- Reason: " << errbuf << endl;
+    cerr << "Failed to open video codec for stream -- Reason: " << errbuf << endl;
 
     return false;
   }
@@ -213,7 +263,7 @@ private:
     {
       err = av_strerror( err, errbuf, 1000 );
       if( err != 0 ) strcpy( errbuf, "Reason unknown" );
-      cout << "Got no frame from context -- Reason: " << errbuf << endl;
+      if(verbose) cout << "Got no frame from context -- Reason: " << errbuf << endl;
       return false;
     }
 
@@ -248,43 +298,19 @@ private:
         {
           err = av_strerror( err, errbuf, 1000 );
           if( err != 0 ) strcpy( errbuf, "Reason unknown" );
-          cout << "Got no frame data from packet -- Reason: " << errbuf << endl;
+          if(verbose) cout << "Got no frame data from packet -- Reason: " << errbuf << endl;
         }
         else if( videoFrameBytes > 0 )
         {
           if( got_picture != 0 )
           {
-            cout << "Frame " << numbering << endl;
-#undef DUMP_IN_FILE
-#ifdef DUMP_IN_FILE
-            {
-                ostringstream name;
-                name << _outputDirectory << "/" << "in-file-" << numbering << ".txt";
-                ofstream of( name.str() );
-                of << "Width = " << _width << endl;
-                of << "Height = " << _height << endl;
-                for( int i=0; i<AV_NUM_DATA_POINTERS; i++ ) {
-                    of << "Linesize " << i << " : " << frame->linesize[i] << endl;
-                }
-
-                for( int h=0; h<_height; h++ ) {
-                    for( int w=0; w<_width; w+=1 ) {
-                        of << int(frame->data[0][h*frame->linesize[0]+w]) << ","
-                           << int(frame->data[1][h/2*frame->linesize[1]+w/2]) << ","
-                           << int(frame->data[2][h/2*frame->linesize[2]+w/2]) << " ";
-                    }
-                    of << endl;
-                }
-            }
-#endif // DUMP_IN_FILE
+            if(verbose) cout << "Frame " << numbering << endl;
 
             // AVPicture contains only the first 2 members of AVFrame
             avpicture_fill((AVPicture*)outframe, out_buffer, AV_PIX_FMT_RGB24, _width, _height );
 
             AVPixelFormat             fmt  = (AVPixelFormat)frame->format;
             const AVPixFmtDescriptor* desc = av_pix_fmt_desc_get( fmt );
-            // cout << "(" << __LINE__ << ") new picture - read " << videoFrameBytes << " bytes" << endl;
-            // cout << "Frame. pixfmt=" << av_get_pix_fmt_name( fmt ) << " num planes=" << av_pix_fmt_count_planes( fmt ) << " bits per pixel=" << av_get_bits_per_pixel( desc ) << endl;
 
             int height = sws_scale( convertCtx,
                                     frame->data, 
@@ -292,80 +318,63 @@ private:
                                     videoCtx->height,
                                     outframe->data,
                                     outframe->linesize ); 
-            // cout << "result height of sws_scale: " << height << endl;
 
-#undef DUMP_OUT_FILE
-#ifdef DUMP_OUT_FILE
+            if( _mode_360 == cam_mode_360_t::CUBEMAP && _split_cube )
             {
-                ostringstream name;
-                name << _outputDirectory << "/" << "out-file-" << numbering << ".txt";
-                ofstream of( name.str() );
-                of << "Width = " << _width << endl;
-                of << "Height = " << _height << endl;
-                for( int i=0; i<AV_NUM_DATA_POINTERS; i++ ) {
-                    of << "Linesize " << i << " : " << outframe->linesize[i] << endl;
+                int face_w;
+                int face_h;
+                setCubeFaceSize( face_w, face_h );
+                for( int i=0; i<6; i++ ) {
+                    ostringstream filebase;
+
+                    filebase << "file-" << cam_cube_order[i] << "-" << numbering;
+
+                    openMVG::image::Image<openMVG::image::RGBColor> out( face_w, face_h, false );
+                
+                    const int linesize = outframe->linesize[0];
+                    uint8_t*  data     = outframe->data[0];
+                    data = setDataOffset( i, linesize, data, face_w, face_h );
+
+                    for( int h=0; h<face_h; h++ ) {
+                        for( int w=0; w<face_w; w+=1 ) {
+                            out( h, w ) = openMVG::image::RGBColor( data[h*linesize+w*3+0],
+                                                                    data[h*linesize+w*3+1],
+                                                                    data[h*linesize+w*3+2] );
+                        }
+                    }
+
+                    ostringstream filename;
+
+                    filename << filebase.str() << (_img_format==img_format_t::PNG ? ".png" : ".jpg" );
+                    const string fullname = _outputDirectory + "/" + filename.str();
+                    int err = openMVG::image::WriteImage( fullname.c_str(), out );
+                    printExif( filebase.str(), filename.str() );
                 }
+            }
+            else
+            {
+                ostringstream filename;
+                ostringstream filebase;
+
+                filebase << "file-" << numbering;
+
+                openMVG::image::Image<openMVG::image::RGBColor> out( _width, _height, false );
 
                 int      linesize = outframe->linesize[0];
                 uint8_t* data     = outframe->data[0];
 
-                for( int h=0; h<_height; h++ ) {
-                    for( int w=0; w<_width*3; w+=3 ) {
-                        of << int(data[h*linesize+w+0]) << ","
-                           << int(data[h*linesize+w+1]) << ","
-                           << int(data[h*linesize+w+2]) << " ";
-
-                        float y = frame->data[0][h*frame->linesize[0]+w];
-                        float u = frame->data[1][h/2*frame->linesize[1]+w/2];
-                        float v = frame->data[2][h/2*frame->linesize[2]+w/2];
-                        float r = (int)(y + 1.402 * ( u - 128.0 ) );
-                        float g = (int)(y - 0.344 * ( v - 128.0 ) - 0.714 * ( u - 128.0 ) );
-                        float b = (int)(y + 1.772 * ( v - 128.0 ) );
-                        of << "(" << int(r) << "," << int(g) << "," << int(b) << ") ";
+                for( int h=0; h<height; h++ ) {
+                    for( int w=0; w<_width; w+=1 ) {
+                        out( h, w ) = openMVG::image::RGBColor( data[h*linesize+w*3+0],
+                                                                data[h*linesize+w*3+1],
+                                                                data[h*linesize+w*3+2] );
                     }
-                    of << endl;
                 }
-            }
-#endif // DUMP_OUT_FILE
 
-            openMVG::image::Image<openMVG::image::RGBColor> out( _width, _height, false );
-
-            int      linesize = outframe->linesize[0];
-            uint8_t* data     = outframe->data[0];
-
-            for( int h=0; h<height; h++ ) {
-                for( int w=0; w<_width; w+=1 ) {
-                    out( h, w ) = openMVG::image::RGBColor( data[h*linesize+w*3+0],
-                                                            data[h*linesize+w*3+1],
-                                                            data[h*linesize+w*3+2] );
-                }
-            }
-
-            ostringstream filebase;
-            ostringstream filename;
-            ostringstream fullname;
-            filebase << "file-" << numbering;
-            filename << filebase.str() << (_img_format==img_format_t::PNG ? ".png" : ".jpg" );
-            fullname << _outputDirectory << "/" << filename.str();
-            int err = openMVG::image::WriteImage( fullname.str().c_str(), out );
-
-            if( _print_exif )
-            {
-              if( _mode_360 == cam_mode_360_t::EQUIRECT || _mode_360 == cam_mode_360_t::CUBEMAP )
-              {
-                int deg = ( _mode_360 == cam_mode_360_t::EQUIRECT ) ? 360 : 90;
-                ostringstream xmlname;
-                xmlname << _outputDirectory << "/" << filebase.str() << ".rdf";
-                ofstream rdfout( xmlname.str() );
-                rdfout << "<?xml version='1.0' encoding='UTF-8'?>\n"
-                       << "<rdf:RDF xmlns:rdf='http://www.w3.org/1999/02/22-rdf-syntax-ns#'>\n"
-                       << "  <rdf:Description rdf:about='" << fullname.str() << "'>\n"
-                       << "    <System:FileName>" << filename.str() << "</System:FileName>\n"
-                       << "    <System:Directory>" << _outputDirectory << "</System:Directory>\n"
-                       << "    <Composite:FOV>" << deg << " deg</Composite:FOV>\n"
-                       << "  </rdf:Description>\n"
-                       << "</rdf:RDF>\n";
-              }
+                filename << filebase.str() << (_img_format==img_format_t::PNG ? ".png" : ".jpg" );
+                const string fullname = _outputDirectory + "/" + filename.str();
+                int err = openMVG::image::WriteImage( fullname.c_str(), out );
+                printExif( filebase.str(), filename.str() );
             }
 
             av_frame_unref( outframe );
@@ -391,6 +400,158 @@ private:
 
     return true;
   }
+
+  void setCubeFaceSize( int& face_w, int& face_h )
+  {
+    switch( _conf_360 )
+    {
+    case cam_cube_conf_6x1 :
+        face_w = _width / 6;
+        face_h = _height;
+        break;
+    case cam_cube_conf_3x2 :
+        face_w = _width / 3;
+        face_h = _height / 2;
+        break;
+    case cam_cube_conf_2x3 :
+        face_w = _width / 2;
+        face_h = _height / 3;
+        break;
+    case cam_cube_conf_1x6 :
+        face_w = _width;
+        face_h = _height / 6;
+        break;
+    default :
+        face_w = _width;
+        face_h = _height;
+        break;
+    }
+  }
+
+  uint8_t* setDataOffset( int i, int linesize, uint8_t* data, int face_w, int face_h )
+  {
+    switch( i )
+    {
+    case 0 :
+        return data;
+        break;
+    case 1 :
+        switch( _conf_360 )
+        {
+        case cam_cube_conf_6x1 :
+        case cam_cube_conf_3x2 :
+        case cam_cube_conf_2x3 :
+            return data + 3 * face_w;
+            break;
+        case cam_cube_conf_1x6 :
+            return data + face_h * linesize;
+            break;
+        default :
+            break;
+        }
+        break;
+    case 2 :
+        switch( _conf_360 )
+        {
+        case cam_cube_conf_6x1 :
+        case cam_cube_conf_3x2 :
+            return data + 2 * 3 * face_w;
+            break;
+        case cam_cube_conf_2x3 :
+            return data + face_h * linesize;
+            break;
+        case cam_cube_conf_1x6 :
+            return data + 2 * face_h * linesize;
+            break;
+        default :
+            break;
+        }
+        break;
+    case 3 :
+        switch( _conf_360 )
+        {
+        case cam_cube_conf_6x1 :
+            return data + 3 * 3 * face_w;
+            break;
+        case cam_cube_conf_3x2 :
+            return data + face_h * linesize;
+            break;
+        case cam_cube_conf_2x3 :
+            return data + face_h * linesize + 3 * face_w;
+            break;
+        case cam_cube_conf_1x6 :
+            return data + 3 * face_h * linesize;
+            break;
+        default :
+            break;
+        }
+        break;
+    case 4 :
+        switch( _conf_360 )
+        {
+        case cam_cube_conf_6x1 :
+            return data + 4 * 3 * face_w;
+            break;
+        case cam_cube_conf_3x2 :
+            return data + face_h * linesize + 3 * face_w;
+            break;
+        case cam_cube_conf_2x3 :
+            return data + 2 * face_h * linesize;
+            break;
+        case cam_cube_conf_1x6 :
+            return data + 4 * face_h * linesize;
+            break;
+        default :
+            break;
+        }
+        break;
+    case 5 :
+        switch( _conf_360 )
+        {
+        case cam_cube_conf_6x1 :
+            return data + 5 * 3 * face_w;
+            break;
+        case cam_cube_conf_3x2 :
+            return data + face_h * linesize + 2 * 3 * face_w;
+            break;
+        case cam_cube_conf_2x3 :
+            return data + 2 * face_h * linesize + 3 * face_w;
+            break;
+        case cam_cube_conf_1x6 :
+            return data + 5 * face_h * linesize;
+            break;
+        default :
+            break;
+        }
+        break;
+    }
+    return data;
+  }
+
+  void printExif( const string& filebase, const string& filename )
+  {
+    if( _print_exif )
+    {
+      if( _mode_360 == cam_mode_360_t::EQUIRECT || _mode_360 == cam_mode_360_t::CUBEMAP )
+      {
+        int deg = ( _mode_360 == cam_mode_360_t::EQUIRECT ) ? 360 : 90;
+  
+        const string fullname = _outputDirectory + "/" + filename;
+        const string xmlname  = _outputDirectory + "/" + filebase + ".rdf";
+  
+        ofstream rdfout( xmlname );
+  
+        rdfout << "<?xml version='1.0' encoding='UTF-8'?>\n"
+               << "<rdf:RDF xmlns:rdf='http://www.w3.org/1999/02/22-rdf-syntax-ns#'>\n"
+               << "  <rdf:Description rdf:about='" << fullname << "'>\n"
+               << "    <System:FileName>" << filename << "</System:FileName>\n"
+               << "    <System:Directory>" << _outputDirectory << "</System:Directory>\n"
+               << "    <Composite:FOV>" << deg << " deg</Composite:FOV>\n"
+               << "  </rdf:Description>\n"
+               << "</rdf:RDF>\n";
+      }
+    }
+  }
 };
 
 int main(int argc, char** argv)
@@ -407,6 +568,8 @@ int main(int argc, char** argv)
   cmd.add( make_option('m', modeString, "mode") );
   cmd.add( make_option('f', imgFormatString, "format") );
   cmd.add( make_switch('e', "exif") );
+  cmd.add( make_switch('s', "split") );
+  cmd.add( make_switch('v', "verbose") );
   
   try
   {
@@ -415,24 +578,29 @@ int main(int argc, char** argv)
   }
   catch(const std::string& s)
   {
-      std::cerr << "Usage: " << argv[0] << '\n'
-                << "    [-i|--input]  the input HEVC video file\n"
-                << "    [-o|--output] the directory output image should be stored\n"
-                << "    [-m|--mode]   EQUIRECT if the input is an equirectangular 360 video\n"
-                << "                  CUBEMAP  if the input is a CubeMap 360 video\n"
-                << "    [-f|--format] output image format, either PNG (default) or JPG\n"
-                << "  Current open source EXIF writer libraries are GPL'd.\n"
-                << "  We provide only the XML output that can be added using exiftool.\n"
-                << "    [-e|--exif] Print the FOV in XML suitable for exiftool.\n"
-                << std::endl;
+      cerr << "Usage: " << argv[0] << '\n'
+           << "    [-i|--input]   the input HEVC video file\n"
+           << "    [-o|--output]  the directory output image should be stored\n"
+           << "    [-m|--mode]    EQUIRECT if the input is an equirectangular 360 video\n"
+           << "                   CUBEMAP  if the input is a CubeMap 360 video\n"
+           << "    [-f|--format]  output image format, either PNG (default) or JPG\n"
+           << "    [-s|--split]   split a CUBEMAP input into 6 images per frames\n"
+           << "    [-v|--verbose] print some info strings\n"
+           << "\n"
+           << "  Current open source EXIF writer libraries are GPL'd.\n"
+           << "  We provide only the XML output that can be added using exiftool.\n"
+           << "    [-e|--exif]    Print the FOV in XML suitable for exiftool\n"
+           << endl;
 
-      std::cerr << s << std::endl;
+      cerr << s << endl;
       return EXIT_FAILURE;
   }
+
+  verbose = cmd.used('v');
   
   if( !stlplus::file_exists( inputVideoFilename ) )
   {
-    std::cout << "The video input file " << inputVideoFilename << " does not exist." << std::endl;
+    cerr << "The video input file " << inputVideoFilename << " does not exist." << endl;
     return false;
   }
 
@@ -441,7 +609,7 @@ int main(int argc, char** argv)
   {
     if( !stlplus::is_folder(outputDirectory ) )
     {
-      std::cout << "A file " << outputDirectory << " is present but it is not a directory." << std::endl;
+      cerr << "A file " << outputDirectory << " is present but it is not a directory." << endl;
       return false;
     }
   }
@@ -449,7 +617,7 @@ int main(int argc, char** argv)
   {
     if( !stlplus::folder_create( outputDirectory ) )
     {
-      std::cout << "Directory " << outputDirectory << " did not exist but creation failed." << std::endl;
+      cerr << "Directory " << outputDirectory << " did not exist but creation failed." << endl;
       return false;
     }
   }
@@ -458,13 +626,18 @@ int main(int argc, char** argv)
 
   img_format_t img_format = stringToImgFormat( imgFormatString );
 
-  ConvertVideo cv( inputVideoFilename, outputDirectory, img_format, mode, cmd.used('e') );
+  ConvertVideo cv( inputVideoFilename,
+                   outputDirectory,
+                   img_format,
+                   mode,
+                   cmd.used('e'),
+                   cmd.used('s') );
   
   bool ret = cv.convert( );
 
   if( not ret )
   {
-    cout << "Failed to find codecs for any video stream in file " << inputVideoFilename << endl;
+    cerr << "Failed to find codecs for any video stream in file " << inputVideoFilename << endl;
     return false;
   }
 
