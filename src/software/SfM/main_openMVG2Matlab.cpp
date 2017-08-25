@@ -96,14 +96,21 @@ bool exportToMatlab(
   {
     const std::string cameraIntrinsicsFilename = stlplus::filespec_to_path(outDirectory, "cameras.intrinsics");
     std::ofstream cameraIntrinsicsFile(cameraIntrinsicsFilename);
-    cameraIntrinsicsFile << "# viewId f u0 v0 k1 k2 k3\n";
+    cameraIntrinsicsFile <<
+      "# viewId pinhole f u0 v0\n"
+      "# viewId radial1 f u0 v0 k1\n"
+      "# viewId radial3 f u0 v0 k1 k2 k3\n"
+      "# viewId brown f u0 v0 k1 k2 k3 t1 t2\n"
+      "# viewId fisheye4 f u0 v0 k1 k2 k3 k4\n"
+      "# viewId fisheye1 f u0 v0 k1\n";
+
     for(const auto& v: sfm_data.views)
     {
       const View& view = *v.second.get();
       if(!sfm_data.IsPoseAndIntrinsicDefined(&view))
         continue;
       const IntrinsicBase& intrinsics = *sfm_data.intrinsics.at(view.id_intrinsic).get();
-      cameraIntrinsicsFile << view.id_view;
+      cameraIntrinsicsFile << view.id_view << " " << cameras::EINTRINSIC_enumToString(intrinsics.getType());
       for(double p: intrinsics.getParams())
         cameraIntrinsicsFile << " " << p;
       cameraIntrinsicsFile << "\n";
