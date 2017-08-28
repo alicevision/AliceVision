@@ -59,7 +59,8 @@ static bool Generate_SfM_Report
   htmlDocStream.pushInfo( "Dataset info:" + sNewLine );
 
   std::ostringstream os;
-  os << " #views: " << sfm_data.GetViews().size() << sNewLine
+  os << "#views: " << sfm_data.GetViews().size() << sNewLine
+  << " #valid views: " << sfm_data.getValidViews().size() << sNewLine
   << " #poses: " << sfm_data.GetPoses().size() << sNewLine
   << " #intrinsics: " << sfm_data.GetIntrinsics().size() << sNewLine
   << " #tracks: " << sfm_data.GetLandmarks().size() << sNewLine

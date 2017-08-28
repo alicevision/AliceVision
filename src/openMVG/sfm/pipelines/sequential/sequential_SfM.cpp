@@ -174,6 +174,11 @@ void SequentialSfMReconstructionEngine::RobustResectionOfImages(
   std::vector<size_t> vec_possible_resection_indexes;
   while (FindNextImagesGroupForResection(vec_possible_resection_indexes, set_remainingViewId))
   {
+    if(vec_possible_resection_indexes.empty())
+    {
+      break;
+    }
+
     // The beginning of the incremental SfM is a well known risky and
     // unstable step which has a big impact on the final result.
     // The Bundle Adjustment is an intensive computing step so we only use it
@@ -188,6 +193,7 @@ void SequentialSfMReconstructionEngine::RobustResectionOfImages(
       // Add images one by one to reconstruct the first cameras.
       OPENMVG_LOG_DEBUG("RobustResectionOfImages : beginning of the incremental SfM" << std::endl
                         << "Only the first image of the resection group is used." << std::endl
+                        << "First image ViewId : " << vec_possible_resection_indexes.front() << std::endl
                         << "# unstable poses : " << _sfm_data.GetPoses().size() << " / " << nbFirstUnstableCameras << std::endl);
 
       vec_possible_resection_indexes.resize(1);
@@ -282,7 +288,7 @@ void SequentialSfMReconstructionEngine::RobustResectionOfImages(
     //BundleAdjustment();
 
     // triangulate
-    triangulate(prevReconstructedViews, newReconstructedViews);
+    triangulate(_sfm_data, prevReconstructedViews, newReconstructedViews);
 
     if (bImageAdded)
     {
@@ -297,13 +303,13 @@ void SequentialSfMReconstructionEngine::RobustResectionOfImages(
       }
       OPENMVG_LOG_DEBUG("Global Bundle start, resection group index: " << resectionGroupIndex << ".");
       chrono_start = std::chrono::steady_clock::now();
-      int bundleAdjustmentIteration = 0;
+      std::size_t bundleAdjustmentIteration = 0;
       const std::size_t nbOutliersThreshold = 50;
       // Perform BA until all point are under the given precision
       do
       {
         auto chrono2_start = std::chrono::steady_clock::now();
-        BundleAdjustment();
+        BundleAdjustment(_bFixedIntrinsics);
         OPENMVG_LOG_DEBUG("Resection group index: " << resectionGroupIndex << ", bundle iteration: " << bundleAdjustmentIteration
                   << " took " << std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - chrono2_start).count() << " msec.");
         ++bundleAdjustmentIteration;
@@ -872,106 +878,65 @@ bool SequentialSfMReconstructionEngine::MakeInitialPair3D(const Pair& current_pa
   relativePose_info.found_residual_precision = std::max(relativePose_info.found_residual_precision, 1.0);
 
   {
-    // Refine the defined scene
-    SfM_Data tinyScene;
-    tinyScene.getRigs() = _sfm_data.getRigs();
-    tinyScene.views.insert(*_sfm_data.GetViews().find(viewI->getViewId()));
-    tinyScene.views.insert(*_sfm_data.GetViews().find(viewJ->getViewId()));
-    tinyScene.intrinsics.insert(*_sfm_data.GetIntrinsics().find(viewI->getIntrinsicId()));
-    tinyScene.intrinsics.insert(*_sfm_data.GetIntrinsics().find(viewJ->getIntrinsicId()));
-
     // Init poses
     const Pose3& initPoseI = Pose3(Mat3::Identity(), Vec3::Zero());
     const Pose3& initPoseJ = relativePose_info.relativePose;
 
-    tinyScene.setPose(*viewI, initPoseI);
-    tinyScene.setPose(*viewJ, initPoseJ);
+    _sfm_data.setPose(*viewI, initPoseI);
+    _sfm_data.setPose(*viewJ, initPoseJ);
 
-    // Init structure
-    const Mat34 P1 = camI->get_projective_equivalent(initPoseI);
-    const Mat34 P2 = camJ->get_projective_equivalent(initPoseJ);
-    Landmarks & landmarks = tinyScene.structure;
+    // Triangulate
+    const std::set<IndexT> prevImageIndex = {static_cast<IndexT>(I)};
+    const std::set<IndexT> newImageIndex = {static_cast<IndexT>(J)};
 
-    for (const auto& trackIt: map_tracksCommon)
-    {
-      Landmark& landmark = landmarks[trackIt.first];
-      const tracks::Track& track = trackIt.second;
+    triangulate(_sfm_data, prevImageIndex, newImageIndex);
 
-      // Get corresponding points
-      auto iter = trackIt.second.featPerView.begin();
-      const size_t i = iter->second;
-      const size_t j = (++iter)->second;
+    Save(_sfm_data, stlplus::create_filespec(_sOutDirectory, "initialPair", _sfmdataInterFileExtension), _sfmdataInterFilter);
 
-      const Vec2 xCoordI = _featuresPerView->getFeatures(I, track.descType)[i].coords().cast<double>();
-      const Vec2 xCoordJ = _featuresPerView->getFeatures(J, track.descType)[j].coords().cast<double>();
-
-      Vec3 X;
-      TriangulateDLT(P1, xCoordI, P2, xCoordJ, &X);
-      Observations observations;
-      observations[viewI->getViewId()] = Observation(xCoordI, i);
-      observations[viewJ->getViewId()] = Observation(xCoordJ, j);
-      landmark.descType = track.descType;
-      landmark.observations = std::move(observations);
-      landmark.X = X;
-    }
-
-    Save(tinyScene, stlplus::create_filespec(_sOutDirectory, "initialPair", _sfmdataInterFileExtension), _sfmdataInterFilter);
-
+    /*
     // - refine only Structure and Rotations & translations (keep intrinsic constant)
     Bundle_Adjustment_Ceres::BA_options options(true);
     options.setDenseBA();
     Bundle_Adjustment_Ceres bundle_adjustment_obj(options);
-    if (!bundle_adjustment_obj.Adjust(tinyScene, BA_REFINE_ROTATION | BA_REFINE_TRANSLATION | BA_REFINE_STRUCTURE))
+    if (!bundle_adjustment_obj.Adjust(_sfm_data, BA_REFINE_ROTATION | BA_REFINE_TRANSLATION | BA_REFINE_STRUCTURE))
     {
       OPENMVG_LOG_WARNING("BA of initial pair " << current_pair.first << ", " << current_pair.second << " failed.");
+
+      // Clear poses, RIGs, landmarks
+      _sfm_data.GetPoses().clear();
+      _sfm_data.GetLandmarks().clear();
+      _sfm_data.resetRigs();
+
       return false;
     }
+    */
+    std::size_t bundleAdjustmentIteration = 0;
+    const std::size_t nbOutliersThreshold = 0;
 
-    Save(tinyScene, stlplus::create_filespec(_sOutDirectory, "initialPair_afterBA", _sfmdataInterFileExtension), _sfmdataInterFilter);
-
-    // Save computed data
-    _sfm_data.getRigs() = tinyScene.getRigs();
-
-    const Pose3 poseI = tinyScene.getPose(*viewI);
-    const Pose3 poseJ = tinyScene.getPose(*viewJ);
-
-    _sfm_data.setPose(*viewI, poseI);
-    _sfm_data.setPose(*viewJ, poseJ);
-
-    _map_ACThreshold.insert(std::make_pair(I, relativePose_info.found_residual_precision));
-    _map_ACThreshold.insert(std::make_pair(J, relativePose_info.found_residual_precision));
-    _set_remainingViewId.erase(viewI->getViewId());
-    _set_remainingViewId.erase(viewJ->getViewId());
-
-    static const double minAngle = 3.0;
-    
-    // List inliers and save them
-    for (Landmarks::const_iterator iter = tinyScene.GetLandmarks().begin();
-      iter != tinyScene.GetLandmarks().end(); ++iter)
+    do
     {
-      const IndexT trackId = iter->first;
-      const Landmark & landmark = iter->second;
-      const Observations & observations = landmark.observations;
-      Observations::const_iterator iterObs_xI = observations.begin();
-      Observations::const_iterator iterObs_xJ = observations.begin();
-      std::advance(iterObs_xJ, 1);
-
-      const Observation & ob_xI = iterObs_xI->second;
-      const Observation & ob_xJ = iterObs_xJ->second;
-
-      const double angle = AngleBetweenRay(
-        poseI, camI, poseJ, camJ, ob_xI.x, ob_xJ.x);
-      const Vec2 residualI = camI->residual(poseI, landmark.X, ob_xI.x);
-      const Vec2 residualJ = camJ->residual(poseJ, landmark.X, ob_xJ.x);
-      if ( angle > minAngle &&
-           poseI.depth(landmark.X) > 0 &&
-           poseJ.depth(landmark.X) > 0 &&
-           residualI.norm() < relativePose_info.found_residual_precision &&
-           residualJ.norm() < relativePose_info.found_residual_precision)
+      auto chrono2_start = std::chrono::steady_clock::now();
+      bool baStatus = BundleAdjustment(true);
+      if(baStatus == false)
       {
-        _sfm_data.structure[trackId] = landmarks[trackId];
+          OPENMVG_LOG_WARNING("BA of initial pair " << current_pair.first << ", " << current_pair.second << " failed.");
+
+          // Clear poses, RIGs, landmarks
+          _sfm_data.GetPoses().clear();
+          _sfm_data.GetLandmarks().clear();
+          _sfm_data.resetRigs();
+
+          return false;
       }
+      OPENMVG_LOG_DEBUG("Initial Pair, bundle iteration: " << bundleAdjustmentIteration
+           << " took " << std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - chrono2_start).count() << " msec.");
+      ++bundleAdjustmentIteration;
     }
+    while (badTrackRejector(4.0, nbOutliersThreshold));
+
+
+    Save(_sfm_data, stlplus::create_filespec(_sOutDirectory, "initialPair_afterBA", _sfmdataInterFileExtension), _sfmdataInterFilter);
+
     // Save outlier residual information
     Histogram<double> histoResiduals;
     OPENMVG_LOG_DEBUG(
@@ -1019,8 +984,8 @@ bool SequentialSfMReconstructionEngine::MakeInitialPair3D(const Pair& current_pa
       jsxGraph.UnsuspendUpdate();
       jsxGraph.setViewport(range);
       jsxGraph.close();
-      _htmlDocStream->pushInfo(jsxGraph.toStr());
 
+      _htmlDocStream->pushInfo(jsxGraph.toStr());
       _htmlDocStream->pushInfo("<hr>");
 
       ofstream htmlFileStream( string(stlplus::folder_append_separator(_sOutDirectory) +
@@ -1268,6 +1233,9 @@ bool SequentialSfMReconstructionEngine::FindNextImagesGroupForResection(
     return false;
   }
 
+  // Add the image view index with the best score
+  out_selectedViewIds.push_back(std::get<0>(vec_viewsScore[0]));
+
 #ifdef OPENMVG_NEXTBESTVIEW_WITHOUT_SCORE
   static const float dThresholdGroup = 0.75f;
   // Number of 2D-3D correspondences for the best view.
@@ -1278,7 +1246,7 @@ bool SequentialSfMReconstructionEngine::FindNextImagesGroupForResection(
   const size_t scoreThreshold = _pyramidThreshold;
 #endif
 
-  for (size_t i = 0;
+  for (size_t i = 1;
        i < vec_viewsScore.size() &&
        std::get<1>(vec_viewsScore[i]) > minPointsThreshold && // ensure min number of points
        std::get<2>(vec_viewsScore[i]) > scoreThreshold; // ensure score level
@@ -1501,7 +1469,7 @@ bool SequentialSfMReconstructionEngine::Resection(const std::size_t viewIndex)
   return true;
 }
 
-void SequentialSfMReconstructionEngine::triangulate(const std::set<IndexT>& previousReconstructedViews, const std::set<IndexT>& newReconstructedViews)
+void SequentialSfMReconstructionEngine::triangulate(SfM_Data& scene, const std::set<IndexT>& previousReconstructedViews, const std::set<IndexT>& newReconstructedViews)
 {
   {
     std::vector<IndexT> intersection;
@@ -1515,15 +1483,22 @@ void SequentialSfMReconstructionEngine::triangulate(const std::set<IndexT>& prev
     assert(intersection.empty());
   }
 
+  std::set<IndexT> reconstructedViews;
+  reconstructedViews.insert(previousReconstructedViews.begin(), previousReconstructedViews.end());
+  reconstructedViews.insert(newReconstructedViews.begin(), newReconstructedViews.end());
+
   #pragma omp parallel for schedule(dynamic)
-  for (ptrdiff_t i = 0; i < static_cast<ptrdiff_t>(previousReconstructedViews.size()); ++i)
+  for (ptrdiff_t i = 0; i < static_cast<ptrdiff_t>(reconstructedViews.size()); ++i)
   {
-    std::set<IndexT>::const_iterator iter = previousReconstructedViews.begin();
+    std::set<IndexT>::const_iterator iter = reconstructedViews.begin();
     std::advance(iter, i);
     const IndexT indexPrev = *iter;
 
     for(IndexT indexNew: newReconstructedViews)
     {
+      if(indexPrev == indexNew)
+        continue;
+
       const std::size_t I = std::min((IndexT)indexNew, indexPrev);
       const std::size_t J = std::max((IndexT)indexNew, indexPrev);
 
@@ -1532,12 +1507,12 @@ void SequentialSfMReconstructionEngine::triangulate(const std::set<IndexT>& prev
       tracks::TracksMap map_tracksCommonIJ;
       tracks::TracksUtilsMap::GetTracksInImagesFast(set_viewIndex, _map_tracks, _map_tracksPerView, map_tracksCommonIJ);
 
-      const View* viewI = _sfm_data.GetViews().at(I).get();
-      const View* viewJ = _sfm_data.GetViews().at(J).get();
-      const IntrinsicBase* camI = _sfm_data.GetIntrinsics().at(viewI->getIntrinsicId()).get();
-      const IntrinsicBase* camJ = _sfm_data.GetIntrinsics().at(viewJ->getIntrinsicId()).get();
-      const Pose3 poseI = _sfm_data.getPose(*viewI);
-      const Pose3 poseJ = _sfm_data.getPose(*viewJ);
+      const View* viewI = scene.GetViews().at(I).get();
+      const View* viewJ = scene.GetViews().at(J).get();
+      const IntrinsicBase* camI = scene.GetIntrinsics().at(viewI->getIntrinsicId()).get();
+      const IntrinsicBase* camJ = scene.GetIntrinsics().at(viewJ->getIntrinsicId()).get();
+      const Pose3 poseI = scene.getPose(*viewI);
+      const Pose3 poseJ = scene.getPose(*viewJ);
 
       std::size_t new_putative_track = 0, new_added_track = 0, extented_track = 0;
       for (const std::pair<std::size_t, tracks::Track >& trackIt : map_tracksCommonIJ)
@@ -1552,14 +1527,14 @@ void SequentialSfMReconstructionEngine::triangulate(const std::set<IndexT>& prev
         bool trackIdExists;
         #pragma omp critical
         {
-            trackIdExists = _sfm_data.structure.find(trackId) != _sfm_data.structure.end();
+            trackIdExists = scene.structure.find(trackId) != scene.structure.end();
         }
         if (trackIdExists)
         {
           // 3D point triangulated before, only add image observation if needed
           #pragma omp critical
           {
-            Landmark& landmark = _sfm_data.structure.at(trackId);
+            Landmark& landmark = scene.structure.at(trackId);
             if (landmark.observations.count(I) == 0)
             {
               const Vec2 residual = camI->residual(poseI, landmark.X, xI);
@@ -1627,7 +1602,7 @@ void SequentialSfMReconstructionEngine::triangulate(const std::set<IndexT>& prev
             #pragma omp critical
             {
               // Add a new track
-              Landmark & landmark = _sfm_data.structure[trackId];
+              Landmark & landmark = scene.structure[trackId];
               landmark.X = X_euclidean;
               landmark.descType = track.descType;
 
@@ -1647,13 +1622,13 @@ void SequentialSfMReconstructionEngine::triangulate(const std::set<IndexT>& prev
 //    OPENMVG_LOG_DEBUG("--Triangulated 3D points [" << I << "-" << J << "]:\n"
 //                      "\t#Track extented: " << extented_track << "\n"
 //                      "\t#Validated/#Possible: " << new_added_track << "/" << new_putative_track << "\n"
-//                      "\t#3DPoint for the entire scene: " << _sfm_data.GetLandmarks().size());
+//                      "\t#3DPoint for the entire scene: " << scene.GetLandmarks().size());
 //  }
   }
 }
 
 /// Bundle adjustment to refine Structure; Motion and Intrinsics
-bool SequentialSfMReconstructionEngine::BundleAdjustment()
+bool SequentialSfMReconstructionEngine::BundleAdjustment(bool fixedIntrinsics)
 {
   Bundle_Adjustment_Ceres::BA_options options;
   if (_sfm_data.GetPoses().size() > 100)
@@ -1668,7 +1643,7 @@ bool SequentialSfMReconstructionEngine::BundleAdjustment()
   }
   Bundle_Adjustment_Ceres bundle_adjustment_obj(options);
   BA_Refine refineOptions = BA_REFINE_ROTATION | BA_REFINE_TRANSLATION | BA_REFINE_STRUCTURE;
-  if(!_bFixedIntrinsics)
+  if(!fixedIntrinsics)
     refineOptions |= BA_REFINE_INTRINSICS_ALL;
   return bundle_adjustment_obj.Adjust(_sfm_data, refineOptions);
 }

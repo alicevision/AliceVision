@@ -148,6 +148,18 @@ public:
   }
 
   /**
+   * @brief Reset all sub-poses parameters
+   */
+  void reset()
+  {
+    for(RigSubPose& subPose : _subPoses)
+    {
+      subPose.status = ERigSubPoseStatus::UNINITIALIZED;
+      subPose.pose = geometry::Pose3();
+    }
+  }
+
+  /**
    * @brief cereal serialize method
    * @param ar The archive
    */

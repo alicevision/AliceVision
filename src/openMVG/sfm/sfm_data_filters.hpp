@@ -56,7 +56,8 @@ static IndexT RemoveOutliers_PixelResidualError
       const geometry::Pose3 pose = sfm_data.getPose(*view);
       const cameras::IntrinsicBase * intrinsic = sfm_data.intrinsics.at(view->getIntrinsicId()).get();
       const Vec2 residual = intrinsic->residual(pose, iterTracks->second.X, itObs->second.x);
-      if (residual.norm() > dThresholdPixel)
+      if((pose.depth(iterTracks->second.X) < 0) ||
+         (residual.norm() > dThresholdPixel))
       {
         ++outlier_count;
         itObs = observations.erase(itObs);

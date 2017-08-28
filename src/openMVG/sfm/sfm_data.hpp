@@ -61,6 +61,7 @@ public:
   Rigs& getRigs() {return _rigs;}
   const Intrinsics& GetIntrinsics() const {return intrinsics;}
   const Landmarks& GetLandmarks() const {return structure;}
+  Landmarks& GetLandmarks() {return structure;}
   const Landmarks& GetControl_Points() const {return control_points;}
   const std::string& getFeatureFolder() const {return _featureFolder;}
   const std::string& getMatchingFolder() const {return _matchingFolder;}
@@ -230,6 +231,15 @@ public:
       _poses.erase(it);
     else
       throw std::out_of_range(std::string("Can't erase unfind pose ") + std::to_string(poseId));
+  }
+
+  /**
+   * @brief Reset rigs sub-poses parameters
+   */
+  void resetRigs()
+  {
+    for(auto rigIt : _rigs)
+      rigIt.second.reset();
   }
 
 private:

@@ -176,10 +176,13 @@ private:
    * @param previousReconstructedViews
    * @param newReconstructedViews
    */
-  void triangulate(const std::set<IndexT>& previousReconstructedViews, const std::set<IndexT>& newReconstructedViews);
+  void triangulate(SfM_Data& scene, const std::set<IndexT>& previousReconstructedViews, const std::set<IndexT>& newReconstructedViews);
 
-  /// Bundle adjustment to refine Structure; Motion and Intrinsics
-  bool BundleAdjustment();
+  /**
+   * @brief Bundle adjustment to refine Structure; Motion and Intrinsics
+   * @param fixedIntrinsics
+   */
+  bool BundleAdjustment(bool fixedIntrinsics);
 
   /// Discard track with too large residual error
   bool badTrackRejector(double dPrecision, size_t count = 0);
