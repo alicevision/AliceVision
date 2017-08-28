@@ -162,7 +162,7 @@ void AlembicExporter::addPoints(const sfm::Landmarks &landmarks, bool withVisibi
 
 void AlembicExporter::appendCameraRig(IndexT rigId,
                                       IndexT rigPoseId,
-                                      const std::map<IndexT, View>& views,
+                                      const std::vector<View>& views,
                                       const std::vector<std::string>& viewsImagePaths,
                                       const std::vector<cameras::Pinhole_Intrinsic*>& intrinsics,
                                       const geometry::Pose3& rigPose,
@@ -172,6 +172,7 @@ void AlembicExporter::appendCameraRig(IndexT rigId,
 
   assert(nbSubPoses == viewsImagePaths.size());
   assert(nbSubPoses == intrinsics.size());
+  assert(nbSubPoses == subPoses.size());
 
   // rig pose
   const openMVG::Mat3& R = rigPose.rotation();
@@ -550,21 +551,24 @@ void AlembicExporter::add(const sfm::SfM_Data& sfmData, sfm::ESfM_Data flags_par
 
       for(const auto& rigPoseIt : rigIt.second)
       {
-        const std::map<IndexT, View>& subPoses = rigPoseIt.second;
-        const Rig& rig = sfmData.getRig(subPoses.begin()->second);
+        const std::map<IndexT, View>& mapSubPoses = rigPoseIt.second;
+        const Rig& rig = sfmData.getRig(mapSubPoses.begin()->second);
         const IndexT rigPoseId = rigPoseIt.first;
-        const std::size_t nbSubposes = subPoses.size();
 
-        std::vector<std::string> viewsImagePaths(nbSubposes);
-        std::vector<cameras::Pinhole_Intrinsic*> intrinsics(nbSubposes);
+        std::vector<View> subPoses;
+        std::vector<std::string> viewsImagePaths;
+        std::vector<cameras::Pinhole_Intrinsic*> intrinsics;
+        std::vector<RigSubPose> rigSubPoses;
 
-        for(const auto& subPoseIt : subPoses)
+        for(const auto& subPoseIt : mapSubPoses)
         {
           const IndexT subPoseId = subPoseIt.first;
           const View& view = subPoseIt.second;
 
-          viewsImagePaths.at(subPoseId) = stlplus::create_filespec(sfmData.s_root_path, view.getImagePath());
-          intrinsics.at(subPoseId) = dynamic_cast<openMVG::cameras::Pinhole_Intrinsic*>(sfmData.GetIntrinsics().at(view.getIntrinsicId()).get());
+          subPoses.push_back(view);
+          viewsImagePaths.push_back(stlplus::create_filespec(sfmData.s_root_path, view.getImagePath()));
+          intrinsics.push_back(dynamic_cast<openMVG::cameras::Pinhole_Intrinsic*>(sfmData.GetIntrinsics().at(view.getIntrinsicId()).get()));
+          rigSubPoses.push_back(rig.getSubPose(subPoseId));
         }
 
          appendCameraRig(rigId,
@@ -572,8 +576,8 @@ void AlembicExporter::add(const sfm::SfM_Data& sfmData, sfm::ESfM_Data flags_par
                          subPoses,
                          viewsImagePaths,
                          intrinsics,
-                         sfmData.getPose(subPoses.begin()->second),
-                         rig.getSubPoses());
+                         sfmData.getPose(mapSubPoses.begin()->second),
+                         rigSubPoses);
       }
     }
   }

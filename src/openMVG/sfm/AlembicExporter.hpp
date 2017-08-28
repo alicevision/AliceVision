@@ -41,7 +41,7 @@ public:
    */
   void appendCameraRig(IndexT rigId,
                        IndexT rigPoseId,
-                       const std::map<IndexT, View>& views,
+                       const std::vector<View>& views,
                        const std::vector<std::string>& viewsImagePaths,
                        const std::vector<cameras::Pinhole_Intrinsic*>& intrinsics,
                        const geometry::Pose3& rigPose,
