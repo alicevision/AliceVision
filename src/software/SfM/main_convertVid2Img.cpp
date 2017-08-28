@@ -249,19 +249,23 @@ void GetCubemapFromEquirect::weightedPix( double wgt[4], int x[4], int y[4], dou
 
 class ConvertVideo
 {
-  const string         _filename;
-  const string         _outputDirectory;
-  const img_format_t   _img_format;
-  const cam_mode_360_t _mode_360;
-  const bool           _print_exif;
-  const bool           _split_cube;
-  cam_cube_conf_t      _conf_360;
-  char                 errbuf[1000];
-  AVFormatContext*     ctx;
-  AVCodecContext*      videoCtx;
-  AVCodec*             videoCodec;
-  int                  _width;
-  int                  _height;
+  typedef std::pair<double,double> cube_pix_t;
+
+  const string          _filename;
+  const string          _outputDirectory;
+  const img_format_t    _img_format;
+  const cam_mode_360_t  _mode_360;
+  const bool            _print_exif;
+  const bool            _split_cube;
+  cam_cube_conf_t       _conf_360;
+  char                  errbuf[1000];
+  AVFormatContext*      ctx;
+  AVCodecContext*       videoCtx;
+  AVCodec*              videoCodec;
+  int                   _width;
+  int                   _height;
+  map<char,cube_pix_t*> _mapping;
+
 public:
   ConvertVideo( const string& filename,
                 const string& outputDirectory,
@@ -594,12 +598,12 @@ private:
     return true;
   }
 
-  void extractFaceFromEquirect( const char face,
-                                const int  linesize,
-                                const uint8_t* in,
-                                openMVG::image::Image<openMVG::image::RGBColor>& out,
-                                const int   outsz )
+  void makeMapping( int outsz, char face )
   {
+    if( _mapping.find(face) != _mapping.end() ) return;
+
+    _mapping[face] = new cube_pix_t[outsz*outsz];
+
     GetCubemapFromEquirect m( outsz, _width, _height );
 
     for( int h=0; h<outsz; h++ ) {
@@ -611,6 +615,26 @@ private:
           cerr << "Failed to map (" << w << "," << h << ")" << endl;
           continue;
         }
+
+        _mapping[face][h*outsz+w] = make_pair( rect_x, rect_y );
+      }
+    }
+  }
+
+  void extractFaceFromEquirect( const char face,
+                                const int  linesize,
+                                const uint8_t* in,
+                                openMVG::image::Image<openMVG::image::RGBColor>& out,
+                                const int   outsz )
+  {
+    makeMapping( outsz, face );
+
+    GetCubemapFromEquirect m( outsz, _width, _height );
+
+    for( int h=0; h<outsz; h++ ) {
+      for( int w=0; w<outsz; w+=1 ) {
+        double rect_x = get<0>( _mapping[face][h*outsz+w] );
+        double rect_y = get<1>( _mapping[face][h*outsz+w] );
 
         double wgt[4];
         int    x[4];
