@@ -1504,43 +1504,6 @@ bool SequentialSfMReconstructionEngine::Resection(const std::size_t viewIndex)
   return true;
 }
 
-/// Bundle adjustment to refine Structure; Motion and Intrinsics
-bool SequentialSfMReconstructionEngine::localBundleAdjustment(const std::set<IndexT>& newReconstructedViewIds)
-{
-  Bundle_Adjustment_Ceres::BA_options options;
-  
-//  options.enableParametersOrdering();
-  
-  if (_sfm_data.GetPoses().size() > 5) // default value: 100 
-  {
-    options.setSparseBA();
-    options.enableLocalBA();
-  }
-  else
-  {
-    options.setDenseBA();
-  }
-  
-  // Run Bundle Adjustment:
-  Bundle_Adjustment_Ceres bundle_adjustment_obj(options);
-
-  if (options.isLocalBAEnabled())
-  {
-    std::map<IndexT, std::size_t> map_distancePerViewId, map_distancePerPoseId;
-    computeDistancesMaps(newReconstructedViewIds, map_distancePerViewId, map_distancePerPoseId);
-    bundle_adjustment_obj.setMapDistancePerViewId(map_distancePerViewId);
-    bundle_adjustment_obj.setMapDistancePerPoseId(map_distancePerPoseId);
-    bundle_adjustment_obj.applyRefinementRules(_sfm_data, 2, 1);
-  }
-  
-  BAStats baStats;
-  baStats.newViewsId = newReconstructedViewIds;
-  bool isBaSucceed = bundle_adjustment_obj.adjustPartialReconstruction(_sfm_data, baStats);
-  exportStatistics(baStats);
-  
-  return isBaSucceed;
-}
-
 void SequentialSfMReconstructionEngine::updateDistancesGraph(const std::set<IndexT>& newViewIds)
 {
   std::set<IndexT> viewIdsAddedToTheGraph;
@@ -1682,6 +1645,43 @@ bool SequentialSfMReconstructionEngine::BundleAdjustment()
   if(!_bFixedIntrinsics)
     refineOptions |= BA_REFINE_INTRINSICS_ALL;
   return bundle_adjustment_obj.Adjust(_sfm_data, refineOptions);
+}
+
+///
+bool SequentialSfMReconstructionEngine::localBundleAdjustment(const std::set<IndexT>& newReconstructedViewIds)
+{
+  Bundle_Adjustment_Ceres::BA_options options;
+  options.enableParametersOrdering();
+  
+  if (_sfm_data.GetPoses().size() > 100) // default value: 100 
+  {
+    options.setSparseBA();
+    options.enableLocalBA();
+  }
+  else
+  {
+    options.setDenseBA();
+  }
+  
+  // Run Bundle Adjustment:
+  Bundle_Adjustment_Ceres bundle_adjustment_obj(options);
+
+  if (options.isLocalBAEnabled())
+  {
+    std::map<IndexT, std::size_t> map_distancePerViewId, map_distancePerPoseId;
+    computeDistancesMaps(newReconstructedViewIds, map_distancePerViewId, map_distancePerPoseId);
+    bundle_adjustment_obj.setMapDistancePerViewId(map_distancePerViewId);
+    bundle_adjustment_obj.setMapDistancePerPoseId(map_distancePerPoseId);
+    bundle_adjustment_obj.applyRefinementRules(_sfm_data, 2, 1);
+  }
+  
+  BAStats baStats;
+  baStats.newViewsId = newReconstructedViewIds;
+  bundle_adjustment_obj.setBAStatisticsContainer(baStats);
+  bool isBaSucceed = bundle_adjustment_obj.adjust_LocalBA(_sfm_data);
+  exportStatistics(baStats);
+  
+  return isBaSucceed;
 }
 
 /**

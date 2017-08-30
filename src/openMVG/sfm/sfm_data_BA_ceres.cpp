@@ -642,7 +642,7 @@ void Bundle_Adjustment_Ceres::applyRefinementRules(const SfM_Data & sfm_data, co
 }
 
 
-bool Bundle_Adjustment_Ceres::adjustPartialReconstruction(SfM_Data& sfm_data, BAStats& baStats)
+bool Bundle_Adjustment_Ceres::adjust_LocalBA(SfM_Data& sfm_data)
 {
   //----------
   // Add camera parameters
@@ -661,11 +661,11 @@ bool Bundle_Adjustment_Ceres::adjustPartialReconstruction(SfM_Data& sfm_data, BA
   Hash_Map<IndexT, std::vector<double> > map_posesBlocks;
   Hash_Map<IndexT, std::vector<double> > map_intrinsicsBlocks;
 
-  // Add Poses data to the Ceres problem as Parameter Blocks (do not take care about Local BA strategy)
-  map_posesBlocks = addPosesToCeresProblem(sfm_data.poses, problem, solver_options, baStats);
+  // Add Poses data to the Ceres problem as Parameter Blocks (do not take care of Local BA strategy)
+  map_posesBlocks = addPosesToCeresProblem(sfm_data.poses, problem);
   
-  // Add Poses data to the Ceres problem as Parameter Blocks (do not take care about Local BA strategy)
-  map_intrinsicsBlocks = addIntrinsicsToCeresProblem(sfm_data, problem, solver_options, baStats);
+  // Add Poses data to the Ceres problem as Parameter Blocks (do not take care of Local BA strategy)
+  map_intrinsicsBlocks = addIntrinsicsToCeresProblem(sfm_data, problem);
      
   // Count the number of Refined, Constant & Ignored parameters
   if (_openMVG_options.isLocalBAEnabled())
@@ -673,22 +673,22 @@ bool Bundle_Adjustment_Ceres::adjustPartialReconstruction(SfM_Data& sfm_data, BA
     for (auto it : map_intrinsicsBlocks)
     {
       IndexT intrinsicId = it.first;
-      if (getIntrinsicsBAState(intrinsicId) == LocalBAState::refined)  ++baStats.numRefinedIntrinsics;
-      if (getIntrinsicsBAState(intrinsicId) == LocalBAState::constant) ++baStats.numConstantIntrinsics;
-      if (getIntrinsicsBAState(intrinsicId) == LocalBAState::ignored)  ++baStats.numIgnoredIntrinsics;
+      if (getIntrinsicsBAState(intrinsicId) == LocalBAState::refined)  ++BA_stats.numRefinedIntrinsics;
+      if (getIntrinsicsBAState(intrinsicId) == LocalBAState::constant) ++BA_stats.numConstantIntrinsics;
+      if (getIntrinsicsBAState(intrinsicId) == LocalBAState::ignored)  ++BA_stats.numIgnoredIntrinsics;
     }
     for (auto it : map_posesBlocks)
     {
       IndexT poseId = it.first;
-      if (getPoseBAState(poseId) == LocalBAState::refined)  ++baStats.numRefinedPoses;
-      if (getPoseBAState(poseId) == LocalBAState::constant) ++baStats.numConstantPoses;
-      if (getPoseBAState(poseId) == LocalBAState::ignored)  ++baStats.numIgnoredPoses;
+      if (getPoseBAState(poseId) == LocalBAState::refined)  ++BA_stats.numRefinedPoses;
+      if (getPoseBAState(poseId) == LocalBAState::constant) ++BA_stats.numConstantPoses;
+      if (getPoseBAState(poseId) == LocalBAState::ignored)  ++BA_stats.numIgnoredPoses;
     }
   }   
   else
   {
-    baStats.numRefinedPoses = map_posesBlocks.size();
-    baStats.numRefinedIntrinsics = map_intrinsicsBlocks.size();
+    BA_stats.numRefinedPoses = map_posesBlocks.size();
+    BA_stats.numRefinedIntrinsics = map_intrinsicsBlocks.size();
   }
   
   // Set a LossFunction to be less penalized by false measurements
@@ -702,9 +702,9 @@ bool Bundle_Adjustment_Ceres::adjustPartialReconstruction(SfM_Data& sfm_data, BA
     IndexT landmarkId = landmarkIt.first;
     
     // Count the number of Refined, Constant & Ignored landmarks
-    if (getLandmarkBAState(landmarkId) == LocalBAState::refined)  ++baStats.numRefinedLandmarks;
-    if (getLandmarkBAState(landmarkId) == LocalBAState::constant) ++baStats.numConstantLandmarks;
-    if (getLandmarkBAState(landmarkId) == LocalBAState::ignored)  ++baStats.numIgnoredLandmarks;
+    if (getLandmarkBAState(landmarkId) == LocalBAState::refined)  ++BA_stats.numRefinedLandmarks;
+    if (getLandmarkBAState(landmarkId) == LocalBAState::constant) ++BA_stats.numConstantLandmarks;
+    if (getLandmarkBAState(landmarkId) == LocalBAState::ignored)  ++BA_stats.numIgnoredLandmarks;
             
     const Observations & observations = landmarkIt.second.observations;
     // Iterate over 2D observation associated to the 3D landmark
@@ -756,7 +756,7 @@ bool Bundle_Adjustment_Ceres::adjustPartialReconstruction(SfM_Data& sfm_data, BA
         } 
         
         // Apply a specific parameter ordering: 
-        if (_openMVG_options.useParametersOrdering) 
+        if (_openMVG_options.isParameterOrderingEnabled()) 
         {
           ceres::ParameterBlockOrdering* linear_solver_ordering = new ceres::ParameterBlockOrdering;
           linear_solver_ordering->AddElementToGroup(landmarkBlock, 0);
@@ -790,37 +790,37 @@ bool Bundle_Adjustment_Ceres::adjustPartialReconstruction(SfM_Data& sfm_data, BA
   }
   
   // Add statitics about the BA loop:
-  baStats.time = summary.total_time_in_seconds;
-  baStats.numSuccessfullIterations = summary.num_successful_steps;
-  baStats.numUnsuccessfullIterations = summary.num_unsuccessful_steps;
-  baStats.numResidualBlocks = summary.num_residuals;
-  baStats.RMSEinitial = std::sqrt( summary.initial_cost / summary.num_residuals);
-  baStats.RMSEfinal = std::sqrt( summary.final_cost / summary.num_residuals);
+  BA_stats.time = summary.total_time_in_seconds;
+  BA_stats.numSuccessfullIterations = summary.num_successful_steps;
+  BA_stats.numUnsuccessfullIterations = summary.num_unsuccessful_steps;
+  BA_stats.numResidualBlocks = summary.num_residuals;
+  BA_stats.RMSEinitial = std::sqrt( summary.initial_cost / summary.num_residuals);
+  BA_stats.RMSEfinal = std::sqrt( summary.final_cost / summary.num_residuals);
   
    if (_openMVG_options._bVerbose && _openMVG_options.isLocalBAEnabled())
   {
     // Generate the histogram <distance, NbOfPoses>
     for (auto it: map_poseId_distanceToRecentCameras) // distanceToRecentPoses: <poseId, distance>
     {
-      auto itHisto = baStats.map_distance_numCameras.find(it.second);
-      if(itHisto != baStats.map_distance_numCameras.end())
-        ++baStats.map_distance_numCameras.at(it.second);
+      auto itHisto = BA_stats.map_distance_numCameras.find(it.second);
+      if(itHisto != BA_stats.map_distance_numCameras.end())
+        ++BA_stats.map_distance_numCameras.at(it.second);
       else // first pose with this specific distance
-          baStats.map_distance_numCameras[it.second] = 1;
+          BA_stats.map_distance_numCameras[it.second] = 1;
     }
     
     // Display statistics about the Local BA
     OPENMVG_LOG_DEBUG(
       "Local BA statistics:\n"
-      " #poses: " << baStats.numRefinedPoses << " refined, " 
-        << baStats.numConstantPoses << " constant, "
-        << baStats.numIgnoredPoses << " ignored.\n"
-      " #intrinsics: " << baStats.numRefinedIntrinsics << " refined, " 
-        << baStats.numConstantIntrinsics << " constant, "
-        << baStats.numIgnoredIntrinsics<< " ignored.\n"   
-      " #landmarks: " << baStats.numRefinedLandmarks << " refined, " 
-        << baStats.numConstantLandmarks << " constant, "
-        << baStats.numIgnoredLandmarks << " ignored.\n"
+      " #poses: " << BA_stats.numRefinedPoses << " refined, " 
+        << BA_stats.numConstantPoses << " constant, "
+        << BA_stats.numIgnoredPoses << " ignored.\n"
+      " #intrinsics: " << BA_stats.numRefinedIntrinsics << " refined, " 
+        << BA_stats.numConstantIntrinsics << " constant, "
+        << BA_stats.numIgnoredIntrinsics<< " ignored.\n"   
+      " #landmarks: " << BA_stats.numRefinedLandmarks << " refined, " 
+        << BA_stats.numConstantLandmarks << " constant, "
+        << BA_stats.numIgnoredLandmarks << " ignored.\n"
     );
   }
   
@@ -835,9 +835,7 @@ bool Bundle_Adjustment_Ceres::adjustPartialReconstruction(SfM_Data& sfm_data, BA
 
 Hash_Map<IndexT, std::vector<double> > Bundle_Adjustment_Ceres::addPosesToCeresProblem(
   const Poses & poses,
-  ceres::Problem & problem,
-  ceres::Solver::Options& options,
-  BAStats& baStats)
+  ceres::Problem & problem)
 {
   // Data wrapper for refinement:
   Hash_Map<IndexT, std::vector<double> > map_poses;
@@ -867,10 +865,9 @@ Hash_Map<IndexT, std::vector<double> > Bundle_Adjustment_Ceres::addPosesToCeresP
   return map_poses;
 }
 
-Hash_Map<IndexT, std::vector<double>> Bundle_Adjustment_Ceres::addIntrinsicsToCeresProblem(const SfM_Data & sfm_data,
-  ceres::Problem & problem, 
-  ceres::Solver::Options &options,
-  BAStats& baStats)
+Hash_Map<IndexT, std::vector<double>> Bundle_Adjustment_Ceres::addIntrinsicsToCeresProblem(
+  const SfM_Data & sfm_data,
+  ceres::Problem & problem)
 {
   Hash_Map<IndexT, std::size_t> intrinsicsUsage;
   
