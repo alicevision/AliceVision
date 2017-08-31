@@ -32,6 +32,8 @@ typedef Hash_Map<IndexT, Landmark> Landmarks;
 /// Contain all the information about a Bundle Adjustment loop
 struct LocalBA_stats
 {
+  LocalBA_stats(const std::set<IndexT>& newlyResectedViewsId = std::set<IndexT>()) {newViewsId = newlyResectedViewsId;}
+  
   // Parameters returned by Ceres:
   double time = 0.0;                          // spent time to solve the BA (s)
   std::size_t numSuccessfullIterations = 0;   // number of successfull iterations

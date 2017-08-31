@@ -177,7 +177,7 @@ private:
   size_t badTrackRejector(double dPrecision, size_t count = 0);
 
   /// Add the new views 'newViewIds' to the graph 'reconstructionGraph' used to the distances computation 
-  void updateDistancesGraph(const std::set<IndexT>& newViewIds);
+//  void updateDistancesGraph(const std::set<IndexT>& newViewIds);
 
   /**
    * @brief Compute the distance/connexity to the new cameras for each resected cameras. 
@@ -188,9 +188,9 @@ private:
    * @param[out] map_distancePerViewId: a map storing the distance of each resected view to the new cameras 
    * @param[out] map_distancePerPoseId: a map storing the distance of each resected pose to the new cameras 
    */
-  void computeDistancesMaps(const std::set<IndexT>& newViewIds,
-    std::map<IndexT, size_t> &map_distancePerViewId, 
-    std::map<IndexT, size_t> &map_distancePerPoseId);
+//  void computeDistancesMaps(const std::set<IndexT>& newViewIds,
+//    std::map<IndexT, size_t> &map_distancePerViewId, 
+//    std::map<IndexT, size_t> &map_distancePerPoseId);
   
   #if OPENMVG_IS_DEFINED(OPENMVG_HAVE_BOOST)
   /// Export statistics in a JSON file
@@ -222,10 +222,10 @@ private:
   features::FeaturesPerView  * _featuresPerView;
   matching::PairwiseMatches  * _pairwiseMatches;
   
-  // Local BA data
-  lemon::ListGraph _reconstructionGraph;
-  lemon::ListGraph::NodeMap<IndexT> _nodeMap; // <node, viewId>
-  std::map<IndexT, lemon::ListGraph::Node> _invNodeMap; // <viewId, node>
+//  // Local BA data
+//  lemon::ListGraph _reconstructionGraph;
+//  lemon::ListGraph::NodeMap<IndexT> _nodeMap; // <node, viewId>
+//  std::map<IndexT, lemon::ListGraph::Node> _invNodeMap; // <viewId, node>
   
   // Pyramid scoring
   const int _pyramidBase = 2;
