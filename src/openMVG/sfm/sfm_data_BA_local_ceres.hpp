@@ -10,9 +10,6 @@
 #include "openMVG/sfm/sfm_data_BA_ceres.hpp"
 #include "openMVG/tracks/tracks.hpp"
 
-//#include "lemon/list_graph.h"
-
-
 namespace openMVG {
 namespace sfm {
 
@@ -29,19 +26,19 @@ public:
     LocalBA_options(const bool bVerbose = true, bool bmultithreaded = true) 
       : Bundle_Adjustment_Ceres::BA_options(bVerbose, bmultithreaded)
     {
-      useParametersOrdering = false;
-      useLocalBA = false;
+      _useParametersOrdering = false;
+      _useLocalBA = false;
     }
 
-    bool useParametersOrdering; 
-    void enableParametersOrdering() {useParametersOrdering = true;}
-    void disableParametersOrdering() {useParametersOrdering = false;}
-    bool isParameterOrderingEnabled() {return useParametersOrdering;}
+    bool _useParametersOrdering; 
+    void enableParametersOrdering() {_useParametersOrdering = true;}
+    void disableParametersOrdering() {_useParametersOrdering = false;}
+    bool isParameterOrderingEnabled() {return _useParametersOrdering;}
     
-    bool useLocalBA;
-    void enableLocalBA() {useLocalBA = true;}
-    void disableLocalBA() {useLocalBA = false;}
-    bool isLocalBAEnabled() {return useLocalBA;}
+    bool _useLocalBA;
+    void enableLocalBA() {_useLocalBA = true;}
+    void disableLocalBA() {_useLocalBA = false;}
+    bool isLocalBAEnabled() {return _useLocalBA;}
   };
   
   Local_Bundle_Adjustment_Ceres(Local_Bundle_Adjustment_Ceres::LocalBA_options options = LocalBA_options());
@@ -57,12 +54,10 @@ public:
     const SfM_Data& sfm_data, 
     const std::set<IndexT>& newViewIds,
     const openMVG::tracks::TracksPerView& map_tracksPerView);
-  
-//  void setMapDistancePerViewId(const std::map<IndexT, std::size_t>& map) {map_viewId_distanceToRecentCameras = map;}
-//  void setMapDistancePerPoseId(const std::map<IndexT, std::size_t>& map) {map_poseId_distanceToRecentCameras = map;}
+
   void applyRefinementRules(const SfM_Data & sfm_data, const IndexT strategyId=0, const std::size_t distanceLimit=1);
   
-  void setBAStatisticsContainer(LocalBA_stats& baStats) {LBA_statistics = baStats;}
+  void setBAStatisticsContainer(LocalBA_stats& baStats) {_LBA_statistics = baStats;}
 
   /// Export statistics about bundle adjustment in a TXT file ("BaStats.txt")
   /// The contents of the file have been writen such that it is easy to handle it with
@@ -73,27 +68,25 @@ private:
 
   // Used for Local BA strategy: 
   // Local BA data
-  LocalBA_options LBA_openMVG_options;
-  LocalBA_stats LBA_statistics;
+  LocalBA_options _LBA_openMVG_options;
+  LocalBA_stats _LBA_statistics;
   
   lemon::ListGraph _reconstructionGraph;
   lemon::ListGraph::NodeMap<IndexT> _nodeMap; // <node, viewId>
   std::map<IndexT, lemon::ListGraph::Node> _invNodeMap; // <viewId, node>
   
-  
-  std::map<IndexT, std::size_t> map_viewId_distance;
-  std::map<IndexT, std::size_t> map_poseId_distance;
+  std::map<IndexT, std::size_t> _map_viewId_distance;
+  std::map<IndexT, std::size_t> _map_poseId_distance;
   
   enum LocalBAState{ refined, constant, ignored };
   
-  std::map<IndexT, LocalBAState> map_poseId_LBAState;
-  std::map<IndexT, LocalBAState> map_intrinsicId_LBAState;
-  std::map<IndexT, LocalBAState> map_landmarkId_LBAState;
+  std::map<IndexT, LocalBAState> _map_poseId_LBAState;
+  std::map<IndexT, LocalBAState> _map_intrinsicId_LBAState;
+  std::map<IndexT, LocalBAState> _map_landmarkId_LBAState;
   
-  
-  LocalBAState getPoseState(const IndexT poseId)            {return map_poseId_LBAState.find(poseId)->second;}
-  LocalBAState getIntrinsicsState(const IndexT intrinsicId) {return map_intrinsicId_LBAState.find(intrinsicId)->second;}
-  LocalBAState getLandmarkState(const IndexT landmarkId)    {return map_landmarkId_LBAState.find(landmarkId)->second;}
+  LocalBAState getPoseState(const IndexT poseId)            {return _map_poseId_LBAState.find(poseId)->second;}
+  LocalBAState getIntrinsicsState(const IndexT intrinsicId) {return _map_intrinsicId_LBAState.find(intrinsicId)->second;}
+  LocalBAState getLandmarkState(const IndexT landmarkId)    {return _map_landmarkId_LBAState.find(landmarkId)->second;}
     
   void updateDistancesGraph(const SfM_Data& sfm_data, 
     const tracks::TracksPerView& map_tracksPerView,

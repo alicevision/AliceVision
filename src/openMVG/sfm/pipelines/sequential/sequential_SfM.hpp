@@ -221,12 +221,7 @@ private:
   //-- Data provider
   features::FeaturesPerView  * _featuresPerView;
   matching::PairwiseMatches  * _pairwiseMatches;
-  
-//  // Local BA data
-//  lemon::ListGraph _reconstructionGraph;
-//  lemon::ListGraph::NodeMap<IndexT> _nodeMap; // <node, viewId>
-//  std::map<IndexT, lemon::ListGraph::Node> _invNodeMap; // <viewId, node>
-  
+    
   // Pyramid scoring
   const int _pyramidBase = 2;
   const int _pyramidDepth = 5;
