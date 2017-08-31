@@ -527,8 +527,28 @@ install(TARGETS openMVG_main_keyframeSelection
   DESTINATION bin/
 )
 
-endif()
 
+# -
+# - Split 360 images in input in order to export square images
+# -
+add_executable(openMVG_main_split360Images main_split360Images.cpp)
+target_link_libraries(openMVG_main_split360Images
+  openMVG_system
+  openMVG_keyframe
+  ${OPENIMAGEIO_LIBRARIES}
+  ${Boost_LIBRARIES}
+)
+
+#installation rules
+set_property(TARGET openMVG_main_split360Images
+  PROPERTY FOLDER OpenMVG/software
+)
+
+install(TARGETS openMVG_main_split360Images
+  DESTINATION bin/
+)
+
+endif()
 
 ##
 # Export tutorial with valid path thanks to a configuration file
