@@ -30,7 +30,7 @@ typedef Hash_Map<IndexT, std::shared_ptr<cameras::IntrinsicBase> > Intrinsics;
 typedef Hash_Map<IndexT, Landmark> Landmarks;
 
 /// Contain all the information about a Bundle Adjustment loop
-struct BAStats
+struct LocalBA_stats
 {
   // Parameters returned by Ceres:
   double time = 0.0;                          // spent time to solve the BA (s)

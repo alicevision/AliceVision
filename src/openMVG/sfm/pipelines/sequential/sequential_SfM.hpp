@@ -192,11 +192,6 @@ private:
     std::map<IndexT, size_t> &map_distancePerViewId, 
     std::map<IndexT, size_t> &map_distancePerPoseId);
   
-  /// Export statistics about bundle adjustment in a TXT file ("BaStats.txt")
-  /// The contents of the file have been writen such that it is easy to handle it with
-  /// a Python script or any spreadsheets (e.g. by copy/past the full content to LibreOffice) 
-  bool exportStatistics(BAStats& baStats);
-  
   #if OPENMVG_IS_DEFINED(OPENMVG_HAVE_BOOST)
   /// Export statistics in a JSON file
   void exportStatistics(double time_sfm);
