@@ -23,6 +23,7 @@ Local_Bundle_Adjustment_Ceres::Local_Bundle_Adjustment_Ceres(
 
 bool Local_Bundle_Adjustment_Ceres::Adjust(SfM_Data& sfm_data)
 {
+
   //----------
   // Add camera parameters
   // - intrinsics
@@ -34,6 +35,9 @@ bool Local_Bundle_Adjustment_Ceres::Adjust(SfM_Data& sfm_data)
   
   ceres::Solver::Options solver_options;
   setSolverOptions(solver_options);
+  if (LBA_openMVG_options.isParameterOrderingEnabled()) 
+    solver_options.linear_solver_ordering.reset(new ceres::ParameterBlockOrdering);
+
   ceres::Problem problem;
   
   // Data wrapper for refinement:
@@ -118,6 +122,19 @@ bool Local_Bundle_Adjustment_Ceres::Adjust(SfM_Data& sfm_data)
         double* intrinsicBlock = &map_intrinsicsBlocks[intrinsicId][0];
         double* poseBlock = &map_posesBlocks[poseId][0];
         double* landmarkBlock = landmarkIt.second.X.data();
+
+        // Apply a specific parameter ordering: 
+        if (LBA_openMVG_options.isParameterOrderingEnabled()) 
+        {
+          solver_options.linear_solver_ordering->AddElementToGroup(landmarkBlock, 0);
+          solver_options.linear_solver_ordering->AddElementToGroup(intrinsicBlock, 1);
+          solver_options.linear_solver_ordering->AddElementToGroup(poseBlock, 2);
+//          ceres::ParameterBlockOrdering* linear_solver_ordering = new ceres::ParameterBlockOrdering;
+//          linear_solver_ordering->AddElementToGroup(landmarkBlock, 0);
+//          linear_solver_ordering->AddElementToGroup(intrinsicBlock, 1);
+//          linear_solver_ordering->AddElementToGroup(poseBlock, 2);
+//          solver_options.linear_solver_ordering.reset(linear_solver_ordering);
+        }
           
         // Create a residual block:
         problem.AddResidualBlock(cost_function,
@@ -134,15 +151,6 @@ bool Local_Bundle_Adjustment_Ceres::Adjust(SfM_Data& sfm_data)
           if (getLandmarkBAState(landmarkId) == LocalBAState::constant)    problem.SetParameterBlockConstant(landmarkBlock);
         } 
         
-        // Apply a specific parameter ordering: 
-        if (LBA_openMVG_options.isParameterOrderingEnabled()) 
-        {
-          ceres::ParameterBlockOrdering* linear_solver_ordering = new ceres::ParameterBlockOrdering;
-          linear_solver_ordering->AddElementToGroup(landmarkBlock, 0);
-          linear_solver_ordering->AddElementToGroup(intrinsicBlock, 1);
-          linear_solver_ordering->AddElementToGroup(poseBlock, 2);
-          solver_options.linear_solver_ordering.reset(linear_solver_ordering);
-        }
       }
     }
   }
@@ -167,6 +175,17 @@ bool Local_Bundle_Adjustment_Ceres::Adjust(SfM_Data& sfm_data)
       " Time (s): " << summary.total_time_in_seconds << "\n"
       );
   }
+
+  if (LBA_openMVG_options._bVerbose && LBA_openMVG_options.isParameterOrderingEnabled())
+  {
+  // Display statistics about "parameter ordering"
+    OPENMVG_LOG_DEBUG(
+      "Parameter ordering statistics:\n"
+      " (group 0 (tracks)): " << solver_options.linear_solver_ordering->GroupSize(0) << "\n"
+      " (group 1 (tracks)): " << solver_options.linear_solver_ordering->GroupSize(1) << "\n"
+      " (group 2 (tracks)): " << solver_options.linear_solver_ordering->GroupSize(2) << "\n"
+      );
+  }
   
   // Add statitics about the BA loop:
   LBA_stats.time = summary.total_time_in_seconds;
@@ -176,7 +195,7 @@ bool Local_Bundle_Adjustment_Ceres::Adjust(SfM_Data& sfm_data)
   LBA_stats.RMSEinitial = std::sqrt( summary.initial_cost / summary.num_residuals);
   LBA_stats.RMSEfinal = std::sqrt( summary.final_cost / summary.num_residuals);
   
-   if (LBA_openMVG_options._bVerbose && LBA_openMVG_options.isLocalBAEnabled())
+  if (LBA_openMVG_options._bVerbose && LBA_openMVG_options.isLocalBAEnabled())
   {
     // Generate the histogram <distance, NbOfPoses>
     for (auto it: map_poseId_distanceToRecentCameras) // distanceToRecentPoses: <poseId, distance>
@@ -328,99 +347,7 @@ void Local_Bundle_Adjustment_Ceres::applyRefinementRules(const SfM_Data & sfm_da
       }
     }
     break;
-    
-    case 3 :
-    {
-      // ----------------------------------------------------
-      // -- Strategy 3 (DEBUG) 
-      // ----------------------------------------------------
-
-      // -- Poses
-      for (Poses::const_iterator itPose = sfm_data.poses.begin(); itPose != sfm_data.poses.end(); ++itPose)
-      {
-        const IndexT poseId = itPose->first;
-        int dist = map_poseId_distanceToRecentCameras.at(poseId);
-        if (dist < distanceLimit) // 0 
-          map_poseId_BAState[poseId] = LocalBAState::refined;
-        else if (dist == distanceLimit ) // 1 
-          map_poseId_BAState[poseId] = LocalBAState::constant;
-        else // 2 
-          map_poseId_BAState[poseId] = LocalBAState::ignored;
-      }
-
-      // -- Instrinsics
-      for(const auto& itIntrinsic: sfm_data.GetIntrinsics())
-      {
-        const IndexT intrinsicId = itIntrinsic.first;
-        map_intrinsicId_BAState[intrinsicId] = LocalBAState::refined;
-      }
-
-      // -- Landmarks
-      for(const auto& itLandmark: sfm_data.structure)
-      {
-        const IndexT landmarkId = itLandmark.first;
-        const Observations & observations = itLandmark.second.observations;
-
-        map_landmarkId_BAState[landmarkId] = LocalBAState::ignored;
-
-        for(const auto& observationIt: observations)
-        {
-          int dist = map_viewId_distanceToRecentCameras.at(observationIt.first);
-          if(dist < distanceLimit)
-          {
-            map_landmarkId_BAState[landmarkId] = LocalBAState::refined;
-            continue;
-          }
-        }
-      }
-    }
-    break;
-    
-    case 4 :
-    {
-      // ----------------------------------------------------
-      // -- Strategy 4 (DEBUG) : Nothing ignored
-      // ----------------------------------------------------
-
-      // -- Poses
-      for (Poses::const_iterator itPose = sfm_data.poses.begin(); itPose != sfm_data.poses.end(); ++itPose)
-      {
-        const IndexT poseId = itPose->first;
-        int dist = map_poseId_distanceToRecentCameras.at(poseId);
-        if (dist <= distanceLimit) // 0 or 1
-          map_poseId_BAState[poseId] = LocalBAState::refined;
-        else // > 1 
-          map_poseId_BAState[poseId] = LocalBAState::constant;
-      }
-
-      // -- Instrinsics
-      for(const auto& itIntrinsic: sfm_data.GetIntrinsics())
-      {
-        const IndexT intrinsicId = itIntrinsic.first;
-        map_intrinsicId_BAState[intrinsicId] = LocalBAState::refined;
-      }
-
-      // -- Landmarks
-      for(const auto& itLandmark: sfm_data.structure)
-      {
-        const IndexT landmarkId = itLandmark.first;
-        const Observations & observations = itLandmark.second.observations;
-
-        map_landmarkId_BAState[landmarkId] = LocalBAState::constant;
-
-        for(const auto& observationIt: observations)
-        {
-          int dist = map_viewId_distanceToRecentCameras.at(observationIt.first);
-          if(dist <= distanceLimit)
-          {
-            map_landmarkId_BAState[landmarkId] = LocalBAState::refined;
-            continue;
-          }
-        }
-      }
-    }
-    break;
-    
+      
     default:
     {
       // ----------------------------------------------------

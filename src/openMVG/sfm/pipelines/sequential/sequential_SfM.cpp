@@ -1652,9 +1652,9 @@ bool SequentialSfMReconstructionEngine::BundleAdjustment()
 bool SequentialSfMReconstructionEngine::localBundleAdjustment(const std::set<IndexT>& newReconstructedViewIds)
 {
   Local_Bundle_Adjustment_Ceres::LocalBA_options options;
-//  options.enableParametersOrdering();
+  options.enableParametersOrdering();
   
-  if (_sfm_data.GetPoses().size() > 10) // default value: 100 
+  if (_sfm_data.GetPoses().size() > 100) // default value: 100 
   {
     options.setSparseBA();
     options.enableLocalBA();
