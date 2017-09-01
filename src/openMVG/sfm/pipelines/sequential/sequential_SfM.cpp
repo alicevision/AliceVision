@@ -1523,7 +1523,7 @@ bool SequentialSfMReconstructionEngine::BundleAdjustment()
   return bundle_adjustment_obj.Adjust(_sfm_data, refineOptions);
 }
 
-///
+/// Local Bundle Adjustment to refine only the parameters close to the newly resected views.
 bool SequentialSfMReconstructionEngine::localBundleAdjustment(const std::set<IndexT>& newReconstructedViewIds)
 {
   Local_Bundle_Adjustment_Ceres::LocalBA_options options;
@@ -1539,20 +1539,28 @@ bool SequentialSfMReconstructionEngine::localBundleAdjustment(const std::set<Ind
     options.setDenseBA();
   }
   
-  // Run Bundle Adjustment:
   Local_Bundle_Adjustment_Ceres localBA_obj(options);
 
   if (options.isLocalBAEnabled())
   {
+    // Compute the 'connexity-distance' for each poses according to the newly added views :
     localBA_obj.computeDistancesMaps(_sfm_data, newReconstructedViewIds, _map_tracksPerView);
-    localBA_obj.applyRefinementRules(_sfm_data, 2, 1);
+    
+    // Determermine which parameter (poses, intrinsics & landmarks) is going to be refined, 
+    // constant or ignored in the Bundle Adjustment :
+    localBA_obj.computeStatesMaps(
+      _sfm_data, 
+      Local_Bundle_Adjustment_Ceres::LocalBAStrategy::strategy_2, 
+      1);
   }
   
   LocalBA_stats lbaStats(newReconstructedViewIds);
   localBA_obj.setBAStatisticsContainer(lbaStats);
   
+  // Run Bundle Adjustment:
   bool isBaSucceed = localBA_obj.Adjust(_sfm_data);
   
+  // Save data about the 
   localBA_obj.exportStatistics(_sOutDirectory);
   
   return isBaSucceed;

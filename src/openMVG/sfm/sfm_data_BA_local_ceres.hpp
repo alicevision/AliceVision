@@ -13,10 +13,6 @@
 namespace openMVG {
 namespace sfm {
 
-/**
- * @brief 
- * 
- */
 class Local_Bundle_Adjustment_Ceres : public Bundle_Adjustment_Ceres
 {
 public:
@@ -50,67 +46,95 @@ public:
    */
   bool Adjust(SfM_Data & sfm_data);
 
+  /// \brief Add the newly resected views 'newViewsIds' into a graph (nodes: cameras, egdes: matching)
+  /// and compute the intragraph-distance between these new cameras and all the others.
   void computeDistancesMaps(
     const SfM_Data& sfm_data, 
     const std::set<IndexT>& newViewIds,
     const openMVG::tracks::TracksPerView& map_tracksPerView);
 
-  void applyRefinementRules(const SfM_Data & sfm_data, const IndexT strategyId=0, const std::size_t distanceLimit=1);
+  /// \brief  A 'LocalBAStrategy' defined the state (refined, constant or ignored) of each parameter 
+  /// of the reconstruction (landmarks, poses & intrinsics) in the BA solver according to the 
+  /// distances graph 'reconstructionGraph'.
+  /// Each strategy is explicitly coded in the 'computeStatesMaps()' method.
+  enum LocalBAStrategy { 
+    strategy_1, ///<
+    strategy_2, ///<
+    none        ///< Everything is refined (= no Local BA)
+  };
+  
+  /// \brief Define the state of each parameter (landmarks, poses & intrinsics) according to the 
+  /// distance graph and the wished Local BA strategy 'LocalBAStrategy'.
+  void computeStatesMaps(const SfM_Data & sfm_data, const LocalBAStrategy& strategy, const std::size_t distanceLimit=1);
   
   void setBAStatisticsContainer(LocalBA_stats& baStats) {_LBA_statistics = baStats;}
 
-  /// Export statistics about bundle adjustment in a TXT file ("BaStats.txt")
+  /// \brief Export statistics about bundle adjustment in a TXT file ("BaStats.txt")
   /// The contents of the file have been writen such that it is easy to handle it with
   /// a Python script or any spreadsheets (e.g. by copy/past the full content to LibreOffice) 
   bool exportStatistics(const std::string& path);
   
 private:
 
-  // Used for Local BA strategy: 
-  // Local BA data
+  // Used for Local BA approach: 
   LocalBA_options _LBA_openMVG_options;
   LocalBA_stats _LBA_statistics;
   
+  // Used to generated & handle the distance graph
   lemon::ListGraph _reconstructionGraph;
-  lemon::ListGraph::NodeMap<IndexT> _nodeMap; // <node, viewId>
-  std::map<IndexT, lemon::ListGraph::Node> _invNodeMap; // <viewId, node>
+  lemon::ListGraph::NodeMap<IndexT> _map_node_viewId; // <node, viewId>
+  std::map<IndexT, lemon::ListGraph::Node> _map_viewId_node; // <viewId, node>
   
+  // Store the distances to the last resected poses, according to the pose or view id. :
   std::map<IndexT, std::size_t> _map_viewId_distance;
   std::map<IndexT, std::size_t> _map_poseId_distance;
   
-  enum LocalBAState{ refined, constant, ignored };
+  // Define the state of the all parameter of the reconstruction (structure, poses, intrinsics) in the BA:
+  enum LocalBAState { 
+    refined, //< will be adjuted by the BA solver
+    constant, //< will be set as constant in the sover
+    ignored //< will not be set into the BA solver
+  };
   
+  // Store the LocalBAState of each parameter (structure, poses, intrinsics) :
   std::map<IndexT, LocalBAState> _map_poseId_LBAState;
   std::map<IndexT, LocalBAState> _map_intrinsicId_LBAState;
   std::map<IndexT, LocalBAState> _map_landmarkId_LBAState;
   
+  // Get back the 'LocalBAState' for a specific parameter :
   LocalBAState getPoseState(const IndexT poseId)            {return _map_poseId_LBAState.find(poseId)->second;}
   LocalBAState getIntrinsicsState(const IndexT intrinsicId) {return _map_intrinsicId_LBAState.find(intrinsicId)->second;}
   LocalBAState getLandmarkState(const IndexT landmarkId)    {return _map_landmarkId_LBAState.find(landmarkId)->second;}
-    
+  
+  // Complete the graph '_reconstructionGraph' with new views
   void updateDistancesGraph(const SfM_Data& sfm_data, 
     const tracks::TracksPerView& map_tracksPerView,
     const std::set<IndexT>& newViewIds);
 
   void setSolverOptions(ceres::Solver::Options& solver_options);
 
+  // Create a parameter block for each pose according to the Ceres format: [Rx, Ry, Rz, tx, ty, tz]
   Hash_Map<IndexT, std::vector<double>> addPosesToCeresProblem(
     const Poses & poses, 
     ceres::Problem & problem);
     
+  // Create a parameter block for each intrinsic according to the Ceres format
   Hash_Map<IndexT, std::vector<double>> addIntrinsicsToCeresProblem(
     const SfM_Data & sfm_data, 
     ceres::Problem & problem);
   
+  // Run the Ceres solver
   bool solveBA(
     ceres::Problem & problem, 
     ceres::Solver::Options &options, 
     ceres::Solver::Summary &summary);
 
+  // Update camera poses with refined data
   void updateCameraPoses(
     const Hash_Map<IndexT, std::vector<double>> & map_poses,
     Poses & poses);
     
+  // Update camera intrinsics with refined data
   void updateCameraIntrinsics(
     const Hash_Map<IndexT, std::vector<double>> & map_intrinsics,
     Intrinsics & intrinsics);

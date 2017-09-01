@@ -31,7 +31,7 @@ using namespace openMVG::geometry;
 Local_Bundle_Adjustment_Ceres::Local_Bundle_Adjustment_Ceres(
   Local_Bundle_Adjustment_Ceres::LocalBA_options options)
   : _LBA_openMVG_options(options),
-  _nodeMap(_reconstructionGraph) 
+  _map_node_viewId(_reconstructionGraph) 
 {}
 
 bool Local_Bundle_Adjustment_Ceres::Adjust(SfM_Data& sfm_data)
@@ -60,7 +60,7 @@ bool Local_Bundle_Adjustment_Ceres::Adjust(SfM_Data& sfm_data)
   // Add Poses data to the Ceres problem as Parameter Blocks (do not take care of Local BA strategy)
   map_posesBlocks = addPosesToCeresProblem(sfm_data.poses, problem);
   
-  // Add Poses data to the Ceres problem as Parameter Blocks (do not take care of Local BA strategy)
+  // Add Intrinsics data to the Ceres problem as Parameter Blocks (do not take care of Local BA strategy)
   map_intrinsicsBlocks = addIntrinsicsToCeresProblem(sfm_data, problem);
      
   // Count the number of Refined, Constant & Ignored parameters
@@ -245,7 +245,7 @@ void Local_Bundle_Adjustment_Ceres::updateDistancesGraph(
   
   // -- Add nodes (= views)
   // Identify the view we need to add to the graph:
-  if (_invNodeMap.empty()) // is the fisrt Local BA
+  if (_map_viewId_node.empty()) // is the fisrt Local BA
   {
     for (auto & it : sfm_data.GetPoses())
       viewIdsAddedToTheGraph.insert(it.first);
@@ -257,8 +257,8 @@ void Local_Bundle_Adjustment_Ceres::updateDistancesGraph(
   for (auto& viewId : viewIdsAddedToTheGraph)
   {
     lemon::ListGraph::Node newNode = _reconstructionGraph.addNode();
-    _nodeMap.set(newNode, viewId);
-    _invNodeMap[viewId] = newNode;  
+    _map_node_viewId.set(newNode, viewId);
+    _map_viewId_node[viewId] = newNode;  
   }
       
   // -- Add edge.
@@ -309,7 +309,7 @@ void Local_Bundle_Adjustment_Ceres::updateDistancesGraph(
     std::size_t L = 100; // typically: 100
     if(it.second > L) // ensure a minimum number of landmarks in common to consider the link
     {
-      _reconstructionGraph.addEdge(_invNodeMap.at(it.first.first), _invNodeMap.at(it.first.second));
+      _reconstructionGraph.addEdge(_map_viewId_node.at(it.first.first), _map_viewId_node.at(it.first.second));
     }
   }
 }
@@ -332,12 +332,12 @@ void Local_Bundle_Adjustment_Ceres::computeDistancesMaps(
   // Add source views for the bfs visit of the _reconstructionGraph
   for(const IndexT viewId: newViewIds)
   {
-    bfs.addSource(_invNodeMap.find(viewId)->second);
+    bfs.addSource(_map_viewId_node.find(viewId)->second);
   }
   bfs.start();
 
   // Handle bfs results (distances)
-  for(auto it: _invNodeMap)
+  for(auto it: _map_viewId_node)
   {
     auto& node = it.second;
     int d = bfs.dist(node);
@@ -368,16 +368,16 @@ void Local_Bundle_Adjustment_Ceres::computeDistancesMaps(
   }
 }
 
-void Local_Bundle_Adjustment_Ceres::applyRefinementRules(const SfM_Data & sfm_data, const IndexT strategyId, const std::size_t distanceLimit)
+void Local_Bundle_Adjustment_Ceres::computeStatesMaps(const SfM_Data & sfm_data, const LocalBAStrategy& strategy, const std::size_t distanceLimit)
 {
   // reset the maps
   _map_poseId_LBAState.clear();
   _map_intrinsicId_LBAState.clear();
   _map_landmarkId_LBAState.clear();
 
-  switch(strategyId)
+  switch(strategy)
   {
-    case 1:
+    case LocalBAStrategy::strategy_1:
     {
       // ----------------------------------------------------
       // -- Strategy 1 : (2017.07.14)
@@ -429,7 +429,7 @@ void Local_Bundle_Adjustment_Ceres::applyRefinementRules(const SfM_Data & sfm_da
     }
     break;
 
-    case 2 :
+    case LocalBAStrategy::strategy_2 :
     {
       // ----------------------------------------------------
       // -- Strategy 2 : (2017.07.19)
