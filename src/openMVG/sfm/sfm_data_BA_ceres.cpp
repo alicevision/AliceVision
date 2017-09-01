@@ -221,7 +221,6 @@ bool Bundle_Adjustment_Ceres::Adjust(
     const IndexT indexPose = itPose->first;
     const Pose3& pose = itPose->second;
 
-    OPENMVG_LOG_DEBUG("[BA] declare pose: " << indexPose);
     addPose(problem, refineOptions, pose, map_poses[indexPose]);
   }
 
@@ -240,7 +239,6 @@ bool Bundle_Adjustment_Ceres::Adjust(
       if(rigSubPose.status == ERigSubPoseStatus::UNINITIALIZED)
         continue;
 
-      OPENMVG_LOG_DEBUG("[BA] declare RIG: " << rigId << ", " << subPoseId);
       addPose(problem, refineOptions, rigSubPose.pose, map_subposes[rigId][subPoseId]);
     }
   }
@@ -355,7 +353,6 @@ bool Bundle_Adjustment_Ceres::Adjust(
 
       if(!vec_constant_params.empty())
       {
-        OPENMVG_LOG_DEBUG("[BA] declare intrinsic: " << idIntrinsics);
         ceres::SubsetParameterization *subset_parameterization =
           new ceres::SubsetParameterization(map_intrinsics[idIntrinsics].size(), vec_constant_params);
         problem.SetParameterization(parameter_block, subset_parameterization);
@@ -393,7 +390,6 @@ bool Bundle_Adjustment_Ceres::Adjust(
 
         double* subpose_ptr = &map_subposes.at(view->getRigId()).at(view->getSubPoseId())[0];
 
-        OPENMVG_LOG_DEBUG("[BA] declare landmark: " << landmarkIt.first << ", RIG observation: " << view->getRigId() << ", " << view->getSubPoseId());
         problem.AddResidualBlock(
           costFunction,
           p_LossFunction,

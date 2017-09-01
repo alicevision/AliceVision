@@ -168,6 +168,7 @@ void SequentialSfMReconstructionEngine::RobustResectionOfImages(
 {
   static const std::size_t maxImagesPerGroup = 30;
 
+  IndexT resectionId = 0;
   size_t imageIndex = 0;
   size_t resectionGroupIndex = 0;
   std::set<size_t> set_remainingViewId(viewIds);
@@ -257,6 +258,8 @@ void SequentialSfMReconstructionEngine::RobustResectionOfImages(
       {
         set_reconstructedViewId.insert(possible_resection_index);
         OPENMVG_LOG_DEBUG("Resection of image: " << currentIndex << " ID=" << possible_resection_index << " succeed.");
+        _sfm_data.GetViews().at(possible_resection_index)->setResectionId(resectionId);
+        ++resectionId;
       }
       set_remainingViewId.erase(possible_resection_index);
 

@@ -221,6 +221,7 @@ bool readCamera(const ICamera& camera, const M44d& mat, sfm::SfM_Data &sfmData, 
   IndexT intrinsicId = sfmData.GetIntrinsics().size();
   IndexT rigId = UndefinedIndexT;
   IndexT subPoseId = UndefinedIndexT;
+  IndexT resectionId = UndefinedIndexT;
 
   if(userProps)
   {
@@ -294,6 +295,15 @@ bool readCamera(const ICamera& camera, const M44d& mat, sfm::SfM_Data &sfmData, 
         subPoseId = getAbcProp<Alembic::Abc::IInt32Property>(userProps, *propHeader, "mvg_subPoseId", sampleFrame);
       }
     }
+    if(const Alembic::Abc::PropertyHeader *propHeader = userProps.getPropertyHeader("mvg_resectionId"))
+    {
+      try {
+        resectionId = getAbcProp<Alembic::Abc::IUInt32Property>(userProps, *propHeader, "mvg_resectionId", sampleFrame);
+      } catch(Alembic::Util::Exception&)
+      {
+        resectionId = getAbcProp<Alembic::Abc::IInt32Property>(userProps, *propHeader, "mvg_resectionId", sampleFrame);
+      }
+    }
   }
 
   // OpenMVG Camera
@@ -345,6 +355,7 @@ bool readCamera(const ICamera& camera, const M44d& mat, sfm::SfM_Data &sfmData, 
                                                       imgHeight,
                                                       rigId,
                                                       subPoseId);
+  view->setResectionId(resectionId);
 
   sfmData.views[viewId] = view;
 

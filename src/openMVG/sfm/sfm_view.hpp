@@ -137,6 +137,15 @@ public:
   }
 
   /**
+   * @brief Get the resection id
+   * @return resection id
+   */
+  IndexT getResectionId() const
+  {
+    return _resectionId;
+  }
+
+  /**
    * @brief Return if true or false the view is part of a rig
    * @return true if the view is part of a rig
    */
@@ -196,6 +205,15 @@ public:
   }
 
   /**
+   * @brief Set the given resection id
+   * @param[in] resectionId The given resection id
+   */
+  void setResectionId(IndexT resectionId)
+  {
+    _resectionId = resectionId;
+  }
+
+  /**
    * @brief Set view metadata
    * @param[in] metadata The metadata map
    */
@@ -224,6 +242,7 @@ public:
        cereal::make_nvp("id_pose", _poseId),
        cereal::make_nvp("id_rig", _rigId),
        cereal::make_nvp("id_subpose", _subPoseId),
+       cereal::make_nvp("id_resection", _resectionId),
        cereal::make_nvp("metadata", _metadata));
   }
 
@@ -250,6 +269,7 @@ public:
     {
       ar(cereal::make_nvp("id_rig", _rigId),
          cereal::make_nvp("id_subpose", _subPoseId),
+         cereal::make_nvp("id_resection", _resectionId),
          cereal::make_nvp("metadata", _metadata));
     }
     catch(cereal::Exception const &)
@@ -280,6 +300,8 @@ private:
   IndexT _rigId;
   /// corresponding sub-pose id or undefined
   IndexT _subPoseId;
+  /// resection id
+  IndexT _resectionId = UndefinedIndexT;
   /// map for metadata
   std::map<std::string, std::string> _metadata;
 };

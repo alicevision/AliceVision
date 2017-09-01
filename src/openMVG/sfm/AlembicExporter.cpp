@@ -288,7 +288,7 @@ void AlembicExporter::appendCamera(const std::string& cameraName,
   xformsample.setMatrix(xformMatrix);
 
   std::stringstream ss;
-  ss << std::setfill('0') << std::setw(5) << view.getPoseId();
+  ss << std::setfill('0') << std::setw(5) << view.getResectionId() << "_" << view.getPoseId();
   ss << "_" << cameraName << "_" << view.getViewId();
 
   Alembic::AbcGeom::OXform xform(parent, "camxform_" + ss.str());
@@ -357,6 +357,9 @@ void AlembicExporter::appendCamera(const std::string& cameraName,
     OUInt32Property propSubPoseId(userProps, "mvg_subPoseId");
     propSubPoseId.set(view.getSubPoseId());
   }
+
+  OUInt32Property propSubPoseId(userProps, "mvg_resectionId");
+  propSubPoseId.set(view.getResectionId());
 
   camObj.getSchema().set(camSample);
 }
