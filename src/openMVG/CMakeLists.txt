@@ -40,3 +40,13 @@ install(
   COMPONENT headers
   FILES_MATCHING PATTERN "*.hpp" PATTERN "*.h" PATTERN "*.tcc"
 )
+
+set(global_files_headers
+  logger.hpp
+  openmvg_omp.hpp
+  prettyprint.hpp
+  types.hpp
+  version.hpp
+  )
+
+add_custom_target(openMVG_global_headers_ide SOURCES ${global_files_headers})
