@@ -1,28 +1,8 @@
----------------
-openMVG authors
----------------
-Pierre Moulon <pmoulon@gmail.com>
-Pascal Monasse <monasse@imagine.enpc.fr>
-Renaud Marlet <renaud.marlet@enpc.fr>
+libmv Contributors
+==================
 
-anhtuann
-Bruno Duisit
-Fabien Castan
-Iivari Äikäs
-luxigo
-Michael Holroyd
-Romain Janvier
-Rory McCann
-Romuald Perrot
-rhiestan
-sergi pujades-rocamora
-sflotron
-vincentweb
-Yohann Salaun
+A subpart of libmv has been included in the "multiview" module and continue to evolve.
 
--------------
-OpenMVG authors would thanks the libmv authors
--------------
 Andrew Chant <andrew.chant@gmail.com>
 Daniel Waterworth <da.waterworth@gmail.com>
 Darius Blaszyk <dblaszyk@gmail.com>
@@ -39,3 +19,4 @@ Rehno Lindeque <errantkid@gmail.com>
 Slava Vishnyakov <bomboze@gmail.com>
 Vess Perfanov <vessper@gmail.com>
 W. James MacLean <w.james.maclean@gmail.com>
+
