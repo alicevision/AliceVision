@@ -1,19 +1,6 @@
+// This file is part of the AliceVision project and is made available under
+// the terms of the MPL2 license (see the COPYING.md file).
 
-// Copyright (c) 2013, 2014 Pierre MOULON.
-
-// This Source Code Form is subject to the terms of the Mozilla Public
-// License, v. 2.0. If a copy of the MPL was not distributed with this
-// file, You can obtain one at http://mozilla.org/MPL/2.0/.
-
-//------------------
-//-- Bibliography --
-//------------------
-//- [1] "Global Multiple-View Color Consistency."
-//- Authors: Pierre MOULON, Bruno DUISIT and Pascal MONASSE.
-//- Date: November 2013.
-//- Conference: CVMP.
-
-//-- Linear programming
 #include <openMVG/config.hpp>
 #include "openMVG/linearProgramming/linearProgrammingInterface.hpp"
 #include "openMVG/linearProgramming/linearProgrammingOSI_X.hpp"

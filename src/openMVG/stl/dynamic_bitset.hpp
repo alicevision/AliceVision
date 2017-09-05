@@ -1,22 +1,16 @@
-
-// Copyright (c) 2015 Pierre MOULON.
-
-// This Source Code Form is subject to the terms of the Mozilla Public
-// License, v. 2.0. If a copy of the MPL was not distributed with this
-// file, You can obtain one at http://mozilla.org/MPL/2.0/.
-
-// Class derived from the Boost dynamic_bitset<> implementation.
-
-// Distributed under the Boost Software License, Version 1.0.
-//    (http://www.boost.org/LICENSE_1_0.txt)
-//
-// -----------------------------------------------------------
+// This file is part of the AliceVision project and is made available under
+// the terms of the MPL2 license (see the COPYING.md file).
 
 #pragma once
 
 namespace stl
 {
 
+  /**
+   * Class derived from the Boost dynamic_bitset<> implementation.
+   * Distributed under the Boost Software License, Version 1.0.
+   * (http://www.boost.org/LICENSE_1_0.txt)
+   */
   struct dynamic_bitset
   {
     typedef unsigned char BlockType;

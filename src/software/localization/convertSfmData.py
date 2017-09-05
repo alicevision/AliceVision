@@ -1,10 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-"""
-Created on Sat Nov 28 11:27:30 2015
-
-@author: sgaspari
-"""
+# This file is part of the AliceVision project and is made available under
+# the terms of the MPL2 license (see the COPYING.md file).
 
 import json
 import argparse

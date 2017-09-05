@@ -1,3 +1,6 @@
+// This file is part of the AliceVision project and is made available under
+// the terms of the MPL2 license (see the COPYING.md file).
+
 #include "LocalizationResult.hpp"
 #include <openMVG/cameras/Camera_Pinhole_Radial.hpp>
 #include <openMVG/numeric/numeric.h>

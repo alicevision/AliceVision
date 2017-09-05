@@ -1,14 +1,5 @@
-
-// Copyright (c) 2012, 2013 Pierre MOULON.
-
-// This Source Code Form is subject to the terms of the Mozilla Public
-// License, v. 2.0. If a copy of the MPL was not distributed with this
-// file, You can obtain one at http://mozilla.org/MPL/2.0/.
-
-// Implementation corresponding to the ACCV12 demo:
-// Adaptive model estimation, a real time demonstration.
-// Pierre Moulon, Pascal Monasse and Renaud Marlet.
-// In 11th Asian Confence on Computer Vision (ACCV 2012)
+// This file is part of the AliceVision project and is made available under
+// the terms of the MPL2 license (see the COPYING.md file).
 
 #include <iostream>
 #include <string>
@@ -70,6 +61,12 @@ int fontFace = CV_FONT_HERSHEY_PLAIN;
 double fontScale = 1;
 int thickness = 1;
 
+/*
+ * Implementation corresponding to the ACCV12 demo:
+ * Adaptive model estimation, a real time demonstration.
+ * Pierre Moulon, Pascal Monasse and Renaud Marlet.
+ * In 11th Asian Confence on Computer Vision (ACCV 2012)
+ */
 int main(int, char**)
 {
   cout << "Press:" << endl

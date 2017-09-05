@@ -1,3 +1,6 @@
+// This file is part of the AliceVision project and is made available under
+// the terms of the MPL2 license (see the COPYING.md file).
+
 #include "openMVG/multiview/solver_resection_kernel.hpp"
 #include "openMVG/multiview/solver_resection_p4pf.hpp"
 #include "openMVG/multiview/test_data_sets.hpp"

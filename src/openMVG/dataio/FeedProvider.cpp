@@ -1,9 +1,5 @@
-/* 
- * File:   FeedProvider.cpp
- * Author: sgaspari
- * 
- * Created on September 28, 2015, 6:48 PM
- */
+// This file is part of the AliceVision project and is made available under
+// the terms of the MPL2 license (see the COPYING.md file).
 
 #include "FeedProvider.hpp"
 #include <openMVG/config.hpp>

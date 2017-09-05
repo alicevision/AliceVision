@@ -19,6 +19,7 @@ Gregoire De Lillo
 Havard Espeland
 Iivari Aikas
 Jean Melou
+Kevin Cain
 Lilian Calvet
 luxigo
 Michael Holroyd

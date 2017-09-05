@@ -1,3 +1,6 @@
+// This file is part of the AliceVision project and is made available under
+// the terms of the MPL2 license (see the COPYING.md file).
+
 #include "sfm_data_UID_utils.hpp"
 #include "openMVG/exif/exif_IO_EasyExif.hpp"
 

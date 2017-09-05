@@ -1,3 +1,6 @@
+// This file is part of the AliceVision project and is made available under
+// the terms of the MPL2 license (see the COPYING.md file).
+
 #ifndef OPENMVG_VOCABULARY_TREE_DISTANCE_HPP
 #define OPENMVG_VOCABULARY_TREE_DISTANCE_HPP
 

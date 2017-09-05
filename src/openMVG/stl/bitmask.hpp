@@ -1,3 +1,6 @@
+// This file is part of the AliceVision project and is made available under
+// the terms of the MPL2 license (see the COPYING.md file).
+
 #ifndef OPENMVG_STL_BITMASK_H
 #define OPENMVG_STL_BITMASK_H
 

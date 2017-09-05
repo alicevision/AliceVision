@@ -1,3 +1,6 @@
+// This file is part of the AliceVision project and is made available under
+// the terms of the MPL2 license (see the COPYING.md file).
+
 /** @Main KVLD algorithm implementation
  ** @Containing scale image pyramid, VLD structure and KVLD algorithm
  ** @author Zhe Liu

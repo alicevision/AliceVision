@@ -1,27 +1,7 @@
-// Copyright (c) 2015 Pierre MOULON.
+// This file is part of the AliceVision project and is made available under
+// the terms of the MPL2 license (see the COPYING.md file).
 
-// This Source Code Form is subject to the terms of the Mozilla Public
-// License, v. 2.0. If a copy of the MPL was not distributed with this
-// file, You can obtain one at http://mozilla.org/MPL/2.0/.
-
-//------------------
-//-- Bibliography --
-//------------------
-//- [1] "Fast and Accurate Image Matching with Cascade Hashing for 3D Reconstruction"
-//- Authors: Jian Cheng, Cong Leng, Jiaxiang Wu, Hainan Cui, Hanqing Lu.
-//- Date: 2014.
-//- Conference: CVPR.
-//
-// This implementation is based on the Theia library implementation.
-//
-// Update compare to the initial paper [1] and initial author code:
-// - hashing projection is made by using Eigen to use vectorization (Theia)
-// - replace the BoxMuller random number generation by C++ 11 random number generation (OpenMVG)
-// - this implementation can support various descriptor length and internal type (OpenMVG)
-// -  SIFT, SURF, ... all scalar based descriptor
-//
-
-// Copyright (C) 2014 The Regents of the University of California (Regents).
+// Copyright (C) 2013 The Regents of the University of California (Regents).
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -86,16 +66,28 @@ struct HashedDescriptions{
   std::vector<std::vector<Bucket> > buckets;
 };
 
-// This hasher will hash descriptors with a two-step hashing system:
-// 1. it generates a hash code,
-// 2. it determines which buckets the descriptors belong to.
-// Retrieval step is fast since:
-// - only descriptors in the same bucket are likely to be good matches.
-//   - 1. a hamming distance is used for fast neighbor candidate retrieval
-//   - 2. the L2 distance is computed only a reduced selection of approximate neighbor
-//
-// Implementation is based on the paper [1].
-// If you use this matcher, please cite the paper.
+/**
+ * This hasher will hash descriptors with a two-step hashing system:
+ * 1. it generates a hash code,
+ * 2. it determines which buckets the descriptors belong to.
+ * Retrieval step is fast since:
+ *  - only descriptors in the same bucket are likely to be good matches.
+ *  - 1. a hamming distance is used for fast neighbor candidate retrieval
+ *  - 2. the L2 distance is computed only a reduced selection of approximate neighbor
+ *
+ * Implementation is based on the paper:
+ * [1] "Fast and Accurate Image Matching with Cascade Hashing for 3D Reconstruction"
+ * Authors: Jian Cheng, Cong Leng, Jiaxiang Wu, Hainan Cui, Hanqing Lu.
+ * Date: 2014.
+ * Conference: CVPR.
+ *
+ * This implementation is based on the Theia library implementation from Chris Sweeney.
+ * Update compare to the initial paper [1] and initial author code:
+ * - hashing projection is made by using Eigen to use vectorization
+ * - replace the BoxMuller random number generation by C++ 11 random number generation
+ * - this implementation can support various descriptor length and internal type
+ *   SIFT, SURF, ... all scalar based descriptor
+ */
 class CascadeHasher {
 private:
 

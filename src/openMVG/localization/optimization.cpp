@@ -1,9 +1,5 @@
-/* 
- * File:   optimization.cpp
- * Author: sgaspari
- * 
- * Created on October 23, 2015, 12:02 AM
- */
+// This file is part of the AliceVision project and is made available under
+// the terms of the MPL2 license (see the COPYING.md file).
 
 #include "optimization.hpp"
 #include "openMVG/sfm/sfm_data_io.hpp"

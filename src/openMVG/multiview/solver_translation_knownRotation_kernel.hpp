@@ -1,9 +1,5 @@
-
-// Copyright (c) 2015 Pierre MOULON.
-
-// This Source Code Form is subject to the terms of the Mozilla Public
-// License, v. 2.0. If a copy of the MPL was not distributed with this
-// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+// This file is part of the AliceVision project and is made available under
+// the terms of the MPL2 license (see the COPYING.md file).
 
 #ifndef OPENMVG_MULTIVIEW_TRANSLATION_KNOWNROTATION_HPP
 #define OPENMVG_MULTIVIEW_TRANSLATION_KNOWNROTATION_HPP
@@ -13,21 +9,19 @@
 #include "openMVG/multiview/solver_fundamental_kernel.hpp"
 #include "openMVG/multiview/two_view_kernel.hpp"
 
-//------------------
-//-- Bibliography --
-//------------------
-//- [1] "Finding the Exact Rotation Between Two Images Independently of the Translation."
-//- Authors: L.Kneip and R.Siegwart and M.Pollefeys.
-//- Date: October 2012.
-//- Conference: ECCV.
-
 namespace openMVG {
 namespace translation {
 namespace kernel {
 
 /**
  * Two-point translation estimation between two views from a known rotation
- * Implementation based on [1] => 3.2 Selection of the right solution. */
+ * Implementation based on [1] => 3.2 Selection of the right solution.
+ *
+ * [1] "Finding the Exact Rotation Between Two Images Independently of the Translation."
+ * Authors: L.Kneip and R.Siegwart and M.Pollefeys
+ * Date: October 2012
+ * Conference: ECCV
+ */
 template<typename EpipolarDistanceErrorFunctor>
 struct TwoPointTranslationSolver {
   enum { MINIMUM_SAMPLES = 2 };

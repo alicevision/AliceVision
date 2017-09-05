@@ -1,26 +1,8 @@
-
-// Copyright (c) 2015 Pierre MOULON.
-
-// This Source Code Form is subject to the terms of the Mozilla Public
-// License, v. 2.0. If a copy of the MPL was not distributed with this
-// file, You can obtain one at http://mozilla.org/MPL/2.0/.
-
-//-----------------
-// Test summary:
-//-----------------
-// - Create a SfM_Data scene from a synthetic dataset
-//   - since random noise have been added on 2d data point (initial residual is not small)
-// - Check that residual is small once the generic Bundle Adjustment framework have been called.
-// --
-// - Perform the test for all the plausible intrinsic camera models
-//-----------------
+// This file is part of the AliceVision project and is made available under
+// the terms of the MPL2 license (see the COPYING.md file).
 
 #include "openMVG/multiview/test_data_sets.hpp"
 #include "openMVG/sfm/sfm.hpp"
-using namespace openMVG;
-using namespace openMVG::cameras;
-using namespace openMVG::geometry;
-using namespace openMVG::sfm;
 
 #include "testing/testing.h"
 #include "../cameras/Camera_Common.hpp"
@@ -29,9 +11,20 @@ using namespace openMVG::sfm;
 #include <cstdio>
 #include <iostream>
 
+using namespace openMVG;
+using namespace openMVG::cameras;
+using namespace openMVG::geometry;
+using namespace openMVG::sfm;
+
 double RMSE(const SfM_Data & sfm_data);
 
 SfM_Data getInputScene(const NViewDataSet & d, const nViewDatasetConfigurator & config, EINTRINSIC eintrinsic);
+
+// Test summary:
+// - Create a SfM_Data scene from a synthetic dataset
+//   - since random noise have been added on 2d data point (initial residual is not small)
+// - Check that residual is small once the generic Bundle Adjustment framework have been called.
+// - Perform the test for all the plausible intrinsic camera models
 
 TEST(BUNDLE_ADJUSTMENT, EffectiveMinimization_Pinhole) {
 

@@ -1,19 +1,5 @@
-
-// Copyright (C) 2013  "Robot Vision Group, NLPR, CASIA", Zhenhua Wang,
-// Bin Fan and Fuchao Wu.
-
-// Copyright (C) 2014: Adaptation to openMVG by Pierre MOULON.
-
-// This Source Code Form is subject to the terms of the Mozilla Public
-// License, v. 2.0. If a copy of the MPL was not distributed with this
-// file, You can obtain one at http://mozilla.org/MPL/2.0/.
-
-//------------------
-//-- Bibliography --
-//------------------
-//- [1] "Local Intensity Order Pattern for Feature Description"
-//- Authors: Zhenhua Wang, Bin Fan and Fuchao Wu
-//- Date: 2011, ICCV, IEEE International Conference on Computer Vision
+// This file is part of the AliceVision project and is made available under
+// the terms of the MPL2 license (see the COPYING.md file).
 
 #pragma once
 
@@ -26,6 +12,17 @@
 namespace openMVG {
 namespace features{
 namespace LIOP    {
+
+/**
+ * @brief Local Intensity Order Pattern
+ *
+ * This code has been adapted from
+ * "Robot Vision Group, NLPR, CASIA", Zhenhua Wang, Bin Fan and Fuchao Wu.
+ *
+ * [1] "Local Intensity Order Pattern for Feature Description"
+ * Authors: Zhenhua Wang, Bin Fan and Fuchao Wu
+ * Date: 2011, ICCV, IEEE International Conference on Computer Vision
+ */
 
 class Liop_Descriptor_Extractor
 {

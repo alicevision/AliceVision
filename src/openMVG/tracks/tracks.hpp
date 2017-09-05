@@ -1,33 +1,5 @@
-
-// Copyright (c) 2012, 2013 Pierre MOULON.
-
-// This Source Code Form is subject to the terms of the Mozilla Public
-// License, v. 2.0. If a copy of the MPL was not distributed with this
-// file, You can obtain one at http://mozilla.org/MPL/2.0/.
-
-// Implementation of [1] an efficient algorithm to compute track from pairwise
-//  correspondences.
-//
-//  [1] Pierre Moulon and Pascal Monasse,
-//    "Unordered feature tracking made fast and easy" CVMP 2012.
-//
-// It tracks the position of features along the series of image from pairwise
-//  correspondences.
-//
-// From map< [imageI,ImageJ], [indexed matches array] > it builds tracks.
-//
-// Usage :
-//  PairWiseMatches map_Matches;
-//  PairedIndMatchImport(sMatchFile, map_Matches); // Load series of pairwise matches
-//  //---------------------------------------
-//  // Compute tracks from matches
-//  //---------------------------------------
-//  TracksBuilder tracksBuilder;
-//  tracks::STLMAPTracks map_tracks;
-//  tracksBuilder.Build(map_Matches); // Build: Efficient fusion of correspondences
-//  tracksBuilder.Filter();           // Filter: Remove track that have conflict
-//  tracksBuilder.ExportToSTL(map_tracks); // Build tracks with STL compliant type
-//
+// This file is part of the AliceVision project and is made available under
+// the terms of the MPL2 license (see the COPYING.md file).
 
 #ifndef OPENMVG_TRACKS_H_
 #define OPENMVG_TRACKS_H_
@@ -131,6 +103,31 @@ inline std::ostream& operator<<(std::ostream& os, const KeypointId& k)
 
 /**
  * @brief Allows to create Tracks from a set of Matches accross Views.
+ *
+ *
+ * Implementation of [1] an efficient algorithm to compute track from pairwise
+ * correspondences.
+ * [1] "Unordered feature tracking made fast and easy"
+ *     Pierre Moulon and Pascal Monasse. CVMP 2012
+ *
+ * It tracks the position of features along the series of image from pairwise
+ *  correspondences.
+ *
+ * From map< [imageI,ImageJ], [indexed matches array] > it builds tracks.
+ *
+ * Usage:
+ * @code{.cpp}
+ *  PairWiseMatches map_Matches;
+ *  PairedIndMatchImport(sMatchFile, map_Matches); // Load series of pairwise matches
+ *  //---------------------------------------
+ *  // Compute tracks from matches
+ *  //---------------------------------------
+ *  TracksBuilder tracksBuilder;
+ *  tracks::STLMAPTracks map_tracks;
+ *  tracksBuilder.Build(map_Matches); // Build: Efficient fusion of correspondences
+ *  tracksBuilder.Filter();           // Filter: Remove track that have conflict
+ *  tracksBuilder.ExportToSTL(map_tracks); // Build tracks with STL compliant type
+ * @endcode
  */
 struct TracksBuilder
 {

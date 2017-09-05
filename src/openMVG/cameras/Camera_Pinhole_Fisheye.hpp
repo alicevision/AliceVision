@@ -1,11 +1,5 @@
-// This is an adaptation of the Fisheye distortion model implemented in OpenCV
-// https://github.com/Itseez/opencv/blob/master/modules/calib3d/src/fisheye.cpp
-
-// Copyright (c) 2015 Romain Janvier <romain.janvier~AT~univ-orleans.fr> for the given adaptation
-
-// This Source Code Form is subject to the terms of the Mozilla Public
-// License, v. 2.0. If a copy of the MPL was not distributed with this
-// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+// This file is part of the AliceVision project and is made available under
+// the terms of the MPL2 license (see the COPYING.md file).
 
 #ifndef OPENMVG_CAMERA_PINHOLE_FISHEYE_HPP
 #define OPENMVG_CAMERA_PINHOLE_FISHEYE_HPP
@@ -18,7 +12,12 @@
 namespace openMVG {
 namespace cameras {
 
-/// Implement a simple Fish-eye camera model
+/**
+ * Implement a simple Fish-eye camera model
+ *
+ * This is an adaptation of the Fisheye distortion model implemented in OpenCV:
+ * https://github.com/Itseez/opencv/blob/master/modules/calib3d/src/fisheye.cpp
+ */
 class Pinhole_Intrinsic_Fisheye : public Pinhole_Intrinsic
 {
   protected:

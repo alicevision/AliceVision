@@ -1,3 +1,6 @@
+// This file is part of the AliceVision project and is made available under
+// the terms of the MPL2 license (see the COPYING.md file).
+
 #include "RegionsIO.hpp"
 #include "third_party/progress/progress.hpp"
 

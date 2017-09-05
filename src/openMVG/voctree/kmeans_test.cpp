@@ -1,9 +1,5 @@
-/* 
- * File:   kmean_test.cpp
- * Author: sgaspari
- *
- * Created on February 11, 2016, 11:54 AM
- */
+// This file is part of the AliceVision project and is made available under
+// the terms of the MPL2 license (see the COPYING.md file).
 
 #include <openMVG/system/Logger.hpp>
 #include <openMVG/voctree/simple_kmeans.hpp>

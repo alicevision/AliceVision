@@ -1,9 +1,5 @@
-/* 
- * File:   Alembic_Exporter.cpp
- * Author: sgaspari
- * 
- * Created on September 24, 2015, 3:57 PM
- */
+// This file is part of the AliceVision project and is made available under
+// the terms of the MPL2 license (see the COPYING.md file).
 
 #include "AlembicExporter.hpp"
 

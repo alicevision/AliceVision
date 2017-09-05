@@ -1,15 +1,5 @@
-// ========================================================================== //
-//
-// Copyright (C) 2013 David Ok <david.ok8@gmail.com>
-// Copyright (C) 2014 Pierre Moulon
-//
-// Adapted from DO++, a basic set of libraries in C++ for computer 
-// vision.
-//
-// This Source Code Form is subject to the terms of the Mozilla Public 
-// License v. 2.0. If a copy of the MPL was not distributed with this file, 
-// you can obtain one at http://mozilla.org/MPL/2.0/.
-// ========================================================================== //
+// This file is part of the AliceVision project and is made available under
+// the terms of the MPL2 license (see the COPYING.md file).
 
 #ifndef OPENMVG_SYSTEM_TIMER_HPP
 #define OPENMVG_SYSTEM_TIMER_HPP
@@ -21,7 +11,11 @@
 namespace openMVG {
 namespace system {
 
-  //! \brief Timer class with microsecond accuracy.
+  /**
+   * @brief Timer class with microsecond accuracy.
+   * Adapted from DO++, a basic set of libraries in C++ for computer vision, licensed under MPL2.
+   * See https://do-cv.github.io/sara
+   */
   class Timer
   {
   public:

@@ -1,5 +1,5 @@
-﻿#ifndef KVLD_ALGORITHM_H
-#define KVLD_ALGORITHM_H
+// This file is part of the AliceVision project and is made available under
+// the terms of the MPL2 license (see the COPYING.md file).
 
 /** @basic structures implementation
  ** @author Zhe Liu
@@ -12,6 +12,9 @@ All rights reserved.
 This file is part of the KVLD library and is made available under
 the terms of the BSD license (see the COPYING file).
 */
+
+#ifndef KVLD_ALGORITHM_H
+#define KVLD_ALGORITHM_H
 
 #include <openMVG/numeric/numeric.h>
 #include <openMVG/image/image_container.hpp>

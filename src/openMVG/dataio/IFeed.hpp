@@ -1,9 +1,5 @@
-/* 
- * File:   IFeed.hpp
- * Author: sgaspari
- *
- * Created on September 28, 2015, 10:24 AM
- */
+// This file is part of the AliceVision project and is made available under
+// the terms of the MPL2 license (see the COPYING.md file).
 
 #pragma once
 

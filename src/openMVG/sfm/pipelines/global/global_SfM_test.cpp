@@ -1,21 +1,5 @@
-
-// Copyright (c) 2015 Pierre MOULON.
-
-// This Source Code Form is subject to the terms of the Mozilla Public
-// License, v. 2.0. If a copy of the MPL was not distributed with this
-// file, You can obtain one at http://mozilla.org/MPL/2.0/.
-
-//-----------------
-// Test summary:
-//-----------------
-// - Create features points and matching from the synthetic dataset
-// - Init a SfM_Data scene VIew and Intrinsic from a synthetic dataset
-// - Perform Global SfM on the data
-// - Assert that:
-//   - mean residual error is below the gaussian noise added to observation
-//   - the desired number of tracks are found,
-//   - the desired number of poses are found.
-//-----------------
+// This file is part of the AliceVision project and is made available under
+// the terms of the MPL2 license (see the COPYING.md file).
 
 #include "openMVG/sfm/pipelines/pipelines_test.hpp"
 #include "openMVG/features/FeaturesPerView.hpp"
@@ -32,7 +16,14 @@ using namespace openMVG::cameras;
 using namespace openMVG::geometry;
 using namespace openMVG::sfm;
 
-
+// Test summary:
+// - Create features points and matching from the synthetic dataset
+// - Init a SfM_Data scene VIew and Intrinsic from a synthetic dataset
+// - Perform Global SfM on the data
+// - Assert that:
+//   - mean residual error is below the gaussian noise added to observation
+//   - the desired number of tracks are found,
+//   - the desired number of poses are found.
 TEST(GLOBAL_SFM, RotationAveragingL2_TranslationAveragingL1) {
 
   const int nviews = 6;

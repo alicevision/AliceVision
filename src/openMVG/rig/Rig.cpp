@@ -1,3 +1,6 @@
+// This file is part of the AliceVision project and is made available under
+// the terms of the MPL2 license (see the COPYING.md file).
+
 #include "Rig.hpp"
 #include "rig_BA_ceres.hpp"
 #include <openMVG/sfm/sfm_data_BA_ceres.hpp>
