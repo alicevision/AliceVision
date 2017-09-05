@@ -103,21 +103,21 @@ private:
     // get the image
     const std::string rootPath = _sfmdata.s_root_path;
     const sfm::View *view = _viewIterator->second.get();
-    imageName = (bf::path(rootPath) / bf::path(view->s_Img_path)).string();
+    imageName = (bf::path(rootPath) / bf::path(view->getImagePath())).string();
     if (!image::ReadImage(imageName.c_str(), &image))
     {
       OPENMVG_LOG_WARNING("Error while opening image " << imageName);
       return false;
     }
     // get the associated Intrinsics
-    if((view->id_intrinsic == UndefinedIndexT) || (!_sfmdata.GetIntrinsics().count(view->id_intrinsic)))
+    if((view->getIntrinsicId() == UndefinedIndexT) || (!_sfmdata.GetIntrinsics().count(view->getIntrinsicId())))
     {
       OPENMVG_LOG_DEBUG("Image "<< imageName << " does not have associated intrinsics");
       hasIntrinsics = false;
     }
     else
     {
-      const cameras::IntrinsicBase * cam = _sfmdata.GetIntrinsics().at(view->id_intrinsic).get();
+      const cameras::IntrinsicBase * cam = _sfmdata.GetIntrinsics().at(view->getIntrinsicId()).get();
       if(cam->getType() != cameras::EINTRINSIC::PINHOLE_CAMERA_RADIAL3)
       {
         OPENMVG_LOG_WARNING("Only Pinhole_Intrinsic_Radial_K3 is supported");

@@ -2,6 +2,7 @@
 
 #include "openMVG/matching/indMatch.hpp"
 #include <openMVG/config.hpp>
+#include <openMVG/system/Logger.hpp>
 
 #include <cereal/archives/portable_binary.hpp>
 #include <cereal/types/map.hpp>

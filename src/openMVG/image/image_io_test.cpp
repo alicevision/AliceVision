@@ -9,7 +9,7 @@
 #include <iostream>
 #include <string>
 
-#include "openMVG/logger.hpp"
+#include <openMVG/system/Logger.hpp>
 #include "openMVG/image/image.hpp"
 #include "testing/testing.h"
 

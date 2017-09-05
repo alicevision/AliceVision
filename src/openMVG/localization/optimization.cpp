@@ -10,7 +10,7 @@
 #include <openMVG/sfm/sfm_data_BA_ceres.hpp>
 #include <openMVG/numeric/numeric.h>
 #include <openMVG/rig/rig_BA_ceres.hpp>
-#include <openMVG/logger.hpp>
+#include <openMVG/system/Logger.hpp>
 #include <openMVG/system/timer.hpp>
 
 
@@ -114,9 +114,11 @@ bool refineSequence(std::vector<LocalizationResult> & vec_localizationResult,
     
 //    OPENMVG_LOG_DEBUG("\n*****\nView " << viewID);
     // view
-    tinyScene.views.insert( std::make_pair(viewID, std::make_shared<sfm::View>("",viewID, intrinsicID, viewID)));
+    std::shared_ptr<sfm::View> view = std::make_shared<sfm::View>("",viewID, intrinsicID, viewID);
+    tinyScene.views.insert( std::make_pair(viewID, view));
     // pose
-    tinyScene.poses[viewID] = currResult.getPose();
+    tinyScene.setPose(*view, currResult.getPose());
+
     
     if(!allTheSameIntrinsics)
     {
@@ -277,7 +279,7 @@ bool refineSequence(std::vector<LocalizationResult> & vec_localizationResult,
   if(b_BA_Status)
   {
     // get back the results and update the localization result with the refined pose
-    for(const auto &pose : tinyScene.poses)
+    for(const auto &pose : tinyScene.GetPoses())
     {
       const IndexT idPose = pose.first;
       vec_localizationResult[idPose].setPose(pose.second);

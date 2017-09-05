@@ -1,6 +1,6 @@
 #include "IFeed.hpp"
 
-#include "openMVG/logger.hpp"
+#include <openMVG/system/Logger.hpp>
 
 #include <fstream>
 #include <exception>

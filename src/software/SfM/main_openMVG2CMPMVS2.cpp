@@ -101,8 +101,8 @@ void retrieveSeedsPerView(
         continue; // this view cannot be exported to cmpmvs, so we skip the observation
       int obsACamId = obsACamId_it->second;
       const View& viewA = *sfm_data.GetViews().at(obsA.first).get();
-      const geometry::Pose3& poseA = sfm_data.GetPoses().at(viewA.id_pose);
-      const Pinhole_Intrinsic * intrinsicsA = dynamic_cast<const Pinhole_Intrinsic*>(sfm_data.GetIntrinsics().at(viewA.id_intrinsic).get());
+      const geometry::Pose3& poseA = sfm_data.GetPoses().at(viewA.getPoseId());
+      const Pinhole_Intrinsic * intrinsicsA = dynamic_cast<const Pinhole_Intrinsic*>(sfm_data.GetIntrinsics().at(viewA.getIntrinsicId()).get());
       
       for(const auto& obsB: landmark.observations)
       {
@@ -113,8 +113,8 @@ void retrieveSeedsPerView(
         if(obsBCamId_it == map_viewIdToContiguous.end())
           continue; // this view cannot be exported to cmpmvs, so we skip the observation
         const View& viewB = *sfm_data.GetViews().at(obsB.first).get();
-        const geometry::Pose3& poseB = sfm_data.GetPoses().at(viewB.id_pose);
-        const Pinhole_Intrinsic * intrinsicsB = dynamic_cast<const Pinhole_Intrinsic*>(sfm_data.GetIntrinsics().at(viewB.id_intrinsic).get());
+        const geometry::Pose3& poseB = sfm_data.GetPoses().at(viewB.getPoseId());
+        const Pinhole_Intrinsic * intrinsicsB = dynamic_cast<const Pinhole_Intrinsic*>(sfm_data.GetIntrinsics().at(viewB.getIntrinsicId()).get());
 
         const double angle = AngleBetweenRay(
           poseA, intrinsicsA, poseB, intrinsicsB, obsA.second.x, obsB.second.x);
@@ -179,11 +179,11 @@ bool exportToCMPMVS2Format(
     const View * view = iter.second.get();
     if (!sfm_data.IsPoseAndIntrinsicDefined(view))
       continue;
-    Intrinsics::const_iterator iterIntrinsic = sfm_data.GetIntrinsics().find(view->id_intrinsic);
+    Intrinsics::const_iterator iterIntrinsic = sfm_data.GetIntrinsics().find(view->getIntrinsicId());
     const IntrinsicBase * cam = iterIntrinsic->second.get();
     // View Id re-indexing
     // Need to start at 1 for CMPMVS
-    map_viewIdToContiguous.insert(std::make_pair(view->id_view, map_viewIdToContiguous.size() + 1));
+    map_viewIdToContiguous.insert(std::make_pair(view->getViewId(), map_viewIdToContiguous.size() + 1));
   }
 
   SeedsPerView seedsPerView;
@@ -204,9 +204,10 @@ bool exportToCMPMVS2Format(
     std::advance(viewIdToContiguous, i);
     const IndexT viewId = viewIdToContiguous->first;
     const View * view = sfm_data.GetViews().at(viewId).get();
-    assert(view->id_view == viewId);
+
+    assert(view->getViewId() == viewId);
     const IndexT contiguousViewIndex = viewIdToContiguous->second;
-    Intrinsics::const_iterator iterIntrinsic = sfm_data.GetIntrinsics().find(view->id_intrinsic);
+    Intrinsics::const_iterator iterIntrinsic = sfm_data.GetIntrinsics().find(view->getIntrinsicId());
     // We have a valid view with a corresponding camera & pose
     assert(viewIdToContiguous->second == i + 1);
 
@@ -216,7 +217,7 @@ bool exportToCMPMVS2Format(
 
     // Export camera pose
     {
-      const Pose3 pose = sfm_data.GetPoseOrDie(view);
+      const Pose3 pose = sfm_data.getPose(*view);
       Mat34 P = iterIntrinsic->second.get()->get_projective_equivalent(pose);
       std::ofstream file(
         stlplus::create_filespec(stlplus::folder_append_separator(sOutDirectory),
@@ -230,7 +231,7 @@ bool exportToCMPMVS2Format(
     
     // Export undistort image
     {
-      const std::string srcImage = stlplus::create_filespec(sfm_data.s_root_path, view->s_Img_path);
+      const std::string srcImage = stlplus::create_filespec(sfm_data.s_root_path, view->getImagePath());
 
       std::string dstColorImage = stlplus::create_filespec(
         stlplus::folder_append_separator(sOutDirectory), baseFilename + "._c", "png");
@@ -327,7 +328,7 @@ bool exportToCMPMVS2Format(
     baseFilenameSS << std::setw(5) << std::setfill('0') << contiguousViewIndex;
     const std::string baseFilename = baseFilenameSS.str();
 
-    os << baseFilename << "=" << view->ui_width / (double)scale << "x" << view->ui_height / (double)scale << os.widen('\n');
+    os << baseFilename << "=" << view->getWidth() / (double)scale << "x" << view->getHeight() / (double)scale << os.widen('\n');
   }
 
 

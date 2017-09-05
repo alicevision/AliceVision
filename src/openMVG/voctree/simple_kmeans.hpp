@@ -4,7 +4,7 @@
 #include "distance.hpp"
 #include "feature_allocator.hpp"
 
-#include <openMVG/logger.hpp>
+#include <openMVG/system/Logger.hpp>
 
 #include <boost/function.hpp>
 #include <boost/foreach.hpp>

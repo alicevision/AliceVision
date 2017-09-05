@@ -195,7 +195,7 @@ bool readGt(const std::string & sRootPath, SfM_Data & sfm_data, bool useUID)
 
     // Update intrinsics with width and height of image
     sfm_data.views.emplace(used_id, std::make_shared<View>(stlplus::basename_part(*iter), used_id, index, index, pinholeIntrinsic->w(), pinholeIntrinsic->h()));
-    sfm_data.poses.emplace(index, pose);
+    sfm_data.setPose(*sfm_data.views.at(used_id), pose);
     sfm_data.intrinsics.emplace(index, pinholeIntrinsic);
   }
   return true;

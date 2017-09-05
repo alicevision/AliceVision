@@ -160,8 +160,8 @@ void MatchesPairToMat(
   const sfm::View * view_J = sfmData->views.at(pairIndex.second).get();
 
   // Retrieve corresponding pair camera intrinsic if any
-  const cameras::IntrinsicBase * cam_I = sfmData->GetIntrinsicPtr(view_I->id_intrinsic);
-  const cameras::IntrinsicBase * cam_J = sfmData->GetIntrinsicPtr(view_J->id_intrinsic);
+  const cameras::IntrinsicBase * cam_I = sfmData->GetIntrinsicPtr(view_I->getIntrinsicId());
+  const cameras::IntrinsicBase * cam_J = sfmData->GetIntrinsicPtr(view_J->getIntrinsicId());
 
   MatchesPairToMat(
       putativeMatchesPerType,

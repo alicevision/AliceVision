@@ -160,7 +160,7 @@ int main(int argc, char **argv)
       if (!reconstructionSfmData.IsPoseAndIntrinsicDefined(view))
       {
         // Consider only reconstructed cameras
-        std::cout << "Ignore unreconstructed view (viewId: " << view->id_view << ", poseId: " << view->id_pose << ")" << std::endl;
+        std::cout << "Ignore unreconstructed view (viewId: " << view->getViewId() << ", poseId: " << view->getPoseId() << ")" << std::endl;
         continue;
       }
       const features::Regions* regions = regionForView.second.at(describerMethodType).get();
@@ -192,10 +192,10 @@ int main(int argc, char **argv)
       if(!sDebugOutputDir.empty())
       {
         cameras::IntrinsicBase* intrinsics = reconstructionSfmData.GetIntrinsics().at(view->id_intrinsic).get();
-        features::saveCCTag2SVG(view->s_Img_path, 
+        features::saveCCTag2SVG(view->getImagePath(),
                 std::make_pair(intrinsics->w(), intrinsics->h()),
                 cctagRegions_debug,
-                (bfs::path(sDebugOutputDir) / bfs::path(bfs::path(view->s_Img_path).stem().string()+".svg")).string());
+                (bfs::path(sDebugOutputDir) / bfs::path(bfs::path(view->getImagePath()).stem().string()+".svg")).string());
       }
     }
   }

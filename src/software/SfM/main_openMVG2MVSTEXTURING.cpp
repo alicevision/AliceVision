@@ -69,8 +69,8 @@ int main(int argc, char **argv)
         continue;
     
     // Valid view, we can ask a pose & intrinsic data
-    const Pose3 pose = sfm_data.GetPoseOrDie(view);
-    Intrinsics::const_iterator iterIntrinsic = sfm_data.GetIntrinsics().find(view->id_intrinsic);
+    const Pose3 pose = sfm_data.getPose(*view);
+    Intrinsics::const_iterator iterIntrinsic = sfm_data.GetIntrinsics().find(view->getIntrinsicId());
     const IntrinsicBase * cam = iterIntrinsic->second.get();
     
     if (!cameras::isPinhole(cam->getType()))
@@ -90,7 +90,7 @@ int main(int argc, char **argv)
     
     // We can now create the .cam file for the View in the output dir 
     std::ofstream outfile( stlplus::create_filespec(
-                sOutDir, stlplus::basename_part(view->s_Img_path), "cam" ).c_str() );
+                sOutDir, stlplus::basename_part(view->getImagePath()), "cam" ).c_str() );
     // See https://github.com/nmoehrle/mvs-texturing/blob/master/Arguments.cpp
     // for full specs
     const int largerDim = w > h ? w : h;

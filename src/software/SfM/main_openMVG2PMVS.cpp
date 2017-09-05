@@ -71,16 +71,16 @@ bool exportToPMVSFormat(
       if (!sfm_data.IsPoseAndIntrinsicDefined(view))
         continue;
 
-      const Pose3 pose = sfm_data.GetPoseOrDie(view);
-      Intrinsics::const_iterator iterIntrinsic = sfm_data.GetIntrinsics().find(view->id_intrinsic);
+      const Pose3 pose = sfm_data.getPose(*view);
+      Intrinsics::const_iterator iterIntrinsic = sfm_data.GetIntrinsics().find(view->getIntrinsicId());
 
       // View Id re-indexing
-      map_viewIdToContiguous.insert(std::make_pair(view->id_view, map_viewIdToContiguous.size()));
+      map_viewIdToContiguous.insert(std::make_pair(view->getViewId(), map_viewIdToContiguous.size()));
 
       // We have a valid view with a corresponding camera & pose
       const Mat34 P = iterIntrinsic->second.get()->get_projective_equivalent(pose);
       std::ostringstream os;
-      os << std::setw(8) << std::setfill('0') << map_viewIdToContiguous[view->id_view];
+      os << std::setw(8) << std::setfill('0') << map_viewIdToContiguous[view->getViewId()];
       std::ofstream file(
         stlplus::create_filespec(stlplus::folder_append_separator(sOutDirectory) + "txt",
         os.str() ,"txt").c_str());
@@ -98,12 +98,12 @@ bool exportToPMVSFormat(
       if (!sfm_data.IsPoseAndIntrinsicDefined(view))
         continue;
 
-      Intrinsics::const_iterator iterIntrinsic = sfm_data.GetIntrinsics().find(view->id_intrinsic);
+      Intrinsics::const_iterator iterIntrinsic = sfm_data.GetIntrinsics().find(view->getIntrinsicId());
 
       // We have a valid view with a corresponding camera & pose
-      const std::string srcImage = stlplus::create_filespec(sfm_data.s_root_path, view->s_Img_path);
+      const std::string srcImage = stlplus::create_filespec(sfm_data.s_root_path, view->getImagePath());
       std::ostringstream os;
-      os << std::setw(8) << std::setfill('0') << map_viewIdToContiguous[view->id_view];
+      os << std::setw(8) << std::setfill('0') << map_viewIdToContiguous[view->getViewId()];
       const std::string dstImage = stlplus::create_filespec(
         stlplus::folder_append_separator(sOutDirectory) + "visualize", os.str(),"jpg");
 
@@ -227,7 +227,7 @@ bool exportToBundlerFormat(
         continue;
 
       // View Id re-indexing
-      map_viewIdToContiguous.insert(std::make_pair(view->id_view, map_viewIdToContiguous.size()));
+      map_viewIdToContiguous.insert(std::make_pair(view->getViewId(), map_viewIdToContiguous.size()));
     }
 
     // Fill the "Bundle file"
@@ -242,8 +242,8 @@ bool exportToBundlerFormat(
       if (!sfm_data.IsPoseAndIntrinsicDefined(view))
         continue;
 
-      const Pose3 pose = sfm_data.GetPoseOrDie(view);
-      Intrinsics::const_iterator iterIntrinsic = sfm_data.GetIntrinsics().find(view->id_intrinsic);
+      const Pose3 pose = sfm_data.getPose(*view);
+      Intrinsics::const_iterator iterIntrinsic = sfm_data.GetIntrinsics().find(view->getIntrinsicId());
 
       // Must export focal, k1, k2, R, t
 
@@ -265,7 +265,7 @@ bool exportToBundlerFormat(
           << R(2,0) << " " << R(2, 1) << " " << R(2, 2) << os.widen('\n')  //R.row(2)
           << t(0)   << " " << t(1)    << " " << t(2)    << os.widen('\n'); //t
 
-        osList << stlplus::basename_part(view->s_Img_path) + "." + stlplus::extension_part(view->s_Img_path)
+        osList << stlplus::basename_part(view->getImagePath()) + "." + stlplus::extension_part(view->getImagePath())
           << " 0 " << focal << os.widen('\n');
       }
       else

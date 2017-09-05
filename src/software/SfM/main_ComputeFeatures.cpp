@@ -358,8 +358,8 @@ int main(int argc, char **argv)
 
       // Build the view corresponding to the image
       View v(imageName, (IndexT)uid);
-      v.id_intrinsic = UndefinedIndexT;
-      views[v.id_view] = std::make_shared<View>(v);
+      v.setIntrinsicId(UndefinedIndexT);
+      views[v.getViewId()] = std::make_shared<View>(v);
     }
   }
 
@@ -437,7 +437,7 @@ int main(int argc, char **argv)
     for(; iterViews != iterViewsEnd; ++iterViews, ++my_progress_bar)
     {
       const View* view = iterViews->second.get();
-      const std::string viewFilename = stlplus::create_filespec(sfm_data.s_root_path, view->s_Img_path);
+      const std::string viewFilename = stlplus::create_filespec(sfm_data.s_root_path, view->getImagePath());
       std::cout << "Extract features in view: " << viewFilename << std::endl;
       
       std::vector<DescriberComputeMethod> computeMethods;
@@ -447,9 +447,9 @@ int main(int argc, char **argv)
         DescriberComputeMethod computeMethod;
         
         computeMethod.featFilename = stlplus::create_filespec(outDirectory,
-              stlplus::basename_part(std::to_string(view->id_view)), imageDescribers[i].typeName + ".feat");
+              stlplus::basename_part(std::to_string(view->getViewId())), imageDescribers[i].typeName + ".feat");
         computeMethod.descFilename = stlplus::create_filespec(outDirectory,
-              stlplus::basename_part(std::to_string(view->id_view)), imageDescribers[i].typeName + ".desc");
+              stlplus::basename_part(std::to_string(view->getViewId())), imageDescribers[i].typeName + ".desc");
       
         if (stlplus::file_exists(computeMethod.featFilename) &&
             stlplus::file_exists(computeMethod.descFilename))
@@ -474,7 +474,7 @@ int main(int argc, char **argv)
             for(auto& compute : computeMethods)
             {
               // Compute features and descriptors and export them to files
-              std::cout << "Extracting "<< imageDescribers[compute.methodIndex].typeName  << " features from image " << view->id_view << std::endl;
+              std::cout << "Extracting "<< imageDescribers[compute.methodIndex].typeName  << " features from image " << view->getViewId() << std::endl;
               std::unique_ptr<Regions> regions;
               imageDescribers[compute.methodIndex].describer->Describe(imageGray, regions);
               imageDescribers[compute.methodIndex].describer->Save(regions.get(), compute.featFilename, compute.descFilename);

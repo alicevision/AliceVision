@@ -565,7 +565,7 @@ int main(int argc, char **argv)
     std::cout << "After grid filtering:" << std::endl;
     for(const auto& matchGridFiltering: finalMatches)
     {
-      std::cout << " * Image pair (" << matchGridFiltering.first.first << ", " << matchGridFiltering.first.second << ") contains " << matchGridFiltering.second.size() << " geometric matches." << std::endl;
+      std::cout << " * Image pair (" << matchGridFiltering.first.first << ", " << matchGridFiltering.first.second << ") contains " << matchGridFiltering.second.getNbAllMatches() << " geometric matches." << std::endl;
     }
   }
 

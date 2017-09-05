@@ -28,6 +28,8 @@
 #ifndef OPENMVG_NUMERIC_NUMERIC_H
 #define OPENMVG_NUMERIC_NUMERIC_H
 
+#include <openMVG/system/Logger.hpp>
+
 //--
 // Eigen
 // http://eigen.tuxfamily.org/dox-devel/QuickRefPage.html

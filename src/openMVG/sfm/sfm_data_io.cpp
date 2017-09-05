@@ -16,8 +16,10 @@
 #include "openMVG/sfm/sfm_data_io_baf.hpp"
 #include "openMVG/sfm/sfm_data_io_gt.hpp"
 
+#if OPENMVG_IS_DEFINED(OPENMVG_HAVE_ALEMBIC)
 #include "openMVG/sfm/AlembicExporter.hpp"
 #include "openMVG/sfm/AlembicImporter.hpp"
+#endif
 
 #include "openMVG/config.hpp"
 
@@ -43,10 +45,10 @@ bool ValidIds(const SfM_Data & sfm_data, ESfM_Data flags_part)
   std::set<IndexT> extrinsicIdsReferenced;
   for(const auto& v: sfm_data.GetViews())
   {
-    const IndexT id_intrinsic = v.second.get()->id_intrinsic;
+    const IndexT id_intrinsic = v.second.get()->getIntrinsicId();
     intrinsicIdsReferenced.insert(id_intrinsic);
 
-    const IndexT id_pose = v.second.get()->id_pose;
+    const IndexT id_pose = v.second.get()->getPoseId();
     extrinsicIdsReferenced.insert(id_pose);
   }
 

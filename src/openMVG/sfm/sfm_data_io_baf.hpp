@@ -75,9 +75,9 @@ static bool Save_BAF(
       else
       {
         // [Rotation col major 3x3; camera center 3x1]
-        const double * rotation = poses.at(view->id_pose).rotation().data();
+        const double * rotation = poses.at(view->getPoseId()).rotation().data();
         std::copy(rotation, rotation+9, std::ostream_iterator<double>(stream, " "));
-        const double * center = poses.at(view->id_pose).center().data();
+        const double * center = poses.at(view->getPoseId()).center().data();
         std::copy(center, center+3, std::ostream_iterator<double>(stream, " "));
         stream << '\n';
       }
@@ -100,8 +100,8 @@ static bool Save_BAF(
         const IndexT id_view = iterOb->first;
         const View * v = sfm_data.GetViews().at(id_view).get();
         stream
-          << v->id_intrinsic << ' '
-          << v->id_pose << ' '
+          << v->getIntrinsicId() << ' '
+          << v->getPoseId() << ' '
           << iterOb->second.x(0) << ' ' << iterOb->second.x(1) << ' ';
       }
       stream << '\n';
@@ -125,11 +125,11 @@ static bool Save_BAF(
       ++ iterV)
     {
       const std::string sView_filename = stlplus::create_filespec(sfm_data.s_root_path,
-        iterV->second->s_Img_path);
+        iterV->second->getImagePath());
       stream
         << sView_filename
-        << ' ' << iterV->second->id_intrinsic
-        << ' ' << iterV->second->id_pose << "\n";
+        << ' ' << iterV->second->getIntrinsicId()
+        << ' ' << iterV->second->getPoseId() << "\n";
     }
     stream.flush();
     bOk = stream.good();

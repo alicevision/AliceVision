@@ -1,7 +1,7 @@
 #include "patternDetect.hpp"
 
 #include <openMVG/config.hpp>
-#include <openMVG/logger.hpp>
+#include <openMVG/system/Logger.hpp>
 #include <openMVG/system/timer.hpp>
 
 #include <boost/program_options.hpp>

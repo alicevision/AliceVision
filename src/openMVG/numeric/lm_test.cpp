@@ -8,7 +8,7 @@
 #include <iostream>
 #include <fstream>
 #include <string>
-#include "openMVG/logger.hpp"
+#include <openMVG/system/Logger.hpp>
 #include "openMVG/numeric/numeric.h"
 #include "openMVG/numeric/lm.hpp"
 #include "testing/testing.h"

@@ -146,14 +146,14 @@ int main(int argc, char ** argv)
 
       const View * view_I = sfm_data.GetViews().at(I).get();
       const std::string sView_I= stlplus::create_filespec(sfm_data.s_root_path,
-        view_I->s_Img_path);
+        view_I->getImagePath());
       const View * view_J = sfm_data.GetViews().at(J).get();
       const std::string sView_J= stlplus::create_filespec(sfm_data.s_root_path,
-        view_J->s_Img_path);
+        view_J->getImagePath());
 
       const std::pair<size_t, size_t>
-        dimImage_I = std::make_pair(view_I->ui_width, view_I->ui_height),
-        dimImage_J = std::make_pair(view_J->ui_width, view_J->ui_height);
+        dimImage_I = std::make_pair(view_I->getWidth(), view_I->getHeight()),
+        dimImage_J = std::make_pair(view_J->getWidth(), view_J->getHeight());
 
       //Get common tracks between view I and J
       tracks::TracksMap map_tracksCommon;
@@ -180,8 +180,8 @@ int main(int argc, char ** argv)
           assert(descType != features::EImageDescriberType::UNINITIALIZED);
           tracks::Track::FeatureIdPerView::const_iterator obsIt = tracksIt->second.featPerView.begin();
 
-          const PointFeatures& vec_feat_I = featuresPerView.getFeatures(view_I->id_view, descType);
-          const PointFeatures& vec_feat_J = featuresPerView.getFeatures(view_J->id_view, descType);
+          const PointFeatures& vec_feat_I = featuresPerView.getFeatures(view_I->getViewId(), descType);
+          const PointFeatures& vec_feat_J = featuresPerView.getFeatures(view_J->getViewId(), descType);
 
           const PointFeature& imaA = vec_feat_I[obsIt->second];
           ++obsIt;
@@ -200,8 +200,8 @@ int main(int argc, char ** argv)
           assert(descType != features::EImageDescriberType::UNINITIALIZED);
           tracks::Track::FeatureIdPerView::const_iterator obsIt = tracksIt->second.featPerView.begin();
 
-          const PointFeatures& vec_feat_I = featuresPerView.getFeatures(view_I->id_view, descType);
-          const PointFeatures& vec_feat_J = featuresPerView.getFeatures(view_J->id_view, descType);
+          const PointFeatures& vec_feat_I = featuresPerView.getFeatures(view_I->getViewId(), descType);
+          const PointFeatures& vec_feat_J = featuresPerView.getFeatures(view_J->getViewId(), descType);
 
           const PointFeature& imaA = vec_feat_I[obsIt->second];
           ++obsIt;

@@ -74,7 +74,7 @@ bool exportToCMPMVSFormat(
         const View * view = iter.second.get();
         if (!sfm_data.IsPoseAndIntrinsicDefined(view))
           continue;
-        Intrinsics::const_iterator iterIntrinsic = sfm_data.GetIntrinsics().find(view->id_intrinsic);
+        Intrinsics::const_iterator iterIntrinsic = sfm_data.GetIntrinsics().find(view->getIntrinsicId());
         const IntrinsicBase * cam = iterIntrinsic->second.get();
         if(!cam->isValid())
           continue;
@@ -110,13 +110,13 @@ bool exportToCMPMVSFormat(
       const View * view = iter.second.get();
       if (!sfm_data.IsPoseAndIntrinsicDefined(view))
         continue;
-      Intrinsics::const_iterator iterIntrinsic = sfm_data.GetIntrinsics().find(view->id_intrinsic);
+      Intrinsics::const_iterator iterIntrinsic = sfm_data.GetIntrinsics().find(view->getIntrinsicId());
       const IntrinsicBase * cam = iterIntrinsic->second.get();
       if(cam->w() != mostCommonResolution.first || cam->h() != mostCommonResolution.second)
         continue;
       // View Id re-indexing
       // Need to start at 1 for CMPMVS
-      map_viewIdToContiguous.insert(std::make_pair(view->id_view, map_viewIdToContiguous.size() + 1));
+      map_viewIdToContiguous.insert(std::make_pair(view->getViewId(), map_viewIdToContiguous.size() + 1));
     }
 
     // Export data
@@ -129,15 +129,15 @@ bool exportToCMPMVSFormat(
       std::advance(viewIdToContiguous, i);
       IndexT viewId = viewIdToContiguous->first;
       const View * view = sfm_data.GetViews().at(viewId).get();
-      Intrinsics::const_iterator iterIntrinsic = sfm_data.GetIntrinsics().find(view->id_intrinsic);
+      Intrinsics::const_iterator iterIntrinsic = sfm_data.GetIntrinsics().find(view->getIntrinsicId());
       // We have a valid view with a corresponding camera & pose
       
       // Export camera pose
       {
-        const Pose3 pose = sfm_data.GetPoseOrDie(view);
+        const Pose3 pose = sfm_data.getPose(*view);
         const Mat34 P = iterIntrinsic->second.get()->get_projective_equivalent(pose);
         std::ostringstream os;
-        os << std::setw(5) << std::setfill('0') << map_viewIdToContiguous[view->id_view] << "_P";
+        os << std::setw(5) << std::setfill('0') << map_viewIdToContiguous[view->getViewId()] << "_P";
         std::ofstream file(
           stlplus::create_filespec(stlplus::folder_append_separator(sOutDirectory),
           os.str() ,"txt").c_str());
@@ -149,9 +149,9 @@ bool exportToCMPMVSFormat(
       }
       // Export undistort image
       {
-        const std::string srcImage = stlplus::create_filespec(sfm_data.s_root_path, view->s_Img_path);
+        const std::string srcImage = stlplus::create_filespec(sfm_data.s_root_path, view->getImagePath());
         std::ostringstream os;
-        os << std::setw(5) << std::setfill('0') << map_viewIdToContiguous[view->id_view];
+        os << std::setw(5) << std::setfill('0') << map_viewIdToContiguous[view->getViewId()];
 
         std::string dstImage = stlplus::create_filespec(
           stlplus::folder_append_separator(sOutDirectory), os.str(),"jpg");

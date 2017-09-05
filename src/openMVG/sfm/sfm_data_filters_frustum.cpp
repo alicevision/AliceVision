@@ -42,11 +42,11 @@ void Frustum_Filter::initFrustum(const SfM_Data & sfm_data)
     const View * view = sfm_data.GetViews().at(it->first).get();
     if (!sfm_data.IsPoseAndIntrinsicDefined(view))
       continue;
-    Intrinsics::const_iterator iterIntrinsic = sfm_data.GetIntrinsics().find(view->id_intrinsic);
+    Intrinsics::const_iterator iterIntrinsic = sfm_data.GetIntrinsics().find(view->getIntrinsicId());
     if (!isPinhole(iterIntrinsic->second.get()->getType()))
       continue;
 
-    const Pose3 pose = sfm_data.GetPoseOrDie(view);
+    const Pose3 pose = sfm_data.getPose(*view);
 
     const Pinhole_Intrinsic * cam = dynamic_cast<const Pinhole_Intrinsic*>(iterIntrinsic->second.get());
     if (cam == nullptr)
@@ -57,13 +57,13 @@ void Frustum_Filter::initFrustum(const SfM_Data & sfm_data)
       const Frustum f(
         cam->w(), cam->h(), cam->K(),
         pose.rotation(), pose.center());
-      frustum_perView[view->id_view] = f;
+      frustum_perView[view->getViewId()] = f;
     }
     else // use truncated frustum with defined Near and Far planes
     {
       const Frustum f(cam->w(), cam->h(), cam->K(),
         pose.rotation(), pose.center(), it->second.first, it->second.second);
-      frustum_perView[view->id_view] = f;
+      frustum_perView[view->getViewId()] = f;
     }
   }
 }
@@ -201,8 +201,8 @@ void Frustum_Filter::init_z_near_z_far_depth(const SfM_Data & sfm_data,
         if (!sfm_data.IsPoseAndIntrinsicDefined(view))
           continue;
 
-        Intrinsics::const_iterator iterIntrinsic = sfm_data.GetIntrinsics().find(view->id_intrinsic);
-        const Pose3 pose = sfm_data.GetPoseOrDie(view);
+        Intrinsics::const_iterator iterIntrinsic = sfm_data.GetIntrinsics().find(view->getIntrinsicId());
+        const Pose3 pose = sfm_data.getPose(*view);
         const double z = pose.depth(X);
         NearFarPlanesT::iterator itZ = z_near_z_far_perView.find(id_view);
         if (itZ != z_near_z_far_perView.end())
@@ -227,7 +227,7 @@ void Frustum_Filter::init_z_near_z_far_depth(const SfM_Data & sfm_data,
       const View * view = it->second.get();
       if (!sfm_data.IsPoseAndIntrinsicDefined(view))
         continue;
-      z_near_z_far_perView[view->id_view] = std::make_pair(zNear, zFar);
+      z_near_z_far_perView[view->getViewId()] = std::make_pair(zNear, zFar);
     }
   }
 }

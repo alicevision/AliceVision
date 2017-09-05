@@ -45,7 +45,7 @@
 #include <vector>
 
 #include <openMVG/robust_estimation/rand_sampling.hpp>
-#include <openMVG/logger.hpp>
+#include <openMVG/system/Logger.hpp>
 
 namespace openMVG {
 namespace robust{

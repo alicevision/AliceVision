@@ -62,7 +62,7 @@ static bool Save_PLY(
         {
           if (sfm_data.IsPoseAndIntrinsicDefined(view.second.get()))
           {
-            const geometry::Pose3 pose = sfm_data.GetPoseOrDie(view.second.get());
+            const geometry::Pose3 pose = sfm_data.getPose(*(view.second.get()));
             stream << pose.center().transpose()
               << " 0 255 0" << "\n";
           }

@@ -5,7 +5,7 @@
 #include <openMVG/voctree/vocabulary_tree.hpp>
 #include <openMVG/voctree/descriptor_loader.hpp>
 #include <openMVG/matching/indMatch.hpp>
-#include <openMVG/logger.hpp>
+#include <openMVG/system/Logger.hpp>
 #include <openMVG/types.hpp>
 #include <openMVG/voctree/databaseIO.hpp>
 #include <openMVG/sfm/sfm_data.hpp>
@@ -431,7 +431,7 @@ int main(int argc, char** argv)
         OPENMVG_CERR("Could not find the image file for the document " << docMatches.first << "!");
         return EXIT_FAILURE;
       }
-      sylinkName = bfs::path(it->second->s_Img_path).filename();
+      sylinkName = bfs::path(it->second->getImagePath()).filename();
       dirname = bfs::path(outDir) / sylinkName;
       absoluteFilename = bfs::path(sfmdataQuery->s_root_path) / sylinkName;
       bfs::create_directories(dirname);
@@ -504,7 +504,7 @@ int main(int argc, char** argv)
         openMVG::sfm::Views::const_iterator it = sfmdata.GetViews().find(matches[j].id);
         if(it != sfmdata.GetViews().end())
         {
-          bfs::path imgName(it->second->s_Img_path);
+          bfs::path imgName(it->second->getImagePath());
           sylinkName = bfs::path(myToString(j, 4) + "." + std::to_string(matches[j].score) + "." + imgName.filename().string());
           bfs::path imgPath(sfmdata.s_root_path);
           absoluteFilename = imgPath / imgName;
