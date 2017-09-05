@@ -1,3 +1,4 @@
+add_subdirectory(accv12_demo)
 add_subdirectory(siftPutativeMatches)
 add_subdirectory(robust_homography)
 add_subdirectory(robust_homography_guided)
@@ -12,3 +13,4 @@ add_subdirectory(exifParsing)
 add_subdirectory(sensorWidthDatabase)
 add_subdirectory(kvld_filter)
 add_subdirectory(features_repeatability)
+
