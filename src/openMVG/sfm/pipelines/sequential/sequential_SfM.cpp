@@ -77,7 +77,7 @@ void computeTracksPyramidPerView(
     widthPerLevel[level] = std::pow(pyramidBase, level+1);
     start += Square(widthPerLevel[level]);
   }
-
+  
 #if OPENMVG_IS_DEFINED(OPENMVG_HAVE_BOOST)
   tracksPyramidPerView.reserve(tracksPerView.size());
   for(const auto& viewTracks: tracksPerView)
@@ -121,9 +121,9 @@ void computeTracksPyramidPerView(
 }
 
 SequentialSfMReconstructionEngine::SequentialSfMReconstructionEngine(
-  const SfM_Data & sfm_data,
-  const std::string & soutDirectory,
-  const std::string & sloggingFile)
+    const SfM_Data & sfm_data,
+    const std::string & soutDirectory,
+    const std::string & sloggingFile)
   : ReconstructionEngine(sfm_data, soutDirectory),
     _sLoggingFile(sloggingFile),
     _initialpair(Pair(0,0)),
@@ -134,17 +134,17 @@ SequentialSfMReconstructionEngine::SequentialSfMReconstructionEngine(
     // setup HTML logger
     _htmlDocStream = std::make_shared<htmlDocument::htmlDocumentStream>("SequentialReconstructionEngine SFM report.");
     _htmlDocStream->pushInfo(
-      htmlDocument::htmlMarkup("h1", std::string("SequentialSfMReconstructionEngine")));
+          htmlDocument::htmlMarkup("h1", std::string("SequentialSfMReconstructionEngine")));
     _htmlDocStream->pushInfo("<hr>");
-
+    
     _htmlDocStream->pushInfo( "Dataset info:");
     _htmlDocStream->pushInfo( "Views count: " +
-      htmlDocument::toString( sfm_data.GetViews().size()) + "<br>");
+                              htmlDocument::toString( sfm_data.GetViews().size()) + "<br>");
   }
-
+  
   // Init remaining image list
   for (Views::const_iterator itV = sfm_data.GetViews().begin();
-    itV != sfm_data.GetViews().end(); ++itV)
+       itV != sfm_data.GetViews().end(); ++itV)
   {
     _set_remainingViewId.insert(itV->second.get()->id_view);
   }
@@ -163,9 +163,9 @@ SequentialSfMReconstructionEngine::~SequentialSfMReconstructionEngine()
 // Compute robust Resection of remaining images
 // - group of images will be selected and resection + scene completion will be tried
 void SequentialSfMReconstructionEngine::RobustResectionOfImages(
-  const std::set<size_t>& viewIds,
-  std::set<size_t>& set_reconstructedViewId,
-  std::set<size_t>& set_rejectedViewId)
+    const std::set<size_t>& viewIds,
+    std::set<size_t>& set_reconstructedViewId,
+    std::set<size_t>& set_rejectedViewId)
 {
   size_t imageIndex = 0;
   size_t resectionGroupIndex = 0;
@@ -199,7 +199,7 @@ void SequentialSfMReconstructionEngine::RobustResectionOfImages(
       set_remainingViewId.erase(possible_resection_index);
     }
     OPENMVG_LOG_DEBUG("Resection of " << vec_possible_resection_indexes.size() << " new images took " << std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - chrono_start).count() << " msec.");
-
+    
     if (bImageAdded)
     {
       if((resectionGroupIndex % 10) == 0)
@@ -216,20 +216,160 @@ void SequentialSfMReconstructionEngine::RobustResectionOfImages(
       int bundleAdjustmentIteration = 0;
       const std::size_t nbOutliersThreshold = 50;
       // Perform BA until all point are under the given precision
-      do
-      {
+      std::size_t nbRejectedTracks;
+//      do
+//      {
         auto chrono2_start = std::chrono::steady_clock::now();
-
-//        BundleAdjustment();
-        localBundleAdjustment(set_newReconstructedViewId);
+        
+        //        BundleAdjustment();
+        std::map<IndexT, int> mapPoseIdDistance;
+        std::cout << "in : RobustResectionOfImages" << std::endl;
+        std::cout << "set_newReconstructedViewId.size() = " << set_newReconstructedViewId.size() << std::endl;
+        localBundleAdjustment(set_newReconstructedViewId, mapPoseIdDistance);
+        
+        
         OPENMVG_LOG_DEBUG("Resection group index: " << resectionGroupIndex << ", bundle iteration: " << bundleAdjustmentIteration
-                  << " took " << std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - chrono2_start).count() << " msec.");
+                          << " took " << std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - chrono2_start).count() << " msec.");
         ++bundleAdjustmentIteration;
-      }
-      while (badTrackRejector(4.0, nbOutliersThreshold) != 0);
+        nbRejectedTracks = badTrackRejector(4.0, nbOutliersThreshold);
+        
+        
+        ///////////////////////////////////////////////////////////////////////////////////////////
+        ///////////////////////////////////////////////////////////////////////////////////////////
+        std::string filename = "/home/cdebize/Documents/Data_SfM/lastpants/reconstructions/Outliers.txt";
+        std::ofstream os;
+        os.open(filename, std::ios::app);
+        os.seekp(0, std::ios::end); //put the cursor at the end
+        
+        
+        // -- HEADER
+        if (os.tellp() == 0) // 'tellp' return the cursor's position
+        {
+          std::vector<std::string> header;
+          header.push_back("idBA");
+          header.push_back("nbAddedCams"); 
+          header.push_back("nameAddedCams\t\t\t\t"); 
+          header.push_back("nbOutliers"); 
+          header.push_back("nbRemovedCam"); 
+          header.push_back("nameRemovedCams"); 
+          for (std::string & head : header)
+            os << head << "\t";
+          os << "\n"; 
+        }
+        
+        // -- DATA
+        os << bundleAdjustmentIteration << "\t";
+        os << set_newReconstructedViewId.size() << "\t";
+        uint i=0;
+        for(const IndexT viewId: set_newReconstructedViewId)
+        {
+          os << _sfm_data.views.at(viewId).get()->s_Img_path << "-K" << _sfm_data.views.at(viewId).get()->id_intrinsic << "\t";
+          i++;
+        }
+        for (; i<30; i++)
+        {
+          os << "x\t"; 
+        }
+        
+//        os << nbRejectedTracks << "\t";        
+        
+//        if (nbRejectedTracks != 0)
+//          os << "\n";
+        
+//        os.close();
+        ///////////////////////////////////////////////////////////////////////////////////////////
+        ///////////////////////////////////////////////////////////////////////////////////////////
+        
+//      }
+//      while (nbRejectedTracks != 0);
       OPENMVG_LOG_DEBUG("Bundle with " << bundleAdjustmentIteration << " iterations took " << std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - chrono_start).count() << " msec.");
       chrono_start = std::chrono::steady_clock::now();
+      
+      ////////////////////////////////////////////////////////////////////////////////////////vvvvvvvv
+      // Save poses before removing
+      Poses poses_saved =  _sfm_data.poses;
+      
+      ////////////////////////////////////////////////////////////////////////////////////////^^^^^^^^
+      
+      std::cout << "-- eraseUnstablePosesAndObservations" << std::endl;
       eraseUnstablePosesAndObservations(this->_sfm_data, _minPointsPerPose, _minTrackLength);
+      
+      
+      ////////////////////////////////////////////////////////////////////////////////////////vvvvvvvv
+      // Write view names
+      
+      
+      // -- get removed 'id_pose'
+      std::vector<IndexT> removed_poseIds;
+      if (poses_saved !=  _sfm_data.poses)
+      {
+//        std::cout << "_sfm_data.poses : (size: " << _sfm_data.poses.size() << ")" << std::endl;
+//        for (const auto& pose : _sfm_data.poses)
+//        {
+//          std::cout << pose.first << std::endl;
+//        }
+        
+//        std::cout << "poses_saved : (size: " << poses_saved.size() << ")" << std::endl;
+        for (const auto& pose : poses_saved)
+        {
+//          std::cout << pose.first ;
+          
+          IndexT id_pose = pose.first;
+          if (_sfm_data.poses.find(id_pose) == _sfm_data.poses.end()) // id not found = removed
+          {
+//            std::cout << " Removed !" << std::endl;
+            removed_poseIds.push_back(id_pose);
+          }
+//          else
+//            std::cout << std::endl;
+        }
+//        std::cout << "Different POSES !! (expected)" << std::endl;      
+      }
+      
+      // -- Write names in the txt file
+//      std::string filename = "/home/cdebize/Documents/Data_SfM/lastpants/reconstructions/Outliers.txt";
+//      std::ofstream os;
+//      os.open(filename, std::ios::app);
+//      os.seekp(0, std::ios::end); //put the cursor at the end
+      os << removed_poseIds.size() << "\t";
+      if (!removed_poseIds.empty())
+      {
+        // -- get associated views
+        std::vector<std::string> removed_viewNames;
+        std::vector<int> removed_viewIntrinsicId;
+        std::vector<std::size_t> removed_poseDistance;
+        std::cout << "Removed views : (names)" << std::endl;
+        for (const auto& view : _sfm_data.views)
+        {
+          auto it = std::find(removed_poseIds.begin(), removed_poseIds.end(), view.second->id_pose);
+          if (it != removed_poseIds.end()) // associated pose removed ! 
+          {
+            removed_viewNames.push_back(view.second->s_Img_path);
+            removed_viewIntrinsicId.push_back(view.second->id_intrinsic);
+            if (mapPoseIdDistance.size() != 0)
+              removed_poseDistance.push_back(mapPoseIdDistance[view.second->id_pose]);
+            else
+              removed_poseDistance.push_back(-1);
+            
+            std::cout << view.second->s_Img_path << "(pose id: "  << view.second->id_pose << ")" << std::endl;
+          }
+        }
+        
+        // -- DATA
+        for (uint i=0; i< removed_viewNames.size(); i++)
+        {
+          os << removed_viewNames.at(i) 
+             << "-K" << removed_viewIntrinsicId.at(i) 
+             << "-D" << removed_poseDistance.at(i) << "\t";
+        }
+      }
+      
+      os << "\n";
+      os.close();
+      
+      ////////////////////////////////////////////////////////////////////////////////////////^^^^^^^^
+      
+      
       OPENMVG_LOG_DEBUG("eraseUnstablePosesAndObservations took " << std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - chrono_start).count() << " msec.");
     }
     ++resectionGroupIndex;
@@ -258,13 +398,13 @@ bool SequentialSfMReconstructionEngine::Process()
     }
     _pyramidThreshold = maxWeight * 0.2;
   }
-
+  
   //-------------------
   //-- Incremental reconstruction
   //-------------------
   if (!InitLandmarkTracks())
     return false;
-
+  
   // Initial pair choice
   if(_initialpair == Pair(0,0))
   {
@@ -283,14 +423,14 @@ bool SequentialSfMReconstructionEngine::Process()
     }
   }
   // Else a starting pair was already initialized before
-
+  
   // Initial pair Essential Matrix and [R|t] estimation.
   if (!MakeInitialPair3D(_initialpair))
     return false;
-
+  
   // timer for stats
   openMVG::system::Timer timer_sfm;
-
+  
   std::set<std::size_t> reconstructedViewIds;
   std::set<std::size_t> rejectedViewIds;
   std::size_t nbRejectedLoops = 0;
@@ -298,46 +438,46 @@ bool SequentialSfMReconstructionEngine::Process()
   {
     reconstructedViewIds.clear();
     rejectedViewIds.clear();
-
+    
     // Compute robust Resection of remaining images
     // - group of images will be selected and resection + scene completion will be tried
     RobustResectionOfImages(
-      _set_remainingViewId,
-      reconstructedViewIds,
-      rejectedViewIds);
+          _set_remainingViewId,
+          reconstructedViewIds,
+          rejectedViewIds);
     // Remove all reconstructed views from the remaining views
     for(const std::size_t v: reconstructedViewIds)
     {
       _set_remainingViewId.erase(v);
     }
-
+    
     OPENMVG_LOG_DEBUG("SequentialSfM -- nbRejectedLoops: " << nbRejectedLoops);
     OPENMVG_LOG_DEBUG("SequentialSfM -- reconstructedViewIds: " << reconstructedViewIds.size());
     OPENMVG_LOG_DEBUG("SequentialSfM -- rejectedViewIds: " << rejectedViewIds.size());
     OPENMVG_LOG_DEBUG("SequentialSfM -- _set_remainingViewId: " << _set_remainingViewId.size());
-
+    
     ++nbRejectedLoops;
     // Retry to perform the resectioning of all the rejected views,
     // as long as new views are successfully added.
   } while( !reconstructedViewIds.empty() && !_set_remainingViewId.empty() );
-
+  
   // timer for stats
   const double time_sfm = timer_sfm.elapsed();
-
+  
   //-- Reconstruction done.
   //-- Display some statistics
   OPENMVG_LOG_DEBUG(
-    "-------------------------------\n"
-    "-- Structure from Motion (statistics):\n"
-    "-- #Camera calibrated: " << _sfm_data.GetPoses().size() <<
-    " from " << _sfm_data.GetViews().size() << " input images.\n"
-    "-- #Tracks, #3D points: " << _sfm_data.GetLandmarks().size() << "\n"
-    "-------------------------------");
-
+        "-------------------------------\n"
+        "-- Structure from Motion (statistics):\n"
+        "-- #Camera calibrated: " << _sfm_data.GetPoses().size() <<
+        " from " << _sfm_data.GetViews().size() << " input images.\n"
+                                                   "-- #Tracks, #3D points: " << _sfm_data.GetLandmarks().size() << "\n"
+                                                                                                                    "-------------------------------");
+  
   Histogram<double> h;
   ComputeResidualsHistogram(&h);
   OPENMVG_LOG_DEBUG("Histogram of residuals:" << h.ToString());
-    
+  
   Histogram<double> hTracks;
   ComputeTracksLengthsHistogram(&hTracks);
   OPENMVG_LOG_DEBUG("Histogram of tracks length:" << hTracks.ToString());
@@ -349,18 +489,18 @@ bool SequentialSfMReconstructionEngine::Process()
     os << "Structure from Motion process finished.";
     _htmlDocStream->pushInfo("<hr>");
     _htmlDocStream->pushInfo(htmlMarkup("h1",os.str()));
-
+    
     os.str("");
     os << "-------------------------------" << "<br>"
-      << "-- Structure from Motion (statistics):<br>"
-      << "-- #Camera calibrated: " << _sfm_data.GetPoses().size()
-      << " from " <<_sfm_data.GetViews().size() << " input images.<br>"
-      << "-- #Tracks, #3D points: " << _sfm_data.GetLandmarks().size() << "<br>"
-      << "-------------------------------" << "<br>";
+       << "-- Structure from Motion (statistics):<br>"
+       << "-- #Camera calibrated: " << _sfm_data.GetPoses().size()
+       << " from " <<_sfm_data.GetViews().size() << " input images.<br>"
+       << "-- #Tracks, #3D points: " << _sfm_data.GetLandmarks().size() << "<br>"
+       << "-------------------------------" << "<br>";
     _htmlDocStream->pushInfo(os.str());
-
+    
     _htmlDocStream->pushInfo(htmlMarkup("h2","Histogram of reprojection-residuals"));
-
+    
     
     const std::vector<double> xBin = h.GetXbinsValue();
     htmlDocument::JSXGraphWrapper jsxGraph;
@@ -370,10 +510,10 @@ bool SequentialSfMReconstructionEngine::Process()
     htmlDocument::JSXGraphWrapper jsxGraphTracks;
     _htmlDocStream->pushXYChart(xBinTracks, hTracks.GetHist(),"3DtoTracksSize");
   }
-
-  #if OPENMVG_IS_DEFINED(OPENMVG_HAVE_BOOST)
-    exportStatistics(time_sfm);
-  #endif
+  
+#if OPENMVG_IS_DEFINED(OPENMVG_HAVE_BOOST)
+  exportStatistics(time_sfm);
+#endif
   return true;
 }
 
@@ -390,41 +530,41 @@ bool SequentialSfMReconstructionEngine::ChooseInitialPair(Pair & initialPairInde
     // List Views that supports valid intrinsic
     std::set<IndexT> valid_views;
     for (Views::const_iterator it = _sfm_data.GetViews().begin();
-      it != _sfm_data.GetViews().end(); ++it)
+         it != _sfm_data.GetViews().end(); ++it)
     {
       const View * v = it->second.get();
       if( _sfm_data.GetIntrinsics().find(v->id_intrinsic) != _sfm_data.GetIntrinsics().end())
         valid_views.insert(v->id_view);
     }
-
+    
     if (_sfm_data.GetIntrinsics().empty() || valid_views.empty())
     {
-
+      
       OPENMVG_CERR("There is no defined intrinsic data in order to compute an essential matrix for the initial pair.");
       return false;
     }
-
+    
     OPENMVG_LOG_DEBUG(
-      "----------------------------------------------------\n"
-      "SequentialSfMReconstructionEngine::ChooseInitialPair\n"
-      "----------------------------------------------------\n"
-      " Pairs that have valid intrinsic and high support of points are displayed:\n"
-      " Choose one pair manually by typing the two integer indexes\n"
-      "----------------------------------------------------"
-      );
-
+          "----------------------------------------------------\n"
+          "SequentialSfMReconstructionEngine::ChooseInitialPair\n"
+          "----------------------------------------------------\n"
+          " Pairs that have valid intrinsic and high support of points are displayed:\n"
+          " Choose one pair manually by typing the two integer indexes\n"
+          "----------------------------------------------------"
+          );
+    
     // Try to list the 10 top pairs that have:
     //  - valid intrinsics,
     //  - valid estimated Fundamental matrix.
     std::vector< size_t > vec_NbMatchesPerPair;
     std::vector<openMVG::matching::PairwiseMatches::const_iterator> vec_MatchesIterator;
     for (openMVG::matching::PairwiseMatches::const_iterator
-      iter = _pairwiseMatches->begin();
-      iter != _pairwiseMatches->end(); ++iter)
+         iter = _pairwiseMatches->begin();
+         iter != _pairwiseMatches->end(); ++iter)
     {
       const Pair current_pair = iter->first;
       if (valid_views.count(current_pair.first) &&
-        valid_views.count(current_pair.second) )
+          valid_views.count(current_pair.second) )
       {
         vec_NbMatchesPerPair.push_back(iter->second.size());
         vec_MatchesIterator.push_back(iter);
@@ -434,14 +574,14 @@ bool SequentialSfMReconstructionEngine::ChooseInitialPair(Pair & initialPairInde
     using namespace stl::indexed_sort;
     std::vector< sort_index_packet_descend< size_t, size_t> > packet_vec(vec_NbMatchesPerPair.size());
     sort_index_helper(packet_vec, &vec_NbMatchesPerPair[0], std::min((size_t)10, vec_NbMatchesPerPair.size()));
-
+    
     for (size_t i = 0; i < std::min((size_t)10, vec_NbMatchesPerPair.size()); ++i) {
       const size_t index = packet_vec[i].index;
       openMVG::matching::PairwiseMatches::const_iterator iter = vec_MatchesIterator[index];
       OPENMVG_COUT("(" << iter->first.first << "," << iter->first.second <<")\t\t"
-        << iter->second.getNbAllMatches() << " matches");
+                   << iter->second.getNbAllMatches() << " matches");
     }
-
+    
     // Ask the user to choose an initial pair (by set some view ids)
     OPENMVG_COUT(std::endl << " type INITIAL pair ids: X enter Y enter");
     int val, val2;
@@ -450,10 +590,10 @@ bool SequentialSfMReconstructionEngine::ChooseInitialPair(Pair & initialPairInde
       initialPairIndex.second = val2;
     }
   }
-
+  
   OPENMVG_LOG_DEBUG("\nPutative starting pair is: (" << initialPairIndex.first
-      << "," << initialPairIndex.second << ")");
-
+                    << "," << initialPairIndex.second << ")");
+  
   // Check validity of the initial pair indices:
   if (!_featuresPerView->viewExist(initialPairIndex.first)  ||
       !_featuresPerView->viewExist(initialPairIndex.second))
@@ -468,16 +608,16 @@ bool SequentialSfMReconstructionEngine::InitLandmarkTracks()
 {
   // Compute tracks from matches
   tracks::TracksBuilder tracksBuilder;
-
+  
   {
     // List of features matches for each couple of images
     const openMVG::matching::PairwiseMatches & map_Matches = *_pairwiseMatches;
     OPENMVG_LOG_DEBUG("Track building");
-
+    
     tracksBuilder.Build(map_Matches);
     OPENMVG_LOG_DEBUG("Track filtering");
     tracksBuilder.Filter(_minInputTrackLength);
-
+    
     OPENMVG_LOG_DEBUG("Track export to internal struct");
     //-- Build tracks with STL compliant type :
     tracksBuilder.ExportToSTL(_map_tracks);
@@ -485,8 +625,8 @@ bool SequentialSfMReconstructionEngine::InitLandmarkTracks()
     tracks::TracksUtilsMap::computeTracksPerView(_map_tracks, _map_tracksPerView);
     OPENMVG_LOG_DEBUG("Build tracks pyramid per view");
     computeTracksPyramidPerView(
-            _map_tracksPerView, _map_tracks, _sfm_data.views, *_featuresPerView, _pyramidBase, _pyramidDepth, _map_featsPyramidPerView);
-
+          _map_tracksPerView, _map_tracks, _sfm_data.views, *_featuresPerView, _pyramidBase, _pyramidDepth, _map_featsPyramidPerView);
+    
     OPENMVG_LOG_DEBUG("Track stats");
     {
       std::ostringstream osTrack;
@@ -496,26 +636,26 @@ bool SequentialSfMReconstructionEngine::InitLandmarkTracks()
       std::set<size_t> set_imagesId;
       tracks::TracksUtilsMap::ImageIdInTracks(_map_tracksPerView, set_imagesId);
       osTrack << "------------------" << "\n"
-        << "-- Tracks Stats --" << "\n"
-        << " Number of tracks: " << tracksBuilder.NbTracks() << "\n"
-        << " Number of images in tracks: " << set_imagesId.size() << "\n";
-//        << " Images Id: " << "\n";
-//      std::copy(set_imagesId.begin(),
-//        set_imagesId.end(),
-//        std::ostream_iterator<size_t>(osTrack, ", "));
+              << "-- Tracks Stats --" << "\n"
+              << " Number of tracks: " << tracksBuilder.NbTracks() << "\n"
+              << " Number of images in tracks: " << set_imagesId.size() << "\n";
+      //        << " Images Id: " << "\n";
+      //      std::copy(set_imagesId.begin(),
+      //        set_imagesId.end(),
+      //        std::ostream_iterator<size_t>(osTrack, ", "));
       osTrack << "\n------------------" << "\n";
-
+      
       std::map<size_t, size_t> map_Occurence_TrackLength;
       tracks::TracksUtilsMap::TracksLength(_map_tracks, map_Occurence_TrackLength);
       osTrack << "TrackLength, Occurrence" << "\n";
       for(const auto& iter: map_Occurence_TrackLength)
       {
         osTrack << "\t" << iter.first << "\t" << iter.second << "\n";
-        #if OPENMVG_IS_DEFINED(OPENMVG_HAVE_BOOST)
-          // Add input tracks histogram
-          _tree.add("sfm.inputtracks_histogram."
-            + std::to_string(iter.first), iter.second);
-        #endif
+#if OPENMVG_IS_DEFINED(OPENMVG_HAVE_BOOST)
+        // Add input tracks histogram
+        _tree.add("sfm.inputtracks_histogram."
+                  + std::to_string(iter.first), iter.second);
+#endif
       }
       osTrack << "\n";
       OPENMVG_LOG_DEBUG(osTrack.str());
@@ -528,23 +668,23 @@ bool SequentialSfMReconstructionEngine::AutomaticInitialPairChoice(Pair & initia
 {
   // From the k view pairs with the highest number of verified matches
   // select a pair that have the largest baseline (mean angle between its bearing vectors).
-
+  
   const unsigned iMin_inliers_count = 100;
   // Use a min angle limit to ensure quality of the geometric evaluation.
   const float fRequired_min_angle = 5.0f;
   // Use a max angle limit to ensure good matching quality.
   const float fLimit_max_angle = 40.0f;
-
+  
   // List Views that support valid intrinsic (view that could be used for Essential matrix computation)
   std::set<IndexT> valid_views;
   for (Views::const_iterator it = _sfm_data.GetViews().begin();
-    it != _sfm_data.GetViews().end(); ++it)
+       it != _sfm_data.GetViews().end(); ++it)
   {
     const View * v = it->second.get();
     if (_sfm_data.GetIntrinsics().count(v->id_intrinsic))
       valid_views.insert(v->id_view);
   }
-
+  
   if (valid_views.size() < 2)
   {
     OPENMVG_LOG_WARNING("Failed to find an initial pair automatically. There is no view with valid intrinsics.");
@@ -554,42 +694,42 @@ bool SequentialSfMReconstructionEngine::AutomaticInitialPairChoice(Pair & initia
   typedef std::tuple<double, double, double, std::size_t, Pair> ImagePairScore;
   std::vector<ImagePairScore> scoring_per_pair;
   scoring_per_pair.reserve(_pairwiseMatches->size());
-
+  
   // Compute the relative pose & the 'baseline score'
   C_Progress_display my_progress_bar( _pairwiseMatches->size(),
-    std::cout,
-    "Automatic selection of an initial pair:\n" );
-
-  #pragma omp parallel for schedule(dynamic)
+                                      std::cout,
+                                      "Automatic selection of an initial pair:\n" );
+  
+#pragma omp parallel for schedule(dynamic)
   for (int i = 0; i < _pairwiseMatches->size(); ++i)
   {
     matching::PairwiseMatches::const_iterator iter = _pairwiseMatches->begin();
     std::advance(iter, i);
-
-    #pragma omp critical
+    
+#pragma omp critical
     ++my_progress_bar;
-
+    
     const Pair current_pair = iter->first;
-
+    
     const size_t I = min(current_pair.first, current_pair.second);
     const size_t J = max(current_pair.first, current_pair.second);
     if (!valid_views.count(I) || !valid_views.count(J))
       continue;
-
+    
     const View * view_I = _sfm_data.GetViews().at(I).get();
     const Intrinsics::const_iterator iterIntrinsic_I = _sfm_data.GetIntrinsics().find(view_I->id_intrinsic);
     const View * view_J = _sfm_data.GetViews().at(J).get();
     const Intrinsics::const_iterator iterIntrinsic_J = _sfm_data.GetIntrinsics().find(view_J->id_intrinsic);
-
+    
     const Pinhole_Intrinsic * cam_I = dynamic_cast<const Pinhole_Intrinsic*>(iterIntrinsic_I->second.get());
     const Pinhole_Intrinsic * cam_J = dynamic_cast<const Pinhole_Intrinsic*>(iterIntrinsic_J->second.get());
     if (cam_I == nullptr || cam_J == nullptr)
       continue;
-
+    
     openMVG::tracks::TracksMap map_tracksCommon;
     const std::set<size_t> set_imageIndex= {I, J};
     tracks::TracksUtilsMap::GetTracksInImagesFast(set_imageIndex, _map_tracks, _map_tracksPerView, map_tracksCommon);
-
+    
     // Copy points correspondences to arrays for relative pose estimation
     const size_t n = map_tracksCommon.size();
     OPENMVG_LOG_INFO("AutomaticInitialPairChoice, test I: " << I << ", J: " << J << ", nbCommonTracks: " << n);
@@ -597,8 +737,8 @@ bool SequentialSfMReconstructionEngine::AutomaticInitialPairChoice(Pair & initia
     size_t cptIndex = 0;
     std::vector<std::size_t> commonTracksIds(n);
     for (openMVG::tracks::TracksMap::const_iterator
-      iterT = map_tracksCommon.begin(); iterT != map_tracksCommon.end();
-      ++iterT, ++cptIndex)
+         iterT = map_tracksCommon.begin(); iterT != map_tracksCommon.end();
+         ++iterT, ++cptIndex)
     {
       auto iter = iterT->second.featPerView.begin();
       const size_t i = iter->second;
@@ -607,23 +747,23 @@ bool SequentialSfMReconstructionEngine::AutomaticInitialPairChoice(Pair & initia
       
       const auto& viewI = _featuresPerView->getFeatures(I, iterT->second.descType); 
       const auto& viewJ = _featuresPerView->getFeatures(J, iterT->second.descType);
-
+      
       Vec2 feat = viewI[i].coords().cast<double>();
       xI.col(cptIndex) = cam_I->get_ud_pixel(feat);
       feat = viewJ[j].coords().cast<double>();
       xJ.col(cptIndex) = cam_J->get_ud_pixel(feat);
     }
-
+    
     // Robust estimation of the relative pose
     RelativePose_Info relativePose_info;
     relativePose_info.initial_residual_tolerance = Square(4.0);
-
+    
     const bool relativePoseSuccess = robustRelativePose(
-      cam_I->K(), cam_J->K(),
-      xI, xJ, relativePose_info,
-      std::make_pair(cam_I->w(), cam_I->h()), std::make_pair(cam_J->w(), cam_J->h()),
-      1024);
-
+          cam_I->K(), cam_J->K(),
+          xI, xJ, relativePose_info,
+          std::make_pair(cam_I->w(), cam_I->h()), std::make_pair(cam_J->w(), cam_J->h()),
+          1024);
+    
     if (relativePoseSuccess && relativePose_info.vec_inliers.size() > iMin_inliers_count)
     {
       // Triangulate inliers & compute angle between bearing vectors
@@ -649,9 +789,9 @@ bool SequentialSfMReconstructionEngine::AutomaticInitialPairChoice(Pair & initia
       // Compute the median triangulation angle
       const unsigned median_index = vec_angles.size() / 2;
       std::nth_element(
-        vec_angles.begin(),
-        vec_angles.begin() + median_index,
-        vec_angles.end());
+            vec_angles.begin(),
+            vec_angles.begin() + median_index,
+            vec_angles.end());
       const float scoring_angle = vec_angles[median_index];
       // Store the pair iff the pair is in the asked angle range [fRequired_min_angle;fLimit_max_angle]
       if (scoring_angle > fRequired_min_angle &&
@@ -659,8 +799,8 @@ bool SequentialSfMReconstructionEngine::AutomaticInitialPairChoice(Pair & initia
       {
         const double imagePairScore = std::min(computeImageScore(I, validCommonTracksIds), computeImageScore(J, validCommonTracksIds));
         const double score = scoring_angle * imagePairScore;
-
-        #pragma omp critical
+        
+#pragma omp critical
         scoring_per_pair.emplace_back(score, imagePairScore, scoring_angle, relativePose_info.vec_inliers.size(), current_pair);
       }
     }
@@ -701,24 +841,24 @@ bool SequentialSfMReconstructionEngine::MakeInitialPair3D(const Pair & current_p
   // use min max to have I < J
   const std::size_t I = min(current_pair.first, current_pair.second);
   const std::size_t J = max(current_pair.first, current_pair.second);
-
+  
   // a. Assert we have valid pinhole cameras
   const View * view_I = _sfm_data.GetViews().at(I).get();
   const Intrinsics::const_iterator iterIntrinsic_I = _sfm_data.GetIntrinsics().find(view_I->id_intrinsic);
   const View * view_J = _sfm_data.GetViews().at(J).get();
   const Intrinsics::const_iterator iterIntrinsic_J = _sfm_data.GetIntrinsics().find(view_J->id_intrinsic);
-
+  
   OPENMVG_LOG_DEBUG("Initial pair is:\n"
-          << "  A - Id: " << I << " - " << " filepath: " << view_I->s_Img_path << "\n"
-          << "  B - Id: " << J << " - " << " filepath: " << view_J->s_Img_path);
-
+                    << "  A - Id: " << I << " - " << " filepath: " << view_I->s_Img_path << "\n"
+                    << "  B - Id: " << J << " - " << " filepath: " << view_J->s_Img_path);
+  
   if (iterIntrinsic_I == _sfm_data.GetIntrinsics().end() ||
       iterIntrinsic_J == _sfm_data.GetIntrinsics().end() )
   {
     OPENMVG_LOG_WARNING("Can't find initial image pair intrinsics: " << view_I->id_intrinsic << ", "  << view_J->id_intrinsic);
     return false;
   }
-
+  
   const Pinhole_Intrinsic * cam_I = dynamic_cast<const Pinhole_Intrinsic*>(iterIntrinsic_I->second.get());
   const Pinhole_Intrinsic * cam_J = dynamic_cast<const Pinhole_Intrinsic*>(iterIntrinsic_J->second.get());
   if (cam_I == nullptr || cam_J == nullptr)
@@ -726,50 +866,50 @@ bool SequentialSfMReconstructionEngine::MakeInitialPair3D(const Pair & current_p
     OPENMVG_LOG_WARNING("Can't find initial image pair intrinsics (NULL ptr): " << view_I->id_intrinsic << ", "  << view_J->id_intrinsic);
     return false;
   }
-
+  
   // b. Get common features between the two view
   // use the track to have a more dense match correspondence set
   openMVG::tracks::TracksMap map_tracksCommon;
   const std::set<std::size_t> set_imageIndex= {I, J};
   tracks::TracksUtilsMap::GetTracksInImagesFast(set_imageIndex, _map_tracks, _map_tracksPerView, map_tracksCommon);
-
+  
   //-- Copy point to arrays
   const std::size_t n = map_tracksCommon.size();
   Mat xI(2,n), xJ(2,n);
   std::size_t cptIndex = 0;
   for (openMVG::tracks::TracksMap::const_iterator
-    iterT = map_tracksCommon.begin(); iterT != map_tracksCommon.end();
-    ++iterT, ++cptIndex)
+       iterT = map_tracksCommon.begin(); iterT != map_tracksCommon.end();
+       ++iterT, ++cptIndex)
   {
     assert(iterT->second.featPerView.size() == 2);
     auto iter = iterT->second.featPerView.begin();
     const std::size_t i = iter->second;
     const std::size_t j = (++iter)->second;
-
+    
     Vec2 feat = _featuresPerView->getFeatures(I, iterT->second.descType)[i].coords().cast<double>();
     xI.col(cptIndex) = cam_I->get_ud_pixel(feat);
     feat = _featuresPerView->getFeatures(J, iterT->second.descType)[j].coords().cast<double>();
     xJ.col(cptIndex) = cam_J->get_ud_pixel(feat);
   }
   OPENMVG_LOG_DEBUG(n << " matches in the image pair for the initial pose estimation.");
-
+  
   // c. Robust estimation of the relative pose
   RelativePose_Info relativePose_info;
-
+  
   const std::pair<std::size_t, std::size_t> imageSize_I(cam_I->w(), cam_I->h());
   const std::pair<std::size_t, std::size_t> imageSize_J(cam_J->w(), cam_J->h());
-
+  
   if (!robustRelativePose(
-    cam_I->K(), cam_J->K(), xI, xJ, relativePose_info, imageSize_I, imageSize_J, 4096))
+        cam_I->K(), cam_J->K(), xI, xJ, relativePose_info, imageSize_I, imageSize_J, 4096))
   {
     OPENMVG_LOG_WARNING(" /!\\ Robust estimation failed to compute E for this pair");
     return false;
   }
   OPENMVG_LOG_DEBUG("A-Contrario initial pair residual: "
-    << relativePose_info.found_residual_precision);
+                    << relativePose_info.found_residual_precision);
   // Bound min precision at 1 pix.
   relativePose_info.found_residual_precision = std::max(relativePose_info.found_residual_precision, 1.0);
-
+  
   bool bRefine_using_BA = true;
   if (bRefine_using_BA)
   {
@@ -779,29 +919,29 @@ bool SequentialSfMReconstructionEngine::MakeInitialPair3D(const Pair & current_p
     tiny_scene.views.insert(*_sfm_data.GetViews().find(view_J->id_view));
     tiny_scene.intrinsics.insert(*_sfm_data.GetIntrinsics().find(view_I->id_intrinsic));
     tiny_scene.intrinsics.insert(*_sfm_data.GetIntrinsics().find(view_J->id_intrinsic));
-
+    
     // Init poses
     const Pose3 & Pose_I = tiny_scene.poses[view_I->id_pose] = Pose3(Mat3::Identity(), Vec3::Zero());
     const Pose3 & Pose_J = tiny_scene.poses[view_J->id_pose] = relativePose_info.relativePose;
-
+    
     // Init structure
     const Mat34 P1 = cam_I->get_projective_equivalent(Pose_I);
     const Mat34 P2 = cam_J->get_projective_equivalent(Pose_J);
     Landmarks & landmarks = tiny_scene.structure;
-
+    
     for (const auto& trackIt: map_tracksCommon)
     {
       Landmark& landmark = landmarks[trackIt.first];
       const tracks::Track& track = trackIt.second;
-
+      
       // Get corresponding points
       auto iter = trackIt.second.featPerView.begin();
       const size_t i = iter->second;
       const size_t j = (++iter)->second;
-
+      
       const Vec2 xCoordI = _featuresPerView->getFeatures(I, track.descType)[i].coords().cast<double>();
       const Vec2 xCoordJ = _featuresPerView->getFeatures(J, track.descType)[j].coords().cast<double>();
-
+      
       Vec3 X;
       TriangulateDLT(P1, xCoordI, P2, xCoordJ, &X);
       Observations observations;
@@ -811,9 +951,9 @@ bool SequentialSfMReconstructionEngine::MakeInitialPair3D(const Pair & current_p
       landmark.observations = std::move(observations);
       landmark.X = X;
     }
-
+    
     Save(tiny_scene, stlplus::create_filespec(_sOutDirectory, "initialPair", _sfmdataInterFileExtension), _sfmdataInterFilter);
-
+    
     // - refine only Structure and Rotations & translations (keep intrinsic constant)
     Bundle_Adjustment_Ceres::BA_options options(true);
     options.setDenseBA();
@@ -822,7 +962,7 @@ bool SequentialSfMReconstructionEngine::MakeInitialPair3D(const Pair & current_p
     {
       return false;
     }
-
+    
     // Save computed data
     const Pose3 pose_I = _sfm_data.poses[view_I->id_pose] = tiny_scene.poses[view_I->id_pose];
     const Pose3 pose_J = _sfm_data.poses[view_J->id_pose] = tiny_scene.poses[view_J->id_pose];
@@ -830,12 +970,12 @@ bool SequentialSfMReconstructionEngine::MakeInitialPair3D(const Pair & current_p
     _map_ACThreshold.insert(std::make_pair(J, relativePose_info.found_residual_precision));
     _set_remainingViewId.erase(view_I->id_view);
     _set_remainingViewId.erase(view_J->id_view);
-
+    
     static const double minAngle = 3.0;
     
     // List inliers and save them
     for (Landmarks::const_iterator iter = tiny_scene.GetLandmarks().begin();
-      iter != tiny_scene.GetLandmarks().end(); ++iter)
+         iter != tiny_scene.GetLandmarks().end(); ++iter)
     {
       const IndexT trackId = iter->first;
       const Landmark & landmark = iter->second;
@@ -843,12 +983,12 @@ bool SequentialSfMReconstructionEngine::MakeInitialPair3D(const Pair & current_p
       Observations::const_iterator iterObs_xI = observations.begin();
       Observations::const_iterator iterObs_xJ = observations.begin();
       std::advance(iterObs_xJ, 1);
-
+      
       const Observation & ob_xI = iterObs_xI->second;
       const Observation & ob_xJ = iterObs_xJ->second;
-
+      
       const double angle = AngleBetweenRay(
-        pose_I, cam_I, pose_J, cam_J, ob_xI.x, ob_xJ.x);
+            pose_I, cam_I, pose_J, cam_J, ob_xI.x, ob_xJ.x);
       const Vec2 residual_I = cam_I->residual(pose_I, landmark.X, ob_xI.x);
       const Vec2 residual_J = cam_J->residual(pose_J, landmark.X, ob_xJ.x);
       if ( angle > minAngle &&
@@ -863,56 +1003,56 @@ bool SequentialSfMReconstructionEngine::MakeInitialPair3D(const Pair & current_p
     // Save outlier residual information
     Histogram<double> histoResiduals;
     OPENMVG_LOG_DEBUG(
-      "=========================\n"
-      " MSE Residual InitialPair Inlier: " << ComputeResidualsHistogram(&histoResiduals) << "\n"
-      "=========================");
-
+          "=========================\n"
+          " MSE Residual InitialPair Inlier: " << ComputeResidualsHistogram(&histoResiduals) << "\n"
+                                                                                                "=========================");
+    
     if (!_sLoggingFile.empty())
     {
       using namespace htmlDocument;
       _htmlDocStream->pushInfo(htmlMarkup("h1","Essential Matrix."));
       ostringstream os;
       os << std::endl
-        << "-------------------------------" << "<br>"
-        << "-- Robust Essential matrix: <"  << I << "," <<J << "> images: "
-        << view_I->s_Img_path << ","
-        << view_J->s_Img_path << "<br>"
-        << "-- Threshold: " << relativePose_info.found_residual_precision << "<br>"
-        << "-- Resection status: " << "OK" << "<br>"
-        << "-- Nb points used for robust Essential matrix estimation: "
-        << xI.cols() << "<br>"
-        << "-- Nb points validated by robust estimation: "
-        << _sfm_data.structure.size() << "<br>"
-        << "-- % points validated: "
-        << _sfm_data.structure.size()/static_cast<float>(xI.cols())
-        << "<br>"
-        << "-------------------------------" << "<br>";
+         << "-------------------------------" << "<br>"
+         << "-- Robust Essential matrix: <"  << I << "," <<J << "> images: "
+         << view_I->s_Img_path << ","
+         << view_J->s_Img_path << "<br>"
+         << "-- Threshold: " << relativePose_info.found_residual_precision << "<br>"
+         << "-- Resection status: " << "OK" << "<br>"
+         << "-- Nb points used for robust Essential matrix estimation: "
+         << xI.cols() << "<br>"
+         << "-- Nb points validated by robust estimation: "
+         << _sfm_data.structure.size() << "<br>"
+         << "-- % points validated: "
+         << _sfm_data.structure.size()/static_cast<float>(xI.cols())
+         << "<br>"
+         << "-------------------------------" << "<br>";
       _htmlDocStream->pushInfo(os.str());
-
+      
       _htmlDocStream->pushInfo(htmlMarkup("h2",
-        "Residual of the robust estimation (Initial triangulation). Thresholded at: "
-        + toString(relativePose_info.found_residual_precision)));
-
+                                          "Residual of the robust estimation (Initial triangulation). Thresholded at: "
+                                          + toString(relativePose_info.found_residual_precision)));
+      
       _htmlDocStream->pushInfo(htmlMarkup("h2","Histogram of residuals"));
-
+      
       std::vector<double> xBin = histoResiduals.GetXbinsValue();
       std::pair< std::pair<double,double>, std::pair<double,double> > range =
-        autoJSXGraphViewport<double>(xBin, histoResiduals.GetHist());
-
+          autoJSXGraphViewport<double>(xBin, histoResiduals.GetHist());
+      
       htmlDocument::JSXGraphWrapper jsxGraph;
       jsxGraph.init("InitialPairTriangulationKeptInfo",600,300);
       jsxGraph.addXYChart(xBin, histoResiduals.GetHist(), "line,point");
       jsxGraph.addLine(relativePose_info.found_residual_precision, 0,
-        relativePose_info.found_residual_precision, histoResiduals.GetHist().front());
+                       relativePose_info.found_residual_precision, histoResiduals.GetHist().front());
       jsxGraph.UnsuspendUpdate();
       jsxGraph.setViewport(range);
       jsxGraph.close();
       _htmlDocStream->pushInfo(jsxGraph.toStr());
-
+      
       _htmlDocStream->pushInfo("<hr>");
-
+      
       ofstream htmlFileStream( string(stlplus::folder_append_separator(_sOutDirectory) +
-        "Reconstruction_Report.html").c_str());
+                                      "Reconstruction_Report.html").c_str());
       htmlFileStream << _htmlDocStream->getDoc();
     }
   }
@@ -923,7 +1063,7 @@ double SequentialSfMReconstructionEngine::ComputeResidualsHistogram(Histogram<do
 {
   if (_sfm_data.GetLandmarks().empty())
     return -1.0;
-
+  
   // Collect residuals for each observation
   std::vector<float> vec_residuals;
   vec_residuals.reserve(_sfm_data.structure.size());
@@ -940,9 +1080,9 @@ double SequentialSfMReconstructionEngine::ComputeResidualsHistogram(Histogram<do
       vec_residuals.push_back( fabs(residual(1)) );
     }
   }
-
+  
   assert(!vec_residuals.empty());
-
+  
   float dMin, dMax, dMean, dMedian;
   minMaxMeanMedian<float>(vec_residuals.begin(), vec_residuals.end(),
                           dMin, dMax, dMean, dMedian);
@@ -950,15 +1090,15 @@ double SequentialSfMReconstructionEngine::ComputeResidualsHistogram(Histogram<do
     *histo = Histogram<double>(dMin, dMax, 10);
     histo->Add(vec_residuals.begin(), vec_residuals.end());
   }
-
+  
   OPENMVG_LOG_DEBUG(
-    "\nSequentialSfMReconstructionEngine::ComputeResidualsMSE.\n"
-    "\t-- #Tracks:\t" << _sfm_data.GetLandmarks().size() << "\n"
-    "\t-- Residual min:\t" << dMin << "\n"
-    "\t-- Residual median:\t" << dMedian << "\n"
-    "\t-- Residual max:\t "  << dMax << "\n"
-    "\t-- Residual mean:\t " << dMean);
-
+        "\nSequentialSfMReconstructionEngine::ComputeResidualsMSE.\n"
+        "\t-- #Tracks:\t" << _sfm_data.GetLandmarks().size() << "\n"
+                                                                "\t-- Residual min:\t" << dMin << "\n"
+                                                                                                  "\t-- Residual median:\t" << dMedian << "\n"
+                                                                                                                                          "\t-- Residual max:\t "  << dMax << "\n"
+                                                                                                                                                                              "\t-- Residual mean:\t " << dMean);
+  
   return dMean;
 }
 
@@ -966,38 +1106,38 @@ double SequentialSfMReconstructionEngine::ComputeTracksLengthsHistogram(Histogra
 {
   if (_sfm_data.GetLandmarks().empty())
     return -1.0;
-
+  
   // Collect tracks size: number of 2D observations per 3D points
   std::vector<float> vec_nbTracks;
   vec_nbTracks.reserve(_sfm_data.GetLandmarks().size());
-
+  
   for(const auto &track : _sfm_data.GetLandmarks())
   {
     const Observations & observations = track.second.observations;
     vec_nbTracks.push_back(observations.size());
   }
-
+  
   assert(!vec_nbTracks.empty());
   
   float dMin, dMax, dMean, dMedian;
   minMaxMeanMedian<float>(
-    vec_nbTracks.begin(), vec_nbTracks.end(),
-    dMin, dMax, dMean, dMedian);
-
+        vec_nbTracks.begin(), vec_nbTracks.end(),
+        dMin, dMax, dMean, dMedian);
+  
   if (histo)
   {
     *histo = Histogram<double>(dMin, dMax, dMax-dMin+1);
     histo->Add(vec_nbTracks.begin(), vec_nbTracks.end());
   }
-
+  
   OPENMVG_LOG_DEBUG(
-    "\nSequentialSfMReconstructionEngine::ComputeTracksLengthsHistogram.\n"
-    "\t-- #Tracks:\t" << _sfm_data.GetLandmarks().size() << "\n"
-    "\t-- Tracks Length min:\t" << dMin << "\n"
-    "\t-- Tracks Length median:\t" << dMedian << "\n"
-    "\t-- Tracks Length max:\t "  << dMax << "\n"
-    "\t-- Tracks Length mean:\t " << dMean);
-
+        "\nSequentialSfMReconstructionEngine::ComputeTracksLengthsHistogram.\n"
+        "\t-- #Tracks:\t" << _sfm_data.GetLandmarks().size() << "\n"
+                                                                "\t-- Tracks Length min:\t" << dMin << "\n"
+                                                                                                       "\t-- Tracks Length median:\t" << dMedian << "\n"
+                                                                                                                                                    "\t-- Tracks Length max:\t "  << dMax << "\n"
+                                                                                                                                                                                             "\t-- Tracks Length mean:\t " << dMean);
+  
   return dMean;
 }
 
@@ -1025,23 +1165,23 @@ std::size_t SequentialSfMReconstructionEngine::computeImageScore(std::size_t vie
 }
 
 bool SequentialSfMReconstructionEngine::FindConnectedViews(
-  std::vector<ViewConnectionScore>& out_connectedViews,
-  const std::set<size_t>& remainingViewIds) const
+    std::vector<ViewConnectionScore>& out_connectedViews,
+    const std::set<size_t>& remainingViewIds) const
 {
   out_connectedViews.clear();
-
+  
   if (remainingViewIds.empty() || _sfm_data.GetLandmarks().empty())
     return false;
-
+  
   // Collect tracksIds
   std::set<size_t> reconstructed_trackId;
   std::transform(_sfm_data.GetLandmarks().begin(), _sfm_data.GetLandmarks().end(),
-    std::inserter(reconstructed_trackId, reconstructed_trackId.begin()),
-    stl::RetrieveKey());
+                 std::inserter(reconstructed_trackId, reconstructed_trackId.begin()),
+                 stl::RetrieveKey());
   
   const std::set<IndexT> reconstructedIntrinsics = Get_Reconstructed_Intrinsics(_sfm_data);
-
-  #pragma omp parallel for
+  
+#pragma omp parallel for
   for (int i = 0; i < remainingViewIds.size(); ++i)
   {
     std::set<size_t>::const_iterator iter = remainingViewIds.cbegin();
@@ -1049,56 +1189,56 @@ bool SequentialSfMReconstructionEngine::FindConnectedViews(
     const size_t viewId = *iter;
     const size_t intrinsicId = _sfm_data.GetViews().at(viewId)->id_intrinsic;
     const bool isIntrinsicsReconstructed = reconstructedIntrinsics.count(intrinsicId);
-
+    
     // Compute 2D - 3D possible content
     openMVG::tracks::TracksPerView::const_iterator tracksIdsIt = _map_tracksPerView.find(viewId);
     if(tracksIdsIt == _map_tracksPerView.end())
       continue;
-
+    
     const openMVG::tracks::TrackIdSet& set_tracksIds = tracksIdsIt->second;
     if (set_tracksIds.empty())
       continue;
-
+    
     // Count the common possible putative point
     //  with the already 3D reconstructed trackId
     std::vector<size_t> vec_trackIdForResection;
     vec_trackIdForResection.reserve(set_tracksIds.size());
     std::set_intersection(set_tracksIds.begin(), set_tracksIds.end(),
-      reconstructed_trackId.begin(),
-      reconstructed_trackId.end(),
-      std::back_inserter(vec_trackIdForResection));
+                          reconstructed_trackId.begin(),
+                          reconstructed_trackId.end(),
+                          std::back_inserter(vec_trackIdForResection));
     // Compute an image score based on the number of matches to the 3D scene
     // and the repartition of these features in the image.
     std::size_t score = computeImageScore(viewId, vec_trackIdForResection);
-    #pragma omp critical
+#pragma omp critical
     {
       out_connectedViews.emplace_back(viewId, vec_trackIdForResection.size(), score, isIntrinsicsReconstructed);
     }
   }
-
+  
   // Sort by the image score
   std::sort(out_connectedViews.begin(), out_connectedViews.end(),
-      [](const ViewConnectionScore& t1, const ViewConnectionScore& t2) {
-        return get<2>(t1) > get<2>(t2);
-      });
-
+            [](const ViewConnectionScore& t1, const ViewConnectionScore& t2) {
+    return get<2>(t1) > get<2>(t2);
+  });
+  
   return !out_connectedViews.empty();
 }
 
 
 bool SequentialSfMReconstructionEngine::FindNextImagesGroupForResection(
-  std::vector<size_t> & out_selectedViewIds,
-  const std::set<size_t>& remainingViewIds) const
+    std::vector<size_t> & out_selectedViewIds,
+    const std::set<size_t>& remainingViewIds) const
 {
   out_selectedViewIds.clear();
   auto chrono_start = std::chrono::steady_clock::now();
   std::vector<ViewConnectionScore> vec_viewsScore;
   if(!FindConnectedViews(vec_viewsScore, remainingViewIds))
     return false;
-
+  
   // Impose a minimal number of points to ensure that it makes sense to try the pose estimation.
   std::size_t minPointsThreshold = 30;
-
+  
   OPENMVG_LOG_DEBUG("FindNextImagesGroupForResection -- Scores (features): ");
   // print the 30 best scores
   for(std::size_t i = 0; i < vec_viewsScore.size() && i < 30; ++i)
@@ -1106,7 +1246,7 @@ bool SequentialSfMReconstructionEngine::FindNextImagesGroupForResection(
     OPENMVG_LOG_DEBUG_OBJ << std::get<2>(vec_viewsScore[i]) << "(" << std::get<1>(vec_viewsScore[i]) << "), ";
   }
   OPENMVG_LOG_DEBUG_OBJ << std::endl;
-
+  
   // If the list is empty or if the list contains images with no correspondences
   // -> (no resection will be possible)
   if (vec_viewsScore.empty() || std::get<1>(vec_viewsScore[0]) == 0)
@@ -1126,10 +1266,10 @@ bool SequentialSfMReconstructionEngine::FindNextImagesGroupForResection(
     // All remaining images cannot be used for pose estimation
     return false;
   }
-
+  
   // Add the image view index with the best score
   out_selectedViewIds.push_back(std::get<0>(vec_viewsScore[0]));
-
+  
   // The beginning of the incremental SfM is a well known risky and
   // unstable step which has a big impact on the final result.
   // The Bundle Adjustment is an intensive computing step so we only use it
@@ -1138,14 +1278,14 @@ bool SequentialSfMReconstructionEngine::FindNextImagesGroupForResection(
   // and perform a BA for each camera because it makes the results
   // more stable and it's quite cheap because we have few data.
   static const std::size_t nbFirstUnstableCameras = 30;
-
+  
   if (_sfm_data.GetPoses().size() < nbFirstUnstableCameras)
   {
     // Add images one by one to reconstruct the first cameras.
     OPENMVG_LOG_DEBUG(
-      "FindNextImagesGroupForResection with few images. " << " images took: " << std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - chrono_start).count() << " msec\n"
-      " - Scores: " << std::get<2>(vec_viewsScore.front()) << "\n"
-      " - Features: " << std::get<1>(vec_viewsScore.front()));
+          "FindNextImagesGroupForResection with few images. " << " images took: " << std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - chrono_start).count() << " msec\n"
+                                                                                                                                                                                                       " - Scores: " << std::get<2>(vec_viewsScore.front()) << "\n"
+                                                                                                                                                                                                                                                               " - Features: " << std::get<1>(vec_viewsScore.front()));
     return true;
   }
 #ifdef OPENMVG_NEXTBESTVIEW_WITHOUT_SCORE
@@ -1176,9 +1316,9 @@ bool SequentialSfMReconstructionEngine::FindNextImagesGroupForResection(
     }
   }
   OPENMVG_LOG_DEBUG(
-    "FindNextImagesGroupForResection with " << out_selectedViewIds.size() << " images took: " << std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - chrono_start).count() << " msec\n"
-    " - Scores: " << std::get<2>(vec_viewsScore.front()) << " to " << std::get<2>(vec_viewsScore[out_selectedViewIds.size()-1]) << " (threshold was " << scoreThreshold << ")\n"
-    " - Features: " << std::get<1>(vec_viewsScore.front()) << " to " << std::get<1>(vec_viewsScore[out_selectedViewIds.size()-1]) << " (threshold was " << minPointsThreshold << ")");
+        "FindNextImagesGroupForResection with " << out_selectedViewIds.size() << " images took: " << std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - chrono_start).count() << " msec\n"
+                                                                                                                                                                                                                       " - Scores: " << std::get<2>(vec_viewsScore.front()) << " to " << std::get<2>(vec_viewsScore[out_selectedViewIds.size()-1]) << " (threshold was " << scoreThreshold << ")\n"
+                                                                                                                                                                                                                                                                                                                                                                                              " - Features: " << std::get<1>(vec_viewsScore.front()) << " to " << std::get<1>(vec_viewsScore[out_selectedViewIds.size()-1]) << " (threshold was " << minPointsThreshold << ")");
   return true;
 }
 
@@ -1198,105 +1338,105 @@ bool SequentialSfMReconstructionEngine::FindNextImagesGroupForResection(
 bool SequentialSfMReconstructionEngine::Resection(const std::size_t viewIndex)
 {
   using namespace tracks;
-
+  
   // A. Compute 2D/3D matches
   // A1. list tracks ids used by the view
   const openMVG::tracks::TrackIdSet& set_tracksIds = _map_tracksPerView.at(viewIndex);
-
+  
   // A2. intersects the track list with the reconstructed
   std::set<std::size_t> reconstructed_trackId;
   std::transform(_sfm_data.GetLandmarks().begin(), _sfm_data.GetLandmarks().end(),
-    std::inserter(reconstructed_trackId, reconstructed_trackId.begin()),
-    stl::RetrieveKey());
-
+                 std::inserter(reconstructed_trackId, reconstructed_trackId.begin()),
+                 stl::RetrieveKey());
+  
   // Get the ids of the already reconstructed tracks
   std::set<std::size_t> set_trackIdForResection;
   std::set_intersection(set_tracksIds.begin(), set_tracksIds.end(),
-    reconstructed_trackId.begin(),
-    reconstructed_trackId.end(),
-    std::inserter(set_trackIdForResection, set_trackIdForResection.begin()));
-
+                        reconstructed_trackId.begin(),
+                        reconstructed_trackId.end(),
+                        std::inserter(set_trackIdForResection, set_trackIdForResection.begin()));
+  
   if (set_trackIdForResection.empty())
   {
     // No match. The image has no connection with already reconstructed points.
     OPENMVG_LOG_DEBUG(
-      "-------------------------------\n"
-      "-- Resection of camera index: " << viewIndex << "\n"
-      "-- Resection status: FAILED\n"
-      "-------------------------------");
+          "-------------------------------\n"
+          "-- Resection of camera index: " << viewIndex << "\n"
+                                                           "-- Resection status: FAILED\n"
+                                                           "-------------------------------");
     return false;
   }
-
+  
   // Get back featId associated to a tracksID already reconstructed.
   // These 2D/3D associations will be used for the resection.
   std::vector<TracksUtilsMap::FeatureId> vec_featIdForResection;
   
   TracksUtilsMap::GetFeatureIdInViewPerTrack(_map_tracks,
-    set_trackIdForResection,
-    viewIndex,
-    &vec_featIdForResection);
-
+                                             set_trackIdForResection,
+                                             viewIndex,
+                                             &vec_featIdForResection);
+  
   // Localize the image inside the SfM reconstruction
   Image_Localizer_Match_Data resection_data;
   resection_data.pt2D.resize(2, set_trackIdForResection.size());
   resection_data.pt3D.resize(3, set_trackIdForResection.size());
   resection_data.vec_descType.resize(set_trackIdForResection.size());
-
+  
   // B. Look if intrinsic data is known or not
   const View * view_I = _sfm_data.GetViews().at(viewIndex).get();
   std::shared_ptr<cameras::IntrinsicBase> optionalIntrinsic = _sfm_data.GetIntrinsicSharedPtr(view_I->id_intrinsic);
-
+  
   std::size_t cpt = 0;
   std::set<std::size_t>::const_iterator iterTrackId = set_trackIdForResection.begin();
   for (std::vector<TracksUtilsMap::FeatureId>::const_iterator iterfeatId = vec_featIdForResection.begin();
-    iterfeatId != vec_featIdForResection.end();
-    ++iterfeatId, ++iterTrackId, ++cpt)
+       iterfeatId != vec_featIdForResection.end();
+       ++iterfeatId, ++iterTrackId, ++cpt)
   {
     const features::EImageDescriberType descType = iterfeatId->first;
     resection_data.pt3D.col(cpt) = _sfm_data.GetLandmarks().at(*iterTrackId).X;
     resection_data.pt2D.col(cpt) = _featuresPerView->getFeatures(viewIndex, descType)[iterfeatId->second].coords().cast<double>();
     resection_data.vec_descType.at(cpt) = descType;
   }
-
+  
   // C. Do the resectioning: compute the camera pose.
   OPENMVG_LOG_DEBUG(
-    "-------------------------------\n"
-    "-- Robust Resection of view: " << viewIndex);
-
+        "-------------------------------\n"
+        "-- Robust Resection of view: " << viewIndex);
+  
   geometry::Pose3 pose;
   const bool bResection = sfm::SfM_Localizer::Localize(
-      Pair(view_I->ui_width, view_I->ui_height),
-      optionalIntrinsic.get(),
-      resection_data,
-      pose
-    );
-
+        Pair(view_I->ui_width, view_I->ui_height),
+        optionalIntrinsic.get(),
+        resection_data,
+        pose
+        );
+  
   if (!_sLoggingFile.empty())
   {
     using namespace htmlDocument;
     ostringstream os;
     os << "Resection of Image index: <" << viewIndex << "> image: "
-      << view_I->s_Img_path <<"<br> \n";
+       << view_I->s_Img_path <<"<br> \n";
     _htmlDocStream->pushInfo(htmlMarkup("h1",os.str()));
-
+    
     os.str("");
     os << std::endl
-      << "-------------------------------" << "<br>"
-      << "-- Robust Resection of camera index: <" << viewIndex << "> image: "
-      <<  view_I->s_Img_path <<"<br>"
-      << "-- Threshold: " << resection_data.error_max << "<br>"
-      << "-- Resection status: " << (bResection ? "OK" : "FAILED") << "<br>"
-      << "-- Nb points used for Resection: " << vec_featIdForResection.size() << "<br>"
-      << "-- Nb points validated by robust estimation: " << resection_data.vec_inliers.size() << "<br>"
-      << "-- % points validated: "
-      << resection_data.vec_inliers.size()/static_cast<float>(vec_featIdForResection.size()) << "<br>"
-      << "-------------------------------" << "<br>";
+       << "-------------------------------" << "<br>"
+       << "-- Robust Resection of camera index: <" << viewIndex << "> image: "
+       <<  view_I->s_Img_path <<"<br>"
+        << "-- Threshold: " << resection_data.error_max << "<br>"
+        << "-- Resection status: " << (bResection ? "OK" : "FAILED") << "<br>"
+        << "-- Nb points used for Resection: " << vec_featIdForResection.size() << "<br>"
+        << "-- Nb points validated by robust estimation: " << resection_data.vec_inliers.size() << "<br>"
+        << "-- % points validated: "
+        << resection_data.vec_inliers.size()/static_cast<float>(vec_featIdForResection.size()) << "<br>"
+        << "-------------------------------" << "<br>";
     _htmlDocStream->pushInfo(os.str());
   }
-
+  
   if (!bResection)
     return false;
-
+  
   // D. Refine the pose of the found camera.
   // We use a local scene with only the 3D points and the new camera.
   {
@@ -1312,10 +1452,10 @@ bool SequentialSfMReconstructionEngine::Resection(const std::size_t viewIndex)
       Mat3 K, R;
       Vec3 t;
       KRt_From_P(resection_data.projection_matrix, &K, &R, &t);
-
+      
       const double focal = (K(0,0) + K(1,1))/2.0;
       const Vec2 principal_point(K(0,2), K(1,2));
-
+      
       if(optionalIntrinsic == nullptr)
       {
         // Create the new camera intrinsic group
@@ -1330,14 +1470,14 @@ bool SequentialSfMReconstructionEngine::Resection(const std::size_t viewIndex)
     const std::set<IndexT> reconstructedIntrinsics = Get_Reconstructed_Intrinsics(_sfm_data);
     // If we use a camera intrinsic for the first time we need to refine it.
     const bool intrinsicsFirstUsage = (reconstructedIntrinsics.count(view_I->id_intrinsic) == 0);
-
+    
     if(!sfm::SfM_Localizer::RefinePose(
-      optionalIntrinsic.get(), pose,
-      resection_data, true, b_new_intrinsic || intrinsicsFirstUsage))
+         optionalIntrinsic.get(), pose,
+         resection_data, true, b_new_intrinsic || intrinsicsFirstUsage))
     {
       return false;
     }
-
+    
     // E. Update the global scene with the new found camera pose, intrinsic (if not defined)
     if (b_new_intrinsic)
     {
@@ -1348,9 +1488,9 @@ bool SequentialSfMReconstructionEngine::Resection(const std::size_t viewIndex)
         // Since some intrinsic Id already exists,
         //  we have to create a new unique identifier following the existing one
         std::set<IndexT> existing_intrinsicId;
-          std::transform(_sfm_data.GetIntrinsics().begin(), _sfm_data.GetIntrinsics().end(),
-          std::inserter(existing_intrinsicId, existing_intrinsicId.begin()),
-          stl::RetrieveKey());
+        std::transform(_sfm_data.GetIntrinsics().begin(), _sfm_data.GetIntrinsics().end(),
+                       std::inserter(existing_intrinsicId, existing_intrinsicId.begin()),
+                       stl::RetrieveKey());
         new_intrinsic_id = (*existing_intrinsicId.rbegin())+1;
       }
       _sfm_data.views.at(viewIndex).get()->id_intrinsic = new_intrinsic_id;
@@ -1360,7 +1500,7 @@ bool SequentialSfMReconstructionEngine::Resection(const std::size_t viewIndex)
     _sfm_data.poses[view_I->id_pose] = pose;
     _map_ACThreshold.insert(std::make_pair(viewIndex, resection_data.error_max));
   }
-
+  
   // F. Update the observations into the global scene structure
   // - Add the new 2D observations to the reconstructed tracks
   iterTrackId = set_trackIdForResection.begin();
@@ -1376,58 +1516,58 @@ bool SequentialSfMReconstructionEngine::Resection(const std::size_t viewIndex)
       _sfm_data.structure[*iterTrackId].observations[viewIndex] = Observation(x, vec_featIdForResection[i].second);
     }
   }
-
+  
   // G. Triangulate new possible 2D tracks
   // List tracks that share content with this view and add observations and new 3D track if required.
   {
     // For all reconstructed images look for common content in the tracks.
     const std::set<IndexT> valid_views = Get_Valid_Views(_sfm_data);
-
-    #pragma omp parallel for schedule(dynamic)
+    
+#pragma omp parallel for schedule(dynamic)
     for (ptrdiff_t i = 0; i < static_cast<ptrdiff_t>(valid_views.size()); ++i)
     {
       std::set<IndexT>::const_iterator iter = valid_views.begin();
       std::advance(iter, i);
       const IndexT indexI = *iter;
-
+      
       // Ignore the current view
       if (indexI == viewIndex)
         continue;
-
+      
       const std::size_t I = std::min((IndexT)viewIndex, indexI);
       const std::size_t J = std::max((IndexT)viewIndex, indexI);
-
+      
       // Find track correspondences between I and J
       const std::set<std::size_t> set_viewIndex = { I,J };
       openMVG::tracks::TracksMap map_tracksCommonIJ;
       TracksUtilsMap::GetTracksInImagesFast(set_viewIndex, _map_tracks, _map_tracksPerView, map_tracksCommonIJ);
-
+      
       const View * view_I = _sfm_data.GetViews().at(I).get();
       const View * view_J = _sfm_data.GetViews().at(J).get();
       const IntrinsicBase * cam_I = _sfm_data.GetIntrinsics().at(view_I->id_intrinsic).get();
       const IntrinsicBase * cam_J = _sfm_data.GetIntrinsics().at(view_J->id_intrinsic).get();
       const Pose3 pose_I = _sfm_data.GetPoseOrDie(view_I);
       const Pose3 pose_J = _sfm_data.GetPoseOrDie(view_J);
-
+      
       std::size_t new_putative_track = 0, new_added_track = 0, extented_track = 0;
       for (const std::pair<std::size_t, tracks::Track >& trackIt : map_tracksCommonIJ)
       {
         const std::size_t trackId = trackIt.first;
         const tracks::Track & track = trackIt.second;
-
+        
         const Vec2 xI = _featuresPerView->getFeatures(I, track.descType)[track.featPerView.at(I)].coords().cast<double>();
         const Vec2 xJ = _featuresPerView->getFeatures(J, track.descType)[track.featPerView.at(J)].coords().cast<double>();
-
+        
         // test if the track already exists in 3D
         bool trackIdExists;
 #pragma omp critical
         {
-            trackIdExists = _sfm_data.structure.find(trackId) != _sfm_data.structure.end();
+          trackIdExists = _sfm_data.structure.find(trackId) != _sfm_data.structure.end();
         }
         if (trackIdExists)
         {
           // 3D point triangulated before, only add image observation if needed
-          #pragma omp critical
+#pragma omp critical
           {
             Landmark & landmark = _sfm_data.structure.at(trackId);
             if (landmark.observations.count(I) == 0)
@@ -1453,7 +1593,7 @@ bool SequentialSfMReconstructionEngine::Resection(const std::size_t viewIndex)
         else
         {
           // A new 3D point must be added
-          #pragma omp critical
+#pragma omp critical
           {
             ++new_putative_track;
           }
@@ -1471,12 +1611,12 @@ bool SequentialSfMReconstructionEngine::Resection(const std::size_t viewIndex)
           const Vec2 residual_I = cam_I->residual(pose_I, X_euclidean, xI);
           const Vec2 residual_J = cam_J->residual(pose_J, X_euclidean, xJ);
           if (angle > 3.0 &&
-            pose_I.depth(X_euclidean) > 0 &&
-            pose_J.depth(X_euclidean) > 0 &&
-            residual_I.norm() < std::max(4.0, _map_ACThreshold.at(I)) &&
-            residual_J.norm() < std::max(4.0, _map_ACThreshold.at(J)))
+              pose_I.depth(X_euclidean) > 0 &&
+              pose_J.depth(X_euclidean) > 0 &&
+              residual_I.norm() < std::max(4.0, _map_ACThreshold.at(I)) &&
+              residual_J.norm() < std::max(4.0, _map_ACThreshold.at(J)))
           {
-            #pragma omp critical
+#pragma omp critical
             {
               // Add a new track
               Landmark & landmark = _sfm_data.structure[trackId];
@@ -1490,15 +1630,15 @@ bool SequentialSfMReconstructionEngine::Resection(const std::size_t viewIndex)
         } // else (New 3D point)
       }// For all correspondences
       
-//        #pragma omp critical
-//        if (!map_tracksCommonIJ.empty())
-//        {
-//          OPENMVG_LOG_DEBUG(
-//            "--Triangulated 3D points [" << I << "-" << J << "]:\n"
-//            "\t#Track extented: " << extented_track << "\n"
-//            "\t#Validated/#Possible: " << new_added_track << "/" << new_putative_track << "\n"
-//            "\t#3DPoint for the entire scene: " << _sfm_data.GetLandmarks().size());
-//        }
+      //        #pragma omp critical
+      //        if (!map_tracksCommonIJ.empty())
+      //        {
+      //          OPENMVG_LOG_DEBUG(
+      //            "--Triangulated 3D points [" << I << "-" << J << "]:\n"
+      //            "\t#Track extented: " << extented_track << "\n"
+      //            "\t#Validated/#Possible: " << new_added_track << "/" << new_putative_track << "\n"
+      //            "\t#3DPoint for the entire scene: " << _sfm_data.GetLandmarks().size());
+      //        }
     }
   }
   return true;
@@ -1524,7 +1664,9 @@ bool SequentialSfMReconstructionEngine::BundleAdjustment()
 }
 
 /// Local Bundle Adjustment to refine only the parameters close to the newly resected views.
-bool SequentialSfMReconstructionEngine::localBundleAdjustment(const std::set<IndexT>& newReconstructedViewIds)
+bool SequentialSfMReconstructionEngine::localBundleAdjustment(
+  const std::set<IndexT>& newReconstructedViewIds, 
+  std::map<IndexT, int>& mapPoseIdDistance)
 {
   Local_Bundle_Adjustment_Ceres::LocalBA_options options;
   options.enableParametersOrdering();
@@ -1540,18 +1682,21 @@ bool SequentialSfMReconstructionEngine::localBundleAdjustment(const std::set<Ind
   }
   
   Local_Bundle_Adjustment_Ceres localBA_obj(options);
-
   if (options.isLocalBAEnabled())
   {
     // Compute the 'connexity-distance' for each poses according to the newly added views :
-    localBA_obj.computeDistancesMaps(_sfm_data, newReconstructedViewIds, _map_tracksPerView);
+    std::cout << "in: localBundleAdjustment" << std::endl;
+    std::cout << "newReconstructedViewIds.size() = "  << newReconstructedViewIds.size() << std::endl;
+    localBA_obj.computeDistancesMaps(_sfm_data, newReconstructedViewIds, _map_tracksPerView, mapPoseIdDistance);
     
+        
     // Determermine which parameter (poses, intrinsics & landmarks) is going to be refined, 
     // constant or ignored in the Bundle Adjustment :
     localBA_obj.computeStatesMaps(
-      _sfm_data, 
-      Local_Bundle_Adjustment_Ceres::LocalBAStrategy::strategy_2, 
-      1);
+          _sfm_data, 
+          Local_Bundle_Adjustment_Ceres::LocalBAStrategy::strategy_3, 
+          1, 
+          newReconstructedViewIds);
   }
   
   LocalBA_stats lbaStats(newReconstructedViewIds);
@@ -1561,7 +1706,7 @@ bool SequentialSfMReconstructionEngine::localBundleAdjustment(const std::set<Ind
   bool isBaSucceed = localBA_obj.Adjust(_sfm_data);
   
   // Save data about the 
-  localBA_obj.exportStatistics(_sOutDirectory);
+  localBA_obj.exportStatistics(_sOutDirectory, _sfm_data);
   
   return isBaSucceed;
 }
@@ -1577,11 +1722,12 @@ bool SequentialSfMReconstructionEngine::localBundleAdjustment(const std::set<Ind
  */
 std::size_t SequentialSfMReconstructionEngine::badTrackRejector(double dPrecision, std::size_t count)
 {
+  std::cout << "-- badTrackrejector" << std::endl;
   const std::size_t nbOutliers_residualErr = RemoveOutliers_PixelResidualError(_sfm_data, dPrecision, 2);
   const std::size_t nbOutliers_angleErr = RemoveOutliers_AngleError(_sfm_data, 2.0);
-
+  
   OPENMVG_LOG_DEBUG("badTrackRejector: nbOutliers_residualErr: " << nbOutliers_residualErr << ", nbOutliers_angleErr: " << nbOutliers_angleErr);
-  return (nbOutliers_residualErr + nbOutliers_angleErr) > count;
+  return nbOutliers_residualErr + nbOutliers_angleErr;
 }
 
 /**
@@ -1596,7 +1742,7 @@ void SequentialSfMReconstructionEngine::exportStatistics(double time_sfm)
   _tree.put("sfm.views", _sfm_data.GetViews().size());
   _tree.put("sfm.poses", _sfm_data.GetPoses().size());
   _tree.put("sfm.points", _sfm_data.GetLandmarks().size());
-
+  
   // Add observations histogram
   std::map<std::size_t, std::size_t> obsHistogram;
   for (const auto & iterTracks : _sfm_data.GetLandmarks())
@@ -1610,20 +1756,20 @@ void SequentialSfMReconstructionEngine::exportStatistics(double time_sfm)
   for(std::size_t i = 2; i < obsHistogram.size(); i++)
   {
     _tree.add("sfm.observationsHistogram."
-      + std::to_string(i), obsHistogram[i]);
+              + std::to_string(i), obsHistogram[i]);
   }
-
+  
   // Add process time
   _tree.put("sfm.time", time_sfm);
-
+  
   // CPU frequency
   _tree.put("hardware.cpu.freq", system::cpu_clock_by_os());
-
+  
   // CPU cores
   _tree.put("hardware.cpu.cores", system::get_total_cpus());
-
+  
   _tree.put("hardware.ram.size", system::getMemoryInfo().totalRam);
-
+  
   // Write json on disk
   pt::write_json(stlplus::folder_append_separator(_sOutDirectory)+"stats.json", _tree);
 }

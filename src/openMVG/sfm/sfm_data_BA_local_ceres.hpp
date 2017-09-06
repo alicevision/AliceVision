@@ -48,31 +48,34 @@ public:
 
   /// \brief Add the newly resected views 'newViewsIds' into a graph (nodes: cameras, egdes: matching)
   /// and compute the intragraph-distance between these new cameras and all the others.
-  void computeDistancesMaps(
-    const SfM_Data& sfm_data, 
+  void computeDistancesMaps(const SfM_Data& sfm_data, 
     const std::set<IndexT>& newViewIds,
-    const openMVG::tracks::TracksPerView& map_tracksPerView);
+    const openMVG::tracks::TracksPerView& map_tracksPerView, std::map<IndexT, int> &outMapPoseIdDistance);
 
   /// \brief  A 'LocalBAStrategy' defined the state (refined, constant or ignored) of each parameter 
   /// of the reconstruction (landmarks, poses & intrinsics) in the BA solver according to the 
   /// distances graph 'reconstructionGraph'.
   /// Each strategy is explicitly coded in the 'computeStatesMaps()' method.
   enum LocalBAStrategy { 
-    strategy_1, ///<
-    strategy_2, ///<
+    strategy_1, ///< 
+    strategy_2, ///< 
+    strategy_3, ///< 
     none        ///< Everything is refined (= no Local BA)
   };
   
   /// \brief Define the state of each parameter (landmarks, poses & intrinsics) according to the 
   /// distance graph and the wished Local BA strategy 'LocalBAStrategy'.
-  void computeStatesMaps(const SfM_Data & sfm_data, const LocalBAStrategy& strategy, const std::size_t distanceLimit=1);
+  void computeStatesMaps(const SfM_Data & sfm_data, 
+    const LocalBAStrategy& strategy, 
+    const std::size_t distanceLimit, 
+    const std::set<IndexT>& newReconstructedViewIds );
   
   void setBAStatisticsContainer(LocalBA_stats& baStats) {_LBA_statistics = baStats;}
 
   /// \brief Export statistics about bundle adjustment in a TXT file ("BaStats.txt")
   /// The contents of the file have been writen such that it is easy to handle it with
   /// a Python script or any spreadsheets (e.g. by copy/past the full content to LibreOffice) 
-  bool exportStatistics(const std::string& path);
+  bool exportStatistics(const std::string& path, const SfM_Data &sfm_data);
   
 private:
 
@@ -85,15 +88,16 @@ private:
   lemon::ListGraph::NodeMap<IndexT> _map_node_viewId; // <node, viewId>
   std::map<IndexT, lemon::ListGraph::Node> _map_viewId_node; // <viewId, node>
   
-  // Store the distances to the last resected poses, according to the pose or view id. :
-  std::map<IndexT, std::size_t> _map_viewId_distance;
-  std::map<IndexT, std::size_t> _map_poseId_distance;
+  // Store the graph-distances to the new poses/views. 
+  // If the view/pose is not connected to the new poses/views, its distance is -1.
+  std::map<IndexT, int> _map_viewId_distance;
+  std::map<IndexT, int> _map_poseId_distance;
   
   // Define the state of the all parameter of the reconstruction (structure, poses, intrinsics) in the BA:
   enum LocalBAState { 
-    refined, //< will be adjuted by the BA solver
+    refined,  //< will be adjuted by the BA solver
     constant, //< will be set as constant in the sover
-    ignored //< will not be set into the BA solver
+    ignored   //< will not be set into the BA solver
   };
   
   // Store the LocalBAState of each parameter (structure, poses, intrinsics) :

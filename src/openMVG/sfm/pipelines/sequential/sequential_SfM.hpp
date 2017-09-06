@@ -171,7 +171,7 @@ private:
   bool BundleAdjustment();  
   
   /// Bundle adjustment to refine a few Structure, Motion and Intrinsics parameter
-  bool localBundleAdjustment(const std::set<IndexT> &newReconstructedViewIds);
+  bool localBundleAdjustment(const std::set<IndexT> &newReconstructedViewIds, std::map<IndexT, int> &mapViewIdDistance);
 
   /// Discard track with too large residual error
   size_t badTrackRejector(double dPrecision, size_t count = 0);

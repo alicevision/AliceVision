@@ -11,6 +11,8 @@
 #include "openMVG/stl/stlMap.hpp"
 #include "ceres/rotation.h"
 #include "lemon/bfs.h"
+
+#include <fstream>
 //#include <lemon/core.h>
 
 //#include <lemon/bits/map_extender.h>
@@ -36,7 +38,8 @@ Local_Bundle_Adjustment_Ceres::Local_Bundle_Adjustment_Ceres(
 
 bool Local_Bundle_Adjustment_Ceres::Adjust(SfM_Data& sfm_data)
 {
-
+  std::cout << "-- Adjust" << std::endl;
+  
   //----------
   // Add camera parameters
   // - intrinsics
@@ -232,7 +235,7 @@ bool Local_Bundle_Adjustment_Ceres::Adjust(SfM_Data& sfm_data)
 
   // Update camera intrinsics with refined data
   updateCameraIntrinsics(map_intrinsicsBlocks, sfm_data.intrinsics);
-
+  std::cout << "-- adjust: done" << std::endl;
   return true;
 }
 
@@ -241,21 +244,30 @@ void Local_Bundle_Adjustment_Ceres::updateDistancesGraph(
   const tracks::TracksPerView& map_tracksPerView, 
   const std::set<IndexT>& newViewIds)
 {
+  std::cout << "in: updateDistancesgrpah" << std::endl;
+  std::cout << "newViewIds.size() = " << newViewIds.size() << std::endl;
   std::set<IndexT> viewIdsAddedToTheGraph;
   
   // -- Add nodes (= views)
   // Identify the view we need to add to the graph:
-  if (_map_viewId_node.empty()) // is the fisrt Local BA
+  if (_map_viewId_node.empty()) 
   {
+    std::cout << "_map_viewId_node est vide ! (premier LBA théoriquement)" << std::endl;
     for (auto & it : sfm_data.GetPoses())
       viewIdsAddedToTheGraph.insert(it.first);
   }
-  else // not the first Local BA
+  else 
+  {
+    std::cout << "_map_viewId_node non vide ! (tjs sauf lors du du premier LBA théoriquement)" << std::endl;
     viewIdsAddedToTheGraph = newViewIds; 
+  }
+  std::cout << "viewIdsAddedToTheGraph.size() = " << viewIdsAddedToTheGraph.size() << std::endl;
   
   // Add the views as nodes to the graph:
+//  std::cout << "nouveaux noeuds ajoutés au graph (viewIds) : " << std::endl;
   for (auto& viewId : viewIdsAddedToTheGraph)
   {
+//    std::cout << viewId << std::endl;
     lemon::ListGraph::Node newNode = _reconstructionGraph.addNode();
     _map_node_viewId.set(newNode, viewId);
     _map_viewId_node[viewId] = newNode;  
@@ -317,34 +329,57 @@ void Local_Bundle_Adjustment_Ceres::updateDistancesGraph(
 void Local_Bundle_Adjustment_Ceres::computeDistancesMaps(
   const SfM_Data& sfm_data, 
   const std::set<IndexT>& newViewIds,
-  const tracks::TracksPerView& map_tracksPerView)
+  const tracks::TracksPerView& map_tracksPerView, 
+  std::map<IndexT, int>& outMapPoseIdDistance)
 {  
+  std::cout << "\nvvv ------------------------ vvv" << std::endl;
+  std::cout << "in: computeDistancesMaps" << std::endl;
+  std::cout << "newViewIds.size() = " << newViewIds.size() << std::endl;
   _map_viewId_distance.clear();
   _map_poseId_distance.clear();
   
   // Update the 'reconstructionGraph' using the recently added cameras
   updateDistancesGraph(sfm_data, map_tracksPerView, newViewIds);
-
+  
   // Setup Breadth First Search using Lemon
   lemon::Bfs<lemon::ListGraph> bfs(_reconstructionGraph);
   bfs.init();
 
   // Add source views for the bfs visit of the _reconstructionGraph
+  std::cout << "... adding sources to the BFS " << std::endl;
+  std::cout << "nb de sources : " << newViewIds.size() << std::endl;
+  std::cout << "taille de la _map_viewId_node = " << _map_viewId_node.size() << std::endl;
   for(const IndexT viewId: newViewIds)
   {
-    bfs.addSource(_map_viewId_node.find(viewId)->second);
+    std::cout << "ajout d'un noeud avec la vue #" << viewId << std::endl;
+    auto it = _map_viewId_node.find(viewId);
+    if (it == _map_viewId_node.end())
+      std::cout << "ERROR!!! La vue #" << viewId << " pas trouvée dans _map_viewId_node!" << std::endl;
+    bfs.addSource(it->second);
   }
+  std::cout << "bfs.emptyQueue() = " << bfs.emptyQueue() << " - doit être false (0)" << std::endl;
+  std::cout << "bfs.start... " << std::endl;
   bfs.start();
 
   // Handle bfs results (distances)
-  for(auto it: _map_viewId_node)
+  std::cout << " Handle bfs results" << std::endl;
+  for(auto it: _map_viewId_node) // each node in the graph
   {
     auto& node = it.second;
     int d = bfs.dist(node);
+    
+    if (bfs.reached(node)) // check if the node is connected to a source node
+      std::cout << "vue #" << it.first << ", dist:" << d << std::endl;
+    else 
+      std::cout << "vue #" << it.first << ", dist:" << d << " (not reached) "<< std::endl;
+    
     _map_viewId_distance[it.first] = d;
   }
 
+  std::cout << "_map_viewId_distance.size() = " << _map_viewId_distance.size() << std::endl;
+
   // Re-mapping: from <ViewId, distance> to <PoseId, distance>:
+  std::cout << "Re-mapping: from <ViewId, distance> to <PoseId, distance>" << std::endl;
   for(auto it: _map_viewId_distance)
   {
     // Get the poseId of the camera no. viewId
@@ -360,20 +395,35 @@ void Local_Bundle_Adjustment_Ceres::computeDistancesMaps(
 
   // Display result: viewId -> distance to recent cameras
   {    
-    OPENMVG_LOG_INFO("-- View distance map: ");
-    for (auto & itMap: _map_viewId_distance)
+    OPENMVG_LOG_INFO("-- View distances map: ");
+    for (auto & itVMap: _map_viewId_distance)
     {
-      OPENMVG_LOG_INFO( itMap.first << " -> " << itMap.second);
+      OPENMVG_LOG_INFO( itVMap.first << " -> " << itVMap.second);
+    }
+    
+    OPENMVG_LOG_INFO("-- Pose distances map: ");
+    for (auto & itPMap: _map_poseId_distance)
+    {
+      OPENMVG_LOG_INFO( itPMap.first << " -> " << itPMap.second);
     }
   }
+  
+  outMapPoseIdDistance = _map_poseId_distance;
+
+  std::cout << "^^^ ------------------------ ^^^\n" << std::endl;
+        
 }
 
-void Local_Bundle_Adjustment_Ceres::computeStatesMaps(const SfM_Data & sfm_data, const LocalBAStrategy& strategy, const std::size_t distanceLimit)
+void Local_Bundle_Adjustment_Ceres::computeStatesMaps(const SfM_Data & sfm_data, const LocalBAStrategy& strategy, const std::size_t distanceLimit, const std::set<IndexT> &newReconstructedViewIds)
 {
   // reset the maps
   _map_poseId_LBAState.clear();
   _map_intrinsicId_LBAState.clear();
   _map_landmarkId_LBAState.clear();
+  
+  std::cout << "-- computeStatesMaps" << std::endl;
+  std::cout << "_map_poseId_distance.size ()" << _map_poseId_distance.size() << std::endl;
+  std::cout << "_map_viewId_distance.size ()" << _map_viewId_distance.size() << std::endl;
 
   switch(strategy)
   {
@@ -381,7 +431,7 @@ void Local_Bundle_Adjustment_Ceres::computeStatesMaps(const SfM_Data & sfm_data,
     {
       // ----------------------------------------------------
       // -- Strategy 1 : (2017.07.14)
-      //  D = 1
+      //  D = distanceLimit
       //  - cameras:
       //    - dist <= D: refined
       //    - else fixed
@@ -433,7 +483,7 @@ void Local_Bundle_Adjustment_Ceres::computeStatesMaps(const SfM_Data & sfm_data,
     {
       // ----------------------------------------------------
       // -- Strategy 2 : (2017.07.19)
-      //  D = 1
+      //  D = distanceLimit
       //  - cameras:
       //    - dist <= D: refined
       //    - dist == D+1: fixed
@@ -484,6 +534,102 @@ void Local_Bundle_Adjustment_Ceres::computeStatesMaps(const SfM_Data & sfm_data,
       }
     }
     break;
+      
+      
+    case LocalBAStrategy::strategy_3 :
+    {
+      // ----------------------------------------------------
+      // -- Strategy 3 : (2017.08.05)
+      //  D = distanceLimit
+      //  - cameras:
+      //    - dist <= D: refined
+      //    - dist == D+1: fixed
+      //    - else ignored
+      //  - intrinsic:
+      //    N = sharingLimit
+      //    - used by more than N already resected cameras: constant
+      //    - else refined
+      //  - landmarks:
+      //    - connected to a refined camera: refined
+      //    - else ignored
+      // ----------------------------------------------------
+
+      // -- Poses
+      for (Poses::const_iterator itPose = sfm_data.poses.begin(); itPose != sfm_data.poses.end(); ++itPose)
+      {
+        const IndexT poseId = itPose->first;
+        int dist = _map_poseId_distance.at(poseId);
+        if (dist <= distanceLimit) // 0 or 1
+          _map_poseId_LBAState[poseId] = LocalBAState::refined;
+        else if (dist == distanceLimit + 1)
+          _map_poseId_LBAState[poseId] = LocalBAState::constant;
+        else
+          _map_poseId_LBAState[poseId] = LocalBAState::ignored;
+      }
+
+      // -- Instrinsics
+      
+      // transform the 'newReconstructedViewIds' set to 'newReconstructedPoseIds'
+      std::set<IndexT> newPoseIds;
+      for (auto& viewId : newReconstructedViewIds)
+      {
+        const View * view = sfm_data.views.at(viewId).get();
+        newPoseIds.insert(view->id_pose);
+      }
+      
+      // count the number of usage of each intrinsic among the aready resected poses
+      std::map<IndexT, std::size_t> map_intrinsicId_usageNum;
+      
+      for (const auto& itView : sfm_data.views)
+      {
+        const View * view = itView.second.get();
+
+        if (sfm_data.IsPoseAndIntrinsicDefined(view))
+        {
+          auto itPose = newPoseIds.find(view->id_pose);
+          if (itPose == newPoseIds.end()) // not a newly resected view/pose
+          {
+            auto itIntr = map_intrinsicId_usageNum.find(view->id_intrinsic);
+            if (itIntr == map_intrinsicId_usageNum.end())
+              map_intrinsicId_usageNum[view->id_intrinsic] = 1;
+            else
+              map_intrinsicId_usageNum[view->id_intrinsic]++;
+          }
+        }
+      }
+         
+      // 
+      for(const auto& itIntrinsic: sfm_data.GetIntrinsics())
+      {
+        std::size_t kSharingLimit = 10;
+        const IndexT intrinsicId = itIntrinsic.first;
+        if (map_intrinsicId_usageNum[intrinsicId] >= kSharingLimit)
+          _map_intrinsicId_LBAState[intrinsicId] = LocalBAState::constant;
+        else
+          _map_intrinsicId_LBAState[intrinsicId] = LocalBAState::refined;
+      }
+
+      // -- Landmarks
+      for(const auto& itLandmark: sfm_data.structure)
+      {
+        const IndexT landmarkId = itLandmark.first;
+        const Observations & observations = itLandmark.second.observations;
+
+        _map_landmarkId_LBAState[landmarkId] = LocalBAState::ignored;
+
+        for(const auto& observationIt: observations)
+        {
+          int dist = _map_viewId_distance.at(observationIt.first);
+          if(dist <= distanceLimit)
+          {
+            _map_landmarkId_LBAState[landmarkId] = LocalBAState::refined;
+            continue;
+          }
+        }
+      }
+    }
+    break;
+      
       
     default:
     {
@@ -701,7 +847,7 @@ void Local_Bundle_Adjustment_Ceres::updateCameraIntrinsics(
   }
 }
 
-bool Local_Bundle_Adjustment_Ceres::exportStatistics(const std::string& path)
+bool Local_Bundle_Adjustment_Ceres::exportStatistics(const std::string& path, const SfM_Data& sfm_data)
 {
   std::string filename = stlplus::folder_append_separator(path)+"BaStats.txt";
   std::ofstream os;
@@ -779,6 +925,7 @@ bool Local_Bundle_Adjustment_Ceres::exportStatistics(const std::string& path)
   
   for (const IndexT id : _LBA_statistics.newViewsId)
   {
+//    os << sfm_data.views.at(id)->s_Img_path << "\t";
     os << id << "\t";
   }
   os << "\n";
