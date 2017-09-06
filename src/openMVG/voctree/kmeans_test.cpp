@@ -5,7 +5,7 @@
  * Created on February 11, 2016, 11:54 AM
  */
 
-#include <openMVG/logger.hpp>
+#include <openMVG/system/Logger.hpp>
 #include <openMVG/voctree/simple_kmeans.hpp>
 
 #include <testing/testing.h>

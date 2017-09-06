@@ -1,6 +1,6 @@
 #include "descriptor_loader.hpp"
 
-#include <openMVG/logger.hpp>
+#include <openMVG/system/Logger.hpp>
 #include <openMVG/sfm/sfm_data_io.hpp>
 #include <openMVG/config.hpp>
 

@@ -117,12 +117,12 @@ int main(int argc, char ** argv)
   {
     const View * view = iterViews.second.get();
     const std::string sView_filename = stlplus::create_filespec(sfm_data.s_root_path,
-      view->s_Img_path);
+      view->getImagePath());
 
     const std::pair<size_t, size_t>
-      dimImage = std::make_pair(view->ui_width, view->ui_height);
+      dimImage = std::make_pair(view->getWidth(), view->getHeight());
 
-    const MapFeaturesPerDesc& features = featuresPerView.getData().at(view->id_view);
+    const MapFeaturesPerDesc& features = featuresPerView.getData().at(view->getViewId());
 
     // output filename
     std::ostringstream os;
@@ -132,7 +132,7 @@ int main(int argc, char ** argv)
 
     features::saveFeatures2SVG(sView_filename,
                                dimImage,
-                               featuresPerView.getData().at(view->id_view),
+                               featuresPerView.getData().at(view->getViewId()),
                                os.str());
 
     ++my_progress_bar;

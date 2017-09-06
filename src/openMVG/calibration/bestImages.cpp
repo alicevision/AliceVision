@@ -1,5 +1,5 @@
 #include "bestImages.hpp"
-#include "openMVG/logger.hpp"
+#include <openMVG/system/Logger.hpp>
 
 #include <limits>
 #include <numeric>

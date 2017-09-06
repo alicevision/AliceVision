@@ -30,10 +30,13 @@ SfM_Data create_test_scene(IndexT viewsCount, bool bSharedIntrinsic)
     os << "dataset/" << i << ".jpg";
     const IndexT id_view = i, id_pose = i;
     const IndexT id_intrinsic = bSharedIntrinsic ? 0 : i; //(shared or not intrinsics)
-    sfm_data.views[id_view] = std::make_shared<View>(os.str(),id_view, id_intrinsic, id_pose, 1000, 1000);
+
+    std::shared_ptr<View> view = std::make_shared<View>(os.str(),id_view, id_intrinsic, id_pose, 1000, 1000);
+
+    sfm_data.views[id_view] = view;
 
     // Add poses
-    sfm_data.poses[i] = Pose3();
+    sfm_data.setPose(*view, Pose3());
 
     // Add intrinsics
     if (bSharedIntrinsic)
@@ -81,7 +84,7 @@ TEST(SfM_Data_IO, SAVE_LOAD_JSON) {
     ESfM_Data flags_part = ALL;
     EXPECT_TRUE( Load(sfm_data_load, filename, flags_part) );
     EXPECT_EQ( sfm_data_load.views.size(), sfm_data.views.size());
-    EXPECT_EQ( sfm_data_load.poses.size(), sfm_data.poses.size());
+    EXPECT_EQ( sfm_data_load.GetPoses().size(), sfm_data.GetPoses().size());
     EXPECT_EQ( sfm_data_load.intrinsics.size(), sfm_data.intrinsics.size());
     EXPECT_EQ( sfm_data_load.structure.size(), sfm_data.structure.size());
     EXPECT_EQ( sfm_data_load.control_points.size(), sfm_data.control_points.size());
@@ -95,7 +98,7 @@ TEST(SfM_Data_IO, SAVE_LOAD_JSON) {
     ESfM_Data flags_part = VIEWS;
     EXPECT_TRUE( Load(sfm_data_load, filename, flags_part) );
     EXPECT_EQ( sfm_data_load.views.size(), sfm_data.views.size());
-    EXPECT_EQ( sfm_data_load.poses.size(), 0);
+    EXPECT_EQ( sfm_data_load.GetPoses().size(), 0);
     EXPECT_EQ( sfm_data_load.intrinsics.size(), 0);
     EXPECT_EQ( sfm_data_load.structure.size(), 0);
     EXPECT_EQ( sfm_data_load.control_points.size(), 0);
@@ -109,7 +112,7 @@ TEST(SfM_Data_IO, SAVE_LOAD_JSON) {
     ESfM_Data flags_part = EXTRINSICS;
     EXPECT_TRUE( Load(sfm_data_load, filename, flags_part) );
     EXPECT_EQ( sfm_data_load.views.size(), 0);
-    EXPECT_EQ( sfm_data_load.poses.size(), sfm_data.poses.size());
+    EXPECT_EQ( sfm_data_load.GetPoses().size(), sfm_data.GetPoses().size());
     EXPECT_EQ( sfm_data_load.intrinsics.size(), 0);
     EXPECT_EQ( sfm_data_load.structure.size(), 0);
     EXPECT_EQ( sfm_data_load.control_points.size(), 0);
@@ -123,7 +126,7 @@ TEST(SfM_Data_IO, SAVE_LOAD_JSON) {
     ESfM_Data flags_part = INTRINSICS;
     EXPECT_TRUE( Load(sfm_data_load, filename, flags_part) );
     EXPECT_EQ( sfm_data_load.views.size(), 0);
-    EXPECT_EQ( sfm_data_load.poses.size(), 0);
+    EXPECT_EQ( sfm_data_load.GetPoses().size(), 0);
     EXPECT_EQ( sfm_data_load.intrinsics.size(), sfm_data.intrinsics.size());
     EXPECT_EQ( sfm_data_load.structure.size(), 0);
     EXPECT_EQ( sfm_data_load.control_points.size(), 0);
@@ -137,7 +140,7 @@ TEST(SfM_Data_IO, SAVE_LOAD_JSON) {
     ESfM_Data flags_part = ESfM_Data(INTRINSICS | EXTRINSICS);
     EXPECT_TRUE( Load(sfm_data_load, filename, flags_part) );
     EXPECT_EQ( sfm_data_load.views.size(), 0);
-    EXPECT_EQ( sfm_data_load.poses.size(), sfm_data.poses.size());
+    EXPECT_EQ( sfm_data_load.GetPoses().size(), sfm_data.GetPoses().size());
     EXPECT_EQ( sfm_data_load.intrinsics.size(), sfm_data.intrinsics.size());
     EXPECT_EQ( sfm_data_load.structure.size(), 0);
     EXPECT_EQ( sfm_data_load.control_points.size(), 0);
@@ -151,7 +154,7 @@ TEST(SfM_Data_IO, SAVE_LOAD_JSON) {
     ESfM_Data flags_part = ESfM_Data(VIEWS | INTRINSICS | EXTRINSICS);
     EXPECT_TRUE( Load(sfm_data_load, filename, flags_part) );
     EXPECT_EQ( sfm_data_load.views.size(), sfm_data.views.size());
-    EXPECT_EQ( sfm_data_load.poses.size(), sfm_data.poses.size());
+    EXPECT_EQ( sfm_data_load.GetPoses().size(), sfm_data.GetPoses().size());
     EXPECT_EQ( sfm_data_load.intrinsics.size(), sfm_data.intrinsics.size());
     EXPECT_EQ( sfm_data_load.structure.size(), 0);
     EXPECT_EQ( sfm_data_load.control_points.size(), 0);

@@ -93,7 +93,7 @@ TEST(Matching, ParseDatabaseCanon_EOS_5D_Mark_II)
 
   EXPECT_TRUE( parseDatabase( sfileDatabase, vec_database ) );
   EXPECT_TRUE( getInfo( sBrand, sModel, vec_database, datasheet ) );
-  EXPECT_EQ( 36, datasheet._sensorSize );
+  EXPECT_EQ( 35.8, datasheet._sensorSize );
 }
 
 TEST(Matching, ParseDatabaseCanon_EOS_1100D)

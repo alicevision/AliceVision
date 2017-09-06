@@ -45,7 +45,7 @@ TEST(SEQUENTIAL_SFM, Known_Intrinsics) {
 
   // Remove poses and structure
   SfM_Data sfm_data_2 = sfm_data;
-  sfm_data_2.poses.clear();
+  sfm_data_2.GetPoses().clear();
   sfm_data_2.structure.clear();
 
   SequentialSfMReconstructionEngine sfmEngine(
@@ -78,8 +78,8 @@ TEST(SEQUENTIAL_SFM, Known_Intrinsics) {
   const double dResidual = RMSE(sfmEngine.Get_SfM_Data());
   OPENMVG_LOG_DEBUG("RMSE residual: " << dResidual);
   EXPECT_TRUE( dResidual < 0.5);
-  EXPECT_TRUE( sfmEngine.Get_SfM_Data().GetPoses().size() == nviews);
-  EXPECT_TRUE( sfmEngine.Get_SfM_Data().GetLandmarks().size() == npoints);
+  EXPECT_EQ(sfmEngine.Get_SfM_Data().GetPoses().size(), nviews);
+  EXPECT_EQ(sfmEngine.Get_SfM_Data().GetLandmarks().size(), npoints);
 }
 
 // Test a scene where only the two first camera have known intrinsics
@@ -95,7 +95,7 @@ TEST(SEQUENTIAL_SFM, Partially_Known_Intrinsics) {
 
   // Remove poses and structure
   SfM_Data sfm_data_2 = sfm_data;
-  sfm_data_2.poses.clear();
+  sfm_data_2.GetPoses().clear();
   sfm_data_2.structure.clear();
   // Only the first two views will have valid intrinsics
   // Remaining one will have undefined intrinsics
@@ -104,7 +104,7 @@ TEST(SEQUENTIAL_SFM, Partially_Known_Intrinsics) {
   {
     if (std::distance(sfm_data_2.views.begin(),iterV) >1)
     {
-      iterV->second.get()->id_intrinsic = UndefinedIndexT;
+      iterV->second.get()->setIntrinsicId(UndefinedIndexT);
     }
   }
 
@@ -141,6 +141,58 @@ TEST(SEQUENTIAL_SFM, Partially_Known_Intrinsics) {
   EXPECT_TRUE( dResidual < 0.5);
   EXPECT_EQ(nviews, sfmEngine.Get_SfM_Data().GetPoses().size());
   EXPECT_EQ(npoints, sfmEngine.Get_SfM_Data().GetLandmarks().size());
+}
+
+TEST(SEQUENTIAL_SFM, Rig) {
+
+  const int nviews = 10;
+  const int npoints = 128;
+  const std::size_t nbSubPoses = 2;
+  const std::size_t nbPoses = nviews / nbSubPoses;
+
+  const nViewDatasetConfigurator config;
+  const NViewDataSet d = NRealisticCamerasRing(nviews, npoints, config);
+
+  // Translate the input dataset to a SfM_Data scene
+  const SfM_Data sfm_data = getInputRigScene(d, config, PINHOLE_CAMERA, nbSubPoses, nbPoses);
+
+  // Remove poses and structure
+  SfM_Data sfm_data_2 = sfm_data;
+  sfm_data_2.GetPoses().clear();
+  sfm_data_2.structure.clear();
+
+  SequentialSfMReconstructionEngine sfmEngine(
+    sfm_data_2,
+    "./",
+    stlplus::create_filespec("./", "Reconstruction_Report.html"));
+
+  // Configure the featuresPerView & the matches_provider from the synthetic dataset
+  features::FeaturesPerView featuresPerView;
+
+  // Add a tiny noise in 2D observations to make data more realistic
+  std::normal_distribution<double> distribution(0.0,0.5);
+  featuresPerView.createSyntheticData(features::EImageDescriberType::UNKNOWN, d, distribution);
+
+  matching::PairwiseMatches pairwiseMatches;
+  generateSyntheticMatches(pairwiseMatches, d, features::EImageDescriberType::UNKNOWN);
+
+  // Configure data provider (Features and Matches)
+  sfmEngine.setFeatures(&featuresPerView);
+  sfmEngine.setMatches(&pairwiseMatches);
+
+  // Set an initial pair
+  sfmEngine.setInitialPair(Pair(0,1));
+
+  // Configure reconstruction parameters
+  sfmEngine.Set_bFixedIntrinsics(true);
+
+  EXPECT_TRUE (sfmEngine.Process());
+
+  const double dResidual = RMSE(sfmEngine.Get_SfM_Data());
+  OPENMVG_LOG_DEBUG("RMSE residual: " << dResidual);
+  EXPECT_TRUE( dResidual < 0.5);
+  EXPECT_TRUE( sfmEngine.Get_SfM_Data().GetPoses().size() == nbPoses);
+  EXPECT_TRUE( sfmEngine.Get_SfM_Data().GetLandmarks().size() == npoints);
 }
 
 /* ************************************************************************* */

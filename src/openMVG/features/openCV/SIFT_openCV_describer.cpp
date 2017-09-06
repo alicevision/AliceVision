@@ -1,8 +1,8 @@
 #include "SIFT_openCV_describer.hpp"
 
-#include "openMVG/image/image.hpp"
-#include "openMVG/system/timer.hpp"
-#include "openMVG/logger.hpp"
+#include <openMVG/image/image.hpp>
+#include <openMVG/system/timer.hpp>
+#include <openMVG/system/Logger.hpp>
 
 #include <opencv2/opencv.hpp>
 #include <opencv2/core/eigen.hpp>

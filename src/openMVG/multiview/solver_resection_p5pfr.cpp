@@ -1,7 +1,7 @@
-#include "openMVG/multiview/projection.hpp"
-#include "openMVG/numeric/numeric.h"
-#include "openMVG/multiview/solver_resection_p5pfr.hpp"
-#include "openMVG/logger.hpp"
+#include <openMVG/multiview/projection.hpp>
+#include <openMVG/numeric/numeric.h>
+#include <openMVG/multiview/solver_resection_p5pfr.hpp>
+#include <openMVG/system/Logger.hpp>
 
 #include <cmath>
 #include <iostream>
@@ -350,7 +350,7 @@ double reprojectionErrorRP(const p5pfrModel &m,
   v *= 1.0 / v(2); // normalize to have v(3, :) = 1
 
   double t = 1; // the final radius parameter
-  const double r = sqrt(v(0) * v(0) + v(1) * v(1));
+  const double r = std::hypot(v(0), v(1));
   for(Mat::Index i = 0; i < m._r.rows(); ++i)
     t += m._r(i) * pow(r, 2 * (i + 1));
 

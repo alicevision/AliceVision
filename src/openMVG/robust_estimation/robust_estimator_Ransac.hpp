@@ -8,7 +8,7 @@
 #ifndef OPENMVG_ROBUST_ESTIMATION_SIMPLE_RANSAC_H_
 #define OPENMVG_ROBUST_ESTIMATION_SIMPLE_RANSAC_H_
 
-#include "openMVG/logger.hpp"
+#include <openMVG/system/Logger.hpp>
 #include "openMVG/robust_estimation/rand_sampling.hpp"
 #include "openMVG/robust_estimation/robust_ransac_tools.hpp"
 #include <limits>
@@ -68,12 +68,12 @@ typename Kernel::Model RANSAC(
   std::vector<size_t> all_samples(total_samples);
   std::iota(all_samples.begin(), all_samples.end(), 0);
 
-  std::vector<size_t> sample;
   for (iteration = 0;
     iteration < max_iterations &&
     iteration < really_max_iterations; ++iteration) 
   {
-      UniformSample(min_samples, total_samples, &sample);
+      std::vector<size_t> sample;
+      UniformSample(min_samples, total_samples, sample);
 
       std::vector<typename Kernel::Model> models;
       kernel.Fit(sample, &models);

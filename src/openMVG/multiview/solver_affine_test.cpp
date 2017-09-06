@@ -27,8 +27,8 @@
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 #include "testing/testing.h"
-#include "openMVG/logger.hpp"
-#include "openMVG/multiview/solver_affine.hpp"
+#include <openMVG/system/Logger.hpp>
+#include <openMVG/multiview/solver_affine.hpp>
 
 using namespace openMVG;
 

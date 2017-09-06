@@ -7,7 +7,7 @@
 #ifndef OPENMVG_LINEAR_PROGRAMMING_BISECTIONLP_H_
 #define OPENMVG_LINEAR_PROGRAMMING_BISECTIONLP_H_
 
-#include <openMVG/logger.hpp>
+#include <openMVG/system/Logger.hpp>
 #include <openMVG/linearProgramming/linearProgrammingInterface.hpp>
 
 #include <iostream>

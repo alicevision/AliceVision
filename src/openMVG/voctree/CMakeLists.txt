@@ -16,6 +16,7 @@ set(voctree_headers
 set(voctree_sources
   database.cpp
   descriptor_loader.cpp
+  vocabulary_tree.cpp
 )
 
 add_library(openMVG_voctree

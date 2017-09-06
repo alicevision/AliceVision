@@ -29,7 +29,6 @@ namespace sfm {
 class SequentialSfMReconstructionEngine : public ReconstructionEngine
 {
 public:
-
   SequentialSfMReconstructionEngine(
     const SfM_Data & sfm_data,
     const std::string & soutDirectory,
@@ -56,7 +55,7 @@ public:
 
   void setInitialPair(const Pair & initialPair)
   {
-    _initialpair = initialPair;
+    _userInitialImagePair = initialPair;
   }
 
   /// Initialize tracks
@@ -69,7 +68,7 @@ public:
   bool MakeInitialPair3D(const Pair & initialPair);
 
   /// Automatic initial pair selection (based on a 'baseline' computation score)
-  bool AutomaticInitialPairChoice(Pair & initialPair) const;
+  bool getBestInitialImagePairs(std::vector<Pair>& out_bestImagePairs) const;
 
   /**
    * Set the default lens distortion type to use if it is declared unknown
@@ -164,17 +163,32 @@ private:
     std::vector<size_t>& out_selectedViewIds,
     const std::set<size_t>& remainingViewIds) const;
 
-  /// Add a single Image to the scene and triangulate new possible tracks.
+  /**
+   * @brief Add a single Image to the scene and triangulate new possible tracks.
+   * @param imageIndex
+   * @return false if resection failed
+   */
   bool Resection(const size_t imageIndex);
 
-  /// Bundle adjustment to refine Structure; Motion and Intrinsics
-  bool BundleAdjustment();  
-  
+  /**
+   * @brief  Triangulate new possible 2D tracks
+   * List tracks that share content with this view and add observations and new 3D track if required.
+   * @param previousReconstructedViews
+   * @param newReconstructedViews
+   */
+  void triangulate(SfM_Data& scene, const std::set<IndexT>& previousReconstructedViews, const std::set<IndexT>& newReconstructedViews);
+
+  /**
+   * @brief Bundle adjustment to refine Structure; Motion and Intrinsics
+   * @param fixedIntrinsics
+   */
+  bool BundleAdjustment(bool fixedIntrinsics);
+
   /// Bundle adjustment to refine a few Structure, Motion and Intrinsics parameter
   bool localBundleAdjustment(const std::set<IndexT> &newReconstructedViewIds);
 
   /// Discard track with too large residual error
-  size_t badTrackRejector(double dPrecision, size_t count = 0);
+  bool badTrackRejector(double dPrecision, size_t count = 0);
 
   /// Add the new views 'newViewIds' to the graph 'reconstructionGraph' used to the distances computation 
 //  void updateDistancesGraph(const std::set<IndexT>& newViewIds);
@@ -212,7 +226,7 @@ private:
 
   // Parameter
   bool _userInteraction = true;
-  Pair _initialpair;
+  Pair _userInitialImagePair;
   cameras::EINTRINSIC _camType; // The camera type for the unknown cameras
   int _minInputTrackLength = 2;
   int _minTrackLength = 2;

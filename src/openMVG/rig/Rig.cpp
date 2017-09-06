@@ -1,7 +1,7 @@
 #include "Rig.hpp"
 #include "rig_BA_ceres.hpp"
 #include <openMVG/sfm/sfm_data_BA_ceres.hpp>
-#include <openMVG/logger.hpp>
+#include <openMVG/system/Logger.hpp>
 
 #include <ceres/rotation.h>
 

@@ -1,33 +1,32 @@
-// Copyright (c) 2015 Pierre Moulon.
+#pragma once
 
-// This Source Code Form is subject to the terms of the Mozilla Public
-// License, v. 2.0. If a copy of the MPL was not distributed with this
-// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+#include <openMVG/types.hpp>
+#include <openMVG/sfm/sfm_view.hpp>
+#include <openMVG/sfm/Rig.hpp>
+#include <openMVG/sfm/sfm_landmark.hpp>
+#include <openMVG/geometry/pose3.hpp>
+#include <openMVG/cameras/cameras.hpp>
 
-#ifndef OPENMVG_SFM_DATA_HPP
-#define OPENMVG_SFM_DATA_HPP
-
-#include "openMVG/types.hpp"
-#include "openMVG/sfm/sfm_view.hpp"
-#include "openMVG/sfm/sfm_view_metadata.hpp"
-#include "openMVG/sfm/sfm_landmark.hpp"
-#include "openMVG/geometry/pose3.hpp"
-#include "openMVG/cameras/cameras.hpp"
+#include <stdexcept>
+#include <cassert>
 
 namespace openMVG {
 namespace sfm {
 
 /// Define a collection of View
-typedef Hash_Map<IndexT, std::shared_ptr<View> > Views;
+using Views = Hash_Map<IndexT, std::shared_ptr<View> >;
 
 /// Define a collection of Pose (indexed by View::id_pose)
-typedef Hash_Map<IndexT, geometry::Pose3> Poses;
+using Poses = Hash_Map<IndexT, geometry::Pose3>;
 
 /// Define a collection of IntrinsicParameter (indexed by View::id_intrinsic)
-typedef Hash_Map<IndexT, std::shared_ptr<cameras::IntrinsicBase> > Intrinsics;
+using Intrinsics = Hash_Map<IndexT, std::shared_ptr<cameras::IntrinsicBase> >;
 
 /// Define a collection of landmarks are indexed by their TrackId
-typedef Hash_Map<IndexT, Landmark> Landmarks;
+using Landmarks = Hash_Map<IndexT, Landmark>;
+
+/// Define a collection of Rig
+using Rigs = std::map<IndexT, Rig>;
 
 /// Contain all the information about a Bundle Adjustment loop
 struct LocalBA_stats
@@ -64,34 +63,57 @@ struct LocalBA_stats
 
 /// Generic SfM data container
 /// Store structure and camera properties:
-struct SfM_Data
+class SfM_Data
 {
+public:
   /// Considered views
   Views views;
-  /// Considered poses (indexed by view.id_pose)
-  Poses poses;
-  /// Considered camera intrinsics (indexed by view.id_intrinsic)
+  /// Considered camera intrinsics (indexed by view.getIntrinsicId())
   Intrinsics intrinsics;
   /// Structure (3D points with their 2D observations)
   Landmarks structure;
   /// Controls points (stored as Landmarks (id_feat has no meaning here))
   Landmarks control_points;
-
   /// Root Views path
   std::string s_root_path;
+  /// Feature folder path
   std::string _featureFolder;
+  /// Matching folder path
   std::string _matchingFolder;
 
-  //--
+  // Operators
+
+  bool operator==(const SfM_Data& other) const;
+
   // Accessors
-  //--
-  const Views & GetViews() const {return views;}
-  const Poses & GetPoses() const {return poses;}
-  const Intrinsics & GetIntrinsics() const {return intrinsics;}
+
+  const Views& GetViews() const {return views;}
+  const Poses& GetPoses() const {return _poses;}
+  Poses& GetPoses() {return _poses;}
+  const Rigs& getRigs() const {return _rigs;}
+  Rigs& getRigs() {return _rigs;}
+  const Intrinsics& GetIntrinsics() const {return intrinsics;}
+  const Landmarks& GetLandmarks() const {return structure;}
+  Landmarks& GetLandmarks() {return structure;}
+  const Landmarks& GetControl_Points() const {return control_points;}
+  const std::string& getFeatureFolder() const {return _featureFolder;}
+  const std::string& getMatchingFolder() const {return _matchingFolder;}
+
+  /**
+   * @brief List the view indexes that have valid camera intrinsic and pose.
+   * @return view indexes list
+   */
+  std::set<IndexT> getValidViews() const;
+
+  /**
+   * @brief List the intrinsic indexes that have valid camera intrinsic and pose.
+   * @return intrinsic indexes list
+   */
+  std::set<IndexT> getReconstructedIntrinsics() const;
 
   /**
    * @brief Return a pointer to an intrinsic if available or nullptr otherwise.
-   * @param intrinsicId
+   * @param[in] intrinsicId
    */
   const cameras::IntrinsicBase * GetIntrinsicPtr(IndexT intrinsicId) const
   {
@@ -102,7 +124,7 @@ struct SfM_Data
 
   /**
    * @brief Return a pointer to an intrinsic if available or nullptr otherwise.
-   * @param intrinsicId
+   * @param[in] intrinsicId
    */
   cameras::IntrinsicBase * GetIntrinsicPtr(IndexT intrinsicId)
   {
@@ -111,6 +133,10 @@ struct SfM_Data
     return nullptr;
   }
 
+  /**
+   * @brief Return a shared pointer to an intrinsic if available or nullptr otherwise.
+   * @param[in] intrinsicId
+   */
   std::shared_ptr<cameras::IntrinsicBase> GetIntrinsicSharedPtr(IndexT intrinsicId)
   {
     if(intrinsics.count(intrinsicId))
@@ -118,9 +144,10 @@ struct SfM_Data
     return nullptr;
   }
 
-  const Landmarks & GetLandmarks() const {return structure;}
-  const Landmarks & GetControl_Points() const {return control_points;}
-
+  /**
+   * @brief Get a set of views keys
+   * @return set of views keys
+   */
   std::set<IndexT> GetViewsKeys() const
   {
     std::set<IndexT> viewKeys;
@@ -129,102 +156,174 @@ struct SfM_Data
     return viewKeys;
   }
 
-  /// Check if the View have defined intrinsic and pose
-  bool IsPoseAndIntrinsicDefined(const View * view) const
+  /**
+   * @brief Check if the given view have defined intrinsic and pose
+   * @param[in] view The given view
+   * @return true if intrinsic and pose defined
+   */
+  bool IsPoseAndIntrinsicDefined(const View* view) const
   {
-    if (view == nullptr) return false;
+    if (view == nullptr)
+      return false;
     return (
-      view->id_intrinsic != UndefinedIndexT &&
-      view->id_pose != UndefinedIndexT &&
-      intrinsics.find(view->id_intrinsic) != intrinsics.end() &&
-      poses.find(view->id_pose) != poses.end());
+      view->getIntrinsicId() != UndefinedIndexT &&
+      view->getPoseId() != UndefinedIndexT &&
+      (!view->isPartOfRig() || getRigSubPose(*view).status != ERigSubPoseStatus::UNINITIALIZED) &&
+      intrinsics.find(view->getIntrinsicId()) != intrinsics.end() &&
+      _poses.find(view->getPoseId()) != _poses.end());
   }
   
-  bool IsPoseAndIntrinsicDefined(IndexT viewID) const
+  /**
+   * @brief Check if the given view have defined intrinsic and pose
+   * @param[in] viewID The given viewID
+   * @return true if intrinsic and pose defined
+   */
+  bool IsPoseAndIntrinsicDefined(IndexT viewId) const
   { 
-    return IsPoseAndIntrinsicDefined(views.at(viewID).get());
+    return IsPoseAndIntrinsicDefined(views.at(viewId).get());
   }
 
-  /// Get the pose associated to a view
-  const geometry::Pose3 GetPoseOrDie(const View * view) const
+  /**
+   * @brief Check if the given view has an existing pose
+   * @param[in] view The given view
+   * @return true if the pose exists
+   */
+  bool existsPose(const View& view) const
   {
-    return poses.at(view->id_pose);
+     return (_poses.find(view.getPoseId()) != _poses.end());
+  }
+
+  /**
+   * @brief Gives the pose of the input view. If this view is part of a RIG, it returns rigPose + rigSubPose.
+   * @param[in] view The given view
+   */
+  const geometry::Pose3 getPose(const View& view) const
+  {
+    // check the view has valid pose / rig etc
+    if(!view.isPartOfRig())
+    {
+      return _poses.at(view.getPoseId());
+    }
+
+    // get the pose of the rig and the subpose of the camera
+    const geometry::Pose3& rigPose = getRigPose(view);
+    const geometry::Pose3& subPose = getRigSubPose(view).pose;
+
+    // multiply rig pose by camera subpose
+    return  subPose * rigPose;
+  }
+
+  /**
+   * @brief Get the rig of the given view
+   * @param[in] view The given view
+   * @return rig of the given view
+   */
+  const Rig& getRig(const View& view) const
+  {
+    assert(view.isPartOfRig());
+    return _rigs.at(view.getRigId());
   }
 
   void setFeatureFolder(const std::string& featureFolder)
   {
     _featureFolder = featureFolder;
   }
+
   void setMatchingFolder(const std::string& matchingFolder)
   {
     _matchingFolder = matchingFolder;
   }
-  const std::string& getFeatureFolder() const { return _featureFolder; }
-  const std::string& getMatchingFolder() const { return _matchingFolder; }
 
-  bool operator==(const SfM_Data& other) const {
+  /**
+   * @brief Set the given pose for the given view
+   * if the view is part of a rig, this method update rig pose/sub-pose
+   * @param[in] view The given view
+   * @param[in] pose The given pose
+   */
+  void setPose(const View& view, const geometry::Pose3& pose);
 
-    // Views
-    if(views.size() != other.views.size())
-      return false;
-    for(Views::const_iterator it = views.begin(); it != views.end(); ++it)
-    {
-        const View& view1 = *(it->second.get());
-        const View& view2 = *(other.views.at(it->first).get());
-        if(!(view1 == view2))
-          return false;
-        
-        // Image paths 
-        if(s_root_path + view1.s_Img_path != other.s_root_path + view2.s_Img_path)
-          return false;
-    }
 
-    // Poses
-    if((poses != other.poses))
-      return false;
+  /**
+   * @brief Set the given pose for the given poseId
+   * @param[in] poseId The given poseId
+   * @param[in] pose The given pose
+   */
+  void setAbsolutePose(IndexT poseId, const geometry::Pose3& pose)
+  {
+    _poses[poseId] = pose;
+  }
 
-    // Intrinsics
-    if(intrinsics.size() != other.intrinsics.size())
-      return false;
+  /**
+   * @brief Erase yhe pose for the given poseId
+   * @param[in] poseId The given poseId
+   */
+  void erasePose(IndexT poseId)
+  {
+    auto it =_poses.find(poseId);
+    if(it != _poses.end())
+      _poses.erase(it);
+    else
+      throw std::out_of_range(std::string("Can't erase unfind pose ") + std::to_string(poseId));
+  }
 
-    Intrinsics::const_iterator it = intrinsics.begin();
-    Intrinsics::const_iterator otherIt = other.intrinsics.begin();
-    for(; it != intrinsics.end() && otherIt != other.intrinsics.end(); ++it, ++otherIt)
-    {
-        // Index
-        if(it->first != otherIt->first)
-          return false;
+  /**
+   * @brief Reset rigs sub-poses parameters
+   */
+  void resetRigs()
+  {
+    for(auto rigIt : _rigs)
+      rigIt.second.reset();
+  }
 
-        // Intrinsic
-        cameras::IntrinsicBase& intrinsic1 = *(it->second.get());
-        cameras::IntrinsicBase& intrinsic2 = *(otherIt->second.get());
-        if(!(intrinsic1 == intrinsic2))
-          return false;
-    }
+private:
 
-    // Points IDs are not preserved
-    if(structure.size() != other.structure.size())
-      return false;
-    Landmarks::const_iterator landMarkIt = structure.begin();
-    Landmarks::const_iterator otherLandmarkIt = other.structure.begin();
-    for(; landMarkIt != structure.end() && otherLandmarkIt != other.structure.end(); ++landMarkIt, ++otherLandmarkIt)
-    {
-        // Points IDs are not preserved
-        // Landmark
-        const Landmark& landmark1 = landMarkIt->second;
-        const Landmark& landmark2 = otherLandmarkIt->second;
-        if(!(landmark1 == landmark2))
-          return false;
-    }
+  /// Considered poses (indexed by view.getPoseId())
+  Poses _poses;
+  /// Considered rigs
+  Rigs _rigs;
 
-    // Control points
-    if(control_points != other.control_points)
-      return false;
+  /**
+   * @brief Get Rig pose of a given camera view
+   * @param[in] view The given view
+   * @return Rig pose of the given camera view
+   */
+  const geometry::Pose3& getRigPose(const View& view) const
+  {
+    return _poses.at(view.getPoseId());
+  }
 
-    // Root path can be reseted during exports
+  /**
+   * @brief Get Rig subPose of a given camera view
+   * @param[in] view The given view
+   * @return Rig subPose of the given camera view
+   */
+  const RigSubPose& getRigSubPose(const View& view) const
+  {
+    assert(view.isPartOfRig());
+    const Rig& rig = _rigs.at(view.getRigId());
+    return rig.getSubPose(view.getSubPoseId());
+  }
 
-    return true;
+  /**
+   * @brief Get Rig pose of a given camera view
+   * @param[in] view The given view
+   * @return Rig pose of the given camera view
+   */
+  geometry::Pose3& getRigPose(const View& view)
+  {
+    return _poses.at(view.getPoseId());
+  }
 
+  /**
+   * @brief Get Rig subPose of a given camera view
+   * @param[in] view The given view
+   * @return Rig subPose of the given camera view
+   */
+  RigSubPose& getRigSubPose(const View& view)
+  {
+    assert(view.isPartOfRig());
+    Rig& rig = _rigs.at(view.getRigId());
+    return rig.getSubPose(view.getSubPoseId());
   }
 };
 
@@ -239,5 +338,3 @@ bool ColorizeTracks( SfM_Data & sfm_data );
 
 } // namespace sfm
 } // namespace openMVG
-
-#endif // OPENMVG_SFM_DATA_HPP

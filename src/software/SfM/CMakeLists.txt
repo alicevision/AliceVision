@@ -410,6 +410,18 @@ target_link_libraries(openMVG_main_openMVG2MVSTEXTURING
   stlplus
 )
 
+# - Export a SfM openMVG scene to Matlab
+#
+add_executable(openMVG_main_openMVG2Matlab main_openMVG2Matlab.cpp)
+target_link_libraries(openMVG_main_openMVG2Matlab
+  openMVG_system
+  openMVG_image
+  openMVG_features
+  openMVG_sfm
+  stlplus
+  )
+
+
 # - Export SfM openMVG camera scene as triangle meshes
 # -
 add_executable(openMVG_main_ExportCameraFrustums main_ExportCameraFrustums.cpp)
@@ -462,6 +474,13 @@ install(TARGETS openMVG_main_openMVG2MVSTEXTURING
   DESTINATION bin/
 )
 
+set_property(TARGET openMVG_main_openMVG2Matlab
+  PROPERTY FOLDER OpenMVG/software
+)
+
+install(TARGETS openMVG_main_openMVG2Matlab
+  DESTINATION bin/)
+
 set_property(TARGET openMVG_main_openMVG2MVE2
   PROPERTY FOLDER OpenMVG/software
 )
@@ -501,6 +520,35 @@ install(TARGETS openMVG_main_evalQuality
   DESTINATION bin/
 )
 
+
+###
+# SfM tools to prepare picture to a future SfM process
+###
+
+# - Export keyframes from video files / image sequence directories
+# -
+if(OPENMVG_HAVE_BOOST AND OPENMVG_HAVE_OIIO)
+
+add_executable(openMVG_main_keyframeSelection main_keyframeSelection.cpp)
+target_link_libraries(openMVG_main_keyframeSelection
+  openMVG_system
+  openMVG_keyframe
+  ${OPENIMAGEIO_LIBRARIES}
+  ${Boost_LIBRARIES}
+)
+
+#installation rules
+set_property(TARGET openMVG_main_keyframeSelection
+  PROPERTY FOLDER OpenMVG/software
+)
+
+install(TARGETS openMVG_main_keyframeSelection
+  DESTINATION bin/
+)
+
+endif()
+
+
 ##
 # Export tutorial with valid path thanks to a configuration file
 ##
@@ -515,11 +563,6 @@ set(OPENMVG_TUTORIAL_IN_FILE "${CMAKE_CURRENT_LIST_DIR}/tutorial_demo.py.in")
 configure_file(${OPENMVG_TUTORIAL_IN_FILE}
     "${CMAKE_CURRENT_BINARY_DIR}/tutorial_demo.py" @ONLY)
 
-set(OPENMVG_TUTORIAL_IN_FILE "${CMAKE_CURRENT_LIST_DIR}/SfM_GlobalPipeline.py.in")
+set(OPENMVG_TUTORIAL_IN_FILE "${CMAKE_CURRENT_LIST_DIR}/SfM_Pipeline.py.in")
 configure_file(${OPENMVG_TUTORIAL_IN_FILE}
-    "${CMAKE_CURRENT_BINARY_DIR}/SfM_GlobalPipeline.py" @ONLY)
-
-set(OPENMVG_TUTORIAL_IN_FILE "${CMAKE_CURRENT_LIST_DIR}/SfM_SequentialPipeline.py.in")
-configure_file(${OPENMVG_TUTORIAL_IN_FILE}
-    "${CMAKE_CURRENT_BINARY_DIR}/SfM_SequentialPipeline.py" @ONLY)
-
+    "${CMAKE_CURRENT_BINARY_DIR}/SfM_Pipeline.py" @ONLY)

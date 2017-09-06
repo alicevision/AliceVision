@@ -2,7 +2,7 @@
 
 #include <openMVG/sfm/sfm_data_io.hpp>
 
-#include <openMVG/logger.hpp>
+#include <openMVG/system/Logger.hpp>
 
 #include <boost/algorithm/string/predicate.hpp>
 
@@ -142,7 +142,7 @@ void getListOfDescriptorFiles(const std::string &fileFullPath, std::map<IndexT, 
     for(const auto &view : sfmdata.GetViews())
     {
       // generate the equivalent .desc file path
-      const std::string filepath = bfs::path(pathToFiles / (std::to_string(view.first) + ".desc")).string();
+      const std::string filepath = bfs::path(pathToFiles / (std::to_string(view.first) + ".SIFT.desc")).string();
 
       // add the filepath in the vector
       descriptorsFiles[view.first] = filepath;

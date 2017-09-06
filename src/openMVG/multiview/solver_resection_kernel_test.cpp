@@ -49,11 +49,11 @@ TEST(Resection_Kernel, Multiview) {
     Mat X = d._X;
     openMVG::resection::kernel::PoseResectionKernel kernel(x, X);
 
-    size_t samples_[6]={0,1,2,3,4,5};
-    vector<size_t> samples(samples_,samples_+6);
-    vector<Mat34> Ps;
+    std::size_t samples_[6]={0,1,2,3,4,5};
+    std::vector<std::size_t> samples(samples_,samples_+6);
+    std::vector<Mat34> Ps;
     kernel.Fit(samples, &Ps);
-    for (size_t i = 0; i < x.cols(); ++i) {
+    for (std::size_t i = 0; i < x.cols(); ++i) {
       EXPECT_NEAR(0.0, kernel.Error(i, Ps[0]), 1e-8);
     }
 
@@ -82,14 +82,15 @@ TEST(P3P_Kneip_CVPR11, Multiview) {
     Mat X = d._X;
     openMVG::euclidean_resection::P3P_ResectionKernel_K kernel(x, X, d._K[0]);
 
-    size_t samples_[3]={0,1,2};
-    vector<size_t> samples(samples_, samples_+3);
-    vector<Mat34> Ps;
+    std::size_t samples_[3]={0,1,2};
+    std::vector<std::size_t> samples(samples_, samples_+3);
+    std::vector<Mat34> Ps;
     kernel.Fit(samples, &Ps);
 
     bool bFound = false;
     char index = -1;
-    for (size_t i = 0; i < Ps.size(); ++i)  {
+    for (std::size_t i = 0; i < Ps.size(); ++i)
+    {
       Mat34 GT_ProjectionMatrix = d.P(nResectionCameraIndex).array()
                                 / d.P(nResectionCameraIndex).norm();
       Mat34 COMPUTED_ProjectionMatrix = Ps[i].array() / Ps[i].norm();
@@ -102,7 +103,8 @@ TEST(P3P_Kneip_CVPR11, Multiview) {
     EXPECT_TRUE(bFound);
 
     // Check that for the found matrix residual is small
-    for (size_t i = 0; i < x.cols(); ++i) {
+    for (std::size_t i = 0; i < x.cols(); ++i)
+    {
       EXPECT_NEAR(0.0, kernel.Error(i,Ps[index]), 1e-8);
     }
   }
@@ -120,7 +122,8 @@ void CreateCameraSystem(const Mat3& KK,
                         Mat2X *x_camera,
                         Mat3X *X_world,
                         Mat3  *R_expected,
-                        Vec3  *T_expected) {
+                        Vec3  *T_expected)
+{
   int num_points = x_image.cols();
 
   Mat3X x_unit_cam(3, num_points);
@@ -193,15 +196,16 @@ TEST(EuclideanResection, Points6AllRandomInput) {
     typedef openMVG::euclidean_resection::kernel::ResectionKernel_K Kernel;
     Kernel kernel(x_image.block(0, 0, 2, 6), X_world, KK);
 
-    size_t samples_[6]={0,1,2,3,4,5};
-    vector<size_t> samples(samples_,samples_+6);
-    vector<Mat34> Ps;
+    std::size_t samples_[6]={0,1,2,3,4,5};
+    std::vector<std::size_t> samples(samples_,samples_+6);
+    std::vector<Mat34> Ps;
     kernel.Fit(samples, &Ps);
 
     CHECK_EQUAL(1, Ps.size());
 
     bool bFound = false;
-    for (size_t i = 0; i < Ps.size(); ++i)  {
+    for (std::size_t i = 0; i < Ps.size(); ++i)
+    {
       Mat3 R_output;
       Vec3 T_output;
       Mat3 K;

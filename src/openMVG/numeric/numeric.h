@@ -28,6 +28,8 @@
 #ifndef OPENMVG_NUMERIC_NUMERIC_H
 #define OPENMVG_NUMERIC_NUMERIC_H
 
+#include <openMVG/system/Logger.hpp>
+
 //--
 // Eigen
 // http://eigen.tuxfamily.org/dox-devel/QuickRefPage.html
@@ -376,7 +378,7 @@ VStack(const Eigen::MatrixBase<Derived1>& lhs, const Eigen::MatrixBase<Derived2>
 template<typename TMat>
 inline double FrobeniusNorm(const TMat &A)
 {
-  return sqrt(A.array().abs2().sum());
+  return A.norm();
 }
 
 template<typename TMat>

@@ -158,19 +158,19 @@ int main(int argc, char **argv)
     // Build the view corresponding to the image
     View v( iter->m_sImageName, id_view, id_intrinsic, id_pose, width, height);
     // Add the view to the sfm_container
-    views[v.id_view] = std::make_shared<View>(v);
+    views[v.getViewId()] = std::make_shared<View>(v);
 
     // Add intrinsic related to the image (if any)
     if (intrinsic == NULL)
     {
       //Since the view have invalid intrinsic data
       // (export the view, with an invalid intrinsic field value)
-      v.id_intrinsic = UndefinedIndexT;
+      v.setIntrinsicId(UndefinedIndexT);
     }
     else
     {
       // Add the intrinsic to the sfm_container
-      intrinsics[v.id_intrinsic] = intrinsic;
+      intrinsics[v.getIntrinsicId()] = intrinsic;
     }
   }
 

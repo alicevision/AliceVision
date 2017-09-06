@@ -55,17 +55,16 @@ void SfM_Data_Structure_Computation_Blind::triangulate(SfM_Data & sfm_data) cons
       // Triangulate each landmark
       Triangulation trianObj;
       const Observations & observations = iterTracks->second.observations;
-      for(Observations::const_iterator itObs = observations.begin();
-        itObs != observations.end(); ++itObs)
+      for(const auto& itObs : observations)
       {
-        const View * view = sfm_data.views.at(itObs->first).get();
+        const View * view = sfm_data.views.at(itObs.first).get();
         if (sfm_data.IsPoseAndIntrinsicDefined(view))
         {
-          const IntrinsicBase * cam = sfm_data.GetIntrinsics().at(view->id_intrinsic).get();
-          const Pose3 pose = sfm_data.GetPoseOrDie(view);
+          const IntrinsicBase * cam = sfm_data.GetIntrinsics().at(view->getIntrinsicId()).get();
+          const Pose3 pose = sfm_data.getPose(*view);
           trianObj.add(
             cam->get_projective_equivalent(pose),
-            cam->get_ud_pixel(itObs->second.x));
+            cam->get_ud_pixel(itObs.second.x));
         }
       }
       if (trianObj.size() < 2)
@@ -182,7 +181,7 @@ bool SfM_Data_Structure_Computation_Robust::robust_triangulation(
   for (IndexT i = 0; i < nbIter; ++i)
   {
     std::set<IndexT> samples;
-    robust::UniformSample(std::min(std::size_t(min_sample_index), observations.size()), observations.size(), &samples);
+    robust::UniformSample(std::min(std::size_t(min_sample_index), observations.size()), observations.size(), samples);
 
     // Hypothesis generation.
     const Vec3 current_model = track_sample_triangulation(sfm_data, observations, samples);
@@ -193,12 +192,14 @@ bool SfM_Data_Structure_Computation_Robust::robust_triangulation(
 
     // Chierality (Check the point is in front of the sampled cameras)
     bool bChierality = true;
-    for (auto& it : samples){
+
+    for (auto& it : samples)
+    {
       Observations::const_iterator itObs = observations.begin();
       std::advance(itObs, it);
       const View * view = sfm_data.views.at(itObs->first).get();
-      const IntrinsicBase * cam = sfm_data.GetIntrinsics().at(view->id_intrinsic).get();
-      const Pose3 pose = sfm_data.GetPoseOrDie(view);
+      const IntrinsicBase * cam = sfm_data.GetIntrinsics().at(view->getIntrinsicId()).get();
+      const Pose3 pose = sfm_data.getPose(*view);
       const double z = pose.depth(current_model); // TODO: cam->depth(pose(X));
       bChierality &= z > 0;
     }
@@ -208,18 +209,19 @@ bool SfM_Data_Structure_Computation_Robust::robust_triangulation(
 
     std::set<IndexT> inlier_set;
     double current_error = 0.0;
+    
     // Classification as inlier/outlier according pixel residual errors.
-    for (Observations::const_iterator itObs = observations.begin();
-        itObs != observations.end(); ++itObs)
+    for (const auto& itObs : observations)
     {
-      const View * view = sfm_data.views.at(itObs->first).get();
-      const IntrinsicBase * intrinsic = sfm_data.GetIntrinsics().at(view->id_intrinsic).get();
-      const Pose3 pose = sfm_data.GetPoseOrDie(view);
-      const Vec2 residual = intrinsic->residual(pose, current_model, itObs->second.x);
+      const View * view = sfm_data.views.at(itObs.first).get();
+      const IntrinsicBase * intrinsic = sfm_data.GetIntrinsics().at(view->getIntrinsicId()).get();
+      const Pose3 pose = sfm_data.getPose(*view);
+      const Vec2 residual = intrinsic->residual(pose, current_model, itObs.second.x);
       const double residual_d = residual.norm();
+
       if (residual_d < dThresholdPixel)
       {
-        inlier_set.insert(itObs->first);
+        inlier_set.insert(itObs.first);
         current_error += residual_d;
       }
       else
@@ -252,8 +254,8 @@ Vec3 SfM_Data_Structure_Computation_Robust::track_sample_triangulation(
     Observations::const_iterator itObs = observations.begin();
     std::advance(itObs, idx);
     const View * view = sfm_data.views.at(itObs->first).get();
-    const IntrinsicBase * cam = sfm_data.GetIntrinsics().at(view->id_intrinsic).get();
-    const Pose3 pose = sfm_data.GetPoseOrDie(view);
+    const IntrinsicBase * cam = sfm_data.GetIntrinsics().at(view->getIntrinsicId()).get();
+    const Pose3 pose = sfm_data.getPose(*view);
     trianObj.add(
       cam->get_projective_equivalent(pose),
       cam->get_ud_pixel(itObs->second.x));

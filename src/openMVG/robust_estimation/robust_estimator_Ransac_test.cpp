@@ -12,6 +12,7 @@
 #include "openMVG/numeric/numeric.h"
 
 #include "testing/testing.h"
+#include "lineTestGenerator.hpp"
 
 using namespace openMVG;
 using namespace openMVG::robust;
@@ -74,28 +75,18 @@ TEST(MaxConsensusLineFitter, TooFewPoints) {
 TEST(MaxConsensusLineFitter, RealisticCase) {
 
   const int NbPoints = 30;
-  const int inlierPourcentAmount = 30; //works with 40
+  const double outlierRatio = .3; //works with 40
   Mat2X xy(2, NbPoints);
+  std::mt19937 gen;
 
   Vec2 GTModel; // y = 2x + 1
   GTModel <<  -2.0, 6.3;
 
-  //-- Build the point list according the given model
-  for(int i = 0; i < NbPoints; ++i)  {
-    xy.col(i) << i, (double)i*GTModel[1] + GTModel[0];
-  }
-
   //-- Add some noise (for the asked percentage amount)
-  int nbPtToNoise = (int) NbPoints*inlierPourcentAmount/100.0;
-  vector<size_t> vec_samples; // Fit with unique random index
-  UniformSample(nbPtToNoise, NbPoints, &vec_samples);
-  for(size_t i = 0; i <vec_samples.size(); ++i)
-  {
-    const size_t randomIndex = vec_samples[i];
-    //Additive random noise
-    xy.col(randomIndex) << xy.col(randomIndex)(0)+rand()%2-3,
-                           xy.col(randomIndex)(1)+rand()%8-6;
-  }
+  const std::size_t nbPtToNoise = (size_t) NbPoints*outlierRatio;
+  std::vector<std::size_t> vec_inliersGT;
+  generateLine(NbPoints, outlierRatio, 0.0, GTModel, gen, xy, vec_inliersGT);
+
 
   LineKernel kernel(xy);
   std::vector<size_t> vec_inliers;

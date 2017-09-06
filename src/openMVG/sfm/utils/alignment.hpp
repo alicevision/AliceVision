@@ -61,10 +61,12 @@ inline void applyTransform(SfM_Data & sfmData,
                            const Vec3& t,
                            bool transformControlPoints = false)
 {
-  for(auto& view: sfmData.views)
+  for(auto& viewPair: sfmData.views)
   {
-    geometry::Pose3& pose = sfmData.poses[view.second->id_pose];
+    const View& view = *viewPair.second;
+    geometry::Pose3 pose = sfmData.getPose(view);
     pose = pose.transformSRt(S, R, t);
+    sfmData.setPose(view, pose);
   }
   
   for(auto& landmark: sfmData.structure)

@@ -118,7 +118,7 @@ TEST(ImageDrawing, Circle) {
   for ( int j = 0; j < image.Height(); ++j)
   for ( int i = 0; i < image.Width(); ++i) {
     if (image(j, i) == 255)  {
-      const float distance =  sqrt((float)((j-y)*(j-y) + (i-x)*(i-x)));
+      const float distance =  std::hypot((float)(j-y), (float)(i-x));
       EXPECT_NEAR(radius, distance, 1.0f);
       // Due to discretisation we cannot expect better precision
     }
@@ -139,12 +139,16 @@ TEST(ImageDrawing, Ellipse) {
   DrawEllipse(x, y, radius, radius, (unsigned char)255, &image, (double)angle);
 
   // Distance checking :
-  for ( int j = 0; j < image.Height(); ++j)
-  for ( int i = 0; i < image.Width(); ++i) {
-    if (image(j, i) == 255)  {
-      const float distance =  sqrt((float)((j-y)*(j-y) + (i-x)*(i-x)));
-      EXPECT_NEAR(radius, distance, 1.0f);
-      // Due to discretisation we cannot expect better precision
+  for(int j = 0; j < image.Height(); ++j)
+  {
+    for(int i = 0; i < image.Width(); ++i)
+    {
+      if(image(j, i) == 255)
+      {
+        const float distance = std::hypot((float) (j - y), (float) (i - x));
+        EXPECT_NEAR(radius, distance, 1.0f);
+        // Due to discretisation we cannot expect better precision
+      }
     }
   }
 }
@@ -163,13 +167,17 @@ TEST(ImageDrawing, RotatedEllipse) {
   DrawEllipse(x, y, radius, radius/2.0, static_cast<unsigned char>(255), &image, M_PI/4.0);
 
   // Distance checking :
-  for ( int j = 0; j < image.Height(); ++j)
-  for ( int i = 0; i < image.Width(); ++i) {
-    if (image(j, i) == 255)  {
-      const float distance =  sqrt((float)((j-y)*(j-y) + (i-x)*(i-x)));
-      EXPECT_EQ( radius+1 >= distance && radius/2.0-1 <= distance, true);
-      // Due to discretization we cannot expect better precision
-      // Use +-1 to avoid rasterization error.
+  for(int j = 0; j < image.Height(); ++j)
+  {
+    for(int i = 0; i < image.Width(); ++i)
+    {
+      if(image(j, i) == 255)
+      {
+        const float distance = std::hypot((float) (j - y), (float) (i - x));
+        EXPECT_EQ(radius + 1 >= distance && radius / 2.0 - 1 <= distance, true);
+        // Due to discretization we cannot expect better precision
+        // Use +-1 to avoid rasterization error.
+      }
     }
   }
 }

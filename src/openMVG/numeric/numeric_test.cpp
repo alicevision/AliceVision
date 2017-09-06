@@ -26,8 +26,8 @@
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 #include <iostream>
+#include <openMVG/system/Logger.hpp>
 #include "CppUnitLite/TestHarness.h"
-#include "openMVG/logger.hpp"
 #include "openMVG/numeric/numeric.h"
 #include "testing/testing.h"
 

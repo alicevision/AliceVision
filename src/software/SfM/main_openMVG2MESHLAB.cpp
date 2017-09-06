@@ -90,11 +90,11 @@ int main(int argc, char **argv)
     if (!sfm_data.IsPoseAndIntrinsicDefined(view))
       continue;
 
-    const Pose3 pose = sfm_data.GetPoseOrDie(view);
-    Intrinsics::const_iterator iterIntrinsic = sfm_data.GetIntrinsics().find(view->id_intrinsic);
+    const Pose3 pose = sfm_data.getPose(*view);
+    Intrinsics::const_iterator iterIntrinsic = sfm_data.GetIntrinsics().find(view->getIntrinsicId());
 
     // We have a valid view with a corresponding camera & pose
-    const std::string srcImage = stlplus::create_filespec(sfm_data.s_root_path, view->s_Img_path);
+    const std::string srcImage = stlplus::create_filespec(sfm_data.s_root_path, view->getImagePath());
     const IntrinsicBase * cam = iterIntrinsic->second.get();
     Mat34 P = cam->get_projective_equivalent(pose);
 
@@ -109,7 +109,7 @@ int main(int argc, char **argv)
     const Vec3 optical_center = R.transpose() * t;
 
     outfile
-      << "  <MLRaster label=\"" << stlplus::filename_part(view->s_Img_path) << "\">" << std::endl
+      << "  <MLRaster label=\"" << stlplus::filename_part(view->getImagePath()) << "\">" << std::endl
       << "   <VCGCamera TranslationVector=\""
       << optical_center[0] << " "
       << optical_center[1] << " "
