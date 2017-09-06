@@ -11,7 +11,11 @@
 #include <memory>
 #include <limits>
 
+#if OIIO_VERSION_MAJOR == 1 && OIIO_VERSION_MINOR <= 8
+namespace oiio = OIIO;
+#else
 namespace oiio = OpenImageIO;
+#endif
 
 namespace openMVG {
 

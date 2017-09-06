@@ -11,16 +11,7 @@
 #include "openMVG/stl/stlMap.hpp"
 #include "ceres/rotation.h"
 #include "lemon/bfs.h"
-//#include <lemon/core.h>
-
-//#include <lemon/bits/map_extender.h>
-//#include <lemon/bits/default_map.h>
-
-//#include <lemon/concept_check.h>
-//#include <lemon/concepts/maps.h>
-//#include "lemon/lgf_writer.h"
-//#include "lemon/lgf_reader.h"
-//#include "lemon/bits/graph_extender.h"
+#include <fstream>
 
 namespace openMVG {
 namespace sfm {
@@ -58,7 +49,7 @@ bool Local_Bundle_Adjustment_Ceres::Adjust(SfM_Data& sfm_data)
   Hash_Map<IndexT, std::vector<double> > map_intrinsicsBlocks;
 
   // Add Poses data to the Ceres problem as Parameter Blocks (do not take care of Local BA strategy)
-  map_posesBlocks = addPosesToCeresProblem(sfm_data.poses, problem);
+  map_posesBlocks = addPosesToCeresProblem(sfm_data.GetPoses(), problem);
   
   // Add Intrinsics data to the Ceres problem as Parameter Blocks (do not take care of Local BA strategy)
   map_intrinsicsBlocks = addIntrinsicsToCeresProblem(sfm_data, problem);
@@ -108,8 +99,8 @@ bool Local_Bundle_Adjustment_Ceres::Adjust(SfM_Data& sfm_data)
     {
       // Build the residual block corresponding to the track observation:
       const View * view = sfm_data.views.at(observationIt.first).get();
-      IndexT intrinsicId = view->id_intrinsic;
-      IndexT poseId = view->id_pose;
+      IndexT intrinsicId = view->getIntrinsicId();
+      IndexT poseId = view->getPoseId();
       
       // Do not create a residual block if the pose, the intrinsic or the landmark 
       // have been set as Ignored by the Local BA strategy
@@ -127,7 +118,7 @@ bool Local_Bundle_Adjustment_Ceres::Adjust(SfM_Data& sfm_data)
       // dimensional residual. Internally, the cost function stores the observed
       // image location and compares the reprojection against the observation.
       ceres::CostFunction* cost_function =
-          IntrinsicsToCostFunction(sfm_data.intrinsics[intrinsicId].get(), observationIt.second.x);
+          createCostFunctionFromIntrinsics(sfm_data.intrinsics[intrinsicId].get(), observationIt.second.x);
       
       if (cost_function)
       {
@@ -171,7 +162,7 @@ bool Local_Bundle_Adjustment_Ceres::Adjust(SfM_Data& sfm_data)
     OPENMVG_LOG_DEBUG(
       "Bundle Adjustment statistics (approximated RMSE):\n"
       " #views: " << sfm_data.views.size() << "\n"
-      " #poses: " << sfm_data.poses.size() << "\n"
+      " #poses: " << sfm_data.GetPoses().size() << "\n"
       " #intrinsics: " << sfm_data.intrinsics.size() << "\n"
       " #tracks: " << sfm_data.structure.size() << "\n"
       " #residuals: " << summary.num_residuals << "\n"
@@ -228,7 +219,7 @@ bool Local_Bundle_Adjustment_Ceres::Adjust(SfM_Data& sfm_data)
   }
 
   // Update camera poses with refined data
-  updateCameraPoses(map_posesBlocks, sfm_data.poses);
+  updateCameraPoses(map_posesBlocks, sfm_data.GetPoses());
 
   // Update camera intrinsics with refined data
   updateCameraIntrinsics(map_intrinsicsBlocks, sfm_data.intrinsics);
@@ -348,7 +339,7 @@ void Local_Bundle_Adjustment_Ceres::computeDistancesMaps(
   for(auto it: _map_viewId_distance)
   {
     // Get the poseId of the camera no. viewId
-    IndexT idPose = sfm_data.GetViews().at(it.first)->id_pose; // PoseId of a resected camera
+    IndexT idPose = sfm_data.GetViews().at(it.first)->getPoseId(); // PoseId of a resected camera
 
     auto poseIt = _map_poseId_distance.find(idPose);
     // If multiple views share the same pose
@@ -391,7 +382,7 @@ void Local_Bundle_Adjustment_Ceres::computeStatesMaps(const SfM_Data & sfm_data,
       //    - else ignored
       // ----------------------------------------------------
       // -- Poses
-      for (Poses::const_iterator itPose = sfm_data.poses.begin(); itPose != sfm_data.poses.end(); ++itPose)
+      for (Poses::const_iterator itPose = sfm_data.GetPoses().begin(); itPose != sfm_data.GetPoses().end(); ++itPose)
       {
         const IndexT poseId = itPose->first;
         int dist = _map_poseId_distance.at(poseId);
@@ -445,7 +436,7 @@ void Local_Bundle_Adjustment_Ceres::computeStatesMaps(const SfM_Data & sfm_data,
       // ----------------------------------------------------
 
       // -- Poses
-      for (Poses::const_iterator itPose = sfm_data.poses.begin(); itPose != sfm_data.poses.end(); ++itPose)
+      for (Poses::const_iterator itPose = sfm_data.GetPoses().begin(); itPose != sfm_data.GetPoses().end(); ++itPose)
       {
         const IndexT poseId = itPose->first;
         int dist = _map_poseId_distance.at(poseId);
@@ -491,7 +482,7 @@ void Local_Bundle_Adjustment_Ceres::computeStatesMaps(const SfM_Data & sfm_data,
       // -- All parameters are refined = NO LOCAL BA
       // ----------------------------------------------------
       // Poses
-      for (Poses::const_iterator itPose = sfm_data.poses.begin(); itPose != sfm_data.poses.end(); ++itPose)
+      for (Poses::const_iterator itPose = sfm_data.GetPoses().begin(); itPose != sfm_data.GetPoses().end(); ++itPose)
       {
         const IndexT poseId = itPose->first;
         _map_poseId_LBAState[poseId] = LocalBAState::refined;
@@ -558,15 +549,15 @@ Hash_Map<IndexT, std::vector<double>> Local_Bundle_Adjustment_Ceres::addIntrinsi
     const View* view = itView.second.get();
     if (sfm_data.IsPoseAndIntrinsicDefined(view))
     {
-      if(intrinsicsUsage.find(view->id_intrinsic) == intrinsicsUsage.end())
-        intrinsicsUsage[view->id_intrinsic] = 1;
+      if(intrinsicsUsage.find(view->getIntrinsicId()) == intrinsicsUsage.end())
+        intrinsicsUsage[view->getIntrinsicId()] = 1;
       else
-        ++intrinsicsUsage[view->id_intrinsic];
+        ++intrinsicsUsage[view->getIntrinsicId()];
     }
     else
     {
-      if(intrinsicsUsage.find(view->id_intrinsic) == intrinsicsUsage.end())
-        intrinsicsUsage[view->id_intrinsic] = 0;
+      if(intrinsicsUsage.find(view->getIntrinsicId()) == intrinsicsUsage.end())
+        intrinsicsUsage[view->getIntrinsicId()] = 0;
     }
   }
   

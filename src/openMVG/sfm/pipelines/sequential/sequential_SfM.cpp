@@ -258,7 +258,6 @@ void SequentialSfMReconstructionEngine::RobustResectionOfImages(
       else
       {
         set_reconstructedViewId.insert(possible_resection_index); // contains all the resected views (from the beginning of the reconstruction)
-        set_newReconstructedViewId.insert(possible_resection_index); // contains the new resected views 
         OPENMVG_LOG_DEBUG("Resection of image: " << currentIndex << " ID=" << possible_resection_index << " succeed.");
         _sfm_data.GetViews().at(possible_resection_index)->setResectionId(resectionId);
         ++resectionId;
@@ -315,11 +314,11 @@ void SequentialSfMReconstructionEngine::RobustResectionOfImages(
       {
         auto chrono2_start = std::chrono::steady_clock::now();
 
-        if(true)
-        {
-          BundleAdjustment(_bFixedIntrinsics);
-        }
-        else
+//        if(true)
+//        {
+//          BundleAdjustment(_bFixedIntrinsics);
+//        }
+//        else
         {
           localBundleAdjustment(newReconstructedViews);
         }
