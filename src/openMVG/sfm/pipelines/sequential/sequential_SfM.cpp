@@ -1706,7 +1706,9 @@ bool SequentialSfMReconstructionEngine::localBundleAdjustment(
   bool isBaSucceed = localBA_obj.Adjust(_sfm_data);
   
   // Save data about the 
+  std::cout << "Export statistics... " << std::endl;
   localBA_obj.exportStatistics(_sOutDirectory, _sfm_data);
+  std::cout << "Export statistics: done" << std::endl;
   
   return isBaSucceed;
 }
@@ -1727,6 +1729,7 @@ std::size_t SequentialSfMReconstructionEngine::badTrackRejector(double dPrecisio
   const std::size_t nbOutliers_angleErr = RemoveOutliers_AngleError(_sfm_data, 2.0);
   
   OPENMVG_LOG_DEBUG("badTrackRejector: nbOutliers_residualErr: " << nbOutliers_residualErr << ", nbOutliers_angleErr: " << nbOutliers_angleErr);
+  std::cout << "-- badTrackrejector: done " << std::endl;
   return nbOutliers_residualErr + nbOutliers_angleErr;
 }
 

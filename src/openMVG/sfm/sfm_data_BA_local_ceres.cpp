@@ -90,6 +90,13 @@ bool Local_Bundle_Adjustment_Ceres::Adjust(SfM_Data& sfm_data)
     _LBA_statistics.numRefinedIntrinsics = map_intrinsicsBlocks.size();
   }
   
+  if (_LBA_statistics.numConstantPoses == 0)
+  {
+    OPENMVG_LOG_WARNING("Local bundle adjustment not executed: There is no pose set to Constant in the solver.");
+    // It happens when the added pose(s) is(are) not connected to the rest of the graph.
+    return false;
+  }
+  
   // Set a LossFunction to be less penalized by false measurements
   //  - set it to NULL if you don't want use a lossFunction.
   ceres::LossFunction * p_LossFunction = new ceres::HuberLoss(Square(4.0));
@@ -265,6 +272,7 @@ void Local_Bundle_Adjustment_Ceres::updateDistancesGraph(
   
   // Add the views as nodes to the graph:
 //  std::cout << "nouveaux noeuds ajoutés au graph (viewIds) : " << std::endl;
+  std::cout << "adding node to the graph..." << std::endl;
   for (auto& viewId : viewIdsAddedToTheGraph)
   {
 //    std::cout << viewId << std::endl;
@@ -284,6 +292,7 @@ void Local_Bundle_Adjustment_Ceres::updateDistancesGraph(
     std::inserter(landmarkIds, landmarkIds.begin()),
     stl::RetrieveKey());
 
+  std::cout << "createing map_nbSharedLandmarksPerImagesPair..." << std::endl;
   for(const auto& viewId: viewIdsAddedToTheGraph)
   {
     const openMVG::tracks::TrackIdSet& newView_trackIds = map_tracksPerView.at(viewId);
@@ -316,6 +325,8 @@ void Local_Bundle_Adjustment_Ceres::updateDistancesGraph(
     }
   }
   // add edges in the graph
+  std::cout << "adding Edges to the graph..." << std::endl;
+
   for(auto& it: map_nbSharedLandmarksPerImagesPair)
   {
     std::size_t L = 100; // typically: 100
@@ -324,6 +335,9 @@ void Local_Bundle_Adjustment_Ceres::updateDistancesGraph(
       _reconstructionGraph.addEdge(_map_viewId_node.at(it.first.first), _map_viewId_node.at(it.first.second));
     }
   }
+  
+  std::cout << "in: updateDistancesgrpah: done" << std::endl;
+
 }
 
 void Local_Bundle_Adjustment_Ceres::computeDistancesMaps(
@@ -366,14 +380,20 @@ void Local_Bundle_Adjustment_Ceres::computeDistancesMaps(
   for(auto it: _map_viewId_node) // each node in the graph
   {
     auto& node = it.second;
-    int d = bfs.dist(node);
+//    int d = bfs.dist(node);
     
-    if (bfs.reached(node)) // check if the node is connected to a source node
-      std::cout << "vue #" << it.first << ", dist:" << d << std::endl;
-    else 
-      std::cout << "vue #" << it.first << ", dist:" << d << " (not reached) "<< std::endl;
+    int d = -1; 
+    if (bfs.reached(node))
+      d = bfs.dist(node);
+
+//    int d = bfs.dist(node);
+//    if (bfs.reached(node)) // check if the node is connected to a source node
+//      std::cout << "vue #" << it.first << ", dist:" << d << std::endl;
+//    else 
+//      std::cout << "vue #" << it.first << ", dist:" << d << " (not reached) "<< std::endl;
     
     _map_viewId_distance[it.first] = d;
+    
   }
 
   std::cout << "_map_viewId_distance.size() = " << _map_viewId_distance.size() << std::endl;
@@ -401,15 +421,16 @@ void Local_Bundle_Adjustment_Ceres::computeDistancesMaps(
       OPENMVG_LOG_INFO( itVMap.first << " -> " << itVMap.second);
     }
     
-    OPENMVG_LOG_INFO("-- Pose distances map: ");
-    for (auto & itPMap: _map_poseId_distance)
-    {
-      OPENMVG_LOG_INFO( itPMap.first << " -> " << itPMap.second);
-    }
+//    OPENMVG_LOG_INFO("-- Pose distances map: ");
+//    for (auto & itPMap: _map_poseId_distance)
+//    {
+//      OPENMVG_LOG_INFO( itPMap.first << " -> " << itPMap.second);
+//    }
   }
   
   outMapPoseIdDistance = _map_poseId_distance;
 
+  std::cout << "in: computeDistancesMaps (done)" << std::endl;
   std::cout << "^^^ ------------------------ ^^^\n" << std::endl;
         
 }
@@ -559,11 +580,11 @@ void Local_Bundle_Adjustment_Ceres::computeStatesMaps(const SfM_Data & sfm_data,
       {
         const IndexT poseId = itPose->first;
         int dist = _map_poseId_distance.at(poseId);
-        if (dist <= distanceLimit) // 0 or 1
+        if (dist >= 0 && dist <= distanceLimit) 
           _map_poseId_LBAState[poseId] = LocalBAState::refined;
         else if (dist == distanceLimit + 1)
           _map_poseId_LBAState[poseId] = LocalBAState::constant;
-        else
+        else // dist < 0 (not connected to the node) or > D + 1
           _map_poseId_LBAState[poseId] = LocalBAState::ignored;
       }
 
@@ -870,11 +891,13 @@ bool Local_Bundle_Adjustment_Ceres::exportStatistics(const std::string& path, co
     header.push_back("ResidualBlocks");
     header.push_back("SuccessIter"); header.push_back("BadIter");
     header.push_back("InitRMSE"); header.push_back("FinalRMSE");
+    header.push_back("dAR=-1");
     header.push_back("dAR=0"); header.push_back("dAR=1"); header.push_back("dAR=2");
     header.push_back("dAR=3"); header.push_back("dAR=4"); header.push_back("dAR=5");   
     header.push_back("dAR=6"); header.push_back("dAR=7"); header.push_back("dAR=8"); 
     header.push_back("dAR=9"); header.push_back("dAR=10+");
-    header.push_back("New Views");
+    header.
+    push_back("New Views");
     
     for (std::string & head : header)
       os << head << "\t";
@@ -883,15 +906,26 @@ bool Local_Bundle_Adjustment_Ceres::exportStatistics(const std::string& path, co
   
   // Add the '_LBA_statistics' contents:
   // Compute the number of poses with a distanceToRecenteCameras > 10
+  // remind: distances range is {-1; 10+} so 11th element is the dist. 10
+  std::cout << "a" << std::endl;
   std::size_t posesWthDistUpperThanTen = 0;
-  if (_LBA_statistics.map_distance_numCameras.size() >= 10)
+  std::cout << "map_distance_numCameras.size() = " << _LBA_statistics.map_distance_numCameras.size() << std::endl;
+
+  for (const auto& it : _LBA_statistics.map_distance_numCameras)
   {
-    for (int i=10; i<_LBA_statistics.map_distance_numCameras.size(); ++i)
-    {
-      posesWthDistUpperThanTen += _LBA_statistics.map_distance_numCameras.at(i);
-    }
+    if (it.first >= 10)
+      posesWthDistUpperThanTen += it.second;
   }
-  
+//  if (_LBA_statistics.map_distance_numCameras.size() > 11) 
+//  {
+//    for (int i=11; i<_LBA_statistics.map_distance_numCameras.size(); ++i)
+//    {
+//      std::cout << "dist " << i << " - ";
+//      std::cout << _LBA_statistics.map_distance_numCameras.at(i) << std::endl;
+//      posesWthDistUpperThanTen += _LBA_statistics.map_distance_numCameras.at(i);
+//    }
+//  }
+  std::cout << "b" << std::endl;
   os << _LBA_statistics.time << "\t"
         
      << _LBA_statistics.numRefinedPoses << "\t"
@@ -911,6 +945,7 @@ bool Local_Bundle_Adjustment_Ceres::exportStatistics(const std::string& path, co
      << _LBA_statistics.RMSEinitial << "\t"
      << _LBA_statistics.RMSEfinal << "\t"
         
+     << _LBA_statistics.map_distance_numCameras[-1] << "\t"
      << _LBA_statistics.map_distance_numCameras[0] << "\t"
      << _LBA_statistics.map_distance_numCameras[1] << "\t"
      << _LBA_statistics.map_distance_numCameras[2] << "\t"

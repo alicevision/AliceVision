@@ -55,7 +55,7 @@ struct LocalBA_stats
   std::size_t numConstantLandmarks = 0;      // num. of landmarks set constant in the BA solver
   std::size_t numIgnoredLandmarks = 0;       // num. of not added landmarks to the BA solver
   
-  std::map<IndexT, std::size_t> map_distance_numCameras; // distribution of the cameras for each graph distance
+  std::map<int, std::size_t> map_distance_numCameras; // distribution of the cameras for each graph distance
   
   std::set<IndexT> newViewsId;  // index of the new views added (newly resected)
   
