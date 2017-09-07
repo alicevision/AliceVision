@@ -42,7 +42,6 @@ install(
 )
 
 set(global_files_headers
-  logger.hpp
   openmvg_omp.hpp
   prettyprint.hpp
   types.hpp

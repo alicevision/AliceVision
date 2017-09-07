@@ -1,3 +1,4 @@
+# Headers
 set(color_harmonization_files_headers
   global_quantile_gain_offset_alignment.hpp
   selection_fullFrame.hpp
@@ -5,14 +6,13 @@ set(color_harmonization_files_headers
   selection_matchedPoints.hpp
   selection_VLDSegment.hpp
 )
+
+# Sources
 set(color_harmonization_files_test
     global_quantile_gain_offset_alignment_test.cpp
 )
 
 add_library(openMVG_color_harmonization INTERFACE)
-target_sources(openMVG_color_harmonization INTERFACE
-    ${color_harmonization_files_headers}
-    )
 
 target_link_libraries(openMVG_color_harmonization
   INTERFACE openMVG_image

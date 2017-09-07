@@ -1,3 +1,4 @@
+# Headers
 set(cameras_files_headers
   Camera_Common.hpp
   Camera_Intrinsics.hpp
@@ -9,6 +10,8 @@ set(cameras_files_headers
   cameras.hpp
   Camera_undistort_image.hpp
 )
+
+# Sources
 set(cameras_files_test
     Camera_Pinhole_Brown_test.cpp
     Camera_Pinhole_Fisheye1_test.cpp
@@ -17,10 +20,6 @@ set(cameras_files_test
 )
 
 add_library(openMVG_cameras INTERFACE)
-target_sources(openMVG_cameras INTERFACE
-    ${cameras_files_headers}
-    )
-
 
 target_link_libraries(openMVG_cameras
   INTERFACE openMVG_multiview

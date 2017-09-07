@@ -13,10 +13,8 @@ set(stl_files_headers
 
 add_library(openMVG_stl INTERFACE)
 
-target_sources(openMVG_stl INTERFACE
-    ${stl_files_headers}
-    )
 # target_sources(openMVG_stl INTERFACE ${stl_files_headers}) # TODO
+
 target_link_libraries(openMVG_stl
   INTERFACE ${LOG_LIB}
 )

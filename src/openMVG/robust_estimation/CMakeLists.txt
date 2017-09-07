@@ -1,3 +1,4 @@
+# Headers
 set(robust_estimation_files_headers
   guided_matching.hpp
   lineTestGenerator.hpp
@@ -15,6 +16,8 @@ set(robust_estimation_files_headers
   robust_ransac_tools.hpp
   score_evaluator.hpp
 )
+
+# Sources
 set(robust_estimation_files_test
   robust_estimator_ACRansac_test.cpp
   robust_estimator_lineKernel_test.cpp
@@ -22,12 +25,9 @@ set(robust_estimation_files_test
   robust_estimator_LMeds_test.cpp
   robust_estimator_LORansac_test.cpp
   robust_estimator_Ransac_test.cpp
-  )
+)
 
 add_library(openMVG_robust_estimation INTERFACE)
-target_sources(openMVG_robust_estimation INTERFACE
-    ${robust_estimation_files_headers}
-    )
 
 target_link_libraries(openMVG_robust_estimation
   INTERFACE ${LOG_LIB}

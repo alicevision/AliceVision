@@ -1,11 +1,9 @@
+# Headers
 set(tracks_files_headers
   tracks.hpp
 )
 
 add_library(openMVG_tracks INTERFACE)
-target_sources(openMVG_tracks INTERFACE
-    ${tracks_files_headers}
-    )
 
 target_link_libraries(openMVG_tracks
   INTERFACE openMVG_features

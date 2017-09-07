@@ -1,3 +1,4 @@
+# Headers
 set(graph_files_headers
   connectedComponent.hpp
   graph.hpp
@@ -5,15 +6,14 @@ set(graph_files_headers
   graph_graphviz_export.hpp
   triplet_finder.hpp
 )
+
+# Sources
 set(graph_files_test
   connectedComponent_test.cpp
   triplet_finder_test.cpp
 )
 
 add_library(openMVG_graph INTERFACE)
-target_sources(openMVG_graph INTERFACE
-    ${graph_files_headers}
-    )
 
 target_link_libraries(openMVG_graph
   INTERFACE ${LEMON_LIBRARY}

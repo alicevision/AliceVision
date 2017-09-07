@@ -1,3 +1,4 @@
+# Headers
 set(geometry_files_headers
   frustum.hpp
   half_space_intersection.hpp
@@ -5,6 +6,8 @@ set(geometry_files_headers
   rigid_transformation3D_srt.hpp
   Similarity3.hpp
 )
+
+# Sources
 set(geometry_files_test
     frustum_intersection_test.cpp
     half_space_intersection_test.cpp
@@ -12,9 +15,6 @@ set(geometry_files_test
 )
 
 add_library(openMVG_geometry INTERFACE)
-target_sources(openMVG_geometry INTERFACE
-    ${geometry_files_headers}
-    )
 
 target_link_libraries(openMVG_geometry
   INTERFACE openMVG_numeric
