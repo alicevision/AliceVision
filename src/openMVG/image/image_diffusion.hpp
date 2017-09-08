@@ -1,8 +1,8 @@
 // This file is part of the AliceVision project and is made available under
 // the terms of the MPL2 license (see the COPYING.md file).
 
-#ifndef OPENMVG_IMAGE_IMAGE_DIFFUSION_HPP_
-#define OPENMVG_IMAGE_IMAGE_DIFFUSION_HPP_
+#ifndef ALICEVISION_IMAGE_IMAGE_DIFFUSION_HPP_
+#define ALICEVISION_IMAGE_IMAGE_DIFFUSION_HPP_
 
 #include <aliceVision/config.hpp>
 #include <aliceVision/alicevision_omp.hpp>
@@ -331,4 +331,4 @@ int FEDCycleTimings( const Real T , const Real Tmax , std::vector< Real > & tau 
 }  // namespace image
 }  // namespace aliceVision
 
-#endif //  OPENMVG_IMAGE_IMAGE_DIFFUSION_HPP_
+#endif //  ALICEVISION_IMAGE_IMAGE_DIFFUSION_HPP_

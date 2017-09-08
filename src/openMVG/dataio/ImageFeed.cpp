@@ -39,7 +39,7 @@ public:
   {
     if(!_isInit)
     {
-      OPENMVG_LOG_WARNING("Image feed is not initialized ");
+      ALICEVISION_LOG_WARNING("Image feed is not initialized ");
       return false;
     }
 
@@ -67,11 +67,11 @@ public:
       }
       imageName = _images[_currentImageIndex];
 
-      OPENMVG_LOG_DEBUG(imageName);
+      ALICEVISION_LOG_DEBUG(imageName);
 
       if (!image::ReadImage(imageName.c_str(), &image))
       {
-        OPENMVG_LOG_WARNING("Error while opening image " << imageName);
+        ALICEVISION_LOG_WARNING("Error while opening image " << imageName);
         throw std::invalid_argument("Error while opening image " + imageName);
       }
       return true;
@@ -109,13 +109,13 @@ private:
     imageName = (bf::path(rootPath) / bf::path(view->getImagePath())).string();
     if (!image::ReadImage(imageName.c_str(), &image))
     {
-      OPENMVG_LOG_WARNING("Error while opening image " << imageName);
+      ALICEVISION_LOG_WARNING("Error while opening image " << imageName);
       return false;
     }
     // get the associated Intrinsics
     if((view->getIntrinsicId() == UndefinedIndexT) || (!_sfmdata.GetIntrinsics().count(view->getIntrinsicId())))
     {
-      OPENMVG_LOG_DEBUG("Image "<< imageName << " does not have associated intrinsics");
+      ALICEVISION_LOG_DEBUG("Image "<< imageName << " does not have associated intrinsics");
       hasIntrinsics = false;
     }
     else
@@ -123,7 +123,7 @@ private:
       const cameras::IntrinsicBase * cam = _sfmdata.GetIntrinsics().at(view->getIntrinsicId()).get();
       if(cam->getType() != cameras::EINTRINSIC::PINHOLE_CAMERA_RADIAL3)
       {
-        OPENMVG_LOG_WARNING("Only Pinhole_Intrinsic_Radial_K3 is supported");
+        ALICEVISION_LOG_WARNING("Only Pinhole_Intrinsic_Radial_K3 is supported");
         hasIntrinsics = false;
       }
       else
@@ -169,7 +169,7 @@ ImageFeed::FeederImpl::FeederImpl(const std::string& imagePath, const std::strin
 , _withCalibration(false)
 {
   namespace bf = boost::filesystem;
-//    OPENMVG_LOG_DEBUG(imagePath);
+//    ALICEVISION_LOG_DEBUG(imagePath);
   // if it is a json, calibPath is neglected
   if(bf::is_regular_file(imagePath))
   {
@@ -227,7 +227,7 @@ ImageFeed::FeederImpl::FeederImpl(const std::string& imagePath, const std::strin
     {
       filePattern = bf::path(imagePath).filename().string();
       folder = bf::path(imagePath).parent_path().string();
-      OPENMVG_LOG_DEBUG("filePattern: " << filePattern);
+      ALICEVISION_LOG_DEBUG("filePattern: " << filePattern);
       std::string regexStr = filePattern;
       // escape "."
       boost::algorithm::replace_all(regexStr, ".", "\\.");
@@ -239,9 +239,9 @@ ImageFeed::FeederImpl::FeederImpl(const std::string& imagePath, const std::strin
     }
     else
     {
-      OPENMVG_LOG_DEBUG("folder without expression: " << imagePath);
+      ALICEVISION_LOG_DEBUG("folder without expression: " << imagePath);
     }
-    OPENMVG_LOG_DEBUG("directory feedImage");
+    ALICEVISION_LOG_DEBUG("directory feedImage");
     // if it is a directory, list all the images and add them to the list
     bf::directory_iterator iterator(folder);
     // since some OS will provide the files in a random order, first store them
@@ -305,7 +305,7 @@ bool ImageFeed::FeederImpl::goToFrame(const unsigned int frame)
   if(!_isInit)
   {
     _currentImageIndex = frame;
-    OPENMVG_LOG_WARNING("Image feed is not initialized ");
+    ALICEVISION_LOG_WARNING("Image feed is not initialized ");
     return false;
   }
   
@@ -315,7 +315,7 @@ bool ImageFeed::FeederImpl::goToFrame(const unsigned int frame)
     if(frame >= _sfmdata.GetViews().size())
     {
       _viewIterator = _sfmdata.GetViews().end();
-      OPENMVG_LOG_WARNING("The current frame is out of the range.");
+      ALICEVISION_LOG_WARNING("The current frame is out of the range.");
       return false;
     }
 
@@ -328,10 +328,10 @@ bool ImageFeed::FeederImpl::goToFrame(const unsigned int frame)
     // Image list mode
     if(frame >= _images.size())
     {
-      OPENMVG_LOG_WARNING("The current frame is out of the range.");
+      ALICEVISION_LOG_WARNING("The current frame is out of the range.");
       return false;
     }
-    OPENMVG_LOG_DEBUG("frame " << frame);
+    ALICEVISION_LOG_DEBUG("frame " << frame);
   }
   return true;
 }
@@ -349,7 +349,7 @@ bool ImageFeed::FeederImpl::goToNextFrame()
   else
   {
     ++_currentImageIndex;
-    OPENMVG_LOG_DEBUG("next frame " << _currentImageIndex);
+    ALICEVISION_LOG_DEBUG("next frame " << _currentImageIndex);
     if(_currentImageIndex >= _images.size())
       return false;
   }

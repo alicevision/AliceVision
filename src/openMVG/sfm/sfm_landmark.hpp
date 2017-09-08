@@ -1,8 +1,8 @@
 // This file is part of the AliceVision project and is made available under
 // the terms of the MPL2 license (see the COPYING.md file).
 
-#ifndef OPENMVG_SFM_LANDMARK_HPP
-#define OPENMVG_SFM_LANDMARK_HPP
+#ifndef ALICEVISION_SFM_LANDMARK_HPP
+#define ALICEVISION_SFM_LANDMARK_HPP
 
 #include "aliceVision/features/ImageDescriberCommon.hpp"
 #include "aliceVision/image/pixel_types.hpp"
@@ -122,4 +122,4 @@ struct Landmark
 } // namespace sfm
 } // namespace aliceVision
 
-#endif // OPENMVG_SFM_LANDMARK_HPP
+#endif // ALICEVISION_SFM_LANDMARK_HPP

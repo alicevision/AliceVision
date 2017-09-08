@@ -25,7 +25,7 @@ void readCalibrationFromFile(const std::string &filename, cameras::Pinhole_Intri
   std::ifstream fs(filename, std::ios::in);
   if(!fs.is_open())
   {
-    OPENMVG_LOG_WARNING("Unable to open the calibration file " << filename);
+    ALICEVISION_LOG_WARNING("Unable to open the calibration file " << filename);
     throw std::invalid_argument("Unable to open the calibration file "+filename);
   }
   int width = 0;

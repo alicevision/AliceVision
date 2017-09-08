@@ -1,8 +1,8 @@
 // This file is part of the AliceVision project and is made available under
 // the terms of the MPL2 license (see the COPYING.md file).
 
-#ifndef OPENMVG_FEATURES_HPP
-#define OPENMVG_FEATURES_HPP
+#ifndef ALICEVISION_FEATURES_HPP
+#define ALICEVISION_FEATURES_HPP
 
 #include "aliceVision/numeric/numeric.h"
 
@@ -15,4 +15,4 @@
 #include "aliceVision/features/image_describer_akaze.hpp"
 #include "aliceVision/features/io_regions_type.hpp"
 
-#endif // OPENMVG_FEATURES_HPP
+#endif // ALICEVISION_FEATURES_HPP

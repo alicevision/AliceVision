@@ -1,8 +1,8 @@
 // This file is part of the AliceVision project and is made available under
 // the terms of the MPL2 license (see the COPYING.md file).
 
-#ifndef OPENMVG_VOCABULARY_TREE_DISTANCE_HPP
-#define OPENMVG_VOCABULARY_TREE_DISTANCE_HPP
+#ifndef ALICEVISION_VOCABULARY_TREE_DISTANCE_HPP
+#define ALICEVISION_VOCABULARY_TREE_DISTANCE_HPP
 
 #include <stdint.h>
 //#include <iostream>
@@ -58,4 +58,4 @@ struct L2< Eigen::Matrix<Scalar, Rows, Cols, Options, MaxRows, MaxCols>, Eigen::
 }
 }
 
-#endif //OPENMVG_VOCABULARY_TREE_DISTANCE_HPP
+#endif //ALICEVISION_VOCABULARY_TREE_DISTANCE_HPP

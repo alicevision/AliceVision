@@ -36,7 +36,7 @@ struct AlembicExporter::DataImpl
     OUInt32ArrayProperty propAliceVisionVersion(userProps, "mvg_aliceVision_version");
     const std::vector<::uint32_t> abcVersion = {1, 1};
     propAbcVersion.set(abcVersion);
-    const std::vector<::uint32_t> aliceVisionVersion = {OPENMVG_VERSION_MAJOR, OPENMVG_VERSION_MINOR, OPENMVG_VERSION_REVISION};
+    const std::vector<::uint32_t> aliceVisionVersion = {ALICEVISION_VERSION_MAJOR, ALICEVISION_VERSION_MINOR, ALICEVISION_VERSION_REVISION};
     propAliceVisionVersion.set(aliceVisionVersion);
   }
   

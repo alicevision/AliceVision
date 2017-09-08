@@ -1,8 +1,8 @@
 // This file is part of the AliceVision project and is made available under
 // the terms of the MPL2 license (see the COPYING.md file).
 
-#ifndef OPENMVG_VOCABULARY_TREE_FEATURE_ALLOCATOR_HPP
-#define OPENMVG_VOCABULARY_TREE_FEATURE_ALLOCATOR_HPP
+#ifndef ALICEVISION_VOCABULARY_TREE_FEATURE_ALLOCATOR_HPP
+#define ALICEVISION_VOCABULARY_TREE_FEATURE_ALLOCATOR_HPP
 
 #include <Eigen/Core>
 #include <Eigen/StdVector>

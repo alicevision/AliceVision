@@ -5,7 +5,7 @@
 
 #include <aliceVision/config.hpp>
 #include "image_describer.hpp"
-#if OPENMVG_IS_DEFINED(OPENMVG_HAVE_CCTAG)
+#if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_CCTAG)
 #include "regions_factory.hpp"
 #endif
 #include <aliceVision/features/RegionsPerView.hpp>
@@ -161,7 +161,7 @@ bool lineToBorderPoints(const Vec3 &epiLine,
                         const std::size_t imgH, 
                         std::vector<Vec2> &intersectionPts);
 
-#if OPENMVG_IS_DEFINED(OPENMVG_HAVE_CCTAG)
+#if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_CCTAG)
 
 /**
  * @brief It generates a svg file containing the image and its extracted cctags.

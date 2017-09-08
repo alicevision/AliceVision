@@ -198,7 +198,7 @@ bool solve_translations_problem_softl1
 
   if (!summary.IsSolutionUsable())
   {
-    OPENMVG_LOG_DEBUG(summary.FullReport());
+    ALICEVISION_LOG_DEBUG(summary.FullReport());
     return false;
   }
 

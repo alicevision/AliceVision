@@ -100,7 +100,7 @@ bool LoadMatchFile(
   }
   else
   {
-    OPENMVG_LOG_WARNING("Unknown matching file format: " << ext);
+    ALICEVISION_LOG_WARNING("Unknown matching file format: " << ext);
   }
   return false;
 }
@@ -164,7 +164,7 @@ bool LoadMatchFilePerImage(
     {
       #pragma omp critical
       {
-        OPENMVG_LOG_WARNING("Unable to load match file: " << folder << "/" << matchFilename);
+        ALICEVISION_LOG_WARNING("Unable to load match file: " << folder << "/" << matchFilename);
       }
       continue;
     }
@@ -180,10 +180,10 @@ bool LoadMatchFilePerImage(
   }
   if( nbLoadedMatchFiles == 0 )
   {
-    OPENMVG_LOG_WARNING("No matches file loaded in: " << folder);
+    ALICEVISION_LOG_WARNING("No matches file loaded in: " << folder);
     return false;
   }
-  OPENMVG_LOG_TRACE("Matches per image pair");
+  ALICEVISION_LOG_TRACE("Matches per image pair");
   for(const auto& imagePairIt: matches)
   {
     std::stringstream ss;
@@ -192,7 +192,7 @@ bool LoadMatchFilePerImage(
     {
        ss << " [" << features::EImageDescriberType_enumToString(matchesPerDeskIt.first) << ": " << matchesPerDeskIt.second.size() << "]";
     }
-    OPENMVG_LOG_TRACE(ss.str());
+    ALICEVISION_LOG_TRACE(ss.str());
   }
   return true;
 }
@@ -231,7 +231,7 @@ bool Load(
   if(!descTypesFilter.empty())
     filterMatchesByDesc(matches, descTypesFilter);
 
-  OPENMVG_LOG_TRACE("Matches per image pair");
+  ALICEVISION_LOG_TRACE("Matches per image pair");
   for(const auto& imagePairIt: matches)
   {
     std::stringstream ss;
@@ -240,7 +240,7 @@ bool Load(
     {
        ss << " [" << features::EImageDescriberType_enumToString(matchesPerDeskIt.first) << ": " << matchesPerDeskIt.second.size() << "]";
     }
-    OPENMVG_LOG_TRACE(ss.str());
+    ALICEVISION_LOG_TRACE(ss.str());
   }
 
   return res;
@@ -338,7 +338,7 @@ public:
         ++match;
       }
       const std::string filepath = m_directory + "/" + std::to_string(key) + "." + m_filename;
-      OPENMVG_LOG_DEBUG("Export Matches in: " << filepath);
+      ALICEVISION_LOG_DEBUG("Export Matches in: " << filepath);
       
       if(m_ext == "txt")
       {

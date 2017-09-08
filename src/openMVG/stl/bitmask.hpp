@@ -1,11 +1,11 @@
 // This file is part of the AliceVision project and is made available under
 // the terms of the MPL2 license (see the COPYING.md file).
 
-#ifndef OPENMVG_STL_BITMASK_H
-#define OPENMVG_STL_BITMASK_H
+#ifndef ALICEVISION_STL_BITMASK_H
+#define ALICEVISION_STL_BITMASK_H
 
 // Taken from boost
-#define OPENMVG_BITMASK(Bitmask)                                            \
+#define ALICEVISION_BITMASK(Bitmask)                                            \
                                                                           \
   inline Bitmask operator| (Bitmask x , Bitmask y )                       \
   { return static_cast<Bitmask>( static_cast<std::int32_t>(x)     \
@@ -32,4 +32,4 @@
   { x = x ^ y ; return x ; }                                              
 
 
-#endif  // OPENMVG_STL_HASH_H
+#endif  // ALICEVISION_STL_HASH_H

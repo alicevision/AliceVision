@@ -52,9 +52,9 @@ TEST(voctree, voctreeBuilder)
   voctree::TreeBuilder<FeatureFloat> builder(FeatureFloat::Zero());
   builder.setVerbose(0);
   builder.kmeans().setRestarts(10);
-  OPENMVG_LOG_DEBUG("Building a tree of L = " << LEVELS << " levels with a branching factor of k = " << K);
+  ALICEVISION_LOG_DEBUG("Building a tree of L = " << LEVELS << " levels with a branching factor of k = " << K);
   builder.build(features, K, LEVELS);
-  OPENMVG_LOG_DEBUG(builder.tree().centers().size() << " centers");
+  ALICEVISION_LOG_DEBUG(builder.tree().centers().size() << " centers");
 
   // the centers should all be valid in this configuration
   std::vector<uint8_t> valid = builder.tree().validCenters();

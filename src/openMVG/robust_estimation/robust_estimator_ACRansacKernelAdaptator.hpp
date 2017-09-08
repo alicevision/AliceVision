@@ -1,8 +1,8 @@
 // This file is part of the AliceVision project and is made available under
 // the terms of the MPL2 license (see the COPYING.md file).
 
-#ifndef OPENMVG_ROBUST_ESTIMATOR_ACRANSAC_KERNEL_ADAPTATOR_H_
-#define OPENMVG_ROBUST_ESTIMATOR_ACRANSAC_KERNEL_ADAPTATOR_H_
+#ifndef ALICEVISION_ROBUST_ESTIMATOR_ACRANSAC_KERNEL_ADAPTATOR_H_
+#define ALICEVISION_ROBUST_ESTIMATOR_ACRANSAC_KERNEL_ADAPTATOR_H_
 
 // Here a collection of A contrario Kernel adaptor.
 //  - See // [1] "Robust and accurate calibration of camera networks". PhD.
@@ -32,7 +32,7 @@
 namespace aliceVision {
 namespace robust {
 
-#define OPENMVG_MINIMUM_SAMPLES_COEF 7 //TODO: TO REMOVE
+#define ALICEVISION_MINIMUM_SAMPLES_COEF 7 //TODO: TO REMOVE
 
 inline bool hasStrongSupport(const std::vector<std::size_t>& inliers, const std::vector<features::EImageDescriberType>& descTypes, std::size_t minimumSamples)
 {
@@ -504,4 +504,4 @@ private:
 
 } // namespace robust
 } // namespace aliceVision
-#endif // OPENMVG_ROBUST_ESTIMATOR_ACRANSAC_KERNEL_ADAPTATOR_H_
+#endif // ALICEVISION_ROBUST_ESTIMATOR_ACRANSAC_KERNEL_ADAPTATOR_H_

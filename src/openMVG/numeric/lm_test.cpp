@@ -69,7 +69,7 @@ TEST(LM, MimimaSearchViaLM) {
   // Optimization by using LevenbergMarquardt routine
   int info = lm.minimize(xlm);
   // Get back optimized value
-  OPENMVG_LOG_DEBUG("info: " << info);
+  ALICEVISION_LOG_DEBUG("info: " << info);
 
   Vec minima = xlm;
   Vec2 GT(-.4999, .9999);

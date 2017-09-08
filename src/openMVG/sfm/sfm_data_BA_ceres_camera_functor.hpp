@@ -1,8 +1,8 @@
 // This file is part of the AliceVision project and is made available under
 // the terms of the MPL2 license (see the COPYING.md file).
 
-#ifndef OPENMVG_SFM_DATA_BA_CERES_CAMERA_FUNCTOR_HPP
-#define OPENMVG_SFM_DATA_BA_CERES_CAMERA_FUNCTOR_HPP
+#ifndef ALICEVISION_SFM_DATA_BA_CERES_CAMERA_FUNCTOR_HPP
+#define ALICEVISION_SFM_DATA_BA_CERES_CAMERA_FUNCTOR_HPP
 
 #include "aliceVision/cameras/cameras.hpp"
 #include "ceres/rotation.h"
@@ -961,4 +961,4 @@ struct ResidualErrorFunctor_Pinhole_Intrinsic_Fisheye1
 } // namespace sfm
 } // namespace aliceVision
 
-#endif // OPENMVG_SFM_DATA_BA_CERES_CAMERA_FUNCTOR_HPP
+#endif // ALICEVISION_SFM_DATA_BA_CERES_CAMERA_FUNCTOR_HPP

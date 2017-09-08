@@ -1,8 +1,8 @@
 // This file is part of the AliceVision project and is made available under
 // the terms of the MPL2 license (see the COPYING.md file).
 
-#ifndef OPENMVG_TYPES_H_
-#define OPENMVG_TYPES_H_
+#ifndef ALICEVISION_TYPES_H_
+#define ALICEVISION_TYPES_H_
 
 #include <Eigen/Core>
 
@@ -12,7 +12,7 @@
 #include <set>
 #include <vector>
 
-#ifdef OPENMVG_STD_UNORDERED_MAP
+#ifdef ALICEVISION_STD_UNORDERED_MAP
 #include <unordered_map>
 #endif
 
@@ -25,7 +25,7 @@ typedef std::pair<IndexT,IndexT> Pair;
 typedef std::set<Pair> Pair_Set;
 typedef std::vector<Pair> Pair_Vec;
 
-#ifdef OPENMVG_UNORDERED_MAP
+#ifdef ALICEVISION_UNORDERED_MAP
 template<typename Key, typename Value>
 struct Hash_Map : std::unordered_map<Key, Value> {};
 #else
@@ -48,4 +48,4 @@ struct EstimationStatus
 
 } // namespace aliceVision
 
-#endif  // OPENMVG_TYPES_H_
+#endif  // ALICEVISION_TYPES_H_

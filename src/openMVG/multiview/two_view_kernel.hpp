@@ -1,8 +1,8 @@
 // This file is part of the AliceVision project and is made available under
 // the terms of the MPL2 license (see the COPYING.md file).
 
-#ifndef OPENMVG_MULTIVIEW_TWO_VIEW_KERNEL_H_
-#define OPENMVG_MULTIVIEW_TWO_VIEW_KERNEL_H_
+#ifndef ALICEVISION_MULTIVIEW_TWO_VIEW_KERNEL_H_
+#define ALICEVISION_MULTIVIEW_TWO_VIEW_KERNEL_H_
 
 #include <vector>
 #include "aliceVision/multiview/conditioning.hpp"
@@ -107,4 +107,4 @@ public:
 }  // namespace two_view
 }  // namespace aliceVision
 
-#endif  // OPENMVG_MULTIVIEW_TWO_VIEW_KERNEL_H_
+#endif  // ALICEVISION_MULTIVIEW_TWO_VIEW_KERNEL_H_

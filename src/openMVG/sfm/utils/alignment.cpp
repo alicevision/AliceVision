@@ -21,10 +21,10 @@ bool computeSimilarity(const SfM_Data & sfmDataA,
   getCommonViewsWithPoses(sfmDataA, sfmDataB, commonViewIds);
   if(commonViewIds.size() < 2)
   {
-    OPENMVG_LOG_WARNING("Cannot compute similarities. Need at least 2 common views.");
+    ALICEVISION_LOG_WARNING("Cannot compute similarities. Need at least 2 common views.");
     return false;
   }
-  OPENMVG_LOG_DEBUG("Found " << commonViewIds.size() << " common views.");
+  ALICEVISION_LOG_DEBUG("Found " << commonViewIds.size() << " common views.");
 
   // Move input point in appropriate container
   Mat xA(3, commonViewIds.size());
@@ -44,7 +44,7 @@ bool computeSimilarity(const SfM_Data & sfmDataA,
   if(!aliceVision::geometry::ACRansac_FindRTS(xA, xB, S, t, R, inliers, true))
     return false;
 
-  OPENMVG_LOG_DEBUG("There are " << commonViewIds.size() << " common cameras and " << inliers.size() << " were used to compute the similarity transform.");
+  ALICEVISION_LOG_DEBUG("There are " << commonViewIds.size() << " common cameras and " << inliers.size() << " were used to compute the similarity transform.");
 
   *out_S = S;
   *out_R = R;

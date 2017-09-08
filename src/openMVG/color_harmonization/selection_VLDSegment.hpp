@@ -1,8 +1,8 @@
 // This file is part of the AliceVision project and is made available under
 // the terms of the MPL2 license (see the COPYING.md file).
 
-#ifndef OPENMVG_COLORHARMONIZATION_VLDSEGMENT_H
-#define OPENMVG_COLORHARMONIZATION_VLDSEGMENT_H
+#ifndef ALICEVISION_COLORHARMONIZATION_VLDSEGMENT_H
+#define ALICEVISION_COLORHARMONIZATION_VLDSEGMENT_H
 
 #include "aliceVision/color_harmonization/selection_interface.hpp"
 #include "aliceVision/matching/kvld/kvld.h"
@@ -76,7 +76,7 @@ class commonDataByPair_VLDSegment  : public commonDataByPair
         vec_score, E, valid, kvldparameters ) )
     {
       kvldparameters.inlierRate /= 2;
-      OPENMVG_LOG_DEBUG("low inlier rate, re-select matches with new rate=" << kvldparameters.inlierRate);
+      ALICEVISION_LOG_DEBUG("low inlier rate, re-select matches with new rate=" << kvldparameters.inlierRate);
       kvldparameters.K = 2;
       it_num++;
     }
@@ -110,4 +110,4 @@ private:
 }  // namespace color_harmonization
 }  // namespace aliceVision
 
-#endif  // OPENMVG_COLORHARMONIZATION_VLDSEGMENT_H
+#endif  // ALICEVISION_COLORHARMONIZATION_VLDSEGMENT_H

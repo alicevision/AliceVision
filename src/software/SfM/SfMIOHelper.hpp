@@ -1,8 +1,8 @@
 // This file is part of the AliceVision project and is made available under
 // the terms of the MPL2 license (see the COPYING.md file).
 
-#ifndef OPENMVG_SFM_IO_H
-#define OPENMVG_SFM_IO_H
+#ifndef ALICEVISION_SFM_IO_H
+#define ALICEVISION_SFM_IO_H
 
 #include "aliceVision/numeric/numeric.h"
 #include "aliceVision/stl/split.hpp"
@@ -211,5 +211,5 @@ static bool loadImageList( std::vector<std::string> & vec_camImageName,
 } // namespace SfMIO
 } // namespace aliceVision
 
-#endif // OPENMVG_SFM_IO_H
+#endif // ALICEVISION_SFM_IO_H
 

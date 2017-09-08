@@ -1,8 +1,8 @@
 // This file is part of the AliceVision project and is made available under
 // the terms of the MPL2 license (see the COPYING.md file).
 
-#ifndef OPENMVG_SFM_DATA_IO_PLY_HPP
-#define OPENMVG_SFM_DATA_IO_PLY_HPP
+#ifndef ALICEVISION_SFM_DATA_IO_PLY_HPP
+#define ALICEVISION_SFM_DATA_IO_PLY_HPP
 
 #include "aliceVision/sfm/sfm_data_io.hpp"
 #include <fstream>
@@ -87,4 +87,4 @@ static bool Save_PLY(
 } // namespace sfm
 } // namespace aliceVision
 
-#endif // OPENMVG_SFM_DATA_IO_PLY_HPP
+#endif // ALICEVISION_SFM_DATA_IO_PLY_HPP

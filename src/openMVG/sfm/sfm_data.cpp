@@ -250,7 +250,7 @@ bool ColorizeTracks( SfM_Data & sfm_data )
     Image<RGBColor> image;
     if(!ReadImage(sView_filename.c_str(), &image))
     {
-      OPENMVG_LOG_WARNING("Unable to read image: " << sView_filename);
+      ALICEVISION_LOG_WARNING("Unable to read image: " << sView_filename);
       return false;
     }
 

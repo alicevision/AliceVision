@@ -1,8 +1,8 @@
 // This file is part of the AliceVision project and is made available under
 // the terms of the MPL2 license (see the COPYING.md file).
 
-#ifndef OPENMVG_IMAGE_HPP
-#define OPENMVG_IMAGE_HPP
+#ifndef ALICEVISION_IMAGE_HPP
+#define ALICEVISION_IMAGE_HPP
 
 // Get rid of the specific MSVC compiler warnings.
 #if defined(_MSC_VER) && !defined(_CRT_SECURE_NO_WARNINGS)
@@ -28,4 +28,4 @@
 #include "aliceVision/image/image_resampling.hpp"
 #include "aliceVision/image/image_diffusion.hpp"
 
-#endif /* OPENMVG_IMAGE_HPP */
+#endif /* ALICEVISION_IMAGE_HPP */

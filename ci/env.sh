@@ -54,9 +54,9 @@ download_files_from_tar()
     return 0
 }
 
-export OPENMVG_SOURCE="${TRAVIS_BUILD_DIR}/src"
-export OPENMVG_BUILD="${TRAVIS_BUILD_DIR}/build"
-export OPENMVG_INSTALL="${TRAVIS_BUILD_DIR}/install"
+export ALICEVISION_SOURCE="${TRAVIS_BUILD_DIR}/src"
+export ALICEVISION_BUILD="${TRAVIS_BUILD_DIR}/build"
+export ALICEVISION_INSTALL="${TRAVIS_BUILD_DIR}/install"
 # GT datasets for tests
 export GT_TEST_ROOT="${TRAVIS_BUILD_DIR}/gt_test"
 export GT_TEST_SOURCE="${GT_TEST_ROOT}/gt_source"

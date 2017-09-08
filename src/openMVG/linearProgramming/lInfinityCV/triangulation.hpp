@@ -1,8 +1,8 @@
 // This file is part of the AliceVision project and is made available under
 // the terms of the MPL2 license (see the COPYING.md file).
 
-#ifndef OPENMVG_LINFINITY_COMPUTER_VISION_TRIANGULATION_H_
-#define OPENMVG_LINFINITY_COMPUTER_VISION_TRIANGULATION_H_
+#ifndef ALICEVISION_LINFINITY_COMPUTER_VISION_TRIANGULATION_H_
+#define ALICEVISION_LINFINITY_COMPUTER_VISION_TRIANGULATION_H_
 
 #include "aliceVision/numeric/numeric.h"
 #include "aliceVision/linearProgramming/linearProgrammingInterface.hpp"
@@ -121,4 +121,4 @@ struct Triangulation_L1_ConstraintBuilder
 } // namespace lInfinityCV
 } // namespace aliceVision
 
-#endif // OPENMVG_LINFINITY_COMPUTER_VISION_TRIANGULATION_H_
+#endif // ALICEVISION_LINFINITY_COMPUTER_VISION_TRIANGULATION_H_

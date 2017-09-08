@@ -36,8 +36,8 @@ void exportImages(aliceVision::dataio::FeedProvider& feed,
   aliceVision::cameras::Pinhole_Intrinsic_Radial_K3 camera(imageSize.width, imageSize.height,
                                                        cameraMatrix.at<double>(0, 0), cameraMatrix.at<double>(0, 2), cameraMatrix.at<double>(1, 2),
                                                        distCoeffs.at<double>(0), distCoeffs.at<double>(1), distCoeffs.at<double>(4));
-  OPENMVG_LOG_DEBUG("Coefficients matrix :\n " << distCoeffs);
-  OPENMVG_LOG_DEBUG("Exporting images ...");
+  ALICEVISION_LOG_DEBUG("Coefficients matrix :\n " << distCoeffs);
+  ALICEVISION_LOG_DEBUG("Exporting images ...");
   for (std::size_t currentFrame : exportFrames)
   {
     feed.goToFrame(currentFrame);
@@ -51,10 +51,10 @@ void exportImages(aliceVision::dataio::FeedProvider& feed,
     const bool exportStatus = aliceVision::image::WriteImage(imagePath.string().c_str(), outputImage);
     if (!exportStatus)
     {
-      OPENMVG_LOG_WARNING("Failed to export: " << imagePath);
+      ALICEVISION_LOG_WARNING("Failed to export: " << imagePath);
     }
   }
-  OPENMVG_LOG_DEBUG("... finished");
+  ALICEVISION_LOG_DEBUG("... finished");
 }
 
 void exportDebug(const std::string& debugSelectedImgFolder,
@@ -77,7 +77,7 @@ void exportDebug(const std::string& debugSelectedImgFolder,
     exportImages(feed, debugSelectedImgFolder, calibInputFrames,
                  cameraMatrix, distCoeffs, imageSize, "_undistort.png");
     durationDebug = (std::clock() - startDebug) / (double) CLOCKS_PER_SEC;
-    OPENMVG_LOG_DEBUG("Export debug of selected frames, duration: " << durationDebug);
+    ALICEVISION_LOG_DEBUG("Export debug of selected frames, duration: " << durationDebug);
   }
 
   if (!debugRejectedImgFolder.empty())
@@ -86,7 +86,7 @@ void exportDebug(const std::string& debugSelectedImgFolder,
     exportImages(feed, debugRejectedImgFolder, rejectedInputFrames,
                  cameraMatrix, distCoeffs, imageSize, "_rejected_undistort.png");
     durationDebug = (std::clock() - startDebug) / (double) CLOCKS_PER_SEC;
-    OPENMVG_LOG_DEBUG("Export debug of rejected frames, duration: " << durationDebug);
+    ALICEVISION_LOG_DEBUG("Export debug of rejected frames, duration: " << durationDebug);
   }
 
   if (!debugRejectedImgFolder.empty())
@@ -95,7 +95,7 @@ void exportDebug(const std::string& debugSelectedImgFolder,
     exportImages(feed, debugRejectedImgFolder, unusedImagesIndexes,
                  cameraMatrix, distCoeffs, imageSize, "_not_selected_undistort.png");
     durationDebug = (std::clock() - startDebug) / (double) CLOCKS_PER_SEC;
-    OPENMVG_LOG_DEBUG("Export debug of not selected frames, duration: " << durationDebug);
+    ALICEVISION_LOG_DEBUG("Export debug of not selected frames, duration: " << durationDebug);
   }
 }
 
@@ -107,7 +107,7 @@ void saveCameraParamsToPlainTxt(const cv::Size& imageSize,
   std::ofstream fs(filename, std::ios::out);
   if (!fs.is_open())
   {
-    OPENMVG_LOG_WARNING("Unable to create the calibration file " << filename);
+    ALICEVISION_LOG_WARNING("Unable to create the calibration file " << filename);
     throw std::invalid_argument("Unable to create the calibration file " + filename);
   }
 

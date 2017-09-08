@@ -63,7 +63,7 @@ bool Rig::initializeCalibration()
 {
   if(_isInitialized)
   {
-    OPENMVG_LOG_DEBUG("The rig is already initialized");
+    ALICEVISION_LOG_DEBUG("The rig is already initialized");
     return _isInitialized;
   }
   // check that there are cameras
@@ -80,7 +80,7 @@ bool Rig::initializeCalibration()
   
     if(shortestSeqLength == 0)
     {
-        OPENMVG_LOG_DEBUG("The calibration results are empty!");
+        ALICEVISION_LOG_DEBUG("The calibration results are empty!");
         return false;
     }
   }
@@ -118,7 +118,7 @@ bool Rig::initializeCalibration()
     }
     if(vRelativePoses.empty())
     {
-      OPENMVG_CERR("Unable to find candidate poses between the main camera and "
+      ALICEVISION_CERR("Unable to find candidate poses between the main camera and "
               "the witness camera " << iLocalizer << "\nAborting...");
       return false;
     }
@@ -257,7 +257,7 @@ bool Rig::optimizeCalibration()
 {
   if(!_isInitialized)
   {
-    OPENMVG_LOG_DEBUG("The rig is yet initialized");
+    ALICEVISION_LOG_DEBUG("The rig is yet initialized");
     return _isInitialized;
   }
   
@@ -438,7 +438,7 @@ bool Rig::optimizeCalibration()
                                       &vMainPoses[iView][0]);
           }else
           {
-            OPENMVG_CERR("Fail in adding residual block for the main camera");
+            ALICEVISION_CERR("Fail in adding residual block for the main camera");
           }
 
         }else
@@ -460,7 +460,7 @@ bool Rig::optimizeCalibration()
                                       &vRelativePoses[iLocalizer-1][0]);
           }else
           {
-            OPENMVG_CERR("Fail in adding residual block for a secondary camera");
+            ALICEVISION_CERR("Fail in adding residual block for a secondary camera");
           }
         }
       }
@@ -487,25 +487,25 @@ bool Rig::optimizeCalibration()
   ceres::Solve(options, &problem, &summary);
   
   if (aliceVision_options._bCeres_Summary)
-    OPENMVG_LOG_DEBUG(summary.FullReport());
+    ALICEVISION_LOG_DEBUG(summary.FullReport());
 
   // If no error, get back refined parameters
   if (!summary.IsSolutionUsable())
   {
     if (aliceVision_options._bVerbose)
-      OPENMVG_LOG_DEBUG("Bundle Adjustment failed.");
+      ALICEVISION_LOG_DEBUG("Bundle Adjustment failed.");
     return false;
   }
 
   if (aliceVision_options._bVerbose)
   {
     // Display statistics about the minimization
-    OPENMVG_LOG_DEBUG("Bundle Adjustment statistics (approximated RMSE):");
-    OPENMVG_LOG_DEBUG(" #localizers: " << _vLocalizationResults.size());
-    OPENMVG_LOG_DEBUG(" #views: " << _vLocalizationResults[0].size());
-    OPENMVG_LOG_DEBUG(" #residuals: " << summary.num_residuals);
-    OPENMVG_LOG_DEBUG(" Initial RMSE: " << std::sqrt( summary.initial_cost / summary.num_residuals));
-    OPENMVG_LOG_DEBUG(" Final RMSE: " << std::sqrt( summary.final_cost / summary.num_residuals));
+    ALICEVISION_LOG_DEBUG("Bundle Adjustment statistics (approximated RMSE):");
+    ALICEVISION_LOG_DEBUG(" #localizers: " << _vLocalizationResults.size());
+    ALICEVISION_LOG_DEBUG(" #views: " << _vLocalizationResults[0].size());
+    ALICEVISION_LOG_DEBUG(" #residuals: " << summary.num_residuals);
+    ALICEVISION_LOG_DEBUG(" Initial RMSE: " << std::sqrt( summary.initial_cost / summary.num_residuals));
+    ALICEVISION_LOG_DEBUG(" Final RMSE: " << std::sqrt( summary.final_cost / summary.num_residuals));
   }
 
   // Update relative pose after optimization
@@ -637,7 +637,7 @@ void cvpause(){
 
   if ( (char) keyboard == 'q' )
   {
-    OPENMVG_CERR("The program has been manually stopped");
+    ALICEVISION_CERR("The program has been manually stopped");
     std::exit(0);
   }
 #endif
@@ -648,14 +648,14 @@ bool loadRigCalibration(const std::string &filename, std::vector<geometry::Pose3
   std::ifstream fs(filename, std::ios::in);
   if(!fs.is_open())
   {
-    OPENMVG_CERR("Unable to load the calibration file " << filename);
+    ALICEVISION_CERR("Unable to load the calibration file " << filename);
     throw std::invalid_argument("Unable to load the calibration file "+filename);
   }  
   
   // first read the number of cameras subposes stores
   std::size_t numCameras = 0;
   fs >> numCameras;
-  OPENMVG_LOG_DEBUG("Found " << numCameras << " cameras");
+  ALICEVISION_LOG_DEBUG("Found " << numCameras << " cameras");
   subposes.reserve(numCameras);
   
   for(std::size_t cam = 0; cam < numCameras; ++cam)
@@ -695,7 +695,7 @@ bool saveRigCalibration(const std::string &filename, const std::vector<geometry:
   std::ofstream fs(filename, std::ios::out);
   if(!fs.is_open())
   {
-    OPENMVG_CERR("Unable to create the calibration file " << filename);
+    ALICEVISION_CERR("Unable to create the calibration file " << filename);
     throw std::invalid_argument("Unable to create the calibration file "+filename);
   }
   fs << subposes.size() << std::endl;

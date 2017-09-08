@@ -132,9 +132,9 @@ int main(int argc, char** argv)
   // Load vocabulary tree
   //************************************************
 
-  OPENMVG_COUT("Loading vocabulary tree\n");
+  ALICEVISION_COUT("Loading vocabulary tree\n");
   aliceVision::voctree::VocabularyTree<DescriptorFloat> tree(treeName);
-  OPENMVG_COUT("tree loaded with\n\t" 
+  ALICEVISION_COUT("tree loaded with\n\t" 
           << tree.levels() << " levels\n\t" 
           << tree.splits() << " branching factor");
 
@@ -143,18 +143,18 @@ int main(int argc, char** argv)
   // Create the database
   //************************************************
 
-  OPENMVG_COUT("Creating the database...");
+  ALICEVISION_COUT("Creating the database...");
   // Add each object (document) to the database
   aliceVision::voctree::Database db(tree.words());
 
   if(withWeights)
   {
-    OPENMVG_COUT("Loading weights...");
+    ALICEVISION_COUT("Loading weights...");
     db.loadWeights(weightsName);
   }
   else
   {
-    OPENMVG_COUT("No weights specified, skipping...");
+    ALICEVISION_COUT("No weights specified, skipping...");
   }
 
 
@@ -162,7 +162,7 @@ int main(int argc, char** argv)
   // Read the descriptors and populate the database
   //*********************************************************
 
-  OPENMVG_COUT("Reading descriptors from " << keylist);
+  ALICEVISION_COUT("Reading descriptors from " << keylist);
   auto detect_start = std::chrono::steady_clock::now();
   size_t numTotFeatures = aliceVision::voctree::populateDatabase<DescriptorUChar>(keylist, tree, db);
   auto detect_end = std::chrono::steady_clock::now();
@@ -170,18 +170,18 @@ int main(int argc, char** argv)
 
   if(numTotFeatures == 0)
   {
-    OPENMVG_CERR("No descriptors loaded!!");
+    ALICEVISION_CERR("No descriptors loaded!!");
     return EXIT_FAILURE;
   }
 
-  OPENMVG_COUT("Done! " << db.getSparseHistogramPerImage().size() << " sets of descriptors read for a total of " << numTotFeatures << " features");
-  OPENMVG_COUT("Reading took " << detect_elapsed.count() << " sec");
+  ALICEVISION_COUT("Done! " << db.getSparseHistogramPerImage().size() << " sets of descriptors read for a total of " << numTotFeatures << " features");
+  ALICEVISION_COUT("Reading took " << detect_elapsed.count() << " sec");
   
 
   if(!withWeights)
   {
     // Compute and save the word weights
-    OPENMVG_COUT("Computing weights...");
+    ALICEVISION_COUT("Computing weights...");
     db.computeTfIdfWeights();
   }
 
@@ -192,7 +192,7 @@ int main(int argc, char** argv)
 
   std::map<int,int> globalHisto;
 
-  OPENMVG_COUT("Getting some stats for " << queryList);
+  ALICEVISION_COUT("Getting some stats for " << queryList);
   
   aliceVision::voctree::voctreeStatistics<DescriptorUChar>(queryList, tree, db, distance, globalHisto);
   

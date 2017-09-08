@@ -151,7 +151,7 @@ void Bundle_Adjustment_Ceres::BA_options::setDenseBA()
   // Default configuration use a DENSE representation
   _preconditioner_type = ceres::JACOBI;
   _linear_solver_type = ceres::DENSE_SCHUR;
-    OPENMVG_LOG_DEBUG("Bundle_Adjustment_Ceres: DENSE_SCHUR");
+    ALICEVISION_LOG_DEBUG("Bundle_Adjustment_Ceres: DENSE_SCHUR");
 }
 
 void Bundle_Adjustment_Ceres::BA_options::setSparseBA()
@@ -163,24 +163,24 @@ void Bundle_Adjustment_Ceres::BA_options::setSparseBA()
   {
     _sparse_linear_algebra_library_type = ceres::SUITE_SPARSE;
     _linear_solver_type = ceres::SPARSE_SCHUR;
-    OPENMVG_LOG_DEBUG("Bundle_Adjustment_Ceres: SPARSE_SCHUR, SUITE_SPARSE");
+    ALICEVISION_LOG_DEBUG("Bundle_Adjustment_Ceres: SPARSE_SCHUR, SUITE_SPARSE");
   }
   else if (ceres::IsSparseLinearAlgebraLibraryTypeAvailable(ceres::CX_SPARSE))
   {
     _sparse_linear_algebra_library_type = ceres::CX_SPARSE;
     _linear_solver_type = ceres::SPARSE_SCHUR;
-    OPENMVG_LOG_DEBUG("Bundle_Adjustment_Ceres: SPARSE_SCHUR, CX_SPARSE");
+    ALICEVISION_LOG_DEBUG("Bundle_Adjustment_Ceres: SPARSE_SCHUR, CX_SPARSE");
   }
   else if (ceres::IsSparseLinearAlgebraLibraryTypeAvailable(ceres::EIGEN_SPARSE))
   {
     _sparse_linear_algebra_library_type = ceres::EIGEN_SPARSE;
     _linear_solver_type = ceres::SPARSE_SCHUR;
-    OPENMVG_LOG_DEBUG("Bundle_Adjustment_Ceres: SPARSE_SCHUR, EIGEN_SPARSE");
+    ALICEVISION_LOG_DEBUG("Bundle_Adjustment_Ceres: SPARSE_SCHUR, EIGEN_SPARSE");
   }
   else
   {
     _linear_solver_type = ceres::DENSE_SCHUR;
-    OPENMVG_LOG_WARNING("Bundle_Adjustment_Ceres: no sparse BA available, fallback to dense BA.");
+    ALICEVISION_LOG_WARNING("Bundle_Adjustment_Ceres: no sparse BA available, fallback to dense BA.");
   }
 }
 
@@ -426,12 +426,12 @@ bool Bundle_Adjustment_Ceres::Adjust(
   ceres::Solver::Summary summary;
   ceres::Solve(options, &problem, &summary);
   if (_aliceVision_options._bCeres_Summary)
-    OPENMVG_LOG_DEBUG(summary.FullReport());
+    ALICEVISION_LOG_DEBUG(summary.FullReport());
 
   // If no error, get back refined parameters
   if (!summary.IsSolutionUsable())
   {
-    OPENMVG_LOG_WARNING("Bundle Adjustment failed.");
+    ALICEVISION_LOG_WARNING("Bundle Adjustment failed.");
     return false;
   }
 
@@ -439,7 +439,7 @@ bool Bundle_Adjustment_Ceres::Adjust(
   if (_aliceVision_options._bVerbose)
   {
     // Display statistics about the minimization
-    OPENMVG_LOG_DEBUG(
+    ALICEVISION_LOG_DEBUG(
       "Bundle Adjustment statistics (approximated RMSE):\n"
       " #views: " << sfm_data.views.size() << "\n"
       " #poses: " << sfm_data.GetPoses().size() << "\n"

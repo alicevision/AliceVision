@@ -1,8 +1,8 @@
 // This file is part of the AliceVision project and is made available under
 // the terms of the MPL2 license (see the COPYING.md file).
 
-#ifndef OPENMVG_MATCHING_METRIC_HAMMING_H
-#define OPENMVG_MATCHING_METRIC_HAMMING_H
+#ifndef ALICEVISION_MATCHING_METRIC_HAMMING_H
+#define ALICEVISION_MATCHING_METRIC_HAMMING_H
 
 #include "aliceVision/matching/metric.hpp"
 #include <bitset>
@@ -179,4 +179,4 @@ struct SquaredHamming
 }  // namespace matching
 }  // namespace aliceVision
 
-#endif // OPENMVG_MATCHING_METRIC_HAMMING_H
+#endif // ALICEVISION_MATCHING_METRIC_HAMMING_H

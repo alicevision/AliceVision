@@ -9,7 +9,7 @@
 #include "third_party/cmdLine/cmdLine.h"
 #include "third_party/stlplus3/filesystemSimplified/file_system.hpp"
 
-#if OPENMVG_IS_DEFINED(OPENMVG_HAVE_BOOST)
+#if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_BOOST)
 #include <boost/system/error_code.hpp>
 #include <boost/filesystem.hpp>
 #endif
@@ -27,7 +27,7 @@ int main(int argc, char **argv)
 
   std::string sSfM_Data_Filename_In;
   std::string sSfM_Data_Filename_Out;
-#if OPENMVG_IS_DEFINED(OPENMVG_HAVE_BOOST)
+#if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_BOOST)
   std::string matchDir;
 #endif
 
@@ -40,7 +40,7 @@ int main(int argc, char **argv)
   cmd.add(make_switch('C', "CONTROL_POINTS"));
   cmd.add(make_switch('u', "regenerateUID"));
   cmd.add(make_option('o', sSfM_Data_Filename_Out, "output_file"));
-#if OPENMVG_IS_DEFINED(OPENMVG_HAVE_BOOST)
+#if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_BOOST)
   cmd.add(make_option('m', matchDir, "matchDirectory"));
 #endif
 
@@ -52,7 +52,7 @@ int main(int argc, char **argv)
         << "[-i|--input_file] path to the input SfM_Data scene\n"
         << "[-o|--output_file] path to the output SfM_Data scene\n"
         << "\t .json, .bin, .xml, .ply, .baf"
-#if OPENMVG_IS_DEFINED(OPENMVG_HAVE_ALEMBIC)
+#if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_ALEMBIC)
            ", .abc"
 #endif
            "\n"
@@ -65,7 +65,7 @@ int main(int argc, char **argv)
         << "[-O|--OBSERVATIONS] export 2D observations associated with 3D structure\n"
         << "[-C|--CONTROL_POINTS] export control points\n"
         << "[-u|--uid] (re-)compute the unique ID (UID) for the views\n"
-#if OPENMVG_IS_DEFINED(OPENMVG_HAVE_BOOST)              
+#if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_BOOST)              
         << "[-m|--matchDirectory] the directory containing the features used for the\n"
            "    reconstruction. If provided along the -u option, it creates symbolic\n"
            "    links to the .desc and .feat with the new UID as name. This can be\n"
@@ -111,7 +111,7 @@ int main(int argc, char **argv)
     std::map<std::size_t, std::size_t> oldIdToNew;
     regenerateUID(sfm_data, oldIdToNew);
     
-#if OPENMVG_IS_DEFINED(OPENMVG_HAVE_BOOST)
+#if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_BOOST)
     if(!matchDir.empty())
     {
       std::cout << "Generating alias for .feat and .desc with the UIDs" << std::endl;

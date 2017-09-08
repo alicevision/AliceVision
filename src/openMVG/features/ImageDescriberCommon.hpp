@@ -22,13 +22,13 @@ enum class EImageDescriberType: unsigned char
   , AKAZE_LIOP = 21
   , AKAZE_MLDB = 22
 
-#if OPENMVG_IS_DEFINED(OPENMVG_HAVE_CCTAG)
+#if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_CCTAG)
   , CCTAG3 = 30
   , CCTAG4 = 31
 #endif
 
-#if OPENMVG_IS_DEFINED(OPENMVG_HAVE_OPENCV)
-#if OPENMVG_IS_DEFINED(OPENMVG_HAVE_OCVSIFT)
+#if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_OPENCV)
+#if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_OCVSIFT)
   , SIFT_OCV = 40
 #endif
   , AKAZE_OCV = 41
@@ -71,17 +71,17 @@ inline float getStrongSupportCoeff(EImageDescriberType imageDescriberType)
     case EImageDescriberType::AKAZE_LIOP:    return 0.14f;
     case EImageDescriberType::AKAZE_MLDB:    return 0.14f;
 
-#if OPENMVG_IS_DEFINED(OPENMVG_HAVE_CCTAG)
+#if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_CCTAG)
     case EImageDescriberType::CCTAG3:        return 1.0f;
     case EImageDescriberType::CCTAG4:        return 1.0f;
 #endif
 
-#if OPENMVG_IS_DEFINED(OPENMVG_HAVE_OPENCV)
-#if OPENMVG_IS_DEFINED(OPENMVG_HAVE_OCVSIFT)
+#if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_OPENCV)
+#if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_OCVSIFT)
     case EImageDescriberType::SIFT_OCV:      return 0.14f;
-#endif //OPENMVG_HAVE_OCVSIFT
+#endif //ALICEVISION_HAVE_OCVSIFT
     case EImageDescriberType::AKAZE_OCV:     return 0.14f;
-#endif //OPENMVG_HAVE_OPENCV
+#endif //ALICEVISION_HAVE_OPENCV
 
     case EImageDescriberType::UNKNOWN:       return 1.0f;
     case EImageDescriberType::UNINITIALIZED: break; // Should throw an error.

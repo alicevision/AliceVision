@@ -18,8 +18,8 @@ std::unique_ptr<features::Regions> loadRegions(const std::string& folder, IndexT
 
   const std::string featFilename = stlplus::create_filespec(folder, basename, imageDescriberTypeName + ".feat");
   const std::string descFilename = stlplus::create_filespec(folder, basename, imageDescriberTypeName + ".desc");
-  OPENMVG_LOG_TRACE("featFilename: " << featFilename);
-  OPENMVG_LOG_TRACE("descFilename: " << descFilename);
+  ALICEVISION_LOG_TRACE("featFilename: " << featFilename);
+  ALICEVISION_LOG_TRACE("descFilename: " << descFilename);
 
   std::unique_ptr<features::Regions> regionsPtr;
   imageDescriber.Allocate(regionsPtr);
@@ -31,7 +31,7 @@ std::unique_ptr<features::Regions> loadRegions(const std::string& folder, IndexT
     ss << "See features and descriptors files: " << featFilename << "\n" << descFilename << "\n";
     throw std::runtime_error(ss.str());
   }
-  OPENMVG_LOG_TRACE("RegionCount: " << regionsPtr->RegionCount());
+  ALICEVISION_LOG_TRACE("RegionCount: " << regionsPtr->RegionCount());
   return regionsPtr;
 }
 
@@ -117,14 +117,14 @@ bool loadFeaturesPerView(features::FeaturesPerView& featuresPerView,
                 std::to_string(iter->second->getViewId()),
                 EImageDescriberType_enumToString(imageDescriberTypes[i]) + ".feat");
 
-        OPENMVG_LOG_TRACE("featFilename: " << featFile);
+        ALICEVISION_LOG_TRACE("featFilename: " << featFile);
 
         std::unique_ptr<features::Regions> regionsPtr;
         imageDescribers[i]->Allocate(regionsPtr);
 
         if (!regionsPtr->LoadFeatures(featFile))
         {
-          OPENMVG_LOG_WARNING("Invalid feature file: " << featFile);
+          ALICEVISION_LOG_WARNING("Invalid feature file: " << featFile);
           invalid = true;
         }
 

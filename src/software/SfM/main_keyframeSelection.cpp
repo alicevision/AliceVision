@@ -83,21 +83,21 @@ int main(int argc, char** argv)
 
     if(vm.count("help") || (argc == 1))
     {
-      OPENMVG_COUT(allParams);
+      ALICEVISION_COUT(allParams);
       return EXIT_SUCCESS;
     }
     po::notify(vm);
   }
   catch(boost::program_options::required_option& e)
   {
-    OPENMVG_CERR("ERROR: " << e.what());
-    OPENMVG_COUT("Usage:\n\n" << allParams);
+    ALICEVISION_CERR("ERROR: " << e.what());
+    ALICEVISION_COUT("Usage:\n\n" << allParams);
     return EXIT_FAILURE;
   }
   catch(boost::program_options::error& e)
   {
-    OPENMVG_CERR("ERROR: " << e.what());
-    OPENMVG_COUT("Usage:\n\n" << allParams);
+    ALICEVISION_CERR("ERROR: " << e.what());
+    ALICEVISION_COUT("Usage:\n\n" << allParams);
     return EXIT_FAILURE;
   }
   
@@ -107,7 +107,7 @@ int main(int argc, char** argv)
     outputDirectory = outDir.string();
     if(!bfs::is_directory(outDir))
     {
-      OPENMVG_CERR("ERROR: can't find directory " << outputDirectory);
+      ALICEVISION_CERR("ERROR: can't find directory " << outputDirectory);
       return EXIT_FAILURE;
     }
   }
@@ -116,7 +116,7 @@ int main(int argc, char** argv)
 
   if(nbCameras < 1)
   {
-    OPENMVG_CERR("ERROR: program need at least one media path");
+    ALICEVISION_CERR("ERROR: program need at least one media path");
     return EXIT_FAILURE;
   }
 
@@ -127,23 +127,23 @@ int main(int argc, char** argv)
 
   // debugging prints, print out all the parameters
   {
-    OPENMVG_COUT("Program called with the following parameters:");
+    ALICEVISION_COUT("Program called with the following parameters:");
 
     if(nbCameras == 1)
-      OPENMVG_COUT("\tSingle camera");
+      ALICEVISION_COUT("\tSingle camera");
     else
-      OPENMVG_COUT("\tCamera Rig");
+      ALICEVISION_COUT("\tCamera Rig");
 
     for(std::size_t i = 0; i < nbCameras; ++i)
     {
-      OPENMVG_COUT("\tcamera : "           << mediaPaths.at(i) << std::endl
+      ALICEVISION_COUT("\tcamera : "           << mediaPaths.at(i) << std::endl
                    << "\t - brand : "      << brands.at(i)     << std::endl
                    << "\t - model : "      << models.at(i)     << std::endl
                    << "\t - focal (mm) : " << mmFocals.at(i)   << std::endl
                    << "\t - focal (px) : " << pxFocals.at(i)   << std::endl);
     }
 
-    OPENMVG_COUT("\tsensor database file path : "     << sensorDbPath    << std::endl
+    ALICEVISION_COUT("\tsensor database file path : "     << sensorDbPath    << std::endl
                  << "\tvocabulary tree file path : "  << voctreeFilePath << std::endl
                  << "\toutput directory : "           << outputDirectory << std::endl
                  << "\tsharpness selection preset : " << sharpnessPreset << std::endl

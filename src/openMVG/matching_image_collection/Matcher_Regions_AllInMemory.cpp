@@ -33,8 +33,8 @@ void ImageCollectionMatcher_Generic::Match(
   features::EImageDescriberType descType,
   matching::PairwiseMatches & map_PutativesMatches)const // the pairwise photometric corresponding points
 {
-#if OPENMVG_IS_DEFINED(OPENMVG_HAVE_OPENMP)
-  OPENMVG_LOG_DEBUG("Using the OPENMP thread interface");
+#if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_OPENMP)
+  ALICEVISION_LOG_DEBUG("Using the OPENMP thread interface");
 #endif
   const bool b_multithreaded_pair_search = (_matcherType == CASCADE_HASHING_L2);
   // -> set to true for CASCADE_HASHING_L2, since OpenMP instructions are not used in this matcher

@@ -12,7 +12,7 @@
 // Linear programming solver(s)
 #include "aliceVision/linearProgramming/linearProgrammingInterface.hpp"
 #include "aliceVision/linearProgramming/linearProgrammingOSI_X.hpp"
-#if OPENMVG_IS_DEFINED(OPENMVG_HAVE_MOSEK)
+#if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_MOSEK)
 #include "aliceVision/linearProgramming/linearProgrammingMOSEK.hpp"
 #endif
 
@@ -81,7 +81,7 @@ struct translations_Triplet_Solver {
 
     using namespace aliceVision::lInfinityCV;
 
-#if OPENMVG_IS_DEFINED(OPENMVG_HAVE_MOSEK)
+#if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_MOSEK)
     MOSEK_SolveWrapper LPsolver(static_cast<int>(vec_solution.size()));
 #else
     OSI_CLP_SolverWrapper LPsolver(static_cast<int>(vec_solution.size()));

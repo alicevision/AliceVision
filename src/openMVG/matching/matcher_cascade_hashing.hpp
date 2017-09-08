@@ -75,7 +75,7 @@ class ArrayMatcherCascadeHashing  : public ArrayMatcher<Scalar, Metric>
   bool SearchNeighbour( const Scalar * query,
                         int * indice, DistanceType * distance)
   {
-    OPENMVG_LOG_WARNING("This matcher is not made to match a single query");
+    ALICEVISION_LOG_WARNING("This matcher is not made to match a single query");
     return false;
   }
 

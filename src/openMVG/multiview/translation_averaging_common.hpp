@@ -1,8 +1,8 @@
 // This file is part of the AliceVision project and is made available under
 // the terms of the MPL2 license (see the COPYING.md file).
 
-#ifndef OPENMVG_MULTIVIEW_TRANSLATION_AVERAGING_COMMON_H_
-#define OPENMVG_MULTIVIEW_TRANSLATION_AVERAGING_COMMON_H_
+#ifndef ALICEVISION_MULTIVIEW_TRANSLATION_AVERAGING_COMMON_H_
+#define ALICEVISION_MULTIVIEW_TRANSLATION_AVERAGING_COMMON_H_
 
 #include "aliceVision/types.hpp"
 #include "aliceVision/numeric/numeric.h"
@@ -46,4 +46,4 @@ static std::set<IndexT> getIndexT(const RelativeInfo_Vec & vec_relative)
 
 } // namespace aliceVision
 
-#endif //OPENMVG_MULTIVIEW_TRANSLATION_AVERAGING_COMMON_H_
+#endif //ALICEVISION_MULTIVIEW_TRANSLATION_AVERAGING_COMMON_H_

@@ -90,7 +90,7 @@ bool GlobalSfM_Translation_AveragingSolver::Translation_averaging(
     const std::set<IndexT> index = getIndexT(m_vec_initialRijTijEstimates);
 
     const size_t iNview = index.size();
-    OPENMVG_LOG_DEBUG(
+    ALICEVISION_LOG_DEBUG(
       "\n-------------------------------\n"
       " Global translations computation:\n"
       "   - Ready to compute " << iNview << " global translations." << "\n"
@@ -123,7 +123,7 @@ bool GlobalSfM_Translation_AveragingSolver::Translation_averaging(
         {
           vec_solution.resize(iNview*3 + vec_initialRijTijEstimates_cpy.size()/3 + 1);
           using namespace aliceVision::linearProgramming;
-          #if OPENMVG_IS_DEFINED(OPENMVG_HAVE_MOSEK)
+          #if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_MOSEK)
             MOSEK_SolveWrapper solverLP(vec_solution.size());
           #else
             OSI_CLP_SolverWrapper solverLP(vec_solution.size());
@@ -138,14 +138,14 @@ bool GlobalSfM_Translation_AveragingSolver::Translation_averaging(
           //--
           // Solving
           const bool bFeasible = solverLP.solve();
-          OPENMVG_LOG_DEBUG(" Feasibility " << bFeasible);
+          ALICEVISION_LOG_DEBUG(" Feasibility " << bFeasible);
           //--
           if (bFeasible)  {
             solverLP.getSolution(vec_solution);
             gamma = vec_solution[vec_solution.size()-1];
           }
           else  {
-            OPENMVG_LOG_WARNING("Compute global translations: failed");
+            ALICEVISION_LOG_WARNING("Compute global translations: failed");
             return false;
           }
         }
@@ -162,18 +162,18 @@ bool GlobalSfM_Translation_AveragingSolver::Translation_averaging(
             << " converge with gamma: " << gamma << ".\n"
             << " timing (s): " << timeLP_translation << ".\n"
             << "-------------------------------" << "\n";
-          OPENMVG_LOG_DEBUG(os.str());
+          ALICEVISION_LOG_DEBUG(os.str());
         }
 
-        OPENMVG_LOG_DEBUG("Found solution:\n" << vec_solution);
+        ALICEVISION_LOG_DEBUG("Found solution:\n" << vec_solution);
 
         std::vector<double> vec_camTranslation(iNview*3,0);
         std::copy(&vec_solution[0], &vec_solution[iNview*3], &vec_camTranslation[0]);
 
         std::vector<double> vec_camRelLambdas(&vec_solution[iNview*3], &vec_solution[iNview*3 + vec_initialRijTijEstimates_cpy.size()/3]);
 
-        OPENMVG_LOG_DEBUG("cam position: " << vec_camTranslation);
-        OPENMVG_LOG_DEBUG("cam Lambdas: " << vec_camRelLambdas);
+        ALICEVISION_LOG_DEBUG("cam position: " << vec_camTranslation);
+        ALICEVISION_LOG_DEBUG("cam Lambdas: " << vec_camRelLambdas);
 
         // Update the view poses according the found camera centers
         for (size_t i = 0; i < iNview; ++i)
@@ -192,7 +192,7 @@ bool GlobalSfM_Translation_AveragingSolver::Translation_averaging(
         if (!solve_translations_problem_softl1(
           vec_initialRijTijEstimates_cpy, true, iNview, vec_translations))
         {
-          OPENMVG_LOG_WARNING("Compute global translations: failed");
+          ALICEVISION_LOG_WARNING("Compute global translations: failed");
           return false;
         }
 
@@ -252,7 +252,7 @@ bool GlobalSfM_Translation_AveragingSolver::Translation_averaging(
           function_tolerance,
           parameter_tolerance,
           max_iterations))  {
-            OPENMVG_LOG_WARNING("Compute global translations: failed");
+            ALICEVISION_LOG_WARNING("Compute global translations: failed");
             return false;
         }
 
@@ -268,7 +268,7 @@ bool GlobalSfM_Translation_AveragingSolver::Translation_averaging(
       break;
       default:
       {
-        OPENMVG_LOG_WARNING("Unknown translation averaging method");
+        ALICEVISION_LOG_WARNING("Unknown translation averaging method");
         return false;
       }
     }
@@ -283,7 +283,7 @@ void GlobalSfM_Translation_AveragingSolver::Compute_translations(
   const Hash_Map<IndexT, Mat3> & map_globalR,
   matching::PairwiseMatches & tripletWise_matches)
 {
-  OPENMVG_LOG_DEBUG(
+  ALICEVISION_LOG_DEBUG(
     "-------------------------------\n"
     " Relative translations computation:\n"
     "-------------------------------");
@@ -341,7 +341,7 @@ void GlobalSfM_Translation_AveragingSolver::ComputePutativeTranslation_EdgesCove
   // List putative triplets (from global rotations Ids)
   const std::vector< graph::Triplet > vec_triplets =
     graph::tripletListing(rotation_pose_id_graph);
-  OPENMVG_LOG_DEBUG("#Triplets: " << vec_triplets.size());
+  ALICEVISION_LOG_DEBUG("#Triplets: " << vec_triplets.size());
 
   {
     // Compute triplets of translations
@@ -571,9 +571,9 @@ void GlobalSfM_Translation_AveragingSolver::ComputePutativeTranslation_EdgesCove
 
 
   const double timeLP_triplet = timerLP_triplet.elapsed();
-  OPENMVG_LOG_DEBUG("TRIPLET COVERAGE TIMING: " << timeLP_triplet << " seconds");
+  ALICEVISION_LOG_DEBUG("TRIPLET COVERAGE TIMING: " << timeLP_triplet << " seconds");
 
-  OPENMVG_LOG_DEBUG(
+  ALICEVISION_LOG_DEBUG(
       "-------------------------------\n"
       "-- #Relative translations estimates: " << m_vec_initialRijTijEstimates.size()/3 <<
       " computed from " << vec_triplets.size() << " triplets.\n"
@@ -773,7 +773,7 @@ bool GlobalSfM_Translation_AveragingSolver::Estimate_T_triplet(
 
 #ifdef DEBUG_TRIPLET
   {
-    OPENMVG_LOG_DEBUG(
+    ALICEVISION_LOG_DEBUG(
       "Triplet : status: " << bTest <<
       " AC: " << dPrecision <<
       " inliers % " << double(vec_inliers.size()) / tracks.size() * 100.0 <<

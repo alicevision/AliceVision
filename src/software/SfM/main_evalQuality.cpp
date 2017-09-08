@@ -39,7 +39,7 @@ int main(int argc, char **argv)
   } catch(const std::string& s) {
     std::cerr << "Usage: " << argv[0] << '\n'
       << "[-i|--gt] ground truth path: it could be a json/bin"
-#if OPENMVG_IS_DEFINED(OPENMVG_HAVE_ALEMBIC)
+#if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_ALEMBIC)
       << "/abc"
 #endif
       << " file containing\n"

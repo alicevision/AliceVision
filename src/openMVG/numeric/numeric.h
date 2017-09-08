@@ -1,8 +1,8 @@
 // This file is part of the AliceVision project and is made available under
 // the terms of the MPL2 license (see the COPYING.md file).
 
-#ifndef OPENMVG_NUMERIC_NUMERIC_H
-#define OPENMVG_NUMERIC_NUMERIC_H
+#ifndef ALICEVISION_NUMERIC_NUMERIC_H
+#define ALICEVISION_NUMERIC_NUMERIC_H
 
 #include <aliceVision/system/Logger.hpp>
 
@@ -438,7 +438,7 @@ void minMaxMeanMedian(DataInputIterator begin, DataInputIterator end)
 {
   Type min, max, mean, median;
   minMaxMeanMedian(begin, end, min, max, mean, median);
-  OPENMVG_LOG_DEBUG("\n"
+  ALICEVISION_LOG_DEBUG("\n"
           "\t min: " << min << "\n"
           "\t mean: " << mean << "\n"
           "\t median: " << median << "\n"
@@ -485,4 +485,4 @@ void SplitRange(const T range_start, const T range_end, const int nb_split,
 } // namespace aliceVision
 
 
-#endif  // OPENMVG_NUMERIC_NUMERIC_H
+#endif  // ALICEVISION_NUMERIC_NUMERIC_H

@@ -4,7 +4,7 @@
 #include <aliceVision/config.hpp>
 #include <aliceVision/localization/ILocalizer.hpp>
 #include <aliceVision/localization/VoctreeLocalizer.hpp>
-#if OPENMVG_IS_DEFINED(OPENMVG_HAVE_CCTAG)
+#if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_CCTAG)
 #include <aliceVision/localization/CCTagLocalizer.hpp>
 #endif
 #include <aliceVision/localization/LocalizationResult.hpp>
@@ -32,9 +32,9 @@
 #include <chrono>
 #include <memory>
 
-#if OPENMVG_IS_DEFINED(OPENMVG_HAVE_ALEMBIC)
+#if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_ALEMBIC)
 #include <aliceVision/sfm/AlembicExporter.hpp>
-#endif // OPENMVG_HAVE_ALEMBIC
+#endif // ALICEVISION_HAVE_ALEMBIC
 
 
 namespace bfs = boost::filesystem;
@@ -65,7 +65,7 @@ bool checkRobustEstimator(robust::EROBUST_ESTIMATOR e, double &value)
   if(e != robust::EROBUST_ESTIMATOR::ROBUST_ESTIMATOR_LORANSAC &&
      e != robust::EROBUST_ESTIMATOR::ROBUST_ESTIMATOR_ACRANSAC)
   {
-    OPENMVG_CERR("Only " << robust::EROBUST_ESTIMATOR::ROBUST_ESTIMATOR_ACRANSAC 
+    ALICEVISION_CERR("Only " << robust::EROBUST_ESTIMATOR::ROBUST_ESTIMATOR_ACRANSAC 
             << " and " << robust::EROBUST_ESTIMATOR::ROBUST_ESTIMATOR_LORANSAC
             << " are supported.");
     return false;
@@ -82,7 +82,7 @@ bool checkRobustEstimator(robust::EROBUST_ESTIMATOR e, double &value)
     const double minThreshold = 1e-6;
     if( value <= minThreshold)
     {
-      OPENMVG_CERR("Error: errorMax and matchingError cannot be 0 with " 
+      ALICEVISION_CERR("Error: errorMax and matchingError cannot be 0 with " 
               << robust::EROBUST_ESTIMATOR::ROBUST_ESTIMATOR_LORANSAC 
               << " estimator.");
       return false;     
@@ -146,7 +146,7 @@ int main(int argc, char** argv)
   /// the Binary export file
   std::string exportBinaryFile = "";
 
-#if OPENMVG_IS_DEFINED(OPENMVG_HAVE_CCTAG)
+#if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_CCTAG)
   // parameters for cctag localizer
   std::size_t nNearestKeyFrames = 5;   
 #endif
@@ -228,7 +228,7 @@ int main(int argc, char** argv)
           "[voctree] Enable/Disable the robust matching between query and database images, "
           "all putative matches will be considered.")
 // cctag specific options
-#if OPENMVG_IS_DEFINED(OPENMVG_HAVE_CCTAG)
+#if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_CCTAG)
       ("nNearestKeyFrames", po::value<size_t>(&nNearestKeyFrames)->default_value(nNearestKeyFrames), 
           "[cctag] Number of images to retrieve in the database")
 #endif
@@ -257,7 +257,7 @@ int main(int argc, char** argv)
           "If a directory is provided it enables visual debug and saves all the "
           "debugging info in that directory")
 
-#if OPENMVG_IS_DEFINED(OPENMVG_HAVE_ALEMBIC)
+#if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_ALEMBIC)
       ("outputAlembic", po::value<std::string>(&exportAlembicFile)->default_value(exportAlembicFile),
           "Filename for the SfM_Data export file (where camera poses will be stored). "
           "Default : trackedcameras.abc.")
@@ -277,7 +277,7 @@ int main(int argc, char** argv)
 
     if(vm.count("help") || (argc == 1))
     {
-      OPENMVG_COUT(allParams);
+      ALICEVISION_COUT(allParams);
       return EXIT_SUCCESS;
     }
 
@@ -285,14 +285,14 @@ int main(int argc, char** argv)
   }
   catch(boost::program_options::required_option& e)
   {
-    OPENMVG_CERR("ERROR: " << e.what() << std::endl);
-    OPENMVG_COUT("Usage:\n\n" << allParams);
+    ALICEVISION_CERR("ERROR: " << e.what() << std::endl);
+    ALICEVISION_COUT("Usage:\n\n" << allParams);
     return EXIT_FAILURE;
   }
   catch(boost::program_options::error& e)
   {
-    OPENMVG_CERR("ERROR: " << e.what() << std::endl);
-    OPENMVG_COUT("Usage:\n\n" << allParams);
+    ALICEVISION_CERR("ERROR: " << e.what() << std::endl);
+    ALICEVISION_COUT("Usage:\n\n" << allParams);
     return EXIT_FAILURE;
   }
   
@@ -306,7 +306,7 @@ int main(int argc, char** argv)
   matchDescTypes = features::EImageDescriberType_stringToEnums(matchDescTypeNames);
 
   // decide the localizer to use based on the type of feature
-#if OPENMVG_IS_DEFINED(OPENMVG_HAVE_CCTAG)
+#if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_CCTAG)
   useVoctreeLocalizer = !(matchDescTypes.size() == 1 &&
                         ((matchDescTypes.front() == features::EImageDescriberType::CCTAG3) ||
                         (matchDescTypes.front() == features::EImageDescriberType::CCTAG4)));
@@ -316,44 +316,44 @@ int main(int argc, char** argv)
   {
     // the bundle adjustment can be run for now only if the refine intrinsics option is not set
     globalBundle = (globalBundle && !refineIntrinsics);
-    OPENMVG_COUT("Program called with the following parameters:");
-    OPENMVG_COUT("\tsfmdata: " << sfmFilePath);
-    OPENMVG_COUT("\tmatching descriptor types: " << matchDescTypeNames);
-    OPENMVG_COUT("\tpreset: " << featurePreset);
-    OPENMVG_COUT("\tresectionEstimator: " << resectionEstimator);
-    OPENMVG_COUT("\tmatchingEstimator: " << matchingEstimator);
-    OPENMVG_COUT("\tcalibration: " << calibFile);
-    OPENMVG_COUT("\tdescriptorPath: " << descriptorsFolder);
-    OPENMVG_COUT("\trefineIntrinsics: " << refineIntrinsics);
-    OPENMVG_COUT("\treprojectionError: " << resectionErrorMax);
-    OPENMVG_COUT("\tmediafile: " << mediaFilepath);
+    ALICEVISION_COUT("Program called with the following parameters:");
+    ALICEVISION_COUT("\tsfmdata: " << sfmFilePath);
+    ALICEVISION_COUT("\tmatching descriptor types: " << matchDescTypeNames);
+    ALICEVISION_COUT("\tpreset: " << featurePreset);
+    ALICEVISION_COUT("\tresectionEstimator: " << resectionEstimator);
+    ALICEVISION_COUT("\tmatchingEstimator: " << matchingEstimator);
+    ALICEVISION_COUT("\tcalibration: " << calibFile);
+    ALICEVISION_COUT("\tdescriptorPath: " << descriptorsFolder);
+    ALICEVISION_COUT("\trefineIntrinsics: " << refineIntrinsics);
+    ALICEVISION_COUT("\treprojectionError: " << resectionErrorMax);
+    ALICEVISION_COUT("\tmediafile: " << mediaFilepath);
     if(useVoctreeLocalizer)
     {
-      OPENMVG_COUT("\tvoctree: " << vocTreeFilepath);
-      OPENMVG_COUT("\tweights: " << weightsFilepath);
-      OPENMVG_COUT("\tnbImageMatch: " << numResults);
-      OPENMVG_COUT("\tmaxResults: " << maxResults);
-      OPENMVG_COUT("\tcommon views: " << numCommonViews);
-      OPENMVG_COUT("\talgorithm: " << algostring);
-      OPENMVG_COUT("\tmatchingError: " << matchingErrorMax);
-      OPENMVG_COUT("\tnbFrameBufferMatching: " << nbFrameBufferMatching);
-      OPENMVG_COUT("\trobustMatching: " << robustMatching);
+      ALICEVISION_COUT("\tvoctree: " << vocTreeFilepath);
+      ALICEVISION_COUT("\tweights: " << weightsFilepath);
+      ALICEVISION_COUT("\tnbImageMatch: " << numResults);
+      ALICEVISION_COUT("\tmaxResults: " << maxResults);
+      ALICEVISION_COUT("\tcommon views: " << numCommonViews);
+      ALICEVISION_COUT("\talgorithm: " << algostring);
+      ALICEVISION_COUT("\tmatchingError: " << matchingErrorMax);
+      ALICEVISION_COUT("\tnbFrameBufferMatching: " << nbFrameBufferMatching);
+      ALICEVISION_COUT("\trobustMatching: " << robustMatching);
     }
-#if OPENMVG_IS_DEFINED(OPENMVG_HAVE_CCTAG) 
+#if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_CCTAG) 
     else
     {
-      OPENMVG_COUT("\tnNearestKeyFrames: " << nNearestKeyFrames);
+      ALICEVISION_COUT("\tnNearestKeyFrames: " << nNearestKeyFrames);
     }
 #endif 
-    OPENMVG_COUT("\tminPointVisibility: " << minPointVisibility);
-    OPENMVG_COUT("\tglobalBundle: " << globalBundle);
-    OPENMVG_COUT("\tnoDistortion: " << noDistortion);
-    OPENMVG_COUT("\tnoBArefineIntrinsics: " << noBArefineIntrinsics);
-#if OPENMVG_IS_DEFINED(OPENMVG_HAVE_ALEMBIC)
-    OPENMVG_COUT("\toutputAlembic: " << exportAlembicFile);
+    ALICEVISION_COUT("\tminPointVisibility: " << minPointVisibility);
+    ALICEVISION_COUT("\tglobalBundle: " << globalBundle);
+    ALICEVISION_COUT("\tnoDistortion: " << noDistortion);
+    ALICEVISION_COUT("\tnoBArefineIntrinsics: " << noBArefineIntrinsics);
+#if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_ALEMBIC)
+    ALICEVISION_COUT("\toutputAlembic: " << exportAlembicFile);
 #endif
-    OPENMVG_COUT("\toutputBinary: " << exportBinaryFile);
-    OPENMVG_COUT("\tvisualDebug: " << visualDebug);
+    ALICEVISION_COUT("\toutputBinary: " << exportBinaryFile);
+    ALICEVISION_COUT("\tvisualDebug: " << visualDebug);
   }
 
   // if the provided directory for visual debugging does not exist create it
@@ -365,7 +365,7 @@ int main(int argc, char** argv)
  
   // this contains the full path and the root name of the file without the extension
   const bool wantsBinaryOutput = exportBinaryFile.empty();
-#if OPENMVG_IS_DEFINED(OPENMVG_HAVE_ALEMBIC)
+#if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_ALEMBIC)
   std::string basenameAlembic = (bfs::path(exportBinaryFile).parent_path() / bfs::path(exportBinaryFile).stem()).string();
 #endif
   std::string basenameBinary;
@@ -385,7 +385,7 @@ int main(int argc, char** argv)
   
   // initialize the localizer according to the chosen type of describer
 
-#if OPENMVG_IS_DEFINED(OPENMVG_HAVE_CCTAG)
+#if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_CCTAG)
   if(!useVoctreeLocalizer)
   {
     localization::CCTagLocalizer* tmpLoc = new localization::CCTagLocalizer(sfmFilePath, descriptorsFolder);
@@ -432,7 +432,7 @@ int main(int argc, char** argv)
   
   if(!localizer->isInit())
   {
-    OPENMVG_CERR("ERROR while initializing the localizer!");
+    ALICEVISION_CERR("ERROR while initializing the localizer!");
     return EXIT_FAILURE;
   }
   
@@ -440,11 +440,11 @@ int main(int argc, char** argv)
   dataio::FeedProvider feed(mediaFilepath, calibFile);
   if(!feed.isInit())
   {
-    OPENMVG_CERR("ERROR while initializing the FeedProvider!");
+    ALICEVISION_CERR("ERROR while initializing the FeedProvider!");
     return EXIT_FAILURE;
   }
   
-#if OPENMVG_IS_DEFINED(OPENMVG_HAVE_ALEMBIC)
+#if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_ALEMBIC)
   // init alembic exporter
   sfm::AlembicExporter exporter( exportAlembicFile );
   exporter.initAnimatedCamera("camera");
@@ -471,9 +471,9 @@ int main(int argc, char** argv)
   
   while(feed.readImage(imageGrey, queryIntrinsics, currentImgName, hasIntrinsics))
   {
-    OPENMVG_COUT("******************************");
-    OPENMVG_COUT("FRAME " << myToString(frameCounter,4));
-    OPENMVG_COUT("******************************");
+    ALICEVISION_COUT("******************************");
+    ALICEVISION_COUT("FRAME " << myToString(frameCounter,4));
+    ALICEVISION_COUT("******************************");
     localization::LocalizationResult localizationResult;
     auto detect_start = std::chrono::steady_clock::now();
     localizer->localize(imageGrey, 
@@ -484,7 +484,7 @@ int main(int argc, char** argv)
                        currentImgName);
     auto detect_end = std::chrono::steady_clock::now();
     auto detect_elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(detect_end - detect_start);
-    OPENMVG_COUT("\nLocalization took  " << detect_elapsed.count() << " [ms]");
+    ALICEVISION_COUT("\nLocalization took  " << detect_elapsed.count() << " [ms]");
     stats(detect_elapsed.count());
     
     vec_localizationResults.emplace_back(localizationResult);
@@ -492,7 +492,7 @@ int main(int argc, char** argv)
     // save data
     if(localizationResult.isValid())
     {
-#if OPENMVG_IS_DEFINED(OPENMVG_HAVE_ALEMBIC)
+#if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_ALEMBIC)
       exporter.addCameraKeyframe(localizationResult.getPose(), &queryIntrinsics, currentImgName, frameCounter, frameCounter);
 #endif
       
@@ -501,8 +501,8 @@ int main(int argc, char** argv)
     }
     else
     {
-      OPENMVG_CERR("Unable to localize frame " << frameCounter);
-#if OPENMVG_IS_DEFINED(OPENMVG_HAVE_ALEMBIC)
+      ALICEVISION_CERR("Unable to localize frame " << frameCounter);
+#if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_ALEMBIC)
       exporter.jumpKeyframe(currentImgName);
 #endif
     }
@@ -521,9 +521,9 @@ int main(int argc, char** argv)
   
   if(globalBundle)
   {
-    OPENMVG_COUT("\n\n\n***********************************************");
-    OPENMVG_COUT("Bundle Adjustment - Refining the whole sequence");
-    OPENMVG_COUT("***********************************************\n\n");
+    ALICEVISION_COUT("\n\n\n***********************************************");
+    ALICEVISION_COUT("Bundle Adjustment - Refining the whole sequence");
+    ALICEVISION_COUT("***********************************************\n\n");
     // run a bundle adjustment
     const bool b_allTheSame = true;
     const bool b_refineStructure = false;
@@ -538,11 +538,11 @@ int main(int argc, char** argv)
                                                        minPointVisibility);
     if(!BAresult)
     {
-      OPENMVG_CERR("Bundle Adjustment failed!");
+      ALICEVISION_CERR("Bundle Adjustment failed!");
     }
     else
     {
-#if OPENMVG_IS_DEFINED(OPENMVG_HAVE_ALEMBIC)
+#if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_ALEMBIC)
       // now copy back in a new abc with the same name file and BUNDLE appended at the end
       sfm::AlembicExporter exporterBA( basenameAlembic +".BUNDLE.abc" );
       exporterBA.initAnimatedCamera("camera");
@@ -571,13 +571,13 @@ int main(int argc, char** argv)
   }
   
   // print out some time stats
-  OPENMVG_COUT("\n\n******************************");
-  OPENMVG_COUT("Localized " << goodFrameCounter << "/" << frameCounter << " images");
-  OPENMVG_COUT("Images localized with the number of 2D/3D matches during localization :");
+  ALICEVISION_COUT("\n\n******************************");
+  ALICEVISION_COUT("Localized " << goodFrameCounter << "/" << frameCounter << " images");
+  ALICEVISION_COUT("Images localized with the number of 2D/3D matches during localization :");
   for(std::size_t i = 0; i < goodFrameList.size(); ++i)
-    OPENMVG_COUT(goodFrameList[i]);
-  OPENMVG_COUT("Processing took " << bacc::sum(stats)/1000 << " [s] overall");
-  OPENMVG_COUT("Mean time for localization:   " << bacc::mean(stats) << " [ms]");
-  OPENMVG_COUT("Max time for localization:   " << bacc::max(stats) << " [ms]");
-  OPENMVG_COUT("Min time for localization:   " << bacc::min(stats) << " [ms]");
+    ALICEVISION_COUT(goodFrameList[i]);
+  ALICEVISION_COUT("Processing took " << bacc::sum(stats)/1000 << " [s] overall");
+  ALICEVISION_COUT("Mean time for localization:   " << bacc::mean(stats) << " [ms]");
+  ALICEVISION_COUT("Max time for localization:   " << bacc::max(stats) << " [ms]");
+  ALICEVISION_COUT("Min time for localization:   " << bacc::min(stats) << " [ms]");
 }

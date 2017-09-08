@@ -17,7 +17,7 @@ set(localization_files_sources
 )
 
 
-if (OPENMVG_HAVE_CCTAG)
+if (ALICEVISION_HAVE_CCTAG)
   list(APPEND localization_files_headers CCTagLocalizer.hpp)
   list(APPEND localization_files_sources CCTagLocalizer.cpp)
 endif()
@@ -37,17 +37,17 @@ target_link_libraries(aliceVision_localization
           ${LOG_LIB}
 )
 
-if(OPENMVG_HAVE_CCTAG)
+if(ALICEVISION_HAVE_CCTAG)
   target_link_libraries(aliceVision_localization PRIVATE CCTag::CCTag)
 endif()
 
-if(OPENMVG_HAVE_OPENGV)
+if(ALICEVISION_HAVE_OPENGV)
   target_link_libraries(aliceVision_localization PRIVATE ${OPENGV_LIBRARY})
 endif()
 
 set_target_properties(aliceVision_localization
-  PROPERTIES SOVERSION ${OPENMVG_VERSION_MAJOR}
-  VERSION "${OPENMVG_VERSION_MAJOR}.${OPENMVG_VERSION_MINOR}"
+  PROPERTIES SOVERSION ${ALICEVISION_VERSION_MAJOR}
+  VERSION "${ALICEVISION_VERSION_MAJOR}.${ALICEVISION_VERSION_MINOR}"
 )
 
 set_property(TARGET aliceVision_localization
@@ -61,6 +61,6 @@ install(TARGETS aliceVision_localization
 
 UNIT_TEST(aliceVision LocalizationResult "aliceVision_localization")
 
-if(OPENMVG_HAVE_OPENGV)
+if(ALICEVISION_HAVE_OPENGV)
   UNIT_TEST(aliceVision rigResection  "aliceVision_localization")
 endif()

@@ -16,18 +16,18 @@ add_subdirectory(system)
 add_subdirectory(sfm)
 add_subdirectory(stl)
 
-if(OPENMVG_HAVE_BOOST)
+if(ALICEVISION_HAVE_BOOST)
 
   add_subdirectory(dataio)
   add_subdirectory(voctree)
   add_subdirectory(localization)
   add_subdirectory(rig)
 
-  if(OPENMVG_HAVE_OPENCV)
+  if(ALICEVISION_HAVE_OPENCV)
     add_subdirectory(calibration)
   endif()
 
-  if(OPENMVG_HAVE_OIIO)
+  if(ALICEVISION_HAVE_OIIO)
     add_subdirectory(keyframe)
   endif()
 

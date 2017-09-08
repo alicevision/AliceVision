@@ -58,7 +58,7 @@ target_link_libraries(aliceVision_main_ComputeFeatures
   vlsift
 )
 
-if(OPENMVG_HAVE_CCTAG)
+if(ALICEVISION_HAVE_CCTAG)
   target_link_libraries(aliceVision_main_ComputeFeatures CCTag::CCTag)
 endif()
 
@@ -169,7 +169,7 @@ target_link_libraries(aliceVision_main_ComputeSfM_DataColor
   stlplus
 )
 
-if(OPENMVG_HAVE_ALEMBIC)
+if(ALICEVISION_HAVE_ALEMBIC)
   add_executable(aliceVision_main_ConvertAnimatedCamera main_ConvertAnimatedCamera.cpp)
 
   target_link_libraries(aliceVision_main_ConvertAnimatedCamera
@@ -237,7 +237,7 @@ install(TARGETS aliceVision_main_ComputeSfM_DataColor
   DESTINATION bin/
 )
 
-if(OPENMVG_HAVE_ALEMBIC)
+if(ALICEVISION_HAVE_ALEMBIC)
   set_property(TARGET aliceVision_main_ConvertAnimatedCamera
     PROPERTY FOLDER AliceVision/software
   )
@@ -527,7 +527,7 @@ install(TARGETS aliceVision_main_evalQuality
 
 # - Export keyframes from video files / image sequence directories
 # -
-if(OPENMVG_HAVE_BOOST AND OPENMVG_HAVE_OIIO)
+if(ALICEVISION_HAVE_BOOST AND ALICEVISION_HAVE_OIIO)
 
 add_executable(aliceVision_main_keyframeSelection main_keyframeSelection.cpp)
 target_link_libraries(aliceVision_main_keyframeSelection
@@ -552,17 +552,17 @@ endif()
 ##
 # Export tutorial with valid path thanks to a configuration file
 ##
-set(OPENMVG_SOFTWARE_SFM_SRC_DIR ${CMAKE_CURRENT_LIST_DIR})
+set(ALICEVISION_SOFTWARE_SFM_SRC_DIR ${CMAKE_CURRENT_LIST_DIR})
 if(MSVC OR APPLE)
-  set(OPENMVG_SOFTWARE_SFM_BUILD_DIR "${EXECUTABLE_OUTPUT_PATH}/${CMAKE_BUILD_TYPE}")
+  set(ALICEVISION_SOFTWARE_SFM_BUILD_DIR "${EXECUTABLE_OUTPUT_PATH}/${CMAKE_BUILD_TYPE}")
 else()
-  set(OPENMVG_SOFTWARE_SFM_BUILD_DIR ${EXECUTABLE_OUTPUT_PATH})
+  set(ALICEVISION_SOFTWARE_SFM_BUILD_DIR ${EXECUTABLE_OUTPUT_PATH})
 endif()
 
-set(OPENMVG_TUTORIAL_IN_FILE "${CMAKE_CURRENT_LIST_DIR}/tutorial_demo.py.in")
-configure_file(${OPENMVG_TUTORIAL_IN_FILE}
+set(ALICEVISION_TUTORIAL_IN_FILE "${CMAKE_CURRENT_LIST_DIR}/tutorial_demo.py.in")
+configure_file(${ALICEVISION_TUTORIAL_IN_FILE}
     "${CMAKE_CURRENT_BINARY_DIR}/tutorial_demo.py" @ONLY)
 
-set(OPENMVG_TUTORIAL_IN_FILE "${CMAKE_CURRENT_LIST_DIR}/SfM_Pipeline.py.in")
-configure_file(${OPENMVG_TUTORIAL_IN_FILE}
+set(ALICEVISION_TUTORIAL_IN_FILE "${CMAKE_CURRENT_LIST_DIR}/SfM_Pipeline.py.in")
+configure_file(${ALICEVISION_TUTORIAL_IN_FILE}
     "${CMAKE_CURRENT_BINARY_DIR}/SfM_Pipeline.py" @ONLY)

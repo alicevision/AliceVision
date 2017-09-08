@@ -64,7 +64,7 @@ int main(int argc, char** argv)
 
     if(vm.count("help") || (argc == 1))
     {
-      OPENMVG_COUT(desc);
+      ALICEVISION_COUT(desc);
       return EXIT_SUCCESS;
     }
 
@@ -72,23 +72,23 @@ int main(int argc, char** argv)
   }
   catch(boost::program_options::required_option& e)
   {
-    OPENMVG_CERR("ERROR: " << e.what() << std::endl);
-    OPENMVG_COUT("Usage:\n\n" << desc);
+    ALICEVISION_CERR("ERROR: " << e.what() << std::endl);
+    ALICEVISION_COUT("Usage:\n\n" << desc);
     return EXIT_FAILURE;
   }
   catch(boost::program_options::error& e)
   {
-    OPENMVG_CERR("ERROR: " << e.what() << std::endl);
-    OPENMVG_COUT("Usage:\n\n" << desc);
+    ALICEVISION_CERR("ERROR: " << e.what() << std::endl);
+    ALICEVISION_COUT("Usage:\n\n" << desc);
     return EXIT_FAILURE;
   }
   // just debugging prints
   {
-    OPENMVG_COUT("Program called with the following parameters:");
-    OPENMVG_COUT("\timportFile: " << importFile);
-    OPENMVG_COUT("\texportFile: " << exportFile);
-    OPENMVG_COUT("\trigFile: " << rigFile);
-    OPENMVG_COUT("\tcalibFile: " << calibFile);
+    ALICEVISION_COUT("Program called with the following parameters:");
+    ALICEVISION_COUT("\timportFile: " << importFile);
+    ALICEVISION_COUT("\texportFile: " << exportFile);
+    ALICEVISION_COUT("\trigFile: " << rigFile);
+    ALICEVISION_COUT("\tcalibFile: " << calibFile);
 
   }
 
@@ -122,7 +122,7 @@ int main(int argc, char** argv)
   }
   exporter.addPoints(sfmData.GetLandmarks());
 
-  OPENMVG_COUT("Done.");
+  ALICEVISION_COUT("Done.");
   return EXIT_SUCCESS;
 }
 

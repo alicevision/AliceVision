@@ -1,8 +1,8 @@
 // This file is part of the AliceVision project and is made available under
 // the terms of the MPL2 license (see the COPYING.md file).
 
-#ifndef OPENMVG_IMAGE_IMAGE_FILTERING_HPP_
-#define OPENMVG_IMAGE_IMAGE_FILTERING_HPP_
+#ifndef ALICEVISION_IMAGE_IMAGE_FILTERING_HPP_
+#define ALICEVISION_IMAGE_IMAGE_FILTERING_HPP_
 
 /**
  ** @file standard image filtering functions :

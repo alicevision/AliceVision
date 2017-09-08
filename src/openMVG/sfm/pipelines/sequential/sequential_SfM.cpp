@@ -23,7 +23,7 @@
 #include "third_party/htmlDoc/htmlDoc.hpp"
 #include "third_party/progress/progress.hpp"
 
-#if OPENMVG_IS_DEFINED(OPENMVG_HAVE_BOOST)
+#if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_BOOST)
 #include <boost/format.hpp>
 #endif
 
@@ -33,7 +33,7 @@
 #pragma warning( once : 4267 ) //warning C4267: 'argument' : conversion from 'size_t' to 'const int', possible loss of data
 #endif
 
-//#define OPENMVG_NEXTBESTVIEW_WITHOUT_SCORE
+//#define ALICEVISION_NEXTBESTVIEW_WITHOUT_SCORE
 
 namespace aliceVision {
 namespace sfm {
@@ -72,7 +72,7 @@ void computeTracksPyramidPerView(
     start += Square(widthPerLevel[level]);
   }
 
-#if OPENMVG_IS_DEFINED(OPENMVG_HAVE_BOOST)
+#if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_BOOST)
   tracksPyramidPerView.reserve(tracksPerView.size());
   for(const auto& viewTracks: tracksPerView)
   {
@@ -187,7 +187,7 @@ void SequentialSfMReconstructionEngine::RobustResectionOfImages(
     if (_sfm_data.GetPoses().size() < nbFirstUnstableCameras)
     {
       // Add images one by one to reconstruct the first cameras.
-      OPENMVG_LOG_DEBUG("RobustResectionOfImages : beginning of the incremental SfM" << std::endl
+      ALICEVISION_LOG_DEBUG("RobustResectionOfImages : beginning of the incremental SfM" << std::endl
                         << "Only the first image of the resection group is used." << std::endl
                         << "First image ViewId : " << vec_possible_resection_indexes.front() << std::endl
                         << "# unstable poses : " << _sfm_data.GetPoses().size() << " / " << nbFirstUnstableCameras << std::endl);
@@ -195,7 +195,7 @@ void SequentialSfMReconstructionEngine::RobustResectionOfImages(
       vec_possible_resection_indexes.resize(1);
     }
 
-    OPENMVG_LOG_DEBUG("Resection group start " << resectionGroupIndex << " with " << vec_possible_resection_indexes.size() << " images.\n");
+    ALICEVISION_LOG_DEBUG("Resection group start " << resectionGroupIndex << " with " << vec_possible_resection_indexes.size() << " images.\n");
     auto chrono_start = std::chrono::steady_clock::now();
     bool bImageAdded = false;
 
@@ -216,7 +216,7 @@ void SequentialSfMReconstructionEngine::RobustResectionOfImages(
           // Some views can become indirectly localized when the sub-pose becomes defined
           if(_sfm_data.IsPoseAndIntrinsicDefined(view.getViewId()))
           {
-            OPENMVG_LOG_DEBUG("Resection of image " << currentIndex << " ID=" << possible_resection_index << " was skipped." << std::endl
+            ALICEVISION_LOG_DEBUG("Resection of image " << currentIndex << " ID=" << possible_resection_index << " was skipped." << std::endl
                               << "RigID=" << view.getRigId() << " Sub-poseID=" << view.getSubPoseId()
                               << " sub-pose and pose defined.");
             set_remainingViewId.erase(possible_resection_index);
@@ -232,7 +232,7 @@ void SequentialSfMReconstructionEngine::RobustResectionOfImages(
              !knownPose &&
              (subpose.status == ERigSubPoseStatus::UNINITIALIZED))
           {
-            OPENMVG_LOG_DEBUG("Resection of image " << currentIndex << " ID=" << possible_resection_index << " was skipped." << std::endl
+            ALICEVISION_LOG_DEBUG("Resection of image " << currentIndex << " ID=" << possible_resection_index << " was skipped." << std::endl
                               << "RigID=" << view.getRigId() << " Sub-poseID=" << view.getSubPoseId()
                               << " Rig initialized but unkown pose and sub-pose.");
             set_remainingViewId.erase(possible_resection_index);
@@ -247,12 +247,12 @@ void SequentialSfMReconstructionEngine::RobustResectionOfImages(
       if (!bResect)
       {
         set_rejectedViewId.insert(possible_resection_index);
-        OPENMVG_LOG_DEBUG("Resection of image " << currentIndex << " ID=" << possible_resection_index << " was not possible.");
+        ALICEVISION_LOG_DEBUG("Resection of image " << currentIndex << " ID=" << possible_resection_index << " was not possible.");
       }
       else
       {
         set_reconstructedViewId.insert(possible_resection_index);
-        OPENMVG_LOG_DEBUG("Resection of image: " << currentIndex << " ID=" << possible_resection_index << " succeed.");
+        ALICEVISION_LOG_DEBUG("Resection of image: " << currentIndex << " ID=" << possible_resection_index << " succeed.");
         _sfm_data.GetViews().at(possible_resection_index)->setResectionId(resectionId);
         ++resectionId;
       }
@@ -265,7 +265,7 @@ void SequentialSfMReconstructionEngine::RobustResectionOfImages(
         break;
       }
     }
-    OPENMVG_LOG_DEBUG("Resection of " << vec_possible_resection_indexes.size() << " new images took " << std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - chrono_start).count() << " msec.");
+    ALICEVISION_LOG_DEBUG("Resection of " << vec_possible_resection_indexes.size() << " new images took " << std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - chrono_start).count() << " msec.");
 
     // get new reconstructed views
     std::set<IndexT> newReconstructedViews;
@@ -281,7 +281,7 @@ void SequentialSfMReconstructionEngine::RobustResectionOfImages(
             std::inserter(newReconstructedViews, newReconstructedViews.end()));
     }
 
-    OPENMVG_LOG_DEBUG("Triangulation of the " << newReconstructedViews.size() << " newly reconstructed views.");
+    ALICEVISION_LOG_DEBUG("Triangulation of the " << newReconstructedViews.size() << " newly reconstructed views.");
 
     //BundleAdjustment();
 
@@ -297,9 +297,9 @@ void SequentialSfMReconstructionEngine::RobustResectionOfImages(
         std::ostringstream os;
         os << std::setw(8) << std::setfill('0') << resectionGroupIndex << "_Resection";
         Save(_sfm_data, stlplus::create_filespec(_sOutDirectory, os.str(), _sfmdataInterFileExtension), _sfmdataInterFilter);
-        OPENMVG_LOG_DEBUG("Save of file " << os.str() << " took " << std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - chrono_start).count() << " msec.");
+        ALICEVISION_LOG_DEBUG("Save of file " << os.str() << " took " << std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - chrono_start).count() << " msec.");
       }
-      OPENMVG_LOG_DEBUG("Global Bundle start, resection group index: " << resectionGroupIndex << ".");
+      ALICEVISION_LOG_DEBUG("Global Bundle start, resection group index: " << resectionGroupIndex << ".");
       chrono_start = std::chrono::steady_clock::now();
       std::size_t bundleAdjustmentIteration = 0;
       const std::size_t nbOutliersThreshold = 50;
@@ -308,15 +308,15 @@ void SequentialSfMReconstructionEngine::RobustResectionOfImages(
       {
         auto chrono2_start = std::chrono::steady_clock::now();
         BundleAdjustment(_bFixedIntrinsics);
-        OPENMVG_LOG_DEBUG("Resection group index: " << resectionGroupIndex << ", bundle iteration: " << bundleAdjustmentIteration
+        ALICEVISION_LOG_DEBUG("Resection group index: " << resectionGroupIndex << ", bundle iteration: " << bundleAdjustmentIteration
                   << " took " << std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - chrono2_start).count() << " msec.");
         ++bundleAdjustmentIteration;
       }
       while (badTrackRejector(4.0, nbOutliersThreshold));
-      OPENMVG_LOG_DEBUG("Bundle with " << bundleAdjustmentIteration << " iterations took " << std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - chrono_start).count() << " msec.");
+      ALICEVISION_LOG_DEBUG("Bundle with " << bundleAdjustmentIteration << " iterations took " << std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - chrono_start).count() << " msec.");
       chrono_start = std::chrono::steady_clock::now();
       eraseUnstablePosesAndObservations(this->_sfm_data, _minPointsPerPose, _minTrackLength);
-      OPENMVG_LOG_DEBUG("eraseUnstablePosesAndObservations took " << std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - chrono_start).count() << " msec.");
+      ALICEVISION_LOG_DEBUG("eraseUnstablePosesAndObservations took " << std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - chrono_start).count() << " msec.");
     }
     ++resectionGroupIndex;
   }
@@ -382,14 +382,14 @@ bool SequentialSfMReconstructionEngine::Process()
     if(MakeInitialPair3D(initialPairCandidate))
     {
       // Successfully found an initial image pair
-      OPENMVG_LOG_DEBUG("Initial pair is: " << initialPairCandidate.first << ", " << initialPairCandidate.second);
+      ALICEVISION_LOG_DEBUG("Initial pair is: " << initialPairCandidate.first << ", " << initialPairCandidate.second);
       successfullInitialization = true;
       break;
     }
   }
   if(!successfullInitialization)
   {
-    OPENMVG_LOG_ERROR("Initialization failed after trying all possible initial image pairs.");
+    ALICEVISION_LOG_ERROR("Initialization failed after trying all possible initial image pairs.");
     return false;
   }
   
@@ -416,10 +416,10 @@ bool SequentialSfMReconstructionEngine::Process()
       _set_remainingViewId.erase(v);
     }
 
-    OPENMVG_LOG_DEBUG("SequentialSfM -- nbRejectedLoops: " << nbRejectedLoops);
-    OPENMVG_LOG_DEBUG("SequentialSfM -- reconstructedViewIds: " << reconstructedViewIds.size());
-    OPENMVG_LOG_DEBUG("SequentialSfM -- rejectedViewIds: " << rejectedViewIds.size());
-    OPENMVG_LOG_DEBUG("SequentialSfM -- _set_remainingViewId: " << _set_remainingViewId.size());
+    ALICEVISION_LOG_DEBUG("SequentialSfM -- nbRejectedLoops: " << nbRejectedLoops);
+    ALICEVISION_LOG_DEBUG("SequentialSfM -- reconstructedViewIds: " << reconstructedViewIds.size());
+    ALICEVISION_LOG_DEBUG("SequentialSfM -- rejectedViewIds: " << rejectedViewIds.size());
+    ALICEVISION_LOG_DEBUG("SequentialSfM -- _set_remainingViewId: " << _set_remainingViewId.size());
 
     ++nbRejectedLoops;
     // Retry to perform the resectioning of all the rejected views,
@@ -431,7 +431,7 @@ bool SequentialSfMReconstructionEngine::Process()
 
   //-- Reconstruction done.
   //-- Display some statistics
-  OPENMVG_LOG_DEBUG(
+  ALICEVISION_LOG_DEBUG(
     "-------------------------------\n"
     "-- Structure from Motion (statistics):\n"
     "-- #Camera calibrated: " << _sfm_data.GetPoses().size() <<
@@ -441,11 +441,11 @@ bool SequentialSfMReconstructionEngine::Process()
 
   Histogram<double> h;
   ComputeResidualsHistogram(&h);
-  OPENMVG_LOG_DEBUG("Histogram of residuals:" << h.ToString());
+  ALICEVISION_LOG_DEBUG("Histogram of residuals:" << h.ToString());
     
   Histogram<double> hTracks;
   ComputeTracksLengthsHistogram(&hTracks);
-  OPENMVG_LOG_DEBUG("Histogram of tracks length:" << hTracks.ToString());
+  ALICEVISION_LOG_DEBUG("Histogram of tracks length:" << hTracks.ToString());
   
   if (!_sLoggingFile.empty())
   {
@@ -476,7 +476,7 @@ bool SequentialSfMReconstructionEngine::Process()
     _htmlDocStream->pushXYChart(xBinTracks, hTracks.GetHist(),"3DtoTracksSize");
   }
 
-  #if OPENMVG_IS_DEFINED(OPENMVG_HAVE_BOOST)
+  #if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_BOOST)
     exportStatistics(time_sfm);
   #endif
   return true;
@@ -505,11 +505,11 @@ bool SequentialSfMReconstructionEngine::ChooseInitialPair(Pair & initialPairInde
     if (_sfm_data.GetIntrinsics().empty() || valid_views.empty())
     {
 
-      OPENMVG_CERR("There is no defined intrinsic data in order to compute an essential matrix for the initial pair.");
+      ALICEVISION_CERR("There is no defined intrinsic data in order to compute an essential matrix for the initial pair.");
       return false;
     }
 
-    OPENMVG_LOG_DEBUG(
+    ALICEVISION_LOG_DEBUG(
       "----------------------------------------------------\n"
       "SequentialSfMReconstructionEngine::ChooseInitialPair\n"
       "----------------------------------------------------\n"
@@ -543,12 +543,12 @@ bool SequentialSfMReconstructionEngine::ChooseInitialPair(Pair & initialPairInde
     for (size_t i = 0; i < std::min((size_t)10, vec_NbMatchesPerPair.size()); ++i) {
       const size_t index = packet_vec[i].index;
       aliceVision::matching::PairwiseMatches::const_iterator iter = vec_MatchesIterator[index];
-      OPENMVG_COUT("(" << iter->first.first << "," << iter->first.second <<")\t\t"
+      ALICEVISION_COUT("(" << iter->first.first << "," << iter->first.second <<")\t\t"
         << iter->second.getNbAllMatches() << " matches");
     }
 
     // Ask the user to choose an initial pair (by set some view ids)
-    OPENMVG_COUT(std::endl << " type INITIAL pair ids: X enter Y enter");
+    ALICEVISION_COUT(std::endl << " type INITIAL pair ids: X enter Y enter");
     int val, val2;
     if ( std::cin >> val && std::cin >> val2) {
       initialPairIndex.first = val;
@@ -556,14 +556,14 @@ bool SequentialSfMReconstructionEngine::ChooseInitialPair(Pair & initialPairInde
     }
   }
 
-  OPENMVG_LOG_DEBUG("\nPutative starting pair is: (" << initialPairIndex.first
+  ALICEVISION_LOG_DEBUG("\nPutative starting pair is: (" << initialPairIndex.first
       << "," << initialPairIndex.second << ")");
 
   // Check validity of the initial pair indices:
   if (!_featuresPerView->viewExist(initialPairIndex.first)  ||
       !_featuresPerView->viewExist(initialPairIndex.second))
   {
-    OPENMVG_LOG_WARNING("At least one of the initial pair indices is invalid.");
+    ALICEVISION_LOG_WARNING("At least one of the initial pair indices is invalid.");
     return false;
   }
   return true;
@@ -577,22 +577,22 @@ bool SequentialSfMReconstructionEngine::InitLandmarkTracks()
   {
     // List of features matches for each couple of images
     const aliceVision::matching::PairwiseMatches & map_Matches = *_pairwiseMatches;
-    OPENMVG_LOG_DEBUG("Track building");
+    ALICEVISION_LOG_DEBUG("Track building");
 
     tracksBuilder.Build(map_Matches);
-    OPENMVG_LOG_DEBUG("Track filtering");
+    ALICEVISION_LOG_DEBUG("Track filtering");
     tracksBuilder.Filter(_minInputTrackLength);
 
-    OPENMVG_LOG_DEBUG("Track export to internal struct");
+    ALICEVISION_LOG_DEBUG("Track export to internal struct");
     //-- Build tracks with STL compliant type :
     tracksBuilder.ExportToSTL(_map_tracks);
-    OPENMVG_LOG_DEBUG("Build tracks per view");
+    ALICEVISION_LOG_DEBUG("Build tracks per view");
     tracks::TracksUtilsMap::computeTracksPerView(_map_tracks, _map_tracksPerView);
-    OPENMVG_LOG_DEBUG("Build tracks pyramid per view");
+    ALICEVISION_LOG_DEBUG("Build tracks pyramid per view");
     computeTracksPyramidPerView(
             _map_tracksPerView, _map_tracks, _sfm_data.views, *_featuresPerView, _pyramidBase, _pyramidDepth, _map_featsPyramidPerView);
 
-    OPENMVG_LOG_DEBUG("Track stats");
+    ALICEVISION_LOG_DEBUG("Track stats");
     {
       std::ostringstream osTrack;
       //-- Display stats :
@@ -616,14 +616,14 @@ bool SequentialSfMReconstructionEngine::InitLandmarkTracks()
       for(const auto& iter: map_Occurence_TrackLength)
       {
         osTrack << "\t" << iter.first << "\t" << iter.second << "\n";
-        #if OPENMVG_IS_DEFINED(OPENMVG_HAVE_BOOST)
+        #if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_BOOST)
           // Add input tracks histogram
           _tree.add("sfm.inputtracks_histogram."
             + std::to_string(iter.first), iter.second);
         #endif
       }
       osTrack << "\n";
-      OPENMVG_LOG_DEBUG(osTrack.str());
+      ALICEVISION_LOG_DEBUG(osTrack.str());
     }
   }
   return _map_tracks.size() > 0;
@@ -653,7 +653,7 @@ bool SequentialSfMReconstructionEngine::getBestInitialImagePairs(std::vector<Pai
 
   if (valid_views.size() < 2)
   {
-    OPENMVG_LOG_WARNING("Failed to find an initial pair automatically. There is no view with valid intrinsics.");
+    ALICEVISION_LOG_WARNING("Failed to find an initial pair automatically. There is no view with valid intrinsics.");
     return false;
   }
   
@@ -699,7 +699,7 @@ bool SequentialSfMReconstructionEngine::getBestInitialImagePairs(std::vector<Pai
 
     // Copy points correspondences to arrays for relative pose estimation
     const size_t n = map_tracksCommon.size();
-    OPENMVG_LOG_INFO("AutomaticInitialPairChoice, test I: " << I << ", J: " << J << ", nbCommonTracks: " << n);
+    ALICEVISION_LOG_INFO("AutomaticInitialPairChoice, test I: " << I << ", J: " << J << ", nbCommonTracks: " << n);
     Mat xI(2,n), xJ(2,n);
     size_t cptIndex = 0;
     std::vector<std::size_t> commonTracksIds(n);
@@ -775,21 +775,21 @@ bool SequentialSfMReconstructionEngine::getBestInitialImagePairs(std::vector<Pai
   // We print the N best scores and return the best one.
   const std::size_t nBestScores = std::min(std::size_t(50), bestImagePairs.size());
   std::sort(bestImagePairs.begin(), bestImagePairs.end(), std::greater<ImagePairScore>());
-  OPENMVG_LOG_DEBUG(bestImagePairs.size() << " possible image pairs. " << nBestScores << " best possibles image pairs are:");
-#if OPENMVG_IS_DEFINED(OPENMVG_HAVE_BOOST)
-  OPENMVG_LOG_DEBUG(boost::format("%=15s | %=15s | %=15s | %=15s | %=15s") % "Pair" % "Score" % "ImagePairScore" % "Angle" % "NbMatches");
-  OPENMVG_LOG_DEBUG(std::string(15*5+3*3, '-'));
+  ALICEVISION_LOG_DEBUG(bestImagePairs.size() << " possible image pairs. " << nBestScores << " best possibles image pairs are:");
+#if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_BOOST)
+  ALICEVISION_LOG_DEBUG(boost::format("%=15s | %=15s | %=15s | %=15s | %=15s") % "Pair" % "Score" % "ImagePairScore" % "Angle" % "NbMatches");
+  ALICEVISION_LOG_DEBUG(std::string(15*5+3*3, '-'));
   for(std::size_t i = 0; i < nBestScores; ++i)
   {
     const ImagePairScore& s = bestImagePairs[i];
     const Pair& currPair = std::get<4>(s);
     const std::string pairIdx = std::to_string(currPair.first) + ", " + std::to_string(currPair.second);
-    OPENMVG_LOG_DEBUG(boost::format("%=15s | %+15.1f | %+15.1f | %+15.1f | %+15f") % pairIdx % std::get<0>(s) % std::get<1>(s) % std::get<2>(s) % std::get<3>(s));
+    ALICEVISION_LOG_DEBUG(boost::format("%=15s | %+15.1f | %+15.1f | %+15.1f | %+15f") % pairIdx % std::get<0>(s) % std::get<1>(s) % std::get<2>(s) % std::get<3>(s));
   }
 #endif
   if (bestImagePairs.empty())
   {
-    OPENMVG_LOG_DEBUG("No valid initial pair found automatically.");
+    ALICEVISION_LOG_DEBUG("No valid initial pair found automatically.");
     return false;
   }
   out_bestImagePairs.reserve(bestImagePairs.size());
@@ -813,14 +813,14 @@ bool SequentialSfMReconstructionEngine::MakeInitialPair3D(const Pair& current_pa
   const View * viewJ = _sfm_data.GetViews().at(J).get();
   const Intrinsics::const_iterator iterIntrinsicJ = _sfm_data.GetIntrinsics().find(viewJ->getIntrinsicId());
 
-  OPENMVG_LOG_DEBUG("Initial pair is:\n"
+  ALICEVISION_LOG_DEBUG("Initial pair is:\n"
           << "  A - Id: " << I << " - " << " filepath: " << viewI->getImagePath() << "\n"
           << "  B - Id: " << J << " - " << " filepath: " << viewJ->getImagePath());
 
   if (iterIntrinsicI == _sfm_data.GetIntrinsics().end() ||
       iterIntrinsicJ == _sfm_data.GetIntrinsics().end() )
   {
-    OPENMVG_LOG_WARNING("Can't find initial image pair intrinsics: " << viewI->getIntrinsicId() << ", "  << viewJ->getIntrinsicId());
+    ALICEVISION_LOG_WARNING("Can't find initial image pair intrinsics: " << viewI->getIntrinsicId() << ", "  << viewJ->getIntrinsicId());
     return false;
   }
 
@@ -828,7 +828,7 @@ bool SequentialSfMReconstructionEngine::MakeInitialPair3D(const Pair& current_pa
   const Pinhole_Intrinsic * camJ = dynamic_cast<const Pinhole_Intrinsic*>(iterIntrinsicJ->second.get());
   if (camI == nullptr || camJ == nullptr || !camI->isValid() || !camJ->isValid())
   {
-    OPENMVG_LOG_WARNING("Can't find initial image pair intrinsics (NULL ptr): " << viewI->getIntrinsicId() << ", "  << viewJ->getIntrinsicId());
+    ALICEVISION_LOG_WARNING("Can't find initial image pair intrinsics (NULL ptr): " << viewI->getIntrinsicId() << ", "  << viewJ->getIntrinsicId());
     return false;
   }
 
@@ -856,7 +856,7 @@ bool SequentialSfMReconstructionEngine::MakeInitialPair3D(const Pair& current_pa
     feat = _featuresPerView->getFeatures(J, iterT->second.descType)[j].coords().cast<double>();
     xJ.col(cptIndex) = camJ->get_ud_pixel(feat);
   }
-  OPENMVG_LOG_DEBUG(n << " matches in the image pair for the initial pose estimation.");
+  ALICEVISION_LOG_DEBUG(n << " matches in the image pair for the initial pose estimation.");
 
   // c. Robust estimation of the relative pose
   RelativePose_Info relativePose_info;
@@ -867,10 +867,10 @@ bool SequentialSfMReconstructionEngine::MakeInitialPair3D(const Pair& current_pa
   if (!robustRelativePose(
     camI->K(), camJ->K(), xI, xJ, relativePose_info, imageSizeI, imageSizeJ, 4096))
   {
-    OPENMVG_LOG_WARNING(" /!\\ Robust estimation failed to compute E for this pair");
+    ALICEVISION_LOG_WARNING(" /!\\ Robust estimation failed to compute E for this pair");
     return false;
   }
-  OPENMVG_LOG_DEBUG("A-Contrario initial pair residual: "
+  ALICEVISION_LOG_DEBUG("A-Contrario initial pair residual: "
     << relativePose_info.found_residual_precision);
   // Bound min precision at 1 pix.
   relativePose_info.found_residual_precision = std::max(relativePose_info.found_residual_precision, 1.0);
@@ -898,7 +898,7 @@ bool SequentialSfMReconstructionEngine::MakeInitialPair3D(const Pair& current_pa
     Bundle_Adjustment_Ceres bundle_adjustment_obj(options);
     if (!bundle_adjustment_obj.Adjust(_sfm_data, BA_REFINE_ROTATION | BA_REFINE_TRANSLATION | BA_REFINE_STRUCTURE))
     {
-      OPENMVG_LOG_WARNING("BA of initial pair " << current_pair.first << ", " << current_pair.second << " failed.");
+      ALICEVISION_LOG_WARNING("BA of initial pair " << current_pair.first << ", " << current_pair.second << " failed.");
 
       // Clear poses, RIGs, landmarks
       _sfm_data.GetPoses().clear();
@@ -917,7 +917,7 @@ bool SequentialSfMReconstructionEngine::MakeInitialPair3D(const Pair& current_pa
       bool baStatus = BundleAdjustment(true);
       if(baStatus == false)
       {
-          OPENMVG_LOG_WARNING("BA of initial pair " << current_pair.first << ", " << current_pair.second << " failed.");
+          ALICEVISION_LOG_WARNING("BA of initial pair " << current_pair.first << ", " << current_pair.second << " failed.");
 
           // Clear poses, RIGs, landmarks
           _sfm_data.GetPoses().clear();
@@ -926,7 +926,7 @@ bool SequentialSfMReconstructionEngine::MakeInitialPair3D(const Pair& current_pa
 
           return false;
       }
-      OPENMVG_LOG_DEBUG("Initial Pair, bundle iteration: " << bundleAdjustmentIteration
+      ALICEVISION_LOG_DEBUG("Initial Pair, bundle iteration: " << bundleAdjustmentIteration
            << " took " << std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - chrono2_start).count() << " msec.");
       ++bundleAdjustmentIteration;
     }
@@ -937,7 +937,7 @@ bool SequentialSfMReconstructionEngine::MakeInitialPair3D(const Pair& current_pa
 
     // Save outlier residual information
     Histogram<double> histoResiduals;
-    OPENMVG_LOG_DEBUG(
+    ALICEVISION_LOG_DEBUG(
       "=========================\n"
       " MSE Residual InitialPair Inlier: " << ComputeResidualsHistogram(&histoResiduals) << "\n"
       "=========================");
@@ -1029,7 +1029,7 @@ double SequentialSfMReconstructionEngine::ComputeResidualsHistogram(Histogram<do
     histo->Add(vec_residuals.begin(), vec_residuals.end());
   }
 
-  OPENMVG_LOG_DEBUG(
+  ALICEVISION_LOG_DEBUG(
     "\nSequentialSfMReconstructionEngine::ComputeResidualsMSE.\n"
     "\t-- #Tracks:\t" << _sfm_data.GetLandmarks().size() << "\n"
     "\t-- Residual min:\t" << dMin << "\n"
@@ -1068,7 +1068,7 @@ double SequentialSfMReconstructionEngine::ComputeTracksLengthsHistogram(Histogra
     histo->Add(vec_nbTracks.begin(), vec_nbTracks.end());
   }
 
-  OPENMVG_LOG_DEBUG(
+  ALICEVISION_LOG_DEBUG(
     "\nSequentialSfMReconstructionEngine::ComputeTracksLengthsHistogram.\n"
     "\t-- #Tracks:\t" << _sfm_data.GetLandmarks().size() << "\n"
     "\t-- Tracks Length min:\t" << dMin << "\n"
@@ -1081,7 +1081,7 @@ double SequentialSfMReconstructionEngine::ComputeTracksLengthsHistogram(Histogra
 
 std::size_t SequentialSfMReconstructionEngine::computeImageScore(std::size_t viewId, const std::vector<std::size_t>& trackIds) const
 {
-#ifdef OPENMVG_NEXTBESTVIEW_WITHOUT_SCORE
+#ifdef ALICEVISION_NEXTBESTVIEW_WITHOUT_SCORE
   return trackIds.size();
 #else
   std::size_t score = 0;
@@ -1203,30 +1203,30 @@ bool SequentialSfMReconstructionEngine::FindNextImagesGroupForResection(
   // Impose a minimal number of points to ensure that it makes sense to try the pose estimation.
   static const std::size_t minPointsThreshold = 30;
 
-  OPENMVG_LOG_DEBUG("FindNextImagesGroupForResection -- Scores (features): ");
+  ALICEVISION_LOG_DEBUG("FindNextImagesGroupForResection -- Scores (features): ");
   // print the 30 best scores
   for(std::size_t i = 0; i < vec_viewsScore.size() && i < 30; ++i)
   {
-    OPENMVG_LOG_DEBUG_OBJ << std::get<2>(vec_viewsScore[i]) << "(" << std::get<1>(vec_viewsScore[i]) << "), ";
+    ALICEVISION_LOG_DEBUG_OBJ << std::get<2>(vec_viewsScore[i]) << "(" << std::get<1>(vec_viewsScore[i]) << "), ";
   }
-  OPENMVG_LOG_DEBUG_OBJ << std::endl;
+  ALICEVISION_LOG_DEBUG_OBJ << std::endl;
 
   // If the list is empty or if the list contains images with no correspondences
   // -> (no resection will be possible)
   if (vec_viewsScore.empty() || std::get<1>(vec_viewsScore[0]) == 0)
   {
-    OPENMVG_LOG_DEBUG("FindNextImagesGroupForResection failed:");
+    ALICEVISION_LOG_DEBUG("FindNextImagesGroupForResection failed:");
     if(vec_viewsScore.empty())
     {
-      OPENMVG_LOG_DEBUG("No putative image.");
+      ALICEVISION_LOG_DEBUG("No putative image.");
     }
     else
     {
-      OPENMVG_LOG_DEBUG_OBJ << "Not enough point in the putative images: ";
+      ALICEVISION_LOG_DEBUG_OBJ << "Not enough point in the putative images: ";
       for(auto v: vec_viewsScore)
-        OPENMVG_LOG_DEBUG_OBJ << std::get<1>(v) << ", ";
+        ALICEVISION_LOG_DEBUG_OBJ << std::get<1>(v) << ", ";
     }
-    OPENMVG_LOG_DEBUG_OBJ << std::endl;
+    ALICEVISION_LOG_DEBUG_OBJ << std::endl;
     // All remaining images cannot be used for pose estimation
     return false;
   }
@@ -1234,7 +1234,7 @@ bool SequentialSfMReconstructionEngine::FindNextImagesGroupForResection(
   // Add the image view index with the best score
   out_selectedViewIds.push_back(std::get<0>(vec_viewsScore[0]));
 
-#ifdef OPENMVG_NEXTBESTVIEW_WITHOUT_SCORE
+#ifdef ALICEVISION_NEXTBESTVIEW_WITHOUT_SCORE
   static const float dThresholdGroup = 0.75f;
   // Number of 2D-3D correspondences for the best view.
   const IndexT bestScore = std::get<2>(vec_viewsScore[0]);
@@ -1258,7 +1258,7 @@ bool SequentialSfMReconstructionEngine::FindNextImagesGroupForResection(
       break;
     }
   }
-  OPENMVG_LOG_DEBUG(
+  ALICEVISION_LOG_DEBUG(
     "FindNextImagesGroupForResection with " << out_selectedViewIds.size() << " images took: " << std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - chrono_start).count() << " msec\n"
     " - Scores: " << std::get<2>(vec_viewsScore.front()) << " to " << std::get<2>(vec_viewsScore[out_selectedViewIds.size()-1]) << " (threshold was " << scoreThreshold << ")\n"
     " - Features: " << std::get<1>(vec_viewsScore.front()) << " to " << std::get<1>(vec_viewsScore[out_selectedViewIds.size()-1]) << " (threshold was " << minPointsThreshold << ")");
@@ -1302,7 +1302,7 @@ bool SequentialSfMReconstructionEngine::Resection(const std::size_t viewIndex)
   if (set_trackIdForResection.empty())
   {
     // No match. The image has no connection with already reconstructed points.
-    OPENMVG_LOG_DEBUG("Resection failed as there is no connection with already reconstructed points");
+    ALICEVISION_LOG_DEBUG("Resection failed as there is no connection with already reconstructed points");
     return false;
   }
 
@@ -1338,7 +1338,7 @@ bool SequentialSfMReconstructionEngine::Resection(const std::size_t viewIndex)
   }
 
   // C. Do the resectioning: compute the camera pose.
-  OPENMVG_LOG_DEBUG(
+  ALICEVISION_LOG_DEBUG(
     "-------------------------------\n"
     "-- Robust Resection of view: " << viewIndex);
 
@@ -1375,7 +1375,7 @@ bool SequentialSfMReconstructionEngine::Resection(const std::size_t viewIndex)
 
   if (!bResection)
   {
-    OPENMVG_LOG_DEBUG("Resection of view " << viewIndex << " failed.");
+    ALICEVISION_LOG_DEBUG("Resection of view " << viewIndex << " failed.");
     return false;
   }
 
@@ -1417,7 +1417,7 @@ bool SequentialSfMReconstructionEngine::Resection(const std::size_t viewIndex)
       optionalIntrinsic.get(), pose,
       resection_data, true, b_new_intrinsic || intrinsicsFirstUsage))
     {
-      OPENMVG_LOG_DEBUG("Resection of view " << viewIndex << " failed during pose refinement.");
+      ALICEVISION_LOG_DEBUG("Resection of view " << viewIndex << " failed during pose refinement.");
       return false;
     }
 
@@ -1617,7 +1617,7 @@ void SequentialSfMReconstructionEngine::triangulate(SfM_Data& scene, const std::
 //  #pragma omp critical
 //  if (!map_tracksCommonIJ.empty())
 //  {
-//    OPENMVG_LOG_DEBUG("--Triangulated 3D points [" << I << "-" << J << "]:\n"
+//    ALICEVISION_LOG_DEBUG("--Triangulated 3D points [" << I << "-" << J << "]:\n"
 //                      "\t#Track extented: " << extented_track << "\n"
 //                      "\t#Validated/#Possible: " << new_added_track << "/" << new_putative_track << "\n"
 //                      "\t#3DPoint for the entire scene: " << scene.GetLandmarks().size());
@@ -1631,12 +1631,12 @@ bool SequentialSfMReconstructionEngine::BundleAdjustment(bool fixedIntrinsics)
   Bundle_Adjustment_Ceres::BA_options options;
   if (_sfm_data.GetPoses().size() > 100)
   {
-    OPENMVG_LOG_DEBUG("Global BundleAdjustment sparse");
+    ALICEVISION_LOG_DEBUG("Global BundleAdjustment sparse");
     options.setSparseBA();
   }
   else
   {
-    OPENMVG_LOG_DEBUG("Global BundleAdjustment dense");
+    ALICEVISION_LOG_DEBUG("Global BundleAdjustment dense");
     options.setDenseBA();
   }
   Bundle_Adjustment_Ceres bundle_adjustment_obj(options);
@@ -1660,7 +1660,7 @@ bool SequentialSfMReconstructionEngine::badTrackRejector(double dPrecision, std:
   const std::size_t nbOutliers_residualErr = RemoveOutliers_PixelResidualError(_sfm_data, dPrecision, 2);
   const std::size_t nbOutliers_angleErr = RemoveOutliers_AngleError(_sfm_data, 2.0);
 
-  OPENMVG_LOG_DEBUG("badTrackRejector: nbOutliers_residualErr: " << nbOutliers_residualErr << ", nbOutliers_angleErr: " << nbOutliers_angleErr);
+  ALICEVISION_LOG_DEBUG("badTrackRejector: nbOutliers_residualErr: " << nbOutliers_residualErr << ", nbOutliers_angleErr: " << nbOutliers_angleErr);
   return (nbOutliers_residualErr + nbOutliers_angleErr) > count;
 }
 
@@ -1669,7 +1669,7 @@ bool SequentialSfMReconstructionEngine::badTrackRejector(double dPrecision, std:
  *
  * @param[in] time_sfm time in seconds of the reconstruction process
  */
-#if OPENMVG_IS_DEFINED(OPENMVG_HAVE_BOOST)
+#if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_BOOST)
 void SequentialSfMReconstructionEngine::exportStatistics(double time_sfm)
 {
   // Put nb images, nb poses, nb points

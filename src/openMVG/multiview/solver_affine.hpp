@@ -1,8 +1,8 @@
 // This file is part of the AliceVision project and is made available under
 // the terms of the MPL2 license (see the COPYING.md file).
 
-#ifndef OPENMVG_SOLVER_MULTIVIEW_AFFINE_H_
-#define OPENMVG_SOLVER_MULTIVIEW_AFFINE_H_
+#ifndef ALICEVISION_SOLVER_MULTIVIEW_AFFINE_H_
+#define ALICEVISION_SOLVER_MULTIVIEW_AFFINE_H_
 
 #include "aliceVision/numeric/numeric.h"
 
@@ -64,4 +64,4 @@ bool Affine3DFromCorrespondencesLinear(const Mat &x1,
                                          EigenDoubleTraits::dummy_precision());
 } // namespace aliceVision
 
-#endif  // OPENMVG_SOLVER_MULTIVIEW_AFFINE_H_
+#endif  // ALICEVISION_SOLVER_MULTIVIEW_AFFINE_H_

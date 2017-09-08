@@ -1,8 +1,8 @@
 // This file is part of the AliceVision project and is made available under
 // the terms of the MPL2 license (see the COPYING.md file).
 
-#ifndef OPENMVG_COLORHARMONIZATION_FULLFRAME_H
-#define OPENMVG_COLORHARMONIZATION_FULLFRAME_H
+#ifndef ALICEVISION_COLORHARMONIZATION_FULLFRAME_H
+#define ALICEVISION_COLORHARMONIZATION_FULLFRAME_H
 
 #include "aliceVision/color_harmonization/selection_interface.hpp"
 
@@ -41,4 +41,4 @@ private:
 }  // namespace color_harmonization
 }  // namespace aliceVision
 
-#endif  // OPENMVG_COLORHARMONIZATION_FULLFRAME_H
+#endif  // ALICEVISION_COLORHARMONIZATION_FULLFRAME_H

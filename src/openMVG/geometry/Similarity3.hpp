@@ -1,8 +1,8 @@
 // This file is part of the AliceVision project and is made available under
 // the terms of the MPL2 license (see the COPYING.md file).
 
-#ifndef OPENMVG_GEOMETRY_SIMILARITY3_H_
-#define OPENMVG_GEOMETRY_SIMILARITY3_H_
+#ifndef ALICEVISION_GEOMETRY_SIMILARITY3_H_
+#define ALICEVISION_GEOMETRY_SIMILARITY3_H_
 
 
 namespace aliceVision {
@@ -32,4 +32,4 @@ struct Similarity3
 } // namespace geometry
 } // namespace aliceVision
 
-#endif  // OPENMVG_GEOMETRY_SIMILARITY3_H_
+#endif  // ALICEVISION_GEOMETRY_SIMILARITY3_H_

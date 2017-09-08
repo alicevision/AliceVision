@@ -1,8 +1,8 @@
 // This file is part of the AliceVision project and is made available under
 // the terms of the MPL2 license (see the COPYING.md file).
 
-#ifndef OPENMVG_MULTIVIEW_RESECTION_P3P_H_
-#define OPENMVG_MULTIVIEW_RESECTION_P3P_H_
+#ifndef ALICEVISION_MULTIVIEW_RESECTION_P3P_H_
+#define ALICEVISION_MULTIVIEW_RESECTION_P3P_H_
 
 #include <iostream>
 #include "aliceVision/numeric/numeric.h"
@@ -81,5 +81,5 @@ private:
 } // namespace euclidean_resection
 } // namespace aliceVision
 
-#endif // OPENMVG_MULTIVIEW_RESECTION_P3P_H_
+#endif // ALICEVISION_MULTIVIEW_RESECTION_P3P_H_
 

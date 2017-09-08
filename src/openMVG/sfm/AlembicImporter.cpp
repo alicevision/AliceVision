@@ -93,7 +93,7 @@ bool readPointCloud(IObject iObj, M44d mat, sfm::SfM_Data &sfmdata, sfm::ESfM_Da
     propColor.get(sampleColors);
     if(sampleColors->size() != positions->size())
     {
-      OPENMVG_LOG_WARNING("[Alembic Importer] WARNING: colors will be ignored. Color vector size: " << sampleColors->size() << ", positions vector size: " << positions->size());
+      ALICEVISION_LOG_WARNING("[Alembic Importer] WARNING: colors will be ignored. Color vector size: " << sampleColors->size() << ", positions vector size: " << positions->size());
       sampleColors.reset();
     }
   }
@@ -105,7 +105,7 @@ bool readPointCloud(IObject iObj, M44d mat, sfm::SfM_Data &sfmdata, sfm::ESfM_Da
     propDesc.get(sampleDescs);
     if(sampleDescs->size() != positions->size())
     {
-      OPENMVG_LOG_WARNING("[Alembic Importer] WARNING: describer type will be ignored. describerType vector size: " << sampleDescs->size() << ", positions vector size: " << positions->size());
+      ALICEVISION_LOG_WARNING("[Alembic Importer] WARNING: describer type will be ignored. describerType vector size: " << sampleDescs->size() << ", positions vector size: " << positions->size());
       sampleDescs.reset();
     }
   }
@@ -152,16 +152,16 @@ bool readPointCloud(IObject iObj, M44d mat, sfm::SfM_Data &sfmdata, sfm::ESfM_Da
 
     if( positions->size() != sampleVisibilitySize->size() )
     {
-      OPENMVG_LOG_WARNING("ABC Error: number of observations per 3D point should be identical to the number of 2D features.");
-      OPENMVG_LOG_WARNING("Number of observations per 3D point size is " << sampleVisibilitySize->size());
-      OPENMVG_LOG_WARNING("Number of 3D points is " << positions->size());
+      ALICEVISION_LOG_WARNING("ABC Error: number of observations per 3D point should be identical to the number of 2D features.");
+      ALICEVISION_LOG_WARNING("Number of observations per 3D point size is " << sampleVisibilitySize->size());
+      ALICEVISION_LOG_WARNING("Number of 3D points is " << positions->size());
       return false;
     }
     if( sampleVisibilityIds->size() != sampleFeatPos2d->size() )
     {
-      OPENMVG_LOG_WARNING("ABC Error: visibility Ids and features 2D pos should have the same size.");
-      OPENMVG_LOG_WARNING("Visibility Ids size is " << sampleVisibilityIds->size());
-      OPENMVG_LOG_WARNING("Features 2d Pos size is " << sampleFeatPos2d->size());
+      ALICEVISION_LOG_WARNING("ABC Error: visibility Ids and features 2D pos should have the same size.");
+      ALICEVISION_LOG_WARNING("Visibility Ids size is " << sampleVisibilityIds->size());
+      ALICEVISION_LOG_WARNING("Features 2d Pos size is " << sampleFeatPos2d->size());
       return false;
     }
 
@@ -391,7 +391,7 @@ bool readXform(IXform& xform, M44d& mat, sfm::SfM_Data& sfmData, sfm::ESfM_Data 
   // If we have an animated camera we handle it with the xform here
   if(xform.getSchema().getNumSamples() != 1)
   {
-    OPENMVG_LOG_DEBUG(xform.getSchema().getNumSamples() << " samples found in this animated xform.");
+    ALICEVISION_LOG_DEBUG(xform.getSchema().getNumSamples() << " samples found in this animated xform.");
     for(index_t frame = 0; frame < xform.getSchema().getNumSamples(); ++frame)
     {
       xform.getSchema().get(xsample, ISampleSelector(frame));
@@ -484,7 +484,7 @@ bool readXform(IXform& xform, M44d& mat, sfm::SfM_Data& sfmData, sfm::ESfM_Data 
 // Top down read of 3d objects
 void visitObject(IObject iObj, M44d mat, sfm::SfM_Data &sfmdata, sfm::ESfM_Data flags_part)
 {
-  // OPENMVG_LOG_DEBUG("ABC visit: " << iObj.getFullName());
+  // ALICEVISION_LOG_DEBUG("ABC visit: " << iObj.getFullName());
   
   const MetaData& md = iObj.getMetaData();
   if(IPoints::matches(md) && (flags_part & sfm::ESfM_Data::STRUCTURE))

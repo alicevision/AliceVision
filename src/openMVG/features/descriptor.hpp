@@ -1,8 +1,8 @@
 // This file is part of the AliceVision project and is made available under
 // the terms of the MPL2 license (see the COPYING.md file).
 
-#ifndef OPENMVG_FEATURES_DESCRIPTOR_HPP
-#define OPENMVG_FEATURES_DESCRIPTOR_HPP
+#ifndef ALICEVISION_FEATURES_DESCRIPTOR_HPP
+#define ALICEVISION_FEATURES_DESCRIPTOR_HPP
 
 #include "aliceVision/numeric/numeric.h"
 #include <iostream>
@@ -314,4 +314,4 @@ bool saveDescsToBinFile(
 } // namespace features
 } // namespace aliceVision
 
-#endif  // OPENMVG_FEATURES_DESCRIPTOR_HPP
+#endif  // ALICEVISION_FEATURES_DESCRIPTOR_HPP

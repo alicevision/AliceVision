@@ -24,8 +24,8 @@ void getInfoBinFile(const std::string &path, int dim, size_t &numDescriptors, in
 
   if(!fs.is_open())
   {
-    OPENMVG_CERR("Error while opening " << path);
-    OPENMVG_CERR("Error while opening " + path);
+    ALICEVISION_CERR("Error while opening " << path);
+    ALICEVISION_CERR("Error while opening " + path);
   }
 
   // go to the end of the file
@@ -80,8 +80,8 @@ void getListOfDescriptorFiles(const std::string &fileFullPath, std::map<IndexT, 
   
   if(!bp.has_extension())
   {
-    OPENMVG_CERR("File without extension not recognized! " << fileFullPath);
-    OPENMVG_CERR("The file  " + fileFullPath + " is neither a JSON nor a txt file");
+    ALICEVISION_CERR("File without extension not recognized! " << fileFullPath);
+    ALICEVISION_CERR("The file  " + fileFullPath + " is neither a JSON nor a txt file");
     throw std::invalid_argument("Unrecognized extension for " + fileFullPath);
   }
 
@@ -104,7 +104,7 @@ void getListOfDescriptorFiles(const std::string &fileFullPath, std::map<IndexT, 
     fs.open(fileFullPath, std::ios::in);
     if(!fs.is_open())
     {
-      OPENMVG_CERR("Error while opening " << fileFullPath);
+      ALICEVISION_CERR("Error while opening " << fileFullPath);
       throw std::invalid_argument("Error while opening " + fileFullPath);
     }
 
@@ -134,7 +134,7 @@ void getListOfDescriptorFiles(const std::string &fileFullPath, std::map<IndexT, 
 
     if(numberOfFiles == 0)
     {
-      OPENMVG_CERR("It seems like there are no views in " << fileFullPath);
+      ALICEVISION_CERR("It seems like there are no views in " << fileFullPath);
       return;
     }
 

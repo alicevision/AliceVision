@@ -1,8 +1,8 @@
 // This file is part of the AliceVision project and is made available under
 // the terms of the MPL2 license (see the COPYING.md file).
 
-#ifndef OPENMVG_TRACKS_H_
-#define OPENMVG_TRACKS_H_
+#ifndef ALICEVISION_TRACKS_H_
+#define ALICEVISION_TRACKS_H_
 
 #include "aliceVision/config.hpp"
 #include "lemon/list_graph.h"
@@ -179,7 +179,7 @@ struct TracksBuilder
 
     // Build the node indirection for each referenced feature
     MapIndexToNode map_indexToNode;
-#if OPENMVG_IS_DEFINED(OPENMVG_HAVE_BOOST)
+#if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_BOOST)
     map_indexToNode.reserve(allFeatures.size());
     _map_nodeToIndex.reserve(allFeatures.size());
 #endif
@@ -611,4 +611,4 @@ struct TracksUtilsMap
 } // namespace tracks
 } // namespace aliceVision
 
-#endif // OPENMVG_TRACKS_H_
+#endif // ALICEVISION_TRACKS_H_

@@ -1,8 +1,8 @@
 // This file is part of the AliceVision project and is made available under
 // the terms of the MPL2 license (see the COPYING.md file).
 
-#ifndef OPENMVG_SFM_FILTERS_HPP
-#define OPENMVG_SFM_FILTERS_HPP
+#ifndef ALICEVISION_SFM_FILTERS_HPP
+#define ALICEVISION_SFM_FILTERS_HPP
 
 #include <aliceVision/multiview/rotation_averaging_common.hpp>
 #include <aliceVision/multiview/translation_averaging_common.hpp>
@@ -28,7 +28,7 @@ static void KeepOnlyReferencedElement(
   const std::set<IndexT> & Ids,
   T & toFilter)
 {
-  OPENMVG_LOG_ERROR("Must be specialized for your type");
+  ALICEVISION_LOG_ERROR("Must be specialized for your type");
 }
 
 // Specialization for RelativeInfo_Map
@@ -145,4 +145,4 @@ void KeepOnlyReferencedElement(
 } // namespace sfm
 } // namespace aliceVision
 
-#endif // OPENMVG_SFM_FILTERS_HPP
+#endif // ALICEVISION_SFM_FILTERS_HPP

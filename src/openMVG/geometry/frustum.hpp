@@ -1,8 +1,8 @@
 // This file is part of the AliceVision project and is made available under
 // the terms of the MPL2 license (see the COPYING.md file).
 
-#ifndef OPENMVG_GEOMETRY_FRUSTUM_HPP_
-#define OPENMVG_GEOMETRY_FRUSTUM_HPP_
+#ifndef ALICEVISION_GEOMETRY_FRUSTUM_HPP_
+#define ALICEVISION_GEOMETRY_FRUSTUM_HPP_
 
 #include "aliceVision/geometry/half_space_intersection.hpp"
 
@@ -114,4 +114,4 @@ struct Frustum
 } // namespace geometry
 } // namespace aliceVision
 
-#endif // OPENMVG_GEOMETRY_FRUSTUM_HPP_
+#endif // ALICEVISION_GEOMETRY_FRUSTUM_HPP_

@@ -51,7 +51,7 @@ bool GlobalSfM_Rotation_AveragingSolver::Run(
       break;
     }
     default:
-      OPENMVG_LOG_WARNING(
+      ALICEVISION_LOG_WARNING(
         "Unknown relative rotation inference method: " << (int) eRelativeRotationInferenceMethod);
   }
 
@@ -107,7 +107,7 @@ bool GlobalSfM_Rotation_AveragingSolver::Run(
       bSuccess = rotation_averaging::l1::GlobalRotationsRobust(
         relativeRotations, vec_globalR, nMainViewID, 0.0f, &vec_inliers);
 
-      OPENMVG_LOG_DEBUG("inliers: " << vec_inliers);
+      ALICEVISION_LOG_DEBUG("inliers: " << vec_inliers);
 
       // save kept pairs (restore original pose indices using the backward reindexing)
       for (size_t i = 0; i < vec_inliers.size(); ++i)
@@ -122,7 +122,7 @@ bool GlobalSfM_Rotation_AveragingSolver::Run(
     }
     break;
     default:
-      OPENMVG_LOG_DEBUG(
+      ALICEVISION_LOG_DEBUG(
         "Unknown rotation averaging method: " << (int) eRotationAveragingMethod);
   }
 
@@ -134,7 +134,7 @@ bool GlobalSfM_Rotation_AveragingSolver::Run(
     }
   }
   else{
-    OPENMVG_LOG_WARNING("Global rotation solving failed.");
+    ALICEVISION_LOG_WARNING("Global rotation solving failed.");
   }
 
   return bSuccess;
@@ -213,7 +213,7 @@ void GlobalSfM_Rotation_AveragingSolver::TripletRotationRejection(
   std::transform(map_relatives.begin(), map_relatives.end(), std::inserter(used_pairs, used_pairs.begin()), stl::RetrieveKey());
 
   // Display statistics about rotation triplets error:
-  OPENMVG_LOG_DEBUG("Statistics about rotation triplets:");
+  ALICEVISION_LOG_DEBUG("Statistics about rotation triplets:");
   minMaxMeanMedian<float>(vec_errToIdentityPerTriplet.begin(), vec_errToIdentityPerTriplet.end());
 
   std::sort(vec_errToIdentityPerTriplet.begin(), vec_errToIdentityPerTriplet.end());
@@ -222,12 +222,12 @@ void GlobalSfM_Rotation_AveragingSolver::TripletRotationRejection(
   {
     Histogram<float> histo(0.0f, *max_element(vec_errToIdentityPerTriplet.begin(), vec_errToIdentityPerTriplet.end()), 20);
     histo.Add(vec_errToIdentityPerTriplet.begin(), vec_errToIdentityPerTriplet.end());
-    OPENMVG_LOG_DEBUG(histo.ToString());
+    ALICEVISION_LOG_DEBUG(histo.ToString());
   }
 
   {
-    OPENMVG_LOG_DEBUG("Triplets filtering based on composition error on unit cycles");
-    OPENMVG_LOG_DEBUG(
+    ALICEVISION_LOG_DEBUG("Triplets filtering based on composition error on unit cycles");
+    ALICEVISION_LOG_DEBUG(
       "#Triplets before: " << vec_triplets.size() << "\n"
       "#Triplets after: " << vec_triplets_validated.size());
   }
@@ -235,7 +235,7 @@ void GlobalSfM_Rotation_AveragingSolver::TripletRotationRejection(
   vec_triplets = std::move(vec_triplets_validated);
 
   const size_t edges_end_count = relativeRotations.size();
-  OPENMVG_LOG_DEBUG("#Edges removed by triplet inference: " << edges_start_count - edges_end_count);
+  ALICEVISION_LOG_DEBUG("#Edges removed by triplet inference: " << edges_start_count - edges_end_count);
 }
 
 } // namespace sfm

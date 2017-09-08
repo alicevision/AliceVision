@@ -1,8 +1,8 @@
 // This file is part of the AliceVision project and is made available under
 // the terms of the MPL2 license (see the COPYING.md file).
 
-#ifndef OPENMVG_GRAPH_CONNECTED_COMPONENT_H_
-#define OPENMVG_GRAPH_CONNECTED_COMPONENT_H_
+#ifndef ALICEVISION_GRAPH_CONNECTED_COMPONENT_H_
+#define ALICEVISION_GRAPH_CONNECTED_COMPONENT_H_
 
 #include <aliceVision/types.hpp>
 #include <aliceVision/system/Logger.hpp>
@@ -76,7 +76,7 @@ std::set<IndexT> CleanGraph_KeepLargestBiEdge_Nodes(
   // Graph is bi-edge connected, but still many connected components can exist
   // Keep only the largest one
   const int connectedComponentCount = lemon::countConnectedComponents(putativeGraph.g);
-  OPENMVG_LOG_DEBUG("CleanGraph_KeepLargestBiEdge_Nodes():: => connected Component: "
+  ALICEVISION_LOG_DEBUG("CleanGraph_KeepLargestBiEdge_Nodes():: => connected Component: "
     << connectedComponentCount);
   if (connectedComponentCount >= 1)
   {
@@ -94,7 +94,7 @@ std::set<IndexT> CleanGraph_KeepLargestBiEdge_Nodes(
         count = iter->second.size();
         iterLargestCC = iter;
       }
-      OPENMVG_LOG_DEBUG("Connected component of size: " << iter->second.size());
+      ALICEVISION_LOG_DEBUG("Connected component of size: " << iter->second.size());
     }
 
     //-- Keep only the nodes that are in the largest CC
@@ -137,7 +137,7 @@ std::set<IndexT> CleanGraph_KeepLargestBiEdge_Nodes(
       putativeGraph.g);
   }*/
 
-  OPENMVG_LOG_DEBUG(
+  ALICEVISION_LOG_DEBUG(
     "Cardinal of nodes: " << lemon::countNodes(putativeGraph.g) << "\n" <<
     "Cardinal of edges: " << lemon::countEdges(putativeGraph.g)
     );
@@ -148,4 +148,4 @@ std::set<IndexT> CleanGraph_KeepLargestBiEdge_Nodes(
 } // namespace graph
 } // namespace aliceVision
 
-#endif // OPENMVG_GRAPH_CONNECTED_COMPONENT_H_
+#endif // ALICEVISION_GRAPH_CONNECTED_COMPONENT_H_

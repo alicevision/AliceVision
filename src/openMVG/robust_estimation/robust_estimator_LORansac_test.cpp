@@ -84,11 +84,11 @@ void lineFittingTest(std::size_t numPoints,
   LineKernelLoRansac kernel(xy);
 
   estimatedModel = LO_RANSAC(kernel, ScorerEvaluator<LineKernel>(threshold), &vec_inliers);
-  OPENMVG_LOG_DEBUG("#inliers found : " << vec_inliers.size()
+  ALICEVISION_LOG_DEBUG("#inliers found : " << vec_inliers.size()
           << " expected: " << numPoints - expectedInliers);
-  OPENMVG_LOG_DEBUG("model[0] found : " << estimatedModel[0]
+  ALICEVISION_LOG_DEBUG("model[0] found : " << estimatedModel[0]
           << " expected: " << GTModel[0]);
-  OPENMVG_LOG_DEBUG("model[1] found : " << estimatedModel[1]
+  ALICEVISION_LOG_DEBUG("model[1] found : " << estimatedModel[1]
           << " expected: " << GTModel[1]);
 
   const std::string base = "testRansac_line_t" + std::to_string(threshold) + "_n" + std::to_string(gaussianNoiseLevel);

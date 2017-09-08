@@ -27,7 +27,7 @@ size_t readDescFromFiles(const std::string &fileFullPath, std::vector<Descriptor
   int bytesPerElement = 0;
 
   // Display infos and progress bar
-  OPENMVG_LOG_DEBUG("Pre-computing the memory needed...");
+  ALICEVISION_LOG_DEBUG("Pre-computing the memory needed...");
   boost::progress_display display(descriptorsFiles.size());
 
   // Read all files and get the number of descriptors to load
@@ -46,10 +46,10 @@ size_t readDescFromFiles(const std::string &fileFullPath, std::vector<Descriptor
     }
     ++display;
   }
-  OPENMVG_LOG_DEBUG("Found " << numDescriptors << " descriptors overall, allocating memory...");
+  ALICEVISION_LOG_DEBUG("Found " << numDescriptors << " descriptors overall, allocating memory...");
   if(bytesPerElement == 0)
   {
-    OPENMVG_LOG_DEBUG("WARNING: Empty descriptor file: " << fileFullPath);
+    ALICEVISION_LOG_DEBUG("WARNING: Empty descriptor file: " << fileFullPath);
     return 0;
   }
 
@@ -59,7 +59,7 @@ size_t readDescFromFiles(const std::string &fileFullPath, std::vector<Descriptor
   numDescriptors = 0;
 
   // Read the descriptors
-  OPENMVG_LOG_DEBUG("Reading the descriptors...");
+  ALICEVISION_LOG_DEBUG("Reading the descriptors...");
   display.restart(descriptorsFiles.size());
 
   // Run through the path vector and read the descriptors

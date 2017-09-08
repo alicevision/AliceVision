@@ -1,8 +1,8 @@
 // This file is part of the AliceVision project and is made available under
 // the terms of the MPL2 license (see the COPYING.md file).
 
-#ifndef OPENMVG_GRAPH_TRIPLET_FINDER_H
-#define OPENMVG_GRAPH_TRIPLET_FINDER_H
+#ifndef ALICEVISION_GRAPH_TRIPLET_FINDER_H
+#define ALICEVISION_GRAPH_TRIPLET_FINDER_H
 
 #include "aliceVision/types.hpp"
 #include "aliceVision/graph/graph.hpp"
@@ -141,4 +141,4 @@ static std::vector< graph::Triplet > tripletListing(
 } // namespace graph
 } // namespace aliceVision
 
-#endif // OPENMVG_GRAPH_TRIPLET_FINDER_H
+#endif // ALICEVISION_GRAPH_TRIPLET_FINDER_H

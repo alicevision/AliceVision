@@ -51,7 +51,7 @@ TEST(connectedComponents, TwoCC_Parsing) {
   EXPECT_EQ(2, connectedComponentCount);
   for (IndexMap::MapIt it(connectedNodeMap); it != INVALID; ++it)
   {
-    OPENMVG_LOG_DEBUG(*it << "\t" << graph.id(it));
+    ALICEVISION_LOG_DEBUG(*it << "\t" << graph.id(it));
   }
 }
 

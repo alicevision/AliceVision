@@ -50,7 +50,7 @@ static double RMSE(const SfM_Data & sfm_data)
       const geometry::Pose3 pose = sfm_data.getPose(*view);
       const std::shared_ptr<cameras::IntrinsicBase> intrinsic = sfm_data.GetIntrinsics().at(view->getIntrinsicId());
       const Vec2 residual = intrinsic->residual(pose, iterTracks->second.X, itObs->second.x);
-      //OPENMVG_LOG_DEBUG(residual);
+      //ALICEVISION_LOG_DEBUG(residual);
       vec.push_back( residual(0) );
       vec.push_back( residual(1) );
     }
@@ -112,7 +112,7 @@ SfM_Data getInputScene
           (w, h, config._fx, config._cx, config._cy, 0., 0., 0.);
       break;
       default:
-        OPENMVG_LOG_DEBUG("Not yet supported");
+        ALICEVISION_LOG_DEBUG("Not yet supported");
     }
   }
 
@@ -204,7 +204,7 @@ SfM_Data getInputRigScene(const NViewDataSet& d,
           (w, h, config._fx, config._cx, config._cy, 0., 0., 0.);
       break;
       default:
-        OPENMVG_LOG_DEBUG("Not yet supported");
+        ALICEVISION_LOG_DEBUG("Not yet supported");
     }
   }
 

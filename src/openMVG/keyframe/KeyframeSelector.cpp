@@ -26,7 +26,7 @@ KeyframeSelector::KeyframeSelector(const std::vector<std::string>& mediaPaths,
   _voctree.reset(new aliceVision::voctree::VocabularyTree<DescriptorFloat>(voctreeFilePath));
 
   {
-      OPENMVG_LOG_INFO("vocabulary tree loaded with :" << std::endl
+      ALICEVISION_LOG_INFO("vocabulary tree loaded with :" << std::endl
                        << " - " << _voctree->levels() << " levels" << std::endl
                        << " - " << _voctree->splits() << " branching factor" << std::endl);
   }
@@ -34,7 +34,7 @@ KeyframeSelector::KeyframeSelector(const std::vector<std::string>& mediaPaths,
   // check number of input media filePaths
   if(mediaPaths.empty())
   {
-    OPENMVG_LOG_ERROR("ERROR : can't create KeyframeSelector without a media file path !");
+    ALICEVISION_LOG_ERROR("ERROR : can't create KeyframeSelector without a media file path !");
     throw std::invalid_argument("ERROR : can't create KeyframeSelector without a media file path !");
   }
 
@@ -53,7 +53,7 @@ KeyframeSelector::KeyframeSelector(const std::vector<std::string>& mediaPaths,
     // check if feed is initialized
     if(!feed.isInit())
     {
-      OPENMVG_LOG_ERROR("ERROR : while initializing the FeedProvider with " << path);
+      ALICEVISION_LOG_ERROR("ERROR : while initializing the FeedProvider with " << path);
       throw std::invalid_argument("ERROR : while initializing the FeedProvider with " + path);
     }
 
@@ -64,7 +64,7 @@ KeyframeSelector::KeyframeSelector(const std::vector<std::string>& mediaPaths,
   // check if minimum number of frame is zero
   if(nbFrames == 0)
   {
-    OPENMVG_LOG_ERROR("ERROR : one or multiple medias can't be found or empty !");
+    ALICEVISION_LOG_ERROR("ERROR : one or multiple medias can't be found or empty !");
     throw std::invalid_argument("ERROR : one or multiple medias can't be found or empty !");
   }
 
@@ -92,7 +92,7 @@ void KeyframeSelector::process()
     // first frame
     if(!_feeds.at(mediaIndex)->readImage(image, queryIntrinsics, currentImgName, hasIntrinsics))
     {
-      OPENMVG_LOG_ERROR("ERROR : can't read media first frame " << _mediaPaths[mediaIndex]);
+      ALICEVISION_LOG_ERROR("ERROR : can't read media first frame " << _mediaPaths[mediaIndex]);
       throw std::invalid_argument("ERROR : can't read media first frame " + _mediaPaths[mediaIndex]);
     }
 
@@ -121,21 +121,21 @@ void KeyframeSelector::process()
   
   for(std::size_t frameIndex = 0; frameIndex < _framesData.size(); ++frameIndex)
   {
-    OPENMVG_LOG_TRACE("frame : " << frameIndex);
+    ALICEVISION_LOG_TRACE("frame : " << frameIndex);
     bool frameSelected = true;
     auto& frameData = _framesData.at(frameIndex);
     frameData.mediasData.resize(_feeds.size());
 
     for(std::size_t mediaIndex = 0; mediaIndex < _feeds.size(); ++mediaIndex)
     {
-      OPENMVG_LOG_TRACE("media : " << _mediaPaths.at(mediaIndex));
+      ALICEVISION_LOG_TRACE("media : " << _mediaPaths.at(mediaIndex));
       auto& feed = *_feeds.at(mediaIndex);
 
       if(frameSelected) // false if a camera of a rig is not selected
       {
         if(!feed.readImage(image, queryIntrinsics, currentImgName, hasIntrinsics))
         {
-          OPENMVG_LOG_ERROR("ERROR  : can't read frame '" << currentImgName << "' !");
+          ALICEVISION_LOG_ERROR("ERROR  : can't read frame '" << currentImgName << "' !");
           throw std::invalid_argument("ERROR : can't read frame '" + currentImgName + "' !");
         }
 
@@ -152,13 +152,13 @@ void KeyframeSelector::process()
     {
       if(frameSelected)
       {
-        OPENMVG_LOG_TRACE(" > selected" << std::endl);
+        ALICEVISION_LOG_TRACE(" > selected" << std::endl);
         frameData.selected = true;
         frameData.computeAvgSharpness();
       }
       else
       {
-        OPENMVG_LOG_TRACE(" > skipped" << std::endl);
+        ALICEVISION_LOG_TRACE(" > skipped" << std::endl);
         frameData.mediasData.clear(); // remove unselected mediasData
       }
     }
@@ -185,7 +185,7 @@ void KeyframeSelector::process()
       // save keyframe
       if(hasKeyframe)
       {
-        OPENMVG_LOG_INFO("keyframe choice : " << keyframeIndex << std::endl);
+        ALICEVISION_LOG_INFO("keyframe choice : " << keyframeIndex << std::endl);
 
         // write keyframe
         for(std::size_t mediaIndex = 0; mediaIndex < _feeds.size(); ++mediaIndex)
@@ -207,7 +207,7 @@ void KeyframeSelector::process()
       }
       else
       {
-        OPENMVG_LOG_INFO("keyframe choice : none" << std::endl);
+        ALICEVISION_LOG_INFO("keyframe choice : none" << std::endl);
       }
     }
     ++currentFrameStep;
@@ -306,7 +306,7 @@ bool KeyframeSelector::computeFrameData(const image::Image<image::RGBColor>& ima
                                              currMediaInfo.tileWidth,
                                              tileSharpSubset);
 
-  OPENMVG_LOG_TRACE( " - sharpness : " << currMediaData.sharpness);
+  ALICEVISION_LOG_TRACE( " - sharpness : " << currMediaData.sharpness);
 
   if(currMediaData.sharpness > _sharpnessThreshold)
   {
@@ -330,7 +330,7 @@ bool KeyframeSelector::computeFrameData(const image::Image<image::RGBColor>& ima
         }
       }
       currframeData.maxDistScore = std::max(currframeData.maxDistScore, currMediaData.distScore);
-      OPENMVG_LOG_TRACE(" - distScore : " << currMediaData.distScore);
+      ALICEVISION_LOG_TRACE(" - distScore : " << currMediaData.distScore);
     }
 
     if(noKeyframe || (currMediaData.distScore < _distScoreMax))
@@ -376,11 +376,11 @@ void KeyframeSelector::convertFocalLengthInMM(CameraInfo& cameraInfo, int imageW
   {
     cameraInfo.focalLength = (cameraInfo.focalLength * find._sensorSize) / imageWidth;
     cameraInfo.focalIsMM = true;
-    OPENMVG_LOG_INFO("Focal length converted in mm : " << cameraInfo.focalLength);
+    ALICEVISION_LOG_INFO("Focal length converted in mm : " << cameraInfo.focalLength);
   }
   else
   {
-    OPENMVG_LOG_WARNING("Warning: can't convert focal length in mm  : " << cameraInfo.brand << " / " << cameraInfo.model);
+    ALICEVISION_LOG_WARNING("Warning: can't convert focal length in mm  : " << cameraInfo.brand << " / " << cameraInfo.model);
   }
 }
 

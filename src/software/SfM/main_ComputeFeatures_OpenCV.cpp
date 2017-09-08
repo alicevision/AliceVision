@@ -20,7 +20,7 @@
 /// OpenCV Includes
 #include <opencv2/opencv.hpp>
 #include "opencv2/core/eigen.hpp"
-#if OPENMVG_IS_DEFINED(OPENMVG_USE_OCVSIFT)
+#if ALICEVISION_IS_DEFINED(ALICEVISION_USE_OCVSIFT)
 #include "opencv2/xfeatures2d.hpp"
 #endif
 
@@ -135,7 +135,7 @@ public:
 #include <cereal/archives/json.hpp>
 CEREAL_REGISTER_TYPE_WITH_NAME(AKAZE_OCV_Image_describer, "AKAZE_OCV_Image_describer");
 
-#if OPENMVG_IS_DEFINED(OPENMVG_USE_OCVSIFT)
+#if ALICEVISION_IS_DEFINED(ALICEVISION_USE_OCVSIFT)
 
 class SIFT_OPENCV_Params
 {
@@ -364,7 +364,7 @@ private:
 };
 
 CEREAL_REGISTER_TYPE_WITH_NAME(SIFT_OPENCV_Image_describer, "SIFT_OPENCV_Image_describer");
-#endif //OPENMVG_USE_OCVSIFT
+#endif //ALICEVISION_USE_OCVSIFT
 
 /// Compute between the Views
 /// Compute view image description (feature & descriptor extraction using OpenCV)
@@ -378,7 +378,7 @@ int main(int argc, char **argv)
   std::string sSfM_Data_Filename;
   std::string sOutDir = "";
   bool bForce = false;
-#if OPENMVG_IS_DEFINED(OPENMVG_USE_OCVSIFT)
+#if ALICEVISION_IS_DEFINED(ALICEVISION_USE_OCVSIFT)
   std::string sImage_Describer_Method = "AKAZE_OPENCV";
 #endif
   std::string sFeaturePreset = "NORMAL";
@@ -390,7 +390,7 @@ int main(int argc, char **argv)
   cmd.add( make_option('o', sOutDir, "outdir") );
   // Optional
   cmd.add( make_option('f', bForce, "force") );
-#if OPENMVG_IS_DEFINED(OPENMVG_USE_OCVSIFT)
+#if ALICEVISION_IS_DEFINED(ALICEVISION_USE_OCVSIFT)
   cmd.add( make_option('m', sImage_Describer_Method, "describerMethod") );
 #endif
   cmd.add( make_option('p', sFeaturePreset, "describerPreset") );
@@ -406,7 +406,7 @@ int main(int argc, char **argv)
       << "[-o|--outdir] path \n"
       << "\n[Optional]\n"
       << "[-f|--force: Force to recompute data]\n"
-#if OPENMVG_IS_DEFINED(OPENMVG_USE_OCVSIFT)
+#if ALICEVISION_IS_DEFINED(ALICEVISION_USE_OCVSIFT)
       << "[-m|--describerMethod\n"
       << "  (method to use to describe an image):\n"
       << "   AKAZE_OPENCV (default),\n"
@@ -431,7 +431,7 @@ int main(int argc, char **argv)
             << argv[0] << std::endl
             << "--input_file " << sSfM_Data_Filename << std::endl
             << "--outdir " << sOutDir << std::endl
-#if OPENMVG_IS_DEFINED(OPENMVG_USE_OCVSIFT)
+#if ALICEVISION_IS_DEFINED(ALICEVISION_USE_OCVSIFT)
             << "--describerMethod " << sImage_Describer_Method << std::endl
 #endif
             << "--describerPreset " << sFeaturePreset << std::endl
@@ -483,7 +483,7 @@ int main(int argc, char **argv)
   }
   else
   {
-#if OPENMVG_IS_DEFINED(OPENMVG_USE_OCVSIFT)
+#if ALICEVISION_IS_DEFINED(ALICEVISION_USE_OCVSIFT)
     if (sImage_Describer_Method == "AKAZE_OPENCV")
     {
       image_describer.reset(new AKAZE_OCV_Image_describer);

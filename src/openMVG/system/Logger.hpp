@@ -5,46 +5,46 @@
 
 #include <memory>
 
-#define OPENMVG_COUT(x) std::cout << x << std::endl
-#define OPENMVG_CERR(x) std::cerr << x << std::endl
+#define ALICEVISION_COUT(x) std::cout << x << std::endl
+#define ALICEVISION_CERR(x) std::cerr << x << std::endl
 
-#if OPENMVG_IS_DEFINED(OPENMVG_WITH_COUT)
-#if OPENMVG_IS_DEFINED(OPENMVG_HAVE_BOOST)
+#if ALICEVISION_IS_DEFINED(ALICEVISION_WITH_COUT)
+#if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_BOOST)
   #define BOOST_LOG_DYN_LINK 1
   #include <boost/log/trivial.hpp>
 
-  #define OPENMVG_LOG_TRACE_OBJ BOOST_LOG_TRIVIAL(trace)
-  #define OPENMVG_LOG_DEBUG_OBJ BOOST_LOG_TRIVIAL(debug)
-  #define OPENMVG_LOG_INFO_OBJ BOOST_LOG_TRIVIAL(info)
-  #define OPENMVG_LOG_WARNING_OBJ BOOST_LOG_TRIVIAL(warning)
-  #define OPENMVG_LOG_ERROR_OBJ BOOST_LOG_TRIVIAL(error)
-  #define OPENMVG_LOG_FATAL_OBJ BOOST_LOG_TRIVIAL(fatal)
+  #define ALICEVISION_LOG_TRACE_OBJ BOOST_LOG_TRIVIAL(trace)
+  #define ALICEVISION_LOG_DEBUG_OBJ BOOST_LOG_TRIVIAL(debug)
+  #define ALICEVISION_LOG_INFO_OBJ BOOST_LOG_TRIVIAL(info)
+  #define ALICEVISION_LOG_WARNING_OBJ BOOST_LOG_TRIVIAL(warning)
+  #define ALICEVISION_LOG_ERROR_OBJ BOOST_LOG_TRIVIAL(error)
+  #define ALICEVISION_LOG_FATAL_OBJ BOOST_LOG_TRIVIAL(fatal)
   
 #else
-  #define OPENMVG_LOG_TRACE_OBJ std::cout
-  #define OPENMVG_LOG_DEBUG_OBJ std::cout
-  #define OPENMVG_LOG_INFO_OBJ std::cout
-  #define OPENMVG_LOG_WARNING_OBJ std::cout
-  #define OPENMVG_LOG_ERROR_OBJ std::cerr
-  #define OPENMVG_LOG_FATAL_OBJ std::cerr
+  #define ALICEVISION_LOG_TRACE_OBJ std::cout
+  #define ALICEVISION_LOG_DEBUG_OBJ std::cout
+  #define ALICEVISION_LOG_INFO_OBJ std::cout
+  #define ALICEVISION_LOG_WARNING_OBJ std::cout
+  #define ALICEVISION_LOG_ERROR_OBJ std::cerr
+  #define ALICEVISION_LOG_FATAL_OBJ std::cerr
 #endif
-  #define OPENMVG_LOG(MODE, ...) MODE << __VA_ARGS__
+  #define ALICEVISION_LOG(MODE, ...) MODE << __VA_ARGS__
 #else
-  #define OPENMVG_LOG_TRACE_OBJ std::stringstream
-  #define OPENMVG_LOG_DEBUG_OBJ std::stringstream
-  #define OPENMVG_LOG_INFO_OBJ std::stringstream
-  #define OPENMVG_LOG_WARNING_OBJ std::stringstream
-  #define OPENMVG_LOG_ERROR_OBJ std::stringstream
-  #define OPENMVG_LOG_FATAL_OBJ std::stringstream
-  #define OPENMVG_LOG(MODE, ...)
+  #define ALICEVISION_LOG_TRACE_OBJ std::stringstream
+  #define ALICEVISION_LOG_DEBUG_OBJ std::stringstream
+  #define ALICEVISION_LOG_INFO_OBJ std::stringstream
+  #define ALICEVISION_LOG_WARNING_OBJ std::stringstream
+  #define ALICEVISION_LOG_ERROR_OBJ std::stringstream
+  #define ALICEVISION_LOG_FATAL_OBJ std::stringstream
+  #define ALICEVISION_LOG(MODE, ...)
 #endif
 
-#define OPENMVG_LOG_TRACE(...) OPENMVG_LOG(OPENMVG_LOG_TRACE_OBJ, __VA_ARGS__)
-#define OPENMVG_LOG_DEBUG(...) OPENMVG_LOG(OPENMVG_LOG_DEBUG_OBJ, __VA_ARGS__)
-#define OPENMVG_LOG_INFO(...) OPENMVG_LOG(OPENMVG_LOG_INFO_OBJ, __VA_ARGS__)
-#define OPENMVG_LOG_WARNING(...) OPENMVG_LOG(OPENMVG_LOG_WARNING_OBJ, __VA_ARGS__)
-#define OPENMVG_LOG_ERROR(...) OPENMVG_LOG(OPENMVG_LOG_ERROR_OBJ, __VA_ARGS__)
-#define OPENMVG_LOG_FATAL(...) OPENMVG_LOG(OPENMVG_LOG_FATAL_OBJ, __VA_ARGS__)
+#define ALICEVISION_LOG_TRACE(...) ALICEVISION_LOG(ALICEVISION_LOG_TRACE_OBJ, __VA_ARGS__)
+#define ALICEVISION_LOG_DEBUG(...) ALICEVISION_LOG(ALICEVISION_LOG_DEBUG_OBJ, __VA_ARGS__)
+#define ALICEVISION_LOG_INFO(...) ALICEVISION_LOG(ALICEVISION_LOG_INFO_OBJ, __VA_ARGS__)
+#define ALICEVISION_LOG_WARNING(...) ALICEVISION_LOG(ALICEVISION_LOG_WARNING_OBJ, __VA_ARGS__)
+#define ALICEVISION_LOG_ERROR(...) ALICEVISION_LOG(ALICEVISION_LOG_ERROR_OBJ, __VA_ARGS__)
+#define ALICEVISION_LOG_FATAL(...) ALICEVISION_LOG(ALICEVISION_LOG_FATAL_OBJ, __VA_ARGS__)
 
 
 namespace aliceVision {
@@ -148,13 +148,13 @@ private:
    */
   Logger();
 
-#if OPENMVG_IS_DEFINED(OPENMVG_HAVE_BOOST)
+#if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_BOOST)
   /**
    * @brief setLogLevel with boost severity level
    * @param level boost severity level
    */
   void setLogLevel(const boost::log::trivial::severity_level level);
-#endif // OPENMVG_HAVE_BOOST
+#endif // ALICEVISION_HAVE_BOOST
 
   static std::shared_ptr<Logger> _instance;
 };

@@ -327,7 +327,7 @@ int ReadPngStream(FILE *file,
   if ((ppbRowPointers = (png_bytepp) malloc(hPNG
     * sizeof(png_bytep))) == nullptr)
   {
-    OPENMVG_LOG_ERROR("PNG: out of memory");
+    ALICEVISION_LOG_ERROR("PNG: out of memory");
     return 0;
   }
 
@@ -562,7 +562,7 @@ int ReadTiff(const char * filename,
 {
   TIFF* tiff = TIFFOpen(filename, "r");
   if (!tiff) {
-    OPENMVG_LOG_ERROR("Error: Couldn't open " << filename << " fopen returned 0");
+    ALICEVISION_LOG_ERROR("Error: Couldn't open " << filename << " fopen returned 0");
     return 0;
   }
   uint16 bps, spp;
@@ -603,7 +603,7 @@ int WriteTiff(const char * filename,
 {
   TIFF* tiff = TIFFOpen(filename, "w");
   if (!tiff) {
-    OPENMVG_LOG_ERROR("Error: Couldn't open " << filename << " fopen returned 0");
+    ALICEVISION_LOG_ERROR("Error: Couldn't open " << filename << " fopen returned 0");
     return 0;
   }
   TIFFSetField(tiff, TIFFTAG_IMAGEWIDTH, w);

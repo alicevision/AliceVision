@@ -1,8 +1,8 @@
 // This file is part of the AliceVision project and is made available under
 // the terms of the MPL2 license (see the COPYING.md file).
 
-#ifndef OPENMVG_FEATURES_REGIONS_FACTORY_HPP
-#define OPENMVG_FEATURES_REGIONS_FACTORY_HPP
+#ifndef ALICEVISION_FEATURES_REGIONS_FACTORY_HPP
+#define ALICEVISION_FEATURES_REGIONS_FACTORY_HPP
 
 #include "aliceVision/features/feature.hpp"
 #include "aliceVision/features/regions.hpp"
@@ -39,4 +39,4 @@ CEREAL_REGISTER_TYPE_WITH_NAME(aliceVision::features::AKAZE_Float_Regions, "AKAZ
 CEREAL_REGISTER_TYPE_WITH_NAME(aliceVision::features::AKAZE_Liop_Regions, "AKAZE_Liop_Regions");
 CEREAL_REGISTER_TYPE_WITH_NAME(aliceVision::features::AKAZE_Binary_Regions, "AKAZE_Binary_Regions");
 
-#endif // OPENMVG_FEATURES_REGIONS_FACTORY_HPP
+#endif // ALICEVISION_FEATURES_REGIONS_FACTORY_HPP

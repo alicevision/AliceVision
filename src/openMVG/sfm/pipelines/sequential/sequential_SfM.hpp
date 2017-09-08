@@ -12,7 +12,7 @@
 #include "third_party/htmlDoc/htmlDoc.hpp"
 #include "third_party/histogram/histogram.hpp"
 
-#if OPENMVG_IS_DEFINED(OPENMVG_HAVE_BOOST)
+#if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_BOOST)
   #include <boost/property_tree/ptree.hpp>
   #include <boost/property_tree/json_parser.hpp>
   namespace pt = boost::property_tree;
@@ -183,7 +183,7 @@ private:
   /// Discard track with too large residual error
   bool badTrackRejector(double dPrecision, size_t count = 0);
 
-  #if OPENMVG_IS_DEFINED(OPENMVG_HAVE_BOOST)
+  #if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_BOOST)
   /// Export statistics in a JSON file
   void exportStatistics(double time_sfm);
   #endif
@@ -219,7 +219,7 @@ private:
   std::vector<int> _pyramidWeights;
   int _pyramidThreshold;
 
-  #if OPENMVG_IS_DEFINED(OPENMVG_HAVE_BOOST)
+  #if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_BOOST)
     // Property tree for json stats export
     pt::ptree _tree;
   #endif

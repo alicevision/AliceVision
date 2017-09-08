@@ -1,8 +1,8 @@
 // This file is part of the AliceVision project and is made available under
 // the terms of the MPL2 license (see the COPYING.md file).
 
-#ifndef OPENMVG_IMAGE_DESCRIPTION_MSURF_DESCRIPTOR_H
-#define OPENMVG_IMAGE_DESCRIPTION_MSURF_DESCRIPTOR_H
+#ifndef ALICEVISION_IMAGE_DESCRIPTION_MSURF_DESCRIPTOR_H
+#define ALICEVISION_IMAGE_DESCRIPTION_MSURF_DESCRIPTOR_H
 
 #include "aliceVision/features/descriptor.hpp"
 #include "aliceVision/features/feature.hpp"
@@ -133,7 +133,7 @@ namespace features {
     typedef Eigen::Matrix<Real, Eigen::Dynamic, 1> VecReal;
     Eigen::Map< VecReal > dataMap( &desc[0], 64);
     dataMap.normalize();
-    //OPENMVG_LOG_DEBUG(dataMap.transpose()));
+    //ALICEVISION_LOG_DEBUG(dataMap.transpose()));
   }
 
   template<typename ImageT>

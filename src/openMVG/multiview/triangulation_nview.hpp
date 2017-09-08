@@ -1,8 +1,8 @@
 // This file is part of the AliceVision project and is made available under
 // the terms of the MPL2 license (see the COPYING.md file).
 
-#ifndef OPENMVG_MULTIVIEW_TRIANGULATION_NVIEW_H
-#define OPENMVG_MULTIVIEW_TRIANGULATION_NVIEW_H
+#ifndef ALICEVISION_MULTIVIEW_TRIANGULATION_NVIEW_H
+#define ALICEVISION_MULTIVIEW_TRIANGULATION_NVIEW_H
 
 #include "aliceVision/numeric/numeric.h"
 
@@ -64,4 +64,4 @@ protected:
 
 } // namespace aliceVision
 
-#endif  // OPENMVG_MULTIVIEW_TRIANGULATION_NVIEW_H
+#endif  // ALICEVISION_MULTIVIEW_TRIANGULATION_NVIEW_H

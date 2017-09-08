@@ -38,24 +38,24 @@ set(features_files_sources
 )
 
 # CCTAG imageDescriber
-if(OPENMVG_HAVE_CCTAG)
+if(ALICEVISION_HAVE_CCTAG)
   list(APPEND features_files_headers cctag/CCTAG_describer.hpp)
   list(APPEND features_files_sources cctag/CCTAG_describer.cpp)
 endif()
 
 # PopSIFT imageDescriber
-if(OPENMVG_HAVE_POPSIFT)
+if(ALICEVISION_HAVE_POPSIFT)
   list(APPEND features_files_headers sift/SIFT_popSIFT_describer.hpp)
   list(APPEND features_files_sources sift/SIFT_popSIFT_describer.cpp)
 endif()
 
 # OpenCV imageDescriber
-if(OPENMVG_HAVE_OPENCV)
+if(ALICEVISION_HAVE_OPENCV)
 
   list(APPEND features_files_headers openCV/AKAZE_openCV_describer.hpp)
   list(APPEND features_files_sources openCV/AKAZE_openCV_describer.cpp)
 
-  if(OPENMVG_HAVE_OCVSIFT)
+  if(ALICEVISION_HAVE_OCVSIFT)
     list(APPEND features_files_headers openCV/SIFT_openCV_describer.hpp)
     list(APPEND features_files_sources openCV/SIFT_openCV_describer.cpp)
   endif()
@@ -79,23 +79,23 @@ target_link_libraries( aliceVision_features
 )
 
 # Link CCTAG library
-if(OPENMVG_HAVE_CCTAG)
+if(ALICEVISION_HAVE_CCTAG)
   target_link_libraries(aliceVision_features PUBLIC CCTag::CCTag)
 endif()
 
 # Link PopSIFT library
-if(OPENMVG_HAVE_POPSIFT)
+if(ALICEVISION_HAVE_POPSIFT)
   target_link_libraries(aliceVision_features PUBLIC PopSift::popsift)
 endif()
 
 # Link OpenCV library
-if(OPENMVG_HAVE_OPENCV)
+if(ALICEVISION_HAVE_OPENCV)
   target_link_libraries(aliceVision_features PUBLIC ${OpenCV_LIBS})
 endif()
 
 set_target_properties(aliceVision_features
-  PROPERTIES SOVERSION ${OPENMVG_VERSION_MAJOR}
-  VERSION "${OPENMVG_VERSION_MAJOR}.${OPENMVG_VERSION_MINOR}"
+  PROPERTIES SOVERSION ${ALICEVISION_VERSION_MAJOR}
+  VERSION "${ALICEVISION_VERSION_MAJOR}.${ALICEVISION_VERSION_MINOR}"
 )
 
 install(TARGETS aliceVision_features

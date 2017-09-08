@@ -1,8 +1,8 @@
 // This file is part of the AliceVision project and is made available under
 // the terms of the MPL2 license (see the COPYING.md file).
 
-#ifndef OPENMVG_SPHERICAL_CAMERA_HPP
-#define OPENMVG_SPHERICAL_CAMERA_HPP
+#ifndef ALICEVISION_SPHERICAL_CAMERA_HPP
+#define ALICEVISION_SPHERICAL_CAMERA_HPP
 
 #include "aliceVision/numeric/numeric.h"
 #include "aliceVision/multiview/projection.hpp"
@@ -164,4 +164,4 @@ void TriangulateDLT(const Mat34 &P1, const Vec3 &x1,
 } // namespace spherical_cam
 } // namespace aliceVision
 
-#endif /* OPENMVG_SPHERICAL_CAMERA_HPP */
+#endif /* ALICEVISION_SPHERICAL_CAMERA_HPP */

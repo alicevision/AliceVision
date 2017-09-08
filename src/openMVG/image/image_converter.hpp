@@ -1,8 +1,8 @@
 // This file is part of the AliceVision project and is made available under
 // the terms of the MPL2 license (see the COPYING.md file).
 
-#ifndef OPENMVG_IMAGE_IMAGE_CONVERTER_HPP
-#define OPENMVG_IMAGE_IMAGE_CONVERTER_HPP
+#ifndef ALICEVISION_IMAGE_IMAGE_CONVERTER_HPP
+#define ALICEVISION_IMAGE_IMAGE_CONVERTER_HPP
 
 #include "aliceVision/image/image_container.hpp"
 #include "aliceVision/image/pixel_types.hpp"
@@ -122,4 +122,4 @@ static inline void rgbFloat2rgbInt(
 } // namespace image
 } // namespace aliceVision
 
-#endif  // OPENMVG_IMAGE_IMAGE_CONVERTER_HPP
+#endif  // ALICEVISION_IMAGE_IMAGE_CONVERTER_HPP

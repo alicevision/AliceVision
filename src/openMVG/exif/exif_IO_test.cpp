@@ -31,11 +31,11 @@ TEST(Matching, Exif_IO_easyexif_ReadData)
 {
   std::unique_ptr<Exif_IO> exif_io(new Exif_IO_EasyExif(sImg));
 
-  OPENMVG_LOG_DEBUG("Read Metadata of file: " << sImg);
+  ALICEVISION_LOG_DEBUG("Read Metadata of file: " << sImg);
 
-  OPENMVG_LOG_DEBUG("-----");
-  OPENMVG_LOG_DEBUG(exif_io->getExifDataString());
-  OPENMVG_LOG_DEBUG("-----");
+  ALICEVISION_LOG_DEBUG("-----");
+  ALICEVISION_LOG_DEBUG(exif_io->getExifDataString());
+  ALICEVISION_LOG_DEBUG("-----");
 
   EXPECT_TRUE(exif_io->doesHaveExifInfo());
 

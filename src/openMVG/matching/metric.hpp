@@ -1,14 +1,14 @@
 // This file is part of the AliceVision project and is made available under
 // the terms of the MPL2 license (see the COPYING.md file).
 
-#ifndef OPENMVG_MATCHING_METRIC_H
-#define OPENMVG_MATCHING_METRIC_H
+#ifndef ALICEVISION_MATCHING_METRIC_H
+#define ALICEVISION_MATCHING_METRIC_H
 
 #include "aliceVision/matching/metric_hamming.hpp"
 #include "aliceVision/numeric/accumulator_trait.hpp"
 #include <aliceVision/config.hpp>
 
-#if OPENMVG_IS_DEFINED(OPENMVG_HAVE_SSE)
+#if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_SSE)
 #include <aliceVision/system/Logger.hpp>
 #include <xmmintrin.h>
 #endif
@@ -72,7 +72,7 @@ struct L2_Vectorized
   }
 };
 
-#if OPENMVG_IS_DEFINED(OPENMVG_HAVE_SSE)
+#if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_SSE)
 
 namespace optim_ss2{
 
@@ -110,7 +110,7 @@ namespace optim_ss2{
     }
     else
     {
-      OPENMVG_LOG_WARNING("/!\\ size is not modulus 4, distance cannot be performed in SSE");
+      ALICEVISION_LOG_WARNING("/!\\ size is not modulus 4, distance cannot be performed in SSE");
       return 0.0f;
     }
   }
@@ -131,9 +131,9 @@ struct L2_Vectorized<float>
   }
 };
 
-#endif // OPENMVG_HAVE_SSE
+#endif // ALICEVISION_HAVE_SSE
 
 }  // namespace matching
 }  // namespace aliceVision
 
-#endif // OPENMVG_MATCHING_METRIC_H
+#endif // ALICEVISION_MATCHING_METRIC_H

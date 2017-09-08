@@ -6,7 +6,7 @@ TARGET_LINK_LIBRARIES(aliceVision_sample_akaze
   aliceVision_image
   aliceVision_features
   stlplus
-  ${OPENMVG_LIBRARY_DEPENDENCIES})
+  ${ALICEVISION_LIBRARY_DEPENDENCIES})
 SET_PROPERTY(TARGET aliceVision_sample_akaze PROPERTY FOLDER AliceVision/Samples)
 
 ADD_EXECUTABLE( aliceVision_main_computeAKAZE main_computeAKAZE.cpp )
@@ -15,6 +15,6 @@ TARGET_LINK_LIBRARIES( aliceVision_main_computeAKAZE
   aliceVision_features
   aliceVision_system
   stlplus
-  ${OPENMVG_LIBRARY_DEPENDENCIES})
+  ${ALICEVISION_LIBRARY_DEPENDENCIES})
 SET_PROPERTY(TARGET aliceVision_main_computeAKAZE PROPERTY FOLDER AliceVision/Samples)
 

@@ -24,13 +24,13 @@ set_property(TARGET aliceVision_system
   PROPERTY FOLDER AliceVision/AliceVision
 )
 
-if(OPENMVG_HAVE_BOOST)
+if(ALICEVISION_HAVE_BOOST)
   target_link_libraries(aliceVision_system ${Boost_LIBRARIES})
 endif()
 
 set_target_properties(aliceVision_system
-  PROPERTIES SOVERSION ${OPENMVG_VERSION_MAJOR}
-  VERSION "${OPENMVG_VERSION_MAJOR}.${OPENMVG_VERSION_MINOR}"
+  PROPERTIES SOVERSION ${ALICEVISION_VERSION_MAJOR}
+  VERSION "${ALICEVISION_VERSION_MAJOR}.${ALICEVISION_VERSION_MINOR}"
 )
 
 install(TARGETS aliceVision_system

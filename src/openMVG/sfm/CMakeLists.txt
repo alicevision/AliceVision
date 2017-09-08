@@ -59,7 +59,7 @@ set(sfm_files_sources
   utils/sfm_data_UID_utils.cpp
 )
 
-if(OPENMVG_HAVE_ALEMBIC)
+if(ALICEVISION_HAVE_ALEMBIC)
   list(APPEND sfm_files_headers
     AlembicExporter.hpp
     AlembicImporter.hpp
@@ -94,11 +94,11 @@ if(Boost_FOUND)
 endif()
 
 set_target_properties(aliceVision_sfm
-  PROPERTIES SOVERSION ${OPENMVG_VERSION_MAJOR}
-  VERSION "${OPENMVG_VERSION_MAJOR}.${OPENMVG_VERSION_MINOR}"
+  PROPERTIES SOVERSION ${ALICEVISION_VERSION_MAJOR}
+  VERSION "${ALICEVISION_VERSION_MAJOR}.${ALICEVISION_VERSION_MINOR}"
 )
 
-if(OPENMVG_HAVE_ALEMBIC)
+if(ALICEVISION_HAVE_ALEMBIC)
   target_link_libraries(aliceVision_sfm
     ${ABC_LIBRARIES}
   )
@@ -114,7 +114,7 @@ UNIT_TEST(aliceVision sfm_data_BA    "aliceVision_multiview_test_data;aliceVisio
 UNIT_TEST(aliceVision sfm_data_utils "aliceVision_features;aliceVision_multiview;aliceVision_system;aliceVision_sfm;stlplus")
 UNIT_TEST(aliceVision Rig            "aliceVision_features;aliceVision_sfm;aliceVision_system;stlplus")
 
-if(OPENMVG_HAVE_ALEMBIC)
+if(ALICEVISION_HAVE_ALEMBIC)
   UNIT_TEST(aliceVision AlembicImporter "aliceVision_sfm;${ABC_LIBRARIES}")
 endif()
 

@@ -1,8 +1,8 @@
 // This file is part of the AliceVision project and is made available under
 // the terms of the MPL2 license (see the COPYING.md file).
 
-#ifndef OPENMVG_MATCHING_ARRAYMATCHER_BRUTE_FORCE_H
-#define OPENMVG_MATCHING_ARRAYMATCHER_BRUTE_FORCE_H
+#ifndef ALICEVISION_MATCHING_ARRAYMATCHER_BRUTE_FORCE_H
+#define ALICEVISION_MATCHING_ARRAYMATCHER_BRUTE_FORCE_H
 
 #include "aliceVision/numeric/numeric.h"
 #include "aliceVision/matching/matching_interface.hpp"
@@ -155,4 +155,4 @@ private:
 }  // namespace matching
 }  // namespace aliceVision
 
-#endif  // OPENMVG_MATCHING_ARRAYMATCHER_BRUTE_FORCE_H
+#endif  // ALICEVISION_MATCHING_ARRAYMATCHER_BRUTE_FORCE_H

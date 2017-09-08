@@ -1,8 +1,8 @@
 // This file is part of the AliceVision project and is made available under
 // the terms of the MPL2 license (see the COPYING.md file).
 
-#ifndef OPENMVG_SFM_HPP
-#define OPENMVG_SFM_HPP
+#ifndef ALICEVISION_SFM_HPP
+#define ALICEVISION_SFM_HPP
 
 #include "aliceVision/types.hpp"
 #include "aliceVision/numeric/numeric.h"
@@ -42,4 +42,4 @@
 #include "aliceVision/sfm/pipelines/localization/SfM_Localizer.hpp"
 #include "aliceVision/sfm/pipelines/localization/SfM_Localizer_Single_3DTrackObservation_Database.hpp"
 
-#endif // OPENMVG_SFM_HPP
+#endif // ALICEVISION_SFM_HPP

@@ -1,8 +1,8 @@
 // This file is part of the AliceVision project and is made available under
 // the terms of the MPL2 license (see the COPYING.md file).
 
-#ifndef OPENMVG_MATCHING_ARRAYMATCHER_KDTREE_FLANN_H_
-#define OPENMVG_MATCHING_ARRAYMATCHER_KDTREE_FLANN_H_
+#ifndef ALICEVISION_MATCHING_ARRAYMATCHER_KDTREE_FLANN_H_
+#define ALICEVISION_MATCHING_ARRAYMATCHER_KDTREE_FLANN_H_
 
 #include "aliceVision/matching/matching_interface.hpp"
 #include <aliceVision/config.hpp>
@@ -154,4 +154,4 @@ class ArrayMatcher_Kdtree_Flann : public ArrayMatcher<Scalar, Metric>
 } // namespace matching
 } // namespace aliceVision
 
-#endif // OPENMVG_MATCHING_ARRAYMATCHER_KDTREE_FLANN_H_
+#endif // ALICEVISION_MATCHING_ARRAYMATCHER_KDTREE_FLANN_H_

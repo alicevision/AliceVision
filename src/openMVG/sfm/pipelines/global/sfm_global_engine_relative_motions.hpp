@@ -1,8 +1,8 @@
 // This file is part of the AliceVision project and is made available under
 // the terms of the MPL2 license (see the COPYING.md file).
 
-#ifndef OPENMVG_SFM_GLOBAL_ENGINE_RELATIVE_MOTIONS_HPP
-#define OPENMVG_SFM_GLOBAL_ENGINE_RELATIVE_MOTIONS_HPP
+#ifndef ALICEVISION_SFM_GLOBAL_ENGINE_RELATIVE_MOTIONS_HPP
+#define ALICEVISION_SFM_GLOBAL_ENGINE_RELATIVE_MOTIONS_HPP
 
 #include "aliceVision/sfm/pipelines/sfm_engine.hpp"
 
@@ -87,4 +87,4 @@ private:
 } // namespace sfm
 } // namespace aliceVision
 
-#endif // OPENMVG_SFM_GLOBAL_ENGINE_RELATIVE_MOTIONS_HPP
+#endif // ALICEVISION_SFM_GLOBAL_ENGINE_RELATIVE_MOTIONS_HPP

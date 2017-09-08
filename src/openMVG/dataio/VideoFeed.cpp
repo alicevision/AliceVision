@@ -61,7 +61,7 @@ VideoFeed::FeederImpl::FeederImpl(const std::string &videoPath, const std::strin
   _videoCapture.open(videoPath);
   if (!_videoCapture.isOpened())
   {
-    OPENMVG_LOG_WARNING("Unable to open the video : " << videoPath);
+    ALICEVISION_LOG_WARNING("Unable to open the video : " << videoPath);
     throw std::invalid_argument("Unable to open the video : "+videoPath);
   }
   // Grab frame 0, so we can call readImage.
@@ -82,7 +82,7 @@ VideoFeed::FeederImpl::FeederImpl(int videoDevice, const std::string &calibPath)
   _videoCapture.open(videoDevice);
   if (!_videoCapture.isOpened())
   {
-    OPENMVG_LOG_WARNING("Unable to open the video : " << _videoPath);
+    ALICEVISION_LOG_WARNING("Unable to open the video : " << _videoPath);
     throw std::invalid_argument("Unable to open the video : "+_videoPath);
   }
 
@@ -129,7 +129,7 @@ bool VideoFeed::FeederImpl::readImage(image::Image<image::RGBColor> &imageRGB,
   }
   else
   {
-    OPENMVG_LOG_WARNING("Error can't read RGB frame " << _videoPath);
+    ALICEVISION_LOG_WARNING("Error can't read RGB frame " << _videoPath);
     throw std::invalid_argument("Error can't read RGB frame " + _videoPath);
   }
   
@@ -162,8 +162,8 @@ bool VideoFeed::FeederImpl::readImage(image::Image<unsigned char> &imageGray,
     cv::cvtColor(frame, grey, CV_BGR2GRAY);
     imageGray.resize(grey.cols, grey.rows);
     cv::cv2eigen(grey, imageGray);
-//      OPENMVG_LOG_DEBUG(grey.channels() << " " << grey.rows << " " << grey.cols);
-//      OPENMVG_LOG_DEBUG(imageGray.Depth() << " " << imageGray.Height() << " " << imageGray.Width());
+//      ALICEVISION_LOG_DEBUG(grey.channels() << " " << grey.rows << " " << grey.cols);
+//      ALICEVISION_LOG_DEBUG(imageGray.Depth() << " " << imageGray.Height() << " " << imageGray.Width());
   }
   else
   {
@@ -189,7 +189,7 @@ bool VideoFeed::FeederImpl::goToFrame(const unsigned int frame)
 {
   if (!_videoCapture.isOpened())
   {
-    OPENMVG_LOG_WARNING("We cannot open the video file.");
+    ALICEVISION_LOG_WARNING("We cannot open the video file.");
     return false;
   }
   

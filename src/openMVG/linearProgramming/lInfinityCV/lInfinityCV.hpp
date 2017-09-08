@@ -1,8 +1,8 @@
 // This file is part of the AliceVision project and is made available under
 // the terms of the MPL2 license (see the COPYING.md file).
 
-#ifndef OPENMVG_L_INFINITY_COMPUTER_VISION_H_
-#define OPENMVG_L_INFINITY_COMPUTER_VISION_H_
+#ifndef ALICEVISION_L_INFINITY_COMPUTER_VISION_H_
+#define ALICEVISION_L_INFINITY_COMPUTER_VISION_H_
 
 // Structure and motion problem solver
 #include "aliceVision/linearProgramming/lInfinityCV/tijsAndXis_From_xi_Ri.hpp"
@@ -23,4 +23,4 @@
 // Compute from global translation by using 3-views relative translations guess
 #include "aliceVision/linearProgramming/lInfinityCV/global_translations_fromTriplets.hpp"
 
-#endif // OPENMVG_L_INFINITY_COMPUTER_VISION_H_
+#endif // ALICEVISION_L_INFINITY_COMPUTER_VISION_H_

@@ -116,7 +116,7 @@ bool SfM_Localizer::Localize
         {
           // switch to a default value
           resection_data.error_max = 4.0;
-          OPENMVG_LOG_DEBUG("LORansac: error was set to infinity, a default value of " 
+          ALICEVISION_LOG_DEBUG("LORansac: error was set to infinity, a default value of " 
                   << resection_data.error_max << " is going to be used");
         }
 
@@ -154,9 +154,9 @@ bool SfM_Localizer::Localize
 
   if (!bResection)
   {
-    OPENMVG_LOG_DEBUG("bResection is false");
-    OPENMVG_LOG_DEBUG(" because resection_data.vec_inliers.size() = " << resection_data.vec_inliers.size());
-    OPENMVG_LOG_DEBUG(" and MINIMUM_SAMPLES = " << MINIMUM_SAMPLES);
+    ALICEVISION_LOG_DEBUG("bResection is false");
+    ALICEVISION_LOG_DEBUG(" because resection_data.vec_inliers.size() = " << resection_data.vec_inliers.size());
+    ALICEVISION_LOG_DEBUG(" and MINIMUM_SAMPLES = " << MINIMUM_SAMPLES);
   }
 
   if (bResection)
@@ -167,7 +167,7 @@ bool SfM_Localizer::Localize
     KRt_From_P(P, &K, &R, &t);
     pose = geometry::Pose3(R, -R.transpose() * t);
   }
-  OPENMVG_LOG_DEBUG(
+  ALICEVISION_LOG_DEBUG(
     "-------------------------------\n"
     "-- Robust Resection\n"
     "-- Resection status: " << bResection << "\n"

@@ -1,8 +1,8 @@
 // This file is part of the AliceVision project and is made available under
 // the terms of the MPL2 license (see the COPYING.md file).
 
-#ifndef OPENMVG_LINEAR_PROGRAMMING_INTERFACE_H_
-#define OPENMVG_LINEAR_PROGRAMMING_INTERFACE_H_
+#ifndef ALICEVISION_LINEAR_PROGRAMMING_INTERFACE_H_
+#define ALICEVISION_LINEAR_PROGRAMMING_INTERFACE_H_
 
 #include <vector>
 #include <utility>
@@ -95,4 +95,4 @@ protected :
 } // namespace aliceVision
 
 
-#endif // OPENMVG_LINEAR_PROGRAMMING_INTERFACE_H_
+#endif // ALICEVISION_LINEAR_PROGRAMMING_INTERFACE_H_

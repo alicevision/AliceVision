@@ -7,7 +7,7 @@
 
 #include <aliceVision/config.hpp>
 #include "testing/testing.h"
-#if OPENMVG_IS_DEFINED(OPENMVG_HAVE_MOSEK)
+#if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_MOSEK)
 #include "aliceVision/linearProgramming/linearProgrammingMOSEK.hpp"
 #endif
 #include "aliceVision/linearProgramming/linearProgrammingOSI_X.hpp"
@@ -53,7 +53,7 @@ void BuildLinearProblem(LP_Constraints & cstraint)
       std::make_pair((double)-1e+30, (double)1e+30));
 }
 
-#if OPENMVG_IS_DEFINED(OPENMVG_HAVE_MOSEK)
+#if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_MOSEK)
 // LP_Solve website example solving with the HighLevelFramework
 TEST(linearProgramming, MOSEK_dense_sample) {
 
@@ -71,9 +71,9 @@ TEST(linearProgramming, MOSEK_dense_sample) {
   EXPECT_NEAR( 21.875000, vec_solution[0], 1e-6);
   EXPECT_NEAR( 53.125000, vec_solution[1], 1e-6);
 
-  OPENMVG_LOG_DEBUG("Solution : " << vec_solution[0] << " " << vec_solution[1]);
+  ALICEVISION_LOG_DEBUG("Solution : " << vec_solution[0] << " " << vec_solution[1]);
 }
-#endif // OPENMVG_HAVE_MOSEK
+#endif // ALICEVISION_HAVE_MOSEK
 
 TEST(linearProgramming, osiclp_dense_sample) {
 
@@ -151,7 +151,7 @@ void BuildSparseLinearProblem(LP_Constraints_Sparse & cstraint)
   cstraint._vec_cost[3] = 1;
 }
 
-#if OPENMVG_IS_DEFINED(OPENMVG_HAVE_MOSEK)
+#if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_MOSEK)
 // Unit test on mosek Sparse constraint
 TEST(linearProgramming, mosek_sparse_sample) {
 
@@ -171,7 +171,7 @@ TEST(linearProgramming, mosek_sparse_sample) {
   EXPECT_NEAR( 15, vec_solution[2], 1e-2);
   EXPECT_NEAR( 8.33, vec_solution[3], 1e-2);
 }
-#endif // #if OPENMVG_IS_DEFINED(OPENMVG_HAVE_MOSEK)
+#endif // #if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_MOSEK)
 
 TEST(linearProgramming, osiclp_sparse_sample) {
 
@@ -192,7 +192,7 @@ TEST(linearProgramming, osiclp_sparse_sample) {
   EXPECT_NEAR( 8.33, vec_solution[3], 1e-2);
 }
 
-#if OPENMVG_IS_DEFINED(OPENMVG_HAVE_MOSEK)
+#if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_MOSEK)
 TEST(linearProgramming, osi_mosek_sparse_sample) {
 
   LP_Constraints_Sparse cstraint;
@@ -211,7 +211,7 @@ TEST(linearProgramming, osi_mosek_sparse_sample) {
   EXPECT_NEAR( 15, vec_solution[2], 1e-2);
   EXPECT_NEAR( 8.33, vec_solution[3], 1e-2);
 }
-#endif // #if OPENMVG_IS_DEFINED(OPENMVG_HAVE_MOSEK)
+#endif // #if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_MOSEK)
 
 
 

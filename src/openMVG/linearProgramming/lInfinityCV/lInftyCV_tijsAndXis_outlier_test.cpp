@@ -11,7 +11,7 @@
 
 #include "aliceVision/linearProgramming/linearProgrammingInterface.hpp"
 #include "aliceVision/linearProgramming/linearProgrammingOSI_X.hpp"
-#if OPENMVG_IS_DEFINED(OPENMVG_HAVE_MOSEK)
+#if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_MOSEK)
 #include "aliceVision/linearProgramming/linearProgrammingMOSEK.hpp"
 #endif
 
@@ -90,9 +90,9 @@ TEST(Translation_Structure_L_Infinity_Noisy, Outlier_OSICLP_SOLVER) {
             &vec_solution,
             admissibleResidual,
             0.0, 1e-8);
-    OPENMVG_LOG_DEBUG("Bisection returns : " << bisectionRes);
+    ALICEVISION_LOG_DEBUG("Bisection returns : " << bisectionRes);
 
-    OPENMVG_LOG_DEBUG("Found solution:" << vec_solution);
+    ALICEVISION_LOG_DEBUG("Found solution:" << vec_solution);
 
     //-- First the ti and after the Xi :
 
@@ -109,16 +109,16 @@ TEST(Translation_Structure_L_Infinity_Noisy, Outlier_OSICLP_SOLVER) {
     }
 
     // Compute residuals L2 from estimated parameter values :
-    OPENMVG_LOG_DEBUG("Residual : ");
+    ALICEVISION_LOG_DEBUG("Residual : ");
     Vec2 xk;
     double xsum = 0.0;
     for (int i = 0; i < d2._n; ++i) {
-        OPENMVG_LOG_DEBUG_OBJ << "Camera : " << i << " \t:";
+        ALICEVISION_LOG_DEBUG_OBJ << "Camera : " << i << " \t:";
         for(int k = 0; k < d._x[0].cols(); ++k)
         {
           xk = Project(d2.P(i),  Vec3(d2._X.col(k)));
           double residual = (xk - d2._x[i].col(k)).norm();
-          OPENMVG_LOG_DEBUG_OBJ << Vec2(( xk - d2._x[i].col(k)).array().pow(2)).array().sqrt().mean() <<"\t";
+          ALICEVISION_LOG_DEBUG_OBJ << Vec2(( xk - d2._x[i].col(k)).array().pow(2)).array().sqrt().mean() <<"\t";
           //-- Check that were measurement are not noisy the residual is small
           //  check were the measurement are noisy, the residual is important
           //if ((i != 0 && k != 0) || (i!=3 && k !=3))
@@ -127,10 +127,10 @@ TEST(Translation_Structure_L_Infinity_Noisy, Outlier_OSICLP_SOLVER) {
             xsum += residual;
           }
         }
-        OPENMVG_LOG_DEBUG_OBJ << std::endl;
+        ALICEVISION_LOG_DEBUG_OBJ << std::endl;
     }
     double dResidual = xsum / (d2._n*d._x[0].cols());
-    OPENMVG_LOG_DEBUG(std::endl << "Residual mean in not noisy measurement: " << dResidual);
+    ALICEVISION_LOG_DEBUG(std::endl << "Residual mean in not noisy measurement: " << dResidual);
     // Check that 2D re-projection and 3D point are near to GT.
     EXPECT_NEAR(0.0, dResidual, 1e-1);
   }
@@ -138,7 +138,7 @@ TEST(Translation_Structure_L_Infinity_Noisy, Outlier_OSICLP_SOLVER) {
   d2.ExportToPLY("test_After_Infinity.ply");
 }
 
-#if OPENMVG_IS_DEFINED(OPENMVG_HAVE_MOSEK)
+#if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_MOSEK)
 TEST(Translation_Structure_L_Infinity_Noisy, Outlier_MOSEK) {
 
   const int nViews = 5;
@@ -197,15 +197,15 @@ TEST(Translation_Structure_L_Infinity_Noisy, Outlier_MOSEK) {
     std::vector<double> vec_solution((nViews + nbPoints + megaMat.cols())*3);
     MOSEK_SolveWrapper wrapperMosek(vec_solution.size());
     TiXi_withNoise_L1_ConstraintBuilder cstBuilder( vec_KRotation, megaMat);
-    OPENMVG_LOG_DEBUG(std::endl << "Bisection returns : ");
-    OPENMVG_LOG_DEBUG( BisectionLP<TiXi_withNoise_L1_ConstraintBuilder, LP_Constraints_Sparse>(
+    ALICEVISION_LOG_DEBUG(std::endl << "Bisection returns : ");
+    ALICEVISION_LOG_DEBUG( BisectionLP<TiXi_withNoise_L1_ConstraintBuilder, LP_Constraints_Sparse>(
             wrapperMosek,
             cstBuilder,
             &vec_solution,
             admissibleResidual,
             0.0, 1e-8);
 
-    OPENMVG_LOG_DEBUG("Found solution:\n";
+    ALICEVISION_LOG_DEBUG("Found solution:\n";
     std::copy(vec_solution.begin(), vec_solution.end(), std::ostream_iterator<double>(std::cout, " "));
 
     //-- First the ti and after the Xi :
@@ -223,16 +223,16 @@ TEST(Translation_Structure_L_Infinity_Noisy, Outlier_MOSEK) {
     }
 
     // Compute residuals L2 from estimated parameter values :
-    OPENMVG_LOG_DEBUG(std::endl << "Residual : ");
+    ALICEVISION_LOG_DEBUG(std::endl << "Residual : ");
     Vec2 xk;
     double xsum = 0.0;
     for (int i = 0; i < d2._n; ++i) {
-        OPENMVG_LOG_DEBUG("\nCamera : " << i << " \t:";
+        ALICEVISION_LOG_DEBUG("\nCamera : " << i << " \t:";
         for(int k = 0; k < d._x[0].cols(); ++k)
         {
           xk = Project(d2.P(i),  Vec3(d2._X.col(k)));
           double residual = (xk - d2._x[i].col(k)).norm();
-          OPENMVG_LOG_DEBUG(Vec2(( xk - d2._x[i].col(k)).array().pow(2)).array().sqrt().mean() <<"\t";
+          ALICEVISION_LOG_DEBUG(Vec2(( xk - d2._x[i].col(k)).array().pow(2)).array().sqrt().mean() <<"\t";
           //-- Check that were measurement are not noisy the residual is small
           //  check were the measurement are noisy, the residual is important
           //if ((i != 0 && k != 0) || (i!=3 && k !=3))
@@ -241,17 +241,17 @@ TEST(Translation_Structure_L_Infinity_Noisy, Outlier_MOSEK) {
             xsum += residual;
           }
         }
-        OPENMVG_LOG_DEBUG(std::endl;
+        ALICEVISION_LOG_DEBUG(std::endl;
     }
     double dResidual = xsum / (d2._n*d._x[0].cols());
-    OPENMVG_LOG_DEBUG(std::endl << "Residual mean in not noisy measurement: " << dResidual);
+    ALICEVISION_LOG_DEBUG(std::endl << "Residual mean in not noisy measurement: " << dResidual);
     // Check that 2D re-projection and 3D point are near to GT.
     EXPECT_NEAR(0.0, dResidual, 1e-1);
   }
 
   d2.ExportToPLY("test_After_Infinity.ply");
 }
-#endif // OPENMVG_HAVE_MOSEK
+#endif // ALICEVISION_HAVE_MOSEK
 
 /* ************************************************************************* */
 int main() { TestResult tr; return TestRegistry::runAllTests(tr);}

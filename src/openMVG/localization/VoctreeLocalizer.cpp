@@ -134,22 +134,22 @@ VoctreeLocalizer::VoctreeLocalizer(const std::string &sfmFilePath,
   }
 
   // load the sfm data containing the 3D reconstruction info
-  OPENMVG_LOG_DEBUG("Loading SFM data...");
+  ALICEVISION_LOG_DEBUG("Loading SFM data...");
   if (!Load(_sfm_data, sfmFilePath, sfm::ESfM_Data::ALL)) 
   {
-    OPENMVG_CERR("The input SfM_Data file " << sfmFilePath << " cannot be read!");
-    OPENMVG_CERR("\n\nIf the error says \"JSON Parsing failed - provided NVP not found\" "
+    ALICEVISION_CERR("The input SfM_Data file " << sfmFilePath << " cannot be read!");
+    ALICEVISION_CERR("\n\nIf the error says \"JSON Parsing failed - provided NVP not found\" "
             "it's likely that you have to convert your sfm_data to a recent version supporting "
             "polymorphic Views. You can run the python script convertSfmData.py to update an existing sfmdata.");
     _isInit = false;
     return;
   }
 
-  OPENMVG_LOG_DEBUG("SfM data loaded from " << sfmFilePath << " containing: ");
-  OPENMVG_LOG_DEBUG("\tnumber of views      : " << _sfm_data.GetViews().size());
-  OPENMVG_LOG_DEBUG("\tnumber of poses      : " << _sfm_data.GetPoses().size());
-  OPENMVG_LOG_DEBUG("\tnumber of points     : " << _sfm_data.GetLandmarks().size());
-  OPENMVG_LOG_DEBUG("\tnumber of intrinsics : " << _sfm_data.GetIntrinsics().size());
+  ALICEVISION_LOG_DEBUG("SfM data loaded from " << sfmFilePath << " containing: ");
+  ALICEVISION_LOG_DEBUG("\tnumber of views      : " << _sfm_data.GetViews().size());
+  ALICEVISION_LOG_DEBUG("\tnumber of poses      : " << _sfm_data.GetPoses().size());
+  ALICEVISION_LOG_DEBUG("\tnumber of points     : " << _sfm_data.GetLandmarks().size());
+  ALICEVISION_LOG_DEBUG("\tnumber of intrinsics : " << _sfm_data.GetIntrinsics().size());
 
   // load the features and descriptors
   // initially we need all the feature in order to create the database
@@ -207,7 +207,7 @@ bool VoctreeLocalizer::localize(const image::Image<unsigned char> & imageGrey,
                                 const std::string& imagePath /* = std::string() */)
 {
   // A. extract descriptors and features from image
-  OPENMVG_LOG_DEBUG("[features]\tExtract Regions from query image");
+  ALICEVISION_LOG_DEBUG("[features]\tExtract Regions from query image");
   features::MapRegionsPerDesc queryRegionsPerDesc;
 
   for(const auto& imageDescriber : _imageDescribers)
@@ -222,7 +222,7 @@ bool VoctreeLocalizer::localize(const image::Image<unsigned char> & imageGrey,
     imageDescriber->Set_configuration_preset(param->_featurePreset);
     imageDescriber->Describe(imageGrey, queryRegions, nullptr);
 
-    OPENMVG_LOG_DEBUG("[features]\tExtract " << features::EImageDescriberType_enumToString(descType) << " done: found " << queryRegions->RegionCount() << " features in " << timer.elapsedMs() << " [ms]");
+    ALICEVISION_LOG_DEBUG("[features]\tExtract " << features::EImageDescriberType_enumToString(descType) << " done: found " << queryRegions->RegionCount() << " features in " << timer.elapsedMs() << " [ms]");
   }
 
   const std::pair<std::size_t, std::size_t> queryImageSize = std::make_pair(imageGrey.Width(), imageGrey.Height());
@@ -274,31 +274,31 @@ bool VoctreeLocalizer::initDatabase(const std::string & vocTreeFilepath,
   bool withWeights = !weightsFilepath.empty();
 
   // Load vocabulary tree
-  OPENMVG_LOG_DEBUG("Loading vocabulary tree...");
+  ALICEVISION_LOG_DEBUG("Loading vocabulary tree...");
 
   voctree::load(_voctree, _voctreeDescType, vocTreeFilepath);
 
-  OPENMVG_LOG_DEBUG("tree loaded with " << _voctree->levels() << " levels and "
+  ALICEVISION_LOG_DEBUG("tree loaded with " << _voctree->levels() << " levels and "
           << _voctree->splits() << " branching factors");
 
-  OPENMVG_LOG_DEBUG("Creating the database...");
+  ALICEVISION_LOG_DEBUG("Creating the database...");
   // Add each object (document) to the database
   _database = voctree::Database(_voctree->words());
   if(withWeights)
   {
-    OPENMVG_LOG_DEBUG("Loading weights...");
+    ALICEVISION_LOG_DEBUG("Loading weights...");
     _database.loadWeights(weightsFilepath);
   }
   else
   {
-    OPENMVG_LOG_DEBUG("No weights specified, skipping...");
+    ALICEVISION_LOG_DEBUG("No weights specified, skipping...");
   }
 
   // Load the descriptors and the features related to the images
   // for every image, pass the descriptors through the vocabulary tree and
   // add its visual words to the database.
   // then only store the feature and descriptors that have a 3D point associated
-  OPENMVG_LOG_DEBUG("Build observations per view");
+  ALICEVISION_LOG_DEBUG("Build observations per view");
   C_Progress_display my_progress_bar(_sfm_data.GetViews().size(),
                                      std::cout, "\n- Load Features and Descriptors per view -\n");
 
@@ -393,7 +393,7 @@ bool VoctreeLocalizer::localizeFirstBestResult(const features::MapRegionsPerDesc
                                                const std::string& imagePath)
 {
   // A. Find the (visually) similar images in the database 
-  OPENMVG_LOG_DEBUG("[database]\tRequest closest images from voctree");
+  ALICEVISION_LOG_DEBUG("[database]\tRequest closest images from voctree");
   // pass the descriptors through the vocabulary tree to get the visual words
   // associated to each feature
   voctree::SparseHistogram requestImageWords = _voctree->quantizeToSparse(queryRegions.at(_voctreeDescType)->blindDescriptors());
@@ -410,14 +410,14 @@ bool VoctreeLocalizer::localizeFirstBestResult(const features::MapRegionsPerDesc
 //    const IndexT matchedViewIndex = currMatch.id;
 //    // get the view handle
 //    const std::shared_ptr<sfm::View> matchedView = _sfm_data.views[matchedViewIndex];
-//    OPENMVG_LOG_DEBUG( "[database]\t\t match " << matchedView->getImagePath()
+//    ALICEVISION_LOG_DEBUG( "[database]\t\t match " << matchedView->getImagePath()
 //            << " [docid: "<< currMatch.id << "]"
 //            << " with score " << currMatch.score 
 //            << " and it has "  << _regions_per_view[matchedViewIndex]._regions.RegionCount() 
 //            << " features with 3D points");
 //  }
 
-  OPENMVG_LOG_DEBUG("[matching]\tBuilding the matcher");
+  ALICEVISION_LOG_DEBUG("[matching]\tBuilding the matcher");
   matching::RegionsDatabaseMatcherPerDesc matchers(_matcherType, queryRegions);
 
   sfm::Image_Localizer_Match_Data resectionData;
@@ -441,10 +441,10 @@ bool VoctreeLocalizer::localizeFirstBestResult(const features::MapRegionsPerDesc
     // image of the dataset that was not reconstructed
     if(_regionsPerView.getRegionsPerDesc(matchedViewId).getNbAllRegions() < minNum3DPoints)
     {
-      OPENMVG_LOG_DEBUG("[matching]\tSkipping matching with " << matchedView->getImagePath() << " as it has too few visible 3D points (" << _regionsPerView.getRegionsPerDesc(matchedViewId).getNbAllRegions() << ")");
+      ALICEVISION_LOG_DEBUG("[matching]\tSkipping matching with " << matchedView->getImagePath() << " as it has too few visible 3D points (" << _regionsPerView.getRegionsPerDesc(matchedViewId).getNbAllRegions() << ")");
       continue;
     }
-    OPENMVG_LOG_DEBUG("[matching]\tTrying to match the query image with " << matchedView->getImagePath());
+    ALICEVISION_LOG_DEBUG("[matching]\tTrying to match the query image with " << matchedView->getImagePath());
 
     // its associated intrinsics
     const cameras::IntrinsicBase *matchedIntrinsicsBase = _sfm_data.GetIntrinsicPtr(matchedView->getIntrinsicId());
@@ -469,12 +469,12 @@ bool VoctreeLocalizer::localizeFirstBestResult(const features::MapRegionsPerDesc
                                       param._matchingEstimator);
     if (!matchWorked)
     {
-      OPENMVG_LOG_DEBUG("[matching]\tMatching with " << matchedView->getImagePath() << " failed! Skipping image");
+      ALICEVISION_LOG_DEBUG("[matching]\tMatching with " << matchedView->getImagePath() << " failed! Skipping image");
       continue;
     }
 
     std::size_t nbAllMatches = featureMatches.getNbAllMatches();
-    OPENMVG_LOG_DEBUG("[matching]\tFound " << nbAllMatches << " geometrically validated matches");
+    ALICEVISION_LOG_DEBUG("[matching]\tFound " << nbAllMatches << " geometrically validated matches");
     assert(nbAllMatches > 0);
     
     if(!param._visualDebug.empty() && !imagePath.empty())
@@ -533,7 +533,7 @@ bool VoctreeLocalizer::localizeFirstBestResult(const features::MapRegionsPerDesc
     // estimate the pose
     // Do the resectioning: compute the camera pose.
     resectionData.error_max = param._errorMax;
-    OPENMVG_LOG_DEBUG("[poseEstimation]\tEstimating camera pose...");
+    ALICEVISION_LOG_DEBUG("[poseEstimation]\tEstimating camera pose...");
     bool bResection = sfm::SfM_Localizer::Localize(queryImageSize,
                                                    // pass the input intrinsic if they are valid, null otherwise
                                                    (useInputIntrinsics) ? &queryIntrinsics : nullptr,
@@ -543,14 +543,14 @@ bool VoctreeLocalizer::localizeFirstBestResult(const features::MapRegionsPerDesc
 
     if(!bResection)
     {
-      OPENMVG_LOG_DEBUG("[poseEstimation]\tResection failed");
+      ALICEVISION_LOG_DEBUG("[poseEstimation]\tResection failed");
       // try next one
       continue;
     }
-    OPENMVG_LOG_DEBUG("[poseEstimation]\tResection SUCCEDED");
+    ALICEVISION_LOG_DEBUG("[poseEstimation]\tResection SUCCEDED");
        
-    OPENMVG_LOG_DEBUG("R est\n" << pose.rotation());
-    OPENMVG_LOG_DEBUG("t est\n" << pose.translation());
+    ALICEVISION_LOG_DEBUG("R est\n" << pose.rotation());
+    ALICEVISION_LOG_DEBUG("t est\n" << pose.translation());
 
     // if we didn't use the provided intrinsics, estimate K from the projection
     // matrix estimated by the localizer and initialize the queryIntrinsics with
@@ -563,14 +563,14 @@ bool VoctreeLocalizer::localizeFirstBestResult(const features::MapRegionsPerDesc
       // Decompose the projection matrix  to get K, R and t using 
       // RQ decomposition
       KRt_From_P(resectionData.projection_matrix, &K_, &R_, &t_);
-      OPENMVG_LOG_DEBUG("K estimated\n" << K_);
+      ALICEVISION_LOG_DEBUG("K estimated\n" << K_);
       queryIntrinsics.setK(K_);
       queryIntrinsics.setWidth(queryImageSize.first);
       queryIntrinsics.setHeight(queryImageSize.second);
     }
 
     // D. refine the estimated pose
-    OPENMVG_LOG_DEBUG("[poseEstimation]\tRefining estimated pose");
+    ALICEVISION_LOG_DEBUG("[poseEstimation]\tRefining estimated pose");
     bool refineStatus = sfm::SfM_Localizer::RefinePose(&queryIntrinsics, 
                                                        pose, 
                                                        resectionData, 
@@ -578,7 +578,7 @@ bool VoctreeLocalizer::localizeFirstBestResult(const features::MapRegionsPerDesc
                                                        param._refineIntrinsics /*b_refine_intrinsic*/);
     if(!refineStatus)
     {
-      OPENMVG_LOG_DEBUG("[poseEstimation]\tRefine pose failed.");
+      ALICEVISION_LOG_DEBUG("[poseEstimation]\tRefine pose failed.");
       // try next one
       continue;
     }
@@ -586,14 +586,14 @@ bool VoctreeLocalizer::localizeFirstBestResult(const features::MapRegionsPerDesc
     {
       // just temporary code to evaluate the estimated pose @todo remove it
       const geometry::Pose3 &referencePose = _sfm_data.getPose(*_sfm_data.views.at(matchedViewId));
-      OPENMVG_LOG_DEBUG("R refined\n" << pose.rotation());
-      OPENMVG_LOG_DEBUG("t refined\n" << pose.translation());
-      OPENMVG_LOG_DEBUG("K refined\n" << queryIntrinsics.K());
-      OPENMVG_LOG_DEBUG("R_gt\n" << referencePose.rotation());
-      OPENMVG_LOG_DEBUG("t_gt\n" << referencePose.translation());
-      OPENMVG_LOG_DEBUG("angular difference: " << R2D(getRotationMagnitude(pose.rotation()*referencePose.rotation().inverse())) << "deg");
-      OPENMVG_LOG_DEBUG("center difference: " << (pose.center()-referencePose.center()).norm());
-      OPENMVG_LOG_DEBUG("err = [err; " << R2D(getRotationMagnitude(pose.rotation()*referencePose.rotation().inverse())) << ", "<< (pose.center()-referencePose.center()).norm() << "];");
+      ALICEVISION_LOG_DEBUG("R refined\n" << pose.rotation());
+      ALICEVISION_LOG_DEBUG("t refined\n" << pose.translation());
+      ALICEVISION_LOG_DEBUG("K refined\n" << queryIntrinsics.K());
+      ALICEVISION_LOG_DEBUG("R_gt\n" << referencePose.rotation());
+      ALICEVISION_LOG_DEBUG("t_gt\n" << referencePose.translation());
+      ALICEVISION_LOG_DEBUG("angular difference: " << R2D(getRotationMagnitude(pose.rotation()*referencePose.rotation().inverse())) << "deg");
+      ALICEVISION_LOG_DEBUG("center difference: " << (pose.center()-referencePose.center()).norm());
+      ALICEVISION_LOG_DEBUG("err = [err; " << R2D(getRotationMagnitude(pose.rotation()*referencePose.rotation().inverse())) << ", "<< (pose.center()-referencePose.center()).norm() << "];");
     }
     localizationResult = LocalizationResult(resectionData, associationIDs, pose, queryIntrinsics, matchedImages, refineStatus);
     break;
@@ -650,7 +650,7 @@ bool VoctreeLocalizer::localizeAllResults(const features::MapRegionsPerDesc &que
   // estimate the pose
   // Do the resectioning: compute the camera pose.
   resectionData.error_max = param._errorMax;
-  OPENMVG_LOG_DEBUG("[poseEstimation]\tEstimating camera pose...");
+  ALICEVISION_LOG_DEBUG("[poseEstimation]\tEstimating camera pose...");
   const bool bResection = sfm::SfM_Localizer::Localize(queryImageSize,
                                                       // pass the input intrinsic if they are valid, null otherwise
                                                       (useInputIntrinsics) ? &queryIntrinsics : nullptr,
@@ -660,7 +660,7 @@ bool VoctreeLocalizer::localizeAllResults(const features::MapRegionsPerDesc &que
 
   if(!bResection)
   {
-    OPENMVG_LOG_DEBUG("[poseEstimation]\tResection failed");
+    ALICEVISION_LOG_DEBUG("[poseEstimation]\tResection failed");
     if(!param._visualDebug.empty() && !imagePath.empty())
     {
       namespace bfs = boost::filesystem;
@@ -672,10 +672,10 @@ bool VoctreeLocalizer::localizeAllResults(const features::MapRegionsPerDesc &que
     localizationResult = LocalizationResult(resectionData, associationIDs, pose, queryIntrinsics, matchedImages, bResection);
     return localizationResult.isValid();
   }
-  OPENMVG_LOG_DEBUG("[poseEstimation]\tResection SUCCEDED");
+  ALICEVISION_LOG_DEBUG("[poseEstimation]\tResection SUCCEDED");
 
-  OPENMVG_LOG_DEBUG("R est\n" << pose.rotation());
-  OPENMVG_LOG_DEBUG("t est\n" << pose.translation());
+  ALICEVISION_LOG_DEBUG("R est\n" << pose.rotation());
+  ALICEVISION_LOG_DEBUG("t est\n" << pose.translation());
 
   // if we didn't use the provided intrinsics, estimate K from the projection
   // matrix estimated by the localizer and initialize the queryIntrinsics with
@@ -689,20 +689,20 @@ bool VoctreeLocalizer::localizeAllResults(const features::MapRegionsPerDesc &que
     // RQ decomposition
     KRt_From_P(resectionData.projection_matrix, &K_, &R_, &t_);
     queryIntrinsics.setK(K_);
-    OPENMVG_LOG_DEBUG("K estimated\n" << K_);
+    ALICEVISION_LOG_DEBUG("K estimated\n" << K_);
     queryIntrinsics.setWidth(queryImageSize.first);
     queryIntrinsics.setHeight(queryImageSize.second);
   }
 
   // E. refine the estimated pose
-  OPENMVG_LOG_DEBUG("[poseEstimation]\tRefining estimated pose");
+  ALICEVISION_LOG_DEBUG("[poseEstimation]\tRefining estimated pose");
   bool refineStatus = sfm::SfM_Localizer::RefinePose(&queryIntrinsics,
                                                      pose,
                                                      resectionData,
                                                      true /*b_refine_pose*/,
                                                      param._refineIntrinsics /*b_refine_intrinsic*/);
   if(!refineStatus)
-    OPENMVG_LOG_DEBUG("Refine pose failed.");
+    ALICEVISION_LOG_DEBUG("Refine pose failed.");
 
   if(!param._visualDebug.empty() && !imagePath.empty())
   {
@@ -718,14 +718,14 @@ bool VoctreeLocalizer::localizeAllResults(const features::MapRegionsPerDesc &que
 
   {
     // just debugging this block can be safely removed or commented out
-    OPENMVG_LOG_DEBUG("R refined\n" << pose.rotation());
-    OPENMVG_LOG_DEBUG("t refined\n" << pose.translation());
-    OPENMVG_LOG_DEBUG("K refined\n" << queryIntrinsics.K());
+    ALICEVISION_LOG_DEBUG("R refined\n" << pose.rotation());
+    ALICEVISION_LOG_DEBUG("t refined\n" << pose.translation());
+    ALICEVISION_LOG_DEBUG("K refined\n" << queryIntrinsics.K());
 
     const Mat2X residuals = localizationResult.computeInliersResiduals();
 
     const auto sqrErrors = (residuals.cwiseProduct(residuals)).colwise().sum();
-    OPENMVG_LOG_DEBUG("RMSE = " << std::sqrt(sqrErrors.mean())
+    ALICEVISION_LOG_DEBUG("RMSE = " << std::sqrt(sqrErrors.mean())
                 << " min = " << std::sqrt(sqrErrors.minCoeff())
                 << " max = " << std::sqrt(sqrErrors.maxCoeff()));
   }
@@ -756,10 +756,10 @@ void VoctreeLocalizer::getAllAssociations(const features::MapRegionsPerDesc &que
   // A. Find the (visually) similar images in the database 
   // pass the descriptors through the vocabulary tree to get the visual words
   // associated to each feature
-  OPENMVG_LOG_DEBUG("[database]\tRequest closest images from voctree");
+  ALICEVISION_LOG_DEBUG("[database]\tRequest closest images from voctree");
   if(queryRegions.count(_voctreeDescType) == 0)
   {
-    OPENMVG_LOG_WARNING("[database]\t No feature type " << features::EImageDescriberType_enumToString(_voctreeDescType) << " in query region.");
+    ALICEVISION_LOG_WARNING("[database]\t No feature type " << features::EImageDescriberType_enumToString(_voctreeDescType) << " in query region.");
     return;
   }
   voctree::SparseHistogram requestImageWords = _voctree->quantizeToSparse(queryRegions.at(_voctreeDescType)->blindDescriptors());
@@ -773,14 +773,14 @@ void VoctreeLocalizer::getAllAssociations(const features::MapRegionsPerDesc &que
 //  {
 //    // get the view handle
 //    const std::shared_ptr<sfm::View> matchedView = _sfm_data.views[currMatch.id];
-//    OPENMVG_LOG_DEBUG( "[database]\t\t match " << matchedView->getImagePath()
+//    ALICEVISION_LOG_DEBUG( "[database]\t\t match " << matchedView->getImagePath()
 //            << " [docid: "<< currMatch.id << "]"
 //            << " with score " << currMatch.score 
 //            << " and it has "  << _regions_per_view[currMatch.id]._regions.RegionCount() 
 //            << " features with 3D points");
 //  }
 
-  OPENMVG_LOG_DEBUG("[matching]\tBuilding the matcher");
+  ALICEVISION_LOG_DEBUG("[matching]\tBuilding the matcher");
   matching::RegionsDatabaseMatcherPerDesc matchers(_matcherType, queryRegions);
 
   std::map< std::pair<IndexT, IndexT>, std::size_t > repeated;
@@ -805,11 +805,11 @@ void VoctreeLocalizer::getAllAssociations(const features::MapRegionsPerDesc &que
     // image of the dataset that was not reconstructed
     if(matchedRegions.getNbAllRegions() < minNum3DPoints)
     {
-      OPENMVG_LOG_DEBUG("[matching]\tSkipping matching with " << matchedView->getImagePath() << " as it has too few visible 3D points");
+      ALICEVISION_LOG_DEBUG("[matching]\tSkipping matching with " << matchedView->getImagePath() << " as it has too few visible 3D points");
       continue;
     }
-    OPENMVG_LOG_TRACE("[matching]\tTrying to match the query image with " << matchedView->getImagePath());
-    OPENMVG_LOG_TRACE("[matching]\tIt has " << matchedRegions.getNbAllRegions() << " available features to match");
+    ALICEVISION_LOG_TRACE("[matching]\tTrying to match the query image with " << matchedView->getImagePath());
+    ALICEVISION_LOG_TRACE("[matching]\tIt has " << matchedRegions.getNbAllRegions() << " available features to match");
     
     // its associated intrinsics
     // this is just ugly!
@@ -817,7 +817,7 @@ void VoctreeLocalizer::getAllAssociations(const features::MapRegionsPerDesc &que
     if ( !isPinhole(matchedIntrinsicsBase->getType()) )
     {
       //@fixme maybe better to throw something here
-      OPENMVG_CERR("Only Pinhole cameras are supported!");
+      ALICEVISION_CERR("Only Pinhole cameras are supported!");
       return;
     }
     const cameras::Pinhole_Intrinsic *matchedIntrinsics = (const cameras::Pinhole_Intrinsic*)(matchedIntrinsicsBase);
@@ -838,11 +838,11 @@ void VoctreeLocalizer::getAllAssociations(const features::MapRegionsPerDesc &que
                                       param._matchingEstimator);
     if (!matchWorked)
     {
-//      OPENMVG_LOG_DEBUG("[matching]\tMatching with " << matchedView->getImagePath() << " failed! Skipping image");
+//      ALICEVISION_LOG_DEBUG("[matching]\tMatching with " << matchedView->getImagePath() << " failed! Skipping image");
       continue;
     }
 
-    OPENMVG_LOG_DEBUG("[matching]\tFound " << featureMatches.getNbAllMatches() << " geometrically validated matches");
+    ALICEVISION_LOG_DEBUG("[matching]\tFound " << featureMatches.getNbAllMatches() << " geometrically validated matches");
     assert(featureMatches.getNbAllMatches() > 0);
 
     // if debug is enable save the matches between the query image and the current matching image
@@ -865,7 +865,7 @@ void VoctreeLocalizer::getAllAssociations(const features::MapRegionsPerDesc &que
       const auto baseDir = bfs::path(param._visualDebug) / queryImage;
       if((!bfs::exists(baseDir)))
       {
-        OPENMVG_LOG_DEBUG("created " << baseDir.string());
+        ALICEVISION_LOG_DEBUG("created " << baseDir.string());
         bfs::create_directories(baseDir);
       }
       
@@ -916,14 +916,14 @@ void VoctreeLocalizer::getAllAssociations(const features::MapRegionsPerDesc &que
     if((param._maxResults !=0) && (goodMatches == param._maxResults))
     { 
       // let's say we have enough features
-      OPENMVG_LOG_DEBUG("[matching]\tgot enough point from " << param._maxResults << " images");
+      ALICEVISION_LOG_DEBUG("[matching]\tgot enough point from " << param._maxResults << " images");
       break;
     }
   }
   
   if(param._nbFrameBufferMatching > 0)
   {
-    OPENMVG_LOG_DEBUG("[matching]\tUsing frameBuffer matching: matching with the past " 
+    ALICEVISION_LOG_DEBUG("[matching]\tUsing frameBuffer matching: matching with the past " 
             << param._nbFrameBufferMatching << " frames" );
     getAssociationsFromBuffer(matchers, imageSize, param, useInputIntrinsics, queryIntrinsics, out_occurences);
   }
@@ -943,7 +943,7 @@ void VoctreeLocalizer::getAllAssociations(const features::MapRegionsPerDesc &que
           ++counter;
         }
       }
-      OPENMVG_LOG_DEBUG("[matching]\tThere are " << counter 
+      ALICEVISION_LOG_DEBUG("[matching]\tThere are " << counter 
               <<  " associations occurred " << value << " times ("
               << 100.0*counter/(double)numCollectedPts << "%)");
       numOccTreated += counter;
@@ -965,7 +965,7 @@ void VoctreeLocalizer::getAllAssociations(const features::MapRegionsPerDesc &que
     const IndexT pt2D_id = idx.first.featId;
     const sfm::Landmark& landmark = _sfm_data.GetLandmarks().at(idx.first.landmarkId);
     
-//    OPENMVG_LOG_DEBUG("[matching]\tAssociation [" << idx.first.landmarkId << "," << pt2D_id << "] occurred " << idx.second << " times");
+//    ALICEVISION_LOG_DEBUG("[matching]\tAssociation [" << idx.first.landmarkId << "," << pt2D_id << "] occurred " << idx.second << " times");
 
     out_pt2D.col(index) = queryRegions.at(idx.first.descType)->GetRegionPosition(pt2D_id);
     out_pt3D.col(index) = landmark.X;
@@ -1013,7 +1013,7 @@ void VoctreeLocalizer::getAssociationsFromBuffer(matching::RegionsDatabaseMatche
       continue;
     }
 
-    OPENMVG_LOG_DEBUG("[matching]\tFound " << featureMatches.getNbAllMatches() << " matches from frame " << frameCounter);
+    ALICEVISION_LOG_DEBUG("[matching]\tFound " << featureMatches.getNbAllMatches() << " matches from frame " << frameCounter);
     assert(featureMatches.getNbAllMatches() > 0);
     
     // recover the 2D-3D associations from the matches 
@@ -1036,13 +1036,13 @@ void VoctreeLocalizer::getAssociationsFromBuffer(matching::RegionsDatabaseMatche
         }
         else
         {
-          OPENMVG_LOG_DEBUG("[matching]\tnew association found: [" << pt3D_id << "," << pt2D_id << "]");
+          ALICEVISION_LOG_DEBUG("[matching]\tnew association found: [" << pt3D_id << "," << pt2D_id << "]");
           out_occurences[key] = 1;
           ++newOccurences;
         }
       }
     }
-    OPENMVG_LOG_DEBUG("[matching]\tFound " << newOccurences << " new associations with the frameBufferMatching");
+    ALICEVISION_LOG_DEBUG("[matching]\tFound " << newOccurences << " new associations with the frameBufferMatching");
     ++frameCounter;
   }
 }
@@ -1064,7 +1064,7 @@ bool VoctreeLocalizer::robustMatching(matching::RegionsDatabaseMatcherPerDesc & 
   if ((queryIntrinsicsBase != nullptr) && !isPinhole(queryIntrinsicsBase->getType()))
   {
     //@fixme maybe better to throw something here
-    OPENMVG_CERR("[matching]\tOnly Pinhole cameras are supported!");
+    ALICEVISION_CERR("[matching]\tOnly Pinhole cameras are supported!");
     return false;
   }
   const cameras::Pinhole_Intrinsic *queryIntrinsics = (const cameras::Pinhole_Intrinsic*)(queryIntrinsicsBase);
@@ -1073,7 +1073,7 @@ bool VoctreeLocalizer::robustMatching(matching::RegionsDatabaseMatcherPerDesc & 
   if ((matchedIntrinsicsBase != nullptr) &&  !isPinhole(matchedIntrinsicsBase->getType()) )
   {
     //@fixme maybe better to throw something here
-    OPENMVG_CERR("[matching]\tOnly Pinhole cameras are supported!");
+    ALICEVISION_CERR("[matching]\tOnly Pinhole cameras are supported!");
     return false;
   }
   const cameras::Pinhole_Intrinsic *matchedIntrinsics = (const cameras::Pinhole_Intrinsic*)(matchedIntrinsicsBase);
@@ -1085,7 +1085,7 @@ bool VoctreeLocalizer::robustMatching(matching::RegionsDatabaseMatcherPerDesc & 
   const bool matchWorked = matchers.Match(fDistRatio, matchedRegions, putativeFeatureMatches);
   if (!matchWorked)
   {
-    OPENMVG_LOG_DEBUG("[matching]\tPutative matching failed.");
+    ALICEVISION_LOG_DEBUG("[matching]\tPutative matching failed.");
     return false;
   }
   assert(!putativeFeatureMatches.empty());
@@ -1113,13 +1113,13 @@ bool VoctreeLocalizer::robustMatching(matching::RegionsDatabaseMatcherPerDesc & 
 
   if(!estimationState.isValid)
   {
-    OPENMVG_LOG_DEBUG("[matching]\tGeometric validation failed.");
+    ALICEVISION_LOG_DEBUG("[matching]\tGeometric validation failed.");
     return false;
   }
 
   if(!estimationState.hasStrongSupport)
   {
-    OPENMVG_LOG_DEBUG("[matching]\tGeometric validation hasn't strong support.");
+    ALICEVISION_LOG_DEBUG("[matching]\tGeometric validation hasn't strong support.");
     return false;
   }
 
@@ -1171,11 +1171,11 @@ bool VoctreeLocalizer::localizeRig(const std::vector<image::Image<unsigned char>
     // extract descriptors and features from each image
     for(auto& imageDescriber: _imageDescribers)
     {
-      OPENMVG_LOG_DEBUG("[features]\tExtract " << features::EImageDescriberType_enumToString(imageDescriber->getDescriberType()) << " from query image...");
+      ALICEVISION_LOG_DEBUG("[features]\tExtract " << features::EImageDescriberType_enumToString(imageDescriber->getDescriberType()) << " from query image...");
       imageDescriber->Describe(vec_imageGrey[i], vec_queryRegions[i][imageDescriber->getDescriberType()]);
-      OPENMVG_LOG_DEBUG("[features]\tExtract done: found " <<  vec_queryRegions[i][imageDescriber->getDescriberType()]->RegionCount() << " features");
+      ALICEVISION_LOG_DEBUG("[features]\tExtract done: found " <<  vec_queryRegions[i][imageDescriber->getDescriberType()]->RegionCount() << " features");
     }
-    OPENMVG_LOG_DEBUG("[features]\tAll descriptors extracted. Found " <<  vec_queryRegions[i].getNbAllRegions() << " features");
+    ALICEVISION_LOG_DEBUG("[features]\tAll descriptors extracted. Found " <<  vec_queryRegions[i].getNbAllRegions() << " features");
   }
   assert(vec_imageSize.size() == vec_queryRegions.size());
           
@@ -1197,10 +1197,10 @@ bool VoctreeLocalizer::localizeRig(const std::vector<features::MapRegionsPerDesc
                                    geometry::Pose3 &rigPose,
                                    std::vector<LocalizationResult>& vec_locResults)
 {
-#if OPENMVG_IS_DEFINED(OPENMVG_HAVE_OPENGV)
+#if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_OPENGV)
   if(!parameters->_useLocalizeRigNaive)
   {
-    OPENMVG_LOG_DEBUG("Using localizeRig_opengv()");
+    ALICEVISION_LOG_DEBUG("Using localizeRig_opengv()");
     return localizeRig_opengv(vec_queryRegions,
                               vec_imageSize,
                               parameters,
@@ -1213,7 +1213,7 @@ bool VoctreeLocalizer::localizeRig(const std::vector<features::MapRegionsPerDesc
 #endif
   {
     if(!parameters->_useLocalizeRigNaive)
-      OPENMVG_LOG_DEBUG("OpenGV is not available. Fallback to localizeRig_naive().");
+      ALICEVISION_LOG_DEBUG("OpenGV is not available. Fallback to localizeRig_naive().");
     return localizeRig_naive(vec_queryRegions,
                            vec_imageSize,
                            parameters,
@@ -1225,7 +1225,7 @@ bool VoctreeLocalizer::localizeRig(const std::vector<features::MapRegionsPerDesc
 }
 
 
-#if OPENMVG_IS_DEFINED(OPENMVG_HAVE_OPENGV)
+#if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_OPENGV)
 
 bool VoctreeLocalizer::localizeRig_opengv(const std::vector<features::MapRegionsPerDesc> & vec_queryRegions,
                                           const std::vector<std::pair<std::size_t, std::size_t> > &vec_imageSize,
@@ -1291,7 +1291,7 @@ bool VoctreeLocalizer::localizeRig_opengv(const std::vector<features::MapRegions
   const std::size_t minNumAssociations = 5;  //possible parameter?
   if(numAssociations < minNumAssociations)
   {
-    OPENMVG_LOG_DEBUG("[poseEstimation]\tonly " << numAssociations << " have been found, not enough to do the resection!");
+    ALICEVISION_LOG_DEBUG("[poseEstimation]\tonly " << numAssociations << " have been found, not enough to do the resection!");
     for(std::size_t cam = 0; cam < numCams; ++cam)
     {
       // empty result with isValid set to false
@@ -1303,8 +1303,8 @@ bool VoctreeLocalizer::localizeRig_opengv(const std::vector<features::MapRegions
   {
     for(std::size_t camID = 0; camID < vec_subPoses.size(); ++camID)
     {
-    OPENMVG_LOG_DEBUG("Rotation: " << vec_subPoses[camID].rotation());
-    OPENMVG_LOG_DEBUG("Centre: " << vec_subPoses[camID].center());
+    ALICEVISION_LOG_DEBUG("Rotation: " << vec_subPoses[camID].rotation());
+    ALICEVISION_LOG_DEBUG("Centre: " << vec_subPoses[camID].center());
     }
   }
   
@@ -1325,13 +1325,13 @@ bool VoctreeLocalizer::localizeRig_opengv(const std::vector<features::MapRegions
       // empty result with isValid set to false
       vec_locResults.emplace_back();
     }
-    OPENMVG_LOG_DEBUG("Resection failed.");
+    ALICEVISION_LOG_DEBUG("Resection failed.");
     return false;
   }
   
   if(!resectionEstimation.hasStrongSupport)
   {
-    OPENMVG_LOG_DEBUG("Resection hasn't a strong support.");
+    ALICEVISION_LOG_DEBUG("Resection hasn't a strong support.");
   }
 
   { // just debugging stuff, this block can be removed
@@ -1339,17 +1339,17 @@ bool VoctreeLocalizer::localizeRig_opengv(const std::vector<features::MapRegions
     if(vec_inliers.size() < numCams)
     {
       // in general the inlier should be spread among different cameras
-      OPENMVG_CERR("WARNING: RIG Voctree Localizer: Inliers in " 
+      ALICEVISION_CERR("WARNING: RIG Voctree Localizer: Inliers in " 
               << vec_inliers.size() << " cameras on a RIG of " 
               << numCams << " cameras.");
     }
 
     for(std::size_t camID = 0; camID < vec_inliers.size(); ++camID)
-      OPENMVG_LOG_DEBUG("#inliers for cam " << camID << ": " << vec_inliers[camID].size());
+      ALICEVISION_LOG_DEBUG("#inliers for cam " << camID << ": " << vec_inliers[camID].size());
     
-    OPENMVG_LOG_DEBUG("Pose after resection:");
-    OPENMVG_LOG_DEBUG("Rotation: " << rigPose.rotation());
-    OPENMVG_LOG_DEBUG("Centre: " << rigPose.center());
+    ALICEVISION_LOG_DEBUG("Pose after resection:");
+    ALICEVISION_LOG_DEBUG("Rotation: " << rigPose.rotation());
+    ALICEVISION_LOG_DEBUG("Centre: " << rigPose.center());
     
     // print the reprojection error for inliers (just debugging purposes)
     printRigRMSEStats(vec_pts2D, vec_pts3D, vec_queryIntrinsics, vec_subPoses, rigPose, vec_inliers);
@@ -1370,7 +1370,7 @@ bool VoctreeLocalizer::localizeRig_opengv(const std::vector<features::MapRegions
                                       rigPose,
                                       vec_inliers);
   
-  OPENMVG_LOG_DEBUG("After first recomputation of inliers with a threshold of "
+  ALICEVISION_LOG_DEBUG("After first recomputation of inliers with a threshold of "
           << param->_errorMax << " the RMSE is: " << resInl.first);
   
   aliceVision::system::Timer timer;
@@ -1383,7 +1383,7 @@ bool VoctreeLocalizer::localizeRig_opengv(const std::vector<features::MapRegions
                                                minNumPoints,
                                                vec_inliers,
                                                rigPose);
-  OPENMVG_LOG_DEBUG("Iterative refinement took " << timer.elapsedMs() << "ms");
+  ALICEVISION_LOG_DEBUG("Iterative refinement took " << timer.elapsedMs() << "ms");
   
   {
     // debugging stats
@@ -1441,15 +1441,15 @@ bool VoctreeLocalizer::localizeRig_opengv(const std::vector<features::MapRegions
   
   if(!refineOk)
   {
-    OPENMVG_LOG_DEBUG("[poseEstimation]\tRefine failed.");
+    ALICEVISION_LOG_DEBUG("[poseEstimation]\tRefine failed.");
     return false;
   }
   
   { // just debugging stuff, this block can be removed
     
-    OPENMVG_LOG_DEBUG("Pose after BA:");
-    OPENMVG_LOG_DEBUG("Rotation: " << rigPose.rotation());
-    OPENMVG_LOG_DEBUG("Centre: " << rigPose.center());
+    ALICEVISION_LOG_DEBUG("Pose after BA:");
+    ALICEVISION_LOG_DEBUG("Rotation: " << rigPose.rotation());
+    ALICEVISION_LOG_DEBUG("Centre: " << rigPose.center());
     
     // compute the reprojection error for inliers (just debugging purposes)
     for(std::size_t camID = 0; camID < numCams; ++camID)
@@ -1463,27 +1463,27 @@ bool VoctreeLocalizer::localizeRig_opengv(const std::vector<features::MapRegions
 
       const Vec sqrErrors = (residuals.cwiseProduct(residuals)).colwise().sum();
 
-//      OPENMVG_LOG_DEBUG("Camera " << camID << " all reprojection errors after BA:");
-//      OPENMVG_LOG_DEBUG(sqrErrors);
+//      ALICEVISION_LOG_DEBUG("Camera " << camID << " all reprojection errors after BA:");
+//      ALICEVISION_LOG_DEBUG(sqrErrors);
 
-//      OPENMVG_LOG_DEBUG("Camera " << camID << " inliers reprojection errors after BA:");
+//      ALICEVISION_LOG_DEBUG("Camera " << camID << " inliers reprojection errors after BA:");
       const auto &currInliers = vec_inliers[camID];
 
       double rmse = 0;
       for(std::size_t j = 0; j < currInliers.size(); ++j)
       {
-//          OPENMVG_LOG_DEBUG(sqrErrors(currInliers[j]));
+//          ALICEVISION_LOG_DEBUG(sqrErrors(currInliers[j]));
           rmse += sqrErrors(currInliers[j]);
       }
       if(!currInliers.empty())
-        OPENMVG_LOG_DEBUG("\n\nRMSE inliers cam " << camID << ": " << std::sqrt(rmse/currInliers.size()));
+        ALICEVISION_LOG_DEBUG("\n\nRMSE inliers cam " << camID << ": " << std::sqrt(rmse/currInliers.size()));
     }
   }
     
   return true;
 }
 
-#endif // OPENMVG_HAVE_OPENGV
+#endif // ALICEVISION_HAVE_OPENGV
 
 // subposes is n-1 as we consider the first camera as the main camera and the 
 // reference frame of the grid
@@ -1512,7 +1512,7 @@ bool VoctreeLocalizer::localizeRig_naive(const std::vector<features::MapRegionsP
     assert(isLocalized[i] == vec_localizationResults[i].isValid());
     if(!isLocalized[i])
     {
-      OPENMVG_CERR("Could not localize camera " << i);
+      ALICEVISION_CERR("Could not localize camera " << i);
       // even if it is not localize we can try to go on and do with the cameras we have
     }
   }
@@ -1523,11 +1523,11 @@ bool VoctreeLocalizer::localizeRig_naive(const std::vector<features::MapRegionsP
   // no camera has be localized
   if(numLocalizedCam == 0)
   {
-    OPENMVG_LOG_DEBUG("No camera has been localized!!!");
+    ALICEVISION_LOG_DEBUG("No camera has been localized!!!");
     return false;
   }
   
-  OPENMVG_LOG_DEBUG("Localized cameras: " << numLocalizedCam << "/" << numCams);
+  ALICEVISION_LOG_DEBUG("Localized cameras: " << numLocalizedCam << "/" << numCams);
   
   // if there is only one camera (the main one)
   if(numCams==1)
@@ -1547,7 +1547,7 @@ bool VoctreeLocalizer::localizeRig_naive(const std::vector<features::MapRegionsP
     // better safe than sorry
     assert(idx < isLocalized.size());
     
-    OPENMVG_LOG_DEBUG("Index of the first localized camera: " << idx);
+    ALICEVISION_LOG_DEBUG("Index of the first localized camera: " << idx);
     
     // if the only localized camera is the main camera
     if(idx==0)
@@ -1573,7 +1573,7 @@ bool VoctreeLocalizer::localizeRig_naive(const std::vector<features::MapRegionsP
   
   if(!refineOk)
   {
-    OPENMVG_LOG_DEBUG("[poseEstimation]\tRig pose refinement failed.");
+    ALICEVISION_LOG_DEBUG("[poseEstimation]\tRig pose refinement failed.");
     return false;
   }
   

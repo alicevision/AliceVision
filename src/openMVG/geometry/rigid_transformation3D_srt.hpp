@@ -1,8 +1,8 @@
 // This file is part of the AliceVision project and is made available under
 // the terms of the MPL2 license (see the COPYING.md file).
 
-#ifndef OPENMVG_GEOMETRY_3D_REGISTRATION_7DOF_H_
-#define OPENMVG_GEOMETRY_3D_REGISTRATION_7DOF_H_
+#ifndef ALICEVISION_GEOMETRY_3D_REGISTRATION_7DOF_H_
+#define ALICEVISION_GEOMETRY_3D_REGISTRATION_7DOF_H_
 
 #include "aliceVision/numeric/numeric.h"
 #include "aliceVision/numeric/lm.hpp"
@@ -463,4 +463,4 @@ static bool ACRansac_FindRTS(const Mat &x1,
 } // namespace geometry
 } // namespace aliceVision
 
-#endif  // OPENMVG_GEOMETRY_REGISTRATION_7DOF_H_
+#endif  // ALICEVISION_GEOMETRY_REGISTRATION_7DOF_H_

@@ -13,7 +13,7 @@
 #include <vector>
 #include <map>
 
-#if OPENMVG_IS_DEFINED(OPENMVG_HAVE_OPENCV)
+#if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_OPENCV)
 //#define VISUAL_DEBUG_MODE
 #endif
 

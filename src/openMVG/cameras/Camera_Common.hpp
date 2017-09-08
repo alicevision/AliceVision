@@ -1,8 +1,8 @@
 // This file is part of the AliceVision project and is made available under
 // the terms of the MPL2 license (see the COPYING.md file).
 
-#ifndef OPENMVG_CAMERAS_COMMON_HPP
-#define OPENMVG_CAMERAS_COMMON_HPP
+#ifndef ALICEVISION_CAMERAS_COMMON_HPP
+#define ALICEVISION_CAMERAS_COMMON_HPP
 
 #include <string>
 #include <stdexcept>
@@ -76,4 +76,4 @@ static inline bool isPinhole(EINTRINSIC eintrinsic)
 } // namespace cameras
 } // namespace aliceVision
 
-#endif // OPENMVG_CAMERAS_COMMON_HPP
+#endif // ALICEVISION_CAMERAS_COMMON_HPP

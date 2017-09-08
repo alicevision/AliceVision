@@ -1,8 +1,8 @@
 // This file is part of the AliceVision project and is made available under
 // the terms of the MPL2 license (see the COPYING.md file).
 
-#ifndef OPENMVG_GLOBAL_SFM_ENGINE_TRIPLET_T_ESTIMATOR_H
-#define OPENMVG_GLOBAL_SFM_ENGINE_TRIPLET_T_ESTIMATOR_H
+#ifndef ALICEVISION_GLOBAL_SFM_ENGINE_TRIPLET_T_ESTIMATOR_H
+#define ALICEVISION_GLOBAL_SFM_ENGINE_TRIPLET_T_ESTIMATOR_H
 
 #include "aliceVision/numeric/numeric.h"
 #include "aliceVision/multiview/conditioning.hpp"
@@ -98,4 +98,4 @@ private:
 } // namespace sfm
 } // namespace aliceVision
 
-#endif // OPENMVG_GLOBAL_SFM_ENGINE_TRIPLET_T_ESTIMATOR_H
+#endif // ALICEVISION_GLOBAL_SFM_ENGINE_TRIPLET_T_ESTIMATOR_H

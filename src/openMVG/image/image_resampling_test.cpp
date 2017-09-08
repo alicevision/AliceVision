@@ -15,7 +15,7 @@ TEST(Ressampling,SampleSamePosition)
 {
   Image<unsigned char> image;
   std::string png_filename = std::string(THIS_SOURCE_DIR) + "/image_test/lena.png";
-  OPENMVG_LOG_DEBUG(png_filename);
+  ALICEVISION_LOG_DEBUG(png_filename);
   EXPECT_TRUE(ReadImage(png_filename.c_str(), &image));
 
 
@@ -107,7 +107,7 @@ TEST(Ressampling,SampleRotate)
   Image<RGBColor> image;
 
   std::string png_filename = std::string(THIS_SOURCE_DIR) + "/image_test/lena.png";
-  OPENMVG_LOG_DEBUG(png_filename);
+  ALICEVISION_LOG_DEBUG(png_filename);
   EXPECT_TRUE(ReadImage(png_filename.c_str(), &image));
 
   EXPECT_TRUE(ImageRotation(image, Sampler2d< SamplerNearest >(), "SamplerNearest"));

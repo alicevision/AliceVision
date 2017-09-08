@@ -1,8 +1,8 @@
 // This file is part of the AliceVision project and is made available under
 // the terms of the MPL2 license (see the COPYING.md file).
 
-#ifndef OPENMVG_GRAPH_BUILDER_H_
-#define OPENMVG_GRAPH_BUILDER_H_
+#ifndef ALICEVISION_GRAPH_BUILDER_H_
+#define ALICEVISION_GRAPH_BUILDER_H_
 
 #include <memory>
 #include <set>
@@ -89,4 +89,4 @@ struct indexedGraph
 } // namespace graph
 } // namespace aliceVision
 
-#endif // OPENMVG_GRAPH_BUILDER__H_
+#endif // ALICEVISION_GRAPH_BUILDER__H_

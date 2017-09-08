@@ -53,18 +53,18 @@ bool refineSequence(std::vector<LocalizationResult> & vec_localizationResult,
     // it may be the case that all the localization result are invalid...
     if(!vec_localizationResult[intrinsicIndex].isValid())
     {
-      OPENMVG_CERR("Apparently all the vec_localizationResult are invalid! Aborting...");
+      ALICEVISION_CERR("Apparently all the vec_localizationResult are invalid! Aborting...");
       return false;
     }
     
-    OPENMVG_CERR("allTheSameIntrinsics mode: using the intrinsics of the " << intrinsicIndex << " result");
+    ALICEVISION_CERR("allTheSameIntrinsics mode: using the intrinsics of the " << intrinsicIndex << " result");
     
     cameras::Pinhole_Intrinsic_Radial_K3* currIntrinsics = &vec_localizationResult[intrinsicIndex].getIntrinsics();
     
     if(b_no_distortion)
     {
       // no distortion refinement
-      OPENMVG_LOG_DEBUG("Optical distortion won't be considered");
+      ALICEVISION_LOG_DEBUG("Optical distortion won't be considered");
       // just add a simple pinhole camera with the same K as the input camera
       Vec2 pp = currIntrinsics->principal_point();
       tinyScene.intrinsics[intrinsicID] = std::make_shared<cameras::Pinhole_Intrinsic>(currIntrinsics->_w, currIntrinsics->_h, currIntrinsics->focal(), pp(0), pp(1));
@@ -73,7 +73,7 @@ bool refineSequence(std::vector<LocalizationResult> & vec_localizationResult,
     {
       // intrinsic (the shared_ptr does not take the ownership, will not release the input pointer)
       tinyScene.intrinsics[intrinsicID] = std::shared_ptr<cameras::Pinhole_Intrinsic_Radial_K3>(currIntrinsics, [](cameras::Pinhole_Intrinsic_Radial_K3*){});
-      OPENMVG_LOG_DEBUG("Type of intrinsics " <<tinyScene.intrinsics[0].get()->getType());
+      ALICEVISION_LOG_DEBUG("Type of intrinsics " <<tinyScene.intrinsics[0].get()->getType());
     }
   }
   
@@ -90,7 +90,7 @@ bool refineSequence(std::vector<LocalizationResult> & vec_localizationResult,
       const Mat2X residuals = currResult.computeInliersResiduals();
       
       const auto sqrErrors = (residuals.cwiseProduct(residuals)).colwise().sum();
-      OPENMVG_LOG_DEBUG("View " << viewID << " RMSE = " << std::sqrt(sqrErrors.mean()) 
+      ALICEVISION_LOG_DEBUG("View " << viewID << " RMSE = " << std::sqrt(sqrErrors.mean()) 
               << " min = " << std::sqrt(sqrErrors.minCoeff()) 
               << " mean = " << std::sqrt(sqrErrors.mean())
               << " max = " << std::sqrt(sqrErrors.maxCoeff())
@@ -104,11 +104,11 @@ bool refineSequence(std::vector<LocalizationResult> & vec_localizationResult,
     // skip invalid poses
     if(!currResult.isValid())
     {
-      OPENMVG_LOG_DEBUG("\n*****\nskipping invalid View " << viewID);
+      ALICEVISION_LOG_DEBUG("\n*****\nskipping invalid View " << viewID);
       continue;
     }
     
-//    OPENMVG_LOG_DEBUG("\n*****\nView " << viewID);
+//    ALICEVISION_LOG_DEBUG("\n*****\nView " << viewID);
     // view
     std::shared_ptr<sfm::View> view = std::make_shared<sfm::View>("",viewID, intrinsicID, viewID);
     tinyScene.views.insert( std::make_pair(viewID, view));
@@ -132,7 +132,7 @@ bool refineSequence(std::vector<LocalizationResult> & vec_localizationResult,
       // the idx should be in the size range of the data
       assert(idx < currResult.getPt3D().cols());
       const IndMatch3D2D& match = matches[idx];
-//      OPENMVG_LOG_DEBUG("inlier " << idx << " is land " << landmarkID << " and feat " << featID);
+//      ALICEVISION_LOG_DEBUG("inlier " << idx << " is land " << landmarkID << " and feat " << featID);
       // get the corresponding feature
       const Vec2 &feature = currResult.getPt2D().col(idx);
       // check if the point exists already
@@ -145,10 +145,10 @@ bool refineSequence(std::vector<LocalizationResult> & vec_localizationResult,
         if(landmark.observations.count(viewID) != 0)
         {
           // this is weird but it could happen when two features are really close to each other (?)
-          OPENMVG_LOG_DEBUG("Point 3D " << match.landmarkId << " has multiple features "
+          ALICEVISION_LOG_DEBUG("Point 3D " << match.landmarkId << " has multiple features "
                   << "in the same view " << viewID << ", current size of obs: " 
                   << landmark.observations.size() );
-          OPENMVG_LOG_DEBUG("its associated features are: ");
+          ALICEVISION_LOG_DEBUG("its associated features are: ");
           for(std::size_t i = 0; i <  matches.size(); ++i)
           {
             auto const &p = matches[i];
@@ -156,7 +156,7 @@ bool refineSequence(std::vector<LocalizationResult> & vec_localizationResult,
             {
               assert(p.descType == match.descType);
               const Vec2 &fff = currResult.getPt2D().col(i);
-              OPENMVG_LOG_DEBUG("\tfeatID " << features::EImageDescriberType_enumToString(p.descType) << " " << p.featId << " " << fff.transpose());
+              ALICEVISION_LOG_DEBUG("\tfeatID " << features::EImageDescriberType_enumToString(p.descType) << " " << p.featId << " " << fff.transpose());
             }
           }
           continue;
@@ -178,7 +178,7 @@ bool refineSequence(std::vector<LocalizationResult> & vec_localizationResult,
   }
 
 //  {
-//    OPENMVG_LOG_DEBUG("Number of 3D-2D associations before filtering " << tinyScene.structure.size());
+//    ALICEVISION_LOG_DEBUG("Number of 3D-2D associations before filtering " << tinyScene.structure.size());
 //    sfm::Landmarks &landmarks = tinyScene.structure;
 //    for(sfm::Landmarks::iterator it = landmarks.begin(), ite = landmarks.end(); it != ite;)
 //    {
@@ -194,7 +194,7 @@ bool refineSequence(std::vector<LocalizationResult> & vec_localizationResult,
   {
     // just debugging some stats -- this block can be safely removed/commented out
     
-    OPENMVG_LOG_DEBUG("Number of 3D-2D associations " << tinyScene.structure.size());
+    ALICEVISION_LOG_DEBUG("Number of 3D-2D associations " << tinyScene.structure.size());
     
     std::size_t maxObs = 0;
     for(const auto landmark : tinyScene.GetLandmarks() )
@@ -212,15 +212,15 @@ bool refineSequence(std::vector<LocalizationResult> & vec_localizationResult,
       stats(nobs);
       hist[nobs]++;
     }
-    OPENMVG_LOG_DEBUG("Min number of observations per point:   " << bacc::min(stats) );
-    OPENMVG_LOG_DEBUG("Mean number of observations per point:   " << bacc::mean(stats) );
-    OPENMVG_LOG_DEBUG("Max number of observations per point:   " << bacc::max(stats) );
+    ALICEVISION_LOG_DEBUG("Min number of observations per point:   " << bacc::min(stats) );
+    ALICEVISION_LOG_DEBUG("Mean number of observations per point:   " << bacc::mean(stats) );
+    ALICEVISION_LOG_DEBUG("Max number of observations per point:   " << bacc::max(stats) );
     
     std::size_t cumulative = 0;
     const std::size_t num3DPoints = tinyScene.structure.size();
     for(std::size_t i = 0; i < hist.size(); i++ ) 
     {
-      OPENMVG_LOG_DEBUG("Points with " << i << " observations: " << hist[i] 
+      ALICEVISION_LOG_DEBUG("Points with " << i << " observations: " << hist[i] 
               << " (cumulative in %: " << 100*(num3DPoints-cumulative)/float(num3DPoints) << ")"); 
       cumulative += hist[i];
     }
@@ -229,9 +229,9 @@ bool refineSequence(std::vector<LocalizationResult> & vec_localizationResult,
     if(allTheSameIntrinsics)
     {
       std::vector<double> params = tinyScene.intrinsics[0].get()->getParams();
-      OPENMVG_LOG_DEBUG("K before bundle: " << params[0] << " " << params[1] << " "<< params[2]);
+      ALICEVISION_LOG_DEBUG("K before bundle: " << params[0] << " " << params[1] << " "<< params[2]);
       if(params.size() == 6)
-        OPENMVG_LOG_DEBUG("Distortion before bundle: " << params[3] << " " << params[4] << " "<< params[5]);
+        ALICEVISION_LOG_DEBUG("Distortion before bundle: " << params[3] << " " << params[4] << " "<< params[5]);
     }
   }
 
@@ -259,7 +259,7 @@ bool refineSequence(std::vector<LocalizationResult> & vec_localizationResult,
   {
     const std::string outfile = outputFilename+".BEFORE.json";
     if(!sfm::Save(tinyScene, outfile, sfm::ESfM_Data::ALL))
-      OPENMVG_CERR("Could not save " << outfile);
+      ALICEVISION_CERR("Could not save " << outfile);
   }
 
   sfm::Bundle_Adjustment_Ceres bundle_adjustment_obj;
@@ -285,7 +285,7 @@ bool refineSequence(std::vector<LocalizationResult> & vec_localizationResult,
     {
       const std::string outfile = outputFilename+".AFTER.json";
       if(!sfm::Save(tinyScene, outfile, sfm::ESfM_Data::ALL))
-        OPENMVG_CERR("Could not save " << outfile);
+        ALICEVISION_CERR("Could not save " << outfile);
     }
   }
   
@@ -296,7 +296,7 @@ bool refineSequence(std::vector<LocalizationResult> & vec_localizationResult,
     
     // get its optimized parameters
     std::vector<double> params = tinyScene.intrinsics[0].get()->getParams();
-    OPENMVG_LOG_DEBUG("Type of intrinsics " <<tinyScene.intrinsics[0].get()->getType());
+    ALICEVISION_LOG_DEBUG("Type of intrinsics " <<tinyScene.intrinsics[0].get()->getType());
     if(params.size() == 3)
     {
       // this means that the b_no_distortion has been passed
@@ -306,8 +306,8 @@ bool refineSequence(std::vector<LocalizationResult> & vec_localizationResult,
       params.push_back(0);
     }
     assert(params.size() == 6);
-    OPENMVG_LOG_DEBUG("K after bundle: " << params[0] << " " << params[1] << " "<< params[2]);
-    OPENMVG_LOG_DEBUG("Distortion after bundle " << params[3] << " " << params[4] << " "<< params[5]);
+    ALICEVISION_LOG_DEBUG("K after bundle: " << params[0] << " " << params[1] << " "<< params[2]);
+    ALICEVISION_LOG_DEBUG("Distortion after bundle " << params[3] << " " << params[4] << " "<< params[5]);
 
     // update the intrinsics of the each localization result
     for(size_t viewID = 0; viewID < numViews; ++viewID)
@@ -323,7 +323,7 @@ bool refineSequence(std::vector<LocalizationResult> & vec_localizationResult,
       const Mat2X residuals = currResult.computeInliersResiduals();
       
       const auto sqrErrors = (residuals.cwiseProduct(residuals)).colwise().sum();
-      OPENMVG_LOG_DEBUG("View " << viewID << " RMSE = " << std::sqrt(sqrErrors.mean()) 
+      ALICEVISION_LOG_DEBUG("View " << viewID << " RMSE = " << std::sqrt(sqrErrors.mean()) 
               << " min = " << std::sqrt(sqrErrors.minCoeff()) 
               << " mean = " << std::sqrt(sqrErrors.mean())
               << " max = " << std::sqrt(sqrErrors.maxCoeff())
@@ -368,7 +368,7 @@ bool refineRigPose(const std::vector<geometry::Pose3 > &vec_subPoses,
 
     if(!localizationResult.isValid())
     {
-      OPENMVG_LOG_DEBUG("Skipping camera " << iLocalizer << " as it has not been localized");
+      ALICEVISION_LOG_DEBUG("Skipping camera " << iLocalizer << " as it has not been localized");
       continue;
     }
     // Get the inliers 3D points
@@ -411,7 +411,7 @@ bool refineRigPose(const std::vector<geometry::Pose3 > &vec_subPoses,
       }
       else
       {
-        OPENMVG_CERR("Fail in adding residual block for the " << iLocalizer 
+        ALICEVISION_CERR("Fail in adding residual block for the " << iLocalizer 
                 << " camera while adding point id " << iPoint);
       }
     }
@@ -437,24 +437,24 @@ bool refineRigPose(const std::vector<geometry::Pose3 > &vec_subPoses,
   ceres::Solve(options, &problem, &summary);
   
   if (aliceVision_options._bCeres_Summary)
-    OPENMVG_LOG_DEBUG(summary.FullReport());
+    ALICEVISION_LOG_DEBUG(summary.FullReport());
 
   // If no error, get back refined parameters
   if (!summary.IsSolutionUsable())
   {
     if (aliceVision_options._bVerbose)
-      OPENMVG_CERR("Bundle Adjustment failed.");
+      ALICEVISION_CERR("Bundle Adjustment failed.");
     return false;
   }
 
   if(aliceVision_options._bVerbose)
   {
     // Display statistics about the minimization
-    OPENMVG_LOG_DEBUG("Bundle Adjustment statistics (approximated RMSE");
-    OPENMVG_LOG_DEBUG(" #localizers: " << vec_localizationResults.size());
-    OPENMVG_LOG_DEBUG(" #residuals: " << summary.num_residuals);
-    OPENMVG_LOG_DEBUG(" Initial RMSE: " << std::sqrt(summary.initial_cost / summary.num_residuals));
-    OPENMVG_LOG_DEBUG(" Final RMSE: " << std::sqrt(summary.final_cost / summary.num_residuals));
+    ALICEVISION_LOG_DEBUG("Bundle Adjustment statistics (approximated RMSE");
+    ALICEVISION_LOG_DEBUG(" #localizers: " << vec_localizationResults.size());
+    ALICEVISION_LOG_DEBUG(" #residuals: " << summary.num_residuals);
+    ALICEVISION_LOG_DEBUG(" Initial RMSE: " << std::sqrt(summary.initial_cost / summary.num_residuals));
+    ALICEVISION_LOG_DEBUG(" Final RMSE: " << std::sqrt(summary.final_cost / summary.num_residuals));
   }
 
   // update the rigPose 
@@ -516,7 +516,7 @@ bool refineRigPose(const std::vector<Mat> &pts2d,
 
     if(inliers[cam].empty())
     {
-      OPENMVG_LOG_DEBUG("Skipping cam " << cam << " as it has no inliers");
+      ALICEVISION_LOG_DEBUG("Skipping cam " << cam << " as it has no inliers");
       continue;
     }
     // Add a residual block for all inliers
@@ -554,7 +554,7 @@ bool refineRigPose(const std::vector<Mat> &pts2d,
       }
       else
       {
-        OPENMVG_CERR("Fail in adding residual block for the " << cam 
+        ALICEVISION_CERR("Fail in adding residual block for the " << cam 
                 << " camera while adding point id " << iPoint);
       }
     }
@@ -580,20 +580,20 @@ bool refineRigPose(const std::vector<Mat> &pts2d,
   ceres::Solve(options, &problem, &summary);
   
   if (aliceVision_options._bCeres_Summary)
-    OPENMVG_LOG_DEBUG(summary.FullReport());
+    ALICEVISION_LOG_DEBUG(summary.FullReport());
 
   // If no error, get back refined parameters
   if (!summary.IsSolutionUsable())
   {
     if (aliceVision_options._bVerbose)
-      OPENMVG_LOG_DEBUG("Bundle Adjustment failed.");
+      ALICEVISION_LOG_DEBUG("Bundle Adjustment failed.");
     return false;
   }
 
   if(aliceVision_options._bVerbose)
   {
     // Display statistics about the minimization
-    OPENMVG_LOG_DEBUG(
+    ALICEVISION_LOG_DEBUG(
             "Bundle Adjustment statistics (approximated RMSE):\n"
             " #cameras: " << numCameras << "\n"
             " #residuals: " << summary.num_residuals << "\n"
@@ -632,17 +632,17 @@ std::tuple<double, double, double> computeStatistics(const Mat &pts2D,
 
   Vec sqrErrors = (residuals.cwiseProduct(residuals)).colwise().sum();
 
-  //      OPENMVG_LOG_DEBUG("Camera " << camID << " all reprojection errors:");
-  //      OPENMVG_LOG_DEBUG(sqrErrors);
+  //      ALICEVISION_LOG_DEBUG("Camera " << camID << " all reprojection errors:");
+  //      ALICEVISION_LOG_DEBUG(sqrErrors);
   //
-  //      OPENMVG_LOG_DEBUG("Camera " << camID << " inliers reprojection errors:");
+  //      ALICEVISION_LOG_DEBUG("Camera " << camID << " inliers reprojection errors:");
 
   double rmse = 0;
   double rmseMin = std::numeric_limits<double>::max();
   double rmseMax = 0;
   for(std::size_t j = 0; j < currInliers.size(); ++j)
   {
-    // OPENMVG_LOG_DEBUG(sqrErrors(currInliers[j]));
+    // ALICEVISION_LOG_DEBUG(sqrErrors(currInliers[j]));
     const double err = sqrErrors(currInliers[j]);
     rmse += err;
     if(err > rmseMax)
@@ -679,7 +679,7 @@ void printRigRMSEStats(const std::vector<Mat> &vec_pts2D,
                                             vec_inliers[camID],
                                             (camID != 0 ) ? vec_subPoses[camID-1] : geometry::Pose3(),
                                             rigPose);
-      OPENMVG_LOG_DEBUG("\nCam #" << camID 
+      ALICEVISION_LOG_DEBUG("\nCam #" << camID 
               << " RMSE inliers: " << std::get<0>(stats)
               << " min: " << std::get<1>(stats)
               << " max: " << std::get<2>(stats));        
@@ -688,7 +688,7 @@ void printRigRMSEStats(const std::vector<Mat> &vec_pts2D,
     totalInliers += vec_inliers[camID].size();
     }
   }
-  OPENMVG_LOG_DEBUG("Overall RMSE: " << std::sqrt(totalRMSE/totalInliers));
+  ALICEVISION_LOG_DEBUG("Overall RMSE: " << std::sqrt(totalRMSE/totalInliers));
 }
 
 std::pair<double, bool> computeInliers(const std::vector<Mat> &vec_pts2d,
@@ -759,7 +759,7 @@ std::pair<double, bool> computeInliers(const std::vector<Mat> &vec_pts2d,
       }
     }
   }
-  OPENMVG_LOG_DEBUG("Removed " << numRemoved << " inliers, added new " << numAdded << " point");
+  ALICEVISION_LOG_DEBUG("Removed " << numRemoved << " inliers, added new " << numAdded << " point");
   
   // swap
   vec_inliers.swap(vec_newInliers);
@@ -784,7 +784,7 @@ bool iterativeRefineRigPose(const std::vector<Mat> &pts2d,
   
   do
   {
-    OPENMVG_LOG_DEBUG("[poseEstimation]\tIteration " << iterationNumber);
+    ALICEVISION_LOG_DEBUG("[poseEstimation]\tIteration " << iterationNumber);
     const bool refineOk = refineRigPose(pts2d,
                                         pts3d,
                                         vec_inliers,
@@ -793,7 +793,7 @@ bool iterativeRefineRigPose(const std::vector<Mat> &pts2d,
                                         optimalPose);
     if(!refineOk)
     {
-      OPENMVG_LOG_DEBUG("[poseEstimation]\tIterative refine rig pose failed");
+      ALICEVISION_LOG_DEBUG("[poseEstimation]\tIterative refine rig pose failed");
       return false;
     }
     
@@ -815,13 +815,13 @@ bool iterativeRefineRigPose(const std::vector<Mat> &pts2d,
     
     if(numInliers <= minNumPoints)
     {
-      OPENMVG_LOG_DEBUG("[poseEstimation]\tIterative refine rig pose has reached the minimum number of points");
+      ALICEVISION_LOG_DEBUG("[poseEstimation]\tIterative refine rig pose has reached the minimum number of points");
       return false;
     }
     
     ++iterationNumber;
     if(iterationNumber > maxIterationNumber)
-      OPENMVG_LOG_DEBUG("Terminating refine because the max number of iterations has been reached");
+      ALICEVISION_LOG_DEBUG("Terminating refine because the max number of iterations has been reached");
   }
   while(hasChanged && iterationNumber <= maxIterationNumber);
 

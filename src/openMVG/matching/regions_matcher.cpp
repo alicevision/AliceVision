@@ -89,7 +89,7 @@ std::unique_ptr<IRegionsMatcher> createRegionsMatcher(const features::Regions & 
         }
         break;
         default:
-          OPENMVG_LOG_WARNING("Using unknown matcher type");
+          ALICEVISION_LOG_WARNING("Using unknown matcher type");
       }
     }
     else if (regions.Type_id() == typeid(float).name())
@@ -118,7 +118,7 @@ std::unique_ptr<IRegionsMatcher> createRegionsMatcher(const features::Regions & 
         }
         break;
         default:
-          OPENMVG_LOG_WARNING("Using unknown matcher type");
+          ALICEVISION_LOG_WARNING("Using unknown matcher type");
       }
     }
     else if (regions.Type_id() == typeid(double).name())
@@ -141,11 +141,11 @@ std::unique_ptr<IRegionsMatcher> createRegionsMatcher(const features::Regions & 
         break;
         case CASCADE_HASHING_L2:
         {
-          OPENMVG_LOG_WARNING("Not yet implemented");
+          ALICEVISION_LOG_WARNING("Not yet implemented");
         }
         break;
         default:
-          OPENMVG_LOG_WARNING("Using unknown matcher type");
+          ALICEVISION_LOG_WARNING("Using unknown matcher type");
       }
     }
   }
@@ -161,12 +161,12 @@ std::unique_ptr<IRegionsMatcher> createRegionsMatcher(const features::Regions & 
       }
       break;
       default:
-          OPENMVG_LOG_WARNING("Using unknown matcher type");
+          ALICEVISION_LOG_WARNING("Using unknown matcher type");
     }
   }
   else
   {
-    OPENMVG_LOG_WARNING("Please consider add this region type_id to Matcher_Regions_Database::Match(...)\n"
+    ALICEVISION_LOG_WARNING("Please consider add this region type_id to Matcher_Regions_Database::Match(...)\n"
       << "typeid: " << regions.Type_id());
   }
   return out;

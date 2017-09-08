@@ -1,8 +1,8 @@
 // This file is part of the AliceVision project and is made available under
 // the terms of the MPL2 license (see the COPYING.md file).
 
-#ifndef OPENMVG_ROBUST_ESTIMATOR_ACRANSAC_H_
-#define OPENMVG_ROBUST_ESTIMATOR_ACRANSAC_H_
+#ifndef ALICEVISION_ROBUST_ESTIMATOR_ACRANSAC_H_
+#define ALICEVISION_ROBUST_ESTIMATOR_ACRANSAC_H_
 
 //-------------------
 // Generic implementation of ACRANSAC
@@ -256,7 +256,7 @@ std::pair<double, double> ACRANSAC(const Kernel &kernel,
 
           if(bVerbose)
           {
-            OPENMVG_LOG_DEBUG("  nfa=" << minNFA
+            ALICEVISION_LOG_DEBUG("  nfa=" << minNFA
               << " inliers=" << best.second << "/" << nData
               << " precisionNormalized=" << errorMax
               << " precision=" << kernel.unormalizeError(errorMax)
@@ -309,4 +309,4 @@ std::pair<double, double> ACRANSAC(const Kernel &kernel,
 
 } // namespace robust
 } // namespace aliceVision
-#endif // OPENMVG_ROBUST_ESTIMATOR_ACRANSAC_H_
+#endif // ALICEVISION_ROBUST_ESTIMATOR_ACRANSAC_H_

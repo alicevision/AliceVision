@@ -77,7 +77,7 @@ void ImageCollectionGeometricFilter::Robust_model_estimation(
         {
           MatchesPerDescType guided_geometric_inliers;
           geometricFilter.Geometry_guided_matching(_sfm_data, _regionsPerView, imagePair, d_distance_ratio, guided_geometric_inliers);
-          //OPENMVG_LOG_DEBUG("#before/#after: " << putative_inliers.size() << "/" << guided_geometric_inliers.size());
+          //ALICEVISION_LOG_DEBUG("#before/#after: " << putative_inliers.size() << "/" << guided_geometric_inliers.size());
           std::swap(inliers, guided_geometric_inliers);
         }
         #pragma omp critical

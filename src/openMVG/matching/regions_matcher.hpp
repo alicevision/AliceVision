@@ -159,7 +159,7 @@ public:
     {
       const size_t index = vec_nn_ratio_idx[k];
       vec_putative_matches.emplace_back(vec_nIndice[index*NNN__]._j, vec_nIndice[index*NNN__]._i
-#ifdef OPENMVG_DEBUG_MATCHING
+#ifdef ALICEVISION_DEBUG_MATCHING
           , (float) vec_fDistance[vec_nn_ratio_idx[0]]
 #endif
       );

@@ -1,8 +1,8 @@
 // This file is part of the AliceVision project and is made available under
 // the terms of the MPL2 license (see the COPYING.md file).
 
-#ifndef OPENMVG_SFM_GLOBAL_REINDEX_HPP
-#define OPENMVG_SFM_GLOBAL_REINDEX_HPP
+#ifndef ALICEVISION_SFM_GLOBAL_REINDEX_HPP
+#define ALICEVISION_SFM_GLOBAL_REINDEX_HPP
 
 namespace aliceVision {
 namespace sfm{
@@ -46,4 +46,4 @@ void reindex(
 } // namespace sfm
 } // namespace aliceVision
 
-#endif // OPENMVG_SFM_GLOBAL_REINDEX_HPP
+#endif // ALICEVISION_SFM_GLOBAL_REINDEX_HPP

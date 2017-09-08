@@ -14,7 +14,7 @@
 namespace aliceVision {
 namespace localization{
 
-#if OPENMVG_IS_DEFINED(OPENMVG_HAVE_OPENGV)
+#if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_OPENGV)
 
 /**
  * @brief It computes the pose of a camera rig given the 2d-3d associations of 

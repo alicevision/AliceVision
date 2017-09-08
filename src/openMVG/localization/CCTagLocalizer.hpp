@@ -97,7 +97,7 @@ public:
                    geometry::Pose3 &rigPose,
                    std::vector<LocalizationResult>& vec_locResults) override;
   
-#if OPENMVG_IS_DEFINED(OPENMVG_HAVE_OPENGV)
+#if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_OPENGV)
   bool localizeRig_opengv(const std::vector<features::MapRegionsPerDesc> & vec_queryRegions,
                           const std::vector<std::pair<std::size_t, std::size_t> > &imageSize,
                           const LocalizerParameters *parameters,

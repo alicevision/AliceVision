@@ -1,8 +1,8 @@
 // This file is part of the AliceVision project and is made available under
 // the terms of the MPL2 license (see the COPYING.md file).
 
-#ifndef OPENMVG_ROBUST_ESTIMATION_SCORE_EVALUATOR_H_
-#define OPENMVG_ROBUST_ESTIMATION_SCORE_EVALUATOR_H_
+#ifndef ALICEVISION_ROBUST_ESTIMATION_SCORE_EVALUATOR_H_
+#define ALICEVISION_ROBUST_ESTIMATION_SCORE_EVALUATOR_H_
 
 namespace aliceVision {
 namespace robust{
@@ -58,4 +58,4 @@ private:
 } // namespace robust
 } // namespace aliceVision
 
-#endif // OPENMVG_ROBUST_ESTIMATION_SCORE_EVALUATOR_H_
+#endif // ALICEVISION_ROBUST_ESTIMATION_SCORE_EVALUATOR_H_

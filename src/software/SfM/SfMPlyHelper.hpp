@@ -1,8 +1,8 @@
 // This file is part of the AliceVision project and is made available under
 // the terms of the MPL2 license (see the COPYING.md file).
 
-#ifndef OPENMVG_SFM_PLY_HELPER_H
-#define OPENMVG_SFM_PLY_HELPER_H
+#ifndef ALICEVISION_SFM_PLY_HELPER_H
+#define ALICEVISION_SFM_PLY_HELPER_H
 
 #include "aliceVision/numeric/numeric.h"
 
@@ -89,5 +89,5 @@ static bool exportToPly(const std::vector<Vec3> & vec_points,
 } // namespace plyHelper
 } // namespace aliceVision
 
-#endif // OPENMVG_SFM_PLY_HELPER_H
+#endif // ALICEVISION_SFM_PLY_HELPER_H
 

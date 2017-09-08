@@ -135,7 +135,7 @@ void selectBestImages(const std::vector<std::vector<cv::Point2f> >& imagePoints,
   }
   else
   {
-    OPENMVG_LOG_DEBUG("Info: Less valid frames (" << imagePoints.size() << ") than specified maxCalibFrames (" << maxCalibFrames << ").");
+    ALICEVISION_LOG_DEBUG("Info: Less valid frames (" << imagePoints.size() << ") than specified maxCalibFrames (" << maxCalibFrames << ").");
     bestImagesIndexes.resize(imagePoints.size());
     std::iota(bestImagesIndexes.begin(), bestImagesIndexes.end(), 0);
     

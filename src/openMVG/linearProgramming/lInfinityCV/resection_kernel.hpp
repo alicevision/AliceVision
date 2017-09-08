@@ -1,8 +1,8 @@
 // This file is part of the AliceVision project and is made available under
 // the terms of the MPL2 license (see the COPYING.md file).
 
-#ifndef OPENMVG_RESECTION_L1_KERNEL_H_
-#define OPENMVG_RESECTION_L1_KERNEL_H_
+#ifndef ALICEVISION_RESECTION_L1_KERNEL_H_
+#define ALICEVISION_RESECTION_L1_KERNEL_H_
 
 #include <vector>
 #include "aliceVision/multiview/projection.hpp"
@@ -44,4 +44,4 @@ typedef two_view::kernel::Kernel<l1SixPointResectionSolver,
 }  // namespace lInfinityCV
 }  // namespace aliceVision
 
-#endif  // OPENMVG_RESECTION_L1_KERNEL_H_
+#endif  // ALICEVISION_RESECTION_L1_KERNEL_H_

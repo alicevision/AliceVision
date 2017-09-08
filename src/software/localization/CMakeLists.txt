@@ -1,4 +1,4 @@
-if(OPENMVG_HAVE_BOOST)
+if(ALICEVISION_HAVE_BOOST)
 
   ###
   # Test the localization class
@@ -14,11 +14,11 @@ if(OPENMVG_HAVE_BOOST)
     ${BOOST_LIBRARIES}
   )
 
-  if(OPENMVG_HAVE_ALEMBIC)
+  if(ALICEVISION_HAVE_ALEMBIC)
       target_link_libraries(aliceVision_main_cameraLocalizer aliceVision_sfm ${ABC_LIBRARIES})
   endif()
 
-  if(OPENMVG_HAVE_CCTAG)
+  if(ALICEVISION_HAVE_CCTAG)
       target_link_libraries(aliceVision_main_cameraLocalizer CCTag::CCTag)
   endif()
 
@@ -84,15 +84,15 @@ if(OPENMVG_HAVE_BOOST)
     ${Boost_LIBRARIES}
   )
 
-  if(OPENMVG_HAVE_ALEMBIC)
+  if(ALICEVISION_HAVE_ALEMBIC)
       target_link_libraries(aliceVision_main_rigLocalizer aliceVision_sfm ${ABC_LIBRARIES})
   endif()
 
-  if(OPENMVG_HAVE_CCTAG)
+  if(ALICEVISION_HAVE_CCTAG)
       target_link_libraries(aliceVision_main_rigLocalizer CCTag::CCTag)
   endif()
 
-  if(OPENMVG_HAVE_ALEMBIC)
+  if(ALICEVISION_HAVE_ALEMBIC)
 
     add_executable(aliceVision_main_rigTransform main_rigTransform.cpp)
 

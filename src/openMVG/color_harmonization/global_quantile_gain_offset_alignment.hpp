@@ -4,7 +4,7 @@
 #include <aliceVision/config.hpp>
 #include "aliceVision/linearProgramming/linearProgrammingInterface.hpp"
 #include "aliceVision/linearProgramming/linearProgrammingOSI_X.hpp"
-#if OPENMVG_IS_DEFINED(OPENMVG_HAVE_MOSEK)
+#if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_MOSEK)
 #include "aliceVision/linearProgramming/linearProgrammingMOSEK.hpp"
 #endif
 #include "aliceVision/linearProgramming/bisectionLP.hpp"

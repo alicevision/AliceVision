@@ -45,7 +45,7 @@ bool checkIntrinsicStringValidity(const std::string& Kmatrix,
   stl::split(Kmatrix, ";", vec_str);
   if (vec_str.size() != 9)
   {
-    OPENMVG_LOG_ERROR("Error: In K matrix string, missing ';' character");
+    ALICEVISION_LOG_ERROR("Error: In K matrix string, missing ';' character");
     return false;
   }
 
@@ -57,7 +57,7 @@ bool checkIntrinsicStringValidity(const std::string& Kmatrix,
     ss.str(vec_str[i]);
     if(!(ss >> readvalue))
     {
-      OPENMVG_LOG_ERROR("Error: In K matrix string, used an invalid not a number character");
+      ALICEVISION_LOG_ERROR("Error: In K matrix string, used an invalid not a number character");
       return false;
     }
     if (i==0) focal = readvalue;
@@ -97,7 +97,7 @@ bool listFiles(const std::string& folderOrFile,
     const std::vector<std::string> allFiles = stlplus::folder_all(folderOrFile);
     if(allFiles.empty())
     {
-      OPENMVG_LOG_ERROR("Error: Folder '" << stlplus::filename_part(folderOrFile) <<"' is empty.");
+      ALICEVISION_LOG_ERROR("Error: Folder '" << stlplus::filename_part(folderOrFile) <<"' is empty.");
       return false;
     }
 
@@ -110,7 +110,7 @@ bool listFiles(const std::string& folderOrFile,
   }
   else
   {
-    OPENMVG_LOG_ERROR("Error: '" << folderOrFile << "' is not a valid folder or file path.");
+    ALICEVISION_LOG_ERROR("Error: '" << folderOrFile << "' is not a valid folder or file path.");
     return false;
   }
   return true;
@@ -129,7 +129,7 @@ bool retrieveResources(const std::string& jsonFile,
 {
   if(!stlplus::file_exists(jsonFile))
   {
-    OPENMVG_LOG_ERROR("File \"" << jsonFile << "\" does not exists.");
+    ALICEVISION_LOG_ERROR("File \"" << jsonFile << "\" does not exists.");
     return false;
   }
 
@@ -154,12 +154,12 @@ bool retrieveResources(const std::string& jsonFile,
   document.Parse<0>(&jsonString[0]);
   if(!document.IsObject())
   {
-    OPENMVG_LOG_ERROR("Error: File '" << jsonFile << "' is not in json format.");
+    ALICEVISION_LOG_ERROR("Error: File '" << jsonFile << "' is not in json format.");
     return false;
   }
   if(!document.HasMember("resources"))
   {
-    OPENMVG_LOG_ERROR("Error: No member 'resources' in json file");
+    ALICEVISION_LOG_ERROR("Error: No member 'resources' in json file");
     return false;
   }
 
@@ -167,7 +167,7 @@ bool retrieveResources(const std::string& jsonFile,
 
   if(!jsonResourcesArray.IsArray())
   {
-    OPENMVG_LOG_ERROR("Error: Member 'resources' in json file isn't an array");
+    ALICEVISION_LOG_ERROR("Error: Member 'resources' in json file isn't an array");
     return false;
   }
 
@@ -263,9 +263,9 @@ public:
       _exifData = exifReader.getExifData();
 
     if(!exifReader.doesHaveExifInfo())
-      OPENMVG_LOG_WARNING("Warning: No Exif metadata for image '" << stlplus::filename_part(imageAbsPath) << "'" << std::endl);
+      ALICEVISION_LOG_WARNING("Warning: No Exif metadata for image '" << stlplus::filename_part(imageAbsPath) << "'" << std::endl);
     else if(_cameraBrand.empty() || _cameraModel.empty())
-      OPENMVG_LOG_WARNING("Warning: No Brand/Model in Exif metadata for image '" << stlplus::filename_part(imageAbsPath) << "'" << std::endl);
+      ALICEVISION_LOG_WARNING("Warning: No Brand/Model in Exif metadata for image '" << stlplus::filename_part(imageAbsPath) << "'" << std::endl);
 
     // find width/height in metadata
     {
@@ -301,7 +301,7 @@ public:
 
     if(_isResized)
     {
-      OPENMVG_LOG_WARNING("Warning: Resized image detected:" << std::endl
+      ALICEVISION_LOG_WARNING("Warning: Resized image detected:" << std::endl
                           << "\t- real image size: " << width << "x" << height << std::endl
                           << "\t- image size from metadata is: " << _metadataImageWidth << "x" << _metadataImageHeight << std::endl);
     }
@@ -408,7 +408,7 @@ public:
   {
     if(!_haveValidMetadata)
     {
-      OPENMVG_LOG_WARNING("Warning: No metadata in image '" << stlplus::filename_part(_imageAbsPath) << "'." << std::endl
+      ALICEVISION_LOG_WARNING("Warning: No metadata in image '" << stlplus::filename_part(_imageAbsPath) << "'." << std::endl
                           << "Use default sensor width." << std::endl);
     }
 
@@ -433,7 +433,7 @@ public:
       // handle case where focal length (mm) is equal to 0
       if(_mmFocalLength <= .0f)
       {
-        OPENMVG_LOG_WARNING("Warning: image '" << stlplus::filename_part(_imageAbsPath) << "' focal length (in mm) metadata is missing." << std::endl
+        ALICEVISION_LOG_WARNING("Warning: image '" << stlplus::filename_part(_imageAbsPath) << "' focal length (in mm) metadata is missing." << std::endl
                             << "Can't compute focal length (in px)." << std::endl);
       }
       else if(_ccdw != -1.0)
@@ -492,7 +492,7 @@ public:
     // not enough information to find intrinsics
     if(_pxFocalLength <= 0 || _ppx <= 0 || _ppy <= 0)
     {
-      OPENMVG_LOG_WARNING("Warning: No instrinsics for '" << stlplus::filename_part(_imageAbsPath) << "':" << std::endl
+      ALICEVISION_LOG_WARNING("Warning: No instrinsics for '" << stlplus::filename_part(_imageAbsPath) << "':" << std::endl
                            << "\t- width: " << _width << std::endl
                            << "\t- height: " << _height << std::endl
                            << "\t- camera brand: " << ((_cameraBrand.empty()) ? "unknown" : _cameraBrand) << std::endl
@@ -579,7 +579,7 @@ int main(int argc, char **argv)
   }
   catch(const std::string& s)
   {
-    OPENMVG_CERR("Usage: " << argv[0] << '\n'
+    ALICEVISION_CERR("Usage: " << argv[0] << '\n'
       << "[-i|--imageDirectory]\n"
       << "[-j|--jsonFile] Input file with all the user options. It can be used to provide a list of images instead of a directory.\n"
       << "[-d|--sensorWidthDatabase]\n"
@@ -602,12 +602,12 @@ int main(int argc, char **argv)
       << "\t debug\n"
       << "\t trace\n");
 
-    OPENMVG_CERR(s);
+    ALICEVISION_CERR(s);
 
     return EXIT_FAILURE;
   }
 
-  OPENMVG_COUT("Program called with the following parameters: " <<std::endl
+  ALICEVISION_COUT("Program called with the following parameters: " <<std::endl
                 << "\t" << argv[0] << std::endl
                 << "\t--imageDirectory " << imageDir << std::endl
                 << "\t--jsonFile " << jsonFile << std::endl
@@ -636,21 +636,21 @@ int main(int argc, char **argv)
   // check user don't choose both input options
   if(!imageDir.empty() && !jsonFile.empty())
   {
-    OPENMVG_LOG_ERROR("Error: Cannot combine -i and -j options");
+    ALICEVISION_LOG_ERROR("Error: Cannot combine -i and -j options");
     return EXIT_FAILURE;
   }
 
   // check input directory
   if(!imageDir.empty() && !stlplus::folder_exists(imageDir))
   {
-    OPENMVG_LOG_ERROR("Error: The input directory doesn't exist");
+    ALICEVISION_LOG_ERROR("Error: The input directory doesn't exist");
     return EXIT_FAILURE;
   }
 
   // check output directory string
   if(outputDir.empty())
   {
-    OPENMVG_LOG_ERROR("Error: Invalid output directory");
+    ALICEVISION_LOG_ERROR("Error: Invalid output directory");
     return EXIT_FAILURE;
   }
 
@@ -659,7 +659,7 @@ int main(int argc, char **argv)
   {
     if(!stlplus::folder_create(outputDir))
     {
-      OPENMVG_LOG_ERROR("Error: Cannot create output directory");
+      ALICEVISION_LOG_ERROR("Error: Cannot create output directory");
       return EXIT_FAILURE;
     }
   }
@@ -667,7 +667,7 @@ int main(int argc, char **argv)
   // check user don't combine focal and K matrix
   if(userKMatrix.size() > 0 && userFocalLengthPixel != -1.0)
   {
-    OPENMVG_LOG_ERROR("Error: Cannot combine -f and -k options");
+    ALICEVISION_LOG_ERROR("Error: Cannot combine -f and -k options");
     return EXIT_FAILURE;
   }
 
@@ -677,7 +677,7 @@ int main(int argc, char **argv)
     double ppy = -1.0;
     if(userKMatrix.size() > 0 && !checkIntrinsicStringValidity(userKMatrix, userFocalLengthPixel, ppx, ppy))
     {
-      OPENMVG_LOG_ERROR("Error: Invalid K matrix input");
+      ALICEVISION_LOG_ERROR("Error: Invalid K matrix input");
       return EXIT_FAILURE;
     }
   }
@@ -688,7 +688,7 @@ int main(int argc, char **argv)
   {
     if(!sensordb::parseDatabase(sensorDatabasePath, database))
     {
-      OPENMVG_LOG_ERROR("Error: Invalid input database '" << sensorDatabasePath << "', please specify a valid file.");
+      ALICEVISION_LOG_ERROR("Error: Invalid input database '" << sensorDatabasePath << "', please specify a valid file.");
       return EXIT_FAILURE;
     }
   }
@@ -702,7 +702,7 @@ int main(int argc, char **argv)
   {
     if(!retrieveResources(jsonFile, supportedExtensions, allImagePaths))
     {
-      OPENMVG_LOG_ERROR("Error: Can't retrieve image paths in '" << jsonFile << "'");
+      ALICEVISION_LOG_ERROR("Error: Can't retrieve image paths in '" << jsonFile << "'");
       return EXIT_FAILURE;
     } 
   }
@@ -719,7 +719,7 @@ int main(int argc, char **argv)
     }
     else
     {
-      OPENMVG_LOG_ERROR("Error: Can't find image paths in '" << imageDir << "'");
+      ALICEVISION_LOG_ERROR("Error: Can't find image paths in '" << imageDir << "'");
       return EXIT_FAILURE;
     }
   }
@@ -727,7 +727,7 @@ int main(int argc, char **argv)
   // check the number of groups
   if(allImagePaths.empty())
   {
-    OPENMVG_LOG_ERROR("Error: No image paths given");
+    ALICEVISION_LOG_ERROR("Error: No image paths given");
     return EXIT_FAILURE;
   }
 
@@ -753,7 +753,7 @@ int main(int argc, char **argv)
         {
           if(cameraImagePaths.size() != nbCamImages)
           {
-            OPENMVG_LOG_ERROR("Error: Each camera of a rig must have the same number of images.");
+            ALICEVISION_LOG_ERROR("Error: Each camera of a rig must have the same number of images.");
             return EXIT_FAILURE;
           }
         }
@@ -773,7 +773,7 @@ int main(int argc, char **argv)
       }
     }
 
-    OPENMVG_LOG_INFO("Retrive: " << std::endl
+    ALICEVISION_LOG_INFO("Retrive: " << std::endl
                       << "\t- # single image(s): " << nbSingleImages << std::endl
                       << "\t- # intrinsic group(s): " << nbInstrinsicGroup << std::endl
                       << "\t- # rig(s): " << nbRigs << std::endl);
@@ -818,7 +818,7 @@ int main(int argc, char **argv)
   std::vector<sensorInfo> unknownSensorImages;
   std::vector<std::string> noMetadataImages;
 
-  OPENMVG_LOG_TRACE("Start image listing :" << std::endl);
+  ALICEVISION_LOG_TRACE("Start image listing :" << std::endl);
 
   for(std::size_t groupId = 0; groupId < allImagePaths.size(); ++groupId) // intrinsic group or rig
   {
@@ -851,13 +851,13 @@ int main(int argc, char **argv)
 
         if(isRig)
         {
-          OPENMVG_LOG_TRACE("[" << (1 + nbCurrImages) << "/" << nbTotalImages << "] "
+          ALICEVISION_LOG_TRACE("[" << (1 + nbCurrImages) << "/" << nbTotalImages << "] "
                             << "rig [" << std::to_string(1 + cameraId) << "/" << nbCameras << "]"
                             << " file: '" << stlplus::filename_part(imagePath) << "'");
         }
         else
         {
-          OPENMVG_LOG_TRACE("[" << (1 + nbCurrImages) << "/" << nbTotalImages
+          ALICEVISION_LOG_TRACE("[" << (1 + nbCurrImages) << "/" << nbTotalImages
                             << "] image file: '" << stlplus::filename_part(imagePath) << "'");
         }
 
@@ -869,7 +869,7 @@ int main(int argc, char **argv)
         // test if the image format is supported
         if(aliceVision::image::GetFormat(imageAbsPath.c_str()) == aliceVision::image::Unknown)
         {
-          OPENMVG_LOG_WARNING("Warning: Unknown image file format '" << stlplus::filename_part(imageAbsPath) << "'." << std::endl
+          ALICEVISION_LOG_WARNING("Warning: Unknown image file format '" << stlplus::filename_part(imageAbsPath) << "'." << std::endl
                               << "Skip image." << std::endl);
           continue; // image cannot be opened
         }
@@ -878,7 +878,7 @@ int main(int argc, char **argv)
         ImageHeader imgHeader;
         if(!aliceVision::image::ReadImageHeader(imageAbsPath.c_str(), &imgHeader))
         {
-          OPENMVG_LOG_WARNING("Warning: Can't read image header '" << stlplus::filename_part(imageAbsPath) << "'." << std::endl
+          ALICEVISION_LOG_WARNING("Warning: Can't read image header '" << stlplus::filename_part(imageAbsPath) << "'." << std::endl
                               << "Skip image." << std::endl);
           continue; // image cannot be read
         }
@@ -889,7 +889,7 @@ int main(int argc, char **argv)
         //check dimensions
         if(width <= 0 || height <= 0)
         {
-          OPENMVG_LOG_WARNING("Error: Image size is invalid '" << imagePath << "'." << std::endl
+          ALICEVISION_LOG_WARNING("Error: Image size is invalid '" << imagePath << "'." << std::endl
                               << "\t- width: " << width << std::endl
                               << "\t- height: " << height << std::endl
                               << "Skip image." << std::endl);
@@ -969,7 +969,7 @@ int main(int argc, char **argv)
           if((width != cameraWidth) && (height != cameraHeight))
           {
             // if not the first image check dimensions
-            OPENMVG_LOG_ERROR("Error: rig camera images don't have the same dimensions" << std::endl);
+            ALICEVISION_LOG_ERROR("Error: rig camera images don't have the same dimensions" << std::endl);
             return EXIT_FAILURE;
           }
         }
@@ -986,7 +986,7 @@ int main(int argc, char **argv)
         // check duplicated view identifier
         if(views.count(viewId))
         {
-          OPENMVG_LOG_WARNING("Warning: view identifier already use, duplicated image in input (" << imageAbsPath << ")." << std::endl
+          ALICEVISION_LOG_WARNING("Warning: view identifier already use, duplicated image in input (" << imageAbsPath << ")." << std::endl
                               << "Skip image." << std::endl);
           continue;
         }
@@ -1024,26 +1024,26 @@ int main(int argc, char **argv)
 
   if(!noMetadataImages.empty())
   {
-    OPENMVG_LOG_WARNING("Warning: No metadata in image(s) :");
+    ALICEVISION_LOG_WARNING("Warning: No metadata in image(s) :");
     for(const auto& imagePath : noMetadataImages)
     {
-      OPENMVG_LOG_WARNING("\t- '" << imagePath << "'");
+      ALICEVISION_LOG_WARNING("\t- '" << imagePath << "'");
     }
-    OPENMVG_LOG_WARNING(std::endl);
+    ALICEVISION_LOG_WARNING(std::endl);
   }
 
   if(!unknownSensorImages.empty())
   {
     unknownSensorImages.erase(unique(unknownSensorImages.begin(), unknownSensorImages.end()), unknownSensorImages.end());
-    OPENMVG_LOG_ERROR("Error: Sensor width doesn't exist in the database for image(s) :");
+    ALICEVISION_LOG_ERROR("Error: Sensor width doesn't exist in the database for image(s) :");
 
     for(const auto& unknownSensor : unknownSensorImages)
     {
-      OPENMVG_LOG_ERROR("image: '" << stlplus::filename_part(unknownSensor.filePath) << "'" << std::endl
+      ALICEVISION_LOG_ERROR("image: '" << stlplus::filename_part(unknownSensor.filePath) << "'" << std::endl
                         << "\t- camera brand: " << unknownSensor.brand <<  std::endl
                         << "\t- camera model: " << unknownSensor.model <<  std::endl);
     }
-    OPENMVG_LOG_ERROR("Please add camera model(s) and sensor width(s) in the database." << std::endl);
+    ALICEVISION_LOG_ERROR("Please add camera model(s) and sensor width(s) in the database." << std::endl);
     return EXIT_FAILURE;
   }
 
@@ -1070,7 +1070,7 @@ int main(int argc, char **argv)
   }
 
   // print report
-  OPENMVG_LOG_INFO("SfMInit_ImageListing report:" << std::endl
+  ALICEVISION_LOG_INFO("SfMInit_ImageListing report:" << std::endl
                    << "\t- # input image path(s): " << nbTotalImages << std::endl
                    << "\t- # view(s) listed in sfm_data: " << sfm_data.GetViews().size() << std::endl
                    << "\t- # view(s) listed in sfm_data without intrinsic: " << viewsWithoutIntrinsic << std::endl
@@ -1078,12 +1078,12 @@ int main(int argc, char **argv)
 
   if(viewsWithoutIntrinsic == sfm_data.GetViews().size())
   {
-    OPENMVG_LOG_ERROR("Error: No metadata in all images." << std::endl);
+    ALICEVISION_LOG_ERROR("Error: No metadata in all images." << std::endl);
     return EXIT_FAILURE;
   }
   else if(viewsWithoutIntrinsic > 0)
   {
-    OPENMVG_LOG_WARNING("Warning: " << viewsWithoutIntrinsic << " views without metadata. It may fail the reconstruction." << std::endl);
+    ALICEVISION_LOG_WARNING("Warning: " << viewsWithoutIntrinsic << " views without metadata. It may fail the reconstruction." << std::endl);
   }
 
   return EXIT_SUCCESS;

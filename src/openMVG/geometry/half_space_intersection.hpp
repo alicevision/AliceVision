@@ -1,8 +1,8 @@
 // This file is part of the AliceVision project and is made available under
 // the terms of the MPL2 license (see the COPYING.md file).
 
-#ifndef OPENMVG_GEOMETRY_HALF_SPACE_HPP_
-#define OPENMVG_GEOMETRY_HALF_SPACE_HPP_
+#ifndef ALICEVISION_GEOMETRY_HALF_SPACE_HPP_
+#define ALICEVISION_GEOMETRY_HALF_SPACE_HPP_
 
 #include "aliceVision/linearProgramming/linearProgrammingOSI_X.hpp"
 #include <Eigen/Geometry>
@@ -85,4 +85,4 @@ static bool isNotEmpty(const Half_planes & hplanes)
 } // namespace aliceVision
 } // namespace halfPlane
 
-#endif // OPENMVG_GEOMETRY_HALF_SPACE_HPP_
+#endif // ALICEVISION_GEOMETRY_HALF_SPACE_HPP_

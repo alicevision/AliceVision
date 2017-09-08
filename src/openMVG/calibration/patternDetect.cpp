@@ -10,7 +10,7 @@
 #include <boost/program_options.hpp>
 #include <boost/algorithm/string/case_conv.hpp>
 
-#if OPENMVG_IS_DEFINED(OPENMVG_HAVE_CCTAG)
+#if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_CCTAG)
 #include <aliceVision/features/cctag/CCTAG_describer.hpp>
 #include <cctag/ICCTag.hpp>
 #include <cctag/utils/LogTime.hpp>
@@ -38,7 +38,7 @@ std::istream& operator>>(std::istream &stream, Pattern &pattern)
   else if (token == "ASYMMETRIC_CIRCLES")
     pattern = aliceVision::calibration::Pattern::ASYMMETRIC_CIRCLES_GRID;
   else if (token == "ASYMMETRIC_CCTAG")
-#if OPENMVG_IS_DEFINED(OPENMVG_HAVE_CCTAG)
+#if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_CCTAG)
     pattern = ASYMMETRIC_CCTAG_GRID;
 #else
     throw boost::program_options::invalid_option_value("Not builded with CCTag support.");
@@ -61,7 +61,7 @@ std::ostream& operator<<(std::ostream &stream, const Pattern pattern)
     case aliceVision::calibration::Pattern::ASYMMETRIC_CIRCLES_GRID:
       stream << "ASYMMETRIC_CIRCLES";
       break;
-#if OPENMVG_IS_DEFINED(OPENMVG_HAVE_CCTAG)
+#if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_CCTAG)
     case aliceVision::calibration::Pattern::ASYMMETRIC_CCTAG_GRID:
       stream << "ASYMMETRIC_CCTAG";
       break;
@@ -85,7 +85,7 @@ bool findPattern(const Pattern& pattern, const cv::Mat& viewGray, const cv::Size
       found = cv::findChessboardCorners(viewGray, boardSize, pointbuf,
                                         CV_CALIB_CB_ADAPTIVE_THRESH | CV_CALIB_CB_FAST_CHECK | CV_CALIB_CB_NORMALIZE_IMAGE);
       durationCh = (std::clock() - startCh) / (double) CLOCKS_PER_SEC;
-      OPENMVG_LOG_DEBUG("Find chessboard corners' duration: " << durationCh);
+      ALICEVISION_LOG_DEBUG("Find chessboard corners' duration: " << durationCh);
 
       // improve the found corners' coordinate accuracy
       if (found)
@@ -95,7 +95,7 @@ bool findPattern(const Pattern& pattern, const cv::Mat& viewGray, const cv::Size
                          cv::TermCriteria(CV_TERMCRIT_EPS + CV_TERMCRIT_ITER, 30, 0.1));
 
         durationCh = (std::clock() - startCh) / (double) CLOCKS_PER_SEC;
-        OPENMVG_LOG_DEBUG("Refine chessboard corners' duration: " << durationCh);
+        ALICEVISION_LOG_DEBUG("Refine chessboard corners' duration: " << durationCh);
       }
       break;
     }
@@ -106,7 +106,7 @@ bool findPattern(const Pattern& pattern, const cv::Mat& viewGray, const cv::Size
       found = cv::findCirclesGrid(viewGray, boardSize, pointbuf);
 
       durationCh = (std::clock() - startCh) / (double) CLOCKS_PER_SEC;
-      OPENMVG_LOG_DEBUG("Find circles grid duration: " << durationCh);
+      ALICEVISION_LOG_DEBUG("Find circles grid duration: " << durationCh);
       break;
     }
     case ASYMMETRIC_CIRCLES_GRID:
@@ -116,10 +116,10 @@ bool findPattern(const Pattern& pattern, const cv::Mat& viewGray, const cv::Size
       found = cv::findCirclesGrid(viewGray, boardSize, pointbuf, cv::CALIB_CB_ASYMMETRIC_GRID);
 
       durationCh = (std::clock() - startCh) / (double) CLOCKS_PER_SEC;
-      OPENMVG_LOG_DEBUG("Find asymmetric circles grid duration: " << durationCh);
+      ALICEVISION_LOG_DEBUG("Find asymmetric circles grid duration: " << durationCh);
       break;
     }
-  #if OPENMVG_IS_DEFINED(OPENMVG_HAVE_CCTAG)
+  #if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_CCTAG)
     case ASYMMETRIC_CCTAG_GRID:
     {
       startCh = std::clock();
@@ -149,7 +149,7 @@ bool findPattern(const Pattern& pattern, const cv::Mat& viewGray, const cv::Size
       found = true;
 
       durationCh = (std::clock() - startCh) / (double) CLOCKS_PER_SEC;
-      OPENMVG_LOG_DEBUG("Find asymmetric CCTag grid duration: " << durationCh);
+      ALICEVISION_LOG_DEBUG("Find asymmetric CCTag grid duration: " << durationCh);
       break;
     }
   #endif
@@ -194,7 +194,7 @@ void calcChessboardCorners(std::vector<cv::Point3f>& corners, const cv::Size& bo
                                         0));
       break;
     }
-  #if OPENMVG_IS_DEFINED(OPENMVG_HAVE_CCTAG)
+  #if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_CCTAG)
     case ASYMMETRIC_CCTAG_GRID:
     {
       // The real number of lines in the cctag asymmetric grid

@@ -1,8 +1,8 @@
 // This file is part of the AliceVision project and is made available under
 // the terms of the MPL2 license (see the COPYING.md file).
 
-#ifndef OPENMVG_VOCABULARY_TREE_TREE_BUILDER_HPP
-#define OPENMVG_VOCABULARY_TREE_TREE_BUILDER_HPP
+#ifndef ALICEVISION_VOCABULARY_TREE_TREE_BUILDER_HPP
+#define ALICEVISION_VOCABULARY_TREE_TREE_BUILDER_HPP
 
 #include "mutable_tree.hpp"
 #include "simple_kmeans.hpp"

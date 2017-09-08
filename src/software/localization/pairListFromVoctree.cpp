@@ -275,18 +275,18 @@ int main(int argc, char** argv)
   // Create the database
   //**********************************************************
 
-  OPENMVG_COUT("Creating the database...");
+  ALICEVISION_COUT("Creating the database...");
   // Add each object (document) to the database
   aliceVision::voctree::Database db(tree.words());
 
   if(withWeights)
   {
-    OPENMVG_COUT("Loading weights...");
+    ALICEVISION_COUT("Loading weights...");
     db.loadWeights(weightsName);
   }
   else
   {
-    OPENMVG_COUT("No weights specified, skipping...");
+    ALICEVISION_COUT("No weights specified, skipping...");
   }
 
 
@@ -294,24 +294,24 @@ int main(int argc, char** argv)
   // Read the descriptors and populate the database
   //*********************************************************
 
-  OPENMVG_COUT("Reading descriptors from " << keylist);
+  ALICEVISION_COUT("Reading descriptors from " << keylist);
   auto detect_start = std::chrono::steady_clock::now();
   std::size_t numTotFeatures = aliceVision::voctree::populateDatabase<DescriptorUChar>(keylist, tree, db, nbMaxDescriptors);
   auto detect_elapsed = std::chrono::duration_cast<std::chrono::seconds>(std::chrono::steady_clock::now() - detect_start);
 
   if(numTotFeatures == 0)
   {
-    OPENMVG_CERR("No descriptors loaded!!");
+    ALICEVISION_CERR("No descriptors loaded!!");
     return EXIT_FAILURE;
   }
 
-  OPENMVG_COUT("Done! " << db.getSparseHistogramPerImage().size() << " sets of descriptors read for a total of " << numTotFeatures << " features");
-  OPENMVG_COUT("Reading took " << detect_elapsed.count() << " sec");
+  ALICEVISION_COUT("Done! " << db.getSparseHistogramPerImage().size() << " sets of descriptors read for a total of " << numTotFeatures << " features");
+  ALICEVISION_COUT("Reading took " << detect_elapsed.count() << " sec");
 
   if(!withWeights)
   {
     // Compute and save the word weights
-    OPENMVG_COUT("Computing weights...");
+    ALICEVISION_COUT("Computing weights...");
     db.computeTfIdfWeights();
   }
 
@@ -328,7 +328,7 @@ int main(int argc, char** argv)
 
   PairList allMatches;
 
-  OPENMVG_COUT("Query all documents");
+  ALICEVISION_COUT("Query all documents");
   detect_start = std::chrono::steady_clock::now();
   // Now query each document
   #pragma omp parallel for
@@ -339,7 +339,7 @@ int main(int argc, char** argv)
     std::vector<aliceVision::voctree::DocMatch> matches;
     
     db.find(docIt->second, numImageQuery, matches);
-    //    OPENMVG_COUT("query document " << docIt->first
+    //    ALICEVISION_COUT("query document " << docIt->first
     //                  << " took " << detect_elapsed.count() 
     //                  << " ms and has " << matches.size() 
     //                  << " matches\tBest " << matches[0].id 
@@ -357,7 +357,7 @@ int main(int argc, char** argv)
     }
   }
   detect_elapsed = std::chrono::duration_cast<std::chrono::seconds>(std::chrono::steady_clock::now() - detect_start);
-  OPENMVG_COUT("Query of all documents took " << detect_elapsed.count() << " sec.");
+  ALICEVISION_COUT("Query of all documents took " << detect_elapsed.count() << " sec.");
 
   //**********************************************************
   // process pair list
@@ -366,10 +366,10 @@ int main(int argc, char** argv)
   detect_start = std::chrono::steady_clock::now();
   OrderedPairList selectedPairs;
 
-  OPENMVG_COUT("Convert all matches to pairList");
+  ALICEVISION_COUT("Convert all matches to pairList");
   convertAllMatchesToPairList(allMatches, numImageQuery, selectedPairs);
   detect_elapsed = std::chrono::duration_cast<std::chrono::seconds>(std::chrono::steady_clock::now() - detect_start);
-  OPENMVG_COUT("Convert all matches to pairList took " << detect_elapsed.count() << " sec.");
+  ALICEVISION_COUT("Convert all matches to pairList took " << detect_elapsed.count() << " sec.");
 
   // check if the output directory exists
   const auto basePath = bfs::path(outfile).parent_path();
@@ -378,7 +378,7 @@ int main(int argc, char** argv)
     // then create the missing directory
     if(!bfs::create_directories(basePath))
     {
-      OPENMVG_CERR("Unable to create directories: " << basePath);
+      ALICEVISION_CERR("Unable to create directories: " << basePath);
       return EXIT_FAILURE;
     }
   }
@@ -389,6 +389,6 @@ int main(int argc, char** argv)
   fileout << selectedPairs;
   fileout.close();
 
-  OPENMVG_COUT("pairList exported in: " << outfile);
+  ALICEVISION_COUT("pairList exported in: " << outfile);
   return EXIT_SUCCESS;
 }

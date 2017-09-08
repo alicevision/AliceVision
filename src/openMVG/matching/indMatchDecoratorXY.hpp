@@ -1,8 +1,8 @@
 // This file is part of the AliceVision project and is made available under
 // the terms of the MPL2 license (see the COPYING.md file).
 
-#ifndef OPENMVG_MATCHING_IND_MATCH_DECORATOR_XY_H
-#define OPENMVG_MATCHING_IND_MATCH_DECORATOR_XY_H
+#ifndef ALICEVISION_MATCHING_IND_MATCH_DECORATOR_XY_H
+#define ALICEVISION_MATCHING_IND_MATCH_DECORATOR_XY_H
 
 #include <iostream>
 #include "aliceVision/matching/indMatch.hpp"
@@ -142,4 +142,4 @@ private :
 }  // namespace matching
 }  // namespace aliceVision
 
-#endif // OPENMVG_MATCHING_IND_MATCH_DECORATOR_XY_H
+#endif // ALICEVISION_MATCHING_IND_MATCH_DECORATOR_XY_H

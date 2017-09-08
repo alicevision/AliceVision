@@ -42,7 +42,7 @@ struct Datasheet
       std::string brandlower2 = *iter_brand;
       std::transform(brandlower2.begin(), brandlower2.end(),
         brandlower2.begin(), ::tolower);
-      //OPENMVG_LOG_DEBUG(brandlower << "\t" << brandlower2);
+      //ALICEVISION_LOG_DEBUG(brandlower << "\t" << brandlower2);
       if ( brandlower.compare( brandlower2 ) == 0 )
       {
         std::vector<std::string> vec_model1;

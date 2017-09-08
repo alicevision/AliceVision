@@ -3,7 +3,7 @@
 
 #include "rigResection.hpp"
 #include "aliceVision/robust_estimation/robust_estimator_ACRansacKernelAdaptator.hpp"
-#if OPENMVG_IS_DEFINED(OPENMVG_HAVE_OPENGV)
+#if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_OPENGV)
 #include <Eigen/Eigen>
 #include <opengv/absolute_pose/methods.hpp>
 #include <opengv/absolute_pose/NoncentralAbsoluteAdapter.hpp>
@@ -19,7 +19,7 @@
 namespace aliceVision{
 namespace localization{
 
-#if OPENMVG_IS_DEFINED(OPENMVG_HAVE_OPENGV)
+#if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_OPENGV)
 
 EstimationStatus rigResection(const std::vector<Mat> &pts2d,
                   const std::vector<Mat> &pts3d,
@@ -145,7 +145,7 @@ EstimationStatus rigResection(const std::vector<Mat> &pts2d,
   if(!success)
   {
     if(verbosity)
-      OPENMVG_LOG_DEBUG("Resection Failed");
+      ALICEVISION_LOG_DEBUG("Resection Failed");
     
     return EstimationStatus(false, false);
   }
@@ -164,7 +164,7 @@ EstimationStatus rigResection(const std::vector<Mat> &pts2d,
   
   if(verbosity)
   {
-    OPENMVG_LOG_DEBUG(
+    ALICEVISION_LOG_DEBUG(
       "-------------------------------" << "\n"
       "-- Robust Resection " << "\n"
       "-- Resection status: " << success << "\n"
@@ -183,13 +183,13 @@ EstimationStatus rigResection(const std::vector<Mat> &pts2d,
     inliers[idx.first].emplace_back(idx.second);
   }
 //  for(size_t i = 0; i < ransac.inliers_.size(); i++)
-//    OPENMVG_LOG_DEBUG(ransac.inliers_[i]);
+//    ALICEVISION_LOG_DEBUG(ransac.inliers_[i]);
 //  
 //  for(size_t i = 0; i < inliers.size(); ++i)
 //  {
-//    OPENMVG_LOG_DEBUG("Inliers cam " << i << ":");
+//    ALICEVISION_LOG_DEBUG("Inliers cam " << i << ":");
 //    for(size_t j = 0; j < inliers[i].size(); ++j)
-//      OPENMVG_LOG_DEBUG(inliers[i][j]);
+//      ALICEVISION_LOG_DEBUG(inliers[i][j]);
 //  }
 
   bool hasStrongSupport = true;
@@ -201,7 +201,7 @@ EstimationStatus rigResection(const std::vector<Mat> &pts2d,
   return EstimationStatus(true, hasStrongSupport);
 }
 
-#endif // #if OPENMVG_IS_DEFINED(OPENMVG_HAVE_OPENGV)
+#endif // #if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_OPENGV)
 
 }
 }

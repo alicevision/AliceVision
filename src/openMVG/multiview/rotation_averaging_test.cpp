@@ -269,7 +269,7 @@ TEST ( rotation_averaging, RefineRotationsAvgL1IRLS_CompleteGraph_outliers)
   bool bTest = GlobalRotationsRobust(vec_relativeRotEstimate, vec_globalR, nMainViewID, 0.0f, &vec_inliers);
   EXPECT_TRUE(bTest);
 
-  OPENMVG_LOG_DEBUG("Inliers: " << vec_inliers);
+  ALICEVISION_LOG_DEBUG("Inliers: " << vec_inliers);
 
   // Check inlier list
   CHECK(std::accumulate(vec_inliers.begin(), vec_inliers.end(), 0) == 8);

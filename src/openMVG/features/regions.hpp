@@ -1,8 +1,8 @@
 // This file is part of the AliceVision project and is made available under
 // the terms of the MPL2 license (see the COPYING.md file).
 
-#ifndef OPENMVG_FEATURES_REGIONS_HPP
-#define OPENMVG_FEATURES_REGIONS_HPP
+#ifndef ALICEVISION_FEATURES_REGIONS_HPP
+#define ALICEVISION_FEATURES_REGIONS_HPP
 
 #include "aliceVision/types.hpp"
 #include "aliceVision/numeric/numeric.h"
@@ -333,4 +333,4 @@ using Binary_Regions = FeatDesc_Regions<FeatT, unsigned char, L, ERegionType::Bi
 } // namespace features
 } // namespace aliceVision
 
-#endif // OPENMVG_FEATURES_REGIONS_HPP
+#endif // ALICEVISION_FEATURES_REGIONS_HPP

@@ -23,7 +23,7 @@ bool SIFT_popSIFT_ImageDescriber::Describe(const image::Image<unsigned char>& im
   regionsCasted->Features().reserve(popFeatures->getDescriptorCount());
   regionsCasted->Descriptors().reserve(popFeatures->getDescriptorCount());
 
-  OPENMVG_LOG_TRACE("PopSIFT features count: " << popFeatures->getFeatureCount() << ", descriptors count: " << popFeatures->getDescriptorCount() << std::endl);
+  ALICEVISION_LOG_TRACE("PopSIFT features count: " << popFeatures->getFeatureCount() << ", descriptors count: " << popFeatures->getDescriptorCount() << std::endl);
 
   for(const auto& popFeat: *popFeatures)
   {
@@ -47,7 +47,7 @@ bool SIFT_popSIFT_ImageDescriber::Describe(const image::Image<unsigned char>& im
     }
   }
 
-  OPENMVG_LOG_TRACE("aliceVision PopSIFT feature count : " << regionsCasted->RegionCount() << std::endl);
+  ALICEVISION_LOG_TRACE("aliceVision PopSIFT feature count : " << regionsCasted->RegionCount() << std::endl);
 
   return true;
 }

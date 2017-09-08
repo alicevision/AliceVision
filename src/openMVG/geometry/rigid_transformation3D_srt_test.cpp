@@ -39,7 +39,7 @@ TEST(SRT_precision, Experiment_ScaleOnly)
   FindRTS(x1, x2, Sc, tc, Rc);
   Refine_RTS(x1, x2, Sc, tc, Rc);
 
-  OPENMVG_LOG_DEBUG(
+  ALICEVISION_LOG_DEBUG(
           "Scale " << Sc << "\n" <<
           "Rot \n" << Rc << "\n" <<
           "t " << tc.transpose());
@@ -71,12 +71,12 @@ TEST(SRT_precision, Experiment_ScaleAndRot)
   FindRTS(x1, x2, Sc, tc, Rc);
   Refine_RTS(x1, x2, Sc, tc, Rc);
 
-  OPENMVG_LOG_DEBUG(
+  ALICEVISION_LOG_DEBUG(
           "Scale " << Sc << "\n" <<
           "Rot \n" << Rc << "\n" <<
           "t " << tc.transpose());
 
-  OPENMVG_LOG_DEBUG("GT\n" <<
+  ALICEVISION_LOG_DEBUG("GT\n" <<
           "Scale " << scale << "\n" <<
           "Rot \n" << rot << "\n" <<
           "t " << t.transpose());
@@ -108,12 +108,12 @@ TEST(SRT_precision, Experiment_ScaleRotTranslation)
   FindRTS(x1, x2, Sc, tc, Rc);
   Refine_RTS(x1, x2, Sc, tc, Rc);
 
-  OPENMVG_LOG_DEBUG(
+  ALICEVISION_LOG_DEBUG(
           "Scale " << Sc << "\n" <<
           "Rot \n" << Rc << "\n" <<
           "t " << tc.transpose());
 
-  OPENMVG_LOG_DEBUG("GT\n" <<
+  ALICEVISION_LOG_DEBUG("GT\n" <<
           "Scale " << scale << "\n" <<
           "Rot \n" << rot << "\n" <<
           "t " << t.transpose());
@@ -148,12 +148,12 @@ TEST(SRT_precision, ACRANSAC_noNoise)
   EXPECT_TRUE(result);
   EXPECT_TRUE(vec_inliers.size() == nbPoints);
 
-  OPENMVG_LOG_DEBUG(
+  ALICEVISION_LOG_DEBUG(
           "Scale " << Sc << "\n" <<
           "Rot \n" << Rc << "\n" <<
           "t " << tc.transpose());
 
-  OPENMVG_LOG_DEBUG("GT\n" <<
+  ALICEVISION_LOG_DEBUG("GT\n" <<
           "Scale " << scale << "\n" <<
           "Rot \n" << rot << "\n" <<
           "t " << t.transpose());
@@ -201,12 +201,12 @@ TEST(SRT_precision, ACRANSAC_noiseByShuffling)
   std::vector<std::size_t> vec_inliers;
   const bool result = ACRansac_FindRTS(x1, x2, Sc, tc, Rc, vec_inliers, true);
 
-  OPENMVG_LOG_DEBUG(
+  ALICEVISION_LOG_DEBUG(
           "Scale " << Sc << "\n" <<
           "Rot \n" << Rc << "\n" <<
           "t " << tc.transpose());
 
-  OPENMVG_LOG_DEBUG("GT\n" <<
+  ALICEVISION_LOG_DEBUG("GT\n" <<
           "Scale " << scale << "\n" <<
           "Rot \n" << rot << "\n" <<
           "t " << t.transpose());

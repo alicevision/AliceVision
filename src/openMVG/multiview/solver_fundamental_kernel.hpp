@@ -1,8 +1,8 @@
 // This file is part of the AliceVision project and is made available under
 // the terms of the MPL2 license (see the COPYING.md file).
 
-#ifndef OPENMVG_MULTIVIEW_SOLVER_FUNDAMENTAL_KERNEL_H_
-#define OPENMVG_MULTIVIEW_SOLVER_FUNDAMENTAL_KERNEL_H_
+#ifndef ALICEVISION_MULTIVIEW_SOLVER_FUNDAMENTAL_KERNEL_H_
+#define ALICEVISION_MULTIVIEW_SOLVER_FUNDAMENTAL_KERNEL_H_
 
 #include <vector>
 #include "aliceVision/multiview/two_view_kernel.hpp"
@@ -144,4 +144,4 @@ typedef two_view::kernel::Kernel<
 }  // namespace fundamental
 }  // namespace aliceVision
 
-#endif  // OPENMVG_MULTIVIEW_SOLVER_FUNDAMENTAL_KERNEL_H_
+#endif  // ALICEVISION_MULTIVIEW_SOLVER_FUNDAMENTAL_KERNEL_H_

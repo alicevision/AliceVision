@@ -64,49 +64,49 @@ At the end of the cmake process, a report shows for each library which version (
 CMake Options
 --------------------------
 
-* `OPENMVG_USE_BOOST` (default `ON`)
+* `ALICEVISION_USE_BOOST` (default `ON`)
   Use Boost library (enable modules like localization/voctree and other features and optimizations.
 
 * `BOOST_NO_CXX11` (default `OFF`)
   If your Boost binaries are compiled without C++11 support, you need to set this option to avoid compilation errors.
   This is most likely to be the case if you use the system packages to install boost.
 
-* `OPENMVG_USE_OPENMP` (default `ON`)
+* `ALICEVISION_USE_OPENMP` (default `ON`)
   Use OpenMP parallelization (huge impact on performances)
 
-* `OPENMVG_USE_CCTAG` (default `ON`)
+* `ALICEVISION_USE_CCTAG` (default `ON`)
   Build with CCTag markers support.
   `-DCCTag_DIR:PATH=/path/to/cctag/install/lib/cmake/CCTag` (where CCTagConfig.cmake can be found)
 
-* `OPENMVG_USE_OPENGV` (default `OFF`)
+* `ALICEVISION_USE_OPENGV` (default `OFF`)
   Build with openGV for multi-cameras localization.
   `-DOPENGV_DIR:PATH=/path/to/opengv/install/` (where "include" and "lib" folders can be found)
   We recommend: `git clone https://github.com/alicevision/opengv.git --branch=cmake_fix_install`
 
-* `OPENMVG_USE_ALEMBIC` (default `OFF`)
+* `ALICEVISION_USE_ALEMBIC` (default `OFF`)
   Build with Alembic file format support.
   `-DAlembic_DIR:PATH=/path/to/alembic/install/lib/cmake/Alembic/` (where AlembicConfig.cmake can be found)
   With old Alembic versions (<1.6), you need to set many variables: `ALEMBIC_ROOT`, `ALEMBIC_HDF5_ROOT`, `ALEMBIC_ILMBASE_ROOT`, `ALEMBIC_OPENEXR_ROOT`.
 
-* `OPENMVG_USE_OPENCV` (default: `OFF`): Build with openCV
+* `ALICEVISION_USE_OPENCV` (default: `OFF`): Build with openCV
   `-DOpenCV_DIR:PATH=/path/to/opencv/install/share/OpenCV/` (where OpenCVConfig.cmake can be found)
 
-* `OPENMVG_REQUIRE_CERES_WITH_SUITESPARSE` (default: `ON`)
+* `ALICEVISION_REQUIRE_CERES_WITH_SUITESPARSE` (default: `ON`)
   By default, aliceVision requires Ceres built with SuiteSparse to ensure best performances but you can make SuiteSparse optional with this flag.
 
-* `OPENMVG_BUILD_SHARED` (default `OFF`)
+* `ALICEVISION_BUILD_SHARED` (default `OFF`)
   Build AliceVision as shared libs (instead of static libs)
 
-* `OPENMVG_BUILD_TESTS` (default `OFF`)
+* `ALICEVISION_BUILD_TESTS` (default `OFF`)
   Build AliceVision tests
 
-* `OPENMVG_BUILD_DOC` (default `ON`)
+* `ALICEVISION_BUILD_DOC` (default `ON`)
   Build AliceVision documentation
 
-* `OPENMVG_BUILD_EXAMPLES` (default `ON`)
+* `ALICEVISION_BUILD_EXAMPLES` (default `ON`)
   Build AliceVision samples applications (aliceVision software are still built)
 
-* `OPENMVG_BUILD_COVERAGE` (default `OFF`)
+* `ALICEVISION_BUILD_COVERAGE` (default `OFF`)
   Enable code coverage generation (gcc only)
 
 
@@ -246,9 +246,9 @@ Perform `make` and `make install`
 Once the library has been installed, go to your project that want use AliceVision as an external library and add:
 ```cmake
 FIND_PACKAGE(AliceVision REQUIRED)
-INCLUDE_DIRECTORIES(${OPENMVG_INCLUDE_DIRS})
+INCLUDE_DIRECTORIES(${ALICEVISION_INCLUDE_DIRS})
 ADD_EXECUTABLE(main main.cpp)
-TARGET_LINK_LIBRARIES(main ${OPENMVG_LIBRARIES})
+TARGET_LINK_LIBRARIES(main ${ALICEVISION_LIBRARIES})
 ```
 
 Specify to CMake where AliceVision have been installed by using the cmake `AliceVision_DIR` variable that must point to: `-DAliceVision_DIR:STRING="YourInstallPath"/share/aliceVision/cmake`

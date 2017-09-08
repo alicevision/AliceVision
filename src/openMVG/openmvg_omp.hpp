@@ -5,7 +5,7 @@
 
 #include <aliceVision/config.hpp>
 
-#if OPENMVG_IS_DEFINED(OPENMVG_HAVE_OPENMP)
+#if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_OPENMP)
 
 #include <omp.h>
 

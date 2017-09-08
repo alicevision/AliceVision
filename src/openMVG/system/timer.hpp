@@ -1,8 +1,8 @@
 // This file is part of the AliceVision project and is made available under
 // the terms of the MPL2 license (see the COPYING.md file).
 
-#ifndef OPENMVG_SYSTEM_TIMER_HPP
-#define OPENMVG_SYSTEM_TIMER_HPP
+#ifndef ALICEVISION_SYSTEM_TIMER_HPP
+#define ALICEVISION_SYSTEM_TIMER_HPP
 
 #include <chrono>
 #include <iostream>
@@ -47,5 +47,5 @@ std::string prettyTime(double durationMs);
 } // namespace system
 } // namespace aliceVision
 
-#endif // OPENMVG_SYSTEM_TIMER_HPP
+#endif // ALICEVISION_SYSTEM_TIMER_HPP
 

@@ -320,7 +320,7 @@ double reprojectionErrorRD(const p5pfrModel &m,
 {
   if(m._r.rows() > 1)
   {
-     OPENMVG_CERR("Projection function is not implemented for the radial division undistortion model for more than one parameter." << std::endl);
+     ALICEVISION_CERR("Projection function is not implemented for the radial division undistortion model for more than one parameter." << std::endl);
      throw std::invalid_argument("Projection function is not implemented for the radial division undistortion model for more than one parameter.");
   }
 

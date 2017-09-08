@@ -225,9 +225,9 @@ int main(int argc, char** argv)
   // Load vocabulary tree
   //************************************************
 
-  OPENMVG_COUT("Loading vocabulary tree\n");
+  ALICEVISION_COUT("Loading vocabulary tree\n");
   aliceVision::voctree::VocabularyTree<DescriptorFloat> tree(treeName);
-  OPENMVG_COUT("tree loaded with\n\t" 
+  ALICEVISION_COUT("tree loaded with\n\t" 
           << tree.levels() << " levels\n\t" 
           << tree.splits() << " branching factor");
 
@@ -236,18 +236,18 @@ int main(int argc, char** argv)
   // Create the database
   //************************************************
 
-  OPENMVG_COUT("Creating the database...");
+  ALICEVISION_COUT("Creating the database...");
   // Add each object (document) to the database
   aliceVision::voctree::Database db(tree.words());
 
   if(withWeights)
   {
-    OPENMVG_COUT("Loading weights...");
+    ALICEVISION_COUT("Loading weights...");
     db.loadWeights(weightsName);
   }
   else
   {
-    OPENMVG_COUT("No weights specified, skipping...");
+    ALICEVISION_COUT("No weights specified, skipping...");
   }
 
 
@@ -255,7 +255,7 @@ int main(int argc, char** argv)
   // Read the descriptors and populate the database
   //*********************************************************
 
-  OPENMVG_COUT("Reading descriptors from " << keylist);
+  ALICEVISION_COUT("Reading descriptors from " << keylist);
   auto detect_start = std::chrono::steady_clock::now();
   std::size_t numTotFeatures = aliceVision::voctree::populateDatabase<DescriptorUChar>(keylist, tree, db, Nmax);
   auto detect_end = std::chrono::steady_clock::now();
@@ -263,12 +263,12 @@ int main(int argc, char** argv)
 
   if(numTotFeatures == 0)
   {
-    OPENMVG_CERR("No descriptors loaded!!");
+    ALICEVISION_CERR("No descriptors loaded!!");
     return EXIT_FAILURE;
   }
 
-  OPENMVG_COUT("Done! " << db.getSparseHistogramPerImage().size() << " sets of descriptors read for a total of " << numTotFeatures << " features");
-  OPENMVG_COUT("Reading took " << detect_elapsed.count() << " sec");
+  ALICEVISION_COUT("Done! " << db.getSparseHistogramPerImage().size() << " sets of descriptors read for a total of " << numTotFeatures << " features");
+  ALICEVISION_COUT("Reading took " << detect_elapsed.count() << " sec");
   
   if(vm.count("saveDocumentMap"))
   {
@@ -279,7 +279,7 @@ int main(int argc, char** argv)
   {
     // If we don't have an input weight file, we compute weights based on the
     // current database.
-    OPENMVG_COUT("Computing weights...");
+    ALICEVISION_COUT("Computing weights...");
     db.computeTfIdfWeights();
   }
 
@@ -307,13 +307,13 @@ int main(int argc, char** argv)
   if(!withQuery)
   {
     // do a sanity check
-    OPENMVG_COUT("Sanity check: querying the database with the same documents");
+    ALICEVISION_COUT("Sanity check: querying the database with the same documents");
     db.sanityCheck(numImageQuery, allDocMatches);
   }
   else
   {
     // otherwise query the database with the provided query list
-    OPENMVG_COUT("Querying the database with the documents in " << queryList);
+    ALICEVISION_COUT("Querying the database with the documents in " << queryList);
     aliceVision::voctree::queryDatabase<DescriptorUChar>(queryList, tree, db, numImageQuery, allDocMatches, histograms, distance, Nmax);
   }
 
@@ -322,12 +322,12 @@ int main(int argc, char** argv)
     // load the json for the dataset used to build the database
     if(aliceVision::sfm::Load(sfmdata, keylist, aliceVision::sfm::ESfM_Data::VIEWS))
     {
-      OPENMVG_COUT("SfM data loaded from " << keylist << " containing: ");
-      OPENMVG_COUT("\tnumber of views      : " << sfmdata.GetViews().size());
+      ALICEVISION_COUT("SfM data loaded from " << keylist << " containing: ");
+      ALICEVISION_COUT("\tnumber of views      : " << sfmdata.GetViews().size());
     }
     else
     {
-      OPENMVG_CERR("Could not load the sfm_data file " << keylist << "!");
+      ALICEVISION_CERR("Could not load the sfm_data file " << keylist << "!");
       return EXIT_FAILURE;
     }
     // load the json for the dataset used to query the database
@@ -336,12 +336,12 @@ int main(int argc, char** argv)
       sfmdataQuery = new aliceVision::sfm::SfM_Data();
       if(aliceVision::sfm::Load(*sfmdataQuery, queryList, aliceVision::sfm::ESfM_Data::VIEWS))
       {
-        OPENMVG_COUT("SfM data loaded from " << queryList << " containing: ");
-        OPENMVG_COUT("\tnumber of views      : " << sfmdataQuery->GetViews().size());
+        ALICEVISION_COUT("SfM data loaded from " << queryList << " containing: ");
+        ALICEVISION_COUT("\tnumber of views      : " << sfmdataQuery->GetViews().size());
       }
       else
       {
-        OPENMVG_CERR("Could not load the sfm_data file " << queryList << "!");
+        ALICEVISION_CERR("Could not load the sfm_data file " << queryList << "!");
         return EXIT_FAILURE;
       }
     }
@@ -354,7 +354,7 @@ int main(int argc, char** argv)
     // create recursively the provided out dir
     if(!bfs::exists(bfs::path(outDir)))
     {
-//      OPENMVG_COUT("creating directory" << outDir);
+//      ALICEVISION_COUT("creating directory" << outDir);
       bfs::create_directories(bfs::path(outDir));
     }
 
@@ -384,7 +384,7 @@ int main(int argc, char** argv)
   if((describerType != EImageDescriberType::SIFT) &&
       (describerType != EImageDescriberType::SIFT_FLOAT))
   {
-    OPENMVG_CERR("Invalid describer method." << std::endl);
+    ALICEVISION_CERR("Invalid describer method." << std::endl);
     return EXIT_FAILURE;
   }
   
@@ -392,7 +392,7 @@ int main(int argc, char** argv)
   aliceVision::features::RegionsPerView regionsPerView;
   if(!aliceVision::sfm::loadRegionsPerView(regionsPerView, sfmData, matchDir, {describerType}))
   {
-    OPENMVG_CERR("Invalid regions." << std::endl);
+    ALICEVISION_CERR("Invalid regions." << std::endl);
     return EXIT_FAILURE;
   }
   
@@ -402,8 +402,8 @@ int main(int argc, char** argv)
   {
     const aliceVision::voctree::DocMatches& matches = docMatches.second;
     bfs::path dirname;
-    OPENMVG_COUT("Camera: " << docMatches.first);
-    OPENMVG_COUT("query document " << docMatches.first << " has " << matches.size() << " matches\tBest " << matches[0].id << " with score " << matches[0].score);
+    ALICEVISION_COUT("Camera: " << docMatches.first);
+    ALICEVISION_COUT("query document " << docMatches.first << " has " << matches.size() << " matches\tBest " << matches[0].id << " with score " << matches[0].score);
     if(withOutput)
     {
       if(!matlabOutput)
@@ -431,7 +431,7 @@ int main(int argc, char** argv)
       if(it == sfmdataQuery->GetViews().end())
       {
         // this is very wrong
-        OPENMVG_CERR("Could not find the image file for the document " << docMatches.first << "!");
+        ALICEVISION_CERR("Could not find the image file for the document " << docMatches.first << "!");
         return EXIT_FAILURE;
       }
       sylinkName = bfs::path(it->second->getImagePath()).filename();
@@ -472,7 +472,7 @@ int main(int argc, char** argv)
 
             double dist = siftRegionsLeft.SquaredDescriptorDistance(currentLeaf.second[0], &siftRegionsRight, leafRightIt->second[0]);
             aliceVision::matching::IndMatch currentMatch = aliceVision::matching::IndMatch( currentLeaf.second[0], leafRightIt->second[0]
-#ifdef OPENMVG_DEBUG_MATCHING
+#ifdef ALICEVISION_DEBUG_MATCHING
                     , dist
 #endif
                     );
@@ -491,8 +491,8 @@ int main(int argc, char** argv)
     // now parse all the returned matches 
     for(std::size_t j = 0; j < matches.size(); ++j)
     {
-      OPENMVG_COUT("\t match " << matches[j].id << " with score " << matches[j].score);
-//      OPENMVG_CERR("" << i->first << " " << matches[j].id << " " << matches[j].score);
+      ALICEVISION_COUT("\t match " << matches[j].id << " with score " << matches[j].score);
+//      ALICEVISION_CERR("" << i->first << " " << matches[j].id << " " << matches[j].score);
       if(withOutput && !matlabOutput) 
         fileout << docMatches.first << " " << matches[j].id << " " << matches[j].score << std::endl;
 
@@ -515,7 +515,7 @@ int main(int argc, char** argv)
         else
         {
           // this is very wrong
-          OPENMVG_CERR("Could not find the image file for the document " << matches[j].id << "!");
+          ALICEVISION_CERR("Could not find the image file for the document " << matches[j].id << "!");
           return EXIT_FAILURE;
         }
         bfs::create_symlink(absoluteFilename, dirname / sylinkName);
@@ -528,12 +528,12 @@ int main(int argc, char** argv)
       if(docMatches.first != matches[0].id)
       {
         ++wrong;
-        OPENMVG_COUT("##### wrong match for document " << docMatches.first);
+        ALICEVISION_COUT("##### wrong match for document " << docMatches.first);
       }
     }
   }
 
-#ifdef OPENMVG_DEBUG_MATCHING
+#ifdef ALICEVISION_DEBUG_MATCHING
   std::cout << " ---------------------------- \n" << endl;
   std::cout << "Matching distances - Histogram: \n" << endl;
   std::map<int,int> stats;
@@ -561,9 +561,9 @@ int main(int argc, char** argv)
   if(!withQuery)
   {
     if(wrong)
-      OPENMVG_COUT("there are " << wrong << " wrong matches");
+      ALICEVISION_COUT("there are " << wrong << " wrong matches");
     else
-      OPENMVG_COUT("no wrong matches!");
+      ALICEVISION_COUT("no wrong matches!");
   }
 
   if(withOutput)

@@ -11,7 +11,7 @@
 
 #include "aliceVision/linearProgramming/linearProgrammingInterface.hpp"
 #include "aliceVision/linearProgramming/linearProgrammingOSI_X.hpp"
-#if OPENMVG_IS_DEFINED(OPENMVG_HAVE_MOSEK)
+#if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_MOSEK)
 #include "aliceVision/linearProgramming/linearProgrammingMOSEK.hpp"
 #endif
 
@@ -198,7 +198,7 @@ TEST(Translation_Structure_L_Infinity, OSICLP_SOLVER_K) {
   d2.ExportToPLY("test_After_Infinity.ply");
 }
 
-#if OPENMVG_IS_DEFINED(OPENMVG_HAVE_MOSEK)
+#if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_MOSEK)
 TEST(Translation_Structure_L_Infinity, MOSEK) {
 
   const size_t nViews = 3;
@@ -282,7 +282,7 @@ TEST(Translation_Structure_L_Infinity, MOSEK) {
 
   d2.ExportToPLY("test_After_Infinity.ply");
 }
-#endif // OPENMVG_HAVE_MOSEK
+#endif // ALICEVISION_HAVE_MOSEK
 
 /* ************************************************************************* */
 int main() { TestResult tr; return TestRegistry::runAllTests(tr);}

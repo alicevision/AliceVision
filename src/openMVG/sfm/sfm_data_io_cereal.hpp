@@ -106,7 +106,7 @@ bool Load_Cereal(
   }
   catch (const cereal::Exception & e)
   {
-    OPENMVG_LOG_WARNING(e.what());
+    ALICEVISION_LOG_WARNING(e.what());
     return false;
   }
   stream.close();

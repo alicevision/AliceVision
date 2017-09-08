@@ -13,7 +13,7 @@
 
 #include "aliceVision/linearProgramming/linearProgrammingInterface.hpp"
 #include "aliceVision/linearProgramming/linearProgrammingOSI_X.hpp"
-#if OPENMVG_IS_DEFINED(OPENMVG_HAVE_MOSEK)
+#if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_MOSEK)
 #include "aliceVision/linearProgramming/linearProgrammingMOSEK.hpp"
 #endif
 
@@ -83,7 +83,7 @@ TEST(lInfinityCV, Triangulation_OSICLPSOLVER) {
   d2.ExportToPLY("test_After_Infinity_Triangulation_OSICLP.ply");
 }
 
-#if OPENMVG_IS_DEFINED(OPENMVG_HAVE_MOSEK)
+#if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_MOSEK)
 TEST(computervision, Triangulation_MOSEK) {
 
   NViewDataSet d = NRealisticCamerasRing(6, 10,
@@ -142,7 +142,7 @@ TEST(computervision, Triangulation_MOSEK) {
   }
   d2.ExportToPLY("test_After_Infinity_Triangulation_MOSEK.ply");
 }
-#endif // OPENMVG_HAVE_MOSEK
+#endif // ALICEVISION_HAVE_MOSEK
 
 /* ************************************************************************* */
 int main() { TestResult tr; return TestRegistry::runAllTests(tr);}

@@ -73,11 +73,11 @@ bool SIFT_openCV_ImageDescriber::Describe(const image::Image<unsigned char>& ima
   auto detect_end = std::chrono::steady_clock::now();
   auto detect_elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(detect_end - detect_start);
 
-  OPENMVG_LOG_TRACE("SIFT: contrastThreshold: " << _params.contrastThreshold << ", edgeThreshold: " << _params.edgeThreshold << std::endl);
-  OPENMVG_LOG_TRACE("Detect SIFT: " << detect_elapsed.count() << " milliseconds." << std::endl);
-  OPENMVG_LOG_TRACE("Image size: " << img.cols << " x " << img.rows << std::endl);
-  OPENMVG_LOG_TRACE("Grid size: " << _params.gridSize << ", maxTotalKeypoints: " << _params.maxTotalKeypoints << std::endl);
-  OPENMVG_LOG_TRACE("Number of detected features: " << v_keypoints.size() << std::endl);
+  ALICEVISION_LOG_TRACE("SIFT: contrastThreshold: " << _params.contrastThreshold << ", edgeThreshold: " << _params.edgeThreshold << std::endl);
+  ALICEVISION_LOG_TRACE("Detect SIFT: " << detect_elapsed.count() << " milliseconds." << std::endl);
+  ALICEVISION_LOG_TRACE("Image size: " << img.cols << " x " << img.rows << std::endl);
+  ALICEVISION_LOG_TRACE("Grid size: " << _params.gridSize << ", maxTotalKeypoints: " << _params.maxTotalKeypoints << std::endl);
+  ALICEVISION_LOG_TRACE("Number of detected features: " << v_keypoints.size() << std::endl);
 
   // cv::KeyPoint::response: the response by which the most strong keypoints have been selected.
   // Can be used for the further sorting or subsampling.
@@ -99,7 +99,7 @@ bool SIFT_openCV_ImageDescriber::Describe(const image::Image<unsigned char>& ima
       const double regionWidth = image.Width() / double(countFeatPerCell.cols);
       const double regionHeight = image.Height() / double(countFeatPerCell.rows);
 
-      OPENMVG_LOG_TRACE ("Grid filtering -- keypointsPerCell: " << keypointsPerCell
+      ALICEVISION_LOG_TRACE ("Grid filtering -- keypointsPerCell: " << keypointsPerCell
                         << ", regionWidth: " << regionWidth
                         << ", regionHeight: " << regionHeight << std::endl);
 
@@ -124,21 +124,21 @@ bool SIFT_openCV_ImageDescriber::Describe(const image::Image<unsigned char>& ima
       if( filtered_keypoints.size() < _params.maxTotalKeypoints )
       {
         const std::size_t remainingElements = std::min(rejected_keypoints.size(), _params.maxTotalKeypoints - filtered_keypoints.size());
-        OPENMVG_LOG_TRACE("Grid filtering -- Copy remaining points: " << remainingElements << std::endl);
+        ALICEVISION_LOG_TRACE("Grid filtering -- Copy remaining points: " << remainingElements << std::endl);
         filtered_keypoints.insert(filtered_keypoints.end(), rejected_keypoints.begin(), rejected_keypoints.begin() + remainingElements);
       }
 
       v_keypoints.swap(filtered_keypoints);
     }
   }
-  OPENMVG_LOG_TRACE("Number of features: " << v_keypoints.size() << std::endl);
+  ALICEVISION_LOG_TRACE("Number of features: " << v_keypoints.size() << std::endl);
 
   // Compute SIFT descriptors
   auto desc_start = std::chrono::steady_clock::now();
   siftdetector->compute(img, v_keypoints, m_desc);
   auto desc_end = std::chrono::steady_clock::now();
   auto desc_elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(desc_end - desc_start);
-  OPENMVG_LOG_TRACE("Compute descriptors: " << desc_elapsed.count() << " milliseconds." << std::endl);
+  ALICEVISION_LOG_TRACE("Compute descriptors: " << desc_elapsed.count() << " milliseconds." << std::endl);
 
   Allocate(regions);
 

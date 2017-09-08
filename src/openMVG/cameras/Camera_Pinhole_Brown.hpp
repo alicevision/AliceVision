@@ -1,8 +1,8 @@
 // This file is part of the AliceVision project and is made available under
 // the terms of the MPL2 license (see the COPYING.md file).
 
-#ifndef OPENMVG_CAMERA_PINHOLE_BROWN_HPP
-#define OPENMVG_CAMERA_PINHOLE_BROWN_HPP
+#ifndef ALICEVISION_CAMERA_PINHOLE_BROWN_HPP
+#define ALICEVISION_CAMERA_PINHOLE_BROWN_HPP
 
 #include "aliceVision/numeric/numeric.h"
 #include "aliceVision/cameras/Camera_Common.hpp"
@@ -146,4 +146,4 @@ class Pinhole_Intrinsic_Brown_T2 : public Pinhole_Intrinsic
 
 CEREAL_REGISTER_TYPE_WITH_NAME(aliceVision::cameras::Pinhole_Intrinsic_Brown_T2, "pinhole_brown_t2");
 
-#endif // #ifndef OPENMVG_CAMERA_PINHOLE_BROWN_HPP
+#endif // #ifndef ALICEVISION_CAMERA_PINHOLE_BROWN_HPP

@@ -1,8 +1,8 @@
 // This file is part of the AliceVision project and is made available under
 // the terms of the MPL2 license (see the COPYING.md file).
 
-#ifndef OPENMVG_ROBUST_ESTIMATION_SIMPLE_RANSAC_H_
-#define OPENMVG_ROBUST_ESTIMATION_SIMPLE_RANSAC_H_
+#ifndef ALICEVISION_ROBUST_ESTIMATION_SIMPLE_RANSAC_H_
+#define ALICEVISION_ROBUST_ESTIMATION_SIMPLE_RANSAC_H_
 
 #include <aliceVision/system/Logger.hpp>
 #include "aliceVision/robust_estimation/rand_sampling.hpp"
@@ -91,7 +91,7 @@ typename Kernel::Model RANSAC(
           }
           if(bVerbose)
           {
-            OPENMVG_LOG_DEBUG("inliers=" << best_num_inliers << "/" << total_samples
+            ALICEVISION_LOG_DEBUG("inliers=" << best_num_inliers << "/" << total_samples
                       << " (iter=" << iteration
                       << ", sample=" << sample
                       << ")");
@@ -102,7 +102,7 @@ typename Kernel::Model RANSAC(
             outliers_probability,
             best_inlier_ratio);
             if(bVerbose)
-              OPENMVG_LOG_DEBUG("New max_iteration: " << max_iterations);
+              ALICEVISION_LOG_DEBUG("New max_iteration: " << max_iterations);
           }
         }
       }
@@ -119,4 +119,4 @@ typename Kernel::Model RANSAC(
 
 } // namespace robust
 } // namespace aliceVision
-#endif // OPENMVG_ROBUST_ESTIMATION_SIMPLE_RANSAC_H_
+#endif // ALICEVISION_ROBUST_ESTIMATION_SIMPLE_RANSAC_H_

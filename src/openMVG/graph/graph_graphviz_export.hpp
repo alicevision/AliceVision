@@ -1,8 +1,8 @@
 // This file is part of the AliceVision project and is made available under
 // the terms of the MPL2 license (see the COPYING.md file).
 
-#ifndef OPENMVG_GRAPH_EXPORT_H_
-#define OPENMVG_GRAPH_EXPORT_H_
+#ifndef ALICEVISION_GRAPH_EXPORT_H_
+#define ALICEVISION_GRAPH_EXPORT_H_
 
 #include <iostream>
 #include <fstream>
@@ -136,4 +136,4 @@ void exportToGraphvizData(const std::string& sfile, const GraphT & graph){
 } // namespace graph
 } // namespace aliceVision
 
-#endif // OPENMVG_GRAPH_EXPORT_H_
+#endif // ALICEVISION_GRAPH_EXPORT_H_

@@ -1,8 +1,8 @@
 // This file is part of the AliceVision project and is made available under
 // the terms of the MPL2 license (see the COPYING.md file).
 
-#ifndef OPENMVG_ROBUST_ESTIMATION_MAX_CONSENSUS_H_
-#define OPENMVG_ROBUST_ESTIMATION_MAX_CONSENSUS_H_
+#ifndef ALICEVISION_ROBUST_ESTIMATION_MAX_CONSENSUS_H_
+#define ALICEVISION_ROBUST_ESTIMATION_MAX_CONSENSUS_H_
 
 #include "aliceVision/robust_estimation/rand_sampling.hpp"
 #include <limits>
@@ -71,7 +71,7 @@ typename Kernel::Model MaxConsensus(const Kernel &kernel,
 
         if (best_num_inliers < inliers.size())
         {
-          //OPENMVG_LOG_DEBUG("Fit cost: " << cost/inliers.size()
+          //ALICEVISION_LOG_DEBUG("Fit cost: " << cost/inliers.size()
           //  << ", number of inliers: " << inliers.size());
           best_num_inliers = inliers.size();
           best_model = models[i];
@@ -87,4 +87,4 @@ typename Kernel::Model MaxConsensus(const Kernel &kernel,
 
 } // namespace robust
 } // namespace aliceVision
-#endif // OPENMVG_ROBUST_ESTIMATION_MAX_CONSENSUS_H_
+#endif // ALICEVISION_ROBUST_ESTIMATION_MAX_CONSENSUS_H_

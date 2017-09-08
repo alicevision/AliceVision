@@ -1,8 +1,8 @@
 // This file is part of the AliceVision project and is made available under
 // the terms of the MPL2 license (see the COPYING.md file).
 
-#ifndef OPENMVG_IMAGE_IMAGE_CONVOLUTION_BASE_HPP
-#define OPENMVG_IMAGE_IMAGE_CONVOLUTION_BASE_HPP
+#ifndef ALICEVISION_IMAGE_IMAGE_CONVOLUTION_BASE_HPP
+#define ALICEVISION_IMAGE_IMAGE_CONVOLUTION_BASE_HPP
 
 namespace aliceVision {
 namespace image {
@@ -29,4 +29,4 @@ namespace image {
 } // namespace image
 } // namespace aliceVision
 
-#endif // OPENMVG_IMAGE_IMAGE_CONVOLUTION_BASE_HPP
+#endif // ALICEVISION_IMAGE_IMAGE_CONVOLUTION_BASE_HPP

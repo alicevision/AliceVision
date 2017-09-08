@@ -1,8 +1,8 @@
 // This file is part of the AliceVision project and is made available under
 // the terms of the MPL2 license (see the COPYING.md file).
 
-#ifndef OPENMVG_COLORHARMONIZATION_SELECTORINTERFACE_H
-#define OPENMVG_COLORHARMONIZATION_SELECTORINTERFACE_H
+#ifndef ALICEVISION_COLORHARMONIZATION_SELECTORINTERFACE_H
+#define ALICEVISION_COLORHARMONIZATION_SELECTORINTERFACE_H
 
 #include "aliceVision/image/image.hpp"
 #include "third_party/histogram/histogram.hpp"
@@ -72,4 +72,4 @@ protected:
 }  // namespace color_harmonization
 }  // namespace aliceVision
 
-#endif // OPENMVG_COLORHARMONIZATION_SELECTORINTERFACE_H
+#endif // ALICEVISION_COLORHARMONIZATION_SELECTORINTERFACE_H

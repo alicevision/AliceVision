@@ -31,10 +31,10 @@ import sys
 import argparse
 
 # the aliceVision binary directory
-OPENMVG_SFM_BIN = "@OPENMVG_SOFTWARE_SFM_BUILD_DIR@"
+ALICEVISION_SFM_BIN = "@ALICEVISION_SOFTWARE_SFM_BUILD_DIR@"
 
 # the aliceVision camera sensor width directory
-CAMERA_SENSOR_WIDTH_DIRECTORY = "@OPENMVG_SOFTWARE_SFM_SRC_DIR@"
+CAMERA_SENSOR_WIDTH_DIRECTORY = "@ALICEVISION_SOFTWARE_SFM_SRC_DIR@"
 
 camera_file_params = os.path.join(CAMERA_SENSOR_WIDTH_DIRECTORY, "sensor_width_camera_database.txt")
 
@@ -44,7 +44,7 @@ if __name__ == '__main__':
     # general parameters
     parser.add_argument('--image_dir', required=True, help='The directory containing the images.')
     parser.add_argument('--output_dir', required=True, help='The directory where the recontruction files are saved')
-    parser.add_argument('--binary_dir',  default=OPENMVG_SFM_BIN,
+    parser.add_argument('--binary_dir',  default=ALICEVISION_SFM_BIN,
                         help='The directory where aliceVision binaries are installed (default: %(default)s)')
     parser.add_argument('--pipeline',  default='incremental', choices=['incremental', 'global'],
                         help='The reconstruction pipeline to use (default: %(default)s)')

@@ -1,8 +1,8 @@
 // This file is part of the AliceVision project and is made available under
 // the terms of the MPL2 license (see the COPYING.md file).
 
-#ifndef OPENMVG_SFM_DATA_FILTERS_HPP
-#define OPENMVG_SFM_DATA_FILTERS_HPP
+#ifndef ALICEVISION_SFM_DATA_FILTERS_HPP
+#define ALICEVISION_SFM_DATA_FILTERS_HPP
 
 #include "sfm_view.hpp"
 
@@ -156,7 +156,7 @@ static bool eraseUnstablePoses(SfM_Data & sfm_data, const IndexT min_points_per_
     }
   }
   if(removed_elements)
-    OPENMVG_LOG_DEBUG("eraseUnstablePoses: " << removed_elements);
+    ALICEVISION_LOG_DEBUG("eraseUnstablePoses: " << removed_elements);
   return removed_elements > 0;
 }
 
@@ -221,4 +221,4 @@ static bool eraseUnstablePosesAndObservations(
 } // namespace sfm
 } // namespace aliceVision
 
-#endif // OPENMVG_SFM_DATA_FILTERS_HPP
+#endif // ALICEVISION_SFM_DATA_FILTERS_HPP

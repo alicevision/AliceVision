@@ -1,8 +1,8 @@
 // This file is part of the AliceVision project and is made available under
 // the terms of the MPL2 license (see the COPYING.md file).
 
-#ifndef OPENMVG_MULTIVIEW_TRIANGULATION_H_
-#define OPENMVG_MULTIVIEW_TRIANGULATION_H_
+#ifndef ALICEVISION_MULTIVIEW_TRIANGULATION_H_
+#define ALICEVISION_MULTIVIEW_TRIANGULATION_H_
 
 #include "aliceVision/numeric/numeric.h"
 
@@ -20,4 +20,4 @@ void TriangulateDLT(const Mat34 &P1, const Vec2 &x1,
 
 } // namespace aliceVision
 
-#endif  // OPENMVG_MULTIVIEW_TRIANGULATION_H_
+#endif  // ALICEVISION_MULTIVIEW_TRIANGULATION_H_

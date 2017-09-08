@@ -1,8 +1,8 @@
 // This file is part of the AliceVision project and is made available under
 // the terms of the MPL2 license (see the COPYING.md file).
 
-#ifndef OPENMVG_CAMERA_INTRINSICS_H
-#define OPENMVG_CAMERA_INTRINSICS_H
+#ifndef ALICEVISION_CAMERA_INTRINSICS_H
+#define ALICEVISION_CAMERA_INTRINSICS_H
 
 #include "aliceVision/numeric/numeric.h"
 #include "aliceVision/cameras/Camera_Common.hpp"
@@ -204,5 +204,5 @@ static inline double AngleBetweenRay(
 } // namespace cameras
 } // namespace aliceVision
 
-#endif // #ifndef OPENMVG_CAMERA_INTRINSICS_H
+#endif // #ifndef ALICEVISION_CAMERA_INTRINSICS_H
 

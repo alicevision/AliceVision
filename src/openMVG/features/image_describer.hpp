@@ -1,8 +1,8 @@
 // This file is part of the AliceVision project and is made available under
 // the terms of the MPL2 license (see the COPYING.md file).
 
-#ifndef OPENMVG_FEATURES_IMAGE_DESCRIBER_HPP
-#define OPENMVG_FEATURES_IMAGE_DESCRIBER_HPP
+#ifndef ALICEVISION_FEATURES_IMAGE_DESCRIBER_HPP
+#define ALICEVISION_FEATURES_IMAGE_DESCRIBER_HPP
 
 #include "aliceVision/numeric/numeric.h"
 #include "aliceVision/features/ImageDescriberCommon.hpp"
@@ -139,4 +139,4 @@ std::unique_ptr<Image_describer> createImageDescriber(EImageDescriberType imageD
 } // namespace features
 } // namespace aliceVision
 
-#endif // OPENMVG_FEATURES_IMAGE_DESCRIBER_HPP
+#endif // ALICEVISION_FEATURES_IMAGE_DESCRIBER_HPP

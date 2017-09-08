@@ -12,7 +12,7 @@ set(dataio_sources
     ImageFeed.cpp
 )
 
-if(OPENMVG_HAVE_OPENCV)
+if(ALICEVISION_HAVE_OPENCV)
     list(APPEND dataio_headers VideoFeed.hpp)
     list(APPEND dataio_sources VideoFeed.cpp)
 endif()
@@ -34,13 +34,13 @@ target_link_libraries(aliceVision_dataio
   ${LOG_LIB}
 )
 
-if(OPENMVG_HAVE_OPENCV)
+if(ALICEVISION_HAVE_OPENCV)
   target_link_libraries(aliceVision_dataio ${OpenCV_LIBS})
 endif()
 
 set_target_properties(aliceVision_dataio
-  PROPERTIES SOVERSION ${OPENMVG_VERSION_MAJOR}
-  VERSION "${OPENMVG_VERSION_MAJOR}.${OPENMVG_VERSION_MINOR}"
+  PROPERTIES SOVERSION ${ALICEVISION_VERSION_MAJOR}
+  VERSION "${ALICEVISION_VERSION_MAJOR}.${ALICEVISION_VERSION_MINOR}"
 )
 
 install(TARGETS aliceVision_dataio

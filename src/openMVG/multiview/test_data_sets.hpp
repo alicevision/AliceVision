@@ -1,8 +1,8 @@
 // This file is part of the AliceVision project and is made available under
 // the terms of the MPL2 license (see the COPYING.md file).
 
-#ifndef OPENMVG_MULTIVIEW_TEST_DATA_SETS_H_
-#define OPENMVG_MULTIVIEW_TEST_DATA_SETS_H_
+#ifndef ALICEVISION_MULTIVIEW_TEST_DATA_SETS_H_
+#define ALICEVISION_MULTIVIEW_TEST_DATA_SETS_H_
 
 #include "aliceVision/numeric/numeric.h"
 #include <vector>
@@ -56,4 +56,4 @@ NViewDataSet NRealisticCamerasCardioid(std::size_t nviews, std::size_t npoints,
 
 } // namespace aliceVision
 
-#endif  // OPENMVG_MULTIVIEW_TEST_DATA_SETS_H_
+#endif  // ALICEVISION_MULTIVIEW_TEST_DATA_SETS_H_

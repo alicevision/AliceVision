@@ -3,7 +3,7 @@
 
 #include <aliceVision/config.hpp>
 #include <aliceVision/localization/VoctreeLocalizer.hpp>
-#if OPENMVG_IS_DEFINED(OPENMVG_HAVE_CCTAG)
+#if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_CCTAG)
 #include <aliceVision/localization/CCTagLocalizer.hpp>
 #endif
 #include <aliceVision/rig/Rig.hpp>
@@ -29,9 +29,9 @@
 #include <chrono>
 #include <memory>
 
-#if OPENMVG_IS_DEFINED(OPENMVG_HAVE_ALEMBIC)
+#if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_ALEMBIC)
 #include <aliceVision/sfm/AlembicExporter.hpp>
-#endif // OPENMVG_HAVE_ALEMBIC
+#endif // ALICEVISION_HAVE_ALEMBIC
 
 
 namespace bfs = boost::filesystem;
@@ -61,7 +61,7 @@ bool checkRobustEstimator(robust::EROBUST_ESTIMATOR e, double &value)
   if(e != robust::EROBUST_ESTIMATOR::ROBUST_ESTIMATOR_LORANSAC &&
      e != robust::EROBUST_ESTIMATOR::ROBUST_ESTIMATOR_ACRANSAC)
   {
-    OPENMVG_CERR("Only " << robust::EROBUST_ESTIMATOR::ROBUST_ESTIMATOR_ACRANSAC 
+    ALICEVISION_CERR("Only " << robust::EROBUST_ESTIMATOR::ROBUST_ESTIMATOR_ACRANSAC 
             << " and " << robust::EROBUST_ESTIMATOR::ROBUST_ESTIMATOR_LORANSAC 
             << " are supported.");
     return false;
@@ -78,7 +78,7 @@ bool checkRobustEstimator(robust::EROBUST_ESTIMATOR e, double &value)
     const double minThreshold = 1e-6;
     if(value <= minThreshold)
     {
-      OPENMVG_CERR("Error: errorMax and matchingError cannot be 0 with " 
+      ALICEVISION_CERR("Error: errorMax and matchingError cannot be 0 with " 
               << robust::EROBUST_ESTIMATOR::ROBUST_ESTIMATOR_LORANSAC 
               << " estimator.");
       return false;     
@@ -141,7 +141,7 @@ int main(int argc, char** argv)
   // parameters for cctag localizer
   std::size_t nNearestKeyFrames = 5;
 
-#if OPENMVG_IS_DEFINED(OPENMVG_HAVE_ALEMBIC)
+#if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_ALEMBIC)
   /// the export file
   std::string exportFile = "trackedcameras.abc"; 
 #endif
@@ -206,7 +206,7 @@ int main(int argc, char** argv)
           "[voctree] Maximum matching error (in pixels) allowed for image matching with "
           "geometric verification. If set to 0 it lets the ACRansac select "
           "an optimal value.")
-#if OPENMVG_IS_DEFINED(OPENMVG_HAVE_CCTAG)
+#if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_CCTAG)
   // parameters for cctag localizer
       ("nNearestKeyFrames", po::value<std::size_t>(&nNearestKeyFrames)->default_value(nNearestKeyFrames),
           "[cctag] Number of images to retrieve in database")
@@ -217,7 +217,7 @@ int main(int argc, char** argv)
   po::options_description outputParams("Options for the output of the localizer");
   outputParams.add_options()  
       ("help,h", "Print this message")
-#if OPENMVG_IS_DEFINED(OPENMVG_HAVE_ALEMBIC)
+#if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_ALEMBIC)
       ("export,e", po::value<std::string>(&exportFile)->default_value(exportFile),
           "Filename for the alembic file containing the rig poses with the 3D points. "
           "It also saves a file for each camera named 'filename.cam##.abc'.")
@@ -234,7 +234,7 @@ int main(int argc, char** argv)
 
     if(vm.count("help") || (argc == 1))
     {
-      OPENMVG_COUT(allParams);
+      ALICEVISION_COUT(allParams);
       return EXIT_SUCCESS;
     }
 
@@ -242,14 +242,14 @@ int main(int argc, char** argv)
   }
   catch(po::required_option& e)
   {
-    OPENMVG_CERR("ERROR: " << e.what() << std::endl);
-    OPENMVG_COUT("Usage:\n\n" << allParams);
+    ALICEVISION_CERR("ERROR: " << e.what() << std::endl);
+    ALICEVISION_COUT("Usage:\n\n" << allParams);
     return EXIT_FAILURE;
   }
   catch(po::error& e)
   {
-    OPENMVG_CERR("ERROR: " << e.what() << std::endl);
-    OPENMVG_COUT("Usage:\n\n" << allParams);
+    ALICEVISION_CERR("ERROR: " << e.what() << std::endl);
+    ALICEVISION_COUT("Usage:\n\n" << allParams);
     return EXIT_FAILURE;
   }
 
@@ -262,7 +262,7 @@ int main(int argc, char** argv)
   // check that we have the same number of feeds as the intrinsics
   if((mediaPath.size() != cameraIntrinsics.size()))
   {
-    OPENMVG_CERR("The number of intrinsics and the number of cameras are not the same." << std::endl);
+    ALICEVISION_CERR("The number of intrinsics and the number of cameras are not the same." << std::endl);
     return EXIT_FAILURE;
   }
   numCameras = mediaPath.size();
@@ -271,7 +271,7 @@ int main(int argc, char** argv)
   matchDescTypes = features::EImageDescriberType_stringToEnums(matchDescTypeNames);
 
   // decide the localizer to use based on the type of feature
-#if OPENMVG_IS_DEFINED(OPENMVG_HAVE_CCTAG)
+#if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_CCTAG)
   useVoctreeLocalizer = !(matchDescTypes.size() == 1 &&
                         ((matchDescTypes.front() == features::EImageDescriberType::CCTAG3) ||
                         (matchDescTypes.front() == features::EImageDescriberType::CCTAG4)));
@@ -279,32 +279,32 @@ int main(int argc, char** argv)
 
   // just debugging prints, print out all the parameters
   {
-    OPENMVG_COUT("Program called with the following parameters:");
-    OPENMVG_COUT("\tsfmdata: " << sfmFilePath);
-    OPENMVG_COUT("\tmatching descriptor types: " << matchDescTypeNames);
-    OPENMVG_COUT("\tpreset: " << featurePreset);
-    OPENMVG_COUT("\tmediapath: " << mediaPath);
-    OPENMVG_COUT("\tcameraIntrinsics: " << cameraIntrinsics);
-    OPENMVG_COUT("\tresectionEstimator: " << resectionEstimator);
-    OPENMVG_COUT("\tmatchingEstimator: " << matchingEstimator);
-    OPENMVG_COUT("\tdescriptorPath: " << descriptorsFolder);
-    OPENMVG_COUT("\trefineIntrinsics: " << refineIntrinsics);
-    OPENMVG_COUT("\treprojectionError: " << resectionErrorMax);
+    ALICEVISION_COUT("Program called with the following parameters:");
+    ALICEVISION_COUT("\tsfmdata: " << sfmFilePath);
+    ALICEVISION_COUT("\tmatching descriptor types: " << matchDescTypeNames);
+    ALICEVISION_COUT("\tpreset: " << featurePreset);
+    ALICEVISION_COUT("\tmediapath: " << mediaPath);
+    ALICEVISION_COUT("\tcameraIntrinsics: " << cameraIntrinsics);
+    ALICEVISION_COUT("\tresectionEstimator: " << resectionEstimator);
+    ALICEVISION_COUT("\tmatchingEstimator: " << matchingEstimator);
+    ALICEVISION_COUT("\tdescriptorPath: " << descriptorsFolder);
+    ALICEVISION_COUT("\trefineIntrinsics: " << refineIntrinsics);
+    ALICEVISION_COUT("\treprojectionError: " << resectionErrorMax);
 
     if(useVoctreeLocalizer)
     {
       // parameters for voctree localizer
-      OPENMVG_COUT("\tvoctree: " << vocTreeFilepath);
-      OPENMVG_COUT("\tweights: " << weightsFilepath);
-      OPENMVG_COUT("\tnbImageMatch: " << numResults);
-      OPENMVG_COUT("\tmaxResults: " << maxResults);
-      OPENMVG_COUT("\talgorithm: " << algostring);
-      OPENMVG_COUT("\tmatchingError: " << matchingErrorMax);
+      ALICEVISION_COUT("\tvoctree: " << vocTreeFilepath);
+      ALICEVISION_COUT("\tweights: " << weightsFilepath);
+      ALICEVISION_COUT("\tnbImageMatch: " << numResults);
+      ALICEVISION_COUT("\tmaxResults: " << maxResults);
+      ALICEVISION_COUT("\talgorithm: " << algostring);
+      ALICEVISION_COUT("\tmatchingError: " << matchingErrorMax);
     }
-#if OPENMVG_IS_DEFINED(OPENMVG_HAVE_CCTAG)
+#if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_CCTAG)
     else
     {
-      OPENMVG_COUT("\tnNearestKeyFrames: " << nNearestKeyFrames);
+      ALICEVISION_COUT("\tnNearestKeyFrames: " << nNearestKeyFrames);
     }
 #endif
 
@@ -317,7 +317,7 @@ int main(int argc, char** argv)
   // initialize the localizer according to the chosen type of describer
   if(useVoctreeLocalizer)
   {
-    OPENMVG_COUT("Calibrating sequence using the voctree localizer");
+    ALICEVISION_COUT("Calibrating sequence using the voctree localizer");
     localization::VoctreeLocalizer* tmpLoc = new localization::VoctreeLocalizer(sfmFilePath,
                                                             descriptorsFolder,
                                                             vocTreeFilepath,
@@ -335,7 +335,7 @@ int main(int argc, char** argv)
     tmpParam->_matchingError = matchingErrorMax;
     
   }
-#if OPENMVG_IS_DEFINED(OPENMVG_HAVE_CCTAG)
+#if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_CCTAG)
   else
   {
     localization::CCTagLocalizer* tmpLoc = new localization::CCTagLocalizer(sfmFilePath, descriptorsFolder);
@@ -359,11 +359,11 @@ int main(int argc, char** argv)
 
   if(!localizer->isInit())
   {
-    OPENMVG_CERR("ERROR while initializing the localizer!");
+    ALICEVISION_CERR("ERROR while initializing the localizer!");
     return EXIT_FAILURE;
   }
 
-#if OPENMVG_IS_DEFINED(OPENMVG_HAVE_ALEMBIC)
+#if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_ALEMBIC)
   sfm::AlembicExporter exporter(exportFile);
   exporter.addPoints(localizer->getSfMData().GetLandmarks());
 #endif
@@ -374,9 +374,9 @@ int main(int argc, char** argv)
   // Loop over all cameras of the rig
   for(std::size_t idCamera = 0; idCamera < numCameras; ++idCamera)
   {
-    OPENMVG_COUT("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~");
-    OPENMVG_COUT("CAMERA " << idCamera);
-    OPENMVG_COUT("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n\n");
+    ALICEVISION_COUT("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~");
+    ALICEVISION_COUT("CAMERA " << idCamera);
+    ALICEVISION_COUT("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n\n");
     const std::string &calibFile = cameraIntrinsics[idCamera];
     const std::string &feedPath = mediaPath[idCamera];
     // contains the directory where the video, the images or the filelist is
@@ -389,7 +389,7 @@ int main(int argc, char** argv)
     dataio::FeedProvider feed(feedPath, calibFile);
     if(!feed.isInit())
     {
-      OPENMVG_CERR("ERROR while initializing the FeedProvider!");
+      ALICEVISION_CERR("ERROR while initializing the FeedProvider!");
       return EXIT_FAILURE;
     }
 
@@ -403,7 +403,7 @@ int main(int argc, char** argv)
       step = feed.nbFrames() / (double) maxInputFrames;
       nbFramesToProcess = maxInputFrames;
     }
-    OPENMVG_COUT("Input stream length is " << feed.nbFrames() << ".");
+    ALICEVISION_COUT("Input stream length is " << feed.nbFrames() << ".");
 
     //std::string featureFile, cameraResultFile, pointsFile;
     //featureFile = subMediaFilepath + "/cctag" + std::to_string(nRings) + "CC.out";
@@ -428,9 +428,9 @@ int main(int argc, char** argv)
     std::size_t currentFrame = 0;
     while(feed.readImage(imageGrey, queryIntrinsics, currentImgName, hasIntrinsics))
     {
-      OPENMVG_COUT("******************************");
-      OPENMVG_COUT("Stream " << idCamera << " Frame " << myToString(currentFrame, 4) << "/" << nbFrames << " : (" << iInputFrame << "/" << nbFramesToProcess << ")");
-      OPENMVG_COUT("******************************");
+      ALICEVISION_COUT("******************************");
+      ALICEVISION_COUT("Stream " << idCamera << " Frame " << myToString(currentFrame, 4) << "/" << nbFrames << " : (" << iInputFrame << "/" << nbFramesToProcess << ")");
+      ALICEVISION_COUT("******************************");
       auto detect_start = std::chrono::steady_clock::now();
       localization::LocalizationResult localizationResult;
       localizer->setCudaPipe( idCamera );
@@ -443,10 +443,10 @@ int main(int argc, char** argv)
       vLocalizationResults.emplace_back(localizationResult);
       auto detect_end = std::chrono::steady_clock::now();
       auto detect_elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(detect_end - detect_start);
-      OPENMVG_COUT("Localization took  " << detect_elapsed.count() << " [ms]");
+      ALICEVISION_COUT("Localization took  " << detect_elapsed.count() << " [ms]");
       stats(detect_elapsed.count());
       
-#if OPENMVG_IS_DEFINED(OPENMVG_HAVE_ALEMBIC)
+#if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_ALEMBIC)
       if(localizationResult.isValid())
       {
         exporter.appendCamera("camera"+std::to_string(idCamera)+"."+myToString(currentFrame,4),
@@ -473,18 +473,18 @@ int main(int argc, char** argv)
     rig.setTrackingResult(vLocalizationResults, idCamera);
 
     // print out some time stats
-    OPENMVG_COUT("\n\n******************************");
-    OPENMVG_COUT("Processed " << iInputFrame << " images for camera " << idCamera);
-    OPENMVG_COUT("Processing took " << bacc::sum(stats) / 1000 << " [s] overall");
-    OPENMVG_COUT("Mean time for localization:   " << bacc::mean(stats) << " [ms]");
-    OPENMVG_COUT("Max time for localization:   " << bacc::max(stats) << " [ms]");
-    OPENMVG_COUT("Min time for localization:   " << bacc::min(stats) << " [ms]");
+    ALICEVISION_COUT("\n\n******************************");
+    ALICEVISION_COUT("Processed " << iInputFrame << " images for camera " << idCamera);
+    ALICEVISION_COUT("Processing took " << bacc::sum(stats) / 1000 << " [s] overall");
+    ALICEVISION_COUT("Mean time for localization:   " << bacc::mean(stats) << " [ms]");
+    ALICEVISION_COUT("Max time for localization:   " << bacc::max(stats) << " [ms]");
+    ALICEVISION_COUT("Min time for localization:   " << bacc::min(stats) << " [ms]");
   }
   
   {
     // just for statistics purposes
     const std::size_t numRigCam = rig.nCams();
-    OPENMVG_COUT("\n\n******************************");
+    ALICEVISION_COUT("\n\n******************************");
     for(std::size_t idCam = 0; idCam < numRigCam; ++idCam)
     {
       auto & currResult = rig.getLocalizationResults(idCam);
@@ -494,22 +494,22 @@ int main(int argc, char** argv)
         if(curr.isValid())
           ++numLocalized;
       }
-      OPENMVG_COUT("Camera " << idCam << " localized " 
+      ALICEVISION_COUT("Camera " << idCam << " localized " 
               << numLocalized << "/" << currResult.size());
     }
     
   }
   
-  OPENMVG_COUT("Rig calibration initialization...");
+  ALICEVISION_COUT("Rig calibration initialization...");
   if(!rig.initializeCalibration())
   {
-    OPENMVG_CERR("Unable to find a proper initialization for the relative poses! Aborting...");
+    ALICEVISION_CERR("Unable to find a proper initialization for the relative poses! Aborting...");
     return EXIT_FAILURE;
   }
-  OPENMVG_COUT("Rig calibration optimization...");
+  ALICEVISION_COUT("Rig calibration optimization...");
   if(!rig.optimizeCalibration())
   {
-    OPENMVG_CERR("Unable to optimize the relative poses! Aborting...");
+    ALICEVISION_CERR("Unable to optimize the relative poses! Aborting...");
     return EXIT_FAILURE;
   }
   
@@ -521,11 +521,11 @@ int main(int argc, char** argv)
   // the first rig pose
   if(rig.getPosesSize() > 0)
   {
-    OPENMVG_COUT("First pose of the rig");
+    ALICEVISION_COUT("First pose of the rig");
     const geometry::Pose3 &pose = rig.getPose(0); 
-    OPENMVG_COUT("R\n" << pose.rotation());
-    OPENMVG_COUT("center\n" << pose.center());
-    OPENMVG_COUT("t\n" << pose.translation());
+    ALICEVISION_COUT("R\n" << pose.rotation());
+    ALICEVISION_COUT("center\n" << pose.center());
+    ALICEVISION_COUT("t\n" << pose.translation());
   }
   
   // get the subposes of the cameras inside the rig
@@ -534,12 +534,12 @@ int main(int argc, char** argv)
   for(std::size_t i = 0; i < subposes.size(); ++i)
   {
     const geometry::Pose3 &pose = subposes[i];
-    OPENMVG_COUT("--------------------");
-    OPENMVG_COUT("Subpose p0" << i+1); // from camera 0 to camera i+1
-    OPENMVG_COUT("R\n" << pose.rotation());
-    OPENMVG_COUT("center\n" << pose.center());
-    OPENMVG_COUT("t\n" << pose.translation());
-    OPENMVG_COUT("--------------------\n");
+    ALICEVISION_COUT("--------------------");
+    ALICEVISION_COUT("Subpose p0" << i+1); // from camera 0 to camera i+1
+    ALICEVISION_COUT("R\n" << pose.rotation());
+    ALICEVISION_COUT("center\n" << pose.center());
+    ALICEVISION_COUT("t\n" << pose.translation());
+    ALICEVISION_COUT("--------------------\n");
   }
   
   return EXIT_SUCCESS;

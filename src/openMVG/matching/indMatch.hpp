@@ -1,8 +1,8 @@
 // This file is part of the AliceVision project and is made available under
 // the terms of the MPL2 license (see the COPYING.md file).
 
-#ifndef OPENMVG_MATCHING_IND_MATCH_H
-#define OPENMVG_MATCHING_IND_MATCH_H
+#ifndef ALICEVISION_MATCHING_IND_MATCH_H
+#define ALICEVISION_MATCHING_IND_MATCH_H
 
 #include "aliceVision/types.hpp"
 #include "aliceVision/features/ImageDescriberCommon.hpp"
@@ -14,7 +14,7 @@
 #include <map>
 #include <vector>
 
-#define OPENMVG_DEBUG_MATCHING
+#define ALICEVISION_DEBUG_MATCHING
 
 namespace aliceVision {
 namespace matching {
@@ -25,14 +25,14 @@ struct IndMatch
 {
   IndMatch(
           IndexT i = 0, IndexT j = 0
-#ifdef OPENMVG_DEBUG_MATCHING
+#ifdef ALICEVISION_DEBUG_MATCHING
           , float distance = 0.0
 #endif
           )
   {
     _i = i;
     _j = j;
-#ifdef OPENMVG_DEBUG_MATCHING
+#ifdef ALICEVISION_DEBUG_MATCHING
     _distance = distance;
 #endif
   }
@@ -66,7 +66,7 @@ struct IndMatch
   }
 
   IndexT _i, _j;  // Left, right index
-#ifdef OPENMVG_DEBUG_MATCHING
+#ifdef ALICEVISION_DEBUG_MATCHING
   float _distance;
 #endif
 };
@@ -120,4 +120,4 @@ inline Pair_Set getImagePairs(const PairwiseMatches & matches)
 }  // namespace matching
 }  // namespace aliceVision
 
-#endif // OPENMVG_MATCHING_IND_MATCH_H
+#endif // ALICEVISION_MATCHING_IND_MATCH_H

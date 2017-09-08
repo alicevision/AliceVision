@@ -4,7 +4,7 @@
 #pragma once
 #include <aliceVision/config.hpp>
 #include <aliceVision/features/sift/SIFT_vlfeat_describer.hpp>
-#if OPENMVG_IS_DEFINED(OPENMVG_HAVE_POPSIFT)
+#if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_POPSIFT)
 #include <aliceVision/features/sift/SIFT_popSIFT_describer.hpp>
 #endif
 namespace aliceVision {
@@ -57,7 +57,7 @@ public:
   {
     _useCuda = useCuda;
 
-#if OPENMVG_IS_DEFINED(OPENMVG_HAVE_POPSIFT)
+#if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_POPSIFT)
     if(useCuda)
     {
       _imageDescriberImpl.reset(new SIFT_popSIFT_ImageDescriber(_params, _isOriented));

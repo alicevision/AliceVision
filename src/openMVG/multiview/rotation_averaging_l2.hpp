@@ -1,8 +1,8 @@
 // This file is part of the AliceVision project and is made available under
 // the terms of the MPL2 license (see the COPYING.md file).
 
-#ifndef OPENMVG_MULTIVIEW_ROTATION_AVERAGING_L2_H_
-#define OPENMVG_MULTIVIEW_ROTATION_AVERAGING_L2_H_
+#ifndef ALICEVISION_MULTIVIEW_ROTATION_AVERAGING_L2_H_
+#define ALICEVISION_MULTIVIEW_ROTATION_AVERAGING_L2_H_
 
 #include "aliceVision/multiview/rotation_averaging_common.hpp"
 #include <vector>
@@ -66,5 +66,5 @@ bool L2RotationAveraging_Refine(
 } // namespace rotation_averaging
 } // namespace aliceVision
 
-#endif //OPENMVG_MULTIVIEW_ROTATION_AVERAGING_L2_H_
+#endif //ALICEVISION_MULTIVIEW_ROTATION_AVERAGING_L2_H_
 

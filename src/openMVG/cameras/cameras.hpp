@@ -1,8 +1,8 @@
 // This file is part of the AliceVision project and is made available under
 // the terms of the MPL2 license (see the COPYING.md file).
 
-#ifndef OPENMVG_CAMERAS_HPP
-#define OPENMVG_CAMERAS_HPP
+#ifndef ALICEVISION_CAMERAS_HPP
+#define ALICEVISION_CAMERAS_HPP
 
 #include "aliceVision/cameras/Camera_Common.hpp"
 #include "aliceVision/cameras/Camera_Intrinsics.hpp"
@@ -45,4 +45,4 @@ inline std::shared_ptr<Pinhole_Intrinsic> createPinholeIntrinsic(EINTRINSIC intr
 } // namespace cameras
 } // namespace aliceVision
 
-#endif // OPENMVG_CAMERAS_HPP
+#endif // ALICEVISION_CAMERAS_HPP

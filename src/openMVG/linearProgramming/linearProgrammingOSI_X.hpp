@@ -7,7 +7,7 @@
 #include "OsiClpSolverInterface.hpp"
 #include <aliceVision/config.hpp>
 
-#if OPENMVG_IS_DEFINED(OPENMVG_HAVE_MOSEK)
+#if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_MOSEK)
 #include "OsiMskSolverInterface.hpp"
 #endif
 
@@ -48,9 +48,9 @@ private :
 
 
 typedef OSI_X_SolverWrapper<OsiClpSolverInterface> OSI_CLP_SolverWrapper;
-#if OPENMVG_IS_DEFINED(OPENMVG_HAVE_MOSEK)
+#if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_MOSEK)
 typedef OSI_X_SolverWrapper<OsiMskSolverInterface> OSI_MOSEK_SolverWrapper;
-#endif // OPENMVG_HAVE_MOSEK
+#endif // ALICEVISION_HAVE_MOSEK
 
 
 
@@ -61,14 +61,14 @@ OSI_X_SolverWrapper<SOLVERINTERFACE>::OSI_X_SolverWrapper(int nbParams) : LP_Sol
   si->setLogLevel(0);
 }
 
-#if OPENMVG_IS_DEFINED(OPENMVG_HAVE_MOSEK)
+#if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_MOSEK)
 template<>
 OSI_X_SolverWrapper<OsiMskSolverInterface>::OSI_X_SolverWrapper(int nbParams) : LP_Solver(nbParams)
 {
   si = new OsiMskSolverInterface();
   //si->setLogLevel(0);
 }
-#endif // OPENMVG_HAVE_MOSEK
+#endif // ALICEVISION_HAVE_MOSEK
 
 template<typename SOLVERINTERFACE>
 OSI_X_SolverWrapper<SOLVERINTERFACE>::~OSI_X_SolverWrapper()

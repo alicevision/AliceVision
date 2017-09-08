@@ -13,11 +13,11 @@ target_link_libraries(aliceVision_main_rigCalibration
   ${Boost_LIBRARIES}
 )
 
-if(OPENMVG_HAVE_CCTAG)
+if(ALICEVISION_HAVE_CCTAG)
   target_link_libraries(aliceVision_main_rigCalibration CCTag::CCTag)
 endif()
 
-if(OPENMVG_HAVE_OPENCV)
+if(ALICEVISION_HAVE_OPENCV)
 
   add_executable(aliceVision_main_cameraCalibration main_cameraCalibration.cpp)
   # target_include_directories(aliceVision_main_cameraCalibration PUBLIC ${Boost_INCLUDE_DIRS} ${OpenCV_INCLUDE_DIRS})
@@ -29,7 +29,7 @@ if(OPENMVG_HAVE_OPENCV)
     ${OpenCV_LIBRARIES}
     ${Boost_LIBRARIES})
 
-  if(OPENMVG_HAVE_CCTAG)
+  if(ALICEVISION_HAVE_CCTAG)
     target_link_libraries(aliceVision_main_cameraCalibration CCTag::CCTag)
   endif()
 

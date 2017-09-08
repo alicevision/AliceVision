@@ -1,8 +1,8 @@
 // This file is part of the AliceVision project and is made available under
 // the terms of the MPL2 license (see the COPYING.md file).
 
-#ifndef OPENMVG_FEATURES_AKAZE_IMAGE_DESCRIBER_HPP
-#define OPENMVG_FEATURES_AKAZE_IMAGE_DESCRIBER_HPP
+#ifndef ALICEVISION_FEATURES_AKAZE_IMAGE_DESCRIBER_HPP
+#define ALICEVISION_FEATURES_AKAZE_IMAGE_DESCRIBER_HPP
 
 #include "ImageDescriberCommon.hpp"
 #include "aliceVision/features/image_describer.hpp"
@@ -278,4 +278,4 @@ private:
 } // namespace features
 } // namespace aliceVision
 
-#endif // OPENMVG_FEATURES_AKAZE_IMAGE_DESCRIBER_HPP
+#endif // ALICEVISION_FEATURES_AKAZE_IMAGE_DESCRIBER_HPP

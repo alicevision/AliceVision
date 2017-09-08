@@ -4,7 +4,7 @@
 #include "FeedProvider.hpp"
 #include <aliceVision/config.hpp>
 #include "ImageFeed.hpp"
-#if OPENMVG_IS_DEFINED(OPENMVG_HAVE_OPENCV)
+#if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_OPENCV)
 #include "VideoFeed.hpp"
 #endif
 
@@ -37,7 +37,7 @@ FeedProvider::FeedProvider(const std::string &feedPath, const std::string &calib
     }
     else 
     {
-#if OPENMVG_IS_DEFINED(OPENMVG_HAVE_OPENCV)
+#if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_OPENCV)
       // let's try it with a video
       _feeder.reset(new VideoFeed(feedPath, calibPath));
       _isVideo = true;
@@ -54,7 +54,7 @@ FeedProvider::FeedProvider(const std::string &feedPath, const std::string &calib
     // Folder or sequence of images
     _feeder.reset(new ImageFeed(feedPath, calibPath));
   }
-#if OPENMVG_IS_DEFINED(OPENMVG_HAVE_OPENCV)
+#if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_OPENCV)
   else if(isdigit(feedPath[0]))
   {
     // let's try it with a video

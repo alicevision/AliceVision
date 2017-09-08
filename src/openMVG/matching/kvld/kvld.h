@@ -127,17 +127,17 @@ public:
 
 		diff[ 0 ] *= 0.36;
 		diff[ 1 ] *= 0.64 / ( binNum );
-    //OPENMVG_LOG_DEBUG("diff = "<<diff[0]<<" "<<diff[1]);
+    //ALICEVISION_LOG_DEBUG("diff = "<<diff[0]<<" "<<diff[1]);
 		return diff[ 0 ] + diff[ 1 ];
 	}
 
   inline void test() const
   {
-    OPENMVG_LOG_DEBUG("contrast: " << contrast);
-    OPENMVG_LOG_DEBUG("distance: " << distance);
+    ALICEVISION_LOG_DEBUG("contrast: " << contrast);
+    ALICEVISION_LOG_DEBUG("distance: " << distance);
 
-    OPENMVG_LOG_DEBUG("weights: " << weight);
-    OPENMVG_LOG_DEBUG("descriptor: " << descriptor);
+    ALICEVISION_LOG_DEBUG("weights: " << weight);
+    ALICEVISION_LOG_DEBUG("descriptor: " << descriptor);
   }
 
 };

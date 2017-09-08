@@ -1,8 +1,8 @@
 // This file is part of the AliceVision project and is made available under
 // the terms of the MPL2 license (see the COPYING.md file).
 
-#ifndef OPENMVG_CAMERA_UNDISTORT_IMAGE_HPP
-#define OPENMVG_CAMERA_UNDISTORT_IMAGE_HPP
+#ifndef ALICEVISION_CAMERA_UNDISTORT_IMAGE_HPP
+#define ALICEVISION_CAMERA_UNDISTORT_IMAGE_HPP
 
 #include "aliceVision/image/image.hpp"
 #include <aliceVision/config.hpp>
@@ -44,5 +44,5 @@ void UndistortImage(
 } // namespace cameras
 } // namespace aliceVision
 
-#endif // #ifndef OPENMVG_CAMERA_UNDISTORT_IMAGE_HPP
+#endif // #ifndef ALICEVISION_CAMERA_UNDISTORT_IMAGE_HPP
 

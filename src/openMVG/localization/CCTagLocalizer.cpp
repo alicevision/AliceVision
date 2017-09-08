@@ -37,8 +37,8 @@ CCTagLocalizer::CCTagLocalizer(const std::string &sfmFilePath,
   // load the sfm data containing the 3D reconstruction info
   if (!Load(_sfm_data, sfmFilePath, sfm::ESfM_Data::ALL)) 
   {
-    OPENMVG_CERR("The input SfM_Data file "<< sfmFilePath << " cannot be read.");
-    OPENMVG_CERR("\n\nIf the error says \"JSON Parsing failed - provided NVP not found\" "
+    ALICEVISION_CERR("The input SfM_Data file "<< sfmFilePath << " cannot be read.");
+    ALICEVISION_CERR("\n\nIf the error says \"JSON Parsing failed - provided NVP not found\" "
         "it's likely that you have to convert your sfm_data to a recent version supporting "
         "polymorphic Views. You can run the python script convertSfmData.py to update an existing sfmdata.");
     throw std::invalid_argument("The input SfM_Data file "+ sfmFilePath + " cannot be read.");
@@ -50,7 +50,7 @@ CCTagLocalizer::CCTagLocalizer(const std::string &sfmFilePath,
   
   if(!loadSuccessful)
   {
-    OPENMVG_CERR("Unable to load the descriptors");
+    ALICEVISION_CERR("Unable to load the descriptors");
     throw std::invalid_argument("Unable to load the descriptors from "+descriptorsFolder);
   }
   
@@ -82,7 +82,7 @@ CCTagLocalizer::CCTagLocalizer(const std::string &sfmFilePath,
 bool CCTagLocalizer::loadReconstructionDescriptors(const sfm::SfM_Data & sfm_data,
                                                    const std::string & feat_directory)
 {
-  OPENMVG_LOG_DEBUG("Build observations per view");
+  ALICEVISION_LOG_DEBUG("Build observations per view");
 
   // Build observations per view
   std::map<IndexT, std::map<features::EImageDescriberType, std::vector<features::FeatureInImage>>> observationsPerView;
@@ -106,7 +106,7 @@ bool CCTagLocalizer::loadReconstructionDescriptors(const sfm::SfM_Data & sfm_dat
     }
   }
 
-  OPENMVG_LOG_DEBUG("Load Features and Descriptors per view");
+  ALICEVISION_LOG_DEBUG("Load Features and Descriptors per view");
 
   // Read for each view the corresponding Regions and store them
   for(const auto &iter : _sfm_data.GetViews())
@@ -172,21 +172,21 @@ bool CCTagLocalizer::loadReconstructionDescriptors(const sfm::SfM_Data & sfm_dat
         else
           counterCCtagsInImage[countcctag] += 1;
       }
-      OPENMVG_LOG_DEBUG(ss.str());
+      ALICEVISION_LOG_DEBUG(ss.str());
     }
     
     // Display histogram
-    OPENMVG_LOG_DEBUG("Histogram of number of cctags in images :");
+    ALICEVISION_LOG_DEBUG("Histogram of number of cctags in images :");
     for(std::size_t i = 0; i < 5; i++)
-      OPENMVG_LOG_DEBUG("Images with " << i << "  CCTags : " << counterCCtagsInImage[i]);
-    OPENMVG_LOG_DEBUG("Images with 5+ CCTags : " << counterCCtagsInImage[5]);
+      ALICEVISION_LOG_DEBUG("Images with " << i << "  CCTags : " << counterCCtagsInImage[i]);
+    ALICEVISION_LOG_DEBUG("Images with 5+ CCTags : " << counterCCtagsInImage[5]);
 
     // Display the cctag ids over all cctag landmarks present in the database
-    OPENMVG_LOG_DEBUG("Found " << presentCCtagIds.size() << " different CCTag ids in the database with " << _sfm_data.GetLandmarks().size() << " associated 3D points\n"
+    ALICEVISION_LOG_DEBUG("Found " << presentCCtagIds.size() << " different CCTag ids in the database with " << _sfm_data.GetLandmarks().size() << " associated 3D points\n"
             "The CCTag ids in the database are: ");
     for(int cctagId: presentCCtagIds)
     {
-      OPENMVG_LOG_DEBUG(cctagId);
+      ALICEVISION_LOG_DEBUG(cctagId);
     }
   }
 
@@ -208,13 +208,13 @@ bool CCTagLocalizer::localize(const image::Image<unsigned char> & imageGrey,
     throw std::invalid_argument("The CCTag localizer parameters are not in the right format.");
   }
   // extract descriptors and features from image
-  OPENMVG_LOG_DEBUG("[features]\tExtract CCTag from query image");
+  ALICEVISION_LOG_DEBUG("[features]\tExtract CCTag from query image");
   features::MapRegionsPerDesc tmpQueryRegions;
 
   _imageDescriber.setCudaPipe( _cudaPipe );
   _imageDescriber.Set_configuration_preset(param->_featurePreset);
   _imageDescriber.Describe(imageGrey, tmpQueryRegions[_cctagDescType]);
-  OPENMVG_LOG_DEBUG("[features]\tExtract CCTAG done: found " << tmpQueryRegions.at(_cctagDescType)->RegionCount() << " features");
+  ALICEVISION_LOG_DEBUG("[features]\tExtract CCTAG done: found " << tmpQueryRegions.at(_cctagDescType)->RegionCount() << " features");
   
   std::pair<std::size_t, std::size_t> imageSize = std::make_pair(imageGrey.Width(),imageGrey.Height());
   
@@ -273,7 +273,7 @@ bool CCTagLocalizer::localize(const features::MapRegionsPerDesc & genQueryRegion
   getAllAssociations(queryRegions, imageSize, *param, occurences, resectionData.pt2D, resectionData.pt3D, matchedImages, imagePath);
   
   resectionData.vec_descType.resize(resectionData.pt2D.cols(), _cctagDescType);
-  OPENMVG_LOG_DEBUG("[Matching]\tRetrieving associations took " << timer.elapsedMs() << "ms");
+  ALICEVISION_LOG_DEBUG("[Matching]\tRetrieving associations took " << timer.elapsedMs() << "ms");
   
   const std::size_t numCollectedPts = occurences.size();
   
@@ -296,7 +296,7 @@ bool CCTagLocalizer::localize(const features::MapRegionsPerDesc & genQueryRegion
   timer.reset();
   // estimate the pose
   resectionData.error_max = param->_errorMax;
-  OPENMVG_LOG_DEBUG("[poseEstimation]\tEstimating camera pose...");
+  ALICEVISION_LOG_DEBUG("[poseEstimation]\tEstimating camera pose...");
   const bool bResection = sfm::SfM_Localizer::Localize(imageSize,
                                                       // pass the input intrinsic if they are valid, null otherwise
                                                       (useInputIntrinsics) ? &queryIntrinsics : nullptr,
@@ -306,7 +306,7 @@ bool CCTagLocalizer::localize(const features::MapRegionsPerDesc & genQueryRegion
   
   if(!bResection)
   {
-    OPENMVG_LOG_DEBUG("[poseEstimation]\tResection failed");
+    ALICEVISION_LOG_DEBUG("[poseEstimation]\tResection failed");
     if(!param->_visualDebug.empty() && !imagePath.empty())
     {
 //      namespace bfs = boost::filesystem;
@@ -318,10 +318,10 @@ bool CCTagLocalizer::localize(const features::MapRegionsPerDesc & genQueryRegion
     localizationResult = LocalizationResult(resectionData, associationIDs, pose, queryIntrinsics, matchedImages, bResection);
     return localizationResult.isValid();
   }
-  OPENMVG_LOG_DEBUG("[poseEstimation]\tResection SUCCEDED");
+  ALICEVISION_LOG_DEBUG("[poseEstimation]\tResection SUCCEDED");
 
-  OPENMVG_LOG_DEBUG("R est\n" << pose.rotation());
-  OPENMVG_LOG_DEBUG("t est\n" << pose.translation());
+  ALICEVISION_LOG_DEBUG("R est\n" << pose.rotation());
+  ALICEVISION_LOG_DEBUG("t est\n" << pose.translation());
 
   // if we didn't use the provided intrinsics, estimate K from the projection
   // matrix estimated by the localizer and initialize the queryIntrinsics with
@@ -335,13 +335,13 @@ bool CCTagLocalizer::localize(const features::MapRegionsPerDesc & genQueryRegion
     // RQ decomposition
     KRt_From_P(resectionData.projection_matrix, &K_, &R_, &t_);
     queryIntrinsics.setK(K_);
-    OPENMVG_LOG_DEBUG("K estimated\n" << K_);
+    ALICEVISION_LOG_DEBUG("K estimated\n" << K_);
     queryIntrinsics.setWidth(imageSize.first);
     queryIntrinsics.setHeight(imageSize.second);
   }
 
   // refine the estimated pose
-  OPENMVG_LOG_DEBUG("[poseEstimation]\tRefining estimated pose");
+  ALICEVISION_LOG_DEBUG("[poseEstimation]\tRefining estimated pose");
   const bool b_refine_pose = true;
   const bool refineStatus = sfm::SfM_Localizer::RefinePose(&queryIntrinsics,
                                                             pose,
@@ -349,27 +349,27 @@ bool CCTagLocalizer::localize(const features::MapRegionsPerDesc & genQueryRegion
                                                             b_refine_pose,
                                                             param->_refineIntrinsics);
   if(!refineStatus)
-    OPENMVG_LOG_DEBUG("Refine pose failed.");
+    ALICEVISION_LOG_DEBUG("Refine pose failed.");
 
   if(!param->_visualDebug.empty() && !imagePath.empty())
   {
     //@todo save image with cctag with different code color for inliers
   }
   
-  OPENMVG_LOG_DEBUG("[poseEstimation]\tPose estimation took " << timer.elapsedMs() << "ms.");
+  ALICEVISION_LOG_DEBUG("[poseEstimation]\tPose estimation took " << timer.elapsedMs() << "ms.");
 
   localizationResult = LocalizationResult(resectionData, associationIDs, pose, queryIntrinsics, matchedImages, refineStatus);
 
   {
     // just debugging this block can be safely removed or commented out
-    OPENMVG_LOG_DEBUG("R refined\n" << pose.rotation());
-    OPENMVG_LOG_DEBUG("t refined\n" << pose.translation());
-    OPENMVG_LOG_DEBUG("K refined\n" << queryIntrinsics.K());
+    ALICEVISION_LOG_DEBUG("R refined\n" << pose.rotation());
+    ALICEVISION_LOG_DEBUG("t refined\n" << pose.translation());
+    ALICEVISION_LOG_DEBUG("K refined\n" << queryIntrinsics.K());
 
     const Mat2X residuals = localizationResult.computeInliersResiduals();
 
     const auto sqrErrors = (residuals.cwiseProduct(residuals)).colwise().sum();
-    OPENMVG_LOG_DEBUG("RMSE = " << std::sqrt(sqrErrors.mean())
+    ALICEVISION_LOG_DEBUG("RMSE = " << std::sqrt(sqrErrors.mean())
                 << " min = " << std::sqrt(sqrErrors.minCoeff())
                 << " max = " << std::sqrt(sqrErrors.maxCoeff()));
   }
@@ -408,10 +408,10 @@ bool CCTagLocalizer::localizeRig(const std::vector<image::Image<unsigned char> >
   for(size_t i = 0; i < numCams; ++i)
   {
     // extract descriptors and features from each image
-    OPENMVG_LOG_DEBUG("[features]\tExtract CCTag from query image...");
+    ALICEVISION_LOG_DEBUG("[features]\tExtract CCTag from query image...");
     _imageDescriber.Set_configuration_preset(param->_featurePreset);
     _imageDescriber.Describe(vec_imageGrey[i], vec_queryRegions[i][_imageDescriber.getDescriberType()]);
-    OPENMVG_LOG_DEBUG("[features]\tExtract CCTAG done: found " <<  vec_queryRegions[i].at(_imageDescriber.getDescriberType())->RegionCount() << " features");
+    ALICEVISION_LOG_DEBUG("[features]\tExtract CCTAG done: found " <<  vec_queryRegions[i].at(_imageDescriber.getDescriberType())->RegionCount() << " features");
     // add the image size for this image
     vec_imageSize.emplace_back(vec_imageGrey[i].Width(), vec_imageGrey[i].Height());
   }
@@ -434,10 +434,10 @@ bool CCTagLocalizer::localizeRig(const std::vector<features::MapRegionsPerDesc> 
                                  geometry::Pose3 &rigPose,
                                  std::vector<LocalizationResult>& vec_locResults)
 {
-#if OPENMVG_IS_DEFINED(OPENMVG_HAVE_OPENGV)
+#if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_OPENGV)
   if(!parameters->_useLocalizeRigNaive)
   {
-    OPENMVG_LOG_DEBUG("Using localizeRig_opengv()");
+    ALICEVISION_LOG_DEBUG("Using localizeRig_opengv()");
     return localizeRig_opengv(vec_queryRegions,
                               vec_imageSize,
                               parameters,
@@ -450,7 +450,7 @@ bool CCTagLocalizer::localizeRig(const std::vector<features::MapRegionsPerDesc> 
 #endif
   {
     if(!parameters->_useLocalizeRigNaive)
-      OPENMVG_LOG_DEBUG("OpenGV is not available. Fallback to localizeRig_naive().");
+      ALICEVISION_LOG_DEBUG("OpenGV is not available. Fallback to localizeRig_naive().");
     return localizeRig_naive(vec_queryRegions,
                              vec_imageSize,
                              parameters,
@@ -461,7 +461,7 @@ bool CCTagLocalizer::localizeRig(const std::vector<features::MapRegionsPerDesc> 
   }
 }
 
-#if OPENMVG_IS_DEFINED(OPENMVG_HAVE_OPENGV)
+#if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_OPENGV)
 bool CCTagLocalizer::localizeRig_opengv(const std::vector<features::MapRegionsPerDesc> & vec_queryRegions,
                                  const std::vector<std::pair<std::size_t, std::size_t> > &imageSize,
                                  const LocalizerParameters *parameters,
@@ -514,7 +514,7 @@ bool CCTagLocalizer::localizeRig_opengv(const std::vector<features::MapRegionsPe
   const size_t minNumAssociations = 4;  //possible parameter?
   if(numAssociations < minNumAssociations)
   {
-    OPENMVG_LOG_DEBUG("[poseEstimation]\tonly " << numAssociations << " have been found, not enough to do the resection!");
+    ALICEVISION_LOG_DEBUG("[poseEstimation]\tonly " << numAssociations << " have been found, not enough to do the resection!");
     for(std::size_t cam = 0; cam < numCams; ++cam)
     {
       // empty result with isValid set to false
@@ -547,17 +547,17 @@ bool CCTagLocalizer::localizeRig_opengv(const std::vector<features::MapRegionsPe
     if(vec_inliers.size() < numCams)
     {
       // in general the inlier should be spread among different cameras
-      OPENMVG_CERR("WARNING: RIG Voctree Localizer: Inliers in " 
+      ALICEVISION_CERR("WARNING: RIG Voctree Localizer: Inliers in " 
               << vec_inliers.size() << " cameras on a RIG of " 
               << numCams << " cameras.");
     }
 
     for(std::size_t camID = 0; camID < vec_inliers.size(); ++camID)
-      OPENMVG_LOG_DEBUG("#inliers for cam " << camID << ": " << vec_inliers[camID].size());
+      ALICEVISION_LOG_DEBUG("#inliers for cam " << camID << ": " << vec_inliers[camID].size());
     
-    OPENMVG_LOG_DEBUG("Pose after resection:");
-    OPENMVG_LOG_DEBUG("Rotation: " << rigPose.rotation());
-    OPENMVG_LOG_DEBUG("Centre: " << rigPose.center());
+    ALICEVISION_LOG_DEBUG("Pose after resection:");
+    ALICEVISION_LOG_DEBUG("Rotation: " << rigPose.rotation());
+    ALICEVISION_LOG_DEBUG("Centre: " << rigPose.center());
     
     // debugging stats
     // print the reprojection error for inliers (just debugging purposes)
@@ -580,7 +580,7 @@ bool CCTagLocalizer::localizeRig_opengv(const std::vector<features::MapRegionsPe
                                                minNumPoints,
                                                vec_inliers,
                                                rigPose);
-  OPENMVG_LOG_DEBUG("Iterative refinement took " << timer.elapsedMs() << "ms");
+  ALICEVISION_LOG_DEBUG("Iterative refinement took " << timer.elapsedMs() << "ms");
   
   {
     // debugging stats
@@ -636,7 +636,7 @@ bool CCTagLocalizer::localizeRig_opengv(const std::vector<features::MapRegionsPe
   
   if(!refineOk)
   {
-    OPENMVG_LOG_DEBUG("[poseEstimation]\tRefine failed.");
+    ALICEVISION_LOG_DEBUG("[poseEstimation]\tRefine failed.");
     return false;
   }
   
@@ -644,7 +644,7 @@ bool CCTagLocalizer::localizeRig_opengv(const std::vector<features::MapRegionsPe
   
 }
   
-#endif //OPENMVG_HAVE_OPENGV
+#endif //ALICEVISION_HAVE_OPENGV
 
 // subposes is n-1 as we consider the first camera as the main camera and the 
 // reference frame of the grid
@@ -678,7 +678,7 @@ bool CCTagLocalizer::localizeRig_naive(const std::vector<features::MapRegionsPer
     isLocalized[i] = localize(vec_queryRegions[i], imageSize[i], param, true /*useInputIntrinsics*/, vec_queryIntrinsics[i], vec_localizationResults[i]);
     if(!isLocalized[i])
     {
-      OPENMVG_CERR("Could not localize camera " << i);
+      ALICEVISION_CERR("Could not localize camera " << i);
       // even if it is not localize we can try to go on and do with the cameras we have
     }
   }
@@ -690,11 +690,11 @@ bool CCTagLocalizer::localizeRig_naive(const std::vector<features::MapRegionsPer
   // no camera has be localized
   if(numLocalizedCam == 0)
   {
-    OPENMVG_LOG_DEBUG("No camera has been localized!!!");
+    ALICEVISION_LOG_DEBUG("No camera has been localized!!!");
     return false;
   }
   
-  OPENMVG_LOG_DEBUG("Localized cameras: " << numLocalizedCam << "/" << numCams);
+  ALICEVISION_LOG_DEBUG("Localized cameras: " << numLocalizedCam << "/" << numCams);
   
   // if there is only one camera (the main one)
   if(numCams==1)
@@ -715,7 +715,7 @@ bool CCTagLocalizer::localizeRig_naive(const std::vector<features::MapRegionsPer
     // better safe than sorry
     assert(idx < isLocalized.size());
     
-    OPENMVG_LOG_DEBUG("Index of the first localized camera: " << idx);
+    ALICEVISION_LOG_DEBUG("Index of the first localized camera: " << idx);
     
     // if the only localized camera is the main camera
     if(idx==0)
@@ -741,7 +741,7 @@ bool CCTagLocalizer::localizeRig_naive(const std::vector<features::MapRegionsPer
   
   if(!refineOk)
   {
-    OPENMVG_LOG_DEBUG("[poseEstimation]\tRig pose refinement failed.");
+    ALICEVISION_LOG_DEBUG("[poseEstimation]\tRig pose refinement failed.");
     return false;
   }
   
@@ -772,11 +772,11 @@ void CCTagLocalizer::getAllAssociations(const features::CCTAG_Regions &queryRegi
   out_matchedImages.clear();
   out_matchedImages.reserve(nearestKeyFrames.size());
   
-  OPENMVG_LOG_DEBUG("nearestKeyFrames.size() = " << nearestKeyFrames.size());
+  ALICEVISION_LOG_DEBUG("nearestKeyFrames.size() = " << nearestKeyFrames.size());
   for(const IndexT keyframeId : nearestKeyFrames)
   {
-    OPENMVG_LOG_DEBUG(keyframeId);
-    OPENMVG_LOG_DEBUG(_sfm_data.GetViews().at(keyframeId)->getImagePath());
+    ALICEVISION_LOG_DEBUG(keyframeId);
+    ALICEVISION_LOG_DEBUG(_sfm_data.GetViews().at(keyframeId)->getImagePath());
     const features::Regions& matchedRegions = _regionsPerView.getRegions(keyframeId, _cctagDescType);
     const ReconstructedRegionsMapping& regionsMapping = _reconstructedRegionsMappingPerView.at(keyframeId).at(_cctagDescType);
     const features::CCTAG_Regions & matchedCCtagRegions = dynamic_cast<const features::CCTAG_Regions &>(matchedRegions);
@@ -784,7 +784,7 @@ void CCTagLocalizer::getAllAssociations(const features::CCTAG_Regions &queryRegi
     // Matching
     std::vector<matching::IndMatch> vec_featureMatches;
     viewMatching(queryRegions, matchedCCtagRegions, vec_featureMatches);
-    OPENMVG_LOG_DEBUG("[matching]\tFound "<< vec_featureMatches.size() <<" matches.");
+    ALICEVISION_LOG_DEBUG("[matching]\tFound "<< vec_featureMatches.size() <<" matches.");
     
     out_matchedImages.emplace_back(keyframeId, vec_featureMatches.size());
     
@@ -800,7 +800,7 @@ void CCTagLocalizer::getAllAssociations(const features::CCTAG_Regions &queryRegi
       const auto baseDir = bfs::path(param._visualDebug) / queryImage;
       if((!bfs::exists(baseDir)))
       {
-        OPENMVG_LOG_DEBUG("created " << baseDir.string());
+        ALICEVISION_LOG_DEBUG("created " << baseDir.string());
         bfs::create_directories(baseDir);
       }
       
@@ -847,7 +847,7 @@ void CCTagLocalizer::getAllAssociations(const features::CCTAG_Regions &queryRegi
   }
       
   const size_t numCollectedPts = out_occurences.size();
-  OPENMVG_LOG_DEBUG("[matching]\tCollected "<< numCollectedPts <<" associations.");
+  ALICEVISION_LOG_DEBUG("[matching]\tCollected "<< numCollectedPts <<" associations.");
   
   {
     // just debugging statistics, this block can be safely removed    
@@ -856,7 +856,7 @@ void CCTagLocalizer::getAllAssociations(const features::CCTAG_Regions &queryRegi
     {
       const auto &key = idx.first;
       const auto &value = idx.second;
-       OPENMVG_LOG_DEBUG("[matching]\tAssociations "
+       ALICEVISION_LOG_DEBUG("[matching]\tAssociations "
                << features::EImageDescriberType_enumToString(key.descType) << " "
                << key.landmarkId << "," << key.featId <<" found "
                << value << " times.");
@@ -876,7 +876,7 @@ void CCTagLocalizer::getAllAssociations(const features::CCTAG_Regions &queryRegi
         }
       }
       if(counter>0)
-        OPENMVG_LOG_DEBUG("[matching]\tThere are " << counter
+        ALICEVISION_LOG_DEBUG("[matching]\tThere are " << counter
                     << " associations occurred " << value << " times ("
                     << 100.0 * counter / (double) numCollectedPts << "%)");
       numOccTreated += counter;

@@ -42,7 +42,7 @@ std::size_t populateDatabase(const std::string &fileFullPath,
   std::size_t numDescriptors = 0;
   
   // Read the descriptors
-  OPENMVG_LOG_DEBUG("Reading the descriptors from " << descriptorsFiles.size() <<" files...");
+  ALICEVISION_LOG_DEBUG("Reading the descriptors from " << descriptorsFiles.size() <<" files...");
   boost::progress_display display(descriptorsFiles.size());
 
   // Run through the path vector and read the descriptors
@@ -82,7 +82,7 @@ std::size_t populateDatabase(const std::string &fileFullPath,
   std::size_t numDescriptors = 0;
 
   // Read the descriptors
-  OPENMVG_LOG_DEBUG("Reading the descriptors from " << descriptorsFiles.size() <<" files...");
+  ALICEVISION_LOG_DEBUG("Reading the descriptors from " << descriptorsFiles.size() <<" files...");
   boost::progress_display display(descriptorsFiles.size());
 
   // Run through the path vector and read the descriptors
@@ -166,7 +166,7 @@ void queryDatabase(const std::string &fileFullPath,
   getListOfDescriptorFiles(fileFullPath, descriptorsFiles);
   
   // Read the descriptors
-  OPENMVG_LOG_DEBUG("queryDatabase: Reading the descriptors from " << descriptorsFiles.size() << " files...");
+  ALICEVISION_LOG_DEBUG("queryDatabase: Reading the descriptors from " << descriptorsFiles.size() << " files...");
   boost::progress_display display(descriptorsFiles.size());
 
   #pragma omp parallel for
@@ -221,7 +221,7 @@ void voctreeStatistics(
   getListOfDescriptorFiles(fileFullPath, descriptorsFiles);
   
   // Read the descriptors
-  OPENMVG_LOG_DEBUG("Reading the descriptors from " << descriptorsFiles.size() << " files.");
+  ALICEVISION_LOG_DEBUG("Reading the descriptors from " << descriptorsFiles.size() << " files.");
 
   // Run through the path vector and read the descriptors
   for(const auto &currentFile : descriptorsFiles)
@@ -249,15 +249,15 @@ void voctreeStatistics(
         localHisto[nb] += 1;   
     }
     
-    OPENMVG_LOG_DEBUG("Histogram of " << currentFile.first);
+    ALICEVISION_LOG_DEBUG("Histogram of " << currentFile.first);
     
     for(auto itHisto = localHisto.begin(); itHisto != localHisto.end(); itHisto++)
     {
-      OPENMVG_LOG_DEBUG_OBJ << itHisto->first << ": " << itHisto->second  << ", ";
+      ALICEVISION_LOG_DEBUG_OBJ << itHisto->first << ": " << itHisto->second  << ", ";
     }
     localHisto.clear();
     
-    OPENMVG_LOG_DEBUG_OBJ << std::endl;
+    ALICEVISION_LOG_DEBUG_OBJ << std::endl;
     
   }
 }

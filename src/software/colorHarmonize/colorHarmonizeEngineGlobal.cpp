@@ -330,7 +330,7 @@ bool ColorHarmonizationEngineGlobal::Process()
 
   aliceVision::system::Timer timer;
 
-  #if OPENMVG_IS_DEFINED(OPENMVG_HAVE_MOSEK)
+  #if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_MOSEK)
   typedef MOSEK_SolveWrapper SOLVER_LP_T;
   #else
   typedef OSI_CLP_SolverWrapper SOLVER_LP_T;

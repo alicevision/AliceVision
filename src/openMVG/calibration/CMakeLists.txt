@@ -28,7 +28,7 @@ target_link_libraries(aliceVision_calibration
           ${LOG_LIB}
 )
 
-if(OPENMVG_HAVE_CCTAG)
+if(ALICEVISION_HAVE_CCTAG)
   target_link_libraries(aliceVision_calibration
     PRIVATE CCTag::CCTag
   )

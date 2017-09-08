@@ -65,7 +65,7 @@ double iterativeReweightedLeastSquares(const Kernel &kernel,
     inliers.clear();
     if(verbose)
     {
-      OPENMVG_LOG_WARNING("[IRLS] returning cause inliers.size() < min_samples");
+      ALICEVISION_LOG_WARNING("[IRLS] returning cause inliers.size() < min_samples");
     }
     return std::numeric_limits<double>::infinity();
   }
@@ -91,11 +91,11 @@ double iterativeReweightedLeastSquares(const Kernel &kernel,
       inliers.clear();
       if(verbose)
       {
-        OPENMVG_LOG_WARNING("[IRLS] returning cause inliers.size() < min_samples");
+        ALICEVISION_LOG_WARNING("[IRLS] returning cause inliers.size() < min_samples");
       }
       return std::numeric_limits<double>::infinity();
     }
-//    OPENMVG_LOG_DEBUG("[IRLS] #" << i 
+//    ALICEVISION_LOG_DEBUG("[IRLS] #" << i 
 //            << " theta: " << theta
 //            << " num inliers: " << inliers.size());
     
@@ -110,7 +110,7 @@ double iterativeReweightedLeastSquares(const Kernel &kernel,
     {
       if(verbose)
       {
-        OPENMVG_LOG_WARNING("[IRLS] found "<< models.size() << " models, aborting...");
+        ALICEVISION_LOG_WARNING("[IRLS] found "<< models.size() << " models, aborting...");
       }
       return std::numeric_limits<double>::infinity();
     }
@@ -125,7 +125,7 @@ double iterativeReweightedLeastSquares(const Kernel &kernel,
   const double score = scorer.Score(kernel, best_model, all_samples, &inliers, theta);
   if(verbose)
   {
-    OPENMVG_LOG_DEBUG("[IRLS] returning with num inliers: " << inliers.size() 
+    ALICEVISION_LOG_DEBUG("[IRLS] returning with num inliers: " << inliers.size() 
             << " and score " << score);
   }
   return score;
@@ -194,9 +194,9 @@ double localOptimization(const Kernel &kernel,
   std::size_t bestNumInliers = bestInliers.size();
   if(verbose)
   {
-    OPENMVG_LOG_DEBUG("[localOptim] so far best num inliers: " << bestNumInliers);
-    OPENMVG_LOG_DEBUG("[localOptim] so far best model:\n" << bestModel);
-    OPENMVG_LOG_DEBUG("[localOptim] so far best score: " << bestScore);
+    ALICEVISION_LOG_DEBUG("[localOptim] so far best num inliers: " << bestNumInliers);
+    ALICEVISION_LOG_DEBUG("[localOptim] so far best model:\n" << bestModel);
+    ALICEVISION_LOG_DEBUG("[localOptim] so far best score: " << bestScore);
   }
      
   // find inliers from best model with larger threshold t*m over all the samples
@@ -220,7 +220,7 @@ double localOptimization(const Kernel &kernel,
   {
     if(verbose)
     {
-      OPENMVG_LOG_DEBUG("breaking cause sampleSize is " << sampleSize);
+      ALICEVISION_LOG_DEBUG("breaking cause sampleSize is " << sampleSize);
     }
     return bestScore;
   }
@@ -252,7 +252,7 @@ double localOptimization(const Kernel &kernel,
       bestInliers.swap(inliers);
       if(verbose)
       {
-        OPENMVG_LOG_DEBUG("[localOptim] new best num inliers: " << bestNumInliers);
+        ALICEVISION_LOG_DEBUG("[localOptim] new best num inliers: " << bestNumInliers);
       }
     }
   }
@@ -333,8 +333,8 @@ typename Kernel::Model LO_RANSAC(const Kernel &kernel,
       double score = scorer.Score(kernel, models[i], all_samples, &inliers);
       if(bVerbose)
       {
-        OPENMVG_LOG_DEBUG("sample=" << sample);
-        OPENMVG_LOG_DEBUG("model " << i << " e: " << score);
+        ALICEVISION_LOG_DEBUG("sample=" << sample);
+        ALICEVISION_LOG_DEBUG("model " << i << " e: " << score);
       }
 
       if (bestNumInliers <= inliers.size()) 
@@ -343,12 +343,12 @@ typename Kernel::Model LO_RANSAC(const Kernel &kernel,
         //** LOCAL OPTIMIZATION
         if(bVerbose)
         {
-          OPENMVG_LOG_DEBUG("Before Optim: num inliers: " << inliers.size() 
+          ALICEVISION_LOG_DEBUG("Before Optim: num inliers: " << inliers.size() 
                   << " score: " << score
                   << " Kernel::MINIMUM_LSSAMPLES: " << Kernel::MINIMUM_LSSAMPLES 
                  );
 
-          OPENMVG_LOG_DEBUG("Model:\n" << bestModel);
+          ALICEVISION_LOG_DEBUG("Model:\n" << bestModel);
         }
         
         if(inliers.size() > Kernel::MINIMUM_LSSAMPLES)
@@ -358,9 +358,9 @@ typename Kernel::Model LO_RANSAC(const Kernel &kernel,
         
         if(bVerbose)
         {
-          OPENMVG_LOG_DEBUG("After Optim: num inliers: " << inliers.size()
+          ALICEVISION_LOG_DEBUG("After Optim: num inliers: " << inliers.size()
                   << " score: " << score);
-          OPENMVG_LOG_DEBUG("Model:\n" << bestModel);
+          ALICEVISION_LOG_DEBUG("Model:\n" << bestModel);
         }
         
         bestNumInliers = inliers.size();
@@ -373,7 +373,7 @@ typename Kernel::Model LO_RANSAC(const Kernel &kernel,
 
         if(bVerbose)
         {
-          OPENMVG_LOG_DEBUG(" inliers=" << bestNumInliers << "/" << total_samples
+          ALICEVISION_LOG_DEBUG(" inliers=" << bestNumInliers << "/" << total_samples
                     << " (iter=" << iteration
                     << " ,i=" << i
                     << " ,sample=" << sample
@@ -387,7 +387,7 @@ typename Kernel::Model LO_RANSAC(const Kernel &kernel,
           // safeguard to not get stuck in a big number of iterations
           max_iterations = std::min(max_iterations, really_max_iterations);
           if(bVerbose)
-            OPENMVG_LOG_DEBUG("New max_iteration: " << max_iterations);
+            ALICEVISION_LOG_DEBUG("New max_iteration: " << max_iterations);
         }
       }
     }

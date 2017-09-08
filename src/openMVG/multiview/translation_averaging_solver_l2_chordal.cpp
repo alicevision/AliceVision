@@ -121,7 +121,7 @@ bool solve_translations_problem_l2_chordal(
   Solver::Summary summary;
   Solve(options, &problem, &summary);
 
-  OPENMVG_LOG_DEBUG(summary.FullReport());
+  ALICEVISION_LOG_DEBUG(summary.FullReport());
 
   if (summary.IsSolutionUsable())
   {

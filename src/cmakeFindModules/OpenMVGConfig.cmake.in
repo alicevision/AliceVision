@@ -13,51 +13,51 @@
 #
 # This module defines the following variables:
 #
-# OPENMVG_FOUND: True if AliceVision has been successfully found.
+# ALICEVISION_FOUND: True if AliceVision has been successfully found.
 #
-# OPENMVG_VERSION: Version of AliceVision found.
+# ALICEVISION_VERSION: Version of AliceVision found.
 #
-# OPENMVG_INCLUDE_DIRS: Include directories for AliceVision and the
+# ALICEVISION_INCLUDE_DIRS: Include directories for AliceVision and the
 #                       dependencies which appear in the AliceVision public
 #                       API and are thus required to use AliceVision.
 #
-# OPENMVG_LIBRARIES: Libraries for AliceVision and all
+# ALICEVISION_LIBRARIES: Libraries for AliceVision and all
 #                    dependencies against which AliceVision was
 #                    compiled.
 
 # Called if we failed to find Ceres or any of it's required dependencies,
 # unsets all public (designed to be used externally) variables and reports
 # error message at priority depending upon [REQUIRED/QUIET/<NONE>] argument.
-macro(OPENMVG_REPORT_NOT_FOUND REASON_MSG)
+macro(ALICEVISION_REPORT_NOT_FOUND REASON_MSG)
   # FindPackage() only references Ceres_FOUND, and requires it to be
   # explicitly set FALSE to denote not found (not merely undefined).
-  set(OPENMVG_FOUND FALSE)
-  unset(OPENMVG_INCLUDE_DIRS)
-  unset(OPENMVG_LIBRARIES)
+  set(ALICEVISION_FOUND FALSE)
+  unset(ALICEVISION_INCLUDE_DIRS)
+  unset(ALICEVISION_LIBRARIES)
 
   # Reset the CMake module path to its state when this script was called.
   set(CMAKE_MODULE_PATH ${CALLERS_CMAKE_MODULE_PATH})
 
   # Note <package>_FIND_[REQUIRED/QUIETLY] variables defined by
   # FindPackage() use the camelcase library name, not uppercase.
-  if(OPENMVG_FIND_QUIETLY)
-    message(STATUS "Failed to find OPENMVG - " ${REASON_MSG} ${ARGN})
-  else(OPENMVG_FIND_REQUIRED)
-    message(FATAL_ERROR "Failed to find OPENMVG - " ${REASON_MSG} ${ARGN})
+  if(ALICEVISION_FIND_QUIETLY)
+    message(STATUS "Failed to find ALICEVISION - " ${REASON_MSG} ${ARGN})
+  else(ALICEVISION_FIND_REQUIRED)
+    message(FATAL_ERROR "Failed to find ALICEVISION - " ${REASON_MSG} ${ARGN})
   else()
     # Neither QUIETLY nor REQUIRED, use SEND_ERROR which emits an error
     # that prevents generation, but continues configuration.
-    message(SEND_ERROR "Failed to find OPENMVG - " ${REASON_MSG} ${ARGN})
+    message(SEND_ERROR "Failed to find ALICEVISION - " ${REASON_MSG} ${ARGN})
   endif()
   return()
-endmacro(OPENMVG_REPORT_NOT_FOUND)
+endmacro(ALICEVISION_REPORT_NOT_FOUND)
 
 ## Public dependencies that needs to be propagated
 include(CMakeFindDependencyMacro)
 
-set(OPENMVG_USE_INTERNAL_CERES @OPENMVG_USE_INTERNAL_CERES@)
+set(ALICEVISION_USE_INTERNAL_CERES @ALICEVISION_USE_INTERNAL_CERES@)
 
-if(OPENMVG_USE_INTERNAL_CERES)
+if(ALICEVISION_USE_INTERNAL_CERES)
   set(Ceres_DIR @CMAKE_INSTALL_PREFIX@/share/Ceres/)
 else()
   set(Ceres_DIR @Ceres_DIR@)
@@ -65,51 +65,51 @@ endif()
 find_dependency(Ceres)
 
 # whether it is built with CCTags
-set(OPENMVG_HAVE_CCTAG @OPENMVG_HAVE_CCTAG@)
+set(ALICEVISION_HAVE_CCTAG @ALICEVISION_HAVE_CCTAG@)
 
-if(OPENMVG_HAVE_CCTAG)
+if(ALICEVISION_HAVE_CCTAG)
   set(CCTag_DIR @CCTag_DIR@)
   find_dependency(CCTag 1.0.0)
 endif()
 
 # whether it is built with CCTags
-set(OPENMVG_HAVE_POPSIFT @OPENMVG_HAVE_POPSIFT@)
+set(ALICEVISION_HAVE_POPSIFT @ALICEVISION_HAVE_POPSIFT@)
 
-if(OPENMVG_HAVE_POPSIFT)
+if(ALICEVISION_HAVE_POPSIFT)
   find_dependency(PopSift 1.0.0)
 endif()
 
 
 # whether it is built with CCTags
-set(OPENMVG_HAVE_OPENCV @OPENMVG_HAVE_OPENCV@)
+set(ALICEVISION_HAVE_OPENCV @ALICEVISION_HAVE_OPENCV@)
 
-if(OPENMVG_HAVE_OPENCV)
+if(ALICEVISION_HAVE_OPENCV)
   set(OpenCV_DIR @OpenCV_DIR@)
   find_dependency(OpenCV)
 endif()
 
-set(OPENMVG_HAVE_OPENMP @OPENMVG_HAVE_OPENMP@)
+set(ALICEVISION_HAVE_OPENMP @ALICEVISION_HAVE_OPENMP@)
 
-if(OPENMVG_HAVE_OPENMP)
+if(ALICEVISION_HAVE_OPENMP)
   find_dependency(OpenMP)
   # TODO: this would not be necessary if the flags were declared properly for each target
   set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
 endif()
 
-set(OPENMVG_HAVE_BOOST @OPENMVG_HAVE_BOOST@)
+set(ALICEVISION_HAVE_BOOST @ALICEVISION_HAVE_BOOST@)
 set(BOOST_NO_CXX11 @BOOST_NO_CXX11@)
 if(BOOST_NO_CXX11)
  add_definitions(-DBOOST_NO_CXX11_SCOPED_ENUMS)
 endif()
 
 # propagate other building options
-set(OPENMVG_HAVE_OPENGV @OPENMVG_HAVE_OPENGV@)
-set(OPENMVG_HAVE_ALEMBIC @OPENMVG_HAVE_ALEMBIC@)
-set(OPENMVG_USE_LOG @OPENMVG_USE_LOG@)
+set(ALICEVISION_HAVE_OPENGV @ALICEVISION_HAVE_OPENGV@)
+set(ALICEVISION_HAVE_ALEMBIC @ALICEVISION_HAVE_ALEMBIC@)
+set(ALICEVISION_USE_LOG @ALICEVISION_USE_LOG@)
 
 # Set the version.
-set(OPENMVG_VERSION @OPENMVG_VERSION@)
+set(ALICEVISION_VERSION @ALICEVISION_VERSION@)
 
 # Get the (current, i.e. installed) directory containing this file.
 get_filename_component(CURRENT_CONFIG_INSTALL_DIR
@@ -127,7 +127,7 @@ set(CMAKE_MODULE_PATH ${CURRENT_CONFIG_INSTALL_DIR})
 get_filename_component(CURRENT_ROOT_INSTALL_DIR
   ${CMAKE_MODULE_PATH}/../../../ ABSOLUTE)
 if(NOT EXISTS ${CURRENT_ROOT_INSTALL_DIR})
-  OPENMVG_REPORT_NOT_FOUND(
+  ALICEVISION_REPORT_NOT_FOUND(
     "AliceVision install root: ${CURRENT_ROOT_INSTALL_DIR}, "
     "determined from relative path from AliceVisionConfig.cmake install location: "
     "${CMAKE_MODULE_PATH}, does not exist.")
@@ -135,33 +135,33 @@ endif()
 
 # Check if AliceVision header is installed
 if(NOT EXISTS ${CURRENT_ROOT_INSTALL_DIR}/include/aliceVision/version.hpp)
-  OPENMVG_REPORT_NOT_FOUND(
+  ALICEVISION_REPORT_NOT_FOUND(
     "AliceVision install root: ${CMAKE_MODULE_PATH}. "
     "Cannot find aliceVision include files.")
 endif()
 
 # Set the include directories for AliceVision (itself) and all (potentially optional)
 # dependencies with which AliceVision was compiled.
-set(OPENMVG_INCLUDE_DIRS "@OPENMVG_INCLUDE_DIRS@")
+set(ALICEVISION_INCLUDE_DIRS "@ALICEVISION_INCLUDE_DIRS@")
 
 ##### the libraries themselves come in via AliceVisionTargets-<release/debug>.cmake
 # as link libraries rules as target.
 
 # Import exported AliceVision targets
-set(OPENMVG_LIBRARIES @OPENMVG_LIBRARIES@)
+set(ALICEVISION_LIBRARIES @ALICEVISION_LIBRARIES@)
 include(${CURRENT_CONFIG_INSTALL_DIR}/AliceVisionTargets.cmake)
 
-# As we use OPENMVG_REPORT_NOT_FOUND() to abort, if we reach this point we have
+# As we use ALICEVISION_REPORT_NOT_FOUND() to abort, if we reach this point we have
 # found AliceVision and all required dependencies.
 message(STATUS "----")
 message(STATUS "AliceVision Find_Package")
 message(STATUS "----")
-message(STATUS "Found AliceVision version: ${OPENMVG_VERSION}")
+message(STATUS "Found AliceVision version: ${ALICEVISION_VERSION}")
 message(STATUS "Installed in: ${CURRENT_ROOT_INSTALL_DIR}")
-message(STATUS "Used AliceVision libraries: ${OPENMVG_LIBRARIES}")
+message(STATUS "Used AliceVision libraries: ${ALICEVISION_LIBRARIES}")
 message(STATUS "----")
 
-set(OPENMVG_FOUND TRUE)
+set(ALICEVISION_FOUND TRUE)
 
 # Reset the CMake module path to its state when this script was called.
 set(CMAKE_MODULE_PATH ${CALLERS_CMAKE_MODULE_PATH})

@@ -1,8 +1,8 @@
 // This file is part of the AliceVision project and is made available under
 // the terms of the MPL2 license (see the COPYING.md file).
 
-#ifndef OPENMVG_MULTIVIEW_TRANSLATION_KNOWNROTATION_HPP
-#define OPENMVG_MULTIVIEW_TRANSLATION_KNOWNROTATION_HPP
+#ifndef ALICEVISION_MULTIVIEW_TRANSLATION_KNOWNROTATION_HPP
+#define ALICEVISION_MULTIVIEW_TRANSLATION_KNOWNROTATION_HPP
 
 #include <vector>
 #include "aliceVision/multiview/projection.hpp"
@@ -102,4 +102,4 @@ typedef TranslationFromKnowRotation<
 }  // namespace translation
 }  // namespace aliceVision
 
-#endif  // OPENMVG_MULTIVIEW_TRANSLATION_KNOWNROTATION_HPP
+#endif  // ALICEVISION_MULTIVIEW_TRANSLATION_KNOWNROTATION_HPP

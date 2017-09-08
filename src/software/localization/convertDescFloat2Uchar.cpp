@@ -40,7 +40,7 @@ int main( int argc, char** argv )
 
     if(vm.count("help") || (argc == 1))
     {
-      OPENMVG_COUT(desc);
+      ALICEVISION_COUT(desc);
       return EXIT_SUCCESS;
     }
 
@@ -48,20 +48,20 @@ int main( int argc, char** argv )
   }
   catch(boost::program_options::required_option& e)
   {
-    OPENMVG_CERR("ERROR: " << e.what() << std::endl);
-    OPENMVG_COUT("Usage:\n\n" << desc);
+    ALICEVISION_CERR("ERROR: " << e.what() << std::endl);
+    ALICEVISION_COUT("Usage:\n\n" << desc);
     return EXIT_FAILURE;
   }
   catch(boost::program_options::error& e)
   {
-    OPENMVG_CERR("ERROR: " << e.what() << std::endl);
-    OPENMVG_COUT("Usage:\n\n" << desc);
+    ALICEVISION_CERR("ERROR: " << e.what() << std::endl);
+    ALICEVISION_COUT("Usage:\n\n" << desc);
     return EXIT_FAILURE;
   }
 
   if(!(bfs::exists(inputFolder) && bfs::is_directory(inputFolder)))
   {
-    OPENMVG_CERR("ERROR: " << inputFolder << " does not exists or it is not a directory" << std::endl);
+    ALICEVISION_CERR("ERROR: " << inputFolder << " does not exists or it is not a directory" << std::endl);
     return EXIT_FAILURE;
   }
 
@@ -151,5 +151,5 @@ int main( int argc, char** argv )
       ++countDesc;
     }
   }
-  OPENMVG_COUT("Converted " << countDesc << " files .desc and copied " << countFeat << " files .feat");
+  ALICEVISION_COUT("Converted " << countDesc << " files .desc and copied " << countFeat << " files .feat");
 }

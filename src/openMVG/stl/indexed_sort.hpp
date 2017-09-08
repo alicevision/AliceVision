@@ -1,8 +1,8 @@
 // This file is part of the AliceVision project and is made available under
 // the terms of the MPL2 license (see the COPYING.md file).
 
-#ifndef OPENMVG_STL_INDEXED_SORT_H
-#define OPENMVG_STL_INDEXED_SORT_H
+#ifndef ALICEVISION_STL_INDEXED_SORT_H
+#define ALICEVISION_STL_INDEXED_SORT_H
 
 namespace stl
 {
@@ -59,4 +59,4 @@ namespace indexed_sort
 } // namespace indexed_sort
 } // namespace stl
 
-#endif  // OPENMVG_STL_INDEXED_SORT_H
+#endif  // ALICEVISION_STL_INDEXED_SORT_H

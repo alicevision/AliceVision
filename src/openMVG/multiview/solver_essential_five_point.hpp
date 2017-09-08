@@ -1,8 +1,8 @@
 // This file is part of the AliceVision project and is made available under
 // the terms of the MPL2 license (see the COPYING.md file).
 
-#ifndef OPENMVG_MULTIVIEW_SOLVER_ESSENTIAL_FIVE_POINT_H_
-#define OPENMVG_MULTIVIEW_SOLVER_ESSENTIAL_FIVE_POINT_H_
+#ifndef ALICEVISION_MULTIVIEW_SOLVER_ESSENTIAL_FIVE_POINT_H_
+#define ALICEVISION_MULTIVIEW_SOLVER_ESSENTIAL_FIVE_POINT_H_
 
 #include "aliceVision/numeric/numeric.h"
 #include <vector>
@@ -69,5 +69,5 @@ enum {
 
 } // namespace aliceVision
 
-#endif  // OPENMVG_MULTIVIEW_SOLVER_ESSENTIAL_FIVE_POINT_H_
+#endif  // ALICEVISION_MULTIVIEW_SOLVER_ESSENTIAL_FIVE_POINT_H_
 

@@ -228,7 +228,7 @@ TEST(ImageHeader, AllFormats) {
     std::ostringstream os;
     os << "img" << "." << ext_Type[i];
     const std::string filename = os.str();
-    OPENMVG_LOG_DEBUG("Testing:" << filename);
+    ALICEVISION_LOG_DEBUG("Testing:" << filename);
 
     // Test for gray images
     {

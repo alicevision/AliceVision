@@ -177,7 +177,7 @@ TEST(P3P_Ransac, noisyFromImagePoints)
 
   for(std::size_t trial = 0; trial < NUMTRIALS; ++trial)
   {
-    OPENMVG_LOG_DEBUG("Trial #" << trial);
+    ALICEVISION_LOG_DEBUG("Trial #" << trial);
     typedef aliceVision::euclidean_resection::P3PSolver SolverType;
     typedef aliceVision::resection::kernel::SixPointResectionSolver SolverLSType;
   
@@ -209,19 +209,19 @@ TEST(P3P_Ransac, noisyFromImagePoints)
     Vec3 Test;
     KRt_From_P(Pest, &Kest, &Rest, &Test);
 
-    OPENMVG_LOG_DEBUG("Est: Pest:\n" << Pest
+    ALICEVISION_LOG_DEBUG("Est: Pest:\n" << Pest
             << "\nRest:\n" << Rest
             << "\nKest:\n" << Kest
             << "\ntest:\n" << Test);
     
-    OPENMVG_LOG_DEBUG("Solution found with " << numInliersFound << " inliers");
-    OPENMVG_LOG_DEBUG("Expected number of inliers " << numInliersExpected);
+    ALICEVISION_LOG_DEBUG("Solution found with " << numInliersFound << " inliers");
+    ALICEVISION_LOG_DEBUG("Expected number of inliers " << numInliersExpected);
 
     CHECK_EQUAL(numInliersFound, numInliersExpected);
     
     const double angError = R2D(getRotationMagnitude(Rgt * Rest.transpose()));
-    OPENMVG_LOG_DEBUG("Angular error: " << angError);
-    OPENMVG_LOG_DEBUG("Baseline error: " << (Test - Tgt).squaredNorm());
+    ALICEVISION_LOG_DEBUG("Angular error: " << angError);
+    ALICEVISION_LOG_DEBUG("Baseline error: " << (Test - Tgt).squaredNorm());
 
     geometry::Pose3 pose = geometry::poseFromRT(Rest, Test);
     refinePoseAsItShouldbe(pts3D,
@@ -234,13 +234,13 @@ TEST(P3P_Ransac, noisyFromImagePoints)
 
     const double angErrorRef = R2D(getRotationMagnitude(Rgt * pose.rotation().transpose()));
     const double baselineErrorRef = (Tgt - pose.translation()).squaredNorm();
-    OPENMVG_LOG_DEBUG("Final angular error #"<<trial<<" : " << angErrorRef);
-    OPENMVG_LOG_DEBUG("Final baseline error #"<<trial<<" : " << baselineErrorRef);
+    ALICEVISION_LOG_DEBUG("Final angular error #"<<trial<<" : " << angErrorRef);
+    ALICEVISION_LOG_DEBUG("Final baseline error #"<<trial<<" : " << baselineErrorRef);
     
     EXPECT_NEAR(angErrorRef, 0.0, maxAngularError);
     EXPECT_NEAR(baselineErrorRef, 0.0, maxBaselineError);
 
-    OPENMVG_LOG_DEBUG("Refined pose:\n"
+    ALICEVISION_LOG_DEBUG("Refined pose:\n"
                 << "\nEst: Rest:\n" << pose.rotation()
                 << "\nCest:\n" << pose.center()
                 << "\nTest:\n" << pose.translation());
@@ -255,7 +255,7 @@ TEST(P3P_Ransac, noisyFromImagePoints)
                                       inters.begin());
       inters.resize(it-inters.begin());
       if(inters.size() > 0)
-        OPENMVG_LOG_WARNING("******* there are " << inters.size() << " outliers considered as inliers");
+        ALICEVISION_LOG_WARNING("******* there are " << inters.size() << " outliers considered as inliers");
       CHECK_EQUAL(inters.size(), 0);
     }
   }

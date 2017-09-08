@@ -214,8 +214,8 @@ void ImageCollectionMatcher_CascadeHashing::Match
   PairwiseMatches & map_PutativesMatches // the pairwise photometric corresponding points
 ) const
 {
-#if OPENMVG_IS_DEFINED(OPENMVG_HAVE_OPENMP)
-  OPENMVG_LOG_DEBUG("Using the OPENMP thread interface");
+#if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_OPENMP)
+  ALICEVISION_LOG_DEBUG("Using the OPENMP thread interface");
 #endif
 
   if (regionsPerView.isEmpty())
@@ -249,7 +249,7 @@ void ImageCollectionMatcher_CascadeHashing::Match
   }
   else
   {
-    OPENMVG_LOG_WARNING("Matcher not implemented for this region type");
+    ALICEVISION_LOG_WARNING("Matcher not implemented for this region type");
   }
 }
 

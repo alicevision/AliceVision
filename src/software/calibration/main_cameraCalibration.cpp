@@ -69,7 +69,7 @@ int main(int argc, char** argv)
            "Output filename for intrinsic [and extrinsic] parameters.\n")
           ("pattern,p", po::value<aliceVision::calibration::Pattern>(&patternType)->default_value(patternType),
            "Type of pattern: 'CHESSBOARD', 'CIRCLES', 'ASYMMETRIC_CIRCLES'"
-            #if OPENMVG_IS_DEFINED(OPENMVG_HAVE_CCTAG)
+            #if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_CCTAG)
                       " or 'ASYMMETRIC_CCTAG'"
             #endif
           ".\n")
@@ -104,7 +104,7 @@ int main(int argc, char** argv)
 
     if (vm.count("help") || (argc == 1))
     {
-      OPENMVG_COUT(desc);
+      ALICEVISION_COUT(desc);
       return EXIT_SUCCESS;
     }
     
@@ -119,14 +119,14 @@ int main(int argc, char** argv)
   }
   catch (boost::program_options::required_option& e)
   {
-    OPENMVG_CERR("ERROR: " << e.what());
-    OPENMVG_CERR("Usage:\n\n" << desc);
+    ALICEVISION_CERR("ERROR: " << e.what());
+    ALICEVISION_CERR("Usage:\n\n" << desc);
     return EXIT_FAILURE;
   }
   catch (boost::program_options::error& e)
   {
-    OPENMVG_CERR("ERROR: " << e.what());
-    OPENMVG_CERR("Usage:\n\n" << desc);
+    ALICEVISION_CERR("ERROR: " << e.what());
+    ALICEVISION_CERR("Usage:\n\n" << desc);
     return EXIT_FAILURE;
   }
 
@@ -155,7 +155,7 @@ int main(int argc, char** argv)
   aliceVision::dataio::FeedProvider feed(inputPath.string());
   if (!feed.isInit())
   {
-    OPENMVG_CERR("ERROR while initializing the FeedProvider!");
+    ALICEVISION_CERR("ERROR while initializing the FeedProvider!");
     return EXIT_FAILURE;
   }
   aliceVision::image::Image<unsigned char> imageGrey;
@@ -175,7 +175,7 @@ int main(int argc, char** argv)
     step = feed.nbFrames() / (double) maxNbFrames;
     nbFramesToProcess = maxNbFrames;
   }
-  OPENMVG_COUT("Input video length is " << feed.nbFrames() << ".");
+  ALICEVISION_COUT("Input video length is " << feed.nbFrames() << ".");
 
   aliceVision::system::Timer durationAlgo;
   aliceVision::system::Timer duration;
@@ -205,7 +205,7 @@ int main(int argc, char** argv)
 
     std::vector<cv::Point2f> pointbuf;
     std::vector<int> detectedId;
-    OPENMVG_CERR("[" << currentFrame << "/" << nbFrames << "] (" << iInputFrame << "/" << nbFramesToProcess << ")");
+    ALICEVISION_CERR("[" << currentFrame << "/" << nbFrames << "] (" << iInputFrame << "/" << nbFramesToProcess << ")");
 
     // Find the chosen pattern in images
     const bool found = aliceVision::calibration::findPattern(patternType, viewGray, boardSize, detectedId, pointbuf);
@@ -223,8 +223,8 @@ int main(int argc, char** argv)
   }
 
   
-  OPENMVG_CERR("find points duration: " << aliceVision::system::prettyTime(duration.elapsedMs()));
-  OPENMVG_CERR("Grid detected in " << imagePoints.size() << " images on " << iInputFrame << " input images.");
+  ALICEVISION_CERR("find points duration: " << aliceVision::system::prettyTime(duration.elapsedMs()));
+  ALICEVISION_CERR("Grid detected in " << imagePoints.size() << " images on " << iInputFrame << " input images.");
 
   if (imagePoints.empty())
     throw std::logic_error("No checkerboard detected.");
@@ -277,7 +277,7 @@ int main(int argc, char** argv)
                         totalAvgErr, maxTotalAvgErr, minInputFrames, calibInputFrames,
                         calibImagePoints, calibObjectPoints, calibImageScore, rejectInputFrames);
 
-  OPENMVG_COUT("Calibration duration: " << aliceVision::system::prettyTime(duration.elapsedMs()));
+  ALICEVISION_COUT("Calibration duration: " << aliceVision::system::prettyTime(duration.elapsedMs()));
 
   aliceVision::calibration::saveCameraParams(outputFilename, imageSize,
                                          boardSize, squareSize, aspectRatio,
@@ -292,7 +292,7 @@ int main(int argc, char** argv)
                                     feed, calibInputFrames, rejectInputFrames, remainingImagesIndexes,
                                     cameraMatrix, distCoeffs, imageSize);
 
-  OPENMVG_COUT("Total duration: " << aliceVision::system::prettyTime(durationAlgo.elapsedMs()));
+  ALICEVISION_COUT("Total duration: " << aliceVision::system::prettyTime(durationAlgo.elapsedMs()));
 
   return EXIT_SUCCESS;
 }

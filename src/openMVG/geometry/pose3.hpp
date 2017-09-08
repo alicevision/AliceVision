@@ -1,8 +1,8 @@
 // This file is part of the AliceVision project and is made available under
 // the terms of the MPL2 license (see the COPYING.md file).
 
-#ifndef OPENMVG_GEOMETRY_POSE3_H_
-#define OPENMVG_GEOMETRY_POSE3_H_
+#ifndef ALICEVISION_GEOMETRY_POSE3_H_
+#define ALICEVISION_GEOMETRY_POSE3_H_
 
 #include "aliceVision/multiview/projection.hpp"
 #include <cereal/cereal.hpp> // Serialization
@@ -124,4 +124,4 @@ inline Pose3 poseFromRT(const Mat3& R, const Vec3& t)
 } // namespace geometry
 } // namespace aliceVision
 
-#endif  // OPENMVG_GEOMETRY_POSE3_H_
+#endif  // ALICEVISION_GEOMETRY_POSE3_H_

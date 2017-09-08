@@ -1,8 +1,8 @@
 // This file is part of the AliceVision project and is made available under
 // the terms of the MPL2 license (see the COPYING.md file).
 
-#ifndef OPENMVG_VOCABULARY_TREE_VOCABULARY_TREE_HPP
-#define OPENMVG_VOCABULARY_TREE_VOCABULARY_TREE_HPP
+#ifndef ALICEVISION_VOCABULARY_TREE_VOCABULARY_TREE_HPP
+#define ALICEVISION_VOCABULARY_TREE_VOCABULARY_TREE_HPP
 
 #include <aliceVision/config.hpp>
 #include "distance.hpp"
@@ -222,7 +222,7 @@ template<class Feature, template<typename, typename> class Distance, class Featu
 template<class DescriptorT>
 std::vector<Word> VocabularyTree<Feature, Distance, FeatureAllocator>::quantize(const std::vector<DescriptorT>& features) const
 {
-  // OPENMVG_LOG_DEBUG("VocabularyTree quantize: " << features.size());
+  // ALICEVISION_LOG_DEBUG("VocabularyTree quantize: " << features.size());
   std::vector<Word> imgVisualWords(features.size(), 0);
 
   // quantize the features
@@ -353,17 +353,17 @@ inline std::unique_ptr<IVocabularyTree> createVoctreeForDescriberType(features::
     case EImageDescriberType::AKAZE:      res.reset(new VocabularyTree<AKAZE_Float_Regions::DescriptorT>); break;
     case EImageDescriberType::AKAZE_MLDB: res.reset(new VocabularyTree<AKAZE_Binary_Regions::DescriptorT>); break;
 
-#if OPENMVG_IS_DEFINED(OPENMVG_HAVE_CCTAG)
+#if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_CCTAG)
     case EImageDescriberType::CCTAG3:
     case EImageDescriberType::CCTAG4:     res.reset(new VocabularyTree<CCTAG_Regions::DescriptorT>); break;
-#endif //OPENMVG_HAVE_CCTAG
+#endif //ALICEVISION_HAVE_CCTAG
 
-#if OPENMVG_IS_DEFINED(OPENMVG_HAVE_OPENCV)
-#if OPENMVG_IS_DEFINED(OPENMVG_HAVE_OCVSIFT)
+#if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_OPENCV)
+#if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_OCVSIFT)
   case EImageDescriberType::SIFT_OCV:     res.reset(new VocabularyTree<SIFT_Regions::DescriptorT>); break;
-#endif //OPENMVG_HAVE_OCVSIFT
+#endif //ALICEVISION_HAVE_OCVSIFT
   case EImageDescriberType::AKAZE_OCV:    res.reset(new VocabularyTree<AKAZE_Float_Regions::DescriptorT>); break;
-#endif //OPENMVG_HAVE_OPENCV
+#endif //ALICEVISION_HAVE_OPENCV
 
     default: throw std::out_of_range("Invalid imageDescriber enum");
   }
@@ -391,4 +391,4 @@ inline void load(std::unique_ptr<IVocabularyTree>& out_voctree, features::EImage
 }
 }
 
-#endif //OPENMVG_VOCABULARY_TREE_VOCABULARY_TREE_HPP
+#endif //ALICEVISION_VOCABULARY_TREE_VOCABULARY_TREE_HPP

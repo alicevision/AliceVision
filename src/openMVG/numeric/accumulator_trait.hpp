@@ -1,8 +1,8 @@
 // This file is part of the AliceVision project and is made available under
 // the terms of the MPL2 license (see the COPYING.md file).
 
-#ifndef _OPENMVG_NUMERIC_ACCUMULATOR_TRAIT_HPP_
-#define _OPENMVG_NUMERIC_ACCUMULATOR_TRAIT_HPP_
+#ifndef _ALICEVISION_NUMERIC_ACCUMULATOR_TRAIT_HPP_
+#define _ALICEVISION_NUMERIC_ACCUMULATOR_TRAIT_HPP_
 
 /// Accumulator trait to perform safe summation over a specified type
 namespace aliceVision {
@@ -26,4 +26,4 @@ struct Accumulator<bool>  { typedef unsigned int Type; };
 
 } // namespace aliceVision
 
-#endif //_OPENMVG_NUMERIC_ACCUMULATOR_TRAIT_HPP_
+#endif //_ALICEVISION_NUMERIC_ACCUMULATOR_TRAIT_HPP_

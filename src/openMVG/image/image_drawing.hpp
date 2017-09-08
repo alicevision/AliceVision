@@ -1,8 +1,8 @@
 // This file is part of the AliceVision project and is made available under
 // the terms of the MPL2 license (see the COPYING.md file).
 
-#ifndef OPENMVG_IMAGE_IMAGE_DRAWING_HPP
-#define OPENMVG_IMAGE_IMAGE_DRAWING_HPP
+#ifndef ALICEVISION_IMAGE_IMAGE_DRAWING_HPP
+#define ALICEVISION_IMAGE_IMAGE_DRAWING_HPP
 
 #include "aliceVision/image/image_container.hpp"
 
@@ -387,4 +387,4 @@ void DrawLineThickness(int xa, int ya, int xb, int yb, const Color& col, int thi
 } // namespace image
 } // namespace aliceVision
 
-#endif  // OPENMVG_IMAGE_IMAGE_DRAWING_HPP
+#endif  // ALICEVISION_IMAGE_IMAGE_DRAWING_HPP

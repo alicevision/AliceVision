@@ -4,7 +4,7 @@
 #include "aliceVision/multiview/rotation_averaging_l1.hpp"
 #include <aliceVision/system/Logger.hpp>
 
-#ifdef OPENMVG_ROTATION_AVERAGING_WITH_BOOST
+#ifdef ALICEVISION_ROTATION_AVERAGING_WITH_BOOST
 #include <boost/graph/adjacency_list.hpp>
 #include <boost/graph/kruskal_min_spanning_tree.hpp>
 #include <boost/graph/prim_minimum_spanning_tree.hpp>
@@ -249,12 +249,12 @@ inline bool TIterativelyReweightedLeastSquares(
     const MATRIX_TYPE AtF(A.transpose()*e.asDiagonal());
     const Eigen::LDLT<Matrix> solver(AtF*A); // compute the Cholesky decomposition
     if (solver.info() != Eigen::Success) {
-      OPENMVG_LOG_WARNING("error: decomposing linear system failed");
+      ALICEVISION_LOG_WARNING("error: decomposing linear system failed");
       return false;
     }
     x = solver.solve(AtF*b);
     if (solver.info() != Eigen::Success) {
-      OPENMVG_LOG_WARNING("error: solving linear system failed");
+      ALICEVISION_LOG_WARNING("error: solving linear system failed");
       return false;
     }
     if (++iter > 32)
@@ -326,7 +326,7 @@ struct Link {
 };
 typedef std::queue<Link> LinkQue;
 
-#ifdef OPENMVG_ROTATION_AVERAGING_WITH_BOOST
+#ifdef ALICEVISION_ROTATION_AVERAGING_WITH_BOOST
 typedef boost::property<boost::edge_weight_t, float> edge_property_t;
 typedef boost::adjacency_list<boost::vecS, boost::vecS, boost::undirectedS, size_t, edge_property_t> graph_t;
 typedef graph_t::vertex_descriptor vertex_t;
@@ -344,7 +344,7 @@ typedef std::map<std::pair<size_t,size_t>, Matrix3x3> MapEdgeIJ2R;
 size_t FindMaximumSpanningTree(const RelativeRotations& RelRs, graph_t& g, MapEdgeIJ2R& mapIJ2R, NodeArr& minGraph)
 {
   assert(!RelRs.empty());
-#ifdef OPENMVG_ROTATION_AVERAGING_WITH_BOOST
+#ifdef ALICEVISION_ROTATION_AVERAGING_WITH_BOOST
   for (size_t p = 0; p < RelRs.size(); ++p) {
     const RelativeRotation& relR = RelRs[p];
     boost::add_edge(relR.i, relR.j, - relR.weight, g);
@@ -460,7 +460,7 @@ unsigned int FilterRelativeRotations(
 
 REAL RelRotationAvgError(const RelativeRotations& RelRs, const Matrix3x3Arr& Rs, REAL* pMin=nullptr, REAL* pMax=nullptr)
 {
-#ifdef OPENMVG_ROTATION_AVERAGING_WITH_BOOST
+#ifdef ALICEVISION_ROTATION_AVERAGING_WITH_BOOST
   boost::accumulators::accumulator_set<REAL,
     boost::accumulators::stats<
       boost::accumulators::tag::min,
@@ -662,7 +662,7 @@ bool RefineRotationsAvgL1IRLS(
     _FillErrorMatrix(RelRs, Rs, b);
     // solve the linear system using l1 norm
     if (!RobustRegressionL1PD(A, b, x)) {
-      OPENMVG_LOG_WARNING("error: l1 robust regression failed.");
+      ALICEVISION_LOG_WARNING("error: l1 robust regression failed.");
       return false;
     }
     ep = e; e = x.norm();
@@ -680,7 +680,7 @@ bool RefineRotationsAvgL1IRLS(
     _FillErrorMatrix(RelRs, Rs, b);
     // solve the linear system using l2 norm
     if (!IterativelyReweightedLeastSquares(A, b, x, sigma)) {
-      OPENMVG_LOG_WARNING("error: l2 iterative regression failed");
+      ALICEVISION_LOG_WARNING("error: l2 iterative regression failed");
       return false;
     }
     ep = e; e = x.norm();
@@ -692,7 +692,7 @@ bool RefineRotationsAvgL1IRLS(
 
   REAL fMinAfter, fMaxAfter, fMeanAfter = RelRotationAvgError(RelRs, Rs, &fMinAfter, &fMaxAfter);
 
-  OPENMVG_LOG_DEBUG("Refine global rotations using L1RA-IRLS and " << nObss << " relative rotations:\n"
+  ALICEVISION_LOG_DEBUG("Refine global rotations using L1RA-IRLS and " << nObss << " relative rotations:\n"
     << " error reduced from " << fMeanBefore << "(" <<fMinBefore << " min, " << fMaxBefore << " max)\n"
     << " to " << fMeanAfter << "(" << fMinAfter << "min,"<< fMaxAfter<< "max)\n"
     << " in " << iter1 << "+" << iter2 << "=" << iter1+iter2 << " iterations");

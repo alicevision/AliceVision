@@ -69,7 +69,7 @@ TEST(translation_averaging, globalTi_from_tijs_Triplets) {
   //--
   EXPECT_NEAR(0.0, gamma, 1e-6); // Gamma must be 0, no noise, perfect data have been sent
 
-  OPENMVG_LOG_DEBUG("Found solution with gamma = " << gamma);
+  ALICEVISION_LOG_DEBUG("Found solution with gamma = " << gamma);
 
   //-- Get back computed camera translations
   std::vector<double> vec_camTranslation(iNviews*3,0);
@@ -81,7 +81,7 @@ TEST(translation_averaging, globalTi_from_tijs_Triplets) {
   EXPECT_NEAR(vec_relative_estimates.size()/3, std::accumulate (vec_camRelLambdas.begin(), vec_camRelLambdas.end(), 0.0), 1e-6);
 
   // Get back the camera translations in the global frame:
-  OPENMVG_LOG_DEBUG(std::endl << "Camera centers (Computed): ");
+  ALICEVISION_LOG_DEBUG(std::endl << "Camera centers (Computed): ");
   for (size_t i = 0; i < iNviews; ++i)
   {
     const Vec3 C_GT = d._C[i] - d._C[0]; //First camera supposed to be at Identity

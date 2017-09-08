@@ -1,8 +1,8 @@
 // This file is part of the AliceVision project and is made available under
 // the terms of the MPL2 license (see the COPYING.md file).
 
-#ifndef OPENMVG_NUMERIC_LM_H_
-#define OPENMVG_NUMERIC_LM_H_
+#ifndef ALICEVISION_NUMERIC_LM_H_
+#define ALICEVISION_NUMERIC_LM_H_
 
 #include "aliceVision/numeric/numeric.h"
 // Levenberg Marquardt Non Linear Optimization
@@ -39,4 +39,4 @@ struct Functor
 
 }; // namespace aliceVision
 
-#endif // OPENMVG_NUMERIC_LM_H_
+#endif // ALICEVISION_NUMERIC_LM_H_

@@ -32,8 +32,8 @@ target_link_libraries(aliceVision_matching_image_collection
 )
 
 set_target_properties(aliceVision_matching_image_collection
-  PROPERTIES SOVERSION ${OPENMVG_VERSION_MAJOR}
-  VERSION "${OPENMVG_VERSION_MAJOR}.${OPENMVG_VERSION_MINOR}"
+  PROPERTIES SOVERSION ${ALICEVISION_VERSION_MAJOR}
+  VERSION "${ALICEVISION_VERSION_MAJOR}.${ALICEVISION_VERSION_MINOR}"
 )
 
 set_property(TARGET aliceVision_matching_image_collection

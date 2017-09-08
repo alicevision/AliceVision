@@ -1,8 +1,8 @@
 // This file is part of the AliceVision project and is made available under
 // the terms of the MPL2 license (see the COPYING.md file).
 
-#ifndef OPENMVG_SFM_DATA_BA_HPP
-#define OPENMVG_SFM_DATA_BA_HPP
+#ifndef ALICEVISION_SFM_DATA_BA_HPP
+#define ALICEVISION_SFM_DATA_BA_HPP
 
 #include <aliceVision/stl/bitmask.hpp>
 
@@ -25,7 +25,7 @@ enum BA_Refine
   BA_REFINE_ALL = BA_REFINE_ROTATION | BA_REFINE_TRANSLATION | BA_REFINE_INTRINSICS_ALL | BA_REFINE_STRUCTURE,
 };
 
-OPENMVG_BITMASK(BA_Refine)
+ALICEVISION_BITMASK(BA_Refine)
 
 class Bundle_Adjustment
 {
@@ -47,4 +47,4 @@ class Bundle_Adjustment
 } // namespace sfm
 } // namespace aliceVision
 
-#endif // OPENMVG_SFM_DATA_BA_HPP
+#endif // ALICEVISION_SFM_DATA_BA_HPP

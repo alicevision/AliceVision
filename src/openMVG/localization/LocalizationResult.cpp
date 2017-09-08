@@ -128,7 +128,7 @@ std::size_t LocalizationResult::selectBestInliers(double maxReprojectionError)
 {
    const auto &residuals = computeReprojectionErrorPerPoint();
    auto &inliers = _matchData.vec_inliers;
-   OPENMVG_LOG_DEBUG("Inliers before: " << inliers.size());
+   ALICEVISION_LOG_DEBUG("Inliers before: " << inliers.size());
    inliers.clear();
    // at worst they could all be inliers
    inliers.reserve(getPt2D().size());
@@ -140,7 +140,7 @@ std::size_t LocalizationResult::selectBestInliers(double maxReprojectionError)
        inliers.push_back(i);
      }
    }
-   OPENMVG_LOG_DEBUG(" After: " << inliers.size());
+   ALICEVISION_LOG_DEBUG(" After: " << inliers.size());
    _matchData.error_max = maxReprojectionError;
    return inliers.size();
 }
@@ -157,7 +157,7 @@ bool load(LocalizationResult & res, const std::string & filename)
   std::ifstream stream(filename, std::ios::binary | std::ios::in);
   if(!stream.is_open())
   {
-    OPENMVG_LOG_WARNING("Unable to load file " << filename);
+    ALICEVISION_LOG_WARNING("Unable to load file " << filename);
     return false;
   }
   try
@@ -167,7 +167,7 @@ bool load(LocalizationResult & res, const std::string & filename)
   }
   catch (const cereal::Exception & e)
   {
-    OPENMVG_LOG_WARNING(e.what());
+    ALICEVISION_LOG_WARNING(e.what());
     return false;
   }
   return true;
@@ -180,7 +180,7 @@ bool load(std::vector<LocalizationResult> & res, const std::string & filename)
   std::ifstream stream(filename, std::ios::binary | std::ios::in);
   if(!stream.is_open())
   {
-    OPENMVG_LOG_WARNING("Unable to load file " << filename);
+    ALICEVISION_LOG_WARNING("Unable to load file " << filename);
     return false;
   }
   try
@@ -190,7 +190,7 @@ bool load(std::vector<LocalizationResult> & res, const std::string & filename)
   }
   catch (const cereal::Exception & e)
   {
-    OPENMVG_LOG_WARNING(e.what());
+    ALICEVISION_LOG_WARNING(e.what());
     return false;
   }
   return true;
@@ -203,7 +203,7 @@ bool save(const LocalizationResult & res, const std::string & filename)
   std::ofstream stream(filename, std::ios::binary | std::ios::out);
   if(!stream.is_open())
   {
-    OPENMVG_LOG_WARNING("Unable to create file " << filename);
+    ALICEVISION_LOG_WARNING("Unable to create file " << filename);
     return false;
   }
 
@@ -219,7 +219,7 @@ bool save(const std::vector<LocalizationResult> & res, const std::string & filen
   std::ofstream stream(filename, std::ios::binary | std::ios::out);
   if(!stream.is_open())
   {
-    OPENMVG_LOG_WARNING("Unable to create file " << filename);
+    ALICEVISION_LOG_WARNING("Unable to create file " << filename);
     return false;
   }
 

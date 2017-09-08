@@ -1,8 +1,8 @@
 // This file is part of the AliceVision project and is made available under
 // the terms of the MPL2 license (see the COPYING.md file).
 
-#ifndef OPENMVG_ROBUST_RANSAC_TOOLS_H_
-#define OPENMVG_ROBUST_RANSAC_TOOLS_H_
+#ifndef ALICEVISION_ROBUST_RANSAC_TOOLS_H_
+#define ALICEVISION_ROBUST_RANSAC_TOOLS_H_
 
 #include <cmath>
 
@@ -32,4 +32,4 @@ inline size_t IterationsRequired(
 
 } // namespace robust
 } // namespace aliceVision
-#endif // OPENMVG_ROBUST_RANSAC_TOOLS_H_
+#endif // ALICEVISION_ROBUST_RANSAC_TOOLS_H_

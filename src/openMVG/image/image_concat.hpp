@@ -1,8 +1,8 @@
 // This file is part of the AliceVision project and is made available under
 // the terms of the MPL2 license (see the COPYING.md file).
 
-#ifndef OPENMVG_IMAGE_IMAGE_CONCAT_H_
-#define OPENMVG_IMAGE_IMAGE_CONCAT_H_
+#ifndef ALICEVISION_IMAGE_IMAGE_CONCAT_H_
+#define ALICEVISION_IMAGE_IMAGE_CONCAT_H_
 
 #include "aliceVision/image/image_container.hpp"
 
@@ -46,4 +46,4 @@ void ConcatV(const Image & imageA, const Image & imageB, Image & Out)
 } // namespace image
 } // namespace aliceVision
 
-#endif // OPENMVG_IMAGE_IMAGE_CONCAT_H_
+#endif // ALICEVISION_IMAGE_IMAGE_CONCAT_H_

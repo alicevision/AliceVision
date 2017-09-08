@@ -1,8 +1,8 @@
 // This file is part of the AliceVision project and is made available under
 // the terms of the MPL2 license (see the COPYING.md file).
 
-#ifndef OPENMVG_STL_HASH_H
-#define OPENMVG_STL_HASH_H
+#ifndef ALICEVISION_STL_HASH_H
+#define ALICEVISION_STL_HASH_H
 
 #include <functional>
 
@@ -20,4 +20,4 @@ inline void hash_combine(std::size_t& seed, const T& v)
 
 } // namespace stl
 
-#endif  // OPENMVG_STL_HASH_H
+#endif  // ALICEVISION_STL_HASH_H

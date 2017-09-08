@@ -1,8 +1,8 @@
 // This file is part of the AliceVision project and is made available under
 // the terms of the MPL2 license (see the COPYING.md file).
 
-#ifndef OPENMVG_SFM_ROBUST_MODEL_ESTIMATION_HPP
-#define OPENMVG_SFM_ROBUST_MODEL_ESTIMATION_HPP
+#ifndef ALICEVISION_SFM_ROBUST_MODEL_ESTIMATION_HPP
+#define ALICEVISION_SFM_ROBUST_MODEL_ESTIMATION_HPP
 
 #include "aliceVision/numeric/numeric.h"
 #include "aliceVision/geometry/pose3.hpp"
@@ -72,4 +72,4 @@ bool robustRelativePose
 } // namespace sfm
 } // namespace aliceVision
 
-#endif // OPENMVG_SFM_ROBUST_MODEL_ESTIMATION_HPP
+#endif // ALICEVISION_SFM_ROBUST_MODEL_ESTIMATION_HPP

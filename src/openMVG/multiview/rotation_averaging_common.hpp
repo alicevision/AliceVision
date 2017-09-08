@@ -1,8 +1,8 @@
 // This file is part of the AliceVision project and is made available under
 // the terms of the MPL2 license (see the COPYING.md file).
 
-#ifndef OPENMVG_MULTIVIEW_ROTATION_AVERAGING_COMMON_H_
-#define OPENMVG_MULTIVIEW_ROTATION_AVERAGING_COMMON_H_
+#ifndef ALICEVISION_MULTIVIEW_ROTATION_AVERAGING_COMMON_H_
+#define ALICEVISION_MULTIVIEW_ROTATION_AVERAGING_COMMON_H_
 
 #include "aliceVision/numeric/numeric.h"
 #include "aliceVision/types.hpp"
@@ -47,5 +47,5 @@ static RelativeRotations_map getMap(const RelativeRotations & relRots)
 } // namespace rotation_averaging
 } // namespace aliceVision
 
-#endif //OPENMVG_MULTIVIEW_ROTATION_AVERAGING_COMMON_H_
+#endif //ALICEVISION_MULTIVIEW_ROTATION_AVERAGING_COMMON_H_
 

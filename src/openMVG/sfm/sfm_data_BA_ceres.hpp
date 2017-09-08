@@ -1,8 +1,8 @@
 // This file is part of the AliceVision project and is made available under
 // the terms of the MPL2 license (see the COPYING.md file).
 
-#ifndef OPENMVG_SFM_DATA_BA_CERES_HPP
-#define OPENMVG_SFM_DATA_BA_CERES_HPP
+#ifndef ALICEVISION_SFM_DATA_BA_CERES_HPP
+#define ALICEVISION_SFM_DATA_BA_CERES_HPP
 
 #include "aliceVision/sfm/sfm_data.hpp"
 #include "aliceVision/sfm/sfm_data_BA.hpp"
@@ -50,4 +50,4 @@ class Bundle_Adjustment_Ceres : public Bundle_Adjustment
 } // namespace sfm
 } // namespace aliceVision
 
-#endif // OPENMVG_SFM_DATA_BA_CERES_HPP
+#endif // ALICEVISION_SFM_DATA_BA_CERES_HPP

@@ -1,8 +1,8 @@
 // This file is part of the AliceVision project and is made available under
 // the terms of the MPL2 license (see the COPYING.md file).
 
-#ifndef OPENMVG_FEATURES_AKAZE_H
-#define OPENMVG_FEATURES_AKAZE_H
+#ifndef ALICEVISION_FEATURES_AKAZE_H
+#define ALICEVISION_FEATURES_AKAZE_H
 
 #ifdef _MSC_VER
 #pragma warning(once:4244)
@@ -152,4 +152,4 @@ public:
 } // namespace features
 } // namespace aliceVision
 
-#endif //OPENMVG_FEATURES_AKAZE_H
+#endif //ALICEVISION_FEATURES_AKAZE_H

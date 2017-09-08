@@ -1,8 +1,8 @@
 // This file is part of the AliceVision project and is made available under
 // the terms of the MPL2 license (see the COPYING.md file).
 
-#ifndef OPENMVG_SFM_REPORT_HPP
-#define OPENMVG_SFM_REPORT_HPP
+#ifndef ALICEVISION_SFM_REPORT_HPP
+#define ALICEVISION_SFM_REPORT_HPP
 
 #include "third_party/stlplus3/filesystemSimplified/file_system.hpp"
 #include "third_party/htmlDoc/htmlDoc.hpp"
@@ -175,4 +175,4 @@ static bool Generate_SfM_Report
 } // namespace sfm
 } // namespace aliceVision
 
-#endif // OPENMVG_SFM_REPORT_HPP
+#endif // ALICEVISION_SFM_REPORT_HPP

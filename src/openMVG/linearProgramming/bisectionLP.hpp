@@ -1,8 +1,8 @@
 // This file is part of the AliceVision project and is made available under
 // the terms of the MPL2 license (see the COPYING.md file).
 
-#ifndef OPENMVG_LINEAR_PROGRAMMING_BISECTIONLP_H_
-#define OPENMVG_LINEAR_PROGRAMMING_BISECTIONLP_H_
+#ifndef ALICEVISION_LINEAR_PROGRAMMING_BISECTIONLP_H_
+#define ALICEVISION_LINEAR_PROGRAMMING_BISECTIONLP_H_
 
 #include <aliceVision/system/Logger.hpp>
 #include <aliceVision/linearProgramming/linearProgrammingInterface.hpp>
@@ -58,7 +58,7 @@ bool BisectionLP(
       bModelFound = true;
 
       if(bVerbose)
-        OPENMVG_LOG_DEBUG(k << "/" << maxIteration
+        ALICEVISION_LOG_DEBUG(k << "/" << maxIteration
           << "\t gamma " << gamma
           << "\t gammaUp-gammaLow " << gammaUp-gammaLow);
     }
@@ -66,7 +66,7 @@ bool BisectionLP(
     {
       gammaLow = gamma;
       if(bVerbose)
-        OPENMVG_LOG_DEBUG("Not feasible with gamma: " << gamma);
+        ALICEVISION_LOG_DEBUG("Not feasible with gamma: " << gamma);
     }
   } while (k < maxIteration && gammaUp - gammaLow > eps);
 
@@ -77,4 +77,4 @@ bool BisectionLP(
 } // namespace aliceVision
 
 
-#endif // OPENMVG_LINEAR_PROGRAMMING_BISECTIONLP_H_
+#endif // ALICEVISION_LINEAR_PROGRAMMING_BISECTIONLP_H_

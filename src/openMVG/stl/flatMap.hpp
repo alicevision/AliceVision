@@ -5,7 +5,7 @@
 
 #include <aliceVision/config.hpp>
 
-#if OPENMVG_IS_DEFINED(OPENMVG_HAVE_BOOST)
+#if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_BOOST)
 #include <boost/container/flat_map.hpp>
 #include <cereal/types/map.hpp>
 
@@ -30,7 +30,7 @@ namespace cereal
 
 namespace stl
 {
-#if OPENMVG_IS_DEFINED(OPENMVG_HAVE_BOOST)
+#if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_BOOST)
   template <class Key
          ,class T
          ,class Compare = std::less<Key>
