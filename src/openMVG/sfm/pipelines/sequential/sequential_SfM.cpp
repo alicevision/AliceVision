@@ -171,6 +171,11 @@ void SequentialSfMReconstructionEngine::RobustResectionOfImages(
   size_t resectionGroupIndex = 0;
   std::set<size_t> set_remainingViewId(viewIds);
   std::vector<size_t> vec_possible_resection_indexes;
+  
+  // Used by Local BA 
+  lemon::ListGraph graph_poses; 
+  std::map<IndexT, lemon::ListGraph::Node> map_viewId_node;
+  
   while (FindNextImagesGroupForResection(vec_possible_resection_indexes, set_remainingViewId))
   {
     auto chrono_start = std::chrono::steady_clock::now();
@@ -222,10 +227,14 @@ void SequentialSfMReconstructionEngine::RobustResectionOfImages(
         auto chrono2_start = std::chrono::steady_clock::now();
         
         //        BundleAdjustment();
-        std::map<IndexT, int> mapPoseIdDistance;
+        std::map<IndexT, int> map_poseId_distance;
         std::cout << "in : RobustResectionOfImages" << std::endl;
         std::cout << "set_newReconstructedViewId.size() = " << set_newReconstructedViewId.size() << std::endl;
-        localBundleAdjustment(set_newReconstructedViewId, mapPoseIdDistance);
+        localBundleAdjustment(
+          set_newReconstructedViewId, 
+          graph_poses, 
+          map_viewId_node, 
+          map_poseId_distance);
         
         
         OPENMVG_LOG_DEBUG("Resection group index: " << resectionGroupIndex << ", bundle iteration: " << bundleAdjustmentIteration
@@ -346,8 +355,8 @@ void SequentialSfMReconstructionEngine::RobustResectionOfImages(
           {
             removed_viewNames.push_back(view.second->s_Img_path);
             removed_viewIntrinsicId.push_back(view.second->id_intrinsic);
-            if (mapPoseIdDistance.size() != 0)
-              removed_poseDistance.push_back(mapPoseIdDistance[view.second->id_pose]);
+            if (map_poseId_distance.size() != 0)
+              removed_poseDistance.push_back(map_poseId_distance[view.second->id_pose]);
             else
               removed_poseDistance.push_back(-1);
             
@@ -1665,7 +1674,9 @@ bool SequentialSfMReconstructionEngine::BundleAdjustment()
 
 /// Local Bundle Adjustment to refine only the parameters close to the newly resected views.
 bool SequentialSfMReconstructionEngine::localBundleAdjustment(
-  const std::set<IndexT>& newReconstructedViewIds, 
+  const std::set<IndexT>& newReconstructedViewIds,
+  lemon::ListGraph& graph_poses,
+  std::map<IndexT, lemon::ListGraph::Node>& map_viewId_node, 
   std::map<IndexT, int>& mapPoseIdDistance)
 {
   Local_Bundle_Adjustment_Ceres::LocalBA_options options;
@@ -1687,7 +1698,22 @@ bool SequentialSfMReconstructionEngine::localBundleAdjustment(
     // Compute the 'connexity-distance' for each poses according to the newly added views :
     std::cout << "in: localBundleAdjustment" << std::endl;
     std::cout << "newReconstructedViewIds.size() = "  << newReconstructedViewIds.size() << std::endl;
-    localBA_obj.computeDistancesMaps(_sfm_data, newReconstructedViewIds, _map_tracksPerView, mapPoseIdDistance);
+    
+    // Update the 'reconstructionGraph' using the recently added cameras
+    localBA_obj.updateGraph(
+      _sfm_data, 
+      _map_tracksPerView, 
+      newReconstructedViewIds, 
+      map_viewId_node, 
+      graph_poses);
+    
+    //
+    localBA_obj.computeDistancesMaps(
+      graph_poses, 
+      map_viewId_node, 
+      _sfm_data, 
+      newReconstructedViewIds, 
+      mapPoseIdDistance);
     
         
     // Determermine which parameter (poses, intrinsics & landmarks) is going to be refined, 

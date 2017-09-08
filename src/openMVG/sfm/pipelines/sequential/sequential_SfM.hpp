@@ -171,13 +171,17 @@ private:
   bool BundleAdjustment();  
   
   /// Bundle adjustment to refine a few Structure, Motion and Intrinsics parameter
-  bool localBundleAdjustment(const std::set<IndexT> &newReconstructedViewIds, std::map<IndexT, int> &mapViewIdDistance);
+  bool localBundleAdjustment(
+    const std::set<IndexT>& newReconstructedViewIds, 
+    lemon::ListGraph& graph_poses, 
+    std::map<IndexT, lemon::ListGraph::Node>& map_viewId_node, 
+    std::map<IndexT, int>& mapViewIdDistance);
 
   /// Discard track with too large residual error
   size_t badTrackRejector(double dPrecision, size_t count = 0);
 
   /// Add the new views 'newViewIds' to the graph 'reconstructionGraph' used to the distances computation 
-//  void updateDistancesGraph(const std::set<IndexT>& newViewIds);
+//  void updateGraph(const std::set<IndexT>& newViewIds);
 
   /**
    * @brief Compute the distance/connexity to the new cameras for each resected cameras. 

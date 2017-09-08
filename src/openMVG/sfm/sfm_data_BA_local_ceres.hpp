@@ -9,6 +9,7 @@
 
 #include "openMVG/sfm/sfm_data_BA_ceres.hpp"
 #include "openMVG/tracks/tracks.hpp"
+#include "lemon/bfs.h"
 
 namespace openMVG {
 namespace sfm {
@@ -46,11 +47,23 @@ public:
    */
   bool Adjust(SfM_Data & sfm_data);
 
+  
+  /// @brief Complete the graph '_reconstructionGraph' with new poses
+  void updateGraph(
+    const SfM_Data& sfm_data, 
+    const tracks::TracksPerView& map_tracksPerView,
+    const std::set<IndexT>& newViewIds, 
+    std::map<IndexT, lemon::ListGraph::Node>& map_viewId_node, 
+    lemon::ListGraph& graph_poses);
+    
   /// \brief Add the newly resected views 'newViewsIds' into a graph (nodes: cameras, egdes: matching)
   /// and compute the intragraph-distance between these new cameras and all the others.
-  void computeDistancesMaps(const SfM_Data& sfm_data, 
-    const std::set<IndexT>& newViewIds,
-    const openMVG::tracks::TracksPerView& map_tracksPerView, std::map<IndexT, int> &outMapPoseIdDistance);
+  void computeDistancesMaps(
+    const lemon::ListGraph &graph_poses, 
+    const std::map<IndexT, lemon::ListGraph::Node> &map_viewId_node, 
+    const SfM_Data& sfm_data, 
+    const std::set<IndexT>& newViewIds, 
+    std::map<IndexT, int> &outMapPoseIdDistance);
 
   /// \brief  A 'LocalBAStrategy' defined the state (refined, constant or ignored) of each parameter 
   /// of the reconstruction (landmarks, poses & intrinsics) in the BA solver according to the 
@@ -84,9 +97,9 @@ private:
   LocalBA_stats _LBA_statistics;
   
   // Used to generated & handle the distance graph
-  lemon::ListGraph _reconstructionGraph;
-  lemon::ListGraph::NodeMap<IndexT> _map_node_viewId; // <node, viewId>
-  std::map<IndexT, lemon::ListGraph::Node> _map_viewId_node; // <viewId, node>
+//  lemon::ListGraph _reconstructionGraph;
+//  lemon::ListGraph::NodeMap<IndexT> _map_node_viewId; // <node, viewId>
+//  std::map<IndexT, lemon::ListGraph::Node> _map_viewId_node; // <viewId, node>
   
   // Store the graph-distances to the new poses/views. 
   // If the view/pose is not connected to the new poses/views, its distance is -1.
@@ -109,11 +122,7 @@ private:
   LocalBAState getPoseState(const IndexT poseId)            {return _map_poseId_LBAState.find(poseId)->second;}
   LocalBAState getIntrinsicsState(const IndexT intrinsicId) {return _map_intrinsicId_LBAState.find(intrinsicId)->second;}
   LocalBAState getLandmarkState(const IndexT landmarkId)    {return _map_landmarkId_LBAState.find(landmarkId)->second;}
-  
-  // Complete the graph '_reconstructionGraph' with new views
-  void updateDistancesGraph(const SfM_Data& sfm_data, 
-    const tracks::TracksPerView& map_tracksPerView,
-    const std::set<IndexT>& newViewIds);
+
 
   void setSolverOptions(ceres::Solver::Options& solver_options);
 
