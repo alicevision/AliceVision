@@ -339,9 +339,9 @@ install(TARGETS aliceVision_main_ExportUndistortedImages
 
 # - Export a SfM aliceVision scene to PMVS format
 #
-add_executable(aliceVision_main_aliceVision2PMVS main_aliceVision2PMVS.cpp)
+add_executable(aliceVision_main_exportPMVS main_exportPMVS.cpp)
 
-target_link_libraries(aliceVision_main_aliceVision2PMVS
+target_link_libraries(aliceVision_main_exportPMVS
   aliceVision_system
   aliceVision_image
   aliceVision_features
@@ -351,9 +351,9 @@ target_link_libraries(aliceVision_main_aliceVision2PMVS
 
 # - Export a SfM aliceVision scene to CMPMVS format
 #
-add_executable(aliceVision_main_aliceVision2CMPMVS main_aliceVision2CMPMVS.cpp)
+add_executable(aliceVision_main_exportCMPMVS main_exportCMPMVS.cpp)
 
-target_link_libraries(aliceVision_main_aliceVision2CMPMVS
+target_link_libraries(aliceVision_main_exportCMPMVS
   aliceVision_system
   aliceVision_image
   aliceVision_features
@@ -363,9 +363,9 @@ target_link_libraries(aliceVision_main_aliceVision2CMPMVS
 
 # - Export a SfM aliceVision scene to CMPMVS format
 #
-add_executable(aliceVision_main_aliceVision2CMPMVS2 main_aliceVision2CMPMVS2.cpp)
+add_executable(aliceVision_main_exportCMPMVS2 main_exportCMPMVS2.cpp)
 
-target_link_libraries(aliceVision_main_aliceVision2CMPMVS2
+target_link_libraries(aliceVision_main_exportCMPMVS2
   aliceVision_system
   aliceVision_image
   aliceVision_features
@@ -376,9 +376,9 @@ target_link_libraries(aliceVision_main_aliceVision2CMPMVS2
 
 # - Export a SfM aliceVision scene to MVE(v2) format
 #
-add_executable(aliceVision_main_aliceVision2MVE2 main_aliceVision2MVE2.cpp)
+add_executable(aliceVision_main_exportMVE2 main_exportMVE2.cpp)
 
-target_link_libraries(aliceVision_main_aliceVision2MVE2
+target_link_libraries(aliceVision_main_exportMVE2
   aliceVision_system
   aliceVision_image
   aliceVision_features
@@ -388,9 +388,9 @@ target_link_libraries(aliceVision_main_aliceVision2MVE2
 
 # - Export a SfM aliceVision scene to meshlab scene with rasters
 # -
-add_executable(aliceVision_main_aliceVision2MESHLAB main_aliceVision2MESHLAB.cpp)
+add_executable(aliceVision_main_exportMeshlab main_exportMeshlab.cpp)
 
-target_link_libraries(aliceVision_main_aliceVision2MESHLAB
+target_link_libraries(aliceVision_main_exportMeshlab
   aliceVision_system
   aliceVision_image
   aliceVision_features
@@ -400,9 +400,9 @@ target_link_libraries(aliceVision_main_aliceVision2MESHLAB
 
 # - Export a SfM aliceVision scene to mvs-texturing scene folder
 # -
-add_executable(aliceVision_main_aliceVision2MVSTEXTURING main_aliceVision2MVSTEXTURING.cpp)
+add_executable(aliceVision_main_exportMVSTexturing main_exportMVSTexturing.cpp)
 
-target_link_libraries(aliceVision_main_aliceVision2MVSTEXTURING
+target_link_libraries(aliceVision_main_exportMVSTexturing
   aliceVision_system
   aliceVision_image
   aliceVision_features
@@ -412,14 +412,14 @@ target_link_libraries(aliceVision_main_aliceVision2MVSTEXTURING
 
 # - Export a SfM aliceVision scene to Matlab
 #
-add_executable(aliceVision_main_aliceVision2Matlab main_aliceVision2Matlab.cpp)
-target_link_libraries(aliceVision_main_aliceVision2Matlab
+add_executable(aliceVision_main_exportMatlab main_exportMatlab.cpp)
+target_link_libraries(aliceVision_main_exportMatlab
   aliceVision_system
   aliceVision_image
   aliceVision_features
   aliceVision_sfm
   stlplus
-  )
+)
 
 
 # - Export SfM aliceVision camera scene as triangle meshes
@@ -434,58 +434,58 @@ target_link_libraries(aliceVision_main_ExportCameraFrustums
 )
 
 # installation rules
-set_property(TARGET aliceVision_main_aliceVision2PMVS
+set_property(TARGET aliceVision_main_exportPMVS
   PROPERTY FOLDER AliceVision/software
 )
 
-install(TARGETS aliceVision_main_aliceVision2PMVS
+install(TARGETS aliceVision_main_exportPMVS
   DESTINATION bin/
 )
 
-set_property(TARGET aliceVision_main_aliceVision2CMPMVS
+set_property(TARGET aliceVision_main_exportCMPMVS
   PROPERTY FOLDER AliceVision/software
 )
 
-install(TARGETS aliceVision_main_aliceVision2CMPMVS
+install(TARGETS aliceVision_main_exportCMPMVS
   DESTINATION bin/
 )
 
-set_property(TARGET aliceVision_main_aliceVision2CMPMVS2
+set_property(TARGET aliceVision_main_exportCMPMVS2
   PROPERTY FOLDER AliceVision/software
 )
 
-install(TARGETS aliceVision_main_aliceVision2CMPMVS2
+install(TARGETS aliceVision_main_exportCMPMVS2
   DESTINATION bin/
 )
 
-set_property(TARGET aliceVision_main_aliceVision2MESHLAB
+set_property(TARGET aliceVision_main_exportMeshlab
   PROPERTY FOLDER AliceVision/software
 )
 
-install(TARGETS aliceVision_main_aliceVision2MESHLAB
+install(TARGETS aliceVision_main_exportMeshlab
   DESTINATION bin/
 )
 
-set_property(TARGET aliceVision_main_aliceVision2MVSTEXTURING
+set_property(TARGET aliceVision_main_exportMVSTexturing
   PROPERTY FOLDER AliceVision/software
 )
 
-install(TARGETS aliceVision_main_aliceVision2MVSTEXTURING
+install(TARGETS aliceVision_main_exportMVSTexturing
   DESTINATION bin/
 )
 
-set_property(TARGET aliceVision_main_aliceVision2Matlab
+set_property(TARGET aliceVision_main_exportMatlab
   PROPERTY FOLDER AliceVision/software
 )
 
-install(TARGETS aliceVision_main_aliceVision2Matlab
+install(TARGETS aliceVision_main_exportMatlab
   DESTINATION bin/)
 
-set_property(TARGET aliceVision_main_aliceVision2MVE2
+set_property(TARGET aliceVision_main_exportMVE2
   PROPERTY FOLDER AliceVision/software
 )
 
-install(TARGETS aliceVision_main_aliceVision2MVE2
+install(TARGETS aliceVision_main_exportMVE2
   DESTINATION bin/
 )
 
