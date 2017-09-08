@@ -11,7 +11,7 @@ set_target_properties(openMVG_numeric
 )
 
 set_property(TARGET openMVG_numeric
-  PROPERTY FOLDER OpenMVG/OpenMVG
+  PROPERTY FOLDER AliceVision/AliceVision
 )
 
 install(TARGETS openMVG_numeric

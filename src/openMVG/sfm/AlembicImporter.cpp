@@ -303,7 +303,7 @@ bool readCamera(const ICamera& camera, const M44d& mat, sfm::SfM_Data &sfmData, 
     }
   }
 
-  // OpenMVG Camera
+  // AliceVision Camera
   Mat3 camR;
   camR(0,0) = mat[0][0];
   camR(0,1) = mat[0][1];

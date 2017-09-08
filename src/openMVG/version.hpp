@@ -12,7 +12,7 @@
 #define OPENMVG_TO_STRING_HELPER(x) #x
 #define OPENMVG_TO_STRING(x) OPENMVG_TO_STRING_HELPER(x)
 
-// OpenMVG version as a string; for example "0.9.0".
+// AliceVision version as a string; for example "0.9.0".
 #define OPENMVG_VERSION_STRING OPENMVG_TO_STRING(OPENMVG_VERSION_MAJOR) "." \
                              OPENMVG_TO_STRING(OPENMVG_VERSION_MINOR) "." \
                              OPENMVG_TO_STRING(OPENMVG_VERSION_REVISION)

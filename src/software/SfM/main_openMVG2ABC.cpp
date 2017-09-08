@@ -6,7 +6,7 @@
 // Command line
 #include "third_party/cmdLine/cmdLine.h"
 
-// OpenMVG
+// AliceVision
 #include "openMVG/sfm/sfm.hpp"
 #include "openMVG/numeric/numeric.h"
 #include "openMVG/geometry/pose3.hpp"
@@ -84,7 +84,7 @@ int main(int argc, char **argv) {
         if (!sfm_data.IsPoseAndIntrinsicDefined(view))
           continue;
 
-        // OpenMVG Camera
+        // AliceVision Camera
         const openMVG::geometry::Pose3 pose = sfm_data.getPose(*view);
         auto iterIntrinsic = sfm_data.GetIntrinsics().find(view->getIntrinsicId());
         openMVG::cameras::Pinhole_Intrinsic *cam = static_cast<openMVG::cameras::Pinhole_Intrinsic*>(iterIntrinsic->second.get());

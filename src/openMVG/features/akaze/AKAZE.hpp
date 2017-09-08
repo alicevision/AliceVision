@@ -17,7 +17,7 @@
 //- Conference : BMVC.
 //------
 // Notes:
-// This implementation is done for OpenMVG:
+// This implementation is done for AliceVision:
 //  - code look the same but less memory are allocated,
 //  - only Perona and Malik G2 diffusion (PM_G2) is implemented.
 //------

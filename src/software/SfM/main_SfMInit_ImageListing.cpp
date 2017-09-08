@@ -534,7 +534,7 @@ private:
 };
 
 /**
- * @brief Create the description of an input image dataset for OpenMVG toolsuite
+ * @brief Create the description of an input image dataset for AliceVision toolsuite
  * - Export a SfM_Data file with View & Intrinsic data
  */
 int main(int argc, char **argv)

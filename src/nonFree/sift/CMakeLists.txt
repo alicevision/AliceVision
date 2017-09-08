@@ -30,7 +30,7 @@ install(TARGETS vlsift
 )
 
 set_property(TARGET vlsift
-  PROPERTY FOLDER OpenMVG/nonFree
+  PROPERTY FOLDER AliceVision/nonFree
 )
 
 install(

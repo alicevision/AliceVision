@@ -1,7 +1,7 @@
 #!/usr/bin/python
 #! -*- encoding: utf-8 -*-
 
-# Python script to launch OpenMVG SfM tools on an image dataset
+# Python script to launch AliceVision SfM tools on an image dataset
 #
 # usage : python tutorial_demo.py
 #
@@ -22,7 +22,7 @@ def get_parent_dir(directory):
     return os.path.dirname(directory)
 
 input_eval_dir = os.path.dirname(os.path.abspath(__file__)) + "/ImageDataset_SceauxCastle"
-# Checkout an OpenMVG image dataset with Git
+# Checkout an AliceVision image dataset with Git
 if not os.path.exists(input_eval_dir):
   pImageDataCheckout = subprocess.Popen([ "git", "clone", "https://github.com/openMVG/ImageDataset_SceauxCastle.git" ])
   pImageDataCheckout.wait()

@@ -35,7 +35,7 @@ if(OPENMVG_HAVE_CCTAG)
 endif()
 
 set_property(TARGET openMVG_calibration
-  PROPERTY FOLDER OpenMVG
+  PROPERTY FOLDER AliceVision
 )
 
 install(TARGETS openMVG_calibration

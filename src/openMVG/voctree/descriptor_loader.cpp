@@ -90,7 +90,7 @@ void getListOfDescriptorFiles(const std::string &fileFullPath, std::map<IndexT, 
   boost::to_lower(ext);
 
   // two cases, either the input file is a text file with the relative paths or
-  // it is a JSON file from OpenMVG
+  // it is a JSON file from AliceVision
   // in the two cases we fill a vector with paths to the descriptors files
 
   if(ext == ".txt")

@@ -25,7 +25,7 @@ add_library(openMVG_voctree
 )
 
 set_property(TARGET openMVG_voctree
-  PROPERTY FOLDER OpenMVG/OpenMVG
+  PROPERTY FOLDER AliceVision/AliceVision
 )
 
 target_link_libraries(openMVG_voctree

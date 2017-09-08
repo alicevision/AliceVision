@@ -23,7 +23,7 @@ target_link_libraries(openMVG_main_ConvertList
 
 # Installation rules
 set_property(TARGET openMVG_main_SfMInit_ImageListing
-  PROPERTY FOLDER OpenMVG/software
+  PROPERTY FOLDER AliceVision/software
 )
 
 install(TARGETS openMVG_main_SfMInit_ImageListing
@@ -31,7 +31,7 @@ install(TARGETS openMVG_main_SfMInit_ImageListing
 )
 
 set_property(TARGET openMVG_main_ConvertList
-  PROPERTY FOLDER OpenMVG/software
+  PROPERTY FOLDER AliceVision/software
 )
 
 install(TARGETS openMVG_main_ConvertList
@@ -75,7 +75,7 @@ target_link_libraries(openMVG_main_ComputeMatches
 
 # Installation rules
 set_property(TARGET openMVG_main_ComputeFeatures
-  PROPERTY FOLDER OpenMVG/software
+  PROPERTY FOLDER AliceVision/software
 )
 
 install(TARGETS openMVG_main_ComputeFeatures
@@ -83,7 +83,7 @@ install(TARGETS openMVG_main_ComputeFeatures
 )
 
 set_property(TARGET openMVG_main_ComputeMatches
-  PROPERTY FOLDER OpenMVG/software
+  PROPERTY FOLDER AliceVision/software
 )
 
 install(TARGETS openMVG_main_ComputeMatches
@@ -182,7 +182,7 @@ endif()
 
 # Installation rules
 set_property(TARGET openMVG_main_IncrementalSfM
-  PROPERTY FOLDER OpenMVG/software
+  PROPERTY FOLDER AliceVision/software
 )
 
 install(TARGETS openMVG_main_IncrementalSfM
@@ -190,7 +190,7 @@ install(TARGETS openMVG_main_IncrementalSfM
 )
 
 set_property(TARGET openMVG_main_GlobalSfM
-  PROPERTY FOLDER OpenMVG/software
+  PROPERTY FOLDER AliceVision/software
 )
 
 install(TARGETS openMVG_main_GlobalSfM
@@ -198,7 +198,7 @@ install(TARGETS openMVG_main_GlobalSfM
 )
 
 set_property(TARGET openMVG_main_ConvertSfM_DataFormat
-  PROPERTY FOLDER OpenMVG/software
+  PROPERTY FOLDER AliceVision/software
 )
 
 install(TARGETS openMVG_main_ConvertSfM_DataFormat
@@ -206,7 +206,7 @@ install(TARGETS openMVG_main_ConvertSfM_DataFormat
 )
 
 set_property(TARGET openMVG_main_Align
-  PROPERTY FOLDER OpenMVG/software
+  PROPERTY FOLDER AliceVision/software
 )
 
 install(TARGETS openMVG_main_Align
@@ -214,7 +214,7 @@ install(TARGETS openMVG_main_Align
 )
 
 set_property(TARGET openMVG_main_FrustumFiltering
-  PROPERTY FOLDER OpenMVG/software
+  PROPERTY FOLDER AliceVision/software
 )
 
 install(TARGETS openMVG_main_FrustumFiltering
@@ -222,7 +222,7 @@ install(TARGETS openMVG_main_FrustumFiltering
 )
 
 set_property(TARGET openMVG_main_ComputeStructureFromKnownPoses
-  PROPERTY FOLDER OpenMVG/software
+  PROPERTY FOLDER AliceVision/software
 )
 
 install(TARGETS openMVG_main_ComputeStructureFromKnownPoses
@@ -230,7 +230,7 @@ install(TARGETS openMVG_main_ComputeStructureFromKnownPoses
 )
 
 set_property(TARGET openMVG_main_ComputeSfM_DataColor
-  PROPERTY FOLDER OpenMVG/software
+  PROPERTY FOLDER AliceVision/software
 )
 
 install(TARGETS openMVG_main_ComputeSfM_DataColor
@@ -239,7 +239,7 @@ install(TARGETS openMVG_main_ComputeSfM_DataColor
 
 if(OPENMVG_HAVE_ALEMBIC)
   set_property(TARGET openMVG_main_ConvertAnimatedCamera
-    PROPERTY FOLDER OpenMVG/software
+    PROPERTY FOLDER AliceVision/software
   )
   install(TARGETS openMVG_main_ConvertAnimatedCamera
     DESTINATION bin/
@@ -298,7 +298,7 @@ target_link_libraries(openMVG_main_ExportUndistortedImages
 
 # installation rules
 set_property(TARGET openMVG_main_exportKeypoints
-  PROPERTY FOLDER OpenMVG/software
+  PROPERTY FOLDER AliceVision/software
 )
 
 install(TARGETS openMVG_main_exportKeypoints
@@ -306,7 +306,7 @@ install(TARGETS openMVG_main_exportKeypoints
 )
 
 set_property(TARGET openMVG_main_exportMatches
-  PROPERTY FOLDER OpenMVG/software
+  PROPERTY FOLDER AliceVision/software
 )
 
 install(TARGETS openMVG_main_exportMatches
@@ -314,7 +314,7 @@ install(TARGETS openMVG_main_exportMatches
 )
 
 set_property(TARGET openMVG_main_exportTracks
-  PROPERTY FOLDER OpenMVG/software
+  PROPERTY FOLDER AliceVision/software
 )
 
 install(TARGETS openMVG_main_exportTracks
@@ -322,7 +322,7 @@ install(TARGETS openMVG_main_exportTracks
 )
 
 set_property(TARGET openMVG_main_ExportUndistortedImages
-  PROPERTY FOLDER OpenMVG/software
+  PROPERTY FOLDER AliceVision/software
 )
 
 install(TARGETS openMVG_main_ExportUndistortedImages
@@ -435,7 +435,7 @@ target_link_libraries(openMVG_main_ExportCameraFrustums
 
 # installation rules
 set_property(TARGET openMVG_main_openMVG2PMVS
-  PROPERTY FOLDER OpenMVG/software
+  PROPERTY FOLDER AliceVision/software
 )
 
 install(TARGETS openMVG_main_openMVG2PMVS
@@ -443,7 +443,7 @@ install(TARGETS openMVG_main_openMVG2PMVS
 )
 
 set_property(TARGET openMVG_main_openMVG2CMPMVS
-  PROPERTY FOLDER OpenMVG/software
+  PROPERTY FOLDER AliceVision/software
 )
 
 install(TARGETS openMVG_main_openMVG2CMPMVS
@@ -451,7 +451,7 @@ install(TARGETS openMVG_main_openMVG2CMPMVS
 )
 
 set_property(TARGET openMVG_main_openMVG2CMPMVS2
-  PROPERTY FOLDER OpenMVG/software
+  PROPERTY FOLDER AliceVision/software
 )
 
 install(TARGETS openMVG_main_openMVG2CMPMVS2
@@ -459,7 +459,7 @@ install(TARGETS openMVG_main_openMVG2CMPMVS2
 )
 
 set_property(TARGET openMVG_main_openMVG2MESHLAB
-  PROPERTY FOLDER OpenMVG/software
+  PROPERTY FOLDER AliceVision/software
 )
 
 install(TARGETS openMVG_main_openMVG2MESHLAB
@@ -467,7 +467,7 @@ install(TARGETS openMVG_main_openMVG2MESHLAB
 )
 
 set_property(TARGET openMVG_main_openMVG2MVSTEXTURING
-  PROPERTY FOLDER OpenMVG/software
+  PROPERTY FOLDER AliceVision/software
 )
 
 install(TARGETS openMVG_main_openMVG2MVSTEXTURING
@@ -475,14 +475,14 @@ install(TARGETS openMVG_main_openMVG2MVSTEXTURING
 )
 
 set_property(TARGET openMVG_main_openMVG2Matlab
-  PROPERTY FOLDER OpenMVG/software
+  PROPERTY FOLDER AliceVision/software
 )
 
 install(TARGETS openMVG_main_openMVG2Matlab
   DESTINATION bin/)
 
 set_property(TARGET openMVG_main_openMVG2MVE2
-  PROPERTY FOLDER OpenMVG/software
+  PROPERTY FOLDER AliceVision/software
 )
 
 install(TARGETS openMVG_main_openMVG2MVE2
@@ -490,7 +490,7 @@ install(TARGETS openMVG_main_openMVG2MVE2
 )
 
 set_property(TARGET openMVG_main_ExportCameraFrustums
-  PROPERTY FOLDER OpenMVG/software
+  PROPERTY FOLDER AliceVision/software
 )
 
 install(TARGETS openMVG_main_ExportCameraFrustums
@@ -513,7 +513,7 @@ target_link_libraries(openMVG_main_evalQuality
 
 #installation rules
 set_property(TARGET openMVG_main_evalQuality
-  PROPERTY FOLDER OpenMVG/software
+  PROPERTY FOLDER AliceVision/software
 )
 
 install(TARGETS openMVG_main_evalQuality
@@ -539,7 +539,7 @@ target_link_libraries(openMVG_main_keyframeSelection
 
 #installation rules
 set_property(TARGET openMVG_main_keyframeSelection
-  PROPERTY FOLDER OpenMVG/software
+  PROPERTY FOLDER AliceVision/software
 )
 
 install(TARGETS openMVG_main_keyframeSelection

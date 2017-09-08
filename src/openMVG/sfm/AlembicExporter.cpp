@@ -33,11 +33,11 @@ struct AlembicExporter::DataImpl
     // Add version as custom property
     auto userProps = _mvgRoot.getProperties();
     OUInt32ArrayProperty propAbcVersion(userProps, "mvg_ABC_version");
-    OUInt32ArrayProperty propOpenMVGVersion(userProps, "mvg_openMVG_version");
+    OUInt32ArrayProperty propAliceVisionVersion(userProps, "mvg_openMVG_version");
     const std::vector<::uint32_t> abcVersion = {1, 1};
     propAbcVersion.set(abcVersion);
     const std::vector<::uint32_t> openMVGVersion = {OPENMVG_VERSION_MAJOR, OPENMVG_VERSION_MINOR, OPENMVG_VERSION_REVISION};
-    propOpenMVGVersion.set(openMVGVersion);
+    propAliceVisionVersion.set(openMVGVersion);
   }
   
   Alembic::Abc::OArchive _archive;
@@ -70,7 +70,7 @@ void AlembicExporter::addPoints(const sfm::Landmarks &landmarks, bool withVisibi
   if(landmarks.empty())
     return;
 
-  // Fill vector with the values taken from OpenMVG 
+  // Fill vector with the values taken from AliceVision 
   std::vector<V3f> positions;
   std::vector<Imath::C3f> colors;
   std::vector<Alembic::Util::uint32_t> descTypes;
@@ -524,7 +524,7 @@ void AlembicExporter::add(const sfm::SfM_Data& sfmData, sfm::ESfM_Data flags_par
           continue;
         }
 
-        // OpenMVG single Camera
+        // AliceVision single Camera
         intrinsic = dynamic_cast<openMVG::cameras::Pinhole_Intrinsic*>(sfmData.GetIntrinsics().at(view->getIntrinsicId()).get());
         pose = sfmData.getPose(*view);
       }

@@ -43,7 +43,7 @@ target_link_libraries(openMVG_matching
 )
 
 set_property(TARGET openMVG_matching
-  PROPERTY FOLDER OpenMVG/OpenMVG
+  PROPERTY FOLDER AliceVision/AliceVision
 )
 
 install(TARGETS openMVG_matching

@@ -10,5 +10,5 @@ target_link_libraries(openMVG_sample_main_repeatability_dataset
   stlplus)
 
 set_property(TARGET openMVG_sample_main_repeatability_dataset
-  PROPERTY FOLDER OpenMVG/Samples
+  PROPERTY FOLDER AliceVision/Samples
 )

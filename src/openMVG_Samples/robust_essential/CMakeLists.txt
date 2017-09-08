@@ -13,5 +13,5 @@ target_link_libraries(openMVG_sample_robustEssential
 )
 
 set_property(TARGET openMVG_sample_robustEssential
-  PROPERTY FOLDER OpenMVG/Samples
+  PROPERTY FOLDER AliceVision/Samples
 )

@@ -25,7 +25,7 @@ set_target_properties(openMVG_rig
 )
 
 set_property(TARGET openMVG_rig
-  PROPERTY FOLDER OpenMVG
+  PROPERTY FOLDER AliceVision
 )
 
 install(TARGETS openMVG_rig

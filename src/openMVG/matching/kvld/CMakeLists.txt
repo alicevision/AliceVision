@@ -22,7 +22,7 @@ set_target_properties(openMVG_kvld
 )
 
 set_property(TARGET openMVG_kvld
-  PROPERTY FOLDER OpenMVG/OpenMVG
+  PROPERTY FOLDER AliceVision/AliceVision
 )
 
 install(TARGETS openMVG_kvld

@@ -36,7 +36,7 @@ create_thumbnail
  * - We do not save the original, instead we rely on the undistorted image from openMVG.
  * - We do not output thumbnails or EXIF blobs, as these appear only to be used only for the GUI UMVE.
  * - To avoid encoding loss, openMVG images should be written as .PNG if undistorted images are *not* computed.
- * - In OpenMVG, some views may have some missing poses; MVE does *not* require a contiguous camera index.
+ * - In AliceVision, some views may have some missing poses; MVE does *not* require a contiguous camera index.
  *
  *  For information on the target for this conversion, please see the MVE (v2) File format:
  *  https://github.com/simonfuhrmann/mve/wiki/MVE-File-Format
@@ -73,7 +73,7 @@ bool exportToMVE2Format(
     }
 
     // Prepare to write bundle file
-    // Get cameras and features from OpenMVG
+    // Get cameras and features from AliceVision
     size_t cameraCount = 0;
     for(const auto& view: sfm_data.GetViews())
         if(sfm_data.IsPoseAndIntrinsicDefined(view.second.get()))

@@ -7,7 +7,7 @@ TARGET_LINK_LIBRARIES(openMVG_sample_akaze
   openMVG_features
   stlplus
   ${OPENMVG_LIBRARY_DEPENDENCIES})
-SET_PROPERTY(TARGET openMVG_sample_akaze PROPERTY FOLDER OpenMVG/Samples)
+SET_PROPERTY(TARGET openMVG_sample_akaze PROPERTY FOLDER AliceVision/Samples)
 
 ADD_EXECUTABLE( openMVG_main_computeAKAZE main_computeAKAZE.cpp )
 TARGET_LINK_LIBRARIES( openMVG_main_computeAKAZE
@@ -16,5 +16,5 @@ TARGET_LINK_LIBRARIES( openMVG_main_computeAKAZE
   openMVG_system
   stlplus
   ${OPENMVG_LIBRARY_DEPENDENCIES})
-SET_PROPERTY(TARGET openMVG_main_computeAKAZE PROPERTY FOLDER OpenMVG/Samples)
+SET_PROPERTY(TARGET openMVG_main_computeAKAZE PROPERTY FOLDER AliceVision/Samples)
 

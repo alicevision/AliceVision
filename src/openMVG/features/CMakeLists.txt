@@ -104,7 +104,7 @@ install(TARGETS openMVG_features
 )
 
 set_property(TARGET openMVG_features
-  PROPERTY FOLDER OpenMVG/OpenMVG
+  PROPERTY FOLDER AliceVision/AliceVision
 )
 
 UNIT_TEST(openMVG features "openMVG_features")

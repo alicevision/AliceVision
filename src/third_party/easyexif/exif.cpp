@@ -435,7 +435,7 @@ int easyexif::EXIFInfo::parseFrom(const unsigned char *buf, unsigned len) {
   // or some other bytes are. If the first non-zero/0xFF bytes from the end are
   // not 0xFFD9, then we can be reasonably sure that the buffer is not a JPEG.
   //
-  // [OpenMVG note]
+  // [AliceVision note]
   // Since we encounter often invalid ended JPEG file, we skip this check.
   /*
   while (len > 2) {

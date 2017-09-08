@@ -12,5 +12,5 @@ target_link_libraries(openMVG_sample_robustHomography
 )
 
 set_property(TARGET openMVG_sample_robustHomography
-  PROPERTY FOLDER OpenMVG/Samples
+  PROPERTY FOLDER AliceVision/Samples
 )

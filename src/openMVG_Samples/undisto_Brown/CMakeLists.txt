@@ -8,5 +8,5 @@ target_link_libraries(openMVG_sample_undistoBrown
 )
 
 set_property(TARGET openMVG_sample_undistoBrown
-  PROPERTY FOLDER OpenMVG/Samples
+  PROPERTY FOLDER AliceVision/Samples
 )

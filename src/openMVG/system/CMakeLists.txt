@@ -21,7 +21,7 @@ add_library(openMVG_system
 )
 
 set_property(TARGET openMVG_system
-  PROPERTY FOLDER OpenMVG/OpenMVG
+  PROPERTY FOLDER AliceVision/AliceVision
 )
 
 if(OPENMVG_HAVE_BOOST)

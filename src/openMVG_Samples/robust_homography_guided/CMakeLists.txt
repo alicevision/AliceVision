@@ -11,5 +11,5 @@ target_link_libraries(openMVG_sample_robustHomography_guided
   stlplus)
 
 set_property(TARGET openMVG_sample_robustHomography_guided
-  PROPERTY FOLDER OpenMVG/Samples
+  PROPERTY FOLDER AliceVision/Samples
 )

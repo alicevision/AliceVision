@@ -40,7 +40,7 @@ void getInfoBinFile(const std::string &path, int dim, size_t &numDescriptors, in
  * In any case the filename for the descriptors will be inferred by removing the extension
  * and keeping the name. Normally this is the format used by Bundler
  *
- * 2. a json file containing the sfm_data using the OpenMVG data container. The function will
+ * 2. a json file containing the sfm_data using the AliceVision data container. The function will
  * parse the view section to retrieve the image name and it will infer the descriptor
  * filename from that
  * 
@@ -67,7 +67,7 @@ void getListOfDescriptorFiles(const std::string &fileFullPath, std::map<IndexT, 
  * In any case the filename for the descriptors will be inferred by removing the extension
  * and keeping the name. Normally this is the format used by Bundler
  *
- * 2. a json file containing the sfm_data using the OpenMVG data container. The function will
+ * 2. a json file containing the sfm_data using the AliceVision data container. The function will
  * parse the view section to retrieve the image name and it will infer the descriptor
  * filename from that. It assumes that the descriptors are in the same folder as
  * the .json file.

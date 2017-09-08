@@ -17,7 +17,7 @@ a combination of feature types [depending on you build options].
                                      {LOW,MEDIUM,NORMAL,HIGH,ULTRA}
   --calibration arg                  Calibration file
   --sfmdata arg                      The sfm_data.json kind of file generated 
-                                     by OpenMVG.
+                                     by AliceVision.
   --descriptorPath arg               Folder containing the .desc.
   --mediafile arg                    The folder path or the filename for the 
                                      media to track

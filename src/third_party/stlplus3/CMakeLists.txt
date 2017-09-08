@@ -10,7 +10,7 @@ include_directories(./filesystemSimplified)
 add_library(stlplus ${LIBSLTPLUS_SRCS})
 
 set_property(TARGET stlplus
-  PROPERTY FOLDER OpenMVG/3rdParty
+  PROPERTY FOLDER AliceVision/3rdParty
 )
 
 install(

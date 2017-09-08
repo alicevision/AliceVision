@@ -51,7 +51,7 @@ set_target_properties(openMVG_localization
 )
 
 set_property(TARGET openMVG_localization
-  PROPERTY FOLDER OpenMVG
+  PROPERTY FOLDER AliceVision
 )
 
 install(TARGETS openMVG_localization

@@ -19,7 +19,7 @@ target_link_libraries(openMVG_main_ColHarmonize
 )
 
 set_property(TARGET openMVG_main_ColHarmonize
-  PROPERTY FOLDER OpenMVG/software
+  PROPERTY FOLDER AliceVision/software
 )
 
 install(TARGETS openMVG_main_ColHarmonize

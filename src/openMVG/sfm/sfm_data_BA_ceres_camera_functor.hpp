@@ -8,7 +8,7 @@
 #include "ceres/rotation.h"
 
 //--
-//- Define ceres Cost_functor for each OpenMVG camera model
+//- Define ceres Cost_functor for each AliceVision camera model
 //--
 
 namespace openMVG {

@@ -40,7 +40,7 @@ else ()
   )
 
   set_property(TARGET openMVG_linearProgramming
-    PROPERTY FOLDER OpenMVG/OpenMVG
+    PROPERTY FOLDER AliceVision/AliceVision
   )
 
   target_link_libraries(openMVG_linearProgramming

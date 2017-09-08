@@ -25,7 +25,7 @@ add_library(openMVG_dataio
  )
 
 set_property(TARGET openMVG_dataio
-  PROPERTY FOLDER OpenMVG/OpenMVG
+  PROPERTY FOLDER AliceVision/AliceVision
 )
 
 target_link_libraries(openMVG_dataio

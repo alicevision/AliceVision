@@ -39,7 +39,7 @@ install(TARGETS openMVG_exif
 )
 
 set_property(TARGET openMVG_exif
-  PROPERTY FOLDER OpenMVG/OpenMVG
+  PROPERTY FOLDER AliceVision/AliceVision
 )
 
 UNIT_TEST(openMVG exif_IO "openMVG_exif")

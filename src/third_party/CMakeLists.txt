@@ -23,10 +23,10 @@ add_subdirectory(stlplus3)
 if(DEFINED OPENMVG_USE_INTERNAL_LEMON)
   add_subdirectory(lemon)
   set_property(TARGET lemon
-    PROPERTY FOLDER OpenMVG/3rdParty/lemon
+    PROPERTY FOLDER AliceVision/3rdParty/lemon
   )
   set_property(TARGET check
-    PROPERTY FOLDER OpenMVG/3rdParty/lemon
+    PROPERTY FOLDER AliceVision/3rdParty/lemon
   )
 endif()
 
@@ -84,10 +84,10 @@ if(OPENMVG_USE_INTERNAL_CERES)
   set(CERES_INCLUDE_INSTALL_DIR ${CMAKE_INSTALL_PREFIX}/include/openMVG/third_party/ceres)
   add_subdirectory(ceres-solver)
   set_property(TARGET cxsparse
-    PROPERTY FOLDER OpenMVG/3rdParty/ceres
+    PROPERTY FOLDER AliceVision/3rdParty/ceres
   )
   set_property(TARGET ceres
-    PROPERTY FOLDER OpenMVG/3rdParty/ceres
+    PROPERTY FOLDER AliceVision/3rdParty/ceres
   )
 endif()
 
@@ -96,7 +96,7 @@ if(DEFINED OPENMVG_USE_INTERNAL_FLANN)
   set(FLANN_INCLUDE_INSTALL_DIR ${CMAKE_INSTALL_PREFIX}/include/openMVG/third_party/flann/src/cpp)
   add_subdirectory(flann)
   set_property(TARGET flann_cpp_s
-    PROPERTY FOLDER OpenMVG/3rdParty
+    PROPERTY FOLDER AliceVision/3rdParty
   )
 endif()
 

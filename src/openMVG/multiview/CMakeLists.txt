@@ -58,7 +58,7 @@ add_library(openMVG_multiview
 )
 
 set_property(TARGET openMVG_multiview
-  PROPERTY FOLDER OpenMVG
+  PROPERTY FOLDER AliceVision
 )
 
 install(TARGETS openMVG_multiview
@@ -77,7 +77,7 @@ add_library(openMVG_multiview_test_data
 )
 
 set_property(TARGET openMVG_multiview_test_data
-  PROPERTY FOLDER OpenMVG/OpenMVG
+  PROPERTY FOLDER AliceVision/AliceVision
 )
 
 target_link_libraries(openMVG_multiview

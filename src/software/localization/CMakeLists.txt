@@ -142,9 +142,9 @@ if(OPENMVG_HAVE_BOOST)
   #@TODO decide where to put the binaries
 
   # Installation rules
-  #set_property(TARGET openMVG_main_createVoctree PROPERTY FOLDER OpenMVG/software)
+  #set_property(TARGET openMVG_main_createVoctree PROPERTY FOLDER AliceVision/software)
   #install(TARGETS openMVG_main_createVoctree DESTINATION bin/)
-  #set_property(TARGET openMVG_main_generatePairList PROPERTY FOLDER OpenMVG/software)
+  #set_property(TARGET openMVG_main_generatePairList PROPERTY FOLDER AliceVision/software)
   #install(TARGETS openMVG_main_generatePairList DESTINATION bin/)
 
 endif()
@@ -168,7 +168,7 @@ target_link_libraries(openMVG_main_SfM_Localization
 
 # Installation rules
 set_property(TARGET openMVG_main_SfM_Localization
-  PROPERTY FOLDER OpenMVG/software
+  PROPERTY FOLDER AliceVision/software
 )
 
 install(TARGETS openMVG_main_SfM_Localization

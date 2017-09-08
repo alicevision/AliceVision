@@ -138,7 +138,7 @@ bool Save_Cereal(
   // Data serialization
   {
     archiveType archive(stream);
-    // since OpenMVG 0.9, the sfm_data version 0.2 is introduced
+    // since AliceVision 0.9, the sfm_data version 0.2 is introduced
     //  - it adds control_points storage
     const std::string version = "0.3.1";
     archive(cereal::make_nvp("sfm_data_version", version));

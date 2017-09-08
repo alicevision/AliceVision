@@ -37,7 +37,7 @@ set_target_properties(openMVG_matching_image_collection
 )
 
 set_property(TARGET openMVG_matching_image_collection
-  PROPERTY FOLDER OpenMVG
+  PROPERTY FOLDER AliceVision
 )
 
 install(TARGETS openMVG_matching_image_collection

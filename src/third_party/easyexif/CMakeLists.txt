@@ -5,7 +5,7 @@ cmake_minimum_required(VERSION 2.8)
 add_library(easyexif exif.h exif.cpp)
 
 set_property(TARGET easyexif
-  PROPERTY FOLDER OpenMVG/3rdParty
+  PROPERTY FOLDER AliceVision/3rdParty
 )
 
 if(EASYEXIF_INCLUDE_INSTALL_DIR)

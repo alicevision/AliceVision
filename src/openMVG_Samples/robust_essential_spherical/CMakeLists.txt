@@ -13,5 +13,5 @@ target_link_libraries(openMVG_sample_robustEssential_spherical
   vlsift
 )
 
-set_property(TARGET openMVG_sample_robustEssential_spherical PROPERTY FOLDER OpenMVG/Samples)
+set_property(TARGET openMVG_sample_robustEssential_spherical PROPERTY FOLDER AliceVision/Samples)
 

@@ -22,7 +22,7 @@ namespace voctree {
  * @brief Given a vocabulary tree and a set of features it builds a database
  *
  * @param[in] fileFullPath A file containing the path the features to load, 
- * it could be a .txt or an OpenMVG .json or the path to a directory containing
+ * it could be a .txt or an AliceVision .json or the path to a directory containing
  * the feature. In the case of a json, it is assumed that the descriptors are
  * in the same folder as the file. 
  * @param[in] tree The vocabulary tree to be used for feature quantization
@@ -116,7 +116,7 @@ std::size_t populateDatabase(const std::string &fileFullPath,
  * and their associated features and returns, for each image, the first \p numResults best
  * matching documents in the database
  * 
- * @param[in] fileFullPath A file containing the path the features to load, it could be a .txt or an OpenMVG .json
+ * @param[in] fileFullPath A file containing the path the features to load, it could be a .txt or an AliceVision .json
  * @param[in] tree The vocabulary tree to be used for feature quantization
  * @param[in] db The built database
  * @param[in] numResults The number of results to retrieve for each image
@@ -143,7 +143,7 @@ void queryDatabase(const std::string &fileFullPath,
  * and their associated features and returns, for each image, the first \p numResults best
  * matching documents in the database
  * 
- * @param[in] fileFullPath A file containing the path the features to load, it could be a .txt or an OpenMVG .json
+ * @param[in] fileFullPath A file containing the path the features to load, it could be a .txt or an AliceVision .json
  * @param[in] tree The vocabulary tree to be used for feature quantization
  * @param[in] db The built database
  * @param[in] numResults The number of results to retrieve for each image
@@ -202,7 +202,7 @@ void queryDatabase(const std::string &fileFullPath,
 /**
  * @brief Returns some statistics (histogram) 
  * 
- * @param[in] fileFullPath A file containing the path the features to load, it could be a .txt or an OpenMVG .json
+ * @param[in] fileFullPath A file containing the path the features to load, it could be a .txt or an AliceVision .json
  * @param[in] tree The vocabulary tree to be used for feature quantization
  * @param[in] db The built database
  * @param[in] distanceMethod The distance method used for create the pair list

@@ -10,5 +10,5 @@ target_link_libraries(openMVG_sample_describe_and_match
   vlsift)
 
 set_property(TARGET openMVG_sample_describe_and_match
-  PROPERTY FOLDER OpenMVG/Samples
+  PROPERTY FOLDER AliceVision/Samples
 )

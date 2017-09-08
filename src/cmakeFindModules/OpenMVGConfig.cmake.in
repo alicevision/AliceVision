@@ -6,23 +6,23 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 #
 
-# Config file for OpenMVG library - Find OpenMVG & dependencies.
+# Config file for AliceVision library - Find AliceVision & dependencies.
 #
-# This file is used by CMake when FIND_PACKAGE( OpenMVG ) is invoked (and
+# This file is used by CMake when FIND_PACKAGE( AliceVision ) is invoked (and
 # the directory containing this file is present in CMAKE_MODULE_PATH).
 #
 # This module defines the following variables:
 #
-# OPENMVG_FOUND: True if OpenMVG has been successfully found.
+# OPENMVG_FOUND: True if AliceVision has been successfully found.
 #
-# OPENMVG_VERSION: Version of OpenMVG found.
+# OPENMVG_VERSION: Version of AliceVision found.
 #
-# OPENMVG_INCLUDE_DIRS: Include directories for OpenMVG and the
-#                       dependencies which appear in the OpenMVG public
-#                       API and are thus required to use OpenMVG.
+# OPENMVG_INCLUDE_DIRS: Include directories for AliceVision and the
+#                       dependencies which appear in the AliceVision public
+#                       API and are thus required to use AliceVision.
 #
-# OPENMVG_LIBRARIES: Libraries for OpenMVG and all
-#                    dependencies against which OpenMVG was
+# OPENMVG_LIBRARIES: Libraries for AliceVision and all
+#                    dependencies against which AliceVision was
 #                    compiled.
 
 # Called if we failed to find Ceres or any of it's required dependencies,
@@ -128,37 +128,37 @@ get_filename_component(CURRENT_ROOT_INSTALL_DIR
   ${CMAKE_MODULE_PATH}/../../../ ABSOLUTE)
 if(NOT EXISTS ${CURRENT_ROOT_INSTALL_DIR})
   OPENMVG_REPORT_NOT_FOUND(
-    "OpenMVG install root: ${CURRENT_ROOT_INSTALL_DIR}, "
-    "determined from relative path from OpenMVGConfig.cmake install location: "
+    "AliceVision install root: ${CURRENT_ROOT_INSTALL_DIR}, "
+    "determined from relative path from AliceVisionConfig.cmake install location: "
     "${CMAKE_MODULE_PATH}, does not exist.")
 endif()
 
-# Check if OpenMVG header is installed
+# Check if AliceVision header is installed
 if(NOT EXISTS ${CURRENT_ROOT_INSTALL_DIR}/include/openMVG/version.hpp)
   OPENMVG_REPORT_NOT_FOUND(
-    "OpenMVG install root: ${CMAKE_MODULE_PATH}. "
+    "AliceVision install root: ${CMAKE_MODULE_PATH}. "
     "Cannot find openMVG include files.")
 endif()
 
-# Set the include directories for OpenMVG (itself) and all (potentially optional)
-# dependencies with which OpenMVG was compiled.
+# Set the include directories for AliceVision (itself) and all (potentially optional)
+# dependencies with which AliceVision was compiled.
 set(OPENMVG_INCLUDE_DIRS "@OPENMVG_INCLUDE_DIRS@")
 
-##### the libraries themselves come in via OpenMVGTargets-<release/debug>.cmake
+##### the libraries themselves come in via AliceVisionTargets-<release/debug>.cmake
 # as link libraries rules as target.
 
-# Import exported OpenMVG targets
+# Import exported AliceVision targets
 set(OPENMVG_LIBRARIES @OPENMVG_LIBRARIES@)
-include(${CURRENT_CONFIG_INSTALL_DIR}/OpenMVGTargets.cmake)
+include(${CURRENT_CONFIG_INSTALL_DIR}/AliceVisionTargets.cmake)
 
 # As we use OPENMVG_REPORT_NOT_FOUND() to abort, if we reach this point we have
-# found OpenMVG and all required dependencies.
+# found AliceVision and all required dependencies.
 message(STATUS "----")
-message(STATUS "OpenMVG Find_Package")
+message(STATUS "AliceVision Find_Package")
 message(STATUS "----")
-message(STATUS "Found OpenMVG version: ${OPENMVG_VERSION}")
+message(STATUS "Found AliceVision version: ${OPENMVG_VERSION}")
 message(STATUS "Installed in: ${CURRENT_ROOT_INSTALL_DIR}")
-message(STATUS "Used OpenMVG libraries: ${OPENMVG_LIBRARIES}")
+message(STATUS "Used AliceVision libraries: ${OPENMVG_LIBRARIES}")
 message(STATUS "----")
 
 set(OPENMVG_FOUND TRUE)

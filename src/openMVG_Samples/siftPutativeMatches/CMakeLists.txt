@@ -11,5 +11,5 @@ target_link_libraries(openMVG_sample_siftPutative
 )
 
 set_property(TARGET openMVG_sample_siftPutative
-  PROPERTY FOLDER OpenMVG/Samples
+  PROPERTY FOLDER AliceVision/Samples
 )

@@ -27,14 +27,14 @@ function(trilean_option NAME DESCRIPTION DEFAULT_VALUE)
 endfunction()
 
 # ==============================================================================
-# OpenMVG build options
+# AliceVision build options
 # ==============================================================================
-option(OPENMVG_BUILD_SHARED "Build OpenMVG shared libs" OFF)
-option(OPENMVG_BUILD_TESTS "Build OpenMVG tests" OFF)
-option(OPENMVG_BUILD_EXAMPLES "Build OpenMVG samples applications." ON)
+option(OPENMVG_BUILD_SHARED "Build AliceVision shared libs" OFF)
+option(OPENMVG_BUILD_TESTS "Build AliceVision tests" OFF)
+option(OPENMVG_BUILD_EXAMPLES "Build AliceVision samples applications." ON)
 option(OPENMVG_BUILD_COVERAGE "Enable code coverage generation (gcc only)" OFF)
 
-trilean_option(OPENMVG_BUILD_DOC "Build OpenMVG documentation" AUTO)
+trilean_option(OPENMVG_BUILD_DOC "Build AliceVision documentation" AUTO)
 trilean_option(OPENMVG_USE_BOOST "Build code depending on Boost (localization/voctree)" ON)
 trilean_option(OPENMVG_USE_OIIO "Build code depending on OpenImageIO (keyframeSelection)" AUTO)
 trilean_option(OPENMVG_USE_OPENMP "Enable OpenMP parallelization" AUTO)
@@ -67,14 +67,14 @@ trilean_option(OPENMVG_USE_OPENCV "Build or not opencv+openMVG samples programs"
 option(OPENMVG_USE_OCVSIFT "Add or not OpenCV SIFT in available features" OFF)
 
 # ==============================================================================
-# OpenMVG version
+# AliceVision version
 # ==============================================================================
 file(STRINGS "openMVG/version.hpp" _OPENMVG_VERSION_HPP_CONTENTS REGEX "#define OPENMVG_VERSION_")
 foreach(v MAJOR MINOR REVISION)
   if("${_OPENMVG_VERSION_HPP_CONTENTS}" MATCHES "#define OPENMVG_VERSION_${v} ([0-9]+)")
     set(OPENMVG_VERSION_${v} "${CMAKE_MATCH_1}")
   else()
-    message(FATAL_ERROR "Failed to retrieve the OpenMVG version the source code. Missing OPENMVG_VERSION_${v}.")
+    message(FATAL_ERROR "Failed to retrieve the AliceVision version the source code. Missing OPENMVG_VERSION_${v}.")
   endif()
 endforeach()
 set(OPENMVG_VERSION ${OPENMVG_VERSION_MAJOR}.${OPENMVG_VERSION_MINOR}.${OPENMVG_VERSION_REVISION})
@@ -246,7 +246,7 @@ macro(UNIT_TEST NAMESPACE NAME EXTRA_LIBS)
   if(OPENMVG_BUILD_TESTS)
     add_executable(${NAMESPACE}_test_${NAME} ${NAME}_test.cpp)
 
-    set_property(TARGET ${NAMESPACE}_test_${NAME} PROPERTY FOLDER OpenMVG/test)
+    set_property(TARGET ${NAMESPACE}_test_${NAME} PROPERTY FOLDER AliceVision/test)
 
     target_link_libraries(${NAMESPACE}_test_${NAME}
                           ${EXTRA_LIBS} # Extra libs MUST be first.
@@ -378,10 +378,10 @@ endif()
 # ==============================================================================
 if(OPENMVG_USE_INTERNAL_OSI AND OPENMVG_USE_INTERNAL_CLP AND OPENMVG_USE_INTERNAL_COINUTILS)
   add_subdirectory(dependencies/osi_clp/)
-  set_property(TARGET lib_clp PROPERTY FOLDER OpenMVG/3rdParty/lib_clp)
-  set_property(TARGET lib_CoinUtils PROPERTY FOLDER OpenMVG/3rdParty/lib_CoinUtils)
-  set_property(TARGET lib_Osi PROPERTY FOLDER OpenMVG/3rdParty/lib_Osi)
-  set_property(TARGET lib_OsiClpSolver PROPERTY FOLDER OpenMVG/3rdParty/lib_OsiClpSolver)
+  set_property(TARGET lib_clp PROPERTY FOLDER AliceVision/3rdParty/lib_clp)
+  set_property(TARGET lib_CoinUtils PROPERTY FOLDER AliceVision/3rdParty/lib_CoinUtils)
+  set_property(TARGET lib_Osi PROPERTY FOLDER AliceVision/3rdParty/lib_Osi)
+  set_property(TARGET lib_OsiClpSolver PROPERTY FOLDER AliceVision/3rdParty/lib_OsiClpSolver)
 endif()
 
 # ==============================================================================
@@ -655,7 +655,7 @@ if(OPENMVG_HAVE_BOOST)
 endif()
 
 foreach(omvglib ${OPENMVG_LIBRARIES})
-  set_property(TARGET ${omvglib} PROPERTY FOLDER OpenMVG/OpenMVG)
+  set_property(TARGET ${omvglib} PROPERTY FOLDER AliceVision/AliceVision)
 endforeach()
 
 # openMVG tutorial examples
@@ -697,7 +697,7 @@ else()
       COMMENT "Building HTML documentation with Sphinx")
 
     set_property(TARGET doc
-      PROPERTY FOLDER OpenMVG
+      PROPERTY FOLDER AliceVision
     )
     set(OPENMVG_HAVE_DOC 1)
     message(STATUS "Sphinx found.")
@@ -710,16 +710,16 @@ else()
 endif()
 
 message("\n")
-message("** OpenMVG version: " ${OPENMVG_VERSION})
+message("** AliceVision version: " ${OPENMVG_VERSION})
 message("** Build Shared libs: " ${OPENMVG_BUILD_SHARED})
-message("** Build OpenMVG tests: " ${OPENMVG_BUILD_TESTS})
-message("** Build OpenMVG samples applications: " ${OPENMVG_BUILD_EXAMPLES})
-message("** Build OpenMVG documentation: " ${OPENMVG_HAVE_DOC})
+message("** Build AliceVision tests: " ${OPENMVG_BUILD_TESTS})
+message("** Build AliceVision samples applications: " ${OPENMVG_BUILD_EXAMPLES})
+message("** Build AliceVision documentation: " ${OPENMVG_HAVE_DOC})
 message("** Build the voctree and localization module: " ${OPENMVG_HAVE_BOOST})
 message("** Build the keyframeSelection module: " ${OPENMVG_HAVE_OIIO})
 message("** Enable code coverage generation: " ${OPENMVG_BUILD_COVERAGE})
 message("** Enable OpenMP parallelization: " ${OPENMVG_HAVE_OPENMP})
-message("** Build OpenCV+OpenMVG samples programs: " ${OPENMVG_HAVE_OPENCV})
+message("** Build OpenCV+AliceVision samples programs: " ${OPENMVG_HAVE_OPENCV})
 message("** Use OpenCV SIFT features: " ${OPENMVG_HAVE_OCVSIFT})
 message("** Use CCTAG markers: " ${OPENMVG_HAVE_CCTAG})
 message("** Build Alembic exporter: " ${OPENMVG_HAVE_ALEMBIC})
@@ -795,7 +795,7 @@ message("\n")
 
 install(EXPORT openMVG-targets DESTINATION lib)
 install(EXPORT openMVG-targets
-        DESTINATION share/openMVG/cmake FILE OpenMVGTargets.cmake)
+        DESTINATION share/openMVG/cmake FILE AliceVisionTargets.cmake)
 
 #Adapt build include paths to install path
 set(OPENMVG_INCLUDE_DIRS
@@ -838,13 +838,13 @@ if(OPENMVG_USE_INTERNAL_CERES)
   )
 endif()
 
-# Create a OpenMVGConfig.cmake file. <name>Config.cmake files are searched by
+# Create a AliceVisionConfig.cmake file. <name>Config.cmake files are searched by
 # find_package() automatically. We configure that file so that we can put any
 # information we want in it, e.g. version numbers, include directories, etc.
-configure_file("${CMAKE_SOURCE_DIR}/cmakeFindModules/OpenMVGConfig.cmake.in"
-               "${CMAKE_CURRENT_BINARY_DIR}/OpenMVGConfig.cmake" @ONLY)
+configure_file("${CMAKE_SOURCE_DIR}/cmakeFindModules/AliceVisionConfig.cmake.in"
+               "${CMAKE_CURRENT_BINARY_DIR}/AliceVisionConfig.cmake" @ONLY)
 
-install(FILES "${CMAKE_CURRENT_BINARY_DIR}/OpenMVGConfig.cmake"
+install(FILES "${CMAKE_CURRENT_BINARY_DIR}/AliceVisionConfig.cmake"
         DESTINATION share/openMVG/cmake)
 
 # create the config.hpp file containing all the preprocessor definitions

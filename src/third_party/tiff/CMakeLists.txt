@@ -94,7 +94,7 @@ endif()
 
 add_library(tiff STATIC ${lib_srcs} ${lib_headers})
 target_link_libraries(tiff zlib)
-SET_PROPERTY(TARGET tiff PROPERTY FOLDER OpenMVG/3rdParty)
+SET_PROPERTY(TARGET tiff PROPERTY FOLDER AliceVision/3rdParty)
 
 if(TIFF_INCLUDE_INSTALL_DIR)
   set(INCLUDE_INSTALL_DIR ${TIFF_INCLUDE_INSTALL_DIR})
