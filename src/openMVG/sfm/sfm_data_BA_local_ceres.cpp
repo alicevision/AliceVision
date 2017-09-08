@@ -270,9 +270,18 @@ void Local_Bundle_Adjustment_Ceres::updateGraph(
   else 
   {
     std::cout << "map_viewId_node non vide ! (tjs sauf lors du du premier LBA théoriquement)" << std::endl;
-    viewIdsAddedToTheGraph = newViewIds; 
+    for (const IndexT viewId : newViewIds)
+    {
+      auto it = map_viewId_node.find(viewId);
+      if (it == map_viewId_node.end()) // the view doesn't already have an associated node
+        viewIdsAddedToTheGraph.insert(viewId);
+    }
+//    viewIdsAddedToTheGraph = newViewIds; 
   }
   
+  if (viewIdsAddedToTheGraph.empty())
+    return;
+    
   std::cout << "graph_poses.maxNodeId() = " << graph_poses.maxNodeId() << std::endl;
   std::cout << "viewIdsAddedToTheGraph.size() = " << viewIdsAddedToTheGraph.size() << std::endl;
 //  getchar();
@@ -289,7 +298,6 @@ void Local_Bundle_Adjustment_Ceres::updateGraph(
   }
       
   // -- Add edge.
-/* vvvv------works-------vvv
 
   // An edge is created between 2 views when they share at least 'L' landmarks (by default L=100).
   // At first, we need to count the number of shared landmarks between all the new views 
@@ -384,11 +392,12 @@ void Local_Bundle_Adjustment_Ceres::updateGraph(
     std::size_t L = 100; // typically: 100
     if(it.second > L) // ensure a minimum number of landmarks in common to consider the link
     {
-      graph_poses.addEdge(_map_viewId_node.at(it.first.first), _map_viewId_node.at(it.first.second));
+      graph_poses.addEdge(map_viewId_node.at(it.first.first), map_viewId_node.at(it.first.second));
     }
   }
-    */
-  
+    
+
+/* ---------- works but exmpoential time   
   std::cout << "adding egde to the graph..." << std::endl;
 
   // All the 3D landmarks ids
@@ -436,7 +445,8 @@ void Local_Bundle_Adjustment_Ceres::updateGraph(
       }
     }
   }  
-  
+*/  
+  }
   std::cout << "in: updateDistancesgrpah: done" << std::endl;
 
 }

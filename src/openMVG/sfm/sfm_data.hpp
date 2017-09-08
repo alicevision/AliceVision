@@ -13,6 +13,7 @@
 #include "openMVG/sfm/sfm_landmark.hpp"
 #include "openMVG/geometry/pose3.hpp"
 #include "openMVG/cameras/cameras.hpp"
+#include <fstream>
 
 namespace openMVG {
 namespace sfm {
@@ -58,9 +59,65 @@ struct LocalBA_stats
   std::map<int, std::size_t> map_distance_numCameras; // distribution of the cameras for each graph distance
   
   std::set<IndexT> newViewsId;  // index of the new views added (newly resected)
-  
-
 };
+
+struct LocalBA_timeProfiler
+{
+  double graphUpdating = 0.0;
+  double distMapsComputing = 0.0;
+  double statesMapsComputing = 0.0;
+  double adjusting = 0.0;
+  double allLocalBA = 0.0;
+  
+  bool exportTimes(const std::string& filename)
+  {
+    std::ofstream os;
+    os.open(filename, std::ios::app);
+    os.seekp(0, std::ios::end); //put the cursor at the end
+    if (!os.is_open())
+    {
+      OPENMVG_LOG_DEBUG("Unable to open the Time profiling file '" << filename << "'.");
+      return false;
+    }
+    
+    if (os.tellp() == 0) // 'tellp' return the cursor's position
+    {
+      // If the file does't exist: add a header.
+      std::vector<std::string> header;
+      header.push_back("graphUpdating (s)");
+      header.push_back("distMapsComputing (s)"); 
+      header.push_back("statesMapsComputing (s)"); 
+      header.push_back("adjusting (s)"); 
+      header.push_back("allLocalBA (s)"); 
+      
+      for (std::string & head : header)
+        os << head << "\t";
+      os << "\n"; 
+    }
+    
+    os << graphUpdating << "\t"
+       << distMapsComputing << "\t"
+       << statesMapsComputing << "\t"
+       << adjusting << "\t"
+       << allLocalBA << "\t";
+    
+    os << "\n";
+    os.close();
+    return true;
+  }
+  
+  void showTimes()
+  {
+    std::cout << "\n----- Local BA durations ------" << std::endl;
+    std::cout << "graph updating : " << graphUpdating << " ms" << std::endl;
+    std::cout << "dist. Maps Computing : " << distMapsComputing << " ms" << std::endl;
+    std::cout << "states Maps Computing : " << statesMapsComputing << " ms" << std::endl;
+    std::cout << "adjusting : " << adjusting << " ms" << std::endl;
+    std::cout << "** all Local BA: " << allLocalBA << " ms" << std::endl;
+    std::cout << "-------------------------------\n" << std::endl;
+  }
+};
+
 
 /// Generic SfM data container
 /// Store structure and camera properties:
@@ -76,19 +133,19 @@ struct SfM_Data
   Landmarks structure;
   /// Controls points (stored as Landmarks (id_feat has no meaning here))
   Landmarks control_points;
-
+  
   /// Root Views path
   std::string s_root_path;
   std::string _featureFolder;
   std::string _matchingFolder;
-
+  
   //--
   // Accessors
   //--
   const Views & GetViews() const {return views;}
   const Poses & GetPoses() const {return poses;}
   const Intrinsics & GetIntrinsics() const {return intrinsics;}
-
+  
   /**
    * @brief Return a pointer to an intrinsic if available or nullptr otherwise.
    * @param intrinsicId
@@ -99,7 +156,7 @@ struct SfM_Data
       return intrinsics.at(intrinsicId).get();
     return nullptr;
   }
-
+  
   /**
    * @brief Return a pointer to an intrinsic if available or nullptr otherwise.
    * @param intrinsicId
@@ -110,47 +167,47 @@ struct SfM_Data
       return intrinsics.at(intrinsicId).get();
     return nullptr;
   }
-
+  
   std::shared_ptr<cameras::IntrinsicBase> GetIntrinsicSharedPtr(IndexT intrinsicId)
   {
     if(intrinsics.count(intrinsicId))
       return intrinsics.at(intrinsicId);
     return nullptr;
   }
-
+  
   const Landmarks & GetLandmarks() const {return structure;}
   const Landmarks & GetControl_Points() const {return control_points;}
-
+  
   std::set<IndexT> GetViewsKeys() const
   {
     std::set<IndexT> viewKeys;
     for(auto v: views)
-        viewKeys.insert(v.first);
+      viewKeys.insert(v.first);
     return viewKeys;
   }
-
+  
   /// Check if the View have defined intrinsic and pose
   bool IsPoseAndIntrinsicDefined(const View * view) const
   {
     if (view == nullptr) return false;
     return (
-      view->id_intrinsic != UndefinedIndexT &&
-      view->id_pose != UndefinedIndexT &&
-      intrinsics.find(view->id_intrinsic) != intrinsics.end() &&
-      poses.find(view->id_pose) != poses.end());
+          view->id_intrinsic != UndefinedIndexT &&
+        view->id_pose != UndefinedIndexT &&
+        intrinsics.find(view->id_intrinsic) != intrinsics.end() &&
+        poses.find(view->id_pose) != poses.end());
   }
   
   bool IsPoseAndIntrinsicDefined(IndexT viewID) const
   { 
     return IsPoseAndIntrinsicDefined(views.at(viewID).get());
   }
-
+  
   /// Get the pose associated to a view
   const geometry::Pose3 GetPoseOrDie(const View * view) const
   {
     return poses.at(view->id_pose);
   }
-
+  
   void setFeatureFolder(const std::string& featureFolder)
   {
     _featureFolder = featureFolder;
@@ -161,47 +218,47 @@ struct SfM_Data
   }
   const std::string& getFeatureFolder() const { return _featureFolder; }
   const std::string& getMatchingFolder() const { return _matchingFolder; }
-
+  
   bool operator==(const SfM_Data& other) const {
-
+    
     // Views
     if(views.size() != other.views.size())
       return false;
     for(Views::const_iterator it = views.begin(); it != views.end(); ++it)
     {
-        const View& view1 = *(it->second.get());
-        const View& view2 = *(other.views.at(it->first).get());
-        if(!(view1 == view2))
-          return false;
-        
-        // Image paths 
-        if(s_root_path + view1.s_Img_path != other.s_root_path + view2.s_Img_path)
-          return false;
+      const View& view1 = *(it->second.get());
+      const View& view2 = *(other.views.at(it->first).get());
+      if(!(view1 == view2))
+        return false;
+      
+      // Image paths 
+      if(s_root_path + view1.s_Img_path != other.s_root_path + view2.s_Img_path)
+        return false;
     }
-
+    
     // Poses
     if((poses != other.poses))
       return false;
-
+    
     // Intrinsics
     if(intrinsics.size() != other.intrinsics.size())
       return false;
-
+    
     Intrinsics::const_iterator it = intrinsics.begin();
     Intrinsics::const_iterator otherIt = other.intrinsics.begin();
     for(; it != intrinsics.end() && otherIt != other.intrinsics.end(); ++it, ++otherIt)
     {
-        // Index
-        if(it->first != otherIt->first)
-          return false;
-
-        // Intrinsic
-        cameras::IntrinsicBase& intrinsic1 = *(it->second.get());
-        cameras::IntrinsicBase& intrinsic2 = *(otherIt->second.get());
-        if(!(intrinsic1 == intrinsic2))
-          return false;
+      // Index
+      if(it->first != otherIt->first)
+        return false;
+      
+      // Intrinsic
+      cameras::IntrinsicBase& intrinsic1 = *(it->second.get());
+      cameras::IntrinsicBase& intrinsic2 = *(otherIt->second.get());
+      if(!(intrinsic1 == intrinsic2))
+        return false;
     }
-
+    
     // Points IDs are not preserved
     if(structure.size() != other.structure.size())
       return false;
@@ -209,22 +266,22 @@ struct SfM_Data
     Landmarks::const_iterator otherLandmarkIt = other.structure.begin();
     for(; landMarkIt != structure.end() && otherLandmarkIt != other.structure.end(); ++landMarkIt, ++otherLandmarkIt)
     {
-        // Points IDs are not preserved
-        // Landmark
-        const Landmark& landmark1 = landMarkIt->second;
-        const Landmark& landmark2 = otherLandmarkIt->second;
-        if(!(landmark1 == landmark2))
-          return false;
+      // Points IDs are not preserved
+      // Landmark
+      const Landmark& landmark1 = landMarkIt->second;
+      const Landmark& landmark2 = otherLandmarkIt->second;
+      if(!(landmark1 == landmark2))
+        return false;
     }
-
+    
     // Control points
     if(control_points != other.control_points)
       return false;
-
+    
     // Root path can be reseted during exports
-
+    
     return true;
-
+    
   }
 };
 

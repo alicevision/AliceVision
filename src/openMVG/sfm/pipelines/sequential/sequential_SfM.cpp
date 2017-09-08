@@ -222,8 +222,8 @@ void SequentialSfMReconstructionEngine::RobustResectionOfImages(
       const std::size_t nbOutliersThreshold = 50;
       // Perform BA until all point are under the given precision
       std::size_t nbRejectedTracks;
-//      do
-//      {
+      do
+      {
         auto chrono2_start = std::chrono::steady_clock::now();
         
         //        BundleAdjustment();
@@ -231,10 +231,10 @@ void SequentialSfMReconstructionEngine::RobustResectionOfImages(
         std::cout << "in : RobustResectionOfImages" << std::endl;
         std::cout << "set_newReconstructedViewId.size() = " << set_newReconstructedViewId.size() << std::endl;
         localBundleAdjustment(
-          set_newReconstructedViewId, 
-          graph_poses, 
-          map_viewId_node, 
-          map_poseId_distance);
+              set_newReconstructedViewId, 
+              graph_poses, 
+              map_viewId_node, 
+              map_poseId_distance);
         
         
         OPENMVG_LOG_DEBUG("Resection group index: " << resectionGroupIndex << ", bundle iteration: " << bundleAdjustmentIteration
@@ -280,17 +280,17 @@ void SequentialSfMReconstructionEngine::RobustResectionOfImages(
           os << "x\t"; 
         }
         
-//        os << nbRejectedTracks << "\t";        
+        os << nbRejectedTracks << "\t";        
         
-//        if (nbRejectedTracks != 0)
-//          os << "\n";
+        if (nbRejectedTracks != 0)
+          os << "\n";
         
-//        os.close();
+        os.close();
         ///////////////////////////////////////////////////////////////////////////////////////////
         ///////////////////////////////////////////////////////////////////////////////////////////
         
-//      }
-//      while (nbRejectedTracks != 0);
+      }
+      while (nbRejectedTracks != 0);
       OPENMVG_LOG_DEBUG("Bundle with " << bundleAdjustmentIteration << " iterations took " << std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - chrono_start).count() << " msec.");
       chrono_start = std::chrono::steady_clock::now();
       
@@ -307,39 +307,38 @@ void SequentialSfMReconstructionEngine::RobustResectionOfImages(
       ////////////////////////////////////////////////////////////////////////////////////////vvvvvvvv
       // Write view names
       
-      
       // -- get removed 'id_pose'
       std::vector<IndexT> removed_poseIds;
       if (poses_saved !=  _sfm_data.poses)
       {
-//        std::cout << "_sfm_data.poses : (size: " << _sfm_data.poses.size() << ")" << std::endl;
-//        for (const auto& pose : _sfm_data.poses)
-//        {
-//          std::cout << pose.first << std::endl;
-//        }
+        //        std::cout << "_sfm_data.poses : (size: " << _sfm_data.poses.size() << ")" << std::endl;
+        //        for (const auto& pose : _sfm_data.poses)
+        //        {
+        //          std::cout << pose.first << std::endl;
+        //        }
         
-//        std::cout << "poses_saved : (size: " << poses_saved.size() << ")" << std::endl;
+        //        std::cout << "poses_saved : (size: " << poses_saved.size() << ")" << std::endl;
         for (const auto& pose : poses_saved)
         {
-//          std::cout << pose.first ;
+          //          std::cout << pose.first ;
           
           IndexT id_pose = pose.first;
           if (_sfm_data.poses.find(id_pose) == _sfm_data.poses.end()) // id not found = removed
           {
-//            std::cout << " Removed !" << std::endl;
+            //            std::cout << " Removed !" << std::endl;
             removed_poseIds.push_back(id_pose);
           }
-//          else
-//            std::cout << std::endl;
+          //          else
+          //            std::cout << std::endl;
         }
-//        std::cout << "Different POSES !! (expected)" << std::endl;      
+        //        std::cout << "Different POSES !! (expected)" << std::endl;      
       }
       
       // -- Write names in the txt file
-//      std::string filename = "/home/cdebize/Documents/Data_SfM/lastpants/reconstructions/Outliers.txt";
-//      std::ofstream os;
-//      os.open(filename, std::ios::app);
-//      os.seekp(0, std::ios::end); //put the cursor at the end
+      std::string filename = "/home/cdebize/Documents/Data_SfM/lastpants/reconstructions/Outliers.txt";
+      std::ofstream os;
+      os.open(filename, std::ios::app);
+      os.seekp(0, std::ios::end); //put the cursor at the end
       os << removed_poseIds.size() << "\t";
       if (!removed_poseIds.empty())
       {
@@ -355,12 +354,8 @@ void SequentialSfMReconstructionEngine::RobustResectionOfImages(
           {
             removed_viewNames.push_back(view.second->s_Img_path);
             removed_viewIntrinsicId.push_back(view.second->id_intrinsic);
-            if (map_poseId_distance.size() != 0)
-              removed_poseDistance.push_back(map_poseId_distance[view.second->id_pose]);
-            else
-              removed_poseDistance.push_back(-1);
             
-            std::cout << view.second->s_Img_path << "(pose id: "  << view.second->id_pose << ")" << std::endl;
+//            std::cout << view.second->s_Img_path << "(pose id: "  << view.second->id_pose << ")" << std::endl;
           }
         }
         
@@ -368,8 +363,7 @@ void SequentialSfMReconstructionEngine::RobustResectionOfImages(
         for (uint i=0; i< removed_viewNames.size(); i++)
         {
           os << removed_viewNames.at(i) 
-             << "-K" << removed_viewIntrinsicId.at(i) 
-             << "-D" << removed_poseDistance.at(i) << "\t";
+             << "-K" << removed_viewIntrinsicId.at(i);
         }
       }
       
@@ -1674,11 +1668,14 @@ bool SequentialSfMReconstructionEngine::BundleAdjustment()
 
 /// Local Bundle Adjustment to refine only the parameters close to the newly resected views.
 bool SequentialSfMReconstructionEngine::localBundleAdjustment(
-  const std::set<IndexT>& newReconstructedViewIds,
-  lemon::ListGraph& graph_poses,
-  std::map<IndexT, lemon::ListGraph::Node>& map_viewId_node, 
-  std::map<IndexT, int>& mapPoseIdDistance)
+    const std::set<IndexT>& newReconstructedViewIds,
+    lemon::ListGraph& graph_poses,
+    std::map<IndexT, lemon::ListGraph::Node>& map_viewId_node, 
+    std::map<IndexT, int>& mapPoseIdDistance)
 {
+  
+  LocalBA_timeProfiler times;
+  
   Local_Bundle_Adjustment_Ceres::LocalBA_options options;
   options.enableParametersOrdering();
   
@@ -1692,6 +1689,9 @@ bool SequentialSfMReconstructionEngine::localBundleAdjustment(
     options.setDenseBA();
   }
   
+  openMVG::system::Timer durationLBA;
+  openMVG::system::Timer duration;
+  
   Local_Bundle_Adjustment_Ceres localBA_obj(options);
   if (options.isLocalBAEnabled())
   {
@@ -1701,21 +1701,26 @@ bool SequentialSfMReconstructionEngine::localBundleAdjustment(
     
     // Update the 'reconstructionGraph' using the recently added cameras
     localBA_obj.updateGraph(
-      _sfm_data, 
-      _map_tracksPerView, 
-      newReconstructedViewIds, 
-      map_viewId_node, 
-      graph_poses);
+          _sfm_data, 
+          _map_tracksPerView, 
+          newReconstructedViewIds, 
+          map_viewId_node, 
+          graph_poses);
+    
+    times.graphUpdating = duration.elapsed(); 
+    duration.reset();
     
     //
     localBA_obj.computeDistancesMaps(
-      graph_poses, 
-      map_viewId_node, 
-      _sfm_data, 
-      newReconstructedViewIds, 
-      mapPoseIdDistance);
+          graph_poses, 
+          map_viewId_node, 
+          _sfm_data, 
+          newReconstructedViewIds, 
+          mapPoseIdDistance);
     
-        
+    times.distMapsComputing = duration.elapsed(); 
+    duration.reset();
+    
     // Determermine which parameter (poses, intrinsics & landmarks) is going to be refined, 
     // constant or ignored in the Bundle Adjustment :
     localBA_obj.computeStatesMaps(
@@ -1723,19 +1728,29 @@ bool SequentialSfMReconstructionEngine::localBundleAdjustment(
           Local_Bundle_Adjustment_Ceres::LocalBAStrategy::strategy_3, 
           1, 
           newReconstructedViewIds);
+    
+    times.statesMapsComputing = duration.elapsed(); 
+    duration.reset();
   }
+  
   
   LocalBA_stats lbaStats(newReconstructedViewIds);
   localBA_obj.setBAStatisticsContainer(lbaStats);
   
+  duration.reset();
+  
   // Run Bundle Adjustment:
   bool isBaSucceed = localBA_obj.Adjust(_sfm_data);
+  
+  times.adjusting = duration.elapsed(); 
+  times.allLocalBA = durationLBA.elapsed();  
+  times.exportTimes(_sOutDirectory + "/TimeProfile.txt");
+  times.showTimes();
   
   // Save data about the 
   std::cout << "Export statistics... " << std::endl;
   localBA_obj.exportStatistics(_sOutDirectory, _sfm_data);
   std::cout << "Export statistics: done" << std::endl;
-  
   return isBaSucceed;
 }
 
