@@ -1,7 +1,7 @@
 #pragma once
 
-#include <openMVG/types.hpp>
-#include <openMVG/geometry/pose3.hpp>
+#include <aliceVision/types.hpp>
+#include <aliceVision/geometry/pose3.hpp>
 
 #include <cereal/cereal.hpp>
 #include <cereal/types/vector.hpp>
@@ -9,7 +9,7 @@
 #include <vector>
 #include <cassert>
 
-namespace openMVG {
+namespace aliceVision {
 namespace sfm {
 
 enum class ERigSubPoseStatus: std::uint8_t
@@ -176,4 +176,4 @@ private:
 };
 
 } // namespace sfm
-} // namespace openMVG
+} // namespace aliceVision

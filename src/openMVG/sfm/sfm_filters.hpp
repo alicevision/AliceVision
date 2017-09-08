@@ -4,12 +4,12 @@
 #ifndef OPENMVG_SFM_FILTERS_HPP
 #define OPENMVG_SFM_FILTERS_HPP
 
-#include <openMVG/multiview/rotation_averaging_common.hpp>
-#include <openMVG/multiview/translation_averaging_common.hpp>
-#include <openMVG/matching/indMatch.hpp>
-#include <openMVG/system/Logger.hpp>
+#include <aliceVision/multiview/rotation_averaging_common.hpp>
+#include <aliceVision/multiview/translation_averaging_common.hpp>
+#include <aliceVision/matching/indMatch.hpp>
+#include <aliceVision/system/Logger.hpp>
 
-namespace openMVG {
+namespace aliceVision {
 namespace sfm { 
 
 template<typename IterableIndexTSequence>
@@ -84,10 +84,10 @@ static
 #endif
 void KeepOnlyReferencedElement(
   const std::set<IndexT> & set_remainingIds,
-  openMVG::matching::PairwiseMatches& map_matches)
+  aliceVision::matching::PairwiseMatches& map_matches)
 {
-  openMVG::matching::PairwiseMatches map_matches_E_infered;
-  for (openMVG::matching::PairwiseMatches::const_iterator iter = map_matches.begin();
+  aliceVision::matching::PairwiseMatches map_matches_E_infered;
+  for (aliceVision::matching::PairwiseMatches::const_iterator iter = map_matches.begin();
     iter != map_matches.end(); ++iter)
   {
     if (set_remainingIds.find(iter->first.first) != set_remainingIds.end() &&
@@ -143,6 +143,6 @@ void KeepOnlyReferencedElement(
 }
 
 } // namespace sfm
-} // namespace openMVG
+} // namespace aliceVision
 
 #endif // OPENMVG_SFM_FILTERS_HPP

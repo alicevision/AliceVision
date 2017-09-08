@@ -23,32 +23,32 @@ set(image_files_sources
   image_io.cpp
 )
 
-add_library(openMVG_image
+add_library(aliceVision_image
   ${image_files_headers}
   ${image_files_sources}
 )
 
-target_link_libraries(openMVG_image
-  openMVG_numeric
+target_link_libraries(aliceVision_image
+  aliceVision_numeric
   ${PNG_LIBRARIES}
   ${JPEG_LIBRARIES}
   ${TIFF_LIBRARIES}
   ${LOG_LIB}
 )
 
-set_target_properties(openMVG_image
+set_target_properties(aliceVision_image
   PROPERTIES SOVERSION ${OPENMVG_VERSION_MAJOR}
   VERSION "${OPENMVG_VERSION_MAJOR}.${OPENMVG_VERSION_MINOR}"
 )
 
-install(TARGETS openMVG_image
+install(TARGETS aliceVision_image
   DESTINATION lib
-  EXPORT openMVG-targets
+  EXPORT aliceVision-targets
 )
 
-UNIT_TEST(openMVG image            "openMVG_image")
-UNIT_TEST(openMVG image_drawing    "openMVG_image")
-UNIT_TEST(openMVG image_io         "openMVG_image")
-UNIT_TEST(openMVG image_filtering  "openMVG_image")
-UNIT_TEST(openMVG image_resampling "openMVG_image")
+UNIT_TEST(aliceVision image            "aliceVision_image")
+UNIT_TEST(aliceVision image_drawing    "aliceVision_image")
+UNIT_TEST(aliceVision image_io         "aliceVision_image")
+UNIT_TEST(aliceVision image_filtering  "aliceVision_image")
+UNIT_TEST(aliceVision image_resampling "aliceVision_image")
 

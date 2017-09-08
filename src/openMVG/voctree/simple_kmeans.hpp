@@ -7,7 +7,7 @@
 #include "distance.hpp"
 #include "feature_allocator.hpp"
 
-#include <openMVG/system/Logger.hpp>
+#include <aliceVision/system/Logger.hpp>
 
 #include <boost/function.hpp>
 #include <boost/foreach.hpp>
@@ -20,7 +20,7 @@
 #include <stdlib.h>
 #include <iostream>
 
-namespace openMVG{
+namespace aliceVision{
 namespace voctree{
 
 /**

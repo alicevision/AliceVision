@@ -4,8 +4,8 @@
 
 #include <memory>
 
-using namespace openMVG;
-using namespace openMVG::sfm;
+using namespace aliceVision;
+using namespace aliceVision::sfm;
 
 TEST(Rig, initialization)
 {

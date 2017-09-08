@@ -3,20 +3,20 @@
 
 #pragma once
 
-#include "openMVG/types.hpp"
-#include "openMVG/multiview/solver_essential_kernel.hpp"
-#include "openMVG/multiview/essential.hpp"
-#include "openMVG/robust_estimation/robust_estimator_ACRansac.hpp"
-#include "openMVG/robust_estimation/robust_estimator_ACRansacKernelAdaptator.hpp"
-#include "openMVG/robust_estimation/guided_matching.hpp"
+#include "aliceVision/types.hpp"
+#include "aliceVision/multiview/solver_essential_kernel.hpp"
+#include "aliceVision/multiview/essential.hpp"
+#include "aliceVision/robust_estimation/robust_estimator_ACRansac.hpp"
+#include "aliceVision/robust_estimation/robust_estimator_ACRansacKernelAdaptator.hpp"
+#include "aliceVision/robust_estimation/guided_matching.hpp"
 #include <limits>
 
-#include "openMVG/matching/indMatch.hpp"
-#include "openMVG/sfm/sfm_data.hpp"
-#include "openMVG/features/RegionsPerView.hpp"
-#include "openMVG/matching_image_collection/GeometricFilterMatrix.hpp"
+#include "aliceVision/matching/indMatch.hpp"
+#include "aliceVision/sfm/sfm_data.hpp"
+#include "aliceVision/features/RegionsPerView.hpp"
+#include "aliceVision/matching_image_collection/GeometricFilterMatrix.hpp"
 
-namespace openMVG {
+namespace aliceVision {
 namespace matching_image_collection {
 
 //-- A contrario essential matrix estimation template functor used for filter pair of putative correspondences
@@ -41,8 +41,8 @@ struct GeometricFilter_EMatrix_AC : public GeometricFilterMatrix
     const matching::MatchesPerDescType & putativeMatchesPerType,
     matching::MatchesPerDescType & out_geometricInliersPerType)
   {
-    using namespace openMVG;
-    using namespace openMVG::robust;
+    using namespace aliceVision;
+    using namespace aliceVision::robust;
     out_geometricInliersPerType.clear();
 
     // Get back corresponding view index
@@ -72,8 +72,8 @@ struct GeometricFilter_EMatrix_AC : public GeometricFilterMatrix
 
     // Define the AContrario adapted Essential matrix solver
     typedef ACKernelAdaptorEssential<
-        openMVG::essential::kernel::FivePointKernel,
-        openMVG::fundamental::kernel::EpipolarDistanceError,
+        aliceVision::essential::kernel::FivePointKernel,
+        aliceVision::fundamental::kernel::EpipolarDistanceError,
         UnnormalizerT,
         Mat3>
         KernelType;
@@ -157,8 +157,8 @@ struct GeometricFilter_EMatrix_AC : public GeometricFilterMatrix
       FundamentalFromEssential(m_E, ptrPinhole_I->K(), ptrPinhole_J->K(), &F);
 
       geometry_aware::GuidedMatching<Mat3,
-            openMVG::fundamental::kernel::EpipolarDistanceError>(
-            //openMVG::fundamental::kernel::SymmetricEpipolarDistanceError>(
+            aliceVision::fundamental::kernel::EpipolarDistanceError>(
+            //aliceVision::fundamental::kernel::SymmetricEpipolarDistanceError>(
         F,
         cam_I, regionsPerView.getAllRegions(viewId_I),
         cam_J, regionsPerView.getAllRegions(viewId_J),
@@ -174,6 +174,6 @@ struct GeometricFilter_EMatrix_AC : public GeometricFilterMatrix
 };
 
 } // namespace matching_image_collection
-} // namespace openMVG
+} // namespace aliceVision
 
 

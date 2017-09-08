@@ -17,31 +17,31 @@ set(exif_files_sources
 
 set_source_files_properties(${exif_files_sources} PROPERTIES LANGUAGE CXX)
 
-add_library(openMVG_exif
+add_library(aliceVision_exif
   ${exif_files_headers}
   ${exif_files_sources}
 )
 
-target_link_libraries(openMVG_exif
+target_link_libraries(aliceVision_exif
   stlplus
   easyexif
   ${LOG_LIB}
 )
 
-set_target_properties(openMVG_exif
+set_target_properties(aliceVision_exif
   PROPERTIES SOVERSION ${OPENMVG_VERSION_MAJOR}
   VERSION "${OPENMVG_VERSION_MAJOR}.${OPENMVG_VERSION_MINOR}"
 )
 
-install(TARGETS openMVG_exif
+install(TARGETS aliceVision_exif
   DESTINATION lib
-  EXPORT openMVG-targets
+  EXPORT aliceVision-targets
 )
 
-set_property(TARGET openMVG_exif
+set_property(TARGET aliceVision_exif
   PROPERTY FOLDER AliceVision/AliceVision
 )
 
-UNIT_TEST(openMVG exif_IO "openMVG_exif")
+UNIT_TEST(aliceVision exif_IO "aliceVision_exif")
 
 add_subdirectory(sensor_width_database)

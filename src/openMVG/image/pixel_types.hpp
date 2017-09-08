@@ -4,9 +4,9 @@
 #ifndef OPENMVG_IMAGE_PIXELTYPES_HPP
 #define OPENMVG_IMAGE_PIXELTYPES_HPP
 
-#include "openMVG/numeric/numeric.h"
+#include "aliceVision/numeric/numeric.h"
 
-namespace openMVG
+namespace aliceVision
 {
   namespace image
   {
@@ -371,7 +371,7 @@ namespace openMVG
     const RGBColor MAGENTA( 255, 0, 255 );
     
   } // namespace image
-} // namespace openMVG
+} // namespace aliceVision
 
 #endif // OPENMVG_IMAGE_PIXELTYPES_HPP
 

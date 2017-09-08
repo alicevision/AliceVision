@@ -8,7 +8,7 @@
 
 #include <string>
 
-namespace openMVG {
+namespace aliceVision {
 namespace voctree {
 
 /**
@@ -93,6 +93,6 @@ void voctreeStatistics(
     std::map<int, int> &globalHistogram);
 
 } //namespace voctree
-} //namespace openMVG
+} //namespace aliceVision
 
 #include "databaseIO.tcc"

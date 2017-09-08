@@ -4,7 +4,7 @@
 #ifndef OPENMVG_MULTIVIEW_ROTATION_AVERAGING_L1_H_
 #define OPENMVG_MULTIVIEW_ROTATION_AVERAGING_L1_H_
 
-#include "openMVG/multiview/rotation_averaging_common.hpp"
+#include "aliceVision/multiview/rotation_averaging_common.hpp"
 
 //------------------
 //-- Bibliography --
@@ -14,7 +14,7 @@
 //- Date: December 2013.
 //- Conference: ICCV.
 
-namespace openMVG   {
+namespace aliceVision   {
 namespace rotation_averaging  {
 
 namespace l1  {
@@ -22,7 +22,7 @@ namespace l1  {
 // D E F I N E S ///////////////////////////////////////////////////
 typedef double REAL;
 
-typedef std::vector<openMVG::Mat3> Matrix3x3Arr;
+typedef std::vector<aliceVision::Mat3> Matrix3x3Arr;
 
 /**
  * @brief Compute an initial estimation of global rotation (chain rotations along a MST).
@@ -66,7 +66,7 @@ bool RefineRotationsAvgL1IRLS(
   const RelativeRotations& RelRs,
   Matrix3x3Arr& Rs,
   const size_t nMainViewID,
-  REAL sigma=openMVG::D2R(5));
+  REAL sigma=aliceVision::D2R(5));
 
 /**
  * @brief Sort relative rotation as inlier, outlier rotations.
@@ -115,6 +115,6 @@ bool IterativelyReweightedLeastSquares(
 
 } // namespace l1
 } // namespace rotation_averaging
-} // namespace openMVG
+} // namespace aliceVision
 
 #endif // OPENMVG_MULTIVIEW_ROTATION_AVERAGING_L1_H_

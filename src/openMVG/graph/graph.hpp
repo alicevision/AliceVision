@@ -4,13 +4,13 @@
 #ifndef OPENMVG_GRAPH_H_
 #define OPENMVG_GRAPH_H_
 
-#include "openMVG/types.hpp"
+#include "aliceVision/types.hpp"
 #include "lemon/list_graph.h"
 #include <lemon/connectivity.h>
 
-#include "openMVG/graph/graph_builder.hpp"
-#include "openMVG/graph/graph_graphviz_export.hpp"
-#include "openMVG/graph/connectedComponent.hpp"
-#include "openMVG/graph/triplet_finder.hpp"
+#include "aliceVision/graph/graph_builder.hpp"
+#include "aliceVision/graph/graph_graphviz_export.hpp"
+#include "aliceVision/graph/connectedComponent.hpp"
+#include "aliceVision/graph/triplet_finder.hpp"
 
 #endif // OPENMVG_GRAPH_H_

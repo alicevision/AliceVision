@@ -1,20 +1,20 @@
 // This file is part of the AliceVision project and is made available under
 // the terms of the MPL2 license (see the COPYING.md file).
 
-#include "openMVG/sfm/pipelines/pipelines_test.hpp"
-#include "openMVG/features/FeaturesPerView.hpp"
-#include "openMVG/matching/indMatch.hpp"
-#include "openMVG/sfm/sfm.hpp"
+#include "aliceVision/sfm/pipelines/pipelines_test.hpp"
+#include "aliceVision/features/FeaturesPerView.hpp"
+#include "aliceVision/matching/indMatch.hpp"
+#include "aliceVision/sfm/sfm.hpp"
 #include "testing/testing.h"
 
 #include <cmath>
 #include <cstdio>
 #include <iostream>
 
-using namespace openMVG;
-using namespace openMVG::cameras;
-using namespace openMVG::geometry;
-using namespace openMVG::sfm;
+using namespace aliceVision;
+using namespace aliceVision::cameras;
+using namespace aliceVision::geometry;
+using namespace aliceVision::sfm;
 
 // Test summary:
 // - Create features points and matching from the synthetic dataset

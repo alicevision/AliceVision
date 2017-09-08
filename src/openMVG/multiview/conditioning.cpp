@@ -1,9 +1,9 @@
 // This file is part of the AliceVision project and is made available under
 // the terms of the MPL2 license (see the COPYING.md file).
 
-#include "openMVG/multiview/conditioning.hpp"
+#include "aliceVision/multiview/conditioning.hpp"
 
-namespace openMVG {
+namespace aliceVision {
 
 // HZ 4.4.4 pag.109
 void PreconditionerFromPoints(const Mat &points, Mat3 *T) {
@@ -76,4 +76,4 @@ void UnnormalizerI::Unnormalize(const Mat3 &T1, const Mat3 &T2, Mat3 *H)  {
   *H = T2.inverse() * (*H) * T1;
 }
 
-} // namespace openMVG
+} // namespace aliceVision

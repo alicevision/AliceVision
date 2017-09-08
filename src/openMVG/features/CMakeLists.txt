@@ -64,15 +64,15 @@ endif()
 
 set_source_files_properties(${features_files_sources} PROPERTIES LANGUAGE CXX)
 
-add_library(openMVG_features
+add_library(aliceVision_features
   ${features_files_headers}
   ${features_files_sources}
 )
 
-target_link_libraries( openMVG_features 
-  PUBLIC openMVG_numeric
-         openMVG_image
-         openMVG_multiview
+target_link_libraries( aliceVision_features 
+  PUBLIC aliceVision_numeric
+         aliceVision_image
+         aliceVision_multiview
          vlsift
          stlplus
          ${LOG_LIB}
@@ -80,31 +80,31 @@ target_link_libraries( openMVG_features
 
 # Link CCTAG library
 if(OPENMVG_HAVE_CCTAG)
-  target_link_libraries(openMVG_features PUBLIC CCTag::CCTag)
+  target_link_libraries(aliceVision_features PUBLIC CCTag::CCTag)
 endif()
 
 # Link PopSIFT library
 if(OPENMVG_HAVE_POPSIFT)
-  target_link_libraries(openMVG_features PUBLIC PopSift::popsift)
+  target_link_libraries(aliceVision_features PUBLIC PopSift::popsift)
 endif()
 
 # Link OpenCV library
 if(OPENMVG_HAVE_OPENCV)
-  target_link_libraries(openMVG_features PUBLIC ${OpenCV_LIBS})
+  target_link_libraries(aliceVision_features PUBLIC ${OpenCV_LIBS})
 endif()
 
-set_target_properties(openMVG_features
+set_target_properties(aliceVision_features
   PROPERTIES SOVERSION ${OPENMVG_VERSION_MAJOR}
   VERSION "${OPENMVG_VERSION_MAJOR}.${OPENMVG_VERSION_MINOR}"
 )
 
-install(TARGETS openMVG_features
+install(TARGETS aliceVision_features
   DESTINATION lib
-  EXPORT openMVG-targets
+  EXPORT aliceVision-targets
 )
 
-set_property(TARGET openMVG_features
+set_property(TARGET aliceVision_features
   PROPERTY FOLDER AliceVision/AliceVision
 )
 
-UNIT_TEST(openMVG features "openMVG_features")
+UNIT_TEST(aliceVision features "aliceVision_features")

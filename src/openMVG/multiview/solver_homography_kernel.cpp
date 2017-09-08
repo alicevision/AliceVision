@@ -1,9 +1,9 @@
 // This file is part of the AliceVision project and is made available under
 // the terms of the MPL2 license (see the COPYING.md file).
 
-#include "openMVG/multiview/solver_homography_kernel.hpp"
+#include "aliceVision/multiview/solver_homography_kernel.hpp"
 
-namespace openMVG {
+namespace aliceVision {
 namespace homography {
 namespace kernel {
 
@@ -61,4 +61,4 @@ void FourPointSolver::Solve(const Mat &x, const Mat &y, vector<Mat3> *Hs) {
 
 }  // namespace kernel
 }  // namespace homography
-}  // namespace openMVG
+}  // namespace aliceVision

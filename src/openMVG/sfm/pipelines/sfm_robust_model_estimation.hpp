@@ -4,11 +4,11 @@
 #ifndef OPENMVG_SFM_ROBUST_MODEL_ESTIMATION_HPP
 #define OPENMVG_SFM_ROBUST_MODEL_ESTIMATION_HPP
 
-#include "openMVG/numeric/numeric.h"
-#include "openMVG/geometry/pose3.hpp"
+#include "aliceVision/numeric/numeric.h"
+#include "aliceVision/geometry/pose3.hpp"
 #include <vector>
 
-namespace openMVG {
+namespace aliceVision {
 namespace sfm {
 
 /**
@@ -70,6 +70,6 @@ bool robustRelativePose
 );
 
 } // namespace sfm
-} // namespace openMVG
+} // namespace aliceVision
 
 #endif // OPENMVG_SFM_ROBUST_MODEL_ESTIMATION_HPP

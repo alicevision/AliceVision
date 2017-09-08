@@ -3,23 +3,23 @@
 
 #pragma once
 
-#include "openMVG/numeric/numeric.h"
-#include <openMVG/config.hpp>
+#include "aliceVision/numeric/numeric.h"
+#include <aliceVision/config.hpp>
 
-#include "openMVG/multiview/conditioning.hpp"
-#include "openMVG/multiview/triangulation_nview.hpp"
+#include "aliceVision/multiview/conditioning.hpp"
+#include "aliceVision/multiview/triangulation_nview.hpp"
 
 // Linear programming solver(s)
-#include "openMVG/linearProgramming/linearProgrammingInterface.hpp"
-#include "openMVG/linearProgramming/linearProgrammingOSI_X.hpp"
+#include "aliceVision/linearProgramming/linearProgrammingInterface.hpp"
+#include "aliceVision/linearProgramming/linearProgrammingOSI_X.hpp"
 #if OPENMVG_IS_DEFINED(OPENMVG_HAVE_MOSEK)
-#include "openMVG/linearProgramming/linearProgrammingMOSEK.hpp"
+#include "aliceVision/linearProgramming/linearProgrammingMOSEK.hpp"
 #endif
 
-#include "openMVG/linearProgramming/bisectionLP.hpp"
-#include "openMVG/linearProgramming/lInfinityCV/tijsAndXis_From_xi_Ri.hpp"
+#include "aliceVision/linearProgramming/bisectionLP.hpp"
+#include "aliceVision/linearProgramming/lInfinityCV/tijsAndXis_From_xi_Ri.hpp"
 
-namespace openMVG {
+namespace aliceVision {
 namespace trifocal {
 namespace kernel {
 
@@ -47,11 +47,11 @@ struct TrifocalTensorModel {
 
 }  // namespace kernel
 }  // namespace trifocal
-}  // namespace openMVG
+}  // namespace aliceVision
 
-namespace openMVG{
+namespace aliceVision{
 
-using namespace openMVG::trifocal::kernel;
+using namespace aliceVision::trifocal::kernel;
 
 /// Solve the translations and the structure of a view-triplet that have known rotations
 struct translations_Triplet_Solver {
@@ -79,7 +79,7 @@ struct translations_Triplet_Solver {
     //-- Solve the LInfinity translation and structure from Rotation and points data.
     std::vector<double> vec_solution((3 + MINIMUM_SAMPLES)*3);
 
-    using namespace openMVG::lInfinityCV;
+    using namespace aliceVision::lInfinityCV;
 
 #if OPENMVG_IS_DEFINED(OPENMVG_HAVE_MOSEK)
     MOSEK_SolveWrapper LPsolver(static_cast<int>(vec_solution.size()));
@@ -119,5 +119,5 @@ struct translations_Triplet_Solver {
   }
 };
 
-} // namespace openMVG
+} // namespace aliceVision
 

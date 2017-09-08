@@ -5,10 +5,10 @@
 #define OPENMVG_MATCHING_IND_MATCH_DECORATOR_XY_H
 
 #include <iostream>
-#include "openMVG/matching/indMatch.hpp"
-#include "openMVG/features/features.hpp"
+#include "aliceVision/matching/indMatch.hpp"
+#include "aliceVision/features/features.hpp"
 
-namespace openMVG {
+namespace aliceVision {
 namespace matching {
 
 /// IndMatch decorator.
@@ -140,6 +140,6 @@ private :
 };
 
 }  // namespace matching
-}  // namespace openMVG
+}  // namespace aliceVision
 
 #endif // OPENMVG_MATCHING_IND_MATCH_DECORATOR_XY_H

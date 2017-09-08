@@ -1,10 +1,10 @@
 // This file is part of the AliceVision project and is made available under
 // the terms of the MPL2 license (see the COPYING.md file).
 
-#include <openMVG/voctree/database.hpp>
-#include <openMVG/voctree/vocabulary_tree.hpp>
-#include <openMVG/voctree/databaseIO.hpp>
-#include <openMVG/config.hpp>
+#include <aliceVision/voctree/database.hpp>
+#include <aliceVision/voctree/vocabulary_tree.hpp>
+#include <aliceVision/voctree/databaseIO.hpp>
+#include <aliceVision/config.hpp>
 
 #include <Eigen/Core>
 
@@ -18,7 +18,7 @@
 #include <set>
 #include <chrono>
 
-#include <openMVG/system/Logger.hpp>
+#include <aliceVision/system/Logger.hpp>
 
 static const int DIMENSION = 128;
 
@@ -27,8 +27,8 @@ namespace po = boost::program_options;
 namespace bfs = boost::filesystem;
 
 
-typedef openMVG::features::Descriptor<float, DIMENSION> DescriptorFloat;
-typedef openMVG::features::Descriptor<unsigned char, DIMENSION> DescriptorUChar;
+typedef aliceVision::features::Descriptor<float, DIMENSION> DescriptorFloat;
+typedef aliceVision::features::Descriptor<unsigned char, DIMENSION> DescriptorUChar;
 
 typedef std::size_t ImageID;
 
@@ -265,7 +265,7 @@ int main(int argc, char** argv)
 
   printf("Loading vocabulary tree\n");
   auto loadVoctree_start = std::chrono::steady_clock::now();
-  openMVG::voctree::VocabularyTree<DescriptorFloat> tree(treeName);
+  aliceVision::voctree::VocabularyTree<DescriptorFloat> tree(treeName);
   auto loadVoctree_elapsed = std::chrono::duration_cast<std::chrono::seconds>(std::chrono::steady_clock::now() - loadVoctree_start);
   std::cout << "tree loaded with" << endl << "\t" << tree.levels() << " levels" << std::endl
           << "\t" << tree.splits() << " branching factor" << std::endl
@@ -277,7 +277,7 @@ int main(int argc, char** argv)
 
   OPENMVG_COUT("Creating the database...");
   // Add each object (document) to the database
-  openMVG::voctree::Database db(tree.words());
+  aliceVision::voctree::Database db(tree.words());
 
   if(withWeights)
   {
@@ -296,7 +296,7 @@ int main(int argc, char** argv)
 
   OPENMVG_COUT("Reading descriptors from " << keylist);
   auto detect_start = std::chrono::steady_clock::now();
-  std::size_t numTotFeatures = openMVG::voctree::populateDatabase<DescriptorUChar>(keylist, tree, db, nbMaxDescriptors);
+  std::size_t numTotFeatures = aliceVision::voctree::populateDatabase<DescriptorUChar>(keylist, tree, db, nbMaxDescriptors);
   auto detect_elapsed = std::chrono::duration_cast<std::chrono::seconds>(std::chrono::steady_clock::now() - detect_start);
 
   if(numTotFeatures == 0)
@@ -334,9 +334,9 @@ int main(int argc, char** argv)
   #pragma omp parallel for
   for(ptrdiff_t i = 0; i < static_cast<ptrdiff_t>(db.getSparseHistogramPerImage().size()); ++i)
   {
-    openMVG::voctree::SparseHistogramPerImage::const_iterator docIt = db.getSparseHistogramPerImage().cbegin();
+    aliceVision::voctree::SparseHistogramPerImage::const_iterator docIt = db.getSparseHistogramPerImage().cbegin();
     std::advance(docIt, i);
-    std::vector<openMVG::voctree::DocMatch> matches;
+    std::vector<aliceVision::voctree::DocMatch> matches;
     
     db.find(docIt->second, numImageQuery, matches);
     //    OPENMVG_COUT("query document " << docIt->first
@@ -347,7 +347,7 @@ int main(int argc, char** argv)
 
     ListOfImageID idMatches;
     idMatches.reserve(matches.size());
-    for(const openMVG::voctree::DocMatch& m : matches)
+    for(const aliceVision::voctree::DocMatch& m : matches)
     {
       idMatches.push_back(m.id);
     }

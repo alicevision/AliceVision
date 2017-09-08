@@ -1,14 +1,14 @@
 // This file is part of the AliceVision project and is made available under
 // the terms of the MPL2 license (see the COPYING.md file).
 
-#include "openMVG/matching/indMatch.hpp"
-#include "openMVG/matching/indMatch_utils.hpp"
-#include "openMVG/image/image.hpp"
-#include "openMVG/features/features.hpp"
-#include "openMVG/tracks/tracks.hpp"
-#include "openMVG/sfm/sfm.hpp"
-#include "openMVG/sfm/pipelines/RegionsIO.hpp"
-#include "openMVG/features/svgVisualization.hpp"
+#include "aliceVision/matching/indMatch.hpp"
+#include "aliceVision/matching/indMatch_utils.hpp"
+#include "aliceVision/image/image.hpp"
+#include "aliceVision/features/features.hpp"
+#include "aliceVision/tracks/tracks.hpp"
+#include "aliceVision/sfm/sfm.hpp"
+#include "aliceVision/sfm/pipelines/RegionsIO.hpp"
+#include "aliceVision/features/svgVisualization.hpp"
 
 #include "software/SfM/SfMIOHelper.hpp"
 #include "third_party/cmdLine/cmdLine.h"
@@ -16,10 +16,10 @@
 #include "third_party/progress/progress.hpp"
 #include "third_party/vectorGraphics/svgDrawer.hpp"
 
-using namespace openMVG;
-using namespace openMVG::matching;
-using namespace openMVG::sfm;
-using namespace openMVG::tracks;
+using namespace aliceVision;
+using namespace aliceVision::matching;
+using namespace aliceVision::sfm;
+using namespace aliceVision::tracks;
 using namespace svg;
 
 
@@ -92,7 +92,7 @@ int main(int argc, char ** argv)
   //---------------------------------------
   // Load SfM Scene regions
   //---------------------------------------
-  using namespace openMVG::features;
+  using namespace aliceVision::features;
   
   // Get imageDescriberMethodType
   std::vector<EImageDescriberType> describerMethodTypes = EImageDescriberType_stringToEnums(describerMethods);
@@ -118,7 +118,7 @@ int main(int argc, char ** argv)
   //---------------------------------------
   tracks::TracksMap map_tracks;
   {
-    const openMVG::matching::PairwiseMatches & map_Matches = pairwiseMatches;
+    const aliceVision::matching::PairwiseMatches & map_Matches = pairwiseMatches;
     tracks::TracksBuilder tracksBuilder;
     tracksBuilder.Build(map_Matches);
     tracksBuilder.Filter();

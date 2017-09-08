@@ -4,14 +4,14 @@
 #ifndef OPENMVG_CAMERA_INTRINSICS_H
 #define OPENMVG_CAMERA_INTRINSICS_H
 
-#include "openMVG/numeric/numeric.h"
-#include "openMVG/cameras/Camera_Common.hpp"
-#include "openMVG/geometry/pose3.hpp"
-#include "openMVG/stl/hash.hpp"
+#include "aliceVision/numeric/numeric.h"
+#include "aliceVision/cameras/Camera_Common.hpp"
+#include "aliceVision/geometry/pose3.hpp"
+#include "aliceVision/stl/hash.hpp"
 #include <vector>
 #include <cereal/cereal.hpp> // Serialization
 
-namespace openMVG {
+namespace aliceVision {
 namespace cameras {
 
 /// Basis class for all intrinsic parameters of a camera
@@ -202,7 +202,7 @@ static inline double AngleBetweenRay(
 }
 
 } // namespace cameras
-} // namespace openMVG
+} // namespace aliceVision
 
 #endif // #ifndef OPENMVG_CAMERA_INTRINSICS_H
 

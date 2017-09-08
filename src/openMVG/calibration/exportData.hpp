@@ -3,14 +3,14 @@
 
 #pragma once
 
-#include <openMVG/dataio/FeedProvider.hpp>
+#include <aliceVision/dataio/FeedProvider.hpp>
 
 #include <opencv2/opencv.hpp>
 
 #include <vector>
 #include <string>
 
-namespace openMVG{
+namespace aliceVision{
 namespace calibration{
 
 /**
@@ -24,7 +24,7 @@ namespace calibration{
  * @param[in] imageSize The size of the image.
  * @param[in] suffix The suffix of the filename.
  */
-void exportImages(openMVG::dataio::FeedProvider& feed,
+void exportImages(aliceVision::dataio::FeedProvider& feed,
                   const std::string& debugFolder,
                   const std::vector<std::size_t>& exportFrames,
                   const cv::Mat& cameraMatrix,
@@ -47,7 +47,7 @@ void exportImages(openMVG::dataio::FeedProvider& feed,
  */
 void exportDebug(const std::string& debugSelectedImgFolder,
                  const std::string& debugRejectedImgFolder,
-                 openMVG::dataio::FeedProvider& feed,
+                 aliceVision::dataio::FeedProvider& feed,
                  const std::vector<std::size_t>& calibInputFrames,
                  const std::vector<std::size_t>& rejectedInputFrames,
                  const std::vector<std::size_t>& unusedImagesIndexes,
@@ -95,5 +95,5 @@ void saveCameraParams(const std::string& filename,
                       double totalAvgErr);
 
 }//namespace calibration
-}//namespace openMVG
+}//namespace aliceVision
 

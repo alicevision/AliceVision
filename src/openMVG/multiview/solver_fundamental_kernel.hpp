@@ -5,10 +5,10 @@
 #define OPENMVG_MULTIVIEW_SOLVER_FUNDAMENTAL_KERNEL_H_
 
 #include <vector>
-#include "openMVG/multiview/two_view_kernel.hpp"
-#include "openMVG/numeric/numeric.h"
+#include "aliceVision/multiview/two_view_kernel.hpp"
+#include "aliceVision/numeric/numeric.h"
 
-namespace openMVG {
+namespace aliceVision {
 namespace fundamental {
 namespace kernel {
 
@@ -142,6 +142,6 @@ typedef two_view::kernel::Kernel<
 
 }  // namespace kernel
 }  // namespace fundamental
-}  // namespace openMVG
+}  // namespace aliceVision
 
 #endif  // OPENMVG_MULTIVIEW_SOLVER_FUNDAMENTAL_KERNEL_H_

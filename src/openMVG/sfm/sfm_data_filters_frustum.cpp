@@ -1,22 +1,22 @@
 // This file is part of the AliceVision project and is made available under
 // the terms of the MPL2 license (see the COPYING.md file).
 
-#include "openMVG/sfm/sfm_data_filters_frustum.hpp"
-#include "openMVG/sfm/sfm.hpp"
-#include "openMVG/types.hpp"
-#include "openMVG/geometry/half_space_intersection.hpp"
-#include <openMVG/config.hpp>
+#include "aliceVision/sfm/sfm_data_filters_frustum.hpp"
+#include "aliceVision/sfm/sfm.hpp"
+#include "aliceVision/types.hpp"
+#include "aliceVision/geometry/half_space_intersection.hpp"
+#include <aliceVision/config.hpp>
 
 #include "third_party/progress/progress.hpp"
 
 #include <fstream>
 
-namespace openMVG {
+namespace aliceVision {
 namespace sfm {
 
-using namespace openMVG::cameras;
-using namespace openMVG::geometry;
-using namespace openMVG::geometry::halfPlane;
+using namespace aliceVision::cameras;
+using namespace aliceVision::geometry;
+using namespace aliceVision::geometry::halfPlane;
 
 // Constructor
 Frustum_Filter::Frustum_Filter(const SfM_Data & sfm_data,
@@ -229,5 +229,5 @@ void Frustum_Filter::init_z_near_z_far_depth(const SfM_Data & sfm_data,
 }
 
 } // namespace sfm
-} // namespace openMVG
+} // namespace aliceVision
 

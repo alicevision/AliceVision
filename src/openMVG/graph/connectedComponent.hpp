@@ -4,12 +4,12 @@
 #ifndef OPENMVG_GRAPH_CONNECTED_COMPONENT_H_
 #define OPENMVG_GRAPH_CONNECTED_COMPONENT_H_
 
-#include <openMVG/types.hpp>
-#include <openMVG/system/Logger.hpp>
-#include <openMVG/graph/graph.hpp>
+#include <aliceVision/types.hpp>
+#include <aliceVision/system/Logger.hpp>
+#include <aliceVision/graph/graph.hpp>
 #include <set>
 
-namespace openMVG {
+namespace aliceVision {
 namespace graph {
 
 /// Export node of each CC (Connected Component) in a map
@@ -146,6 +146,6 @@ std::set<IndexT> CleanGraph_KeepLargestBiEdge_Nodes(
 }
 
 } // namespace graph
-} // namespace openMVG
+} // namespace aliceVision
 
 #endif // OPENMVG_GRAPH_CONNECTED_COMPONENT_H_

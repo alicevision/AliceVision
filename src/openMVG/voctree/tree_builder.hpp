@@ -9,7 +9,7 @@
 #include <deque>
 //#include <cstdio> //DEBUG
 
-namespace openMVG {
+namespace aliceVision {
 namespace voctree {
 
 /**

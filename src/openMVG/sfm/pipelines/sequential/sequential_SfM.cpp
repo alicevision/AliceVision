@@ -1,24 +1,24 @@
 // This file is part of the AliceVision project and is made available under
 // the terms of the MPL2 license (see the COPYING.md file).
 
-#include "openMVG/sfm/pipelines/sequential/sequential_SfM.hpp"
-#include "openMVG/sfm/pipelines/sfm_robust_model_estimation.hpp"
-#include "openMVG/sfm/sfm_data_io.hpp"
-#include "openMVG/sfm/sfm_data_BA_ceres.hpp"
-#include "openMVG/sfm/sfm_data_filters.hpp"
-#include "openMVG/sfm/pipelines/localization/SfM_Localizer.hpp"
+#include "aliceVision/sfm/pipelines/sequential/sequential_SfM.hpp"
+#include "aliceVision/sfm/pipelines/sfm_robust_model_estimation.hpp"
+#include "aliceVision/sfm/sfm_data_io.hpp"
+#include "aliceVision/sfm/sfm_data_BA_ceres.hpp"
+#include "aliceVision/sfm/sfm_data_filters.hpp"
+#include "aliceVision/sfm/pipelines/localization/SfM_Localizer.hpp"
 
-#include "openMVG/features/FeaturesPerView.hpp"
-#include "openMVG/matching/indMatch.hpp"
-#include "openMVG/multiview/essential.hpp"
-#include "openMVG/multiview/triangulation.hpp"
-#include "openMVG/multiview/triangulation_nview.hpp"
-#include "openMVG/graph/connectedComponent.hpp"
-#include "openMVG/stl/stl.hpp"
-#include "openMVG/system/timer.hpp"
-#include "openMVG/system/cpu.hpp"
-#include "openMVG/system/memoryInfo.hpp"
-#include <openMVG/config.hpp>
+#include "aliceVision/features/FeaturesPerView.hpp"
+#include "aliceVision/matching/indMatch.hpp"
+#include "aliceVision/multiview/essential.hpp"
+#include "aliceVision/multiview/triangulation.hpp"
+#include "aliceVision/multiview/triangulation_nview.hpp"
+#include "aliceVision/graph/connectedComponent.hpp"
+#include "aliceVision/stl/stl.hpp"
+#include "aliceVision/system/timer.hpp"
+#include "aliceVision/system/cpu.hpp"
+#include "aliceVision/system/memoryInfo.hpp"
+#include <aliceVision/config.hpp>
 
 #include "third_party/htmlDoc/htmlDoc.hpp"
 #include "third_party/progress/progress.hpp"
@@ -35,11 +35,11 @@
 
 //#define OPENMVG_NEXTBESTVIEW_WITHOUT_SCORE
 
-namespace openMVG {
+namespace aliceVision {
 namespace sfm {
 
-using namespace openMVG::geometry;
-using namespace openMVG::cameras;
+using namespace aliceVision::geometry;
+using namespace aliceVision::cameras;
 
 /**
  * @brief Compute indexes of all features in a fixed size pyramid grid.
@@ -394,7 +394,7 @@ bool SequentialSfMReconstructionEngine::Process()
   }
   
   // timer for stats
-  openMVG::system::Timer timer_sfm;
+  aliceVision::system::Timer timer_sfm;
 
   std::set<std::size_t> reconstructedViewIds;
   std::set<std::size_t> rejectedViewIds;
@@ -522,8 +522,8 @@ bool SequentialSfMReconstructionEngine::ChooseInitialPair(Pair & initialPairInde
     //  - valid intrinsics,
     //  - valid estimated Fundamental matrix.
     std::vector< size_t > vec_NbMatchesPerPair;
-    std::vector<openMVG::matching::PairwiseMatches::const_iterator> vec_MatchesIterator;
-    for (openMVG::matching::PairwiseMatches::const_iterator
+    std::vector<aliceVision::matching::PairwiseMatches::const_iterator> vec_MatchesIterator;
+    for (aliceVision::matching::PairwiseMatches::const_iterator
       iter = _pairwiseMatches->begin();
       iter != _pairwiseMatches->end(); ++iter)
     {
@@ -542,7 +542,7 @@ bool SequentialSfMReconstructionEngine::ChooseInitialPair(Pair & initialPairInde
 
     for (size_t i = 0; i < std::min((size_t)10, vec_NbMatchesPerPair.size()); ++i) {
       const size_t index = packet_vec[i].index;
-      openMVG::matching::PairwiseMatches::const_iterator iter = vec_MatchesIterator[index];
+      aliceVision::matching::PairwiseMatches::const_iterator iter = vec_MatchesIterator[index];
       OPENMVG_COUT("(" << iter->first.first << "," << iter->first.second <<")\t\t"
         << iter->second.getNbAllMatches() << " matches");
     }
@@ -576,7 +576,7 @@ bool SequentialSfMReconstructionEngine::InitLandmarkTracks()
 
   {
     // List of features matches for each couple of images
-    const openMVG::matching::PairwiseMatches & map_Matches = *_pairwiseMatches;
+    const aliceVision::matching::PairwiseMatches & map_Matches = *_pairwiseMatches;
     OPENMVG_LOG_DEBUG("Track building");
 
     tracksBuilder.Build(map_Matches);
@@ -693,7 +693,7 @@ bool SequentialSfMReconstructionEngine::getBestInitialImagePairs(std::vector<Pai
     if (cam_I == nullptr || cam_J == nullptr)
       continue;
 
-    openMVG::tracks::TracksMap map_tracksCommon;
+    aliceVision::tracks::TracksMap map_tracksCommon;
     const std::set<size_t> set_imageIndex= {I, J};
     tracks::TracksUtilsMap::GetTracksInImagesFast(set_imageIndex, _map_tracks, _map_tracksPerView, map_tracksCommon);
 
@@ -703,7 +703,7 @@ bool SequentialSfMReconstructionEngine::getBestInitialImagePairs(std::vector<Pai
     Mat xI(2,n), xJ(2,n);
     size_t cptIndex = 0;
     std::vector<std::size_t> commonTracksIds(n);
-    for (openMVG::tracks::TracksMap::const_iterator
+    for (aliceVision::tracks::TracksMap::const_iterator
       iterT = map_tracksCommon.begin(); iterT != map_tracksCommon.end();
       ++iterT, ++cptIndex)
     {
@@ -834,7 +834,7 @@ bool SequentialSfMReconstructionEngine::MakeInitialPair3D(const Pair& current_pa
 
   // b. Get common features between the two views
   // use the track to have a more dense match correspondence set
-  openMVG::tracks::TracksMap map_tracksCommon;
+  aliceVision::tracks::TracksMap map_tracksCommon;
   const std::set<std::size_t> set_imageIndex= {I, J};
   tracks::TracksUtilsMap::GetTracksInImagesFast(set_imageIndex, _map_tracks, _map_tracksPerView, map_tracksCommon);
 
@@ -842,7 +842,7 @@ bool SequentialSfMReconstructionEngine::MakeInitialPair3D(const Pair& current_pa
   const std::size_t n = map_tracksCommon.size();
   Mat xI(2,n), xJ(2,n);
   std::size_t cptIndex = 0;
-  for (openMVG::tracks::TracksMap::const_iterator
+  for (aliceVision::tracks::TracksMap::const_iterator
     iterT = map_tracksCommon.begin(); iterT != map_tracksCommon.end();
     ++iterT, ++cptIndex)
   {
@@ -1129,11 +1129,11 @@ bool SequentialSfMReconstructionEngine::FindConnectedViews(
     const bool isIntrinsicsReconstructed = reconstructedIntrinsics.count(intrinsicId);
 
     // Compute 2D - 3D possible content
-    openMVG::tracks::TracksPerView::const_iterator tracksIdsIt = _map_tracksPerView.find(viewId);
+    aliceVision::tracks::TracksPerView::const_iterator tracksIdsIt = _map_tracksPerView.find(viewId);
     if(tracksIdsIt == _map_tracksPerView.end())
       continue;
 
-    const openMVG::tracks::TrackIdSet& set_tracksIds = tracksIdsIt->second;
+    const aliceVision::tracks::TrackIdSet& set_tracksIds = tracksIdsIt->second;
     if (set_tracksIds.empty())
       continue;
 
@@ -1284,7 +1284,7 @@ bool SequentialSfMReconstructionEngine::Resection(const std::size_t viewIndex)
 
   // A. Compute 2D/3D matches
   // A1. list tracks ids used by the view
-  const openMVG::tracks::TrackIdSet& set_tracksIds = _map_tracksPerView.at(viewIndex);
+  const aliceVision::tracks::TrackIdSet& set_tracksIds = _map_tracksPerView.at(viewIndex);
 
   // A2. intersects the track list with the reconstructed
   std::set<std::size_t> reconstructed_trackId;
@@ -1710,4 +1710,4 @@ void SequentialSfMReconstructionEngine::exportStatistics(double time_sfm)
 #endif
 
 } // namespace sfm
-} // namespace openMVG
+} // namespace aliceVision

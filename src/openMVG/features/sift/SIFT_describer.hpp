@@ -2,12 +2,12 @@
 // the terms of the MPL2 license (see the COPYING.md file).
 
 #pragma once
-#include <openMVG/config.hpp>
-#include <openMVG/features/sift/SIFT_vlfeat_describer.hpp>
+#include <aliceVision/config.hpp>
+#include <aliceVision/features/sift/SIFT_vlfeat_describer.hpp>
 #if OPENMVG_IS_DEFINED(OPENMVG_HAVE_POPSIFT)
-#include <openMVG/features/sift/SIFT_popSIFT_describer.hpp>
+#include <aliceVision/features/sift/SIFT_popSIFT_describer.hpp>
 #endif
-namespace openMVG {
+namespace aliceVision {
 namespace features {
 
 class SIFT_ImageDescriber : public Image_describer
@@ -105,4 +105,4 @@ private:
 };
 
 } // namespace features
-} // namespace openMVG
+} // namespace aliceVision

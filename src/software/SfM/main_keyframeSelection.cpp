@@ -1,8 +1,8 @@
 // This file is part of the AliceVision project and is made available under
 // the terms of the MPL2 license (see the COPYING.md file).
 
-#include <openMVG/keyframe/KeyframeSelector.hpp>
-#include <openMVG/system/Logger.hpp>
+#include <aliceVision/keyframe/KeyframeSelector.hpp>
+#include <aliceVision/system/Logger.hpp>
 
 #include <boost/filesystem.hpp>
 #include <boost/program_options.hpp> 
@@ -13,7 +13,7 @@
 namespace bfs = boost::filesystem;
 namespace po = boost::program_options;
 
-using namespace openMVG::keyframe;
+using namespace aliceVision::keyframe;
 
 int main(int argc, char** argv)
 {

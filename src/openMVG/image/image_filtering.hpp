@@ -18,9 +18,9 @@
 //- Date: September 2002.
 //- Journal : Journal of Visual Communication and Image Representation.
 
-#include "openMVG/image/image_convolution.hpp"
+#include "aliceVision/image/image_convolution.hpp"
 
-namespace openMVG {
+namespace aliceVision {
 namespace image {
 
   /**
@@ -336,6 +336,6 @@ namespace image {
   }
 
 } // namespace image
-} // namespace openMVG
+} // namespace aliceVision
 
 #endif

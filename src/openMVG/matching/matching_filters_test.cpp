@@ -4,9 +4,9 @@
 #include "CppUnitLite/TestHarness.h"
 #include "testing/testing.h"
 
-#include "openMVG/matching/matching_filters.hpp"
-using namespace openMVG;
-using namespace openMVG::matching;
+#include "aliceVision/matching/matching_filters.hpp"
+using namespace aliceVision;
+using namespace aliceVision::matching;
 using namespace std;
 
 /// Sorted vector intersection (increasing order)

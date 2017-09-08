@@ -4,7 +4,7 @@
 #ifndef OPENMVG_FEATURES_DESCRIPTOR_HPP
 #define OPENMVG_FEATURES_DESCRIPTOR_HPP
 
-#include "openMVG/numeric/numeric.h"
+#include "aliceVision/numeric/numeric.h"
 #include <iostream>
 #include <iterator>
 #include <fstream>
@@ -12,7 +12,7 @@
 #include <vector>
 #include <exception>
 
-namespace openMVG {
+namespace aliceVision {
 namespace features {
 
 /**
@@ -312,6 +312,6 @@ bool saveDescsToBinFile(
 
 
 } // namespace features
-} // namespace openMVG
+} // namespace aliceVision
 
 #endif  // OPENMVG_FEATURES_DESCRIPTOR_HPP

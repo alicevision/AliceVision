@@ -2,7 +2,7 @@
 // the terms of the MPL2 license (see the COPYING.md file).
 
 #include "rigResection.hpp"
-#include "openMVG/robust_estimation/robust_estimator_ACRansacKernelAdaptator.hpp"
+#include "aliceVision/robust_estimation/robust_estimator_ACRansacKernelAdaptator.hpp"
 #if OPENMVG_IS_DEFINED(OPENMVG_HAVE_OPENGV)
 #include <Eigen/Eigen>
 #include <opengv/absolute_pose/methods.hpp>
@@ -16,7 +16,7 @@
 #include <vector>
 #include <chrono>
 
-namespace openMVG{
+namespace aliceVision{
 namespace localization{
 
 #if OPENMVG_IS_DEFINED(OPENMVG_HAVE_OPENGV)

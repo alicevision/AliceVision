@@ -6,8 +6,8 @@
 #include "third_party/stlplus3/filesystemSimplified/file_system.hpp"
 #include "testing/testing.h"
 
-using namespace openMVG;
-using namespace openMVG::SfMIO;
+using namespace aliceVision;
+using namespace aliceVision::SfMIO;
 
 TEST(SfMIOHelper, EmptyFile) {
   std::ostringstream os;
@@ -23,7 +23,7 @@ TEST(SfMIOHelper, EmptyFile) {
   std::vector<IntrinsicCameraInfo> vec_intrinsicGroups;
   
   EXPECT_FALSE(
-    openMVG::SfMIO::loadImageList( vec_camImageNames, vec_intrinsicGroups, sListsFile));
+    aliceVision::SfMIO::loadImageList( vec_camImageNames, vec_intrinsicGroups, sListsFile));
   
   EXPECT_EQ(0, vec_intrinsicGroups.size());
 }
@@ -44,7 +44,7 @@ TEST(SfMIOHelper, UniqueIntrinsicGroup) {
   std::vector<IntrinsicCameraInfo> vec_intrinsicGroups;
   
   EXPECT_TRUE(
-    openMVG::SfMIO::loadImageList( vec_camImageNames, vec_intrinsicGroups, sListsFile));
+    aliceVision::SfMIO::loadImageList( vec_camImageNames, vec_intrinsicGroups, sListsFile));
   
   EXPECT_EQ(1, vec_intrinsicGroups.size());    
 }
@@ -66,7 +66,7 @@ TEST(SfMIOHelper, SameCameraDifferentFocal) {
   std::vector<IntrinsicCameraInfo> vec_intrinsicGroups;
   
   EXPECT_TRUE(
-    openMVG::SfMIO::loadImageList( vec_camImageNames, vec_intrinsicGroups, sListsFile));
+    aliceVision::SfMIO::loadImageList( vec_camImageNames, vec_intrinsicGroups, sListsFile));
   
   EXPECT_EQ(2, vec_intrinsicGroups.size());
 }
@@ -97,7 +97,7 @@ TEST(SfMIOHelper, ManyCameraDifferentFocal) {
   std::vector<IntrinsicCameraInfo> vec_intrinsicGroups;
   
   EXPECT_TRUE(
-    openMVG::SfMIO::loadImageList( vec_camImageNames, vec_intrinsicGroups, sListsFile));
+    aliceVision::SfMIO::loadImageList( vec_camImageNames, vec_intrinsicGroups, sListsFile));
   
   EXPECT_EQ(9, vec_intrinsicGroups.size());
   // Check intrinsic group Ids correctness
@@ -124,7 +124,7 @@ TEST(SfMIOHelper, KnowAndUnknowCamera) {
   std::vector<IntrinsicCameraInfo> vec_intrinsicGroups;
   
   EXPECT_TRUE(
-    openMVG::SfMIO::loadImageList( vec_camImageNames, vec_intrinsicGroups, sListsFile));
+    aliceVision::SfMIO::loadImageList( vec_camImageNames, vec_intrinsicGroups, sListsFile));
   
   EXPECT_EQ(2, vec_intrinsicGroups.size());
 }
@@ -151,7 +151,7 @@ TEST(SfMIOHelper, ThreeIntrinsicGroup_KMatrix) {
   std::vector<IntrinsicCameraInfo> vec_intrinsicGroups;
   
   EXPECT_TRUE(
-    openMVG::SfMIO::loadImageList( vec_camImageNames, vec_intrinsicGroups, sListsFile));
+    aliceVision::SfMIO::loadImageList( vec_camImageNames, vec_intrinsicGroups, sListsFile));
   
   EXPECT_EQ(3, vec_intrinsicGroups.size());                                       
 }

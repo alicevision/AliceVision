@@ -3,15 +3,15 @@
 
 #include <iostream>
 
-#include "openMVG/numeric/numeric.h"
-#include "openMVG/multiview/essential.hpp"
-#include "openMVG/multiview/projection.hpp"
-#include "openMVG/multiview/solver_essential_five_point.hpp"
+#include "aliceVision/numeric/numeric.h"
+#include "aliceVision/multiview/essential.hpp"
+#include "aliceVision/multiview/projection.hpp"
+#include "aliceVision/multiview/solver_essential_five_point.hpp"
 #include "testing/testing.h"
 
-#include "openMVG/multiview/test_data_sets.hpp"
+#include "aliceVision/multiview/test_data_sets.hpp"
 
-using namespace openMVG;
+using namespace aliceVision;
 
 struct TestData {
   //-- Dataset that encapsulate :

@@ -3,13 +3,13 @@
 
 #include "descriptor_loader.hpp"
 
-#include <openMVG/sfm/sfm_data_io.hpp>
+#include <aliceVision/sfm/sfm_data_io.hpp>
 
-#include <openMVG/system/Logger.hpp>
+#include <aliceVision/system/Logger.hpp>
 
 #include <boost/algorithm/string/predicate.hpp>
 
-namespace openMVG {
+namespace aliceVision {
 namespace voctree {
 
 void getInfoBinFile(const std::string &path, int dim, size_t &numDescriptors, int &bytesPerElement)

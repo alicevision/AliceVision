@@ -4,30 +4,30 @@
 #include "colorHarmonizeEngineGlobal.hpp"
 #include "software/SfM/SfMIOHelper.hpp"
 
-#include "openMVG/image/image.hpp"
+#include "aliceVision/image/image.hpp"
 //-- Load features per view
-#include <openMVG/sfm/pipelines/RegionsIO.hpp>
+#include <aliceVision/sfm/pipelines/RegionsIO.hpp>
 //-- Feature matches
-#include <openMVG/matching/indMatch.hpp>
-#include "openMVG/matching/indMatch_utils.hpp"
-#include "openMVG/stl/stl.hpp"
+#include <aliceVision/matching/indMatch.hpp>
+#include "aliceVision/matching/indMatch_utils.hpp"
+#include "aliceVision/stl/stl.hpp"
 
-#include "openMVG/sfm/sfm.hpp"
-#include "openMVG/graph/graph.hpp"
-#include <openMVG/config.hpp>
+#include "aliceVision/sfm/sfm.hpp"
+#include "aliceVision/graph/graph.hpp"
+#include <aliceVision/config.hpp>
 
 #include "third_party/stlplus3/filesystemSimplified/file_system.hpp"
 #include "third_party/vectorGraphics/svgDrawer.hpp"
 
 //-- Selection Methods
-#include "openMVG/color_harmonization/selection_fullFrame.hpp"
-#include "openMVG/color_harmonization/selection_matchedPoints.hpp"
-#include "openMVG/color_harmonization/selection_VLDSegment.hpp"
+#include "aliceVision/color_harmonization/selection_fullFrame.hpp"
+#include "aliceVision/color_harmonization/selection_matchedPoints.hpp"
+#include "aliceVision/color_harmonization/selection_VLDSegment.hpp"
 
 //-- Color harmonization solver
-#include "openMVG/color_harmonization/global_quantile_gain_offset_alignment.hpp"
+#include "aliceVision/color_harmonization/global_quantile_gain_offset_alignment.hpp"
 
-#include "openMVG/system/timer.hpp"
+#include "aliceVision/system/timer.hpp"
 
 #include "third_party/progress/progress.hpp"
 
@@ -39,13 +39,13 @@
 #include <sstream>
 
 
-namespace openMVG {
+namespace aliceVision {
 
 using namespace lemon;
-using namespace openMVG::image;
-using namespace openMVG::matching;
-using namespace openMVG::lInfinity;
-using namespace openMVG::sfm;
+using namespace aliceVision::image;
+using namespace aliceVision::matching;
+using namespace aliceVision::lInfinity;
+using namespace aliceVision::sfm;
 
 typedef features::SIOPointFeature FeatureT;
 typedef vector< FeatureT > featsT;
@@ -322,13 +322,13 @@ bool ColorHarmonizationEngineGlobal::Process()
   std::vector<size_t> vec_indexToFix;
   vec_indexToFix.push_back(map_cameraNodeToCameraIndex[_imgRef]);
 
-  using namespace openMVG::linearProgramming;
+  using namespace aliceVision::linearProgramming;
 
   std::vector<double> vec_solution_r(_vec_fileNames.size() * 2 + 1);
   std::vector<double> vec_solution_g(_vec_fileNames.size() * 2 + 1);
   std::vector<double> vec_solution_b(_vec_fileNames.size() * 2 + 1);
 
-  openMVG::system::Timer timer;
+  aliceVision::system::Timer timer;
 
   #if OPENMVG_IS_DEFINED(OPENMVG_HAVE_MOSEK)
   typedef MOSEK_SolveWrapper SOLVER_LP_T;
@@ -519,7 +519,7 @@ bool ColorHarmonizationEngineGlobal::CleanGraph()
   {
     // Search the largest CC index
     const std::map<IndexT, std::set<lemon::ListGraph::Node> > map_subgraphs =
-      openMVG::graph::exportGraphToMapSubgraphs<lemon::ListGraph, IndexT>(putativeGraph.g);
+      aliceVision::graph::exportGraphToMapSubgraphs<lemon::ListGraph, IndexT>(putativeGraph.g);
     size_t count = std::numeric_limits<size_t>::min();
     std::map<IndexT, std::set<lemon::ListGraph::Node> >::const_iterator iterLargestCC = map_subgraphs.end();
     for(std::map<IndexT, std::set<lemon::ListGraph::Node> >::const_iterator iter = map_subgraphs.begin();
@@ -578,4 +578,4 @@ bool ColorHarmonizationEngineGlobal::CleanGraph()
   return true;
 }
 
-} // namespace openMVG
+} // namespace aliceVision

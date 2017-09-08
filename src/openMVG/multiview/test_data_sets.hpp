@@ -4,10 +4,10 @@
 #ifndef OPENMVG_MULTIVIEW_TEST_DATA_SETS_H_
 #define OPENMVG_MULTIVIEW_TEST_DATA_SETS_H_
 
-#include "openMVG/numeric/numeric.h"
+#include "aliceVision/numeric/numeric.h"
 #include <vector>
 
-namespace openMVG {
+namespace aliceVision {
 
 // A N-view metric dataset.
 // All points are seen by all cameras.
@@ -54,6 +54,6 @@ NViewDataSet NRealisticCamerasCardioid(std::size_t nviews, std::size_t npoints,
                                        const nViewDatasetConfigurator
                                         config = nViewDatasetConfigurator());
 
-} // namespace openMVG
+} // namespace aliceVision
 
 #endif  // OPENMVG_MULTIVIEW_TEST_DATA_SETS_H_

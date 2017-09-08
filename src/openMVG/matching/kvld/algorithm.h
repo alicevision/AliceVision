@@ -16,11 +16,11 @@ the terms of the BSD license (see the COPYING file).
 #ifndef KVLD_ALGORITHM_H
 #define KVLD_ALGORITHM_H
 
-#include <openMVG/numeric/numeric.h>
-#include <openMVG/image/image_container.hpp>
-#include <openMVG/matching/indMatch.hpp>
-#include <openMVG/features/feature.hpp>
-#include <openMVG/types.hpp>
+#include <aliceVision/numeric/numeric.h>
+#include <aliceVision/image/image_container.hpp>
+#include <aliceVision/matching/indMatch.hpp>
+#include <aliceVision/features/feature.hpp>
+#include <aliceVision/types.hpp>
 
 #include <fstream>
 #include <iostream>
@@ -52,9 +52,9 @@ struct PointS
 //It is used to efficiently construct the pyramid of scale images in KVLD
 struct IntegralImages
 {
-  openMVG::image::Image< double > map;
+  aliceVision::image::Image< double > map;
 
-  IntegralImages(const openMVG::image::Image< float >& I);
+  IntegralImages(const aliceVision::image::Image< float >& I);
 
   inline double operator()( double x1, double y1, double x2, double y2 )const
   {
@@ -88,8 +88,8 @@ private :
 
 //=============================IO interface ======================//
 
-std::ofstream& writeDetector( std::ofstream& out, const openMVG::features::SIOPointFeature& vect );
-std::ifstream& readDetector( std::ifstream& in, openMVG::features::SIOPointFeature& point );
+std::ofstream& writeDetector( std::ofstream& out, const aliceVision::features::SIOPointFeature& vect );
+std::ifstream& readDetector( std::ifstream& in, aliceVision::features::SIOPointFeature& point );
 //======================================elemetuary operations================================//
 template < typename T >
 inline T point_distance( const T x1, const T y1, const T x2, const T y2 )
@@ -199,6 +199,6 @@ inline float consistent( const T& a1, const T& a2, const T& b1, const T& b2 )
 	float d = std::min( d1_error / std::min( d1, point_distance( b1, b2 ) ), d2_error / std::min( d2, point_distance( b1, b2 ) ) );
 	return d;
 }
-float getRange(const openMVG::image::Image< float >& I, int a, const float p);
+float getRange(const aliceVision::image::Image< float >& I, int a, const float p);
 
 #endif //KVLD_ALGORITHM_H

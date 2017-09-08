@@ -3,10 +3,10 @@
 
 #pragma once
 
-#include <openMVG/features/ImageDescriberCommon.hpp>
-#include <openMVG/features/image_describer.hpp>
-#include <openMVG/features/regions_factory.hpp>
-#include <openMVG/types.hpp>
+#include <aliceVision/features/ImageDescriberCommon.hpp>
+#include <aliceVision/features/image_describer.hpp>
+#include <aliceVision/features/regions_factory.hpp>
+#include <aliceVision/types.hpp>
 
 #include <iostream>
 #include <numeric>
@@ -15,7 +15,7 @@ namespace cctag {
   class Parameters; // Hidden implementation
 }
 
-namespace openMVG {
+namespace aliceVision {
 namespace features {
 
 
@@ -98,4 +98,4 @@ IndexT getCCTagId(const DescriptorT & desc)
 }
 
 } // namespace features
-} // namespace openMVG
+} // namespace aliceVision

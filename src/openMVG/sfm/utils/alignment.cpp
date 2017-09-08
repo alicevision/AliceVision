@@ -1,10 +1,10 @@
 // This file is part of the AliceVision project and is made available under
 // the terms of the MPL2 license (see the COPYING.md file).
 
-#include "openMVG/sfm/utils/alignment.hpp"
-#include "openMVG/geometry/rigid_transformation3D_srt.hpp"
+#include "aliceVision/sfm/utils/alignment.hpp"
+#include "aliceVision/geometry/rigid_transformation3D_srt.hpp"
 
-namespace openMVG {
+namespace aliceVision {
 namespace sfm {
 
 bool computeSimilarity(const SfM_Data & sfmDataA,
@@ -41,7 +41,7 @@ bool computeSimilarity(const SfM_Data & sfmDataA,
   Vec3 t;
   Mat3 R;
   std::vector<std::size_t> inliers;
-  if(!openMVG::geometry::ACRansac_FindRTS(xA, xB, S, t, R, inliers, true))
+  if(!aliceVision::geometry::ACRansac_FindRTS(xA, xB, S, t, R, inliers, true))
     return false;
 
   OPENMVG_LOG_DEBUG("There are " << commonViewIds.size() << " common cameras and " << inliers.size() << " were used to compute the similarity transform.");
@@ -53,4 +53,4 @@ bool computeSimilarity(const SfM_Data & sfmDataA,
 }
 
 } //namespace sfm
-} //namespace openMVG
+} //namespace aliceVision

@@ -1,13 +1,13 @@
 // This file is part of the AliceVision project and is made available under
 // the terms of the MPL2 license (see the COPYING.md file).
 
-#include "openMVG/multiview/test_data_sets.hpp"
-#include "openMVG/multiview/essential.hpp"
-#include "openMVG/multiview/solver_translation_knownRotation_kernel.hpp"
+#include "aliceVision/multiview/test_data_sets.hpp"
+#include "aliceVision/multiview/essential.hpp"
+#include "aliceVision/multiview/solver_translation_knownRotation_kernel.hpp"
 #include "testing/testing.h"
 #include <vector>
 
-using namespace openMVG;
+using namespace aliceVision;
 
 // Estimate the translation for a pair of view for which the relative rotation is known
 // Use a 2 correspondences based solver
@@ -30,7 +30,7 @@ TEST(Translation_knownRotation_Kernel, Multiview) {
     Vec3 t_GT;
     RelativeCameraMotion(d._R[0], d._t[0], d._R[nCameraIndex], d._t[nCameraIndex], &R_GT, &t_GT);
 
-    openMVG::translation::kernel::TranslationFromKnowRotationKernel kernel(x0, xCam, R_GT);
+    aliceVision::translation::kernel::TranslationFromKnowRotationKernel kernel(x0, xCam, R_GT);
 
     std::size_t samples_[2]={0,1};
     std::vector<std::size_t> samples(samples_,samples_+2);

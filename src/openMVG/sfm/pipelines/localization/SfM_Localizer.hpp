@@ -3,15 +3,15 @@
 
 #pragma once
 
-#include "openMVG/numeric/numeric.h"
-#include "openMVG/sfm/sfm_data.hpp"
-#include "openMVG/features/RegionsPerView.hpp"
-#include <openMVG/robust_estimation/robust_estimators.hpp>
+#include "aliceVision/numeric/numeric.h"
+#include "aliceVision/sfm/sfm_data.hpp"
+#include "aliceVision/features/RegionsPerView.hpp"
+#include <aliceVision/robust_estimation/robust_estimators.hpp>
 
 #include <cstddef>
 #include <limits>
 
-namespace openMVG {
+namespace aliceVision {
 namespace sfm {
 
 struct Image_Localizer_Match_Data
@@ -121,4 +121,4 @@ public:
 
 
 } // namespace sfm
-} // namespace openMVG
+} // namespace aliceVision

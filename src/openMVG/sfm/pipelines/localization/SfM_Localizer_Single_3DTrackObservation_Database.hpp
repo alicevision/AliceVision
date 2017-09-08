@@ -3,11 +3,11 @@
 
 #pragma once
 
-#include "openMVG/features/FeaturesPerView.hpp"
-#include "openMVG/sfm/pipelines/localization/SfM_Localizer.hpp"
-#include "openMVG/matching/regions_matcher.hpp"
+#include "aliceVision/features/FeaturesPerView.hpp"
+#include "aliceVision/sfm/pipelines/localization/SfM_Localizer.hpp"
+#include "aliceVision/matching/regions_matcher.hpp"
 
-namespace openMVG {
+namespace aliceVision {
 namespace sfm {
 
 // Implementation of a naive method:
@@ -67,4 +67,4 @@ private:
 };
 
 } // namespace sfm
-} // namespace openMVG
+} // namespace aliceVision

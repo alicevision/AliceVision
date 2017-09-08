@@ -10,7 +10,7 @@
 #include <stdexcept>
 #include <boost/format.hpp>
 
-namespace openMVG{
+namespace aliceVision{
 namespace voctree{
 
 std::ostream& operator<<(std::ostream& os, const SparseHistogram &dv)	
@@ -199,4 +199,4 @@ size_t Database::size() const
 }
 
 } //namespace voctree
-} //namespace openMVG
+} //namespace aliceVision

@@ -1,10 +1,10 @@
 // This file is part of the AliceVision project and is made available under
 // the terms of the MPL2 license (see the COPYING.md file).
 
-#include "openMVG/multiview/test_data_sets.hpp"
-#include "openMVG/sfm/sfm.hpp"
-using namespace openMVG;
-using namespace openMVG::sfm;
+#include "aliceVision/multiview/test_data_sets.hpp"
+#include "aliceVision/sfm/sfm.hpp"
+using namespace aliceVision;
+using namespace aliceVision::sfm;
 
 #include <random>
 #include <iostream>

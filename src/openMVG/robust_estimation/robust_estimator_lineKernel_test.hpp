@@ -4,9 +4,9 @@
 #ifndef OPENMVG_ROBUST_ESTIMATION_LINEKERNEL_TEST_H_
 #define OPENMVG_ROBUST_ESTIMATION_LINEKERNEL_TEST_H_
 
-#include "openMVG/numeric/numeric.h"
+#include "aliceVision/numeric/numeric.h"
 
-namespace openMVG {
+namespace aliceVision {
 namespace robust{
 
 struct LineSolver
@@ -91,6 +91,6 @@ struct LineKernel
 };
 
 } // namespace robust
-} // namespace openMVG
+} // namespace aliceVision
 
 #endif // OPENMVG_ROBUST_ESTIMATION_LINEKERNEL_TEST_H_

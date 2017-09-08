@@ -3,14 +3,14 @@
 
 #pragma once
 
-#include "openMVG/matching/matching_interface.hpp"
-#include "openMVG/matching/cascade_hasher.hpp"
-#include "openMVG/matching/indMatch.hpp"
+#include "aliceVision/matching/matching_interface.hpp"
+#include "aliceVision/matching/cascade_hasher.hpp"
+#include "aliceVision/matching/indMatch.hpp"
 #include <memory>
 #include <random>
 #include <cmath>
 
-namespace openMVG {
+namespace aliceVision {
 namespace matching {
 
 //------------------
@@ -137,5 +137,5 @@ private:
 };
 
 }  // namespace matching
-}  // namespace openMVG
+}  // namespace aliceVision
 

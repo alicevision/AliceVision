@@ -4,14 +4,14 @@
 #ifndef OPENMVG_SFM_DATA_BA_CERES_CAMERA_FUNCTOR_HPP
 #define OPENMVG_SFM_DATA_BA_CERES_CAMERA_FUNCTOR_HPP
 
-#include "openMVG/cameras/cameras.hpp"
+#include "aliceVision/cameras/cameras.hpp"
 #include "ceres/rotation.h"
 
 //--
 //- Define ceres Cost_functor for each AliceVision camera model
 //--
 
-namespace openMVG {
+namespace aliceVision {
 namespace sfm {
 
 /**
@@ -33,7 +33,7 @@ struct ResidualErrorFunctor_Pinhole_Intrinsic
     m_pos_2dpoint[1] = pos_2dpoint[1];
   }
 
-  // Enum to map intrinsics parameters between openMVG & ceres camera data parameter block.
+  // Enum to map intrinsics parameters between aliceVision & ceres camera data parameter block.
   enum {
     OFFSET_FOCAL_LENGTH = 0,
     OFFSET_PRINCIPAL_POINT_X = 1,
@@ -181,7 +181,7 @@ struct ResidualErrorFunctor_Pinhole_Intrinsic_Radial_K1
     m_pos_2dpoint[1] = pos_2dpoint[1];
   }
 
-  // Enum to map intrinsics parameters between openMVG & ceres camera data parameter block.
+  // Enum to map intrinsics parameters between aliceVision & ceres camera data parameter block.
   enum {
     OFFSET_FOCAL_LENGTH = 0,
     OFFSET_PRINCIPAL_POINT_X = 1,
@@ -335,7 +335,7 @@ struct ResidualErrorFunctor_Pinhole_Intrinsic_Radial_K3
     m_pos_2dpoint[1] = pos_2dpoint[1];
   }
 
-  // Enum to map intrinsics parameters between openMVG & ceres camera data parameter block.
+  // Enum to map intrinsics parameters between aliceVision & ceres camera data parameter block.
   enum {
     OFFSET_FOCAL_LENGTH = 0,
     OFFSET_PRINCIPAL_POINT_X = 1,
@@ -488,7 +488,7 @@ struct ResidualErrorFunctor_Pinhole_Intrinsic_Brown_T2
     m_pos_2dpoint[1] = pos_2dpoint[1];
   }
 
-  // Enum to map intrinsics parameters between openMVG & ceres camera data parameter block.
+  // Enum to map intrinsics parameters between aliceVision & ceres camera data parameter block.
   enum {
     OFFSET_FOCAL_LENGTH = 0,
     OFFSET_PRINCIPAL_POINT_X = 1,
@@ -655,7 +655,7 @@ struct ResidualErrorFunctor_Pinhole_Intrinsic_Fisheye
     m_pos_2dpoint[1] = pos_2dpoint[1];
   }
 
-  // Enum to map intrinsics parameters between openMVG & ceres camera data parameter block.
+  // Enum to map intrinsics parameters between aliceVision & ceres camera data parameter block.
   enum {
     OFFSET_FOCAL_LENGTH = 0,
     OFFSET_PRINCIPAL_POINT_X = 1,
@@ -822,7 +822,7 @@ struct ResidualErrorFunctor_Pinhole_Intrinsic_Fisheye1
     m_pos_2dpoint[1] = pos_2dpoint[1];
   }
 
-  // Enum to map intrinsics parameters between openMVG & ceres camera data parameter block.
+  // Enum to map intrinsics parameters between aliceVision & ceres camera data parameter block.
   enum {
     OFFSET_FOCAL_LENGTH = 0,
     OFFSET_PRINCIPAL_POINT_X = 1,
@@ -959,6 +959,6 @@ struct ResidualErrorFunctor_Pinhole_Intrinsic_Fisheye1
 
 
 } // namespace sfm
-} // namespace openMVG
+} // namespace aliceVision
 
 #endif // OPENMVG_SFM_DATA_BA_CERES_CAMERA_FUNCTOR_HPP

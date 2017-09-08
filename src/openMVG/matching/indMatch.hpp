@@ -4,8 +4,8 @@
 #ifndef OPENMVG_MATCHING_IND_MATCH_H
 #define OPENMVG_MATCHING_IND_MATCH_H
 
-#include "openMVG/types.hpp"
-#include "openMVG/features/ImageDescriberCommon.hpp"
+#include "aliceVision/types.hpp"
+#include "aliceVision/features/ImageDescriberCommon.hpp"
 
 #include <cereal/cereal.hpp> // Serialization
 
@@ -16,7 +16,7 @@
 
 #define OPENMVG_DEBUG_MATCHING
 
-namespace openMVG {
+namespace aliceVision {
 namespace matching {
 
 /// Structure in order to save pairwise indexed references.
@@ -118,6 +118,6 @@ inline Pair_Set getImagePairs(const PairwiseMatches & matches)
 
 
 }  // namespace matching
-}  // namespace openMVG
+}  // namespace aliceVision
 
 #endif // OPENMVG_MATCHING_IND_MATCH_H

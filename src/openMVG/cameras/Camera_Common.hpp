@@ -7,7 +7,7 @@
 #include <string>
 #include <stdexcept>
 
-namespace openMVG {
+namespace aliceVision {
 namespace cameras {
 
 enum EINTRINSIC
@@ -74,6 +74,6 @@ static inline bool isPinhole(EINTRINSIC eintrinsic)
 }
 
 } // namespace cameras
-} // namespace openMVG
+} // namespace aliceVision
 
 #endif // OPENMVG_CAMERAS_COMMON_HPP

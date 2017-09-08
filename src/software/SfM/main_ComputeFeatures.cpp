@@ -1,17 +1,17 @@
 // This file is part of the AliceVision project and is made available under
 // the terms of the MPL2 license (see the COPYING.md file).
 
-#include <openMVG/config.hpp>
-#include "openMVG/image/image.hpp"
-#include "openMVG/sfm/sfm.hpp"
+#include <aliceVision/config.hpp>
+#include "aliceVision/image/image.hpp"
+#include "aliceVision/sfm/sfm.hpp"
 
 /// Feature/Regions & Image describer interfaces
-#include "openMVG/features/ImageDescriberCommon.hpp"
-#include "openMVG/features/features.hpp"
+#include "aliceVision/features/ImageDescriberCommon.hpp"
+#include "aliceVision/features/features.hpp"
 
-#include "openMVG/exif/exif_IO_EasyExif.hpp"
-#include "openMVG/stl/split.hpp"
-#include "openMVG/system/timer.hpp"
+#include "aliceVision/exif/exif_IO_EasyExif.hpp"
+#include "aliceVision/stl/split.hpp"
+#include "aliceVision/system/timer.hpp"
 
 #include "third_party/cmdLine/cmdLine.h"
 #include "third_party/stlplus3/filesystemSimplified/file_system.hpp"
@@ -26,10 +26,10 @@
 #include <limits>
 
 
-using namespace openMVG;
-using namespace openMVG::image;
-using namespace openMVG::features;
-using namespace openMVG::sfm;
+using namespace aliceVision;
+using namespace aliceVision::image;
+using namespace aliceVision::features;
+using namespace aliceVision::sfm;
 using namespace std;
 
 
@@ -389,7 +389,7 @@ int main(int argc, char **argv)
     }
   }
 
-  using namespace openMVG::features;
+  using namespace aliceVision::features;
 
   // Feature extraction routines
   // For each View of the SfM_Data container:

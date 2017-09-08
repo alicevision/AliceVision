@@ -1,27 +1,27 @@
 // This file is part of the AliceVision project and is made available under
 // the terms of the MPL2 license (see the COPYING.md file).
 
-#include "openMVG/image/image.hpp"
+#include "aliceVision/image/image.hpp"
 
-using namespace openMVG::image;
+using namespace aliceVision::image;
 
-#include "openMVG/features/features.hpp"
-#include "openMVG/features/sift/SIFT_describer.hpp"
-#include "openMVG/matching/regions_matcher.hpp"
+#include "aliceVision/features/features.hpp"
+#include "aliceVision/features/sift/SIFT_describer.hpp"
+#include "aliceVision/matching/regions_matcher.hpp"
 
-using namespace openMVG::matching;
+using namespace aliceVision::matching;
 
 #include "third_party/stlplus3/filesystemSimplified/file_system.hpp"
 
-#include "openMVG/multiview/solver_homography_kernel.hpp"
-#include "openMVG/multiview/conditioning.hpp"
+#include "aliceVision/multiview/solver_homography_kernel.hpp"
+#include "aliceVision/multiview/conditioning.hpp"
 
-using namespace openMVG;
+using namespace aliceVision;
 
-#include "openMVG/robust_estimation/robust_estimator_ACRansac.hpp"
-#include "openMVG/robust_estimation/robust_estimator_ACRansacKernelAdaptator.hpp"
+#include "aliceVision/robust_estimation/robust_estimator_ACRansac.hpp"
+#include "aliceVision/robust_estimation/robust_estimator_ACRansacKernelAdaptator.hpp"
 
-using namespace openMVG::robust;
+using namespace aliceVision::robust;
 
 #include "third_party/vectorGraphics/svgDrawer.hpp"
 
@@ -31,8 +31,8 @@ using namespace svg;
 #include <iostream>
 using namespace std;
 
-#include "openMVG/matching/kvld/kvld.h"
-#include "openMVG/matching/kvld/kvld_draw.h"
+#include "aliceVision/matching/kvld/kvld.h"
+#include "aliceVision/matching/kvld/kvld_draw.h"
 
 #include "third_party/cmdLine/cmdLine.h"
 
@@ -100,7 +100,7 @@ int main(int argc, char **argv) {
 //--
   // Detect regions thanks to an image_describer
   //--
-  using namespace openMVG::features;
+  using namespace aliceVision::features;
   std::unique_ptr<Image_describer> image_describer(new SIFT_ImageDescriber(SiftParams(-1)));
   std::map<IndexT, std::unique_ptr<features::Regions> > regions_perImage;
   image_describer->Describe(imageL, regions_perImage[0]);
@@ -182,7 +182,7 @@ int main(int argc, char **argv) {
 
   //In order to illustrate the gvld(or vld)-consistant neighbors,
   // the following two parameters has been externalized as inputs of the function KVLD.
-  openMVG::Mat E = openMVG::Mat::Ones(vec_PutativeMatches.size(), vec_PutativeMatches.size())*(-1);
+  aliceVision::Mat E = aliceVision::Mat::Ones(vec_PutativeMatches.size(), vec_PutativeMatches.size())*(-1);
   // gvld-consistancy matrix, intitialized to -1,  >0 consistancy value, -1=unknow, -2=false
   std::vector<bool> valide(vec_PutativeMatches.size(), true);// indices of match in the initial matches, if true at the end of KVLD, a match is kept.
 

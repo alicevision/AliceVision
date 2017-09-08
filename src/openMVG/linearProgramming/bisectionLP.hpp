@@ -4,14 +4,14 @@
 #ifndef OPENMVG_LINEAR_PROGRAMMING_BISECTIONLP_H_
 #define OPENMVG_LINEAR_PROGRAMMING_BISECTIONLP_H_
 
-#include <openMVG/system/Logger.hpp>
-#include <openMVG/linearProgramming/linearProgrammingInterface.hpp>
+#include <aliceVision/system/Logger.hpp>
+#include <aliceVision/linearProgramming/linearProgrammingInterface.hpp>
 
 #include <iostream>
 #include <iterator>
 #include <vector>
 
-namespace openMVG   {
+namespace aliceVision   {
 namespace linearProgramming  {
 
 /// Generic Bisection algorithm via Linear Programming.
@@ -74,7 +74,7 @@ bool BisectionLP(
 }
 
 } // namespace linearProgramming
-} // namespace openMVG
+} // namespace aliceVision
 
 
 #endif // OPENMVG_LINEAR_PROGRAMMING_BISECTIONLP_H_

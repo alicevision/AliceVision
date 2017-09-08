@@ -1,18 +1,18 @@
 // This file is part of the AliceVision project and is made available under
 // the terms of the MPL2 license (see the COPYING.md file).
 
-#include <openMVG/robust_estimation/robust_estimator_LORansac.hpp>
-#include <openMVG/robust_estimation/robust_estimator_LORansacKernelAdaptor.hpp>
-#include <openMVG/robust_estimation/score_evaluator.hpp>
-#include <openMVG/robust_estimation/rand_sampling.hpp>
-#include <openMVG/multiview/projection.hpp>
-#include <openMVG/multiview/solver_resection_kernel.hpp>
-#include <openMVG/multiview/solver_resection_p3p.hpp>
-#include <openMVG/multiview/conditioning.hpp>
-#include <openMVG/cameras/cameras.hpp>
-#include <openMVG/sfm/sfm.hpp>
-#include <openMVG/geometry/pose3.hpp>
-#include <openMVG/numeric/numeric.h>
+#include <aliceVision/robust_estimation/robust_estimator_LORansac.hpp>
+#include <aliceVision/robust_estimation/robust_estimator_LORansacKernelAdaptor.hpp>
+#include <aliceVision/robust_estimation/score_evaluator.hpp>
+#include <aliceVision/robust_estimation/rand_sampling.hpp>
+#include <aliceVision/multiview/projection.hpp>
+#include <aliceVision/multiview/solver_resection_kernel.hpp>
+#include <aliceVision/multiview/solver_resection_p3p.hpp>
+#include <aliceVision/multiview/conditioning.hpp>
+#include <aliceVision/cameras/cameras.hpp>
+#include <aliceVision/sfm/sfm.hpp>
+#include <aliceVision/geometry/pose3.hpp>
+#include <aliceVision/numeric/numeric.h>
 
 #include "testing/testing.h"
 
@@ -20,7 +20,7 @@
 #include <random>
 #include <algorithm>
 
-using namespace openMVG;
+using namespace aliceVision;
 
 struct ResectionSquaredResidualError
 {
@@ -178,12 +178,12 @@ TEST(P3P_Ransac, noisyFromImagePoints)
   for(std::size_t trial = 0; trial < NUMTRIALS; ++trial)
   {
     OPENMVG_LOG_DEBUG("Trial #" << trial);
-    typedef openMVG::euclidean_resection::P3PSolver SolverType;
-    typedef openMVG::resection::kernel::SixPointResectionSolver SolverLSType;
+    typedef aliceVision::euclidean_resection::P3PSolver SolverType;
+    typedef aliceVision::resection::kernel::SixPointResectionSolver SolverLSType;
   
-    typedef openMVG::robust::KernelAdaptorResectionLORansac_K<SolverType,
+    typedef aliceVision::robust::KernelAdaptorResectionLORansac_K<SolverType,
                                                               ResectionSquaredResidualError,
-                                                              openMVG::robust::UnnormalizerResection,
+                                                              aliceVision::robust::UnnormalizerResection,
                                                               SolverLSType,
                                                               Mat34> KernelType;
 

@@ -3,11 +3,11 @@
 
 #pragma once
 
-#include <openMVG/config.hpp>
-#include "openMVG/features/feature.hpp"
-#include "openMVG/features/RegionsPerView.hpp"
-#include "openMVG/matching/indMatch.hpp"
-#include "openMVG/matching_image_collection/GeometricFilterMatrix.hpp"
+#include <aliceVision/config.hpp>
+#include "aliceVision/features/feature.hpp"
+#include "aliceVision/features/RegionsPerView.hpp"
+#include "aliceVision/matching/indMatch.hpp"
+#include "aliceVision/matching_image_collection/GeometricFilterMatrix.hpp"
 
 #include "third_party/stlplus3/filesystemSimplified/file_system.hpp"
 #include "third_party/progress/progress.hpp"
@@ -15,10 +15,10 @@
 #include <vector>
 #include <map>
 
-namespace openMVG {
+namespace aliceVision {
 namespace matching_image_collection {
 
-using namespace openMVG::matching;
+using namespace aliceVision::matching;
 
 /// Allow to keep only geometrically coherent matches
 /// -> It discards pairs that do not lead to a valid robust model estimation
@@ -93,7 +93,7 @@ void ImageCollectionGeometricFilter::Robust_model_estimation(
   }
 }
 
-} // namespace openMVG
+} // namespace aliceVision
 } // namespace matching_image_collection
 
 

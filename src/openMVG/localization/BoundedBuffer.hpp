@@ -6,7 +6,7 @@
 #include <deque>
 #include <assert.h>
 
-namespace openMVG {
+namespace aliceVision {
 namespace localization {
 
 /**

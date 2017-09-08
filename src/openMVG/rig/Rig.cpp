@@ -3,8 +3,8 @@
 
 #include "Rig.hpp"
 #include "rig_BA_ceres.hpp"
-#include <openMVG/sfm/sfm_data_BA_ceres.hpp>
-#include <openMVG/system/Logger.hpp>
+#include <aliceVision/sfm/sfm_data_BA_ceres.hpp>
+#include <aliceVision/system/Logger.hpp>
 
 #include <ceres/rotation.h>
 
@@ -15,7 +15,7 @@
 #include <opencv2/opencv.hpp>
 #endif
 
-namespace openMVG {
+namespace aliceVision {
 namespace rig {
 
 Rig::~Rig()
@@ -190,7 +190,7 @@ void Rig::findBestRelativePose(
   }
   result = vPoses[iMin];
   
-  displayRelativePoseReprojection(geometry::Pose3(openMVG::Mat3::Identity(), openMVG::Vec3::Zero()), 0);
+  displayRelativePoseReprojection(geometry::Pose3(aliceVision::Mat3::Identity(), aliceVision::Vec3::Zero()), 0);
   displayRelativePoseReprojection(result, iLocalizer);
 }
 
@@ -223,8 +223,8 @@ void Rig::displayRelativePoseReprojection(const geometry::Pose3 & relativePose, 
       
       const geometry::Pose3 poseWitnessCamera = poseFromMainToWitness(mainLocalizerResults[iView].getPose(), relativePose);
         
-      const openMVG::Mat points2D = witnessLocalizerResults[iView].getPt2D();
-      const openMVG::Mat points3D = witnessLocalizerResults[iView].getPt3D();
+      const aliceVision::Mat points2D = witnessLocalizerResults[iView].getPt2D();
+      const aliceVision::Mat points3D = witnessLocalizerResults[iView].getPt3D();
       
       for(const IndexT iInlier : witnessLocalizerResults[iView].getInliers())
       {
@@ -273,8 +273,8 @@ bool Rig::optimizeCalibration()
   {
     geometry::Pose3 & pose = _vRelativePoses[iRelativePose];
     
-    const openMVG::Mat3 & R = pose.rotation();
-    const openMVG::Vec3 & t = pose.translation();
+    const aliceVision::Mat3 & R = pose.rotation();
+    const aliceVision::Vec3 & t = pose.translation();
 
     double angleAxis[3];
     ceres::RotationMatrixToAngleAxis((const double*)R.data(), angleAxis);
@@ -305,8 +305,8 @@ bool Rig::optimizeCalibration()
       continue;
     
     const geometry::Pose3 & pose = _vLocalizationResults[0][iView].getPose();
-    const openMVG::Mat3 & R = pose.rotation();
-    const openMVG::Vec3 & t = pose.translation();
+    const aliceVision::Mat3 & R = pose.rotation();
+    const aliceVision::Vec3 & t = pose.translation();
 
     double angleAxis[3];
     ceres::RotationMatrixToAngleAxis((const double*)R.data(), angleAxis);
@@ -469,35 +469,35 @@ bool Rig::optimizeCalibration()
 
   // Configure a BA engine and run it
   // todo: Set the most appropriate options
-  openMVG::sfm::Bundle_Adjustment_Ceres::BA_options openMVG_options(true); // Set all
-  // the options field in our owm struct - unnecessary dependancy to openMVG here
+  aliceVision::sfm::Bundle_Adjustment_Ceres::BA_options aliceVision_options(true); // Set all
+  // the options field in our owm struct - unnecessary dependancy to aliceVision here
   
   ceres::Solver::Options options;
   
-  options.preconditioner_type = openMVG_options._preconditioner_type;
-  options.linear_solver_type = openMVG_options._linear_solver_type;
-  options.sparse_linear_algebra_library_type = openMVG_options._sparse_linear_algebra_library_type;
-  options.minimizer_progress_to_stdout = openMVG_options._bVerbose;
+  options.preconditioner_type = aliceVision_options._preconditioner_type;
+  options.linear_solver_type = aliceVision_options._linear_solver_type;
+  options.sparse_linear_algebra_library_type = aliceVision_options._sparse_linear_algebra_library_type;
+  options.minimizer_progress_to_stdout = aliceVision_options._bVerbose;
   options.logging_type = ceres::SILENT;
-  options.num_threads = 1;//openMVG_options._nbThreads;
-  options.num_linear_solver_threads = 1;//openMVG_options._nbThreads;
+  options.num_threads = 1;//aliceVision_options._nbThreads;
+  options.num_linear_solver_threads = 1;//aliceVision_options._nbThreads;
   
   // Solve BA
   ceres::Solver::Summary summary;
   ceres::Solve(options, &problem, &summary);
   
-  if (openMVG_options._bCeres_Summary)
+  if (aliceVision_options._bCeres_Summary)
     OPENMVG_LOG_DEBUG(summary.FullReport());
 
   // If no error, get back refined parameters
   if (!summary.IsSolutionUsable())
   {
-    if (openMVG_options._bVerbose)
+    if (aliceVision_options._bVerbose)
       OPENMVG_LOG_DEBUG("Bundle Adjustment failed.");
     return false;
   }
 
-  if (openMVG_options._bVerbose)
+  if (aliceVision_options._bVerbose)
   {
     // Display statistics about the minimization
     OPENMVG_LOG_DEBUG("Bundle Adjustment statistics (approximated RMSE):");
@@ -511,11 +511,11 @@ bool Rig::optimizeCalibration()
   // Update relative pose after optimization
   for(std::size_t iRelativePose = 0 ; iRelativePose < _vRelativePoses.size() ; ++iRelativePose)
   {
-    openMVG::Mat3 R_refined;
+    aliceVision::Mat3 R_refined;
     std::vector<double> vPose;
     vPose.reserve(6);
     ceres::AngleAxisToRotationMatrix(&vRelativePoses[iRelativePose][0], R_refined.data());
-    openMVG::Vec3 t_refined(vRelativePoses[iRelativePose][3], vRelativePoses[iRelativePose][4], vRelativePoses[iRelativePose][5]);
+    aliceVision::Vec3 t_refined(vRelativePoses[iRelativePose][3], vRelativePoses[iRelativePose][4], vRelativePoses[iRelativePose][5]);
     // Update the pose
     geometry::Pose3 & pose = _vRelativePoses[iRelativePose];
     pose = geometry::Pose3(R_refined, -R_refined.transpose() * t_refined);
@@ -526,11 +526,11 @@ bool Rig::optimizeCalibration()
   {
     if( _vLocalizationResults[0][iView].isValid() )
     {
-      openMVG::Mat3 R_refined;
+      aliceVision::Mat3 R_refined;
       std::vector<double> vPose;
       vPose.reserve(6);
       ceres::AngleAxisToRotationMatrix(&vMainPoses[iView][0], R_refined.data());
-      openMVG::Vec3 t_refined(vMainPoses[iView][3], vMainPoses[iView][4], vMainPoses[iView][5]);
+      aliceVision::Vec3 t_refined(vMainPoses[iView][3], vMainPoses[iView][4], vMainPoses[iView][5]);
       // Push the optimized pose
       geometry::Pose3 pose = geometry::Pose3(R_refined, -R_refined.transpose() * t_refined);
       _vLocalizationResults[0][iView].setPose(pose);
@@ -538,7 +538,7 @@ bool Rig::optimizeCalibration()
     }
   }
     
-  displayRelativePoseReprojection(geometry::Pose3(openMVG::Mat3::Identity(), openMVG::Vec3::Zero()), 0);
+  displayRelativePoseReprojection(geometry::Pose3(aliceVision::Mat3::Identity(), aliceVision::Vec3::Zero()), 0);
     
     // Update all poses over all witness cameras after optimization
   for(std::size_t iRelativePose = 0; iRelativePose < _vRelativePoses.size(); ++iRelativePose)
@@ -582,13 +582,13 @@ bool Rig::saveCalibration(const std::string &filename)
 // it returns poseWitnessCamera*inv(poseMainCamera)
 geometry::Pose3 computeRelativePose(const geometry::Pose3 &poseMainCamera, const geometry::Pose3 &poseWitnessCamera)
 {
-  const openMVG::Mat3 & R1 = poseMainCamera.rotation();
-  const openMVG::Vec3 & t1 = poseMainCamera.translation();
-  const openMVG::Mat3 & R2 = poseWitnessCamera.rotation();
-  const openMVG::Vec3 & t2 = poseWitnessCamera.translation();
+  const aliceVision::Mat3 & R1 = poseMainCamera.rotation();
+  const aliceVision::Vec3 & t1 = poseMainCamera.translation();
+  const aliceVision::Mat3 & R2 = poseWitnessCamera.rotation();
+  const aliceVision::Vec3 & t2 = poseWitnessCamera.translation();
 
-  const openMVG::Mat3 R12 = R2 * R1.transpose();
-  const openMVG::Vec3 t12 = t2 - R12 * t1;
+  const aliceVision::Mat3 R12 = R2 * R1.transpose();
+  const aliceVision::Vec3 t12 = t2 - R12 * t1;
 
   return geometry::Pose3( R12 , -R12.transpose()*t12 );
 }
@@ -597,14 +597,14 @@ geometry::Pose3 computeRelativePose(const geometry::Pose3 &poseMainCamera, const
 // it returns relativePose*poseMainCamera
 geometry::Pose3 poseFromMainToWitness(const geometry::Pose3 &poseMainCamera, const geometry::Pose3 &relativePose)
 {
-  const openMVG::Mat3 & R1 = poseMainCamera.rotation();
-  const openMVG::Vec3 & t1 = poseMainCamera.translation();
+  const aliceVision::Mat3 & R1 = poseMainCamera.rotation();
+  const aliceVision::Vec3 & t1 = poseMainCamera.translation();
 
-  const openMVG::Mat3 & R12 = relativePose.rotation();
-  const openMVG::Vec3 & t12 = relativePose.translation();
+  const aliceVision::Mat3 & R12 = relativePose.rotation();
+  const aliceVision::Vec3 & t12 = relativePose.translation();
 
-  const openMVG::Mat3 R2 = R12 * R1;
-  const openMVG::Vec3 t2 = R12 * t1 + t12 ;
+  const aliceVision::Mat3 R2 = R12 * R1;
+  const aliceVision::Vec3 t2 = R12 * t1 + t12 ;
   
   return geometry::Pose3( R2 , -R2.transpose() * t2 );
 }
@@ -720,4 +720,4 @@ bool saveRigCalibration(const std::string &filename, const std::vector<geometry:
 }
 
 } // namespace rig
-} // namespace openMVG
+} // namespace aliceVision

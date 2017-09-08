@@ -1,8 +1,8 @@
 // This file is part of the AliceVision project and is made available under
 // the terms of the MPL2 license (see the COPYING.md file).
 
-#include "openMVG/multiview/test_data_sets.hpp"
-#include "openMVG/sfm/sfm.hpp"
+#include "aliceVision/multiview/test_data_sets.hpp"
+#include "aliceVision/sfm/sfm.hpp"
 
 #include "testing/testing.h"
 #include "../cameras/Camera_Common.hpp"
@@ -11,10 +11,10 @@
 #include <cstdio>
 #include <iostream>
 
-using namespace openMVG;
-using namespace openMVG::cameras;
-using namespace openMVG::geometry;
-using namespace openMVG::sfm;
+using namespace aliceVision;
+using namespace aliceVision::cameras;
+using namespace aliceVision::geometry;
+using namespace aliceVision::sfm;
 
 double RMSE(const SfM_Data & sfm_data);
 

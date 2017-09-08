@@ -2,12 +2,12 @@
 // the terms of the MPL2 license (see the COPYING.md file).
 
 #include <iostream>
-#include <openMVG/system/Logger.hpp>
+#include <aliceVision/system/Logger.hpp>
 #include "CppUnitLite/TestHarness.h"
-#include "openMVG/numeric/numeric.h"
+#include "aliceVision/numeric/numeric.h"
 #include "testing/testing.h"
 
-using namespace openMVG;
+using namespace aliceVision;
 using namespace std;
 
 //-- Assert that stream interface is available

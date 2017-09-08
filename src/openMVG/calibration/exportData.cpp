@@ -3,8 +3,8 @@
 
 #include "exportData.hpp"
 
-#include <openMVG/system/Logger.hpp>
-#include <openMVG/cameras/Camera_undistort_image.hpp>
+#include <aliceVision/system/Logger.hpp>
+#include <aliceVision/cameras/Camera_undistort_image.hpp>
 
 #include <boost/filesystem/path.hpp>
 
@@ -13,10 +13,10 @@
 #include <ctime>
 #include <cstdio>
 
-namespace openMVG{
+namespace aliceVision{
 namespace calibration{
 
-void exportImages(openMVG::dataio::FeedProvider& feed,
+void exportImages(aliceVision::dataio::FeedProvider& feed,
                   const std::string& debugFolder,
                   const std::vector<std::size_t>& exportFrames,
                   const cv::Mat& cameraMatrix,
@@ -25,15 +25,15 @@ void exportImages(openMVG::dataio::FeedProvider& feed,
                   const std::string& suffix)
 {
   std::vector<int> export_params;
-  openMVG::image::Image<unsigned char> inputImage;
-  openMVG::image::Image<unsigned char> outputImage;
+  aliceVision::image::Image<unsigned char> inputImage;
+  aliceVision::image::Image<unsigned char> outputImage;
   std::string currentImgName;
-  openMVG::cameras::Pinhole_Intrinsic_Radial_K3 queryIntrinsics;
+  aliceVision::cameras::Pinhole_Intrinsic_Radial_K3 queryIntrinsics;
 
   export_params.push_back(CV_IMWRITE_JPEG_QUALITY);
   export_params.push_back(100);
 
-  openMVG::cameras::Pinhole_Intrinsic_Radial_K3 camera(imageSize.width, imageSize.height,
+  aliceVision::cameras::Pinhole_Intrinsic_Radial_K3 camera(imageSize.width, imageSize.height,
                                                        cameraMatrix.at<double>(0, 0), cameraMatrix.at<double>(0, 2), cameraMatrix.at<double>(1, 2),
                                                        distCoeffs.at<double>(0), distCoeffs.at<double>(1), distCoeffs.at<double>(4));
   OPENMVG_LOG_DEBUG("Coefficients matrix :\n " << distCoeffs);
@@ -46,9 +46,9 @@ void exportImages(openMVG::dataio::FeedProvider& feed,
 
     // drawChessboardCorners(view, boardSize, cv::Mat(pointbuf), found);
 
-    openMVG::cameras::UndistortImage(inputImage, &camera, outputImage, openMVG::image::BLACK);
+    aliceVision::cameras::UndistortImage(inputImage, &camera, outputImage, aliceVision::image::BLACK);
     const boost::filesystem::path imagePath = boost::filesystem::path(debugFolder) / (std::to_string(currentFrame) + suffix);
-    const bool exportStatus = openMVG::image::WriteImage(imagePath.string().c_str(), outputImage);
+    const bool exportStatus = aliceVision::image::WriteImage(imagePath.string().c_str(), outputImage);
     if (!exportStatus)
     {
       OPENMVG_LOG_WARNING("Failed to export: " << imagePath);
@@ -59,7 +59,7 @@ void exportImages(openMVG::dataio::FeedProvider& feed,
 
 void exportDebug(const std::string& debugSelectedImgFolder,
                  const std::string& debugRejectedImgFolder,
-                 openMVG::dataio::FeedProvider& feed,
+                 aliceVision::dataio::FeedProvider& feed,
                  const std::vector<std::size_t>& calibInputFrames,
                  const std::vector<std::size_t>& rejectedInputFrames,
                  const std::vector<std::size_t>& unusedImagesIndexes,
@@ -231,4 +231,4 @@ void saveCameraParams(const std::string& filename,
 }
 
 }//namespace calibration
-}//namespace openMVG
+}//namespace aliceVision

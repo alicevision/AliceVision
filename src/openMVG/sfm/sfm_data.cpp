@@ -1,19 +1,19 @@
 // This file is part of the AliceVision project and is made available under
 // the terms of the MPL2 license (see the COPYING.md file).
 
-#include "openMVG/sfm/sfm_data.hpp"
-#include "openMVG/sfm/sfm_data_io.hpp"
-#include "openMVG/image/image_io.hpp"
-#include "openMVG/stl/stl.hpp"
+#include "aliceVision/sfm/sfm_data.hpp"
+#include "aliceVision/sfm/sfm_data_io.hpp"
+#include "aliceVision/image/image_io.hpp"
+#include "aliceVision/stl/stl.hpp"
 
 #include "third_party/progress/progress.hpp"
 
-namespace openMVG {
+namespace aliceVision {
 namespace sfm {
 
-using namespace openMVG::geometry;
-using namespace openMVG::cameras;
-using namespace openMVG::image;
+using namespace aliceVision::geometry;
+using namespace aliceVision::cameras;
+using namespace aliceVision::image;
 
 bool SfM_Data::operator==(const SfM_Data& other) const {
 
@@ -289,4 +289,4 @@ bool ColorizeTracks( SfM_Data & sfm_data )
 }
 
 } // namespace sfm
-} // namespace openMVG
+} // namespace aliceVision

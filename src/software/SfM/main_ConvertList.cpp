@@ -1,9 +1,9 @@
 // This file is part of the AliceVision project and is made available under
 // the terms of the MPL2 license (see the COPYING.md file).
 
-#include "openMVG/stl/split.hpp"
+#include "aliceVision/stl/split.hpp"
 
-#include "openMVG/sfm/sfm.hpp"
+#include "aliceVision/sfm/sfm.hpp"
 
 #include "software/SfM/SfMIOHelper.hpp"
 
@@ -13,12 +13,12 @@
 #include <string>
 #include <vector>
 
-using namespace openMVG;
-using namespace openMVG::cameras;
-using namespace openMVG::sfm;
+using namespace aliceVision;
+using namespace aliceVision::cameras;
+using namespace aliceVision::sfm;
 
 // Compatibility binary
-// Convert an openMVG v0.x=>7 lists.txt file to the new SfM_Data file format (v0.8)
+// Convert an aliceVision v0.x=>7 lists.txt file to the new SfM_Data file format (v0.8)
 // - Export a SfM_Data file with View & Intrinsic data
 //
 
@@ -102,9 +102,9 @@ int main(int argc, char **argv)
 
   // Parse the lists.txt file and create the corresponding View & Intrinsic data
 
-  std::vector<openMVG::SfMIO::CameraInfo> vec_camImageNames;
-  std::vector<openMVG::SfMIO::IntrinsicCameraInfo> vec_intrinsicGroups;
-  if (!openMVG::SfMIO::loadImageList( vec_camImageNames,
+  std::vector<aliceVision::SfMIO::CameraInfo> vec_camImageNames;
+  std::vector<aliceVision::SfMIO::IntrinsicCameraInfo> vec_intrinsicGroups;
+  if (!aliceVision::SfMIO::loadImageList( vec_camImageNames,
                                       vec_intrinsicGroups,
                                       sListsFile) )
   {
@@ -120,18 +120,18 @@ int main(int argc, char **argv)
 
 
   // Find to which intrinsic groups each image belong
-  for (std::vector<openMVG::SfMIO::CameraInfo>::const_iterator iter = vec_camImageNames.begin();
+  for (std::vector<aliceVision::SfMIO::CameraInfo>::const_iterator iter = vec_camImageNames.begin();
     iter != vec_camImageNames.end(); ++iter)
   {
-    const openMVG::SfMIO::CameraInfo & camInfo = *iter;
+    const aliceVision::SfMIO::CameraInfo & camInfo = *iter;
     // Find the index of the correponding cameraInfo
-    const size_t idx = std::distance((std::vector<openMVG::SfMIO::CameraInfo>::const_iterator)vec_camImageNames.begin(), iter);
+    const size_t idx = std::distance((std::vector<aliceVision::SfMIO::CameraInfo>::const_iterator)vec_camImageNames.begin(), iter);
 
     double width = height = ppx = ppy = focal = -1.0;
 
     std::shared_ptr<IntrinsicBase> intrinsic (NULL);
 
-    const openMVG::SfMIO::IntrinsicCameraInfo & camIntrinsic = vec_intrinsicGroups[camInfo.m_intrinsicId];
+    const aliceVision::SfMIO::IntrinsicCameraInfo & camIntrinsic = vec_intrinsicGroups[camInfo.m_intrinsicId];
     width = camIntrinsic.m_w;
     height = camIntrinsic.m_h;
     if (camIntrinsic.m_bKnownIntrinsic)

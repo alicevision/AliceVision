@@ -4,9 +4,9 @@
 #ifndef OPENMVG_IMAGE_IMAGE_DRAWING_HPP
 #define OPENMVG_IMAGE_IMAGE_DRAWING_HPP
 
-#include "openMVG/image/image_container.hpp"
+#include "aliceVision/image/image_container.hpp"
 
-namespace openMVG {
+namespace aliceVision {
 namespace image {
 
 /// Put the pixel in the image to the given color only if the point (xc,yc)
@@ -385,6 +385,6 @@ void DrawLineThickness(int xa, int ya, int xb, int yb, const Color& col, int thi
 }
 
 } // namespace image
-} // namespace openMVG
+} // namespace aliceVision
 
 #endif  // OPENMVG_IMAGE_IMAGE_DRAWING_HPP

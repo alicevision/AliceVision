@@ -7,7 +7,7 @@
 #include <Eigen/Core>
 #include <Eigen/StdVector>
 
-namespace openMVG {
+namespace aliceVision {
 namespace voctree {
 
 /**

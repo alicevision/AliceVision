@@ -3,7 +3,7 @@
 
 #pragma once
 
-#include <openMVG/config.hpp>
+#include <aliceVision/config.hpp>
 
 #if OPENMVG_IS_DEFINED(OPENMVG_HAVE_BOOST)
 #include <boost/container/flat_map.hpp>

@@ -1,6 +1,6 @@
 ## Camera Localization
 
-`openMVG_main_cameraLocalization` is used to localize a camera. It can take as 
+`aliceVision_main_cameraLocalization` is used to localize a camera. It can take as 
 input a video, a list of images in the form of a simple txt file or a json file. 
 It can localize a camera using natural features (SIFT), circular markers (CCTAG) or
 a combination of feature types [depending on you build options].

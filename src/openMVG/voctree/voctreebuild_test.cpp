@@ -1,8 +1,8 @@
 // This file is part of the AliceVision project and is made available under
 // the terms of the MPL2 license (see the COPYING.md file).
 
-#include <openMVG/voctree/tree_builder.hpp>
-#include <openMVG/system/Logger.hpp>
+#include <aliceVision/voctree/tree_builder.hpp>
+#include <aliceVision/system/Logger.hpp>
 
 #include <testing/testing.h>
 
@@ -15,7 +15,7 @@
 
 TEST(voctree, voctreeBuilder)
 {
-  using namespace openMVG;
+  using namespace aliceVision;
 
   const std::string treeName = "test.tree";
 

@@ -5,10 +5,10 @@
 #define OPENMVG_MULTIVIEW_SOLVER_HOMOGRAPHY_KERNEL_H_
 
 #include <vector>
-#include "openMVG/multiview/projection.hpp"
-#include "openMVG/multiview/two_view_kernel.hpp"
+#include "aliceVision/multiview/projection.hpp"
+#include "aliceVision/multiview/two_view_kernel.hpp"
 
-namespace openMVG {
+namespace aliceVision {
 namespace homography {
 namespace kernel {
 
@@ -52,6 +52,6 @@ typedef two_view::kernel::Kernel<
 
 }  // namespace kernel
 }  // namespace homography
-}  // namespace openMVG
+}  // namespace aliceVision
 
 #endif // OPENMVG_MULTIVIEW_SOLVER_HOMOGRAPHY_KERNEL_H_

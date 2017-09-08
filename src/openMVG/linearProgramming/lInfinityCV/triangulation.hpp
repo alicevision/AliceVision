@@ -4,8 +4,8 @@
 #ifndef OPENMVG_LINFINITY_COMPUTER_VISION_TRIANGULATION_H_
 #define OPENMVG_LINFINITY_COMPUTER_VISION_TRIANGULATION_H_
 
-#include "openMVG/numeric/numeric.h"
-#include "openMVG/linearProgramming/linearProgrammingInterface.hpp"
+#include "aliceVision/numeric/numeric.h"
+#include "aliceVision/linearProgramming/linearProgrammingInterface.hpp"
 #include <utility>
 #include <vector>
 
@@ -20,7 +20,7 @@
 //- ICCV 2005.
 //--
 
-namespace openMVG   {
+namespace aliceVision   {
 namespace lInfinityCV  {
 
 using namespace linearProgramming;
@@ -119,6 +119,6 @@ struct Triangulation_L1_ConstraintBuilder
 
 
 } // namespace lInfinityCV
-} // namespace openMVG
+} // namespace aliceVision
 
 #endif // OPENMVG_LINFINITY_COMPUTER_VISION_TRIANGULATION_H_

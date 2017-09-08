@@ -4,11 +4,11 @@
 #ifndef OPENMVG_FEATURES_KEYPOINTSET_HPP
 #define OPENMVG_FEATURES_KEYPOINTSET_HPP
 
-#include "openMVG/features/feature.hpp"
-#include "openMVG/features/descriptor.hpp"
+#include "aliceVision/features/feature.hpp"
+#include "aliceVision/features/descriptor.hpp"
 #include <string>
 
-namespace openMVG {
+namespace aliceVision {
 namespace features {
 
 /// Association storage of associated feature and descriptor for a given image.
@@ -76,6 +76,6 @@ private:
 };
 
 } // namespace features
-} // namespace openMVG
+} // namespace aliceVision
 
 #endif // OPENMVG_FEATURES_KEYPOINTSET_HPP

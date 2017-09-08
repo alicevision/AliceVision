@@ -3,23 +3,23 @@
 
 #include "image_describer.hpp"
 
-#include <openMVG/config.hpp>
-#include <openMVG/features/image_describer_akaze.hpp>
-#include <openMVG/features/sift/SIFT_describer.hpp>
-#include <openMVG/features/sift/SIFT_vlfeat_float_describer.hpp>
+#include <aliceVision/config.hpp>
+#include <aliceVision/features/image_describer_akaze.hpp>
+#include <aliceVision/features/sift/SIFT_describer.hpp>
+#include <aliceVision/features/sift/SIFT_vlfeat_float_describer.hpp>
 #if OPENMVG_IS_DEFINED(OPENMVG_HAVE_CCTAG)
-#include <openMVG/features/cctag/CCTAG_describer.hpp>
+#include <aliceVision/features/cctag/CCTAG_describer.hpp>
 #endif //OPENMVG_HAVE_CCTAG
 #if OPENMVG_IS_DEFINED(OPENMVG_HAVE_OPENCV)
-#include <openMVG/features/openCV/AKAZE_openCV_describer.hpp>
+#include <aliceVision/features/openCV/AKAZE_openCV_describer.hpp>
 #if OPENMVG_IS_DEFINED(OPENMVG_HAVE_OCVSIFT)
-#include <openMVG/features/openCV/SIFT_openCV_describer.hpp>
+#include <aliceVision/features/openCV/SIFT_openCV_describer.hpp>
 #endif //OPENMVG_HAVE_OCVSIFT
 #endif //OPENMVG_HAVE_OPENCV
 
 #include <stdexcept>
 
-namespace openMVG{
+namespace aliceVision{
 namespace features{
 
 EDESCRIBER_PRESET describerPreset_stringToEnum(const std::string& sPreset)
@@ -97,4 +97,4 @@ std::unique_ptr<Image_describer> createImageDescriber(EImageDescriberType imageD
 }
 
 }//namespace features
-}//namespace openMVG
+}//namespace aliceVision

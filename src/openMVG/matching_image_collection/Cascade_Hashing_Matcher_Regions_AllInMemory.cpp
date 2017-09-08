@@ -1,20 +1,20 @@
 // This file is part of the AliceVision project and is made available under
 // the terms of the MPL2 license (see the COPYING.md file).
 
-#include "openMVG/matching_image_collection/Cascade_Hashing_Matcher_Regions_AllInMemory.hpp"
-#include "openMVG/matching/matcher_cascade_hashing.hpp"
-#include "openMVG/matching/indMatchDecoratorXY.hpp"
-#include "openMVG/matching/matching_filters.hpp"
-#include <openMVG/config.hpp>
+#include "aliceVision/matching_image_collection/Cascade_Hashing_Matcher_Regions_AllInMemory.hpp"
+#include "aliceVision/matching/matcher_cascade_hashing.hpp"
+#include "aliceVision/matching/indMatchDecoratorXY.hpp"
+#include "aliceVision/matching/matching_filters.hpp"
+#include <aliceVision/config.hpp>
 
 #include "third_party/stlplus3/filesystemSimplified/file_system.hpp"
 #include "third_party/progress/progress.hpp"
 
-namespace openMVG {
+namespace aliceVision {
 namespace matching_image_collection {
 
-using namespace openMVG::matching;
-using namespace openMVG::features;
+using namespace aliceVision::matching;
+using namespace aliceVision::features;
 
 ImageCollectionMatcher_CascadeHashing
 ::ImageCollectionMatcher_CascadeHashing
@@ -253,5 +253,5 @@ void ImageCollectionMatcher_CascadeHashing::Match
   }
 }
 
-} // namespace openMVG
+} // namespace aliceVision
 } // namespace matching_image_collection

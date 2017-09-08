@@ -1,6 +1,6 @@
 ## RIG Calibration
 
-`openMVG_main_rigCalibration` is used to calibrate a rig of cameras.
+`aliceVision_main_rigCalibration` is used to calibrate a rig of cameras.
 
 ### Usage:
 
@@ -14,7 +14,7 @@ This program is used to calibrate a camera rig composed of internally calibrated
   -s [ --siftPath ] arg                 Folder containing the .desc. If not 
                                         provided, it will be assumed to be 
                                         parent(sfmdata)/matches [for the older 
-                                        version of openMVG it is the list.txt]
+                                        version of aliceVision it is the list.txt]
   -m [ --mediapath ] arg                The folder path containing all the 
                                         synchronised image subfolders assocated
                                         to each camera

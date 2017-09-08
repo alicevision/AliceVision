@@ -6,9 +6,9 @@
 
 #include <vector>
 
-#include "openMVG/numeric/numeric.h"
+#include "aliceVision/numeric/numeric.h"
 
-namespace openMVG {
+namespace aliceVision {
 
 // Compute the relative camera motion between two cameras.
 // Given the motion parameters of two cameras, computes the motion parameters
@@ -70,6 +70,6 @@ void MotionFromEssential(const Mat3 &E,
   std::vector<Vec3> *ts);
 
 
-} // namespace openMVG
+} // namespace aliceVision
 
 #endif  // OPENMVG_MULTIVIEW_ESSENTIAL_H_

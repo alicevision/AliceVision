@@ -3,14 +3,14 @@
 
 #pragma once
 
-#include <openMVG/types.hpp>
-#include <openMVG/features/regions.hpp>
-#include <openMVG/features/image_describer.hpp>
-#include <openMVG/features/ImageDescriberCommon.hpp>
+#include <aliceVision/types.hpp>
+#include <aliceVision/features/regions.hpp>
+#include <aliceVision/features/image_describer.hpp>
+#include <aliceVision/features/ImageDescriberCommon.hpp>
 
 #include <memory>
 
-namespace openMVG {
+namespace aliceVision {
 namespace features {
 
 /// Regions per ViewId of the considered SfM_Data container
@@ -112,7 +112,7 @@ public:
   {
     const auto& regionsA = getAllRegions(pair.first);
     const auto& regionsB = getAllRegions(pair.second);
-    return openMVG::features::getCommonDescTypes(regionsA, regionsB);
+    return aliceVision::features::getCommonDescTypes(regionsA, regionsB);
   }
   
   void clearDescriptors()
@@ -131,6 +131,6 @@ private:
 };
 
 } // namespace features
-} // namespace openMVG
+} // namespace aliceVision
 
 

@@ -3,11 +3,11 @@
 
 #pragma once
 
-#include "openMVG/numeric/numeric.h"
+#include "aliceVision/numeric/numeric.h"
 
 #include <iostream>
 
-namespace openMVG {
+namespace aliceVision {
 namespace resection {
 
 /**
@@ -43,7 +43,7 @@ struct p4fSolution
 
 /**
  * @brief  Compute the absolute pose and focal length of a camera using three 3D-to-2D correspondences
- * @author Martin Bujnak, adapted to openMVG by Michal Polic
+ * @author Martin Bujnak, adapted to aliceVision by Michal Polic
  * @ref [1] A general solution to the p4p
  *          Bujnak, M., Kukelova, Z., and Pajdla T.
  *          CVPR 2008
@@ -159,4 +159,4 @@ void getRigidTransform(const Mat &pp1,
                        Vec3 &t);
 
 } // namespace resection
-} // namespace openMVG
+} // namespace aliceVision

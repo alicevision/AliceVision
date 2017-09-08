@@ -5,12 +5,12 @@
 
 #include "database.hpp"
 #include "vocabulary_tree.hpp"
-#include <openMVG/types.hpp>
+#include <aliceVision/types.hpp>
 
 #include <string>
 
 
-namespace openMVG {
+namespace aliceVision {
 namespace voctree {
 
 /**
@@ -91,6 +91,6 @@ template<class DescriptorT, class FileDescriptorT>
 size_t readDescFromFiles(const std::string &fileFullPath, std::vector<DescriptorT>& descriptors, std::vector<size_t> &numFeatures);
 
 } // namespace voctree
-} // namespace openMVG
+} // namespace aliceVision
 
 #include "descriptor_loader.tcc"

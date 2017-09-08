@@ -21,28 +21,28 @@ set(matching_collection_images_files_sources
   Cascade_Hashing_Matcher_Regions_AllInMemory.cpp
 )
 
-add_library(openMVG_matching_image_collection
+add_library(aliceVision_matching_image_collection
   ${matching_collection_images_files_headers}
   ${matching_collection_images_files_sources}
 )
 
-target_link_libraries(openMVG_matching_image_collection
-  openMVG_matching
+target_link_libraries(aliceVision_matching_image_collection
+  aliceVision_matching
   ${LOG_LIB}
 )
 
-set_target_properties(openMVG_matching_image_collection
+set_target_properties(aliceVision_matching_image_collection
   PROPERTIES SOVERSION ${OPENMVG_VERSION_MAJOR}
   VERSION "${OPENMVG_VERSION_MAJOR}.${OPENMVG_VERSION_MINOR}"
 )
 
-set_property(TARGET openMVG_matching_image_collection
+set_property(TARGET aliceVision_matching_image_collection
   PROPERTY FOLDER AliceVision
 )
 
-install(TARGETS openMVG_matching_image_collection
+install(TARGETS aliceVision_matching_image_collection
   DESTINATION lib
-  EXPORT openMVG-targets
+  EXPORT aliceVision-targets
 )
 
-UNIT_TEST(openMVG Pair_Builder "openMVG_matching_image_collection")
+UNIT_TEST(aliceVision Pair_Builder "aliceVision_matching_image_collection")

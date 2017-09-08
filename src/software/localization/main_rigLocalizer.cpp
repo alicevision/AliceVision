@@ -1,17 +1,17 @@
 // This file is part of the AliceVision project and is made available under
 // the terms of the MPL2 license (see the COPYING.md file).
 
-#include <openMVG/config.hpp>
-#include <openMVG/localization/VoctreeLocalizer.hpp>
+#include <aliceVision/config.hpp>
+#include <aliceVision/localization/VoctreeLocalizer.hpp>
 #if OPENMVG_IS_DEFINED(OPENMVG_HAVE_CCTAG)
-#include <openMVG/localization/CCTagLocalizer.hpp>
+#include <aliceVision/localization/CCTagLocalizer.hpp>
 #endif
-#include <openMVG/rig/Rig.hpp>
-#include <openMVG/image/image_io.hpp>
-#include <openMVG/dataio/FeedProvider.hpp>
-#include <openMVG/features/image_describer.hpp>
-#include <openMVG/robust_estimation/robust_estimators.hpp>
-#include <openMVG/system/Logger.hpp>
+#include <aliceVision/rig/Rig.hpp>
+#include <aliceVision/image/image_io.hpp>
+#include <aliceVision/dataio/FeedProvider.hpp>
+#include <aliceVision/features/image_describer.hpp>
+#include <aliceVision/robust_estimation/robust_estimators.hpp>
+#include <aliceVision/system/Logger.hpp>
 
 #include <boost/filesystem.hpp>
 #include <boost/progress.hpp>
@@ -31,7 +31,7 @@
 #include <memory>
 
 #if OPENMVG_IS_DEFINED(OPENMVG_HAVE_ALEMBIC)
-#include <openMVG/sfm/AlembicExporter.hpp>
+#include <aliceVision/sfm/AlembicExporter.hpp>
 #endif
 
 
@@ -39,7 +39,7 @@ namespace bfs = boost::filesystem;
 namespace bacc = boost::accumulators;
 namespace po = boost::program_options;
 
-using namespace openMVG;
+using namespace aliceVision;
 
 std::string myToString(std::size_t i, std::size_t zeroPadding)
 {

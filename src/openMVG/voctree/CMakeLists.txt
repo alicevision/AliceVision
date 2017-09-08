@@ -19,32 +19,32 @@ set(voctree_sources
   vocabulary_tree.cpp
 )
 
-add_library(openMVG_voctree
+add_library(aliceVision_voctree
   ${voctree_headers}
   ${voctree_sources}
 )
 
-set_property(TARGET openMVG_voctree
+set_property(TARGET aliceVision_voctree
   PROPERTY FOLDER AliceVision/AliceVision
 )
 
-target_link_libraries(openMVG_voctree
-  openMVG_features
-  openMVG_sfm
+target_link_libraries(aliceVision_voctree
+  aliceVision_features
+  aliceVision_sfm
   ${Boost_LIBRARIES}
   ${LOG_LIB}
 )
 
-set_target_properties(openMVG_voctree
+set_target_properties(aliceVision_voctree
   PROPERTIES SOVERSION ${OPENMVG_VERSION_MAJOR}
   VERSION "${OPENMVG_VERSION_MAJOR}.${OPENMVG_VERSION_MINOR}"
 )
 
-install(TARGETS openMVG_voctree
+install(TARGETS aliceVision_voctree
   DESTINATION lib/
-  EXPORT openMVG-targets
+  EXPORT aliceVision-targets
 )
 
-UNIT_TEST(openMVG voctree      "openMVG_voctree")
-UNIT_TEST(openMVG kmeans       "openMVG_voctree")
-UNIT_TEST(openMVG voctreebuild "openMVG_voctree")
+UNIT_TEST(aliceVision voctree      "aliceVision_voctree")
+UNIT_TEST(aliceVision kmeans       "aliceVision_voctree")
+UNIT_TEST(aliceVision voctreebuild "aliceVision_voctree")

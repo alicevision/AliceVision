@@ -1,8 +1,8 @@
 // This file is part of the AliceVision project and is made available under
 // the terms of the MPL2 license (see the COPYING.md file).
 
-#include <openMVG/system/Logger.hpp>
-#include "openMVG/image/image.hpp"
+#include <aliceVision/system/Logger.hpp>
+#include "aliceVision/image/image.hpp"
 
 #include <cstring>
 #include <iostream>
@@ -16,7 +16,7 @@ extern "C" {
 
 using namespace std;
 
-namespace openMVG {
+namespace aliceVision {
 namespace image {
 
 static bool CmpFormatExt(const char *a, const char *b) {
@@ -853,4 +853,4 @@ bool Read_TIFF_ImageHeader(const char * filename, ImageHeader * imgheader)
 }
 
 }  // namespace image
-}  // namespace openMVG
+}  // namespace aliceVision

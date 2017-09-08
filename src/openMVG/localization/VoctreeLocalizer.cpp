@@ -4,23 +4,23 @@
 #include "VoctreeLocalizer.hpp"
 #include "rigResection.hpp"
 #include "optimization.hpp"
-#include <openMVG/config.hpp>
-#include <openMVG/sfm/sfm_data_io.hpp>
-#include <openMVG/sfm/pipelines/sfm_robust_model_estimation.hpp>
-#include <openMVG/sfm/sfm_data_BA_ceres.hpp>
-#include <openMVG/sfm/pipelines/RegionsIO.hpp>
-#include <openMVG/features/io_regions_type.hpp>
-#include <openMVG/features/svgVisualization.hpp>
-#include <openMVG/matching/regions_matcher.hpp>
-#include <openMVG/matching_image_collection/Matcher.hpp>
-#include <openMVG/matching_image_collection/GeometricFilterMatrix.hpp>
-#include <openMVG/matching/matcher_kdtree_flann.hpp>
-#include <openMVG/matching_image_collection/F_ACRobust.hpp>
-#include <openMVG/matching_image_collection/GeometricFilterMatrix.hpp>
-#include <openMVG/numeric/numeric.h>
-#include <openMVG/robust_estimation/guided_matching.hpp>
-#include <openMVG/system/Logger.hpp>
-#include <openMVG/system/timer.hpp>
+#include <aliceVision/config.hpp>
+#include <aliceVision/sfm/sfm_data_io.hpp>
+#include <aliceVision/sfm/pipelines/sfm_robust_model_estimation.hpp>
+#include <aliceVision/sfm/sfm_data_BA_ceres.hpp>
+#include <aliceVision/sfm/pipelines/RegionsIO.hpp>
+#include <aliceVision/features/io_regions_type.hpp>
+#include <aliceVision/features/svgVisualization.hpp>
+#include <aliceVision/matching/regions_matcher.hpp>
+#include <aliceVision/matching_image_collection/Matcher.hpp>
+#include <aliceVision/matching_image_collection/GeometricFilterMatrix.hpp>
+#include <aliceVision/matching/matcher_kdtree_flann.hpp>
+#include <aliceVision/matching_image_collection/F_ACRobust.hpp>
+#include <aliceVision/matching_image_collection/GeometricFilterMatrix.hpp>
+#include <aliceVision/numeric/numeric.h>
+#include <aliceVision/robust_estimation/guided_matching.hpp>
+#include <aliceVision/system/Logger.hpp>
+#include <aliceVision/system/timer.hpp>
 
 #include <third_party/progress/progress.hpp>
 
@@ -29,7 +29,7 @@
 #include <algorithm>
 #include <chrono>
 
-namespace openMVG {
+namespace aliceVision {
 namespace localization {
 
 std::ostream& operator<<( std::ostream& os, const voctree::Document &doc )	
@@ -124,7 +124,7 @@ VoctreeLocalizer::VoctreeLocalizer(const std::string &sfmFilePath,
   : ILocalizer()
   , _frameBuffer(5)
 {
-  using namespace openMVG::features;
+  using namespace aliceVision::features;
 
   // init the feature extractor
   _imageDescribers.reserve(matchingDescTypes.size());
@@ -1135,7 +1135,7 @@ bool VoctreeLocalizer::robustMatching(matching::RegionsDatabaseMatcherPerDesc & 
   out_featureMatches.clear();
   geometry_aware::GuidedMatching<
           Mat3,
-          openMVG::fundamental::kernel::EpipolarDistanceError>(
+          aliceVision::fundamental::kernel::EpipolarDistanceError>(
         geometricFilter.m_F,
         queryIntrinsicsBase, // cameras::IntrinsicBase of the matched image
         matchers.getDatabaseRegionsPerDesc(), // features::Regions
@@ -1373,7 +1373,7 @@ bool VoctreeLocalizer::localizeRig_opengv(const std::vector<features::MapRegions
   OPENMVG_LOG_DEBUG("After first recomputation of inliers with a threshold of "
           << param->_errorMax << " the RMSE is: " << resInl.first);
   
-  openMVG::system::Timer timer;
+  aliceVision::system::Timer timer;
   const std::size_t minNumPoints = 4;
   const bool refineOk = iterativeRefineRigPose(vec_pts2D,
                                                vec_pts3D,
@@ -1585,4 +1585,4 @@ bool VoctreeLocalizer::localizeRig_naive(const std::vector<features::MapRegionsP
 
 
 } // localization
-} // openMVG
+} // aliceVision

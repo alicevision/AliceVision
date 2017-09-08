@@ -3,17 +3,17 @@
 
 #pragma once
 
-#include "openMVG/features/ImageDescriberCommon.hpp"
-#include "openMVG/matching/matcher_type.hpp"
-#include "openMVG/matching/indMatch.hpp"
-#include "openMVG/matching_image_collection/Pair_Builder.hpp"
-#include "openMVG/sfm/sfm_data.hpp"
-#include "openMVG/features/RegionsPerView.hpp"
+#include "aliceVision/features/ImageDescriberCommon.hpp"
+#include "aliceVision/matching/matcher_type.hpp"
+#include "aliceVision/matching/indMatch.hpp"
+#include "aliceVision/matching_image_collection/Pair_Builder.hpp"
+#include "aliceVision/sfm/sfm_data.hpp"
+#include "aliceVision/features/RegionsPerView.hpp"
 
 #include <string>
 #include <vector>
 
-namespace openMVG {
+namespace aliceVision {
 namespace matching_image_collection {
 
 /**
@@ -38,5 +38,5 @@ class IImageCollectionMatcher
     ) const = 0;
 };
 
-} // namespace openMVG
+} // namespace aliceVision
 } // namespace matching_image_collection

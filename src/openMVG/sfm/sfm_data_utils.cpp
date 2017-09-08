@@ -1,10 +1,10 @@
 // This file is part of the AliceVision project and is made available under
 // the terms of the MPL2 license (see the COPYING.md file).
 
-#include "openMVG/sfm/sfm_data_utils.hpp"
-#include "openMVG/sfm/sfm_data.hpp"
+#include "aliceVision/sfm/sfm_data_utils.hpp"
+#include "aliceVision/sfm/sfm_data.hpp"
 
-namespace openMVG {
+namespace aliceVision {
 namespace sfm {
 
 void GroupSharedIntrinsics(SfM_Data & sfm_data)
@@ -59,4 +59,4 @@ void GroupSharedIntrinsics(SfM_Data & sfm_data)
 }
 
 } // namespace sfm
-} // namespace openMVG
+} // namespace aliceVision

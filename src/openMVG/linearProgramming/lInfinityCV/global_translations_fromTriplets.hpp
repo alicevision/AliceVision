@@ -4,9 +4,9 @@
 #ifndef OPENMVG_LINFINITY_COMPUTER_VISION_GLOBAL_TRANSLATIONS_FROMTRIPLETS_H_
 #define OPENMVG_LINFINITY_COMPUTER_VISION_GLOBAL_TRANSLATIONS_FROMTRIPLETS_H_
 
-#include "openMVG/numeric/numeric.h"
-#include "openMVG/multiview/translation_averaging_common.hpp"
-#include "openMVG/linearProgramming/linearProgrammingInterface.hpp"
+#include "aliceVision/numeric/numeric.h"
+#include "aliceVision/multiview/translation_averaging_common.hpp"
+#include "aliceVision/linearProgramming/linearProgrammingInterface.hpp"
 #include <fstream>
 #include <utility>
 #include <vector>
@@ -24,7 +24,7 @@
 //- Date: December 2013.
 //- Conference: ICCV.
 
-namespace openMVG   {
+namespace aliceVision   {
 namespace lInfinityCV  {
 
 using namespace linearProgramming;
@@ -203,7 +203,7 @@ struct Tifromtij_ConstraintBuilder_OneLambdaPerTrif
 };
 
 } // namespace lInfinityCV
-} // namespace openMVG
+} // namespace aliceVision
 
 #endif // OPENMVG_LINFINITY_COMPUTER_VISION_GLOBAL_TRANSLATIONS_FROMTRIPLETS_H_
 

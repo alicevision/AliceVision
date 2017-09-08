@@ -1,37 +1,37 @@
 // This file is part of the AliceVision project and is made available under
 // the terms of the MPL2 license (see the COPYING.md file).
 
-#include "openMVG/sfm/pipelines/global/GlobalSfM_translation_averaging.hpp"
-#include "openMVG/sfm/sfm_filters.hpp"
-#include "openMVG/sfm/sfm_data_triangulation.hpp"
-#include "openMVG/sfm/sfm_data_io.hpp"
-#include "openMVG/sfm/sfm_data_BA_ceres.hpp"
-#include "openMVG/sfm/pipelines/global/sfm_global_reindex.hpp"
-#include "openMVG/sfm/pipelines/global/mutexSet.hpp"
-#include "openMVG/matching/indMatch.hpp"
-#include "openMVG/multiview/translation_averaging_common.hpp"
-#include "openMVG/multiview/translation_averaging_solver.hpp"
-#include "openMVG/graph/graph.hpp"
-#include "openMVG/stl/stl.hpp"
-#include "openMVG/system/timer.hpp"
-#include "openMVG/linearProgramming/linearProgramming.hpp"
-#include "openMVG/multiview/essential.hpp"
-#include "openMVG/multiview/conditioning.hpp"
-#include "openMVG/multiview/translation_averaging_common.hpp"
-#include "openMVG/multiview/translation_averaging_solver.hpp"
-#include "openMVG/sfm/pipelines/global/triplet_t_ACRansac_kernelAdaptator.hpp"
-#include <openMVG/config.hpp>
-#include <openMVG/alicevision_omp.hpp>
+#include "aliceVision/sfm/pipelines/global/GlobalSfM_translation_averaging.hpp"
+#include "aliceVision/sfm/sfm_filters.hpp"
+#include "aliceVision/sfm/sfm_data_triangulation.hpp"
+#include "aliceVision/sfm/sfm_data_io.hpp"
+#include "aliceVision/sfm/sfm_data_BA_ceres.hpp"
+#include "aliceVision/sfm/pipelines/global/sfm_global_reindex.hpp"
+#include "aliceVision/sfm/pipelines/global/mutexSet.hpp"
+#include "aliceVision/matching/indMatch.hpp"
+#include "aliceVision/multiview/translation_averaging_common.hpp"
+#include "aliceVision/multiview/translation_averaging_solver.hpp"
+#include "aliceVision/graph/graph.hpp"
+#include "aliceVision/stl/stl.hpp"
+#include "aliceVision/system/timer.hpp"
+#include "aliceVision/linearProgramming/linearProgramming.hpp"
+#include "aliceVision/multiview/essential.hpp"
+#include "aliceVision/multiview/conditioning.hpp"
+#include "aliceVision/multiview/translation_averaging_common.hpp"
+#include "aliceVision/multiview/translation_averaging_solver.hpp"
+#include "aliceVision/sfm/pipelines/global/triplet_t_ACRansac_kernelAdaptator.hpp"
+#include <aliceVision/config.hpp>
+#include <aliceVision/alicevision_omp.hpp>
 
 #include "third_party/histogram/histogram.hpp"
 #include "third_party/progress/progress.hpp"
 #include "third_party/stlplus3/filesystemSimplified/file_system.hpp"
 
-namespace openMVG{
+namespace aliceVision{
 namespace sfm{
 
-using namespace openMVG::cameras;
-using namespace openMVG::geometry;
+using namespace aliceVision::cameras;
+using namespace aliceVision::geometry;
 
 /// Use features in normalized camera frames
 bool GlobalSfM_Translation_AveragingSolver::Run(
@@ -83,7 +83,7 @@ bool GlobalSfM_Translation_AveragingSolver::Translation_averaging(
   std::transform(m_vec_initialRijTijEstimates.begin(), m_vec_initialRijTijEstimates.end(),
     std::inserter(pairs, pairs.begin()), stl::RetrieveKey());
   const std::set<IndexT> set_remainingIds =
-    openMVG::graph::CleanGraph_KeepLargestBiEdge_Nodes<Pair_Set, IndexT>(pairs, "./");
+    aliceVision::graph::CleanGraph_KeepLargestBiEdge_Nodes<Pair_Set, IndexT>(pairs, "./");
   KeepOnlyReferencedElement(set_remainingIds, m_vec_initialRijTijEstimates);
 
   {
@@ -108,11 +108,11 @@ bool GlobalSfM_Translation_AveragingSolver::Translation_averaging(
     reindex(pairs, _reindexForward, _reindexBackward);
     for(size_t i = 0; i < vec_initialRijTijEstimates_cpy.size(); ++i)
     {
-      openMVG::relativeInfo & rel = vec_initialRijTijEstimates_cpy[i];
+      aliceVision::relativeInfo & rel = vec_initialRijTijEstimates_cpy[i];
       rel.first = Pair(_reindexForward[rel.first.first], _reindexForward[rel.first.second]);
     }
 
-    openMVG::system::Timer timerLP_translation;
+    aliceVision::system::Timer timerLP_translation;
 
     switch(eTranslationAveragingMethod)
     {
@@ -122,7 +122,7 @@ bool GlobalSfM_Translation_AveragingSolver::Translation_averaging(
         std::vector<double> vec_solution;
         {
           vec_solution.resize(iNview*3 + vec_initialRijTijEstimates_cpy.size()/3 + 1);
-          using namespace openMVG::linearProgramming;
+          using namespace aliceVision::linearProgramming;
           #if OPENMVG_IS_DEFINED(OPENMVG_HAVE_MOSEK)
             MOSEK_SolveWrapper solverLP(vec_solution.size());
           #else
@@ -219,7 +219,7 @@ bool GlobalSfM_Translation_AveragingSolver::Translation_averaging(
 
         for(int i=0; i < vec_initialRijTijEstimates_cpy.size(); ++i)
         {
-          const openMVG::relativeInfo & rel = vec_initialRijTijEstimates_cpy[i];
+          const aliceVision::relativeInfo & rel = vec_initialRijTijEstimates_cpy[i];
           vec_edges.push_back(rel.first.first);
           vec_edges.push_back(rel.first.second);
           // Since index have been remapped
@@ -309,7 +309,7 @@ void GlobalSfM_Translation_AveragingSolver::ComputePutativeTranslation_EdgesCove
   RelativeInfo_Vec & vec_initialEstimates,
   matching::PairwiseMatches & newpairMatches)
 {
-  openMVG::system::Timer timerLP_triplet;
+  aliceVision::system::Timer timerLP_triplet;
 
   //--
   // Compute the relative translations using triplets of rotations over the rotation graph.
@@ -374,7 +374,7 @@ void GlobalSfM_Translation_AveragingSolver::ComputePutativeTranslation_EdgesCove
       }
       // Compute tracks:
       {
-        openMVG::tracks::TracksBuilder tracksBuilder;
+        aliceVision::tracks::TracksBuilder tracksBuilder;
         tracksBuilder.Build(map_triplet_matches);
         tracksBuilder.Filter(3);
 
@@ -399,7 +399,7 @@ void GlobalSfM_Translation_AveragingSolver::ComputePutativeTranslation_EdgesCove
     std::vector<myEdge > vec_edges;
     std::transform(map_tripletIds_perEdge.begin(), map_tripletIds_perEdge.end(), std::back_inserter(vec_edges), stl::RetrieveKey());
 
-    openMVG::sfm::MutexSet<myEdge> m_mutexSet;
+    aliceVision::sfm::MutexSet<myEdge> m_mutexSet;
 
     C_Progress_display my_progress_bar(
       vec_edges.size(),
@@ -459,7 +459,7 @@ void GlobalSfM_Translation_AveragingSolver::ComputePutativeTranslation_EdgesCove
 
           std::vector<Vec3> vec_tis(3);
           std::vector<size_t> vec_inliers;
-          openMVG::tracks::TracksMap pose_triplet_tracks;
+          aliceVision::tracks::TracksMap pose_triplet_tracks;
 
           const std::string sOutDirectory = "./";
           const bool bTriplet_estimation = Estimate_T_triplet(
@@ -521,7 +521,7 @@ void GlobalSfM_Translation_AveragingSolver::ComputePutativeTranslation_EdgesCove
                 for (std::vector<size_t>::const_iterator iterInliers = vec_inliers.begin();
                   iterInliers != vec_inliers.end(); ++iterInliers)
                 {
-                  using namespace openMVG::tracks;
+                  using namespace aliceVision::tracks;
                   TracksMap::iterator it_tracks = pose_triplet_tracks.begin();
                   std::advance(it_tracks, *iterInliers);
                   const Track & track = it_tracks->second;
@@ -592,7 +592,7 @@ bool GlobalSfM_Translation_AveragingSolver::Estimate_T_triplet(
   std::vector<Vec3> & vec_tis,
   double & dPrecision, // UpperBound of the precision found by the AContrario estimator
   std::vector<size_t> & vec_inliers,
-  openMVG::tracks::TracksMap & tracks,
+  aliceVision::tracks::TracksMap & tracks,
   const std::string & sOutDirectory) const
 {
   // List matches that belong to the triplet of poses
@@ -613,7 +613,7 @@ bool GlobalSfM_Translation_AveragingSolver::Estimate_T_triplet(
     }
   }
 
-  openMVG::tracks::TracksBuilder tracksBuilder;
+  aliceVision::tracks::TracksBuilder tracksBuilder;
   tracksBuilder.Build(map_triplet_matches);
   tracksBuilder.Filter(3);
   tracksBuilder.ExportToSTL(tracks);
@@ -663,8 +663,8 @@ bool GlobalSfM_Translation_AveragingSolver::Estimate_T_triplet(
   const std::vector<Mat3> vec_global_R_Triplet =
     {map_globalR.at(poses_id.i), map_globalR.at(poses_id.j), map_globalR.at(poses_id.k)};
 
-  using namespace openMVG::trifocal;
-  using namespace openMVG::trifocal::kernel;
+  using namespace aliceVision::trifocal;
+  using namespace aliceVision::trifocal::kernel;
 
   typedef TranslationTripletKernel_ACRansac<
     translations_Triplet_Solver,
@@ -785,5 +785,5 @@ bool GlobalSfM_Translation_AveragingSolver::Estimate_T_triplet(
 }
 
 } // namespace sfm
-} // namespace openMVG
+} // namespace aliceVision
 

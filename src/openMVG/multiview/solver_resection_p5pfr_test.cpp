@@ -2,11 +2,11 @@
 // the terms of the MPL2 license (see the COPYING.md file).
 
 #include <vector>
-#include "openMVG/multiview/solver_resection_p5pfr.hpp"
+#include "aliceVision/multiview/solver_resection_p5pfr.hpp"
 #include "testing/testing.h"
 
 using namespace std;
-using namespace openMVG;
+using namespace aliceVision;
 
 bool checkNear(const Mat &expect, const Mat &actual, double eps)
 {

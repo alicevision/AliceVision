@@ -3,18 +3,18 @@
 
 #pragma once
 
-#include "openMVG/multiview/solver_homography_kernel.hpp"
-#include "openMVG/robust_estimation/robust_estimator_ACRansac.hpp"
-#include "openMVG/robust_estimation/robust_estimator_ACRansacKernelAdaptator.hpp"
-#include "openMVG/robust_estimation/guided_matching.hpp"
+#include "aliceVision/multiview/solver_homography_kernel.hpp"
+#include "aliceVision/robust_estimation/robust_estimator_ACRansac.hpp"
+#include "aliceVision/robust_estimation/robust_estimator_ACRansacKernelAdaptator.hpp"
+#include "aliceVision/robust_estimation/guided_matching.hpp"
 
-#include "openMVG/matching/indMatch.hpp"
-#include "openMVG/matching/indMatchDecoratorXY.hpp"
-#include "openMVG/sfm/sfm_data.hpp"
-#include "openMVG/features/RegionsPerView.hpp"
-#include "openMVG/matching_image_collection/GeometricFilterMatrix.hpp"
+#include "aliceVision/matching/indMatch.hpp"
+#include "aliceVision/matching/indMatchDecoratorXY.hpp"
+#include "aliceVision/sfm/sfm_data.hpp"
+#include "aliceVision/features/RegionsPerView.hpp"
+#include "aliceVision/matching_image_collection/GeometricFilterMatrix.hpp"
 
-namespace openMVG {
+namespace aliceVision {
 namespace matching_image_collection {
 
 //-- A contrario homography matrix estimation template functor used for filter pair of putative correspondences
@@ -39,8 +39,8 @@ struct GeometricFilter_HMatrix_AC : public GeometricFilterMatrix
     const matching::MatchesPerDescType & putativeMatchesPerType,
     matching::MatchesPerDescType & out_geometricInliersPerType)
   {
-    using namespace openMVG;
-    using namespace openMVG::robust;
+    using namespace aliceVision;
+    using namespace aliceVision::robust;
     out_geometricInliersPerType.clear();
 
     // Get back corresponding view index
@@ -57,8 +57,8 @@ struct GeometricFilter_HMatrix_AC : public GeometricFilterMatrix
 
     // Define the AContrario adapted Homography matrix solver
     typedef ACKernelAdaptor<
-        openMVG::homography::kernel::FourPointSolver,
-        openMVG::homography::kernel::AsymmetricError,
+        aliceVision::homography::kernel::FourPointSolver,
+        aliceVision::homography::kernel::AsymmetricError,
         UnnormalizerI,
         Mat3>
         KernelType;
@@ -220,7 +220,7 @@ struct GeometricFilter_HMatrix_AC : public GeometricFilterMatrix
           createMatricesWithUndistortFeatures(cam_J, pointsFeaturesJ, xJ);
 
           geometry_aware::GuidedMatching
-            <Mat3, openMVG::homography::kernel::AsymmetricError>(
+            <Mat3, aliceVision::homography::kernel::AsymmetricError>(
             m_H, xI, xJ, Square(m_dPrecision_robust), localMatches);
 
           // Remove matches that have the same (X,Y) coordinates
@@ -233,7 +233,7 @@ struct GeometricFilter_HMatrix_AC : public GeometricFilterMatrix
       {
         // Filtering based on region positions and regions descriptors
         geometry_aware::GuidedMatching
-          <Mat3, openMVG::homography::kernel::AsymmetricError>(
+          <Mat3, aliceVision::homography::kernel::AsymmetricError>(
           m_H,
           cam_I, regionsPerView.getAllRegions(viewId_I),
           cam_J, regionsPerView.getAllRegions(viewId_J),
@@ -250,6 +250,6 @@ struct GeometricFilter_HMatrix_AC : public GeometricFilterMatrix
 };
 
 } // namespace matching_image_collection
-} // namespace openMVG
+} // namespace aliceVision
 
 

@@ -3,7 +3,7 @@
 
 #include "FeaturesPerView.hpp"
 
-namespace openMVG {
+namespace aliceVision {
 namespace features {
 
 const features::PointFeatures& FeaturesPerView::getFeatures(IndexT viewId, features::EImageDescriberType descType) const
@@ -45,4 +45,4 @@ std::vector<features::EImageDescriberType> FeaturesPerView::getCommonDescTypes(c
 }
 
 } // namespace features
-} // namespace openMVG
+} // namespace aliceVision

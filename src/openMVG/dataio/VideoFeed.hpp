@@ -8,7 +8,7 @@
 #include <string>
 #include <memory>
 
-namespace openMVG{
+namespace aliceVision{
 namespace dataio{
 
 class VideoFeed : public IFeed
@@ -105,4 +105,4 @@ private:
 };
 
 }//namespace dataio 
-}//namespace openMVG
+}//namespace aliceVision

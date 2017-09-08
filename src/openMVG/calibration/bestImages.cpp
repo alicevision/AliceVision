@@ -2,14 +2,14 @@
 // the terms of the MPL2 license (see the COPYING.md file).
 
 #include "bestImages.hpp"
-#include <openMVG/system/Logger.hpp>
+#include <aliceVision/system/Logger.hpp>
 
 #include <limits>
 #include <numeric>
 #include <iostream>
 #include <assert.h>
 
-namespace openMVG{
+namespace aliceVision{
 namespace calibration{
 
 void precomputeCellIndexes(const std::vector<std::vector<cv::Point2f> >& imagePoints,
@@ -162,4 +162,4 @@ void selectBestImages(const std::vector<std::vector<cv::Point2f> >& imagePoints,
 }
 
 }//namespace calibration
-}//namespace openMVG
+}//namespace aliceVision

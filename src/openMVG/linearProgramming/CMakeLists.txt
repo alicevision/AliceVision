@@ -12,7 +12,7 @@ set(linearProgramming_sources
 )
 
 # Dependencies
-set(openMVG_linearProgramming_DEPS
+set(aliceVision_linearProgramming_DEPS
   ${CLP_LIBRARIES}     # clp + solver wrapper
   ${COINUTILS_LIBRARY} # container tools
   ${OSI_LIBRARY}       # generic LP
@@ -21,10 +21,10 @@ set(openMVG_linearProgramming_DEPS
 set_source_files_properties(${linearProgramming_headers} PROPERTIES LANGUAGE CXX)
 
 if (NOT MOSEK_FOUND)
-  add_library(openMVG_linearProgramming INTERFACE)
+  add_library(aliceVision_linearProgramming INTERFACE)
 
-  target_link_libraries(openMVG_linearProgramming
-    INTERFACE ${openMVG_linearProgramming_DEPS}
+  target_link_libraries(aliceVision_linearProgramming
+    INTERFACE ${aliceVision_linearProgramming_DEPS}
   )
 
 else ()
@@ -34,28 +34,28 @@ else ()
   list(APPEND linearProgramming_headers linearProgrammingMOSEK.hpp)
 
   # MOSEK_FOUND is true
-  add_library(openMVG_linearProgramming
+  add_library(aliceVision_linearProgramming
     ${linearProgramming_headers}
     ${linearProgramming_sources}
   )
 
-  set_property(TARGET openMVG_linearProgramming
+  set_property(TARGET aliceVision_linearProgramming
     PROPERTY FOLDER AliceVision/AliceVision
   )
 
-  target_link_libraries(openMVG_linearProgramming
-      ${openMVG_linearProgramming_DEPS}
+  target_link_libraries(aliceVision_linearProgramming
+      ${aliceVision_linearProgramming_DEPS}
       lib_Osi_Msk   # OSI solver wrapper for the Mosek backend
       ${MOSEK_LIB}  # Mosek lib
   )
 
 endif()
 
-install(TARGETS openMVG_linearProgramming
+install(TARGETS aliceVision_linearProgramming
   DESTINATION lib
-  EXPORT openMVG-targets
+  EXPORT aliceVision-targets
 )
 
-UNIT_TEST(openMVG linearProgramming "openMVG_linearProgramming")
+UNIT_TEST(aliceVision linearProgramming "aliceVision_linearProgramming")
 
 add_subdirectory(lInfinityCV)

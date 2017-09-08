@@ -3,14 +3,14 @@
 
 #pragma once
 
-#include "openMVG/robust_estimation/rand_sampling.hpp"
-#include "openMVG/robust_estimation/robust_ransac_tools.hpp"
+#include "aliceVision/robust_estimation/rand_sampling.hpp"
+#include "aliceVision/robust_estimation/robust_ransac_tools.hpp"
 
 #include <algorithm>
 #include <limits>
 #include <vector>
 
-namespace openMVG {
+namespace aliceVision {
 namespace robust {
 
 /// \brief Variant of RANSAC using Least Median of Squares.
@@ -109,4 +109,4 @@ double LeastMedianOfSquares(const Kernel &kernel,
 
 
 } // namespace robust
-} // namespace openMVG
+} // namespace aliceVision

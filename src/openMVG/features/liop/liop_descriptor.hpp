@@ -3,13 +3,13 @@
 
 #pragma once
 
-#include <openMVG/image/image.hpp>
-#include <openMVG/features/feature.hpp>
+#include <aliceVision/image/image.hpp>
+#include <aliceVision/features/feature.hpp>
 
 #include <map>
 #include <vector>
 
-namespace openMVG {
+namespace aliceVision {
 namespace features{
 namespace LIOP    {
 
@@ -52,4 +52,4 @@ public:
 
 } // namespace LIOP
 } // namespace features
-} // namespace openMVG
+} // namespace aliceVision

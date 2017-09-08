@@ -3,15 +3,15 @@
 
 #include "patternDetect.hpp"
 
-#include <openMVG/config.hpp>
-#include <openMVG/system/Logger.hpp>
-#include <openMVG/system/timer.hpp>
+#include <aliceVision/config.hpp>
+#include <aliceVision/system/Logger.hpp>
+#include <aliceVision/system/timer.hpp>
 
 #include <boost/program_options.hpp>
 #include <boost/algorithm/string/case_conv.hpp>
 
 #if OPENMVG_IS_DEFINED(OPENMVG_HAVE_CCTAG)
-#include <openMVG/features/cctag/CCTAG_describer.hpp>
+#include <aliceVision/features/cctag/CCTAG_describer.hpp>
 #include <cctag/ICCTag.hpp>
 #include <cctag/utils/LogTime.hpp>
 #endif
@@ -22,7 +22,7 @@
 #include <stdexcept>
 #include <iostream>
 
-namespace openMVG{
+namespace aliceVision{
 namespace calibration{
 
 std::istream& operator>>(std::istream &stream, Pattern &pattern)
@@ -32,11 +32,11 @@ std::istream& operator>>(std::istream &stream, Pattern &pattern)
   boost::to_upper(token);
 
   if (token == "CHESSBOARD")
-    pattern = openMVG::calibration::Pattern::CHESSBOARD;
+    pattern = aliceVision::calibration::Pattern::CHESSBOARD;
   else if (token == "CIRCLES")
-    pattern = openMVG::calibration::Pattern::CIRCLES_GRID;
+    pattern = aliceVision::calibration::Pattern::CIRCLES_GRID;
   else if (token == "ASYMMETRIC_CIRCLES")
-    pattern = openMVG::calibration::Pattern::ASYMMETRIC_CIRCLES_GRID;
+    pattern = aliceVision::calibration::Pattern::ASYMMETRIC_CIRCLES_GRID;
   else if (token == "ASYMMETRIC_CCTAG")
 #if OPENMVG_IS_DEFINED(OPENMVG_HAVE_CCTAG)
     pattern = ASYMMETRIC_CCTAG_GRID;
@@ -52,17 +52,17 @@ std::ostream& operator<<(std::ostream &stream, const Pattern pattern)
 {
   switch(pattern)
   {
-    case openMVG::calibration::Pattern::CHESSBOARD:
+    case aliceVision::calibration::Pattern::CHESSBOARD:
       stream << "CHESSBOARD";
       break;
-    case openMVG::calibration::Pattern::CIRCLES_GRID:
+    case aliceVision::calibration::Pattern::CIRCLES_GRID:
       stream << "CIRCLES";
       break;
-    case openMVG::calibration::Pattern::ASYMMETRIC_CIRCLES_GRID:
+    case aliceVision::calibration::Pattern::ASYMMETRIC_CIRCLES_GRID:
       stream << "ASYMMETRIC_CIRCLES";
       break;
 #if OPENMVG_IS_DEFINED(OPENMVG_HAVE_CCTAG)
-    case openMVG::calibration::Pattern::ASYMMETRIC_CCTAG_GRID:
+    case aliceVision::calibration::Pattern::ASYMMETRIC_CCTAG_GRID:
       stream << "ASYMMETRIC_CCTAG";
       break;
 #endif
@@ -231,4 +231,4 @@ void computeObjectPoints(const cv::Size& boardSize, Pattern pattern, const float
 }
 
 }//namespace calibration
-}//namespace openMVG
+}//namespace aliceVision

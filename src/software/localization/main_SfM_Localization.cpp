@@ -1,19 +1,19 @@
 // This file is part of the AliceVision project and is made available under
 // the terms of the MPL2 license (see the COPYING.md file).
 
-#include <openMVG/sfm/sfm.hpp>
-#include <openMVG/sfm/pipelines/RegionsIO.hpp>
-#include <openMVG/features/features.hpp>
-#include <openMVG/image/image.hpp>
-#include <openMVG/system/timer.hpp>
+#include <aliceVision/sfm/sfm.hpp>
+#include <aliceVision/sfm/pipelines/RegionsIO.hpp>
+#include <aliceVision/features/features.hpp>
+#include <aliceVision/image/image.hpp>
+#include <aliceVision/system/timer.hpp>
 
 #include "third_party/cmdLine/cmdLine.h"
 #include "third_party/stlplus3/filesystemSimplified/file_system.hpp"
 
 #include <cstdlib>
 
-using namespace openMVG;
-using namespace openMVG::sfm;
+using namespace aliceVision;
+using namespace aliceVision::sfm;
 
 // ---------------------------------------------------------------------------
 // Image localization API sample:
@@ -102,7 +102,7 @@ int main(int argc, char **argv)
   // ---------------
 
   // Init the regions_type from the image describer file (used for image regions extraction)
-  using namespace openMVG::features;
+  using namespace aliceVision::features;
 
   // Get imageDescriberMethodType
   EImageDescriberType describerType = EImageDescriberType_stringToEnum(describerMethod);

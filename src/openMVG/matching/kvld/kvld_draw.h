@@ -3,11 +3,11 @@
 
 #pragma once
 
-#include "openMVG/image/image.hpp"
-#include "openMVG/features/feature.hpp"
+#include "aliceVision/image/image.hpp"
+#include "aliceVision/features/feature.hpp"
 #include <vector>
 
-namespace openMVG {
+namespace aliceVision {
 
 //-- A slow but accurate way to draw K-VLD lines
 void getKVLDMask(
@@ -17,7 +17,7 @@ void getKVLDMask(
   const std::vector< features::SIOPointFeature > &vec_F2,
   const std::vector< Pair >& vec_matches,
   const std::vector< bool >& vec_valide,
-  const openMVG::Mat& mat_E)
+  const aliceVision::Mat& mat_E)
 {
   for( int it1 = 0; it1 < vec_matches.size() - 1; it1++ )
   {
@@ -43,4 +43,4 @@ void getKVLDMask(
   }
 }
 
-}; // namespace openMVG
+}; // namespace aliceVision

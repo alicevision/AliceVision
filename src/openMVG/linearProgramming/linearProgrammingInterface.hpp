@@ -6,9 +6,9 @@
 
 #include <vector>
 #include <utility>
-#include "openMVG/numeric/numeric.h"
+#include "aliceVision/numeric/numeric.h"
 
-namespace openMVG   {
+namespace aliceVision   {
 namespace linearProgramming  {
 
 /// Generic container for LP (Linear Programming problems).
@@ -92,7 +92,7 @@ protected :
 };
 
 } // namespace linearProgramming
-} // namespace openMVG
+} // namespace aliceVision
 
 
 #endif // OPENMVG_LINEAR_PROGRAMMING_INTERFACE_H_

@@ -3,7 +3,7 @@
 
 #include "vocabulary_tree.hpp"
 
-namespace openMVG {
+namespace aliceVision {
 namespace voctree {
 
 float sparseDistance(const SparseHistogram& v1, const SparseHistogram& v2, const std::string &distanceMethod, const std::vector<float>& word_weights)
@@ -237,4 +237,4 @@ float sparseDistance(const SparseHistogram& v1, const SparseHistogram& v2, const
 }
 
 } //namespace voctree
-} //namespace openMVG
+} //namespace aliceVision

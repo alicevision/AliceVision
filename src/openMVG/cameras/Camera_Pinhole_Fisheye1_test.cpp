@@ -1,9 +1,9 @@
 // This file is part of the AliceVision project and is made available under
 // the terms of the MPL2 license (see the COPYING.md file).
 
-#include "openMVG/cameras/cameras.hpp"
-using namespace openMVG;
-using namespace openMVG::cameras;
+#include "aliceVision/cameras/cameras.hpp"
+using namespace aliceVision;
+using namespace aliceVision::cameras;
 
 #include "testing/testing.h"
 

@@ -3,17 +3,17 @@
 
 #pragma once
 
-#include <openMVG/matching/indMatch.hpp>
-#include <openMVG/features/regions.hpp>
-#include <openMVG/features/regions_factory.hpp>
-#include <openMVG/image/image.hpp>
-#include <openMVG/features/features.hpp>
-#include <openMVG/matching_image_collection/Matcher_Regions_AllInMemory.hpp>
+#include <aliceVision/matching/indMatch.hpp>
+#include <aliceVision/features/regions.hpp>
+#include <aliceVision/features/regions_factory.hpp>
+#include <aliceVision/image/image.hpp>
+#include <aliceVision/features/features.hpp>
+#include <aliceVision/matching_image_collection/Matcher_Regions_AllInMemory.hpp>
 
-#include "openMVG/sfm/sfm_data.hpp"
-#include "openMVG/sfm/sfm_data_io.hpp"
+#include "aliceVision/sfm/sfm_data.hpp"
+#include "aliceVision/sfm/sfm_data_io.hpp"
 
-namespace openMVG {
+namespace aliceVision {
 namespace features {
 
 /**
@@ -24,10 +24,10 @@ namespace features {
 * @param[out] outputMatches Subset of inputMatches containing the best n matches, sorted.
 */
 void sortMatches(
-	const openMVG::matching::IndMatches& inputMatches,
-	const openMVG::features::Feat_Regions<openMVG::features::SIOPointFeature>& regionsI,
-	const openMVG::features::Feat_Regions<openMVG::features::SIOPointFeature>& regionsJ,
-	openMVG::matching::IndMatches& outputMatches);
+	const aliceVision::matching::IndMatches& inputMatches,
+	const aliceVision::features::Feat_Regions<aliceVision::features::SIOPointFeature>& regionsI,
+	const aliceVision::features::Feat_Regions<aliceVision::features::SIOPointFeature>& regionsJ,
+	aliceVision::matching::IndMatches& outputMatches);
 
 
 /**
@@ -43,7 +43,7 @@ bool matchCompare(const std::pair<float, size_t>& firstElem, const std::pair<flo
 * @param[out] outputMatches Set of image pairs and their respective sets of matches thresholded to the first uNumMatchesToKeep.
 * @param[in] uNumMatchesToKeep The N best matches to keep.
 */
-void thresholdMatches(openMVG::matching::IndMatches& outputMatches, const std::size_t uNumMatchesToKeep);
+void thresholdMatches(aliceVision::matching::IndMatches& outputMatches, const std::size_t uNumMatchesToKeep);
 
 /**
  * @brief Perform the gris filtering on the matches
@@ -53,11 +53,11 @@ void thresholdMatches(openMVG::matching::IndMatches& outputMatches, const std::s
  * @param[in] sfm_data The sfm data file
  * @param[out] outMatches The remaining matches
  */
-void matchesGridFiltering(const openMVG::features::Feat_Regions<openMVG::features::SIOPointFeature>& lRegions, 
-        const openMVG::features::Feat_Regions<openMVG::features::SIOPointFeature>& rRegions, 
-        const openMVG::Pair& indexImagePair,
-        const openMVG::sfm::SfM_Data sfm_data, 
-        openMVG::matching::IndMatches& outMatches);
+void matchesGridFiltering(const aliceVision::features::Feat_Regions<aliceVision::features::SIOPointFeature>& lRegions, 
+        const aliceVision::features::Feat_Regions<aliceVision::features::SIOPointFeature>& rRegions, 
+        const aliceVision::Pair& indexImagePair,
+        const aliceVision::sfm::SfM_Data sfm_data, 
+        aliceVision::matching::IndMatches& outMatches);
 
 }
 }

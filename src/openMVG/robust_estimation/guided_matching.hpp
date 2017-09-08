@@ -3,16 +3,16 @@
 
 #pragma once
 
-#include "openMVG/numeric/numeric.h"
-#include "openMVG/matching/indMatch.hpp"
-#include "openMVG/features/RegionsPerView.hpp"
+#include "aliceVision/numeric/numeric.h"
+#include "aliceVision/matching/indMatch.hpp"
+#include "aliceVision/features/RegionsPerView.hpp"
 
-#include "openMVG/features/regions.hpp"
-#include "openMVG/cameras/Camera_Intrinsics.hpp"
+#include "aliceVision/features/regions.hpp"
+#include "aliceVision/cameras/Camera_Intrinsics.hpp"
 
 #include <vector>
 
-namespace openMVG {
+namespace aliceVision {
 namespace geometry_aware {
 
 /**
@@ -453,4 +453,4 @@ void GuidedMatching_Fundamental_Fast(
 }
 
 } // namespace geometry_aware
-} // namespace openMVG
+} // namespace aliceVision

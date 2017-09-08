@@ -4,11 +4,11 @@
 #ifndef OPENMVG_COLORHARMONIZATION_SELECTORINTERFACE_H
 #define OPENMVG_COLORHARMONIZATION_SELECTORINTERFACE_H
 
-#include "openMVG/image/image.hpp"
+#include "aliceVision/image/image.hpp"
 #include "third_party/histogram/histogram.hpp"
 #include <string>
 
-namespace openMVG {
+namespace aliceVision {
 namespace color_harmonization {
 
 using namespace std;
@@ -70,6 +70,6 @@ protected:
 };
 
 }  // namespace color_harmonization
-}  // namespace openMVG
+}  // namespace aliceVision
 
 #endif // OPENMVG_COLORHARMONIZATION_SELECTORINTERFACE_H

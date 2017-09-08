@@ -21,7 +21,7 @@
 #endif
 
 
-namespace openMVG {
+namespace aliceVision {
 namespace system {
 
 MemoryInfo getMemoryInfo()

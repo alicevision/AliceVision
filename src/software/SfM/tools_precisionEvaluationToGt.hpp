@@ -4,8 +4,8 @@
 #ifndef TOOLS_PRECISION_EVALUATION_TO_GT_HPP
 #define TOOLS_PRECISION_EVALUATION_TO_GT_HPP
 
-#include "openMVG/numeric/numeric.h"
-#include "openMVG/geometry/rigid_transformation3D_srt.hpp"
+#include "aliceVision/numeric/numeric.h"
+#include "aliceVision/geometry/rigid_transformation3D_srt.hpp"
 
 #include "third_party/htmlDoc/htmlDoc.hpp"
 #include "third_party/histogram/histogram.hpp"
@@ -15,7 +15,7 @@
 #include <vector>
 #include <algorithm>
 
-namespace openMVG
+namespace aliceVision
 {
 /// Compute a 5DOF rigid transform between the two camera trajectories
 bool computeSimilarity(
@@ -42,7 +42,7 @@ bool computeSimilarity(
   Vec3 t;
   Mat3 R;
   std::vector<std::size_t> inliers;
-  if(!openMVG::geometry::ACRansac_FindRTS(x1, x2, S, t, R, inliers, true))
+  if(!aliceVision::geometry::ACRansac_FindRTS(x1, x2, S, t, R, inliers, true))
     return false;
 
   vec_camPosComputed_T.resize(vec_camPosGT.size());
@@ -329,6 +329,6 @@ int findIdGT(std::string file, std::vector<std::string> filelist)
   return result;
 }
 
-} //namespace openMVG
+} //namespace aliceVision
 
 #endif // TOOLS_PRECISION_EVALUATION_TO_GT_HPP

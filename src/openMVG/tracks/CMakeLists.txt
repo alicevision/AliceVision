@@ -3,14 +3,14 @@ set(tracks_files_headers
   tracks.hpp
 )
 
-add_library(openMVG_tracks INTERFACE)
+add_library(aliceVision_tracks INTERFACE)
 
-target_link_libraries(openMVG_tracks
-  INTERFACE openMVG_features
+target_link_libraries(aliceVision_tracks
+  INTERFACE aliceVision_features
             ${LEMON_LIBRARY}
             ${LOG_LIB}
 )
 
-UNIT_TEST(openMVG tracks "openMVG_tracks")
+UNIT_TEST(aliceVision tracks "aliceVision_tracks")
 
-add_custom_target(openMVG_tracks_ide SOURCES ${tracks_files_headers})
+add_custom_target(aliceVision_tracks_ide SOURCES ${tracks_files_headers})

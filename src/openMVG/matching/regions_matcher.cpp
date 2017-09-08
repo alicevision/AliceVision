@@ -1,13 +1,13 @@
 // This file is part of the AliceVision project and is made available under
 // the terms of the MPL2 license (see the COPYING.md file).
 
-#include "openMVG/matching/matcher_type.hpp"
-#include "openMVG/matching/regions_matcher.hpp"
-#include "openMVG/matching/matcher_brute_force.hpp"
-#include "openMVG/matching/matcher_kdtree_flann.hpp"
-#include "openMVG/matching/matcher_cascade_hashing.hpp"
+#include "aliceVision/matching/matcher_type.hpp"
+#include "aliceVision/matching/regions_matcher.hpp"
+#include "aliceVision/matching/matcher_brute_force.hpp"
+#include "aliceVision/matching/matcher_kdtree_flann.hpp"
+#include "aliceVision/matching/matcher_cascade_hashing.hpp"
 
-namespace openMVG {
+namespace aliceVision {
 namespace matching {
 
 void DistanceRatioMatch(
@@ -174,4 +174,4 @@ std::unique_ptr<IRegionsMatcher> createRegionsMatcher(const features::Regions & 
 
 
 }  // namespace matching
-}  // namespace openMVG
+}  // namespace aliceVision

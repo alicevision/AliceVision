@@ -4,9 +4,9 @@
 #ifndef OPENMVG_SOLVER_MULTIVIEW_AFFINE_H_
 #define OPENMVG_SOLVER_MULTIVIEW_AFFINE_H_
 
-#include "openMVG/numeric/numeric.h"
+#include "aliceVision/numeric/numeric.h"
 
-namespace openMVG {
+namespace aliceVision {
 
 /** 2D Affine transformation estimation
  *
@@ -62,6 +62,6 @@ bool Affine3DFromCorrespondencesLinear(const Mat &x1,
                                        Mat4 *M,
                                        double expected_precision =
                                          EigenDoubleTraits::dummy_precision());
-} // namespace openMVG
+} // namespace aliceVision
 
 #endif  // OPENMVG_SOLVER_MULTIVIEW_AFFINE_H_

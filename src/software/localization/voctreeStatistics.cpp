@@ -1,11 +1,11 @@
 // This file is part of the AliceVision project and is made available under
 // the terms of the MPL2 license (see the COPYING.md file).
 
-#include <openMVG/sfm/sfm_data_io.hpp>
-#include <openMVG/voctree/database.hpp>
-#include <openMVG/voctree/databaseIO.hpp>
-#include <openMVG/voctree/vocabulary_tree.hpp>
-#include <openMVG/voctree/descriptor_loader.hpp>
+#include <aliceVision/sfm/sfm_data_io.hpp>
+#include <aliceVision/voctree/database.hpp>
+#include <aliceVision/voctree/databaseIO.hpp>
+#include <aliceVision/voctree/vocabulary_tree.hpp>
+#include <aliceVision/voctree/descriptor_loader.hpp>
 
 #include <boost/program_options.hpp> 
 #include <boost/accumulators/accumulators.hpp>
@@ -27,10 +27,10 @@ using namespace boost::accumulators;
 namespace bpo = boost::program_options;
 namespace bfs = boost::filesystem;
 
-typedef openMVG::features::Descriptor<float, DIMENSION> DescriptorFloat;
-typedef openMVG::features::Descriptor<unsigned char, DIMENSION> DescriptorUChar;
+typedef aliceVision::features::Descriptor<float, DIMENSION> DescriptorFloat;
+typedef aliceVision::features::Descriptor<unsigned char, DIMENSION> DescriptorUChar;
 
-std::ostream& operator<<(std::ostream& os, const openMVG::voctree::DocMatches &matches)
+std::ostream& operator<<(std::ostream& os, const aliceVision::voctree::DocMatches &matches)
 {
   os << "[ ";
   for(const auto &e : matches)
@@ -41,10 +41,10 @@ std::ostream& operator<<(std::ostream& os, const openMVG::voctree::DocMatches &m
   return os;
 }
 
-std::ostream& operator<<(std::ostream& os, const openMVG::voctree::Document &doc)
+std::ostream& operator<<(std::ostream& os, const aliceVision::voctree::Document &doc)
 {
   os << "[ ";
-  for(const openMVG::voctree::Word &w : doc)
+  for(const aliceVision::voctree::Word &w : doc)
   {
     os << w << ", ";
   }
@@ -133,7 +133,7 @@ int main(int argc, char** argv)
   //************************************************
 
   OPENMVG_COUT("Loading vocabulary tree\n");
-  openMVG::voctree::VocabularyTree<DescriptorFloat> tree(treeName);
+  aliceVision::voctree::VocabularyTree<DescriptorFloat> tree(treeName);
   OPENMVG_COUT("tree loaded with\n\t" 
           << tree.levels() << " levels\n\t" 
           << tree.splits() << " branching factor");
@@ -145,7 +145,7 @@ int main(int argc, char** argv)
 
   OPENMVG_COUT("Creating the database...");
   // Add each object (document) to the database
-  openMVG::voctree::Database db(tree.words());
+  aliceVision::voctree::Database db(tree.words());
 
   if(withWeights)
   {
@@ -164,7 +164,7 @@ int main(int argc, char** argv)
 
   OPENMVG_COUT("Reading descriptors from " << keylist);
   auto detect_start = std::chrono::steady_clock::now();
-  size_t numTotFeatures = openMVG::voctree::populateDatabase<DescriptorUChar>(keylist, tree, db);
+  size_t numTotFeatures = aliceVision::voctree::populateDatabase<DescriptorUChar>(keylist, tree, db);
   auto detect_end = std::chrono::steady_clock::now();
   auto detect_elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(detect_end - detect_start);
 
@@ -194,7 +194,7 @@ int main(int argc, char** argv)
 
   OPENMVG_COUT("Getting some stats for " << queryList);
   
-  openMVG::voctree::voctreeStatistics<DescriptorUChar>(queryList, tree, db, distance, globalHisto);
+  aliceVision::voctree::voctreeStatistics<DescriptorUChar>(queryList, tree, db, distance, globalHisto);
   
   std::cout << "-----------------" << std::endl;
   

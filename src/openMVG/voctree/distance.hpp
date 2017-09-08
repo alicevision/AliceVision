@@ -8,7 +8,7 @@
 //#include <iostream>
 #include <Eigen/Core>
 
-namespace openMVG {
+namespace aliceVision {
 namespace voctree {
 
 

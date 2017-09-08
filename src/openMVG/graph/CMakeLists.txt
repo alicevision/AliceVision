@@ -13,14 +13,14 @@ set(graph_files_test
   triplet_finder_test.cpp
 )
 
-add_library(openMVG_graph INTERFACE)
+add_library(aliceVision_graph INTERFACE)
 
-target_link_libraries(openMVG_graph
+target_link_libraries(aliceVision_graph
   INTERFACE ${LEMON_LIBRARY}
             ${LOG_LIB}
 )
 
-UNIT_TEST(openMVG connectedComponent "openMVG_graph")
-UNIT_TEST(openMVG triplet_finder     "openMVG_graph")
+UNIT_TEST(aliceVision connectedComponent "aliceVision_graph")
+UNIT_TEST(aliceVision triplet_finder     "aliceVision_graph")
 
-add_custom_target(openMVG_graph_ide SOURCES ${graph_files_headers} ${graph_files_test})
+add_custom_target(aliceVision_graph_ide SOURCES ${graph_files_headers} ${graph_files_test})

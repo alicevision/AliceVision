@@ -1,7 +1,7 @@
 // This file is part of the AliceVision project and is made available under
 // the terms of the MPL2 license (see the COPYING.md file).
 
-#include <openMVG/voctree/database.hpp>
+#include <aliceVision/voctree/database.hpp>
 
 #include <testing/testing.h>
 
@@ -12,7 +12,7 @@
 #include <vector>
 
 using namespace std;
-using namespace openMVG::voctree;
+using namespace aliceVision::voctree;
 
 int card_documents = 10;
 int card_words = 12;

@@ -2,12 +2,12 @@
 // the terms of the MPL2 license (see the COPYING.md file).
 
 #include "CppUnitLite/TestHarness.h"
-#include "openMVG/multiview/rotation_averaging.hpp"
-#include "openMVG/multiview/essential.hpp"
-#include <openMVG/system/Logger.hpp>
+#include "aliceVision/multiview/rotation_averaging.hpp"
+#include "aliceVision/multiview/essential.hpp"
+#include <aliceVision/system/Logger.hpp>
 #include "testing/testing.h"
 
-#include "openMVG/multiview/test_data_sets.hpp"
+#include "aliceVision/multiview/test_data_sets.hpp"
 
 #include <iostream>
 #include <fstream>
@@ -15,10 +15,10 @@
 #include <iterator>
 #include <utility>
 
-using namespace openMVG;
-using namespace openMVG::rotation_averaging;
-using namespace openMVG::rotation_averaging::l1;
-using namespace openMVG::rotation_averaging::l2;
+using namespace aliceVision;
+using namespace aliceVision::rotation_averaging;
+using namespace aliceVision::rotation_averaging::l1;
+using namespace aliceVision::rotation_averaging::l2;
 
 TEST ( rotation_averaging, ClosestSVDRotationMatrix )
 {

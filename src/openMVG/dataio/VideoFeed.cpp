@@ -3,8 +3,8 @@
 
 #include "VideoFeed.hpp"
 
-#include <openMVG/system/Logger.hpp>
-#include <openMVG/image/image_converter.hpp>
+#include <aliceVision/system/Logger.hpp>
+#include <aliceVision/image/image_converter.hpp>
 
 #include <opencv2/core.hpp>
 #include <opencv2/imgproc.hpp>
@@ -14,7 +14,7 @@
 #include <iostream>
 #include <exception>
 
-namespace openMVG{
+namespace aliceVision{
 namespace dataio{
 
 class VideoFeed::FeederImpl
@@ -265,4 +265,4 @@ bool VideoFeed::isInit() const {return(_feeder->isInit()); }
 VideoFeed::~VideoFeed() { }
 
 }//namespace dataio 
-}//namespace openMVG
+}//namespace aliceVision

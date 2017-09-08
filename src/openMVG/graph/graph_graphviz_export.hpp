@@ -8,7 +8,7 @@
 #include <fstream>
 #include <cstdlib>
 
-namespace openMVG {
+namespace aliceVision {
 namespace graph {
 
 // Export an Image connection graph
@@ -124,7 +124,7 @@ void exportToGraphvizData(const std::string& sfile, const GraphT & graph){
   //Prepare Data
 
   std::ofstream file(sfile.c_str());
-  openMVG::graph::exportToGraphvizFormat_Nodal(graph, file);
+  aliceVision::graph::exportToGraphvizFormat_Nodal(graph, file);
   file.close();
 
   //Use Graphviz
@@ -134,6 +134,6 @@ void exportToGraphvizData(const std::string& sfile, const GraphT & graph){
 }
 
 } // namespace graph
-} // namespace openMVG
+} // namespace aliceVision
 
 #endif // OPENMVG_GRAPH_EXPORT_H_

@@ -4,7 +4,7 @@
 #include "solver_resection_p3p.hpp"
 #include "projection.hpp"
 
-namespace openMVG {
+namespace aliceVision {
 namespace euclidean_resection {
 
 void solveQuartic(const Vec5 & factors, Vec4 & realRoots)
@@ -56,7 +56,7 @@ void solveQuartic(const Vec5 & factors, Vec4 & realRoots)
 }
 
 /*
- *      Author: Laurent Kneip, adapted to openMVG by Pierre Moulon
+ *      Author: Laurent Kneip, adapted to aliceVision by Pierre Moulon
  * Description: Compute the absolute pose of a camera using three 3D-to-2D correspondences
  *   Reference: [1] A Novel Parametrization of the P3P-Problem for a Direct Computation of
  *              Absolute Camera Position and Orientation
@@ -329,7 +329,7 @@ size_t P3P_ResectionKernel_K::NumSamples() const
 
 
 } // namespace euclidean_resection
-} // namespace openMVG
+} // namespace aliceVision
 
 
 

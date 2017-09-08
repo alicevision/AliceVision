@@ -5,7 +5,7 @@
 #define OPENMVG_IMAGE_IMAGE_RESAMPLING_HPP_
 
 
-namespace openMVG {
+namespace aliceVision {
 namespace image {
 
   /**
@@ -70,6 +70,6 @@ namespace image {
   }
 
 } // namespace image
-} // namespace openMVG
+} // namespace aliceVision
 
 #endif

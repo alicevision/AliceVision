@@ -1,14 +1,14 @@
 // This file is part of the AliceVision project and is made available under
 // the terms of the MPL2 license (see the COPYING.md file).
 
-#include "openMVG/geometry/half_space_intersection.hpp"
-#include "openMVG/geometry/frustum.hpp"
+#include "aliceVision/geometry/half_space_intersection.hpp"
+#include "aliceVision/geometry/frustum.hpp"
 #include "CppUnitLite/TestHarness.h"
 #include "testing/testing.h"
 #include <iostream>
 
-using namespace openMVG;
-using namespace openMVG::geometry::halfPlane;
+using namespace aliceVision;
+using namespace aliceVision::geometry::halfPlane;
 using namespace std;
 
 TEST(HALF_PLANE, ExistingSubspace) {

@@ -15,7 +15,7 @@ the terms of the BSD license (see the COPYING file).
 
 #include "algorithm.h"
 
-IntegralImages::IntegralImages(const openMVG::image::Image< float >& I)
+IntegralImages::IntegralImages(const aliceVision::image::Image< float >& I)
 {
   map.resize( I.Width() + 1, I.Height() + 1 );
   map.fill( 0 );
@@ -29,7 +29,7 @@ IntegralImages::IntegralImages(const openMVG::image::Image< float >& I)
 }
 
 float getRange(
-  const openMVG::image::Image< float >& I,
+  const aliceVision::image::Image< float >& I,
   int a,
   const float p )
 {
@@ -40,7 +40,7 @@ float getRange(
 
 //=============================IO interface======================//
 
-std::ofstream& writeDetector( std::ofstream& out, const openMVG::features::SIOPointFeature& feature )
+std::ofstream& writeDetector( std::ofstream& out, const aliceVision::features::SIOPointFeature& feature )
 {
   out << feature.x() << " "
     << feature.y() << " "
@@ -49,7 +49,7 @@ std::ofstream& writeDetector( std::ofstream& out, const openMVG::features::SIOPo
   return out;
 }
 
-std::ifstream& readDetector( std::ifstream& in, openMVG::features::SIOPointFeature& point )
+std::ifstream& readDetector( std::ifstream& in, aliceVision::features::SIOPointFeature& point )
 {
   in >> point.x()
     >> point.y()

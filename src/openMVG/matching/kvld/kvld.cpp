@@ -18,12 +18,12 @@ the terms of the BSD license ( see the COPYING file).
 #include "algorithm.h"
 #include <functional>
 #include <numeric>
-#include <openMVG/image/image.hpp>
-#include <openMVG/config.hpp>
+#include <aliceVision/image/image.hpp>
+#include <aliceVision/config.hpp>
 
 using namespace std;
-using namespace openMVG;
-using namespace openMVG::image;
+using namespace aliceVision;
+using namespace aliceVision::image;
 
 ImageScale::ImageScale( const Image< float >& I, double r )
 {
@@ -206,7 +206,7 @@ float KVLD( const Image< float >& I1,
             const vector< Pair >& matches,
             vector< Pair >& matchesFiltered,
             vector< double >& score,
-            openMVG::Mat& E,
+            aliceVision::Mat& E,
             vector< bool >& valide,
             KvldParameters& kvldParameters )
 {
@@ -227,11 +227,11 @@ float KVLD( const Image< float >& I1,
 
   bool bPrecomputedDist = false;
 
-  openMVG::Matf dist1, dist2;
+  aliceVision::Matf dist1, dist2;
   if( bPrecomputedDist )
   {
-    dist1 = openMVG::Matf::Zero( F1.size(), F1.size() );
-    dist2 = openMVG::Matf::Zero( F2.size(), F2.size() );
+    dist1 = aliceVision::Matf::Zero( F1.size(), F1.size() );
+    dist2 = aliceVision::Matf::Zero( F2.size(), F2.size() );
 
     for( int a1 = 0; a1 < F1.size(); ++a1 )
       for( int a2 = a1; a2 < F1.size(); ++a2 )

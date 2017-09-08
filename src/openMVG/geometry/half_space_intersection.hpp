@@ -4,12 +4,12 @@
 #ifndef OPENMVG_GEOMETRY_HALF_SPACE_HPP_
 #define OPENMVG_GEOMETRY_HALF_SPACE_HPP_
 
-#include "openMVG/linearProgramming/linearProgrammingOSI_X.hpp"
+#include "aliceVision/linearProgramming/linearProgrammingOSI_X.hpp"
 #include <Eigen/Geometry>
 #include <Eigen/StdVector>
 EIGEN_DEFINE_STL_VECTOR_SPECIALIZATION(Eigen::Hyperplane<double,3>)
 
-namespace openMVG {
+namespace aliceVision {
 namespace geometry {
 namespace halfPlane {
 
@@ -43,8 +43,8 @@ static bool isNotEmpty(const Half_planes & hplanes)
   // => If a point exists: there is a common subspace defined and so intersections.
   // The LP formulation consists in set the Half_plane as constraint and check if a point can fit the equations.
 
-  using namespace openMVG;
-  using namespace openMVG::linearProgramming;
+  using namespace aliceVision;
+  using namespace aliceVision::linearProgramming;
 
   LP_Constraints cstraint;
   {
@@ -82,7 +82,7 @@ static bool isNotEmpty(const Half_planes & hplanes)
 }
 
 } // namespace geometry
-} // namespace openMVG
+} // namespace aliceVision
 } // namespace halfPlane
 
 #endif // OPENMVG_GEOMETRY_HALF_SPACE_HPP_

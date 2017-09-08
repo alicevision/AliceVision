@@ -4,14 +4,14 @@
 #ifndef IO_REGIONS_TYPE_HPP
 #define IO_REGIONS_TYPE_HPP
 
-#include "openMVG/features/features.hpp"
+#include "aliceVision/features/features.hpp"
 #include "third_party/stlplus3/filesystemSimplified/file_system.hpp"
 #include <cereal/archives/json.hpp>
 
 #include <fstream>
 #include <vector>
 
-namespace openMVG {
+namespace aliceVision {
 namespace features {
 
 // Init the regions_type from an image describer file (used for regions loading)
@@ -20,7 +20,7 @@ static inline std::unique_ptr<features::Regions> Init_region_type_from_file
   const std::string & sImage_describer_file
 )
 {
-  using namespace openMVG::features;
+  using namespace aliceVision::features;
   std::unique_ptr<Regions> regions_type;
   if (stlplus::is_file(sImage_describer_file))
   {
@@ -40,6 +40,6 @@ static inline std::unique_ptr<features::Regions> Init_region_type_from_file
 }
 
 } // namespace features
-} // namespace openMVG
+} // namespace aliceVision
 
 #endif // IO_REGIONS_TYPE_HPP

@@ -4,9 +4,9 @@
 #ifndef OPENMVG_SFM_DATA_BA_HPP
 #define OPENMVG_SFM_DATA_BA_HPP
 
-#include <openMVG/stl/bitmask.hpp>
+#include <aliceVision/stl/bitmask.hpp>
 
-namespace openMVG {
+namespace aliceVision {
 namespace sfm {
 
 enum BA_Refine
@@ -45,6 +45,6 @@ class Bundle_Adjustment
 };
 
 } // namespace sfm
-} // namespace openMVG
+} // namespace aliceVision
 
 #endif // OPENMVG_SFM_DATA_BA_HPP

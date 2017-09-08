@@ -5,12 +5,12 @@
 #include <iostream>
 #include <string>
 
-#include <openMVG/system/Logger.hpp>
-#include "openMVG/image/image.hpp"
+#include <aliceVision/system/Logger.hpp>
+#include "aliceVision/image/image.hpp"
 #include "testing/testing.h"
 
-using namespace openMVG;
-using namespace openMVG::image;
+using namespace aliceVision;
+using namespace aliceVision::image;
 using std::string;
 
 TEST(ReadJpg, Jpg_Color) {
@@ -59,18 +59,18 @@ TEST(ReadPng, Png_Monochrome) {
 }
 
 TEST(GetFormat, filenames) {
-  EXPECT_EQ(GetFormat("something.jpg"), openMVG::image::Jpg);
-  EXPECT_EQ(GetFormat("something.png"), openMVG::image::Png);
-  EXPECT_EQ(GetFormat("something.pnm"), openMVG::image::Pnm);
-  EXPECT_EQ(GetFormat("something.tif"), openMVG::image::Tiff);
-  EXPECT_EQ(GetFormat("/some/thing.JpG"), openMVG::image::Jpg);
-  EXPECT_EQ(GetFormat("/some/thing.pNG"), openMVG::image::Png);
-  EXPECT_EQ(GetFormat("some/thing.PNm"), openMVG::image::Pnm);
-  EXPECT_EQ(GetFormat("some/thing.TIf"), openMVG::image::Tiff);
-  EXPECT_EQ(GetFormat(".s/o.m/e.t/h.i/n.g.JPG"), openMVG::image::Jpg);
-  EXPECT_EQ(GetFormat(".s/o.m/e.t/h.i/n.g.PNG"), openMVG::image::Png);
-  EXPECT_EQ(GetFormat(".s/o.m/e.t/h.i/n.g.PNM"), openMVG::image::Pnm);
-  EXPECT_EQ(GetFormat(".s/o.m/e.t/h.i/n.g.TIF"), openMVG::image::Tiff);
+  EXPECT_EQ(GetFormat("something.jpg"), aliceVision::image::Jpg);
+  EXPECT_EQ(GetFormat("something.png"), aliceVision::image::Png);
+  EXPECT_EQ(GetFormat("something.pnm"), aliceVision::image::Pnm);
+  EXPECT_EQ(GetFormat("something.tif"), aliceVision::image::Tiff);
+  EXPECT_EQ(GetFormat("/some/thing.JpG"), aliceVision::image::Jpg);
+  EXPECT_EQ(GetFormat("/some/thing.pNG"), aliceVision::image::Png);
+  EXPECT_EQ(GetFormat("some/thing.PNm"), aliceVision::image::Pnm);
+  EXPECT_EQ(GetFormat("some/thing.TIf"), aliceVision::image::Tiff);
+  EXPECT_EQ(GetFormat(".s/o.m/e.t/h.i/n.g.JPG"), aliceVision::image::Jpg);
+  EXPECT_EQ(GetFormat(".s/o.m/e.t/h.i/n.g.PNG"), aliceVision::image::Png);
+  EXPECT_EQ(GetFormat(".s/o.m/e.t/h.i/n.g.PNM"), aliceVision::image::Pnm);
+  EXPECT_EQ(GetFormat(".s/o.m/e.t/h.i/n.g.TIF"), aliceVision::image::Tiff);
 }
 
 TEST(ImageIOTest, Png_Out) {

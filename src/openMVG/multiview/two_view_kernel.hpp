@@ -5,10 +5,10 @@
 #define OPENMVG_MULTIVIEW_TWO_VIEW_KERNEL_H_
 
 #include <vector>
-#include "openMVG/multiview/conditioning.hpp"
-#include "openMVG/numeric/numeric.h"
+#include "aliceVision/multiview/conditioning.hpp"
+#include "aliceVision/numeric/numeric.h"
 
-namespace openMVG {
+namespace aliceVision {
 namespace two_view {
 namespace kernel {
 
@@ -105,6 +105,6 @@ public:
 
 }  // namespace kernel
 }  // namespace two_view
-}  // namespace openMVG
+}  // namespace aliceVision
 
 #endif  // OPENMVG_MULTIVIEW_TWO_VIEW_KERNEL_H_

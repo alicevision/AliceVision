@@ -7,7 +7,7 @@
 #include <memory>
 #include <set>
 
-namespace openMVG {
+namespace aliceVision {
 namespace graph  {
 
 // Structure used to keep information of an image graph:
@@ -87,6 +87,6 @@ struct indexedGraph
 };
 
 } // namespace graph
-} // namespace openMVG
+} // namespace aliceVision
 
 #endif // OPENMVG_GRAPH_BUILDER__H_

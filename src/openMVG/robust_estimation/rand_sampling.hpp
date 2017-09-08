@@ -10,7 +10,7 @@
 #include <random>
 #include <cassert>
 
-namespace openMVG {
+namespace aliceVision {
 namespace robust{
 
 
@@ -153,4 +153,4 @@ inline void UniformSample(std::size_t sampleSize,
 }
 
 } // namespace robust
-} // namespace openMVG
+} // namespace aliceVision

@@ -3,17 +3,17 @@
 
 #pragma once
 
-#include <openMVG/types.hpp>
-#include <openMVG/sfm/sfm_view.hpp>
-#include <openMVG/sfm/Rig.hpp>
-#include <openMVG/sfm/sfm_landmark.hpp>
-#include <openMVG/geometry/pose3.hpp>
-#include <openMVG/cameras/cameras.hpp>
+#include <aliceVision/types.hpp>
+#include <aliceVision/sfm/sfm_view.hpp>
+#include <aliceVision/sfm/Rig.hpp>
+#include <aliceVision/sfm/sfm_landmark.hpp>
+#include <aliceVision/geometry/pose3.hpp>
+#include <aliceVision/cameras/cameras.hpp>
 
 #include <stdexcept>
 #include <cassert>
 
-namespace openMVG {
+namespace aliceVision {
 namespace sfm {
 
 /// Define a collection of View
@@ -307,4 +307,4 @@ private:
 bool ColorizeTracks( SfM_Data & sfm_data );
 
 } // namespace sfm
-} // namespace openMVG
+} // namespace aliceVision

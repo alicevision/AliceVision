@@ -1,18 +1,18 @@
 // This file is part of the AliceVision project and is made available under
 // the terms of the MPL2 license (see the COPYING.md file).
 
-#include "openMVG/sfm/sfm.hpp"
-#include "openMVG/image/image.hpp"
+#include "aliceVision/sfm/sfm.hpp"
+#include "aliceVision/image/image.hpp"
 
-using namespace openMVG;
-using namespace openMVG::cameras;
-using namespace openMVG::geometry;
-using namespace openMVG::image;
-using namespace openMVG::sfm;
+using namespace aliceVision;
+using namespace aliceVision::cameras;
+using namespace aliceVision::geometry;
+using namespace aliceVision::image;
+using namespace aliceVision::sfm;
 
 #include "third_party/cmdLine/cmdLine.h"
 #include "third_party/stlplus3/filesystemSimplified/file_system.hpp"
-#include "openMVG/numeric/numeric.h"
+#include "aliceVision/numeric/numeric.h"
 
 #include <fstream>
 

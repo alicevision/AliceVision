@@ -3,11 +3,11 @@
 
 #pragma once
 
-#include <openMVG/robust_estimation/robust_estimator_ACRansacKernelAdaptator.hpp>
-#include <openMVG/numeric/numeric.h>
-#include <openMVG/multiview/conditioning.hpp>
+#include <aliceVision/robust_estimation/robust_estimator_ACRansacKernelAdaptator.hpp>
+#include <aliceVision/numeric/numeric.h>
+#include <aliceVision/multiview/conditioning.hpp>
 
-namespace openMVG {
+namespace aliceVision {
 namespace robust {
 
 
@@ -157,4 +157,4 @@ class KernelAdaptorResectionLORansac_K :
 
 
 } // namespace robust
-} // namespace openMVG
+} // namespace aliceVision

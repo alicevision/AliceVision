@@ -63,19 +63,19 @@ ENDIF()
 INSTALL(
   TARGETS lemon
   DESTINATION lib
-  EXPORT openMVG-targets
+  EXPORT aliceVision-targets
 )
 
 INSTALL(
   DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-  DESTINATION include/openMVG/third_party/lemon
+  DESTINATION include/aliceVision/third_party/lemon
   COMPONENT headers
   FILES_MATCHING PATTERN "*.hpp" PATTERN "*.h"
 )
 
 INSTALL(
   FILES ${CMAKE_CURRENT_BINARY_DIR}/config.h
-  DESTINATION include/openMVG/third_party/lemon
+  DESTINATION include/aliceVision/third_party/lemon
   COMPONENT headers
 )
 
@@ -88,7 +88,7 @@ INSTALL(
 
 #INSTALL(
 #  FILES ${CMAKE_CURRENT_BINARY_DIR}/config.h
-#  DESTINATION include/openMVG_third_party/lemon
+#  DESTINATION include/aliceVision_third_party/lemon
 #  COMPONENT headers
 #)
 

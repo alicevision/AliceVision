@@ -3,9 +3,9 @@
 
 #pragma once
 
-#include "openMVG/matching_image_collection/Matcher.hpp"
+#include "aliceVision/matching_image_collection/Matcher.hpp"
 
-namespace openMVG {
+namespace aliceVision {
 namespace matching_image_collection {
 
 /**
@@ -39,5 +39,5 @@ class ImageCollectionMatcher_CascadeHashing : public IImageCollectionMatcher
   float f_dist_ratio_;
 };
 
-} // namespace openMVG
+} // namespace aliceVision
 } // namespace matching_image_collection

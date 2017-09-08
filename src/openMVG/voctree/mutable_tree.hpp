@@ -6,7 +6,7 @@
 
 #include "vocabulary_tree.hpp"
 
-namespace openMVG {
+namespace aliceVision {
 namespace voctree {
 
 /**

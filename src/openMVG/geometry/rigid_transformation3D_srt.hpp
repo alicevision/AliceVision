@@ -4,12 +4,12 @@
 #ifndef OPENMVG_GEOMETRY_3D_REGISTRATION_7DOF_H_
 #define OPENMVG_GEOMETRY_3D_REGISTRATION_7DOF_H_
 
-#include "openMVG/numeric/numeric.h"
-#include "openMVG/numeric/lm.hpp"
+#include "aliceVision/numeric/numeric.h"
+#include "aliceVision/numeric/lm.hpp"
 
-#include <openMVG/robust_estimation/robust_estimator_ACRansac.hpp>
+#include <aliceVision/robust_estimation/robust_estimator_ACRansac.hpp>
 
-namespace openMVG {
+namespace aliceVision {
 namespace geometry {
 
 /**
@@ -461,6 +461,6 @@ static bool ACRansac_FindRTS(const Mat &x1,
 }
 
 } // namespace geometry
-} // namespace openMVG
+} // namespace aliceVision
 
 #endif  // OPENMVG_GEOMETRY_REGISTRATION_7DOF_H_

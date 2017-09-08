@@ -4,13 +4,13 @@
 #ifndef OPENMVG_SFM_GLOBAL_ENGINE_RELATIVE_MOTIONS_HPP
 #define OPENMVG_SFM_GLOBAL_ENGINE_RELATIVE_MOTIONS_HPP
 
-#include "openMVG/sfm/pipelines/sfm_engine.hpp"
+#include "aliceVision/sfm/pipelines/sfm_engine.hpp"
 
-#include "openMVG/sfm/pipelines/global/GlobalSfM_rotation_averaging.hpp"
-#include "openMVG/sfm/pipelines/global/GlobalSfM_translation_averaging.hpp"
+#include "aliceVision/sfm/pipelines/global/GlobalSfM_rotation_averaging.hpp"
+#include "aliceVision/sfm/pipelines/global/GlobalSfM_translation_averaging.hpp"
 #include "third_party/htmlDoc/htmlDoc.hpp"
 
-namespace openMVG{
+namespace aliceVision{
 namespace sfm{
 
 /// Global SfM Pipeline Reconstruction Engine.
@@ -38,7 +38,7 @@ protected:
   /// Compute from relative rotations the global rotations of the camera poses
   bool Compute_Global_Rotations
   (
-    const openMVG::rotation_averaging::RelativeRotations & vec_relatives_R,
+    const aliceVision::rotation_averaging::RelativeRotations & vec_relatives_R,
     Hash_Map<IndexT, Mat3> & map_globalR
   );
 
@@ -62,7 +62,7 @@ private:
   /// Compute relative rotations
   void Compute_Relative_Rotations
   (
-    openMVG::rotation_averaging::RelativeRotations & vec_relatives_R
+    aliceVision::rotation_averaging::RelativeRotations & vec_relatives_R
   );
 
   //----
@@ -85,6 +85,6 @@ private:
 };
 
 } // namespace sfm
-} // namespace openMVG
+} // namespace aliceVision
 
 #endif // OPENMVG_SFM_GLOBAL_ENGINE_RELATIVE_MOTIONS_HPP

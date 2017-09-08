@@ -4,9 +4,9 @@
 #ifndef OPENMVG_IMAGE_HOMOGRAPHY_WARP
 #define OPENMVG_IMAGE_HOMOGRAPHY_WARP
 
-#include <openMVG/config.hpp>
+#include <aliceVision/config.hpp>
 
-namespace openMVG{
+namespace aliceVision{
 namespace image{
 
 /// Apply inplace homography transform for the given point (x,y).
@@ -42,6 +42,6 @@ void Warp(const Image &im, const Mat3 & H, Image &out)
 }
 
 }; // namespace image
-}; // namespace openMVG
+}; // namespace aliceVision
 
 #endif // OPENMVG_IMAGE_HOMOGRAPHY_WARP

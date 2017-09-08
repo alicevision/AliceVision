@@ -1,15 +1,15 @@
 // This file is part of the AliceVision project and is made available under
 // the terms of the MPL2 license (see the COPYING.md file).
 
-#include <openMVG/multiview/projection.hpp>
-#include <openMVG/numeric/numeric.h>
-#include <openMVG/multiview/solver_resection_p5pfr.hpp>
-#include <openMVG/system/Logger.hpp>
+#include <aliceVision/multiview/projection.hpp>
+#include <aliceVision/numeric/numeric.h>
+#include <aliceVision/multiview/solver_resection_p5pfr.hpp>
+#include <aliceVision/system/Logger.hpp>
 
 #include <cmath>
 #include <iostream>
 
-namespace openMVG {
+namespace aliceVision {
 namespace resection {
 
 /**
@@ -395,4 +395,4 @@ double P5PfrSolver::error(const p5pfrModel &m,
 }
 
 } // namespace resection
-} // namespace openMVG
+} // namespace aliceVision

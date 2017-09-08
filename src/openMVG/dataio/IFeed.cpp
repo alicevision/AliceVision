@@ -3,12 +3,12 @@
 
 #include "IFeed.hpp"
 
-#include <openMVG/system/Logger.hpp>
+#include <aliceVision/system/Logger.hpp>
 
 #include <fstream>
 #include <exception>
 
-namespace openMVG{
+namespace aliceVision{
 namespace dataio{
 
 // the structure of the file is
@@ -47,4 +47,4 @@ void readCalibrationFromFile(const std::string &filename, cameras::Pinhole_Intri
 }
 
 }//namespace dataio 
-}//namespace openMVG
+}//namespace aliceVision

@@ -9,7 +9,7 @@
 #include "third_party/histogram/histogram.hpp"
 #include "third_party/vectorGraphics/svgDrawer.hpp"
 
-namespace openMVG {
+namespace aliceVision {
 namespace sfm {
 
 static bool Generate_SfM_Report
@@ -173,6 +173,6 @@ static bool Generate_SfM_Report
 }
 
 } // namespace sfm
-} // namespace openMVG
+} // namespace aliceVision
 
 #endif // OPENMVG_SFM_REPORT_HPP

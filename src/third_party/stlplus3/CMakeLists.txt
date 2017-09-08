@@ -16,7 +16,7 @@ set_property(TARGET stlplus
 install(
   TARGETS stlplus
   DESTINATION lib
-  EXPORT openMVG-targets
+  EXPORT aliceVision-targets
 )
 
 if(STLPLUS_INCLUDE_INSTALL_DIR)

@@ -116,7 +116,7 @@ const int WARNING = -1;
 const int INFO    =  0;
 
 // define a default LOG severity
-#define MAX_LOG_LEVEL (ERROR) // openMVG
+#define MAX_LOG_LEVEL (ERROR) // aliceVision
 
 // ------------------------- Glog compatibility ------------------------------
 

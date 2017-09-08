@@ -1,44 +1,44 @@
 // This file is part of the AliceVision project and is made available under
 // the terms of the MPL2 license (see the COPYING.md file).
 
-#include "openMVG/sfm/sfm_data.hpp"
-#include "openMVG/sfm/sfm_data_io.hpp"
-#include "openMVG/sfm/pipelines/RegionsIO.hpp"
-#include "openMVG/sfm/pipelines/sfm_engine.hpp"
-#include "openMVG/features/FeaturesPerView.hpp"
-#include "openMVG/features/RegionsPerView.hpp"
+#include "aliceVision/sfm/sfm_data.hpp"
+#include "aliceVision/sfm/sfm_data_io.hpp"
+#include "aliceVision/sfm/pipelines/RegionsIO.hpp"
+#include "aliceVision/sfm/pipelines/sfm_engine.hpp"
+#include "aliceVision/features/FeaturesPerView.hpp"
+#include "aliceVision/features/RegionsPerView.hpp"
 
 /// Generic Image Collection image matching
-#include "openMVG/features/image_describer.hpp"
-#include "openMVG/features/ImageDescriberCommon.hpp"
-#include "openMVG/matching_image_collection/MatchingCommon.hpp"
-#include "openMVG/matching_image_collection/Matcher_Regions_AllInMemory.hpp"
-#include "openMVG/matching_image_collection/Cascade_Hashing_Matcher_Regions_AllInMemory.hpp"
-#include "openMVG/matching_image_collection/GeometricFilter.hpp"
-#include "openMVG/matching_image_collection/F_ACRobust.hpp"
-#include "openMVG/matching_image_collection/E_ACRobust.hpp"
-#include "openMVG/matching_image_collection/H_ACRobust.hpp"
-#include "openMVG/matching/pairwiseAdjacencyDisplay.hpp"
-#include "openMVG/matching/indMatch_utils.hpp"
-#include "openMVG/system/timer.hpp"
+#include "aliceVision/features/image_describer.hpp"
+#include "aliceVision/features/ImageDescriberCommon.hpp"
+#include "aliceVision/matching_image_collection/MatchingCommon.hpp"
+#include "aliceVision/matching_image_collection/Matcher_Regions_AllInMemory.hpp"
+#include "aliceVision/matching_image_collection/Cascade_Hashing_Matcher_Regions_AllInMemory.hpp"
+#include "aliceVision/matching_image_collection/GeometricFilter.hpp"
+#include "aliceVision/matching_image_collection/F_ACRobust.hpp"
+#include "aliceVision/matching_image_collection/E_ACRobust.hpp"
+#include "aliceVision/matching_image_collection/H_ACRobust.hpp"
+#include "aliceVision/matching/pairwiseAdjacencyDisplay.hpp"
+#include "aliceVision/matching/indMatch_utils.hpp"
+#include "aliceVision/system/timer.hpp"
 
-#include "openMVG/graph/graph.hpp"
-#include "openMVG/stl/stl.hpp"
+#include "aliceVision/graph/graph.hpp"
+#include "aliceVision/stl/stl.hpp"
 #include "third_party/cmdLine/cmdLine.h"
 #include "third_party/stlplus3/filesystemSimplified/file_system.hpp"
 
-#include "openMVG/features/selection.hpp"
+#include "aliceVision/features/selection.hpp"
 
 #include <cstdlib>
 #include <fstream>
 #include <cctype>
 
-using namespace openMVG;
-using namespace openMVG::cameras;
-using namespace openMVG::matching;
-using namespace openMVG::robust;
-using namespace openMVG::sfm;
-using namespace openMVG::matching_image_collection;
+using namespace aliceVision;
+using namespace aliceVision::cameras;
+using namespace aliceVision::matching;
+using namespace aliceVision::robust;
+using namespace aliceVision::sfm;
+using namespace aliceVision::matching_image_collection;
 using namespace std;
 
 enum EGeometricModel
@@ -305,7 +305,7 @@ int main(int argc, char **argv)
   //---------------------------------------
   // Load SfM Scene regions
   //---------------------------------------
-  using namespace openMVG::features;
+  using namespace aliceVision::features;
 
   //---------------------------------------
   // a. Compute putative descriptor matches
@@ -522,13 +522,13 @@ int main(int argc, char **argv)
     {
       //Get the image pair and their matches.
       const Pair& indexImagePair = matchGeo.first;
-      const openMVG::matching::MatchesPerDescType& matchesPerDesc = matchGeo.second;
+      const aliceVision::matching::MatchesPerDescType& matchesPerDesc = matchGeo.second;
 
       for(const auto& match: matchesPerDesc)
       {
         const features::EImageDescriberType descType = match.first;
         assert(descType != features::EImageDescriberType::UNINITIALIZED);
-        const openMVG::matching::IndMatches& inputMatches = match.second;
+        const aliceVision::matching::IndMatches& inputMatches = match.second;
 
         const features::Feat_Regions<features::SIOPointFeature>* rRegions = dynamic_cast<const features::Feat_Regions<features::SIOPointFeature>*>(&regionPerView.getRegions(indexImagePair.second, descType));
         const features::Feat_Regions<features::SIOPointFeature>* lRegions = dynamic_cast<const features::Feat_Regions<features::SIOPointFeature>*>(&regionPerView.getRegions(indexImagePair.first, descType));
@@ -537,7 +537,7 @@ int main(int argc, char **argv)
         if(rRegions && lRegions)
         {
           //Sorting function:
-          openMVG::matching::IndMatches outMatches;
+          aliceVision::matching::IndMatches outMatches;
           sortMatches(inputMatches, *lRegions, *rRegions, outMatches);
 
           if(useGridSort)

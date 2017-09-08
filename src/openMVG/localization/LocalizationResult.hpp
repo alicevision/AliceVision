@@ -3,8 +3,8 @@
 
 #pragma once
 
-#include <openMVG/sfm/pipelines/localization/SfM_Localizer.hpp>
-#include <openMVG/voctree/database.hpp>
+#include <aliceVision/sfm/pipelines/localization/SfM_Localizer.hpp>
+#include <aliceVision/voctree/database.hpp>
 
 #include <cereal/cereal.hpp>
 
@@ -15,23 +15,23 @@
 namespace cereal{
 
 template<class Archive>
-void save(Archive & archive, openMVG::Mat34 const & mat)
+void save(Archive & archive, aliceVision::Mat34 const & mat)
 { 
   std::vector<double> vec(mat.data(), mat.data() + mat.rows() * mat.cols());
   archive(vec); 
 }
 
 template<class Archive>
-void load(Archive & archive, openMVG::Mat34 & m)
+void load(Archive & archive, aliceVision::Mat34 & m)
 {
   std::vector<double> vec(12);
   archive(vec); 
-  m = Eigen::Map<openMVG::Mat34>(vec.data(), 3, 4);
+  m = Eigen::Map<aliceVision::Mat34>(vec.data(), 3, 4);
 }
 
 }
 
-namespace openMVG {
+namespace aliceVision {
 namespace localization {
 
 template<class Archive>
@@ -42,12 +42,12 @@ void saveMat(Archive & archive, const std::string &name, Mat const & mat)
 }
 
 template<class Archive>
-void loadMat(Archive & archive, const std::string &name, const std::size_t rows, openMVG::Mat & m)
+void loadMat(Archive & archive, const std::string &name, const std::size_t rows, aliceVision::Mat & m)
 {
   std::vector<double> vec;
   archive(cereal::make_nvp(name, vec));
   const std::size_t cols = vec.size() / rows;
-  m = Eigen::Map<openMVG::Mat>(vec.data(), rows, cols);
+  m = Eigen::Map<aliceVision::Mat>(vec.data(), rows, cols);
 }
 
 struct IndMatch3D2D
@@ -292,5 +292,5 @@ void updateRigPoses(std::vector<LocalizationResult>& vec_localizationResults,
                     const std::vector<geometry::Pose3 > &vec_subPoses);
 
 } // localization
-} // openMVG
+} // aliceVision
 

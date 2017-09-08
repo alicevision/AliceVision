@@ -24,9 +24,9 @@ the terms of the BSD license (see the COPYING file).
 #include <sstream>
 #include "algorithm.h"
 
-#include <openMVG/system/Logger.hpp>
-#include <openMVG/image/pixel_types.hpp>
-#include <openMVG/numeric/numeric.h>
+#include <aliceVision/system/Logger.hpp>
+#include <aliceVision/image/pixel_types.hpp>
+#include <aliceVision/numeric/numeric.h>
 
 //Parameters concerning speed and performance
   const bool uniqueMatch      = true;//if activated, a point can be matched to only one point in the other image. Note: if false, it also desactivate partially geometric verification
@@ -62,20 +62,20 @@ struct KvldParameters
 // magnitudes: store gradient norms of pixels of each scale image into a vector of images
 struct ImageScale
 {
-	std::vector< openMVG::image::Image< float > > angles;
-  std::vector< openMVG::image::Image< float > > magnitudes;
+	std::vector< aliceVision::image::Image< float > > angles;
+  std::vector< aliceVision::image::Image< float > > magnitudes;
 	std::vector< double > ratios;
 	double radius_size;
 	double step;
 
-  ImageScale(const openMVG::image::Image< float >& I, double r = 5.0);
+  ImageScale(const aliceVision::image::Image< float >& I, double r = 5.0);
 	int getIndex( const double r )const;
 
 private:
   void GradAndNorm(
-    const openMVG::image::Image< float >& I,
-    openMVG::image::Image< float >& angle,
-    openMVG::image::Image< float >& m);
+    const aliceVision::image::Image< float >& I,
+    aliceVision::image::Image< float >& angle,
+    aliceVision::image::Image< float >& m);
 };
 
 //====== VLD structures ======//
@@ -165,14 +165,14 @@ public:
 //
 //kvldParameters: container of minimum inlier rate, the value of K (=3 initially) and geometric verification flag (true initially)
 
-float KVLD(const openMVG::image::Image< float >& I1,
-  const openMVG::image::Image< float >& I2,
-  const std::vector<openMVG::features::SIOPointFeature> & F1,
-  const std::vector<openMVG::features::SIOPointFeature> & F2,
-  const std::vector< openMVG::Pair >& matches,
-  std::vector< openMVG::Pair >& matchesFiltered,
+float KVLD(const aliceVision::image::Image< float >& I1,
+  const aliceVision::image::Image< float >& I2,
+  const std::vector<aliceVision::features::SIOPointFeature> & F1,
+  const std::vector<aliceVision::features::SIOPointFeature> & F2,
+  const std::vector< aliceVision::Pair >& matches,
+  std::vector< aliceVision::Pair >& matchesFiltered,
   std::vector< double >& score,
-  openMVG::Mat& E,
+  aliceVision::Mat& E,
   std::vector< bool >& valide,
   KvldParameters& kvldParameters );
 

@@ -1,13 +1,13 @@
 // This file is part of the AliceVision project and is made available under
 // the terms of the MPL2 license (see the COPYING.md file).
 
-#include "openMVG/multiview/test_data_sets.hpp"
-#include "openMVG/multiview/solver_resection_kernel.hpp"
-#include "openMVG/multiview/solver_resection_p3p.hpp"
+#include "aliceVision/multiview/test_data_sets.hpp"
+#include "aliceVision/multiview/solver_resection_kernel.hpp"
+#include "aliceVision/multiview/solver_resection_p3p.hpp"
 #include "testing/testing.h"
 #include <vector>
 
-using namespace openMVG;
+using namespace aliceVision;
 
 TEST(Resection_Kernel, Multiview) {
 
@@ -22,7 +22,7 @@ TEST(Resection_Kernel, Multiview) {
   {
     Mat x = d._x[nResectionCameraIndex];
     Mat X = d._X;
-    openMVG::resection::kernel::PoseResectionKernel kernel(x, X);
+    aliceVision::resection::kernel::PoseResectionKernel kernel(x, X);
 
     std::size_t samples_[6]={0,1,2,3,4,5};
     std::vector<std::size_t> samples(samples_,samples_+6);
@@ -55,7 +55,7 @@ TEST(P3P_Kneip_CVPR11, Multiview) {
   {
     Mat x = d._x[nResectionCameraIndex];
     Mat X = d._X;
-    openMVG::euclidean_resection::P3P_ResectionKernel_K kernel(x, X, d._K[0]);
+    aliceVision::euclidean_resection::P3P_ResectionKernel_K kernel(x, X, d._K[0]);
 
     std::size_t samples_[3]={0,1,2};
     std::vector<std::size_t> samples(samples_, samples_+3);
@@ -168,7 +168,7 @@ TEST(EuclideanResection, Points6AllRandomInput) {
 
 
   {
-    typedef openMVG::euclidean_resection::kernel::ResectionKernel_K Kernel;
+    typedef aliceVision::euclidean_resection::kernel::ResectionKernel_K Kernel;
     Kernel kernel(x_image.block(0, 0, 2, 6), X_world, KK);
 
     std::size_t samples_[6]={0,1,2,3,4,5};

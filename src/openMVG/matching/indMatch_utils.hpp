@@ -4,11 +4,11 @@
 #ifndef OPENMVG_MATCHING_IND_MATCH_UTILS_H
 #define OPENMVG_MATCHING_IND_MATCH_UTILS_H
 
-#include "openMVG/matching/indMatch.hpp"
+#include "aliceVision/matching/indMatch.hpp"
 
 #include <string>
 
-namespace openMVG {
+namespace aliceVision {
 namespace matching {
 
   
@@ -79,6 +79,6 @@ bool Save(
   bool matchFilePerImage);
 
 }  // namespace matching
-}  // namespace openMVG
+}  // namespace aliceVision
 
 #endif // #define OPENMVG_MATCHING_IND_MATCH_UTILS_H

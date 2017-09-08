@@ -4,15 +4,15 @@
 #ifndef OPENMVG_VOCABULARY_TREE_VOCABULARY_TREE_HPP
 #define OPENMVG_VOCABULARY_TREE_VOCABULARY_TREE_HPP
 
-#include <openMVG/config.hpp>
+#include <aliceVision/config.hpp>
 #include "distance.hpp"
 #include "feature_allocator.hpp"
 
-#include <openMVG/features/ImageDescriberCommon.hpp>
-#include <openMVG/features/regions_factory.hpp>
+#include <aliceVision/features/ImageDescriberCommon.hpp>
+#include <aliceVision/features/regions_factory.hpp>
 
-#include <openMVG/types.hpp>
-#include <openMVG/system/Logger.hpp>
+#include <aliceVision/types.hpp>
+#include <aliceVision/system/Logger.hpp>
 
 #include <stdint.h>
 #include <vector>
@@ -24,7 +24,7 @@
 #include <iostream>
 
 
-namespace openMVG {
+namespace aliceVision {
 namespace voctree {
 
 typedef int32_t Word;
@@ -343,7 +343,7 @@ float sparseDistance(const SparseHistogram& v1, const SparseHistogram& v2, const
 
 inline std::unique_ptr<IVocabularyTree> createVoctreeForDescriberType(features::EImageDescriberType imageDescriberType)
 {
-  using namespace openMVG::features;
+  using namespace aliceVision::features;
   std::unique_ptr<IVocabularyTree> res;
 
   switch(imageDescriberType)

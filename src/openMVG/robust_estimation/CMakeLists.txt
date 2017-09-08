@@ -27,19 +27,19 @@ set(robust_estimation_files_test
   robust_estimator_Ransac_test.cpp
 )
 
-add_library(openMVG_robust_estimation INTERFACE)
+add_library(aliceVision_robust_estimation INTERFACE)
 
-target_link_libraries(openMVG_robust_estimation
+target_link_libraries(aliceVision_robust_estimation
   INTERFACE ${LOG_LIB}
 )
 
-UNIT_TEST(openMVG rand_sampling                 "openMVG_robust_estimation")
-UNIT_TEST(openMVG robust_estimator_lineKernel   "openMVG_robust_estimation")
-UNIT_TEST(openMVG robust_estimator_MaxConsensus "openMVG_robust_estimation")
-UNIT_TEST(openMVG robust_estimator_Ransac       "openMVG_robust_estimation")
-UNIT_TEST(openMVG robust_estimator_LORansac     "openMVG_robust_estimation")
-#UNIT_TEST(openMVG robust_estimator_LMeds        "openMVG_robust_estimation")
-UNIT_TEST(openMVG robust_estimator_ACRansac     "openMVG_robust_estimation")
+UNIT_TEST(aliceVision rand_sampling                 "aliceVision_robust_estimation")
+UNIT_TEST(aliceVision robust_estimator_lineKernel   "aliceVision_robust_estimation")
+UNIT_TEST(aliceVision robust_estimator_MaxConsensus "aliceVision_robust_estimation")
+UNIT_TEST(aliceVision robust_estimator_Ransac       "aliceVision_robust_estimation")
+UNIT_TEST(aliceVision robust_estimator_LORansac     "aliceVision_robust_estimation")
+#UNIT_TEST(aliceVision robust_estimator_LMeds        "aliceVision_robust_estimation")
+UNIT_TEST(aliceVision robust_estimator_ACRansac     "aliceVision_robust_estimation")
 
 
-add_custom_target(openMVG_robust_estimation_ide SOURCES ${robust_estimation_files_headers} ${robust_estimation_files_test})
+add_custom_target(aliceVision_robust_estimation_ide SOURCES ${robust_estimation_files_headers} ${robust_estimation_files_test})

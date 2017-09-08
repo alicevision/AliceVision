@@ -29,16 +29,16 @@
 //  TrueVision Solutions (2)
 //------
 
-#include "openMVG/image/image.hpp"
-#include "openMVG/numeric/numeric.h"
-#include "openMVG/numeric/math_trait.hpp"
+#include "aliceVision/image/image.hpp"
+#include "aliceVision/numeric/numeric.h"
+#include "aliceVision/numeric/math_trait.hpp"
 
-#include "openMVG/features/feature.hpp"
-#include "openMVG/features/descriptor.hpp"
+#include "aliceVision/features/feature.hpp"
+#include "aliceVision/features/descriptor.hpp"
 
 #include <cereal/cereal.hpp>
 
-namespace openMVG {
+namespace aliceVision {
 namespace features {
 
 struct AKAZEConfig
@@ -150,6 +150,6 @@ public:
 /* ************************************************************************* */
 
 } // namespace features
-} // namespace openMVG
+} // namespace aliceVision
 
 #endif //OPENMVG_FEATURES_AKAZE_H

@@ -5,11 +5,11 @@
 #define OPENMVG_RESECTION_L1_KERNEL_H_
 
 #include <vector>
-#include "openMVG/multiview/projection.hpp"
-#include "openMVG/multiview/two_view_kernel.hpp"
-#include "openMVG/numeric/numeric.h"
+#include "aliceVision/multiview/projection.hpp"
+#include "aliceVision/multiview/two_view_kernel.hpp"
+#include "aliceVision/numeric/numeric.h"
 
-namespace openMVG {
+namespace aliceVision {
 namespace lInfinityCV {
 namespace kernel {
 
@@ -42,6 +42,6 @@ typedef two_view::kernel::Kernel<l1SixPointResectionSolver,
 
 }  // namespace kernel
 }  // namespace lInfinityCV
-}  // namespace openMVG
+}  // namespace aliceVision
 
 #endif  // OPENMVG_RESECTION_L1_KERNEL_H_

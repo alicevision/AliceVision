@@ -1,20 +1,20 @@
 // This file is part of the AliceVision project and is made available under
 // the terms of the MPL2 license (see the COPYING.md file).
 
-#include "openMVG/multiview/test_data_sets.hpp"
+#include "aliceVision/multiview/test_data_sets.hpp"
 #include "CppUnitLite/TestHarness.h"
 #include "testing/testing.h"
 
-#include "openMVG/linearProgramming/lInfinityCV/resection_kernel.hpp"
-#include "openMVG/robust_estimation/robust_estimator_MaxConsensus.hpp"
-#include "openMVG/robust_estimation/score_evaluator.hpp"
-#include "openMVG/multiview/projection.hpp"
+#include "aliceVision/linearProgramming/lInfinityCV/resection_kernel.hpp"
+#include "aliceVision/robust_estimation/robust_estimator_MaxConsensus.hpp"
+#include "aliceVision/robust_estimation/score_evaluator.hpp"
+#include "aliceVision/multiview/projection.hpp"
 
 #include <iostream>
 #include <vector>
 
-using namespace openMVG;
-using namespace openMVG::robust;
+using namespace aliceVision;
+using namespace aliceVision::robust;
 
 TEST(Resection_L_Infinity, Robust_OutlierFree) {
 

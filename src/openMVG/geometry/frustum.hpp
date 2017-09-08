@@ -4,12 +4,12 @@
 #ifndef OPENMVG_GEOMETRY_FRUSTUM_HPP_
 #define OPENMVG_GEOMETRY_FRUSTUM_HPP_
 
-#include "openMVG/geometry/half_space_intersection.hpp"
+#include "aliceVision/geometry/half_space_intersection.hpp"
 
-namespace openMVG {
+namespace aliceVision {
 namespace geometry {
 
-using namespace openMVG::geometry::halfPlane;
+using namespace aliceVision::geometry::halfPlane;
 
 /// Define a camera Frustum:
 ///  - infinite Frustum (4 Half Spaces) (a pyramid)
@@ -112,6 +112,6 @@ struct Frustum
 }; // struct Frustum
 
 } // namespace geometry
-} // namespace openMVG
+} // namespace aliceVision
 
 #endif // OPENMVG_GEOMETRY_FRUSTUM_HPP_

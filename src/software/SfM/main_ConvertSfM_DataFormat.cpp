@@ -1,9 +1,9 @@
 // This file is part of the AliceVision project and is made available under
 // the terms of the MPL2 license (see the COPYING.md file).
 
-#include "openMVG/sfm/sfm.hpp"
-#include "openMVG/sfm/utils/sfm_data_UID_utils.hpp"
-#include <openMVG/config.hpp>
+#include "aliceVision/sfm/sfm.hpp"
+#include "aliceVision/sfm/utils/sfm_data_UID_utils.hpp"
+#include <aliceVision/config.hpp>
 
 
 #include "third_party/cmdLine/cmdLine.h"
@@ -17,8 +17,8 @@
 #include <string>
 #include <vector>
 
-using namespace openMVG;
-using namespace openMVG::sfm;
+using namespace aliceVision;
+using namespace aliceVision::sfm;
 
 // Convert from a SfM_Data format to another
 int main(int argc, char **argv)

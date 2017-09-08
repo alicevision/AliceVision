@@ -3,22 +3,22 @@
 
 #pragma once
 
-#include "openMVG/matching_image_collection/GeometricFilterMatrix.hpp"
-#include "openMVG/matching_image_collection/Geometric_Filter_utils.hpp"
-#include "openMVG/matching/indMatch.hpp"
-#include "openMVG/multiview/solver_fundamental_kernel.hpp"
-#include "openMVG/multiview/essential.hpp"
-#include "openMVG/robust_estimation/robust_estimators.hpp"
-#include "openMVG/robust_estimation/robust_estimator_ACRansac.hpp"
-#include "openMVG/robust_estimation/robust_estimator_ACRansacKernelAdaptator.hpp"
-#include "openMVG/robust_estimation/robust_estimator_LORansac.hpp"
-#include "openMVG/robust_estimation/robust_estimator_LORansacKernelAdaptor.hpp"
-#include "openMVG/robust_estimation/score_evaluator.hpp"
-#include "openMVG/robust_estimation/guided_matching.hpp"
-#include "openMVG/sfm/sfm_data.hpp"
-#include "openMVG/features/RegionsPerView.hpp"
+#include "aliceVision/matching_image_collection/GeometricFilterMatrix.hpp"
+#include "aliceVision/matching_image_collection/Geometric_Filter_utils.hpp"
+#include "aliceVision/matching/indMatch.hpp"
+#include "aliceVision/multiview/solver_fundamental_kernel.hpp"
+#include "aliceVision/multiview/essential.hpp"
+#include "aliceVision/robust_estimation/robust_estimators.hpp"
+#include "aliceVision/robust_estimation/robust_estimator_ACRansac.hpp"
+#include "aliceVision/robust_estimation/robust_estimator_ACRansacKernelAdaptator.hpp"
+#include "aliceVision/robust_estimation/robust_estimator_LORansac.hpp"
+#include "aliceVision/robust_estimation/robust_estimator_LORansacKernelAdaptor.hpp"
+#include "aliceVision/robust_estimation/score_evaluator.hpp"
+#include "aliceVision/robust_estimation/guided_matching.hpp"
+#include "aliceVision/sfm/sfm_data.hpp"
+#include "aliceVision/features/RegionsPerView.hpp"
 
-namespace openMVG {
+namespace aliceVision {
 namespace matching_image_collection {
 
 //-- A contrario fundamental matrix estimation template functor used for filter pair of putative correspondences
@@ -45,8 +45,8 @@ struct GeometricFilter_FMatrix: public GeometricFilterMatrix
     const matching::MatchesPerDescType & putativeMatchesPerType,
     matching::MatchesPerDescType & out_geometricInliersPerType)
   {
-    using namespace openMVG;
-    using namespace openMVG::robust;
+    using namespace aliceVision;
+    using namespace aliceVision::robust;
     out_geometricInliersPerType.clear();
 
     // Get back corresponding view index
@@ -85,8 +85,8 @@ struct GeometricFilter_FMatrix: public GeometricFilterMatrix
       const matching::MatchesPerDescType & putativeMatchesPerType,
       matching::MatchesPerDescType & out_geometricInliersPerType)
   {
-    using namespace openMVG;
-    using namespace openMVG::robust;
+    using namespace aliceVision;
+    using namespace aliceVision::robust;
     out_geometricInliersPerType.clear();
 
     const std::vector<features::EImageDescriberType> descTypes = getCommonDescTypes(region_I, region_J);
@@ -144,8 +144,8 @@ struct GeometricFilter_FMatrix: public GeometricFilterMatrix
     const std::pair<size_t,size_t> & imageSizeJ,     // size of the first image
     std::vector<size_t> & out_inliers)
   {
-    using namespace openMVG;
-    using namespace openMVG::robust;
+    using namespace aliceVision;
+    using namespace aliceVision::robust;
     out_inliers.clear();
 
     switch(m_estimator)
@@ -154,9 +154,9 @@ struct GeometricFilter_FMatrix: public GeometricFilterMatrix
       {
         // Define the AContrario adapted Fundamental matrix solver
         typedef ACKernelAdaptor<
-          openMVG::fundamental::kernel::SevenPointSolver,
-          openMVG::fundamental::kernel::SimpleError,
-          //openMVG::fundamental::kernel::SymmetricEpipolarDistanceError,
+          aliceVision::fundamental::kernel::SevenPointSolver,
+          aliceVision::fundamental::kernel::SimpleError,
+          //aliceVision::fundamental::kernel::SymmetricEpipolarDistanceError,
           UnnormalizerT,
           Mat3>
           KernelType;
@@ -186,11 +186,11 @@ struct GeometricFilter_FMatrix: public GeometricFilterMatrix
         }
 
         typedef KernelAdaptorLoRansac<
-                openMVG::fundamental::kernel::SevenPointSolver,
-                openMVG::fundamental::kernel::SymmetricEpipolarDistanceError,
+                aliceVision::fundamental::kernel::SevenPointSolver,
+                aliceVision::fundamental::kernel::SymmetricEpipolarDistanceError,
                 UnnormalizerT,
                 Mat3,
-                openMVG::fundamental::kernel::EightPointSolver>
+                aliceVision::fundamental::kernel::EightPointSolver>
                 KernelType;
 
         const KernelType kernel(xI, imageSizeI.first, imageSizeI.second,
@@ -269,4 +269,4 @@ struct GeometricFilter_FMatrix: public GeometricFilterMatrix
 };
 
 } // namespace matching_image_collection
-} // namespace openMVG
+} // namespace aliceVision

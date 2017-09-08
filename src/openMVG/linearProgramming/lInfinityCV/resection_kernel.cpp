@@ -1,16 +1,16 @@
 // This file is part of the AliceVision project and is made available under
 // the terms of the MPL2 license (see the COPYING.md file).
 
-#include "openMVG/linearProgramming/linearProgrammingInterface.hpp"
-#include "openMVG/linearProgramming/linearProgrammingOSI_X.hpp"
-#include "openMVG/linearProgramming/bisectionLP.hpp"
+#include "aliceVision/linearProgramming/linearProgrammingInterface.hpp"
+#include "aliceVision/linearProgramming/linearProgrammingOSI_X.hpp"
+#include "aliceVision/linearProgramming/bisectionLP.hpp"
 
-#include "openMVG/linearProgramming/lInfinityCV/resection.hpp"
-#include "openMVG/linearProgramming/lInfinityCV/resection_kernel.hpp"
+#include "aliceVision/linearProgramming/lInfinityCV/resection.hpp"
+#include "aliceVision/linearProgramming/lInfinityCV/resection_kernel.hpp"
 
 #include <cassert>
 
-namespace openMVG {
+namespace aliceVision {
 namespace lInfinityCV {
 namespace kernel {
 
@@ -62,4 +62,4 @@ void l1SixPointResectionSolver::Solve(const Mat &pt2D, const Mat &pt3d, vector<M
 
 }  // namespace kernel
 }  // namespace lInfinityCV
-}  // namespace openMVG
+}  // namespace aliceVision

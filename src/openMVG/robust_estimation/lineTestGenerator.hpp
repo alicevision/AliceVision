@@ -4,7 +4,7 @@
 #pragma once
 
 #include "third_party/vectorGraphics/svgDrawer.hpp"
-#include <openMVG/numeric/numeric.h>
+#include <aliceVision/numeric/numeric.h>
 #include "robust_estimator_lineKernel_test.hpp"
 
 #include <iostream>
@@ -29,9 +29,9 @@
 void drawTest(const std::string &outfile,
               int imageWidth, 
               int imageHeight,
-              const openMVG::Vec2 &lineGT,
-              const openMVG::Vec2 &lineEst,
-              const openMVG::Mat &points,
+              const aliceVision::Vec2 &lineGT,
+              const aliceVision::Vec2 &lineEst,
+              const aliceVision::Mat &points,
               const std::vector<std::size_t> &vec_inliers)
 {
   const std::size_t nbPoints = points.cols();
@@ -79,9 +79,9 @@ void drawTest(const std::string &outfile,
 void generateLine(std::size_t numPoints,
                     double outlierRatio,
                     double gaussianNoiseLevel,
-                    const openMVG::Vec2& GTModel,
+                    const aliceVision::Vec2& GTModel,
                     std::mt19937& gen,
-                    openMVG::Mat2X& outPoints,
+                    aliceVision::Mat2X& outPoints,
                     std::vector<std::size_t>& outInliers)
 {
   assert(outlierRatio >= 0 && outlierRatio < 1);
@@ -102,7 +102,7 @@ void generateLine(std::size_t numPoints,
 //      std::cout << theta << std::endl;
       const double radius = d(gen);
 //      std::cout << radius << std::endl;
-      outPoints.col(i) += radius * openMVG::Vec2(std::cos(theta), std::sin(theta));
+      outPoints.col(i) += radius * aliceVision::Vec2(std::cos(theta), std::sin(theta));
     }
   }
   const int W = std::abs(outPoints(0, 0) - outPoints(0, numPoints - 1));
@@ -124,7 +124,7 @@ void generateLine(std::size_t numPoints,
 
     outInliers.erase(std::remove(outInliers.begin(), outInliers.end(), randomIndex), outInliers.end());
 
-    openMVG::Vec2 pt;
+    aliceVision::Vec2 pt;
     double distance = 0;
     // try to generate a point that is well far from the line
     std::size_t timeToStop = 0;
@@ -134,7 +134,7 @@ void generateLine(std::size_t numPoints,
       assert(timeToStop < 200);
       pt(0) = realDist(gen) * W;
       pt(1) = realDist(gen) * H;
-      distance = openMVG::robust::pointToLineError::Error(GTModel, pt);
+      distance = aliceVision::robust::pointToLineError::Error(GTModel, pt);
       ++timeToStop;
     }
 //    total += timeToStop;

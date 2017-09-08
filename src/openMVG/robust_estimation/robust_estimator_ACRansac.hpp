@@ -38,10 +38,10 @@
 #include <numeric>
 #include <vector>
 
-#include <openMVG/robust_estimation/rand_sampling.hpp>
-#include <openMVG/system/Logger.hpp>
+#include <aliceVision/robust_estimation/rand_sampling.hpp>
+#include <aliceVision/system/Logger.hpp>
 
-namespace openMVG {
+namespace aliceVision {
 namespace robust{
 
 /// logarithm (base 10) of binomial coefficient
@@ -308,5 +308,5 @@ std::pair<double, double> ACRANSAC(const Kernel &kernel,
 }
 
 } // namespace robust
-} // namespace openMVG
+} // namespace aliceVision
 #endif // OPENMVG_ROBUST_ESTIMATOR_ACRANSAC_H_

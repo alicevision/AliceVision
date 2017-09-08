@@ -1,10 +1,10 @@
 // This file is part of the AliceVision project and is made available under
 // the terms of the MPL2 license (see the COPYING.md file).
 
-#include "openMVG/multiview/projection.hpp"
-#include "openMVG/multiview/triangulation.hpp"
+#include "aliceVision/multiview/projection.hpp"
+#include "aliceVision/multiview/triangulation.hpp"
 
-namespace openMVG {
+namespace aliceVision {
 
 // HZ 12.2 pag.312
 void TriangulateDLT(const Mat34 &P1, const Vec2 &x1,
@@ -28,4 +28,4 @@ void TriangulateDLT(const Mat34 &P1, const Vec2 &x1,
   HomogeneousToEuclidean(X_homogeneous, X_euclidean);
 }
 
-}  // namespace openMVG
+}  // namespace aliceVision

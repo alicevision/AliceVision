@@ -3,9 +3,9 @@
 
 #include "descriptor_loader.hpp"
 
-#include <openMVG/system/Logger.hpp>
-#include <openMVG/sfm/sfm_data_io.hpp>
-#include <openMVG/config.hpp>
+#include <aliceVision/system/Logger.hpp>
+#include <aliceVision/sfm/sfm_data_io.hpp>
+#include <aliceVision/config.hpp>
 
 #include <boost/filesystem.hpp>
 #include <boost/algorithm/string/case_conv.hpp>
@@ -15,7 +15,7 @@
 #include <iostream>
 #include <fstream>
 
-namespace openMVG {
+namespace aliceVision {
 namespace voctree {
 
 /**
@@ -183,7 +183,7 @@ void queryDatabase(const std::string &fileFullPath,
     // quantize the descriptors
     SparseHistogram query = tree.quantizeToSparse(descriptors);
 
-    openMVG::voctree::DocMatches docMatches;
+    aliceVision::voctree::DocMatches docMatches;
     // query the database
     db.find(query, numResults, docMatches, distanceMethod);
     #pragma omp critical
@@ -264,4 +264,4 @@ void voctreeStatistics(
 
 
 } //namespace voctree
-} //namespace openMVG
+} //namespace aliceVision

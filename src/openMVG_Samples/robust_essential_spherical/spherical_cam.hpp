@@ -4,8 +4,8 @@
 #ifndef OPENMVG_SPHERICAL_CAMERA_HPP
 #define OPENMVG_SPHERICAL_CAMERA_HPP
 
-#include "openMVG/numeric/numeric.h"
-#include "openMVG/multiview/projection.hpp"
+#include "aliceVision/numeric/numeric.h"
+#include "aliceVision/multiview/projection.hpp"
 
 // [1] "Robust and accurate calibration of camera networks". PhD.
 // Authors: Pierre MOULON
@@ -15,7 +15,7 @@
 // Implementation of the AContrario estimation of the relative pose estimation
 //  between two spherical panorama.
 
-namespace openMVG {
+namespace aliceVision {
 namespace spherical_cam {
 
 static void planarToSpherical(
@@ -162,6 +162,6 @@ void TriangulateDLT(const Mat34 &P1, const Vec3 &x1,
 }
 
 } // namespace spherical_cam
-} // namespace openMVG
+} // namespace aliceVision
 
 #endif /* OPENMVG_SPHERICAL_CAMERA_HPP */

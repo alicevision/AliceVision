@@ -4,15 +4,15 @@
 #ifndef OPENMVG_MATCHING_ARRAYMATCHER_KDTREE_FLANN_H_
 #define OPENMVG_MATCHING_ARRAYMATCHER_KDTREE_FLANN_H_
 
-#include "openMVG/matching/matching_interface.hpp"
-#include <openMVG/config.hpp>
-#include <openMVG/alicevision_omp.hpp>
+#include "aliceVision/matching/matching_interface.hpp"
+#include <aliceVision/config.hpp>
+#include <aliceVision/alicevision_omp.hpp>
 
 #include "flann/flann.hpp"
 
 #include <memory>
 
-namespace openMVG {
+namespace aliceVision {
 namespace matching  {
 
 /// Implement ArrayMatcher as a FLANN KDtree matcher.
@@ -152,6 +152,6 @@ class ArrayMatcher_Kdtree_Flann : public ArrayMatcher<Scalar, Metric>
 };
 
 } // namespace matching
-} // namespace openMVG
+} // namespace aliceVision
 
 #endif // OPENMVG_MATCHING_ARRAYMATCHER_KDTREE_FLANN_H_

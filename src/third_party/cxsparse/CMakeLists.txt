@@ -30,5 +30,5 @@ INSTALL(
   COMPONENT headers
   FILES_MATCHING PATTERN "*.h"
 )
-INSTALL(TARGETS cxsparse DESTINATION lib EXPORT openMVG-targets)
+INSTALL(TARGETS cxsparse DESTINATION lib EXPORT aliceVision-targets)
 

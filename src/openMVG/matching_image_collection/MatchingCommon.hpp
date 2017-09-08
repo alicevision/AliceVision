@@ -3,10 +3,10 @@
 
 #pragma once
 
-#include "openMVG/matching/matcher_type.hpp"
-#include "openMVG/matching_image_collection/Matcher.hpp"
+#include "aliceVision/matching/matcher_type.hpp"
+#include "aliceVision/matching_image_collection/Matcher.hpp"
 
-namespace openMVG {
+namespace aliceVision {
 namespace matching_image_collection {
   
 /**
@@ -18,4 +18,4 @@ std::unique_ptr<IImageCollectionMatcher> createImageCollectionMatcher(matching::
 
 
 } // namespace matching
-} // namespace openMVG
+} // namespace aliceVision

@@ -1,10 +1,10 @@
 // This file is part of the AliceVision project and is made available under
 // the terms of the MPL2 license (see the COPYING.md file).
 
-#include "openMVG/linearProgramming/linearProgrammingMOSEK.hpp"
+#include "aliceVision/linearProgramming/linearProgrammingMOSEK.hpp"
 #include <iostream>
 
-namespace openMVG {
+namespace aliceVision {
 namespace linearProgramming {
 
 using namespace std;
@@ -429,4 +429,4 @@ bool MOSEK_SolveWrapper::getSolution(std::vector<double> & estimatedParams)
 }
 
 } //namespace linearProgramming
-} //namespace openMVG
+} //namespace aliceVision

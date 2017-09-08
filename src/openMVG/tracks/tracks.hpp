@@ -4,15 +4,15 @@
 #ifndef OPENMVG_TRACKS_H_
 #define OPENMVG_TRACKS_H_
 
-#include "openMVG/config.hpp"
+#include "aliceVision/config.hpp"
 #include "lemon/list_graph.h"
 #include "lemon/unionfind.h"
 
-#include "openMVG/features/ImageDescriberCommon.hpp"
-#include "openMVG/matching/indMatch.hpp"
-#include "openMVG/stl/flatMap.hpp"
-#include "openMVG/stl/flatSet.hpp"
-#include <openMVG/config.hpp>
+#include "aliceVision/features/ImageDescriberCommon.hpp"
+#include "aliceVision/matching/indMatch.hpp"
+#include "aliceVision/stl/flatMap.hpp"
+#include "aliceVision/stl/flatSet.hpp"
+#include <aliceVision/config.hpp>
 
 #include <algorithm>
 #include <iostream>
@@ -22,10 +22,10 @@
 #include <map>
 #include <memory>
 
-namespace openMVG {
+namespace aliceVision {
 namespace tracks {
 
-using namespace openMVG::matching;
+using namespace aliceVision::matching;
 using namespace lemon;
 
 
@@ -609,6 +609,6 @@ struct TracksUtilsMap
 };
 
 } // namespace tracks
-} // namespace openMVG
+} // namespace aliceVision
 
 #endif // OPENMVG_TRACKS_H_

@@ -19,7 +19,7 @@ Users
   `calibrating robot-camera systems`_.
 * `Blender <http://www.blender.org>`_ uses Ceres for `planar
   tracking`_ and `bundle adjustment`_.
-* `OpenMVG <http://imagine.enpc.fr/~moulonp/openMVG/>`_ an open source
+* `OpenMVG <http://imagine.enpc.fr/~moulonp/aliceVision/>`_ an open source
   multi-view geometry library uses Ceres for `bundle adjustment`_.
 * `Microsoft Research <http://research.microsoft.com/en-us/>`_ uses
   Ceres for nonlinear optimization of objectives involving subdivision

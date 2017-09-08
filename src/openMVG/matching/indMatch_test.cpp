@@ -2,12 +2,12 @@
 // the terms of the MPL2 license (see the COPYING.md file).
 
 #include "testing/testing.h"
-#include "openMVG/matching/indMatch.hpp"
-#include "openMVG/matching/indMatch_utils.hpp"
+#include "aliceVision/matching/indMatch.hpp"
+#include "aliceVision/matching/indMatch_utils.hpp"
 
-using namespace openMVG;
-using namespace openMVG::matching;
-using namespace openMVG::features;
+using namespace aliceVision;
+using namespace aliceVision::matching;
+using namespace aliceVision::features;
 
 TEST(IndMatch, IO)
 {

@@ -5,7 +5,7 @@
 
 #include <stdexcept>
 
-namespace openMVG {
+namespace aliceVision {
 namespace matching {
   
 std::string EMatcherType_enumToString(EMatcherType matcherType)
@@ -32,4 +32,4 @@ EMatcherType EMatcherType_stringToEnum(const std::string& matcherType)
 }
 
 } // namespace matching
-} // namespace openMVG
+} // namespace aliceVision

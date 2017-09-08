@@ -23,6 +23,6 @@ install(
 
 install(TARGETS easyexif
   DESTINATION lib
-  EXPORT openMVG-targets
+  EXPORT aliceVision-targets
 )
 

@@ -8,7 +8,7 @@
 #include <algorithm>
 #include <stdexcept>
 
-namespace openMVG {
+namespace aliceVision {
 namespace keyframe {
 
 /**
@@ -81,4 +81,4 @@ inline std::istream& operator>>(std::istream& in, ESharpnessSelectionPreset &sha
 }
 
 } // namespace keyframe
-} // namespace openMVG
+} // namespace aliceVision

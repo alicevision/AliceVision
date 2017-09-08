@@ -3,10 +3,10 @@
 
 #pragma once
 
-#include <openMVG/types.hpp>
-#include <openMVG/stl/split.hpp>
-#include <openMVG/sfm/sfm_data.hpp>
-#include <openMVG/system/Logger.hpp>
+#include <aliceVision/types.hpp>
+#include <aliceVision/stl/split.hpp>
+#include <aliceVision/sfm/sfm_data.hpp>
+#include <aliceVision/system/Logger.hpp>
 
 #include <set>
 #include <iostream>
@@ -14,7 +14,7 @@
 #include <sstream>
 #include <algorithm>
 
-namespace openMVG {
+namespace aliceVision {
 
 /// Generate all the (I,J) pairs of the upper diagonal of the NxN matrix
 static Pair_Set exhaustivePairs(const sfm::Views& views, int rangeStart=-1, int rangeSize=0)
@@ -160,4 +160,4 @@ static bool savePairs(const std::string &sFileName, const Pair_Set & pairs)
   return bOk;
 }
 
-}; // namespace openMVG
+}; // namespace aliceVision

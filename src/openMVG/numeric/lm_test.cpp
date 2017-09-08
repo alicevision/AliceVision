@@ -4,14 +4,14 @@
 #include <iostream>
 #include <fstream>
 #include <string>
-#include <openMVG/system/Logger.hpp>
-#include "openMVG/numeric/numeric.h"
-#include "openMVG/numeric/lm.hpp"
+#include <aliceVision/system/Logger.hpp>
+#include "aliceVision/numeric/numeric.h"
+#include "aliceVision/numeric/lm.hpp"
 #include "testing/testing.h"
 
 #include "third_party/vectorGraphics/svgDrawer.hpp"
 
-using namespace openMVG;
+using namespace aliceVision;
 using namespace svg;
 using namespace std;
 

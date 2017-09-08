@@ -5,9 +5,9 @@
 #define OPENMVG_MULTIVIEW_RESECTION_P3P_H_
 
 #include <iostream>
-#include "openMVG/numeric/numeric.h"
+#include "aliceVision/numeric/numeric.h"
 
-namespace openMVG {
+namespace aliceVision {
 namespace euclidean_resection {
 
 typedef Eigen::Matrix<double, 5, 1> Vec5;
@@ -79,7 +79,7 @@ private:
 };
 
 } // namespace euclidean_resection
-} // namespace openMVG
+} // namespace aliceVision
 
 #endif // OPENMVG_MULTIVIEW_RESECTION_P3P_H_
 

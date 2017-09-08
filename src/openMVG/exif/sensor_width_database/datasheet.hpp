@@ -3,11 +3,11 @@
 
 #pragma once
 
-#include "openMVG/stl/split.hpp"
+#include "aliceVision/stl/split.hpp"
 #include <iterator>
 #include <algorithm>
 
-namespace openMVG {
+namespace aliceVision {
 namespace exif {
 namespace sensordb {
 

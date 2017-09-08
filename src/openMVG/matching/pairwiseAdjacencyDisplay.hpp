@@ -5,9 +5,9 @@
 #define OPENMVG_PAIRWISE_ADJACENCY_DISPLAY_H
 
 #include "third_party/vectorGraphics/svgDrawer.hpp"
-#include "openMVG/matching/indMatch.hpp"
+#include "aliceVision/matching/indMatch.hpp"
 
-namespace openMVG  {
+namespace aliceVision  {
 namespace matching {
 
 /// Display pair wises matches as an Adjacency matrix in svg format
@@ -57,6 +57,6 @@ inline void PairwiseMatchingToAdjacencyMatrixSVG(const size_t NbImages,
 }
 
 } // namespace matching
-} // namespace openMVG
+} // namespace aliceVision
 
 #endif // OPENMVG_PAIRWISE_ADJACENCY_DISPLAY_H

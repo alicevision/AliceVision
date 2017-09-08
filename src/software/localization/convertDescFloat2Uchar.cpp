@@ -1,8 +1,8 @@
 // This file is part of the AliceVision project and is made available under
 // the terms of the MPL2 license (see the COPYING.md file).
 
-#include <openMVG/features/descriptor.hpp>
-#include <openMVG/system/Logger.hpp>
+#include <aliceVision/features/descriptor.hpp>
+#include <aliceVision/system/Logger.hpp>
 
 #include <boost/progress.hpp>
 #include <boost/filesystem.hpp>
@@ -15,7 +15,7 @@
 namespace bfs = boost::filesystem;
 namespace po = boost::program_options;
 
-using namespace openMVG;
+using namespace aliceVision;
 /*
  * 
  */

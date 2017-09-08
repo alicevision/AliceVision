@@ -1,15 +1,15 @@
 // This file is part of the AliceVision project and is made available under
 // the terms of the MPL2 license (see the COPYING.md file).
 
-#include "openMVG/image/image.hpp"
-#include "openMVG/image/image_warping.hpp"
-#include "openMVG/features/features.hpp"
-#include "openMVG/features/sift/SIFT_describer.hpp"
-#include "openMVG/matching/regions_matcher.hpp"
-#include "openMVG/multiview/solver_homography_kernel.hpp"
-#include "openMVG/multiview/conditioning.hpp"
-#include "openMVG/robust_estimation/robust_estimator_ACRansac.hpp"
-#include "openMVG/robust_estimation/robust_estimator_ACRansacKernelAdaptator.hpp"
+#include "aliceVision/image/image.hpp"
+#include "aliceVision/image/image_warping.hpp"
+#include "aliceVision/features/features.hpp"
+#include "aliceVision/features/sift/SIFT_describer.hpp"
+#include "aliceVision/matching/regions_matcher.hpp"
+#include "aliceVision/multiview/solver_homography_kernel.hpp"
+#include "aliceVision/multiview/conditioning.hpp"
+#include "aliceVision/robust_estimation/robust_estimator_ACRansac.hpp"
+#include "aliceVision/robust_estimation/robust_estimator_ACRansacKernelAdaptator.hpp"
 
 #include "third_party/stlplus3/filesystemSimplified/file_system.hpp"
 #include "third_party/vectorGraphics/svgDrawer.hpp"
@@ -17,10 +17,10 @@
 #include <string>
 #include <iostream>
 
-using namespace openMVG;
-using namespace openMVG::image;
-using namespace openMVG::matching;
-using namespace openMVG::robust;
+using namespace aliceVision;
+using namespace aliceVision::image;
+using namespace aliceVision::matching;
+using namespace aliceVision::robust;
 using namespace svg;
 using namespace std;
 
@@ -39,7 +39,7 @@ int main() {
   //--
   // Detect regions thanks to an image_describer
   //--
-  using namespace openMVG::features;
+  using namespace aliceVision::features;
   std::unique_ptr<Image_describer> image_describer(new SIFT_ImageDescriber(SiftParams(-1)));
   std::map<IndexT, std::unique_ptr<features::Regions> > regions_perImage;
   image_describer->Describe(imageL, regions_perImage[0]);
@@ -122,8 +122,8 @@ int main() {
     //-- Homography robust estimation
     std::vector<size_t> vec_inliers;
     typedef ACKernelAdaptor<
-      openMVG::homography::kernel::FourPointSolver,
-      openMVG::homography::kernel::AsymmetricError,
+      aliceVision::homography::kernel::FourPointSolver,
+      aliceVision::homography::kernel::AsymmetricError,
       UnnormalizerI,
       Mat3>
       KernelType;

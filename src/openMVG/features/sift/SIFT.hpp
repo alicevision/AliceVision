@@ -3,10 +3,10 @@
 
 #pragma once
 
-#include <openMVG/features/descriptor.hpp>
-#include <openMVG/features/image_describer.hpp>
-#include <openMVG/features/regions_factory.hpp>
-#include <openMVG/config.hpp>
+#include <aliceVision/features/descriptor.hpp>
+#include <aliceVision/features/image_describer.hpp>
+#include <aliceVision/features/regions_factory.hpp>
+#include <aliceVision/config.hpp>
 
 extern "C" {
 #include "nonFree/sift/vl/sift.h"
@@ -16,7 +16,7 @@ extern "C" {
 #include <numeric>
 #include <stdexcept>
 
-namespace openMVG {
+namespace aliceVision {
 namespace features {
 
 /**
@@ -332,6 +332,6 @@ bool extractSIFT(const image::Image<unsigned char>& image,
   return true;
 }
 
-} //namespace openMVG
+} //namespace aliceVision
 } //namespace features
 

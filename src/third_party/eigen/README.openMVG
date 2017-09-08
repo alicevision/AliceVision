@@ -10,5 +10,5 @@ Note:
 - Only the license and Eigen/ directory is included.
 - the CMake build system for Eigen is not included because we only
 need the headers.
-- openMVG used on the MPL2 licensed code checked thanks to the CMAKE 
+- aliceVision used on the MPL2 licensed code checked thanks to the CMAKE 
   EIGEN_MPL2_ONLY preprocessor.

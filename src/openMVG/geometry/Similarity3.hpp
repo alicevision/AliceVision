@@ -5,7 +5,7 @@
 #define OPENMVG_GEOMETRY_SIMILARITY3_H_
 
 
-namespace openMVG {
+namespace aliceVision {
 namespace geometry {
 
 // Define a 3D Similarity transform encoded as a 3D pose plus a scale
@@ -30,6 +30,6 @@ struct Similarity3
 };
 
 } // namespace geometry
-} // namespace openMVG
+} // namespace aliceVision
 
 #endif  // OPENMVG_GEOMETRY_SIMILARITY3_H_

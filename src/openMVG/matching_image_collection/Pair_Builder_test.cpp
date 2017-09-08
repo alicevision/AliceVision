@@ -1,10 +1,10 @@
 // This file is part of the AliceVision project and is made available under
 // the terms of the MPL2 license (see the COPYING.md file).
 
-#include "openMVG/matching_image_collection/Pair_Builder.hpp"
+#include "aliceVision/matching_image_collection/Pair_Builder.hpp"
 #include "testing/testing.h"
-#include "openMVG/sfm/sfm_data.hpp"
-#include "openMVG/sfm/sfm_view.hpp"
+#include "aliceVision/sfm/sfm_data.hpp"
+#include "aliceVision/sfm/sfm_view.hpp"
 
 #include <iostream>
 #include <algorithm>
@@ -12,7 +12,7 @@
 
 using namespace std;
 
-using namespace openMVG;
+using namespace aliceVision;
 
 // Check pairs follow a weak ordering pair.first < pair.second
 template<typename IterablePairs>

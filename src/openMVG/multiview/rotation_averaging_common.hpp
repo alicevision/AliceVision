@@ -4,12 +4,12 @@
 #ifndef OPENMVG_MULTIVIEW_ROTATION_AVERAGING_COMMON_H_
 #define OPENMVG_MULTIVIEW_ROTATION_AVERAGING_COMMON_H_
 
-#include "openMVG/numeric/numeric.h"
-#include "openMVG/types.hpp"
+#include "aliceVision/numeric/numeric.h"
+#include "aliceVision/types.hpp"
 #include <vector>
 #include <map>
 
-namespace openMVG   {
+namespace aliceVision   {
 namespace rotation_averaging  {
 
 /// Representation of weighted relative rotations data between two poses
@@ -45,7 +45,7 @@ static RelativeRotations_map getMap(const RelativeRotations & relRots)
 }
 
 } // namespace rotation_averaging
-} // namespace openMVG
+} // namespace aliceVision
 
 #endif //OPENMVG_MULTIVIEW_ROTATION_AVERAGING_COMMON_H_
 

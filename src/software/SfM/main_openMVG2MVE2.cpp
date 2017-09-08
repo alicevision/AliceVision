@@ -1,15 +1,15 @@
 // This file is part of the AliceVision project and is made available under
 // the terms of the MPL2 license (see the COPYING.md file).
 
-#include "openMVG/sfm/sfm.hpp"
-#include "openMVG/image/image.hpp"
+#include "aliceVision/sfm/sfm.hpp"
+#include "aliceVision/image/image.hpp"
 
-using namespace openMVG;
-using namespace openMVG::cameras;
-using namespace openMVG::geometry;
-using namespace openMVG::image;
-using namespace openMVG::sfm;
-using namespace openMVG::features;
+using namespace aliceVision;
+using namespace aliceVision::cameras;
+using namespace aliceVision::geometry;
+using namespace aliceVision::image;
+using namespace aliceVision::sfm;
+using namespace aliceVision::features;
 
 #include "third_party/cmdLine/cmdLine.h"
 #include "third_party/progress/progress.hpp"
@@ -33,9 +33,9 @@ create_thumbnail
 /* Notes:
  * - An MVE2 scene appears to duplicate camera rot matrix and trans vector per-view data in 'meta.ini'
  *   within the first section of 'synth_0.out'.
- * - We do not save the original, instead we rely on the undistorted image from openMVG.
+ * - We do not save the original, instead we rely on the undistorted image from aliceVision.
  * - We do not output thumbnails or EXIF blobs, as these appear only to be used only for the GUI UMVE.
- * - To avoid encoding loss, openMVG images should be written as .PNG if undistorted images are *not* computed.
+ * - To avoid encoding loss, aliceVision images should be written as .PNG if undistorted images are *not* computed.
  * - In AliceVision, some views may have some missing poses; MVE does *not* require a contiguous camera index.
  *
  *  For information on the target for this conversion, please see the MVE (v2) File format:
@@ -177,8 +177,8 @@ bool exportToMVE2Format(
         << "id = " << view_index << fileOut.widen('\n')
         << "name = " << stlplus::filename_part(srcImage.c_str()) << fileOut.widen('\n');
 
-      // To do:  trim any extra separator(s) from openMVG name we receive, e.g.:
-      // '/home/insight/openMVG_KevinCain/openMVG_Build/software/SfM/ImageDataset_SceauxCastle/images//100_7100.JPG'
+      // To do:  trim any extra separator(s) from aliceVision name we receive, e.g.:
+      // '/home/insight/aliceVision_KevinCain/aliceVision_Build/software/SfM/ImageDataset_SceauxCastle/images//100_7100.JPG'
       std::ofstream file(
         stlplus::create_filespec(stlplus::folder_append_separator(sOutViewIteratorDirectory),
         "meta","ini").c_str());

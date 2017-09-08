@@ -9,8 +9,8 @@
 #include "third_party/stlplus3/filesystemSimplified/file_system.hpp"
 
 
-using namespace openMVG;
-using namespace openMVG::sfm;
+using namespace aliceVision;
+using namespace aliceVision::sfm;
 
 
 // Create a SfM scene with desired count of views & poses & intrinsic (shared or not)

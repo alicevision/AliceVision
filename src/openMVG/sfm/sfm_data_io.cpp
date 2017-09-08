@@ -1,24 +1,24 @@
 // This file is part of the AliceVision project and is made available under
 // the terms of the MPL2 license (see the COPYING.md file).
 
-#include "openMVG/sfm/sfm_data_io.hpp"
+#include "aliceVision/sfm/sfm_data_io.hpp"
 
-#include "openMVG/stl/stlMap.hpp"
+#include "aliceVision/stl/stlMap.hpp"
 #include "third_party/stlplus3/filesystemSimplified/file_system.hpp"
 
-#include "openMVG/sfm/sfm_data_io_cereal.hpp"
-#include "openMVG/sfm/sfm_data_io_ply.hpp"
-#include "openMVG/sfm/sfm_data_io_baf.hpp"
-#include "openMVG/sfm/sfm_data_io_gt.hpp"
+#include "aliceVision/sfm/sfm_data_io_cereal.hpp"
+#include "aliceVision/sfm/sfm_data_io_ply.hpp"
+#include "aliceVision/sfm/sfm_data_io_baf.hpp"
+#include "aliceVision/sfm/sfm_data_io_gt.hpp"
 
 #if OPENMVG_IS_DEFINED(OPENMVG_HAVE_ALEMBIC)
-#include "openMVG/sfm/AlembicExporter.hpp"
-#include "openMVG/sfm/AlembicImporter.hpp"
+#include "aliceVision/sfm/AlembicExporter.hpp"
+#include "aliceVision/sfm/AlembicImporter.hpp"
 #endif
 
-#include "openMVG/config.hpp"
+#include "aliceVision/config.hpp"
 
-namespace openMVG {
+namespace aliceVision {
 namespace sfm {
 
 ///Check that each pose have a valid intrinsic and pose id in the existing View ids
@@ -101,7 +101,7 @@ bool Load(SfM_Data & sfm_data, const std::string & filename, ESfM_Data flags_par
     bStatus = Load_Cereal<cereal::XMLInputArchive>(sfm_data, filename, flags_part);
 #if OPENMVG_IS_DEFINED(OPENMVG_HAVE_ALEMBIC)
   else if (ext == "abc") {
-    openMVG::sfm::AlembicImporter(filename).populate(sfm_data, flags_part);
+    aliceVision::sfm::AlembicImporter(filename).populate(sfm_data, flags_part);
     bStatus = true;
   }
 #endif // OPENMVG_HAVE_ALEMBIC
@@ -142,7 +142,7 @@ bool Save(const SfM_Data & sfm_data, const std::string & filename, ESfM_Data fla
 #if OPENMVG_IS_DEFINED(OPENMVG_HAVE_ALEMBIC)
   else if (ext == "abc") // Alembic
   {
-    openMVG::sfm::AlembicExporter(filename).add(sfm_data, flags_part);
+    aliceVision::sfm::AlembicExporter(filename).add(sfm_data, flags_part);
     return true;
   }
 #endif // OPENMVG_HAVE_ALEMBIC
@@ -152,6 +152,6 @@ bool Save(const SfM_Data & sfm_data, const std::string & filename, ESfM_Data fla
 }
 
 } // namespace sfm
-} // namespace openMVG
+} // namespace aliceVision
 
 

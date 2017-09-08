@@ -6,7 +6,7 @@
 
 #include <cmath>
 
-namespace openMVG {
+namespace aliceVision {
 namespace robust{
 
 /// Number of samplings to have at least \a minProba probability of absence of
@@ -31,5 +31,5 @@ inline size_t IterationsRequired(
 }
 
 } // namespace robust
-} // namespace openMVG
+} // namespace aliceVision
 #endif // OPENMVG_ROBUST_RANSAC_TOOLS_H_

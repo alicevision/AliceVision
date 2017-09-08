@@ -7,7 +7,7 @@
 #include <atomic>
 
 
-namespace openMVG {
+namespace aliceVision {
 namespace sfm {
 
 
@@ -142,4 +142,4 @@ bool loadFeaturesPerView(features::FeaturesPerView& featuresPerView,
 
   
 } // namespace sfm
-} // namespace openMVG
+} // namespace aliceVision

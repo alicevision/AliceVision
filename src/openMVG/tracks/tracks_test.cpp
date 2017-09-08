@@ -4,16 +4,16 @@
 #include "CppUnitLite/TestHarness.h"
 #include "testing/testing.h"
 
-#include "openMVG/tracks/tracks.hpp"
-#include "openMVG/matching/indMatch.hpp"
+#include "aliceVision/tracks/tracks.hpp"
+#include "aliceVision/matching/indMatch.hpp"
 
 #include <vector>
 #include <utility>
 
 
-using namespace openMVG::features;
-using namespace openMVG::tracks;
-using namespace openMVG::matching;
+using namespace aliceVision::features;
+using namespace aliceVision::tracks;
+using namespace aliceVision::matching;
 
 
 TEST(Tracks, Simple) {

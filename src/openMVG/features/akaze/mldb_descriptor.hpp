@@ -4,12 +4,12 @@
 #ifndef OPENMVG_IMAGE_DESCRIPTION_MLDB_DESCRIPTOR_H
 #define OPENMVG_IMAGE_DESCRIPTION_MLDB_DESCRIPTOR_H
 
-#include "openMVG/features/descriptor.hpp"
-#include "openMVG/features/feature.hpp"
-#include "openMVG/image/image.hpp"
-#include "openMVG/numeric/math_trait.hpp"
+#include "aliceVision/features/descriptor.hpp"
+#include "aliceVision/features/feature.hpp"
+#include "aliceVision/image/image.hpp"
+#include "aliceVision/numeric/math_trait.hpp"
 
-namespace openMVG {
+namespace aliceVision {
 namespace features {
 
   /**
@@ -216,6 +216,6 @@ namespace features {
   }
 
 } // namespace features
-} // namespace openMVG
+} // namespace aliceVision
 
 #endif

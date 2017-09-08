@@ -4,14 +4,14 @@
 #pragma once
 
 #include "LocalizationResult.hpp"
-#include <openMVG/cameras/Camera_Pinhole_Radial.hpp>
-#include <openMVG/geometry/pose3.hpp>
+#include <aliceVision/cameras/Camera_Pinhole_Radial.hpp>
+#include <aliceVision/geometry/pose3.hpp>
 
 #include <vector>
 #include <string>
 #include <tuple>
 
-namespace openMVG{
+namespace aliceVision{
 namespace localization{
 
 /**
@@ -144,4 +144,4 @@ std::tuple<double, double, double> computeStatistics(const Mat &pts2d,
                                                      const geometry::Pose3 &rigPose);
 
 } //namespace localization
-} //namespace openMVG
+} //namespace aliceVision

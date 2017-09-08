@@ -19,17 +19,17 @@ set(cameras_files_test
     Camera_Pinhole_Radial_test.cpp
 )
 
-add_library(openMVG_cameras INTERFACE)
+add_library(aliceVision_cameras INTERFACE)
 
-target_link_libraries(openMVG_cameras
-  INTERFACE openMVG_multiview
+target_link_libraries(aliceVision_cameras
+  INTERFACE aliceVision_multiview
             ${LOG_LIB}
 )
 
-UNIT_TEST(openMVG Camera_Pinhole_Radial   "openMVG_cameras")
-UNIT_TEST(openMVG Camera_Pinhole_Brown    "openMVG_cameras")
-UNIT_TEST(openMVG Camera_Pinhole_Fisheye  "openMVG_cameras")
-UNIT_TEST(openMVG Camera_Pinhole_Fisheye1 "openMVG_cameras")
+UNIT_TEST(aliceVision Camera_Pinhole_Radial   "aliceVision_cameras")
+UNIT_TEST(aliceVision Camera_Pinhole_Brown    "aliceVision_cameras")
+UNIT_TEST(aliceVision Camera_Pinhole_Fisheye  "aliceVision_cameras")
+UNIT_TEST(aliceVision Camera_Pinhole_Fisheye1 "aliceVision_cameras")
 
-add_custom_target(openMVG_cameras_ide SOURCES ${cameras_files_headers} ${cameras_files_test})
+add_custom_target(aliceVision_cameras_ide SOURCES ${cameras_files_headers} ${cameras_files_test})
 

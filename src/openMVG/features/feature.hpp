@@ -4,14 +4,14 @@
 #ifndef OPENMVG_FEATURES_FEATURE_HPP
 #define OPENMVG_FEATURES_FEATURE_HPP
 
-#include "openMVG/numeric/numeric.h"
+#include "aliceVision/numeric/numeric.h"
 #include <iostream>
 #include <iterator>
 #include <fstream>
 #include <string>
 #include <vector>
 
-namespace openMVG {
+namespace aliceVision {
 namespace features {
 
 /**
@@ -190,6 +190,6 @@ void PointsToMat(
 }
 
 } // namespace features
-} // namespace openMVG
+} // namespace aliceVision
 
 #endif // OPENMVG_FEATURES_FEATURE_HPP

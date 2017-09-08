@@ -1,11 +1,11 @@
 // This file is part of the AliceVision project and is made available under
 // the terms of the MPL2 license (see the COPYING.md file).
 
-#include "openMVG/multiview/translation_averaging_common.hpp"
-#include "openMVG/multiview/translation_averaging_solver.hpp"
-#include <openMVG/config.hpp>
-#include <openMVG/alicevision_omp.hpp>
-#include <openMVG/system/Logger.hpp>
+#include "aliceVision/multiview/translation_averaging_common.hpp"
+#include "aliceVision/multiview/translation_averaging_solver.hpp"
+#include <aliceVision/config.hpp>
+#include <aliceVision/alicevision_omp.hpp>
+#include <aliceVision/system/Logger.hpp>
 
 #include "ceres/ceres.h"
 
@@ -14,7 +14,7 @@
 #include <set>
 #include <map>
 
-namespace openMVG {
+namespace aliceVision {
 
 using ceres::AutoDiffCostFunction;
 using ceres::CostFunction;
@@ -161,4 +161,4 @@ reindex_problem(int* edges, int num_edges, std::vector<int> &reindex_lookup)
     edges[i]  = reindexing_key[edges[i]];
 }
 
-} // namespace openMVG
+} // namespace aliceVision

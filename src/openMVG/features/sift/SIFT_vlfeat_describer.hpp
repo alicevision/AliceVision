@@ -3,10 +3,10 @@
 
 #pragma once
 
-#include <openMVG/features/descriptor.hpp>
-#include <openMVG/features/image_describer.hpp>
-#include <openMVG/features/regions_factory.hpp>
-#include <openMVG/features/sift/SIFT.hpp>
+#include <aliceVision/features/descriptor.hpp>
+#include <aliceVision/features/image_describer.hpp>
+#include <aliceVision/features/regions_factory.hpp>
+#include <aliceVision/features/sift/SIFT.hpp>
 
 extern "C" {
 #include "nonFree/sift/vl/sift.h"
@@ -15,7 +15,7 @@ extern "C" {
 #include <iostream>
 #include <numeric>
 
-namespace openMVG {
+namespace aliceVision {
 namespace features {
 
 /**
@@ -97,4 +97,4 @@ private:
 };
 
 } // namespace features
-} // namespace openMVG
+} // namespace aliceVision

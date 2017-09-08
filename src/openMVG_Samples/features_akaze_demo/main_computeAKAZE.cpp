@@ -1,8 +1,8 @@
 // This file is part of the AliceVision project and is made available under
 // the terms of the MPL2 license (see the COPYING.md file).
 
-#include "openMVG/image/image.hpp"
-#include "openMVG/features/akaze/AKAZE.hpp"
+#include "aliceVision/image/image.hpp"
+#include "aliceVision/features/akaze/AKAZE.hpp"
 
 #include "third_party/vectorGraphics/svgDrawer.hpp"
 using namespace svg;
@@ -11,12 +11,12 @@ using namespace svg;
 #include "third_party/cmdLine/cmdLine.h"
 #include "third_party/stlplus3/filesystemSimplified/file_system.hpp"
 
-#include "openMVG/system/timer.hpp"
+#include "aliceVision/system/timer.hpp"
 
 #include <iostream>
 #include <sstream>
 
-using namespace openMVG;
+using namespace aliceVision;
 
 void usage( const std::string & appName )
 {

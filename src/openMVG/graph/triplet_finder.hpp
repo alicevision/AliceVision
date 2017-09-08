@@ -4,8 +4,8 @@
 #ifndef OPENMVG_GRAPH_TRIPLET_FINDER_H
 #define OPENMVG_GRAPH_TRIPLET_FINDER_H
 
-#include "openMVG/types.hpp"
-#include "openMVG/graph/graph.hpp"
+#include "aliceVision/types.hpp"
+#include "aliceVision/graph/graph.hpp"
 
 #include "lemon/list_graph.h"
 using namespace lemon;
@@ -13,7 +13,7 @@ using namespace lemon;
 #include <algorithm>
 #include <vector>
 
-namespace openMVG {
+namespace aliceVision {
 namespace graph {
 
 /// Simple container for tuple of three value
@@ -139,6 +139,6 @@ static std::vector< graph::Triplet > tripletListing(
 }
 
 } // namespace graph
-} // namespace openMVG
+} // namespace aliceVision
 
 #endif // OPENMVG_GRAPH_TRIPLET_FINDER_H

@@ -7,7 +7,7 @@
 #include <cmath>
 #include <stdio.h>
 
-namespace openMVG {
+namespace aliceVision {
 
 // Solve the cubic polynomial
 //
@@ -102,5 +102,5 @@ int SolveCubicPolynomial(const Real *coeffs, Real *solutions) {
                               solutions + 1,
                               solutions + 2);
 }
-}  // namespace openMVG
+}  // namespace aliceVision
 #endif  // OPENMVG_NUMERIC_POLY_H_

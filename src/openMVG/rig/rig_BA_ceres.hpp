@@ -3,15 +3,15 @@
 
 #pragma once
 
-#include <openMVG/geometry/pose3.hpp>
-#include <openMVG/cameras/Camera_Pinhole_Radial.hpp> //todo: not generic
+#include <aliceVision/geometry/pose3.hpp>
+#include <aliceVision/cameras/Camera_Pinhole_Radial.hpp> //todo: not generic
                          // only Pinhole_Intrinsic_Radial_K3 is currently supported
                          // todo: allows internal parameters refinement
 #include <ceres/ceres.h>
 #include <ceres/rotation.h>
 
 
-namespace openMVG {
+namespace aliceVision {
 namespace rig {
 
 class ResidualErrorMainCameraFunctor
@@ -40,7 +40,7 @@ public :
 
   }
 
-  // Enum to map intrinsics parameters between openMVG & ceres camera data parameter block.
+  // Enum to map intrinsics parameters between aliceVision & ceres camera data parameter block.
 //  enum {
 //    OFFSET_FOCAL_LENGTH = 0,
 //    OFFSET_PRINCIPAL_POINT_X = 1,
@@ -117,18 +117,18 @@ public :
   }
 
 private :
-  openMVG::Mat3 _K; // Calibration matrix
+  aliceVision::Mat3 _K; // Calibration matrix
   std::vector<double> _params; // {K1, K2, K3}
-  openMVG::Vec3 _point; // 3D point
-  openMVG::Vec2 _observation; // its image location
+  aliceVision::Vec3 _point; // 3D point
+  aliceVision::Vec2 _observation; // its image location
 };
 
 class ResidualErrorSecondaryCameraFunctor
 {
 public :
   ResidualErrorSecondaryCameraFunctor(const cameras::Pinhole_Intrinsic_Radial_K3 & intrinsics,
-                                      const openMVG::Vec2 & pt2d,
-                                      const openMVG::Vec3 & pt3d) // const double* const pos_2dpoint
+                                      const aliceVision::Vec2 & pt2d,
+                                      const aliceVision::Vec3 & pt3d) // const double* const pos_2dpoint
   {
     // Set the intrinsics
      _K = intrinsics.K();
@@ -149,7 +149,7 @@ public :
     
   }
 
-  // Enum to map intrinsics parameters between openMVG & ceres camera data parameter block.
+  // Enum to map intrinsics parameters between aliceVision & ceres camera data parameter block.
 //  enum {
 //    OFFSET_FOCAL_LENGTH = 0,
 //    OFFSET_PRINCIPAL_POINT_X = 1,
@@ -239,10 +239,10 @@ public :
   }
 
 private :
-  openMVG::Mat3 _K; // Calibration matrix
+  aliceVision::Mat3 _K; // Calibration matrix
   std::vector<double> _params; // {K1, K2, K3}
-  openMVG::Vec3 _point; // 3D point
-  openMVG::Vec2 _observation; // its image location
+  aliceVision::Vec3 _point; // 3D point
+  aliceVision::Vec2 _observation; // its image location
 };
 
 /**
@@ -275,8 +275,8 @@ public :
     _point(1) = pt3d(1);
     _point(2) = pt3d(2);
 
-    const openMVG::Mat3 & R = relativePose.rotation();
-    const openMVG::Vec3 & t = relativePose.translation();
+    const aliceVision::Mat3 & R = relativePose.rotation();
+    const aliceVision::Vec3 & t = relativePose.translation();
 
     // convert the relative pose into angle axis representation
     ceres::RotationMatrixToAngleAxis((const double*)R.data(), _relativePose);
@@ -287,7 +287,7 @@ public :
     
   }
 
-  // Enum to map intrinsics parameters between openMVG & ceres camera data parameter block.
+  // Enum to map intrinsics parameters between aliceVision & ceres camera data parameter block.
 //  enum {
 //    OFFSET_FOCAL_LENGTH = 0,
 //    OFFSET_PRINCIPAL_POINT_X = 1,
@@ -380,10 +380,10 @@ public :
   }
 
 private :
-  openMVG::Mat3 _K;               // Calibration matrix
+  aliceVision::Mat3 _K;               // Calibration matrix
   std::vector<double> _params;    // {K1, K2, K3}
-  openMVG::Vec3 _point;           // 3D point
-  openMVG::Vec2 _observation;     // its image location
+  aliceVision::Vec3 _point;           // 3D point
+  aliceVision::Vec2 _observation;     // its image location
   double _relativePose[6];        // the relative pose of the witness camera wrt 
                                   // in angle axis format the main camera
 };

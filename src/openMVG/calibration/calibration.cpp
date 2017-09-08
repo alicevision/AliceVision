@@ -1,16 +1,16 @@
 // This file is part of the AliceVision project and is made available under
 // the terms of the MPL2 license (see the COPYING.md file).
 
-#include "openMVG/calibration/calibration.hpp"
+#include "aliceVision/calibration/calibration.hpp"
 
-#include <openMVG/system/Logger.hpp>
-#include <openMVG/system/timer.hpp>
+#include <aliceVision/system/Logger.hpp>
+#include <aliceVision/system/timer.hpp>
 
 #include <ctime>
 #include <algorithm>
 #include <iostream>
 
-namespace openMVG{
+namespace aliceVision{
 namespace calibration{
 
 double computeReprojectionErrors(const std::vector<std::vector<cv::Point3f> >& objectPoints,
@@ -188,4 +188,4 @@ bool calibrationIterativeOptimization(
 }
 
 }//namespace calibration
-}//namespace openMVG
+}//namespace aliceVision

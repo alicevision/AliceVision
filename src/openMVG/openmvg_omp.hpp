@@ -3,7 +3,7 @@
 
 #pragma once
 
-#include <openMVG/config.hpp>
+#include <aliceVision/config.hpp>
 
 #if OPENMVG_IS_DEFINED(OPENMVG_HAVE_OPENMP)
 

@@ -9,7 +9,7 @@
 typedef std::mutex mutexT;
 typedef std::lock_guard<mutexT> lock_guardT;
 
-namespace openMVG {
+namespace aliceVision {
 namespace sfm{
 
 /// ThreadSafe Set thanks to a mutex
@@ -38,4 +38,4 @@ private:
 };
 
 } // namespace sfm
-} // namespace openMVG
+} // namespace aliceVision

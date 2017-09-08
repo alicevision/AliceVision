@@ -1,19 +1,19 @@
 // This file is part of the AliceVision project and is made available under
 // the terms of the MPL2 license (see the COPYING.md file).
 
-#include "openMVG/sfm/pipelines/global/GlobalSfM_rotation_averaging.hpp"
+#include "aliceVision/sfm/pipelines/global/GlobalSfM_rotation_averaging.hpp"
 
-#include "openMVG/sfm/sfm.hpp"
-#include "openMVG/graph/graph.hpp"
-#include "openMVG/multiview/rotation_averaging.hpp"
-#include "openMVG/stl/stlMap.hpp"
+#include "aliceVision/sfm/sfm.hpp"
+#include "aliceVision/graph/graph.hpp"
+#include "aliceVision/multiview/rotation_averaging.hpp"
+#include "aliceVision/stl/stlMap.hpp"
 
 #include "third_party/histogram/histogram.hpp"
 
-namespace openMVG{
+namespace aliceVision{
 namespace sfm{
 
-using namespace openMVG::rotation_averaging;
+using namespace aliceVision::rotation_averaging;
 
 Pair_Set GlobalSfM_Rotation_AveragingSolver::GetUsedPairs() const
 {
@@ -99,7 +99,7 @@ bool GlobalSfM_Rotation_AveragingSolver::Run(
     break;
     case ROTATION_AVERAGING_L1:
     {
-      using namespace openMVG::rotation_averaging::l1;
+      using namespace aliceVision::rotation_averaging::l1;
 
       //- Solve the global rotation estimation problem:
       const size_t nMainViewID = 0; //arbitrary choice
@@ -239,5 +239,5 @@ void GlobalSfM_Rotation_AveragingSolver::TripletRotationRejection(
 }
 
 } // namespace sfm
-} // namespace openMVG
+} // namespace aliceVision
 

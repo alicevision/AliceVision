@@ -1,16 +1,16 @@
 // This file is part of the AliceVision project and is made available under
 // the terms of the MPL2 license (see the COPYING.md file).
 
-#include "openMVG/image/image.hpp"
-#include "openMVG/features/features.hpp"
-#include "openMVG/features/sift/SIFT_describer.hpp"
-#include "openMVG/matching/regions_matcher.hpp"
-#include "openMVG/multiview/essential.hpp"
-#include "openMVG/robust_estimation/robust_estimator_ACRansac.hpp"
-#include "openMVG/multiview/conditioning.hpp"
-#include "openMVG/robust_estimation/robust_estimator_ACRansacKernelAdaptator.hpp"
+#include "aliceVision/image/image.hpp"
+#include "aliceVision/features/features.hpp"
+#include "aliceVision/features/sift/SIFT_describer.hpp"
+#include "aliceVision/matching/regions_matcher.hpp"
+#include "aliceVision/multiview/essential.hpp"
+#include "aliceVision/robust_estimation/robust_estimator_ACRansac.hpp"
+#include "aliceVision/multiview/conditioning.hpp"
+#include "aliceVision/robust_estimation/robust_estimator_ACRansacKernelAdaptator.hpp"
 
-#include "openMVG_Samples/robust_essential_spherical/spherical_cam.hpp"
+#include "aliceVision_Samples/robust_essential_spherical/spherical_cam.hpp"
 
 #include "software/SfM/SfMPlyHelper.hpp"
 
@@ -20,10 +20,10 @@
 #include <string>
 #include <iostream>
 
-using namespace openMVG;
-using namespace openMVG::image;
-using namespace openMVG::matching;
-using namespace openMVG::robust;
+using namespace aliceVision;
+using namespace aliceVision::image;
+using namespace aliceVision::matching;
+using namespace aliceVision::robust;
 using namespace svg;
 using namespace std;
 
@@ -46,7 +46,7 @@ int main() {
   //--
   // Detect regions thanks to an image_describer
   //--
-  using namespace openMVG::features;
+  using namespace aliceVision::features;
   std::unique_ptr<Image_describer> image_describer(new SIFT_ImageDescriber(SiftParams(-1)));
   std::map<IndexT, std::unique_ptr<features::Regions> > regions_perImage;
   image_describer->Describe(imageL, regions_perImage[0]);
@@ -142,12 +142,12 @@ int main() {
       std::vector<size_t> vec_inliers;
 
       // Use the 8 point solver in order to estimate E
-      typedef openMVG::spherical_cam::EssentialKernel_spherical Kernel;
+      typedef aliceVision::spherical_cam::EssentialKernel_spherical Kernel;
 
       // Define the AContrario angular error adaptor
-      typedef openMVG::robust::ACKernelAdaptor_AngularRadianError<
-          openMVG::spherical_cam::EightPointRelativePoseSolver,
-          openMVG::spherical_cam::AngularError,
+      typedef aliceVision::robust::ACKernelAdaptor_AngularRadianError<
+          aliceVision::spherical_cam::EightPointRelativePoseSolver,
+          aliceVision::spherical_cam::AngularError,
           Mat3>
           KernelType;
 
@@ -204,7 +204,7 @@ int main() {
 
             //Triangulate
             Vec3 X;
-            openMVG::spherical_cam::TriangulateDLT(P1, x1_, P2, x2_, &X);
+            aliceVision::spherical_cam::TriangulateDLT(P1, x1_, P2, x2_, &X);
 
             //Check positivity of the depth (sign of the dot product)
             const Vec3 Mc = R2 * X + t2;

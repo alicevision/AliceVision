@@ -4,13 +4,13 @@
 #ifndef OPENMVG_CAMERA_PINHOLE_RADIAL_K_HPP
 #define OPENMVG_CAMERA_PINHOLE_RADIAL_K_HPP
 
-#include "openMVG/numeric/numeric.h"
-#include "openMVG/cameras/Camera_Common.hpp"
-#include "openMVG/cameras/Camera_Pinhole.hpp"
+#include "aliceVision/numeric/numeric.h"
+#include "aliceVision/cameras/Camera_Common.hpp"
+#include "aliceVision/cameras/Camera_Pinhole.hpp"
 
 #include <vector>
 
-namespace openMVG {
+namespace aliceVision {
 namespace cameras {
 
 namespace radial_distortion{
@@ -283,13 +283,13 @@ class Pinhole_Intrinsic_Radial_K3 : public Pinhole_Intrinsic
 };
 
 } // namespace cameras
-} // namespace openMVG
+} // namespace aliceVision
 
 #include <cereal/types/polymorphic.hpp>
 #include <cereal/types/vector.hpp>
 
-CEREAL_REGISTER_TYPE_WITH_NAME(openMVG::cameras::Pinhole_Intrinsic_Radial_K1, "pinhole_radial_k1");
-CEREAL_REGISTER_TYPE_WITH_NAME(openMVG::cameras::Pinhole_Intrinsic_Radial_K3, "pinhole_radial_k3");
+CEREAL_REGISTER_TYPE_WITH_NAME(aliceVision::cameras::Pinhole_Intrinsic_Radial_K1, "pinhole_radial_k1");
+CEREAL_REGISTER_TYPE_WITH_NAME(aliceVision::cameras::Pinhole_Intrinsic_Radial_K3, "pinhole_radial_k3");
 
 #endif // #ifndef OPENMVG_CAMERA_PINHOLE_RADIAL_K_HPP
 

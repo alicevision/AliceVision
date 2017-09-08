@@ -4,16 +4,16 @@
 #ifndef OPENMVG_CAMERAS_HPP
 #define OPENMVG_CAMERAS_HPP
 
-#include "openMVG/cameras/Camera_Common.hpp"
-#include "openMVG/cameras/Camera_Intrinsics.hpp"
-#include "openMVG/cameras/Camera_Pinhole.hpp"
-#include "openMVG/cameras/Camera_Pinhole_Radial.hpp"
-#include "openMVG/cameras/Camera_Pinhole_Brown.hpp"
-#include "openMVG/cameras/Camera_Pinhole_Fisheye.hpp"
-#include "openMVG/cameras/Camera_Pinhole_Fisheye1.hpp"
-#include "openMVG/cameras/Camera_undistort_image.hpp"
+#include "aliceVision/cameras/Camera_Common.hpp"
+#include "aliceVision/cameras/Camera_Intrinsics.hpp"
+#include "aliceVision/cameras/Camera_Pinhole.hpp"
+#include "aliceVision/cameras/Camera_Pinhole_Radial.hpp"
+#include "aliceVision/cameras/Camera_Pinhole_Brown.hpp"
+#include "aliceVision/cameras/Camera_Pinhole_Fisheye.hpp"
+#include "aliceVision/cameras/Camera_Pinhole_Fisheye1.hpp"
+#include "aliceVision/cameras/Camera_undistort_image.hpp"
 
-namespace openMVG {
+namespace aliceVision {
 namespace cameras {
 
 inline std::shared_ptr<Pinhole_Intrinsic> createPinholeIntrinsic(EINTRINSIC intrinsicType,
@@ -43,6 +43,6 @@ inline std::shared_ptr<Pinhole_Intrinsic> createPinholeIntrinsic(EINTRINSIC intr
 }
 
 } // namespace cameras
-} // namespace openMVG
+} // namespace aliceVision
 
 #endif // OPENMVG_CAMERAS_HPP

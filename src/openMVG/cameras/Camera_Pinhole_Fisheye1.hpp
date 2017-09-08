@@ -3,12 +3,12 @@
 
 #pragma once
 
-#include "openMVG/numeric/numeric.h"
-#include "openMVG/cameras/Camera_Common.hpp"
+#include "aliceVision/numeric/numeric.h"
+#include "aliceVision/cameras/Camera_Common.hpp"
 
 #include <vector>
 
-namespace openMVG {
+namespace aliceVision {
 namespace cameras {
 
 /**
@@ -114,9 +114,9 @@ public:
 };
 
 } // namespace cameras
-} // namespace openMVG
+} // namespace aliceVision
 
 #include <cereal/types/polymorphic.hpp>
 #include <cereal/types/vector.hpp>
 
-CEREAL_REGISTER_TYPE_WITH_NAME(openMVG::cameras::Pinhole_Intrinsic_Fisheye1, "fisheye1");
+CEREAL_REGISTER_TYPE_WITH_NAME(aliceVision::cameras::Pinhole_Intrinsic_Fisheye1, "fisheye1");

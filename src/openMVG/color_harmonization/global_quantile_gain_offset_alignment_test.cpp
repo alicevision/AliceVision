@@ -8,10 +8,10 @@
 #include <cmath>
 
 //-- Color harmonization solver
-#include "openMVG/color_harmonization/global_quantile_gain_offset_alignment.hpp"
+#include "aliceVision/color_harmonization/global_quantile_gain_offset_alignment.hpp"
 
-#include "openMVG/image/image.hpp"
-#include <openMVG/config.hpp>
+#include "aliceVision/image/image.hpp"
+#include <aliceVision/config.hpp>
 
 #include "testing/testing.h"
 
@@ -19,9 +19,9 @@
 #include "third_party/htmlDoc/htmlDoc.hpp"
 
 
-using namespace openMVG;
-using namespace openMVG::linearProgramming;
-using namespace openMVG::lInfinity;
+using namespace aliceVision;
+using namespace aliceVision::linearProgramming;
+using namespace aliceVision::lInfinity;
 
 double const pi = 4.0 *std::atan(1.0);
 

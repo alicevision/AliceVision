@@ -4,11 +4,11 @@
 #include <cmath>
 #include <fstream>
 
-#include "openMVG/numeric/numeric.h"
-#include "openMVG/multiview/projection.hpp"
-#include "openMVG/multiview/test_data_sets.hpp"
+#include "aliceVision/numeric/numeric.h"
+#include "aliceVision/multiview/projection.hpp"
+#include "aliceVision/multiview/test_data_sets.hpp"
 
-namespace openMVG {
+namespace aliceVision {
 
 
 nViewDatasetConfigurator::nViewDatasetConfigurator(int fx, int fy,
@@ -161,4 +161,4 @@ NViewDataSet NRealisticCamerasCardioid(size_t nviews, size_t npoints,
   return d;
 }
 
-}  // namespace openMVG
+}  // namespace aliceVision

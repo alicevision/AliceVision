@@ -4,10 +4,10 @@
 #ifndef OPENMVG_SFM_DATA_IO_BAF_HPP
 #define OPENMVG_SFM_DATA_IO_BAF_HPP
 
-#include "openMVG/sfm/sfm_data_io.hpp"
+#include "aliceVision/sfm/sfm_data_io.hpp"
 #include <fstream>
 
-namespace openMVG {
+namespace aliceVision {
 namespace sfm {
 
 /// Save SfM_Data in an ASCII BAF (Bundle Adjustment File).
@@ -135,6 +135,6 @@ static bool Save_BAF(
 }
 
 } // namespace sfm
-} // namespace openMVG
+} // namespace aliceVision
 
 #endif // OPENMVG_SFM_DATA_IO_PLY_HPP

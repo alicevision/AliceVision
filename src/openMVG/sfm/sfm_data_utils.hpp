@@ -3,7 +3,7 @@
 
 #pragma once
 
-namespace openMVG {
+namespace aliceVision {
 namespace sfm {
 
 struct SfM_Data;
@@ -15,4 +15,4 @@ struct SfM_Data;
 void GroupSharedIntrinsics(SfM_Data & sfm_data);
 
 } // namespace sfm
-} // namespace openMVG
+} // namespace aliceVision

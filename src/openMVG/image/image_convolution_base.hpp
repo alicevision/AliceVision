@@ -4,7 +4,7 @@
 #ifndef OPENMVG_IMAGE_IMAGE_CONVOLUTION_BASE_HPP
 #define OPENMVG_IMAGE_IMAGE_CONVOLUTION_BASE_HPP
 
-namespace openMVG {
+namespace aliceVision {
 namespace image {
   /**
    ** Filter an extended row [halfKernelSize][row][halfKernelSize]
@@ -27,6 +27,6 @@ namespace image {
     }
   }
 } // namespace image
-} // namespace openMVG
+} // namespace aliceVision
 
 #endif // OPENMVG_IMAGE_IMAGE_CONVOLUTION_BASE_HPP

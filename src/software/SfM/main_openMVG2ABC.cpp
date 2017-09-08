@@ -7,10 +7,10 @@
 #include "third_party/cmdLine/cmdLine.h"
 
 // AliceVision
-#include "openMVG/sfm/sfm.hpp"
-#include "openMVG/numeric/numeric.h"
-#include "openMVG/geometry/pose3.hpp"
-using namespace openMVG::sfm;
+#include "aliceVision/sfm/sfm.hpp"
+#include "aliceVision/numeric/numeric.h"
+#include "aliceVision/geometry/pose3.hpp"
+using namespace aliceVision::sfm;
 
 // Alembic
 #include <Alembic/AbcGeom/All.h>
@@ -33,7 +33,7 @@ int main(int argc, char **argv) {
         if (argc < 4) throw std::string("Invalid number of parameters in the command line.");
         cmdLine.process(argc, argv);
     } catch(const std::string &s) {
-        std::cout << "openMVG to alembic\n";
+        std::cout << "aliceVision to alembic\n";
         std::cout << "Usage: " << argv[0] << '\n'
         << "[-i|--sfmdata filename, the SfM_Data file to convert]\n"
         << "[-o|--outfile path]\n"
@@ -64,7 +64,7 @@ int main(int argc, char **argv) {
 
     // For all the 3d points in the hash_map
     for(const auto lm : sfm_data.GetLandmarks()) {
-        const openMVG::Vec3 &pt = lm.second.X;
+        const aliceVision::Vec3 &pt = lm.second.X;
         positions.emplace_back(pt[0], pt[1], pt[2]);
     }
 
@@ -85,22 +85,22 @@ int main(int argc, char **argv) {
           continue;
 
         // AliceVision Camera
-        const openMVG::geometry::Pose3 pose = sfm_data.getPose(*view);
+        const aliceVision::geometry::Pose3 pose = sfm_data.getPose(*view);
         auto iterIntrinsic = sfm_data.GetIntrinsics().find(view->getIntrinsicId());
-        openMVG::cameras::Pinhole_Intrinsic *cam = static_cast<openMVG::cameras::Pinhole_Intrinsic*>(iterIntrinsic->second.get());
-        openMVG::Mat34 P = cam->get_projective_equivalent(pose);
+        aliceVision::cameras::Pinhole_Intrinsic *cam = static_cast<aliceVision::cameras::Pinhole_Intrinsic*>(iterIntrinsic->second.get());
+        aliceVision::Mat34 P = cam->get_projective_equivalent(pose);
 
         // Extract internal matrix, rotation and translation
-        //openMVG::Mat3 R, K;
-        //openMVG::Vec3 t;
-        //openMVG::KRt_From_P(P, &K, &R, &t);
+        //aliceVision::Mat3 R, K;
+        //aliceVision::Vec3 t;
+        //aliceVision::KRt_From_P(P, &K, &R, &t);
        
-        const openMVG::Mat3 R = pose.rotation();
-        const openMVG::Vec3 center = pose.center();
+        const aliceVision::Mat3 R = pose.rotation();
+        const aliceVision::Vec3 center = pose.center();
 
         // POSE
         // Compensate translation with rotation
-        //openMVG::Vec3 center = R.transpose() * t;
+        //aliceVision::Vec3 center = R.transpose() * t;
         // Build transform matrix
         Abc::M44d xformMatrix;
         xformMatrix[0][0]= R(0,0);

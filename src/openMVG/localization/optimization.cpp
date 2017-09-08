@@ -2,12 +2,12 @@
 // the terms of the MPL2 license (see the COPYING.md file).
 
 #include "optimization.hpp"
-#include "openMVG/sfm/sfm_data_io.hpp"
-#include <openMVG/sfm/sfm_data_BA_ceres.hpp>
-#include <openMVG/numeric/numeric.h>
-#include <openMVG/rig/rig_BA_ceres.hpp>
-#include <openMVG/system/Logger.hpp>
-#include <openMVG/system/timer.hpp>
+#include "aliceVision/sfm/sfm_data_io.hpp"
+#include <aliceVision/sfm/sfm_data_BA_ceres.hpp>
+#include <aliceVision/numeric/numeric.h>
+#include <aliceVision/rig/rig_BA_ceres.hpp>
+#include <aliceVision/system/Logger.hpp>
+#include <aliceVision/system/timer.hpp>
 
 
 #include <boost/accumulators/accumulators.hpp>
@@ -18,7 +18,7 @@
 #include <boost/accumulators/statistics/max.hpp>
 #include <boost/accumulators/statistics/sum.hpp>
 
-namespace openMVG{
+namespace aliceVision{
 namespace localization{
 
 bool refineSequence(std::vector<LocalizationResult> & vec_localizationResult,
@@ -344,8 +344,8 @@ bool refineRigPose(const std::vector<geometry::Pose3 > &vec_subPoses,
   
   ceres::Problem problem;
   
-  const openMVG::Mat3 & R = rigPose.rotation();
-  const openMVG::Vec3 & t = rigPose.translation();
+  const aliceVision::Mat3 & R = rigPose.rotation();
+  const aliceVision::Vec3 & t = rigPose.translation();
 
   double mainPose[6];
   ceres::RotationMatrixToAngleAxis((const double*)R.data(), mainPose);
@@ -419,35 +419,35 @@ bool refineRigPose(const std::vector<geometry::Pose3 > &vec_subPoses,
 
   // Configure a BA engine and run it
   // todo: Set the most appropriate options
-  openMVG::sfm::Bundle_Adjustment_Ceres::BA_options openMVG_options; // Set all
-  // the options field in our owm struct - unnecessary dependancy to openMVG here
+  aliceVision::sfm::Bundle_Adjustment_Ceres::BA_options aliceVision_options; // Set all
+  // the options field in our owm struct - unnecessary dependancy to aliceVision here
   
   ceres::Solver::Options options;
   
-  options.preconditioner_type = openMVG_options._preconditioner_type;
-  options.linear_solver_type = openMVG_options._linear_solver_type;
-  options.sparse_linear_algebra_library_type = openMVG_options._sparse_linear_algebra_library_type;
-  options.minimizer_progress_to_stdout = openMVG_options._bVerbose;
+  options.preconditioner_type = aliceVision_options._preconditioner_type;
+  options.linear_solver_type = aliceVision_options._linear_solver_type;
+  options.sparse_linear_algebra_library_type = aliceVision_options._sparse_linear_algebra_library_type;
+  options.minimizer_progress_to_stdout = aliceVision_options._bVerbose;
   options.logging_type = ceres::SILENT;
-  options.num_threads = 1;//openMVG_options._nbThreads;
-  options.num_linear_solver_threads = 1;//openMVG_options._nbThreads;
+  options.num_threads = 1;//aliceVision_options._nbThreads;
+  options.num_linear_solver_threads = 1;//aliceVision_options._nbThreads;
   
   // Solve BA
   ceres::Solver::Summary summary;
   ceres::Solve(options, &problem, &summary);
   
-  if (openMVG_options._bCeres_Summary)
+  if (aliceVision_options._bCeres_Summary)
     OPENMVG_LOG_DEBUG(summary.FullReport());
 
   // If no error, get back refined parameters
   if (!summary.IsSolutionUsable())
   {
-    if (openMVG_options._bVerbose)
+    if (aliceVision_options._bVerbose)
       OPENMVG_CERR("Bundle Adjustment failed.");
     return false;
   }
 
-  if(openMVG_options._bVerbose)
+  if(aliceVision_options._bVerbose)
   {
     // Display statistics about the minimization
     OPENMVG_LOG_DEBUG("Bundle Adjustment statistics (approximated RMSE");
@@ -458,13 +458,13 @@ bool refineRigPose(const std::vector<geometry::Pose3 > &vec_subPoses,
   }
 
   // update the rigPose 
-  openMVG::Mat3 R_refined;
+  aliceVision::Mat3 R_refined;
   ceres::AngleAxisToRotationMatrix(mainPose, R_refined.data());
-  openMVG::Vec3 t_refined(mainPose[3], mainPose[4], mainPose[5]);
+  aliceVision::Vec3 t_refined(mainPose[3], mainPose[4], mainPose[5]);
   // Push the optimized pose
   rigPose = geometry::Pose3(R_refined, -R_refined.transpose() * t_refined);
 
-//  displayRelativePoseReprojection(geometry::Pose3(openMVG::Mat3::Identity(), openMVG::Vec3::Zero()), 0);
+//  displayRelativePoseReprojection(geometry::Pose3(aliceVision::Mat3::Identity(), aliceVision::Vec3::Zero()), 0);
 
   // @todo do we want to update pose inside the LocalizationResults 
 
@@ -486,8 +486,8 @@ bool refineRigPose(const std::vector<Mat> &pts2d,
   
   ceres::Problem problem;
   
-  const openMVG::Mat3 & R = rigPose.rotation();
-  const openMVG::Vec3 & t = rigPose.translation();
+  const aliceVision::Mat3 & R = rigPose.rotation();
+  const aliceVision::Vec3 & t = rigPose.translation();
 
   double mainPose[6];
   ceres::RotationMatrixToAngleAxis((const double*)R.data(), mainPose);
@@ -562,35 +562,35 @@ bool refineRigPose(const std::vector<Mat> &pts2d,
 
   // Configure a BA engine and run it
   // todo: Set the most appropriate options
-  openMVG::sfm::Bundle_Adjustment_Ceres::BA_options openMVG_options; // Set all
-  // the options field in our owm struct - unnecessary dependancy to openMVG here
+  aliceVision::sfm::Bundle_Adjustment_Ceres::BA_options aliceVision_options; // Set all
+  // the options field in our owm struct - unnecessary dependancy to aliceVision here
   
   ceres::Solver::Options options;
   
-  options.preconditioner_type = openMVG_options._preconditioner_type;
-  options.linear_solver_type = openMVG_options._linear_solver_type;
-  options.sparse_linear_algebra_library_type = openMVG_options._sparse_linear_algebra_library_type;
+  options.preconditioner_type = aliceVision_options._preconditioner_type;
+  options.linear_solver_type = aliceVision_options._linear_solver_type;
+  options.sparse_linear_algebra_library_type = aliceVision_options._sparse_linear_algebra_library_type;
   options.minimizer_progress_to_stdout = true;
   //options.logging_type = ceres::SILENT;
-  options.num_threads = 1;//openMVG_options._nbThreads;
-  options.num_linear_solver_threads = 1;//openMVG_options._nbThreads;
+  options.num_threads = 1;//aliceVision_options._nbThreads;
+  options.num_linear_solver_threads = 1;//aliceVision_options._nbThreads;
   
   // Solve BA
   ceres::Solver::Summary summary;
   ceres::Solve(options, &problem, &summary);
   
-  if (openMVG_options._bCeres_Summary)
+  if (aliceVision_options._bCeres_Summary)
     OPENMVG_LOG_DEBUG(summary.FullReport());
 
   // If no error, get back refined parameters
   if (!summary.IsSolutionUsable())
   {
-    if (openMVG_options._bVerbose)
+    if (aliceVision_options._bVerbose)
       OPENMVG_LOG_DEBUG("Bundle Adjustment failed.");
     return false;
   }
 
-  if(openMVG_options._bVerbose)
+  if(aliceVision_options._bVerbose)
   {
     // Display statistics about the minimization
     OPENMVG_LOG_DEBUG(
@@ -603,13 +603,13 @@ bool refineRigPose(const std::vector<Mat> &pts2d,
   }
 
   // update the rigPose 
-  openMVG::Mat3 R_refined;
+  aliceVision::Mat3 R_refined;
   ceres::AngleAxisToRotationMatrix(mainPose, R_refined.data());
-  openMVG::Vec3 t_refined(mainPose[3], mainPose[4], mainPose[5]);
+  aliceVision::Vec3 t_refined(mainPose[3], mainPose[4], mainPose[5]);
   // Push the optimized pose
   rigPose = geometry::Pose3(R_refined, -R_refined.transpose() * t_refined);
 
-//  displayRelativePoseReprojection(geometry::Pose3(openMVG::Mat3::Identity(), openMVG::Vec3::Zero()), 0);
+//  displayRelativePoseReprojection(geometry::Pose3(aliceVision::Mat3::Identity(), aliceVision::Vec3::Zero()), 0);
 
   // @todo do we want to update pose inside the LocalizationResults 
 
@@ -832,5 +832,5 @@ bool iterativeRefineRigPose(const std::vector<Mat> &pts2d,
 
 
 } //namespace localization
-} //namespace openMVG
+} //namespace aliceVision
 

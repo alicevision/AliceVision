@@ -3,14 +3,14 @@
 
 #include <cstdlib>
 
-#include "openMVG/sfm/pipelines/RegionsIO.hpp"
-#include "openMVG/features/ImageDescriberCommon.hpp"
-#include "openMVG/sfm/pipelines/global/sfm_global_engine_relative_motions.hpp"
-#include "openMVG/system/timer.hpp"
+#include "aliceVision/sfm/pipelines/RegionsIO.hpp"
+#include "aliceVision/features/ImageDescriberCommon.hpp"
+#include "aliceVision/sfm/pipelines/global/sfm_global_engine_relative_motions.hpp"
+#include "aliceVision/system/timer.hpp"
 
-using namespace openMVG;
-using namespace openMVG::sfm;
-using namespace openMVG::features;
+using namespace aliceVision;
+using namespace aliceVision::sfm;
+using namespace aliceVision::features;
 
 #include "third_party/cmdLine/cmdLine.h"
 #include "third_party/stlplus3/filesystemSimplified/file_system.hpp"
@@ -158,7 +158,7 @@ int main(int argc, char **argv)
   // Global SfM reconstruction process
   //---------------------------------------
 
-  openMVG::system::Timer timer;
+  aliceVision::system::Timer timer;
   GlobalSfMReconstructionEngine_RelativeMotions sfmEngine(
     sfmData,
     sOutDir,

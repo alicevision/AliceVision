@@ -3,11 +3,11 @@
 
 #pragma once
 
-#include <openMVG/cameras/Camera_Pinhole_Radial.hpp>
-#include <openMVG/image/image_container.hpp>
-#include <openMVG/image/pixel_types.hpp>
+#include <aliceVision/cameras/Camera_Pinhole_Radial.hpp>
+#include <aliceVision/image/image_container.hpp>
+#include <aliceVision/image/pixel_types.hpp>
 
-namespace openMVG{
+namespace aliceVision{
 namespace dataio{
 
 class IFeed
@@ -68,5 +68,5 @@ public:
 void readCalibrationFromFile(const std::string &filename, cameras::Pinhole_Intrinsic_Radial_K3 &camIntrinsics);
 
 }//namespace dataio 
-}//namespace openMVG
+}//namespace aliceVision
 

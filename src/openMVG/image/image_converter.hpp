@@ -4,10 +4,10 @@
 #ifndef OPENMVG_IMAGE_IMAGE_CONVERTER_HPP
 #define OPENMVG_IMAGE_IMAGE_CONVERTER_HPP
 
-#include "openMVG/image/image_container.hpp"
-#include "openMVG/image/pixel_types.hpp"
+#include "aliceVision/image/image_container.hpp"
+#include "aliceVision/image/pixel_types.hpp"
 
-namespace openMVG{
+namespace aliceVision{
 namespace image {
 
 template<typename T>
@@ -120,6 +120,6 @@ static inline void rgbFloat2rgbInt(
 }
 
 } // namespace image
-} // namespace openMVG
+} // namespace aliceVision
 
 #endif  // OPENMVG_IMAGE_IMAGE_CONVERTER_HPP

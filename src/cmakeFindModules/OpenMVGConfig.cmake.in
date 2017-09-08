@@ -134,10 +134,10 @@ if(NOT EXISTS ${CURRENT_ROOT_INSTALL_DIR})
 endif()
 
 # Check if AliceVision header is installed
-if(NOT EXISTS ${CURRENT_ROOT_INSTALL_DIR}/include/openMVG/version.hpp)
+if(NOT EXISTS ${CURRENT_ROOT_INSTALL_DIR}/include/aliceVision/version.hpp)
   OPENMVG_REPORT_NOT_FOUND(
     "AliceVision install root: ${CMAKE_MODULE_PATH}. "
-    "Cannot find openMVG include files.")
+    "Cannot find aliceVision include files.")
 endif()
 
 # Set the include directories for AliceVision (itself) and all (potentially optional)

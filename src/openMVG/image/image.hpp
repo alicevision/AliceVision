@@ -12,20 +12,20 @@
 #include <iostream>
 #include <vector>
 
-#include "openMVG/numeric/numeric.h"
+#include "aliceVision/numeric/numeric.h"
 
-#include "openMVG/image/image_container.hpp"
-#include "openMVG/image/pixel_types.hpp"
-#include "openMVG/image/image_converter.hpp"
-#include "openMVG/image/image_drawing.hpp"
-#include "openMVG/image/image_concat.hpp"
-#include "openMVG/image/image_io.hpp"
-#include "openMVG/image/sample.hpp"
+#include "aliceVision/image/image_container.hpp"
+#include "aliceVision/image/pixel_types.hpp"
+#include "aliceVision/image/image_converter.hpp"
+#include "aliceVision/image/image_drawing.hpp"
+#include "aliceVision/image/image_concat.hpp"
+#include "aliceVision/image/image_io.hpp"
+#include "aliceVision/image/sample.hpp"
 
-#include "openMVG/image/image_convolution_base.hpp"
-#include "openMVG/image/image_convolution.hpp"
-#include "openMVG/image/image_filtering.hpp"
-#include "openMVG/image/image_resampling.hpp"
-#include "openMVG/image/image_diffusion.hpp"
+#include "aliceVision/image/image_convolution_base.hpp"
+#include "aliceVision/image/image_convolution.hpp"
+#include "aliceVision/image/image_filtering.hpp"
+#include "aliceVision/image/image_resampling.hpp"
+#include "aliceVision/image/image_diffusion.hpp"
 
 #endif /* OPENMVG_IMAGE_HPP */

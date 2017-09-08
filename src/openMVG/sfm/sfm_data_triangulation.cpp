@@ -1,22 +1,22 @@
 // This file is part of the AliceVision project and is made available under
 // the terms of the MPL2 license (see the COPYING.md file).
 
-#include "openMVG/sfm/sfm_data_triangulation.hpp"
+#include "aliceVision/sfm/sfm_data_triangulation.hpp"
 
-#include "openMVG/multiview/triangulation_nview.hpp"
-#include "openMVG/robust_estimation/rand_sampling.hpp"
-#include <openMVG/config.hpp>
+#include "aliceVision/multiview/triangulation_nview.hpp"
+#include "aliceVision/robust_estimation/rand_sampling.hpp"
+#include <aliceVision/config.hpp>
 
 #include "third_party/progress/progress.hpp"
 
 #include <deque>
 #include <memory>
 
-namespace openMVG {
+namespace aliceVision {
 namespace sfm {
 
-using namespace openMVG::geometry;
-using namespace openMVG::cameras;
+using namespace aliceVision::geometry;
+using namespace aliceVision::cameras;
 
 SfM_Data_Structure_Computation_Basis::SfM_Data_Structure_Computation_Basis(bool bConsoleVerbose)
   :_bConsoleVerbose(bConsoleVerbose)
@@ -261,4 +261,4 @@ Vec3 SfM_Data_Structure_Computation_Robust::track_sample_triangulation(
 }
 
 } // namespace sfm
-} // namespace openMVG
+} // namespace aliceVision

@@ -3,12 +3,12 @@
 
 #pragma once
 
-#include <openMVG/config.hpp>
+#include <aliceVision/config.hpp>
 #include <string>
 #include <vector>
 #include <stdexcept>
 
-namespace openMVG {
+namespace aliceVision {
 namespace features {
 
 enum class EImageDescriberType: unsigned char
@@ -119,4 +119,4 @@ inline std::istream& operator>>(std::istream &in, std::vector<EImageDescriberTyp
 }
 
 } // namespace features
-} // namespace openMVG
+} // namespace aliceVision

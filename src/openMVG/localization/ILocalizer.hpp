@@ -5,13 +5,13 @@
 
 #include "LocalizationResult.hpp"
 
-#include <openMVG/image/image_container.hpp>
-#include <openMVG/features/image_describer.hpp>
-#include <openMVG/cameras/Camera_Pinhole_Radial.hpp>
-#include <openMVG/robust_estimation/robust_estimators.hpp>
-#include <openMVG/numeric/numeric.h>
+#include <aliceVision/image/image_container.hpp>
+#include <aliceVision/features/image_describer.hpp>
+#include <aliceVision/cameras/Camera_Pinhole_Radial.hpp>
+#include <aliceVision/robust_estimation/robust_estimators.hpp>
+#include <aliceVision/numeric/numeric.h>
 
-namespace openMVG {
+namespace aliceVision {
 namespace localization {
 
 struct LocalizerParameters
@@ -116,6 +116,6 @@ protected:
 
 };
 
-} //namespace openMVG 
+} //namespace aliceVision 
 } //namespace localization 
 

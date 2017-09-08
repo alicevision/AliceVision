@@ -4,7 +4,7 @@
 #ifndef OPENMVG_NUMERIC_NUMERIC_H
 #define OPENMVG_NUMERIC_NUMERIC_H
 
-#include <openMVG/system/Logger.hpp>
+#include <aliceVision/system/Logger.hpp>
 
 //--
 // Eigen
@@ -25,7 +25,7 @@
 #include <iostream>
 #include <vector>
 
-namespace openMVG {
+namespace aliceVision {
 
 // Check MSVC
 #if _WIN32 || _WIN64
@@ -482,7 +482,7 @@ void SplitRange(const T range_start, const T range_end, const int nb_split,
 }
 
 
-} // namespace openMVG
+} // namespace aliceVision
 
 
 #endif  // OPENMVG_NUMERIC_NUMERIC_H

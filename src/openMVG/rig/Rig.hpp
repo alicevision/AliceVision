@@ -3,10 +3,10 @@
 
 #pragma once
 
-#include <openMVG/localization/LocalizationResult.hpp>
-#include <openMVG/geometry/pose3.hpp>
-#include <openMVG/numeric/numeric.h>
-#include <openMVG/config.hpp>
+#include <aliceVision/localization/LocalizationResult.hpp>
+#include <aliceVision/geometry/pose3.hpp>
+#include <aliceVision/numeric/numeric.h>
+#include <aliceVision/config.hpp>
 
 #include <Eigen/Dense>
 
@@ -17,7 +17,7 @@
 //#define VISUAL_DEBUG_MODE
 #endif
 
-namespace openMVG {
+namespace aliceVision {
 namespace rig {
   
 class Rig {
@@ -177,5 +177,5 @@ bool loadRigCalibration(const std::string &filename, std::vector<geometry::Pose3
 bool saveRigCalibration(const std::string &filename, const std::vector<geometry::Pose3> &subposes);
 
 } // namespace rig
-} // namespace openMVG
+} // namespace aliceVision
 

@@ -1,4 +1,4 @@
-# Copyright (c) 2012, 2013 openMVG authors.
+# Copyright (c) 2012, 2013 aliceVision authors.
 
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0. if a copy of the MPL was not distributed with this
@@ -6,7 +6,7 @@
 
 cmake_minimum_required(VERSION 3.3)
 
-project(openMVG C CXX)
+project(aliceVision C CXX)
 
 # Guard against in-source builds
 if(${CMAKE_SOURCE_DIR} STREQUAL ${CMAKE_BINARY_DIR})
@@ -54,10 +54,10 @@ endif()
 option(OPENMVG_REQUIRE_CERES_WITH_SUITESPARSE ON)
 
 # ==============================================================================
-# Opencv is not used by openMVG but some samples show how to use openCV
-#  and openMVG simultaneously
+# Opencv is not used by aliceVision but some samples show how to use openCV
+#  and aliceVision simultaneously
 # ==============================================================================
-trilean_option(OPENMVG_USE_OPENCV "Build or not opencv+openMVG samples programs" OFF)
+trilean_option(OPENMVG_USE_OPENCV "Build or not opencv+aliceVision samples programs" OFF)
 
 # ==============================================================================
 # Since OpenCV 3, SIFT is no longer in the default modules. See
@@ -69,7 +69,7 @@ option(OPENMVG_USE_OCVSIFT "Add or not OpenCV SIFT in available features" OFF)
 # ==============================================================================
 # AliceVision version
 # ==============================================================================
-file(STRINGS "openMVG/version.hpp" _OPENMVG_VERSION_HPP_CONTENTS REGEX "#define OPENMVG_VERSION_")
+file(STRINGS "aliceVision/version.hpp" _OPENMVG_VERSION_HPP_CONTENTS REGEX "#define OPENMVG_VERSION_")
 foreach(v MAJOR MINOR REVISION)
   if("${_OPENMVG_VERSION_HPP_CONTENTS}" MATCHES "#define OPENMVG_VERSION_${v} ([0-9]+)")
     set(OPENMVG_VERSION_${v} "${CMAKE_MATCH_1}")
@@ -226,7 +226,7 @@ endif()
 #Install RULES
 install(
   DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/dependencies/
-  DESTINATION include/openMVG_dependencies
+  DESTINATION include/aliceVision_dependencies
   COMPONENT headers
   FILES_MATCHING PATTERN "*.hpp" PATTERN "*.h"
 )
@@ -277,7 +277,7 @@ endif()
 # - internal by default (ceres-solver+cxsparse+miniglog),
 # - external if Ceres_DIR and find_package return a valid Ceres setup
 # ==============================================================================
-message(STATUS "Trying to find package Ceres for openMVG: ${Ceres_DIR}")
+message(STATUS "Trying to find package Ceres for aliceVision: ${Ceres_DIR}")
 if(OPENMVG_REQUIRE_CERES_WITH_SUITESPARSE)
   message(STATUS "By default, Ceres required SuiteSparse to ensure best performances. if you explicitly need to build without it, you can use the option: -DOPENMVG_REQUIRE_CERES_WITH_SUITESPARSE=OFF")
   find_package(Ceres QUIET REQUIRED SuiteSparse CONFIG)
@@ -620,37 +620,37 @@ set(OPENMVG_INCLUDE_DIRS
 include_directories(${OPENMVG_INCLUDE_DIRS})
 
 # ==============================================================================
-# openMVG modules
+# aliceVision modules
 # ==============================================================================
-# The openMVG library itself
-add_subdirectory(openMVG)
+# The aliceVision library itself
+add_subdirectory(aliceVision)
 
 # ==============================================================================
-# openMVG libraries
+# aliceVision libraries
 # ==============================================================================
 set(OPENMVG_LIBRARIES
-  openMVG_exif
-  openMVG_features
-  openMVG_image
-#  openMVG_linearProgramming
-  openMVG_lInftyComputerVision
-  openMVG_matching
-  openMVG_kvld
-  openMVG_matching_image_collection
-  openMVG_multiview
-  openMVG_numeric
-  openMVG_sfm
-  openMVG_system)
+  aliceVision_exif
+  aliceVision_features
+  aliceVision_image
+#  aliceVision_linearProgramming
+  aliceVision_lInftyComputerVision
+  aliceVision_matching
+  aliceVision_kvld
+  aliceVision_matching_image_collection
+  aliceVision_multiview
+  aliceVision_numeric
+  aliceVision_sfm
+  aliceVision_system)
 
 if(OPENMVG_HAVE_BOOST)
   list(APPEND OPENMVG_LIBRARIES 
-    openMVG_dataio 
-    openMVG_voctree 
-    openMVG_localization
-    openMVG_rig)
+    aliceVision_dataio 
+    aliceVision_voctree 
+    aliceVision_localization
+    aliceVision_rig)
   if(OPENMVG_HAVE_OPENCV)
     list(APPEND OPENMVG_LIBRARIES 
-      openMVG_calibration)
+      aliceVision_calibration)
   endif()
 endif()
 
@@ -658,12 +658,12 @@ foreach(omvglib ${OPENMVG_LIBRARIES})
   set_property(TARGET ${omvglib} PROPERTY FOLDER AliceVision/AliceVision)
 endforeach()
 
-# openMVG tutorial examples
+# aliceVision tutorial examples
 if(OPENMVG_BUILD_EXAMPLES)
-  add_subdirectory(openMVG_Samples)
+  add_subdirectory(aliceVision_Samples)
 endif()
 
-# Complete software(s) build on openMVG libraries
+# Complete software(s) build on aliceVision libraries
 add_subdirectory(software)
 
 # software(s) under patent or commercial licence
@@ -793,14 +793,14 @@ message("\n")
 # INSTALL RULES
 # ==============================================================================
 
-install(EXPORT openMVG-targets DESTINATION lib)
-install(EXPORT openMVG-targets
-        DESTINATION share/openMVG/cmake FILE AliceVisionTargets.cmake)
+install(EXPORT aliceVision-targets DESTINATION lib)
+install(EXPORT aliceVision-targets
+        DESTINATION share/aliceVision/cmake FILE AliceVisionTargets.cmake)
 
 #Adapt build include paths to install path
 set(OPENMVG_INCLUDE_DIRS
   "${OPENMVG_INCLUDE_DIRS}"
-  "${CMAKE_INSTALL_PREFIX}/include/openMVG")
+  "${CMAKE_INSTALL_PREFIX}/include/aliceVision")
 
 list(REMOVE_ITEM OPENMVG_INCLUDE_DIRS ${generatedDir})
 string(REGEX REPLACE
@@ -812,13 +812,13 @@ string(REGEX REPLACE
 
 string(REGEX REPLACE
   "third_party"
-  "openMVG/third_party"
+  "aliceVision/third_party"
   OPENMVG_INCLUDE_DIRS
   "${OPENMVG_INCLUDE_DIRS}"
 )
 string(REGEX REPLACE
   "dependencies"
-  "openMVG_dependencies"
+  "aliceVision_dependencies"
   OPENMVG_INCLUDE_DIRS
   "${OPENMVG_INCLUDE_DIRS}"
 )
@@ -845,15 +845,15 @@ configure_file("${CMAKE_SOURCE_DIR}/cmakeFindModules/AliceVisionConfig.cmake.in"
                "${CMAKE_CURRENT_BINARY_DIR}/AliceVisionConfig.cmake" @ONLY)
 
 install(FILES "${CMAKE_CURRENT_BINARY_DIR}/AliceVisionConfig.cmake"
-        DESTINATION share/openMVG/cmake)
+        DESTINATION share/aliceVision/cmake)
 
 # create the config.hpp file containing all the preprocessor definitions
-set(configfile "${generatedDir}/openMVG/config.hpp")
+set(configfile "${generatedDir}/aliceVision/config.hpp")
 configure_file("${CMAKE_SOURCE_DIR}/cmakeFindModules/config.hpp.in"
                "${configfile}" @ONLY)
 
 install(FILES "${configfile}"
-        DESTINATION "include/openMVG")
+        DESTINATION "include/aliceVision")
 
 ########### Add uninstall target ###############
 configure_file(

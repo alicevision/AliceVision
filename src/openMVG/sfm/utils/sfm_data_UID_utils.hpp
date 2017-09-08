@@ -3,11 +3,11 @@
 
 #pragma once
 
-#include <openMVG/sfm/sfm_data.hpp>
+#include <aliceVision/sfm/sfm_data.hpp>
 
 #include <map>
 
-namespace openMVG {
+namespace aliceVision {
 namespace sfm {
 
 /**

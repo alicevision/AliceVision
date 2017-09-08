@@ -7,7 +7,7 @@
 #include <map>
 #include <opencv2/opencv.hpp>
 
-namespace openMVG{
+namespace aliceVision{
 namespace calibration{
 
 /**
@@ -71,5 +71,5 @@ void selectBestImages(const std::vector<std::vector<cv::Point2f> >& imagePoints,
                       std::vector<std::size_t>& remainingImagesIndexes);
 
 }//namespace calibration
-}//namespace openMVG
+}//namespace aliceVision
 

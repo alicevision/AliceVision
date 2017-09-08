@@ -1,12 +1,12 @@
 // This file is part of the AliceVision project and is made available under
 // the terms of the MPL2 license (see the COPYING.md file).
 
-#include "openMVG/image/image.hpp"
-#include "openMVG/features/features.hpp"
-#include "openMVG/features/sift/SIFT_describer.hpp"
-#include "openMVG/robust_estimation/guided_matching.hpp"
-#include "openMVG/multiview/solver_homography_kernel.hpp"
-#include "openMVG/matching/regions_matcher.hpp"
+#include "aliceVision/image/image.hpp"
+#include "aliceVision/features/features.hpp"
+#include "aliceVision/features/sift/SIFT_describer.hpp"
+#include "aliceVision/robust_estimation/guided_matching.hpp"
+#include "aliceVision/multiview/solver_homography_kernel.hpp"
+#include "aliceVision/matching/regions_matcher.hpp"
 
 #include "third_party/stlplus3/filesystemSimplified/file_system.hpp"
 #include "third_party/vectorGraphics/svgDrawer.hpp"
@@ -15,9 +15,9 @@
 #include <string>
 #include <iostream>
 
-using namespace openMVG;
-using namespace openMVG::image;
-using namespace openMVG::matching;
+using namespace aliceVision;
+using namespace aliceVision::image;
+using namespace aliceVision::matching;
 using namespace svg;
 using namespace std;
 
@@ -185,7 +185,7 @@ struct RepeatabilityResults_Matching
 // Regions repeatability evaluation:
 // - compare feature/descriptor matching repeatability on some dataset with known homography motions
 // Must be run one of the dataset contained here:
-//  https://github.com/openMVG/Features_Repeatability
+//  https://github.com/aliceVision/Features_Repeatability
 //
 int main(int argc, char **argv)
 {
@@ -267,7 +267,7 @@ int main(int argc, char **argv)
       // 2. Test the repeatability (localization/overlap (accuracy))
       // 3. Export data
 
-      using namespace openMVG::features;
+      using namespace aliceVision::features;
       std::unique_ptr<Image_describer> image_describer;
       if (sImage_Describer_Method == "SIFT")
       {
@@ -324,7 +324,7 @@ int main(int argc, char **argv)
 
           IndMatches matches_0I;
           geometry_aware::GuidedMatching
-            <Mat3, openMVG::homography::kernel::AsymmetricError>(
+            <Mat3, aliceVision::homography::kernel::AsymmetricError>(
             dataset.H(i).transpose(), x0, xI, Square(m_dPrecision_robust), matches_0I);
 
           std::cout << "Feature repeatablity Results" << "\n"
@@ -362,7 +362,7 @@ int main(int argc, char **argv)
 
           IndMatches matches_0I;
           geometry_aware::GuidedMatching
-            <Mat3, openMVG::homography::kernel::AsymmetricError>(
+            <Mat3, aliceVision::homography::kernel::AsymmetricError>(
             dataset.H(i).transpose(), x0, xI, Square(m_dPrecision_robust), matches_0I);
 
           std::cout << "Feature matching repeatability Results" << "\n"

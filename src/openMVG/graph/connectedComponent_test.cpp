@@ -7,7 +7,7 @@
 #include "CppUnitLite/TestHarness.h"
 #include "testing/testing.h"
 
-#include "openMVG/graph/graph.hpp"
+#include "aliceVision/graph/graph.hpp"
 using namespace lemon;
 
 TEST(connectedComponents, Empty) {
@@ -96,7 +96,7 @@ TEST(exportGraphToMapSubgraphs, CC_Subgraph) {
   graph.addEdge(j,l);
 
   const std::map<size_t, std::set<lemon::ListGraph::Node> > map_subgraphs =
-    openMVG::graph::exportGraphToMapSubgraphs<lemon::ListGraph, size_t>(graph);
+    aliceVision::graph::exportGraphToMapSubgraphs<lemon::ListGraph, size_t>(graph);
 
   EXPECT_EQ(4, map_subgraphs.size());
   EXPECT_EQ(5, map_subgraphs.at(0).size());

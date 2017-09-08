@@ -6,11 +6,11 @@
 
 #include "sfm_view.hpp"
 
-#include "openMVG/stl/stl.hpp"
-#include <openMVG/system/Logger.hpp>
+#include "aliceVision/stl/stl.hpp"
+#include <aliceVision/system/Logger.hpp>
 #include <iterator>
 
-namespace openMVG {
+namespace aliceVision {
 namespace sfm {
 
 /// Filter a list of pair: Keep only the pair that are defined in index list
@@ -219,6 +219,6 @@ static bool eraseUnstablePosesAndObservations(
 }
 
 } // namespace sfm
-} // namespace openMVG
+} // namespace aliceVision
 
 #endif // OPENMVG_SFM_DATA_FILTERS_HPP

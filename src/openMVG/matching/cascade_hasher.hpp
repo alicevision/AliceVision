@@ -37,15 +37,15 @@
 
 #pragma once
 
-#include "openMVG/numeric/numeric.h"
-#include "openMVG/matching/metric.hpp"
-#include "openMVG/matching/indMatch.hpp"
-#include "openMVG/stl/dynamic_bitset.hpp"
+#include "aliceVision/numeric/numeric.h"
+#include "aliceVision/matching/metric.hpp"
+#include "aliceVision/matching/indMatch.hpp"
+#include "aliceVision/stl/dynamic_bitset.hpp"
 #include <iostream>
 #include <random>
 #include <cmath>
 
-namespace openMVG {
+namespace aliceVision {
 namespace matching {
 
 struct HashedDescription {
@@ -377,5 +377,5 @@ public:
 };
 
 }  // namespace matching
-}  // namespace openMVG
+}  // namespace aliceVision
 

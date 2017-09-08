@@ -1,8 +1,8 @@
 // This file is part of the AliceVision project and is made available under
 // the terms of the MPL2 license (see the COPYING.md file).
 
-#include "openMVG/image/image.hpp"
-#include "openMVG/cameras/cameras.hpp"
+#include "aliceVision/image/image.hpp"
+#include "aliceVision/cameras/cameras.hpp"
 
 #include "third_party/cmdLine/cmdLine.h"
 #include "third_party/stlplus3/filesystemSimplified/file_system.hpp"
@@ -11,9 +11,9 @@
 #include <string>
 #include <iostream>
 
-using namespace openMVG;
-using namespace openMVG::cameras;
-using namespace openMVG::image;
+using namespace aliceVision;
+using namespace aliceVision::cameras;
+using namespace aliceVision::image;
 using namespace std;
 
 int main(int argc, char **argv)

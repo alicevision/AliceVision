@@ -22,14 +22,14 @@
 // Mainly it add correct data normalization and define the function required
 //  by the generic ACRANSAC routine.
 //
-#include <openMVG/config.hpp>
-#include <openMVG/numeric/numeric.h>
-#include <openMVG/multiview/conditioning.hpp>
-#include <openMVG/features/ImageDescriberCommon.hpp>
-#include <openMVG/matching/indMatch.hpp>
+#include <aliceVision/config.hpp>
+#include <aliceVision/numeric/numeric.h>
+#include <aliceVision/multiview/conditioning.hpp>
+#include <aliceVision/features/ImageDescriberCommon.hpp>
+#include <aliceVision/matching/indMatch.hpp>
 #include <vector>
 
-namespace openMVG {
+namespace aliceVision {
 namespace robust {
 
 #define OPENMVG_MINIMUM_SAMPLES_COEF 7 //TODO: TO REMOVE
@@ -503,5 +503,5 @@ private:
 };
 
 } // namespace robust
-} // namespace openMVG
+} // namespace aliceVision
 #endif // OPENMVG_ROBUST_ESTIMATOR_ACRANSAC_KERNEL_ADAPTATOR_H_

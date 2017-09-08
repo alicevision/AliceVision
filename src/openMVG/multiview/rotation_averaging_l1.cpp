@@ -1,8 +1,8 @@
 // This file is part of the AliceVision project and is made available under
 // the terms of the MPL2 license (see the COPYING.md file).
 
-#include "openMVG/multiview/rotation_averaging_l1.hpp"
-#include <openMVG/system/Logger.hpp>
+#include "aliceVision/multiview/rotation_averaging_l1.hpp"
+#include <aliceVision/system/Logger.hpp>
 
 #ifdef OPENMVG_ROTATION_AVERAGING_WITH_BOOST
 #include <boost/graph/adjacency_list.hpp>
@@ -32,7 +32,7 @@ using namespace lemon;
 #include <queue>
 #include <stdint.h>
 
-namespace openMVG   {
+namespace aliceVision   {
 namespace rotation_averaging  {
 namespace l1  {
 
@@ -309,7 +309,7 @@ ComputeX84Threshold(const TYPE* const values, size_t size, TYPE mul=TYPE(5.2))
 
 /////////////////////////
 
-typedef openMVG::Mat3 Matrix3x3;
+typedef aliceVision::Mat3 Matrix3x3;
 typedef std::vector<size_t> IndexArr;
 
 // find the shortest cycle for the given graph and starting vertex
@@ -432,7 +432,7 @@ unsigned int FilterRelativeRotations(
     const Matrix3x3& Rj = Rs[relR.j];
     const Matrix3x3& Rij = relR.Rij;
     const Mat3 eRij(Rj.transpose()*Rij*Ri);
-    const openMVG::Vec3 erij;
+    const aliceVision::Vec3 erij;
     ceres::RotationMatrixToAngleAxis((const double*)eRij.data(), (double*)erij.data());
     errors[r] = (float)erij.norm();
   }
@@ -469,7 +469,7 @@ REAL RelRotationAvgError(const RelativeRotations& RelRs, const Matrix3x3Arr& Rs,
 
   for(int i=0; i < RelRs.size(); ++i) {
     const RelativeRotation& relR = RelRs[i];
-    acc(openMVG::FrobeniusNorm(relR.Rij  - (Rs[relR.j]*Rs[relR.i].transpose())));
+    acc(aliceVision::FrobeniusNorm(relR.Rij  - (Rs[relR.j]*Rs[relR.i].transpose())));
   }
   if (pMin)
     *pMin = boost::accumulators::min(acc);
@@ -480,7 +480,7 @@ REAL RelRotationAvgError(const RelativeRotations& RelRs, const Matrix3x3Arr& Rs,
   std::vector<REAL> vec_err(RelRs.size(), REAL(0.0));
   for(int i=0; i < RelRs.size(); ++i) {
     const RelativeRotation& relR = RelRs[i];
-    vec_err[i] = openMVG::FrobeniusNorm(relR.Rij  - (Rs[relR.j]*Rs[relR.i].transpose()));
+    vec_err[i] = aliceVision::FrobeniusNorm(relR.Rij  - (Rs[relR.j]*Rs[relR.i].transpose()));
   }
   float min, max, mean, median;
   minMaxMeanMedian(vec_err.begin(), vec_err.end(), min, max, mean, median);
@@ -604,9 +604,9 @@ inline void _FillErrorMatrix(
     const Matrix3x3& Rj = Rs[relR.j];
     const Matrix3x3& Rij = relR.Rij;
     const Mat3 eRij(Rj.transpose()*Rij*Ri);
-    const openMVG::Vec3 erij;
+    const aliceVision::Vec3 erij;
     ceres::RotationMatrixToAngleAxis((const double*)eRij.data(), (double*)erij.data());
-    b.block<3,1>(3*r,0) = openMVG::Vec3(erij*relR.weight);
+    b.block<3,1>(3*r,0) = aliceVision::Vec3(erij*relR.weight);
   }
 }
 
@@ -621,7 +621,7 @@ inline void _CorrectMatrix(
       continue;
     Matrix3x3& Ri = Rs[r];
     const size_t i = (r<nMainViewID ? r : r-1);
-    openMVG::Vec3 eRid = openMVG::Vec3(x.block<3,1>(3*i,0));
+    aliceVision::Vec3 eRid = aliceVision::Vec3(x.block<3,1>(3*i,0));
     const Mat3 eRi;
     ceres::AngleAxisToRotationMatrix((const double*)eRid.data(), (double*)eRi.data());
     Ri = Ri*eRi;
@@ -702,5 +702,5 @@ bool RefineRotationsAvgL1IRLS(
 
 } // namespace l1
 } // namespace rotation_averaging
-} // namespace openMVG
+} // namespace aliceVision
 

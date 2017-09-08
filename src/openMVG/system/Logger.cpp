@@ -23,7 +23,7 @@
 
 #endif // OPENMVG_HAVE_BOOST
 
-namespace openMVG {
+namespace aliceVision {
 namespace system {
 
 std::shared_ptr<Logger> Logger::_instance = nullptr;
@@ -123,4 +123,4 @@ void Logger::setLogLevel(const boost::log::trivial::severity_level level)
 #endif // OPENMVG_HAVE_BOOST
 
 } // namespace system
-} // namespace openMVG
+} // namespace aliceVision

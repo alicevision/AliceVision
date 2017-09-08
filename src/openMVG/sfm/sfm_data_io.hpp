@@ -4,9 +4,9 @@
 #ifndef OPENMVG_SFM_DATA_IO_HPP
 #define OPENMVG_SFM_DATA_IO_HPP
 
-#include "openMVG/sfm/sfm_data.hpp"
+#include "aliceVision/sfm/sfm_data.hpp"
 
-namespace openMVG {
+namespace aliceVision {
 namespace sfm {
 
 enum ESfM_Data
@@ -30,6 +30,6 @@ bool Load(SfM_Data & sfm_data, const std::string & filename, ESfM_Data flags_par
 bool Save(const SfM_Data & sfm_data, const std::string & filename, ESfM_Data flags_part);
 
 } // namespace sfm
-} // namespace openMVG
+} // namespace aliceVision
 
 #endif // OPENMVG_SFM_DATA_IO_HPP

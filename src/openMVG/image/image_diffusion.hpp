@@ -4,14 +4,14 @@
 #ifndef OPENMVG_IMAGE_IMAGE_DIFFUSION_HPP_
 #define OPENMVG_IMAGE_IMAGE_DIFFUSION_HPP_
 
-#include <openMVG/config.hpp>
-#include <openMVG/alicevision_omp.hpp>
+#include <aliceVision/config.hpp>
+#include <aliceVision/alicevision_omp.hpp>
 
 #ifdef _MSC_VER
 #pragma warning(once:4244)
 #endif
 
-namespace openMVG {
+namespace aliceVision {
 namespace image {
 
 /**
@@ -329,6 +329,6 @@ int FEDCycleTimings( const Real T , const Real Tmax , std::vector< Real > & tau 
 }
 
 }  // namespace image
-}  // namespace openMVG
+}  // namespace aliceVision
 
 #endif //  OPENMVG_IMAGE_IMAGE_DIFFUSION_HPP_

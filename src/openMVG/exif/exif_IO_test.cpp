@@ -2,7 +2,7 @@
 // the terms of the MPL2 license (see the COPYING.md file).
 
 #include "exif_IO_EasyExif.hpp"
-#include <openMVG/system/Logger.hpp>
+#include <aliceVision/system/Logger.hpp>
 
 #include "testing/testing.h"
 #include "third_party/stlplus3/filesystemSimplified/file_system.hpp"
@@ -11,14 +11,14 @@
 #include <memory>
 
 using namespace std;
-using namespace openMVG;
-using namespace openMVG::exif;
+using namespace aliceVision;
+using namespace aliceVision::exif;
 
 const std::string sImg =
   stlplus::folder_part(
   stlplus::folder_part(
   stlplus::folder_up(string(THIS_SOURCE_DIR))))
-    + "/openMVG_Samples/imageData/Exif_Test/100_7100.JPG";
+    + "/aliceVision_Samples/imageData/Exif_Test/100_7100.JPG";
 
 TEST(Matching, Exif_IO_easyexif_ReadData_invalidFile)
 {

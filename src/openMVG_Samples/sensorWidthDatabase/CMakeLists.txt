@@ -1,8 +1,8 @@
-add_executable(openMVG_main_ParseDatabase main_ParseDatabase.cpp)
+add_executable(aliceVision_main_ParseDatabase main_ParseDatabase.cpp)
 
-target_link_libraries(openMVG_main_ParseDatabase stlplus)
+target_link_libraries(aliceVision_main_ParseDatabase stlplus)
 
-set_property(TARGET openMVG_main_ParseDatabase
+set_property(TARGET aliceVision_main_ParseDatabase
   PROPERTY FOLDER AliceVision/Samples
 )
 

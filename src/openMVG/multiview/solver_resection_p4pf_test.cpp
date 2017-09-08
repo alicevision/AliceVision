@@ -1,15 +1,15 @@
 // This file is part of the AliceVision project and is made available under
 // the terms of the MPL2 license (see the COPYING.md file).
 
-#include "openMVG/multiview/solver_resection_kernel.hpp"
-#include "openMVG/multiview/solver_resection_p4pf.hpp"
-#include "openMVG/multiview/test_data_sets.hpp"
+#include "aliceVision/multiview/solver_resection_kernel.hpp"
+#include "aliceVision/multiview/solver_resection_p4pf.hpp"
+#include "aliceVision/multiview/test_data_sets.hpp"
 
 #include "testing/testing.h"
 
 #include <vector>
 
-using namespace openMVG;
+using namespace aliceVision;
 
 bool isEqual(const resection::p4fSolution first, const resection::p4fSolution second)
 {

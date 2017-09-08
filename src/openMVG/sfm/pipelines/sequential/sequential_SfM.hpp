@@ -3,11 +3,11 @@
 
 #pragma once
 
-#include "openMVG/sfm/sfm_data_io.hpp"
-#include "openMVG/sfm/pipelines/sfm_engine.hpp"
-#include "openMVG/features/FeaturesPerView.hpp"
-#include "openMVG/sfm/pipelines/sfm_matches_provider.hpp"
-#include "openMVG/tracks/tracks.hpp"
+#include "aliceVision/sfm/sfm_data_io.hpp"
+#include "aliceVision/sfm/pipelines/sfm_engine.hpp"
+#include "aliceVision/features/FeaturesPerView.hpp"
+#include "aliceVision/sfm/pipelines/sfm_matches_provider.hpp"
+#include "aliceVision/tracks/tracks.hpp"
 
 #include "third_party/htmlDoc/htmlDoc.hpp"
 #include "third_party/histogram/histogram.hpp"
@@ -18,7 +18,7 @@
   namespace pt = boost::property_tree;
 #endif
 
-namespace openMVG {
+namespace aliceVision {
 namespace sfm {
 
 /// Sequential SfM Pipeline Reconstruction Engine.
@@ -239,5 +239,5 @@ private:
 };
 
 } // namespace sfm
-} // namespace openMVG
+} // namespace aliceVision
 

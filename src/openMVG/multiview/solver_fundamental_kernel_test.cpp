@@ -1,11 +1,11 @@
 // This file is part of the AliceVision project and is made available under
 // the terms of the MPL2 license (see the COPYING.md file).
 
-#include "openMVG/multiview/solver_fundamental_kernel.hpp"
-#include "openMVG/multiview/projection.hpp"
+#include "aliceVision/multiview/solver_fundamental_kernel.hpp"
+#include "aliceVision/multiview/projection.hpp"
 #include "testing/testing.h"
 
-using namespace openMVG;
+using namespace aliceVision;
 using namespace std;
 
 // Check that sin(angle(a, b)) < tolerance.

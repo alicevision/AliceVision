@@ -1,11 +1,11 @@
 // This file is part of the AliceVision project and is made available under
 // the terms of the MPL2 license (see the COPYING.md file).
 
-#include "openMVG/sfm/pipelines/localization/SfM_Localizer_Single_3DTrackObservation_Database.hpp"
-#include "openMVG/matching/indMatch.hpp"
-#include "openMVG/matching/regions_matcher.hpp"
+#include "aliceVision/sfm/pipelines/localization/SfM_Localizer_Single_3DTrackObservation_Database.hpp"
+#include "aliceVision/matching/indMatch.hpp"
+#include "aliceVision/matching/regions_matcher.hpp"
 
-namespace openMVG {
+namespace aliceVision {
 namespace sfm {
 
   SfM_Localization_Single_3DTrackObservation_Database::
@@ -112,4 +112,4 @@ namespace sfm {
   }
 
 } // namespace sfm
-} // namespace openMVG
+} // namespace aliceVision

@@ -2,9 +2,9 @@
 // the terms of the MPL2 license (see the COPYING.md file).
 
 #include "SIFT_popSIFT_describer.hpp"
-#include <openMVG/system/Logger.hpp>
+#include <aliceVision/system/Logger.hpp>
 
-namespace openMVG {
+namespace aliceVision {
 namespace features {
 
 std::unique_ptr<PopSift> SIFT_popSIFT_ImageDescriber::_popSift = nullptr;
@@ -47,10 +47,10 @@ bool SIFT_popSIFT_ImageDescriber::Describe(const image::Image<unsigned char>& im
     }
   }
 
-  OPENMVG_LOG_TRACE("openMVG PopSIFT feature count : " << regionsCasted->RegionCount() << std::endl);
+  OPENMVG_LOG_TRACE("aliceVision PopSIFT feature count : " << regionsCasted->RegionCount() << std::endl);
 
   return true;
 }
 
 } // namespace features
-} // namespace openMVG
+} // namespace aliceVision

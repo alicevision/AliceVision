@@ -3,11 +3,11 @@
 
 #include "exif_IO.hpp"
 
-#include "openMVG/stl/hash.hpp"
+#include "aliceVision/stl/hash.hpp"
 
 #include <cstdlib>
 
-namespace openMVG {
+namespace aliceVision {
 namespace exif  {
 
 std::size_t computeUID(const Exif_IO& exifReader, const std::string& imageFilename)
@@ -50,4 +50,4 @@ std::size_t computeUID(const Exif_IO& exifReader, const std::string& imageFilena
 }
 
 } // namespace exif
-} // namespace openMVG
+} // namespace aliceVision

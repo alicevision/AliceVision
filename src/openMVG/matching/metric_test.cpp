@@ -2,12 +2,12 @@
 // the terms of the MPL2 license (see the COPYING.md file).
 
 #include "testing/testing.h"
-#include "openMVG/matching/metric.hpp"
+#include "aliceVision/matching/metric.hpp"
 #include <iostream>
 #include <string>
 using namespace std;
 
-using namespace openMVG;
+using namespace aliceVision;
 using namespace matching;
 
 template<typename Metric>

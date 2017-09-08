@@ -3,11 +3,11 @@
 
 #pragma once
 
-#include "openMVG/numeric/numeric.h"
+#include "aliceVision/numeric/numeric.h"
 
 /// Collection of function related to the classic Projection matrix used
 ///  in computer vision. P = K[R|t] with [t]=[-RC] Cf HZ
-namespace openMVG {
+namespace aliceVision {
 
 /// Compute P = K[R|t]
 void P_From_KRt(const Mat3 &K, const Mat3 &R, const Vec3 &t, Mat34 *P);
@@ -73,4 +73,4 @@ double reprojectionErrorRMSE(const Mat2X &x_image,
   const Mat3 &R,
   const Vec3 &t);
 
-} // namespace openMVG
+} // namespace aliceVision

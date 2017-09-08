@@ -36,7 +36,7 @@ endif()
 #Install rules
 install(
   DIRECTORY .
-  DESTINATION include/openMVG
+  DESTINATION include/aliceVision
   COMPONENT headers
   FILES_MATCHING PATTERN "*.hpp" PATTERN "*.h" PATTERN "*.tcc"
 )
@@ -48,4 +48,4 @@ set(global_files_headers
   version.hpp
   )
 
-add_custom_target(openMVG_global_headers_ide SOURCES ${global_files_headers})
+add_custom_target(aliceVision_global_headers_ide SOURCES ${global_files_headers})

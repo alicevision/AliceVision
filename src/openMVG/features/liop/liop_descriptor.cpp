@@ -1,12 +1,12 @@
 // This file is part of the AliceVision project and is made available under
 // the terms of the MPL2 license (see the COPYING.md file).
 
-#include <openMVG/features/liop/liop_descriptor.hpp>
+#include <aliceVision/features/liop/liop_descriptor.hpp>
 
 #include <float.h>
 #include <algorithm>
 
-namespace openMVG {
+namespace aliceVision {
 namespace features{
 namespace LIOP    {
 
@@ -403,4 +403,4 @@ void Liop_Descriptor_Extractor::GeneratePatternMap(
 
 } // namespace LIOP
 } // namespace features
-} // namespace openMVG
+} // namespace aliceVision

@@ -1,13 +1,13 @@
 // This file is part of the AliceVision project and is made available under
 // the terms of the MPL2 license (see the COPYING.md file).
 
-#include "openMVG/image/image.hpp"
+#include "aliceVision/image/image.hpp"
 #include "testing/testing.h"
 
 #include <iostream>
 using namespace std;
-using namespace openMVG;
-using namespace openMVG::image;
+using namespace aliceVision;
+using namespace aliceVision::image;
 
 TEST(Image, Basis)
 {

@@ -25,35 +25,35 @@ set(matching_files_sources
 
 set_source_files_properties(${matching_files_sources} PROPERTIES LANGUAGE CXX)
 
-add_library(openMVG_matching
+add_library(aliceVision_matching
   ${matching_files_headers}
   ${matching_files_sources}
 )
 
-set_target_properties(openMVG_matching
+set_target_properties(aliceVision_matching
   PROPERTIES SOVERSION ${OPENMVG_VERSION_MAJOR}
   VERSION "${OPENMVG_VERSION_MAJOR}.${OPENMVG_VERSION_MINOR}"
 )
 
-target_link_libraries(openMVG_matching
-  openMVG_features
+target_link_libraries(aliceVision_matching
+  aliceVision_features
   stlplus
   ${FLANN_LIBRARY}
   ${LOG_LIB}
 )
 
-set_property(TARGET openMVG_matching
+set_property(TARGET aliceVision_matching
   PROPERTY FOLDER AliceVision/AliceVision
 )
 
-install(TARGETS openMVG_matching
+install(TARGETS aliceVision_matching
   DESTINATION lib
-  EXPORT openMVG-targets
+  EXPORT aliceVision-targets
 )
 
-UNIT_TEST(openMVG matching          "openMVG_matching")
-UNIT_TEST(openMVG matching_filters  "openMVG_matching")
-UNIT_TEST(openMVG indMatch          "openMVG_matching")
-UNIT_TEST(openMVG metric            "openMVG_matching")
+UNIT_TEST(aliceVision matching          "aliceVision_matching")
+UNIT_TEST(aliceVision matching_filters  "aliceVision_matching")
+UNIT_TEST(aliceVision indMatch          "aliceVision_matching")
+UNIT_TEST(aliceVision metric            "aliceVision_matching")
 
 add_subdirectory(kvld)

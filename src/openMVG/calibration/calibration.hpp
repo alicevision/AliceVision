@@ -6,7 +6,7 @@
 #include <vector>
 #include <opencv2/opencv.hpp>
 
-namespace openMVG{
+namespace aliceVision{
 namespace calibration{
 
 /**
@@ -94,4 +94,4 @@ bool calibrationIterativeOptimization(const cv::Size& imageSize,
                                       std::vector<std::size_t>& rejectInputFrames);
 
 }//namespace calibration
-}//namespace openMVG
+}//namespace aliceVision

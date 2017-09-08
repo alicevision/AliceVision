@@ -12,7 +12,7 @@ using namespace Alembic::Abc;
 namespace AbcG = Alembic::AbcGeom;
 using namespace AbcG;
 
-namespace openMVG {
+namespace aliceVision {
 namespace sfm {
 
 template<class AbcArrayProperty, typename T>
@@ -76,8 +76,8 @@ inline ICompoundProperty getAbcUserProperties(ABCSCHEMA& schema)
 
 bool readPointCloud(IObject iObj, M44d mat, sfm::SfM_Data &sfmdata, sfm::ESfM_Data flags_part)
 {
-  using namespace openMVG::geometry;
-  using namespace openMVG::sfm;
+  using namespace aliceVision::geometry;
+  using namespace aliceVision::sfm;
 
   IPoints points(iObj, kWrapExisting);
   IPointsSchema& ms = points.getSchema();
@@ -196,9 +196,9 @@ bool readPointCloud(IObject iObj, M44d mat, sfm::SfM_Data &sfmdata, sfm::ESfM_Da
 
 bool readCamera(const ICamera& camera, const M44d& mat, sfm::SfM_Data &sfmData, sfm::ESfM_Data flags_part, const index_t sampleFrame = 0)
 {
-  using namespace openMVG::geometry;
-  using namespace openMVG::cameras;
-  using namespace openMVG::sfm;
+  using namespace aliceVision::geometry;
+  using namespace aliceVision::cameras;
+  using namespace aliceVision::sfm;
 
   ICameraSchema cs = camera.getSchema();
   CameraSample camSample;
@@ -379,9 +379,9 @@ bool readCamera(const ICamera& camera, const M44d& mat, sfm::SfM_Data &sfmData, 
 
 bool readXform(IXform& xform, M44d& mat, sfm::SfM_Data& sfmData, sfm::ESfM_Data flags_part)
 {
-  using namespace openMVG::geometry;
-  using namespace openMVG::cameras;
-  using namespace openMVG::sfm;
+  using namespace aliceVision::geometry;
+  using namespace aliceVision::cameras;
+  using namespace aliceVision::sfm;
 
   IXformSchema schema = xform.getSchema();
   XformSample xsample;
@@ -561,4 +561,4 @@ void AlembicImporter::populate(sfm::SfM_Data &sfmdata, sfm::ESfM_Data flags_part
 }
 
 } // namespace sfm
-} // namespace openMVG
+} // namespace aliceVision

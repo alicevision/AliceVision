@@ -4,10 +4,10 @@
 #ifndef OPENMVG_GEOMETRY_POSE3_H_
 #define OPENMVG_GEOMETRY_POSE3_H_
 
-#include "openMVG/multiview/projection.hpp"
+#include "aliceVision/multiview/projection.hpp"
 #include <cereal/cereal.hpp> // Serialization
 
-namespace openMVG {
+namespace aliceVision {
 namespace geometry {
 
 // Define a 3D Pose as a 3D transform: [R|C] t = -RC
@@ -122,6 +122,6 @@ inline Pose3 poseFromRT(const Mat3& R, const Vec3& t)
 }
 
 } // namespace geometry
-} // namespace openMVG
+} // namespace aliceVision
 
 #endif  // OPENMVG_GEOMETRY_POSE3_H_

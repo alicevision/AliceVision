@@ -1,20 +1,20 @@
 // This file is part of the AliceVision project and is made available under
 // the terms of the MPL2 license (see the COPYING.md file).
 
-#include "openMVG/multiview/translation_averaging_common.hpp"
-#include "openMVG/multiview/translation_averaging_solver.hpp"
-#include "openMVG/numeric/numeric.h"
-#include "openMVG/types.hpp"
-#include <openMVG/config.hpp>
-#include <openMVG/alicevision_omp.hpp>
-#include <openMVG/system/Logger.hpp>
+#include "aliceVision/multiview/translation_averaging_common.hpp"
+#include "aliceVision/multiview/translation_averaging_solver.hpp"
+#include "aliceVision/numeric/numeric.h"
+#include "aliceVision/types.hpp"
+#include <aliceVision/config.hpp>
+#include <aliceVision/alicevision_omp.hpp>
+#include <aliceVision/system/Logger.hpp>
 
 #include "ceres/ceres.h"
 #include "ceres/rotation.h"
 
 #include <vector>
 
-namespace openMVG {
+namespace aliceVision {
 
 // Main Cost functor for translation averaging:
 // measure the consistency (residual error) from the relative translations (constant) to the scales and global camera translations
@@ -82,7 +82,7 @@ struct SmallScaleError
 
 bool solve_translations_problem_softl1
 (
-  const std::vector<openMVG::relativeInfo > & vec_initial_estimates,
+  const std::vector<aliceVision::relativeInfo > & vec_initial_estimates,
   const bool b_translation_triplets,
   const int nb_poses,
   std::vector<Eigen::Vector3d> & translations,
@@ -116,7 +116,7 @@ bool solve_translations_problem_softl1
   // Relative rotations array
   std::vector<double> vec_relative_rotations(vec_initial_estimates.size()*3, 0.0);
   size_t cpt = 0;
-  for (const openMVG::relativeInfo & info : vec_initial_estimates)
+  for (const aliceVision::relativeInfo & info : vec_initial_estimates)
   {
     ceres::RotationMatrixToAngleAxis(
       (const double*)info.second.first.data(),
@@ -132,7 +132,7 @@ bool solve_translations_problem_softl1
   // A. Add cost functor from camera translation to the relative informations
   cpt = 0;
   IndexT scale_idx = 0;
-  for (const openMVG::relativeInfo & info : vec_initial_estimates)
+  for (const aliceVision::relativeInfo & info : vec_initial_estimates)
   {
     const Pair & ids = info.first;
     const IndexT I = ids.first;
@@ -212,4 +212,4 @@ bool solve_translations_problem_softl1
   return true;
 }
 
-} // namespace openMVG
+} // namespace aliceVision

@@ -4,13 +4,13 @@
 #ifndef OPENMVG_SFM_PLY_HELPER_H
 #define OPENMVG_SFM_PLY_HELPER_H
 
-#include "openMVG/numeric/numeric.h"
+#include "aliceVision/numeric/numeric.h"
 
 #include <fstream>
 #include <string>
 #include <vector>
 
-namespace openMVG{
+namespace aliceVision{
 namespace plyHelper{
 
 /// Export 3D point vector to PLY format
@@ -87,7 +87,7 @@ static bool exportToPly(const std::vector<Vec3> & vec_points,
 }
 
 } // namespace plyHelper
-} // namespace openMVG
+} // namespace aliceVision
 
 #endif // OPENMVG_SFM_PLY_HELPER_H
 

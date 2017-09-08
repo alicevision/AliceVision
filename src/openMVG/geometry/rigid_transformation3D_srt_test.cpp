@@ -3,7 +3,7 @@
 
 #include "rigid_transformation3D_srt.hpp"
 
-#include "openMVG/robust_estimation/robust_estimator_ACRansac.hpp"
+#include "aliceVision/robust_estimation/robust_estimator_ACRansac.hpp"
 
 #include "CppUnitLite/TestHarness.h"
 
@@ -11,8 +11,8 @@
 
 #include <iostream>
 
-using namespace openMVG;
-using namespace openMVG::geometry;
+using namespace aliceVision;
+using namespace aliceVision::geometry;
 using namespace std;
 
 TEST(SRT_precision, Experiment_ScaleOnly)

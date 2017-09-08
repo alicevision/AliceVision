@@ -8,7 +8,7 @@
 #include <string>
 #include <memory>
 
-namespace openMVG{
+namespace aliceVision{
 namespace dataio{
 
 class FeedProvider
@@ -100,5 +100,5 @@ private:
 };
 
 }//namespace dataio 
-}//namespace openMVG
+}//namespace aliceVision
 

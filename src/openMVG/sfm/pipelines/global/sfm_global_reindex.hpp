@@ -4,7 +4,7 @@
 #ifndef OPENMVG_SFM_GLOBAL_REINDEX_HPP
 #define OPENMVG_SFM_GLOBAL_REINDEX_HPP
 
-namespace openMVG {
+namespace aliceVision {
 namespace sfm{
 
 /// Association of Ids to a contiguous set of Ids
@@ -44,6 +44,6 @@ void reindex(
 }
 
 } // namespace sfm
-} // namespace openMVG
+} // namespace aliceVision
 
 #endif // OPENMVG_SFM_GLOBAL_REINDEX_HPP

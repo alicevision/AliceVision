@@ -1,17 +1,17 @@
 add_definitions(-DTHIS_SOURCE_DIR="${CMAKE_CURRENT_SOURCE_DIR}")
 
-add_executable(openMVG_sample_robustEssential robust_essential.cpp)
+add_executable(aliceVision_sample_robustEssential robust_essential.cpp)
 
-target_link_libraries(openMVG_sample_robustEssential
-  openMVG_image
-  openMVG_multiview
-  openMVG_system
-  openMVG_features
-  openMVG_matching
-  openMVG_sfm
+target_link_libraries(aliceVision_sample_robustEssential
+  aliceVision_image
+  aliceVision_multiview
+  aliceVision_system
+  aliceVision_features
+  aliceVision_matching
+  aliceVision_sfm
   vlsift
 )
 
-set_property(TARGET openMVG_sample_robustEssential
+set_property(TARGET aliceVision_sample_robustEssential
   PROPERTY FOLDER AliceVision/Samples
 )

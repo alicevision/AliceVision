@@ -1,22 +1,22 @@
 // This file is part of the AliceVision project and is made available under
 // the terms of the MPL2 license (see the COPYING.md file).
 
-#include "openMVG/sfm/sfm.hpp"
-#include "openMVG/sfm/pipelines/RegionsIO.hpp"
-#include "openMVG/system/timer.hpp"
-#include "openMVG/features/ImageDescriberCommon.hpp"
-#include "openMVG/features/regions_factory.hpp"
-#include "openMVG/features/svgVisualization.hpp"
-#include "openMVG/features/cctag/CCTAG_describer.hpp"
-#include "openMVG/matching/indMatch.hpp"
+#include "aliceVision/sfm/sfm.hpp"
+#include "aliceVision/sfm/pipelines/RegionsIO.hpp"
+#include "aliceVision/system/timer.hpp"
+#include "aliceVision/features/ImageDescriberCommon.hpp"
+#include "aliceVision/features/regions_factory.hpp"
+#include "aliceVision/features/svgVisualization.hpp"
+#include "aliceVision/features/cctag/CCTAG_describer.hpp"
+#include "aliceVision/matching/indMatch.hpp"
 
 #include "boost/filesystem.hpp"
 #include "third_party/cmdLine/cmdLine.h"
 #include "third_party/stlplus3/filesystemSimplified/file_system.hpp"
 
-using namespace openMVG;
-using namespace openMVG::sfm;
-using namespace openMVG::features;
+using namespace aliceVision;
+using namespace aliceVision::sfm;
+using namespace aliceVision::features;
 
 namespace bfs = boost::filesystem;
 
@@ -85,7 +85,7 @@ int main(int argc, char **argv)
     return EXIT_FAILURE;
   }
 
-  using namespace openMVG::features;
+  using namespace aliceVision::features;
   
   // Get imageDescriberMethodType
   EImageDescriberType describerMethodType = EImageDescriberType_stringToEnum(describerMethod);
@@ -249,7 +249,7 @@ int main(int argc, char **argv)
     }
   }
   
-  openMVG::system::Timer timer;
+  aliceVision::system::Timer timer;
 
   //------------------------------------------
   // Compute Structure from known camera poses

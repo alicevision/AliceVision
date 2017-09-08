@@ -6,11 +6,11 @@
 # usage : python tutorial_demo.py
 #
 
-# Indicate the openMVG binary directory
+# Indicate the aliceVision binary directory
 OPENMVG_SFM_BIN = "@OPENMVG_SOFTWARE_SFM_BUILD_DIR@"
 
-# Indicate the openMVG camera sensor width directory
-CAMERA_SENSOR_WIDTH_DIRECTORY = "@OPENMVG_SOFTWARE_SFM_SRC_DIR@" + "/../../openMVG/exif/sensor_width_database"
+# Indicate the aliceVision camera sensor width directory
+CAMERA_SENSOR_WIDTH_DIRECTORY = "@OPENMVG_SOFTWARE_SFM_SRC_DIR@" + "/../../aliceVision/exif/sensor_width_database"
 
 import commands
 import os
@@ -24,7 +24,7 @@ def get_parent_dir(directory):
 input_eval_dir = os.path.dirname(os.path.abspath(__file__)) + "/ImageDataset_SceauxCastle"
 # Checkout an AliceVision image dataset with Git
 if not os.path.exists(input_eval_dir):
-  pImageDataCheckout = subprocess.Popen([ "git", "clone", "https://github.com/openMVG/ImageDataset_SceauxCastle.git" ])
+  pImageDataCheckout = subprocess.Popen([ "git", "clone", "https://github.com/aliceVision/ImageDataset_SceauxCastle.git" ])
   pImageDataCheckout.wait()
 
 output_eval_dir = os.path.join(get_parent_dir(input_eval_dir), "tutorial_out")
@@ -45,48 +45,48 @@ if not os.path.exists(matches_dir):
   os.mkdir(matches_dir)
 
 print ("1. Intrinsics analysis")
-pIntrisics = subprocess.Popen( [os.path.join(OPENMVG_SFM_BIN, "openMVG_main_SfMInit_ImageListing"),  "-i", input_dir, "-o", matches_dir, "-d", camera_file_params, "-c", "3"] )
+pIntrisics = subprocess.Popen( [os.path.join(OPENMVG_SFM_BIN, "aliceVision_main_SfMInit_ImageListing"),  "-i", input_dir, "-o", matches_dir, "-d", camera_file_params, "-c", "3"] )
 pIntrisics.wait()
 
 print ("2. Compute features")
-pFeatures = subprocess.Popen( [os.path.join(OPENMVG_SFM_BIN, "openMVG_main_ComputeFeatures"),  "-i", matches_dir+"/sfm_data.json", "-o", matches_dir, "-m", "SIFT", "-f" , "1"] )
+pFeatures = subprocess.Popen( [os.path.join(OPENMVG_SFM_BIN, "aliceVision_main_ComputeFeatures"),  "-i", matches_dir+"/sfm_data.json", "-o", matches_dir, "-m", "SIFT", "-f" , "1"] )
 pFeatures.wait()
 
 print ("2. Compute matches")
-pMatches = subprocess.Popen( [os.path.join(OPENMVG_SFM_BIN, "openMVG_main_ComputeMatches"),  "-i", matches_dir+"/sfm_data.json", "-o", matches_dir, "-f", "1"] )
+pMatches = subprocess.Popen( [os.path.join(OPENMVG_SFM_BIN, "aliceVision_main_ComputeMatches"),  "-i", matches_dir+"/sfm_data.json", "-o", matches_dir, "-f", "1"] )
 pMatches.wait()
 
 reconstruction_dir = os.path.join(output_dir,"reconstruction_sequential")
 print ("3. Do Incremental/Sequential reconstruction") #set manually the initial pair to avoid the prompt question
-pRecons = subprocess.Popen( [os.path.join(OPENMVG_SFM_BIN, "openMVG_main_IncrementalSfM"),  "-i", matches_dir+"/sfm_data.json", "-m", matches_dir, "-o", reconstruction_dir, "-a", "100_7104.JPG", "-b", "100_7105.JPG"] )
+pRecons = subprocess.Popen( [os.path.join(OPENMVG_SFM_BIN, "aliceVision_main_IncrementalSfM"),  "-i", matches_dir+"/sfm_data.json", "-m", matches_dir, "-o", reconstruction_dir, "-a", "100_7104.JPG", "-b", "100_7105.JPG"] )
 pRecons.wait()
 
 print ("5. Colorize Structure")
-pRecons = subprocess.Popen( [os.path.join(OPENMVG_SFM_BIN, "openMVG_main_ComputeSfM_DataColor"),  "-i", reconstruction_dir+"/sfm_data.bin", "-o", os.path.join(reconstruction_dir,"colorized.ply")] )
+pRecons = subprocess.Popen( [os.path.join(OPENMVG_SFM_BIN, "aliceVision_main_ComputeSfM_DataColor"),  "-i", reconstruction_dir+"/sfm_data.bin", "-o", os.path.join(reconstruction_dir,"colorized.ply")] )
 pRecons.wait()
 
 print ("4. Structure from Known Poses (robust triangulation)")
-pRecons = subprocess.Popen( [os.path.join(OPENMVG_SFM_BIN, "openMVG_main_ComputeStructureFromKnownPoses"),  "-i", reconstruction_dir+"/sfm_data.bin", "-m", matches_dir, "-o", os.path.join(reconstruction_dir,"robust.ply")] )
+pRecons = subprocess.Popen( [os.path.join(OPENMVG_SFM_BIN, "aliceVision_main_ComputeStructureFromKnownPoses"),  "-i", reconstruction_dir+"/sfm_data.bin", "-m", matches_dir, "-o", os.path.join(reconstruction_dir,"robust.ply")] )
 pRecons.wait()
 
 # Reconstruction for the global SfM pipeline
 # - global SfM pipeline use matches filtered by the essential matrices
 # - here we reuse photometric matches and perform only the essential matrix filering
 print ("2. Compute matches (for the global SfM Pipeline)")
-pMatches = subprocess.Popen( [os.path.join(OPENMVG_SFM_BIN, "openMVG_main_ComputeMatches"),  "-i", matches_dir+"/sfm_data.json", "-o", matches_dir, "-r", "0.8", "-g", "e"] )
+pMatches = subprocess.Popen( [os.path.join(OPENMVG_SFM_BIN, "aliceVision_main_ComputeMatches"),  "-i", matches_dir+"/sfm_data.json", "-o", matches_dir, "-r", "0.8", "-g", "e"] )
 pMatches.wait()
 
 reconstruction_dir = os.path.join(output_dir,"reconstruction_global")
 print ("3. Do Global reconstruction")
-pRecons = subprocess.Popen( [os.path.join(OPENMVG_SFM_BIN, "openMVG_main_GlobalSfM"),  "-i", matches_dir+"/sfm_data.json", "-m", matches_dir, "-o", reconstruction_dir] )
+pRecons = subprocess.Popen( [os.path.join(OPENMVG_SFM_BIN, "aliceVision_main_GlobalSfM"),  "-i", matches_dir+"/sfm_data.json", "-m", matches_dir, "-o", reconstruction_dir] )
 pRecons.wait()
 
 print ("5. Colorize Structure")
-pRecons = subprocess.Popen( [os.path.join(OPENMVG_SFM_BIN, "openMVG_main_ComputeSfM_DataColor"),  "-i", reconstruction_dir+"/sfm_data.bin", "-o", os.path.join(reconstruction_dir,"colorized.ply")] )
+pRecons = subprocess.Popen( [os.path.join(OPENMVG_SFM_BIN, "aliceVision_main_ComputeSfM_DataColor"),  "-i", reconstruction_dir+"/sfm_data.bin", "-o", os.path.join(reconstruction_dir,"colorized.ply")] )
 pRecons.wait()
 
 print ("4. Structure from Known Poses (robust triangulation)")
-pRecons = subprocess.Popen( [os.path.join(OPENMVG_SFM_BIN, "openMVG_main_ComputeStructureFromKnownPoses"),  "-i", reconstruction_dir+"/sfm_data.bin", "-m", matches_dir, "-o", os.path.join(reconstruction_dir,"robust.ply")] )
+pRecons = subprocess.Popen( [os.path.join(OPENMVG_SFM_BIN, "aliceVision_main_ComputeStructureFromKnownPoses"),  "-i", reconstruction_dir+"/sfm_data.bin", "-m", matches_dir, "-o", os.path.join(reconstruction_dir,"robust.ply")] )
 pRecons.wait()
 
 

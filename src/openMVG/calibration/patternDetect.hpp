@@ -3,14 +3,14 @@
 
 #pragma once
 
-#include <openMVG/config.hpp>
+#include <aliceVision/config.hpp>
 
 #include <vector>
 #include <iostream>
 
 #include <opencv2/opencv.hpp>
 
-namespace openMVG{
+namespace aliceVision{
 namespace calibration{
 
 enum Pattern
@@ -78,6 +78,6 @@ void computeObjectPoints(const cv::Size& boardSize, Pattern pattern, const float
                          std::vector<std::vector<cv::Point3f> >& objectPoints);
 
 }//namespace calibration
-}//namespace openMVG
+}//namespace aliceVision
 
 

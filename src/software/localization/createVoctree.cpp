@@ -1,12 +1,12 @@
 // This file is part of the AliceVision project and is made available under
 // the terms of the MPL2 license (see the COPYING.md file).
 
-#include <openMVG/voctree/tree_builder.hpp>
-#include <openMVG/voctree/database.hpp>
-#include <openMVG/voctree/vocabulary_tree.hpp>
-#include <openMVG/voctree/descriptor_loader.hpp>
-#include <openMVG/features/descriptor.hpp>
-#include <openMVG/system/Logger.hpp>
+#include <aliceVision/voctree/tree_builder.hpp>
+#include <aliceVision/voctree/database.hpp>
+#include <aliceVision/voctree/vocabulary_tree.hpp>
+#include <aliceVision/voctree/descriptor_loader.hpp>
+#include <aliceVision/features/descriptor.hpp>
+#include <aliceVision/system/Logger.hpp>
 
 #include <Eigen/Core>
 
@@ -24,8 +24,8 @@ using namespace std;
 //using namespace boost::accumulators;
 namespace po = boost::program_options;
 
-typedef openMVG::features::Descriptor<float, DIMENSION> DescriptorFloat;
-typedef openMVG::features::Descriptor<unsigned char, DIMENSION> DescriptorUChar;
+typedef aliceVision::features::Descriptor<float, DIMENSION> DescriptorFloat;
+typedef aliceVision::features::Descriptor<unsigned char, DIMENSION> DescriptorUChar;
 
 /*
  * This program is used to load the sift descriptors from a list of files and create a vocabulary tree
@@ -103,7 +103,7 @@ int main(int argc, char** argv)
   std::vector<size_t> descRead;
   OPENMVG_COUT("Reading descriptors from " << keylist);
   auto detect_start = std::chrono::steady_clock::now();
-  size_t numTotDescriptors = openMVG::voctree::readDescFromFiles<DescriptorFloat, DescriptorUChar>(keylist, descriptors, descRead);
+  size_t numTotDescriptors = aliceVision::voctree::readDescFromFiles<DescriptorFloat, DescriptorUChar>(keylist, descriptors, descRead);
   auto detect_end = std::chrono::steady_clock::now();
   auto detect_elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(detect_end - detect_start);
   if(descriptors.size() == 0)
@@ -116,7 +116,7 @@ int main(int argc, char** argv)
   OPENMVG_COUT("Reading took " << detect_elapsed.count() << " sec");
 
   // Create tree
-  openMVG::voctree::TreeBuilder<DescriptorFloat> builder(DescriptorFloat(0));
+  aliceVision::voctree::TreeBuilder<DescriptorFloat> builder(DescriptorFloat(0));
   builder.setVerbose(verbosity);
   builder.kmeans().setRestarts(restart);
   OPENMVG_COUT("Building a tree of L=" << LEVELS << " levels with a branching factor of k=" << K);
@@ -129,9 +129,9 @@ int main(int argc, char** argv)
   OPENMVG_COUT("Saving vocabulary tree as " << treeName);
   builder.tree().save(treeName);
 
-  openMVG::voctree::SparseHistogramPerImage allSparseHistograms;
+  aliceVision::voctree::SparseHistogramPerImage allSparseHistograms;
   // temporary vector used to save all the visual word for each image before adding them to documents
-  std::vector<openMVG::voctree::Word> imgVisualWords;
+  std::vector<aliceVision::voctree::Word> imgVisualWords;
   OPENMVG_COUT("Quantizing the features");
   size_t offset = 0; ///< this is used to align to the features of a given image in 'feature'
   detect_start = std::chrono::steady_clock::now();
@@ -151,8 +151,8 @@ int main(int argc, char** argv)
       //	store the visual word associated to the feature in the temporary list
       imgVisualWords[j] = builder.tree().quantize(descriptors[ j + offset ]);
     }
-    openMVG::voctree::SparseHistogram histo;
-    openMVG::voctree::computeSparseHistogram(imgVisualWords, histo);
+    aliceVision::voctree::SparseHistogram histo;
+    aliceVision::voctree::computeSparseHistogram(imgVisualWords, histo);
     // add the vector to the documents
     allSparseHistograms[i] = histo;
 
@@ -166,7 +166,7 @@ int main(int argc, char** argv)
 
   OPENMVG_COUT("Creating the database...");
   // Add each object (document) to the database
-  openMVG::voctree::Database db(builder.tree().words());
+  aliceVision::voctree::Database db(builder.tree().words());
   OPENMVG_COUT("\tfound " << allSparseHistograms.size() << " documents");
   for(const auto &doc : allSparseHistograms)
   {
@@ -188,7 +188,7 @@ int main(int argc, char** argv)
   if(sanityCheck)
   {
     // Now query each document (sanity check)
-    std::vector<openMVG::voctree::DocMatch> matches;
+    std::vector<aliceVision::voctree::DocMatch> matches;
     size_t wrong = 0; // count the wrong matches
     double recval = 0.0;
     OPENMVG_COUT("Sanity check: querying the database with the same documents");

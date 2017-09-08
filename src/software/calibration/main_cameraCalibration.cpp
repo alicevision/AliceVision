@@ -1,17 +1,17 @@
 // This file is part of the AliceVision project and is made available under
 // the terms of the MPL2 license (see the COPYING.md file).
 
-#include <openMVG/dataio/FeedProvider.hpp>
-#include <openMVG/cameras/Camera_undistort_image.hpp>
-#include <openMVG/cameras/Camera_Pinhole_Radial.hpp>
-#include <openMVG/image/image_io.hpp>
-#include <openMVG/calibration/patternDetect.hpp>
-#include <openMVG/calibration/bestImages.hpp>
-#include <openMVG/calibration/calibration.hpp>
-#include <openMVG/calibration/exportData.hpp>
-#include <openMVG/system/timer.hpp>
-#include <openMVG/system/Logger.hpp>
-#include <openMVG/config.hpp>
+#include <aliceVision/dataio/FeedProvider.hpp>
+#include <aliceVision/cameras/Camera_undistort_image.hpp>
+#include <aliceVision/cameras/Camera_Pinhole_Radial.hpp>
+#include <aliceVision/image/image_io.hpp>
+#include <aliceVision/calibration/patternDetect.hpp>
+#include <aliceVision/calibration/bestImages.hpp>
+#include <aliceVision/calibration/calibration.hpp>
+#include <aliceVision/calibration/exportData.hpp>
+#include <aliceVision/system/timer.hpp>
+#include <aliceVision/system/Logger.hpp>
+#include <aliceVision/config.hpp>
 
 #include <boost/program_options.hpp>
 #include <boost/filesystem.hpp>
@@ -47,7 +47,7 @@ int main(int argc, char** argv)
   std::string debugSelectedImgFolder;
   std::string debugRejectedImgFolder;
   std::vector<std::size_t> checkerboardSize;
-  openMVG::calibration::Pattern patternType = openMVG::calibration::Pattern::CHESSBOARD;
+  aliceVision::calibration::Pattern patternType = aliceVision::calibration::Pattern::CHESSBOARD;
   std::size_t maxNbFrames = 0;
   std::size_t maxCalibFrames = 100;
   std::size_t calibGridSize = 10;
@@ -67,7 +67,7 @@ int main(int argc, char** argv)
            " - video file\n")
           ("output,o", po::value<std::string>(&outputFilename)->required(),
            "Output filename for intrinsic [and extrinsic] parameters.\n")
-          ("pattern,p", po::value<openMVG::calibration::Pattern>(&patternType)->default_value(patternType),
+          ("pattern,p", po::value<aliceVision::calibration::Pattern>(&patternType)->default_value(patternType),
            "Type of pattern: 'CHESSBOARD', 'CIRCLES', 'ASYMMETRIC_CIRCLES'"
             #if OPENMVG_IS_DEFINED(OPENMVG_HAVE_CCTAG)
                       " or 'ASYMMETRIC_CCTAG'"
@@ -152,14 +152,14 @@ int main(int argc, char** argv)
   std::clock_t start = std::clock();
 
   // create the feedProvider
-  openMVG::dataio::FeedProvider feed(inputPath.string());
+  aliceVision::dataio::FeedProvider feed(inputPath.string());
   if (!feed.isInit())
   {
     OPENMVG_CERR("ERROR while initializing the FeedProvider!");
     return EXIT_FAILURE;
   }
-  openMVG::image::Image<unsigned char> imageGrey;
-  openMVG::cameras::Pinhole_Intrinsic_Radial_K3 queryIntrinsics;
+  aliceVision::image::Image<unsigned char> imageGrey;
+  aliceVision::cameras::Pinhole_Intrinsic_Radial_K3 queryIntrinsics;
   bool hasIntrinsics = false;
   std::string currentImgName;
   std::size_t iInputFrame = 0;
@@ -177,8 +177,8 @@ int main(int argc, char** argv)
   }
   OPENMVG_COUT("Input video length is " << feed.nbFrames() << ".");
 
-  openMVG::system::Timer durationAlgo;
-  openMVG::system::Timer duration;
+  aliceVision::system::Timer durationAlgo;
+  aliceVision::system::Timer duration;
   
   std::size_t currentFrame = 0;
   while (feed.readImage(imageGrey, queryIntrinsics, currentImgName, hasIntrinsics))
@@ -208,7 +208,7 @@ int main(int argc, char** argv)
     OPENMVG_CERR("[" << currentFrame << "/" << nbFrames << "] (" << iInputFrame << "/" << nbFramesToProcess << ")");
 
     // Find the chosen pattern in images
-    const bool found = openMVG::calibration::findPattern(patternType, viewGray, boardSize, detectedId, pointbuf);
+    const bool found = aliceVision::calibration::findPattern(patternType, viewGray, boardSize, detectedId, pointbuf);
     
     if (found)
     {
@@ -223,7 +223,7 @@ int main(int argc, char** argv)
   }
 
   
-  OPENMVG_CERR("find points duration: " << openMVG::system::prettyTime(duration.elapsedMs()));
+  OPENMVG_CERR("find points duration: " << aliceVision::system::prettyTime(duration.elapsedMs()));
   OPENMVG_CERR("Grid detected in " << imagePoints.size() << " images on " << iInputFrame << " input images.");
 
   if (imagePoints.empty())
@@ -235,7 +235,7 @@ int main(int argc, char** argv)
   std::vector<std::vector<cv::Point2f> > calibImagePoints;
 
   // Select best images based on repartition in images of the calibration landmarks
-  openMVG::calibration::selectBestImages(
+  aliceVision::calibration::selectBestImages(
       imagePoints, imageSize, maxCalibFrames, calibGridSize,
       calibImageScore, calibInputFrames, calibImagePoints,
       remainingImagesIndexes);
@@ -246,7 +246,7 @@ int main(int argc, char** argv)
   {
     std::vector<cv::Point3f> templateObjectPoints;
     // Generate the object points coordinates
-    openMVG::calibration::calcChessboardCorners(templateObjectPoints, boardSize, squareSize, patternType);
+    aliceVision::calibration::calcChessboardCorners(templateObjectPoints, boardSize, squareSize, patternType);
     // Assign the corners to all items
     for(std::size_t frame: calibInputFrames)
     {
@@ -272,14 +272,14 @@ int main(int argc, char** argv)
   
   duration.reset();
   // Refinement loop of the calibration
-  openMVG::calibration::calibrationIterativeOptimization(imageSize, aspectRatio,
+  aliceVision::calibration::calibrationIterativeOptimization(imageSize, aspectRatio,
                         cvCalibFlags, cameraMatrix, distCoeffs, rvecs, tvecs, reprojErrs,
                         totalAvgErr, maxTotalAvgErr, minInputFrames, calibInputFrames,
                         calibImagePoints, calibObjectPoints, calibImageScore, rejectInputFrames);
 
-  OPENMVG_COUT("Calibration duration: " << openMVG::system::prettyTime(duration.elapsedMs()));
+  OPENMVG_COUT("Calibration duration: " << aliceVision::system::prettyTime(duration.elapsedMs()));
 
-  openMVG::calibration::saveCameraParams(outputFilename, imageSize,
+  aliceVision::calibration::saveCameraParams(outputFilename, imageSize,
                                          boardSize, squareSize, aspectRatio,
                                          cvCalibFlags, cameraMatrix, distCoeffs,
                                          writeExtrinsics ? rvecs : std::vector<cv::Mat>(),
@@ -288,11 +288,11 @@ int main(int argc, char** argv)
                                          writePoints ? calibImagePoints : std::vector<std::vector<cv::Point2f> >(),
                                          totalAvgErr);
 
-  openMVG::calibration::exportDebug(debugSelectedImgFolder, debugRejectedImgFolder,
+  aliceVision::calibration::exportDebug(debugSelectedImgFolder, debugRejectedImgFolder,
                                     feed, calibInputFrames, rejectInputFrames, remainingImagesIndexes,
                                     cameraMatrix, distCoeffs, imageSize);
 
-  OPENMVG_COUT("Total duration: " << openMVG::system::prettyTime(durationAlgo.elapsedMs()));
+  OPENMVG_COUT("Total duration: " << aliceVision::system::prettyTime(durationAlgo.elapsedMs()));
 
   return EXIT_SUCCESS;
 }

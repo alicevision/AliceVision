@@ -14,31 +14,31 @@ set(calibration_files_sources
   exportData.cpp
 )
 
-add_library(openMVG_calibration
+add_library(aliceVision_calibration
   ${calibration_files_headers}
   ${calibration_files_sources}
 )
 
-target_link_libraries(openMVG_calibration
+target_link_libraries(aliceVision_calibration
   PUBLIC ${OpenCV_LIBS}
-  PRIVATE openMVG_image
-          openMVG_system
-          openMVG_dataio
+  PRIVATE aliceVision_image
+          aliceVision_system
+          aliceVision_dataio
           ${BOOST_LIBRARIES}
           ${LOG_LIB}
 )
 
 if(OPENMVG_HAVE_CCTAG)
-  target_link_libraries(openMVG_calibration
+  target_link_libraries(aliceVision_calibration
     PRIVATE CCTag::CCTag
   )
 endif()
 
-set_property(TARGET openMVG_calibration
+set_property(TARGET aliceVision_calibration
   PROPERTY FOLDER AliceVision
 )
 
-install(TARGETS openMVG_calibration
+install(TARGETS aliceVision_calibration
   DESTINATION lib
-  EXPORT openMVG-targets
+  EXPORT aliceVision-targets
 )

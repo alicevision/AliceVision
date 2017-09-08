@@ -3,7 +3,7 @@
 
 #pragma once
 
-namespace openMVG {
+namespace aliceVision {
 
 
 namespace features {
@@ -58,4 +58,4 @@ struct GeometricFilterMatrix
 
 
 } // namespace matching_image_collection
-} // namespace openMVG
+} // namespace aliceVision

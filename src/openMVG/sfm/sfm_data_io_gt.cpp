@@ -1,19 +1,19 @@
 // This file is part of the AliceVision project and is made available under
 // the terms of the MPL2 license (see the COPYING.md file).
 
-#include "openMVG/sfm/sfm_data_io_gt.hpp"
+#include "aliceVision/sfm/sfm_data_io_gt.hpp"
 
-#include <openMVG/exif/exif_IO_EasyExif.hpp>
+#include <aliceVision/exif/exif_IO_EasyExif.hpp>
 
 #include <third_party/stlplus3/filesystemSimplified/file_system.hpp>
 
 #include <fstream>
 #include <vector>
 
-namespace openMVG {
+namespace aliceVision {
 namespace sfm {
 
-bool read_openMVG_Camera(const std::string & camName, cameras::Pinhole_Intrinsic & cam, geometry::Pose3 & pose)
+bool read_aliceVision_Camera(const std::string & camName, cameras::Pinhole_Intrinsic & cam, geometry::Pose3 & pose)
 {
   std::vector<double> val;
   if (stlplus::extension_part(camName) == "bin")
@@ -133,8 +133,8 @@ bool readGt(const std::string & sRootPath, SfM_Data & sfm_data, bool useUID)
   std::string suffix;
   if (!stlplus::folder_wildcard(sGTPath, "*.bin", true, true).empty())
   {
-    OPENMVG_LOG_TRACE("Using openMVG Camera");
-    fcnReadCamPtr = &read_openMVG_Camera;
+    OPENMVG_LOG_TRACE("Using aliceVision Camera");
+    fcnReadCamPtr = &read_aliceVision_Camera;
     suffix = "bin";
   }
   else if (!stlplus::folder_wildcard(sGTPath, "*.camera", true, true).empty())
@@ -198,4 +198,4 @@ bool readGt(const std::string & sRootPath, SfM_Data & sfm_data, bool useUID)
 }
 
 } // namespace sfm
-} // namespace openMVG
+} // namespace aliceVision

@@ -3,17 +3,17 @@
 
 #pragma once
 
-#include <openMVG/types.hpp>
-#include <openMVG/sfm/sfm_data.hpp>
+#include <aliceVision/types.hpp>
+#include <aliceVision/sfm/sfm_data.hpp>
 
-#include <openMVG/features/image_describer.hpp>
-#include <openMVG/features/ImageDescriberCommon.hpp>
-#include <openMVG/features/RegionsPerView.hpp>
-#include <openMVG/features/FeaturesPerView.hpp>
+#include <aliceVision/features/image_describer.hpp>
+#include <aliceVision/features/ImageDescriberCommon.hpp>
+#include <aliceVision/features/RegionsPerView.hpp>
+#include <aliceVision/features/FeaturesPerView.hpp>
 
 #include <memory>
 
-namespace openMVG {
+namespace aliceVision {
 namespace sfm {
 
 /**
@@ -59,6 +59,6 @@ bool loadFeaturesPerView(features::FeaturesPerView& featuresPerView,
 
 
 } // namespace sfm
-} // namespace openMVG
+} // namespace aliceVision
 
 

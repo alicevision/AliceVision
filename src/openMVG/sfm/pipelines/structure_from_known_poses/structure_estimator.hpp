@@ -3,12 +3,12 @@
 
 #pragma once
 
-#include "openMVG/sfm/sfm_data.hpp"
+#include "aliceVision/sfm/sfm_data.hpp"
 
-#include "openMVG/features/RegionsPerView.hpp"
-#include "openMVG/matching/indMatch.hpp"
+#include "aliceVision/features/RegionsPerView.hpp"
+#include "aliceVision/matching/indMatch.hpp"
 
-namespace openMVG {
+namespace aliceVision {
 namespace sfm {
 
 class SfM_Data_Structure_Estimation_From_Known_Poses
@@ -49,5 +49,5 @@ private:
 };
 
 } // namespace sfm
-} // namespace openMVG
+} // namespace aliceVision
 

@@ -4,16 +4,16 @@
 #ifndef OPENMVG_FEATURES_IMAGE_DESCRIBER_HPP
 #define OPENMVG_FEATURES_IMAGE_DESCRIBER_HPP
 
-#include "openMVG/numeric/numeric.h"
-#include "openMVG/features/ImageDescriberCommon.hpp"
-#include "openMVG/features/regions.hpp"
-#include "openMVG/image/image_container.hpp"
+#include "aliceVision/numeric/numeric.h"
+#include "aliceVision/features/ImageDescriberCommon.hpp"
+#include "aliceVision/features/regions.hpp"
+#include "aliceVision/image/image_container.hpp"
 #include <memory>
 
 #include <string>
 #include <iostream>
 
-namespace openMVG {
+namespace aliceVision {
 namespace features {
 
 /**
@@ -137,6 +137,6 @@ std::unique_ptr<Image_describer> createImageDescriber(EImageDescriberType imageD
 
 
 } // namespace features
-} // namespace openMVG
+} // namespace aliceVision
 
 #endif // OPENMVG_FEATURES_IMAGE_DESCRIBER_HPP

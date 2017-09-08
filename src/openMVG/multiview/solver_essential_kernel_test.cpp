@@ -1,14 +1,14 @@
 // This file is part of the AliceVision project and is made available under
 // the terms of the MPL2 license (see the COPYING.md file).
 
-#include "openMVG/multiview/essential.hpp"
-#include "openMVG/multiview/solver_essential_kernel.hpp"
-#include "openMVG/multiview/projection.hpp"
+#include "aliceVision/multiview/essential.hpp"
+#include "aliceVision/multiview/solver_essential_kernel.hpp"
+#include "aliceVision/multiview/projection.hpp"
 #include "testing/testing.h"
 
-#include "openMVG/multiview/test_data_sets.hpp"
+#include "aliceVision/multiview/test_data_sets.hpp"
 
-using namespace openMVG;
+using namespace aliceVision;
 
 /// Check that the E matrix fit the Essential Matrix properties
 /// Determinant is 0

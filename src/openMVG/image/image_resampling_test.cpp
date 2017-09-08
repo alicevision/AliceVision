@@ -1,15 +1,15 @@
 // This file is part of the AliceVision project and is made available under
 // the terms of the MPL2 license (see the COPYING.md file).
 
-#include <openMVG/system/Logger.hpp>
-#include <openMVG/image/image.hpp>
+#include <aliceVision/system/Logger.hpp>
+#include <aliceVision/image/image.hpp>
 #include "testing/testing.h"
 
 #include <string>
 #include <sstream>
 
-using namespace openMVG;
-using namespace openMVG::image;
+using namespace aliceVision;
+using namespace aliceVision::image;
 
 TEST(Ressampling,SampleSamePosition)
 {

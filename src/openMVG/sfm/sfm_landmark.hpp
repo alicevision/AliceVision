@@ -4,13 +4,13 @@
 #ifndef OPENMVG_SFM_LANDMARK_HPP
 #define OPENMVG_SFM_LANDMARK_HPP
 
-#include "openMVG/features/ImageDescriberCommon.hpp"
-#include "openMVG/image/pixel_types.hpp"
-#include "openMVG/numeric/numeric.h"
-#include "openMVG/stl/flatMap.hpp"
+#include "aliceVision/features/ImageDescriberCommon.hpp"
+#include "aliceVision/image/pixel_types.hpp"
+#include "aliceVision/numeric/numeric.h"
+#include "aliceVision/stl/flatMap.hpp"
 #include <cereal/cereal.hpp> // Serialization
 
-namespace openMVG {
+namespace aliceVision {
 namespace sfm {
 
 /**
@@ -108,18 +108,18 @@ struct Landmark
     {
       // compatibility with older versions
       ar(cereal::make_nvp("rgb", color ));
-      rgb = openMVG::image::RGBColor( color[0], color[1], color[2] );
+      rgb = aliceVision::image::RGBColor( color[0], color[1], color[2] );
     }
     catch( cereal::Exception e )
     {
       // if it fails just use a default color
-      rgb = openMVG::image::WHITE;
+      rgb = aliceVision::image::WHITE;
     }
     ar(cereal::make_nvp("observations", observations));
   }
 };
 
 } // namespace sfm
-} // namespace openMVG
+} // namespace aliceVision
 
 #endif // OPENMVG_SFM_LANDMARK_HPP

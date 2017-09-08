@@ -3,18 +3,18 @@
 
 #pragma once
 
-#include "openMVG/matching/matcher_type.hpp"
-#include "openMVG/matching/indMatch.hpp"
-#include "openMVG/matching/indMatchDecoratorXY.hpp"
-#include "openMVG/matching/matching_filters.hpp"
+#include "aliceVision/matching/matcher_type.hpp"
+#include "aliceVision/matching/indMatch.hpp"
+#include "aliceVision/matching/indMatchDecoratorXY.hpp"
+#include "aliceVision/matching/matching_filters.hpp"
 
-#include "openMVG/numeric/numeric.h"
-#include "openMVG/features/regions.hpp"
-#include "openMVG/features/RegionsPerView.hpp"
+#include "aliceVision/numeric/numeric.h"
+#include "aliceVision/features/regions.hpp"
+#include "aliceVision/features/RegionsPerView.hpp"
 
 #include <vector>
 
-namespace openMVG {
+namespace aliceVision {
 namespace matching {
 
 /**
@@ -271,4 +271,4 @@ private:
 std::unique_ptr<IRegionsMatcher> createRegionsMatcher(const features::Regions & regions, matching::EMatcherType matcherType);
 
 }  // namespace matching
-}  // namespace openMVG
+}  // namespace aliceVision

@@ -52,62 +52,62 @@ set(multiview_files_test_data
   test_data_sets.cpp
 )
 
-add_library(openMVG_multiview
+add_library(aliceVision_multiview
   ${multiview_files_headers}
   ${multiview_files_sources}
 )
 
-set_property(TARGET openMVG_multiview
+set_property(TARGET aliceVision_multiview
   PROPERTY FOLDER AliceVision
 )
 
-install(TARGETS openMVG_multiview
+install(TARGETS aliceVision_multiview
   DESTINATION lib
-  EXPORT openMVG-targets
+  EXPORT aliceVision-targets
 )
 
-target_link_libraries(openMVG_multiview
+target_link_libraries(aliceVision_multiview
   ${LEMON_LIBRARY}
   ${LOG_LIB}
 )
 
 # Make multiview library integrate numeric library
-add_library(openMVG_multiview_test_data
+add_library(aliceVision_multiview_test_data
   ${multiview_files_test_data}
 )
 
-set_property(TARGET openMVG_multiview_test_data
+set_property(TARGET aliceVision_multiview_test_data
   PROPERTY FOLDER AliceVision/AliceVision
 )
 
-target_link_libraries(openMVG_multiview
-  openMVG_numeric
+target_link_libraries(aliceVision_multiview
+  aliceVision_numeric
   ${CERES_LIBRARIES}
 )
 
-set_target_properties(openMVG_multiview
+set_target_properties(aliceVision_multiview
   PROPERTIES SOVERSION ${OPENMVG_VERSION_MAJOR}
   VERSION "${OPENMVG_VERSION_MAJOR}.${OPENMVG_VERSION_MINOR}"
 )
 
 
 # Triangulation routines
-UNIT_TEST(openMVG triangulation       "openMVG_multiview;openMVG_multiview_test_data")
-UNIT_TEST(openMVG triangulation_nview "openMVG_multiview;openMVG_multiview_test_data")
+UNIT_TEST(aliceVision triangulation       "aliceVision_multiview;aliceVision_multiview_test_data")
+UNIT_TEST(aliceVision triangulation_nview "aliceVision_multiview;aliceVision_multiview_test_data")
 
 # Solvers
-UNIT_TEST(openMVG solver_affine "openMVG_multiview")
-UNIT_TEST(openMVG solver_fundamental_kernel "openMVG_multiview")
-UNIT_TEST(openMVG solver_essential_kernel "openMVG_multiview;openMVG_multiview_test_data")
-UNIT_TEST(openMVG solver_homography_kernel "openMVG_multiview;openMVG_multiview_test_data")
-UNIT_TEST(openMVG solver_essential_five_point "openMVG_multiview;openMVG_multiview_test_data")
-UNIT_TEST(openMVG solver_resection_kernel "openMVG_multiview;openMVG_multiview_test_data")
-UNIT_TEST(openMVG solver_resection_p4pf "openMVG_multiview;openMVG_multiview_test_data")
-UNIT_TEST(openMVG solver_resection_p5pfr "openMVG_multiview;openMVG_multiview_test_data")
-UNIT_TEST(openMVG solver_resection_LORansac "openMVG_multiview;openMVG_features;openMVG_sfm;openMVG_multiview_test_data;${CERES_LIBRARIES}")
-UNIT_TEST(openMVG solver_translation_knownRotation_kernel "openMVG_multiview;openMVG_multiview_test_data")
+UNIT_TEST(aliceVision solver_affine "aliceVision_multiview")
+UNIT_TEST(aliceVision solver_fundamental_kernel "aliceVision_multiview")
+UNIT_TEST(aliceVision solver_essential_kernel "aliceVision_multiview;aliceVision_multiview_test_data")
+UNIT_TEST(aliceVision solver_homography_kernel "aliceVision_multiview;aliceVision_multiview_test_data")
+UNIT_TEST(aliceVision solver_essential_five_point "aliceVision_multiview;aliceVision_multiview_test_data")
+UNIT_TEST(aliceVision solver_resection_kernel "aliceVision_multiview;aliceVision_multiview_test_data")
+UNIT_TEST(aliceVision solver_resection_p4pf "aliceVision_multiview;aliceVision_multiview_test_data")
+UNIT_TEST(aliceVision solver_resection_p5pfr "aliceVision_multiview;aliceVision_multiview_test_data")
+UNIT_TEST(aliceVision solver_resection_LORansac "aliceVision_multiview;aliceVision_features;aliceVision_sfm;aliceVision_multiview_test_data;${CERES_LIBRARIES}")
+UNIT_TEST(aliceVision solver_translation_knownRotation_kernel "aliceVision_multiview;aliceVision_multiview_test_data")
 
 # Averaging routines
-UNIT_TEST(openMVG rotation_averaging    "openMVG_multiview;openMVG_multiview_test_data;${CERES_LIBRARIES}")
-UNIT_TEST(openMVG translation_averaging "openMVG_multiview;openMVG_multiview_test_data;${CERES_LIBRARIES}")
+UNIT_TEST(aliceVision rotation_averaging    "aliceVision_multiview;aliceVision_multiview_test_data;${CERES_LIBRARIES}")
+UNIT_TEST(aliceVision translation_averaging "aliceVision_multiview;aliceVision_multiview_test_data;${CERES_LIBRARIES}")
 

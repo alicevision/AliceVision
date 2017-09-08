@@ -4,18 +4,18 @@
 #ifndef OPENMVG_MATCHING_METRIC_H
 #define OPENMVG_MATCHING_METRIC_H
 
-#include "openMVG/matching/metric_hamming.hpp"
-#include "openMVG/numeric/accumulator_trait.hpp"
-#include <openMVG/config.hpp>
+#include "aliceVision/matching/metric_hamming.hpp"
+#include "aliceVision/numeric/accumulator_trait.hpp"
+#include <aliceVision/config.hpp>
 
 #if OPENMVG_IS_DEFINED(OPENMVG_HAVE_SSE)
-#include <openMVG/system/Logger.hpp>
+#include <aliceVision/system/Logger.hpp>
 #include <xmmintrin.h>
 #endif
 
 #include <cstddef>
 
-namespace openMVG {
+namespace aliceVision {
 namespace matching {
 
 /// Squared Euclidean distance functor.
@@ -134,6 +134,6 @@ struct L2_Vectorized<float>
 #endif // OPENMVG_HAVE_SSE
 
 }  // namespace matching
-}  // namespace openMVG
+}  // namespace aliceVision
 
 #endif // OPENMVG_MATCHING_METRIC_H

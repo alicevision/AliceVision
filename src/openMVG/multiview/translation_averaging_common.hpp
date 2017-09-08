@@ -4,13 +4,13 @@
 #ifndef OPENMVG_MULTIVIEW_TRANSLATION_AVERAGING_COMMON_H_
 #define OPENMVG_MULTIVIEW_TRANSLATION_AVERAGING_COMMON_H_
 
-#include "openMVG/types.hpp"
-#include "openMVG/numeric/numeric.h"
+#include "aliceVision/types.hpp"
+#include "aliceVision/numeric/numeric.h"
 
 #include <utility>
 #include <vector>
 
-namespace openMVG {
+namespace aliceVision {
 
 /// Relative information [Rij|tij] for a pair
 typedef std::pair< Pair, std::pair<Mat3,Vec3> > relativeInfo;
@@ -44,6 +44,6 @@ static std::set<IndexT> getIndexT(const RelativeInfo_Vec & vec_relative)
 }
 
 
-} // namespace openMVG
+} // namespace aliceVision
 
 #endif //OPENMVG_MULTIVIEW_TRANSLATION_AVERAGING_COMMON_H_

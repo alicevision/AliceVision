@@ -1,9 +1,9 @@
 // This file is part of the AliceVision project and is made available under
 // the terms of the MPL2 license (see the COPYING.md file).
 
-#include "openMVG/multiview/translation_averaging_common.hpp"
-#include "openMVG/multiview/translation_averaging_solver.hpp"
-#include "openMVG/multiview/translation_averaging_test.hpp"
+#include "aliceVision/multiview/translation_averaging_common.hpp"
+#include "aliceVision/multiview/translation_averaging_solver.hpp"
+#include "aliceVision/multiview/translation_averaging_test.hpp"
 #include "testing/testing.h"
 
 #include <fstream>
@@ -11,7 +11,7 @@
 #include <utility>
 #include <vector>
 
-using namespace openMVG;
+using namespace aliceVision;
 using namespace std;
 
 TEST(translation_averaging, globalTi_from_tijs_Triplets_softL1_Ceres) {
@@ -24,7 +24,7 @@ TEST(translation_averaging, globalTi_from_tijs_Triplets_softL1_Ceres) {
 
   const bool bCardiod = true;
   const bool bRelative_Translation_PerTriplet = true;
-  std::vector<openMVG::relativeInfo > vec_relative_estimates;
+  std::vector<aliceVision::relativeInfo > vec_relative_estimates;
 
   const NViewDataSet d =
     Setup_RelativeTranslations_AndNviewDataset
@@ -73,7 +73,7 @@ TEST(translation_averaging, globalTi_from_tijs_softl1_Ceres) {
 
   const bool bCardiod = true;
   const bool bRelative_Translation_PerTriplet = false;
-  std::vector<openMVG::relativeInfo > vec_relative_estimates;
+  std::vector<aliceVision::relativeInfo > vec_relative_estimates;
 
   const NViewDataSet d =
     Setup_RelativeTranslations_AndNviewDataset
@@ -122,7 +122,7 @@ TEST(translation_averaging, globalTi_from_tijs_Triplets_l2_chordal) {
 
   const bool bCardiod = true;
   const bool bRelative_Translation_PerTriplet = true;
-  std::vector<openMVG::relativeInfo > vec_relative_estimates;
+  std::vector<aliceVision::relativeInfo > vec_relative_estimates;
 
   const NViewDataSet d =
     Setup_RelativeTranslations_AndNviewDataset
@@ -146,7 +146,7 @@ TEST(translation_averaging, globalTi_from_tijs_Triplets_l2_chordal) {
 
   for(int i=0; i < vec_relative_estimates.size(); ++i)
   {
-    const openMVG::relativeInfo & rel = vec_relative_estimates[i];
+    const aliceVision::relativeInfo & rel = vec_relative_estimates[i];
     vec_edges.push_back(rel.first.first);
     vec_edges.push_back(rel.first.second);
 

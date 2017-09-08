@@ -2,9 +2,9 @@
 // the terms of the MPL2 license (see the COPYING.md file).
 
 #include "LocalizationResult.hpp"
-#include <openMVG/cameras/Camera_Pinhole_Radial.hpp>
-#include <openMVG/numeric/numeric.h>
-#include <openMVG/sfm/pipelines/localization/SfM_Localizer.hpp>
+#include <aliceVision/cameras/Camera_Pinhole_Radial.hpp>
+#include <aliceVision/numeric/numeric.h>
+#include <aliceVision/sfm/pipelines/localization/SfM_Localizer.hpp>
 #include "testing/testing.h"
 
 #include <third_party/stlplus3/filesystemSimplified/file_system.hpp>
@@ -13,7 +13,7 @@
 #include <chrono>
 #include <random>
 
-using namespace openMVG;
+using namespace aliceVision;
 
 sfm::Image_Localizer_Match_Data generateRandomMatch_Data(std::size_t numPts)
 {

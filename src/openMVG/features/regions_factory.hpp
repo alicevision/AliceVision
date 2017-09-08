@@ -4,10 +4,10 @@
 #ifndef OPENMVG_FEATURES_REGIONS_FACTORY_HPP
 #define OPENMVG_FEATURES_REGIONS_FACTORY_HPP
 
-#include "openMVG/features/feature.hpp"
-#include "openMVG/features/regions.hpp"
+#include "aliceVision/features/feature.hpp"
+#include "aliceVision/features/regions.hpp"
 
-namespace openMVG {
+namespace aliceVision {
 namespace features {
 
 /// Define the classic SIFT Keypoint
@@ -25,7 +25,7 @@ typedef Scalar_Regions<SIOPointFeature,unsigned char,144> AKAZE_Liop_Regions;
 typedef Binary_Regions<SIOPointFeature,64> AKAZE_Binary_Regions;
 
 } // namespace features
-} // namespace openMVG
+} // namespace aliceVision
 
 //--
 // Register region type for serialization
@@ -33,10 +33,10 @@ typedef Binary_Regions<SIOPointFeature,64> AKAZE_Binary_Regions;
 #include <cereal/cereal.hpp>
 #include <cereal/types/polymorphic.hpp>
 #include <cereal/archives/json.hpp>
-CEREAL_REGISTER_TYPE_WITH_NAME(openMVG::features::SIFT_Regions, "SIFT_Regions");
-CEREAL_REGISTER_TYPE_WITH_NAME(openMVG::features::SIFT_Float_Regions, "SIFT_Float_Regions");
-CEREAL_REGISTER_TYPE_WITH_NAME(openMVG::features::AKAZE_Float_Regions, "AKAZE_Float_Regions");
-CEREAL_REGISTER_TYPE_WITH_NAME(openMVG::features::AKAZE_Liop_Regions, "AKAZE_Liop_Regions");
-CEREAL_REGISTER_TYPE_WITH_NAME(openMVG::features::AKAZE_Binary_Regions, "AKAZE_Binary_Regions");
+CEREAL_REGISTER_TYPE_WITH_NAME(aliceVision::features::SIFT_Regions, "SIFT_Regions");
+CEREAL_REGISTER_TYPE_WITH_NAME(aliceVision::features::SIFT_Float_Regions, "SIFT_Float_Regions");
+CEREAL_REGISTER_TYPE_WITH_NAME(aliceVision::features::AKAZE_Float_Regions, "AKAZE_Float_Regions");
+CEREAL_REGISTER_TYPE_WITH_NAME(aliceVision::features::AKAZE_Liop_Regions, "AKAZE_Liop_Regions");
+CEREAL_REGISTER_TYPE_WITH_NAME(aliceVision::features::AKAZE_Binary_Regions, "AKAZE_Binary_Regions");
 
 #endif // OPENMVG_FEATURES_REGIONS_FACTORY_HPP

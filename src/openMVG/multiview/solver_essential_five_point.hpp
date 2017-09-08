@@ -4,10 +4,10 @@
 #ifndef OPENMVG_MULTIVIEW_SOLVER_ESSENTIAL_FIVE_POINT_H_
 #define OPENMVG_MULTIVIEW_SOLVER_ESSENTIAL_FIVE_POINT_H_
 
-#include "openMVG/numeric/numeric.h"
+#include "aliceVision/numeric/numeric.h"
 #include <vector>
 
-namespace openMVG {
+namespace aliceVision {
   using namespace std;
 
 /** Computes the relative pose of two calibrated cameras from 5 correspondences.
@@ -67,7 +67,7 @@ enum {
   coef_1
 };
 
-} // namespace openMVG
+} // namespace aliceVision
 
 #endif  // OPENMVG_MULTIVIEW_SOLVER_ESSENTIAL_FIVE_POINT_H_
 

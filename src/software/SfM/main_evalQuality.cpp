@@ -1,8 +1,8 @@
 // This file is part of the AliceVision project and is made available under
 // the terms of the MPL2 license (see the COPYING.md file).
 
-#include "openMVG/sfm/sfm.hpp"
-#include <openMVG/config.hpp>
+#include "aliceVision/sfm/sfm.hpp"
+#include <aliceVision/config.hpp>
 
 #include "software/SfM/tools_precisionEvaluationToGt.hpp"
 #include "software/SfM/SfMPlyHelper.hpp"
@@ -14,8 +14,8 @@
 #include <cstdlib>
 #include <iostream>
 
-using namespace openMVG;
-using namespace openMVG::sfm;
+using namespace aliceVision;
+using namespace aliceVision::sfm;
 
 int main(int argc, char **argv)
 {
@@ -46,7 +46,7 @@ int main(int argc, char **argv)
       << " a reconstructed scene or localized camera, or the path to a directory\n"
       << " containing the 2 other directories, \"images\" containing the images of\n"
       << " the scene, and \"gt_dense_cameras\" containing the corresponding .camera files\n"
-      << "[-c|--computed] path (openMVG sfm_data.json file)\n"
+      << "[-c|--computed] path (aliceVision sfm_data.json file)\n"
       << "[-o|--outdir] path (where statistics will be saved)\n"
       << std::endl;
 
@@ -123,7 +123,7 @@ int main(int argc, char **argv)
   plyHelper::exportToPly(vec_C, string(stlplus::folder_append_separator(sOutDirectory) + "camComputed.ply").c_str());
 
   // Evaluation
-  htmlDocument::htmlDocumentStream _htmlDocStream("openMVG Quality evaluation.");
+  htmlDocument::htmlDocumentStream _htmlDocStream("aliceVision Quality evaluation.");
   EvaluteToGT(vec_camPosGT, vec_C, vec_camRotGT, vec_camRot, sOutDirectory, &_htmlDocStream);
 
   ofstream htmlFileStream( string(stlplus::folder_append_separator(sOutDirectory) +

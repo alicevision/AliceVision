@@ -3,7 +3,7 @@
 
 #pragma once
 
-#include <openMVG/types.hpp>
+#include <aliceVision/types.hpp>
 
 #include <third_party/stlplus3/filesystemSimplified/file_system.hpp>
 
@@ -12,7 +12,7 @@
 #include <string>
 #include <utility>
 
-namespace openMVG {
+namespace aliceVision {
 namespace sfm {
 
 /**
@@ -310,4 +310,4 @@ private:
 };
 
 } // namespace sfm
-} // namespace openMVG
+} // namespace aliceVision

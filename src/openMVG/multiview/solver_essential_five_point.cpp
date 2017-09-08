@@ -1,10 +1,10 @@
 // This file is part of the AliceVision project and is made available under
 // the terms of the MPL2 license (see the COPYING.md file).
 
-#include "openMVG/multiview/solver_essential_five_point.hpp"
-#include "openMVG/multiview/solver_fundamental_kernel.hpp"
+#include "aliceVision/multiview/solver_essential_five_point.hpp"
+#include "aliceVision/multiview/solver_fundamental_kernel.hpp"
 #include <iostream>
-namespace openMVG {
+namespace aliceVision {
 
 Mat FivePointsNullspaceBasis(const Mat2X &x1, const Mat2X &x2) {
   Eigen::Matrix<double,9, 9> A;
@@ -185,5 +185,5 @@ void FivePointsRelativePose(const Mat2X &x1,
   }
 }
 
-} // namespace openMVG
+} // namespace aliceVision
 

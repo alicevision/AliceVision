@@ -3,15 +3,15 @@
 
 #include <cstdlib>
 
-#include "openMVG/sfm/sfm.hpp"
-#include "openMVG/system/timer.hpp"
-#include "openMVG/matching_image_collection/Pair_Builder.hpp"
+#include "aliceVision/sfm/sfm.hpp"
+#include "aliceVision/system/timer.hpp"
+#include "aliceVision/matching_image_collection/Pair_Builder.hpp"
 
 #include "third_party/cmdLine/cmdLine.h"
 #include "third_party/stlplus3/filesystemSimplified/file_system.hpp"
 
-using namespace openMVG;
-using namespace openMVG::sfm;
+using namespace aliceVision;
+using namespace aliceVision::sfm;
 
 /// Build a list of pair that share visibility content from the SfM_Data structure
 Pair_Set BuildPairsFromStructureObservations(const SfM_Data & sfm_data)
@@ -101,7 +101,7 @@ int main(int argc, char **argv)
     return EXIT_FAILURE;
   }
 
-  openMVG::system::Timer timer;
+  aliceVision::system::Timer timer;
 
   const Pair_Set pairs = BuildPairsFromFrustumsIntersections(sfm_data, z_near, z_far, stlplus::folder_part(sOutFile));
   /*const Pair_Set pairs = BuildPairsFromStructureObservations(sfm_data); */

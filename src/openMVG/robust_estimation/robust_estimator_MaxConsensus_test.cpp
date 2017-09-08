@@ -1,16 +1,16 @@
 // This file is part of the AliceVision project and is made available under
 // the terms of the MPL2 license (see the COPYING.md file).
 
-#include "openMVG/robust_estimation/robust_estimator_lineKernel_test.hpp"
-#include "openMVG/robust_estimation/robust_estimator_MaxConsensus.hpp"
-#include "openMVG/robust_estimation/score_evaluator.hpp"
+#include "aliceVision/robust_estimation/robust_estimator_lineKernel_test.hpp"
+#include "aliceVision/robust_estimation/robust_estimator_MaxConsensus.hpp"
+#include "aliceVision/robust_estimation/score_evaluator.hpp"
 
-#include "openMVG/numeric/numeric.h"
+#include "aliceVision/numeric/numeric.h"
 
 #include "testing/testing.h"
 
-using namespace openMVG;
-using namespace openMVG::robust;
+using namespace aliceVision;
+using namespace aliceVision::robust;
 
 // Test without outlier
 TEST(MaxConsensusLineFitter, OutlierFree) {

@@ -2,11 +2,11 @@
 // the terms of the MPL2 license (see the COPYING.md file).
 
 #include "CppUnitLite/TestHarness.h"
-#include "openMVG/numeric/numeric.h"
-#include "openMVG/numeric/poly.h"
+#include "aliceVision/numeric/numeric.h"
+#include "aliceVision/numeric/poly.h"
 #include "testing/testing.h"
 
-using namespace openMVG;
+using namespace aliceVision;
 
 // Find the polynomial coefficients of x in the equation
 //

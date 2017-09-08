@@ -2,8 +2,8 @@
 // the terms of the MPL2 license (see the COPYING.md file).
 
 #include "rigResection.hpp"
-#include <openMVG/cameras/Camera_Pinhole_Radial.hpp>
-#include <openMVG/geometry/pose3.hpp>
+#include <aliceVision/cameras/Camera_Pinhole_Radial.hpp>
+#include <aliceVision/geometry/pose3.hpp>
 
 #include "testing/testing.h"
 #include "optimization.hpp"
@@ -14,7 +14,7 @@
 #include <random>
 #include <random>
 
-using namespace openMVG;
+using namespace aliceVision;
 
 Mat3 generateRotation(double x, double y, double z)
 {

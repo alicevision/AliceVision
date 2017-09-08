@@ -3,10 +3,10 @@
 
 #pragma once
 
-#include <openMVG/matching/indMatch.hpp>
-#include <openMVG/features/FeaturesPerView.hpp>
+#include <aliceVision/matching/indMatch.hpp>
+#include <aliceVision/features/FeaturesPerView.hpp>
 
-namespace openMVG {
+namespace aliceVision {
 namespace matching_image_collection {
 
 // TODO: remove PointFeature to avoid this hack
@@ -202,5 +202,5 @@ void copyInlierMatches(
   }
 }
 
-} // namespace openMVG
+} // namespace aliceVision
 } //namespace matching_image_collection

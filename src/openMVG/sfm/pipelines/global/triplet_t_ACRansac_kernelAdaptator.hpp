@@ -4,16 +4,16 @@
 #ifndef OPENMVG_GLOBAL_SFM_ENGINE_TRIPLET_T_ESTIMATOR_H
 #define OPENMVG_GLOBAL_SFM_ENGINE_TRIPLET_T_ESTIMATOR_H
 
-#include "openMVG/numeric/numeric.h"
-#include "openMVG/multiview/conditioning.hpp"
+#include "aliceVision/numeric/numeric.h"
+#include "aliceVision/multiview/conditioning.hpp"
 
-#include "openMVG/linearProgramming/linearProgramming.hpp"
-#include "openMVG/robust_estimation/robust_estimator_ACRansac.hpp"
+#include "aliceVision/linearProgramming/linearProgramming.hpp"
+#include "aliceVision/robust_estimation/robust_estimator_ACRansac.hpp"
 
-namespace openMVG{
+namespace aliceVision{
 namespace sfm{
 
-using namespace openMVG::trifocal::kernel;
+using namespace aliceVision::trifocal::kernel;
 
 /// AContrario Kernel to solve a translation triplet & structure problem
 template <typename SolverArg,
@@ -96,6 +96,6 @@ private:
 };
 
 } // namespace sfm
-} // namespace openMVG
+} // namespace aliceVision
 
 #endif // OPENMVG_GLOBAL_SFM_ENGINE_TRIPLET_T_ESTIMATOR_H

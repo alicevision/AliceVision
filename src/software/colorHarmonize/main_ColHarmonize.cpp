@@ -5,12 +5,12 @@
 
 #include "third_party/cmdLine/cmdLine.h"
 #include "third_party/stlplus3/filesystemSimplified/file_system.hpp"
-#include "openMVG/system/timer.hpp"
+#include "aliceVision/system/timer.hpp"
 
 #include <cstdlib>
 #include <memory>
 
-using namespace openMVG;
+using namespace aliceVision;
 
 int main( int argc, char **argv )
 {
@@ -91,7 +91,7 @@ int main( int argc, char **argv )
   // Harmonization process
   //---------------------------------------
 
-  openMVG::system::Timer timer;
+  aliceVision::system::Timer timer;
 
   ColorHarmonizationEngineGlobal colorHarmonizeEngine(sSfM_Data_Filename,
     sMatchesDir,

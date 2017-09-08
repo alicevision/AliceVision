@@ -1,22 +1,22 @@
 // This file is part of the AliceVision project and is made available under
 // the terms of the MPL2 license (see the COPYING.md file).
 
-#include <openMVG/sfm/sfm_data_io.hpp>
-#include <openMVG/sfm/pipelines/RegionsIO.hpp>
-#include <openMVG/voctree/database.hpp>
-#include <openMVG/voctree/databaseIO.hpp>
-#include <openMVG/voctree/vocabulary_tree.hpp>
-#include <openMVG/voctree/descriptor_loader.hpp>
-#include <openMVG/matching/indMatch.hpp>
-#include <openMVG/system/Logger.hpp>
-#include <openMVG/types.hpp>
-#include <openMVG/voctree/databaseIO.hpp>
-#include <openMVG/sfm/sfm_data.hpp>
-#include <openMVG/sfm/sfm_data_io.hpp>
-#include <openMVG/sfm/pipelines/RegionsIO.hpp>
-#include <openMVG/sfm/pipelines/sfm_engine.hpp>
-#include <openMVG/features/FeaturesPerView.hpp>
-#include <openMVG/features/RegionsPerView.hpp>
+#include <aliceVision/sfm/sfm_data_io.hpp>
+#include <aliceVision/sfm/pipelines/RegionsIO.hpp>
+#include <aliceVision/voctree/database.hpp>
+#include <aliceVision/voctree/databaseIO.hpp>
+#include <aliceVision/voctree/vocabulary_tree.hpp>
+#include <aliceVision/voctree/descriptor_loader.hpp>
+#include <aliceVision/matching/indMatch.hpp>
+#include <aliceVision/system/Logger.hpp>
+#include <aliceVision/types.hpp>
+#include <aliceVision/voctree/databaseIO.hpp>
+#include <aliceVision/sfm/sfm_data.hpp>
+#include <aliceVision/sfm/sfm_data_io.hpp>
+#include <aliceVision/sfm/pipelines/RegionsIO.hpp>
+#include <aliceVision/sfm/pipelines/sfm_engine.hpp>
+#include <aliceVision/features/FeaturesPerView.hpp>
+#include <aliceVision/features/RegionsPerView.hpp>
 
 #include <Eigen/Core>
 
@@ -39,10 +39,10 @@ using namespace boost::accumulators;
 namespace bpo = boost::program_options;
 namespace bfs = boost::filesystem;
 
-typedef openMVG::features::Descriptor<float, DIMENSION> DescriptorFloat;
-typedef openMVG::features::Descriptor<unsigned char, DIMENSION> DescriptorUChar;
+typedef aliceVision::features::Descriptor<float, DIMENSION> DescriptorFloat;
+typedef aliceVision::features::Descriptor<unsigned char, DIMENSION> DescriptorUChar;
 
-std::ostream& operator<<(std::ostream& os, const openMVG::voctree::DocMatches &matches)
+std::ostream& operator<<(std::ostream& os, const aliceVision::voctree::DocMatches &matches)
 {
   os << "[ ";
   for(const auto &e : matches)
@@ -53,10 +53,10 @@ std::ostream& operator<<(std::ostream& os, const openMVG::voctree::DocMatches &m
   return os;
 }
 
-std::ostream& operator<<(std::ostream& os, const openMVG::voctree::Document &doc)
+std::ostream& operator<<(std::ostream& os, const aliceVision::voctree::Document &doc)
 {
   os << "[ ";
-  for(const openMVG::voctree::Word &w : doc)
+  for(const aliceVision::voctree::Word &w : doc)
   {
     os << w << ", ";
   }
@@ -71,7 +71,7 @@ std::string myToString(std::size_t i, std::size_t zeroPadding)
   return ss.str();
 }
 
-bool saveSparseHistogramPerImage(const std::string &filename, const openMVG::voctree::SparseHistogramPerImage &docs)
+bool saveSparseHistogramPerImage(const std::string &filename, const aliceVision::voctree::SparseHistogramPerImage &docs)
 {
   std::ofstream fileout(filename);
   if(!fileout.is_open())
@@ -137,8 +137,8 @@ int main(int argc, char** argv)
   std::string distance;
   int Nmax = 0;
 
-  openMVG::sfm::SfM_Data sfmdata;
-  openMVG::sfm::SfM_Data *sfmdataQuery;
+  aliceVision::sfm::SfM_Data sfmdata;
+  aliceVision::sfm::SfM_Data *sfmdataQuery;
 
   bpo::options_description desc(programDescription);
   desc.add_options()
@@ -226,7 +226,7 @@ int main(int argc, char** argv)
   //************************************************
 
   OPENMVG_COUT("Loading vocabulary tree\n");
-  openMVG::voctree::VocabularyTree<DescriptorFloat> tree(treeName);
+  aliceVision::voctree::VocabularyTree<DescriptorFloat> tree(treeName);
   OPENMVG_COUT("tree loaded with\n\t" 
           << tree.levels() << " levels\n\t" 
           << tree.splits() << " branching factor");
@@ -238,7 +238,7 @@ int main(int argc, char** argv)
 
   OPENMVG_COUT("Creating the database...");
   // Add each object (document) to the database
-  openMVG::voctree::Database db(tree.words());
+  aliceVision::voctree::Database db(tree.words());
 
   if(withWeights)
   {
@@ -257,7 +257,7 @@ int main(int argc, char** argv)
 
   OPENMVG_COUT("Reading descriptors from " << keylist);
   auto detect_start = std::chrono::steady_clock::now();
-  std::size_t numTotFeatures = openMVG::voctree::populateDatabase<DescriptorUChar>(keylist, tree, db, Nmax);
+  std::size_t numTotFeatures = aliceVision::voctree::populateDatabase<DescriptorUChar>(keylist, tree, db, Nmax);
   auto detect_end = std::chrono::steady_clock::now();
   auto detect_elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(detect_end - detect_start);
 
@@ -288,7 +288,7 @@ int main(int argc, char** argv)
   // Query documents or sanity check
   //************************************************
 
-  std::map<std::size_t, openMVG::voctree::DocMatches> allDocMatches;
+  std::map<std::size_t, aliceVision::voctree::DocMatches> allDocMatches;
   std::size_t wrong = 0;
   if(numImageQuery == 0)
   {
@@ -301,7 +301,7 @@ int main(int argc, char** argv)
     fileout.open(outfile, ofstream::out);
   }
 
-  std::map<std::size_t, openMVG::voctree::SparseHistogram> histograms;
+  std::map<std::size_t, aliceVision::voctree::SparseHistogram> histograms;
 
   // if the query list is not provided
   if(!withQuery)
@@ -314,13 +314,13 @@ int main(int argc, char** argv)
   {
     // otherwise query the database with the provided query list
     OPENMVG_COUT("Querying the database with the documents in " << queryList);
-    openMVG::voctree::queryDatabase<DescriptorUChar>(queryList, tree, db, numImageQuery, allDocMatches, histograms, distance, Nmax);
+    aliceVision::voctree::queryDatabase<DescriptorUChar>(queryList, tree, db, numImageQuery, allDocMatches, histograms, distance, Nmax);
   }
 
   if(withOutDir)
   {
     // load the json for the dataset used to build the database
-    if(openMVG::sfm::Load(sfmdata, keylist, openMVG::sfm::ESfM_Data::VIEWS))
+    if(aliceVision::sfm::Load(sfmdata, keylist, aliceVision::sfm::ESfM_Data::VIEWS))
     {
       OPENMVG_COUT("SfM data loaded from " << keylist << " containing: ");
       OPENMVG_COUT("\tnumber of views      : " << sfmdata.GetViews().size());
@@ -333,8 +333,8 @@ int main(int argc, char** argv)
     // load the json for the dataset used to query the database
     if(withQuery)
     {
-      sfmdataQuery = new openMVG::sfm::SfM_Data();
-      if(openMVG::sfm::Load(*sfmdataQuery, queryList, openMVG::sfm::ESfM_Data::VIEWS))
+      sfmdataQuery = new aliceVision::sfm::SfM_Data();
+      if(aliceVision::sfm::Load(*sfmdataQuery, queryList, aliceVision::sfm::ESfM_Data::VIEWS))
       {
         OPENMVG_COUT("SfM data loaded from " << queryList << " containing: ");
         OPENMVG_COUT("\tnumber of views      : " << sfmdataQuery->GetViews().size());
@@ -360,14 +360,14 @@ int main(int argc, char** argv)
 
   }
 
-  openMVG::sfm::SfM_Data sfmData;
-  if (!openMVG::sfm::Load(sfmData, queryList, openMVG::sfm::ESfM_Data(openMVG::sfm::VIEWS|openMVG::sfm::INTRINSICS))) {
+  aliceVision::sfm::SfM_Data sfmData;
+  if (!aliceVision::sfm::Load(sfmData, queryList, aliceVision::sfm::ESfM_Data(aliceVision::sfm::VIEWS|aliceVision::sfm::INTRINSICS))) {
     std::cerr << std::endl
       << "The input SfM_Data file \""<< queryList << "\" cannot be read." << std::endl;
     return EXIT_FAILURE;
   }
 
-  using namespace openMVG::features;
+  using namespace aliceVision::features;
   std::string matchDir = queryList.substr(0, queryList.find_last_of("/\\"));;
   const std::string sImage_describer = stlplus::create_filespec(matchDir, "image_describer", "json");
   std::unique_ptr<Regions> regions_type = Init_region_type_from_file(sImage_describer);
@@ -389,18 +389,18 @@ int main(int argc, char** argv)
   }
   
   
-  openMVG::features::RegionsPerView regionsPerView;
-  if(!openMVG::sfm::loadRegionsPerView(regionsPerView, sfmData, matchDir, {describerType}))
+  aliceVision::features::RegionsPerView regionsPerView;
+  if(!aliceVision::sfm::loadRegionsPerView(regionsPerView, sfmData, matchDir, {describerType}))
   {
     OPENMVG_CERR("Invalid regions." << std::endl);
     return EXIT_FAILURE;
   }
   
-  openMVG::matching::PairwiseSimpleMatches allMatches;
+  aliceVision::matching::PairwiseSimpleMatches allMatches;
 
   for(auto docMatches: allDocMatches)
   {
-    const openMVG::voctree::DocMatches& matches = docMatches.second;
+    const aliceVision::voctree::DocMatches& matches = docMatches.second;
     bfs::path dirname;
     OPENMVG_COUT("Camera: " << docMatches.first);
     OPENMVG_COUT("query document " << docMatches.first << " has " << matches.size() << " matches\tBest " << matches[0].id << " with score " << matches[0].score);
@@ -427,7 +427,7 @@ int main(int argc, char** argv)
 
       // get the dirname from the filename
       
-      openMVG::sfm::Views::const_iterator it = sfmdataQuery->GetViews().find(docMatches.first);
+      aliceVision::sfm::Views::const_iterator it = sfmdataQuery->GetViews().find(docMatches.first);
       if(it == sfmdataQuery->GetViews().end())
       {
         // this is very wrong
@@ -441,21 +441,21 @@ int main(int argc, char** argv)
       bfs::create_symlink(absoluteFilename, dirname / sylinkName);
       
       // Perform features matching
-      const openMVG::voctree::SparseHistogram& currentHistogram = histograms.at(docMatches.first);
+      const aliceVision::voctree::SparseHistogram& currentHistogram = histograms.at(docMatches.first);
       
       for (const auto comparedPicture : matches)
       {
-        openMVG::voctree::SparseHistogram comparedHistogram = histograms.at(comparedPicture.id);
-        openMVG::Pair indexImagePair = openMVG::Pair(docMatches.first, comparedPicture.id);
+        aliceVision::voctree::SparseHistogram comparedHistogram = histograms.at(comparedPicture.id);
+        aliceVision::Pair indexImagePair = aliceVision::Pair(docMatches.first, comparedPicture.id);
         
         //Get the regions for the current view pair.
-//        const openMVG::features::SIFT_Regions& lRegions = dynamic_cast<openMVG::features::SIFT_Regions>(regionsPerView->getRegions(indexImagePair.first);
-//        const openMVG::features::SIFT_Regions& rRegions = dynamic_cast<openMVG::features::SIFT_Regions>(regionsPerView->getRegions(indexImagePair.second);
+//        const aliceVision::features::SIFT_Regions& lRegions = dynamic_cast<aliceVision::features::SIFT_Regions>(regionsPerView->getRegions(indexImagePair.first);
+//        const aliceVision::features::SIFT_Regions& rRegions = dynamic_cast<aliceVision::features::SIFT_Regions>(regionsPerView->getRegions(indexImagePair.second);
         
         //Distances Vector
         //const std::vector<float> distances;
         
-        openMVG::matching::IndMatches featureMatches;
+        aliceVision::matching::IndMatches featureMatches;
 
         for (const auto& currentLeaf: currentHistogram)
         {
@@ -471,7 +471,7 @@ int main(int argc, char** argv)
             const Regions& siftRegionsRight = regionsPerView.getRegions(comparedPicture.id, describerType);
 
             double dist = siftRegionsLeft.SquaredDescriptorDistance(currentLeaf.second[0], &siftRegionsRight, leafRightIt->second[0]);
-            openMVG::matching::IndMatch currentMatch = openMVG::matching::IndMatch( currentLeaf.second[0], leafRightIt->second[0]
+            aliceVision::matching::IndMatch currentMatch = aliceVision::matching::IndMatch( currentLeaf.second[0], leafRightIt->second[0]
 #ifdef OPENMVG_DEBUG_MATCHING
                     , dist
 #endif
@@ -504,7 +504,7 @@ int main(int argc, char** argv)
         bfs::path sylinkName; //< the name used for the symbolic link
 
         // get the dirname from the filename
-        openMVG::sfm::Views::const_iterator it = sfmdata.GetViews().find(matches[j].id);
+        aliceVision::sfm::Views::const_iterator it = sfmdata.GetViews().find(matches[j].id);
         if(it != sfmdata.GetViews().end())
         {
           bfs::path imgName(it->second->getImagePath());
@@ -543,7 +543,7 @@ int main(int argc, char** argv)
       // Ignore auto-match
       continue;
 
-    for( const openMVG::matching::IndMatch& featMatches: imgMatches.second)
+    for( const aliceVision::matching::IndMatch& featMatches: imgMatches.second)
     {
       int d = std::floor(featMatches._distance / 1000.0);
       if( stats.find(d) != stats.end() )

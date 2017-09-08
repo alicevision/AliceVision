@@ -4,10 +4,10 @@
 #ifndef OPENMVG_CAMERA_UNDISTORT_IMAGE_HPP
 #define OPENMVG_CAMERA_UNDISTORT_IMAGE_HPP
 
-#include "openMVG/image/image.hpp"
-#include <openMVG/config.hpp>
+#include "aliceVision/image/image.hpp"
+#include <aliceVision/config.hpp>
 
-namespace openMVG {
+namespace aliceVision {
 namespace cameras {
 
 /// Undistort an image according a given camera & it's distortion model
@@ -42,7 +42,7 @@ void UndistortImage(
 }
 
 } // namespace cameras
-} // namespace openMVG
+} // namespace aliceVision
 
 #endif // #ifndef OPENMVG_CAMERA_UNDISTORT_IMAGE_HPP
 

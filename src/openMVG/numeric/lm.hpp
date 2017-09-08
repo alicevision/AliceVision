@@ -4,12 +4,12 @@
 #ifndef OPENMVG_NUMERIC_LM_H_
 #define OPENMVG_NUMERIC_LM_H_
 
-#include "openMVG/numeric/numeric.h"
+#include "aliceVision/numeric/numeric.h"
 // Levenberg Marquardt Non Linear Optimization
 #include <unsupported/Eigen/NonLinearOptimization>
 #include <unsupported/Eigen/NumericalDiff>
 
-namespace openMVG
+namespace aliceVision
 {
   using namespace Eigen;
 // Generic functor Levenberg-Marquardt minimization
@@ -37,6 +37,6 @@ struct Functor
   //  void operator() (const InputType& x, ValueType* v, JacobianType* _j=0) const;
 };
 
-}; // namespace openMVG
+}; // namespace aliceVision
 
 #endif // OPENMVG_NUMERIC_LM_H_

@@ -1,11 +1,11 @@
 // This file is part of the AliceVision project and is made available under
 // the terms of the MPL2 license (see the COPYING.md file).
 
-#include <openMVG/multiview/projection.hpp>
+#include <aliceVision/multiview/projection.hpp>
 
 #include <cmath>
 
-namespace openMVG {
+namespace aliceVision {
 
 /// Compute P = K[R|t]
 void P_From_KRt(const Mat3 &K,  const Mat3 &R,  const Vec3 &t, Mat34 *P)
@@ -268,5 +268,5 @@ double reprojectionErrorRMSE(const Mat2X &x_image,
     return reprojectionErrorRMSE(x_image, X_world.colwise().homogeneous(), P);
 }
 
-} // namespace openMVG
+} // namespace aliceVision
 

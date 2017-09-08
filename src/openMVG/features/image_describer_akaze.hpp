@@ -5,18 +5,18 @@
 #define OPENMVG_FEATURES_AKAZE_IMAGE_DESCRIBER_HPP
 
 #include "ImageDescriberCommon.hpp"
-#include "openMVG/features/image_describer.hpp"
-#include "openMVG/features/regions_factory.hpp"
-#include "openMVG/features/akaze/AKAZE.hpp"
-#include "openMVG/features/akaze/msurf_descriptor.hpp"
-#include "openMVG/features/akaze/mldb_descriptor.hpp"
-#include "openMVG/features/liop/liop_descriptor.hpp"
-#include <openMVG/config.hpp>
+#include "aliceVision/features/image_describer.hpp"
+#include "aliceVision/features/regions_factory.hpp"
+#include "aliceVision/features/akaze/AKAZE.hpp"
+#include "aliceVision/features/akaze/msurf_descriptor.hpp"
+#include "aliceVision/features/akaze/mldb_descriptor.hpp"
+#include "aliceVision/features/liop/liop_descriptor.hpp"
+#include <aliceVision/config.hpp>
 #include <cereal/cereal.hpp>
 
 using namespace std;
 
-namespace openMVG {
+namespace aliceVision {
 namespace features {
 
 enum EAKAZE_DESCRIPTOR
@@ -276,6 +276,6 @@ private:
 };
 
 } // namespace features
-} // namespace openMVG
+} // namespace aliceVision
 
 #endif // OPENMVG_FEATURES_AKAZE_IMAGE_DESCRIBER_HPP

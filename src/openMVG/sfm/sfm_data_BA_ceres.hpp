@@ -4,12 +4,12 @@
 #ifndef OPENMVG_SFM_DATA_BA_CERES_HPP
 #define OPENMVG_SFM_DATA_BA_CERES_HPP
 
-#include "openMVG/sfm/sfm_data.hpp"
-#include "openMVG/sfm/sfm_data_BA.hpp"
-#include "openMVG/sfm/sfm_data_BA_ceres_camera_functor.hpp"
+#include "aliceVision/sfm/sfm_data.hpp"
+#include "aliceVision/sfm/sfm_data_BA.hpp"
+#include "aliceVision/sfm/sfm_data_BA_ceres_camera_functor.hpp"
 #include "ceres/ceres.h"
 
-namespace openMVG {
+namespace aliceVision {
 namespace sfm {
 
 /// Create the appropriate cost functor according the provided input camera intrinsic model
@@ -34,7 +34,7 @@ class Bundle_Adjustment_Ceres : public Bundle_Adjustment
     void setSparseBA();
   };
   private:
-    BA_options _openMVG_options;
+    BA_options _aliceVision_options;
 
   public:
   Bundle_Adjustment_Ceres(Bundle_Adjustment_Ceres::BA_options options = BA_options());
@@ -48,6 +48,6 @@ class Bundle_Adjustment_Ceres : public Bundle_Adjustment
 };
 
 } // namespace sfm
-} // namespace openMVG
+} // namespace aliceVision
 
 #endif // OPENMVG_SFM_DATA_BA_CERES_HPP

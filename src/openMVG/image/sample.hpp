@@ -4,10 +4,10 @@
 #ifndef OPENMVG_IMAGE_SAMPLE_HPP
 #define OPENMVG_IMAGE_SAMPLE_HPP
 
-#include "openMVG/image/image_container.hpp"
-#include "openMVG/image/pixel_types.hpp"
+#include "aliceVision/image/image_container.hpp"
+#include "aliceVision/image/pixel_types.hpp"
 
-namespace openMVG {
+namespace aliceVision {
 namespace image {
 
 /**
@@ -491,6 +491,6 @@ private:
 };
 
 } // namespace image
-} // namespace openMVG
+} // namespace aliceVision
 
 #endif  // OPENMVG_IMAGE_SAMPLE_HPP

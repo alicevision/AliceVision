@@ -1,16 +1,16 @@
 // This file is part of the AliceVision project and is made available under
 // the terms of the MPL2 license (see the COPYING.md file).
 
-#include "openMVG/multiview/projection.hpp"
-#include "openMVG/numeric/numeric.h"
-#include "openMVG/multiview/solver_resection_p4pf.hpp"
+#include "aliceVision/multiview/projection.hpp"
+#include "aliceVision/numeric/numeric.h"
+#include "aliceVision/multiview/solver_resection_p4pf.hpp"
 
 #include <cmath>
 #include <cstring>
 #include <limits>
 #include <iostream>
 
-namespace openMVG {
+namespace aliceVision {
 namespace resection {
 
 void GJ(double *A, int rcnt, int ccnt, double tol)
@@ -1217,4 +1217,4 @@ double P4PfSolver::error(const p4fSolution & model, const Vec2 & pt2D, const Vec
 }
 
 } // namespace resection
-} // namespace openMVG
+} // namespace aliceVision

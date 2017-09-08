@@ -4,17 +4,17 @@
 #ifndef OPENMVG_FEATURES_REGIONS_HPP
 #define OPENMVG_FEATURES_REGIONS_HPP
 
-#include "openMVG/types.hpp"
-#include "openMVG/numeric/numeric.h"
-#include "openMVG/features/feature.hpp"
-#include "openMVG/features/descriptor.hpp"
-#include "openMVG/matching/metric.hpp"
+#include "aliceVision/types.hpp"
+#include "aliceVision/numeric/numeric.h"
+#include "aliceVision/features/feature.hpp"
+#include "aliceVision/features/descriptor.hpp"
+#include "aliceVision/matching/metric.hpp"
 #include "cereal/types/vector.hpp"
 #include <string>
 #include <cstddef>
 #include <typeinfo>
 
-namespace openMVG {
+namespace aliceVision {
 namespace features {
 
 
@@ -331,6 +331,6 @@ using Binary_Regions = FeatDesc_Regions<FeatT, unsigned char, L, ERegionType::Bi
 
 
 } // namespace features
-} // namespace openMVG
+} // namespace aliceVision
 
 #endif // OPENMVG_FEATURES_REGIONS_HPP

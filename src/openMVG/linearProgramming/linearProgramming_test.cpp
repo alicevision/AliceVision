@@ -5,16 +5,16 @@
 #include <iostream>
 #include <vector>
 
-#include <openMVG/config.hpp>
+#include <aliceVision/config.hpp>
 #include "testing/testing.h"
 #if OPENMVG_IS_DEFINED(OPENMVG_HAVE_MOSEK)
-#include "openMVG/linearProgramming/linearProgrammingMOSEK.hpp"
+#include "aliceVision/linearProgramming/linearProgrammingMOSEK.hpp"
 #endif
-#include "openMVG/linearProgramming/linearProgrammingOSI_X.hpp"
+#include "aliceVision/linearProgramming/linearProgrammingOSI_X.hpp"
 
 
-using namespace openMVG;
-using namespace openMVG::linearProgramming;
+using namespace aliceVision;
+using namespace aliceVision::linearProgramming;
 
 // Setup :
 // max(143x + 60y)

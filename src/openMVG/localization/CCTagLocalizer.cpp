@@ -6,15 +6,15 @@
 #include "optimization.hpp"
 #include "rigResection.hpp"
 
-#include <openMVG/config.hpp>
-#include <openMVG/features/svgVisualization.hpp>
-#include <openMVG/matching/indMatch.hpp>
-#include <openMVG/sfm/sfm_data_io.hpp>
-#include <openMVG/sfm/pipelines/RegionsIO.hpp>
-#include <openMVG/sfm/pipelines/sfm_robust_model_estimation.hpp>
+#include <aliceVision/config.hpp>
+#include <aliceVision/features/svgVisualization.hpp>
+#include <aliceVision/matching/indMatch.hpp>
+#include <aliceVision/sfm/sfm_data_io.hpp>
+#include <aliceVision/sfm/pipelines/RegionsIO.hpp>
+#include <aliceVision/sfm/pipelines/sfm_robust_model_estimation.hpp>
 
-#include <openMVG/system/timer.hpp>
-#include <openMVG/system/Logger.hpp>
+#include <aliceVision/system/timer.hpp>
+#include <aliceVision/system/Logger.hpp>
 
 #include <third_party/progress/progress.hpp>
 
@@ -25,14 +25,14 @@
 #include <algorithm>
 #include <sstream>
 
-namespace openMVG {
+namespace aliceVision {
 namespace localization {
 
 CCTagLocalizer::CCTagLocalizer(const std::string &sfmFilePath,
                                const std::string &descriptorsFolder)
     : _cudaPipe( 0 )
 {
-  using namespace openMVG::features;
+  using namespace aliceVision::features;
 
   // load the sfm data containing the 3D reconstruction info
   if (!Load(_sfm_data, sfmFilePath, sfm::ESfM_Data::ALL)) 
@@ -570,7 +570,7 @@ bool CCTagLocalizer::localizeRig_opengv(const std::vector<features::MapRegionsPe
 //                                      vec_queryIntrinsics,
 //                                      vec_subPoses,
 //                                      rigPose);
-  openMVG::system::Timer timer;
+  aliceVision::system::Timer timer;
   const std::size_t minNumPoints = 4;
   const bool refineOk = iterativeRefineRigPose(vec_pts2D,
                                                vec_pts3D,
@@ -992,5 +992,5 @@ std::bitset<128> constructCCTagViewDescriptor(const std::vector<features::CCTAG_
 }
 
 } // localization
-} // openMVG
+} // aliceVision
 

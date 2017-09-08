@@ -4,7 +4,7 @@
 #ifndef __TRANS_SOLVER_H__
 #define __TRANS_SOLVER_H__
 
-namespace openMVG
+namespace aliceVision
 {
 
 /**
@@ -54,13 +54,13 @@ bool solve_translations_problem_l2_chordal(
 bool
 solve_translations_problem_softl1
 (
-  const std::vector<openMVG::relativeInfo > & vec_initial_estimates,
+  const std::vector<aliceVision::relativeInfo > & vec_initial_estimates,
   const bool b_translation_triplets,
   const int nb_poses,
   std::vector<Eigen::Vector3d> & translations,
   const double d_l1_loss_threshold = 0.01
 );
 
-} // namespace openMVG
+} // namespace aliceVision
 
 #endif /* __TRANS_SOLVER_H__ */

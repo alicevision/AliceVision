@@ -1,10 +1,10 @@
 // This file is part of the AliceVision project and is made available under
 // the terms of the MPL2 license (see the COPYING.md file).
 
-#include "openMVG/multiview/solver_resection_kernel.hpp"
+#include "aliceVision/multiview/solver_resection_kernel.hpp"
 #include <cassert>
 
-namespace openMVG {
+namespace aliceVision {
 namespace resection {
 namespace kernel {
 
@@ -139,9 +139,9 @@ void SixPointResectionSolver::Solve(
 
 }  // namespace kernel
 }  // namespace resection
-}  // namespace openMVG
+}  // namespace aliceVision
 
-namespace openMVG {
+namespace aliceVision {
 namespace euclidean_resection {
 namespace kernel {
 
@@ -516,5 +516,5 @@ bool EuclideanResectionEPnP(const Mat2X &x_camera,
 
 }  // namespace kernel
 }  // namespace euclidean_resection
-}  // namespace openMVG
+}  // namespace aliceVision
 

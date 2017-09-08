@@ -1,14 +1,14 @@
 add_definitions(-DTHIS_SOURCE_DIR="${CMAKE_CURRENT_SOURCE_DIR}")
 
-add_executable(openMVG_sample_describe_and_match describe_and_match.cpp)
+add_executable(aliceVision_sample_describe_and_match describe_and_match.cpp)
 
-target_link_libraries(openMVG_sample_describe_and_match
-  openMVG_image
-  openMVG_features
-  openMVG_matching
+target_link_libraries(aliceVision_sample_describe_and_match
+  aliceVision_image
+  aliceVision_features
+  aliceVision_matching
   stlplus
   vlsift)
 
-set_property(TARGET openMVG_sample_describe_and_match
+set_property(TARGET aliceVision_sample_describe_and_match
   PROPERTY FOLDER AliceVision/Samples
 )

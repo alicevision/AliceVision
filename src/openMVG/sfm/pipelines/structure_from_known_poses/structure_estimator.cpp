@@ -1,21 +1,21 @@
 // This file is part of the AliceVision project and is made available under
 // the terms of the MPL2 license (see the COPYING.md file).
 
-#include "openMVG/sfm/pipelines/structure_from_known_poses/structure_estimator.hpp"
+#include "aliceVision/sfm/pipelines/structure_from_known_poses/structure_estimator.hpp"
 
-#include "openMVG/matching/indMatch.hpp"
-#include "openMVG/matching/metric.hpp"
-#include "openMVG/robust_estimation/guided_matching.hpp"
-#include "openMVG/multiview/solver_fundamental_kernel.hpp"
-#include "openMVG/multiview/triangulation_nview.hpp"
-#include "openMVG/graph/graph.hpp"
-#include "openMVG/tracks/tracks.hpp"
-#include "openMVG/sfm/sfm_data_triangulation.hpp"
-#include <openMVG/config.hpp>
+#include "aliceVision/matching/indMatch.hpp"
+#include "aliceVision/matching/metric.hpp"
+#include "aliceVision/robust_estimation/guided_matching.hpp"
+#include "aliceVision/multiview/solver_fundamental_kernel.hpp"
+#include "aliceVision/multiview/triangulation_nview.hpp"
+#include "aliceVision/graph/graph.hpp"
+#include "aliceVision/tracks/tracks.hpp"
+#include "aliceVision/sfm/sfm_data_triangulation.hpp"
+#include <aliceVision/config.hpp>
 
 #include "third_party/progress/progress.hpp"
 
-namespace openMVG {
+namespace aliceVision {
 namespace sfm {
 
 using namespace cameras;
@@ -279,5 +279,5 @@ void SfM_Data_Structure_Estimation_From_Known_Poses::triangulate(
 }
 
 } // namespace sfm
-} // namespace openMVG
+} // namespace aliceVision
 

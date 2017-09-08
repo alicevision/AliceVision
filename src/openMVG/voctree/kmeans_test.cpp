@@ -1,8 +1,8 @@
 // This file is part of the AliceVision project and is made available under
 // the terms of the MPL2 license (see the COPYING.md file).
 
-#include <openMVG/system/Logger.hpp>
-#include <openMVG/voctree/simple_kmeans.hpp>
+#include <aliceVision/system/Logger.hpp>
+#include <aliceVision/voctree/simple_kmeans.hpp>
 
 #include <testing/testing.h>
 
@@ -13,7 +13,7 @@
 
 TEST(kmeans, kmeanInitializer) 
 {
-  using namespace openMVG;
+  using namespace aliceVision;
   
   OPENMVG_LOG_DEBUG("Testing kmeanspp Initializer...");
 
@@ -70,7 +70,7 @@ TEST(kmeans, kmeanInitializer)
 
 TEST(kmeans, kmeanInitializerVarying)
 {
-  using namespace openMVG;
+  using namespace aliceVision;
   
   OPENMVG_LOG_DEBUG("Testing kmeanspp Initializer with variable k and DIM...");
 
@@ -123,7 +123,7 @@ TEST(kmeans, kmeanInitializerVarying)
 }
 TEST(kmeans, kmeanSimple)
 {
-  using namespace openMVG;
+  using namespace aliceVision;
 
   OPENMVG_LOG_DEBUG("Testing kmeans...");
 
@@ -202,7 +202,7 @@ TEST(kmeans, kmeanSimple)
 
 TEST(kmeans, kmeanVarying)
 {
-  using namespace openMVG;
+  using namespace aliceVision;
   OPENMVG_LOG_DEBUG("Testing kmeans with variable k and DIM...");
 
   const std::size_t FEATURENUMBER = 300;

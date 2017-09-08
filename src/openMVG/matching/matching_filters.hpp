@@ -4,14 +4,14 @@
 #ifndef OPENMVG_MATCHING_MATCHINGFILTERS_H
 #define OPENMVG_MATCHING_MATCHINGFILTERS_H
 
-#include "openMVG/matching/indMatch.hpp"
+#include "aliceVision/matching/indMatch.hpp"
 #include <algorithm>
 #include <cassert>
 #include <iterator>
 #include <set>
 #include <vector>
 
-namespace openMVG {
+namespace aliceVision {
 namespace matching {
 
 using namespace std;
@@ -200,6 +200,6 @@ inline void Filter( int NN,
 }
 
 }  // namespace matching
-}  // namespace openMVG
+}  // namespace aliceVision
 
 #endif // OPENMVG_MATCHING_MATCHINGFILTERS_H

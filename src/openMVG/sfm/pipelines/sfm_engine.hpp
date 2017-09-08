@@ -3,10 +3,10 @@
 
 #pragma once
 
-#include "openMVG/sfm/sfm_data.hpp"
+#include "aliceVision/sfm/sfm_data.hpp"
 #include <string>
 
-namespace openMVG {
+namespace aliceVision {
 namespace sfm {
 
 /// Basic Reconstruction Engine.
@@ -51,4 +51,4 @@ protected:
 };
 
 } // namespace sfm
-} // namespace openMVG
+} // namespace aliceVision

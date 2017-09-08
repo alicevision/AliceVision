@@ -4,7 +4,7 @@
 #ifndef OPENMVG_IMAGE_IMAGE_HPP
 #define OPENMVG_IMAGE_IMAGE_HPP
 
-#include "openMVG/numeric/numeric.h"
+#include "aliceVision/numeric/numeric.h"
 
 //---------------------------------
 //  Universal Image Processing Algorithm
@@ -16,7 +16,7 @@
 //-- Pixel access is done with operator(y,x)
 //  [2/3/2011 pierre MOULON]
 //---------------------------
-namespace openMVG
+namespace aliceVision
 {
   namespace image
   {
@@ -239,6 +239,6 @@ namespace openMVG
     }
 
   } // namespace image
-} // namespace openMVG
+} // namespace aliceVision
 
 #endif // OPENMVG_IMAGE_IMAGE_HPP

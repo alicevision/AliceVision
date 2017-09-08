@@ -2,13 +2,13 @@
 // the terms of the MPL2 license (see the COPYING.md file).
 
 #include "svgVisualization.hpp"
-#include <openMVG/config.hpp>
+#include <aliceVision/config.hpp>
 #if OPENMVG_IS_DEFINED(OPENMVG_HAVE_CCTAG)
 #include "cctag/CCTAG_describer.hpp"
 #endif
 #include "third_party/vectorGraphics/svgDrawer.hpp"
 
-namespace openMVG {
+namespace aliceVision {
 namespace features {
 
 std::string describerTypeColor(const features::EImageDescriberType descType )
@@ -554,5 +554,5 @@ void saveCCTagMatches2SVG(const std::string &imagePathLeft,
 #endif
 
 } // namespace features
-} // namespace openMVG
+} // namespace aliceVision
 

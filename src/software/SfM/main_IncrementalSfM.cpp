@@ -3,18 +3,18 @@
 
 #include <cstdlib>
 
-#include "openMVG/features/ImageDescriberCommon.hpp"
-#include "openMVG/sfm/sfm.hpp"
-#include "openMVG/sfm/pipelines/RegionsIO.hpp"
-#include "openMVG/system/timer.hpp"
+#include "aliceVision/features/ImageDescriberCommon.hpp"
+#include "aliceVision/sfm/sfm.hpp"
+#include "aliceVision/sfm/pipelines/RegionsIO.hpp"
+#include "aliceVision/system/timer.hpp"
 
 #include "third_party/cmdLine/cmdLine.h"
 #include "third_party/stlplus3/filesystemSimplified/file_system.hpp"
 
-using namespace openMVG;
-using namespace openMVG::cameras;
-using namespace openMVG::sfm;
-using namespace openMVG::features;
+using namespace aliceVision;
+using namespace aliceVision::cameras;
+using namespace aliceVision::sfm;
+using namespace aliceVision::features;
 
 /**
  * @brief Retrieve the view id in the sfmData from the image filename.
@@ -204,7 +204,7 @@ int main(int argc, char **argv)
   // Sequential reconstruction process
   //---------------------------------------
 
-  openMVG::system::Timer timer;
+  aliceVision::system::Timer timer;
   SequentialSfMReconstructionEngine sfmEngine(
     sfm_data,
     sOutDir,

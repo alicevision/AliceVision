@@ -2,11 +2,11 @@
 // the terms of the MPL2 license (see the COPYING.md file).
 
 #pragma once
-#include "openMVG/features/ImageDescriberCommon.hpp"
-#include "openMVG/features/image_describer.hpp"
-#include "openMVG/features/regions_factory.hpp"
+#include "aliceVision/features/ImageDescriberCommon.hpp"
+#include "aliceVision/features/image_describer.hpp"
+#include "aliceVision/features/regions_factory.hpp"
 
-namespace openMVG {
+namespace aliceVision {
 
 namespace image {
 

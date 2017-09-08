@@ -2,11 +2,11 @@
 // the terms of the MPL2 license (see the COPYING.md file).
 
 #include <vector>
-#include "openMVG/multiview/solver_homography_kernel.hpp"
+#include "aliceVision/multiview/solver_homography_kernel.hpp"
 #include "testing/testing.h"
 
 using namespace std;
-using namespace openMVG;
+using namespace aliceVision;
 
 TEST(HomographyKernelTest, Fitting_Unnormalized) {
   // Define 3 knows homographies (Use as GT).

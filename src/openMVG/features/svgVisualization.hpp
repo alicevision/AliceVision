@@ -3,18 +3,18 @@
 
 #pragma once
 
-#include <openMVG/config.hpp>
+#include <aliceVision/config.hpp>
 #include "image_describer.hpp"
 #if OPENMVG_IS_DEFINED(OPENMVG_HAVE_CCTAG)
 #include "regions_factory.hpp"
 #endif
-#include <openMVG/features/RegionsPerView.hpp>
-#include <openMVG/features/FeaturesPerView.hpp>
-#include <openMVG/matching/indMatch.hpp>
+#include <aliceVision/features/RegionsPerView.hpp>
+#include <aliceVision/features/FeaturesPerView.hpp>
+#include <aliceVision/matching/indMatch.hpp>
 
 #include <vector>
 
-namespace openMVG {
+namespace aliceVision {
 namespace features {
 
 std::string describerTypeColor(const features::EImageDescriberType descType);
@@ -210,5 +210,5 @@ void saveCCTagMatches2SVG(const std::string &imagePathLeft,
 #endif
 
 } // namespace features
-} // namespace openMVG
+} // namespace aliceVision
 

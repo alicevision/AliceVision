@@ -4,8 +4,8 @@
 #ifndef OPENMVG_SFM_IO_H
 #define OPENMVG_SFM_IO_H
 
-#include "openMVG/numeric/numeric.h"
-#include "openMVG/stl/split.hpp"
+#include "aliceVision/numeric/numeric.h"
+#include "aliceVision/stl/split.hpp"
 
 #include <fstream>
 #include <iterator>
@@ -16,7 +16,7 @@
 #include <algorithm>    // std::lexicographical_compare
 #include <cctype>       // std::tolower
 
-namespace openMVG{
+namespace aliceVision{
 namespace SfMIO{
 
 struct CameraInfo
@@ -190,14 +190,14 @@ static bool loadImageList( std::vector<std::string> & vec_camImageName,
                            bool bVerbose = true )
 {
   vec_camImageName.clear();
-  std::vector<openMVG::SfMIO::CameraInfo> vec_camImageIntrinsicInfo;
-  std::vector<openMVG::SfMIO::IntrinsicCameraInfo> vec_focalGroup;
+  std::vector<aliceVision::SfMIO::CameraInfo> vec_camImageIntrinsicInfo;
+  std::vector<aliceVision::SfMIO::IntrinsicCameraInfo> vec_focalGroup;
   if (loadImageList( vec_camImageIntrinsicInfo,
                       vec_focalGroup,
                       sListFileName,
                       bVerbose) )
   {
-    for ( std::vector<openMVG::SfMIO::CameraInfo>::const_iterator
+    for ( std::vector<aliceVision::SfMIO::CameraInfo>::const_iterator
       iter_camInfo = vec_camImageIntrinsicInfo.begin();
       iter_camInfo != vec_camImageIntrinsicInfo.end();
       iter_camInfo++ )
@@ -209,7 +209,7 @@ static bool loadImageList( std::vector<std::string> & vec_camImageName,
 }
 
 } // namespace SfMIO
-} // namespace openMVG
+} // namespace aliceVision
 
 #endif // OPENMVG_SFM_IO_H
 

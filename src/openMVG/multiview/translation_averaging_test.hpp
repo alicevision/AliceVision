@@ -3,16 +3,16 @@
 
 #pragma once
 
-#include "openMVG/multiview/essential.hpp"
-#include "openMVG/multiview/translation_averaging_common.hpp"
+#include "aliceVision/multiview/essential.hpp"
+#include "aliceVision/multiview/translation_averaging_common.hpp"
 
-#include "openMVG/graph/triplet_finder.hpp"
-using namespace openMVG::graph;
+#include "aliceVision/graph/triplet_finder.hpp"
+using namespace aliceVision::graph;
 
 #include "third_party/vectorGraphics/svgDrawer.hpp"
 using namespace svg;
 
-#include "openMVG/multiview/test_data_sets.hpp"
+#include "aliceVision/multiview/test_data_sets.hpp"
 #include "testing/testing.h"
 
 #include <fstream>
@@ -24,7 +24,7 @@ using namespace svg;
 #include "ceres/rotation.h"
 #include <numeric>
 
-using namespace openMVG;
+using namespace aliceVision;
 using namespace std;
 
 int modifiedMod
@@ -82,7 +82,7 @@ void visibleCamPosToSVGSurface
 
 NViewDataSet Setup_RelativeTranslations_AndNviewDataset
 (
-  std::vector<openMVG::relativeInfo > & vec_relative_estimates,
+  std::vector<aliceVision::relativeInfo > & vec_relative_estimates,
   const int focal = 1000,
   const int principal_Point = 500,
   const int iNviews = 12,

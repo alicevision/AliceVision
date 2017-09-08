@@ -6,7 +6,7 @@
 #include <cstddef>
 #include <ostream>
 
-namespace openMVG {
+namespace aliceVision {
 namespace system {
 
 struct MemoryInfo

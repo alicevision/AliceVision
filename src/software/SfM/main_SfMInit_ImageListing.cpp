@@ -1,12 +1,12 @@
 // This file is part of the AliceVision project and is made available under
 // the terms of the MPL2 license (see the COPYING.md file).
 
-#include <openMVG/image/image.hpp>
-#include <openMVG/sfm/sfm.hpp>
-#include <openMVG/exif/exif_IO_EasyExif.hpp>
-#include <openMVG/exif/sensor_width_database/ParseDatabase.hpp>
-#include <openMVG/stl/split.hpp>
-#include <openMVG/system/Logger.hpp>
+#include <aliceVision/image/image.hpp>
+#include <aliceVision/sfm/sfm.hpp>
+#include <aliceVision/exif/exif_IO_EasyExif.hpp>
+#include <aliceVision/exif/sensor_width_database/ParseDatabase.hpp>
+#include <aliceVision/stl/split.hpp>
+#include <aliceVision/system/Logger.hpp>
 
 #include <third_party/cmdLine/cmdLine.h>
 #include <third_party/stlplus3/filesystemSimplified/file_system.hpp>
@@ -18,11 +18,11 @@
 #include <string>
 #include <vector>
 
-using namespace openMVG;
-using namespace openMVG::cameras;
-using namespace openMVG::exif;
-using namespace openMVG::image;
-using namespace openMVG::sfm;
+using namespace aliceVision;
+using namespace aliceVision::cameras;
+using namespace aliceVision::exif;
+using namespace aliceVision::image;
+using namespace aliceVision::sfm;
 
 using ResourcePathsPerCamera = std::vector<std::vector<std::string>>;
 using Resources = std::vector<ResourcePathsPerCamera>;
@@ -412,7 +412,7 @@ public:
                           << "Use default sensor width." << std::endl);
     }
 
-    openMVG::exif::sensordb::Datasheet datasheet;
+    aliceVision::exif::sensordb::Datasheet datasheet;
     if(!getInfo(_cameraBrand, _cameraModel, database, datasheet))
     {
       return false;
@@ -867,7 +867,7 @@ int main(int argc, char **argv)
         const std::string imageFolder = stlplus::folder_part(imageAbsPath);
 
         // test if the image format is supported
-        if(openMVG::image::GetFormat(imageAbsPath.c_str()) == openMVG::image::Unknown)
+        if(aliceVision::image::GetFormat(imageAbsPath.c_str()) == aliceVision::image::Unknown)
         {
           OPENMVG_LOG_WARNING("Warning: Unknown image file format '" << stlplus::filename_part(imageAbsPath) << "'." << std::endl
                               << "Skip image." << std::endl);
@@ -876,7 +876,7 @@ int main(int argc, char **argv)
 
         // read image header
         ImageHeader imgHeader;
-        if(!openMVG::image::ReadImageHeader(imageAbsPath.c_str(), &imgHeader))
+        if(!aliceVision::image::ReadImageHeader(imageAbsPath.c_str(), &imgHeader))
         {
           OPENMVG_LOG_WARNING("Warning: Can't read image header '" << stlplus::filename_part(imageAbsPath) << "'." << std::endl
                               << "Skip image." << std::endl);

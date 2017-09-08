@@ -16,7 +16,7 @@ if(OPENMVG_BUILD_TESTS)
 endif()
 
 # Basic filesystem utils
-set(STLPLUS_INCLUDE_INSTALL_DIR ${CMAKE_INSTALL_PREFIX}/include/openMVG/third_party/stlplus3)
+set(STLPLUS_INCLUDE_INSTALL_DIR ${CMAKE_INSTALL_PREFIX}/include/aliceVision/third_party/stlplus3)
 add_subdirectory(stlplus3)
 
 # Add graph library
@@ -35,7 +35,7 @@ endif()
 ##
 if(NOT JPEG_FOUND)
   set(OPENMVG_USE_INTERNAL_JPEG ON PARENT_SCOPE)
-  set(JPEG_INCLUDE_INSTALL_DIR ${CMAKE_INSTALL_PREFIX}/include/openMVG/third_party/jpeg)
+  set(JPEG_INCLUDE_INSTALL_DIR ${CMAKE_INSTALL_PREFIX}/include/aliceVision/third_party/jpeg)
   add_subdirectory(jpeg)
   list(APPEND JPEG_INCLUDE_DIRECTORIES ${CMAKE_CURRENT_SOURCE_DIR}/jpeg ${CMAKE_CURRENT_BINARY_DIR}/jpeg/config)
   set(JPEG_INCLUDE_DIR ${JPEG_INCLUDE_DIRECTORIES})
@@ -50,8 +50,8 @@ endif()
 
 if(NOT PNG_FOUND)
   set(OPENMVG_USE_INTERNAL_PNG ON PARENT_SCOPE)
-  set(ZLIB_INCLUDE_INSTALL_DIR ${CMAKE_INSTALL_PREFIX}/include/openMVG/third_party/zlib)
-  set(PNG_INCLUDE_INSTALL_DIR ${CMAKE_INSTALL_PREFIX}/include/openMVG/third_party/png)
+  set(ZLIB_INCLUDE_INSTALL_DIR ${CMAKE_INSTALL_PREFIX}/include/aliceVision/third_party/zlib)
+  set(PNG_INCLUDE_INSTALL_DIR ${CMAKE_INSTALL_PREFIX}/include/aliceVision/third_party/png)
   add_subdirectory(png)
   set(PNG_LIBRARIES png zlib)
   list(APPEND PNG_INCLUDE_DIRECTORIES ${CMAKE_CURRENT_SOURCE_DIR}/png ${CMAKE_CURRENT_SOURCE_DIR}/zlib ${CMAKE_CURRENT_BINARY_DIR}/png/config)
@@ -62,7 +62,7 @@ endif()
 
 if(NOT TIFF_FOUND)
   set(OPENMVG_USE_INTERNAL_TIFF ON PARENT_SCOPE)
-  set(TIFF_INCLUDE_INSTALL_DIR ${CMAKE_INSTALL_PREFIX}/include/openMVG/third_party/tiff)
+  set(TIFF_INCLUDE_INSTALL_DIR ${CMAKE_INSTALL_PREFIX}/include/aliceVision/third_party/tiff)
   add_subdirectory(tiff)
   list(APPEND TIFF_INCLUDE_DIRECTORIES ${CMAKE_CURRENT_SOURCE_DIR}/tiff ${CMAKE_CURRENT_BINARY_DIR}/tiff)
   set(TIFF_INCLUDE_DIR ${TIFF_INCLUDE_DIRECTORIES})
@@ -79,9 +79,9 @@ add_subdirectory(vectorGraphics)
 
 # Add ceres-solver (A Nonlinear Least Squares Minimizer)
 if(OPENMVG_USE_INTERNAL_CERES)
-  set(CXSPARSE_INCLUDE_INSTALL_DIR ${CMAKE_INSTALL_PREFIX}/include/openMVG/third_party/cxsparse)
+  set(CXSPARSE_INCLUDE_INSTALL_DIR ${CMAKE_INSTALL_PREFIX}/include/aliceVision/third_party/cxsparse)
   add_subdirectory(cxsparse)
-  set(CERES_INCLUDE_INSTALL_DIR ${CMAKE_INSTALL_PREFIX}/include/openMVG/third_party/ceres)
+  set(CERES_INCLUDE_INSTALL_DIR ${CMAKE_INSTALL_PREFIX}/include/aliceVision/third_party/ceres)
   add_subdirectory(ceres-solver)
   set_property(TARGET cxsparse
     PROPERTY FOLDER AliceVision/3rdParty/ceres
@@ -93,7 +93,7 @@ endif()
 
 # Add an Approximate Nearest Neighbor library
 if(DEFINED OPENMVG_USE_INTERNAL_FLANN)
-  set(FLANN_INCLUDE_INSTALL_DIR ${CMAKE_INSTALL_PREFIX}/include/openMVG/third_party/flann/src/cpp)
+  set(FLANN_INCLUDE_INSTALL_DIR ${CMAKE_INSTALL_PREFIX}/include/aliceVision/third_party/flann/src/cpp)
   add_subdirectory(flann)
   set_property(TARGET flann_cpp_s
     PROPERTY FOLDER AliceVision/3rdParty
@@ -101,7 +101,7 @@ if(DEFINED OPENMVG_USE_INTERNAL_FLANN)
 endif()
 
 # Exif data parsing
-set(EASYEXIF_INCLUDE_INSTALL_DIR ${CMAKE_INSTALL_PREFIX}/include/openMVG/third_party/easyexif)
+set(EASYEXIF_INCLUDE_INSTALL_DIR ${CMAKE_INSTALL_PREFIX}/include/aliceVision/third_party/easyexif)
 add_subdirectory(easyexif)
 
 ##
@@ -109,7 +109,7 @@ add_subdirectory(easyexif)
 ## 
 if(DEFINED OPENMVG_USE_INTERNAL_EIGEN)
   # Configure Eigen install
-  set(EIGEN_INCLUDE_INSTALL_DIR ${CMAKE_INSTALL_PREFIX}/include/openMVG/third_party/eigen)
+  set(EIGEN_INCLUDE_INSTALL_DIR ${CMAKE_INSTALL_PREFIX}/include/aliceVision/third_party/eigen)
   add_subdirectory(eigen)
 endif()
 
@@ -117,7 +117,7 @@ list(APPEND directories cmdLine histogram htmlDoc progress vectorGraphics)
 foreach(inDirectory ${directories})
   install(
     DIRECTORY ./${inDirectory}
-    DESTINATION include/openMVG/third_party/
+    DESTINATION include/aliceVision/third_party/
     COMPONENT headers
     FILES_MATCHING PATTERN "*.hpp" PATTERN "*.h"
   )

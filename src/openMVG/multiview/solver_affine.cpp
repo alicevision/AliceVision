@@ -1,9 +1,9 @@
 // This file is part of the AliceVision project and is made available under
 // the terms of the MPL2 license (see the COPYING.md file).
 
-#include "openMVG/multiview/solver_affine.hpp"
+#include "aliceVision/multiview/solver_affine.hpp"
 
-namespace openMVG {
+namespace aliceVision {
 
 // Parametrization
 // a b x
@@ -119,4 +119,4 @@ bool Affine3DFromCorrespondencesLinear(const Mat &x1,
     return false;
   }
 }
-} // namespace openMVG
+} // namespace aliceVision

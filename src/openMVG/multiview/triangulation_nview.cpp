@@ -1,10 +1,10 @@
 // This file is part of the AliceVision project and is made available under
 // the terms of the MPL2 license (see the COPYING.md file).
 
-#include "openMVG/multiview/triangulation_nview.hpp"
-#include "openMVG/multiview/projection.hpp"
+#include "aliceVision/multiview/triangulation_nview.hpp"
+#include "aliceVision/multiview/projection.hpp"
 
-namespace openMVG {
+namespace aliceVision {
 
 void TriangulateNView(const Mat2X &x,
                       const std::vector< Mat34 > &Ps,
@@ -131,5 +131,5 @@ Vec3 Triangulation::compute(int iter) const
 }
 
 
-}  // namespace openMVG
+}  // namespace aliceVision
 

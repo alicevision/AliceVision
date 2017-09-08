@@ -3,15 +3,15 @@
 
 #include "SIFT_openCV_describer.hpp"
 
-#include <openMVG/image/image.hpp>
-#include <openMVG/system/timer.hpp>
-#include <openMVG/system/Logger.hpp>
+#include <aliceVision/image/image.hpp>
+#include <aliceVision/system/timer.hpp>
+#include <aliceVision/system/Logger.hpp>
 
 #include <opencv2/opencv.hpp>
 #include <opencv2/core/eigen.hpp>
 #include <opencv2/xfeatures2d.hpp>
 
-namespace openMVG {
+namespace aliceVision {
 namespace features {
 
 bool SIFT_openCV_Params::Set_configuration_preset(EDESCRIBER_PRESET preset)
@@ -172,4 +172,4 @@ bool SIFT_openCV_ImageDescriber::Describe(const image::Image<unsigned char>& ima
 }
 
 } //namespace features
-} //namespace openMVG
+} //namespace aliceVision

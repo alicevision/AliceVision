@@ -4,10 +4,10 @@
 #ifndef OPENMVG_SFM_DATA_FILTERS_FRUSTUM_HPP
 #define OPENMVG_SFM_DATA_FILTERS_FRUSTUM_HPP
 
-#include "openMVG/types.hpp"
-#include "openMVG/geometry/frustum.hpp"
+#include "aliceVision/types.hpp"
+#include "aliceVision/geometry/frustum.hpp"
 
-namespace openMVG {
+namespace aliceVision {
 namespace sfm {
 
 struct SfM_Data;
@@ -48,6 +48,6 @@ private:
 };
 
 } // namespace sfm
-} // namespace openMVG
+} // namespace aliceVision
 
 #endif // OPENMVG_SFM_DATA_FILTERS_FRUSTUM_HPP

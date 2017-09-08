@@ -4,14 +4,14 @@
 #ifndef OPENMVG_MULTIVIEW_CONDITIONNING_H_
 #define OPENMVG_MULTIVIEW_CONDITIONNING_H_
 
-#include "openMVG/numeric/numeric.h"
+#include "aliceVision/numeric/numeric.h"
 
 //-- Implementation of normalized coordinates.
 // Normalization improve accuracy of results and provide benefits
 //  that make scale and coordinate origin invariant.
 // The implementation follows Algorithm 4.2 from HZ page 109.
 
-namespace openMVG {
+namespace aliceVision {
 
 // Point conditioning :
 void PreconditionerFromPoints(const Mat &points, Mat3 *T);
@@ -47,7 +47,7 @@ struct UnnormalizerT {
   static void Unnormalize(const Mat3 &T1, const Mat3 &T2, Mat3 *H);
 };
 
-} //namespace openMVG
+} //namespace aliceVision
 
 
 #endif // OPENMVG_MULTIVIEW_CONDITIONNING_H_

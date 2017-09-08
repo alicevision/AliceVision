@@ -4,7 +4,7 @@
 #ifndef OPENMVG_ROBUST_ESTIMATION_SCORE_EVALUATOR_H_
 #define OPENMVG_ROBUST_ESTIMATION_SCORE_EVALUATOR_H_
 
-namespace openMVG {
+namespace aliceVision {
 namespace robust{
 
 using namespace std;
@@ -56,6 +56,6 @@ private:
 };
 
 } // namespace robust
-} // namespace openMVG
+} // namespace aliceVision
 
 #endif // OPENMVG_ROBUST_ESTIMATION_SCORE_EVALUATOR_H_

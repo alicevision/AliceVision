@@ -4,14 +4,14 @@
 #ifndef EXIF_IO_EASYEXIF_HPP
 #define EXIF_IO_EASYEXIF_HPP
 
-#include "openMVG/exif/exif_IO.hpp"
+#include "aliceVision/exif/exif_IO.hpp"
 #include "third_party/easyexif/exif.h"
 
 #include <fstream>
 #include <sstream>
 #include <vector>
 
-namespace openMVG {
+namespace aliceVision {
 namespace exif  {
 
 /// Remove all leading and trailing spaces from the input. The result is a trimmed copy of the input
@@ -290,6 +290,6 @@ class Exif_IO_EasyExif : public Exif_IO
 };
 
 } // namespace exif
-} // namespace openMVG
+} // namespace aliceVision
 
 #endif //EXIF_IO_EASYEXIF_HPP

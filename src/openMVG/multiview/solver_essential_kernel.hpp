@@ -4,12 +4,12 @@
 #ifndef OPENMVG_MULTIVIEW_SOLVER_ESSENTIAL_KERNEL_H_
 #define OPENMVG_MULTIVIEW_SOLVER_ESSENTIAL_KERNEL_H_
 
-#include "openMVG/multiview/two_view_kernel.hpp"
-#include "openMVG/multiview/essential.hpp"
-#include "openMVG/multiview/solver_fundamental_kernel.hpp"
+#include "aliceVision/multiview/two_view_kernel.hpp"
+#include "aliceVision/multiview/essential.hpp"
+#include "aliceVision/multiview/solver_fundamental_kernel.hpp"
 #include <vector>
 
-namespace openMVG {
+namespace aliceVision {
 namespace essential {
 namespace kernel {
 
@@ -92,6 +92,6 @@ typedef essential::kernel::EssentialKernel<FivePointSolver,
 
 }  // namespace kernel
 }  // namespace essential
-}  // namespace openMVG
+}  // namespace aliceVision
 
 #endif  // OPENMVG_MULTIVIEW_SOLVER_ESSENTIAL_KERNEL_H_

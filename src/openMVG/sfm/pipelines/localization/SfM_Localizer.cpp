@@ -1,19 +1,19 @@
 // This file is part of the AliceVision project and is made available under
 // the terms of the MPL2 license (see the COPYING.md file).
 
-#include "openMVG/sfm/pipelines/localization/SfM_Localizer.hpp"
-#include "openMVG/sfm/sfm_data_BA_ceres.hpp"
+#include "aliceVision/sfm/pipelines/localization/SfM_Localizer.hpp"
+#include "aliceVision/sfm/sfm_data_BA_ceres.hpp"
 
-#include "openMVG/multiview/solver_resection_kernel.hpp"
-#include "openMVG/multiview/solver_resection_p3p.hpp"
-#include "openMVG/robust_estimation/robust_estimator_ACRansac.hpp"
-#include "openMVG/robust_estimation/robust_estimator_ACRansacKernelAdaptator.hpp"
-#include <openMVG/robust_estimation/robust_estimator_LORansac.hpp>
-#include <openMVG/robust_estimation/robust_estimator_LORansacKernelAdaptor.hpp>
-#include <openMVG/robust_estimation/score_evaluator.hpp>
+#include "aliceVision/multiview/solver_resection_kernel.hpp"
+#include "aliceVision/multiview/solver_resection_p3p.hpp"
+#include "aliceVision/robust_estimation/robust_estimator_ACRansac.hpp"
+#include "aliceVision/robust_estimation/robust_estimator_ACRansacKernelAdaptator.hpp"
+#include <aliceVision/robust_estimation/robust_estimator_LORansac.hpp>
+#include <aliceVision/robust_estimation/robust_estimator_LORansacKernelAdaptor.hpp>
+#include <aliceVision/robust_estimation/score_evaluator.hpp>
 
-#include <openMVG/config.hpp>
-namespace openMVG {
+#include <aliceVision/config.hpp>
+namespace aliceVision {
 namespace sfm {
 
 struct ResectionSquaredResidualError 
@@ -54,18 +54,18 @@ bool SfM_Localizer::Localize
   {
     //--
     // Classic resection (try to compute the entire P matrix)
-    typedef openMVG::resection::kernel::SixPointResectionSolver SolverType;
+    typedef aliceVision::resection::kernel::SixPointResectionSolver SolverType;
     MINIMUM_SAMPLES = SolverType::MINIMUM_SAMPLES;
 
-    typedef openMVG::robust::ACKernelAdaptorResection<
-      SolverType, ResectionSquaredResidualError, openMVG::robust::UnnormalizerResection, Mat34>
+    typedef aliceVision::robust::ACKernelAdaptorResection<
+      SolverType, ResectionSquaredResidualError, aliceVision::robust::UnnormalizerResection, Mat34>
       KernelType;
 
     KernelType kernel(resection_data.pt2D, image_size.first, image_size.second,
       resection_data.pt3D);
     // Robust estimation of the Projection matrix and its precision
     const std::pair<double,double> ACRansacOut =
-      openMVG::robust::ACRANSAC(kernel, resection_data.vec_inliers, resection_data.max_iteration, &P, dPrecision, true);
+      aliceVision::robust::ACRANSAC(kernel, resection_data.vec_inliers, resection_data.max_iteration, &P, dPrecision, true);
     // Update the upper bound precision of the model found by AC-RANSAC
     resection_data.error_max = ACRansacOut.first;
   }
@@ -90,19 +90,19 @@ bool SfM_Localizer::Localize
       {
         //--
         // Since K calibration matrix is known, compute only [R|t]
-        typedef openMVG::euclidean_resection::P3PSolver SolverType;
+        typedef aliceVision::euclidean_resection::P3PSolver SolverType;
         MINIMUM_SAMPLES = SolverType::MINIMUM_SAMPLES;
 
-        typedef openMVG::robust::ACKernelAdaptorResection_K<
+        typedef aliceVision::robust::ACKernelAdaptorResection_K<
                 SolverType, ResectionSquaredResidualError,
-                openMVG::robust::UnnormalizerResection, Mat34> KernelType;
+                aliceVision::robust::UnnormalizerResection, Mat34> KernelType;
 
         // otherwise we just pass the input points
         KernelType kernel = KernelType(has_disto ? pt2Dundistorted : resection_data.pt2D, resection_data.pt3D, pinhole_cam->K());
 
         // Robust estimation of the Projection matrix and its precision
         const std::pair<double, double> ACRansacOut =
-                openMVG::robust::ACRANSAC(kernel, resection_data.vec_inliers, resection_data.max_iteration, &P, dPrecision, true);
+                aliceVision::robust::ACRANSAC(kernel, resection_data.vec_inliers, resection_data.max_iteration, &P, dPrecision, true);
         // Update the upper bound precision of the model found by AC-RANSAC
         resection_data.error_max = ACRansacOut.first;
         break;
@@ -121,14 +121,14 @@ bool SfM_Localizer::Localize
         }
 
         // use the P3P solver for generating the model
-        typedef openMVG::euclidean_resection::P3PSolver SolverType;
+        typedef aliceVision::euclidean_resection::P3PSolver SolverType;
         MINIMUM_SAMPLES = SolverType::MINIMUM_SAMPLES;
         // use the six point algorithm as Least square solution to refine the model
-        typedef openMVG::resection::kernel::SixPointResectionSolver SolverLSType;
+        typedef aliceVision::resection::kernel::SixPointResectionSolver SolverLSType;
 
-        typedef openMVG::robust::KernelAdaptorResectionLORansac_K<SolverType,
+        typedef aliceVision::robust::KernelAdaptorResectionLORansac_K<SolverType,
                 ResectionSquaredResidualError,
-                openMVG::robust::UnnormalizerResection,
+                aliceVision::robust::UnnormalizerResection,
                 SolverLSType,
                 Mat34> KernelType;
 
@@ -229,4 +229,4 @@ bool SfM_Localizer::RefinePose
 }
 
 } // namespace sfm
-} // namespace openMVG
+} // namespace aliceVision

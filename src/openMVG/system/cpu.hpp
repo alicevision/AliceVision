@@ -3,7 +3,7 @@
 
 #pragma once
 
-namespace openMVG {
+namespace aliceVision {
 namespace system {
 
 /**

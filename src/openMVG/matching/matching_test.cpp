@@ -2,14 +2,14 @@
 // the terms of the MPL2 license (see the COPYING.md file).
 
 #include "testing/testing.h"
-#include "openMVG/numeric/numeric.h"
-#include "openMVG/matching/matcher_brute_force.hpp"
-#include "openMVG/matching/matcher_kdtree_flann.hpp"
-#include "openMVG/matching/matcher_cascade_hashing.hpp"
+#include "aliceVision/numeric/numeric.h"
+#include "aliceVision/matching/matcher_brute_force.hpp"
+#include "aliceVision/matching/matcher_kdtree_flann.hpp"
+#include "aliceVision/matching/matcher_cascade_hashing.hpp"
 #include <iostream>
 using namespace std;
 
-using namespace openMVG;
+using namespace aliceVision;
 using namespace matching;
 
 TEST(Matching, ArrayMatcherBruteForce_Simple_Dim1)

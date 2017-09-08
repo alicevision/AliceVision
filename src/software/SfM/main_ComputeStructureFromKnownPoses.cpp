@@ -1,17 +1,17 @@
 // This file is part of the AliceVision project and is made available under
 // the terms of the MPL2 license (see the COPYING.md file).
 
-#include "openMVG/config.hpp"
-#include "openMVG/sfm/sfm.hpp"
-#include "openMVG/sfm/pipelines/RegionsIO.hpp"
-#include "openMVG/matching/indMatch.hpp"
-#include "openMVG/system/timer.hpp"
+#include "aliceVision/config.hpp"
+#include "aliceVision/sfm/sfm.hpp"
+#include "aliceVision/sfm/pipelines/RegionsIO.hpp"
+#include "aliceVision/matching/indMatch.hpp"
+#include "aliceVision/system/timer.hpp"
 
 #include "third_party/cmdLine/cmdLine.h"
 #include "third_party/stlplus3/filesystemSimplified/file_system.hpp"
 
-using namespace openMVG;
-using namespace openMVG::sfm;
+using namespace aliceVision;
+using namespace aliceVision::sfm;
 
 /// Compute the structure of a scene according existing camera poses.
 int main(int argc, char **argv)
@@ -80,7 +80,7 @@ int main(int argc, char **argv)
   }
 
   // Init the regions_type from the image describer file (used for image regions extraction)
-  using namespace openMVG::features;
+  using namespace aliceVision::features;
   
   // Get imageDescriberMethodType
   std::vector<EImageDescriberType> describerMethodTypes = EImageDescriberType_stringToEnums(describerMethods);
@@ -122,7 +122,7 @@ int main(int argc, char **argv)
     pairs = Pair_filter(pairs, valid_viewIdx);
   }
 
-  openMVG::system::Timer timer;
+  aliceVision::system::Timer timer;
 
   // Clear previous 3D landmarks
   sfm_data.structure.clear();

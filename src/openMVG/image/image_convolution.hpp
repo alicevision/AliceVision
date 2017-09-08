@@ -4,8 +4,8 @@
 #ifndef OPENMVG_IMAGE_IMAGE_CONVOLUTION_HPP_
 #define OPENMVG_IMAGE_IMAGE_CONVOLUTION_HPP_
 
-#include "openMVG/numeric/accumulator_trait.hpp"
-#include <openMVG/config.hpp>
+#include "aliceVision/numeric/accumulator_trait.hpp"
+#include <aliceVision/config.hpp>
 
 /**
  ** @file Standard 2D image convolution functions :
@@ -14,7 +14,7 @@
  ** - 2D (using standard 2d kernel of with separable kernels)
  **/
 
-namespace openMVG {
+namespace aliceVision {
 namespace image {
 
 /**
@@ -258,15 +258,15 @@ void ImageSeparableConvolution( const Image<float> & img ,
 {
   // Cast the Kernel to the appropriate type
   typedef Image<float>::Tpixel pix_t;
-  typedef Eigen::Matrix<typename openMVG::Accumulator<pix_t>::Type, Eigen::Dynamic, 1> VecKernel;
-  const VecKernel horiz_k_cast = horiz_k.template cast< typename openMVG::Accumulator<pix_t>::Type >();
-  const VecKernel vert_k_cast = vert_k.template cast< typename openMVG::Accumulator<pix_t>::Type >();
+  typedef Eigen::Matrix<typename aliceVision::Accumulator<pix_t>::Type, Eigen::Dynamic, 1> VecKernel;
+  const VecKernel horiz_k_cast = horiz_k.template cast< typename aliceVision::Accumulator<pix_t>::Type >();
+  const VecKernel vert_k_cast = vert_k.template cast< typename aliceVision::Accumulator<pix_t>::Type >();
 
   out.resize(img.Width(), img.Height());
   SeparableConvolution2d(img.GetMat(), horiz_k_cast, vert_k_cast, &((Image<float>::Base&)out));
 }
 
 } // namespace image
-} // namespace openMVG
+} // namespace aliceVision
 
 #endif // OPENMVG_IMAGE_IMAGE_CONVOLUTION_HPP_

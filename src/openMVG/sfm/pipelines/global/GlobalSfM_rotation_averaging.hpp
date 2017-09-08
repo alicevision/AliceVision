@@ -4,7 +4,7 @@
 #ifndef OPENMVG_SFM_GLOBAL_ENGINE_PIPELINES_GLOBAL_ROTATION_AVERAGING_HPP
 #define OPENMVG_SFM_GLOBAL_ENGINE_PIPELINES_GLOBAL_ROTATION_AVERAGING_HPP
 
-namespace openMVG{
+namespace aliceVision{
 namespace sfm{
 
 enum ERotationAveragingMethod
@@ -20,13 +20,13 @@ enum ERelativeRotationInferenceMethod
 };
 
 } // namespace sfm
-} // namespace openMVG
+} // namespace aliceVision
 
-#include "openMVG/sfm/sfm.hpp"
-#include "openMVG/graph/graph.hpp"
-#include "openMVG/multiview/rotation_averaging_common.hpp"
+#include "aliceVision/sfm/sfm.hpp"
+#include "aliceVision/graph/graph.hpp"
+#include "aliceVision/multiview/rotation_averaging_common.hpp"
 
-namespace openMVG{
+namespace aliceVision{
 namespace sfm{
 
 class GlobalSfM_Rotation_AveragingSolver
@@ -54,6 +54,6 @@ public:
 };
 
 } // namespace sfm
-} // namespace openMVG
+} // namespace aliceVision
 
 #endif // OPENMVG_SFM_GLOBAL_ENGINE_PIPELINES_GLOBAL_ROTATION_AVERAGING_HPP

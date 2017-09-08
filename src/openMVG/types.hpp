@@ -16,7 +16,7 @@
 #include <unordered_map>
 #endif
 
-namespace openMVG{
+namespace aliceVision{
 
 typedef uint32_t IndexT;
 static const IndexT UndefinedIndexT = std::numeric_limits<IndexT>::max();
@@ -46,6 +46,6 @@ struct EstimationStatus
   bool hasStrongSupport = false;
 };
 
-} // namespace openMVG
+} // namespace aliceVision
 
 #endif  // OPENMVG_TYPES_H_

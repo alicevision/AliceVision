@@ -4,12 +4,12 @@
 #ifndef OPENMVG_MATCHING_MATCHINGINTERFACE_H
 #define OPENMVG_MATCHING_MATCHINGINTERFACE_H
 
-#include "openMVG/numeric/numeric.h"
-#include "openMVG/matching/indMatch.hpp"
+#include "aliceVision/numeric/numeric.h"
+#include "aliceVision/matching/indMatch.hpp"
 
 #include <vector>
 
-namespace openMVG {
+namespace aliceVision {
 namespace matching {
 
 
@@ -68,6 +68,6 @@ class ArrayMatcher
 };
 
 }  // namespace matching
-}  // namespace openMVG
+}  // namespace aliceVision
 
 #endif  // OPENMVG_MATCHING_MATCHINGINTERFACE_H

@@ -1,16 +1,16 @@
 // This file is part of the AliceVision project and is made available under
 // the terms of the MPL2 license (see the COPYING.md file).
 
-#include "openMVG/sfm/pipelines/sfm_robust_model_estimation.hpp"
+#include "aliceVision/sfm/pipelines/sfm_robust_model_estimation.hpp"
 
-#include "openMVG/multiview/solver_essential_kernel.hpp"
-#include "openMVG/multiview/projection.hpp"
-#include "openMVG/multiview/triangulation.hpp"
+#include "aliceVision/multiview/solver_essential_kernel.hpp"
+#include "aliceVision/multiview/projection.hpp"
+#include "aliceVision/multiview/triangulation.hpp"
 
-#include "openMVG/robust_estimation/robust_estimator_ACRansac.hpp"
-#include "openMVG/robust_estimation/robust_estimator_ACRansacKernelAdaptator.hpp"
+#include "aliceVision/robust_estimation/robust_estimator_ACRansac.hpp"
+#include "aliceVision/robust_estimation/robust_estimator_ACRansacKernelAdaptator.hpp"
 
-namespace openMVG {
+namespace aliceVision {
 namespace sfm {
 
 bool estimate_Rt_fromE(const Mat3 & K1, const Mat3 & K2,
@@ -70,7 +70,7 @@ bool estimate_Rt_fromE(const Mat3 & K1, const Mat3 & K2,
   return true;
 }
 
-using namespace openMVG::robust;
+using namespace aliceVision::robust;
 
 bool robustRelativePose(
   const Mat3 & K1, const Mat3 & K2,
@@ -81,11 +81,11 @@ bool robustRelativePose(
   const size_t max_iteration_count)
 {
   // Use the 5 point solver to estimate E
-  typedef openMVG::essential::kernel::FivePointKernel SolverType;
+  typedef aliceVision::essential::kernel::FivePointKernel SolverType;
   // Define the AContrario adaptor
   typedef ACKernelAdaptorEssential<
       SolverType,
-      openMVG::fundamental::kernel::EpipolarDistanceError,
+      aliceVision::fundamental::kernel::EpipolarDistanceError,
       UnnormalizerT,
       Mat3>
       KernelType;
@@ -115,5 +115,5 @@ bool robustRelativePose(
 }
 
 } // namespace sfm
-} // namespace openMVG
+} // namespace aliceVision
 

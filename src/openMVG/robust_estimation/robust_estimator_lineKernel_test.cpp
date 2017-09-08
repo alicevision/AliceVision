@@ -1,11 +1,11 @@
 // This file is part of the AliceVision project and is made available under
 // the terms of the MPL2 license (see the COPYING.md file).
 
-#include "openMVG/robust_estimation/robust_estimator_lineKernel_test.hpp"
+#include "aliceVision/robust_estimation/robust_estimator_lineKernel_test.hpp"
 #include "testing/testing.h"
 #include <vector>
-using namespace openMVG;
-using namespace openMVG::robust;
+using namespace aliceVision;
+using namespace aliceVision::robust;
 
 // Since the line fitter isn't so simple, test it in isolation.
 TEST(LineFitter, ItWorks) {

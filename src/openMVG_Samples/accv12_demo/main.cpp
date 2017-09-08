@@ -17,20 +17,20 @@
 #include <opencv2/nonfree/features2d.hpp>
 #include <opencv2/legacy/legacy.hpp>
 
-#include "openMVG/numeric/numeric.h"
+#include "aliceVision/numeric/numeric.h"
 #include "third_party/vectorGraphics/svgDrawer.hpp"
-#include "openMVG/multiview/solver_homography_kernel.hpp"
-#include "openMVG/multiview/conditioning.hpp"
+#include "aliceVision/multiview/solver_homography_kernel.hpp"
+#include "aliceVision/multiview/conditioning.hpp"
 
-using namespace openMVG;
+using namespace aliceVision;
 
-#include "openMVG/robust_estimation/robust_estimator_MaxConsensus.hpp"
-#include "openMVG/robust_estimation/score_evaluator.hpp"
+#include "aliceVision/robust_estimation/robust_estimator_MaxConsensus.hpp"
+#include "aliceVision/robust_estimation/score_evaluator.hpp"
 
-#include "openMVG/robust_estimation/robust_estimator_ACRansac.hpp"
-#include "openMVG/robust_estimation/robust_estimator_ACRansacKernelAdaptator.hpp"
+#include "aliceVision/robust_estimation/robust_estimator_ACRansac.hpp"
+#include "aliceVision/robust_estimation/robust_estimator_ACRansacKernelAdaptator.hpp"
 
-using namespace openMVG::robust;
+using namespace aliceVision::robust;
 
 
 #include <boost/circular_buffer.hpp>
@@ -174,7 +174,7 @@ int main(int, char**)
           //-------
           //-- Robust Model estimation :
           //-------
-          openMVG::Mat xA(2,vec_matches.size()), xB(2, vec_matches.size());
+          aliceVision::Mat xA(2,vec_matches.size()), xB(2, vec_matches.size());
           const std::vector<cv::KeyPoint >& keypointsA = kpts;
           const std::vector<cv::KeyPoint >& keypointsB = kptsStream;
           for (size_t i = 0; i < vec_matches.size(); ++i)
@@ -193,8 +193,8 @@ int main(int, char**)
           double NFAH;
           {
             typedef ACKernelAdaptor<
-              openMVG::homography::kernel::FourPointSolver,
-              openMVG::homography::kernel::AsymmetricError,
+              aliceVision::homography::kernel::FourPointSolver,
+              aliceVision::homography::kernel::AsymmetricError,
               UnnormalizerI,
               Mat3>
             KernelType;

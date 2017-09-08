@@ -1,13 +1,13 @@
 // This file is part of the AliceVision project and is made available under
 // the terms of the MPL2 license (see the COPYING.md file).
 
-#include <openMVG/rig/Rig.hpp>
-#include <openMVG/system/Logger.hpp>
+#include <aliceVision/rig/Rig.hpp>
+#include <aliceVision/system/Logger.hpp>
 
-#include <openMVG/sfm/sfm_data.hpp>
-#include <openMVG/sfm/sfm_data_io.hpp>
+#include <aliceVision/sfm/sfm_data.hpp>
+#include <aliceVision/sfm/sfm_data_io.hpp>
 
-#include <openMVG/sfm/AlembicExporter.hpp>
+#include <aliceVision/sfm/AlembicExporter.hpp>
 
 #include <boost/filesystem.hpp>
 #include <boost/progress.hpp>
@@ -20,8 +20,8 @@
 namespace bfs = boost::filesystem;
 namespace po = boost::program_options;
 
-using namespace openMVG;
-using namespace openMVG::sfm;
+using namespace aliceVision;
+using namespace aliceVision::sfm;
 
 static std::vector<double> ReadIntrinsicsFile(const std::string& fname)
 {
@@ -40,7 +40,7 @@ int main(int argc, char** argv)
   std::string importFile = "";
   std::string rigFile = "";
   std::string calibFile = "";
-  std::vector<openMVG::geometry::Pose3> extrinsics;  // the rig subposes
+  std::vector<aliceVision::geometry::Pose3> extrinsics;  // the rig subposes
   
   po::options_description desc("If you have localized a single camera from an acquisition with a RIG of cameras, you can use this program to deduce the pose of the other cameras of the RIG.");
   desc.add_options()
@@ -107,16 +107,16 @@ int main(int argc, char** argv)
 
   // Load intrinsics
   auto v = ReadIntrinsicsFile(calibFile);
-  openMVG::cameras::Pinhole_Intrinsic_Radial_K3 intrinsics = openMVG::cameras::Pinhole_Intrinsic_Radial_K3(v[0], v[1], v[2], v[3], v[4], v[5], v[6], v[7]);
+  aliceVision::cameras::Pinhole_Intrinsic_Radial_K3 intrinsics = aliceVision::cameras::Pinhole_Intrinsic_Radial_K3(v[0], v[1], v[2], v[3], v[4], v[5], v[6], v[7]);
 
   // Export to abc
-  openMVG::sfm::AlembicExporter exporter( exportFile );
+  aliceVision::sfm::AlembicExporter exporter( exportFile );
   exporter.initAnimatedCamera("camera");
 
   size_t idx = 0;
   for (auto &p : sfmData.GetPoses())
   {
-    const openMVG::geometry::Pose3 rigPose = extrinsics[0].inverse() * p.second;
+    const aliceVision::geometry::Pose3 rigPose = extrinsics[0].inverse() * p.second;
     exporter.addCameraKeyframe(rigPose, &intrinsics, "", idx, idx);
     ++idx;
   }

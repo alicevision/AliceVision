@@ -1,17 +1,17 @@
 // This file is part of the AliceVision project and is made available under
 // the terms of the MPL2 license (see the COPYING.md file).
 
-#include "openMVG/image/image.hpp"
-#include "openMVG/sfm/sfm.hpp"
+#include "aliceVision/image/image.hpp"
+#include "aliceVision/sfm/sfm.hpp"
 
-#include <openMVG/config.hpp>
+#include <aliceVision/config.hpp>
 
 /// Feature/Regions & Image describer interfaces
-#include "openMVG/features/ImageDescriberCommon.hpp"
-#include "openMVG/features/features.hpp"
+#include "aliceVision/features/ImageDescriberCommon.hpp"
+#include "aliceVision/features/features.hpp"
 #include <cereal/archives/json.hpp>
 
-#include "openMVG/system/timer.hpp"
+#include "aliceVision/system/timer.hpp"
 
 #include "third_party/cmdLine/cmdLine.h"
 #include "third_party/stlplus3/filesystemSimplified/file_system.hpp"
@@ -28,10 +28,10 @@
 #include <fstream>
 #include <algorithm>
 
-using namespace openMVG;
-using namespace openMVG::image;
-using namespace openMVG::features;
-using namespace openMVG::sfm;
+using namespace aliceVision;
+using namespace aliceVision::image;
+using namespace aliceVision::features;
+using namespace aliceVision::sfm;
 using namespace std;
 
 enum eGeometricModel
@@ -52,7 +52,7 @@ enum ePairMode
 //- Create an Image_describer interface that use an OpenCV feature extraction method
 // i.e. with the AKAZE detector+descriptor
 //--/!\ If you use a new Regions type you define and register it in
-//   "openMVG/features/regions_factory.hpp" file.
+//   "aliceVision/features/regions_factory.hpp" file.
 ///
 // Reuse the existing AKAZE floating point Keypoint.
 typedef features::AKAZE_Float_Regions AKAZE_OpenCV_Regions;
@@ -467,7 +467,7 @@ int main(int argc, char **argv)
   // - retrieve the used one in case of pre-computed features
   // - else create the desired one
 
-  using namespace openMVG::features;
+  using namespace aliceVision::features;
   std::unique_ptr<Image_describer> image_describer;
 
   const std::string sImage_describer = stlplus::create_filespec(sOutDir, "image_describer", "json");

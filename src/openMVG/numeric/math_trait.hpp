@@ -6,7 +6,7 @@
 
 #include <cmath>
 
-namespace openMVG
+namespace aliceVision
 {
   /* Type trait used to specialize math functions */
 

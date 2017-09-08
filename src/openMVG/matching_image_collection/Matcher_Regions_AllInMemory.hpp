@@ -3,9 +3,9 @@
 
 #pragma once
 
-#include "openMVG/matching_image_collection/Matcher.hpp"
+#include "aliceVision/matching_image_collection/Matcher.hpp"
 
-namespace openMVG {
+namespace aliceVision {
 namespace matching_image_collection {
 
 /**
@@ -40,5 +40,5 @@ class ImageCollectionMatcher_Generic : public IImageCollectionMatcher
   matching::EMatcherType _matcherType;
 };
 
-} // namespace openMVG
+} // namespace aliceVision
 } // namespace matching_image_collection

@@ -4,14 +4,14 @@
 #ifndef OPENMVG_COLOR_HARMONIZATION_ENGINE_GLOBAL_H
 #define OPENMVG_COLOR_HARMONIZATION_ENGINE_GLOBAL_H
 
-#include <openMVG/numeric/numeric.h>
-#include <openMVG/features/features.hpp>
-#include <openMVG/features/RegionsPerView.hpp>
-#include <openMVG/tracks/tracks.hpp>
+#include <aliceVision/numeric/numeric.h>
+#include <aliceVision/features/features.hpp>
+#include <aliceVision/features/RegionsPerView.hpp>
+#include <aliceVision/tracks/tracks.hpp>
 
 #include <memory>
 
-namespace openMVG {
+namespace aliceVision {
 
 enum EHistogramSelectionMethod
 {
@@ -72,7 +72,7 @@ private:
   features::RegionsPerView _regionsPerView;
   std::vector< std::pair< size_t, size_t > > _vec_imageSize; // Size of each image
 
-  openMVG::matching::PairwiseMatches _pairwiseMatches; // pairwise geometric matches
+  aliceVision::matching::PairwiseMatches _pairwiseMatches; // pairwise geometric matches
 
   std::vector<features::EImageDescriberType> _descTypes; //< describer type use for color harmonizations
 
@@ -83,6 +83,6 @@ private:
 };
 
 
-} // namespace openMVG
+} // namespace aliceVision
 
 #endif // OPENMVG_COLOR_HARMONIZATION_ENGINE_GLOBAL_H

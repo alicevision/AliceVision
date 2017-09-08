@@ -10,7 +10,7 @@
   #include "cctag/progBase/MemoryPool.hpp"
 #endif
 
-namespace openMVG {
+namespace aliceVision {
 namespace features {
 
 CCTAG_Image_describer::CCTagParameters::CCTagParameters(size_t nRings)
@@ -126,5 +126,5 @@ bool CCTAG_Image_describer::Describe(const image::Image<unsigned char>& image,
   };
 
 } // namespace features
-} // namespace openMVG
+} // namespace aliceVision
 

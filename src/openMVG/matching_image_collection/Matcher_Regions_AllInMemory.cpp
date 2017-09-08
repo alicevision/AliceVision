@@ -1,22 +1,22 @@
 // This file is part of the AliceVision project and is made available under
 // the terms of the MPL2 license (see the COPYING.md file).
 
-#include "openMVG/matching_image_collection/Matcher_Regions_AllInMemory.hpp"
-#include "openMVG/matching/matcher_brute_force.hpp"
-#include "openMVG/matching/matcher_kdtree_flann.hpp"
-#include "openMVG/matching/matcher_cascade_hashing.hpp"
-#include "openMVG/matching/regions_matcher.hpp"
-#include "openMVG/matching_image_collection/Matcher.hpp"
-#include <openMVG/config.hpp>
+#include "aliceVision/matching_image_collection/Matcher_Regions_AllInMemory.hpp"
+#include "aliceVision/matching/matcher_brute_force.hpp"
+#include "aliceVision/matching/matcher_kdtree_flann.hpp"
+#include "aliceVision/matching/matcher_cascade_hashing.hpp"
+#include "aliceVision/matching/regions_matcher.hpp"
+#include "aliceVision/matching_image_collection/Matcher.hpp"
+#include <aliceVision/config.hpp>
 
 #include "third_party/stlplus3/filesystemSimplified/file_system.hpp"
 #include "third_party/progress/progress.hpp"
 
-namespace openMVG {
+namespace aliceVision {
 namespace matching_image_collection {
 
-using namespace openMVG::matching;
-using namespace openMVG::features;
+using namespace aliceVision::matching;
+using namespace aliceVision::features;
 
 ImageCollectionMatcher_Generic::ImageCollectionMatcher_Generic(
   float distRatio, EMatcherType matcherType)
@@ -94,5 +94,5 @@ void ImageCollectionMatcher_Generic::Match(
   }
 }
 
-} // namespace openMVG
+} // namespace aliceVision
 } // namespace matching_image_collection

@@ -3,13 +3,13 @@
 
 #include "ImageDescriberCommon.hpp"
 
-#include "openMVG/types.hpp"
-#include "openMVG/stl/split.hpp"
+#include "aliceVision/types.hpp"
+#include "aliceVision/stl/split.hpp"
 
 #include <cassert>
 
 
-namespace openMVG {
+namespace aliceVision {
 namespace features {
 
 std::string EImageDescriberType_enumToString(EImageDescriberType imageDescriberType)
@@ -79,4 +79,4 @@ std::vector<EImageDescriberType> EImageDescriberType_stringToEnums(const std::st
 }
 
 } // namespace features
-} // namespace openMVG
+} // namespace aliceVision

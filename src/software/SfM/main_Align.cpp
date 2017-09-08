@@ -1,9 +1,9 @@
 // This file is part of the AliceVision project and is made available under
 // the terms of the MPL2 license (see the COPYING.md file).
 
-#include "openMVG/sfm/sfm.hpp"
-#include "openMVG/sfm/utils/alignment.hpp"
-#include <openMVG/config.hpp>
+#include "aliceVision/sfm/sfm.hpp"
+#include "aliceVision/sfm/utils/alignment.hpp"
+#include <aliceVision/config.hpp>
 
 #include "third_party/cmdLine/cmdLine.h"
 #include "third_party/stlplus3/filesystemSimplified/file_system.hpp"
@@ -12,8 +12,8 @@
 #include <sstream>
 #include <vector>
 
-using namespace openMVG;
-using namespace openMVG::sfm;
+using namespace aliceVision;
+using namespace aliceVision::sfm;
 
 static bool parseAlignScale(const std::string& alignScale, double& S, Mat3& R, Vec3& t);
 

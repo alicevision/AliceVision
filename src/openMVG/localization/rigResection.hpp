@@ -2,16 +2,16 @@
 // the terms of the MPL2 license (see the COPYING.md file).
 
 #pragma once
-#include <openMVG/config.hpp>
-#include <openMVG/types.hpp>
-#include <openMVG/features/ImageDescriberCommon.hpp>
-#include <openMVG/cameras/Camera_Pinhole_Radial.hpp>
-#include <openMVG/geometry/pose3.hpp>
-#include <openMVG/numeric/numeric.h>
+#include <aliceVision/config.hpp>
+#include <aliceVision/types.hpp>
+#include <aliceVision/features/ImageDescriberCommon.hpp>
+#include <aliceVision/cameras/Camera_Pinhole_Radial.hpp>
+#include <aliceVision/geometry/pose3.hpp>
+#include <aliceVision/numeric/numeric.h>
 
 #include <vector>
 
-namespace openMVG {
+namespace aliceVision {
 namespace localization{
 
 #if OPENMVG_IS_DEFINED(OPENMVG_HAVE_OPENGV)

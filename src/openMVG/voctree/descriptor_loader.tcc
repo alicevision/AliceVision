@@ -1,8 +1,8 @@
 // This file is part of the AliceVision project and is made available under
 // the terms of the MPL2 license (see the COPYING.md file).
 
-#include <openMVG/features/descriptor.hpp>
-#include <openMVG/system/Logger.hpp>
+#include <aliceVision/features/descriptor.hpp>
+#include <aliceVision/system/Logger.hpp>
 
 #include <boost/filesystem.hpp>
 #include <boost/algorithm/string/case_conv.hpp>
@@ -11,7 +11,7 @@
 #include <iostream>
 #include <fstream>
 
-namespace openMVG {
+namespace aliceVision {
 namespace voctree {
 
 template<class DescriptorT, class FileDescriptorT>
@@ -84,4 +84,4 @@ size_t readDescFromFiles(const std::string &fileFullPath, std::vector<Descriptor
 }
 
 } // namespace voctree
-} // namespace openMVG
+} // namespace aliceVision

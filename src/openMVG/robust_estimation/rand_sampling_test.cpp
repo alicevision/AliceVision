@@ -1,13 +1,13 @@
 // This file is part of the AliceVision project and is made available under
 // the terms of the MPL2 license (see the COPYING.md file).
 
-#include "openMVG/robust_estimation/rand_sampling.hpp"
+#include "aliceVision/robust_estimation/rand_sampling.hpp"
 #include "testing/testing.h"
 #include <set>
 #include <vector>
 
-using namespace openMVG;
-using namespace openMVG::robust;
+using namespace aliceVision;
+using namespace aliceVision::robust;
 
 // Assert that each time exactly N random number are picked (no repetition)
 TEST(UniformSampleTest, NoRepetions) {

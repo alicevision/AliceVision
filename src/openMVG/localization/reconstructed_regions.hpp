@@ -3,17 +3,17 @@
 
 #pragma once
 
-#include "openMVG/config.hpp"
-#include "openMVG/types.hpp"
-#include "openMVG/features/regions.hpp"
-#include "openMVG/features/descriptor.hpp"
-#include "openMVG/features/ImageDescriberCommon.hpp"
+#include "aliceVision/config.hpp"
+#include "aliceVision/types.hpp"
+#include "aliceVision/features/regions.hpp"
+#include "aliceVision/features/descriptor.hpp"
+#include "aliceVision/features/ImageDescriberCommon.hpp"
 
 #include <vector>
 #include <map>
 #include <memory>
 
-namespace openMVG {
+namespace aliceVision {
 namespace localization {
 
 
@@ -35,4 +35,4 @@ using ReconstructedRegionsMappingPerView = std::map<IndexT, ReconstructedRegions
 
 
 } // namespace features
-} // namespace openMVG
+} // namespace aliceVision

@@ -3,7 +3,7 @@
 
 #pragma once
 
-#include "openMVG/stl/split.hpp"
+#include "aliceVision/stl/split.hpp"
 #include "datasheet.hpp"
 
 #include <vector>
@@ -15,7 +15,7 @@
 
 #include "third_party/stlplus3/filesystemSimplified/file_system.hpp"
 
-namespace openMVG {
+namespace aliceVision {
 namespace exif {
 namespace sensordb {
 

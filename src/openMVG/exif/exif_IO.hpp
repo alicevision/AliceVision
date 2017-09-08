@@ -7,7 +7,7 @@
 #include <string>
 #include <map>
 
-namespace openMVG {
+namespace aliceVision {
 namespace exif  {
 
 class Exif_IO
@@ -57,6 +57,6 @@ class Exif_IO
 std::size_t computeUID(const Exif_IO& exifReader, const std::string& imageFilename);
 
 } // namespace exif
-} // namespace openMVG
+} // namespace aliceVision
 #endif //EXIF_IO_HPP
 

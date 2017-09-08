@@ -3,9 +3,9 @@
 
 #include "selection.hpp"
 
-#include <openMVG/numeric/numeric.h>
+#include <aliceVision/numeric/numeric.h>
 
-namespace openMVG {
+namespace aliceVision {
 namespace features {
 
 const size_t gridSize = 3;
@@ -18,13 +18,13 @@ const size_t gridSize = 3;
 * @param[out] outputMatches Subset of inputMatches containing the best n matches, sorted.
 */
 void sortMatches(
-	const openMVG::matching::IndMatches& inputMatches,
-	const openMVG::features::Feat_Regions<openMVG::features::SIOPointFeature>& regionsI,
-	const openMVG::features::Feat_Regions<openMVG::features::SIOPointFeature>& regionsJ,
-	openMVG::matching::IndMatches& outputMatches)
+	const aliceVision::matching::IndMatches& inputMatches,
+	const aliceVision::features::Feat_Regions<aliceVision::features::SIOPointFeature>& regionsI,
+	const aliceVision::features::Feat_Regions<aliceVision::features::SIOPointFeature>& regionsJ,
+	aliceVision::matching::IndMatches& outputMatches)
 {
-	const std::vector<openMVG::features::SIOPointFeature>& vecFeatureI = regionsI.Features();
-	const std::vector<openMVG::features::SIOPointFeature>& vecFeatureJ = regionsJ.Features();
+	const std::vector<aliceVision::features::SIOPointFeature>& vecFeatureI = regionsI.Features();
+	const std::vector<aliceVision::features::SIOPointFeature>& vecFeatureJ = regionsJ.Features();
 
 	//outputMatches will contain the sorted matches if inputMatches.
 	outputMatches.reserve(inputMatches.size());
@@ -65,7 +65,7 @@ bool matchCompare(const std::pair<float, size_t>& firstElem, const std::pair<flo
 * @param[out] outputMatches Set of image pairs and their respective sets of matches thresholded to the first uNumMatchesToKeep.
 * @param[in] uNumMatchesToKeep The N best matches to keep.
 */
-void thresholdMatches(openMVG::matching::IndMatches& outputMatches, const std::size_t uNumMatchesToKeep)
+void thresholdMatches(aliceVision::matching::IndMatches& outputMatches, const std::size_t uNumMatchesToKeep)
 {
 	if (outputMatches.size() > uNumMatchesToKeep) {
 		outputMatches.resize(uNumMatchesToKeep);
@@ -80,11 +80,11 @@ void thresholdMatches(openMVG::matching::IndMatches& outputMatches, const std::s
  * @param[in] sfm_data The sfm data file
  * @param[out] outMatches The remaining matches
  */
-void matchesGridFiltering(const openMVG::features::Feat_Regions<openMVG::features::SIOPointFeature>& lRegions, 
-        const openMVG::features::Feat_Regions<openMVG::features::SIOPointFeature>& rRegions, 
-        const openMVG::Pair& indexImagePair,
-        const openMVG::sfm::SfM_Data sfm_data, 
-        openMVG::matching::IndMatches& outMatches)
+void matchesGridFiltering(const aliceVision::features::Feat_Regions<aliceVision::features::SIOPointFeature>& lRegions, 
+        const aliceVision::features::Feat_Regions<aliceVision::features::SIOPointFeature>& rRegions, 
+        const aliceVision::Pair& indexImagePair,
+        const aliceVision::sfm::SfM_Data sfm_data, 
+        aliceVision::matching::IndMatches& outMatches)
 {
   const std::size_t lWidth = sfm_data.GetViews().at(indexImagePair.first)->getWidth();
   const std::size_t lHeight = sfm_data.GetViews().at(indexImagePair.first)->getHeight();
@@ -96,17 +96,17 @@ void matchesGridFiltering(const openMVG::features::Feat_Regions<openMVG::feature
   const size_t rightCellHeight = std::ceil(rHeight / (float)gridSize);
   const size_t rightCellWidth = std::ceil(rWidth / (float)gridSize);
 
-  std::vector< openMVG::matching::IndMatches > completeGrid(gridSize*gridSize*2);
+  std::vector< aliceVision::matching::IndMatches > completeGrid(gridSize*gridSize*2);
   // Reserve all cells
-  for(openMVG::matching::IndMatches& cell: completeGrid)
+  for(aliceVision::matching::IndMatches& cell: completeGrid)
   {
     cell.reserve(outMatches.size()/completeGrid.size());
   }
   // Split matches in grid cells
   for(const auto& match: outMatches)
   {
-    const openMVG::features::SIOPointFeature& leftPoint = lRegions.Features()[match._i];
-    const openMVG::features::SIOPointFeature& rightPoint = rRegions.Features()[match._j];
+    const aliceVision::features::SIOPointFeature& leftPoint = lRegions.Features()[match._i];
+    const aliceVision::features::SIOPointFeature& rightPoint = rRegions.Features()[match._j];
     
     const float leftGridIndex_f = std::floor(leftPoint.x() / (float)leftCellWidth) + std::floor(leftPoint.y() / (float)leftCellHeight) * gridSize;
     const float rightGridIndex_f = std::floor(rightPoint.x() / (float)rightCellWidth) + std::floor(rightPoint.y() / (float)rightCellHeight) * gridSize;
@@ -114,8 +114,8 @@ void matchesGridFiltering(const openMVG::features::Feat_Regions<openMVG::feature
     const std::size_t leftGridIndex = clamp(leftGridIndex_f, 0.f, float(gridSize-1));
     const std::size_t rightGridIndex = clamp(rightGridIndex_f, 0.f, float(gridSize-1));
 
-    openMVG::matching::IndMatches& currentCaseL = completeGrid[leftGridIndex];
-    openMVG::matching::IndMatches& currentCaseR = completeGrid[rightGridIndex + gridSize*gridSize];
+    aliceVision::matching::IndMatches& currentCaseL = completeGrid[leftGridIndex];
+    aliceVision::matching::IndMatches& currentCaseR = completeGrid[rightGridIndex + gridSize*gridSize];
     
     if(currentCaseL.size() <= currentCaseR.size())
     {
@@ -137,7 +137,7 @@ void matchesGridFiltering(const openMVG::features::Feat_Regions<openMVG::feature
     }
   }
   
-  openMVG::matching::IndMatches finalMatches;
+  aliceVision::matching::IndMatches finalMatches;
   finalMatches.reserve(outMatches.size());
   
   // Combine all cells into a global ordered vector

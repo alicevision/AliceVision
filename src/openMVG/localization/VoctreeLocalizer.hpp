@@ -7,19 +7,19 @@
 #include "LocalizationResult.hpp"
 #include "ILocalizer.hpp"
 #include "BoundedBuffer.hpp"
-#include <openMVG/config.hpp>
-#include <openMVG/features/image_describer.hpp>
-#include <openMVG/sfm/sfm_data.hpp>
-#include <openMVG/sfm/pipelines/localization/SfM_Localizer.hpp>
-#include <openMVG/stl/stlMap.hpp>
-#include <openMVG/voctree/vocabulary_tree.hpp>
-#include <openMVG/voctree/database.hpp>
-#include <openMVG/matching/matcher_kdtree_flann.hpp>
-#include <openMVG/matching/regions_matcher.hpp>
+#include <aliceVision/config.hpp>
+#include <aliceVision/features/image_describer.hpp>
+#include <aliceVision/sfm/sfm_data.hpp>
+#include <aliceVision/sfm/pipelines/localization/SfM_Localizer.hpp>
+#include <aliceVision/stl/stlMap.hpp>
+#include <aliceVision/voctree/vocabulary_tree.hpp>
+#include <aliceVision/voctree/database.hpp>
+#include <aliceVision/matching/matcher_kdtree_flann.hpp>
+#include <aliceVision/matching/regions_matcher.hpp>
 #include <flann/algorithms/dist.h>
 
 
-namespace openMVG {
+namespace aliceVision {
 namespace localization {
 
 struct FrameData
@@ -366,4 +366,4 @@ std::istream& operator>>(std::istream &in, VoctreeLocalizer::Algorithm &a);
 
 
 } // localization
-} // openMVG
+} // aliceVision

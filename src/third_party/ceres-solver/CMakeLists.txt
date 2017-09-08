@@ -325,7 +325,7 @@ ENDIF (SUITESPARSE)
 IF (CXSPARSE)
   SET(CXSPARSE_INCLUDE_DIRS ../cxsparse/Include) # AliceVision
   SET(CXSPARSE_FOUND ON)
-  # openMVG: cxsparse already exists
+  # aliceVision: cxsparse already exists
   SET(CXSPARSE_LIBRARIES cxsparse)
   # Don't search with REQUIRED as we can continue without CXSparse.
 #  FIND_PACKAGE(CXSparse)

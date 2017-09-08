@@ -4,9 +4,9 @@
 #ifndef OPENMVG_SFM_DATA_TRIANGULATION_HPP
 #define OPENMVG_SFM_DATA_TRIANGULATION_HPP
 
-#include "openMVG/sfm/sfm_data.hpp"
+#include "aliceVision/sfm/sfm_data.hpp"
 
-namespace openMVG {
+namespace aliceVision {
 namespace sfm {
 
 /// Generic basis struct for triangulation of track data contained
@@ -65,6 +65,6 @@ private:
 };
 
 } // namespace sfm
-} // namespace openMVG
+} // namespace aliceVision
 
 #endif // OPENMVG_SFM_DATA_TRIANGULATION_HPP

@@ -3,13 +3,13 @@
 
 #include "MatchingCommon.hpp"
 
-#include "openMVG/matching_image_collection/Matcher_Regions_AllInMemory.hpp"
-#include "openMVG/matching_image_collection/Cascade_Hashing_Matcher_Regions_AllInMemory.hpp"
+#include "aliceVision/matching_image_collection/Matcher_Regions_AllInMemory.hpp"
+#include "aliceVision/matching_image_collection/Cascade_Hashing_Matcher_Regions_AllInMemory.hpp"
 
 #include <exception>
 #include <cassert>
 
-namespace openMVG {
+namespace aliceVision {
 namespace matching_image_collection {
   
 
@@ -33,4 +33,4 @@ std::unique_ptr<IImageCollectionMatcher> createImageCollectionMatcher(matching::
 }
 
 } // namespace matching_image_collection
-} // namespace openMVG
+} // namespace aliceVision

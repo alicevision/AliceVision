@@ -1,13 +1,13 @@
 // This file is part of the AliceVision project and is made available under
 // the terms of the MPL2 license (see the COPYING.md file).
 
-#include "openMVG/multiview/solver_essential_kernel.hpp"
-#include "openMVG/multiview/solver_fundamental_kernel.hpp"
-#include "openMVG/numeric/poly.h"
-#include "openMVG/multiview/solver_essential_five_point.hpp"
+#include "aliceVision/multiview/solver_essential_kernel.hpp"
+#include "aliceVision/multiview/solver_fundamental_kernel.hpp"
+#include "aliceVision/numeric/poly.h"
+#include "aliceVision/multiview/solver_essential_five_point.hpp"
 #include <cassert>
 
-namespace openMVG {
+namespace aliceVision {
 namespace essential {
 namespace kernel {
 
@@ -50,4 +50,4 @@ void FivePointSolver::Solve(const Mat &x1, const Mat &x2, vector<Mat3> *E) {
 
 }  // namespace kernel
 }  // namespace essential
-}  // namespace openMVG
+}  // namespace aliceVision

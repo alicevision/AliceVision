@@ -3,12 +3,12 @@
 
 #pragma once
 
-#include <openMVG/sfm/sfm_data.hpp>
-#include <openMVG/sfm/sfm_data_io.hpp>
+#include <aliceVision/sfm/sfm_data.hpp>
+#include <aliceVision/sfm/sfm_data_io.hpp>
 
 #include <string>
 
-namespace openMVG {
+namespace aliceVision {
 namespace sfm {
 
 class AlembicImporter 
@@ -26,5 +26,5 @@ private:
 };
 
 } // namespace sfm
-} // namespace openMVG
+} // namespace aliceVision
 

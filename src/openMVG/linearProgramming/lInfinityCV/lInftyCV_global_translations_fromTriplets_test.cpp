@@ -1,15 +1,15 @@
 // This file is part of the AliceVision project and is made available under
 // the terms of the MPL2 license (see the COPYING.md file).
 
-#include "openMVG/linearProgramming/linearProgrammingInterface.hpp"
-#include "openMVG/linearProgramming/linearProgrammingOSI_X.hpp"
-#include "openMVG/linearProgramming/lInfinityCV/global_translations_fromTriplets.hpp"
+#include "aliceVision/linearProgramming/linearProgrammingInterface.hpp"
+#include "aliceVision/linearProgramming/linearProgrammingOSI_X.hpp"
+#include "aliceVision/linearProgramming/lInfinityCV/global_translations_fromTriplets.hpp"
 
-#include "openMVG/multiview/translation_averaging_test.hpp"
+#include "aliceVision/multiview/translation_averaging_test.hpp"
 #include "testing/testing.h"
 
-using namespace openMVG;
-using namespace openMVG::linearProgramming;
+using namespace aliceVision;
+using namespace aliceVision::linearProgramming;
 using namespace lInfinityCV;
 using namespace std;
 
@@ -23,7 +23,7 @@ TEST(translation_averaging, globalTi_from_tijs_Triplets) {
 
   const bool bCardiod = true;
   const bool bRelative_Translation_PerTriplet = true;
-  std::vector<openMVG::relativeInfo > vec_relative_estimates;
+  std::vector<aliceVision::relativeInfo > vec_relative_estimates;
 
   const NViewDataSet d =
     Setup_RelativeTranslations_AndNviewDataset

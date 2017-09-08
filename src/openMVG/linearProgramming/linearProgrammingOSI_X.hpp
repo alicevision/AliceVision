@@ -5,21 +5,21 @@
 #define MIMATTE_LINEAR_PROGRAMMING_INTERFACE_OSICLP_H_
 
 #include "OsiClpSolverInterface.hpp"
-#include <openMVG/config.hpp>
+#include <aliceVision/config.hpp>
 
 #if OPENMVG_IS_DEFINED(OPENMVG_HAVE_MOSEK)
 #include "OsiMskSolverInterface.hpp"
 #endif
 
-#include "openMVG/numeric/numeric.h"
-#include "openMVG/linearProgramming/linearProgrammingInterface.hpp"
+#include "aliceVision/numeric/numeric.h"
+#include "aliceVision/linearProgramming/linearProgrammingInterface.hpp"
 
 #include "CoinPackedMatrix.hpp"
 #include "CoinPackedVector.hpp"
 
 #include <vector>
 
-namespace openMVG   {
+namespace aliceVision   {
 namespace linearProgramming  {
 
 /// OSI_X wrapper for the LP_Solver
@@ -300,7 +300,7 @@ bool OSI_X_SolverWrapper<SOLVERINTERFACE>::getSolution(std::vector<double> & est
 }
 
 } // namespace linearProgramming
-} // namespace openMVG
+} // namespace aliceVision
 
 
 #endif // MIMATTE_LINEAR_PROGRAMMING_INTERFACE_OSICLP_H_

@@ -4,9 +4,9 @@
 #ifndef OPENMVG_COLORHARMONIZATION_FULLFRAME_H
 #define OPENMVG_COLORHARMONIZATION_FULLFRAME_H
 
-#include "openMVG/color_harmonization/selection_interface.hpp"
+#include "aliceVision/color_harmonization/selection_interface.hpp"
 
-namespace openMVG {
+namespace aliceVision {
 namespace color_harmonization {
 
 class commonDataByPair_FullFrame  : public commonDataByPair
@@ -39,6 +39,6 @@ private:
 };
 
 }  // namespace color_harmonization
-}  // namespace openMVG
+}  // namespace aliceVision
 
 #endif  // OPENMVG_COLORHARMONIZATION_FULLFRAME_H

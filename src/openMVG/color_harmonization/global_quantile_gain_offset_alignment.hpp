@@ -1,15 +1,15 @@
 // This file is part of the AliceVision project and is made available under
 // the terms of the MPL2 license (see the COPYING.md file).
 
-#include <openMVG/config.hpp>
-#include "openMVG/linearProgramming/linearProgrammingInterface.hpp"
-#include "openMVG/linearProgramming/linearProgrammingOSI_X.hpp"
+#include <aliceVision/config.hpp>
+#include "aliceVision/linearProgramming/linearProgrammingInterface.hpp"
+#include "aliceVision/linearProgramming/linearProgrammingOSI_X.hpp"
 #if OPENMVG_IS_DEFINED(OPENMVG_HAVE_MOSEK)
-#include "openMVG/linearProgramming/linearProgrammingMOSEK.hpp"
+#include "aliceVision/linearProgramming/linearProgrammingMOSEK.hpp"
 #endif
-#include "openMVG/linearProgramming/bisectionLP.hpp"
+#include "aliceVision/linearProgramming/bisectionLP.hpp"
 
-namespace openMVG {
+namespace aliceVision {
 namespace lInfinity {
 
 struct relativeColorHistogramEdge
@@ -244,4 +244,4 @@ struct ConstraintBuilder_GainOffset
 
 
 }; // namespace lInfinity
-}; // namespace openMVG
+}; // namespace aliceVision

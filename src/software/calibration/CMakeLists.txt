@@ -1,38 +1,38 @@
 ###
 # Calibrate a rig based on CCTag localizers
 ###
-add_executable(openMVG_main_rigCalibration main_rigCalibration.cpp)
-install(TARGETS openMVG_main_rigCalibration DESTINATION bin/)
-target_link_libraries(openMVG_main_rigCalibration
-  openMVG_rig
-  openMVG_localization
-  openMVG_dataio
-  openMVG_image
-  openMVG_features
+add_executable(aliceVision_main_rigCalibration main_rigCalibration.cpp)
+install(TARGETS aliceVision_main_rigCalibration DESTINATION bin/)
+target_link_libraries(aliceVision_main_rigCalibration
+  aliceVision_rig
+  aliceVision_localization
+  aliceVision_dataio
+  aliceVision_image
+  aliceVision_features
   vlsift  #TODO: delete vlsift
   ${Boost_LIBRARIES}
 )
 
 if(OPENMVG_HAVE_CCTAG)
-  target_link_libraries(openMVG_main_rigCalibration CCTag::CCTag)
+  target_link_libraries(aliceVision_main_rigCalibration CCTag::CCTag)
 endif()
 
 if(OPENMVG_HAVE_OPENCV)
 
-  add_executable(openMVG_main_cameraCalibration main_cameraCalibration.cpp)
-  # target_include_directories(openMVG_main_cameraCalibration PUBLIC ${Boost_INCLUDE_DIRS} ${OpenCV_INCLUDE_DIRS})
-  target_link_libraries(openMVG_main_cameraCalibration # PUBLIC
-    openMVG_dataio
-    openMVG_image
-    openMVG_calibration
-    openMVG_system
+  add_executable(aliceVision_main_cameraCalibration main_cameraCalibration.cpp)
+  # target_include_directories(aliceVision_main_cameraCalibration PUBLIC ${Boost_INCLUDE_DIRS} ${OpenCV_INCLUDE_DIRS})
+  target_link_libraries(aliceVision_main_cameraCalibration # PUBLIC
+    aliceVision_dataio
+    aliceVision_image
+    aliceVision_calibration
+    aliceVision_system
     ${OpenCV_LIBRARIES}
     ${Boost_LIBRARIES})
 
   if(OPENMVG_HAVE_CCTAG)
-    target_link_libraries(openMVG_main_cameraCalibration CCTag::CCTag)
+    target_link_libraries(aliceVision_main_cameraCalibration CCTag::CCTag)
   endif()
 
-  install(TARGETS openMVG_main_cameraCalibration DESTINATION bin/)
+  install(TARGETS aliceVision_main_cameraCalibration DESTINATION bin/)
 
 endif()

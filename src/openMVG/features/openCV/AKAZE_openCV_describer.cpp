@@ -3,12 +3,12 @@
 
 #include "AKAZE_openCV_describer.hpp"
 
-#include "openMVG/image/image.hpp"
+#include "aliceVision/image/image.hpp"
 
 #include <opencv2/opencv.hpp>
 #include <opencv2/core/eigen.hpp>
 
-namespace openMVG {
+namespace aliceVision {
 namespace features {
 
 bool AKAZE_openCV_ImageDescriber::Describe(const image::Image<unsigned char>& image,
@@ -59,4 +59,4 @@ bool AKAZE_openCV_ImageDescriber::Describe(const image::Image<unsigned char>& im
 }
 
 } //namespace features
-} //namespace openMVG
+} //namespace aliceVision

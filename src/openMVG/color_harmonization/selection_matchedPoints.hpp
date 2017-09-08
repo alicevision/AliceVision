@@ -4,13 +4,13 @@
 #ifndef OPENMVG_COLORHARMONIZATION_MATCHESPOINTS_H
 #define OPENMVG_COLORHARMONIZATION_MATCHESPOINTS_H
 
-#include "openMVG/color_harmonization/selection_interface.hpp"
-#include "openMVG/matching/indMatch.hpp"
-#include "openMVG/features/features.hpp"
+#include "aliceVision/color_harmonization/selection_interface.hpp"
+#include "aliceVision/matching/indMatch.hpp"
+#include "aliceVision/features/features.hpp"
 
 #include <vector>
 
-namespace openMVG {
+namespace aliceVision {
 namespace color_harmonization {
 
 class commonDataByPair_MatchedPoints  : public commonDataByPair
@@ -69,6 +69,6 @@ private:
 };
 
 }  // namespace color_harmonization
-}  // namespace openMVG
+}  // namespace aliceVision
 
 #endif  // OPENMVG_COLORHARMONIZATION_MATCHESPOINTS_H

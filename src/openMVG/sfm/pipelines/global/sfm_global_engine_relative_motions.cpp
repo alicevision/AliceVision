@@ -1,17 +1,17 @@
 // This file is part of the AliceVision project and is made available under
 // the terms of the MPL2 license (see the COPYING.md file).
 
-#include "openMVG/sfm/pipelines/global/sfm_global_engine_relative_motions.hpp"
-#include "openMVG/sfm/sfm_data.hpp"
-#include <openMVG/config.hpp>
+#include "aliceVision/sfm/pipelines/global/sfm_global_engine_relative_motions.hpp"
+#include "aliceVision/sfm/sfm_data.hpp"
+#include <aliceVision/config.hpp>
 #include "third_party/htmlDoc/htmlDoc.hpp"
 
-#include "openMVG/multiview/triangulation.hpp"
-#include "openMVG/multiview/triangulation_nview.hpp"
-#include "openMVG/graph/connectedComponent.hpp"
-#include "openMVG/system/timer.hpp"
-#include "openMVG/stl/stl.hpp"
-#include "openMVG/multiview/essential.hpp"
+#include "aliceVision/multiview/triangulation.hpp"
+#include "aliceVision/multiview/triangulation_nview.hpp"
+#include "aliceVision/graph/connectedComponent.hpp"
+#include "aliceVision/system/timer.hpp"
+#include "aliceVision/stl/stl.hpp"
+#include "aliceVision/multiview/essential.hpp"
 
 #include "third_party/progress/progress.hpp"
 
@@ -19,12 +19,12 @@
 #pragma warning( once : 4267 ) //warning C4267: 'argument' : conversion from 'size_t' to 'const int', possible loss of data
 #endif
 
-namespace openMVG{
+namespace aliceVision{
 namespace sfm{
 
-using namespace openMVG::cameras;
-using namespace openMVG::geometry;
-using namespace openMVG::features;
+using namespace aliceVision::cameras;
+using namespace aliceVision::geometry;
+using namespace aliceVision::features;
 
 GlobalSfMReconstructionEngine_RelativeMotions::GlobalSfMReconstructionEngine_RelativeMotions(
   const SfM_Data & sfm_data,
@@ -128,7 +128,7 @@ bool GlobalSfMReconstructionEngine_RelativeMotions::Process() {
     KeepOnlyReferencedElement(set_remainingIds, *_pairwiseMatches);
   }
 
-  openMVG::rotation_averaging::RelativeRotations relatives_R;
+  aliceVision::rotation_averaging::RelativeRotations relatives_R;
   Compute_Relative_Rotations(relatives_R);
 
   Hash_Map<IndexT, Mat3> global_rotations;
@@ -284,7 +284,7 @@ bool GlobalSfMReconstructionEngine_RelativeMotions::Compute_Initial_Structure
 {
   // Build tracks from selected triplets (Union of all the validated triplet tracks (_tripletWise_matches))
   {
-    using namespace openMVG::tracks;
+    using namespace aliceVision::tracks;
     TracksBuilder tracksBuilder;
 #ifdef USE_ALL_VALID_MATCHES // not used by default
     matching::PairwiseMatches pose_supported_matches;
@@ -357,7 +357,7 @@ bool GlobalSfMReconstructionEngine_RelativeMotions::Compute_Initial_Structure
 
   // Compute 3D position of the landmark of the structure by triangulation of the observations
   {
-    openMVG::system::Timer timer;
+    aliceVision::system::Timer timer;
 
     const IndexT trackCountBefore = _sfm_data.GetLandmarks().size();
     SfM_Data_Structure_Computation_Blind structure_estimator(true);
@@ -640,7 +640,7 @@ void GlobalSfMReconstructionEngine_RelativeMotions::Compute_Relative_Rotations
       #pragma omp critical
       {
         // Add the relative rotation to the relative 'rotation' pose graph
-        using namespace openMVG::rotation_averaging;
+        using namespace aliceVision::rotation_averaging;
           vec_relatives_R.emplace_back(
             relative_pose_pair.first, relative_pose_pair.second,
             relativePose_info.relativePose.rotation(), relativePose_info.vec_inliers.size());
@@ -709,5 +709,5 @@ void GlobalSfMReconstructionEngine_RelativeMotions::Compute_Relative_Rotations
 }
 
 } // namespace sfm
-} // namespace openMVG
+} // namespace aliceVision
 

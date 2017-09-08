@@ -1,10 +1,10 @@
 // This file is part of the AliceVision project and is made available under
 // the terms of the MPL2 license (see the COPYING.md file).
 
-#include "openMVG/multiview/rotation_averaging_l2.hpp"
-#include <openMVG/config.hpp>
-#include <openMVG/alicevision_omp.hpp>
-#include <openMVG/system/Logger.hpp>
+#include "aliceVision/multiview/rotation_averaging_l2.hpp"
+#include <aliceVision/config.hpp>
+#include <aliceVision/alicevision_omp.hpp>
+#include <aliceVision/system/Logger.hpp>
 
 #include <vector>
 #include <map>
@@ -25,7 +25,7 @@
 //- Author : Daniel Martinec.
 //- Date : July 2, 2008.
 //--
-namespace openMVG   {
+namespace aliceVision   {
 namespace rotation_averaging  {
 namespace l2  {
 
@@ -179,7 +179,7 @@ bool L2RotationAveraging( size_t nCamera,
 
 // Ceres Functor to minimize global rotation regarding fixed relative rotation
 struct CeresPairRotationError {
-  CeresPairRotationError(const openMVG::Vec3& relative_rotation,  const double weight)
+  CeresPairRotationError(const aliceVision::Vec3& relative_rotation,  const double weight)
     :relative_rotation_(relative_rotation), weight_(weight) {}
 
   // The error is given by the rotation cycle error (R2 * R1.t) * RRel.t
@@ -210,13 +210,13 @@ struct CeresPairRotationError {
     return true;
   }
 
-  const openMVG::Vec3 relative_rotation_;
+  const aliceVision::Vec3 relative_rotation_;
   const double weight_;
 };
 
 bool L2RotationAveraging_Refine(
   const RelativeRotations & vec_relativeRot,
-  std::vector<openMVG::Mat3> & vec_ApprRotMatrix)
+  std::vector<aliceVision::Mat3> & vec_ApprRotMatrix)
 {
   if (vec_relativeRot.size() == 0 ||vec_ApprRotMatrix.size() == 0 ) {
     OPENMVG_LOG_DEBUG("Skip nonlinear rotation optimization, no sufficient data provided ");
@@ -224,7 +224,7 @@ bool L2RotationAveraging_Refine(
 }
 
   // Convert global rotation to AngleAxis representation
-  std::vector<openMVG::Vec3> vec_Rot_AngleAxis(vec_ApprRotMatrix.size());
+  std::vector<aliceVision::Vec3> vec_Rot_AngleAxis(vec_ApprRotMatrix.size());
   for (int i=0; i < vec_ApprRotMatrix.size(); ++i)
   {
     ceres::RotationMatrixToAngleAxis((const double*)vec_ApprRotMatrix[i].data(), vec_Rot_AngleAxis[i].data());
@@ -238,10 +238,10 @@ bool L2RotationAveraging_Refine(
   {
     const int i = vec_relativeRot[ii].i;
     const int j = vec_relativeRot[ii].j;
-    const openMVG::Mat3& Rrel = vec_relativeRot[ii].Rij;
+    const aliceVision::Mat3& Rrel = vec_relativeRot[ii].Rij;
     const double w = vec_relativeRot[ii].weight;
 
-    openMVG::Vec3 rotAngleAxis;
+    aliceVision::Vec3 rotAngleAxis;
     ceres::RotationMatrixToAngleAxis((const double*)Rrel.data(), rotAngleAxis.data());
 
     ceres::CostFunction* cost_function =
@@ -289,6 +289,6 @@ bool L2RotationAveraging_Refine(
 
 } // namespace l2
 } // namespace rotation_averaging
-} // namespace openMVG
+} // namespace aliceVision
 
 

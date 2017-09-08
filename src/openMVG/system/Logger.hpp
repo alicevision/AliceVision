@@ -1,7 +1,7 @@
 #pragma once
 
-#include <openMVG/config.hpp>
-#include <openMVG/prettyprint.hpp>
+#include <aliceVision/config.hpp>
+#include <aliceVision/prettyprint.hpp>
 
 #include <memory>
 
@@ -47,7 +47,7 @@
 #define OPENMVG_LOG_FATAL(...) OPENMVG_LOG(OPENMVG_LOG_FATAL_OBJ, __VA_ARGS__)
 
 
-namespace openMVG {
+namespace aliceVision {
 namespace system {
 
 enum class EVerboseLevel
@@ -160,4 +160,4 @@ private:
 };
 
 } // namespace system
-} // namespace openMVG
+} // namespace aliceVision

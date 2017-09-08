@@ -3,8 +3,8 @@
 
 #pragma once
 
-#include <openMVG/sfm/sfm_data_io.hpp>
-#include <openMVG/stl/split.hpp>
+#include <aliceVision/sfm/sfm_data_io.hpp>
+#include <aliceVision/stl/split.hpp>
 
 #include <cereal/archives/portable_binary.hpp>
 #include <cereal/archives/xml.hpp>
@@ -18,7 +18,7 @@
 #include <iomanip>
 #include <fstream>
 
-namespace openMVG {
+namespace aliceVision {
 namespace sfm {
 
 template <
@@ -184,4 +184,4 @@ bool Save_Cereal(
 }
 
 } // namespace sfm
-} // namespace openMVG
+} // namespace aliceVision

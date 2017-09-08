@@ -4,11 +4,11 @@
 #ifndef OPENMVG_COLORHARMONIZATION_VLDSEGMENT_H
 #define OPENMVG_COLORHARMONIZATION_VLDSEGMENT_H
 
-#include "openMVG/color_harmonization/selection_interface.hpp"
-#include "openMVG/matching/kvld/kvld.h"
-#include "openMVG/matching/kvld/kvld_draw.h"
+#include "aliceVision/color_harmonization/selection_interface.hpp"
+#include "aliceVision/matching/kvld/kvld.h"
+#include "aliceVision/matching/kvld/kvld_draw.h"
 
-namespace openMVG {
+namespace aliceVision {
 namespace color_harmonization {
 
 class commonDataByPair_VLDSegment  : public commonDataByPair
@@ -58,7 +58,7 @@ class commonDataByPair_VLDSegment  : public commonDataByPair
 
     //In order to illustrate the gvld(or vld)-consistant neighbors, the following two parameters has been externalized as inputs of the function KVLD.
     // gvld-consistancy matrix, intitialized to -1,  >0 consistancy value, -1=unknow, -2=false
-    openMVG::Mat E = openMVG::Mat::Ones( _matches.size(), _matches.size() ) * ( -1 );
+    aliceVision::Mat E = aliceVision::Mat::Ones( _matches.size(), _matches.size() ) * ( -1 );
 
     // indices of match in the initial matches, if true at the end of KVLD, a match is kept.
     std::vector< bool > valid( _matches.size(), true );
@@ -108,6 +108,6 @@ private:
 };
 
 }  // namespace color_harmonization
-}  // namespace openMVG
+}  // namespace aliceVision
 
 #endif  // OPENMVG_COLORHARMONIZATION_VLDSEGMENT_H

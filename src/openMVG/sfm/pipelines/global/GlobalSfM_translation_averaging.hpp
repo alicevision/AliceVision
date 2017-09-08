@@ -4,7 +4,7 @@
 #ifndef OPENMVG_SFM_GLOBAL_ENGINE_PIPELINES_GLOBAL_TRANSLATION_AVERAGING_HPP
 #define OPENMVG_SFM_GLOBAL_ENGINE_PIPELINES_GLOBAL_TRANSLATION_AVERAGING_HPP
 
-namespace openMVG{
+namespace aliceVision{
 namespace sfm{
 
 enum ETranslationAveragingMethod
@@ -15,16 +15,16 @@ enum ETranslationAveragingMethod
 };
 
 } // namespace sfm
-} // namespace openMVG
+} // namespace aliceVision
 
-#include "openMVG/sfm/sfm_data.hpp"
-#include "openMVG/multiview/translation_averaging_common.hpp"
-#include "openMVG/features/FeaturesPerView.hpp"
-#include "openMVG/sfm/pipelines/sfm_matches_provider.hpp"
-#include "openMVG/tracks/tracks.hpp"
-#include "openMVG/graph/graph.hpp"
+#include "aliceVision/sfm/sfm_data.hpp"
+#include "aliceVision/multiview/translation_averaging_common.hpp"
+#include "aliceVision/features/FeaturesPerView.hpp"
+#include "aliceVision/sfm/pipelines/sfm_matches_provider.hpp"
+#include "aliceVision/tracks/tracks.hpp"
+#include "aliceVision/graph/graph.hpp"
 
-namespace openMVG{
+namespace aliceVision{
 namespace sfm{
 
 class GlobalSfM_Translation_AveragingSolver
@@ -78,11 +78,11 @@ private:
     std::vector<Vec3> & vec_tis,
     double & dPrecision, // UpperBound of the precision found by the AContrario estimator
     std::vector<size_t> & vec_inliers,
-    openMVG::tracks::TracksMap & rig_tracks,
+    aliceVision::tracks::TracksMap & rig_tracks,
     const std::string & sOutDirectory) const;
 };
 
 } // namespace sfm
-} // namespace openMVG
+} // namespace aliceVision
 
 #endif // OPENMVG_SFM_GLOBAL_ENGINE_PIPELINES_GLOBAL_TRANSLATION_AVERAGING_HPP

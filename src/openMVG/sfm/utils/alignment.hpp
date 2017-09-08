@@ -3,10 +3,10 @@
 
 #pragma once
 
-#include "openMVG/sfm/sfm_data.hpp"
-#include "openMVG/geometry/pose3.hpp"
+#include "aliceVision/sfm/sfm_data.hpp"
+#include "aliceVision/geometry/pose3.hpp"
 
-namespace openMVG {
+namespace aliceVision {
 namespace sfm {
 
 inline void getCommonViews(const SfM_Data & sfmDataA,

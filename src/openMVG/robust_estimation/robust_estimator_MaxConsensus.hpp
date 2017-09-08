@@ -4,11 +4,11 @@
 #ifndef OPENMVG_ROBUST_ESTIMATION_MAX_CONSENSUS_H_
 #define OPENMVG_ROBUST_ESTIMATION_MAX_CONSENSUS_H_
 
-#include "openMVG/robust_estimation/rand_sampling.hpp"
+#include "aliceVision/robust_estimation/rand_sampling.hpp"
 #include <limits>
 #include <vector>
 
-namespace openMVG {
+namespace aliceVision {
 namespace robust{
 
 /// Naive implementation of RANSAC without noise and iteration reduction options
@@ -86,5 +86,5 @@ typename Kernel::Model MaxConsensus(const Kernel &kernel,
 }
 
 } // namespace robust
-} // namespace openMVG
+} // namespace aliceVision
 #endif // OPENMVG_ROBUST_ESTIMATION_MAX_CONSENSUS_H_

@@ -1,14 +1,14 @@
 // This file is part of the AliceVision project and is made available under
 // the terms of the MPL2 license (see the COPYING.md file).
 
-#include "openMVG/features/ImageDescriberCommon.hpp"
-#include "openMVG/sfm/pipelines/pipelines_test.hpp"
-#include "openMVG/sfm/sfm.hpp"
+#include "aliceVision/features/ImageDescriberCommon.hpp"
+#include "aliceVision/sfm/pipelines/pipelines_test.hpp"
+#include "aliceVision/sfm/sfm.hpp"
 
-using namespace openMVG;
-using namespace openMVG::cameras;
-using namespace openMVG::geometry;
-using namespace openMVG::sfm;
+using namespace aliceVision;
+using namespace aliceVision::cameras;
+using namespace aliceVision::geometry;
+using namespace aliceVision::sfm;
 
 #include "testing/testing.h"
 

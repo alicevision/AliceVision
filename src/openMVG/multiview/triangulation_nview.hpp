@@ -4,11 +4,11 @@
 #ifndef OPENMVG_MULTIVIEW_TRIANGULATION_NVIEW_H
 #define OPENMVG_MULTIVIEW_TRIANGULATION_NVIEW_H
 
-#include "openMVG/numeric/numeric.h"
+#include "aliceVision/numeric/numeric.h"
 
 #include <vector>
 
-namespace openMVG {
+namespace aliceVision {
 
 /// Compute a 3D position of a point from several images of it. In particular,
 ///  compute the projective point X in R^4 such that x = PX.
@@ -62,6 +62,6 @@ protected:
   std::vector< std::pair<Mat34, Vec2> > views; // Proj matrix and associated image point
 };
 
-} // namespace openMVG
+} // namespace aliceVision
 
 #endif  // OPENMVG_MULTIVIEW_TRIANGULATION_NVIEW_H

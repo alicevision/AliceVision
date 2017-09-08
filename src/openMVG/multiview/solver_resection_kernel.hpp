@@ -5,10 +5,10 @@
 #define OPENMVG_MULTIVIEW_RESECTION_KERNEL_H_
 
 #include <vector>
-#include "openMVG/multiview/projection.hpp"
-#include "openMVG/multiview/two_view_kernel.hpp"
+#include "aliceVision/multiview/projection.hpp"
+#include "aliceVision/multiview/two_view_kernel.hpp"
 
-namespace openMVG {
+namespace aliceVision {
 namespace resection {
 namespace kernel {
 
@@ -69,13 +69,13 @@ typedef two_view::kernel::Kernel<SixPointResectionSolver,
 
 }  // namespace kernel
 }  // namespace resection
-}  // namespace openMVG
+}  // namespace aliceVision
 
 //--
 // Euclidean resection kernel (Have K intrinsic helps)
 //--
 
-namespace openMVG {
+namespace aliceVision {
 namespace euclidean_resection {
 namespace kernel {
 
@@ -170,6 +170,6 @@ class ResectionKernel_K {
 
 }  // namespace kernel
 }  // namespace euclidean_resection
-}  // namespace openMVG
+}  // namespace aliceVision
 
 #endif  // OPENMVG_MULTIVIEW_RESECTION_KERNEL_H_

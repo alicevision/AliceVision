@@ -6,7 +6,7 @@
 #include <string>
 #include <iostream>
 
-namespace openMVG {
+namespace aliceVision {
 namespace robust {
 
 enum EROBUST_ESTIMATOR
@@ -70,4 +70,4 @@ inline std::istream& operator>>(std::istream& in, robust::EROBUST_ESTIMATOR& est
 }
 
 } //namespace robust
-} //namespace openMVG
+} //namespace aliceVision

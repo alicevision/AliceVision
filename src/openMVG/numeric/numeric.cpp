@@ -1,12 +1,12 @@
 // This file is part of the AliceVision project and is made available under
 // the terms of the MPL2 license (see the COPYING.md file).
 
-#include "openMVG/numeric/numeric.h"
+#include "aliceVision/numeric/numeric.h"
 #include <iostream>
 #include <fstream>
 #include <string>
 
-namespace openMVG {
+namespace aliceVision {
 
 Mat3 CrossProductMatrix(const Vec3 &x) {
   Mat3 X;
@@ -140,5 +140,5 @@ bool exportMatToTextFile(const Mat & mat, const std::string & filename,
   return bOk;
 }
 
-}  // namespace openMVG
+}  // namespace aliceVision
 

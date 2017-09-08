@@ -4,13 +4,13 @@
 #ifndef OPENMVG_SFM_MATCHES_PROVIDER_HPP
 #define OPENMVG_SFM_MATCHES_PROVIDER_HPP
 
-#include <openMVG/types.hpp>
-#include <openMVG/system/Logger.hpp>
-#include <openMVG/sfm/sfm_data.hpp>
-#include <openMVG/matching/indMatch.hpp>
-#include <openMVG/matching/indMatch_utils.hpp>
+#include <aliceVision/types.hpp>
+#include <aliceVision/system/Logger.hpp>
+#include <aliceVision/sfm/sfm_data.hpp>
+#include <aliceVision/matching/indMatch.hpp>
+#include <aliceVision/matching/indMatch_utils.hpp>
 
-namespace openMVG {
+namespace aliceVision {
 namespace sfm {
 
 /**
@@ -39,6 +39,6 @@ inline bool loadPairwiseMatches(
 
 
 } // namespace sfm
-} // namespace openMVG
+} // namespace aliceVision
 
 #endif // OPENMVG_SFM_MATCHES_PROVIDER_HPP

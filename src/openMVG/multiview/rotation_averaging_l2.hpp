@@ -4,7 +4,7 @@
 #ifndef OPENMVG_MULTIVIEW_ROTATION_AVERAGING_L2_H_
 #define OPENMVG_MULTIVIEW_ROTATION_AVERAGING_L2_H_
 
-#include "openMVG/multiview/rotation_averaging_common.hpp"
+#include "aliceVision/multiview/rotation_averaging_common.hpp"
 #include <vector>
 
 #ifdef _MSC_VER
@@ -20,7 +20,7 @@
 //- Author : Daniel Martinec.
 //- Date : July 2, 2008.
 //--
-namespace openMVG   {
+namespace aliceVision   {
 namespace rotation_averaging  {
 namespace l2  {
 
@@ -60,11 +60,11 @@ bool L2RotationAveraging( size_t nCamera,
 // None linear refinement of the rotation using an angle-axis representation
 bool L2RotationAveraging_Refine(
   const RelativeRotations & vec_relativeRot,
-  std::vector<openMVG::Mat3> & vec_ApprRotMatrix);
+  std::vector<aliceVision::Mat3> & vec_ApprRotMatrix);
 
 } // namespace l2
 } // namespace rotation_averaging
-} // namespace openMVG
+} // namespace aliceVision
 
 #endif //OPENMVG_MULTIVIEW_ROTATION_AVERAGING_L2_H_
 

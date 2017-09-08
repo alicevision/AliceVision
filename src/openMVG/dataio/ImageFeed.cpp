@@ -2,9 +2,9 @@
 // the terms of the MPL2 license (see the COPYING.md file).
 
 #include "ImageFeed.hpp"
-#include <openMVG/sfm/sfm_data.hpp>
-#include <openMVG/sfm/sfm_data_io.hpp>
-#include <openMVG/image/image_io.hpp>
+#include <aliceVision/sfm/sfm_data.hpp>
+#include <aliceVision/sfm/sfm_data_io.hpp>
+#include <aliceVision/image/image_io.hpp>
 
 #include <boost/filesystem.hpp>
 #include <boost/algorithm/string/case_conv.hpp> 
@@ -18,7 +18,7 @@
 #include <iterator>
 #include <string>
 
-namespace openMVG{
+namespace aliceVision{
 namespace dataio{
 
 class ImageFeed::FeederImpl
@@ -417,4 +417,4 @@ bool ImageFeed::isSupported(const std::string &extension)
 ImageFeed::~ImageFeed() { }
 
 }//namespace dataio 
-}//namespace openMVG
+}//namespace aliceVision

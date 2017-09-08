@@ -1,17 +1,17 @@
 // This file is part of the AliceVision project and is made available under
 // the terms of the MPL2 license (see the COPYING.md file).
 
-#include "openMVG/sfm/sfm_data_BA_ceres.hpp"
-#include <openMVG/config.hpp>
-#include <openMVG/alicevision_omp.hpp>
+#include "aliceVision/sfm/sfm_data_BA_ceres.hpp"
+#include <aliceVision/config.hpp>
+#include <aliceVision/alicevision_omp.hpp>
 
 #include "ceres/rotation.h"
 
-namespace openMVG {
+namespace aliceVision {
 namespace sfm {
 
-using namespace openMVG::cameras;
-using namespace openMVG::geometry;
+using namespace aliceVision::cameras;
+using namespace aliceVision::geometry;
 
 /// Create the appropriate cost functor according the provided input camera intrinsic model
 ceres::CostFunction * createCostFunctionFromIntrinsics(IntrinsicBase * intrinsic, const Vec2 & observation)
@@ -187,7 +187,7 @@ void Bundle_Adjustment_Ceres::BA_options::setSparseBA()
 
 Bundle_Adjustment_Ceres::Bundle_Adjustment_Ceres(
   Bundle_Adjustment_Ceres::BA_options options)
-  : _openMVG_options(options)
+  : _aliceVision_options(options)
 {}
 
 bool Bundle_Adjustment_Ceres::Adjust(
@@ -414,18 +414,18 @@ bool Bundle_Adjustment_Ceres::Adjust(
   // Configure a BA engine and run it
   //  Make Ceres automatically detect the bundle structure.
   ceres::Solver::Options options;
-  options.preconditioner_type = _openMVG_options._preconditioner_type;
-  options.linear_solver_type = _openMVG_options._linear_solver_type;
-  options.sparse_linear_algebra_library_type = _openMVG_options._sparse_linear_algebra_library_type;
-  options.minimizer_progress_to_stdout = _openMVG_options._bVerbose;
+  options.preconditioner_type = _aliceVision_options._preconditioner_type;
+  options.linear_solver_type = _aliceVision_options._linear_solver_type;
+  options.sparse_linear_algebra_library_type = _aliceVision_options._sparse_linear_algebra_library_type;
+  options.minimizer_progress_to_stdout = _aliceVision_options._bVerbose;
   options.logging_type = ceres::SILENT;
-  options.num_threads = _openMVG_options._nbThreads;
-  options.num_linear_solver_threads = _openMVG_options._nbThreads;
+  options.num_threads = _aliceVision_options._nbThreads;
+  options.num_linear_solver_threads = _aliceVision_options._nbThreads;
 
   // Solve BA
   ceres::Solver::Summary summary;
   ceres::Solve(options, &problem, &summary);
-  if (_openMVG_options._bCeres_Summary)
+  if (_aliceVision_options._bCeres_Summary)
     OPENMVG_LOG_DEBUG(summary.FullReport());
 
   // If no error, get back refined parameters
@@ -436,7 +436,7 @@ bool Bundle_Adjustment_Ceres::Adjust(
   }
 
   // Solution is usable
-  if (_openMVG_options._bVerbose)
+  if (_aliceVision_options._bVerbose)
   {
     // Display statistics about the minimization
     OPENMVG_LOG_DEBUG(
@@ -498,5 +498,5 @@ bool Bundle_Adjustment_Ceres::Adjust(
 }
 
 } // namespace sfm
-} // namespace openMVG
+} // namespace aliceVision
 

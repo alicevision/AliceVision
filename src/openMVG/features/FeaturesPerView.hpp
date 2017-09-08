@@ -3,15 +3,15 @@
 
 #pragma once
 
-#include "openMVG/types.hpp"
-#include "openMVG/features/features.hpp"
-#include "openMVG/features/ImageDescriberCommon.hpp"
-#include "openMVG/multiview/test_data_sets.hpp" // synthetic data
+#include "aliceVision/types.hpp"
+#include "aliceVision/features/features.hpp"
+#include "aliceVision/features/ImageDescriberCommon.hpp"
+#include "aliceVision/multiview/test_data_sets.hpp" // synthetic data
 
 #include <memory>
 #include <random>
 
-namespace openMVG {
+namespace aliceVision {
 namespace features {
 
 
@@ -127,4 +127,4 @@ private:
 };
 
 } // namespace features
-} // namespace openMVG
+} // namespace aliceVision

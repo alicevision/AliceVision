@@ -3,9 +3,9 @@
 
 #include "indMatch_utils.hpp"
 
-#include "openMVG/matching/indMatch.hpp"
-#include <openMVG/config.hpp>
-#include <openMVG/system/Logger.hpp>
+#include "aliceVision/matching/indMatch.hpp"
+#include <aliceVision/config.hpp>
+#include <aliceVision/system/Logger.hpp>
 
 #include <cereal/archives/portable_binary.hpp>
 #include <cereal/types/map.hpp>
@@ -20,7 +20,7 @@
 #include <string>
 #include <vector>
 
-namespace openMVG {
+namespace aliceVision {
 namespace matching {
 
 bool LoadMatchFile(
@@ -381,4 +381,4 @@ bool Save(
 }
 
 }  // namespace matching
-}  // namespace openMVG
+}  // namespace aliceVision

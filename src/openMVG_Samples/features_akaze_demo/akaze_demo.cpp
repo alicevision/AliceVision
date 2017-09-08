@@ -1,12 +1,12 @@
 // This file is part of the AliceVision project and is made available under
 // the terms of the MPL2 license (see the COPYING.md file).
 
-#include "openMVG/image/image.hpp"
-#include "openMVG/features/akaze/AKAZE.hpp"
+#include "aliceVision/image/image.hpp"
+#include "aliceVision/features/akaze/AKAZE.hpp"
 
-#include "openMVG/matching/matcher_brute_force.hpp"
-#include "openMVG/matching/matching_filters.hpp"
-#include "openMVG_Samples/siftPutativeMatches/two_view_matches.hpp"
+#include "aliceVision/matching/matcher_brute_force.hpp"
+#include "aliceVision/matching/matching_filters.hpp"
+#include "aliceVision_Samples/siftPutativeMatches/two_view_matches.hpp"
 
 #include "third_party/stlplus3/filesystemSimplified/file_system.hpp"
 #include "third_party/vectorGraphics/svgDrawer.hpp"
@@ -14,8 +14,8 @@
 #include <string>
 #include <iostream>
 
-using namespace openMVG;
-using namespace openMVG::matching;
+using namespace aliceVision;
+using namespace aliceVision::matching;
 using namespace svg;
 using namespace std;
 

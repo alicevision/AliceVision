@@ -14,19 +14,19 @@ set(geometry_files_test
     rigid_transformation3D_srt_test.cpp
 )
 
-add_library(openMVG_geometry INTERFACE)
+add_library(aliceVision_geometry INTERFACE)
 
-target_link_libraries(openMVG_geometry
-  INTERFACE openMVG_numeric
-            openMVG_multiview
+target_link_libraries(aliceVision_geometry
+  INTERFACE aliceVision_numeric
+            aliceVision_multiview
             ${CLP_LIBRARIES}
             ${COINUTILS_LIBRARY}
             ${OSI_LIBRARY}
             ${LOG_LIB}
 )
 
-UNIT_TEST(openMVG rigid_transformation3D_srt "openMVG_geometry")
-UNIT_TEST(openMVG half_space_intersection    "openMVG_geometry")
-UNIT_TEST(openMVG frustum_intersection       "openMVG_geometry;openMVG_multiview_test_data")
+UNIT_TEST(aliceVision rigid_transformation3D_srt "aliceVision_geometry")
+UNIT_TEST(aliceVision half_space_intersection    "aliceVision_geometry")
+UNIT_TEST(aliceVision frustum_intersection       "aliceVision_geometry;aliceVision_multiview_test_data")
 
-add_custom_target(openMVG_geometry_ide SOURCES ${geometry_files_headers} ${geometry_files_test})
+add_custom_target(aliceVision_geometry_ide SOURCES ${geometry_files_headers} ${geometry_files_test})

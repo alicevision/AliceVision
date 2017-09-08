@@ -1,12 +1,12 @@
 // This file is part of the AliceVision project and is made available under
 // the terms of the MPL2 license (see the COPYING.md file).
 
-#include "openMVG/numeric/numeric.h"
-#include "openMVG/multiview/projection.hpp"
-#include "openMVG/multiview/triangulation.hpp"
-#include "openMVG/multiview/essential.hpp"
+#include "aliceVision/numeric/numeric.h"
+#include "aliceVision/multiview/projection.hpp"
+#include "aliceVision/multiview/triangulation.hpp"
+#include "aliceVision/multiview/essential.hpp"
 
-namespace openMVG {
+namespace aliceVision {
 
 // HZ 9.6 page 257 (formula 9.12)
 void EssentialFromFundamental(const Mat3 &F,
@@ -132,4 +132,4 @@ bool MotionFromEssentialAndCorrespondence(const Mat3 &E,
   }
 }
 
-}  // namespace openMVG
+}  // namespace aliceVision

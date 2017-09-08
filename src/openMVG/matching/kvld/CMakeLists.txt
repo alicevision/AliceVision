@@ -11,21 +11,21 @@ set(kvld_files_sources
   algorithm.cpp
 )
 
-add_library(openMVG_kvld
+add_library(aliceVision_kvld
   ${kvld_files_headers}
   ${kvld_files_sources}
 )
 
-set_target_properties(openMVG_kvld
+set_target_properties(aliceVision_kvld
   PROPERTIES SOVERSION ${OPENMVG_VERSION_MAJOR}
   VERSION "${OPENMVG_VERSION_MAJOR}.${OPENMVG_VERSION_MINOR}"
 )
 
-set_property(TARGET openMVG_kvld
+set_property(TARGET aliceVision_kvld
   PROPERTY FOLDER AliceVision/AliceVision
 )
 
-install(TARGETS openMVG_kvld
+install(TARGETS aliceVision_kvld
   DESTINATION lib
-  EXPORT openMVG-targets
+  EXPORT aliceVision-targets
 )

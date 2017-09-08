@@ -6,7 +6,7 @@
 
 #ifdef __WINDOWS__
 #include <windows.h>
-namespace openMVG {
+namespace aliceVision {
 namespace system {
 
 int cpu_clock_by_os(void)
@@ -32,7 +32,7 @@ int cpu_clock_by_os(void)
 #include <sys/types.h>
 #include <sys/sysctl.h>
 /* Assuming Mac OS X with hw.cpufrequency sysctl */
-namespace openMVG {
+namespace aliceVision {
 namespace system {
 
 int cpu_clock_by_os(void)
@@ -48,7 +48,7 @@ int cpu_clock_by_os(void)
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
-namespace openMVG {
+namespace aliceVision {
 namespace system {
 
 /* Assuming Linux with /proc/cpuinfo */
@@ -84,7 +84,7 @@ int cpu_clock_by_os(void)
 #include <mach/clock_types.h>
 #include <mach/clock.h>
 #include <mach/mach.h>
-namespace openMVG {
+namespace aliceVision {
 namespace system {
 
 int get_total_cpus(void)
@@ -104,7 +104,7 @@ int get_total_cpus(void)
 
 #ifdef __WINDOWS__
 #include <windows.h>
-namespace openMVG {
+namespace aliceVision {
 namespace system {
 
 int get_total_cpus(void)
@@ -120,7 +120,7 @@ int get_total_cpus(void)
 #if defined linux || defined __linux__ || defined __sun
 #include <sys/sysinfo.h>
 #include <unistd.h>
-namespace openMVG {
+namespace aliceVision {
 namespace system {
 
 int get_total_cpus(void)
@@ -134,7 +134,7 @@ int get_total_cpus(void)
 #if defined __FreeBSD__ || defined __OpenBSD__ || defined __NetBSD__ || defined __bsdi__ || defined __QNX__
 #include <sys/types.h>
 #include <sys/sysctl.h>
-namespace openMVG {
+namespace aliceVision {
 namespace system {
 
 int get_total_cpus(void)
@@ -150,7 +150,7 @@ int get_total_cpus(void)
 #endif
 
 #ifndef GET_TOTAL_CPUS_DEFINED
-namespace openMVG {
+namespace aliceVision {
 namespace system {
 
 int get_total_cpus(void)

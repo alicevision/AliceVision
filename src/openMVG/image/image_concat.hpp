@@ -4,9 +4,9 @@
 #ifndef OPENMVG_IMAGE_IMAGE_CONCAT_H_
 #define OPENMVG_IMAGE_IMAGE_CONCAT_H_
 
-#include "openMVG/image/image_container.hpp"
+#include "aliceVision/image/image_container.hpp"
 
-namespace openMVG {
+namespace aliceVision {
 namespace image {
 
 /// Horizontal concatenation of images
@@ -44,6 +44,6 @@ void ConcatV(const Image & imageA, const Image & imageB, Image & Out)
 }
 
 } // namespace image
-} // namespace openMVG
+} // namespace aliceVision
 
 #endif // OPENMVG_IMAGE_IMAGE_CONCAT_H_

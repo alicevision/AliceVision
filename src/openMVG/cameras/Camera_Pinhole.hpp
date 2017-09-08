@@ -4,14 +4,14 @@
 #ifndef OPENMVG_CAMERA_PINHOLE_HPP
 #define OPENMVG_CAMERA_PINHOLE_HPP
 
-#include "openMVG/numeric/numeric.h"
-#include "openMVG/cameras/Camera_Common.hpp"
-#include "openMVG/cameras/Camera_Intrinsics.hpp"
-#include "openMVG/geometry/pose3.hpp"
+#include "aliceVision/numeric/numeric.h"
+#include "aliceVision/cameras/Camera_Common.hpp"
+#include "aliceVision/cameras/Camera_Intrinsics.hpp"
+#include "aliceVision/geometry/pose3.hpp"
 
 #include <vector>
 
-namespace openMVG {
+namespace aliceVision {
 namespace cameras {
 
 /// Define a classic Pinhole camera (store a K 3x3 matrix)
@@ -153,12 +153,12 @@ class Pinhole_Intrinsic : public IntrinsicBase
 };
 
 } // namespace cameras
-} // namespace openMVG
+} // namespace aliceVision
 
 #include <cereal/types/polymorphic.hpp>
 #include <cereal/types/vector.hpp>
 
-CEREAL_REGISTER_TYPE_WITH_NAME(openMVG::cameras::Pinhole_Intrinsic, "pinhole");
+CEREAL_REGISTER_TYPE_WITH_NAME(aliceVision::cameras::Pinhole_Intrinsic, "pinhole");
 
 #endif // #ifndef OPENMVG_CAMERA_PINHOLE_HPP
 

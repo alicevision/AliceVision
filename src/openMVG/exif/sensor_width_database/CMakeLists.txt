@@ -1,8 +1,8 @@
 add_definitions(-DTHIS_SOURCE_DIR="${CMAKE_CURRENT_SOURCE_DIR}")
 
-UNIT_TEST(openMVG ParseDatabase "stlplus")
+UNIT_TEST(aliceVision ParseDatabase "stlplus")
 
 # Installation rules
 install(FILES sensor_width_camera_database.txt
-  DESTINATION share/openMVG
+  DESTINATION share/aliceVision
 )

@@ -1,16 +1,16 @@
 // This file is part of the AliceVision project and is made available under
 // the terms of the MPL2 license (see the COPYING.md file).
 
-#include "openMVG/image/image.hpp"
-#include "openMVG/features/features.hpp"
-#include "openMVG/features/sift/SIFT_describer.hpp"
-#include "openMVG/matching/regions_matcher.hpp"
-#include "openMVG/multiview/solver_fundamental_kernel.hpp"
-#include "openMVG/multiview/conditioning.hpp"
-#include "openMVG/robust_estimation/robust_estimator_ACRansac.hpp"
-#include "openMVG/robust_estimation/robust_estimator_ACRansacKernelAdaptator.hpp"
+#include "aliceVision/image/image.hpp"
+#include "aliceVision/features/features.hpp"
+#include "aliceVision/features/sift/SIFT_describer.hpp"
+#include "aliceVision/matching/regions_matcher.hpp"
+#include "aliceVision/multiview/solver_fundamental_kernel.hpp"
+#include "aliceVision/multiview/conditioning.hpp"
+#include "aliceVision/robust_estimation/robust_estimator_ACRansac.hpp"
+#include "aliceVision/robust_estimation/robust_estimator_ACRansacKernelAdaptator.hpp"
 
-#include "openMVG/robust_estimation/guided_matching.hpp"
+#include "aliceVision/robust_estimation/guided_matching.hpp"
 
 #include "third_party/stlplus3/filesystemSimplified/file_system.hpp"
 #include "third_party/vectorGraphics/svgDrawer.hpp"
@@ -18,10 +18,10 @@
 #include <string>
 #include <iostream>
 
-using namespace openMVG;
-using namespace openMVG::image;
-using namespace openMVG::matching;
-using namespace openMVG::robust;
+using namespace aliceVision;
+using namespace aliceVision::image;
+using namespace aliceVision::matching;
+using namespace aliceVision::robust;
 using namespace svg;
 using namespace std;
 
@@ -40,7 +40,7 @@ int main() {
   //--
   // Detect regions thanks to an image_describer
   //--
-  using namespace openMVG::features;
+  using namespace aliceVision::features;
   std::unique_ptr<Image_describer> image_describer(new SIFT_ImageDescriber);
   std::map<IndexT, std::unique_ptr<features::Regions> > regions_perImage;
   image_describer->Describe(imageL, regions_perImage[0]);
@@ -123,8 +123,8 @@ int main() {
     //-- Fundamental robust estimation
     std::vector<size_t> vec_inliers;
     typedef ACKernelAdaptor<
-      openMVG::fundamental::kernel::SevenPointSolver,
-      openMVG::fundamental::kernel::SymmetricEpipolarDistanceError,
+      aliceVision::fundamental::kernel::SevenPointSolver,
+      aliceVision::fundamental::kernel::SymmetricEpipolarDistanceError,
       UnnormalizerT,
       Mat3>
       KernelType;
@@ -198,7 +198,7 @@ int main() {
 
       //a. by considering only the geometric error
 
-      geometry_aware::GuidedMatching<Mat3, openMVG::fundamental::kernel::EpipolarDistanceError>(
+      geometry_aware::GuidedMatching<Mat3, aliceVision::fundamental::kernel::EpipolarDistanceError>(
         F, xL, xR, Square(thresholdF), vec_corresponding_indexes[0]);
       std::cout << "\nGuided Fundamental matching (geometric error) found "
         << vec_corresponding_indexes[0].size() << " correspondences."
@@ -206,7 +206,7 @@ int main() {
 
       // b. by considering geometric error and descriptor distance ratio
       geometry_aware::GuidedMatching
-        <Mat3, openMVG::fundamental::kernel::EpipolarDistanceError>(
+        <Mat3, aliceVision::fundamental::kernel::EpipolarDistanceError>(
         F,
         NULL, *regions_perImage.at(0), // Null since no Intrinsic is defined
         NULL, *regions_perImage.at(1), // Null since no Intrinsic is defined

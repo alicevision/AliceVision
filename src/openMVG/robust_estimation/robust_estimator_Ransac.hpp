@@ -4,16 +4,16 @@
 #ifndef OPENMVG_ROBUST_ESTIMATION_SIMPLE_RANSAC_H_
 #define OPENMVG_ROBUST_ESTIMATION_SIMPLE_RANSAC_H_
 
-#include <openMVG/system/Logger.hpp>
-#include "openMVG/robust_estimation/rand_sampling.hpp"
-#include "openMVG/robust_estimation/robust_ransac_tools.hpp"
+#include <aliceVision/system/Logger.hpp>
+#include "aliceVision/robust_estimation/rand_sampling.hpp"
+#include "aliceVision/robust_estimation/robust_ransac_tools.hpp"
 #include <limits>
 #include <numeric>
 #include <vector>
 #include <iostream>
 #include <iterator>
 
-namespace openMVG {
+namespace aliceVision {
 namespace robust{
 
 /// \brief The famous Random Sample Consensus algorithm (Fischler&Bolles 1981).
@@ -118,5 +118,5 @@ typename Kernel::Model RANSAC(
 
 
 } // namespace robust
-} // namespace openMVG
+} // namespace aliceVision
 #endif // OPENMVG_ROBUST_ESTIMATION_SIMPLE_RANSAC_H_

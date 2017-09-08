@@ -4,7 +4,7 @@
 #ifndef OPENMVG_MATCHING_METRIC_HAMMING_H
 #define OPENMVG_MATCHING_METRIC_HAMMING_H
 
-#include "openMVG/matching/metric.hpp"
+#include "aliceVision/matching/metric.hpp"
 #include <bitset>
 
 #ifdef _MSC_VER
@@ -24,7 +24,7 @@ typedef unsigned __int64 uint64_t;
 //  by using a XOR operation + a count.
 // For maximal performance SSE4 must be enable for builtin popcount activation.
 
-namespace openMVG {
+namespace aliceVision {
 namespace matching {
 
 #undef PLATFORM_64_BIT
@@ -177,6 +177,6 @@ struct SquaredHamming
 };
 
 }  // namespace matching
-}  // namespace openMVG
+}  // namespace aliceVision
 
 #endif // OPENMVG_MATCHING_METRIC_HAMMING_H

@@ -2,10 +2,10 @@
 // the terms of the MPL2 license (see the COPYING.md file).
 
 #pragma once
-#include <openMVG/keyframe/SharpnessSelectionPreset.hpp>
-#include <openMVG/features/features.hpp>
-#include <openMVG/dataio/FeedProvider.hpp>
-#include <openMVG/voctree/vocabulary_tree.hpp>
+#include <aliceVision/keyframe/SharpnessSelectionPreset.hpp>
+#include <aliceVision/features/features.hpp>
+#include <aliceVision/dataio/FeedProvider.hpp>
+#include <aliceVision/voctree/vocabulary_tree.hpp>
 
 #include <OpenImageIO/imageio.h>
 
@@ -16,7 +16,7 @@
 
 namespace oiio = OpenImageIO;
 
-namespace openMVG {
+namespace aliceVision {
 
 namespace image {
 
@@ -32,7 +32,7 @@ class KeyframeSelector
 private:
   // SIFT descriptor definition
   const static std::size_t _dimension = 128;
-  using DescriptorFloat = openMVG::features::Descriptor<float, _dimension>;
+  using DescriptorFloat = aliceVision::features::Descriptor<float, _dimension>;
   
 public:
 
@@ -214,7 +214,7 @@ private:
   /// Image describer in order to extract describer
   std::unique_ptr<features::Image_describer> _imageDescriber;
   /// Voctree in order to compute sparseHistogram
-  std::unique_ptr< openMVG::voctree::VocabularyTree<DescriptorFloat> > _voctree;
+  std::unique_ptr< aliceVision::voctree::VocabularyTree<DescriptorFloat> > _voctree;
   /// Feed provider for media paths images extraction
   std::vector< std::unique_ptr<dataio::FeedProvider> > _feeds;
 
@@ -325,4 +325,4 @@ private:
 };
 
 } // namespace keyframe 
-} // namespace openMVG
+} // namespace aliceVision

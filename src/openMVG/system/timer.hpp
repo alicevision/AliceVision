@@ -8,7 +8,7 @@
 #include <iostream>
 #include <string>
 
-namespace openMVG {
+namespace aliceVision {
 namespace system {
 
   /**
@@ -45,7 +45,7 @@ namespace system {
 std::string prettyTime(double durationMs);
 
 } // namespace system
-} // namespace openMVG
+} // namespace aliceVision
 
 #endif // OPENMVG_SYSTEM_TIMER_HPP
 

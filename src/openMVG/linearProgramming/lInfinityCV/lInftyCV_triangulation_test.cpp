@@ -4,23 +4,23 @@
 #include <iostream>
 #include <vector>
 
-#include "openMVG/multiview/test_data_sets.hpp"
-#include "openMVG/numeric/numeric.h"
-#include <openMVG/config.hpp>
+#include "aliceVision/multiview/test_data_sets.hpp"
+#include "aliceVision/numeric/numeric.h"
+#include <aliceVision/config.hpp>
 #include "testing/testing.h"
 
-#include "openMVG/multiview/projection.hpp"
+#include "aliceVision/multiview/projection.hpp"
 
-#include "openMVG/linearProgramming/linearProgrammingInterface.hpp"
-#include "openMVG/linearProgramming/linearProgrammingOSI_X.hpp"
+#include "aliceVision/linearProgramming/linearProgrammingInterface.hpp"
+#include "aliceVision/linearProgramming/linearProgrammingOSI_X.hpp"
 #if OPENMVG_IS_DEFINED(OPENMVG_HAVE_MOSEK)
-#include "openMVG/linearProgramming/linearProgrammingMOSEK.hpp"
+#include "aliceVision/linearProgramming/linearProgrammingMOSEK.hpp"
 #endif
 
-#include "openMVG/linearProgramming/bisectionLP.hpp"
-#include "openMVG/linearProgramming/lInfinityCV/triangulation.hpp"
+#include "aliceVision/linearProgramming/bisectionLP.hpp"
+#include "aliceVision/linearProgramming/lInfinityCV/triangulation.hpp"
 
-using namespace openMVG;
+using namespace aliceVision;
 using namespace linearProgramming;
 using namespace lInfinityCV;
 

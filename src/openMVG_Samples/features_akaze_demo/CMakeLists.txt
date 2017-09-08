@@ -1,20 +1,20 @@
 
 ADD_DEFINITIONS(-DTHIS_SOURCE_DIR="${CMAKE_CURRENT_SOURCE_DIR}")
 
-ADD_EXECUTABLE(openMVG_sample_akaze akaze_demo.cpp)
-TARGET_LINK_LIBRARIES(openMVG_sample_akaze
-  openMVG_image
-  openMVG_features
+ADD_EXECUTABLE(aliceVision_sample_akaze akaze_demo.cpp)
+TARGET_LINK_LIBRARIES(aliceVision_sample_akaze
+  aliceVision_image
+  aliceVision_features
   stlplus
   ${OPENMVG_LIBRARY_DEPENDENCIES})
-SET_PROPERTY(TARGET openMVG_sample_akaze PROPERTY FOLDER AliceVision/Samples)
+SET_PROPERTY(TARGET aliceVision_sample_akaze PROPERTY FOLDER AliceVision/Samples)
 
-ADD_EXECUTABLE( openMVG_main_computeAKAZE main_computeAKAZE.cpp )
-TARGET_LINK_LIBRARIES( openMVG_main_computeAKAZE
-  openMVG_image
-  openMVG_features
-  openMVG_system
+ADD_EXECUTABLE( aliceVision_main_computeAKAZE main_computeAKAZE.cpp )
+TARGET_LINK_LIBRARIES( aliceVision_main_computeAKAZE
+  aliceVision_image
+  aliceVision_features
+  aliceVision_system
   stlplus
   ${OPENMVG_LIBRARY_DEPENDENCIES})
-SET_PROPERTY(TARGET openMVG_main_computeAKAZE PROPERTY FOLDER AliceVision/Samples)
+SET_PROPERTY(TARGET aliceVision_main_computeAKAZE PROPERTY FOLDER AliceVision/Samples)
 

@@ -3,11 +3,11 @@
 
 #pragma once
 
-#include "openMVG/numeric/numeric.h"
+#include "aliceVision/numeric/numeric.h"
 
 #include <iostream>
 
-namespace openMVG {
+namespace aliceVision {
 namespace resection {
 
 /**
@@ -30,7 +30,7 @@ struct p5pfrModel
 
 /**
  * @brief Compute the absolute pose, focal length and radial distorsion of a camera using three 3D-to-2D correspondences
- * @author Tomas Pajdla, adapted to openMVG by Michal Polic
+ * @author Tomas Pajdla, adapted to aliceVision by Michal Polic
  * @ref [1] Time solution to the absolute pose problem with unknown radial distortion and focal length
  *          Kukelova, Z., Bujnak, M., and Pajdla T.
  *          ICCV 2013
@@ -82,7 +82,7 @@ struct P5PfrSolver
 /**
  * @brief divisionToPolynomialModelDistortion
  * inversion of the radial division undistortion to Brown polynomial distortion model conversion
- * @author Tomas Pajdla, adapted to openMVG by Michal Polic
+ * @author Tomas Pajdla, adapted to aliceVision by Michal Polic
  * @param divisionModel camera description with radial division undistortion parameters 'KRCrd'
  * @param maxRadius maximal distorted radius, 1 implicit
  * @param points2d  points on which is the difference minimized, dmax//max(C.K([1 5]))*[0 0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 0.95 1] implicit
@@ -139,4 +139,4 @@ double reprojectionErrorRP(const p5pfrModel &m,
                            const Vec3 &pt3D);
 
 } // namespace resection
-} // namespace openMVG
+} // namespace aliceVision

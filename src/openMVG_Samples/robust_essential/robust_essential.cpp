@@ -1,12 +1,12 @@
 // This file is part of the AliceVision project and is made available under
 // the terms of the MPL2 license (see the COPYING.md file).
 
-#include "openMVG/sfm/sfm.hpp"
-#include "openMVG/image/image.hpp"
-#include "openMVG/features/features.hpp"
-#include "openMVG/features/sift/SIFT_describer.hpp"
-#include "openMVG/matching/regions_matcher.hpp"
-#include "openMVG/multiview/triangulation.hpp"
+#include "aliceVision/sfm/sfm.hpp"
+#include "aliceVision/image/image.hpp"
+#include "aliceVision/features/features.hpp"
+#include "aliceVision/features/sift/SIFT_describer.hpp"
+#include "aliceVision/matching/regions_matcher.hpp"
+#include "aliceVision/multiview/triangulation.hpp"
 
 #include "third_party/stlplus3/filesystemSimplified/file_system.hpp"
 #include "third_party/vectorGraphics/svgDrawer.hpp"
@@ -14,11 +14,11 @@
 #include <string>
 #include <iostream>
 
-using namespace openMVG;
-using namespace openMVG::matching;
-using namespace openMVG::image;
-using namespace openMVG::cameras;
-using namespace openMVG::geometry;
+using namespace aliceVision;
+using namespace aliceVision::matching;
+using namespace aliceVision::image;
+using namespace aliceVision::cameras;
+using namespace aliceVision::geometry;
 using namespace svg;
 using namespace std;
 
@@ -47,7 +47,7 @@ int main() {
   //--
   // Detect regions thanks to an image_describer
   //--
-  using namespace openMVG::features;
+  using namespace aliceVision::features;
   std::unique_ptr<Image_describer> image_describer(new SIFT_ImageDescriber);
   std::map<IndexT, std::unique_ptr<features::Regions> > regions_perImage;
   image_describer->Describe(imageL, regions_perImage[0]);

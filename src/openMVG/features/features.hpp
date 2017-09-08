@@ -4,15 +4,15 @@
 #ifndef OPENMVG_FEATURES_HPP
 #define OPENMVG_FEATURES_HPP
 
-#include "openMVG/numeric/numeric.h"
+#include "aliceVision/numeric/numeric.h"
 
-#include "openMVG/features/feature.hpp"
-#include "openMVG/features/descriptor.hpp"
-#include "openMVG/features/keypointSet.hpp"
-#include "openMVG/features/regions.hpp"
-#include "openMVG/features/regions_factory.hpp"
-#include "openMVG/features/image_describer.hpp"
-#include "openMVG/features/image_describer_akaze.hpp"
-#include "openMVG/features/io_regions_type.hpp"
+#include "aliceVision/features/feature.hpp"
+#include "aliceVision/features/descriptor.hpp"
+#include "aliceVision/features/keypointSet.hpp"
+#include "aliceVision/features/regions.hpp"
+#include "aliceVision/features/regions_factory.hpp"
+#include "aliceVision/features/image_describer.hpp"
+#include "aliceVision/features/image_describer_akaze.hpp"
+#include "aliceVision/features/io_regions_type.hpp"
 
 #endif // OPENMVG_FEATURES_HPP

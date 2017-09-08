@@ -2,10 +2,10 @@
 // the terms of the MPL2 license (see the COPYING.md file).
 
 #include "testing/testing.h"
-#include <openMVG/system/Logger.hpp>
-#include <openMVG/multiview/solver_affine.hpp>
+#include <aliceVision/system/Logger.hpp>
+#include <aliceVision/multiview/solver_affine.hpp>
 
-using namespace openMVG;
+using namespace aliceVision;
 
 TEST(Affine2DTest, TranslationX) {
   Mat x1(2, 3);

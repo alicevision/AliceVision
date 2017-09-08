@@ -11,15 +11,15 @@ set(stl_files_headers
   stlMap.hpp
 )
 
-add_library(openMVG_stl INTERFACE)
+add_library(aliceVision_stl INTERFACE)
 
-# target_sources(openMVG_stl INTERFACE ${stl_files_headers}) # TODO
+# target_sources(aliceVision_stl INTERFACE ${stl_files_headers}) # TODO
 
-target_link_libraries(openMVG_stl
+target_link_libraries(aliceVision_stl
   INTERFACE ${LOG_LIB}
 )
 
-UNIT_TEST(openMVG split          "openMVG_stl")
-UNIT_TEST(openMVG dynamic_bitset "openMVG_stl")
+UNIT_TEST(aliceVision split          "aliceVision_stl")
+UNIT_TEST(aliceVision dynamic_bitset "aliceVision_stl")
 
-add_custom_target(openMVG_stl_ide SOURCES ${stl_files_headers})
+add_custom_target(aliceVision_stl_ide SOURCES ${stl_files_headers})

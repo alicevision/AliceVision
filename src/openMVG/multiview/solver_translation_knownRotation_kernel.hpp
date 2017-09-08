@@ -5,11 +5,11 @@
 #define OPENMVG_MULTIVIEW_TRANSLATION_KNOWNROTATION_HPP
 
 #include <vector>
-#include "openMVG/multiview/projection.hpp"
-#include "openMVG/multiview/solver_fundamental_kernel.hpp"
-#include "openMVG/multiview/two_view_kernel.hpp"
+#include "aliceVision/multiview/projection.hpp"
+#include "aliceVision/multiview/solver_fundamental_kernel.hpp"
+#include "aliceVision/multiview/two_view_kernel.hpp"
 
-namespace openMVG {
+namespace aliceVision {
 namespace translation {
 namespace kernel {
 
@@ -94,12 +94,12 @@ protected:
 
 //-- Usable solver for the 2pt translation from known rotation estimation
 typedef TranslationFromKnowRotation<
-  TwoPointTranslationSolver<openMVG::fundamental::kernel::SampsonError>, // SolverFunctor
-  TwoPointTranslationSolver<openMVG::fundamental::kernel::SampsonError>, // ErrorFunctor
+  TwoPointTranslationSolver<aliceVision::fundamental::kernel::SampsonError>, // SolverFunctor
+  TwoPointTranslationSolver<aliceVision::fundamental::kernel::SampsonError>, // ErrorFunctor
   Vec3>  TranslationFromKnowRotationKernel;
 
 }  // namespace kernel
 }  // namespace translation
-}  // namespace openMVG
+}  // namespace aliceVision
 
 #endif  // OPENMVG_MULTIVIEW_TRANSLATION_KNOWNROTATION_HPP

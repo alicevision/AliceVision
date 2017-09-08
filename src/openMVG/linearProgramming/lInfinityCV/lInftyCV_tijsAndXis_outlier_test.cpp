@@ -1,27 +1,27 @@
 // This file is part of the AliceVision project and is made available under
 // the terms of the MPL2 license (see the COPYING.md file).
 
-#include <openMVG/system/Logger.hpp>
-#include "openMVG/multiview/test_data_sets.hpp"
-#include "openMVG/numeric/numeric.h"
-#include <openMVG/config.hpp>
+#include <aliceVision/system/Logger.hpp>
+#include "aliceVision/multiview/test_data_sets.hpp"
+#include "aliceVision/numeric/numeric.h"
+#include <aliceVision/config.hpp>
 #include "testing/testing.h"
 
-#include "openMVG/multiview/projection.hpp"
+#include "aliceVision/multiview/projection.hpp"
 
-#include "openMVG/linearProgramming/linearProgrammingInterface.hpp"
-#include "openMVG/linearProgramming/linearProgrammingOSI_X.hpp"
+#include "aliceVision/linearProgramming/linearProgrammingInterface.hpp"
+#include "aliceVision/linearProgramming/linearProgrammingOSI_X.hpp"
 #if OPENMVG_IS_DEFINED(OPENMVG_HAVE_MOSEK)
-#include "openMVG/linearProgramming/linearProgrammingMOSEK.hpp"
+#include "aliceVision/linearProgramming/linearProgrammingMOSEK.hpp"
 #endif
 
-#include "openMVG/linearProgramming/bisectionLP.hpp"
-#include "openMVG/linearProgramming/lInfinityCV/tijsAndXis_From_xi_Ri_noise.hpp"
+#include "aliceVision/linearProgramming/bisectionLP.hpp"
+#include "aliceVision/linearProgramming/lInfinityCV/tijsAndXis_From_xi_Ri_noise.hpp"
 
 #include <iostream>
 #include <vector>
 
-using namespace openMVG;
+using namespace aliceVision;
 
 using namespace linearProgramming;
 using namespace lInfinityCV;

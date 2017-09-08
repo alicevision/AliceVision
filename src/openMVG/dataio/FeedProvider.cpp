@@ -2,7 +2,7 @@
 // the terms of the MPL2 license (see the COPYING.md file).
 
 #include "FeedProvider.hpp"
-#include <openMVG/config.hpp>
+#include <aliceVision/config.hpp>
 #include "ImageFeed.hpp"
 #if OPENMVG_IS_DEFINED(OPENMVG_HAVE_OPENCV)
 #include "VideoFeed.hpp"
@@ -16,7 +16,7 @@
 #include <limits>
 #include <ctype.h>
 
-namespace openMVG{
+namespace aliceVision{
 namespace dataio{
 
 FeedProvider::FeedProvider(const std::string &feedPath, const std::string &calibPath) 
@@ -112,4 +112,4 @@ bool FeedProvider::isInit() const
 FeedProvider::~FeedProvider( ) { }
 
 }//namespace dataio 
-}//namespace openMVG
+}//namespace aliceVision

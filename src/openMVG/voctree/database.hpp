@@ -11,13 +11,13 @@
 #include <cereal/types/vector.hpp>
 #include <cereal/types/map.hpp>
 
-#include <openMVG/types.hpp>
+#include <aliceVision/types.hpp>
 
 #include <map>
 #include <cstddef>
 #include <string>
 
-namespace openMVG{
+namespace aliceVision{
 namespace voctree{
 
 /**
@@ -194,6 +194,6 @@ private:
 };
 
 }//namespace voctree
-}//namespace openMVG
+}//namespace aliceVision
 
 #endif

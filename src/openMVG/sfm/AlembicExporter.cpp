@@ -6,11 +6,11 @@
 #include <Alembic/AbcGeom/All.h>
 #include <Alembic/AbcCoreHDF5/All.h>
 
-#include "openMVG/version.hpp"
+#include "aliceVision/version.hpp"
 
 #include <numeric>
 
-namespace openMVG {
+namespace aliceVision {
 namespace sfm {
 
 
@@ -33,11 +33,11 @@ struct AlembicExporter::DataImpl
     // Add version as custom property
     auto userProps = _mvgRoot.getProperties();
     OUInt32ArrayProperty propAbcVersion(userProps, "mvg_ABC_version");
-    OUInt32ArrayProperty propAliceVisionVersion(userProps, "mvg_openMVG_version");
+    OUInt32ArrayProperty propAliceVisionVersion(userProps, "mvg_aliceVision_version");
     const std::vector<::uint32_t> abcVersion = {1, 1};
     propAbcVersion.set(abcVersion);
-    const std::vector<::uint32_t> openMVGVersion = {OPENMVG_VERSION_MAJOR, OPENMVG_VERSION_MINOR, OPENMVG_VERSION_REVISION};
-    propAliceVisionVersion.set(openMVGVersion);
+    const std::vector<::uint32_t> aliceVisionVersion = {OPENMVG_VERSION_MAJOR, OPENMVG_VERSION_MINOR, OPENMVG_VERSION_REVISION};
+    propAliceVisionVersion.set(aliceVisionVersion);
   }
   
   Alembic::Abc::OArchive _archive;
@@ -80,8 +80,8 @@ void AlembicExporter::addPoints(const sfm::Landmarks &landmarks, bool withVisibi
   // For all the 3d points in the hash_map
   for(const auto landmark : landmarks)
   {
-    const openMVG::Vec3& pt = landmark.second.X;
-    const openMVG::image::RGBColor& color = landmark.second.rgb;
+    const aliceVision::Vec3& pt = landmark.second.X;
+    const aliceVision::image::RGBColor& color = landmark.second.rgb;
     positions.emplace_back(pt[0], pt[1], pt[2]);
     colors.emplace_back(color.r()/255.f, color.g()/255.f, color.b()/255.f);
     descTypes.emplace_back(static_cast<Alembic::Util::uint8_t>(landmark.second.descType));
@@ -171,8 +171,8 @@ void AlembicExporter::appendCameraRig(IndexT rigId,
   assert(nbSubPoses == subPoses.size());
 
   // rig pose
-  const openMVG::Mat3& R = rigPose.rotation();
-  const openMVG::Vec3& center = rigPose.center();
+  const aliceVision::Mat3& R = rigPose.rotation();
+  const aliceVision::Vec3& center = rigPose.center();
 
   // Compensate translation with rotation
   // Build transform matrix
@@ -252,8 +252,8 @@ void AlembicExporter::appendCamera(const std::string& cameraName,
     sensorWidth_mm = std::stof(view.getMetadata(kSensorWidth));
 
   // pose
-  const openMVG::Mat3 R = pose.rotation();
-  const openMVG::Vec3 center = pose.center();
+  const aliceVision::Mat3 R = pose.rotation();
+  const aliceVision::Vec3 center = pose.center();
 
   // Compensate translation with rotation
   // Build transform matrix
@@ -306,7 +306,7 @@ void AlembicExporter::appendCamera(const std::string& cameraName,
   const float focalLength_mm = sensorWidth_mm * focalLength_pix / sensorWidth_pix;
   const float pix2mm = sensorWidth_mm / sensorWidth_pix;
 
-  // openMVG: origin is (top,left) corner and orientation is (bottom,right)
+  // aliceVision: origin is (top,left) corner and orientation is (bottom,right)
   // ABC: origin is centered and orientation is (up,right)
   // Following values are in cm, hence the 0.1 multiplier
   const float haperture_cm = 0.1 * imgWidth * pix2mm;
@@ -399,8 +399,8 @@ void AlembicExporter::addCameraKeyframe(const geometry::Pose3 &pose,
                                           const IndexT id_intrinsic,
                                           const float sensorWidth_mm)
 {
-  const openMVG::Mat3 R = pose.rotation();
-  const openMVG::Vec3 center = pose.center();
+  const aliceVision::Mat3 R = pose.rotation();
+  const aliceVision::Vec3 center = pose.center();
   // POSE
   // Compensate translation with rotation
   // Build transform matrix
@@ -447,7 +447,7 @@ void AlembicExporter::addCameraKeyframe(const geometry::Pose3 &pose,
   const float focalLength_mm = sensorWidth_mm * focalLength_pix / sensorWidth_pix;
   const float pix2mm = sensorWidth_mm / sensorWidth_pix;
 
-  // openMVG: origin is (top,left) corner and orientation is (bottom,right)
+  // aliceVision: origin is (top,left) corner and orientation is (bottom,right)
   // ABC: origin is centered and orientation is (up,right)
   // Following values are in cm, hence the 0.1 multiplier
   const float haperture_cm = 0.1 * imgWidth * pix2mm;
@@ -510,7 +510,7 @@ void AlembicExporter::add(const sfm::SfM_Data& sfmData, sfm::ESfM_Data flags_par
     for(const auto it : sfmData.GetViews())
     {
       const sfm::View* view = it.second.get();
-      openMVG::cameras::Pinhole_Intrinsic* intrinsic = nullptr;
+      aliceVision::cameras::Pinhole_Intrinsic* intrinsic = nullptr;
       geometry::Pose3 pose;
 
       if(sfmData.IsPoseAndIntrinsicDefined(view))
@@ -525,7 +525,7 @@ void AlembicExporter::add(const sfm::SfM_Data& sfmData, sfm::ESfM_Data flags_par
         }
 
         // AliceVision single Camera
-        intrinsic = dynamic_cast<openMVG::cameras::Pinhole_Intrinsic*>(sfmData.GetIntrinsics().at(view->getIntrinsicId()).get());
+        intrinsic = dynamic_cast<aliceVision::cameras::Pinhole_Intrinsic*>(sfmData.GetIntrinsics().at(view->getIntrinsicId()).get());
         pose = sfmData.getPose(*view);
       }
       else
@@ -566,7 +566,7 @@ void AlembicExporter::add(const sfm::SfM_Data& sfmData, sfm::ESfM_Data flags_par
 
           subPoses.push_back(view);
           viewsImagePaths.push_back(stlplus::create_filespec(sfmData.s_root_path, view.getImagePath()));
-          intrinsics.push_back(dynamic_cast<openMVG::cameras::Pinhole_Intrinsic*>(sfmData.GetIntrinsics().at(view.getIntrinsicId()).get()));
+          intrinsics.push_back(dynamic_cast<aliceVision::cameras::Pinhole_Intrinsic*>(sfmData.GetIntrinsics().at(view.getIntrinsicId()).get()));
           rigSubPoses.push_back(rig.getSubPose(subPoseId));
         }
 
@@ -593,4 +593,4 @@ std::string AlembicExporter::getFilename()
 }
 
 } //namespace sfm
-} //namespace openMVG
+} //namespace aliceVision

@@ -5,14 +5,14 @@
 #define MIMATTE_LINEAR_PROGRAMMING_INTERFACE_MOSEK_H_
 
 
-#include "openMVG/numeric/numeric.h"
-#include "openMVG/linearProgramming/linearProgrammingInterface.hpp"
+#include "aliceVision/numeric/numeric.h"
+#include "aliceVision/linearProgramming/linearProgrammingInterface.hpp"
 extern "C"{
 #include "mosek.h"
 }
 #include <vector>
 
-namespace openMVG   {
+namespace aliceVision   {
 namespace linearProgramming  {
 
 /// MOSEK wrapper for the LP_Solver
@@ -41,7 +41,7 @@ private :
 
 
 } // namespace linearProgramming
-} // namespace openMVG
+} // namespace aliceVision
 
 
 #endif // MIMATTE_LINEAR_PROGRAMMING_INTERFACE_MOSEK_H_

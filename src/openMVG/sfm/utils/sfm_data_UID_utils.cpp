@@ -2,9 +2,9 @@
 // the terms of the MPL2 license (see the COPYING.md file).
 
 #include "sfm_data_UID_utils.hpp"
-#include "openMVG/exif/exif_IO_EasyExif.hpp"
+#include "aliceVision/exif/exif_IO_EasyExif.hpp"
 
-namespace openMVG {
+namespace aliceVision {
 namespace sfm {
 
 void updateStructureWithNewUID(Landmarks &landmarks, const std::map<std::size_t, std::size_t> &oldIdToNew)

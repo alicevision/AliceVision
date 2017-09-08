@@ -4,15 +4,15 @@
 #ifndef OPENMVG_MATCHING_ARRAYMATCHER_BRUTE_FORCE_H
 #define OPENMVG_MATCHING_ARRAYMATCHER_BRUTE_FORCE_H
 
-#include "openMVG/numeric/numeric.h"
-#include "openMVG/matching/matching_interface.hpp"
-#include "openMVG/matching/metric.hpp"
-#include "openMVG/stl/indexed_sort.hpp"
-#include <openMVG/config.hpp>
+#include "aliceVision/numeric/numeric.h"
+#include "aliceVision/matching/matching_interface.hpp"
+#include "aliceVision/matching/metric.hpp"
+#include "aliceVision/stl/indexed_sort.hpp"
+#include <aliceVision/config.hpp>
 #include <memory>
 #include <iostream>
 
-namespace openMVG {
+namespace aliceVision {
 namespace matching {
 
 // By default compute square(L2 distance).
@@ -153,6 +153,6 @@ private:
 };
 
 }  // namespace matching
-}  // namespace openMVG
+}  // namespace aliceVision
 
 #endif  // OPENMVG_MATCHING_ARRAYMATCHER_BRUTE_FORCE_H

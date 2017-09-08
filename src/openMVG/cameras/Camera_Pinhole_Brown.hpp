@@ -4,12 +4,12 @@
 #ifndef OPENMVG_CAMERA_PINHOLE_BROWN_HPP
 #define OPENMVG_CAMERA_PINHOLE_BROWN_HPP
 
-#include "openMVG/numeric/numeric.h"
-#include "openMVG/cameras/Camera_Common.hpp"
+#include "aliceVision/numeric/numeric.h"
+#include "aliceVision/cameras/Camera_Common.hpp"
 
 #include <vector>
 
-namespace openMVG {
+namespace aliceVision {
 namespace cameras {
 
 /// Implement a Pinhole camera with a 3 radial distortion coefficients and 2 tangential distortion coefficients.
@@ -139,11 +139,11 @@ class Pinhole_Intrinsic_Brown_T2 : public Pinhole_Intrinsic
 
 
 } // namespace cameras
-} // namespace openMVG
+} // namespace aliceVision
 
 #include <cereal/types/polymorphic.hpp>
 #include <cereal/types/vector.hpp>
 
-CEREAL_REGISTER_TYPE_WITH_NAME(openMVG::cameras::Pinhole_Intrinsic_Brown_T2, "pinhole_brown_t2");
+CEREAL_REGISTER_TYPE_WITH_NAME(aliceVision::cameras::Pinhole_Intrinsic_Brown_T2, "pinhole_brown_t2");
 
 #endif // #ifndef OPENMVG_CAMERA_PINHOLE_BROWN_HPP

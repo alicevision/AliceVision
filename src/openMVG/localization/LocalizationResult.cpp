@@ -8,7 +8,7 @@
 
 #include <limits>
 
-namespace openMVG {
+namespace aliceVision {
 namespace localization {
 
 LocalizationResult::LocalizationResult() : 
@@ -263,4 +263,4 @@ void updateRigPoses(std::vector<LocalizationResult>& vec_localizationResults,
 }
 
 } // localization
-} // openMVG
+} // aliceVision

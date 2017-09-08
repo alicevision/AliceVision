@@ -2,15 +2,15 @@
 // the terms of the MPL2 license (see the COPYING.md file).
 
 #include "KeyframeSelector.hpp"
-#include <openMVG/image/image.hpp>
-#include <openMVG/features/sift/SIFT_describer.hpp>
-#include <openMVG/exif/sensor_width_database/ParseDatabase.hpp>
-#include <openMVG/system/Logger.hpp>
+#include <aliceVision/image/image.hpp>
+#include <aliceVision/features/sift/SIFT_describer.hpp>
+#include <aliceVision/exif/sensor_width_database/ParseDatabase.hpp>
+#include <aliceVision/system/Logger.hpp>
 
 #include <tuple>
 #include <cassert>
 
-namespace openMVG {
+namespace aliceVision {
 namespace keyframe {
 
 KeyframeSelector::KeyframeSelector(const std::vector<std::string>& mediaPaths,
@@ -23,7 +23,7 @@ KeyframeSelector::KeyframeSelector(const std::vector<std::string>& mediaPaths,
   , _outputDirectory(outputDirectory)
 {
   // load vocabulary tree
-  _voctree.reset(new openMVG::voctree::VocabularyTree<DescriptorFloat>(voctreeFilePath));
+  _voctree.reset(new aliceVision::voctree::VocabularyTree<DescriptorFloat>(voctreeFilePath));
 
   {
       OPENMVG_LOG_INFO("vocabulary tree loaded with :" << std::endl
@@ -385,4 +385,4 @@ void KeyframeSelector::convertFocalLengthInMM(CameraInfo& cameraInfo, int imageW
 }
 
 } // namespace keyframe 
-} // namespace openMVG
+} // namespace aliceVision

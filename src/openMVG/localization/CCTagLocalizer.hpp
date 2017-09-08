@@ -6,18 +6,18 @@
 #include "ILocalizer.hpp"
 #include "LocalizationResult.hpp"
 #include "VoctreeLocalizer.hpp"
-#include <openMVG/config.hpp>
-#include <openMVG/features/features.hpp>
-#include <openMVG/features/image_describer.hpp>
-#include <openMVG/features/cctag/CCTAG_describer.hpp>
-#include <openMVG/sfm/sfm_data.hpp>
-#include <openMVG/sfm/pipelines/localization/SfM_Localizer.hpp>
-#include <openMVG/voctree/database.hpp>
+#include <aliceVision/config.hpp>
+#include <aliceVision/features/features.hpp>
+#include <aliceVision/features/image_describer.hpp>
+#include <aliceVision/features/cctag/CCTAG_describer.hpp>
+#include <aliceVision/sfm/sfm_data.hpp>
+#include <aliceVision/sfm/pipelines/localization/SfM_Localizer.hpp>
+#include <aliceVision/voctree/database.hpp>
 
 #include <iostream>
 #include <bitset>
 
-namespace openMVG {
+namespace aliceVision {
 namespace localization {
 
 
@@ -209,5 +209,5 @@ void viewMatching(
         std::vector<matching::IndMatch> & out_featureMatches);
 
 } // namespace localization
-} // openMVG
+} // aliceVision
 
