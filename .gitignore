@@ -1,0 +1,71 @@
+# temporary files
+*~
+.*.swp # vim
+*.flc # xemacs
+.DS_Store # MacOS
+Thumbs.db # Windows
+
+# python
+*.pyc
+
+# Binary files
+*.o
+*.os
+*.so
+*.a
+*.dll
+*.exe
+
+# folder receiving the compilation products
+build*
+install
+lib
+bin
+x64
+
+# CMake
+CMakeFiles  # intermediate folders
+
+#Third party libs
+THIRDPARTY
+
+# do not keep tuttlePluginCache.xml in case you one executes sam
+/*.xml
+/*.dot
+/*.log
+
+# user files
+*.user
+
+# netbeans projects
+/nbproject
+nbproject
+.idea
+
+# visual projects
+#*.sln
+#*.vcxproj*
+*.suo
+*.vcproj*
+*.ncb
+*.rc
+*.rules
+*.XML
+*.VC.db
+*.VC.opendb
+*ipch
+*.pdb
+
+
+# visual projects create log files into directories
+Debug
+Release
+Production
+
+# Archives
+*.zip
+*.gz
+*.tgz
+*.tar*
+
+
