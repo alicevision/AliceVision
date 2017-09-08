@@ -5,7 +5,7 @@
 #define OPENMVG_IMAGE_IMAGE_DIFFUSION_HPP_
 
 #include <openMVG/config.hpp>
-#include <openMVG/openmvg_omp.hpp>
+#include <openMVG/alicevision_omp.hpp>
 
 #ifdef _MSC_VER
 #pragma warning(once:4244)

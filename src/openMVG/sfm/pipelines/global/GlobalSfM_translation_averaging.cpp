@@ -21,7 +21,7 @@
 #include "openMVG/multiview/translation_averaging_solver.hpp"
 #include "openMVG/sfm/pipelines/global/triplet_t_ACRansac_kernelAdaptator.hpp"
 #include <openMVG/config.hpp>
-#include <openMVG/openmvg_omp.hpp>
+#include <openMVG/alicevision_omp.hpp>
 
 #include "third_party/histogram/histogram.hpp"
 #include "third_party/progress/progress.hpp"

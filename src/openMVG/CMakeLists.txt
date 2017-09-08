@@ -42,7 +42,7 @@ install(
 )
 
 set(global_files_headers
-  openmvg_omp.hpp
+  alicevision_omp.hpp
   prettyprint.hpp
   types.hpp
   version.hpp

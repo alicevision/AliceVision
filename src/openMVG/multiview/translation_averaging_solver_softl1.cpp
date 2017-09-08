@@ -6,7 +6,7 @@
 #include "openMVG/numeric/numeric.h"
 #include "openMVG/types.hpp"
 #include <openMVG/config.hpp>
-#include <openMVG/openmvg_omp.hpp>
+#include <openMVG/alicevision_omp.hpp>
 #include <openMVG/system/Logger.hpp>
 
 #include "ceres/ceres.h"

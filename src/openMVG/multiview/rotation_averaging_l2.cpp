@@ -3,7 +3,7 @@
 
 #include "openMVG/multiview/rotation_averaging_l2.hpp"
 #include <openMVG/config.hpp>
-#include <openMVG/openmvg_omp.hpp>
+#include <openMVG/alicevision_omp.hpp>
 #include <openMVG/system/Logger.hpp>
 
 #include <vector>
