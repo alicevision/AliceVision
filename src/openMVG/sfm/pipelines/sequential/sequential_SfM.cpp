@@ -234,7 +234,15 @@ void SequentialSfMReconstructionEngine::RobustResectionOfImages(
               set_newReconstructedViewId, 
               graph_poses, 
               map_viewId_node, 
-              map_poseId_distance);
+              map_poseId_distance,
+              "first"); 
+        
+        localBundleAdjustment(
+              set_newReconstructedViewId, 
+              graph_poses, 
+              map_viewId_node, 
+              map_poseId_distance, 
+              "second");
         
         
         OPENMVG_LOG_DEBUG("Resection group index: " << resectionGroupIndex << ", bundle iteration: " << bundleAdjustmentIteration
@@ -1671,7 +1679,8 @@ bool SequentialSfMReconstructionEngine::localBundleAdjustment(
     const std::set<IndexT>& newReconstructedViewIds,
     lemon::ListGraph& graph_poses,
     std::map<IndexT, lemon::ListGraph::Node>& map_viewId_node, 
-    std::map<IndexT, int>& mapPoseIdDistance)
+    std::map<IndexT, int>& mapPoseIdDistance, 
+    const std::string& name)
 {
   
   LocalBA_timeProfiler times;
@@ -1740,17 +1749,22 @@ bool SequentialSfMReconstructionEngine::localBundleAdjustment(
   duration.reset();
   
   // Run Bundle Adjustment:
-  bool isBaSucceed = localBA_obj.Adjust(_sfm_data);
+  bool isBaSucceed;
+  if (name == "first")
+    isBaSucceed = localBA_obj.AdjustNoChanges(_sfm_data);
+  else
+    isBaSucceed = localBA_obj.Adjust(_sfm_data);
+    
   
   times.adjusting = duration.elapsed(); 
   times.allLocalBA = durationLBA.elapsed();  
-  times.exportTimes(_sOutDirectory + "/TimeProfile.txt");
+  times.exportTimes(_sOutDirectory + name);
   times.showTimes();
   
-  // Save data about the 
-  std::cout << "Export statistics... " << std::endl;
-  localBA_obj.exportStatistics(_sOutDirectory, _sfm_data);
-  std::cout << "Export statistics: done" << std::endl;
+//  // Save data about the 
+//  std::cout << "Export statistics... " << std::endl;
+//  localBA_obj.exportStatistics(_sOutDirectory, _sfm_data);
+//  std::cout << "Export statistics: done" << std::endl;
   return isBaSucceed;
 }
 

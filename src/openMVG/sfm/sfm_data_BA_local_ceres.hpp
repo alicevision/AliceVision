@@ -46,6 +46,7 @@ public:
    * if graph is empty. 
    */
   bool Adjust(SfM_Data & sfm_data);
+  bool AdjustNoChanges(const SfM_Data & sfm_data2);
 
   
   /// @brief Complete the graph '_reconstructionGraph' with new poses

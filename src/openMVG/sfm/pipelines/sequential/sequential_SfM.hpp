@@ -171,11 +171,10 @@ private:
   bool BundleAdjustment();  
   
   /// Bundle adjustment to refine a few Structure, Motion and Intrinsics parameter
-  bool localBundleAdjustment(
-    const std::set<IndexT>& newReconstructedViewIds, 
+  bool localBundleAdjustment(const std::set<IndexT>& newReconstructedViewIds, 
     lemon::ListGraph& graph_poses, 
     std::map<IndexT, lemon::ListGraph::Node>& map_viewId_node, 
-    std::map<IndexT, int>& mapViewIdDistance);
+    std::map<IndexT, int>& mapViewIdDistance, const string &filename);
 
   /// Discard track with too large residual error
   size_t badTrackRejector(double dPrecision, size_t count = 0);

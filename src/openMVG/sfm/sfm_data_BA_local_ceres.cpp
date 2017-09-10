@@ -38,6 +38,242 @@ Local_Bundle_Adjustment_Ceres::Local_Bundle_Adjustment_Ceres(Local_Bundle_Adjust
 //  _map_node_viewId(_reconstructionGraph) 
 {}
 
+bool Local_Bundle_Adjustment_Ceres::AdjustNoChanges(const SfM_Data & sfm_data2)
+{
+
+  SfM_Data sfm_data;
+  sfm_data.poses = sfm_data2.poses;
+  sfm_data.structure = sfm_data2.structure;
+  // clone views
+  for (const auto& it : sfm_data2.views)
+    sfm_data.views[it.first] = std::make_shared<View>(*(it.second));
+  // clone intrinsics
+  
+  sfm_data.intrinsics = sfm_data2.GetIntrinsics();
+//  for (const auto& it : sfm_data2.intrinsics)
+//  {
+//    cameras::IntrinsicBase& K = *(it.second.get());
+//    sfm_data.intrinsics[it.first] = std::make_shared<cameras::IntrinsicBase>(K);
+//  }
+// use getIntrinsic() function... 
+  
+  
+//  if (sfm_data == sfm_data2)
+//    std::cout << "LES SFM_DTA SONT IDENTIQUES !" << std::endl;
+//  else
+//    std::cout << "LES SFM_DTA SONT differernts..." << std::endl;
+//  getchar();
+  
+  
+ std::cout << "-- Adjust" << std::endl;
+  
+  //----------
+  // Add camera parameters
+  // - intrinsics
+  // - poses [R|t]
+  
+  // Create residuals for each observation in the bundle adjustment problem. The
+  // parameters for cameras and points are added automatically.
+  //----------
+  
+  ceres::Solver::Options solver_options;
+  setSolverOptions(solver_options);
+  if (_LBA_openMVG_options.isParameterOrderingEnabled()) 
+    solver_options.linear_solver_ordering.reset(new ceres::ParameterBlockOrdering);
+
+  ceres::Problem problem;
+  
+  // Data wrapper for refinement:
+  Hash_Map<IndexT, std::vector<double> > map_posesBlocks;
+  Hash_Map<IndexT, std::vector<double> > map_intrinsicsBlocks;
+
+  // Add Poses data to the Ceres problem as Parameter Blocks (do not take care of Local BA strategy)
+  map_posesBlocks = addPosesToCeresProblem(sfm_data.poses, problem);
+  
+  // Add Intrinsics data to the Ceres problem as Parameter Blocks (do not take care of Local BA strategy)
+  map_intrinsicsBlocks = addIntrinsicsToCeresProblem(sfm_data, problem);
+     
+  // Count the number of Refined, Constant & Ignored parameters
+  if (_LBA_openMVG_options.isLocalBAEnabled())
+  {
+    for (auto it : map_intrinsicsBlocks)
+    {
+      IndexT intrinsicId = it.first;
+      if (getIntrinsicsState(intrinsicId) == LocalBAState::refined)  ++_LBA_statistics.numRefinedIntrinsics;
+      if (getIntrinsicsState(intrinsicId) == LocalBAState::constant) ++_LBA_statistics.numConstantIntrinsics;
+      if (getIntrinsicsState(intrinsicId) == LocalBAState::ignored)  ++_LBA_statistics.numIgnoredIntrinsics;
+    }
+    for (auto it : map_posesBlocks)
+    {
+      IndexT poseId = it.first;
+      if (getPoseState(poseId) == LocalBAState::refined)  ++_LBA_statistics.numRefinedPoses;
+      if (getPoseState(poseId) == LocalBAState::constant) ++_LBA_statistics.numConstantPoses;
+      if (getPoseState(poseId) == LocalBAState::ignored)  ++_LBA_statistics.numIgnoredPoses;
+    }
+  }   
+  else
+  {
+    _LBA_statistics.numRefinedPoses = map_posesBlocks.size();
+    _LBA_statistics.numRefinedIntrinsics = map_intrinsicsBlocks.size();
+  }
+  
+  if (_LBA_statistics.numConstantPoses == 0 && _LBA_statistics.numIgnoredPoses != 0)
+  {
+    OPENMVG_LOG_WARNING("Local bundle adjustment not executed: There is no pose set to Constant in the solver.");
+    // It happens when the added pose(s) is(are) not connected to the rest of the graph.
+    return false;
+  }
+  
+  // Set a LossFunction to be less penalized by false measurements
+  //  - set it to NULL if you don't want use a lossFunction.
+  ceres::LossFunction * p_LossFunction = new ceres::HuberLoss(Square(4.0));
+  // TODO: make the LOSS function and the parameter an option
+
+  // For all visibility add reprojections errors:
+  for(auto& landmarkIt: sfm_data.structure)
+  {             
+    IndexT landmarkId = landmarkIt.first;
+    
+    // Count the number of Refined, Constant & Ignored landmarks
+    if (getLandmarkState(landmarkId) == LocalBAState::refined)  ++_LBA_statistics.numRefinedLandmarks;
+    if (getLandmarkState(landmarkId) == LocalBAState::constant) ++_LBA_statistics.numConstantLandmarks;
+    if (getLandmarkState(landmarkId) == LocalBAState::ignored)  ++_LBA_statistics.numIgnoredLandmarks;
+            
+    const Observations & observations = landmarkIt.second.observations;
+    // Iterate over 2D observation associated to the 3D landmark
+    for (const auto& observationIt: observations)
+    {
+      // Build the residual block corresponding to the track observation:
+      const View * view = sfm_data.views.at(observationIt.first).get();
+      IndexT intrinsicId = view->id_intrinsic;
+      IndexT poseId = view->id_pose;
+      
+      // Do not create a residual block if the pose, the intrinsic or the landmark 
+      // have been set as Ignored by the Local BA strategy
+      if (_LBA_openMVG_options.isLocalBAEnabled())
+      {
+        if (getPoseState(poseId) == LocalBAState::ignored 
+          || getIntrinsicsState(intrinsicId) == LocalBAState::ignored 
+          || getLandmarkState(landmarkId) == LocalBAState::ignored)
+        {
+          continue;
+        }
+      }
+ 
+      // Each Residual block takes a point and a camera as input and outputs a 2
+      // dimensional residual. Internally, the cost function stores the observed
+      // image location and compares the reprojection against the observation.
+      ceres::CostFunction* cost_function =
+          IntrinsicsToCostFunction(sfm_data.intrinsics[intrinsicId].get(), observationIt.second.x);
+      
+      if (cost_function)
+      {
+        // Needed parameters to create a residual block (K, pose & landmark)
+        double* intrinsicBlock = &map_intrinsicsBlocks[intrinsicId][0];
+        double* poseBlock = &map_posesBlocks[poseId][0];
+        double* landmarkBlock = landmarkIt.second.X.data();
+
+        // Apply a specific parameter ordering: 
+        if (_LBA_openMVG_options.isParameterOrderingEnabled()) 
+        {
+          solver_options.linear_solver_ordering->AddElementToGroup(landmarkBlock, 0);
+          solver_options.linear_solver_ordering->AddElementToGroup(intrinsicBlock, 1);
+          solver_options.linear_solver_ordering->AddElementToGroup(poseBlock, 2);
+        }
+        // Set to constant parameters previoously set as Constant by the Local BA strategy
+        if (_LBA_openMVG_options.isLocalBAEnabled())
+        {
+          if (getIntrinsicsState(intrinsicId) == LocalBAState::constant) problem.SetParameterBlockConstant(intrinsicBlock);        
+          if (getPoseState(poseId) == LocalBAState::constant)            problem.SetParameterBlockConstant(poseBlock);
+          if (getLandmarkState(landmarkId) == LocalBAState::constant)    problem.SetParameterBlockConstant(landmarkBlock);
+        } 
+        // Create a residual block:
+        problem.AddResidualBlock(cost_function,
+                                 p_LossFunction,
+                                 intrinsicBlock,
+                                 poseBlock,
+                                 landmarkBlock); //Do we need to copy 3D point to avoid false motion, if failure ?
+      }
+    }
+  }
+    
+  ceres::Solver::Summary summary;
+  if (!solveBA(problem, solver_options, summary))
+    return false;
+  
+  // Solution is usable
+  if (_LBA_openMVG_options._bVerbose)
+  {
+    // Display statistics about the minimization
+    OPENMVG_LOG_DEBUG(
+      "Bundle Adjustment statistics (approximated RMSE):\n"
+      " #views: " << sfm_data.views.size() << "\n"
+      " #poses: " << sfm_data.poses.size() << "\n"
+      " #intrinsics: " << sfm_data.intrinsics.size() << "\n"
+      " #tracks: " << sfm_data.structure.size() << "\n"
+      " #residuals: " << summary.num_residuals << "\n"
+      " Initial RMSE: " << std::sqrt( summary.initial_cost / summary.num_residuals) << "\n"
+      " Final RMSE: " << std::sqrt( summary.final_cost / summary.num_residuals) << "\n"
+      " Time (s): " << summary.total_time_in_seconds << "\n"
+      );
+  }
+
+  if (_LBA_openMVG_options._bVerbose && _LBA_openMVG_options.isParameterOrderingEnabled())
+  {
+  // Display statistics about "parameter ordering"
+    OPENMVG_LOG_DEBUG(
+      "Parameter ordering statistics:\n"
+      " (group 0 (landmarks)): " << solver_options.linear_solver_ordering->GroupSize(0) << "\n"
+      " (group 1 (intrinsics)): " << solver_options.linear_solver_ordering->GroupSize(1) << "\n"
+      " (group 2 (poses)): " << solver_options.linear_solver_ordering->GroupSize(2) << "\n"
+      );
+  }
+  
+  // Add statitics about the BA loop:
+  _LBA_statistics.time = summary.total_time_in_seconds;
+  _LBA_statistics.numSuccessfullIterations = summary.num_successful_steps;
+  _LBA_statistics.numUnsuccessfullIterations = summary.num_unsuccessful_steps;
+  _LBA_statistics.numResidualBlocks = summary.num_residuals;
+  _LBA_statistics.RMSEinitial = std::sqrt( summary.initial_cost / summary.num_residuals);
+  _LBA_statistics.RMSEfinal = std::sqrt( summary.final_cost / summary.num_residuals);
+  
+  if (_LBA_openMVG_options._bVerbose && _LBA_openMVG_options.isLocalBAEnabled())
+  {
+    // Generate the histogram <distance, NbOfPoses>
+    for (auto it: _map_poseId_distance) // distanceToRecentPoses: <poseId, distance>
+    {
+      auto itHisto = _LBA_statistics.map_distance_numCameras.find(it.second);
+      if(itHisto != _LBA_statistics.map_distance_numCameras.end())
+        ++_LBA_statistics.map_distance_numCameras.at(it.second);
+      else // first pose with this specific distance
+          _LBA_statistics.map_distance_numCameras[it.second] = 1;
+    }
+    
+    // Display statistics about the Local BA
+    OPENMVG_LOG_DEBUG(
+      "Local BA statistics:\n"
+      " #poses: " << _LBA_statistics.numRefinedPoses << " refined, " 
+        << _LBA_statistics.numConstantPoses << " constant, "
+        << _LBA_statistics.numIgnoredPoses << " ignored.\n"
+      " #intrinsics: " << _LBA_statistics.numRefinedIntrinsics << " refined, " 
+        << _LBA_statistics.numConstantIntrinsics << " constant, "
+        << _LBA_statistics.numIgnoredIntrinsics<< " ignored.\n"   
+      " #landmarks: " << _LBA_statistics.numRefinedLandmarks << " refined, " 
+        << _LBA_statistics.numConstantLandmarks << " constant, "
+        << _LBA_statistics.numIgnoredLandmarks << " ignored.\n"
+    );
+  }
+
+  // Update camera poses with refined data
+  updateCameraPoses(map_posesBlocks, sfm_data.poses);
+
+  // Update camera intrinsics with refined data
+  updateCameraIntrinsics(map_intrinsicsBlocks, sfm_data.intrinsics);
+  std::cout << "-- adjust: done" << std::endl;
+  return true;
+}
+
+
 bool Local_Bundle_Adjustment_Ceres::Adjust(SfM_Data& sfm_data)
 {
   std::cout << "-- Adjust" << std::endl;
