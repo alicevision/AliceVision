@@ -1,0 +1,283 @@
+## AliceVision
+## Pipeline softwares
+
+# Intrinsic image analysis and SfMData container initialization
+
+add_executable(aliceVision_cameraInit main_cameraInit.cpp)
+
+target_link_libraries(aliceVision_cameraInit
+  aliceVision_system
+  aliceVision_image
+  aliceVision_features
+  aliceVision_exif
+  aliceVision_sfm
+  easyexif
+)
+
+set_property(TARGET aliceVision_cameraInit
+  PROPERTY FOLDER AliceVision/software
+)
+
+install(TARGETS aliceVision_cameraInit
+  DESTINATION bin/
+)
+
+# Feature extraction
+
+add_executable(aliceVision_featureExtraction main_featureExtraction.cpp)
+
+target_link_libraries(aliceVision_featureExtraction
+  aliceVision_system
+  aliceVision_image
+  aliceVision_features
+  aliceVision_multiview
+  aliceVision_sfm
+  aliceVision_exif
+  easyexif
+  stlplus
+  vlsift
+)
+
+if(ALICEVISION_HAVE_CCTAG)
+  target_link_libraries(aliceVision_featureExtraction CCTag::CCTag)
+endif()
+
+set_property(TARGET aliceVision_featureExtraction
+  PROPERTY FOLDER AliceVision/software
+)
+
+install(TARGETS aliceVision_featureExtraction
+  DESTINATION bin/
+)
+
+# Image matching
+# - generate the pair lists
+
+add_executable(aliceVision_imageMatching main_imageMatching.cpp)
+
+target_link_libraries(aliceVision_imageMatching
+	aliceVision_voctree
+	${Boost_LIBRARIES}
+)
+
+install(TARGETS aliceVision_imageMatching
+	DESTINATION bin/
+)
+
+# Feature matching
+# - putative matches and geometric filtered matches
+
+add_executable(aliceVision_featureMatching main_featureMatching.cpp)
+
+target_link_libraries(aliceVision_featureMatching
+  aliceVision_system
+  aliceVision_features
+  aliceVision_multiview
+  aliceVision_sfm
+  aliceVision_matching_image_collection
+  stlplus
+)
+
+set_property(TARGET aliceVision_featureMatching
+  PROPERTY FOLDER AliceVision/software
+)
+
+install(TARGETS aliceVision_featureMatching
+  DESTINATION bin/
+)
+
+# Incremental / Sequential SfM
+
+add_executable(aliceVision_incrementalSfM main_incrementalSfM.cpp)
+
+target_link_libraries(aliceVision_incrementalSfM
+  aliceVision_system
+  aliceVision_image
+  aliceVision_features
+  aliceVision_sfm
+  stlplus
+)
+
+set_property(TARGET aliceVision_incrementalSfM
+  PROPERTY FOLDER AliceVision/software
+)
+
+install(TARGETS aliceVision_incrementalSfM
+  DESTINATION bin/
+)
+
+# Global SfM
+
+add_executable(aliceVision_globalSfM main_globalSfM.cpp)
+
+target_link_libraries(aliceVision_globalSfM
+  aliceVision_system
+  aliceVision_image
+  aliceVision_features
+  aliceVision_sfm
+  stlplus
+)
+
+set_property(TARGET aliceVision_globalSfM
+  PROPERTY FOLDER AliceVision/software
+)
+
+install(TARGETS aliceVision_globalSfM
+  DESTINATION bin/
+)
+
+# Compute structure from known camera poses
+
+add_executable(aliceVision_computeStructureFromKnownPoses main_computeStructureFromKnownPoses.cpp)
+
+target_link_libraries(aliceVision_computeStructureFromKnownPoses
+  aliceVision_system
+  aliceVision_features
+  aliceVision_sfm
+  stlplus
+)
+
+set_property(TARGET aliceVision_computeStructureFromKnownPoses
+  PROPERTY FOLDER AliceVision/software
+)
+
+install(TARGETS aliceVision_computeStructureFromKnownPoses
+  DESTINATION bin/
+)
+
+# Compute structure color
+
+add_executable(aliceVision_computeSfMColor main_computeSfMColor.cpp)
+
+target_link_libraries(aliceVision_computeSfMColor
+  aliceVision_system
+  aliceVision_image
+  aliceVision_features
+  aliceVision_sfm
+  stlplus
+)
+
+set_property(TARGET aliceVision_computeSfMColor
+  PROPERTY FOLDER AliceVision/software
+)
+
+install(TARGETS aliceVision_computeSfMColor
+  DESTINATION bin/
+)
+
+# Calibrate a camera 
+
+if(ALICEVISION_HAVE_OPENCV)
+  add_executable(aliceVision_cameraCalibration main_cameraCalibration.cpp)
+  
+  target_link_libraries(aliceVision_cameraCalibration # PUBLIC
+    aliceVision_dataio
+    aliceVision_image
+    aliceVision_calibration
+    aliceVision_system
+    ${OpenCV_LIBRARIES}
+    ${Boost_LIBRARIES}
+  )
+
+  if(ALICEVISION_HAVE_CCTAG)
+    target_link_libraries(aliceVision_cameraCalibration CCTag::CCTag)
+  endif()
+
+  install(TARGETS aliceVision_cameraCalibration 
+	DESTINATION bin/
+  )
+endif()
+
+# Calibrate a rig 
+
+add_executable(aliceVision_rigCalibration main_rigCalibration.cpp)
+
+target_link_libraries(aliceVision_rigCalibration
+	aliceVision_rig
+	aliceVision_localization
+	aliceVision_dataio
+	aliceVision_image
+	aliceVision_features
+	vlsift  #TODO: delete vlsift
+	${Boost_LIBRARIES}
+)
+
+if(ALICEVISION_HAVE_CCTAG)
+	target_link_libraries(aliceVision_rigCalibration CCTag::CCTag)
+endif()
+
+install(TARGETS aliceVision_rigCalibration 
+	DESTINATION bin/
+)
+
+# Localize a camera
+
+add_executable(main_cameraLocalization main_cameraLocalization.cpp)
+
+target_link_libraries(main_cameraLocalization
+	aliceVision_localization
+	aliceVision_dataio
+	aliceVision_image
+	aliceVision_features
+	vlsift
+	${BOOST_LIBRARIES}
+)
+
+if(ALICEVISION_HAVE_ALEMBIC)
+	target_link_libraries(main_cameraLocalization 
+		aliceVision_sfm 
+		${ABC_LIBRARIES}
+	)
+endif()
+
+if(ALICEVISION_HAVE_CCTAG)
+	target_link_libraries(main_cameraLocalization CCTag::CCTag)
+endif()
+
+install(TARGETS main_cameraLocalization 
+	DESTINATION bin/
+)
+
+# Localize a rig
+
+add_executable(aliceVision_rigLocalization main_rigLocalization.cpp)
+
+target_link_libraries(aliceVision_rigLocalization
+	aliceVision_localization
+	aliceVision_dataio
+	aliceVision_rig
+	aliceVision_image
+	aliceVision_features
+	vlsift
+	${Boost_LIBRARIES}
+)
+
+if(ALICEVISION_HAVE_ALEMBIC)
+  target_link_libraries(aliceVision_rigLocalization aliceVision_sfm ${ABC_LIBRARIES})
+endif()
+
+if(ALICEVISION_HAVE_CCTAG)
+  target_link_libraries(aliceVision_rigLocalization CCTag::CCTag)
+endif()
+
+install(TARGETS aliceVision_rigLocalization
+	DESTINATION bin/
+)
+
+##
+# Export tutorial with valid path thanks to a configuration file
+##
+#set(ALICEVISION_SOFTWARE_SFM_SRC_DIR ${CMAKE_CURRENT_LIST_DIR})
+#if(MSVC OR APPLE)
+#  set(ALICEVISION_SOFTWARE_SFM_BUILD_DIR "${EXECUTABLE_OUTPUT_PATH}/${CMAKE_BUILD_TYPE}")
+#else()
+#  set(ALICEVISION_SOFTWARE_SFM_BUILD_DIR ${EXECUTABLE_OUTPUT_PATH})
+#endif()
+
+#set(ALICEVISION_TUTORIAL_IN_FILE "${CMAKE_CURRENT_LIST_DIR}/tutorial_demo.py.in")
+#configure_file(${ALICEVISION_TUTORIAL_IN_FILE}
+#    "${CMAKE_CURRENT_BINARY_DIR}/tutorial_demo.py" @ONLY)
+
+#set(ALICEVISION_TUTORIAL_IN_FILE "${CMAKE_CURRENT_LIST_DIR}/pipeline.py.in")
+#configure_file(${ALICEVISION_TUTORIAL_IN_FILE}
+#    "${CMAKE_CURRENT_BINARY_DIR}/pipeline.py" @ONLY)

@@ -4,8 +4,8 @@
 #include "aliceVision/sfm/sfm.hpp"
 #include <aliceVision/config.hpp>
 
-#include "software/SfM/tools_precisionEvaluationToGt.hpp"
-#include "software/SfM/SfMPlyHelper.hpp"
+#include "software/utils/precisionEvaluationToGt.hpp"
+#include "software/utils/sfmHelper/sfmPlyHelper.hpp"
 
 #include "third_party/htmlDoc/htmlDoc.hpp"
 

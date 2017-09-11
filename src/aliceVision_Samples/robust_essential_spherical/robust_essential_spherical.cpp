@@ -12,7 +12,7 @@
 
 #include "aliceVision_Samples/robust_essential_spherical/spherical_cam.hpp"
 
-#include "software/SfM/SfMPlyHelper.hpp"
+#include "software/utils/sfmHelper/sfmPlyHelper.hpp"
 
 #include "third_party/stlplus3/filesystemSimplified/file_system.hpp"
 #include "third_party/vectorGraphics/svgDrawer.hpp"

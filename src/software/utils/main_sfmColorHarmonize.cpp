@@ -1,7 +1,7 @@
 // This file is part of the AliceVision project and is made available under
 // the terms of the MPL2 license (see the COPYING.md file).
 
-#include "software/colorHarmonize/colorHarmonizeEngineGlobal.hpp"
+#include "software/utils/sfmColorHarmonize/colorHarmonizeEngineGlobal.hpp"
 
 #include "third_party/cmdLine/cmdLine.h"
 #include "third_party/stlplus3/filesystemSimplified/file_system.hpp"

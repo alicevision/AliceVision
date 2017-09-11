@@ -2,7 +2,7 @@
 // the terms of the MPL2 license (see the COPYING.md file).
 
 #include "colorHarmonizeEngineGlobal.hpp"
-#include "software/SfM/SfMIOHelper.hpp"
+#include "software/utils/sfmHelper/sfmIOHelper.hpp"
 
 #include "aliceVision/image/image.hpp"
 //-- Load features per view

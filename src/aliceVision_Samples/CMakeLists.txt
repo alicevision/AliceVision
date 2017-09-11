@@ -1,4 +1,4 @@
-add_subdirectory(accv12_demo)
+# add_subdirectory(accv12_demo)
 add_subdirectory(siftPutativeMatches)
 add_subdirectory(robust_homography)
 add_subdirectory(robust_homography_guided)

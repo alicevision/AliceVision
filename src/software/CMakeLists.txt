@@ -1,7 +1,6 @@
-add_subdirectory(SfM)
-add_subdirectory(localization)
-add_subdirectory(colorHarmonize)
-
 if(ALICEVISION_HAVE_BOOST)
- add_subdirectory(calibration)
+  add_subdirectory(pipeline)
+  add_subdirectory(convert)
+  add_subdirectory(export)
+  add_subdirectory(utils)
 endif()

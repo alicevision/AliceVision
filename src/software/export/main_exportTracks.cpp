@@ -10,7 +10,7 @@
 #include "aliceVision/sfm/pipelines/RegionsIO.hpp"
 #include "aliceVision/features/svgVisualization.hpp"
 
-#include "software/SfM/SfMIOHelper.hpp"
+#include "software/utils/sfmHelper/sfmIOHelper.hpp"
 #include "third_party/cmdLine/cmdLine.h"
 #include "third_party/stlplus3/filesystemSimplified/file_system.hpp"
 #include "third_party/progress/progress.hpp"

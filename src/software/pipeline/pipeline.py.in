@@ -7,7 +7,7 @@
 #
 # This script eases the call to the 3D reconstruction pipelines.
 #
-# Usage : python SfM_Pipeline.py --image_dir imageDIR --output_dir outputDir
+# Usage : python pipeline.py --image_dir imageDIR --output_dir outputDir
 #
 # imageDIR is the input directory where images are located
 # outputDir is where the project will be saved
