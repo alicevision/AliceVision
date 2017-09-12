@@ -8,10 +8,10 @@
 #include "aliceVision/sfm/pipelines/RegionsIO.hpp"
 #include "aliceVision/features/svgVisualization.hpp"
 
-#include "third_party/cmdLine/cmdLine.h"
-#include "third_party/stlplus3/filesystemSimplified/file_system.hpp"
-#include "third_party/progress/progress.hpp"
-#include "third_party/vectorGraphics/svgDrawer.hpp"
+#include "dependencies/cmdLine/cmdLine.h"
+#include "dependencies/stlplus3/filesystemSimplified/file_system.hpp"
+#include "dependencies/progress/progress.hpp"
+#include "dependencies/vectorGraphics/svgDrawer.hpp"
 
 #include <cstdlib>
 #include <string>

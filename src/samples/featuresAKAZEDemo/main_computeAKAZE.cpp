@@ -1,22 +1,19 @@
 // This file is part of the AliceVision project and is made available under
 // the terms of the MPL2 license (see the COPYING.md file).
 
+#include "aliceVision/system/timer.hpp"
 #include "aliceVision/image/image.hpp"
 #include "aliceVision/features/akaze/AKAZE.hpp"
 
-#include "third_party/vectorGraphics/svgDrawer.hpp"
-using namespace svg;
-
-
-#include "third_party/cmdLine/cmdLine.h"
-#include "third_party/stlplus3/filesystemSimplified/file_system.hpp"
-
-#include "aliceVision/system/timer.hpp"
+#include "dependencies/vectorGraphics/svgDrawer.hpp"
+#include "dependencies/cmdLine/cmdLine.h"
+#include "dependencies/stlplus3/filesystemSimplified/file_system.hpp"
 
 #include <iostream>
 #include <sstream>
 
 using namespace aliceVision;
+using namespace svg;
 
 void usage( const std::string & appName )
 {

@@ -4,7 +4,7 @@
 #include "aliceVision/sfm/pipelines/global/sfm_global_engine_relative_motions.hpp"
 #include "aliceVision/sfm/sfm_data.hpp"
 #include <aliceVision/config.hpp>
-#include "third_party/htmlDoc/htmlDoc.hpp"
+#include "dependencies/htmlDoc/htmlDoc.hpp"
 
 #include "aliceVision/multiview/triangulation.hpp"
 #include "aliceVision/multiview/triangulation_nview.hpp"
@@ -13,7 +13,7 @@
 #include "aliceVision/stl/stl.hpp"
 #include "aliceVision/multiview/essential.hpp"
 
-#include "third_party/progress/progress.hpp"
+#include "dependencies/progress/progress.hpp"
 
 #ifdef _MSC_VER
 #pragma warning( once : 4267 ) //warning C4267: 'argument' : conversion from 'size_t' to 'const int', possible loss of data

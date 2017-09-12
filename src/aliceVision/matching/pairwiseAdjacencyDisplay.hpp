@@ -4,7 +4,7 @@
 #ifndef ALICEVISION_PAIRWISE_ADJACENCY_DISPLAY_H
 #define ALICEVISION_PAIRWISE_ADJACENCY_DISPLAY_H
 
-#include "third_party/vectorGraphics/svgDrawer.hpp"
+#include "dependencies/vectorGraphics/svgDrawer.hpp"
 #include "aliceVision/matching/indMatch.hpp"
 
 namespace aliceVision  {

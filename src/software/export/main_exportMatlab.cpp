@@ -5,9 +5,8 @@
 #include "aliceVision/image/image.hpp"
 #include "aliceVision/image/image_converter.hpp"
 
-
-#include "third_party/cmdLine/cmdLine.h"
-#include "third_party/progress/progress.hpp"
+#include "dependencies/cmdLine/cmdLine.h"
+#include "dependencies/progress/progress.hpp"
 
 #include <stdlib.h>
 #include <stdio.h>

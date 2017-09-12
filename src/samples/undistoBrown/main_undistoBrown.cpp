@@ -4,9 +4,9 @@
 #include "aliceVision/image/image.hpp"
 #include "aliceVision/cameras/cameras.hpp"
 
-#include "third_party/cmdLine/cmdLine.h"
-#include "third_party/stlplus3/filesystemSimplified/file_system.hpp"
-#include "third_party/progress/progress.hpp"
+#include "dependencies/cmdLine/cmdLine.h"
+#include "dependencies/stlplus3/filesystemSimplified/file_system.hpp"
+#include "dependencies/progress/progress.hpp"
 
 #include <string>
 #include <iostream>

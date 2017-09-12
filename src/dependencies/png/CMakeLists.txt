@@ -67,7 +67,7 @@ endif(MSVC)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR} ../zlib)
 add_library(png STATIC ${libpng_sources})
 target_link_libraries(png zlib ${M_LIBRARY})
-SET_PROPERTY(TARGET png PROPERTY FOLDER AliceVision/3rdParty)
+SET_PROPERTY(TARGET png PROPERTY FOLDER AliceVision/Dependencies/Png)
 
 if(PNG_INCLUDE_INSTALL_DIR)
   set(INCLUDE_INSTALL_DIR ${PNG_INCLUDE_INSTALL_DIR})

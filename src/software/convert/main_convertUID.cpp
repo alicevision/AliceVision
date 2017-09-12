@@ -3,13 +3,13 @@
 
 #include "aliceVision/image/image.hpp"
 #include "aliceVision/sfm/sfm.hpp"
-
-#include <cereal/archives/json.hpp>
 #include "aliceVision/system/timer.hpp"
 
-#include "third_party/cmdLine/cmdLine.h"
-#include "third_party/stlplus3/filesystemSimplified/file_system.hpp"
-#include "third_party/progress/progress.hpp"
+#include "dependencies/cmdLine/cmdLine.h"
+#include "dependencies/stlplus3/filesystemSimplified/file_system.hpp"
+#include "dependencies/progress/progress.hpp"
+
+#include <cereal/archives/json.hpp>
 
 #include <cstdlib>
 #include <fstream>

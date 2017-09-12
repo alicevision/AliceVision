@@ -1,7 +1,7 @@
 // This file is part of the AliceVision project and is made available under
 // the terms of the MPL2 license (see the COPYING.md file).
 
-#include "third_party/cmdLine/cmdLine.h"
+#include "dependencies/cmdLine/cmdLine.h"
 
 #include "aliceVision/exif/sensor_width_database/ParseDatabase.hpp"
 

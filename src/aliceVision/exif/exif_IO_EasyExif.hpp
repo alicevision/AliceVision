@@ -5,7 +5,7 @@
 #define EXIF_IO_EASYEXIF_HPP
 
 #include "aliceVision/exif/exif_IO.hpp"
-#include "third_party/easyexif/exif.h"
+#include "dependencies/easyexif/exif.h"
 
 #include <fstream>
 #include <sstream>

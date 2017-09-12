@@ -22,7 +22,7 @@
 #include <aliceVision/system/Logger.hpp>
 #include <aliceVision/system/timer.hpp>
 
-#include <third_party/progress/progress.hpp>
+#include <dependencies/progress/progress.hpp>
 
 #include <boost/filesystem.hpp>
 

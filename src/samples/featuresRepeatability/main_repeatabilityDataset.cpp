@@ -8,9 +8,9 @@
 #include "aliceVision/multiview/solver_homography_kernel.hpp"
 #include "aliceVision/matching/regions_matcher.hpp"
 
-#include "third_party/stlplus3/filesystemSimplified/file_system.hpp"
-#include "third_party/vectorGraphics/svgDrawer.hpp"
-#include "third_party/cmdLine/cmdLine.h"
+#include "dependencies/stlplus3/filesystemSimplified/file_system.hpp"
+#include "dependencies/vectorGraphics/svgDrawer.hpp"
+#include "dependencies/cmdLine/cmdLine.h"
 
 #include <string>
 #include <iostream>

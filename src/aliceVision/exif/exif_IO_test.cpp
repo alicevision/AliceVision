@@ -5,7 +5,7 @@
 #include <aliceVision/system/Logger.hpp>
 
 #include "testing/testing.h"
-#include "third_party/stlplus3/filesystemSimplified/file_system.hpp"
+#include "dependencies/stlplus3/filesystemSimplified/file_system.hpp"
 
 #include <iostream>
 #include <memory>

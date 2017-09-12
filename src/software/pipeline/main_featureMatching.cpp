@@ -7,8 +7,6 @@
 #include "aliceVision/sfm/pipelines/sfm_engine.hpp"
 #include "aliceVision/features/FeaturesPerView.hpp"
 #include "aliceVision/features/RegionsPerView.hpp"
-
-/// Generic Image Collection image matching
 #include "aliceVision/features/image_describer.hpp"
 #include "aliceVision/features/ImageDescriberCommon.hpp"
 #include "aliceVision/matching_image_collection/MatchingCommon.hpp"
@@ -21,13 +19,12 @@
 #include "aliceVision/matching/pairwiseAdjacencyDisplay.hpp"
 #include "aliceVision/matching/indMatch_utils.hpp"
 #include "aliceVision/system/timer.hpp"
-
+#include "aliceVision/features/selection.hpp"
 #include "aliceVision/graph/graph.hpp"
 #include "aliceVision/stl/stl.hpp"
-#include "third_party/cmdLine/cmdLine.h"
-#include "third_party/stlplus3/filesystemSimplified/file_system.hpp"
 
-#include "aliceVision/features/selection.hpp"
+#include "dependencies/cmdLine/cmdLine.h"
+#include "dependencies/stlplus3/filesystemSimplified/file_system.hpp"
 
 #include <cstdlib>
 #include <fstream>

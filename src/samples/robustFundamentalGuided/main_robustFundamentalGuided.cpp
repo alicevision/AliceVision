@@ -12,8 +12,8 @@
 
 #include "aliceVision/robust_estimation/guided_matching.hpp"
 
-#include "third_party/stlplus3/filesystemSimplified/file_system.hpp"
-#include "third_party/vectorGraphics/svgDrawer.hpp"
+#include "dependencies/stlplus3/filesystemSimplified/file_system.hpp"
+#include "dependencies/vectorGraphics/svgDrawer.hpp"
 
 #include <string>
 #include <iostream>

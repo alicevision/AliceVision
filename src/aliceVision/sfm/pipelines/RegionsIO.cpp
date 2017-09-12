@@ -2,7 +2,7 @@
 // the terms of the MPL2 license (see the COPYING.md file).
 
 #include "RegionsIO.hpp"
-#include "third_party/progress/progress.hpp"
+#include "dependencies/progress/progress.hpp"
 
 #include <atomic>
 

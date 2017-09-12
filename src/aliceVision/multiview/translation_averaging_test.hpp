@@ -9,7 +9,7 @@
 #include "aliceVision/graph/triplet_finder.hpp"
 using namespace aliceVision::graph;
 
-#include "third_party/vectorGraphics/svgDrawer.hpp"
+#include "dependencies/vectorGraphics/svgDrawer.hpp"
 using namespace svg;
 
 #include "aliceVision/multiview/test_data_sets.hpp"

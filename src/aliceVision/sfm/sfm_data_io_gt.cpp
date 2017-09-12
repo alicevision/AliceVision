@@ -5,7 +5,7 @@
 
 #include <aliceVision/exif/exif_IO_EasyExif.hpp>
 
-#include <third_party/stlplus3/filesystemSimplified/file_system.hpp>
+#include <dependencies/stlplus3/filesystemSimplified/file_system.hpp>
 
 #include <fstream>
 #include <vector>

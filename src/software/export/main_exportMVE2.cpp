@@ -11,9 +11,9 @@ using namespace aliceVision::image;
 using namespace aliceVision::sfm;
 using namespace aliceVision::features;
 
-#include "third_party/cmdLine/cmdLine.h"
-#include "third_party/progress/progress.hpp"
-#include "third_party/stlplus3/filesystemSimplified/file_system.hpp"
+#include "dependencies/cmdLine/cmdLine.h"
+#include "dependencies/progress/progress.hpp"
+#include "dependencies/stlplus3/filesystemSimplified/file_system.hpp"
 #include <stdlib.h>
 #include <stdio.h>
 #include <cmath>

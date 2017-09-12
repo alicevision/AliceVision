@@ -2,14 +2,13 @@
 // the terms of the MPL2 license (see the COPYING.md file).
 
 #include "aliceVision/sfm/sfm.hpp"
-#include <aliceVision/config.hpp>
+#include "aliceVision/config.hpp"
 
 #include "software/utils/precisionEvaluationToGt.hpp"
 #include "software/utils/sfmHelper/sfmPlyHelper.hpp"
 
-#include "third_party/htmlDoc/htmlDoc.hpp"
-
-#include "third_party/cmdLine/cmdLine.h"
+#include "dependencies/htmlDoc/htmlDoc.hpp"
+#include "dependencies/cmdLine/cmdLine.h"
 
 #include <cstdlib>
 #include <iostream>

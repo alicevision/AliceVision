@@ -1,15 +1,15 @@
 // This file is part of the AliceVision project and is made available under
 // the terms of the MPL2 license (see the COPYING.md file).
 
-#include <cstdlib>
-
 #include "aliceVision/features/ImageDescriberCommon.hpp"
 #include "aliceVision/sfm/sfm.hpp"
 #include "aliceVision/sfm/pipelines/RegionsIO.hpp"
 #include "aliceVision/system/timer.hpp"
 
-#include "third_party/cmdLine/cmdLine.h"
-#include "third_party/stlplus3/filesystemSimplified/file_system.hpp"
+#include "dependencies/cmdLine/cmdLine.h"
+#include "dependencies/stlplus3/filesystemSimplified/file_system.hpp"
+
+#include <cstdlib>
 
 using namespace aliceVision;
 using namespace aliceVision::cameras;

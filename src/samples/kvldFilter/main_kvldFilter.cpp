@@ -11,7 +11,7 @@ using namespace aliceVision::image;
 
 using namespace aliceVision::matching;
 
-#include "third_party/stlplus3/filesystemSimplified/file_system.hpp"
+#include "dependencies/stlplus3/filesystemSimplified/file_system.hpp"
 
 #include "aliceVision/multiview/solver_homography_kernel.hpp"
 #include "aliceVision/multiview/conditioning.hpp"
@@ -23,7 +23,7 @@ using namespace aliceVision;
 
 using namespace aliceVision::robust;
 
-#include "third_party/vectorGraphics/svgDrawer.hpp"
+#include "dependencies/vectorGraphics/svgDrawer.hpp"
 
 using namespace svg;
 
@@ -34,7 +34,7 @@ using namespace std;
 #include "aliceVision/matching/kvld/kvld.h"
 #include "aliceVision/matching/kvld/kvld_draw.h"
 
-#include "third_party/cmdLine/cmdLine.h"
+#include "dependencies/cmdLine/cmdLine.h"
 
 int main(int argc, char **argv) {
   CmdLine cmd;

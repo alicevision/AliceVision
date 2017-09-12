@@ -68,14 +68,14 @@ INSTALL(
 
 INSTALL(
   DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-  DESTINATION include/aliceVision/third_party/lemon
+  DESTINATION include/aliceVision/dependencies/lemon
   COMPONENT headers
   FILES_MATCHING PATTERN "*.hpp" PATTERN "*.h"
 )
 
 INSTALL(
   FILES ${CMAKE_CURRENT_BINARY_DIR}/config.h
-  DESTINATION include/aliceVision/third_party/lemon
+  DESTINATION include/aliceVision/dependencies/lemon
   COMPONENT headers
 )
 
@@ -88,7 +88,7 @@ INSTALL(
 
 #INSTALL(
 #  FILES ${CMAKE_CURRENT_BINARY_DIR}/config.h
-#  DESTINATION include/aliceVision_third_party/lemon
+#  DESTINATION include/aliceVision_dependencies/lemon
 #  COMPONENT headers
 #)
 

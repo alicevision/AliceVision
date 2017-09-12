@@ -6,8 +6,8 @@
 #include <aliceVision/config.hpp>
 
 
-#include "third_party/cmdLine/cmdLine.h"
-#include "third_party/stlplus3/filesystemSimplified/file_system.hpp"
+#include "dependencies/cmdLine/cmdLine.h"
+#include "dependencies/stlplus3/filesystemSimplified/file_system.hpp"
 
 #if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_BOOST)
 #include <boost/system/error_code.hpp>

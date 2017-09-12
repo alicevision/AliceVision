@@ -11,7 +11,7 @@
 #include "lineTestGenerator.hpp"
 #include "testing/testing.h"
 
-#include "third_party/vectorGraphics/svgDrawer.hpp"
+#include "dependencies/vectorGraphics/svgDrawer.hpp"
 
 using namespace svg;
 

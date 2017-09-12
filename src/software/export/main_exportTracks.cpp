@@ -11,17 +11,16 @@
 #include "aliceVision/features/svgVisualization.hpp"
 
 #include "software/utils/sfmHelper/sfmIOHelper.hpp"
-#include "third_party/cmdLine/cmdLine.h"
-#include "third_party/stlplus3/filesystemSimplified/file_system.hpp"
-#include "third_party/progress/progress.hpp"
-#include "third_party/vectorGraphics/svgDrawer.hpp"
+#include "dependencies/cmdLine/cmdLine.h"
+#include "dependencies/stlplus3/filesystemSimplified/file_system.hpp"
+#include "dependencies/progress/progress.hpp"
+#include "dependencies/vectorGraphics/svgDrawer.hpp"
 
 using namespace aliceVision;
 using namespace aliceVision::matching;
 using namespace aliceVision::sfm;
 using namespace aliceVision::tracks;
 using namespace svg;
-
 
 int main(int argc, char ** argv)
 {

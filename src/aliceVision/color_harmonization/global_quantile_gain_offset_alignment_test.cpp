@@ -15,8 +15,8 @@
 
 #include "testing/testing.h"
 
-#include "third_party/histogram/histogram.hpp"
-#include "third_party/htmlDoc/htmlDoc.hpp"
+#include "dependencies/histogram/histogram.hpp"
+#include "dependencies/htmlDoc/htmlDoc.hpp"
 
 
 using namespace aliceVision;

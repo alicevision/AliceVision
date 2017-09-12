@@ -20,8 +20,8 @@
 #include "aliceVision/system/memoryInfo.hpp"
 #include <aliceVision/config.hpp>
 
-#include "third_party/htmlDoc/htmlDoc.hpp"
-#include "third_party/progress/progress.hpp"
+#include "dependencies/htmlDoc/htmlDoc.hpp"
+#include "dependencies/progress/progress.hpp"
 
 #if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_BOOST)
 #include <boost/format.hpp>

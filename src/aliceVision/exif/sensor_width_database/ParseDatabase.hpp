@@ -13,7 +13,7 @@
 #include <fstream>
 #include <iterator>
 
-#include "third_party/stlplus3/filesystemSimplified/file_system.hpp"
+#include "dependencies/stlplus3/filesystemSimplified/file_system.hpp"
 
 namespace aliceVision {
 namespace exif {

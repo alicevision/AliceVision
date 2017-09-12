@@ -4,15 +4,15 @@
 #include "aliceVision/sfm/sfm.hpp"
 #include "aliceVision/image/image.hpp"
 
+#include "dependencies/cmdLine/cmdLine.h"
+#include "dependencies/stlplus3/filesystemSimplified/file_system.hpp"
+
+#include <fstream>
+
 using namespace aliceVision;
 using namespace aliceVision::cameras;
 using namespace aliceVision::geometry;
 using namespace aliceVision::sfm;
-
-#include "third_party/cmdLine/cmdLine.h"
-#include "third_party/stlplus3/filesystemSimplified/file_system.hpp"
-
-#include <fstream>
 
 int main(int argc, char **argv)
 {

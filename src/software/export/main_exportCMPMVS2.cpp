@@ -7,8 +7,8 @@
 #include <aliceVision/config.hpp>
 
 
-#include "third_party/cmdLine/cmdLine.h"
-#include "third_party/progress/progress.hpp"
+#include "dependencies/cmdLine/cmdLine.h"
+#include "dependencies/progress/progress.hpp"
 
 #include <stdlib.h>
 #include <stdio.h>

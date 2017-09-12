@@ -7,7 +7,7 @@
 #include "aliceVision/robust_estimation/rand_sampling.hpp"
 #include <aliceVision/config.hpp>
 
-#include "third_party/progress/progress.hpp"
+#include "dependencies/progress/progress.hpp"
 
 #include <deque>
 #include <memory>

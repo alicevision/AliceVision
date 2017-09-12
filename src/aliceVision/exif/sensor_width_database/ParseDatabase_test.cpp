@@ -4,7 +4,7 @@
 #include "testing/testing.h"
 #include "ParseDatabase.hpp"
 
-#include "third_party/stlplus3/filesystemSimplified/file_system.hpp"
+#include "dependencies/stlplus3/filesystemSimplified/file_system.hpp"
 
 #include <string>
 

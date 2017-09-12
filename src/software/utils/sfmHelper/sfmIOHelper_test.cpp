@@ -2,8 +2,7 @@
 // the terms of the MPL2 license (see the COPYING.md file).
 
 #include "software/SfM/SfMIOHelper.hpp"
-
-#include "third_party/stlplus3/filesystemSimplified/file_system.hpp"
+#include "dependencies/stlplus3/filesystemSimplified/file_system.hpp"
 #include "testing/testing.h"
 
 using namespace aliceVision;

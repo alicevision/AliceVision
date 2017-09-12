@@ -12,7 +12,7 @@
 #include <cereal/types/utility.hpp>
 #include <cereal/types/vector.hpp>
 
-#include "third_party/stlplus3/filesystemSimplified/file_system.hpp"
+#include "dependencies/stlplus3/filesystemSimplified/file_system.hpp"
 
 #include <map>
 #include <fstream>

@@ -1,23 +1,21 @@
 // This file is part of the AliceVision project and is made available under
 // the terms of the MPL2 license (see the COPYING.md file).
 
-#include <aliceVision/config.hpp>
+#include "aliceVision/config.hpp"
 #include "aliceVision/image/image.hpp"
 #include "aliceVision/sfm/sfm.hpp"
-
-/// Feature/Regions & Image describer interfaces
 #include "aliceVision/features/ImageDescriberCommon.hpp"
 #include "aliceVision/features/features.hpp"
-
 #include "aliceVision/exif/exif_IO_EasyExif.hpp"
 #include "aliceVision/stl/split.hpp"
 #include "aliceVision/system/timer.hpp"
 
-#include "third_party/cmdLine/cmdLine.h"
-#include "third_party/stlplus3/filesystemSimplified/file_system.hpp"
-#include "third_party/progress/progress.hpp"
+#include "dependencies/cmdLine/cmdLine.h"
+#include "dependencies/stlplus3/filesystemSimplified/file_system.hpp"
+#include "dependencies/progress/progress.hpp"
 
 #include <cereal/archives/json.hpp>
+
 #include <cstdlib>
 #include <fstream>
 #include <sstream>
@@ -25,14 +23,11 @@
 #include <functional>
 #include <limits>
 
-
 using namespace aliceVision;
 using namespace aliceVision::image;
 using namespace aliceVision::features;
 using namespace aliceVision::sfm;
 using namespace std;
-
-
 
 // ----------
 // Dispatcher

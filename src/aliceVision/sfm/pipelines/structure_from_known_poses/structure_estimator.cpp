@@ -13,7 +13,7 @@
 #include "aliceVision/sfm/sfm_data_triangulation.hpp"
 #include <aliceVision/config.hpp>
 
-#include "third_party/progress/progress.hpp"
+#include "dependencies/progress/progress.hpp"
 
 namespace aliceVision {
 namespace sfm {

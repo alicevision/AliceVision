@@ -6,7 +6,7 @@
 #include "aliceVision/image/image_io.hpp"
 #include "aliceVision/stl/stl.hpp"
 
-#include "third_party/progress/progress.hpp"
+#include "dependencies/progress/progress.hpp"
 
 namespace aliceVision {
 namespace sfm {

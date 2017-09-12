@@ -1,6 +1,5 @@
-#---------------------
-#Third party libraries
-#---------------------
+## AliceVision
+## Dependencies
 
 # libs should be static
 set(BUILD_SHARED_LIBS OFF)
@@ -16,17 +15,17 @@ if(ALICEVISION_BUILD_TESTS)
 endif()
 
 # Basic filesystem utils
-set(STLPLUS_INCLUDE_INSTALL_DIR ${CMAKE_INSTALL_PREFIX}/include/aliceVision/third_party/stlplus3)
+set(STLPLUS_INCLUDE_INSTALL_DIR ${CMAKE_INSTALL_PREFIX}/include/aliceVision/dependencies/stlplus3)
 add_subdirectory(stlplus3)
 
 # Add graph library
 if(DEFINED ALICEVISION_USE_INTERNAL_LEMON)
   add_subdirectory(lemon)
   set_property(TARGET lemon
-    PROPERTY FOLDER AliceVision/3rdParty/lemon
+    PROPERTY FOLDER AliceVision/Dependencies/Lemon
   )
   set_property(TARGET check
-    PROPERTY FOLDER AliceVision/3rdParty/lemon
+    PROPERTY FOLDER AliceVision/Dependencies/Lemon
   )
 endif()
 
@@ -35,7 +34,7 @@ endif()
 ##
 if(NOT JPEG_FOUND)
   set(ALICEVISION_USE_INTERNAL_JPEG ON PARENT_SCOPE)
-  set(JPEG_INCLUDE_INSTALL_DIR ${CMAKE_INSTALL_PREFIX}/include/aliceVision/third_party/jpeg)
+  set(JPEG_INCLUDE_INSTALL_DIR ${CMAKE_INSTALL_PREFIX}/include/aliceVision/dependencies/jpeg)
   add_subdirectory(jpeg)
   list(APPEND JPEG_INCLUDE_DIRECTORIES ${CMAKE_CURRENT_SOURCE_DIR}/jpeg ${CMAKE_CURRENT_BINARY_DIR}/jpeg/config)
   set(JPEG_INCLUDE_DIR ${JPEG_INCLUDE_DIRECTORIES})
@@ -50,8 +49,8 @@ endif()
 
 if(NOT PNG_FOUND)
   set(ALICEVISION_USE_INTERNAL_PNG ON PARENT_SCOPE)
-  set(ZLIB_INCLUDE_INSTALL_DIR ${CMAKE_INSTALL_PREFIX}/include/aliceVision/third_party/zlib)
-  set(PNG_INCLUDE_INSTALL_DIR ${CMAKE_INSTALL_PREFIX}/include/aliceVision/third_party/png)
+  set(ZLIB_INCLUDE_INSTALL_DIR ${CMAKE_INSTALL_PREFIX}/include/aliceVision/dependencies/zlib)
+  set(PNG_INCLUDE_INSTALL_DIR ${CMAKE_INSTALL_PREFIX}/include/aliceVision/dependencies/png)
   add_subdirectory(png)
   set(PNG_LIBRARIES png zlib)
   list(APPEND PNG_INCLUDE_DIRECTORIES ${CMAKE_CURRENT_SOURCE_DIR}/png ${CMAKE_CURRENT_SOURCE_DIR}/zlib ${CMAKE_CURRENT_BINARY_DIR}/png/config)
@@ -62,7 +61,7 @@ endif()
 
 if(NOT TIFF_FOUND)
   set(ALICEVISION_USE_INTERNAL_TIFF ON PARENT_SCOPE)
-  set(TIFF_INCLUDE_INSTALL_DIR ${CMAKE_INSTALL_PREFIX}/include/aliceVision/third_party/tiff)
+  set(TIFF_INCLUDE_INSTALL_DIR ${CMAKE_INSTALL_PREFIX}/include/aliceVision/dependencies/tiff)
   add_subdirectory(tiff)
   list(APPEND TIFF_INCLUDE_DIRECTORIES ${CMAKE_CURRENT_SOURCE_DIR}/tiff ${CMAKE_CURRENT_BINARY_DIR}/tiff)
   set(TIFF_INCLUDE_DIR ${TIFF_INCLUDE_DIRECTORIES})
@@ -79,29 +78,29 @@ add_subdirectory(vectorGraphics)
 
 # Add ceres-solver (A Nonlinear Least Squares Minimizer)
 if(ALICEVISION_USE_INTERNAL_CERES)
-  set(CXSPARSE_INCLUDE_INSTALL_DIR ${CMAKE_INSTALL_PREFIX}/include/aliceVision/third_party/cxsparse)
+  set(CXSPARSE_INCLUDE_INSTALL_DIR ${CMAKE_INSTALL_PREFIX}/include/aliceVision/dependencies/cxsparse)
   add_subdirectory(cxsparse)
-  set(CERES_INCLUDE_INSTALL_DIR ${CMAKE_INSTALL_PREFIX}/include/aliceVision/third_party/ceres)
+  set(CERES_INCLUDE_INSTALL_DIR ${CMAKE_INSTALL_PREFIX}/include/aliceVision/dependencies/ceres)
   add_subdirectory(ceres-solver)
   set_property(TARGET cxsparse
-    PROPERTY FOLDER AliceVision/3rdParty/ceres
+    PROPERTY FOLDER AliceVision/Dependencies/Ceres
   )
   set_property(TARGET ceres
-    PROPERTY FOLDER AliceVision/3rdParty/ceres
+    PROPERTY FOLDER AliceVision/Dependencies/Ceres
   )
 endif()
 
 # Add an Approximate Nearest Neighbor library
 if(DEFINED ALICEVISION_USE_INTERNAL_FLANN)
-  set(FLANN_INCLUDE_INSTALL_DIR ${CMAKE_INSTALL_PREFIX}/include/aliceVision/third_party/flann/src/cpp)
+  set(FLANN_INCLUDE_INSTALL_DIR ${CMAKE_INSTALL_PREFIX}/include/aliceVision/dependencies/flann/src/cpp)
   add_subdirectory(flann)
   set_property(TARGET flann_cpp_s
-    PROPERTY FOLDER AliceVision/3rdParty
+    PROPERTY FOLDER AliceVision/Dependencies/Flann
   )
 endif()
 
 # Exif data parsing
-set(EASYEXIF_INCLUDE_INSTALL_DIR ${CMAKE_INSTALL_PREFIX}/include/aliceVision/third_party/easyexif)
+set(EASYEXIF_INCLUDE_INSTALL_DIR ${CMAKE_INSTALL_PREFIX}/include/aliceVision/dependencies/easyexif)
 add_subdirectory(easyexif)
 
 ##
@@ -109,7 +108,7 @@ add_subdirectory(easyexif)
 ## 
 if(DEFINED ALICEVISION_USE_INTERNAL_EIGEN)
   # Configure Eigen install
-  set(EIGEN_INCLUDE_INSTALL_DIR ${CMAKE_INSTALL_PREFIX}/include/aliceVision/third_party/eigen)
+  set(EIGEN_INCLUDE_INSTALL_DIR ${CMAKE_INSTALL_PREFIX}/include/aliceVision/dependencies/eigen)
   add_subdirectory(eigen)
 endif()
 
@@ -117,7 +116,7 @@ list(APPEND directories cmdLine histogram htmlDoc progress vectorGraphics)
 foreach(inDirectory ${directories})
   install(
     DIRECTORY ./${inDirectory}
-    DESTINATION include/aliceVision/third_party/
+    DESTINATION include/aliceVision/dependencies/
     COMPONENT headers
     FILES_MATCHING PATTERN "*.hpp" PATTERN "*.h"
   )

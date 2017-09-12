@@ -6,7 +6,7 @@
 #if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_CCTAG)
 #include "cctag/CCTAG_describer.hpp"
 #endif
-#include "third_party/vectorGraphics/svgDrawer.hpp"
+#include "dependencies/vectorGraphics/svgDrawer.hpp"
 
 namespace aliceVision {
 namespace features {

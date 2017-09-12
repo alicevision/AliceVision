@@ -5,7 +5,7 @@
 #define IO_REGIONS_TYPE_HPP
 
 #include "aliceVision/features/features.hpp"
-#include "third_party/stlplus3/filesystemSimplified/file_system.hpp"
+#include "dependencies/stlplus3/filesystemSimplified/file_system.hpp"
 #include <cereal/archives/json.hpp>
 
 #include <fstream>

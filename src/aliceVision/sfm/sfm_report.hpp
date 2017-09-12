@@ -4,10 +4,10 @@
 #ifndef ALICEVISION_SFM_REPORT_HPP
 #define ALICEVISION_SFM_REPORT_HPP
 
-#include "third_party/stlplus3/filesystemSimplified/file_system.hpp"
-#include "third_party/htmlDoc/htmlDoc.hpp"
-#include "third_party/histogram/histogram.hpp"
-#include "third_party/vectorGraphics/svgDrawer.hpp"
+#include "dependencies/stlplus3/filesystemSimplified/file_system.hpp"
+#include "dependencies/htmlDoc/htmlDoc.hpp"
+#include "dependencies/histogram/histogram.hpp"
+#include "dependencies/vectorGraphics/svgDrawer.hpp"
 
 namespace aliceVision {
 namespace sfm {

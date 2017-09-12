@@ -5,8 +5,8 @@
 #include "aliceVision/sfm/utils/alignment.hpp"
 #include <aliceVision/config.hpp>
 
-#include "third_party/cmdLine/cmdLine.h"
-#include "third_party/stlplus3/filesystemSimplified/file_system.hpp"
+#include "dependencies/cmdLine/cmdLine.h"
+#include "dependencies/stlplus3/filesystemSimplified/file_system.hpp"
 
 #include <string>
 #include <sstream>

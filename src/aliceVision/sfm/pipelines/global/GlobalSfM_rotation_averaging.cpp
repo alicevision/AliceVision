@@ -8,7 +8,7 @@
 #include "aliceVision/multiview/rotation_averaging.hpp"
 #include "aliceVision/stl/stlMap.hpp"
 
-#include "third_party/histogram/histogram.hpp"
+#include "dependencies/histogram/histogram.hpp"
 
 namespace aliceVision{
 namespace sfm{

@@ -1,41 +1,35 @@
 // This file is part of the AliceVision project and is made available under
 // the terms of the MPL2 license (see the COPYING.md file).
 
-#include <iostream>
-#include <string>
-#include <vector>
-#include <fstream>
-#include <sstream>
+#include "aliceVision/numeric/numeric.h"
+#include "aliceVision/multiview/solver_homography_kernel.hpp"
+#include "aliceVision/multiview/conditioning.hpp"
+#include "aliceVision/robust_estimation/robust_estimator_MaxConsensus.hpp"
+#include "aliceVision/robust_estimation/score_evaluator.hpp"
+#include "aliceVision/robust_estimation/robust_estimator_ACRansac.hpp"
+#include "aliceVision/robust_estimation/robust_estimator_ACRansacKernelAdaptator.hpp"
 
-#include <cv.h>
-#include <highgui.h>
-#include <cvaux.h>
+#include "dependencies/vectorGraphics/svgDrawer.hpp"
+
 
 #include <opencv2/core/core.hpp>
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/features2d/features2d.hpp>
 #include <opencv2/nonfree/features2d.hpp>
 #include <opencv2/legacy/legacy.hpp>
-
-#include "aliceVision/numeric/numeric.h"
-#include "third_party/vectorGraphics/svgDrawer.hpp"
-#include "aliceVision/multiview/solver_homography_kernel.hpp"
-#include "aliceVision/multiview/conditioning.hpp"
-
-using namespace aliceVision;
-
-#include "aliceVision/robust_estimation/robust_estimator_MaxConsensus.hpp"
-#include "aliceVision/robust_estimation/score_evaluator.hpp"
-
-#include "aliceVision/robust_estimation/robust_estimator_ACRansac.hpp"
-#include "aliceVision/robust_estimation/robust_estimator_ACRansacKernelAdaptator.hpp"
-
-using namespace aliceVision::robust;
-
-
 #include <boost/circular_buffer.hpp>
 #include <numeric>
+#include <iostream>
+#include <string>
+#include <vector>
+#include <fstream>
+#include <sstream>
+#include <cv.h>
+#include <highgui.h>
+#include <cvaux.h>
 
+using namespace aliceVision;
+using namespace aliceVision::robust;
 using namespace cv;
 
 // Number of the frames processed per second in the application

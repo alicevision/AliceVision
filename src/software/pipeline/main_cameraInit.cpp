@@ -8,8 +8,8 @@
 #include <aliceVision/stl/split.hpp>
 #include <aliceVision/system/Logger.hpp>
 
-#include <third_party/cmdLine/cmdLine.h>
-#include <third_party/stlplus3/filesystemSimplified/file_system.hpp>
+#include <dependencies/cmdLine/cmdLine.h>
+#include <dependencies/stlplus3/filesystemSimplified/file_system.hpp>
 
 #include <iostream>
 #include <fstream>

@@ -16,8 +16,8 @@
 #include "aliceVision/graph/graph.hpp"
 #include <aliceVision/config.hpp>
 
-#include "third_party/stlplus3/filesystemSimplified/file_system.hpp"
-#include "third_party/vectorGraphics/svgDrawer.hpp"
+#include "dependencies/stlplus3/filesystemSimplified/file_system.hpp"
+#include "dependencies/vectorGraphics/svgDrawer.hpp"
 
 //-- Selection Methods
 #include "aliceVision/color_harmonization/selection_fullFrame.hpp"
@@ -29,7 +29,7 @@
 
 #include "aliceVision/system/timer.hpp"
 
-#include "third_party/progress/progress.hpp"
+#include "dependencies/progress/progress.hpp"
 
 #include <numeric>
 #include <iomanip>

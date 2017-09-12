@@ -16,7 +16,7 @@
 #include <aliceVision/system/timer.hpp>
 #include <aliceVision/system/Logger.hpp>
 
-#include <third_party/progress/progress.hpp>
+#include <dependencies/progress/progress.hpp>
 
 #include <cctag/ICCTag.hpp>
 

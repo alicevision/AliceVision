@@ -4,7 +4,7 @@
 #include "aliceVision/exif/exif_IO_EasyExif.hpp"
 using namespace aliceVision::exif;
 
-#include "third_party/cmdLine/cmdLine.h"
+#include "dependencies/cmdLine/cmdLine.h"
 #include <memory>
 
 int main(int argc, char **argv)

@@ -8,7 +8,7 @@
 
 #include "aliceVision/sfm/pipelines/global/GlobalSfM_rotation_averaging.hpp"
 #include "aliceVision/sfm/pipelines/global/GlobalSfM_translation_averaging.hpp"
-#include "third_party/htmlDoc/htmlDoc.hpp"
+#include "dependencies/htmlDoc/htmlDoc.hpp"
 
 namespace aliceVision{
 namespace sfm{

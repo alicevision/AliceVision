@@ -5,7 +5,7 @@
 #define ALICEVISION_COLORHARMONIZATION_SELECTORINTERFACE_H
 
 #include "aliceVision/image/image.hpp"
-#include "third_party/histogram/histogram.hpp"
+#include "dependencies/histogram/histogram.hpp"
 #include <string>
 
 namespace aliceVision {

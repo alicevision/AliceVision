@@ -3,7 +3,7 @@
 
 #pragma once
 
-#include "third_party/vectorGraphics/svgDrawer.hpp"
+#include "dependencies/vectorGraphics/svgDrawer.hpp"
 #include <aliceVision/numeric/numeric.h>
 #include "robust_estimator_lineKernel_test.hpp"
 

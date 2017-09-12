@@ -4,20 +4,20 @@
 #include "aliceVision/sfm/sfm.hpp"
 #include "aliceVision/image/image.hpp"
 
-using namespace aliceVision;
-using namespace aliceVision::cameras;
-using namespace aliceVision::geometry;
-using namespace aliceVision::image;
-using namespace aliceVision::sfm;
-
-#include "third_party/cmdLine/cmdLine.h"
-#include "third_party/progress/progress.hpp"
+#include "dependencies/cmdLine/cmdLine.h"
+#include "dependencies/progress/progress.hpp"
 
 #include <stdlib.h>
 #include <stdio.h>
 #include <cmath>
 #include <iterator>
 #include <iomanip>
+
+using namespace aliceVision;
+using namespace aliceVision::cameras;
+using namespace aliceVision::geometry;
+using namespace aliceVision::image;
+using namespace aliceVision::sfm;
 
 bool exportToPMVSFormat(
   const SfM_Data & sfm_data,

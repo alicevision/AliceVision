@@ -20,7 +20,7 @@ function(trilean_option NAME DESCRIPTION DEFAULT_VALUE)
 
   set_property(CACHE ${NAME} PROPERTY STRINGS "${TRILEAN_VALUES}")
   if("${${NAME}}" IN_LIST TRILEAN_VALUES)
-    message(STATUS "> ${NAME}: '${${NAME}}'")
+    message(STATUS "** ${NAME}: '${${NAME}}'")
   else()
     message(FATAL_ERROR "A trilean option only accept the values: '${TRILEAN_VALUES}'")
   endif()
@@ -230,9 +230,6 @@ install(
   COMPONENT headers
   FILES_MATCHING PATTERN "*.hpp" PATTERN "*.h"
 )
-# ==============================================================================
-# --END-- SUBMODULE CONFIGURATION
-# ==============================================================================
 
 # ==============================================================================
 # Enable cmake UNIT TEST framework
@@ -263,7 +260,7 @@ endmacro()
 # - external if EIGEN_INCLUDE_DIR_HINTS is defined
 # ==============================================================================
 if(NOT DEFINED EIGEN_INCLUDE_DIR_HINTS)
-  set(EIGEN_INCLUDE_DIR_HINTS ${CMAKE_CURRENT_SOURCE_DIR}/third_party/eigen)
+  set(EIGEN_INCLUDE_DIR_HINTS ${CMAKE_CURRENT_SOURCE_DIR}/dependencies/eigen)
   set(ALICEVISION_USE_INTERNAL_EIGEN ON)
 endif()
 find_package(Eigen QUIET)
@@ -293,10 +290,10 @@ if(NOT Ceres_FOUND)
   message(STATUS "No external CERES detected, using the embedded one.")
   set(ALICEVISION_USE_INTERNAL_CERES ON)
   set(CERES_INCLUDE_DIRS
-    ${CMAKE_CURRENT_SOURCE_DIR}/third_party/ceres-solver/include
-    ${CMAKE_CURRENT_SOURCE_DIR}/third_party/ceres-solver/internal/ceres/miniglog
-    ${PROJECT_BINARY_DIR}/third_party/ceres-solver/config)
-    file(READ "${CMAKE_CURRENT_SOURCE_DIR}/third_party/ceres-solver/VERSION" CERES_CONFIG)
+    ${CMAKE_CURRENT_SOURCE_DIR}/dependencies/ceres-solver/include
+    ${CMAKE_CURRENT_SOURCE_DIR}/dependencies/ceres-solver/internal/ceres/miniglog
+    ${PROJECT_BINARY_DIR}/dependencies/ceres-solver/config)
+    file(READ "${CMAKE_CURRENT_SOURCE_DIR}/dependencies/ceres-solver/VERSION" CERES_CONFIG)
     string(REGEX REPLACE "version ([0-9.]+).*" "\\1" CERES_VERSION ${CERES_CONFIG})
   set(CERES_LIBRARIES ceres cxsparse)
   set(Ceres_FOUND TRUE)
@@ -314,12 +311,12 @@ endif()
 # - external if FLANN_INCLUDE_DIR_HINTS and a valid Flann setup is found
 # ==============================================================================
 if(NOT DEFINED FLANN_INCLUDE_DIR_HINTS)
-  set(FLANN_INCLUDE_DIR_HINTS ${CMAKE_CURRENT_SOURCE_DIR}/third_party/flann/src/cpp)
+  set(FLANN_INCLUDE_DIR_HINTS ${CMAKE_CURRENT_SOURCE_DIR}/dependencies/flann/src/cpp)
   set(ALICEVISION_USE_INTERNAL_FLANN ON)
 endif()
 find_package(Flann QUIET)
 if(NOT FLANN_FOUND OR ALICEVISION_USE_INTERNAL_FLANN)
-  set(FLANN_INCLUDE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/third_party/flann/src/cpp)
+  set(FLANN_INCLUDE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/dependencies/flann/src/cpp)
   set(FLANN_LIBRARY flann_cpp_s)
 endif()
 
@@ -378,10 +375,10 @@ endif()
 # ==============================================================================
 if(ALICEVISION_USE_INTERNAL_OSI AND ALICEVISION_USE_INTERNAL_CLP AND ALICEVISION_USE_INTERNAL_COINUTILS)
   add_subdirectory(dependencies/osi_clp/)
-  set_property(TARGET lib_clp PROPERTY FOLDER AliceVision/3rdParty/lib_clp)
-  set_property(TARGET lib_CoinUtils PROPERTY FOLDER AliceVision/3rdParty/lib_CoinUtils)
-  set_property(TARGET lib_Osi PROPERTY FOLDER AliceVision/3rdParty/lib_Osi)
-  set_property(TARGET lib_OsiClpSolver PROPERTY FOLDER AliceVision/3rdParty/lib_OsiClpSolver)
+  set_property(TARGET lib_clp PROPERTY FOLDER AliceVision/Dependencies/Lib_clp)
+  set_property(TARGET lib_CoinUtils PROPERTY FOLDER AliceVision/Dependencies/Lib_CoinUtils)
+  set_property(TARGET lib_Osi PROPERTY FOLDER AliceVision/Dependencies/Lib_Osi)
+  set_property(TARGET lib_OsiClpSolver PROPERTY FOLDER AliceVision/Dependencies/Lib_OsiClpSolver)
 endif()
 
 # ==============================================================================
@@ -391,14 +388,14 @@ endif()
 # - external if LEMON_INCLUDE_DIR_HINTS and a valid Lemon setup is found
 # ==============================================================================
 if(NOT DEFINED LEMON_INCLUDE_DIR_HINTS)
-  set(LEMON_INCLUDE_DIR_HINTS ${CMAKE_CURRENT_SOURCE_DIR}/third_party/lemon)
+  set(LEMON_INCLUDE_DIR_HINTS ${CMAKE_CURRENT_SOURCE_DIR}/dependencies/lemon)
   set(ALICEVISION_USE_INTERNAL_LEMON ON)
 endif()
 find_package(Lemon QUIET)
 if(NOT LEMON_FOUND OR ALICEVISION_USE_INTERNAL_LEMON)
   set(LEMON_INCLUDE_DIRS
-    ${CMAKE_CURRENT_SOURCE_DIR}/third_party/lemon
-    ${PROJECT_BINARY_DIR}/third_party/lemon)
+    ${CMAKE_CURRENT_SOURCE_DIR}/dependencies/lemon
+    ${PROJECT_BINARY_DIR}/dependencies/lemon)
   set(LEMON_LIBRARY lemon)
 endif()
 
@@ -498,9 +495,9 @@ if(ALICEVISION_HAVE_ALEMBIC)
 endif()
 
 # ==============================================================================
-# Third-party libraries:
+# Dependencies libraries:
 # ==============================================================================
-add_subdirectory(third_party)
+add_subdirectory(dependencies)
 
 # ==============================================================================
 # CCTag
@@ -604,7 +601,6 @@ set(ALICEVISION_INCLUDE_DIRS
   ${JPEG_INCLUDE_DIR}
   ${PNG_INCLUDE_DIRS}
   ${TIFF_INCLUDE_DIR}
-  ${CMAKE_CURRENT_SOURCE_DIR}/third_party
   ${CMAKE_CURRENT_SOURCE_DIR}/dependencies
   ${CMAKE_CURRENT_SOURCE_DIR}/dependencies/cereal/include
   ${LEMON_INCLUDE_DIRS}
@@ -640,7 +636,8 @@ set(ALICEVISION_LIBRARIES
   aliceVision_multiview
   aliceVision_numeric
   aliceVision_sfm
-  aliceVision_system)
+  aliceVision_system
+)
 
 if(ALICEVISION_HAVE_BOOST)
   list(APPEND ALICEVISION_LIBRARIES 
@@ -649,8 +646,7 @@ if(ALICEVISION_HAVE_BOOST)
     aliceVision_localization
     aliceVision_rig)
   if(ALICEVISION_HAVE_OPENCV)
-    list(APPEND ALICEVISION_LIBRARIES 
-      aliceVision_calibration)
+    list(APPEND ALICEVISION_LIBRARIES aliceVision_calibration)
   endif()
 endif()
 
@@ -810,12 +806,6 @@ string(REGEX REPLACE
   "${ALICEVISION_INCLUDE_DIRS}"
 )
 
-string(REGEX REPLACE
-  "third_party"
-  "aliceVision/third_party"
-  ALICEVISION_INCLUDE_DIRS
-  "${ALICEVISION_INCLUDE_DIRS}"
-)
 string(REGEX REPLACE
   "dependencies"
   "aliceVision_dependencies"

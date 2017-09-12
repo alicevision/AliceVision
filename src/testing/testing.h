@@ -30,7 +30,7 @@
 #define TESTING_TESTING_H_
 
 #include "aliceVision/numeric/numeric.h"
-#include "third_party/CppUnitLite/TestHarness.h"
+#include "dependencies/CppUnitLite/TestHarness.h"
 
 #define EXPECT_MATRIX_NEAR(a, b, tolerance) \
 do { \

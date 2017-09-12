@@ -10,7 +10,7 @@ include_directories(./filesystemSimplified)
 add_library(stlplus ${LIBSLTPLUS_SRCS})
 
 set_property(TARGET stlplus
-  PROPERTY FOLDER AliceVision/3rdParty
+  PROPERTY FOLDER AliceVision/Dependencies/Stlplus3
 )
 
 install(

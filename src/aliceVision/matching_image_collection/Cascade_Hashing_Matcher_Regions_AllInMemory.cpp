@@ -7,8 +7,8 @@
 #include "aliceVision/matching/matching_filters.hpp"
 #include <aliceVision/config.hpp>
 
-#include "third_party/stlplus3/filesystemSimplified/file_system.hpp"
-#include "third_party/progress/progress.hpp"
+#include "dependencies/stlplus3/filesystemSimplified/file_system.hpp"
+#include "dependencies/progress/progress.hpp"
 
 namespace aliceVision {
 namespace matching_image_collection {

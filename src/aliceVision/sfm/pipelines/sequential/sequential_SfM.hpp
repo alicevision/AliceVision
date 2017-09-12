@@ -9,8 +9,8 @@
 #include "aliceVision/sfm/pipelines/sfm_matches_provider.hpp"
 #include "aliceVision/tracks/tracks.hpp"
 
-#include "third_party/htmlDoc/htmlDoc.hpp"
-#include "third_party/histogram/histogram.hpp"
+#include "dependencies/htmlDoc/htmlDoc.hpp"
+#include "dependencies/histogram/histogram.hpp"
 
 #if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_BOOST)
   #include <boost/property_tree/ptree.hpp>

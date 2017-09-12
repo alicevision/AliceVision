@@ -4,19 +4,19 @@
 #include "aliceVision/sfm/sfm.hpp"
 #include "aliceVision/image/image.hpp"
 
+#include "dependencies/cmdLine/cmdLine.h"
+#include "dependencies/progress/progress.hpp"
+
+#include <stdlib.h>
+
 using namespace aliceVision;
 using namespace aliceVision::cameras;
 using namespace aliceVision::geometry;
 using namespace aliceVision::image;
 using namespace aliceVision::sfm;
 
-#include "third_party/cmdLine/cmdLine.h"
-#include "third_party/progress/progress.hpp"
-
-#include <stdlib.h>
-
-int main(int argc, char *argv[]) {
-
+int main(int argc, char *argv[])
+{
   CmdLine cmd;
   std::string sSfM_Data_Filename;
   std::string sOutDir = "";
