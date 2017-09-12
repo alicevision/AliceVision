@@ -1,3 +1,12 @@
+Project: CXSparse
+URL: https://github.com/TheFrenchLeaf/CXSparse
+License: CXSparse, Copyright (c) 2006-2012, Timothy A. Davis. Distributed under the GNU LGPL license.
+Upstream version: 3.1.1
+
+Local modifications:
+
+  * Add CMake based build
+
 #[CXSparse](http://www.cise.ufl.edu/research/sparse/CXSparse/) Multi-platform compilation
 
 CXSparse version 3.1.1.
@@ -20,4 +29,3 @@ CXSparse version 3.1.1.
 
 #Authors:
 - TheFrenchLeaf (cmake based build)
-
