@@ -1,3 +1,6 @@
+## AliceVision
+## Software
+
 if(ALICEVISION_HAVE_BOOST)
   add_subdirectory(pipeline)
   add_subdirectory(convert)

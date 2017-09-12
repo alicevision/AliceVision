@@ -1,5 +1,5 @@
 ## AliceVision
-## Pipeline softwares
+## Pipeline software
 
 # Intrinsic image analysis and SfMData container initialization
 
@@ -15,7 +15,7 @@ target_link_libraries(aliceVision_cameraInit
 )
 
 set_property(TARGET aliceVision_cameraInit
-  PROPERTY FOLDER AliceVision/software
+  PROPERTY FOLDER AliceVision/Software/Pipeline
 )
 
 install(TARGETS aliceVision_cameraInit
@@ -43,7 +43,7 @@ if(ALICEVISION_HAVE_CCTAG)
 endif()
 
 set_property(TARGET aliceVision_featureExtraction
-  PROPERTY FOLDER AliceVision/software
+  PROPERTY FOLDER AliceVision/Software/Pipeline
 )
 
 install(TARGETS aliceVision_featureExtraction
@@ -58,6 +58,10 @@ add_executable(aliceVision_imageMatching main_imageMatching.cpp)
 target_link_libraries(aliceVision_imageMatching
 	aliceVision_voctree
 	${Boost_LIBRARIES}
+)
+
+set_property(TARGET aliceVision_imageMatching
+  PROPERTY FOLDER AliceVision/Software/Pipeline
 )
 
 install(TARGETS aliceVision_imageMatching
@@ -79,7 +83,7 @@ target_link_libraries(aliceVision_featureMatching
 )
 
 set_property(TARGET aliceVision_featureMatching
-  PROPERTY FOLDER AliceVision/software
+  PROPERTY FOLDER AliceVision/Software/Pipeline
 )
 
 install(TARGETS aliceVision_featureMatching
@@ -99,7 +103,7 @@ target_link_libraries(aliceVision_incrementalSfM
 )
 
 set_property(TARGET aliceVision_incrementalSfM
-  PROPERTY FOLDER AliceVision/software
+  PROPERTY FOLDER AliceVision/Software/Pipeline
 )
 
 install(TARGETS aliceVision_incrementalSfM
@@ -119,7 +123,7 @@ target_link_libraries(aliceVision_globalSfM
 )
 
 set_property(TARGET aliceVision_globalSfM
-  PROPERTY FOLDER AliceVision/software
+  PROPERTY FOLDER AliceVision/Software/Pipeline
 )
 
 install(TARGETS aliceVision_globalSfM
@@ -138,7 +142,7 @@ target_link_libraries(aliceVision_computeStructureFromKnownPoses
 )
 
 set_property(TARGET aliceVision_computeStructureFromKnownPoses
-  PROPERTY FOLDER AliceVision/software
+  PROPERTY FOLDER AliceVision/Software/Pipeline
 )
 
 install(TARGETS aliceVision_computeStructureFromKnownPoses
@@ -158,7 +162,7 @@ target_link_libraries(aliceVision_computeSfMColor
 )
 
 set_property(TARGET aliceVision_computeSfMColor
-  PROPERTY FOLDER AliceVision/software
+  PROPERTY FOLDER AliceVision/Software/Pipeline
 )
 
 install(TARGETS aliceVision_computeSfMColor
@@ -182,6 +186,10 @@ if(ALICEVISION_HAVE_OPENCV)
   if(ALICEVISION_HAVE_CCTAG)
     target_link_libraries(aliceVision_cameraCalibration CCTag::CCTag)
   endif()
+  
+  set_property(TARGET aliceVision_cameraCalibration
+	PROPERTY FOLDER AliceVision/Software/Pipeline
+  )
 
   install(TARGETS aliceVision_cameraCalibration 
 	DESTINATION bin/
@@ -206,15 +214,19 @@ if(ALICEVISION_HAVE_CCTAG)
 	target_link_libraries(aliceVision_rigCalibration CCTag::CCTag)
 endif()
 
+set_property(TARGET aliceVision_rigCalibration
+  PROPERTY FOLDER AliceVision/Software/Pipeline
+)
+
 install(TARGETS aliceVision_rigCalibration 
 	DESTINATION bin/
 )
 
 # Localize a camera
 
-add_executable(main_cameraLocalization main_cameraLocalization.cpp)
+add_executable(aliceVision_cameraLocalization main_cameraLocalization.cpp)
 
-target_link_libraries(main_cameraLocalization
+target_link_libraries(aliceVision_cameraLocalization
 	aliceVision_localization
 	aliceVision_dataio
 	aliceVision_image
@@ -224,17 +236,21 @@ target_link_libraries(main_cameraLocalization
 )
 
 if(ALICEVISION_HAVE_ALEMBIC)
-	target_link_libraries(main_cameraLocalization 
+	target_link_libraries(aliceVision_cameraLocalization 
 		aliceVision_sfm 
 		${ABC_LIBRARIES}
 	)
 endif()
 
 if(ALICEVISION_HAVE_CCTAG)
-	target_link_libraries(main_cameraLocalization CCTag::CCTag)
+	target_link_libraries(aliceVision_cameraLocalization CCTag::CCTag)
 endif()
 
-install(TARGETS main_cameraLocalization 
+set_property(TARGET aliceVision_cameraLocalization
+  PROPERTY FOLDER AliceVision/Software/Pipeline
+)
+
+install(TARGETS aliceVision_cameraLocalization 
 	DESTINATION bin/
 )
 
@@ -259,6 +275,10 @@ endif()
 if(ALICEVISION_HAVE_CCTAG)
   target_link_libraries(aliceVision_rigLocalization CCTag::CCTag)
 endif()
+
+set_property(TARGET aliceVision_rigLocalization
+  PROPERTY FOLDER AliceVision/Software/Pipeline
+)
 
 install(TARGETS aliceVision_rigLocalization
 	DESTINATION bin/

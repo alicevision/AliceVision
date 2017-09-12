@@ -1,5 +1,5 @@
 ## AliceVision
-## Utilities softwares
+## Utilities software
 
 # Voctree creation
 
@@ -9,6 +9,10 @@ target_link_libraries(aliceVision_utils_voctreeCreation
 	aliceVision_voctree
 	aliceVision_features
 	${Boost_LIBRARIES}
+)
+
+set_property(TARGET aliceVision_utils_voctreeCreation
+  PROPERTY FOLDER AliceVision/Software/Utils
 )
 
 install(TARGETS aliceVision_utils_voctreeCreation
@@ -24,6 +28,10 @@ target_link_libraries(aliceVision_utils_voctreeQueryUtility
 	${Boost_LIBRARIES}
 )
 
+set_property(TARGET aliceVision_utils_voctreeQueryUtility
+  PROPERTY FOLDER AliceVision/Software/Utils
+)
+
 install(TARGETS aliceVision_utils_voctreeQueryUtility
 	DESTINATION bin/
 )
@@ -35,6 +43,10 @@ add_executable(aliceVision_utils_voctreeStatistics main_voctreeStatistics.cpp)
 target_link_libraries(aliceVision_utils_voctreeStatistics
 	aliceVision_voctree
 	${Boost_LIBRARIES}
+)
+
+set_property(TARGET aliceVision_utils_voctreeStatistics
+  PROPERTY FOLDER AliceVision/Software/Utils
 )
 
 install(TARGETS aliceVision_utils_voctreeStatistics
@@ -54,7 +66,7 @@ target_link_libraries(aliceVision_utils_frustumFiltering
 )
 
 set_property(TARGET aliceVision_utils_frustumFiltering
-  PROPERTY FOLDER AliceVision/software
+  PROPERTY FOLDER AliceVision/Software/Utils
 )
 
 install(TARGETS aliceVision_utils_frustumFiltering
@@ -73,6 +85,10 @@ if(ALICEVISION_HAVE_ALEMBIC)
 		aliceVision_rig
 		${ABC_LIBRARIES}
 		${BOOST_LIBRARIES}
+	)
+	
+	set_property(TARGET aliceVision_utils_rigTransform
+		PROPERTY FOLDER AliceVision/Software/Utils
 	)
 
 	install(TARGETS aliceVision_utils_rigTransform
@@ -93,7 +109,7 @@ target_link_libraries(aliceVision_utils_qualityEvaluation
 )
 
 set_property(TARGET aliceVision_utils_qualityEvaluation
-  PROPERTY FOLDER AliceVision/software
+  PROPERTY FOLDER AliceVision/Software/Utils
 )
 
 install(TARGETS aliceVision_utils_qualityEvaluation
@@ -112,7 +128,7 @@ target_link_libraries(aliceVision_utils_sfmAlignment
 )
 
 set_property(TARGET aliceVision_utils_sfmAlignment
-  PROPERTY FOLDER AliceVision/software
+  PROPERTY FOLDER AliceVision/Software/Utils
 )
 
 install(TARGETS aliceVision_utils_sfmAlignment
@@ -139,7 +155,7 @@ target_link_libraries(aliceVision_utils_sfmColorHarmonize
 )
 
 set_property(TARGET aliceVision_utils_sfmColorHarmonize
-  PROPERTY FOLDER AliceVision/software
+  PROPERTY FOLDER AliceVision/Software/Utils
 )
 
 install(TARGETS aliceVision_utils_sfmColorHarmonize
@@ -160,7 +176,7 @@ if(ALICEVISION_HAVE_OIIO)
 	)
 
 	set_property(TARGET aliceVision_utils_keyframeSelection
-	  PROPERTY FOLDER AliceVision/software
+	  PROPERTY FOLDER AliceVision/Software/Utils
 	)
 
 	install(TARGETS aliceVision_utils_keyframeSelection
