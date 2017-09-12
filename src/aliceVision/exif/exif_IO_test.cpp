@@ -18,7 +18,7 @@ const std::string sImg =
   stlplus::folder_part(
   stlplus::folder_part(
   stlplus::folder_up(string(THIS_SOURCE_DIR))))
-    + "/aliceVision_Samples/imageData/Exif_Test/100_7100.JPG";
+    + "/samples/imageData/exifTest/100_7100.JPG";
 
 TEST(Matching, Exif_IO_easyexif_ReadData_invalidFile)
 {

@@ -660,7 +660,7 @@ endforeach()
 
 # aliceVision tutorial examples
 if(ALICEVISION_BUILD_EXAMPLES)
-  add_subdirectory(aliceVision_Samples)
+  add_subdirectory(samples)
 endif()
 
 # Complete software(s) build on aliceVision libraries
