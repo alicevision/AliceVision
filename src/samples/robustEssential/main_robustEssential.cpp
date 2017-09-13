@@ -17,7 +17,7 @@
 using namespace aliceVision;
 using namespace aliceVision::matching;
 using namespace aliceVision::image;
-using namespace aliceVision::cameras;
+using namespace aliceVision::camera;
 using namespace aliceVision::geometry;
 using namespace svg;
 using namespace std;
@@ -182,8 +182,8 @@ int main() {
     std::vector<Vec3> vec_3DPoints;
 
     // Setup camera intrinsic and poses
-    Pinhole_Intrinsic intrinsic0(imageL.Width(), imageL.Height(), K(0, 0), K(0, 2), K(1, 2));
-    Pinhole_Intrinsic intrinsic1(imageR.Width(), imageR.Height(), K(0, 0), K(0, 2), K(1, 2));
+    Pinhole intrinsic0(imageL.Width(), imageL.Height(), K(0, 0), K(0, 2), K(1, 2));
+    Pinhole intrinsic1(imageR.Width(), imageR.Height(), K(0, 0), K(0, 2), K(1, 2));
 
     const Pose3 pose0 = Pose3(Mat3::Identity(), Vec3::Zero());
     const Pose3 pose1 = relativePose_info.relativePose;

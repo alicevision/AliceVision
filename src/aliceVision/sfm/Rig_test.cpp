@@ -14,7 +14,7 @@ TEST(Rig, initialization)
 
   SfM_Data sfmData;
 
-  sfmData.intrinsics.emplace(0, std::make_shared<cameras::Pinhole_Intrinsic>(1000, 1000, 36.0, std::rand()%10000, std::rand()%10000));
+  sfmData.intrinsics.emplace(0, std::make_shared<camera::Pinhole>(1000, 1000, 36.0, std::rand()%10000, std::rand()%10000));
   sfmData.getRigs().emplace(rigId, Rig(nbSubPoses));
 
   std::vector<View> rigViews;
@@ -80,7 +80,7 @@ TEST(Rig, setPose)
 
   SfM_Data sfmData;
 
-  sfmData.intrinsics.emplace(0, std::make_shared<cameras::Pinhole_Intrinsic>(1000, 1000, 36.0, std::rand()%10000, std::rand()%10000));
+  sfmData.intrinsics.emplace(0, std::make_shared<camera::Pinhole>(1000, 1000, 36.0, std::rand()%10000, std::rand()%10000));
   sfmData.getRigs().emplace(rigId, Rig(nbSubPoses));
 
   std::vector<View> rigViews;
@@ -171,7 +171,7 @@ TEST(Rig, getPose)
 
   SfM_Data sfmData;
 
-  sfmData.intrinsics.emplace(0, std::make_shared<cameras::Pinhole_Intrinsic>(1000, 1000, 36.0, std::rand()%10000, std::rand()%10000));
+  sfmData.intrinsics.emplace(0, std::make_shared<camera::Pinhole>(1000, 1000, 36.0, std::rand()%10000, std::rand()%10000));
   sfmData.getRigs().emplace(rigId, Rig(nbSubPoses));
 
   std::vector<View> rigViews;

@@ -29,12 +29,12 @@ public:
   bool isInit() const {return _isInit;}
   
   bool readImage(image::Image<image::RGBColor> &imageRGB,
-                   cameras::Pinhole_Intrinsic_Radial_K3 &camIntrinsics,
+                   camera::PinholeRadialK3 &camIntrinsics,
                    std::string &mediaPath,
                    bool &hasIntrinsics);
   
   bool readImage(image::Image<unsigned char> &imageGray,
-                     cameras::Pinhole_Intrinsic_Radial_K3 &camIntrinsics,
+                     camera::PinholeRadialK3 &camIntrinsics,
                      std::string &mediaPath,
                      bool &hasIntrinsics);
   
@@ -50,7 +50,7 @@ private:
   bool _withIntrinsics;
   std::string _videoPath;
   cv::VideoCapture _videoCapture;
-  cameras::Pinhole_Intrinsic_Radial_K3 _camIntrinsics;
+  camera::PinholeRadialK3 _camIntrinsics;
 };
 
 
@@ -97,7 +97,7 @@ VideoFeed::FeederImpl::FeederImpl(int videoDevice, const std::string &calibPath)
 }
 
 bool VideoFeed::FeederImpl::readImage(image::Image<image::RGBColor> &imageRGB,
-          cameras::Pinhole_Intrinsic_Radial_K3 &camIntrinsics,
+          camera::PinholeRadialK3 &camIntrinsics,
           std::string &mediaPath,
           bool &hasIntrinsics)
 {
@@ -143,7 +143,7 @@ bool VideoFeed::FeederImpl::readImage(image::Image<image::RGBColor> &imageRGB,
 
 
 bool VideoFeed::FeederImpl::readImage(image::Image<unsigned char> &imageGray,
-                   cameras::Pinhole_Intrinsic_Radial_K3 &camIntrinsics,
+                   camera::PinholeRadialK3 &camIntrinsics,
                    std::string &mediaPath,
                    bool &hasIntrinsics)
 {
@@ -230,7 +230,7 @@ VideoFeed::VideoFeed(int videoDevice, const std::string &calibPath)
 { }
 
 bool VideoFeed::readImage(image::Image<image::RGBColor> &imageRGB,
-                     cameras::Pinhole_Intrinsic_Radial_K3 &camIntrinsics,
+                     camera::PinholeRadialK3 &camIntrinsics,
                      std::string &mediaPath,
                      bool &hasIntrinsics)
 {
@@ -238,7 +238,7 @@ bool VideoFeed::readImage(image::Image<image::RGBColor> &imageRGB,
 }
 
 bool VideoFeed::readImage(image::Image<unsigned char> &imageGray,
-                     cameras::Pinhole_Intrinsic_Radial_K3 &camIntrinsics,
+                     camera::PinholeRadialK3 &camIntrinsics,
                      std::string &mediaPath,
                      bool &hasIntrinsics)
 {

@@ -70,7 +70,7 @@ namespace sfm {
   SfM_Localization_Single_3DTrackObservation_Database::Localize
   (
     const Pair & image_size,
-    const cameras::IntrinsicBase * optional_intrinsics,
+    const camera::IntrinsicBase * optional_intrinsics,
     const features::Regions & query_regions,
     geometry::Pose3 & pose,
     Image_Localizer_Match_Data * resection_data_ptr

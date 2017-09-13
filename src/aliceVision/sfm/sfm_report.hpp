@@ -32,7 +32,7 @@ static bool Generate_SfM_Report
     {
       const View * view = sfm_data.GetViews().at(itObs->first).get();
       const geometry::Pose3 pose = sfm_data.getPose(*view);
-      const cameras::IntrinsicBase * intrinsic = sfm_data.GetIntrinsics().at(view->getIntrinsicId()).get();
+      const camera::IntrinsicBase * intrinsic = sfm_data.GetIntrinsics().at(view->getIntrinsicId()).get();
       // Use absolute values
       const Vec2 residual = intrinsic->residual(pose, iterTracks->second.X, itObs->second.x).array().abs();
       residuals_per_view[itObs->first].push_back(residual(0));

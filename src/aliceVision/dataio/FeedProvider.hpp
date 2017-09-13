@@ -29,7 +29,7 @@ public:
    * @return True if there is a new image, false otherwise.
    */
   bool readImage(image::Image<image::RGBColor> &imageRGB,
-        cameras::Pinhole_Intrinsic_Radial_K3 &camIntrinsics,
+        camera::PinholeRadialK3 &camIntrinsics,
         std::string &mediaPath,
         bool &hasIntrinsics);
   
@@ -45,7 +45,7 @@ public:
    * @return True if there is a new image, false otherwise.
    */
   bool readImage(image::Image<unsigned char> &imageGray,
-        cameras::Pinhole_Intrinsic_Radial_K3 &camIntrinsics,
+        camera::PinholeRadialK3 &camIntrinsics,
         std::string &mediaPath,
         bool &hasIntrinsics);
 

@@ -1,24 +1,25 @@
 // This file is part of the AliceVision project and is made available under
 // the terms of the MPL2 license (see the COPYING.md file).
 
-#include "aliceVision/cameras/cameras.hpp"
-using namespace aliceVision;
-using namespace aliceVision::cameras;
+#include "aliceVision/camera/camera.hpp"
 
 #include "testing/testing.h"
+
+using namespace aliceVision;
+using namespace aliceVision::camera;
 
 //-----------------
 // Test summary:
 //-----------------
-// - Create a Pinhole_Intrinsic_Radial_K1 camera
+// - Create a PinholeRadialK1 camera
 // - Generate random point inside the image domain
 // - Add and remove distortion and assert we found back the generated point
 // - Check the last point in the camera & image domain
 // - Assert that the tested distortion is not null (in order to ensure validity of the test)
 //-----------------
-TEST(Cameras_Radial, disto_undisto_K1) {
+TEST(cameraPinholeRadial, disto_undisto_K1) {
 
-  const Pinhole_Intrinsic_Radial_K1 cam(1000, 1000, 1000, 500, 500,
+  const PinholeRadialK1 cam(1000, 1000, 1000, 500, 500,
     // K1
     0.1);
 
@@ -41,15 +42,15 @@ TEST(Cameras_Radial, disto_undisto_K1) {
 //-----------------
 // Test summary:
 //-----------------
-// - Create a Pinhole_Intrinsic_Radial_K3 camera
+// - Create a PinholeRadialK3 camera
 // - Generate random point inside the image domain
 // - Add and remove distortion and assert we found back the generated point
 // - Check the last point in the camera & image domain
 // - Assert that the tested distortion is not null (in order to ensure validity of the test)
 //-----------------
-TEST(Cameras_Radial, disto_undisto_K3) {
+TEST(cameraPinholeRadial, disto_undisto_K3) {
 
-  const Pinhole_Intrinsic_Radial_K3 cam(1000, 1000, 1000, 500, 500,
+  const PinholeRadialK3 cam(1000, 1000, 1000, 500, 500,
     // K1, K2, K3
     -0.245539, 0.255195, 0.163773);
 

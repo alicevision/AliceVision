@@ -79,7 +79,7 @@ void KeyframeSelector::process()
 {
   // feed provider variables
   image::Image< image::RGBColor> image;                 // original image
-  cameras::Pinhole_Intrinsic_Radial_K3 queryIntrinsics; // image associated camera intrinsics
+  camera::PinholeRadialK3 queryIntrinsics; // image associated camera intrinsics
   bool hasIntrinsics = false;                           // true if queryIntrinsics is valid
   std::string currentImgName;                           // current image name
   

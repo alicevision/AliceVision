@@ -4,7 +4,7 @@
 #ifndef ALICEVISION_SFM_DATA_BA_CERES_CAMERA_FUNCTOR_HPP
 #define ALICEVISION_SFM_DATA_BA_CERES_CAMERA_FUNCTOR_HPP
 
-#include "aliceVision/cameras/cameras.hpp"
+#include "aliceVision/camera/camera.hpp"
 #include "ceres/rotation.h"
 
 //--
@@ -15,7 +15,7 @@ namespace aliceVision {
 namespace sfm {
 
 /**
- * @brief Ceres functor to use a Pinhole_Intrinsic (pinhole camera model K[R[t]) and a 3D point.
+ * @brief Ceres functor to use a Pinhole (pinhole camera model K[R[t]) and a 3D point.
  *
  *  Data parameter blocks are the following <2,3,6,3>
  *  - 2 => dimension of the residuals,
@@ -25,9 +25,9 @@ namespace sfm {
  *  - 3 => a 3D point data block.
  *
  */
-struct ResidualErrorFunctor_Pinhole_Intrinsic
+struct ResidualErrorFunctor_Pinhole
 {
-  ResidualErrorFunctor_Pinhole_Intrinsic(const double* const pos_2dpoint)
+  ResidualErrorFunctor_Pinhole(const double* const pos_2dpoint)
   {
     m_pos_2dpoint[0] = pos_2dpoint[0];
     m_pos_2dpoint[1] = pos_2dpoint[1];
@@ -163,7 +163,7 @@ struct ResidualErrorFunctor_Pinhole_Intrinsic
 };
 
 /**
- * @brief Ceres functor to use a Pinhole_Intrinsic_Radial_K1
+ * @brief Ceres functor to use a PinholeRadialK1
  *
  *  Data parameter blocks are the following <2,4,6,3>
  *  - 2 => dimension of the residuals,
@@ -173,9 +173,9 @@ struct ResidualErrorFunctor_Pinhole_Intrinsic
  *  - 3 => a 3D point data block.
  *
  */
-struct ResidualErrorFunctor_Pinhole_Intrinsic_Radial_K1
+struct ResidualErrorFunctor_PinholeRadialK1
 {
-  ResidualErrorFunctor_Pinhole_Intrinsic_Radial_K1(const double* const pos_2dpoint)
+  ResidualErrorFunctor_PinholeRadialK1(const double* const pos_2dpoint)
   {
     m_pos_2dpoint[0] = pos_2dpoint[0];
     m_pos_2dpoint[1] = pos_2dpoint[1];
@@ -317,7 +317,7 @@ struct ResidualErrorFunctor_Pinhole_Intrinsic_Radial_K1
 };
 
 /**
- * @brief Ceres functor to use a Pinhole_Intrinsic_Radial_K3
+ * @brief Ceres functor to use a PinholeRadialK3
  *
  *  Data parameter blocks are the following <2,6,6,3>
  *  - 2 => dimension of the residuals,
@@ -327,9 +327,9 @@ struct ResidualErrorFunctor_Pinhole_Intrinsic_Radial_K1
  *  - 3 => a 3D point data block.
  *
  */
-struct ResidualErrorFunctor_Pinhole_Intrinsic_Radial_K3
+struct ResidualErrorFunctor_PinholeRadialK3
 {
-  ResidualErrorFunctor_Pinhole_Intrinsic_Radial_K3(const double* const pos_2dpoint)
+  ResidualErrorFunctor_PinholeRadialK3(const double* const pos_2dpoint)
   {
     m_pos_2dpoint[0] = pos_2dpoint[0];
     m_pos_2dpoint[1] = pos_2dpoint[1];
@@ -470,7 +470,7 @@ struct ResidualErrorFunctor_Pinhole_Intrinsic_Radial_K3
 };
 
 /**
- * @brief Ceres functor with constrained 3D points to use a Pinhole_Intrinsic_Brown_T2
+ * @brief Ceres functor with constrained 3D points to use a PinholeBrownT2
  *
  *  Data parameter blocks are the following <2,8,6,3>
  *  - 2 => dimension of the residuals,
@@ -480,9 +480,9 @@ struct ResidualErrorFunctor_Pinhole_Intrinsic_Radial_K3
  *  - 3 => a 3D point data block.
  *
  */
-struct ResidualErrorFunctor_Pinhole_Intrinsic_Brown_T2
+struct ResidualErrorFunctor_PinholeBrownT2
 {
-  ResidualErrorFunctor_Pinhole_Intrinsic_Brown_T2(const double* const pos_2dpoint)
+  ResidualErrorFunctor_PinholeBrownT2(const double* const pos_2dpoint)
   {
     m_pos_2dpoint[0] = pos_2dpoint[0];
     m_pos_2dpoint[1] = pos_2dpoint[1];
@@ -637,7 +637,7 @@ struct ResidualErrorFunctor_Pinhole_Intrinsic_Brown_T2
 
 
 /**
- * @brief Ceres functor with constrained 3D points to use a Pinhole_Intrinsic_Fisheye
+ * @brief Ceres functor with constrained 3D points to use a PinholeFisheye
  *
  *  Data parameter blocks are the following <2,8,6,3>
  *  - 2 => dimension of the residuals,
@@ -647,9 +647,9 @@ struct ResidualErrorFunctor_Pinhole_Intrinsic_Brown_T2
  *  - 3 => a 3D point data block.
  *
  */
-struct ResidualErrorFunctor_Pinhole_Intrinsic_Fisheye
+struct ResidualErrorFunctor_PinholeFisheye
 {
-  ResidualErrorFunctor_Pinhole_Intrinsic_Fisheye(const double* const pos_2dpoint)
+  ResidualErrorFunctor_PinholeFisheye(const double* const pos_2dpoint)
   {
     m_pos_2dpoint[0] = pos_2dpoint[0];
     m_pos_2dpoint[1] = pos_2dpoint[1];
@@ -804,7 +804,7 @@ struct ResidualErrorFunctor_Pinhole_Intrinsic_Fisheye
 };
 
 /**
- * @brief Ceres functor to use a ResidualErrorFunctor_Pinhole_Intrinsic_Fisheye1
+ * @brief Ceres functor to use a ResidualErrorFunctor_PinholeFisheye1
  *
  *  Data parameter blocks are the following <2,4,6,3>
  *  - 2 => dimension of the residuals,
@@ -814,9 +814,9 @@ struct ResidualErrorFunctor_Pinhole_Intrinsic_Fisheye
  *  - 3 => a 3D point data block.
  *
  */
-struct ResidualErrorFunctor_Pinhole_Intrinsic_Fisheye1
+struct ResidualErrorFunctor_PinholeFisheye1
 {
-  ResidualErrorFunctor_Pinhole_Intrinsic_Fisheye1(const double* const pos_2dpoint)
+  ResidualErrorFunctor_PinholeFisheye1(const double* const pos_2dpoint)
   {
     m_pos_2dpoint[0] = pos_2dpoint[0];
     m_pos_2dpoint[1] = pos_2dpoint[1];

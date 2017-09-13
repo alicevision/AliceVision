@@ -20,7 +20,7 @@ void GroupSharedIntrinsics(SfM_Data & sfm_data)
     iterIntrinsic != intrinsics.end();
     ++iterIntrinsic)
   {
-    const cameras::IntrinsicBase * intrinsicData = iterIntrinsic->second.get();
+    const camera::IntrinsicBase * intrinsicData = iterIntrinsic->second.get();
     const size_t hashVal = intrinsicData->hashValue();
     hash_index.insert(hashVal);
     hash_value.push_back(hashVal);

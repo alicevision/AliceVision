@@ -8,7 +8,7 @@
 #include <sstream>
 
 using namespace aliceVision;
-using namespace aliceVision::cameras;
+using namespace aliceVision::camera;
 using namespace aliceVision::geometry;
 using namespace aliceVision::sfm;
 
@@ -38,11 +38,11 @@ SfM_Data create_test_scene(IndexT viewsCount, bool bSharedIntrinsic)
     if (bSharedIntrinsic)
     {
       if (i == 0)
-        sfm_data.intrinsics[0] = std::make_shared<Pinhole_Intrinsic>();
+        sfm_data.intrinsics[0] = std::make_shared<Pinhole>();
     }
     else
     {
-      sfm_data.intrinsics[i] = std::make_shared<Pinhole_Intrinsic>();
+      sfm_data.intrinsics[i] = std::make_shared<Pinhole>();
     }
   }
 

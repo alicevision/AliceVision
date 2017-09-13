@@ -4,7 +4,7 @@
 #include "exportData.hpp"
 
 #include <aliceVision/system/Logger.hpp>
-#include <aliceVision/cameras/Camera_undistort_image.hpp>
+#include <aliceVision/camera/cameraUndistortImage.hpp>
 
 #include <boost/filesystem/path.hpp>
 
@@ -28,12 +28,12 @@ void exportImages(aliceVision::dataio::FeedProvider& feed,
   aliceVision::image::Image<unsigned char> inputImage;
   aliceVision::image::Image<unsigned char> outputImage;
   std::string currentImgName;
-  aliceVision::cameras::Pinhole_Intrinsic_Radial_K3 queryIntrinsics;
+  aliceVision::camera::PinholeRadialK3 queryIntrinsics;
 
   export_params.push_back(CV_IMWRITE_JPEG_QUALITY);
   export_params.push_back(100);
 
-  aliceVision::cameras::Pinhole_Intrinsic_Radial_K3 camera(imageSize.width, imageSize.height,
+  aliceVision::camera::PinholeRadialK3 camera(imageSize.width, imageSize.height,
                                                        cameraMatrix.at<double>(0, 0), cameraMatrix.at<double>(0, 2), cameraMatrix.at<double>(1, 2),
                                                        distCoeffs.at<double>(0), distCoeffs.at<double>(1), distCoeffs.at<double>(4));
   ALICEVISION_LOG_DEBUG("Coefficients matrix :\n " << distCoeffs);
@@ -46,7 +46,7 @@ void exportImages(aliceVision::dataio::FeedProvider& feed,
 
     // drawChessboardCorners(view, boardSize, cv::Mat(pointbuf), found);
 
-    aliceVision::cameras::UndistortImage(inputImage, &camera, outputImage, aliceVision::image::BLACK);
+    aliceVision::camera::UndistortImage(inputImage, &camera, outputImage, aliceVision::image::BLACK);
     const boost::filesystem::path imagePath = boost::filesystem::path(debugFolder) / (std::to_string(currentFrame) + suffix);
     const bool exportStatus = aliceVision::image::WriteImage(imagePath.string().c_str(), outputImage);
     if (!exportStatus)

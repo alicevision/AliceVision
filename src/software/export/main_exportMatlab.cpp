@@ -16,7 +16,7 @@
 #include <map>
 
 using namespace aliceVision;
-using namespace aliceVision::cameras;
+using namespace aliceVision::camera;
 using namespace aliceVision::geometry;
 using namespace aliceVision::image;
 using namespace aliceVision::sfm;
@@ -112,7 +112,7 @@ bool exportToMatlab(
       if(!sfm_data.IsPoseAndIntrinsicDefined(&view))
         continue;
       const IntrinsicBase& intrinsics = *sfm_data.intrinsics.at(view.getIntrinsicId()).get();
-      cameraIntrinsicsFile << view.getViewId() << " " << cameras::EINTRINSIC_enumToString(intrinsics.getType());
+      cameraIntrinsicsFile << view.getViewId() << " " << camera::EINTRINSIC_enumToString(intrinsics.getType());
       for(double p: intrinsics.getParams())
         cameraIntrinsicsFile << " " << p;
       cameraIntrinsicsFile << "\n";

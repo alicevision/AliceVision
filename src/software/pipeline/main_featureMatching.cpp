@@ -31,7 +31,7 @@
 #include <cctype>
 
 using namespace aliceVision;
-using namespace aliceVision::cameras;
+using namespace aliceVision::camera;
 using namespace aliceVision::matching;
 using namespace aliceVision::robust;
 using namespace aliceVision::sfm;

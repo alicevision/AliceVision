@@ -50,7 +50,7 @@ static IndexT RemoveOutliers_PixelResidualError
     {
       const View * view = sfm_data.views.at(itObs->first).get();
       const geometry::Pose3 pose = sfm_data.getPose(*view);
-      const cameras::IntrinsicBase * intrinsic = sfm_data.intrinsics.at(view->getIntrinsicId()).get();
+      const camera::IntrinsicBase * intrinsic = sfm_data.intrinsics.at(view->getIntrinsicId()).get();
       const Vec2 residual = intrinsic->residual(pose, iterTracks->second.X, itObs->second.x);
       if((pose.depth(iterTracks->second.X) < 0) ||
          (residual.norm() > dThresholdPixel))
@@ -88,7 +88,7 @@ static IndexT RemoveOutliers_AngleError
     {
       const View * view1 = sfm_data.views.at(itObs1->first).get();
       const geometry::Pose3 pose1 = sfm_data.getPose(*view1);
-      const cameras::IntrinsicBase * intrinsic1 = sfm_data.intrinsics.at(view1->getIntrinsicId()).get();
+      const camera::IntrinsicBase * intrinsic1 = sfm_data.intrinsics.at(view1->getIntrinsicId()).get();
 
       Observations::const_iterator itObs2 = itObs1;
       ++itObs2;
@@ -96,7 +96,7 @@ static IndexT RemoveOutliers_AngleError
       {
         const View * view2 = sfm_data.views.at(itObs2->first).get();
         const geometry::Pose3 pose2 = sfm_data.getPose(*view2);
-        const cameras::IntrinsicBase * intrinsic2 = sfm_data.intrinsics.at(view2->getIntrinsicId()).get();
+        const camera::IntrinsicBase * intrinsic2 = sfm_data.intrinsics.at(view2->getIntrinsicId()).get();
 
         const double angle = AngleBetweenRay(
           pose1, intrinsic1, pose2, intrinsic2,

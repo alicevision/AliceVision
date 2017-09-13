@@ -57,9 +57,9 @@ int main(int argc, char **argv)
   {
     const auto &view = iter.second;
     const geometry::Pose3 pose_gt = sfm_data.GetPoses().at(view->getPoseId());
-    std::shared_ptr<cameras::IntrinsicBase> intrinsic_gt = std::make_shared<cameras::Pinhole_Intrinsic>();
+    std::shared_ptr<camera::IntrinsicBase> intrinsic_gt = std::make_shared<camera::Pinhole>();
     intrinsic_gt = sfm_data.GetIntrinsics().at(view->getIntrinsicId());
-    exporter.addCameraKeyframe(pose_gt, dynamic_cast<cameras::Pinhole_Intrinsic*>(intrinsic_gt.get()), view->getImagePath(), view->getViewId(), view->getIntrinsicId());
+    exporter.addCameraKeyframe(pose_gt, dynamic_cast<camera::Pinhole*>(intrinsic_gt.get()), view->getImagePath(), view->getViewId(), view->getIntrinsicId());
   }
   return EXIT_SUCCESS;
 }

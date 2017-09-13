@@ -14,7 +14,7 @@
 #include <iomanip>
 
 using namespace aliceVision;
-using namespace aliceVision::cameras;
+using namespace aliceVision::camera;
 using namespace aliceVision::geometry;
 using namespace aliceVision::image;
 using namespace aliceVision::sfm;
@@ -250,7 +250,7 @@ bool exportToBundlerFormat(
 
       if(isPinhole(iterIntrinsic->second.get()->getType()))
       {
-        const Pinhole_Intrinsic * cam = dynamic_cast<const Pinhole_Intrinsic*>(iterIntrinsic->second.get());
+        const Pinhole * cam = dynamic_cast<const Pinhole*>(iterIntrinsic->second.get());
         const double focal = cam->focal();
         const Mat3 R = D * pose.rotation();
         const Vec3 t = D * pose.translation();

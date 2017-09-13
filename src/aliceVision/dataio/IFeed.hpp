@@ -3,7 +3,7 @@
 
 #pragma once
 
-#include <aliceVision/cameras/Camera_Pinhole_Radial.hpp>
+#include <aliceVision/camera/PinholeRadial.hpp>
 #include <aliceVision/image/image_container.hpp>
 #include <aliceVision/image/pixel_types.hpp>
 
@@ -31,7 +31,7 @@ public:
    * @return True if there is a new image, false otherwise.
    */
   virtual bool readImage(image::Image<image::RGBColor> &imageRGB,
-                    cameras::Pinhole_Intrinsic_Radial_K3 &camIntrinsics,
+                    camera::PinholeRadialK3 &camIntrinsics,
                     std::string &mediaPath,
                     bool &hasIntrinsics) = 0;
   
@@ -45,7 +45,7 @@ public:
    * @return True if there is a new image, false otherwise.
    */
   virtual bool readImage(image::Image<unsigned char> &imageGray,
-                    cameras::Pinhole_Intrinsic_Radial_K3 &camIntrinsics, 
+                    camera::PinholeRadialK3 &camIntrinsics, 
                     std::string &mediaPath,
                     bool &hasIntrinsics) = 0;  
 
@@ -65,7 +65,7 @@ public:
  * @param[in] filename The file containing the calibration parameters.
  * @param[out] camIntrinsics The loaded parameters.
  */
-void readCalibrationFromFile(const std::string &filename, cameras::Pinhole_Intrinsic_Radial_K3 &camIntrinsics);
+void readCalibrationFromFile(const std::string &filename, camera::PinholeRadialK3 &camIntrinsics);
 
 }//namespace dataio 
 }//namespace aliceVision

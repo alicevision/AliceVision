@@ -22,7 +22,7 @@
 namespace aliceVision{
 namespace sfm{
 
-using namespace aliceVision::cameras;
+using namespace aliceVision::camera;
 using namespace aliceVision::geometry;
 using namespace aliceVision::features;
 

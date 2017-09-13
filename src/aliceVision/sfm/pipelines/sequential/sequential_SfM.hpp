@@ -72,7 +72,7 @@ public:
    *
    * It can be declared unknown if the type cannot be deduced from the metadata.
    */
-  void SetUnknownCameraType(const cameras::EINTRINSIC camType)
+  void SetUnknownCameraType(const camera::EINTRINSIC camType)
   {
     _camType = camType;
   }
@@ -203,7 +203,7 @@ private:
   // Parameter
   bool _userInteraction = true;
   Pair _userInitialImagePair;
-  cameras::EINTRINSIC _camType; // The camera type for the unknown cameras
+  camera::EINTRINSIC _camType; // The camera type for the unknown cameras
   int _minInputTrackLength = 2;
   int _minTrackLength = 2;
   int _minPointsPerPose = 30;

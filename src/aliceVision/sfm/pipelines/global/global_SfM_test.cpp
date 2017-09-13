@@ -12,7 +12,7 @@
 #include <iostream>
 
 using namespace aliceVision;
-using namespace aliceVision::cameras;
+using namespace aliceVision::camera;
 using namespace aliceVision::geometry;
 using namespace aliceVision::sfm;
 

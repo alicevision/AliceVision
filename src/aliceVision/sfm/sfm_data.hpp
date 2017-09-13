@@ -8,7 +8,7 @@
 #include <aliceVision/sfm/Rig.hpp>
 #include <aliceVision/sfm/sfm_landmark.hpp>
 #include <aliceVision/geometry/pose3.hpp>
-#include <aliceVision/cameras/cameras.hpp>
+#include <aliceVision/camera/camera.hpp>
 
 #include <stdexcept>
 #include <cassert>
@@ -23,7 +23,7 @@ using Views = Hash_Map<IndexT, std::shared_ptr<View> >;
 using Poses = Hash_Map<IndexT, geometry::Pose3>;
 
 /// Define a collection of IntrinsicParameter (indexed by View::id_intrinsic)
-using Intrinsics = Hash_Map<IndexT, std::shared_ptr<cameras::IntrinsicBase> >;
+using Intrinsics = Hash_Map<IndexT, std::shared_ptr<camera::IntrinsicBase> >;
 
 /// Define a collection of landmarks are indexed by their TrackId
 using Landmarks = Hash_Map<IndexT, Landmark>;
@@ -85,7 +85,7 @@ public:
    * @brief Return a pointer to an intrinsic if available or nullptr otherwise.
    * @param[in] intrinsicId
    */
-  const cameras::IntrinsicBase * GetIntrinsicPtr(IndexT intrinsicId) const
+  const camera::IntrinsicBase * GetIntrinsicPtr(IndexT intrinsicId) const
   {
     if(intrinsics.count(intrinsicId))
       return intrinsics.at(intrinsicId).get();
@@ -96,7 +96,7 @@ public:
    * @brief Return a pointer to an intrinsic if available or nullptr otherwise.
    * @param[in] intrinsicId
    */
-  cameras::IntrinsicBase * GetIntrinsicPtr(IndexT intrinsicId)
+  camera::IntrinsicBase * GetIntrinsicPtr(IndexT intrinsicId)
   {
     if(intrinsics.count(intrinsicId))
       return intrinsics.at(intrinsicId).get();
@@ -107,7 +107,7 @@ public:
    * @brief Return a shared pointer to an intrinsic if available or nullptr otherwise.
    * @param[in] intrinsicId
    */
-  std::shared_ptr<cameras::IntrinsicBase> GetIntrinsicSharedPtr(IndexT intrinsicId)
+  std::shared_ptr<camera::IntrinsicBase> GetIntrinsicSharedPtr(IndexT intrinsicId)
   {
     if(intrinsics.count(intrinsicId))
       return intrinsics.at(intrinsicId);

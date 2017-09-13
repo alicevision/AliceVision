@@ -12,7 +12,7 @@ namespace aliceVision {
 namespace sfm {
 
 using namespace aliceVision::geometry;
-using namespace aliceVision::cameras;
+using namespace aliceVision::camera;
 using namespace aliceVision::image;
 
 bool SfM_Data::operator==(const SfM_Data& other) const {
@@ -54,8 +54,8 @@ bool SfM_Data::operator==(const SfM_Data& other) const {
         return false;
 
       // Intrinsic
-      cameras::IntrinsicBase& intrinsic1 = *(it->second.get());
-      cameras::IntrinsicBase& intrinsic2 = *(otherIt->second.get());
+      camera::IntrinsicBase& intrinsic1 = *(it->second.get());
+      camera::IntrinsicBase& intrinsic2 = *(otherIt->second.get());
       if(!(intrinsic1 == intrinsic2))
         return false;
   }

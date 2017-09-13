@@ -98,7 +98,7 @@ struct GeometricFilter_HMatrix_AC : public GeometricFilterMatrix
    */
   template<typename MatT >
   static void fillMatricesWithUndistortFeatures(
-    const cameras::IntrinsicBase * cam,
+    const camera::IntrinsicBase * cam,
     const features::PointFeatures & vec_feats,
     MatT & m)
   {
@@ -127,7 +127,7 @@ struct GeometricFilter_HMatrix_AC : public GeometricFilterMatrix
 
   template<typename MatT >
   static void createMatricesWithUndistortFeatures(
-    const cameras::IntrinsicBase * cam,
+    const camera::IntrinsicBase * cam,
     const features::MapRegionsPerDesc & regionsPerDesc,
     MatT & m)
   {
@@ -151,7 +151,7 @@ struct GeometricFilter_HMatrix_AC : public GeometricFilterMatrix
 
   template<typename MatT >
   static void createMatricesWithUndistortFeatures(
-    const cameras::IntrinsicBase * cam,
+    const camera::IntrinsicBase * cam,
     const features::PointFeatures & vec_feats,
     MatT & m)
   {
@@ -195,10 +195,10 @@ struct GeometricFilter_HMatrix_AC : public GeometricFilterMatrix
       const sfm::View * view_J = sfmData->views.at(viewId_J).get();
 
       // Retrieve corresponding pair camera intrinsic if any
-      const cameras::IntrinsicBase * cam_I =
+      const camera::IntrinsicBase * cam_I =
         sfmData->GetIntrinsics().count(view_I->getIntrinsicId()) ?
           sfmData->GetIntrinsics().at(view_I->getIntrinsicId()).get() : nullptr;
-      const cameras::IntrinsicBase * cam_J =
+      const camera::IntrinsicBase * cam_J =
         sfmData->GetIntrinsics().count(view_J->getIntrinsicId()) ?
           sfmData->GetIntrinsics().at(view_J->getIntrinsicId()).get() : nullptr;
 

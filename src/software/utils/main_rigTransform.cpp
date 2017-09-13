@@ -107,7 +107,7 @@ int main(int argc, char** argv)
 
   // Load intrinsics
   auto v = ReadIntrinsicsFile(calibFile);
-  aliceVision::cameras::Pinhole_Intrinsic_Radial_K3 intrinsics = aliceVision::cameras::Pinhole_Intrinsic_Radial_K3(v[0], v[1], v[2], v[3], v[4], v[5], v[6], v[7]);
+  aliceVision::camera::PinholeRadialK3 intrinsics = aliceVision::camera::PinholeRadialK3(v[0], v[1], v[2], v[3], v[4], v[5], v[6], v[7]);
 
   // Export to abc
   aliceVision::sfm::AlembicExporter exporter( exportFile );

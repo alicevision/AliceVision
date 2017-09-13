@@ -33,7 +33,7 @@ public:
   
   template<typename T>
   bool readImage(image::Image<T> &image,
-                   cameras::Pinhole_Intrinsic_Radial_K3 &camIntrinsics,
+                   camera::PinholeRadialK3 &camIntrinsics,
                    std::string &imageName,
                    bool &hasIntrinsics)
   {
@@ -91,7 +91,7 @@ private:
   
   template<typename T>
   bool feedWithJson(image::Image<T> &image,
-                     cameras::Pinhole_Intrinsic_Radial_K3 &camIntrinsics,
+                     camera::PinholeRadialK3 &camIntrinsics,
                      std::string &imageName,
                      bool &hasIntrinsics)
   {
@@ -120,15 +120,15 @@ private:
     }
     else
     {
-      const cameras::IntrinsicBase * cam = _sfmdata.GetIntrinsics().at(view->getIntrinsicId()).get();
-      if(cam->getType() != cameras::EINTRINSIC::PINHOLE_CAMERA_RADIAL3)
+      const camera::IntrinsicBase * cam = _sfmdata.GetIntrinsics().at(view->getIntrinsicId()).get();
+      if(cam->getType() != camera::EINTRINSIC::PINHOLE_CAMERA_RADIAL3)
       {
-        ALICEVISION_LOG_WARNING("Only Pinhole_Intrinsic_Radial_K3 is supported");
+        ALICEVISION_LOG_WARNING("Only PinholeRadialK3 is supported");
         hasIntrinsics = false;
       }
       else
       {
-        const cameras::Pinhole_Intrinsic_Radial_K3 * intrinsics = dynamic_cast<const cameras::Pinhole_Intrinsic_Radial_K3*>(cam) ;
+        const camera::PinholeRadialK3 * intrinsics = dynamic_cast<const camera::PinholeRadialK3*>(cam) ;
 
         // simply copy values
         camIntrinsics = *intrinsics;
@@ -147,7 +147,7 @@ private:
   bool _withCalibration;
   // It contains the images to be fed
   std::vector<std::string> _images;
-  cameras::Pinhole_Intrinsic_Radial_K3 _camIntrinsics;
+  camera::PinholeRadialK3 _camIntrinsics;
   
   bool _sfmMode = false;
   sfm::SfM_Data _sfmdata;
@@ -366,7 +366,7 @@ ImageFeed::ImageFeed(const std::string& imagePath, const std::string& calibPath)
     : _imageFeed( new FeederImpl(imagePath, calibPath) ) { }
 
 bool ImageFeed::readImage(image::Image<image::RGBColor> &imageRGB, 
-                     cameras::Pinhole_Intrinsic_Radial_K3 &camIntrinsics,
+                     camera::PinholeRadialK3 &camIntrinsics,
                      std::string &mediaPath,
                      bool &hasIntrinsics)
 {
@@ -374,7 +374,7 @@ bool ImageFeed::readImage(image::Image<image::RGBColor> &imageRGB,
 }
 
 bool ImageFeed::readImage(image::Image<unsigned char> &imageGray, 
-                     cameras::Pinhole_Intrinsic_Radial_K3 &camIntrinsics,
+                     camera::PinholeRadialK3 &camIntrinsics,
                      std::string &mediaPath,
                      bool &hasIntrinsics)
 {

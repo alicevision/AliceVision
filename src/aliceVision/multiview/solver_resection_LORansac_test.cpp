@@ -9,7 +9,7 @@
 #include <aliceVision/multiview/solver_resection_kernel.hpp>
 #include <aliceVision/multiview/solver_resection_p3p.hpp>
 #include <aliceVision/multiview/conditioning.hpp>
-#include <aliceVision/cameras/cameras.hpp>
+#include <aliceVision/camera/camera.hpp>
 #include <aliceVision/sfm/sfm.hpp>
 #include <aliceVision/geometry/pose3.hpp>
 #include <aliceVision/numeric/numeric.h>
@@ -37,7 +37,7 @@ struct ResectionSquaredResidualError
 bool refinePoseAsItShouldbe(const Mat & pt3D,
                             const Mat & pt2D,
                             const std::vector<std::size_t> & vec_inliers,
-                            cameras::IntrinsicBase * intrinsics,
+                            camera::IntrinsicBase * intrinsics,
                             geometry::Pose3 & pose,
                             bool b_refine_pose,
                             bool b_refine_intrinsic)
@@ -52,7 +52,7 @@ bool refinePoseAsItShouldbe(const Mat & pt3D,
   // pose
   sfm_data.setPose(*view, pose);
   // intrinsic (the shared_ptr does not take the ownership, will not release the input pointer)
-  sfm_data.intrinsics[0] = std::shared_ptr<cameras::IntrinsicBase>(intrinsics, [](cameras::IntrinsicBase*)
+  sfm_data.intrinsics[0] = std::shared_ptr<camera::IntrinsicBase>(intrinsics, [](camera::IntrinsicBase*)
   {
   });
   // structure data (2D-3D correspondences)
@@ -227,7 +227,7 @@ TEST(P3P_Ransac, noisyFromImagePoints)
     refinePoseAsItShouldbe(pts3D,
                            pts2Dnorm,
                            vec_inliers,
-                           new cameras::Pinhole_Intrinsic(WIDTH, HEIGHT, 1, 0, 0),
+                           new camera::Pinhole(WIDTH, HEIGHT, 1, 0, 0),
                            pose,
                            true,
                            false );

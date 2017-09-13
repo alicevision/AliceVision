@@ -1,21 +1,20 @@
 // This file is part of the AliceVision project and is made available under
 // the terms of the MPL2 license (see the COPYING.md file).
 
-#ifndef ALICEVISION_CAMERA_PINHOLE_BROWN_HPP
-#define ALICEVISION_CAMERA_PINHOLE_BROWN_HPP
+#pragma once
 
 #include "aliceVision/numeric/numeric.h"
-#include "aliceVision/cameras/Camera_Common.hpp"
+#include "aliceVision/camera/cameraCommon.hpp"
 
 #include <vector>
 
 namespace aliceVision {
-namespace cameras {
+namespace camera {
 
 /// Implement a Pinhole camera with a 3 radial distortion coefficients and 2 tangential distortion coefficients.
 /// x_d = x_u (1 + K_1 r^2 + K_2 r^4 + K_3 r^6) + (T_2 (r^2 + 2 x_u^2) + 2 T_1 x_u y_u)
 /// y_d = y_u (1 + K_1 r^2 + K_2 r^4 + K_3 r^6) + (T_1 (r^2 + 2 y_u^2) + 2 T_2 x_u y_u)
-class Pinhole_Intrinsic_Brown_T2 : public Pinhole_Intrinsic
+class PinholeBrownT2 : public Pinhole
 {
     protected:
     // center of distortion is applied by the Intrinsics class
@@ -23,18 +22,18 @@ class Pinhole_Intrinsic_Brown_T2 : public Pinhole_Intrinsic
 
     public:
 
-    Pinhole_Intrinsic_Brown_T2(
+    PinholeBrownT2(
         int w = 0, int h = 0,
         double focal = 0.0, double ppx = 0, double ppy = 0,
         double k1 = 0.0, double k2 = 0.0, double k3 = 0.0,
         double t1 = 0.0, double t2 = 0.0)
-            :Pinhole_Intrinsic(w, h, focal, ppx, ppy)
+            :Pinhole(w, h, focal, ppx, ppy)
     {
         _distortionParams = {k1, k2, k3, t1, t2};
     }
 
-    Pinhole_Intrinsic_Brown_T2* clone() const { return new Pinhole_Intrinsic_Brown_T2(*this); }
-    void assign(const IntrinsicBase& other) { *this = dynamic_cast<const Pinhole_Intrinsic_Brown_T2&>(other); }
+    PinholeBrownT2* clone() const { return new PinholeBrownT2(*this); }
+    void assign(const IntrinsicBase& other) { *this = dynamic_cast<const PinholeBrownT2&>(other); }
   
     EINTRINSIC getType() const { return PINHOLE_CAMERA_BROWN; }
 
@@ -63,7 +62,7 @@ class Pinhole_Intrinsic_Brown_T2 : public Pinhole_Intrinsic
     // Data wrapper for non linear optimization (get data)
     virtual std::vector<double> getParams() const
     {
-        std::vector<double> params = Pinhole_Intrinsic::getParams();
+        std::vector<double> params = Pinhole::getParams();
         params.push_back(_distortionParams[0]);
         params.push_back(_distortionParams[1]);
         params.push_back(_distortionParams[2]);
@@ -108,7 +107,7 @@ class Pinhole_Intrinsic_Brown_T2 : public Pinhole_Intrinsic
     template <class Archive>
     void save( Archive & ar) const
     {
-      Pinhole_Intrinsic::save(ar);
+      Pinhole::save(ar);
       ar(cereal::make_nvp("disto_t2", _distortionParams));
     }
 
@@ -116,7 +115,7 @@ class Pinhole_Intrinsic_Brown_T2 : public Pinhole_Intrinsic
     template <class Archive>
     void load( Archive & ar)
     {
-      Pinhole_Intrinsic::load(ar);
+      Pinhole::load(ar);
       ar(cereal::make_nvp("disto_t2", _distortionParams));
     }
 
@@ -138,12 +137,10 @@ class Pinhole_Intrinsic_Brown_T2 : public Pinhole_Intrinsic
 };
 
 
-} // namespace cameras
+} // namespace camera
 } // namespace aliceVision
 
 #include <cereal/types/polymorphic.hpp>
 #include <cereal/types/vector.hpp>
 
-CEREAL_REGISTER_TYPE_WITH_NAME(aliceVision::cameras::Pinhole_Intrinsic_Brown_T2, "pinhole_brown_t2");
-
-#endif // #ifndef ALICEVISION_CAMERA_PINHOLE_BROWN_HPP
+CEREAL_REGISTER_TYPE_WITH_NAME(aliceVision::camera::PinholeBrownT2, "PinholeBrownT2");

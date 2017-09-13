@@ -10,7 +10,7 @@
 #include <fstream>
 
 using namespace aliceVision;
-using namespace aliceVision::cameras;
+using namespace aliceVision::camera;
 using namespace aliceVision::geometry;
 using namespace aliceVision::sfm;
 
@@ -68,9 +68,9 @@ int main(int argc, char **argv)
     Intrinsics::const_iterator iterIntrinsic = sfm_data.GetIntrinsics().find(view->getIntrinsicId());
     const IntrinsicBase * cam = iterIntrinsic->second.get();
     
-    if (!cameras::isPinhole(cam->getType()))
+    if (!camera::isPinhole(cam->getType()))
         continue;
-    const Pinhole_Intrinsic * pinhole_cam = static_cast<const Pinhole_Intrinsic *>(cam);
+    const Pinhole * pinhole_cam = static_cast<const Pinhole *>(cam);
     
     // Extrinsic
     const Vec3 t = pose.translation();

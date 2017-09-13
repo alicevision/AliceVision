@@ -5,7 +5,7 @@
 #include "aliceVision/image/image.hpp"
 
 using namespace aliceVision;
-using namespace aliceVision::cameras;
+using namespace aliceVision::camera;
 using namespace aliceVision::geometry;
 using namespace aliceVision::image;
 using namespace aliceVision::sfm;
@@ -146,7 +146,7 @@ bool exportToMVE2Format(
 
       // Prepare to write an MVE 'meta.ini' file for the current view
       const Pose3 pose = sfm_data.getPose(*view);
-      const Pinhole_Intrinsic * pinhole_cam = static_cast<const Pinhole_Intrinsic *>(cam);
+      const Pinhole * pinhole_cam = static_cast<const Pinhole *>(cam);
 
       const Mat3 rotation = pose.rotation();
       const Vec3 translation = pose.translation();

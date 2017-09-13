@@ -2,7 +2,7 @@
 // the terms of the MPL2 license (see the COPYING.md file).
 
 #include "LocalizationResult.hpp"
-#include <aliceVision/cameras/Camera_Pinhole_Radial.hpp>
+#include <aliceVision/camera/PinholeRadial.hpp>
 #include <aliceVision/numeric/numeric.h>
 #include <aliceVision/sfm/pipelines/localization/SfM_Localizer.hpp>
 #include "testing/testing.h"
@@ -46,7 +46,7 @@ localization::LocalizationResult generateRandomResult(std::size_t numPts)
   geometry::Pose3 pose = geometry::Pose3(Mat3::Random(), Vec3::Random());
   
   // random intrinsics
-  cameras::Pinhole_Intrinsic_Radial_K3 intrinsics = cameras::Pinhole_Intrinsic_Radial_K3(640, 480, 1400, 320.5, 240.5, 0.001, -0.05, 0.00003);
+  camera::PinholeRadialK3 intrinsics = camera::PinholeRadialK3(640, 480, 1400, 320.5, 240.5, 0.001, -0.05, 0.00003);
   
   // random valid
   const bool valid = (numPts % 2 == 0);

@@ -196,7 +196,7 @@ bool CCTagLocalizer::loadReconstructionDescriptors(const sfm::SfM_Data & sfm_dat
 bool CCTagLocalizer::localize(const image::Image<unsigned char> & imageGrey,
                               const LocalizerParameters *parameters,
                               bool useInputIntrinsics,
-                              cameras::Pinhole_Intrinsic_Radial_K3 &queryIntrinsics,
+                              camera::PinholeRadialK3 &queryIntrinsics,
                               LocalizationResult & localizationResult, 
                               const std::string& imagePath)
 {
@@ -247,7 +247,7 @@ bool CCTagLocalizer::localize(const features::MapRegionsPerDesc & genQueryRegion
                               const std::pair<std::size_t, std::size_t> &imageSize,
                               const LocalizerParameters *parameters,
                               bool useInputIntrinsics,
-                              cameras::Pinhole_Intrinsic_Radial_K3 &queryIntrinsics,
+                              camera::PinholeRadialK3 &queryIntrinsics,
                               LocalizationResult & localizationResult,
                               const std::string& imagePath)
 {
@@ -387,7 +387,7 @@ CCTagLocalizer::~CCTagLocalizer()
 // reference frame of the grid
 bool CCTagLocalizer::localizeRig(const std::vector<image::Image<unsigned char> > & vec_imageGrey,
                                  const LocalizerParameters *parameters,
-                                 std::vector<cameras::Pinhole_Intrinsic_Radial_K3 > &vec_queryIntrinsics,
+                                 std::vector<camera::PinholeRadialK3 > &vec_queryIntrinsics,
                                  const std::vector<geometry::Pose3 > &vec_subPoses,
                                  geometry::Pose3 &rigPose,
                                  std::vector<localization::LocalizationResult> & vec_locResults)
@@ -429,7 +429,7 @@ bool CCTagLocalizer::localizeRig(const std::vector<image::Image<unsigned char> >
 bool CCTagLocalizer::localizeRig(const std::vector<features::MapRegionsPerDesc> & vec_queryRegions,
                                  const std::vector<std::pair<std::size_t, std::size_t> > &vec_imageSize,
                                  const LocalizerParameters *parameters,
-                                 std::vector<cameras::Pinhole_Intrinsic_Radial_K3 > &vec_queryIntrinsics,
+                                 std::vector<camera::PinholeRadialK3 > &vec_queryIntrinsics,
                                  const std::vector<geometry::Pose3 > &vec_subPoses,
                                  geometry::Pose3 &rigPose,
                                  std::vector<LocalizationResult>& vec_locResults)
@@ -465,7 +465,7 @@ bool CCTagLocalizer::localizeRig(const std::vector<features::MapRegionsPerDesc> 
 bool CCTagLocalizer::localizeRig_opengv(const std::vector<features::MapRegionsPerDesc> & vec_queryRegions,
                                  const std::vector<std::pair<std::size_t, std::size_t> > &imageSize,
                                  const LocalizerParameters *parameters,
-                                 std::vector<cameras::Pinhole_Intrinsic_Radial_K3 > &vec_queryIntrinsics,
+                                 std::vector<camera::PinholeRadialK3 > &vec_queryIntrinsics,
                                  const std::vector<geometry::Pose3 > &vec_subPoses,
                                  geometry::Pose3 &rigPose,
                                  std::vector<LocalizationResult>& vec_locResults)
@@ -651,7 +651,7 @@ bool CCTagLocalizer::localizeRig_opengv(const std::vector<features::MapRegionsPe
 bool CCTagLocalizer::localizeRig_naive(const std::vector<features::MapRegionsPerDesc> & vec_queryRegions,
                                  const std::vector<std::pair<std::size_t, std::size_t> > &imageSize,
                                  const LocalizerParameters *parameters,
-                                 std::vector<cameras::Pinhole_Intrinsic_Radial_K3 > &vec_queryIntrinsics,
+                                 std::vector<camera::PinholeRadialK3 > &vec_queryIntrinsics,
                                  const std::vector<geometry::Pose3 > &vec_subPoses,
                                  geometry::Pose3 &rigPose,
                                  std::vector<LocalizationResult>& vec_localizationResults)

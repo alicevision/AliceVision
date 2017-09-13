@@ -197,7 +197,7 @@ bool readPointCloud(IObject iObj, M44d mat, sfm::SfM_Data &sfmdata, sfm::ESfM_Da
 bool readCamera(const ICamera& camera, const M44d& mat, sfm::SfM_Data &sfmData, sfm::ESfM_Data flags_part, const index_t sampleFrame = 0)
 {
   using namespace aliceVision::geometry;
-  using namespace aliceVision::cameras;
+  using namespace aliceVision::camera;
   using namespace aliceVision::sfm;
 
   ICameraSchema cs = camera.getSchema();
@@ -337,7 +337,7 @@ bool readCamera(const ICamera& camera, const M44d& mat, sfm::SfM_Data &sfmData, 
   const float imgHeight = vaperture_cm * 10.0 * mm2pix;
 
   // Create intrinsic parameters object
-  std::shared_ptr<Pinhole_Intrinsic> pinholeIntrinsic = createPinholeIntrinsic(EINTRINSIC_stringToEnum(mvg_intrinsicType));
+  std::shared_ptr<Pinhole> pinholeIntrinsic = createPinholeIntrinsic(EINTRINSIC_stringToEnum(mvg_intrinsicType));
 
   pinholeIntrinsic->setWidth(imgWidth);
   pinholeIntrinsic->setHeight(imgHeight);
@@ -380,7 +380,7 @@ bool readCamera(const ICamera& camera, const M44d& mat, sfm::SfM_Data &sfmData, 
 bool readXform(IXform& xform, M44d& mat, sfm::SfM_Data& sfmData, sfm::ESfM_Data flags_part)
 {
   using namespace aliceVision::geometry;
-  using namespace aliceVision::cameras;
+  using namespace aliceVision::camera;
   using namespace aliceVision::sfm;
 
   IXformSchema schema = xform.getSchema();

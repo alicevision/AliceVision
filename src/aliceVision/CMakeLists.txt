@@ -1,4 +1,4 @@
-add_subdirectory(cameras)
+add_subdirectory(camera)
 add_subdirectory(exif)
 add_subdirectory(features)
 add_subdirectory(graph)

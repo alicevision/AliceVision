@@ -160,7 +160,7 @@ void AlembicExporter::appendCameraRig(IndexT rigId,
                                       IndexT rigPoseId,
                                       const std::vector<View>& views,
                                       const std::vector<std::string>& viewsImagePaths,
-                                      const std::vector<cameras::Pinhole_Intrinsic*>& intrinsics,
+                                      const std::vector<camera::Pinhole*>& intrinsics,
                                       const geometry::Pose3& rigPose,
                                       const std::vector<RigSubPose>& subPoses)
 {
@@ -225,7 +225,7 @@ void AlembicExporter::appendCameraRig(IndexT rigId,
 void AlembicExporter::appendCamera(const std::string& cameraName,
                                    const View& view,
                                    const std::string& viewImagePath,
-                                   const cameras::Pinhole_Intrinsic* intrinsic,
+                                   const camera::Pinhole* intrinsic,
                                    const geometry::Pose3& pose)
 {
   appendCamera(cameraName,
@@ -239,7 +239,7 @@ void AlembicExporter::appendCamera(const std::string& cameraName,
 void AlembicExporter::appendCamera(const std::string& cameraName,
                                    const View& view,
                                    const std::string& viewImagePath,
-                                   const cameras::Pinhole_Intrinsic* intrinsic,
+                                   const camera::Pinhole* intrinsic,
                                    const geometry::Pose3& pose,
                                    Alembic::Abc::OObject& parent)
 {
@@ -393,7 +393,7 @@ void AlembicExporter::initAnimatedCamera(const std::string& cameraName)
 }
 
 void AlembicExporter::addCameraKeyframe(const geometry::Pose3 &pose,
-                                          const cameras::Pinhole_Intrinsic *cam,
+                                          const camera::Pinhole *cam,
                                           const std::string &imagePath,
                                           const IndexT id_view,
                                           const IndexT id_intrinsic,
@@ -483,7 +483,7 @@ void AlembicExporter::jumpKeyframe(const std::string &imagePath)
 {
   if(_data->_xform.getSchema().getNumSamples() == 0)
   {
-    cameras::Pinhole_Intrinsic default_intrinsic;
+    camera::Pinhole default_intrinsic;
     this->addCameraKeyframe(geometry::Pose3(), &default_intrinsic, imagePath, 0, 0);
   }
   else
@@ -510,7 +510,7 @@ void AlembicExporter::add(const sfm::SfM_Data& sfmData, sfm::ESfM_Data flags_par
     for(const auto it : sfmData.GetViews())
     {
       const sfm::View* view = it.second.get();
-      aliceVision::cameras::Pinhole_Intrinsic* intrinsic = nullptr;
+      aliceVision::camera::Pinhole* intrinsic = nullptr;
       geometry::Pose3 pose;
 
       if(sfmData.IsPoseAndIntrinsicDefined(view))
@@ -525,7 +525,7 @@ void AlembicExporter::add(const sfm::SfM_Data& sfmData, sfm::ESfM_Data flags_par
         }
 
         // AliceVision single Camera
-        intrinsic = dynamic_cast<aliceVision::cameras::Pinhole_Intrinsic*>(sfmData.GetIntrinsics().at(view->getIntrinsicId()).get());
+        intrinsic = dynamic_cast<aliceVision::camera::Pinhole*>(sfmData.GetIntrinsics().at(view->getIntrinsicId()).get());
         pose = sfmData.getPose(*view);
       }
       else
@@ -556,7 +556,7 @@ void AlembicExporter::add(const sfm::SfM_Data& sfmData, sfm::ESfM_Data flags_par
 
         std::vector<View> subPoses;
         std::vector<std::string> viewsImagePaths;
-        std::vector<cameras::Pinhole_Intrinsic*> intrinsics;
+        std::vector<camera::Pinhole*> intrinsics;
         std::vector<RigSubPose> rigSubPoses;
 
         for(const auto& subPoseIt : mapSubPoses)
@@ -566,7 +566,7 @@ void AlembicExporter::add(const sfm::SfM_Data& sfmData, sfm::ESfM_Data flags_par
 
           subPoses.push_back(view);
           viewsImagePaths.push_back(stlplus::create_filespec(sfmData.s_root_path, view.getImagePath()));
-          intrinsics.push_back(dynamic_cast<aliceVision::cameras::Pinhole_Intrinsic*>(sfmData.GetIntrinsics().at(view.getIntrinsicId()).get()));
+          intrinsics.push_back(dynamic_cast<aliceVision::camera::Pinhole*>(sfmData.GetIntrinsics().at(view.getIntrinsicId()).get()));
           rigSubPoses.push_back(rig.getSubPose(subPoseId));
         }
 

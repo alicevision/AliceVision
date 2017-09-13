@@ -121,7 +121,7 @@ public:
   bool localize(const image::Image<unsigned char> & imageGrey,
                 const LocalizerParameters *param,
                 bool useInputIntrinsics,
-                cameras::Pinhole_Intrinsic_Radial_K3 &queryIntrinsics,
+                camera::PinholeRadialK3 &queryIntrinsics,
                 LocalizationResult &localizationResult, 
                 const std::string& imagePath = std::string()) override;
 
@@ -144,14 +144,14 @@ public:
                 const std::pair<std::size_t, std::size_t> &imageSize,
                 const LocalizerParameters *param,
                 bool useInputIntrinsics,
-                cameras::Pinhole_Intrinsic_Radial_K3 &queryIntrinsics,
+                camera::PinholeRadialK3 &queryIntrinsics,
                 LocalizationResult & localizationResult,
                 const std::string& imagePath = std::string()) override;
   
   
   bool localizeRig(const std::vector<image::Image<unsigned char> > & vec_imageGrey,
                    const LocalizerParameters *param,
-                   std::vector<cameras::Pinhole_Intrinsic_Radial_K3 > &vec_queryIntrinsics,
+                   std::vector<camera::PinholeRadialK3 > &vec_queryIntrinsics,
                    const std::vector<geometry::Pose3 > &vec_subPoses,
                    geometry::Pose3 &rigPose,
                    std::vector<LocalizationResult> & vec_locResults) override;
@@ -159,7 +159,7 @@ public:
   bool localizeRig(const std::vector<features::MapRegionsPerDesc> & vec_queryRegions,
                    const std::vector<std::pair<std::size_t, std::size_t> > &vec_imageSize,
                    const LocalizerParameters *param,
-                   std::vector<cameras::Pinhole_Intrinsic_Radial_K3 > &vec_queryIntrinsics,
+                   std::vector<camera::PinholeRadialK3 > &vec_queryIntrinsics,
                    const std::vector<geometry::Pose3 > &vec_subPoses,
                    geometry::Pose3 &rigPose,
                    std::vector<LocalizationResult>& vec_locResults) override;
@@ -169,7 +169,7 @@ public:
   bool localizeRig_opengv(const std::vector<features::MapRegionsPerDesc> & vec_queryRegions,
                           const std::vector<std::pair<std::size_t, std::size_t> > &imageSize,
                           const LocalizerParameters *parameters,
-                          std::vector<cameras::Pinhole_Intrinsic_Radial_K3 > &vec_queryIntrinsics,
+                          std::vector<camera::PinholeRadialK3 > &vec_queryIntrinsics,
                           const std::vector<geometry::Pose3 > &vec_subPoses,
                           geometry::Pose3 &rigPose,
                           std::vector<LocalizationResult>& vec_locResults);
@@ -178,7 +178,7 @@ public:
   bool localizeRig_naive(const std::vector<features::MapRegionsPerDesc> & vec_queryRegions,
                         const std::vector<std::pair<std::size_t, std::size_t> > &imageSize,
                         const LocalizerParameters *parameters,
-                        std::vector<cameras::Pinhole_Intrinsic_Radial_K3 > &vec_queryIntrinsics,
+                        std::vector<camera::PinholeRadialK3 > &vec_queryIntrinsics,
                         const std::vector<geometry::Pose3 > &vec_subPoses,
                         geometry::Pose3 &rigPose,
                         std::vector<LocalizationResult>& vec_locResults);
@@ -204,7 +204,7 @@ public:
                                const std::pair<std::size_t, std::size_t> imageSize,
                                const Parameters &param,
                                bool useInputIntrinsics,
-                               cameras::Pinhole_Intrinsic_Radial_K3 &queryIntrinsics,
+                               camera::PinholeRadialK3 &queryIntrinsics,
                                LocalizationResult &localizationResult,
                                const std::string& imagePath = std::string());
 
@@ -229,7 +229,7 @@ public:
                           const std::pair<std::size_t, std::size_t> imageSize,
                           const Parameters &param,
                           bool useInputIntrinsics,
-                          cameras::Pinhole_Intrinsic_Radial_K3 &queryIntrinsics,
+                          camera::PinholeRadialK3 &queryIntrinsics,
                           LocalizationResult &localizationResult,
                           const std::string& imagePath = std::string());
   
@@ -253,7 +253,7 @@ public:
                           const std::pair<std::size_t, std::size_t> &imageSize,
                           const Parameters &param,
                           bool useInputIntrinsics,
-                          const cameras::Pinhole_Intrinsic_Radial_K3 &queryIntrinsics,
+                          const camera::PinholeRadialK3 &queryIntrinsics,
                           OccurenceMap & out_occurences,
                           Mat &out_pt2D,
                           Mat &out_pt3D,
@@ -296,9 +296,9 @@ private:
    * @return
    */
   bool robustMatching(matching::RegionsDatabaseMatcherPerDesc & matchers,
-                      const cameras::IntrinsicBase * queryIntrinsics,// the intrinsics of the image we are using as reference
+                      const camera::IntrinsicBase * queryIntrinsics,// the intrinsics of the image we are using as reference
                       const features::MapRegionsPerDesc & regionsToMatch,
-                      const cameras::IntrinsicBase * matchedIntrinsics,
+                      const camera::IntrinsicBase * matchedIntrinsics,
                       const float fDistRatio,
                       const double matchingError,
                       const bool useGeometricFiltering,
@@ -312,7 +312,7 @@ private:
                                  const std::pair<std::size_t, std::size_t> imageSize,
                                  const Parameters &param,
                                  bool useInputIntrinsics,
-                                 const cameras::Pinhole_Intrinsic_Radial_K3 &queryIntrinsics,
+                                 const camera::PinholeRadialK3 &queryIntrinsics,
                                  OccurenceMap &out_occurences,
                                  const std::string& imagePath = std::string()) const;
   

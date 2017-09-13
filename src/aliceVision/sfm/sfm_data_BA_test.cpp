@@ -5,14 +5,14 @@
 #include "aliceVision/sfm/sfm.hpp"
 
 #include "testing/testing.h"
-#include "../cameras/Camera_Common.hpp"
+#include "../camera/cameraCommon.hpp"
 
 #include <cmath>
 #include <cstdio>
 #include <iostream>
 
 using namespace aliceVision;
-using namespace aliceVision::cameras;
+using namespace aliceVision::camera;
 using namespace aliceVision::geometry;
 using namespace aliceVision::sfm;
 
@@ -46,7 +46,7 @@ TEST(BUNDLE_ADJUSTMENT, EffectiveMinimization_Pinhole) {
   EXPECT_TRUE( dResidual_before > dResidual_after);
 }
 
-TEST(BUNDLE_ADJUSTMENT, EffectiveMinimization_Pinhole_Radial_K1) {
+TEST(BUNDLE_ADJUSTMENT, EffectiveMinimization_PinholeRadialK1) {
 
   const int nviews = 3;
   const int npoints = 6;
@@ -66,7 +66,7 @@ TEST(BUNDLE_ADJUSTMENT, EffectiveMinimization_Pinhole_Radial_K1) {
   EXPECT_TRUE( dResidual_before > dResidual_after);
 }
 
-TEST(BUNDLE_ADJUSTMENT, EffectiveMinimization_Pinhole_Radial_K3) {
+TEST(BUNDLE_ADJUSTMENT, EffectiveMinimization_PinholeRadialK3) {
 
   const int nviews = 3;
   const int npoints = 6;
@@ -86,7 +86,7 @@ TEST(BUNDLE_ADJUSTMENT, EffectiveMinimization_Pinhole_Radial_K3) {
   EXPECT_TRUE( dResidual_before > dResidual_after);
 }
 
-TEST(BUNDLE_ADJUSTMENT, EffectiveMinimization_Pinhole_Intrinsic_Brown_T2) {
+TEST(BUNDLE_ADJUSTMENT, EffectiveMinimization_PinholeBrownT2) {
 
   const int nviews = 3;
   const int npoints = 6;
@@ -106,7 +106,7 @@ TEST(BUNDLE_ADJUSTMENT, EffectiveMinimization_Pinhole_Intrinsic_Brown_T2) {
   EXPECT_TRUE( dResidual_before > dResidual_after);
 }
 
-TEST(BUNDLE_ADJUSTMENT, EffectiveMinimization_Pinhole_Intrinsic_Fisheye) {
+TEST(BUNDLE_ADJUSTMENT, EffectiveMinimization_PinholeFisheye) {
 
   const int nviews = 3;
   const int npoints = 6;

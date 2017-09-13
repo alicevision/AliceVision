@@ -71,7 +71,7 @@ public:
   virtual bool Localize
   (
     const Pair & image_size,
-    const cameras::IntrinsicBase * optional_intrinsics,
+    const camera::IntrinsicBase * optional_intrinsics,
     const features::Regions & query_regions,
     geometry::Pose3 & pose,
     Image_Localizer_Match_Data * resection_data = nullptr // optional
@@ -93,7 +93,7 @@ public:
   static bool Localize
   (
     const Pair & image_size,
-    const cameras::IntrinsicBase * optional_intrinsics,
+    const camera::IntrinsicBase * optional_intrinsics,
     Image_Localizer_Match_Data & resection_data,
     geometry::Pose3 & pose,
     robust::EROBUST_ESTIMATOR estimator = robust::ROBUST_ESTIMATOR_ACRANSAC
@@ -111,7 +111,7 @@ public:
   */
   static bool RefinePose
   (
-    cameras::IntrinsicBase * intrinsics,
+    camera::IntrinsicBase * intrinsics,
     geometry::Pose3 & pose,
     const Image_Localizer_Match_Data & matching_data,
     bool b_refine_pose,

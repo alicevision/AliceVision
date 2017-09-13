@@ -1,7 +1,7 @@
 // This file is part of the AliceVision project and is made available under
 // the terms of the MPL2 license (see the COPYING.md file).
 
-#include "aliceVision/cameras/cameras.hpp"
+#include "aliceVision/camera/camera.hpp"
 #include "aliceVision/image/image.hpp"
 #include "aliceVision/features/features.hpp"
 #include "aliceVision/features/sift/SIFT_describer.hpp"
@@ -22,7 +22,7 @@
 using namespace aliceVision;
 using namespace aliceVision::image;
 using namespace aliceVision::matching;
-using namespace aliceVision::cameras;
+using namespace aliceVision::camera;
 using namespace aliceVision::geometry;
 using namespace aliceVision::sfm;
 using namespace svg;
@@ -210,14 +210,14 @@ int main() {
     switch (iBAType)
     {
       case 1: // Each view use it's own pinhole camera intrinsic
-        tinyScene.intrinsics[0].reset(new Pinhole_Intrinsic(imageL.Width(), imageL.Height(), K(0, 0), K(0, 2), K(1, 2)));
-        tinyScene.intrinsics[1].reset(new Pinhole_Intrinsic(imageR.Width(), imageR.Height(), K(0, 0), K(0, 2), K(1, 2)));
+        tinyScene.intrinsics[0].reset(new Pinhole(imageL.Width(), imageL.Height(), K(0, 0), K(0, 2), K(1, 2)));
+        tinyScene.intrinsics[1].reset(new Pinhole(imageR.Width(), imageR.Height(), K(0, 0), K(0, 2), K(1, 2)));
         break;
       case 2: // Shared pinhole camera intrinsic
-        tinyScene.intrinsics[0].reset(new Pinhole_Intrinsic(imageL.Width(), imageL.Height(), K(0, 0), K(0, 2), K(1, 2)));
+        tinyScene.intrinsics[0].reset(new Pinhole(imageL.Width(), imageL.Height(), K(0, 0), K(0, 2), K(1, 2)));
         break;
       case 3: // Shared pinhole camera intrinsic with radial K3 distortion
-        tinyScene.intrinsics[0].reset(new Pinhole_Intrinsic_Radial_K3(imageL.Width(), imageL.Height(), K(0, 0), K(0, 2), K(1, 2)));
+        tinyScene.intrinsics[0].reset(new PinholeRadialK3(imageL.Width(), imageL.Height(), K(0, 0), K(0, 2), K(1, 2)));
         break;
       default:
         std::cerr << "Invalid input number" << std::endl;

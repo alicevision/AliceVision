@@ -1,24 +1,25 @@
 // This file is part of the AliceVision project and is made available under
 // the terms of the MPL2 license (see the COPYING.md file).
 
-#include "aliceVision/cameras/cameras.hpp"
-using namespace aliceVision;
-using namespace aliceVision::cameras;
+#include "aliceVision/camera/camera.hpp"
 
 #include "testing/testing.h"
+
+using namespace aliceVision;
+using namespace aliceVision::camera;
 
 //-----------------
 // Test summary:
 //-----------------
-// - Create a Pinhole_Intrinsic_Fisheye
+// - Create a PinholeFisheye
 // - Generate random point inside the image domain
 // - Add and remove distortion and assert we found back the generated point
 // - Check the last point in the camera & image domain
 // - Assert that the tested distortion is not null (in order to ensure validity of the test)
 //-----------------
-TEST(Cameras_Fisheye, disto_undisto_Fisheye) {
+TEST(cameraPinholeFisheye, disto_undisto_Fisheye) {
 
-const Pinhole_Intrinsic_Fisheye cam(1000, 1000, 1000, 500, 500,
+const PinholeFisheye cam(1000, 1000, 1000, 500, 500,
                                     -0.054, 0.014, 0.006, 0.011); // K1, K2, K3, K4
 
   const double epsilon = 1e-4;

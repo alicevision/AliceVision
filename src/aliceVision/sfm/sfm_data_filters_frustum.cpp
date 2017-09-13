@@ -14,7 +14,7 @@
 namespace aliceVision {
 namespace sfm {
 
-using namespace aliceVision::cameras;
+using namespace aliceVision::camera;
 using namespace aliceVision::geometry;
 using namespace aliceVision::geometry::halfPlane;
 
@@ -44,7 +44,7 @@ void Frustum_Filter::initFrustum(const SfM_Data & sfm_data)
 
     const Pose3 pose = sfm_data.getPose(*view);
 
-    const Pinhole_Intrinsic * cam = dynamic_cast<const Pinhole_Intrinsic*>(iterIntrinsic->second.get());
+    const Pinhole * cam = dynamic_cast<const Pinhole*>(iterIntrinsic->second.get());
     if (cam == nullptr)
       continue;
 

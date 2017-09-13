@@ -8,7 +8,7 @@
 #include <sstream>
 
 using namespace aliceVision;
-using namespace aliceVision::cameras;
+using namespace aliceVision::camera;
 using namespace aliceVision::geometry;
 using namespace aliceVision::sfm;
 
@@ -25,10 +25,10 @@ TEST(SfM_Data_IntrinsicGrouping, Grouping_One)
   SfM_Data sfm_data;
   // One view, one intrinsic
   sfm_data.views[0] = std::make_shared<View>("", 0, 0, 0);
-  sfm_data.intrinsics[0] = std::make_shared<Pinhole_Intrinsic>(0);
+  sfm_data.intrinsics[0] = std::make_shared<Pinhole>(0);
   // One view, one intrinsic
   sfm_data.views[1] = std::make_shared<View>("", 1, 1, 1);
-  sfm_data.intrinsics[1] = std::make_shared<Pinhole_Intrinsic>(0);
+  sfm_data.intrinsics[1] = std::make_shared<Pinhole>(0);
 
   CHECK_EQUAL(2, sfm_data.intrinsics.size());
   GroupSharedIntrinsics(sfm_data);
@@ -46,7 +46,7 @@ TEST(SfM_Data_IntrinsicGrouping, No_Grouping)
   {
     // Add one view, one intrinsic
     sfm_data.views[i] = std::make_shared<View>("", i, i, i);
-    sfm_data.intrinsics[i] = std::make_shared<Pinhole_Intrinsic>(i);
+    sfm_data.intrinsics[i] = std::make_shared<Pinhole>(i);
   }
 
   CHECK_EQUAL(nbView, sfm_data.intrinsics.size());
@@ -62,16 +62,16 @@ TEST(SfM_Data_IntrinsicGrouping, Grouping_Two)
   // first block of intrinsics
   {
     sfm_data.views[0] = std::make_shared<View>("", 0, 0, 0);
-    sfm_data.intrinsics[0] = std::make_shared<Pinhole_Intrinsic>(0);
+    sfm_data.intrinsics[0] = std::make_shared<Pinhole>(0);
     sfm_data.views[1] = std::make_shared<View>("", 1, 1, 1);
-    sfm_data.intrinsics[1] = std::make_shared<Pinhole_Intrinsic>(0);
+    sfm_data.intrinsics[1] = std::make_shared<Pinhole>(0);
   }
   // second block of intrinsics
   {
     sfm_data.views[2] = std::make_shared<View>("", 2, 2, 2);
-    sfm_data.intrinsics[2] = std::make_shared<Pinhole_Intrinsic>(1);
+    sfm_data.intrinsics[2] = std::make_shared<Pinhole>(1);
     sfm_data.views[3] = std::make_shared<View>("", 3, 3, 3);
-    sfm_data.intrinsics[3] = std::make_shared<Pinhole_Intrinsic>(1);
+    sfm_data.intrinsics[3] = std::make_shared<Pinhole>(1);
   }
 
   CHECK_EQUAL(4, sfm_data.intrinsics.size());
@@ -98,16 +98,16 @@ TEST(SfM_Data_IntrinsicGrouping, Grouping_Two_Different_Camera_Type)
   // first block of intrinsics
   {
     sfm_data.views[0] = std::make_shared<View>("", 0, 0, 0);
-    sfm_data.intrinsics[0] = std::make_shared<Pinhole_Intrinsic>(0);
+    sfm_data.intrinsics[0] = std::make_shared<Pinhole>(0);
     sfm_data.views[1] = std::make_shared<View>("", 1, 1, 1);
-    sfm_data.intrinsics[1] = std::make_shared<Pinhole_Intrinsic>(0);
+    sfm_data.intrinsics[1] = std::make_shared<Pinhole>(0);
   }
   // second block of intrinsics (different type)
   {
     sfm_data.views[2] = std::make_shared<View>("", 2, 2, 2);
-    sfm_data.intrinsics[2] = std::make_shared<Pinhole_Intrinsic_Radial_K1>(0);
+    sfm_data.intrinsics[2] = std::make_shared<PinholeRadialK1>(0);
     sfm_data.views[3] = std::make_shared<View>("", 3, 3, 3);
-    sfm_data.intrinsics[3] = std::make_shared<Pinhole_Intrinsic_Radial_K1>(0);
+    sfm_data.intrinsics[3] = std::make_shared<PinholeRadialK1>(0);
   }
 
   CHECK_EQUAL(4, sfm_data.intrinsics.size());

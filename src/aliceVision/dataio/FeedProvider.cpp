@@ -71,7 +71,7 @@ FeedProvider::FeedProvider(const std::string &feedPath, const std::string &calib
 }
 
 bool FeedProvider::readImage(image::Image<image::RGBColor> &imageRGB,
-      cameras::Pinhole_Intrinsic_Radial_K3 &camIntrinsics,
+      camera::PinholeRadialK3 &camIntrinsics,
       std::string &mediaPath,
       bool &hasIntrinsics)
 {
@@ -79,7 +79,7 @@ bool FeedProvider::readImage(image::Image<image::RGBColor> &imageRGB,
 }
 
 bool FeedProvider::readImage(image::Image<unsigned char> &imageGray,
-      cameras::Pinhole_Intrinsic_Radial_K3 &camIntrinsics,
+      camera::PinholeRadialK3 &camIntrinsics,
       std::string &mediaPath,
       bool &hasIntrinsics)
 {

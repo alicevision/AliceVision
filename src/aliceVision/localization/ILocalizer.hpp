@@ -7,7 +7,7 @@
 
 #include <aliceVision/image/image_container.hpp>
 #include <aliceVision/features/image_describer.hpp>
-#include <aliceVision/cameras/Camera_Pinhole_Radial.hpp>
+#include <aliceVision/camera/PinholeRadial.hpp>
 #include <aliceVision/robust_estimation/robust_estimators.hpp>
 #include <aliceVision/numeric/numeric.h>
 
@@ -81,7 +81,7 @@ public:
   virtual bool localize(const image::Image<unsigned char> & imageGrey,
                         const LocalizerParameters *param,
                         bool useInputIntrinsics,
-                        cameras::Pinhole_Intrinsic_Radial_K3 &queryIntrinsics,
+                        camera::PinholeRadialK3 &queryIntrinsics,
                         LocalizationResult & localizationResult,
                         const std::string& imagePath = std::string()) = 0;
 
@@ -89,13 +89,13 @@ public:
                         const std::pair<std::size_t, std::size_t> &imageSize,
                         const LocalizerParameters *param,
                         bool useInputIntrinsics,
-                        cameras::Pinhole_Intrinsic_Radial_K3 &queryIntrinsics,
+                        camera::PinholeRadialK3 &queryIntrinsics,
                         LocalizationResult & localizationResult,
                         const std::string& imagePath = std::string()) = 0;
     
   virtual bool localizeRig(const std::vector<image::Image<unsigned char> > & vec_imageGrey,
                            const LocalizerParameters *param,
-                           std::vector<cameras::Pinhole_Intrinsic_Radial_K3 > &vec_queryIntrinsics,
+                           std::vector<camera::PinholeRadialK3 > &vec_queryIntrinsics,
                            const std::vector<geometry::Pose3 > &vec_subPoses,
                            geometry::Pose3 &rigPose, 
                            std::vector<LocalizationResult>& vec_locResults)=0;
@@ -103,7 +103,7 @@ public:
   virtual bool localizeRig(const std::vector<features::MapRegionsPerDesc> & vec_queryRegions,
                            const std::vector<std::pair<std::size_t, std::size_t> > &imageSize,
                            const LocalizerParameters *param,
-                           std::vector<cameras::Pinhole_Intrinsic_Radial_K3 > &vec_queryIntrinsics,
+                           std::vector<camera::PinholeRadialK3 > &vec_queryIntrinsics,
                            const std::vector<geometry::Pose3 > &vec_subPoses,
                            geometry::Pose3 &rigPose,
                            std::vector<LocalizationResult>& vec_locResults)=0;

@@ -56,8 +56,8 @@ struct GeometricFilter_FMatrix: public GeometricFilterMatrix
     const sfm::View * view_I = sfmData->views.at(iIndex).get();
     const sfm::View * view_J = sfmData->views.at(jIndex).get();
 
-    const cameras::IntrinsicBase * cam_I = sfmData->GetIntrinsicPtr(view_I->getIntrinsicId());
-    const cameras::IntrinsicBase * cam_J = sfmData->GetIntrinsicPtr(view_J->getIntrinsicId());
+    const camera::IntrinsicBase * cam_I = sfmData->GetIntrinsicPtr(view_I->getIntrinsicId());
+    const camera::IntrinsicBase * cam_J = sfmData->GetIntrinsicPtr(view_J->getIntrinsicId());
 
     const std::pair<size_t,size_t> imageSizeI(sfmData->GetViews().at(iIndex)->getWidth(), sfmData->GetViews().at(iIndex)->getHeight());
     const std::pair<size_t,size_t> imageSizeJ(sfmData->GetViews().at(jIndex)->getWidth(), sfmData->GetViews().at(jIndex)->getHeight());
@@ -78,8 +78,8 @@ struct GeometricFilter_FMatrix: public GeometricFilterMatrix
   EstimationStatus geometricEstimation(
       const MapFeatOrRegionsPerDesc& region_I,
       const MapFeatOrRegionsPerDesc& region_J,
-      const cameras::IntrinsicBase * cam_I,
-      const cameras::IntrinsicBase * cam_J,
+      const camera::IntrinsicBase * cam_I,
+      const camera::IntrinsicBase * cam_J,
       const std::pair<size_t,size_t> & imageSizeI,     // size of the first image
       const std::pair<size_t,size_t> & imageSizeJ,     // size of the first image
       const matching::MatchesPerDescType & putativeMatchesPerType,
@@ -241,10 +241,10 @@ struct GeometricFilter_FMatrix: public GeometricFilterMatrix
       const sfm::View * view_J = sfmData->views.at(viewId_J).get();
 
       // Retrieve corresponding pair camera intrinsic if any
-      const cameras::IntrinsicBase * cam_I =
+      const camera::IntrinsicBase * cam_I =
         sfmData->GetIntrinsics().count(view_I->getIntrinsicId()) ?
           sfmData->GetIntrinsics().at(view_I->getIntrinsicId()).get() : nullptr;
-      const cameras::IntrinsicBase * cam_J =
+      const camera::IntrinsicBase * cam_J =
         sfmData->GetIntrinsics().count(view_J->getIntrinsicId()) ?
           sfmData->GetIntrinsics().at(view_J->getIntrinsicId()).get() : nullptr;
 
@@ -252,9 +252,9 @@ struct GeometricFilter_FMatrix: public GeometricFilterMatrix
       geometry_aware::GuidedMatching<Mat3,
                                      fundamental::kernel::EpipolarDistanceError>(
         m_F,
-        cam_I, // cameras::IntrinsicBase
+        cam_I, // camera::IntrinsicBase
         regionsPerView.getAllRegions(viewId_I), // features::Regions
-        cam_J, // cameras::IntrinsicBase
+        cam_J, // camera::IntrinsicBase
         regionsPerView.getAllRegions(viewId_J), // features::Regions
         Square(m_dPrecision_robust), Square(dDistanceRatio),
         matches);

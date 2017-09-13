@@ -6,16 +6,16 @@
 #include "aliceVision/sfm/sfm_data.hpp"
 
 #include <aliceVision/geometry/pose3.hpp>
-#include <aliceVision/cameras/Camera_Pinhole.hpp>
+#include <aliceVision/camera/Pinhole.hpp>
 
 #include <string>
 
 namespace aliceVision {
 namespace sfm {
 
-bool read_aliceVision_Camera(const std::string & camName, cameras::Pinhole_Intrinsic & cam, geometry::Pose3 & pose);
+bool read_aliceVision_Camera(const std::string & camName, camera::Pinhole & cam, geometry::Pose3 & pose);
 
-bool read_Strecha_Camera(const std::string & camName, cameras::Pinhole_Intrinsic & cam, geometry::Pose3 & pose);
+bool read_Strecha_Camera(const std::string & camName, camera::Pinhole & cam, geometry::Pose3 & pose);
 
 /**
 @brief Reads a set of Pinhole Cameras and its poses from a ground truth dataset.

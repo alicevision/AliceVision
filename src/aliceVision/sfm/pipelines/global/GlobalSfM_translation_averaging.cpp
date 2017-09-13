@@ -30,7 +30,7 @@
 namespace aliceVision{
 namespace sfm{
 
-using namespace aliceVision::cameras;
+using namespace aliceVision::camera;
 using namespace aliceVision::geometry;
 
 /// Use features in normalized camera frames
@@ -647,8 +647,8 @@ bool GlobalSfM_Translation_AveragingSolver::Estimate_T_triplet(
   double min_focal = std::numeric_limits<double>::max();
   for (const auto & ids : intrinsic_ids)
   {
-    const cameras::IntrinsicBase * intrinsicPtr = sfm_data.GetIntrinsics().at(ids).get();
-    const cameras::Pinhole_Intrinsic * intrinsic = dynamic_cast< const cameras::Pinhole_Intrinsic * > (intrinsicPtr);
+    const camera::IntrinsicBase * intrinsicPtr = sfm_data.GetIntrinsics().at(ids).get();
+    const camera::Pinhole * intrinsic = dynamic_cast< const camera::Pinhole * > (intrinsicPtr);
     if (intrinsic && intrinsic->isValid())
     {
       min_focal = std::min(min_focal, intrinsic->focal());
@@ -733,8 +733,8 @@ bool GlobalSfM_Translation_AveragingSolver::Estimate_T_triplet(
 
       // initialize view and get intrinsics
       const View * view = sfm_data.GetViews().at(viewIndex).get();
-      const cameras::IntrinsicBase *  cam = sfm_data.GetIntrinsics().find(view->getIntrinsicId())->second.get();
-      const cameras::Pinhole_Intrinsic * intrinsicPtr = dynamic_cast< const cameras::Pinhole_Intrinsic * >(cam);
+      const camera::IntrinsicBase *  cam = sfm_data.GetIntrinsics().find(view->getIntrinsicId())->second.get();
+      const camera::Pinhole * intrinsicPtr = dynamic_cast< const camera::Pinhole * >(cam);
       const Vec2 principal_point = intrinsicPtr->principal_point();
 
       // get normalized feature

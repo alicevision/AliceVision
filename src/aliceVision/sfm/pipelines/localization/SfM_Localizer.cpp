@@ -30,7 +30,7 @@ struct ResectionSquaredResidualError
 bool SfM_Localizer::Localize
 (
   const Pair & image_size,
-  const cameras::IntrinsicBase * optional_intrinsics,
+  const camera::IntrinsicBase * optional_intrinsics,
   Image_Localizer_Match_Data & resection_data,
   geometry::Pose3 & pose,
   robust::EROBUST_ESTIMATOR estimator
@@ -49,7 +49,7 @@ bool SfM_Localizer::Localize
     Square(resection_data.error_max);
 
   size_t MINIMUM_SAMPLES = 0;
-  const cameras::Pinhole_Intrinsic * pinhole_cam = dynamic_cast<const cameras::Pinhole_Intrinsic *>(optional_intrinsics);
+  const camera::Pinhole * pinhole_cam = dynamic_cast<const camera::Pinhole *>(optional_intrinsics);
   if (pinhole_cam == nullptr || !pinhole_cam->isValid())
   {
     //--
@@ -180,7 +180,7 @@ bool SfM_Localizer::Localize
 
 bool SfM_Localizer::RefinePose
 (
-  cameras::IntrinsicBase * intrinsics,
+  camera::IntrinsicBase * intrinsics,
   geometry::Pose3 & pose,
   const Image_Localizer_Match_Data & matching_data,
   bool b_refine_pose,
@@ -198,7 +198,7 @@ bool SfM_Localizer::RefinePose
   sfm_data.setPose(*view, pose);
 
   // intrinsic (the shared_ptr does not take the ownership, will not release the input pointer)
-  std::shared_ptr<cameras::IntrinsicBase> localIntrinsics(intrinsics->clone());
+  std::shared_ptr<camera::IntrinsicBase> localIntrinsics(intrinsics->clone());
   sfm_data.intrinsics[0] = localIntrinsics;
 
   // structure data (2D-3D correspondences)

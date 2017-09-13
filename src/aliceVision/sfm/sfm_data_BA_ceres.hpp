@@ -14,7 +14,7 @@ namespace sfm {
 
 /// Create the appropriate cost functor according the provided input camera intrinsic model
 ceres::CostFunction * IntrinsicsToCostFunction(
-  cameras::IntrinsicBase * intrinsic,
+  camera::IntrinsicBase * intrinsic,
   const Vec2 & observation);
 
 class Bundle_Adjustment_Ceres : public Bundle_Adjustment

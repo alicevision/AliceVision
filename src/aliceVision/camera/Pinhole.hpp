@@ -1,29 +1,28 @@
 // This file is part of the AliceVision project and is made available under
 // the terms of the MPL2 license (see the COPYING.md file).
 
-#ifndef ALICEVISION_CAMERA_PINHOLE_HPP
-#define ALICEVISION_CAMERA_PINHOLE_HPP
+#pragma once
 
 #include "aliceVision/numeric/numeric.h"
-#include "aliceVision/cameras/Camera_Common.hpp"
-#include "aliceVision/cameras/Camera_Intrinsics.hpp"
+#include "aliceVision/camera/cameraCommon.hpp"
+#include "aliceVision/camera/IntrinsicBase.hpp"
 #include "aliceVision/geometry/pose3.hpp"
 
 #include <vector>
 
 namespace aliceVision {
-namespace cameras {
+namespace camera {
 
 /// Define a classic Pinhole camera (store a K 3x3 matrix)
 ///  with intrinsic parameters defining the K calibration matrix
-class Pinhole_Intrinsic : public IntrinsicBase
+class Pinhole : public IntrinsicBase
 {
   protected:
     // Focal & principal point are embed into the calibration matrix K
     Mat3 _K, _Kinv;
 
   public:
-  Pinhole_Intrinsic(
+  Pinhole(
     unsigned int w, unsigned int h,
     const Mat3 K)
     :IntrinsicBase(w,h)
@@ -31,7 +30,7 @@ class Pinhole_Intrinsic : public IntrinsicBase
     _K = K;
     _Kinv = _K.inverse();
   }
-  Pinhole_Intrinsic(
+  Pinhole(
     unsigned int w = 0, unsigned int h = 0,
     double focal_length_pix = 0.0,
     double ppx = 0.0, double ppy = 0.0)
@@ -40,10 +39,10 @@ class Pinhole_Intrinsic : public IntrinsicBase
     setK(focal_length_pix, ppx, ppy);
   }
   
-  virtual ~Pinhole_Intrinsic() {}
+  virtual ~Pinhole() {}
 
-  virtual Pinhole_Intrinsic* clone() const { return new Pinhole_Intrinsic(*this); }
-  virtual void assign(const IntrinsicBase& other) { *this = dynamic_cast<const Pinhole_Intrinsic&>(other); }
+  virtual Pinhole* clone() const { return new Pinhole(*this); }
+  virtual void assign(const IntrinsicBase& other) { *this = dynamic_cast<const Pinhole&>(other); }
   
   virtual bool isValid() const { return focal() > 0 && IntrinsicBase::isValid(); }
   
@@ -152,13 +151,10 @@ class Pinhole_Intrinsic : public IntrinsicBase
   }
 };
 
-} // namespace cameras
+} // namespace camera
 } // namespace aliceVision
 
 #include <cereal/types/polymorphic.hpp>
 #include <cereal/types/vector.hpp>
 
-CEREAL_REGISTER_TYPE_WITH_NAME(aliceVision::cameras::Pinhole_Intrinsic, "pinhole");
-
-#endif // #ifndef ALICEVISION_CAMERA_PINHOLE_HPP
-
+CEREAL_REGISTER_TYPE_WITH_NAME(aliceVision::camera::Pinhole, "pinhole");

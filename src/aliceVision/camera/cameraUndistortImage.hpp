@@ -1,14 +1,13 @@
 // This file is part of the AliceVision project and is made available under
 // the terms of the MPL2 license (see the COPYING.md file).
 
-#ifndef ALICEVISION_CAMERA_UNDISTORT_IMAGE_HPP
-#define ALICEVISION_CAMERA_UNDISTORT_IMAGE_HPP
+#pragma once
 
 #include "aliceVision/image/image.hpp"
-#include <aliceVision/config.hpp>
+#include "aliceVision/config.hpp"
 
 namespace aliceVision {
-namespace cameras {
+namespace camera {
 
 /// Undistort an image according a given camera & it's distortion model
 template <typename Image>
@@ -41,8 +40,7 @@ void UndistortImage(
   }
 }
 
-} // namespace cameras
+} // namespace camera
 } // namespace aliceVision
 
-#endif // #ifndef ALICEVISION_CAMERA_UNDISTORT_IMAGE_HPP
 

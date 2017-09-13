@@ -17,7 +17,7 @@
 #include <iomanip>
 
 using namespace aliceVision;
-using namespace aliceVision::cameras;
+using namespace aliceVision::camera;
 using namespace aliceVision::geometry;
 using namespace aliceVision::image;
 using namespace aliceVision::sfm;
@@ -105,7 +105,7 @@ void retrieveSeedsPerView(
       int obsACamId = obsACamId_it->second;
       const View& viewA = *sfm_data.GetViews().at(obsA.first).get();
       const geometry::Pose3& poseA = sfm_data.GetPoses().at(viewA.getPoseId());
-      const Pinhole_Intrinsic * intrinsicsA = dynamic_cast<const Pinhole_Intrinsic*>(sfm_data.GetIntrinsics().at(viewA.getIntrinsicId()).get());
+      const Pinhole * intrinsicsA = dynamic_cast<const Pinhole*>(sfm_data.GetIntrinsics().at(viewA.getIntrinsicId()).get());
       
       for(const auto& obsB: landmark.observations)
       {
@@ -117,7 +117,7 @@ void retrieveSeedsPerView(
           continue; // this view cannot be exported to cmpmvs, so we skip the observation
         const View& viewB = *sfm_data.GetViews().at(obsB.first).get();
         const geometry::Pose3& poseB = sfm_data.GetPoses().at(viewB.getPoseId());
-        const Pinhole_Intrinsic * intrinsicsB = dynamic_cast<const Pinhole_Intrinsic*>(sfm_data.GetIntrinsics().at(viewB.getIntrinsicId()).get());
+        const Pinhole * intrinsicsB = dynamic_cast<const Pinhole*>(sfm_data.GetIntrinsics().at(viewB.getIntrinsicId()).get());
 
         const double angle = AngleBetweenRay(
           poseA, intrinsicsA, poseB, intrinsicsB, obsA.second.x, obsB.second.x);

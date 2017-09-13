@@ -451,7 +451,7 @@ int main(int argc, char** argv)
 #endif
   
   image::Image<unsigned char> imageGrey;
-  cameras::Pinhole_Intrinsic_Radial_K3 queryIntrinsics;
+  camera::PinholeRadialK3 queryIntrinsics;
   bool hasIntrinsics = false;
   
   std::size_t frameCounter = 0;

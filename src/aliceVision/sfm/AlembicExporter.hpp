@@ -6,7 +6,7 @@
 #include <aliceVision/sfm/sfm_data.hpp>
 #include <aliceVision/sfm/sfm_data_io.hpp>
 #include <aliceVision/geometry/pose3.hpp>
-#include <aliceVision/cameras/Camera_Pinhole.hpp>
+#include <aliceVision/camera/Pinhole.hpp>
 #include <aliceVision/types.hpp>
 
 #include <Alembic/Abc/OObject.h>
@@ -46,7 +46,7 @@ public:
                        IndexT rigPoseId,
                        const std::vector<View>& views,
                        const std::vector<std::string>& viewsImagePaths,
-                       const std::vector<cameras::Pinhole_Intrinsic*>& intrinsics,
+                       const std::vector<camera::Pinhole*>& intrinsics,
                        const geometry::Pose3& rigPose,
                        const std::vector<RigSubPose>& subPoses);
 
@@ -63,7 +63,7 @@ public:
   void appendCamera(const std::string& cameraName,
                     const View& view,
                     const std::string& viewImagePath,
-                    const cameras::Pinhole_Intrinsic* intrinsic,
+                    const camera::Pinhole* intrinsic,
                     const geometry::Pose3& pose);
   /**
    * @brief Add a single camera
@@ -78,7 +78,7 @@ public:
   void appendCamera(const std::string& cameraName,
                     const View& view,
                     const std::string& viewImagePath,
-                    const cameras::Pinhole_Intrinsic* intrinsic,
+                    const camera::Pinhole* intrinsic,
                     const geometry::Pose3& pose,
                     Alembic::Abc::OObject& parent);
 
@@ -100,7 +100,7 @@ public:
    * @param[in] sensorWidth_mm Width of the sensor in millimeters
    */
   void addCameraKeyframe(const geometry::Pose3 &pose,
-                           const cameras::Pinhole_Intrinsic *cam,
+                           const camera::Pinhole *cam,
                            const std::string &imagePath,
                            const IndexT id_view,
                            const IndexT id_intrinsic,

@@ -413,7 +413,7 @@ int main(int argc, char** argv)
     //pointsFile = inputFolder + "/points.txt";
 
     image::Image<unsigned char> imageGrey;
-    cameras::Pinhole_Intrinsic_Radial_K3 queryIntrinsics;
+    camera::PinholeRadialK3 queryIntrinsics;
     bool hasIntrinsics = false;
 
     std::size_t iInputFrame = 0;

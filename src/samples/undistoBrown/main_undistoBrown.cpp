@@ -2,7 +2,7 @@
 // the terms of the MPL2 license (see the COPYING.md file).
 
 #include "aliceVision/image/image.hpp"
-#include "aliceVision/cameras/cameras.hpp"
+#include "aliceVision/camera/camera.hpp"
 
 #include "dependencies/cmdLine/cmdLine.h"
 #include "dependencies/stlplus3/filesystemSimplified/file_system.hpp"
@@ -12,7 +12,7 @@
 #include <iostream>
 
 using namespace aliceVision;
-using namespace aliceVision::cameras;
+using namespace aliceVision::camera;
 using namespace aliceVision::image;
 using namespace std;
 
@@ -88,7 +88,7 @@ int main(int argc, char **argv)
     const string sInFileName = stlplus::create_filespec(sPath, stlplus::basename_part(vec_fileNames[j]));
     const int res = ReadImage(sInFileName.c_str(), &tmp_vec, &w, &h, &depth);
 
-    const Pinhole_Intrinsic_Radial_K3 cam(w, h, f, c(0), c(1), k(0), k(1), k(2));
+    const PinholeRadialK3 cam(w, h, f, c(0), c(1), k(0), k(1), k(2));
 
     if (res == 1)
     {

@@ -34,9 +34,9 @@ inline Vec2 getFeaturePosition(const features::PointFeatures& features, std::siz
 template<typename MatT, class FeatOrRegions>
 void fillMatricesWithUndistortFeaturesMatches(
   const matching::IndMatches & putativeMatches,
-  const cameras::IntrinsicBase * cam_I,
+  const camera::IntrinsicBase * cam_I,
   const FeatOrRegions & feature_I,
-  const cameras::IntrinsicBase * cam_J,
+  const camera::IntrinsicBase * cam_J,
   const FeatOrRegions & feature_J,
   MatT & x_I, MatT & x_J)
 {
@@ -93,8 +93,8 @@ void fillMatricesWithUndistortFeaturesMatches(
 template<typename MatT, class MapFeatOrRegionPerDesc>
 void MatchesPairToMat(
   const matching::MatchesPerDescType & putativeMatchesPerType,
-  const cameras::IntrinsicBase * cam_I,
-  const cameras::IntrinsicBase * cam_J,
+  const camera::IntrinsicBase * cam_I,
+  const camera::IntrinsicBase * cam_J,
   const MapFeatOrRegionPerDesc& features_I,
   const MapFeatOrRegionPerDesc& features_J,
   const std::vector<features::EImageDescriberType>& descTypes,
@@ -156,8 +156,8 @@ void MatchesPairToMat(
   const sfm::View * view_J = sfmData->views.at(pairIndex.second).get();
 
   // Retrieve corresponding pair camera intrinsic if any
-  const cameras::IntrinsicBase * cam_I = sfmData->GetIntrinsicPtr(view_I->getIntrinsicId());
-  const cameras::IntrinsicBase * cam_J = sfmData->GetIntrinsicPtr(view_J->getIntrinsicId());
+  const camera::IntrinsicBase * cam_I = sfmData->GetIntrinsicPtr(view_I->getIntrinsicId());
+  const camera::IntrinsicBase * cam_J = sfmData->GetIntrinsicPtr(view_J->getIntrinsicId());
 
   MatchesPairToMat(
       putativeMatchesPerType,

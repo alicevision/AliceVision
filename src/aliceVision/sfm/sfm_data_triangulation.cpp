@@ -16,7 +16,7 @@ namespace aliceVision {
 namespace sfm {
 
 using namespace aliceVision::geometry;
-using namespace aliceVision::cameras;
+using namespace aliceVision::camera;
 
 SfM_Data_Structure_Computation_Basis::SfM_Data_Structure_Computation_Basis(bool bConsoleVerbose)
   :_bConsoleVerbose(bConsoleVerbose)

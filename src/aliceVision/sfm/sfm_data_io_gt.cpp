@@ -13,7 +13,7 @@
 namespace aliceVision {
 namespace sfm {
 
-bool read_aliceVision_Camera(const std::string & camName, cameras::Pinhole_Intrinsic & cam, geometry::Pose3 & pose)
+bool read_aliceVision_Camera(const std::string & camName, camera::Pinhole & cam, geometry::Pose3 & pose)
 {
   std::vector<double> val;
   if (stlplus::extension_part(camName) == "bin")
@@ -66,13 +66,13 @@ bool read_aliceVision_Camera(const std::string & camName, cameras::Pinhole_Intri
   Mat3 K, R;
   Vec3 t;
   KRt_From_P(P, &K, &R, &t);
-  cam = cameras::Pinhole_Intrinsic(0,0,K);
+  cam = camera::Pinhole(0,0,K);
   // K.transpose() is applied to give [R t] to the constructor instead of P = K [R t]
   pose = geometry::Pose3(K.transpose() * P);
   return true;
 }
 
-bool read_Strecha_Camera(const std::string & camName, cameras::Pinhole_Intrinsic & cam, geometry::Pose3 & pose)
+bool read_Strecha_Camera(const std::string & camName, camera::Pinhole & cam, geometry::Pose3 & pose)
 {
   std::ifstream ifs;
   ifs.open( camName.c_str(), std::ifstream::in);
@@ -104,7 +104,7 @@ bool read_Strecha_Camera(const std::string & camName, cameras::Pinhole_Intrinsic
 
   Vec3 C (val[21], val[22], val[23]);
   // R need to be transposed
-  cam = cameras::Pinhole_Intrinsic(0,0,K);
+  cam = camera::Pinhole(0,0,K);
   cam.setWidth(val[24]);
   cam.setHeight(val[25]);
   pose = geometry::Pose3(R.transpose(), C);
@@ -129,7 +129,7 @@ bool readGt(const std::string & sRootPath, SfM_Data & sfm_data, bool useUID)
   }
 
   // Switch between case to choose the file reader according to the file types in GT path
-  bool (*fcnReadCamPtr)(const std::string &, cameras::Pinhole_Intrinsic &, geometry::Pose3&);
+  bool (*fcnReadCamPtr)(const std::string &, camera::Pinhole &, geometry::Pose3&);
   std::string suffix;
   if (!stlplus::folder_wildcard(sGTPath, "*.bin", true, true).empty())
   {
@@ -165,7 +165,7 @@ bool readGt(const std::string & sRootPath, SfM_Data & sfm_data, bool useUID)
     iter != vec_camfilenames.end(); ++iter, ++index)
   {
     geometry::Pose3 pose;
-    std::shared_ptr<cameras::Pinhole_Intrinsic> pinholeIntrinsic = std::make_shared<cameras::Pinhole_Intrinsic>();
+    std::shared_ptr<camera::Pinhole> pinholeIntrinsic = std::make_shared<camera::Pinhole>();
     bool loaded = fcnReadCamPtr(stlplus::create_filespec(sGTPath, *iter), *pinholeIntrinsic.get(), pose);
     if (!loaded)
     {

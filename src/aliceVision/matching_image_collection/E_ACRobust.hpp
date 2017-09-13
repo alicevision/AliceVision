@@ -58,8 +58,8 @@ struct GeometricFilter_EMatrix_AC : public GeometricFilterMatrix
     const sfm::View * view_J = sfmData->views.at(jIndex).get();
 
     // Check that valid cameras can be retrieved for the pair of views
-    const cameras::IntrinsicBase * cam_I = sfmData->GetIntrinsicPtr(view_I->getIntrinsicId());
-    const cameras::IntrinsicBase * cam_J = sfmData->GetIntrinsicPtr(view_J->getIntrinsicId());
+    const camera::IntrinsicBase * cam_I = sfmData->GetIntrinsicPtr(view_I->getIntrinsicId());
+    const camera::IntrinsicBase * cam_J = sfmData->GetIntrinsicPtr(view_J->getIntrinsicId());
 
     if (!cam_I || !cam_J)
       return EstimationStatus(false, false);
@@ -78,8 +78,8 @@ struct GeometricFilter_EMatrix_AC : public GeometricFilterMatrix
         Mat3>
         KernelType;
 
-    const cameras::Pinhole_Intrinsic * ptrPinhole_I = (const cameras::Pinhole_Intrinsic*)(cam_I);
-    const cameras::Pinhole_Intrinsic * ptrPinhole_J = (const cameras::Pinhole_Intrinsic*)(cam_J);
+    const camera::Pinhole * ptrPinhole_I = (const camera::Pinhole*)(cam_I);
+    const camera::Pinhole * ptrPinhole_J = (const camera::Pinhole*)(cam_J);
 
     KernelType kernel(
       xI, sfmData->GetViews().at(iIndex)->getWidth(), sfmData->GetViews().at(iIndex)->getHeight(),
@@ -137,10 +137,10 @@ struct GeometricFilter_EMatrix_AC : public GeometricFilterMatrix
       const sfm::View * view_J = sfmData->views.at(viewId_J).get();
 
       // Check that valid cameras can be retrieved for the pair of views
-      const cameras::IntrinsicBase * cam_I =
+      const camera::IntrinsicBase * cam_I =
         sfmData->GetIntrinsics().count(view_I->getIntrinsicId()) ?
           sfmData->GetIntrinsics().at(view_I->getIntrinsicId()).get() : nullptr;
-      const cameras::IntrinsicBase * cam_J =
+      const camera::IntrinsicBase * cam_J =
         sfmData->GetIntrinsics().count(view_J->getIntrinsicId()) ?
           sfmData->GetIntrinsics().at(view_J->getIntrinsicId()).get() : nullptr;
 
@@ -150,8 +150,8 @@ struct GeometricFilter_EMatrix_AC : public GeometricFilterMatrix
       if ( !isPinhole(cam_I->getType()) || !isPinhole(cam_J->getType()))
         return false;
 
-      const cameras::Pinhole_Intrinsic * ptrPinhole_I = (const cameras::Pinhole_Intrinsic*)(cam_I);
-      const cameras::Pinhole_Intrinsic * ptrPinhole_J = (const cameras::Pinhole_Intrinsic*)(cam_J);
+      const camera::Pinhole * ptrPinhole_I = (const camera::Pinhole*)(cam_I);
+      const camera::Pinhole * ptrPinhole_J = (const camera::Pinhole*)(cam_J);
 
       Mat3 F;
       FundamentalFromEssential(m_E, ptrPinhole_I->K(), ptrPinhole_J->K(), &F);

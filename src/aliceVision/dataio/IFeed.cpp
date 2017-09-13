@@ -20,7 +20,7 @@ namespace dataio{
 // double #k0
 // double #k1
 // double #k2
-void readCalibrationFromFile(const std::string &filename, cameras::Pinhole_Intrinsic_Radial_K3 &camIntrinsics)
+void readCalibrationFromFile(const std::string &filename, camera::PinholeRadialK3 &camIntrinsics)
 {
   std::ifstream fs(filename, std::ios::in);
   if(!fs.is_open())
@@ -39,7 +39,7 @@ void readCalibrationFromFile(const std::string &filename, cameras::Pinhole_Intri
   {
     fs >> params[i];
   }
-  camIntrinsics = cameras::Pinhole_Intrinsic_Radial_K3(width, height, 
+  camIntrinsics = camera::PinholeRadialK3(width, height, 
                                   params[0], params[1], params[2],
                                   params[3], params[4], params[5]);
   

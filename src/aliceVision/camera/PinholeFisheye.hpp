@@ -1,16 +1,15 @@
 // This file is part of the AliceVision project and is made available under
 // the terms of the MPL2 license (see the COPYING.md file).
 
-#ifndef ALICEVISION_CAMERA_PINHOLE_FISHEYE_HPP
-#define ALICEVISION_CAMERA_PINHOLE_FISHEYE_HPP
+#pragma once
 
 #include "aliceVision/numeric/numeric.h"
-#include "aliceVision/cameras/Camera_Common.hpp"
+#include "aliceVision/camera/cameraCommon.hpp"
 
 #include <vector>
 
 namespace aliceVision {
-namespace cameras {
+namespace camera {
 
 /**
  * Implement a simple Fish-eye camera model
@@ -18,7 +17,7 @@ namespace cameras {
  * This is an adaptation of the Fisheye distortion model implemented in OpenCV:
  * https://github.com/Itseez/opencv/blob/master/modules/calib3d/src/fisheye.cpp
  */
-class Pinhole_Intrinsic_Fisheye : public Pinhole_Intrinsic
+class PinholeFisheye : public Pinhole
 {
   protected:
   // center of distortion is applied by the Intrinsics class
@@ -27,17 +26,17 @@ class Pinhole_Intrinsic_Fisheye : public Pinhole_Intrinsic
 
   public:
 
-  Pinhole_Intrinsic_Fisheye(
+  PinholeFisheye(
     int w = 0, int h = 0,
     double focal = 0.0, double ppx = 0, double ppy = 0,
     double k1 = 0.0, double k2 = 0.0, double k3 = 0.0, double k4 = 0.0)
-        :Pinhole_Intrinsic(w, h, focal, ppx, ppy)
+        :Pinhole(w, h, focal, ppx, ppy)
   {
     _distortionParams = {k1, k2, k3, k4};
   }
 
-  Pinhole_Intrinsic_Fisheye* clone() const { return new Pinhole_Intrinsic_Fisheye(*this); }
-  void assign(const IntrinsicBase& other) { *this = dynamic_cast<const Pinhole_Intrinsic_Fisheye&>(other); }
+  PinholeFisheye* clone() const { return new PinholeFisheye(*this); }
+  void assign(const IntrinsicBase& other) { *this = dynamic_cast<const PinholeFisheye&>(other); }
 
   EINTRINSIC getType() const { return PINHOLE_CAMERA_FISHEYE; }
 
@@ -93,7 +92,7 @@ class Pinhole_Intrinsic_Fisheye : public Pinhole_Intrinsic
   // Data wrapper for non linear optimization (get data)
   virtual std::vector<double> getParams() const
   {
-    std::vector<double> params = Pinhole_Intrinsic::getParams();
+    std::vector<double> params = Pinhole::getParams();
     params.push_back(_distortionParams[0]);
     params.push_back(_distortionParams[1]);
     params.push_back(_distortionParams[2]);
@@ -134,7 +133,7 @@ class Pinhole_Intrinsic_Fisheye : public Pinhole_Intrinsic
   template <class Archive>
   void save( Archive & ar) const
   {
-    Pinhole_Intrinsic::save(ar);
+    Pinhole::save(ar);
     ar(cereal::make_nvp("fisheye4", _distortionParams));
   }
 
@@ -142,18 +141,16 @@ class Pinhole_Intrinsic_Fisheye : public Pinhole_Intrinsic
   template <class Archive>
   void load( Archive & ar)
   {
-    Pinhole_Intrinsic::load(ar);
+    Pinhole::load(ar);
     ar(cereal::make_nvp("fisheye4", _distortionParams));
   }
 };
 
 
-} // namespace cameras
+} // namespace camera
 } // namespace aliceVision
 
 #include <cereal/types/polymorphic.hpp>
 #include <cereal/types/vector.hpp>
 
-CEREAL_REGISTER_TYPE_WITH_NAME(aliceVision::cameras::Pinhole_Intrinsic_Fisheye, "fisheye4");
-
-#endif // #ifndef ALICEVISION_CAMERA_PINHOLE_FISHEYE_HPP
+CEREAL_REGISTER_TYPE_WITH_NAME(aliceVision::camera::PinholeFisheye, "fisheye4");

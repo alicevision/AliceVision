@@ -39,7 +39,7 @@ namespace aliceVision {
 namespace sfm {
 
 using namespace aliceVision::geometry;
-using namespace aliceVision::cameras;
+using namespace aliceVision::camera;
 
 /**
  * @brief Compute indexes of all features in a fixed size pyramid grid.
@@ -688,8 +688,8 @@ bool SequentialSfMReconstructionEngine::getBestInitialImagePairs(std::vector<Pai
     const View * view_J = _sfm_data.GetViews().at(J).get();
     const Intrinsics::const_iterator iterIntrinsic_J = _sfm_data.GetIntrinsics().find(view_J->getIntrinsicId());
 
-    const Pinhole_Intrinsic * cam_I = dynamic_cast<const Pinhole_Intrinsic*>(iterIntrinsic_I->second.get());
-    const Pinhole_Intrinsic * cam_J = dynamic_cast<const Pinhole_Intrinsic*>(iterIntrinsic_J->second.get());
+    const Pinhole * cam_I = dynamic_cast<const Pinhole*>(iterIntrinsic_I->second.get());
+    const Pinhole * cam_J = dynamic_cast<const Pinhole*>(iterIntrinsic_J->second.get());
     if (cam_I == nullptr || cam_J == nullptr)
       continue;
 
@@ -824,8 +824,8 @@ bool SequentialSfMReconstructionEngine::MakeInitialPair3D(const Pair& current_pa
     return false;
   }
 
-  const Pinhole_Intrinsic * camI = dynamic_cast<const Pinhole_Intrinsic*>(iterIntrinsicI->second.get());
-  const Pinhole_Intrinsic * camJ = dynamic_cast<const Pinhole_Intrinsic*>(iterIntrinsicJ->second.get());
+  const Pinhole * camI = dynamic_cast<const Pinhole*>(iterIntrinsicI->second.get());
+  const Pinhole * camJ = dynamic_cast<const Pinhole*>(iterIntrinsicJ->second.get());
   if (camI == nullptr || camJ == nullptr || !camI->isValid() || !camJ->isValid())
   {
     ALICEVISION_LOG_WARNING("Can't find initial image pair intrinsics (NULL ptr): " << viewI->getIntrinsicId() << ", "  << viewJ->getIntrinsicId());
@@ -1323,7 +1323,7 @@ bool SequentialSfMReconstructionEngine::Resection(const std::size_t viewIndex)
 
   // B. Look if intrinsic data is known or not
   const View * view_I = _sfm_data.GetViews().at(viewIndex).get();
-  std::shared_ptr<cameras::IntrinsicBase> optionalIntrinsic = _sfm_data.GetIntrinsicSharedPtr(view_I->getIntrinsicId());
+  std::shared_ptr<camera::IntrinsicBase> optionalIntrinsic = _sfm_data.GetIntrinsicSharedPtr(view_I->getIntrinsicId());
 
   std::size_t cpt = 0;
   std::set<std::size_t>::const_iterator iterTrackId = set_trackIdForResection.begin();
@@ -1382,7 +1382,7 @@ bool SequentialSfMReconstructionEngine::Resection(const std::size_t viewIndex)
   // D. Refine the pose of the found camera.
   // We use a local scene with only the 3D points and the new camera.
   {
-    cameras::Pinhole_Intrinsic * pinhole_cam = dynamic_cast<cameras::Pinhole_Intrinsic *>(optionalIntrinsic.get());
+    camera::Pinhole * pinhole_cam = dynamic_cast<camera::Pinhole *>(optionalIntrinsic.get());
     const bool b_new_intrinsic = (optionalIntrinsic == nullptr) || (pinhole_cam && !pinhole_cam->isValid());
     // A valid pose has been found (try to refine it):
     // If no valid intrinsic as input:

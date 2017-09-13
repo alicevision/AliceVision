@@ -8,7 +8,7 @@
 #include "aliceVision/features/RegionsPerView.hpp"
 
 #include "aliceVision/features/regions.hpp"
-#include "aliceVision/cameras/Camera_Intrinsics.hpp"
+#include "aliceVision/camera/IntrinsicBase.hpp"
 
 #include <vector>
 
@@ -182,9 +182,9 @@ typename ErrorArg // The metric to compute distance to the model
 >
 void GuidedMatching(
   const ModelArg & mod, // The model
-  const cameras::IntrinsicBase * camL, // Optional camera (in order to undistord on the fly feature positions, can be NULL)
+  const camera::IntrinsicBase * camL, // Optional camera (in order to undistord on the fly feature positions, can be NULL)
   const features::Regions & lRegions,  // regions (point features & corresponding descriptors)
-  const cameras::IntrinsicBase * camR, // Optional camera (in order to undistord on the fly feature positions, can be NULL)
+  const camera::IntrinsicBase * camR, // Optional camera (in order to undistord on the fly feature positions, can be NULL)
   const features::Regions & rRegions,  // regions (point features & corresponding descriptors)
   double errorTh,       // Maximal authorized error threshold
   double distRatio,     // Maximal authorized distance ratio
@@ -260,9 +260,9 @@ template<
   >
 void GuidedMatching(
   const ModelArg & mod, // The model
-  const cameras::IntrinsicBase * camL, // Optional camera (in order to undistord on the fly feature positions, can be NULL)
+  const camera::IntrinsicBase * camL, // Optional camera (in order to undistord on the fly feature positions, can be NULL)
   const features::MapRegionsPerDesc & lRegions,  // regions (point features & corresponding descriptors)
-  const cameras::IntrinsicBase * camR, // Optional camera (in order to undistord on the fly feature positions, can be NULL)
+  const camera::IntrinsicBase * camR, // Optional camera (in order to undistord on the fly feature positions, can be NULL)
   const features::MapRegionsPerDesc & rRegions,  // regions (point features & corresponding descriptors)
   double errorTh,       // Maximal authorized error threshold
   double distRatio,     // Maximal authorized distance ratio
@@ -345,9 +345,9 @@ template<typename ErrorArg> // The used model type
 void GuidedMatching_Fundamental_Fast(
   const Mat3 & FMat,    // The fundamental matrix
   const Vec3 & epipole2,// Epipole2 (camera center1 in image plane2; must not be normalized)
-  const cameras::IntrinsicBase * camL, // Optional camera (in order to undistord on the fly feature positions, can be NULL)
+  const camera::IntrinsicBase * camL, // Optional camera (in order to undistord on the fly feature positions, can be NULL)
   const features::Regions & lRegions,  // regions (point features & corresponding descriptors)
-  const cameras::IntrinsicBase * camR, // Optional camera (in order to undistord on the fly feature positions, can be NULL)
+  const camera::IntrinsicBase * camR, // Optional camera (in order to undistord on the fly feature positions, can be NULL)
   const features::Regions & rRegions,  // regions (point features & corresponding descriptors)
   const int widthR, const int heightR,
   double errorTh,       // Maximal authorized error threshold (consider it's a square threshold)

@@ -2,8 +2,8 @@
 // the terms of the MPL2 license (see the COPYING.md file).
 
 #include <aliceVision/dataio/FeedProvider.hpp>
-#include <aliceVision/cameras/Camera_undistort_image.hpp>
-#include <aliceVision/cameras/Camera_Pinhole_Radial.hpp>
+#include <aliceVision/camera/cameraUndistortImage.hpp>
+#include <aliceVision/camera/PinholeRadial.hpp>
 #include <aliceVision/image/image_io.hpp>
 #include <aliceVision/calibration/patternDetect.hpp>
 #include <aliceVision/calibration/bestImages.hpp>
@@ -159,7 +159,7 @@ int main(int argc, char** argv)
     return EXIT_FAILURE;
   }
   aliceVision::image::Image<unsigned char> imageGrey;
-  aliceVision::cameras::Pinhole_Intrinsic_Radial_K3 queryIntrinsics;
+  aliceVision::camera::PinholeRadialK3 queryIntrinsics;
   bool hasIntrinsics = false;
   std::string currentImgName;
   std::size_t iInputFrame = 0;

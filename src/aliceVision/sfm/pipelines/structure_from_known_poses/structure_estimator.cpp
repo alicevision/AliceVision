@@ -18,7 +18,7 @@
 namespace aliceVision {
 namespace sfm {
 
-using namespace cameras;
+using namespace camera;
 using namespace features;
 using namespace geometry;
 

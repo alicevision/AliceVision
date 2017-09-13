@@ -87,7 +87,7 @@ public:
   LocalizationResult(const sfm::Image_Localizer_Match_Data & matchData,
                      const std::vector<IndMatch3D2D> & indMatch3D2D,
                      const geometry::Pose3 & pose,
-                     const cameras::Pinhole_Intrinsic_Radial_K3 & intrinsics,
+                     const camera::PinholeRadialK3 & intrinsics,
                      const std::vector<voctree::DocMatch>& matchedImages,
                      bool isValid = true);
   
@@ -137,12 +137,12 @@ public:
     _pose = pose;
   }
 
-  const cameras::Pinhole_Intrinsic_Radial_K3 & getIntrinsics() const
+  const camera::PinholeRadialK3 & getIntrinsics() const
   {
     return _intrinsics;
   }
 
-  cameras::Pinhole_Intrinsic_Radial_K3 & getIntrinsics()
+  camera::PinholeRadialK3 & getIntrinsics()
   {
     return _intrinsics;
   }
@@ -261,7 +261,7 @@ private:
   geometry::Pose3 _pose; 
   
   /// The camera intrinsics associated 
-  cameras::Pinhole_Intrinsic_Radial_K3 _intrinsics;
+  camera::PinholeRadialK3 _intrinsics;
 
   /// the database images that have been used for matching
   std::vector<voctree::DocMatch> _matchedImages;

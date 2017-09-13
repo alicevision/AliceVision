@@ -1,18 +1,19 @@
 // This file is part of the AliceVision project and is made available under
 // the terms of the MPL2 license (see the COPYING.md file).
 
-#ifndef ALICEVISION_CAMERA_INTRINSICS_H
-#define ALICEVISION_CAMERA_INTRINSICS_H
+#pragma once
 
 #include "aliceVision/numeric/numeric.h"
-#include "aliceVision/cameras/Camera_Common.hpp"
+#include "aliceVision/camera/cameraCommon.hpp"
 #include "aliceVision/geometry/pose3.hpp"
 #include "aliceVision/stl/hash.hpp"
+
+#include <cereal/cereal.hpp>
+
 #include <vector>
-#include <cereal/cereal.hpp> // Serialization
 
 namespace aliceVision {
-namespace cameras {
+namespace camera {
 
 /// Basis class for all intrinsic parameters of a camera
 /// Store the image size & define all basis optical modelization of a camera
@@ -201,8 +202,5 @@ static inline double AngleBetweenRay(
   return R2D(acos(clamp(dotAngle/mag, -1.0 + 1.e-8, 1.0 - 1.e-8)));
 }
 
-} // namespace cameras
+} // namespace camera
 } // namespace aliceVision
-
-#endif // #ifndef ALICEVISION_CAMERA_INTRINSICS_H
-
