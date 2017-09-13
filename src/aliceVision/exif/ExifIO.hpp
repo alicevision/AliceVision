@@ -10,7 +10,7 @@
 namespace aliceVision {
 namespace exif  {
 
-class Exif_IO
+class ExifIO
 {
   public:
     virtual size_t getWidth() const = 0;
@@ -54,7 +54,7 @@ class Exif_IO
     virtual std::string getSubSecTimeOriginal() const = 0;
 };
 
-std::size_t computeUID(const Exif_IO& exifReader, const std::string& imageFilename);
+std::size_t computeUID(const ExifIO& exifReader, const std::string& imageFilename);
 
 } // namespace exif
 } // namespace aliceVision

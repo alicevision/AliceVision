@@ -1,7 +1,7 @@
 // This file is part of the AliceVision project and is made available under
 // the terms of the MPL2 license (see the COPYING.md file).
 
-#include "aliceVision/exif/exif_IO_EasyExif.hpp"
+#include "aliceVision/exif/EasyExifIO.hpp"
 using namespace aliceVision::exif;
 
 #include "dependencies/cmdLine/cmdLine.h"
@@ -31,7 +31,7 @@ int main(int argc, char **argv)
             << argv[0] << std::endl
             << "--imafile " << sInputImage << std::endl;
   
-  std::unique_ptr<Exif_IO> exif_io( new Exif_IO_EasyExif( sInputImage ) );
+  std::unique_ptr<ExifIO> exif_io( new EasyExifIO( sInputImage ) );
 
   std::cout << "width : " << exif_io->getWidth() << std::endl;
   std::cout << "height : " << exif_io->getHeight() << std::endl;

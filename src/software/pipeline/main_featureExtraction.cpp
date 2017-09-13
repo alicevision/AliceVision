@@ -6,7 +6,7 @@
 #include "aliceVision/sfm/sfm.hpp"
 #include "aliceVision/features/ImageDescriberCommon.hpp"
 #include "aliceVision/features/features.hpp"
-#include "aliceVision/exif/exif_IO_EasyExif.hpp"
+#include "aliceVision/exif/EasyExifIO.hpp"
 #include "aliceVision/stl/split.hpp"
 #include "aliceVision/system/timer.hpp"
 
@@ -343,7 +343,7 @@ int main(int argc, char **argv)
     
     for(const auto &imageName : vec_images)
     {
-      exif::Exif_IO_EasyExif exifReader(imageName);
+      exif::EasyExifIO exifReader(imageName);
 
       const std::size_t uid = exif::computeUID(exifReader, imageName);
 

@@ -4,7 +4,7 @@
 #include "KeyframeSelector.hpp"
 #include <aliceVision/image/image.hpp>
 #include <aliceVision/features/sift/SIFT_describer.hpp>
-#include <aliceVision/exif/sensor_width_database/ParseDatabase.hpp>
+#include <aliceVision/exif/sensorWidthDatabase/parseDatabase.hpp>
 #include <aliceVision/system/Logger.hpp>
 
 #include <tuple>

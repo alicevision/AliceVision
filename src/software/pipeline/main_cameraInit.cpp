@@ -3,8 +3,8 @@
 
 #include <aliceVision/image/image.hpp>
 #include <aliceVision/sfm/sfm.hpp>
-#include <aliceVision/exif/exif_IO_EasyExif.hpp>
-#include <aliceVision/exif/sensor_width_database/ParseDatabase.hpp>
+#include <aliceVision/exif/EasyExifIO.hpp>
+#include <aliceVision/exif/sensorWidthDatabase/parseDatabase.hpp>
 #include <aliceVision/stl/split.hpp>
 #include <aliceVision/system/Logger.hpp>
 
@@ -240,7 +240,7 @@ public:
     _ppx = width / 2.0;
     _ppy = height / 2.0;
 
-    Exif_IO_EasyExif exifReader;
+    EasyExifIO exifReader;
     exifReader.open(imageAbsPath);
 
     _cameraBrand = exifReader.getBrand();
@@ -977,7 +977,7 @@ int main(int argc, char **argv)
         // change viewId if user wants to use UID
         if(useUid)
         {
-          Exif_IO_EasyExif exifReader;
+          EasyExifIO exifReader;
           exifReader.open(imageAbsPath);
 
           viewId = (IndexT)computeUID(exifReader, imagePath);

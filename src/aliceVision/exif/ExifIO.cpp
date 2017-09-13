@@ -1,7 +1,7 @@
 // This file is part of the AliceVision project and is made available under
 // the terms of the MPL2 license (see the COPYING.md file).
 
-#include "exif_IO.hpp"
+#include "ExifIO.hpp"
 
 #include "aliceVision/stl/hash.hpp"
 
@@ -10,7 +10,7 @@
 namespace aliceVision {
 namespace exif  {
 
-std::size_t computeUID(const Exif_IO& exifReader, const std::string& imageFilename)
+std::size_t computeUID(const ExifIO& exifReader, const std::string& imageFilename)
 {
   std::size_t uid = 0;
 

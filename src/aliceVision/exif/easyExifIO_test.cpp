@@ -1,7 +1,7 @@
 // This file is part of the AliceVision project and is made available under
 // the terms of the MPL2 license (see the COPYING.md file).
 
-#include "exif_IO_EasyExif.hpp"
+#include "EasyExifIO.hpp"
 #include <aliceVision/system/Logger.hpp>
 
 #include "testing/testing.h"
@@ -20,16 +20,16 @@ const std::string sImg =
   stlplus::folder_up(string(THIS_SOURCE_DIR))))
     + "/samples/imageData/exifTest/100_7100.JPG";
 
-TEST(Matching, Exif_IO_easyexif_ReadData_invalidFile)
+TEST(Matching, ExifIO_easyexif_ReadData_invalidFile)
 {
-  std::unique_ptr<Exif_IO> exif_io ( new Exif_IO_EasyExif( "tmp.jpg" ) );
+  std::unique_ptr<ExifIO> exif_io ( new EasyExifIO( "tmp.jpg" ) );
 
   EXPECT_FALSE(exif_io->doesHaveExifInfo());
 }
 
-TEST(Matching, Exif_IO_easyexif_ReadData)
+TEST(Matching, ExifIO_easyexif_ReadData)
 {
-  std::unique_ptr<Exif_IO> exif_io(new Exif_IO_EasyExif(sImg));
+  std::unique_ptr<ExifIO> exif_io(new EasyExifIO(sImg));
 
   ALICEVISION_LOG_DEBUG("Read Metadata of file: " << sImg);
 

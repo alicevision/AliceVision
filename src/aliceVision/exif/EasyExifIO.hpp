@@ -4,7 +4,7 @@
 #ifndef EXIF_IO_EASYEXIF_HPP
 #define EXIF_IO_EASYEXIF_HPP
 
-#include "aliceVision/exif/exif_IO.hpp"
+#include "aliceVision/exif/ExifIO.hpp"
 #include "dependencies/easyexif/exif.h"
 
 #include <fstream>
@@ -29,14 +29,14 @@ inline std::string trim_copy(const std::string& s)
   return res;
 }
 
-class Exif_IO_EasyExif : public Exif_IO
+class EasyExifIO : public ExifIO
 {
   public:
-    Exif_IO_EasyExif(): bHaveExifInfo_(false)
+    EasyExifIO(): bHaveExifInfo_(false)
     {
     }
 
-    Exif_IO_EasyExif( const std::string & sFileName ): bHaveExifInfo_(false)
+    EasyExifIO( const std::string & sFileName ): bHaveExifInfo_(false)
     {
       open(sFileName);
     }

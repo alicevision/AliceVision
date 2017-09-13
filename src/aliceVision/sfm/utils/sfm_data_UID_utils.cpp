@@ -2,7 +2,7 @@
 // the terms of the MPL2 license (see the COPYING.md file).
 
 #include "sfm_data_UID_utils.hpp"
-#include "aliceVision/exif/exif_IO_EasyExif.hpp"
+#include "aliceVision/exif/EasyExifIO.hpp"
 
 namespace aliceVision {
 namespace sfm {
@@ -80,7 +80,7 @@ void regenerateViewUIDs(Views &views, std::map<std::size_t, std::size_t> &oldIdT
     const View& currentView = *iter.second.get();
     const auto &imageName = currentView.getImagePath();
     
-    exif::Exif_IO_EasyExif exifReader(imageName);
+    exif::EasyExifIO exifReader(imageName);
 
     // compute the view UID
     const std::size_t uid = exif::computeUID(exifReader, imageName);

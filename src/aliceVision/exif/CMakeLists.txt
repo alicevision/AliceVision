@@ -4,15 +4,15 @@ project(exif)
 
 # Headers
 set(exif_files_headers
-  exif_IO_EasyExif.hpp
-  exif_IO.hpp
-  sensor_width_database/datasheet.hpp
-  sensor_width_database/ParseDatabase.hpp
+  EasyExifIO.hpp
+  ExifIO.hpp
+  sensorWidthDatabase/Datasheet.hpp
+  sensorWidthDatabase/parseDatabase.hpp
 )
 
 # Sources
 set(exif_files_sources
-  exif_IO.cpp
+  ExifIO.cpp
 )
 
 set_source_files_properties(${exif_files_sources} PROPERTIES LANGUAGE CXX)
@@ -42,6 +42,6 @@ set_property(TARGET aliceVision_exif
   PROPERTY FOLDER AliceVision/AliceVision
 )
 
-UNIT_TEST(aliceVision exif_IO "aliceVision_exif")
+UNIT_TEST(aliceVision easyExifIO "aliceVision_exif")
 
-add_subdirectory(sensor_width_database)
+add_subdirectory(sensorWidthDatabase)

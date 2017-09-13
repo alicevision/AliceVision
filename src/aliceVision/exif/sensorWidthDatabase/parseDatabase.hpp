@@ -4,7 +4,7 @@
 #pragma once
 
 #include "aliceVision/stl/split.hpp"
-#include "datasheet.hpp"
+#include "Datasheet.hpp"
 
 #include <vector>
 #include <string>

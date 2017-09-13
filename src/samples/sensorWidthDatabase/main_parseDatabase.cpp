@@ -3,7 +3,7 @@
 
 #include "dependencies/cmdLine/cmdLine.h"
 
-#include "aliceVision/exif/sensor_width_database/ParseDatabase.hpp"
+#include "aliceVision/exif/sensorWidthDatabase/parseDatabase.hpp"
 
 int main(int argc, char ** argv)
 {

@@ -2,7 +2,7 @@
 // the terms of the MPL2 license (see the COPYING.md file).
 
 #include "testing/testing.h"
-#include "ParseDatabase.hpp"
+#include "parseDatabase.hpp"
 
 #include "dependencies/stlplus3/filesystemSimplified/file_system.hpp"
 

@@ -3,7 +3,7 @@
 
 #include "aliceVision/sfm/sfm_data_io_gt.hpp"
 
-#include <aliceVision/exif/exif_IO_EasyExif.hpp>
+#include <aliceVision/exif/EasyExifIO.hpp>
 
 #include <dependencies/stlplus3/filesystemSimplified/file_system.hpp>
 
@@ -184,7 +184,7 @@ bool readGt(const std::string & sRootPath, SfM_Data & sfm_data, bool useUID)
       {
         throw std::logic_error("Impossible to generate UID from this file, because it does not exists: "+sImgFile);
       }
-      exif::Exif_IO_EasyExif exifReader;
+      exif::EasyExifIO exifReader;
       exifReader.open( sImgFile );
       used_id = (IndexT) computeUID(exifReader, sImgName);
     }
