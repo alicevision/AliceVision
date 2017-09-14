@@ -224,6 +224,112 @@ void SequentialSfMReconstructionEngine::RobustResectionOfImages(
       std::size_t nbRejectedTracks;
       do
       {
+        
+//        ///////////////////////////////////////////////////////////////////////////////////////////
+//        ///////////////////////////////////////////////////////////////////////////////////////////
+//        //        /* Save Intrinsics */
+        std::cout << "Writting intrinsics..." << std::endl;
+        std::cout << "_sfm_data.poses.size() = " << _sfm_data.poses.size() << std::endl;
+        std::cout << "set_newReconstructedViewId.size() = " << set_newReconstructedViewId.size() << std::endl;
+   
+        if (_sfm_data.poses.size() == set_newReconstructedViewId.size()+2) // FIRST BA
+        {
+        std::cout << "Fisrt BA" << std::endl;
+        std::cout << "set_newReconstructedViewId.size() = " << set_newReconstructedViewId.size() << std::endl;
+//           for (IndexT idIntr = 0; idIntr < _sfm_data.GetIntrinsics().size(); idIntr++)
+          for (auto& itIntr : _sfm_data.intrinsics)
+          {
+            IndexT idIntr = itIntr.first;
+            std::vector<double> params = itIntr.second.get()->getParams();
+          
+//            std::vector<double> params = _sfm_data.GetIntrinsicPtr(idIntr)->getParams();
+            std::string filename = _sOutDirectory + "K" + std::to_string(idIntr) + ".txt";
+            std::ofstream os;
+            os.open(filename, std::ios::app);
+            os.seekp(0, std::ios::end); //put the cursor at the end
+            
+            
+            // -- HEADER
+            if (os.tellp() == 0) // 'tellp' return the cursor's position
+            {
+              std::vector<std::string> header;
+              header.push_back("#poses");
+              header.push_back("f"); 
+              header.push_back("ppx"); 
+              header.push_back("ppy"); 
+              header.push_back("d1"); 
+              header.push_back("d2"); 
+              header.push_back("d3"); 
+              for (std::string & head : header)
+                os << head << "\t";
+              os << "\n"; 
+            }
+            
+            // -- DATA
+            os << 0 << "\t";
+            std::cout << "K" << idIntr << " : " << params << std::endl;
+            os << params.at(0) << "\t";
+            os << params.at(1) << "\t";
+            os << params.at(2) << "\t";
+            os << params.at(3) << "\t";
+            os << params.at(4) << "\t";
+            os << params.at(5) << "\t";
+            os << "\n";
+            
+            os.close();
+          }
+        }
+        else
+        {
+          
+          // -- count the number of usage of each intrinsic among the aready resected poses
+          std::map<IndexT, std::size_t> map_intrinsicId_usageNum;
+          
+          for (const auto& itView : _sfm_data.views)
+          {
+            const View * view = itView.second.get();
+            
+            if (_sfm_data.IsPoseAndIntrinsicDefined(view))
+            {
+              auto itPose = set_newReconstructedViewId.find(view->id_pose);
+              if (itPose == set_newReconstructedViewId.end()) // not a newly resected view/pose
+              {
+                auto itIntr = map_intrinsicId_usageNum.find(view->id_intrinsic);
+                if (itIntr == map_intrinsicId_usageNum.end())
+                  map_intrinsicId_usageNum[view->id_intrinsic] = 1;
+                else
+                  map_intrinsicId_usageNum[view->id_intrinsic]++;
+              }
+            }
+          }
+          
+          
+          for (IndexT idIntr = 0; idIntr < _sfm_data.GetIntrinsics().size(); idIntr++)
+          {
+            std::size_t usageNum = map_intrinsicId_usageNum[idIntr];
+            std::vector<double> params = _sfm_data.GetIntrinsicPtr(idIntr)->getParams();
+            std::string filename = _sOutDirectory + "K" + std::to_string(idIntr) + ".txt";
+            std::ofstream os;
+            os.open(filename, std::ios::app);
+            os.seekp(0, std::ios::end); //put the cursor at the end
+                      
+            // -- DATA
+            os << usageNum << "\t";
+            os << params.at(0) << "\t";
+            os << params.at(1) << "\t";
+            os << params.at(2) << "\t";
+            os << params.at(3) << "\t";
+            os << params.at(4) << "\t";
+            os << params.at(5) << "\t";
+            os << "\n";
+            
+            os.close();
+          }
+        }
+        std::cout << "Writting intrinsics... done" << std::endl;
+        ///////////////////////////////////////////////////////////////////////////////////////////
+        ///////////////////////////////////////////////////////////////////////////////////////////
+        
         auto chrono2_start = std::chrono::steady_clock::now();
         
         //        BundleAdjustment();
@@ -237,12 +343,14 @@ void SequentialSfMReconstructionEngine::RobustResectionOfImages(
               map_poseId_distance,
               "first"); 
         
-        localBundleAdjustment(
-              set_newReconstructedViewId, 
-              graph_poses, 
-              map_viewId_node, 
-              map_poseId_distance, 
-              "second");
+        
+        
+        //        localBundleAdjustment(
+        //              set_newReconstructedViewId, 
+        //              graph_poses, 
+        //              map_viewId_node, 
+        //              map_poseId_distance, 
+        //              "second");
         
         
         OPENMVG_LOG_DEBUG("Resection group index: " << resectionGroupIndex << ", bundle iteration: " << bundleAdjustmentIteration
@@ -251,49 +359,52 @@ void SequentialSfMReconstructionEngine::RobustResectionOfImages(
         nbRejectedTracks = badTrackRejector(4.0, nbOutliersThreshold);
         
         
+        
+        
         ///////////////////////////////////////////////////////////////////////////////////////////
         ///////////////////////////////////////////////////////////////////////////////////////////
-        std::string filename = "/home/cdebize/Documents/Data_SfM/lastpants/reconstructions/Outliers.txt";
-        std::ofstream os;
-        os.open(filename, std::ios::app);
-        os.seekp(0, std::ios::end); //put the cursor at the end
+        //        /* Save outliers */
+        //        std::string filename = _sOutDirectory + "Outliers.txt";
+        //        std::ofstream os;
+        //        os.open(filename, std::ios::app);
+        //        os.seekp(0, std::ios::end); //put the cursor at the end
         
         
-        // -- HEADER
-        if (os.tellp() == 0) // 'tellp' return the cursor's position
-        {
-          std::vector<std::string> header;
-          header.push_back("idBA");
-          header.push_back("nbAddedCams"); 
-          header.push_back("nameAddedCams\t\t\t\t"); 
-          header.push_back("nbOutliers"); 
-          header.push_back("nbRemovedCam"); 
-          header.push_back("nameRemovedCams"); 
-          for (std::string & head : header)
-            os << head << "\t";
-          os << "\n"; 
-        }
+        //        // -- HEADER
+        //        if (os.tellp() == 0) // 'tellp' return the cursor's position
+        //        {
+        //          std::vector<std::string> header;
+        //          header.push_back("idBA");
+        //          header.push_back("nbAddedCams"); 
+        //          header.push_back("nameAddedCams\t\t\t\t"); 
+        //          header.push_back("nbOutliers"); 
+        //          header.push_back("nbRemovedCam"); 
+        //          header.push_back("nameRemovedCams"); 
+        //          for (std::string & head : header)
+        //            os << head << "\t";
+        //          os << "\n"; 
+        //        }
         
-        // -- DATA
-        os << bundleAdjustmentIteration << "\t";
-        os << set_newReconstructedViewId.size() << "\t";
-        uint i=0;
-        for(const IndexT viewId: set_newReconstructedViewId)
-        {
-          os << _sfm_data.views.at(viewId).get()->s_Img_path << "-K" << _sfm_data.views.at(viewId).get()->id_intrinsic << "\t";
-          i++;
-        }
-        for (; i<30; i++)
-        {
-          os << "x\t"; 
-        }
+        //        // -- DATA
+        //        os << bundleAdjustmentIteration << "\t";
+        //        os << set_newReconstructedViewId.size() << "\t";
+        //        uint i=0;
+        //        for(const IndexT viewId: set_newReconstructedViewId)
+        //        {
+        //          os << _sfm_data.views.at(viewId).get()->s_Img_path << "-K" << _sfm_data.views.at(viewId).get()->id_intrinsic << "\t";
+        //          i++;
+        //        }
+        //        for (; i<30; i++)
+        //        {
+        //          os << "x\t"; 
+        //        }
         
-        os << nbRejectedTracks << "\t";        
+        //        os << nbRejectedTracks << "\t";        
         
-        if (nbRejectedTracks != 0)
-          os << "\n";
+        //        if (nbRejectedTracks != 0)
+        //          os << "\n";
         
-        os.close();
+        //        os.close();
         ///////////////////////////////////////////////////////////////////////////////////////////
         ///////////////////////////////////////////////////////////////////////////////////////////
         
@@ -343,7 +454,7 @@ void SequentialSfMReconstructionEngine::RobustResectionOfImages(
       }
       
       // -- Write names in the txt file
-      std::string filename = "/home/cdebize/Documents/Data_SfM/lastpants/reconstructions/Outliers.txt";
+      std::string filename = "/home/cdebize/Documents/Data_SfM/cirque500/reconstructions/Outliers.txt";
       std::ofstream os;
       os.open(filename, std::ios::app);
       os.seekp(0, std::ios::end); //put the cursor at the end
@@ -363,7 +474,7 @@ void SequentialSfMReconstructionEngine::RobustResectionOfImages(
             removed_viewNames.push_back(view.second->s_Img_path);
             removed_viewIntrinsicId.push_back(view.second->id_intrinsic);
             
-//            std::cout << view.second->s_Img_path << "(pose id: "  << view.second->id_pose << ")" << std::endl;
+            //            std::cout << view.second->s_Img_path << "(pose id: "  << view.second->id_pose << ")" << std::endl;
           }
         }
         
@@ -1691,7 +1802,8 @@ bool SequentialSfMReconstructionEngine::localBundleAdjustment(
   if (_sfm_data.GetPoses().size() > 100) // default value: 100 
   {
     options.setSparseBA();
-    options.enableLocalBA();
+    //    if (name == "first")
+    //      options.enableLocalBA();
   }
   else
   {
@@ -1750,21 +1862,21 @@ bool SequentialSfMReconstructionEngine::localBundleAdjustment(
   
   // Run Bundle Adjustment:
   bool isBaSucceed;
-  if (name == "first")
-    isBaSucceed = localBA_obj.AdjustNoChanges(_sfm_data);
-  else
-    isBaSucceed = localBA_obj.Adjust(_sfm_data);
-    
+  //  if (name == "first")
+  //    isBaSucceed = localBA_obj.AdjustNoChanges(_sfm_data);
+  //  else
+  isBaSucceed = localBA_obj.Adjust(_sfm_data);
+  
   
   times.adjusting = duration.elapsed(); 
   times.allLocalBA = durationLBA.elapsed();  
   times.exportTimes(_sOutDirectory + name);
   times.showTimes();
   
-//  // Save data about the 
-//  std::cout << "Export statistics... " << std::endl;
-//  localBA_obj.exportStatistics(_sOutDirectory, _sfm_data);
-//  std::cout << "Export statistics: done" << std::endl;
+  // Save data about the 
+  std::cout << "Export statistics... " << std::endl;
+  localBA_obj.exportStatistics(_sOutDirectory, _sfm_data);
+  std::cout << "Export statistics: done" << std::endl;
   return isBaSucceed;
 }
 

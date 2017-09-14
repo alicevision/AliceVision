@@ -40,7 +40,7 @@ Local_Bundle_Adjustment_Ceres::Local_Bundle_Adjustment_Ceres(Local_Bundle_Adjust
 
 bool Local_Bundle_Adjustment_Ceres::AdjustNoChanges(const SfM_Data & sfm_data2)
 {
-
+  // -- Duplicate SfM_Data
   SfM_Data sfm_data;
   sfm_data.poses = sfm_data2.poses;
   sfm_data.structure = sfm_data2.structure;
@@ -48,22 +48,8 @@ bool Local_Bundle_Adjustment_Ceres::AdjustNoChanges(const SfM_Data & sfm_data2)
   for (const auto& it : sfm_data2.views)
     sfm_data.views[it.first] = std::make_shared<View>(*(it.second));
   // clone intrinsics
-  
   sfm_data.intrinsics = sfm_data2.GetIntrinsics();
-//  for (const auto& it : sfm_data2.intrinsics)
-//  {
-//    cameras::IntrinsicBase& K = *(it.second.get());
-//    sfm_data.intrinsics[it.first] = std::make_shared<cameras::IntrinsicBase>(K);
-//  }
-// use getIntrinsic() function... 
-  
-  
-//  if (sfm_data == sfm_data2)
-//    std::cout << "LES SFM_DTA SONT IDENTIQUES !" << std::endl;
-//  else
-//    std::cout << "LES SFM_DTA SONT differernts..." << std::endl;
-//  getchar();
-  
+
   
  std::cout << "-- Adjust" << std::endl;
   

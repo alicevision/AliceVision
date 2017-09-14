@@ -123,34 +123,6 @@ struct LocalBA_timeProfiler
 /// Store structure and camera properties:
 struct SfM_Data
 {
-//  SfM_Data copy()
-//  {
-//    SfM_Data data;
-//    // no pointer
-//    data.poses = this->poses;
-//    data.structure = this->structure;
-//    data.control_points = this->control_points;
-    
-//    for (const auto& it : views)
-//    {
-//      View v = *(it.second);
-//      View copy_v(v.s_Img_path, v.id_view, v.id_intrinsic, v.id_pose, v.ui_width, v.ui_height);
-//      std::shared_ptr<View> sp_v = std::make_shared<View>(copy_v);
-//      data.views[it.first] =  sp_v;     
-//    }
-    
-//    for (const auto& itt : intrinsics)
-//    {
-////      cameras::PINHOLE_CAMERA_RADIAL3 k;
-////      k = *(itt.second);
-////      cameras::IntrinsicBase copy_k = k.clone();
-////      std::shared_ptr<cameras::IntrinsicBase> sp_k 
-////        = std::make_shared<cameras::IntrinsicBase>(copy_k);
-//      data.intrinsics[itt.first] =  itt.second.clone();     
-//    }
-//    return data;
-//  }
-  
   /// Considered views
   Views views;
   /// Considered poses (indexed by view.id_pose)
