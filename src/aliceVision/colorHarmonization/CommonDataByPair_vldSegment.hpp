@@ -1,31 +1,30 @@
 // This file is part of the AliceVision project and is made available under
 // the terms of the MPL2 license (see the COPYING.md file).
 
-#ifndef ALICEVISION_COLORHARMONIZATION_VLDSEGMENT_H
-#define ALICEVISION_COLORHARMONIZATION_VLDSEGMENT_H
+#pragma once
 
-#include "aliceVision/color_harmonization/selection_interface.hpp"
+#include "aliceVision/colorHarmonization/CommonDataByPair.hpp"
 #include "aliceVision/matching/kvld/kvld.h"
 #include "aliceVision/matching/kvld/kvld_draw.h"
 
 namespace aliceVision {
-namespace color_harmonization {
+namespace colorHarmonization {
 
-class commonDataByPair_VLDSegment  : public commonDataByPair
+class CommonDataByPair_vldSegment  : public CommonDataByPair
 {
   public:
-  commonDataByPair_VLDSegment( const std::string& sLeftImage,
+  CommonDataByPair_vldSegment( const std::string& sLeftImage,
                                const std::string& sRightImage,
                                const matching::IndMatches& matchesPerDesc,
                                const std::vector<feature::SIOPointFeature>& featsL,
                                const std::vector<feature::SIOPointFeature>& featsR)
-           : commonDataByPair( sLeftImage, sRightImage )
+           : CommonDataByPair( sLeftImage, sRightImage )
            , _matches( matchesPerDesc )
            , _featsL( featsL )
            , _featsR( featsR )
   {}
 
-  virtual ~commonDataByPair_VLDSegment()
+  virtual ~CommonDataByPair_vldSegment()
   {}
 
   /**
@@ -107,7 +106,5 @@ private:
   matching::IndMatches _matches;
 };
 
-}  // namespace color_harmonization
+}  // namespace colorHarmonization
 }  // namespace aliceVision
-
-#endif  // ALICEVISION_COLORHARMONIZATION_VLDSEGMENT_H

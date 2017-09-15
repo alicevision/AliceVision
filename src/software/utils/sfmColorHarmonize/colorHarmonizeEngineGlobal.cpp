@@ -20,12 +20,12 @@
 #include "dependencies/vectorGraphics/svgDrawer.hpp"
 
 //-- Selection Methods
-#include "aliceVision/color_harmonization/selection_fullFrame.hpp"
-#include "aliceVision/color_harmonization/selection_matchedPoints.hpp"
-#include "aliceVision/color_harmonization/selection_VLDSegment.hpp"
+#include "aliceVision/colorHarmonization/CommonDataByPair_fullFrame.hpp"
+#include "aliceVision/colorHarmonization/CommonDataByPair_matchedPoints.hpp"
+#include "aliceVision/colorHarmonization/CommonDataByPair_vldSegment.hpp"
 
 //-- Color harmonization solver
-#include "aliceVision/color_harmonization/global_quantile_gain_offset_alignment.hpp"
+#include "aliceVision/colorHarmonization/GainOffsetConstraintBuilder.hpp"
 
 #include "aliceVision/system/timer.hpp"
 
@@ -222,7 +222,7 @@ bool ColorHarmonizationEngineGlobal::Process()
     {
       case eHistogramHarmonizeFullFrame:
       {
-        color_harmonization::commonDataByPair_FullFrame  dataSelector(
+        colorHarmonization::CommonDataByPair_fullFrame  dataSelector(
           p_imaNames.first,
           p_imaNames.second);
         dataSelector.computeMask( maskI, maskJ );
@@ -231,7 +231,7 @@ bool ColorHarmonizationEngineGlobal::Process()
       case eHistogramHarmonizeMatchedPoints:
       {
         int circleSize = 10;
-        color_harmonization::commonDataByPair_MatchedPoints dataSelector(
+        colorHarmonization::CommonDataByPair_matchedPoints dataSelector(
           p_imaNames.first,
           p_imaNames.second,
           matchesPerDesc,
@@ -250,7 +250,7 @@ bool ColorHarmonizationEngineGlobal::Process()
         {
           const feature::EImageDescriberType descType = matchesIt.first;
           const IndMatches& matches = matchesIt.second;
-          color_harmonization::commonDataByPair_VLDSegment dataSelector(
+          colorHarmonization::CommonDataByPair_vldSegment dataSelector(
             p_imaNames.first,
             p_imaNames.second,
             matches,
@@ -294,24 +294,24 @@ bool ColorHarmonizationEngineGlobal::Process()
     Histogram< double > histoJ( minvalue, maxvalue, bin);
 
     int channelIndex = 0; // RED channel
-    color_harmonization::commonDataByPair::computeHisto( histoI, maskI, channelIndex, imageI );
-    color_harmonization::commonDataByPair::computeHisto( histoJ, maskJ, channelIndex, imageJ );
+    colorHarmonization::CommonDataByPair::computeHisto( histoI, maskI, channelIndex, imageI );
+    colorHarmonization::CommonDataByPair::computeHisto( histoJ, maskJ, channelIndex, imageJ );
     relativeColorHistogramEdge & edgeR = map_relativeHistograms[channelIndex][i];
     edgeR = relativeColorHistogramEdge(map_cameraNodeToCameraIndex[viewI], map_cameraNodeToCameraIndex[viewJ],
       histoI.GetHist(), histoJ.GetHist());
 
     histoI = histoJ = Histogram< double >( minvalue, maxvalue, bin);
     channelIndex = 1; // GREEN channel
-    color_harmonization::commonDataByPair::computeHisto( histoI, maskI, channelIndex, imageI );
-    color_harmonization::commonDataByPair::computeHisto( histoJ, maskJ, channelIndex, imageJ );
+    colorHarmonization::CommonDataByPair::computeHisto( histoI, maskI, channelIndex, imageI );
+    colorHarmonization::CommonDataByPair::computeHisto( histoJ, maskJ, channelIndex, imageJ );
     relativeColorHistogramEdge & edgeG = map_relativeHistograms[channelIndex][i];
     edgeG = relativeColorHistogramEdge(map_cameraNodeToCameraIndex[viewI], map_cameraNodeToCameraIndex[viewJ],
       histoI.GetHist(), histoJ.GetHist());
 
     histoI = histoJ = Histogram< double >( minvalue, maxvalue, bin);
     channelIndex = 2; // BLUE channel
-    color_harmonization::commonDataByPair::computeHisto( histoI, maskI, channelIndex, imageI );
-    color_harmonization::commonDataByPair::computeHisto( histoJ, maskJ, channelIndex, imageJ );
+    colorHarmonization::CommonDataByPair::computeHisto( histoI, maskI, channelIndex, imageI );
+    colorHarmonization::CommonDataByPair::computeHisto( histoJ, maskJ, channelIndex, imageJ );
     relativeColorHistogramEdge & edgeB = map_relativeHistograms[channelIndex][i];
     edgeB = relativeColorHistogramEdge(map_cameraNodeToCameraIndex[viewI], map_cameraNodeToCameraIndex[viewJ],
       histoI.GetHist(), histoJ.GetHist());
@@ -339,7 +339,7 @@ bool ColorHarmonizationEngineGlobal::Process()
   {
     SOLVER_LP_T lpSolver(vec_solution_r.size());
 
-    ConstraintBuilder_GainOffset cstBuilder(map_relativeHistograms[0], vec_indexToFix);
+    GainOffsetConstraintBuilder cstBuilder(map_relativeHistograms[0], vec_indexToFix);
     LP_Constraints_Sparse constraint;
     cstBuilder.Build(constraint);
     lpSolver.setup(constraint);
@@ -350,7 +350,7 @@ bool ColorHarmonizationEngineGlobal::Process()
   {
     SOLVER_LP_T lpSolver(vec_solution_g.size());
 
-    ConstraintBuilder_GainOffset cstBuilder(map_relativeHistograms[1], vec_indexToFix);
+    GainOffsetConstraintBuilder cstBuilder(map_relativeHistograms[1], vec_indexToFix);
     LP_Constraints_Sparse constraint;
     cstBuilder.Build(constraint);
     lpSolver.setup(constraint);
@@ -361,7 +361,7 @@ bool ColorHarmonizationEngineGlobal::Process()
   {
     SOLVER_LP_T lpSolver(vec_solution_b.size());
 
-    ConstraintBuilder_GainOffset cstBuilder(map_relativeHistograms[2], vec_indexToFix);
+    GainOffsetConstraintBuilder cstBuilder(map_relativeHistograms[2], vec_indexToFix);
     LP_Constraints_Sparse constraint;
     cstBuilder.Build(constraint);
     lpSolver.setup(constraint);

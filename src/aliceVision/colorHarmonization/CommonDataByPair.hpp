@@ -1,27 +1,26 @@
 // This file is part of the AliceVision project and is made available under
 // the terms of the MPL2 license (see the COPYING.md file).
 
-#ifndef ALICEVISION_COLORHARMONIZATION_SELECTORINTERFACE_H
-#define ALICEVISION_COLORHARMONIZATION_SELECTORINTERFACE_H
+#pragma once
 
 #include "aliceVision/image/image.hpp"
 #include "dependencies/histogram/histogram.hpp"
 #include <string>
 
 namespace aliceVision {
-namespace color_harmonization {
+namespace colorHarmonization {
 
 using namespace std;
 
-class commonDataByPair
+class CommonDataByPair
 {
 public:
-  commonDataByPair( const std::string & sLeftImage,
+  CommonDataByPair( const std::string & sLeftImage,
                     const std::string & sRightImage ):
     _sLeftImage( sLeftImage ), _sRightImage( sRightImage )
   {}
 
-  virtual ~commonDataByPair() {}
+  virtual ~CommonDataByPair() {}
 
   /**
    * Compute mask forthe two images
@@ -69,7 +68,5 @@ protected:
   std::string _sLeftImage, _sRightImage;
 };
 
-}  // namespace color_harmonization
+}  // namespace colorHarmonization
 }  // namespace aliceVision
-
-#endif // ALICEVISION_COLORHARMONIZATION_SELECTORINTERFACE_H

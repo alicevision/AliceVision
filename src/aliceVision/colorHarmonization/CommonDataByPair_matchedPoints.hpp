@@ -1,35 +1,34 @@
 // This file is part of the AliceVision project and is made available under
 // the terms of the MPL2 license (see the COPYING.md file).
 
-#ifndef ALICEVISION_COLORHARMONIZATION_MATCHESPOINTS_H
-#define ALICEVISION_COLORHARMONIZATION_MATCHESPOINTS_H
+#pragma once
 
-#include "aliceVision/color_harmonization/selection_interface.hpp"
+#include "aliceVision/colorHarmonization/CommonDataByPair.hpp"
 #include "aliceVision/matching/indMatch.hpp"
 #include "aliceVision/feature/feature.hpp"
 
 #include <vector>
 
 namespace aliceVision {
-namespace color_harmonization {
+namespace colorHarmonization {
 
-class commonDataByPair_MatchedPoints  : public commonDataByPair
+class CommonDataByPair_matchedPoints  : public CommonDataByPair
 {
 public:
-  commonDataByPair_MatchedPoints(const std::string& sLeftImage,
+  CommonDataByPair_matchedPoints(const std::string& sLeftImage,
                                  const std::string& sRightImage,
                                  const matching::MatchesPerDescType& matchesPerDesc,
                                  const feature::MapRegionsPerDesc& regionsL,
                                  const feature::MapRegionsPerDesc& regionsR,
                                  const size_t radius = 1 )
-     : commonDataByPair( sLeftImage, sRightImage )
+     : CommonDataByPair( sLeftImage, sRightImage )
      , _matchesPerDesc( matchesPerDesc )
      , _regionsL( regionsL )
      , _regionsR( regionsR )
      , _radius( radius )
   {}
 
-  virtual ~commonDataByPair_MatchedPoints()
+  virtual ~CommonDataByPair_matchedPoints()
   {}
 
   /**
@@ -68,7 +67,5 @@ private:
   const feature::MapRegionsPerDesc& _regionsR;
 };
 
-}  // namespace color_harmonization
+}  // namespace colorHarmonization
 }  // namespace aliceVision
-
-#endif  // ALICEVISION_COLORHARMONIZATION_MATCHESPOINTS_H

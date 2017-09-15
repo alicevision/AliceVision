@@ -7,17 +7,15 @@
 #include <cstdlib>
 #include <cmath>
 
-//-- Color harmonization solver
-#include "aliceVision/color_harmonization/global_quantile_gain_offset_alignment.hpp"
-
-#include "aliceVision/image/image.hpp"
+//ColorHarmonization solver
+#include <aliceVision/colorHarmonization/GainOffsetConstraintBuilder.hpp>
+#include <aliceVision/image/image.hpp>
 #include <aliceVision/config.hpp>
 
 #include "testing/testing.h"
 
 #include "dependencies/histogram/histogram.hpp"
 #include "dependencies/htmlDoc/htmlDoc.hpp"
-
 
 using namespace aliceVision;
 using namespace aliceVision::linearProgramming;
@@ -74,7 +72,7 @@ TEST(ColorHarmonisation, Simple_offset) {
   {
     SOLVER_LP_T lpSolver(vec_solution.size());
 
-    ConstraintBuilder_GainOffset cstBuilder(vec_relativeHistograms, vec_indexToFix);
+    GainOffsetConstraintBuilder cstBuilder(vec_relativeHistograms, vec_indexToFix);
     LP_Constraints_Sparse constraint;
     cstBuilder.Build(constraint);
     lpSolver.setup(constraint);
@@ -138,7 +136,7 @@ TEST(ColorHarmonisation, Offset_gain) {
   {
     SOLVER_LP_T lpSolver(vec_solution.size());
 
-    ConstraintBuilder_GainOffset cstBuilder(vec_relativeHistograms, vec_indexToFix);
+    GainOffsetConstraintBuilder cstBuilder(vec_relativeHistograms, vec_indexToFix);
     LP_Constraints_Sparse constraint;
     cstBuilder.Build(constraint);
     lpSolver.setup(constraint);

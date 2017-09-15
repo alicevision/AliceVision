@@ -1,23 +1,22 @@
 // This file is part of the AliceVision project and is made available under
 // the terms of the MPL2 license (see the COPYING.md file).
 
-#ifndef ALICEVISION_COLORHARMONIZATION_FULLFRAME_H
-#define ALICEVISION_COLORHARMONIZATION_FULLFRAME_H
+#pragma once
 
-#include "aliceVision/color_harmonization/selection_interface.hpp"
+#include "aliceVision/colorHarmonization/CommonDataByPair.hpp"
 
 namespace aliceVision {
-namespace color_harmonization {
+namespace colorHarmonization {
 
-class commonDataByPair_FullFrame  : public commonDataByPair
+class CommonDataByPair_fullFrame  : public CommonDataByPair
 {
 public:
-  commonDataByPair_FullFrame( const std::string & sLeftImage,
+  CommonDataByPair_fullFrame( const std::string & sLeftImage,
                               const std::string & sRightImage ):
-        commonDataByPair( sLeftImage, sRightImage )
+        CommonDataByPair( sLeftImage, sRightImage )
   {}
 
-  virtual ~commonDataByPair_FullFrame() {}
+  virtual ~CommonDataByPair_fullFrame() {}
 
   /**
    * Put masks to white, all image is considered as valid pixel selection
@@ -38,7 +37,5 @@ private:
 
 };
 
-}  // namespace color_harmonization
+}  // namespace colorHarmonization
 }  // namespace aliceVision
-
-#endif  // ALICEVISION_COLORHARMONIZATION_FULLFRAME_H

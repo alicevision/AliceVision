@@ -1,6 +1,8 @@
 // This file is part of the AliceVision project and is made available under
 // the terms of the MPL2 license (see the COPYING.md file).
 
+#pragma once
+
 #include <aliceVision/config.hpp>
 #include "aliceVision/linearProgramming/linearProgrammingInterface.hpp"
 #include "aliceVision/linearProgramming/linearProgrammingOSI_X.hpp"
@@ -197,9 +199,9 @@ static void Encode_histo_relation(
 #undef GAMMAVAR
 }
 
-struct ConstraintBuilder_GainOffset
+struct GainOffsetConstraintBuilder
 {
-  ConstraintBuilder_GainOffset(
+  GainOffsetConstraintBuilder(
     const std::vector<relativeColorHistogramEdge > & vec_relativeHistograms,
     const std::vector<size_t> & vec_indexToFix):
     _vec_relative(vec_relativeHistograms),
