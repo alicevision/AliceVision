@@ -6,7 +6,7 @@
 #include "aliceVision/multiview/essential.hpp"
 #include "aliceVision/multiview/translation_averaging_common.hpp"
 
-#include "aliceVision/graph/triplet_finder.hpp"
+#include "aliceVision/graph/Triplet.hpp"
 using namespace aliceVision::graph;
 
 #include "dependencies/vectorGraphics/svgDrawer.hpp"

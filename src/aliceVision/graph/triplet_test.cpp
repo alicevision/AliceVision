@@ -1,14 +1,15 @@
 // This file is part of the AliceVision project and is made available under
 // the terms of the MPL2 license (see the COPYING.md file).
 
-#include "aliceVision/graph/triplet_finder.hpp"
-using namespace aliceVision::graph;
+#include "aliceVision/graph/Triplet.hpp"
 
 #include "CppUnitLite/TestHarness.h"
 #include "testing/testing.h"
 
 #include <iostream>
 #include <vector>
+
+using namespace aliceVision::graph;
 
 TEST(TripletFinder, test_no_triplet) {
 

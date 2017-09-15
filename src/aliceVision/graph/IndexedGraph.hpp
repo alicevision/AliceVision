@@ -1,10 +1,13 @@
 // This file is part of the AliceVision project and is made available under
 // the terms of the MPL2 license (see the COPYING.md file).
 
-#ifndef ALICEVISION_GRAPH_BUILDER_H_
-#define ALICEVISION_GRAPH_BUILDER_H_
+#pragma once
+
+#include <lemon/list_graph.h>
+#include <lemon/connectivity.h>
 
 #include <memory>
+#include <map>
 #include <set>
 
 namespace aliceVision {
@@ -88,5 +91,3 @@ struct indexedGraph
 
 } // namespace graph
 } // namespace aliceVision
-
-#endif // ALICEVISION_GRAPH_BUILDER__H_

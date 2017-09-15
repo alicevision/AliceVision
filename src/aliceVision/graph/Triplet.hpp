@@ -1,17 +1,17 @@
 // This file is part of the AliceVision project and is made available under
 // the terms of the MPL2 license (see the COPYING.md file).
 
-#ifndef ALICEVISION_GRAPH_TRIPLET_FINDER_H
-#define ALICEVISION_GRAPH_TRIPLET_FINDER_H
+#pragma once
 
-#include "aliceVision/types.hpp"
-#include "aliceVision/graph/graph.hpp"
+#include <aliceVision/types.hpp>
+#include <aliceVision/graph/graph.hpp>
 
-#include "lemon/list_graph.h"
-using namespace lemon;
+#include <lemon/list_graph.h>
 
 #include <algorithm>
 #include <vector>
+
+using namespace lemon;
 
 namespace aliceVision {
 namespace graph {
@@ -20,10 +20,13 @@ namespace graph {
 /// It is used to store the node id of triplets of a graph.
 struct Triplet
 {
-  Triplet(IndexT ii, IndexT jj, IndexT kk)
-    :i(ii), j(jj), k(kk)
-  { }
   IndexT i,j,k;
+
+  Triplet(IndexT ii, IndexT jj, IndexT kk)
+    : i(ii)
+    , j(jj)
+    , k(kk)
+  {}
 
   bool contain(const std::pair<IndexT,IndexT> & edge) const
   {
@@ -140,5 +143,3 @@ static std::vector< graph::Triplet > tripletListing(
 
 } // namespace graph
 } // namespace aliceVision
-
-#endif // ALICEVISION_GRAPH_TRIPLET_FINDER_H

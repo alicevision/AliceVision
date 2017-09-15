@@ -1,13 +1,14 @@
 // This file is part of the AliceVision project and is made available under
 // the terms of the MPL2 license (see the COPYING.md file).
 
-#include <iostream>
-#include <vector>
+#include "aliceVision/graph/graph.hpp"
 
 #include "CppUnitLite/TestHarness.h"
 #include "testing/testing.h"
 
-#include "aliceVision/graph/graph.hpp"
+#include <iostream>
+#include <vector>
+
 using namespace lemon;
 
 TEST(connectedComponents, Empty) {

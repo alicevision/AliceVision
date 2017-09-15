@@ -1,12 +1,13 @@
 // This file is part of the AliceVision project and is made available under
 // the terms of the MPL2 license (see the COPYING.md file).
 
-#ifndef ALICEVISION_GRAPH_CONNECTED_COMPONENT_H_
-#define ALICEVISION_GRAPH_CONNECTED_COMPONENT_H_
+#pragma once
 
+#include <aliceVision/config.hpp>
 #include <aliceVision/types.hpp>
 #include <aliceVision/system/Logger.hpp>
 #include <aliceVision/graph/graph.hpp>
+
 #include <set>
 
 namespace aliceVision {
@@ -147,5 +148,3 @@ std::set<IndexT> CleanGraph_KeepLargestBiEdge_Nodes(
 
 } // namespace graph
 } // namespace aliceVision
-
-#endif // ALICEVISION_GRAPH_CONNECTED_COMPONENT_H_
