@@ -4,18 +4,18 @@
 #pragma once
 
 #include <aliceVision/matching/indMatch.hpp>
-#include <aliceVision/features/FeaturesPerView.hpp>
+#include <aliceVision/feature/FeaturesPerView.hpp>
 
 namespace aliceVision {
 namespace matching_image_collection {
 
 // TODO: remove PointFeature to avoid this hack
-inline Vec2 getFeaturePosition(const std::unique_ptr<features::Regions>& regions, std::size_t i)
+inline Vec2 getFeaturePosition(const std::unique_ptr<feature::Regions>& regions, std::size_t i)
 {
   return regions->GetRegionPosition(i);
 }
 
-inline Vec2 getFeaturePosition(const features::PointFeatures& features, std::size_t i)
+inline Vec2 getFeaturePosition(const feature::PointFeatures& features, std::size_t i)
 {
   return features[i].coords().cast<double>();
 }
@@ -97,7 +97,7 @@ void MatchesPairToMat(
   const camera::IntrinsicBase * cam_J,
   const MapFeatOrRegionPerDesc& features_I,
   const MapFeatOrRegionPerDesc& features_J,
-  const std::vector<features::EImageDescriberType>& descTypes,
+  const std::vector<feature::EImageDescriberType>& descTypes,
   MatT & x_I, MatT & x_J)
 {
   // Create the output matrices with all matched features for images I and J
@@ -108,7 +108,7 @@ void MatchesPairToMat(
   size_t y = 0;
   for(size_t d = 0; d < descTypes.size(); ++d)
   {
-    const features::EImageDescriberType& descType = descTypes[d];
+    const feature::EImageDescriberType& descType = descTypes[d];
 
     if(!putativeMatchesPerType.count(descType))
       continue; // we may have 0 feature for some descriptor types
@@ -148,8 +148,8 @@ void MatchesPairToMat(
   const Pair pairIndex,
   const matching::MatchesPerDescType & putativeMatchesPerType,
   const sfm::SfM_Data * sfmData,
-  const features::RegionsPerView& regionsPerView,
-  const std::vector<features::EImageDescriberType>& descTypes,
+  const feature::RegionsPerView& regionsPerView,
+  const std::vector<feature::EImageDescriberType>& descTypes,
   MatT & x_I, MatT & x_J)
 {
   const sfm::View * view_I = sfmData->views.at(pairIndex.first).get();
@@ -179,7 +179,7 @@ void MatchesPairToMat(
 void copyInlierMatches(
   const std::vector<size_t>& inliers,
   const matching::MatchesPerDescType & putativeMatchesPerType,
-  const std::vector<features::EImageDescriberType> descTypes,
+  const std::vector<feature::EImageDescriberType> descTypes,
   matching::MatchesPerDescType & out_geometricInliersPerType)
 {
   std::vector<size_t> orderedInliers = inliers;

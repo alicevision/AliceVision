@@ -5,9 +5,9 @@
 
 #include "aliceVision/config.hpp"
 #include "aliceVision/types.hpp"
-#include "aliceVision/features/regions.hpp"
-#include "aliceVision/features/descriptor.hpp"
-#include "aliceVision/features/ImageDescriberCommon.hpp"
+#include "aliceVision/feature/Regions.hpp"
+#include "aliceVision/feature/Descriptor.hpp"
+#include "aliceVision/feature/imageDescriberCommon.hpp"
 
 #include <vector>
 #include <map>
@@ -24,15 +24,15 @@ struct ReconstructedRegionsMapping
 };
 
 
-inline std::unique_ptr<features::Regions> createFilteredRegions(const features::Regions& regions, const std::vector<features::FeatureInImage>& featuresInImage, ReconstructedRegionsMapping& out_mapping)
+inline std::unique_ptr<feature::Regions> createFilteredRegions(const feature::Regions& regions, const std::vector<feature::FeatureInImage>& featuresInImage, ReconstructedRegionsMapping& out_mapping)
 {
   return regions.createFilteredRegions(featuresInImage, out_mapping._associated3dPoint, out_mapping._mapFullToLocal);
 }
 
-using ReconstructedRegionsMappingPerDesc = std::map<features::EImageDescriberType, ReconstructedRegionsMapping>;
+using ReconstructedRegionsMappingPerDesc = std::map<feature::EImageDescriberType, ReconstructedRegionsMapping>;
 
 using ReconstructedRegionsMappingPerView = std::map<IndexT, ReconstructedRegionsMappingPerDesc>;
 
 
-} // namespace features
+} // namespace feature
 } // namespace aliceVision

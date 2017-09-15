@@ -6,7 +6,7 @@ set(tracks_files_headers
 add_library(aliceVision_tracks INTERFACE)
 
 target_link_libraries(aliceVision_tracks
-  INTERFACE aliceVision_features
+  INTERFACE aliceVision_feature
             ${LEMON_LIBRARY}
             ${LOG_LIB}
 )

@@ -11,8 +11,8 @@
 #include <aliceVision/localization/optimization.hpp>
 #include <aliceVision/image/image_io.hpp>
 #include <aliceVision/dataio/FeedProvider.hpp>
-#include <aliceVision/features/image_describer.hpp>
-#include <aliceVision/features/ImageDescriberCommon.hpp>
+#include <aliceVision/feature/ImageDescriber.hpp>
+#include <aliceVision/feature/imageDescriberCommon.hpp>
 #include <aliceVision/robust_estimation/robust_estimators.hpp>
 #include <aliceVision/system/Logger.hpp>
 
@@ -104,11 +104,11 @@ int main(int argc, char** argv)
   std::string mediaFilepath;
  
   /// the describer types name to use for the matching
-  std::string matchDescTypeNames = features::EImageDescriberType_enumToString(features::EImageDescriberType::SIFT);
+  std::string matchDescTypeNames = feature::EImageDescriberType_enumToString(feature::EImageDescriberType::SIFT);
   /// the preset for the feature extractor
-  features::EDESCRIBER_PRESET featurePreset = features::EDESCRIBER_PRESET::NORMAL_PRESET;     
+  feature::EDESCRIBER_PRESET featurePreset = feature::EDESCRIBER_PRESET::NORMAL_PRESET;     
   /// the describer types to use for the matching
-  std::vector<features::EImageDescriberType> matchDescTypes;
+  std::vector<feature::EImageDescriberType> matchDescTypes;
   /// the estimator to use for resection
   robust::EROBUST_ESTIMATOR resectionEstimator = robust::EROBUST_ESTIMATOR::ROBUST_ESTIMATOR_ACRANSAC;        
   /// the estimator to use for matching
@@ -183,7 +183,7 @@ int main(int argc, char** argv)
           "Folder containing the descriptors for all the images (ie the *.desc.)")
       ("matchDescTypes", po::value<std::string>(&matchDescTypeNames)->default_value(matchDescTypeNames),
           "The describer types to use for the matching")
-      ("preset", po::value<features::EDESCRIBER_PRESET>(&featurePreset)->default_value(featurePreset), 
+      ("preset", po::value<feature::EDESCRIBER_PRESET>(&featurePreset)->default_value(featurePreset), 
           "Preset for the feature extractor when localizing a new image "
           "{LOW,MEDIUM,NORMAL,HIGH,ULTRA}")
       ("resectionEstimator", po::value<robust::EROBUST_ESTIMATOR>(&resectionEstimator)->default_value(resectionEstimator), 
@@ -303,13 +303,13 @@ int main(int argc, char** argv)
   }
 
   // Init descTypes from command-line string
-  matchDescTypes = features::EImageDescriberType_stringToEnums(matchDescTypeNames);
+  matchDescTypes = feature::EImageDescriberType_stringToEnums(matchDescTypeNames);
 
   // decide the localizer to use based on the type of feature
 #if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_CCTAG)
   useVoctreeLocalizer = !(matchDescTypes.size() == 1 &&
-                        ((matchDescTypes.front() == features::EImageDescriberType::CCTAG3) ||
-                        (matchDescTypes.front() == features::EImageDescriberType::CCTAG4)));
+                        ((matchDescTypes.front() == feature::EImageDescriberType::CCTAG3) ||
+                        (matchDescTypes.front() == feature::EImageDescriberType::CCTAG4)));
 #endif
   
   // just for debugging purpose, print out all the parameters

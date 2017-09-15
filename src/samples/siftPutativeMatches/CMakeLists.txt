@@ -4,7 +4,7 @@ add_executable(aliceVision_samples_siftMatching main_siftMatching.cpp)
 
 target_link_libraries(aliceVision_samples_siftMatching
   aliceVision_image
-  aliceVision_features
+  aliceVision_feature
   aliceVision_matching
   vlsift
   stlplus

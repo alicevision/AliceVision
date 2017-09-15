@@ -50,7 +50,7 @@ bool Load(
   PairwiseMatches & matches,
   const std::set<IndexT> & viewsKeysFilter,
   const std::string & folder,
-  const std::vector<features::EImageDescriberType>& descTypesFilter,
+  const std::vector<feature::EImageDescriberType>& descTypesFilter,
   const std::string & mode);
 
 /**

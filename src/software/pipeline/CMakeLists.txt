@@ -8,7 +8,7 @@ add_executable(aliceVision_cameraInit main_cameraInit.cpp)
 target_link_libraries(aliceVision_cameraInit
   aliceVision_system
   aliceVision_image
-  aliceVision_features
+  aliceVision_feature
   aliceVision_exif
   aliceVision_sfm
   easyexif
@@ -29,7 +29,7 @@ add_executable(aliceVision_featureExtraction main_featureExtraction.cpp)
 target_link_libraries(aliceVision_featureExtraction
   aliceVision_system
   aliceVision_image
-  aliceVision_features
+  aliceVision_feature
   aliceVision_multiview
   aliceVision_sfm
   aliceVision_exif
@@ -75,7 +75,7 @@ add_executable(aliceVision_featureMatching main_featureMatching.cpp)
 
 target_link_libraries(aliceVision_featureMatching
   aliceVision_system
-  aliceVision_features
+  aliceVision_feature
   aliceVision_multiview
   aliceVision_sfm
   aliceVision_matching_image_collection
@@ -97,7 +97,7 @@ add_executable(aliceVision_incrementalSfM main_incrementalSfM.cpp)
 target_link_libraries(aliceVision_incrementalSfM
   aliceVision_system
   aliceVision_image
-  aliceVision_features
+  aliceVision_feature
   aliceVision_sfm
   stlplus
 )
@@ -117,7 +117,7 @@ add_executable(aliceVision_globalSfM main_globalSfM.cpp)
 target_link_libraries(aliceVision_globalSfM
   aliceVision_system
   aliceVision_image
-  aliceVision_features
+  aliceVision_feature
   aliceVision_sfm
   stlplus
 )
@@ -136,7 +136,7 @@ add_executable(aliceVision_computeStructureFromKnownPoses main_computeStructureF
 
 target_link_libraries(aliceVision_computeStructureFromKnownPoses
   aliceVision_system
-  aliceVision_features
+  aliceVision_feature
   aliceVision_sfm
   stlplus
 )
@@ -156,7 +156,7 @@ add_executable(aliceVision_computeSfMColor main_computeSfMColor.cpp)
 target_link_libraries(aliceVision_computeSfMColor
   aliceVision_system
   aliceVision_image
-  aliceVision_features
+  aliceVision_feature
   aliceVision_sfm
   stlplus
 )
@@ -205,7 +205,7 @@ target_link_libraries(aliceVision_rigCalibration
 	aliceVision_localization
 	aliceVision_dataio
 	aliceVision_image
-	aliceVision_features
+	aliceVision_feature
 	vlsift  #TODO: delete vlsift
 	${Boost_LIBRARIES}
 )
@@ -230,7 +230,7 @@ target_link_libraries(aliceVision_cameraLocalization
 	aliceVision_localization
 	aliceVision_dataio
 	aliceVision_image
-	aliceVision_features
+	aliceVision_feature
 	vlsift
 	${BOOST_LIBRARIES}
 )
@@ -263,7 +263,7 @@ target_link_libraries(aliceVision_rigLocalization
 	aliceVision_dataio
 	aliceVision_rig
 	aliceVision_image
-	aliceVision_features
+	aliceVision_feature
 	vlsift
 	${Boost_LIBRARIES}
 )

@@ -1,7 +1,7 @@
 // This file is part of the AliceVision project and is made available under
 // the terms of the MPL2 license (see the COPYING.md file).
 
-#include <aliceVision/features/descriptor.hpp>
+#include <aliceVision/feature/Descriptor.hpp>
 #include <aliceVision/system/Logger.hpp>
 
 #include <boost/filesystem.hpp>
@@ -66,7 +66,7 @@ size_t readDescFromFiles(const std::string &fileFullPath, std::vector<Descriptor
   for(const auto &currentFile : descriptorsFiles)
   {
     // Read the descriptors and append them in the vector
-    features::loadDescsFromBinFile<DescriptorT, FileDescriptorT>(currentFile.second, descriptors, true);
+    feature::loadDescsFromBinFile<DescriptorT, FileDescriptorT>(currentFile.second, descriptors, true);
     size_t result = descriptors.size();
 
     // Add the number of descriptors from this file

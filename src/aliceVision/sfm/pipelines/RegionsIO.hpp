@@ -6,10 +6,10 @@
 #include <aliceVision/types.hpp>
 #include <aliceVision/sfm/sfm_data.hpp>
 
-#include <aliceVision/features/image_describer.hpp>
-#include <aliceVision/features/ImageDescriberCommon.hpp>
-#include <aliceVision/features/RegionsPerView.hpp>
-#include <aliceVision/features/FeaturesPerView.hpp>
+#include <aliceVision/feature/ImageDescriber.hpp>
+#include <aliceVision/feature/imageDescriberCommon.hpp>
+#include <aliceVision/feature/RegionsPerView.hpp>
+#include <aliceVision/feature/FeaturesPerView.hpp>
 
 #include <memory>
 
@@ -25,7 +25,7 @@ namespace sfm {
  *
  * @return Loaded Regions
  */
-std::unique_ptr<features::Regions> loadRegions(const std::string& folder, IndexT id_view, const features::Image_describer& imageDescriber);
+std::unique_ptr<feature::Regions> loadRegions(const std::string& folder, IndexT id_view, const feature::ImageDescriber& imageDescriber);
 
 /**
  * Load Regions (Features & Descriptors) for each view of the provided SfM_Data container.
@@ -37,10 +37,10 @@ std::unique_ptr<features::Regions> loadRegions(const std::string& folder, IndexT
  * @param filter: to load Regions only for a sub-set of the views contained in the sfmData
  * @return true if the regions are correctlty loaded
  */
-bool loadRegionsPerView(features::RegionsPerView& regionsPerView,
+bool loadRegionsPerView(feature::RegionsPerView& regionsPerView,
             const SfM_Data& sfmData,
             const std::string& storageDirectory,
-            const std::vector<features::EImageDescriberType>& imageDescriberTypes,
+            const std::vector<feature::EImageDescriberType>& imageDescriberTypes,
             const std::set<IndexT>& filter = std::set<IndexT>());
 
 
@@ -52,10 +52,10 @@ bool loadRegionsPerView(features::RegionsPerView& regionsPerView,
  * @param imageDescriberType
  * @return true if the features are correctlty loaded
  */
-bool loadFeaturesPerView(features::FeaturesPerView& featuresPerView,
+bool loadFeaturesPerView(feature::FeaturesPerView& featuresPerView,
                     const SfM_Data& sfmData,
                     const std::string& folder,
-                    const std::vector<features::EImageDescriberType>& imageDescriberTypes);
+                    const std::vector<feature::EImageDescriberType>& imageDescriberTypes);
 
 
 } // namespace sfm

@@ -13,8 +13,8 @@ namespace matching {
 void DistanceRatioMatch(
   float f_dist_ratio,
   matching::EMatcherType eMatcherType,
-  const features::Regions & regions_I, // database
-  const features::Regions & regions_J, // query
+  const feature::Regions & regions_I, // database
+  const feature::Regions & regions_J, // query
   matching::IndMatches & matches)
 {
   RegionsDatabaseMatcher matcher(eMatcherType, regions_I);
@@ -23,7 +23,7 @@ void DistanceRatioMatch(
 
 bool RegionsDatabaseMatcher::Match(
   float distRatio,
-  const features::Regions & queryRegions,
+  const feature::Regions & queryRegions,
   matching::IndMatches & matches) const
 {
   if (queryRegions.RegionCount() == 0)
@@ -43,14 +43,14 @@ RegionsDatabaseMatcher::RegionsDatabaseMatcher():
 
 RegionsDatabaseMatcher::RegionsDatabaseMatcher(
   matching::EMatcherType matcherType,
-  const features::Regions & databaseRegions)
+  const feature::Regions & databaseRegions)
   : _matcherType(matcherType)
 {
   _regionsMatcher = createRegionsMatcher(databaseRegions, matcherType);
 }
 
 
-std::unique_ptr<IRegionsMatcher> createRegionsMatcher(const features::Regions & regions, matching::EMatcherType matcherType)
+std::unique_ptr<IRegionsMatcher> createRegionsMatcher(const feature::Regions & regions, matching::EMatcherType matcherType)
 {
   std::unique_ptr<IRegionsMatcher> out;
 

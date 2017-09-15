@@ -25,7 +25,7 @@ inline bool loadPairwiseMatches(
     matching::PairwiseMatches& out_pairwiseMatches,
     const SfM_Data& sfmData,
     const std::string& folder,
-    const std::vector<features::EImageDescriberType>& descTypes,
+    const std::vector<feature::EImageDescriberType>& descTypes,
     const std::string& matchesMode)
 {
   ALICEVISION_LOG_DEBUG("- Loading matches...");

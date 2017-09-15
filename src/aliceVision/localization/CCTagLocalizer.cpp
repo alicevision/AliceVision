@@ -7,7 +7,7 @@
 #include "rigResection.hpp"
 
 #include <aliceVision/config.hpp>
-#include <aliceVision/features/svgVisualization.hpp>
+#include <aliceVision/feature/svgVisualization.hpp>
 #include <aliceVision/matching/indMatch.hpp>
 #include <aliceVision/sfm/sfm_data_io.hpp>
 #include <aliceVision/sfm/pipelines/RegionsIO.hpp>
@@ -32,7 +32,7 @@ CCTagLocalizer::CCTagLocalizer(const std::string &sfmFilePath,
                                const std::string &descriptorsFolder)
     : _cudaPipe( 0 )
 {
-  using namespace aliceVision::features;
+  using namespace aliceVision::feature;
 
   // load the sfm data containing the 3D reconstruction info
   if (!Load(_sfm_data, sfmFilePath, sfm::ESfM_Data::ALL)) 
@@ -85,7 +85,7 @@ bool CCTagLocalizer::loadReconstructionDescriptors(const sfm::SfM_Data & sfm_dat
   ALICEVISION_LOG_DEBUG("Build observations per view");
 
   // Build observations per view
-  std::map<IndexT, std::map<features::EImageDescriberType, std::vector<features::FeatureInImage>>> observationsPerView;
+  std::map<IndexT, std::map<feature::EImageDescriberType, std::vector<feature::FeatureInImage>>> observationsPerView;
   for(const auto& landmarkValue : _sfm_data.structure)
   {
     IndexT trackId = landmarkValue.first;
@@ -116,7 +116,7 @@ bool CCTagLocalizer::loadReconstructionDescriptors(const sfm::SfM_Data & sfm_dat
       continue;
     const auto& observations = observationsPerView.at(id_view);
     {
-      const features::EImageDescriberType descType = _imageDescriber.getDescriberType();
+      const feature::EImageDescriberType descType = _imageDescriber.getDescriberType();
 
       if(observations.count(descType) == 0)
       {
@@ -126,7 +126,7 @@ bool CCTagLocalizer::loadReconstructionDescriptors(const sfm::SfM_Data & sfm_dat
       }
 
       // Load from files
-      std::unique_ptr<features::Regions> currRegions = sfm::loadRegions(feat_directory, id_view, _imageDescriber);
+      std::unique_ptr<feature::Regions> currRegions = sfm::loadRegions(feat_directory, id_view, _imageDescriber);
 
       // Filter descriptors to keep only the 3D reconstructed points
       _regionsPerView.getData()[id_view][descType] = createFilteredRegions(*currRegions, observations.at(descType), _reconstructedRegionsMappingPerView[id_view][descType]);
@@ -142,7 +142,7 @@ bool CCTagLocalizer::loadReconstructionDescriptors(const sfm::SfM_Data & sfm_dat
     for(const auto &iter : sfm_data.GetViews())
     {
       const IndexT id_view = iter.second->getViewId();
-      const features::Regions& regions = _regionsPerView.getRegions(id_view, _cctagDescType);
+      const feature::Regions& regions = _regionsPerView.getRegions(id_view, _cctagDescType);
       const std::string &sImageName = iter.second.get()->getImagePath();
       std::stringstream ss;
 
@@ -155,10 +155,10 @@ bool CCTagLocalizer::loadReconstructionDescriptors(const sfm::SfM_Data & sfm_dat
       else
       {
         ss << " contains CCTag Id: ";
-        const features::CCTAG_Regions& cctagRegions = dynamic_cast<const features::CCTAG_Regions&>(regions);
+        const feature::CCTAG_Regions& cctagRegions = dynamic_cast<const feature::CCTAG_Regions&>(regions);
         for(const auto &desc : cctagRegions.Descriptors())
         {
-          const IndexT cctagIdA = features::getCCTagId(desc);
+          const IndexT cctagIdA = feature::getCCTagId(desc);
           if(cctagIdA != UndefinedIndexT)
           {
             presentCCtagIds.insert(cctagIdA);
@@ -209,7 +209,7 @@ bool CCTagLocalizer::localize(const image::Image<unsigned char> & imageGrey,
   }
   // extract descriptors and features from image
   ALICEVISION_LOG_DEBUG("[features]\tExtract CCTag from query image");
-  features::MapRegionsPerDesc tmpQueryRegions;
+  feature::MapRegionsPerDesc tmpQueryRegions;
 
   _imageDescriber.setCudaPipe( _cudaPipe );
   _imageDescriber.Set_configuration_preset(param->_featurePreset);
@@ -221,10 +221,10 @@ bool CCTagLocalizer::localize(const image::Image<unsigned char> & imageGrey,
   if(!param->_visualDebug.empty() && !imagePath.empty())
   {
     // it automatically throws an exception if the cast does not work
-    const features::CCTAG_Regions & cctagQueryRegions = tmpQueryRegions.getRegions<features::CCTAG_Regions>(_cctagDescType);
+    const feature::CCTAG_Regions & cctagQueryRegions = tmpQueryRegions.getRegions<feature::CCTAG_Regions>(_cctagDescType);
     
     // just debugging -- save the svg image with detected cctag
-    features::saveCCTag2SVG(imagePath, 
+    feature::saveCCTag2SVG(imagePath, 
                             imageSize, 
                             cctagQueryRegions,
                             param->_visualDebug+"/"+bfs::path(imagePath).stem().string()+".svg");
@@ -243,7 +243,7 @@ void CCTagLocalizer::setCudaPipe( int i )
     _cudaPipe = i;
 }
 
-bool CCTagLocalizer::localize(const features::MapRegionsPerDesc & genQueryRegions,
+bool CCTagLocalizer::localize(const feature::MapRegionsPerDesc & genQueryRegions,
                               const std::pair<std::size_t, std::size_t> &imageSize,
                               const LocalizerParameters *parameters,
                               bool useInputIntrinsics,
@@ -260,7 +260,7 @@ bool CCTagLocalizer::localize(const features::MapRegionsPerDesc & genQueryRegion
   }
   
   // it automatically throws an exception if the cast does not work
-  const features::CCTAG_Regions &queryRegions = genQueryRegions.getRegions<features::CCTAG_Regions>(_cctagDescType);
+  const feature::CCTAG_Regions &queryRegions = genQueryRegions.getRegions<feature::CCTAG_Regions>(_cctagDescType);
   
   // a map containing for each pair <pt3D_id, pt2D_id> the number of times that 
   // the association has been seen
@@ -310,7 +310,7 @@ bool CCTagLocalizer::localize(const features::MapRegionsPerDesc & genQueryRegion
     if(!param->_visualDebug.empty() && !imagePath.empty())
     {
 //      namespace bfs = boost::filesystem;
-//      features::saveFeatures2SVG(imagePath,
+//      feature::saveFeatures2SVG(imagePath,
 //                                 imageSize,
 //                                 resectionData.pt2D,
 //                                 param._visualDebug + "/" + bfs::path(imagePath).stem().string() + ".associations.svg");
@@ -401,7 +401,7 @@ bool CCTagLocalizer::localizeRig(const std::vector<image::Image<unsigned char> >
   assert(numCams == vec_queryIntrinsics.size());
   assert(numCams == vec_subPoses.size() + 1);
 
-  std::vector<features::MapRegionsPerDesc> vec_queryRegions(numCams);
+  std::vector<feature::MapRegionsPerDesc> vec_queryRegions(numCams);
   std::vector<std::pair<std::size_t, std::size_t> > vec_imageSize;
   
   //@todo parallelize?
@@ -426,7 +426,7 @@ bool CCTagLocalizer::localizeRig(const std::vector<image::Image<unsigned char> >
                      vec_locResults);
 }
 
-bool CCTagLocalizer::localizeRig(const std::vector<features::MapRegionsPerDesc> & vec_queryRegions,
+bool CCTagLocalizer::localizeRig(const std::vector<feature::MapRegionsPerDesc> & vec_queryRegions,
                                  const std::vector<std::pair<std::size_t, std::size_t> > &vec_imageSize,
                                  const LocalizerParameters *parameters,
                                  std::vector<camera::PinholeRadialK3 > &vec_queryIntrinsics,
@@ -462,7 +462,7 @@ bool CCTagLocalizer::localizeRig(const std::vector<features::MapRegionsPerDesc> 
 }
 
 #if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_OPENGV)
-bool CCTagLocalizer::localizeRig_opengv(const std::vector<features::MapRegionsPerDesc> & vec_queryRegions,
+bool CCTagLocalizer::localizeRig_opengv(const std::vector<feature::MapRegionsPerDesc> & vec_queryRegions,
                                  const std::vector<std::pair<std::size_t, std::size_t> > &imageSize,
                                  const LocalizerParameters *parameters,
                                  std::vector<camera::PinholeRadialK3 > &vec_queryIntrinsics,
@@ -503,7 +503,7 @@ bool CCTagLocalizer::localizeRig_opengv(const std::vector<features::MapRegionsPe
     auto &matchedImages = vec_matchedImages[i];
     Mat &pts3D = vec_pts3D[i];
     Mat &pts2D = vec_pts2D[i];
-    const features::CCTAG_Regions &queryRegions = vec_queryRegions[i].getRegions<features::CCTAG_Regions>(_cctagDescType);
+    const feature::CCTAG_Regions &queryRegions = vec_queryRegions[i].getRegions<feature::CCTAG_Regions>(_cctagDescType);
     getAllAssociations(queryRegions, imageSize[i],*param, occurrences, pts2D, pts3D, matchedImages);
     numAssociations += occurrences.size();
   }
@@ -648,7 +648,7 @@ bool CCTagLocalizer::localizeRig_opengv(const std::vector<features::MapRegionsPe
 
 // subposes is n-1 as we consider the first camera as the main camera and the 
 // reference frame of the grid
-bool CCTagLocalizer::localizeRig_naive(const std::vector<features::MapRegionsPerDesc> & vec_queryRegions,
+bool CCTagLocalizer::localizeRig_naive(const std::vector<feature::MapRegionsPerDesc> & vec_queryRegions,
                                  const std::vector<std::pair<std::size_t, std::size_t> > &imageSize,
                                  const LocalizerParameters *parameters,
                                  std::vector<camera::PinholeRadialK3 > &vec_queryIntrinsics,
@@ -751,7 +751,7 @@ bool CCTagLocalizer::localizeRig_naive(const std::vector<features::MapRegionsPer
 }
 
 
-void CCTagLocalizer::getAllAssociations(const features::CCTAG_Regions &queryRegions,
+void CCTagLocalizer::getAllAssociations(const feature::CCTAG_Regions &queryRegions,
                                         const std::pair<std::size_t, std::size_t> &imageSize,
                                         const CCTagLocalizer::Parameters &param,
                                         OccurenceMap & out_occurences,
@@ -777,9 +777,9 @@ void CCTagLocalizer::getAllAssociations(const features::CCTAG_Regions &queryRegi
   {
     ALICEVISION_LOG_DEBUG(keyframeId);
     ALICEVISION_LOG_DEBUG(_sfm_data.GetViews().at(keyframeId)->getImagePath());
-    const features::Regions& matchedRegions = _regionsPerView.getRegions(keyframeId, _cctagDescType);
+    const feature::Regions& matchedRegions = _regionsPerView.getRegions(keyframeId, _cctagDescType);
     const ReconstructedRegionsMapping& regionsMapping = _reconstructedRegionsMappingPerView.at(keyframeId).at(_cctagDescType);
-    const features::CCTAG_Regions & matchedCCtagRegions = dynamic_cast<const features::CCTAG_Regions &>(matchedRegions);
+    const feature::CCTAG_Regions & matchedCCtagRegions = dynamic_cast<const feature::CCTAG_Regions &>(matchedRegions);
 
     // Matching
     std::vector<matching::IndMatch> vec_featureMatches;
@@ -812,7 +812,7 @@ void CCTagLocalizer::getAllAssociations(const features::CCTAG_Regions &queryRegi
       outputName += ".svg";
       
       const bool showNotMatched = true;
-      features::saveCCTagMatches2SVG(imagePath, 
+      feature::saveCCTagMatches2SVG(imagePath, 
                                      imageSize, 
                                      queryRegions,
                                      matchedPath,
@@ -857,7 +857,7 @@ void CCTagLocalizer::getAllAssociations(const features::CCTAG_Regions &queryRegi
       const auto &key = idx.first;
       const auto &value = idx.second;
        ALICEVISION_LOG_DEBUG("[matching]\tAssociations "
-               << features::EImageDescriberType_enumToString(key.descType) << " "
+               << feature::EImageDescriberType_enumToString(key.descType) << " "
                << key.landmarkId << "," << key.featId <<" found "
                << value << " times.");
        if(value > maxOcc)
@@ -902,9 +902,9 @@ void CCTagLocalizer::getAllAssociations(const features::CCTAG_Regions &queryRegi
 }
 
 
-void kNearestKeyFrames(const features::CCTAG_Regions & queryRegions,
-                       features::EImageDescriberType cctagDescType,
-                       const features::RegionsPerView & regionsPerView,
+void kNearestKeyFrames(const feature::CCTAG_Regions & queryRegions,
+                       feature::EImageDescriberType cctagDescType,
+                       const feature::RegionsPerView & regionsPerView,
                        std::size_t nNearestKeyFrames,
                        std::vector<IndexT> & out_kNearestFrames,
                        const float similarityThreshold /*=.0f*/)
@@ -917,7 +917,7 @@ void kNearestKeyFrames(const features::CCTAG_Regions & queryRegions,
   
   for(const auto & keyFrame : regionsPerView.getData())
   {
-    const features::CCTAG_Regions& keyFrameCCTagRegions = keyFrame.second.getRegions<features::CCTAG_Regions>(cctagDescType);
+    const feature::CCTAG_Regions& keyFrameCCTagRegions = keyFrame.second.getRegions<feature::CCTAG_Regions>(cctagDescType);
     const float similarity = viewSimilarity(queryRegions, keyFrameCCTagRegions);
     sortedViewSimilarities.emplace(similarity, keyFrame.first);
   }
@@ -939,21 +939,21 @@ void kNearestKeyFrames(const features::CCTAG_Regions & queryRegions,
   }
 }
  
-void viewMatching(const features::CCTAG_Regions & regionsA,
-                  const features::CCTAG_Regions & regionsB,
+void viewMatching(const feature::CCTAG_Regions & regionsA,
+                  const feature::CCTAG_Regions & regionsB,
                   std::vector<matching::IndMatch> & out_featureMatches)
 {
   out_featureMatches.clear();
   
   for(std::size_t i=0 ; i < regionsA.Descriptors().size() ; ++i)
   {
-    const IndexT cctagIdA = features::getCCTagId(regionsA.Descriptors()[i]);
+    const IndexT cctagIdA = feature::getCCTagId(regionsA.Descriptors()[i]);
     // todo: Should be change to: Find in regionsB.Descriptors() the nearest 
     // descriptor to descriptorA. Currently, a cctag descriptor encode directly
     // the cctag id, then the id equality is tested.
     for(std::size_t j=0 ; j < regionsB.Descriptors().size() ; ++j)
     {
-      const IndexT cctagIdB = features::getCCTagId(regionsB.Descriptors()[j]);
+      const IndexT cctagIdB = feature::getCCTagId(regionsB.Descriptors()[j]);
       if ( cctagIdA == cctagIdB )
       {
         out_featureMatches.emplace_back(i,j);
@@ -965,8 +965,8 @@ void viewMatching(const features::CCTAG_Regions & regionsA,
  
  
  
-float viewSimilarity(const features::CCTAG_Regions & regionsA,
-                     const features::CCTAG_Regions & regionsB)
+float viewSimilarity(const feature::CCTAG_Regions & regionsA,
+                     const feature::CCTAG_Regions & regionsB)
 {
   assert(regionsA.DescriptorLength() == regionsB.DescriptorLength()); 
   
@@ -977,12 +977,12 @@ float viewSimilarity(const features::CCTAG_Regions & regionsA,
   return (descriptorViewA & descriptorViewB).count();
 }
 
-std::bitset<128> constructCCTagViewDescriptor(const std::vector<features::CCTAG_Regions::DescriptorT> & vCCTagDescriptors)
+std::bitset<128> constructCCTagViewDescriptor(const std::vector<feature::CCTAG_Regions::DescriptorT> & vCCTagDescriptors)
 {
   std::bitset<128> descriptorView;
   for(const auto & cctagDescriptor : vCCTagDescriptors )
   {
-    const IndexT cctagId = features::getCCTagId(cctagDescriptor);
+    const IndexT cctagId = feature::getCCTagId(cctagDescriptor);
     if ( cctagId != UndefinedIndexT)
     {
       descriptorView.set(cctagId, true);

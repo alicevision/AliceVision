@@ -5,7 +5,7 @@
 
 #include "aliceVision/numeric/numeric.h"
 #include "aliceVision/sfm/sfm_data.hpp"
-#include "aliceVision/features/RegionsPerView.hpp"
+#include "aliceVision/feature/RegionsPerView.hpp"
 #include <aliceVision/robust_estimation/robust_estimators.hpp>
 
 #include <cstddef>
@@ -33,7 +33,7 @@ struct Image_Localizer_Match_Data
   /// and pt3D.
   std::vector<std::size_t> vec_inliers;
 
-  std::vector<features::EImageDescriberType> vec_descType;
+  std::vector<feature::EImageDescriberType> vec_descType;
   
   /// Upper bound pixel(s) tolerance for residual errors
   double error_max = std::numeric_limits<double>::infinity();
@@ -55,7 +55,7 @@ public:
   virtual bool Init
   (
     const SfM_Data & sfm_data,
-    const features::RegionsPerView & regionPerView
+    const feature::RegionsPerView & regionPerView
   ) = 0;
 
   /**
@@ -72,7 +72,7 @@ public:
   (
     const Pair & image_size,
     const camera::IntrinsicBase * optional_intrinsics,
-    const features::Regions & query_regions,
+    const feature::Regions & query_regions,
     geometry::Pose3 & pose,
     Image_Localizer_Match_Data * resection_data = nullptr // optional
   ) const = 0;

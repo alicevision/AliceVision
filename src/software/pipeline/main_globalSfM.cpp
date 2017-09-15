@@ -2,7 +2,7 @@
 // the terms of the MPL2 license (see the COPYING.md file).
 
 #include "aliceVision/sfm/pipelines/RegionsIO.hpp"
-#include "aliceVision/features/ImageDescriberCommon.hpp"
+#include "aliceVision/feature/imageDescriberCommon.hpp"
 #include "aliceVision/sfm/pipelines/global/sfm_global_engine_relative_motions.hpp"
 #include "aliceVision/system/timer.hpp"
 
@@ -13,7 +13,7 @@
 
 using namespace aliceVision;
 using namespace aliceVision::sfm;
-using namespace aliceVision::features;
+using namespace aliceVision::feature;
 
 int main(int argc, char **argv)
 {
@@ -125,7 +125,7 @@ int main(int argc, char **argv)
   }
 
   // Get describerTypes
-  const std::vector<features::EImageDescriberType> describerTypes = features::EImageDescriberType_stringToEnums(describerMethods);
+  const std::vector<feature::EImageDescriberType> describerTypes = feature::EImageDescriberType_stringToEnums(describerMethods);
 
   // Features reading
   FeaturesPerView featuresPerView;

@@ -24,7 +24,7 @@ namespace sfm{
 
 using namespace aliceVision::camera;
 using namespace aliceVision::geometry;
-using namespace aliceVision::features;
+using namespace aliceVision::feature;
 
 GlobalSfMReconstructionEngine_RelativeMotions::GlobalSfMReconstructionEngine_RelativeMotions(
   const SfM_Data & sfm_data,
@@ -60,7 +60,7 @@ GlobalSfMReconstructionEngine_RelativeMotions::~GlobalSfMReconstructionEngine_Re
   }
 }
 
-void GlobalSfMReconstructionEngine_RelativeMotions::SetFeaturesProvider(features::FeaturesPerView * featuresPerView)
+void GlobalSfMReconstructionEngine_RelativeMotions::SetFeaturesProvider(feature::FeaturesPerView * featuresPerView)
 {
   _featuresPerView = featuresPerView;
 
@@ -535,8 +535,8 @@ void GlobalSfMReconstructionEngine_RelativeMotions::Compute_Relative_Rotations
 
       for(const auto& matchesPerDescIt: matchesPerDesc)
       {
-        const features::EImageDescriberType descType = matchesPerDescIt.first;
-        assert(descType != features::EImageDescriberType::UNINITIALIZED);
+        const feature::EImageDescriberType descType = matchesPerDescIt.first;
+        assert(descType != feature::EImageDescriberType::UNINITIALIZED);
         const matching::IndMatches & matches = matchesPerDescIt.second;
 
         for (const auto & match : matches)
@@ -590,9 +590,9 @@ void GlobalSfMReconstructionEngine_RelativeMotions::Compute_Relative_Rotations
         size_t landmarkId = 0;
         for(const auto& matchesPerDescIt: matchesPerDesc)
         {
-          const features::EImageDescriberType descType = matchesPerDescIt.first;
-          assert(descType != features::EImageDescriberType::UNINITIALIZED);
-          if(descType == features::EImageDescriberType::UNINITIALIZED)
+          const feature::EImageDescriberType descType = matchesPerDescIt.first;
+          assert(descType != feature::EImageDescriberType::UNINITIALIZED);
+          if(descType == feature::EImageDescriberType::UNINITIALIZED)
             throw std::logic_error("descType UNINITIALIZED");
           const matching::IndMatches & matches = matchesPerDescIt.second;
           for (const matching::IndMatch& match: matches)

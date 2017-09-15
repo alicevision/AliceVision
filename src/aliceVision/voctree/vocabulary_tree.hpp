@@ -8,8 +8,8 @@
 #include "distance.hpp"
 #include "feature_allocator.hpp"
 
-#include <aliceVision/features/ImageDescriberCommon.hpp>
-#include <aliceVision/features/regions_factory.hpp>
+#include <aliceVision/feature/imageDescriberCommon.hpp>
+#include <aliceVision/feature/regionsFactory.hpp>
 
 #include <aliceVision/types.hpp>
 #include <aliceVision/system/Logger.hpp>
@@ -341,9 +341,9 @@ void VocabularyTree<Feature, Distance, FeatureAllocator>::setNodeCounts()
  */
 float sparseDistance(const SparseHistogram& v1, const SparseHistogram& v2, const std::string &distanceMethod = "classic", const std::vector<float>& word_weights = std::vector<float>());
 
-inline std::unique_ptr<IVocabularyTree> createVoctreeForDescriberType(features::EImageDescriberType imageDescriberType)
+inline std::unique_ptr<IVocabularyTree> createVoctreeForDescriberType(feature::EImageDescriberType imageDescriberType)
 {
-  using namespace aliceVision::features;
+  using namespace aliceVision::feature;
   std::unique_ptr<IVocabularyTree> res;
 
   switch(imageDescriberType)
@@ -351,7 +351,7 @@ inline std::unique_ptr<IVocabularyTree> createVoctreeForDescriberType(features::
     case EImageDescriberType::SIFT:       res.reset(new VocabularyTree<SIFT_Regions::DescriptorT>); break;
     case EImageDescriberType::SIFT_FLOAT: res.reset(new VocabularyTree<SIFT_Float_Regions::DescriptorT>); break;
     case EImageDescriberType::AKAZE:      res.reset(new VocabularyTree<AKAZE_Float_Regions::DescriptorT>); break;
-    case EImageDescriberType::AKAZE_MLDB: res.reset(new VocabularyTree<AKAZE_Binary_Regions::DescriptorT>); break;
+    case EImageDescriberType::AKAZE_MLDB: res.reset(new VocabularyTree<AKAZE_BinaryRegions::DescriptorT>); break;
 
 #if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_CCTAG)
     case EImageDescriberType::CCTAG3:
@@ -371,7 +371,7 @@ inline std::unique_ptr<IVocabularyTree> createVoctreeForDescriberType(features::
   return res;
 }
 
-inline void load(std::unique_ptr<IVocabularyTree>& out_voctree, features::EImageDescriberType& out_descType, const std::string& filepath)
+inline void load(std::unique_ptr<IVocabularyTree>& out_voctree, feature::EImageDescriberType& out_descType, const std::string& filepath)
 {
   std::size_t lastDot = filepath.find_last_of(".");
   if(lastDot == std::string::npos)
@@ -382,7 +382,7 @@ inline void load(std::unique_ptr<IVocabularyTree>& out_voctree, features::EImage
 
   const std::string descTypeStr = filepath.substr((secondLastDot+1), lastDot - (secondLastDot+1));
 
-  out_descType = features::EImageDescriberType_stringToEnum(descTypeStr);
+  out_descType = feature::EImageDescriberType_stringToEnum(descTypeStr);
   out_voctree = createVoctreeForDescriberType(out_descType);
   out_voctree->load(filepath);
 }

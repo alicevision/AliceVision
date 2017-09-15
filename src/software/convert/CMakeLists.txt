@@ -7,7 +7,7 @@ add_executable(aliceVision_convertSfMFormat main_convertSfMFormat.cpp)
 
 target_link_libraries(aliceVision_convertSfMFormat
 	aliceVision_system
-	aliceVision_features
+	aliceVision_feature
 	aliceVision_sfm
 	stlplus
 	${Boost_LIBRARIES}
@@ -27,7 +27,7 @@ add_executable(aliceVision_convertFloatDescriptorToUchar main_convertFloatDescri
 
 target_link_libraries(aliceVision_convertFloatDescriptorToUchar
 	aliceVision_localization
-	aliceVision_features
+	aliceVision_feature
 	${Boost_LIBRARIES}
 )
 
@@ -47,7 +47,7 @@ if(ALICEVISION_HAVE_ALEMBIC)
 
 	target_link_libraries(aliceVision_convertAnimatedCamera
 		aliceVision_system
-		aliceVision_features
+		aliceVision_feature
 		aliceVision_sfm
 		stlplus
 	)

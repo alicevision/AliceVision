@@ -61,7 +61,7 @@ bool LoadMatchFile(
         // Read descType and number of matches
         stream >> descTypeStr >> nbMatches;
 
-        features::EImageDescriberType descType = features::EImageDescriberType_stringToEnum(descTypeStr);
+        feature::EImageDescriberType descType = feature::EImageDescriberType_stringToEnum(descTypeStr);
         std::vector<IndMatch> matchesPerDesc(nbMatches);
         // Read all matches
         for (std::size_t i = 0; i < nbMatches; ++i)
@@ -127,7 +127,7 @@ void filterMatchesByViews(
 
 void filterMatchesByDesc(
   PairwiseMatches & allMatches,
-  const std::vector<features::EImageDescriberType>& descTypesFilter)
+  const std::vector<feature::EImageDescriberType>& descTypesFilter)
 {
   matching::PairwiseMatches filteredMatches;
   for(const auto& matchesPerDesc: allMatches)
@@ -190,7 +190,7 @@ bool LoadMatchFilePerImage(
     ss << " * " << imagePairIt.first.first << "-" << imagePairIt.first.second << ": " << imagePairIt.second.getNbAllMatches() << "    ";
     for(const auto& matchesPerDeskIt: imagePairIt.second)
     {
-       ss << " [" << features::EImageDescriberType_enumToString(matchesPerDeskIt.first) << ": " << matchesPerDeskIt.second.size() << "]";
+       ss << " [" << feature::EImageDescriberType_enumToString(matchesPerDeskIt.first) << ": " << matchesPerDeskIt.second.size() << "]";
     }
     ALICEVISION_LOG_TRACE(ss.str());
   }
@@ -201,7 +201,7 @@ bool Load(
   PairwiseMatches & matches,
   const std::set<IndexT> & viewsKeysFilter,
   const std::string & folder,
-  const std::vector<features::EImageDescriberType>& descTypesFilter,
+  const std::vector<feature::EImageDescriberType>& descTypesFilter,
   const std::string & mode)
 {
   bool res = false;
@@ -238,7 +238,7 @@ bool Load(
     ss << " * " << imagePairIt.first.first << "-" << imagePairIt.first.second << ": " << imagePairIt.second.getNbAllMatches() << "    ";
     for(const auto& matchesPerDeskIt: imagePairIt.second)
     {
-       ss << " [" << features::EImageDescriberType_enumToString(matchesPerDeskIt.first) << ": " << matchesPerDeskIt.second.size() << "]";
+       ss << " [" << feature::EImageDescriberType_enumToString(matchesPerDeskIt.first) << ": " << matchesPerDeskIt.second.size() << "]";
     }
     ALICEVISION_LOG_TRACE(ss.str());
   }
@@ -267,7 +267,7 @@ private:
              << matchesPerDesc.size() << '\n';
       for(const auto& m: matchesPerDesc)
       {
-        stream << features::EImageDescriberType_enumToString(m.first) << " " << m.second.size() << '\n';
+        stream << feature::EImageDescriberType_enumToString(m.first) << " " << m.second.size() << '\n';
         copy(m.second.begin(), m.second.end(),
              std::ostream_iterator<IndMatch>(stream, "\n"));
       }

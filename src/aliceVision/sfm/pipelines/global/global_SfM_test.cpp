@@ -2,7 +2,7 @@
 // the terms of the MPL2 license (see the COPYING.md file).
 
 #include "aliceVision/sfm/pipelines/pipelines_test.hpp"
-#include "aliceVision/features/FeaturesPerView.hpp"
+#include "aliceVision/feature/FeaturesPerView.hpp"
 #include "aliceVision/matching/indMatch.hpp"
 #include "aliceVision/sfm/sfm.hpp"
 #include "testing/testing.h"
@@ -45,14 +45,14 @@ TEST(GLOBAL_SFM, RotationAveragingL2_TranslationAveragingL1) {
     stlplus::create_filespec("./", "Reconstruction_Report.html"));
 
   // Configure the featuresPerView & the matches_provider from the synthetic dataset
-  features::FeaturesPerView featuresPerView;
+  feature::FeaturesPerView featuresPerView;
   
   // Add a tiny noise in 2D observations to make data more realistic
   std::normal_distribution<double> distribution(0.0,0.5);
-  featuresPerView.createSyntheticData(features::EImageDescriberType::UNKNOWN, d, distribution);
+  featuresPerView.createSyntheticData(feature::EImageDescriberType::UNKNOWN, d, distribution);
 
   matching::PairwiseMatches pairwiseMatches;
-  generateSyntheticMatches(pairwiseMatches, d, features::EImageDescriberType::UNKNOWN);
+  generateSyntheticMatches(pairwiseMatches, d, feature::EImageDescriberType::UNKNOWN);
 
   // Configure data provider (Features and Matches)
   sfmEngine.SetFeaturesProvider(&featuresPerView);
@@ -95,14 +95,14 @@ TEST(GLOBAL_SFM, RotationAveragingL1_TranslationAveragingL1) {
     stlplus::create_filespec("./", "Reconstruction_Report.html"));
 
   // Configure the featuresPerView & the matches_provider from the synthetic dataset
-  features::FeaturesPerView featuresPerView;
+  feature::FeaturesPerView featuresPerView;
   
   // Add a tiny noise in 2D observations to make data more realistic
   std::normal_distribution<double> distribution(0.0,0.5);
-  featuresPerView.createSyntheticData(features::EImageDescriberType::UNKNOWN, d, distribution);
+  featuresPerView.createSyntheticData(feature::EImageDescriberType::UNKNOWN, d, distribution);
 
   matching::PairwiseMatches pairwiseMatches;
-  generateSyntheticMatches(pairwiseMatches, d, features::EImageDescriberType::UNKNOWN);
+  generateSyntheticMatches(pairwiseMatches, d, feature::EImageDescriberType::UNKNOWN);
 
   // Configure data provider (Features and Matches)
   sfmEngine.SetFeaturesProvider(&featuresPerView);
@@ -145,13 +145,13 @@ TEST(GLOBAL_SFM, RotationAveragingL2_TranslationAveragingL2_Chordal) {
     stlplus::create_filespec("./", "Reconstruction_Report.html"));
 
   // Configure the featuresPerView & the matches_provider from the synthetic dataset
-  features::FeaturesPerView featuresPerView;
+  feature::FeaturesPerView featuresPerView;
   // Add a tiny noise in 2D observations to make data more realistic
   std::normal_distribution<double> distribution(0.0,0.5);
-  featuresPerView.createSyntheticData(features::EImageDescriberType::UNKNOWN, d, distribution);
+  featuresPerView.createSyntheticData(feature::EImageDescriberType::UNKNOWN, d, distribution);
 
   matching::PairwiseMatches pairwiseMatches;
-  generateSyntheticMatches(pairwiseMatches, d, features::EImageDescriberType::UNKNOWN);
+  generateSyntheticMatches(pairwiseMatches, d, feature::EImageDescriberType::UNKNOWN);
 
   // Configure data provider (Features and Matches)
   sfmEngine.SetFeaturesProvider(&featuresPerView);
@@ -194,14 +194,14 @@ TEST(GLOBAL_SFM, RotationAveragingL2_TranslationAveragingSoftL1) {
     stlplus::create_filespec("./", "Reconstruction_Report.html"));
 
   // Configure the featuresPerView & the matches_provider from the synthetic dataset
-  features::FeaturesPerView featuresPerView;
+  feature::FeaturesPerView featuresPerView;
   
   // Add a tiny noise in 2D observations to make data more realistic
   std::normal_distribution<double> distribution(0.0,0.5);
-   featuresPerView.createSyntheticData(features::EImageDescriberType::UNKNOWN, d, distribution);
+   featuresPerView.createSyntheticData(feature::EImageDescriberType::UNKNOWN, d, distribution);
 
    matching::PairwiseMatches pairwiseMatches;
-   generateSyntheticMatches(pairwiseMatches, d, features::EImageDescriberType::UNKNOWN);
+   generateSyntheticMatches(pairwiseMatches, d, feature::EImageDescriberType::UNKNOWN);
 
   // Configure data provider (Features and Matches)
   sfmEngine.SetFeaturesProvider(&featuresPerView);

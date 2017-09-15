@@ -82,7 +82,7 @@ target_link_libraries(aliceVision_sfm
   aliceVision_lInftyComputerVision
   aliceVision_system
   aliceVision_matching
-  aliceVision_features
+  aliceVision_feature
   aliceVision_exif
   ${LOG_LIB}
 )
@@ -109,10 +109,10 @@ install(TARGETS aliceVision_sfm
   EXPORT aliceVision-targets
 )
 
-UNIT_TEST(aliceVision sfm_data_io    "aliceVision_features;aliceVision_sfm;aliceVision_system;stlplus")
-UNIT_TEST(aliceVision sfm_data_BA    "aliceVision_multiview_test_data;aliceVision_features;aliceVision_multiview;aliceVision_sfm;aliceVision_system;stlplus")
-UNIT_TEST(aliceVision sfm_data_utils "aliceVision_features;aliceVision_multiview;aliceVision_system;aliceVision_sfm;stlplus")
-UNIT_TEST(aliceVision Rig            "aliceVision_features;aliceVision_sfm;aliceVision_system;stlplus")
+UNIT_TEST(aliceVision sfm_data_io    "aliceVision_feature;aliceVision_sfm;aliceVision_system;stlplus")
+UNIT_TEST(aliceVision sfm_data_BA    "aliceVision_multiview_test_data;aliceVision_feature;aliceVision_multiview;aliceVision_sfm;aliceVision_system;stlplus")
+UNIT_TEST(aliceVision sfm_data_utils "aliceVision_feature;aliceVision_multiview;aliceVision_system;aliceVision_sfm;stlplus")
+UNIT_TEST(aliceVision Rig            "aliceVision_feature;aliceVision_sfm;aliceVision_system;stlplus")
 
 if(ALICEVISION_HAVE_ALEMBIC)
   UNIT_TEST(aliceVision AlembicImporter "aliceVision_sfm;${ABC_LIBRARIES}")

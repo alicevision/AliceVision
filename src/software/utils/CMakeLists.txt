@@ -7,7 +7,7 @@ add_executable(aliceVision_utils_voctreeCreation main_voctreeCreation.cpp)
 
 target_link_libraries(aliceVision_utils_voctreeCreation
 	aliceVision_voctree
-	aliceVision_features
+	aliceVision_feature
 	${Boost_LIBRARIES}
 )
 
@@ -60,7 +60,7 @@ add_executable(aliceVision_utils_frustumFiltering main_frustumFiltering.cpp)
 
 target_link_libraries(aliceVision_utils_frustumFiltering
   aliceVision_system
-  aliceVision_features
+  aliceVision_feature
   aliceVision_sfm
   stlplus
 )
@@ -103,7 +103,7 @@ add_executable(aliceVision_utils_qualityEvaluation main_qualityEvaluation.cpp)
 
 target_link_libraries(aliceVision_utils_qualityEvaluation
   aliceVision_system
-  aliceVision_features
+  aliceVision_feature
   aliceVision_sfm
   stlplus
 )
@@ -122,7 +122,7 @@ add_executable(aliceVision_utils_sfmAlignment main_sfmAlignment.cpp)
 
 target_link_libraries(aliceVision_utils_sfmAlignment
   aliceVision_system
-  aliceVision_features
+  aliceVision_feature
   aliceVision_sfm
   stlplus
 )
@@ -146,7 +146,7 @@ target_link_libraries(aliceVision_utils_sfmColorHarmonize
   aliceVision_system
   aliceVision_image
   aliceVision_kvld
-  aliceVision_features
+  aliceVision_feature
   aliceVision_sfm
   stlplus
   ${CLP_LIBRARIES}

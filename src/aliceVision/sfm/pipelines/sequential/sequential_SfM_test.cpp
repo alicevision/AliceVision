@@ -1,7 +1,7 @@
 // This file is part of the AliceVision project and is made available under
 // the terms of the MPL2 license (see the COPYING.md file).
 
-#include "aliceVision/features/ImageDescriberCommon.hpp"
+#include "aliceVision/feature/imageDescriberCommon.hpp"
 #include "aliceVision/sfm/pipelines/pipelines_test.hpp"
 #include "aliceVision/sfm/sfm.hpp"
 
@@ -47,14 +47,14 @@ TEST(SEQUENTIAL_SFM, Known_Intrinsics) {
     stlplus::create_filespec("./", "Reconstruction_Report.html"));
 
   // Configure the featuresPerView & the matches_provider from the synthetic dataset
-  features::FeaturesPerView featuresPerView;
+  feature::FeaturesPerView featuresPerView;
   
   // Add a tiny noise in 2D observations to make data more realistic
   std::normal_distribution<double> distribution(0.0,0.5);
-  featuresPerView.createSyntheticData(features::EImageDescriberType::UNKNOWN, d, distribution);
+  featuresPerView.createSyntheticData(feature::EImageDescriberType::UNKNOWN, d, distribution);
 
   matching::PairwiseMatches pairwiseMatches;
-  generateSyntheticMatches(pairwiseMatches, d, features::EImageDescriberType::UNKNOWN);
+  generateSyntheticMatches(pairwiseMatches, d, feature::EImageDescriberType::UNKNOWN);
 
   // Configure data provider (Features and Matches)
   sfmEngine.setFeatures(&featuresPerView);
@@ -107,15 +107,15 @@ TEST(SEQUENTIAL_SFM, Partially_Known_Intrinsics) {
     stlplus::create_filespec("./", "Reconstruction_Report.html"));
 
   // Configure the featuresPerView & the matches_provider from the synthetic dataset
-  features::FeaturesPerView featuresPerView;
+  feature::FeaturesPerView featuresPerView;
   
   // Add a tiny noise in 2D observations to make data more realistic
   std::normal_distribution<double> distribution(0.0,0.5);
-  featuresPerView.createSyntheticData(features::EImageDescriberType::UNKNOWN, d, distribution);
+  featuresPerView.createSyntheticData(feature::EImageDescriberType::UNKNOWN, d, distribution);
 
   matching::PairwiseMatches pairwiseMatches;
 
-  generateSyntheticMatches(pairwiseMatches, d, features::EImageDescriberType::UNKNOWN);
+  generateSyntheticMatches(pairwiseMatches, d, feature::EImageDescriberType::UNKNOWN);
 
   // Configure data provider (Features and Matches)
   sfmEngine.setFeatures(&featuresPerView);
@@ -160,14 +160,14 @@ TEST(SEQUENTIAL_SFM, Rig) {
     stlplus::create_filespec("./", "Reconstruction_Report.html"));
 
   // Configure the featuresPerView & the matches_provider from the synthetic dataset
-  features::FeaturesPerView featuresPerView;
+  feature::FeaturesPerView featuresPerView;
 
   // Add a tiny noise in 2D observations to make data more realistic
   std::normal_distribution<double> distribution(0.0,0.5);
-  featuresPerView.createSyntheticData(features::EImageDescriberType::UNKNOWN, d, distribution);
+  featuresPerView.createSyntheticData(feature::EImageDescriberType::UNKNOWN, d, distribution);
 
   matching::PairwiseMatches pairwiseMatches;
-  generateSyntheticMatches(pairwiseMatches, d, features::EImageDescriberType::UNKNOWN);
+  generateSyntheticMatches(pairwiseMatches, d, feature::EImageDescriberType::UNKNOWN);
 
   // Configure data provider (Features and Matches)
   sfmEngine.setFeatures(&featuresPerView);

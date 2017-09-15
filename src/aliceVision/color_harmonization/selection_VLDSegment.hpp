@@ -17,8 +17,8 @@ class commonDataByPair_VLDSegment  : public commonDataByPair
   commonDataByPair_VLDSegment( const std::string& sLeftImage,
                                const std::string& sRightImage,
                                const matching::IndMatches& matchesPerDesc,
-                               const std::vector<features::SIOPointFeature>& featsL,
-                               const std::vector<features::SIOPointFeature>& featsR)
+                               const std::vector<feature::SIOPointFeature>& featsL,
+                               const std::vector<feature::SIOPointFeature>& featsR)
            : commonDataByPair( sLeftImage, sRightImage )
            , _matches( matchesPerDesc )
            , _featsL( featsL )
@@ -101,8 +101,8 @@ class commonDataByPair_VLDSegment  : public commonDataByPair
 
 private:
   // Left and Right features
-  const vector<features::SIOPointFeature>& _featsL;
-  const vector<features::SIOPointFeature>& _featsR;
+  const vector<feature::SIOPointFeature>& _featsL;
+  const vector<feature::SIOPointFeature>& _featsR;
   // Left and Right corresponding index (putatives matches)
   matching::IndMatches _matches;
 };

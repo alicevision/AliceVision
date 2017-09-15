@@ -6,7 +6,7 @@
 #include "LocalizationResult.hpp"
 
 #include <aliceVision/image/image_container.hpp>
-#include <aliceVision/features/image_describer.hpp>
+#include <aliceVision/feature/ImageDescriber.hpp>
 #include <aliceVision/camera/PinholeRadial.hpp>
 #include <aliceVision/robust_estimation/robust_estimators.hpp>
 #include <aliceVision/numeric/numeric.h>
@@ -20,7 +20,7 @@ struct LocalizerParameters
   _visualDebug(""),
   _refineIntrinsics(false),
   _fDistRatio(0.8),
-  _featurePreset(features::EDESCRIBER_PRESET::ULTRA_PRESET),
+  _featurePreset(feature::EDESCRIBER_PRESET::ULTRA_PRESET),
   _errorMax(std::numeric_limits<double>::infinity()),
   _resectionEstimator(robust::ROBUST_ESTIMATOR_ACRANSAC),
   _matchingEstimator(robust::ROBUST_ESTIMATOR_ACRANSAC),
@@ -36,7 +36,7 @@ struct LocalizerParameters
   /// the distance ratio to use when matching feature with the ratio test
   float _fDistRatio;
   /// the preset to use for feature extraction of the query image
-  features::EDESCRIBER_PRESET _featurePreset;
+  feature::EDESCRIBER_PRESET _featurePreset;
   /// maximum reprojection error allowed for resectioning
   double _errorMax;
   /// the type of *sac framework to use for resection
@@ -85,7 +85,7 @@ public:
                         LocalizationResult & localizationResult,
                         const std::string& imagePath = std::string()) = 0;
 
-  virtual bool localize(const features::MapRegionsPerDesc &queryRegions,
+  virtual bool localize(const feature::MapRegionsPerDesc &queryRegions,
                         const std::pair<std::size_t, std::size_t> &imageSize,
                         const LocalizerParameters *param,
                         bool useInputIntrinsics,
@@ -100,7 +100,7 @@ public:
                            geometry::Pose3 &rigPose, 
                            std::vector<LocalizationResult>& vec_locResults)=0;
     
-  virtual bool localizeRig(const std::vector<features::MapRegionsPerDesc> & vec_queryRegions,
+  virtual bool localizeRig(const std::vector<feature::MapRegionsPerDesc> & vec_queryRegions,
                            const std::vector<std::pair<std::size_t, std::size_t> > &imageSize,
                            const LocalizerParameters *param,
                            std::vector<camera::PinholeRadialK3 > &vec_queryIntrinsics,

@@ -8,7 +8,7 @@
 #include "aliceVision/sfm/sfm_data_filters.hpp"
 #include "aliceVision/sfm/pipelines/localization/SfM_Localizer.hpp"
 
-#include "aliceVision/features/FeaturesPerView.hpp"
+#include "aliceVision/feature/FeaturesPerView.hpp"
 #include "aliceVision/matching/indMatch.hpp"
 #include "aliceVision/multiview/essential.hpp"
 #include "aliceVision/multiview/triangulation.hpp"
@@ -57,7 +57,7 @@ void computeTracksPyramidPerView(
     const tracks::TracksPerView& tracksPerView,
     const tracks::TracksMap& map_tracks,
     const Views& views,
-    const features::FeaturesPerView& featuresProvider,
+    const feature::FeaturesPerView& featuresProvider,
     const std::size_t pyramidBase,
     const std::size_t pyramidDepth,
     tracks::TracksPyramidPerView& tracksPyramidPerView)
@@ -1331,7 +1331,7 @@ bool SequentialSfMReconstructionEngine::Resection(const std::size_t viewIndex)
     iterfeatId != vec_featIdForResection.end();
     ++iterfeatId, ++iterTrackId, ++cpt)
   {
-    const features::EImageDescriberType descType = iterfeatId->first;
+    const feature::EImageDescriberType descType = iterfeatId->first;
     resection_data.pt3D.col(cpt) = _sfm_data.GetLandmarks().at(*iterTrackId).X;
     resection_data.pt2D.col(cpt) = _featuresPerView->getFeatures(viewIndex, descType)[iterfeatId->second].coords().cast<double>();
     resection_data.vec_descType.at(cpt) = descType;

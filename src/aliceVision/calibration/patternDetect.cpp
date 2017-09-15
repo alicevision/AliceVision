@@ -11,7 +11,7 @@
 #include <boost/algorithm/string/case_conv.hpp>
 
 #if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_CCTAG)
-#include <aliceVision/features/cctag/CCTAG_describer.hpp>
+#include <aliceVision/feature/cctag/ImageDescriber_CCTAG.hpp>
 #include <cctag/ICCTag.hpp>
 #include <cctag/utils/LogTime.hpp>
 #endif

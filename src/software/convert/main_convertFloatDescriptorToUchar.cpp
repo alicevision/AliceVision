@@ -1,7 +1,7 @@
 // This file is part of the AliceVision project and is made available under
 // the terms of the MPL2 license (see the COPYING.md file).
 
-#include <aliceVision/features/descriptor.hpp>
+#include <aliceVision/feature/Descriptor.hpp>
 #include <aliceVision/system/Logger.hpp>
 
 #include <boost/progress.hpp>
@@ -10,7 +10,6 @@
 #include <boost/algorithm/string/case_conv.hpp> 
 
 #include <cstdlib>
-
 
 namespace bfs = boost::filesystem;
 namespace po = boost::program_options;
@@ -92,14 +91,14 @@ int main( int argc, char** argv )
     else if(ext == ".desc")
     {
       const std::string outpath = (bfs::path(outputFolder)/bfs::path(filename)).string(); 
-      std::vector<features::Descriptor<float, siftSize> > floatDescriptors;
+      std::vector<feature::Descriptor<float, siftSize> > floatDescriptors;
       
       // load the float descriptors
-      features::loadDescsFromBinFile(iterator->path().string(), floatDescriptors, false);
+      feature::loadDescsFromBinFile(iterator->path().string(), floatDescriptors, false);
       
       const size_t numDesc = floatDescriptors.size();
       
-      std::vector<features::Descriptor<unsigned char, siftSize> > charDescriptors(numDesc);
+      std::vector<feature::Descriptor<unsigned char, siftSize> > charDescriptors(numDesc);
  
       for(std::size_t i = 0; i < numDesc; ++i)
       {
@@ -123,7 +122,7 @@ int main( int argc, char** argv )
       assert(charDescriptors.size() == floatDescriptors.size());
       
       // save the unsigned char
-      features::saveDescsToBinFile(outpath, charDescriptors);
+      feature::saveDescsToBinFile(outpath, charDescriptors);
       
       if(doSanityCheck)
       {
@@ -131,16 +130,16 @@ int main( int argc, char** argv )
         // reload everything and compare
         floatDescriptors.clear();
         charDescriptors.clear();
-        features::loadDescsFromBinFile(iterator->path().string(), floatDescriptors, false);
-        features::loadDescsFromBinFile(outpath, charDescriptors, false);
+        feature::loadDescsFromBinFile(iterator->path().string(), floatDescriptors, false);
+        feature::loadDescsFromBinFile(outpath, charDescriptors, false);
 
         assert(charDescriptors.size() == numDesc);
         assert(charDescriptors.size() == floatDescriptors.size());
 
         for(std::size_t i = 0; i < numDesc; ++i)
         {
-          const features::Descriptor<float, siftSize> &currFloat = floatDescriptors[i];
-          const features::Descriptor<unsigned char, siftSize> &currUchar = charDescriptors[i];
+          const feature::Descriptor<float, siftSize> &currFloat = floatDescriptors[i];
+          const feature::Descriptor<unsigned char, siftSize> &currUchar = charDescriptors[i];
           for(std::size_t j = 0; j < siftSize; ++j)
           {
             const unsigned char compare = (unsigned char) currFloat[j];

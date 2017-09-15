@@ -104,7 +104,7 @@ UNIT_TEST(aliceVision solver_essential_five_point "aliceVision_multiview;aliceVi
 UNIT_TEST(aliceVision solver_resection_kernel "aliceVision_multiview;aliceVision_multiview_test_data")
 UNIT_TEST(aliceVision solver_resection_p4pf "aliceVision_multiview;aliceVision_multiview_test_data")
 UNIT_TEST(aliceVision solver_resection_p5pfr "aliceVision_multiview;aliceVision_multiview_test_data")
-UNIT_TEST(aliceVision solver_resection_LORansac "aliceVision_multiview;aliceVision_features;aliceVision_sfm;aliceVision_multiview_test_data;${CERES_LIBRARIES}")
+UNIT_TEST(aliceVision solver_resection_LORansac "aliceVision_multiview;aliceVision_feature;aliceVision_sfm;aliceVision_multiview_test_data;${CERES_LIBRARIES}")
 UNIT_TEST(aliceVision solver_translation_knownRotation_kernel "aliceVision_multiview;aliceVision_multiview_test_data")
 
 # Averaging routines

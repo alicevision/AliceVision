@@ -4,7 +4,7 @@
 #pragma once
 #include <aliceVision/config.hpp>
 #include <aliceVision/types.hpp>
-#include <aliceVision/features/ImageDescriberCommon.hpp>
+#include <aliceVision/feature/imageDescriberCommon.hpp>
 #include <aliceVision/camera/PinholeRadial.hpp>
 #include <aliceVision/geometry/pose3.hpp>
 #include <aliceVision/numeric/numeric.h>
@@ -48,7 +48,7 @@ EstimationStatus rigResection(const std::vector<Mat> &vec_pts2d,
                   const std::vector<Mat> &vec_pts3d,
                   const std::vector<camera::PinholeRadialK3 > &vec_queryIntrinsics,
                   const std::vector<geometry::Pose3 > &vec_subPoses,
-                  const std::vector< std::vector<features::EImageDescriberType> > * descTypesPerCamera,
+                  const std::vector< std::vector<feature::EImageDescriberType> > * descTypesPerCamera,
                   geometry::Pose3 &rigPose,
                   std::vector<std::vector<std::size_t> > &inliers,
                   double threshold = D2R(0.1),

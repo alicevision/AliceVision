@@ -6,7 +6,7 @@
 
 #include <iostream>
 #include "aliceVision/matching/indMatch.hpp"
-#include "aliceVision/features/features.hpp"
+#include "aliceVision/feature/feature.hpp"
 
 namespace aliceVision {
 namespace matching {
@@ -56,8 +56,8 @@ class IndMatchDecorator
 public:
 
   IndMatchDecorator(const std::vector<IndMatch> & vec_matches,
-    const std::vector<features::SIOPointFeature> & leftFeat,
-    const std::vector<features::SIOPointFeature> & rightFeat)
+    const std::vector<feature::SIOPointFeature> & leftFeat,
+    const std::vector<feature::SIOPointFeature> & rightFeat)
     :_vec_matches(vec_matches)
   {
     for (size_t i = 0; i < vec_matches.size(); ++i) {
@@ -70,8 +70,8 @@ public:
   }
 
   IndMatchDecorator(const std::vector<IndMatch> & vec_matches,
-    const std::vector<features::PointFeature> & leftFeat,
-    const std::vector<features::PointFeature> & rightFeat)
+    const std::vector<feature::PointFeature> & leftFeat,
+    const std::vector<feature::PointFeature> & rightFeat)
     :_vec_matches(vec_matches)
   {
     for (size_t i = 0; i < vec_matches.size(); ++i) {

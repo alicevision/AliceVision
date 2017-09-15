@@ -26,8 +26,8 @@
 //-----------------
 #include "aliceVision/sfm/sfm_report.hpp"
 #include "aliceVision/sfm/pipelines/sfm_engine.hpp"
-#include "aliceVision/features/FeaturesPerView.hpp"
-#include "aliceVision/features/RegionsPerView.hpp"
+#include "aliceVision/feature/FeaturesPerView.hpp"
+#include "aliceVision/feature/RegionsPerView.hpp"
 #include "aliceVision/sfm/pipelines/sfm_matches_provider.hpp"
 
 #include "aliceVision/sfm/pipelines/sfm_robust_model_estimation.hpp"

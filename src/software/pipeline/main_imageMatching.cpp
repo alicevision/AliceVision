@@ -27,8 +27,8 @@ namespace po = boost::program_options;
 namespace bfs = boost::filesystem;
 
 
-typedef aliceVision::features::Descriptor<float, DIMENSION> DescriptorFloat;
-typedef aliceVision::features::Descriptor<unsigned char, DIMENSION> DescriptorUChar;
+typedef aliceVision::feature::Descriptor<float, DIMENSION> DescriptorFloat;
+typedef aliceVision::feature::Descriptor<unsigned char, DIMENSION> DescriptorUChar;
 
 typedef std::size_t ImageID;
 

@@ -1,6 +1,6 @@
 add_subdirectory(camera)
 add_subdirectory(exif)
-add_subdirectory(features)
+add_subdirectory(feature)
 add_subdirectory(graph)
 add_subdirectory(image)
 add_subdirectory(linearProgramming)

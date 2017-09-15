@@ -5,7 +5,7 @@
 
 #include "aliceVision/sfm/sfm_data.hpp"
 
-#include "aliceVision/features/RegionsPerView.hpp"
+#include "aliceVision/feature/RegionsPerView.hpp"
 #include "aliceVision/matching/indMatch.hpp"
 
 namespace aliceVision {
@@ -19,7 +19,7 @@ public:
   void run(
     SfM_Data & sfm_data,
     const Pair_Set & pairs,
-    const features::RegionsPerView& regionsPerView);
+    const feature::RegionsPerView& regionsPerView);
 
 public:
 
@@ -27,18 +27,18 @@ public:
   void match(
     const SfM_Data & sfm_data,
     const Pair_Set & pairs,
-    const features::RegionsPerView& regionsPerView);
+    const feature::RegionsPerView& regionsPerView);
 
   /// Filter inconsistent correspondences by using 3-view correspondences on view triplets
   void filter(
     const SfM_Data & sfm_data,
     const Pair_Set & pairs,
-    const features::RegionsPerView& regionsPerView);
+    const feature::RegionsPerView& regionsPerView);
 
   /// Init & triangulate landmark observations from validated 3-view correspondences
   void triangulate(
     SfM_Data & sfm_data,
-    const features::RegionsPerView& regionsPerView);
+    const feature::RegionsPerView& regionsPerView);
 
 private:
   //--

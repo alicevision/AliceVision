@@ -3,7 +3,7 @@
 
 #pragma once
 #include <aliceVision/keyframe/SharpnessSelectionPreset.hpp>
-#include <aliceVision/features/features.hpp>
+#include <aliceVision/feature/feature.hpp>
 #include <aliceVision/dataio/FeedProvider.hpp>
 #include <aliceVision/voctree/vocabulary_tree.hpp>
 
@@ -32,7 +32,7 @@ class KeyframeSelector
 private:
   // SIFT descriptor definition
   const static std::size_t _dimension = 128;
-  using DescriptorFloat = aliceVision::features::Descriptor<float, _dimension>;
+  using DescriptorFloat = aliceVision::feature::Descriptor<float, _dimension>;
   
 public:
 
@@ -212,7 +212,7 @@ private:
   // Tools
 
   /// Image describer in order to extract describer
-  std::unique_ptr<features::Image_describer> _imageDescriber;
+  std::unique_ptr<feature::ImageDescriber> _imageDescriber;
   /// Voctree in order to compute sparseHistogram
   std::unique_ptr< aliceVision::voctree::VocabularyTree<DescriptorFloat> > _voctree;
   /// Feed provider for media paths images extraction

@@ -2,8 +2,9 @@
 // the terms of the MPL2 license (see the COPYING.md file).
 
 #include "aliceVision/image/image.hpp"
-#include "aliceVision/features/features.hpp"
-#include "aliceVision/features/sift/SIFT_describer.hpp"
+#include "aliceVision/feature/feature.hpp"
+#include "aliceVision/feature/sift/ImageDescriber_SIFT.hpp"
+#include "aliceVision/feature/akaze/ImageDescriber_AKAZE.hpp"
 #include "aliceVision/matching/matching_filters.hpp"
 #include "aliceVision/matching/regions_matcher.hpp"
 
@@ -22,8 +23,8 @@ using namespace std;
 
 int main(int argc, char **argv) {
 
-  // Add options to choose the desired Image_describer
-  std::string sImage_describer_type = "SIFT";
+  // Add options to choose the desired ImageDescriber
+  std::string sImageDescriber_type = "SIFT";
   std::string jpg_filenameL = stlplus::folder_up(string(THIS_SOURCE_DIR))
     + "/imageData/StanfordMobileVisualSearch/Ace_0.png";
   std::string jpg_filenameR = stlplus::folder_up(string(THIS_SOURCE_DIR))
@@ -32,7 +33,7 @@ int main(int argc, char **argv) {
   std::string sFeaturePreset = "";
 
   CmdLine cmd;
-  cmd.add( make_option('t', sImage_describer_type, "type") );
+  cmd.add( make_option('t', sImageDescriber_type, "type") );
   cmd.add( make_option('l', jpg_filenameL, "left") );
   cmd.add( make_option('r', jpg_filenameR, "right") );
   cmd.add( make_option('p', sFeaturePreset, "describerPreset") );
@@ -50,7 +51,7 @@ int main(int argc, char **argv) {
       << "   SIFT: SIFT keypoint & descriptor,\n"
       << "   AKAZE: AKAZE keypoint & floating point descriptor]"
       << "[-p|--describerPreset]\n"
-      << "  (used to control the Image_describer configuration):\n"
+      << "  (used to control the ImageDescriber configuration):\n"
       << "   LOW,\n"
       << "   MEDIUM,\n"
       << "   NORMAL (default),\n"
@@ -69,18 +70,18 @@ int main(int argc, char **argv) {
   ReadImage(jpg_filenameR.c_str(), &imageR);
 
   // Call Keypoint extractor
-  using namespace aliceVision::features;
-  std::shared_ptr<Image_describer> image_describer;
-  if (sImage_describer_type == "SIFT")
-    image_describer = std::make_shared<SIFT_ImageDescriber>(SiftParams());
-  else if (sImage_describer_type == "AKAZE")
-    image_describer = std::make_shared<AKAZE_Image_describer>(AKAZEParams(AKAZEConfig(), AKAZE_MSURF));
-  else if (sImage_describer_type == "AKAZE_MLDB")
-    image_describer = std::make_shared<AKAZE_Image_describer>(AKAZEParams(AKAZEConfig(), AKAZE_MLDB));
+  using namespace aliceVision::feature;
+  std::shared_ptr<ImageDescriber> image_describer;
+  if (sImageDescriber_type == "SIFT")
+    image_describer = std::make_shared<ImageDescriber_SIFT>(SiftParams());
+  else if (sImageDescriber_type == "AKAZE")
+    image_describer = std::make_shared<ImageDescriber_AKAZE>(AKAZEParams(AKAZEConfig(), AKAZE_MSURF));
+  else if (sImageDescriber_type == "AKAZE_MLDB")
+    image_describer = std::make_shared<ImageDescriber_AKAZE>(AKAZEParams(AKAZEConfig(), AKAZE_MLDB));
 
   if (image_describer.use_count()==0)
   {
-    std::cerr << "Invalid Image_describer type" << std::endl;
+    std::cerr << "Invalid ImageDescriber type" << std::endl;
     return EXIT_FAILURE;
   }
   if (!sFeaturePreset.empty())
@@ -95,7 +96,7 @@ int main(int argc, char **argv) {
   //--
   // Detect regions thanks to the image_describer
   //--
-  std::map<IndexT, std::unique_ptr<features::Regions> > regions_perImage;
+  std::map<IndexT, std::unique_ptr<feature::Regions> > regions_perImage;
   image_describer->Describe(imageL, regions_perImage[0]);
   image_describer->Describe(imageR, regions_perImage[1]);
 

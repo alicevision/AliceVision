@@ -29,7 +29,7 @@ set_property(TARGET aliceVision_voctree
 )
 
 target_link_libraries(aliceVision_voctree
-  aliceVision_features
+  aliceVision_feature
   aliceVision_sfm
   ${Boost_LIBRARIES}
   ${LOG_LIB}

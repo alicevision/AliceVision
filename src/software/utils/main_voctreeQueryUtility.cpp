@@ -15,8 +15,8 @@
 #include <aliceVision/sfm/sfm_data_io.hpp>
 #include <aliceVision/sfm/pipelines/RegionsIO.hpp>
 #include <aliceVision/sfm/pipelines/sfm_engine.hpp>
-#include <aliceVision/features/FeaturesPerView.hpp>
-#include <aliceVision/features/RegionsPerView.hpp>
+#include <aliceVision/feature/FeaturesPerView.hpp>
+#include <aliceVision/feature/RegionsPerView.hpp>
 
 #include <Eigen/Core>
 
@@ -39,8 +39,8 @@ using namespace boost::accumulators;
 namespace bpo = boost::program_options;
 namespace bfs = boost::filesystem;
 
-typedef aliceVision::features::Descriptor<float, DIMENSION> DescriptorFloat;
-typedef aliceVision::features::Descriptor<unsigned char, DIMENSION> DescriptorUChar;
+typedef aliceVision::feature::Descriptor<float, DIMENSION> DescriptorFloat;
+typedef aliceVision::feature::Descriptor<unsigned char, DIMENSION> DescriptorUChar;
 
 std::ostream& operator<<(std::ostream& os, const aliceVision::voctree::DocMatches &matches)
 {
@@ -367,14 +367,14 @@ int main(int argc, char** argv)
     return EXIT_FAILURE;
   }
 
-  using namespace aliceVision::features;
+  using namespace aliceVision::feature;
   std::string matchDir = queryList.substr(0, queryList.find_last_of("/\\"));;
-  const std::string sImage_describer = stlplus::create_filespec(matchDir, "image_describer", "json");
-  std::unique_ptr<Regions> regions_type = Init_region_type_from_file(sImage_describer);
+  const std::string sImageDescriber = stlplus::create_filespec(matchDir, "image_describer", "json");
+  std::unique_ptr<Regions> regions_type = Init_region_type_from_file(sImageDescriber);
   if (!regions_type)
   {
     std::cerr << "Invalid: "
-      << sImage_describer << " regions type file." << std::endl;
+      << sImageDescriber << " regions type file." << std::endl;
     return EXIT_FAILURE;
   }
   // Load the corresponding RegionsPerView
@@ -389,7 +389,7 @@ int main(int argc, char** argv)
   }
   
   
-  aliceVision::features::RegionsPerView regionsPerView;
+  aliceVision::feature::RegionsPerView regionsPerView;
   if(!aliceVision::sfm::loadRegionsPerView(regionsPerView, sfmData, matchDir, {describerType}))
   {
     ALICEVISION_CERR("Invalid regions." << std::endl);
@@ -449,8 +449,8 @@ int main(int argc, char** argv)
         aliceVision::Pair indexImagePair = aliceVision::Pair(docMatches.first, comparedPicture.id);
         
         //Get the regions for the current view pair.
-//        const aliceVision::features::SIFT_Regions& lRegions = dynamic_cast<aliceVision::features::SIFT_Regions>(regionsPerView->getRegions(indexImagePair.first);
-//        const aliceVision::features::SIFT_Regions& rRegions = dynamic_cast<aliceVision::features::SIFT_Regions>(regionsPerView->getRegions(indexImagePair.second);
+//        const aliceVision::feature::SIFT_Regions& lRegions = dynamic_cast<aliceVision::feature::SIFT_Regions>(regionsPerView->getRegions(indexImagePair.first);
+//        const aliceVision::feature::SIFT_Regions& rRegions = dynamic_cast<aliceVision::feature::SIFT_Regions>(regionsPerView->getRegions(indexImagePair.second);
         
         //Distances Vector
         //const std::vector<float> distances;

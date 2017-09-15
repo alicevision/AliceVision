@@ -5,7 +5,7 @@
 
 #include "aliceVision/sfm/sfm_data_io.hpp"
 #include "aliceVision/sfm/pipelines/sfm_engine.hpp"
-#include "aliceVision/features/FeaturesPerView.hpp"
+#include "aliceVision/feature/FeaturesPerView.hpp"
 #include "aliceVision/sfm/pipelines/sfm_matches_provider.hpp"
 #include "aliceVision/tracks/tracks.hpp"
 
@@ -32,7 +32,7 @@ public:
 
   ~SequentialSfMReconstructionEngine();
 
-  void setFeatures(features::FeaturesPerView * featuresPerView)
+  void setFeatures(feature::FeaturesPerView * featuresPerView)
   {
     _featuresPerView = featuresPerView;
   }
@@ -209,7 +209,7 @@ private:
   int _minPointsPerPose = 30;
   
   //-- Data provider
-  features::FeaturesPerView  * _featuresPerView;
+  feature::FeaturesPerView  * _featuresPerView;
   matching::PairwiseMatches  * _pairwiseMatches;
 
   // Pyramid scoring

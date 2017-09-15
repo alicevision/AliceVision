@@ -83,7 +83,7 @@ int main( int argc, char **argv )
     return EXIT_FAILURE;
   }
 
-  const std::vector<features::EImageDescriberType> describerTypes = features::EImageDescriberType_stringToEnums(describerMethods);
+  const std::vector<feature::EImageDescriberType> describerTypes = feature::EImageDescriberType_stringToEnums(describerMethods);
 
   if ( !stlplus::folder_exists( sOutDir ) )
     stlplus::folder_create( sOutDir );

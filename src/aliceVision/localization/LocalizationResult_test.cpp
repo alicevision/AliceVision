@@ -39,7 +39,7 @@ localization::LocalizationResult generateRandomResult(std::size_t numPts)
   indMatch3D2D.reserve(numPts);
   for(std::size_t i = 0; i < numPts; ++i)
   {
-    indMatch3D2D.emplace_back(i, features::EImageDescriberType::UNKNOWN, i);
+    indMatch3D2D.emplace_back(i, feature::EImageDescriberType::UNKNOWN, i);
   }
   
   // random pose

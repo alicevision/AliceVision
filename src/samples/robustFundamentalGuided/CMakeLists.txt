@@ -5,7 +5,7 @@ add_executable(aliceVision_samples_robustFundamentalGuided main_robustFundamenta
 target_link_libraries(aliceVision_samples_robustFundamentalGuided
   aliceVision_image
   aliceVision_multiview
-  aliceVision_features
+  aliceVision_feature
   aliceVision_matching
   stlplus
   vlsift

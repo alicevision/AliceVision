@@ -9,7 +9,7 @@ using namespace aliceVision::camera;
 using namespace aliceVision::geometry;
 using namespace aliceVision::image;
 using namespace aliceVision::sfm;
-using namespace aliceVision::features;
+using namespace aliceVision::feature;
 
 #include "dependencies/cmdLine/cmdLine.h"
 #include "dependencies/progress/progress.hpp"

@@ -36,7 +36,7 @@ set_target_properties(aliceVision_matching
 )
 
 target_link_libraries(aliceVision_matching
-  aliceVision_features
+  aliceVision_feature
   stlplus
   ${FLANN_LIBRARY}
   ${LOG_LIB}

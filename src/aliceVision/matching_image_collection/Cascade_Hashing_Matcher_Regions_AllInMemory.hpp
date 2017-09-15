@@ -28,9 +28,9 @@ class ImageCollectionMatcher_CascadeHashing : public IImageCollectionMatcher
   /// Find corresponding points between some pair of view Ids
   void Match(
     const sfm::SfM_Data & sfm_data,
-    const features::RegionsPerView& regionsPerView,
+    const feature::RegionsPerView& regionsPerView,
     const Pair_Set & pairs,
-    features::EImageDescriberType descType,
+    feature::EImageDescriberType descType,
     matching::PairwiseMatches & map_PutativesMatches // the pairwise photometric corresponding points
   ) const;
 

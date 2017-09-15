@@ -26,7 +26,7 @@ public:
 
   ~GlobalSfMReconstructionEngine_RelativeMotions();
 
-  void SetFeaturesProvider(features::FeaturesPerView * featuresPerView);
+  void SetFeaturesProvider(feature::FeaturesPerView * featuresPerView);
   void SetMatchesProvider(matching::PairwiseMatches * provider);
 
   void SetRotationAveragingMethod(ERotationAveragingMethod eRotationAveragingMethod);
@@ -78,10 +78,10 @@ private:
   ETranslationAveragingMethod _eTranslationAveragingMethod;
 
   //-- Data provider
-  features::FeaturesPerView  * _featuresPerView;
+  feature::FeaturesPerView  * _featuresPerView;
   matching::PairwiseMatches  * _pairwiseMatches;
 
-  std::shared_ptr<features::FeaturesPerView> _normalizedFeaturesPerView;
+  std::shared_ptr<feature::FeaturesPerView> _normalizedFeaturesPerView;
 };
 
 } // namespace sfm

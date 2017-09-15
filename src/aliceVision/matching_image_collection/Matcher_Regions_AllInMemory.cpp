@@ -16,7 +16,7 @@ namespace aliceVision {
 namespace matching_image_collection {
 
 using namespace aliceVision::matching;
-using namespace aliceVision::features;
+using namespace aliceVision::feature;
 
 ImageCollectionMatcher_Generic::ImageCollectionMatcher_Generic(
   float distRatio, EMatcherType matcherType)
@@ -28,9 +28,9 @@ ImageCollectionMatcher_Generic::ImageCollectionMatcher_Generic(
 
 void ImageCollectionMatcher_Generic::Match(
   const sfm::SfM_Data & sfm_data,
-  const features::RegionsPerView& regionsPerView,
+  const feature::RegionsPerView& regionsPerView,
   const Pair_Set & pairs,
-  features::EImageDescriberType descType,
+  feature::EImageDescriberType descType,
   matching::PairwiseMatches & map_PutativesMatches)const // the pairwise photometric corresponding points
 {
 #if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_OPENMP)
@@ -56,7 +56,7 @@ void ImageCollectionMatcher_Generic::Match(
     const size_t I = iter->first;
     const std::vector<size_t> & indexToCompare = iter->second;
 
-    const features::Regions & regionsI = regionsPerView.getRegions(I, descType);
+    const feature::Regions & regionsI = regionsPerView.getRegions(I, descType);
     if (regionsI.RegionCount() == 0)
     {
       my_progress_bar += indexToCompare.size();
@@ -71,7 +71,7 @@ void ImageCollectionMatcher_Generic::Match(
     {
       const size_t J = indexToCompare[j];
 
-      const features::Regions &regionsJ = regionsPerView.getRegions(J, descType);
+      const feature::Regions &regionsJ = regionsPerView.getRegions(J, descType);
       if (regionsJ.RegionCount() == 0
           || regionsI.Type_id() != regionsJ.Type_id())
       {

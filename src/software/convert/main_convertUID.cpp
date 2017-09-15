@@ -18,7 +18,7 @@
 using namespace std;
 using namespace aliceVision;
 using namespace aliceVision::image;
-using namespace aliceVision::features;
+using namespace aliceVision::feature;
 using namespace aliceVision::sfm;
 /*
  * 

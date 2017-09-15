@@ -19,7 +19,7 @@ enum ETranslationAveragingMethod
 
 #include "aliceVision/sfm/sfm_data.hpp"
 #include "aliceVision/multiview/translation_averaging_common.hpp"
-#include "aliceVision/features/FeaturesPerView.hpp"
+#include "aliceVision/feature/FeaturesPerView.hpp"
 #include "aliceVision/sfm/pipelines/sfm_matches_provider.hpp"
 #include "aliceVision/tracks/tracks.hpp"
 #include "aliceVision/graph/graph.hpp"
@@ -37,7 +37,7 @@ public:
   bool Run(
     ETranslationAveragingMethod eTranslationAveragingMethod,
     SfM_Data & sfm_data,
-    const features::FeaturesPerView & normalizedFeaturesPerView,
+    const feature::FeaturesPerView & normalizedFeaturesPerView,
     const matching::PairwiseMatches & matches_provider,
     const Hash_Map<IndexT, Mat3> & map_globalR,
     matching::PairwiseMatches & tripletWise_matches
@@ -51,7 +51,7 @@ private:
 
   void Compute_translations(
     const SfM_Data & sfm_data,
-    const features::FeaturesPerView & normalizedFeaturesPerView,
+    const feature::FeaturesPerView & normalizedFeaturesPerView,
     const matching::PairwiseMatches & matches_provider,
     const Hash_Map<IndexT, Mat3> & map_globalR,
     matching::PairwiseMatches &tripletWise_matches);
@@ -63,7 +63,7 @@ private:
   void ComputePutativeTranslation_EdgesCoverage(
     const SfM_Data & sfm_data,
     const Hash_Map<IndexT, Mat3> & map_globalR,
-    const features::FeaturesPerView & normalizedFeaturesPerView,
+    const feature::FeaturesPerView & normalizedFeaturesPerView,
     const matching::PairwiseMatches & matches_provider,
     RelativeInfo_Vec & vec_initialEstimates,
     matching::PairwiseMatches & newpairMatches);
@@ -72,7 +72,7 @@ private:
   bool Estimate_T_triplet(
     const SfM_Data & sfm_data,
     const Hash_Map<IndexT, Mat3> & map_globalR,
-    const features::FeaturesPerView & normalizedFeaturesPerView,
+    const feature::FeaturesPerView & normalizedFeaturesPerView,
     const matching::PairwiseMatches & matches_provider,
     const graph::Triplet & poses_id,
     std::vector<Vec3> & vec_tis,

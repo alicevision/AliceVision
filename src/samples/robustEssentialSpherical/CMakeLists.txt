@@ -5,7 +5,7 @@ add_executable(aliceVision_samples_robustEssentialSpherical main_robustEssential
 target_link_libraries(aliceVision_samples_robustEssentialSpherical
   aliceVision_image
   aliceVision_multiview
-  aliceVision_features
+  aliceVision_feature
   aliceVision_matching
   aliceVision_system
   aliceVision_sfm

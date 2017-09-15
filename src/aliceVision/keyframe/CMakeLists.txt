@@ -18,7 +18,7 @@ target_include_directories(aliceVision_keyframe
 )
 
 target_link_libraries(aliceVision_keyframe
-  PUBLIC aliceVision_features
+  PUBLIC aliceVision_feature
   aliceVision_dataio
   aliceVision_voctree
   ${OPENIMAGEIO_LIBRARIES}

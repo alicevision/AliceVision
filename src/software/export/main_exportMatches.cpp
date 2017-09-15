@@ -6,7 +6,7 @@
 #include "aliceVision/image/image.hpp"
 #include "aliceVision/sfm/sfm.hpp"
 #include "aliceVision/sfm/pipelines/RegionsIO.hpp"
-#include "aliceVision/features/svgVisualization.hpp"
+#include "aliceVision/feature/svgVisualization.hpp"
 
 #include "dependencies/cmdLine/cmdLine.h"
 #include "dependencies/stlplus3/filesystemSimplified/file_system.hpp"
@@ -20,7 +20,7 @@
 #include <map>
 
 using namespace aliceVision;
-using namespace aliceVision::features;
+using namespace aliceVision::feature;
 using namespace aliceVision::matching;
 using namespace aliceVision::sfm;
 using namespace svg;
@@ -129,7 +129,7 @@ int main(int argc, char ** argv)
   std::vector<EImageDescriberType> describerMethodTypes = EImageDescriberType_stringToEnums(describerMethods);
 
   // Read the features
-  features::FeaturesPerView featuresPerView;
+  feature::FeaturesPerView featuresPerView;
   if(!sfm::loadFeaturesPerView(featuresPerView, sfm_data, sMatchesDir, describerMethodTypes))
   {
     std::cerr << std::endl
@@ -187,8 +187,8 @@ int main(int argc, char ** argv)
 
     for(const auto& matchesIt: vec_FilteredMatches)
     {
-      const features::EImageDescriberType descType = matchesIt.first;
-      assert(descType != features::EImageDescriberType::UNINITIALIZED);
+      const feature::EImageDescriberType descType = matchesIt.first;
+      assert(descType != feature::EImageDescriberType::UNINITIALIZED);
       const matching::IndMatches& matches = matchesIt.second;
       std::cout << EImageDescriberType_enumToString(matchesIt.first) << ": " << matches.size() << " matches" << std::endl;
 

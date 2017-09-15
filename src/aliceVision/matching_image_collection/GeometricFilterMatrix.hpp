@@ -6,7 +6,7 @@
 namespace aliceVision {
 
 
-namespace features {
+namespace feature {
 class RegionsPerView;
 }
 
@@ -44,7 +44,7 @@ struct GeometricFilterMatrix
   virtual bool Geometry_guided_matching
   (
     const sfm::SfM_Data * sfmData,
-    const features::RegionsPerView& regionsPerView,
+    const feature::RegionsPerView& regionsPerView,
     const Pair imageIdsPair,
     const double dDistanceRatio,
     matching::MatchesPerDescType & matches

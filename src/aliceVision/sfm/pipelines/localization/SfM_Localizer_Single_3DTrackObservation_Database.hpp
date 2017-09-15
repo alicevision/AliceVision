@@ -3,7 +3,7 @@
 
 #pragma once
 
-#include "aliceVision/features/FeaturesPerView.hpp"
+#include "aliceVision/feature/FeaturesPerView.hpp"
 #include "aliceVision/sfm/pipelines/localization/SfM_Localizer.hpp"
 #include "aliceVision/matching/regions_matcher.hpp"
 
@@ -32,7 +32,7 @@ public:
   bool Init
   (
     const SfM_Data & sfm_data,
-    const features::RegionsPerView & regionsPerView
+    const feature::RegionsPerView & regionsPerView
   );
 
   /**
@@ -49,7 +49,7 @@ public:
   (
     const Pair & image_size,
     const camera::IntrinsicBase * optional_intrinsics,
-    const features::Regions & query_regions,
+    const feature::Regions & query_regions,
     geometry::Pose3 & pose,
     Image_Localizer_Match_Data * resection_data_ptr = nullptr // optional
   ) const;
@@ -58,7 +58,7 @@ private:
   // Reference to the scene
   const SfM_Data * sfm_data_;
   /// Association of a regions to a landmark observation
-  std::unique_ptr<features::Regions> landmark_observations_descriptors_;
+  std::unique_ptr<feature::Regions> landmark_observations_descriptors_;
   /// Association of a track observation to a track Id (used for retrieval)
   std::vector<IndexT> index_to_landmark_id_;
   /// A matching interface to find matches between 2D descriptor matches

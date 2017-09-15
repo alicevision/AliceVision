@@ -109,7 +109,7 @@ SfM_Data create_test_scene(IndexT singleViewsCount,
     sfm_data.structure[i].observations = observations;
     sfm_data.structure[i].X = Vec3(std::rand() % 10000, std::rand() % 10000, std::rand() % 10000);
     sfm_data.structure[i].rgb = image::RGBColor((std::rand() % 1000) / 1000.0, (std::rand() % 1000) / 1000.0, (std::rand() % 1000) / 1000.0);
-    sfm_data.structure[i].descType = features::EImageDescriberType::SIFT;
+    sfm_data.structure[i].descType = feature::EImageDescriberType::SIFT;
 
     // Add control points    
   }

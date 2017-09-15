@@ -5,10 +5,10 @@
 #include "aliceVision/sfm/sfm_data_io.hpp"
 #include "aliceVision/sfm/pipelines/RegionsIO.hpp"
 #include "aliceVision/sfm/pipelines/sfm_engine.hpp"
-#include "aliceVision/features/FeaturesPerView.hpp"
-#include "aliceVision/features/RegionsPerView.hpp"
-#include "aliceVision/features/image_describer.hpp"
-#include "aliceVision/features/ImageDescriberCommon.hpp"
+#include "aliceVision/feature/FeaturesPerView.hpp"
+#include "aliceVision/feature/RegionsPerView.hpp"
+#include "aliceVision/feature/ImageDescriber.hpp"
+#include "aliceVision/feature/imageDescriberCommon.hpp"
 #include "aliceVision/matching_image_collection/MatchingCommon.hpp"
 #include "aliceVision/matching_image_collection/Matcher_Regions_AllInMemory.hpp"
 #include "aliceVision/matching_image_collection/Cascade_Hashing_Matcher_Regions_AllInMemory.hpp"
@@ -19,7 +19,7 @@
 #include "aliceVision/matching/pairwiseAdjacencyDisplay.hpp"
 #include "aliceVision/matching/indMatch_utils.hpp"
 #include "aliceVision/system/timer.hpp"
-#include "aliceVision/features/selection.hpp"
+#include "aliceVision/feature/selection.hpp"
 #include "aliceVision/graph/graph.hpp"
 #include "aliceVision/stl/stl.hpp"
 
@@ -302,7 +302,7 @@ int main(int argc, char **argv)
   //---------------------------------------
   // Load SfM Scene regions
   //---------------------------------------
-  using namespace aliceVision::features;
+  using namespace aliceVision::feature;
 
   //---------------------------------------
   // a. Compute putative descriptor matches
@@ -357,7 +357,7 @@ int main(int argc, char **argv)
   EMatcherType collectionMatcherType = EMatcherType_stringToEnum(nearestMatchingMethod);
   std::unique_ptr<IImageCollectionMatcher> imageCollectionMatcher = createImageCollectionMatcher(collectionMatcherType, distRatio);
 
-  const std::vector<features::EImageDescriberType> describerTypes = features::EImageDescriberType_stringToEnums(describerMethods);
+  const std::vector<feature::EImageDescriberType> describerTypes = feature::EImageDescriberType_stringToEnums(describerMethods);
 
   std::cout << "There are " << sfmData.GetViews().size() << " views and " << pairs.size() << " image pairs." << std::endl;
 
@@ -373,9 +373,9 @@ int main(int argc, char **argv)
     return EXIT_FAILURE;
   }
 
-  for(const features::EImageDescriberType descType : describerTypes)
+  for(const feature::EImageDescriberType descType : describerTypes)
   {
-    assert(descType != features::EImageDescriberType::UNINITIALIZED);
+    assert(descType != feature::EImageDescriberType::UNINITIALIZED);
     std::cout << "-> " << EImageDescriberType_enumToString(descType) << " Regions Matching" << std::endl;
 
     // Photometric matching of putative pairs
@@ -523,12 +523,12 @@ int main(int argc, char **argv)
 
       for(const auto& match: matchesPerDesc)
       {
-        const features::EImageDescriberType descType = match.first;
-        assert(descType != features::EImageDescriberType::UNINITIALIZED);
+        const feature::EImageDescriberType descType = match.first;
+        assert(descType != feature::EImageDescriberType::UNINITIALIZED);
         const aliceVision::matching::IndMatches& inputMatches = match.second;
 
-        const features::Feat_Regions<features::SIOPointFeature>* rRegions = dynamic_cast<const features::Feat_Regions<features::SIOPointFeature>*>(&regionPerView.getRegions(indexImagePair.second, descType));
-        const features::Feat_Regions<features::SIOPointFeature>* lRegions = dynamic_cast<const features::Feat_Regions<features::SIOPointFeature>*>(&regionPerView.getRegions(indexImagePair.first, descType));
+        const feature::FeatRegions<feature::SIOPointFeature>* rRegions = dynamic_cast<const feature::FeatRegions<feature::SIOPointFeature>*>(&regionPerView.getRegions(indexImagePair.second, descType));
+        const feature::FeatRegions<feature::SIOPointFeature>* lRegions = dynamic_cast<const feature::FeatRegions<feature::SIOPointFeature>*>(&regionPerView.getRegions(indexImagePair.first, descType));
 
         //Get the regions for the current view pair:
         if(rRegions && lRegions)

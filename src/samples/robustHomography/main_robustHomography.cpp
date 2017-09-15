@@ -3,8 +3,8 @@
 
 #include "aliceVision/image/image.hpp"
 #include "aliceVision/image/image_warping.hpp"
-#include "aliceVision/features/features.hpp"
-#include "aliceVision/features/sift/SIFT_describer.hpp"
+#include "aliceVision/feature/feature.hpp"
+#include "aliceVision/feature/sift/ImageDescriber_SIFT.hpp"
 #include "aliceVision/matching/regions_matcher.hpp"
 #include "aliceVision/multiview/solver_homography_kernel.hpp"
 #include "aliceVision/multiview/conditioning.hpp"
@@ -39,9 +39,9 @@ int main() {
   //--
   // Detect regions thanks to an image_describer
   //--
-  using namespace aliceVision::features;
-  std::unique_ptr<Image_describer> image_describer(new SIFT_ImageDescriber(SiftParams(-1)));
-  std::map<IndexT, std::unique_ptr<features::Regions> > regions_perImage;
+  using namespace aliceVision::feature;
+  std::unique_ptr<ImageDescriber> image_describer(new ImageDescriber_SIFT(SiftParams(-1)));
+  std::map<IndexT, std::unique_ptr<feature::Regions> > regions_perImage;
   image_describer->Describe(imageL, regions_perImage[0]);
   image_describer->Describe(imageR, regions_perImage[1]);
 

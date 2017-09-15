@@ -9,8 +9,8 @@
 #include "aliceVision/matching/matching_filters.hpp"
 
 #include "aliceVision/numeric/numeric.h"
-#include "aliceVision/features/regions.hpp"
-#include "aliceVision/features/RegionsPerView.hpp"
+#include "aliceVision/feature/Regions.hpp"
+#include "aliceVision/feature/RegionsPerView.hpp"
 
 #include <vector>
 
@@ -32,8 +32,8 @@ void DistanceRatioMatch
 (
   float dist_ratio,   // Distance ratio
   matching::EMatcherType eMatcherType, // Matcher
-  const features::Regions & regions_I, // database
-  const features::Regions & regions_J, // query
+  const feature::Regions & regions_I, // database
+  const feature::Regions & regions_J, // query
   matching::IndMatches & matches // corresponding points
 );
 
@@ -46,14 +46,14 @@ void DistanceRatioMatch
 class IRegionsMatcher
 {
 public:
-  const features::Regions& regions_;
+  const feature::Regions& regions_;
 
   /**
    * @brief The destructor.
    */
   virtual ~IRegionsMatcher() = 0;
 
-  IRegionsMatcher(const features::Regions& regions)
+  IRegionsMatcher(const feature::Regions& regions)
     : regions_(regions)
   {
 
@@ -71,11 +71,11 @@ public:
    */
   virtual bool Match(
     const float f_dist_ratio,
-    const features::Regions& query_regions,
+    const feature::Regions& query_regions,
     matching::IndMatches & vec_putative_matches
   ) = 0;
 
-  const features::Regions& getDatabaseRegions() const { return regions_; }
+  const feature::Regions& getDatabaseRegions() const { return regions_; }
 };
 
 inline IRegionsMatcher::~IRegionsMatcher()
@@ -106,7 +106,7 @@ public:
    * @param b_squared_metric Whether to use a squared metric for the ratio test 
    * when matching two Regions.
    */
-  RegionsMatcher(const features::Regions& regions, bool b_squared_metric = false)
+  RegionsMatcher(const feature::Regions& regions, bool b_squared_metric = false)
     : IRegionsMatcher(regions), b_squared_metric_(b_squared_metric)
   {
     if (regions_.RegionCount() == 0)
@@ -128,7 +128,7 @@ public:
    */
   bool Match(
     const float f_dist_ratio,
-    const features::Regions& queryregions_,
+    const feature::Regions& queryregions_,
     matching::IndMatches & vec_putative_matches)
   {
 
@@ -201,7 +201,7 @@ class RegionsDatabaseMatcher
      */
     RegionsDatabaseMatcher(
       matching::EMatcherType matcherType,
-      const features::Regions & database_regions);
+      const feature::Regions & database_regions);
 
     /**
      * @brief Find corresponding points between the query Regions and the database one
@@ -214,10 +214,10 @@ class RegionsDatabaseMatcher
      */
     bool Match(
       float distRatio,
-      const features::Regions & queryRegions,
+      const feature::Regions & queryRegions,
       matching::IndMatches & matches) const;
 
-    const features::Regions& getDatabaseRegions() const { return _regionsMatcher->getDatabaseRegions(); }
+    const feature::Regions& getDatabaseRegions() const { return _regionsMatcher->getDatabaseRegions(); }
 
   private:
   // Matcher Type
@@ -231,7 +231,7 @@ class RegionsDatabaseMatcherPerDesc
 public:
   RegionsDatabaseMatcherPerDesc(
       matching::EMatcherType matcherType,
-      const features::MapRegionsPerDesc & queryRegions)
+      const feature::MapRegionsPerDesc & queryRegions)
     : _databaseRegions(queryRegions)
   {
     for(const auto& queryRegionsIt: queryRegions)
@@ -242,13 +242,13 @@ public:
 
   bool Match(
     float distRatio,
-    const features::MapRegionsPerDesc & matchedRegions,
+    const feature::MapRegionsPerDesc & matchedRegions,
     matching::MatchesPerDescType & out_putativeFeatureMatches)
   {
     bool res = false;
     for(auto& matcherIt: _mapMatchers)
     {
-      const features::EImageDescriberType descType = matcherIt.first;
+      const feature::EImageDescriberType descType = matcherIt.first;
       res |= matcherIt.second.Match(
             distRatio,
             *matchedRegions.at(descType),
@@ -257,18 +257,18 @@ public:
     return res;
   }
 
-  const features::MapRegionsPerDesc & getDatabaseRegionsPerDesc() const { return _databaseRegions; }
+  const feature::MapRegionsPerDesc & getDatabaseRegionsPerDesc() const { return _databaseRegions; }
 
-  const features::Regions & getDatabaseRegions(features::EImageDescriberType descType) const { return _mapMatchers.at(descType).getDatabaseRegions(); }
+  const feature::Regions & getDatabaseRegions(feature::EImageDescriberType descType) const { return _mapMatchers.at(descType).getDatabaseRegions(); }
 
-  std::map<features::EImageDescriberType, RegionsDatabaseMatcher> & getData() { return _mapMatchers; }
+  std::map<feature::EImageDescriberType, RegionsDatabaseMatcher> & getData() { return _mapMatchers; }
 
 private:
-  const features::MapRegionsPerDesc & _databaseRegions;
-  std::map<features::EImageDescriberType, RegionsDatabaseMatcher> _mapMatchers;
+  const feature::MapRegionsPerDesc & _databaseRegions;
+  std::map<feature::EImageDescriberType, RegionsDatabaseMatcher> _mapMatchers;
 };
 
-std::unique_ptr<IRegionsMatcher> createRegionsMatcher(const features::Regions & regions, matching::EMatcherType matcherType);
+std::unique_ptr<IRegionsMatcher> createRegionsMatcher(const feature::Regions & regions, matching::EMatcherType matcherType);
 
 }  // namespace matching
 }  // namespace aliceVision

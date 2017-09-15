@@ -16,7 +16,7 @@ using namespace aliceVision::sfm;
 inline bool generateSyntheticMatches(
   matching::PairwiseMatches& pairwiseMatches,
   const NViewDataSet & synthetic_data,
-  features::EImageDescriberType descType)
+  feature::EImageDescriberType descType)
 {
   // For each view
   for (int j = 0; j < synthetic_data._n; ++j)

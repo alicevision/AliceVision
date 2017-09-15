@@ -11,7 +11,7 @@
 #include "aliceVision/matching/indMatch.hpp"
 #include "aliceVision/matching/indMatchDecoratorXY.hpp"
 #include "aliceVision/sfm/sfm_data.hpp"
-#include "aliceVision/features/RegionsPerView.hpp"
+#include "aliceVision/feature/RegionsPerView.hpp"
 #include "aliceVision/matching_image_collection/GeometricFilterMatrix.hpp"
 
 namespace aliceVision {
@@ -47,7 +47,7 @@ struct GeometricFilter_HMatrix_AC : public GeometricFilterMatrix
     const IndexT iIndex = pairIndex.first;
     const IndexT jIndex = pairIndex.second;
 
-    const std::vector<features::EImageDescriberType> descTypes = regionsPerView.getCommonDescTypes(pairIndex);
+    const std::vector<feature::EImageDescriberType> descTypes = regionsPerView.getCommonDescTypes(pairIndex);
     if(descTypes.empty())
       return EstimationStatus(false, false);
 
@@ -99,7 +99,7 @@ struct GeometricFilter_HMatrix_AC : public GeometricFilterMatrix
   template<typename MatT >
   static void fillMatricesWithUndistortFeatures(
     const camera::IntrinsicBase * cam,
-    const features::PointFeatures & vec_feats,
+    const feature::PointFeatures & vec_feats,
     MatT & m)
   {
     using Scalar = typename MatT::Scalar; // Output matrix type
@@ -109,7 +109,7 @@ struct GeometricFilter_HMatrix_AC : public GeometricFilterMatrix
 
     if (hasValidIntrinsics)
     {
-      for( features::PointFeatures::const_iterator iter = vec_feats.begin();
+      for( feature::PointFeatures::const_iterator iter = vec_feats.begin();
         iter != vec_feats.end(); ++iter, ++i)
       {
           m.col(i) = cam->get_ud_pixel(Vec2(iter->x(), iter->y()));
@@ -117,7 +117,7 @@ struct GeometricFilter_HMatrix_AC : public GeometricFilterMatrix
     }
     else
     {
-      for( features::PointFeatures::const_iterator iter = vec_feats.begin();
+      for( feature::PointFeatures::const_iterator iter = vec_feats.begin();
         iter != vec_feats.end(); ++iter, ++i)
       {
           m.col(i) = iter->coords().cast<Scalar>();
@@ -128,7 +128,7 @@ struct GeometricFilter_HMatrix_AC : public GeometricFilterMatrix
   template<typename MatT >
   static void createMatricesWithUndistortFeatures(
     const camera::IntrinsicBase * cam,
-    const features::MapRegionsPerDesc & regionsPerDesc,
+    const feature::MapRegionsPerDesc & regionsPerDesc,
     MatT & m)
   {
     size_t nbRegions = 0;
@@ -152,7 +152,7 @@ struct GeometricFilter_HMatrix_AC : public GeometricFilterMatrix
   template<typename MatT >
   static void createMatricesWithUndistortFeatures(
     const camera::IntrinsicBase * cam,
-    const features::PointFeatures & vec_feats,
+    const feature::PointFeatures & vec_feats,
     MatT & m)
   {
     size_t nbRegions = vec_feats.size();
@@ -176,14 +176,14 @@ struct GeometricFilter_HMatrix_AC : public GeometricFilterMatrix
   bool Geometry_guided_matching
   (
     const sfm::SfM_Data * sfmData,
-    const features::RegionsPerView& regionsPerView,
+    const feature::RegionsPerView& regionsPerView,
     const Pair imageIdsPair,
     const double dDistanceRatio,
     matching::MatchesPerDescType & matches) override
   {
     if (m_dPrecision_robust != std::numeric_limits<double>::infinity())
     {
-      const std::vector<features::EImageDescriberType> descTypes = regionsPerView.getCommonDescTypes(imageIdsPair);
+      const std::vector<feature::EImageDescriberType> descTypes = regionsPerView.getCommonDescTypes(imageIdsPair);
       if(descTypes.empty())
         return false;
 
@@ -204,15 +204,15 @@ struct GeometricFilter_HMatrix_AC : public GeometricFilterMatrix
 
       if (dDistanceRatio < 0)
       {
-        for(const features::EImageDescriberType descType: descTypes)
+        for(const feature::EImageDescriberType descType: descTypes)
         {
-          assert(descType != features::EImageDescriberType::UNINITIALIZED);
+          assert(descType != feature::EImageDescriberType::UNINITIALIZED);
           matching::IndMatches localMatches;
 
-          const features::Regions& regions_I = regionsPerView.getRegions(viewId_I, descType);
-          const features::Regions& regions_J = regionsPerView.getRegions(viewId_J, descType);
-          const features::PointFeatures pointsFeaturesI = regions_I.GetRegionsPositions();
-          const features::PointFeatures pointsFeaturesJ = regions_J.GetRegionsPositions();
+          const feature::Regions& regions_I = regionsPerView.getRegions(viewId_I, descType);
+          const feature::Regions& regions_J = regionsPerView.getRegions(viewId_J, descType);
+          const feature::PointFeatures pointsFeaturesI = regions_I.GetRegionsPositions();
+          const feature::PointFeatures pointsFeaturesJ = regions_J.GetRegionsPositions();
 
           // Filtering based only on region positions
           Mat xI, xJ;

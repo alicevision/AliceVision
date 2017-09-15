@@ -1,0 +1,59 @@
+// This file is part of the AliceVision project and is made available under
+// the terms of the MPL2 license (see the COPYING.md file).
+
+#pragma once
+
+#include <aliceVision/image/image.hpp>
+#include <aliceVision/feature/PointFeature.hpp>
+
+#include <map>
+#include <vector>
+
+namespace aliceVision {
+namespace feature{
+
+/**
+ * @brief Local Intensity Order Pattern
+ *
+ * This code has been adapted from
+ * "Robot Vision Group, NLPR, CASIA", Zhenhua Wang, Bin Fan and Fuchao Wu.
+ *
+ * [1] "Local Intensity Order Pattern for Feature Description"
+ * Authors: Zhenhua Wang, Bin Fan and Fuchao Wu
+ * Date: 2011, ICCV, IEEE International Conference on Computer Vision
+ */
+
+class DescriptorExtractor_LIOP
+{
+private:
+  std::map<int, unsigned char> m_LiopPatternMap;
+  std::vector<int> m_LiopPosWeight;
+
+  static const int _maxRegionNum = 10;
+  static const int _maxPixelNum  = 1681;
+  static const int _maxSampleNum = 10;
+  static const int _liopNum = 4;
+  static const int _regionNum = 6;
+public:
+
+  DescriptorExtractor_LIOP();
+
+  void extract(
+    const image::Image<unsigned char> & I,
+    const SIOPointFeature & feat,
+    float desc[144]);
+
+  void CreateLIOP_GOrder(
+    const image::Image<float> & outPatch,
+    const image::Image<unsigned char> & flagPatch,
+    const int inRadius,
+    float desc[144]) const;
+
+  void GeneratePatternMap(
+    std::map<int,unsigned char> & pattern_map,
+    std::vector<int> & pos_weight,
+    unsigned char n);
+};
+
+} // namespace LIO} // namespace feature
+} // namespace aliceVision

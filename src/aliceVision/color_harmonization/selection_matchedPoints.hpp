@@ -6,7 +6,7 @@
 
 #include "aliceVision/color_harmonization/selection_interface.hpp"
 #include "aliceVision/matching/indMatch.hpp"
-#include "aliceVision/features/features.hpp"
+#include "aliceVision/feature/feature.hpp"
 
 #include <vector>
 
@@ -19,8 +19,8 @@ public:
   commonDataByPair_MatchedPoints(const std::string& sLeftImage,
                                  const std::string& sRightImage,
                                  const matching::MatchesPerDescType& matchesPerDesc,
-                                 const features::MapRegionsPerDesc& regionsL,
-                                 const features::MapRegionsPerDesc& regionsR,
+                                 const feature::MapRegionsPerDesc& regionsL,
+                                 const feature::MapRegionsPerDesc& regionsR,
                                  const size_t radius = 1 )
      : commonDataByPair( sLeftImage, sRightImage )
      , _matchesPerDesc( matchesPerDesc )
@@ -46,12 +46,12 @@ public:
     maskRight.fill(0);
     for(const auto& matchesPerDescIt : _matchesPerDesc) //< loop over descType
     {
-      const features::EImageDescriberType descType = matchesPerDescIt.first;
+      const feature::EImageDescriberType descType = matchesPerDescIt.first;
 
       for(const matching::IndMatch& match : matchesPerDescIt.second) //< loop over matches
       {
-        const features::SIOPointFeature& L = features::getSIOPointFeatures(*_regionsL.at(descType)).at(match._i);
-        const features::SIOPointFeature& R = features::getSIOPointFeatures(*_regionsR.at(descType)).at(match._j);
+        const feature::SIOPointFeature& L = feature::getSIOPointFeatures(*_regionsL.at(descType)).at(match._i);
+        const feature::SIOPointFeature& R = feature::getSIOPointFeatures(*_regionsR.at(descType)).at(match._j);
 
         image::FilledCircle( L.x(), L.y(), ( int )_radius, ( unsigned char ) 255, &maskLeft );
         image::FilledCircle( R.x(), R.y(), ( int )_radius, ( unsigned char ) 255, &maskRight );
@@ -64,8 +64,8 @@ public:
 private:
   size_t _radius;
   matching::MatchesPerDescType _matchesPerDesc;
-  const features::MapRegionsPerDesc& _regionsL;
-  const features::MapRegionsPerDesc& _regionsR;
+  const feature::MapRegionsPerDesc& _regionsL;
+  const feature::MapRegionsPerDesc& _regionsR;
 };
 
 }  // namespace color_harmonization

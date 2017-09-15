@@ -3,7 +3,7 @@
 
 #include "aliceVision/matching/indMatch.hpp"
 #include "aliceVision/matching/indMatch_utils.hpp"
-#include "aliceVision/features/svgVisualization.hpp"
+#include "aliceVision/feature/svgVisualization.hpp"
 #include "aliceVision/image/image.hpp"
 #include "aliceVision/sfm/sfm.hpp"
 #include "aliceVision/sfm/pipelines/RegionsIO.hpp"
@@ -89,13 +89,13 @@ int main(int argc, char ** argv)
   //---------------------------------------
   // Load SfM Scene regions
   //---------------------------------------
-  using namespace aliceVision::features;
+  using namespace aliceVision::feature;
   
   // Get imageDescriberMethodType
   std::vector<EImageDescriberType> describerMethodTypes = EImageDescriberType_stringToEnums(describerMethods);
 
   // Read the features
-  features::FeaturesPerView featuresPerView;
+  feature::FeaturesPerView featuresPerView;
   if (!sfm::loadFeaturesPerView(featuresPerView, sfm_data, sMatchesDir, describerMethodTypes)) {
     std::cerr << std::endl
       << "Invalid features." << std::endl;
@@ -126,7 +126,7 @@ int main(int argc, char ** argv)
       << stlplus::basename_part(sView_filename)
       << "_" << features.size() << "_.svg";
 
-    features::saveFeatures2SVG(sView_filename,
+    feature::saveFeatures2SVG(sView_filename,
                                dimImage,
                                featuresPerView.getData().at(view->getViewId()),
                                os.str());

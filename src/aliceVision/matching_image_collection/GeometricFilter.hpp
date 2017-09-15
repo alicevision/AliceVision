@@ -4,8 +4,8 @@
 #pragma once
 
 #include <aliceVision/config.hpp>
-#include "aliceVision/features/feature.hpp"
-#include "aliceVision/features/RegionsPerView.hpp"
+#include "aliceVision/feature/PointFeature.hpp"
+#include "aliceVision/feature/RegionsPerView.hpp"
 #include "aliceVision/matching/indMatch.hpp"
 #include "aliceVision/matching_image_collection/GeometricFilterMatrix.hpp"
 
@@ -26,7 +26,7 @@ struct ImageCollectionGeometricFilter
 {
   ImageCollectionGeometricFilter(
     const sfm::SfM_Data * sfm_data,
-    const features::RegionsPerView & regionsPerView
+    const feature::RegionsPerView & regionsPerView
   ):_sfm_data(sfm_data), _regionsPerView(regionsPerView)
   {}
 
@@ -43,7 +43,7 @@ struct ImageCollectionGeometricFilter
 
   // Data
   const sfm::SfM_Data * _sfm_data;
-  const features::RegionsPerView & _regionsPerView;
+  const feature::RegionsPerView & _regionsPerView;
   PairwiseMatches _map_GeometricMatches;
 };
 

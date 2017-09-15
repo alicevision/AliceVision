@@ -4,7 +4,7 @@
 #ifndef ALICEVISION_SFM_LANDMARK_HPP
 #define ALICEVISION_SFM_LANDMARK_HPP
 
-#include "aliceVision/features/ImageDescriberCommon.hpp"
+#include "aliceVision/feature/imageDescriberCommon.hpp"
 #include "aliceVision/image/pixel_types.hpp"
 #include "aliceVision/numeric/numeric.h"
 #include "aliceVision/stl/flatMap.hpp"
@@ -58,11 +58,11 @@ typedef stl::flat_map<IndexT, Observation> Observations;
 struct Landmark
 {
   Landmark() {}
-  Landmark(features::EImageDescriberType descType)
+  Landmark(feature::EImageDescriberType descType)
   : descType(descType)
   {}
   Landmark(const Vec3& pos3d,
-           features::EImageDescriberType descType,
+           feature::EImageDescriberType descType,
            const Observations& observations = Observations(),
            const image::RGBColor &color = image::WHITE)
     : X(pos3d)
@@ -72,7 +72,7 @@ struct Landmark
   {}
 
   Vec3 X;
-  features::EImageDescriberType descType = features::EImageDescriberType::UNINITIALIZED;
+  feature::EImageDescriberType descType = feature::EImageDescriberType::UNINITIALIZED;
   Observations observations;
   image::RGBColor rgb = image::WHITE;    //!> the color associated to the point
   

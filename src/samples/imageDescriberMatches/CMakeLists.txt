@@ -4,7 +4,7 @@ add_executable(aliceVision_samples_describeAndMatch main_describeAndMatch.cpp)
 
 target_link_libraries(aliceVision_samples_describeAndMatch
   aliceVision_image
-  aliceVision_features
+  aliceVision_feature
   aliceVision_matching
   stlplus
   vlsift

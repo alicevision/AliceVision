@@ -7,7 +7,7 @@
 
 using namespace aliceVision;
 using namespace aliceVision::matching;
-using namespace aliceVision::features;
+using namespace aliceVision::feature;
 
 TEST(IndMatch, IO)
 {

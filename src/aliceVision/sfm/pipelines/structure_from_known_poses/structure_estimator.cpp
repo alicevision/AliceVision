@@ -19,7 +19,7 @@ namespace aliceVision {
 namespace sfm {
 
 using namespace camera;
-using namespace features;
+using namespace feature;
 using namespace geometry;
 
 
@@ -58,7 +58,7 @@ static void PointsToMat(
 void SfM_Data_Structure_Estimation_From_Known_Poses::run(
   SfM_Data & sfm_data,
   const Pair_Set & pairs,
-  const features::RegionsPerView& regionsPerView)
+  const feature::RegionsPerView& regionsPerView)
 {
   sfm_data.structure.clear();
 
@@ -71,7 +71,7 @@ void SfM_Data_Structure_Estimation_From_Known_Poses::run(
 void SfM_Data_Structure_Estimation_From_Known_Poses::match(
   const SfM_Data & sfm_data,
   const Pair_Set & pairs,
-  const features::RegionsPerView& regionsPerView)
+  const feature::RegionsPerView& regionsPerView)
 {
   C_Progress_display my_progress_bar( pairs.size(), std::cout,
     "Compute pairwise fundamental guided matching:\n" );
@@ -102,10 +102,10 @@ void SfM_Data_Structure_Estimation_From_Known_Poses::match(
 
       const Mat3 F_lr = F_from_P(P_L, P_R);
       const double thresholdF = 4.0;
-      std::vector<features::EImageDescriberType> commonDescTypes = regionsPerView.getCommonDescTypes(*it);
+      std::vector<feature::EImageDescriberType> commonDescTypes = regionsPerView.getCommonDescTypes(*it);
       
       matching::MatchesPerDescType allImagePairMatches;
-      for(features::EImageDescriberType descType: commonDescTypes)
+      for(feature::EImageDescriberType descType: commonDescTypes)
       {
         std::vector<matching::IndMatch> matches;
       #ifdef EXHAUSTIVE_MATCHING
@@ -124,7 +124,7 @@ void SfM_Data_Structure_Estimation_From_Known_Poses::match(
       #else
         const Vec3 epipole2  = epipole_from_P(P_R, poseL);
 
-        //const features::Regions& regions = regionsPerView.getRegions(it->first);
+        //const feature::Regions& regions = regionsPerView.getRegions(it->first);
         geometry_aware::GuidedMatching_Fundamental_Fast
           <fundamental::kernel::EpipolarDistanceError>
           (
@@ -157,7 +157,7 @@ void SfM_Data_Structure_Estimation_From_Known_Poses::match(
 void SfM_Data_Structure_Estimation_From_Known_Poses::filter(
   const SfM_Data & sfm_data,
   const Pair_Set & pairs,
-  const features::RegionsPerView& regionsPerView)
+  const feature::RegionsPerView& regionsPerView)
 {
   // Compute triplets
   // Triangulate triplet tracks
@@ -242,7 +242,7 @@ void SfM_Data_Structure_Estimation_From_Known_Poses::filter(
 /// Init & triangulate landmark observations from validated 3-view correspondences
 void SfM_Data_Structure_Estimation_From_Known_Poses::triangulate(
   SfM_Data & sfm_data,
-  const features::RegionsPerView& regionsPerView)
+  const feature::RegionsPerView& regionsPerView)
 {
   tracks::TracksMap map_tracksCommon;
   tracks::TracksBuilder tracksBuilder;

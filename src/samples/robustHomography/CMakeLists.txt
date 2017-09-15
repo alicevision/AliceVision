@@ -5,7 +5,7 @@ add_executable(aliceVision_samples_robustHomography main_robustHomography.cpp)
 target_link_libraries(aliceVision_samples_robustHomography
   aliceVision_image
   aliceVision_multiview
-  aliceVision_features
+  aliceVision_feature
   aliceVision_matching
   vlsift
   stlplus

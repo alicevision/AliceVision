@@ -5,7 +5,7 @@
 #include <aliceVision/voctree/database.hpp>
 #include <aliceVision/voctree/vocabulary_tree.hpp>
 #include <aliceVision/voctree/descriptor_loader.hpp>
-#include <aliceVision/features/descriptor.hpp>
+#include <aliceVision/feature/Descriptor.hpp>
 #include <aliceVision/system/Logger.hpp>
 
 #include <Eigen/Core>
@@ -24,8 +24,8 @@ using namespace std;
 //using namespace boost::accumulators;
 namespace po = boost::program_options;
 
-typedef aliceVision::features::Descriptor<float, DIMENSION> DescriptorFloat;
-typedef aliceVision::features::Descriptor<unsigned char, DIMENSION> DescriptorUChar;
+typedef aliceVision::feature::Descriptor<float, DIMENSION> DescriptorFloat;
+typedef aliceVision::feature::Descriptor<unsigned char, DIMENSION> DescriptorUChar;
 
 /*
  * This program is used to load the sift descriptors from a list of files and create a vocabulary tree

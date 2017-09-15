@@ -4,8 +4,8 @@
 #include "aliceVision/config.hpp"
 #include "aliceVision/image/image.hpp"
 #include "aliceVision/sfm/sfm.hpp"
-#include "aliceVision/features/ImageDescriberCommon.hpp"
-#include "aliceVision/features/features.hpp"
+#include "aliceVision/feature/imageDescriberCommon.hpp"
+#include "aliceVision/feature/feature.hpp"
 #include "aliceVision/exif/EasyExifIO.hpp"
 #include "aliceVision/stl/split.hpp"
 #include "aliceVision/system/timer.hpp"
@@ -25,7 +25,7 @@
 
 using namespace aliceVision;
 using namespace aliceVision::image;
-using namespace aliceVision::features;
+using namespace aliceVision::feature;
 using namespace aliceVision::sfm;
 using namespace std;
 
@@ -257,7 +257,7 @@ int main(int argc, char **argv)
 #endif
     << "[-u|--upright] Use Upright feature 0 or 1\n"
     << "[-p|--describerPreset]\n"
-    << "  (used to control the Image_describer configuration):\n"
+    << "  (used to control the ImageDescriber configuration):\n"
     << "   LOW,\n"
     << "   MEDIUM,\n"
     << "   NORMAL (default),\n"
@@ -360,7 +360,7 @@ int main(int argc, char **argv)
   {
     std::string typeName;
     EImageDescriberType type;
-    std::shared_ptr<Image_describer> describer; //TODO
+    std::shared_ptr<ImageDescriber> describer; //TODO
   };
   std::vector<DescriberMethod> imageDescribers;
   
@@ -384,7 +384,7 @@ int main(int argc, char **argv)
     }
   }
 
-  using namespace aliceVision::features;
+  using namespace aliceVision::feature;
 
   // Feature extraction routines
   // For each View of the SfM_Data container:

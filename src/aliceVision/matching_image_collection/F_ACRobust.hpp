@@ -16,7 +16,7 @@
 #include "aliceVision/robust_estimation/score_evaluator.hpp"
 #include "aliceVision/robust_estimation/guided_matching.hpp"
 #include "aliceVision/sfm/sfm_data.hpp"
-#include "aliceVision/features/RegionsPerView.hpp"
+#include "aliceVision/feature/RegionsPerView.hpp"
 
 namespace aliceVision {
 namespace matching_image_collection {
@@ -89,7 +89,7 @@ struct GeometricFilter_FMatrix: public GeometricFilterMatrix
     using namespace aliceVision::robust;
     out_geometricInliersPerType.clear();
 
-    const std::vector<features::EImageDescriberType> descTypes = getCommonDescTypes(region_I, region_J);
+    const std::vector<feature::EImageDescriberType> descTypes = getCommonDescTypes(region_I, region_J);
 
     if(descTypes.empty())
       return EstimationStatus(false, false);
@@ -226,7 +226,7 @@ struct GeometricFilter_FMatrix: public GeometricFilterMatrix
    */
   bool Geometry_guided_matching(
     const sfm::SfM_Data * sfmData,
-    const features::RegionsPerView& regionsPerView,
+    const feature::RegionsPerView& regionsPerView,
     const Pair imageIdsPair,
     const double dDistanceRatio,
     matching::MatchesPerDescType & matches) override
@@ -253,9 +253,9 @@ struct GeometricFilter_FMatrix: public GeometricFilterMatrix
                                      fundamental::kernel::EpipolarDistanceError>(
         m_F,
         cam_I, // camera::IntrinsicBase
-        regionsPerView.getAllRegions(viewId_I), // features::Regions
+        regionsPerView.getAllRegions(viewId_I), // feature::Regions
         cam_J, // camera::IntrinsicBase
-        regionsPerView.getAllRegions(viewId_J), // features::Regions
+        regionsPerView.getAllRegions(viewId_J), // feature::Regions
         Square(m_dPrecision_robust), Square(dDistanceRatio),
         matches);
     }

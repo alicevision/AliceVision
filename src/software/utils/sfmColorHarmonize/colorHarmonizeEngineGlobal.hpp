@@ -5,8 +5,8 @@
 #define ALICEVISION_COLOR_HARMONIZATION_ENGINE_GLOBAL_H
 
 #include <aliceVision/numeric/numeric.h>
-#include <aliceVision/features/features.hpp>
-#include <aliceVision/features/RegionsPerView.hpp>
+#include <aliceVision/feature/feature.hpp>
+#include <aliceVision/feature/RegionsPerView.hpp>
 #include <aliceVision/tracks/tracks.hpp>
 
 #include <memory>
@@ -36,7 +36,7 @@ public:
     const std::string & sMatchesPath,
     const std::string & sMatchesGeometricModel,
     const std::string & sOutDirectory,
-    const std::vector<features::EImageDescriberType>& descTypes,
+    const std::vector<feature::EImageDescriberType>& descTypes,
     int selectionMethod = -1,
     int imgRef = -1);
 
@@ -69,12 +69,12 @@ private:
 
   std::vector< std::string > _vec_fileNames; // considered images
 
-  features::RegionsPerView _regionsPerView;
+  feature::RegionsPerView _regionsPerView;
   std::vector< std::pair< size_t, size_t > > _vec_imageSize; // Size of each image
 
   aliceVision::matching::PairwiseMatches _pairwiseMatches; // pairwise geometric matches
 
-  std::vector<features::EImageDescriberType> _descTypes; //< describer type use for color harmonizations
+  std::vector<feature::EImageDescriberType> _descTypes; //< describer type use for color harmonizations
 
   //
   std::string _sSfM_Data_Path;// Path to the Sfm_Scene

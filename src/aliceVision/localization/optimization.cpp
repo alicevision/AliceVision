@@ -156,7 +156,7 @@ bool refineSequence(std::vector<LocalizationResult> & vec_localizationResult,
             {
               assert(p.descType == match.descType);
               const Vec2 &fff = currResult.getPt2D().col(i);
-              ALICEVISION_LOG_DEBUG("\tfeatID " << features::EImageDescriberType_enumToString(p.descType) << " " << p.featId << " " << fff.transpose());
+              ALICEVISION_LOG_DEBUG("\tfeatID " << feature::EImageDescriberType_enumToString(p.descType) << " " << p.featId << " " << fff.transpose());
             }
           }
           continue;

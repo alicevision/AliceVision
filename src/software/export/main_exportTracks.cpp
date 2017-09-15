@@ -4,11 +4,11 @@
 #include "aliceVision/matching/indMatch.hpp"
 #include "aliceVision/matching/indMatch_utils.hpp"
 #include "aliceVision/image/image.hpp"
-#include "aliceVision/features/features.hpp"
+#include "aliceVision/feature/feature.hpp"
 #include "aliceVision/tracks/tracks.hpp"
 #include "aliceVision/sfm/sfm.hpp"
 #include "aliceVision/sfm/pipelines/RegionsIO.hpp"
-#include "aliceVision/features/svgVisualization.hpp"
+#include "aliceVision/feature/svgVisualization.hpp"
 
 #include "software/utils/sfmHelper/sfmIOHelper.hpp"
 #include "dependencies/cmdLine/cmdLine.h"
@@ -91,13 +91,13 @@ int main(int argc, char ** argv)
   //---------------------------------------
   // Load SfM Scene regions
   //---------------------------------------
-  using namespace aliceVision::features;
+  using namespace aliceVision::feature;
   
   // Get imageDescriberMethodType
   std::vector<EImageDescriberType> describerMethodTypes = EImageDescriberType_stringToEnums(describerMethods);
 
   // Read the features
-  features::FeaturesPerView featuresPerView;
+  feature::FeaturesPerView featuresPerView;
   if (!sfm::loadFeaturesPerView(featuresPerView, sfm_data, sMatchesDir, describerMethodTypes)) {
     std::cerr << std::endl
       << "Invalid features." << std::endl;
@@ -171,8 +171,8 @@ int main(int argc, char ** argv)
         for (tracks::TracksMap::const_iterator tracksIt = map_tracksCommon.begin();
           tracksIt != map_tracksCommon.end(); ++tracksIt)
         {
-          const features::EImageDescriberType descType = tracksIt->second.descType;
-          assert(descType != features::EImageDescriberType::UNINITIALIZED);
+          const feature::EImageDescriberType descType = tracksIt->second.descType;
+          assert(descType != feature::EImageDescriberType::UNINITIALIZED);
           tracks::Track::FeatureIdPerView::const_iterator obsIt = tracksIt->second.featPerView.begin();
 
           const PointFeatures& vec_feat_I = featuresPerView.getFeatures(view_I->getViewId(), descType);
@@ -191,8 +191,8 @@ int main(int argc, char ** argv)
         for (tracks::TracksMap::const_iterator tracksIt = map_tracksCommon.begin();
           tracksIt != map_tracksCommon.end(); ++ tracksIt)
         {
-          const features::EImageDescriberType descType = tracksIt->second.descType;
-          assert(descType != features::EImageDescriberType::UNINITIALIZED);
+          const feature::EImageDescriberType descType = tracksIt->second.descType;
+          assert(descType != feature::EImageDescriberType::UNINITIALIZED);
           tracks::Track::FeatureIdPerView::const_iterator obsIt = tracksIt->second.featPerView.begin();
 
           const PointFeatures& vec_feat_I = featuresPerView.getFeatures(view_I->getViewId(), descType);

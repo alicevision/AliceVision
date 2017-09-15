@@ -4,7 +4,7 @@ add_executable(aliceVision_samples_robustEssentialBA main_robustEssentialBA.cpp)
 
 target_link_libraries(aliceVision_samples_robustEssentialBA
   aliceVision_image
-  aliceVision_features
+  aliceVision_feature
   aliceVision_matching
   aliceVision_system
   aliceVision_sfm

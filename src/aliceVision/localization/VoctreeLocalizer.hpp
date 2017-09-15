@@ -8,7 +8,7 @@
 #include "ILocalizer.hpp"
 #include "BoundedBuffer.hpp"
 #include <aliceVision/config.hpp>
-#include <aliceVision/features/image_describer.hpp>
+#include <aliceVision/feature/ImageDescriber.hpp>
 #include <aliceVision/sfm/sfm_data.hpp>
 #include <aliceVision/sfm/pipelines/localization/SfM_Localizer.hpp>
 #include <aliceVision/stl/stlMap.hpp>
@@ -24,11 +24,11 @@ namespace localization {
 
 struct FrameData
 {
-  FrameData(const LocalizationResult &locResult, const features::MapRegionsPerDesc& regionsPerDesc);
+  FrameData(const LocalizationResult &locResult, const feature::MapRegionsPerDesc& regionsPerDesc);
   
   LocalizationResult _locResult;
   ReconstructedRegionsMappingPerDesc _regionsWith3D;
-  features::MapRegionsPerDesc _regions;
+  feature::MapRegionsPerDesc _regions;
 };
 
 class VoctreeLocalizer : public ILocalizer
@@ -96,7 +96,7 @@ public:
                    const std::string &descriptorsFolder,
                    const std::string &vocTreeFilepath,
                    const std::string &weightsFilepath,
-                   const std::vector<features::EImageDescriberType>& matchingDescTypes
+                   const std::vector<feature::EImageDescriberType>& matchingDescTypes
                   );
   
   void setCudaPipe( int i ) override
@@ -140,7 +140,7 @@ public:
    * @param[in] imagePath Optional complete path to the image, used only for debugging purposes.
    * @return  true if the image has been successfully localized.
    */
-  bool localize(const features::MapRegionsPerDesc & queryRegions,
+  bool localize(const feature::MapRegionsPerDesc & queryRegions,
                 const std::pair<std::size_t, std::size_t> &imageSize,
                 const LocalizerParameters *param,
                 bool useInputIntrinsics,
@@ -156,7 +156,7 @@ public:
                    geometry::Pose3 &rigPose,
                    std::vector<LocalizationResult> & vec_locResults) override;
   
-  bool localizeRig(const std::vector<features::MapRegionsPerDesc> & vec_queryRegions,
+  bool localizeRig(const std::vector<feature::MapRegionsPerDesc> & vec_queryRegions,
                    const std::vector<std::pair<std::size_t, std::size_t> > &vec_imageSize,
                    const LocalizerParameters *param,
                    std::vector<camera::PinholeRadialK3 > &vec_queryIntrinsics,
@@ -166,7 +166,7 @@ public:
 
 
 #if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_OPENGV)
-  bool localizeRig_opengv(const std::vector<features::MapRegionsPerDesc> & vec_queryRegions,
+  bool localizeRig_opengv(const std::vector<feature::MapRegionsPerDesc> & vec_queryRegions,
                           const std::vector<std::pair<std::size_t, std::size_t> > &imageSize,
                           const LocalizerParameters *parameters,
                           std::vector<camera::PinholeRadialK3 > &vec_queryIntrinsics,
@@ -175,7 +175,7 @@ public:
                           std::vector<LocalizationResult>& vec_locResults);
 #endif
 
-  bool localizeRig_naive(const std::vector<features::MapRegionsPerDesc> & vec_queryRegions,
+  bool localizeRig_naive(const std::vector<feature::MapRegionsPerDesc> & vec_queryRegions,
                         const std::vector<std::pair<std::size_t, std::size_t> > &imageSize,
                         const LocalizerParameters *parameters,
                         std::vector<camera::PinholeRadialK3 > &vec_queryIntrinsics,
@@ -200,7 +200,7 @@ public:
    * @param[out] associationIDs the ids of the 2D-3D correspondences used to compute the pose
    * @return true if the localization is successful
    */
-  bool localizeFirstBestResult(const features::MapRegionsPerDesc & queryRegions,
+  bool localizeFirstBestResult(const feature::MapRegionsPerDesc & queryRegions,
                                const std::pair<std::size_t, std::size_t> imageSize,
                                const Parameters &param,
                                bool useInputIntrinsics,
@@ -225,7 +225,7 @@ public:
    * @param[out] associationIDs the ids of the 2D-3D correspondences used to compute the pose
    * @return true if the localization is successful
    */
-  bool localizeAllResults(const features::MapRegionsPerDesc & queryRegions,
+  bool localizeAllResults(const feature::MapRegionsPerDesc & queryRegions,
                           const std::pair<std::size_t, std::size_t> imageSize,
                           const Parameters &param,
                           bool useInputIntrinsics,
@@ -249,7 +249,7 @@ public:
    * @param[out] out_matchedImages image matches output
    * @param[in] imagePath
    */
-  void getAllAssociations(const features::MapRegionsPerDesc & queryRegions,
+  void getAllAssociations(const feature::MapRegionsPerDesc & queryRegions,
                           const std::pair<std::size_t, std::size_t> &imageSize,
                           const Parameters &param,
                           bool useInputIntrinsics,
@@ -257,7 +257,7 @@ public:
                           OccurenceMap & out_occurences,
                           Mat &out_pt2D,
                           Mat &out_pt3D,
-                          std::vector<features::EImageDescriberType>& out_descTypes,
+                          std::vector<feature::EImageDescriberType>& out_descTypes,
                           std::vector<voctree::DocMatch>& out_matchedImages,
                           const std::string& imagePath = std::string()) const;
 
@@ -297,7 +297,7 @@ private:
    */
   bool robustMatching(matching::RegionsDatabaseMatcherPerDesc & matchers,
                       const camera::IntrinsicBase * queryIntrinsics,// the intrinsics of the image we are using as reference
-                      const features::MapRegionsPerDesc & regionsToMatch,
+                      const feature::MapRegionsPerDesc & regionsToMatch,
                       const camera::IntrinsicBase * matchedIntrinsics,
                       const float fDistRatio,
                       const double matchingError,
@@ -329,11 +329,11 @@ public:
   
   /// for each view index, it contains the features and descriptors that have an
   /// associated 3D point
-  features::RegionsPerView _regionsPerView;
+  feature::RegionsPerView _regionsPerView;
   ReconstructedRegionsMappingPerView _reconstructedRegionsMappingPerView;
   
   /// the feature extractor
-  std::vector<std::unique_ptr<features::Image_describer>> _imageDescribers;
+  std::vector<std::unique_ptr<feature::ImageDescriber>> _imageDescribers;
   
   // CUDA CCTag supports several parallel pipelines, where each one can
   // processing different image dimensions.
@@ -342,7 +342,7 @@ public:
   /// the vocabulary tree used to generate the database and the visual images for
   /// the query images
   std::unique_ptr<voctree::IVocabularyTree> _voctree;
-  features::EImageDescriberType _voctreeDescType = features::EImageDescriberType::UNINITIALIZED;
+  feature::EImageDescriberType _voctreeDescType = feature::EImageDescriberType::UNINITIALIZED;
   
   /// the database that stores the visual word representation of each image of
   /// the original dataset

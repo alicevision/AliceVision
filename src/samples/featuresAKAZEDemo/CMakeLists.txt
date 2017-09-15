@@ -4,7 +4,7 @@ add_executable(aliceVision_samples_demoAKAZE main_demoAKAZE.cpp)
 
 target_link_libraries(aliceVision_samples_demoAKAZE
   aliceVision_image
-  aliceVision_features
+  aliceVision_feature
   stlplus
   ${ALICEVISION_LIBRARY_DEPENDENCIES}
 )
@@ -17,7 +17,7 @@ add_executable( aliceVision_samples_computeAKAZE main_computeAKAZE.cpp)
 
 target_link_libraries( aliceVision_samples_computeAKAZE
   aliceVision_image
-  aliceVision_features
+  aliceVision_feature
   aliceVision_system
   stlplus
   ${ALICEVISION_LIBRARY_DEPENDENCIES}

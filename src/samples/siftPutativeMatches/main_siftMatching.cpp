@@ -2,9 +2,9 @@
 // the terms of the MPL2 license (see the COPYING.md file).
 
 #include "aliceVision/image/image.hpp"
-#include "aliceVision/features/features.hpp"
+#include "aliceVision/feature/feature.hpp"
 #include "aliceVision/matching/regions_matcher.hpp"
-#include "aliceVision/features/sift/SIFT_describer.hpp"
+#include "aliceVision/feature/sift/ImageDescriber_SIFT.hpp"
 
 #include "dependencies/stlplus3/filesystemSimplified/file_system.hpp"
 #include "dependencies/vectorGraphics/svgDrawer.hpp"
@@ -33,9 +33,9 @@ int main() {
   //--
   // Detect regions thanks to an image_describer
   //--
-  using namespace aliceVision::features;
-  std::unique_ptr<Image_describer> image_describer(new SIFT_ImageDescriber());
-  std::map<IndexT, std::unique_ptr<features::Regions> > regions_perImage;
+  using namespace aliceVision::feature;
+  std::unique_ptr<ImageDescriber> image_describer(new ImageDescriber_SIFT());
+  std::map<IndexT, std::unique_ptr<feature::Regions> > regions_perImage;
   image_describer->Describe(imageL, regions_perImage[0]);
   image_describer->Describe(imageR, regions_perImage[1]);
 

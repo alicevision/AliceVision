@@ -3,7 +3,7 @@
 
 #include "KeyframeSelector.hpp"
 #include <aliceVision/image/image.hpp>
-#include <aliceVision/features/sift/SIFT_describer.hpp>
+#include <aliceVision/feature/sift/ImageDescriber_SIFT.hpp>
 #include <aliceVision/exif/sensorWidthDatabase/parseDatabase.hpp>
 #include <aliceVision/system/Logger.hpp>
 
@@ -72,7 +72,7 @@ KeyframeSelector::KeyframeSelector(const std::vector<std::string>& mediaPaths,
   _framesData.resize(nbFrames);
 
   // create SIFT image describer
-  _imageDescriber.reset(new features::SIFT_ImageDescriber());
+  _imageDescriber.reset(new feature::ImageDescriber_SIFT());
 }
 
 void KeyframeSelector::process()
@@ -313,9 +313,9 @@ bool KeyframeSelector::computeFrameData(const image::Image<image::RGBColor>& ima
     bool noKeyframe = (_keyframeIndexes.empty());
 
     // compute current frame sparse histogram
-    std::unique_ptr<features::Regions> regions;
+    std::unique_ptr<feature::Regions> regions;
     _imageDescriber->Describe(imageGrayHalfSample, regions);
-    currMediaData.histogram = voctree::SparseHistogram(_voctree->quantizeToSparse(dynamic_cast<features::SIFT_Regions*>(regions.get())->Descriptors()));
+    currMediaData.histogram = voctree::SparseHistogram(_voctree->quantizeToSparse(dynamic_cast<feature::SIFT_Regions*>(regions.get())->Descriptors()));
 
     // compute sparseDistance
     if(!noKeyframe)
@@ -346,7 +346,7 @@ void KeyframeSelector::writeKeyframe(const image::Image<image::RGBColor>& image,
                                      std::size_t mediaIndex)
 {
   const auto& mediaInfo = _mediasInfo.at(mediaIndex);
-  const auto filepath = _outputDirectory + "/frame_" + to_string(frameIndex) + "_media_" + to_string(mediaIndex) + ".jpg";
+  const auto filepath = _outputDirectory + "/frame_" + std::to_string(frameIndex) + "_media_" + std::to_string(mediaIndex) + ".jpg";
 
   std::unique_ptr<oiio::ImageOutput> out(oiio::ImageOutput::create(filepath));
   

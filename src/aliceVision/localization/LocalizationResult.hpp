@@ -54,7 +54,7 @@ struct IndMatch3D2D
 {
   IndMatch3D2D() {}
   IndMatch3D2D(IndexT landmarkId,
-      features::EImageDescriberType descType,
+      feature::EImageDescriberType descType,
       IndexT featId)
     : landmarkId(landmarkId)
     , descType(descType)
@@ -73,7 +73,7 @@ struct IndMatch3D2D
   }
 
   IndexT landmarkId = UndefinedIndexT;
-  features::EImageDescriberType descType = features::EImageDescriberType::UNINITIALIZED;
+  feature::EImageDescriberType descType = feature::EImageDescriberType::UNINITIALIZED;
   IndexT featId = UndefinedIndexT;
 };
 

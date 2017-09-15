@@ -2,8 +2,9 @@
 // the terms of the MPL2 license (see the COPYING.md file).
 
 #include "aliceVision/image/image.hpp"
-#include "aliceVision/features/features.hpp"
-#include "aliceVision/features/sift/SIFT_describer.hpp"
+#include "aliceVision/feature/feature.hpp"
+#include "aliceVision/feature/sift/ImageDescriber_SIFT.hpp"
+#include "aliceVision/feature/akaze/ImageDescriber_AKAZE.hpp"
 #include "aliceVision/robust_estimation/guided_matching.hpp"
 #include "aliceVision/multiview/solver_homography_kernel.hpp"
 #include "aliceVision/matching/regions_matcher.hpp"
@@ -218,14 +219,14 @@ int main(int argc, char **argv)
       << "   SIFT (default),\n"
       << "   AKAZE_FLOAT: AKAZE with floating point descriptors.\n"
       << "[-p|--describer_preset]\n"
-      << "  (used to control the Image_describer configuration):\n"
+      << "  (used to control the ImageDescriber configuration):\n"
       << "   LOW,\n"
       << "   MEDIUM,\n"
       << "   NORMAL (default),\n"
       << "   HIGH,\n"
       << "   ULTRA: !!Can take long time!!\n"
       << "[-f|--feature_repeatability]\n"
-      << "  (used to control the Image_describer configuration):\n"
+      << "  (used to control the ImageDescriber configuration):\n"
       << "   0 (default),\n"
       << "   1\n"
       << "[-m|--matching_repeatability]\n"
@@ -267,21 +268,21 @@ int main(int argc, char **argv)
       // 2. Test the repeatability (localization/overlap (accuracy))
       // 3. Export data
 
-      using namespace aliceVision::features;
-      std::unique_ptr<Image_describer> image_describer;
+      using namespace aliceVision::feature;
+      std::unique_ptr<ImageDescriber> image_describer;
       if (sImage_Describer_Method == "SIFT")
       {
-        image_describer.reset(new SIFT_ImageDescriber(SiftParams()));
+        image_describer.reset(new ImageDescriber_SIFT(SiftParams()));
       }
       else
       if (sImage_Describer_Method == "AKAZE_FLOAT")
       {
-        image_describer.reset(new AKAZE_Image_describer(AKAZEParams(AKAZEConfig(), AKAZE_MSURF)));
+        image_describer.reset(new ImageDescriber_AKAZE(AKAZEParams(AKAZEConfig(), AKAZE_MSURF)));
       }
 
       if (!image_describer)
       {
-        std::cerr << "Cannot create the designed Image_describer:"
+        std::cerr << "Cannot create the designed ImageDescriber:"
           << sImage_Describer_Method << "." << std::endl;
         return EXIT_FAILURE;
       }

@@ -11,9 +11,9 @@ namespace aliceVision {
 namespace sfm {
 
 
-std::unique_ptr<features::Regions> loadRegions(const std::string& folder, IndexT id_view, const features::Image_describer& imageDescriber)
+std::unique_ptr<feature::Regions> loadRegions(const std::string& folder, IndexT id_view, const feature::ImageDescriber& imageDescriber)
 {
-  const std::string imageDescriberTypeName = features::EImageDescriberType_enumToString(imageDescriber.getDescriberType());
+  const std::string imageDescriberTypeName = feature::EImageDescriberType_enumToString(imageDescriber.getDescriberType());
   const std::string basename = std::to_string(id_view);
 
   const std::string featFilename = stlplus::create_filespec(folder, basename, imageDescriberTypeName + ".feat");
@@ -21,7 +21,7 @@ std::unique_ptr<features::Regions> loadRegions(const std::string& folder, IndexT
   ALICEVISION_LOG_TRACE("featFilename: " << featFilename);
   ALICEVISION_LOG_TRACE("descFilename: " << descFilename);
 
-  std::unique_ptr<features::Regions> regionsPtr;
+  std::unique_ptr<feature::Regions> regionsPtr;
   imageDescriber.Allocate(regionsPtr);
 
   if (!regionsPtr->Load(featFilename, descFilename))
@@ -35,10 +35,10 @@ std::unique_ptr<features::Regions> loadRegions(const std::string& folder, IndexT
   return regionsPtr;
 }
 
-bool loadRegionsPerView(features::RegionsPerView& regionsPerView,
+bool loadRegionsPerView(feature::RegionsPerView& regionsPerView,
             const SfM_Data& sfmData,
             const std::string& folder,
-            const std::vector<features::EImageDescriberType>& imageDescriberTypes,
+            const std::vector<feature::EImageDescriberType>& imageDescriberTypes,
             const std::set<IndexT>& viewIdFilter)
 {
   C_Progress_display my_progress_bar( sfmData.GetViews().size() * imageDescriberTypes.size(), std::cout, "\n- Regions Loading -\n");
@@ -46,7 +46,7 @@ bool loadRegionsPerView(features::RegionsPerView& regionsPerView,
   std::atomic_bool invalid(false);
 
 
-  std::vector< std::unique_ptr<features::Image_describer> > imageDescribers;
+  std::vector< std::unique_ptr<feature::ImageDescriber> > imageDescribers;
   imageDescribers.resize(imageDescriberTypes.size());
 
   for(std::size_t i =0; i < imageDescriberTypes.size(); ++i)
@@ -65,7 +65,7 @@ bool loadRegionsPerView(features::RegionsPerView& regionsPerView,
      {
        if(viewIdFilter.empty() || viewIdFilter.find(iter->second.get()->getViewId()) != viewIdFilter.end())
        {
-         std::unique_ptr<features::Regions> regionsPtr = loadRegions(folder, iter->second.get()->getViewId(), *imageDescribers[i]);
+         std::unique_ptr<feature::Regions> regionsPtr = loadRegions(folder, iter->second.get()->getViewId(), *imageDescribers[i]);
 
          if(regionsPtr)
          {
@@ -87,17 +87,17 @@ bool loadRegionsPerView(features::RegionsPerView& regionsPerView,
 }
 
 
-bool loadFeaturesPerView(features::FeaturesPerView& featuresPerView,
+bool loadFeaturesPerView(feature::FeaturesPerView& featuresPerView,
                       const SfM_Data& sfmData,
                       const std::string& storageDirectory,
-                      const std::vector<features::EImageDescriberType>& imageDescriberTypes)
+                      const std::vector<feature::EImageDescriberType>& imageDescriberTypes)
 {
   C_Progress_display my_progress_bar( sfmData.GetViews().size(), std::cout, "\n- Features Loading -\n" );
 
   // Read for each view the corresponding features and store them as PointFeatures
   std::atomic_bool invalid(false);
 
-  std::vector< std::unique_ptr<features::Image_describer> > imageDescribers;
+  std::vector< std::unique_ptr<feature::ImageDescriber> > imageDescribers;
   imageDescribers.resize(imageDescriberTypes.size());
 
   for(std::size_t i =0; i < imageDescriberTypes.size(); ++i)
@@ -119,7 +119,7 @@ bool loadFeaturesPerView(features::FeaturesPerView& featuresPerView,
 
         ALICEVISION_LOG_TRACE("featFilename: " << featFile);
 
-        std::unique_ptr<features::Regions> regionsPtr;
+        std::unique_ptr<feature::Regions> regionsPtr;
         imageDescribers[i]->Allocate(regionsPtr);
 
         if (!regionsPtr->LoadFeatures(featFile))

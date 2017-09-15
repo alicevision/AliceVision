@@ -1,7 +1,7 @@
 // This file is part of the AliceVision project and is made available under
 // the terms of the MPL2 license (see the COPYING.md file).
 
-#include "aliceVision/features/ImageDescriberCommon.hpp"
+#include "aliceVision/feature/imageDescriberCommon.hpp"
 #include "aliceVision/sfm/sfm.hpp"
 #include "aliceVision/sfm/pipelines/RegionsIO.hpp"
 #include "aliceVision/system/timer.hpp"
@@ -14,7 +14,7 @@
 using namespace aliceVision;
 using namespace aliceVision::camera;
 using namespace aliceVision::sfm;
-using namespace aliceVision::features;
+using namespace aliceVision::feature;
 
 /**
  * @brief Retrieve the view id in the sfmData from the image filename.
@@ -171,10 +171,10 @@ int main(int argc, char **argv)
   }
 
   // Get imageDescriberMethodType
-  const std::vector<features::EImageDescriberType> describerTypes = features::EImageDescriberType_stringToEnums(describerMethods);
+  const std::vector<feature::EImageDescriberType> describerTypes = feature::EImageDescriberType_stringToEnums(describerMethods);
 
   // Features reading
-  features::FeaturesPerView featuresPerView;
+  feature::FeaturesPerView featuresPerView;
   if(!sfm::loadFeaturesPerView(featuresPerView, sfm_data, sFeaturesDir, describerTypes))
   {
     std::cerr << std::endl

@@ -117,7 +117,7 @@ bool readPointCloud(IObject iObj, M44d mat, sfm::SfM_Data &sfmdata, sfm::ESfM_Da
       ++point3d_i)
   {
     const P3fArraySamplePtr::element_type::value_type & pos_i = positions->get()[point3d_i];
-    Landmark& landmark = sfmdata.structure[nbPointsInit + point3d_i] = Landmark(Vec3(pos_i.x, pos_i.y, pos_i.z), features::EImageDescriberType::UNKNOWN);
+    Landmark& landmark = sfmdata.structure[nbPointsInit + point3d_i] = Landmark(Vec3(pos_i.x, pos_i.y, pos_i.z), feature::EImageDescriberType::UNKNOWN);
 
     if(sampleColors)
     {
@@ -128,7 +128,7 @@ bool readPointCloud(IObject iObj, M44d mat, sfm::SfM_Data &sfmdata, sfm::ESfM_Da
     if(sampleDescs)
     {
       const UInt32ArraySamplePtr::element_type::value_type & descType_i = sampleDescs->get()[point3d_i];
-      landmark.descType = static_cast<features::EImageDescriberType>(descType_i);
+      landmark.descType = static_cast<feature::EImageDescriberType>(descType_i);
     }
   }
 

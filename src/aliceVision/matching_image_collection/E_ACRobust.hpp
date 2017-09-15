@@ -13,7 +13,7 @@
 
 #include "aliceVision/matching/indMatch.hpp"
 #include "aliceVision/sfm/sfm_data.hpp"
-#include "aliceVision/features/RegionsPerView.hpp"
+#include "aliceVision/feature/RegionsPerView.hpp"
 #include "aliceVision/matching_image_collection/GeometricFilterMatrix.hpp"
 
 namespace aliceVision {
@@ -49,7 +49,7 @@ struct GeometricFilter_EMatrix_AC : public GeometricFilterMatrix
     const IndexT iIndex = pairIndex.first;
     const IndexT jIndex = pairIndex.second;
 
-    const std::vector<features::EImageDescriberType> descTypes = regionsPerView.getCommonDescTypes(pairIndex);
+    const std::vector<feature::EImageDescriberType> descTypes = regionsPerView.getCommonDescTypes(pairIndex);
     if(descTypes.empty())
       return EstimationStatus(false, false);
 
@@ -122,7 +122,7 @@ struct GeometricFilter_EMatrix_AC : public GeometricFilterMatrix
   bool Geometry_guided_matching
   (
     const sfm::SfM_Data * sfmData,
-    const features::RegionsPerView& regionsPerView,
+    const feature::RegionsPerView& regionsPerView,
     const Pair imageIdsPair,
     const double dDistanceRatio,
     matching::MatchesPerDescType & matches) override

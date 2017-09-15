@@ -3,7 +3,7 @@
 
 #include "aliceVision/system/timer.hpp"
 #include "aliceVision/image/image.hpp"
-#include "aliceVision/features/akaze/AKAZE.hpp"
+#include "aliceVision/feature/akaze/AKAZE.hpp"
 
 #include "dependencies/vectorGraphics/svgDrawer.hpp"
 #include "dependencies/cmdLine/cmdLine.h"

@@ -47,7 +47,7 @@ using namespace aliceVision::matching;
 using namespace aliceVision::lInfinity;
 using namespace aliceVision::sfm;
 
-typedef features::SIOPointFeature FeatureT;
+typedef feature::SIOPointFeature FeatureT;
 typedef vector< FeatureT > featsT;
 
 ColorHarmonizationEngineGlobal::ColorHarmonizationEngineGlobal(
@@ -55,7 +55,7 @@ ColorHarmonizationEngineGlobal::ColorHarmonizationEngineGlobal(
   const string & sMatchesPath,
   const std::string & sMatchesGeometricModel,
   const string & sOutDirectory,
-  const std::vector<features::EImageDescriberType>& descTypes,
+  const std::vector<feature::EImageDescriberType>& descTypes,
   int selectionMethod,
   int imgRef):
   _sSfM_Data_Path(sSfM_Data_Filename),
@@ -248,14 +248,14 @@ bool ColorHarmonizationEngineGlobal::Process()
 
         for(const auto& matchesIt: matchesPerDesc)
         {
-          const features::EImageDescriberType descType = matchesIt.first;
+          const feature::EImageDescriberType descType = matchesIt.first;
           const IndMatches& matches = matchesIt.second;
           color_harmonization::commonDataByPair_VLDSegment dataSelector(
             p_imaNames.first,
             p_imaNames.second,
             matches,
-            features::getSIOPointFeatures(_regionsPerView.getRegions(viewI, descType)),
-            features::getSIOPointFeatures(_regionsPerView.getRegions(viewJ, descType)));
+            feature::getSIOPointFeatures(_regionsPerView.getRegions(viewI, descType)),
+            feature::getSIOPointFeatures(_regionsPerView.getRegions(viewJ, descType)));
 
           dataSelector.computeMask( maskI, maskJ );
         }

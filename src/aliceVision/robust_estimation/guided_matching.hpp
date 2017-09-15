@@ -5,9 +5,9 @@
 
 #include "aliceVision/numeric/numeric.h"
 #include "aliceVision/matching/indMatch.hpp"
-#include "aliceVision/features/RegionsPerView.hpp"
+#include "aliceVision/feature/RegionsPerView.hpp"
 
-#include "aliceVision/features/regions.hpp"
+#include "aliceVision/feature/Regions.hpp"
 #include "aliceVision/camera/IntrinsicBase.hpp"
 
 #include <vector>
@@ -183,9 +183,9 @@ typename ErrorArg // The metric to compute distance to the model
 void GuidedMatching(
   const ModelArg & mod, // The model
   const camera::IntrinsicBase * camL, // Optional camera (in order to undistord on the fly feature positions, can be NULL)
-  const features::Regions & lRegions,  // regions (point features & corresponding descriptors)
+  const feature::Regions & lRegions,  // regions (point features & corresponding descriptors)
   const camera::IntrinsicBase * camR, // Optional camera (in order to undistord on the fly feature positions, can be NULL)
-  const features::Regions & rRegions,  // regions (point features & corresponding descriptors)
+  const feature::Regions & rRegions,  // regions (point features & corresponding descriptors)
   double errorTh,       // Maximal authorized error threshold
   double distRatio,     // Maximal authorized distance ratio
   matching::IndMatches & out_matches) // Ouput corresponding index
@@ -261,18 +261,18 @@ template<
 void GuidedMatching(
   const ModelArg & mod, // The model
   const camera::IntrinsicBase * camL, // Optional camera (in order to undistord on the fly feature positions, can be NULL)
-  const features::MapRegionsPerDesc & lRegions,  // regions (point features & corresponding descriptors)
+  const feature::MapRegionsPerDesc & lRegions,  // regions (point features & corresponding descriptors)
   const camera::IntrinsicBase * camR, // Optional camera (in order to undistord on the fly feature positions, can be NULL)
-  const features::MapRegionsPerDesc & rRegions,  // regions (point features & corresponding descriptors)
+  const feature::MapRegionsPerDesc & rRegions,  // regions (point features & corresponding descriptors)
   double errorTh,       // Maximal authorized error threshold
   double distRatio,     // Maximal authorized distance ratio
   matching::MatchesPerDescType & out_matchesPerDesc) // Ouput corresponding index
 {
-  const std::vector<features::EImageDescriberType> descTypes = getCommonDescTypes(lRegions, rRegions);
+  const std::vector<feature::EImageDescriberType> descTypes = getCommonDescTypes(lRegions, rRegions);
   if(descTypes.empty())
     return;
 
-  for(const features::EImageDescriberType descType: descTypes)
+  for(const feature::EImageDescriberType descType: descTypes)
   {
     GuidedMatching<ModelArg, ErrorArg>(mod, camL, *lRegions.at(descType), camR, *rRegions.at(descType), errorTh, distRatio, out_matchesPerDesc[descType]);
   }
@@ -346,9 +346,9 @@ void GuidedMatching_Fundamental_Fast(
   const Mat3 & FMat,    // The fundamental matrix
   const Vec3 & epipole2,// Epipole2 (camera center1 in image plane2; must not be normalized)
   const camera::IntrinsicBase * camL, // Optional camera (in order to undistord on the fly feature positions, can be NULL)
-  const features::Regions & lRegions,  // regions (point features & corresponding descriptors)
+  const feature::Regions & lRegions,  // regions (point features & corresponding descriptors)
   const camera::IntrinsicBase * camR, // Optional camera (in order to undistord on the fly feature positions, can be NULL)
-  const features::Regions & rRegions,  // regions (point features & corresponding descriptors)
+  const feature::Regions & rRegions,  // regions (point features & corresponding descriptors)
   const int widthR, const int heightR,
   double errorTh,       // Maximal authorized error threshold (consider it's a square threshold)
   double distRatio,     // Maximal authorized distance ratio

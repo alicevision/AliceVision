@@ -14,7 +14,7 @@ namespace aliceVision {
 namespace matching_image_collection {
 
 using namespace aliceVision::matching;
-using namespace aliceVision::features;
+using namespace aliceVision::feature;
 
 ImageCollectionMatcher_CascadeHashing
 ::ImageCollectionMatcher_CascadeHashing
@@ -30,7 +30,7 @@ template <typename ScalarT>
 void Match
 (
   const sfm::SfM_Data & sfm_data,
-  const features::RegionsPerView& regionsPerView,
+  const feature::RegionsPerView& regionsPerView,
   const Pair_Set & pairs,
   EImageDescriberType descType,
   float fDistRatio,
@@ -58,7 +58,7 @@ void Match
   if (!used_index.empty())
   {
     const IndexT I = *used_index.begin();
-    const features::Regions &regionsI = regionsPerView.getRegions(I, descType);
+    const feature::Regions &regionsI = regionsPerView.getRegions(I, descType);
     const size_t dimension = regionsI.DescriptorLength();
     cascade_hasher.Init(dimension);
   }
@@ -74,7 +74,7 @@ void Match
       std::set<IndexT>::const_iterator iter = used_index.begin();
       std::advance(iter, i);
       const IndexT I = *iter;
-      const features::Regions &regionsI = regionsPerView.getRegions(I, descType);
+      const feature::Regions &regionsI = regionsPerView.getRegions(I, descType);
       const ScalarT * tabI =
         reinterpret_cast<const ScalarT*>(regionsI.DescriptorRawData());
       const size_t dimension = regionsI.DescriptorLength();
@@ -99,7 +99,7 @@ void Match
     std::set<IndexT>::const_iterator iter = used_index.begin();
     std::advance(iter, i);
     const IndexT I = *iter;
-    const features::Regions &regionsI = regionsPerView.getRegions(I, descType);
+    const feature::Regions &regionsI = regionsPerView.getRegions(I, descType);
     const ScalarT * tabI =
       reinterpret_cast<const ScalarT*>(regionsI.DescriptorRawData());
     const size_t dimension = regionsI.DescriptorLength();
@@ -120,14 +120,14 @@ void Match
     const IndexT I = iter->first;
     const std::vector<IndexT> & indexToCompare = iter->second;
 
-    const features::Regions &regionsI = regionsPerView.getRegions(I, descType);
+    const feature::Regions &regionsI = regionsPerView.getRegions(I, descType);
     if (regionsI.RegionCount() == 0)
     {
       my_progress_bar += indexToCompare.size();
       continue;
     }
 
-    const std::vector<features::PointFeature> pointFeaturesI = regionsI.GetRegionsPositions();
+    const std::vector<feature::PointFeature> pointFeaturesI = regionsI.GetRegionsPositions();
     const ScalarT * tabI =
       reinterpret_cast<const ScalarT*>(regionsI.DescriptorRawData());
     const size_t dimension = regionsI.DescriptorLength();
@@ -136,7 +136,7 @@ void Match
     for (int j = 0; j < (int)indexToCompare.size(); ++j)
     {
       size_t J = indexToCompare[j];
-      const features::Regions &regionsJ = regionsPerView.getRegions(I, descType);
+      const feature::Regions &regionsJ = regionsPerView.getRegions(I, descType);
 
       if (!regionsPerView.viewExist(J)
           || regionsI.Type_id() != regionsJ.Type_id())
@@ -186,7 +186,7 @@ void Match
       matching::IndMatch::getDeduplicated(vec_putative_matches);
 
       // Remove matches that have the same (X,Y) coordinates
-      const std::vector<features::PointFeature> pointFeaturesJ = regionsJ.GetRegionsPositions();
+      const std::vector<feature::PointFeature> pointFeaturesJ = regionsJ.GetRegionsPositions();
       matching::IndMatchDecorator<float> matchDeduplicator(vec_putative_matches,
         pointFeaturesI, pointFeaturesJ);
       matchDeduplicator.getDeduplicated(vec_putative_matches);
@@ -208,9 +208,9 @@ void Match
 void ImageCollectionMatcher_CascadeHashing::Match
 (
   const sfm::SfM_Data & sfm_data,
-  const features::RegionsPerView& regionsPerView,
+  const feature::RegionsPerView& regionsPerView,
   const Pair_Set & pairs,
-  features::EImageDescriberType descType,
+  feature::EImageDescriberType descType,
   PairwiseMatches & map_PutativesMatches // the pairwise photometric corresponding points
 ) const
 {
@@ -221,7 +221,7 @@ void ImageCollectionMatcher_CascadeHashing::Match
   if (regionsPerView.isEmpty())
     return;
 
-  const features::Regions& regions = regionsPerView.getFirstViewRegions(descType);
+  const feature::Regions& regions = regionsPerView.getFirstViewRegions(descType);
 
   if (regions.IsBinary())
     return;

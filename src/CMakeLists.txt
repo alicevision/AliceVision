@@ -626,7 +626,7 @@ add_subdirectory(aliceVision)
 # ==============================================================================
 set(ALICEVISION_LIBRARIES
   aliceVision_exif
-  aliceVision_features
+  aliceVision_feature
   aliceVision_image
 #  aliceVision_linearProgramming
   aliceVision_lInftyComputerVision

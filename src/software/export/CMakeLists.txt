@@ -7,7 +7,7 @@ add_executable(aliceVision_exportKeypoints main_exportKeypoints.cpp)
 
 target_link_libraries(aliceVision_exportKeypoints
   aliceVision_system
-  aliceVision_features
+  aliceVision_feature
   aliceVision_sfm
   stlplus
 )
@@ -26,7 +26,7 @@ add_executable(aliceVision_exportMatches main_exportMatches.cpp)
 
 target_link_libraries(aliceVision_exportMatches
   aliceVision_system
-  aliceVision_features
+  aliceVision_feature
   aliceVision_sfm
   stlplus
 )
@@ -45,7 +45,7 @@ add_executable(aliceVision_exportTracks main_exportTracks.cpp)
 
 target_link_libraries(aliceVision_exportTracks
   aliceVision_system
-  aliceVision_features
+  aliceVision_feature
   aliceVision_sfm
   stlplus
 )
@@ -65,7 +65,7 @@ add_executable(aliceVision_exportUndistortedImages main_exportUndistortedImages.
 target_link_libraries(aliceVision_exportUndistortedImages
   aliceVision_system
   aliceVision_image
-  aliceVision_features
+  aliceVision_feature
   aliceVision_sfm
   stlplus
 )
@@ -85,7 +85,7 @@ add_executable(aliceVision_exportPMVS main_exportPMVS.cpp)
 target_link_libraries(aliceVision_exportPMVS
   aliceVision_system
   aliceVision_image
-  aliceVision_features
+  aliceVision_feature
   aliceVision_sfm
   stlplus
 )
@@ -105,7 +105,7 @@ add_executable(aliceVision_exportCMPMVS main_exportCMPMVS.cpp)
 target_link_libraries(aliceVision_exportCMPMVS
   aliceVision_system
   aliceVision_image
-  aliceVision_features
+  aliceVision_feature
   aliceVision_sfm
   stlplus
 )
@@ -125,7 +125,7 @@ add_executable(aliceVision_exportCMPMVS2 main_exportCMPMVS2.cpp)
 target_link_libraries(aliceVision_exportCMPMVS2
   aliceVision_system
   aliceVision_image
-  aliceVision_features
+  aliceVision_feature
   aliceVision_sfm
   stlplus
 )
@@ -145,7 +145,7 @@ add_executable(aliceVision_exportMVE2 main_exportMVE2.cpp)
 target_link_libraries(aliceVision_exportMVE2
   aliceVision_system
   aliceVision_image
-  aliceVision_features
+  aliceVision_feature
   aliceVision_sfm
   stlplus
 )
@@ -165,7 +165,7 @@ add_executable(aliceVision_exportMeshlab main_exportMeshlab.cpp)
 target_link_libraries(aliceVision_exportMeshlab
   aliceVision_system
   aliceVision_image
-  aliceVision_features
+  aliceVision_feature
   aliceVision_sfm
   stlplus
 )
@@ -185,7 +185,7 @@ add_executable(aliceVision_exportMVSTexturing main_exportMVSTexturing.cpp)
 target_link_libraries(aliceVision_exportMVSTexturing
   aliceVision_system
   aliceVision_image
-  aliceVision_features
+  aliceVision_feature
   aliceVision_sfm
   stlplus
 )
@@ -205,7 +205,7 @@ add_executable(aliceVision_exportMatlab main_exportMatlab.cpp)
 target_link_libraries(aliceVision_exportMatlab
   aliceVision_system
   aliceVision_image
-  aliceVision_features
+  aliceVision_feature
   aliceVision_sfm
   stlplus
 )
@@ -224,7 +224,7 @@ add_executable(aliceVision_exportCameraFrustums main_exportCameraFrustums.cpp)
 
 target_link_libraries(aliceVision_exportCameraFrustums
   aliceVision_system
-  aliceVision_features
+  aliceVision_feature
   aliceVision_sfm
   stlplus
 )

@@ -6,7 +6,7 @@ target_link_libraries(aliceVision_samples_robustEssential
   aliceVision_image
   aliceVision_multiview
   aliceVision_system
-  aliceVision_features
+  aliceVision_feature
   aliceVision_matching
   aliceVision_sfm
   vlsift

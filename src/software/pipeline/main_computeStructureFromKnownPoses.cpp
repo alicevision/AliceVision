@@ -80,7 +80,7 @@ int main(int argc, char **argv)
   }
 
   // Init the regions_type from the image describer file (used for image regions extraction)
-  using namespace aliceVision::features;
+  using namespace aliceVision::feature;
   
   // Get imageDescriberMethodType
   std::vector<EImageDescriberType> describerMethodTypes = EImageDescriberType_stringToEnums(describerMethods);

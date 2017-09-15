@@ -6,7 +6,7 @@ target_link_libraries(aliceVision_samples_kvldFilter
   aliceVision_image
   aliceVision_multiview
   aliceVision_kvld
-  aliceVision_features
+  aliceVision_feature
   aliceVision_matching
   stlplus
   vlsift

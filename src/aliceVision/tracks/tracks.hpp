@@ -8,7 +8,7 @@
 #include "lemon/list_graph.h"
 #include "lemon/unionfind.h"
 
-#include "aliceVision/features/ImageDescriberCommon.hpp"
+#include "aliceVision/feature/imageDescriberCommon.hpp"
 #include "aliceVision/matching/indMatch.hpp"
 #include "aliceVision/stl/flatMap.hpp"
 #include "aliceVision/stl/flatSet.hpp"
@@ -41,7 +41,7 @@ struct Track
   Track() {}
 
   /// Descriptor type
-  features::EImageDescriberType descType = features::EImageDescriberType::UNINITIALIZED;
+  feature::EImageDescriberType descType = feature::EImageDescriberType::UNINITIALIZED;
   /// Collection of matched features between views: {ViewId, FeatureId}
   FeatureIdPerView featPerView;
 };
@@ -79,7 +79,7 @@ typedef stl::flat_map<std::size_t, TrackIdSet > TracksPerView;
 struct KeypointId
 {
   KeypointId(){}
-  KeypointId(features::EImageDescriberType type, std::size_t index)
+  KeypointId(feature::EImageDescriberType type, std::size_t index)
     : descType(type)
     , featIndex(index)
   {}
@@ -91,13 +91,13 @@ struct KeypointId
     return descType < other.descType;
   }
 
-  features::EImageDescriberType descType = features::EImageDescriberType::UNINITIALIZED;
+  feature::EImageDescriberType descType = feature::EImageDescriberType::UNINITIALIZED;
   std::size_t featIndex = 0;
 };
 
 inline std::ostream& operator<<(std::ostream& os, const KeypointId& k)
 {
-    os << features::EImageDescriberType_enumToString(k.descType) << ", " << k.featIndex;
+    os << feature::EImageDescriberType_enumToString(k.descType) << ", " << k.featIndex;
     return os;
 }
 
@@ -164,7 +164,7 @@ struct TracksBuilder
 
       for(const auto& matchesIt: matchesPerDesc)
       {
-        const features::EImageDescriberType descType = matchesIt.first;
+        const feature::EImageDescriberType descType = matchesIt.first;
         const IndMatches& matches = matchesIt.second;
         // We have correspondences between I and J image index.
         for(const IndMatch& m: matches)
@@ -208,7 +208,7 @@ struct TracksBuilder
 
       for(const auto& matchesIt: matchesPerDesc)
       {
-        const features::EImageDescriberType descType = matchesIt.first;
+        const feature::EImageDescriberType descType = matchesIt.first;
         const IndMatches& matches = matchesIt.second;
         // We have correspondences between I and J image index.
         for(const IndMatch& m: matches)
@@ -488,7 +488,7 @@ struct TracksUtilsMap
       set_tracksIds->insert(iterT->first);
     }
   }
-  using FeatureId = std::pair<features::EImageDescriberType, size_t>;
+  using FeatureId = std::pair<feature::EImageDescriberType, size_t>;
   
   /// Get feature id (with associated describer type) in the specified view for each TrackId
   static bool GetFeatureIdInViewPerTrack(

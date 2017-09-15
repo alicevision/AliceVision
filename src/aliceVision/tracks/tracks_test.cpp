@@ -11,7 +11,7 @@
 #include <utility>
 
 
-using namespace aliceVision::features;
+using namespace aliceVision::feature;
 using namespace aliceVision::tracks;
 using namespace aliceVision::matching;
 

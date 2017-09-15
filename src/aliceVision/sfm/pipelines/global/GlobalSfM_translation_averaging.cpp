@@ -37,7 +37,7 @@ using namespace aliceVision::geometry;
 bool GlobalSfM_Translation_AveragingSolver::Run(
   ETranslationAveragingMethod eTranslationAveragingMethod,
   SfM_Data & sfm_data,
-  const features::FeaturesPerView & normalizedFeaturesPerView,
+  const feature::FeaturesPerView & normalizedFeaturesPerView,
   const matching::PairwiseMatches & pairwiseMatches,
   const Hash_Map<IndexT, Mat3> & map_globalR,
   matching::PairwiseMatches & tripletWise_matches
@@ -278,7 +278,7 @@ bool GlobalSfM_Translation_AveragingSolver::Translation_averaging(
 
 void GlobalSfM_Translation_AveragingSolver::Compute_translations(
   const SfM_Data & sfm_data,
-  const features::FeaturesPerView & normalizedFeaturesPerView,
+  const feature::FeaturesPerView & normalizedFeaturesPerView,
   const matching::PairwiseMatches & pairwiseMatches,
   const Hash_Map<IndexT, Mat3> & map_globalR,
   matching::PairwiseMatches & tripletWise_matches)
@@ -304,7 +304,7 @@ void GlobalSfM_Translation_AveragingSolver::Compute_translations(
 void GlobalSfM_Translation_AveragingSolver::ComputePutativeTranslation_EdgesCoverage(
   const SfM_Data & sfm_data,
   const Hash_Map<IndexT, Mat3> & map_globalR,
-  const features::FeaturesPerView & normalizedFeaturesPerView,
+  const feature::FeaturesPerView & normalizedFeaturesPerView,
   const matching::PairwiseMatches & pairwiseMatches,
   RelativeInfo_Vec & vec_initialEstimates,
   matching::PairwiseMatches & newpairMatches)
@@ -586,7 +586,7 @@ void GlobalSfM_Translation_AveragingSolver::ComputePutativeTranslation_EdgesCove
 bool GlobalSfM_Translation_AveragingSolver::Estimate_T_triplet(
   const SfM_Data & sfm_data,
   const Hash_Map<IndexT, Mat3> & map_globalR,
-  const features::FeaturesPerView & normalizedFeaturesPerView,
+  const feature::FeaturesPerView & normalizedFeaturesPerView,
   const matching::PairwiseMatches & pairwiseMatches,
   const graph::Triplet & poses_id,
   std::vector<Vec3> & vec_tis,
@@ -637,7 +637,7 @@ bool GlobalSfM_Translation_AveragingSolver::Estimate_T_triplet(
     for (tracks::Track::FeatureIdPerView::const_iterator iter = track.featPerView.begin(); iter != track.featPerView.end(); ++iter, ++index)
     {
       const size_t idx_view = iter->first;
-      const features::PointFeature pt = normalizedFeaturesPerView.getFeatures(idx_view, track.descType)[iter->second];
+      const feature::PointFeature pt = normalizedFeaturesPerView.getFeatures(idx_view, track.descType)[iter->second];
       xxx[index]->col(cpt) = pt.coords().cast<double>();
       const View * view = sfm_data.views.at(idx_view).get();
       intrinsic_ids.insert(view->getIntrinsicId());
@@ -738,7 +738,7 @@ bool GlobalSfM_Translation_AveragingSolver::Estimate_T_triplet(
       const Vec2 principal_point = intrinsicPtr->principal_point();
 
       // get normalized feature
-      const features::PointFeature & pt = normalizedFeaturesPerView.getFeatures(viewIndex)[featIndex];
+      const feature::PointFeature & pt = normalizedFeaturesPerView.getFeatures(viewIndex)[featIndex];
       const Vec2 pt_unnormalized (cam->cam2ima(pt.coords().cast<double>()));
       obs[viewIndex] = Observation(pt_unnormalized, featIndex);
     }

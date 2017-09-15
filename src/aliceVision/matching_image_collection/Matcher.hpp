@@ -3,12 +3,12 @@
 
 #pragma once
 
-#include "aliceVision/features/ImageDescriberCommon.hpp"
+#include "aliceVision/feature/imageDescriberCommon.hpp"
 #include "aliceVision/matching/matcher_type.hpp"
 #include "aliceVision/matching/indMatch.hpp"
 #include "aliceVision/matching_image_collection/Pair_Builder.hpp"
 #include "aliceVision/sfm/sfm_data.hpp"
-#include "aliceVision/features/RegionsPerView.hpp"
+#include "aliceVision/feature/RegionsPerView.hpp"
 
 #include <string>
 #include <vector>
@@ -31,9 +31,9 @@ class IImageCollectionMatcher
   /// Find corresponding points between some pair of view Ids
   virtual void Match(
     const sfm::SfM_Data & sfm_data,
-    const features::RegionsPerView& regionsPerView,
+    const feature::RegionsPerView& regionsPerView,
     const Pair_Set & pairs, // list of pair to consider for matching
-    features::EImageDescriberType descType,
+    feature::EImageDescriberType descType,
     matching::PairwiseMatches & map_putatives_matches // the output pairwise photometric corresponding points
     ) const = 0;
 };

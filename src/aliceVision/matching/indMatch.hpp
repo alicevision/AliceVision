@@ -5,7 +5,7 @@
 #define ALICEVISION_MATCHING_IND_MATCH_H
 
 #include "aliceVision/types.hpp"
-#include "aliceVision/features/ImageDescriberCommon.hpp"
+#include "aliceVision/feature/imageDescriberCommon.hpp"
 
 #include <cereal/cereal.hpp> // Serialization
 
@@ -81,9 +81,9 @@ static inline std::istream& operator>>(std::istream & in, IndMatch & obj) {
 
 typedef std::vector<matching::IndMatch> IndMatches;
 
-struct MatchesPerDescType: public std::map<features::EImageDescriberType, IndMatches>
+struct MatchesPerDescType: public std::map<feature::EImageDescriberType, IndMatches>
 {
-    int getNbMatches(features::EImageDescriberType descType) const
+    int getNbMatches(feature::EImageDescriberType descType) const
     {
         const auto& it = this->find(descType);
         if(it == this->end())
