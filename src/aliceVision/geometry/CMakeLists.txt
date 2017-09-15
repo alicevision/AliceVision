@@ -1,17 +1,17 @@
 # Headers
 set(geometry_files_headers
-  frustum.hpp
-  half_space_intersection.hpp
-  pose3.hpp
-  rigid_transformation3D_srt.hpp
-  Similarity3.hpp
+    Frustum.hpp
+    HalfPlane.hpp
+    Pose3.hpp
+    rigidTransformation3D.hpp
+    Similarity3.hpp
 )
 
 # Sources
 set(geometry_files_test
-    frustum_intersection_test.cpp
-    half_space_intersection_test.cpp
-    rigid_transformation3D_srt_test.cpp
+    frustumIntersection_test.cpp
+    halfSpaceIntersection_test.cpp
+    rigidTransformation3D_test.cpp
 )
 
 add_library(aliceVision_geometry INTERFACE)
@@ -25,8 +25,8 @@ target_link_libraries(aliceVision_geometry
             ${LOG_LIB}
 )
 
-UNIT_TEST(aliceVision rigid_transformation3D_srt "aliceVision_geometry")
-UNIT_TEST(aliceVision half_space_intersection    "aliceVision_geometry")
-UNIT_TEST(aliceVision frustum_intersection       "aliceVision_geometry;aliceVision_multiview_test_data")
+UNIT_TEST(aliceVision rigidTransformation3D    "aliceVision_geometry")
+UNIT_TEST(aliceVision halfSpaceIntersection    "aliceVision_geometry")
+UNIT_TEST(aliceVision frustumIntersection      "aliceVision_geometry;aliceVision_multiview_test_data")
 
 add_custom_target(aliceVision_geometry_ide SOURCES ${geometry_files_headers} ${geometry_files_test})

@@ -1,8 +1,8 @@
 // This file is part of the AliceVision project and is made available under
 // the terms of the MPL2 license (see the COPYING.md file).
 
-#include "aliceVision/geometry/half_space_intersection.hpp"
-#include "aliceVision/geometry/frustum.hpp"
+#include "aliceVision/geometry/HalfPlane.hpp"
+#include "aliceVision/geometry/Frustum.hpp"
 
 #include "aliceVision/multiview/test_data_sets.hpp"
 #include "aliceVision/multiview/projection.hpp"

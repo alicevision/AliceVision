@@ -6,7 +6,7 @@
 #include <aliceVision/types.hpp>
 #include <aliceVision/feature/imageDescriberCommon.hpp>
 #include <aliceVision/camera/PinholeRadial.hpp>
-#include <aliceVision/geometry/pose3.hpp>
+#include <aliceVision/geometry/Pose3.hpp>
 #include <aliceVision/numeric/numeric.h>
 
 #include <vector>

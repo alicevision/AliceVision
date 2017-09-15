@@ -7,7 +7,7 @@
 #include <aliceVision/sfm/sfm_view.hpp>
 #include <aliceVision/sfm/Rig.hpp>
 #include <aliceVision/sfm/sfm_landmark.hpp>
-#include <aliceVision/geometry/pose3.hpp>
+#include <aliceVision/geometry/Pose3.hpp>
 #include <aliceVision/camera/camera.hpp>
 
 #include <stdexcept>

@@ -5,7 +5,7 @@
 
 #include "aliceVision/numeric/numeric.h"
 #include "aliceVision/camera/cameraCommon.hpp"
-#include "aliceVision/geometry/pose3.hpp"
+#include "aliceVision/geometry/Pose3.hpp"
 #include "aliceVision/stl/hash.hpp"
 
 #include <cereal/cereal.hpp>

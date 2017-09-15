@@ -6,7 +6,7 @@
 #include "aliceVision/numeric/numeric.h"
 #include "aliceVision/camera/cameraCommon.hpp"
 #include "aliceVision/camera/IntrinsicBase.hpp"
-#include "aliceVision/geometry/pose3.hpp"
+#include "aliceVision/geometry/Pose3.hpp"
 
 #include <vector>
 

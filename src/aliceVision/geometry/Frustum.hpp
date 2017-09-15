@@ -4,7 +4,7 @@
 #ifndef ALICEVISION_GEOMETRY_FRUSTUM_HPP_
 #define ALICEVISION_GEOMETRY_FRUSTUM_HPP_
 
-#include "aliceVision/geometry/half_space_intersection.hpp"
+#include "aliceVision/geometry/HalfPlane.hpp"
 
 namespace aliceVision {
 namespace geometry {

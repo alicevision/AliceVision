@@ -5,7 +5,7 @@
 #define ALICEVISION_SFM_ROBUST_MODEL_ESTIMATION_HPP
 
 #include "aliceVision/numeric/numeric.h"
-#include "aliceVision/geometry/pose3.hpp"
+#include "aliceVision/geometry/Pose3.hpp"
 #include <vector>
 
 namespace aliceVision {

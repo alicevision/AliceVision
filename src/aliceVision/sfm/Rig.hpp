@@ -1,7 +1,7 @@
 #pragma once
 
 #include <aliceVision/types.hpp>
-#include <aliceVision/geometry/pose3.hpp>
+#include <aliceVision/geometry/Pose3.hpp>
 
 #include <cereal/cereal.hpp>
 #include <cereal/types/vector.hpp>

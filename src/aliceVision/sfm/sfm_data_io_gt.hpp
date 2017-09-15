@@ -5,7 +5,7 @@
 
 #include "aliceVision/sfm/sfm_data.hpp"
 
-#include <aliceVision/geometry/pose3.hpp>
+#include <aliceVision/geometry/Pose3.hpp>
 #include <aliceVision/camera/Pinhole.hpp>
 
 #include <string>

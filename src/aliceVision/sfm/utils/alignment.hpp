@@ -4,7 +4,7 @@
 #pragma once
 
 #include "aliceVision/sfm/sfm_data.hpp"
-#include "aliceVision/geometry/pose3.hpp"
+#include "aliceVision/geometry/Pose3.hpp"
 
 namespace aliceVision {
 namespace sfm {

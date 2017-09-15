@@ -11,7 +11,7 @@
 #include <aliceVision/multiview/conditioning.hpp>
 #include <aliceVision/camera/camera.hpp>
 #include <aliceVision/sfm/sfm.hpp>
-#include <aliceVision/geometry/pose3.hpp>
+#include <aliceVision/geometry/Pose3.hpp>
 #include <aliceVision/numeric/numeric.h>
 
 #include "testing/testing.h"

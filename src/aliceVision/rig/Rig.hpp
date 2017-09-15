@@ -4,7 +4,7 @@
 #pragma once
 
 #include <aliceVision/localization/LocalizationResult.hpp>
-#include <aliceVision/geometry/pose3.hpp>
+#include <aliceVision/geometry/Pose3.hpp>
 #include <aliceVision/numeric/numeric.h>
 #include <aliceVision/config.hpp>
 

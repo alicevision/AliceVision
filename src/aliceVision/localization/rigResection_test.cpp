@@ -3,7 +3,7 @@
 
 #include "rigResection.hpp"
 #include <aliceVision/camera/PinholeRadial.hpp>
-#include <aliceVision/geometry/pose3.hpp>
+#include <aliceVision/geometry/Pose3.hpp>
 
 #include "testing/testing.h"
 #include "optimization.hpp"

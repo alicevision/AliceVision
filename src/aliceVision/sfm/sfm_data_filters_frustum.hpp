@@ -5,7 +5,7 @@
 #define ALICEVISION_SFM_DATA_FILTERS_FRUSTUM_HPP
 
 #include "aliceVision/types.hpp"
-#include "aliceVision/geometry/frustum.hpp"
+#include "aliceVision/geometry/Frustum.hpp"
 
 namespace aliceVision {
 namespace sfm {

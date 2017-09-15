@@ -3,7 +3,7 @@
 
 #pragma once
 
-#include <aliceVision/geometry/pose3.hpp>
+#include <aliceVision/geometry/Pose3.hpp>
 #include <aliceVision/camera/PinholeRadial.hpp> //todo: not generic
                          // only PinholeRadialK3 is currently supported
                          // todo: allows internal parameters refinement

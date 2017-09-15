@@ -1,7 +1,7 @@
 // This file is part of the AliceVision project and is made available under
 // the terms of the MPL2 license (see the COPYING.md file).
 
-#include "rigid_transformation3D_srt.hpp"
+#include "rigidTransformation3D.hpp"
 
 #include "aliceVision/robust_estimation/robust_estimator_ACRansac.hpp"
 

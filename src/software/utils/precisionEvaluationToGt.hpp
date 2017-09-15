@@ -5,7 +5,7 @@
 #define TOOLS_PRECISION_EVALUATION_TO_GT_HPP
 
 #include "aliceVision/numeric/numeric.h"
-#include "aliceVision/geometry/rigid_transformation3D_srt.hpp"
+#include "aliceVision/geometry/rigidTransformation3D.hpp"
 
 #include "dependencies/htmlDoc/htmlDoc.hpp"
 #include "dependencies/histogram/histogram.hpp"

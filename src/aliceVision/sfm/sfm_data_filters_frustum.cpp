@@ -4,7 +4,7 @@
 #include "aliceVision/sfm/sfm_data_filters_frustum.hpp"
 #include "aliceVision/sfm/sfm.hpp"
 #include "aliceVision/types.hpp"
-#include "aliceVision/geometry/half_space_intersection.hpp"
+#include "aliceVision/geometry/HalfPlane.hpp"
 #include <aliceVision/config.hpp>
 
 #include "dependencies/progress/progress.hpp"

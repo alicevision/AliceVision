@@ -2,7 +2,7 @@
 // the terms of the MPL2 license (see the COPYING.md file).
 
 #include "aliceVision/sfm/utils/alignment.hpp"
-#include "aliceVision/geometry/rigid_transformation3D_srt.hpp"
+#include "aliceVision/geometry/rigidTransformation3D.hpp"
 
 namespace aliceVision {
 namespace sfm {
