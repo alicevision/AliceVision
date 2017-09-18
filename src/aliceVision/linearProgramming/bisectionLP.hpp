@@ -1,11 +1,10 @@
 // This file is part of the AliceVision project and is made available under
 // the terms of the MPL2 license (see the COPYING.md file).
 
-#ifndef ALICEVISION_LINEAR_PROGRAMMING_BISECTIONLP_H_
-#define ALICEVISION_LINEAR_PROGRAMMING_BISECTIONLP_H_
+#pragma once
 
 #include <aliceVision/system/Logger.hpp>
-#include <aliceVision/linearProgramming/linearProgrammingInterface.hpp>
+#include <aliceVision/linearProgramming/ISolver.hpp>
 
 #include <iostream>
 #include <iterator>
@@ -22,7 +21,7 @@ namespace linearProgramming  {
 ///
 template <typename ConstraintBuilder, typename ConstraintType>
 bool BisectionLP(
-  LP_Solver & solver,
+  ISolver & solver,
   ConstraintBuilder & cstraintBuilder,
   std::vector<double> * parameters,
   double gammaUp  = 1.0,  // Upper bound
@@ -75,6 +74,3 @@ bool BisectionLP(
 
 } // namespace linearProgramming
 } // namespace aliceVision
-
-
-#endif // ALICEVISION_LINEAR_PROGRAMMING_BISECTIONLP_H_

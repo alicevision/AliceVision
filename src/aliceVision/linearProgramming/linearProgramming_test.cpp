@@ -8,9 +8,9 @@
 #include <aliceVision/config.hpp>
 #include "testing/testing.h"
 #if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_MOSEK)
-#include "aliceVision/linearProgramming/linearProgrammingMOSEK.hpp"
+#include "aliceVision/linearProgramming/MOSEKSolver.hpp"
 #endif
-#include "aliceVision/linearProgramming/linearProgrammingOSI_X.hpp"
+#include "aliceVision/linearProgramming/OSIXSolver.hpp"
 
 
 using namespace aliceVision;
@@ -24,7 +24,7 @@ using namespace aliceVision::linearProgramming;
 //  x + y <= 75
 //  x >= 0
 //  y >= 0
-void BuildLinearProblem(LP_Constraints & cstraint)
+void BuildLinearProblem(LPConstraints & cstraint)
 {
   cstraint._nbParams = 2;
   cstraint._bminimize = false;
@@ -45,8 +45,8 @@ void BuildLinearProblem(LP_Constraints & cstraint)
   cstraint._Cst_objective << 15000, 4000, 75, 0, 0;
 
   cstraint._vec_sign.resize(5);
-  std::fill_n(cstraint._vec_sign.begin(), 3, LP_Constraints::LP_LESS_OR_EQUAL);
-  std::fill_n(cstraint._vec_sign.begin()+3, 2, LP_Constraints::LP_GREATER_OR_EQUAL);
+  std::fill_n(cstraint._vec_sign.begin(), 3, LPConstraints::LP_LESS_OR_EQUAL);
+  std::fill_n(cstraint._vec_sign.begin()+3, 2, LPConstraints::LP_GREATER_OR_EQUAL);
 
   cstraint._vec_bounds = std::vector< std::pair<double,double> >(cstraint._nbParams);
   fill(cstraint._vec_bounds.begin(),cstraint._vec_bounds.end(),
@@ -57,12 +57,12 @@ void BuildLinearProblem(LP_Constraints & cstraint)
 // LP_Solve website example solving with the HighLevelFramework
 TEST(linearProgramming, MOSEK_dense_sample) {
 
-  LP_Constraints cstraint;
+  LPConstraints cstraint;
   BuildLinearProblem(cstraint);
 
   //Solve
   std::vector<double> vec_solution(2);
-  MOSEK_SolveWrapper solver(2);
+  MOSEKSolver solver(2);
   solver.setup(cstraint);
 
   EXPECT_TRUE(solver.solve());
@@ -77,12 +77,12 @@ TEST(linearProgramming, MOSEK_dense_sample) {
 
 TEST(linearProgramming, osiclp_dense_sample) {
 
-  LP_Constraints cstraint;
+  LPConstraints cstraint;
   BuildLinearProblem(cstraint);
 
   //Solve
   std::vector<double> vec_solution(2);
-  OSI_CLP_SolverWrapper solver(2);
+  OSI_CISolverWrapper solver(2);
   solver.setup(cstraint);
 
   EXPECT_TRUE(solver.solve());
@@ -102,7 +102,7 @@ TEST(linearProgramming, osiclp_dense_sample) {
 // bounds
 // 0 <= x0, x2, x3 < infinity
 // 0 <= x1 <= 10
-void BuildSparseLinearProblem(LP_Constraints_Sparse & cstraint)
+void BuildSparseLinearProblem(LPConstraintsSparse & cstraint)
 {
   // Number of variable we are looking for
   cstraint._nbParams = 4; // {x0, x1, x2, x3}
@@ -130,11 +130,11 @@ void BuildSparseLinearProblem(LP_Constraints_Sparse & cstraint)
   C[2] = 25;
 
   // Constraint sign
-  std::vector<LP_Constraints::eLP_SIGN> & vec_sign = cstraint._vec_sign;
+  std::vector<LPConstraints::eLP_SIGN> & vec_sign = cstraint._vec_sign;
   vec_sign.resize(3);
-  vec_sign[0] = LP_Constraints::LP_EQUAL;
-  vec_sign[1] = LP_Constraints::LP_GREATER_OR_EQUAL;
-  vec_sign[2] = LP_Constraints::LP_LESS_OR_EQUAL;
+  vec_sign[0] = LPConstraints::LP_EQUAL;
+  vec_sign[1] = LPConstraints::LP_GREATER_OR_EQUAL;
+  vec_sign[2] = LPConstraints::LP_LESS_OR_EQUAL;
 
   // Variable bounds
   cstraint._vec_bounds = std::vector< std::pair<double,double> >(4);
@@ -155,12 +155,12 @@ void BuildSparseLinearProblem(LP_Constraints_Sparse & cstraint)
 // Unit test on mosek Sparse constraint
 TEST(linearProgramming, mosek_sparse_sample) {
 
-  LP_Constraints_Sparse cstraint;
+  LPConstraintsSparse cstraint;
   BuildSparseLinearProblem(cstraint);
 
   //Solve
   std::vector<double> vec_solution(4);
-  MOSEK_SolveWrapper solver(4);
+  MOSEKSolver solver(4);
   solver.setup(cstraint);
 
   EXPECT_TRUE(solver.solve());
@@ -175,12 +175,12 @@ TEST(linearProgramming, mosek_sparse_sample) {
 
 TEST(linearProgramming, osiclp_sparse_sample) {
 
-  LP_Constraints_Sparse cstraint;
+  LPConstraintsSparse cstraint;
   BuildSparseLinearProblem(cstraint);
 
   //Solve
   std::vector<double> vec_solution(4);
-  OSI_CLP_SolverWrapper solver(4);
+  OSI_CISolverWrapper solver(4);
   solver.setup(cstraint);
 
   EXPECT_TRUE(solver.solve());
@@ -195,7 +195,7 @@ TEST(linearProgramming, osiclp_sparse_sample) {
 #if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_MOSEK)
 TEST(linearProgramming, osi_mosek_sparse_sample) {
 
-  LP_Constraints_Sparse cstraint;
+  LPConstraintsSparse cstraint;
   BuildSparseLinearProblem(cstraint);
 
   //Solve

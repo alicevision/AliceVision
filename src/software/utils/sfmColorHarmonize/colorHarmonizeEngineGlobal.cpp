@@ -331,16 +331,16 @@ bool ColorHarmonizationEngineGlobal::Process()
   aliceVision::system::Timer timer;
 
   #if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_MOSEK)
-  typedef MOSEK_SolveWrapper SOLVER_LP_T;
+  typedef MOSEKSolver SOLVER_LP_T;
   #else
-  typedef OSI_CLP_SolverWrapper SOLVER_LP_T;
+  typedef OSI_CISolverWrapper SOLVER_LP_T;
   #endif
   // Red channel
   {
     SOLVER_LP_T lpSolver(vec_solution_r.size());
 
     GainOffsetConstraintBuilder cstBuilder(map_relativeHistograms[0], vec_indexToFix);
-    LP_Constraints_Sparse constraint;
+    LPConstraintsSparse constraint;
     cstBuilder.Build(constraint);
     lpSolver.setup(constraint);
     lpSolver.solve();
@@ -351,7 +351,7 @@ bool ColorHarmonizationEngineGlobal::Process()
     SOLVER_LP_T lpSolver(vec_solution_g.size());
 
     GainOffsetConstraintBuilder cstBuilder(map_relativeHistograms[1], vec_indexToFix);
-    LP_Constraints_Sparse constraint;
+    LPConstraintsSparse constraint;
     cstBuilder.Build(constraint);
     lpSolver.setup(constraint);
     lpSolver.solve();
@@ -362,7 +362,7 @@ bool ColorHarmonizationEngineGlobal::Process()
     SOLVER_LP_T lpSolver(vec_solution_b.size());
 
     GainOffsetConstraintBuilder cstBuilder(map_relativeHistograms[2], vec_indexToFix);
-    LP_Constraints_Sparse constraint;
+    LPConstraintsSparse constraint;
     cstBuilder.Build(constraint);
     lpSolver.setup(constraint);
     lpSolver.solve();

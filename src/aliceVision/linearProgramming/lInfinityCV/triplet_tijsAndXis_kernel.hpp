@@ -10,10 +10,10 @@
 #include "aliceVision/multiview/triangulation_nview.hpp"
 
 // Linear programming solver(s)
-#include "aliceVision/linearProgramming/linearProgrammingInterface.hpp"
-#include "aliceVision/linearProgramming/linearProgrammingOSI_X.hpp"
+#include "aliceVision/linearProgramming/ISolver.hpp"
+#include "aliceVision/linearProgramming/OSIXSolver.hpp"
 #if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_MOSEK)
-#include "aliceVision/linearProgramming/linearProgrammingMOSEK.hpp"
+#include "aliceVision/linearProgramming/MOSEKSolver.hpp"
 #endif
 
 #include "aliceVision/linearProgramming/bisectionLP.hpp"
@@ -82,14 +82,14 @@ struct translations_Triplet_Solver {
     using namespace aliceVision::lInfinityCV;
 
 #if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_MOSEK)
-    MOSEK_SolveWrapper LPsolver(static_cast<int>(vec_solution.size()));
+    MOSEKSolver LPsolver(static_cast<int>(vec_solution.size()));
 #else
-    OSI_CLP_SolverWrapper LPsolver(static_cast<int>(vec_solution.size()));
+    OSI_CISolverWrapper LPsolver(static_cast<int>(vec_solution.size()));
 #endif
 
     Translation_Structure_L1_ConstraintBuilder cstBuilder(vec_KR, megaMat);
     double gamma;
-    if (BisectionLP<Translation_Structure_L1_ConstraintBuilder, LP_Constraints_Sparse>(
+    if (BisectionLP<Translation_Structure_L1_ConstraintBuilder, LPConstraintsSparse>(
       LPsolver,
       cstBuilder,
       &vec_solution,

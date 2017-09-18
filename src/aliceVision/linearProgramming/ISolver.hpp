@@ -1,12 +1,12 @@
 // This file is part of the AliceVision project and is made available under
 // the terms of the MPL2 license (see the COPYING.md file).
 
-#ifndef ALICEVISION_LINEAR_PROGRAMMING_INTERFACE_H_
-#define ALICEVISION_LINEAR_PROGRAMMING_INTERFACE_H_
+#pragma once
+
+#include "aliceVision/numeric/numeric.h"
 
 #include <vector>
 #include <utility>
-#include "aliceVision/numeric/numeric.h"
 
 namespace aliceVision   {
 namespace linearProgramming  {
@@ -18,7 +18,7 @@ namespace linearProgramming  {
 ///  - Bounds over parameter (<=, =, >=).
 ///  - minimize or maximize
 ///
-struct LP_Constraints
+struct LPConstraints
 {
   enum eLP_SIGN
   {
@@ -28,7 +28,7 @@ struct LP_Constraints
     LP_FREE             = 4 //only supported in MOSEK
   };
 
-  LP_Constraints() {
+  LPConstraints() {
     _bminimize = false;
   }
 
@@ -46,12 +46,12 @@ struct LP_Constraints
 /// Embed :
 ///  - Constraints (coefficients, Sign, objective value),
 ///  - Bounds over parameter (<=, =, >=).
-/// Implementation differ from LP_Constraints, here constraints are
+/// Implementation differ from LPConstraints, here constraints are
 ///  stored as a Sparse matrix.
 ///
-struct LP_Constraints_Sparse
+struct LPConstraintsSparse
 {
-  LP_Constraints_Sparse() {
+  LPConstraintsSparse() {
     _bminimize = false;
   }
 
@@ -62,7 +62,7 @@ struct LP_Constraints_Sparse
   // Constraint part
   sRMat _constraintMat; // Constraint under Matrix form.
   Vec _Cst_objective; // Constraint objective value.
-  std::vector<LP_Constraints::eLP_SIGN> _vec_sign; // Constraint sign.
+  std::vector<LPConstraints::eLP_SIGN> _vec_sign; // Constraint sign.
 
   bool _bminimize; // minimize is true or maximize is false.
   std::vector<double> _vec_cost; // Objective function
@@ -71,15 +71,15 @@ struct LP_Constraints_Sparse
 /// Generic LP solver (Linear Programming)
 /// It's an interface to setup constraint and objective of a Linear Program.
 /// Embed constraint setup, problem solving, and parameters getter.
-class LP_Solver
+class ISolver
 {
 public:
 
-  LP_Solver(int nbParams):_nbParams(nbParams){};
+  ISolver(int nbParams):_nbParams(nbParams){};
 
   /// Setup constraint for the given library.
-  virtual bool setup(const LP_Constraints & constraints) = 0;
-  virtual bool setup(const LP_Constraints_Sparse & constraints) = 0;
+  virtual bool setup(const LPConstraints & constraints) = 0;
+  virtual bool setup(const LPConstraintsSparse & constraints) = 0;
 
   /// Setup the feasibility and found the solution that best fit the constraint.
   virtual bool solve() = 0;
@@ -93,6 +93,3 @@ protected :
 
 } // namespace linearProgramming
 } // namespace aliceVision
-
-
-#endif // ALICEVISION_LINEAR_PROGRAMMING_INTERFACE_H_

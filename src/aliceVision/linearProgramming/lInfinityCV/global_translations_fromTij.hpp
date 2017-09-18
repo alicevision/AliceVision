@@ -6,7 +6,7 @@
 
 #include "aliceVision/numeric/numeric.h"
 #include "aliceVision/multiview/translation_averaging_common.hpp"
-#include "aliceVision/linearProgramming/linearProgrammingInterface.hpp"
+#include "aliceVision/linearProgramming/ISolver.hpp"
 #include <fstream>
 #include <utility>
 #include <vector>
@@ -37,7 +37,7 @@ static void EncodeTi_from_tij(
     const size_t nTranslation,
     const std::vector<relativeInfo > & vec_relative,
     sRMat & A, Vec & C,
-    std::vector<LP_Constraints::eLP_SIGN> & vec_sign,
+    std::vector<LPConstraints::eLP_SIGN> & vec_sign,
     std::vector<double> & vec_costs,
     std::vector< std::pair<double,double> > & vec_bounds)
 {
@@ -119,7 +119,7 @@ static void EncodeTi_from_tij(
       A.coeffRef(rowPos, GAMMAVAR) = -1;
 
       // < 0
-      vec_sign[rowPos] = LP_Constraints::LP_LESS_OR_EQUAL;
+      vec_sign[rowPos] = LPConstraints::LP_LESS_OR_EQUAL;
       C(rowPos) = 0;
       ++rowPos;
 
@@ -143,7 +143,7 @@ static void EncodeTi_from_tij(
       A.coeffRef(rowPos, GAMMAVAR) = 1;
 
       // > 0
-      vec_sign[rowPos] = LP_Constraints::LP_GREATER_OR_EQUAL;
+      vec_sign[rowPos] = LPConstraints::LP_GREATER_OR_EQUAL;
       C(rowPos) = 0;
       ++rowPos;
     }
@@ -171,8 +171,8 @@ struct Tifromtij_ConstraintBuilder
 }
 
   /// Setup constraints for the global translations problem,
-  ///  in the LP_Constraints_Sparse object.
-  bool Build(LP_Constraints_Sparse & constraint)
+  ///  in the LPConstraintsSparse object.
+  bool Build(LPConstraintsSparse & constraint)
   {
     EncodeTi_from_tij(
       _Ncam,

@@ -1,8 +1,8 @@
 // This file is part of the AliceVision project and is made available under
 // the terms of the MPL2 license (see the COPYING.md file).
 
-#include "aliceVision/linearProgramming/linearProgrammingInterface.hpp"
-#include "aliceVision/linearProgramming/linearProgrammingOSI_X.hpp"
+#include "aliceVision/linearProgramming/ISolver.hpp"
+#include "aliceVision/linearProgramming/OSIXSolver.hpp"
 #include "aliceVision/linearProgramming/lInfinityCV/global_translations_fromTij.hpp"
 
 #include "aliceVision/multiview/translation_averaging_test.hpp"
@@ -47,13 +47,13 @@ TEST(translation_averaging, globalTi_from_tijs) {
   //- d. Get back the estimated parameters.
 
   //- a. Setup the LP solver,
-  OSI_CLP_SolverWrapper solverLP(vec_solution.size());
+  OSI_CISolverWrapper solverLP(vec_solution.size());
 
   //- b. Setup the constraints generator (for the dedicated L_inf problem),
   Tifromtij_ConstraintBuilder cstBuilder(vec_relative_estimates);
 
   //- c. Build constraints and solve the problem (Setup constraints and solver)
-  LP_Constraints_Sparse constraint;
+  LPConstraintsSparse constraint;
   cstBuilder.Build(constraint);
   solverLP.setup(constraint);
   //-- Solving

@@ -5,7 +5,7 @@
 #define ALICEVISION_LINFINITY_COMPUTER_VISION_RESECTION_H_
 
 #include "aliceVision/numeric/numeric.h"
-#include "aliceVision/linearProgramming/linearProgrammingInterface.hpp"
+#include "aliceVision/linearProgramming/ISolver.hpp"
 #include <fstream>
 #include <utility>
 #include <vector>
@@ -135,7 +135,7 @@ void EncodeResection(const Mat2X & Pt2D,
 
 /// Kernel that set Linear constraints for the
 ///   - Translation Registration and Structure Problem.
-///  Designed to be used with bisectionLP and LP_Solver interface.
+///  Designed to be used with bisectionLP and ISolver interface.
 ///
 /// Implementation of camera Resection
 ///    - Estimation of [Ri|Ti] from xij and Xi
@@ -152,8 +152,8 @@ struct Resection_L1_ConstraintBuilder
   }
 
   /// Setup constraints for the Resection problem,
-  ///  in the LP_Constraints object.
-  bool Build(double gamma, LP_Constraints_Sparse & constraint)
+  ///  in the LPConstraints object.
+  bool Build(double gamma, LPConstraintsSparse & constraint)
   {
     EncodeResection(_2DPt, _3DPt,
       gamma,
@@ -174,7 +174,7 @@ struct Resection_L1_ConstraintBuilder
     // Constraint sign are all LESS or equal (<=)
     constraint._vec_sign.resize(constraint._constraintMat.rows());
     fill(constraint._vec_sign.begin(), constraint._vec_sign.end(),
-      LP_Constraints::LP_LESS_OR_EQUAL);
+      LPConstraints::LP_LESS_OR_EQUAL);
 
     return true;
   }

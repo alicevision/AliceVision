@@ -64,16 +64,16 @@ TEST(ColorHarmonisation, Simple_offset) {
   std::vector<size_t> vec_indexToFix(1,0);
 
 #if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_MOSEK)
-  typedef MOSEK_SolveWrapper SOLVER_LP_T;
+  typedef MOSEKSolver SOLVER_LP_T;
 #else
-  typedef OSI_CLP_SolverWrapper SOLVER_LP_T;
+  typedef OSI_CISolverWrapper SOLVER_LP_T;
 #endif
   // Red channel
   {
     SOLVER_LP_T lpSolver(vec_solution.size());
 
     GainOffsetConstraintBuilder cstBuilder(vec_relativeHistograms, vec_indexToFix);
-    LP_Constraints_Sparse constraint;
+    LPConstraintsSparse constraint;
     cstBuilder.Build(constraint);
     lpSolver.setup(constraint);
     lpSolver.solve();
@@ -128,16 +128,16 @@ TEST(ColorHarmonisation, Offset_gain) {
   std::vector<size_t> vec_indexToFix(1,0);
 
 #if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_MOSEK)
-  typedef MOSEK_SolveWrapper SOLVER_LP_T;
+  typedef MOSEKSolver SOLVER_LP_T;
 #else
-  typedef OSI_CLP_SolverWrapper SOLVER_LP_T;
+  typedef OSI_CISolverWrapper SOLVER_LP_T;
 #endif
   // Red channel
   {
     SOLVER_LP_T lpSolver(vec_solution.size());
 
     GainOffsetConstraintBuilder cstBuilder(vec_relativeHistograms, vec_indexToFix);
-    LP_Constraints_Sparse constraint;
+    LPConstraintsSparse constraint;
     cstBuilder.Build(constraint);
     lpSolver.setup(constraint);
     lpSolver.solve();

@@ -11,10 +11,10 @@
 #include "CppUnitLite/TestHarness.h"
 #include "testing/testing.h"
 
-#include "aliceVision/linearProgramming/linearProgrammingInterface.hpp"
-#include "aliceVision/linearProgramming/linearProgrammingOSI_X.hpp"
+#include "aliceVision/linearProgramming/ISolver.hpp"
+#include "aliceVision/linearProgramming/OSIXSolver.hpp"
 #if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_MOSEK)
-#include "aliceVision/linearProgramming/linearProgrammingMOSEK.hpp"
+#include "aliceVision/linearProgramming/MOSEKSolver.hpp"
 #endif // ALICEVISION_HAVE_MOSEK
 #include "aliceVision/linearProgramming/bisectionLP.hpp"
 #include "aliceVision/linearProgramming/lInfinityCV/resection.hpp"
@@ -62,10 +62,10 @@ TEST(Resection_L_Infinity, OSICLP) {
     Mat3X XPoints;
     translate(d2._X, vecTranslation, &XPoints);
 
-    OSI_CLP_SolverWrapper wrapperOSICLPSolver(vec_solution.size());
+    OSI_CISolverWrapper wrapperOSICLPSolver(vec_solution.size());
     Resection_L1_ConstraintBuilder cstBuilder(d2._x[nResectionCameraIndex], XPoints);
     EXPECT_TRUE(
-      (BisectionLP<Resection_L1_ConstraintBuilder, LP_Constraints_Sparse>(
+      (BisectionLP<Resection_L1_ConstraintBuilder, LPConstraintsSparse>(
       wrapperOSICLPSolver,
       cstBuilder,
       &vec_solution,
@@ -120,10 +120,10 @@ TEST(Resection_L_Infinity, MOSEK) {
     Mat3X XPoints;
     translate(d2._X, vecTranslation, &XPoints);
 
-    MOSEK_SolveWrapper wrapperMosek(vec_solution.size());
+    MOSEKSolver wrapperMosek(vec_solution.size());
     Resection_L1_ConstraintBuilder cstBuilder(d2._x[nResectionCameraIndex], XPoints);
     EXPECT_TRUE(
-      (BisectionLP<Resection_L1_ConstraintBuilder, LP_Constraints_Sparse>(
+      (BisectionLP<Resection_L1_ConstraintBuilder, LPConstraintsSparse>(
       wrapperMosek,
       cstBuilder,
       &vec_solution,

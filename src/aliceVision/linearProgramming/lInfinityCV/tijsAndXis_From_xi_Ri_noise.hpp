@@ -5,7 +5,7 @@
 #define ALICEVISION_LINFINITY_COMPUTER_VISION_TRANSLATIONANDSTRUCTUREFrom_xi_RI_NOISE_H_
 
 #include "aliceVision/numeric/numeric.h"
-#include "aliceVision/linearProgramming/linearProgrammingInterface.hpp"
+#include "aliceVision/linearProgramming/ISolver.hpp"
 #include <fstream>
 #include <utility>
 #include <vector>
@@ -49,7 +49,7 @@ static void EncodeTiXi_withNoise(const Mat & M, //Scene representation
                            const std::vector<Mat3> & Ri,
                            double sigma, // Start upper bound
                            sRMat & A, Vec & C,
-                           std::vector<LP_Constraints::eLP_SIGN> & vec_sign,
+                           std::vector<LPConstraints::eLP_SIGN> & vec_sign,
                            std::vector<double> & vec_costs,
                            std::vector< std::pair<double,double> > & vec_bounds)
 {
@@ -104,7 +104,7 @@ static void EncodeTiXi_withNoise(const Mat & M, //Scene representation
     A.coeffRef(rowPos, TVAR(indexCam, 2)) = 1.0;
     A.coeffRef(rowPos, OFSVAR(k, 2)) = 1.0;
     C(rowPos) = 1.0;
-    vec_sign[rowPos] = LP_Constraints::LP_GREATER_OR_EQUAL;
+    vec_sign[rowPos] = LPConstraints::LP_GREATER_OR_EQUAL;
     ++rowPos;
   } // end for (k)
 
@@ -130,7 +130,7 @@ static void EncodeTiXi_withNoise(const Mat & M, //Scene representation
     A.coeffRef(rowPos, TVAR(indexCam, 2)) = sigma-u;
     A.coeffRef(rowPos, OFSVAR(k, 0)) = 1.0;
     C(rowPos) = 0.0;
-    vec_sign[rowPos] = LP_Constraints::LP_GREATER_OR_EQUAL;
+    vec_sign[rowPos] = LPConstraints::LP_GREATER_OR_EQUAL;
     ++rowPos;
 
     A.coeffRef(rowPos, XVAR(indexPt3D, 0)) = R(0,0) - (sigma+u) * R(2,0);
@@ -140,7 +140,7 @@ static void EncodeTiXi_withNoise(const Mat & M, //Scene representation
     A.coeffRef(rowPos, TVAR(indexCam, 2)) = -(sigma + u);
     A.coeffRef(rowPos, OFSVAR(k, 0)) = -1.0;
     C(rowPos) = 0.0;
-    vec_sign[rowPos] = LP_Constraints::LP_LESS_OR_EQUAL;
+    vec_sign[rowPos] = LPConstraints::LP_LESS_OR_EQUAL;
     ++rowPos;
 
     // y-residual =>
@@ -152,7 +152,7 @@ static void EncodeTiXi_withNoise(const Mat & M, //Scene representation
     A.coeffRef(rowPos, TVAR(indexCam, 2)) = sigma-v;
 
     C(rowPos) = 0.0;
-    vec_sign[rowPos] = LP_Constraints::LP_GREATER_OR_EQUAL;
+    vec_sign[rowPos] = LPConstraints::LP_GREATER_OR_EQUAL;
     ++rowPos;
 
     A.coeffRef(rowPos, XVAR(indexPt3D, 0)) = R(1,0) - (sigma+v) * R(2,0);
@@ -162,14 +162,14 @@ static void EncodeTiXi_withNoise(const Mat & M, //Scene representation
     A.coeffRef(rowPos, TVAR(indexCam, 2)) = -(sigma + v);
     A.coeffRef(rowPos, OFSVAR(k, 1)) = -1.0;
     C(rowPos) = 0.0;
-    vec_sign[rowPos] = LP_Constraints::LP_LESS_OR_EQUAL;
+    vec_sign[rowPos] = LPConstraints::LP_LESS_OR_EQUAL;
     ++rowPos;
   }
   // Fix the translation ambiguity. (set first cam at (0,0,0)
   //LP_EQUAL
-  A.coeffRef(rowPos, TVAR(0, 0)) = 1.0; C(rowPos) = 0.0; vec_sign[rowPos] = LP_Constraints::LP_EQUAL; ++rowPos;
-  A.coeffRef(rowPos, TVAR(0, 1)) = 1.0; C(rowPos) = 0.0; vec_sign[rowPos] = LP_Constraints::LP_EQUAL; ++rowPos;
-  A.coeffRef(rowPos, TVAR(0, 2)) = 1.0; C(rowPos) = 0.0; vec_sign[rowPos] = LP_Constraints::LP_EQUAL; ++rowPos;
+  A.coeffRef(rowPos, TVAR(0, 0)) = 1.0; C(rowPos) = 0.0; vec_sign[rowPos] = LPConstraints::LP_EQUAL; ++rowPos;
+  A.coeffRef(rowPos, TVAR(0, 1)) = 1.0; C(rowPos) = 0.0; vec_sign[rowPos] = LPConstraints::LP_EQUAL; ++rowPos;
+  A.coeffRef(rowPos, TVAR(0, 2)) = 1.0; C(rowPos) = 0.0; vec_sign[rowPos] = LPConstraints::LP_EQUAL; ++rowPos;
 
 # undef TVAR
 # undef XVAR
@@ -187,8 +187,8 @@ struct TiXi_withNoise_L1_ConstraintBuilder
   }
 
   /// Setup constraints for the translation and structure problem,
-  ///  in the LP_Constraints object.
-  bool Build(double gamma, LP_Constraints_Sparse & constraint)
+  ///  in the LPConstraints object.
+  bool Build(double gamma, LPConstraintsSparse & constraint)
   {
     EncodeTiXi_withNoise(_M, _vec_Ri,
       gamma,

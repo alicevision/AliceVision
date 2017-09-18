@@ -11,10 +11,10 @@
 
 #include "aliceVision/multiview/projection.hpp"
 
-#include "aliceVision/linearProgramming/linearProgrammingInterface.hpp"
-#include "aliceVision/linearProgramming/linearProgrammingOSI_X.hpp"
+#include "aliceVision/linearProgramming/ISolver.hpp"
+#include "aliceVision/linearProgramming/OSIXSolver.hpp"
 #if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_MOSEK)
-#include "aliceVision/linearProgramming/linearProgrammingMOSEK.hpp"
+#include "aliceVision/linearProgramming/MOSEKSolver.hpp"
 #endif
 
 #include "aliceVision/linearProgramming/bisectionLP.hpp"
@@ -48,12 +48,12 @@ TEST(lInfinityCV, Triangulation_OSICLPSOLVER) {
 
     std::vector<double> vec_solution(3);
 
-    OSI_CLP_SolverWrapper wrapperOSICLPSolver(3);
+    OSI_CISolverWrapper wrapperOSICLPSolver(3);
     Triangulation_L1_ConstraintBuilder cstBuilder(vec_Pi, x_ij);
     // Use bisection in order to find the global optimum and so find the
     //  best triangulated point under the L_infinity norm
     EXPECT_TRUE(
-      (BisectionLP<Triangulation_L1_ConstraintBuilder,LP_Constraints>(
+      (BisectionLP<Triangulation_L1_ConstraintBuilder,LPConstraints>(
       wrapperOSICLPSolver,
       cstBuilder,
       &vec_solution,
@@ -108,12 +108,12 @@ TEST(computervision, Triangulation_MOSEK) {
 
     std::vector<double> vec_solution(3);
 
-    MOSEK_SolveWrapper wrapperLpSolve(3);
+    MOSEKSolver wrapperLpSolve(3);
     Triangulation_L1_ConstraintBuilder cstBuilder(vec_Pi, x_ij);
     // Use bisection in order to find the global optimum and so find the
     //  best triangulated point under the L_infinity norm
     EXPECT_TRUE(
-      (BisectionLP<Triangulation_L1_ConstraintBuilder,LP_Constraints>(
+      (BisectionLP<Triangulation_L1_ConstraintBuilder,LPConstraints>(
       wrapperLpSolve,
       cstBuilder,
       &vec_solution,

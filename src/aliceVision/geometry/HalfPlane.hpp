@@ -4,7 +4,7 @@
 #ifndef ALICEVISION_GEOMETRY_HALF_SPACE_HPP_
 #define ALICEVISION_GEOMETRY_HALF_SPACE_HPP_
 
-#include "aliceVision/linearProgramming/linearProgrammingOSI_X.hpp"
+#include "aliceVision/linearProgramming/OSIXSolver.hpp"
 #include <Eigen/Geometry>
 #include <Eigen/StdVector>
 EIGEN_DEFINE_STL_VECTOR_SPECIALIZATION(Eigen::Hyperplane<double,3>)
@@ -46,7 +46,7 @@ static bool isNotEmpty(const Half_planes & hplanes)
   using namespace aliceVision;
   using namespace aliceVision::linearProgramming;
 
-  LP_Constraints cstraint;
+  LPConstraints cstraint;
   {
     cstraint._nbParams = 3; // {X,Y,Z}
     cstraint._vec_bounds.resize(cstraint._nbParams);
@@ -69,13 +69,13 @@ static bool isNotEmpty(const Half_planes & hplanes)
         Vec3(half_plane_coeff(0),
           half_plane_coeff(1),
           half_plane_coeff(2));
-      cstraint._vec_sign[i] = LP_Constraints::LP_GREATER_OR_EQUAL;
+      cstraint._vec_sign[i] = LPConstraints::LP_GREATER_OR_EQUAL;
       cstraint._Cst_objective(i) = - half_plane_coeff(3);
     }
   }
 
   // Solve in order to see if a point exists within the half spaces positive side?
-  OSI_CLP_SolverWrapper solver(cstraint._nbParams);
+  OSI_CISolverWrapper solver(cstraint._nbParams);
   solver.setup(cstraint);
   const bool bIntersect = solver.solve(); // Status of the solver tell if there is an intersection or not
   return bIntersect;

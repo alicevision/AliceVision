@@ -9,10 +9,10 @@
 
 #include "aliceVision/multiview/projection.hpp"
 
-#include "aliceVision/linearProgramming/linearProgrammingInterface.hpp"
-#include "aliceVision/linearProgramming/linearProgrammingOSI_X.hpp"
+#include "aliceVision/linearProgramming/ISolver.hpp"
+#include "aliceVision/linearProgramming/OSIXSolver.hpp"
 #if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_MOSEK)
-#include "aliceVision/linearProgramming/linearProgrammingMOSEK.hpp"
+#include "aliceVision/linearProgramming/MOSEKSolver.hpp"
 #endif
 
 #include "aliceVision/linearProgramming/bisectionLP.hpp"
@@ -82,9 +82,9 @@ TEST(Translation_Structure_L_Infinity_Noisy, Outlier_OSICLP_SOLVER) {
 
     double admissibleResidual = 1.0/focalValue;
     std::vector<double> vec_solution((nViews + nbPoints + megaMat.cols())*3);
-    OSI_CLP_SolverWrapper wrapperOSICLPSolver(vec_solution.size());
+    OSI_CISolverWrapper wrapperOSICLPSolver(vec_solution.size());
     TiXi_withNoise_L1_ConstraintBuilder cstBuilder( vec_KRotation, megaMat);
-    const bool bisectionRes = BisectionLP<TiXi_withNoise_L1_ConstraintBuilder, LP_Constraints_Sparse>(
+    const bool bisectionRes = BisectionLP<TiXi_withNoise_L1_ConstraintBuilder, LPConstraintsSparse>(
             wrapperOSICLPSolver,
             cstBuilder,
             &vec_solution,
@@ -195,10 +195,10 @@ TEST(Translation_Structure_L_Infinity_Noisy, Outlier_MOSEK) {
 
     double admissibleResidual = 1.0/focalValue;
     std::vector<double> vec_solution((nViews + nbPoints + megaMat.cols())*3);
-    MOSEK_SolveWrapper wrapperMosek(vec_solution.size());
+    MOSEKSolver wrapperMosek(vec_solution.size());
     TiXi_withNoise_L1_ConstraintBuilder cstBuilder( vec_KRotation, megaMat);
     ALICEVISION_LOG_DEBUG(std::endl << "Bisection returns : ");
-    ALICEVISION_LOG_DEBUG( BisectionLP<TiXi_withNoise_L1_ConstraintBuilder, LP_Constraints_Sparse>(
+    ALICEVISION_LOG_DEBUG( BisectionLP<TiXi_withNoise_L1_ConstraintBuilder, LPConstraintsSparse>(
             wrapperMosek,
             cstBuilder,
             &vec_solution,

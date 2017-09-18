@@ -9,10 +9,10 @@
 
 #include "aliceVision/multiview/projection.hpp"
 
-#include "aliceVision/linearProgramming/linearProgrammingInterface.hpp"
-#include "aliceVision/linearProgramming/linearProgrammingOSI_X.hpp"
+#include "aliceVision/linearProgramming/ISolver.hpp"
+#include "aliceVision/linearProgramming/OSIXSolver.hpp"
 #if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_MOSEK)
-#include "aliceVision/linearProgramming/linearProgrammingMOSEK.hpp"
+#include "aliceVision/linearProgramming/MOSEKSolver.hpp"
 #endif
 
 #include "aliceVision/linearProgramming/bisectionLP.hpp"
@@ -63,10 +63,10 @@ TEST(Translation_Structure_L_Infinity, OSICLP_SOLVER) {
   {
     std::vector<double> vec_solution((nViews + nbPoints)*3);
 
-    OSI_CLP_SolverWrapper wrapperOSICLPSolver(vec_solution.size());
+    OSI_CISolverWrapper wrapperOSICLPSolver(vec_solution.size());
     Translation_Structure_L1_ConstraintBuilder cstBuilder( d._R, megaMat);
     EXPECT_TRUE(
-      (BisectionLP<Translation_Structure_L1_ConstraintBuilder, LP_Constraints_Sparse>(
+      (BisectionLP<Translation_Structure_L1_ConstraintBuilder, LPConstraintsSparse>(
       wrapperOSICLPSolver,
       cstBuilder,
       &vec_solution,
@@ -151,10 +151,10 @@ TEST(Translation_Structure_L_Infinity, OSICLP_SOLVER_K) {
     for(int i=0;i < nViews; ++i)
       vec_KR[i] = d._K[0] * d._R[i];
 
-    OSI_CLP_SolverWrapper wrapperOSICLPSolver(vec_solution.size());
+    OSI_CISolverWrapper wrapperOSICLPSolver(vec_solution.size());
     Translation_Structure_L1_ConstraintBuilder cstBuilder( vec_KR, megaMat);
     EXPECT_TRUE(
-      (BisectionLP<Translation_Structure_L1_ConstraintBuilder, LP_Constraints_Sparse>(
+      (BisectionLP<Translation_Structure_L1_ConstraintBuilder, LPConstraintsSparse>(
       wrapperOSICLPSolver,
       cstBuilder,
       &vec_solution,
@@ -236,10 +236,10 @@ TEST(Translation_Structure_L_Infinity, MOSEK) {
   {
     std::vector<double> vec_solution((nViews + nbPoints)*3);
 
-    MOSEK_SolveWrapper wrapperMosek(vec_solution.size());
+    MOSEKSolver wrapperMosek(vec_solution.size());
     Translation_Structure_L1_ConstraintBuilder cstBuilder( d._R, megaMat);
     EXPECT_TRUE(
-      (BisectionLP<Translation_Structure_L1_ConstraintBuilder, LP_Constraints_Sparse>(
+      (BisectionLP<Translation_Structure_L1_ConstraintBuilder, LPConstraintsSparse>(
       wrapperMosek,
       cstBuilder,
       &vec_solution,

@@ -5,7 +5,7 @@
 #define ALICEVISION_LINFINITY_COMPUTER_VISION_TRIANGULATION_H_
 
 #include "aliceVision/numeric/numeric.h"
-#include "aliceVision/linearProgramming/linearProgrammingInterface.hpp"
+#include "aliceVision/linearProgramming/ISolver.hpp"
 #include <utility>
 #include <vector>
 
@@ -74,7 +74,7 @@ static void EncodeTriangulation(
 }
 
 /// Kernel that set Linear constraints for the Triangulation Problem.
-///  Designed to be used with bisectionLP and LP_Solver interface.
+///  Designed to be used with bisectionLP and ISolver interface.
 ///
 /// Triangulation :
 ///    - Estimation of Xi from Pj and xij
@@ -91,7 +91,7 @@ struct Triangulation_L1_ConstraintBuilder
   }
 
   /// Setup constraints of the triangulation problem as a Linear program
-  bool Build(double gamma, LP_Constraints & constraint)
+  bool Build(double gamma, LPConstraints & constraint)
   {
     EncodeTriangulation(_vec_Pi, _x_ij,
       gamma,
@@ -107,7 +107,7 @@ struct Triangulation_L1_ConstraintBuilder
     // Setup constraint sign
     constraint._vec_sign.resize(constraint._constraintMat.rows());
     fill(constraint._vec_sign.begin(), constraint._vec_sign.end(),
-      LP_Constraints::LP_LESS_OR_EQUAL);
+      LPConstraints::LP_LESS_OR_EQUAL);
 
     return true;
   }

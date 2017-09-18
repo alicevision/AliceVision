@@ -1,8 +1,8 @@
 // This file is part of the AliceVision project and is made available under
 // the terms of the MPL2 license (see the COPYING.md file).
 
-#include "aliceVision/linearProgramming/linearProgrammingInterface.hpp"
-#include "aliceVision/linearProgramming/linearProgrammingOSI_X.hpp"
+#include "aliceVision/linearProgramming/ISolver.hpp"
+#include "aliceVision/linearProgramming/OSIXSolver.hpp"
 #include "aliceVision/linearProgramming/bisectionLP.hpp"
 
 #include "aliceVision/linearProgramming/lInfinityCV/resection.hpp"
@@ -39,10 +39,10 @@ void l1SixPointResectionSolver::Solve(const Mat &pt2D, const Mat &pt3d, vector<M
   translate(pt3d, vecTranslation, &XPoints);
 
   std::vector<double> vec_solution(11);
-  OSI_CLP_SolverWrapper wrapperLpSolve(vec_solution.size());
+  OSI_CISolverWrapper wrapperLpSolve(vec_solution.size());
   Resection_L1_ConstraintBuilder cstBuilder(pt2D, XPoints);
   if(
-    (BisectionLP<Resection_L1_ConstraintBuilder, LP_Constraints_Sparse>(
+    (BisectionLP<Resection_L1_ConstraintBuilder, LPConstraintsSparse>(
     wrapperLpSolve,
     cstBuilder,
     &vec_solution,

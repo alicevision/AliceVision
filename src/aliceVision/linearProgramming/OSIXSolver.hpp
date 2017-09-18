@@ -1,8 +1,7 @@
 // This file is part of the AliceVision project and is made available under
 // the terms of the MPL2 license (see the COPYING.md file).
 
-#ifndef MIMATTE_LINEAR_PROGRAMMING_INTERFACE_OSICLP_H_
-#define MIMATTE_LINEAR_PROGRAMMING_INTERFACE_OSICLP_H_
+#pragma once
 
 #include "OsiClpSolverInterface.hpp"
 #include <aliceVision/config.hpp>
@@ -12,7 +11,7 @@
 #endif
 
 #include "aliceVision/numeric/numeric.h"
-#include "aliceVision/linearProgramming/linearProgrammingInterface.hpp"
+#include "aliceVision/linearProgramming/ISolver.hpp"
 
 #include "CoinPackedMatrix.hpp"
 #include "CoinPackedVector.hpp"
@@ -22,21 +21,21 @@
 namespace aliceVision   {
 namespace linearProgramming  {
 
-/// OSI_X wrapper for the LP_Solver
+/// OSI_X wrapper for the ISolver
 template<typename SOLVERINTERFACE>
-class OSI_X_SolverWrapper : public LP_Solver
+class OSIXSolver : public ISolver
 {
 public :
-  OSI_X_SolverWrapper(int nbParams);
+  OSIXSolver(int nbParams);
 
-  ~OSI_X_SolverWrapper();
+  ~OSIXSolver();
 
   //--
   // Inherited functions :
   //--
 
-  bool setup(const LP_Constraints & constraints);
-  bool setup(const LP_Constraints_Sparse & constraints);
+  bool setup(const LPConstraints & constraints);
+  bool setup(const LPConstraintsSparse & constraints);
 
   bool solve();
 
@@ -47,15 +46,15 @@ private :
 };
 
 
-typedef OSI_X_SolverWrapper<OsiClpSolverInterface> OSI_CLP_SolverWrapper;
+typedef OSIXSolver<OsiClpSolverInterface> OSI_CISolverWrapper;
 #if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_MOSEK)
-typedef OSI_X_SolverWrapper<OsiMskSolverInterface> OSI_MOSEK_SolverWrapper;
+typedef OSIXSolver<OsiMskSolverInterface> OSI_MOSEK_SolverWrapper;
 #endif // ALICEVISION_HAVE_MOSEK
 
 
 
 template<typename SOLVERINTERFACE>
-OSI_X_SolverWrapper<SOLVERINTERFACE>::OSI_X_SolverWrapper(int nbParams) : LP_Solver(nbParams)
+OSIXSolver<SOLVERINTERFACE>::OSIXSolver(int nbParams) : ISolver(nbParams)
 {
   si = new SOLVERINTERFACE;
   si->setLogLevel(0);
@@ -63,7 +62,7 @@ OSI_X_SolverWrapper<SOLVERINTERFACE>::OSI_X_SolverWrapper(int nbParams) : LP_Sol
 
 #if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_MOSEK)
 template<>
-OSI_X_SolverWrapper<OsiMskSolverInterface>::OSI_X_SolverWrapper(int nbParams) : LP_Solver(nbParams)
+OSIXSolver<OsiMskSolverInterface>::OSIXSolver(int nbParams) : ISolver(nbParams)
 {
   si = new OsiMskSolverInterface();
   //si->setLogLevel(0);
@@ -71,7 +70,7 @@ OSI_X_SolverWrapper<OsiMskSolverInterface>::OSI_X_SolverWrapper(int nbParams) : 
 #endif // ALICEVISION_HAVE_MOSEK
 
 template<typename SOLVERINTERFACE>
-OSI_X_SolverWrapper<SOLVERINTERFACE>::~OSI_X_SolverWrapper()
+OSIXSolver<SOLVERINTERFACE>::~OSIXSolver()
 {
   // Memory cleaning.
   if ( si != nullptr )
@@ -82,7 +81,7 @@ OSI_X_SolverWrapper<SOLVERINTERFACE>::~OSI_X_SolverWrapper()
 }
 
 template<typename SOLVERINTERFACE>
-bool OSI_X_SolverWrapper<SOLVERINTERFACE>::setup(const LP_Constraints & cstraints) //cstraints <-> constraints
+bool OSIXSolver<SOLVERINTERFACE>::setup(const LPConstraints & cstraints) //cstraints <-> constraints
 {
   bool bOk = true;
   if ( si == nullptr )
@@ -103,7 +102,7 @@ bool OSI_X_SolverWrapper<SOLVERINTERFACE>::setup(const LP_Constraints & cstraint
 
   //Equality constraint will be done by two constraints due to the API limitation ( >= & <=).
   const size_t nbLine = A.rows() +
-    std::count(cstraints._vec_sign.begin(), cstraints._vec_sign.end(), LP_Constraints::LP_EQUAL);
+    std::count(cstraints._vec_sign.begin(), cstraints._vec_sign.end(), LPConstraints::LP_EQUAL);
 
   std::vector<double> row_lb(nbLine);//the row lower bounds
   std::vector<double> row_ub(nbLine);//the row upper bounds
@@ -118,7 +117,7 @@ bool OSI_X_SolverWrapper<SOLVERINTERFACE>::setup(const LP_Constraints & cstraint
     Vec temp = A.row(i);
 
     CoinPackedVector row;
-    if ( cstraints._vec_sign[i] == LP_Constraints::LP_EQUAL || cstraints._vec_sign[i] == LP_Constraints::LP_LESS_OR_EQUAL )
+    if ( cstraints._vec_sign[i] == LPConstraints::LP_EQUAL || cstraints._vec_sign[i] == LPConstraints::LP_LESS_OR_EQUAL )
     {
       int coef = 1;
       for ( int j = 0; j < A.cols() ; j++ )
@@ -130,7 +129,7 @@ bool OSI_X_SolverWrapper<SOLVERINTERFACE>::setup(const LP_Constraints & cstraint
       matrix->appendRow(row);
       indexRow++;
     }
-    if ( cstraints._vec_sign[i] == LP_Constraints::LP_EQUAL || cstraints._vec_sign[i] == LP_Constraints::LP_GREATER_OR_EQUAL )
+    if ( cstraints._vec_sign[i] == LPConstraints::LP_EQUAL || cstraints._vec_sign[i] == LPConstraints::LP_GREATER_OR_EQUAL )
     {
       int coef = -1;
       for ( int j = 0; j < A.cols() ; j++ )
@@ -171,7 +170,7 @@ bool OSI_X_SolverWrapper<SOLVERINTERFACE>::setup(const LP_Constraints & cstraint
 }
 
 template<typename SOLVERINTERFACE>
-bool OSI_X_SolverWrapper<SOLVERINTERFACE>::setup(const LP_Constraints_Sparse & cstraints) //cstraints <-> constraints
+bool OSIXSolver<SOLVERINTERFACE>::setup(const LPConstraintsSparse & cstraints) //cstraints <-> constraints
 {
   bool bOk = true;
   if ( si == nullptr )
@@ -192,7 +191,7 @@ bool OSI_X_SolverWrapper<SOLVERINTERFACE>::setup(const LP_Constraints_Sparse & c
 
   //Equality constraint will be done by two constraints due to the API limitation (>= & <=)
   const size_t nbLine = A.rows() +
-    std::count(cstraints._vec_sign.begin(), cstraints._vec_sign.end(), LP_Constraints::LP_EQUAL);
+    std::count(cstraints._vec_sign.begin(), cstraints._vec_sign.end(), LPConstraints::LP_EQUAL);
 
   std::vector<double> row_lb(nbLine);//the row lower bounds
   std::vector<double> row_ub(nbLine);//the row upper bounds
@@ -213,7 +212,7 @@ bool OSI_X_SolverWrapper<SOLVERINTERFACE>::setup(const LP_Constraints_Sparse & c
     }
 
 
-    if ( cstraints._vec_sign[i] == LP_Constraints::LP_EQUAL || cstraints._vec_sign[i] == LP_Constraints::LP_LESS_OR_EQUAL )
+    if ( cstraints._vec_sign[i] == LPConstraints::LP_EQUAL || cstraints._vec_sign[i] == LPConstraints::LP_LESS_OR_EQUAL )
     {
       int coef = 1;
       row_lb[rowindex] = -1.0 * si->getInfinity();
@@ -224,7 +223,7 @@ bool OSI_X_SolverWrapper<SOLVERINTERFACE>::setup(const LP_Constraints_Sparse & c
       rowindex++;
     }
 
-    if ( cstraints._vec_sign[i] == LP_Constraints::LP_EQUAL || cstraints._vec_sign[i] == LP_Constraints::LP_GREATER_OR_EQUAL )
+    if ( cstraints._vec_sign[i] == LPConstraints::LP_EQUAL || cstraints._vec_sign[i] == LPConstraints::LP_GREATER_OR_EQUAL )
     {
       int coef = -1;
       for ( std::vector<double>::iterator iter_val = vec_value.begin();
@@ -275,7 +274,7 @@ bool OSI_X_SolverWrapper<SOLVERINTERFACE>::setup(const LP_Constraints_Sparse & c
 }
 
 template<typename SOLVERINTERFACE>
-bool OSI_X_SolverWrapper<SOLVERINTERFACE>::solve()
+bool OSIXSolver<SOLVERINTERFACE>::solve()
 {
   //-- Compute solution
   if ( si != nullptr )
@@ -288,7 +287,7 @@ bool OSI_X_SolverWrapper<SOLVERINTERFACE>::solve()
 }
 
 template<typename SOLVERINTERFACE>
-bool OSI_X_SolverWrapper<SOLVERINTERFACE>::getSolution(std::vector<double> & estimatedParams)
+bool OSIXSolver<SOLVERINTERFACE>::getSolution(std::vector<double> & estimatedParams)
 {
   if ( si != nullptr )
   {
@@ -301,7 +300,4 @@ bool OSI_X_SolverWrapper<SOLVERINTERFACE>::getSolution(std::vector<double> & est
 
 } // namespace linearProgramming
 } // namespace aliceVision
-
-
-#endif // MIMATTE_LINEAR_PROGRAMMING_INTERFACE_OSICLP_H_
 

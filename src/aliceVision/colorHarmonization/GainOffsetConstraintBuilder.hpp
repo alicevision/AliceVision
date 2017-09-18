@@ -4,10 +4,10 @@
 #pragma once
 
 #include <aliceVision/config.hpp>
-#include "aliceVision/linearProgramming/linearProgrammingInterface.hpp"
-#include "aliceVision/linearProgramming/linearProgrammingOSI_X.hpp"
+#include "aliceVision/linearProgramming/ISolver.hpp"
+#include "aliceVision/linearProgramming/OSIXSolver.hpp"
 #if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_MOSEK)
-#include "aliceVision/linearProgramming/linearProgrammingMOSEK.hpp"
+#include "aliceVision/linearProgramming/MOSEKSolver.hpp"
 #endif
 #include "aliceVision/linearProgramming/bisectionLP.hpp"
 
@@ -61,7 +61,7 @@ static void Encode_histo_relation(
     const std::vector<relativeColorHistogramEdge > & vec_relativeHistograms,
     const std::vector<size_t> & vec_indexToFix,
     sRMat & A, Vec & C,
-    std::vector<linearProgramming::LP_Constraints::eLP_SIGN> & vec_sign,
+    std::vector<linearProgramming::LPConstraints::eLP_SIGN> & vec_sign,
     std::vector<double> & vec_costs,
     std::vector< std::pair<double,double> > & vec_bounds)
 {
@@ -176,7 +176,7 @@ static void Encode_histo_relation(
       // - gamma (side change)
       A.coeffRef(rowPos, GAMMAVAR) = -1;
       // <= gamma
-      vec_sign[rowPos] = linearProgramming::LP_Constraints::LP_LESS_OR_EQUAL;
+      vec_sign[rowPos] = linearProgramming::LPConstraints::LP_LESS_OR_EQUAL;
       C(rowPos) = 0;
       ++rowPos;
 
@@ -189,7 +189,7 @@ static void Encode_histo_relation(
       // + gamma (side change)
       A.coeffRef(rowPos, GAMMAVAR) = 1;
       // >= - gamma
-      vec_sign[rowPos] = linearProgramming::LP_Constraints::LP_GREATER_OR_EQUAL;
+      vec_sign[rowPos] = linearProgramming::LPConstraints::LP_GREATER_OR_EQUAL;
       C(rowPos) = 0;
       ++rowPos;
     }
@@ -218,8 +218,8 @@ struct GainOffsetConstraintBuilder
   }
 
   /// Setup constraints for the translation and structure problem,
-  ///  in the LP_Constraints object.
-  bool Build(linearProgramming::LP_Constraints_Sparse & constraint)
+  ///  in the LPConstraints object.
+  bool Build(linearProgramming::LPConstraintsSparse & constraint)
   {
     Encode_histo_relation(
       _Nima,

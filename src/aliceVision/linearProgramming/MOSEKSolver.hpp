@@ -1,34 +1,34 @@
 // This file is part of the AliceVision project and is made available under
 // the terms of the MPL2 license (see the COPYING.md file).
 
-#ifndef MIMATTE_LINEAR_PROGRAMMING_INTERFACE_MOSEK_H_
-#define MIMATTE_LINEAR_PROGRAMMING_INTERFACE_MOSEK_H_
-
+#pragma once
 
 #include "aliceVision/numeric/numeric.h"
-#include "aliceVision/linearProgramming/linearProgrammingInterface.hpp"
+#include "aliceVision/linearProgramming/ISolver.hpp"
+
 extern "C"{
 #include "mosek.h"
 }
+
 #include <vector>
 
 namespace aliceVision   {
 namespace linearProgramming  {
 
-/// MOSEK wrapper for the LP_Solver
-class MOSEK_SolveWrapper : public LP_Solver
+/// MOSEK wrapper for the ISolver
+class MOSEKSolver : public ISolver
 {
 public :
-  MOSEK_SolveWrapper(int nbParams);
+  MOSEKSolver(int nbParams);
 
-  ~MOSEK_SolveWrapper();
+  ~MOSEKSolver();
 
   //--
   // Inherited functions :
   //--
 
-  bool setup(const LP_Constraints & constraints);
-  bool setup(const LP_Constraints_Sparse & constraints);
+  bool setup(const LPConstraints & constraints);
+  bool setup(const LPConstraintsSparse & constraints);
 
   bool solve();
 
@@ -42,8 +42,3 @@ private :
 
 } // namespace linearProgramming
 } // namespace aliceVision
-
-
-#endif // MIMATTE_LINEAR_PROGRAMMING_INTERFACE_MOSEK_H_
-
-

@@ -124,14 +124,14 @@ bool GlobalSfM_Translation_AveragingSolver::Translation_averaging(
           vec_solution.resize(iNview*3 + vec_initialRijTijEstimates_cpy.size()/3 + 1);
           using namespace aliceVision::linearProgramming;
           #if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_MOSEK)
-            MOSEK_SolveWrapper solverLP(vec_solution.size());
+            MOSEKSolver solverLP(vec_solution.size());
           #else
-            OSI_CLP_SolverWrapper solverLP(vec_solution.size());
+            OSI_CISolverWrapper solverLP(vec_solution.size());
           #endif
 
           lInfinityCV::Tifromtij_ConstraintBuilder_OneLambdaPerTrif cstBuilder(vec_initialRijTijEstimates_cpy);
 
-          LP_Constraints_Sparse constraint;
+          LPConstraintsSparse constraint;
           //-- Setup constraint and solver
           cstBuilder.Build(constraint);
           solverLP.setup(constraint);

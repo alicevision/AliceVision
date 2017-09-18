@@ -2,8 +2,8 @@
 set(linearProgramming_headers
     bisectionLP.hpp
     linearProgramming.hpp
-    linearProgrammingInterface.hpp
-    linearProgrammingOSI_X.hpp
+    ISolver.hpp
+    OSIXSolver.hpp
 )
 
 # Sources
@@ -30,8 +30,8 @@ if (NOT MOSEK_FOUND)
 else ()
 
   # Add MOSEK related sources
-  list(APPEND linearProgramming_cpp linearProgrammingMOSEK.cpp)
-  list(APPEND linearProgramming_headers linearProgrammingMOSEK.hpp)
+  list(APPEND linearProgramming_sources MOSEKSolver.cpp)
+  list(APPEND linearProgramming_headers MOSEKSolver.hpp)
 
   # MOSEK_FOUND is true
   add_library(aliceVision_linearProgramming

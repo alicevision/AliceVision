@@ -1,7 +1,7 @@
 // This file is part of the AliceVision project and is made available under
 // the terms of the MPL2 license (see the COPYING.md file).
 
-#include "aliceVision/linearProgramming/linearProgrammingMOSEK.hpp"
+#include "aliceVision/linearProgramming/MOSEKSolver.hpp"
 #include <iostream>
 
 namespace aliceVision {
@@ -18,7 +18,7 @@ static void MSKAPI printstr(void *handle,
 
 MSKenv_t     env = nullptr;
 
-MOSEK_SolveWrapper::MOSEK_SolveWrapper(int nbParams) : LP_Solver(nbParams)
+MOSEKSolver::MOSEKSolver(int nbParams) : ISolver(nbParams)
 {
   task = nullptr;
   //env  = nullptr;
@@ -48,7 +48,7 @@ MOSEK_SolveWrapper::MOSEK_SolveWrapper(int nbParams) : LP_Solver(nbParams)
 
 }
 
-MOSEK_SolveWrapper::~MOSEK_SolveWrapper()
+MOSEKSolver::~MOSEKSolver()
 {
   // Memory cleaning.
   MSK_deletetask(&task);
@@ -56,23 +56,23 @@ MOSEK_SolveWrapper::~MOSEK_SolveWrapper()
 }
 
 
-inline MSKboundkey_enum convertSign(LP_Constraints::eLP_SIGN sign) {
+inline MSKboundkey_enum convertSign(LPConstraints::eLP_SIGN sign) {
 
   switch(sign) {
-    case LP_Constraints::LP_LESS_OR_EQUAL:    // = 1,  // cst (<=) VAL
+    case LPConstraints::LP_LESS_OR_EQUAL:    // = 1,  // cst (<=) VAL
       return MSK_BK_UP;
-    case LP_Constraints::LP_GREATER_OR_EQUAL: // = 2,  // cst (>=) VAL
+    case LPConstraints::LP_GREATER_OR_EQUAL: // = 2,  // cst (>=) VAL
       return MSK_BK_LO;
-    case LP_Constraints::LP_EQUAL:            // = 3,  // cst (=) VAL
+    case LPConstraints::LP_EQUAL:            // = 3,  // cst (=) VAL
       return MSK_BK_FX;
-    case LP_Constraints::LP_FREE:
+    case LPConstraints::LP_FREE:
       return MSK_BK_FR;
     default:
       ALICEVISION_LOG_WARNING("Error unknow constraint sign : " << sign << "\n";
   }
 }
 
-bool MOSEK_SolveWrapper::setup(const LP_Constraints & cstraints) //cstraints <-> constraints
+bool MOSEKSolver::setup(const LPConstraints & cstraints) //cstraints <-> constraints
 {
   assert(_nbParams == cstraints._nbParams);
 
@@ -194,7 +194,7 @@ bool MOSEK_SolveWrapper::setup(const LP_Constraints & cstraints) //cstraints <->
   return r == MSK_RES_OK;
 }
 
-bool MOSEK_SolveWrapper::setup(const LP_Constraints_Sparse & cstraints) //cstraints <-> constraints
+bool MOSEKSolver::setup(const LPConstraintsSparse & cstraints) //cstraints <-> constraints
 {
   assert(_nbParams == cstraints._nbParams);
 
@@ -337,7 +337,7 @@ bool MOSEK_SolveWrapper::setup(const LP_Constraints_Sparse & cstraints) //cstrai
   return r == MSK_RES_OK;
 }
 
-bool MOSEK_SolveWrapper::solve()
+bool MOSEKSolver::solve()
 {
   MSKrescodee trmcode;
 
@@ -384,7 +384,7 @@ bool MOSEK_SolveWrapper::solve()
   return false;
 }
 
-bool MOSEK_SolveWrapper::getSolution(std::vector<double> & estimatedParams)
+bool MOSEKSolver::getSolution(std::vector<double> & estimatedParams)
 {
   bool bRet = false;
   MSKsolstae solsta;
