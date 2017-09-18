@@ -11,7 +11,7 @@
 #include "aliceVision/robust_estimation/guided_matching.hpp"
 #include <limits>
 
-#include "aliceVision/matching/indMatch.hpp"
+#include "aliceVision/matching/IndMatch.hpp"
 #include "aliceVision/sfm/sfm_data.hpp"
 #include "aliceVision/feature/RegionsPerView.hpp"
 #include "aliceVision/matching_image_collection/GeometricFilterMatrix.hpp"

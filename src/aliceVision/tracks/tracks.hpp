@@ -9,7 +9,7 @@
 #include "lemon/unionfind.h"
 
 #include "aliceVision/feature/imageDescriberCommon.hpp"
-#include "aliceVision/matching/indMatch.hpp"
+#include "aliceVision/matching/IndMatch.hpp"
 #include "aliceVision/stl/flatMap.hpp"
 #include "aliceVision/stl/flatSet.hpp"
 #include <aliceVision/config.hpp>

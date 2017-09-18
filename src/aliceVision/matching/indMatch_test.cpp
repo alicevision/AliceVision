@@ -2,8 +2,8 @@
 // the terms of the MPL2 license (see the COPYING.md file).
 
 #include "testing/testing.h"
-#include "aliceVision/matching/indMatch.hpp"
-#include "aliceVision/matching/indMatch_utils.hpp"
+#include "aliceVision/matching/IndMatch.hpp"
+#include "aliceVision/matching/io.hpp"
 
 using namespace aliceVision;
 using namespace aliceVision::matching;

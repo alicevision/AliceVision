@@ -1,26 +1,26 @@
 # Headers
 set(matching_files_headers
-  indMatch.hpp
-  indMatch_utils.hpp
-  indMatchDecoratorXY.hpp
-  matcher_type.hpp
-  matcher_brute_force.hpp
-  matcher_kdtree_flann.hpp
-  matcher_cascade_hashing.hpp
-  matching_filters.hpp
-  matching_interface.hpp
+  ArrayMatcher.hpp
+  ArrayMatcher_bruteForce.hpp
+  ArrayMatcher_cascadeHashing.hpp
+  ArrayMatcher_kdtreeFlann.hpp
+  IndMatch.hpp
+  IndMatchDecorator.hpp
+  filters.hpp
+  io.hpp
+  matcherType.hpp
   metric.hpp
-  metric_hamming.hpp
-  regions_matcher.hpp
-  cascade_hasher.hpp
+  Hamming.hpp
+  CascadeHasher.hpp
+  RegionsMatcher.hpp
   pairwiseAdjacencyDisplay.hpp
 )
 
 # Sources
 set(matching_files_sources
-  indMatch_utils.cpp
-  matcher_type.cpp
-  regions_matcher.cpp
+  io.cpp
+  matcherType.cpp
+  RegionsMatcher.cpp
 )
 
 set_source_files_properties(${matching_files_sources} PROPERTIES LANGUAGE CXX)
@@ -51,9 +51,9 @@ install(TARGETS aliceVision_matching
   EXPORT aliceVision-targets
 )
 
-UNIT_TEST(aliceVision matching          "aliceVision_matching")
-UNIT_TEST(aliceVision matching_filters  "aliceVision_matching")
-UNIT_TEST(aliceVision indMatch          "aliceVision_matching")
-UNIT_TEST(aliceVision metric            "aliceVision_matching")
+UNIT_TEST(aliceVision matching  "aliceVision_matching")
+UNIT_TEST(aliceVision filters   "aliceVision_matching")
+UNIT_TEST(aliceVision indMatch  "aliceVision_matching")
+UNIT_TEST(aliceVision metric    "aliceVision_matching")
 
 add_subdirectory(kvld)

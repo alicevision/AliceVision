@@ -4,8 +4,8 @@
 #pragma once
 
 #include "aliceVision/feature/imageDescriberCommon.hpp"
-#include "aliceVision/matching/matcher_type.hpp"
-#include "aliceVision/matching/indMatch.hpp"
+#include "aliceVision/matching/matcherType.hpp"
+#include "aliceVision/matching/IndMatch.hpp"
 #include "aliceVision/matching_image_collection/Pair_Builder.hpp"
 #include "aliceVision/sfm/sfm_data.hpp"
 #include "aliceVision/feature/RegionsPerView.hpp"

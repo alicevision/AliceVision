@@ -2,8 +2,8 @@
 // the terms of the MPL2 license (see the COPYING.md file).
 
 #include "aliceVision/sfm/pipelines/localization/SfM_Localizer_Single_3DTrackObservation_Database.hpp"
-#include "aliceVision/matching/indMatch.hpp"
-#include "aliceVision/matching/regions_matcher.hpp"
+#include "aliceVision/matching/IndMatch.hpp"
+#include "aliceVision/matching/RegionsMatcher.hpp"
 
 namespace aliceVision {
 namespace sfm {

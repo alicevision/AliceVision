@@ -3,7 +3,7 @@
 
 #pragma once
 
-#include <aliceVision/matching/indMatch.hpp>
+#include <aliceVision/matching/IndMatch.hpp>
 #include <aliceVision/feature/FeaturesPerView.hpp>
 
 namespace aliceVision {

@@ -14,8 +14,8 @@
 #include <aliceVision/stl/stlMap.hpp>
 #include <aliceVision/voctree/vocabulary_tree.hpp>
 #include <aliceVision/voctree/database.hpp>
-#include <aliceVision/matching/matcher_kdtree_flann.hpp>
-#include <aliceVision/matching/regions_matcher.hpp>
+#include <aliceVision/matching/ArrayMatcher_kdtreeFlann.hpp>
+#include <aliceVision/matching/RegionsMatcher.hpp>
 #include <flann/algorithms/dist.h>
 
 

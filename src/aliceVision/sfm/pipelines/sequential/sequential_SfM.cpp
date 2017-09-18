@@ -9,7 +9,7 @@
 #include "aliceVision/sfm/pipelines/localization/SfM_Localizer.hpp"
 
 #include "aliceVision/feature/FeaturesPerView.hpp"
-#include "aliceVision/matching/indMatch.hpp"
+#include "aliceVision/matching/IndMatch.hpp"
 #include "aliceVision/multiview/essential.hpp"
 #include "aliceVision/multiview/triangulation.hpp"
 #include "aliceVision/multiview/triangulation_nview.hpp"

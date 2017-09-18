@@ -3,7 +3,7 @@
 
 #include "aliceVision/sfm/pipelines/structure_from_known_poses/structure_estimator.hpp"
 
-#include "aliceVision/matching/indMatch.hpp"
+#include "aliceVision/matching/IndMatch.hpp"
 #include "aliceVision/matching/metric.hpp"
 #include "aliceVision/robust_estimation/guided_matching.hpp"
 #include "aliceVision/multiview/solver_fundamental_kernel.hpp"

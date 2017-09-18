@@ -8,8 +8,8 @@
 //-- Load features per view
 #include <aliceVision/sfm/pipelines/RegionsIO.hpp>
 //-- Feature matches
-#include <aliceVision/matching/indMatch.hpp>
-#include "aliceVision/matching/indMatch_utils.hpp"
+#include <aliceVision/matching/IndMatch.hpp>
+#include "aliceVision/matching/io.hpp"
 #include "aliceVision/stl/stl.hpp"
 
 #include "aliceVision/sfm/sfm.hpp"

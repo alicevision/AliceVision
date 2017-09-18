@@ -18,7 +18,7 @@ the terms of the BSD license (see the COPYING file).
 
 #include <aliceVision/numeric/numeric.h>
 #include <aliceVision/image/Image.hpp>
-#include <aliceVision/matching/indMatch.hpp>
+#include <aliceVision/matching/IndMatch.hpp>
 #include <aliceVision/feature/PointFeature.hpp>
 #include <aliceVision/types.hpp>
 

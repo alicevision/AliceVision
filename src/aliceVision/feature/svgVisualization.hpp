@@ -10,7 +10,7 @@
 #endif
 #include <aliceVision/feature/RegionsPerView.hpp>
 #include <aliceVision/feature/FeaturesPerView.hpp>
-#include <aliceVision/matching/indMatch.hpp>
+#include <aliceVision/matching/IndMatch.hpp>
 
 #include <vector>
 

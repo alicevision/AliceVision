@@ -1,11 +1,10 @@
 // This file is part of the AliceVision project and is made available under
 // the terms of the MPL2 license (see the COPYING.md file).
 
-#ifndef ALICEVISION_PAIRWISE_ADJACENCY_DISPLAY_H
-#define ALICEVISION_PAIRWISE_ADJACENCY_DISPLAY_H
+#pragma once
 
 #include "dependencies/vectorGraphics/svgDrawer.hpp"
-#include "aliceVision/matching/indMatch.hpp"
+#include "aliceVision/matching/IndMatch.hpp"
 
 namespace aliceVision  {
 namespace matching {
@@ -58,5 +57,3 @@ inline void PairwiseMatchingToAdjacencyMatrixSVG(const size_t NbImages,
 
 } // namespace matching
 } // namespace aliceVision
-
-#endif // ALICEVISION_PAIRWISE_ADJACENCY_DISPLAY_H

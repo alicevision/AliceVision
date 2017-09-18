@@ -26,7 +26,7 @@
 #include <aliceVision/numeric/numeric.h>
 #include <aliceVision/multiview/conditioning.hpp>
 #include <aliceVision/feature/imageDescriberCommon.hpp>
-#include <aliceVision/matching/indMatch.hpp>
+#include <aliceVision/matching/IndMatch.hpp>
 #include <vector>
 
 namespace aliceVision {

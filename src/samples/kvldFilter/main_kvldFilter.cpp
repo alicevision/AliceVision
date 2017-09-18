@@ -7,7 +7,7 @@ using namespace aliceVision::image;
 
 #include "aliceVision/feature/feature.hpp"
 #include "aliceVision/feature/sift/ImageDescriber_SIFT.hpp"
-#include "aliceVision/matching/regions_matcher.hpp"
+#include "aliceVision/matching/RegionsMatcher.hpp"
 
 using namespace aliceVision::matching;
 

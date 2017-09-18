@@ -7,8 +7,8 @@
 #include <aliceVision/types.hpp>
 #include <aliceVision/system/Logger.hpp>
 #include <aliceVision/sfm/sfm_data.hpp>
-#include <aliceVision/matching/indMatch.hpp>
-#include <aliceVision/matching/indMatch_utils.hpp>
+#include <aliceVision/matching/IndMatch.hpp>
+#include <aliceVision/matching/io.hpp>
 
 namespace aliceVision {
 namespace sfm {

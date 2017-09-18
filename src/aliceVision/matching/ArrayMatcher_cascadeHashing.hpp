@@ -3,9 +3,9 @@
 
 #pragma once
 
-#include "aliceVision/matching/matching_interface.hpp"
-#include "aliceVision/matching/cascade_hasher.hpp"
-#include "aliceVision/matching/indMatch.hpp"
+#include "aliceVision/matching/ArrayMatcher.hpp"
+#include "aliceVision/matching/CascadeHasher.hpp"
+#include "aliceVision/matching/IndMatch.hpp"
 #include <memory>
 #include <random>
 #include <cmath>
@@ -26,13 +26,13 @@ namespace matching {
 // If you use this matcher, please cite the paper.
 // template Metric parameter is ignored (by default compute square(L2 distance)).
 template < typename Scalar = float, typename Metric = L2_Simple<Scalar> >
-class ArrayMatcherCascadeHashing  : public ArrayMatcher<Scalar, Metric>
+class ArrayMatcher_cascadeHashing  : public ArrayMatcher<Scalar, Metric>
 {
   public:
   typedef typename Metric::ResultType DistanceType;
 
-  ArrayMatcherCascadeHashing()   {}
-  virtual ~ArrayMatcherCascadeHashing() {
+  ArrayMatcher_cascadeHashing()   {}
+  virtual ~ArrayMatcher_cascadeHashing() {
     memMapping.reset();
   }
 
@@ -138,4 +138,3 @@ private:
 
 }  // namespace matching
 }  // namespace aliceVision
-

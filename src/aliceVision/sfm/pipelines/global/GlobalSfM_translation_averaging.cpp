@@ -8,7 +8,7 @@
 #include "aliceVision/sfm/sfm_data_BA_ceres.hpp"
 #include "aliceVision/sfm/pipelines/global/sfm_global_reindex.hpp"
 #include "aliceVision/sfm/pipelines/global/mutexSet.hpp"
-#include "aliceVision/matching/indMatch.hpp"
+#include "aliceVision/matching/IndMatch.hpp"
 #include "aliceVision/multiview/translation_averaging_common.hpp"
 #include "aliceVision/multiview/translation_averaging_solver.hpp"
 #include "aliceVision/graph/graph.hpp"

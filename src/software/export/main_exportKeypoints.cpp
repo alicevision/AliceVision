@@ -1,8 +1,8 @@
 // This file is part of the AliceVision project and is made available under
 // the terms of the MPL2 license (see the COPYING.md file).
 
-#include "aliceVision/matching/indMatch.hpp"
-#include "aliceVision/matching/indMatch_utils.hpp"
+#include "aliceVision/matching/IndMatch.hpp"
+#include "aliceVision/matching/io.hpp"
 #include "aliceVision/feature/svgVisualization.hpp"
 #include "aliceVision/image/image.hpp"
 #include "aliceVision/sfm/sfm.hpp"

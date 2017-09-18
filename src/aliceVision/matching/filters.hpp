@@ -1,10 +1,9 @@
 // This file is part of the AliceVision project and is made available under
 // the terms of the MPL2 license (see the COPYING.md file).
 
-#ifndef ALICEVISION_MATCHING_MATCHINGFILTERS_H
-#define ALICEVISION_MATCHING_MATCHINGFILTERS_H
+#pragma once
 
-#include "aliceVision/matching/indMatch.hpp"
+#include "aliceVision/matching/IndMatch.hpp"
 #include <algorithm>
 #include <cassert>
 #include <iterator>
@@ -201,5 +200,3 @@ inline void Filter( int NN,
 
 }  // namespace matching
 }  // namespace aliceVision
-
-#endif // ALICEVISION_MATCHING_MATCHINGFILTERS_H

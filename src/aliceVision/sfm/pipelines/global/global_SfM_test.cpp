@@ -3,7 +3,7 @@
 
 #include "aliceVision/sfm/pipelines/pipelines_test.hpp"
 #include "aliceVision/feature/FeaturesPerView.hpp"
-#include "aliceVision/matching/indMatch.hpp"
+#include "aliceVision/matching/IndMatch.hpp"
 #include "aliceVision/sfm/sfm.hpp"
 #include "testing/testing.h"
 

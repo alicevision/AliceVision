@@ -7,7 +7,7 @@
 #include "aliceVision/feature/akaze/ImageDescriber_AKAZE.hpp"
 #include "aliceVision/robust_estimation/guided_matching.hpp"
 #include "aliceVision/multiview/solver_homography_kernel.hpp"
-#include "aliceVision/matching/regions_matcher.hpp"
+#include "aliceVision/matching/RegionsMatcher.hpp"
 
 #include "dependencies/stlplus3/filesystemSimplified/file_system.hpp"
 #include "dependencies/vectorGraphics/svgDrawer.hpp"

@@ -8,8 +8,8 @@
 #include "aliceVision/robust_estimation/robust_estimator_ACRansacKernelAdaptator.hpp"
 #include "aliceVision/robust_estimation/guided_matching.hpp"
 
-#include "aliceVision/matching/indMatch.hpp"
-#include "aliceVision/matching/indMatchDecoratorXY.hpp"
+#include "aliceVision/matching/IndMatch.hpp"
+#include "aliceVision/matching/IndMatchDecorator.hpp"
 #include "aliceVision/sfm/sfm_data.hpp"
 #include "aliceVision/feature/RegionsPerView.hpp"
 #include "aliceVision/matching_image_collection/GeometricFilterMatrix.hpp"

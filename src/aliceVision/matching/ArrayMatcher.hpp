@@ -1,11 +1,10 @@
 // This file is part of the AliceVision project and is made available under
 // the terms of the MPL2 license (see the COPYING.md file).
 
-#ifndef ALICEVISION_MATCHING_MATCHINGINTERFACE_H
-#define ALICEVISION_MATCHING_MATCHINGINTERFACE_H
+#pragma once
 
 #include "aliceVision/numeric/numeric.h"
-#include "aliceVision/matching/indMatch.hpp"
+#include "aliceVision/matching/IndMatch.hpp"
 
 #include <vector>
 
@@ -69,5 +68,3 @@ class ArrayMatcher
 
 }  // namespace matching
 }  // namespace aliceVision
-
-#endif  // ALICEVISION_MATCHING_MATCHINGINTERFACE_H

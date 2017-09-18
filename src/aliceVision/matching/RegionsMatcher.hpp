@@ -3,10 +3,10 @@
 
 #pragma once
 
-#include "aliceVision/matching/matcher_type.hpp"
-#include "aliceVision/matching/indMatch.hpp"
-#include "aliceVision/matching/indMatchDecoratorXY.hpp"
-#include "aliceVision/matching/matching_filters.hpp"
+#include "aliceVision/matching/matcherType.hpp"
+#include "aliceVision/matching/IndMatch.hpp"
+#include "aliceVision/matching/IndMatchDecorator.hpp"
+#include "aliceVision/matching/filters.hpp"
 
 #include "aliceVision/numeric/numeric.h"
 #include "aliceVision/feature/Regions.hpp"

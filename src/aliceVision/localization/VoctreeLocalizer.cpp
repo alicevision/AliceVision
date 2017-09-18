@@ -11,10 +11,10 @@
 #include <aliceVision/sfm/pipelines/RegionsIO.hpp>
 #include <aliceVision/feature/regionsTypeIO.hpp>
 #include <aliceVision/feature/svgVisualization.hpp>
-#include <aliceVision/matching/regions_matcher.hpp>
+#include <aliceVision/matching/RegionsMatcher.hpp>
 #include <aliceVision/matching_image_collection/Matcher.hpp>
 #include <aliceVision/matching_image_collection/GeometricFilterMatrix.hpp>
-#include <aliceVision/matching/matcher_kdtree_flann.hpp>
+#include <aliceVision/matching/ArrayMatcher_kdtreeFlann.hpp>
 #include <aliceVision/matching_image_collection/F_ACRobust.hpp>
 #include <aliceVision/matching_image_collection/GeometricFilterMatrix.hpp>
 #include <aliceVision/numeric/numeric.h>

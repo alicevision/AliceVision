@@ -7,11 +7,11 @@
 #include "aliceVision/feature/sift/ImageDescriber_SIFT.hpp"
 #include "aliceVision/sfm/sfm.hpp"
 
-#include "aliceVision/matching/matcher_brute_force.hpp"
-#include "aliceVision/matching/indMatchDecoratorXY.hpp"
+#include "aliceVision/matching/ArrayMatcher_bruteForce.hpp"
+#include "aliceVision/matching/IndMatchDecorator.hpp"
 #include "aliceVision/multiview/triangulation.hpp"
 
-#include "aliceVision/matching/regions_matcher.hpp"
+#include "aliceVision/matching/RegionsMatcher.hpp"
 
 #include "dependencies/stlplus3/filesystemSimplified/file_system.hpp"
 #include "dependencies/vectorGraphics/svgDrawer.hpp"

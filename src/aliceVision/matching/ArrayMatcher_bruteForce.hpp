@@ -1,11 +1,10 @@
 // This file is part of the AliceVision project and is made available under
 // the terms of the MPL2 license (see the COPYING.md file).
 
-#ifndef ALICEVISION_MATCHING_ARRAYMATCHER_BRUTE_FORCE_H
-#define ALICEVISION_MATCHING_ARRAYMATCHER_BRUTE_FORCE_H
+#pragma once
 
 #include "aliceVision/numeric/numeric.h"
-#include "aliceVision/matching/matching_interface.hpp"
+#include "aliceVision/matching/ArrayMatcher.hpp"
 #include "aliceVision/matching/metric.hpp"
 #include "aliceVision/stl/indexed_sort.hpp"
 #include <aliceVision/config.hpp>
@@ -17,13 +16,13 @@ namespace matching {
 
 // By default compute square(L2 distance).
 template < typename Scalar = float, typename Metric = L2_Simple<Scalar> >
-class ArrayMatcherBruteForce  : public ArrayMatcher<Scalar, Metric>
+class ArrayMatcher_bruteForce  : public ArrayMatcher<Scalar, Metric>
 {
   public:
   typedef typename Metric::ResultType DistanceType;
 
-  ArrayMatcherBruteForce()   {}
-  virtual ~ArrayMatcherBruteForce() {
+  ArrayMatcher_bruteForce()   {}
+  virtual ~ArrayMatcher_bruteForce() {
     memMapping.reset();
   }
 
@@ -154,5 +153,3 @@ private:
 
 }  // namespace matching
 }  // namespace aliceVision
-
-#endif  // ALICEVISION_MATCHING_ARRAYMATCHER_BRUTE_FORCE_H

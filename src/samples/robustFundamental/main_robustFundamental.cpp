@@ -4,7 +4,7 @@
 #include "aliceVision/image/image.hpp"
 #include "aliceVision/feature/feature.hpp"
 #include "aliceVision/feature/sift/ImageDescriber_SIFT.hpp"
-#include "aliceVision/matching/regions_matcher.hpp"
+#include "aliceVision/matching/RegionsMatcher.hpp"
 #include "aliceVision/multiview/solver_fundamental_kernel.hpp"
 #include "aliceVision/multiview/conditioning.hpp"
 #include "aliceVision/robust_estimation/robust_estimator_ACRansac.hpp"

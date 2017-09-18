@@ -6,7 +6,7 @@
 
 #include <aliceVision/multiview/rotation_averaging_common.hpp>
 #include <aliceVision/multiview/translation_averaging_common.hpp>
-#include <aliceVision/matching/indMatch.hpp>
+#include <aliceVision/matching/IndMatch.hpp>
 #include <aliceVision/system/Logger.hpp>
 
 namespace aliceVision {

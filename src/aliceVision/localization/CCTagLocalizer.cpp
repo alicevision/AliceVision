@@ -8,7 +8,7 @@
 
 #include <aliceVision/config.hpp>
 #include <aliceVision/feature/svgVisualization.hpp>
-#include <aliceVision/matching/indMatch.hpp>
+#include <aliceVision/matching/IndMatch.hpp>
 #include <aliceVision/sfm/sfm_data_io.hpp>
 #include <aliceVision/sfm/pipelines/RegionsIO.hpp>
 #include <aliceVision/sfm/pipelines/sfm_robust_model_estimation.hpp>

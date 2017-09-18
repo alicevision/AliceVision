@@ -1,11 +1,10 @@
 // This file is part of the AliceVision project and is made available under
 // the terms of the MPL2 license (see the COPYING.md file).
 
-#ifndef ALICEVISION_MATCHING_IND_MATCH_DECORATOR_XY_H
-#define ALICEVISION_MATCHING_IND_MATCH_DECORATOR_XY_H
+#pragma once
 
 #include <iostream>
-#include "aliceVision/matching/indMatch.hpp"
+#include "aliceVision/matching/IndMatch.hpp"
 #include "aliceVision/feature/feature.hpp"
 
 namespace aliceVision {
@@ -141,5 +140,3 @@ private :
 
 }  // namespace matching
 }  // namespace aliceVision
-
-#endif // ALICEVISION_MATCHING_IND_MATCH_DECORATOR_XY_H

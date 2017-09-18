@@ -1,10 +1,9 @@
 // This file is part of the AliceVision project and is made available under
 // the terms of the MPL2 license (see the COPYING.md file).
 
-#ifndef ALICEVISION_MATCHING_IND_MATCH_UTILS_H
-#define ALICEVISION_MATCHING_IND_MATCH_UTILS_H
+#pragma once
 
-#include "aliceVision/matching/indMatch.hpp"
+#include <aliceVision/matching/IndMatch.hpp>
 
 #include <string>
 
@@ -80,5 +79,3 @@ bool Save(
 
 }  // namespace matching
 }  // namespace aliceVision
-
-#endif // #define ALICEVISION_MATCHING_IND_MATCH_UTILS_H

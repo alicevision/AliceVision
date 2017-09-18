@@ -1,18 +1,18 @@
 // This file is part of the AliceVision project and is made available under
 // the terms of the MPL2 license (see the COPYING.md file).
 
-#ifndef ALICEVISION_MATCHING_IND_MATCH_H
-#define ALICEVISION_MATCHING_IND_MATCH_H
+#pragma once
 
-#include "aliceVision/types.hpp"
-#include "aliceVision/feature/imageDescriberCommon.hpp"
+#include <aliceVision/types.hpp>
+#include <aliceVision/feature/imageDescriberCommon.hpp>
 
-#include <cereal/cereal.hpp> // Serialization
+#include <cereal/cereal.hpp>
 
 #include <iostream>
+#include <vector>
 #include <set>
 #include <map>
-#include <vector>
+
 
 #define ALICEVISION_DEBUG_MATCHING
 
@@ -119,5 +119,3 @@ inline Pair_Set getImagePairs(const PairwiseMatches & matches)
 
 }  // namespace matching
 }  // namespace aliceVision
-
-#endif // ALICEVISION_MATCHING_IND_MATCH_H

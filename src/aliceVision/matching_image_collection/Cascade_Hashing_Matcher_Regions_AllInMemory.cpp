@@ -2,9 +2,9 @@
 // the terms of the MPL2 license (see the COPYING.md file).
 
 #include "aliceVision/matching_image_collection/Cascade_Hashing_Matcher_Regions_AllInMemory.hpp"
-#include "aliceVision/matching/matcher_cascade_hashing.hpp"
-#include "aliceVision/matching/indMatchDecoratorXY.hpp"
-#include "aliceVision/matching/matching_filters.hpp"
+#include "aliceVision/matching/ArrayMatcher_cascadeHashing.hpp"
+#include "aliceVision/matching/IndMatchDecorator.hpp"
+#include "aliceVision/matching/filters.hpp"
 #include <aliceVision/config.hpp>
 
 #include "dependencies/stlplus3/filesystemSimplified/file_system.hpp"

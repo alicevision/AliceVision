@@ -3,19 +3,19 @@
 
 #include "testing/testing.h"
 #include "aliceVision/numeric/numeric.h"
-#include "aliceVision/matching/matcher_brute_force.hpp"
-#include "aliceVision/matching/matcher_kdtree_flann.hpp"
-#include "aliceVision/matching/matcher_cascade_hashing.hpp"
+#include "aliceVision/matching/ArrayMatcher_bruteForce.hpp"
+#include "aliceVision/matching/ArrayMatcher_kdtreeFlann.hpp"
+#include "aliceVision/matching/ArrayMatcher_cascadeHashing.hpp"
 #include <iostream>
 using namespace std;
 
 using namespace aliceVision;
 using namespace matching;
 
-TEST(Matching, ArrayMatcherBruteForce_Simple_Dim1)
+TEST(Matching, ArrayMatcher_bruteForce_Simple_Dim1)
 {
   const float array[] = {0, 1, 2, 3, 4};
-  ArrayMatcherBruteForce<float> matcher;
+  ArrayMatcher_bruteForce<float> matcher;
   EXPECT_TRUE( matcher.Build(array, 5, 1) );
 
   const float query[] = {2};
@@ -27,11 +27,11 @@ TEST(Matching, ArrayMatcherBruteForce_Simple_Dim1)
   EXPECT_NEAR( 0.0f, fDistance, 1e-8); //distance
 }
 
-TEST(Matching, ArrayMatcherBruteForce_NN)
+TEST(Matching, ArrayMatcher_bruteForce_NN)
 {
   const float array[] = {0, 1, 2, 5, 6};
   // no 3, because it involve the same dist as 1,1
-  ArrayMatcherBruteForce<float> matcher;
+  ArrayMatcher_bruteForce<float> matcher;
   EXPECT_TRUE( matcher.Build(array, 5, 1) );
 
   const float query[] = {2};
@@ -57,13 +57,13 @@ TEST(Matching, ArrayMatcherBruteForce_NN)
   EXPECT_EQ(IndMatch(0,4), vec_nIndice[4]);
 }
 
-TEST(Matching, ArrayMatcherBruteForce_Simple_Dim4)
+TEST(Matching, ArrayMatcher_bruteForce_Simple_Dim4)
 {
   const float array[] = {
     0, 1, 2, 3,
     4, 5, 6, 7,
     8, 9, 10, 11};
-  ArrayMatcherBruteForce<float> matcher;
+  ArrayMatcher_bruteForce<float> matcher;
   EXPECT_TRUE( matcher.Build(array, 3, 4) );
 
   const float query[] = {4, 5, 6, 7};
@@ -75,12 +75,12 @@ TEST(Matching, ArrayMatcherBruteForce_Simple_Dim4)
   EXPECT_NEAR( 0.0f, fDistance, 1e-8); //distance
 }
 
-TEST(Matching, ArrayMatcher_Kdtree_Flann_Simple__NN)
+TEST(Matching, ArrayMatcher_kdtreeFlann_Simple__NN)
 {
   const float array[] = {0, 1, 2, 5, 6};
   // no 3, because it involve the same dist as 1,1
 
-  ArrayMatcher_Kdtree_Flann<float> matcher;
+  ArrayMatcher_kdtreeFlann<float> matcher;
   EXPECT_TRUE( matcher.Build(array, 5, 1) );
 
   const float query[] = {2};
@@ -109,10 +109,10 @@ TEST(Matching, ArrayMatcher_Kdtree_Flann_Simple__NN)
 
 //-- Test LIMIT case (empty arrays)
 
-TEST(Matching, ArrayMatcherBruteForce_Simple_EmptyArrays)
+TEST(Matching, ArrayMatcher_bruteForce_Simple_EmptyArrays)
 {
   std::vector<float> array;
-  ArrayMatcherBruteForce<float> matcher;
+  ArrayMatcher_bruteForce<float> matcher;
   EXPECT_FALSE( matcher.Build(&array[0], 0, 4) );
 
   int nIndice = -1;
@@ -120,10 +120,10 @@ TEST(Matching, ArrayMatcherBruteForce_Simple_EmptyArrays)
   EXPECT_FALSE( matcher.SearchNeighbour( &array[0], &nIndice, &fDistance) );
 }
 
-TEST(Matching, ArrayMatcher_Kdtree_Flann_Simple_EmptyArrays)
+TEST(Matching, ArrayMatcher_kdtreeFlann_Simple_EmptyArrays)
 {
   std::vector<float> array;
-  ArrayMatcher_Kdtree_Flann<float> matcher;
+  ArrayMatcher_kdtreeFlann<float> matcher;
   EXPECT_FALSE( matcher.Build(&array[0], 0, 4) );
 
   int nIndice = -1;
@@ -134,7 +134,7 @@ TEST(Matching, ArrayMatcher_Kdtree_Flann_Simple_EmptyArrays)
 TEST(Matching, Cascade_Hashing_Simple_EmptyArrays)
 {
   std::vector<float> array;
-  ArrayMatcherCascadeHashing<float> matcher;
+  ArrayMatcher_cascadeHashing<float> matcher;
   EXPECT_FALSE( matcher.Build(&array[0], 0, 4) );
 
   int nIndice = -1;

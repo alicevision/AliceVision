@@ -4,7 +4,7 @@
 #pragma once
 
 #include "aliceVision/numeric/numeric.h"
-#include "aliceVision/matching/indMatch.hpp"
+#include "aliceVision/matching/IndMatch.hpp"
 #include "aliceVision/feature/RegionsPerView.hpp"
 
 #include "aliceVision/feature/Regions.hpp"

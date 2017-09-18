@@ -39,7 +39,7 @@
 
 #include "aliceVision/numeric/numeric.h"
 #include "aliceVision/matching/metric.hpp"
-#include "aliceVision/matching/indMatch.hpp"
+#include "aliceVision/matching/IndMatch.hpp"
 #include "aliceVision/stl/dynamic_bitset.hpp"
 #include <iostream>
 #include <random>
@@ -378,4 +378,3 @@ public:
 
 }  // namespace matching
 }  // namespace aliceVision
-

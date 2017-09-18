@@ -4,7 +4,7 @@
 #include "CppUnitLite/TestHarness.h"
 #include "testing/testing.h"
 
-#include "aliceVision/matching/matching_filters.hpp"
+#include "aliceVision/matching/filters.hpp"
 using namespace aliceVision;
 using namespace aliceVision::matching;
 using namespace std;

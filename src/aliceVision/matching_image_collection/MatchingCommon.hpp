@@ -3,7 +3,7 @@
 
 #pragma once
 
-#include "aliceVision/matching/matcher_type.hpp"
+#include "aliceVision/matching/matcherType.hpp"
 #include "aliceVision/matching_image_collection/Matcher.hpp"
 
 namespace aliceVision {

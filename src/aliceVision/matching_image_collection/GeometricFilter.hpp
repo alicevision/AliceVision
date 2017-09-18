@@ -6,7 +6,7 @@
 #include <aliceVision/config.hpp>
 #include "aliceVision/feature/PointFeature.hpp"
 #include "aliceVision/feature/RegionsPerView.hpp"
-#include "aliceVision/matching/indMatch.hpp"
+#include "aliceVision/matching/IndMatch.hpp"
 #include "aliceVision/matching_image_collection/GeometricFilterMatrix.hpp"
 
 #include "dependencies/stlplus3/filesystemSimplified/file_system.hpp"

@@ -1,10 +1,9 @@
 // This file is part of the AliceVision project and is made available under
 // the terms of the MPL2 license (see the COPYING.md file).
 
-#ifndef ALICEVISION_MATCHING_ARRAYMATCHER_KDTREE_FLANN_H_
-#define ALICEVISION_MATCHING_ARRAYMATCHER_KDTREE_FLANN_H_
+#pragma once
 
-#include "aliceVision/matching/matching_interface.hpp"
+#include <aliceVision/matching/ArrayMatcher.hpp>
 #include <aliceVision/config.hpp>
 #include <aliceVision/alicevision_omp.hpp>
 
@@ -23,14 +22,14 @@ namespace matching  {
 // sqrt is monotonic so for performance reason we do not compute it.
 
 template < typename Scalar = float, typename  Metric = flann::L2<Scalar> >
-class ArrayMatcher_Kdtree_Flann : public ArrayMatcher<Scalar, Metric>
+class ArrayMatcher_kdtreeFlann : public ArrayMatcher<Scalar, Metric>
 {
   public:
   typedef typename Metric::ResultType DistanceType;
 
-  ArrayMatcher_Kdtree_Flann() {}
+  ArrayMatcher_kdtreeFlann() {}
 
-  virtual ~ArrayMatcher_Kdtree_Flann()
+  virtual ~ArrayMatcher_kdtreeFlann()
   {
     _datasetM.reset();
     _index.reset();
@@ -153,5 +152,3 @@ class ArrayMatcher_Kdtree_Flann : public ArrayMatcher<Scalar, Metric>
 
 } // namespace matching
 } // namespace aliceVision
-
-#endif // ALICEVISION_MATCHING_ARRAYMATCHER_KDTREE_FLANN_H_

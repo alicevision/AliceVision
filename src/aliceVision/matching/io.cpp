@@ -1,9 +1,9 @@
 // This file is part of the AliceVision project and is made available under
 // the terms of the MPL2 license (see the COPYING.md file).
 
-#include "indMatch_utils.hpp"
+#include "io.hpp"
 
-#include "aliceVision/matching/indMatch.hpp"
+#include "aliceVision/matching/IndMatch.hpp"
 #include <aliceVision/config.hpp>
 #include <aliceVision/system/Logger.hpp>
 

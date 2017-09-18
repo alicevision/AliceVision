@@ -4,7 +4,7 @@
 #pragma once
 
 #include "aliceVision/colorHarmonization/CommonDataByPair.hpp"
-#include "aliceVision/matching/indMatch.hpp"
+#include "aliceVision/matching/IndMatch.hpp"
 #include "aliceVision/feature/feature.hpp"
 
 #include <vector>

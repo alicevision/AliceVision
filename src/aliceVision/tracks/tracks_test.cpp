@@ -5,7 +5,7 @@
 #include "testing/testing.h"
 
 #include "aliceVision/tracks/tracks.hpp"
-#include "aliceVision/matching/indMatch.hpp"
+#include "aliceVision/matching/IndMatch.hpp"
 
 #include <vector>
 #include <utility>

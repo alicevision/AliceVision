@@ -1,11 +1,11 @@
 // This file is part of the AliceVision project and is made available under
 // the terms of the MPL2 license (see the COPYING.md file).
 
-#include "aliceVision/matching/matcher_type.hpp"
-#include "aliceVision/matching/regions_matcher.hpp"
-#include "aliceVision/matching/matcher_brute_force.hpp"
-#include "aliceVision/matching/matcher_kdtree_flann.hpp"
-#include "aliceVision/matching/matcher_cascade_hashing.hpp"
+#include "aliceVision/matching/matcherType.hpp"
+#include "aliceVision/matching/RegionsMatcher.hpp"
+#include "aliceVision/matching/ArrayMatcher_bruteForce.hpp"
+#include "aliceVision/matching/ArrayMatcher_kdtreeFlann.hpp"
+#include "aliceVision/matching/ArrayMatcher_cascadeHashing.hpp"
 
 namespace aliceVision {
 namespace matching {
@@ -71,20 +71,20 @@ std::unique_ptr<IRegionsMatcher> createRegionsMatcher(const feature::Regions & r
         case BRUTE_FORCE_L2:
         {
           typedef L2_Vectorized<unsigned char> MetricT;
-          typedef ArrayMatcherBruteForce<unsigned char, MetricT> MatcherT;
+          typedef ArrayMatcher_bruteForce<unsigned char, MetricT> MatcherT;
           out.reset(new matching::RegionsMatcher<MatcherT>(regions, true));
         }
         break;
         case ANN_L2:
         {
-          typedef ArrayMatcher_Kdtree_Flann<unsigned char> MatcherT;
+          typedef ArrayMatcher_kdtreeFlann<unsigned char> MatcherT;
           out.reset(new matching::RegionsMatcher<MatcherT>(regions, true));
         }
         break;
         case CASCADE_HASHING_L2:
         {
           typedef L2_Vectorized<unsigned char> MetricT;
-          typedef ArrayMatcherCascadeHashing<unsigned char, MetricT> MatcherT;
+          typedef ArrayMatcher_cascadeHashing<unsigned char, MetricT> MatcherT;
           out.reset(new matching::RegionsMatcher<MatcherT>(regions, true));
         }
         break;
@@ -100,20 +100,20 @@ std::unique_ptr<IRegionsMatcher> createRegionsMatcher(const feature::Regions & r
         case BRUTE_FORCE_L2:
         {
           typedef L2_Vectorized<float> MetricT;
-          typedef ArrayMatcherBruteForce<float, MetricT> MatcherT;
+          typedef ArrayMatcher_bruteForce<float, MetricT> MatcherT;
           out.reset(new matching::RegionsMatcher<MatcherT>(regions, true));
         }
         break;
         case ANN_L2:
         {
-          typedef ArrayMatcher_Kdtree_Flann<float> MatcherT;
+          typedef ArrayMatcher_kdtreeFlann<float> MatcherT;
           out.reset(new matching::RegionsMatcher<MatcherT>(regions, true));
         }
         break;
         case CASCADE_HASHING_L2:
         {
           typedef L2_Vectorized<float> MetricT;
-          typedef ArrayMatcherCascadeHashing<float, MetricT> MatcherT;
+          typedef ArrayMatcher_cascadeHashing<float, MetricT> MatcherT;
           out.reset(new matching::RegionsMatcher<MatcherT>(regions, true));
         }
         break;
@@ -129,13 +129,13 @@ std::unique_ptr<IRegionsMatcher> createRegionsMatcher(const feature::Regions & r
         case BRUTE_FORCE_L2:
         {
           typedef L2_Vectorized<double> MetricT;
-          typedef ArrayMatcherBruteForce<double, MetricT> MatcherT;
+          typedef ArrayMatcher_bruteForce<double, MetricT> MatcherT;
           out.reset(new matching::RegionsMatcher<MatcherT>(regions, true));
         }
         break;
         case ANN_L2:
         {
-          typedef ArrayMatcher_Kdtree_Flann<double> MatcherT;
+          typedef ArrayMatcher_kdtreeFlann<double> MatcherT;
           out.reset(new matching::RegionsMatcher<MatcherT>(regions, true));
         }
         break;
@@ -156,7 +156,7 @@ std::unique_ptr<IRegionsMatcher> createRegionsMatcher(const feature::Regions & r
       case BRUTE_FORCE_HAMMING:
       {
         typedef Hamming<unsigned char> Metric;
-        typedef ArrayMatcherBruteForce<unsigned char, Metric> MatcherT;
+        typedef ArrayMatcher_bruteForce<unsigned char, Metric> MatcherT;
         out.reset(new matching::RegionsMatcher<MatcherT>(regions, false));
       }
       break;

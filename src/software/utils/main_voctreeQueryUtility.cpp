@@ -7,7 +7,7 @@
 #include <aliceVision/voctree/databaseIO.hpp>
 #include <aliceVision/voctree/vocabulary_tree.hpp>
 #include <aliceVision/voctree/descriptor_loader.hpp>
-#include <aliceVision/matching/indMatch.hpp>
+#include <aliceVision/matching/IndMatch.hpp>
 #include <aliceVision/system/Logger.hpp>
 #include <aliceVision/types.hpp>
 #include <aliceVision/voctree/databaseIO.hpp>

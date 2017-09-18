@@ -5,7 +5,7 @@
 
 #include "aliceVision/feature/FeaturesPerView.hpp"
 #include "aliceVision/sfm/pipelines/localization/SfM_Localizer.hpp"
-#include "aliceVision/matching/regions_matcher.hpp"
+#include "aliceVision/matching/RegionsMatcher.hpp"
 
 namespace aliceVision {
 namespace sfm {

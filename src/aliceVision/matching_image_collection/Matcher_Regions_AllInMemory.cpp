@@ -2,10 +2,10 @@
 // the terms of the MPL2 license (see the COPYING.md file).
 
 #include "aliceVision/matching_image_collection/Matcher_Regions_AllInMemory.hpp"
-#include "aliceVision/matching/matcher_brute_force.hpp"
-#include "aliceVision/matching/matcher_kdtree_flann.hpp"
-#include "aliceVision/matching/matcher_cascade_hashing.hpp"
-#include "aliceVision/matching/regions_matcher.hpp"
+#include "aliceVision/matching/ArrayMatcher_bruteForce.hpp"
+#include "aliceVision/matching/ArrayMatcher_kdtreeFlann.hpp"
+#include "aliceVision/matching/ArrayMatcher_cascadeHashing.hpp"
+#include "aliceVision/matching/RegionsMatcher.hpp"
 #include "aliceVision/matching_image_collection/Matcher.hpp"
 #include <aliceVision/config.hpp>
 

@@ -1,10 +1,9 @@
 // This file is part of the AliceVision project and is made available under
 // the terms of the MPL2 license (see the COPYING.md file).
 
-#ifndef ALICEVISION_MATCHING_METRIC_H
-#define ALICEVISION_MATCHING_METRIC_H
+#pragma once
 
-#include "aliceVision/matching/metric_hamming.hpp"
+#include "aliceVision/matching/Hamming.hpp"
 #include "aliceVision/numeric/accumulator_trait.hpp"
 #include <aliceVision/config.hpp>
 
@@ -135,5 +134,3 @@ struct L2_Vectorized<float>
 
 }  // namespace matching
 }  // namespace aliceVision
-
-#endif // ALICEVISION_MATCHING_METRIC_H
