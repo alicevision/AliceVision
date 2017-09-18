@@ -7,7 +7,7 @@
 #include <aliceVision/feature/FeaturesPerView.hpp>
 
 namespace aliceVision {
-namespace matching_image_collection {
+namespace matchingImageCollection {
 
 // TODO: remove PointFeature to avoid this hack
 inline Vec2 getFeaturePosition(const std::unique_ptr<feature::Regions>& regions, std::size_t i)
@@ -203,4 +203,4 @@ void copyInlierMatches(
 }
 
 } // namespace aliceVision
-} //namespace matching_image_collection
+} // namespace matchingImageCollection

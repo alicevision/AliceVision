@@ -4,10 +4,10 @@
 #pragma once
 
 #include "aliceVision/matching/matcherType.hpp"
-#include "aliceVision/matching_image_collection/Matcher.hpp"
+#include "aliceVision/matchingImageCollection/IImageCollectionMatcher.hpp"
 
 namespace aliceVision {
-namespace matching_image_collection {
+namespace matchingImageCollection {
   
 /**
  * 

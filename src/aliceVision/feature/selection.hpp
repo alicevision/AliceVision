@@ -8,7 +8,7 @@
 #include <aliceVision/feature/regionsFactory.hpp>
 #include <aliceVision/image/image.hpp>
 #include <aliceVision/feature/feature.hpp>
-#include <aliceVision/matching_image_collection/Matcher_Regions_AllInMemory.hpp>
+#include <aliceVision/matchingImageCollection/ImageCollectionMatcher_generic.hpp>
 
 #include "aliceVision/sfm/sfm_data.hpp"
 #include "aliceVision/sfm/sfm_data_io.hpp"

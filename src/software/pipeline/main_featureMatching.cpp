@@ -9,13 +9,13 @@
 #include "aliceVision/feature/RegionsPerView.hpp"
 #include "aliceVision/feature/ImageDescriber.hpp"
 #include "aliceVision/feature/imageDescriberCommon.hpp"
-#include "aliceVision/matching_image_collection/MatchingCommon.hpp"
-#include "aliceVision/matching_image_collection/Matcher_Regions_AllInMemory.hpp"
-#include "aliceVision/matching_image_collection/Cascade_Hashing_Matcher_Regions_AllInMemory.hpp"
-#include "aliceVision/matching_image_collection/GeometricFilter.hpp"
-#include "aliceVision/matching_image_collection/F_ACRobust.hpp"
-#include "aliceVision/matching_image_collection/E_ACRobust.hpp"
-#include "aliceVision/matching_image_collection/H_ACRobust.hpp"
+#include "aliceVision/matchingImageCollection/matchingCommon.hpp"
+#include "aliceVision/matchingImageCollection/ImageCollectionMatcher_generic.hpp"
+#include "aliceVision/matchingImageCollection/ImageCollectionMatcher_cascadeHashing.hpp"
+#include "aliceVision/matchingImageCollection/GeometricFilter.hpp"
+#include "aliceVision/matchingImageCollection/GeometricFilterMatrix_F_AC.hpp"
+#include "aliceVision/matchingImageCollection/GeometricFilterMatrix_E_AC.hpp"
+#include "aliceVision/matchingImageCollection/GeometricFilterMatrix_H_AC.hpp"
 #include "aliceVision/matching/pairwiseAdjacencyDisplay.hpp"
 #include "aliceVision/matching/io.hpp"
 #include "aliceVision/system/timer.hpp"
@@ -35,7 +35,7 @@ using namespace aliceVision::camera;
 using namespace aliceVision::matching;
 using namespace aliceVision::robust;
 using namespace aliceVision::sfm;
-using namespace aliceVision::matching_image_collection;
+using namespace aliceVision::matchingImageCollection;
 using namespace std;
 
 enum EGeometricModel
@@ -444,7 +444,7 @@ int main(int argc, char **argv)
   //    - Use an upper bound for the a contrario estimated threshold
   //---------------------------------------
 
-  ImageCollectionGeometricFilter geometricFilter(&sfmData, regionPerView);
+  GeometricFilter geometricFilter(&sfmData, regionPerView);
 
   timer.reset();
   std::cout << std::endl << " - Geometric filtering - " << std::endl;
@@ -455,7 +455,7 @@ int main(int argc, char **argv)
     case HOMOGRAPHY_MATRIX:
     {
       const bool bGeometric_only_guided_matching = true;
-      geometricFilter.Robust_model_estimation(GeometricFilter_HMatrix_AC(std::numeric_limits<double>::infinity(), maxIteration),
+      geometricFilter.Robust_model_estimation(GeometricFilterMatrix_H_AC(std::numeric_limits<double>::infinity(), maxIteration),
         mapPutativesMatches, guidedMatching,
         bGeometric_only_guided_matching ? -1.0 : 0.6);
       map_GeometricMatches = geometricFilter.Get_geometric_matches();
@@ -463,14 +463,14 @@ int main(int argc, char **argv)
     break;
     case FUNDAMENTAL_MATRIX:
     {
-      geometricFilter.Robust_model_estimation(GeometricFilter_FMatrix(std::numeric_limits<double>::infinity(), maxIteration, geometricEstimator),
+      geometricFilter.Robust_model_estimation(GeometricFilterMatrix_F_AC(std::numeric_limits<double>::infinity(), maxIteration, geometricEstimator),
         mapPutativesMatches, guidedMatching);
       map_GeometricMatches = geometricFilter.Get_geometric_matches();
     }
     break;
     case ESSENTIAL_MATRIX:
     {
-      geometricFilter.Robust_model_estimation(GeometricFilter_EMatrix_AC(std::numeric_limits<double>::infinity(), maxIteration),
+      geometricFilter.Robust_model_estimation(GeometricFilterMatrix_E_AC(std::numeric_limits<double>::infinity(), maxIteration),
         mapPutativesMatches, guidedMatching);
       map_GeometricMatches = geometricFilter.Get_geometric_matches();
 

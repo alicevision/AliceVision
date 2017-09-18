@@ -12,11 +12,11 @@
 #include <aliceVision/feature/regionsTypeIO.hpp>
 #include <aliceVision/feature/svgVisualization.hpp>
 #include <aliceVision/matching/RegionsMatcher.hpp>
-#include <aliceVision/matching_image_collection/Matcher.hpp>
-#include <aliceVision/matching_image_collection/GeometricFilterMatrix.hpp>
+#include <aliceVision/matchingImageCollection/IImageCollectionMatcher.hpp>
+#include <aliceVision/matchingImageCollection/GeometricFilterMatrix.hpp>
 #include <aliceVision/matching/ArrayMatcher_kdtreeFlann.hpp>
-#include <aliceVision/matching_image_collection/F_ACRobust.hpp>
-#include <aliceVision/matching_image_collection/GeometricFilterMatrix.hpp>
+#include <aliceVision/matchingImageCollection/GeometricFilterMatrix_F_AC.hpp>
+#include <aliceVision/matchingImageCollection/GeometricFilterMatrix.hpp>
 #include <aliceVision/numeric/numeric.h>
 #include <aliceVision/robust_estimation/guided_matching.hpp>
 #include <aliceVision/system/Logger.hpp>
@@ -1098,7 +1098,7 @@ bool VoctreeLocalizer::robustMatching(matching::RegionsDatabaseMatcherPerDesc & 
   }
 
   // perform the geometric filtering
-  matching_image_collection::GeometricFilter_FMatrix geometricFilter(matchingError, 5000, estimator);
+  matchingImageCollection::GeometricFilterMatrix_F_AC geometricFilter(matchingError, 5000, estimator);
 
   matching::MatchesPerDescType geometricInliersPerType;
   EstimationStatus estimationState = geometricFilter.geometricEstimation(

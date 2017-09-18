@@ -7,7 +7,7 @@
 #include "aliceVision/feature/PointFeature.hpp"
 #include "aliceVision/feature/RegionsPerView.hpp"
 #include "aliceVision/matching/IndMatch.hpp"
-#include "aliceVision/matching_image_collection/GeometricFilterMatrix.hpp"
+#include "aliceVision/matchingImageCollection/GeometricFilterMatrix.hpp"
 
 #include "dependencies/stlplus3/filesystemSimplified/file_system.hpp"
 #include "dependencies/progress/progress.hpp"
@@ -16,15 +16,15 @@
 #include <map>
 
 namespace aliceVision {
-namespace matching_image_collection {
+namespace matchingImageCollection {
 
 using namespace aliceVision::matching;
 
 /// Allow to keep only geometrically coherent matches
 /// -> It discards pairs that do not lead to a valid robust model estimation
-struct ImageCollectionGeometricFilter
+struct GeometricFilter
 {
-  ImageCollectionGeometricFilter(
+  GeometricFilter(
     const sfm::SfM_Data * sfm_data,
     const feature::RegionsPerView & regionsPerView
   ):_sfm_data(sfm_data), _regionsPerView(regionsPerView)
@@ -48,7 +48,7 @@ struct ImageCollectionGeometricFilter
 };
 
 template<typename GeometryFunctor>
-void ImageCollectionGeometricFilter::Robust_model_estimation(
+void GeometricFilter::Robust_model_estimation(
   const GeometryFunctor & functor,
   const PairwiseMatches & putative_matches,
   const bool b_guided_matching,
@@ -94,6 +94,6 @@ void ImageCollectionGeometricFilter::Robust_model_estimation(
 }
 
 } // namespace aliceVision
-} // namespace matching_image_collection
+} // namespace matchingImageCollection
 
 

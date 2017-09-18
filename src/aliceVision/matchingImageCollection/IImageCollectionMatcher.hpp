@@ -6,7 +6,7 @@
 #include "aliceVision/feature/imageDescriberCommon.hpp"
 #include "aliceVision/matching/matcherType.hpp"
 #include "aliceVision/matching/IndMatch.hpp"
-#include "aliceVision/matching_image_collection/Pair_Builder.hpp"
+#include "aliceVision/matchingImageCollection/pairBuilder.hpp"
 #include "aliceVision/sfm/sfm_data.hpp"
 #include "aliceVision/feature/RegionsPerView.hpp"
 
@@ -14,7 +14,7 @@
 #include <vector>
 
 namespace aliceVision {
-namespace matching_image_collection {
+namespace matchingImageCollection {
 
 /**
  * @brief Image Collection Matcher interface.
@@ -39,4 +39,4 @@ class IImageCollectionMatcher
 };
 
 } // namespace aliceVision
-} // namespace matching_image_collection
+} // namespace matchingImageCollection

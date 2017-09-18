@@ -1,24 +1,24 @@
 // This file is part of the AliceVision project and is made available under
 // the terms of the MPL2 license (see the COPYING.md file).
 
-#include "aliceVision/matching_image_collection/Matcher_Regions_AllInMemory.hpp"
+#include "aliceVision/matchingImageCollection/ImageCollectionMatcher_generic.hpp"
 #include "aliceVision/matching/ArrayMatcher_bruteForce.hpp"
 #include "aliceVision/matching/ArrayMatcher_kdtreeFlann.hpp"
 #include "aliceVision/matching/ArrayMatcher_cascadeHashing.hpp"
 #include "aliceVision/matching/RegionsMatcher.hpp"
-#include "aliceVision/matching_image_collection/Matcher.hpp"
+#include "aliceVision/matchingImageCollection/IImageCollectionMatcher.hpp"
 #include <aliceVision/config.hpp>
 
 #include "dependencies/stlplus3/filesystemSimplified/file_system.hpp"
 #include "dependencies/progress/progress.hpp"
 
 namespace aliceVision {
-namespace matching_image_collection {
+namespace matchingImageCollection {
 
 using namespace aliceVision::matching;
 using namespace aliceVision::feature;
 
-ImageCollectionMatcher_Generic::ImageCollectionMatcher_Generic(
+ImageCollectionMatcher_generic::ImageCollectionMatcher_generic(
   float distRatio, EMatcherType matcherType)
   : IImageCollectionMatcher()
   , _f_dist_ratio(distRatio)
@@ -26,7 +26,7 @@ ImageCollectionMatcher_Generic::ImageCollectionMatcher_Generic(
 {
 }
 
-void ImageCollectionMatcher_Generic::Match(
+void ImageCollectionMatcher_generic::Match(
   const sfm::SfM_Data & sfm_data,
   const feature::RegionsPerView& regionsPerView,
   const Pair_Set & pairs,
@@ -95,4 +95,4 @@ void ImageCollectionMatcher_Generic::Match(
 }
 
 } // namespace aliceVision
-} // namespace matching_image_collection
+} // namespace matchingImageCollection

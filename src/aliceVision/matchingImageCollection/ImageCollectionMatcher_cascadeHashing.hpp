@@ -3,10 +3,10 @@
 
 #pragma once
 
-#include "aliceVision/matching_image_collection/Matcher.hpp"
+#include "aliceVision/matchingImageCollection/IImageCollectionMatcher.hpp"
 
 namespace aliceVision {
-namespace matching_image_collection {
+namespace matchingImageCollection {
 
 /**
  * @brief Compute putative matches between a collection of pictures.
@@ -17,10 +17,10 @@ namespace matching_image_collection {
  * @note: Cascade hashing tables are computed once and used for all the regions.
  * @warning: all descriptors are loaded in memory. You need to ensure that it can fit in RAM.
  */
-class ImageCollectionMatcher_CascadeHashing : public IImageCollectionMatcher
+class ImageCollectionMatcher_cascadeHashing : public IImageCollectionMatcher
 {
   public:
-  ImageCollectionMatcher_CascadeHashing
+  ImageCollectionMatcher_cascadeHashing
   (
     float dist_ratio
   );
@@ -40,4 +40,4 @@ class ImageCollectionMatcher_CascadeHashing : public IImageCollectionMatcher
 };
 
 } // namespace aliceVision
-} // namespace matching_image_collection
+} // namespace matchingImageCollection

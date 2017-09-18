@@ -1,7 +1,7 @@
 // This file is part of the AliceVision project and is made available under
 // the terms of the MPL2 license (see the COPYING.md file).
 
-#include "aliceVision/matching_image_collection/Cascade_Hashing_Matcher_Regions_AllInMemory.hpp"
+#include "aliceVision/matchingImageCollection/ImageCollectionMatcher_cascadeHashing.hpp"
 #include "aliceVision/matching/ArrayMatcher_cascadeHashing.hpp"
 #include "aliceVision/matching/IndMatchDecorator.hpp"
 #include "aliceVision/matching/filters.hpp"
@@ -11,13 +11,13 @@
 #include "dependencies/progress/progress.hpp"
 
 namespace aliceVision {
-namespace matching_image_collection {
+namespace matchingImageCollection {
 
 using namespace aliceVision::matching;
 using namespace aliceVision::feature;
 
-ImageCollectionMatcher_CascadeHashing
-::ImageCollectionMatcher_CascadeHashing
+ImageCollectionMatcher_cascadeHashing
+::ImageCollectionMatcher_cascadeHashing
 (
   float distRatio
 ):IImageCollectionMatcher(), f_dist_ratio_(distRatio)
@@ -205,7 +205,7 @@ void Match
 }
 } // namespace impl
 
-void ImageCollectionMatcher_CascadeHashing::Match
+void ImageCollectionMatcher_cascadeHashing::Match
 (
   const sfm::SfM_Data & sfm_data,
   const feature::RegionsPerView& regionsPerView,
@@ -254,4 +254,4 @@ void ImageCollectionMatcher_CascadeHashing::Match
 }
 
 } // namespace aliceVision
-} // namespace matching_image_collection
+} // namespace matchingImageCollection

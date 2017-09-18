@@ -12,15 +12,15 @@
 #include "aliceVision/matching/IndMatchDecorator.hpp"
 #include "aliceVision/sfm/sfm_data.hpp"
 #include "aliceVision/feature/RegionsPerView.hpp"
-#include "aliceVision/matching_image_collection/GeometricFilterMatrix.hpp"
+#include "aliceVision/matchingImageCollection/GeometricFilterMatrix.hpp"
 
 namespace aliceVision {
-namespace matching_image_collection {
+namespace matchingImageCollection {
 
 //-- A contrario homography matrix estimation template functor used for filter pair of putative correspondences
-struct GeometricFilter_HMatrix_AC : public GeometricFilterMatrix
+struct GeometricFilterMatrix_H_AC : public GeometricFilterMatrix
 {
-  GeometricFilter_HMatrix_AC(
+  GeometricFilterMatrix_H_AC(
     double dPrecision = std::numeric_limits<double>::infinity(),
     size_t iteration = 1024)
     : GeometricFilterMatrix(dPrecision, std::numeric_limits<double>::infinity(), iteration)
@@ -249,7 +249,7 @@ struct GeometricFilter_HMatrix_AC : public GeometricFilterMatrix
   Mat3 m_H;
 };
 
-} // namespace matching_image_collection
+} // namespace matchingImageCollection
 } // namespace aliceVision
 
 

@@ -3,8 +3,8 @@
 
 #pragma once
 
-#include "aliceVision/matching_image_collection/GeometricFilterMatrix.hpp"
-#include "aliceVision/matching_image_collection/Geometric_Filter_utils.hpp"
+#include "aliceVision/matchingImageCollection/GeometricFilterMatrix.hpp"
+#include "aliceVision/matchingImageCollection/geometricFilterUtils.hpp"
 #include "aliceVision/matching/IndMatch.hpp"
 #include "aliceVision/multiview/solver_fundamental_kernel.hpp"
 #include "aliceVision/multiview/essential.hpp"
@@ -19,12 +19,12 @@
 #include "aliceVision/feature/RegionsPerView.hpp"
 
 namespace aliceVision {
-namespace matching_image_collection {
+namespace matchingImageCollection {
 
 //-- A contrario fundamental matrix estimation template functor used for filter pair of putative correspondences
-struct GeometricFilter_FMatrix: public GeometricFilterMatrix
+struct GeometricFilterMatrix_F_AC: public GeometricFilterMatrix
 {
-  GeometricFilter_FMatrix(
+  GeometricFilterMatrix_F_AC(
     double dPrecision = std::numeric_limits<double>::infinity(),
     size_t iteration = 1024,
     robust::EROBUST_ESTIMATOR estimator = robust::ROBUST_ESTIMATOR_ACRANSAC)
@@ -182,7 +182,7 @@ struct GeometricFilter_FMatrix: public GeometricFilterMatrix
         // just a safeguard
         if(m_dPrecision == std::numeric_limits<double>::infinity())
         {
-          throw std::invalid_argument("[GeometricFilter_FMatrix_AC::geometricEstimation] the threshold of the LORANSAC is set to infinity!");
+          throw std::invalid_argument("[GeometricFilterMatrix_F_AC_AC::geometricEstimation] the threshold of the LORANSAC is set to infinity!");
         }
 
         typedef KernelAdaptorLoRansac<
@@ -210,7 +210,7 @@ struct GeometricFilter_FMatrix: public GeometricFilterMatrix
         return std::make_pair(true, KernelType::MINIMUM_SAMPLES);
       }
     default:
-      throw std::runtime_error("[GeometricFilter_FMatrix_AC::geometricEstimation] only ACRansac and LORansac are supported!");
+      throw std::runtime_error("[GeometricFilterMatrix_F_AC_AC::geometricEstimation] only ACRansac and LORansac are supported!");
     }
     return std::make_pair(false, 0);;
   }
@@ -268,5 +268,5 @@ struct GeometricFilter_FMatrix: public GeometricFilterMatrix
   robust::EROBUST_ESTIMATOR m_estimator;
 };
 
-} // namespace matching_image_collection
+} // namespace matchingImageCollection
 } // namespace aliceVision

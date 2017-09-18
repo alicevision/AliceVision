@@ -1,7 +1,7 @@
 // This file is part of the AliceVision project and is made available under
 // the terms of the MPL2 license (see the COPYING.md file).
 
-#include "aliceVision/matching_image_collection/Pair_Builder.hpp"
+#include "aliceVision/matchingImageCollection/pairBuilder.hpp"
 #include "testing/testing.h"
 #include "aliceVision/sfm/sfm_data.hpp"
 #include "aliceVision/sfm/sfm_view.hpp"
@@ -27,7 +27,7 @@ bool checkPairOrder(const IterablePairs & pairs)
   return true;
 }
 
-TEST(matching_image_collection, exhaustivePairs)
+TEST(matchingImageCollection, exhaustivePairs)
 {
   sfm::Views views;
   {
@@ -55,7 +55,7 @@ TEST(matching_image_collection, exhaustivePairs)
   }
 }
 
-TEST(matching_image_collection, contiguousWithOverlap)
+TEST(matchingImageCollection, contiguousWithOverlap)
 {
   sfm::Views views;
   {
@@ -102,7 +102,7 @@ TEST(matching_image_collection, contiguousWithOverlap)
   }
 }
 
-TEST(matching_image_collection, IO)
+TEST(matchingImageCollection, IO)
 {
   Pair_Set pairSetGT;
   pairSetGT.insert( std::make_pair(0,1) );

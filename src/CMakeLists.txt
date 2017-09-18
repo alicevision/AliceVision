@@ -632,7 +632,7 @@ set(ALICEVISION_LIBRARIES
   aliceVision_lInftyComputerVision
   aliceVision_matching
   aliceVision_kvld
-  aliceVision_matching_image_collection
+  aliceVision_matchingImageCollection
   aliceVision_multiview
   aliceVision_numeric
   aliceVision_sfm

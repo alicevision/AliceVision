@@ -3,7 +3,7 @@
 
 #include "aliceVision/sfm/sfm.hpp"
 #include "aliceVision/system/timer.hpp"
-#include "aliceVision/matching_image_collection/Pair_Builder.hpp"
+#include "aliceVision/matchingImageCollection/pairBuilder.hpp"
 
 #include "dependencies/cmdLine/cmdLine.h"
 #include "dependencies/stlplus3/filesystemSimplified/file_system.hpp"

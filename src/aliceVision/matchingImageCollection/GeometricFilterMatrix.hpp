@@ -19,7 +19,7 @@ class SfM_Data;
 }
 
 
-namespace matching_image_collection {
+namespace matchingImageCollection {
 
 
 struct GeometricFilterMatrix
@@ -57,5 +57,5 @@ struct GeometricFilterMatrix
 };
 
 
-} // namespace matching_image_collection
+} // namespace matchingImageCollection
 } // namespace aliceVision

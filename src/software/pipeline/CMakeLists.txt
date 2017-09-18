@@ -78,7 +78,7 @@ target_link_libraries(aliceVision_featureMatching
   aliceVision_feature
   aliceVision_multiview
   aliceVision_sfm
-  aliceVision_matching_image_collection
+  aliceVision_matchingImageCollection
   stlplus
 )
 
