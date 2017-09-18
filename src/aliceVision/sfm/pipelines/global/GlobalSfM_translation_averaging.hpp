@@ -21,7 +21,7 @@ enum ETranslationAveragingMethod
 #include "aliceVision/multiview/translation_averaging_common.hpp"
 #include "aliceVision/feature/FeaturesPerView.hpp"
 #include "aliceVision/sfm/pipelines/sfm_matches_provider.hpp"
-#include "aliceVision/tracks/tracks.hpp"
+#include "aliceVision/track/Track.hpp"
 #include "aliceVision/graph/graph.hpp"
 
 namespace aliceVision{
@@ -78,7 +78,7 @@ private:
     std::vector<Vec3> & vec_tis,
     double & dPrecision, // UpperBound of the precision found by the AContrario estimator
     std::vector<size_t> & vec_inliers,
-    aliceVision::tracks::TracksMap & rig_tracks,
+    aliceVision::track::TracksMap & rig_tracks,
     const std::string & sOutDirectory) const;
 };
 

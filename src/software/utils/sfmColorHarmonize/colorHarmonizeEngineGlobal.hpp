@@ -7,7 +7,7 @@
 #include <aliceVision/numeric/numeric.h>
 #include <aliceVision/feature/feature.hpp>
 #include <aliceVision/feature/RegionsPerView.hpp>
-#include <aliceVision/tracks/tracks.hpp>
+#include <aliceVision/track/Track.hpp>
 
 #include <memory>
 

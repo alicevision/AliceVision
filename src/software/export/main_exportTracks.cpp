@@ -5,7 +5,7 @@
 #include "aliceVision/matching/io.hpp"
 #include "aliceVision/image/image.hpp"
 #include "aliceVision/feature/feature.hpp"
-#include "aliceVision/tracks/tracks.hpp"
+#include "aliceVision/track/Track.hpp"
 #include "aliceVision/sfm/sfm.hpp"
 #include "aliceVision/sfm/pipelines/RegionsIO.hpp"
 #include "aliceVision/feature/svgVisualization.hpp"
@@ -19,7 +19,7 @@
 using namespace aliceVision;
 using namespace aliceVision::matching;
 using namespace aliceVision::sfm;
-using namespace aliceVision::tracks;
+using namespace aliceVision::track;
 using namespace svg;
 
 int main(int argc, char ** argv)
@@ -115,10 +115,10 @@ int main(int argc, char ** argv)
   //---------------------------------------
   // Compute tracks from matches
   //---------------------------------------
-  tracks::TracksMap map_tracks;
+  track::TracksMap map_tracks;
   {
     const aliceVision::matching::PairwiseMatches & map_Matches = pairwiseMatches;
-    tracks::TracksBuilder tracksBuilder;
+    track::TracksBuilder tracksBuilder;
     tracksBuilder.Build(map_Matches);
     tracksBuilder.Filter();
     tracksBuilder.ExportToSTL(map_tracks);
@@ -151,7 +151,7 @@ int main(int argc, char ** argv)
         dimImage_J = std::make_pair(view_J->getWidth(), view_J->getHeight());
 
       //Get common tracks between view I and J
-      tracks::TracksMap map_tracksCommon;
+      track::TracksMap map_tracksCommon;
       std::set<size_t> set_imageIndex;
       set_imageIndex.insert(I);
       set_imageIndex.insert(J);
@@ -168,12 +168,12 @@ int main(int argc, char ** argv)
           dimImage_J.second, dimImage_I.first);
 
         //-- Draw link between features :
-        for (tracks::TracksMap::const_iterator tracksIt = map_tracksCommon.begin();
+        for (track::TracksMap::const_iterator tracksIt = map_tracksCommon.begin();
           tracksIt != map_tracksCommon.end(); ++tracksIt)
         {
           const feature::EImageDescriberType descType = tracksIt->second.descType;
           assert(descType != feature::EImageDescriberType::UNINITIALIZED);
-          tracks::Track::FeatureIdPerView::const_iterator obsIt = tracksIt->second.featPerView.begin();
+          track::Track::FeatureIdPerView::const_iterator obsIt = tracksIt->second.featPerView.begin();
 
           const PointFeatures& vec_feat_I = featuresPerView.getFeatures(view_I->getViewId(), descType);
           const PointFeatures& vec_feat_J = featuresPerView.getFeatures(view_J->getViewId(), descType);
@@ -188,12 +188,12 @@ int main(int argc, char ** argv)
         }
 
         //-- Draw features (in two loop, in order to have the features upper the link, svg layer order):
-        for (tracks::TracksMap::const_iterator tracksIt = map_tracksCommon.begin();
+        for (track::TracksMap::const_iterator tracksIt = map_tracksCommon.begin();
           tracksIt != map_tracksCommon.end(); ++ tracksIt)
         {
           const feature::EImageDescriberType descType = tracksIt->second.descType;
           assert(descType != feature::EImageDescriberType::UNINITIALIZED);
-          tracks::Track::FeatureIdPerView::const_iterator obsIt = tracksIt->second.featPerView.begin();
+          track::Track::FeatureIdPerView::const_iterator obsIt = tracksIt->second.featPerView.begin();
 
           const PointFeatures& vec_feat_I = featuresPerView.getFeatures(view_I->getViewId(), descType);
           const PointFeatures& vec_feat_J = featuresPerView.getFeatures(view_J->getViewId(), descType);

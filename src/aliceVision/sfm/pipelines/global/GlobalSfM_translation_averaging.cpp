@@ -374,7 +374,7 @@ void GlobalSfM_Translation_AveragingSolver::ComputePutativeTranslation_EdgesCove
       }
       // Compute tracks:
       {
-        aliceVision::tracks::TracksBuilder tracksBuilder;
+        aliceVision::track::TracksBuilder tracksBuilder;
         tracksBuilder.Build(map_triplet_matches);
         tracksBuilder.Filter(3);
 
@@ -459,7 +459,7 @@ void GlobalSfM_Translation_AveragingSolver::ComputePutativeTranslation_EdgesCove
 
           std::vector<Vec3> vec_tis(3);
           std::vector<size_t> vec_inliers;
-          aliceVision::tracks::TracksMap pose_triplet_tracks;
+          aliceVision::track::TracksMap pose_triplet_tracks;
 
           const std::string sOutDirectory = "./";
           const bool bTriplet_estimation = Estimate_T_triplet(
@@ -521,7 +521,7 @@ void GlobalSfM_Translation_AveragingSolver::ComputePutativeTranslation_EdgesCove
                 for (std::vector<size_t>::const_iterator iterInliers = vec_inliers.begin();
                   iterInliers != vec_inliers.end(); ++iterInliers)
                 {
-                  using namespace aliceVision::tracks;
+                  using namespace aliceVision::track;
                   TracksMap::iterator it_tracks = pose_triplet_tracks.begin();
                   std::advance(it_tracks, *iterInliers);
                   const Track & track = it_tracks->second;
@@ -592,7 +592,7 @@ bool GlobalSfM_Translation_AveragingSolver::Estimate_T_triplet(
   std::vector<Vec3> & vec_tis,
   double & dPrecision, // UpperBound of the precision found by the AContrario estimator
   std::vector<size_t> & vec_inliers,
-  aliceVision::tracks::TracksMap & tracks,
+  aliceVision::track::TracksMap & tracks,
   const std::string & sOutDirectory) const
 {
   // List matches that belong to the triplet of poses
@@ -613,7 +613,7 @@ bool GlobalSfM_Translation_AveragingSolver::Estimate_T_triplet(
     }
   }
 
-  aliceVision::tracks::TracksBuilder tracksBuilder;
+  aliceVision::track::TracksBuilder tracksBuilder;
   tracksBuilder.Build(map_triplet_matches);
   tracksBuilder.Filter(3);
   tracksBuilder.ExportToSTL(tracks);
@@ -629,12 +629,12 @@ bool GlobalSfM_Translation_AveragingSolver::Estimate_T_triplet(
   Mat* xxx[3] = {&x1, &x2, &x3};
   std::set<IndexT> intrinsic_ids;
   size_t cpt = 0;
-  for (tracks::TracksMap::const_iterator iterTracks = tracks.begin();
+  for (track::TracksMap::const_iterator iterTracks = tracks.begin();
     iterTracks != tracks.end(); ++iterTracks, ++cpt)
   {
-    const tracks::Track & track = iterTracks->second;
+    const track::Track & track = iterTracks->second;
     size_t index = 0;
-    for (tracks::Track::FeatureIdPerView::const_iterator iter = track.featPerView.begin(); iter != track.featPerView.end(); ++iter, ++index)
+    for (track::Track::FeatureIdPerView::const_iterator iter = track.featPerView.begin(); iter != track.featPerView.end(); ++iter, ++index)
     {
       const size_t idx_view = iter->first;
       const feature::PointFeature pt = normalizedFeaturesPerView.getFeatures(idx_view, track.descType)[iter->second];
@@ -723,9 +723,9 @@ bool GlobalSfM_Translation_AveragingSolver::Estimate_T_triplet(
   for (size_t idx=0; idx < vec_inliers.size(); ++idx)
   {
     const size_t trackId = vec_inliers[idx];
-    const tracks::submapTrack & track = tracks.at(trackId);
+    const track::submapTrack & track = tracks.at(trackId);
     Observations & obs = structure[idx].obs;
-    for (tracks::Track::FeatureIdPerView::const_iterator it = track.begin(); it != track.end(); ++it)
+    for (track::Track::FeatureIdPerView::const_iterator it = track.begin(); it != track.end(); ++it)
     {
       // get view Id and feat ID
       const size_t viewIndex = it->first;

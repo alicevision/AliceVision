@@ -9,7 +9,7 @@
 #include "aliceVision/multiview/solver_fundamental_kernel.hpp"
 #include "aliceVision/multiview/triangulation_nview.hpp"
 #include "aliceVision/graph/graph.hpp"
-#include "aliceVision/tracks/tracks.hpp"
+#include "aliceVision/track/Track.hpp"
 #include "aliceVision/sfm/sfm_data_triangulation.hpp"
 #include <aliceVision/config.hpp>
 
@@ -179,8 +179,8 @@ void SfM_Data_Structure_Estimation_From_Known_Poses::filter(
       const graph::Triplet & triplet = *it;
       const IndexT I = triplet.i, J = triplet.j , K = triplet.k;
 
-      tracks::TracksMap map_tracksCommon;
-      tracks::TracksBuilder tracksBuilder;
+      track::TracksMap map_tracksCommon;
+      track::TracksBuilder tracksBuilder;
       {
         matching::PairwiseMatches map_matchesIJK;
         if (_putativeMatches.count(std::make_pair(I,J)))
@@ -199,10 +199,10 @@ void SfM_Data_Structure_Estimation_From_Known_Poses::filter(
         }
 
         // Triangulate the tracks
-        for (tracks::TracksMap::const_iterator iterTracks = map_tracksCommon.begin();
+        for (track::TracksMap::const_iterator iterTracks = map_tracksCommon.begin();
           iterTracks != map_tracksCommon.end(); ++iterTracks) {
           {
-            const tracks::Track & subTrack = iterTracks->second;
+            const track::Track & subTrack = iterTracks->second;
             Triangulation trianObj;
             for (auto iter = subTrack.featPerView.begin(); iter != subTrack.featPerView.end(); ++iter)
             {
@@ -220,7 +220,7 @@ void SfM_Data_Structure_Estimation_From_Known_Poses::filter(
             {
               #pragma omp critical
               {
-                tracks::Track::FeatureIdPerView::const_iterator iterI, iterJ, iterK;
+                track::Track::FeatureIdPerView::const_iterator iterI, iterJ, iterK;
                 iterI = iterJ = iterK = subTrack.featPerView.begin();
                 std::advance(iterJ,1);
                 std::advance(iterK,2);
@@ -244,8 +244,8 @@ void SfM_Data_Structure_Estimation_From_Known_Poses::triangulate(
   SfM_Data & sfm_data,
   const feature::RegionsPerView& regionsPerView)
 {
-  tracks::TracksMap map_tracksCommon;
-  tracks::TracksBuilder tracksBuilder;
+  track::TracksMap map_tracksCommon;
+  track::TracksBuilder tracksBuilder;
   tracksBuilder.Build(_tripletMatches);
   tracksBuilder.Filter(3);
   tracksBuilder.ExportToSTL(map_tracksCommon);
@@ -257,11 +257,11 @@ void SfM_Data_Structure_Estimation_From_Known_Poses::triangulate(
   // Fill sfm_data with the computed tracks (no 3D yet)
   Landmarks & structure = sfm_data.structure;
   IndexT idx(0);
-  for (tracks::TracksMap::const_iterator itTracks = map_tracksCommon.begin();
+  for (track::TracksMap::const_iterator itTracks = map_tracksCommon.begin();
     itTracks != map_tracksCommon.end();
     ++itTracks, ++idx)
   {
-    const tracks::Track & track = itTracks->second;
+    const track::Track & track = itTracks->second;
     structure[idx] = Landmark(track.descType);
     Observations & observations = structure.at(idx).observations;
     for (auto it = track.featPerView.begin(); it != track.featPerView.end(); ++it)

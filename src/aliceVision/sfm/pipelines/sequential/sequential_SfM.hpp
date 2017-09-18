@@ -7,7 +7,7 @@
 #include "aliceVision/sfm/pipelines/sfm_engine.hpp"
 #include "aliceVision/feature/FeaturesPerView.hpp"
 #include "aliceVision/sfm/pipelines/sfm_matches_provider.hpp"
-#include "aliceVision/tracks/tracks.hpp"
+#include "aliceVision/track/Track.hpp"
 
 #include "dependencies/htmlDoc/htmlDoc.hpp"
 #include "dependencies/histogram/histogram.hpp"
@@ -226,11 +226,11 @@ private:
 
   // Temporary data
   /// Putative landmark tracks (visibility per potential 3D point)
-  tracks::TracksMap _map_tracks;
+  track::TracksMap _map_tracks;
   /// Putative tracks per view
-  tracks::TracksPerView _map_tracksPerView;
+  track::TracksPerView _map_tracksPerView;
   /// Precomputed pyramid index for each trackId of each viewId.
-  tracks::TracksPyramidPerView _map_featsPyramidPerView;
+  track::TracksPyramidPerView _map_featsPyramidPerView;
   /// Per camera confidence (A contrario estimated threshold error)
   Hash_Map<IndexT, double> _map_ACThreshold;
 

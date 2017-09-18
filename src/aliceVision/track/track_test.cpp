@@ -4,7 +4,7 @@
 #include "CppUnitLite/TestHarness.h"
 #include "testing/testing.h"
 
-#include "aliceVision/tracks/tracks.hpp"
+#include "aliceVision/track/Track.hpp"
 #include "aliceVision/matching/IndMatch.hpp"
 
 #include <vector>
@@ -12,11 +12,11 @@
 
 
 using namespace aliceVision::feature;
-using namespace aliceVision::tracks;
+using namespace aliceVision::track;
 using namespace aliceVision::matching;
 
 
-TEST(Tracks, Simple) {
+TEST(Track, Simple) {
 
   // Create some tracks for image (A,B,C)
   // {A,B,C} imageId will be {0,1,2}
@@ -80,7 +80,7 @@ TEST(Tracks, Simple) {
   }
 }
 
-TEST(Tracks, filter_3viewAtLeast) {
+TEST(Track, filter_3viewAtLeast) {
 
   //
   //A    B    C
@@ -112,7 +112,7 @@ TEST(Tracks, filter_3viewAtLeast) {
   CHECK_EQUAL(2, trackBuilder.NbTracks());
 }
 
-TEST(Tracks, Conflict) {
+TEST(Track, Conflict) {
 
   //
   //A    B    C
@@ -174,7 +174,7 @@ TEST(Tracks, Conflict) {
   }
 }
 
-TEST(Tracks, GetCommonTracksInImages)
+TEST(Track, GetCommonTracksInImages)
 {
   {
     std::set<std::size_t> set_imageIndex {15, 20};

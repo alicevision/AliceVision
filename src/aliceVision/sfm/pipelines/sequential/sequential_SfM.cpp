@@ -54,13 +54,13 @@ using namespace aliceVision::camera;
  *             Precomputed list of pyramid cells ID for each track in each view.
  */
 void computeTracksPyramidPerView(
-    const tracks::TracksPerView& tracksPerView,
-    const tracks::TracksMap& map_tracks,
+    const track::TracksPerView& tracksPerView,
+    const track::TracksMap& map_tracks,
     const Views& views,
     const feature::FeaturesPerView& featuresProvider,
     const std::size_t pyramidBase,
     const std::size_t pyramidDepth,
-    tracks::TracksPyramidPerView& tracksPyramidPerView)
+    track::TracksPyramidPerView& tracksPyramidPerView)
 {
   std::vector<std::size_t> widthPerLevel(pyramidDepth);
   std::vector<std::size_t> startPerLevel(pyramidDepth);
@@ -96,7 +96,7 @@ void computeTracksPyramidPerView(
     for(std::size_t i = 0; i < viewTracks.second.size(); ++i)
     {
       const std::size_t trackId = viewTracks.second[i];
-      const tracks::Track& track = map_tracks.at(trackId);
+      const track::Track& track = map_tracks.at(trackId);
       const std::size_t featIndex = track.featPerView.at(viewId);
       const auto& feature = featuresProvider.getFeatures(viewId, track.descType)[featIndex]; 
       
@@ -572,7 +572,7 @@ bool SequentialSfMReconstructionEngine::ChooseInitialPair(Pair & initialPairInde
 bool SequentialSfMReconstructionEngine::InitLandmarkTracks()
 {
   // Compute tracks from matches
-  tracks::TracksBuilder tracksBuilder;
+  track::TracksBuilder tracksBuilder;
 
   {
     // List of features matches for each couple of images
@@ -587,7 +587,7 @@ bool SequentialSfMReconstructionEngine::InitLandmarkTracks()
     //-- Build tracks with STL compliant type :
     tracksBuilder.ExportToSTL(_map_tracks);
     ALICEVISION_LOG_DEBUG("Build tracks per view");
-    tracks::TracksUtilsMap::computeTracksPerView(_map_tracks, _map_tracksPerView);
+    track::TracksUtilsMap::computeTracksPerView(_map_tracks, _map_tracksPerView);
     ALICEVISION_LOG_DEBUG("Build tracks pyramid per view");
     computeTracksPyramidPerView(
             _map_tracksPerView, _map_tracks, _sfm_data.views, *_featuresPerView, _pyramidBase, _pyramidDepth, _map_featsPyramidPerView);
@@ -599,7 +599,7 @@ bool SequentialSfMReconstructionEngine::InitLandmarkTracks()
       //    - number of images
       //    - number of tracks
       std::set<size_t> set_imagesId;
-      tracks::TracksUtilsMap::ImageIdInTracks(_map_tracksPerView, set_imagesId);
+      track::TracksUtilsMap::ImageIdInTracks(_map_tracksPerView, set_imagesId);
       osTrack << "------------------" << "\n"
         << "-- Tracks Stats --" << "\n"
         << " Number of tracks: " << tracksBuilder.NbTracks() << "\n"
@@ -611,7 +611,7 @@ bool SequentialSfMReconstructionEngine::InitLandmarkTracks()
       osTrack << "\n------------------" << "\n";
 
       std::map<size_t, size_t> map_Occurence_TrackLength;
-      tracks::TracksUtilsMap::TracksLength(_map_tracks, map_Occurence_TrackLength);
+      track::TracksUtilsMap::TracksLength(_map_tracks, map_Occurence_TrackLength);
       osTrack << "TrackLength, Occurrence" << "\n";
       for(const auto& iter: map_Occurence_TrackLength)
       {
@@ -693,9 +693,9 @@ bool SequentialSfMReconstructionEngine::getBestInitialImagePairs(std::vector<Pai
     if (cam_I == nullptr || cam_J == nullptr)
       continue;
 
-    aliceVision::tracks::TracksMap map_tracksCommon;
+    aliceVision::track::TracksMap map_tracksCommon;
     const std::set<size_t> set_imageIndex= {I, J};
-    tracks::TracksUtilsMap::GetTracksInImagesFast(set_imageIndex, _map_tracks, _map_tracksPerView, map_tracksCommon);
+    track::TracksUtilsMap::GetTracksInImagesFast(set_imageIndex, _map_tracks, _map_tracksPerView, map_tracksCommon);
 
     // Copy points correspondences to arrays for relative pose estimation
     const size_t n = map_tracksCommon.size();
@@ -703,7 +703,7 @@ bool SequentialSfMReconstructionEngine::getBestInitialImagePairs(std::vector<Pai
     Mat xI(2,n), xJ(2,n);
     size_t cptIndex = 0;
     std::vector<std::size_t> commonTracksIds(n);
-    for (aliceVision::tracks::TracksMap::const_iterator
+    for (aliceVision::track::TracksMap::const_iterator
       iterT = map_tracksCommon.begin(); iterT != map_tracksCommon.end();
       ++iterT, ++cptIndex)
     {
@@ -834,15 +834,15 @@ bool SequentialSfMReconstructionEngine::MakeInitialPair3D(const Pair& current_pa
 
   // b. Get common features between the two views
   // use the track to have a more dense match correspondence set
-  aliceVision::tracks::TracksMap map_tracksCommon;
+  aliceVision::track::TracksMap map_tracksCommon;
   const std::set<std::size_t> set_imageIndex= {I, J};
-  tracks::TracksUtilsMap::GetTracksInImagesFast(set_imageIndex, _map_tracks, _map_tracksPerView, map_tracksCommon);
+  track::TracksUtilsMap::GetTracksInImagesFast(set_imageIndex, _map_tracks, _map_tracksPerView, map_tracksCommon);
 
   //-- Copy point to arrays
   const std::size_t n = map_tracksCommon.size();
   Mat xI(2,n), xJ(2,n);
   std::size_t cptIndex = 0;
-  for (aliceVision::tracks::TracksMap::const_iterator
+  for (aliceVision::track::TracksMap::const_iterator
     iterT = map_tracksCommon.begin(); iterT != map_tracksCommon.end();
     ++iterT, ++cptIndex)
   {
@@ -1129,11 +1129,11 @@ bool SequentialSfMReconstructionEngine::FindConnectedViews(
     const bool isIntrinsicsReconstructed = reconstructedIntrinsics.count(intrinsicId);
 
     // Compute 2D - 3D possible content
-    aliceVision::tracks::TracksPerView::const_iterator tracksIdsIt = _map_tracksPerView.find(viewId);
+    aliceVision::track::TracksPerView::const_iterator tracksIdsIt = _map_tracksPerView.find(viewId);
     if(tracksIdsIt == _map_tracksPerView.end())
       continue;
 
-    const aliceVision::tracks::TrackIdSet& set_tracksIds = tracksIdsIt->second;
+    const aliceVision::track::TrackIdSet& set_tracksIds = tracksIdsIt->second;
     if (set_tracksIds.empty())
       continue;
 
@@ -1280,11 +1280,11 @@ bool SequentialSfMReconstructionEngine::FindNextImagesGroupForResection(
  */
 bool SequentialSfMReconstructionEngine::Resection(const std::size_t viewIndex)
 {
-  using namespace tracks;
+  using namespace track;
 
   // A. Compute 2D/3D matches
   // A1. list tracks ids used by the view
-  const aliceVision::tracks::TrackIdSet& set_tracksIds = _map_tracksPerView.at(viewIndex);
+  const aliceVision::track::TrackIdSet& set_tracksIds = _map_tracksPerView.at(viewIndex);
 
   // A2. intersects the track list with the reconstructed
   std::set<std::size_t> reconstructed_trackId;
@@ -1502,8 +1502,8 @@ void SequentialSfMReconstructionEngine::triangulate(SfM_Data& scene, const std::
 
       // Find track correspondences between I and J
       const std::set<std::size_t> set_viewIndex = { I, J };
-      tracks::TracksMap map_tracksCommonIJ;
-      tracks::TracksUtilsMap::GetTracksInImagesFast(set_viewIndex, _map_tracks, _map_tracksPerView, map_tracksCommonIJ);
+      track::TracksMap map_tracksCommonIJ;
+      track::TracksUtilsMap::GetTracksInImagesFast(set_viewIndex, _map_tracks, _map_tracksPerView, map_tracksCommonIJ);
 
       const View* viewI = scene.GetViews().at(I).get();
       const View* viewJ = scene.GetViews().at(J).get();
@@ -1513,10 +1513,10 @@ void SequentialSfMReconstructionEngine::triangulate(SfM_Data& scene, const std::
       const Pose3 poseJ = scene.getPose(*viewJ);
 
       std::size_t new_putative_track = 0, new_added_track = 0, extented_track = 0;
-      for (const std::pair<std::size_t, tracks::Track >& trackIt : map_tracksCommonIJ)
+      for (const std::pair<std::size_t, track::Track >& trackIt : map_tracksCommonIJ)
       {
         const std::size_t trackId = trackIt.first;
-        const tracks::Track & track = trackIt.second;
+        const track::Track & track = trackIt.second;
 
         const Vec2 xI = _featuresPerView->getFeatures(I, track.descType)[track.featPerView.at(I)].coords().cast<double>();
         const Vec2 xJ = _featuresPerView->getFeatures(J, track.descType)[track.featPerView.at(J)].coords().cast<double>();

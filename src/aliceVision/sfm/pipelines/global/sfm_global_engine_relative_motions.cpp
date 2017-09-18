@@ -284,7 +284,7 @@ bool GlobalSfMReconstructionEngine_RelativeMotions::Compute_Initial_Structure
 {
   // Build tracks from selected triplets (Union of all the validated triplet tracks (_tripletWise_matches))
   {
-    using namespace aliceVision::tracks;
+    using namespace aliceVision::track;
     TracksBuilder tracksBuilder;
 #ifdef USE_ALL_VALID_MATCHES // not used by default
     matching::PairwiseMatches pose_supported_matches;

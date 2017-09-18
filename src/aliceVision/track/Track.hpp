@@ -1,8 +1,7 @@
 // This file is part of the AliceVision project and is made available under
 // the terms of the MPL2 license (see the COPYING.md file).
 
-#ifndef ALICEVISION_TRACKS_H_
-#define ALICEVISION_TRACKS_H_
+#pragma once
 
 #include "aliceVision/config.hpp"
 #include "lemon/list_graph.h"
@@ -23,7 +22,7 @@
 #include <memory>
 
 namespace aliceVision {
-namespace tracks {
+namespace track {
 
 using namespace aliceVision::matching;
 using namespace lemon;
@@ -123,7 +122,7 @@ inline std::ostream& operator<<(std::ostream& os, const KeypointId& k)
  *  // Compute tracks from matches
  *  //---------------------------------------
  *  TracksBuilder tracksBuilder;
- *  tracks::STLMAPTracks map_tracks;
+ *  track::STLMAPTracks map_tracks;
  *  tracksBuilder.Build(map_Matches); // Build: Efficient fusion of correspondences
  *  tracksBuilder.Filter();           // Filter: Remove track that have conflict
  *  tracksBuilder.ExportToSTL(map_tracks); // Build tracks with STL compliant type
@@ -608,7 +607,5 @@ struct TracksUtilsMap
   }
 };
 
-} // namespace tracks
+} // namespace track
 } // namespace aliceVision
-
-#endif // ALICEVISION_TRACKS_H_
