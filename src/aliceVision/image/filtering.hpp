@@ -1,8 +1,7 @@
 // This file is part of the AliceVision project and is made available under
 // the terms of the MPL2 license (see the COPYING.md file).
 
-#ifndef ALICEVISION_IMAGE_IMAGE_FILTERING_HPP_
-#define ALICEVISION_IMAGE_IMAGE_FILTERING_HPP_
+#pragma once
 
 /**
  ** @file standard image filtering functions :
@@ -18,7 +17,7 @@
 //- Date: September 2002.
 //- Journal : Journal of Visual Communication and Image Representation.
 
-#include "aliceVision/image/image_convolution.hpp"
+#include "aliceVision/image/convolution.hpp"
 
 namespace aliceVision {
 namespace image {
@@ -337,5 +336,3 @@ namespace image {
 
 } // namespace image
 } // namespace aliceVision
-
-#endif

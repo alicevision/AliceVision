@@ -1,12 +1,11 @@
 // This file is part of the AliceVision project and is made available under
 // the terms of the MPL2 license (see the COPYING.md file).
 
-#ifndef ALICEVISION_IMAGE_IMAGE_IMAGE_IO_HPP
-#define ALICEVISION_IMAGE_IMAGE_IMAGE_IO_HPP
+#pragma once
 
-#include "aliceVision/image/image_container.hpp"
-#include "aliceVision/image/pixel_types.hpp"
-#include "aliceVision/image/image_converter.hpp"
+#include "aliceVision/image/Image.hpp"
+#include "aliceVision/image/pixelTypes.hpp"
+#include "aliceVision/image/convertion.hpp"
 
 namespace aliceVision {
 namespace image {
@@ -189,5 +188,3 @@ int WriteJpg(const char * filename, const Image<T>& im, int quality)
 
 }  // namespace image
 }  // namespace aliceVision
-
-#endif  // ALICEVISION_IMAGE_IMAGE_IMAGE_IO_HPP

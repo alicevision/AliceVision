@@ -25,7 +25,7 @@ the terms of the BSD license (see the COPYING file).
 #include "algorithm.h"
 
 #include <aliceVision/system/Logger.hpp>
-#include <aliceVision/image/pixel_types.hpp>
+#include <aliceVision/image/pixelTypes.hpp>
 #include <aliceVision/numeric/numeric.h>
 
 //Parameters concerning speed and performance

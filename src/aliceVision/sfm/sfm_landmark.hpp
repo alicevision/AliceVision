@@ -5,7 +5,7 @@
 #define ALICEVISION_SFM_LANDMARK_HPP
 
 #include "aliceVision/feature/imageDescriberCommon.hpp"
-#include "aliceVision/image/pixel_types.hpp"
+#include "aliceVision/image/pixelTypes.hpp"
 #include "aliceVision/numeric/numeric.h"
 #include "aliceVision/stl/flatMap.hpp"
 #include <cereal/cereal.hpp> // Serialization

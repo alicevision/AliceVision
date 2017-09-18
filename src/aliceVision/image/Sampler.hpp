@@ -1,11 +1,10 @@
 // This file is part of the AliceVision project and is made available under
 // the terms of the MPL2 license (see the COPYING.md file).
 
-#ifndef ALICEVISION_IMAGE_SAMPLE_HPP
-#define ALICEVISION_IMAGE_SAMPLE_HPP
+#pragma once
 
-#include "aliceVision/image/image_container.hpp"
-#include "aliceVision/image/pixel_types.hpp"
+#include "aliceVision/image/Image.hpp"
+#include "aliceVision/image/pixelTypes.hpp"
 
 namespace aliceVision {
 namespace image {
@@ -492,5 +491,3 @@ private:
 
 } // namespace image
 } // namespace aliceVision
-
-#endif  // ALICEVISION_IMAGE_SAMPLE_HPP

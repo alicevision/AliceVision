@@ -4,8 +4,8 @@
 #pragma once
 
 #include <aliceVision/camera/PinholeRadial.hpp>
-#include <aliceVision/image/image_container.hpp>
-#include <aliceVision/image/pixel_types.hpp>
+#include <aliceVision/image/Image.hpp>
+#include <aliceVision/image/pixelTypes.hpp>
 
 namespace aliceVision{
 namespace dataio{

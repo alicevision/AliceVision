@@ -1,10 +1,9 @@
 // This file is part of the AliceVision project and is made available under
 // the terms of the MPL2 license (see the COPYING.md file).
 
-#ifndef ALICEVISION_IMAGE_IMAGE_DRAWING_HPP
-#define ALICEVISION_IMAGE_IMAGE_DRAWING_HPP
+#pragma once
 
-#include "aliceVision/image/image_container.hpp"
+#include "aliceVision/image/Image.hpp"
 
 namespace aliceVision {
 namespace image {
@@ -386,5 +385,3 @@ void DrawLineThickness(int xa, int ya, int xb, int yb, const Color& col, int thi
 
 } // namespace image
 } // namespace aliceVision
-
-#endif  // ALICEVISION_IMAGE_IMAGE_DRAWING_HPP

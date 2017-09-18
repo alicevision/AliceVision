@@ -1,8 +1,7 @@
 // This file is part of the AliceVision project and is made available under
 // the terms of the MPL2 license (see the COPYING.md file).
 
-#ifndef ALICEVISION_IMAGE_IMAGE_CONVOLUTION_BASE_HPP
-#define ALICEVISION_IMAGE_IMAGE_CONVOLUTION_BASE_HPP
+#pragma once
 
 namespace aliceVision {
 namespace image {
@@ -28,5 +27,3 @@ namespace image {
   }
 } // namespace image
 } // namespace aliceVision
-
-#endif // ALICEVISION_IMAGE_IMAGE_CONVOLUTION_BASE_HPP

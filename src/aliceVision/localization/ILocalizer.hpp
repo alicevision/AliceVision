@@ -5,7 +5,7 @@
 
 #include "LocalizationResult.hpp"
 
-#include <aliceVision/image/image_container.hpp>
+#include <aliceVision/image/Image.hpp>
 #include <aliceVision/feature/ImageDescriber.hpp>
 #include <aliceVision/camera/PinholeRadial.hpp>
 #include <aliceVision/robust_estimation/robust_estimators.hpp>

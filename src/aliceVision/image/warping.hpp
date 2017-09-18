@@ -1,8 +1,7 @@
 // This file is part of the AliceVision project and is made available under
 // the terms of the MPL2 license (see the COPYING.md file).
 
-#ifndef ALICEVISION_IMAGE_HOMOGRAPHY_WARP
-#define ALICEVISION_IMAGE_HOMOGRAPHY_WARP
+#pragma once
 
 #include <aliceVision/config.hpp>
 
@@ -43,5 +42,3 @@ void Warp(const Image &im, const Mat3 & H, Image &out)
 
 }; // namespace image
 }; // namespace aliceVision
-
-#endif // ALICEVISION_IMAGE_HOMOGRAPHY_WARP

@@ -3,24 +3,24 @@ add_definitions(-DTHIS_SOURCE_DIR="${CMAKE_CURRENT_SOURCE_DIR}")
 # Headers
 set(image_files_headers
   image.hpp
-  image_concat.hpp
-  image_container.hpp
-  image_converter.hpp
-  image_convolution_base.hpp
-  image_convolution.hpp
-  image_diffusion.hpp
-  image_drawing.hpp
-  image_filtering.hpp
-  image_io.hpp
-  image_resampling.hpp
-  image_warping.hpp
-  pixel_types.hpp
-  sample.hpp
+  Image.hpp
+  concat.hpp
+  convertion.hpp
+  convolutionBase.hpp
+  convolution.hpp
+  diffusion.hpp
+  drawing.hpp
+  filtering.hpp
+  io.hpp
+  resampling.hpp
+  warping.hpp
+  pixelTypes.hpp
+  Sampler.hpp
 )
 
 # Sources
 set(image_files_sources
-  image_io.cpp
+  io.cpp
 )
 
 add_library(aliceVision_image
@@ -46,9 +46,9 @@ install(TARGETS aliceVision_image
   EXPORT aliceVision-targets
 )
 
-UNIT_TEST(aliceVision image            "aliceVision_image")
-UNIT_TEST(aliceVision image_drawing    "aliceVision_image")
-UNIT_TEST(aliceVision image_io         "aliceVision_image")
-UNIT_TEST(aliceVision image_filtering  "aliceVision_image")
-UNIT_TEST(aliceVision image_resampling "aliceVision_image")
+UNIT_TEST(aliceVision image      "aliceVision_image")
+UNIT_TEST(aliceVision drawing    "aliceVision_image")
+UNIT_TEST(aliceVision io         "aliceVision_image")
+UNIT_TEST(aliceVision filtering  "aliceVision_image")
+UNIT_TEST(aliceVision resampling "aliceVision_image")
 

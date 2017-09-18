@@ -17,7 +17,7 @@ the terms of the BSD license (see the COPYING file).
 #define KVLD_ALGORITHM_H
 
 #include <aliceVision/numeric/numeric.h>
-#include <aliceVision/image/image_container.hpp>
+#include <aliceVision/image/Image.hpp>
 #include <aliceVision/matching/indMatch.hpp>
 #include <aliceVision/feature/PointFeature.hpp>
 #include <aliceVision/types.hpp>

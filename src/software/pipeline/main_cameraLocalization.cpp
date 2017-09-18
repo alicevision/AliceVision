@@ -9,7 +9,7 @@
 #endif
 #include <aliceVision/localization/LocalizationResult.hpp>
 #include <aliceVision/localization/optimization.hpp>
-#include <aliceVision/image/image_io.hpp>
+#include <aliceVision/image/io.hpp>
 #include <aliceVision/dataio/FeedProvider.hpp>
 #include <aliceVision/feature/ImageDescriber.hpp>
 #include <aliceVision/feature/imageDescriberCommon.hpp>

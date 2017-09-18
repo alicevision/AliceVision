@@ -3,7 +3,7 @@
 
 #include "aliceVision/sfm/sfm_data.hpp"
 #include "aliceVision/sfm/sfm_data_io.hpp"
-#include "aliceVision/image/image_io.hpp"
+#include "aliceVision/image/io.hpp"
 #include "aliceVision/stl/stl.hpp"
 
 #include "dependencies/progress/progress.hpp"

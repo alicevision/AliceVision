@@ -4,7 +4,7 @@
 #include <aliceVision/dataio/FeedProvider.hpp>
 #include <aliceVision/camera/cameraUndistortImage.hpp>
 #include <aliceVision/camera/PinholeRadial.hpp>
-#include <aliceVision/image/image_io.hpp>
+#include <aliceVision/image/io.hpp>
 #include <aliceVision/calibration/patternDetect.hpp>
 #include <aliceVision/calibration/bestImages.hpp>
 #include <aliceVision/calibration/calibration.hpp>

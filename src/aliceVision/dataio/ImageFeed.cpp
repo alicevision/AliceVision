@@ -4,7 +4,7 @@
 #include "ImageFeed.hpp"
 #include <aliceVision/sfm/sfm_data.hpp>
 #include <aliceVision/sfm/sfm_data_io.hpp>
-#include <aliceVision/image/image_io.hpp>
+#include <aliceVision/image/io.hpp>
 
 #include <boost/filesystem.hpp>
 #include <boost/algorithm/string/case_conv.hpp> 

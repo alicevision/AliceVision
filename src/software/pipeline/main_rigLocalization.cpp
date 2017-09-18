@@ -7,7 +7,7 @@
 #include <aliceVision/localization/CCTagLocalizer.hpp>
 #endif
 #include <aliceVision/rig/Rig.hpp>
-#include <aliceVision/image/image_io.hpp>
+#include <aliceVision/image/io.hpp>
 #include <aliceVision/dataio/FeedProvider.hpp>
 #include <aliceVision/feature/ImageDescriber.hpp>
 #include <aliceVision/robust_estimation/robust_estimators.hpp>

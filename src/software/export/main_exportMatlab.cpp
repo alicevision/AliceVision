@@ -3,7 +3,7 @@
 
 #include "aliceVision/sfm/sfm.hpp"
 #include "aliceVision/image/image.hpp"
-#include "aliceVision/image/image_converter.hpp"
+#include "aliceVision/image/convertion.hpp"
 
 #include "dependencies/cmdLine/cmdLine.h"
 #include "dependencies/progress/progress.hpp"

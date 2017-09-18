@@ -7,7 +7,7 @@
 #include "aliceVision/numeric/numeric.h"
 #include "aliceVision/feature/imageDescriberCommon.hpp"
 #include "aliceVision/feature/Regions.hpp"
-#include "aliceVision/image/image_container.hpp"
+#include "aliceVision/image/Image.hpp"
 #include <memory>
 
 #include <string>

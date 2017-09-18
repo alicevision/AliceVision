@@ -1,10 +1,10 @@
 // This file is part of the AliceVision project and is made available under
 // the terms of the MPL2 license (see the COPYING.md file).
 
-#ifndef ALICEVISION_IMAGE_IMAGE_CONVOLUTION_HPP_
-#define ALICEVISION_IMAGE_IMAGE_CONVOLUTION_HPP_
+#pragma once
 
-#include "aliceVision/numeric/accumulator_trait.hpp"
+#include <aliceVision/numeric/accumulator_trait.hpp>
+#include <aliceVision/image/convolutionBase.hpp>
 #include <aliceVision/config.hpp>
 
 /**
@@ -268,5 +268,3 @@ void ImageSeparableConvolution( const Image<float> & img ,
 
 } // namespace image
 } // namespace aliceVision
-
-#endif // ALICEVISION_IMAGE_IMAGE_CONVOLUTION_HPP_
