@@ -1,17 +1,16 @@
 // This file is part of the AliceVision project and is made available under
 // the terms of the MPL2 license (see the COPYING.md file).
 
-#include "aliceVision/robust_estimation/robust_estimator_lineKernel_test.hpp"
-#include "aliceVision/robust_estimation/robust_estimator_Ransac.hpp"
-#include "aliceVision/robust_estimation/score_evaluator.hpp"
+#include "aliceVision/robustEstimation/LineKernel.hpp"
+#include "aliceVision/robustEstimation/maxConsensus.hpp"
+#include "aliceVision/robustEstimation/ScoreEvaluator.hpp"
 
 #include "aliceVision/numeric/numeric.hpp"
 
 #include "testing/testing.h"
-#include "lineTestGenerator.hpp"
 
 using namespace aliceVision;
-using namespace aliceVision::robust;
+using namespace aliceVision::robustEstimation;
 
 // Test without outlier
 TEST(MaxConsensusLineFitter, OutlierFree) {
@@ -25,11 +24,27 @@ TEST(MaxConsensusLineFitter, OutlierFree) {
   LineKernel kernel(xy);
 
   // Check the best model that fit the most of the data
-  //  in a robust framework (Ransac).
+  //  in a robust framework (Max-consensus).
   std::vector<size_t> vec_inliers;
-  Vec2 model = RANSAC(kernel, ScorerEvaluator<LineKernel>(0.3), &vec_inliers);
+  Vec2 model = MaxConsensus(kernel,
+    ScoreEvaluator<LineKernel>(0.3), &vec_inliers);
   EXPECT_NEAR(2.0, model[1], 1e-9);
   EXPECT_NEAR(1.0, model[0], 1e-9);
+  CHECK_EQUAL(5, vec_inliers.size());
+}
+
+// Test without getting back the model
+TEST(MaxConsensusLineFitter, OutlierFree_DoNotGetBackModel) {
+
+  Mat2X xy(2, 5);
+  // y = 2x + 1
+  xy << 1, 2, 3, 4,  5,
+        3, 5, 7, 9, 11;
+
+  LineKernel kernel(xy);
+  std::vector<size_t> vec_inliers;
+  Vec2 model = MaxConsensus(kernel,
+    ScoreEvaluator<LineKernel>(0.3), &vec_inliers);
   CHECK_EQUAL(5, vec_inliers.size());
 }
 
@@ -44,7 +59,8 @@ TEST(MaxConsensusLineFitter, OneOutlier) {
   LineKernel kernel(xy);
 
   std::vector<size_t> vec_inliers;
-  Vec2 model = RANSAC(kernel, ScorerEvaluator<LineKernel>(0.3), &vec_inliers);
+  Vec2 model = MaxConsensus(kernel,
+    ScoreEvaluator<LineKernel>(0.3), &vec_inliers);
   EXPECT_NEAR(2.0, model[1], 1e-9);
   EXPECT_NEAR(1.0, model[0], 1e-9);
   CHECK_EQUAL(5, vec_inliers.size());
@@ -60,7 +76,8 @@ TEST(MaxConsensusLineFitter, TooFewPoints) {
         3;   // y = 2x + 1 with x = 1
   LineKernel kernel(xy);
   std::vector<size_t> vec_inliers;
-  Vec2 model = RANSAC(kernel, ScorerEvaluator<LineKernel>(0.3), &vec_inliers);
+  Vec2 model = MaxConsensus(kernel,
+    ScoreEvaluator<LineKernel>(0.3), &vec_inliers);
   CHECK_EQUAL(0, vec_inliers.size());
 }
 
@@ -70,24 +87,36 @@ TEST(MaxConsensusLineFitter, TooFewPoints) {
 //  Check that the number of inliers and the model are correct.
 TEST(MaxConsensusLineFitter, RealisticCase) {
 
-  const int NbPoints = 30;
-  const double outlierRatio = .3; //works with 40
-  Mat2X xy(2, NbPoints);
-  std::mt19937 gen;
+  const int numPoints = 30;
+  const float outlierRatio = .3; //works with .4
+  Mat2X xy(2, numPoints);
 
   Vec2 GTModel; // y = 2x + 1
   GTModel <<  -2.0, 6.3;
 
-  //-- Add some noise (for the asked percentage amount)
-  const std::size_t nbPtToNoise = (size_t) NbPoints*outlierRatio;
-  std::vector<std::size_t> vec_inliersGT;
-  generateLine(NbPoints, outlierRatio, 0.0, GTModel, gen, xy, vec_inliersGT);
+  //-- Build the point list according the given model
+  for(Mat::Index i = 0; i < numPoints; ++i)
+  {
+    xy.col(i) << i, (double)i*GTModel[1] + GTModel[0];
+  }
 
+  //-- Add some noise (for the asked percentage amount)
+  int nbPtToNoise = (int) numPoints * outlierRatio;
+  vector<size_t> vec_samples; // Fit with unique random index
+  UniformSample(nbPtToNoise, numPoints, vec_samples);
+  for(size_t i = 0; i <vec_samples.size(); ++i)
+  {
+    const size_t randomIndex = vec_samples[i];
+    //Additive random noise
+    xy.col(randomIndex) << xy.col(randomIndex)(0)+rand()%2-3,
+                           xy.col(randomIndex)(1)+rand()%8-6;
+  }
 
   LineKernel kernel(xy);
   std::vector<size_t> vec_inliers;
-  Vec2 model = RANSAC(kernel, ScorerEvaluator<LineKernel>(0.3), &vec_inliers);
-  CHECK_EQUAL(NbPoints-nbPtToNoise, vec_inliers.size());
+  Vec2 model = MaxConsensus(kernel,
+    ScoreEvaluator<LineKernel>(0.3), &vec_inliers);
+  CHECK_EQUAL(numPoints-nbPtToNoise, vec_inliers.size());
   EXPECT_NEAR(-2.0, model[0], 1e-9);
   EXPECT_NEAR( 6.3, model[1], 1e-9);
 }

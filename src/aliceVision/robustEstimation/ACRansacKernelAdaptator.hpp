@@ -1,8 +1,7 @@
 // This file is part of the AliceVision project and is made available under
 // the terms of the MPL2 license (see the COPYING.md file).
 
-#ifndef ALICEVISION_ROBUST_ESTIMATOR_ACRANSAC_KERNEL_ADAPTATOR_H_
-#define ALICEVISION_ROBUST_ESTIMATOR_ACRANSAC_KERNEL_ADAPTATOR_H_
+#pragma once
 
 // Here a collection of A contrario Kernel adaptor.
 //  - See // [1] "Robust and accurate calibration of camera networks". PhD.
@@ -30,7 +29,7 @@
 #include <vector>
 
 namespace aliceVision {
-namespace robust {
+namespace robustEstimation {
 
 #define ALICEVISION_MINIMUM_SAMPLES_COEF 7 //TODO: TO REMOVE
 
@@ -502,6 +501,5 @@ private:
   double logalpha0_; // Alpha0 is used to make the error scale invariant
 };
 
-} // namespace robust
+} // namespace robustEstimation
 } // namespace aliceVision
-#endif // ALICEVISION_ROBUST_ESTIMATOR_ACRANSAC_KERNEL_ADAPTATOR_H_

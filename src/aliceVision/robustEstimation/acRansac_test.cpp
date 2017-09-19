@@ -4,9 +4,9 @@
 #include <iterator>
 #include <random>
 
-#include <aliceVision/robust_estimation/robust_estimator_lineKernel_test.hpp>
-#include <aliceVision/robust_estimation/robust_estimator_ACRansac.hpp>
-#include <aliceVision/robust_estimation/rand_sampling.hpp>
+#include <aliceVision/robustEstimation/LineKernel.hpp>
+#include <aliceVision/robustEstimation/ACRansac.hpp>
+#include <aliceVision/robustEstimation/randSampling.hpp>
 #include <glog/logging.h>
 #include "lineTestGenerator.hpp"
 #include "testing/testing.h"
@@ -16,7 +16,7 @@
 using namespace svg;
 
 using namespace aliceVision;
-using namespace aliceVision::robust;
+using namespace aliceVision::robustEstimation;
 using namespace std;
 
 /// ACRansac Kernel for line estimation

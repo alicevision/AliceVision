@@ -5,7 +5,7 @@
 
 #include "aliceVision/matching/IndMatch.hpp"
 #include "aliceVision/matching/metric.hpp"
-#include "aliceVision/robust_estimation/guided_matching.hpp"
+#include "aliceVision/robustEstimation/guidedMatching.hpp"
 #include "aliceVision/multiview/solver_fundamental_kernel.hpp"
 #include "aliceVision/multiview/triangulation_nview.hpp"
 #include "aliceVision/graph/graph.hpp"
@@ -109,7 +109,7 @@ void SfM_Data_Structure_Estimation_From_Known_Poses::match(
       {
         std::vector<matching::IndMatch> matches;
       #ifdef EXHAUSTIVE_MATCHING
-        geometry_aware::GuidedMatching
+        robustEstimation::GuidedMatching
           <Mat3, fundamental::kernel::EpipolarDistanceError>
           (
             F_lr,
@@ -125,7 +125,7 @@ void SfM_Data_Structure_Estimation_From_Known_Poses::match(
         const Vec3 epipole2  = epipole_from_P(P_R, poseL);
 
         //const feature::Regions& regions = regionsPerView.getRegions(it->first);
-        geometry_aware::GuidedMatching_Fundamental_Fast
+        robustEstimation::GuidedMatching_Fundamental_Fast
           <fundamental::kernel::EpipolarDistanceError>
           (
             F_lr,

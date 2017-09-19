@@ -1,13 +1,12 @@
 // This file is part of the AliceVision project and is made available under
 // the terms of the MPL2 license (see the COPYING.md file).
 
-#ifndef ALICEVISION_ROBUST_RANSAC_TOOLS_H_
-#define ALICEVISION_ROBUST_RANSAC_TOOLS_H_
+#pragma once
 
 #include <cmath>
 
 namespace aliceVision {
-namespace robust{
+namespace robustEstimation{
 
 /// Number of samplings to have at least \a minProba probability of absence of
 /// outlier in a sample of \a SampleSize elements.
@@ -30,6 +29,5 @@ inline size_t IterationsRequired(
     std::log(1.0 - std::pow(inlier_ratio, static_cast<int>(min_samples))));
 }
 
-} // namespace robust
+} // namespace robustEstimation
 } // namespace aliceVision
-#endif // ALICEVISION_ROBUST_RANSAC_TOOLS_H_

@@ -8,13 +8,13 @@
 #include "aliceVision/matching/IndMatch.hpp"
 #include "aliceVision/multiview/solver_fundamental_kernel.hpp"
 #include "aliceVision/multiview/essential.hpp"
-#include "aliceVision/robust_estimation/robust_estimators.hpp"
-#include "aliceVision/robust_estimation/robust_estimator_ACRansac.hpp"
-#include "aliceVision/robust_estimation/robust_estimator_ACRansacKernelAdaptator.hpp"
-#include "aliceVision/robust_estimation/robust_estimator_LORansac.hpp"
-#include "aliceVision/robust_estimation/robust_estimator_LORansacKernelAdaptor.hpp"
-#include "aliceVision/robust_estimation/score_evaluator.hpp"
-#include "aliceVision/robust_estimation/guided_matching.hpp"
+#include "aliceVision/robustEstimation/estimators.hpp"
+#include "aliceVision/robustEstimation/ACRansac.hpp"
+#include "aliceVision/robustEstimation/ACRansacKernelAdaptator.hpp"
+#include "aliceVision/robustEstimation/LORansac.hpp"
+#include "aliceVision/robustEstimation/LORansacKernelAdaptor.hpp"
+#include "aliceVision/robustEstimation/ScoreEvaluator.hpp"
+#include "aliceVision/robustEstimation/guidedMatching.hpp"
 #include "aliceVision/sfm/sfm_data.hpp"
 #include "aliceVision/feature/RegionsPerView.hpp"
 
@@ -27,7 +27,7 @@ struct GeometricFilterMatrix_F_AC: public GeometricFilterMatrix
   GeometricFilterMatrix_F_AC(
     double dPrecision = std::numeric_limits<double>::infinity(),
     size_t iteration = 1024,
-    robust::EROBUST_ESTIMATOR estimator = robust::ROBUST_ESTIMATOR_ACRANSAC)
+    robustEstimation::EROBUST_ESTIMATOR estimator = robustEstimation::ROBUST_ESTIMATOR_ACRANSAC)
     : GeometricFilterMatrix(dPrecision, std::numeric_limits<double>::infinity(), iteration)
     , m_F(Mat3::Identity())
     , m_estimator(estimator)
@@ -46,7 +46,7 @@ struct GeometricFilterMatrix_F_AC: public GeometricFilterMatrix
     matching::MatchesPerDescType & out_geometricInliersPerType)
   {
     using namespace aliceVision;
-    using namespace aliceVision::robust;
+    using namespace aliceVision::robustEstimation;
     out_geometricInliersPerType.clear();
 
     // Get back corresponding view index
@@ -86,7 +86,7 @@ struct GeometricFilterMatrix_F_AC: public GeometricFilterMatrix
       matching::MatchesPerDescType & out_geometricInliersPerType)
   {
     using namespace aliceVision;
-    using namespace aliceVision::robust;
+    using namespace aliceVision::robustEstimation;
     out_geometricInliersPerType.clear();
 
     const std::vector<feature::EImageDescriberType> descTypes = getCommonDescTypes(region_I, region_J);
@@ -121,7 +121,7 @@ struct GeometricFilterMatrix_F_AC: public GeometricFilterMatrix
           out_geometricInliersPerType);
 
     // If matches has strong support
-    const bool hasStrongSupport = robust::hasStrongSupport(out_geometricInliersPerType, estimationPair.second);
+    const bool hasStrongSupport = robustEstimation::hasStrongSupport(out_geometricInliersPerType, estimationPair.second);
 
     return EstimationStatus(true, hasStrongSupport);
   }
@@ -145,7 +145,7 @@ struct GeometricFilterMatrix_F_AC: public GeometricFilterMatrix
     std::vector<size_t> & out_inliers)
   {
     using namespace aliceVision;
-    using namespace aliceVision::robust;
+    using namespace aliceVision::robustEstimation;
     out_inliers.clear();
 
     switch(m_estimator)
@@ -198,7 +198,7 @@ struct GeometricFilterMatrix_F_AC: public GeometricFilterMatrix
 
         //@fixme scorer should be using the pixel error, not the squared version, refactoring needed
         const double normalizedThreshold = Square(m_dPrecision * kernel.normalizer2()(0, 0));
-        ScorerEvaluator<KernelType> scorer(normalizedThreshold);
+        ScoreEvaluator<KernelType> scorer(normalizedThreshold);
 
         m_F = LO_RANSAC(kernel, scorer, &out_inliers);
 
@@ -249,7 +249,7 @@ struct GeometricFilterMatrix_F_AC: public GeometricFilterMatrix
           sfmData->GetIntrinsics().at(view_J->getIntrinsicId()).get() : nullptr;
 
       // Check the features correspondences that agree in the geometric and photometric domain
-      geometry_aware::GuidedMatching<Mat3,
+      robustEstimation::GuidedMatching<Mat3,
                                      fundamental::kernel::EpipolarDistanceError>(
         m_F,
         cam_I, // camera::IntrinsicBase
@@ -265,7 +265,7 @@ struct GeometricFilterMatrix_F_AC: public GeometricFilterMatrix
   //
   //-- Stored data
   Mat3 m_F;
-  robust::EROBUST_ESTIMATOR m_estimator;
+  robustEstimation::EROBUST_ESTIMATOR m_estimator;
 };
 
 } // namespace matchingImageCollection

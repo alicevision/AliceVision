@@ -1,15 +1,14 @@
 // This file is part of the AliceVision project and is made available under
 // the terms of the MPL2 license (see the COPYING.md file).
 
-#ifndef ALICEVISION_ROBUST_ESTIMATION_MAX_CONSENSUS_H_
-#define ALICEVISION_ROBUST_ESTIMATION_MAX_CONSENSUS_H_
+#pragma once
 
-#include "aliceVision/robust_estimation/rand_sampling.hpp"
+#include "aliceVision/robustEstimation/randSampling.hpp"
 #include <limits>
 #include <vector>
 
 namespace aliceVision {
-namespace robust{
+namespace robustEstimation{
 
 /// Naive implementation of RANSAC without noise and iteration reduction options
 /// Pick max_iteration times N_samples and Fit a solution.
@@ -85,6 +84,5 @@ typename Kernel::Model MaxConsensus(const Kernel &kernel,
     return best_model;
 }
 
-} // namespace robust
+} // namespace robustEstimation
 } // namespace aliceVision
-#endif // ALICEVISION_ROBUST_ESTIMATION_MAX_CONSENSUS_H_

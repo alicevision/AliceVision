@@ -8,8 +8,8 @@
 #include "aliceVision/matching/RegionsMatcher.hpp"
 #include "aliceVision/multiview/solver_homography_kernel.hpp"
 #include "aliceVision/multiview/conditioning.hpp"
-#include "aliceVision/robust_estimation/robust_estimator_ACRansac.hpp"
-#include "aliceVision/robust_estimation/robust_estimator_ACRansacKernelAdaptator.hpp"
+#include "aliceVision/robustEstimation/ACRansac.hpp"
+#include "aliceVision/robustEstimation/ACRansacKernelAdaptator.hpp"
 
 #include "dependencies/stlplus3/filesystemSimplified/file_system.hpp"
 #include "dependencies/vectorGraphics/svgDrawer.hpp"
@@ -20,7 +20,7 @@
 using namespace aliceVision;
 using namespace aliceVision::image;
 using namespace aliceVision::matching;
-using namespace aliceVision::robust;
+using namespace aliceVision::robustEstimation;
 using namespace svg;
 using namespace std;
 

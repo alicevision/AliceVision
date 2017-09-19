@@ -1,16 +1,16 @@
 // This file is part of the AliceVision project and is made available under
 // the terms of the MPL2 license (see the COPYING.md file).
 
-#include "aliceVision/robust_estimation/robust_estimator_lineKernel_test.hpp"
-#include "aliceVision/robust_estimation/robust_estimator_LMeds.hpp"
-#include "aliceVision/robust_estimation/score_evaluator.hpp"
+#include "aliceVision/robustEstimation/LineKernel.hpp"
+#include "aliceVision/robustEstimation/leastMedianOfSquares.hpp"
+#include "aliceVision/robustEstimation/ScoreEvaluator.hpp"
 
 #include "aliceVision/numeric/numeric.hpp"
 
 #include "testing/testing.h"
 
 using namespace aliceVision;
-using namespace aliceVision::robust;
+using namespace aliceVision::robustEstimation;
 
 static const double dExpectedPrecision = 1e-9;
 
@@ -18,7 +18,7 @@ template<typename Kernel>
 void EvalInlier(const Kernel & kernel, const typename Kernel::Model & model,
    double dThreshold, std::vector<size_t> * vec_inliers)
 {
-  ScorerEvaluator<Kernel> scorer(dThreshold);
+  ScoreEvaluator<Kernel> scorer(dThreshold);
   std::vector<size_t> vec_index(kernel.NumSamples());
   for (size_t i = 0; i < kernel.NumSamples(); ++i)
     vec_index[i] = i;

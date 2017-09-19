@@ -306,7 +306,7 @@ private:
                       const std::pair<size_t,size_t> & imageSizeI,     // size of the image in matcher  
                       const std::pair<size_t,size_t> & imageSizeJ,     // size of the query image
                       matching::MatchesPerDescType & out_featureMatches,
-                      robust::EROBUST_ESTIMATOR estimator = robust::ROBUST_ESTIMATOR_ACRANSAC) const;
+                      robustEstimation::EROBUST_ESTIMATOR estimator = robustEstimation::ROBUST_ESTIMATOR_ACRANSAC) const;
   
   void getAssociationsFromBuffer(matching::RegionsDatabaseMatcherPerDesc& matchers,
                                  const std::pair<std::size_t, std::size_t> imageSize,

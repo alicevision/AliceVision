@@ -677,7 +677,7 @@ bool GlobalSfM_Translation_AveragingSolver::Estimate_T_triplet(
 
   TrifocalTensorModel T;
   const std::pair<double,double> acStat =
-    robust::ACRANSAC(kernel, vec_inliers, ORSA_ITER, &T, dPrecision/min_focal, false);
+    robustEstimation::ACRANSAC(kernel, vec_inliers, ORSA_ITER, &T, dPrecision/min_focal, false);
   // If robust estimation fails => stop.
   if (dPrecision == std::numeric_limits<double>::infinity())
     return false;

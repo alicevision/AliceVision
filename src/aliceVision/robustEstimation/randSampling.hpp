@@ -11,7 +11,7 @@
 #include <cassert>
 
 namespace aliceVision {
-namespace robust{
+namespace robustEstimation{
 
 
 /**
@@ -152,5 +152,5 @@ inline void UniformSample(std::size_t sampleSize,
   }
 }
 
-} // namespace robust
+} // namespace robustEstimation
 } // namespace aliceVision

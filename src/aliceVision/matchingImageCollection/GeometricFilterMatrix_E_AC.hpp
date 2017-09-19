@@ -6,9 +6,9 @@
 #include "aliceVision/types.hpp"
 #include "aliceVision/multiview/solver_essential_kernel.hpp"
 #include "aliceVision/multiview/essential.hpp"
-#include "aliceVision/robust_estimation/robust_estimator_ACRansac.hpp"
-#include "aliceVision/robust_estimation/robust_estimator_ACRansacKernelAdaptator.hpp"
-#include "aliceVision/robust_estimation/guided_matching.hpp"
+#include "aliceVision/robustEstimation/ACRansac.hpp"
+#include "aliceVision/robustEstimation/ACRansacKernelAdaptator.hpp"
+#include "aliceVision/robustEstimation/guidedMatching.hpp"
 #include <limits>
 
 #include "aliceVision/matching/IndMatch.hpp"
@@ -42,7 +42,7 @@ struct GeometricFilterMatrix_E_AC : public GeometricFilterMatrix
     matching::MatchesPerDescType & out_geometricInliersPerType)
   {
     using namespace aliceVision;
-    using namespace aliceVision::robust;
+    using namespace aliceVision::robustEstimation;
     out_geometricInliersPerType.clear();
 
     // Get back corresponding view index
@@ -105,7 +105,7 @@ struct GeometricFilterMatrix_E_AC : public GeometricFilterMatrix
           out_geometricInliersPerType);
 
     // Check if resection has strong support
-    const bool hasStrongSupport = robust::hasStrongSupport(out_geometricInliersPerType, KernelType::MINIMUM_SAMPLES);
+    const bool hasStrongSupport = robustEstimation::hasStrongSupport(out_geometricInliersPerType, KernelType::MINIMUM_SAMPLES);
 
     return EstimationStatus(true, hasStrongSupport);
   }
@@ -156,7 +156,7 @@ struct GeometricFilterMatrix_E_AC : public GeometricFilterMatrix
       Mat3 F;
       FundamentalFromEssential(m_E, ptrPinhole_I->K(), ptrPinhole_J->K(), &F);
 
-      geometry_aware::GuidedMatching<Mat3,
+      robustEstimation::GuidedMatching<Mat3,
             aliceVision::fundamental::kernel::EpipolarDistanceError>(
             //aliceVision::fundamental::kernel::SymmetricEpipolarDistanceError>(
         F,

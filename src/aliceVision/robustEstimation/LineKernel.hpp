@@ -1,13 +1,12 @@
 // This file is part of the AliceVision project and is made available under
 // the terms of the MPL2 license (see the COPYING.md file).
 
-#ifndef ALICEVISION_ROBUST_ESTIMATION_LINEKERNEL_TEST_H_
-#define ALICEVISION_ROBUST_ESTIMATION_LINEKERNEL_TEST_H_
+#pragma once
 
 #include "aliceVision/numeric/numeric.hpp"
 
 namespace aliceVision {
-namespace robust{
+namespace robustEstimation{
 
 struct LineSolver
 {
@@ -90,7 +89,5 @@ struct LineKernel
   const Mat2X &xs_;
 };
 
-} // namespace robust
+} // namespace robustEstimation
 } // namespace aliceVision
-
-#endif // ALICEVISION_ROBUST_ESTIMATION_LINEKERNEL_TEST_H_

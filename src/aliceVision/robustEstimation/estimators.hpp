@@ -7,7 +7,7 @@
 #include <iostream>
 
 namespace aliceVision {
-namespace robust {
+namespace robustEstimation {
 
 enum EROBUST_ESTIMATOR
 {
@@ -61,13 +61,13 @@ inline std::ostream& operator<<(std::ostream& os, EROBUST_ESTIMATOR e)
     return os << EROBUST_ESTIMATOR_enumToString(e);
 }
 
-inline std::istream& operator>>(std::istream& in, robust::EROBUST_ESTIMATOR& estimatorType)
+inline std::istream& operator>>(std::istream& in, robustEstimation::EROBUST_ESTIMATOR& estimatorType)
 {
     std::string token;
     in >> token;
-    estimatorType = robust::EROBUST_ESTIMATOR_stringToEnum(token);
+    estimatorType = robustEstimation::EROBUST_ESTIMATOR_stringToEnum(token);
     return in;
 }
 
-} //namespace robust
+} //namespace robustEstimation
 } //namespace aliceVision

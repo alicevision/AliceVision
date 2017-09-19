@@ -8,7 +8,7 @@
 #include <aliceVision/image/Image.hpp>
 #include <aliceVision/feature/ImageDescriber.hpp>
 #include <aliceVision/camera/PinholeRadial.hpp>
-#include <aliceVision/robust_estimation/robust_estimators.hpp>
+#include <aliceVision/robustEstimation/estimators.hpp>
 #include <aliceVision/numeric/numeric.hpp>
 
 namespace aliceVision {
@@ -22,8 +22,8 @@ struct LocalizerParameters
   _fDistRatio(0.8),
   _featurePreset(feature::EDESCRIBER_PRESET::ULTRA_PRESET),
   _errorMax(std::numeric_limits<double>::infinity()),
-  _resectionEstimator(robust::ROBUST_ESTIMATOR_ACRANSAC),
-  _matchingEstimator(robust::ROBUST_ESTIMATOR_ACRANSAC),
+  _resectionEstimator(robustEstimation::ROBUST_ESTIMATOR_ACRANSAC),
+  _matchingEstimator(robustEstimation::ROBUST_ESTIMATOR_ACRANSAC),
   _useLocalizeRigNaive(false),
   _angularThreshold(D2R(0.1)) { }
 
@@ -40,9 +40,9 @@ struct LocalizerParameters
   /// maximum reprojection error allowed for resectioning
   double _errorMax;
   /// the type of *sac framework to use for resection
-  robust::EROBUST_ESTIMATOR _resectionEstimator;
+  robustEstimation::EROBUST_ESTIMATOR _resectionEstimator;
   /// the type of *sac framework to use for matching
-  robust::EROBUST_ESTIMATOR _matchingEstimator; 	
+  robustEstimation::EROBUST_ESTIMATOR _matchingEstimator; 	
   /// force the use of the rig localization without openGV
   bool _useLocalizeRigNaive;
   /// in rad, it is the maximum angular error for the opengv rig resection

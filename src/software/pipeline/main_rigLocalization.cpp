@@ -10,7 +10,7 @@
 #include <aliceVision/image/io.hpp>
 #include <aliceVision/dataio/FeedProvider.hpp>
 #include <aliceVision/feature/ImageDescriber.hpp>
-#include <aliceVision/robust_estimation/robust_estimators.hpp>
+#include <aliceVision/robustEstimation/estimators.hpp>
 #include <aliceVision/system/Logger.hpp>
 
 #include <boost/filesystem.hpp>
@@ -57,30 +57,30 @@ std::string myToString(std::size_t i, std::size_t zeroPadding)
  * @param value The value for the reprojection or matching error.
  * @return true if the value is compatible
  */
-bool checkRobustEstimator(robust::EROBUST_ESTIMATOR e, double &value)
+bool checkRobustEstimator(robustEstimation::EROBUST_ESTIMATOR e, double &value)
 {
-  if(e != robust::EROBUST_ESTIMATOR::ROBUST_ESTIMATOR_LORANSAC &&
-     e != robust::EROBUST_ESTIMATOR::ROBUST_ESTIMATOR_ACRANSAC)
+  if(e != robustEstimation::EROBUST_ESTIMATOR::ROBUST_ESTIMATOR_LORANSAC &&
+     e != robustEstimation::EROBUST_ESTIMATOR::ROBUST_ESTIMATOR_ACRANSAC)
   {
-    ALICEVISION_CERR("Only " << robust::EROBUST_ESTIMATOR::ROBUST_ESTIMATOR_ACRANSAC 
-            << " and " << robust::EROBUST_ESTIMATOR::ROBUST_ESTIMATOR_LORANSAC 
+    ALICEVISION_CERR("Only " << robustEstimation::EROBUST_ESTIMATOR::ROBUST_ESTIMATOR_ACRANSAC 
+            << " and " << robustEstimation::EROBUST_ESTIMATOR::ROBUST_ESTIMATOR_LORANSAC 
             << " are supported.");
     return false;
   }
   if(value == 0 && 
-     e == robust::EROBUST_ESTIMATOR::ROBUST_ESTIMATOR_ACRANSAC)
+     e == robustEstimation::EROBUST_ESTIMATOR::ROBUST_ESTIMATOR_ACRANSAC)
   {
     // for acransac set it to infinity
     value = std::numeric_limits<double>::infinity();
   }
   // for loransac we need thresholds > 0
-  if(e == robust::EROBUST_ESTIMATOR::ROBUST_ESTIMATOR_LORANSAC)
+  if(e == robustEstimation::EROBUST_ESTIMATOR::ROBUST_ESTIMATOR_LORANSAC)
   {
     const double minThreshold = 1e-6;
     if(value <= minThreshold)
     {
       ALICEVISION_CERR("Error: errorMax and matchingError cannot be 0 with " 
-              << robust::EROBUST_ESTIMATOR::ROBUST_ESTIMATOR_LORANSAC 
+              << robustEstimation::EROBUST_ESTIMATOR::ROBUST_ESTIMATOR_LORANSAC 
               << " estimator.");
       return false;     
     }
@@ -110,12 +110,12 @@ int main(int argc, char** argv)
   /// the describer types to use for the matching
   std::vector<feature::EImageDescriberType> matchDescTypes;
   /// the estimator to use for resection
-  robust::EROBUST_ESTIMATOR resectionEstimator = robust::EROBUST_ESTIMATOR::ROBUST_ESTIMATOR_ACRANSAC;        
+  robustEstimation::EROBUST_ESTIMATOR resectionEstimator = robustEstimation::EROBUST_ESTIMATOR::ROBUST_ESTIMATOR_ACRANSAC;        
   /// the estimator to use for matching
-  robust::EROBUST_ESTIMATOR matchingEstimator = robust::EROBUST_ESTIMATOR::ROBUST_ESTIMATOR_ACRANSAC;        
+  robustEstimation::EROBUST_ESTIMATOR matchingEstimator = robustEstimation::EROBUST_ESTIMATOR::ROBUST_ESTIMATOR_ACRANSAC;        
   /// the possible choices for the estimators as strings
-  const std::string str_estimatorChoices = ""+robust::EROBUST_ESTIMATOR_enumToString(robust::EROBUST_ESTIMATOR::ROBUST_ESTIMATOR_ACRANSAC)
-                                          +","+robust::EROBUST_ESTIMATOR_enumToString(robust::EROBUST_ESTIMATOR::ROBUST_ESTIMATOR_LORANSAC);
+  const std::string str_estimatorChoices = ""+robustEstimation::EROBUST_ESTIMATOR_enumToString(robustEstimation::EROBUST_ESTIMATOR::ROBUST_ESTIMATOR_ACRANSAC)
+                                          +","+robustEstimation::EROBUST_ESTIMATOR_enumToString(robustEstimation::EROBUST_ESTIMATOR::ROBUST_ESTIMATOR_LORANSAC);
   bool refineIntrinsics = false;
   bool useLocalizeRigNaive = false;
   /// the maximum error allowed for resection
@@ -172,10 +172,10 @@ int main(int argc, char** argv)
       ("preset", po::value<feature::EDESCRIBER_PRESET>(&featurePreset)->default_value(featurePreset), 
           "Preset for the feature extractor when localizing a new image "
           "{LOW,MEDIUM,NORMAL,HIGH,ULTRA}")
-      ("resectionEstimator", po::value<robust::EROBUST_ESTIMATOR>(&resectionEstimator)->default_value(resectionEstimator), 
+      ("resectionEstimator", po::value<robustEstimation::EROBUST_ESTIMATOR>(&resectionEstimator)->default_value(resectionEstimator), 
           std::string("The type of *sac framework to use for resection "
           "{"+str_estimatorChoices+"}").c_str())
-      ("matchingEstimator", po::value<robust::EROBUST_ESTIMATOR>(&matchingEstimator)->default_value(matchingEstimator), 
+      ("matchingEstimator", po::value<robustEstimation::EROBUST_ESTIMATOR>(&matchingEstimator)->default_value(matchingEstimator), 
           std::string("The type of *sac framework to use for matching "
           "{"+str_estimatorChoices+"}").c_str())
       ("refineIntrinsics", po::bool_switch(&refineIntrinsics),

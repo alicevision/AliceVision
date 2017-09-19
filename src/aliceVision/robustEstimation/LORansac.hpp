@@ -3,9 +3,9 @@
 
 #pragma once
 
-#include "aliceVision/robust_estimation/rand_sampling.hpp"
-#include "aliceVision/robust_estimation/robust_estimator_ACRansac.hpp"
-#include "aliceVision/robust_estimation/robust_ransac_tools.hpp"
+#include "aliceVision/robustEstimation/randSampling.hpp"
+#include "aliceVision/robustEstimation/ACRansac.hpp"
+#include "aliceVision/robustEstimation/ransacTools.hpp"
 #include <limits>
 #include <numeric>
 #include <iostream>
@@ -13,7 +13,7 @@
 #include <iterator>
 
 namespace aliceVision {
-namespace robust{
+namespace robustEstimation{
 
 /**
  * @brief It performs an iterative reweighted least square (IRLS) estimation of the problem
@@ -26,8 +26,8 @@ namespace robust{
  * 
  * @tparam Kernel The kernel used in the LORansac estimator which must provide a
  * minimum solver and a LS solver, the latter used here for the IRLS 
- * @see aliceVision/robust_estimation/robust_estimator_LORansacKernelAdaptor.hpp
- * @tparam Scorer The scorer used in the LORansac estimator @see ScorerEvaluator
+ * @see aliceVision/robustEstimation/LORansacKernelAdaptor.hpp
+ * @tparam Scorer The scorer used in the LORansac estimator @see ScoreEvaluator
  * 
  * @param[in] kernel The kernel used in the LORansac estimator.
  * @param[in] scorer The scorer used in the LORansac estimator.
@@ -148,8 +148,8 @@ double iterativeReweightedLeastSquares(const Kernel &kernel,
  * 
  * @tparam Kernel The kernel used in the LORansac estimator which must provide a
  * minimum solver and a LS solver, the latter used here for the IRLS 
- * @see aliceVision/robust_estimation/robust_estimator_LORansacKernelAdaptor.hpp
- * @tparam Scorer The scorer used in the LORansac estimator @see ScorerEvaluator
+ * @see aliceVision/robustEstimation/LORansacKernelAdaptor.hpp
+ * @tparam Scorer The scorer used in the LORansac estimator @see ScoreEvaluator
  * 
  * @param[in] kernel The kernel used in the LORansac estimator.
  * @param[in] scorer The scorer used in the LORansac estimator.
@@ -270,8 +270,8 @@ double localOptimization(const Kernel &kernel,
  * 
  * @tparam Kernel The kernel used in the LORansac estimator which must provide a
  * minimum solver and a LS solver, the latter used here for the IRLS 
- * @see aliceVision/robust_estimation/robust_estimator_LORansacKernelAdaptor.hpp
- * @tparam Scorer The scorer used in the LORansac estimator @see ScorerEvaluator
+ * @see aliceVision/robustEstimation/LORansacKernelAdaptor.hpp
+ * @tparam Scorer The scorer used in the LORansac estimator @see ScoreEvaluator
  * 
  * @param[in] kernel The kernel containing the problem to solve.
  * @param[in] scorer The scorer used to asses the model quality.
@@ -401,9 +401,5 @@ typename Kernel::Model LO_RANSAC(const Kernel &kernel,
   return bestModel;  
 }
 
-
-
-
-
-} // namespace robust
+} // namespace robustEstimation
 } // namespace aliceVision

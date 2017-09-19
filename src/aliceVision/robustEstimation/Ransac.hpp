@@ -1,12 +1,11 @@
 // This file is part of the AliceVision project and is made available under
 // the terms of the MPL2 license (see the COPYING.md file).
 
-#ifndef ALICEVISION_ROBUST_ESTIMATION_SIMPLE_RANSAC_H_
-#define ALICEVISION_ROBUST_ESTIMATION_SIMPLE_RANSAC_H_
+#pragma once
 
 #include <aliceVision/system/Logger.hpp>
-#include "aliceVision/robust_estimation/rand_sampling.hpp"
-#include "aliceVision/robust_estimation/robust_ransac_tools.hpp"
+#include "aliceVision/robustEstimation/randSampling.hpp"
+#include "aliceVision/robustEstimation/ransacTools.hpp"
 #include <limits>
 #include <numeric>
 #include <vector>
@@ -14,7 +13,7 @@
 #include <iterator>
 
 namespace aliceVision {
-namespace robust{
+namespace robustEstimation{
 
 /// \brief The famous Random Sample Consensus algorithm (Fischler&Bolles 1981).
 /// \details The number of tests is reevaluated down as soon as more inliers are
@@ -117,6 +116,5 @@ typename Kernel::Model RANSAC(
 }
 
 
-} // namespace robust
+} // namespace robustEstimation
 } // namespace aliceVision
-#endif // ALICEVISION_ROBUST_ESTIMATION_SIMPLE_RANSAC_H_

@@ -3,12 +3,12 @@
 
 #pragma once
 
-#include <aliceVision/robust_estimation/robust_estimator_ACRansacKernelAdaptator.hpp>
+#include <aliceVision/robustEstimation/ACRansacKernelAdaptator.hpp>
 #include <aliceVision/numeric/numeric.hpp>
 #include <aliceVision/multiview/conditioning.hpp>
 
 namespace aliceVision {
-namespace robust {
+namespace robustEstimation {
 
 
 /**
@@ -156,5 +156,5 @@ class KernelAdaptorResectionLORansac_K :
 
 
 
-} // namespace robust
+} // namespace robustEstimation
 } // namespace aliceVision

@@ -3,7 +3,7 @@
 
 #include "rigidTransformation3D.hpp"
 
-#include "aliceVision/robust_estimation/robust_estimator_ACRansac.hpp"
+#include "aliceVision/robustEstimation/ACRansac.hpp"
 
 #include "CppUnitLite/TestHarness.h"
 

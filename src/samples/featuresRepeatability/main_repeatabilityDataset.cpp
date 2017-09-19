@@ -5,7 +5,7 @@
 #include "aliceVision/feature/feature.hpp"
 #include "aliceVision/feature/sift/ImageDescriber_SIFT.hpp"
 #include "aliceVision/feature/akaze/ImageDescriber_AKAZE.hpp"
-#include "aliceVision/robust_estimation/guided_matching.hpp"
+#include "aliceVision/robustEstimation/guidedMatching.hpp"
 #include "aliceVision/multiview/solver_homography_kernel.hpp"
 #include "aliceVision/matching/RegionsMatcher.hpp"
 
@@ -324,7 +324,7 @@ int main(int argc, char **argv)
           PointsToMat(pointsFeaturesI, xI);
 
           IndMatches matches_0I;
-          geometry_aware::GuidedMatching
+          robustEstimation::GuidedMatching
             <Mat3, aliceVision::homography::kernel::AsymmetricError>(
             dataset.H(i).transpose(), x0, xI, Square(m_dPrecision_robust), matches_0I);
 
@@ -362,7 +362,7 @@ int main(int argc, char **argv)
           PointsToMat(putativesMatches, pointsFeatures0, pointsFeaturesI, x0, xI);
 
           IndMatches matches_0I;
-          geometry_aware::GuidedMatching
+          robustEstimation::GuidedMatching
             <Mat3, aliceVision::homography::kernel::AsymmetricError>(
             dataset.H(i).transpose(), x0, xI, Square(m_dPrecision_robust), matches_0I);
 

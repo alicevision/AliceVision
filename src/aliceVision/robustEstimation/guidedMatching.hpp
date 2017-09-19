@@ -13,7 +13,7 @@
 #include <vector>
 
 namespace aliceVision {
-namespace geometry_aware {
+namespace robustEstimation {
 
 /**
  * @brief Guided Matching (features only):
@@ -335,7 +335,7 @@ inline bool line_to_endPoints(const Vec3 & line, int W, int H, Vec2 & x0, Vec2 &
 /// Cluster correspondences per epipolar line (faster than exhaustive search).
 ///   Keep the best corresponding points for the given model under the
 ///   user specified distance ratio.
-/// Can be seen as a variant of geometry_aware method [1].
+/// Can be seen as a variant of robustEstimation method [1].
 /// Note that implementation done here use a pixel grid limited to image border.
 ///
 ///  [1] Rajvi Shah, Vanshika Shrivastava, and P J Narayanan
@@ -452,5 +452,5 @@ void GuidedMatching_Fundamental_Fast(
   }
 }
 
-} // namespace geometry_aware
+} // namespace robustEstimation
 } // namespace aliceVision

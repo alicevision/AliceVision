@@ -1,19 +1,18 @@
 // This file is part of the AliceVision project and is made available under
 // the terms of the MPL2 license (see the COPYING.md file).
 
-#ifndef ALICEVISION_ROBUST_ESTIMATION_SCORE_EVALUATOR_H_
-#define ALICEVISION_ROBUST_ESTIMATION_SCORE_EVALUATOR_H_
+#pragma once
 
 namespace aliceVision {
-namespace robust{
+namespace robustEstimation{
 
 using namespace std;
 
 /// Templated Functor class to evaluate a given model over a set of samples.
 template<typename Kernel>
-class ScorerEvaluator {
+class ScoreEvaluator {
 public:
-  ScorerEvaluator(double threshold) : threshold_(threshold) {}
+  ScoreEvaluator(double threshold) : threshold_(threshold) {}
 
   template <typename T>
   double Score(const Kernel &kernel,
@@ -55,7 +54,5 @@ private:
   double threshold_;
 };
 
-} // namespace robust
+} // namespace robustEstimation
 } // namespace aliceVision
-
-#endif // ALICEVISION_ROBUST_ESTIMATION_SCORE_EVALUATOR_H_

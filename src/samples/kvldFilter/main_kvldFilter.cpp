@@ -18,10 +18,10 @@ using namespace aliceVision::matching;
 
 using namespace aliceVision;
 
-#include "aliceVision/robust_estimation/robust_estimator_ACRansac.hpp"
-#include "aliceVision/robust_estimation/robust_estimator_ACRansacKernelAdaptator.hpp"
+#include "aliceVision/robustEstimation/ACRansac.hpp"
+#include "aliceVision/robustEstimation/ACRansacKernelAdaptator.hpp"
 
-using namespace aliceVision::robust;
+using namespace aliceVision::robustEstimation;
 
 #include "dependencies/vectorGraphics/svgDrawer.hpp"
 

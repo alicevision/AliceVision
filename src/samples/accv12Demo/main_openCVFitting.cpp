@@ -4,10 +4,10 @@
 #include "aliceVision/numeric/numeric.hpp"
 #include "aliceVision/multiview/solver_homography_kernel.hpp"
 #include "aliceVision/multiview/conditioning.hpp"
-#include "aliceVision/robust_estimation/robust_estimator_MaxConsensus.hpp"
-#include "aliceVision/robust_estimation/score_evaluator.hpp"
-#include "aliceVision/robust_estimation/robust_estimator_ACRansac.hpp"
-#include "aliceVision/robust_estimation/robust_estimator_ACRansacKernelAdaptator.hpp"
+#include "aliceVision/robustEstimation/maxConsensus.hpp"
+#include "aliceVision/robustEstimation/ScoreEvaluator.hpp"
+#include "aliceVision/robustEstimation/ACRansac.hpp"
+#include "aliceVision/robustEstimation/ACRansacKernelAdaptator.hpp"
 
 #include "dependencies/vectorGraphics/svgDrawer.hpp"
 
@@ -29,7 +29,7 @@
 #include <cvaux.h>
 
 using namespace aliceVision;
-using namespace aliceVision::robust;
+using namespace aliceVision::robustEstimation;
 using namespace cv;
 
 // Number of the frames processed per second in the application
@@ -208,7 +208,7 @@ int main(int, char**)
             typedef homography::kernel::Kernel KernelType;
             KernelType kernel(xA, xB);
             if (bDoRansac)
-              Hransac = MaxConsensus(kernel, ScorerEvaluator<KernelType>(Square(thresholdransac)), &vec_inliersRansac, 1024);
+              Hransac = MaxConsensus(kernel, ScoreEvaluator<KernelType>(Square(thresholdransac)), &vec_inliersRansac, 1024);
             if (vec_inliersRansac.size()<12)
               thresholdransac = 900;
           }

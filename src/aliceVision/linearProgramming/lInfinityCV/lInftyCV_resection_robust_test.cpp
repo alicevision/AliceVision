@@ -6,15 +6,15 @@
 #include "testing/testing.h"
 
 #include "aliceVision/linearProgramming/lInfinityCV/resection_kernel.hpp"
-#include "aliceVision/robust_estimation/robust_estimator_MaxConsensus.hpp"
-#include "aliceVision/robust_estimation/score_evaluator.hpp"
+#include "aliceVision/robustEstimation/maxConsensus.hpp"
+#include "aliceVision/robustEstimation/ScoreEvaluator.hpp"
 #include "aliceVision/multiview/projection.hpp"
 
 #include <iostream>
 #include <vector>
 
 using namespace aliceVision;
-using namespace aliceVision::robust;
+using namespace aliceVision::robustEstimation;
 
 TEST(Resection_L_Infinity, Robust_OutlierFree) {
 
@@ -37,7 +37,7 @@ TEST(Resection_L_Infinity, Robust_OutlierFree) {
     const Mat & pt2D = d2._x[nResectionCameraIndex];
     const Mat & pt3D = d2._X;
     KernelType kernel(pt2D, pt3D);
-    ScorerEvaluator<KernelType> scorer(2*Square(0.6));
+    ScoreEvaluator<KernelType> scorer(2*Square(0.6));
     Mat34 P = MaxConsensus(kernel, scorer, nullptr, 128);
 
     // Check that Projection matrix is near to the GT :
@@ -90,7 +90,7 @@ TEST(Resection_L_Infinity, Robust_OneOutlier) {
     const Mat & pt2D = d2._x[nResectionCameraIndex];
     const Mat & pt3D = d2._X;
     KernelType kernel(pt2D, pt3D);
-    ScorerEvaluator<KernelType> scorer(Square(0.1)); //Highly intolerant for the test
+    ScoreEvaluator<KernelType> scorer(Square(0.1)); //Highly intolerant for the test
     Mat34 P = MaxConsensus(kernel, scorer, nullptr, 128);
 
     // Check that Projection matrix is near to the GT :

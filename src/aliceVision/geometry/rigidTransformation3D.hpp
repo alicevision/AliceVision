@@ -7,7 +7,7 @@
 #include "aliceVision/numeric/numeric.hpp"
 #include "aliceVision/numeric/LMFunctor.hpp"
 
-#include <aliceVision/robust_estimation/robust_estimator_ACRansac.hpp>
+#include <aliceVision/robustEstimation/ACRansac.hpp>
 
 namespace aliceVision {
 namespace geometry {
@@ -406,7 +406,7 @@ static bool ACRansac_FindRTS(const Mat &x1,
   KernelType kernel = KernelType(x1, x2);
   // Robust estimation of the Projection matrix and its precision
   const std::pair<double, double> ACRansacOut =
-          robust::ACRANSAC(kernel, vec_inliers, numIterations, &RTS, dPrecision, true);
+          robustEstimation::ACRANSAC(kernel, vec_inliers, numIterations, &RTS, dPrecision, true);
   
   const bool good = decomposeRTS(RTS, S, t, R);
   

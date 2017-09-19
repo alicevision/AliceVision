@@ -7,10 +7,10 @@
 #include "aliceVision/matching/RegionsMatcher.hpp"
 #include "aliceVision/multiview/solver_homography_kernel.hpp"
 #include "aliceVision/multiview/conditioning.hpp"
-#include "aliceVision/robust_estimation/robust_estimator_ACRansac.hpp"
-#include "aliceVision/robust_estimation/robust_estimator_ACRansacKernelAdaptator.hpp"
+#include "aliceVision/robustEstimation/ACRansac.hpp"
+#include "aliceVision/robustEstimation/ACRansacKernelAdaptator.hpp"
 
-#include "aliceVision/robust_estimation/guided_matching.hpp"
+#include "aliceVision/robustEstimation/guidedMatching.hpp"
 
 #include "dependencies/stlplus3/filesystemSimplified/file_system.hpp"
 #include "dependencies/vectorGraphics/svgDrawer.hpp"
@@ -21,7 +21,7 @@
 using namespace aliceVision;
 using namespace aliceVision::image;
 using namespace aliceVision::matching;
-using namespace aliceVision::robust;
+using namespace aliceVision::robustEstimation;
 using namespace svg;
 using namespace std;
 
@@ -198,14 +198,14 @@ int main() {
 
       //a. by considering only the geometric error
 
-      geometry_aware::GuidedMatching<Mat3, aliceVision::homography::kernel::AsymmetricError>(
+      robustEstimation::GuidedMatching<Mat3, aliceVision::homography::kernel::AsymmetricError>(
         H, xL, xR, Square(thresholdH), vec_corresponding_indexes[0]);
       std::cout << "\nGuided homography matching (geometric error) found "
         << vec_corresponding_indexes[0].size() << " correspondences."
         << std::endl;
 
       // b. by considering geometric error and descriptor distance ratio
-      geometry_aware::GuidedMatching
+      robustEstimation::GuidedMatching
         <Mat3, aliceVision::homography::kernel::AsymmetricError>(
         H,
         NULL, *regions_perImage.at(0), // Null since no Intrinsic is defined

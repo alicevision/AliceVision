@@ -8,7 +8,7 @@
 #include "aliceVision/multiview/conditioning.hpp"
 
 #include "aliceVision/linearProgramming/linearProgramming.hpp"
-#include "aliceVision/robust_estimation/robust_estimator_ACRansac.hpp"
+#include "aliceVision/robustEstimation/ACRansac.hpp"
 
 namespace aliceVision{
 namespace sfm{

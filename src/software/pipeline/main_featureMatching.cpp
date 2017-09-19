@@ -33,7 +33,7 @@
 using namespace aliceVision;
 using namespace aliceVision::camera;
 using namespace aliceVision::matching;
-using namespace aliceVision::robust;
+using namespace aliceVision::robustEstimation;
 using namespace aliceVision::sfm;
 using namespace aliceVision::matchingImageCollection;
 using namespace std;
@@ -97,7 +97,7 @@ int main(int argc, char **argv)
   int rangeStart = -1;
   int rangeSize = 0;
   std::string nearestMatchingMethod = "ANN_L2";
-  std::string geometricEstimatorStr = robust::EROBUST_ESTIMATOR_enumToString(robust::ROBUST_ESTIMATOR_ACRANSAC);
+  std::string geometricEstimatorStr = robustEstimation::EROBUST_ESTIMATOR_enumToString(robustEstimation::ROBUST_ESTIMATOR_ACRANSAC);
   bool savePutativeMatches = false;
   bool guidedMatching = false;
   int maxIteration = 2048;
@@ -191,8 +191,8 @@ int main(int argc, char **argv)
       << "  For Binary based descriptor:\n"
       << "    BRUTE_FORCE_HAMMING: BruteForce Hamming matching.\n"
       << "[-G|--geometricEstimator] Geometric estimator\n"
-      << "  " << robust::EROBUST_ESTIMATOR_enumToString(robust::ROBUST_ESTIMATOR_ACRANSAC) << ": A-Contrario Ransac (default),\n"
-      << "  " << robust::EROBUST_ESTIMATOR_enumToString(robust::ROBUST_ESTIMATOR_LORANSAC) << ": LO-Ransac (only available for fundamental matrix)\n"
+      << "  " << robustEstimation::EROBUST_ESTIMATOR_enumToString(robustEstimation::ROBUST_ESTIMATOR_ACRANSAC) << ": A-Contrario Ransac (default),\n"
+      << "  " << robustEstimation::EROBUST_ESTIMATOR_enumToString(robustEstimation::ROBUST_ESTIMATOR_LORANSAC) << ": LO-Ransac (only available for fundamental matrix)\n"
       << "[-M|--guided_matching]\n"
       << "  use the found model to improve the pairwise correspondences.\n"
       << "[-I|--max_iteration]\n"
@@ -280,7 +280,7 @@ int main(int argc, char **argv)
       std::cerr << "Unknown geometric model: " << geometricMode << std::endl;
       return EXIT_FAILURE;
   }
-  robust::EROBUST_ESTIMATOR geometricEstimator = robust::EROBUST_ESTIMATOR_stringToEnum(geometricEstimatorStr);
+  robustEstimation::EROBUST_ESTIMATOR geometricEstimator = robustEstimation::EROBUST_ESTIMATOR_stringToEnum(geometricEstimatorStr);
 
   // -----------------------------
   // - Load SfM_Data Views & intrinsics data

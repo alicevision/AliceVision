@@ -18,7 +18,7 @@
 #include <aliceVision/matchingImageCollection/GeometricFilterMatrix_F_AC.hpp>
 #include <aliceVision/matchingImageCollection/GeometricFilterMatrix.hpp>
 #include <aliceVision/numeric/numeric.hpp>
-#include <aliceVision/robust_estimation/guided_matching.hpp>
+#include <aliceVision/robustEstimation/guidedMatching.hpp>
 #include <aliceVision/system/Logger.hpp>
 #include <aliceVision/system/timer.hpp>
 
@@ -1058,7 +1058,7 @@ bool VoctreeLocalizer::robustMatching(matching::RegionsDatabaseMatcherPerDesc & 
                                       const std::pair<std::size_t,std::size_t> & imageSizeI,     // size of the first image @fixme change the API of the kernel!! 
                                       const std::pair<std::size_t,std::size_t> & imageSizeJ,     // size of the second image
                                       matching::MatchesPerDescType & out_featureMatches,
-                                      robust::EROBUST_ESTIMATOR estimator) const
+                                      robustEstimation::EROBUST_ESTIMATOR estimator) const
 {
   // get the intrinsics of the query camera
   if ((queryIntrinsicsBase != nullptr) && !isPinhole(queryIntrinsicsBase->getType()))
@@ -1133,7 +1133,7 @@ bool VoctreeLocalizer::robustMatching(matching::RegionsDatabaseMatcherPerDesc & 
   // perform guided matching.
   // So we ignore the previous matches and recompute all matches.
   out_featureMatches.clear();
-  geometry_aware::GuidedMatching<
+  robustEstimation::GuidedMatching<
           Mat3,
           aliceVision::fundamental::kernel::EpipolarDistanceError>(
         geometricFilter.m_F,

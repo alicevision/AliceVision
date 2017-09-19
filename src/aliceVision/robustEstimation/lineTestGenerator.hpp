@@ -5,7 +5,7 @@
 
 #include "dependencies/vectorGraphics/svgDrawer.hpp"
 #include <aliceVision/numeric/numeric.hpp>
-#include "robust_estimator_lineKernel_test.hpp"
+#include "LineKernel.hpp"
 
 #include <iostream>
 #include <fstream>  
@@ -134,7 +134,7 @@ void generateLine(std::size_t numPoints,
       assert(timeToStop < 200);
       pt(0) = realDist(gen) * W;
       pt(1) = realDist(gen) * H;
-      distance = aliceVision::robust::pointToLineError::Error(GTModel, pt);
+      distance = aliceVision::robustEstimation::pointToLineError::Error(GTModel, pt);
       ++timeToStop;
     }
 //    total += timeToStop;

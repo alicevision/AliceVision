@@ -7,8 +7,8 @@
 #include "aliceVision/multiview/projection.hpp"
 #include "aliceVision/multiview/triangulation.hpp"
 
-#include "aliceVision/robust_estimation/robust_estimator_ACRansac.hpp"
-#include "aliceVision/robust_estimation/robust_estimator_ACRansacKernelAdaptator.hpp"
+#include "aliceVision/robustEstimation/ACRansac.hpp"
+#include "aliceVision/robustEstimation/ACRansacKernelAdaptator.hpp"
 
 namespace aliceVision {
 namespace sfm {
@@ -70,7 +70,7 @@ bool estimate_Rt_fromE(const Mat3 & K1, const Mat3 & K2,
   return true;
 }
 
-using namespace aliceVision::robust;
+using namespace aliceVision::robustEstimation;
 
 bool robustRelativePose(
   const Mat3 & K1, const Mat3 & K2,

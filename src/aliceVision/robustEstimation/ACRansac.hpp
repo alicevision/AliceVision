@@ -1,8 +1,7 @@
 // This file is part of the AliceVision project and is made available under
 // the terms of the MPL2 license (see the COPYING.md file).
 
-#ifndef ALICEVISION_ROBUST_ESTIMATOR_ACRANSAC_H_
-#define ALICEVISION_ROBUST_ESTIMATOR_ACRANSAC_H_
+#pragma once
 
 //-------------------
 // Generic implementation of ACRANSAC
@@ -38,11 +37,11 @@
 #include <numeric>
 #include <vector>
 
-#include <aliceVision/robust_estimation/rand_sampling.hpp>
+#include <aliceVision/robustEstimation/randSampling.hpp>
 #include <aliceVision/system/Logger.hpp>
 
 namespace aliceVision {
-namespace robust{
+namespace robustEstimation{
 
 /// logarithm (base 10) of binomial coefficient
 template <typename T>
@@ -307,6 +306,5 @@ std::pair<double, double> ACRANSAC(const Kernel &kernel,
   return std::make_pair(errorMax, minNFA);
 }
 
-} // namespace robust
+} // namespace robustEstimation
 } // namespace aliceVision
-#endif // ALICEVISION_ROBUST_ESTIMATOR_ACRANSAC_H_

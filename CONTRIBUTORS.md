@@ -1,7 +1,7 @@
 AliceVision Contributors
 ========================
 
-[libmv](https://github.com/libmv/libmv) has been an important source of inspiration for the design of openMVG and part of the code from the "multiview" and "robust_estimation" modules are based on libmv code, see [CONTRIBUTORS-libmv.md](CONTRIBUTORS-libmv.md).
+[libmv](https://github.com/libmv/libmv) has been an important source of inspiration for the design of openMVG and part of the code from the "multiview" and "robustEstimation" modules are based on libmv code, see [CONTRIBUTORS-libmv.md](CONTRIBUTORS-libmv.md).
 [openMVG](https://github.com/openMVG/openMVG) and [CMPMVS](http://ptak.felk.cvut.cz/sfmservice/websfm.pl?menu=cmpmvs) have been the first steps to build AliceVision.
 
 

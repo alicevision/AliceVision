@@ -3,15 +3,15 @@
 
 #pragma once
 
-#include "aliceVision/robust_estimation/rand_sampling.hpp"
-#include "aliceVision/robust_estimation/robust_ransac_tools.hpp"
+#include "aliceVision/robustEstimation/randSampling.hpp"
+#include "aliceVision/robustEstimation/ransacTools.hpp"
 
 #include <algorithm>
 #include <limits>
 #include <vector>
 
 namespace aliceVision {
-namespace robust {
+namespace robustEstimation {
 
 /// \brief Variant of RANSAC using Least Median of Squares.
 /// \details Instead of using a fixed threshold to distinguish inlier/outlier,
@@ -108,5 +108,5 @@ double LeastMedianOfSquares(const Kernel &kernel,
 }
 
 
-} // namespace robust
+} // namespace robustEstimation
 } // namespace aliceVision

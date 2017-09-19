@@ -2,7 +2,7 @@
 // the terms of the MPL2 license (see the COPYING.md file).
 
 #include "rigResection.hpp"
-#include "aliceVision/robust_estimation/robust_estimator_ACRansacKernelAdaptator.hpp"
+#include "aliceVision/robustEstimation/ACRansacKernelAdaptator.hpp"
 #if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_OPENGV)
 #include <Eigen/Eigen>
 #include <opengv/absolute_pose/methods.hpp>
@@ -196,7 +196,7 @@ EstimationStatus rigResection(const std::vector<Mat> &pts2d,
   if(descTypesPerCamera)
   {
     // Check if estimation has strong support
-    hasStrongSupport = robust::hasStrongSupport(inliers, *descTypesPerCamera, 3);
+    hasStrongSupport = robustEstimation::hasStrongSupport(inliers, *descTypesPerCamera, 3);
   }
   return EstimationStatus(true, hasStrongSupport);
 }

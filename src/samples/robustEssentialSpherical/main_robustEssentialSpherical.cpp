@@ -6,9 +6,9 @@
 #include "aliceVision/feature/sift/ImageDescriber_SIFT.hpp"
 #include "aliceVision/matching/RegionsMatcher.hpp"
 #include "aliceVision/multiview/essential.hpp"
-#include "aliceVision/robust_estimation/robust_estimator_ACRansac.hpp"
+#include "aliceVision/robustEstimation/ACRansac.hpp"
 #include "aliceVision/multiview/conditioning.hpp"
-#include "aliceVision/robust_estimation/robust_estimator_ACRansacKernelAdaptator.hpp"
+#include "aliceVision/robustEstimation/ACRansacKernelAdaptator.hpp"
 
 #include "sphericalCam.hpp"
 
@@ -23,7 +23,7 @@
 using namespace aliceVision;
 using namespace aliceVision::image;
 using namespace aliceVision::matching;
-using namespace aliceVision::robust;
+using namespace aliceVision::robustEstimation;
 using namespace svg;
 using namespace std;
 
@@ -145,7 +145,7 @@ int main() {
       typedef aliceVision::spherical_cam::EssentialKernel_spherical Kernel;
 
       // Define the AContrario angular error adaptor
-      typedef aliceVision::robust::ACKernelAdaptor_AngularRadianError<
+      typedef aliceVision::robustEstimation::ACKernelAdaptor_AngularRadianError<
           aliceVision::spherical_cam::EightPointRelativePoseSolver,
           aliceVision::spherical_cam::AngularError,
           Mat3>

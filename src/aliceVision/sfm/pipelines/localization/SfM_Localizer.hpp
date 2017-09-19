@@ -6,7 +6,7 @@
 #include "aliceVision/numeric/numeric.hpp"
 #include "aliceVision/sfm/sfm_data.hpp"
 #include "aliceVision/feature/RegionsPerView.hpp"
-#include <aliceVision/robust_estimation/robust_estimators.hpp>
+#include <aliceVision/robustEstimation/estimators.hpp>
 
 #include <cstddef>
 #include <limits>
@@ -96,7 +96,7 @@ public:
     const camera::IntrinsicBase * optional_intrinsics,
     Image_Localizer_Match_Data & resection_data,
     geometry::Pose3 & pose,
-    robust::EROBUST_ESTIMATOR estimator = robust::ROBUST_ESTIMATOR_ACRANSAC
+    robustEstimation::EROBUST_ESTIMATOR estimator = robustEstimation::ROBUST_ESTIMATOR_ACRANSAC
   );
 
   /**

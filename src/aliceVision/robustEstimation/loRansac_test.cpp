@@ -1,9 +1,9 @@
 // This file is part of the AliceVision project and is made available under
 // the terms of the MPL2 license (see the COPYING.md file).
 
-#include "aliceVision/robust_estimation/robust_estimator_lineKernel_test.hpp"
-#include "aliceVision/robust_estimation/robust_estimator_LORansac.hpp"
-#include "aliceVision/robust_estimation/score_evaluator.hpp"
+#include "aliceVision/robustEstimation/LineKernel.hpp"
+#include "aliceVision/robustEstimation/LORansac.hpp"
+#include "aliceVision/robustEstimation/ScoreEvaluator.hpp"
 
 #include "lineTestGenerator.hpp"
 
@@ -17,7 +17,7 @@
 #include <string>
 
 using namespace aliceVision;
-using namespace aliceVision::robust;
+using namespace aliceVision::robustEstimation;
  
 
 struct LineKernelLoRansac : public LineKernel
@@ -83,7 +83,7 @@ void lineFittingTest(std::size_t numPoints,
   const double threshold = (withNoise) ? 3 * gaussianNoiseLevel : 0.3;
   LineKernelLoRansac kernel(xy);
 
-  estimatedModel = LO_RANSAC(kernel, ScorerEvaluator<LineKernel>(threshold), &vec_inliers);
+  estimatedModel = LO_RANSAC(kernel, ScoreEvaluator<LineKernel>(threshold), &vec_inliers);
   ALICEVISION_LOG_DEBUG("#inliers found : " << vec_inliers.size()
           << " expected: " << numPoints - expectedInliers);
   ALICEVISION_LOG_DEBUG("model[0] found : " << estimatedModel[0]

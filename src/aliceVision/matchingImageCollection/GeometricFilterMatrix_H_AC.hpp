@@ -4,9 +4,9 @@
 #pragma once
 
 #include "aliceVision/multiview/solver_homography_kernel.hpp"
-#include "aliceVision/robust_estimation/robust_estimator_ACRansac.hpp"
-#include "aliceVision/robust_estimation/robust_estimator_ACRansacKernelAdaptator.hpp"
-#include "aliceVision/robust_estimation/guided_matching.hpp"
+#include "aliceVision/robustEstimation/ACRansac.hpp"
+#include "aliceVision/robustEstimation/ACRansacKernelAdaptator.hpp"
+#include "aliceVision/robustEstimation/guidedMatching.hpp"
 
 #include "aliceVision/matching/IndMatch.hpp"
 #include "aliceVision/matching/IndMatchDecorator.hpp"
@@ -40,7 +40,7 @@ struct GeometricFilterMatrix_H_AC : public GeometricFilterMatrix
     matching::MatchesPerDescType & out_geometricInliersPerType)
   {
     using namespace aliceVision;
-    using namespace aliceVision::robust;
+    using namespace aliceVision::robustEstimation;
     out_geometricInliersPerType.clear();
 
     // Get back corresponding view index
@@ -87,7 +87,7 @@ struct GeometricFilterMatrix_H_AC : public GeometricFilterMatrix
           out_geometricInliersPerType);
 
     // Check if resection has strong support
-    const bool hasStrongSupport = robust::hasStrongSupport(out_geometricInliersPerType, KernelType::MINIMUM_SAMPLES);
+    const bool hasStrongSupport = robustEstimation::hasStrongSupport(out_geometricInliersPerType, KernelType::MINIMUM_SAMPLES);
 
     return EstimationStatus(true, hasStrongSupport);
   }
@@ -219,7 +219,7 @@ struct GeometricFilterMatrix_H_AC : public GeometricFilterMatrix
           createMatricesWithUndistortFeatures(cam_I, pointsFeaturesI, xI);
           createMatricesWithUndistortFeatures(cam_J, pointsFeaturesJ, xJ);
 
-          geometry_aware::GuidedMatching
+          robustEstimation::GuidedMatching
             <Mat3, aliceVision::homography::kernel::AsymmetricError>(
             m_H, xI, xJ, Square(m_dPrecision_robust), localMatches);
 
@@ -232,7 +232,7 @@ struct GeometricFilterMatrix_H_AC : public GeometricFilterMatrix
       else
       {
         // Filtering based on region positions and regions descriptors
-        geometry_aware::GuidedMatching
+        robustEstimation::GuidedMatching
           <Mat3, aliceVision::homography::kernel::AsymmetricError>(
           m_H,
           cam_I, regionsPerView.getAllRegions(viewId_I),

@@ -3,7 +3,7 @@
 
 AliceVision is licensed under the [MPL2 license](LICENSE-MPL2.md).
 
-[libmv](https://github.com/libmv/libmv) has been an important source of inspiration for the design and part of the code of the "multiview" and "robust_estimation" modules are based on libmv code, see [LICENSE-libmv.md](LICENSE-libmv.md).
+[libmv](https://github.com/libmv/libmv) has been an important source of inspiration for the design and part of the code of the "multiview" and "robustEstimation" modules are based on libmv code, see [LICENSE-libmv.md](LICENSE-libmv.md).
 
 ## Third parties licenses
 

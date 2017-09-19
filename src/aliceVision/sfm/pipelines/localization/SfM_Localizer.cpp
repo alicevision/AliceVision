@@ -6,11 +6,11 @@
 
 #include "aliceVision/multiview/solver_resection_kernel.hpp"
 #include "aliceVision/multiview/solver_resection_p3p.hpp"
-#include "aliceVision/robust_estimation/robust_estimator_ACRansac.hpp"
-#include "aliceVision/robust_estimation/robust_estimator_ACRansacKernelAdaptator.hpp"
-#include <aliceVision/robust_estimation/robust_estimator_LORansac.hpp>
-#include <aliceVision/robust_estimation/robust_estimator_LORansacKernelAdaptor.hpp>
-#include <aliceVision/robust_estimation/score_evaluator.hpp>
+#include "aliceVision/robustEstimation/ACRansac.hpp"
+#include "aliceVision/robustEstimation/ACRansacKernelAdaptator.hpp"
+#include <aliceVision/robustEstimation/LORansac.hpp>
+#include <aliceVision/robustEstimation/LORansacKernelAdaptor.hpp>
+#include <aliceVision/robustEstimation/ScoreEvaluator.hpp>
 
 #include <aliceVision/config.hpp>
 namespace aliceVision {
@@ -33,7 +33,7 @@ bool SfM_Localizer::Localize
   const camera::IntrinsicBase * optional_intrinsics,
   Image_Localizer_Match_Data & resection_data,
   geometry::Pose3 & pose,
-  robust::EROBUST_ESTIMATOR estimator
+  robustEstimation::EROBUST_ESTIMATOR estimator
 )
 {
   // --
@@ -57,15 +57,15 @@ bool SfM_Localizer::Localize
     typedef aliceVision::resection::kernel::SixPointResectionSolver SolverType;
     MINIMUM_SAMPLES = SolverType::MINIMUM_SAMPLES;
 
-    typedef aliceVision::robust::ACKernelAdaptorResection<
-      SolverType, ResectionSquaredResidualError, aliceVision::robust::UnnormalizerResection, Mat34>
+    typedef aliceVision::robustEstimation::ACKernelAdaptorResection<
+      SolverType, ResectionSquaredResidualError, aliceVision::robustEstimation::UnnormalizerResection, Mat34>
       KernelType;
 
     KernelType kernel(resection_data.pt2D, image_size.first, image_size.second,
       resection_data.pt3D);
     // Robust estimation of the Projection matrix and its precision
     const std::pair<double,double> ACRansacOut =
-      aliceVision::robust::ACRANSAC(kernel, resection_data.vec_inliers, resection_data.max_iteration, &P, dPrecision, true);
+      aliceVision::robustEstimation::ACRANSAC(kernel, resection_data.vec_inliers, resection_data.max_iteration, &P, dPrecision, true);
     // Update the upper bound precision of the model found by AC-RANSAC
     resection_data.error_max = ACRansacOut.first;
   }
@@ -86,29 +86,29 @@ bool SfM_Localizer::Localize
 
     switch(estimator)
     {
-      case robust::ROBUST_ESTIMATOR_ACRANSAC:
+      case robustEstimation::ROBUST_ESTIMATOR_ACRANSAC:
       {
         //--
         // Since K calibration matrix is known, compute only [R|t]
         typedef aliceVision::euclidean_resection::P3PSolver SolverType;
         MINIMUM_SAMPLES = SolverType::MINIMUM_SAMPLES;
 
-        typedef aliceVision::robust::ACKernelAdaptorResection_K<
+        typedef aliceVision::robustEstimation::ACKernelAdaptorResection_K<
                 SolverType, ResectionSquaredResidualError,
-                aliceVision::robust::UnnormalizerResection, Mat34> KernelType;
+                aliceVision::robustEstimation::UnnormalizerResection, Mat34> KernelType;
 
         // otherwise we just pass the input points
         KernelType kernel = KernelType(has_disto ? pt2Dundistorted : resection_data.pt2D, resection_data.pt3D, pinhole_cam->K());
 
         // Robust estimation of the Projection matrix and its precision
         const std::pair<double, double> ACRansacOut =
-                aliceVision::robust::ACRANSAC(kernel, resection_data.vec_inliers, resection_data.max_iteration, &P, dPrecision, true);
+                aliceVision::robustEstimation::ACRANSAC(kernel, resection_data.vec_inliers, resection_data.max_iteration, &P, dPrecision, true);
         // Update the upper bound precision of the model found by AC-RANSAC
         resection_data.error_max = ACRansacOut.first;
         break;
       }
 
-      case robust::ROBUST_ESTIMATOR_LORANSAC:
+      case robustEstimation::ROBUST_ESTIMATOR_LORANSAC:
       {
 
         // just a safeguard
@@ -126,9 +126,9 @@ bool SfM_Localizer::Localize
         // use the six point algorithm as Least square solution to refine the model
         typedef aliceVision::resection::kernel::SixPointResectionSolver SolverLSType;
 
-        typedef aliceVision::robust::KernelAdaptorResectionLORansac_K<SolverType,
+        typedef aliceVision::robustEstimation::KernelAdaptorResectionLORansac_K<SolverType,
                 ResectionSquaredResidualError,
-                aliceVision::robust::UnnormalizerResection,
+                aliceVision::robustEstimation::UnnormalizerResection,
                 SolverLSType,
                 Mat34> KernelType;
 
@@ -140,8 +140,8 @@ bool SfM_Localizer::Localize
         // and normalization inside the kernel
         // @todo refactor, maybe move scorer directly inside the kernel
         const double threshold = resection_data.error_max * resection_data.error_max * (kernel.normalizer2()(0, 0) * kernel.normalizer2()(0, 0));
-        robust::ScorerEvaluator<KernelType> scorer(threshold);
-        P = robust::LO_RANSAC(kernel, scorer, &resection_data.vec_inliers);
+        robustEstimation::ScoreEvaluator<KernelType> scorer(threshold);
+        P = robustEstimation::LO_RANSAC(kernel, scorer, &resection_data.vec_inliers);
         break;
       }
 
@@ -150,7 +150,7 @@ bool SfM_Localizer::Localize
     }
   }
 
-  const bool bResection = robust::hasStrongSupport(resection_data.vec_inliers, resection_data.vec_descType, MINIMUM_SAMPLES);
+  const bool bResection = robustEstimation::hasStrongSupport(resection_data.vec_inliers, resection_data.vec_descType, MINIMUM_SAMPLES);
 
   if (!bResection)
   {

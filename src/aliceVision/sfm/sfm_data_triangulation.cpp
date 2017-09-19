@@ -4,7 +4,7 @@
 #include "aliceVision/sfm/sfm_data_triangulation.hpp"
 
 #include "aliceVision/multiview/triangulation_nview.hpp"
-#include "aliceVision/robust_estimation/rand_sampling.hpp"
+#include "aliceVision/robustEstimation/randSampling.hpp"
 #include <aliceVision/config.hpp>
 
 #include "dependencies/progress/progress.hpp"
@@ -178,7 +178,7 @@ bool SfM_Data_Structure_Computation_Robust::robust_triangulation(
   for (IndexT i = 0; i < nbIter; ++i)
   {
     std::set<IndexT> samples;
-    robust::UniformSample(std::min(std::size_t(min_sample_index), observations.size()), observations.size(), samples);
+    robustEstimation::UniformSample(std::min(std::size_t(min_sample_index), observations.size()), observations.size(), samples);
 
     // Hypothesis generation.
     const Vec3 current_model = track_sample_triangulation(sfm_data, observations, samples);

@@ -1,10 +1,10 @@
 // This file is part of the AliceVision project and is made available under
 // the terms of the MPL2 license (see the COPYING.md file).
 
-#include <aliceVision/robust_estimation/robust_estimator_LORansac.hpp>
-#include <aliceVision/robust_estimation/robust_estimator_LORansacKernelAdaptor.hpp>
-#include <aliceVision/robust_estimation/score_evaluator.hpp>
-#include <aliceVision/robust_estimation/rand_sampling.hpp>
+#include <aliceVision/robustEstimation/LORansac.hpp>
+#include <aliceVision/robustEstimation/LORansacKernelAdaptor.hpp>
+#include <aliceVision/robustEstimation/ScoreEvaluator.hpp>
+#include <aliceVision/robustEstimation/randSampling.hpp>
 #include <aliceVision/multiview/projection.hpp>
 #include <aliceVision/multiview/solver_resection_kernel.hpp>
 #include <aliceVision/multiview/solver_resection_p3p.hpp>
@@ -181,9 +181,9 @@ TEST(P3P_Ransac, noisyFromImagePoints)
     typedef aliceVision::euclidean_resection::P3PSolver SolverType;
     typedef aliceVision::resection::kernel::SixPointResectionSolver SolverLSType;
   
-    typedef aliceVision::robust::KernelAdaptorResectionLORansac_K<SolverType,
+    typedef aliceVision::robustEstimation::KernelAdaptorResectionLORansac_K<SolverType,
                                                               ResectionSquaredResidualError,
-                                                              aliceVision::robust::UnnormalizerResection,
+                                                              aliceVision::robustEstimation::UnnormalizerResection,
                                                               SolverLSType,
                                                               Mat34> KernelType;
 
@@ -196,8 +196,8 @@ TEST(P3P_Ransac, noisyFromImagePoints)
     std::vector<std::size_t> vec_inliers;
     const double threshold = 2*gaussianNoiseLevel;
     const double normalizedThreshold = Square(threshold / FOCAL);
-    robust::ScorerEvaluator<KernelType> scorer(normalizedThreshold);
-    Mat34 Pest = robust::LO_RANSAC(kernel, scorer, &vec_inliers);
+    robustEstimation::ScoreEvaluator<KernelType> scorer(normalizedThreshold);
+    Mat34 Pest = robustEstimation::LO_RANSAC(kernel, scorer, &vec_inliers);
     
     const std::size_t numInliersFound = vec_inliers.size();
     const std::size_t numInliersExpected = nbPoints-vec_outliers.size();
