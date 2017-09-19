@@ -8,7 +8,7 @@
 #include "aliceVision/matching/IndMatchDecorator.hpp"
 #include "aliceVision/matching/filters.hpp"
 
-#include "aliceVision/numeric/numeric.h"
+#include "aliceVision/numeric/numeric.hpp"
 #include "aliceVision/feature/Regions.hpp"
 #include "aliceVision/feature/RegionsPerView.hpp"
 

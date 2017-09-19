@@ -3,7 +3,7 @@
 
 #pragma once
 
-#include "aliceVision/numeric/numeric.h"
+#include "aliceVision/numeric/numeric.hpp"
 #include "aliceVision/sfm/sfm_data.hpp"
 #include "aliceVision/feature/RegionsPerView.hpp"
 #include <aliceVision/robust_estimation/robust_estimators.hpp>

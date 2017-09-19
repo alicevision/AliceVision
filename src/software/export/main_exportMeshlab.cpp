@@ -3,7 +3,7 @@
 
 #include "aliceVision/sfm/sfm.hpp"
 #include "aliceVision/image/image.hpp"
-#include "aliceVision/numeric/numeric.h"
+#include "aliceVision/numeric/numeric.hpp"
 
 #include "dependencies/cmdLine/cmdLine.h"
 #include "dependencies/stlplus3/filesystemSimplified/file_system.hpp"

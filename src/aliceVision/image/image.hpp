@@ -11,7 +11,7 @@
 #include <iostream>
 #include <vector>
 
-#include "aliceVision/numeric/numeric.h"
+#include "aliceVision/numeric/numeric.hpp"
 
 #include "aliceVision/image/Image.hpp"
 #include "aliceVision/image/pixelTypes.hpp"

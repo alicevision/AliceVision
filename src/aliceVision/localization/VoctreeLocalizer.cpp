@@ -17,7 +17,7 @@
 #include <aliceVision/matching/ArrayMatcher_kdtreeFlann.hpp>
 #include <aliceVision/matchingImageCollection/GeometricFilterMatrix_F_AC.hpp>
 #include <aliceVision/matchingImageCollection/GeometricFilterMatrix.hpp>
-#include <aliceVision/numeric/numeric.h>
+#include <aliceVision/numeric/numeric.hpp>
 #include <aliceVision/robust_estimation/guided_matching.hpp>
 #include <aliceVision/system/Logger.hpp>
 #include <aliceVision/system/timer.hpp>

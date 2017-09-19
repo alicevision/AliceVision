@@ -7,7 +7,7 @@
 
 #include "lineTestGenerator.hpp"
 
-#include "aliceVision/numeric/numeric.h"
+#include "aliceVision/numeric/numeric.hpp"
 #include "testing/testing.h"
 
 #include <iostream>

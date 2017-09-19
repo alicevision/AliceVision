@@ -3,7 +3,7 @@
 
 #include <iostream>
 
-#include "aliceVision/numeric/numeric.h"
+#include "aliceVision/numeric/numeric.hpp"
 #include "aliceVision/multiview/essential.hpp"
 #include "aliceVision/multiview/projection.hpp"
 #include "aliceVision/multiview/solver_essential_five_point.hpp"

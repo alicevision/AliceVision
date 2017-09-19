@@ -1,8 +1,7 @@
 // This file is part of the AliceVision project and is made available under
 // the terms of the MPL2 license (see the COPYING.md file).
 
-#ifndef ALICEVISION_NUMERIC_NUMERIC_H
-#define ALICEVISION_NUMERIC_NUMERIC_H
+#pragma once
 
 #include <aliceVision/system/Logger.hpp>
 
@@ -483,6 +482,3 @@ void SplitRange(const T range_start, const T range_end, const int nb_split,
 
 
 } // namespace aliceVision
-
-
-#endif  // ALICEVISION_NUMERIC_NUMERIC_H

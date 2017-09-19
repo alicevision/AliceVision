@@ -4,7 +4,7 @@
 #ifndef ALICEVISION_MULTIVIEW_CONDITIONNING_H_
 #define ALICEVISION_MULTIVIEW_CONDITIONNING_H_
 
-#include "aliceVision/numeric/numeric.h"
+#include "aliceVision/numeric/numeric.hpp"
 
 //-- Implementation of normalized coordinates.
 // Normalization improve accuracy of results and provide benefits

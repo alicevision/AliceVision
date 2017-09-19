@@ -2,7 +2,7 @@
 // the terms of the MPL2 license (see the COPYING.md file).
 
 #include "aliceVision/multiview/solver_fundamental_kernel.hpp"
-#include "aliceVision/numeric/poly.h"
+#include "aliceVision/numeric/polynomial.hpp"
 
 namespace aliceVision {
 namespace fundamental {

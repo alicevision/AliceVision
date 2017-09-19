@@ -4,7 +4,7 @@
 #ifndef ALICEVISION_SPHERICAL_CAMERA_HPP
 #define ALICEVISION_SPHERICAL_CAMERA_HPP
 
-#include "aliceVision/numeric/numeric.h"
+#include "aliceVision/numeric/numeric.hpp"
 #include "aliceVision/multiview/projection.hpp"
 
 // [1] "Robust and accurate calibration of camera networks". PhD.

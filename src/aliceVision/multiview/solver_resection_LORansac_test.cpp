@@ -12,7 +12,7 @@
 #include <aliceVision/camera/camera.hpp>
 #include <aliceVision/sfm/sfm.hpp>
 #include <aliceVision/geometry/Pose3.hpp>
-#include <aliceVision/numeric/numeric.h>
+#include <aliceVision/numeric/numeric.hpp>
 
 #include "testing/testing.h"
 

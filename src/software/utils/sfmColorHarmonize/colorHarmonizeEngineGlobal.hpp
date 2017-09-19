@@ -4,7 +4,7 @@
 #ifndef ALICEVISION_COLOR_HARMONIZATION_ENGINE_GLOBAL_H
 #define ALICEVISION_COLOR_HARMONIZATION_ENGINE_GLOBAL_H
 
-#include <aliceVision/numeric/numeric.h>
+#include <aliceVision/numeric/numeric.hpp>
 #include <aliceVision/feature/feature.hpp>
 #include <aliceVision/feature/RegionsPerView.hpp>
 #include <aliceVision/track/Track.hpp>

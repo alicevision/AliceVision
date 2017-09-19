@@ -3,7 +3,7 @@
 
 #pragma once
 
-#include "aliceVision/numeric/numeric.h"
+#include "aliceVision/numeric/numeric.hpp"
 #include "aliceVision/camera/cameraCommon.hpp"
 #include "aliceVision/geometry/Pose3.hpp"
 #include "aliceVision/stl/hash.hpp"

@@ -4,7 +4,7 @@
 #ifndef ALICEVISION_GLOBAL_SFM_ENGINE_TRIPLET_T_ESTIMATOR_H
 #define ALICEVISION_GLOBAL_SFM_ENGINE_TRIPLET_T_ESTIMATOR_H
 
-#include "aliceVision/numeric/numeric.h"
+#include "aliceVision/numeric/numeric.hpp"
 #include "aliceVision/multiview/conditioning.hpp"
 
 #include "aliceVision/linearProgramming/linearProgramming.hpp"

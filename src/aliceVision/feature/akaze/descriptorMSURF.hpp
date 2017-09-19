@@ -6,7 +6,7 @@
 
 #include "aliceVision/feature/Descriptor.hpp"
 #include "aliceVision/feature/PointFeature.hpp"
-#include "aliceVision/numeric/math_trait.hpp"
+#include "aliceVision/numeric/MathTrait.hpp"
 
 namespace aliceVision {
 namespace feature {

@@ -5,7 +5,7 @@
 #include <vector>
 
 #include "aliceVision/multiview/test_data_sets.hpp"
-#include "aliceVision/numeric/numeric.h"
+#include "aliceVision/numeric/numeric.hpp"
 #include <aliceVision/config.hpp>
 #include "testing/testing.h"
 

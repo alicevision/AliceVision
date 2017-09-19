@@ -5,7 +5,7 @@
 
 #include <aliceVision/localization/LocalizationResult.hpp>
 #include <aliceVision/geometry/Pose3.hpp>
-#include <aliceVision/numeric/numeric.h>
+#include <aliceVision/numeric/numeric.hpp>
 #include <aliceVision/config.hpp>
 
 #include <Eigen/Dense>

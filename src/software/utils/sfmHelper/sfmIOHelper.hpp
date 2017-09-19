@@ -4,7 +4,7 @@
 #ifndef ALICEVISION_SFM_IO_H
 #define ALICEVISION_SFM_IO_H
 
-#include "aliceVision/numeric/numeric.h"
+#include "aliceVision/numeric/numeric.hpp"
 #include "aliceVision/stl/split.hpp"
 
 #include <fstream>

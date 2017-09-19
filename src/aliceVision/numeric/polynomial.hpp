@@ -1,8 +1,7 @@
 // This file is part of the AliceVision project and is made available under
 // the terms of the MPL2 license (see the COPYING.md file).
 
-#ifndef ALICEVISION_NUMERIC_POLY_H_
-#define ALICEVISION_NUMERIC_POLY_H_
+#pragma once
 
 #include <cmath>
 #include <stdio.h>
@@ -103,4 +102,3 @@ int SolveCubicPolynomial(const Real *coeffs, Real *solutions) {
                               solutions + 2);
 }
 }  // namespace aliceVision
-#endif  // ALICEVISION_NUMERIC_POLY_H_

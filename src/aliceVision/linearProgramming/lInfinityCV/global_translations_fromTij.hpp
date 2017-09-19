@@ -4,7 +4,7 @@
 #ifndef ALICEVISION_LINFINITY_COMPUTER_VISION_GLOBAL_TRANSLATIONS_FROMTIJ_H_
 #define ALICEVISION_LINFINITY_COMPUTER_VISION_GLOBAL_TRANSLATIONS_FROMTIJ_H_
 
-#include "aliceVision/numeric/numeric.h"
+#include "aliceVision/numeric/numeric.hpp"
 #include "aliceVision/multiview/translation_averaging_common.hpp"
 #include "aliceVision/linearProgramming/ISolver.hpp"
 #include <fstream>

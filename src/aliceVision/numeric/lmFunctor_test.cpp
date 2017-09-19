@@ -5,8 +5,8 @@
 #include <fstream>
 #include <string>
 #include <aliceVision/system/Logger.hpp>
-#include "aliceVision/numeric/numeric.h"
-#include "aliceVision/numeric/lm.hpp"
+#include "aliceVision/numeric/numeric.hpp"
+#include "aliceVision/numeric/LMFunctor.hpp"
 #include "testing/testing.h"
 
 #include "dependencies/vectorGraphics/svgDrawer.hpp"
@@ -21,10 +21,10 @@ using namespace std;
 // Eigen LM functor to compute a mono-dimensional exponential regression
 // We are looking for the exponential function that best fit the given point x,y
 // f(x, c1, c2) = exp(c1*x) + c2
-struct lm_Refine_functor : Functor<double>
+struct lm_Refine_functor : LMFunctor<double>
 {
   lm_Refine_functor(int inputs, int values,
-    const Vec & x, const Vec & y): Functor<double>(inputs,values),
+    const Vec & x, const Vec & y): LMFunctor<double>(inputs,values),
       _x(x), _y(y){}
 
   // The residual operator compute errors for the given x parameter

@@ -6,7 +6,7 @@
 
 #include <vector>
 #include "aliceVision/multiview/two_view_kernel.hpp"
-#include "aliceVision/numeric/numeric.h"
+#include "aliceVision/numeric/numeric.hpp"
 
 namespace aliceVision {
 namespace fundamental {

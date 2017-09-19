@@ -4,7 +4,7 @@
 #ifndef ALICEVISION_SFM_PLY_HELPER_H
 #define ALICEVISION_SFM_PLY_HELPER_H
 
-#include "aliceVision/numeric/numeric.h"
+#include "aliceVision/numeric/numeric.hpp"
 
 #include <fstream>
 #include <string>

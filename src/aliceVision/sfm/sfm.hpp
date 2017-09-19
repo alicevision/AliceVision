@@ -5,7 +5,7 @@
 #define ALICEVISION_SFM_HPP
 
 #include "aliceVision/types.hpp"
-#include "aliceVision/numeric/numeric.h"
+#include "aliceVision/numeric/numeric.hpp"
 
 //-----------------
 // SfM data

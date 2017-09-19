@@ -5,7 +5,7 @@
 #include "aliceVision/robust_estimation/robust_estimator_Ransac.hpp"
 #include "aliceVision/robust_estimation/score_evaluator.hpp"
 
-#include "aliceVision/numeric/numeric.h"
+#include "aliceVision/numeric/numeric.hpp"
 
 #include "testing/testing.h"
 #include "lineTestGenerator.hpp"

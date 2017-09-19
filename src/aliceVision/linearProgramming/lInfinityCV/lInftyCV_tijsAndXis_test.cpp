@@ -2,7 +2,7 @@
 // the terms of the MPL2 license (see the COPYING.md file).
 
 #include "aliceVision/multiview/test_data_sets.hpp"
-#include "aliceVision/numeric/numeric.h"
+#include "aliceVision/numeric/numeric.hpp"
 #include <aliceVision/config.hpp>
 #include "CppUnitLite/TestHarness.h"
 #include "testing/testing.h"

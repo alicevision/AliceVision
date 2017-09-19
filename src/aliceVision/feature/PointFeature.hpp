@@ -4,7 +4,7 @@
 #ifndef ALICEVISION_FEATURES_FEATURE_HPP
 #define ALICEVISION_FEATURES_FEATURE_HPP
 
-#include "aliceVision/numeric/numeric.h"
+#include "aliceVision/numeric/numeric.hpp"
 #include <iostream>
 #include <iterator>
 #include <fstream>

@@ -4,7 +4,7 @@
 #ifndef ALICEVISION_FEATURES_IMAGE_DESCRIBER_HPP
 #define ALICEVISION_FEATURES_IMAGE_DESCRIBER_HPP
 
-#include "aliceVision/numeric/numeric.h"
+#include "aliceVision/numeric/numeric.hpp"
 #include "aliceVision/feature/imageDescriberCommon.hpp"
 #include "aliceVision/feature/Regions.hpp"
 #include "aliceVision/image/Image.hpp"

@@ -21,7 +21,7 @@
 //--
 
 
-#include "aliceVision/numeric/numeric.h"
+#include "aliceVision/numeric/numeric.hpp"
 #include "aliceVision/multiview/rotation_averaging_common.hpp"
 #include "aliceVision/multiview/rotation_averaging_l1.hpp"
 #include "aliceVision/multiview/rotation_averaging_l2.hpp"

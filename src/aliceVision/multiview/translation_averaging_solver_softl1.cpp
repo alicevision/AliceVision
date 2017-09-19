@@ -3,7 +3,7 @@
 
 #include "aliceVision/multiview/translation_averaging_common.hpp"
 #include "aliceVision/multiview/translation_averaging_solver.hpp"
-#include "aliceVision/numeric/numeric.h"
+#include "aliceVision/numeric/numeric.hpp"
 #include "aliceVision/types.hpp"
 #include <aliceVision/config.hpp>
 #include <aliceVision/alicevision_omp.hpp>

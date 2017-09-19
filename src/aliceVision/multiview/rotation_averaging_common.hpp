@@ -4,7 +4,7 @@
 #ifndef ALICEVISION_MULTIVIEW_ROTATION_AVERAGING_COMMON_H_
 #define ALICEVISION_MULTIVIEW_ROTATION_AVERAGING_COMMON_H_
 
-#include "aliceVision/numeric/numeric.h"
+#include "aliceVision/numeric/numeric.hpp"
 #include "aliceVision/types.hpp"
 #include <vector>
 #include <map>

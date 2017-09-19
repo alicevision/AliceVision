@@ -9,7 +9,7 @@
 #include <aliceVision/feature/ImageDescriber.hpp>
 #include <aliceVision/camera/PinholeRadial.hpp>
 #include <aliceVision/robust_estimation/robust_estimators.hpp>
-#include <aliceVision/numeric/numeric.h>
+#include <aliceVision/numeric/numeric.hpp>
 
 namespace aliceVision {
 namespace localization {

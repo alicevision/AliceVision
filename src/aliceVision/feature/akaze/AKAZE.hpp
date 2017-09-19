@@ -30,8 +30,8 @@
 //------
 
 #include "aliceVision/image/image.hpp"
-#include "aliceVision/numeric/numeric.h"
-#include "aliceVision/numeric/math_trait.hpp"
+#include "aliceVision/numeric/numeric.hpp"
+#include "aliceVision/numeric/MathTrait.hpp"
 
 #include "aliceVision/feature/PointFeature.hpp"
 #include "aliceVision/feature/Descriptor.hpp"

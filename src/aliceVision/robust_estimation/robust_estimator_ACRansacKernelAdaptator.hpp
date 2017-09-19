@@ -23,7 +23,7 @@
 //  by the generic ACRANSAC routine.
 //
 #include <aliceVision/config.hpp>
-#include <aliceVision/numeric/numeric.h>
+#include <aliceVision/numeric/numeric.hpp>
 #include <aliceVision/multiview/conditioning.hpp>
 #include <aliceVision/feature/imageDescriberCommon.hpp>
 #include <aliceVision/matching/IndMatch.hpp>

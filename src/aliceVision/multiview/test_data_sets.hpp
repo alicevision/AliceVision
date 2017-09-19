@@ -4,7 +4,7 @@
 #ifndef ALICEVISION_MULTIVIEW_TEST_DATA_SETS_H_
 #define ALICEVISION_MULTIVIEW_TEST_DATA_SETS_H_
 
-#include "aliceVision/numeric/numeric.h"
+#include "aliceVision/numeric/numeric.hpp"
 #include <vector>
 
 namespace aliceVision {

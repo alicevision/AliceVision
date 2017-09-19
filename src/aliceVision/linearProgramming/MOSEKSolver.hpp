@@ -3,7 +3,7 @@
 
 #pragma once
 
-#include "aliceVision/numeric/numeric.h"
+#include "aliceVision/numeric/numeric.hpp"
 #include "aliceVision/linearProgramming/ISolver.hpp"
 
 extern "C"{

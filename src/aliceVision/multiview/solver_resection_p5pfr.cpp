@@ -2,7 +2,7 @@
 // the terms of the MPL2 license (see the COPYING.md file).
 
 #include <aliceVision/multiview/projection.hpp>
-#include <aliceVision/numeric/numeric.h>
+#include <aliceVision/numeric/numeric.hpp>
 #include <aliceVision/multiview/solver_resection_p5pfr.hpp>
 #include <aliceVision/system/Logger.hpp>
 

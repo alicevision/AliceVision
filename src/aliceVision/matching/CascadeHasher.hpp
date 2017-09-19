@@ -37,7 +37,7 @@
 
 #pragma once
 
-#include "aliceVision/numeric/numeric.h"
+#include "aliceVision/numeric/numeric.hpp"
 #include "aliceVision/matching/metric.hpp"
 #include "aliceVision/matching/IndMatch.hpp"
 #include "aliceVision/stl/dynamic_bitset.hpp"

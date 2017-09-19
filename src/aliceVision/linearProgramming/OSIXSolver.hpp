@@ -10,7 +10,7 @@
 #include "OsiMskSolverInterface.hpp"
 #endif
 
-#include "aliceVision/numeric/numeric.h"
+#include "aliceVision/numeric/numeric.hpp"
 #include "aliceVision/linearProgramming/ISolver.hpp"
 
 #include "CoinPackedMatrix.hpp"

@@ -4,7 +4,7 @@
 #pragma once
 
 #include "aliceVision/types.hpp"
-#include "aliceVision/numeric/numeric.h"
+#include "aliceVision/numeric/numeric.hpp"
 #include "aliceVision/feature/PointFeature.hpp"
 #include "aliceVision/feature/Descriptor.hpp"
 #include "aliceVision/matching/metric.hpp"

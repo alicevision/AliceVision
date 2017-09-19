@@ -4,7 +4,7 @@
 #pragma once
 
 #include <aliceVision/robust_estimation/robust_estimator_ACRansacKernelAdaptator.hpp>
-#include <aliceVision/numeric/numeric.h>
+#include <aliceVision/numeric/numeric.hpp>
 #include <aliceVision/multiview/conditioning.hpp>
 
 namespace aliceVision {

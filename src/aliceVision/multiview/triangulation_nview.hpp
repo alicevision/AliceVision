@@ -4,7 +4,7 @@
 #ifndef ALICEVISION_MULTIVIEW_TRIANGULATION_NVIEW_H
 #define ALICEVISION_MULTIVIEW_TRIANGULATION_NVIEW_H
 
-#include "aliceVision/numeric/numeric.h"
+#include "aliceVision/numeric/numeric.hpp"
 
 #include <vector>
 

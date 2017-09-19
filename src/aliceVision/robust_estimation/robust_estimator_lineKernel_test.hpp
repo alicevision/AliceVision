@@ -4,7 +4,7 @@
 #ifndef ALICEVISION_ROBUST_ESTIMATION_LINEKERNEL_TEST_H_
 #define ALICEVISION_ROBUST_ESTIMATION_LINEKERNEL_TEST_H_
 
-#include "aliceVision/numeric/numeric.h"
+#include "aliceVision/numeric/numeric.hpp"
 
 namespace aliceVision {
 namespace robust{

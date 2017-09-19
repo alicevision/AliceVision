@@ -4,7 +4,7 @@
 #include <iostream>
 #include <aliceVision/system/Logger.hpp>
 #include "CppUnitLite/TestHarness.h"
-#include "aliceVision/numeric/numeric.h"
+#include "aliceVision/numeric/numeric.hpp"
 #include "testing/testing.h"
 
 using namespace aliceVision;

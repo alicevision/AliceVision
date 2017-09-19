@@ -4,7 +4,7 @@
 #include <cmath>
 #include <fstream>
 
-#include "aliceVision/numeric/numeric.h"
+#include "aliceVision/numeric/numeric.hpp"
 #include "aliceVision/multiview/projection.hpp"
 #include "aliceVision/multiview/test_data_sets.hpp"
 

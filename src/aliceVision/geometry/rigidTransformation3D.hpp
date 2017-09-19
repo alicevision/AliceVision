@@ -4,8 +4,8 @@
 #ifndef ALICEVISION_GEOMETRY_3D_REGISTRATION_7DOF_H_
 #define ALICEVISION_GEOMETRY_3D_REGISTRATION_7DOF_H_
 
-#include "aliceVision/numeric/numeric.h"
-#include "aliceVision/numeric/lm.hpp"
+#include "aliceVision/numeric/numeric.hpp"
+#include "aliceVision/numeric/LMFunctor.hpp"
 
 #include <aliceVision/robust_estimation/robust_estimator_ACRansac.hpp>
 
@@ -96,11 +96,11 @@ static bool FindRTS(const Mat &x1,
 }
 
 // Eigen LM functor to refine translation, Rotation and Scale parameter.
-struct lm_SRTRefine_functor : Functor<double>
+struct lm_SRTRefine_functor : LMFunctor<double>
 {
   lm_SRTRefine_functor(int inputs, int values,
     const Mat &x1, const Mat &x2,
-    const double &S, const Mat3 & R, const Vec &t): Functor<double>(inputs,values),
+    const double &S, const Mat3 & R, const Vec &t): LMFunctor<double>(inputs,values),
     _x1(x1), _x2(x2), _t(t), _R(R), _S(S) { }
 
   int operator()(const Vec &x, Vec &fvec) const
@@ -140,11 +140,11 @@ struct lm_SRTRefine_functor : Functor<double>
 };
 
 // Eigen LM functor to refine Rotation.
-struct lm_RRefine_functor : Functor<double>
+struct lm_RRefine_functor : LMFunctor<double>
 {
   lm_RRefine_functor(int inputs, int values,
     const Mat &x1, const Mat &x2,
-    const double &S, const Mat3 & R, const Vec &t): Functor<double>(inputs,values),
+    const double &S, const Mat3 & R, const Vec &t): LMFunctor<double>(inputs,values),
     _x1(x1), _x2(x2), _t(t), _R(R), _S(S) { }
 
   int operator()(const Vec &x, Vec &fvec) const

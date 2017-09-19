@@ -2,8 +2,8 @@
 // the terms of the MPL2 license (see the COPYING.md file).
 
 #include "CppUnitLite/TestHarness.h"
-#include "aliceVision/numeric/numeric.h"
-#include "aliceVision/numeric/poly.h"
+#include "aliceVision/numeric/numeric.hpp"
+#include "aliceVision/numeric/polynomial.hpp"
 #include "testing/testing.h"
 
 using namespace aliceVision;

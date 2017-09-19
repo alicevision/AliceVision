@@ -5,7 +5,7 @@
 #define ALICEVISION_MULTIVIEW_RESECTION_P3P_H_
 
 #include <iostream>
-#include "aliceVision/numeric/numeric.h"
+#include "aliceVision/numeric/numeric.hpp"
 
 namespace aliceVision {
 namespace euclidean_resection {

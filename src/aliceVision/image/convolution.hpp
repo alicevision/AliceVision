@@ -3,7 +3,7 @@
 
 #pragma once
 
-#include <aliceVision/numeric/accumulator_trait.hpp>
+#include <aliceVision/numeric/Accumulator.hpp>
 #include <aliceVision/image/convolutionBase.hpp>
 #include <aliceVision/config.hpp>
 

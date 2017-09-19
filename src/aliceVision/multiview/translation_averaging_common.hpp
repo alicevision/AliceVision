@@ -5,7 +5,7 @@
 #define ALICEVISION_MULTIVIEW_TRANSLATION_AVERAGING_COMMON_H_
 
 #include "aliceVision/types.hpp"
-#include "aliceVision/numeric/numeric.h"
+#include "aliceVision/numeric/numeric.hpp"
 
 #include <utility>
 #include <vector>

@@ -4,7 +4,7 @@
 #pragma once
 
 #include "dependencies/vectorGraphics/svgDrawer.hpp"
-#include <aliceVision/numeric/numeric.h>
+#include <aliceVision/numeric/numeric.hpp>
 #include "robust_estimator_lineKernel_test.hpp"
 
 #include <iostream>

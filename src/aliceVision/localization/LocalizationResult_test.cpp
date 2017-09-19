@@ -3,7 +3,7 @@
 
 #include "LocalizationResult.hpp"
 #include <aliceVision/camera/PinholeRadial.hpp>
-#include <aliceVision/numeric/numeric.h>
+#include <aliceVision/numeric/numeric.hpp>
 #include <aliceVision/sfm/pipelines/localization/SfM_Localizer.hpp>
 #include "testing/testing.h"
 

@@ -3,7 +3,7 @@
 
 #include "aliceVision/multiview/solver_essential_kernel.hpp"
 #include "aliceVision/multiview/solver_fundamental_kernel.hpp"
-#include "aliceVision/numeric/poly.h"
+#include "aliceVision/numeric/polynomial.hpp"
 #include "aliceVision/multiview/solver_essential_five_point.hpp"
 #include <cassert>
 

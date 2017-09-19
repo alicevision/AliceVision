@@ -1,6 +1,6 @@
 add_library(aliceVision_numeric
   numeric.cpp
-  numeric.h
+  numeric.hpp
 )
 
 target_link_libraries(aliceVision_numeric ${LOG_LIB})
@@ -19,6 +19,6 @@ install(TARGETS aliceVision_numeric
   EXPORT aliceVision-targets
 )
 
-UNIT_TEST(aliceVision numeric aliceVision_numeric)
-UNIT_TEST(aliceVision poly    aliceVision_numeric)
-UNIT_TEST(aliceVision lm      aliceVision_numeric)
+UNIT_TEST(aliceVision numeric       aliceVision_numeric)
+UNIT_TEST(aliceVision polynomial    aliceVision_numeric)
+UNIT_TEST(aliceVision lmFunctor     aliceVision_numeric)

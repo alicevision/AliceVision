@@ -26,7 +26,7 @@ the terms of the BSD license (see the COPYING file).
 
 #include <aliceVision/system/Logger.hpp>
 #include <aliceVision/image/pixelTypes.hpp>
-#include <aliceVision/numeric/numeric.h>
+#include <aliceVision/numeric/numeric.hpp>
 
 //Parameters concerning speed and performance
   const bool uniqueMatch      = true;//if activated, a point can be matched to only one point in the other image. Note: if false, it also desactivate partially geometric verification

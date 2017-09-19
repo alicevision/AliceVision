@@ -4,7 +4,7 @@
 #ifndef ALICEVISION_SOLVER_MULTIVIEW_AFFINE_H_
 #define ALICEVISION_SOLVER_MULTIVIEW_AFFINE_H_
 
-#include "aliceVision/numeric/numeric.h"
+#include "aliceVision/numeric/numeric.hpp"
 
 namespace aliceVision {
 
