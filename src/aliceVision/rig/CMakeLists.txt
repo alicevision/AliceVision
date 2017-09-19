@@ -1,7 +1,7 @@
 # Headers
 set(rig_files_headers
   Rig.hpp
-  rig_BA_ceres.hpp
+  ResidualError.hpp
 )
 
 # Sources

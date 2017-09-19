@@ -5,7 +5,7 @@
 #include "aliceVision/sfm/sfm_data_io.hpp"
 #include <aliceVision/sfm/sfm_data_BA_ceres.hpp>
 #include <aliceVision/numeric/numeric.hpp>
-#include <aliceVision/rig/rig_BA_ceres.hpp>
+#include <aliceVision/rig/ResidualError.hpp>
 #include <aliceVision/system/Logger.hpp>
 #include <aliceVision/system/timer.hpp>
 

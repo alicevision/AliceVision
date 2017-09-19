@@ -2,7 +2,7 @@
 // the terms of the MPL2 license (see the COPYING.md file).
 
 #include "Rig.hpp"
-#include "rig_BA_ceres.hpp"
+#include "ResidualError.hpp"
 #include <aliceVision/sfm/sfm_data_BA_ceres.hpp>
 #include <aliceVision/system/Logger.hpp>
 
