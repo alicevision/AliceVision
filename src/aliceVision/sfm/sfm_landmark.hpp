@@ -7,7 +7,7 @@
 #include "aliceVision/feature/imageDescriberCommon.hpp"
 #include "aliceVision/image/pixelTypes.hpp"
 #include "aliceVision/numeric/numeric.hpp"
-#include "aliceVision/stl/flatMap.hpp"
+#include "aliceVision/stl/FlatMap.hpp"
 #include <cereal/cereal.hpp> // Serialization
 
 namespace aliceVision {

@@ -4,8 +4,8 @@
 #ifndef ALICEVISION_STL_HPP
 #define ALICEVISION_STL_HPP
 
-#include "aliceVision/stl/stlMap.hpp"
-#include "aliceVision/stl/indexed_sort.hpp"
+#include "aliceVision/stl/mapUtils.hpp"
+#include "aliceVision/stl/indexedSort.hpp"
 #include "aliceVision/stl/hash.hpp"
 
 #endif  // ALICEVISION_STL_HPP

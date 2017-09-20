@@ -3,7 +3,7 @@
 
 #include "testing/testing.h"
 
-#include "dynamic_bitset.hpp"
+#include "DynamicBitset.hpp"
 
 TEST(DYNAMIC_BITSET, InitAndReset_64)
 {

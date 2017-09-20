@@ -11,7 +11,7 @@
 #include <aliceVision/feature/ImageDescriber.hpp>
 #include <aliceVision/sfm/sfm_data.hpp>
 #include <aliceVision/sfm/pipelines/localization/SfM_Localizer.hpp>
-#include <aliceVision/stl/stlMap.hpp>
+#include <aliceVision/stl/mapUtils.hpp>
 #include <aliceVision/voctree/vocabulary_tree.hpp>
 #include <aliceVision/voctree/database.hpp>
 #include <aliceVision/matching/ArrayMatcher_kdtreeFlann.hpp>

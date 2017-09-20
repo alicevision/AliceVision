@@ -9,8 +9,8 @@
 
 #include "aliceVision/feature/imageDescriberCommon.hpp"
 #include "aliceVision/matching/IndMatch.hpp"
-#include "aliceVision/stl/flatMap.hpp"
-#include "aliceVision/stl/flatSet.hpp"
+#include "aliceVision/stl/FlatMap.hpp"
+#include "aliceVision/stl/FlatSet.hpp"
 #include <aliceVision/config.hpp>
 
 #include <algorithm>

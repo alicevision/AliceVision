@@ -3,7 +3,7 @@
 
 #include "aliceVision/sfm/sfm_data_io.hpp"
 
-#include "aliceVision/stl/stlMap.hpp"
+#include "aliceVision/stl/mapUtils.hpp"
 #include "dependencies/stlplus3/filesystemSimplified/file_system.hpp"
 
 #include "aliceVision/sfm/sfm_data_io_cereal.hpp"

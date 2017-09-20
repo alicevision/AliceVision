@@ -40,7 +40,7 @@
 #include "aliceVision/numeric/numeric.hpp"
 #include "aliceVision/matching/metric.hpp"
 #include "aliceVision/matching/IndMatch.hpp"
-#include "aliceVision/stl/dynamic_bitset.hpp"
+#include "aliceVision/stl/DynamicBitset.hpp"
 #include <iostream>
 #include <random>
 #include <cmath>

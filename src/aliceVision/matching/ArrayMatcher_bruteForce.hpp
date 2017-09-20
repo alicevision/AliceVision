@@ -6,7 +6,7 @@
 #include "aliceVision/numeric/numeric.hpp"
 #include "aliceVision/matching/ArrayMatcher.hpp"
 #include "aliceVision/matching/metric.hpp"
-#include "aliceVision/stl/indexed_sort.hpp"
+#include "aliceVision/stl/indexedSort.hpp"
 #include <aliceVision/config.hpp>
 #include <memory>
 #include <iostream>

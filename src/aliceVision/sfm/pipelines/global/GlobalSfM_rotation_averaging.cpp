@@ -6,7 +6,7 @@
 #include "aliceVision/sfm/sfm.hpp"
 #include "aliceVision/graph/graph.hpp"
 #include "aliceVision/multiview/rotation_averaging.hpp"
-#include "aliceVision/stl/stlMap.hpp"
+#include "aliceVision/stl/mapUtils.hpp"
 
 #include "dependencies/histogram/histogram.hpp"
 
