@@ -2,10 +2,10 @@
 // the terms of the MPL2 license (see the COPYING.md file).
 
 #include <aliceVision/sfm/sfm_data_io.hpp>
-#include <aliceVision/voctree/database.hpp>
+#include <aliceVision/voctree/Database.hpp>
 #include <aliceVision/voctree/databaseIO.hpp>
-#include <aliceVision/voctree/vocabulary_tree.hpp>
-#include <aliceVision/voctree/descriptor_loader.hpp>
+#include <aliceVision/voctree/VocabularyTree.hpp>
+#include <aliceVision/voctree/descriptorLoader.hpp>
 
 #include <boost/program_options.hpp> 
 #include <boost/accumulators/accumulators.hpp>

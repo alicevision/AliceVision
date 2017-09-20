@@ -1,10 +1,9 @@
 // This file is part of the AliceVision project and is made available under
 // the terms of the MPL2 license (see the COPYING.md file).
 
-#ifndef ALICEVISION_VOCABULARY_TREE_DATABASE_HPP
-#define ALICEVISION_VOCABULARY_TREE_DATABASE_HPP
+#pragma once
 
-#include "vocabulary_tree.hpp"
+#include "VocabularyTree.hpp"
 
 #include <cereal/cereal.hpp> // Serialization
 #include <cereal/archives/binary.hpp>
@@ -195,5 +194,3 @@ private:
 
 }//namespace voctree
 }//namespace aliceVision
-
-#endif

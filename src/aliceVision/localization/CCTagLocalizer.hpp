@@ -12,7 +12,7 @@
 #include <aliceVision/feature/cctag/ImageDescriber_CCTAG.hpp>
 #include <aliceVision/sfm/sfm_data.hpp>
 #include <aliceVision/sfm/pipelines/localization/SfM_Localizer.hpp>
-#include <aliceVision/voctree/database.hpp>
+#include <aliceVision/voctree/Database.hpp>
 
 #include <iostream>
 #include <bitset>

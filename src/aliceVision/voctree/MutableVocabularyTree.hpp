@@ -1,10 +1,9 @@
 // This file is part of the AliceVision project and is made available under
 // the terms of the MPL2 license (see the COPYING.md file).
 
-#ifndef ALICEVISION_VOCABULARY_TREE_MUTABLE_TREE_HPP
-#define ALICEVISION_VOCABULARY_TREE_MUTABLE_TREE_HPP
+#pragma once
 
-#include "vocabulary_tree.hpp"
+#include "VocabularyTree.hpp"
 
 namespace aliceVision {
 namespace voctree {
@@ -61,5 +60,3 @@ public:
 
 }
 }
-
-#endif //ALICEVISION_VOCABULARY_TREE_MUTABLE_TREE_HPP

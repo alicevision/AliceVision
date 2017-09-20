@@ -1,8 +1,8 @@
 // This file is part of the AliceVision project and is made available under
 // the terms of the MPL2 license (see the COPYING.md file).
 
-#include <aliceVision/voctree/database.hpp>
-#include <aliceVision/voctree/vocabulary_tree.hpp>
+#include <aliceVision/voctree/Database.hpp>
+#include <aliceVision/voctree/VocabularyTree.hpp>
 #include <aliceVision/voctree/databaseIO.hpp>
 #include <aliceVision/config.hpp>
 

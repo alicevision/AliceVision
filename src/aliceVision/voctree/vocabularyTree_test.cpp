@@ -1,7 +1,7 @@
 // This file is part of the AliceVision project and is made available under
 // the terms of the MPL2 license (see the COPYING.md file).
 
-#include <aliceVision/voctree/database.hpp>
+#include <aliceVision/voctree/Database.hpp>
 
 #include <testing/testing.h>
 

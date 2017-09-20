@@ -3,8 +3,8 @@
 
 #pragma once
 
-#include "database.hpp"
-#include "vocabulary_tree.hpp"
+#include "Database.hpp"
+#include "VocabularyTree.hpp"
 #include <aliceVision/types.hpp>
 
 #include <string>
@@ -93,4 +93,4 @@ size_t readDescFromFiles(const std::string &fileFullPath, std::vector<Descriptor
 } // namespace voctree
 } // namespace aliceVision
 
-#include "descriptor_loader.tcc"
+#include "descriptorLoader.tcc"

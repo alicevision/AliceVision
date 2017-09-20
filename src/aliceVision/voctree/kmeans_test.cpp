@@ -2,7 +2,7 @@
 // the terms of the MPL2 license (see the COPYING.md file).
 
 #include <aliceVision/system/Logger.hpp>
-#include <aliceVision/voctree/simple_kmeans.hpp>
+#include <aliceVision/voctree/SimpleKmeans.hpp>
 
 #include <testing/testing.h>
 

@@ -1,12 +1,11 @@
 // This file is part of the AliceVision project and is made available under
 // the terms of the MPL2 license (see the COPYING.md file).
 
-#ifndef ALICEVISION_VOCABULARY_TREE_VOCABULARY_TREE_HPP
-#define ALICEVISION_VOCABULARY_TREE_VOCABULARY_TREE_HPP
+#pragma once
 
 #include <aliceVision/config.hpp>
 #include "distance.hpp"
-#include "feature_allocator.hpp"
+#include "DefaultAllocator.hpp"
 
 #include <aliceVision/feature/imageDescriberCommon.hpp>
 #include <aliceVision/feature/regionsFactory.hpp>
@@ -387,8 +386,5 @@ inline void load(std::unique_ptr<IVocabularyTree>& out_voctree, feature::EImageD
   out_voctree->load(filepath);
 }
 
-
 }
 }
-
-#endif //ALICEVISION_VOCABULARY_TREE_VOCABULARY_TREE_HPP

@@ -1,22 +1,22 @@
 # Headers
 set(voctree_headers
-  database.hpp
+  Database.hpp
   databaseIO.hpp
-  descriptor_loader.hpp
-  descriptor_loader.tcc
+  descriptorLoader.hpp
+  descriptorLoader.tcc
   distance.hpp
-  feature_allocator.hpp
-  mutable_tree.hpp
-  simple_kmeans.hpp
-  tree_builder.hpp
-  vocabulary_tree.hpp
+  DefaultAllocator.hpp
+  MutableVocabularyTree.hpp
+  SimpleKmeans.hpp
+  TreeBuilder.hpp
+  VocabularyTree.hpp
 )
 
 # Sources
 set(voctree_sources
-  database.cpp
-  descriptor_loader.cpp
-  vocabulary_tree.cpp
+  Database.cpp
+  descriptorLoader.cpp
+  VocabularyTree.cpp
 )
 
 add_library(aliceVision_voctree
@@ -45,6 +45,6 @@ install(TARGETS aliceVision_voctree
   EXPORT aliceVision-targets
 )
 
-UNIT_TEST(aliceVision voctree      "aliceVision_voctree")
-UNIT_TEST(aliceVision kmeans       "aliceVision_voctree")
-UNIT_TEST(aliceVision voctreebuild "aliceVision_voctree")
+UNIT_TEST(aliceVision kmeans               "aliceVision_voctree")
+UNIT_TEST(aliceVision vocabularyTree       "aliceVision_voctree")
+UNIT_TEST(aliceVision vocabularyTreeBuild  "aliceVision_voctree")

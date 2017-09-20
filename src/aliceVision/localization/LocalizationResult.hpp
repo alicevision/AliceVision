@@ -4,7 +4,7 @@
 #pragma once
 
 #include <aliceVision/sfm/pipelines/localization/SfM_Localizer.hpp>
-#include <aliceVision/voctree/database.hpp>
+#include <aliceVision/voctree/Database.hpp>
 
 #include <cereal/cereal.hpp>
 

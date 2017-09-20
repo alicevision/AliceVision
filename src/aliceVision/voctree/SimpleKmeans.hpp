@@ -1,11 +1,10 @@
 // This file is part of the AliceVision project and is made available under
 // the terms of the MPL2 license (see the COPYING.md file).
 
-#ifndef ALICEVISION_VOCABULARY_TREE_SIMPLE_KMEANS_HPP
-#define ALICEVISION_VOCABULARY_TREE_SIMPLE_KMEANS_HPP
+#pragma once
 
 #include "distance.hpp"
-#include "feature_allocator.hpp"
+#include "DefaultAllocator.hpp"
 
 #include <aliceVision/system/Logger.hpp>
 
@@ -528,10 +527,5 @@ SimpleKmeans<Feature, Distance, FeatureAllocator>::clusterOnce(const std::vector
   return sse;
 }
 
-
-
-
 }
 }
-
-#endif //ALICEVISION_VOCABULARY_TREE_SIMPLE_KMEANS_HPP

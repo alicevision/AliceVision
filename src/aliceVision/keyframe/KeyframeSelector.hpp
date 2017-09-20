@@ -5,7 +5,7 @@
 #include <aliceVision/keyframe/SharpnessSelectionPreset.hpp>
 #include <aliceVision/feature/feature.hpp>
 #include <aliceVision/dataio/FeedProvider.hpp>
-#include <aliceVision/voctree/vocabulary_tree.hpp>
+#include <aliceVision/voctree/VocabularyTree.hpp>
 
 #include <OpenImageIO/imageio.h>
 

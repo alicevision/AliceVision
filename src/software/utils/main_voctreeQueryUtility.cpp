@@ -3,10 +3,10 @@
 
 #include <aliceVision/sfm/sfm_data_io.hpp>
 #include <aliceVision/sfm/pipelines/RegionsIO.hpp>
-#include <aliceVision/voctree/database.hpp>
+#include <aliceVision/voctree/Database.hpp>
 #include <aliceVision/voctree/databaseIO.hpp>
-#include <aliceVision/voctree/vocabulary_tree.hpp>
-#include <aliceVision/voctree/descriptor_loader.hpp>
+#include <aliceVision/voctree/VocabularyTree.hpp>
+#include <aliceVision/voctree/descriptorLoader.hpp>
 #include <aliceVision/matching/IndMatch.hpp>
 #include <aliceVision/system/Logger.hpp>
 #include <aliceVision/types.hpp>

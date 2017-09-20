@@ -1,8 +1,7 @@
 // This file is part of the AliceVision project and is made available under
 // the terms of the MPL2 license (see the COPYING.md file).
 
-#ifndef ALICEVISION_VOCABULARY_TREE_FEATURE_ALLOCATOR_HPP
-#define ALICEVISION_VOCABULARY_TREE_FEATURE_ALLOCATOR_HPP
+#pragma once
 
 #include <Eigen/Core>
 #include <Eigen/StdVector>
@@ -31,5 +30,3 @@ struct DefaultAllocator< Eigen::Matrix<Scalar, Rows, Cols, Options, MaxRows, Max
 
 }
 }
-
-#endif

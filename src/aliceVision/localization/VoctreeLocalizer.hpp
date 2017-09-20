@@ -12,8 +12,8 @@
 #include <aliceVision/sfm/sfm_data.hpp>
 #include <aliceVision/sfm/pipelines/localization/SfM_Localizer.hpp>
 #include <aliceVision/stl/mapUtils.hpp>
-#include <aliceVision/voctree/vocabulary_tree.hpp>
-#include <aliceVision/voctree/database.hpp>
+#include <aliceVision/voctree/VocabularyTree.hpp>
+#include <aliceVision/voctree/Database.hpp>
 #include <aliceVision/matching/ArrayMatcher_kdtreeFlann.hpp>
 #include <aliceVision/matching/RegionsMatcher.hpp>
 #include <flann/algorithms/dist.h>

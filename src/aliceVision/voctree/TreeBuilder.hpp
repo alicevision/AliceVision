@@ -1,11 +1,10 @@
 // This file is part of the AliceVision project and is made available under
 // the terms of the MPL2 license (see the COPYING.md file).
 
-#ifndef ALICEVISION_VOCABULARY_TREE_TREE_BUILDER_HPP
-#define ALICEVISION_VOCABULARY_TREE_TREE_BUILDER_HPP
+#pragma once
 
-#include "mutable_tree.hpp"
-#include "simple_kmeans.hpp"
+#include "MutableVocabularyTree.hpp"
+#include "SimpleKmeans.hpp"
 #include <deque>
 //#include <cstdio> //DEBUG
 
@@ -172,5 +171,3 @@ void TreeBuilder<Feature, DistanceT, FeatureAllocator>::build(const FeatureVecto
 
 }
 }
-
-#endif
