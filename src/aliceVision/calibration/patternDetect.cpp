@@ -5,7 +5,7 @@
 
 #include <aliceVision/config.hpp>
 #include <aliceVision/system/Logger.hpp>
-#include <aliceVision/system/timer.hpp>
+#include <aliceVision/system/Timer.hpp>
 
 #include <boost/program_options.hpp>
 #include <boost/algorithm/string/case_conv.hpp>

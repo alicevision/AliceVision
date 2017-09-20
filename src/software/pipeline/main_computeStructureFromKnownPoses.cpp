@@ -5,7 +5,7 @@
 #include "aliceVision/sfm/sfm.hpp"
 #include "aliceVision/sfm/pipelines/RegionsIO.hpp"
 #include "aliceVision/matching/IndMatch.hpp"
-#include "aliceVision/system/timer.hpp"
+#include "aliceVision/system/Timer.hpp"
 
 #include "dependencies/cmdLine/cmdLine.h"
 #include "dependencies/stlplus3/filesystemSimplified/file_system.hpp"

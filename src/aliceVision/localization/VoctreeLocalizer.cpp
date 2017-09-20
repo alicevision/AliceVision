@@ -20,7 +20,7 @@
 #include <aliceVision/numeric/numeric.hpp>
 #include <aliceVision/robustEstimation/guidedMatching.hpp>
 #include <aliceVision/system/Logger.hpp>
-#include <aliceVision/system/timer.hpp>
+#include <aliceVision/system/Timer.hpp>
 
 #include <dependencies/progress/progress.hpp>
 

@@ -7,7 +7,7 @@
 #include <aliceVision/numeric/numeric.hpp>
 #include <aliceVision/rig/ResidualError.hpp>
 #include <aliceVision/system/Logger.hpp>
-#include <aliceVision/system/timer.hpp>
+#include <aliceVision/system/Timer.hpp>
 
 
 #include <boost/accumulators/accumulators.hpp>

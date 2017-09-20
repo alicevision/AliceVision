@@ -9,7 +9,7 @@
 #include <aliceVision/calibration/bestImages.hpp>
 #include <aliceVision/calibration/calibration.hpp>
 #include <aliceVision/calibration/exportData.hpp>
-#include <aliceVision/system/timer.hpp>
+#include <aliceVision/system/Timer.hpp>
 #include <aliceVision/system/Logger.hpp>
 #include <aliceVision/config.hpp>
 

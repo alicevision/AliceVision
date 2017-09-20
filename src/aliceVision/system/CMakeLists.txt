@@ -1,17 +1,17 @@
 # Headers
 set(system_files_headers
   cpu.hpp
-  memoryInfo.hpp
+  MemoryInfo.hpp
   system.hpp
-  timer.hpp
+  Timer.hpp
   Logger.hpp
 )
 
 # Sources
 set(system_files_sources
   cpu.cpp
-  memoryInfo.cpp
-  timer.cpp
+  MemoryInfo.cpp
+  Timer.cpp
   Logger.cpp
 )
 

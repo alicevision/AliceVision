@@ -13,7 +13,7 @@
 #include <aliceVision/sfm/pipelines/RegionsIO.hpp>
 #include <aliceVision/sfm/pipelines/sfm_robust_model_estimation.hpp>
 
-#include <aliceVision/system/timer.hpp>
+#include <aliceVision/system/Timer.hpp>
 #include <aliceVision/system/Logger.hpp>
 
 #include <dependencies/progress/progress.hpp>

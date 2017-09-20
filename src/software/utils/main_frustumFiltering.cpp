@@ -2,7 +2,7 @@
 // the terms of the MPL2 license (see the COPYING.md file).
 
 #include "aliceVision/sfm/sfm.hpp"
-#include "aliceVision/system/timer.hpp"
+#include "aliceVision/system/Timer.hpp"
 #include "aliceVision/matchingImageCollection/pairBuilder.hpp"
 
 #include "dependencies/cmdLine/cmdLine.h"

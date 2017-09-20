@@ -4,7 +4,7 @@
 #include "aliceVision/sfm/pipelines/RegionsIO.hpp"
 #include "aliceVision/feature/imageDescriberCommon.hpp"
 #include "aliceVision/sfm/pipelines/global/sfm_global_engine_relative_motions.hpp"
-#include "aliceVision/system/timer.hpp"
+#include "aliceVision/system/Timer.hpp"
 
 #include "dependencies/cmdLine/cmdLine.h"
 #include "dependencies/stlplus3/filesystemSimplified/file_system.hpp"

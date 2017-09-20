@@ -15,9 +15,9 @@
 #include "aliceVision/multiview/triangulation_nview.hpp"
 #include "aliceVision/graph/connectedComponent.hpp"
 #include "aliceVision/stl/stl.hpp"
-#include "aliceVision/system/timer.hpp"
+#include "aliceVision/system/Timer.hpp"
 #include "aliceVision/system/cpu.hpp"
-#include "aliceVision/system/memoryInfo.hpp"
+#include "aliceVision/system/MemoryInfo.hpp"
 #include <aliceVision/config.hpp>
 
 #include "dependencies/htmlDoc/htmlDoc.hpp"

@@ -9,7 +9,7 @@
 #include "aliceVision/multiview/triangulation.hpp"
 #include "aliceVision/multiview/triangulation_nview.hpp"
 #include "aliceVision/graph/connectedComponent.hpp"
-#include "aliceVision/system/timer.hpp"
+#include "aliceVision/system/Timer.hpp"
 #include "aliceVision/stl/stl.hpp"
 #include "aliceVision/multiview/essential.hpp"
 

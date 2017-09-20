@@ -13,7 +13,7 @@
 #include "aliceVision/multiview/translation_averaging_solver.hpp"
 #include "aliceVision/graph/graph.hpp"
 #include "aliceVision/stl/stl.hpp"
-#include "aliceVision/system/timer.hpp"
+#include "aliceVision/system/Timer.hpp"
 #include "aliceVision/linearProgramming/linearProgramming.hpp"
 #include "aliceVision/multiview/essential.hpp"
 #include "aliceVision/multiview/conditioning.hpp"

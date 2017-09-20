@@ -8,7 +8,7 @@
 #include "aliceVision/feature/feature.hpp"
 #include "aliceVision/exif/EasyExifIO.hpp"
 #include "aliceVision/stl/split.hpp"
-#include "aliceVision/system/timer.hpp"
+#include "aliceVision/system/Timer.hpp"
 
 #include "dependencies/cmdLine/cmdLine.h"
 #include "dependencies/stlplus3/filesystemSimplified/file_system.hpp"

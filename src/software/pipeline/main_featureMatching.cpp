@@ -18,7 +18,7 @@
 #include "aliceVision/matchingImageCollection/GeometricFilterMatrix_H_AC.hpp"
 #include "aliceVision/matching/pairwiseAdjacencyDisplay.hpp"
 #include "aliceVision/matching/io.hpp"
-#include "aliceVision/system/timer.hpp"
+#include "aliceVision/system/Timer.hpp"
 #include "aliceVision/feature/selection.hpp"
 #include "aliceVision/graph/graph.hpp"
 #include "aliceVision/stl/stl.hpp"

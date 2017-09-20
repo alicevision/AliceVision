@@ -27,7 +27,7 @@
 //-- Color harmonization solver
 #include "aliceVision/colorHarmonization/GainOffsetConstraintBuilder.hpp"
 
-#include "aliceVision/system/timer.hpp"
+#include "aliceVision/system/Timer.hpp"
 
 #include "dependencies/progress/progress.hpp"
 
