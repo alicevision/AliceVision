@@ -1,7 +1,7 @@
 // This file is part of the AliceVision project and is made available under
 // the terms of the MPL2 license (see the COPYING.md file).
 
-#include "aliceVision/multiview/test_data_sets.hpp"
+#include "aliceVision/multiview/NViewDataSet.hpp"
 #include "aliceVision/sfm/sfm.hpp"
 using namespace aliceVision;
 using namespace aliceVision::sfm;
@@ -65,7 +65,7 @@ static double RMSE(const SfMData & sfm_data)
 SfMData getInputScene
 (
   const NViewDataSet & d,
-  const nViewDatasetConfigurator & config,
+  const NViewDatasetConfigurator & config,
   camera::EINTRINSIC eintrinsic)
 {
   // Translate the input dataset to a SfMData scene
@@ -134,7 +134,7 @@ SfMData getInputScene
 // Translate a synthetic scene into a valid SfMData scene
 // As only one intrinsic is defined we used shared intrinsic
 SfMData getInputRigScene(const NViewDataSet& d,
-                          const nViewDatasetConfigurator& config,
+                          const NViewDatasetConfigurator& config,
                           camera::EINTRINSIC eintrinsic,
                           std::size_t nbSubposes,
                           std::size_t nbPosesPerCamera)

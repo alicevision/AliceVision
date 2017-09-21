@@ -7,7 +7,7 @@
 #include <aliceVision/config.hpp>
 
 #include "aliceVision/multiview/conditioning.hpp"
-#include "aliceVision/multiview/triangulation_nview.hpp"
+#include "aliceVision/multiview/triangulation/Triangulation.hpp"
 
 // Linear programming solver(s)
 #include "aliceVision/linearProgramming/ISolver.hpp"

@@ -3,9 +3,9 @@
 
 #include "aliceVision/sfm/pipeline/RelativePoseInfo.hpp"
 
-#include "aliceVision/multiview/solver_essential_kernel.hpp"
+#include "aliceVision/multiview/essentialKernelSolver.hpp"
 #include "aliceVision/multiview/projection.hpp"
-#include "aliceVision/multiview/triangulation.hpp"
+#include "aliceVision/multiview/triangulation/triangulationDLT.hpp"
 
 #include "aliceVision/robustEstimation/ACRansac.hpp"
 #include "aliceVision/robustEstimation/ACRansacKernelAdaptator.hpp"

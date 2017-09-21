@@ -37,7 +37,7 @@ protected:
   /// Compute from relative rotations the global rotations of the camera poses
   bool Compute_Global_Rotations
   (
-    const aliceVision::rotation_averaging::RelativeRotations & vec_relatives_R,
+    const aliceVision::rotationAveraging::RelativeRotations & vec_relatives_R,
     Hash_Map<IndexT, Mat3> & map_globalR
   );
 
@@ -61,7 +61,7 @@ private:
   /// Compute relative rotations
   void Compute_Relative_Rotations
   (
-    aliceVision::rotation_averaging::RelativeRotations & vec_relatives_R
+    aliceVision::rotationAveraging::RelativeRotations & vec_relatives_R
   );
 
   //----

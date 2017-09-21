@@ -1,7 +1,7 @@
 // This file is part of the AliceVision project and is made available under
 // the terms of the MPL2 license (see the COPYING.md file).
 
-#include "aliceVision/multiview/test_data_sets.hpp"
+#include "aliceVision/multiview/NViewDataSet.hpp"
 #include "aliceVision/sfm/sfm.hpp"
 
 #include "testing/testing.h"
@@ -18,7 +18,7 @@ using namespace aliceVision::sfm;
 
 double RMSE(const SfMData & sfm_data);
 
-SfMData getInputScene(const NViewDataSet & d, const nViewDatasetConfigurator & config, EINTRINSIC eintrinsic);
+SfMData getInputScene(const NViewDataSet & d, const NViewDatasetConfigurator & config, EINTRINSIC eintrinsic);
 
 // Test summary:
 // - Create a SfMData scene from a synthetic dataset
@@ -30,7 +30,7 @@ TEST(BUNDLE_ADJUSTMENT, EffectiveMinimization_Pinhole) {
 
   const int nviews = 3;
   const int npoints = 6;
-  const nViewDatasetConfigurator config;
+  const NViewDatasetConfigurator config;
   const NViewDataSet d = NRealisticCamerasRing(nviews, npoints, config);
 
   // Translate the input dataset to a SfMData scene
@@ -50,7 +50,7 @@ TEST(BUNDLE_ADJUSTMENT, EffectiveMinimization_PinholeRadialK1) {
 
   const int nviews = 3;
   const int npoints = 6;
-  const nViewDatasetConfigurator config;
+  const NViewDatasetConfigurator config;
   const NViewDataSet d = NRealisticCamerasRing(nviews, npoints, config);
 
   // Translate the input dataset to a SfMData scene
@@ -70,7 +70,7 @@ TEST(BUNDLE_ADJUSTMENT, EffectiveMinimization_PinholeRadialK3) {
 
   const int nviews = 3;
   const int npoints = 6;
-  const nViewDatasetConfigurator config;
+  const NViewDatasetConfigurator config;
   const NViewDataSet d = NRealisticCamerasRing(nviews, npoints, config);
 
   // Translate the input dataset to a SfMData scene
@@ -90,7 +90,7 @@ TEST(BUNDLE_ADJUSTMENT, EffectiveMinimization_PinholeBrownT2) {
 
   const int nviews = 3;
   const int npoints = 6;
-  const nViewDatasetConfigurator config;
+  const NViewDatasetConfigurator config;
   const NViewDataSet d = NRealisticCamerasRing(nviews, npoints, config);
 
   // Translate the input dataset to a SfMData scene
@@ -110,7 +110,7 @@ TEST(BUNDLE_ADJUSTMENT, EffectiveMinimization_PinholeFisheye) {
 
   const int nviews = 3;
   const int npoints = 6;
-  const nViewDatasetConfigurator config;
+  const NViewDatasetConfigurator config;
   const NViewDataSet d = NRealisticCamerasRing(nviews, npoints, config);
 
   // Translate the input dataset to a SfMData scene
@@ -155,7 +155,7 @@ double RMSE(const SfMData & sfm_data)
 // Translation a synthetic scene into a valid SfMData scene.
 // => A synthetic scene is used:
 //    a random noise between [-.5,.5] is added on observed data points
-SfMData getInputScene(const NViewDataSet & d, const nViewDatasetConfigurator & config, EINTRINSIC eintrinsic)
+SfMData getInputScene(const NViewDataSet & d, const NViewDatasetConfigurator & config, EINTRINSIC eintrinsic)
 {
   // Translate the input dataset to a SfMData scene
   SfMData sfm_data;

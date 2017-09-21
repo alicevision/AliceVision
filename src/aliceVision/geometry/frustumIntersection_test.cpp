@@ -4,7 +4,7 @@
 #include "aliceVision/geometry/HalfPlane.hpp"
 #include "aliceVision/geometry/Frustum.hpp"
 
-#include "aliceVision/multiview/test_data_sets.hpp"
+#include "aliceVision/multiview/NViewDataSet.hpp"
 #include "aliceVision/multiview/projection.hpp"
 
 #include "CppUnitLite/TestHarness.h"
@@ -30,7 +30,7 @@ TEST(frustum, intersection)
   const NViewDataSet d =
     NRealisticCamerasRing(
     iNviews, iNbPoints,
-    nViewDatasetConfigurator(focal, focal, principal_Point, principal_Point, 5, 0));
+    NViewDatasetConfigurator(focal, focal, principal_Point, principal_Point, 5, 0));
 
   // Test with infinite Frustum for each camera
   {
@@ -93,7 +93,7 @@ TEST(frustum, empty_intersection)
   const NViewDataSet d =
     NRealisticCamerasRing(
     iNviews, iNbPoints,
-    nViewDatasetConfigurator(focal, focal, principal_Point, principal_Point, 5, 0));
+    NViewDatasetConfigurator(focal, focal, principal_Point, principal_Point, 5, 0));
 
   // Test with infinite Frustum for each camera
   {

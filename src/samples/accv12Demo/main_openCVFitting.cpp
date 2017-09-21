@@ -2,7 +2,7 @@
 // the terms of the MPL2 license (see the COPYING.md file).
 
 #include "aliceVision/numeric/numeric.hpp"
-#include "aliceVision/multiview/solver_homography_kernel.hpp"
+#include "aliceVision/multiview/homographyKernelSolver.hpp"
 #include "aliceVision/multiview/conditioning.hpp"
 #include "aliceVision/robustEstimation/maxConsensus.hpp"
 #include "aliceVision/robustEstimation/ScoreEvaluator.hpp"

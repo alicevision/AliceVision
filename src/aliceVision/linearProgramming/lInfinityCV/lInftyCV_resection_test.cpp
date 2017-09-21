@@ -4,7 +4,7 @@
 #include <iostream>
 #include <vector>
 
-#include "aliceVision/multiview/test_data_sets.hpp"
+#include "aliceVision/multiview/NViewDataSet.hpp"
 #include "aliceVision/multiview/projection.hpp"
 #include <aliceVision/config.hpp>
 
@@ -37,7 +37,7 @@ TEST(Resection_L_Infinity, OSICLP) {
   const int nViews = 3;
   const int nbPoints = 10;
   const NViewDataSet d = NRealisticCamerasRing(nViews, nbPoints,
-    nViewDatasetConfigurator(1,1,0,0,5,0)); // Suppose a camera with Unit matrix as K
+    NViewDatasetConfigurator(1,1,0,0,5,0)); // Suppose a camera with Unit matrix as K
 
   d.ExportToPLY("test_Before_Infinity.ply");
   //-- Modify a dataset (set to 0 and parse new value) (Assert good values)
@@ -95,7 +95,7 @@ TEST(Resection_L_Infinity, MOSEK) {
   const int nViews = 3;
   const int nbPoints = 10;
   const NViewDataSet d = NRealisticCamerasRing(nViews, nbPoints,
-    nViewDatasetConfigurator(1,1,0,0,5,0)); // Suppose a camera with Unit matrix as K
+    NViewDatasetConfigurator(1,1,0,0,5,0)); // Suppose a camera with Unit matrix as K
 
   d.ExportToPLY("test_Before_Infinity.ply");
   //-- Modify a dataset (set to 0 and parse new value) (Assert good values)

@@ -4,8 +4,8 @@
 #include "aliceVision/sfm/pipeline/global/ReconstructionEngine_globalSfM.hpp"
 #include "aliceVision/sfm/SfMData.hpp"
 #include "aliceVision/config.hpp"
-#include "aliceVision/multiview/triangulation.hpp"
-#include "aliceVision/multiview/triangulation_nview.hpp"
+#include "aliceVision/multiview/triangulation/triangulationDLT.hpp"
+#include "aliceVision/multiview/triangulation/Triangulation.hpp"
 #include "aliceVision/graph/connectedComponent.hpp"
 #include "aliceVision/system/Timer.hpp"
 #include "aliceVision/stl/stl.hpp"
@@ -127,7 +127,7 @@ bool ReconstructionEngine_globalSfM::Process() {
     KeepOnlyReferencedElement(set_remainingIds, *_pairwiseMatches);
   }
 
-  aliceVision::rotation_averaging::RelativeRotations relatives_R;
+  aliceVision::rotationAveraging::RelativeRotations relatives_R;
   Compute_Relative_Rotations(relatives_R);
 
   Hash_Map<IndexT, Mat3> global_rotations;
@@ -178,7 +178,7 @@ bool ReconstructionEngine_globalSfM::Process() {
 /// Compute from relative rotations the global rotations of the camera poses
 bool ReconstructionEngine_globalSfM::Compute_Global_Rotations
 (
-  const rotation_averaging::RelativeRotations & relatives_R,
+  const rotationAveraging::RelativeRotations & relatives_R,
   Hash_Map<IndexT, Mat3> & global_rotations
 )
 {
@@ -205,14 +205,14 @@ bool ReconstructionEngine_globalSfM::Compute_Global_Rotations
     TRIPLET_ROTATION_INFERENCE_COMPOSITION_ERROR;
     //TRIPLET_ROTATION_INFERENCE_NONE;
 
-  GlobalSfMRotationAveragingSolver rotation_averaging_solver;
-  const bool b_rotation_averaging = rotation_averaging_solver.Run(
+  GlobalSfMRotationAveragingSolver rotationAveraging_solver;
+  const bool b_rotationAveraging = rotationAveraging_solver.Run(
     _eRotationAveragingMethod, eRelativeRotationInferenceMethod,
     relatives_R, global_rotations);
 
   ALICEVISION_LOG_DEBUG("Found #global_rotations: " << global_rotations.size());
 
-  if (b_rotation_averaging)
+  if (b_rotationAveraging)
   {
     // Log input graph to the HTML report
     if (!_sLoggingFile.empty() && !_sOutDirectory.empty())
@@ -227,7 +227,7 @@ bool ReconstructionEngine_globalSfM::Compute_Global_Rotations
           set_pose_ids.insert(pose_id);
         }
         const std::string sGraph_name = "global_relative_rotation_pose_graph_final";
-        graph::indexedGraph putativeGraph(set_pose_ids, rotation_averaging_solver.GetUsedPairs());
+        graph::indexedGraph putativeGraph(set_pose_ids, rotationAveraging_solver.GetUsedPairs());
         graph::exportToGraphvizData(
           stlplus::create_filespec(_sOutDirectory, sGraph_name),
           putativeGraph.g);
@@ -245,7 +245,7 @@ bool ReconstructionEngine_globalSfM::Compute_Global_Rotations
     }
   }
 
-  return b_rotation_averaging;
+  return b_rotationAveraging;
 }
 
 /// Compute/refine relative translations and compute global translations
@@ -463,7 +463,7 @@ bool ReconstructionEngine_globalSfM::Adjust()
 
 void ReconstructionEngine_globalSfM::Compute_Relative_Rotations
 (
-  rotation_averaging::RelativeRotations & vec_relatives_R
+  rotationAveraging::RelativeRotations & vec_relatives_R
 )
 {
   //
@@ -639,7 +639,7 @@ void ReconstructionEngine_globalSfM::Compute_Relative_Rotations
       #pragma omp critical
       {
         // Add the relative rotation to the relative 'rotation' pose graph
-        using namespace aliceVision::rotation_averaging;
+        using namespace aliceVision::rotationAveraging;
           vec_relatives_R.emplace_back(
             relative_pose_pair.first, relative_pose_pair.second,
             relativePose_info.relativePose.rotation(), relativePose_info.vec_inliers.size());

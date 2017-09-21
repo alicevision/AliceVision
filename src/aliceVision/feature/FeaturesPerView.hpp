@@ -6,7 +6,7 @@
 #include "aliceVision/types.hpp"
 #include "aliceVision/feature/feature.hpp"
 #include "aliceVision/feature/imageDescriberCommon.hpp"
-#include "aliceVision/multiview/test_data_sets.hpp" // synthetic data
+#include "aliceVision/multiview/NViewDataSet.hpp" // synthetic data
 
 #include <memory>
 #include <random>

@@ -1,7 +1,7 @@
 // This file is part of the AliceVision project and is made available under
 // the terms of the MPL2 license (see the COPYING.md file).
 
-#include "aliceVision/multiview/test_data_sets.hpp"
+#include "aliceVision/multiview/NViewDataSet.hpp"
 #include "CppUnitLite/TestHarness.h"
 #include "testing/testing.h"
 
@@ -21,7 +21,7 @@ TEST(Resection_L_Infinity, Robust_OutlierFree) {
   const int nViews = 3;
   const int nbPoints = 10;
   const NViewDataSet d = NRealisticCamerasRing(nViews, nbPoints,
-    nViewDatasetConfigurator(1,1,0,0,5,0)); // Suppose a camera with Unit matrix as K
+    NViewDatasetConfigurator(1,1,0,0,5,0)); // Suppose a camera with Unit matrix as K
 
   //-- Modify a dataset (set to 0 and parse new value) (Assert good values)
   NViewDataSet d2 = d;
@@ -64,7 +64,7 @@ TEST(Resection_L_Infinity, Robust_OneOutlier) {
   const int nViews = 3;
   const int nbPoints = 20;
   const NViewDataSet d = NRealisticCamerasRing(nViews, nbPoints,
-    nViewDatasetConfigurator(1,1,0,0,5,0)); // Suppose a camera with Unit matrix as K
+    NViewDatasetConfigurator(1,1,0,0,5,0)); // Suppose a camera with Unit matrix as K
 
   d.ExportToPLY("test_Before_Infinity.ply");
   //-- Modify a dataset (set to 0 and parse new value) (Assert good values)

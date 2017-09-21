@@ -1,10 +1,11 @@
 // This file is part of the AliceVision project and is made available under
 // the terms of the MPL2 license (see the COPYING.md file).
 
-#include "aliceVision/numeric/numeric.hpp"
-#include "aliceVision/multiview/projection.hpp"
-#include "aliceVision/multiview/triangulation.hpp"
-#include "aliceVision/multiview/essential.hpp"
+#include <aliceVision/numeric/numeric.hpp>
+#include <aliceVision/multiview/projection.hpp>
+#include <aliceVision/multiview/essential.hpp>
+#include <aliceVision/multiview/triangulation/triangulationDLT.hpp>
+
 
 namespace aliceVision {
 

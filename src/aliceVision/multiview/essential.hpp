@@ -1,12 +1,11 @@
 // This file is part of the AliceVision project and is made available under
 // the terms of the MPL2 license (see the COPYING.md file).
 
-#ifndef ALICEVISION_MULTIVIEW_ESSENTIAL_H_
-#define ALICEVISION_MULTIVIEW_ESSENTIAL_H_
+#pragma once
+
+#include <aliceVision/numeric/numeric.hpp>
 
 #include <vector>
-
-#include "aliceVision/numeric/numeric.hpp"
 
 namespace aliceVision {
 
@@ -71,5 +70,3 @@ void MotionFromEssential(const Mat3 &E,
 
 
 } // namespace aliceVision
-
-#endif  // ALICEVISION_MULTIVIEW_ESSENTIAL_H_

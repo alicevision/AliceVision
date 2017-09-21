@@ -30,7 +30,7 @@ TEST(SEQUENTIAL_SFM, Known_Intrinsics) {
 
   const int nviews = 6;
   const int npoints = 128;
-  const nViewDatasetConfigurator config;
+  const NViewDatasetConfigurator config;
   const NViewDataSet d = NRealisticCamerasRing(nviews, npoints, config);
 
   // Translate the input dataset to a SfMData scene
@@ -80,7 +80,7 @@ TEST(SEQUENTIAL_SFM, Partially_Known_Intrinsics) {
 
   const int nviews = 6;
   const int npoints = 256;
-  const nViewDatasetConfigurator config;
+  const NViewDatasetConfigurator config;
   const NViewDataSet d = NRealisticCamerasRing(nviews, npoints, config);
 
   // Translate the input dataset to a SfMData scene
@@ -143,7 +143,7 @@ TEST(SEQUENTIAL_SFM, Rig) {
   const std::size_t nbSubPoses = 2;
   const std::size_t nbPoses = nviews / nbSubPoses;
 
-  const nViewDatasetConfigurator config;
+  const NViewDatasetConfigurator config;
   const NViewDataSet d = NRealisticCamerasRing(nviews, npoints, config);
 
   // Translate the input dataset to a SfMData scene

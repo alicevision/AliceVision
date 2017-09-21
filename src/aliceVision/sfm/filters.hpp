@@ -3,8 +3,8 @@
 
 #pragma once
 
-#include <aliceVision/multiview/rotation_averaging_common.hpp>
-#include <aliceVision/multiview/translation_averaging_common.hpp>
+#include <aliceVision/multiview/rotationAveraging/common.hpp>
+#include <aliceVision/multiview/translationAveraging/common.hpp>
 #include <aliceVision/matching/IndMatch.hpp>
 #include <aliceVision/system/Logger.hpp>
 
@@ -30,17 +30,17 @@ static void KeepOnlyReferencedElement(
   ALICEVISION_LOG_ERROR("Must be specialized for your type");
 }
 
-// Specialization for RelativeInfo_Map
+// Specialization for RelativeInfoMap
 template<>
 #ifdef _MSC_VER
 static
 #endif
 void KeepOnlyReferencedElement(
   const std::set<IndexT> & set_remainingIds,
-  RelativeInfo_Map& map_relatives)
+  translationAveraging::RelativeInfoMap& map_relatives)
 {
-  RelativeInfo_Map map_relatives_infered;
-  for (RelativeInfo_Map::const_iterator
+  translationAveraging::RelativeInfoMap map_relatives_infered;
+  for (translationAveraging::RelativeInfoMap::const_iterator
     iter = map_relatives.begin();
     iter != map_relatives.end(); ++iter)
   {
@@ -53,17 +53,17 @@ void KeepOnlyReferencedElement(
   map_relatives.swap(map_relatives_infered);
 }
 
-// Specialization for RelativeInfo_Map
+// Specialization for RelativeInfoMap
 template<>
 #ifdef _MSC_VER
 static
 #endif
 void KeepOnlyReferencedElement(
   const std::set<IndexT> & set_remainingIds,
-  rotation_averaging::RelativeRotations& relative_info)
+  rotationAveraging::RelativeRotations& relative_info)
 {
-  rotation_averaging::RelativeRotations relatives_infered;
-  for (rotation_averaging::RelativeRotations::const_iterator
+  rotationAveraging::RelativeRotations relatives_infered;
+  for (rotationAveraging::RelativeRotations::const_iterator
     iter = relative_info.begin();
     iter != relative_info.end(); ++iter)
   {
@@ -119,17 +119,17 @@ void KeepOnlyReferencedElement(
   map_Mat3.swap(map_infered);
 }
 
-// Specialization for RelativeInfo_Vec
+// Specialization for RelativeInfoVec
 template<>
 #ifdef _MSC_VER
 static
 #endif
 void KeepOnlyReferencedElement(
   const std::set<IndexT> & set_remainingIds,
-  RelativeInfo_Vec & relativeInfo_vec)
+  translationAveraging::RelativeInfoVec & relativeInfo_vec)
 {
-  RelativeInfo_Vec map_infered;
-  for (RelativeInfo_Vec::const_iterator iter = relativeInfo_vec.begin();
+  translationAveraging::RelativeInfoVec map_infered;
+  for (translationAveraging::RelativeInfoVec::const_iterator iter = relativeInfo_vec.begin();
     iter != relativeInfo_vec.end(); ++iter)
   {
     if (set_remainingIds.find(iter->first.first) != set_remainingIds.end() &&

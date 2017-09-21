@@ -1,55 +1,55 @@
 # Headers
 set(multiview_files_headers
+  affineSolver.hpp
   conditioning.hpp
   essential.hpp
   projection.hpp
-  rotation_averaging_common.hpp
-  rotation_averaging.hpp
-  rotation_averaging_l1.hpp
-  rotation_averaging_l2.hpp
-  solver_affine.hpp
-  solver_essential_five_point.hpp
-  solver_essential_kernel.hpp
-  solver_fundamental_kernel.hpp
-  solver_homography_kernel.hpp
-  solver_resection_kernel.hpp
-  solver_resection_p3p.hpp
-  solver_resection_p4pf.hpp
-  solver_resection_p5pfr.hpp
-  solver_translation_knownRotation_kernel.hpp
-  translation_averaging_common.hpp
-  translation_averaging_solver.hpp
-  triangulation_nview.hpp
-  triangulation.hpp
-  two_view_kernel.hpp
+  essentialFivePointSolver.hpp
+  essentialKernelSolver.hpp
+  fundamentalKernelSolver.hpp
+  homographyKernelSolver.hpp
+  knownRotationTranslationKernel.hpp
+  twoViewKernel.hpp
+  resection/P3PSolver.hpp
+  resection/P4PfSolver.hpp
+  resection/P5PfrSolver.hpp
+  resection/ResectionKernel.hpp
+  rotationAveraging/common.hpp
+  rotationAveraging/rotationAveraging.hpp
+  rotationAveraging/l1.hpp
+  rotationAveraging/l2.hpp
+  translationAveraging/common.hpp
+  translationAveraging/solver.hpp
+  triangulation/Triangulation.hpp
+  triangulation/triangulationDLT.hpp
 )
 
 # Sources
 set(multiview_files_sources
+  affineSolver.cpp
   conditioning.cpp
   essential.cpp
   projection.cpp
-  rotation_averaging_l1.cpp
-  rotation_averaging_l2.cpp
-  solver_affine.cpp
-  solver_essential_five_point.cpp
-  solver_essential_kernel.cpp
-  solver_fundamental_kernel.cpp
-  solver_homography_kernel.cpp
-  solver_resection_kernel.cpp
-  solver_resection_p3p.cpp
-  solver_resection_p4pf.cpp
-  solver_resection_p5pfr.cpp
-  translation_averaging_solver_l2_chordal.cpp
-  translation_averaging_solver_softl1.cpp
-  triangulation_nview.cpp
-  triangulation.cpp
+  essentialFivePointSolver.cpp
+  essentialKernelSolver.cpp
+  fundamentalKernelSolver.cpp
+  homographyKernelSolver.cpp
+  resection/ResectionKernel.cpp
+  resection/P3PSolver.cpp
+  resection/P4PfSolver.cpp
+  resection/P5PfrSolver.cpp
+  rotationAveraging/l1.cpp
+  rotationAveraging/l2.cpp
+  translationAveraging/solverL2Chordal.cpp
+  translationAveraging/solverL1Soft.cpp
+  triangulation/triangulationDLT.cpp
+  triangulation/Triangulation.cpp
 )
 
 # Test data
 set(multiview_files_test_data
-  test_data_sets.hpp
-  test_data_sets.cpp
+  NViewDataSet.hpp
+  NViewDataSet.cpp
 )
 
 add_library(aliceVision_multiview
@@ -90,24 +90,17 @@ set_target_properties(aliceVision_multiview
   VERSION "${ALICEVISION_VERSION_MAJOR}.${ALICEVISION_VERSION_MINOR}"
 )
 
+# Unit test
 
-# Triangulation routines
-UNIT_TEST(aliceVision triangulation       "aliceVision_multiview;aliceVision_multiview_test_data")
-UNIT_TEST(aliceVision triangulation_nview "aliceVision_multiview;aliceVision_multiview_test_data")
+add_subdirectory(resection)
+add_subdirectory(rotationAveraging)
+add_subdirectory(translationAveraging)
+add_subdirectory(triangulation)
 
-# Solvers
-UNIT_TEST(aliceVision solver_affine "aliceVision_multiview")
-UNIT_TEST(aliceVision solver_fundamental_kernel "aliceVision_multiview")
-UNIT_TEST(aliceVision solver_essential_kernel "aliceVision_multiview;aliceVision_multiview_test_data")
-UNIT_TEST(aliceVision solver_homography_kernel "aliceVision_multiview;aliceVision_multiview_test_data")
-UNIT_TEST(aliceVision solver_essential_five_point "aliceVision_multiview;aliceVision_multiview_test_data")
-UNIT_TEST(aliceVision solver_resection_kernel "aliceVision_multiview;aliceVision_multiview_test_data")
-UNIT_TEST(aliceVision solver_resection_p4pf "aliceVision_multiview;aliceVision_multiview_test_data")
-UNIT_TEST(aliceVision solver_resection_p5pfr "aliceVision_multiview;aliceVision_multiview_test_data")
-UNIT_TEST(aliceVision solver_resection_LORansac "aliceVision_multiview;aliceVision_feature;aliceVision_sfm;aliceVision_multiview_test_data;${CERES_LIBRARIES}")
-UNIT_TEST(aliceVision solver_translation_knownRotation_kernel "aliceVision_multiview;aliceVision_multiview_test_data")
 
-# Averaging routines
-UNIT_TEST(aliceVision rotation_averaging    "aliceVision_multiview;aliceVision_multiview_test_data;${CERES_LIBRARIES}")
-UNIT_TEST(aliceVision translation_averaging "aliceVision_multiview;aliceVision_multiview_test_data;${CERES_LIBRARIES}")
-
+UNIT_TEST(aliceVision affineSolver                    "aliceVision_multiview")
+UNIT_TEST(aliceVision fundamentalKernelSolver         "aliceVision_multiview")
+UNIT_TEST(aliceVision essentialFivePointSolver        "aliceVision_multiview;aliceVision_multiview_test_data")
+UNIT_TEST(aliceVision essentialKernelSolver           "aliceVision_multiview;aliceVision_multiview_test_data")
+UNIT_TEST(aliceVision homographyKernelSolver          "aliceVision_multiview;aliceVision_multiview_test_data")
+UNIT_TEST(aliceVision knownRotationTranslationKernel  "aliceVision_multiview;aliceVision_multiview_test_data")

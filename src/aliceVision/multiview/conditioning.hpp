@@ -1,10 +1,9 @@
 // This file is part of the AliceVision project and is made available under
 // the terms of the MPL2 license (see the COPYING.md file).
 
-#ifndef ALICEVISION_MULTIVIEW_CONDITIONNING_H_
-#define ALICEVISION_MULTIVIEW_CONDITIONNING_H_
+#pragma once
 
-#include "aliceVision/numeric/numeric.hpp"
+#include <aliceVision/numeric/numeric.hpp>
 
 //-- Implementation of normalized coordinates.
 // Normalization improve accuracy of results and provide benefits
@@ -48,6 +47,3 @@ struct UnnormalizerT {
 };
 
 } //namespace aliceVision
-
-
-#endif // ALICEVISION_MULTIVIEW_CONDITIONNING_H_

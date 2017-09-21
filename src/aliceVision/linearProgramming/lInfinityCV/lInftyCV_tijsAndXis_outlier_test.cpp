@@ -2,7 +2,7 @@
 // the terms of the MPL2 license (see the COPYING.md file).
 
 #include <aliceVision/system/Logger.hpp>
-#include "aliceVision/multiview/test_data_sets.hpp"
+#include "aliceVision/multiview/NViewDataSet.hpp"
 #include "aliceVision/numeric/numeric.hpp"
 #include <aliceVision/config.hpp>
 #include "testing/testing.h"
@@ -36,7 +36,7 @@ TEST(Translation_Structure_L_Infinity_Noisy, Outlier_OSICLP_SOLVER) {
   const NViewDataSet d =
     //NRealisticCamerasRing(nViews, nbPoints,
     NRealisticCamerasCardioid(nViews, nbPoints,
-    nViewDatasetConfigurator(focalValue,focalValue,cx,cy,5,0));
+    NViewDatasetConfigurator(focalValue,focalValue,cx,cy,5,0));
 
   d.ExportToPLY("test_Before_Infinity.ply");
   //-- Test triangulation of all the point
@@ -149,7 +149,7 @@ TEST(Translation_Structure_L_Infinity_Noisy, Outlier_MOSEK) {
   const NViewDataSet d =
     //NRealisticCamerasRing(nViews, nbPoints,
     NRealisticCamerasCardioid(nViews, nbPoints,
-    nViewDatasetConfigurator(focalValue,focalValue,cx,cy,5,0));
+    NViewDatasetConfigurator(focalValue,focalValue,cx,cy,5,0));
 
   d.ExportToPLY("test_Before_Infinity.ply");
   //-- Test triangulation of all the point

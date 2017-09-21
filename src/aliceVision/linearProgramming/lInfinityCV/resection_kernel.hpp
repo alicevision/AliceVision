@@ -6,7 +6,7 @@
 
 #include <vector>
 #include "aliceVision/multiview/projection.hpp"
-#include "aliceVision/multiview/two_view_kernel.hpp"
+#include "aliceVision/multiview/twoViewKernel.hpp"
 #include "aliceVision/numeric/numeric.hpp"
 
 namespace aliceVision {
@@ -37,7 +37,7 @@ struct l1SixPointResectionSolver {
 };
 
 //-- Usable solver for the l1 6pt Resection Estimation
-typedef two_view::kernel::Kernel<l1SixPointResectionSolver,
+typedef twoView::kernel::Kernel<l1SixPointResectionSolver,
   l1SixPointResectionSolver, Mat34>  l1PoseResectionKernel;
 
 }  // namespace kernel

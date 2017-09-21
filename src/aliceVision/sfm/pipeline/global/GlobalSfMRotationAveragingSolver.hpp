@@ -23,7 +23,7 @@ enum ERelativeRotationInferenceMethod
 
 #include "aliceVision/sfm/sfm.hpp"
 #include "aliceVision/graph/graph.hpp"
-#include "aliceVision/multiview/rotation_averaging_common.hpp"
+#include "aliceVision/multiview/rotationAveraging/common.hpp"
 
 namespace aliceVision{
 namespace sfm{
@@ -37,7 +37,7 @@ public:
   bool Run(
     ERotationAveragingMethod eRotationAveragingMethod,
     ERelativeRotationInferenceMethod eRelativeRotationInferenceMethod,
-    const rotation_averaging::RelativeRotations & relativeRot_In,
+    const rotationAveraging::RelativeRotations & relativeRot_In,
     Hash_Map<IndexT, Mat3> & map_globalR
   ) const;
 
@@ -46,7 +46,7 @@ public:
   void TripletRotationRejection(
     const double max_angular_error,
     std::vector< graph::Triplet > & vec_triplets,
-    rotation_averaging::RelativeRotations & relativeRotations) const;
+    rotationAveraging::RelativeRotations & relativeRotations) const;
 
   /// Return the pairs validated by the GlobalRotation routine (inference can remove some)
   Pair_Set GetUsedPairs() const;

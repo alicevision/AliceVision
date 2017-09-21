@@ -9,7 +9,7 @@
 
 #include "aliceVision/matching/ArrayMatcher_bruteForce.hpp"
 #include "aliceVision/matching/IndMatchDecorator.hpp"
-#include "aliceVision/multiview/triangulation.hpp"
+#include "aliceVision/multiview/triangulation/triangulationDLT.hpp"
 
 #include "aliceVision/matching/RegionsMatcher.hpp"
 

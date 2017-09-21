@@ -13,7 +13,7 @@ using namespace aliceVision::matching;
 
 #include "dependencies/stlplus3/filesystemSimplified/file_system.hpp"
 
-#include "aliceVision/multiview/solver_homography_kernel.hpp"
+#include "aliceVision/multiview/homographyKernelSolver.hpp"
 #include "aliceVision/multiview/conditioning.hpp"
 
 using namespace aliceVision;

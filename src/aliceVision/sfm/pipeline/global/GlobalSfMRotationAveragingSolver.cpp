@@ -5,7 +5,7 @@
 
 #include "aliceVision/sfm/sfm.hpp"
 #include "aliceVision/graph/graph.hpp"
-#include "aliceVision/multiview/rotation_averaging.hpp"
+#include "aliceVision/multiview/rotationAveraging/rotationAveraging.hpp"
 #include "aliceVision/stl/mapUtils.hpp"
 
 #include "dependencies/histogram/histogram.hpp"
@@ -13,7 +13,7 @@
 namespace aliceVision{
 namespace sfm{
 
-using namespace aliceVision::rotation_averaging;
+using namespace aliceVision::rotationAveraging;
 
 Pair_Set GlobalSfMRotationAveragingSolver::GetUsedPairs() const
 {
@@ -77,13 +77,13 @@ bool GlobalSfMRotationAveragingSolver::Run(
     case ROTATION_AVERAGING_L2:
     {
       //- Solve the global rotation estimation problem:
-      bSuccess = rotation_averaging::l2::L2RotationAveraging(
+      bSuccess = rotationAveraging::l2::L2RotationAveraging(
         _reindexForward.size(),
         relativeRotations,
         vec_globalR);
       //- Non linear refinement of the global rotations
       if (bSuccess)
-        bSuccess = rotation_averaging::l2::L2RotationAveraging_Refine(
+        bSuccess = rotationAveraging::l2::L2RotationAveraging_Refine(
           relativeRotations,
           vec_globalR);
 
@@ -99,12 +99,12 @@ bool GlobalSfMRotationAveragingSolver::Run(
     break;
     case ROTATION_AVERAGING_L1:
     {
-      using namespace aliceVision::rotation_averaging::l1;
+      using namespace aliceVision::rotationAveraging::l1;
 
       //- Solve the global rotation estimation problem:
       const size_t nMainViewID = 0; //arbitrary choice
       std::vector<bool> vec_inliers;
-      bSuccess = rotation_averaging::l1::GlobalRotationsRobust(
+      bSuccess = rotationAveraging::l1::GlobalRotationsRobust(
         relativeRotations, vec_globalR, nMainViewID, 0.0f, &vec_inliers);
 
       ALICEVISION_LOG_DEBUG("inliers: " << vec_inliers);
@@ -149,8 +149,8 @@ void GlobalSfMRotationAveragingSolver::TripletRotationRejection(
 {
   const size_t edges_start_count = relativeRotations.size();
 
-  RelativeRotations_map map_relatives = getMap(relativeRotations);
-  RelativeRotations_map map_relatives_validated;
+  RelativeRotationsMap map_relatives = getMap(relativeRotations);
+  RelativeRotationsMap map_relatives_validated;
 
   //--
   // ROTATION OUTLIERS DETECTION

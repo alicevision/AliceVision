@@ -1,7 +1,7 @@
 // This file is part of the AliceVision project and is made available under
 // the terms of the MPL2 license (see the COPYING.md file).
 
-#include "aliceVision/multiview/test_data_sets.hpp"
+#include "aliceVision/multiview/NViewDataSet.hpp"
 #include "aliceVision/numeric/numeric.hpp"
 #include <aliceVision/config.hpp>
 #include "CppUnitLite/TestHarness.h"
@@ -31,7 +31,7 @@ TEST(Translation_Structure_L_Infinity, OSICLP_SOLVER) {
   const size_t nViews = 3;
   const size_t nbPoints = 6;
   const NViewDataSet d = NRealisticCamerasRing(nViews, nbPoints,
-    nViewDatasetConfigurator(1,1,0,0,5,0)); // Suppose a camera with Unit matrix as K
+    NViewDatasetConfigurator(1,1,0,0,5,0)); // Suppose a camera with Unit matrix as K
 
   d.ExportToPLY("test_Before_Infinity.ply");
   //-- Test triangulation of all the point
@@ -115,7 +115,7 @@ TEST(Translation_Structure_L_Infinity, OSICLP_SOLVER_K) {
   const size_t nViews = 3;
   const size_t nbPoints = 6;
   const NViewDataSet d = NRealisticCamerasRing(nViews, nbPoints,
-    nViewDatasetConfigurator(1000,1000,500,500,5,0)); // Suppose a camera with Unit matrix as K
+    NViewDatasetConfigurator(1000,1000,500,500,5,0)); // Suppose a camera with Unit matrix as K
 
   d.ExportToPLY("test_Before_Infinity.ply");
   //-- Test triangulation of all the point
@@ -204,7 +204,7 @@ TEST(Translation_Structure_L_Infinity, MOSEK) {
   const size_t nViews = 3;
   const size_t nbPoints = 6;
   const NViewDataSet d = NRealisticCamerasRing(nViews, nbPoints,
-    nViewDatasetConfigurator(1,1,0,0,5,0)); // Suppose a camera with Unit matrix as K
+    NViewDatasetConfigurator(1,1,0,0,5,0)); // Suppose a camera with Unit matrix as K
 
   d.ExportToPLY("test_Before_Infinity.ply");
   //-- Test triangulation of all the point

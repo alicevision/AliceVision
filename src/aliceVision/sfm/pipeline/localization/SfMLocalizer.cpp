@@ -4,8 +4,8 @@
 #include "aliceVision/sfm/pipeline/localization/SfMLocalizer.hpp"
 #include "aliceVision/sfm/BundleAdjustmentCeres.hpp"
 
-#include "aliceVision/multiview/solver_resection_kernel.hpp"
-#include "aliceVision/multiview/solver_resection_p3p.hpp"
+#include "aliceVision/multiview/resection/ResectionKernel.hpp"
+#include "aliceVision/multiview/resection/P3PSolver.hpp"
 #include "aliceVision/robustEstimation/ACRansac.hpp"
 #include "aliceVision/robustEstimation/ACRansacKernelAdaptator.hpp"
 #include <aliceVision/robustEstimation/LORansac.hpp>
@@ -91,7 +91,7 @@ bool SfMLocalizer::Localize
       {
         //--
         // Since K calibration matrix is known, compute only [R|t]
-        typedef aliceVision::euclidean_resection::P3PSolver SolverType;
+        typedef aliceVision::resection::P3PSolver SolverType;
         MINIMUM_SAMPLES = SolverType::MINIMUM_SAMPLES;
 
         typedef aliceVision::robustEstimation::ACKernelAdaptorResection_K<
@@ -122,7 +122,7 @@ bool SfMLocalizer::Localize
         }
 
         // use the P3P solver for generating the model
-        typedef aliceVision::euclidean_resection::P3PSolver SolverType;
+        typedef aliceVision::resection::P3PSolver SolverType;
         MINIMUM_SAMPLES = SolverType::MINIMUM_SAMPLES;
         // use the six point algorithm as Least square solution to refine the model
         typedef aliceVision::resection::kernel::SixPointResectionSolver SolverLSType;

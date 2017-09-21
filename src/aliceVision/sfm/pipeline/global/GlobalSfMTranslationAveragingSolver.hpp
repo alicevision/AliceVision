@@ -4,7 +4,7 @@
 #pragma once
 
 #include "aliceVision/sfm/SfMData.hpp"
-#include "aliceVision/multiview/translation_averaging_common.hpp"
+#include "aliceVision/multiview/translationAveraging/common.hpp"
 #include "aliceVision/feature/FeaturesPerView.hpp"
 #include "aliceVision/sfm/pipeline/pairwiseMatchesIO.hpp"
 #include "aliceVision/track/Track.hpp"
@@ -22,7 +22,7 @@ enum ETranslationAveragingMethod
 
 class GlobalSfMTranslationAveragingSolver
 {
-  RelativeInfo_Vec m_vec_initialRijTijEstimates;
+  translationAveraging::RelativeInfoVec m_vec_initialRijTijEstimates;
 
 public:
 
@@ -58,7 +58,7 @@ private:
     const Hash_Map<IndexT, Mat3> & map_globalR,
     const feature::FeaturesPerView & normalizedFeaturesPerView,
     const matching::PairwiseMatches & matches_provider,
-    RelativeInfo_Vec & vec_initialEstimates,
+    translationAveraging::RelativeInfoVec & vec_initialEstimates,
     matching::PairwiseMatches & newpairMatches);
 
   // Robust estimation and refinement of a translation and 3D points of an image triplets.

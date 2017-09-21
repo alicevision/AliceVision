@@ -28,7 +28,7 @@ TEST(GLOBAL_SFM, RotationAveragingL2_TranslationAveragingL1) {
 
   const int nviews = 6;
   const int npoints = 64;
-  const nViewDatasetConfigurator config;
+  const NViewDatasetConfigurator config;
   const NViewDataSet d = NRealisticCamerasRing(nviews, npoints, config);
 
   // Translate the input dataset to a SfMData scene
@@ -78,7 +78,7 @@ TEST(GLOBAL_SFM, RotationAveragingL1_TranslationAveragingL1) {
 
   const int nviews = 6;
   const int npoints = 64;
-  const nViewDatasetConfigurator config;
+  const NViewDatasetConfigurator config;
   const NViewDataSet d = NRealisticCamerasRing(nviews, npoints, config);
 
   // Translate the input dataset to a SfMData scene
@@ -128,7 +128,7 @@ TEST(GLOBAL_SFM, RotationAveragingL2_TranslationAveragingL2_Chordal) {
 
   const int nviews = 6;
   const int npoints = 64;
-  const nViewDatasetConfigurator config;
+  const NViewDatasetConfigurator config;
   const NViewDataSet d = NRealisticCamerasRing(nviews, npoints, config);
 
   // Translate the input dataset to a SfMData scene
@@ -177,7 +177,7 @@ TEST(GLOBAL_SFM, RotationAveragingL2_TranslationAveragingSoftL1) {
 
   const int nviews = 6;
   const int npoints = 64;
-  const nViewDatasetConfigurator config;
+  const NViewDatasetConfigurator config;
   const NViewDataSet d = NRealisticCamerasRing(nviews, npoints, config);
 
   // Translate the input dataset to a SfMData scene

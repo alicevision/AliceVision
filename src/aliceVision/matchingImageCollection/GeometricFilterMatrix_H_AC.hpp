@@ -3,7 +3,7 @@
 
 #pragma once
 
-#include "aliceVision/multiview/solver_homography_kernel.hpp"
+#include "aliceVision/multiview/homographyKernelSolver.hpp"
 #include "aliceVision/robustEstimation/ACRansac.hpp"
 #include "aliceVision/robustEstimation/ACRansacKernelAdaptator.hpp"
 #include "aliceVision/robustEstimation/guidedMatching.hpp"

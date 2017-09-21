@@ -5,7 +5,7 @@
 #include "aliceVision/linearProgramming/OSIXSolver.hpp"
 #include "aliceVision/linearProgramming/lInfinityCV/global_translations_fromTij.hpp"
 
-#include "aliceVision/multiview/translation_averaging_test.hpp"
+#include "aliceVision/multiview/translationAveraging/translationAveragingTest.hpp"
 #include "testing/testing.h"
 
 using namespace aliceVision;
@@ -23,7 +23,7 @@ TEST(translation_averaging, globalTi_from_tijs) {
 
   const bool bCardiod = true;
   const bool bRelative_Translation_PerTriplet = true;
-  std::vector<aliceVision::relativeInfo > vec_relative_estimates;
+  std::vector<aliceVision::translationAveraging::relativeInfo > vec_relative_estimates;
 
   const NViewDataSet d =
     Setup_RelativeTranslations_AndNviewDataset

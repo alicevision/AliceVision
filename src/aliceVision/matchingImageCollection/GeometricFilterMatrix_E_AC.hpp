@@ -4,7 +4,7 @@
 #pragma once
 
 #include "aliceVision/types.hpp"
-#include "aliceVision/multiview/solver_essential_kernel.hpp"
+#include "aliceVision/multiview/essentialKernelSolver.hpp"
 #include "aliceVision/multiview/essential.hpp"
 #include "aliceVision/robustEstimation/ACRansac.hpp"
 #include "aliceVision/robustEstimation/ACRansacKernelAdaptator.hpp"

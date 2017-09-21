@@ -6,7 +6,7 @@
 #include "aliceVision/matchingImageCollection/GeometricFilterMatrix.hpp"
 #include "aliceVision/matchingImageCollection/geometricFilterUtils.hpp"
 #include "aliceVision/matching/IndMatch.hpp"
-#include "aliceVision/multiview/solver_fundamental_kernel.hpp"
+#include "aliceVision/multiview/fundamentalKernelSolver.hpp"
 #include "aliceVision/multiview/essential.hpp"
 #include "aliceVision/robustEstimation/estimators.hpp"
 #include "aliceVision/robustEstimation/ACRansac.hpp"

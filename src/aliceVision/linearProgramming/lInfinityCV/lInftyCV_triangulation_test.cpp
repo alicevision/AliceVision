@@ -4,7 +4,7 @@
 #include <iostream>
 #include <vector>
 
-#include "aliceVision/multiview/test_data_sets.hpp"
+#include "aliceVision/multiview/NViewDataSet.hpp"
 #include "aliceVision/numeric/numeric.hpp"
 #include <aliceVision/config.hpp>
 #include "testing/testing.h"
@@ -27,7 +27,7 @@ using namespace lInfinityCV;
 TEST(lInfinityCV, Triangulation_OSICLPSOLVER) {
 
   NViewDataSet d = NRealisticCamerasRing(6, 10,
-    nViewDatasetConfigurator(1,1,0,0,5,0)); // Suppose a camera with Unit matrix as K
+    NViewDatasetConfigurator(1,1,0,0,5,0)); // Suppose a camera with Unit matrix as K
 
   std::vector<Mat34> vec_Pi;
 
@@ -87,7 +87,7 @@ TEST(lInfinityCV, Triangulation_OSICLPSOLVER) {
 TEST(computervision, Triangulation_MOSEK) {
 
   NViewDataSet d = NRealisticCamerasRing(6, 10,
-    nViewDatasetConfigurator(1,1,0,0,5,0)); // Suppose a camera with Unit matrix as K
+    NViewDatasetConfigurator(1,1,0,0,5,0)); // Suppose a camera with Unit matrix as K
 
   std::vector<Mat34> vec_Pi;
 

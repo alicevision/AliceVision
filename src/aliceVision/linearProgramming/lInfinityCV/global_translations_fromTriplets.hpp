@@ -5,7 +5,7 @@
 #define ALICEVISION_LINFINITY_COMPUTER_VISION_GLOBAL_TRANSLATIONS_FROMTRIPLETS_H_
 
 #include "aliceVision/numeric/numeric.hpp"
-#include "aliceVision/multiview/translation_averaging_common.hpp"
+#include "aliceVision/multiview/translationAveraging/common.hpp"
 #include "aliceVision/linearProgramming/ISolver.hpp"
 #include <fstream>
 #include <utility>
@@ -35,7 +35,7 @@ using namespace linearProgramming;
 //--
 static void EncodeTi_from_tij_OneLambdaPerTrif(
     const size_t nTranslation,
-    const std::vector<relativeInfo > & vec_relative,
+    const std::vector<translationAveraging::relativeInfo> & vec_relative,
     sRMat & A, Vec & C,
     std::vector<LPConstraints::eLP_SIGN> & vec_sign,
     std::vector<double> & vec_costs,
@@ -159,7 +159,7 @@ static void EncodeTi_from_tij_OneLambdaPerTrif(
 struct Tifromtij_ConstraintBuilder_OneLambdaPerTrif
 {
   Tifromtij_ConstraintBuilder_OneLambdaPerTrif(
-    const std::vector< relativeInfo > & vec_relative)
+    const std::vector<translationAveraging::relativeInfo> & vec_relative)
   :_vec_relative(vec_relative)
   {
     //Count the number of camera that are represented
@@ -199,7 +199,7 @@ struct Tifromtij_ConstraintBuilder_OneLambdaPerTrif
 
   // Internal data
   size_t _Ncam;
-  const std::vector< relativeInfo > & _vec_relative; // /!\ memory Alias
+  const std::vector<translationAveraging::relativeInfo> & _vec_relative; // /!\ memory Alias
 };
 
 } // namespace lInfinityCV

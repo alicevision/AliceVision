@@ -6,7 +6,7 @@
 #include "aliceVision/feature/feature.hpp"
 #include "aliceVision/feature/sift/ImageDescriber_SIFT.hpp"
 #include "aliceVision/matching/RegionsMatcher.hpp"
-#include "aliceVision/multiview/triangulation.hpp"
+#include "aliceVision/multiview/triangulation/triangulationDLT.hpp"
 
 #include "dependencies/stlplus3/filesystemSimplified/file_system.hpp"
 #include "dependencies/vectorGraphics/svgDrawer.hpp"

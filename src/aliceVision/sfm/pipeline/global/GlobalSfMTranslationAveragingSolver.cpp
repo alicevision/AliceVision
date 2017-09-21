@@ -9,16 +9,16 @@
 #include "aliceVision/sfm/pipeline/global/reindexGlobalSfM.hpp"
 #include "aliceVision/sfm/pipeline/global/MutexSet.hpp"
 #include "aliceVision/matching/IndMatch.hpp"
-#include "aliceVision/multiview/translation_averaging_common.hpp"
-#include "aliceVision/multiview/translation_averaging_solver.hpp"
+#include "aliceVision/multiview/translationAveraging/common.hpp"
+#include "aliceVision/multiview/translationAveraging/solver.hpp"
 #include "aliceVision/graph/graph.hpp"
 #include "aliceVision/stl/stl.hpp"
 #include "aliceVision/system/Timer.hpp"
 #include "aliceVision/linearProgramming/linearProgramming.hpp"
 #include "aliceVision/multiview/essential.hpp"
 #include "aliceVision/multiview/conditioning.hpp"
-#include "aliceVision/multiview/translation_averaging_common.hpp"
-#include "aliceVision/multiview/translation_averaging_solver.hpp"
+#include "aliceVision/multiview/translationAveraging/common.hpp"
+#include "aliceVision/multiview/translationAveraging/solver.hpp"
 #include "aliceVision/sfm/pipeline/global/TranslationTripletKernelACRansac.hpp"
 #include "aliceVision/config.hpp"
 #include "aliceVision/alicevision_omp.hpp"
@@ -87,7 +87,7 @@ bool GlobalSfMTranslationAveragingSolver::Translation_averaging(
   KeepOnlyReferencedElement(set_remainingIds, m_vec_initialRijTijEstimates);
 
   {
-    const std::set<IndexT> index = getIndexT(m_vec_initialRijTijEstimates);
+    const std::set<IndexT> index = translationAveraging::getIndexT(m_vec_initialRijTijEstimates);
 
     const size_t iNview = index.size();
     ALICEVISION_LOG_DEBUG(
@@ -102,13 +102,13 @@ bool GlobalSfMTranslationAveragingSolver::Translation_averaging(
       return false;
     }
     //-- Update initial estimates from [minId,maxId] to range [0->Ncam]
-    RelativeInfo_Vec vec_initialRijTijEstimates_cpy = m_vec_initialRijTijEstimates;
-    const Pair_Set pairs = getPairs(vec_initialRijTijEstimates_cpy);
+    translationAveraging::RelativeInfoVec vec_initialRijTijEstimates_cpy = m_vec_initialRijTijEstimates;
+    const Pair_Set pairs = translationAveraging::getPairs(vec_initialRijTijEstimates_cpy);
     Hash_Map<IndexT,IndexT> _reindexForward, _reindexBackward;
     reindex(pairs, _reindexForward, _reindexBackward);
     for(size_t i = 0; i < vec_initialRijTijEstimates_cpy.size(); ++i)
     {
-      aliceVision::relativeInfo & rel = vec_initialRijTijEstimates_cpy[i];
+      aliceVision::translationAveraging::relativeInfo & rel = vec_initialRijTijEstimates_cpy[i];
       rel.first = Pair(_reindexForward[rel.first.first], _reindexForward[rel.first.second]);
     }
 
@@ -189,7 +189,7 @@ bool GlobalSfMTranslationAveragingSolver::Translation_averaging(
       case TRANSLATION_AVERAGING_SOFTL1:
       {
         std::vector<Vec3> vec_translations;
-        if (!solve_translations_problem_softl1(
+        if (!translationAveraging::solve_translations_problem_softl1(
           vec_initialRijTijEstimates_cpy, true, iNview, vec_translations))
         {
           ALICEVISION_LOG_WARNING("Compute global translations: failed");
@@ -219,7 +219,7 @@ bool GlobalSfMTranslationAveragingSolver::Translation_averaging(
 
         for(int i=0; i < vec_initialRijTijEstimates_cpy.size(); ++i)
         {
-          const aliceVision::relativeInfo & rel = vec_initialRijTijEstimates_cpy[i];
+          const aliceVision::translationAveraging::relativeInfo & rel = vec_initialRijTijEstimates_cpy[i];
           vec_edges.push_back(rel.first.first);
           vec_edges.push_back(rel.first.second);
           // Since index have been remapped
@@ -242,7 +242,7 @@ bool GlobalSfMTranslationAveragingSolver::Translation_averaging(
         const double loss_width = 0.0; // No loss in order to compare with TRANSLATION_AVERAGING_L1
 
         std::vector<double> X(iNview*3, 0.0);
-        if(!solve_translations_problem_l2_chordal(
+        if(!translationAveraging::solve_translations_problem_l2_chordal(
           &vec_edges[0],
           &vec_poses[0],
           &vec_weights[0],
@@ -306,7 +306,7 @@ void GlobalSfMTranslationAveragingSolver::ComputePutativeTranslation_EdgesCovera
   const Hash_Map<IndexT, Mat3> & map_globalR,
   const feature::FeaturesPerView & normalizedFeaturesPerView,
   const matching::PairwiseMatches & pairwiseMatches,
-  RelativeInfo_Vec & vec_initialEstimates,
+  translationAveraging::RelativeInfoVec & vec_initialEstimates,
   matching::PairwiseMatches & newpairMatches)
 {
   aliceVision::system::Timer timerLP_triplet;
@@ -407,7 +407,7 @@ void GlobalSfMTranslationAveragingSolver::ComputePutativeTranslation_EdgesCovera
       "\nRelative translations computation (edge coverage algorithm)\n");
 
     // set number of threads, 1 if openMP is not enabled  
-    std::vector< RelativeInfo_Vec > initial_estimates(omp_get_max_threads());
+    std::vector<translationAveraging::RelativeInfoVec> initial_estimates(omp_get_max_threads());
     const bool bVerbose = false;
 
     #pragma omp parallel for schedule(dynamic)
