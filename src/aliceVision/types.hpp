@@ -1,8 +1,7 @@
 // This file is part of the AliceVision project and is made available under
 // the terms of the MPL2 license (see the COPYING.md file).
 
-#ifndef ALICEVISION_TYPES_H_
-#define ALICEVISION_TYPES_H_
+#pragma once
 
 #include <Eigen/Core>
 
@@ -16,21 +15,21 @@
 #include <unordered_map>
 #endif
 
-namespace aliceVision{
+namespace aliceVision {
 
 typedef uint32_t IndexT;
 static const IndexT UndefinedIndexT = std::numeric_limits<IndexT>::max();
 
 typedef std::pair<IndexT,IndexT> Pair;
-typedef std::set<Pair> Pair_Set;
-typedef std::vector<Pair> Pair_Vec;
+typedef std::set<Pair> PairSet;
+typedef std::vector<Pair> PairVec;
 
 #ifdef ALICEVISION_UNORDERED_MAP
 template<typename Key, typename Value>
-struct Hash_Map : std::unordered_map<Key, Value> {};
+struct HashMap : std::unordered_map<Key, Value> {};
 #else
 template<typename K, typename V>
-struct Hash_Map : std::map<K, V, std::less<K>,
+struct HashMap : std::map<K, V, std::less<K>,
  Eigen::aligned_allocator<std::pair<const K,V> > > {};
 #endif
 
@@ -47,5 +46,3 @@ struct EstimationStatus
 };
 
 } // namespace aliceVision
-
-#endif  // ALICEVISION_TYPES_H_

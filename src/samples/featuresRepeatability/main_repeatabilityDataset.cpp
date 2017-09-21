@@ -297,7 +297,7 @@ int main(int argc, char **argv)
 
       // For each image computes the regions:
       image::Image<unsigned char> imageGray;
-      Hash_Map<IndexT, std::unique_ptr<Regions> > map_regions;
+      HashMap<IndexT, std::unique_ptr<Regions> > map_regions;
       for (size_t i = 0; i < dataset.size(); ++i)
       {
         image::ConvertPixelType(dataset.image(i), &imageGray);

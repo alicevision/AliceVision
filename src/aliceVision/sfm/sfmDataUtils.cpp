@@ -27,7 +27,7 @@ void GroupSharedIntrinsics(SfMData & sfm_data)
   }
 
   // From hash_value(s) compute the new index (old to new indexing)
-  Hash_Map<IndexT, IndexT> old_new_reindex;
+  HashMap<IndexT, IndexT> old_new_reindex;
   size_t i = 0;
   for (Intrinsics::const_iterator iterIntrinsic = intrinsics.begin();
     iterIntrinsic != intrinsics.end();

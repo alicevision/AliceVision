@@ -31,7 +31,7 @@ void Match
 (
   const sfm::SfMData & sfm_data,
   const feature::RegionsPerView& regionsPerView,
-  const Pair_Set & pairs,
+  const PairSet & pairs,
   EImageDescriberType descType,
   float fDistRatio,
   PairwiseMatches & map_PutativesMatches // the pairwise photometric corresponding points
@@ -44,7 +44,7 @@ void Match
   // Sort pairs according the first index to minimize later memory swapping
   typedef std::map<IndexT, std::vector<IndexT> > Map_vectorT;
   Map_vectorT map_Pairs;
-  for (Pair_Set::const_iterator iter = pairs.begin(); iter != pairs.end(); ++iter)
+  for (PairSet::const_iterator iter = pairs.begin(); iter != pairs.end(); ++iter)
   {
     map_Pairs[iter->first].push_back(iter->second);
     used_index.insert(iter->first);
@@ -209,7 +209,7 @@ void ImageCollectionMatcher_cascadeHashing::Match
 (
   const sfm::SfMData & sfm_data,
   const feature::RegionsPerView& regionsPerView,
-  const Pair_Set & pairs,
+  const PairSet & pairs,
   feature::EImageDescriberType descType,
   PairwiseMatches & map_PutativesMatches // the pairwise photometric corresponding points
 ) const

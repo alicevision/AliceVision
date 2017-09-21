@@ -32,7 +32,7 @@ TEST(matchingImageCollection, exhaustivePairs)
   sfm::Views views;
   {
     // Empty
-    Pair_Set pairSet = exhaustivePairs(views);
+    PairSet pairSet = exhaustivePairs(views);
     EXPECT_EQ( 0, pairSet.size());
   }
   {
@@ -43,7 +43,7 @@ TEST(matchingImageCollection, exhaustivePairs)
     }
 
 
-    Pair_Set pairSet = exhaustivePairs(views);
+    PairSet pairSet = exhaustivePairs(views);
     EXPECT_TRUE( checkPairOrder(pairSet) );
     EXPECT_EQ( 6, pairSet.size());
     EXPECT_TRUE( pairSet.find(std::make_pair(12,54)) != pairSet.end() );
@@ -60,7 +60,7 @@ TEST(matchingImageCollection, contiguousWithOverlap)
   sfm::Views views;
   {
     // Empty
-    Pair_Set pairSet = contiguousWithOverlap(views, 1);
+    PairSet pairSet = contiguousWithOverlap(views, 1);
     EXPECT_EQ( 0, pairSet.size());
   }
   {
@@ -70,7 +70,7 @@ TEST(matchingImageCollection, contiguousWithOverlap)
       views[i] = std::make_shared<sfm::View>("filepath", i);
     }
 
-    Pair_Set pairSet = contiguousWithOverlap(views, 1);
+    PairSet pairSet = contiguousWithOverlap(views, 1);
     EXPECT_TRUE( checkPairOrder(pairSet) );
     EXPECT_EQ( 3, pairSet.size());
     EXPECT_TRUE( pairSet.find(std::make_pair(12, 54)) != pairSet.end() );
@@ -84,7 +84,7 @@ TEST(matchingImageCollection, contiguousWithOverlap)
       views[i] = std::make_shared<sfm::View>("filepath", i);
     }
 
-    Pair_Set pairSet = contiguousWithOverlap(views, 3);
+    PairSet pairSet = contiguousWithOverlap(views, 3);
     EXPECT_TRUE( checkPairOrder(pairSet) );
     EXPECT_EQ( 12, pairSet.size());
     EXPECT_TRUE( pairSet.find(std::make_pair(11, 12)) != pairSet.end() );
@@ -104,19 +104,19 @@ TEST(matchingImageCollection, contiguousWithOverlap)
 
 TEST(matchingImageCollection, IO)
 {
-  Pair_Set pairSetGT;
+  PairSet pairSetGT;
   pairSetGT.insert( std::make_pair(0,1) );
   pairSetGT.insert( std::make_pair(1,2) );
   pairSetGT.insert( std::make_pair(2,0) );
 
-  Pair_Set pairSetGTsorted;
+  PairSet pairSetGTsorted;
   pairSetGTsorted.insert( std::make_pair(0,1) );
   pairSetGTsorted.insert( std::make_pair(0,2) );
   pairSetGTsorted.insert( std::make_pair(1,2) );
 
   EXPECT_TRUE( savePairs("pairsT_IO.txt", pairSetGT));
 
-  Pair_Set loaded_Pairs;
+  PairSet loaded_Pairs;
   EXPECT_TRUE( loadPairs("pairsT_IO.txt", loaded_Pairs));
   EXPECT_TRUE( std::equal(loaded_Pairs.begin(), loaded_Pairs.end(), pairSetGTsorted.begin()) );
 }

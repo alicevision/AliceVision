@@ -108,9 +108,9 @@ typedef std::map<Pair, MatchesPerDescType> PairwiseMatches;
 
 typedef std::map<Pair, IndMatches> PairwiseSimpleMatches;
 
-inline Pair_Set getImagePairs(const PairwiseMatches & matches)
+inline PairSet getImagePairs(const PairwiseMatches & matches)
 {
-  Pair_Set pairs;
+  PairSet pairs;
   for(PairwiseMatches::const_iterator it = matches.begin(); it != matches.end(); ++it)
     pairs.insert(it->first);
   return pairs;

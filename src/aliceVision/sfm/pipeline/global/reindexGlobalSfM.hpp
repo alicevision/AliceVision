@@ -10,8 +10,8 @@ namespace sfm{
 template<typename IterablePairs, typename PairValueType>
 void reindex(
   const IterablePairs& pairs,
-  Hash_Map<PairValueType, PairValueType> & _reindexForward,
-  Hash_Map<PairValueType, PairValueType> & _reindexBackward)
+  HashMap<PairValueType, PairValueType> & _reindexForward,
+  HashMap<PairValueType, PairValueType> & _reindexBackward)
 {
   typedef std::pair<PairValueType,PairValueType> PairT;
   // get an unique set of Ids

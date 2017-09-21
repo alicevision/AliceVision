@@ -64,9 +64,9 @@ void FrustumFilter::initFrustum(const SfMData & sfm_data)
   }
 }
 
-Pair_Set FrustumFilter::getFrustumIntersectionPairs() const
+PairSet FrustumFilter::getFrustumIntersectionPairs() const
 {
-  Pair_Set pairs;
+  PairSet pairs;
   // List active view Id
   std::vector<IndexT> viewIds;
   viewIds.reserve(z_near_z_far_perView.size());

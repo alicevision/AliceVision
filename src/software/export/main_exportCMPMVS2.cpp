@@ -87,7 +87,7 @@ typedef stl::flat_map< size_t, SeedVector> SeedsPerView;
 
 void retrieveSeedsPerView(
     const SfMData & sfm_data,
-    const Hash_Map<IndexT, IndexT> map_viewIdToContiguous,
+    const HashMap<IndexT, IndexT> map_viewIdToContiguous,
     SeedsPerView& outSeedsPerView)
 {
   static const double minAngle = 3.0;
@@ -175,7 +175,7 @@ bool exportToCMPMVS2Format(
   
   // Since CMPMVS requires contiguous camera indexes and some views may not have a pose,
   // we reindex the poses to ensure a contiguous pose list.
-  Hash_Map<IndexT, IndexT> map_viewIdToContiguous;
+  HashMap<IndexT, IndexT> map_viewIdToContiguous;
   // Export valid views as Projective Cameras:
   for(const auto &iter : sfm_data.GetViews())
   {

@@ -14,9 +14,9 @@ using namespace aliceVision;
 using namespace aliceVision::sfm;
 
 /// Build a list of pair that share visibility content from the SfMData structure
-Pair_Set BuildPairsFromStructureObservations(const SfMData & sfm_data)
+PairSet BuildPairsFromStructureObservations(const SfMData & sfm_data)
 {
-  Pair_Set pairs;
+  PairSet pairs;
 
   for (Landmarks::const_iterator itL = sfm_data.GetLandmarks().begin();
     itL != sfm_data.GetLandmarks().end(); ++itL)
@@ -38,7 +38,7 @@ Pair_Set BuildPairsFromStructureObservations(const SfMData & sfm_data)
 }
 
 /// Build a list of pair from the camera frusta intersections
-Pair_Set BuildPairsFromFrustumsIntersections(
+PairSet BuildPairsFromFrustumsIntersections(
   const SfMData & sfm_data,
   const double z_near = -1., // default near plane
   const double z_far = -1.,  // default far plane
@@ -103,8 +103,8 @@ int main(int argc, char **argv)
 
   aliceVision::system::Timer timer;
 
-  const Pair_Set pairs = BuildPairsFromFrustumsIntersections(sfm_data, z_near, z_far, stlplus::folder_part(sOutFile));
-  /*const Pair_Set pairs = BuildPairsFromStructureObservations(sfm_data); */
+  const PairSet pairs = BuildPairsFromFrustumsIntersections(sfm_data, z_near, z_far, stlplus::folder_part(sOutFile));
+  /*const PairSet pairs = BuildPairsFromStructureObservations(sfm_data); */
 
   std::cout << "#pairs: " << pairs.size() << std::endl;
   std::cout << std::endl << " Pair filtering took (s): " << timer.elapsed() << std::endl;

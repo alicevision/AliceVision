@@ -57,7 +57,7 @@ static void PointsToMat(
 /// Use geometry of the views to compute a putative structure from features and descriptors.
 void StructureEstimationFromKnownPoses::run(
   SfMData & sfm_data,
-  const Pair_Set & pairs,
+  const PairSet & pairs,
   const feature::RegionsPerView& regionsPerView)
 {
   sfm_data.structure.clear();
@@ -70,14 +70,14 @@ void StructureEstimationFromKnownPoses::run(
 /// Use guided matching to find corresponding 2-view correspondences
 void StructureEstimationFromKnownPoses::match(
   const SfMData & sfm_data,
-  const Pair_Set & pairs,
+  const PairSet & pairs,
   const feature::RegionsPerView& regionsPerView)
 {
   C_Progress_display my_progress_bar( pairs.size(), std::cout,
     "Compute pairwise fundamental guided matching:\n" );
 
   #pragma omp parallel
-  for (Pair_Set::const_iterator it = pairs.begin(); it != pairs.end(); ++it)
+  for (PairSet::const_iterator it = pairs.begin(); it != pairs.end(); ++it)
   {
     #pragma omp single nowait
     {
@@ -156,7 +156,7 @@ void StructureEstimationFromKnownPoses::match(
 /// Filter inconsistent correspondences by using 3-view correspondences on view triplets
 void StructureEstimationFromKnownPoses::filter(
   const SfMData & sfm_data,
-  const Pair_Set & pairs,
+  const PairSet & pairs,
   const feature::RegionsPerView& regionsPerView)
 {
   // Compute triplets

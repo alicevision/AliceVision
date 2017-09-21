@@ -31,14 +31,14 @@ namespace sfm{
 class GlobalSfMRotationAveragingSolver
 {
 private:
-  mutable Pair_Set used_pairs; // pair that are considered as valid by the rotation averaging solver
+  mutable PairSet used_pairs; // pair that are considered as valid by the rotation averaging solver
 
 public:
   bool Run(
     ERotationAveragingMethod eRotationAveragingMethod,
     ERelativeRotationInferenceMethod eRelativeRotationInferenceMethod,
     const rotationAveraging::RelativeRotations & relativeRot_In,
-    Hash_Map<IndexT, Mat3> & map_globalR
+    HashMap<IndexT, Mat3> & map_globalR
   ) const;
 
   /// Reject edges of the view graph that do not produce triplets with tiny
@@ -49,7 +49,7 @@ public:
     rotationAveraging::RelativeRotations & relativeRotations) const;
 
   /// Return the pairs validated by the GlobalRotation routine (inference can remove some)
-  Pair_Set GetUsedPairs() const;
+  PairSet GetUsedPairs() const;
 };
 
 } // namespace sfm

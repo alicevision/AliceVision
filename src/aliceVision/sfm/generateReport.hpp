@@ -19,7 +19,7 @@ static bool Generate_SfM_Report
 {
   // Compute mean,max,median residual values per View
   IndexT residualCount = 0;
-  Hash_Map< IndexT, std::vector<double> > residuals_per_view;
+  HashMap< IndexT, std::vector<double> > residuals_per_view;
   for (Landmarks::const_iterator iterTracks = sfm_data.GetLandmarks().begin();
     iterTracks != sfm_data.GetLandmarks().end();
     ++iterTracks
@@ -118,7 +118,7 @@ static bool Generate_SfM_Report
   // export the SVG histogram
   {
     IndexT residualCount = 0;
-    for (Hash_Map< IndexT, std::vector<double> >::const_iterator
+    for (HashMap< IndexT, std::vector<double> >::const_iterator
       it = residuals_per_view.begin();
       it != residuals_per_view.end();
       ++it)
@@ -128,7 +128,7 @@ static bool Generate_SfM_Report
     // Concat per view residual values into one vector
     std::vector<double> residuals(residualCount);
     residualCount = 0;
-    for (Hash_Map< IndexT, std::vector<double> >::const_iterator
+    for (HashMap< IndexT, std::vector<double> >::const_iterator
       it = residuals_per_view.begin();
       it != residuals_per_view.end();
       ++it)

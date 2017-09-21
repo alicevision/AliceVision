@@ -38,13 +38,13 @@ protected:
   bool Compute_Global_Rotations
   (
     const aliceVision::rotationAveraging::RelativeRotations & vec_relatives_R,
-    Hash_Map<IndexT, Mat3> & map_globalR
+    HashMap<IndexT, Mat3> & map_globalR
   );
 
   /// Compute/refine relative translations and compute global translations
   bool Compute_Global_Translations
   (
-    const Hash_Map<IndexT, Mat3> & global_rotations,
+    const HashMap<IndexT, Mat3> & global_rotations,
     matching::PairwiseMatches & tripletWise_matches
   );
 

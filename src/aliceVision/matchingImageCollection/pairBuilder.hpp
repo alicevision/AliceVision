@@ -17,9 +17,9 @@
 namespace aliceVision {
 
 /// Generate all the (I,J) pairs of the upper diagonal of the NxN matrix
-static Pair_Set exhaustivePairs(const sfm::Views& views, int rangeStart=-1, int rangeSize=0)
+static PairSet exhaustivePairs(const sfm::Views& views, int rangeStart=-1, int rangeSize=0)
 {
-  Pair_Set pairs;
+  PairSet pairs;
   sfm::Views::const_iterator itA = views.begin();
   sfm::Views::const_iterator itAEnd = views.end();
 
@@ -45,9 +45,9 @@ static Pair_Set exhaustivePairs(const sfm::Views& views, int rangeStart=-1, int 
 
 /// Generate the pairs that have a distance inferior to the overlapSize
 /// Usable to match video sequence
-static Pair_Set contiguousWithOverlap(const sfm::Views& views, const size_t overlapSize, int rangeStart=-1, int rangeSize=0)
+static PairSet contiguousWithOverlap(const sfm::Views& views, const size_t overlapSize, int rangeStart=-1, int rangeSize=0)
 {
-  Pair_Set pairs;
+  PairSet pairs;
   sfm::Views::const_iterator itA = views.begin();
   sfm::Views::const_iterator itAEnd = views.end();
 
@@ -79,11 +79,11 @@ static Pair_Set contiguousWithOverlap(const sfm::Views& views, const size_t over
   return pairs;
 }
 
-/// Load a set of Pair_Set from a file
+/// Load a set of PairSet from a file
 /// I J K L (pair that link I)
 static bool loadPairs(
      const std::string &sFileName, // filename of the list file,
-     Pair_Set & pairs,
+     PairSet & pairs,
      int rangeStart=-1,
      int rangeSize=0)
 {
@@ -139,18 +139,18 @@ static bool loadPairs(
   return true;
 }
 
-/// Save a set of Pair_Set to a file (one pair per line)
+/// Save a set of PairSet to a file (one pair per line)
 /// I J
 /// I K
 /// ...
-static bool savePairs(const std::string &sFileName, const Pair_Set & pairs)
+static bool savePairs(const std::string &sFileName, const PairSet & pairs)
 {
   std::ofstream outStream(sFileName.c_str());
   if(!outStream.is_open())  {
     ALICEVISION_LOG_WARNING("savePairs: Impossible to open the output specified file: \"" << sFileName << "\".");
     return false;
   }
-  for (Pair_Set::const_iterator iterP = pairs.begin();
+  for (PairSet::const_iterator iterP = pairs.begin();
     iterP != pairs.end(); ++iterP)
   {
     outStream << iterP->first << ' ' << iterP->second << '\n';

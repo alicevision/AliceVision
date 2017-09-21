@@ -232,7 +232,7 @@ private:
   /// Precomputed pyramid index for each trackId of each viewId.
   track::TracksPyramidPerView _map_featsPyramidPerView;
   /// Per camera confidence (A contrario estimated threshold error)
-  Hash_Map<IndexT, double> _map_ACThreshold;
+  HashMap<IndexT, double> _map_ACThreshold;
 
   /// Remaining camera index that can be used for resection
   std::set<size_t> _set_remainingViewId;

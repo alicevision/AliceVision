@@ -210,7 +210,7 @@ bool BundleAdjustmentCeres::Adjust(
   ceres::Problem problem;
 
   // Data wrapper for refinement:
-  Hash_Map<IndexT, std::vector<double> > map_poses;
+  HashMap<IndexT, std::vector<double> > map_poses;
   
   // Setup Poses data & subparametrization
   for (Poses::const_iterator itPose = sfm_data.GetPoses().begin(); itPose != sfm_data.GetPoses().end(); ++itPose)
@@ -222,7 +222,7 @@ bool BundleAdjustmentCeres::Adjust(
   }
 
   // Setup rig sub-poses
-  Hash_Map<IndexT, Hash_Map<IndexT, std::vector<double>>> map_subposes;
+  HashMap<IndexT, HashMap<IndexT, std::vector<double>>> map_subposes;
   for(const auto& rigIt : sfm_data.getRigs())
   {
     const IndexT rigId = rigIt.first;
@@ -240,7 +240,7 @@ bool BundleAdjustmentCeres::Adjust(
     }
   }
 
-  Hash_Map<IndexT, std::size_t> intrinsicsUsage;
+  HashMap<IndexT, std::size_t> intrinsicsUsage;
 
   // Setup Intrinsics data & subparametrization
   const bool refineIntrinsicsOpticalCenter = (refineOptions & BA_REFINE_INTRINSICS_OPTICALCENTER_ALWAYS) || (refineOptions & BA_REFINE_INTRINSICS_OPTICALCENTER_IF_ENOUGH_DATA);
@@ -264,7 +264,7 @@ bool BundleAdjustmentCeres::Adjust(
     }
   }
 
-  Hash_Map<IndexT, std::vector<double> > map_intrinsics;
+  HashMap<IndexT, std::vector<double> > map_intrinsics;
   // Setup Intrinsics data & subparametrization
   for(const auto& itIntrinsic: sfm_data.GetIntrinsics())
   {

@@ -57,7 +57,7 @@ bool exportToPMVSFormat(
 
     // Since PMVS requires contiguous camera index, and that some views can have some missing poses,
     // we reindex the poses to ensure a contiguous pose list.
-    Hash_Map<IndexT, IndexT> map_viewIdToContiguous;
+    HashMap<IndexT, IndexT> map_viewIdToContiguous;
 
     // Export valid views as Projective Cameras:
     for(Views::const_iterator iter = sfm_data.GetViews().begin();
@@ -212,7 +212,7 @@ bool exportToBundlerFormat(
   {
     // Since PMVS requires contiguous camera index, and that some views can have some missing poses,
     // we reindex the poses to ensure a contiguous pose list.
-    Hash_Map<IndexT, IndexT> map_viewIdToContiguous;
+    HashMap<IndexT, IndexT> map_viewIdToContiguous;
 
     // Count the number of valid cameras and re-index the viewIds
     for(Views::const_iterator iter = sfm_data.GetViews().begin();

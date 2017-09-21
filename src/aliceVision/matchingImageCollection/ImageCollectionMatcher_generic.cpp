@@ -29,7 +29,7 @@ ImageCollectionMatcher_generic::ImageCollectionMatcher_generic(
 void ImageCollectionMatcher_generic::Match(
   const sfm::SfMData & sfm_data,
   const feature::RegionsPerView& regionsPerView,
-  const Pair_Set & pairs,
+  const PairSet & pairs,
   feature::EImageDescriberType descType,
   matching::PairwiseMatches & map_PutativesMatches)const // the pairwise photometric corresponding points
 {
@@ -44,7 +44,7 @@ void ImageCollectionMatcher_generic::Match(
   // Sort pairs according the first index to minimize the MatcherT build operations
   typedef std::map<size_t, std::vector<size_t> > Map_vectorT;
   Map_vectorT map_Pairs;
-  for (Pair_Set::const_iterator iter = pairs.begin(); iter != pairs.end(); ++iter)
+  for (PairSet::const_iterator iter = pairs.begin(); iter != pairs.end(); ++iter)
   {
     map_Pairs[iter->first].push_back(iter->second);
   }

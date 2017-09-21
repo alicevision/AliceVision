@@ -29,7 +29,7 @@ class ImageCollectionMatcher_cascadeHashing : public IImageCollectionMatcher
   void Match(
     const sfm::SfMData & sfm_data,
     const feature::RegionsPerView& regionsPerView,
-    const Pair_Set & pairs,
+    const PairSet & pairs,
     feature::EImageDescriberType descType,
     matching::PairwiseMatches & map_PutativesMatches // the pairwise photometric corresponding points
   ) const;

@@ -100,7 +100,7 @@ int main(int argc, char **argv)
   //  - putative matches guided (photometric matches)
   //     (keep pairs that have valid Intrinsic & Pose ids).
   //--
-  Pair_Set pairs;
+  PairSet pairs;
   if (sMatchesDir.empty())
   {
     // No image pair provided, so we use cameras frustum intersection.

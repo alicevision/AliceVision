@@ -57,7 +57,7 @@ bool exportToCMPMVSFormat(
   {
     // Since CMPMVS requires contiguous camera index, and that some views can have some missing poses,
     // we reindex the poses to ensure a contiguous pose list.
-    Hash_Map<IndexT, IndexT> map_viewIdToContiguous;
+    HashMap<IndexT, IndexT> map_viewIdToContiguous;
 
     // CMPMVS only support images of the same resolution,
     // so select the most used resolution and only export those images.

@@ -19,9 +19,9 @@ typedef std::vector< relativeInfo > RelativeInfoVec;
 typedef std::map< Pair, std::pair<Mat3, Vec3> > RelativeInfoMap;
 
 // List the pairs used by the relative motions
-static Pair_Set getPairs(const RelativeInfoVec & vec_relative)
+static PairSet getPairs(const RelativeInfoVec & vec_relative)
 {
-  Pair_Set pair_set;
+  PairSet pair_set;
   for(size_t i = 0; i < vec_relative.size(); ++i)
   {
     const relativeInfo & rel = vec_relative[i];

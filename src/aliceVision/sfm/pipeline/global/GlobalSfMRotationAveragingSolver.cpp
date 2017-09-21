@@ -15,7 +15,7 @@ namespace sfm{
 
 using namespace aliceVision::rotationAveraging;
 
-Pair_Set GlobalSfMRotationAveragingSolver::GetUsedPairs() const
+PairSet GlobalSfMRotationAveragingSolver::GetUsedPairs() const
 {
   return used_pairs;
 }
@@ -24,7 +24,7 @@ bool GlobalSfMRotationAveragingSolver::Run(
   ERotationAveragingMethod eRotationAveragingMethod,
   ERelativeRotationInferenceMethod eRelativeRotationInferenceMethod,
   const RelativeRotations & relativeRot_In,
-  Hash_Map<IndexT, Mat3> & map_globalR
+  HashMap<IndexT, Mat3> & map_globalR
 ) const
 {
   RelativeRotations relativeRotations = relativeRot_In;
@@ -38,13 +38,13 @@ bool GlobalSfMRotationAveragingSolver::Run(
       //-------------------
       // Triplet inference (test over the composition error)
       //-------------------
-      Pair_Set pairs = getPairs(relativeRotations);
+      PairSet pairs = getPairs(relativeRotations);
       std::vector< graph::Triplet > vec_triplets = graph::tripletListing(pairs);
       //-- Rejection triplet that are 'not' identity rotation (error to identity > 5°)
       TripletRotationRejection(5.0f, vec_triplets, relativeRotations);
 
       pairs = getPairs(relativeRotations);
-      const std::set<IndexT> set_remainingIds = graph::CleanGraph_KeepLargestBiEdge_Nodes<Pair_Set, IndexT>(pairs);
+      const std::set<IndexT> set_remainingIds = graph::CleanGraph_KeepLargestBiEdge_Nodes<PairSet, IndexT>(pairs);
       if(set_remainingIds.empty())
         return false;
       KeepOnlyReferencedElement(set_remainingIds, relativeRotations);
@@ -58,8 +58,8 @@ bool GlobalSfMRotationAveragingSolver::Run(
   // Compute contiguous index (mapping between sparse index and contiguous index)
   //  from ranging in [min(Id), max(Id)] to  [0, nbCam]
 
-  const Pair_Set pairs = getPairs(relativeRotations);
-  Hash_Map<IndexT, IndexT> _reindexForward, _reindexBackward;
+  const PairSet pairs = getPairs(relativeRotations);
+  HashMap<IndexT, IndexT> _reindexForward, _reindexBackward;
   reindex(pairs, _reindexForward, _reindexBackward);
 
   for(RelativeRotations::iterator iter = relativeRotations.begin();  iter != relativeRotations.end(); ++iter)

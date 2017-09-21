@@ -39,7 +39,7 @@ bool GlobalSfMTranslationAveragingSolver::Run(
   SfMData & sfm_data,
   const feature::FeaturesPerView & normalizedFeaturesPerView,
   const matching::PairwiseMatches & pairwiseMatches,
-  const Hash_Map<IndexT, Mat3> & map_globalR,
+  const HashMap<IndexT, Mat3> & map_globalR,
   matching::PairwiseMatches & tripletWise_matches
 )
 {
@@ -72,18 +72,18 @@ bool GlobalSfMTranslationAveragingSolver::Run(
 bool GlobalSfMTranslationAveragingSolver::Translation_averaging(
   ETranslationAveragingMethod eTranslationAveragingMethod,
   SfMData & sfm_data,
-  const Hash_Map<IndexT, Mat3> & map_globalR)
+  const HashMap<IndexT, Mat3> & map_globalR)
 {
   //-------------------
   //-- GLOBAL TRANSLATIONS ESTIMATION from initial triplets t_ij guess
   //-------------------
 
   // Keep the largest Biedge connected component graph of relative translations
-  Pair_Set pairs;
+  PairSet pairs;
   std::transform(m_vec_initialRijTijEstimates.begin(), m_vec_initialRijTijEstimates.end(),
     std::inserter(pairs, pairs.begin()), stl::RetrieveKey());
   const std::set<IndexT> set_remainingIds =
-    aliceVision::graph::CleanGraph_KeepLargestBiEdge_Nodes<Pair_Set, IndexT>(pairs, "./");
+    aliceVision::graph::CleanGraph_KeepLargestBiEdge_Nodes<PairSet, IndexT>(pairs, "./");
   KeepOnlyReferencedElement(set_remainingIds, m_vec_initialRijTijEstimates);
 
   {
@@ -103,8 +103,8 @@ bool GlobalSfMTranslationAveragingSolver::Translation_averaging(
     }
     //-- Update initial estimates from [minId,maxId] to range [0->Ncam]
     translationAveraging::RelativeInfoVec vec_initialRijTijEstimates_cpy = m_vec_initialRijTijEstimates;
-    const Pair_Set pairs = translationAveraging::getPairs(vec_initialRijTijEstimates_cpy);
-    Hash_Map<IndexT,IndexT> _reindexForward, _reindexBackward;
+    const PairSet pairs = translationAveraging::getPairs(vec_initialRijTijEstimates_cpy);
+    HashMap<IndexT,IndexT> _reindexForward, _reindexBackward;
     reindex(pairs, _reindexForward, _reindexBackward);
     for(size_t i = 0; i < vec_initialRijTijEstimates_cpy.size(); ++i)
     {
@@ -280,7 +280,7 @@ void GlobalSfMTranslationAveragingSolver::Compute_translations(
   const SfMData & sfm_data,
   const feature::FeaturesPerView & normalizedFeaturesPerView,
   const matching::PairwiseMatches & pairwiseMatches,
-  const Hash_Map<IndexT, Mat3> & map_globalR,
+  const HashMap<IndexT, Mat3> & map_globalR,
   matching::PairwiseMatches & tripletWise_matches)
 {
   ALICEVISION_LOG_DEBUG(
@@ -303,7 +303,7 @@ void GlobalSfMTranslationAveragingSolver::Compute_translations(
 // edge coverage algorithm. Its complexity is sub-linear in term of edges count.
 void GlobalSfMTranslationAveragingSolver::ComputePutativeTranslation_EdgesCoverage(
   const SfMData & sfm_data,
-  const Hash_Map<IndexT, Mat3> & map_globalR,
+  const HashMap<IndexT, Mat3> & map_globalR,
   const feature::FeaturesPerView & normalizedFeaturesPerView,
   const matching::PairwiseMatches & pairwiseMatches,
   translationAveraging::RelativeInfoVec & vec_initialEstimates,
@@ -318,7 +318,7 @@ void GlobalSfMTranslationAveragingSolver::ComputePutativeTranslation_EdgesCovera
   // 1. List plausible triplets over the global rotation pose graph Ids.
   //   - list all edges that have support in the rotation pose graph
   //
-  Pair_Set rotation_pose_id_graph;
+  PairSet rotation_pose_id_graph;
   std::set<IndexT> set_pose_ids;
   std::transform(map_globalR.begin(), map_globalR.end(),
     std::inserter(set_pose_ids, set_pose_ids.begin()), stl::RetrieveKey());
@@ -349,7 +349,7 @@ void GlobalSfMTranslationAveragingSolver::ComputePutativeTranslation_EdgesCovera
     // An estimated triplets of translation mark three edges as estimated.
 
     //-- precompute the number of track per triplet:
-    Hash_Map<IndexT, IndexT> map_tracksPerTriplets;
+    HashMap<IndexT, IndexT> map_tracksPerTriplets;
 
     #pragma omp parallel for schedule(dynamic)
     for (int i = 0; i < (int)vec_triplets.size(); ++i)
@@ -585,7 +585,7 @@ void GlobalSfMTranslationAveragingSolver::ComputePutativeTranslation_EdgesCovera
 // Robust estimation and refinement of a translation and 3D points of an image triplets.
 bool GlobalSfMTranslationAveragingSolver::Estimate_T_triplet(
   const SfMData & sfm_data,
-  const Hash_Map<IndexT, Mat3> & map_globalR,
+  const HashMap<IndexT, Mat3> & map_globalR,
   const feature::FeaturesPerView & normalizedFeaturesPerView,
   const matching::PairwiseMatches & pairwiseMatches,
   const graph::Triplet & poses_id,

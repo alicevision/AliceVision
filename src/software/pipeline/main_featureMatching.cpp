@@ -311,7 +311,7 @@ int main(int argc, char **argv)
   //---------------------------------------
 
   // From matching mode compute the pair list that have to be matched:
-  Pair_Set pairs;
+  PairSet pairs;
   std::set<IndexT> filter;
   switch(pairMode)
   {

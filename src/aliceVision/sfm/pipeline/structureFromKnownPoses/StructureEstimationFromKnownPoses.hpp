@@ -18,7 +18,7 @@ public:
   /// Use geometry of the views to compute a putative structure from features and descriptors.
   void run(
     SfMData & sfm_data,
-    const Pair_Set & pairs,
+    const PairSet & pairs,
     const feature::RegionsPerView& regionsPerView);
 
 public:
@@ -26,13 +26,13 @@ public:
   /// Use guided matching to find corresponding 2-view correspondences
   void match(
     const SfMData & sfm_data,
-    const Pair_Set & pairs,
+    const PairSet & pairs,
     const feature::RegionsPerView& regionsPerView);
 
   /// Filter inconsistent correspondences by using 3-view correspondences on view triplets
   void filter(
     const SfMData & sfm_data,
-    const Pair_Set & pairs,
+    const PairSet & pairs,
     const feature::RegionsPerView& regionsPerView);
 
   /// Init & triangulate landmark observations from validated 3-view correspondences

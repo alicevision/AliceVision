@@ -1,8 +1,7 @@
 // This file is part of the AliceVision project and is made available under
 // the terms of the MPL2 license (see the COPYING.md file).
 
-#ifndef H_PRETTY_PRINT
-#define H_PRETTY_PRINT
+#pragma once
 
 #include <cstddef>
 #include <iterator>
@@ -437,7 +436,3 @@ namespace std
         return stream << ::pretty_print::print_container_helper<T, TChar, TCharTraits>(container);
     }
 }
-
-
-
-#endif  // H_PRETTY_PRINT

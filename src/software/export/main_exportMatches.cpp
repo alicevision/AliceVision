@@ -150,9 +150,9 @@ int main(int argc, char ** argv)
 
   stlplus::folder_create(sOutDir);
   std::cout << "\n Export pairwise matches" << std::endl;
-  const Pair_Set pairs = matching::getImagePairs(pairwiseMatches);
+  const PairSet pairs = matching::getImagePairs(pairwiseMatches);
   C_Progress_display my_progress_bar( pairs.size() );
-  for (Pair_Set::const_iterator iter = pairs.begin();
+  for (PairSet::const_iterator iter = pairs.begin();
     iter != pairs.end();
     ++iter, ++my_progress_bar)
   {

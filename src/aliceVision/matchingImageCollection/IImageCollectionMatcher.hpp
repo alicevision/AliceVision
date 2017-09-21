@@ -32,7 +32,7 @@ class IImageCollectionMatcher
   virtual void Match(
     const sfm::SfMData & sfm_data,
     const feature::RegionsPerView& regionsPerView,
-    const Pair_Set & pairs, // list of pair to consider for matching
+    const PairSet & pairs, // list of pair to consider for matching
     feature::EImageDescriberType descType,
     matching::PairwiseMatches & map_putatives_matches // the output pairwise photometric corresponding points
     ) const = 0;

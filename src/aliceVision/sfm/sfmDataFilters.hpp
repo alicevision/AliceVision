@@ -14,13 +14,13 @@ namespace sfm {
 
 /// Filter a list of pair: Keep only the pair that are defined in index list
 template <typename IterablePairs, typename IterableIndex>
-static Pair_Set Pair_filter
+static PairSet Pair_filter
 (
   const IterablePairs & pairs,
   const IterableIndex & index
 )
 {
-  Pair_Set kept_pairs;
+  PairSet kept_pairs;
   for (auto& it : pairs)
   {
     if (index.count(it.first) > 0 &&
@@ -120,7 +120,7 @@ static bool eraseUnstablePoses(SfMData & sfm_data, const IndexT min_points_per_p
   const Landmarks & landmarks = sfm_data.structure;
 
   // Count the observation poses occurrence
-  Hash_Map<IndexT, IndexT> map_PoseId_Count; // TODO: add subpose
+  HashMap<IndexT, IndexT> map_PoseId_Count; // TODO: add subpose
   // Init with 0 count (in order to be able to remove non referenced elements)
   for (Poses::const_iterator itPoses = sfm_data.GetPoses().begin();
     itPoses != sfm_data.GetPoses().end(); ++itPoses)
@@ -145,7 +145,7 @@ static bool eraseUnstablePoses(SfMData & sfm_data, const IndexT min_points_per_p
     }
   }
   // If usage count is smaller than the threshold, remove the Pose
-  for (Hash_Map<IndexT, IndexT>::const_iterator it = map_PoseId_Count.begin();
+  for (HashMap<IndexT, IndexT>::const_iterator it = map_PoseId_Count.begin();
     it != map_PoseId_Count.end(); ++it)
   {
     if (it->second < min_points_per_pose)

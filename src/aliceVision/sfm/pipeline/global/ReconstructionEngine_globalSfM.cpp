@@ -117,8 +117,8 @@ bool ReconstructionEngine_globalSfM::Process() {
   // Keep only the largest biedge connected subgraph
   //-------------------
   {
-    const Pair_Set pairs = matching::getImagePairs(*_pairwiseMatches);
-    const std::set<IndexT> set_remainingIds = graph::CleanGraph_KeepLargestBiEdge_Nodes<Pair_Set, IndexT>(pairs, _sOutDirectory);
+    const PairSet pairs = matching::getImagePairs(*_pairwiseMatches);
+    const std::set<IndexT> set_remainingIds = graph::CleanGraph_KeepLargestBiEdge_Nodes<PairSet, IndexT>(pairs, _sOutDirectory);
     if(set_remainingIds.empty())
     {
       ALICEVISION_LOG_DEBUG("Invalid input image graph for global SfM");
@@ -130,7 +130,7 @@ bool ReconstructionEngine_globalSfM::Process() {
   aliceVision::rotationAveraging::RelativeRotations relatives_R;
   Compute_Relative_Rotations(relatives_R);
 
-  Hash_Map<IndexT, Mat3> global_rotations;
+  HashMap<IndexT, Mat3> global_rotations;
   if (!Compute_Global_Rotations(relatives_R, global_rotations))
   {
     ALICEVISION_LOG_WARNING("GlobalSfM:: Rotation Averaging failure!");
@@ -179,7 +179,7 @@ bool ReconstructionEngine_globalSfM::Process() {
 bool ReconstructionEngine_globalSfM::Compute_Global_Rotations
 (
   const rotationAveraging::RelativeRotations & relatives_R,
-  Hash_Map<IndexT, Mat3> & global_rotations
+  HashMap<IndexT, Mat3> & global_rotations
 )
 {
   if(relatives_R.empty())
@@ -220,7 +220,7 @@ bool ReconstructionEngine_globalSfM::Compute_Global_Rotations
       // Log a relative pose graph
       {
         std::set<IndexT> set_pose_ids;
-        Pair_Set relative_pose_pairs;
+        PairSet relative_pose_pairs;
         for (const auto & view : _sfm_data.GetViews())
         {
           const IndexT pose_id = view.second->getPoseId();
@@ -251,7 +251,7 @@ bool ReconstructionEngine_globalSfM::Compute_Global_Rotations
 /// Compute/refine relative translations and compute global translations
 bool ReconstructionEngine_globalSfM::Compute_Global_Translations
 (
-  const Hash_Map<IndexT, Mat3> & global_rotations,
+  const HashMap<IndexT, Mat3> & global_rotations,
   matching::PairwiseMatches & tripletWise_matches
 )
 {
@@ -470,7 +470,7 @@ void ReconstructionEngine_globalSfM::Compute_Relative_Rotations
   // Build the Relative pose graph from matches:
   //
   /// pairwise view relation between poseIds
-  typedef std::map< Pair, Pair_Set > PoseWiseMatches;
+  typedef std::map< Pair, PairSet > PoseWiseMatches;
 
   // List shared correspondences (pairs) between poses
   PoseWiseMatches poseWiseMatches;
@@ -498,7 +498,7 @@ void ReconstructionEngine_globalSfM::Compute_Relative_Rotations
       std::advance(iter, i);
       const auto & relative_pose_iterator(*iter);
       const Pair relative_pose_pair = relative_pose_iterator.first;
-      const Pair_Set & match_pairs = relative_pose_iterator.second;
+      const PairSet & match_pairs = relative_pose_iterator.second;
 
       // If a pair has the same ID, discard it
       if (relative_pose_pair.first == relative_pose_pair.second)
@@ -681,7 +681,7 @@ void ReconstructionEngine_globalSfM::Compute_Relative_Rotations
     // Log a relative pose graph
     {
       std::set<IndexT> set_pose_ids;
-      Pair_Set relative_pose_pairs;
+      PairSet relative_pose_pairs;
       for (const auto & relative_R : vec_relatives_R)
       {
         const Pair relative_pose_indices(relative_R.i, relative_R.j);

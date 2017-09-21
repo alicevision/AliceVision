@@ -32,7 +32,7 @@ public:
     SfMData & sfm_data,
     const feature::FeaturesPerView & normalizedFeaturesPerView,
     const matching::PairwiseMatches & matches_provider,
-    const Hash_Map<IndexT, Mat3> & map_globalR,
+    const HashMap<IndexT, Mat3> & map_globalR,
     matching::PairwiseMatches & tripletWise_matches
   );
 
@@ -40,13 +40,13 @@ private:
   bool Translation_averaging(
     ETranslationAveragingMethod eTranslationAveragingMethod,
     SfMData & sfm_data,
-    const Hash_Map<IndexT, Mat3> & map_globalR);
+    const HashMap<IndexT, Mat3> & map_globalR);
 
   void Compute_translations(
     const SfMData & sfm_data,
     const feature::FeaturesPerView & normalizedFeaturesPerView,
     const matching::PairwiseMatches & matches_provider,
-    const Hash_Map<IndexT, Mat3> & map_globalR,
+    const HashMap<IndexT, Mat3> & map_globalR,
     matching::PairwiseMatches &tripletWise_matches);
 
   //-- Compute the relative translations on the rotations graph.
@@ -55,7 +55,7 @@ private:
   // Complexity: sub-linear in term of edges count.
   void ComputePutativeTranslation_EdgesCoverage(
     const SfMData & sfm_data,
-    const Hash_Map<IndexT, Mat3> & map_globalR,
+    const HashMap<IndexT, Mat3> & map_globalR,
     const feature::FeaturesPerView & normalizedFeaturesPerView,
     const matching::PairwiseMatches & matches_provider,
     translationAveraging::RelativeInfoVec & vec_initialEstimates,
@@ -64,7 +64,7 @@ private:
   // Robust estimation and refinement of a translation and 3D points of an image triplets.
   bool Estimate_T_triplet(
     const SfMData & sfm_data,
-    const Hash_Map<IndexT, Mat3> & map_globalR,
+    const HashMap<IndexT, Mat3> & map_globalR,
     const feature::FeaturesPerView & normalizedFeaturesPerView,
     const matching::PairwiseMatches & matches_provider,
     const graph::Triplet & poses_id,

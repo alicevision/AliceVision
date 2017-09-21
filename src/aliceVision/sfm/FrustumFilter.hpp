@@ -14,8 +14,8 @@ struct SfMData;
 class FrustumFilter
 {
 public:
-  typedef Hash_Map<IndexT, geometry::Frustum> FrustumsT;
-  typedef Hash_Map<IndexT, std::pair<double, double> > NearFarPlanesT;
+  typedef HashMap<IndexT, geometry::Frustum> FrustumsT;
+  typedef HashMap<IndexT, std::pair<double, double> > NearFarPlanesT;
 
   // Constructor
   FrustumFilter(const SfMData & sfm_data,
@@ -25,7 +25,7 @@ public:
   void initFrustum(const SfMData & sfm_data);
 
   // Return intersecting View frustum pairs
-  Pair_Set getFrustumIntersectionPairs() const;
+  PairSet getFrustumIntersectionPairs() const;
 
   // Export defined frustum in PLY file for viewing
   bool export_Ply(const std::string & filename) const;

@@ -17,16 +17,16 @@ namespace aliceVision {
 namespace sfm {
 
 /// Define a collection of View
-using Views = Hash_Map<IndexT, std::shared_ptr<View> >;
+using Views = HashMap<IndexT, std::shared_ptr<View> >;
 
 /// Define a collection of Pose (indexed by View::id_pose)
-using Poses = Hash_Map<IndexT, geometry::Pose3>;
+using Poses = HashMap<IndexT, geometry::Pose3>;
 
 /// Define a collection of IntrinsicParameter (indexed by View::id_intrinsic)
-using Intrinsics = Hash_Map<IndexT, std::shared_ptr<camera::IntrinsicBase> >;
+using Intrinsics = HashMap<IndexT, std::shared_ptr<camera::IntrinsicBase> >;
 
 /// Define a collection of landmarks are indexed by their TrackId
-using Landmarks = Hash_Map<IndexT, Landmark>;
+using Landmarks = HashMap<IndexT, Landmark>;
 
 /// Define a collection of Rig
 using Rigs = std::map<IndexT, Rig>;
