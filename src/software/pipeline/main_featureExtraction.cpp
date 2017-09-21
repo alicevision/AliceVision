@@ -235,7 +235,7 @@ int main(int argc, char **argv)
   catch(const std::string& s) 
   {
     std::cerr << "Usage: " << argv[0] << '\n'
-    << "[-i|--input_file] a SfM_Data file \n"
+    << "[-i|--input_file] a SfMData file \n"
     << "[-o|--outdir path] output path for the features and descriptors files (*.feat, *.desc)\n"
     << "\n[Optional]\n"
     << "[-f|--force] Force to recompute data\n"
@@ -312,7 +312,7 @@ int main(int argc, char **argv)
   //---------------------------------------
   // a. Load input scene
   //---------------------------------------
-  SfM_Data sfm_data;
+  SfMData sfm_data;
   if(sfmDataFilename.empty())
   {
     std::cerr << "\nError: The input file argument is required." << std::endl;
@@ -320,7 +320,7 @@ int main(int argc, char **argv)
   }
   else if(stlplus::is_file( sfmDataFilename))
   {
-    if(!Load(sfm_data, sfmDataFilename, ESfM_Data(VIEWS|INTRINSICS)))
+    if(!Load(sfm_data, sfmDataFilename, ESfMData(VIEWS|INTRINSICS)))
     {
       std::cerr << std::endl
         << "The input file \""<< sfmDataFilename << "\" cannot be read" << std::endl;
@@ -387,7 +387,7 @@ int main(int argc, char **argv)
   using namespace aliceVision::feature;
 
   // Feature extraction routines
-  // For each View of the SfM_Data container:
+  // For each View of the SfMData container:
   // - if regions file exist continue,
   // - if no file, compute features
   {

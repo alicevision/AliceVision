@@ -32,7 +32,7 @@ class ColorHarmonizationEngineGlobal
 {
 public:
   ColorHarmonizationEngineGlobal(
-    const std::string & sSfM_Data_Filename,
+    const std::string & sSfMData_Filename,
     const std::string & sMatchesPath,
     const std::string & sMatchesGeometricModel,
     const std::string & sOutDirectory,
@@ -77,7 +77,7 @@ private:
   std::vector<feature::EImageDescriberType> _descTypes; //< describer type use for color harmonizations
 
   //
-  std::string _sSfM_Data_Path;// Path to the Sfm_Scene
+  std::string _sSfMData_Path;// Path to the Sfm_Scene
   std::string _sMatchesPath;  // Path to correspondences and features
   std::string _sOutDirectory; // Output path where outputs will be stored
 };

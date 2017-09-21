@@ -138,7 +138,7 @@ void MatchesPairToMat(
 * @brief Get un-distorted feature positions for the pair pairIndex from the RegionsPerView interface
 * @param[in] pairIndex Pair from which you need to extract the corresponding points
 * @param[in] putativeMatches Matches of the 'pairIndex' pair
-* @param[in] sfm_data SfM_Data scene container
+* @param[in] sfm_data SfMData scene container
 * @param[in] regionsPerView Interface that provides the features positions
 * @param[out] x_I Pixel perfect features from the Inth image putativeMatches matches
 * @param[out] x_J Pixel perfect features from the Jnth image putativeMatches matches
@@ -147,7 +147,7 @@ template<typename MatT >
 void MatchesPairToMat(
   const Pair pairIndex,
   const matching::MatchesPerDescType & putativeMatchesPerType,
-  const sfm::SfM_Data * sfmData,
+  const sfm::SfMData * sfmData,
   const feature::RegionsPerView& regionsPerView,
   const std::vector<feature::EImageDescriberType>& descTypes,
   MatT & x_I, MatT & x_J)

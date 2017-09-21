@@ -3,8 +3,8 @@
 
 #include "aliceVision/matchingImageCollection/pairBuilder.hpp"
 #include "testing/testing.h"
-#include "aliceVision/sfm/sfm_data.hpp"
-#include "aliceVision/sfm/sfm_view.hpp"
+#include "aliceVision/sfm/SfMData.hpp"
+#include "aliceVision/sfm/View.hpp"
 
 #include <iostream>
 #include <algorithm>

@@ -17,7 +17,7 @@ LocalizationResult::LocalizationResult() :
 }
 
 LocalizationResult::LocalizationResult(
-        const sfm::Image_Localizer_Match_Data & matchData,
+        const sfm::ImageLocalizerMatchData & matchData,
         const std::vector<IndMatch3D2D> & indMatch3D2D,
         const geometry::Pose3 & pose,
         const camera::PinholeRadialK3 & intrinsics,

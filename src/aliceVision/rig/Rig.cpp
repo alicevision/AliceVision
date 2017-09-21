@@ -3,7 +3,7 @@
 
 #include "Rig.hpp"
 #include "ResidualError.hpp"
-#include <aliceVision/sfm/sfm_data_BA_ceres.hpp>
+#include <aliceVision/sfm/BundleAdjustmentCeres.hpp>
 #include <aliceVision/system/Logger.hpp>
 
 #include <ceres/rotation.h>
@@ -469,7 +469,7 @@ bool Rig::optimizeCalibration()
 
   // Configure a BA engine and run it
   // todo: Set the most appropriate options
-  aliceVision::sfm::Bundle_Adjustment_Ceres::BA_options aliceVision_options(true); // Set all
+  aliceVision::sfm::BundleAdjustmentCeres::BA_options aliceVision_options(true); // Set all
   // the options field in our owm struct - unnecessary dependancy to aliceVision here
   
   ceres::Solver::Options options;

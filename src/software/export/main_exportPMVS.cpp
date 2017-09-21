@@ -20,7 +20,7 @@ using namespace aliceVision::image;
 using namespace aliceVision::sfm;
 
 bool exportToPMVSFormat(
-  const SfM_Data & sfm_data,
+  const SfMData & sfm_data,
   const std::string & sOutDirectory,  //Output PMVS files directory
   const int downsampling_factor,
   const int CPU_core_count,
@@ -198,7 +198,7 @@ bool exportToPMVSFormat(
 }
 
 bool exportToBundlerFormat(
-  const SfM_Data & sfm_data,
+  const SfMData & sfm_data,
   const std::string & sOutFile, //Output Bundle.rd.out file
   const std::string & sOutListFile)  //Output Bundler list.txt file
 {
@@ -299,13 +299,13 @@ bool exportToBundlerFormat(
 int main(int argc, char *argv[]) {
 
   CmdLine cmd;
-  std::string sSfM_Data_Filename;
+  std::string sSfMData_Filename;
   std::string sOutDir = "";
   int resolution = 1;
   int CPU = 8;
   bool bVisData = true;
 
-  cmd.add( make_option('i', sSfM_Data_Filename, "sfmdata") );
+  cmd.add( make_option('i', sSfMData_Filename, "sfmdata") );
   cmd.add( make_option('o', sOutDir, "outdir") );
   cmd.add( make_option('r', resolution, "resolution") );
   cmd.add( make_option('c', CPU, "CPU") );
@@ -316,7 +316,7 @@ int main(int argc, char *argv[]) {
       cmd.process(argc, argv);
   } catch(const std::string& s) {
       std::cerr << "Usage: " << argv[0] << '\n'
-      << "[-i|--sfmdata] filename, the SfM_Data file to convert\n"
+      << "[-i|--sfmdata] filename, the SfMData file to convert\n"
       << "[-o|--outdir path]\n"
       << "[-r|--resolution] divide image coefficient\n"
       << "[-c|--nb core]\n"
@@ -331,10 +331,10 @@ int main(int argc, char *argv[]) {
   if (!stlplus::folder_exists(sOutDir))
     stlplus::folder_create( sOutDir );
 
-  SfM_Data sfm_data;
-  if (!Load(sfm_data, sSfM_Data_Filename, ESfM_Data(ALL))) {
+  SfMData sfm_data;
+  if (!Load(sfm_data, sSfMData_Filename, ESfMData(ALL))) {
     std::cerr << std::endl
-      << "The input SfM_Data file \""<< sSfM_Data_Filename << "\" cannot be read." << std::endl;
+      << "The input SfMData file \""<< sSfMData_Filename << "\" cannot be read." << std::endl;
     return EXIT_FAILURE;
   }
 

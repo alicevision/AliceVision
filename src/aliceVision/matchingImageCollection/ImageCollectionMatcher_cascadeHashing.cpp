@@ -29,7 +29,7 @@ namespace impl
 template <typename ScalarT>
 void Match
 (
-  const sfm::SfM_Data & sfm_data,
+  const sfm::SfMData & sfm_data,
   const feature::RegionsPerView& regionsPerView,
   const Pair_Set & pairs,
   EImageDescriberType descType,
@@ -207,7 +207,7 @@ void Match
 
 void ImageCollectionMatcher_cascadeHashing::Match
 (
-  const sfm::SfM_Data & sfm_data,
+  const sfm::SfMData & sfm_data,
   const feature::RegionsPerView& regionsPerView,
   const Pair_Set & pairs,
   feature::EImageDescriberType descType,

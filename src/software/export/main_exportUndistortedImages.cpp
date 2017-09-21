@@ -18,10 +18,10 @@ using namespace aliceVision::sfm;
 int main(int argc, char *argv[])
 {
   CmdLine cmd;
-  std::string sSfM_Data_Filename;
+  std::string sSfMData_Filename;
   std::string sOutDir = "";
 
-  cmd.add( make_option('i', sSfM_Data_Filename, "sfmdata") );
+  cmd.add( make_option('i', sSfMData_Filename, "sfmdata") );
   cmd.add( make_option('o', sOutDir, "outdir") );
 
   try {
@@ -31,7 +31,7 @@ int main(int argc, char *argv[])
     std::cerr
       << "Export undistorted images related to a sfm_data file.\n"
       << "Usage: " << argv[0] << '\n'
-      << "[-i|--sfmdata] filename, the SfM_Data file to convert\n"
+      << "[-i|--sfmdata] filename, the SfMData file to convert\n"
       << "[-o|--outdir] path\n"
       << std::endl;
 
@@ -43,10 +43,10 @@ int main(int argc, char *argv[])
   if (!stlplus::folder_exists(sOutDir))
     stlplus::folder_create( sOutDir );
 
-  SfM_Data sfm_data;
-  if (!Load(sfm_data, sSfM_Data_Filename, ESfM_Data(VIEWS|INTRINSICS))) {
+  SfMData sfm_data;
+  if (!Load(sfm_data, sSfMData_Filename, ESfMData(VIEWS|INTRINSICS))) {
     std::cerr << std::endl
-      << "The input SfM_Data file \""<< sSfM_Data_Filename << "\" cannot be read." << std::endl;
+      << "The input SfMData file \""<< sSfMData_Filename << "\" cannot be read." << std::endl;
     return EXIT_FAILURE;
   }
 

@@ -3,7 +3,7 @@
 
 #include "aliceVision/feature/imageDescriberCommon.hpp"
 #include "aliceVision/sfm/sfm.hpp"
-#include "aliceVision/sfm/pipelines/RegionsIO.hpp"
+#include "aliceVision/sfm/pipeline/regionsIO.hpp"
 #include "aliceVision/system/Timer.hpp"
 
 #include "dependencies/cmdLine/cmdLine.h"
@@ -25,7 +25,7 @@ using namespace aliceVision::feature;
  * @return if a view is found
  */
 bool retrieveViewIdFromImageName(
-  const SfM_Data & sfm_data,
+  const SfMData & sfm_data,
   const std::string& initialName,
   IndexT& out_viewId)
 {
@@ -81,7 +81,7 @@ int main(int argc, char **argv)
 
   CmdLine cmd;
 
-  std::string sSfM_Data_Filename;
+  std::string sSfMData_Filename;
   std::string describerMethods = "SIFT";
   std::string sMatchesDir;
   std::string sFeaturesDir;
@@ -94,7 +94,7 @@ int main(int argc, char **argv)
   int i_User_camera_model = PINHOLE_CAMERA_RADIAL3;
   bool allowUserInteraction = true;
 
-  cmd.add( make_option('i', sSfM_Data_Filename, "input_file") );
+  cmd.add( make_option('i', sSfMData_Filename, "input_file") );
   cmd.add( make_option('d', describerMethods, "describerMethods") );
   cmd.add( make_option('m', sMatchesDir, "matchdir") );
   cmd.add( make_option('F', sFeaturesDir, "featuresDir") );
@@ -113,7 +113,7 @@ int main(int argc, char **argv)
     cmd.process(argc, argv);
   } catch(const std::string& s) {
     std::cerr << "Usage: " << argv[0] << '\n'
-    << "[-i|--input_file] path to a SfM_Data scene\n"
+    << "[-i|--input_file] path to a SfMData scene\n"
     << "[-d|--describerMethods]\n"
     << "  (methods to use to describe an image):\n"
     << "   SIFT (default),\n"
@@ -130,7 +130,7 @@ int main(int argc, char **argv)
 #endif //ALICEVISION_HAVE_OCVSIFT
     << "   AKAZE_OCV: OpenCV AKAZE\n"
 #endif //ALICEVISION_HAVE_OPENCV
-    << "[-m|--matchdir] path to the matches that corresponds to the provided SfM_Data scene\n"
+    << "[-m|--matchdir] path to the matches that corresponds to the provided SfMData scene\n"
     << "[-F|--featuresDir] path to directory containing the extracted features (default: $matchdir)\n"
     << "[-o|--outdir] path where the output data will be stored\n"
     << "[-s|--out_sfmdata_file] path of the output sfmdata file (default: $outdir/sfm_data.json)\n"
@@ -158,11 +158,11 @@ int main(int argc, char **argv)
   if(sOutSfMDataFilepath.empty())
     sOutSfMDataFilepath = stlplus::create_filespec(sOutDir, "sfm_data", "json");
 
-  // Load input SfM_Data scene
-  SfM_Data sfm_data;
-  if (!Load(sfm_data, sSfM_Data_Filename, ESfM_Data(ALL))) {
+  // Load input SfMData scene
+  SfMData sfm_data;
+  if (!Load(sfm_data, sSfMData_Filename, ESfMData(ALL))) {
     std::cerr << std::endl
-      << "The input SfM_Data file \""<< sSfM_Data_Filename << "\" cannot be read." << std::endl;
+      << "The input SfMData file \""<< sSfMData_Filename << "\" cannot be read." << std::endl;
     return EXIT_FAILURE;
   }
 
@@ -205,7 +205,7 @@ int main(int argc, char **argv)
   //---------------------------------------
 
   aliceVision::system::Timer timer;
-  SequentialSfMReconstructionEngine sfmEngine(
+  ReconstructionEngine_sequentialSfM sfmEngine(
     sfm_data,
     sOutDir,
     stlplus::create_filespec(sOutDir, "Reconstruction_Report.html"));
@@ -253,22 +253,22 @@ int main(int argc, char **argv)
     std::cerr << "Colorize failed!" << std::endl;
   }
   
-  sfmEngine.Get_SfM_Data().setFeatureFolder(sFeaturesDir);
-  sfmEngine.Get_SfM_Data().setMatchingFolder(sMatchesDir);
+  sfmEngine.Get_SfMData().setFeatureFolder(sFeaturesDir);
+  sfmEngine.Get_SfMData().setMatchingFolder(sMatchesDir);
 
   std::cout << std::endl << " Total Ac-Sfm took (s): " << timer.elapsed() << std::endl;
 
   std::cout << "...Generating SfM_Report.html" << std::endl;
-  Generate_SfM_Report(sfmEngine.Get_SfM_Data(),
+  Generate_SfM_Report(sfmEngine.Get_SfMData(),
     stlplus::create_filespec(sOutDir, "SfMReconstruction_Report.html"));
 
   //-- Export to disk computed scene (data & visualizable results)
-  std::cout << "...Export SfM_Data to disk:" << std::endl;
+  std::cout << "...Export SfMData to disk:" << std::endl;
   std::cout << "   " << sOutSfMDataFilepath << std::endl;
 
-  Save(sfmEngine.Get_SfM_Data(), sOutSfMDataFilepath, ESfM_Data(ALL));
+  Save(sfmEngine.Get_SfMData(), sOutSfMDataFilepath, ESfMData(ALL));
 
-  Save(sfmEngine.Get_SfM_Data(), stlplus::create_filespec(sOutDir, "cloud_and_poses", sOutInterFileExtension), ESfM_Data(VIEWS | EXTRINSICS | INTRINSICS | STRUCTURE));
+  Save(sfmEngine.Get_SfMData(), stlplus::create_filespec(sOutDir, "cloud_and_poses", sOutInterFileExtension), ESfMData(VIEWS | EXTRINSICS | INTRINSICS | STRUCTURE));
 
   return EXIT_SUCCESS;
 }

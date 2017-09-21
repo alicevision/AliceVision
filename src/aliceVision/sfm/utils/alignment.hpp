@@ -3,14 +3,14 @@
 
 #pragma once
 
-#include "aliceVision/sfm/sfm_data.hpp"
+#include "aliceVision/sfm/SfMData.hpp"
 #include "aliceVision/geometry/Pose3.hpp"
 
 namespace aliceVision {
 namespace sfm {
 
-inline void getCommonViews(const SfM_Data & sfmDataA,
-                           const SfM_Data & sfmDataB,
+inline void getCommonViews(const SfMData & sfmDataA,
+                           const SfMData & sfmDataB,
                            std::vector<IndexT>& outIndexes)
 {
   for(const auto& viewA: sfmDataA.GetViews())
@@ -22,8 +22,8 @@ inline void getCommonViews(const SfM_Data & sfmDataA,
   }
 }
 
-inline void getCommonViewsWithPoses(const SfM_Data & sfmDataA,
-                                    const SfM_Data & sfmDataB,
+inline void getCommonViewsWithPoses(const SfMData & sfmDataA,
+                                    const SfMData & sfmDataB,
                                     std::vector<IndexT>& outIndexes)
 {
   for(const auto& viewA: sfmDataA.GetViews())
@@ -51,14 +51,14 @@ inline void getCommonViewsWithPoses(const SfM_Data & sfmDataA,
  * @param[out] out_t output translation vector
  * @return true if it finds a similarity transformation
  */
-bool computeSimilarity(const SfM_Data & sfmDataA,
-                       const SfM_Data & sfmDataB,
+bool computeSimilarity(const SfMData & sfmDataA,
+                       const SfMData & sfmDataB,
                        double * out_S,
                        Mat3 * out_R,
                        Vec3 * out_t);
 
 
-inline void applyTransform(SfM_Data & sfmData,
+inline void applyTransform(SfMData & sfmData,
                            const double S,
                            const Mat3& R,
                            const Vec3& t,

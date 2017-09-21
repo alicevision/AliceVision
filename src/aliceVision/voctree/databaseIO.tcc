@@ -4,7 +4,7 @@
 #include "descriptorLoader.hpp"
 
 #include <aliceVision/system/Logger.hpp>
-#include <aliceVision/sfm/sfm_data_io.hpp>
+#include <aliceVision/sfm/sfmDataIO.hpp>
 #include <aliceVision/config.hpp>
 
 #include <boost/filesystem.hpp>

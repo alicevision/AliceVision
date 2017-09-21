@@ -17,28 +17,28 @@ using namespace aliceVision::sfm;
 
 static bool parseAlignScale(const std::string& alignScale, double& S, Mat3& R, Vec3& t);
 
-// Convert from a SfM_Data format to another
+// Convert from a SfMData format to another
 int main(int argc, char **argv)
 {
   CmdLine cmd;
 
-  std::string sSfM_Data_Filename_In;
-  std::string sSfM_Data_Filename_InRef;
-  std::string sSfM_Data_Filename_Out;
+  std::string sSfMData_Filename_In;
+  std::string sSfMData_Filename_InRef;
+  std::string sSfMData_Filename_Out;
   std::string sSfm_Data_YAlignScale;
 
-  cmd.add(make_option('i', sSfM_Data_Filename_In, "input_file"));
-  cmd.add(make_option('r', sSfM_Data_Filename_InRef, "reference_file"));
+  cmd.add(make_option('i', sSfMData_Filename_In, "input_file"));
+  cmd.add(make_option('r', sSfMData_Filename_InRef, "reference_file"));
   cmd.add(make_option('y', sSfm_Data_YAlignScale, "y_align_scale"));
-  cmd.add(make_option('o', sSfM_Data_Filename_Out, "output_file"));
+  cmd.add(make_option('o', sSfMData_Filename_Out, "output_file"));
 
   try {
       if (argc == 1) throw std::string("Invalid command line parameter.");
       cmd.process(argc, argv);
   } catch(const std::string& s) {
       std::cerr << "Usage: " << argv[0] << '\n'
-        << "[-i|--input_file] path to the input SfM_Data scene to align.\n"
-        << "[-o|--output_file] path to the output SfM_Data scene\n"
+        << "[-i|--input_file] path to the input SfMData scene to align.\n"
+        << "[-o|--output_file] path to the output SfMData scene\n"
         << "\t .json, .bin, .xml, .ply, .baf"
 #if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_ALEMBIC)
            ", .abc"
@@ -54,21 +54,21 @@ int main(int argc, char **argv)
   }
   
 
-  if (sSfM_Data_Filename_In.empty() ||
-      sSfM_Data_Filename_Out.empty())
+  if (sSfMData_Filename_In.empty() ||
+      sSfMData_Filename_Out.empty())
   {
     std::cerr << "Invalid input or output filename." << std::endl;
     return EXIT_FAILURE;
   }
 
-  if (sSfM_Data_Filename_InRef.empty() &&
+  if (sSfMData_Filename_InRef.empty() &&
       sSfm_Data_YAlignScale.empty())
   {
     std::cerr << "At least one of -y and -r must be specified." << std::endl;
     return EXIT_FAILURE;
   }
   
-  if (!sSfM_Data_Filename_InRef.empty() &&
+  if (!sSfMData_Filename_InRef.empty() &&
       !sSfm_Data_YAlignScale.empty())
   {
     std::cerr << "Must specify exactly one of alignment and reference scene." << std::endl;
@@ -76,11 +76,11 @@ int main(int argc, char **argv)
   }
 
   // Load input scene
-  SfM_Data sfm_data_in;
-  if (!Load(sfm_data_in, sSfM_Data_Filename_In, ESfM_Data(ALL)))
+  SfMData sfm_data_in;
+  if (!Load(sfm_data_in, sSfMData_Filename_In, ESfMData(ALL)))
   {
     std::cerr << std::endl
-      << "The input SfM_Data file \"" << sSfM_Data_Filename_In << "\" cannot be read." << std::endl;
+      << "The input SfMData file \"" << sSfMData_Filename_In << "\" cannot be read." << std::endl;
     return EXIT_FAILURE;
   }
 
@@ -88,14 +88,14 @@ int main(int argc, char **argv)
   Mat3 R;
   Vec3 t;
 
-  if (!sSfM_Data_Filename_InRef.empty())
+  if (!sSfMData_Filename_InRef.empty())
   {
     // Load reference scene
-    SfM_Data sfm_data_inRef;
-    if (!Load(sfm_data_inRef, sSfM_Data_Filename_InRef, ESfM_Data(ALL)))
+    SfMData sfm_data_inRef;
+    if (!Load(sfm_data_inRef, sSfMData_Filename_InRef, ESfMData(ALL)))
     {
       std::cerr << std::endl
-        << "The reference SfM_Data file \"" << sSfM_Data_Filename_InRef << "\" cannot be read." << std::endl;
+        << "The reference SfMData file \"" << sSfMData_Filename_InRef << "\" cannot be read." << std::endl;
       return EXIT_FAILURE;
     }
 
@@ -105,8 +105,8 @@ int main(int argc, char **argv)
     {
       std::cerr << std::endl
         << "Failed to find similarity between the 2 SfM scenes:"
-        << "\"" << sSfM_Data_Filename_In << "\", "
-        << "\"" << sSfM_Data_Filename_InRef << "\""
+        << "\"" << sSfMData_Filename_In << "\", "
+        << "\"" << sSfMData_Filename_InRef << "\""
         << std::endl;
       return EXIT_FAILURE;
     }
@@ -124,13 +124,13 @@ int main(int argc, char **argv)
 
   applyTransform(sfm_data_in, S, R, t);
   
-  std::cout << "Save into \"" << sSfM_Data_Filename_Out << "\"" << std::endl;
+  std::cout << "Save into \"" << sSfMData_Filename_Out << "\"" << std::endl;
   
-  // Export the SfM_Data scene in the expected format
-  if (!Save(sfm_data_in, sSfM_Data_Filename_Out, ESfM_Data(ALL)))
+  // Export the SfMData scene in the expected format
+  if (!Save(sfm_data_in, sSfMData_Filename_Out, ESfMData(ALL)))
   {
     std::cerr << std::endl
-      << "An error occurred while trying to save \"" << sSfM_Data_Filename_Out << "\"." << std::endl;
+      << "An error occurred while trying to save \"" << sSfMData_Filename_Out << "\"." << std::endl;
     return EXIT_FAILURE;
   }
 

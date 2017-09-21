@@ -153,7 +153,7 @@ int main() {
     //B. Compute the relative pose thanks to a essential matrix estimation
     std::pair<size_t, size_t> size_imaL(imageL.Width(), imageL.Height());
     std::pair<size_t, size_t> size_imaR(imageR.Width(), imageR.Height());
-    RelativePose_Info relativePose_info;
+    RelativePoseInfo relativePose_info;
     if (!robustRelativePose(K, K, xL, xR, relativePose_info, size_imaL, size_imaR, 256))
     {
       std::cerr << " /!\\ Robust relative pose estimation failure."
@@ -203,7 +203,7 @@ int main() {
     const bool bSharedIntrinsic = (iBAType == 2 || iBAType == 3) ? true : false;
 
     // Setup a SfM scene with two view corresponding the pictures
-    SfM_Data tinyScene;
+    SfMData tinyScene;
     tinyScene.views[0].reset(new View("", 0, bSharedIntrinsic ? 0 : 1, 0, imageL.Width(), imageL.Height()));
     tinyScene.views[1].reset(new View("", 1, bSharedIntrinsic ? 0 : 1, 1, imageR.Width(), imageR.Height()));
     // Setup intrinsics camera data
@@ -249,14 +249,14 @@ int main() {
       landmarks[i].observations[tinyScene.views[1]->getViewId()] = Observation(RR.coords().cast<double>(), vec_PutativeMatches[relativePose_info.vec_inliers[i]]._j);
       landmarks[i].X = X;
     }
-    Save(tinyScene, "EssentialGeometry_start.ply", ESfM_Data(ALL));
+    Save(tinyScene, "EssentialGeometry_start.ply", ESfMData(ALL));
 
     //D. Perform Bundle Adjustment of the scene
 
-    Bundle_Adjustment_Ceres bundle_adjustment_obj;
+    BundleAdjustmentCeres bundle_adjustment_obj;
     bundle_adjustment_obj.Adjust(tinyScene);
 
-    Save(tinyScene, "EssentialGeometry_refined.ply", ESfM_Data(ALL));
+    Save(tinyScene, "EssentialGeometry_refined.ply", ESfMData(ALL));
   }
   return EXIT_SUCCESS;
 }

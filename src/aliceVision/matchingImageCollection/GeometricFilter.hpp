@@ -25,7 +25,7 @@ using namespace aliceVision::matching;
 struct GeometricFilter
 {
   GeometricFilter(
-    const sfm::SfM_Data * sfm_data,
+    const sfm::SfMData * sfm_data,
     const feature::RegionsPerView & regionsPerView
   ):_sfm_data(sfm_data), _regionsPerView(regionsPerView)
   {}
@@ -42,7 +42,7 @@ struct GeometricFilter
   const PairwiseMatches & Get_geometric_matches() const {return _map_GeometricMatches;}
 
   // Data
-  const sfm::SfM_Data * _sfm_data;
+  const sfm::SfMData * _sfm_data;
   const feature::RegionsPerView & _regionsPerView;
   PairwiseMatches _map_GeometricMatches;
 };

@@ -13,7 +13,7 @@
 namespace aliceVision {
 namespace feature {
 
-/// Regions per ViewId of the considered SfM_Data container
+/// Regions per ViewId of the considered SfMData container
 class MapRegionsPerDesc : public std::map<feature::EImageDescriberType, std::unique_ptr<feature::Regions>>
 {
 public:

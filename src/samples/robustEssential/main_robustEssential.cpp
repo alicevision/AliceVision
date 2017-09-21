@@ -146,7 +146,7 @@ int main() {
     //B. Compute the relative pose thanks to a essential matrix estimation
     std::pair<size_t, size_t> size_imaL(imageL.Width(), imageL.Height());
     std::pair<size_t, size_t> size_imaR(imageR.Width(), imageR.Height());
-    sfm::RelativePose_Info relativePose_info;
+    sfm::RelativePoseInfo relativePose_info;
     if (!sfm::robustRelativePose(K, K, xL, xR, relativePose_info, size_imaL, size_imaR, 256))
     {
       std::cerr << " /!\\ Robust relative pose estimation failure."

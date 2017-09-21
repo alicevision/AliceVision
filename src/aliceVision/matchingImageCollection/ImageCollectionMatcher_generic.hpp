@@ -26,7 +26,7 @@ class ImageCollectionMatcher_generic : public IImageCollectionMatcher
 
   /// Find corresponding points between some pair of view Ids
   void Match(
-    const sfm::SfM_Data & sfm_data,
+    const sfm::SfMData & sfm_data,
     const feature::RegionsPerView& regionsPerView,
     const Pair_Set & pairs,
     feature::EImageDescriberType descType,

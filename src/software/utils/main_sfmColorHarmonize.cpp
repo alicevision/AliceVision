@@ -21,7 +21,7 @@ int main( int argc, char **argv )
 
   CmdLine cmd;
 
-  std::string sSfM_Data_Filename;
+  std::string sSfMData_Filename;
   std::string sMatchesDir;
   std::string describerMethods = "SIFT";
   std::string sMatchesGeometricModel = "f";
@@ -29,7 +29,7 @@ int main( int argc, char **argv )
   int selectionMethod = -1;
   int imgRef = -1;
 
-  cmd.add( make_option('i', sSfM_Data_Filename, "input_file" ));
+  cmd.add( make_option('i', sSfMData_Filename, "input_file" ));
   cmd.add( make_option('m', sMatchesDir, "matchesDir" ));
   cmd.add( make_option('d', describerMethods, "describerMethods") );
   cmd.add( make_option('o', sOutDir, "outdir" ));
@@ -77,7 +77,7 @@ int main( int argc, char **argv )
     return EXIT_FAILURE;
   }
 
-  if ( sSfM_Data_Filename.empty() )
+  if ( sSfMData_Filename.empty() )
   {
     std::cerr << "\nIt is an invalid file input" << std::endl;
     return EXIT_FAILURE;
@@ -94,7 +94,7 @@ int main( int argc, char **argv )
 
   aliceVision::system::Timer timer;
 
-  ColorHarmonizationEngineGlobal colorHarmonizeEngine(sSfM_Data_Filename,
+  ColorHarmonizationEngineGlobal colorHarmonizeEngine(sSfMData_Filename,
     sMatchesDir,
     sMatchesGeometricModel,
     sOutDir,

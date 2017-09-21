@@ -2,7 +2,7 @@
 // the terms of the MPL2 license (see the COPYING.md file).
 
 #include <aliceVision/sfm/AlembicExporter.hpp>
-#include <aliceVision/sfm/sfm_data_io_gt.hpp>
+#include <aliceVision/sfm/sfmDataIO_gt.hpp>
 #include <dependencies/cmdLine/cmdLine.h>
 #include <dependencies/stlplus3/filesystemSimplified/file_system.hpp>
 #include <string>
@@ -16,11 +16,11 @@ int main(int argc, char **argv)
   CmdLine cmd;
 
   std::string
-    sSfM_Data_Filename_In,
-    sSfM_Data_Filename_Out;
+    sSfMData_Filename_In,
+    sSfMData_Filename_Out;
 
-  cmd.add(make_option('i', sSfM_Data_Filename_In, "input_file"));
-  cmd.add(make_option('o', sSfM_Data_Filename_Out, "output_file"));
+  cmd.add(make_option('i', sSfMData_Filename_In, "input_file"));
+  cmd.add(make_option('o', sSfMData_Filename_Out, "output_file"));
 
   try {
       if (argc == 1) throw std::string("Invalid command line parameter.");
@@ -34,23 +34,23 @@ int main(int argc, char **argv)
       return EXIT_FAILURE;
   }
 
-  if (sSfM_Data_Filename_In.empty() || sSfM_Data_Filename_Out.empty())
+  if (sSfMData_Filename_In.empty() || sSfMData_Filename_Out.empty())
   {
     std::cerr << "Invalid input or output filename." << std::endl;
     return EXIT_FAILURE;
   }
 
-  // Load input SfM_Data scene
-  SfM_Data sfm_data;
-  if (!readGt(sSfM_Data_Filename_In, sfm_data, false))
+  // Load input SfMData scene
+  SfMData sfm_data;
+  if (!readGt(sSfMData_Filename_In, sfm_data, false))
   {
     std::cerr << std::endl
-      << "The input SfM_Data file \"" << sSfM_Data_Filename_In << "\" cannot be read." << std::endl;
+      << "The input SfMData file \"" << sSfMData_Filename_In << "\" cannot be read." << std::endl;
     return EXIT_FAILURE;
   }
 
   // init alembic exporter
-  sfm::AlembicExporter exporter( sSfM_Data_Filename_Out );
+  sfm::AlembicExporter exporter( sSfMData_Filename_Out );
   exporter.initAnimatedCamera("camera");
 
   for(const auto &iter : sfm_data.GetViews())

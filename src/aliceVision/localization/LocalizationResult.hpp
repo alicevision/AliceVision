@@ -3,7 +3,7 @@
 
 #pragma once
 
-#include <aliceVision/sfm/pipelines/localization/SfM_Localizer.hpp>
+#include <aliceVision/sfm/pipeline/localization/SfMLocalizer.hpp>
 #include <aliceVision/voctree/Database.hpp>
 
 #include <cereal/cereal.hpp>
@@ -84,7 +84,7 @@ public:
   
   LocalizationResult();
   
-  LocalizationResult(const sfm::Image_Localizer_Match_Data & matchData,
+  LocalizationResult(const sfm::ImageLocalizerMatchData & matchData,
                      const std::vector<IndMatch3D2D> & indMatch3D2D,
                      const geometry::Pose3 & pose,
                      const camera::PinholeRadialK3 & intrinsics,
@@ -115,7 +115,7 @@ public:
     return _matchData.projection_matrix;
   }
   
-  const sfm::Image_Localizer_Match_Data& getMatchData() const { return _matchData; }
+  const sfm::ImageLocalizerMatchData& getMatchData() const { return _matchData; }
 
   const std::vector<IndMatch3D2D> & getIndMatch3D2D() const
   {
@@ -250,7 +250,7 @@ private:
   
   /// Hold all the imaged points, their associated 3D points and the inlier indices 
   /// (w.r.t. the pose robust estimation)
-  sfm::Image_Localizer_Match_Data _matchData;
+  sfm::ImageLocalizerMatchData _matchData;
 
   /// 3D to 2D index matches in the global index system,
   /// i.e. the set of pair (landmark id, index of the associated 2D point).

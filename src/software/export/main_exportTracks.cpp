@@ -7,7 +7,7 @@
 #include "aliceVision/feature/feature.hpp"
 #include "aliceVision/track/Track.hpp"
 #include "aliceVision/sfm/sfm.hpp"
-#include "aliceVision/sfm/pipelines/RegionsIO.hpp"
+#include "aliceVision/sfm/pipeline/regionsIO.hpp"
 #include "aliceVision/feature/svgVisualization.hpp"
 
 #include "software/utils/sfmHelper/sfmIOHelper.hpp"
@@ -26,13 +26,13 @@ int main(int argc, char ** argv)
 {
   CmdLine cmd;
 
-  std::string sSfM_Data_Filename;
+  std::string sSfMData_Filename;
   std::string describerMethods = "SIFT";
   std::string sMatchesDir;
   std::string sMatchGeometricModel = "f";
   std::string sOutDir = "";
 
-  cmd.add( make_option('i', sSfM_Data_Filename, "input_file") );
+  cmd.add( make_option('i', sSfMData_Filename, "input_file") );
   cmd.add( make_option('m', describerMethods, "describerMethods") );
   cmd.add( make_option('d', sMatchesDir, "matchdir") );
   cmd.add( make_option('g', sMatchGeometricModel, "geometric_model") );
@@ -43,7 +43,7 @@ int main(int argc, char ** argv)
       cmd.process(argc, argv);
   } catch(const std::string& s) {
       std::cerr << "Export pairwise tracks.\nUsage: " << argv[0] << "\n"
-      << "[-i|--input_file file] path to a SfM_Data scene\n"
+      << "[-i|--input_file file] path to a SfMData scene\n"
       << "[-m|--describerMethods]\n"
       << "  (methods to use to describe an image):\n"
       << "   SIFT (default),\n"
@@ -81,10 +81,10 @@ int main(int argc, char ** argv)
   //---------------------------------------
   // Read SfM Scene (image view names)
   //---------------------------------------
-  SfM_Data sfm_data;
-  if (!Load(sfm_data, sSfM_Data_Filename, ESfM_Data(VIEWS|INTRINSICS))) {
+  SfMData sfm_data;
+  if (!Load(sfm_data, sSfMData_Filename, ESfMData(VIEWS|INTRINSICS))) {
     std::cerr << std::endl
-      << "The input SfM_Data file \""<< sSfM_Data_Filename << "\" cannot be read." << std::endl;
+      << "The input SfMData file \""<< sSfMData_Filename << "\" cannot be read." << std::endl;
     return EXIT_FAILURE;
   }
 

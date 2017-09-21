@@ -1,10 +1,10 @@
 // This file is part of the AliceVision project and is made available under
 // the terms of the MPL2 license (see the COPYING.md file).
 
-#include "aliceVision/sfm/sfm_data.hpp"
-#include "aliceVision/sfm/sfm_data_io.hpp"
-#include "aliceVision/sfm/pipelines/RegionsIO.hpp"
-#include "aliceVision/sfm/pipelines/sfm_engine.hpp"
+#include "aliceVision/sfm/SfMData.hpp"
+#include "aliceVision/sfm/sfmDataIO.hpp"
+#include "aliceVision/sfm/pipeline/regionsIO.hpp"
+#include "aliceVision/sfm/pipeline/ReconstructionEngine.hpp"
 #include "aliceVision/feature/FeaturesPerView.hpp"
 #include "aliceVision/feature/RegionsPerView.hpp"
 #include "aliceVision/feature/ImageDescriber.hpp"
@@ -138,7 +138,7 @@ int main(int argc, char **argv)
   catch(const std::string& s)
   {
     std::cerr << "Usage: " << argv[0] << '\n'
-      << "[-i|--input_file] a SfM_Data file\n"
+      << "[-i|--input_file] a SfMData file\n"
       << "[-o|--out_dir path] path to directory in which computed matches will be stored \n"
       << "\n[Optional]\n"
       << "[-m|--describerMethods]\n"
@@ -283,7 +283,7 @@ int main(int argc, char **argv)
   robustEstimation::EROBUST_ESTIMATOR geometricEstimator = robustEstimation::EROBUST_ESTIMATOR_stringToEnum(geometricEstimatorStr);
 
   // -----------------------------
-  // - Load SfM_Data Views & intrinsics data
+  // - Load SfMData Views & intrinsics data
   // a. Compute putative descriptor matches
   // b. Geometric filtering of putative matches
   // + Export some statistics
@@ -292,10 +292,10 @@ int main(int argc, char **argv)
   //---------------------------------------
   // Read SfM Scene (image view & intrinsics data)
   //---------------------------------------
-  SfM_Data sfmData;
-  if(!Load(sfmData, sfmDataFilename, ESfM_Data(VIEWS|INTRINSICS))) {
+  SfMData sfmData;
+  if(!Load(sfmData, sfmDataFilename, ESfMData(VIEWS|INTRINSICS))) {
     std::cerr << std::endl
-      << "The input SfM_Data file \""<< sfmDataFilename << "\" cannot be read." << std::endl;
+      << "The input SfMData file \""<< sfmDataFilename << "\" cannot be read." << std::endl;
     return EXIT_FAILURE;
   }
 

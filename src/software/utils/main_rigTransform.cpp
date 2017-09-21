@@ -4,8 +4,8 @@
 #include <aliceVision/rig/Rig.hpp>
 #include <aliceVision/system/Logger.hpp>
 
-#include <aliceVision/sfm/sfm_data.hpp>
-#include <aliceVision/sfm/sfm_data_io.hpp>
+#include <aliceVision/sfm/SfMData.hpp>
+#include <aliceVision/sfm/sfmDataIO.hpp>
 
 #include <aliceVision/sfm/AlembicExporter.hpp>
 
@@ -48,7 +48,7 @@ int main(int argc, char** argv)
         ("input,i", po::value<std::string>(&importFile)->required(),
             "The input file containing cameras.")
         ("output,o", po::value<std::string>(&exportFile)->default_value(exportFile),
-          "Filename for the SfM_Data export file (where camera poses will be stored)."
+          "Filename for the SfMData export file (where camera poses will be stored)."
           " Only Alembic supported for now. Default: trackedcameras-rig.abc.")
         ("rigFile,e", po::value<std::string>(&rigFile)->required(),
             "Rig calibration file that will be  applied to input.")
@@ -101,9 +101,9 @@ int main(int argc, char** argv)
   assert(!extrinsics.empty());
 
   // Import sfm data
-  int flags = sfm::ESfM_Data::ALL;
-  SfM_Data sfmData;
-  Load(sfmData, importFile, ESfM_Data(flags));
+  int flags = sfm::ESfMData::ALL;
+  SfMData sfmData;
+  Load(sfmData, importFile, ESfMData(flags));
 
   // Load intrinsics
   auto v = ReadIntrinsicsFile(calibFile);

@@ -7,8 +7,8 @@
 namespace aliceVision {
 namespace sfm {
 
-bool computeSimilarity(const SfM_Data & sfmDataA,
-                       const SfM_Data & sfmDataB,
+bool computeSimilarity(const SfMData & sfmDataA,
+                       const SfMData & sfmDataB,
                        double * out_S,
                        Mat3 * out_R,
                        Vec3 * out_t)

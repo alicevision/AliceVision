@@ -2,8 +2,8 @@
 // the terms of the MPL2 license (see the COPYING.md file).
 
 #include "ImageFeed.hpp"
-#include <aliceVision/sfm/sfm_data.hpp>
-#include <aliceVision/sfm/sfm_data_io.hpp>
+#include <aliceVision/sfm/SfMData.hpp>
+#include <aliceVision/sfm/sfmDataIO.hpp>
 #include <aliceVision/image/io.hpp>
 
 #include <boost/filesystem.hpp>
@@ -150,7 +150,7 @@ private:
   camera::PinholeRadialK3 _camIntrinsics;
   
   bool _sfmMode = false;
-  sfm::SfM_Data _sfmdata;
+  sfm::SfMData _sfmdata;
   sfm::Views::const_iterator _viewIterator;
   unsigned int _currentImageIndex = 0;
 };
@@ -178,7 +178,7 @@ ImageFeed::FeederImpl::FeederImpl(const std::string& imagePath, const std::strin
     if(ext == ".json")
     {
       // load the json
-      _isInit = sfm::Load(_sfmdata, imagePath, sfm::ESfM_Data(sfm::ESfM_Data::VIEWS | sfm::ESfM_Data::INTRINSICS));
+      _isInit = sfm::Load(_sfmdata, imagePath, sfm::ESfMData(sfm::ESfMData::VIEWS | sfm::ESfMData::INTRINSICS));
       _viewIterator = _sfmdata.GetViews().begin();
       _sfmMode = true;
     }

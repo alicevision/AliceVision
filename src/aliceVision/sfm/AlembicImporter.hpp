@@ -3,8 +3,8 @@
 
 #pragma once
 
-#include <aliceVision/sfm/sfm_data.hpp>
-#include <aliceVision/sfm/sfm_data_io.hpp>
+#include <aliceVision/sfm/SfMData.hpp>
+#include <aliceVision/sfm/sfmDataIO.hpp>
 
 #include <string>
 
@@ -17,7 +17,7 @@ public:
   explicit AlembicImporter(const std::string &filename);
   ~AlembicImporter();
 
-  void populate(sfm::SfM_Data &sfmdata, sfm::ESfM_Data flags_part = sfm::ESfM_Data::ALL);
+  void populate(sfm::SfMData &sfmdata, sfm::ESfMData flags_part = sfm::ESfMData::ALL);
 
 private:
   

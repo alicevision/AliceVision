@@ -2,7 +2,7 @@
 // the terms of the MPL2 license (see the COPYING.md file).
 
 #include "aliceVision/sfm/sfm.hpp"
-#include "aliceVision/sfm/utils/sfm_data_UID_utils.hpp"
+#include "aliceVision/sfm/utils/uid.hpp"
 #include <aliceVision/config.hpp>
 
 
@@ -20,18 +20,18 @@
 using namespace aliceVision;
 using namespace aliceVision::sfm;
 
-// Convert from a SfM_Data format to another
+// Convert from a SfMData format to another
 int main(int argc, char **argv)
 {
   CmdLine cmd;
 
-  std::string sSfM_Data_Filename_In;
-  std::string sSfM_Data_Filename_Out;
+  std::string sSfMData_Filename_In;
+  std::string sSfMData_Filename_Out;
 #if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_BOOST)
   std::string matchDir;
 #endif
 
-  cmd.add(make_option('i', sSfM_Data_Filename_In, "input_file"));
+  cmd.add(make_option('i', sSfMData_Filename_In, "input_file"));
   cmd.add(make_switch('V', "VIEWS"));
   cmd.add(make_switch('I', "INTRINSICS"));
   cmd.add(make_switch('E', "EXTRINSICS"));
@@ -39,7 +39,7 @@ int main(int argc, char **argv)
   cmd.add(make_switch('O', "OBSERVATIONS"));
   cmd.add(make_switch('C', "CONTROL_POINTS"));
   cmd.add(make_switch('u', "regenerateUID"));
-  cmd.add(make_option('o', sSfM_Data_Filename_Out, "output_file"));
+  cmd.add(make_option('o', sSfMData_Filename_Out, "output_file"));
 #if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_BOOST)
   cmd.add(make_option('m', matchDir, "matchDirectory"));
 #endif
@@ -49,8 +49,8 @@ int main(int argc, char **argv)
       cmd.process(argc, argv);
   } catch(const std::string& s) {
       std::cerr << "Usage: " << argv[0] << '\n'
-        << "[-i|--input_file] path to the input SfM_Data scene\n"
-        << "[-o|--output_file] path to the output SfM_Data scene\n"
+        << "[-i|--input_file] path to the input SfMData scene\n"
+        << "[-o|--output_file] path to the output SfMData scene\n"
         << "\t .json, .bin, .xml, .ply, .baf"
 #if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_ALEMBIC)
            ", .abc"
@@ -77,7 +77,7 @@ int main(int argc, char **argv)
       return EXIT_FAILURE;
   }
 
-  if (sSfM_Data_Filename_In.empty() || sSfM_Data_Filename_Out.empty())
+  if (sSfMData_Filename_In.empty() || sSfMData_Filename_Out.empty())
   {
     std::cerr << "Invalid input or output filename." << std::endl;
     return EXIT_FAILURE;
@@ -96,12 +96,12 @@ int main(int argc, char **argv)
   
   const bool recomputeUID = cmd.used('u');
 
-  // Load input SfM_Data scene
-  SfM_Data sfm_data;
-  if (!Load(sfm_data, sSfM_Data_Filename_In, ESfM_Data(ALL)))
+  // Load input SfMData scene
+  SfMData sfm_data;
+  if (!Load(sfm_data, sSfMData_Filename_In, ESfMData(ALL)))
   {
     std::cerr << std::endl
-      << "The input SfM_Data file \"" << sSfM_Data_Filename_In << "\" cannot be read." << std::endl;
+      << "The input SfMData file \"" << sSfMData_Filename_In << "\" cannot be read." << std::endl;
     return EXIT_FAILURE;
   }
   
@@ -154,11 +154,11 @@ int main(int argc, char **argv)
     
   }
 
-  // Export the SfM_Data scene in the expected format
-  if (!Save(sfm_data, sSfM_Data_Filename_Out, ESfM_Data(flags)))
+  // Export the SfMData scene in the expected format
+  if (!Save(sfm_data, sSfMData_Filename_Out, ESfMData(flags)))
   {
     std::cerr << std::endl
-      << "An error occured while trying to save \"" << sSfM_Data_Filename_Out << "\"." << std::endl;
+      << "An error occured while trying to save \"" << sSfMData_Filename_Out << "\"." << std::endl;
     return EXIT_FAILURE;
   }
   return EXIT_SUCCESS;

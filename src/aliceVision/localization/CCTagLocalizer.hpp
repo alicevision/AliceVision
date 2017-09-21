@@ -10,8 +10,8 @@
 #include <aliceVision/feature/feature.hpp>
 #include <aliceVision/feature/ImageDescriber.hpp>
 #include <aliceVision/feature/cctag/ImageDescriber_CCTAG.hpp>
-#include <aliceVision/sfm/sfm_data.hpp>
-#include <aliceVision/sfm/pipelines/localization/SfM_Localizer.hpp>
+#include <aliceVision/sfm/SfMData.hpp>
+#include <aliceVision/sfm/pipeline/localization/SfMLocalizer.hpp>
 #include <aliceVision/voctree/Database.hpp>
 
 #include <iostream>
@@ -146,7 +146,7 @@ public:
 private:
   
   bool loadReconstructionDescriptors(
-    const sfm::SfM_Data & sfm_data,
+    const sfm::SfMData & sfm_data,
     const std::string & feat_directory);
   
   // for each view index, it contains the cctag features and descriptors that have an

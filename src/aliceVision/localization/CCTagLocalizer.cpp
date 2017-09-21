@@ -9,9 +9,9 @@
 #include <aliceVision/config.hpp>
 #include <aliceVision/feature/svgVisualization.hpp>
 #include <aliceVision/matching/IndMatch.hpp>
-#include <aliceVision/sfm/sfm_data_io.hpp>
-#include <aliceVision/sfm/pipelines/RegionsIO.hpp>
-#include <aliceVision/sfm/pipelines/sfm_robust_model_estimation.hpp>
+#include <aliceVision/sfm/sfmDataIO.hpp>
+#include <aliceVision/sfm/pipeline/regionsIO.hpp>
+#include <aliceVision/sfm/pipeline/RelativePoseInfo.hpp>
 
 #include <aliceVision/system/Timer.hpp>
 #include <aliceVision/system/Logger.hpp>
@@ -35,13 +35,13 @@ CCTagLocalizer::CCTagLocalizer(const std::string &sfmFilePath,
   using namespace aliceVision::feature;
 
   // load the sfm data containing the 3D reconstruction info
-  if (!Load(_sfm_data, sfmFilePath, sfm::ESfM_Data::ALL)) 
+  if (!Load(_sfm_data, sfmFilePath, sfm::ESfMData::ALL))
   {
-    ALICEVISION_CERR("The input SfM_Data file "<< sfmFilePath << " cannot be read.");
+    ALICEVISION_CERR("The input SfMData file "<< sfmFilePath << " cannot be read.");
     ALICEVISION_CERR("\n\nIf the error says \"JSON Parsing failed - provided NVP not found\" "
         "it's likely that you have to convert your sfm_data to a recent version supporting "
         "polymorphic Views. You can run the python script convertSfmData.py to update an existing sfmdata.");
-    throw std::invalid_argument("The input SfM_Data file "+ sfmFilePath + " cannot be read.");
+    throw std::invalid_argument("The input SfMData file "+ sfmFilePath + " cannot be read.");
   }
 
   const std::string descFolder = descriptorsFolder.empty() ? _sfm_data.getFeatureFolder() : descriptorsFolder;
@@ -79,7 +79,7 @@ CCTagLocalizer::CCTagLocalizer(const std::string &sfmFilePath,
 }
 
 
-bool CCTagLocalizer::loadReconstructionDescriptors(const sfm::SfM_Data & sfm_data,
+bool CCTagLocalizer::loadReconstructionDescriptors(const sfm::SfMData & sfm_data,
                                                    const std::string & feat_directory)
 {
   ALICEVISION_LOG_DEBUG("Build observations per view");
@@ -265,7 +265,7 @@ bool CCTagLocalizer::localize(const feature::MapRegionsPerDesc & genQueryRegions
   // a map containing for each pair <pt3D_id, pt2D_id> the number of times that 
   // the association has been seen
   std::map<IndMatch3D2D, std::size_t > occurences;
-  sfm::Image_Localizer_Match_Data resectionData;
+  sfm::ImageLocalizerMatchData resectionData;
   
 
   std::vector<voctree::DocMatch> matchedImages;
@@ -297,7 +297,7 @@ bool CCTagLocalizer::localize(const feature::MapRegionsPerDesc & genQueryRegions
   // estimate the pose
   resectionData.error_max = param->_errorMax;
   ALICEVISION_LOG_DEBUG("[poseEstimation]\tEstimating camera pose...");
-  const bool bResection = sfm::SfM_Localizer::Localize(imageSize,
+  const bool bResection = sfm::SfMLocalizer::Localize(imageSize,
                                                       // pass the input intrinsic if they are valid, null otherwise
                                                       (useInputIntrinsics) ? &queryIntrinsics : nullptr,
                                                       resectionData,
@@ -343,7 +343,7 @@ bool CCTagLocalizer::localize(const feature::MapRegionsPerDesc & genQueryRegions
   // refine the estimated pose
   ALICEVISION_LOG_DEBUG("[poseEstimation]\tRefining estimated pose");
   const bool b_refine_pose = true;
-  const bool refineStatus = sfm::SfM_Localizer::RefinePose(&queryIntrinsics,
+  const bool refineStatus = sfm::SfMLocalizer::RefinePose(&queryIntrinsics,
                                                             pose,
                                                             resectionData,
                                                             b_refine_pose,
@@ -614,7 +614,7 @@ bool CCTagLocalizer::localizeRig_opengv(const std::vector<feature::MapRegionsPer
     }
     
     // create matchData
-    sfm::Image_Localizer_Match_Data matchData;
+    sfm::ImageLocalizerMatchData matchData;
     matchData.vec_inliers = vec_inliers[cam];
     matchData.error_max = param->_errorMax;
     matchData.projection_matrix = intrinsics.get_projective_equivalent(pose);

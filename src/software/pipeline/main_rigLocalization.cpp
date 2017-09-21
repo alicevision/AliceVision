@@ -222,7 +222,7 @@ int main(int argc, char** argv)
       ("help,h", "Print this message")
 #if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_ALEMBIC)
       ("outputAlembic", po::value<std::string>(&exportAlembicFile)->default_value(exportAlembicFile),
-          "Filename for the SfM_Data export file (where camera poses will be stored). "
+          "Filename for the SfMData export file (where camera poses will be stored). "
           "Default : trackedcameras.abc.")
 #endif
           ;

@@ -1,8 +1,8 @@
 // This file is part of the AliceVision project and is made available under
 // the terms of the MPL2 license (see the COPYING.md file).
 
-#include <aliceVision/sfm/sfm_data_io.hpp>
-#include <aliceVision/sfm/pipelines/RegionsIO.hpp>
+#include <aliceVision/sfm/sfmDataIO.hpp>
+#include <aliceVision/sfm/pipeline/regionsIO.hpp>
 #include <aliceVision/voctree/Database.hpp>
 #include <aliceVision/voctree/databaseIO.hpp>
 #include <aliceVision/voctree/VocabularyTree.hpp>
@@ -11,10 +11,10 @@
 #include <aliceVision/system/Logger.hpp>
 #include <aliceVision/types.hpp>
 #include <aliceVision/voctree/databaseIO.hpp>
-#include <aliceVision/sfm/sfm_data.hpp>
-#include <aliceVision/sfm/sfm_data_io.hpp>
-#include <aliceVision/sfm/pipelines/RegionsIO.hpp>
-#include <aliceVision/sfm/pipelines/sfm_engine.hpp>
+#include <aliceVision/sfm/SfMData.hpp>
+#include <aliceVision/sfm/sfmDataIO.hpp>
+#include <aliceVision/sfm/pipeline/regionsIO.hpp>
+#include <aliceVision/sfm/pipeline/ReconstructionEngine.hpp>
 #include <aliceVision/feature/FeaturesPerView.hpp>
 #include <aliceVision/feature/RegionsPerView.hpp>
 
@@ -137,8 +137,8 @@ int main(int argc, char** argv)
   std::string distance;
   int Nmax = 0;
 
-  aliceVision::sfm::SfM_Data sfmdata;
-  aliceVision::sfm::SfM_Data *sfmdataQuery;
+  aliceVision::sfm::SfMData sfmdata;
+  aliceVision::sfm::SfMData *sfmdataQuery;
 
   bpo::options_description desc(programDescription);
   desc.add_options()
@@ -320,7 +320,7 @@ int main(int argc, char** argv)
   if(withOutDir)
   {
     // load the json for the dataset used to build the database
-    if(aliceVision::sfm::Load(sfmdata, keylist, aliceVision::sfm::ESfM_Data::VIEWS))
+    if(aliceVision::sfm::Load(sfmdata, keylist, aliceVision::sfm::ESfMData::VIEWS))
     {
       ALICEVISION_COUT("SfM data loaded from " << keylist << " containing: ");
       ALICEVISION_COUT("\tnumber of views      : " << sfmdata.GetViews().size());
@@ -333,8 +333,8 @@ int main(int argc, char** argv)
     // load the json for the dataset used to query the database
     if(withQuery)
     {
-      sfmdataQuery = new aliceVision::sfm::SfM_Data();
-      if(aliceVision::sfm::Load(*sfmdataQuery, queryList, aliceVision::sfm::ESfM_Data::VIEWS))
+      sfmdataQuery = new aliceVision::sfm::SfMData();
+      if(aliceVision::sfm::Load(*sfmdataQuery, queryList, aliceVision::sfm::ESfMData::VIEWS))
       {
         ALICEVISION_COUT("SfM data loaded from " << queryList << " containing: ");
         ALICEVISION_COUT("\tnumber of views      : " << sfmdataQuery->GetViews().size());
@@ -360,10 +360,10 @@ int main(int argc, char** argv)
 
   }
 
-  aliceVision::sfm::SfM_Data sfmData;
-  if (!aliceVision::sfm::Load(sfmData, queryList, aliceVision::sfm::ESfM_Data(aliceVision::sfm::VIEWS|aliceVision::sfm::INTRINSICS))) {
+  aliceVision::sfm::SfMData sfmData;
+  if (!aliceVision::sfm::Load(sfmData, queryList, aliceVision::sfm::ESfMData(aliceVision::sfm::VIEWS|aliceVision::sfm::INTRINSICS))) {
     std::cerr << std::endl
-      << "The input SfM_Data file \""<< queryList << "\" cannot be read." << std::endl;
+      << "The input SfMData file \""<< queryList << "\" cannot be read." << std::endl;
     return EXIT_FAILURE;
   }
 

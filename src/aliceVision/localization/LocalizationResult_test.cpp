@@ -4,7 +4,7 @@
 #include "LocalizationResult.hpp"
 #include <aliceVision/camera/PinholeRadial.hpp>
 #include <aliceVision/numeric/numeric.hpp>
-#include <aliceVision/sfm/pipelines/localization/SfM_Localizer.hpp>
+#include <aliceVision/sfm/pipeline/localization/SfMLocalizer.hpp>
 #include "testing/testing.h"
 
 #include <dependencies/stlplus3/filesystemSimplified/file_system.hpp>
@@ -15,9 +15,9 @@
 
 using namespace aliceVision;
 
-sfm::Image_Localizer_Match_Data generateRandomMatch_Data(std::size_t numPts)
+sfm::ImageLocalizerMatchData generateRandomMatch_Data(std::size_t numPts)
 {
-  sfm::Image_Localizer_Match_Data data;
+  sfm::ImageLocalizerMatchData data;
   data.projection_matrix = Mat34::Random();
   data.pt3D = Mat::Random(3, numPts);
   data.pt2D = Mat::Random(2, numPts);
@@ -32,7 +32,7 @@ sfm::Image_Localizer_Match_Data generateRandomMatch_Data(std::size_t numPts)
 localization::LocalizationResult generateRandomResult(std::size_t numPts)
 {
   // random matchData
-  const sfm::Image_Localizer_Match_Data &data = generateRandomMatch_Data(numPts);
+  const sfm::ImageLocalizerMatchData &data = generateRandomMatch_Data(numPts);
   
   // random indMatch3D2D
   std::vector<localization::IndMatch3D2D> indMatch3D2D;

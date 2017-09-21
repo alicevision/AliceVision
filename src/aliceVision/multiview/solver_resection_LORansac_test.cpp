@@ -45,7 +45,7 @@ bool refinePoseAsItShouldbe(const Mat & pt3D,
   using namespace sfm;
 
   // Setup a tiny SfM scene with the corresponding 2D-3D data
-  SfM_Data sfm_data;
+  SfMData sfm_data;
   // view
   std::shared_ptr<View> view = std::make_shared<View>("", 0, 0, 0);
   sfm_data.views.emplace(0, view);
@@ -65,7 +65,7 @@ bool refinePoseAsItShouldbe(const Mat & pt3D,
     sfm_data.structure[i] = std::move(landmark);
   }
 
-  Bundle_Adjustment_Ceres bundle_adjustment_obj;
+  BundleAdjustmentCeres bundle_adjustment_obj;
   BA_Refine refineOptions = BA_REFINE_NONE;
   if(b_refine_pose)
     refineOptions |= sfm::BA_REFINE_ROTATION | sfm::BA_REFINE_TRANSLATION;

@@ -74,7 +74,7 @@ inline ICompoundProperty getAbcUserProperties(ABCSCHEMA& schema)
 }
 
 
-bool readPointCloud(IObject iObj, M44d mat, sfm::SfM_Data &sfmdata, sfm::ESfM_Data flags_part)
+bool readPointCloud(IObject iObj, M44d mat, sfm::SfMData &sfmdata, sfm::ESfMData flags_part)
 {
   using namespace aliceVision::geometry;
   using namespace aliceVision::sfm;
@@ -194,7 +194,7 @@ bool readPointCloud(IObject iObj, M44d mat, sfm::SfM_Data &sfmdata, sfm::ESfM_Da
   return true;
 }
 
-bool readCamera(const ICamera& camera, const M44d& mat, sfm::SfM_Data &sfmData, sfm::ESfM_Data flags_part, const index_t sampleFrame = 0)
+bool readCamera(const ICamera& camera, const M44d& mat, sfm::SfMData &sfmData, sfm::ESfMData flags_part, const index_t sampleFrame = 0)
 {
   using namespace aliceVision::geometry;
   using namespace aliceVision::camera;
@@ -343,7 +343,7 @@ bool readCamera(const ICamera& camera, const M44d& mat, sfm::SfM_Data &sfmData, 
   pinholeIntrinsic->setHeight(imgHeight);
   pinholeIntrinsic->updateFromParams(mvg_intrinsicParams);
 
-  // Add imported data to the SfM_Data container TODO use UID
+  // Add imported data to the SfMData container TODO use UID
   std::shared_ptr<View> view = std::make_shared<View>(imagePath,
                                                       viewId,
                                                       intrinsicId,
@@ -377,7 +377,7 @@ bool readCamera(const ICamera& camera, const M44d& mat, sfm::SfM_Data &sfmData, 
   return true;
 }
 
-bool readXform(IXform& xform, M44d& mat, sfm::SfM_Data& sfmData, sfm::ESfM_Data flags_part)
+bool readXform(IXform& xform, M44d& mat, sfm::SfMData& sfmData, sfm::ESfMData flags_part)
 {
   using namespace aliceVision::geometry;
   using namespace aliceVision::camera;
@@ -402,7 +402,7 @@ bool readXform(IXform& xform, M44d& mat, sfm::SfM_Data& sfmData, sfm::ESfM_Data 
 
   mat *= xsample.getMatrix();
 
-  if( !(flags_part & sfm::ESfM_Data::EXTRINSICS) )
+  if( !(flags_part & sfm::ESfMData::EXTRINSICS) )
     return true;
 
   ICompoundProperty userProps = getAbcUserProperties(schema);
@@ -482,12 +482,12 @@ bool readXform(IXform& xform, M44d& mat, sfm::SfM_Data& sfmData, sfm::ESfM_Data 
 }
 
 // Top down read of 3d objects
-void visitObject(IObject iObj, M44d mat, sfm::SfM_Data &sfmdata, sfm::ESfM_Data flags_part)
+void visitObject(IObject iObj, M44d mat, sfm::SfMData &sfmdata, sfm::ESfMData flags_part)
 {
   // ALICEVISION_LOG_DEBUG("ABC visit: " << iObj.getFullName());
   
   const MetaData& md = iObj.getMetaData();
-  if(IPoints::matches(md) && (flags_part & sfm::ESfM_Data::STRUCTURE))
+  if(IPoints::matches(md) && (flags_part & sfm::ESfMData::STRUCTURE))
   {
     readPointCloud(iObj, mat, sfmdata, flags_part);
   }
@@ -496,7 +496,7 @@ void visitObject(IObject iObj, M44d mat, sfm::SfM_Data &sfmdata, sfm::ESfM_Data 
     IXform xform(iObj, kWrapExisting);
     readXform(xform, mat, sfmdata, flags_part);
   }
-  else if(ICamera::matches(md) && (flags_part & sfm::ESfM_Data::EXTRINSICS))
+  else if(ICamera::matches(md) && (flags_part & sfm::ESfMData::EXTRINSICS))
   {
     ICamera check_cam(iObj, kWrapExisting);
     // If it's not an animated camera we add it here
@@ -537,7 +537,7 @@ AlembicImporter::~AlembicImporter()
 {
 }
 
-void AlembicImporter::populate(sfm::SfM_Data &sfmdata, sfm::ESfM_Data flags_part)
+void AlembicImporter::populate(sfm::SfMData &sfmdata, sfm::ESfMData flags_part)
 {
   const index_t sampleFrame = 0;
   IObject rootObj = _objImpl->_rootEntity.getChild("mvgRoot");

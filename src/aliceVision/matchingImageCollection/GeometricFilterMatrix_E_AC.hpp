@@ -12,7 +12,7 @@
 #include <limits>
 
 #include "aliceVision/matching/IndMatch.hpp"
-#include "aliceVision/sfm/sfm_data.hpp"
+#include "aliceVision/sfm/SfMData.hpp"
 #include "aliceVision/feature/RegionsPerView.hpp"
 #include "aliceVision/matchingImageCollection/GeometricFilterMatrix.hpp"
 
@@ -35,7 +35,7 @@ struct GeometricFilterMatrix_E_AC : public GeometricFilterMatrix
    */
   template<typename Regions_or_Features_ProviderT>
   EstimationStatus geometricEstimation(
-    const sfm::SfM_Data * sfmData,
+    const sfm::SfMData * sfmData,
     const Regions_or_Features_ProviderT& regionsPerView,
     const Pair pairIndex,
     const matching::MatchesPerDescType & putativeMatchesPerType,
@@ -121,7 +121,7 @@ struct GeometricFilterMatrix_E_AC : public GeometricFilterMatrix
    */
   bool Geometry_guided_matching
   (
-    const sfm::SfM_Data * sfmData,
+    const sfm::SfMData * sfmData,
     const feature::RegionsPerView& regionsPerView,
     const Pair imageIdsPair,
     const double dDistanceRatio,

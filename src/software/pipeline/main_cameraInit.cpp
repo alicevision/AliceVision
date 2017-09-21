@@ -535,7 +535,7 @@ private:
 
 /**
  * @brief Create the description of an input image dataset for AliceVision toolsuite
- * - Export a SfM_Data file with View & Intrinsic data
+ * - Export a SfMData file with View & Intrinsic data
  */
 int main(int argc, char **argv)
 {
@@ -781,7 +781,7 @@ int main(int argc, char **argv)
 
 
   // configure an empty scene with Views and their corresponding cameras
-  SfM_Data sfm_data;
+  SfMData sfm_data;
 
   // setup main image root_path
   if(jsonFile.empty())
@@ -1054,8 +1054,8 @@ int main(int argc, char **argv)
     GroupSharedIntrinsics(sfm_data);
   }
 
-  // store SfM_Data views & intrinsic data
-  if (!Save(sfm_data, stlplus::create_filespec( outputDir, "sfm_data.json" ).c_str(), ESfM_Data(VIEWS|INTRINSICS|EXTRINSICS)))
+  // store SfMData views & intrinsic data
+  if (!Save(sfm_data, stlplus::create_filespec( outputDir, "sfm_data.json" ).c_str(), ESfMData(VIEWS|INTRINSICS|EXTRINSICS)))
   {
     return EXIT_FAILURE;
   }

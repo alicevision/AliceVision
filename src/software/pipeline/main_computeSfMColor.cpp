@@ -14,15 +14,15 @@ using namespace aliceVision;
 using namespace aliceVision::image;
 using namespace aliceVision::sfm;
 
-// Convert from a SfM_Data format to another
+// Convert from a SfMData format to another
 int main(int argc, char **argv)
 {
   CmdLine cmd;
 
-  std::string sSfM_Data_Filename_In;
+  std::string sSfMData_Filename_In;
   std::string sOutput_file;
 
-  cmd.add(make_option('i', sSfM_Data_Filename_In, "input_file"));
+  cmd.add(make_option('i', sSfMData_Filename_In, "input_file"));
   cmd.add(make_option('o', sOutput_file, "output_file"));
 
   try {
@@ -30,8 +30,8 @@ int main(int argc, char **argv)
       cmd.process(argc, argv);
   } catch(const std::string& s) {
       std::cerr << "Usage: " << argv[0] << '\n'
-        << "[-i|--input_file] path to the input SfM_Data scene\n"
-        << "[-o|--output_file] path to the output SfM_Data scene\n"
+        << "[-i|--input_file] path to the input SfMData scene\n"
+        << "[-o|--output_file] path to the output SfMData scene\n"
         << "\t .json, .bin, .xml, .ply, .baf"
 #if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_ALEMBIC)
            ", .abc"
@@ -49,13 +49,13 @@ int main(int argc, char **argv)
     return EXIT_FAILURE;
   }
 
-  // Load input SfM_Data scene
-  SfM_Data sfm_data;
-  std::cout << "Loading sfm data from " << sSfM_Data_Filename_In << "..." << std::endl;
-  if (!Load(sfm_data, sSfM_Data_Filename_In, ESfM_Data(ALL)))
+  // Load input SfMData scene
+  SfMData sfm_data;
+  std::cout << "Loading sfm data from " << sSfMData_Filename_In << "..." << std::endl;
+  if (!Load(sfm_data, sSfMData_Filename_In, ESfMData(ALL)))
   {
     std::cerr << std::endl
-      << "The input SfM_Data file \"" << sSfM_Data_Filename_In << "\" cannot be read." << std::endl;
+      << "The input SfMData file \"" << sSfMData_Filename_In << "\" cannot be read." << std::endl;
     return EXIT_FAILURE;
   }
   std::cout << "Done!" << std::endl;
@@ -67,9 +67,9 @@ int main(int argc, char **argv)
     return EXIT_FAILURE;
   }
 
-  // Export the SfM_Data scene in the expected format
+  // Export the SfMData scene in the expected format
   std::cout << "Saving output result to " << sOutput_file << "..." << std::endl;
-  if (!Save(sfm_data, sOutput_file.c_str(), ESfM_Data(ALL)))
+  if (!Save(sfm_data, sOutput_file.c_str(), ESfMData(ALL)))
   {
     std::cerr << std::endl
       << "An error occured while trying to save \"" << sOutput_file << "\"." << std::endl;

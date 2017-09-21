@@ -3,7 +3,7 @@
 
 #include "descriptorLoader.hpp"
 
-#include <aliceVision/sfm/sfm_data_io.hpp>
+#include <aliceVision/sfm/sfmDataIO.hpp>
 
 #include <aliceVision/system/Logger.hpp>
 
@@ -126,8 +126,8 @@ void getListOfDescriptorFiles(const std::string &fileFullPath, std::map<IndexT, 
     // processing a JSON file containing sfm_data
 
     // open the sfm_data file
-    sfm::SfM_Data sfmdata;
-    sfm::Load(sfmdata, fileFullPath, sfm::ESfM_Data::VIEWS);
+    sfm::SfMData sfmdata;
+    sfm::Load(sfmdata, fileFullPath, sfm::ESfMData::VIEWS);
 
     // get the number of files to load
     size_t numberOfFiles = sfmdata.GetViews().size();

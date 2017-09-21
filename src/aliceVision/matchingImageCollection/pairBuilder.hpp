@@ -5,7 +5,7 @@
 
 #include <aliceVision/types.hpp>
 #include <aliceVision/stl/split.hpp>
-#include <aliceVision/sfm/sfm_data.hpp>
+#include <aliceVision/sfm/SfMData.hpp>
 #include <aliceVision/system/Logger.hpp>
 
 #include <set>

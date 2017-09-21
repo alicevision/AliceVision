@@ -18,10 +18,10 @@ int main(int argc, char **argv)
 {
   CmdLine cmd;
 
-  std::string sSfM_Data_Filename;
+  std::string sSfMData_Filename;
   std::string sOutDir = "";
 
-  cmd.add( make_option('i', sSfM_Data_Filename, "sfmdata") );
+  cmd.add( make_option('i', sSfMData_Filename, "sfmdata") );
   cmd.add( make_option('o', sOutDir, "outdir") );
 
   try {
@@ -29,7 +29,7 @@ int main(int argc, char **argv)
       cmd.process(argc, argv);
   } catch(const std::string& s) {
       std::cerr << "Usage: " << argv[0] << '\n'
-      << "[-i|--sfmdata] filename, the SfM_Data file to convert\n"
+      << "[-i|--sfmdata] filename, the SfMData file to convert\n"
       << "[-o|--outdir] path.\n"
       << std::endl;
 
@@ -39,7 +39,7 @@ int main(int argc, char **argv)
 
   std::cout << " You called : " <<std::endl
             << argv[0] << std::endl
-            << "--sfmdata " << sSfM_Data_Filename << std::endl
+            << "--sfmdata " << sSfMData_Filename << std::endl
             << "--outdir " << sOutDir << std::endl;
 
   bool bOneHaveDisto = false;
@@ -49,10 +49,10 @@ int main(int argc, char **argv)
     stlplus::folder_create( sOutDir );
 
   // Read the SfM scene
-  SfM_Data sfm_data;
-  if (!Load(sfm_data, sSfM_Data_Filename, ESfM_Data(VIEWS|INTRINSICS|EXTRINSICS))) {
+  SfMData sfm_data;
+  if (!Load(sfm_data, sSfMData_Filename, ESfMData(VIEWS|INTRINSICS|EXTRINSICS))) {
     std::cerr << std::endl
-      << "The input SfM_Data file \""<< sSfM_Data_Filename << "\" cannot be read." << std::endl;
+      << "The input SfMData file \""<< sSfMData_Filename << "\" cannot be read." << std::endl;
     return EXIT_FAILURE;
   }
 
@@ -101,7 +101,7 @@ int main(int argc, char **argv)
   }
   
   const std::string sUndistMsg = bOneHaveDisto ? "undistorded" : "";
-  const std::string sQuitMsg = std::string("Your SfM_Data file was succesfully converted!\n") +
+  const std::string sQuitMsg = std::string("Your SfMData file was succesfully converted!\n") +
 	  "Now you can copy your " + sUndistMsg + " images in the \"" + sOutDir + "\" directory and run MVS Texturing";
   std::cout << sQuitMsg << std::endl;
   return EXIT_SUCCESS;

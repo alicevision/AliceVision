@@ -9,8 +9,8 @@
 #include "BoundedBuffer.hpp"
 #include <aliceVision/config.hpp>
 #include <aliceVision/feature/ImageDescriber.hpp>
-#include <aliceVision/sfm/sfm_data.hpp>
-#include <aliceVision/sfm/pipelines/localization/SfM_Localizer.hpp>
+#include <aliceVision/sfm/SfMData.hpp>
+#include <aliceVision/sfm/pipeline/localization/SfMLocalizer.hpp>
 #include <aliceVision/stl/mapUtils.hpp>
 #include <aliceVision/voctree/VocabularyTree.hpp>
 #include <aliceVision/voctree/Database.hpp>
@@ -321,7 +321,7 @@ private:
    * deprecated.. now inside initDatabase
    */
   bool loadReconstructionDescriptors(
-    const sfm::SfM_Data & sfm_data,
+    const sfm::SfMData & sfm_data,
     const std::string & feat_directory);
   
   

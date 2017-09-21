@@ -122,7 +122,7 @@ public:
   
 private:
   
-  /// PointFeature array per ViewId of the considered SfM_Data container
+  /// PointFeature array per ViewId of the considered SfMData container
   MapFeaturesPerView _data;
 };
 

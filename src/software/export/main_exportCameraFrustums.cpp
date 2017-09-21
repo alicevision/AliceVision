@@ -18,10 +18,10 @@ int main(int argc, char **argv)
 
   CmdLine cmd;
 
-  std::string sSfM_Data_Filename;
+  std::string sSfMData_Filename;
   std::string sOutFile = "";
 
-  cmd.add( make_option('i', sSfM_Data_Filename, "input_file") );
+  cmd.add( make_option('i', sSfMData_Filename, "input_file") );
   cmd.add( make_option('o', sOutFile, "output_file") );
 
   try {
@@ -29,7 +29,7 @@ int main(int argc, char **argv)
     cmd.process(argc, argv);
   } catch(const std::string& s) {
     std::cerr << "Usage: " << argv[0] << '\n'
-    << "[-i|--input_file] path to a SfM_Data scene\n"
+    << "[-i|--input_file] path to a SfMData scene\n"
     << "[-o|--output_file] PLY file to store the camera frustums as triangle meshes.\n"
     << std::endl;
 
@@ -37,11 +37,11 @@ int main(int argc, char **argv)
     return EXIT_FAILURE;
   }
 
-  // Load input SfM_Data scene
-  SfM_Data sfm_data;
-  if (!Load(sfm_data, sSfM_Data_Filename, ESfM_Data(VIEWS|INTRINSICS|EXTRINSICS))) {
+  // Load input SfMData scene
+  SfMData sfm_data;
+  if (!Load(sfm_data, sSfMData_Filename, ESfMData(VIEWS|INTRINSICS|EXTRINSICS))) {
     std::cerr << std::endl
-      << "The input SfM_Data file \""<< sSfM_Data_Filename << "\" cannot be read." << std::endl;
+      << "The input SfMData file \""<< sSfMData_Filename << "\" cannot be read." << std::endl;
     return EXIT_FAILURE;
   }
 
@@ -51,7 +51,7 @@ int main(int argc, char **argv)
       return EXIT_FAILURE;
 
   // If sfm_data have not structure, cameras are displayed as tiny normalized cones
-  const Frustum_Filter frustum_filter(sfm_data);
+  const FrustumFilter frustum_filter(sfm_data);
   if (!sOutFile.empty())
   {
     if (frustum_filter.export_Ply(sOutFile))

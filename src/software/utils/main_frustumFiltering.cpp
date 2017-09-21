@@ -13,8 +13,8 @@
 using namespace aliceVision;
 using namespace aliceVision::sfm;
 
-/// Build a list of pair that share visibility content from the SfM_Data structure
-Pair_Set BuildPairsFromStructureObservations(const SfM_Data & sfm_data)
+/// Build a list of pair that share visibility content from the SfMData structure
+Pair_Set BuildPairsFromStructureObservations(const SfMData & sfm_data)
 {
   Pair_Set pairs;
 
@@ -39,12 +39,12 @@ Pair_Set BuildPairsFromStructureObservations(const SfM_Data & sfm_data)
 
 /// Build a list of pair from the camera frusta intersections
 Pair_Set BuildPairsFromFrustumsIntersections(
-  const SfM_Data & sfm_data,
+  const SfMData & sfm_data,
   const double z_near = -1., // default near plane
   const double z_far = -1.,  // default far plane
   const std::string& sOutDirectory = "") // output directory to save frustums as PLY
 {
-  const Frustum_Filter frustum_filter(sfm_data, z_near, z_far);
+  const FrustumFilter frustum_filter(sfm_data, z_near, z_far);
   if (!sOutDirectory.empty())
     frustum_filter.export_Ply(stlplus::create_filespec(sOutDirectory, "frustums.ply"));
   return frustum_filter.getFrustumIntersectionPairs();
@@ -63,12 +63,12 @@ int main(int argc, char **argv)
 
   CmdLine cmd;
 
-  std::string sSfM_Data_Filename;
+  std::string sSfMData_Filename;
   std::string sOutFile;
   double z_near = -1.;
   double z_far = -1.;
 
-  cmd.add( make_option('i', sSfM_Data_Filename, "input_file") );
+  cmd.add( make_option('i', sSfMData_Filename, "input_file") );
   cmd.add( make_option('o', sOutFile, "output_file") );
   cmd.add( make_option('n', z_near, "z_near") );
   cmd.add( make_option('f', z_far, "z_far") );
@@ -78,7 +78,7 @@ int main(int argc, char **argv)
     cmd.process(argc, argv);
   } catch(const std::string& s) {
     std::cerr << "Usage: " << argv[0] << '\n'
-    << "[-i|--input_file] path to a SfM_Data scene\n"
+    << "[-i|--input_file] path to a SfMData scene\n"
     << "[-o|--output_file] filename of the output pair file\n"
     << "[-n|--z_near] 'optional' distance of the near camera plane\n"
     << "[-f|--z_far] 'optional' distance of the far camera plane\n"
@@ -93,11 +93,11 @@ int main(int argc, char **argv)
     if(!stlplus::folder_create( stlplus::folder_part(sOutFile) ))
       return EXIT_FAILURE;
 
-  // Load input SfM_Data scene
-  SfM_Data sfm_data;
-  if (!Load(sfm_data, sSfM_Data_Filename, ESfM_Data(ALL))) {
+  // Load input SfMData scene
+  SfMData sfm_data;
+  if (!Load(sfm_data, sSfMData_Filename, ESfMData(ALL))) {
     std::cerr << std::endl
-      << "The input SfM_Data file \""<< sSfM_Data_Filename << "\" cannot be read." << std::endl;
+      << "The input SfMData file \""<< sSfMData_Filename << "\" cannot be read." << std::endl;
     return EXIT_FAILURE;
   }
 

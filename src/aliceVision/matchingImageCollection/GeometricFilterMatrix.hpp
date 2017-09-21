@@ -15,7 +15,7 @@ class MatchesPerDescType;
 }
 
 namespace sfm {
-class SfM_Data;
+class SfMData;
 }
 
 
@@ -43,7 +43,7 @@ struct GeometricFilterMatrix
    */
   virtual bool Geometry_guided_matching
   (
-    const sfm::SfM_Data * sfmData,
+    const sfm::SfMData * sfmData,
     const feature::RegionsPerView& regionsPerView,
     const Pair imageIdsPair,
     const double dDistanceRatio,

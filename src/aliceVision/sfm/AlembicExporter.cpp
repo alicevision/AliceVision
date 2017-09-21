@@ -3,10 +3,10 @@
 
 #include "AlembicExporter.hpp"
 
+#include <aliceVision/version.hpp>
+
 #include <Alembic/AbcGeom/All.h>
 #include <Alembic/AbcCoreHDF5/All.h>
-
-#include "aliceVision/version.hpp"
 
 #include <numeric>
 
@@ -493,7 +493,7 @@ void AlembicExporter::jumpKeyframe(const std::string &imagePath)
   }
 }
 
-void AlembicExporter::add(const sfm::SfM_Data& sfmData, sfm::ESfM_Data flags_part)
+void AlembicExporter::add(const sfm::SfMData& sfmData, sfm::ESfMData flags_part)
 {
   auto userProps = _data->_mvgRoot.getProperties();
 
@@ -503,7 +503,7 @@ void AlembicExporter::add(const sfm::SfM_Data& sfmData, sfm::ESfM_Data flags_par
   OStringProperty propMatchingFolder(userProps, "mvg_matchingFolder");
   propMatchingFolder.set(sfmData.getMatchingFolder());
 
-  if(flags_part & sfm::ESfM_Data::VIEWS || flags_part & sfm::ESfM_Data::EXTRINSICS)
+  if(flags_part & sfm::ESfMData::VIEWS || flags_part & sfm::ESfMData::EXTRINSICS)
   {
     std::map<IndexT, std::map<IndexT, std::map<IndexT, View>>> viewRigs; // map< rig < poses <sub-poses>>>
 
@@ -580,9 +580,9 @@ void AlembicExporter::add(const sfm::SfM_Data& sfmData, sfm::ESfM_Data flags_par
       }
     }
   }
-  if(flags_part & sfm::ESfM_Data::STRUCTURE)
+  if(flags_part & sfm::ESfMData::STRUCTURE)
   {
-    addPoints(sfmData.GetLandmarks(), (flags_part & sfm::ESfM_Data::OBSERVATIONS));
+    addPoints(sfmData.GetLandmarks(), (flags_part & sfm::ESfMData::OBSERVATIONS));
   }
 }
 

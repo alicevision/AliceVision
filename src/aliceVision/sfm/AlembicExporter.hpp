@@ -3,8 +3,8 @@
 
 #pragma once
 
-#include <aliceVision/sfm/sfm_data.hpp>
-#include <aliceVision/sfm/sfm_data_io.hpp>
+#include <aliceVision/sfm/SfMData.hpp>
+#include <aliceVision/sfm/sfmDataIO.hpp>
 #include <aliceVision/geometry/Pose3.hpp>
 #include <aliceVision/camera/Pinhole.hpp>
 #include <aliceVision/types.hpp>
@@ -114,10 +114,10 @@ public:
   /**
    * @brief Add SfM Data
    * 
-   * @param[in] sfmdata SfM_Data container
+   * @param[in] sfmdata SfMData container
    * @param[in] flags_part filter the elements to add
    */
-  void add(const sfm::SfM_Data &sfmdata, sfm::ESfM_Data flags_part = sfm::ESfM_Data::ALL);
+  void add(const sfm::SfMData &sfmdata, sfm::ESfMData flags_part = sfm::ESfMData::ALL);
 
   /**
    * @brief Return the filename associated to the alembic file.

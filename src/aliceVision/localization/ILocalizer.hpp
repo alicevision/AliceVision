@@ -64,7 +64,7 @@ public:
     
     bool isInit() const {return _isInit;}
     
-    const sfm::SfM_Data& getSfMData() const {return _sfm_data; }
+    const sfm::SfMData& getSfMData() const {return _sfm_data; }
     
     /**
    * @brief Localize one image
@@ -112,7 +112,7 @@ public:
 
 protected:
   bool _isInit;
-  sfm::SfM_Data _sfm_data;
+  sfm::SfMData _sfm_data;
 
 };
 

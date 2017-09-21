@@ -27,10 +27,10 @@ int main(int argc, char** argv) {
 
   CmdLine cmd;
   
-  std::string sSfM_Data_Filename;
+  std::string sSfMData_Filename;
   std::string directory;
   
-  cmd.add( make_option('i', sSfM_Data_Filename, "input_file") );
+  cmd.add( make_option('i', sSfMData_Filename, "input_file") );
   cmd.add( make_option('d', directory, "directory") );
   
   try {
@@ -55,10 +55,10 @@ int main(int argc, char** argv) {
   }
   
   //Load Smf_data file:
-  SfM_Data sfm_data;
-  if (!Load(sfm_data, sSfM_Data_Filename, ESfM_Data(VIEWS|INTRINSICS))) {
+  SfMData sfm_data;
+  if (!Load(sfm_data, sSfMData_Filename, ESfMData(VIEWS|INTRINSICS))) {
     std::cerr << std::endl
-      << "The input file \""<< sSfM_Data_Filename << "\" cannot be read" << std::endl;
+      << "The input file \""<< sSfMData_Filename << "\" cannot be read" << std::endl;
     return false;
   }
   

@@ -6,7 +6,7 @@
 
 #include "aliceVision/image/image.hpp"
 //-- Load features per view
-#include <aliceVision/sfm/pipelines/RegionsIO.hpp>
+#include <aliceVision/sfm/pipeline/regionsIO.hpp>
 //-- Feature matches
 #include <aliceVision/matching/IndMatch.hpp>
 #include "aliceVision/matching/io.hpp"
@@ -51,14 +51,14 @@ typedef feature::SIOPointFeature FeatureT;
 typedef vector< FeatureT > featsT;
 
 ColorHarmonizationEngineGlobal::ColorHarmonizationEngineGlobal(
-  const string & sSfM_Data_Filename,
+  const string & sSfMData_Filename,
   const string & sMatchesPath,
   const std::string & sMatchesGeometricModel,
   const string & sOutDirectory,
   const std::vector<feature::EImageDescriberType>& descTypes,
   int selectionMethod,
   int imgRef):
-  _sSfM_Data_Path(sSfM_Data_Filename),
+  _sSfMData_Path(sSfMData_Filename),
   _sMatchesPath(sMatchesPath),
   _sMatchesGeometricModel(sMatchesGeometricModel),
   _sOutDirectory(sOutDirectory),
@@ -449,7 +449,7 @@ bool ColorHarmonizationEngineGlobal::ReadInputData()
     return false;
   }
 
-  if ( !stlplus::is_file( _sSfM_Data_Path ))
+  if ( !stlplus::is_file( _sSfMData_Path ))
   {
     std::cerr << std::endl
       << "Invalid input sfm_data file: (" << stlplus::basename_part(_sMatchesGeometricModel) << ")" << std::endl;
@@ -457,10 +457,10 @@ bool ColorHarmonizationEngineGlobal::ReadInputData()
   }
 
   // a. Read input scenes views
-  SfM_Data sfm_data;
-  if (!Load(sfm_data, _sSfM_Data_Path, ESfM_Data(VIEWS))) {
+  SfMData sfm_data;
+  if (!Load(sfm_data, _sSfMData_Path, ESfMData(VIEWS))) {
     std::cerr << std::endl
-      << "The input file \""<< _sSfM_Data_Path << "\" cannot be read" << std::endl;
+      << "The input file \""<< _sSfMData_Path << "\" cannot be read" << std::endl;
     return false;
   }
 

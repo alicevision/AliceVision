@@ -23,7 +23,7 @@ using namespace aliceVision::sfm;
 
 
 bool exportToMatlab(
-  const SfM_Data & sfm_data,
+  const SfMData & sfm_data,
   const std::string & outDirectory
   )
 {
@@ -126,10 +126,10 @@ bool exportToMatlab(
 int main(int argc, char *argv[])
 {
   CmdLine cmd;
-  std::string sSfM_Data_Filename;
+  std::string sSfMData_Filename;
   std::string sOutDir = "";
 
-  cmd.add( make_option('i', sSfM_Data_Filename, "sfmdata") );
+  cmd.add( make_option('i', sSfMData_Filename, "sfmdata") );
   cmd.add( make_option('o', sOutDir, "outdir") );
 
   try {
@@ -137,7 +137,7 @@ int main(int argc, char *argv[])
       cmd.process(argc, argv);
   } catch(const std::string& s) {
       std::cerr << "Usage: " << argv[0] << '\n'
-        << "[-i|--sfmdata] filename, the SfM_Data file to convert\n"
+        << "[-i|--sfmdata] filename, the SfMData file to convert\n"
         << "[-o|--outdir] path\n"
         << std::endl;
 
@@ -152,11 +152,11 @@ int main(int argc, char *argv[])
     stlplus::folder_create( sOutDir );
 
   // Read the input SfM scene
-  SfM_Data sfm_data;
-  if (!Load(sfm_data, sSfM_Data_Filename, ESfM_Data(ALL)))
+  SfMData sfm_data;
+  if (!Load(sfm_data, sSfMData_Filename, ESfMData(ALL)))
   {
     std::cerr << std::endl
-      << "The input SfM_Data file \""<< sSfM_Data_Filename << "\" cannot be read." << std::endl;
+      << "The input SfMData file \""<< sSfMData_Filename << "\" cannot be read." << std::endl;
     return EXIT_FAILURE;
   }
 

@@ -2,8 +2,8 @@
 // the terms of the MPL2 license (see the COPYING.md file).
 
 #include "optimization.hpp"
-#include "aliceVision/sfm/sfm_data_io.hpp"
-#include <aliceVision/sfm/sfm_data_BA_ceres.hpp>
+#include "aliceVision/sfm/sfmDataIO.hpp"
+#include <aliceVision/sfm/BundleAdjustmentCeres.hpp>
 #include <aliceVision/numeric/numeric.hpp>
 #include <aliceVision/rig/ResidualError.hpp>
 #include <aliceVision/system/Logger.hpp>
@@ -38,7 +38,7 @@ bool refineSequence(std::vector<LocalizationResult> & vec_localizationResult,
   IndexT intrinsicID = 0;
     
   // Setup a tiny SfM scene with the corresponding 2D-3D data
-  sfm::SfM_Data tinyScene;
+  sfm::SfMData tinyScene;
   
   // if we have only one camera just set the intrinsics group once for all
   if(allTheSameIntrinsics)
@@ -258,11 +258,11 @@ bool refineSequence(std::vector<LocalizationResult> & vec_localizationResult,
   if(!outputFilename.empty())
   {
     const std::string outfile = outputFilename+".BEFORE.json";
-    if(!sfm::Save(tinyScene, outfile, sfm::ESfM_Data::ALL))
+    if(!sfm::Save(tinyScene, outfile, sfm::ESfMData::ALL))
       ALICEVISION_CERR("Could not save " << outfile);
   }
 
-  sfm::Bundle_Adjustment_Ceres bundle_adjustment_obj;
+  sfm::BundleAdjustmentCeres bundle_adjustment_obj;
   sfm::BA_Refine refineOptions = sfm::BA_REFINE_NONE;
   if(b_refine_pose)
     refineOptions |= sfm::BA_REFINE_ROTATION | sfm::BA_REFINE_TRANSLATION;
@@ -284,7 +284,7 @@ bool refineSequence(std::vector<LocalizationResult> & vec_localizationResult,
     if(!outputFilename.empty())
     {
       const std::string outfile = outputFilename+".AFTER.json";
-      if(!sfm::Save(tinyScene, outfile, sfm::ESfM_Data::ALL))
+      if(!sfm::Save(tinyScene, outfile, sfm::ESfMData::ALL))
         ALICEVISION_CERR("Could not save " << outfile);
     }
   }
@@ -419,7 +419,7 @@ bool refineRigPose(const std::vector<geometry::Pose3 > &vec_subPoses,
 
   // Configure a BA engine and run it
   // todo: Set the most appropriate options
-  aliceVision::sfm::Bundle_Adjustment_Ceres::BA_options aliceVision_options; // Set all
+  aliceVision::sfm::BundleAdjustmentCeres::BA_options aliceVision_options; // Set all
   // the options field in our owm struct - unnecessary dependancy to aliceVision here
   
   ceres::Solver::Options options;
@@ -562,7 +562,7 @@ bool refineRigPose(const std::vector<Mat> &pts2d,
 
   // Configure a BA engine and run it
   // todo: Set the most appropriate options
-  aliceVision::sfm::Bundle_Adjustment_Ceres::BA_options aliceVision_options; // Set all
+  aliceVision::sfm::BundleAdjustmentCeres::BA_options aliceVision_options; // Set all
   // the options field in our owm struct - unnecessary dependancy to aliceVision here
   
   ceres::Solver::Options options;

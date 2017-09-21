@@ -3,7 +3,7 @@
 
 #include "aliceVision/config.hpp"
 #include "aliceVision/sfm/sfm.hpp"
-#include "aliceVision/sfm/pipelines/RegionsIO.hpp"
+#include "aliceVision/sfm/pipeline/regionsIO.hpp"
 #include "aliceVision/matching/IndMatch.hpp"
 #include "aliceVision/system/Timer.hpp"
 
@@ -21,14 +21,14 @@ int main(int argc, char **argv)
 
   CmdLine cmd;
 
-  std::string sSfM_Data_Filename;
+  std::string sSfMData_Filename;
   std::string describerMethods = "SIFT";
   std::string sFeaturesDir;
   std::string sMatchesDir;
   std::string sMatchesGeometricModel = "f";
   std::string sOutFile = "";
 
-  cmd.add( make_option('i', sSfM_Data_Filename, "input_file") );
+  cmd.add( make_option('i', sSfMData_Filename, "input_file") );
   cmd.add( make_option('d', describerMethods, "describerMethods") );
   cmd.add( make_option('f', sFeaturesDir, "feat_dir") );
   cmd.add( make_option('m', sMatchesDir, "match_dir") );
@@ -40,7 +40,7 @@ int main(int argc, char **argv)
     cmd.process(argc, argv);
   } catch(const std::string& s) {
     std::cerr << "Usage: " << argv[0] << "\n"
-        "[-i|--input_file] path to a SfM_Data scene\n"
+        "[-i|--input_file] path to a SfMData scene\n"
         "[-d|--describerMethods]\n"
         "  (methods to use to describe an image):\n"
         "   SIFT (default),\n"
@@ -60,7 +60,7 @@ int main(int argc, char **argv)
         "[-o|--output_file] file where the output data will be stored "
            "(i.e. path/sfm_data_structure.bin)\n"
         "[-f|--feat_dir] path to the features and descriptors that "
-           "corresponds to the provided SfM_Data scene\n"
+           "corresponds to the provided SfMData scene\n"
         "\n[Optional]\n"
         "[-m|--match_dir] path to the matches files "
         "(if not provided the images connections will be computed from Frustrums intersections)\n"
@@ -71,11 +71,11 @@ int main(int argc, char **argv)
     return EXIT_FAILURE;
   }
   
-  // Load input SfM_Data scene
-  SfM_Data sfm_data;
-  if (!Load(sfm_data, sSfM_Data_Filename, ESfM_Data(VIEWS|INTRINSICS|EXTRINSICS))) {
+  // Load input SfMData scene
+  SfMData sfm_data;
+  if (!Load(sfm_data, sSfMData_Filename, ESfMData(VIEWS|INTRINSICS|EXTRINSICS))) {
     std::cerr << std::endl
-      << "The input SfM_Data file \""<< sSfM_Data_Filename << "\" cannot be read." << std::endl;
+      << "The input SfMData file \""<< sSfMData_Filename << "\" cannot be read." << std::endl;
     return EXIT_FAILURE;
   }
 
@@ -105,7 +105,7 @@ int main(int argc, char **argv)
   {
     // No image pair provided, so we use cameras frustum intersection.
     // Build the list of connected images pairs from frustum intersections
-    pairs = Frustum_Filter(sfm_data).getFrustumIntersectionPairs();
+    pairs = FrustumFilter(sfm_data).getFrustumIntersectionPairs();
   }
   else
   {
@@ -130,7 +130,7 @@ int main(int argc, char **argv)
   //------------------------------------------
   // Compute Structure from known camera poses
   //------------------------------------------
-  SfM_Data_Structure_Estimation_From_Known_Poses structure_estimator;
+  StructureEstimationFromKnownPoses structure_estimator;
   structure_estimator.match(sfm_data, pairs, regionsPerView);
 
   // Unload descriptors before triangulation
@@ -153,10 +153,10 @@ int main(int argc, char **argv)
       stlplus::create_filespec(
         stlplus::folder_part(sOutFile),
         stlplus::basename_part(sOutFile), "ply"),
-      ESfM_Data(ALL));
+      ESfMData(ALL));
   }
 
-  if (Save(sfm_data, sOutFile, ESfM_Data(ALL)))
+  if (Save(sfm_data, sOutFile, ESfMData(ALL)))
     return EXIT_SUCCESS;
   
   std::cout << "Error while saving the sfm data!" << std::endl;

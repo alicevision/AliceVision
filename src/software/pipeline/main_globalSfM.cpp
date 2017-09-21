@@ -1,9 +1,9 @@
 // This file is part of the AliceVision project and is made available under
 // the terms of the MPL2 license (see the COPYING.md file).
 
-#include "aliceVision/sfm/pipelines/RegionsIO.hpp"
+#include "aliceVision/sfm/pipeline/regionsIO.hpp"
 #include "aliceVision/feature/imageDescriberCommon.hpp"
-#include "aliceVision/sfm/pipelines/global/sfm_global_engine_relative_motions.hpp"
+#include "aliceVision/sfm/pipeline/global/ReconstructionEngine_globalSfM.hpp"
 #include "aliceVision/system/Timer.hpp"
 
 #include "dependencies/cmdLine/cmdLine.h"
@@ -33,7 +33,7 @@ int main(int argc, char **argv)
 
   CmdLine cmd;
 
-  std::string sSfM_Data_Filename;
+  std::string sSfMData_Filename;
   std::string describerMethods = "SIFT";
   std::string sMatchesDir;
   std::string sOutDir = "";
@@ -42,7 +42,7 @@ int main(int argc, char **argv)
   int iTranslationAveragingMethod = int (TRANSLATION_AVERAGING_SOFTL1);
   bool bRefineIntrinsics = true;
 
-  cmd.add( make_option('i', sSfM_Data_Filename, "input_file") );
+  cmd.add( make_option('i', sSfMData_Filename, "input_file") );
   cmd.add( make_option('d', describerMethods, "describerMethods") );
   cmd.add( make_option('m', sMatchesDir, "matchdir") );
   cmd.add( make_option('o', sOutDir, "outdir") );
@@ -56,7 +56,7 @@ int main(int argc, char **argv)
     cmd.process(argc, argv);
   } catch(const std::string& s) {
     std::cerr << "Usage: " << argv[0] << '\n'
-    << "[-i|--input_file] path to a SfM_Data scene\n"
+    << "[-i|--input_file] path to a SfMData scene\n"
     << "[-d|--describerMethods]\n"
     << "  (methods to use to describe an image):\n"
     << "   SIFT (default),\n"
@@ -73,7 +73,7 @@ int main(int argc, char **argv)
 #endif //ALICEVISION_HAVE_OCVSIFT
     << "   AKAZE_OCV: OpenCV AKAZE\n"
 #endif //ALICEVISION_HAVE_OPENCV
-    << "[-m|--matchdir] path to the matches that corresponds to the provided SfM_Data scene\n"
+    << "[-m|--matchdir] path to the matches that corresponds to the provided SfMData scene\n"
     << "[-o|--outdir] path where the output data will be stored\n"
     << "\n[Optional]\n"
     << "[-s|--out_sfmdata_file] path of the output sfmdata file (default: $outdir/sfm_data.json)\n"
@@ -108,11 +108,11 @@ int main(int argc, char **argv)
     return EXIT_FAILURE;
   }
 
-  // Load input SfM_Data scene
-  SfM_Data sfmData;
-  if (!Load(sfmData, sSfM_Data_Filename, ESfM_Data(VIEWS|INTRINSICS))) {
+  // Load input SfMData scene
+  SfMData sfmData;
+  if (!Load(sfmData, sSfMData_Filename, ESfMData(VIEWS|INTRINSICS))) {
     std::cerr << std::endl
-      << "The input SfM_Data file \""<< sSfM_Data_Filename << "\" cannot be read." << std::endl;
+      << "The input SfMData file \""<< sSfMData_Filename << "\" cannot be read." << std::endl;
     return EXIT_FAILURE;
   }
 
@@ -158,7 +158,7 @@ int main(int argc, char **argv)
   //---------------------------------------
 
   aliceVision::system::Timer timer;
-  GlobalSfMReconstructionEngine_RelativeMotions sfmEngine(
+  ReconstructionEngine_globalSfM sfmEngine(
     sfmData,
     sOutDir,
     stlplus::create_filespec(sOutDir, "Reconstruction_Report.html"));
@@ -190,16 +190,16 @@ int main(int argc, char **argv)
   std::cout << std::endl << " Total Ac-Global-Sfm took (s): " << timer.elapsed() << std::endl;
 
   std::cout << "...Generating SfM_Report.html" << std::endl;
-  Generate_SfM_Report(sfmEngine.Get_SfM_Data(),
+  Generate_SfM_Report(sfmEngine.Get_SfMData(),
     stlplus::create_filespec(sOutDir, "SfMReconstruction_Report.html"));
 
   //-- Export to disk computed scene (data & visualizable results)
-  std::cout << "...Export SfM_Data to disk." << std::endl;
-  Save(sfmEngine.Get_SfM_Data(), sOutSfMDataFilepath, ESfM_Data(ALL));
+  std::cout << "...Export SfMData to disk." << std::endl;
+  Save(sfmEngine.Get_SfMData(), sOutSfMDataFilepath, ESfMData(ALL));
 
-  Save(sfmEngine.Get_SfM_Data(),
+  Save(sfmEngine.Get_SfMData(),
     stlplus::create_filespec(sOutDir, "cloud_and_poses", ".ply"),
-    ESfM_Data(ALL));
+    ESfMData(ALL));
 
   return EXIT_SUCCESS;
 }

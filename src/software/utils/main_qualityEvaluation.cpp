@@ -66,22 +66,22 @@ int main(int argc, char **argv)
   //---------------------------------------
 
   //-- Load GT camera rotations & positions [R|C]:
-  SfM_Data sfm_data_gt;
+  SfMData sfm_data_gt;
   // READ DATA FROM GT
   std::cout << "Try to read data from GT" << std::endl;
-  if (!Load(sfm_data_gt, sGTFile, ESfM_Data(VIEWS|INTRINSICS|EXTRINSICS)))
+  if (!Load(sfm_data_gt, sGTFile, ESfMData(VIEWS|INTRINSICS|EXTRINSICS)))
   {
-    std::cerr << "The input SfM_Data file \""<< sComputedFile << "\" cannot be read." << std::endl;
+    std::cerr << "The input SfMData file \""<< sComputedFile << "\" cannot be read." << std::endl;
     return EXIT_FAILURE;
   }
   std::cout << sfm_data_gt.GetPoses().size() << " gt cameras have been found" << std::endl;
 
   //-- Load the camera that we have to evaluate
-  SfM_Data sfm_data;
-  if (!Load(sfm_data, sComputedFile, ESfM_Data(VIEWS|INTRINSICS|EXTRINSICS)))
+  SfMData sfm_data;
+  if (!Load(sfm_data, sComputedFile, ESfMData(VIEWS|INTRINSICS|EXTRINSICS)))
   {
     std::cerr << std::endl
-      << "The input SfM_Data file \""<< sComputedFile << "\" cannot be read." << std::endl;
+      << "The input SfMData file \""<< sComputedFile << "\" cannot be read." << std::endl;
     return EXIT_FAILURE;
   }
 

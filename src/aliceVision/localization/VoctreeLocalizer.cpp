@@ -5,10 +5,10 @@
 #include "rigResection.hpp"
 #include "optimization.hpp"
 #include <aliceVision/config.hpp>
-#include <aliceVision/sfm/sfm_data_io.hpp>
-#include <aliceVision/sfm/pipelines/sfm_robust_model_estimation.hpp>
-#include <aliceVision/sfm/sfm_data_BA_ceres.hpp>
-#include <aliceVision/sfm/pipelines/RegionsIO.hpp>
+#include <aliceVision/sfm/sfmDataIO.hpp>
+#include <aliceVision/sfm/pipeline/RelativePoseInfo.hpp>
+#include <aliceVision/sfm/BundleAdjustmentCeres.hpp>
+#include <aliceVision/sfm/pipeline/regionsIO.hpp>
 #include <aliceVision/feature/regionsTypeIO.hpp>
 #include <aliceVision/feature/svgVisualization.hpp>
 #include <aliceVision/matching/RegionsMatcher.hpp>
@@ -135,9 +135,9 @@ VoctreeLocalizer::VoctreeLocalizer(const std::string &sfmFilePath,
 
   // load the sfm data containing the 3D reconstruction info
   ALICEVISION_LOG_DEBUG("Loading SFM data...");
-  if (!Load(_sfm_data, sfmFilePath, sfm::ESfM_Data::ALL)) 
+  if (!Load(_sfm_data, sfmFilePath, sfm::ESfMData::ALL)) 
   {
-    ALICEVISION_CERR("The input SfM_Data file " << sfmFilePath << " cannot be read!");
+    ALICEVISION_CERR("The input SfMData file " << sfmFilePath << " cannot be read!");
     ALICEVISION_CERR("\n\nIf the error says \"JSON Parsing failed - provided NVP not found\" "
             "it's likely that you have to convert your sfm_data to a recent version supporting "
             "polymorphic Views. You can run the python script convertSfmData.py to update an existing sfmdata.");
@@ -254,7 +254,7 @@ bool VoctreeLocalizer::localize(const image::Image<unsigned char> & imageGrey,
                   imagePath);
 }
 
-bool VoctreeLocalizer::loadReconstructionDescriptors(const sfm::SfM_Data & sfm_data,
+bool VoctreeLocalizer::loadReconstructionDescriptors(const sfm::SfMData & sfm_data,
                                                      const std::string & feat_directory)
 {
   //@fixme deprecated: now inside initDatabase
@@ -420,7 +420,7 @@ bool VoctreeLocalizer::localizeFirstBestResult(const feature::MapRegionsPerDesc 
   ALICEVISION_LOG_DEBUG("[matching]\tBuilding the matcher");
   matching::RegionsDatabaseMatcherPerDesc matchers(_matcherType, queryRegions);
 
-  sfm::Image_Localizer_Match_Data resectionData;
+  sfm::ImageLocalizerMatchData resectionData;
   std::vector<IndMatch3D2D> associationIDs;
   geometry::Pose3 pose;
  
@@ -499,7 +499,7 @@ bool VoctreeLocalizer::localizeFirstBestResult(const feature::MapRegionsPerDesc 
     // Each matched feature in the current similar image is associated to a 3D point,
     // hence we can recover the 2D-3D associations to estimate the pose
     // Prepare data for resection
-    resectionData = sfm::Image_Localizer_Match_Data();
+    resectionData = sfm::ImageLocalizerMatchData();
     resectionData.pt2D = Mat2X(2, nbAllMatches);
     resectionData.pt3D = Mat3X(3, nbAllMatches);
     associationIDs.clear();
@@ -534,7 +534,7 @@ bool VoctreeLocalizer::localizeFirstBestResult(const feature::MapRegionsPerDesc 
     // Do the resectioning: compute the camera pose.
     resectionData.error_max = param._errorMax;
     ALICEVISION_LOG_DEBUG("[poseEstimation]\tEstimating camera pose...");
-    bool bResection = sfm::SfM_Localizer::Localize(queryImageSize,
+    bool bResection = sfm::SfMLocalizer::Localize(queryImageSize,
                                                    // pass the input intrinsic if they are valid, null otherwise
                                                    (useInputIntrinsics) ? &queryIntrinsics : nullptr,
                                                    resectionData,
@@ -571,7 +571,7 @@ bool VoctreeLocalizer::localizeFirstBestResult(const feature::MapRegionsPerDesc 
 
     // D. refine the estimated pose
     ALICEVISION_LOG_DEBUG("[poseEstimation]\tRefining estimated pose");
-    bool refineStatus = sfm::SfM_Localizer::RefinePose(&queryIntrinsics, 
+    bool refineStatus = sfm::SfMLocalizer::RefinePose(&queryIntrinsics, 
                                                        pose, 
                                                        resectionData, 
                                                        true /*b_refine_pose*/, 
@@ -612,7 +612,7 @@ bool VoctreeLocalizer::localizeAllResults(const feature::MapRegionsPerDesc &quer
                                           const std::string& imagePath)
 {
   
-  sfm::Image_Localizer_Match_Data resectionData;
+  sfm::ImageLocalizerMatchData resectionData;
   // a map containing for each pair <pt3D_id, pt2D_id> the number of times that 
   // the association has been seen
   OccurenceMap occurences;
@@ -651,7 +651,7 @@ bool VoctreeLocalizer::localizeAllResults(const feature::MapRegionsPerDesc &quer
   // Do the resectioning: compute the camera pose.
   resectionData.error_max = param._errorMax;
   ALICEVISION_LOG_DEBUG("[poseEstimation]\tEstimating camera pose...");
-  const bool bResection = sfm::SfM_Localizer::Localize(queryImageSize,
+  const bool bResection = sfm::SfMLocalizer::Localize(queryImageSize,
                                                       // pass the input intrinsic if they are valid, null otherwise
                                                       (useInputIntrinsics) ? &queryIntrinsics : nullptr,
                                                       resectionData,
@@ -696,7 +696,7 @@ bool VoctreeLocalizer::localizeAllResults(const feature::MapRegionsPerDesc &quer
 
   // E. refine the estimated pose
   ALICEVISION_LOG_DEBUG("[poseEstimation]\tRefining estimated pose");
-  bool refineStatus = sfm::SfM_Localizer::RefinePose(&queryIntrinsics,
+  bool refineStatus = sfm::SfMLocalizer::RefinePose(&queryIntrinsics,
                                                      pose,
                                                      resectionData,
                                                      true /*b_refine_pose*/,
@@ -1416,7 +1416,7 @@ bool VoctreeLocalizer::localizeRig_opengv(const std::vector<feature::MapRegionsP
     }
     
     // create matchData
-    sfm::Image_Localizer_Match_Data matchData;
+    sfm::ImageLocalizerMatchData matchData;
     matchData.vec_inliers = vec_inliers[camID];
     matchData.error_max = param->_errorMax;
     matchData.projection_matrix = intrinsics.get_projective_equivalent(pose);
