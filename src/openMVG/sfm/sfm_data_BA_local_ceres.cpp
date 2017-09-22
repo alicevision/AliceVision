@@ -953,7 +953,7 @@ void Local_Bundle_Adjustment_Ceres::computeStatesMaps(const SfM_Data & sfm_data,
       // 
       for(const auto& itIntrinsic: sfm_data.GetIntrinsics())
       {
-        std::size_t kSharingLimit = 10;
+        std::size_t kSharingLimit = 30;
         const IndexT intrinsicId = itIntrinsic.first;
         if (map_intrinsicId_usageNum[intrinsicId] >= kSharingLimit)
           _map_intrinsicId_LBAState[intrinsicId] = LocalBAState::constant;

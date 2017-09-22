@@ -17,9 +17,9 @@
 #include "third_party/histogram/histogram.hpp"
 
 #if OPENMVG_IS_DEFINED(OPENMVG_HAVE_BOOST)
-  #include <boost/property_tree/ptree.hpp>
-  #include <boost/property_tree/json_parser.hpp>
-  namespace pt = boost::property_tree;
+#include <boost/property_tree/ptree.hpp>
+#include <boost/property_tree/json_parser.hpp>
+namespace pt = boost::property_tree;
 #endif
 
 namespace openMVG {
@@ -29,48 +29,48 @@ namespace sfm {
 class SequentialSfMReconstructionEngine : public ReconstructionEngine
 {
 public:
-
+  
   SequentialSfMReconstructionEngine(
-    const SfM_Data & sfm_data,
-    const std::string & soutDirectory,
-    const std::string & loggingFile = "");
-
+      const SfM_Data & sfm_data,
+      const std::string & soutDirectory,
+      const std::string & loggingFile = "");
+  
   ~SequentialSfMReconstructionEngine();
-
+  
   void setFeatures(features::FeaturesPerView * featuresPerView)
   {
     _featuresPerView = featuresPerView;
   }
-
+  
   void setMatches(matching::PairwiseMatches * pairwiseMatches)
   {
     _pairwiseMatches = pairwiseMatches;
   }
-
+  
   void RobustResectionOfImages(
-    const std::set<size_t>& viewIds,
-    std::set<size_t>& set_reconstructedViewId,
-    std::set<size_t>& set_rejectedViewId);
-
+      const std::set<size_t>& viewIds,
+      std::set<size_t>& set_reconstructedViewId,
+      std::set<size_t>& set_rejectedViewId);
+  
   virtual bool Process();
-
+  
   void setInitialPair(const Pair & initialPair)
   {
     _initialpair = initialPair;
   }
-
+  
   /// Initialize tracks
   bool InitLandmarkTracks();
-
+  
   /// Select a candidate initial pair
   bool ChooseInitialPair(Pair & initialPairIndex) const;
-
+  
   /// Compute the initial 3D seed (First camera t=0; R=Id, second estimated by 5 point algorithm)
   bool MakeInitialPair3D(const Pair & initialPair);
-
+  
   /// Automatic initial pair selection (based on a 'baseline' computation score)
   bool AutomaticInitialPairChoice(Pair & initialPair) const;
-
+  
   /**
    * Set the default lens distortion type to use if it is declared unknown
    * in the intrinsics camera parameters by the previous steps.
@@ -89,35 +89,35 @@ public:
   {
     _sfmdataInterFileExtension = interFileExtension;
   }
-
+  
   void setAllowUserInteraction(bool v)
   {
     _userInteraction = v;
   }
-
+  
   void setMinInputTrackLength(int minInputTrackLength)
   {
     _minInputTrackLength = minInputTrackLength;
   }
-
+  
   void setMinTrackLength(int minTrackLength)
   {
     _minTrackLength = minTrackLength;
   }
-
+  
 protected:
-
-
+  
+  
 private:
   /// Image score contains <ImageId, NbPutativeCommonPoint, score, isIntrinsicsReconstructed>
   typedef std::tuple<IndexT, std::size_t, std::size_t, bool> ViewConnectionScore;
-
+  
   /// Return MSE (Mean Square Error) and a histogram of residual values.
   double ComputeResidualsHistogram(Histogram<double> * histo) const;
-
+  
   /// Return MSE (Mean Square Error) and a histogram of tracks size.
   double ComputeTracksLengthsHistogram(Histogram<double> * histo) const;
-
+  
   /**
    * @brief Compute a score of the view for a subset of features. This is
    *        used for the next best view choice.
@@ -137,7 +137,7 @@ private:
    * @return the computed score
    */
   std::size_t computeImageScore(std::size_t viewId, const std::vector<std::size_t>& trackIds) const;
-
+  
   /**
    * @brief Return all the images containing matches with already reconstructed 3D points.
    * The images are sorted by a score based on the number of features id shared with
@@ -148,9 +148,9 @@ private:
    * @return False if there is no view connected.
    */
   bool FindConnectedViews(
-    std::vector<ViewConnectionScore>& out_connectedViews,
-    const std::set<size_t>& remainingViewIds) const;
-
+      std::vector<ViewConnectionScore>& out_connectedViews,
+      const std::set<size_t>& remainingViewIds) const;
+  
   /**
    * @brief Estimate the best images on which we can compute the resectioning safely.
    * The images are sorted by a score based on the number of features id shared with
@@ -161,27 +161,52 @@ private:
    * @return False if there is no possible resection.
    */
   bool FindNextImagesGroupForResection(
-    std::vector<size_t>& out_selectedViewIds,
-    const std::set<size_t>& remainingViewIds) const;
-
+      std::vector<size_t>& out_selectedViewIds,
+      const std::set<size_t>& remainingViewIds) const;
+  
   /// Add a single Image to the scene and triangulate new possible tracks.
   bool Resection(const size_t imageIndex);
-
+  
   /// Bundle adjustment to refine Structure; Motion and Intrinsics
   bool BundleAdjustment();  
   
   /// Bundle adjustment to refine a few Structure, Motion and Intrinsics parameter
   bool localBundleAdjustment(const std::set<IndexT>& newReconstructedViewIds, 
-    lemon::ListGraph& graph_poses, 
-    std::map<IndexT, lemon::ListGraph::Node>& map_viewId_node, 
-    std::map<IndexT, int>& mapViewIdDistance, const string &filename);
-
+                             lemon::ListGraph& graph_poses, 
+                             std::map<IndexT, lemon::ListGraph::Node>& map_viewId_node, 
+                             std::map<IndexT, int>& mapViewIdDistance, const string &filename);
+  
+  /// Normalize data as: 
+  /// normalizedData[i] = (data[i] - min(data)) / (max(data) - min(data)) 
+  template<typename T> 
+  std::vector<T> normalize(const std::vector<T>& data) 
+  { 
+    std::vector<T> normalizedData;
+    normalizedData.reserve(data.size());
+    T minVal = *std::min_element(data.begin(), data.end());
+    T maxVal = *std::max_element(data.begin(), data.end());
+    for (auto const& val : data)
+      normalizedData.push_back((val - minVal)/(maxVal - minVal));
+    return normalizedData;
+  }  
+  
+  template<typename T> 
+  double standardDeviation(const std::vector<T>& data) 
+  { 
+    double sum = std::accumulate(data.begin(), data.end(), 0.0);
+    double mean = sum / data.size();
+    std::vector<double> diff(data.size());
+    std::transform(data.begin(), data.end(), diff.begin(), [mean](double x) { return x - mean; });
+    double sq_sum = std::inner_product(diff.begin(), diff.end(), diff.begin(), 0.0);
+    return std::sqrt(sq_sum / data.size());
+  }  
+  
   /// Discard track with too large residual error
   size_t badTrackRejector(double dPrecision, size_t count = 0);
-
+  
   /// Add the new views 'newViewIds' to the graph 'reconstructionGraph' used to the distances computation 
-//  void updateGraph(const std::set<IndexT>& newViewIds);
-
+  //  void updateGraph(const std::set<IndexT>& newViewIds);
+  
   /**
    * @brief Compute the distance/connexity to the new cameras for each resected cameras. 
    * It updates the graph @p _reconstructionGraph and run a Breadth First Search on it.
@@ -191,28 +216,28 @@ private:
    * @param[out] map_distancePerViewId: a map storing the distance of each resected view to the new cameras 
    * @param[out] map_distancePerPoseId: a map storing the distance of each resected pose to the new cameras 
    */
-//  void computeDistancesMaps(const std::set<IndexT>& newViewIds,
-//    std::map<IndexT, size_t> &map_distancePerViewId, 
-//    std::map<IndexT, size_t> &map_distancePerPoseId);
+  //  void computeDistancesMaps(const std::set<IndexT>& newViewIds,
+  //    std::map<IndexT, size_t> &map_distancePerViewId, 
+  //    std::map<IndexT, size_t> &map_distancePerPoseId);
   
-  #if OPENMVG_IS_DEFINED(OPENMVG_HAVE_BOOST)
+#if OPENMVG_IS_DEFINED(OPENMVG_HAVE_BOOST)
   /// Export statistics in a JSON file
   void exportStatistics(double time_sfm);
-  #endif
+#endif
   
-
+  
   //----
   //-- Data
   //----
-
+  
   // HTML logger
   std::shared_ptr<htmlDocument::htmlDocumentStream> _htmlDocStream;
   std::string _sLoggingFile;
-
+  
   // Extension of the file format to store intermediate reconstruction files.
   std::string _sfmdataInterFileExtension = ".ply";
   ESfM_Data _sfmdataInterFilter = ESfM_Data(EXTRINSICS | INTRINSICS | STRUCTURE | OBSERVATIONS | CONTROL_POINTS);
-
+  
   // Parameter
   bool _userInteraction = true;
   Pair _initialpair;
@@ -224,19 +249,19 @@ private:
   //-- Data provider
   features::FeaturesPerView  * _featuresPerView;
   matching::PairwiseMatches  * _pairwiseMatches;
-    
+  
   // Pyramid scoring
   const int _pyramidBase = 2;
   const int _pyramidDepth = 5;
   /// internal cache of precomputed values for the weighting of the pyramid levels
   std::vector<int> _pyramidWeights;
   int _pyramidThreshold;
-
-  #if OPENMVG_IS_DEFINED(OPENMVG_HAVE_BOOST)
-    // Property tree for json stats export
-    pt::ptree _tree;
-  #endif
-
+  
+#if OPENMVG_IS_DEFINED(OPENMVG_HAVE_BOOST)
+  // Property tree for json stats export
+  pt::ptree _tree;
+#endif
+  
   // Temporary data
   /// Putative landmark tracks (visibility per potential 3D point)
   tracks::TracksMap _map_tracks;
@@ -246,7 +271,7 @@ private:
   tracks::TracksPyramidPerView _map_featsPyramidPerView;
   /// Per camera confidence (A contrario estimated threshold error)
   Hash_Map<IndexT, double> _map_ACThreshold;
-
+  
   /// Remaining camera index that can be used for resection
   std::set<size_t> _set_remainingViewId;
 };

@@ -175,6 +175,22 @@ void SequentialSfMReconstructionEngine::RobustResectionOfImages(
   // Used by Local BA 
   lemon::ListGraph graph_poses; 
   std::map<IndexT, lemon::ListGraph::Node> map_viewId_node;
+  std::map<IndexT, std::vector<std::pair<std::size_t, std::vector<double>>>> map_intrinsicsGraphData;
+  const std::size_t kWindowSize = 25; // Number of last images to consider 
+  const double kStdDevPercentage = 1.0; // unit [%]
+  std::map<IndexT, std::vector<IndexT>> map_intrinsicsLimits; // <idFocalLimit, idCxLimit, idCyLimit, idD1Limit ...>
+  std::map<IndexT, std::vector<IndexT>> map_intrinsicsLimitsLow; // <idFocalLimit, idCxLimit, idCyLimit, idD1Limit ...>
+  
+  // Fill 'map_intrinsicsGraphData' with EXIF data
+  for (const auto& it : _sfm_data.intrinsics)
+  {
+    map_intrinsicsGraphData[it.first];
+//    map_intrinsicsGraphData.at(it.first).push_back(std::make_pair(0, it.second->getParams()));
+    map_intrinsicsLimits[it.first];
+    map_intrinsicsLimitsLow[it.first];
+    map_intrinsicsLimits.at(it.first) = std::vector<IndexT> (3, 0);    
+    map_intrinsicsLimitsLow.at(it.first) = std::vector<IndexT> (3, 0);
+  }
   
   while (FindNextImagesGroupForResection(vec_possible_resection_indexes, set_remainingViewId))
   {
@@ -222,113 +238,92 @@ void SequentialSfMReconstructionEngine::RobustResectionOfImages(
       const std::size_t nbOutliersThreshold = 50;
       // Perform BA until all point are under the given precision
       std::size_t nbRejectedTracks;
+      
+      
       do
       {
+        ///////////////////////////////////////////////////////////////////////////////////////////
+        ///////////////////////////////////////////////////////////////////////////////////////////
+        //        //        /* Save  V1 */
+        //        {
+        //          std::cout << "Writting intrinsics..." << std::endl;
+        //          std::cout << "_sfm_data.poses.size() = " << _sfm_data.poses.size() << std::endl;
+        //          std::cout << "set_newReconstructedViewId.size() = " << set_newReconstructedViewId.size() << std::endl;
         
-//        ///////////////////////////////////////////////////////////////////////////////////////////
-//        ///////////////////////////////////////////////////////////////////////////////////////////
-//        //        /* Save Intrinsics */
-        std::cout << "Writting intrinsics..." << std::endl;
-        std::cout << "_sfm_data.poses.size() = " << _sfm_data.poses.size() << std::endl;
-        std::cout << "set_newReconstructedViewId.size() = " << set_newReconstructedViewId.size() << std::endl;
-   
-        if (_sfm_data.poses.size() == set_newReconstructedViewId.size()+2) // FIRST BA
-        {
-        std::cout << "Fisrt BA" << std::endl;
-        std::cout << "set_newReconstructedViewId.size() = " << set_newReconstructedViewId.size() << std::endl;
-//           for (IndexT idIntr = 0; idIntr < _sfm_data.GetIntrinsics().size(); idIntr++)
-          for (auto& itIntr : _sfm_data.intrinsics)
-          {
-            IndexT idIntr = itIntr.first;
-            std::vector<double> params = itIntr.second.get()->getParams();
-          
-//            std::vector<double> params = _sfm_data.GetIntrinsicPtr(idIntr)->getParams();
-            std::string filename = _sOutDirectory + "K" + std::to_string(idIntr) + ".txt";
-            std::ofstream os;
-            os.open(filename, std::ios::app);
-            os.seekp(0, std::ios::end); //put the cursor at the end
-            
-            
-            // -- HEADER
-            if (os.tellp() == 0) // 'tellp' return the cursor's position
-            {
-              std::vector<std::string> header;
-              header.push_back("#poses");
-              header.push_back("f"); 
-              header.push_back("ppx"); 
-              header.push_back("ppy"); 
-              header.push_back("d1"); 
-              header.push_back("d2"); 
-              header.push_back("d3"); 
-              for (std::string & head : header)
-                os << head << "\t";
-              os << "\n"; 
-            }
-            
-            // -- DATA
-            os << 0 << "\t";
-            std::cout << "K" << idIntr << " : " << params << std::endl;
-            os << params.at(0) << "\t";
-            os << params.at(1) << "\t";
-            os << params.at(2) << "\t";
-            os << params.at(3) << "\t";
-            os << params.at(4) << "\t";
-            os << params.at(5) << "\t";
-            os << "\n";
-            
-            os.close();
-          }
-        }
-        else
-        {
-          
-          // -- count the number of usage of each intrinsic among the aready resected poses
-          std::map<IndexT, std::size_t> map_intrinsicId_usageNum;
-          
-          for (const auto& itView : _sfm_data.views)
-          {
-            const View * view = itView.second.get();
-            
-            if (_sfm_data.IsPoseAndIntrinsicDefined(view))
-            {
-              auto itPose = set_newReconstructedViewId.find(view->id_pose);
-              if (itPose == set_newReconstructedViewId.end()) // not a newly resected view/pose
-              {
-                auto itIntr = map_intrinsicId_usageNum.find(view->id_intrinsic);
-                if (itIntr == map_intrinsicId_usageNum.end())
-                  map_intrinsicId_usageNum[view->id_intrinsic] = 1;
-                else
-                  map_intrinsicId_usageNum[view->id_intrinsic]++;
-              }
-            }
-          }
-          
-          
-          for (IndexT idIntr = 0; idIntr < _sfm_data.GetIntrinsics().size(); idIntr++)
-          {
-            std::size_t usageNum = map_intrinsicId_usageNum[idIntr];
-            std::vector<double> params = _sfm_data.GetIntrinsicPtr(idIntr)->getParams();
-            std::string filename = _sOutDirectory + "K" + std::to_string(idIntr) + ".txt";
-            std::ofstream os;
-            os.open(filename, std::ios::app);
-            os.seekp(0, std::ios::end); //put the cursor at the end
-                      
-            // -- DATA
-            os << usageNum << "\t";
-            os << params.at(0) << "\t";
-            os << params.at(1) << "\t";
-            os << params.at(2) << "\t";
-            os << params.at(3) << "\t";
-            os << params.at(4) << "\t";
-            os << params.at(5) << "\t";
-            os << "\n";
-            
-            os.close();
-          }
-        }
-        std::cout << "Writting intrinsics... done" << std::endl;
-        ///////////////////////////////////////////////////////////////////////////////////////////
-        ///////////////////////////////////////////////////////////////////////////////////////////
+        
+        //          std::cout << "Fisrt BA" << std::endl;
+        //          std::cout << "set_newReconstructedViewId.size() = " << set_newReconstructedViewId.size() << std::endl;
+        //          //           for (IndexT idIntr = 0; idIntr < _sfm_data.GetIntrinsics().size(); idIntr++)
+        //          for (auto& itIntr : _sfm_data.intrinsics)
+        //          {
+        //            IndexT idIntr = itIntr.first;
+        
+        //            std::string filename = _sOutDirectory + "K" + std::to_string(idIntr) + ".txt";
+        //            std::ofstream os;
+        //            os.open(filename, std::ios::app);
+        //            os.seekp(0, std::ios::end); //put the cursor at the end
+        
+        //            if (_sfm_data.poses.size() == set_newReconstructedViewId.size()+2) // FIRST BA
+        //            {
+        //              // -- HEADER
+        //              if (os.tellp() == 0) // 'tellp' return the cursor's position
+        //              {
+        //                std::vector<std::string> header;
+        //                header.push_back("#poses");
+        //                header.push_back("f"); 
+        //                header.push_back("ppx"); 
+        //                header.push_back("ppy"); 
+        //                header.push_back("d1"); 
+        //                header.push_back("d2"); 
+        //                header.push_back("d3"); 
+        //                for (std::string & head : header)
+        //                  os << head << "\t";
+        //                os << "\n"; 
+        //              }
+        //            }
+        
+        
+        //            // -- count the number of usage of each intrinsic among the aready resected poses
+        //            std::map<IndexT, std::size_t> map_intrinsicId_usageNum;
+        //            for (const auto& itView : _sfm_data.views)
+        //            {
+        //              const View * view = itView.second.get();
+        
+        //              if (_sfm_data.IsPoseAndIntrinsicDefined(view))
+        //              {
+        //                //              auto itPose = set_newReconstructedViewId.find(view->id_pose);
+        //                //              if (itPose == set_newReconstructedViewId.end()) // not a newly resected view/pose
+        //                //              {
+        //                auto itIntr = map_intrinsicId_usageNum.find(view->id_intrinsic);
+        //                if (itIntr == map_intrinsicId_usageNum.end())
+        //                  map_intrinsicId_usageNum[view->id_intrinsic] = 1;
+        //                else
+        //                  map_intrinsicId_usageNum[view->id_intrinsic]++;
+        //                //              }
+        //              }
+        //            }
+        
+        
+        //            std::size_t usageNum = map_intrinsicId_usageNum[idIntr];
+        //            std::vector<double> params = _sfm_data.GetIntrinsicPtr(idIntr)->getParams();
+        
+        //            // -- DATA
+        //            os << usageNum << "\t";
+        //            os << params.at(0) << "\t";
+        //            os << params.at(1) << "\t";
+        //            os << params.at(2) << "\t";
+        //            os << params.at(3) << "\t";
+        //            os << params.at(4) << "\t";
+        //            os << params.at(5) << "\t";
+        //            os << "\n";
+        
+        //            os.close();
+        
+        //          }
+        //          std::cout << "Writting intrinsics... done" << std::endl;
+        //        }
+        //        ///////////////////////////////////////////////////////////////////////////////////////////
+        //        ///////////////////////////////////////////////////////////////////////////////////////////
         
         auto chrono2_start = std::chrono::steady_clock::now();
         
@@ -342,8 +337,6 @@ void SequentialSfMReconstructionEngine::RobustResectionOfImages(
               map_viewId_node, 
               map_poseId_distance,
               "first"); 
-        
-        
         
         //        localBundleAdjustment(
         //              set_newReconstructedViewId, 
@@ -359,143 +352,256 @@ void SequentialSfMReconstructionEngine::RobustResectionOfImages(
         nbRejectedTracks = badTrackRejector(4.0, nbOutliersThreshold);
         
         
-        
-        
-        ///////////////////////////////////////////////////////////////////////////////////////////
-        ///////////////////////////////////////////////////////////////////////////////////////////
-        //        /* Save outliers */
-        //        std::string filename = _sOutDirectory + "Outliers.txt";
-        //        std::ofstream os;
-        //        os.open(filename, std::ios::app);
-        //        os.seekp(0, std::ios::end); //put the cursor at the end
-        
-        
-        //        // -- HEADER
-        //        if (os.tellp() == 0) // 'tellp' return the cursor's position
-        //        {
-        //          std::vector<std::string> header;
-        //          header.push_back("idBA");
-        //          header.push_back("nbAddedCams"); 
-        //          header.push_back("nameAddedCams\t\t\t\t"); 
-        //          header.push_back("nbOutliers"); 
-        //          header.push_back("nbRemovedCam"); 
-        //          header.push_back("nameRemovedCams"); 
-        //          for (std::string & head : header)
-        //            os << head << "\t";
-        //          os << "\n"; 
-        //        }
-        
-        //        // -- DATA
-        //        os << bundleAdjustmentIteration << "\t";
-        //        os << set_newReconstructedViewId.size() << "\t";
-        //        uint i=0;
-        //        for(const IndexT viewId: set_newReconstructedViewId)
-        //        {
-        //          os << _sfm_data.views.at(viewId).get()->s_Img_path << "-K" << _sfm_data.views.at(viewId).get()->id_intrinsic << "\t";
-        //          i++;
-        //        }
-        //        for (; i<30; i++)
-        //        {
-        //          os << "x\t"; 
-        //        }
-        
-        //        os << nbRejectedTracks << "\t";        
-        
-        //        if (nbRejectedTracks != 0)
-        //          os << "\n";
-        
-        //        os.close();
-        ///////////////////////////////////////////////////////////////////////////////////////////
-        ///////////////////////////////////////////////////////////////////////////////////////////
-        
       }
       while (nbRejectedTracks != 0);
       OPENMVG_LOG_DEBUG("Bundle with " << bundleAdjustmentIteration << " iterations took " << std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - chrono_start).count() << " msec.");
       chrono_start = std::chrono::steady_clock::now();
       
-      ////////////////////////////////////////////////////////////////////////////////////////vvvvvvvv
-      // Save poses before removing
-      Poses poses_saved =  _sfm_data.poses;
+      //      // Fill 'map_intrinsicsGraphData' with EXIF data
+      //      for (const auto& it : _sfm_data.intrinsics)
+      //      {
+      //        // '0' because no intrinsic has any poses
+      //        map_intrinsicsGraphData.at(it.first).push_back(std::make_pair(0, it.second->getParams()));
+      //        map_intrinsicsLimits.at(it.first) = std::vector<IndexT> (6, 0);    
+      //        map_intrinsicsLimitsLow.at(it.first) = std::vector<IndexT> (6, 0);
+      //      }
       
-      ////////////////////////////////////////////////////////////////////////////////////////^^^^^^^^
       
-      std::cout << "-- eraseUnstablePosesAndObservations" << std::endl;
-      eraseUnstablePosesAndObservations(this->_sfm_data, _minPointsPerPose, _minTrackLength);
+      //
+      // Update the map_intrinsicsGraphData
+      std::cout << "Update 'map_intrinsicsGraphData' & detect limits..." << std::endl;
+      std::map<IndexT, std::size_t> map_intrId_numPoses = _sfm_data.GetIntrinsicsUsage();
+      std::cout << map_intrId_numPoses << std::endl;
       
       
-      ////////////////////////////////////////////////////////////////////////////////////////vvvvvvvv
-      // Write view names
+      bool haveBreak = false;
       
-      // -- get removed 'id_pose'
-      std::vector<IndexT> removed_poseIds;
-      if (poses_saved !=  _sfm_data.poses)
+      for (auto& elt : map_intrId_numPoses)
       {
-        //        std::cout << "_sfm_data.poses : (size: " << _sfm_data.poses.size() << ")" << std::endl;
-        //        for (const auto& pose : _sfm_data.poses)
-        //        {
-        //          std::cout << pose.first << std::endl;
-        //        }
+        std::cout << "--- K #" << elt.first << std::endl;
         
-        //        std::cout << "poses_saved : (size: " << poses_saved.size() << ")" << std::endl;
-        for (const auto& pose : poses_saved)
+        // Update 'map_intrinsicsGraphData'
+        std::vector<double> adjusted_params = _sfm_data.GetIntrinsicPtr(elt.first)->getParams();
+        map_intrinsicsGraphData.at(elt.first).push_back(std::make_pair(elt.second, adjusted_params));
+        
+        // Get the full history of intrinsic parameters
+        std::vector<std::size_t> allNumPosesVec;
+        std::vector<double> allFocalVec, allCxVec, allCyVec; 
+        
+        for (const auto& pair_uses_params : map_intrinsicsGraphData.at(elt.first))
         {
-          //          std::cout << pose.first ;
+          allNumPosesVec.push_back(pair_uses_params.first);
+          allFocalVec.push_back(pair_uses_params.second.at(0));
+          allCxVec.push_back(pair_uses_params.second.at(1));
+          allCyVec.push_back(pair_uses_params.second.at(2));
+        }
+        
+        std::cout << "allNumPosesVec = " << allNumPosesVec << std::endl;
+        
+        std::cout << "- Clean duplicated & removed cameras..." << std::endl;
+        // Clean 'map_intrinsicsGraphData':
+        //  [4 5 5 7 8 6 9]
+        // - detect duplicates -> [4 (5) 5 7 8 6 9]
+        // - detecting removed cameras -> [4 5 (7 8) 6 9]
+        std::vector<std::size_t> filteredNumPosesVec(allNumPosesVec);
+        std::vector<double> filteredFocalVec(allFocalVec);
+        std::vector<double> filteredCxVec(allCxVec);
+        std::vector<double> filteredCyVec(allCyVec);
+        
+        std::size_t numPosesEndWindow = allNumPosesVec.back();
+        
+        for (int id = filteredNumPosesVec.size()-2; id > 0; --id)
+        {
+          if (filteredNumPosesVec.size() < 2)
+            break;
           
-          IndexT id_pose = pose.first;
-          if (_sfm_data.poses.find(id_pose) == _sfm_data.poses.end()) // id not found = removed
+          if (filteredNumPosesVec.at(id) >= filteredNumPosesVec.at(id+1))
           {
-            //            std::cout << " Removed !" << std::endl;
-            removed_poseIds.push_back(id_pose);
+            filteredNumPosesVec.erase(filteredNumPosesVec.begin()+id);
+            filteredFocalVec.erase(filteredFocalVec.begin()+id);
+            filteredCxVec.erase(filteredCxVec.begin()+id);
+            filteredCyVec.erase(filteredCyVec.begin()+id);
           }
-          //          else
-          //            std::cout << std::endl;
         }
-        //        std::cout << "Different POSES !! (expected)" << std::endl;      
-      }
-      
-      // -- Write names in the txt file
-      std::string filename = "/home/cdebize/Documents/Data_SfM/cirque500/reconstructions/Outliers.txt";
-      std::ofstream os;
-      os.open(filename, std::ios::app);
-      os.seekp(0, std::ios::end); //put the cursor at the end
-      os << removed_poseIds.size() << "\t";
-      if (!removed_poseIds.empty())
-      {
-        // -- get associated views
-        std::vector<std::string> removed_viewNames;
-        std::vector<int> removed_viewIntrinsicId;
-        std::vector<std::size_t> removed_poseDistance;
-        std::cout << "Removed views : (names)" << std::endl;
-        for (const auto& view : _sfm_data.views)
+        std::cout << "filtredNumPosesVec = " << filteredNumPosesVec << std::endl;
+        
+        // Detect limit according to 'kWindowSize':
+        if (numPosesEndWindow < kWindowSize)
+          continue;
+        
+        IndexT idStartWindow = 0;
+        for (int id = filteredNumPosesVec.size()-2; id > 0; --id)
         {
-          auto it = std::find(removed_poseIds.begin(), removed_poseIds.end(), view.second->id_pose);
-          if (it != removed_poseIds.end()) // associated pose removed ! 
+          if (numPosesEndWindow - filteredNumPosesVec.at(id) >= kWindowSize)
           {
-            removed_viewNames.push_back(view.second->s_Img_path);
-            removed_viewIntrinsicId.push_back(view.second->id_intrinsic);
-            
-            //            std::cout << view.second->s_Img_path << "(pose id: "  << view.second->id_pose << ")" << std::endl;
+            idStartWindow = id;
+            break;
           }
         }
         
-        // -- DATA
-        for (uint i=0; i< removed_viewNames.size(); i++)
+        std::size_t numPosesStartWindow = filteredNumPosesVec.at(idStartWindow);
+        
+        
+        // Normalize parameters historical:
+        // The normalization need to be done on the all historical
+        std::cout << "- Normalize..." << std::endl;
+        std::vector<double> normFocalVec = normalize(filteredFocalVec);
+        std::vector<double> normCxVec = normalize(filteredCxVec);
+        std::vector<double> normCyVec = normalize(filteredCyVec);
+        // Compute the standard deviation for each parameter, between [idLimit; end()]
+        std::cout << "- Subpart vector..." << std::endl;
+        std::vector<double> subNumPosesVec (filteredNumPosesVec.begin()+idStartWindow, filteredNumPosesVec.end());
+        std::vector<double> subNormFocalVec (normFocalVec.begin()+idStartWindow, normFocalVec.end());
+        std::vector<double> subNormCxVec (normCxVec.begin()+idStartWindow, normCxVec.end());
+        std::vector<double> subNormCyVec (normCyVec.begin()+idStartWindow, normCyVec.end());
+        std::cout << "- Compute stdev..." << std::endl;
+        double stdevSubFocal = standardDeviation(subNormFocalVec);
+        double stdevSubCx = standardDeviation(subNormCxVec);
+        double stdevSubCy = standardDeviation(subNormCyVec);
+        
+        /* Display info */
+        std::cout << "idStartWindow = " << idStartWindow << std::endl;
+        std::cout << "numPosesStartWindow = " << numPosesStartWindow << std::endl;
+        std::cout << "numPosesEndWindow = " << numPosesEndWindow << std::endl;
+        std::cout << "subNumPosesVec = " << subNumPosesVec << std::endl;
+                
+  
+        if (stdevSubFocal*100.0 <= kStdDevPercentage && map_intrinsicsLimits.at(elt.first).at(0) == 0)
         {
-          os << removed_viewNames.at(i) 
-             << "-K" << removed_viewIntrinsicId.at(i);
+          map_intrinsicsLimitsLow.at(elt.first).at(0) = numPosesStartWindow;
+          map_intrinsicsLimits.at(elt.first).at(0) = numPosesEndWindow;      
+          haveBreak = true;  
+          std::cout << "> Limit reached with Focal" << std::endl;
+          std::cout << "allFocalVec = " << allFocalVec << std::endl;
+          std::cout << "filteredFocalVec = " << filteredFocalVec << std::endl;
+          std::cout << "subNormFocalVec = " << subNormFocalVec << std::endl;
+          std::cout << "stdevSubFocal*100 = " << stdevSubFocal * 100.0 << std::endl;
         }
+        if (stdevSubCx*100.0 <= kStdDevPercentage && map_intrinsicsLimits.at(elt.first).at(1) == 0)
+        {
+          map_intrinsicsLimitsLow.at(elt.first).at(1) = numPosesStartWindow;
+          map_intrinsicsLimits.at(elt.first).at(1) = numPosesEndWindow;
+          haveBreak = true;  
+          std::cout << "> Limit reached with Cx" << std::endl;
+          std::cout << "allCxVec = " << allCxVec << std::endl;
+          std::cout << "filtredCxVec = " << filteredCxVec << std::endl;
+          std::cout << "subNormCxVec = " << subNormCxVec << std::endl;
+          std::cout << "stdevSubCx*100 = " << stdevSubCx * 100.0 << std::endl;
+        }
+        if (stdevSubCy*100.0 <= kStdDevPercentage && map_intrinsicsLimits.at(elt.first).at(2) == 0)
+        {
+          map_intrinsicsLimitsLow.at(elt.first).at(2) = numPosesStartWindow;
+          map_intrinsicsLimits.at(elt.first).at(2) = numPosesEndWindow;
+          haveBreak = true;  
+          std::cout << "> Limit reached with Cy" << std::endl;
+          std::cout << "allCyVec = " << allCyVec << std::endl;
+          std::cout << "filtredCyVec = " << filteredCyVec << std::endl;
+          std::cout << "subNormCyVec = " << subNormCyVec << std::endl;
+          std::cout << "stdevSubCy*100 = " << stdevSubCy * 100.0 << std::endl;
+        }
+
+        
+        std::cout << "map_intrinsicsLimitsLow = " << map_intrinsicsLimitsLow.at(elt.first) << std::endl;
+        std::cout << "map_intrinsicsLimits = " << map_intrinsicsLimits.at(elt.first) << std::endl;
+        
+        
+        
+//        if (elt.first == 3 || elt.first == 2)
+//          getchar();
       }
       
-      os << "\n";
-      os.close();
+      ///////////////////////////////////////////////////////////////////////////////////////////
+      ///////////////////////////////////////////////////////////////////////////////////////////
+      //        /* Save Intrinsics V2 */
+      {
+        std::cout << "Writting intrinsics..." << std::endl;
+        std::map<IndexT, std::size_t> map_intrinsicId_usageNum = _sfm_data.GetIntrinsicsUsage();
+        for (auto& itIntr : _sfm_data.intrinsics)
+        {
+          IndexT idIntr = itIntr.first;
+          
+          std::string filename = _sOutDirectory + "K" + std::to_string(idIntr) + ".txt";
+          std::ofstream os;
+          os.open(filename, std::ios::app);
+          os.seekp(0, std::ios::end); //put the cursor at the end
+          
+          if (_sfm_data.poses.size() == set_newReconstructedViewId.size()+2) // FIRST BA
+          {
+            // -- HEADER
+            if (os.tellp() == 0) // 'tellp' return the cursor's position
+            {
+              std::vector<std::string> header;
+              header.push_back("#poses");
+              header.push_back("f"); 
+              header.push_back("ppx"); 
+              header.push_back("ppy"); 
+              header.push_back("d1"); 
+              header.push_back("d2"); 
+              header.push_back("d3"); 
+              header.push_back("f_limit"); 
+              header.push_back("ppx_limit"); 
+              header.push_back("ppy_limit");  
+              for (std::string & head : header)
+                os << head << "\t";
+              os << "\n"; 
+            }
+          }
+          
+          // -- count the number of usage of each intrinsic among the aready resected poses
+          std::size_t usageNum = map_intrinsicId_usageNum[idIntr];
+          std::vector<double> params = _sfm_data.GetIntrinsicPtr(idIntr)->getParams();
+          
+          // -- DATA
+          os << usageNum << "\t";
+          os << params.at(0) << "\t";
+          os << params.at(1) << "\t";
+          os << params.at(2) << "\t";
+          os << params.at(3) << "\t";
+          os << params.at(4) << "\t";
+          os << params.at(5) << "\t";
+          os << map_intrinsicsLimits.at(idIntr).at(0) << "\t";
+          os << map_intrinsicsLimits.at(idIntr).at(1) << "\t";
+          os << map_intrinsicsLimits.at(idIntr).at(2) << "\t";
+          os << "\n";
+          
+          os.close();
+          
+        }
+        std::cout << "Writting intrinsics... done" << std::endl;
+      }
+      
+      if (haveBreak)
+          getchar();
+        
+      
+      ///////////////////////////////////////////////////////////////////////////////////////////
+      ///////////////////////////////////////////////////////////////////////////////////////////
       
       ////////////////////////////////////////////////////////////////////////////////////////^^^^^^^^
       
+      // Remove unstable poses & extract removed poses id
+      Poses poses_saved =  _sfm_data.poses;
+      std::cout << "-- eraseUnstablePosesAndObservations" << std::endl;
+      std::vector<IndexT> removed_poseIds;
+      if (eraseUnstablePosesAndObservations(this->_sfm_data, _minPointsPerPose, _minTrackLength))
+      {
+        if (poses_saved !=  _sfm_data.poses)
+        {
+          for (const auto& pose : poses_saved)
+          {
+            IndexT id_pose = pose.first;
+            if (_sfm_data.poses.find(id_pose) == _sfm_data.poses.end()) // id not found = removed
+              removed_poseIds.push_back(id_pose);
+          }
+        }
+      }
       
       OPENMVG_LOG_DEBUG("eraseUnstablePosesAndObservations took " << std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - chrono_start).count() << " msec.");
     }
+    
     ++resectionGroupIndex;
   }
+  
   // Ensure there is no remaining outliers
   badTrackRejector(4.0, 0);
   eraseUnstablePosesAndObservations(this->_sfm_data, _minPointsPerPose, _minTrackLength);
@@ -1803,7 +1909,7 @@ bool SequentialSfMReconstructionEngine::localBundleAdjustment(
   {
     options.setSparseBA();
     //    if (name == "first")
-    //      options.enableLocalBA();
+    options.enableLocalBA();
   }
   else
   {
