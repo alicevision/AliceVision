@@ -40,8 +40,7 @@ using namespace linearProgramming;
 //      (simplex) instead of using SOCP (second order cone programming).
 //      Implementation by Pierre Moulon
 //
-static
-void EncodeResection(const Mat2X & Pt2D,
+inline void EncodeResection(const Mat2X & Pt2D,
                      const Mat3X & Pt3D,
                      double gamma, // Start upper bound
                      sRMat & A, Vec & C)

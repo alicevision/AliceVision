@@ -30,6 +30,7 @@ set(features_files_headers
 set(features_files_sources
   akaze/AKAZE.cpp
   akaze/descriptorLIOP.cpp
+  akaze/ImageDescriber_AKAZE.cpp
   FeaturesPerView.cpp
   ImageDescriber.cpp
   imageDescriberCommon.cpp

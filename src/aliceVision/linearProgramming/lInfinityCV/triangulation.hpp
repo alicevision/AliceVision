@@ -35,7 +35,7 @@ using namespace linearProgramming;
 //      Implementation by Pierre Moulon
 //
 
-static void EncodeTriangulation(
+inline void EncodeTriangulation(
   const std::vector<Mat34> & Pi, // Projection matrices
   const Mat2X & x_ij, // corresponding observations
   double gamma, // Start upper bound

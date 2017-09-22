@@ -10,6 +10,7 @@
 #include "aliceVision/system/Timer.hpp"
 #include "aliceVision/stl/stl.hpp"
 #include "aliceVision/multiview/essential.hpp"
+#include "aliceVision/track/Track.hpp"
 
 #include "dependencies/htmlDoc/htmlDoc.hpp"
 #include "dependencies/progress/progress.hpp"

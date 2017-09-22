@@ -62,6 +62,7 @@ target_link_libraries(aliceVision_utils_frustumFiltering
   aliceVision_system
   aliceVision_feature
   aliceVision_sfm
+  aliceVision_matchingImageCollection
   stlplus
 )
 
@@ -147,6 +148,7 @@ target_link_libraries(aliceVision_utils_sfmColorHarmonize
   aliceVision_image
   aliceVision_kvld
   aliceVision_feature
+  aliceVision_colorHarmonization
   aliceVision_sfm
   stlplus
   ${CLP_LIBRARIES}

@@ -33,7 +33,7 @@ using namespace linearProgramming;
 //  directions in a common global coordinate system.
 //- Implementation of the LINEAR PROGRAM (9) page 5 of [1]:
 //--
-static void EncodeTi_from_tij_OneLambdaPerTrif(
+inline void EncodeTi_from_tij_OneLambdaPerTrif(
     const size_t nTranslation,
     const std::vector<translationAveraging::relativeInfo> & vec_relative,
     sRMat & A, Vec & C,

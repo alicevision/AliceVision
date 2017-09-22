@@ -71,11 +71,11 @@ struct IndMatch
 #endif
 };
 
-static inline std::ostream& operator<<(std::ostream & out, const IndMatch & obj) {
+inline std::ostream& operator<<(std::ostream & out, const IndMatch & obj) {
   return out << obj._i << " " << obj._j;
 }
 
-static inline std::istream& operator>>(std::istream & in, IndMatch & obj) {
+inline std::istream& operator>>(std::istream & in, IndMatch & obj) {
   return in >> obj._i >> obj._j;
 }
 

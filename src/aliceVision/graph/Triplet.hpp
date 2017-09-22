@@ -117,7 +117,7 @@ bool List_Triplets(const GraphT & g, std::vector< Triplet > & vec_triplets)
 
 /// Return triplets contained in the graph build from IterablePairs
 template <typename IterablePairs>
-static std::vector< graph::Triplet > tripletListing(
+inline std::vector< graph::Triplet > tripletListing(
   const IterablePairs & pairs)
 {
   std::vector< graph::Triplet > vec_triplets;

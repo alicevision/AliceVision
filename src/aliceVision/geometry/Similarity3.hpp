@@ -1,9 +1,9 @@
 // This file is part of the AliceVision project and is made available under
 // the terms of the MPL2 license (see the COPYING.md file).
 
-#ifndef ALICEVISION_GEOMETRY_SIMILARITY3_H_
-#define ALICEVISION_GEOMETRY_SIMILARITY3_H_
+#pragma once
 
+#include <aliceVision/geometry/Pose3.hpp>
 
 namespace aliceVision {
 namespace geometry {
@@ -31,5 +31,3 @@ struct Similarity3
 
 } // namespace geometry
 } // namespace aliceVision
-
-#endif  // ALICEVISION_GEOMETRY_SIMILARITY3_H_

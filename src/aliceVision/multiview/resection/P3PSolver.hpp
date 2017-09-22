@@ -12,7 +12,7 @@ namespace resection {
 
 typedef Eigen::Matrix<double, 5, 1> Vec5;
 
-static void solveQuartic(const Vec5 & factors, Vec4 & realRoots);
+void solveQuartic(const Vec5 & factors, Vec4 & realRoots);
 
 /**
  * @brief Compute the absolute pose of a camera using three 3D-to-2D correspondences
@@ -32,7 +32,8 @@ static void solveQuartic(const Vec5 & factors, Vec4 & realRoots);
  *
  * Author: Laurent Kneip, adapted to the project by Pierre Moulon
  */
-static bool compute_P3P_Poses(const Mat3 & featureVectors, const Mat3 & worldPoints, Mat & solutions);
+
+bool compute_P3P_Poses(const Mat3 & featureVectors, const Mat3 & worldPoints, Mat & solutions);
 
 struct P3PSolver
 {

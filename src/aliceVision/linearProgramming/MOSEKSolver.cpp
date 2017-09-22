@@ -10,7 +10,7 @@ namespace linearProgramming {
 using namespace std;
 
 // This function prints log output from MOSEK to the terminal.
-static void MSKAPI printstr(void *handle,
+inline void MSKAPI printstr(void *handle,
                             char str[])
 {
   ALICEVISION_LOG_DEBUG(str);

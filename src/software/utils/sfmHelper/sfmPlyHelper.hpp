@@ -1,8 +1,7 @@
 // This file is part of the AliceVision project and is made available under
 // the terms of the MPL2 license (see the COPYING.md file).
 
-#ifndef ALICEVISION_SFM_PLY_HELPER_H
-#define ALICEVISION_SFM_PLY_HELPER_H
+#pragma once
 
 #include "aliceVision/numeric/numeric.hpp"
 
@@ -14,7 +13,7 @@ namespace aliceVision{
 namespace plyHelper{
 
 /// Export 3D point vector to PLY format
-static bool exportToPly(const std::vector<Vec3> & vec_points,
+inline bool exportToPly(const std::vector<Vec3> & vec_points,
   const std::string & sFileName)
 {
   std::ofstream outfile;
@@ -45,7 +44,7 @@ static bool exportToPly(const std::vector<Vec3> & vec_points,
 }
 
 /// Export 3D point vector and camera position to PLY format
-static bool exportToPly(const std::vector<Vec3> & vec_points,
+inline bool exportToPly(const std::vector<Vec3> & vec_points,
   const std::vector<Vec3> & vec_camPos,
   const std::string & sFileName,
   const std::vector<Vec3> * vec_coloredPoints = NULL)
@@ -88,6 +87,3 @@ static bool exportToPly(const std::vector<Vec3> & vec_points,
 
 } // namespace plyHelper
 } // namespace aliceVision
-
-#endif // ALICEVISION_SFM_PLY_HELPER_H
-

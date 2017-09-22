@@ -128,8 +128,7 @@ public:
     const image::Image<float> & Ly) const;
 
   /// Compute an AKAZE slice
-  static
-  void ComputeAKAZESlice(
+  static void ComputeAKAZESlice(
     const image::Image<float> & src, // Input image for the given octave
     const int p , // octave index
     const int q , // slice index

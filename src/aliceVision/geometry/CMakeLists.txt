@@ -8,13 +8,21 @@ set(geometry_files_headers
 )
 
 # Sources
+set(geometry_files_sources
+    rigidTransformation3D.cpp
+)
+
+# Tests
 set(geometry_files_test
     frustumIntersection_test.cpp
     halfSpaceIntersection_test.cpp
     rigidTransformation3D_test.cpp
 )
 
-add_library(aliceVision_geometry INTERFACE)
+add_library(aliceVision_geometry
+    ${geometry_files_headers}
+    ${geometry_files_sources}
+)
 
 target_link_libraries(aliceVision_geometry
   INTERFACE aliceVision_numeric
@@ -23,6 +31,11 @@ target_link_libraries(aliceVision_geometry
             ${COINUTILS_LIBRARY}
             ${OSI_LIBRARY}
             ${LOG_LIB}
+)
+
+install(TARGETS aliceVision_geometry
+  DESTINATION lib/
+  EXPORT aliceVision-targets
 )
 
 UNIT_TEST(aliceVision rigidTransformation3D    "aliceVision_geometry")

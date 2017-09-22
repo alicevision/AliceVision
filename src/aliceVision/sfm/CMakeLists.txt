@@ -50,11 +50,15 @@ set(sfm_files_sources
   pipeline/regionsIO.cpp
   SfMData.cpp
   BundleAdjustmentCeres.cpp
+  sfmDataFilters.cpp
   FrustumFilter.cpp
   sfmDataIO.cpp
+  sfmDataIO_baf.cpp
   sfmDataIO_gt.cpp
+  sfmDataIO_ply.cpp
   sfmDataTriangulation.cpp
   sfmDataUtils.cpp
+  generateReport.cpp
   utils/alignment.cpp
   utils/uid.cpp
 )
@@ -83,6 +87,8 @@ target_link_libraries(aliceVision_sfm
   aliceVision_system
   aliceVision_matching
   aliceVision_feature
+  aliceVision_geometry
+  aliceVision_track
   aliceVision_exif
   ${LOG_LIB}
 )

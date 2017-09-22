@@ -19,7 +19,7 @@ typedef std::vector< relativeInfo > RelativeInfoVec;
 typedef std::map< Pair, std::pair<Mat3, Vec3> > RelativeInfoMap;
 
 // List the pairs used by the relative motions
-static PairSet getPairs(const RelativeInfoVec & vec_relative)
+inline PairSet getPairs(const RelativeInfoVec & vec_relative)
 {
   PairSet pair_set;
   for(size_t i = 0; i < vec_relative.size(); ++i)
@@ -31,7 +31,7 @@ static PairSet getPairs(const RelativeInfoVec & vec_relative)
 }
 
 // List the index used by the relative motions
-static std::set<IndexT> getIndexT(const RelativeInfoVec & vec_relative)
+inline std::set<IndexT> getIndexT(const RelativeInfoVec & vec_relative)
 {
   std::set<IndexT> indexT_set;
   for (RelativeInfoVec::const_iterator iter = vec_relative.begin();

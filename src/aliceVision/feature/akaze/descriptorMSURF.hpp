@@ -18,7 +18,7 @@ namespace feature {
    * @param sigma Standard Deviation
    */
   template <typename Real>
-  static inline Real gaussian( const Real x, const Real y, const Real sigma )
+  inline Real gaussian( const Real x, const Real y, const Real sigma )
   {
     return MathTrait<Real>::exp( - ( ( x * x ) + ( y * y ) ) / ( static_cast<Real>( 2 ) * sigma * sigma ) ) ;
   }
@@ -35,7 +35,7 @@ namespace feature {
    * ECCV 2008
   */
   template<typename ImageT, typename Real >
-  void ComputeMSURFDescriptor(
+  inline void ComputeMSURFDescriptor(
     const ImageT & Lx ,
     const ImageT & Ly ,
     const int id_octave ,
@@ -137,7 +137,7 @@ namespace feature {
   }
 
   template<typename ImageT>
-  void ComputeMSURFDescriptor(
+  inline void ComputeMSURFDescriptor(
     const ImageT & Lx ,
     const ImageT & Ly ,
     const int id_octave ,

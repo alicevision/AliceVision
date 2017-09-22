@@ -12,7 +12,7 @@ namespace aliceVision {
 namespace sfm { 
 
 template<typename IterableIndexTSequence>
-static std::set<IndexT> getIndexes(const IterableIndexTSequence & seq)
+inline std::set<IndexT> getIndexes(const IterableIndexTSequence & seq)
 {
   std::set<IndexT> setOut;
   for(typename IterableIndexTSequence::const_iterator it = seq.begin(); it != seq.end(); ++it)
@@ -23,7 +23,7 @@ static std::set<IndexT> getIndexes(const IterableIndexTSequence & seq)
 /// Filter the toFilter iterable sequence (keep only the element that share a common index
 ///  with the provided Ids index list).
 template<typename T>
-static void KeepOnlyReferencedElement(
+inline void KeepOnlyReferencedElement(
   const std::set<IndexT> & Ids,
   T & toFilter)
 {
@@ -31,11 +31,7 @@ static void KeepOnlyReferencedElement(
 }
 
 // Specialization for RelativeInfoMap
-template<>
-#ifdef _MSC_VER
-static
-#endif
-void KeepOnlyReferencedElement(
+inline void KeepOnlyReferencedElement(
   const std::set<IndexT> & set_remainingIds,
   translationAveraging::RelativeInfoMap& map_relatives)
 {
@@ -55,10 +51,7 @@ void KeepOnlyReferencedElement(
 
 // Specialization for RelativeInfoMap
 template<>
-#ifdef _MSC_VER
-static
-#endif
-void KeepOnlyReferencedElement(
+inline void KeepOnlyReferencedElement(
   const std::set<IndexT> & set_remainingIds,
   rotationAveraging::RelativeRotations& relative_info)
 {
@@ -78,10 +71,7 @@ void KeepOnlyReferencedElement(
 
 // Specialization for PairwiseMatches
 template<>
-#ifdef _MSC_VER
-static
-#endif
-void KeepOnlyReferencedElement(
+inline void KeepOnlyReferencedElement(
   const std::set<IndexT> & set_remainingIds,
   aliceVision::matching::PairwiseMatches& map_matches)
 {
@@ -100,10 +90,7 @@ void KeepOnlyReferencedElement(
 
 // Specialization for std::map<IndexT,Mat3>
 template<>
-#ifdef _MSC_VER
-static
-#endif
-void KeepOnlyReferencedElement(
+inline void KeepOnlyReferencedElement(
   const std::set<IndexT> & set_remainingIds,
   std::map<IndexT,Mat3>& map_Mat3)
 {
@@ -121,10 +108,7 @@ void KeepOnlyReferencedElement(
 
 // Specialization for RelativeInfoVec
 template<>
-#ifdef _MSC_VER
-static
-#endif
-void KeepOnlyReferencedElement(
+inline void KeepOnlyReferencedElement(
   const std::set<IndexT> & set_remainingIds,
   translationAveraging::RelativeInfoVec & relativeInfo_vec)
 {

@@ -1,12 +1,13 @@
 // This file is part of the AliceVision project and is made available under
 // the terms of the MPL2 license (see the COPYING.md file).
 
-#ifndef ALICEVISION_GEOMETRY_HALF_SPACE_HPP_
-#define ALICEVISION_GEOMETRY_HALF_SPACE_HPP_
+#pragma once
 
 #include "aliceVision/linearProgramming/OSIXSolver.hpp"
+
 #include <Eigen/Geometry>
 #include <Eigen/StdVector>
+
 EIGEN_DEFINE_STL_VECTOR_SPECIALIZATION(Eigen::Hyperplane<double,3>)
 
 namespace aliceVision {
@@ -20,7 +21,7 @@ typedef std::vector<Half_plane> Half_planes;
 
 // Define a plane passing through the points (p, q, r).
 // The plane is oriented such that p, q and r are oriented in a positive sense (that is counterclockwise).
-static Half_plane Half_plane_p(const Vec3 & p, const Vec3 & q, const Vec3 & r)
+inline Half_plane Half_plane_p(const Vec3 & p, const Vec3 & q, const Vec3 & r)
 {
   const Vec3 abc = (p-r).cross(q-r);
   const double d = - abc.dot(r);
@@ -37,7 +38,7 @@ static Half_plane Half_plane_p(const Vec3 & p, const Vec3 & q, const Vec3 & r)
 
 
 /// Return true if the half_planes define a not empty volume (an intersection exists)
-static bool isNotEmpty(const Half_planes & hplanes)
+inline bool isNotEmpty(const Half_planes & hplanes)
 {
   // Check if it exists a point on all positive side of the half plane thanks to a Linear Program formulation [1].
   // => If a point exists: there is a common subspace defined and so intersections.
@@ -84,5 +85,3 @@ static bool isNotEmpty(const Half_planes & hplanes)
 } // namespace geometry
 } // namespace aliceVision
 } // namespace halfPlane
-
-#endif // ALICEVISION_GEOMETRY_HALF_SPACE_HPP_

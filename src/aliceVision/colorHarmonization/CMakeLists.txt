@@ -8,11 +8,19 @@ set(colorHarmonization_files_headers
 )
 
 # Sources
+set(colorHarmonization_files_sources
+  GainOffsetConstraintBuilder.cpp
+)
+
+# Tests
 set(colorHarmonization_files_test
   gainOffsetConstraintBuilder_test.cpp
 )
 
-add_library(aliceVision_colorHarmonization INTERFACE)
+add_library(aliceVision_colorHarmonization
+  ${colorHarmonization_files_headers}
+  ${colorHarmonization_files_sources}
+)
 
 target_link_libraries(aliceVision_colorHarmonization
   INTERFACE aliceVision_image
@@ -20,6 +28,11 @@ target_link_libraries(aliceVision_colorHarmonization
             ${COINUTILS_LIBRARY}
             ${OSI_LIBRARY}
             ${LOG_LIB}
+)
+
+install(TARGETS aliceVision_colorHarmonization
+  DESTINATION lib/
+  EXPORT aliceVision-targets
 )
 
 UNIT_TEST(aliceVision gainOffsetConstraintBuilder "aliceVision_colorHarmonization")

@@ -20,6 +20,8 @@ set(image_files_headers
 
 # Sources
 set(image_files_sources
+  convolution.cpp
+  filtering.cpp
   io.cpp
 )
 

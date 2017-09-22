@@ -18,6 +18,7 @@ set(matching_collection_images_files_sources
   matchingCommon.cpp
   ImageCollectionMatcher_generic.cpp
   ImageCollectionMatcher_cascadeHashing.cpp
+  pairBuilder.cpp
 )
 
 add_library(aliceVision_matchingImageCollection

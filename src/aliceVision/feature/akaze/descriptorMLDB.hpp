@@ -1,8 +1,7 @@
 // This file is part of the AliceVision project and is made available under
 // the terms of the MPL2 license (see the COPYING.md file).
 
-#ifndef ALICEVISION_IMAGE_DESCRIPTION_MLDB_DESCRIPTOR_H
-#define ALICEVISION_IMAGE_DESCRIPTION_MLDB_DESCRIPTOR_H
+#pragma once
 
 #include "aliceVision/feature/Descriptor.hpp"
 #include "aliceVision/feature/PointFeature.hpp"
@@ -27,7 +26,7 @@ namespace feature {
   ** @param mean_Ly mean of Ly in each subdivision
   **/
   template< typename Real>
-  static inline void ComputeMeanValuesInSubdivisions(
+  inline void ComputeMeanValuesInSubdivisions(
       const Eigen::Matrix<Real, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> & samples_Li ,
       const Eigen::Matrix<Real, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> & samples_Lx ,
       const Eigen::Matrix<Real, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> & samples_Ly ,
@@ -100,7 +99,7 @@ namespace feature {
   ** @param desc ouput vector (idealy a std::bitset) containing binary description of theses regions
   **/
   template< typename DescriptorType , typename Real>
-  static inline void ComputeBinaryValues(
+  inline void ComputeBinaryValues(
     const Eigen::Matrix<Real, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> & mean_Li ,
     const Eigen::Matrix<Real, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> & mean_Lx ,
     const Eigen::Matrix<Real, Eigen::Dynamic, Eigen::Dynamic, Eigen::RowMajor> & mean_Ly ,
@@ -137,7 +136,7 @@ namespace feature {
     ** @param desc output descriptor (binary descriptor)
     **/
   template< typename Real>
-  void ComputeMLDBDescriptor(
+  inline void ComputeMLDBDescriptor(
     const image::Image<Real> & Li,
     const image::Image<Real> &Lx,
     const image::Image<Real> &Ly,
@@ -217,5 +216,3 @@ namespace feature {
 
 } // namespace feature
 } // namespace aliceVision
-
-#endif

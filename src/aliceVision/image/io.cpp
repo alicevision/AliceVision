@@ -19,7 +19,7 @@ using namespace std;
 namespace aliceVision {
 namespace image {
 
-static bool CmpFormatExt(const char *a, const char *b) {
+bool CmpFormatExt(const char *a, const char *b) {
   size_t len_a = strlen(a);
   size_t len_b = strlen(b);
   if (len_a != len_b) return false;

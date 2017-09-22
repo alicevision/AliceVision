@@ -1,8 +1,7 @@
 // This file is part of the AliceVision project and is made available under
 // the terms of the MPL2 license (see the COPYING.md file).
 
-#ifndef ALICEVISION_SPHERICAL_CAMERA_HPP
-#define ALICEVISION_SPHERICAL_CAMERA_HPP
+#pragma once
 
 #include "aliceVision/numeric/numeric.hpp"
 #include "aliceVision/multiview/projection.hpp"
@@ -18,7 +17,7 @@
 namespace aliceVision {
 namespace spherical_cam {
 
-static void planarToSpherical(
+inline void planarToSpherical(
   const Mat & planarCoords, // Input (x,y)' coords
   size_t width,             // Width of the 2D planar surface
   size_t height,            // Height of the 2D planar surface
@@ -164,4 +163,3 @@ void TriangulateDLT(const Mat34 &P1, const Vec3 &x1,
 } // namespace spherical_cam
 } // namespace aliceVision
 
-#endif /* ALICEVISION_SPHERICAL_CAMERA_HPP */

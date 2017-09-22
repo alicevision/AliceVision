@@ -1,12 +1,10 @@
 // This file is part of the AliceVision project and is made available under
 // the terms of the MPL2 license (see the COPYING.md file).
 
-#ifndef ALICEVISION_GEOMETRY_3D_REGISTRATION_7DOF_H_
-#define ALICEVISION_GEOMETRY_3D_REGISTRATION_7DOF_H_
+#pragma once
 
-#include "aliceVision/numeric/numeric.hpp"
-#include "aliceVision/numeric/LMFunctor.hpp"
-
+#include <aliceVision/numeric/numeric.hpp>
+#include <aliceVision/numeric/LMFunctor.hpp>
 #include <aliceVision/robustEstimation/ACRansac.hpp>
 
 namespace aliceVision {
@@ -21,7 +19,7 @@ namespace geometry {
  * @param[in] R The rotation matrix.
  * @param[out] RTS The 4x4 similarity matrix [S*R | t; 0 0 0 1].
  */
-static void composeRTS(double &S, const Vec3 &t, const Mat3 &R, Mat4 &RTS)
+inline void composeRTS(double &S, const Vec3 &t, const Mat3 &R, Mat4 &RTS)
 {
   RTS.topLeftCorner(3, 3) = S*R;
   RTS.topRightCorner(3, 1) = t;
@@ -36,7 +34,7 @@ static void composeRTS(double &S, const Vec3 &t, const Mat3 &R, Mat4 &RTS)
  * @param[out] R The rotation part.
  * @return true if the input matrix is a similarity matrix.
  */
-static bool decomposeRTS(const Mat4 &RTS, double &S, Vec3 &t, Mat3 &R)
+inline bool decomposeRTS(const Mat4 &RTS, double &S, Vec3 &t, Mat3 &R)
 {
   // Check critical cases
   R = RTS.topLeftCorner<3, 3>();
@@ -71,7 +69,7 @@ static bool decomposeRTS(const Mat4 &RTS, double &S, Vec3 &t, Mat3 &R)
  * \note Need at least 3 points
  */
 
-static bool FindRTS(const Mat &x1,
+inline bool FindRTS(const Mat &x1,
   const Mat &x2,
   double &S,
   Vec3 &t,
@@ -103,35 +101,7 @@ struct lm_SRTRefine_functor : LMFunctor<double>
     const double &S, const Mat3 & R, const Vec &t): LMFunctor<double>(inputs,values),
     _x1(x1), _x2(x2), _t(t), _R(R), _S(S) { }
 
-  int operator()(const Vec &x, Vec &fvec) const
-  {
-    // convert x to rotation matrix and a translation vector and a Scale factor
-    // x = {tx,ty,tz,anglex,angley,anglez,S}
-    Vec3 transAdd = x.block<3,1>(0,0);
-    Vec3 rot = x.block<3,1>(3,0);
-    double Sadd = x(6);
-
-    //Build the rotation matrix
-    Mat3 Rcor =
-      (Eigen::AngleAxis<double>(rot(0), Vec3::UnitX())
-      * Eigen::AngleAxis<double>(rot(1), Vec3::UnitY())
-      * Eigen::AngleAxis<double>(rot(2), Vec3::UnitZ())).toRotationMatrix();
-
-    const Mat3 nR  = _R*Rcor;
-    const Vec3 nt = _t+transAdd;
-    const double nS = _S+Sadd;
-
-    // Evaluate re-projection errors
-    Vec3 proj;
-    for (Mat::Index i = 0; i < _x1.cols(); ++i)
-    {
-      proj = _x2.col(i) -  (nS *  nR * (_x1.col(i)) + nt);
-      fvec[i*3]   = proj(0);
-      fvec[i*3+1] = proj(1);
-      fvec[i*3+2] = proj(2);
-    }
-    return 0;
-  }
+  int operator()(const Vec &x, Vec &fvec) const;
 
   Mat _x1, _x2;
   Vec3 _t;
@@ -147,33 +117,7 @@ struct lm_RRefine_functor : LMFunctor<double>
     const double &S, const Mat3 & R, const Vec &t): LMFunctor<double>(inputs,values),
     _x1(x1), _x2(x2), _t(t), _R(R), _S(S) { }
 
-  int operator()(const Vec &x, Vec &fvec) const
-  {
-    // convert x to rotation matrix
-    // x = {anglex,angley,anglez}
-    Vec3 rot = x.block<3,1>(0,0);
-
-    //Build the rotation matrix
-    Mat3 Rcor =
-      (Eigen::AngleAxis<double>(rot(0), Vec3::UnitX())
-      * Eigen::AngleAxis<double>(rot(1), Vec3::UnitY())
-      * Eigen::AngleAxis<double>(rot(2), Vec3::UnitZ())).toRotationMatrix();
-
-    const Mat3 nR  = _R*Rcor;
-    const Vec3 nt = _t;
-    const double nS = _S;
-
-    // Evaluate re-projection errors
-    Vec3 proj;
-    for (Mat::Index i = 0; i < _x1.cols(); ++i)
-    {
-      proj = _x2.col(i) -  (nS *  nR * (_x1.col(i)) + nt);
-      fvec[i*3]   = proj(0);
-      fvec[i*3+1] = proj(1);
-      fvec[i*3+2] = proj(2);
-    }
-    return 0;
-  }
+  int operator()(const Vec &x, Vec &fvec) const;
 
   Mat _x1, _x2;
   Vec3 _t;
@@ -193,61 +137,11 @@ struct lm_RRefine_functor : LMFunctor<double>
  *
  * \return none
  */
-static void Refine_RTS(const Mat &x1,
-  const Mat &x2,
-  double &S,
-  Vec3 &t,
-  Mat3 &R)
-{
-  {
-    lm_SRTRefine_functor functor(7, 3*x1.cols(), x1, x2, S, R, t);
-
-    Eigen::NumericalDiff<lm_SRTRefine_functor> numDiff(functor);
-
-    Eigen::LevenbergMarquardt<Eigen::NumericalDiff<lm_SRTRefine_functor> > lm(numDiff);
-    lm.parameters.maxfev = 1000;
-    Vec xlm = Vec::Zero(7); // The deviation vector {tx,ty,tz,rotX,rotY,rotZ,S}
-
-    lm.minimize(xlm);
-
-    Vec3 transAdd = xlm.block<3,1>(0,0);
-    Vec3 rot = xlm.block<3,1>(3,0);
-    double SAdd = xlm(6);
-
-    //Build the rotation matrix
-    Mat3 Rcor =
-      (Eigen::AngleAxis<double>(rot(0), Vec3::UnitX())
-      * Eigen::AngleAxis<double>(rot(1), Vec3::UnitY())
-      * Eigen::AngleAxis<double>(rot(2), Vec3::UnitZ())).toRotationMatrix();
-
-    R = R * Rcor;
-    t = t + transAdd;
-    S = S + SAdd;
-  }
-
-  // Refine rotation
-  {
-    lm_RRefine_functor functor(3, 3*x1.cols(), x1, x2, S, R, t);
-
-    Eigen::NumericalDiff<lm_RRefine_functor> numDiff(functor);
-
-    Eigen::LevenbergMarquardt<Eigen::NumericalDiff<lm_RRefine_functor> > lm(numDiff);
-    lm.parameters.maxfev = 1000;
-    Vec xlm = Vec::Zero(3); // The deviation vector {rotX,rotY,rotZ}
-
-    lm.minimize(xlm);
-
-    Vec3 rot = xlm.block<3,1>(0,0);
-
-    //Build the rotation matrix
-    Mat3 Rcor =
-      (Eigen::AngleAxis<double>(rot(0), Vec3::UnitX())
-      * Eigen::AngleAxis<double>(rot(1), Vec3::UnitY())
-      * Eigen::AngleAxis<double>(rot(2), Vec3::UnitZ())).toRotationMatrix();
-
-    R = R * Rcor;
-  }
-}
+void Refine_RTS(const Mat &x1,
+                const Mat &x2,
+                double &S,
+                Vec3 &t,
+                Mat3 &R);
 
 /**
  * @brief the Solver to use for ACRansac
@@ -380,56 +274,13 @@ private:
  * @return true if the found transformation is a similarity
  * @see FindRTS()
  */
-static bool ACRansac_FindRTS(const Mat &x1,
-                             const Mat &x2,
-                             double &S, 
-                             Vec3 &t, 
-                             Mat3 &R, 
-                             std::vector<std::size_t> &vec_inliers,
-                             bool refine = false)
-{
-  assert(3 == x1.rows());
-  assert(3 <= x1.cols());
-  assert(x1.rows() == x2.rows());
-  assert(x1.cols() == x2.cols());
-  
-  const std::size_t numIterations = 1024;
-  const double dPrecision = std::numeric_limits<double>::infinity();
-  
-  Mat4 RTS;
-
-  typedef geometry::RTSSolver SolverType;
-  typedef ACKernelAdaptor_PointsRegistrationSRT<
-          SolverType,
-          geometry::RTSSquaredResidualError> KernelType;
-
-  KernelType kernel = KernelType(x1, x2);
-  // Robust estimation of the Projection matrix and its precision
-  const std::pair<double, double> ACRansacOut =
-          robustEstimation::ACRANSAC(kernel, vec_inliers, numIterations, &RTS, dPrecision, true);
-  
-  const bool good = decomposeRTS(RTS, S, t, R);
-  
-  // return if it is not good or refine is not required
-  if(!good || !refine)
-    return good;
-
-  const std::size_t nbInliers = vec_inliers.size();
-  //only refine the inliers
-  Mat inliers1 = Mat3X(3, nbInliers);
-  Mat inliers2 = Mat3X(3, nbInliers);
-
-  for(std::size_t i = 0; i < nbInliers; ++i)
-  {
-    inliers1.col(i) = x1.col(vec_inliers[i]);
-    inliers2.col(i) = x2.col(vec_inliers[i]);
-  }
-
-  geometry::Refine_RTS(inliers1, inliers2, S, t, R);
-  
-  return good;
-
-}
+bool ACRansac_FindRTS(const Mat &x1,
+                      const Mat &x2,
+                      double &S,
+                      Vec3 &t,
+                      Mat3 &R,
+                      std::vector<std::size_t> &vec_inliers,
+                      bool refine = false);
 
 /**
  * @brief Uses AC ransac to robustly estimate the similarity between two sets of 
@@ -443,7 +294,7 @@ static bool ACRansac_FindRTS(const Mat &x1,
  * @see geometry::FindRTS()
  * @see geometry::ACRansac_FindRTS()
  */
-static bool ACRansac_FindRTS(const Mat &x1, 
+inline bool ACRansac_FindRTS(const Mat &x1,
                              const Mat &x2, 
                              Mat4 &RTS, 
                              std::vector<std::size_t> &vec_inliers,
@@ -453,7 +304,6 @@ static bool ACRansac_FindRTS(const Mat &x1,
   Vec3 t; 
   Mat3 R; 
   const bool good = ACRansac_FindRTS(x1, x2, S, t, R, vec_inliers, refine);
-  
   if(good)
     composeRTS(S, t, R, RTS);
   
@@ -462,5 +312,3 @@ static bool ACRansac_FindRTS(const Mat &x1,
 
 } // namespace geometry
 } // namespace aliceVision
-
-#endif  // ALICEVISION_GEOMETRY_REGISTRATION_7DOF_H_

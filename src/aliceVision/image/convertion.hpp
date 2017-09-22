@@ -95,8 +95,7 @@ void rgb2Float( const ImageIn& imaIn,
 // Float to RGB ( unsigned char or int )
 //--------------------------------------------------------------------------
 
-static inline
-void convertFloatToInt(
+inline void convertFloatToInt(
   const RGBfColor& valIn,
   RGBColor& valOut,
   float factor = 255.f)
@@ -105,7 +104,7 @@ void convertFloatToInt(
     valOut(channel) = (int)(valIn(channel) * factor);
 }
 
-static inline void rgbFloat2rgbInt(
+inline void rgbFloat2rgbInt(
         const Image< RGBfColor >& imaIn,
         Image< RGBColor > *imaOut,
         float factor = 255.f)

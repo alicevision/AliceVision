@@ -8,11 +8,6 @@
 # define _CRT_SECURE_NO_WARNINGS
 #endif
 
-#include <iostream>
-#include <vector>
-
-#include "aliceVision/numeric/numeric.hpp"
-
 #include "aliceVision/image/Image.hpp"
 #include "aliceVision/image/pixelTypes.hpp"
 #include "aliceVision/image/convertion.hpp"

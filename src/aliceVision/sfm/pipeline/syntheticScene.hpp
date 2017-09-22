@@ -3,12 +3,12 @@
 
 #include "aliceVision/multiview/NViewDataSet.hpp"
 #include "aliceVision/sfm/sfm.hpp"
-using namespace aliceVision;
-using namespace aliceVision::sfm;
 
 #include <random>
 #include <iostream>
 
+using namespace aliceVision;
+using namespace aliceVision::sfm;
 
 // Create from a synthetic scene (NViewDataSet) some SfM pipelines data provider:
 //  - for contiguous triplets store the corresponding observations indexes
@@ -34,7 +34,7 @@ inline bool generateSyntheticMatches(
 
 
 /// Compute the Root Mean Square Error of the residuals
-static double RMSE(const SfMData & sfm_data)
+inline double RMSE(const SfMData & sfm_data)
 {
   // Compute residuals for each observation
   std::vector<double> vec;

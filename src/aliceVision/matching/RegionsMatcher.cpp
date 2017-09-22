@@ -172,6 +172,5 @@ std::unique_ptr<IRegionsMatcher> createRegionsMatcher(const feature::Regions & r
   return out;
 }
 
-
 }  // namespace matching
 }  // namespace aliceVision

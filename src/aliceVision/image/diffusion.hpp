@@ -6,6 +6,8 @@
 #include <aliceVision/config.hpp>
 #include <aliceVision/alicevision_omp.hpp>
 
+#include <vector>
+
 #ifdef _MSC_VER
 #pragma warning(once:4244)
 #endif
@@ -230,7 +232,7 @@ void ImageFEDCycle( Image & self , const Image & diff , const std::vector< typen
 }
 
 // Compute if a number is prime of not
-static bool IsPrime( const int i )
+inline bool IsPrime( const int i )
 {
   if( i == 1 )
   {
@@ -257,7 +259,7 @@ static bool IsPrime( const int i )
   return true;
 }
 
-static inline int NextPrimeGreaterOrEqualTo( const int i )
+inline int NextPrimeGreaterOrEqualTo( const int i )
 {
   if( IsPrime( i ) )
   {

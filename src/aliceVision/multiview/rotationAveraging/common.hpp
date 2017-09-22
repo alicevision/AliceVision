@@ -27,7 +27,7 @@ typedef std::vector<RelativeRotation> RelativeRotations;
 typedef std::map<Pair, RelativeRotation> RelativeRotationsMap;
 
 /// List the pairs used by the relative rotations
-static PairSet getPairs(const RelativeRotations & relRots)
+inline PairSet getPairs(const RelativeRotations & relRots)
 {
   PairSet pairs;
   for(RelativeRotations::const_iterator it = relRots.begin(); it != relRots.end(); ++it)
@@ -36,7 +36,7 @@ static PairSet getPairs(const RelativeRotations & relRots)
 }
 
 /// Convert a relative motion iterable sequence to RelativeRotation indexed by pairs
-static RelativeRotationsMap getMap(const RelativeRotations & relRots)
+inline RelativeRotationsMap getMap(const RelativeRotations & relRots)
 {
   RelativeRotationsMap map_rots;
   for(RelativeRotations::const_iterator it = relRots.begin(); it != relRots.end(); ++it)

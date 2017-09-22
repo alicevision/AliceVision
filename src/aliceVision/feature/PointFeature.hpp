@@ -136,7 +136,7 @@ inline std::istream& operator>>(std::istream& in, SIOPointFeature& obj)
 
 /// Read feats from file
 template<typename FeaturesT >
-static bool loadFeatsFromFile(
+inline bool loadFeatsFromFile(
   const std::string & sfileNameFeats,
   FeaturesT & vec_feat)
 {
@@ -157,7 +157,7 @@ static bool loadFeatsFromFile(
 
 /// Write feats to file
 template<typename FeaturesT >
-static bool saveFeatsToFile(
+inline bool saveFeatsToFile(
   const std::string & sfileNameFeats,
   FeaturesT & vec_feat)
 {

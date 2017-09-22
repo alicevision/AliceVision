@@ -126,10 +126,9 @@ public:
      * of the database and the query Regions.
    * @return True if everything went well.
    */
-  bool Match(
-    const float f_dist_ratio,
-    const feature::Regions& queryregions_,
-    matching::IndMatches & vec_putative_matches)
+  bool Match(const float f_dist_ratio,
+             const feature::Regions& queryregions_,
+             matching::IndMatches & vec_putative_matches)
   {
 
     const Scalar * queries = reinterpret_cast<const Scalar *>(queryregions_.DescriptorRawData());
@@ -151,7 +150,7 @@ public:
       vec_fDistance.begin(), // distance start
       vec_fDistance.end(),   // distance end
       NNN__, // Number of neighbor in iterator sequence (minimum required 2)
-      vec_nn_ratio_idx, // output (indices that respect the distance Ratio)     
+      vec_nn_ratio_idx, // output (indices that respect the distance Ratio)
       b_squared_metric_ ? Square(f_dist_ratio) : f_dist_ratio);
 
     vec_putative_matches.reserve(vec_nn_ratio_idx.size());
@@ -159,9 +158,9 @@ public:
     {
       const size_t index = vec_nn_ratio_idx[k];
       vec_putative_matches.emplace_back(vec_nIndice[index*NNN__]._j, vec_nIndice[index*NNN__]._i
-#ifdef ALICEVISION_DEBUG_MATCHING
+  #ifdef ALICEVISION_DEBUG_MATCHING
           , (float) vec_fDistance[vec_nn_ratio_idx[0]]
-#endif
+  #endif
       );
     }
 

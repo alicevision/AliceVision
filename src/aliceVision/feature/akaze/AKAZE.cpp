@@ -21,7 +21,7 @@ const float gauss25[7][7] = {
 };
 
 // Compute slice scale
-static inline float Sigma( const float sigma0 , const int p , const int q , const int Q )
+inline float Sigma( const float sigma0 , const int p , const int q , const int Q )
 {
   if( p == 0 && q == 0 )
     return sigma0 ;

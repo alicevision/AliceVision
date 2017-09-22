@@ -167,7 +167,7 @@ std::istream& Descriptor<T,N>::read(std::istream& in)
 
 /// Read descriptors from file
 template<typename DescriptorsT >
-static bool loadDescsFromFile(
+inline bool loadDescsFromFile(
   const std::string & sfileNameDescs,
   DescriptorsT & vec_desc)
 {
@@ -188,7 +188,7 @@ static bool loadDescsFromFile(
 
 /// Write descriptors to file
 template<typename DescriptorsT >
-static bool saveDescsToFile(
+inline bool saveDescsToFile(
   const std::string & sfileNameDescs,
   DescriptorsT & vec_desc)
 {
@@ -243,7 +243,7 @@ void convertDesc(
  * @return true if everything went well
  */
 template<typename DescriptorT, typename FileDescriptorT = DescriptorT>
-bool loadDescsFromBinFile(
+inline bool loadDescsFromBinFile(
   const std::string & sfileNameDescs,
   std::vector<DescriptorT> & vec_desc,
   bool append = false,
@@ -286,7 +286,7 @@ bool loadDescsFromBinFile(
 
 /// Write descriptors to file (in binary mode)
 template<typename DescriptorsT >
-bool saveDescsToBinFile(
+inline bool saveDescsToBinFile(
   const std::string & sfileNameDescs,
   DescriptorsT & vec_desc)
 {

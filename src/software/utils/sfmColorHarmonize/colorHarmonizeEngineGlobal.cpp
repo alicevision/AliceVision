@@ -98,7 +98,7 @@ ColorHarmonizationEngineGlobal::~ColorHarmonizationEngineGlobal()
 {
 }
 
-static void pauseProcess()
+inline void pauseProcess()
 {
   unsigned char i;
   cout << "\nPause : type key and press enter: ";

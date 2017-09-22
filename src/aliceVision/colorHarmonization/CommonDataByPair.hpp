@@ -48,14 +48,12 @@ public:
     size_t channelIndex,
     const image::Image< ImageType >& image )
   {
-    for( int j = 0; j < mask.Height(); ++j )
+    for(int j = 0; j < mask.Height(); ++j)
     {
-      for( int i = 0; i < mask.Width(); ++i )
+      for(int i = 0; i < mask.Width(); ++i)
       {
-        if( ( int )mask( j, i ) != 0 )
-        {
-          histo.Add( image( j, i )( channelIndex ) );
-        }
+        if((int)mask(j,i) != 0)
+          histo.Add(image(j,i)(channelIndex));
       }
     }
   }
