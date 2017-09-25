@@ -55,7 +55,7 @@ public:
 
 //  void computeStatesMaps_strategy3(const SfM_Data & sfm_data, const std::set<IndexT> &newReconstructedViewIds);
 
-  void computeStatesMaps_strategy4(const SfM_Data & sfm_data, LocalBA_Data& lba_data, const std::set<IndexT> &newReconstructedViewIds);
+  void computeStatesMaps_strategy4(const SfM_Data & sfm_data, LocalBA_Data& lba_data);
 
   
   void setBAStatisticsContainer(LocalBA_stats& baStats) {_LBA_statistics = baStats;}

@@ -48,7 +48,6 @@ void LocalBA_Data::updateGraph(
       if (it == map_viewId_node.end()) // the view doesn't already have an associated node
         viewIdsAddedToTheGraph.insert(viewId);
     }
-    //    viewIdsAddedToTheGraph = newViewIds; 
   }
   
   if (viewIdsAddedToTheGraph.empty())
@@ -56,16 +55,13 @@ void LocalBA_Data::updateGraph(
   
   std::cout << "graph_poses.maxNodeId() = " << graph_poses.maxNodeId() << std::endl;
   std::cout << "viewIdsAddedToTheGraph.size() = " << viewIdsAddedToTheGraph.size() << std::endl;
-  //  getchar();
   
   // Add the views as nodes to the graph:
   //  std::cout << "nouveaux noeuds ajoutés au graph (viewIds) : " << std::endl;
   std::cout << "adding node to the graph..." << std::endl;
   for (auto& viewId : viewIdsAddedToTheGraph)
   {
-    //    std::cout << viewId << std::endl;
     lemon::ListGraph::Node newNode = graph_poses.addNode();
-    //    _map_node_viewId.set(newNode, viewId);
     map_viewId_node[viewId] = newNode;  
   }
   
@@ -368,7 +364,6 @@ void LocalBA_Data::computeParameterLimits(const IntrinsicParameter& parameter, c
     if (stdevSubValues*100.0 <= kStdDevPercentage && intrinsicsLimitIds.at(idIntr).at(parameter) == 0)
     {
       intrinsicsLimitIds.at(idIntr).at(parameter) = numPosesEndWindow;    
-      getchar();
     }
   }
 }
@@ -402,6 +397,75 @@ double LocalBA_Data::standardDeviation(const std::vector<T>& data)
   double sq_sum = std::inner_product(diff.begin(), diff.end(), diff.begin(), 0.0);
   return std::sqrt(sq_sum / data.size());
 }  
+
+
+void LocalBA_Data::exportIntrinsicsHistory(const std::string& folder)
+{
+  std::cout << "Writting intrinsics..." << std::endl;
+  for (auto& itIntr : intrinsicsHistory)
+  {
+    IndexT idIntr = itIntr.first;
+    
+    std::string filename = folder + "/K" + std::to_string(idIntr) + ".txt";
+    std::ofstream os;
+    os.open(filename, std::ios::app);
+    os.seekp(0, std::ios::end); //put the cursor at the end
+    
+    
+    if (intrinsicsHistory.at(idIntr).size() == 1) // 'intrinsicsHistory' contains EXIF data only
+    {
+      // -- HEADER
+      if (os.tellp() == 0) // 'tellp' return the cursor's position
+      {
+        std::vector<std::string> header;
+        header.push_back("#poses");
+        header.push_back("f"); 
+        header.push_back("ppx"); 
+        header.push_back("ppy"); 
+        header.push_back("d1"); 
+        header.push_back("d2"); 
+        header.push_back("d3"); 
+        header.push_back("f_limit"); 
+        header.push_back("ppx_limit"); 
+        header.push_back("ppy_limit");  
+        for (std::string & head : header)
+          os << head << "\t";
+        os << "\n"; 
+      }
+      
+      // -- EXIF DATA
+      os << 0 << "\t";
+      os << getLastIntrinsicParameters(idIntr).at(0) << "\t";
+      os << getLastIntrinsicParameters(idIntr).at(1) << "\t";
+      os << getLastIntrinsicParameters(idIntr).at(2) << "\t";
+      os << getLastIntrinsicParameters(idIntr).at(3) << "\t";
+      os << getLastIntrinsicParameters(idIntr).at(4) << "\t";
+      os << getLastIntrinsicParameters(idIntr).at(5) << "\t";
+      os << getIntrinsicLimitIds(idIntr).at(0) << "\t";
+      os << getIntrinsicLimitIds(idIntr).at(1) << "\t";
+      os << getIntrinsicLimitIds(idIntr).at(2) << "\t";
+      os << "\n";
+    }
+    else // Write the last intrinsics
+    {
+      // -- DATA
+      IntrinsicParams lastParams = intrinsicsHistory.at(idIntr).back();
+      os << lastParams.first << "\t";
+      os << lastParams.second.at(0) << "\t";
+      os << lastParams.second.at(1) << "\t";
+      os << lastParams.second.at(2) << "\t";
+      os << lastParams.second.at(3) << "\t";
+      os << lastParams.second.at(4) << "\t";
+      os << lastParams.second.at(5) << "\t";
+      os << getIntrinsicLimitIds(idIntr).at(0) << "\t";
+      os << getIntrinsicLimitIds(idIntr).at(1) << "\t";
+      os << getIntrinsicLimitIds(idIntr).at(2) << "\t";
+      os << "\n";
+    }
+    os.close();
+  }
+  std::cout << "Writting intrinsics... done" << std::endl;
+}
 
 } // namespace sfm
 } // namespace openMVG

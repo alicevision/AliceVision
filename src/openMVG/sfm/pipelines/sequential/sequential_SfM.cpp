@@ -176,61 +176,7 @@ void SequentialSfMReconstructionEngine::RobustResectionOfImages(
   // Used by Local BA 
   LocalBA_Data lba_data(_sfm_data);
   
-  ///////////////////////////////////////////////////////////////////////////////////////////
-  ///////////////////////////////////////////////////////////////////////////////////////////
-  //        /* Save Intrinsics V2 */
-  // Write EXIF files
-  {
-    std::cout << "Writting intrinsics..." << std::endl;
-    for (auto& itIntr : _sfm_data.intrinsics)
-    {
-      IndexT idIntr = itIntr.first;
-      
-      std::string filename = _sOutDirectory + "K" + std::to_string(idIntr) + ".txt";
-      std::ofstream os;
-      os.open(filename, std::ios::app);
-      os.seekp(0, std::ios::end); //put the cursor at the end
-      
-      // -- HEADER
-      if (os.tellp() == 0) // 'tellp' return the cursor's position
-      {
-        std::vector<std::string> header;
-        header.push_back("#poses");
-        header.push_back("f"); 
-        header.push_back("ppx"); 
-        header.push_back("ppy"); 
-        header.push_back("d1"); 
-        header.push_back("d2"); 
-        header.push_back("d3"); 
-        header.push_back("f_limit"); 
-        header.push_back("ppx_limit"); 
-        header.push_back("ppy_limit");  
-        for (std::string & head : header)
-          os << head << "\t";
-        os << "\n"; 
-      }
-      
-      // -- count the number of usage of each intrinsic among the aready resected poses
-      std::vector<double> params = _sfm_data.GetIntrinsicPtr(idIntr)->getParams();
-      
-      // -- DATA
-      os << 0 << "\t";
-      os << params.at(0) << "\t";
-      os << params.at(1) << "\t";
-      os << params.at(2) << "\t";
-      os << params.at(3) << "\t";
-      os << params.at(4) << "\t";
-      os << params.at(5) << "\t";
-      os << lba_data.getIntrinsicLimitIds(idIntr).at(0) << "\t";
-      os << lba_data.getIntrinsicLimitIds(idIntr).at(1) << "\t";
-      os << lba_data.getIntrinsicLimitIds(idIntr).at(2) << "\t";
-      os << "\n";
-      
-      os.close();
-      
-    }
-    std::cout << "Writting intrinsics... done" << std::endl;
-  }
+  lba_data.exportIntrinsicsHistory(_sOutDirectory); // export EXIF
   
   while (FindNextImagesGroupForResection(vec_possible_resection_indexes, set_remainingViewId))
   {
@@ -310,52 +256,8 @@ void SequentialSfMReconstructionEngine::RobustResectionOfImages(
       OPENMVG_LOG_DEBUG("Bundle with " << bundleAdjustmentIteration << " iterations took " << std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - chrono_start).count() << " msec.");
       chrono_start = std::chrono::steady_clock::now();
       
-      
-      
-      ///////////////////////////////////////////////////////////////////////////////////////////
-      ///////////////////////////////////////////////////////////////////////////////////////////
-      //        /* Save Intrinsics V2 (suite) */
-      {
-        std::cout << "Writting intrinsics..." << std::endl;
-        std::map<IndexT, std::size_t> map_intrinsicId_usageNum = _sfm_data.GetIntrinsicsUsage();
-        for (auto& itIntr : _sfm_data.intrinsics)
-        {
-          IndexT idIntr = itIntr.first;
-          
-          std::string filename = _sOutDirectory + "K" + std::to_string(idIntr) + ".txt";
-          std::ofstream os;
-          os.open(filename, std::ios::app);
-          os.seekp(0, std::ios::end); //put the cursor at the end
-          
-          // -- count the number of usage of each intrinsic among the aready resected poses
-          std::size_t usageNum = map_intrinsicId_usageNum[idIntr];
-          std::vector<double> params = _sfm_data.GetIntrinsicPtr(idIntr)->getParams();
-          
-          // -- DATA
-          os << usageNum << "\t";
-          os << params.at(0) << "\t";
-          os << params.at(1) << "\t";
-          os << params.at(2) << "\t";
-          os << params.at(3) << "\t";
-          os << params.at(4) << "\t";
-          os << params.at(5) << "\t";
-          os << lba_data.getIntrinsicLimitIds(idIntr).at(0) << "\t";
-          os << lba_data.getIntrinsicLimitIds(idIntr).at(1) << "\t";
-          os << lba_data.getIntrinsicLimitIds(idIntr).at(2) << "\t";
-          os << "\n";
-          
-          os.close();
-          
-        }
-        std::cout << "Writting intrinsics... done" << std::endl;
-      }
-      
-
-      ///////////////////////////////////////////////////////////////////////////////////////////
-      ///////////////////////////////////////////////////////////////////////////////////////////
-      
-      ////////////////////////////////////////////////////////////////////////////////////////^^^^^^^^
-      
+      lba_data.exportIntrinsicsHistory(_sOutDirectory);
+            
       // Remove unstable poses & extract removed poses id
       Poses poses_saved =  _sfm_data.poses;
       std::cout << "-- eraseUnstablePosesAndObservations" << std::endl;
@@ -1722,7 +1624,7 @@ bool SequentialSfMReconstructionEngine::localBundleAdjustment(
       duration.reset();
     }
     
-    localBA_obj.computeStatesMaps_strategy4(_sfm_data, localBA_data, newReconstructedViewIds);    
+    localBA_obj.computeStatesMaps_strategy4(_sfm_data, localBA_data);    
     
     {
       times.statesMapsComputing = duration.elapsed(); 

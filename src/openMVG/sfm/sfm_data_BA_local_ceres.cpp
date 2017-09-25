@@ -688,7 +688,7 @@ bool Local_Bundle_Adjustment_Ceres::Adjust(SfM_Data& sfm_data)
 //  }
 //}
 
-void Local_Bundle_Adjustment_Ceres::computeStatesMaps_strategy4(const SfM_Data & sfm_data, LocalBA_Data& lba_data, const std::set<IndexT> &newReconstructedViewIds)
+void Local_Bundle_Adjustment_Ceres::computeStatesMaps_strategy4(const SfM_Data & sfm_data, LocalBA_Data& lba_data)
 {
   // reset the maps
   _map_poseId_LBAState.clear();

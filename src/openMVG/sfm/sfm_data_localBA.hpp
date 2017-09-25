@@ -55,7 +55,13 @@ public:
   
   std::vector<IndexT> getIntrinsicLimitIds(const IndexT intrinsicId) const {return intrinsicsLimitIds.at(intrinsicId);}
   
+  std::vector<double> getLastIntrinsicParameters(const IndexT intrinsicId) const {return intrinsicsHistory.at(intrinsicId).back().second;}
+  
   bool isLimitReached(const IndexT intrinsicId, IntrinsicParameter parameter) const { return intrinsicsLimitIds.at(intrinsicId).at(parameter) != 0;}
+  
+  void exportIntrinsicsHistory(const std::string& folder);
+  
+  
   
     /// @brief Complete the graph '_reconstructionGraph' with new poses
   void updateGraph(const SfM_Data& sfm_data, 
