@@ -27,6 +27,7 @@ set(sfm_files_headers
   sfm_data_io_cereal.hpp
   sfm_data_io_gt.hpp
   sfm_data_io_ply.hpp
+  sfm_data_localBA.hpp
   sfm_data_triangulation.hpp
   sfm_data_utils.hpp
   sfm_filters.hpp
@@ -55,6 +56,7 @@ set(sfm_files_sources
   sfm_data_filters_frustum.cpp
   sfm_data_io.cpp
   sfm_data_io_gt.cpp
+  sfm_data_localBA.cpp
   sfm_data_triangulation.cpp
   sfm_data_utils.cpp
   utils/alignment.cpp

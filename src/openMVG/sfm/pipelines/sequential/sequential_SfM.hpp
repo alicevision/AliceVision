@@ -8,6 +8,7 @@
 #pragma once
 
 #include "openMVG/sfm/sfm_data_io.hpp"
+#include "openMVG/sfm/sfm_data_localBA.hpp"
 #include "openMVG/sfm/pipelines/sfm_engine.hpp"
 #include "openMVG/features/FeaturesPerView.hpp"
 #include "openMVG/sfm/pipelines/sfm_matches_provider.hpp"
@@ -24,6 +25,7 @@ namespace pt = boost::property_tree;
 
 namespace openMVG {
 namespace sfm {
+
 
 /// Sequential SfM Pipeline Reconstruction Engine.
 class SequentialSfMReconstructionEngine : public ReconstructionEngine
@@ -178,46 +180,15 @@ private:
                              lemon::ListGraph& graph_poses, 
                              std::map<IndexT, lemon::ListGraph::Node>& map_viewId_node, 
                              std::map<IndexT, int>& mapViewIdDistance, 
-                             IntrinsicsHistorical& map_intrinsicsHistorical,
-                             std::map<IndexT, std::vector<IndexT>>& map_intrinsicsLimits,
-                             const string &filename);
+                             LocalBA_Data& lba_data,
+                             const string& filename);
   
   /// .... [TO COMMENT] ....
   
-  /// Normalize data as: 
-  /// normalizedData[i] = (data[i] - min(data)) / (max(data) - min(data)) 
-  template<typename T> 
-  std::vector<T> normalize(const std::vector<T>& data) 
-  { 
-    std::vector<T> normalizedData;
-    normalizedData.reserve(data.size());
-    T minVal = *std::min_element(data.begin(), data.end());
-    T maxVal = *std::max_element(data.begin(), data.end());
-    for (auto const& val : data)
-      normalizedData.push_back((val - minVal)/(maxVal - minVal));
-      
-    std:cout << "Nomalize: " << std::endl;
-    std::cout << "min = " << minVal << " at #" <<  std::distance(data.begin(), std::min_element(data.begin(), data.end())) << std::endl;
-    std::cout << "max = " << maxVal << " at #" << std::distance(data.begin(), std::max_element(data.begin(), data.end())) << std::endl;
-    return normalizedData;
-  }  
   
   /// .... [TO COMMENT] ....
-  
-  template<typename T> 
-  double standardDeviation(const std::vector<T>& data) 
-  { 
-    double sum = std::accumulate(data.begin(), data.end(), 0.0);
-    double mean = sum / data.size();
-    std::vector<double> diff(data.size());
-    std::transform(data.begin(), data.end(), diff.begin(), [mean](double x) { return x - mean; });
-    double sq_sum = std::inner_product(diff.begin(), diff.end(), diff.begin(), 0.0);
-    return std::sqrt(sq_sum / data.size());
-  }  
-  
-  /// .... [TO COMMENT] ....
-  void checkIntrinsicParametersLimits(IntrinsicsHistorical &intrinsicsHistorical,
-      std::map<IndexT, std::vector<IndexT>>& map_intrinsicsLimits);
+  //  void checkIntrinsicParametersLimits(IntrinsicsHistorical &intrinsicsHistorical,
+  //                                      std::map<IndexT, std::vector<IndexT>>& map_intrinsicsLimits);
   
   
   

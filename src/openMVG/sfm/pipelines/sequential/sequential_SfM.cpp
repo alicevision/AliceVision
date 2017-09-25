@@ -160,187 +160,183 @@ SequentialSfMReconstructionEngine::~SequentialSfMReconstructionEngine()
   }
 }
 
-void SequentialSfMReconstructionEngine::checkIntrinsicParametersLimits(
-    IntrinsicsHistorical& intrinsicsHistorical,
-    std::map<IndexT, std::vector<IndexT>>& map_intrinsicsLimits)
-{
-  const std::size_t kWindowSize = 25; // Number of last images to consider 
-  const double kStdDevPercentage = 1.0; // unit [%]
+//void SequentialSfMReconstructionEngine::checkIntrinsicParametersLimits(
+//    IntrinsicsHistorical& intrinsicsHistorical,
+//    std::map<IndexT, std::vector<IndexT>>& map_intrinsicsLimits)
+//{
+//  const std::size_t kWindowSize = 25; // Number of last images to consider 
+//  const double kStdDevPercentage = 1.0; // unit [%]
   
-  std::cout << "?Update 'map_intrinsicsHistorical' & detect limits..." << std::endl;
-  std::map<IndexT, std::size_t> map_intrId_numPoses = _sfm_data.GetIntrinsicsUsage();
-  std::cout << map_intrId_numPoses << std::endl;
+//  std::cout << "?Update 'map_intrinsicsHistorical' & detect limits..." << std::endl;
+//  std::map<IndexT, std::size_t> map_intrId_numPoses = _sfm_data.GetIntrinsicsUsage();
+//  std::cout << map_intrId_numPoses << std::endl;
   
-  for (auto& elt : _sfm_data.intrinsics)
-  {
-    IndexT idIntr = elt.first;
-//    if (map_intrId_numPoses.find(idIntr) != map_intrId_numPoses.end()) 
-//      // refined intrinsic
-      intrinsicsHistorical.at(idIntr).push_back(std::make_pair(map_intrId_numPoses[idIntr], _sfm_data.GetIntrinsicPtr(idIntr)->getParams()));
-//    else 
-//      // intrinsic not refined yet
-//      intrinsicsHistorical.at(idIntr).push_back(std::make_pair(0, _sfm_data.GetIntrinsicPtr(idIntr)->getParams()));
+//  for (auto& elt : _sfm_data.intrinsics)
+//  {
+//    IndexT idIntr = elt.first;
     
-    // Do not compute limits if there are already reached for each parameter
-    if (map_intrinsicsLimits.at(idIntr).at(0) != 0 &&
-        map_intrinsicsLimits.at(idIntr).at(1) != 0 && 
-        map_intrinsicsLimits.at(idIntr).at(2) != 0)  
-      continue;
+//    intrinsicsHistorical.at(idIntr).push_back(std::make_pair(map_intrId_numPoses[idIntr], _sfm_data.GetIntrinsicPtr(idIntr)->getParams()));
     
-    // TODO: verifier F cx et cy séparement
-    // (uniquemlent sur F a long terme ?)
-    //            .........
-    //
+//    // Do not compute limits if there are already reached for each parameter
+//    if (map_intrinsicsLimits.at(idIntr).at(0) != 0 &&
+//        map_intrinsicsLimits.at(idIntr).at(1) != 0 && 
+//        map_intrinsicsLimits.at(idIntr).at(2) != 0)  
+//      continue;
     
-    std::cout << "-- K #" << idIntr << std::endl;
+//    // TODO: verifier F cx et cy séparement
+//    // (uniquemlent sur F a long terme ?)
+//    //            .........
+//    //
     
-    // Get the full history of intrinsic parameters
-    std::vector<std::size_t> allNumPosesVec;
-    std::vector<double> allFocalVec, allCxVec, allCyVec; 
+//    std::cout << "-- K #" << idIntr << std::endl;
     
-    for (const auto& pair_uses_params : intrinsicsHistorical.at(idIntr))
-    {
-      allNumPosesVec.push_back(pair_uses_params.first);
-      allFocalVec.push_back(pair_uses_params.second.at(0));
-      allCxVec.push_back(pair_uses_params.second.at(1));
-      allCyVec.push_back(pair_uses_params.second.at(2));
-    }
+//    // Get the full history of intrinsic parameters
+//    std::vector<std::size_t> allNumPosesVec;
+//    std::vector<double> allFocalVec, allCxVec, allCyVec; 
     
-    std::cout << "allNumPosesVec = " << allNumPosesVec << std::endl;
+//    for (const auto& pair_uses_params : intrinsicsHistorical.at(idIntr))
+//    {
+//      allNumPosesVec.push_back(pair_uses_params.first);
+//      allFocalVec.push_back(pair_uses_params.second.at(0));
+//      allCxVec.push_back(pair_uses_params.second.at(1));
+//      allCyVec.push_back(pair_uses_params.second.at(2));
+//    }
     
-    std::cout << "- Clean duplicated & removed cameras..." << std::endl;
-    // Clean 'intrinsicsHistorical':
-    //  [4 5 5 7 8 6 9]
-    // - detect duplicates -> [4 (5) 5 7 8 6 9]
-    // - detecting removed cameras -> [4 5 (7 8) 6 9]
-    std::vector<std::size_t> filteredNumPosesVec(allNumPosesVec);
-    std::vector<double> filteredFocalVec(allFocalVec);
-    std::vector<double> filteredCxVec(allCxVec);
-    std::vector<double> filteredCyVec(allCyVec);
+//    std::cout << "allNumPosesVec = " << allNumPosesVec << std::endl;
     
-    std::size_t numPosesEndWindow = allNumPosesVec.back();
+//    std::cout << "- Clean duplicated & removed cameras..." << std::endl;
+//    // Clean 'intrinsicsHistorical':
+//    //  [4 5 5 7 8 6 9]
+//    // - detect duplicates -> [4 (5) 5 7 8 6 9]
+//    // - detecting removed cameras -> [4 5 (7 8) 6 9]
+//    std::vector<std::size_t> filteredNumPosesVec(allNumPosesVec);
+//    std::vector<double> filteredFocalVec(allFocalVec);
+//    std::vector<double> filteredCxVec(allCxVec);
+//    std::vector<double> filteredCyVec(allCyVec);
     
-    for (int id = filteredNumPosesVec.size()-2; id > 0; --id)
-    {
-      if (filteredNumPosesVec.size() < 2)
-        break;
+//    std::size_t numPosesEndWindow = allNumPosesVec.back();
+    
+//    for (int id = filteredNumPosesVec.size()-2; id > 0; --id)
+//    {
+//      if (filteredNumPosesVec.size() < 2)
+//        break;
       
-      if (filteredNumPosesVec.at(id) >= filteredNumPosesVec.at(id+1))
-      {
-        filteredNumPosesVec.erase(filteredNumPosesVec.begin()+id);
-        filteredFocalVec.erase(filteredFocalVec.begin()+id);
-        filteredCxVec.erase(filteredCxVec.begin()+id);
-        filteredCyVec.erase(filteredCyVec.begin()+id);
-      }
-    }
-    std::cout << "filtredNumPosesVec = " << filteredNumPosesVec << std::endl;
+//      if (filteredNumPosesVec.at(id) >= filteredNumPosesVec.at(id+1))
+//      {
+//        filteredNumPosesVec.erase(filteredNumPosesVec.begin()+id);
+//        filteredFocalVec.erase(filteredFocalVec.begin()+id);
+//        filteredCxVec.erase(filteredCxVec.begin()+id);
+//        filteredCyVec.erase(filteredCyVec.begin()+id);
+//      }
+//    }
+//    std::cout << "filtredNumPosesVec = " << filteredNumPosesVec << std::endl;
     
-    // Detect limit according to 'kWindowSize':
-    if (numPosesEndWindow < kWindowSize)
-      continue;
+//    // Detect limit according to 'kWindowSize':
+//    if (numPosesEndWindow < kWindowSize)
+//      continue;
     
-    IndexT idStartWindow = 0;
-    for (int id = filteredNumPosesVec.size()-2; id > 0; --id)
-    {
-      if (numPosesEndWindow - filteredNumPosesVec.at(id) >= kWindowSize)
-      {
-        idStartWindow = id;
-        break;
-      }
-    }
+//    IndexT idStartWindow = 0;
+//    for (int id = filteredNumPosesVec.size()-2; id > 0; --id)
+//    {
+//      if (numPosesEndWindow - filteredNumPosesVec.at(id) >= kWindowSize)
+//      {
+//        idStartWindow = id;
+//        break;
+//      }
+//    }
     
-    std::size_t numPosesStartWindow = filteredNumPosesVec.at(idStartWindow);
+//    std::size_t numPosesStartWindow = filteredNumPosesVec.at(idStartWindow);
     
     
-    // Normalize parameters historical:
-    // The normalization need to be done on the all historical
-    std::cout << "- Normalize..." << std::endl;
-    std::vector<double> normFocalVec = normalize(filteredFocalVec);
-    std::vector<double> normCxVec = normalize(filteredCxVec);
-    std::vector<double> normCyVec = normalize(filteredCyVec);
-    // Compute the standard deviation for each parameter, between [idLimit; end()]
-    std::cout << "- Subpart vector..." << std::endl;
-    std::vector<double> subNumPosesVec (filteredNumPosesVec.begin()+idStartWindow, filteredNumPosesVec.end());
-    std::vector<double> subNormFocalVec (normFocalVec.begin()+idStartWindow, normFocalVec.end());
-    std::vector<double> subNormCxVec (normCxVec.begin()+idStartWindow, normCxVec.end());
-    std::vector<double> subNormCyVec (normCyVec.begin()+idStartWindow, normCyVec.end());
-    std::cout << "- Compute stdev..." << std::endl;
-    double stdevSubFocal = standardDeviation(subNormFocalVec);
-    double stdevSubCx = standardDeviation(subNormCxVec);
-    double stdevSubCy = standardDeviation(subNormCyVec);
+//    // Normalize parameters historical:
+//    // The normalization need to be done on the all historical
+//    std::cout << "- Normalize..." << std::endl;
+//    std::vector<double> normFocalVec = normalize(filteredFocalVec);
+//    std::vector<double> normCxVec = normalize(filteredCxVec);
+//    std::vector<double> normCyVec = normalize(filteredCyVec);
+//    // Compute the standard deviation for each parameter, between [idLimit; end()]
+//    std::cout << "- Subpart vector..." << std::endl;
+//    std::vector<double> subNumPosesVec (filteredNumPosesVec.begin()+idStartWindow, filteredNumPosesVec.end());
+//    std::vector<double> subNormFocalVec (normFocalVec.begin()+idStartWindow, normFocalVec.end());
+//    std::vector<double> subNormCxVec (normCxVec.begin()+idStartWindow, normCxVec.end());
+//    std::vector<double> subNormCyVec (normCyVec.begin()+idStartWindow, normCyVec.end());
+//    std::cout << "- Compute stdev..." << std::endl;
+//    double stdevSubFocal = standardDeviation(subNormFocalVec);
+//    double stdevSubCx = standardDeviation(subNormCxVec);
+//    double stdevSubCy = standardDeviation(subNormCyVec);
     
-    /* Display info */
-    std::cout << "idStartWindow = " << idStartWindow << std::endl;
-    std::cout << "numPosesStartWindow = " << numPosesStartWindow << std::endl;
-    std::cout << "numPosesEndWindow = " << numPosesEndWindow << std::endl;
-    std::cout << "subNumPosesVec = " << subNumPosesVec << std::endl;
+//    /* Display info */
+//    std::cout << "idStartWindow = " << idStartWindow << std::endl;
+//    std::cout << "numPosesStartWindow = " << numPosesStartWindow << std::endl;
+//    std::cout << "numPosesEndWindow = " << numPosesEndWindow << std::endl;
+//    std::cout << "subNumPosesVec = " << subNumPosesVec << std::endl;
     
-    bool test = stdevSubFocal*100.0 <= kStdDevPercentage;
-    std::cout << "stdevSubFocal*100.0 <= kStdDevPercentage? " << test << std::endl;
-    test = stdevSubCx*100.0 <= kStdDevPercentage;
-    std::cout << "stdevSubCx*100.0 <= kStdDevPercentage? " << test << std::endl;
-    test = stdevSubCy*100.0 <= kStdDevPercentage;
-    std::cout << "stdevSubCy*100.0 <= kStdDevPercentage? " << test << std::endl;
-    test =  map_intrinsicsLimits.at(idIntr).at(0) == 0;
-    std::cout << "map_intrinsicsLimits.at(idIntr).at(0)? " << test << std::endl;
-    test =  map_intrinsicsLimits.at(idIntr).at(1) == 0;
-    std::cout << "map_intrinsicsLimits.at(idIntr).at(1)? " << test 
-              << std::endl;
-    test =  map_intrinsicsLimits.at(idIntr).at(2) == 0;
-    std::cout << "map_intrinsicsLimits.at(idIntr).at(2)? " << test << std::endl;
+//    bool test = stdevSubFocal*100.0 <= kStdDevPercentage;
+//    std::cout << "stdevSubFocal*100.0 <= kStdDevPercentage? " << test << std::endl;
+//    test = stdevSubCx*100.0 <= kStdDevPercentage;
+//    std::cout << "stdevSubCx*100.0 <= kStdDevPercentage? " << test << std::endl;
+//    test = stdevSubCy*100.0 <= kStdDevPercentage;
+//    std::cout << "stdevSubCy*100.0 <= kStdDevPercentage? " << test << std::endl;
+//    test =  map_intrinsicsLimits.at(idIntr).at(0) == 0;
+//    std::cout << "map_intrinsicsLimits.at(idIntr).at(0)? " << test << std::endl;
+//    test =  map_intrinsicsLimits.at(idIntr).at(1) == 0;
+//    std::cout << "map_intrinsicsLimits.at(idIntr).at(1)? " << test 
+//              << std::endl;
+//    test =  map_intrinsicsLimits.at(idIntr).at(2) == 0;
+//    std::cout << "map_intrinsicsLimits.at(idIntr).at(2)? " << test << std::endl;
     
-    if (stdevSubFocal*100.0 <= kStdDevPercentage && map_intrinsicsLimits.at(idIntr).at(0) == 0)
-    {
-      map_intrinsicsLimits.at(idIntr).at(0) = numPosesEndWindow;      
-      //    haveBreak = true;  
-      std::cout << ">>>> Limit reached with Focal" << std::endl;
-      std::cout << "allFocalVec = " << allFocalVec << std::endl;
-      std::cout << "filteredFocalVec = " << filteredFocalVec << std::endl;
-      std::cout << "subNormFocalVec = " << subNormFocalVec << std::endl;
-      std::cout << "stdevSubFocal*100 = " << stdevSubFocal * 100.0 << std::endl;
-    }
-    if (stdevSubCx*100.0 <= kStdDevPercentage && map_intrinsicsLimits.at(idIntr).at(1) == 0)
-    {
-      map_intrinsicsLimits.at(idIntr).at(1) = numPosesEndWindow;
-      //    haveBreak = true;  
-      std::cout << ">>>> Limit reached with Cx" << std::endl;
-      std::cout << "allCxVec = " << allCxVec << std::endl;
-      std::cout << "filtredCxVec = " << filteredCxVec << std::endl;
-      std::cout << "subNormCxVec = " << subNormCxVec << std::endl;
-      std::cout << "stdevSubCx*100 = " << stdevSubCx * 100.0 << std::endl;
-    }
-    if (stdevSubCy*100.0 <= kStdDevPercentage && map_intrinsicsLimits.at(idIntr).at(2) == 0)
-    {
-      map_intrinsicsLimits.at(idIntr).at(2) = numPosesEndWindow;
-      //    haveBreak = true;  
-      std::cout << ">>>> Limit reached with Cy" << std::endl;
-      std::cout << "allCyVec = " << allCyVec << std::endl;
-      std::cout << "filtredCyVec = " << filteredCyVec << std::endl;
-      std::cout << "subNormCyVec = " << subNormCyVec << std::endl;
-      std::cout << "stdevSubCy*100 = " << stdevSubCy * 100.0 << std::endl;
-    }
+//    if (stdevSubFocal*100.0 <= kStdDevPercentage && map_intrinsicsLimits.at(idIntr).at(0) == 0)
+//    {
+//      map_intrinsicsLimits.at(idIntr).at(0) = numPosesEndWindow;      
+//      //    haveBreak = true;  
+//      std::cout << ">>>> Limit reached with Focal" << std::endl;
+//      std::cout << "allFocalVec = " << allFocalVec << std::endl;
+//      std::cout << "filteredFocalVec = " << filteredFocalVec << std::endl;
+//      std::cout << "subNormFocalVec = " << subNormFocalVec << std::endl;
+//      std::cout << "stdevSubFocal*100 = " << stdevSubFocal * 100.0 << std::endl;
+//    }
+//    if (stdevSubCx*100.0 <= kStdDevPercentage && map_intrinsicsLimits.at(idIntr).at(1) == 0)
+//    {
+//      map_intrinsicsLimits.at(idIntr).at(1) = numPosesEndWindow;
+//      //    haveBreak = true;  
+//      std::cout << ">>>> Limit reached with Cx" << std::endl;
+//      std::cout << "allCxVec = " << allCxVec << std::endl;
+//      std::cout << "filtredCxVec = " << filteredCxVec << std::endl;
+//      std::cout << "subNormCxVec = " << subNormCxVec << std::endl;
+//      std::cout << "stdevSubCx*100 = " << stdevSubCx * 100.0 << std::endl;
+//    }
+//    if (stdevSubCy*100.0 <= kStdDevPercentage && map_intrinsicsLimits.at(idIntr).at(2) == 0)
+//    {
+//      map_intrinsicsLimits.at(idIntr).at(2) = numPosesEndWindow;
+//      //    haveBreak = true;  
+//      std::cout << ">>>> Limit reached with Cy" << std::endl;
+//      std::cout << "allCyVec = " << allCyVec << std::endl;
+//      std::cout << "filtredCyVec = " << filteredCyVec << std::endl;
+//      std::cout << "subNormCyVec = " << subNormCyVec << std::endl;
+//      std::cout << "stdevSubCy*100 = " << stdevSubCy * 100.0 << std::endl;
+//    }
     
-    std::cout << "> Limit reached with Focal" << std::endl;
-    std::cout << "allFocalVec = " << allFocalVec << std::endl;
-    std::cout << "filteredFocalVec = " << filteredFocalVec << std::endl;
-    std::cout << "subNormFocalVec = " << subNormFocalVec << std::endl;
-    std::cout << "stdevSubFocal*100 = " << stdevSubFocal * 100.0 << std::endl;
-    std::cout << "> Limit reached with Cx" << std::endl;
-    std::cout << "allCxVec = " << allCxVec << std::endl;
-    std::cout << "filtredCxVec = " << filteredCxVec << std::endl;
-    std::cout << "subNormCxVec = " << subNormCxVec << std::endl;
-    std::cout << "stdevSubCx*100 = " << stdevSubCx * 100.0 << std::endl;
-    std::cout << "> Limit reached with Cy" << std::endl;
-    std::cout << "allCyVec = " << allCyVec << std::endl;
-    std::cout << "filtredCyVec = " << filteredCyVec << std::endl;
-    std::cout << "subNormCyVec = " << subNormCyVec << std::endl;
-    std::cout << "stdevSubCy*100 = " << stdevSubCy * 100.0 << std::endl;
+//    std::cout << "> Limit reached with Focal" << std::endl;
+//    std::cout << "allFocalVec = " << allFocalVec << std::endl;
+//    std::cout << "filteredFocalVec = " << filteredFocalVec << std::endl;
+//    std::cout << "subNormFocalVec = " << subNormFocalVec << std::endl;
+//    std::cout << "stdevSubFocal*100 = " << stdevSubFocal * 100.0 << std::endl;
+//    std::cout << "> Limit reached with Cx" << std::endl;
+//    std::cout << "allCxVec = " << allCxVec << std::endl;
+//    std::cout << "filtredCxVec = " << filteredCxVec << std::endl;
+//    std::cout << "subNormCxVec = " << subNormCxVec << std::endl;
+//    std::cout << "stdevSubCx*100 = " << stdevSubCx * 100.0 << std::endl;
+//    std::cout << "> Limit reached with Cy" << std::endl;
+//    std::cout << "allCyVec = " << allCyVec << std::endl;
+//    std::cout << "filtredCyVec = " << filteredCyVec << std::endl;
+//    std::cout << "subNormCyVec = " << subNormCyVec << std::endl;
+//    std::cout << "stdevSubCy*100 = " << stdevSubCy * 100.0 << std::endl;
     
-    std::cout << "map_intrinsicsLimits = " << map_intrinsicsLimits.at(idIntr) << std::endl;
-  }
-//  getchar();
+//    std::cout << "map_intrinsicsLimits = " << map_intrinsicsLimits.at(idIntr) << std::endl;
+//  }
+//  //  getchar();
   
-}
+//}
 
 
 // Compute robust Resection of remaining images
@@ -358,17 +354,20 @@ void SequentialSfMReconstructionEngine::RobustResectionOfImages(
   // Used by Local BA 
   lemon::ListGraph graph_poses; 
   std::map<IndexT, lemon::ListGraph::Node> map_viewId_node;
-  IntrinsicsHistorical map_intrinsicsHistorical;
-  std::map<IndexT, std::vector<IndexT>> map_intrinsicsLimits; // <idFocalLimit, idCxLimit, idCyLimit, idD1Limit ...>
   
-  // Init 'map_intrinsicsHistorical' (allocate memory) and 'map_intrinsicsLimits' (set to 0 by default)
-  for (const auto& it : _sfm_data.intrinsics)
-  {
-    map_intrinsicsHistorical[it.first];
-    map_intrinsicsHistorical.at(it.first).push_back(std::make_pair(0, _sfm_data.GetIntrinsicPtr(it.first)->getParams()));
-    map_intrinsicsLimits[it.first];
-    map_intrinsicsLimits.at(it.first) = std::vector<IndexT> (3, 0);    
-  }
+  LocalBA_Data lba_data(_sfm_data);
+  
+//  IntrinsicsHistorical map_intrinsicsHistorical;
+//  std::map<IndexT, std::vector<IndexT>> map_intrinsicsLimits; // <idFocalLimit, idCxLimit, idCyLimit, idD1Limit ...>
+  
+//  // Init 'map_intrinsicsHistorical' (with EXIF data) and 'map_intrinsicsLimits' (set to 0 by default)
+//  for (const auto& it : _sfm_data.intrinsics)
+//  {
+//    map_intrinsicsHistorical[it.first];
+//    map_intrinsicsHistorical.at(it.first).push_back(std::make_pair(0, _sfm_data.GetIntrinsicPtr(it.first)->getParams()));
+//    map_intrinsicsLimits[it.first];
+//    map_intrinsicsLimits.at(it.first) = std::vector<IndexT> (3, 0);    
+//  }
   
   ///////////////////////////////////////////////////////////////////////////////////////////
   ///////////////////////////////////////////////////////////////////////////////////////////
@@ -415,9 +414,9 @@ void SequentialSfMReconstructionEngine::RobustResectionOfImages(
       os << params.at(3) << "\t";
       os << params.at(4) << "\t";
       os << params.at(5) << "\t";
-      os << map_intrinsicsLimits.at(idIntr).at(0) << "\t";
-      os << map_intrinsicsLimits.at(idIntr).at(1) << "\t";
-      os << map_intrinsicsLimits.at(idIntr).at(2) << "\t";
+      os << lba_data.getIntrinsicLimitIds(idIntr).at(0) << "\t";
+      os << lba_data.getIntrinsicLimitIds(idIntr).at(1) << "\t";
+      os << lba_data.getIntrinsicLimitIds(idIntr).at(2) << "\t";
       os << "\n";
       
       os.close();
@@ -486,8 +485,7 @@ void SequentialSfMReconstructionEngine::RobustResectionOfImages(
               graph_poses, 
               map_viewId_node, 
               map_poseId_distance,
-              map_intrinsicsHistorical,
-              map_intrinsicsLimits,
+              lba_data,
               "first"); 
         
         //        localBundleAdjustment(
@@ -538,9 +536,9 @@ void SequentialSfMReconstructionEngine::RobustResectionOfImages(
           os << params.at(3) << "\t";
           os << params.at(4) << "\t";
           os << params.at(5) << "\t";
-          os << map_intrinsicsLimits.at(idIntr).at(0) << "\t";
-          os << map_intrinsicsLimits.at(idIntr).at(1) << "\t";
-          os << map_intrinsicsLimits.at(idIntr).at(2) << "\t";
+          os << lba_data.getIntrinsicLimitIds(idIntr).at(0) << "\t";
+          os << lba_data.getIntrinsicLimitIds(idIntr).at(1) << "\t";
+          os << lba_data.getIntrinsicLimitIds(idIntr).at(2) << "\t";
           os << "\n";
           
           os.close();
@@ -560,9 +558,9 @@ void SequentialSfMReconstructionEngine::RobustResectionOfImages(
       //          getchar();             
       //      }
       
-//      if (map_intrinsicsLimits.at(2).at(0) != 0 ||
-//          map_intrinsicsLimits.at(2).at(1) != 0)
-//        getchar();
+      //      if (map_intrinsicsLimits.at(2).at(0) != 0 ||
+      //          map_intrinsicsLimits.at(2).at(1) != 0)
+      //        getchar();
       
       ///////////////////////////////////////////////////////////////////////////////////////////
       ///////////////////////////////////////////////////////////////////////////////////////////
@@ -1887,8 +1885,7 @@ bool SequentialSfMReconstructionEngine::localBundleAdjustment(
     lemon::ListGraph& graph_poses,
     std::map<IndexT, lemon::ListGraph::Node>& map_viewId_node, 
     std::map<IndexT, int>& mapPoseIdDistance, 
-    IntrinsicsHistorical& map_intrinsicsHistorical,
-    std::map<IndexT, std::vector<IndexT>>& map_intrinsicsLimits,
+    LocalBA_Data& lba_data,
     const std::string& name)
 {
   
@@ -1939,14 +1936,15 @@ bool SequentialSfMReconstructionEngine::localBundleAdjustment(
     
     times.distMapsComputing = duration.elapsed(); 
     duration.reset();
-    
-    // Determermine which parameter (poses, intrinsics & landmarks) is going to be refined, 
-    // constant or ignored in the Bundle Adjustment :
-    localBA_obj.computeStatesMaps(
-          _sfm_data, 
-          Local_Bundle_Adjustment_Ceres::LocalBAStrategy::strategy_3, 
-          1, 
-          newReconstructedViewIds);
+
+    localBA_obj.computeStatesMaps_strategy4(_sfm_data, lba_data, newReconstructedViewIds);    
+//    // Determermine which parameter (poses, intrinsics & landmarks) is going to be refined, 
+//    // constant or ignored in the Bundle Adjustment :
+//    localBA_obj.computeStatesMaps(
+//          _sfm_data, 
+//          Local_Bundle_Adjustment_Ceres::LocalBAStrategy::strategy_3, 
+//          1, 
+//          newReconstructedViewIds);
     
     times.statesMapsComputing = duration.elapsed(); 
     duration.reset();
@@ -1968,8 +1966,9 @@ bool SequentialSfMReconstructionEngine::localBundleAdjustment(
   
   
   // Update 'map_intrinsicsHistorical' and compute 'map_intrinsicsLimits'
-  checkIntrinsicParametersLimits(map_intrinsicsHistorical, map_intrinsicsLimits);
-  
+//  checkIntrinsicParametersLimits(map_intrinsicsHistorical, map_intrinsicsLimits);
+  lba_data.addIntrinsicsToHistory(_sfm_data);
+ 
   
   times.adjusting = duration.elapsed(); 
   times.allLocalBA = durationLBA.elapsed();  

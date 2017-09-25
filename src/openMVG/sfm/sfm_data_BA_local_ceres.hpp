@@ -8,6 +8,7 @@
 #define OPENMVG_SFM_DATA_BA_LOCAL_CERES_HPP
 
 #include "openMVG/sfm/sfm_data_BA_ceres.hpp"
+#include "openMVG/sfm/sfm_data_localBA.hpp"
 #include "openMVG/tracks/tracks.hpp"
 #include "lemon/bfs.h"
 
@@ -66,23 +67,33 @@ public:
     const std::set<IndexT>& newViewIds, 
     std::map<IndexT, int> &outMapPoseIdDistance);
 
-  /// \brief  A 'LocalBAStrategy' defined the state (refined, constant or ignored) of each parameter 
-  /// of the reconstruction (landmarks, poses & intrinsics) in the BA solver according to the 
-  /// distances graph 'reconstructionGraph'.
-  /// Each strategy is explicitly coded in the 'computeStatesMaps()' method.
-  enum LocalBAStrategy { 
-    strategy_1, ///< 
-    strategy_2, ///< 
-    strategy_3, ///< 
-    none        ///< Everything is refined (= no Local BA)
-  };
+//  /// \brief  A 'LocalBAStrategy' defined the state (refined, constant or ignored) of each parameter 
+//  /// of the reconstruction (landmarks, poses & intrinsics) in the BA solver according to the 
+//  /// distances graph 'reconstructionGraph'.
+//  /// Each strategy is explicitly coded in the 'computeStatesMaps()' method.
+//  enum LocalBAStrategy { 
+//    strategy_1, ///< 
+//    strategy_2, ///< 
+//    strategy_3, ///< 
+//    strategy_4, ///< 
+//    none        ///< Everything is refined (= no Local BA)
+//  };
   
-  /// \brief Define the state of each parameter (landmarks, poses & intrinsics) according to the 
-  /// distance graph and the wished Local BA strategy 'LocalBAStrategy'.
-  void computeStatesMaps(const SfM_Data & sfm_data, 
-    const LocalBAStrategy& strategy, 
-    const std::size_t distanceLimit, 
-    const std::set<IndexT>& newReconstructedViewIds );
+//  /// \brief Define the state of each parameter (landmarks, poses & intrinsics) according to the 
+//  /// distance graph and the wished Local BA strategy 'LocalBAStrategy'.
+//  void computeStatesMaps(const SfM_Data & sfm_data, 
+//    const LocalBAStrategy& strategy, 
+//    const std::size_t distanceLimit, 
+//    const std::set<IndexT>& newReconstructedViewIds );
+
+  void computeStatesMaps_strategy1(const SfM_Data & sfm_data,  const std::size_t distanceLimit);
+
+  void computeStatesMaps_strategy2(const SfM_Data & sfm_data, const std::size_t distanceLimit);
+
+  void computeStatesMaps_strategy3(const SfM_Data & sfm_data, const std::set<IndexT> &newReconstructedViewIds);
+
+  void computeStatesMaps_strategy4(const SfM_Data & sfm_data, LocalBA_Data& lba_data, const std::set<IndexT> &newReconstructedViewIds);
+
   
   void setBAStatisticsContainer(LocalBA_stats& baStats) {_LBA_statistics = baStats;}
 
