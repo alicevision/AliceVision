@@ -3,41 +3,21 @@
 #include <aliceVision/config.hpp>
 #include <aliceVision/prettyprint.hpp>
 
+#define BOOST_LOG_DYN_LINK 1
+#include <boost/log/trivial.hpp>
+
 #include <memory>
 
 #define ALICEVISION_COUT(x) std::cout << x << std::endl
 #define ALICEVISION_CERR(x) std::cerr << x << std::endl
 
-#if ALICEVISION_IS_DEFINED(ALICEVISION_WITH_COUT)
-#if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_BOOST)
-  #define BOOST_LOG_DYN_LINK 1
-  #include <boost/log/trivial.hpp>
-
-  #define ALICEVISION_LOG_TRACE_OBJ BOOST_LOG_TRIVIAL(trace)
-  #define ALICEVISION_LOG_DEBUG_OBJ BOOST_LOG_TRIVIAL(debug)
-  #define ALICEVISION_LOG_INFO_OBJ BOOST_LOG_TRIVIAL(info)
-  #define ALICEVISION_LOG_WARNING_OBJ BOOST_LOG_TRIVIAL(warning)
-  #define ALICEVISION_LOG_ERROR_OBJ BOOST_LOG_TRIVIAL(error)
-  #define ALICEVISION_LOG_FATAL_OBJ BOOST_LOG_TRIVIAL(fatal)
-  
-#else
-  #define ALICEVISION_LOG_TRACE_OBJ std::cout
-  #define ALICEVISION_LOG_DEBUG_OBJ std::cout
-  #define ALICEVISION_LOG_INFO_OBJ std::cout
-  #define ALICEVISION_LOG_WARNING_OBJ std::cout
-  #define ALICEVISION_LOG_ERROR_OBJ std::cerr
-  #define ALICEVISION_LOG_FATAL_OBJ std::cerr
-#endif
-  #define ALICEVISION_LOG(MODE, ...) MODE << __VA_ARGS__
-#else
-  #define ALICEVISION_LOG_TRACE_OBJ std::stringstream
-  #define ALICEVISION_LOG_DEBUG_OBJ std::stringstream
-  #define ALICEVISION_LOG_INFO_OBJ std::stringstream
-  #define ALICEVISION_LOG_WARNING_OBJ std::stringstream
-  #define ALICEVISION_LOG_ERROR_OBJ std::stringstream
-  #define ALICEVISION_LOG_FATAL_OBJ std::stringstream
-  #define ALICEVISION_LOG(MODE, ...)
-#endif
+#define ALICEVISION_LOG_TRACE_OBJ BOOST_LOG_TRIVIAL(trace)
+#define ALICEVISION_LOG_DEBUG_OBJ BOOST_LOG_TRIVIAL(debug)
+#define ALICEVISION_LOG_INFO_OBJ BOOST_LOG_TRIVIAL(info)
+#define ALICEVISION_LOG_WARNING_OBJ BOOST_LOG_TRIVIAL(warning)
+#define ALICEVISION_LOG_ERROR_OBJ BOOST_LOG_TRIVIAL(error)
+#define ALICEVISION_LOG_FATAL_OBJ BOOST_LOG_TRIVIAL(fatal)
+#define ALICEVISION_LOG(MODE, ...) MODE << __VA_ARGS__
 
 #define ALICEVISION_LOG_TRACE(...) ALICEVISION_LOG(ALICEVISION_LOG_TRACE_OBJ, __VA_ARGS__)
 #define ALICEVISION_LOG_DEBUG(...) ALICEVISION_LOG(ALICEVISION_LOG_DEBUG_OBJ, __VA_ARGS__)
@@ -148,13 +128,11 @@ private:
    */
   Logger();
 
-#if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_BOOST)
   /**
    * @brief setLogLevel with boost severity level
    * @param level boost severity level
    */
   void setLogLevel(const boost::log::trivial::severity_level level);
-#endif // ALICEVISION_HAVE_BOOST
 
   static std::shared_ptr<Logger> _instance;
 };

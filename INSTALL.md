@@ -64,9 +64,6 @@ At the end of the cmake process, a report shows for each library which version (
 CMake Options
 --------------------------
 
-* `ALICEVISION_USE_BOOST` (default `ON`)
-  Use Boost library (enable modules like localization/voctree and other features and optimizations.
-
 * `BOOST_NO_CXX11` (default `OFF`)
   If your Boost binaries are compiled without C++11 support, you need to set this option to avoid compilation errors.
   This is most likely to be the case if you use the system packages to install boost.

@@ -23,9 +23,7 @@
 #include "dependencies/htmlDoc/htmlDoc.hpp"
 #include "dependencies/progress/progress.hpp"
 
-#if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_BOOST)
 #include <boost/format.hpp>
-#endif
 
 #include <tuple>
 
@@ -72,7 +70,6 @@ void computeTracksPyramidPerView(
     start += Square(widthPerLevel[level]);
   }
 
-#if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_BOOST)
   tracksPyramidPerView.reserve(tracksPerView.size());
   for(const auto& viewTracks: tracksPerView)
   {
@@ -80,7 +77,7 @@ void computeTracksPyramidPerView(
     // reserve 500 tracks in each view
     trackPyramid.reserve(500 * pyramidDepth);
   }
-#endif
+
   for(const auto& viewTracks: tracksPerView)
   {
     const auto viewId = viewTracks.first;
@@ -476,9 +473,8 @@ bool ReconstructionEngine_sequentialSfM::Process()
     _htmlDocStream->pushXYChart(xBinTracks, hTracks.GetHist(),"3DtoTracksSize");
   }
 
-  #if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_BOOST)
-    exportStatistics(time_sfm);
-  #endif
+  exportStatistics(time_sfm);
+
   return true;
 }
 
@@ -616,11 +612,9 @@ bool ReconstructionEngine_sequentialSfM::InitLandmarkTracks()
       for(const auto& iter: map_Occurence_TrackLength)
       {
         osTrack << "\t" << iter.first << "\t" << iter.second << "\n";
-        #if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_BOOST)
-          // Add input tracks histogram
-          _tree.add("sfm.inputtracks_histogram."
-            + std::to_string(iter.first), iter.second);
-        #endif
+        // Add input tracks histogram
+        _tree.add("sfm.inputtracks_histogram."
+          + std::to_string(iter.first), iter.second);
       }
       osTrack << "\n";
       ALICEVISION_LOG_DEBUG(osTrack.str());
@@ -776,7 +770,6 @@ bool ReconstructionEngine_sequentialSfM::getBestInitialImagePairs(std::vector<Pa
   const std::size_t nBestScores = std::min(std::size_t(50), bestImagePairs.size());
   std::sort(bestImagePairs.begin(), bestImagePairs.end(), std::greater<ImagePairScore>());
   ALICEVISION_LOG_DEBUG(bestImagePairs.size() << " possible image pairs. " << nBestScores << " best possibles image pairs are:");
-#if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_BOOST)
   ALICEVISION_LOG_DEBUG(boost::format("%=15s | %=15s | %=15s | %=15s | %=15s") % "Pair" % "Score" % "ImagePairScore" % "Angle" % "NbMatches");
   ALICEVISION_LOG_DEBUG(std::string(15*5+3*3, '-'));
   for(std::size_t i = 0; i < nBestScores; ++i)
@@ -786,7 +779,6 @@ bool ReconstructionEngine_sequentialSfM::getBestInitialImagePairs(std::vector<Pa
     const std::string pairIdx = std::to_string(currPair.first) + ", " + std::to_string(currPair.second);
     ALICEVISION_LOG_DEBUG(boost::format("%=15s | %+15.1f | %+15.1f | %+15.1f | %+15f") % pairIdx % std::get<0>(s) % std::get<1>(s) % std::get<2>(s) % std::get<3>(s));
   }
-#endif
   if (bestImagePairs.empty())
   {
     ALICEVISION_LOG_DEBUG("No valid initial pair found automatically.");
@@ -1669,7 +1661,6 @@ bool ReconstructionEngine_sequentialSfM::badTrackRejector(double dPrecision, std
  *
  * @param[in] time_sfm time in seconds of the reconstruction process
  */
-#if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_BOOST)
 void ReconstructionEngine_sequentialSfM::exportStatistics(double time_sfm)
 {
   // Put nb images, nb poses, nb points
@@ -1707,7 +1698,6 @@ void ReconstructionEngine_sequentialSfM::exportStatistics(double time_sfm)
   // Write json on disk
   pt::write_json(stlplus::folder_append_separator(_sOutDirectory)+"stats.json", _tree);
 }
-#endif
 
 } // namespace sfm
 } // namespace aliceVision

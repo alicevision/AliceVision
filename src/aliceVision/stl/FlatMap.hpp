@@ -3,10 +3,8 @@
 
 #pragma once
 
-#include <aliceVision/config.hpp>
-
-#if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_BOOST)
 #include <boost/container/flat_map.hpp>
+
 #include <cereal/types/map.hpp>
 
 // Add serialization for boost flat_map
@@ -26,23 +24,12 @@ namespace cereal
     map_detail::load( ar, map );
   }
 } // namespace cereal
-#endif
 
 namespace stl
 {
-#if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_BOOST)
   template <class Key
          ,class T
          ,class Compare = std::less<Key>
          ,class Allocator = std::allocator<std::pair<Key, T> > >
   using flat_map = boost::container::flat_map<Key, T, Compare, Allocator>;
-#else
-  // Fallback to non-flat implementation
-  template <class Key
-         ,class T
-         ,class Compare = std::less<Key>
-         ,class Allocator = std::allocator<std::pair<Key, T> > >
-  using flat_map = std::map<Key, T, Compare, Allocator>;
-#endif
-
 }

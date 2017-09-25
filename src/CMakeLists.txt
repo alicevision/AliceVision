@@ -35,7 +35,6 @@ option(ALICEVISION_BUILD_EXAMPLES "Build AliceVision samples applications." ON)
 option(ALICEVISION_BUILD_COVERAGE "Enable code coverage generation (gcc only)" OFF)
 
 trilean_option(ALICEVISION_BUILD_DOC "Build AliceVision documentation" AUTO)
-trilean_option(ALICEVISION_USE_BOOST "Build code depending on Boost (localization/voctree)" ON)
 trilean_option(ALICEVISION_USE_OIIO "Build code depending on OpenImageIO (keyframeSelection)" AUTO)
 trilean_option(ALICEVISION_USE_OPENMP "Enable OpenMP parallelization" AUTO)
 trilean_option(ALICEVISION_USE_CCTAG "Enable CCTAG markers" AUTO)
@@ -434,40 +433,27 @@ endif()
 # ==============================================================================
 # Boost
 # ==============================================================================
-# - optional, it allows to compile the vocabulary tree
-# ==============================================================================
-if(ALICEVISION_USE_BOOST STREQUAL "OFF")
-  set(ALICEVISION_HAVE_BOOST 0)
-else() # ON OR AUTO
-  option(BOOST_NO_CXX11 "if Boost is compiled without C++11 support (as it is often the case in OS packages) this must be enabled to avoid symbol conflicts (SCOPED_ENUM)." OFF)
-  find_package(Boost 1.53.0 QUIET COMPONENTS system filesystem program_options thread serialization log log_setup)
+option(BOOST_NO_CXX11 "if Boost is compiled without C++11 support (as it is often the case in OS packages) this must be enabled to avoid symbol conflicts (SCOPED_ENUM)." OFF)
+find_package(Boost 1.53.0 QUIET COMPONENTS system filesystem program_options thread serialization log log_setup)
 
-  if(Boost_FOUND)
-    set(ALICEVISION_HAVE_BOOST 1)
-    message(STATUS "Boost ${Boost_LIB_VERSION} found.")
-  elseif(ALICEVISION_USE_BOOST STREQUAL "ON")
-    set(ALICEVISION_HAVE_BOOST 0)
-    message(SEND_ERROR "Failed to find Boost.")
-  else()
-    set(ALICEVISION_HAVE_BOOST 0)
-  endif()
+if(Boost_FOUND)
+  message(STATUS "Boost ${Boost_LIB_VERSION} found.")
+else()
+  message(SEND_ERROR "Failed to find Boost.")
 endif()
 
-if(ALICEVISION_HAVE_BOOST)
-  if(BOOST_NO_CXX11)
-    add_definitions(-DBOOST_NO_CXX11_SCOPED_ENUMS)
-  endif()
-
-  if(WIN32)
-    add_definitions(-DBOOST_ALL_DYN_LINK -DBOOST_ALL_NO_LIB)
-  endif()
-
-  include_directories(${Boost_INCLUDE_DIRS})
-  link_directories(${Boost_LIBRARY_DIRS})
-  add_definitions(${Boost_DEFINITIONS})
-  set(LOG_LIB ${Boost_LOG_LIBRARY} ${Boost_LOG_SETUP_LIBRARY})
+if(BOOST_NO_CXX11)
+  add_definitions(-DBOOST_NO_CXX11_SCOPED_ENUMS)
 endif()
 
+if(WIN32)
+  add_definitions(-DBOOST_ALL_DYN_LINK -DBOOST_ALL_NO_LIB)
+endif()
+
+include_directories(${Boost_INCLUDE_DIRS})
+link_directories(${Boost_LIBRARY_DIRS})
+add_definitions(${Boost_DEFINITIONS})
+set(LOG_LIB ${Boost_LOG_LIBRARY} ${Boost_LOG_SETUP_LIBRARY})
 
 # ==============================================================================
 # Alembic
@@ -625,29 +611,26 @@ add_subdirectory(aliceVision)
 # aliceVision libraries
 # ==============================================================================
 set(ALICEVISION_LIBRARIES
+  aliceVision_dataio
   aliceVision_exif
   aliceVision_feature
   aliceVision_image
+  aliceVision_kvld
 #  aliceVision_linearProgramming
   aliceVision_lInftyComputerVision
+  aliceVision_localization
   aliceVision_matching
-  aliceVision_kvld
   aliceVision_matchingImageCollection
   aliceVision_multiview
   aliceVision_numeric
+  aliceVision_rig
   aliceVision_sfm
   aliceVision_system
+  aliceVision_voctree
 )
 
-if(ALICEVISION_HAVE_BOOST)
-  list(APPEND ALICEVISION_LIBRARIES 
-    aliceVision_dataio 
-    aliceVision_voctree 
-    aliceVision_localization
-    aliceVision_rig)
-  if(ALICEVISION_HAVE_OPENCV)
-    list(APPEND ALICEVISION_LIBRARIES aliceVision_calibration)
-  endif()
+if(ALICEVISION_HAVE_OPENCV)
+  list(APPEND ALICEVISION_LIBRARIES aliceVision_calibration)
 endif()
 
 foreach(omvglib ${ALICEVISION_LIBRARIES})
@@ -711,7 +694,6 @@ message("** Build Shared libs: " ${ALICEVISION_BUILD_SHARED})
 message("** Build AliceVision tests: " ${ALICEVISION_BUILD_TESTS})
 message("** Build AliceVision samples applications: " ${ALICEVISION_BUILD_EXAMPLES})
 message("** Build AliceVision documentation: " ${ALICEVISION_HAVE_DOC})
-message("** Build the voctree and localization module: " ${ALICEVISION_HAVE_BOOST})
 message("** Build the keyframeSelection module: " ${ALICEVISION_HAVE_OIIO})
 message("** Enable code coverage generation: " ${ALICEVISION_BUILD_COVERAGE})
 message("** Enable OpenMP parallelization: " ${ALICEVISION_HAVE_OPENMP})

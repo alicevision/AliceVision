@@ -71,7 +71,6 @@ before_script:
        -DOpenCV_DIR="${DEPS_INSTALL_PATH}/share/OpenCV" \
        -DOPENMVG_USE_OPENGV=ON \
        -DOPENGV_DIR="${DEPS_INSTALL_PATH}" \
-       -DOPENMVG_USE_BOOST=ON \
        -DBOOST_NO_CXX11=ON \
        -DOPENMVG_USE_INTERNAL_CERES=OFF \
        -DCeres_DIR="${DEPS_INSTALL_PATH}/share/Ceres" \

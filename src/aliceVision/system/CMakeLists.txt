@@ -24,9 +24,8 @@ set_property(TARGET aliceVision_system
   PROPERTY FOLDER AliceVision/AliceVision
 )
 
-if(ALICEVISION_HAVE_BOOST)
-  target_link_libraries(aliceVision_system ${Boost_LIBRARIES})
-endif()
+
+target_link_libraries(aliceVision_system ${Boost_LIBRARIES})
 
 set_target_properties(aliceVision_system
   PROPERTIES SOVERSION ${ALICEVISION_VERSION_MAJOR}

@@ -12,11 +12,9 @@
 #include "dependencies/htmlDoc/htmlDoc.hpp"
 #include "dependencies/histogram/histogram.hpp"
 
-#if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_BOOST)
-  #include <boost/property_tree/ptree.hpp>
-  #include <boost/property_tree/json_parser.hpp>
-  namespace pt = boost::property_tree;
-#endif
+#include <boost/property_tree/ptree.hpp>
+#include <boost/property_tree/json_parser.hpp>
+namespace pt = boost::property_tree;
 
 namespace aliceVision {
 namespace sfm {
@@ -183,10 +181,8 @@ private:
   /// Discard track with too large residual error
   bool badTrackRejector(double dPrecision, size_t count = 0);
 
-  #if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_BOOST)
   /// Export statistics in a JSON file
   void exportStatistics(double time_sfm);
-  #endif
 
   //----
   //-- Data
@@ -219,10 +215,8 @@ private:
   std::vector<int> _pyramidWeights;
   int _pyramidThreshold;
 
-  #if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_BOOST)
-    // Property tree for json stats export
-    pt::ptree _tree;
-  #endif
+  // Property tree for json stats export
+  pt::ptree _tree;
 
   // Temporary data
   /// Putative landmark tracks (visibility per potential 3D point)

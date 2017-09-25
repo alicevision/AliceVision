@@ -1,6 +1,5 @@
 #include "Logger.hpp"
 
-#if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_BOOST)
 #include <boost/shared_ptr.hpp>
 #include <boost/log/core.hpp>
 #include <boost/log/trivial.hpp>
@@ -21,8 +20,6 @@
 #include <boost/log/utility/empty_deleter.hpp>
 #endif
 
-#endif // ALICEVISION_HAVE_BOOST
-
 namespace aliceVision {
 namespace system {
 
@@ -30,7 +27,6 @@ std::shared_ptr<Logger> Logger::_instance = nullptr;
 
 Logger::Logger()
 {
-#if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_BOOST)
   namespace expr = boost::log::expressions;
   namespace sinks = boost::log::sinks;
   using sink_t = sinks::synchronous_sink<boost::log::sinks::text_ostream_backend>;
@@ -74,8 +70,6 @@ Logger::Logger()
     setLogLevel(getDefaultVerboseLevel());
   else
     setLogLevel(envLevel);
-
-#endif // ALICEVISION_HAVE_BOOST
 }
 
 std::shared_ptr<Logger> Logger::get()
@@ -92,7 +86,6 @@ EVerboseLevel Logger::getDefaultVerboseLevel()
 
 void Logger::setLogLevel(const EVerboseLevel level)
 {
-#if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_BOOST)
   switch(level)
   {
     case EVerboseLevel::Fatal:   setLogLevel(boost::log::trivial::fatal);   break;
@@ -106,7 +99,6 @@ void Logger::setLogLevel(const EVerboseLevel level)
       ALICEVISION_LOG_WARNING("Unrecognized log level enum '" << level << "', fallback to '" << getDefaultVerboseLevel() << "'.");
       break;
   }
-#endif // ALICEVISION_HAVE_BOOST
 }
 
 void Logger::setLogLevel(const std::string& level)
@@ -114,13 +106,11 @@ void Logger::setLogLevel(const std::string& level)
   setLogLevel(EVerboseLevel_stringToEnum(level));
 }
 
-#if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_BOOST)
 void Logger::setLogLevel(const boost::log::trivial::severity_level level)
 {
   boost::log::core::get()->set_filter(boost::log::trivial::severity >= level);
 
 }
-#endif // ALICEVISION_HAVE_BOOST
 
 } // namespace system
 } // namespace aliceVision

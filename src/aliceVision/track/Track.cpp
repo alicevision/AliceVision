@@ -41,10 +41,8 @@ bool TracksBuilder::Build( const PairwiseMatches &  pairwiseMatches)
 
   // Build the node indirection for each referenced feature
   MapIndexToNode map_indexToNode;
-#if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_BOOST)
   map_indexToNode.reserve(allFeatures.size());
   _map_nodeToIndex.reserve(allFeatures.size());
-#endif
 
   for (const IndexedFeaturePair& featPair: allFeatures)
   {

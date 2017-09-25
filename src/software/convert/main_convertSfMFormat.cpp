@@ -9,10 +9,8 @@
 #include "dependencies/cmdLine/cmdLine.h"
 #include "dependencies/stlplus3/filesystemSimplified/file_system.hpp"
 
-#if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_BOOST)
 #include <boost/system/error_code.hpp>
 #include <boost/filesystem.hpp>
-#endif
 
 #include <string>
 #include <vector>
@@ -27,9 +25,7 @@ int main(int argc, char **argv)
 
   std::string sSfMData_Filename_In;
   std::string sSfMData_Filename_Out;
-#if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_BOOST)
   std::string matchDir;
-#endif
 
   cmd.add(make_option('i', sSfMData_Filename_In, "input_file"));
   cmd.add(make_switch('V', "VIEWS"));
@@ -40,9 +36,7 @@ int main(int argc, char **argv)
   cmd.add(make_switch('C', "CONTROL_POINTS"));
   cmd.add(make_switch('u', "regenerateUID"));
   cmd.add(make_option('o', sSfMData_Filename_Out, "output_file"));
-#if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_BOOST)
   cmd.add(make_option('m', matchDir, "matchDirectory"));
-#endif
 
   try {
       if (argc == 1) throw std::string("Invalid command line parameter.");
@@ -64,13 +58,11 @@ int main(int argc, char **argv)
         << "[-S|--STRUCTURE] export structure\n"
         << "[-O|--OBSERVATIONS] export 2D observations associated with 3D structure\n"
         << "[-C|--CONTROL_POINTS] export control points\n"
-        << "[-u|--uid] (re-)compute the unique ID (UID) for the views\n"
-#if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_BOOST)              
+        << "[-u|--uid] (re-)compute the unique ID (UID) for the views\n"             
         << "[-m|--matchDirectory] the directory containing the features used for the\n"
            "    reconstruction. If provided along the -u option, it creates symbolic\n"
            "    links to the .desc and .feat with the new UID as name. This can be\n"
            "    for legacy reconstructions that were not made using UID"
-#endif
         << std::endl;
 
       std::cerr << s << std::endl;
@@ -111,7 +103,6 @@ int main(int argc, char **argv)
     std::map<std::size_t, std::size_t> oldIdToNew;
     regenerateUID(sfm_data, oldIdToNew);
     
-#if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_BOOST)
     if(!matchDir.empty())
     {
       std::cout << "Generating alias for .feat and .desc with the UIDs" << std::endl;
@@ -150,8 +141,6 @@ int main(int argc, char **argv)
         }
       }
     }
-#endif
-    
   }
 
   // Export the SfMData scene in the expected format
