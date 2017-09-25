@@ -175,7 +175,7 @@ struct SfM_Data
     return nullptr;
   }
   
-  std::map<IndexT, std::size_t> GetIntrinsicsUsage()
+  const std::map<IndexT, std::size_t> GetIntrinsicsUsage()
   {
     std::map<IndexT, std::size_t> map_intrinsicId_usageNum;
     

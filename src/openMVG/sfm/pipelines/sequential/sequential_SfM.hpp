@@ -112,6 +112,9 @@ private:
   /// Image score contains <ImageId, NbPutativeCommonPoint, score, isIntrinsicsReconstructed>
   typedef std::tuple<IndexT, std::size_t, std::size_t, bool> ViewConnectionScore;
   
+  /// .... [TO COMMENT] ....
+  using IntrinsicsHistorical = std::map<IndexT, std::vector<std::pair<std::size_t, std::vector<double>>>>;
+  
   /// Return MSE (Mean Square Error) and a histogram of residual values.
   double ComputeResidualsHistogram(Histogram<double> * histo) const;
   
@@ -170,11 +173,16 @@ private:
   /// Bundle adjustment to refine Structure; Motion and Intrinsics
   bool BundleAdjustment();  
   
-  /// Bundle adjustment to refine a few Structure, Motion and Intrinsics parameter
+  /// .... [TO COMMENT] ....
   bool localBundleAdjustment(const std::set<IndexT>& newReconstructedViewIds, 
                              lemon::ListGraph& graph_poses, 
                              std::map<IndexT, lemon::ListGraph::Node>& map_viewId_node, 
-                             std::map<IndexT, int>& mapViewIdDistance, const string &filename);
+                             std::map<IndexT, int>& mapViewIdDistance, 
+                             IntrinsicsHistorical& map_intrinsicsHistorical,
+                             std::map<IndexT, std::vector<IndexT>>& map_intrinsicsLimits,
+                             const string &filename);
+  
+  /// .... [TO COMMENT] ....
   
   /// Normalize data as: 
   /// normalizedData[i] = (data[i] - min(data)) / (max(data) - min(data)) 
@@ -187,8 +195,14 @@ private:
     T maxVal = *std::max_element(data.begin(), data.end());
     for (auto const& val : data)
       normalizedData.push_back((val - minVal)/(maxVal - minVal));
+      
+    std:cout << "Nomalize: " << std::endl;
+    std::cout << "min = " << minVal << " at #" <<  std::distance(data.begin(), std::min_element(data.begin(), data.end())) << std::endl;
+    std::cout << "max = " << maxVal << " at #" << std::distance(data.begin(), std::max_element(data.begin(), data.end())) << std::endl;
     return normalizedData;
   }  
+  
+  /// .... [TO COMMENT] ....
   
   template<typename T> 
   double standardDeviation(const std::vector<T>& data) 
@@ -200,6 +214,12 @@ private:
     double sq_sum = std::inner_product(diff.begin(), diff.end(), diff.begin(), 0.0);
     return std::sqrt(sq_sum / data.size());
   }  
+  
+  /// .... [TO COMMENT] ....
+  void checkIntrinsicParametersLimits(IntrinsicsHistorical &intrinsicsHistorical,
+      std::map<IndexT, std::vector<IndexT>>& map_intrinsicsLimits);
+  
+  
   
   /// Discard track with too large residual error
   size_t badTrackRejector(double dPrecision, size_t count = 0);
