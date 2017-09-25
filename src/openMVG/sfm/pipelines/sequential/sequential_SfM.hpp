@@ -177,20 +177,10 @@ private:
   
   /// .... [TO COMMENT] ....
   bool localBundleAdjustment(const std::set<IndexT>& newReconstructedViewIds, 
-                             lemon::ListGraph& graph_poses, 
-                             std::map<IndexT, lemon::ListGraph::Node>& map_viewId_node, 
-                             std::map<IndexT, int>& mapViewIdDistance, 
-                             LocalBA_Data& lba_data,
+                             LocalBA_Data& localBA_data,
                              const string& filename);
   
-  /// .... [TO COMMENT] ....
-  
-  
-  /// .... [TO COMMENT] ....
-  //  void checkIntrinsicParametersLimits(IntrinsicsHistorical &intrinsicsHistorical,
-  //                                      std::map<IndexT, std::vector<IndexT>>& map_intrinsicsLimits);
-  
-  
+
   
   /// Discard track with too large residual error
   size_t badTrackRejector(double dPrecision, size_t count = 0);

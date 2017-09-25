@@ -9,6 +9,10 @@
 
 #include "openMVG/types.hpp"
 #include "openMVG/sfm/sfm_data.hpp"
+#include "openMVG/tracks/tracks.hpp"
+#include "lemon/list_graph.h"
+#include "lemon/bfs.h"
+#include "openMVG/stl/stlMap.hpp"
 
 namespace openMVG {
 namespace sfm {
@@ -23,6 +27,16 @@ using IntrinicsHistory = std::map<IndexT, std::vector<IntrinsicParams>>;
 
 class LocalBA_Data
 {
+public:
+  lemon::ListGraph graph_poses; 
+  
+  std::map<IndexT, lemon::ListGraph::Node> map_viewId_node;
+  
+  // Store the graph-distances to the new poses/views. 
+  // If the view/pose is not connected to the new poses/views, its distance is -1.
+  std::map<IndexT, int> map_viewId_distance;
+  std::map<IndexT, int> map_poseId_distance;
+  
   IntrinicsHistory intrinsicsHistory; // Backup of the intrinsics parameters
   
   std::map<IndexT, std::vector<IndexT>> intrinsicsLimitIds; // <IntrinsicIndex, <F_limitId, CX_limitId, CY_limitId>>
@@ -42,6 +56,16 @@ public:
   std::vector<IndexT> getIntrinsicLimitIds(const IndexT intrinsicId) const {return intrinsicsLimitIds.at(intrinsicId);}
   
   bool isLimitReached(const IndexT intrinsicId, IntrinsicParameter parameter) const { return intrinsicsLimitIds.at(intrinsicId).at(parameter) != 0;}
+  
+    /// @brief Complete the graph '_reconstructionGraph' with new poses
+  void updateGraph(const SfM_Data& sfm_data, 
+    const tracks::TracksPerView& map_tracksPerView,
+    const std::set<IndexT>& newViewIds);
+    
+  /// \brief Add the newly resected views 'newViewsIds' into a graph (nodes: cameras, egdes: matching)
+  /// and compute the intragraph-distance between these new cameras and all the others.
+  void computeDistancesMaps(const SfM_Data& sfm_data, 
+    const std::set<IndexT>& newViewIds);
   
 private:
   /// Normalize data as: 

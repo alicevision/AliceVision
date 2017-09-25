@@ -22,6 +22,246 @@ LocalBA_Data::LocalBA_Data(const SfM_Data& sfm_data)
   }
 }
 
+void LocalBA_Data::updateGraph(
+    const SfM_Data& sfm_data, 
+    const tracks::TracksPerView& map_tracksPerView, 
+    const std::set<IndexT>& newViewIds)
+{
+  std::cout << "in: updateDistancesgrpah" << std::endl;
+  std::cout << "newViewIds.size() = " << newViewIds.size() << std::endl;
+  std::set<IndexT> viewIdsAddedToTheGraph;
+  
+  // -- Add nodes (= views)
+  // Identify the view we need to add to the graph:
+  if (graph_poses.maxNodeId() == -1) 
+  {
+    std::cout << "map_viewId_node est vide ! (premier LBA théoriquement)" << std::endl;
+    for (auto & it : sfm_data.GetPoses())
+      viewIdsAddedToTheGraph.insert(it.first);
+  }
+  else 
+  {
+    std::cout << "map_viewId_node non vide ! (tjs sauf lors du du premier LBA théoriquement)" << std::endl;
+    for (const IndexT viewId : newViewIds)
+    {
+      auto it = map_viewId_node.find(viewId);
+      if (it == map_viewId_node.end()) // the view doesn't already have an associated node
+        viewIdsAddedToTheGraph.insert(viewId);
+    }
+    //    viewIdsAddedToTheGraph = newViewIds; 
+  }
+  
+  if (viewIdsAddedToTheGraph.empty())
+    return;
+  
+  std::cout << "graph_poses.maxNodeId() = " << graph_poses.maxNodeId() << std::endl;
+  std::cout << "viewIdsAddedToTheGraph.size() = " << viewIdsAddedToTheGraph.size() << std::endl;
+  //  getchar();
+  
+  // Add the views as nodes to the graph:
+  //  std::cout << "nouveaux noeuds ajoutés au graph (viewIds) : " << std::endl;
+  std::cout << "adding node to the graph..." << std::endl;
+  for (auto& viewId : viewIdsAddedToTheGraph)
+  {
+    //    std::cout << viewId << std::endl;
+    lemon::ListGraph::Node newNode = graph_poses.addNode();
+    //    _map_node_viewId.set(newNode, viewId);
+    map_viewId_node[viewId] = newNode;  
+  }
+  
+  // -- Add edge.
+  
+  // An edge is created between 2 views when they share at least 'L' landmarks (by default L=100).
+  // At first, we need to count the number of shared landmarks between all the new views 
+  // and each already resected cameras (already in the graph)
+  std::map<Pair, std::size_t> map_imagesPair_nbSharedLandmarks;
+  
+  // Get landmarks id. of all the reconstructed 3D points (: landmarks)
+  std::set<IndexT> landmarkIds;
+  std::transform(sfm_data.GetLandmarks().begin(), sfm_data.GetLandmarks().end(),
+                 std::inserter(landmarkIds, landmarkIds.begin()),
+                 stl::RetrieveKey());
+  
+  std::cout << "createing map_imagesPair_nbSharedLandmarks..." << std::endl;
+  for(const auto& viewId: viewIdsAddedToTheGraph)
+  {
+    // Get all the tracks of the new added view
+    const openMVG::tracks::TrackIdSet& newView_trackIds = map_tracksPerView.at(viewId);
+    
+    // Keep the reconstructed tracks (with an associated landmark)
+    std::vector<IndexT> newView_landmarks; // all landmarks (already reconstructed) visible from the new view
+    
+    newView_landmarks.reserve(newView_trackIds.size());
+    std::set_intersection(newView_trackIds.begin(), newView_trackIds.end(),
+                          landmarkIds.begin(), landmarkIds.end(),
+                          std::back_inserter(newView_landmarks));
+    
+    // Retrieve the common track Ids
+    for(auto landmark: newView_landmarks)
+    {
+      for(auto viewObs: sfm_data.structure.at(landmark).observations)
+      {
+        if (viewObs.first == viewId) continue; // do not compare an observation with itself
+        
+        // Increment the number of common landmarks between the new view and the already 
+        // reconstructed cameras (observations).
+        // format: pair<min_viewid, max_viewid>
+        auto viewPair = std::make_pair(std::min(viewId, viewObs.first), std::max(viewId, viewObs.first));
+        auto it = map_imagesPair_nbSharedLandmarks.find(viewPair);
+        if(it == map_imagesPair_nbSharedLandmarks.end())  // the first common landmark
+          map_imagesPair_nbSharedLandmarks[viewPair] = 1;
+        else
+          it->second++;
+      }
+    }
+    
+    std::map<Pair, std::size_t> map_imagesPair_nbSharedLandmarks;
+    
+    std::set<IndexT> landmarkIds;
+    std::transform(sfm_data.GetLandmarks().begin(), sfm_data.GetLandmarks().end(),
+                   std::inserter(landmarkIds, landmarkIds.begin()),
+                   stl::RetrieveKey());
+    
+    std::cout << "createing map_imagesPair_nbSharedLandmarks..." << std::endl;
+    for(const auto& viewId: viewIdsAddedToTheGraph)
+    {
+      const openMVG::tracks::TrackIdSet& newView_trackIds = map_tracksPerView.at(viewId);
+      
+      // Retrieve the common track Ids
+      std::vector<IndexT> newView_landmarks; // all landmarks (already reconstructed) visible from the new view
+      
+      newView_landmarks.reserve(newView_trackIds.size());
+      
+      std::set_intersection(newView_trackIds.begin(), newView_trackIds.end(),
+                            landmarkIds.begin(), landmarkIds.end(),
+                            std::back_inserter(newView_landmarks));
+      
+      for(auto landmark: newView_landmarks)
+      {
+        for(auto viewObs: sfm_data.structure.at(landmark).observations)
+        {
+          if (viewObs.first == viewId) continue; // do not compare an observation with itself
+          
+          // Increment the number of common landmarks between the new view and the already 
+          // reconstructed cameras (observations).
+          // format: pair<min_viewid, max_viewid>
+          auto viewPair = std::make_pair(std::min(viewId, viewObs.first), std::max(viewId, viewObs.first));
+          auto it = map_imagesPair_nbSharedLandmarks.find(viewPair);
+          if(it == map_imagesPair_nbSharedLandmarks.end())  // the first common landmark
+            map_imagesPair_nbSharedLandmarks[viewPair] = 1;
+          else
+            it->second++;
+        }
+      }
+    }
+    
+    // add edges in the graph
+    std::cout << "adding Edges to the graph..." << std::endl;
+    
+    for(auto& it: map_imagesPair_nbSharedLandmarks)
+    {
+      std::size_t L = 100; // typically: 100
+      if(it.second > L) // ensure a minimum number of landmarks in common to consider the link
+      {
+        graph_poses.addEdge(map_viewId_node.at(it.first.first), map_viewId_node.at(it.first.second));
+      }
+    }
+  }
+  std::cout << "in: updateDistancesgrpah: done" << std::endl;
+  
+}
+
+void LocalBA_Data::computeDistancesMaps(
+    const SfM_Data& sfm_data, 
+    const std::set<IndexT>& newViewIds)
+{  
+  std::cout << "\nvvv ------------------------ vvv" << std::endl;
+  std::cout << "in: computeDistancesMaps" << std::endl;
+  std::cout << "newViewIds.size() = " << newViewIds.size() << std::endl;
+  map_viewId_distance.clear();
+  map_poseId_distance.clear();
+  
+  // Setup Breadth First Search using Lemon
+  lemon::Bfs<lemon::ListGraph> bfs(graph_poses);
+  bfs.init();
+  
+  // Add source views for the bfs visit of the _reconstructionGraph
+  std::cout << "... adding sources to the BFS " << std::endl;
+  std::cout << "nb de sources : " << newViewIds.size() << std::endl;
+  std::cout << "taille de la map_viewId_node = " << map_viewId_node.size() << std::endl;
+  for(const IndexT viewId: newViewIds)
+  {
+    std::cout << "ajout d'un noeud avec la vue #" << viewId << std::endl;
+    auto it = map_viewId_node.find(viewId);
+    if (it == map_viewId_node.end())
+      std::cout << "ERROR!!! La vue #" << viewId << " pas trouvée dans map_viewId_node!" << std::endl;
+    bfs.addSource(it->second);
+  }
+  std::cout << "bfs.emptyQueue() = " << bfs.emptyQueue() << " - doit être false (0)" << std::endl;
+  std::cout << "bfs.start... " << std::endl;
+  bfs.start();
+  
+  // Handle bfs results (distances)
+  std::cout << " Handle bfs results" << std::endl;
+  for(auto it: map_viewId_node) // each node in the graph
+  {
+    auto& node = it.second;
+    //    int d = bfs.dist(node);
+    
+    int d = -1; 
+    if (bfs.reached(node))
+      d = bfs.dist(node);
+    
+    //    int d = bfs.dist(node);
+    //    if (bfs.reached(node)) // check if the node is connected to a source node
+    //      std::cout << "vue #" << it.first << ", dist:" << d << std::endl;
+    //    else 
+    //      std::cout << "vue #" << it.first << ", dist:" << d << " (not reached) "<< std::endl;
+    
+    map_viewId_distance[it.first] = d;
+    
+  }
+  
+  std::cout << "_map_viewId_distance.size() = " << map_viewId_distance.size() << std::endl;
+  
+  // Re-mapping: from <ViewId, distance> to <PoseId, distance>:
+  std::cout << "Re-mapping: from <ViewId, distance> to <PoseId, distance>" << std::endl;
+  for(auto it: map_viewId_distance)
+  {
+    // Get the poseId of the camera no. viewId
+    IndexT idPose = sfm_data.GetViews().at(it.first)->id_pose; // PoseId of a resected camera
+    
+    auto poseIt = map_poseId_distance.find(idPose);
+    // If multiple views share the same pose
+    if(poseIt != map_poseId_distance.end())
+      poseIt->second = std::min(poseIt->second, it.second);
+    else
+      map_poseId_distance[idPose] = it.second;
+  } 
+  
+  // Display result: viewId -> distance to recent cameras
+  {    
+    OPENMVG_LOG_INFO("-- View distances map: ");
+    for (auto & itVMap: map_viewId_distance)
+    {
+      OPENMVG_LOG_INFO( itVMap.first << " -> " << itVMap.second);
+    }
+    
+    //    OPENMVG_LOG_INFO("-- Pose distances map: ");
+    //    for (auto & itPMap: _map_poseId_distance)
+    //    {
+    //      OPENMVG_LOG_INFO( itPMap.first << " -> " << itPMap.second);
+    //    }
+  }
+  
+  
+  std::cout << "in: computeDistancesMaps (done)" << std::endl;
+  std::cout << "^^^ ------------------------ ^^^\n" << std::endl;
+  
+}
+
+
+
 void LocalBA_Data::addIntrinsicsToHistory(const SfM_Data& sfm_data)
 {
   std::map<IndexT, std::size_t> map_intrId_numPoses = sfm_data.GetIntrinsicsUsage();
