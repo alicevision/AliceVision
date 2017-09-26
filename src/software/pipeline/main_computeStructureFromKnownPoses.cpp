@@ -53,8 +53,8 @@ int main(int argc, char **argv)
     ("matchesGeometricModel,g", po::value<std::string>(&matchesGeometricModel)->default_value(matchesGeometricModel),
       "Matches geometric Model :\n"
       "- f: fundamental matrix\n"
-      "- e: fundamental matrix\n"
-      "- h: fundamental matrix");
+      "- e: essential matrix\n"
+      "- h: homography matrix");
 
   po::options_description logParams("Log parameters");
   logParams.add_options()

@@ -37,7 +37,7 @@ int main(int argc, char **argv)
   bool flagObservations = true;
   bool recomputeUID = true;
 
-   po::options_description allParams("AliceVision convertSfMFormat");
+  po::options_description allParams("AliceVision convertSfMFormat");
 
   po::options_description requiredParams("Required parameters");
   requiredParams.add_options()

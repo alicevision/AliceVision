@@ -133,8 +133,8 @@ int main(int argc, char **argv)
     ("geometricModel,g", po::value<std::string>(&geometricModel)->default_value(geometricModel),
       "Pairwise correspondences filtering thanks to robust model estimation:\n"
       "- f: fundamental matrix\n"
-      "- e: fundamental matrix\n"
-      "- h: fundamental matrix")
+      "- e: essential matrix\n"
+      "- h: homography matrix")
     ("describerTypes,d", po::value<std::string>(&describerTypesName)->default_value(describerTypesName),
       feature::EImageDescriberType_informations().c_str())
     ("featuresDirectory,f", po::value<std::string>(&featuresDirectory)->default_value(featuresDirectory),
