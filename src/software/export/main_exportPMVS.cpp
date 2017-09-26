@@ -4,8 +4,7 @@
 #include "aliceVision/sfm/sfm.hpp"
 #include "aliceVision/image/image.hpp"
 
-#include "dependencies/cmdLine/cmdLine.h"
-
+#include <boost/program_options.hpp>
 #include <boost/progress.hpp>
 
 #include <stdlib.h>
@@ -19,6 +18,7 @@ using namespace aliceVision::camera;
 using namespace aliceVision::geometry;
 using namespace aliceVision::image;
 using namespace aliceVision::sfm;
+namespace po = boost::program_options;
 
 bool exportToPMVSFormat(
   const SfMData & sfm_data,
@@ -297,59 +297,93 @@ bool exportToBundlerFormat(
   return true;
 }
 
-int main(int argc, char *argv[]) {
+int main(int argc, char *argv[])
+{
+  // command-line parameters
 
-  CmdLine cmd;
-  std::string sSfMData_Filename;
-  std::string sOutDir = "";
+  std::string verboseLevel = system::EVerboseLevel_enumToString(system::Logger::getDefaultVerboseLevel());
+  std::string sfmDataFilename;
+  std::string outputDirectory;
+
   int resolution = 1;
-  int CPU = 8;
-  bool bVisData = true;
+  int nbCore = 8;
+  bool useVisData = true;
 
-  cmd.add( make_option('i', sSfMData_Filename, "sfmdata") );
-  cmd.add( make_option('o', sOutDir, "outdir") );
-  cmd.add( make_option('r', resolution, "resolution") );
-  cmd.add( make_option('c', CPU, "CPU") );
-  cmd.add( make_option('v', bVisData, "useVisData") );
+  po::options_description allParams("AliceVision exportPMVS");
 
-  try {
-      if (argc == 1) throw std::string("Invalid command line parameter.");
-      cmd.process(argc, argv);
-  } catch(const std::string& s) {
-      std::cerr << "Usage: " << argv[0] << '\n'
-      << "[-i|--sfmdata] filename, the SfMData file to convert\n"
-      << "[-o|--outdir path]\n"
-      << "[-r|--resolution] divide image coefficient\n"
-      << "[-c|--nb core]\n"
-      << "[-v|--useVisData] use visibility information."
-      << std::endl;
+  po::options_description requiredParams("Required parameters");
+  requiredParams.add_options()
+    ("input,i", po::value<std::string>(&sfmDataFilename)->required(),
+      "SfMData file.")
+    ("output,o", po::value<std::string>(&outputDirectory)->required(),
+      "Output path for keypoints.");
 
-      std::cerr << s << std::endl;
-      return EXIT_FAILURE;
+  po::options_description optionalParams("Optional parameters");
+  optionalParams.add_options()
+    ("resolution", po::value<int>(&resolution)->default_value(resolution),
+      "Divide image coefficient")
+    ("nbCore", po::value<int>(&nbCore)->default_value(nbCore),
+      "Nb core")
+    ("useVisData", po::bool_switch(&useVisData)->default_value(useVisData),
+      "Use visibility information.");
+
+  po::options_description logParams("Log parameters");
+  logParams.add_options()
+    ("verboseLevel,v", po::value<std::string>(&verboseLevel)->default_value(verboseLevel),
+      "verbosity level (fatal,  error, warning, info, debug, trace).");
+
+  allParams.add(requiredParams).add(optionalParams).add(logParams);
+
+  po::variables_map vm;
+  try
+  {
+    po::store(po::parse_command_line(argc, argv, allParams), vm);
+
+    if(vm.count("help") || (argc == 1))
+    {
+      ALICEVISION_COUT(allParams);
+      return EXIT_SUCCESS;
+    }
+    po::notify(vm);
+  }
+  catch(boost::program_options::required_option& e)
+  {
+    ALICEVISION_CERR("ERROR: " << e.what());
+    ALICEVISION_COUT("Usage:\n\n" << allParams);
+    return EXIT_FAILURE;
+  }
+  catch(boost::program_options::error& e)
+  {
+    ALICEVISION_CERR("ERROR: " << e.what());
+    ALICEVISION_COUT("Usage:\n\n" << allParams);
+    return EXIT_FAILURE;
   }
 
+  // set verbose level
+  system::Logger::get()->setLogLevel(verboseLevel);
+
   // Create output dir
-  if (!stlplus::folder_exists(sOutDir))
-    stlplus::folder_create( sOutDir );
+  if (!stlplus::folder_exists(outputDirectory))
+    stlplus::folder_create( outputDirectory );
 
   SfMData sfm_data;
-  if (!Load(sfm_data, sSfMData_Filename, ESfMData(ALL))) {
+  if (!Load(sfm_data, sfmDataFilename, ESfMData(ALL))) {
     std::cerr << std::endl
-      << "The input SfMData file \""<< sSfMData_Filename << "\" cannot be read." << std::endl;
+      << "The input SfMData file \""<< sfmDataFilename << "\" cannot be read." << std::endl;
     return EXIT_FAILURE;
   }
 
   {
     exportToPMVSFormat(sfm_data,
-      stlplus::folder_append_separator(sOutDir) + "PMVS",
+      stlplus::folder_append_separator(outputDirectory) + "PMVS",
       resolution,
-      CPU,
-      bVisData);
+      nbCore,
+      useVisData);
 
     exportToBundlerFormat(sfm_data,
-      stlplus::folder_append_separator(sOutDir) +
+      stlplus::folder_append_separator(outputDirectory) +
       stlplus::folder_append_separator("PMVS") + "bundle.rd.out",
-      stlplus::folder_append_separator(sOutDir) +
+      stlplus::folder_append_separator(outputDirectory) +
       stlplus::folder_append_separator("PMVS") + "list.txt"
       );
 
