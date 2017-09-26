@@ -36,6 +36,12 @@ enum class EImageDescriberType: unsigned char
 };
 
 /**
+ * @brief get informations about each describer type
+ * @return String
+ */
+std::string EImageDescriberType_informations();
+
+/**
  * @brief convert an enum EImageDescriberType to its corresponding string
  * @param EImageDescriberType 
  * @return String

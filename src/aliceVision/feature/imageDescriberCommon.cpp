@@ -12,6 +12,28 @@
 namespace aliceVision {
 namespace feature {
 
+std::string EImageDescriberType_informations()
+{
+  return  "Describer types to use to describe an image:\n"
+          "- SIFT: Scale-invariant feature transform\n"
+          "- SIFT_FLOAT: SIFT stored as float\n"
+          "- AKAZE: A-KAZE with floating point descriptors\n"
+          "- AKAZE_LIOP: A-KAZE with Local Intensity Order Pattern descriptors\n"
+          "- AKAZE_MLDB: A-KAZE with Modified-Local Difference Binary descriptors\n"
+#if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_CCTAG)
+          "- CCTAG3: Concentric circles markers with 3 crowns\n"
+          "- CCTAG4: Concentric circles markers with 4 crowns\n"
+#endif
+#if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_OPENCV)
+#if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_OCVSIFT)
+          "- SIFT_OCV: OpenCV implementation of SIFT describer\n"
+#endif
+          "- AKAZE_OCV: OpenCV implementation of A-KAZE describer\n"
+#endif
+          "";
+
+}
+
 std::string EImageDescriberType_enumToString(EImageDescriberType imageDescriberType)
 {
   switch(imageDescriberType)
