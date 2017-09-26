@@ -5,10 +5,9 @@
 #include "aliceVision/sfm/utils/uid.hpp"
 #include <aliceVision/config.hpp>
 
-
-#include "dependencies/cmdLine/cmdLine.h"
 #include "dependencies/stlplus3/filesystemSimplified/file_system.hpp"
 
+#include <boost/program_options.hpp>
 #include <boost/system/error_code.hpp>
 #include <boost/filesystem.hpp>
 
@@ -17,59 +16,89 @@
 
 using namespace aliceVision;
 using namespace aliceVision::sfm;
+namespace po = boost::program_options;
 
 // Convert from a SfMData format to another
 int main(int argc, char **argv)
 {
-  CmdLine cmd;
+  // command-line parameters
 
-  std::string sSfMData_Filename_In;
-  std::string sSfMData_Filename_Out;
-  std::string matchDir;
+  std::string verboseLevel = system::EVerboseLevel_enumToString(system::Logger::getDefaultVerboseLevel());
+  std::string sfmDataFilename;
+  std::string outputSfMDataFilename;
+  std::string matchesDirectory;
 
-  cmd.add(make_option('i', sSfMData_Filename_In, "input_file"));
-  cmd.add(make_switch('V', "VIEWS"));
-  cmd.add(make_switch('I', "INTRINSICS"));
-  cmd.add(make_switch('E', "EXTRINSICS"));
-  cmd.add(make_switch('S', "STRUCTURE"));
-  cmd.add(make_switch('O', "OBSERVATIONS"));
-  cmd.add(make_switch('C', "CONTROL_POINTS"));
-  cmd.add(make_switch('u', "regenerateUID"));
-  cmd.add(make_option('o', sSfMData_Filename_Out, "output_file"));
-  cmd.add(make_option('m', matchDir, "matchDirectory"));
+  // user optional parameters
 
-  try {
-      if (argc == 1) throw std::string("Invalid command line parameter.");
-      cmd.process(argc, argv);
-  } catch(const std::string& s) {
-      std::cerr << "Usage: " << argv[0] << '\n'
-        << "[-i|--input_file] path to the input SfMData scene\n"
-        << "[-o|--output_file] path to the output SfMData scene\n"
-        << "\t .json, .bin, .xml, .ply, .baf"
-#if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_ALEMBIC)
-           ", .abc"
-#endif
-           "\n"
-        << "\n[Options to export partial data (by default all data are exported)]\n"
-        << "\nUsable for json/bin/xml format\n"
-        << "[-V|--VIEWS] export views\n"
-        << "[-I|--INTRINSICS] export intrinsics\n"
-        << "[-E|--EXTRINSICS] export extrinsics (view poses)\n"
-        << "[-S|--STRUCTURE] export structure\n"
-        << "[-O|--OBSERVATIONS] export 2D observations associated with 3D structure\n"
-        << "[-C|--CONTROL_POINTS] export control points\n"
-        << "[-u|--uid] (re-)compute the unique ID (UID) for the views\n"             
-        << "[-m|--matchDirectory] the directory containing the features used for the\n"
-           "    reconstruction. If provided along the -u option, it creates symbolic\n"
-           "    links to the .desc and .feat with the new UID as name. This can be\n"
-           "    for legacy reconstructions that were not made using UID"
-        << std::endl;
+  bool flagViews = true;
+  bool flagIntrinsics = true;
+  bool flagExtrinsics = true;
+  bool flagStructure = true;
+  bool flagObservations = true;
+  bool recomputeUID = true;
 
-      std::cerr << s << std::endl;
-      return EXIT_FAILURE;
+   po::options_description allParams("AliceVision convertSfMFormat");
+
+  po::options_description requiredParams("Required parameters");
+  requiredParams.add_options()
+    ("input,i", po::value<std::string>(&sfmDataFilename)->required(),
+      "SfMData file.")
+    ("output,o", po::value<std::string>(&outputSfMDataFilename)->required(),
+      "Path to the output Alembic file.")
+    ("matchesDirectory,m", po::value<std::string>(&matchesDirectory)->required(),
+      "Path to a directory in which computed matches are stored.");
+
+  po::options_description optionalParams("Optional parameters");
+  optionalParams.add_options()
+    ("views", po::bool_switch(&flagViews)->default_value(flagViews),
+      "Export views.")
+    ("intrinsics", po::bool_switch(&flagIntrinsics)->default_value(flagIntrinsics),
+      "Export intrinsics.")
+    ("extrinsics", po::bool_switch(&flagExtrinsics)->default_value(flagExtrinsics),
+      "Export extrinsics.")
+    ("structure", po::bool_switch(&flagStructure)->default_value(flagStructure),
+      "Export structure.")
+    ("observations", po::bool_switch(&flagObservations)->default_value(flagObservations),
+      "Export observations.")
+    ("regenerateUID", po::bool_switch(&recomputeUID)->default_value(recomputeUID),
+      "Regenerate UID.");
+
+  po::options_description logParams("Log parameters");
+  logParams.add_options()
+    ("verboseLevel,v", po::value<std::string>(&verboseLevel)->default_value(verboseLevel),
+      "verbosity level (fatal,  error, warning, info, debug, trace).");
+
+  allParams.add(requiredParams).add(optionalParams).add(logParams);
+
+  po::variables_map vm;
+  try
+  {
+    po::store(po::parse_command_line(argc, argv, allParams), vm);
+
+    if(vm.count("help") || (argc == 1))
+    {
+      ALICEVISION_COUT(allParams);
+      return EXIT_SUCCESS;
+    }
+    po::notify(vm);
+  }
+  catch(boost::program_options::required_option& e)
+  {
+    ALICEVISION_CERR("ERROR: " << e.what());
+    ALICEVISION_COUT("Usage:\n\n" << allParams);
+    return EXIT_FAILURE;
+  }
+  catch(boost::program_options::error& e)
+  {
+    ALICEVISION_CERR("ERROR: " << e.what());
+    ALICEVISION_COUT("Usage:\n\n" << allParams);
+    return EXIT_FAILURE;
   }
 
-  if (sSfMData_Filename_In.empty() || sSfMData_Filename_Out.empty())
+  // set verbose level
+  system::Logger::get()->setLogLevel(verboseLevel);
+
+  if (sfmDataFilename.empty() || outputSfMDataFilename.empty())
   {
     std::cerr << "Invalid input or output filename." << std::endl;
     return EXIT_FAILURE;
@@ -78,22 +107,20 @@ int main(int argc, char **argv)
   // OptionSwitch is cloned in cmd.add(),
   // so we must use cmd.used() instead of testing OptionSwitch.used
   int flags =
-    (cmd.used('V') ? VIEWS      : 0)
-  | (cmd.used('I') ? INTRINSICS : 0)
-  | (cmd.used('E') ? EXTRINSICS : 0)
-  | (cmd.used('O') ? OBSERVATIONS : 0)
-  | (cmd.used('S') ? STRUCTURE  : 0);
+    (flagViews ? VIEWS      : 0)
+  | (flagIntrinsics ? INTRINSICS : 0)
+  | (flagExtrinsics ? EXTRINSICS : 0)
+  | (flagObservations ? OBSERVATIONS : 0)
+  | (flagStructure ? STRUCTURE  : 0);
 
   flags = (flags) ? flags : ALL;
-  
-  const bool recomputeUID = cmd.used('u');
 
   // Load input SfMData scene
   SfMData sfm_data;
-  if (!Load(sfm_data, sSfMData_Filename_In, ESfMData(ALL)))
+  if (!Load(sfm_data, sfmDataFilename, ESfMData(ALL)))
   {
     std::cerr << std::endl
-      << "The input SfMData file \"" << sSfMData_Filename_In << "\" cannot be read." << std::endl;
+      << "The input SfMData file \"" << sfmDataFilename << "\" cannot be read." << std::endl;
     return EXIT_FAILURE;
   }
   
@@ -103,7 +130,7 @@ int main(int argc, char **argv)
     std::map<std::size_t, std::size_t> oldIdToNew;
     regenerateUID(sfm_data, oldIdToNew);
     
-    if(!matchDir.empty())
+    if(!matchesDirectory.empty())
     {
       std::cout << "Generating alias for .feat and .desc with the UIDs" << std::endl;
       for(const auto& iter : oldIdToNew)
@@ -115,10 +142,10 @@ int main(int argc, char **argv)
         if(oldID == newID)
           continue;
         
-        const auto oldFeatfilename = stlplus::create_filespec(matchDir, std::to_string(oldID), ".feat");
-        const auto newFeatfilename = stlplus::create_filespec(matchDir, std::to_string(newID), ".feat");
-        const auto oldDescfilename = stlplus::create_filespec(matchDir, std::to_string(oldID), ".desc");
-        const auto newDescfilename = stlplus::create_filespec(matchDir, std::to_string(newID), ".desc");
+        const auto oldFeatfilename = stlplus::create_filespec(matchesDirectory, std::to_string(oldID), ".feat");
+        const auto newFeatfilename = stlplus::create_filespec(matchesDirectory, std::to_string(newID), ".feat");
+        const auto oldDescfilename = stlplus::create_filespec(matchesDirectory, std::to_string(oldID), ".desc");
+        const auto newDescfilename = stlplus::create_filespec(matchesDirectory, std::to_string(newID), ".desc");
 
         if(!(stlplus::is_file(oldFeatfilename) && stlplus::is_file(oldDescfilename)))
         {
@@ -144,10 +171,10 @@ int main(int argc, char **argv)
   }
 
   // Export the SfMData scene in the expected format
-  if (!Save(sfm_data, sSfMData_Filename_Out, ESfMData(flags)))
+  if (!Save(sfm_data, outputSfMDataFilename, ESfMData(flags)))
   {
     std::cerr << std::endl
-      << "An error occured while trying to save \"" << sSfMData_Filename_Out << "\"." << std::endl;
+      << "An error occured while trying to save \"" << outputSfMDataFilename << "\"." << std::endl;
     return EXIT_FAILURE;
   }
   return EXIT_SUCCESS;
