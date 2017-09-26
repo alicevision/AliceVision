@@ -6,113 +6,129 @@
 #include "aliceVision/sfm/pipeline/global/ReconstructionEngine_globalSfM.hpp"
 #include "aliceVision/system/Timer.hpp"
 
-#include "dependencies/cmdLine/cmdLine.h"
 #include "dependencies/stlplus3/filesystemSimplified/file_system.hpp"
+
+#include <boost/program_options.hpp>
 
 #include <cstdlib>
 
 using namespace aliceVision;
 using namespace aliceVision::sfm;
 using namespace aliceVision::feature;
+using namespace std;
+namespace po = boost::program_options;
 
 int main(int argc, char **argv)
 {
-  using namespace std;
-  std::cout << std::endl
-    << "-----------------------------------------------------------\n"
-    << "Global Structure from Motion:\n"
-    << "-----------------------------------------------------------\n"
-    << "Open Source implementation of the paper:\n"
-    << "\"Global Fusion of Relative Motions for "
-    << "Robust, Accurate and Scalable Structure from Motion.\"\n"
-    << "Pierre Moulon, Pascal Monasse and Renaud Marlet. "
-    << " ICCV 2013." << std::endl
-    << "------------------------------------------------------------"
-    << std::endl;
+  // command-line parameters
 
+  std::string verboseLevel = system::EVerboseLevel_enumToString(system::Logger::getDefaultVerboseLevel());
+  std::string sfmDataFilename;
+  std::string matchesDirectory;
+  std::string outDirectory;
 
-  CmdLine cmd;
+  // user optional parameters
 
-  std::string sSfMData_Filename;
-  std::string describerMethods = "SIFT";
-  std::string sMatchesDir;
-  std::string sOutDir = "";
-  std::string sOutSfMDataFilepath = "";
-  int iRotationAveragingMethod = int (ROTATION_AVERAGING_L2);
-  int iTranslationAveragingMethod = int (TRANSLATION_AVERAGING_SOFTL1);
-  bool bRefineIntrinsics = true;
+  std::string outSfMDataFilename = "SfmData.json";
+  std::string describerTypesName = feature::EImageDescriberType_enumToString(feature::EImageDescriberType::SIFT);
+  int rotationAveragingMethod = static_cast<int>(ROTATION_AVERAGING_L2);
+  int translationAveragingMethod = static_cast<int>(TRANSLATION_AVERAGING_SOFTL1);
+  bool refineIntrinsics = true;
 
-  cmd.add( make_option('i', sSfMData_Filename, "input_file") );
-  cmd.add( make_option('d', describerMethods, "describerMethods") );
-  cmd.add( make_option('m', sMatchesDir, "matchdir") );
-  cmd.add( make_option('o', sOutDir, "outdir") );
-  cmd.add( make_option('s', sOutSfMDataFilepath, "out_sfmdata_file") );
-  cmd.add( make_option('r', iRotationAveragingMethod, "rotationAveraging") );
-  cmd.add( make_option('t', iTranslationAveragingMethod, "translationAveraging") );
-  cmd.add( make_option('f', bRefineIntrinsics, "refineIntrinsics") );
+  po::options_description allParams("Implementation of the paper\n"
+    "\"Global Fusion of Relative Motions for "
+    "Robust, Accurate and Scalable Structure from Motion.\"\n"
+    "Pierre Moulon, Pascal Monasse and Renaud Marlet ICCV 2013.\n"
+    "AliceVision globalSfM");
 
-  try {
-    if (argc == 1) throw std::string("Invalid parameter.");
-    cmd.process(argc, argv);
-  } catch(const std::string& s) {
-    std::cerr << "Usage: " << argv[0] << '\n'
-    << "[-i|--input_file] path to a SfMData scene\n"
-    << "[-d|--describerMethods]\n"
-    << "  (methods to use to describe an image):\n"
-    << "   SIFT (default),\n"
-    << "   SIFT_FLOAT to use SIFT stored as float,\n"
-    << "   AKAZE: AKAZE with floating point descriptors,\n"
-    << "   AKAZE_MLDB:  AKAZE with binary descriptors\n"
-#if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_CCTAG)
-    << "   CCTAG3: CCTAG markers with 3 crowns\n"
-    << "   CCTAG4: CCTAG markers with 4 crowns\n"
-#endif //ALICEVISION_HAVE_CCTAG
-#if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_OPENCV)
-#if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_OCVSIFT)
-    << "   SIFT_OCV: OpenCV SIFT\n"
-#endif //ALICEVISION_HAVE_OCVSIFT
-    << "   AKAZE_OCV: OpenCV AKAZE\n"
-#endif //ALICEVISION_HAVE_OPENCV
-    << "[-m|--matchdir] path to the matches that corresponds to the provided SfMData scene\n"
-    << "[-o|--outdir] path where the output data will be stored\n"
-    << "\n[Optional]\n"
-    << "[-s|--out_sfmdata_file] path of the output sfmdata file (default: $outdir/sfm_data.json)\n"
-    << "[-r|--rotationAveraging]\n"
-    << "\t 1 -> L1 minimization\n"
-    << "\t 2 -> L2 minimization (default)\n"
-    << "[-t|--translationAveraging]:\n"
-    << "\t 1 -> L1 minimization\n"
-    << "\t 2 -> L2 minimization of sum of squared Chordal distances\n"
-    << "\t 3 -> SoftL1 minimization (default)\n"
-    << "[-f|--refineIntrinsics]\n"
-    << "\t 0-> intrinsic parameters are kept as constant\n"
-    << "\t 1-> refine intrinsic parameters (default). \n"
-    << std::endl;
+  po::options_description requiredParams("Required parameters");
+  requiredParams.add_options()
+    ("input,i", po::value<std::string>(&sfmDataFilename)->required(),
+      "SfMData file.")
+    ("output,o", po::value<std::string>(&outDirectory)->required(),
+      "Path of the output directory.")
+    ("matchesDirectory,m", po::value<std::string>(&matchesDirectory)->required(),
+      "Path to a directory in which computed matches are stored.");
 
-    std::cerr << s << std::endl;
+  po::options_description optionalParams("Optional parameters");
+  optionalParams.add_options()
+    ("outSfMDataFilename", po::value<std::string>(&outSfMDataFilename)->default_value(outSfMDataFilename),
+      "Filename of the output SfMData file.")
+    ("describerTypes,d", po::value<std::string>(&describerTypesName)->default_value(describerTypesName),
+      feature::EImageDescriberType_informations().c_str())
+    ("rotationAveraging", po::value<int>(&rotationAveragingMethod)->default_value(rotationAveragingMethod),
+      "- 1: L1 minimization\n"
+      "- 2: L2 minimization")
+    ("translationAveraging", po::value<int>(&translationAveragingMethod)->default_value(translationAveragingMethod),
+      "- 1: L1 minimization\n"
+      "- 2: L2 minimization of sum of squared Chordal distances")
+    ("refineIntrinsics", po::bool_switch(&refineIntrinsics)->default_value(refineIntrinsics),
+      "Refine intrinsic parameters.");
+
+  po::options_description logParams("Log parameters");
+  logParams.add_options()
+    ("verboseLevel,v", po::value<std::string>(&verboseLevel)->default_value(verboseLevel),
+      "verbosity level (fatal,  error, warning, info, debug, trace).");
+
+  allParams.add(requiredParams).add(optionalParams).add(logParams);
+
+  po::variables_map vm;
+  try
+  {
+    po::store(po::parse_command_line(argc, argv, allParams), vm);
+
+    if(vm.count("help") || (argc == 1))
+    {
+      ALICEVISION_COUT(allParams);
+      return EXIT_SUCCESS;
+    }
+    po::notify(vm);
+  }
+  catch(boost::program_options::required_option& e)
+  {
+    ALICEVISION_CERR("ERROR: " << e.what());
+    ALICEVISION_COUT("Usage:\n\n" << allParams);
+    return EXIT_FAILURE;
+  }
+  catch(boost::program_options::error& e)
+  {
+    ALICEVISION_CERR("ERROR: " << e.what());
+    ALICEVISION_COUT("Usage:\n\n" << allParams);
     return EXIT_FAILURE;
   }
 
-  if(sOutSfMDataFilepath.empty())
-    sOutSfMDataFilepath = stlplus::create_filespec(sOutDir, "sfm_data", "json");
+  ALICEVISION_COUT("Program called with the following parameters: " << std::endl
+    << "\t" << argv[0] << std::endl
+    << "\t--input " << sfmDataFilename << std::endl
+    << "\t--output " << outDirectory << std::endl
+    << "\t--matchesDirectory " << matchesDirectory << std::endl
+    << "\t--outSfMDataFilename " << outSfMDataFilename << std::endl
+    << "\t--describerTypes " << describerTypesName << std::endl
+    << "\t--rotationAveraging " << rotationAveragingMethod << std::endl
+    << "\t--translationAveraging " << translationAveragingMethod << std::endl
+    << "\t--refineIntrinsics " << refineIntrinsics << std::endl
+    << "\t--verboseLevel " << verboseLevel);
 
-  if (iRotationAveragingMethod < ROTATION_AVERAGING_L1 ||
-      iRotationAveragingMethod > ROTATION_AVERAGING_L2 )  {
+  // set verbose level
+  system::Logger::get()->setLogLevel(verboseLevel);
+
+  if (rotationAveragingMethod < ROTATION_AVERAGING_L1 ||
+      rotationAveragingMethod > ROTATION_AVERAGING_L2 )  {
     std::cerr << "\n Rotation averaging method is invalid" << std::endl;
     return EXIT_FAILURE;
   }
 
-  if (iTranslationAveragingMethod < TRANSLATION_AVERAGING_L1 ||
-      iTranslationAveragingMethod > TRANSLATION_AVERAGING_SOFTL1 )  {
+  if (translationAveragingMethod < TRANSLATION_AVERAGING_L1 ||
+      translationAveragingMethod > TRANSLATION_AVERAGING_SOFTL1 )  {
     std::cerr << "\n Translation averaging method is invalid" << std::endl;
     return EXIT_FAILURE;
   }
 
   // Load input SfMData scene
   SfMData sfmData;
-  if (!Load(sfmData, sSfMData_Filename, ESfMData(VIEWS|INTRINSICS))) {
+  if (!Load(sfmData, sfmDataFilename, ESfMData(VIEWS|INTRINSICS))) {
     std::cerr << std::endl
-      << "The input SfMData file \""<< sSfMData_Filename << "\" cannot be read." << std::endl;
+      << "The input SfMData file \""<< sfmDataFilename << "\" cannot be read." << std::endl;
     return EXIT_FAILURE;
   }
 
@@ -125,11 +141,11 @@ int main(int argc, char **argv)
   }
 
   // Get describerTypes
-  const std::vector<feature::EImageDescriberType> describerTypes = feature::EImageDescriberType_stringToEnums(describerMethods);
+  const std::vector<feature::EImageDescriberType> describerTypes = feature::EImageDescriberType_stringToEnums(describerTypesName);
 
   // Features reading
   FeaturesPerView featuresPerView;
-  if (!sfm::loadFeaturesPerView(featuresPerView, sfmData, sMatchesDir, describerTypes)) {
+  if (!sfm::loadFeaturesPerView(featuresPerView, sfmData, matchesDirectory, describerTypes)) {
     std::cerr << std::endl
       << "Invalid features." << std::endl;
     return EXIT_FAILURE;
@@ -138,20 +154,20 @@ int main(int argc, char **argv)
   matching::PairwiseMatches pairwiseMatches;
   // Load the match file (try to read the two matches file formats)
 
-  if(!sfm::loadPairwiseMatches(pairwiseMatches, sfmData, sMatchesDir, describerTypes, "e"))
+  if(!sfm::loadPairwiseMatches(pairwiseMatches, sfmData, matchesDirectory, describerTypes, "e"))
   {
-    std::cerr << std::endl << "Unable to load matches files from: " << sMatchesDir << std::endl;
+    std::cerr << std::endl << "Unable to load matches files from: " << matchesDirectory << std::endl;
     return EXIT_FAILURE;
   }
 
-  if (sOutDir.empty())
+  if (outDirectory.empty())
   {
     std::cerr << "\nIt is an invalid output directory" << std::endl;
     return EXIT_FAILURE;
   }
 
-  if (!stlplus::folder_exists(sOutDir))
-    stlplus::folder_create(sOutDir);
+  if (!stlplus::folder_exists(outDirectory))
+    stlplus::folder_create(outDirectory);
 
   //---------------------------------------
   // Global SfM reconstruction process
@@ -160,21 +176,21 @@ int main(int argc, char **argv)
   aliceVision::system::Timer timer;
   ReconstructionEngine_globalSfM sfmEngine(
     sfmData,
-    sOutDir,
-    stlplus::create_filespec(sOutDir, "Reconstruction_Report.html"));
+    outDirectory,
+    stlplus::create_filespec(outDirectory, "sfm_log.html"));
 
   // Configure the featuresPerView & the matches_provider
   sfmEngine.SetFeaturesProvider(&featuresPerView);
   sfmEngine.SetMatchesProvider(&pairwiseMatches);
 
   // Configure reconstruction parameters
-  sfmEngine.Set_bFixedIntrinsics(!bRefineIntrinsics);
+  sfmEngine.Set_bFixedIntrinsics(!refineIntrinsics);
 
   // Configure motion averaging method
   sfmEngine.SetRotationAveragingMethod(
-    ERotationAveragingMethod(iRotationAveragingMethod));
+    ERotationAveragingMethod(rotationAveragingMethod));
   sfmEngine.SetTranslationAveragingMethod(
-    ETranslationAveragingMethod(iTranslationAveragingMethod));
+    ETranslationAveragingMethod(translationAveragingMethod));
 
   if (!sfmEngine.Process())
   {
@@ -191,14 +207,14 @@ int main(int argc, char **argv)
 
   std::cout << "...Generating SfM_Report.html" << std::endl;
   Generate_SfM_Report(sfmEngine.Get_SfMData(),
-    stlplus::create_filespec(sOutDir, "SfMReconstruction_Report.html"));
+    stlplus::create_filespec(outDirectory, "sfm_report.html"));
 
   //-- Export to disk computed scene (data & visualizable results)
   std::cout << "...Export SfMData to disk." << std::endl;
-  Save(sfmEngine.Get_SfMData(), sOutSfMDataFilepath, ESfMData(ALL));
+  Save(sfmEngine.Get_SfMData(), outSfMDataFilename, ESfMData(ALL));
 
   Save(sfmEngine.Get_SfMData(),
-    stlplus::create_filespec(sOutDir, "cloud_and_poses", ".ply"),
+    stlplus::create_filespec(outDirectory, "cloud_and_poses", ".ply"),
     ESfMData(ALL));
 
   return EXIT_SUCCESS;
