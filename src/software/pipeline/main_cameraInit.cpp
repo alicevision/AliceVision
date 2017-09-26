@@ -8,8 +8,9 @@
 #include <aliceVision/stl/split.hpp>
 #include <aliceVision/system/Logger.hpp>
 
-#include <dependencies/cmdLine/cmdLine.h>
 #include <dependencies/stlplus3/filesystemSimplified/file_system.hpp>
+
+#include <boost/program_options.hpp>
 
 #include <iostream>
 #include <fstream>
@@ -23,6 +24,7 @@ using namespace aliceVision::camera;
 using namespace aliceVision::exif;
 using namespace aliceVision::image;
 using namespace aliceVision::sfm;
+namespace po = boost::program_options;
 
 using ResourcePathsPerCamera = std::vector<std::vector<std::string>>;
 using Resources = std::vector<ResourcePathsPerCamera>;
@@ -539,12 +541,15 @@ private:
  */
 int main(int argc, char **argv)
 {
-  CmdLine cmd;
+  // command-line parameters
 
-  std::string imageDir;
+  std::string verboseLevel = system::EVerboseLevel_enumToString(system::Logger::getDefaultVerboseLevel());
+  std::string imageDirectory;
   std::string jsonFile;
   std::string sensorDatabasePath;
-  std::string outputDir;
+  std::string outputDirectory;
+
+  // user optional parameters
 
   std::string userKMatrix;
   std::string userCameraModelName;
@@ -552,75 +557,78 @@ int main(int argc, char **argv)
   double userSensorWidth = -1.0;
   int userGroupCameraModel = 1;
 
-  bool wantsMetadata = false;
-  bool useUid = false;
-  std::string verboseLevel = system::EVerboseLevel_enumToString(system::Logger::getDefaultVerboseLevel());
+  po::options_description allParams("AliceVision cameraInit");
 
-  cmd.add( make_option('i', imageDir, "imageDirectory") );
-  cmd.add( make_option('j', jsonFile, "jsonFile") );
-  cmd.add( make_option('d', sensorDatabasePath, "sensorWidthDatabase") );
-  cmd.add( make_option('o', outputDir, "outputDirectory") );
-  cmd.add( make_option('f', userFocalLengthPixel, "focal") );
-  cmd.add( make_option('s', userSensorWidth, "sensorWidth") );
-  cmd.add( make_option('k', userKMatrix, "intrinsics") );
-  cmd.add( make_option('c', userCameraModelName, "camera_model") );
-  cmd.add( make_option('g', userGroupCameraModel, "group_camera_model") );
-  cmd.add( make_option('m', wantsMetadata, "storeMetadata") );
-  cmd.add( make_option('u', useUid, "use_UID") );
-  cmd.add( make_option('v', verboseLevel, "verboseLevel") );
+  po::options_description requiredParams("Required parameters");
+  requiredParams.add_options()
+    ("imageDirectory,i", po::value<std::string>(&imageDirectory)->default_value(imageDirectory),
+      "Input images folder.")
+    ("jsonFile,j", po::value<std::string>(&jsonFile)->default_value(jsonFile),
+      "Input file with all the user options. It can be used to provide a list of images instead of a directory.")
+    ("sensorDatabase,s", po::value<std::string>(&sensorDatabasePath)->required(),
+      "Camera sensor width database path.")
+    ("output,o", po::value<std::string>(&outputDirectory)->required(),
+      "Output directory for the new SfMData file");
 
+  po::options_description optionalParams("Optional parameters");
+  optionalParams.add_options()
+    ("defaultFocalLengthPix", po::value<double>(&userFocalLengthPixel)->default_value(userFocalLengthPixel),
+      "Focal length in pixels.")
+    ("defaultSensorWidth", po::value<double>(&userSensorWidth)->default_value(userSensorWidth),
+      "Sensor width in mm.")
+    ("defaultIntrinsics", po::value<std::string>(&userKMatrix)->default_value(userKMatrix),
+      "Intrinsics Kmatrix \"f;0;ppx;0;f;ppy;0;0;1\".")
+    ("defaultCameraModel", po::value<std::string>(&userCameraModelName)->default_value(userCameraModelName),
+      "Camera model type (pinhole, radial1, radial3, brown or fisheye4).")
+    ("groupCameraModel,g", po::value<int>(&userGroupCameraModel)->default_value(userGroupCameraModel),
+      "- 0: each view have its own camera intrinsic parameters\n"
+      "- 1: view share camera intrinsic parameters based on metadata, if no metadata each view has its own camera intrinsic parameters\n"
+      "- 2: view share camera intrinsic parameters based on metadata, if no metadata they are grouped by folder\n");
+
+  po::options_description logParams("Log parameters");
+  logParams.add_options()
+    ("verboseLevel,v", po::value<std::string>(&verboseLevel)->default_value(verboseLevel),
+      "verbosity level (fatal,  error, warning, info, debug, trace).");
+
+  allParams.add(requiredParams).add(optionalParams).add(logParams);
+
+  po::variables_map vm;
   try
   {
-    if (argc == 1)
+    po::store(po::parse_command_line(argc, argv, allParams), vm);
+
+    if(vm.count("help") || (argc == 1))
     {
-      throw std::string("Invalid command line parameter.");
+      ALICEVISION_COUT(allParams);
+      return EXIT_SUCCESS;
     }
-    cmd.process(argc, argv);
+    po::notify(vm);
   }
-  catch(const std::string& s)
+  catch(boost::program_options::required_option& e)
   {
-    ALICEVISION_CERR("Usage: " << argv[0] << '\n'
-      << "[-i|--imageDirectory]\n"
-      << "[-j|--jsonFile] Input file with all the user options. It can be used to provide a list of images instead of a directory.\n"
-      << "[-d|--sensorWidthDatabase]\n"
-      << "[-o|--outputDirectory]\n"
-      << "[-f|--focal] (pixels)\n"
-      << "[-s|--sensorWidth] (mm)\n"
-      << "[-k|--intrinsics] Kmatrix: \"f;0;ppx;0;f;ppy;0;0;1\"\n"
-      << "[-c|--camera_model] Camera model type (pinhole, radial1, radial3, brown or fisheye4)\n"
-      << "[-g|--group_camera_model]\n"
-      << "\t 0-> each view have its own camera intrinsic parameters,\n"
-      << "\t 1-> (default) view share camera intrinsic parameters based on metadata, if no metadata each view has its own camera intrinsic parameters\n"
-      << "\t 2-> view share camera intrinsic parameters based on metadata, if no metadata they are grouped by folder\n"
-      << "[-m|--storeMetadata] Store image metadata in the sfm data\n"
-      << "[-u|--use_UID] Generate a UID (unique identifier) for each view. By default, the key is the image index.\n"
-      << "[-v|--verboseLevel]\n"
-      << "\t fatal\n"
-      << "\t error\n"
-      << "\t warning\n"
-      << "\t info\n"
-      << "\t debug\n"
-      << "\t trace\n");
-
-    ALICEVISION_CERR(s);
-
+    ALICEVISION_CERR("ERROR: " << e.what());
+    ALICEVISION_COUT("Usage:\n\n" << allParams);
+    return EXIT_FAILURE;
+  }
+  catch(boost::program_options::error& e)
+  {
+    ALICEVISION_CERR("ERROR: " << e.what());
+    ALICEVISION_COUT("Usage:\n\n" << allParams);
     return EXIT_FAILURE;
   }
 
   ALICEVISION_COUT("Program called with the following parameters: " <<std::endl
-                << "\t" << argv[0] << std::endl
-                << "\t--imageDirectory " << imageDir << std::endl
-                << "\t--jsonFile " << jsonFile << std::endl
-                << "\t--sensorWidthDatabase " << sensorDatabasePath << std::endl
-                << "\t--outputDirectory " << outputDir << std::endl
-                << "\t--focal " << userFocalLengthPixel << std::endl
-                << "\t--sensorWidth " << userSensorWidth << std::endl
-                << "\t--intrinsics " << userKMatrix << std::endl
-                << "\t--camera_model " << userCameraModelName << std::endl
-                << "\t--group_camera_model " << userGroupCameraModel << std::endl
-                << "\t--storeMetadata " << wantsMetadata << std::endl
-                << "\t--use_UID " << useUid << std::endl
-                << "\t--verboseLevel " << verboseLevel);
+    << "\t" << argv[0] << std::endl
+    << "\t--imageDirectory " << imageDirectory << std::endl
+    << "\t--jsonFile " << jsonFile << std::endl
+    << "\t--sensorDatabase " << sensorDatabasePath << std::endl
+    << "\t--output " << outputDirectory << std::endl
+    << "\t--defaultFocalLengthPix " << userFocalLengthPixel << std::endl
+    << "\t--defaultSensorWidth " << userSensorWidth << std::endl
+    << "\t--defaultIntrinsics " << userKMatrix << std::endl
+    << "\t--defaultCameraModel " << userCameraModelName << std::endl
+    << "\t--groupCameraModel " << userGroupCameraModel << std::endl
+    << "\t--verboseLevel " << verboseLevel);
 
   // set verbose level
   system::Logger::get()->setLogLevel(verboseLevel);
@@ -634,30 +642,30 @@ int main(int argc, char **argv)
   }
 
   // check user don't choose both input options
-  if(!imageDir.empty() && !jsonFile.empty())
+  if(!imageDirectory.empty() && !jsonFile.empty())
   {
     ALICEVISION_LOG_ERROR("Error: Cannot combine -i and -j options");
     return EXIT_FAILURE;
   }
 
   // check input directory
-  if(!imageDir.empty() && !stlplus::folder_exists(imageDir))
+  if(!imageDirectory.empty() && !stlplus::folder_exists(imageDirectory))
   {
     ALICEVISION_LOG_ERROR("Error: The input directory doesn't exist");
     return EXIT_FAILURE;
   }
 
   // check output directory string
-  if(outputDir.empty())
+  if(outputDirectory.empty())
   {
     ALICEVISION_LOG_ERROR("Error: Invalid output directory");
     return EXIT_FAILURE;
   }
 
   // check if output directory exists, if no create it
-  if(!stlplus::folder_exists(outputDir))
+  if(!stlplus::folder_exists(outputDirectory))
   {
-    if(!stlplus::folder_create(outputDir))
+    if(!stlplus::folder_create(outputDirectory))
     {
       ALICEVISION_LOG_ERROR("Error: Cannot create output directory");
       return EXIT_FAILURE;
@@ -698,7 +706,7 @@ int main(int argc, char **argv)
   const std::vector<std::string> supportedExtensions{"jpg", "jpeg"};
 
   // retrieve resources from json file
-  if(imageDir.empty())
+  if(imageDirectory.empty())
   {
     if(!retrieveResources(jsonFile, supportedExtensions, allImagePaths))
     {
@@ -708,7 +716,7 @@ int main(int argc, char **argv)
   }
   else
   {
-    std::vector<std::string> imagePaths = stlplus::folder_files(imageDir);
+    std::vector<std::string> imagePaths = stlplus::folder_files(imageDirectory);
     if(!imagePaths.empty())
     {
       std::sort(imagePaths.begin(), imagePaths.end());
@@ -719,7 +727,7 @@ int main(int argc, char **argv)
     }
     else
     {
-      ALICEVISION_LOG_ERROR("Error: Can't find image paths in '" << imageDir << "'");
+      ALICEVISION_LOG_ERROR("Error: Can't find image paths in '" << imageDirectory << "'");
       return EXIT_FAILURE;
     }
   }
@@ -786,7 +794,7 @@ int main(int argc, char **argv)
   // setup main image root_path
   if(jsonFile.empty())
   {
-    sfm_data.s_root_path = imageDir;
+    sfm_data.s_root_path = imageDirectory;
   }
   else
   {
@@ -863,7 +871,7 @@ int main(int argc, char **argv)
 
         IndexT viewId = views.size();
 
-        const std::string imageAbsPath = (imageDir.empty()) ? imagePath : stlplus::create_filespec(imageDir, imagePath);
+        const std::string imageAbsPath = (imageDirectory.empty()) ? imagePath : stlplus::create_filespec(imageDirectory, imagePath);
         const std::string imageFolder = stlplus::folder_part(imageAbsPath);
 
         // test if the image format is supported
@@ -975,13 +983,13 @@ int main(int argc, char **argv)
         }
 
         // change viewId if user wants to use UID
-        if(useUid)
-        {
-          EasyExifIO exifReader;
-          exifReader.open(imageAbsPath);
-
-          viewId = (IndexT)computeUID(exifReader, imagePath);
-        }
+        //if(useUid)
+        //{
+        //  EasyExifIO exifReader;
+        //  exifReader.open(imageAbsPath);
+        //
+        //  viewId = (IndexT)computeUID(exifReader, imagePath);
+        //}
 
         // check duplicated view identifier
         if(views.count(viewId))
@@ -996,11 +1004,7 @@ int main(int argc, char **argv)
         auto& currView = views[viewId];
 
         currView = std::make_shared<View>(imagePath, viewId, cameraIntrincicId, cameraPoseId, width, height);
-
-        if(wantsMetadata)
-        {
-          currView->setMetadata(cameraExifData);
-        }
+        currView->setMetadata(cameraExifData);
 
         if(isRig)
         {
@@ -1055,7 +1059,7 @@ int main(int argc, char **argv)
   }
 
   // store SfMData views & intrinsic data
-  if (!Save(sfm_data, stlplus::create_filespec( outputDir, "sfm_data.json" ).c_str(), ESfMData(VIEWS|INTRINSICS|EXTRINSICS)))
+  if (!Save(sfm_data, stlplus::create_filespec( outputDirectory, "sfm_data.json" ).c_str(), ESfMData(VIEWS|INTRINSICS|EXTRINSICS)))
   {
     return EXIT_FAILURE;
   }
