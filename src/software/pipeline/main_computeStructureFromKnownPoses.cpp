@@ -6,76 +6,106 @@
 #include "aliceVision/sfm/pipeline/regionsIO.hpp"
 #include "aliceVision/matching/IndMatch.hpp"
 #include "aliceVision/system/Timer.hpp"
+#include "aliceVision/system/Logger.hpp"
 
-#include "dependencies/cmdLine/cmdLine.h"
 #include "dependencies/stlplus3/filesystemSimplified/file_system.hpp"
+
+#include <boost/program_options.hpp>
 
 using namespace aliceVision;
 using namespace aliceVision::sfm;
+using namespace std;
+namespace po = boost::program_options;
 
 /// Compute the structure of a scene according existing camera poses.
 int main(int argc, char **argv)
 {
-  using namespace std;
-  std::cout << "Compute Structure from the provided poses" << std::endl;
+  // command-line parameters
 
-  CmdLine cmd;
+  std::string verboseLevel = system::EVerboseLevel_enumToString(system::Logger::getDefaultVerboseLevel());
+  std::string sfmDataFilename;
+  std::string outSfMDataFilename;
+  std::string featuresDirectory;
 
-  std::string sSfMData_Filename;
-  std::string describerMethods = "SIFT";
-  std::string sFeaturesDir;
-  std::string sMatchesDir;
-  std::string sMatchesGeometricModel = "f";
-  std::string sOutFile = "";
+  // user optional parameters
 
-  cmd.add( make_option('i', sSfMData_Filename, "input_file") );
-  cmd.add( make_option('d', describerMethods, "describerMethods") );
-  cmd.add( make_option('f', sFeaturesDir, "feat_dir") );
-  cmd.add( make_option('m', sMatchesDir, "match_dir") );
-  cmd.add( make_option('o', sOutFile, "output_file") );
-  cmd.add( make_option('g', sMatchesGeometricModel, "matchesGeometricModel"));
+  std::string describerTypesName = feature::EImageDescriberType_enumToString(feature::EImageDescriberType::SIFT);
+  std::string matchesDirectory;
+  std::string matchesGeometricModel = "f";
 
-  try {
-    if (argc == 1) throw std::string("Invalid command line parameter.");
-    cmd.process(argc, argv);
-  } catch(const std::string& s) {
-    std::cerr << "Usage: " << argv[0] << "\n"
-        "[-i|--input_file] path to a SfMData scene\n"
-        "[-d|--describerMethods]\n"
-        "  (methods to use to describe an image):\n"
-        "   SIFT (default),\n"
-        "   SIFT_FLOAT to use SIFT stored as float,\n"
-        "   AKAZE: AKAZE with floating point descriptors,\n"
-        "   AKAZE_MLDB:  AKAZE with binary descriptors\n"
-#if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_CCTAG)
-        "   CCTAG3: CCTAG markers with 3 crowns\n"
-        "   CCTAG4: CCTAG markers with 4 crowns\n"
-#endif
-#if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_OPENCV)
-#if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_OCVSIFT)
-        "   SIFT_OCV: OpenCV SIFT\n"
-#endif
-        "   AKAZE_OCV: OpenCV AKAZE\n"
-#endif
-        "[-o|--output_file] file where the output data will be stored "
-           "(i.e. path/sfm_data_structure.bin)\n"
-        "[-f|--feat_dir] path to the features and descriptors that "
-           "corresponds to the provided SfMData scene\n"
-        "\n[Optional]\n"
-        "[-m|--match_dir] path to the matches files "
-        "(if not provided the images connections will be computed from Frustrums intersections)\n"
-        "[-g|--matchesGeometricModel MODEL] matching geometric model used: 'f' (default), 'e' or 'h'"
-    << std::endl;
+  po::options_description allParams("AliceVision ComputeStructureFromKnownPoses");
 
-    std::cerr << s << std::endl;
+  po::options_description requiredParams("Required parameters");
+  requiredParams.add_options()
+    ("input,i", po::value<std::string>(&sfmDataFilename)->required(),
+      "SfMData file.")
+    ("featuresDirectory,f", po::value<std::string>(&featuresDirectory)->required(),
+      "Path to a directory containing the extracted features.")
+    ("output,o", po::value<std::string>(&outSfMDataFilename)->required(),
+      "Output path for the features and descriptors files (*.feat, *.desc).");
+
+  po::options_description optionalParams("Optional parameters");
+  optionalParams.add_options()
+    ("describerTypes,d", po::value<std::string>(&describerTypesName)->default_value(describerTypesName),
+      feature::EImageDescriberType_informations().c_str())
+    ("matchesDirectory,m", po::value<std::string>(&matchesDirectory)->default_value(matchesDirectory),
+      "Path to a directory containing the matches.")
+    ("matchesGeometricModel,g", po::value<std::string>(&matchesGeometricModel)->default_value(matchesGeometricModel),
+      "Matches geometric Model :\n"
+      "- f: fundamental matrix\n"
+      "- e: fundamental matrix\n"
+      "- h: fundamental matrix");
+
+  po::options_description logParams("Log parameters");
+  logParams.add_options()
+    ("verboseLevel,v", po::value<std::string>(&verboseLevel)->default_value(verboseLevel),
+      "verbosity level (fatal,  error, warning, info, debug, trace).");
+
+  allParams.add(requiredParams).add(optionalParams).add(logParams);
+
+  po::variables_map vm;
+  try
+  {
+    po::store(po::parse_command_line(argc, argv, allParams), vm);
+
+    if(vm.count("help") || (argc == 1))
+    {
+      ALICEVISION_COUT(allParams);
+      return EXIT_SUCCESS;
+    }
+    po::notify(vm);
+  }
+  catch(boost::program_options::required_option& e)
+  {
+    ALICEVISION_CERR("ERROR: " << e.what());
+    ALICEVISION_COUT("Usage:\n\n" << allParams);
     return EXIT_FAILURE;
   }
+  catch(boost::program_options::error& e)
+  {
+    ALICEVISION_CERR("ERROR: " << e.what());
+    ALICEVISION_COUT("Usage:\n\n" << allParams);
+    return EXIT_FAILURE;
+  }
+
+  ALICEVISION_COUT("Program called with the following parameters: " << std::endl
+    << "\t" << argv[0] << std::endl
+    << "\t--input " << sfmDataFilename << std::endl
+    << "\t--output " << outSfMDataFilename << std::endl
+    << "\t--featuresDirectory " << featuresDirectory << std::endl
+    << "\t--describerTypes " << describerTypesName << std::endl
+    << "\t--matchesDirectory " << matchesDirectory << std::endl
+    << "\t--matchesGeometricModel " << matchesGeometricModel << std::endl
+    << "\t--verboseLevel " << verboseLevel);
+
+  // set verbose level
+  system::Logger::get()->setLogLevel(verboseLevel);
   
   // Load input SfMData scene
   SfMData sfm_data;
-  if (!Load(sfm_data, sSfMData_Filename, ESfMData(VIEWS|INTRINSICS|EXTRINSICS))) {
+  if (!Load(sfm_data, sfmDataFilename, ESfMData(VIEWS|INTRINSICS|EXTRINSICS))) {
     std::cerr << std::endl
-      << "The input SfMData file \""<< sSfMData_Filename << "\" cannot be read." << std::endl;
+      << "The input SfMData file \""<< sfmDataFilename << "\" cannot be read." << std::endl;
     return EXIT_FAILURE;
   }
 
@@ -83,11 +113,11 @@ int main(int argc, char **argv)
   using namespace aliceVision::feature;
   
   // Get imageDescriberMethodType
-  std::vector<EImageDescriberType> describerMethodTypes = EImageDescriberType_stringToEnums(describerMethods);
+  std::vector<EImageDescriberType> describerMethodTypes = EImageDescriberType_stringToEnums(describerTypesName);
 
   // Prepare the Regions provider
   RegionsPerView regionsPerView;
-  if(!sfm::loadRegionsPerView(regionsPerView, sfm_data, sFeaturesDir, describerMethodTypes))
+  if(!sfm::loadRegionsPerView(regionsPerView, sfm_data, featuresDirectory, describerMethodTypes))
   {
     std::cerr << std::endl
       << "Invalid regions." << std::endl;
@@ -101,7 +131,7 @@ int main(int argc, char **argv)
   //     (keep pairs that have valid Intrinsic & Pose ids).
   //--
   PairSet pairs;
-  if (sMatchesDir.empty())
+  if (matchesDirectory.empty())
   {
     // No image pair provided, so we use cameras frustum intersection.
     // Build the list of connected images pairs from frustum intersections
@@ -111,7 +141,7 @@ int main(int argc, char **argv)
   {
     // Load pre-computed matches
     matching::PairwiseMatches matches;
-    if (!matching::Load(matches, sfm_data.GetViewsKeys(), sMatchesDir, describerMethodTypes, sMatchesGeometricModel))
+    if (!matching::Load(matches, sfm_data.GetViewsKeys(), matchesDirectory, describerMethodTypes, matchesGeometricModel))
     {
       std::cerr<< "Unable to read the matches file." << std::endl;
       return EXIT_FAILURE;
@@ -147,16 +177,16 @@ int main(int argc, char **argv)
     << "\nStructure estimation took (s): " << timer.elapsed() << "." << std::endl
     << "#landmark found: " << sfm_data.GetLandmarks().size() << std::endl;
 
-  if (stlplus::extension_part(sOutFile) != "ply")
+  if (stlplus::extension_part(outSfMDataFilename) != "ply")
   {
     Save(sfm_data,
       stlplus::create_filespec(
-        stlplus::folder_part(sOutFile),
-        stlplus::basename_part(sOutFile), "ply"),
+        stlplus::folder_part(outSfMDataFilename),
+        stlplus::basename_part(outSfMDataFilename), "ply"),
       ESfMData(ALL));
   }
 
-  if (Save(sfm_data, sOutFile, ESfMData(ALL)))
+  if (Save(sfm_data, outSfMDataFilename, ESfMData(ALL)))
     return EXIT_SUCCESS;
   
   std::cout << "Error while saving the sfm data!" << std::endl;
