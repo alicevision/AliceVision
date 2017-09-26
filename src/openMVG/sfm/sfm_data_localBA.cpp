@@ -337,19 +337,20 @@ void LocalBA_Data::computeParameterLimits(const IntrinsicParameter& parameter, c
         break;
       }
     }
-    
+
     std::size_t numPosesStartWindow = filteredNumPosesVec.at(idStartWindow);
     
-    // Normalize parameters historical:
-    // The normalization need to be done on the all historical
-    std::cout << "- Normalize..." << std::endl;
-    std::vector<double> normalizedValuesVec = normalize(filteredValuesVec);
     // Compute the standard deviation for each parameter, between [idLimit; end()]
     std::cout << "- Subpart vector..." << std::endl;
     std::vector<double> subNumPosesVec (filteredNumPosesVec.begin()+idStartWindow, filteredNumPosesVec.end());
-    std::vector<double> subNormValuesVec (normalizedValuesVec.begin()+idStartWindow, normalizedValuesVec.end());
+    std::vector<double> subValuesVec (filteredValuesVec.begin()+idStartWindow, filteredValuesVec.end());
     std::cout << "- Compute stdev..." << std::endl;
-    double stdevSubValues = standardDeviation(subNormValuesVec);
+    double stdev = standardDeviation(subValuesVec);
+    
+    // Normalize stdev (: divide by the range of the values)
+    double minVal = *std::min_element(filteredValuesVec.begin(), filteredValuesVec.end());
+    double maxVal = *std::max_element(filteredValuesVec.begin(), filteredValuesVec.end());
+    double normStdev = stdev / (maxVal - minVal);
     
     /* Display info */
     std::cout << "filtredNumPosesVec = " << filteredNumPosesVec << std::endl;
@@ -357,16 +358,112 @@ void LocalBA_Data::computeParameterLimits(const IntrinsicParameter& parameter, c
     std::cout << "numPosesStartWindow = " << numPosesStartWindow << std::endl;
     std::cout << "numPosesEndWindow = " << numPosesEndWindow << std::endl;
     std::cout << "subNumPosesVec = " << subNumPosesVec << std::endl;
-    std::cout << "normalizedValuesVec = " << normalizedValuesVec << std::endl;
-    std::cout << "subNormValuesVec = " << subNormValuesVec << std::endl;
-    std::cout << "stdevSubValues = " << stdevSubValues << std::endl;
+    std::cout << "normStdev = " << normStdev << std::endl;
     
-    if (stdevSubValues*100.0 <= kStdDevPercentage && intrinsicsLimitIds.at(idIntr).at(parameter) == 0)
+    if (normStdev*100.0 <= kStdDevPercentage && intrinsicsLimitIds.at(idIntr).at(parameter) == 0)
     {
       intrinsicsLimitIds.at(idIntr).at(parameter) = numPosesEndWindow;    
     }
   }
 }
+
+
+//// focal: parameterId = 0
+//// Cx: parameterId = 1
+//// Cy: parameterId = 2
+//void LocalBA_Data::computeParameterLimits(const IntrinsicParameter& parameter, const std::size_t kWindowSize, const double kStdDevPercentage)
+//{
+//  std::cout << "Updating parameter #" << parameter << std::endl;
+//  for (auto& elt : intrinsicsHistory)
+//  {
+//    IndexT idIntr = elt.first;
+    
+//    // Do not compute limits if there are already reached for each parameter
+//    if (intrinsicsLimitIds.at(idIntr).at(parameter) != 0)
+//      continue;
+    
+    
+//    // Get the full history of intrinsic parameters
+//    std::vector<std::size_t> allNumPosesVec;
+//    std::vector<double> allValuesVec; 
+    
+//    for (const auto& pair_uses_params : intrinsicsHistory.at(idIntr))
+//    {
+//      allNumPosesVec.push_back(pair_uses_params.first);
+//      allValuesVec.push_back(pair_uses_params.second.at(parameter));
+//    }
+    
+//    std::cout << "- Clean duplicated & removed cameras..." << std::endl;
+//    // Clean 'intrinsicsHistorical':
+//    //  [4 5 5 7 8 6 9]
+//    // - detect duplicates -> [4 (5) 5 7 8 6 9]
+//    // - detecting removed cameras -> [4 5 (7 8) 6 9]
+//    std::vector<std::size_t> filteredNumPosesVec(allNumPosesVec);
+//    std::vector<double> filteredValuesVec(allValuesVec);
+    
+//    std::size_t numPosesEndWindow = allNumPosesVec.back();
+    
+//    for (int id = filteredNumPosesVec.size()-2; id > 0; --id)
+//    {
+//      if (filteredNumPosesVec.size() < 2)
+//        break;
+      
+//      if (filteredNumPosesVec.at(id) >= filteredNumPosesVec.at(id+1))
+//      {
+//        filteredNumPosesVec.erase(filteredNumPosesVec.begin()+id);
+//        filteredValuesVec.erase(filteredValuesVec.begin()+id);
+//      }
+//    }
+    
+//    /* Display info */
+//    std::cout << "-- K #" << idIntr << std::endl;
+//    std::cout << "allNumPosesVec = " << allNumPosesVec << std::endl;
+//    std::cout << "allValuesVec = " << allValuesVec << std::endl;
+//    std::cout << "filteredValuesVec = " << filteredValuesVec << std::endl;
+    
+//    // Detect limit according to 'kWindowSize':
+//    if (numPosesEndWindow < kWindowSize)
+//      continue;
+    
+//    IndexT idStartWindow = 0;
+//    for (int id = filteredNumPosesVec.size()-2; id > 0; --id)
+//    {
+//      if (numPosesEndWindow - filteredNumPosesVec.at(id) >= kWindowSize)
+//      {
+//        idStartWindow = id;
+//        break;
+//      }
+//    }
+    
+//    std::size_t numPosesStartWindow = filteredNumPosesVec.at(idStartWindow);
+    
+//    // Normalize parameters historical:
+//    // The normalization need to be done on the all historical
+//    std::cout << "- Normalize..." << std::endl;
+//    std::vector<double> normalizedValuesVec = normalize(filteredValuesVec);
+//    // Compute the standard deviation for each parameter, between [idLimit; end()]
+//    std::cout << "- Subpart vector..." << std::endl;
+//    std::vector<double> subNumPosesVec (filteredNumPosesVec.begin()+idStartWindow, filteredNumPosesVec.end());
+//    std::vector<double> subNormValuesVec (normalizedValuesVec.begin()+idStartWindow, normalizedValuesVec.end());
+//    std::cout << "- Compute stdev..." << std::endl;
+//    double stdevSubValues = standardDeviation(subNormValuesVec);
+    
+//    /* Display info */
+//    std::cout << "filtredNumPosesVec = " << filteredNumPosesVec << std::endl;
+//    std::cout << "idStartWindow = " << idStartWindow << std::endl;
+//    std::cout << "numPosesStartWindow = " << numPosesStartWindow << std::endl;
+//    std::cout << "numPosesEndWindow = " << numPosesEndWindow << std::endl;
+//    std::cout << "subNumPosesVec = " << subNumPosesVec << std::endl;
+//    std::cout << "normalizedValuesVec = " << normalizedValuesVec << std::endl;
+//    std::cout << "subNormValuesVec = " << subNormValuesVec << std::endl;
+//    std::cout << "stdevSubValues = " << stdevSubValues << std::endl;
+    
+//    if (stdevSubValues*100.0 <= kStdDevPercentage && intrinsicsLimitIds.at(idIntr).at(parameter) == 0)
+//    {
+//      intrinsicsLimitIds.at(idIntr).at(parameter) = numPosesEndWindow;    
+//    }
+//  }
+//}
 
 void LocalBA_Data::computeAllParametersLimits(const std::size_t kWindowSize, const double kStdDevPercentage)
 {
