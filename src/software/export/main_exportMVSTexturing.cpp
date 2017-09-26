@@ -4,8 +4,9 @@
 #include "aliceVision/sfm/sfm.hpp"
 #include "aliceVision/image/image.hpp"
 
-#include "dependencies/cmdLine/cmdLine.h"
 #include "dependencies/stlplus3/filesystemSimplified/file_system.hpp"
+
+#include <boost/program_options.hpp>
 
 #include <fstream>
 
@@ -13,46 +14,71 @@ using namespace aliceVision;
 using namespace aliceVision::camera;
 using namespace aliceVision::geometry;
 using namespace aliceVision::sfm;
+namespace po = boost::program_options;
 
 int main(int argc, char **argv)
 {
-  CmdLine cmd;
+  // command-line parameters
 
-  std::string sSfMData_Filename;
-  std::string sOutDir = "";
+  std::string verboseLevel = system::EVerboseLevel_enumToString(system::Logger::getDefaultVerboseLevel());
+  std::string sfmDataFilename;
+  std::string outDirectory;
 
-  cmd.add( make_option('i', sSfMData_Filename, "sfmdata") );
-  cmd.add( make_option('o', sOutDir, "outdir") );
+  po::options_description allParams("AliceVision exportMVSTexturing");
 
-  try {
-      if (argc == 1) throw std::string("Invalid command line parameter.");
-      cmd.process(argc, argv);
-  } catch(const std::string& s) {
-      std::cerr << "Usage: " << argv[0] << '\n'
-      << "[-i|--sfmdata] filename, the SfMData file to convert\n"
-      << "[-o|--outdir] path.\n"
-      << std::endl;
+  po::options_description requiredParams("Required parameters");
+  requiredParams.add_options()
+    ("input,i", po::value<std::string>(&sfmDataFilename)->required(),
+      "SfMData file.")
+    ("output,o", po::value<std::string>(&outDirectory)->required(),
+      "Output directory.");
 
-      std::cerr << s << std::endl;
-      return EXIT_FAILURE;
+  po::options_description logParams("Log parameters");
+  logParams.add_options()
+    ("verboseLevel,v", po::value<std::string>(&verboseLevel)->default_value(verboseLevel),
+      "verbosity level (fatal,  error, warning, info, debug, trace).");
+
+  allParams.add(requiredParams).add(logParams);
+
+  po::variables_map vm;
+  try
+  {
+    po::store(po::parse_command_line(argc, argv, allParams), vm);
+
+    if(vm.count("help") || (argc == 1))
+    {
+      ALICEVISION_COUT(allParams);
+      return EXIT_SUCCESS;
+    }
+    po::notify(vm);
+  }
+  catch(boost::program_options::required_option& e)
+  {
+    ALICEVISION_CERR("ERROR: " << e.what());
+    ALICEVISION_COUT("Usage:\n\n" << allParams);
+    return EXIT_FAILURE;
+  }
+  catch(boost::program_options::error& e)
+  {
+    ALICEVISION_CERR("ERROR: " << e.what());
+    ALICEVISION_COUT("Usage:\n\n" << allParams);
+    return EXIT_FAILURE;
   }
 
-  std::cout << " You called : " <<std::endl
-            << argv[0] << std::endl
-            << "--sfmdata " << sSfMData_Filename << std::endl
-            << "--outdir " << sOutDir << std::endl;
+  // set verbose level
+  system::Logger::get()->setLogLevel(verboseLevel);
 
   bool bOneHaveDisto = false;
   
   // Create output dir
-  if (!stlplus::folder_exists(sOutDir))
-    stlplus::folder_create( sOutDir );
+  if (!stlplus::folder_exists(outDirectory))
+    stlplus::folder_create( outDirectory );
 
   // Read the SfM scene
   SfMData sfm_data;
-  if (!Load(sfm_data, sSfMData_Filename, ESfMData(VIEWS|INTRINSICS|EXTRINSICS))) {
+  if (!Load(sfm_data, sfmDataFilename, ESfMData(VIEWS|INTRINSICS|EXTRINSICS))) {
     std::cerr << std::endl
-      << "The input SfMData file \""<< sSfMData_Filename << "\" cannot be read." << std::endl;
+      << "The input SfMData file \""<< sfmDataFilename << "\" cannot be read." << std::endl;
     return EXIT_FAILURE;
   }
 
@@ -85,7 +111,7 @@ int main(int argc, char **argv)
     
     // We can now create the .cam file for the View in the output dir 
     std::ofstream outfile( stlplus::create_filespec(
-                sOutDir, stlplus::basename_part(view->getImagePath()), "cam" ).c_str() );
+                outDirectory, stlplus::basename_part(view->getImagePath()), "cam" ).c_str() );
     // See https://github.com/nmoehrle/mvs-texturing/blob/master/Arguments.cpp
     // for full specs
     const int largerDim = w > h ? w : h;
@@ -102,7 +128,7 @@ int main(int argc, char **argv)
   
   const std::string sUndistMsg = bOneHaveDisto ? "undistorded" : "";
   const std::string sQuitMsg = std::string("Your SfMData file was succesfully converted!\n") +
-	  "Now you can copy your " + sUndistMsg + " images in the \"" + sOutDir + "\" directory and run MVS Texturing";
+    "Now you can copy your " + sUndistMsg + " images in the \"" + outDirectory + "\" directory and run MVS Texturing";
   std::cout << sQuitMsg << std::endl;
   return EXIT_SUCCESS;
 }
