@@ -4,8 +4,7 @@
 #include "aliceVision/sfm/sfm.hpp"
 #include "aliceVision/image/image.hpp"
 
-#include "dependencies/cmdLine/cmdLine.h"
-
+#include <boost/program_options.hpp>
 #include <boost/progress.hpp>
 
 #include <stdlib.h>
@@ -15,39 +14,70 @@ using namespace aliceVision::camera;
 using namespace aliceVision::geometry;
 using namespace aliceVision::image;
 using namespace aliceVision::sfm;
+namespace po = boost::program_options;
 
 int main(int argc, char *argv[])
 {
-  CmdLine cmd;
-  std::string sSfMData_Filename;
-  std::string sOutDir = "";
+  // command-line parameters
 
-  cmd.add( make_option('i', sSfMData_Filename, "sfmdata") );
-  cmd.add( make_option('o', sOutDir, "outdir") );
+  std::string verboseLevel = system::EVerboseLevel_enumToString(system::Logger::getDefaultVerboseLevel());
+  std::string sfmDataFilename;
+  std::string outDirectory;
 
-  try {
-      if (argc == 1) throw std::string("Invalid command line parameter.");
-      cmd.process(argc, argv);
-  } catch(const std::string& s) {
-    std::cerr
-      << "Export undistorted images related to a sfm_data file.\n"
-      << "Usage: " << argv[0] << '\n'
-      << "[-i|--sfmdata] filename, the SfMData file to convert\n"
-      << "[-o|--outdir] path\n"
-      << std::endl;
+  po::options_description allParams(
+    "Export undistorted images related to a sfm_data file.\n"
+    "AliceVision exportUndistortedImages");
 
-      std::cerr << s << std::endl;
-      return EXIT_FAILURE;
+  po::options_description requiredParams("Required parameters");
+  requiredParams.add_options()
+    ("input,i", po::value<std::string>(&sfmDataFilename)->required(),
+      "SfMData file.")
+    ("output,o", po::value<std::string>(&outDirectory)->required(),
+      "Output directory.");
+
+  po::options_description logParams("Log parameters");
+  logParams.add_options()
+    ("verboseLevel,v", po::value<std::string>(&verboseLevel)->default_value(verboseLevel),
+      "verbosity level (fatal,  error, warning, info, debug, trace).");
+
+  allParams.add(requiredParams).add(logParams);
+
+  po::variables_map vm;
+  try
+  {
+    po::store(po::parse_command_line(argc, argv, allParams), vm);
+
+    if(vm.count("help") || (argc == 1))
+    {
+      ALICEVISION_COUT(allParams);
+      return EXIT_SUCCESS;
+    }
+    po::notify(vm);
+  }
+  catch(boost::program_options::required_option& e)
+  {
+    ALICEVISION_CERR("ERROR: " << e.what());
+    ALICEVISION_COUT("Usage:\n\n" << allParams);
+    return EXIT_FAILURE;
+  }
+  catch(boost::program_options::error& e)
+  {
+    ALICEVISION_CERR("ERROR: " << e.what());
+    ALICEVISION_COUT("Usage:\n\n" << allParams);
+    return EXIT_FAILURE;
   }
 
+  // set verbose level
+  system::Logger::get()->setLogLevel(verboseLevel);
+
   // Create output dir
-  if (!stlplus::folder_exists(sOutDir))
-    stlplus::folder_create( sOutDir );
+  if (!stlplus::folder_exists(outDirectory))
+    stlplus::folder_create( outDirectory );
 
   SfMData sfm_data;
-  if (!Load(sfm_data, sSfMData_Filename, ESfMData(VIEWS|INTRINSICS))) {
+  if (!Load(sfm_data, sfmDataFilename, ESfMData(VIEWS|INTRINSICS))) {
     std::cerr << std::endl
-      << "The input SfMData file \""<< sSfMData_Filename << "\" cannot be read." << std::endl;
+      << "The input SfMData file \""<< sfmDataFilename << "\" cannot be read." << std::endl;
     return EXIT_FAILURE;
   }
 
@@ -67,7 +97,7 @@ int main(int argc, char *argv[])
 
       const std::string srcImage = stlplus::create_filespec(sfm_data.s_root_path, view->getImagePath());
       const std::string dstImage = stlplus::create_filespec(
-        sOutDir, stlplus::filename_part(srcImage));
+        outDirectory, stlplus::filename_part(srcImage));
 
       const IntrinsicBase * cam = iterIntrinsic->second.get();
       if (cam->isValid() && cam->have_disto())
