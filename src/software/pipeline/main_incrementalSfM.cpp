@@ -6,8 +6,9 @@
 #include "aliceVision/sfm/pipeline/regionsIO.hpp"
 #include "aliceVision/system/Timer.hpp"
 
-#include "dependencies/cmdLine/cmdLine.h"
 #include "dependencies/stlplus3/filesystemSimplified/file_system.hpp"
+
+#include <boost/program_options.hpp>
 
 #include <cstdlib>
 
@@ -15,6 +16,8 @@ using namespace aliceVision;
 using namespace aliceVision::camera;
 using namespace aliceVision::sfm;
 using namespace aliceVision::feature;
+using namespace std;
+namespace po = boost::program_options;
 
 /**
  * @brief Retrieve the view id in the sfmData from the image filename.
@@ -74,108 +77,134 @@ bool retrieveViewIdFromImageName(
 
 int main(int argc, char **argv)
 {
-  using namespace std;
-  std::cout << "Sequential/Incremental reconstruction" << std::endl
-            << " Perform incremental SfM (Initial Pair Essential + Resection)." << std::endl
-            << std::endl;
+  // command-line parameters
 
-  CmdLine cmd;
+  std::string verboseLevel = system::EVerboseLevel_enumToString(system::Logger::getDefaultVerboseLevel());
+  std::string sfmDataFilename;
+  std::string featuresDirectory;
+  std::string matchesDirectory;
+  std::string outDirectory;
 
-  std::string sSfMData_Filename;
-  std::string describerMethods = "SIFT";
-  std::string sMatchesDir;
-  std::string sFeaturesDir;
-  std::string sOutDir = "";
-  std::string sOutSfMDataFilepath = "";
-  std::string sOutInterFileExtension = ".ply";
+  // user optional parameters
+
+  std::string outSfMDataFilename = "SfmData.json";
+  std::string describerTypesName = feature::EImageDescriberType_enumToString(feature::EImageDescriberType::SIFT);
+  std::string outInterFileExtension = ".ply";
   std::pair<std::string,std::string> initialPairString("","");
-  bool bRefineIntrinsics = true;
   int minInputTrackLength = 2;
-  int i_User_camera_model = PINHOLE_CAMERA_RADIAL3;
+  int userCameraModel = static_cast<int>(PINHOLE_CAMERA_RADIAL3);
+  bool refineIntrinsics = true;
   bool allowUserInteraction = true;
 
-  cmd.add( make_option('i', sSfMData_Filename, "input_file") );
-  cmd.add( make_option('d', describerMethods, "describerMethods") );
-  cmd.add( make_option('m', sMatchesDir, "matchdir") );
-  cmd.add( make_option('F', sFeaturesDir, "featuresDir") );
-  cmd.add( make_option('o', sOutDir, "outdir") );
-  cmd.add( make_option('s', sOutSfMDataFilepath, "out_sfmdata_file") );
-  cmd.add( make_option('e', sOutInterFileExtension, "inter_file_extension") );
-  cmd.add( make_option('a', initialPairString.first, "initialPairA") );
-  cmd.add( make_option('b', initialPairString.second, "initialPairB") );
-  cmd.add( make_option('c', i_User_camera_model, "camera_model") );
-  cmd.add( make_option('f', bRefineIntrinsics, "refineIntrinsics") );
-  cmd.add( make_option('t', minInputTrackLength, "minInputTrackLength") );
-  cmd.add( make_option('u', allowUserInteraction, "allowUserInteraction") );
+  po::options_description allParams(
+    "Sequential/Incremental reconstruction\n"
+    "Perform incremental SfM (Initial Pair Essential + Resection)\n"
+    "AliceVision incrementalSfM");
 
-  try {
-    if (argc == 1) throw std::string("Invalid parameter.");
-    cmd.process(argc, argv);
-  } catch(const std::string& s) {
-    std::cerr << "Usage: " << argv[0] << '\n'
-    << "[-i|--input_file] path to a SfMData scene\n"
-    << "[-d|--describerMethods]\n"
-    << "  (methods to use to describe an image):\n"
-    << "   SIFT (default),\n"
-    << "   SIFT_FLOAT to use SIFT stored as float,\n"
-    << "   AKAZE: AKAZE with floating point descriptors,\n"
-    << "   AKAZE_MLDB:  AKAZE with binary descriptors\n"
-#if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_CCTAG)
-    << "   CCTAG3: CCTAG markers with 3 crowns\n"
-    << "   CCTAG4: CCTAG markers with 4 crowns\n"
-#endif //ALICEVISION_HAVE_CCTAG
-#if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_OPENCV)
-#if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_OCVSIFT)
-    << "   SIFT_OCV: OpenCV SIFT\n"
-#endif //ALICEVISION_HAVE_OCVSIFT
-    << "   AKAZE_OCV: OpenCV AKAZE\n"
-#endif //ALICEVISION_HAVE_OPENCV
-    << "[-m|--matchdir] path to the matches that corresponds to the provided SfMData scene\n"
-    << "[-F|--featuresDir] path to directory containing the extracted features (default: $matchdir)\n"
-    << "[-o|--outdir] path where the output data will be stored\n"
-    << "[-s|--out_sfmdata_file] path of the output sfmdata file (default: $outdir/sfm_data.json)\n"
-    << "[-e|--inter_file_extension] extension of the intermediate file export (default: .ply)\n"
-    << "[-a|--initialPairA] filename of the first image (without path)\n"
-    << "[-b|--initialPairB] filename of the second image (without path)\n"
-    << "[-c|--camera_model] Camera model type for view with unknown intrinsic:\n"
-      << "\t 1: Pinhole \n"
-      << "\t 2: Pinhole radial 1\n"
-      << "\t 3: Pinhole radial 3 (default)\n"
-    << "[-f|--refineIntrinsics] \n"
-    << "\t 0-> intrinsic parameters are kept as constant\n"
-    << "\t 1-> refine intrinsic parameters (default). \n"
-    << "[-t|--minInputTrackLength N] minimum track length in input of SfM (default: 2)\n"
-    << "[-p|--matchFilePerImage] \n"
-    << "\t To use one match file per image instead of a global file.\n"
-    << "[-u|--allowUserInteraction] Enable/Disable user interactions. (default: true)\n"
-    << "\t If the process is done on renderfarm, it doesn't make sense to wait for user inputs.\n"
-    << std::endl;
+  po::options_description requiredParams("Required parameters");
+  requiredParams.add_options()
+    ("input,i", po::value<std::string>(&sfmDataFilename)->required(),
+      "SfMData file.")
+    ("output,o", po::value<std::string>(&outDirectory)->required(),
+      "Path of the output directory.")
+    ("featuresDirectory,f", po::value<std::string>(&featuresDirectory)->required(),
+      "Path to a directory containing the extracted features.")
+    ("matchesDirectory,m", po::value<std::string>(&matchesDirectory)->required(),
+      "Path to a directory in which computed matches are stored.");
 
-    std::cerr << s << std::endl;
+  po::options_description optionalParams("Optional parameters");
+  optionalParams.add_options()
+    ("outSfMDataFilename", po::value<std::string>(&outSfMDataFilename)->default_value(outSfMDataFilename),
+      "Filename of the output SfMData file.")
+    ("describerTypes,d", po::value<std::string>(&describerTypesName)->default_value(describerTypesName),
+      feature::EImageDescriberType_informations().c_str())
+    ("interFileExtension", po::value<std::string>(&outInterFileExtension)->default_value(outInterFileExtension),
+      "Extension of the intermediate file export.")
+    ("minInputTrackLength", po::value<int>(&minInputTrackLength)->default_value(minInputTrackLength),
+      "Minimum track length in input of SfM")
+    ("cameraModel", po::value<int>(&userCameraModel)->default_value(userCameraModel),
+      "- 1: Pinhole\n"
+      "- 2: Pinhole radial 1\n"
+      "- 3: Pinhole radial 3")
+    ("initialPairA", po::value<std::string>(&initialPairString.first)->default_value(initialPairString.first),
+      "filename of the first image (without path).")
+    ("initialPairB", po::value<std::string>(&initialPairString.second)->default_value(initialPairString.second),
+      "filename of the second image (without path).")
+    ("refineIntrinsics", po::bool_switch(&refineIntrinsics)->default_value(refineIntrinsics),
+      "Refine intrinsic parameters.");
+    ("allowUserInteraction", po::bool_switch(&allowUserInteraction)->default_value(allowUserInteraction),
+      "Enable/Disable user interactions.\n"
+      "If the process is done on renderfarm, it doesn't make sense to wait for user inputs");
+
+  po::options_description logParams("Log parameters");
+  logParams.add_options()
+    ("verboseLevel,v", po::value<std::string>(&verboseLevel)->default_value(verboseLevel),
+      "verbosity level (fatal,  error, warning, info, debug, trace).");
+
+  allParams.add(requiredParams).add(optionalParams).add(logParams);
+
+  po::variables_map vm;
+  try
+  {
+    po::store(po::parse_command_line(argc, argv, allParams), vm);
+
+    if(vm.count("help") || (argc == 1))
+    {
+      ALICEVISION_COUT(allParams);
+      return EXIT_SUCCESS;
+    }
+    po::notify(vm);
+  }
+  catch(boost::program_options::required_option& e)
+  {
+    ALICEVISION_CERR("ERROR: " << e.what());
+    ALICEVISION_COUT("Usage:\n\n" << allParams);
+    return EXIT_FAILURE;
+  }
+  catch(boost::program_options::error& e)
+  {
+    ALICEVISION_CERR("ERROR: " << e.what());
+    ALICEVISION_COUT("Usage:\n\n" << allParams);
     return EXIT_FAILURE;
   }
 
-  if(sOutSfMDataFilepath.empty())
-    sOutSfMDataFilepath = stlplus::create_filespec(sOutDir, "sfm_data", "json");
+  ALICEVISION_COUT("Program called with the following parameters: " << std::endl
+    << "\t" << argv[0] << std::endl
+    << "\t--input " << sfmDataFilename << std::endl
+    << "\t--output " << outDirectory << std::endl
+    << "\t--featuresDirectory " << featuresDirectory << std::endl
+    << "\t--matchesDirectory " << matchesDirectory << std::endl
+    << "\t--outSfMDataFilename " << outSfMDataFilename << std::endl
+    << "\t--describerTypes " << describerTypesName << std::endl
+    << "\t--interFileExtension " << outInterFileExtension << std::endl
+    << "\t--minInputTrackLength " << minInputTrackLength << std::endl
+    << "\t--cameraModel " << userCameraModel << std::endl
+    << "\t--initialPair (" << initialPairString.first << "," << initialPairString.second << ")" << std::endl
+    << "\t--refineIntrinsics " << refineIntrinsics << std::endl
+    << "\t--allowUserInteraction " << allowUserInteraction << std::endl
+    << "\t--verboseLevel " << verboseLevel);
+
+  // set verbose level
+  system::Logger::get()->setLogLevel(verboseLevel);
 
   // Load input SfMData scene
-  SfMData sfm_data;
-  if (!Load(sfm_data, sSfMData_Filename, ESfMData(ALL))) {
+  SfMData sfmData;
+  if (!Load(sfmData, sfmDataFilename, ESfMData(ALL))) {
     std::cerr << std::endl
-      << "The input SfMData file \""<< sSfMData_Filename << "\" cannot be read." << std::endl;
+      << "The input SfMData file \""<< sfmDataFilename << "\" cannot be read." << std::endl;
     return EXIT_FAILURE;
   }
 
-  if(sFeaturesDir.empty()) {
-    sFeaturesDir = sMatchesDir;
+  if(featuresDirectory.empty()) {
+    featuresDirectory = matchesDirectory;
   }
 
   // Get imageDescriberMethodType
-  const std::vector<feature::EImageDescriberType> describerTypes = feature::EImageDescriberType_stringToEnums(describerMethods);
+  const std::vector<feature::EImageDescriberType> describerTypes = feature::EImageDescriberType_stringToEnums(describerTypesName);
 
   // Features reading
   feature::FeaturesPerView featuresPerView;
-  if(!sfm::loadFeaturesPerView(featuresPerView, sfm_data, sFeaturesDir, describerTypes))
+  if(!sfm::loadFeaturesPerView(featuresPerView, sfmData, featuresDirectory, describerTypes))
   {
     std::cerr << std::endl
       << "Invalid features." << std::endl;
@@ -185,20 +214,20 @@ int main(int argc, char **argv)
   // Matches reading
   matching::PairwiseMatches pairwiseMatches;
 
-  if(!loadPairwiseMatches(pairwiseMatches, sfm_data, sMatchesDir, describerTypes, "f"))
+  if(!loadPairwiseMatches(pairwiseMatches, sfmData, matchesDirectory, describerTypes, "f"))
   {
-    std::cerr << std::endl << "Unable to load matches file from: " << sMatchesDir << std::endl;
+    std::cerr << std::endl << "Unable to load matches file from: " << matchesDirectory << std::endl;
     return EXIT_FAILURE;
   }
 
-  if (sOutDir.empty())
+  if (outDirectory.empty())
   {
     std::cerr << "\nIt is an invalid output directory" << std::endl;
     return EXIT_FAILURE;
   }
 
-  if (!stlplus::folder_exists(sOutDir))
-    stlplus::folder_create(sOutDir);
+  if (!stlplus::folder_exists(outDirectory))
+    stlplus::folder_create(outDirectory);
 
   //---------------------------------------
   // Sequential reconstruction process
@@ -206,19 +235,19 @@ int main(int argc, char **argv)
 
   aliceVision::system::Timer timer;
   ReconstructionEngine_sequentialSfM sfmEngine(
-    sfm_data,
-    sOutDir,
-    stlplus::create_filespec(sOutDir, "Reconstruction_Report.html"));
+    sfmData,
+    outDirectory,
+    stlplus::create_filespec(outDirectory, "sfm_log.html"));
 
   // Configure the featuresPerView & the matches_provider
   sfmEngine.setFeatures(&featuresPerView);
   sfmEngine.setMatches(&pairwiseMatches);
 
   // Configure reconstruction parameters
-  sfmEngine.Set_bFixedIntrinsics(!bRefineIntrinsics);
-  sfmEngine.SetUnknownCameraType(EINTRINSIC(i_User_camera_model));
+  sfmEngine.Set_bFixedIntrinsics(!refineIntrinsics);
+  sfmEngine.SetUnknownCameraType(EINTRINSIC(userCameraModel));
   sfmEngine.setMinInputTrackLength(minInputTrackLength);
-  sfmEngine.setSfmdataInterFileExtension(sOutInterFileExtension);
+  sfmEngine.setSfmdataInterFileExtension(outInterFileExtension);
   sfmEngine.setAllowUserInteraction(allowUserInteraction);
 
   // Handle Initial pair parameter
@@ -231,8 +260,8 @@ int main(int argc, char **argv)
     }
 
     Pair initialPairIndex;
-    if(!retrieveViewIdFromImageName(sfm_data, initialPairString.first, initialPairIndex.first)
-            || !retrieveViewIdFromImageName(sfm_data, initialPairString.second, initialPairIndex.second))
+    if(!retrieveViewIdFromImageName(sfmData, initialPairString.first, initialPairIndex.first)
+            || !retrieveViewIdFromImageName(sfmData, initialPairString.second, initialPairIndex.second))
     {
         std::cerr << "Could not find the initial pairs <" << initialPairString.first
           <<  ", " << initialPairString.second << ">!\n";
@@ -253,22 +282,22 @@ int main(int argc, char **argv)
     std::cerr << "Colorize failed!" << std::endl;
   }
   
-  sfmEngine.Get_SfMData().setFeatureFolder(sFeaturesDir);
-  sfmEngine.Get_SfMData().setMatchingFolder(sMatchesDir);
+  sfmEngine.Get_SfMData().setFeatureFolder(featuresDirectory);
+  sfmEngine.Get_SfMData().setMatchingFolder(matchesDirectory);
 
   std::cout << std::endl << " Total Ac-Sfm took (s): " << timer.elapsed() << std::endl;
 
   std::cout << "...Generating SfM_Report.html" << std::endl;
   Generate_SfM_Report(sfmEngine.Get_SfMData(),
-    stlplus::create_filespec(sOutDir, "SfMReconstruction_Report.html"));
+    stlplus::create_filespec(outDirectory, "sfm_report.html"));
 
   //-- Export to disk computed scene (data & visualizable results)
   std::cout << "...Export SfMData to disk:" << std::endl;
-  std::cout << "   " << sOutSfMDataFilepath << std::endl;
+  std::cout << "   " << outSfMDataFilename << std::endl;
 
-  Save(sfmEngine.Get_SfMData(), sOutSfMDataFilepath, ESfMData(ALL));
+  Save(sfmEngine.Get_SfMData(), outSfMDataFilename, ESfMData(ALL));
 
-  Save(sfmEngine.Get_SfMData(), stlplus::create_filespec(sOutDir, "cloud_and_poses", sOutInterFileExtension), ESfMData(VIEWS | EXTRINSICS | INTRINSICS | STRUCTURE));
+  Save(sfmEngine.Get_SfMData(), stlplus::create_filespec(outDirectory, "cloud_and_poses", outInterFileExtension), ESfMData(VIEWS | EXTRINSICS | INTRINSICS | STRUCTURE));
 
   return EXIT_SUCCESS;
 }
