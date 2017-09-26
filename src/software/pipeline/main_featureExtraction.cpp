@@ -9,10 +9,12 @@
 #include "aliceVision/exif/EasyExifIO.hpp"
 #include "aliceVision/stl/split.hpp"
 #include "aliceVision/system/Timer.hpp"
+#include "aliceVision/system/Logger.hpp"
 
-#include "dependencies/cmdLine/cmdLine.h"
 #include "dependencies/stlplus3/filesystemSimplified/file_system.hpp"
 #include "dependencies/progress/progress.hpp"
+
+#include <boost/program_options.hpp>
 
 #include <cereal/archives/json.hpp>
 
@@ -28,6 +30,7 @@ using namespace aliceVision::image;
 using namespace aliceVision::feature;
 using namespace aliceVision::sfm;
 using namespace std;
+namespace po = boost::program_options;
 
 // ----------
 // Dispatcher
@@ -204,84 +207,91 @@ int main(int argc, char **argv)
   // the original behavior of the program:
   constexpr static int MAX_JOBS_DEFAULT = std::numeric_limits<int>::max();
 
-  CmdLine cmd;
+  // command-line parameters
 
+  std::string verboseLevel = system::EVerboseLevel_enumToString(system::Logger::getDefaultVerboseLevel());
   std::string sfmDataFilename;
-  std::string outDirectory = "";
-  std::string featurePreset = "NORMAL";
-  std::string describerMethods = "SIFT";
+  std::string outputDirectory;
+
+  // user optional parameters
+
+  std::string describerTypesName = EImageDescriberType_enumToString(EImageDescriberType::SIFT);
+  std::string describerPreset = describerPreset_enumToString(EDESCRIBER_PRESET::NORMAL_PRESET);
   bool describersAreUpRight = false;
   int rangeStart = -1;
   int rangeSize = 1;
   int maxJobs = MAX_JOBS_DEFAULT;
 
-  // required
-  cmd.add( make_option('i', sfmDataFilename, "input_file") );
-  cmd.add( make_option('o', outDirectory, "outdir") );
-  
-  // Optional
-  cmd.add( make_option('m', describerMethods, "describerMethods") );
-  cmd.add( make_option('u', describersAreUpRight, "upright") );
-  cmd.add( make_option('p', featurePreset, "describerPreset") );
-  cmd.add( make_option('s', rangeStart, "range_start") );
-  cmd.add( make_option('r', rangeSize, "range_size") );
-  cmd.add( make_option('j', maxJobs, "jobs") );
+  po::options_description allParams("AliceVision featureExtraction");
 
-  try 
-  {
-    if (argc == 1) throw std::string("Invalid command line parameter.");
-    cmd.process(argc, argv);
-  } 
-  catch(const std::string& s) 
-  {
-    std::cerr << "Usage: " << argv[0] << '\n'
-    << "[-i|--input_file] a SfMData file \n"
-    << "[-o|--outdir path] output path for the features and descriptors files (*.feat, *.desc)\n"
-    << "\n[Optional]\n"
-    << "[-f|--force] Force to recompute data\n"
-    << "[-m|--describerMethods]\n"
-    << "  (methods to use to describe an image):\n"
-    << "   SIFT (default),\n"
-    << "   SIFT_FLOAT to use SIFT stored as float,\n"
-    << "   AKAZE: AKAZE with floating point descriptors,\n"
-    << "   AKAZE_MLDB:  AKAZE with binary descriptors\n"
-#if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_CCTAG)
-    << "   CCTAG3: CCTAG markers with 3 crowns\n"
-    << "   CCTAG4: CCTAG markers with 4 crowns\n"
-#endif
-#if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_OPENCV)
-#if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_OCVSIFT)
-    << "   SIFT_OCV: OpenCV SIFT\n"
-#endif
-    << "   AKAZE_OCV: OpenCV AKAZE\n"
-#endif
-    << "[-u|--upright] Use Upright feature 0 or 1\n"
-    << "[-p|--describerPreset]\n"
-    << "  (used to control the ImageDescriber configuration):\n"
-    << "   LOW,\n"
-    << "   MEDIUM,\n"
-    << "   NORMAL (default),\n"
-    << "   HIGH,\n"
-    << "   ULTRA: !!Can take long time!!\n"
-    << "[-s]--range_start] range image index start\n"
-    << "[-r]--range_size] range size\n"
-    << "[-j|--jobs] Specifies the number of jobs to run simultaneously. Use -j 0 for automatic mode.\n"
-    << std::endl;
+  po::options_description requiredParams("Required parameters");
+  requiredParams.add_options()
+    ("input,i", po::value<std::string>(&sfmDataFilename)->required(),
+      "SfMData file.")
+    ("output,o", po::value<std::string>(&outputDirectory)->required(),
+      "Output path for the features and descriptors files (*.feat, *.desc).");
 
-    std::cerr << s << std::endl;
+  po::options_description optionalParams("Optional parameters");
+  optionalParams.add_options()
+    ("describerTypes,d", po::value<std::string>(&describerTypesName)->default_value(describerTypesName),
+      EImageDescriberType_informations().c_str())
+    ("describerPreset,p", po::value<std::string>(&describerPreset)->default_value(describerPreset),
+      "Control the ImageDescriber configuration (low, medium, normal, high, ultra).\n"
+      "Configuration 'ultra' can take long time !")
+    ("upright,u", po::bool_switch(&describersAreUpRight)->default_value(describersAreUpRight),
+      "Use Upright feature.")
+    ("rangeStart", po::value<int>(&rangeStart)->default_value(rangeStart),
+      "Range image index start.")
+    ("rangeSize", po::value<int>(&rangeSize)->default_value(rangeSize),
+      "Range size.");
+    ("jobs", po::value<int>(&maxJobs)->default_value(maxJobs),
+      "Specifies the number of jobs to run simultaneously (0 for automatic mode).");
+
+  po::options_description logParams("Log parameters");
+  logParams.add_options()
+    ("verboseLevel,v", po::value<std::string>(&verboseLevel)->default_value(verboseLevel),
+      "verbosity level (fatal,  error, warning, info, debug, trace).");
+
+  allParams.add(requiredParams).add(optionalParams).add(logParams);
+
+  po::variables_map vm;
+  try
+  {
+    po::store(po::parse_command_line(argc, argv, allParams), vm);
+
+    if(vm.count("help") || (argc == 1))
+    {
+      ALICEVISION_COUT(allParams);
+      return EXIT_SUCCESS;
+    }
+    po::notify(vm);
+  }
+  catch(boost::program_options::required_option& e)
+  {
+    ALICEVISION_CERR("ERROR: " << e.what());
+    ALICEVISION_COUT("Usage:\n\n" << allParams);
     return EXIT_FAILURE;
-
+  }
+  catch(boost::program_options::error& e)
+  {
+    ALICEVISION_CERR("ERROR: " << e.what());
+    ALICEVISION_COUT("Usage:\n\n" << allParams);
+    return EXIT_FAILURE;
   }
 
-  std::cout << " You called : " <<std::endl
-            << argv[0] << std::endl
-            << "--input_file " << sfmDataFilename << std::endl
-            << "--outdir " << outDirectory << std::endl
-            << "--describerMethods " << describerMethods << std::endl
-            << "--upright " << describersAreUpRight << std::endl
-            << "--describerPreset " << (featurePreset.empty() ? "NORMAL" : featurePreset) << std::endl
-            << "--range_start " << rangeStart << std::endl
-            << "--range_size " << rangeSize << std::endl;
+  ALICEVISION_COUT("Program called with the following parameters: " << std::endl
+    << "\t" << argv[0] << std::endl
+    << "\t--input " << sfmDataFilename << std::endl
+    << "\t--output " << outputDirectory << std::endl
+    << "\t--describerTypes " << describerTypesName << std::endl
+    << "\t--describerPreset " << (describerPreset.empty() ? "NORMAL" : describerPreset) << std::endl
+    << "\t--upright " << describersAreUpRight << std::endl
+    << "\t--rangeStart " << rangeStart << std::endl
+    << "\t--rangeSize " << rangeSize << std::endl
+    << "\t--verboseLevel " << verboseLevel);
+
+  // set verbose level
+  system::Logger::get()->setLogLevel(verboseLevel);
 
   if (maxJobs != MAX_JOBS_DEFAULT)
   {
@@ -293,16 +303,16 @@ int main(int argc, char **argv)
     } 
   }
 
-  if (outDirectory.empty())
+  if (outputDirectory.empty())
   {
     std::cerr << "\nIt is an invalid output directory" << std::endl;
     return EXIT_FAILURE;
   }
 
   // Create output dir
-  if (!stlplus::folder_exists(outDirectory))
+  if (!stlplus::folder_exists(outputDirectory))
   {
-    if (!stlplus::folder_create(outDirectory))
+    if (!stlplus::folder_create(outputDirectory))
     {
       std::cerr << "Cannot create output directory" << std::endl;
       return EXIT_FAILURE;
@@ -365,12 +375,12 @@ int main(int argc, char **argv)
   std::vector<DescriberMethod> imageDescribers;
   
   {
-    if(describerMethods.empty())
+    if(describerTypesName.empty())
     {
       std::cerr << "\nError: describerMethods argument is empty." << std::endl;
       return EXIT_FAILURE;
     }
-    std::vector<EImageDescriberType> describerMethodsVec = EImageDescriberType_stringToEnums(describerMethods);
+    std::vector<EImageDescriberType> describerMethodsVec = EImageDescriberType_stringToEnums(describerTypesName);
 
     for(const auto& describerMethod: describerMethodsVec)
     {
@@ -378,7 +388,7 @@ int main(int argc, char **argv)
       method.typeName = EImageDescriberType_enumToString(describerMethod); // TODO: DELI ?
       method.type = describerMethod;
       method.describer = createImageDescriber(method.type);
-      method.describer->Set_configuration_preset(featurePreset);
+      method.describer->Set_configuration_preset(describerPreset);
       method.describer->setUpRight(describersAreUpRight);
       imageDescribers.push_back(method);
     }
@@ -437,9 +447,9 @@ int main(int argc, char **argv)
       {
         DescriberComputeMethod computeMethod;
         
-        computeMethod.featFilename = stlplus::create_filespec(outDirectory,
+        computeMethod.featFilename = stlplus::create_filespec(outputDirectory,
               stlplus::basename_part(std::to_string(view->getViewId())), imageDescribers[i].typeName + ".feat");
-        computeMethod.descFilename = stlplus::create_filespec(outDirectory,
+        computeMethod.descFilename = stlplus::create_filespec(outputDirectory,
               stlplus::basename_part(std::to_string(view->getViewId())), imageDescribers[i].typeName + ".desc");
       
         if (stlplus::file_exists(computeMethod.featFilename) &&
