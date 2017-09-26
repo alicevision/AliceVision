@@ -3,38 +3,71 @@
 
 #include <aliceVision/sfm/AlembicExporter.hpp>
 #include <aliceVision/sfm/sfmDataIO_gt.hpp>
-#include <dependencies/cmdLine/cmdLine.h>
+
 #include <dependencies/stlplus3/filesystemSimplified/file_system.hpp>
+
+#include <boost/program_options.hpp>
+
 #include <string>
 #include <vector>
 
 using namespace aliceVision;
 using namespace aliceVision::sfm;
+namespace po = boost::program_options;
 
 int main(int argc, char **argv)
 {
-  CmdLine cmd;
+  std::string verboseLevel = system::EVerboseLevel_enumToString(system::Logger::getDefaultVerboseLevel());
+  std::string sfmDataFilename;
+  std::string outputSfMDataFilename;
 
-  std::string
-    sSfMData_Filename_In,
-    sSfMData_Filename_Out;
+  po::options_description allParams("AliceVision convertAnimatedCamera");
 
-  cmd.add(make_option('i', sSfMData_Filename_In, "input_file"));
-  cmd.add(make_option('o', sSfMData_Filename_Out, "output_file"));
+  po::options_description requiredParams("Required parameters");
+  requiredParams.add_options()
+    ("input,i", po::value<std::string>(&sfmDataFilename)->required(),
+      "SfMData file.")
+    ("output,o", po::value<std::string>(&outputSfMDataFilename)->required(),
+      "Path to the output Alembic file.");
 
-  try {
-      if (argc == 1) throw std::string("Invalid command line parameter.");
-      cmd.process(argc, argv);
-  } catch(const std::string& s) {
-      std::cerr << "Usage: " << argv[0] << std::endl;
-      std::cerr  << "[-i|--input_file] path to the input ground truth folder" << std::endl;
-      std::cerr << "[-o|--output_file] path to the output Alembic file" << std::endl;
+  allParams.add(requiredParams);
 
-      std::cerr << s << std::endl;
-      return EXIT_FAILURE;
+  po::variables_map vm;
+  try
+  {
+    po::store(po::parse_command_line(argc, argv, allParams), vm);
+
+    if(vm.count("help") || (argc == 1))
+    {
+      ALICEVISION_COUT(allParams);
+      return EXIT_SUCCESS;
+    }
+    po::notify(vm);
+  }
+  catch(boost::program_options::required_option& e)
+  {
+    ALICEVISION_CERR("ERROR: " << e.what());
+    ALICEVISION_COUT("Usage:\n\n" << allParams);
+    return EXIT_FAILURE;
+  }
+  catch(boost::program_options::error& e)
+  {
+    ALICEVISION_CERR("ERROR: " << e.what());
+    ALICEVISION_COUT("Usage:\n\n" << allParams);
+    return EXIT_FAILURE;
   }
 
-  if (sSfMData_Filename_In.empty() || sSfMData_Filename_Out.empty())
+  ALICEVISION_COUT("Program called with the following parameters: " << std::endl
+    << "\t" << argv[0] << std::endl
+    << "\t--input " << sfmDataFilename << std::endl
+    << "\t--output " << outputSfMDataFilename << std::endl
+    << "\t--verboseLevel "<< verboseLevel);
+
+  // set verbose level
+  system::Logger::get()->setLogLevel(verboseLevel);
+
+
+  if (sfmDataFilename.empty() || outputSfMDataFilename.empty())
   {
     std::cerr << "Invalid input or output filename." << std::endl;
     return EXIT_FAILURE;
@@ -42,15 +75,15 @@ int main(int argc, char **argv)
 
   // Load input SfMData scene
   SfMData sfm_data;
-  if (!readGt(sSfMData_Filename_In, sfm_data, false))
+  if (!readGt(sfmDataFilename, sfm_data, false))
   {
     std::cerr << std::endl
-      << "The input SfMData file \"" << sSfMData_Filename_In << "\" cannot be read." << std::endl;
+      << "The input SfMData file \"" << sfmDataFilename << "\" cannot be read." << std::endl;
     return EXIT_FAILURE;
   }
 
   // init alembic exporter
-  sfm::AlembicExporter exporter( sSfMData_Filename_Out );
+  sfm::AlembicExporter exporter( outputSfMDataFilename );
   exporter.initAnimatedCamera("camera");
 
   for(const auto &iter : sfm_data.GetViews())
