@@ -23,8 +23,9 @@
 #include "aliceVision/graph/graph.hpp"
 #include "aliceVision/stl/stl.hpp"
 
-#include "dependencies/cmdLine/cmdLine.h"
 #include "dependencies/stlplus3/filesystemSimplified/file_system.hpp"
+
+#include <boost/program_options.hpp>
 
 #include <cstdlib>
 #include <fstream>
@@ -37,6 +38,7 @@ using namespace aliceVision::robustEstimation;
 using namespace aliceVision::sfm;
 using namespace aliceVision::matchingImageCollection;
 using namespace std;
+namespace po = boost::program_options;
 
 enum EGeometricModel
 {
@@ -84,20 +86,24 @@ void getStatsMap(const PairwiseMatches& map)
 /// - Export computed data
 int main(int argc, char **argv)
 {
-  CmdLine cmd;
+  // command-line parameters
 
+  std::string verboseLevel = system::EVerboseLevel_enumToString(system::Logger::getDefaultVerboseLevel());
   std::string sfmDataFilename;
-  std::string matchesDirectory = "";
-  std::string sFeaturesDir = "";
+  std::string matchesDirectory;
+
+  // user optional parameters
+
+  std::string featuresDirectory = "";
   std::string geometricModel = "f";
-  std::string describerMethods = "SIFT";
+  std::string describerTypesName = feature::EImageDescriberType_enumToString(feature::EImageDescriberType::SIFT);
   float distRatio = 0.8f;
   int matchingVideoMode = -1;
-  std::string predefinedPairList = "";
+  std::string predefinedPairList;
   int rangeStart = -1;
   int rangeSize = 0;
   std::string nearestMatchingMethod = "ANN_L2";
-  std::string geometricEstimatorStr = robustEstimation::EROBUST_ESTIMATOR_enumToString(robustEstimation::ROBUST_ESTIMATOR_ACRANSAC);
+  std::string geometricEstimatorName = robustEstimation::EROBUST_ESTIMATOR_enumToString(robustEstimation::ROBUST_ESTIMATOR_ACRANSAC);
   bool savePutativeMatches = false;
   bool guidedMatching = false;
   int maxIteration = 2048;
@@ -107,131 +113,132 @@ int main(int argc, char **argv)
   bool exportDebugFiles = false;
   std::string fileExtension = "bin";
 
-  //required
-  cmd.add( make_option('i', sfmDataFilename, "input_file") );
-  cmd.add( make_option('o', matchesDirectory, "out_dir") );
-  // Options
-  cmd.add( make_option('F', sFeaturesDir, "featuresDir"));
-  cmd.add( make_option('m', describerMethods, "describerMethods") );
-  cmd.add( make_option('r', distRatio, "ratio") );
-  cmd.add( make_option('g', geometricModel, "geometric_model") );
-  cmd.add( make_option('v', matchingVideoMode, "video_mode_matching") );
-  cmd.add( make_option('l', predefinedPairList, "pair_list") );
-  cmd.add( make_option('s', rangeStart, "range_start") );
-  cmd.add( make_option('d', rangeSize, "range_size") );
-  cmd.add( make_option('n', nearestMatchingMethod, "nearest_matching_method") );
-  cmd.add( make_option('G', geometricEstimatorStr, "geometricEstimator") );
-  cmd.add( make_option('p', savePutativeMatches, "save_putative_matches") );
-  cmd.add( make_option('M', guidedMatching, "guided_matching") );
-  cmd.add( make_option('I', maxIteration, "max_iteration") );
-  cmd.add( make_option('x', matchFilePerImage, "match_file_per_image") );
-  cmd.add( make_option('u', numMatchesToKeep, "max_matches"));
-  cmd.add( make_option('y', useGridSort, "use_grid_sort"));
-  cmd.add( make_option('e', exportDebugFiles, "export_debug_files"));
-  cmd.add( make_option('t', fileExtension, "fileExtension"));
+  po::options_description allParams(
+     "Compute corresponding features between a series of views:\n"
+      "- Load view images description (regions: features & descriptors)\n"
+      "- Compute putative local feature matches (descriptors matching)\n"
+      "- Compute geometric coherent feature matches (robust model estimation from putative matches)\n"
+      "- Export computed data\n"
+     "AliceVision featureMatching");
 
+  po::options_description requiredParams("Required parameters");
+  requiredParams.add_options()
+    ("input,i", po::value<std::string>(&sfmDataFilename)->required(),
+      "SfMData file.")
+    ("output,o", po::value<std::string>(&matchesDirectory)->required(),
+      "Path to a directory in which computed matches will be stored.");
+
+  po::options_description optionalParams("Optional parameters");
+  optionalParams.add_options()
+    ("geometricModel,g", po::value<std::string>(&geometricModel)->default_value(geometricModel),
+      "Pairwise correspondences filtering thanks to robust model estimation:\n"
+      "- f: fundamental matrix\n"
+      "- e: fundamental matrix\n"
+      "- h: fundamental matrix")
+    ("describerTypes,d", po::value<std::string>(&describerTypesName)->default_value(describerTypesName),
+      feature::EImageDescriberType_informations().c_str())
+    ("featuresDirectory,f", po::value<std::string>(&featuresDirectory)->default_value(featuresDirectory),
+      "Path to a directory containing the extracted features.")
+    ("imagePairsList,l", po::value<std::string>(&predefinedPairList)->default_value(predefinedPairList),
+      "Path to a file which contains the list of image pairs to match.")
+    ("photometricMatchingMethod,p", po::value<std::string>(&nearestMatchingMethod)->default_value(nearestMatchingMethod),
+      "For Scalar based regions descriptor:\n"
+      "- BRUTE_FORCE_L2: L2 BruteForce matching\n"
+      "- ANN_L2: L2 Approximate Nearest Neighbor matching\n"
+      "- CASCADE_HASHING_L2: L2 Cascade Hashing matching\n"
+      "- FAST_CASCADE_HASHING_L2: L2 Cascade Hashing with precomputed hashed regions\n"
+      "(faster than CASCADE_HASHING_L2 but use more memory)\n"
+      "For Binary based descriptor:\n"
+      "- BRUTE_FORCE_HAMMING: BruteForce Hamming matching")
+    ("geometricEstimator", po::value<std::string>(&geometricEstimatorName)->default_value(geometricEstimatorName),
+      "Geometric estimator:\n"
+      "- acransac: A-Contrario Ransac\n"
+      "- loransac: LO-Ransac (only available for fundamental matrix)")
+    ("savePutativeMatches", po::bool_switch(&savePutativeMatches)->default_value(savePutativeMatches),
+      "Save putative matches.")
+    ("guidedMatching", po::bool_switch(&guidedMatching)->default_value(guidedMatching),
+      "Use the found model to improve the pairwise correspondences.")
+    ("matchFilePerImage", po::bool_switch(&matchFilePerImage)->default_value(matchFilePerImage),
+      "Save matches in a separate file per image.")
+    ("distanceRatio", po::value<float>(&distRatio)->default_value(distRatio),
+      "Distance ratio to discard non meaningful matches.")
+    ("videoModeMatching", po::value<int>(&matchingVideoMode)->default_value(matchingVideoMode),
+      "sequence matching with an overlap of X images:\n"
+      "- X: with match 0 with (1->X), ...\n"
+      "- 2: will match 0 with (1,2), 1 with (2,3), ...\n"
+      "- 3: will match 0 with (1,2,3), 1 with (2,3,4), ...")
+    ("maxIteration", po::value<int>(&maxIteration)->default_value(maxIteration),
+      "Maximum number of iterations allowed in ransac step.")
+    ("useGridSort", po::bool_switch(&useGridSort)->default_value(useGridSort),
+      "Use matching grid sort.")
+    ("exportDebugFiles", po::bool_switch(&exportDebugFiles)->default_value(exportDebugFiles),
+      "Export debug files (svg, dot).")
+    ("fileExtension", po::value<std::string>(&fileExtension)->default_value(fileExtension),
+      "File extension to store matches (bin or txt).")
+    ("maxMatches", po::value<std::size_t>(&numMatchesToKeep)->default_value(numMatchesToKeep),
+      "Maximum number pf matches to keep.")
+    ("rangeStart", po::value<int>(&rangeStart)->default_value(rangeStart),
+      "Range image index start.")
+    ("rangeSize", po::value<int>(&rangeSize)->default_value(rangeSize),
+      "Range size.");
+
+  po::options_description logParams("Log parameters");
+  logParams.add_options()
+    ("verboseLevel,v", po::value<std::string>(&verboseLevel)->default_value(verboseLevel),
+      "verbosity level (fatal,  error, warning, info, debug, trace).");
+
+  allParams.add(requiredParams).add(optionalParams).add(logParams);
+
+  po::variables_map vm;
   try
   {
-    if(argc == 1) throw std::string("Invalid command line parameter.");
-    cmd.process(argc, argv);
-  }
-  catch(const std::string& s)
-  {
-    std::cerr << "Usage: " << argv[0] << '\n'
-      << "[-i|--input_file] a SfMData file\n"
-      << "[-o|--out_dir path] path to directory in which computed matches will be stored \n"
-      << "\n[Optional]\n"
-      << "[-m|--describerMethods]\n"
-      << "  (methods to use to describe an image):\n"
-      << "   SIFT (default),\n"
-      << "   SIFT_FLOAT to use SIFT stored as float,\n"
-      << "   AKAZE: AKAZE with floating point descriptors,\n"
-      << "   AKAZE_MLDB:  AKAZE with binary descriptors\n"
-  #if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_CCTAG)
-      << "   CCTAG3: CCTAG markers with 3 crowns\n"
-      << "   CCTAG4: CCTAG markers with 4 crowns\n"
-  #endif
-  #if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_OPENCV)
-  #if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_OCVSIFT)
-      << "   SIFT_OCV: OpenCV SIFT\n"
-  #endif
-      << "   AKAZE_OCV: OpenCV AKAZE\n"
-  #endif
-      << "  use the found model to improve the pairwise correspondences.\n"
-      << "[-F|--featuresDir] Path to directory containing the extracted features (default: $out_dir)\n"
-      << "[-p|--save_putative_matches] Save putative matches\n"
-      << "[-r|--ratio] Distance ratio to discard non meaningful matches\n"
-      << "   0.8: (default).\n"
-      << "[-g|--geometric_model]\n"
-      << "  (pairwise correspondences filtering thanks to robust model estimation):\n"
-      << "   f: (default) fundamental matrix,\n"
-      << "   e: essential matrix,\n"
-      << "   h: homography matrix.\n"
-      << "[-v|--video_mode_matching]\n"
-      << "  (sequence matching with an overlap of X images)\n"
-      << "   X: with match 0 with (1->X), ...]\n"
-      << "   2: will match 0 with (1,2), 1 with (2,3), ...\n"
-      << "   3: will match 0 with (1,2,3), 1 with (2,3,4), ...\n"
-      << "[-l|--pair_list] filepath\n"
-      << "  A file which contains the list of matches to perform.\n"
-      << "[-s|--range_start] range image index start\n"
-      << "  To compute only the matches for specified range.\n"
-      << "  This allows to compute different matches on different computers in parallel.\n"
-      << "[-d|--range_size] range size\n"
-      << "  To compute only the matches for specified range.\n"
-      << "  This allows to compute different matches on different computers in parallel.\n"
-      << "[-n|--nearest_matching_method]\n"
-      << "  For Scalar based regions descriptor:\n"
-      << "    BRUTE_FORCE_L2: L2 BruteForce matching,\n"
-      << "    ANN_L2: L2 Approximate Nearest Neighbor matching (default),\n"
-      << "    CASCADE_HASHING_L2: L2 Cascade Hashing matching.\n"
-      << "    FAST_CASCADE_HASHING_L2:\n"
-      << "      L2 Cascade Hashing with precomputed hashed regions\n"
-      << "     (faster than CASCADE_HASHING_L2 but use more memory).\n"
-      << "  For Binary based descriptor:\n"
-      << "    BRUTE_FORCE_HAMMING: BruteForce Hamming matching.\n"
-      << "[-G|--geometricEstimator] Geometric estimator\n"
-      << "  " << robustEstimation::EROBUST_ESTIMATOR_enumToString(robustEstimation::ROBUST_ESTIMATOR_ACRANSAC) << ": A-Contrario Ransac (default),\n"
-      << "  " << robustEstimation::EROBUST_ESTIMATOR_enumToString(robustEstimation::ROBUST_ESTIMATOR_LORANSAC) << ": LO-Ransac (only available for fundamental matrix)\n"
-      << "[-M|--guided_matching]\n"
-      << "  use the found model to improve the pairwise correspondences.\n"
-      << "[-I|--max_iteration]\n"
-      << "  number of maximum iterations allowed in ransac step.\n"
-      << "[-x|--match_file_per_image]\n"
-      << "  Save matches in a separate file per image\n"
-      << "[-u|--max_matches]\n"
-      << "[-y|--use_grid_sort]\n"
-      << "  Use matching grid sort\n"
-      << "[-e|--export_debug_files] Export debug files (svg, dot)\n"
-      << "[-t|--fileExtension] File extension to store matches: bin (default), txt\n"
-      << std::endl;
+    po::store(po::parse_command_line(argc, argv, allParams), vm);
 
-    std::cerr << s << std::endl;
+    if(vm.count("help") || (argc == 1))
+    {
+      ALICEVISION_COUT(allParams);
+      return EXIT_SUCCESS;
+    }
+    po::notify(vm);
+  }
+  catch(boost::program_options::required_option& e)
+  {
+    ALICEVISION_CERR("ERROR: " << e.what());
+    ALICEVISION_COUT("Usage:\n\n" << allParams);
+    return EXIT_FAILURE;
+  }
+  catch(boost::program_options::error& e)
+  {
+    ALICEVISION_CERR("ERROR: " << e.what());
+    ALICEVISION_COUT("Usage:\n\n" << allParams);
     return EXIT_FAILURE;
   }
 
-  std::cout << " You called : " << "\n"
-            << argv[0] << "\n"
-            << "--input_file " << sfmDataFilename << "\n"
-            << "--out_dir " << matchesDirectory << "\n"
-            << "Optional parameters:" << "\n"
-            << "--featuresDir " << sFeaturesDir
-            << "--save_putative_matches " << savePutativeMatches << "\n"
-            << "--describerMethods " << describerMethods << "\n"
-            << "--ratio " << distRatio << "\n"
-            << "--geometric_model " << geometricModel << "\n"
-            << "--video_mode_matching " << matchingVideoMode << "\n"
-            << "--pair_list " << predefinedPairList << "\n"
-            << "--range_start " << rangeStart <<  "\n"
-            << "--range_size " << rangeSize <<  "\n"
-            << "--nearest_matching_method " << nearestMatchingMethod << "\n"
-            << "--guided_matching " << guidedMatching << "\n"
-            << "--match_file_per_image " << matchFilePerImage << "\n"
-            << "--max_matches " << numMatchesToKeep  << "\n"
-            << "--use_grid_sort " << useGridSort << "\n"
-            << "--max_iteration " << maxIteration << "\n"
-            << "--export_debug_files " << exportDebugFiles
-            << std::endl;
+  ALICEVISION_COUT("Program called with the following parameters: " << std::endl
+    << "\t" << argv[0] << std::endl
+    << "\t--input " << sfmDataFilename << std::endl
+    << "\t--output " << matchesDirectory << std::endl
+    << "\t--geometricModel " << geometricModel << std::endl
+    << "\t--describerTypes " << describerTypesName << std::endl
+    << "\t--featuresDirectory " << featuresDirectory
+    << "\t--imagePairs " << predefinedPairList << std::endl
+    << "\t--photometricMatchingMethod " << nearestMatchingMethod << std::endl
+    << "\t--geometricEstimator " << geometricEstimatorName << std::endl
+    << "\t--savePutativeMatches " << savePutativeMatches << std::endl
+    << "\t--guidedMatching " << guidedMatching << std::endl
+    << "\t--matchFilePerImage " << matchFilePerImage << std::endl
+    << "\t--distanceRatio " << distRatio << std::endl
+    << "\t--videoModeMatching " << matchingVideoMode << std::endl
+    << "\t--maxIteration " << maxIteration << std::endl
+    << "\t--useGridSort " << useGridSort << std::endl
+    << "\t--exportDebugFiles " << exportDebugFiles  << std::endl
+    << "\t--maxMatches " << numMatchesToKeep  << std::endl
+    << "\t--rangeStart " << rangeStart <<  std::endl
+    << "\t--rangeSize " << rangeSize << std::endl
+    << "\t--verboseLevel " << verboseLevel);
+
+  // set verbose level
+  system::Logger::get()->setLogLevel(verboseLevel);
 
   EPairMode pairMode = (matchingVideoMode == -1 ) ? PAIR_EXHAUSTIVE : PAIR_CONTIGUOUS;
 
@@ -248,14 +255,14 @@ int main(int argc, char **argv)
     return EXIT_FAILURE;
   }
 
-  if(describerMethods.empty())
+  if(describerTypesName.empty())
   {
     std::cerr << "\nError: describerMethods argument is empty." << std::endl;
     return EXIT_FAILURE;
   }
 
-  if(sFeaturesDir.empty()) {
-    sFeaturesDir = matchesDirectory;
+  if(featuresDirectory.empty()) {
+    featuresDirectory = matchesDirectory;
   }
 
   EGeometricModel geometricModelToCompute = FUNDAMENTAL_MATRIX;
@@ -280,7 +287,7 @@ int main(int argc, char **argv)
       std::cerr << "Unknown geometric model: " << geometricMode << std::endl;
       return EXIT_FAILURE;
   }
-  robustEstimation::EROBUST_ESTIMATOR geometricEstimator = robustEstimation::EROBUST_ESTIMATOR_stringToEnum(geometricEstimatorStr);
+  robustEstimation::EROBUST_ESTIMATOR geometricEstimator = robustEstimation::EROBUST_ESTIMATOR_stringToEnum(geometricEstimatorName);
 
   // -----------------------------
   // - Load SfMData Views & intrinsics data
@@ -357,7 +364,7 @@ int main(int argc, char **argv)
   EMatcherType collectionMatcherType = EMatcherType_stringToEnum(nearestMatchingMethod);
   std::unique_ptr<IImageCollectionMatcher> imageCollectionMatcher = createImageCollectionMatcher(collectionMatcherType, distRatio);
 
-  const std::vector<feature::EImageDescriberType> describerTypes = feature::EImageDescriberType_stringToEnums(describerMethods);
+  const std::vector<feature::EImageDescriberType> describerTypes = feature::EImageDescriberType_stringToEnums(describerTypesName);
 
   std::cout << "There are " << sfmData.GetViews().size() << " views and " << pairs.size() << " image pairs." << std::endl;
 
@@ -367,7 +374,7 @@ int main(int argc, char **argv)
   // Perform the matching
   system::Timer timer;
 
-  if(!sfm::loadRegionsPerView(regionPerView, sfmData, sFeaturesDir, describerTypes, filter))
+  if(!sfm::loadRegionsPerView(regionPerView, sfmData, featuresDirectory, describerTypes, filter))
   {
     std::cerr << std::endl << "Invalid regions." << std::endl;
     return EXIT_FAILURE;
