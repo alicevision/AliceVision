@@ -12,10 +12,10 @@
 
 #include "software/utils/sfmHelper/sfmIOHelper.hpp"
 
-#include "dependencies/cmdLine/cmdLine.h"
 #include "dependencies/stlplus3/filesystemSimplified/file_system.hpp"
 #include "dependencies/vectorGraphics/svgDrawer.hpp"
 
+#include <boost/program_options.hpp>
 #include <boost/progress.hpp>
 
 using namespace aliceVision;
@@ -23,70 +23,87 @@ using namespace aliceVision::matching;
 using namespace aliceVision::sfm;
 using namespace aliceVision::track;
 using namespace svg;
+namespace po = boost::program_options;
 
 int main(int argc, char ** argv)
 {
-  CmdLine cmd;
+  // command-line parameters
 
-  std::string sSfMData_Filename;
-  std::string describerMethods = "SIFT";
-  std::string sMatchesDir;
-  std::string sMatchGeometricModel = "f";
-  std::string sOutDir = "";
+  std::string verboseLevel = system::EVerboseLevel_enumToString(system::Logger::getDefaultVerboseLevel());
+  std::string sfmDataFilename;
+  std::string outputDirectory;
+  std::string matchesDirectory;
+  std::string describerTypesName = feature::EImageDescriberType_enumToString(feature::EImageDescriberType::SIFT);
+  std::string matchesGeometricModel = "f";
 
-  cmd.add( make_option('i', sSfMData_Filename, "input_file") );
-  cmd.add( make_option('m', describerMethods, "describerMethods") );
-  cmd.add( make_option('d', sMatchesDir, "matchdir") );
-  cmd.add( make_option('g', sMatchGeometricModel, "geometric_model") );
-  cmd.add( make_option('o', sOutDir, "outdir") );
+  po::options_description allParams("AliceVision exportTracks");
 
-  try {
-      if (argc == 1) throw std::string("Invalid command line parameter.");
-      cmd.process(argc, argv);
-  } catch(const std::string& s) {
-      std::cerr << "Export pairwise tracks.\nUsage: " << argv[0] << "\n"
-      << "[-i|--input_file file] path to a SfMData scene\n"
-      << "[-m|--describerMethods]\n"
-      << "  (methods to use to describe an image):\n"
-      << "   SIFT (default),\n"
-      << "   SIFT_FLOAT to use SIFT stored as float,\n"
-      << "   AKAZE: AKAZE with floating point descriptors,\n"
-      << "   AKAZE_MLDB:  AKAZE with binary descriptors\n"
-#if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_CCTAG)
-      << "   CCTAG3: CCTAG markers with 3 crowns\n"
-      << "   CCTAG4: CCTAG markers with 4 crowns\n"
-#endif //ALICEVISION_HAVE_CCTAG
-#if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_OPENCV)
-#if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_OCVSIFT)
-      << "   SIFT_OCV: OpenCV SIFT\n"
-#endif //ALICEVISION_HAVE_OCVSIFT
-      << "   AKAZE_OCV: OpenCV AKAZE\n"
-#endif //ALICEVISION_HAVE_OPENCV
-      << "[-d|--matchdir PATH] path to the folder with all features and match files\n"
-      << "[-g|--geometric_model MODEL] model used for the matching:\n"
-      << "   f: (default) fundamental matrix,\n"
-      << "   e: essential matrix,\n"
-      << "   h: homography matrix.\n"
-      << "[-o|--outdir path]\n"
-      << std::endl;
+  po::options_description requiredParams("Required parameters");
+  requiredParams.add_options()
+    ("input,i", po::value<std::string>(&sfmDataFilename)->required(),
+      "SfMData file.")
+    ("output,o", po::value<std::string>(&outputDirectory)->required(),
+      "Output path for tracks.")
+    ("matchesDirectory,m", po::value<std::string>(&matchesDirectory)->required(),
+      "Path to a directory in which computed matches are stored.");
 
-      std::cerr << s << std::endl;
-      return EXIT_FAILURE;
+  po::options_description optionalParams("Optional parameters");
+  optionalParams.add_options()
+    ("describerTypes,d", po::value<std::string>(&describerTypesName)->default_value(describerTypesName),
+      feature::EImageDescriberType_informations().c_str());
+    ("matchesGeometricModel,g", po::value<std::string>(&matchesGeometricModel)->default_value(matchesGeometricModel),
+      "Matches geometric Model :\n"
+      "- f: fundamental matrix\n"
+      "- e: essential matrix\n"
+      "- h: homography matrix");
+
+  po::options_description logParams("Log parameters");
+  logParams.add_options()
+    ("verboseLevel,v", po::value<std::string>(&verboseLevel)->default_value(verboseLevel),
+      "verbosity level (fatal,  error, warning, info, debug, trace).");
+
+  allParams.add(requiredParams).add(optionalParams).add(logParams);
+
+  po::variables_map vm;
+  try
+  {
+    po::store(po::parse_command_line(argc, argv, allParams), vm);
+
+    if(vm.count("help") || (argc == 1))
+    {
+      ALICEVISION_COUT(allParams);
+      return EXIT_SUCCESS;
+    }
+    po::notify(vm);
   }
-
-  if (sOutDir.empty())  {
-    std::cerr << "\nIt is an invalid output directory" << std::endl;
+  catch(boost::program_options::required_option& e)
+  {
+    ALICEVISION_CERR("ERROR: " << e.what());
+    ALICEVISION_COUT("Usage:\n\n" << allParams);
+    return EXIT_FAILURE;
+  }
+  catch(boost::program_options::error& e)
+  {
+    ALICEVISION_CERR("ERROR: " << e.what());
+    ALICEVISION_COUT("Usage:\n\n" << allParams);
     return EXIT_FAILURE;
   }
 
+  // set verbose level
+  system::Logger::get()->setLogLevel(verboseLevel);
+
+  if (outputDirectory.empty())  {
+    std::cerr << "\nIt is an invalid output directory" << std::endl;
+    return EXIT_FAILURE;
+  }
 
   //---------------------------------------
   // Read SfM Scene (image view names)
   //---------------------------------------
   SfMData sfm_data;
-  if (!Load(sfm_data, sSfMData_Filename, ESfMData(VIEWS|INTRINSICS))) {
+  if (!Load(sfm_data, sfmDataFilename, ESfMData(VIEWS|INTRINSICS))) {
     std::cerr << std::endl
-      << "The input SfMData file \""<< sSfMData_Filename << "\" cannot be read." << std::endl;
+      << "The input SfMData file \""<< sfmDataFilename << "\" cannot be read." << std::endl;
     return EXIT_FAILURE;
   }
 
@@ -96,11 +113,11 @@ int main(int argc, char ** argv)
   using namespace aliceVision::feature;
   
   // Get imageDescriberMethodType
-  std::vector<EImageDescriberType> describerMethodTypes = EImageDescriberType_stringToEnums(describerMethods);
+  std::vector<EImageDescriberType> describerMethodTypes = EImageDescriberType_stringToEnums(describerTypesName);
 
   // Read the features
   feature::FeaturesPerView featuresPerView;
-  if (!sfm::loadFeaturesPerView(featuresPerView, sfm_data, sMatchesDir, describerMethodTypes)) {
+  if (!sfm::loadFeaturesPerView(featuresPerView, sfm_data, matchesDirectory, describerMethodTypes)) {
     std::cerr << std::endl
       << "Invalid features." << std::endl;
     return EXIT_FAILURE;
@@ -108,7 +125,7 @@ int main(int argc, char ** argv)
 
   // Read the matches
   matching::PairwiseMatches pairwiseMatches;
-  if (!loadPairwiseMatches(pairwiseMatches, sfm_data, sMatchesDir, describerMethodTypes, sMatchGeometricModel))
+  if (!loadPairwiseMatches(pairwiseMatches, sfm_data, matchesDirectory, describerMethodTypes, matchesGeometricModel))
   {
     std::cerr << "\nInvalid matches file." << std::endl;
     return EXIT_FAILURE;
@@ -131,7 +148,7 @@ int main(int argc, char ** argv)
   // ------------
   const size_t viewCount = sfm_data.GetViews().size();
 
-  stlplus::folder_create(sOutDir);
+  stlplus::folder_create(outputDirectory);
   std::cout << "\n viewCount: " << viewCount << std::endl;
   std::cout << "\n Export pairwise tracks" << std::endl;
   boost::progress_display my_progress_bar( (viewCount*(viewCount-1)) / 2.0 );
@@ -212,7 +229,7 @@ int main(int argc, char ** argv)
             3.0, svgStyle().stroke(featColor, 2.0));
         }
         std::ostringstream os;
-        os << stlplus::folder_append_separator(sOutDir)
+        os << stlplus::folder_append_separator(outputDirectory)
            << I << "_" << J
            << "_" << map_tracksCommon.size() << "_.svg";
         ofstream svgFile( os.str().c_str() );
