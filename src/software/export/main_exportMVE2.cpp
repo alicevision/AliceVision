@@ -4,21 +4,23 @@
 #include "aliceVision/sfm/sfm.hpp"
 #include "aliceVision/image/image.hpp"
 
+#include "dependencies/cmdLine/cmdLine.h"
+#include "dependencies/stlplus3/filesystemSimplified/file_system.hpp"
+
+#include <boost/progress.hpp>
+
+#include <stdlib.h>
+#include <stdio.h>
+#include <cmath>
+#include <iterator>
+#include <iomanip>
+
 using namespace aliceVision;
 using namespace aliceVision::camera;
 using namespace aliceVision::geometry;
 using namespace aliceVision::image;
 using namespace aliceVision::sfm;
 using namespace aliceVision::feature;
-
-#include "dependencies/cmdLine/cmdLine.h"
-#include "dependencies/progress/progress.hpp"
-#include "dependencies/stlplus3/filesystemSimplified/file_system.hpp"
-#include <stdlib.h>
-#include <stdio.h>
-#include <cmath>
-#include <iterator>
-#include <iomanip>
 
 /// Naive image bilinear resampling of an image for thumbnail generation
 template <typename ImageT>
@@ -51,7 +53,7 @@ bool exportToMVE2Format(
   // Create basis directory structure
   if (!stlplus::is_folder(sOutDirectory))
   {
-    cout << "\033[1;31mCreating directory:  " << sOutDirectory << "\033[0m\n";
+    std::cout << "\033[1;31mCreating directory:  " << sOutDirectory << "\033[0m\n";
     stlplus::folder_create(sOutDirectory);
     bOk = stlplus::is_folder(sOutDirectory);
   }
@@ -65,10 +67,10 @@ bool exportToMVE2Format(
   // Export the SfMData scene to the MVE2 format
   {
     // Create 'views' subdirectory
-    const string sOutViewsDirectory = stlplus::folder_append_separator(sOutDirectory) + "views";
+    const std::string sOutViewsDirectory = stlplus::folder_append_separator(sOutDirectory) + "views";
     if (!stlplus::folder_exists(sOutViewsDirectory))
     {
-      cout << "\033[1;31mCreating directory:  " << sOutViewsDirectory << "\033[0m\n";
+      std::cout << "\033[1;31mCreating directory:  " << sOutViewsDirectory << "\033[0m\n";
       stlplus::folder_create(sOutViewsDirectory);
     }
 
@@ -89,7 +91,7 @@ bool exportToMVE2Format(
     out << cameraCount << " " << featureCount << "\n";
 
     // Export (calibrated) views as undistorted images
-    C_Progress_display my_progress_bar(sfm_data.GetViews().size());
+    boost::progress_display my_progress_bar(sfm_data.GetViews().size());
     std::pair<int,int> w_h_image_size;
     Image<RGBColor> image, image_ud, thumbnail;
     std::string sOutViewIteratorDirectory;

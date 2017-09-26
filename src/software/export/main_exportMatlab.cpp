@@ -6,7 +6,8 @@
 #include "aliceVision/image/convertion.hpp"
 
 #include "dependencies/cmdLine/cmdLine.h"
-#include "dependencies/progress/progress.hpp"
+
+#include <boost/progress.hpp>
 
 #include <stdlib.h>
 #include <stdio.h>

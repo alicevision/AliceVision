@@ -6,7 +6,8 @@
 
 #include "dependencies/cmdLine/cmdLine.h"
 #include "dependencies/stlplus3/filesystemSimplified/file_system.hpp"
-#include "dependencies/progress/progress.hpp"
+
+#include <boost/progress.hpp>
 
 #include <string>
 #include <iostream>
@@ -77,7 +78,7 @@ int main(int argc, char **argv)
   Image<RGBColor> imageRGBIn, imageRGBU;
   Image<RGBAColor> imageRGBAIn, imageRGBAU;
 
-  C_Progress_display my_progress_bar( vec_fileNames.size() );
+  boost::progress_display my_progress_bar( vec_fileNames.size() );
   for (size_t j = 0; j < vec_fileNames.size(); ++j, ++my_progress_bar)
   {
     //read the depth

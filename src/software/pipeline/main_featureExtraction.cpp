@@ -12,8 +12,8 @@
 #include "aliceVision/system/Logger.hpp"
 
 #include "dependencies/stlplus3/filesystemSimplified/file_system.hpp"
-#include "dependencies/progress/progress.hpp"
 
+#include <boost/progress.hpp>
 #include <boost/program_options.hpp>
 
 #include <cereal/archives/json.hpp>
@@ -402,7 +402,7 @@ int main(int argc, char **argv)
   // - if no file, compute features
   {
     system::Timer timer;
-    C_Progress_display my_progress_bar( sfm_data.GetViews().size(),
+    boost::progress_display my_progress_bar( sfm_data.GetViews().size(),
       std::cout, "\n- EXTRACT FEATURES -\n" );
 
     Views::const_iterator iterViews = sfm_data.views.begin();

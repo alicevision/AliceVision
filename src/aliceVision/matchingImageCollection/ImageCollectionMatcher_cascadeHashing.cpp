@@ -8,7 +8,8 @@
 #include <aliceVision/config.hpp>
 
 #include "dependencies/stlplus3/filesystemSimplified/file_system.hpp"
-#include "dependencies/progress/progress.hpp"
+
+#include <boost/progress.hpp>
 
 namespace aliceVision {
 namespace matchingImageCollection {
@@ -37,7 +38,7 @@ void Match
   PairwiseMatches & map_PutativesMatches // the pairwise photometric corresponding points
 )
 {
-  C_Progress_display my_progress_bar( pairs.size() );
+  boost::progress_display my_progress_bar( pairs.size() );
 
   // Collect used view indexes
   std::set<IndexT> used_index;

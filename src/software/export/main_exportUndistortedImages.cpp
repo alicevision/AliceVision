@@ -5,7 +5,8 @@
 #include "aliceVision/image/image.hpp"
 
 #include "dependencies/cmdLine/cmdLine.h"
-#include "dependencies/progress/progress.hpp"
+
+#include <boost/progress.hpp>
 
 #include <stdlib.h>
 
@@ -54,7 +55,7 @@ int main(int argc, char *argv[])
   {
     // Export views as undistorted images (those with valid Intrinsics)
     Image<RGBColor> image, image_ud;
-    C_Progress_display my_progress_bar( sfm_data.GetViews().size() );
+    boost::progress_display my_progress_bar( sfm_data.GetViews().size() );
     for(Views::const_iterator iter = sfm_data.GetViews().begin();
       iter != sfm_data.GetViews().end(); ++iter, ++my_progress_bar)
     {

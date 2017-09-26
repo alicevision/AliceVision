@@ -21,11 +21,13 @@
 #include <aliceVision/config.hpp>
 
 #include "dependencies/htmlDoc/htmlDoc.hpp"
-#include "dependencies/progress/progress.hpp"
 
+#include <boost/progress.hpp>
 #include <boost/format.hpp>
 
 #include <tuple>
+#include <iostream>
+#include <algorithm>
 
 #ifdef _MSC_VER
 #pragma warning( once : 4267 ) //warning C4267: 'argument' : conversion from 'size_t' to 'const int', possible loss of data
@@ -657,7 +659,7 @@ bool ReconstructionEngine_sequentialSfM::getBestInitialImagePairs(std::vector<Pa
   bestImagePairs.reserve(_pairwiseMatches->size());
 
   // Compute the relative pose & the 'baseline score'
-  C_Progress_display my_progress_bar( _pairwiseMatches->size(),
+  boost::progress_display my_progress_bar( _pairwiseMatches->size(),
     std::cout,
     "Automatic selection of an initial pair:\n" );
 
@@ -672,8 +674,8 @@ bool ReconstructionEngine_sequentialSfM::getBestInitialImagePairs(std::vector<Pa
 
     const Pair current_pair = iter->first;
 
-    const size_t I = min(current_pair.first, current_pair.second);
-    const size_t J = max(current_pair.first, current_pair.second);
+    const size_t I = std::min(current_pair.first, current_pair.second);
+    const size_t J = std::max(current_pair.first, current_pair.second);
     if (!valid_views.count(I) || !valid_views.count(J))
       continue;
 
@@ -796,8 +798,8 @@ bool ReconstructionEngine_sequentialSfM::MakeInitialPair3D(const Pair& current_p
 {
   // Compute robust Essential matrix for ImageId [I,J]
   // use min max to have I < J
-  const std::size_t I = min(current_pair.first, current_pair.second);
-  const std::size_t J = max(current_pair.first, current_pair.second);
+  const std::size_t I = std::min(current_pair.first, current_pair.second);
+  const std::size_t J = std::max(current_pair.first, current_pair.second);
 
   // a. Assert we have valid pinhole cameras
   const View * viewI = _sfm_data.GetViews().at(I).get();
@@ -938,7 +940,7 @@ bool ReconstructionEngine_sequentialSfM::MakeInitialPair3D(const Pair& current_p
     {
       using namespace htmlDocument;
       _htmlDocStream->pushInfo(htmlMarkup("h1","Essential Matrix."));
-      ostringstream os;
+      std::ostringstream os;
       os << std::endl
         << "-------------------------------" << "<br>"
         << "-- Robust Essential matrix: <"  << I << "," <<J << "> images: "
@@ -978,7 +980,7 @@ bool ReconstructionEngine_sequentialSfM::MakeInitialPair3D(const Pair& current_p
       _htmlDocStream->pushInfo(jsxGraph.toStr());
       _htmlDocStream->pushInfo("<hr>");
 
-      ofstream htmlFileStream( string(stlplus::folder_append_separator(_sOutDirectory) +
+      std::ofstream htmlFileStream( std::string(stlplus::folder_append_separator(_sOutDirectory) +
         "Reconstruction_Report.html").c_str());
       htmlFileStream << _htmlDocStream->getDoc();
     }
@@ -1175,7 +1177,7 @@ bool ReconstructionEngine_sequentialSfM::FindConnectedViews(
   // Sort by the image score
   std::sort(out_connectedViews.begin(), out_connectedViews.end(),
       [](const ViewConnectionScore& t1, const ViewConnectionScore& t2) {
-        return get<2>(t1) > get<2>(t2);
+        return std::get<2>(t1) > std::get<2>(t2);
       });
 
   return !out_connectedViews.empty();
@@ -1345,7 +1347,7 @@ bool ReconstructionEngine_sequentialSfM::Resection(const std::size_t viewIndex)
   if (!_sLoggingFile.empty())
   {
     using namespace htmlDocument;
-    ostringstream os;
+    std::ostringstream os;
     os << "Resection of Image index: <" << viewIndex << "> image: "
       << view_I->getImagePath() <<"<br> \n";
     _htmlDocStream->pushInfo(htmlMarkup("h1",os.str()));

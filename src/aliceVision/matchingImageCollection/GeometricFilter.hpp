@@ -10,7 +10,8 @@
 #include "aliceVision/matchingImageCollection/GeometricFilterMatrix.hpp"
 
 #include "dependencies/stlplus3/filesystemSimplified/file_system.hpp"
-#include "dependencies/progress/progress.hpp"
+
+#include <boost/progress.hpp>
 
 #include <vector>
 #include <map>
@@ -54,7 +55,7 @@ void GeometricFilter::Robust_model_estimation(
   const bool b_guided_matching,
   const double d_distance_ratio)
 {
-  C_Progress_display my_progress_bar( putative_matches.size() );
+  boost::progress_display my_progress_bar( putative_matches.size() );
   
   #pragma omp parallel for schedule(dynamic)
   for (int i = 0; i < (int)putative_matches.size(); ++i)

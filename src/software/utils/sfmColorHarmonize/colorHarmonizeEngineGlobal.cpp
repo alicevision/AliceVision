@@ -29,7 +29,7 @@
 
 #include "aliceVision/system/Timer.hpp"
 
-#include "dependencies/progress/progress.hpp"
+#include <boost/progress.hpp>
 
 #include <numeric>
 #include <iomanip>
@@ -390,7 +390,7 @@ bool ColorHarmonizationEngineGlobal::Process()
   std::cout << "\n\nThere is :\n" << set_indeximage.size() << " images to transform." << std::endl;
 
   //-> convert solution to gain offset and creation of the LUT per image
-  C_Progress_display my_progress_bar( set_indeximage.size() );
+  boost::progress_display my_progress_bar( set_indeximage.size() );
   for (std::set<size_t>::const_iterator iterSet = set_indeximage.begin();
     iterSet != set_indeximage.end(); ++iterSet, ++my_progress_bar)
   {

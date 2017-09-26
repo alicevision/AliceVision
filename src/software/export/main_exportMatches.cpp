@@ -10,8 +10,9 @@
 
 #include "dependencies/cmdLine/cmdLine.h"
 #include "dependencies/stlplus3/filesystemSimplified/file_system.hpp"
-#include "dependencies/progress/progress.hpp"
 #include "dependencies/vectorGraphics/svgDrawer.hpp"
+
+#include <boost/progress.hpp>
 
 #include <cstdlib>
 #include <string>
@@ -151,7 +152,7 @@ int main(int argc, char ** argv)
   stlplus::folder_create(sOutDir);
   std::cout << "\n Export pairwise matches" << std::endl;
   const PairSet pairs = matching::getImagePairs(pairwiseMatches);
-  C_Progress_display my_progress_bar( pairs.size() );
+  boost::progress_display my_progress_bar( pairs.size() );
   for (PairSet::const_iterator iter = pairs.begin();
     iter != pairs.end();
     ++iter, ++my_progress_bar)

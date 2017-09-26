@@ -25,8 +25,9 @@
 #include "aliceVision/alicevision_omp.hpp"
 
 #include "dependencies/histogram/histogram.hpp"
-#include "dependencies/progress/progress.hpp"
 #include "dependencies/stlplus3/filesystemSimplified/file_system.hpp"
+
+#include <boost/progress.hpp>
 
 namespace aliceVision{
 namespace sfm{
@@ -402,7 +403,7 @@ void GlobalSfMTranslationAveragingSolver::ComputePutativeTranslation_EdgesCovera
 
     aliceVision::sfm::MutexSet<myEdge> m_mutexSet;
 
-    C_Progress_display my_progress_bar(
+    boost::progress_display my_progress_bar(
       vec_edges.size(),
       std::cout,
       "\nRelative translations computation (edge coverage algorithm)\n");

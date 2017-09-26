@@ -2,7 +2,8 @@
 // the terms of the MPL2 license (see the COPYING.md file).
 
 #include "regionsIO.hpp"
-#include "dependencies/progress/progress.hpp"
+
+#include <boost/progress.hpp>
 
 #include <atomic>
 
@@ -41,7 +42,7 @@ bool loadRegionsPerView(feature::RegionsPerView& regionsPerView,
             const std::vector<feature::EImageDescriberType>& imageDescriberTypes,
             const std::set<IndexT>& viewIdFilter)
 {
-  C_Progress_display my_progress_bar( sfmData.GetViews().size() * imageDescriberTypes.size(), std::cout, "\n- Regions Loading -\n");
+  boost::progress_display my_progress_bar( sfmData.GetViews().size() * imageDescriberTypes.size(), std::cout, "\n- Regions Loading -\n");
 
   std::atomic_bool invalid(false);
 
@@ -92,7 +93,7 @@ bool loadFeaturesPerView(feature::FeaturesPerView& featuresPerView,
                       const std::string& storageDirectory,
                       const std::vector<feature::EImageDescriberType>& imageDescriberTypes)
 {
-  C_Progress_display my_progress_bar( sfmData.GetViews().size(), std::cout, "\n- Features Loading -\n" );
+  boost::progress_display my_progress_bar( sfmData.GetViews().size(), std::cout, "\n- Features Loading -\n" );
 
   // Read for each view the corresponding features and store them as PointFeatures
   std::atomic_bool invalid(false);

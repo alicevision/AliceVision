@@ -7,7 +7,7 @@
 #include <aliceVision/robustEstimation/randSampling.hpp>
 #include <aliceVision/config.hpp>
 
-#include <dependencies/progress/progress.hpp>
+#include <boost/progress.hpp>
 
 #include <deque>
 #include <memory>
@@ -31,9 +31,9 @@ StructureComputation_blind::StructureComputation_blind(bool bConsoleVerbose)
 void StructureComputation_blind::triangulate(SfMData & sfm_data) const
 {
   std::deque<IndexT> rejectedId;
-  std::unique_ptr<C_Progress_display> my_progress_bar;
+  std::unique_ptr<boost::progress_display> my_progress_bar;
   if (_bConsoleVerbose)
-    my_progress_bar.reset( new C_Progress_display(
+    my_progress_bar.reset( new boost::progress_display(
     sfm_data.structure.size(),
     std::cout,
     "Blind triangulation progress:\n" ));
@@ -112,9 +112,9 @@ void StructureComputation_robust::triangulate(SfMData & sfm_data) const
 void StructureComputation_robust::robust_triangulation(SfMData & sfm_data) const
 {
   std::deque<IndexT> rejectedId;
-  std::unique_ptr<C_Progress_display> my_progress_bar;
+  std::unique_ptr<boost::progress_display> my_progress_bar;
   if (_bConsoleVerbose)
-    my_progress_bar.reset( new C_Progress_display(
+    my_progress_bar.reset( new boost::progress_display(
     sfm_data.structure.size(),
     std::cout,
     "Robust triangulation progress:\n" ));

@@ -8,7 +8,8 @@
 
 
 #include "dependencies/cmdLine/cmdLine.h"
-#include "dependencies/progress/progress.hpp"
+
+#include <boost/progress.hpp>
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -193,7 +194,7 @@ bool exportToCMPMVS2Format(
   retrieveSeedsPerView(sfm_data, map_viewIdToContiguous, seedsPerView);
   
   // Export data
-  C_Progress_display my_progress_bar(map_viewIdToContiguous.size(),
+  boost::progress_display my_progress_bar(map_viewIdToContiguous.size(),
                                      std::cout, "\n- Exporting Data -\n");
 
   // Export views:

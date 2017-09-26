@@ -10,8 +10,9 @@
 
 #include "dependencies/cmdLine/cmdLine.h"
 #include "dependencies/stlplus3/filesystemSimplified/file_system.hpp"
-#include "dependencies/progress/progress.hpp"
 #include "dependencies/vectorGraphics/svgDrawer.hpp"
+
+#include <boost/progress.hpp>
 
 #include <cstdlib>
 #include <string>
@@ -108,7 +109,7 @@ int main(int argc, char ** argv)
 
   stlplus::folder_create(sOutDir);
   std::cout << "\n Export extracted keypoints for all images" << std::endl;
-  C_Progress_display my_progress_bar( sfm_data.views.size() );
+  boost::progress_display my_progress_bar( sfm_data.views.size() );
   for(const auto &iterViews : sfm_data.views)
   {
     const View * view = iterViews.second.get();

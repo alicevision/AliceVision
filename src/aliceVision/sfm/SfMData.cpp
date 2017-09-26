@@ -6,7 +6,7 @@
 #include "aliceVision/image/io.hpp"
 #include "aliceVision/stl/stl.hpp"
 
-#include "dependencies/progress/progress.hpp"
+#include <boost/progress.hpp>
 
 namespace aliceVision {
 namespace sfm {
@@ -183,7 +183,7 @@ bool ColorizeTracks( SfMData & sfm_data )
   std::vector<Vec3> vec_3dPoints;
   std::vector<Vec3> vec_tracksColor;
 
-  C_Progress_display my_progress_bar(sfm_data.GetLandmarks().size(),
+  boost::progress_display my_progress_bar(sfm_data.GetLandmarks().size(),
                                      std::cout,
                                      "\nCompute scene structure color\n");
 

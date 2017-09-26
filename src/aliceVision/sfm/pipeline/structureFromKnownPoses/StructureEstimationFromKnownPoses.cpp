@@ -2,7 +2,6 @@
 // the terms of the MPL2 license (see the COPYING.md file).
 
 #include "aliceVision/sfm/pipeline/structureFromKnownPoses/StructureEstimationFromKnownPoses.hpp"
-
 #include "aliceVision/matching/IndMatch.hpp"
 #include "aliceVision/matching/metric.hpp"
 #include "aliceVision/robustEstimation/guidedMatching.hpp"
@@ -13,7 +12,7 @@
 #include "aliceVision/sfm/sfmDataTriangulation.hpp"
 #include <aliceVision/config.hpp>
 
-#include "dependencies/progress/progress.hpp"
+#include <boost/progress.hpp>
 
 namespace aliceVision {
 namespace sfm {
@@ -73,7 +72,7 @@ void StructureEstimationFromKnownPoses::match(
   const PairSet & pairs,
   const feature::RegionsPerView& regionsPerView)
 {
-  C_Progress_display my_progress_bar( pairs.size(), std::cout,
+  boost::progress_display my_progress_bar( pairs.size(), std::cout,
     "Compute pairwise fundamental guided matching:\n" );
 
   #pragma omp parallel
@@ -166,7 +165,7 @@ void StructureEstimationFromKnownPoses::filter(
   typedef std::vector< graph::Triplet > Triplets;
   const Triplets triplets = graph::tripletListing(pairs);
 
-  C_Progress_display my_progress_bar( triplets.size(), std::cout,
+  boost::progress_display my_progress_bar( triplets.size(), std::cout,
     "Per triplet tracks validation (discard spurious correspondences):\n" );
   #pragma omp parallel
   for( Triplets::const_iterator it = triplets.begin(); it != triplets.end(); ++it)

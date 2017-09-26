@@ -5,7 +5,8 @@
 #include "aliceVision/image/image.hpp"
 
 #include "dependencies/cmdLine/cmdLine.h"
-#include "dependencies/progress/progress.hpp"
+
+#include <boost/progress.hpp>
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -53,7 +54,7 @@ bool exportToPMVSFormat(
 
   if (bOk)
   {
-    C_Progress_display my_progress_bar( sfm_data.GetViews().size()*2 );
+    boost::progress_display my_progress_bar( sfm_data.GetViews().size()*2 );
 
     // Since PMVS requires contiguous camera index, and that some views can have some missing poses,
     // we reindex the poses to ensure a contiguous pose list.

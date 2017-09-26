@@ -1,16 +1,17 @@
 // This file is part of the AliceVision project and is made available under
 // the terms of the MPL2 license (see the COPYING.md file).
 
-#include "aliceVision/matchingImageCollection/ImageCollectionMatcher_generic.hpp"
-#include "aliceVision/matching/ArrayMatcher_bruteForce.hpp"
-#include "aliceVision/matching/ArrayMatcher_kdtreeFlann.hpp"
-#include "aliceVision/matching/ArrayMatcher_cascadeHashing.hpp"
-#include "aliceVision/matching/RegionsMatcher.hpp"
-#include "aliceVision/matchingImageCollection/IImageCollectionMatcher.hpp"
+#include <aliceVision/matchingImageCollection/ImageCollectionMatcher_generic.hpp>
+#include <aliceVision/matching/ArrayMatcher_bruteForce.hpp>
+#include <aliceVision/matching/ArrayMatcher_kdtreeFlann.hpp>
+#include <aliceVision/matching/ArrayMatcher_cascadeHashing.hpp>
+#include <aliceVision/matching/RegionsMatcher.hpp>
+#include <aliceVision/matchingImageCollection/IImageCollectionMatcher.hpp>
 #include <aliceVision/config.hpp>
 
-#include "dependencies/stlplus3/filesystemSimplified/file_system.hpp"
-#include "dependencies/progress/progress.hpp"
+#include <dependencies/stlplus3/filesystemSimplified/file_system.hpp>
+
+#include <boost/progress.hpp>
 
 namespace aliceVision {
 namespace matchingImageCollection {
@@ -39,7 +40,7 @@ void ImageCollectionMatcher_generic::Match(
   const bool b_multithreaded_pair_search = (_matcherType == CASCADE_HASHING_L2);
   // -> set to true for CASCADE_HASHING_L2, since OpenMP instructions are not used in this matcher
 
-  C_Progress_display my_progress_bar( pairs.size() );
+  boost::progress_display my_progress_bar( pairs.size() );
 
   // Sort pairs according the first index to minimize the MatcherT build operations
   typedef std::map<size_t, std::vector<size_t> > Map_vectorT;

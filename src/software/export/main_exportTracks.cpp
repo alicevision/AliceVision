@@ -11,10 +11,12 @@
 #include "aliceVision/feature/svgVisualization.hpp"
 
 #include "software/utils/sfmHelper/sfmIOHelper.hpp"
+
 #include "dependencies/cmdLine/cmdLine.h"
 #include "dependencies/stlplus3/filesystemSimplified/file_system.hpp"
-#include "dependencies/progress/progress.hpp"
 #include "dependencies/vectorGraphics/svgDrawer.hpp"
+
+#include <boost/progress.hpp>
 
 using namespace aliceVision;
 using namespace aliceVision::matching;
@@ -132,7 +134,7 @@ int main(int argc, char ** argv)
   stlplus::folder_create(sOutDir);
   std::cout << "\n viewCount: " << viewCount << std::endl;
   std::cout << "\n Export pairwise tracks" << std::endl;
-  C_Progress_display my_progress_bar( (viewCount*(viewCount-1)) / 2.0 );
+  boost::progress_display my_progress_bar( (viewCount*(viewCount-1)) / 2.0 );
 
   for (size_t I = 0; I < viewCount; ++I)
   {

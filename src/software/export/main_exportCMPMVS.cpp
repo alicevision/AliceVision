@@ -11,7 +11,8 @@ using namespace aliceVision::image;
 using namespace aliceVision::sfm;
 
 #include "dependencies/cmdLine/cmdLine.h"
-#include "dependencies/progress/progress.hpp"
+
+#include <boost/progress.hpp>
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -116,7 +117,7 @@ bool exportToCMPMVSFormat(
     }
 
     // Export data
-    C_Progress_display my_progress_bar(map_viewIdToContiguous.size());
+    boost::progress_display my_progress_bar(map_viewIdToContiguous.size());
 
     // Export (calibrated) views as undistorted images
     for(int i = 0; i < map_viewIdToContiguous.size(); ++i)
