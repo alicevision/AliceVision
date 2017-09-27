@@ -1,53 +1,66 @@
 // This file is part of the AliceVision project and is made available under
 // the terms of the MPL2 license (see the COPYING.md file).
 
-#include "dependencies/cmdLine/cmdLine.h"
-
+#include "aliceVision/config.hpp"
+#include "aliceVision/system/Logger.hpp"
 #include "aliceVision/exif/sensorWidthDatabase/parseDatabase.hpp"
+
+#include <boost/program_options.hpp>
+
+namespace po = boost::program_options;
 
 int main(int argc, char ** argv)
 {
-  CmdLine cmd;
-  std::cout << argc << std::endl;
-  std::string sfileDatabase;
-  std::string sBrand;
-  std::string sModel;
+  std::string sensorDatabasePath;
+  std::string brandName;
+  std::string modelName;
 
-  cmd.add( make_option('i', sfileDatabase, "ifileDB") );
-  cmd.add( make_option('b', sBrand, "iBrand") );
-  cmd.add( make_option('m', sModel, "iModel") );
+  po::options_description allParams("AliceVision Sample parseDatabase");
+  allParams.add_options()
+    ("sensorDatabase,s", po::value<std::string>(&sensorDatabasePath)->required(),
+      "Camera sensor width database path.")
+    ("brand,b", po::value<std::string>(&brandName)->required(),
+      "Camera brand.")
+    ("model,m", po::value<std::string>(&modelName)->required(),
+      "Camera model.");
 
-  try {
-      if (argc == 1) throw std::string("Invalid command line parameter.");
-      cmd.process(argc, argv);
-  } catch(const std::string& s) {
-      std::cerr << "Look if the given references exist in the camera database file.\nUsage: " << argv[0] << ' '
-      << "[-i|--DatabaseFile path] "
-      << "[-b|--Brand ] "
-      << "[-m|--Model] "
-      << std::endl;
+  po::variables_map vm;
+  try
+  {
+    po::store(po::parse_command_line(argc, argv, allParams), vm);
 
-      std::cerr << s << std::endl;
-      return EXIT_FAILURE;
+    if(vm.count("help") || (argc == 1))
+    {
+      ALICEVISION_COUT(allParams);
+      return EXIT_SUCCESS;
+    }
+    po::notify(vm);
   }
-  std::cout << " You called : " <<std::endl
-            << argv[0] << std::endl
-            << "--DatabaseFile " << sfileDatabase << std::endl
-            << "--Brand " << sBrand << std::endl
-            << "--Model " << sModel << std::endl;
+  catch(boost::program_options::required_option& e)
+  {
+    ALICEVISION_CERR("ERROR: " << e.what());
+    ALICEVISION_COUT("Usage:\n\n" << allParams);
+    return EXIT_FAILURE;
+  }
+  catch(boost::program_options::error& e)
+  {
+    ALICEVISION_CERR("ERROR: " << e.what());
+    ALICEVISION_COUT("Usage:\n\n" << allParams);
+    return EXIT_FAILURE;
+  }
 
   std::vector<aliceVision::exif::sensordb::Datasheet> vec_database;
   aliceVision::exif::sensordb::Datasheet datasheet;
 
-  if ( !aliceVision::exif::sensordb::parseDatabase( sfileDatabase, vec_database ) )
+  if ( !aliceVision::exif::sensordb::parseDatabase( sensorDatabasePath, vec_database ) )
   {
-    std::cout << "Database creation failure from the file : " << sfileDatabase  << std::endl;
+    std::cout << "Database creation failure from the file : " << sensorDatabasePath  << std::endl;
     return EXIT_FAILURE;
   }
 
-  if ( !aliceVision::exif::sensordb::getInfo( sBrand, sModel, vec_database, datasheet ) )
+  if ( !aliceVision::exif::sensordb::getInfo( brandName, modelName, vec_database, datasheet ) )
   {
-    std::cout << "The camera " << sModel << " doesn't exist in the database" << std::endl;
+    std::cout << "The camera " << modelName << " doesn't exist in the database" << std::endl;
     return EXIT_FAILURE;
   }
 
