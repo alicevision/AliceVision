@@ -2,18 +2,21 @@
 // the terms of the MPL2 license (see the COPYING.md file).
 
 #include <aliceVision/sfm/sfm.hpp>
-#include <aliceVision/sfm/pipelines/RegionsIO.hpp>
-#include <aliceVision/features/features.hpp>
+#include <aliceVision/sfm/pipeline/regionsIO.hpp>
+#include <aliceVision/feature/feature.hpp>
 #include <aliceVision/image/image.hpp>
-#include <aliceVision/system/timer.hpp>
+#include <aliceVision/system/Timer.hpp>
 
-#include "third_party/cmdLine/cmdLine.h"
-#include "third_party/stlplus3/filesystemSimplified/file_system.hpp"
+#include <dependencies/stlplus3/filesystemSimplified/file_system.hpp>
+
+#include <boost/program_options.hpp>
 
 #include <cstdlib>
 
 using namespace aliceVision;
 using namespace aliceVision::sfm;
+using namespace std;
+namespace po = boost::program_options;
 
 // ---------------------------------------------------------------------------
 // Image localization API sample:
@@ -26,71 +29,82 @@ using namespace aliceVision::sfm;
 //
 int main(int argc, char **argv)
 {
-  using namespace std;
-  std::cout << std::endl
-    << "-----------------------------------------------------------\n"
-    << "  Image localization in an existing SfM reconstruction:\n"
-    << "-----------------------------------------------------------\n"
-    << std::endl;
+  // command-line parameters
 
-  CmdLine cmd;
+  std::string verboseLevel = system::EVerboseLevel_enumToString(system::Logger::getDefaultVerboseLevel());
+  std::string sfmDataFilename;
+  std::string describerTypesName = feature::EImageDescriberType_enumToString(feature::EImageDescriberType::SIFT);
+  std::string matchesDirectory;
+  std::string outputDirectory;
+  std::string queryImage;
+  double maxResidualError = std::numeric_limits<double>::infinity();
 
-  std::string sSfM_Data_Filename;
-  std::string describerMethod = "SIFT";
-  std::string sMatchesDir;
-  std::string sOutDir = "";
-  std::string sQueryImage;
-  double dMaxResidualError = std::numeric_limits<double>::infinity();
+  po::options_description allParams(
+    "Image localization in an existing SfM reconstruction\n"
+    "AliceVision sfmLocalization");
 
-  cmd.add( make_option('i', sSfM_Data_Filename, "input_file") );
-  cmd.add( make_option('d', describerMethod, "describerMethod") );
-  cmd.add( make_option('m', sMatchesDir, "match_dir") );
-  cmd.add( make_option('o', sOutDir, "out_dir") );
-  cmd.add( make_option('q', sQueryImage, "query_image"));
-  cmd.add( make_option('r', dMaxResidualError, "residual_error"));
+  po::options_description requiredParams("Required parameters");
+  requiredParams.add_options()
+    ("input,i", po::value<std::string>(&sfmDataFilename)->required(),
+      "SfMData file.")
+    ("output,o", po::value<std::string>(&outputDirectory)->required(),
+      "Output path.")
+    ("matchesDirectory,m", po::value<std::string>(&matchesDirectory)->required(),
+      "Path to a directory in which computed matches are stored.")
+    ("queryImage", po::value<std::string>(&queryImage)->required(),
+      "Path to the image that must be localized.");
 
-  try {
-    if (argc == 1) throw std::string("Invalid parameter.");
-    cmd.process(argc, argv);
-  } catch(const std::string& s) {
-    std::cerr << "Usage: " << argv[0] << '\n'
-    << "[-i|--input_file] path to a SfM_Data scene\n"
-    << "[-d|--describerMethod]\n"
-    << "  (methods to use to describe an image):\n"
-    << "   SIFT (default),\n"
-    << "   SIFT_FLOAT to use SIFT stored as float,\n"
-    << "   AKAZE: AKAZE with floating point descriptors,\n"
-    << "   AKAZE_MLDB:  AKAZE with binary descriptors\n"
-#if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_CCTAG)
-    << "   CCTAG3: CCTAG markers with 3 crowns\n"
-    << "   CCTAG4: CCTAG markers with 4 crowns\n"
-#endif //ALICEVISION_HAVE_CCTAG
-#if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_OPENCV)
-#if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_OCVSIFT)
-    << "   SIFT_OCV: OpenCV SIFT\n"
-#endif //ALICEVISION_HAVE_OCVSIFT
-    << "   AKAZE_OCV: OpenCV AKAZE\n"
-#endif //ALICEVISION_HAVE_OPENCV
-    << "[-m|--match_dir] path to the matches that corresponds to the provided SfM_Data scene\n"
-    << "[-o|--out_dir] path where the output data will be stored\n"
-    << "(optional)\n"
-    << "[-q|--query_image] path to the image that must be localized\n"
-    << "[-r|--residual_error] upper bound of the residual error tolerance\n"
-    << std::endl;
+  po::options_description optionalParams("Optional parameters");
+  optionalParams.add_options()
+    ("describerTypes,d", po::value<std::string>(&describerTypesName)->default_value(describerTypesName),
+      feature::EImageDescriberType_informations().c_str())
+    ("maxResidualError", po::value<double>(&maxResidualError)->default_value(maxResidualError),
+      "Upper bound of the residual error tolerance.");
 
-    std::cerr << s << std::endl;
+  po::options_description logParams("Log parameters");
+  logParams.add_options()
+    ("verboseLevel,v", po::value<std::string>(&verboseLevel)->default_value(verboseLevel),
+      "verbosity level (fatal,  error, warning, info, debug, trace).");
+
+  allParams.add(requiredParams).add(optionalParams).add(logParams);
+
+  po::variables_map vm;
+  try
+  {
+    po::store(po::parse_command_line(argc, argv, allParams), vm);
+
+    if(vm.count("help") || (argc == 1))
+    {
+      ALICEVISION_COUT(allParams);
+      return EXIT_SUCCESS;
+    }
+    po::notify(vm);
+  }
+  catch(boost::program_options::required_option& e)
+  {
+    ALICEVISION_CERR("ERROR: " << e.what());
+    ALICEVISION_COUT("Usage:\n\n" << allParams);
     return EXIT_FAILURE;
   }
+  catch(boost::program_options::error& e)
+  {
+    ALICEVISION_CERR("ERROR: " << e.what());
+    ALICEVISION_COUT("Usage:\n\n" << allParams);
+    return EXIT_FAILURE;
+  }
+
+  // set verbose level
+  system::Logger::get()->setLogLevel(verboseLevel);
 
   // Load input SfM_Data scene
-  SfM_Data sfm_data;
-  if (!Load(sfm_data, sSfM_Data_Filename, ESfM_Data(ALL))) {
+  SfMData sfmData;
+  if (!Load(sfmData, sfmDataFilename, ESfMData(ALL))) {
     std::cerr << std::endl
-      << "The input SfM_Data file \""<< sSfM_Data_Filename << "\" cannot be read." << std::endl;
+      << "The input SfM_Data file \""<< sfmDataFilename << "\" cannot be read." << std::endl;
     return EXIT_FAILURE;
   }
 
-  if (sfm_data.GetPoses().empty() || sfm_data.GetLandmarks().empty())
+  if (sfmData.GetPoses().empty() || sfmData.GetLandmarks().empty())
   {
     std::cerr << std::endl
       << "The input SfM_Data file have not 3D content to match with." << std::endl;
@@ -102,13 +116,13 @@ int main(int argc, char **argv)
   // ---------------
 
   // Init the regions_type from the image describer file (used for image regions extraction)
-  using namespace aliceVision::features;
+  using namespace aliceVision::feature;
 
   // Get imageDescriberMethodType
-  EImageDescriberType describerType = EImageDescriberType_stringToEnum(describerMethod);
+  EImageDescriberType describerType = EImageDescriberType_stringToEnum(describerTypesName);
   
   // Get imageDecriber fom type
-  std::unique_ptr<Image_describer> imageDescribers = createImageDescriber(describerType);
+  std::unique_ptr<ImageDescriber> imageDescribers = createImageDescriber(describerType);
 
   // Load the SfM_Data region's views
   //-
@@ -118,26 +132,26 @@ int main(int argc, char **argv)
   // - extract the regions of the view
   // - try to locate the image
   //-
-  sfm::SfM_Localization_Single_3DTrackObservation_Database localizer;
+  sfm::SfMLocalizationSingle3DTrackObservationDatabase localizer;
   {
     RegionsPerView regionsPerView;
 
-    if (!sfm::loadRegionsPerView(regionsPerView, sfm_data, sMatchesDir, {describerType}))
+    if (!sfm::loadRegionsPerView(regionsPerView, sfmData, matchesDirectory, {describerType}))
     {
       std::cerr << std::endl << "Invalid regions." << std::endl;
       return EXIT_FAILURE;
     }
 
-    if (sOutDir.empty())
+    if (outputDirectory.empty())
     {
       std::cerr << "\nIt is an invalid output directory" << std::endl;
       return EXIT_FAILURE;
     }
 
-    if (!stlplus::folder_exists(sOutDir))
-      stlplus::folder_create(sOutDir);
+    if (!stlplus::folder_exists(outputDirectory))
+      stlplus::folder_create(outputDirectory);
     
-    if (!localizer.Init(sfm_data, regionsPerView))
+    if (!localizer.Init(sfmData, regionsPerView))
     {
       std::cerr << "Cannot initialize the SfM localizer" << std::endl;
     }
@@ -145,13 +159,13 @@ int main(int argc, char **argv)
   
   std::vector<Vec3> vec_found_poses;
 
-  if (!sQueryImage.empty())
+  if (!queryImage.empty())
   {
-    std::cout << "SfM::localization => try with image: " << sQueryImage << std::endl;
+    std::cout << "SfM::localization => try with image: " << queryImage << std::endl;
     std::unique_ptr<Regions> query_regions;
     image::Image<unsigned char> imageGray;
     {
-      if (!image::ReadImage(sQueryImage.c_str(), &imageGray))
+      if (!image::ReadImage(queryImage.c_str(), &imageGray))
       {
         std::cerr << "Cannot open the input provided image" << std::endl;
         return EXIT_FAILURE;
@@ -162,11 +176,11 @@ int main(int argc, char **argv)
     }
 
     // Suppose intrinsic as unknown
-    std::shared_ptr<cameras::IntrinsicBase> optional_intrinsic (nullptr);
+    std::shared_ptr<camera::IntrinsicBase> optional_intrinsic (nullptr);
 
     geometry::Pose3 pose;
-    sfm::Image_Localizer_Match_Data matching_data;
-    matching_data.error_max = dMaxResidualError;
+    sfm::ImageLocalizerMatchData matching_data;
+    matching_data.error_max = maxResidualError;
 
     // Try to localize the image in the database thanks to its regions
     if (!localizer.Localize(
@@ -194,11 +208,11 @@ int main(int argc, char **argv)
 
         const double focal = (K(0,0) + K(1,1))/2.0;
         const Vec2 principal_point(K(0,2), K(1,2));
-        optional_intrinsic = std::make_shared<cameras::Pinhole_Intrinsic_Radial_K3>(
+        optional_intrinsic = std::make_shared<camera::PinholeRadialK3>(
           imageGray.Width(), imageGray.Height(),
           focal, principal_point(0), principal_point(1));
       }
-      sfm::SfM_Localizer::RefinePose
+      sfm::SfMLocalizer::RefinePose
       (
         optional_intrinsic.get(),
         pose, matching_data,
@@ -215,19 +229,19 @@ int main(int argc, char **argv)
       << "----------------\n" << std::endl;
     std::cout << "Will try to locate all the view of the loaded sfm_data file." << std::endl;
 
-    for (const auto & viewIter : sfm_data.GetViews())
+    for (const auto & viewIter : sfmData.GetViews())
     {
       const View * view = viewIter.second.get();
       // Load an image, extract the regions and match
-      const std::string sImagePath = sfm_data.s_root_path + view->getImagePath();
+      const std::string sImagePath = sfmData.s_root_path + view->getImagePath();
 
       std::cout << "SfM::localization => try with image: " << sImagePath << std::endl;
 
       std::unique_ptr<Regions> query_regions;
       imageDescribers->Allocate(query_regions);
       const std::string basename = stlplus::basename_part(sImagePath);
-      const std::string featFile = stlplus::create_filespec(sMatchesDir, basename, ".feat");
-      const std::string descFile = stlplus::create_filespec(sMatchesDir, basename, ".desc");
+      const std::string featFile = stlplus::create_filespec(matchesDirectory, basename, ".feat");
+      const std::string descFile = stlplus::create_filespec(matchesDirectory, basename, ".desc");
       if (!query_regions->Load(featFile, descFile))
       {
         std::cerr << "Invalid regions files for the view: " << sImagePath << std::endl;
@@ -235,15 +249,15 @@ int main(int argc, char **argv)
       }
 
       // Initialize intrinsics data for the view if any
-      std::shared_ptr<cameras::IntrinsicBase> optional_intrinsic (nullptr);
-      if (sfm_data.GetIntrinsics().count(view->getIntrinsicId()))
+      std::shared_ptr<camera::IntrinsicBase> optional_intrinsic (nullptr);
+      if (sfmData.GetIntrinsics().count(view->getIntrinsicId()))
       {
-        optional_intrinsic = sfm_data.GetIntrinsics().at(view->getIntrinsicId());
+        optional_intrinsic = sfmData.GetIntrinsics().at(view->getIntrinsicId());
       }
 
       geometry::Pose3 pose;
-      sfm::Image_Localizer_Match_Data matching_data;
-      matching_data.error_max = dMaxResidualError;
+      sfm::ImageLocalizerMatchData matching_data;
+      matching_data.error_max = maxResidualError;
 
       // Try to localize the image in the database thanks to its regions
       if (!localizer.Localize(
@@ -271,11 +285,11 @@ int main(int argc, char **argv)
 
           const double focal = (K(0,0) + K(1,1))/2.0;
           const Vec2 principal_point(K(0,2), K(1,2));
-          optional_intrinsic = std::make_shared<cameras::Pinhole_Intrinsic_Radial_K3>(
+          optional_intrinsic = std::make_shared<camera::PinholeRadialK3>(
             view->getWidth(), view->getHeight(),
             focal, principal_point(0), principal_point(1));
         }
-        sfm::SfM_Localizer::RefinePose
+        sfm::SfMLocalizer::RefinePose
         (
           optional_intrinsic.get(),
           pose, matching_data,
@@ -287,12 +301,12 @@ int main(int argc, char **argv)
     }
     std::cout
       << "\n#images found: " << vec_found_poses.size()
-      << "\n#sfm_data view count: " << sfm_data.GetViews().size()
+      << "\n#sfm_data view count: " << sfmData.GetViews().size()
       << std::endl;
   }
 
   // Export the found camera position
-  const std::string out_file_name = stlplus::create_filespec(sOutDir, "found_pose_centers", "ply");
+  const std::string out_file_name = stlplus::create_filespec(outputDirectory, "found_pose_centers", "ply");
   {
     std::ofstream outfile;
     outfile.open(out_file_name.c_str(), std::ios_base::out);
