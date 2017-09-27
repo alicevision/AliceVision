@@ -10,73 +10,76 @@
 
 #include "dependencies/stlplus3/filesystemSimplified/file_system.hpp"
 #include "dependencies/vectorGraphics/svgDrawer.hpp"
-#include "dependencies/cmdLine/cmdLine.h"
+
+#include <boost/program_options.hpp>
 
 #include <string>
 #include <iostream>
 
-using namespace aliceVision;
-using namespace aliceVision::image;
 using namespace svg;
 using namespace std;
+using namespace aliceVision;
+using namespace aliceVision::image;
+namespace po = boost::program_options;
 
+int main(int argc, char **argv)
+{
+  std::string jpgFilenameL;
+  std::string jpgFilenameR;
+  std::string describerTypesName = feature::EImageDescriberType_enumToString(feature::EImageDescriberType::SIFT);
+  std::string describerPreset = "NORMAL";
 
-int main(int argc, char **argv) {
+  po::options_description allParams("AliceVision Sample describeAndMatch");
+  allParams.add_options()
+    ("jpgFilenameL,l", po::value<std::string>(&jpgFilenameL)->required(),
+      "Left image.")
+    ("jpgFilenameR,r", po::value<std::string>(&jpgFilenameR)->required(),
+      "Right image.")
+    ("describerTypes,d", po::value<std::string>(&describerTypesName)->default_value(describerTypesName),
+      feature::EImageDescriberType_informations().c_str())
+    ("describerPreset,p", po::value<std::string>(&describerPreset)->default_value(describerPreset),
+      "Control the ImageDescriber configuration (low, medium, normal, high, ultra).\n"
+      "Configuration 'ultra' can take long time !");
 
-  // Add options to choose the desired ImageDescriber
-  std::string sImageDescriber_type = "SIFT";
-  std::string jpg_filenameL = stlplus::folder_up(string(THIS_SOURCE_DIR))
-    + "/imageData/StanfordMobileVisualSearch/Ace_0.png";
-  std::string jpg_filenameR = stlplus::folder_up(string(THIS_SOURCE_DIR))
-    + "/imageData/StanfordMobileVisualSearch/Ace_1.png";
-  
-  std::string sFeaturePreset = "";
+  po::variables_map vm;
+  try
+  {
+    po::store(po::parse_command_line(argc, argv, allParams), vm);
 
-  CmdLine cmd;
-  cmd.add( make_option('t', sImageDescriber_type, "type") );
-  cmd.add( make_option('l', jpg_filenameL, "left") );
-  cmd.add( make_option('r', jpg_filenameR, "right") );
-  cmd.add( make_option('p', sFeaturePreset, "describerPreset") );
-
-  try {
-      if (argc == 1) throw std::string("Invalid command line parameter.");
-      cmd.process(argc, argv);
-  } catch(const std::string& s) {
-      std::cerr << "Usage: " << argv[0] << '\n'
-      << "\n[Optional]\n"
-      << "[-l|--left] the left image (default imageData/StanfordMobileVisualSearch/Ace_0.png)"
-      << "[-r|--right] the right image (default imageData/StanfordMobileVisualSearch/Ace_1.png)"
-      << "[-t|--type\n"
-      << "  (choose an image_describer interface):\n"
-      << "   SIFT: SIFT keypoint & descriptor,\n"
-      << "   AKAZE: AKAZE keypoint & floating point descriptor]"
-      << "[-p|--describerPreset]\n"
-      << "  (used to control the ImageDescriber configuration):\n"
-      << "   LOW,\n"
-      << "   MEDIUM,\n"
-      << "   NORMAL (default),\n"
-      << "   HIGH,\n"
-      << "   ULTRA: !!Can take long time!!\n"
-      << std::endl;
-
-      std::cerr << s << std::endl;
-      return EXIT_FAILURE;
+    if(vm.count("help") || (argc == 1))
+    {
+      ALICEVISION_COUT(allParams);
+      return EXIT_SUCCESS;
+    }
+    po::notify(vm);
+  }
+  catch(boost::program_options::required_option& e)
+  {
+    ALICEVISION_CERR("ERROR: " << e.what());
+    ALICEVISION_COUT("Usage:\n\n" << allParams);
+    return EXIT_FAILURE;
+  }
+  catch(boost::program_options::error& e)
+  {
+    ALICEVISION_CERR("ERROR: " << e.what());
+    ALICEVISION_COUT("Usage:\n\n" << allParams);
+    return EXIT_FAILURE;
   }
 
   Image<RGBColor> image;
 
   Image<unsigned char> imageL, imageR;
-  ReadImage(jpg_filenameL.c_str(), &imageL);
-  ReadImage(jpg_filenameR.c_str(), &imageR);
+  ReadImage(jpgFilenameL.c_str(), &imageL);
+  ReadImage(jpgFilenameR.c_str(), &imageR);
 
   // Call Keypoint extractor
   using namespace aliceVision::feature;
   std::shared_ptr<ImageDescriber> image_describer;
-  if (sImageDescriber_type == "SIFT")
+  if (describerTypesName == "SIFT")
     image_describer = std::make_shared<ImageDescriber_SIFT>(SiftParams());
-  else if (sImageDescriber_type == "AKAZE")
+  else if (describerTypesName == "AKAZE")
     image_describer = std::make_shared<ImageDescriber_AKAZE>(AKAZEParams(AKAZEConfig(), AKAZE_MSURF));
-  else if (sImageDescriber_type == "AKAZE_MLDB")
+  else if (describerTypesName == "AKAZE_MLDB")
     image_describer = std::make_shared<ImageDescriber_AKAZE>(AKAZEParams(AKAZEConfig(), AKAZE_MLDB));
 
   if (image_describer.use_count()==0)
@@ -84,9 +87,9 @@ int main(int argc, char **argv) {
     std::cerr << "Invalid ImageDescriber type" << std::endl;
     return EXIT_FAILURE;
   }
-  if (!sFeaturePreset.empty())
+  if (!describerPreset.empty())
   {
-    if (!image_describer->Set_configuration_preset(sFeaturePreset))
+    if (!image_describer->Set_configuration_preset(describerPreset))
     {
       std::cerr << "Preset configuration failed." << std::endl;
       return EXIT_FAILURE;
@@ -148,8 +151,8 @@ int main(int argc, char **argv) {
   // Draw correspondences after Nearest Neighbor ratio filter
   {
     svgDrawer svgStream( imageL.Width() + imageR.Width(), max(imageL.Height(), imageR.Height()));
-    svgStream.drawImage(jpg_filenameL, imageL.Width(), imageL.Height());
-    svgStream.drawImage(jpg_filenameR, imageR.Width(), imageR.Height(), imageL.Width());
+    svgStream.drawImage(jpgFilenameL, imageL.Width(), imageL.Height());
+    svgStream.drawImage(jpgFilenameR, imageR.Width(), imageR.Height(), imageL.Width());
     for (size_t i = 0; i < vec_PutativeMatches.size(); ++i) {
       //Get back linked feature, draw a circle and link them by a line
       const PointFeature & L = featsL[vec_PutativeMatches[i]._i];
