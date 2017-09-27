@@ -588,107 +588,111 @@ bool Local_Bundle_Adjustment_Ceres::Adjust(SfM_Data& sfm_data)
 //  }
 //}
 
-//void Local_Bundle_Adjustment_Ceres::computeStatesMaps_strategy3(const SfM_Data & sfm_data, const std::set<IndexT> &newReconstructedViewIds)
-//{
-//  // reset the maps
-//  _map_poseId_LBAState.clear();
-//  _map_intrinsicId_LBAState.clear();
-//  _map_landmarkId_LBAState.clear();
+void Local_Bundle_Adjustment_Ceres::computeStatesMaps_strategy3(
+  const SfM_Data & sfm_data, 
+  const std::shared_ptr<LocalBA_Data> localBA_data)
+{
+  // reset the maps
+  _map_poseId_LBAState.clear();
+  _map_intrinsicId_LBAState.clear();
+  _map_landmarkId_LBAState.clear();
   
 
-//  // ----------------------------------------------------
-//  // -- Strategy 3 : (2017.08.05)
-//  //  D = distanceLimit
-//  //  - cameras:
-//  //    - dist <= D: refined
-//  //    - dist == D+1: fixed
-//  //    - else ignored
-//  //  - intrinsic:
-//  //    N = sharingLimit
-//  //    - used by more than N already resected cameras: constant
-//  //    - else refined
-//  //  - landmarks:
-//  //    - connected to a refined camera: refined
-//  //    - else ignored
-//  // ----------------------------------------------------
-//  const std::size_t kDistanceLimit = 1;
-//  const std::size_t kSharingLimit = 30;
+  // ----------------------------------------------------
+  // -- Strategy 3 : (2017.08.05)
+  //  D = distanceLimit
+  //  - cameras:
+  //    - dist <= D: refined
+  //    - dist == D+1: fixed
+  //    - else ignored
+  //  - intrinsic:
+  //    N = sharingLimit
+  //    - used by more than N already resected cameras: constant
+  //    - else refined
+  //  - landmarks:
+  //    - connected to a refined camera: refined
+  //    - else ignored
+  // ----------------------------------------------------
+  const std::size_t kDistanceLimit = 1;
+  const std::size_t kIntrinsicSharingLimit = 30;
   
-//  // -- Poses
-//  for (Poses::const_iterator itPose = sfm_data.poses.begin(); itPose != sfm_data.poses.end(); ++itPose)
-//  {
-//    const IndexT poseId = itPose->first;
-//    int dist = _map_poseId_distance.at(poseId);
-//    if (dist >= 0 && dist <= kDistanceLimit) 
-//      _map_poseId_LBAState[poseId] = LocalBAState::refined;
-//    else if (dist == kDistanceLimit + 1)
-//      _map_poseId_LBAState[poseId] = LocalBAState::constant;
-//    else // dist < 0 (not connected to the node) or > D + 1
-//      _map_poseId_LBAState[poseId] = LocalBAState::ignored;
-//  }
+  // -- Poses
+  for (Poses::const_iterator itPose = sfm_data.poses.begin(); itPose != sfm_data.poses.end(); ++itPose)
+  {
+    const IndexT poseId = itPose->first;
+    int dist = localBA_data->getPoseDistance(poseId);
+    if (dist >= 0 && dist <= kDistanceLimit) 
+      _map_poseId_LBAState[poseId] = LocalBAState::refined;
+    else if (dist == kDistanceLimit + 1)
+      _map_poseId_LBAState[poseId] = LocalBAState::constant;
+    else // dist < 0 (not connected to the node) or > D + 1
+      _map_poseId_LBAState[poseId] = LocalBAState::ignored;
+  }
   
-//  // -- Instrinsics
+  // -- Instrinsics
   
-//  // transform the 'newReconstructedViewIds' set to 'newReconstructedPoseIds'
-//  std::set<IndexT> newPoseIds;
-//  for (auto& viewId : newReconstructedViewIds)
-//  {
-//    const View * view = sfm_data.views.at(viewId).get();
-//    newPoseIds.insert(view->id_pose);
-//  }
+  // transform the 'newReconstructedViewIds' set to 'newReconstructedPoseIds'
+  std::set<IndexT> newPoseIds;
+  for (auto& viewId : localBA_data->getNewViewsId())
+  {
+    const View * view = sfm_data.views.at(viewId).get();
+    newPoseIds.insert(view->id_pose);
+  }
   
-//  // count the number of usage of each intrinsic among the aready resected poses
-//  std::map<IndexT, std::size_t> map_intrinsicId_usageNum;
+  // count the number of usage of each intrinsic among the aready resected poses
+  std::map<IndexT, std::size_t> map_intrinsicId_usageNum;
   
-//  for (const auto& itView : sfm_data.views)
-//  {
-//    const View * view = itView.second.get();
+  for (const auto& itView : sfm_data.views)
+  {
+    const View * view = itView.second.get();
     
-//    if (sfm_data.IsPoseAndIntrinsicDefined(view))
-//    {
-//      auto itPose = newPoseIds.find(view->id_pose);
-//      if (itPose == newPoseIds.end()) // not a newly resected view/pose
-//      {
-//        auto itIntr = map_intrinsicId_usageNum.find(view->id_intrinsic);
-//        if (itIntr == map_intrinsicId_usageNum.end())
-//          map_intrinsicId_usageNum[view->id_intrinsic] = 1;
-//        else
-//          map_intrinsicId_usageNum[view->id_intrinsic]++;
-//      }
-//    }
-//  }
+    if (sfm_data.IsPoseAndIntrinsicDefined(view))
+    {
+      auto itPose = newPoseIds.find(view->id_pose);
+      if (itPose == newPoseIds.end()) // not a newly resected view/pose
+      {
+        auto itIntr = map_intrinsicId_usageNum.find(view->id_intrinsic);
+        if (itIntr == map_intrinsicId_usageNum.end())
+          map_intrinsicId_usageNum[view->id_intrinsic] = 1;
+        else
+          map_intrinsicId_usageNum[view->id_intrinsic]++;
+      }
+    }
+  }
   
-//  // 
-//  for(const auto& itIntrinsic: sfm_data.GetIntrinsics())
-//  {
-//    const IndexT intrinsicId = itIntrinsic.first;
-//    if (map_intrinsicId_usageNum[intrinsicId] >= kSharingLimit)
-//      _map_intrinsicId_LBAState[intrinsicId] = LocalBAState::constant;
-//    else
-//      _map_intrinsicId_LBAState[intrinsicId] = LocalBAState::refined;
-//  }
+  // 
+  for(const auto& itIntrinsic: sfm_data.GetIntrinsics())
+  {
+    const IndexT intrinsicId = itIntrinsic.first;
+    if (map_intrinsicId_usageNum[intrinsicId] >= kIntrinsicSharingLimit)
+      _map_intrinsicId_LBAState[intrinsicId] = LocalBAState::constant;
+    else
+      _map_intrinsicId_LBAState[intrinsicId] = LocalBAState::refined;
+  }
   
-//  // -- Landmarks
-//  for(const auto& itLandmark: sfm_data.structure)
-//  {
-//    const IndexT landmarkId = itLandmark.first;
-//    const Observations & observations = itLandmark.second.observations;
+  // -- Landmarks
+  for(const auto& itLandmark: sfm_data.structure)
+  {
+    const IndexT landmarkId = itLandmark.first;
+    const Observations & observations = itLandmark.second.observations;
     
-//    _map_landmarkId_LBAState[landmarkId] = LocalBAState::ignored;
+    _map_landmarkId_LBAState[landmarkId] = LocalBAState::ignored;
     
-//    for(const auto& observationIt: observations)
-//    {
-//      int dist = _map_viewId_distance.at(observationIt.first);
-//      if(dist <= kDistanceLimit)
-//      {
-//        _map_landmarkId_LBAState[landmarkId] = LocalBAState::refined;
-//        continue;
-//      }
-//    }
-//  }
-//}
+    for(const auto& observationIt: observations)
+    {
+      int dist = localBA_data->getViewDistance(observationIt.first);
+      if(dist <= kDistanceLimit)
+      {
+        _map_landmarkId_LBAState[landmarkId] = LocalBAState::refined;
+        continue;
+      }
+    }
+  }
+}
 
-void Local_Bundle_Adjustment_Ceres::computeStatesMaps_strategy4(const SfM_Data & sfm_data, LocalBA_Data& lba_data)
+void Local_Bundle_Adjustment_Ceres::computeStatesMaps_strategy4(
+  const SfM_Data & sfm_data, 
+  std::shared_ptr<LocalBA_Data> localBA_data)
 {
   // reset the maps
   _map_poseId_LBAState.clear();
@@ -721,7 +725,7 @@ void Local_Bundle_Adjustment_Ceres::computeStatesMaps_strategy4(const SfM_Data &
     for (Poses::const_iterator itPose = sfm_data.poses.begin(); itPose != sfm_data.poses.end(); ++itPose)
     {
       const IndexT poseId = itPose->first;
-      int dist = lba_data.map_poseId_distance.at(poseId);
+      int dist = localBA_data->getPoseDistance(poseId);
       if (dist >= 0 && dist <= kDistanceLimit) 
         _map_poseId_LBAState[poseId] = LocalBAState::refined;
       else if (dist == kDistanceLimit + 1)
@@ -731,12 +735,12 @@ void Local_Bundle_Adjustment_Ceres::computeStatesMaps_strategy4(const SfM_Data &
     }
     
     // -- Instrinsics
-    lba_data.computeParameterLimits(LocalBA_Data::IntrinsicParameter::Focal, 25, 1.0); 
+    localBA_data->checkParameterLimits(LocalBA_Data::EIntrinsicParameter::Focal, kWindowSize, kStdevPercentage); 
     
     // 
     for(const auto& itIntrinsic: sfm_data.GetIntrinsics())
     {
-      if (lba_data.isLimitReached(itIntrinsic.first, LocalBA_Data::IntrinsicParameter::Focal))
+      if (localBA_data->isLimitReached(itIntrinsic.first, LocalBA_Data::EIntrinsicParameter::Focal))
         _map_intrinsicId_LBAState[itIntrinsic.first] = LocalBAState::constant;
       else
         _map_intrinsicId_LBAState[itIntrinsic.first] = LocalBAState::refined;
@@ -752,7 +756,7 @@ void Local_Bundle_Adjustment_Ceres::computeStatesMaps_strategy4(const SfM_Data &
       
       for(const auto& observationIt: observations)
       {
-        int dist = lba_data.map_viewId_distance.at(observationIt.first);
+        int dist = localBA_data->getViewDistance(observationIt.first);
         if(dist <= kDistanceLimit)
         {
           _map_landmarkId_LBAState[landmarkId] = LocalBAState::refined;
@@ -951,7 +955,7 @@ void Local_Bundle_Adjustment_Ceres::updateCameraIntrinsics(
   }
 }
 
-bool Local_Bundle_Adjustment_Ceres::exportStatistics(const std::string& path, const SfM_Data& sfm_data)
+bool Local_Bundle_Adjustment_Ceres::exportStatistics(const std::string& path)
 {
   std::string filename = stlplus::folder_append_separator(path)+"BaStats.txt";
   std::ofstream os;

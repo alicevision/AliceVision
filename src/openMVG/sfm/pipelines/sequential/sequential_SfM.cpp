@@ -127,7 +127,8 @@ SequentialSfMReconstructionEngine::SequentialSfMReconstructionEngine(
   : ReconstructionEngine(sfm_data, soutDirectory),
     _sLoggingFile(sloggingFile),
     _initialpair(Pair(0,0)),
-    _camType(EINTRINSIC(PINHOLE_CAMERA_RADIAL3))
+    _camType(EINTRINSIC(PINHOLE_CAMERA_RADIAL3)),
+    _localBA_data(new LocalBA_Data(sfm_data))
 {
   if (!_sLoggingFile.empty())
   {
@@ -166,26 +167,21 @@ SequentialSfMReconstructionEngine::~SequentialSfMReconstructionEngine()
 void SequentialSfMReconstructionEngine::RobustResectionOfImages(
     const std::set<size_t>& viewIds,
     std::set<size_t>& set_reconstructedViewId,
-    std::set<size_t>& set_rejectedViewId, 
-    LocalBA_Data& localBA_data)
+    std::set<size_t>& set_rejectedViewId)
 {
   size_t imageIndex = 0;
   size_t resectionGroupIndex = 0;
   std::set<size_t> set_remainingViewId(viewIds);
   std::vector<size_t> vec_possible_resection_indexes;
-  
-  // Used by Local BA 
-//  LocalBA_Data lba_data(_sfm_data);
-  
-  localBA_data.exportIntrinsicsHistory(_sOutDirectory); // export EXIF
+    
+  _localBA_data->exportIntrinsicsHistory(_sOutDirectory); // export EXIF
   
   while (FindNextImagesGroupForResection(vec_possible_resection_indexes, set_remainingViewId))
   {
     auto chrono_start = std::chrono::steady_clock::now();
     OPENMVG_LOG_DEBUG("Resection group start " << resectionGroupIndex << " with " << vec_possible_resection_indexes.size() << " images.\n");
     bool bImageAdded = false;
-    std::set<IndexT> set_newReconstructedViewId; // will contains all the recently resected cameras
-    
+    std::set<IndexT> set_newReconstructedViewId;
     // Add images to the 3D reconstruction
     for (const size_t possible_resection_index: vec_possible_resection_indexes )
     {
@@ -207,6 +203,8 @@ void SequentialSfMReconstructionEngine::RobustResectionOfImages(
       set_remainingViewId.erase(possible_resection_index);
     }
     OPENMVG_LOG_DEBUG("Resection of " << vec_possible_resection_indexes.size() << " new images took " << std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - chrono_start).count() << " msec.");
+    
+    _localBA_data->setNewViewsId(set_newReconstructedViewId);
     
     if (bImageAdded)
     {
@@ -231,12 +229,7 @@ void SequentialSfMReconstructionEngine::RobustResectionOfImages(
         auto chrono2_start = std::chrono::steady_clock::now();
         
         //        BundleAdjustment();
-        std::cout << "in : RobustResectionOfImages" << std::endl;
-        std::cout << "set_newReconstructedViewId.size() = " << set_newReconstructedViewId.size() << std::endl;
-        localBundleAdjustment(
-              set_newReconstructedViewId, 
-              localBA_data,
-              "first"); 
+        localBundleAdjustment("first"); 
         
         //        localBundleAdjustment(
         //              set_newReconstructedViewId, 
@@ -257,7 +250,7 @@ void SequentialSfMReconstructionEngine::RobustResectionOfImages(
       OPENMVG_LOG_DEBUG("Bundle with " << bundleAdjustmentIteration << " iterations took " << std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - chrono_start).count() << " msec.");
       chrono_start = std::chrono::steady_clock::now();
       
-      localBA_data.exportIntrinsicsHistory(_sOutDirectory);
+      _localBA_data->exportIntrinsicsHistory(_sOutDirectory);
             
       // Remove unstable poses & extract removed poses id
       Poses poses_saved =  _sfm_data.poses;
@@ -353,8 +346,7 @@ bool SequentialSfMReconstructionEngine::Process()
     RobustResectionOfImages(
           _set_remainingViewId,
           reconstructedViewIds,
-          rejectedViewIds, 
-          localBA_data);
+          rejectedViewIds);
     // Remove all reconstructed views from the remaining views
     for(const std::size_t v: reconstructedViewIds)
     {
@@ -1574,12 +1566,8 @@ bool SequentialSfMReconstructionEngine::BundleAdjustment()
 }
 
 /// Local Bundle Adjustment to refine only the parameters close to the newly resected views.
-bool SequentialSfMReconstructionEngine::localBundleAdjustment(
-    const std::set<IndexT>& newReconstructedViewIds,
-    LocalBA_Data& localBA_data,
-    const std::string& name)
+bool SequentialSfMReconstructionEngine::localBundleAdjustment(const std::string& name = "first")
 {
-  
   LocalBA_timeProfiler times;
   
   Local_Bundle_Adjustment_Ceres::LocalBA_options options;
@@ -1604,13 +1592,9 @@ bool SequentialSfMReconstructionEngine::localBundleAdjustment(
   {
     // Compute the 'connexity-distance' for each poses according to the newly added views :
     std::cout << "in: localBundleAdjustment" << std::endl;
-    std::cout << "newReconstructedViewIds.size() = "  << newReconstructedViewIds.size() << std::endl;
     
     // Update the 'reconstructionGraph' using the recently added cameras
-    localBA_data.updateGraph(
-          _sfm_data, 
-          _map_tracksPerView, 
-          newReconstructedViewIds);
+    _localBA_data->updateGraph(_sfm_data, _map_tracksPerView);
     
     {
       times.graphUpdating = duration.elapsed(); 
@@ -1618,16 +1602,14 @@ bool SequentialSfMReconstructionEngine::localBundleAdjustment(
     }
     
     //
-    localBA_data.computeDistancesMaps(
-          _sfm_data, 
-          newReconstructedViewIds);
+    _localBA_data->computeDistancesMaps(_sfm_data);
     
     {
       times.distMapsComputing = duration.elapsed(); 
       duration.reset();
     }
     
-    localBA_obj.computeStatesMaps_strategy4(_sfm_data, localBA_data);    
+    localBA_obj.computeStatesMaps_strategy4(_sfm_data, _localBA_data);    
     
     {
       times.statesMapsComputing = duration.elapsed(); 
@@ -1635,9 +1617,7 @@ bool SequentialSfMReconstructionEngine::localBundleAdjustment(
     }    
   }
   
-  
-  LocalBA_stats lbaStats(newReconstructedViewIds);
-  localBA_obj.setBAStatisticsContainer(lbaStats);
+  localBA_obj.initStatistics(_localBA_data->getNewViewsId());
   
   duration.reset();
   
@@ -1652,7 +1632,7 @@ bool SequentialSfMReconstructionEngine::localBundleAdjustment(
   
   // Update 'map_intrinsicsHistorical' and compute 'map_intrinsicsLimits'
   //  checkIntrinsicParametersLimits(map_intrinsicsHistorical, map_intrinsicsLimits);
-  localBA_data.addIntrinsicsToHistory(_sfm_data);
+  _localBA_data->addIntrinsicsToHistory(_sfm_data);
   
   
   times.adjusting = duration.elapsed(); 
@@ -1662,7 +1642,7 @@ bool SequentialSfMReconstructionEngine::localBundleAdjustment(
   
   // Save data about the 
   std::cout << "Export statistics... " << std::endl;
-  localBA_obj.exportStatistics(_sOutDirectory, _sfm_data);
+  localBA_obj.exportStatistics(_sOutDirectory);
   std::cout << "Export statistics: done" << std::endl;
   return isBaSucceed;
 }

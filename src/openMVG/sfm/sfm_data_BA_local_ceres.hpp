@@ -53,23 +53,22 @@ public:
 
 //  void computeStatesMaps_strategy2(const SfM_Data & sfm_data, const std::size_t distanceLimit);
 
-//  void computeStatesMaps_strategy3(const SfM_Data & sfm_data, const std::set<IndexT> &newReconstructedViewIds);
+  void computeStatesMaps_strategy3(const SfM_Data & sfm_data, const std::shared_ptr<LocalBA_Data> localBA_data);
 
-  void computeStatesMaps_strategy4(const SfM_Data & sfm_data, LocalBA_Data& lba_data);
+  void computeStatesMaps_strategy4(const SfM_Data & sfm_data, std::shared_ptr<LocalBA_Data> localBA_data);
 
-  
-  void setBAStatisticsContainer(LocalBA_stats& baStats) {_LBA_statistics = baStats;}
+  void initStatistics(const std::set<IndexT>& newViewsId) {_LBA_statistics = LocalBA_statistics(newViewsId);}
 
   /// \brief Export statistics about bundle adjustment in a TXT file ("BaStats.txt")
   /// The contents of the file have been writen such that it is easy to handle it with
   /// a Python script or any spreadsheets (e.g. by copy/past the full content to LibreOffice) 
-  bool exportStatistics(const std::string& path, const SfM_Data &sfm_data);
+  bool exportStatistics(const std::string& path);
   
 private:
 
   // Used for Local BA approach: 
   LocalBA_options _LBA_openMVG_options;
-  LocalBA_stats _LBA_statistics;
+  LocalBA_statistics _LBA_statistics;
   
   // Define the state of the all parameter of the reconstruction (structure, poses, intrinsics) in the BA:
   enum LocalBAState { 

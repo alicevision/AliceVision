@@ -48,11 +48,9 @@ public:
     _pairwiseMatches = pairwiseMatches;
   }
   
-  void RobustResectionOfImages(
-      const std::set<size_t>& viewIds,
+  void RobustResectionOfImages(const std::set<size_t>& viewIds,
       std::set<size_t>& set_reconstructedViewId,
-      std::set<size_t>& set_rejectedViewId,
-      LocalBA_Data& localBA_data);
+      std::set<size_t>& set_rejectedViewId);
   
   virtual bool Process();
   
@@ -173,9 +171,7 @@ private:
   bool BundleAdjustment();  
   
   /// .... [TO COMMENT] ....
-  bool localBundleAdjustment(const std::set<IndexT>& newReconstructedViewIds, 
-                             LocalBA_Data& lba_data,
-                             const string& filename);
+  bool localBundleAdjustment(const string& filename);
   
   /// Discard track with too large residual error
   size_t badTrackRejector(double dPrecision, size_t count = 0);
@@ -221,6 +217,9 @@ private:
   pt::ptree _tree;
 #endif
   
+  // Local Bundle Adjustment data
+  // Contains all needed to Local BA approach (poses graph, intrinsics history etc.)
+  std::shared_ptr<LocalBA_Data> _localBA_data;
   
   // Temporary data
   /// Putative landmark tracks (visibility per potential 3D point)

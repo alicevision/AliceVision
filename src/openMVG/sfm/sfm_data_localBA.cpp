@@ -11,6 +11,7 @@
 namespace openMVG {
 namespace sfm {
 
+// -- Constructor
 LocalBA_Data::LocalBA_Data(const SfM_Data& sfm_data)
 {
   for (const auto& it : sfm_data.intrinsics)
@@ -22,13 +23,39 @@ LocalBA_Data::LocalBA_Data(const SfM_Data& sfm_data)
   }
 }
 
+// -- Getters
+int LocalBA_Data::getPoseDistance(const IndexT poseId) const
+{
+  if (map_poseId_distance.find(poseId) == map_poseId_distance.end())
+  {
+    OPENMVG_LOG_DEBUG("The pose #" << poseId << " does not exist in the 'map_poseId_distance':\n"
+    << map_poseId_distance);
+    return -1;
+  }
+  return map_poseId_distance.at(poseId);
+}
+
+int LocalBA_Data::getViewDistance(const IndexT viewId) const
+{
+  if (map_viewId_distance.find(viewId) == map_viewId_distance.end())
+  {
+    OPENMVG_LOG_DEBUG("The view #" << viewId << " does not exist in the 'map_viewId_distance':\n"
+    << map_viewId_distance);
+    return -1;
+  }
+  return map_viewId_distance.at(viewId);
+}
+
+
+// -- Setters
+
+// -- Methods
 void LocalBA_Data::updateGraph(
-    const SfM_Data& sfm_data, 
-    const tracks::TracksPerView& map_tracksPerView, 
-    const std::set<IndexT>& newViewIds)
+  const SfM_Data& sfm_data, 
+  const tracks::TracksPerView& map_tracksPerView)
 {
   std::cout << "in: updateDistancesgrpah" << std::endl;
-  std::cout << "newViewIds.size() = " << newViewIds.size() << std::endl;
+  std::cout << "newViewIds.size() = " << set_newViewsId.size() << std::endl;
   std::set<IndexT> viewIdsAddedToTheGraph;
   
   // -- Add nodes (= views)
@@ -42,7 +69,7 @@ void LocalBA_Data::updateGraph(
   else 
   {
     std::cout << "map_viewId_node non vide ! (tjs sauf lors du du premier LBA théoriquement)" << std::endl;
-    for (const IndexT viewId : newViewIds)
+    for (const IndexT viewId : set_newViewsId)
     {
       auto it = map_viewId_node.find(viewId);
       if (it == map_viewId_node.end()) // the view doesn't already have an associated node
@@ -156,8 +183,7 @@ void LocalBA_Data::updateGraph(
     
     for(auto& it: map_imagesPair_nbSharedLandmarks)
     {
-      std::size_t L = 100; // typically: 100
-      if(it.second > L) // ensure a minimum number of landmarks in common to consider the link
+      if(it.second > kMinNbOfMatches) // ensure a minimum number of landmarks in common to consider the link
       {
         graph_poses.addEdge(map_viewId_node.at(it.first.first), map_viewId_node.at(it.first.second));
       }
@@ -167,13 +193,11 @@ void LocalBA_Data::updateGraph(
   
 }
 
-void LocalBA_Data::computeDistancesMaps(
-    const SfM_Data& sfm_data, 
-    const std::set<IndexT>& newViewIds)
+void LocalBA_Data::computeDistancesMaps(const SfM_Data& sfm_data)
 {  
   std::cout << "\nvvv ------------------------ vvv" << std::endl;
   std::cout << "in: computeDistancesMaps" << std::endl;
-  std::cout << "newViewIds.size() = " << newViewIds.size() << std::endl;
+  std::cout << "newViewIds.size() = " << set_newViewsId.size() << std::endl;
   map_viewId_distance.clear();
   map_poseId_distance.clear();
   
@@ -183,9 +207,9 @@ void LocalBA_Data::computeDistancesMaps(
   
   // Add source views for the bfs visit of the _reconstructionGraph
   std::cout << "... adding sources to the BFS " << std::endl;
-  std::cout << "nb de sources : " << newViewIds.size() << std::endl;
+  std::cout << "nb de sources : " << set_newViewsId.size() << std::endl;
   std::cout << "taille de la map_viewId_node = " << map_viewId_node.size() << std::endl;
-  for(const IndexT viewId: newViewIds)
+  for(const IndexT viewId: set_newViewsId)
   {
     std::cout << "ajout d'un noeud avec la vue #" << viewId << std::endl;
     auto it = map_viewId_node.find(viewId);
@@ -274,7 +298,7 @@ void LocalBA_Data::addIntrinsicsToHistory(const SfM_Data& sfm_data)
 // focal: parameterId = 0
 // Cx: parameterId = 1
 // Cy: parameterId = 2
-void LocalBA_Data::computeParameterLimits(const IntrinsicParameter& parameter, const std::size_t kWindowSize, const double kStdDevPercentage)
+void LocalBA_Data::checkParameterLimits(const EIntrinsicParameter parameter, const std::size_t windowSize, const double stdevPercentageLimit)
 {
   std::cout << "Updating parameter #" << parameter << std::endl;
   for (auto& elt : intrinsicsHistory)
@@ -325,13 +349,13 @@ void LocalBA_Data::computeParameterLimits(const IntrinsicParameter& parameter, c
     std::cout << "filteredValuesVec = " << filteredValuesVec << std::endl;
     
     // Detect limit according to 'kWindowSize':
-    if (numPosesEndWindow < kWindowSize)
+    if (numPosesEndWindow < windowSize)
       continue;
     
     IndexT idStartWindow = 0;
     for (int id = filteredNumPosesVec.size()-2; id > 0; --id)
     {
-      if (numPosesEndWindow - filteredNumPosesVec.at(id) >= kWindowSize)
+      if (numPosesEndWindow - filteredNumPosesVec.at(id) >= windowSize)
       {
         idStartWindow = id;
         break;
@@ -360,31 +384,19 @@ void LocalBA_Data::computeParameterLimits(const IntrinsicParameter& parameter, c
     std::cout << "subNumPosesVec = " << subNumPosesVec << std::endl;
     std::cout << "normStdev = " << normStdev << std::endl;
     
-    if (normStdev*100.0 <= kStdDevPercentage && intrinsicsLimitIds.at(idIntr).at(parameter) == 0)
+    if (normStdev*100.0 <= stdevPercentageLimit && intrinsicsLimitIds.at(idIntr).at(parameter) == 0)
     {
       intrinsicsLimitIds.at(idIntr).at(parameter) = numPosesEndWindow;    
     }
   }
 }
 
-void LocalBA_Data::computeAllParametersLimits(const std::size_t kWindowSize, const double kStdDevPercentage)
+void LocalBA_Data::checkAllParametersLimits(const std::size_t kWindowSize, const double kStdDevPercentage)
 {
-  computeParameterLimits(IntrinsicParameter::Focal, kWindowSize, kStdDevPercentage); 
-  computeParameterLimits(IntrinsicParameter::Cx, kWindowSize, kStdDevPercentage); 
-  computeParameterLimits(IntrinsicParameter::Cy, kWindowSize, kStdDevPercentage); 
+  checkParameterLimits(EIntrinsicParameter::Focal, kWindowSize, kStdDevPercentage); 
+  checkParameterLimits(EIntrinsicParameter::Cx, kWindowSize, kStdDevPercentage); 
+  checkParameterLimits(EIntrinsicParameter::Cy, kWindowSize, kStdDevPercentage); 
 }
-
-template<typename T> 
-std::vector<T> LocalBA_Data::normalize(const std::vector<T>& data) 
-{ 
-  std::vector<T> normalizedData;
-  normalizedData.reserve(data.size());
-  T minVal = *std::min_element(data.begin(), data.end());
-  T maxVal = *std::max_element(data.begin(), data.end());
-  for (auto const& val : data)
-    normalizedData.push_back((val - minVal)/(maxVal - minVal));
-  return normalizedData;
-}  
 
 template<typename T> 
 double LocalBA_Data::standardDeviation(const std::vector<T>& data) 

@@ -17,6 +17,7 @@
 namespace openMVG {
 namespace sfm {
 
+
 /// Intrinsic parameters 
 /// <NbOfPosesWithACommonIntrinsic, IntrinsicParameters>
 using IntrinsicParams = std::pair<std::size_t, std::vector<double>>;
@@ -25,60 +26,113 @@ using IntrinsicParams = std::pair<std::size_t, std::vector<double>>;
 /// <IntrinsicId, IntrinsicsParametersHistory>
 using IntrinicsHistory = std::map<IndexT, std::vector<IntrinsicParams>>;
 
+/// Contains all the data needed to apply a Local Bundle Adjustment.
 class LocalBA_Data
 {
-public:
+  // ------------------------
+  // - Distances data -
+  // Local BA needs to know the distance of all the old posed views to the new poses.
+  // The bundle adjustment will be processed on the closest poses only.
+  // ------------------------
+  
+  // A graph where nodes are poses and an edge exists when 2 poses shared at least 'kMinNbOfMatches' matches.
   lemon::ListGraph graph_poses; 
   
+  // Ensure a minimum number of landmarks in common to consider the link.
+  static std::size_t const kMinNbOfMatches = 100;
+  
+  // A map associating each view index at its node in the graph 'graph_poses'.
   std::map<IndexT, lemon::ListGraph::Node> map_viewId_node;
   
+  // Contains all the last resected cameras
+  std::set<IndexT> set_newViewsId; 
+
   // Store the graph-distances to the new poses/views. 
   // If the view/pose is not connected to the new poses/views, its distance is -1.
   std::map<IndexT, int> map_viewId_distance;
   std::map<IndexT, int> map_poseId_distance;
   
-  IntrinicsHistory intrinsicsHistory; // Backup of the intrinsics parameters
+  // ------------------------
+  // - Intrinsics data -
+  // Local BA needs to know the evolution of all the intrinsics parameters.
+  // When camera parameters are enought reffined (no variation) they are set to constant in the BA.
+  // ------------------------
   
-  std::map<IndexT, std::vector<IndexT>> intrinsicsLimitIds; // <IntrinsicIndex, <F_limitId, CX_limitId, CY_limitId>>
+  // Backup of the intrinsics parameters
+  IntrinicsHistory intrinsicsHistory; 
+  
+  // Store, for each parameter of each intrinsic, the BA's index from which it has been concidered as constant.
+  // <IntrinsicIndex, <F_limitId, CX_limitId, CY_limitId>>
+  std::map<IndexT, std::vector<IndexT>> intrinsicsLimitIds; 
   
 public:
   
-  LocalBA_Data() {;}
+  
+  // -- Constructor
   LocalBA_Data(const SfM_Data& sfm_data);
   
-  enum IntrinsicParameter{Focal, Cx, Cy};
+  // -- Getters
+  int getPoseDistance(const IndexT poseId) const;
   
+  int getViewDistance(const IndexT viewId) const;
+  
+  std::set<IndexT> getNewViewsId() const {return set_newViewsId;}
+  
+  // -- Setters
+  void setNewViewsId(const std::set<IndexT>& newPosesId) {set_newViewsId = newPosesId;}
+  
+  // -- Methods
+  
+  /// @brief addIntrinsicsToHistory Add the current intrinsics of the reconstruction in the intrinsics history.
+  /// @param[in] sfm_data Contains all the information about the reconstruction, notably current intrinsics
   void addIntrinsicsToHistory(const SfM_Data& sfm_data);
   
-  void computeParameterLimits(const IntrinsicParameter &parameter, const std::size_t kWindowSize, const double kStdDevPercentage);
-
-  void computeAllParametersLimits(const std::size_t kWindowSize, const double kStdDevPercentage);
+  /// @brief EIntrinsicParameter
+  enum EIntrinsicParameter{Focal, Cx, Cy};
+  
+  /// @brief checkParameterLimits Compute, for each camera/intrinsic, the variation of the last \a windowSize values of the \a parameter.
+  /// If it consideres the variation of \a parameter as enought constant it updates \a intrinsicsLimitIds.
+  /// @details Pipeline:
+  /// \b H: the history of all the concidered parameter
+  /// \b S: the subpart of H including the last \a wondowSize values only.
+  /// \b sigma = stddev(S)
+  /// \b sigma_normalized = sigma / (max(H) - min(H))
+  /// \c if sigma_normalized < \a stdevPercentageLimit \c then the limit is reached.
+  /// @param[in] parameter The \a EIntrinsicParameter you want to check.
+  /// @param[in] windowSize Compute the variation on the \a windowSize parameter
+  /// @param[in] stdevPercentageLimit The limit is reached when the standard deviation of the \a windowSize values is less than \a stdevPecentageLimit % of the range of all the values.
+  void checkParameterLimits(
+    const EIntrinsicParameter parameter, 
+    const std::size_t windowSize, 
+    const double stdevPercentageLimit);
+  
+  /// @brief checkAllParametersLimits Run \a checkParameterLimits() for each \a EIntrinsicParameter.
+  void checkAllParametersLimits(const std::size_t kWindowSize, const double kStdDevPercentage);
+  
+  /// @brief isLimitReached Giving an intrinsic index and the wished parameter, is return \c true if the limit has alerady been reached, else \c false.
+  /// @param[in] intrinsicId The intrinsic index.
+  /// @param[in] parameter The \a EIntrinsicParameter to observe.
+  /// @return true if the limit is reached, else false
+  bool isLimitReached(const IndexT intrinsicId, const EIntrinsicParameter parameter) const { return intrinsicsLimitIds.at(intrinsicId).at(parameter) != 0;}
+  
+  /// @brief exportIntrinsicsHistory Save the history of each intrinsic. It create a file \b K<intrinsic_index>.txt in \a folder.
+  /// @param[in] folder The folder in which the \b K*.txt are saved.
+  void exportIntrinsicsHistory(const std::string& folder);
+  
+  /// @brief updateGraph Complete the graph '_reconstructionGraph' with new poses
+  void updateGraph(
+    const SfM_Data& sfm_data, 
+    const tracks::TracksPerView& map_tracksPerView);
+  
+  /// @brief computeDistancesMaps Add the newly resected views 'newViewsIds' into a graph (nodes: cameras, egdes: matching)
+  /// and compute the intragraph-distance between these new cameras and all the others.
+  void computeDistancesMaps(const SfM_Data& sfm_data);
+  
+private:
   
   std::vector<IndexT> getIntrinsicLimitIds(const IndexT intrinsicId) const {return intrinsicsLimitIds.at(intrinsicId);}
   
   std::vector<double> getLastIntrinsicParameters(const IndexT intrinsicId) const {return intrinsicsHistory.at(intrinsicId).back().second;}
-  
-  bool isLimitReached(const IndexT intrinsicId, IntrinsicParameter parameter) const { return intrinsicsLimitIds.at(intrinsicId).at(parameter) != 0;}
-  
-  void exportIntrinsicsHistory(const std::string& folder);
-  
-  
-  
-    /// @brief Complete the graph '_reconstructionGraph' with new poses
-  void updateGraph(const SfM_Data& sfm_data, 
-    const tracks::TracksPerView& map_tracksPerView,
-    const std::set<IndexT>& newViewIds);
-    
-  /// \brief Add the newly resected views 'newViewsIds' into a graph (nodes: cameras, egdes: matching)
-  /// and compute the intragraph-distance between these new cameras and all the others.
-  void computeDistancesMaps(const SfM_Data& sfm_data, 
-    const std::set<IndexT>& newViewIds);
-  
-private:
-  /// Normalize data as: 
-  /// normalizedData[i] = (data[i] - min(data)) / (max(data) - min(data)) 
-  template<typename T> 
-  std::vector<T> normalize(const std::vector<T>& data);
   
   template<typename T> 
   double standardDeviation(const std::vector<T>& data);
