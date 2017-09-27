@@ -1,43 +1,59 @@
 // This file is part of the AliceVision project and is made available under
 // the terms of the MPL2 license (see the COPYING.md file).
 
+#include "aliceVision/config.hpp"
+#include "aliceVision/system/Logger.hpp"
 #include "aliceVision/exif/EasyExifIO.hpp"
-using namespace aliceVision::exif;
 
-#include "dependencies/cmdLine/cmdLine.h"
+#include <boost/program_options.hpp>
+
 #include <memory>
+
+using namespace aliceVision::exif;
+namespace po = boost::program_options;
 
 int main(int argc, char **argv)
 {
-  CmdLine cmd;
+  std::string inputImage;
 
-  std::string sInputImage;
+  po::options_description allParams("AliceVision Sample exifParsing");
+  allParams.add_options()
+    ("inputImage", po::value<std::string>(&inputImage)->required(),
+      "An image.");
 
-  cmd.add( make_option('i', sInputImage, "imafile") );
+  po::variables_map vm;
+  try
+  {
+    po::store(po::parse_command_line(argc, argv, allParams), vm);
 
-  try {
-      if (argc == 1) throw std::string("Invalid command line parameter.");
-      cmd.process(argc, argv);
-  } catch(const std::string& s) {
-      std::cerr << "Usage: " << argv[0] << ' '
-      << "[-i|--imafile path] "
-      << std::endl;
-
-      std::cerr << s << std::endl;
-      return EXIT_FAILURE;
+    if(vm.count("help") || (argc == 1))
+    {
+      ALICEVISION_COUT(allParams);
+      return EXIT_SUCCESS;
+    }
+    po::notify(vm);
   }
-
-  std::cout << " You called : " <<std::endl
-            << argv[0] << std::endl
-            << "--imafile " << sInputImage << std::endl;
+  catch(boost::program_options::required_option& e)
+  {
+    ALICEVISION_CERR("ERROR: " << e.what());
+    ALICEVISION_COUT("Usage:\n\n" << allParams);
+    return EXIT_FAILURE;
+  }
+  catch(boost::program_options::error& e)
+  {
+    ALICEVISION_CERR("ERROR: " << e.what());
+    ALICEVISION_COUT("Usage:\n\n" << allParams);
+    return EXIT_FAILURE;
+  }
   
-  std::unique_ptr<ExifIO> exif_io( new EasyExifIO( sInputImage ) );
+  std::unique_ptr<ExifIO> exif_io(new EasyExifIO(inputImage));
 
-  std::cout << "width : " << exif_io->getWidth() << std::endl;
+  std::cout << "width : "  << exif_io->getWidth()  << std::endl;
   std::cout << "height : " << exif_io->getHeight() << std::endl;
-  std::cout << "focal : " << exif_io->getFocal() << std::endl;
-  std::cout << "brand : " << exif_io->getBrand() << std::endl;
-  std::cout << "model : " << exif_io->getModel() << std::endl;
+  std::cout << "focal : "  << exif_io->getFocal()  << std::endl;
+  std::cout << "brand : "  << exif_io->getBrand()  << std::endl;
+  std::cout << "model : "  << exif_io->getModel()  << std::endl;
+
   return EXIT_SUCCESS;
 }
 
