@@ -8,11 +8,11 @@
 #pragma once
 
 #include "openMVG/sfm/sfm_data_io.hpp"
-#include "openMVG/sfm/sfm_data_localBA.hpp"
 #include "openMVG/sfm/pipelines/sfm_engine.hpp"
 #include "openMVG/features/FeaturesPerView.hpp"
 #include "openMVG/sfm/pipelines/sfm_matches_provider.hpp"
 #include "openMVG/tracks/tracks.hpp"
+#include "openMVG/sfm/sfm_data_localBA.hpp"
 
 #include "third_party/htmlDoc/htmlDoc.hpp"
 #include "third_party/histogram/histogram.hpp"
@@ -25,7 +25,6 @@ namespace pt = boost::property_tree;
 
 namespace openMVG {
 namespace sfm {
-
 
 /// Sequential SfM Pipeline Reconstruction Engine.
 class SequentialSfMReconstructionEngine : public ReconstructionEngine
@@ -52,7 +51,8 @@ public:
   void RobustResectionOfImages(
       const std::set<size_t>& viewIds,
       std::set<size_t>& set_reconstructedViewId,
-      std::set<size_t>& set_rejectedViewId);
+      std::set<size_t>& set_rejectedViewId,
+      LocalBA_Data& localBA_data);
   
   virtual bool Process();
   
@@ -114,9 +114,6 @@ private:
   /// Image score contains <ImageId, NbPutativeCommonPoint, score, isIntrinsicsReconstructed>
   typedef std::tuple<IndexT, std::size_t, std::size_t, bool> ViewConnectionScore;
   
-  /// .... [TO COMMENT] ....
-  using IntrinsicsHistorical = std::map<IndexT, std::vector<std::pair<std::size_t, std::vector<double>>>>;
-  
   /// Return MSE (Mean Square Error) and a histogram of residual values.
   double ComputeResidualsHistogram(Histogram<double> * histo) const;
   
@@ -177,36 +174,17 @@ private:
   
   /// .... [TO COMMENT] ....
   bool localBundleAdjustment(const std::set<IndexT>& newReconstructedViewIds, 
-                             LocalBA_Data& localBA_data,
+                             LocalBA_Data& lba_data,
                              const string& filename);
-  
-
   
   /// Discard track with too large residual error
   size_t badTrackRejector(double dPrecision, size_t count = 0);
-  
-  /// Add the new views 'newViewIds' to the graph 'reconstructionGraph' used to the distances computation 
-  //  void updateGraph(const std::set<IndexT>& newViewIds);
-  
-  /**
-   * @brief Compute the distance/connexity to the new cameras for each resected cameras. 
-   * It updates the graph @p _reconstructionGraph and run a Breadth First Search on it.
-   * The distances for each pose and view is stored.
-   * @param[in] newViewIds: indexes of the recently added views to the reconstruction. They are used
-   * as root of the Breadth First Search.
-   * @param[out] map_distancePerViewId: a map storing the distance of each resected view to the new cameras 
-   * @param[out] map_distancePerPoseId: a map storing the distance of each resected pose to the new cameras 
-   */
-  //  void computeDistancesMaps(const std::set<IndexT>& newViewIds,
-  //    std::map<IndexT, size_t> &map_distancePerViewId, 
-  //    std::map<IndexT, size_t> &map_distancePerPoseId);
-  
+ 
 #if OPENMVG_IS_DEFINED(OPENMVG_HAVE_BOOST)
   /// Export statistics in a JSON file
   void exportStatistics(double time_sfm);
 #endif
-  
-  
+    
   //----
   //-- Data
   //----
@@ -242,6 +220,7 @@ private:
   // Property tree for json stats export
   pt::ptree _tree;
 #endif
+  
   
   // Temporary data
   /// Putative landmark tracks (visibility per potential 3D point)

@@ -166,7 +166,8 @@ SequentialSfMReconstructionEngine::~SequentialSfMReconstructionEngine()
 void SequentialSfMReconstructionEngine::RobustResectionOfImages(
     const std::set<size_t>& viewIds,
     std::set<size_t>& set_reconstructedViewId,
-    std::set<size_t>& set_rejectedViewId)
+    std::set<size_t>& set_rejectedViewId, 
+    LocalBA_Data& localBA_data)
 {
   size_t imageIndex = 0;
   size_t resectionGroupIndex = 0;
@@ -174,9 +175,9 @@ void SequentialSfMReconstructionEngine::RobustResectionOfImages(
   std::vector<size_t> vec_possible_resection_indexes;
   
   // Used by Local BA 
-  LocalBA_Data lba_data(_sfm_data);
+//  LocalBA_Data lba_data(_sfm_data);
   
-  lba_data.exportIntrinsicsHistory(_sOutDirectory); // export EXIF
+  localBA_data.exportIntrinsicsHistory(_sOutDirectory); // export EXIF
   
   while (FindNextImagesGroupForResection(vec_possible_resection_indexes, set_remainingViewId))
   {
@@ -234,7 +235,7 @@ void SequentialSfMReconstructionEngine::RobustResectionOfImages(
         std::cout << "set_newReconstructedViewId.size() = " << set_newReconstructedViewId.size() << std::endl;
         localBundleAdjustment(
               set_newReconstructedViewId, 
-              lba_data,
+              localBA_data,
               "first"); 
         
         //        localBundleAdjustment(
@@ -256,7 +257,7 @@ void SequentialSfMReconstructionEngine::RobustResectionOfImages(
       OPENMVG_LOG_DEBUG("Bundle with " << bundleAdjustmentIteration << " iterations took " << std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - chrono_start).count() << " msec.");
       chrono_start = std::chrono::steady_clock::now();
       
-      lba_data.exportIntrinsicsHistory(_sOutDirectory);
+      localBA_data.exportIntrinsicsHistory(_sOutDirectory);
             
       // Remove unstable poses & extract removed poses id
       Poses poses_saved =  _sfm_data.poses;
@@ -341,6 +342,7 @@ bool SequentialSfMReconstructionEngine::Process()
   std::set<std::size_t> reconstructedViewIds;
   std::set<std::size_t> rejectedViewIds;
   std::size_t nbRejectedLoops = 0;
+  LocalBA_Data localBA_data(_sfm_data);
   do
   {
     reconstructedViewIds.clear();
@@ -351,7 +353,8 @@ bool SequentialSfMReconstructionEngine::Process()
     RobustResectionOfImages(
           _set_remainingViewId,
           reconstructedViewIds,
-          rejectedViewIds);
+          rejectedViewIds, 
+          localBA_data);
     // Remove all reconstructed views from the remaining views
     for(const std::size_t v: reconstructedViewIds)
     {

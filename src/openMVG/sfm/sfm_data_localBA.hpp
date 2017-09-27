@@ -43,6 +43,7 @@ public:
   
 public:
   
+  LocalBA_Data() {;}
   LocalBA_Data(const SfM_Data& sfm_data);
   
   enum IntrinsicParameter{Focal, Cx, Cy};
