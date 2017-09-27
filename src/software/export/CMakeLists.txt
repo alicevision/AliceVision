@@ -10,6 +10,7 @@ target_link_libraries(aliceVision_exportKeypoints
   aliceVision_feature
   aliceVision_sfm
   stlplus
+  ${BOOST_LIBRARIES}
 )
 
 set_property(TARGET aliceVision_exportKeypoints
@@ -29,6 +30,7 @@ target_link_libraries(aliceVision_exportMatches
   aliceVision_feature
   aliceVision_sfm
   stlplus
+  ${BOOST_LIBRARIES}
 )
 
 set_property(TARGET aliceVision_exportMatches
@@ -48,6 +50,7 @@ target_link_libraries(aliceVision_exportTracks
   aliceVision_feature
   aliceVision_sfm
   stlplus
+  ${BOOST_LIBRARIES}
 )
 
 set_property(TARGET aliceVision_exportTracks
@@ -68,6 +71,7 @@ target_link_libraries(aliceVision_exportUndistortedImages
   aliceVision_feature
   aliceVision_sfm
   stlplus
+  ${BOOST_LIBRARIES}
 )
 
 set_property(TARGET aliceVision_exportUndistortedImages
@@ -88,6 +92,7 @@ target_link_libraries(aliceVision_exportPMVS
   aliceVision_feature
   aliceVision_sfm
   stlplus
+  ${BOOST_LIBRARIES}
 )
 
 set_property(TARGET aliceVision_exportPMVS
@@ -108,6 +113,7 @@ target_link_libraries(aliceVision_exportCMPMVS
   aliceVision_feature
   aliceVision_sfm
   stlplus
+  ${BOOST_LIBRARIES}
 )
 
 set_property(TARGET aliceVision_exportCMPMVS
@@ -128,6 +134,7 @@ target_link_libraries(aliceVision_exportCMPMVS2
   aliceVision_feature
   aliceVision_sfm
   stlplus
+  ${BOOST_LIBRARIES}
 )
 
 set_property(TARGET aliceVision_exportCMPMVS2
@@ -148,6 +155,7 @@ target_link_libraries(aliceVision_exportMVE2
   aliceVision_feature
   aliceVision_sfm
   stlplus
+  ${BOOST_LIBRARIES}
 )
 
 set_property(TARGET aliceVision_exportMVE2
@@ -168,6 +176,7 @@ target_link_libraries(aliceVision_exportMeshlab
   aliceVision_feature
   aliceVision_sfm
   stlplus
+  ${BOOST_LIBRARIES}
 )
 
 set_property(TARGET aliceVision_exportMeshlab
@@ -188,6 +197,7 @@ target_link_libraries(aliceVision_exportMVSTexturing
   aliceVision_feature
   aliceVision_sfm
   stlplus
+  ${BOOST_LIBRARIES}
 )
 
 set_property(TARGET aliceVision_exportMVSTexturing
@@ -208,6 +218,7 @@ target_link_libraries(aliceVision_exportMatlab
   aliceVision_feature
   aliceVision_sfm
   stlplus
+  ${BOOST_LIBRARIES}
 )
 
 set_property(TARGET aliceVision_exportMatlab
@@ -227,6 +238,7 @@ target_link_libraries(aliceVision_exportCameraFrustums
   aliceVision_feature
   aliceVision_sfm
   stlplus
+  ${BOOST_LIBRARIES}
 )
 
 set_property(TARGET aliceVision_exportCameraFrustums

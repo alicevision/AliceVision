@@ -64,6 +64,7 @@ target_link_libraries(aliceVision_utils_frustumFiltering
   aliceVision_sfm
   aliceVision_matchingImageCollection
   stlplus
+  ${BOOST_LIBRARIES}
 )
 
 set_property(TARGET aliceVision_utils_frustumFiltering
@@ -107,6 +108,7 @@ target_link_libraries(aliceVision_utils_qualityEvaluation
   aliceVision_feature
   aliceVision_sfm
   stlplus
+  ${BOOST_LIBRARIES}
 )
 
 set_property(TARGET aliceVision_utils_qualityEvaluation
@@ -126,6 +128,7 @@ target_link_libraries(aliceVision_utils_sfmAlignment
   aliceVision_feature
   aliceVision_sfm
   stlplus
+  ${BOOST_LIBRARIES}
 )
 
 set_property(TARGET aliceVision_utils_sfmAlignment
@@ -154,6 +157,7 @@ target_link_libraries(aliceVision_utils_sfmColorHarmonize
   ${CLP_LIBRARIES}
   ${COINUTILS_LIBRARY}
   ${OSI_LIBRARY}
+  ${BOOST_LIBRARIES}
 )
 
 set_property(TARGET aliceVision_utils_sfmColorHarmonize

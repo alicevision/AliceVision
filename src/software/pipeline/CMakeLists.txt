@@ -12,6 +12,7 @@ target_link_libraries(aliceVision_cameraInit
   aliceVision_exif
   aliceVision_sfm
   easyexif
+  ${BOOST_LIBRARIES}
 )
 
 set_property(TARGET aliceVision_cameraInit
@@ -36,6 +37,7 @@ target_link_libraries(aliceVision_featureExtraction
   easyexif
   stlplus
   vlsift
+  ${BOOST_LIBRARIES}
 )
 
 if(ALICEVISION_HAVE_CCTAG)
@@ -80,6 +82,7 @@ target_link_libraries(aliceVision_featureMatching
   aliceVision_sfm
   aliceVision_matchingImageCollection
   stlplus
+  ${BOOST_LIBRARIES}
 )
 
 set_property(TARGET aliceVision_featureMatching
@@ -100,6 +103,7 @@ target_link_libraries(aliceVision_incrementalSfM
   aliceVision_feature
   aliceVision_sfm
   stlplus
+  ${BOOST_LIBRARIES}
 )
 
 set_property(TARGET aliceVision_incrementalSfM
@@ -120,6 +124,7 @@ target_link_libraries(aliceVision_globalSfM
   aliceVision_feature
   aliceVision_sfm
   stlplus
+  ${BOOST_LIBRARIES}
 )
 
 set_property(TARGET aliceVision_globalSfM
@@ -139,6 +144,7 @@ target_link_libraries(aliceVision_computeStructureFromKnownPoses
   aliceVision_feature
   aliceVision_sfm
   stlplus
+  ${BOOST_LIBRARIES}
 )
 
 set_property(TARGET aliceVision_computeStructureFromKnownPoses
@@ -159,6 +165,7 @@ target_link_libraries(aliceVision_computeSfMColor
   aliceVision_feature
   aliceVision_sfm
   stlplus
+  ${BOOST_LIBRARIES}
 )
 
 set_property(TARGET aliceVision_computeSfMColor

@@ -50,6 +50,7 @@ if(ALICEVISION_HAVE_ALEMBIC)
 		aliceVision_feature
 		aliceVision_sfm
 		stlplus
+    ${BOOST_LIBRARIES}
 	)
 
 	set_property(TARGET aliceVision_convertAnimatedCamera
