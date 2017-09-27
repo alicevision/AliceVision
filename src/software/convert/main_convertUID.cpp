@@ -5,9 +5,9 @@
 #include "aliceVision/sfm/sfm.hpp"
 #include "aliceVision/system/Timer.hpp"
 
-#include "dependencies/cmdLine/cmdLine.h"
 #include "dependencies/stlplus3/filesystemSimplified/file_system.hpp"
-#include "dependencies/progress/progress.hpp"
+
+#include <boost/program_options.hpp>
 
 #include <cereal/archives/json.hpp>
 
@@ -20,50 +20,77 @@ using namespace aliceVision;
 using namespace aliceVision::image;
 using namespace aliceVision::feature;
 using namespace aliceVision::sfm;
-/*
- * 
- */
-int main(int argc, char** argv) {
+namespace po = boost::program_options;
 
-  CmdLine cmd;
+int main(int argc, char** argv)
+{
+  // command-line parameters
+
+  std::string verboseLevel = system::EVerboseLevel_enumToString(system::Logger::getDefaultVerboseLevel());
+  std::string sfmDataFilename;
+  std::string featuresDirectory;
   
-  std::string sSfMData_Filename;
-  std::string directory;
+  po::options_description allParams("AliceVision convertUID");
+
+  po::options_description requiredParams("Required parameters");
+  requiredParams.add_options()
+    ("input,i", po::value<std::string>(&sfmDataFilename)->required(),
+      "SfMData file.")
+    ("featuresDirectory,f", po::value<std::string>(&featuresDirectory)->required(),
+      "ath to a directory containing the extracted features.");
   
-  cmd.add( make_option('i', sSfMData_Filename, "input_file") );
-  cmd.add( make_option('d', directory, "directory") );
-  
-  try {
-      if (argc == 1) throw std::string("Invalid command line parameter.");
-      cmd.process(argc, argv);
-  } catch(const std::string& s)
+  po::options_description logParams("Log parameters");
+  logParams.add_options()
+    ("verboseLevel,v", po::value<std::string>(&verboseLevel)->default_value(verboseLevel),
+      "verbosity level (fatal,  error, warning, info, debug, trace).");
+
+  allParams.add(requiredParams).add(logParams);
+
+  po::variables_map vm;
+  try
   {
-      std::cerr << "Usage: " << argv[0] << '\n'
-      << "[-i|--input_file] the sfm_data file\n"
-      << "[-d|--directory] The directory where .feat and .desc files are\n"
-      << std::endl;
+    po::store(po::parse_command_line(argc, argv, allParams), vm);
 
-      std::cerr << s << std::endl;
-      return EXIT_FAILURE;
+    if(vm.count("help") || (argc == 1))
+    {
+      ALICEVISION_COUT(allParams);
+      return EXIT_SUCCESS;
+    }
+    po::notify(vm);
   }
-  
+  catch(boost::program_options::required_option& e)
+  {
+    ALICEVISION_CERR("ERROR: " << e.what());
+    ALICEVISION_COUT("Usage:\n\n" << allParams);
+    return EXIT_FAILURE;
+  }
+  catch(boost::program_options::error& e)
+  {
+    ALICEVISION_CERR("ERROR: " << e.what());
+    ALICEVISION_COUT("Usage:\n\n" << allParams);
+    return EXIT_FAILURE;
+  }
+
+  // set verbose level
+  system::Logger::get()->setLogLevel(verboseLevel);
+
   //Check directory name
-  if (!stlplus::is_folder(directory))
+  if (!stlplus::is_folder(featuresDirectory))
   {
     std::cout << "The directory can't be found" << std::endl;
     return false;
   }
   
   //Load Smf_data file:
-  SfMData sfm_data;
-  if (!Load(sfm_data, sSfMData_Filename, ESfMData(VIEWS|INTRINSICS))) {
+  SfMData sfmData;
+  if (!Load(sfmData, sfmDataFilename, ESfMData(VIEWS|INTRINSICS))) {
     std::cerr << std::endl
-      << "The input file \""<< sSfMData_Filename << "\" cannot be read" << std::endl;
+      << "The input file \""<< sfmDataFilename << "\" cannot be read" << std::endl;
     return false;
   }
   
-  Views::const_iterator iterViews = sfm_data.views.begin();
-  Views::const_iterator iterViewsEnd = sfm_data.views.end();
+  Views::const_iterator iterViews = sfmData.views.begin();
+  Views::const_iterator iterViewsEnd = sfmData.views.end();
   
   for(; iterViews != iterViewsEnd; ++iterViews)
   {
@@ -74,18 +101,16 @@ int main(int argc, char** argv) {
     std::string compared2(1,'/');
     std::string id = to_string(view->getViewId());
             
-    if (directory.substr(directory.size() - 1, directory.size()).compare(compared2) == 0)
+    if (featuresDirectory.substr(featuresDirectory.size() - 1, featuresDirectory.size()).compare(compared2) == 0)
     {
-      filename = directory + view->getImagePath().substr(1 ,view->getImagePath().find('.'));
-      newname = directory + id;
+      filename = featuresDirectory + view->getImagePath().substr(1 ,view->getImagePath().find('.'));
+      newname = featuresDirectory + id;
     }
     else 
     {
-      filename = directory + view->getImagePath().substr(0 ,view->getImagePath().find('.') + 1);
-      newname = directory + compared2 + id;
+      filename = featuresDirectory + view->getImagePath().substr(0 ,view->getImagePath().find('.') + 1);
+      newname = featuresDirectory + compared2 + id;
     }
-   
-     
     
     std::string oldDesc = filename + "desc";
     std::string newDesc = newname + ".desc";
