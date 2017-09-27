@@ -2,81 +2,76 @@
 // the terms of the MPL2 license (see the COPYING.md file).
 
 #include "aliceVision/image/image.hpp"
-
-using namespace aliceVision::image;
-
 #include "aliceVision/feature/feature.hpp"
 #include "aliceVision/feature/sift/ImageDescriber_SIFT.hpp"
 #include "aliceVision/matching/RegionsMatcher.hpp"
-
-using namespace aliceVision::matching;
-
-#include "dependencies/stlplus3/filesystemSimplified/file_system.hpp"
-
 #include "aliceVision/multiview/homographyKernelSolver.hpp"
 #include "aliceVision/multiview/conditioning.hpp"
-
-using namespace aliceVision;
-
+#include "aliceVision/matching/kvld/kvld.h"
+#include "aliceVision/matching/kvld/kvld_draw.h"
 #include "aliceVision/robustEstimation/ACRansac.hpp"
 #include "aliceVision/robustEstimation/ACRansacKernelAdaptator.hpp"
 
-using namespace aliceVision::robustEstimation;
-
+#include "dependencies/stlplus3/filesystemSimplified/file_system.hpp"
 #include "dependencies/vectorGraphics/svgDrawer.hpp"
 
-using namespace svg;
+#include <boost/program_options.hpp>
 
 #include <string>
 #include <iostream>
+
 using namespace std;
+using namespace svg;
+using namespace aliceVision;
+using namespace aliceVision::image;
+using namespace aliceVision::matching;
+using namespace aliceVision::robustEstimation;
+namespace po = boost::program_options;
 
-#include "aliceVision/matching/kvld/kvld.h"
-#include "aliceVision/matching/kvld/kvld_draw.h"
+int main(int argc, char **argv)
+{
+  std::string imageAFilename;
+  std::string imageBFilename;
+  std::string outputDirectory;
 
-#include "dependencies/cmdLine/cmdLine.h"
+  po::options_description allParams("AliceVision Sample kvldFilter");
+  allParams.add_options()
+    ("imageAFilename,a", po::value<std::string>(&imageAFilename)->required(),
+      "Left image.")
+    ("imageBFilename,b", po::value<std::string>(&imageBFilename)->required(),
+      "Right image.");
+    ("output,o", po::value<std::string>(&outputDirectory)->required(),
+      "Output directory.");
 
-int main(int argc, char **argv) {
-  CmdLine cmd;
-
-  std::string sImg1 = stlplus::folder_up(string(THIS_SOURCE_DIR))
-    + "/imageData/StanfordMobileVisualSearch/Ace_0.png";
-  std::string sImg2 = stlplus::folder_up(string(THIS_SOURCE_DIR))
-    + "/imageData/StanfordMobileVisualSearch/Ace_1.png";
-  std::string sOutDir = "./kvldOut";
-  std::cout << sImg1 << std::endl << sImg2 << std::endl;
-  cmd.add( make_option('i', sImg1, "img1") );
-  cmd.add( make_option('j', sImg2, "img2") );
-  cmd.add( make_option('o', sOutDir, "outdir") );
-
-  if (argc > 1)
+  po::variables_map vm;
+  try
   {
-    try {
-      if (argc == 1) throw std::string("Invalid command line parameter.");
-      cmd.process(argc, argv);
-    } catch(const std::string& s) {
-        std::cerr << "Usage: " << argv[0] << ' '
-        << "[-i|--img1 file] "
-        << "[-j|--img2 file] "
-        << "[-o|--outdir path] "
-        << std::endl;
+    po::store(po::parse_command_line(argc, argv, allParams), vm);
 
-        std::cerr << s << std::endl;
-        return EXIT_FAILURE;
+    if(vm.count("help") || (argc == 1))
+    {
+      ALICEVISION_COUT(allParams);
+      return EXIT_SUCCESS;
     }
+    po::notify(vm);
   }
-
-  std::cout << " You called : " <<std::endl
-            << argv[0] << std::endl
-            << "--img1 " << sImg1 << std::endl
-            << "--img2 " << sImg2 << std::endl
-            << "--outdir " << sOutDir << std::endl;
-
-  if (sOutDir.empty())  {
-    std::cerr << "\nIt is an invalid output directory" << std::endl;
+  catch(boost::program_options::required_option& e)
+  {
+    ALICEVISION_CERR("ERROR: " << e.what());
+    ALICEVISION_COUT("Usage:\n\n" << allParams);
+    return EXIT_FAILURE;
+  }
+  catch(boost::program_options::error& e)
+  {
+    ALICEVISION_CERR("ERROR: " << e.what());
+    ALICEVISION_COUT("Usage:\n\n" << allParams);
     return EXIT_FAILURE;
   }
 
+  if (outputDirectory.empty())  {
+    std::cerr << "\nIt is an invalid output directory" << std::endl;
+    return EXIT_FAILURE;
+  }
 
   // -----------------------------
   // a. List images
@@ -87,11 +82,11 @@ int main(int argc, char **argv) {
   // -----------------------------
 
   // Create output dir
-  if (!stlplus::folder_exists(sOutDir))
-    stlplus::folder_create( sOutDir );
+  if (!stlplus::folder_exists(outputDirectory))
+    stlplus::folder_create( outputDirectory );
 
-  const string jpg_filenameL = sImg1;
-  const string jpg_filenameR = sImg2;
+  const string jpg_filenameL = imageAFilename;
+  const string jpg_filenameR = imageBFilename;
 
   Image<unsigned char> imageL, imageR;
   ReadImage(jpg_filenameL.c_str(), &imageL);
@@ -237,7 +232,7 @@ int main(int argc, char **argv) {
       }
     }
     string out_filename = "05_KVLD_Matches.svg";
-    out_filename = stlplus::create_filespec(sOutDir, out_filename);
+    out_filename = stlplus::create_filespec(outputDirectory, out_filename);
     ofstream svgFile( out_filename.c_str() );
     svgFile << svgStream.closeSvgFile().str();
     svgFile.close();
@@ -266,7 +261,7 @@ int main(int argc, char **argv) {
       }
     }
     string out_filename = "06_KVLD_Keypoints.svg";
-    out_filename = stlplus::create_filespec(sOutDir, out_filename);
+    out_filename = stlplus::create_filespec(outputDirectory, out_filename);
     ofstream svgFile( out_filename.c_str() );
     svgFile << svgStream.closeSvgFile().str();
     svgFile.close();
@@ -284,12 +279,12 @@ int main(int argc, char **argv) {
 
   {
     string out_filename = "07_Left-K-VLD-MASK.jpg";
-    out_filename = stlplus::create_filespec(sOutDir, out_filename);
+    out_filename = stlplus::create_filespec(outputDirectory, out_filename);
     WriteImage(out_filename.c_str(), imageOutL);
   }
   {
     string out_filename = "08_Right-K-VLD-MASK.jpg";
-    out_filename = stlplus::create_filespec(sOutDir, out_filename);
+    out_filename = stlplus::create_filespec(outputDirectory, out_filename);
     WriteImage(out_filename.c_str(), imageOutR);
   }
 
