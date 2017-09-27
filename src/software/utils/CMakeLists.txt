@@ -168,6 +168,26 @@ install(TARGETS aliceVision_utils_sfmColorHarmonize
   DESTINATION bin/
 )
 
+# SfM alignment
+
+add_executable(aliceVision_utils_sfmLocalization main_sfmLocalization.cpp)
+
+target_link_libraries(aliceVision_utils_sfmLocalization
+  aliceVision_system
+  aliceVision_feature
+  aliceVision_sfm
+  stlplus
+  ${BOOST_LIBRARIES}
+)
+
+set_property(TARGET aliceVision_utils_sfmLocalization
+  PROPERTY FOLDER AliceVision/Software/Utils
+)
+
+install(TARGETS aliceVision_utils_sfmLocalization
+  DESTINATION bin/
+)
+
 # Keyframe selection
 # - export keyframes from video files / image sequence directories
 
