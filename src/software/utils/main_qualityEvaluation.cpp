@@ -8,58 +8,79 @@
 #include "software/utils/sfmHelper/sfmPlyHelper.hpp"
 
 #include "dependencies/htmlDoc/htmlDoc.hpp"
-#include "dependencies/cmdLine/cmdLine.h"
+
+#include <boost/program_options.hpp>
 
 #include <cstdlib>
 #include <iostream>
 
 using namespace aliceVision;
 using namespace aliceVision::sfm;
+namespace po = boost::program_options;
+using namespace std;
 
 int main(int argc, char **argv)
 {
-  using namespace std;
+  // command-line parameters
 
-  CmdLine cmd;
+  std::string verboseLevel = system::EVerboseLevel_enumToString(system::Logger::getDefaultVerboseLevel());
+  std::string sfmDataFilename;
+  std::string outputDirectory;
+  std::string gtFilename;
 
-  std::string
-    sGTFile,
-    sComputedFile,
-    sOutDirectory = "";
+  po::options_description allParams("AliceVision qualityEvaluation");
 
+  po::options_description requiredParams("Required parameters");
+  requiredParams.add_options()
+    ("input,i", po::value<std::string>(&sfmDataFilename)->required(),
+      "SfMData file.")
+    ("output,o", po::value<std::string>(&outputDirectory)->required(),
+      "Output path for statistics.")
+    ("groundTruthPath", po::value<std::string>(&gtFilename)->required(),
+      "Path to a ground truth reconstructed scene");
 
-  cmd.add( make_option('i', sGTFile, "gt") );
-  cmd.add( make_option('c', sComputedFile, "computed") );
-  cmd.add( make_option('o', sOutDirectory, "outdir") );
+  po::options_description logParams("Log parameters");
+  logParams.add_options()
+    ("verboseLevel,v", po::value<std::string>(&verboseLevel)->default_value(verboseLevel),
+      "verbosity level (fatal,  error, warning, info, debug, trace).");
 
-  try {
-    if (argc == 1) throw std::string("Invalid command line parameter.");
-    cmd.process(argc, argv);
-  } catch(const std::string& s) {
-    std::cerr << "Usage: " << argv[0] << '\n'
-      << "[-i|--gt] ground truth path: it could be a json/bin"
-#if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_ALEMBIC)
-      << "/abc"
-#endif
-      << " file containing\n"
-      << " a reconstructed scene or localized camera, or the path to a directory\n"
-      << " containing the 2 other directories, \"images\" containing the images of\n"
-      << " the scene, and \"gt_dense_cameras\" containing the corresponding .camera files\n"
-      << "[-c|--computed] path (aliceVision sfm_data.json file)\n"
-      << "[-o|--outdir] path (where statistics will be saved)\n"
-      << std::endl;
+  allParams.add(requiredParams).add(logParams);
 
-    std::cerr << s << std::endl;
+  po::variables_map vm;
+  try
+  {
+    po::store(po::parse_command_line(argc, argv, allParams), vm);
+
+    if(vm.count("help") || (argc == 1))
+    {
+      ALICEVISION_COUT(allParams);
+      return EXIT_SUCCESS;
+    }
+    po::notify(vm);
+  }
+  catch(boost::program_options::required_option& e)
+  {
+    ALICEVISION_CERR("ERROR: " << e.what());
+    ALICEVISION_COUT("Usage:\n\n" << allParams);
+    return EXIT_FAILURE;
+  }
+  catch(boost::program_options::error& e)
+  {
+    ALICEVISION_CERR("ERROR: " << e.what());
+    ALICEVISION_COUT("Usage:\n\n" << allParams);
     return EXIT_FAILURE;
   }
 
-  if (sOutDirectory.empty())  {
+  // set verbose level
+  system::Logger::get()->setLogLevel(verboseLevel);
+
+  if (outputDirectory.empty())  {
     std::cerr << "\nIt is an invalid output directory" << std::endl;
     return EXIT_FAILURE;
   }
 
-  if (!stlplus::folder_exists(sOutDirectory))
-    stlplus::folder_create(sOutDirectory);
+  if (!stlplus::folder_exists(outputDirectory))
+    stlplus::folder_create(outputDirectory);
 
   //---------------------------------------
   // Quality evaluation
@@ -69,19 +90,19 @@ int main(int argc, char **argv)
   SfMData sfm_data_gt;
   // READ DATA FROM GT
   std::cout << "Try to read data from GT" << std::endl;
-  if (!Load(sfm_data_gt, sGTFile, ESfMData(VIEWS|INTRINSICS|EXTRINSICS)))
+  if (!Load(sfm_data_gt, gtFilename, ESfMData(VIEWS|INTRINSICS|EXTRINSICS)))
   {
-    std::cerr << "The input SfMData file \""<< sComputedFile << "\" cannot be read." << std::endl;
+    std::cerr << "The input SfMData file \""<< sfmDataFilename << "\" cannot be read." << std::endl;
     return EXIT_FAILURE;
   }
   std::cout << sfm_data_gt.GetPoses().size() << " gt cameras have been found" << std::endl;
 
   //-- Load the camera that we have to evaluate
   SfMData sfm_data;
-  if (!Load(sfm_data, sComputedFile, ESfMData(VIEWS|INTRINSICS|EXTRINSICS)))
+  if (!Load(sfm_data, sfmDataFilename, ESfMData(VIEWS|INTRINSICS|EXTRINSICS)))
   {
     std::cerr << std::endl
-      << "The input SfMData file \""<< sComputedFile << "\" cannot be read." << std::endl;
+      << "The input SfMData file \""<< sfmDataFilename << "\" cannot be read." << std::endl;
     return EXIT_FAILURE;
   }
 
@@ -118,14 +139,14 @@ int main(int argc, char **argv)
   }
 
   // Visual output of the camera location
-  plyHelper::exportToPly(vec_camPosGT, string(stlplus::folder_append_separator(sOutDirectory) + "camGT.ply").c_str());
-  plyHelper::exportToPly(vec_C, string(stlplus::folder_append_separator(sOutDirectory) + "camComputed.ply").c_str());
+  plyHelper::exportToPly(vec_camPosGT, string(stlplus::folder_append_separator(outputDirectory) + "camGT.ply").c_str());
+  plyHelper::exportToPly(vec_C, string(stlplus::folder_append_separator(outputDirectory) + "camComputed.ply").c_str());
 
   // Evaluation
   htmlDocument::htmlDocumentStream _htmlDocStream("aliceVision Quality evaluation.");
-  EvaluteToGT(vec_camPosGT, vec_C, vec_camRotGT, vec_camRot, sOutDirectory, &_htmlDocStream);
+  EvaluteToGT(vec_camPosGT, vec_C, vec_camRotGT, vec_camRot, outputDirectory, &_htmlDocStream);
 
-  ofstream htmlFileStream( string(stlplus::folder_append_separator(sOutDirectory) +
+  ofstream htmlFileStream( string(stlplus::folder_append_separator(outputDirectory) +
     "ExternalCalib_Report.html"));
   htmlFileStream << _htmlDocStream.getDoc();
 
