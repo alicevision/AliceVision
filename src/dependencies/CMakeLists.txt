@@ -112,7 +112,7 @@ if(DEFINED ALICEVISION_USE_INTERNAL_EIGEN)
   add_subdirectory(eigen)
 endif()
 
-list(APPEND directories cmdLine histogram htmlDoc vectorGraphics)
+list(APPEND directories histogram htmlDoc vectorGraphics)
 foreach(inDirectory ${directories})
   install(
     DIRECTORY ./${inDirectory}
