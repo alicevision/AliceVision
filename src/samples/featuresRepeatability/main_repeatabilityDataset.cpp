@@ -11,16 +11,18 @@
 
 #include "dependencies/stlplus3/filesystemSimplified/file_system.hpp"
 #include "dependencies/vectorGraphics/svgDrawer.hpp"
-#include "dependencies/cmdLine/cmdLine.h"
+
+#include <boost/program_options.hpp>
 
 #include <string>
 #include <iostream>
 
+using namespace svg;
+using namespace std;
 using namespace aliceVision;
 using namespace aliceVision::image;
 using namespace aliceVision::matching;
-using namespace svg;
-using namespace std;
+namespace po = boost::program_options;
 
 // Class to load images and ground truth homography matrices
 // A reference image
@@ -190,56 +192,53 @@ struct RepeatabilityResults_Matching
 //
 int main(int argc, char **argv)
 {
-  CmdLine cmd;
-  //--
-  // Command line parameters
-  std::string sDataset_Path = "";
-  std::string sImage_Describer_Method = "SIFT";
-  std::string sFeature_Preset = "NORMAL";
-  bool bFeature_Repeatability = false;
-  bool bMatching_Repeatability = false;
-  cmd.add( make_option('i', sDataset_Path, "input_dataset") );
-  cmd.add( make_option('d', sImage_Describer_Method, "describer_method") );
-  cmd.add( make_option('p', sFeature_Preset, "describer_preset") );
-  cmd.add( make_option('f', bFeature_Repeatability, "feature_repeatability") );
-  cmd.add( make_option('m', bMatching_Repeatability, "matching_repeatability") );
-  //--
+  std::string datasetPath;
+  std::string describerTypesName = feature::EImageDescriberType_enumToString(feature::EImageDescriberType::SIFT);
+  std::string describerPreset = "NORMAL";
+  bool featureRepeatability = false;
+  bool matchingRepeatability = false;
 
-  //--
-  // Command line parsing
-  try {
-      if (argc == 1) throw std::string("Invalid command line parameter.");
-      cmd.process(argc, argv);
-  } catch(const std::string& s) {
-      std::cerr << "Usage: " << argv[0] << '\n'
-      << "[-i|--input_dataset] the path to the datasets \n"
-      << "\n[Optional]\n"
-      << "[-d|--describer_method]\n"
-      << "  (method to use to describe an image):\n"
-      << "   SIFT (default),\n"
-      << "   AKAZE_FLOAT: AKAZE with floating point descriptors.\n"
-      << "[-p|--describer_preset]\n"
-      << "  (used to control the ImageDescriber configuration):\n"
-      << "   LOW,\n"
-      << "   MEDIUM,\n"
-      << "   NORMAL (default),\n"
-      << "   HIGH,\n"
-      << "   ULTRA: !!Can take long time!!\n"
-      << "[-f|--feature_repeatability]\n"
-      << "  (used to control the ImageDescriber configuration):\n"
-      << "   0 (default),\n"
-      << "   1\n"
-      << "[-m|--matching_repeatability]\n"
-      << "   1 (default),\n"
-      << "   0\n"
-      << std::endl;
+  po::options_description allParams("AliceVision Sample repeatabilityDataset");
+  allParams.add_options()
+    ("datasetPath", po::value<std::string>(&datasetPath)->required(),
+      "Path to the datasets.")
+    ("describerTypes,d", po::value<std::string>(&describerTypesName)->default_value(describerTypesName),
+      feature::EImageDescriberType_informations().c_str())
+    ("describerPreset,p", po::value<std::string>(&describerPreset)->default_value(describerPreset),
+      "Control the ImageDescriber configuration (low, medium, normal, high, ultra).\n"
+      "Configuration 'ultra' can take long time !")
+    ("featureRepeatability", po::bool_switch(&featureRepeatability)->default_value(featureRepeatability),
+      "Feature repeatability.")
+    ("matchingRepeatability", po::bool_switch(&matchingRepeatability)->default_value(matchingRepeatability),
+      "MatchingRepeatability.");
 
-      std::cerr << s << std::endl;
-      return EXIT_FAILURE;
+  po::variables_map vm;
+  try
+  {
+    po::store(po::parse_command_line(argc, argv, allParams), vm);
+
+    if(vm.count("help") || (argc == 1))
+    {
+      ALICEVISION_COUT(allParams);
+      return EXIT_SUCCESS;
+    }
+    po::notify(vm);
   }
-  //--
+  catch(boost::program_options::required_option& e)
+  {
+    ALICEVISION_CERR("ERROR: " << e.what());
+    ALICEVISION_COUT("Usage:\n\n" << allParams);
+    return EXIT_FAILURE;
+  }
+  catch(boost::program_options::error& e)
+  {
+    ALICEVISION_CERR("ERROR: " << e.what());
+    ALICEVISION_COUT("Usage:\n\n" << allParams);
+    return EXIT_FAILURE;
+  }
 
-  if (bFeature_Repeatability && bMatching_Repeatability)
+
+  if (featureRepeatability && matchingRepeatability)
   {
     std::cerr << "Only one repeatability test can be performed at a time." << std::endl;
     return EXIT_FAILURE;
@@ -254,10 +253,10 @@ int main(int argc, char **argv)
   const double nndr = 0.8;
 
   // List all subdirectories and for each one compute the repeatability
-  const std::vector<std::string> vec_dataset_path = stlplus::folder_subdirectories(sDataset_Path);
+  const std::vector<std::string> vec_dataset_path = stlplus::folder_subdirectories(datasetPath);
   for (auto const& dataset_path : vec_dataset_path)
   {
-    const std::string sPath = stlplus::create_filespec(sDataset_Path, dataset_path);
+    const std::string sPath = stlplus::create_filespec(datasetPath, dataset_path);
     if (stlplus::is_file(sPath))
       continue;
 
@@ -270,12 +269,12 @@ int main(int argc, char **argv)
 
       using namespace aliceVision::feature;
       std::unique_ptr<ImageDescriber> image_describer;
-      if (sImage_Describer_Method == "SIFT")
+      if (describerTypesName == "SIFT")
       {
         image_describer.reset(new ImageDescriber_SIFT(SiftParams()));
       }
       else
-      if (sImage_Describer_Method == "AKAZE_FLOAT")
+      if (describerTypesName == "AKAZE_FLOAT")
       {
         image_describer.reset(new ImageDescriber_AKAZE(AKAZEParams(AKAZEConfig(), AKAZE_MSURF)));
       }
@@ -283,12 +282,12 @@ int main(int argc, char **argv)
       if (!image_describer)
       {
         std::cerr << "Cannot create the designed ImageDescriber:"
-          << sImage_Describer_Method << "." << std::endl;
+          << describerTypesName << "." << std::endl;
         return EXIT_FAILURE;
       }
       else
       {
-        if (!image_describer->Set_configuration_preset(sFeature_Preset))
+        if (!image_describer->Set_configuration_preset(describerPreset))
         {
           std::cerr << "Preset configuration failed." << std::endl;
           return EXIT_FAILURE;
@@ -307,7 +306,7 @@ int main(int argc, char **argv)
 
       // Repeatability evaluation to the first image
       // Evaluate the feature positions accuracy (descriptors are ignored)
-      if (bFeature_Repeatability)
+      if (featureRepeatability)
       {
         for (size_t i = 1; i < dataset.size(); ++i)
         {
@@ -338,7 +337,7 @@ int main(int argc, char **argv)
         }
       }
 
-      if (bMatching_Repeatability)
+      if (matchingRepeatability)
       {
         // Test the repeatability (matching (descriptor))
         RepeatabilityResults_Matching image_results;
