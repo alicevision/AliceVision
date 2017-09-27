@@ -4,64 +4,84 @@
 #include "aliceVision/image/image.hpp"
 #include "aliceVision/camera/camera.hpp"
 
-#include "dependencies/cmdLine/cmdLine.h"
 #include "dependencies/stlplus3/filesystemSimplified/file_system.hpp"
 
 #include <boost/progress.hpp>
+#include <boost/program_options.hpp>
 
 #include <string>
 #include <iostream>
 
+using namespace std;
 using namespace aliceVision;
 using namespace aliceVision::camera;
 using namespace aliceVision::image;
-using namespace std;
+namespace po = boost::program_options;
 
 int main(int argc, char **argv)
 {
-  CmdLine cmd;
-
-  std::string sPath;
-  std::string sOutPath;
+  std::string inputImagePath;
+  std::string outputImagePath;
   // Temp storage for the Brown's distortion model
   Vec2 c; // distortion center
   Vec3 k; // distortion factors
   double f; // Focal
-  std::string suffix = "JPG";
+  std::string suffix = "jpg";
 
-  cmd.add( make_option('i', sPath, "imadir") );
-  cmd.add( make_option('o', sOutPath, "outdir") );
-  cmd.add( make_option('a', c(0), "cx") );
-  cmd.add( make_option('b', c(1), "cy") );
-  cmd.add( make_option('c', k(0), "k1") );
-  cmd.add( make_option('d', k(1), "k2") );
-  cmd.add( make_option('e', k(2), "k3") );
-  cmd.add( make_option('f', f, "focal") );
-  cmd.add( make_option('s', suffix, "suffix") );
+  po::options_description allParams("AliceVision Sample undistoBrown");
+  allParams.add_options()
+    ("input,i", po::value<std::string>(&inputImagePath)->required(),
+      "An image.")
+    ("output,o", po::value<std::string>(&outputImagePath)->required(),
+      "An image.")
+    ("cx", po::value<double>(&c(0))->required(),
+      "Distortion center (x).")
+    ("cy", po::value<double>(&c(1))->required(),
+      "Distortion center (y).")
+    ("k1", po::value<double>(&k(0))->required(),
+      "Distortion factors (1).")
+    ("k2", po::value<double>(&k(1))->required(),
+      "Distortion factors (2).")
+    ("k3", po::value<double>(&k(2))->required(),
+      "Distortion factors (3).")
+    ("focal", po::value<double>(&f)->required(),
+      "Focal length.")
+    ("suffix", po::value<std::string>(&suffix)->default_value(suffix),
+      "Suffix of the input files.");
 
-  try {
-      if (argc == 1) throw std::string("Invalid command line parameter.");
-      cmd.process(argc, argv);
-  } catch(const std::string& s) {
-      std::cerr << "Usage: " << argv[0] << ' '
-      << "[-i|--imadir - Input path]\n"
-      << "[-o|--outdir - path for the undistorted JPG files]\n"
-      << "[-f|--focal - focal length]\n"
-      << "[-s|--suffix - Suffix of the input files. (default: JPG)]\n"
-      << std::endl;
+  po::variables_map vm;
+  try
+  {
+    po::store(po::parse_command_line(argc, argv, allParams), vm);
 
-      std::cerr << s << std::endl;
-      return EXIT_FAILURE;
+    if(vm.count("help") || (argc == 1))
+    {
+      ALICEVISION_COUT(allParams);
+      return EXIT_SUCCESS;
+    }
+    po::notify(vm);
+  }
+  catch(boost::program_options::required_option& e)
+  {
+    ALICEVISION_CERR("ERROR: " << e.what());
+    ALICEVISION_COUT("Usage:\n\n" << allParams);
+    return EXIT_FAILURE;
+  }
+  catch(boost::program_options::error& e)
+  {
+    ALICEVISION_CERR("ERROR: " << e.what());
+    ALICEVISION_COUT("Usage:\n\n" << allParams);
+    return EXIT_FAILURE;
   }
 
-  if (sOutPath == sPath)
+  if (outputImagePath == inputImagePath)
   {
     std::cerr << "Input and Ouput path are set to the same value" << std::endl;
     return EXIT_FAILURE;
   }
 
-  if (!stlplus::folder_exists(sOutPath))
-    stlplus::folder_create(sOutPath);
+  if (!stlplus::folder_exists(outputImagePath))
+    stlplus::folder_create(outputImagePath);
 
   std::cout << "Used Brown's distortion model values: \n"
     << "  Distortion center: " << c.transpose() << "\n"
@@ -70,8 +90,8 @@ int main(int argc, char **argv)
     << "  Distortion focal: " << f << std::endl;
 
   const std::vector<std::string> vec_fileNames =
-    stlplus::folder_wildcard(sPath, "*."+suffix, false, true);
-  std::cout << "\nLocated " << vec_fileNames.size() << " files in " << sPath
+    stlplus::folder_wildcard(inputImagePath, "*."+suffix, false, true);
+  std::cout << "\nLocated " << vec_fileNames.size() << " files in " << inputImagePath
     << " with suffix " << suffix;
 
   Image<unsigned char > imageGreyIn, imageGreyU;
@@ -85,8 +105,8 @@ int main(int argc, char **argv)
     int w,h,depth;
     vector<unsigned char> tmp_vec;
     const string sOutFileName =
-      stlplus::create_filespec(sOutPath, stlplus::basename_part(vec_fileNames[j]), "JPG");
-    const string sInFileName = stlplus::create_filespec(sPath, stlplus::basename_part(vec_fileNames[j]));
+      stlplus::create_filespec(outputImagePath, stlplus::basename_part(vec_fileNames[j]), "JPG");
+    const string sInFileName = stlplus::create_filespec(inputImagePath, stlplus::basename_part(vec_fileNames[j]));
     const int res = ReadImage(sInFileName.c_str(), &tmp_vec, &w, &h, &depth);
 
     const PinholeRadialK3 cam(w, h, f, c(0), c(1), k(0), k(1), k(2));
