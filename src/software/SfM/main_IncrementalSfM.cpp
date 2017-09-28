@@ -97,6 +97,7 @@ int main(int argc, char **argv)
   int minInputTrackLength = 2;
   int i_User_camera_model = PINHOLE_CAMERA_RADIAL3;
   bool allowUserInteraction = true;
+  bool localBA = false;
 
   cmd.add( make_option('i', sSfM_Data_Filename, "input_file") );
   cmd.add( make_option('d', describerMethods, "describerMethods") );
@@ -111,6 +112,7 @@ int main(int argc, char **argv)
   cmd.add( make_option('f', bRefineIntrinsics, "refineIntrinsics") );
   cmd.add( make_option('t', minInputTrackLength, "minInputTrackLength") );
   cmd.add( make_option('u', allowUserInteraction, "allowUserInteraction") );
+  cmd.add( make_option('l', localBA, "localBA") );
 
   try {
     if (argc == 1) throw std::string("Invalid parameter.");
@@ -152,13 +154,15 @@ int main(int argc, char **argv)
     << "[-p|--matchFilePerImage] \n"
     << "\t To use one match file per image instead of a global file.\n"
     << "[-u|--allowUserInteraction] Enable/Disable user interactions. (default: true)\n"
-    << "\t If the process is done on renderfarm, it doesn't make sense to wait for user inputs.\n"
+    << "\t If the process is done on renderfarm, it doesn't make sense to wait for user inputs.\n"    
+    << "[-l|--localBA] Enable/Disable the Local Bundle Adjustment strategy. (default: false)\n"
+    << "\t It may be helpfull in case of big dataset of images.\n"
     << std::endl;
 
     std::cerr << s << std::endl;
     return EXIT_FAILURE;
   }
-
+    
   if(sOutSfMDataFilepath.empty())
     sOutSfMDataFilepath = stlplus::create_filespec(sOutDir, "sfm_data", "json");
 
@@ -224,6 +228,7 @@ int main(int argc, char **argv)
   sfmEngine.setMinInputTrackLength(minInputTrackLength);
   sfmEngine.setSfmdataInterFileExtension(sOutInterFileExtension);
   sfmEngine.setAllowUserInteraction(allowUserInteraction);
+  sfmEngine.setUseLocalBundleAdjustmentStrategy(localBA);
 
   // Handle Initial pair parameter
   if (!initialPairString.first.empty() && !initialPairString.second.empty())

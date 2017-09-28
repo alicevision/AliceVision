@@ -127,8 +127,7 @@ SequentialSfMReconstructionEngine::SequentialSfMReconstructionEngine(
   : ReconstructionEngine(sfm_data, soutDirectory),
     _sLoggingFile(sloggingFile),
     _initialpair(Pair(0,0)),
-    _camType(EINTRINSIC(PINHOLE_CAMERA_RADIAL3)),
-    _localBA_data(new LocalBA_Data(sfm_data))
+    _camType(EINTRINSIC(PINHOLE_CAMERA_RADIAL3))
 {
   if (!_sLoggingFile.empty())
   {
@@ -173,8 +172,9 @@ void SequentialSfMReconstructionEngine::RobustResectionOfImages(
   size_t resectionGroupIndex = 0;
   std::set<size_t> set_remainingViewId(viewIds);
   std::vector<size_t> vec_possible_resection_indexes;
-    
-  _localBA_data->exportIntrinsicsHistory(_sOutDirectory); // export EXIF
+  
+  if (_uselocalBundleAdjustment)  
+    _localBA_data->exportIntrinsicsHistory(_sOutDirectory); // export EXIF
   
   while (FindNextImagesGroupForResection(vec_possible_resection_indexes, set_remainingViewId))
   {
@@ -204,7 +204,8 @@ void SequentialSfMReconstructionEngine::RobustResectionOfImages(
     }
     OPENMVG_LOG_DEBUG("Resection of " << vec_possible_resection_indexes.size() << " new images took " << std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - chrono_start).count() << " msec.");
     
-    _localBA_data->setNewViewsId(set_newReconstructedViewId);
+    if (_uselocalBundleAdjustment)
+      _localBA_data->setNewViewsId(set_newReconstructedViewId);
     
     if (bImageAdded)
     {
@@ -228,16 +229,11 @@ void SequentialSfMReconstructionEngine::RobustResectionOfImages(
       {
         auto chrono2_start = std::chrono::steady_clock::now();
         
-        //        BundleAdjustment();
-        localBundleAdjustment("first"); 
-        
-        //        localBundleAdjustment(
-        //              set_newReconstructedViewId, 
-        //              graph_poses, 
-        //              map_viewId_node, 
-        //              map_poseId_distance, 
-        //              "second");
-        
+        if (_uselocalBundleAdjustment)
+          localBundleAdjustment("first"); 
+        else
+          BundleAdjustment();
+                
         
         OPENMVG_LOG_DEBUG("Resection group index: " << resectionGroupIndex << ", bundle iteration: " << bundleAdjustmentIteration
                           << " took " << std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - chrono2_start).count() << " msec.");
@@ -250,7 +246,8 @@ void SequentialSfMReconstructionEngine::RobustResectionOfImages(
       OPENMVG_LOG_DEBUG("Bundle with " << bundleAdjustmentIteration << " iterations took " << std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - chrono_start).count() << " msec.");
       chrono_start = std::chrono::steady_clock::now();
       
-      _localBA_data->exportIntrinsicsHistory(_sOutDirectory);
+      if (_uselocalBundleAdjustment)
+        _localBA_data->exportIntrinsicsHistory(_sOutDirectory);
             
       // Remove unstable poses & extract removed poses id
       Poses poses_saved =  _sfm_data.poses;
@@ -335,7 +332,7 @@ bool SequentialSfMReconstructionEngine::Process()
   std::set<std::size_t> reconstructedViewIds;
   std::set<std::size_t> rejectedViewIds;
   std::size_t nbRejectedLoops = 0;
-  LocalBA_Data localBA_data(_sfm_data);
+  
   do
   {
     reconstructedViewIds.clear();

@@ -105,6 +105,13 @@ public:
     _minTrackLength = minTrackLength;
   }
   
+  void setUseLocalBundleAdjustmentStrategy(bool v)
+  {
+    _uselocalBundleAdjustment = v;
+    if (v)
+      _localBA_data = std::make_shared<LocalBA_Data>(_sfm_data);
+  }
+  
 protected:
   
   
@@ -200,6 +207,7 @@ private:
   int _minInputTrackLength = 2;
   int _minTrackLength = 2;
   int _minPointsPerPose = 30;
+  bool _uselocalBundleAdjustment = false;
   
   //-- Data provider
   features::FeaturesPerView  * _featuresPerView;
@@ -218,7 +226,7 @@ private:
 #endif
   
   // Local Bundle Adjustment data
-  // Contains all needed to Local BA approach (poses graph, intrinsics history etc.)
+  // Contains all needed data to Local BA approach (poses graph, intrinsics history etc.)
   std::shared_ptr<LocalBA_Data> _localBA_data;
   
   // Temporary data
