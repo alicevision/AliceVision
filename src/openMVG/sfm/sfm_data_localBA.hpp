@@ -29,7 +29,7 @@ using IntrinicsHistory = std::map<IndexT, std::vector<IntrinsicParams>>;
 /// Contains all the data needed to apply a Local Bundle Adjustment.
 class LocalBA_Data
 {
- 
+  
 public:
   
   // -- Constructor
@@ -69,9 +69,9 @@ public:
   /// @param[in] windowSize Compute the variation on the \a windowSize parameter
   /// @param[in] stdevPercentageLimit The limit is reached when the standard deviation of the \a windowSize values is less than \a stdevPecentageLimit % of the range of all the values.
   void checkParameterLimits(
-    const EIntrinsicParameter parameter, 
-    const std::size_t windowSize, 
-    const double stdevPercentageLimit);
+      const EIntrinsicParameter parameter, 
+      const std::size_t windowSize, 
+      const double stdevPercentageLimit);
   
   /// @brief checkAllParametersLimits Run \a checkParameterLimits() for each \a EIntrinsicParameter.
   void checkAllParametersLimits(const std::size_t kWindowSize, const double kStdDevPercentage);
@@ -88,18 +88,27 @@ public:
   
   /// @brief updateGraph Complete the graph with the newly resected views \a set_newViewsId, or all the posed views if the graph is empty.
   void updateGraph(
-    const SfM_Data& sfm_data, 
-    const tracks::TracksPerView& map_tracksPerView);
-
+      const SfM_Data& sfm_data, 
+      const tracks::TracksPerView& map_tracksPerView);
   
+  /// @brief removeViewsToTheGraph Remove some views to the graph. It delete the node and all the incident arcs for each removed view.
+  /// @param[in] removedViewsId Set of views index to remove
+  /// @return true if the number of removed node is equal to the size of \c removedViewsId
   bool removeViewsToTheGraph(const std::set<IndexT>& removedViewsId);
-
+  
   /// @brief computeDistancesMaps Add the newly resected views 'newViewsIds' into a graph (nodes: cameras, egdes: matching)
   /// and compute the intragraph-distance between these new cameras and all the others.
   void computeDistancesMaps(const SfM_Data& sfm_data);
   
 private:
   
+  std::set<IndexT> selectViewsToAddToTheGraph(const SfM_Data& sfm_data);
+  
+  std::map<Pair, std::size_t> countMatchesPerImagesPair(
+      const SfM_Data& sfm_data,
+      const tracks::TracksPerView& map_tracksPerView,
+      const std::set<IndexT>& addedViewsId);
+ 
   std::vector<IndexT> getIntrinsicLimitIds(const IndexT intrinsicId) const {return intrinsicsLimitIds.at(intrinsicId);}
   
   std::vector<double> getLastIntrinsicParameters(const IndexT intrinsicId) const {return intrinsicsHistory.at(intrinsicId).back().second;}
@@ -124,7 +133,7 @@ private:
   
   // Contains all the last resected cameras
   std::set<IndexT> set_newViewsId; 
-
+  
   // Store the graph-distances to the new poses/views. 
   // If the view/pose is not connected to the new poses/views, its distance is -1.
   std::map<IndexT, int> map_viewId_distance;
@@ -144,8 +153,6 @@ private:
   std::map<IndexT, std::vector<IndexT>> intrinsicsLimitIds; 
   
 };
-
-
 
 } // namespace sfm
 } // namespace openMVG

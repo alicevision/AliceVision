@@ -46,25 +46,17 @@ int LocalBA_Data::getViewDistance(const IndexT viewId) const
   return map_viewId_distance.at(viewId);
 }
 
-
-// -- Setters
-
-// -- Methods
-void LocalBA_Data::updateGraph(
-    const SfM_Data& sfm_data, 
-    const tracks::TracksPerView& map_tracksPerView)
+// -- Methods 
+std::set<IndexT> LocalBA_Data::selectViewsToAddToTheGraph(const SfM_Data& sfm_data)
 {
-  OPENMVG_LOG_INFO("Updating the distances graph with newly resected views...");
-
-  std::set<IndexT> viewIdsAddedToTheGraph;
+  std::set<IndexT> addedViewsId;
   
-  // -- Add nodes (= views)
   // Identify the view we need to add to the graph:
   if (graph_poses.maxNodeId() == -1) // empty graph 
   {
     OPENMVG_LOG_INFO("'map_viewId_node' is empty: first local BA.");
     for (auto & it : sfm_data.GetPoses())
-      viewIdsAddedToTheGraph.insert(it.first);
+      addedViewsId.insert(it.first);
   }
   else // not empty graph 
   {
@@ -72,29 +64,22 @@ void LocalBA_Data::updateGraph(
     {
       auto it = map_viewId_node.find(viewId);
       if (it == map_viewId_node.end()) // the view does not already have an associated node
-        viewIdsAddedToTheGraph.insert(viewId);
+        addedViewsId.insert(viewId);
     }
   }
   
-  if (viewIdsAddedToTheGraph.empty())
+  if (addedViewsId.empty())
   {
-    return;
+    OPENMVG_LOG_DEBUG("No views is add to the graph.");
   }
-  
-  std::cout << "graph_poses.maxNodeId() = " << graph_poses.maxNodeId() << std::endl;
-  std::cout << "viewIdsAddedToTheGraph.size() = " << viewIdsAddedToTheGraph.size() << std::endl;
-  
-  // Add the views as nodes to the graph:
-  //  std::cout << "nouveaux noeuds ajoutés au graph (viewIds) : " << std::endl;
-  std::cout << "adding node to the graph..." << std::endl;
-  for (auto& viewId : viewIdsAddedToTheGraph)
-  {
-    lemon::ListGraph::Node newNode = graph_poses.addNode();
-    map_viewId_node[viewId] = newNode;  
-  }
-  
-  // -- Add edge.
-  
+  return addedViewsId;
+}
+
+std::map<Pair, std::size_t> LocalBA_Data::countMatchesPerImagesPair(
+    const SfM_Data& sfm_data,
+    const tracks::TracksPerView& map_tracksPerView,
+    const std::set<IndexT>& addedViewsId)
+{
   // An edge is created between 2 views when they share at least 'L' landmarks (by default L=100).
   // At first, we need to count the number of shared landmarks between all the new views 
   // and each already resected cameras (already in the graph)
@@ -106,8 +91,7 @@ void LocalBA_Data::updateGraph(
                  std::inserter(landmarkIds, landmarkIds.begin()),
                  stl::RetrieveKey());
   
-  std::cout << "createing map_imagesPair_nbSharedLandmarks..." << std::endl;
-  for(const auto& viewId: viewIdsAddedToTheGraph)
+  for(const auto& viewId: addedViewsId)
   {
     // Get all the tracks of the new added view
     const openMVG::tracks::TrackIdSet& newView_trackIds = map_tracksPerView.at(viewId);
@@ -138,59 +122,40 @@ void LocalBA_Data::updateGraph(
           it->second++;
       }
     }
-    
-    std::map<Pair, std::size_t> map_imagesPair_nbSharedLandmarks;
-    
-    std::set<IndexT> landmarkIds;
-    std::transform(sfm_data.GetLandmarks().begin(), sfm_data.GetLandmarks().end(),
-                   std::inserter(landmarkIds, landmarkIds.begin()),
-                   stl::RetrieveKey());
-    
-    std::cout << "createing map_imagesPair_nbSharedLandmarks..." << std::endl;
-    for(const auto& viewId: viewIdsAddedToTheGraph)
+  }
+  return map_imagesPair_nbSharedLandmarks;
+}
+
+void LocalBA_Data::updateGraph(
+    const SfM_Data& sfm_data, 
+    const tracks::TracksPerView& map_tracksPerView)
+{
+  OPENMVG_LOG_INFO("Updating the distances graph with newly resected views...");
+  
+  std::set<IndexT> addedViewsId = selectViewsToAddToTheGraph(sfm_data);
+  
+  std::map<Pair, std::size_t> map_imagesPair_nbSharedLandmarks 
+      = countMatchesPerImagesPair(sfm_data, map_tracksPerView, addedViewsId);
+  
+  // -- Add nodes to the graph
+  for (auto& viewId : addedViewsId)
+  {
+    lemon::ListGraph::Node newNode = graph_poses.addNode();
+    map_viewId_node[viewId] = newNode;  
+  }
+  
+  // -- Add edges to the graph
+  std::size_t numEdges = 0;
+  for(auto& it: map_imagesPair_nbSharedLandmarks)
+  {
+    if(it.second > kMinNbOfMatches) // ensure a minimum number of landmarks in common to consider the link
     {
-      const openMVG::tracks::TrackIdSet& newView_trackIds = map_tracksPerView.at(viewId);
-      
-      // Retrieve the common track Ids
-      std::vector<IndexT> newView_landmarks; // all landmarks (already reconstructed) visible from the new view
-      
-      newView_landmarks.reserve(newView_trackIds.size());
-      
-      std::set_intersection(newView_trackIds.begin(), newView_trackIds.end(),
-                            landmarkIds.begin(), landmarkIds.end(),
-                            std::back_inserter(newView_landmarks));
-      
-      for(auto landmark: newView_landmarks)
-      {
-        for(auto viewObs: sfm_data.structure.at(landmark).observations)
-        {
-          if (viewObs.first == viewId) continue; // do not compare an observation with itself
-          
-          // Increment the number of common landmarks between the new view and the already 
-          // reconstructed cameras (observations).
-          // format: pair<min_viewid, max_viewid>
-          auto viewPair = std::make_pair(std::min(viewId, viewObs.first), std::max(viewId, viewObs.first));
-          auto it = map_imagesPair_nbSharedLandmarks.find(viewPair);
-          if(it == map_imagesPair_nbSharedLandmarks.end())  // the first common landmark
-            map_imagesPair_nbSharedLandmarks[viewPair] = 1;
-          else
-            it->second++;
-        }
-      }
-    }
-    
-    // add edges in the graph
-    std::cout << "adding Edges to the graph..." << std::endl;
-    
-    for(auto& it: map_imagesPair_nbSharedLandmarks)
-    {
-      if(it.second > kMinNbOfMatches) // ensure a minimum number of landmarks in common to consider the link
-      {
-        graph_poses.addEdge(map_viewId_node.at(it.first.first), map_viewId_node.at(it.first.second));
-      }
+      graph_poses.addEdge(map_viewId_node.at(it.first.first), map_viewId_node.at(it.first.second));
+      numEdges++;
     }
   }
-  std::cout << "in: updateDistancesgrpah: done" << std::endl;
+  OPENMVG_LOG_INFO("The distances graph has been completed with " 
+  << addedViewsId.size() << " nodes & " << numEdges << " edges.");
 }
 
 bool LocalBA_Data::removeViewsToTheGraph(const std::set<IndexT>& removedViewsId)
@@ -211,7 +176,7 @@ bool LocalBA_Data::removeViewsToTheGraph(const std::set<IndexT>& removedViewsId)
       OPENMVG_LOG_DEBUG("The removed view #" << viewId << " does not exist in the 'map_viewId_node'.");
   }
   
-  return numRemovedNode > 0;
+  return numRemovedNode == removedViewsId.size();
 }
 
 void LocalBA_Data::computeDistancesMaps(const SfM_Data& sfm_data)
@@ -239,10 +204,10 @@ void LocalBA_Data::computeDistancesMaps(const SfM_Data& sfm_data)
   {
     auto& node = it.second;
     int d = -1; 
-
+    
     if (bfs.reached(node))
       d = bfs.dist(node);
-      
+    
     map_viewId_distance[it.first] = d;
   }
   
@@ -288,7 +253,7 @@ void LocalBA_Data::checkParameterLimits(const EIntrinsicParameter parameter, con
   if (parameter == EIntrinsicParameter::Cx) paramName = "Principal Point X";
   if (parameter == EIntrinsicParameter::Cy) paramName = "Principal Point Y";
   OPENMVG_LOG_INFO("Checking, for each camera, if the " << paramName << " is stable...");
-
+  
   for (auto& elt : intrinsicsHistory)
   {
     IndexT idIntr = elt.first;
@@ -327,7 +292,7 @@ void LocalBA_Data::checkParameterLimits(const EIntrinsicParameter parameter, con
         filteredValuesVec.erase(filteredValuesVec.begin()+id);
       }
     }
-        
+    
     // Detect limit according to 'kWindowSize':
     if (numPosesEndWindow < windowSize)
       continue;
@@ -355,12 +320,12 @@ void LocalBA_Data::checkParameterLimits(const EIntrinsicParameter parameter, con
     if (normStdev*100.0 <= stdevPercentageLimit && intrinsicsLimitIds.at(idIntr).at(parameter) == 0)
     {
       intrinsicsLimitIds.at(idIntr).at(parameter) = numPosesEndWindow;
- 
+      
       OPENMVG_LOG_INFO("The " << paramName << " is considered to be stable.\n" 
-      << "- minimum value = " << minVal << "\n"
-      << "- maximal value = " << minVal << "\n"
-      << "- std. dev. (normalized) = " << normStdev << "\n"
-      << "- current value = " << filteredValuesVec.back() << " (= constant) \n");
+                       << "- minimum value = " << minVal << "\n"
+                       << "- maximal value = " << minVal << "\n"
+                       << "- std. dev. (normalized) = " << normStdev << "\n"
+                       << "- current value = " << filteredValuesVec.back() << " (= constant) \n");
     }
   }
 }
@@ -381,7 +346,6 @@ double LocalBA_Data::standardDeviation(const std::vector<T>& data)
   double sq_sum = std::inner_product(diff.begin(), diff.end(), diff.begin(), 0.0);
   return std::sqrt(sq_sum / data.size());
 }  
-
 
 void LocalBA_Data::exportIntrinsicsHistory(const std::string& folder)
 {
