@@ -29,49 +29,15 @@ using IntrinicsHistory = std::map<IndexT, std::vector<IntrinsicParams>>;
 /// Contains all the data needed to apply a Local Bundle Adjustment.
 class LocalBA_Data
 {
-  // ------------------------
-  // - Distances data -
-  // Local BA needs to know the distance of all the old posed views to the new poses.
-  // The bundle adjustment will be processed on the closest poses only.
-  // ------------------------
-  
-  // A graph where nodes are poses and an edge exists when 2 poses shared at least 'kMinNbOfMatches' matches.
-  lemon::ListGraph graph_poses; 
-  
-  // Ensure a minimum number of landmarks in common to consider the link.
-  static std::size_t const kMinNbOfMatches = 100;
-  
-  // A map associating each view index at its node in the graph 'graph_poses'.
-  std::map<IndexT, lemon::ListGraph::Node> map_viewId_node;
-  
-  // Contains all the last resected cameras
-  std::set<IndexT> set_newViewsId; 
-
-  // Store the graph-distances to the new poses/views. 
-  // If the view/pose is not connected to the new poses/views, its distance is -1.
-  std::map<IndexT, int> map_viewId_distance;
-  std::map<IndexT, int> map_poseId_distance;
-  
-  // ------------------------
-  // - Intrinsics data -
-  // Local BA needs to know the evolution of all the intrinsics parameters.
-  // When camera parameters are enought reffined (no variation) they are set to constant in the BA.
-  // ------------------------
-  
-  // Backup of the intrinsics parameters
-  IntrinicsHistory intrinsicsHistory; 
-  
-  // Store, for each parameter of each intrinsic, the BA's index from which it has been concidered as constant.
-  // <IntrinsicIndex, <F_limitId, CX_limitId, CY_limitId>>
-  std::map<IndexT, std::vector<IndexT>> intrinsicsLimitIds; 
-  
+ 
 public:
   
-  
   // -- Constructor
+  
   LocalBA_Data(const SfM_Data& sfm_data);
   
   // -- Getters
+  
   int getPoseDistance(const IndexT poseId) const;
   
   int getViewDistance(const IndexT viewId) const;
@@ -79,6 +45,7 @@ public:
   std::set<IndexT> getNewViewsId() const {return set_newViewsId;}
   
   // -- Setters
+  
   void setNewViewsId(const std::set<IndexT>& newPosesId) {set_newViewsId = newPosesId;}
   
   // -- Methods
@@ -119,11 +86,14 @@ public:
   /// @param[in] folder The folder in which the \b K*.txt are saved.
   void exportIntrinsicsHistory(const std::string& folder);
   
-  /// @brief updateGraph Complete the graph '_reconstructionGraph' with new poses
+  /// @brief updateGraph Complete the graph with the newly resected views \a set_newViewsId, or all the posed views if the graph is empty.
   void updateGraph(
     const SfM_Data& sfm_data, 
     const tracks::TracksPerView& map_tracksPerView);
+
   
+  bool removeViewsToTheGraph(const std::set<IndexT>& removedViewsId);
+
   /// @brief computeDistancesMaps Add the newly resected views 'newViewsIds' into a graph (nodes: cameras, egdes: matching)
   /// and compute the intragraph-distance between these new cameras and all the others.
   void computeDistancesMaps(const SfM_Data& sfm_data);
@@ -136,6 +106,43 @@ private:
   
   template<typename T> 
   double standardDeviation(const std::vector<T>& data);
+  
+  // ------------------------
+  // - Distances data -
+  // Local BA needs to know the distance of all the old posed views to the new resected views.
+  // The bundle adjustment will be processed on the closest poses only.
+  // ------------------------
+  
+  // Ensure a minimum number of landmarks in common to consider 2 views as connected in the graph.
+  static std::size_t const kMinNbOfMatches = 100;
+  
+  // A graph where nodes are poses and an edge exists when 2 poses shared at least 'kMinNbOfMatches' matches.
+  lemon::ListGraph graph_poses; 
+  
+  // A map associating each view index at its node in the graph 'graph_poses'.
+  std::map<IndexT, lemon::ListGraph::Node> map_viewId_node;
+  
+  // Contains all the last resected cameras
+  std::set<IndexT> set_newViewsId; 
+
+  // Store the graph-distances to the new poses/views. 
+  // If the view/pose is not connected to the new poses/views, its distance is -1.
+  std::map<IndexT, int> map_viewId_distance;
+  std::map<IndexT, int> map_poseId_distance;
+  
+  // ------------------------
+  // - Intrinsics data -
+  // Local BA needs to know the evolution of all the intrinsics parameters.
+  // When camera parameters are enought reffined (no variation) they are set to constant in the BA.
+  // ------------------------
+  
+  // Backup of the intrinsics parameters
+  IntrinicsHistory intrinsicsHistory; 
+  
+  // Store, for each parameter of each intrinsic, the BA's index from which it has been concidered as constant.
+  // <IntrinsicIndex, <F_limitId, CX_limitId, CY_limitId>>
+  std::map<IndexT, std::vector<IndexT>> intrinsicsLimitIds; 
+  
 };
 
 

@@ -29,7 +29,7 @@ int LocalBA_Data::getPoseDistance(const IndexT poseId) const
   if (map_poseId_distance.find(poseId) == map_poseId_distance.end())
   {
     OPENMVG_LOG_DEBUG("The pose #" << poseId << " does not exist in the 'map_poseId_distance':\n"
-    << map_poseId_distance);
+                      << map_poseId_distance);
     return -1;
   }
   return map_poseId_distance.at(poseId);
@@ -40,7 +40,7 @@ int LocalBA_Data::getViewDistance(const IndexT viewId) const
   if (map_viewId_distance.find(viewId) == map_viewId_distance.end())
   {
     OPENMVG_LOG_DEBUG("The view #" << viewId << " does not exist in the 'map_viewId_distance':\n"
-    << map_viewId_distance);
+                      << map_viewId_distance);
     return -1;
   }
   return map_viewId_distance.at(viewId);
@@ -51,34 +51,35 @@ int LocalBA_Data::getViewDistance(const IndexT viewId) const
 
 // -- Methods
 void LocalBA_Data::updateGraph(
-  const SfM_Data& sfm_data, 
-  const tracks::TracksPerView& map_tracksPerView)
+    const SfM_Data& sfm_data, 
+    const tracks::TracksPerView& map_tracksPerView)
 {
-  std::cout << "in: updateDistancesgrpah" << std::endl;
-  std::cout << "newViewIds.size() = " << set_newViewsId.size() << std::endl;
+  OPENMVG_LOG_INFO("Updating the distances graph with newly resected views...");
+
   std::set<IndexT> viewIdsAddedToTheGraph;
   
   // -- Add nodes (= views)
   // Identify the view we need to add to the graph:
-  if (graph_poses.maxNodeId() == -1) 
+  if (graph_poses.maxNodeId() == -1) // empty graph 
   {
-    std::cout << "map_viewId_node est vide ! (premier LBA théoriquement)" << std::endl;
+    OPENMVG_LOG_INFO("'map_viewId_node' is empty: first local BA.");
     for (auto & it : sfm_data.GetPoses())
       viewIdsAddedToTheGraph.insert(it.first);
   }
-  else 
+  else // not empty graph 
   {
-    std::cout << "map_viewId_node non vide ! (tjs sauf lors du du premier LBA théoriquement)" << std::endl;
     for (const IndexT viewId : set_newViewsId)
     {
       auto it = map_viewId_node.find(viewId);
-      if (it == map_viewId_node.end()) // the view doesn't already have an associated node
+      if (it == map_viewId_node.end()) // the view does not already have an associated node
         viewIdsAddedToTheGraph.insert(viewId);
     }
   }
   
   if (viewIdsAddedToTheGraph.empty())
+  {
     return;
+  }
   
   std::cout << "graph_poses.maxNodeId() = " << graph_poses.maxNodeId() << std::endl;
   std::cout << "viewIdsAddedToTheGraph.size() = " << viewIdsAddedToTheGraph.size() << std::endl;
@@ -190,14 +191,32 @@ void LocalBA_Data::updateGraph(
     }
   }
   std::cout << "in: updateDistancesgrpah: done" << std::endl;
+}
+
+bool LocalBA_Data::removeViewsToTheGraph(const std::set<IndexT>& removedViewsId)
+{
+  std::size_t numRemovedNode = 0;
+  for (const IndexT& viewId : removedViewsId)
+  {
+    auto it = map_viewId_node.find(viewId);
+    if (it != map_viewId_node.end())
+    {
+      // this function erase a node with its incident arcs
+      graph_poses.erase(it->second);
+      map_viewId_node.erase(it);
+      numRemovedNode++;
+      OPENMVG_LOG_INFO("The view #" << viewId << " has been successfully removed to the distance graph.");
+    }
+    else 
+      OPENMVG_LOG_DEBUG("The removed view #" << viewId << " does not exist in the 'map_viewId_node'.");
+  }
   
+  return numRemovedNode > 0;
 }
 
 void LocalBA_Data::computeDistancesMaps(const SfM_Data& sfm_data)
-{  
-  std::cout << "\nvvv ------------------------ vvv" << std::endl;
-  std::cout << "in: computeDistancesMaps" << std::endl;
-  std::cout << "newViewIds.size() = " << set_newViewsId.size() << std::endl;
+{ 
+  OPENMVG_LOG_INFO("Computing distance maps...");
   map_viewId_distance.clear();
   map_poseId_distance.clear();
   
@@ -206,46 +225,28 @@ void LocalBA_Data::computeDistancesMaps(const SfM_Data& sfm_data)
   bfs.init();
   
   // Add source views for the bfs visit of the _reconstructionGraph
-  std::cout << "... adding sources to the BFS " << std::endl;
-  std::cout << "nb de sources : " << set_newViewsId.size() << std::endl;
-  std::cout << "taille de la map_viewId_node = " << map_viewId_node.size() << std::endl;
   for(const IndexT viewId: set_newViewsId)
   {
-    std::cout << "ajout d'un noeud avec la vue #" << viewId << std::endl;
     auto it = map_viewId_node.find(viewId);
     if (it == map_viewId_node.end())
-      std::cout << "ERROR!!! La vue #" << viewId << " pas trouvée dans map_viewId_node!" << std::endl;
+      OPENMVG_LOG_DEBUG("The removed view #" << viewId << " does not exist in the 'map_viewId_node'.");
     bfs.addSource(it->second);
   }
-  std::cout << "bfs.emptyQueue() = " << bfs.emptyQueue() << " - doit être false (0)" << std::endl;
-  std::cout << "bfs.start... " << std::endl;
   bfs.start();
   
   // Handle bfs results (distances)
-  std::cout << " Handle bfs results" << std::endl;
   for(auto it: map_viewId_node) // each node in the graph
   {
     auto& node = it.second;
-    //    int d = bfs.dist(node);
-    
     int d = -1; 
+
     if (bfs.reached(node))
       d = bfs.dist(node);
-    
-    //    int d = bfs.dist(node);
-    //    if (bfs.reached(node)) // check if the node is connected to a source node
-    //      std::cout << "vue #" << it.first << ", dist:" << d << std::endl;
-    //    else 
-    //      std::cout << "vue #" << it.first << ", dist:" << d << " (not reached) "<< std::endl;
-    
+      
     map_viewId_distance[it.first] = d;
-    
   }
   
-  std::cout << "_map_viewId_distance.size() = " << map_viewId_distance.size() << std::endl;
-  
   // Re-mapping: from <ViewId, distance> to <PoseId, distance>:
-  std::cout << "Re-mapping: from <ViewId, distance> to <PoseId, distance>" << std::endl;
   for(auto it: map_viewId_distance)
   {
     // Get the poseId of the camera no. viewId
@@ -259,28 +260,13 @@ void LocalBA_Data::computeDistancesMaps(const SfM_Data& sfm_data)
       map_poseId_distance[idPose] = it.second;
   } 
   
-  // Display result: viewId -> distance to recent cameras
-  {    
-    OPENMVG_LOG_INFO("-- View distances map: ");
-    for (auto & itVMap: map_viewId_distance)
-    {
-      OPENMVG_LOG_INFO( itVMap.first << " -> " << itVMap.second);
-    }
-    
-    //    OPENMVG_LOG_INFO("-- Pose distances map: ");
-    //    for (auto & itPMap: _map_poseId_distance)
-    //    {
-    //      OPENMVG_LOG_INFO( itPMap.first << " -> " << itPMap.second);
-    //    }
+  // (Optionnal) Display result: viewId -> distance to recent cameras
+  OPENMVG_LOG_INFO("-- Map <ViewId -> Distance>: ");
+  for (auto & itVMap: map_viewId_distance)
+  {
+    OPENMVG_LOG_INFO( itVMap.first << " -> " << itVMap.second);
   }
-  
-  
-  std::cout << "in: computeDistancesMaps (done)" << std::endl;
-  std::cout << "^^^ ------------------------ ^^^\n" << std::endl;
-  
 }
-
-
 
 void LocalBA_Data::addIntrinsicsToHistory(const SfM_Data& sfm_data)
 {
@@ -295,12 +281,14 @@ void LocalBA_Data::addIntrinsicsToHistory(const SfM_Data& sfm_data)
   }
 }
 
-// focal: parameterId = 0
-// Cx: parameterId = 1
-// Cy: parameterId = 2
 void LocalBA_Data::checkParameterLimits(const EIntrinsicParameter parameter, const std::size_t windowSize, const double stdevPercentageLimit)
 {
-  std::cout << "Updating parameter #" << parameter << std::endl;
+  std::string paramName;
+  if (parameter == EIntrinsicParameter::Focal) paramName = "Focal";
+  if (parameter == EIntrinsicParameter::Cx) paramName = "Principal Point X";
+  if (parameter == EIntrinsicParameter::Cy) paramName = "Principal Point Y";
+  OPENMVG_LOG_INFO("Checking, for each camera, if the " << paramName << " is stable...");
+
   for (auto& elt : intrinsicsHistory)
   {
     IndexT idIntr = elt.first;
@@ -308,7 +296,6 @@ void LocalBA_Data::checkParameterLimits(const EIntrinsicParameter parameter, con
     // Do not compute limits if there are already reached for each parameter
     if (intrinsicsLimitIds.at(idIntr).at(parameter) != 0)
       continue;
-    
     
     // Get the full history of intrinsic parameters
     std::vector<std::size_t> allNumPosesVec;
@@ -320,7 +307,6 @@ void LocalBA_Data::checkParameterLimits(const EIntrinsicParameter parameter, con
       allValuesVec.push_back(pair_uses_params.second.at(parameter));
     }
     
-    std::cout << "- Clean duplicated & removed cameras..." << std::endl;
     // Clean 'intrinsicsHistorical':
     //  [4 5 5 7 8 6 9]
     // - detect duplicates -> [4 (5) 5 7 8 6 9]
@@ -341,13 +327,7 @@ void LocalBA_Data::checkParameterLimits(const EIntrinsicParameter parameter, con
         filteredValuesVec.erase(filteredValuesVec.begin()+id);
       }
     }
-    
-    /* Display info */
-    std::cout << "-- K #" << idIntr << std::endl;
-    std::cout << "allNumPosesVec = " << allNumPosesVec << std::endl;
-    std::cout << "allValuesVec = " << allValuesVec << std::endl;
-    std::cout << "filteredValuesVec = " << filteredValuesVec << std::endl;
-    
+        
     // Detect limit according to 'kWindowSize':
     if (numPosesEndWindow < windowSize)
       continue;
@@ -361,14 +341,9 @@ void LocalBA_Data::checkParameterLimits(const EIntrinsicParameter parameter, con
         break;
       }
     }
-
-    std::size_t numPosesStartWindow = filteredNumPosesVec.at(idStartWindow);
     
     // Compute the standard deviation for each parameter, between [idLimit; end()]
-    std::cout << "- Subpart vector..." << std::endl;
-    std::vector<double> subNumPosesVec (filteredNumPosesVec.begin()+idStartWindow, filteredNumPosesVec.end());
     std::vector<double> subValuesVec (filteredValuesVec.begin()+idStartWindow, filteredValuesVec.end());
-    std::cout << "- Compute stdev..." << std::endl;
     double stdev = standardDeviation(subValuesVec);
     
     // Normalize stdev (: divide by the range of the values)
@@ -376,17 +351,16 @@ void LocalBA_Data::checkParameterLimits(const EIntrinsicParameter parameter, con
     double maxVal = *std::max_element(filteredValuesVec.begin(), filteredValuesVec.end());
     double normStdev = stdev / (maxVal - minVal);
     
-    /* Display info */
-    std::cout << "filtredNumPosesVec = " << filteredNumPosesVec << std::endl;
-    std::cout << "idStartWindow = " << idStartWindow << std::endl;
-    std::cout << "numPosesStartWindow = " << numPosesStartWindow << std::endl;
-    std::cout << "numPosesEndWindow = " << numPosesEndWindow << std::endl;
-    std::cout << "subNumPosesVec = " << subNumPosesVec << std::endl;
-    std::cout << "normStdev = " << normStdev << std::endl;
-    
+    // Check if the normed standard deviation is < stdevPercentageLimit
     if (normStdev*100.0 <= stdevPercentageLimit && intrinsicsLimitIds.at(idIntr).at(parameter) == 0)
     {
-      intrinsicsLimitIds.at(idIntr).at(parameter) = numPosesEndWindow;    
+      intrinsicsLimitIds.at(idIntr).at(parameter) = numPosesEndWindow;
+ 
+      OPENMVG_LOG_INFO("The " << paramName << " is considered to be stable.\n" 
+      << "- minimum value = " << minVal << "\n"
+      << "- maximal value = " << minVal << "\n"
+      << "- std. dev. (normalized) = " << normStdev << "\n"
+      << "- current value = " << filteredValuesVec.back() << " (= constant) \n");
     }
   }
 }
@@ -401,8 +375,7 @@ void LocalBA_Data::checkAllParametersLimits(const std::size_t kWindowSize, const
 template<typename T> 
 double LocalBA_Data::standardDeviation(const std::vector<T>& data) 
 { 
-  double sum = std::accumulate(data.begin(), data.end(), 0.0);
-  double mean = sum / data.size();
+  double mean = std::accumulate(data.begin(), data.end(), 0.0) / data.size();
   std::vector<double> diff(data.size());
   std::transform(data.begin(), data.end(), diff.begin(), [mean](double x) { return x - mean; });
   double sq_sum = std::inner_product(diff.begin(), diff.end(), diff.begin(), 0.0);
@@ -412,7 +385,7 @@ double LocalBA_Data::standardDeviation(const std::vector<T>& data)
 
 void LocalBA_Data::exportIntrinsicsHistory(const std::string& folder)
 {
-  std::cout << "Writting intrinsics..." << std::endl;
+  OPENMVG_LOG_INFO("Exporting intrinsics history...");
   for (auto& itIntr : intrinsicsHistory)
   {
     IndexT idIntr = itIntr.first;
@@ -475,7 +448,6 @@ void LocalBA_Data::exportIntrinsicsHistory(const std::string& folder)
     }
     os.close();
   }
-  std::cout << "Writting intrinsics... done" << std::endl;
 }
 
 } // namespace sfm

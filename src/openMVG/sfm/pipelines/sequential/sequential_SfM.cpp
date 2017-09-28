@@ -233,7 +233,7 @@ void SequentialSfMReconstructionEngine::RobustResectionOfImages(
           localBundleAdjustment("first"); 
         else
           BundleAdjustment();
-                
+        
         
         OPENMVG_LOG_DEBUG("Resection group index: " << resectionGroupIndex << ", bundle iteration: " << bundleAdjustmentIteration
                           << " took " << std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - chrono2_start).count() << " msec.");
@@ -246,25 +246,43 @@ void SequentialSfMReconstructionEngine::RobustResectionOfImages(
       OPENMVG_LOG_DEBUG("Bundle with " << bundleAdjustmentIteration << " iterations took " << std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - chrono_start).count() << " msec.");
       chrono_start = std::chrono::steady_clock::now();
       
-      if (_uselocalBundleAdjustment)
-        _localBA_data->exportIntrinsicsHistory(_sOutDirectory);
-            
-      // Remove unstable poses & extract removed poses id
-      Poses poses_saved =  _sfm_data.poses;
       std::cout << "-- eraseUnstablePosesAndObservations" << std::endl;
-      std::vector<IndexT> removed_poseIds;
-      if (eraseUnstablePosesAndObservations(this->_sfm_data, _minPointsPerPose, _minTrackLength))
+      if (_uselocalBundleAdjustment)
       {
-        if (poses_saved !=  _sfm_data.poses)
+        _localBA_data->exportIntrinsicsHistory(_sOutDirectory);
+        
+        Poses poses_saved =  _sfm_data.poses;
+        std::set<IndexT> removed_posesId, removed_viewsId;
+        // Remove unstable poses & extract removed poses id
+        if (eraseUnstablePosesAndObservations(this->_sfm_data, _minPointsPerPose, _minTrackLength))
         {
-          for (const auto& pose : poses_saved)
+          // If poses have been removed (may be useless ?)
+          if (poses_saved !=  _sfm_data.poses)
           {
-            IndexT id_pose = pose.first;
-            if (_sfm_data.poses.find(id_pose) == _sfm_data.poses.end()) // id not found = removed
-              removed_poseIds.push_back(id_pose);
+            // Get removed POSES
+            for (const auto& pose : poses_saved)
+            {
+              IndexT id_pose = pose.first;
+              if (_sfm_data.poses.find(id_pose) == _sfm_data.poses.end()) // id not found = removed
+                removed_posesId.insert(id_pose);
+            }
+            // Get removed VIEWS
+            for (const auto& itView : _sfm_data.GetViews())
+            {
+              if (_sfm_data.IsPoseAndIntrinsicDefined(itView.second->id_view))
+              {
+                if (removed_posesId.find(itView.second->id_pose) != removed_posesId.end())
+                  removed_viewsId.insert(itView.second->id_view);
+              }
+            }
+            // Remove removed views to the graph
+            _localBA_data->removeViewsToTheGraph(removed_viewsId);
+            
           }
         }
       }
+      else
+        eraseUnstablePosesAndObservations(this->_sfm_data, _minPointsPerPose, _minTrackLength); // just remove poses & obs.
       
       OPENMVG_LOG_DEBUG("eraseUnstablePosesAndObservations took " << std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - chrono_start).count() << " msec.");
     }
