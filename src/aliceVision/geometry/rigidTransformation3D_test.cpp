@@ -2,20 +2,19 @@
 // the terms of the MPL2 license (see the COPYING.md file).
 
 #include "rigidTransformation3D.hpp"
-
 #include "aliceVision/robustEstimation/ACRansac.hpp"
 
-#include "CppUnitLite/TestHarness.h"
-
-#include "testing/testing.h"
-
 #include <iostream>
+
+#define BOOST_TEST_MODULE rigidTransformation3D
+#include <boost/test/included/unit_test.hpp>
+#include <boost/test/floating_point_comparison.hpp>
 
 using namespace aliceVision;
 using namespace aliceVision::geometry;
 using namespace std;
 
-TEST(SRT_precision, Experiment_ScaleOnly)
+BOOST_AUTO_TEST_CASE(SRT_precision_Experiment_ScaleOnly)
 {
 
   const std::size_t nbPoints = 10;
@@ -45,7 +44,7 @@ TEST(SRT_precision, Experiment_ScaleOnly)
           "t " << tc.transpose());
 }
 
-TEST(SRT_precision, Experiment_ScaleAndRot)
+BOOST_AUTO_TEST_CASE(SRT_precision_Experiment_ScaleAndRot)
 {
 
   const std::size_t nbPoints = 10;
@@ -82,7 +81,7 @@ TEST(SRT_precision, Experiment_ScaleAndRot)
           "t " << t.transpose());
 }
 
-TEST(SRT_precision, Experiment_ScaleRotTranslation)
+BOOST_AUTO_TEST_CASE(SRT_precision_Experiment_ScaleRotTranslation)
 {
 
   const std::size_t nbPoints = 10;
@@ -119,7 +118,7 @@ TEST(SRT_precision, Experiment_ScaleRotTranslation)
           "t " << t.transpose());
 }
 
-TEST(SRT_precision, ACRANSAC_noNoise)
+BOOST_AUTO_TEST_CASE(SRT_precision_ACRANSAC_noNoise)
 {
   const std::size_t nbPoints = 100;
   Mat x1 = Mat::Random(3, nbPoints);
@@ -145,8 +144,8 @@ TEST(SRT_precision, ACRANSAC_noNoise)
   std::vector<std::size_t> vec_inliers;
   const bool result = ACRansac_FindRTS(x1, x2, Sc, tc, Rc, vec_inliers, true);
 
-  EXPECT_TRUE(result);
-  EXPECT_TRUE(vec_inliers.size() == nbPoints);
+  BOOST_CHECK(result);
+  BOOST_CHECK(vec_inliers.size() == nbPoints);
 
   ALICEVISION_LOG_DEBUG(
           "Scale " << Sc << "\n" <<
@@ -158,7 +157,7 @@ TEST(SRT_precision, ACRANSAC_noNoise)
           "Rot \n" << rot << "\n" <<
           "t " << t.transpose());
 
-  EXPECT_NEAR(scale, Sc, 1e-9);
+  BOOST_CHECK_SMALL(scale - Sc, 1e-9);
   
   Mat4 RTS;
   composeRTS(Sc, tc, Rc, RTS);
@@ -166,11 +165,11 @@ TEST(SRT_precision, ACRANSAC_noNoise)
   for(std::size_t i = 0; i < nbPoints; ++i)
   {
     const double error = geometry::RTSSquaredResidualError::Error(RTS, x1.col(i), x2.col(i));
-    EXPECT_NEAR(error, 0.0, 1e-9);
+    BOOST_CHECK_SMALL(error, 1e-9);
   }
 }
 
-TEST(SRT_precision, ACRANSAC_noiseByShuffling)
+BOOST_AUTO_TEST_CASE(SRT_precision_ACRANSAC_noiseByShuffling)
 {
   // it generates some points x1, it only generates the corresponding 
   // transformed points x2 for nbPoints-nbShuffles of them while the rest
@@ -211,10 +210,10 @@ TEST(SRT_precision, ACRANSAC_noiseByShuffling)
           "Rot \n" << rot << "\n" <<
           "t " << t.transpose());
   
-  EXPECT_TRUE(result);
+  BOOST_CHECK(result);
   // all the points must be inliers (no noise)
   const std::size_t nbInliers = vec_inliers.size();
-  EXPECT_TRUE(nbInliers == nbPoints - nbNoisy);
+  BOOST_CHECK(nbInliers == nbPoints - nbNoisy);
 
   Mat inliers1 = Mat3X(3, nbInliers);
   Mat inliers2 = Mat3X(3, nbInliers);
@@ -226,7 +225,7 @@ TEST(SRT_precision, ACRANSAC_noiseByShuffling)
   }
 
   // check scale
-  EXPECT_NEAR(scale, Sc, 1e-9);
+  BOOST_CHECK_SMALL(scale - Sc, 1e-9);
   
   Mat4 RTS;
   composeRTS(Sc, tc, Rc, RTS);
@@ -235,14 +234,6 @@ TEST(SRT_precision, ACRANSAC_noiseByShuffling)
   for(std::size_t i = 0; i < nbInliers; ++i)
   {
     const double error = geometry::RTSSquaredResidualError::Error(RTS, inliers1.col(i), inliers2.col(i));
-    EXPECT_NEAR(error, 0.0, 1e-9);
+    BOOST_CHECK_SMALL(error, 1e-9);
   }
 }
-
-/* ************************************************************************* */
-int main()
-{
-  TestResult tr;
-  return TestRegistry::runAllTests(tr);
-}
-/* ************************************************************************* */

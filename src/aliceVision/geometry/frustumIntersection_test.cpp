@@ -7,9 +7,11 @@
 #include "aliceVision/multiview/NViewDataSet.hpp"
 #include "aliceVision/multiview/projection.hpp"
 
-#include "CppUnitLite/TestHarness.h"
-#include "testing/testing.h"
 #include <iostream>
+
+#define BOOST_TEST_MODULE frustumIntersection
+#include <boost/test/included/unit_test.hpp>
+#include <boost/test/floating_point_comparison.hpp>
 
 using namespace aliceVision;
 using namespace aliceVision::geometry;
@@ -20,7 +22,7 @@ using namespace std;
 // Camera frustum intersection unit test
 //--
 
-TEST(frustum, intersection)
+BOOST_AUTO_TEST_CASE(intersection)
 {
   const int focal = 1000;
   const int principal_Point = 500;
@@ -39,13 +41,13 @@ TEST(frustum, intersection)
     {
       vec_frustum.push_back(
         Frustum(principal_Point*2, principal_Point*2, d._K[i], d._R[i], d._C[i]));
-      EXPECT_TRUE(vec_frustum[i].isInfinite());
+      BOOST_CHECK(vec_frustum[i].isInfinite());
     }
 
     // Check that frustums have an overlap
     for (int i = 0; i < iNviews; ++i)
       for (int j = 0; j < iNviews; ++j)
-        EXPECT_TRUE(vec_frustum[i].intersect(vec_frustum[j]));
+        BOOST_CHECK(vec_frustum[i].intersect(vec_frustum[j]));
   }
 
   // Test with truncated frustum
@@ -67,17 +69,17 @@ TEST(frustum, intersection)
       vec_frustum.push_back(
         Frustum(principal_Point*2, principal_Point*2,
           d._K[i], d._R[i], d._C[i], minDepth, maxDepth));
-      EXPECT_TRUE(vec_frustum[i].isTruncated());
+      BOOST_CHECK(vec_frustum[i].isTruncated());
     }
 
     // Check that frustums have an overlap
     for (int i = 0; i < iNviews; ++i)
       for (int j = 0; j < iNviews; ++j)
-        EXPECT_TRUE(vec_frustum[i].intersect(vec_frustum[j]));
+        BOOST_CHECK(vec_frustum[i].intersect(vec_frustum[j]));
   }
 }
 
-TEST(frustum, empty_intersection)
+BOOST_AUTO_TEST_CASE(empty_intersection)
 {
   // Create infinite frustum that do not share any space
   //--
@@ -103,7 +105,7 @@ TEST(frustum, empty_intersection)
       const Mat3 flipMatrix = RotationAroundY(D2R(180));
       vec_frustum.push_back(
         Frustum(principal_Point*2, principal_Point*2, d._K[i], d._R[i]*flipMatrix, d._C[i]));
-      EXPECT_TRUE(vec_frustum[i].isInfinite());
+      BOOST_CHECK(vec_frustum[i].isInfinite());
     }
 
     // Test if the frustum have an overlap
@@ -113,11 +115,11 @@ TEST(frustum, empty_intersection)
       {
         if (i == j) // Same frustum (intersection must exist)
         {
-          EXPECT_TRUE(vec_frustum[i].intersect(vec_frustum[j]));
+          BOOST_CHECK(vec_frustum[i].intersect(vec_frustum[j]));
         }
         else // different frustum
         {
-          EXPECT_FALSE(vec_frustum[i].intersect(vec_frustum[j]));
+          BOOST_CHECK(!vec_frustum[i].intersect(vec_frustum[j]));
         }
       }
     }
@@ -143,7 +145,7 @@ TEST(frustum, empty_intersection)
       vec_frustum.push_back(
         Frustum(principal_Point*2, principal_Point*2,
           d._K[i], d._R[i]*flipMatrix, d._C[i], minDepth, maxDepth));
-      EXPECT_TRUE(vec_frustum[i].isTruncated());
+      BOOST_CHECK(vec_frustum[i].isTruncated());
     }
 
     // Test if the frustum have an overlap
@@ -153,17 +155,13 @@ TEST(frustum, empty_intersection)
       {
         if (i == j) // Same frustum (intersection must exist)
         {
-          EXPECT_TRUE(vec_frustum[i].intersect(vec_frustum[j]));
+          BOOST_CHECK(vec_frustum[i].intersect(vec_frustum[j]));
         }
         else // different frustum
         {
-          EXPECT_FALSE(vec_frustum[i].intersect(vec_frustum[j]));
+          BOOST_CHECK(!vec_frustum[i].intersect(vec_frustum[j]));
         }
       }
     }
   }
 }
-
-/* ************************************************************************* */
-int main() { TestResult tr; return TestRegistry::runAllTests(tr);}
-/* ************************************************************************* */

@@ -3,15 +3,18 @@
 
 #include "aliceVision/geometry/HalfPlane.hpp"
 #include "aliceVision/geometry/Frustum.hpp"
-#include "CppUnitLite/TestHarness.h"
-#include "testing/testing.h"
+
 #include <iostream>
+
+#define BOOST_TEST_MODULE halfSpaceIntersection
+#include <boost/test/included/unit_test.hpp>
+#include <boost/test/floating_point_comparison.hpp>
 
 using namespace aliceVision;
 using namespace aliceVision::geometry::halfPlane;
 using namespace std;
 
-TEST(HALF_PLANE, ExistingSubspace) {
+BOOST_AUTO_TEST_CASE(ExistingSubspace) {
 
 	std::vector<Half_plane> vec_hplanes;
 
@@ -30,10 +33,10 @@ TEST(HALF_PLANE, ExistingSubspace) {
 	//    /\
 	// ___|____ z = 0
 
-	EXPECT_TRUE( isNotEmpty(vec_hplanes) );
+  BOOST_CHECK(isNotEmpty(vec_hplanes));
 }
 
-TEST(HALF_PLANE, EmptyIntersection) {
+BOOST_AUTO_TEST_CASE(EmptyIntersection) {
 
 	std::vector<Half_plane> vec_hplanes;
 
@@ -55,9 +58,5 @@ TEST(HALF_PLANE, EmptyIntersection) {
 	//    |
 	//   \/
 
-	EXPECT_FALSE( isNotEmpty(vec_hplanes) );
+  BOOST_CHECK(!isNotEmpty(vec_hplanes));
 }
-
-/* ************************************************************************* */
-int main() { TestResult tr; return TestRegistry::runAllTests(tr);}
-/* ************************************************************************* */
