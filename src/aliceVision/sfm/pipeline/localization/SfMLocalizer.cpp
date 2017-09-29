@@ -34,7 +34,7 @@ bool SfMLocalizer::Localize
   const camera::IntrinsicBase * optional_intrinsics,
   ImageLocalizerMatchData & resection_data,
   geometry::Pose3 & pose,
-  robustEstimation::EROBUST_ESTIMATOR estimator
+  robustEstimation::ERobustEstimator estimator
 )
 {
   // --
@@ -87,7 +87,7 @@ bool SfMLocalizer::Localize
 
     switch(estimator)
     {
-      case robustEstimation::ROBUST_ESTIMATOR_ACRANSAC:
+      case robustEstimation::ERobustEstimator::ACRANSAC:
       {
         //--
         // Since K calibration matrix is known, compute only [R|t]
@@ -109,7 +109,7 @@ bool SfMLocalizer::Localize
         break;
       }
 
-      case robustEstimation::ROBUST_ESTIMATOR_LORANSAC:
+      case robustEstimation::ERobustEstimator::LORANSAC:
       {
 
         // just a safeguard

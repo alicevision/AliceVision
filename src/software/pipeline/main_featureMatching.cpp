@@ -103,7 +103,7 @@ int main(int argc, char **argv)
   int rangeStart = -1;
   int rangeSize = 0;
   std::string nearestMatchingMethod = "ANN_L2";
-  std::string geometricEstimatorName = robustEstimation::EROBUST_ESTIMATOR_enumToString(robustEstimation::ROBUST_ESTIMATOR_ACRANSAC);
+  std::string geometricEstimatorName = robustEstimation::ERobustEstimator_enumToString(robustEstimation::ERobustEstimator::ACRANSAC);
   bool savePutativeMatches = false;
   bool guidedMatching = false;
   int maxIteration = 2048;
@@ -287,7 +287,7 @@ int main(int argc, char **argv)
       std::cerr << "Unknown geometric model: " << geometricMode << std::endl;
       return EXIT_FAILURE;
   }
-  robustEstimation::EROBUST_ESTIMATOR geometricEstimator = robustEstimation::EROBUST_ESTIMATOR_stringToEnum(geometricEstimatorName);
+  robustEstimation::ERobustEstimator geometricEstimator = robustEstimation::ERobustEstimator_stringToEnum(geometricEstimatorName);
 
   // -----------------------------
   // - Load SfMData Views & intrinsics data

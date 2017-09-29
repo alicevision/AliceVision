@@ -9,63 +9,63 @@
 namespace aliceVision {
 namespace robustEstimation {
 
-enum EROBUST_ESTIMATOR
+enum class ERobustEstimator
 {
-  ROBUST_ESTIMATOR_START = 0,
-  ROBUST_ESTIMATOR_ACRANSAC = 1,        //< A-Contrario Ransac.
-  ROBUST_ESTIMATOR_RANSAC = 2,          //< Classic Ransac.
-  ROBUST_ESTIMATOR_LSMEDS = 3,          //< Variant of RANSAC using Least Median of Squares.
-  ROBUST_ESTIMATOR_LORANSAC = 4,        //< LO-Ransac.
-  ROBUST_ESTIMATOR_MAXCONSENSUS = 5,    //< Naive implementation of RANSAC without noise and iteration reduction options.
-  ROBUST_ESTIMATOR_END
+  START = 0,
+  ACRANSAC = 1,        //< A-Contrario Ransac.
+  RANSAC = 2,          //< Classic Ransac.
+  LSMEDS = 3,          //< Variant of RANSAC using Least Median of Squares.
+  LORANSAC = 4,        //< LO-Ransac.
+  MAXCONSENSUS = 5,    //< Naive implementation of RANSAC without noise and iteration reduction options.
+  END
 };
 
-inline std::string EROBUST_ESTIMATOR_enumToString(EROBUST_ESTIMATOR estimator)
+inline std::string ERobustEstimator_enumToString(ERobustEstimator estimator)
 {
   switch(estimator)
   {
-    case ROBUST_ESTIMATOR_ACRANSAC:
+    case ERobustEstimator::ACRANSAC:
       return "acransac";
-    case ROBUST_ESTIMATOR_RANSAC:
+    case ERobustEstimator::RANSAC:
       return "ransac";
-    case ROBUST_ESTIMATOR_LSMEDS:
+    case ERobustEstimator::LSMEDS:
       return "lsmeds";
-    case ROBUST_ESTIMATOR_LORANSAC:
+    case ERobustEstimator::LORANSAC:
       return "loransac";
-    case ROBUST_ESTIMATOR_MAXCONSENSUS:
+    case ERobustEstimator::MAXCONSENSUS:
       return "maxconsensus";
-    case ROBUST_ESTIMATOR_START:
-    case ROBUST_ESTIMATOR_END:
+    case ERobustEstimator::START:
+    case ERobustEstimator::END:
       break;
   }
   throw std::out_of_range("Invalid Ransac type Enum");
 }
 
-inline EROBUST_ESTIMATOR EROBUST_ESTIMATOR_stringToEnum(const std::string& estimator)
+inline ERobustEstimator ERobustEstimator_stringToEnum(const std::string& estimator)
 {
   if(estimator == "acransac")
-    return ROBUST_ESTIMATOR_ACRANSAC;
+    return ERobustEstimator::ACRANSAC;
   if(estimator == "ransac")
-    return ROBUST_ESTIMATOR_RANSAC;
+    return ERobustEstimator::RANSAC;
   if(estimator == "lsmeds")
-    return ROBUST_ESTIMATOR_LSMEDS;
+    return ERobustEstimator::LSMEDS;
   if(estimator == "loransac")
-    return ROBUST_ESTIMATOR_LORANSAC;
+    return ERobustEstimator::LORANSAC;
   if(estimator == "maxconsensus")
-    return ROBUST_ESTIMATOR_MAXCONSENSUS;
+    return ERobustEstimator::MAXCONSENSUS;
   throw std::out_of_range("Invalid Ransac type string " + estimator);
 }
 
-inline std::ostream& operator<<(std::ostream& os, EROBUST_ESTIMATOR e)
+inline std::ostream& operator<<(std::ostream& os, ERobustEstimator e)
 {
-    return os << EROBUST_ESTIMATOR_enumToString(e);
+    return os << ERobustEstimator_enumToString(e);
 }
 
-inline std::istream& operator>>(std::istream& in, robustEstimation::EROBUST_ESTIMATOR& estimatorType)
+inline std::istream& operator>>(std::istream& in, robustEstimation::ERobustEstimator& estimatorType)
 {
     std::string token;
     in >> token;
-    estimatorType = robustEstimation::EROBUST_ESTIMATOR_stringToEnum(token);
+    estimatorType = robustEstimation::ERobustEstimator_stringToEnum(token);
     return in;
 }
 

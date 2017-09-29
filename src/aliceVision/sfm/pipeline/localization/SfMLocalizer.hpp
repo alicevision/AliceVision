@@ -87,7 +87,7 @@ public:
    * The 2D points are supposed to be the original distorted image points
   * @param[out] pose found pose
   * @param[in] estimator The type of robust estimator to use. The only supported 
-   * frameworks are ROBUST_ESTIMATOR_ACRANSAC and ROBUST_ESTIMATOR_LORANSAC.
+   * frameworks are ERobustEstimator::ACRANSAC and ERobustEstimator::LORANSAC.
   * @return True if a putative pose has been estimated
   */
   static bool Localize
@@ -96,7 +96,7 @@ public:
     const camera::IntrinsicBase * optional_intrinsics,
     ImageLocalizerMatchData & resection_data,
     geometry::Pose3 & pose,
-    robustEstimation::EROBUST_ESTIMATOR estimator = robustEstimation::ROBUST_ESTIMATOR_ACRANSAC
+    robustEstimation::ERobustEstimator estimator = robustEstimation::ERobustEstimator::ACRANSAC
   );
 
   /**

@@ -27,7 +27,7 @@ struct GeometricFilterMatrix_F_AC: public GeometricFilterMatrix
   GeometricFilterMatrix_F_AC(
     double dPrecision = std::numeric_limits<double>::infinity(),
     size_t iteration = 1024,
-    robustEstimation::EROBUST_ESTIMATOR estimator = robustEstimation::ROBUST_ESTIMATOR_ACRANSAC)
+    robustEstimation::ERobustEstimator estimator = robustEstimation::ERobustEstimator::ACRANSAC)
     : GeometricFilterMatrix(dPrecision, std::numeric_limits<double>::infinity(), iteration)
     , m_F(Mat3::Identity())
     , m_estimator(estimator)
@@ -150,7 +150,7 @@ struct GeometricFilterMatrix_F_AC: public GeometricFilterMatrix
 
     switch(m_estimator)
     {
-      case ROBUST_ESTIMATOR_ACRANSAC:
+      case ERobustEstimator::ACRANSAC:
       {
         // Define the AContrario adapted Fundamental matrix solver
         typedef ACKernelAdaptor<
@@ -177,7 +177,7 @@ struct GeometricFilterMatrix_F_AC: public GeometricFilterMatrix
 
         return std::make_pair(true, KernelType::MINIMUM_SAMPLES);
       }
-      case ROBUST_ESTIMATOR_LORANSAC:
+      case ERobustEstimator::LORANSAC:
       {
         // just a safeguard
         if(m_dPrecision == std::numeric_limits<double>::infinity())
@@ -265,7 +265,7 @@ struct GeometricFilterMatrix_F_AC: public GeometricFilterMatrix
   //
   //-- Stored data
   Mat3 m_F;
-  robustEstimation::EROBUST_ESTIMATOR m_estimator;
+  robustEstimation::ERobustEstimator m_estimator;
 };
 
 } // namespace matchingImageCollection

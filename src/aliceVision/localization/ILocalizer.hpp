@@ -22,8 +22,8 @@ struct LocalizerParameters
   _fDistRatio(0.8),
   _featurePreset(feature::EImageDescriberPreset::ULTRA),
   _errorMax(std::numeric_limits<double>::infinity()),
-  _resectionEstimator(robustEstimation::ROBUST_ESTIMATOR_ACRANSAC),
-  _matchingEstimator(robustEstimation::ROBUST_ESTIMATOR_ACRANSAC),
+  _resectionEstimator(robustEstimation::ERobustEstimator::ACRANSAC),
+  _matchingEstimator(robustEstimation::ERobustEstimator::ACRANSAC),
   _useLocalizeRigNaive(false),
   _angularThreshold(D2R(0.1)) { }
 
@@ -40,9 +40,9 @@ struct LocalizerParameters
   /// maximum reprojection error allowed for resectioning
   double _errorMax;
   /// the type of *sac framework to use for resection
-  robustEstimation::EROBUST_ESTIMATOR _resectionEstimator;
+  robustEstimation::ERobustEstimator _resectionEstimator;
   /// the type of *sac framework to use for matching
-  robustEstimation::EROBUST_ESTIMATOR _matchingEstimator; 	
+  robustEstimation::ERobustEstimator _matchingEstimator;
   /// force the use of the rig localization without openGV
   bool _useLocalizeRigNaive;
   /// in rad, it is the maximum angular error for the opengv rig resection

@@ -1057,7 +1057,7 @@ bool VoctreeLocalizer::robustMatching(matching::RegionsDatabaseMatcherPerDesc & 
                                       const std::pair<std::size_t,std::size_t> & imageSizeI,     // size of the first image @fixme change the API of the kernel!! 
                                       const std::pair<std::size_t,std::size_t> & imageSizeJ,     // size of the second image
                                       matching::MatchesPerDescType & out_featureMatches,
-                                      robustEstimation::EROBUST_ESTIMATOR estimator) const
+                                      robustEstimation::ERobustEstimator estimator) const
 {
   // get the intrinsics of the query camera
   if ((queryIntrinsicsBase != nullptr) && !isPinhole(queryIntrinsicsBase->getType()))
