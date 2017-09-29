@@ -59,27 +59,6 @@ TestData SomeTestData() {
   return d;
 }
 
-BOOST_AUTO_TEST_CASE(FivePointsNullspaceBasis_SatisfyEpipolarConstraint) {
-
-  TestData d = SomeTestData();
-
-  Mat E_basis = FivePointsNullspaceBasis(d.x1, d.x2);
-
-  for (int s = 0; s < 4; ++s) {
-    Mat3 E;
-    for (int i = 0; i < 3; ++i) {
-      for (int j = 0; j < 3; ++j) {
-        E(i, j) = E_basis(3 * i + j, s);
-      }
-    }
-    for (int i = 0; i < d.x1.cols(); ++i) {
-      Vec3 x1(d.x1(0,i), d.x1(1,i), 1);
-      Vec3 x2(d.x2(0,i), d.x2(1,i), 1);
-      BOOST_CHECK_SMALL(x2.dot(E * x1), 1e-6);
-    }
-  }
-}
-
 double EvalPolynomial(Vec p, double x, double y, double z) {
   return p(coef_xxx) * x * x * x
        + p(coef_xxy) * x * x * y
@@ -260,5 +239,26 @@ BOOST_AUTO_TEST_CASE(FivePointsRelativePose_test_data_sets) {
     }
     //-- Almost one solution must find the correct relative orientation
     BOOST_CHECK(bsolution_found);
+  }
+}
+
+BOOST_AUTO_TEST_CASE(FivePointsNullspaceBasis_SatisfyEpipolarConstraint) {
+
+  TestData d = SomeTestData();
+
+  Mat E_basis = FivePointsNullspaceBasis(d.x1, d.x2);
+
+  for (int s = 0; s < 4; ++s) {
+    Mat3 E;
+    for (int i = 0; i < 3; ++i) {
+      for (int j = 0; j < 3; ++j) {
+        E(i, j) = E_basis(3 * i + j, s);
+      }
+    }
+    for (int i = 0; i < d.x1.cols(); ++i) {
+      Vec3 x1(d.x1(0,i), d.x1(1,i), 1);
+      Vec3 x2(d.x2(0,i), d.x2(1,i), 1);
+      BOOST_CHECK_SMALL(x2.dot(E * x1), 1e-6);
+    }
   }
 }
