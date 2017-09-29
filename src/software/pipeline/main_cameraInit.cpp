@@ -580,7 +580,7 @@ int main(int argc, char **argv)
       "Intrinsics Kmatrix \"f;0;ppx;0;f;ppy;0;0;1\".")
     ("defaultCameraModel", po::value<std::string>(&userCameraModelName)->default_value(userCameraModelName),
       "Camera model type (pinhole, radial1, radial3, brown or fisheye4).")
-    ("groupCameraModel,g", po::value<int>(&userGroupCameraModel)->default_value(userGroupCameraModel),
+    ("groupCameraModel", po::value<int>(&userGroupCameraModel)->default_value(userGroupCameraModel),
       "- 0: each view have its own camera intrinsic parameters\n"
       "- 1: view share camera intrinsic parameters based on metadata, if no metadata each view has its own camera intrinsic parameters\n"
       "- 2: view share camera intrinsic parameters based on metadata, if no metadata they are grouped by folder\n");
