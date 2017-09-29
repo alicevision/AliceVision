@@ -2,13 +2,18 @@
 // the terms of the MPL2 license (see the COPYING.md file).
 
 #include "aliceVision/robustEstimation/LineKernel.hpp"
-#include "testing/testing.h"
+
 #include <vector>
+
+#define BOOST_TEST_MODULE LineKernel
+#include <boost/test/included/unit_test.hpp>
+#include <boost/test/floating_point_comparison.hpp>
+
 using namespace aliceVision;
 using namespace aliceVision::robustEstimation;
 
 // Since the line fitter isn't so simple, test it in isolation.
-TEST(LineFitter, ItWorks) {
+BOOST_AUTO_TEST_CASE(LineFitter_ItWorks) {
 
   Mat2X xy(2, 5);
   // y = 2x + 1
@@ -21,12 +26,7 @@ TEST(LineFitter, ItWorks) {
     samples.push_back(i);
   }
   kernel.Fit(samples, &models);
-  CHECK_EQUAL(1, models.size());
-  EXPECT_NEAR(2.0, models[0][1], 1e-9);
-  EXPECT_NEAR(1.0, models[0][0], 1e-9);
+  BOOST_CHECK_EQUAL(1, models.size());
+  BOOST_CHECK_SMALL(2.0-models[0][1], 1e-9);
+  BOOST_CHECK_SMALL(1.0-models[0][0], 1e-9);
 }
-
-
-/* ************************************************************************* */
-int main() { TestResult tr; return TestRegistry::runAllTests(tr);}
-/* ************************************************************************* */

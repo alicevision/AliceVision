@@ -8,10 +8,13 @@
 #include <aliceVision/robustEstimation/ACRansac.hpp>
 #include <aliceVision/robustEstimation/randSampling.hpp>
 #include <glog/logging.h>
-#include "lineTestGenerator.hpp"
-#include "testing/testing.h"
 
+#include "lineTestGenerator.hpp"
 #include "dependencies/vectorGraphics/svgDrawer.hpp"
+
+#define BOOST_TEST_MODULE ACRansac
+#include <boost/test/included/unit_test.hpp>
+#include <boost/test/floating_point_comparison.hpp>
 
 using namespace svg;
 
@@ -112,7 +115,7 @@ private:
 
 // Test ACRANSAC with the AC-adapted Line kernel in a noise/outlier free dataset
 
-TEST(RansacLineFitter, OutlierFree)
+BOOST_AUTO_TEST_CASE(RansacLineFitter_OutlierFree)
 {
 
   Mat2X xy(2, 5);
@@ -129,14 +132,14 @@ TEST(RansacLineFitter, OutlierFree)
   Vec2 line;
   ACRANSAC(lineKernel, vec_inliers, 300, &line);
 
-  EXPECT_NEAR(2.0, line[1], 1e-9);
-  EXPECT_NEAR(1.0, line[0], 1e-9);
-  CHECK_EQUAL(5, vec_inliers.size());
+  BOOST_CHECK_SMALL(2.0-line[1], 1e-9);
+  BOOST_CHECK_SMALL(1.0-line[0], 1e-9);
+  BOOST_CHECK_EQUAL(5, vec_inliers.size());
 }
 
 // Simple test without getting back the model
 
-TEST(RansacLineFitter, OutlierFree_DoNotGetBackModel)
+BOOST_AUTO_TEST_CASE(RansacLineFitter_OutlierFree_DoNotGetBackModel)
 {
 
   Mat2X xy(2, 5);
@@ -148,10 +151,10 @@ TEST(RansacLineFitter, OutlierFree_DoNotGetBackModel)
   std::vector<std::size_t> vec_inliers;
   ACRANSAC(lineKernel, vec_inliers);
 
-  CHECK_EQUAL(5, vec_inliers.size());
+  BOOST_CHECK_EQUAL(5, vec_inliers.size());
 }
 
-TEST(RansacLineFitter, OneOutlier)
+BOOST_AUTO_TEST_CASE(RansacLineFitter_OneOutlier)
 {
 
   Mat2X xy(2, 6);
@@ -168,16 +171,16 @@ TEST(RansacLineFitter, OneOutlier)
   Vec2 line;
   ACRANSAC(lineKernel, vec_inliers, 300, &line);
 
-  EXPECT_NEAR(2.0, line[1], 1e-9);
-  EXPECT_NEAR(1.0, line[0], 1e-9);
-  CHECK_EQUAL(5, vec_inliers.size());
+  BOOST_CHECK_SMALL(2.0-line[1], 1e-9);
+  BOOST_CHECK_SMALL(1.0-line[0], 1e-9);
+  BOOST_CHECK_EQUAL(5, vec_inliers.size());
 }
 
 
 // Test if the robust estimator do not return inlier if too few point
 // was given for an estimation.
 
-TEST(RansacLineFitter, TooFewPoints)
+BOOST_AUTO_TEST_CASE(RansacLineFitter_TooFewPoints)
 {
 
   Vec2 xy;
@@ -187,7 +190,7 @@ TEST(RansacLineFitter, TooFewPoints)
   std::vector<std::size_t> vec_inliers;
   ACRANSAC(lineKernel, vec_inliers);
 
-  CHECK_EQUAL(0, vec_inliers.size());
+  BOOST_CHECK_EQUAL(0, vec_inliers.size());
 }
 
 // From a GT model :
@@ -195,7 +198,7 @@ TEST(RansacLineFitter, TooFewPoints)
 //  Add white noise to given amount of points in this list.
 //  Check that the number of inliers and the model are correct.
 
-TEST(RansacLineFitter, RealisticCase)
+BOOST_AUTO_TEST_CASE(RansacLineFitter_RealisticCase)
 {
 
   const int NbPoints = 100;
@@ -236,9 +239,9 @@ TEST(RansacLineFitter, RealisticCase)
   Vec2 line;
   ACRANSAC(lineKernel, vec_inliers, 300, &line);
 
-  CHECK_EQUAL(NbPoints - nbPtToNoise, vec_inliers.size());
-  EXPECT_NEAR(GTModel(0), line[0], 1e-9);
-  EXPECT_NEAR(GTModel(1), line[1], 1e-9);
+  BOOST_CHECK_EQUAL(NbPoints - nbPtToNoise, vec_inliers.size());
+  BOOST_CHECK_SMALL(GTModel(0)-line[0], 1e-9);
+  BOOST_CHECK_SMALL(GTModel(1)-line[1], 1e-9);
 }
 
 // Generate nbPoints along a line and add gaussian noise.
@@ -308,7 +311,7 @@ struct IndMatchd
 // See if the AContrario RANSAC is able to label the good point as inlier
 //  by having it's estimated confidence threshold growing.
 
-TEST(RansacLineFitter, ACRANSACSimu)
+BOOST_AUTO_TEST_CASE(RansacLineFitter_ACRANSACSimu)
 {
 
   const int S = 100;
@@ -351,15 +354,7 @@ TEST(RansacLineFitter, ACRANSACSimu)
 
     // ACRansac is not really repeatable so we can check at least it does not
     // find more inliers than expected.
-    EXPECT_TRUE(vec_inliers.size() <= expectedInliers);
+    BOOST_CHECK(vec_inliers.size() <= expectedInliers);
 
   }
 }
-
-/* ************************************************************************* */
-int main()
-{
-  TestResult tr;
-  return TestRegistry::runAllTests(tr);
-}
-/* ************************************************************************* */

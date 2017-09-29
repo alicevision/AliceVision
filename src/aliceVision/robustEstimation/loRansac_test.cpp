@@ -8,13 +8,16 @@
 #include "lineTestGenerator.hpp"
 
 #include "aliceVision/numeric/numeric.hpp"
-#include "testing/testing.h"
 
 #include <iostream>
 #include <random>
 #include <fstream>
 #include <vector>
 #include <string>
+
+#define BOOST_TEST_MODULE robustEstimationLORansac
+#include <boost/test/included/unit_test.hpp>
+#include <boost/test/floating_point_comparison.hpp>
 
 using namespace aliceVision;
 using namespace aliceVision::robustEstimation;
@@ -103,7 +106,7 @@ void lineFittingTest(std::size_t numPoints,
 }
 
 
-TEST(LoRansacLineFitter, IdealCaseLoRansac) 
+BOOST_AUTO_TEST_CASE(LoRansacLineFitter_IdealCaseLoRansac)
 {
 
   const std::size_t numPoints = 300;
@@ -123,14 +126,14 @@ TEST(LoRansacLineFitter, IdealCaseLoRansac)
     lineFittingTest(numPoints, outlierRatio, gaussianNoiseLevel, GTModel, gen, model, vec_inliers);
     const std::size_t expectedInliers = numPoints - (std::size_t) numPoints * outlierRatio;
 
-    CHECK_EQUAL(expectedInliers, vec_inliers.size());
-    EXPECT_NEAR(GTModel[0], model[0], 1e-2);
-    EXPECT_NEAR(GTModel[1], model[1], 1e-2);
+    BOOST_CHECK_EQUAL(expectedInliers, vec_inliers.size());
+    BOOST_CHECK_SMALL(GTModel[0]-model[0], 1e-2);
+    BOOST_CHECK_SMALL(GTModel[1]-model[1], 1e-2);
   }
 }
 
 
-TEST(LoRansacLineFitter, RealCaseLoRansac)
+BOOST_AUTO_TEST_CASE(LoRansacLineFitter_RealCaseLoRansac)
 {
 
   const std::size_t numPoints = 300;
@@ -151,14 +154,6 @@ TEST(LoRansacLineFitter, RealCaseLoRansac)
     std::vector<std::size_t> vec_inliers;
     lineFittingTest(numPoints, outlierRatio, gaussianNoiseLevel, GTModel, gen, model, vec_inliers);
     const std::size_t expectedInliers = numPoints - (std::size_t) numPoints * outlierRatio;
-    CHECK_EQUAL(expectedInliers, vec_inliers.size());
+    BOOST_CHECK_EQUAL(expectedInliers, vec_inliers.size());
   }
 }
-
-/* ************************************************************************* */
-int main()
-{
-  TestResult tr;
-  return TestRegistry::runAllTests(tr);
-}
-/* ************************************************************************* */

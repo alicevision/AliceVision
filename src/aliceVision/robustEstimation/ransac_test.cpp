@@ -7,14 +7,17 @@
 
 #include "aliceVision/numeric/numeric.hpp"
 
-#include "testing/testing.h"
 #include "lineTestGenerator.hpp"
+
+#define BOOST_TEST_MODULE robustEstimationRansac
+#include <boost/test/included/unit_test.hpp>
+#include <boost/test/floating_point_comparison.hpp>
 
 using namespace aliceVision;
 using namespace aliceVision::robustEstimation;
 
 // Test without outlier
-TEST(MaxConsensusLineFitter, OutlierFree) {
+BOOST_AUTO_TEST_CASE(MaxConsensusLineFitter_OutlierFree) {
 
   Mat2X xy(2, 5);
   // y = 2x + 1
@@ -28,13 +31,13 @@ TEST(MaxConsensusLineFitter, OutlierFree) {
   //  in a robust framework (Ransac).
   std::vector<size_t> vec_inliers;
   Vec2 model = RANSAC(kernel, ScoreEvaluator<LineKernel>(0.3), &vec_inliers);
-  EXPECT_NEAR(2.0, model[1], 1e-9);
-  EXPECT_NEAR(1.0, model[0], 1e-9);
-  CHECK_EQUAL(5, vec_inliers.size());
+  BOOST_CHECK_SMALL(2.0-model[1], 1e-9);
+  BOOST_CHECK_SMALL(1.0-model[0], 1e-9);
+  BOOST_CHECK_EQUAL(5, vec_inliers.size());
 }
 
 // Test efficiency of MaxConsensus to find (inlier/outlier) in contamined data
-TEST(MaxConsensusLineFitter, OneOutlier) {
+BOOST_AUTO_TEST_CASE(MaxConsensusLineFitter_OneOutlier) {
 
   Mat2X xy(2, 6);
   // y = 2x + 1 with an outlier
@@ -45,15 +48,15 @@ TEST(MaxConsensusLineFitter, OneOutlier) {
 
   std::vector<size_t> vec_inliers;
   Vec2 model = RANSAC(kernel, ScoreEvaluator<LineKernel>(0.3), &vec_inliers);
-  EXPECT_NEAR(2.0, model[1], 1e-9);
-  EXPECT_NEAR(1.0, model[0], 1e-9);
-  CHECK_EQUAL(5, vec_inliers.size());
+  BOOST_CHECK_SMALL(2.0-model[1], 1e-9);
+  BOOST_CHECK_SMALL(1.0-model[0], 1e-9);
+  BOOST_CHECK_EQUAL(5, vec_inliers.size());
 }
 
 // Critical test:
 // Test if the robust estimator do not return inlier if too few point
 // was given for an estimation.
-TEST(MaxConsensusLineFitter, TooFewPoints) {
+BOOST_AUTO_TEST_CASE(MaxConsensusLineFitter_TooFewPoints) {
 
   Mat2X xy(2, 1);
   xy << 1,
@@ -61,14 +64,14 @@ TEST(MaxConsensusLineFitter, TooFewPoints) {
   LineKernel kernel(xy);
   std::vector<size_t> vec_inliers;
   Vec2 model = RANSAC(kernel, ScoreEvaluator<LineKernel>(0.3), &vec_inliers);
-  CHECK_EQUAL(0, vec_inliers.size());
+  BOOST_CHECK_EQUAL(0, vec_inliers.size());
 }
 
 // From a GT model :
 //  Compute a list of point that fit the model.
 //  Add white noise to given amount of points in this list.
 //  Check that the number of inliers and the model are correct.
-TEST(MaxConsensusLineFitter, RealisticCase) {
+BOOST_AUTO_TEST_CASE(MaxConsensusLineFitter_RealisticCase) {
 
   const int NbPoints = 30;
   const double outlierRatio = .3; //works with 40
@@ -87,12 +90,7 @@ TEST(MaxConsensusLineFitter, RealisticCase) {
   LineKernel kernel(xy);
   std::vector<size_t> vec_inliers;
   Vec2 model = RANSAC(kernel, ScoreEvaluator<LineKernel>(0.3), &vec_inliers);
-  CHECK_EQUAL(NbPoints-nbPtToNoise, vec_inliers.size());
-  EXPECT_NEAR(-2.0, model[0], 1e-9);
-  EXPECT_NEAR( 6.3, model[1], 1e-9);
+  BOOST_CHECK_EQUAL(NbPoints-nbPtToNoise, vec_inliers.size());
+  BOOST_CHECK_SMALL((-2.0)-model[0], 1e-9);
+  BOOST_CHECK_SMALL( 6.3-model[1], 1e-9);
 }
-
-
-/* ************************************************************************* */
-int main() { TestResult tr; return TestRegistry::runAllTests(tr);}
-/* ************************************************************************* */

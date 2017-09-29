@@ -2,15 +2,18 @@
 // the terms of the MPL2 license (see the COPYING.md file).
 
 #include "aliceVision/robustEstimation/randSampling.hpp"
-#include "testing/testing.h"
 #include <set>
 #include <vector>
+
+#define BOOST_TEST_MODULE randSampling
+#include <boost/test/included/unit_test.hpp>
+#include <boost/test/floating_point_comparison.hpp>
 
 using namespace aliceVision;
 using namespace aliceVision::robustEstimation;
 
 // Assert that each time exactly N random number are picked (no repetition)
-TEST(UniformSampleTest, NoRepetions) {
+BOOST_AUTO_TEST_CASE(UniformSampleTest_NoRepetions) {
 
   for(std::size_t upperBound = 1; upperBound < 513; upperBound *= 2)
   { 
@@ -25,15 +28,15 @@ TEST(UniformSampleTest, NoRepetions) {
       for(const auto& s : samples) 
       {
         myset.insert(s);
-        CHECK(s >= 0);
-        CHECK(s < upperBound);
+        BOOST_CHECK(s >= 0);
+        BOOST_CHECK(s < upperBound);
       }
-      CHECK_EQUAL(numSamples, myset.size());
+      BOOST_CHECK_EQUAL(numSamples, myset.size());
     }
   }
 }
 
-TEST(UniformSampleTest, UniformSampleSet) {
+BOOST_AUTO_TEST_CASE(UniformSampleTest_UniformSampleSet) {
 
   for(std::size_t upperBound = 1; upperBound < 513; upperBound *= 2)
   { 
@@ -44,17 +47,17 @@ TEST(UniformSampleTest, UniformSampleSet) {
       std::cout << "Upper " << upperBound << " Lower " << 0 << " numSamples " << numSample << "\n";
       std::set<std::size_t> samples;
       UniformSample(numSample, upperBound, samples);
-      CHECK_EQUAL(numSample, samples.size());
+      BOOST_CHECK_EQUAL(numSample, samples.size());
       for(const auto& s : samples) 
       {
-        CHECK(s >= 0);
-        CHECK(s < upperBound);
+        BOOST_CHECK(s >= 0);
+        BOOST_CHECK(s < upperBound);
       }
     }
   }
 }
 
-TEST(UniformSampleTest, NoRepetionsBeginEnd) {
+BOOST_AUTO_TEST_CASE(UniformSampleTest_NoRepetionsBeginEnd) {
 
   for(std::size_t upperBound = 1; upperBound < 513; upperBound *= 2)
   { 
@@ -71,15 +74,15 @@ TEST(UniformSampleTest, NoRepetionsBeginEnd) {
       for(const auto& s : samples) 
       {
         myset.insert(s);
-        CHECK(s >= begin);
-        CHECK(s < upperBound);
+        BOOST_CHECK(s >= begin);
+        BOOST_CHECK(s < upperBound);
       }
-      CHECK_EQUAL(numSamples, myset.size());
+      BOOST_CHECK_EQUAL(numSamples, myset.size());
     }
   }
 }
 
-TEST(UniformSampleTest, randSample) {
+BOOST_AUTO_TEST_CASE(UniformSampleTest_randSample) {
   
   for(std::size_t upperBound = 1; upperBound < 513; upperBound *= 2)
   { 
@@ -95,17 +98,12 @@ TEST(UniformSampleTest, randSample) {
       {
 //        std::cout << samples[i] << " ";
         myset.insert(s);
-        CHECK(s >= lowerBound);
-        CHECK(s < upperBound);
+        BOOST_CHECK(s >= lowerBound);
+        BOOST_CHECK(s < upperBound);
       }
 //      std::cout  << "\n";
       // this verifies no repetitions
-      CHECK_EQUAL(numSamples, myset.size());
+      BOOST_CHECK_EQUAL(numSamples, myset.size());
     }
   }
 }
-
-
-/* ************************************************************************* */
-int main() { TestResult tr; return TestRegistry::runAllTests(tr);}
-/* ************************************************************************* */

@@ -7,7 +7,10 @@
 
 #include "aliceVision/numeric/numeric.hpp"
 
-#include "testing/testing.h"
+#define BOOST_TEST_MODULE leastMedianOfSquares
+#include <boost/test/included/unit_test.hpp>
+#include <boost/test/floating_point_comparison.hpp>
+
 
 using namespace aliceVision;
 using namespace aliceVision::robustEstimation;
@@ -27,7 +30,7 @@ void EvalInlier(const Kernel & kernel, const typename Kernel::Model & model,
 }
 
 // Test without outlier
-TEST(LMedsLineFitter, OutlierFree) {
+BOOST_AUTO_TEST_CASE(LMedsLineFitter_OutlierFree) {
 
   Mat2X xy(2, 5);
   // y = 2x + 1
@@ -49,11 +52,11 @@ TEST(LMedsLineFitter, OutlierFree) {
   //Compute which point are inliers (error below dThreshold)
   std::vector<size_t> vec_inliers;
   EvalInlier(kernel, model, dExpectedPrecision, &vec_inliers);
-  CHECK_EQUAL(5, vec_inliers.size());
+  BOOST_CHECK_EQUAL(5, vec_inliers.size());
 }
 
 // Test efficiency of LMeds to find (inlier/outlier) in contamined data
-TEST(LMedsLineFitter, OneOutlier) {
+BOOST_AUTO_TEST_CASE(LMedsLineFitter_OneOutlier) {
 
   Mat2X xy(2, 6);
   // y = 2x + 1 with an outlier
@@ -72,13 +75,13 @@ TEST(LMedsLineFitter, OneOutlier) {
   //Compute which point are inliers (error below dThreshold)
   std::vector<size_t> vec_inliers;
   EvalInlier(kernel, model, dExpectedPrecision, &vec_inliers);
-  CHECK_EQUAL(5, vec_inliers.size());
+  BOOST_CHECK_EQUAL(5, vec_inliers.size());
 }
 
 // Critical test:
 // Test if the robust estimator do not return inlier if too few point
 // was given for an estimation.
-TEST(LMedsLineFitter, TooFewPoints) {
+BOOST_AUTO_TEST_CASE(LMedsLineFitter_TooFewPoints) {
 
   Mat2X xy(2, 1);
   xy << 1,
@@ -89,14 +92,14 @@ TEST(LMedsLineFitter, TooFewPoints) {
   double dThreshold = std::numeric_limits<double>::infinity();
   double dBestMedian = LeastMedianOfSquares(kernel, &model, &dThreshold);
   //No inliers
-  CHECK_EQUAL( dBestMedian, std::numeric_limits<double>::max());
+  BOOST_CHECK_EQUAL( dBestMedian, std::numeric_limits<double>::max());
 }
 
 // From a GT model :
 //  Compute a list of point that fit the model.
 //  Add white noise to given amount of points in this list.
 //  Check that the number of inliers and the model are correct.
-TEST(LMedsLineFitter, RealisticCase) {
+BOOST_AUTO_TEST_CASE(LMedsLineFitter_RealisticCase) {
 
   const int NbPoints = 30;
   const float outlierRatio = .3; //works with .4
@@ -133,10 +136,6 @@ TEST(LMedsLineFitter, RealisticCase) {
   //Compute which point are inliers (error below dThreshold)
   std::vector<size_t> vec_inliers;
   EvalInlier(kernel, model, dThreshold, &vec_inliers);
-  EXPECT_TRUE(vec_inliers.size()>0);
-  CHECK_EQUAL(NbPoints-nbPtToNoise, vec_inliers.size());
+  BOOST_CHECK(vec_inliers.size()>0);
+  BOOST_CHECK_EQUAL(NbPoints-nbPtToNoise, vec_inliers.size());
 }
-
-/* ************************************************************************* */
-int main() { TestResult tr; return TestRegistry::runAllTests(tr);}
-/* ************************************************************************* */
