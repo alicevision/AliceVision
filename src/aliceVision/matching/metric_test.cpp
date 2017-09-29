@@ -1,12 +1,15 @@
 // This file is part of the AliceVision project and is made available under
 // the terms of the MPL2 license (see the COPYING.md file).
 
-#include "testing/testing.h"
 #include "aliceVision/matching/metric.hpp"
 #include <iostream>
 #include <string>
-using namespace std;
 
+#define BOOST_TEST_MODULE matchingMetric
+#include <boost/test/included/unit_test.hpp>
+#include <boost/test/floating_point_comparison.hpp>
+
+using namespace std;
 using namespace aliceVision;
 using namespace matching;
 
@@ -19,43 +22,43 @@ typename Metric::ResultType DistanceT()
   return metric(array1, array2, 8);
 }
 
-TEST(Metric, L2_Simple)
+BOOST_AUTO_TEST_CASE(Metric_L2_Simple)
 {
-  EXPECT_EQ(168, DistanceT<L2_Simple<unsigned char> >());
-  EXPECT_EQ(168, DistanceT<L2_Simple<short> >());
-  EXPECT_EQ(168, DistanceT<L2_Simple<int> >());
-  EXPECT_EQ(168, DistanceT<L2_Simple<float> >());
-  EXPECT_EQ(168, DistanceT<L2_Simple<double> >());
+  BOOST_CHECK_EQUAL(168, DistanceT<L2_Simple<unsigned char> >());
+  BOOST_CHECK_EQUAL(168, DistanceT<L2_Simple<short> >());
+  BOOST_CHECK_EQUAL(168, DistanceT<L2_Simple<int> >());
+  BOOST_CHECK_EQUAL(168, DistanceT<L2_Simple<float> >());
+  BOOST_CHECK_EQUAL(168, DistanceT<L2_Simple<double> >());
 }
 
-TEST(Metric, L2_Vectorized)
+BOOST_AUTO_TEST_CASE(Metric_L2_Vectorized)
 {
-  EXPECT_EQ(168, DistanceT<L2_Vectorized<unsigned char> >());
-  EXPECT_EQ(168, DistanceT<L2_Vectorized<short> >());
-  EXPECT_EQ(168, DistanceT<L2_Vectorized<int> >());
-  EXPECT_EQ(168, DistanceT<L2_Vectorized<float> >());
-  EXPECT_EQ(168, DistanceT<L2_Vectorized<double> >());
+  BOOST_CHECK_EQUAL(168, DistanceT<L2_Vectorized<unsigned char> >());
+  BOOST_CHECK_EQUAL(168, DistanceT<L2_Vectorized<short> >());
+  BOOST_CHECK_EQUAL(168, DistanceT<L2_Vectorized<int> >());
+  BOOST_CHECK_EQUAL(168, DistanceT<L2_Vectorized<float> >());
+  BOOST_CHECK_EQUAL(168, DistanceT<L2_Vectorized<double> >());
 }
 
-TEST(Metric, HAMMING_BITSET)
+BOOST_AUTO_TEST_CASE(Metric_HAMMING_BITSET)
 {
   std::bitset<8> a(std::string("01010101"));
   std::bitset<8> b(std::string("10101010"));
   std::bitset<8> c(std::string("11010100"));
 
   HammingBitSet<std::bitset<8> > metricHamming;
-  EXPECT_EQ(8, metricHamming(&a,&b,1));
-  EXPECT_EQ(0, metricHamming(&a,&a,1));
-  EXPECT_EQ(2, metricHamming(&a,&c,1));
+  BOOST_CHECK_EQUAL(8, metricHamming(&a,&b,1));
+  BOOST_CHECK_EQUAL(0, metricHamming(&a,&a,1));
+  BOOST_CHECK_EQUAL(2, metricHamming(&a,&c,1));
   
   Hamming< unsigned char > metricHammingUchar;
   
-  EXPECT_EQ(8, metricHammingUchar(reinterpret_cast<unsigned char *>(&a),reinterpret_cast<unsigned char *>(&b),1));
-  EXPECT_EQ(0, metricHammingUchar(reinterpret_cast<unsigned char *>(&a),reinterpret_cast<unsigned char *>(&a),1));
-  EXPECT_EQ(2, metricHammingUchar(reinterpret_cast<unsigned char *>(&a),reinterpret_cast<unsigned char *>(&c),1));
+  BOOST_CHECK_EQUAL(8, metricHammingUchar(reinterpret_cast<unsigned char *>(&a),reinterpret_cast<unsigned char *>(&b),1));
+  BOOST_CHECK_EQUAL(0, metricHammingUchar(reinterpret_cast<unsigned char *>(&a),reinterpret_cast<unsigned char *>(&a),1));
+  BOOST_CHECK_EQUAL(2, metricHammingUchar(reinterpret_cast<unsigned char *>(&a),reinterpret_cast<unsigned char *>(&c),1));
 }
 
-TEST(Metric, HAMMING_BITSET_RAW_MEMORY_64BITS)
+BOOST_AUTO_TEST_CASE(Metric_HAMMING_BITSET_RAW_MEMORY_64BITS)
 {
   const int COUNT = 4;
   std::bitset<64> tab[COUNT];
@@ -81,17 +84,17 @@ TEST(Metric, HAMMING_BITSET_RAW_MEMORY_64BITS)
   {
     for (size_t j = 0; j < COUNT; ++j)
     {
-      EXPECT_EQ(gtDist[cpt], metricHammingBitSet(&tab[i],&tab[j], 1));
-      EXPECT_EQ(gtDist[cpt], metricHamming((uint64_t*)&tab[i],(uint64_t*)&tab[j], sizeof(uint64_t)));
+      BOOST_CHECK_EQUAL(gtDist[cpt], metricHammingBitSet(&tab[i],&tab[j], 1));
+      BOOST_CHECK_EQUAL(gtDist[cpt], metricHamming((uint64_t*)&tab[i],(uint64_t*)&tab[j], sizeof(uint64_t)));
       //Check distance symmetry
-      EXPECT_EQ(gtDist[cpt], metricHammingBitSet(&tab[j],&tab[i], 1));
-      EXPECT_EQ(gtDist[cpt], metricHamming((uint64_t*)&tab[j],(uint64_t*)&tab[i], sizeof(uint64_t)));
+      BOOST_CHECK_EQUAL(gtDist[cpt], metricHammingBitSet(&tab[j],&tab[i], 1));
+      BOOST_CHECK_EQUAL(gtDist[cpt], metricHamming((uint64_t*)&tab[j],(uint64_t*)&tab[i], sizeof(uint64_t)));
       ++cpt;
     }
   }
 }
 
-TEST(Metric, HAMMING_BITSET_RAW_MEMORY_32BITS)
+BOOST_AUTO_TEST_CASE(Metric_HAMMING_BITSET_RAW_MEMORY_32BITS)
 {
   const int COUNT = 4;
   std::bitset<32> tab[COUNT];
@@ -117,16 +120,12 @@ TEST(Metric, HAMMING_BITSET_RAW_MEMORY_32BITS)
   {
     for (size_t j = 0; j < COUNT; ++j)
     {
-      EXPECT_EQ(gtDist[cpt], metricHammingBitSet(&tab[i],&tab[j], 1));
-      EXPECT_EQ(gtDist[cpt], metricHamming((uint32_t*)&tab[i],(uint32_t*)&tab[j], sizeof(uint32_t)));
+      BOOST_CHECK_EQUAL(gtDist[cpt], metricHammingBitSet(&tab[i],&tab[j], 1));
+      BOOST_CHECK_EQUAL(gtDist[cpt], metricHamming((uint32_t*)&tab[i],(uint32_t*)&tab[j], sizeof(uint32_t)));
       //Check distance symmetry
-      EXPECT_EQ(gtDist[cpt], metricHammingBitSet(&tab[j],&tab[i], 1));
-      EXPECT_EQ(gtDist[cpt], metricHamming((uint32_t*)&tab[j],(uint32_t*)&tab[i], sizeof(uint32_t)));
+      BOOST_CHECK_EQUAL(gtDist[cpt], metricHammingBitSet(&tab[j],&tab[i], 1));
+      BOOST_CHECK_EQUAL(gtDist[cpt], metricHamming((uint32_t*)&tab[j],(uint32_t*)&tab[i], sizeof(uint32_t)));
       ++cpt;
     }
   }
 }
-
-/* ************************************************************************* */
-int main() { TestResult tr; return TestRegistry::runAllTests(tr);}
-/* ************************************************************************* */
