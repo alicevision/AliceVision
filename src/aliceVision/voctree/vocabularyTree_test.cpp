@@ -3,13 +3,15 @@
 
 #include <aliceVision/voctree/Database.hpp>
 
-#include <testing/testing.h>
-
 #include <cereal/archives/binary.hpp>
 
 #include <iostream>
 #include <fstream>
 #include <vector>
+
+#define BOOST_TEST_MODULE vocabularyTree
+#include <boost/test/included/unit_test.hpp>
+#include <boost/test/floating_point_comparison.hpp>
 
 using namespace std;
 using namespace aliceVision::voctree;
@@ -17,7 +19,7 @@ using namespace aliceVision::voctree;
 int card_documents = 10;
 int card_words = 12;
 
-TEST(database, databaseIO) {
+BOOST_AUTO_TEST_CASE(database_databaseIO) {
 
   // Create a documents vector
   vector< vector<Word> > documents_to_insert;
@@ -57,7 +59,7 @@ TEST(database, databaseIO) {
   is.close();
 
   // Check databases size
-  EXPECT_EQ(source_db.size(), reload_db.size());
+  BOOST_CHECK_EQUAL(source_db.size(), reload_db.size());
 
   // Check returned matches for a given document
   for(int i = 0; i < documents_to_insert.size(); i++)
@@ -68,11 +70,9 @@ TEST(database, databaseIO) {
     source_db.find(documents_to_insert[i], 1, source_match, "classic");
     reload_db.find(documents_to_insert[i], 1, reload_match, "classic");
     // Check we have the same match
-    EXPECT_EQ(source_match[0].id, reload_match[0].id);
+    BOOST_CHECK_EQUAL(source_match[0].id, reload_match[0].id);
     // Check the matches scores are 0 (or near)
-    EXPECT_NEAR(0, source_match[0].score, 0.001);
-    EXPECT_NEAR(0, reload_match[0].score, 0.001);
+    BOOST_CHECK_SMALL(static_cast<double>(source_match[0].score), 0.001);
+    BOOST_CHECK_SMALL(static_cast<double>(reload_match[0].score), 0.001);
   }
 }
-
-int main() { TestResult tr; return TestRegistry::runAllTests(tr);}

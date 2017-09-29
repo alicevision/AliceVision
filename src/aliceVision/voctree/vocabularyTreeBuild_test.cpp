@@ -4,16 +4,17 @@
 #include <aliceVision/voctree/TreeBuilder.hpp>
 #include <aliceVision/system/Logger.hpp>
 
-#include <testing/testing.h>
-
 #include <Eigen/Core>
 
 #include <iostream>
 #include <fstream>
 #include <vector>
 
+#define BOOST_TEST_MODULE voctreeBuilder
+#include <boost/test/included/unit_test.hpp>
+#include <boost/test/floating_point_comparison.hpp>
 
-TEST(voctree, voctreeBuilder)
+BOOST_AUTO_TEST_CASE(voctreeBuilder)
 {
   using namespace aliceVision;
 
@@ -22,7 +23,7 @@ TEST(voctree, voctreeBuilder)
   const std::size_t DIMENSION = 3;
   const std::size_t FEATURENUMBER = 100;
 
-  const float kepsf = 10e-8;
+  const double kepsf = 10e-8;
   const std::size_t K = 4;
   const std::size_t LEVELS = 3;
   const std::size_t LEAVESNUMBER = std::pow(K, LEVELS);
@@ -44,7 +45,7 @@ TEST(voctree, voctreeBuilder)
     for(std::size_t j = 0; j < FEATURENUMBER; ++j)
     {
       features.push_back((FeatureFloat::Random(1, DIMENSION) + Eigen::MatrixXf::Constant(1, DIMENSION, STEP * i) - Eigen::MatrixXf::Constant(1, DIMENSION, STEP * (LEAVESNUMBER - 1) / 2)) / ((STEP * (LEAVESNUMBER - 1) / 2) * sqrt(DIMENSION)));
-      EXPECT_TRUE(voctree::checkElements(features[j], "init"));
+      BOOST_CHECK(voctree::checkElements(features[j], "init"));
     }
   }
 
@@ -59,7 +60,7 @@ TEST(voctree, voctreeBuilder)
   // the centers should all be valid in this configuration
   std::vector<uint8_t> valid = builder.tree().validCenters();
   for(std::size_t i = 0; i < valid.size(); ++i)
-    EXPECT_TRUE(valid[i] != 0);
+    BOOST_CHECK(valid[i] != 0);
 
   builder.tree().save(treeName);
 
@@ -70,21 +71,12 @@ TEST(voctree, voctreeBuilder)
   FeatureFloatVector centerOrig = builder.tree().centers();
   FeatureFloatVector centerLoad = loadedtree.centers();
 
-  EXPECT_EQ(centerOrig.size(), centerLoad.size());
+  BOOST_CHECK_EQUAL(centerOrig.size(), centerLoad.size());
 
   voctree::L2<FeatureFloat, FeatureFloat> distance;
   for(std::size_t i = 0; i < centerOrig.size(); ++i)
   {
-    EXPECT_NEAR(distance(centerOrig[i], centerLoad[i]), 0, kepsf);
+    BOOST_CHECK_SMALL(distance(centerOrig[i],centerLoad[i]), kepsf);
   }
-
-
 //  voctree::printFeatVector( features ); 
 }
-
-int main()
-{
-  TestResult tr;
-  return TestRegistry::runAllTests(tr);
-}
-

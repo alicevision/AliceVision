@@ -4,14 +4,16 @@
 #include <aliceVision/system/Logger.hpp>
 #include <aliceVision/voctree/SimpleKmeans.hpp>
 
-#include <testing/testing.h>
-
 #include <iostream>
 #include <fstream>
 #include <vector>
 #include <random>
 
-TEST(kmeans, kmeanInitializer) 
+#define BOOST_TEST_MODULE kmeans
+#include <boost/test/included/unit_test.hpp>
+#include <boost/test/floating_point_comparison.hpp>
+
+BOOST_AUTO_TEST_CASE(kmeanInitializer)
 {
   using namespace aliceVision;
   
@@ -43,7 +45,7 @@ TEST(kmeans, kmeanInitializer)
   initializer(featPtr, K, centers, voctree::L2<FeatureFloat, FeatureFloat>());
 
   // it's difficult to check the result as it is random, just check there are no weird things
-  EXPECT_TRUE(voctree::checkVectorElements(centers, "initializer1"));
+  BOOST_CHECK(voctree::checkVectorElements(centers, "initializer1"));
 
   // now try to generate k cluster well far away and compare
   features.clear();
@@ -63,12 +65,12 @@ TEST(kmeans, kmeanInitializer)
   initializer(featPtr, K, centers, voctree::L2<FeatureFloat,FeatureFloat>());
 
   // it's difficult to check the result as it is random, just check there are no weird things
-  EXPECT_TRUE(voctree::checkVectorElements(centers, "initializer2"));
+  BOOST_CHECK(voctree::checkVectorElements(centers, "initializer2"));
   
 }
 
 
-TEST(kmeans, kmeanInitializerVarying)
+BOOST_AUTO_TEST_CASE(kmeanInitializerVarying)
 {
   using namespace aliceVision;
   
@@ -109,7 +111,7 @@ TEST(kmeans, kmeanInitializerVarying)
       for(std::size_t j = 0; j < FEATURENUMBER; ++j)
       {
         features.push_back((FeatureFloat::Random(DIMENSION) + FeatureFloat::Constant(DIMENSION, STEP * i) - FeatureFloat::Constant(DIMENSION, STEP * (K - 1) / 2)) / ((STEP * (K - 1) / 2) * sqrt(DIMENSION)));
-        EXPECT_TRUE(voctree::checkElements(features[j], "init"));
+        BOOST_CHECK(voctree::checkElements(features[j], "init"));
         featPtr.push_back(const_cast<FeatureFloat*> (&features.back()));
       }
     }
@@ -117,11 +119,11 @@ TEST(kmeans, kmeanInitializerVarying)
     initializer(featPtr, K, centers, voctree::L2<FeatureFloat,FeatureFloat>());
 
     // it's difficult to check the result as it is random, just check there are no weird things
-    EXPECT_TRUE(voctree::checkVectorElements(centers, "initializer"));
+    BOOST_CHECK(voctree::checkVectorElements(centers, "initializer"));
 
   }
 }
-TEST(kmeans, kmeanSimple)
+BOOST_AUTO_TEST_CASE(kmeanSimple)
 {
   using namespace aliceVision;
 
@@ -167,7 +169,7 @@ TEST(kmeans, kmeanSimple)
       for(std::size_t j = 0; j < FEATURENUMBER; ++j)
       {
         features.push_back((FeatureFloat::Random(1, DIMENSION) + Eigen::MatrixXf::Constant(1, DIMENSION, STEP * i) - Eigen::MatrixXf::Constant(1, DIMENSION, STEP * (K - 1) / 2)) / ((STEP * (K - 1) / 2) * sqrt(DIMENSION)));
-        EXPECT_TRUE(voctree::checkElements(features[j], "init"));
+        BOOST_CHECK(voctree::checkElements(features[j], "init"));
       }
       centersGT.push_back((Eigen::MatrixXf::Constant(1, DIMENSION, STEP * i) - Eigen::MatrixXf::Constant(1, DIMENSION, STEP * (K - 1) / 2)) / ((STEP * (K - 1) / 2) * sqrt(DIMENSION)));
     }
@@ -195,12 +197,12 @@ TEST(kmeans, kmeanSimple)
     }
     for(std::size_t i = 0; i < h.size(); ++i)
     {
-      EXPECT_TRUE(h[i] > 0);
+      BOOST_CHECK(h[i] > 0);
     }
   }
 }
 
-TEST(kmeans, kmeanVarying)
+BOOST_AUTO_TEST_CASE(kmeanVarying)
 {
   using namespace aliceVision;
   ALICEVISION_LOG_DEBUG("Testing kmeans with variable k and DIM...");
@@ -246,7 +248,7 @@ TEST(kmeans, kmeanVarying)
       for(std::size_t j = 0; j < FEATURENUMBER; ++j)
       {
         features.push_back((FeatureFloat::Random(DIMENSION) + FeatureFloat::Constant(DIMENSION, STEP * i) - FeatureFloat::Constant(DIMENSION, STEP * (K - 1) / 2)) / ((STEP * (K - 1) / 2) * sqrt(DIMENSION)));
-        EXPECT_TRUE(voctree::checkElements(features[j], "init"));
+        BOOST_CHECK(voctree::checkElements(features[j], "init"));
       }
       centersGT.push_back((FeatureFloat::Constant(DIMENSION, STEP * i) - FeatureFloat::Constant(DIMENSION, STEP * (K - 1) / 2)) / ((STEP * (K - 1) / 2) * sqrt(DIMENSION)));
     }
@@ -280,15 +282,8 @@ TEST(kmeans, kmeanVarying)
     for(size_t i = 0; i < h.size(); ++i)
     {
 //      ALICEVISION_LOG_DEBUG(h[i]);
-      EXPECT_TRUE(h[i] > 0);
-      EXPECT_EQ(h[i], FEATURENUMBER);
+      BOOST_CHECK(h[i] > 0);
+      BOOST_CHECK_EQUAL(h[i], FEATURENUMBER);
     }
   }
-
-}
-
-int main()
-{
-  TestResult tr;
-  return TestRegistry::runAllTests(tr);
 }
