@@ -2,14 +2,17 @@
 // the terms of the MPL2 license (see the COPYING.md file).
 
 #include "aliceVision/image/image.hpp"
-#include "testing/testing.h"
+
+#define BOOST_TEST_MODULE ImageDrawing
+#include <boost/test/included/unit_test.hpp>
+#include <boost/test/floating_point_comparison.hpp>
 
 using namespace aliceVision;
 using namespace aliceVision::image;
 
 // Horizontal / Vertical scanlines
 // Assert that pixels was drawn at the good place
-TEST(ImageDrawing, Scanlines) {
+BOOST_AUTO_TEST_CASE(ImageDrawing_Scanlines) {
 
   const int w = 10, h = 10;
   Image<unsigned char> image(h,w);
@@ -24,7 +27,7 @@ TEST(ImageDrawing, Scanlines) {
   const int y = 5;
   DrawLine( 0, y, w-1, y, 255, &image);
   for(int i=0; i < w; ++i)
-    EXPECT_EQ( image(y,i), 255);
+    BOOST_CHECK_EQUAL( image(y,i), 255);
 
   image.fill(0);
 
@@ -37,10 +40,10 @@ TEST(ImageDrawing, Scanlines) {
   const int x = 5;
   DrawLine( x, 0, x, h-1, 255, &image);
   for (int i = 0; i < h; ++i)
-    EXPECT_EQ(image(i,y), 255);
+    BOOST_CHECK_EQUAL(image(i,y), 255);
 }
 
-TEST(ImageDrawing, Scanlines_RGB) {
+BOOST_AUTO_TEST_CASE(ImageDrawing_Scanlines_RGB) {
 
   const int w = 10, h = 10;
   Image<RGBColor> image(h,w);
@@ -55,7 +58,7 @@ TEST(ImageDrawing, Scanlines_RGB) {
   const int y = 5;
   DrawLine( 0, y, w-1, y, RGBColor(GREEN), &image);
   for(int i=0; i < w; ++i)
-    EXPECT_EQ( image(y,i), RGBColor(GREEN));
+    BOOST_CHECK_EQUAL( image(y,i), RGBColor(GREEN));
 
   image.fill(RGBColor(BLACK));
 
@@ -68,12 +71,12 @@ TEST(ImageDrawing, Scanlines_RGB) {
   const int x = 5;
   DrawLine( x, 0, x, h-1, RGBColor(YELLOW), &image);
   for (int i = 0; i < h; ++i)
-    EXPECT_EQ(image(i,y), RGBColor(YELLOW));
+    BOOST_CHECK_EQUAL(image(i,y), RGBColor(YELLOW));
 }
 
 // Lines with a given angle +/-45°
 // Assert that pixels was drawn at the good place
-TEST(ImageDrawing, Lines45) {
+BOOST_AUTO_TEST_CASE(ImageDrawing_Lines45) {
 
   const int w = 10, h = 10;
   Image<unsigned char> image(h,w);
@@ -86,7 +89,7 @@ TEST(ImageDrawing, Lines45) {
 
   DrawLine(0, 0, w-1, h-1, 255, &image);
   for (int i = 0; i < w; ++i)
-    EXPECT_EQ(image(i,i), 255);
+    BOOST_CHECK_EQUAL(image(i,i), 255);
 
   image.fill(0);
 
@@ -96,12 +99,12 @@ TEST(ImageDrawing, Lines45) {
   //  |/___|_
   DrawLine(0, h-1, w-1, 0, 255, &image);
   for (int i = 0; i < h; ++i)
-    EXPECT_EQ(image(h-1-i,i), 255);
+    BOOST_CHECK_EQUAL(image(h-1-i,i), 255);
 }
 
 // Draw a circle in an image and assert that all the points are
 // at a distance equal to the radius.
-TEST(ImageDrawing, Circle) {
+BOOST_AUTO_TEST_CASE(ImageDrawing_Circle) {
 
   Image<unsigned char> image(10,10);
   image.fill(0);
@@ -116,7 +119,7 @@ TEST(ImageDrawing, Circle) {
   for ( int i = 0; i < image.Width(); ++i) {
     if (image(j, i) == 255)  {
       const float distance =  std::hypot((float)(j-y), (float)(i-x));
-      EXPECT_NEAR(radius, distance, 1.0f);
+      BOOST_CHECK_SMALL(radius-distance, 1.0f);
       // Due to discretisation we cannot expect better precision
     }
   }
@@ -125,7 +128,7 @@ TEST(ImageDrawing, Circle) {
 // Draw an ellipse with the two radius equal each other...
 // in an image and assert that all the points are
 // at a distance equal to the radius.
-TEST(ImageDrawing, Ellipse) {
+BOOST_AUTO_TEST_CASE(ImageDrawing_Ellipse) {
 
   Image<unsigned char> image(10,10);
   image.fill(0);
@@ -143,7 +146,7 @@ TEST(ImageDrawing, Ellipse) {
       if(image(j, i) == 255)
       {
         const float distance = std::hypot((float) (j - y), (float) (i - x));
-        EXPECT_NEAR(radius, distance, 1.0f);
+        BOOST_CHECK_SMALL(radius-distance, 1.0f);
         // Due to discretisation we cannot expect better precision
       }
     }
@@ -153,7 +156,7 @@ TEST(ImageDrawing, Ellipse) {
 // Draw an ellipse with the two radius and rotated ...
 // in an image and assert that all the points are
 // within the given radius.
-TEST(ImageDrawing, RotatedEllipse) {
+BOOST_AUTO_TEST_CASE(ImageDrawing_RotatedEllipse) {
 
   Image<unsigned char> image(30,30);
   image.fill(0);
@@ -171,7 +174,7 @@ TEST(ImageDrawing, RotatedEllipse) {
       if(image(j, i) == 255)
       {
         const float distance = std::hypot((float) (j - y), (float) (i - x));
-        EXPECT_EQ(radius + 1 >= distance && radius / 2.0 - 1 <= distance, true);
+        BOOST_CHECK_EQUAL(radius + 1 >= distance && radius / 2.0 - 1 <= distance, true);
         // Due to discretization we cannot expect better precision
         // Use +-1 to avoid rasterization error.
       }
@@ -181,7 +184,7 @@ TEST(ImageDrawing, RotatedEllipse) {
 
 /// Assert that the DrawLine function do not crash
 /// when one point is outside the image
-TEST(ImageDrawing, DrawLine_PointOutsideTheImage) {
+BOOST_AUTO_TEST_CASE(ImageDrawing_DrawLine_PointOutsideTheImage) {
 
   Image<unsigned char> image(30,30);
   image.fill(0);
@@ -223,7 +226,3 @@ TEST(ImageDrawing, DrawLine_PointOutsideTheImage) {
   }
   //WriteImage( image, "toto.png");
 }
-
-/* ************************************************************************* */
-int main() { TestResult tr; return TestRegistry::runAllTests(tr);}
-/* ************************************************************************* */

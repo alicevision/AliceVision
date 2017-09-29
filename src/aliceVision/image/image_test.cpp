@@ -2,14 +2,18 @@
 // the terms of the MPL2 license (see the COPYING.md file).
 
 #include "aliceVision/image/image.hpp"
-#include "testing/testing.h"
 
 #include <iostream>
+
+#define BOOST_TEST_MODULE Image
+#include <boost/test/included/unit_test.hpp>
+#include <boost/test/floating_point_comparison.hpp>
+
 using namespace std;
 using namespace aliceVision;
 using namespace aliceVision::image;
 
-TEST(Image, Basis)
+BOOST_AUTO_TEST_CASE(Image_Basis)
 {
   //-- Gray(unsigned char) Image creation
   Image<unsigned char> imaGray(10,10);
@@ -53,11 +57,11 @@ TEST(Image, Basis)
   // Image resizing
   Image<unsigned char> imaToResize;
   imaToResize.resize(5,10);
-  EXPECT_EQ(10, imaToResize.Height());
-  EXPECT_EQ(5, imaToResize.Width());
+  BOOST_CHECK_EQUAL(10, imaToResize.Height());
+  BOOST_CHECK_EQUAL(5, imaToResize.Width());
 }
 
-TEST(Image, PixelTypes)
+BOOST_AUTO_TEST_CASE(Image_PixelTypes)
 {
   RGBColor  a(BLACK);
   // RGBColor  c(0); // Not accepted because can cause bad pixel affectation value (mixed type...)
@@ -66,7 +70,7 @@ TEST(Image, PixelTypes)
   RGBAColor d(BLACK);
 }
 
-TEST(Image, ImageConverter)
+BOOST_AUTO_TEST_CASE(Image_ImageConverter)
 {
   Image<RGBColor> imaColorRGB(5,5);
   imaColorRGB.fill(RGBColor(10,10,10));
@@ -78,7 +82,3 @@ TEST(Image, ImageConverter)
   imaColorRGBA.fill(RGBAColor(10,10,10, 255));
   ConvertPixelType(imaColorRGBA, &imaGray);
 }
-
-/* ************************************************************************* */
-int main() { TestResult tr; return TestRegistry::runAllTests(tr);}
-/* ************************************************************************* */

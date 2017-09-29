@@ -3,20 +3,23 @@
 
 #include <aliceVision/system/Logger.hpp>
 #include <aliceVision/image/image.hpp>
-#include "testing/testing.h"
 
 #include <string>
 #include <sstream>
 
+#define BOOST_TEST_MODULE ImageRessampling
+#include <boost/test/included/unit_test.hpp>
+#include <boost/test/floating_point_comparison.hpp>
+
 using namespace aliceVision;
 using namespace aliceVision::image;
 
-TEST(Ressampling,SampleSamePosition)
+BOOST_AUTO_TEST_CASE(Ressampling_SampleSamePosition)
 {
   Image<unsigned char> image;
   std::string png_filename = std::string(THIS_SOURCE_DIR) + "/image_test/lena.png";
   ALICEVISION_LOG_DEBUG(png_filename);
-  EXPECT_TRUE(ReadImage(png_filename.c_str(), &image));
+  BOOST_CHECK(ReadImage(png_filename.c_str(), &image));
 
 
   // Build sampling grid
@@ -37,7 +40,7 @@ TEST(Ressampling,SampleSamePosition)
   GenericRessample( image , sampling_grid , image.Width() , image.Height() , sampler , imageOut ) ;
 
   std::string out_filename = ("test_ressample_same.png");
-  EXPECT_TRUE( WriteImage( out_filename.c_str(), imageOut) ) ;
+  BOOST_CHECK( WriteImage( out_filename.c_str(), imageOut) ) ;
 }
 
 // Iterative image rotations
@@ -102,21 +105,17 @@ bool ImageRotation(
   return bOk;
 }
 
-TEST(Ressampling,SampleRotate)
+BOOST_AUTO_TEST_CASE(Ressampling_SampleRotate)
 {
   Image<RGBColor> image;
 
   std::string png_filename = std::string(THIS_SOURCE_DIR) + "/image_test/lena.png";
   ALICEVISION_LOG_DEBUG(png_filename);
-  EXPECT_TRUE(ReadImage(png_filename.c_str(), &image));
+  BOOST_CHECK(ReadImage(png_filename.c_str(), &image));
 
-  EXPECT_TRUE(ImageRotation(image, Sampler2d< SamplerNearest >(), "SamplerNearest"));
-  EXPECT_TRUE(ImageRotation(image, Sampler2d< SamplerLinear >(), "SamplerLinear"));
-  EXPECT_TRUE(ImageRotation(image, Sampler2d< SamplerCubic >(), "SamplerCubic"));
-  EXPECT_TRUE(ImageRotation(image, Sampler2d< SamplerSpline16 >(), "SamplerSpline16"));
-  EXPECT_TRUE(ImageRotation(image, Sampler2d< SamplerSpline64 >(), "SamplerSpline64"));
+  BOOST_CHECK(ImageRotation(image, Sampler2d< SamplerNearest >(), "SamplerNearest"));
+  BOOST_CHECK(ImageRotation(image, Sampler2d< SamplerLinear >(), "SamplerLinear"));
+  BOOST_CHECK(ImageRotation(image, Sampler2d< SamplerCubic >(), "SamplerCubic"));
+  BOOST_CHECK(ImageRotation(image, Sampler2d< SamplerSpline16 >(), "SamplerSpline16"));
+  BOOST_CHECK(ImageRotation(image, Sampler2d< SamplerSpline64 >(), "SamplerSpline64"));
 }
-
-/* ************************************************************************* */
-int main() { TestResult tr; return TestRegistry::runAllTests(tr);}
-/* ************************************************************************* */
