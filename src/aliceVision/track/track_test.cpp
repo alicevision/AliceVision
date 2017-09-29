@@ -1,22 +1,22 @@
 // This file is part of the AliceVision project and is made available under
 // the terms of the MPL2 license (see the COPYING.md file).
 
-#include "CppUnitLite/TestHarness.h"
-#include "testing/testing.h"
-
 #include "aliceVision/track/Track.hpp"
 #include "aliceVision/matching/IndMatch.hpp"
 
 #include <vector>
 #include <utility>
 
+#define BOOST_TEST_MODULE Track
+#include <boost/test/included/unit_test.hpp>
+#include <boost/test/floating_point_comparison.hpp>
 
 using namespace aliceVision::feature;
 using namespace aliceVision::track;
 using namespace aliceVision::matching;
 
 
-TEST(Track, Simple) {
+BOOST_AUTO_TEST_CASE(Track_Simple) {
 
   // Create some tracks for image (A,B,C)
   // {A,B,C} imageId will be {0,1,2}
@@ -63,24 +63,24 @@ TEST(Track, Simple) {
     std::make_pair(0,2), std::make_pair(1,3)
   };
 
-  CHECK_EQUAL(3,  map_tracks.size());
+  BOOST_CHECK_EQUAL(3,  map_tracks.size());
   std::size_t cpt = 0, i = 0;
   for (TracksMap::const_iterator iterT = map_tracks.begin();
     iterT != map_tracks.end();
     ++iterT, ++i)
   {
-    CHECK_EQUAL(i, iterT->first);
+    BOOST_CHECK_EQUAL(i, iterT->first);
     for (auto iter = iterT->second.featPerView.begin();
       iter != iterT->second.featPerView.end();
       ++iter)
     {
-      CHECK( GT_Tracks[cpt] == std::make_pair(iter->first, iter->second));
+      BOOST_CHECK( GT_Tracks[cpt] == std::make_pair(iter->first, iter->second));
       ++cpt;
     }
   }
 }
 
-TEST(Track, filter_3viewAtLeast) {
+BOOST_AUTO_TEST_CASE(Track_filter_3viewAtLeast) {
 
   //
   //A    B    C
@@ -107,12 +107,12 @@ TEST(Track, filter_3viewAtLeast) {
   //-- Build tracks using the interface tracksbuilder
   TracksBuilder trackBuilder;
   trackBuilder.Build( map_pairwisematches );
-  CHECK_EQUAL(3, trackBuilder.NbTracks());
+  BOOST_CHECK_EQUAL(3, trackBuilder.NbTracks());
   trackBuilder.Filter(3);
-  CHECK_EQUAL(2, trackBuilder.NbTracks());
+  BOOST_CHECK_EQUAL(2, trackBuilder.NbTracks());
 }
 
-TEST(Track, Conflict) {
+BOOST_AUTO_TEST_CASE(Track_Conflict) {
 
   //
   //A    B    C
@@ -140,9 +140,9 @@ TEST(Track, Conflict) {
   TracksBuilder trackBuilder;
   trackBuilder.Build( map_pairwisematches );
 
-  CHECK_EQUAL(3, trackBuilder.NbTracks());
+  BOOST_CHECK_EQUAL(3, trackBuilder.NbTracks());
   trackBuilder.Filter(); // Key feature tested here to kill the conflicted track
-  CHECK_EQUAL(2, trackBuilder.NbTracks());
+  BOOST_CHECK_EQUAL(2, trackBuilder.NbTracks());
 
   TracksMap map_tracks;
   trackBuilder.ExportToSTL(map_tracks);
@@ -157,24 +157,24 @@ TEST(Track, Conflict) {
     {std::make_pair(0,0), std::make_pair(1,0), std::make_pair(2,0),
      std::make_pair(0,1), std::make_pair(1,1), std::make_pair(2,6)};
 
-  CHECK_EQUAL(2,  map_tracks.size());
+  BOOST_CHECK_EQUAL(2,  map_tracks.size());
   std::size_t cpt = 0, i = 0;
   for (TracksMap::const_iterator iterT = map_tracks.begin();
     iterT != map_tracks.end();
     ++iterT, ++i)
   {
-    CHECK_EQUAL(i, iterT->first);
+    BOOST_CHECK_EQUAL(i, iterT->first);
     for (auto iter = iterT->second.featPerView.begin();
       iter != iterT->second.featPerView.end();
       ++iter)
     {
-      CHECK( GT_Tracks[cpt] == std::make_pair(iter->first, iter->second));
+      BOOST_CHECK( GT_Tracks[cpt] == std::make_pair(iter->first, iter->second));
       ++cpt;
     }
   }
 }
 
-TEST(Track, GetCommonTracksInImages)
+BOOST_AUTO_TEST_CASE(Track_GetCommonTracksInImages)
 {
   {
     std::set<std::size_t> set_imageIndex {15, 20};
@@ -190,11 +190,11 @@ TEST(Track, GetCommonTracksInImages)
 
     std::set<std::size_t> set_visibleTracks;
     TracksUtilsMap::GetCommonTracksInImages(set_imageIndex, map_tracksPerView, set_visibleTracks);
-    CHECK_EQUAL(base.size(), set_visibleTracks.size());
+    BOOST_CHECK_EQUAL(base.size(), set_visibleTracks.size());
     set_visibleTracks.clear();
     // test non-existing view index
     TracksUtilsMap::GetCommonTracksInImages({15, 50}, map_tracksPerView, set_visibleTracks);
-    CHECK(set_visibleTracks.empty());
+    BOOST_CHECK(set_visibleTracks.empty());
   }
   {
     std::set<std::size_t> set_imageIndex {15, 20, 10, 40};
@@ -219,10 +219,6 @@ TEST(Track, GetCommonTracksInImages)
 
     std::set<std::size_t> set_visibleTracks;
     TracksUtilsMap::GetCommonTracksInImages(set_imageIndex, map_tracksPerView, set_visibleTracks);
-    CHECK_EQUAL(base.size(), set_visibleTracks.size());
+    BOOST_CHECK_EQUAL(base.size(), set_visibleTracks.size());
   }
 }
-
-/* ************************************************************************* */
-int main() { TestResult tr; return TestRegistry::runAllTests(tr);}
-/* ************************************************************************* */
