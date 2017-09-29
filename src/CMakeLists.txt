@@ -246,7 +246,7 @@ macro(UNIT_TEST NAMESPACE NAME EXTRA_LIBS)
 
     target_link_libraries(${NAMESPACE}_test_${NAME}
                           ${EXTRA_LIBS} # Extra libs MUST be first.
-                          CppUnitLite ${BOOST_LIBRARIES} ${ALICEVISION_LIBRARY_DEPENDENCIES})
+                          ${BOOST_LIBRARIES} ${ALICEVISION_LIBRARY_DEPENDENCIES})
     add_test(NAME ${NAMESPACE}_test_${NAME} WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}
              COMMAND $<TARGET_FILE:${NAMESPACE}_test_${NAME}>)
   endif()

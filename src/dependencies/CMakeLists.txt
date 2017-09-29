@@ -9,11 +9,6 @@ if(UNIX)
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIC")
 endif(UNIX)
 
-# Unit test library
-if(ALICEVISION_BUILD_TESTS)
-  add_subdirectory(CppUnitLite)
-endif()
-
 # Basic filesystem utils
 set(STLPLUS_INCLUDE_INSTALL_DIR ${CMAKE_INSTALL_PREFIX}/include/aliceVision/dependencies/stlplus3)
 add_subdirectory(stlplus3)

@@ -1,7 +1,6 @@
 // This file is part of the AliceVision project and is made available under
 // the terms of the MPL2 license (see the COPYING.md file).
 
-#include "CppUnitLite/TestHarness.h"
 #include "aliceVision/multiview/rotationAveraging/rotationAveraging.hpp"
 #include "aliceVision/multiview/essential.hpp"
 #include <aliceVision/system/Logger.hpp>
