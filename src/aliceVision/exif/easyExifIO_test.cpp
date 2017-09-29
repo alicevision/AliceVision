@@ -4,11 +4,14 @@
 #include "EasyExifIO.hpp"
 #include <aliceVision/system/Logger.hpp>
 
-#include "testing/testing.h"
 #include "dependencies/stlplus3/filesystemSimplified/file_system.hpp"
 
 #include <iostream>
 #include <memory>
+
+#define BOOST_TEST_MODULE EasyExifIO
+#include <boost/test/included/unit_test.hpp>
+#include <boost/test/floating_point_comparison.hpp>
 
 using namespace std;
 using namespace aliceVision;
@@ -20,14 +23,14 @@ const std::string sImg =
   stlplus::folder_up(string(THIS_SOURCE_DIR))))
     + "/samples/imageData/exifTest/100_7100.JPG";
 
-TEST(Matching, ExifIO_easyexif_ReadData_invalidFile)
+BOOST_AUTO_TEST_CASE(ExifIO_easyexif_ReadData_invalidFile)
 {
   std::unique_ptr<ExifIO> exif_io ( new EasyExifIO( "tmp.jpg" ) );
 
-  EXPECT_FALSE(exif_io->doesHaveExifInfo());
+  BOOST_CHECK(exif_io->doesHaveExifInfo() == false);
 }
 
-TEST(Matching, ExifIO_easyexif_ReadData)
+BOOST_AUTO_TEST_CASE(ExifIO_easyexif_ReadData)
 {
   std::unique_ptr<ExifIO> exif_io(new EasyExifIO(sImg));
 
@@ -37,26 +40,21 @@ TEST(Matching, ExifIO_easyexif_ReadData)
   ALICEVISION_LOG_DEBUG(exif_io->getExifDataString());
   ALICEVISION_LOG_DEBUG("-----");
 
-  EXPECT_TRUE(exif_io->doesHaveExifInfo());
+  BOOST_CHECK(exif_io->doesHaveExifInfo());
 
-  EXPECT_EQ("EASTMAN KODAK COMPANY", exif_io->getBrand());
-  EXPECT_EQ("KODAK Z612 ZOOM DIGITAL CAMERA", exif_io->getModel());
+  BOOST_CHECK(exif_io->getBrand() == "EASTMAN KODAK COMPANY");
+  BOOST_CHECK(exif_io->getModel() == "KODAK Z612 ZOOM DIGITAL CAMERA");
 
-  EXPECT_EQ(2832, exif_io->getWidth());
-  EXPECT_EQ(2128, exif_io->getHeight());
-  EXPECT_NEAR(5.85, exif_io->getFocal(), 1e-2);
+  BOOST_CHECK_EQUAL(2832, exif_io->getWidth());
+  BOOST_CHECK_EQUAL(2128, exif_io->getHeight());
+  BOOST_CHECK_SMALL(5.85 - exif_io->getFocal(), 1e-2);
 
-  EXPECT_EQ("", exif_io->getImageUniqueID());
-  EXPECT_EQ("", exif_io->getSerialNumber());
-  EXPECT_EQ("", exif_io->getLensModel());
-  EXPECT_EQ("", exif_io->getLensSerialNumber());
-  EXPECT_EQ("", exif_io->getDateTime());
-  EXPECT_EQ("2010:10:12 14:43:07", exif_io->getDateTimeOriginal());
-  EXPECT_EQ("2010:10:12 14:43:07", exif_io->getDateTimeDigitized());
-  EXPECT_EQ("", exif_io->getSubSecTimeOriginal());
+  BOOST_CHECK(exif_io->getImageUniqueID() == "");
+  BOOST_CHECK(exif_io->getSerialNumber() == "");
+  BOOST_CHECK(exif_io->getLensModel() == "");
+  BOOST_CHECK(exif_io->getLensSerialNumber() == "");
+  BOOST_CHECK(exif_io->getDateTime() == "");
+  BOOST_CHECK(exif_io->getDateTimeOriginal() == "2010:10:12 14:43:07");
+  BOOST_CHECK(exif_io->getDateTimeDigitized() == "2010:10:12 14:43:07");
+  BOOST_CHECK(exif_io->getSubSecTimeOriginal() == "");
 }
-
-/* ************************************************************************* */
-int main() { TestResult tr; return TestRegistry::runAllTests(tr);}
-/* ************************************************************************* */
-

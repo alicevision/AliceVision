@@ -1,36 +1,40 @@
 // This file is part of the AliceVision project and is made available under
 // the terms of the MPL2 license (see the COPYING.md file).
 
-#include "testing/testing.h"
 #include "parseDatabase.hpp"
 
 #include "dependencies/stlplus3/filesystemSimplified/file_system.hpp"
 
 #include <string>
 
+
+#define BOOST_TEST_MODULE parseDatabase
+#include <boost/test/included/unit_test.hpp>
+#include <boost/test/floating_point_comparison.hpp>
+
 using namespace aliceVision::exif::sensordb;
 
 static const std::string sDatabase = "sensor_width_camera_database.txt";
-TEST(Matching, InvalidDatabase)
+BOOST_AUTO_TEST_CASE(InvalidDatabase)
 {
   std::vector<Datasheet> vec_database;
   const std::string sfileDatabase = stlplus::create_filespec( std::string(THIS_SOURCE_DIR), "" );
 
-  EXPECT_FALSE( parseDatabase( sfileDatabase, vec_database ) );
-  EXPECT_TRUE( vec_database.empty() );
+  BOOST_CHECK(! parseDatabase( sfileDatabase, vec_database ) );
+  BOOST_CHECK( vec_database.empty() );
 }
 
-TEST(Matching, ValidDatabase)
+BOOST_AUTO_TEST_CASE(ValidDatabase)
 {
   std::vector<Datasheet> vec_database;
   const std::string sfileDatabase = stlplus::create_filespec( std::string(THIS_SOURCE_DIR), sDatabase );
 
-  EXPECT_TRUE( parseDatabase( sfileDatabase, vec_database ) );
-  EXPECT_TRUE( !vec_database.empty() );
+  BOOST_CHECK( parseDatabase( sfileDatabase, vec_database ) );
+  BOOST_CHECK( !vec_database.empty() );
 
 }
 
-TEST(Matching, ParseDatabaseSD900)
+BOOST_AUTO_TEST_CASE(ParseDatabaseSD900)
 {
   std::vector<Datasheet> vec_database;
   Datasheet datasheet;
@@ -38,14 +42,14 @@ TEST(Matching, ParseDatabaseSD900)
   const std::string sModel = "Canon PowerShot SD900";
   const std::string sBrand = "Canon";
 
-  EXPECT_TRUE( parseDatabase( sfileDatabase, vec_database ) );
-  EXPECT_TRUE( getInfo( sBrand, sModel, vec_database, datasheet ) );
-  EXPECT_EQ( "Canon", datasheet._brand );
-  EXPECT_EQ( "Canon PowerShot SD900", datasheet._model );
-  EXPECT_EQ( 7.11, datasheet._sensorSize );
+  BOOST_CHECK( parseDatabase( sfileDatabase, vec_database ) );
+  BOOST_CHECK( getInfo( sBrand, sModel, vec_database, datasheet ) );
+  BOOST_CHECK_EQUAL( "Canon", datasheet._brand );
+  BOOST_CHECK_EQUAL( "Canon PowerShot SD900", datasheet._model );
+  BOOST_CHECK_EQUAL( 7.11, datasheet._sensorSize );
 }
 
-TEST(Matching, ParseDatabaseA710_IS)
+BOOST_AUTO_TEST_CASE(ParseDatabaseA710_IS)
 {
   std::vector<Datasheet> vec_database;
   Datasheet datasheet;
@@ -53,14 +57,14 @@ TEST(Matching, ParseDatabaseA710_IS)
   const std::string sModel = "Canon PowerShot A710 IS";
   const std::string sBrand = "Canon";
 
-  EXPECT_TRUE( parseDatabase( sfileDatabase, vec_database ) );
-  EXPECT_TRUE( getInfo( sBrand, sModel, vec_database, datasheet ) );
-  EXPECT_EQ( "Canon", datasheet._brand );
-  EXPECT_EQ( "Canon PowerShot A710 IS", datasheet._model );
-  EXPECT_EQ( 5.75, datasheet._sensorSize );
+  BOOST_CHECK( parseDatabase( sfileDatabase, vec_database ) );
+  BOOST_CHECK( getInfo( sBrand, sModel, vec_database, datasheet ) );
+  BOOST_CHECK_EQUAL( "Canon", datasheet._brand );
+  BOOST_CHECK_EQUAL( "Canon PowerShot A710 IS", datasheet._model );
+  BOOST_CHECK_EQUAL( 5.75, datasheet._sensorSize );
 }
 
-TEST(Matching, ParseDatabaseNotExist)
+BOOST_AUTO_TEST_CASE(ParseDatabaseNotExist)
 {
   std::vector<Datasheet> vec_database;
   Datasheet datasheet;
@@ -68,12 +72,12 @@ TEST(Matching, ParseDatabaseNotExist)
   const std::string sModel = "NotExistModel";
   const std::string sBrand = "NotExistBrand";
 
-  EXPECT_TRUE( parseDatabase( sfileDatabase, vec_database ) );
-  EXPECT_FALSE( getInfo( sBrand, sModel, vec_database, datasheet ) );
+  BOOST_CHECK( parseDatabase( sfileDatabase, vec_database ) );
+  BOOST_CHECK(! getInfo( sBrand, sModel, vec_database, datasheet ) );
 }
 
 
-TEST(Matching, ParseDatabaseCanon_EOS_550D)
+BOOST_AUTO_TEST_CASE(ParseDatabaseCanon_EOS_550D)
 {
   std::vector<Datasheet> vec_database;
   Datasheet datasheet;
@@ -81,12 +85,12 @@ TEST(Matching, ParseDatabaseCanon_EOS_550D)
   const std::string sModel = "Canon EOS 550D";
   const std::string sBrand = "Canon";
 
-  EXPECT_TRUE( parseDatabase( sfileDatabase, vec_database ) );
-  EXPECT_TRUE( getInfo( sBrand, sModel, vec_database, datasheet ) );
-  EXPECT_EQ( 22.3, datasheet._sensorSize );
+  BOOST_CHECK( parseDatabase( sfileDatabase, vec_database ) );
+  BOOST_CHECK( getInfo( sBrand, sModel, vec_database, datasheet ) );
+  BOOST_CHECK_EQUAL( 22.3, datasheet._sensorSize );
 }
 
-TEST(Matching, ParseDatabaseCanon_EOS_5D_Mark_II)
+BOOST_AUTO_TEST_CASE(ParseDatabaseCanon_EOS_5D_Mark_II)
 {
   std::vector<Datasheet> vec_database;
   Datasheet datasheet;
@@ -94,12 +98,12 @@ TEST(Matching, ParseDatabaseCanon_EOS_5D_Mark_II)
   const std::string sModel = "Canon EOS 5D Mark II";
   const std::string sBrand = "Canon";
 
-  EXPECT_TRUE( parseDatabase( sfileDatabase, vec_database ) );
-  EXPECT_TRUE( getInfo( sBrand, sModel, vec_database, datasheet ) );
-  EXPECT_EQ( 35.8, datasheet._sensorSize );
+  BOOST_CHECK( parseDatabase( sfileDatabase, vec_database ) );
+  BOOST_CHECK( getInfo( sBrand, sModel, vec_database, datasheet ) );
+  BOOST_CHECK_EQUAL( 35.8, datasheet._sensorSize );
 }
 
-TEST(Matching, ParseDatabaseCanon_EOS_1100D)
+BOOST_AUTO_TEST_CASE(ParseDatabaseCanon_EOS_1100D)
 {
   std::vector<Datasheet> vec_database;
   Datasheet datasheet;
@@ -107,12 +111,7 @@ TEST(Matching, ParseDatabaseCanon_EOS_1100D)
   const std::string sModel = "Canon EOS 1100D";
   const std::string sBrand = "Canon";
 
-  EXPECT_TRUE( parseDatabase( sfileDatabase, vec_database ) );
-  EXPECT_TRUE( getInfo( sBrand, sModel, vec_database, datasheet ) );
-  EXPECT_EQ( 22.2, datasheet._sensorSize );
+  BOOST_CHECK( parseDatabase( sfileDatabase, vec_database ) );
+  BOOST_CHECK( getInfo( sBrand, sModel, vec_database, datasheet ) );
+  BOOST_CHECK_EQUAL( 22.2, datasheet._sensorSize );
 }
-
-
-/* ************************************************************************* */
-int main() { TestResult tr; return TestRegistry::runAllTests(tr);}
-/* ************************************************************************* */
