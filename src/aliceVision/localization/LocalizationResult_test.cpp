@@ -5,13 +5,17 @@
 #include <aliceVision/camera/PinholeRadial.hpp>
 #include <aliceVision/numeric/numeric.hpp>
 #include <aliceVision/sfm/pipeline/localization/SfMLocalizer.hpp>
-#include "testing/testing.h"
 
 #include <dependencies/stlplus3/filesystemSimplified/file_system.hpp>
 
 #include <vector>
 #include <chrono>
 #include <random>
+
+#define BOOST_TEST_MODULE LocalizationResult
+#include <boost/test/included/unit_test.hpp>
+#include <boost/test/floating_point_comparison.hpp>
+#include <aliceVision/unitTest.hpp>
 
 using namespace aliceVision;
 
@@ -61,18 +65,18 @@ localization::LocalizationResult generateRandomResult(std::size_t numPts)
 // generate a random localization result, save it to binary file, load it again
 // and compare each value
 
-TEST(LocalizationResult, LoadSaveBinSingle)
+BOOST_AUTO_TEST_CASE(LocalizationResult_LoadSaveBinSingle)
 {
   const double threshold = 1e-10;
   const std::string filename = "test_localizationResult.bin";
   const localization::LocalizationResult &res = generateRandomResult(10);
   localization::LocalizationResult check;
 
-  EXPECT_TRUE(localization::save(res, filename));
-  EXPECT_TRUE(localization::load(check, filename));
+  BOOST_CHECK(localization::save(res, filename));
+  BOOST_CHECK(localization::load(check, filename));
 
   // same validity
-  EXPECT_TRUE(res.isValid() == check.isValid());
+  BOOST_CHECK(res.isValid() == check.isValid());
 
   // same pose
   const Mat3 rotGT = res.getPose().rotation();
@@ -81,33 +85,33 @@ TEST(LocalizationResult, LoadSaveBinSingle)
   {
     for(std::size_t j = 0; j < 3; ++j)
     {
-      EXPECT_NEAR(rotGT(i, j), rot(i, j), threshold)
+      BOOST_CHECK_SMALL(rotGT(i, j)- rot(i, j), threshold);
     }
   }
   const Vec3 centerGT = res.getPose().center();
   const Vec3 center = check.getPose().center();
-  EXPECT_NEAR(centerGT(0), center(0), threshold);
-  EXPECT_NEAR(centerGT(1), center(1), threshold);
-  EXPECT_NEAR(centerGT(2), center(2), threshold);
+  BOOST_CHECK_SMALL(centerGT(0)-center(0), threshold);
+  BOOST_CHECK_SMALL(centerGT(1)-center(1), threshold);
+  BOOST_CHECK_SMALL(centerGT(2)-center(2), threshold);
 
   // same _indMatch3D2D
   const auto idxGT = res.getIndMatch3D2D();
   const auto idx = check.getIndMatch3D2D();
-  EXPECT_TRUE(idxGT.size() == idx.size());
+  BOOST_CHECK(idxGT.size() == idx.size());
   const std::size_t numpts = idxGT.size();
   for(std::size_t i = 0; i < numpts; ++i)
   {
-    EXPECT_TRUE(idxGT[i].landmarkId == idx[i].landmarkId);
-    EXPECT_TRUE(idxGT[i].featId == idx[i].featId);
+    BOOST_CHECK(idxGT[i].landmarkId == idx[i].landmarkId);
+    BOOST_CHECK(idxGT[i].featId == idx[i].featId);
   }
 
   // same _matchData
-  EXPECT_TRUE(res.getInliers().size() == check.getInliers().size());
+  BOOST_CHECK(res.getInliers().size() == check.getInliers().size());
   const auto inliersGT = res.getInliers();
   const auto inliers = check.getInliers();
   for(std::size_t i = 0; i < res.getInliers().size(); ++i)
   {
-    EXPECT_TRUE(inliersGT[i] == inliers[i]);
+    BOOST_CHECK(inliersGT[i] == inliers[i]);
   }
 
 
@@ -116,18 +120,18 @@ TEST(LocalizationResult, LoadSaveBinSingle)
   EXPECT_MATRIX_NEAR(res.getProjection(), check.getProjection(), threshold);
 
     // same matchedImages
-  EXPECT_TRUE(res.getMatchedImages().size() == check.getMatchedImages().size());
+  BOOST_CHECK(res.getMatchedImages().size() == check.getMatchedImages().size());
   const std::vector<voctree::DocMatch>& matchedImagesGT = res.getMatchedImages();
   const std::vector<voctree::DocMatch>& matchedImages = check.getMatchedImages();
   for(std::size_t i = 0; i < res.getMatchedImages().size(); ++i)
   {
-    EXPECT_TRUE(matchedImagesGT[i] == matchedImages[i]);
+    BOOST_CHECK(matchedImagesGT[i] == matchedImages[i]);
   }
 
   stlplus::file_delete(filename);
 }
 
-TEST(LocalizationResult, LoadSaveBinVector)
+BOOST_AUTO_TEST_CASE(LocalizationResult_LoadSaveBinVector)
 {
   const double threshold = 1e-10;
   const std::size_t numResults = 10;
@@ -147,9 +151,9 @@ TEST(LocalizationResult, LoadSaveBinVector)
     resGT.push_back(generateRandomResult(numpts(gen)));
   }
 
-  EXPECT_TRUE(localization::save(resGT, filename));
-  EXPECT_TRUE(localization::load(resCheck, filename));
-  EXPECT_TRUE(resCheck.size() == resGT.size());
+  BOOST_CHECK(localization::save(resGT, filename));
+  BOOST_CHECK(localization::load(resCheck, filename));
+  BOOST_CHECK(resCheck.size() == resGT.size());
 
   // check each element
   for(std::size_t i = 0; i < numResults; ++i)
@@ -158,7 +162,7 @@ TEST(LocalizationResult, LoadSaveBinVector)
     const auto check = resCheck[i];
 
     // same validity
-    EXPECT_TRUE(res.isValid() == check.isValid());
+    BOOST_CHECK(res.isValid() == check.isValid());
 
     // same pose
     const Mat3 rotGT = res.getPose().rotation();
@@ -167,33 +171,33 @@ TEST(LocalizationResult, LoadSaveBinVector)
     {
       for(std::size_t j = 0; j < 3; ++j)
       {
-        EXPECT_NEAR(rotGT(i, j), rot(i, j), threshold)
+        BOOST_CHECK_SMALL(rotGT(i, j)- rot(i, j), threshold);
       }
     }
     const Vec3 centerGT = res.getPose().center();
     const Vec3 center = check.getPose().center();
-    EXPECT_NEAR(centerGT(0), center(0), threshold);
-    EXPECT_NEAR(centerGT(1), center(1), threshold);
-    EXPECT_NEAR(centerGT(2), center(2), threshold);
+    BOOST_CHECK_SMALL(centerGT(0)- center(0), threshold);
+    BOOST_CHECK_SMALL(centerGT(1)- center(1), threshold);
+    BOOST_CHECK_SMALL(centerGT(2)- center(2), threshold);
 
     // same _indMatch3D2D
     const auto idxGT = res.getIndMatch3D2D();
     const auto idx = check.getIndMatch3D2D();
-    EXPECT_TRUE(idxGT.size() == idx.size());
+    BOOST_CHECK(idxGT.size() == idx.size());
     const std::size_t numpts = idxGT.size();
     for(std::size_t j = 0; j < numpts; ++j)
     {
-      EXPECT_TRUE(idxGT[j].landmarkId == idx[j].landmarkId);
-      EXPECT_TRUE(idxGT[j].featId == idx[j].featId);
+      BOOST_CHECK(idxGT[j].landmarkId == idx[j].landmarkId);
+      BOOST_CHECK(idxGT[j].featId == idx[j].featId);
     }
 
     // same _matchData
-    EXPECT_TRUE(res.getInliers().size() == check.getInliers().size());
+    BOOST_CHECK(res.getInliers().size() == check.getInliers().size());
     const auto inliersGT = res.getInliers();
     const auto inliers = check.getInliers();
     for(std::size_t j = 0; j < res.getInliers().size(); ++j)
     {
-      EXPECT_TRUE(inliersGT[j] == inliers[j]);
+      BOOST_CHECK(inliersGT[j] == inliers[j]);
     }
 
     EXPECT_MATRIX_NEAR(res.getPt3D(), check.getPt3D(), threshold);
@@ -201,18 +205,14 @@ TEST(LocalizationResult, LoadSaveBinVector)
     EXPECT_MATRIX_NEAR(res.getProjection(), check.getProjection(), threshold);
     
     // same matchedImages
-    EXPECT_TRUE(res.getMatchedImages().size() == check.getMatchedImages().size());
+    BOOST_CHECK(res.getMatchedImages().size() == check.getMatchedImages().size());
     const auto matchedImagesGT = res.getMatchedImages();
     const auto matchedImages = check.getMatchedImages();
     for(std::size_t j = 0; j < res.getMatchedImages().size(); ++j)
     {
-      EXPECT_TRUE(matchedImagesGT[j] == matchedImages[j]);
+      BOOST_CHECK(matchedImagesGT[j] == matchedImages[j]);
     }
 
     stlplus::file_delete(filename);
   }
 }
-
-/* ************************************************************************* */
-int main() { TestResult tr; return TestRegistry::runAllTests(tr);}
-/* ************************************************************************* */

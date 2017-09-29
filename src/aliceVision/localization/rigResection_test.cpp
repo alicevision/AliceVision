@@ -5,7 +5,6 @@
 #include <aliceVision/camera/PinholeRadial.hpp>
 #include <aliceVision/geometry/Pose3.hpp>
 
-#include "testing/testing.h"
 #include "optimization.hpp"
 
 #include <vector>
@@ -13,6 +12,10 @@
 #include <chrono>
 #include <random>
 #include <random>
+
+#define BOOST_TEST_MODULE rigResection
+#include <boost/test/included/unit_test.hpp>
+#include <boost/test/floating_point_comparison.hpp>
 
 using namespace aliceVision;
 
@@ -212,7 +215,7 @@ void generateRandomExperiment(std::size_t numCameras,
 }
 
 
-TEST(rigResection, simpleNoNoiseNoOutliers)
+BOOST_AUTO_TEST_CASE(rigResection_simpleNoNoiseNoOutliers)
 {
   const std::size_t numCameras = 3;
   const std::size_t numPoints = 10;
@@ -252,7 +255,7 @@ TEST(rigResection, simpleNoNoiseNoOutliers)
                                           nullptr,
                                           rigPose,
                                           inliers);
-    EXPECT_TRUE(status.isValid);
+    BOOST_CHECK(status.isValid);
 
     ALICEVISION_LOG_DEBUG("rigPose\n" << rigPose.rotation() << "\n" << rigPose.center());
 
@@ -269,11 +272,11 @@ TEST(rigResection, simpleNoNoiseNoOutliers)
       {
         if(i == j)
         {
-          EXPECT_NEAR(rot(i,j), 1.0, threshold);
+          BOOST_CHECK_SMALL(rot(i,j)- 1.0, threshold);
         }
         else
         {
-          EXPECT_NEAR(rot(i,j), 0.0, threshold);
+          BOOST_CHECK_SMALL(rot(i,j), threshold);
         }
       }
     }
@@ -281,24 +284,24 @@ TEST(rigResection, simpleNoNoiseNoOutliers)
     const Vec3 &center = poseDiff.center();
     for(std::size_t i = 0; i < 3; ++i)
     {
-      EXPECT_NEAR(center(i), 0.0, threshold);
+      BOOST_CHECK_SMALL(center(i), threshold);
     }
 
     // check inliers
-    EXPECT_TRUE(inliers.size() == numCameras);
+    BOOST_CHECK(inliers.size() == numCameras);
     for(std::size_t i = 0; i < numCameras; ++i)
     {
-      EXPECT_TRUE(inliers[i].size() == vec_pts2d[i].cols());
+      BOOST_CHECK(inliers[i].size() == vec_pts2d[i].cols());
     }
 
-    EXPECT_TRUE(localization::refineRigPose(vec_pts2d,
+    BOOST_CHECK(localization::refineRigPose(vec_pts2d,
                                             vec_pts3d,
                                             inliers,
                                             vec_queryIntrinsics,
                                             vec_subPoses,
                                             rigPose));
 
-    // THIS TEST CAN FAIL AS THE REPROJECTION ERROR USED INSIDE THE GP3P IS BASED
+    // THIS BOOST_AUTO_TEST_CASE CAN FAIL AS THE REPROJECTION ERROR USED INSIDE THE GP3P IS BASED
     // ON THE ANGLE DIFFERENCE RATHER THAN THE REPROJECTED POINT DIFFERENCE
     // check reprojection errors
 //    for(std::size_t cam = 0; cam < numCameras; ++cam)
@@ -315,13 +318,13 @@ TEST(rigResection, simpleNoNoiseNoOutliers)
 //      ALICEVISION_LOG_DEBUG(sqrErrors);
 //      for(std::size_t j = 0; j < numPts; ++j)
 //      {
-//        EXPECT_TRUE(sqrErrors(j) <= threshold);
+//        BOOST_CHECK(sqrErrors(j) <= threshold);
 //      }
 //    }
   }
 }
 
-TEST(rigResection, simpleWithNoiseNoOutliers)
+BOOST_AUTO_TEST_CASE(rigResection_simpleWithNoiseNoOutliers)
 {
   const std::size_t numCameras = 3;
   const std::size_t numPoints = 10;
@@ -362,7 +365,7 @@ TEST(rigResection, simpleWithNoiseNoOutliers)
                                            rigPose,
                                            inliers,
                                            D2R(0.008));
-    EXPECT_TRUE(status.isValid);
+    BOOST_CHECK(status.isValid);
 
     ALICEVISION_LOG_DEBUG("rigPose\n" << rigPose.rotation() << "\n" << rigPose.center());
     
@@ -378,11 +381,11 @@ TEST(rigResection, simpleWithNoiseNoOutliers)
       {
         if(i == j)
         {
-          EXPECT_NEAR(rot(i,j), 1.0, threshold);
+          BOOST_CHECK_SMALL(rot(i,j)- 1.0, threshold);
         }
         else
         {
-          EXPECT_NEAR(rot(i,j), 0.0, threshold);
+          BOOST_CHECK_SMALL(rot(i,j), threshold);
         }
       }
     }
@@ -390,10 +393,10 @@ TEST(rigResection, simpleWithNoiseNoOutliers)
     const Vec3 &center = poseDiff.center();
     for(std::size_t i = 0; i < 3; ++i)
     {
-      EXPECT_NEAR(center(i), 0.0, threshold);
+      BOOST_CHECK_SMALL(center(i), threshold);
     }
 
-    EXPECT_TRUE(localization::refineRigPose(vec_pts2d,
+    BOOST_CHECK(localization::refineRigPose(vec_pts2d,
                                             vec_pts3d,
                                             inliers,
                                             vec_queryIntrinsics,
@@ -402,7 +405,7 @@ TEST(rigResection, simpleWithNoiseNoOutliers)
   }
 }
 
-TEST(rigResection, simpleNoNoiseWithOutliers)
+BOOST_AUTO_TEST_CASE(rigResection_simpleNoNoiseWithOutliers)
 {
   const std::size_t numCameras = 3;
   const std::size_t numPoints = 10;
@@ -447,18 +450,18 @@ TEST(rigResection, simpleNoNoiseWithOutliers)
                                           rigPose,
                                           inliers,
                                           D2R(0.008));
-    EXPECT_TRUE(status.hasStrongSupport);
+    BOOST_CHECK(status.hasStrongSupport);
 
     ALICEVISION_LOG_DEBUG("rigPose\n" << rigPose.rotation() << "\n" << rigPose.center());
 
-    EXPECT_TRUE(localization::refineRigPose(vec_pts2d,
+    BOOST_CHECK(localization::refineRigPose(vec_pts2d,
                                             vec_pts3d,
                                             inliers,
                                             vec_queryIntrinsics,
                                             vec_subPoses,
                                             rigPose));
 
-    // THIS TEST CAN FAIL AS THE REPROJECTION ERROR USED INSIDE THE GP3P IS BASED
+    // THIS BOOST_AUTO_TEST_CASE CAN FAIL AS THE REPROJECTION ERROR USED INSIDE THE GP3P IS BASED
     // ON THE ANGLE DIFFERENCE RATHER THAN THE REPROJECTED POINT DIFFERENCE
 //    // check reprojection errors
 //    for(std::size_t cam = 0; cam < numCameras; ++cam)
@@ -479,13 +482,8 @@ TEST(rigResection, simpleNoNoiseWithOutliers)
 //      for(std::size_t j = 0; j < currInliers.size(); ++j)
 //      {
 ////        ALICEVISION_LOG_DEBUG(sqrErrors(currInliers[j]));
-//        EXPECT_TRUE(sqrErrors(currInliers[j]) <= threshold);
+//        BOOST_CHECK(sqrErrors(currInliers[j]) <= threshold);
 //      }
 //    }
   }
 }
-
-/* ************************************************************************* */
-int main() { TestResult tr; return TestRegistry::runAllTests(tr);}
-/* ************************************************************************* */
-
