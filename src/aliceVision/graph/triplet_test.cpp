@@ -3,15 +3,16 @@
 
 #include "aliceVision/graph/Triplet.hpp"
 
-#include "CppUnitLite/TestHarness.h"
-#include "testing/testing.h"
-
 #include <iostream>
 #include <vector>
 
+#define BOOST_TEST_MODULE tripletFinder
+#include <boost/test/included/unit_test.hpp>
+#include <boost/test/floating_point_comparison.hpp>
+
 using namespace aliceVision::graph;
 
-TEST(TripletFinder, test_no_triplet) {
+BOOST_AUTO_TEST_CASE(test_no_triplet) {
 
   typedef lemon::ListGraph Graph;
 
@@ -23,11 +24,11 @@ TEST(TripletFinder, test_no_triplet) {
 
   std::vector< Triplet > vec_triplets;
 
-  EXPECT_FALSE(List_Triplets(ga, vec_triplets));
-  EXPECT_TRUE(vec_triplets.empty());
+  BOOST_CHECK(!List_Triplets(ga, vec_triplets));
+  BOOST_CHECK(vec_triplets.empty());
 }
 
-TEST(TripletFinder, test_one_triplet) {
+BOOST_AUTO_TEST_CASE(test_one_triplet) {
 
   typedef lemon::ListGraph Graph;
 
@@ -43,12 +44,12 @@ TEST(TripletFinder, test_one_triplet) {
     ga.addEdge(b,c);
 
     std::vector< Triplet > vec_triplets;
-    EXPECT_TRUE(List_Triplets(ga, vec_triplets));
-    EXPECT_EQ(1, vec_triplets.size());
+    BOOST_CHECK(List_Triplets(ga, vec_triplets));
+    BOOST_CHECK_EQUAL(1, vec_triplets.size());
     //Check the cycle values
-    EXPECT_EQ(0,vec_triplets[0].i);
-    EXPECT_EQ(1,vec_triplets[0].j);
-    EXPECT_EQ(2,vec_triplets[0].k);
+    BOOST_CHECK_EQUAL(0,vec_triplets[0].i);
+    BOOST_CHECK_EQUAL(1,vec_triplets[0].j);
+    BOOST_CHECK_EQUAL(2,vec_triplets[0].k);
   }
 
   {
@@ -65,16 +66,16 @@ TEST(TripletFinder, test_one_triplet) {
     ga.addEdge(c,d);
 
     std::vector< Triplet > vec_triplets;
-    EXPECT_TRUE(List_Triplets(ga, vec_triplets));
-    EXPECT_EQ(1, vec_triplets.size());
+    BOOST_CHECK(List_Triplets(ga, vec_triplets));
+    BOOST_CHECK_EQUAL(1, vec_triplets.size());
     //Check the cycle values
-    EXPECT_EQ(1,vec_triplets[0].i);
-    EXPECT_EQ(2,vec_triplets[0].j);
-    EXPECT_EQ(3,vec_triplets[0].k);
+    BOOST_CHECK_EQUAL(1,vec_triplets[0].i);
+    BOOST_CHECK_EQUAL(2,vec_triplets[0].j);
+    BOOST_CHECK_EQUAL(3,vec_triplets[0].k);
   }
 }
 
-TEST(TripletFinder, test_two_triplet) {
+BOOST_AUTO_TEST_CASE(test_two_triplet) {
 
   typedef lemon::ListGraph Graph;
 
@@ -95,8 +96,8 @@ TEST(TripletFinder, test_two_triplet) {
     ga.addEdge(b,d);
 
     std::vector< Triplet > vec_triplets;
-    EXPECT_TRUE(List_Triplets(ga, vec_triplets));
-    EXPECT_EQ(2, vec_triplets.size());
+    BOOST_CHECK(List_Triplets(ga, vec_triplets));
+    BOOST_CHECK_EQUAL(2, vec_triplets.size());
   }
 
   {
@@ -119,8 +120,8 @@ TEST(TripletFinder, test_two_triplet) {
     ga.addEdge(d,a);
 
     std::vector< Triplet > vec_triplets;
-    EXPECT_TRUE(List_Triplets(ga, vec_triplets));
-    EXPECT_EQ(2, vec_triplets.size());
+    BOOST_CHECK(List_Triplets(ga, vec_triplets));
+    BOOST_CHECK_EQUAL(2, vec_triplets.size());
   }
 
     {
@@ -145,13 +146,13 @@ TEST(TripletFinder, test_two_triplet) {
     ga.addEdge(d,a);
 
     std::vector< Triplet > vec_triplets;
-    EXPECT_TRUE(List_Triplets(ga, vec_triplets));
-    EXPECT_EQ(2, vec_triplets.size());
+    BOOST_CHECK(List_Triplets(ga, vec_triplets));
+    BOOST_CHECK_EQUAL(2, vec_triplets.size());
   }
 }
 
 
-TEST(TripletFinder, test_three_triplet) {
+BOOST_AUTO_TEST_CASE(test_three_triplet) {
 
   typedef lemon::ListGraph Graph;
 
@@ -177,8 +178,8 @@ TEST(TripletFinder, test_three_triplet) {
     ga.addEdge(e,d);
 
     std::vector< Triplet > vec_triplets;
-    EXPECT_TRUE(List_Triplets(ga, vec_triplets));
-    EXPECT_EQ(3, vec_triplets.size());
+    BOOST_CHECK(List_Triplets(ga, vec_triplets));
+    BOOST_CHECK_EQUAL(3, vec_triplets.size());
   }
 
   {
@@ -208,8 +209,8 @@ TEST(TripletFinder, test_three_triplet) {
     ga.addEdge(i,g);
 
     std::vector< Triplet > vec_triplets;
-    EXPECT_TRUE(List_Triplets(ga, vec_triplets));
-    EXPECT_EQ(3, vec_triplets.size());
+    BOOST_CHECK(List_Triplets(ga, vec_triplets));
+    BOOST_CHECK_EQUAL(3, vec_triplets.size());
   }
 
     {
@@ -233,12 +234,12 @@ TEST(TripletFinder, test_three_triplet) {
     ga.addEdge(d,e);
 
     std::vector< Triplet > vec_triplets;
-    EXPECT_TRUE(List_Triplets(ga, vec_triplets));
-    EXPECT_EQ(3, vec_triplets.size());
+    BOOST_CHECK(List_Triplets(ga, vec_triplets));
+    BOOST_CHECK_EQUAL(3, vec_triplets.size());
   }
 }
 
-TEST(TripletFinder, test_for_triplet) {
+BOOST_AUTO_TEST_CASE(test_for_triplet) {
 
   typedef lemon::ListGraph Graph;
  {
@@ -259,12 +260,7 @@ TEST(TripletFinder, test_for_triplet) {
     ga.addEdge(c,b);
 
     std::vector< Triplet > vec_triplets;
-    EXPECT_TRUE(List_Triplets(ga, vec_triplets));
-    EXPECT_EQ(4, vec_triplets.size());
+    BOOST_CHECK(List_Triplets(ga, vec_triplets));
+    BOOST_CHECK_EQUAL(4, vec_triplets.size());
   }
 }
-
-
-/* ************************************************************************* */
-int main() { TestResult tr; return TestRegistry::runAllTests(tr);}
-/* ************************************************************************* */

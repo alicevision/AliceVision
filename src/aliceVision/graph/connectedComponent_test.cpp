@@ -3,30 +3,31 @@
 
 #include "aliceVision/graph/graph.hpp"
 
-#include "CppUnitLite/TestHarness.h"
-#include "testing/testing.h"
-
 #include <iostream>
 #include <vector>
 
+#define BOOST_TEST_MODULE connectedComponent
+#include <boost/test/included/unit_test.hpp>
+#include <boost/test/floating_point_comparison.hpp>
+
 using namespace lemon;
 
-TEST(connectedComponents, Empty) {
+BOOST_AUTO_TEST_CASE(Empty) {
   lemon::ListGraph graph;
 
   const int connectedComponentCount = lemon::countConnectedComponents(graph);
-  EXPECT_EQ(0, connectedComponentCount);
+  BOOST_CHECK_EQUAL(0, connectedComponentCount);
 }
 
-TEST(connectedComponents, OneCC) {
+BOOST_AUTO_TEST_CASE(OneCC) {
   lemon::ListGraph graph;
   lemon::ListGraph::Node a = graph.addNode(), b = graph.addNode();
   graph.addEdge(a,b);
   const int connectedComponentCount = lemon::countConnectedComponents(graph);
-  EXPECT_EQ(1, connectedComponentCount);
+  BOOST_CHECK_EQUAL(1, connectedComponentCount);
 }
 
-TEST(connectedComponents, TwoCC) {
+BOOST_AUTO_TEST_CASE(TwoCC) {
   lemon::ListGraph graph;
 
   lemon::ListGraph::Node a = graph.addNode(), b = graph.addNode();
@@ -34,11 +35,11 @@ TEST(connectedComponents, TwoCC) {
   lemon::ListGraph::Node a2 = graph.addNode(), b2 = graph.addNode();
   graph.addEdge(a2,b2);
   const int connectedComponentCount = lemon::countConnectedComponents(graph);
-  EXPECT_EQ(2, connectedComponentCount);
+  BOOST_CHECK_EQUAL(2, connectedComponentCount);
 }
 
 
-TEST(connectedComponents, TwoCC_Parsing) {
+BOOST_AUTO_TEST_CASE(TwoCC_Parsing) {
   lemon::ListGraph graph;
 
   lemon::ListGraph::Node a = graph.addNode(), b = graph.addNode();
@@ -49,7 +50,7 @@ TEST(connectedComponents, TwoCC_Parsing) {
   typedef ListGraph::NodeMap<size_t> IndexMap;
   IndexMap connectedNodeMap(graph);
   const int connectedComponentCount =  lemon::connectedComponents(graph, connectedNodeMap);
-  EXPECT_EQ(2, connectedComponentCount);
+  BOOST_CHECK_EQUAL(2, connectedComponentCount);
   for (IndexMap::MapIt it(connectedNodeMap); it != INVALID; ++it)
   {
     ALICEVISION_LOG_DEBUG(*it << "\t" << graph.id(it));
@@ -69,7 +70,7 @@ TEST(connectedComponents, TwoCC_Parsing) {
 // h-i-j-k
 //   |/
 //   l
-TEST(exportGraphToMapSubgraphs, CC_Subgraph) {
+BOOST_AUTO_TEST_CASE(exportGraphToMapSubgraphs_CC_Subgraph) {
   lemon::ListGraph graph;
 
   // single
@@ -99,13 +100,9 @@ TEST(exportGraphToMapSubgraphs, CC_Subgraph) {
   const std::map<size_t, std::set<lemon::ListGraph::Node> > map_subgraphs =
     aliceVision::graph::exportGraphToMapSubgraphs<lemon::ListGraph, size_t>(graph);
 
-  EXPECT_EQ(4, map_subgraphs.size());
-  EXPECT_EQ(5, map_subgraphs.at(0).size());
-  EXPECT_EQ(4, map_subgraphs.at(1).size());
-  EXPECT_EQ(2, map_subgraphs.at(2).size());
-  EXPECT_EQ(1, map_subgraphs.at(3).size());
+  BOOST_CHECK_EQUAL(4, map_subgraphs.size());
+  BOOST_CHECK_EQUAL(5, map_subgraphs.at(0).size());
+  BOOST_CHECK_EQUAL(4, map_subgraphs.at(1).size());
+  BOOST_CHECK_EQUAL(2, map_subgraphs.at(2).size());
+  BOOST_CHECK_EQUAL(1, map_subgraphs.at(3).size());
 }
-
-/* ************************************************************************* */
-int main() { TestResult tr; return TestRegistry::runAllTests(tr);}
-/* ************************************************************************* */
