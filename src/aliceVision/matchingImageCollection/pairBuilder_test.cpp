@@ -2,7 +2,6 @@
 // the terms of the MPL2 license (see the COPYING.md file).
 
 #include "aliceVision/matchingImageCollection/pairBuilder.hpp"
-#include "testing/testing.h"
 #include "aliceVision/sfm/SfMData.hpp"
 #include "aliceVision/sfm/View.hpp"
 
@@ -10,8 +9,11 @@
 #include <algorithm>
 #include <memory>
 
-using namespace std;
+#define BOOST_TEST_MODULE matchingImageCollectionPairBuilder
+#include <boost/test/included/unit_test.hpp>
+#include <boost/test/floating_point_comparison.hpp>
 
+using namespace std;
 using namespace aliceVision;
 
 // Check pairs follow a weak ordering pair.first < pair.second
@@ -27,13 +29,13 @@ bool checkPairOrder(const IterablePairs & pairs)
   return true;
 }
 
-TEST(matchingImageCollection, exhaustivePairs)
+BOOST_AUTO_TEST_CASE(matchingImageCollection_exhaustivePairs)
 {
   sfm::Views views;
   {
     // Empty
     PairSet pairSet = exhaustivePairs(views);
-    EXPECT_EQ( 0, pairSet.size());
+    BOOST_CHECK_EQUAL( 0, pairSet.size());
   }
   {
     std::vector<IndexT> indexes = {{ 12, 54, 89, 65 }};
@@ -44,24 +46,24 @@ TEST(matchingImageCollection, exhaustivePairs)
 
 
     PairSet pairSet = exhaustivePairs(views);
-    EXPECT_TRUE( checkPairOrder(pairSet) );
-    EXPECT_EQ( 6, pairSet.size());
-    EXPECT_TRUE( pairSet.find(std::make_pair(12,54)) != pairSet.end() );
-    EXPECT_TRUE( pairSet.find(std::make_pair(12,89)) != pairSet.end() );
-    EXPECT_TRUE( pairSet.find(std::make_pair(12,65)) != pairSet.end() );
-    EXPECT_TRUE( pairSet.find(std::make_pair(54,89)) != pairSet.end() );
-    EXPECT_TRUE( pairSet.find(std::make_pair(54,65)) != pairSet.end() );
-    EXPECT_TRUE( pairSet.find(std::make_pair(65,89)) != pairSet.end() );
+    BOOST_CHECK( checkPairOrder(pairSet) );
+    BOOST_CHECK_EQUAL( 6, pairSet.size());
+    BOOST_CHECK( pairSet.find(std::make_pair(12,54)) != pairSet.end() );
+    BOOST_CHECK( pairSet.find(std::make_pair(12,89)) != pairSet.end() );
+    BOOST_CHECK( pairSet.find(std::make_pair(12,65)) != pairSet.end() );
+    BOOST_CHECK( pairSet.find(std::make_pair(54,89)) != pairSet.end() );
+    BOOST_CHECK( pairSet.find(std::make_pair(54,65)) != pairSet.end() );
+    BOOST_CHECK( pairSet.find(std::make_pair(65,89)) != pairSet.end() );
   }
 }
 
-TEST(matchingImageCollection, contiguousWithOverlap)
+BOOST_AUTO_TEST_CASE(matchingImageCollection_contiguousWithOverlap)
 {
   sfm::Views views;
   {
     // Empty
     PairSet pairSet = contiguousWithOverlap(views, 1);
-    EXPECT_EQ( 0, pairSet.size());
+    BOOST_CHECK_EQUAL( 0, pairSet.size());
   }
   {
     std::vector<IndexT> indexes = {{ 12, 54, 65, 89 }};
@@ -71,11 +73,11 @@ TEST(matchingImageCollection, contiguousWithOverlap)
     }
 
     PairSet pairSet = contiguousWithOverlap(views, 1);
-    EXPECT_TRUE( checkPairOrder(pairSet) );
-    EXPECT_EQ( 3, pairSet.size());
-    EXPECT_TRUE( pairSet.find(std::make_pair(12, 54)) != pairSet.end() );
-    EXPECT_TRUE( pairSet.find(std::make_pair(54, 65)) != pairSet.end() );
-    EXPECT_TRUE( pairSet.find(std::make_pair(65, 89)) != pairSet.end() );
+    BOOST_CHECK( checkPairOrder(pairSet) );
+    BOOST_CHECK_EQUAL( 3, pairSet.size());
+    BOOST_CHECK( pairSet.find(std::make_pair(12, 54)) != pairSet.end() );
+    BOOST_CHECK( pairSet.find(std::make_pair(54, 65)) != pairSet.end() );
+    BOOST_CHECK( pairSet.find(std::make_pair(65, 89)) != pairSet.end() );
   }
   {
     std::vector<IndexT> indexes = {{ 11, 12, 54, 65, 89, 99 }};
@@ -85,24 +87,24 @@ TEST(matchingImageCollection, contiguousWithOverlap)
     }
 
     PairSet pairSet = contiguousWithOverlap(views, 3);
-    EXPECT_TRUE( checkPairOrder(pairSet) );
-    EXPECT_EQ( 12, pairSet.size());
-    EXPECT_TRUE( pairSet.find(std::make_pair(11, 12)) != pairSet.end() );
-    EXPECT_TRUE( pairSet.find(std::make_pair(11, 54)) != pairSet.end() );
-    EXPECT_TRUE( pairSet.find(std::make_pair(11, 65)) != pairSet.end() );
-    EXPECT_TRUE( pairSet.find(std::make_pair(12, 54)) != pairSet.end() );
-    EXPECT_TRUE( pairSet.find(std::make_pair(12,65)) != pairSet.end() );
-    EXPECT_TRUE( pairSet.find(std::make_pair(12,89)) != pairSet.end() );
-    EXPECT_TRUE( pairSet.find(std::make_pair(54,65)) != pairSet.end() );
-    EXPECT_TRUE( pairSet.find(std::make_pair(54,89)) != pairSet.end() );
-    EXPECT_TRUE( pairSet.find(std::make_pair(54,99)) != pairSet.end() );
-    EXPECT_TRUE( pairSet.find(std::make_pair(65,89)) != pairSet.end() );
-    EXPECT_TRUE( pairSet.find(std::make_pair(65,99)) != pairSet.end() );
-    EXPECT_TRUE( pairSet.find(std::make_pair(89,99)) != pairSet.end() );
+    BOOST_CHECK( checkPairOrder(pairSet) );
+    BOOST_CHECK_EQUAL( 12, pairSet.size());
+    BOOST_CHECK( pairSet.find(std::make_pair(11, 12)) != pairSet.end() );
+    BOOST_CHECK( pairSet.find(std::make_pair(11, 54)) != pairSet.end() );
+    BOOST_CHECK( pairSet.find(std::make_pair(11, 65)) != pairSet.end() );
+    BOOST_CHECK( pairSet.find(std::make_pair(12, 54)) != pairSet.end() );
+    BOOST_CHECK( pairSet.find(std::make_pair(12,65)) != pairSet.end() );
+    BOOST_CHECK( pairSet.find(std::make_pair(12,89)) != pairSet.end() );
+    BOOST_CHECK( pairSet.find(std::make_pair(54,65)) != pairSet.end() );
+    BOOST_CHECK( pairSet.find(std::make_pair(54,89)) != pairSet.end() );
+    BOOST_CHECK( pairSet.find(std::make_pair(54,99)) != pairSet.end() );
+    BOOST_CHECK( pairSet.find(std::make_pair(65,89)) != pairSet.end() );
+    BOOST_CHECK( pairSet.find(std::make_pair(65,99)) != pairSet.end() );
+    BOOST_CHECK( pairSet.find(std::make_pair(89,99)) != pairSet.end() );
   }
 }
 
-TEST(matchingImageCollection, IO)
+BOOST_AUTO_TEST_CASE(matchingImageCollection_IO)
 {
   PairSet pairSetGT;
   pairSetGT.insert( std::make_pair(0,1) );
@@ -114,13 +116,9 @@ TEST(matchingImageCollection, IO)
   pairSetGTsorted.insert( std::make_pair(0,2) );
   pairSetGTsorted.insert( std::make_pair(1,2) );
 
-  EXPECT_TRUE( savePairs("pairsT_IO.txt", pairSetGT));
+  BOOST_CHECK( savePairs("pairsT_IO.txt", pairSetGT));
 
   PairSet loaded_Pairs;
-  EXPECT_TRUE( loadPairs("pairsT_IO.txt", loaded_Pairs));
-  EXPECT_TRUE( std::equal(loaded_Pairs.begin(), loaded_Pairs.end(), pairSetGTsorted.begin()) );
+  BOOST_CHECK( loadPairs("pairsT_IO.txt", loaded_Pairs));
+  BOOST_CHECK( std::equal(loaded_Pairs.begin(), loaded_Pairs.end(), pairSetGTsorted.begin()) );
 }
-
-/* ************************************************************************* */
-int main() { TestResult tr; return TestRegistry::runAllTests(tr);}
-/* ************************************************************************* */
