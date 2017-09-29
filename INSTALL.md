@@ -34,7 +34,7 @@ As aliceVision use some C++11 features you must have a c++11 ready compiler:
 Building using external dependencies
 --------------------------
 
-AliceVision source tree contains all the mandatory dependencies that are needed to build the library, and which will be built together with the libray. In order to build the library with existing versions of the dependencies (e.g. system installed libraries or user built libraries), and thus reduce the compilation time and favour the modularization, the paths where to find such libraries can be given at cmake command line. In particular:
+AliceVision source tree contains some of the mandatory dependencies that are needed to build the library, and which will be built together with the libray. In order to build the library with existing versions of the dependencies (e.g. system installed libraries or user built libraries), and thus reduce the compilation time and favour the modularization, the paths where to find such libraries can be given at cmake command line. In particular:
 
 * For Ceres solver library, `Ceres_DIR` can be passed pointing to where CeresConfig.cmake can be found.
   e.g. `-DCeres_DIR:PATH=/path/to/ceres/install/share/Ceres/`
@@ -75,19 +75,35 @@ CMake Options
   Build with CCTag markers support.
   `-DCCTag_DIR:PATH=/path/to/cctag/install/lib/cmake/CCTag` (where CCTagConfig.cmake can be found)
 
-* `ALICEVISION_USE_OPENGV` (default `OFF`)
+* `ALICEVISION_USE_OPENGV` (default `AUTO`)
   Build with openGV for multi-cameras localization.
   `-DOPENGV_DIR:PATH=/path/to/opengv/install/` (where "include" and "lib" folders can be found)
   We recommend: `git clone https://github.com/alicevision/opengv.git --branch=cmake_fix_install`
 
-* `ALICEVISION_USE_ALEMBIC` (default `OFF`)
+* `ALICEVISION_USE_ALEMBIC` (default `AUTO`)
   Build with Alembic file format support.
   `-DAlembic_DIR:PATH=/path/to/alembic/install/lib/cmake/Alembic/` (where AlembicConfig.cmake can be found)
   With old Alembic versions (<1.6), you need to set many variables: `ALEMBIC_ROOT`, `ALEMBIC_HDF5_ROOT`, `ALEMBIC_ILMBASE_ROOT`, `ALEMBIC_OPENEXR_ROOT`.
+  
+* `ALICEVISION_USE_OIIO` (default: `AUTO`)
+  Build code depending on OpenImageIO
+  
+* `ALICEVISION_USE_OPENMP` (default: `AUTO`)
+  Enable OpenMP parallelization
 
-* `ALICEVISION_USE_OPENCV` (default: `OFF`): Build with openCV
+* `ALICEVISION_USE_CCTAG` (default: `AUTO`)
+  Enable CCTAG markers
+  
+* `ALICEVISION_USE_POPSIFT` (default: `AUTO`)
+  Enable GPU SIFT implementation
+  
+* `ALICEVISION_USE_OPENGV` (default: `AUTO`)
+  Enable use of OpenGV algorithms
+  
+* `ALICEVISION_USE_OPENCV` (default: `OFF`)
+  Build with openCV
   `-DOpenCV_DIR:PATH=/path/to/opencv/install/share/OpenCV/` (where OpenCVConfig.cmake can be found)
-
+  
 * `ALICEVISION_REQUIRE_CERES_WITH_SUITESPARSE` (default: `ON`)
   By default, aliceVision requires Ceres built with SuiteSparse to ensure best performances but you can make SuiteSparse optional with this flag.
 
@@ -97,7 +113,7 @@ CMake Options
 * `ALICEVISION_BUILD_TESTS` (default `OFF`)
   Build AliceVision tests
 
-* `ALICEVISION_BUILD_DOC` (default `ON`)
+* `ALICEVISION_BUILD_DOC` (default `AUTO`)
   Build AliceVision documentation
 
 * `ALICEVISION_BUILD_EXAMPLES` (default `ON`)
@@ -136,7 +152,7 @@ Linux compilation
 
 If you want enable unit tests and examples to the build:
 ```bash
-cmake -DCMAKE_BUILD_TYPE=RELEASE -DAliceVision_BUILD_TESTS=ON -DAliceVision_BUILD_EXAMPLES=ON . ../aliceVision/src/
+cmake -DCMAKE_BUILD_TYPE=RELEASE -DALICEVISION_BUILD_TESTS=ON -DALICEVISION_BUILD_EXAMPLES=ON . ../aliceVision/src/
 ```
 
 In order to use the MOSEK 6 back-end for the linear programming aliceVision module:
@@ -208,8 +224,8 @@ cmake -DCMAKE_BUILD_TYPE=RELEASE -G "Xcode" . ../aliceVision/src/
 If you want enable unit tests and examples to the build:
 ```bash
 cmake -DCMAKE_BUILD_TYPE=RELEASE \
-      -DAliceVision_BUILD_TESTS=ON \
-      -DAliceVision_BUILD_EXAMPLES=ON \
+      -DALICEVISION_BUILD_TESTS=ON \
+      -DALICEVISION_BUILD_EXAMPLES=ON \
       -G "Xcode" \
       . ../aliceVision/src/
 xcodebuild -configuration Release
