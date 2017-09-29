@@ -12,10 +12,12 @@
 #include <aliceVision/image/image.hpp>
 #include <aliceVision/config.hpp>
 
-#include "testing/testing.h"
-
 #include "dependencies/histogram/histogram.hpp"
 #include "dependencies/htmlDoc/htmlDoc.hpp"
+
+#define BOOST_TEST_MODULE GainOffsetConstraintBuilder
+#include <boost/test/included/unit_test.hpp>
+#include <boost/test/floating_point_comparison.hpp>
 
 using namespace aliceVision;
 using namespace aliceVision::linearProgramming;
@@ -39,7 +41,7 @@ private:
   const double mu, sigma;
 };
 
-TEST(ColorHarmonisation, Simple_offset) {
+BOOST_AUTO_TEST_CASE(ColorHarmonisation_Simple_offset) {
 
   Histogram< double > histo( 0, 256, 255);
   for (size_t i=0; i < 6000; i++)
@@ -90,14 +92,14 @@ TEST(ColorHarmonisation, Simple_offset) {
   double o1 = vec_solution[3];
   double gamma = vec_solution[4];
 
-  EXPECT_NEAR(1., g0, 1e-2);
-  EXPECT_NEAR(0., o0, 1e-2);
-  EXPECT_NEAR(1., g1, 1e-2);
-  EXPECT_NEAR(OFFET_VALUE, o1, 1e-2);
-  EXPECT_NEAR(0., gamma, 1e-2);  // Alignment must be perfect
+  BOOST_CHECK_SMALL(1.-g0, 1e-2);
+  BOOST_CHECK_SMALL(0.-o0, 1e-2);
+  BOOST_CHECK_SMALL(1.-g1, 1e-2);
+  BOOST_CHECK_SMALL(OFFET_VALUE-o1, 1e-2);
+  BOOST_CHECK_SMALL(0.-gamma, 1e-2);  // Alignment must be perfect
 }
 
-TEST(ColorHarmonisation, Offset_gain) {
+BOOST_AUTO_TEST_CASE(ColorHarmonisation_Offset_gain) {
 
   Histogram< double > histo_ref( 0, 256, 255);
   Histogram< double > histo_offset_gain( 0, 256, 255);
@@ -159,13 +161,13 @@ TEST(ColorHarmonisation, Offset_gain) {
   // The minimal solution must be {0,1,1/gain, 127-offset/gain,1,0}
   // gain and offset 2 must not move since it is equal to reference and link to the reference.
 
-  EXPECT_NEAR(1., g0, 1e-2);
-  EXPECT_NEAR(0., o0, 1e-2);
-  EXPECT_NEAR(1./GAIN, g1, 1e-1);
-  EXPECT_NEAR(127-OFFSET/GAIN, o1, 2); // +/- quantization error (2 gray levels)
-  EXPECT_NEAR(1., g2, 1e-2);
-  EXPECT_NEAR(0., o2, 1e-2);
-  CHECK(gamma < 1.0); // Alignment must be below one gray level
+  BOOST_CHECK_SMALL(1.-g0, 1e-2);
+  BOOST_CHECK_SMALL(0.-o0, 1e-2);
+  BOOST_CHECK_SMALL((1./GAIN)-g1, 1e-1);
+  BOOST_CHECK_SMALL((127-OFFSET/GAIN)-o1, 2.); // +/- quantization error (2 gray levels)
+  BOOST_CHECK_SMALL(1.-g2, 1e-2);
+  BOOST_CHECK_SMALL(0.-o2, 1e-2);
+  BOOST_CHECK(gamma < 1.0); // Alignment must be below one gray level
 
   //-- Visual HTML export
   using namespace htmlDocument;
@@ -198,7 +200,3 @@ TEST(ColorHarmonisation, Offset_gain) {
   std::ofstream htmlFileStream( "test.html");
   htmlFileStream << _htmlDocStream.getDoc();
 }
-
-/* ************************************************************************* */
-int main() { TestResult tr; return TestRegistry::runAllTests(tr);}
-/* ************************************************************************* */
