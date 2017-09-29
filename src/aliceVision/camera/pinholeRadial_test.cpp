@@ -3,7 +3,10 @@
 
 #include "aliceVision/camera/camera.hpp"
 
-#include "testing/testing.h"
+#define BOOST_TEST_MODULE pinholeRadial
+#include <boost/test/included/unit_test.hpp>
+#include <boost/test/floating_point_comparison.hpp>
+#include <aliceVision/unitTest.hpp>
 
 using namespace aliceVision;
 using namespace aliceVision::camera;
@@ -17,7 +20,7 @@ using namespace aliceVision::camera;
 // - Check the last point in the camera & image domain
 // - Assert that the tested distortion is not null (in order to ensure validity of the test)
 //-----------------
-TEST(cameraPinholeRadial, disto_undisto_K1) {
+BOOST_AUTO_TEST_CASE(cameraPinholeRadial_disto_undisto_K1) {
 
   const PinholeRadialK1 cam(1000, 1000, 1000, 500, 500,
     // K1
@@ -35,7 +38,7 @@ TEST(cameraPinholeRadial, disto_undisto_K1) {
     EXPECT_MATRIX_NEAR( ptImage, cam.cam2ima(cam.remove_disto(cam.add_disto(ptCamera))), epsilon);
 
     // Assert that distortion field is not null and it has moved the initial provided point
-    EXPECT_FALSE( (cam.add_disto(ptCamera) == cam.remove_disto(cam.add_disto(ptCamera))) ) ;
+    BOOST_CHECK(! (cam.add_disto(ptCamera) == cam.remove_disto(cam.add_disto(ptCamera))) ) ;
   }
 }
 
@@ -48,7 +51,7 @@ TEST(cameraPinholeRadial, disto_undisto_K1) {
 // - Check the last point in the camera & image domain
 // - Assert that the tested distortion is not null (in order to ensure validity of the test)
 //-----------------
-TEST(cameraPinholeRadial, disto_undisto_K3) {
+BOOST_AUTO_TEST_CASE(cameraPinholeRadial_disto_undisto_K3) {
 
   const PinholeRadialK3 cam(1000, 1000, 1000, 500, 500,
     // K1, K2, K3
@@ -68,10 +71,6 @@ TEST(cameraPinholeRadial, disto_undisto_K3) {
     EXPECT_MATRIX_NEAR( ptImage, cam.cam2ima(cam.remove_disto(cam.add_disto(ptCamera))), epsilon);
 
     // Assert that distortion field is not null and it has moved the initial provided point
-    EXPECT_FALSE( (cam.add_disto(ptCamera) == cam.remove_disto(cam.add_disto(ptCamera))) ) ;
+    BOOST_CHECK(! (cam.add_disto(ptCamera) == cam.remove_disto(cam.add_disto(ptCamera))) ) ;
   }
 }
-
-/* ************************************************************************* */
-int main() { TestResult tr; return TestRegistry::runAllTests(tr);}
-/* ************************************************************************* */

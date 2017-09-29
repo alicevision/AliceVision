@@ -3,7 +3,10 @@
 
 #include "aliceVision/camera/camera.hpp"
 
-#include "testing/testing.h"
+#define BOOST_TEST_MODULE pinholeBrown
+#include <boost/test/included/unit_test.hpp>
+#include <boost/test/floating_point_comparison.hpp>
+#include <aliceVision/unitTest.hpp>
 
 using namespace aliceVision;
 using namespace aliceVision::camera;
@@ -17,7 +20,7 @@ using namespace aliceVision::camera;
 // - Check the last point in the camera & image domain
 // - Assert that the tested distortion is not null (in order to ensure validity of the test)
 //-----------------
-TEST(cameraPinholeBrown, disto_undisto_T2) {
+BOOST_AUTO_TEST_CASE(cameraPinholeBrown_disto_undisto_T2) {
 
   const PinholeBrownT2 cam(1000, 1000, 1000, 500, 500,
   // K1, K2, K3, T1, T2
@@ -34,10 +37,6 @@ TEST(cameraPinholeBrown, disto_undisto_T2) {
     EXPECT_MATRIX_NEAR( ptImage, cam.cam2ima(cam.remove_disto(cam.add_disto(ptCamera))), epsilon);
 
     // Assert that distortion field is not null and it has moved the initial provided point
-    EXPECT_FALSE( (cam.add_disto(ptCamera) == cam.remove_disto(cam.add_disto(ptCamera))) ) ;
+    BOOST_CHECK(! (cam.add_disto(ptCamera) == cam.remove_disto(cam.add_disto(ptCamera))) ) ;
   }
 }
-
-/* ************************************************************************* */
-int main() { TestResult tr; return TestRegistry::runAllTests(tr);}
-/* ************************************************************************* */
