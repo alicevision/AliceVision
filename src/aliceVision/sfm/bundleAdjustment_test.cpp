@@ -3,13 +3,15 @@
 
 #include "aliceVision/multiview/NViewDataSet.hpp"
 #include "aliceVision/sfm/sfm.hpp"
-
-#include "testing/testing.h"
 #include "../camera/cameraCommon.hpp"
 
 #include <cmath>
 #include <cstdio>
 #include <iostream>
+
+#define BOOST_TEST_MODULE bundleAdjustment
+#include <boost/test/included/unit_test.hpp>
+#include <boost/test/floating_point_comparison.hpp>
 
 using namespace aliceVision;
 using namespace aliceVision::camera;
@@ -26,7 +28,7 @@ SfMData getInputScene(const NViewDataSet & d, const NViewDatasetConfigurator & c
 // - Check that residual is small once the generic Bundle Adjustment framework have been called.
 // - Perform the test for all the plausible intrinsic camera models
 
-TEST(BUNDLE_ADJUSTMENT, EffectiveMinimization_Pinhole) {
+BOOST_AUTO_TEST_CASE(BUNDLE_ADJUSTMENT_EffectiveMinimization_Pinhole) {
 
   const int nviews = 3;
   const int npoints = 6;
@@ -40,13 +42,13 @@ TEST(BUNDLE_ADJUSTMENT, EffectiveMinimization_Pinhole) {
 
   // Call the BA interface and let it refine (Structure and Camera parameters [Intrinsics|Motion])
   std::shared_ptr<BundleAdjustment> ba_object = std::make_shared<BundleAdjustmentCeres>();
-  EXPECT_TRUE( ba_object->Adjust(sfm_data) );
+  BOOST_CHECK( ba_object->Adjust(sfm_data) );
 
   const double dResidual_after = RMSE(sfm_data);
-  EXPECT_TRUE( dResidual_before > dResidual_after);
+  BOOST_CHECK( dResidual_before > dResidual_after);
 }
 
-TEST(BUNDLE_ADJUSTMENT, EffectiveMinimization_PinholeRadialK1) {
+BOOST_AUTO_TEST_CASE(BUNDLE_ADJUSTMENT_EffectiveMinimization_PinholeRadialK1) {
 
   const int nviews = 3;
   const int npoints = 6;
@@ -60,13 +62,13 @@ TEST(BUNDLE_ADJUSTMENT, EffectiveMinimization_PinholeRadialK1) {
 
   // Call the BA interface and let it refine (Structure and Camera parameters [Intrinsics|Motion])
   std::shared_ptr<BundleAdjustment> ba_object = std::make_shared<BundleAdjustmentCeres>();
-  EXPECT_TRUE( ba_object->Adjust(sfm_data) );
+  BOOST_CHECK( ba_object->Adjust(sfm_data) );
 
   const double dResidual_after = RMSE(sfm_data);
-  EXPECT_TRUE( dResidual_before > dResidual_after);
+  BOOST_CHECK( dResidual_before > dResidual_after);
 }
 
-TEST(BUNDLE_ADJUSTMENT, EffectiveMinimization_PinholeRadialK3) {
+BOOST_AUTO_TEST_CASE(BUNDLE_ADJUSTMENT_EffectiveMinimization_PinholeRadialK3) {
 
   const int nviews = 3;
   const int npoints = 6;
@@ -80,13 +82,13 @@ TEST(BUNDLE_ADJUSTMENT, EffectiveMinimization_PinholeRadialK3) {
 
   // Call the BA interface and let it refine (Structure and Camera parameters [Intrinsics|Motion])
   std::shared_ptr<BundleAdjustment> ba_object = std::make_shared<BundleAdjustmentCeres>();
-  EXPECT_TRUE( ba_object->Adjust(sfm_data) );
+  BOOST_CHECK( ba_object->Adjust(sfm_data) );
 
   const double dResidual_after = RMSE(sfm_data);
-  EXPECT_TRUE( dResidual_before > dResidual_after);
+  BOOST_CHECK( dResidual_before > dResidual_after);
 }
 
-TEST(BUNDLE_ADJUSTMENT, EffectiveMinimization_PinholeBrownT2) {
+BOOST_AUTO_TEST_CASE(BUNDLE_ADJUSTMENT_EffectiveMinimization_PinholeBrownT2) {
 
   const int nviews = 3;
   const int npoints = 6;
@@ -100,13 +102,13 @@ TEST(BUNDLE_ADJUSTMENT, EffectiveMinimization_PinholeBrownT2) {
 
   // Call the BA interface and let it refine (Structure and Camera parameters [Intrinsics|Motion])
   std::shared_ptr<BundleAdjustment> ba_object = std::make_shared<BundleAdjustmentCeres>();
-  EXPECT_TRUE( ba_object->Adjust(sfm_data) );
+  BOOST_CHECK( ba_object->Adjust(sfm_data) );
 
   const double dResidual_after = RMSE(sfm_data);
-  EXPECT_TRUE( dResidual_before > dResidual_after);
+  BOOST_CHECK( dResidual_before > dResidual_after);
 }
 
-TEST(BUNDLE_ADJUSTMENT, EffectiveMinimization_PinholeFisheye) {
+BOOST_AUTO_TEST_CASE(BUNDLE_ADJUSTMENT_EffectiveMinimization_PinholeFisheye) {
 
   const int nviews = 3;
   const int npoints = 6;
@@ -120,10 +122,10 @@ TEST(BUNDLE_ADJUSTMENT, EffectiveMinimization_PinholeFisheye) {
 
   // Call the BA interface and let it refine (Structure and Camera parameters [Intrinsics|Motion])
   std::shared_ptr<BundleAdjustment> ba_object = std::make_shared<BundleAdjustmentCeres>();
-  EXPECT_TRUE( ba_object->Adjust(sfm_data) );
+  BOOST_CHECK( ba_object->Adjust(sfm_data) );
 
   const double dResidual_after = RMSE(sfm_data);
-  EXPECT_TRUE( dResidual_before > dResidual_after);
+  BOOST_CHECK( dResidual_before > dResidual_after);
 }
 
 /// Compute the Root Mean Square Error of the residuals
@@ -207,7 +209,3 @@ SfMData getInputScene(const NViewDataSet & d, const NViewDatasetConfigurator & c
 
   return sfm_data;
 }
-
-/* ************************************************************************* */
-int main() { TestResult tr; return TestRegistry::runAllTests(tr);}
-/* ************************************************************************* */

@@ -5,11 +5,14 @@
 #include "aliceVision/feature/FeaturesPerView.hpp"
 #include "aliceVision/matching/IndMatch.hpp"
 #include "aliceVision/sfm/sfm.hpp"
-#include "testing/testing.h"
 
 #include <cmath>
 #include <cstdio>
 #include <iostream>
+
+#define BOOST_TEST_MODULE GLOBAL_SFM
+#include <boost/test/included/unit_test.hpp>
+#include <boost/test/floating_point_comparison.hpp>
 
 using namespace aliceVision;
 using namespace aliceVision::camera;
@@ -24,7 +27,7 @@ using namespace aliceVision::sfm;
 //   - mean residual error is below the gaussian noise added to observation
 //   - the desired number of tracks are found,
 //   - the desired number of poses are found.
-TEST(GLOBAL_SFM, RotationAveragingL2_TranslationAveragingL1) {
+BOOST_AUTO_TEST_CASE(GLOBAL_SFM_RotationAveragingL2_TranslationAveragingL1) {
 
   const int nviews = 6;
   const int npoints = 64;
@@ -65,16 +68,16 @@ TEST(GLOBAL_SFM, RotationAveragingL2_TranslationAveragingL1) {
   sfmEngine.SetRotationAveragingMethod(ROTATION_AVERAGING_L2);
   sfmEngine.SetTranslationAveragingMethod(TRANSLATION_AVERAGING_L1);
 
-  EXPECT_TRUE (sfmEngine.Process());
+  BOOST_CHECK (sfmEngine.Process());
 
   const double dResidual = RMSE(sfmEngine.Get_SfMData());
   ALICEVISION_LOG_DEBUG("RMSE residual: " << dResidual);
-  EXPECT_TRUE( dResidual < 0.5);
-  EXPECT_TRUE( sfmEngine.Get_SfMData().GetPoses().size() == nviews);
-  EXPECT_TRUE( sfmEngine.Get_SfMData().GetLandmarks().size() == npoints);
+  BOOST_CHECK( dResidual < 0.5);
+  BOOST_CHECK( sfmEngine.Get_SfMData().GetPoses().size() == nviews);
+  BOOST_CHECK( sfmEngine.Get_SfMData().GetLandmarks().size() == npoints);
 }
 
-TEST(GLOBAL_SFM, RotationAveragingL1_TranslationAveragingL1) {
+BOOST_AUTO_TEST_CASE(GLOBAL_SFM_RotationAveragingL1_TranslationAveragingL1) {
 
   const int nviews = 6;
   const int npoints = 64;
@@ -115,16 +118,16 @@ TEST(GLOBAL_SFM, RotationAveragingL1_TranslationAveragingL1) {
   sfmEngine.SetRotationAveragingMethod(ROTATION_AVERAGING_L1);
   sfmEngine.SetTranslationAveragingMethod(TRANSLATION_AVERAGING_L1);
 
-  EXPECT_TRUE (sfmEngine.Process());
+  BOOST_CHECK (sfmEngine.Process());
 
   const double dResidual = RMSE(sfmEngine.Get_SfMData());
   ALICEVISION_LOG_DEBUG("RMSE residual: " << dResidual);
-  EXPECT_TRUE( dResidual < 0.5);
-  EXPECT_TRUE( sfmEngine.Get_SfMData().GetPoses().size() == nviews);
-  EXPECT_TRUE( sfmEngine.Get_SfMData().GetLandmarks().size() == npoints);
+  BOOST_CHECK( dResidual < 0.5);
+  BOOST_CHECK( sfmEngine.Get_SfMData().GetPoses().size() == nviews);
+  BOOST_CHECK( sfmEngine.Get_SfMData().GetLandmarks().size() == npoints);
 }
 
-TEST(GLOBAL_SFM, RotationAveragingL2_TranslationAveragingL2_Chordal) {
+BOOST_AUTO_TEST_CASE(GLOBAL_SFM_RotationAveragingL2_TranslationAveragingL2_Chordal) {
 
   const int nviews = 6;
   const int npoints = 64;
@@ -164,16 +167,16 @@ TEST(GLOBAL_SFM, RotationAveragingL2_TranslationAveragingL2_Chordal) {
   sfmEngine.SetRotationAveragingMethod(ROTATION_AVERAGING_L2);
   sfmEngine.SetTranslationAveragingMethod(TRANSLATION_AVERAGING_L2_DISTANCE_CHORDAL);
 
-  EXPECT_TRUE (sfmEngine.Process());
+  BOOST_CHECK (sfmEngine.Process());
 
   const double dResidual = RMSE(sfmEngine.Get_SfMData());
   ALICEVISION_LOG_DEBUG("RMSE residual: " << dResidual);
-  EXPECT_TRUE( dResidual < 0.5);
-  EXPECT_TRUE( sfmEngine.Get_SfMData().GetPoses().size() == nviews);
-  EXPECT_TRUE( sfmEngine.Get_SfMData().GetLandmarks().size() == npoints);
+  BOOST_CHECK( dResidual < 0.5);
+  BOOST_CHECK( sfmEngine.Get_SfMData().GetPoses().size() == nviews);
+  BOOST_CHECK( sfmEngine.Get_SfMData().GetLandmarks().size() == npoints);
 }
 
-TEST(GLOBAL_SFM, RotationAveragingL2_TranslationAveragingSoftL1) {
+BOOST_AUTO_TEST_CASE(GLOBAL_SFM_RotationAveragingL2_TranslationAveragingSoftL1) {
 
   const int nviews = 6;
   const int npoints = 64;
@@ -214,15 +217,11 @@ TEST(GLOBAL_SFM, RotationAveragingL2_TranslationAveragingSoftL1) {
   sfmEngine.SetRotationAveragingMethod(ROTATION_AVERAGING_L2);
   sfmEngine.SetTranslationAveragingMethod(TRANSLATION_AVERAGING_SOFTL1);
 
-  EXPECT_TRUE (sfmEngine.Process());
+  BOOST_CHECK (sfmEngine.Process());
 
   const double dResidual = RMSE(sfmEngine.Get_SfMData());
   ALICEVISION_LOG_DEBUG("RMSE residual: " << dResidual);
-  EXPECT_TRUE( dResidual < 0.5);
-  EXPECT_TRUE( sfmEngine.Get_SfMData().GetPoses().size() == nviews);
-  EXPECT_TRUE( sfmEngine.Get_SfMData().GetLandmarks().size() == npoints);
+  BOOST_CHECK( dResidual < 0.5);
+  BOOST_CHECK( sfmEngine.Get_SfMData().GetPoses().size() == nviews);
+  BOOST_CHECK( sfmEngine.Get_SfMData().GetLandmarks().size() == npoints);
 }
-
-/* ************************************************************************* */
-int main() { TestResult tr; return TestRegistry::runAllTests(tr);}
-/* ************************************************************************* */

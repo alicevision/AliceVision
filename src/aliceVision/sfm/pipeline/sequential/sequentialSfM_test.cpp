@@ -5,11 +5,13 @@
 #include "aliceVision/sfm/pipeline/syntheticScene.hpp"
 #include "aliceVision/sfm/sfm.hpp"
 
-#include "testing/testing.h"
-
 #include <cmath>
 #include <cstdio>
 #include <iostream>
+
+#define BOOST_TEST_MODULE SEQUENTIAL_SFM
+#include <boost/test/included/unit_test.hpp>
+#include <boost/test/floating_point_comparison.hpp>
 
 using namespace aliceVision;
 using namespace aliceVision::camera;
@@ -26,7 +28,7 @@ using namespace aliceVision::sfm;
 //   - the desired number of poses are found.
 
 // Test a scene where all the camera intrinsics are known
-TEST(SEQUENTIAL_SFM, Known_Intrinsics) {
+BOOST_AUTO_TEST_CASE(SEQUENTIAL_SFM_Known_Intrinsics) {
 
   const int nviews = 6;
   const int npoints = 128;
@@ -66,17 +68,17 @@ TEST(SEQUENTIAL_SFM, Known_Intrinsics) {
   // Configure reconstruction parameters
   sfmEngine.Set_bFixedIntrinsics(true);
 
-  EXPECT_TRUE (sfmEngine.Process());
+  BOOST_CHECK (sfmEngine.Process());
 
   const double dResidual = RMSE(sfmEngine.Get_SfMData());
   ALICEVISION_LOG_DEBUG("RMSE residual: " << dResidual);
-  EXPECT_TRUE( dResidual < 0.5);
-  EXPECT_EQ(sfmEngine.Get_SfMData().GetPoses().size(), nviews);
-  EXPECT_EQ(sfmEngine.Get_SfMData().GetLandmarks().size(), npoints);
+  BOOST_CHECK( dResidual < 0.5);
+  BOOST_CHECK_EQUAL(sfmEngine.Get_SfMData().GetPoses().size(), nviews);
+  BOOST_CHECK_EQUAL(sfmEngine.Get_SfMData().GetLandmarks().size(), npoints);
 }
 
 // Test a scene where only the two first camera have known intrinsics
-TEST(SEQUENTIAL_SFM, Partially_Known_Intrinsics) {
+BOOST_AUTO_TEST_CASE(SEQUENTIAL_SFM_Partially_Known_Intrinsics) {
 
   const int nviews = 6;
   const int npoints = 256;
@@ -127,16 +129,16 @@ TEST(SEQUENTIAL_SFM, Partially_Known_Intrinsics) {
   // Configure reconstruction parameters
   sfmEngine.Set_bFixedIntrinsics(true);
 
-  EXPECT_TRUE (sfmEngine.Process());
+  BOOST_CHECK (sfmEngine.Process());
 
   const double dResidual = RMSE(sfmEngine.Get_SfMData());
   ALICEVISION_LOG_DEBUG("RMSE residual: " << dResidual);
-  EXPECT_TRUE( dResidual < 0.5);
-  EXPECT_EQ(nviews, sfmEngine.Get_SfMData().GetPoses().size());
-  EXPECT_EQ(npoints, sfmEngine.Get_SfMData().GetLandmarks().size());
+  BOOST_CHECK( dResidual < 0.5);
+  BOOST_CHECK_EQUAL(nviews, sfmEngine.Get_SfMData().GetPoses().size());
+  BOOST_CHECK_EQUAL(npoints, sfmEngine.Get_SfMData().GetLandmarks().size());
 }
 
-TEST(SEQUENTIAL_SFM, Rig) {
+BOOST_AUTO_TEST_CASE(SEQUENTIAL_SFM_Rig) {
 
   const int nviews = 10;
   const int npoints = 128;
@@ -179,15 +181,11 @@ TEST(SEQUENTIAL_SFM, Rig) {
   // Configure reconstruction parameters
   sfmEngine.Set_bFixedIntrinsics(true);
 
-  EXPECT_TRUE (sfmEngine.Process());
+  BOOST_CHECK (sfmEngine.Process());
 
   const double dResidual = RMSE(sfmEngine.Get_SfMData());
   ALICEVISION_LOG_DEBUG("RMSE residual: " << dResidual);
-  EXPECT_TRUE( dResidual < 0.5);
-  EXPECT_TRUE( sfmEngine.Get_SfMData().GetPoses().size() == nbPoses);
-  EXPECT_TRUE( sfmEngine.Get_SfMData().GetLandmarks().size() == npoints);
+  BOOST_CHECK( dResidual < 0.5);
+  BOOST_CHECK( sfmEngine.Get_SfMData().GetPoses().size() == nbPoses);
+  BOOST_CHECK( sfmEngine.Get_SfMData().GetLandmarks().size() == npoints);
 }
-
-/* ************************************************************************* */
-int main() { TestResult tr; return TestRegistry::runAllTests(tr);}
-/* ************************************************************************* */

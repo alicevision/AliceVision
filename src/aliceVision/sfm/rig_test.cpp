@@ -1,13 +1,15 @@
 #include "SfMData.hpp"
 
-#include "testing/testing.h"
-
 #include <memory>
+
+#define BOOST_TEST_MODULE sfmRig
+#include <boost/test/included/unit_test.hpp>
+#include <boost/test/floating_point_comparison.hpp>
 
 using namespace aliceVision;
 using namespace aliceVision::sfm;
 
-TEST(rig, initialization)
+BOOST_AUTO_TEST_CASE(rig_initialization)
 {
   static constexpr IndexT rigId = 0;
   static constexpr std::size_t nbSubPoses = 5;
@@ -37,12 +39,12 @@ TEST(rig, initialization)
   const Rig& rig = sfmData.getRig(rigViews.front());
 
   // rig uninitialized
-  EXPECT_FALSE(rig.isInitialized());
+  BOOST_CHECK(!rig.isInitialized());
 
   sfmData.setPose(rigViews.at(firstPoseId), firstPose);
 
   // setPose done, rig initialized
-  EXPECT_TRUE(rig.isInitialized());
+  BOOST_CHECK(rig.isInitialized());
 
   // Check rig sub-poses
   for(std::size_t subPoseId = 0; subPoseId < nbSubPoses; ++subPoseId)
@@ -52,27 +54,27 @@ TEST(rig, initialization)
     if(subPoseId == firstPoseId)
     {
       // first sub-pose should be initialized
-      EXPECT_TRUE(subPose.status != ERigSubPoseStatus::UNINITIALIZED);
+      BOOST_CHECK(subPose.status != ERigSubPoseStatus::UNINITIALIZED);
     }
     else
     {
       // other sub-poses are uninitialized
-      EXPECT_TRUE(subPose.status == ERigSubPoseStatus::UNINITIALIZED);
+      BOOST_CHECK(subPose.status == ERigSubPoseStatus::UNINITIALIZED);
     }
 
     // all sub-poses should be at identity
-    EXPECT_TRUE(subPose.pose == geometry::Pose3())
+    BOOST_CHECK(subPose.pose == geometry::Pose3());
   }
 
   // Check rig pose
   for(std::size_t subPoseId = 0; subPoseId < nbSubPoses; ++subPoseId)
   {
     const View& view = rigViews.at(subPoseId);
-    EXPECT_TRUE(sfmData.getPose(view) == firstPose);
+    BOOST_CHECK(sfmData.getPose(view) == firstPose);
   }
 }
 
-TEST(rig, setPose)
+BOOST_AUTO_TEST_CASE(rig_setPose)
 {
   static constexpr IndexT rigId = 0;
   static constexpr std::size_t nbSubPoses = 5;
@@ -112,17 +114,17 @@ TEST(rig, setPose)
       if(subPoseId == 0)
       {
         // first sub-pose, rig pose is unknown
-        EXPECT_FALSE(sfmData.existsPose(view));
+        BOOST_CHECK(!sfmData.existsPose(view));
 
         if(poseId == 0)
         {
           // first rig pose, first sub-pose, sub-pose uninitialized
-          EXPECT_TRUE(subPose.status == ERigSubPoseStatus::UNINITIALIZED)
+          BOOST_CHECK(subPose.status == ERigSubPoseStatus::UNINITIALIZED);
         }
         else
         {
           // not first rig pose, first sub-pose, sub-pose initialized
-          EXPECT_TRUE(subPose.status != ERigSubPoseStatus::UNINITIALIZED)
+          BOOST_CHECK(subPose.status != ERigSubPoseStatus::UNINITIALIZED);
         }
 
         const Mat3 r = Mat3::Random();
@@ -132,17 +134,17 @@ TEST(rig, setPose)
         sfmData.setPose(view, firstPose);
 
         // setPose done, sub-pose must be initialized
-        EXPECT_TRUE(subPose.status != ERigSubPoseStatus::UNINITIALIZED)
+        BOOST_CHECK(subPose.status != ERigSubPoseStatus::UNINITIALIZED);
 
         // setPose done, rig initialized
-        EXPECT_TRUE(sfmData.existsPose(view));
-        EXPECT_TRUE(sfmData.getPose(view) == firstPose);
+        BOOST_CHECK(sfmData.existsPose(view));
+        BOOST_CHECK(sfmData.getPose(view) == firstPose);
       }
       else
       {
 
         // rig pose should be initialized
-        EXPECT_TRUE(sfmData.existsPose(view));
+        BOOST_CHECK(sfmData.existsPose(view));
 
         if(poseId == 0) //other poses are redundant
         {
@@ -151,19 +153,19 @@ TEST(rig, setPose)
           const geometry::Pose3 pose = geometry::Pose3(r, c);
 
           // first rig pose, sub-pose must be uninitialized
-          EXPECT_TRUE(subPose.status == ERigSubPoseStatus::UNINITIALIZED)
+          BOOST_CHECK(subPose.status == ERigSubPoseStatus::UNINITIALIZED);
 
           sfmData.setPose(view, pose);
 
           // setPose done, sub-pose must be initialized
-          EXPECT_TRUE(subPose.status != ERigSubPoseStatus::UNINITIALIZED)
+          BOOST_CHECK(subPose.status != ERigSubPoseStatus::UNINITIALIZED);
         }
       }
     }
   }
 }
 
-TEST(rig, getPose)
+BOOST_AUTO_TEST_CASE(rig_getPose)
 {
   static constexpr IndexT rigId = 0;
   static constexpr std::size_t nbSubPoses = 5;
@@ -212,12 +214,12 @@ TEST(rig, getPose)
         if(poseId == 0)
         {
           // the rig pose is the first pose
-          EXPECT_TRUE(sfmData.getPose(view) == firstPose);
+          BOOST_CHECK(sfmData.getPose(view) == firstPose);
         }
         else
         {
           // the rig pose is the sub-pose inverse multiply by the rig pose
-          EXPECT_TRUE(sfmData.getPose(view) == (subPose.pose.inverse() * firstPose));
+          BOOST_CHECK(sfmData.getPose(view) == (subPose.pose.inverse() * firstPose));
         }
 
       }
@@ -234,16 +236,12 @@ TEST(rig, getPose)
           sfmData.setPose(view, absolutePose);
 
           // the view sub-pose is the absolute pose multiply by the rig pose inverse
-          EXPECT_TRUE(subPose.pose == (absolutePose * rigPose.inverse()))
+          BOOST_CHECK(subPose.pose == (absolutePose * rigPose.inverse()));
         }
 
         // the view absolute pose is the sub-pose multiply by the rig pose
-        EXPECT_TRUE(sfmData.getPose(view) == (subPose.pose * sfmData.GetPoses().at(view.getPoseId())));
+        BOOST_CHECK(sfmData.getPose(view) == (subPose.pose * sfmData.GetPoses().at(view.getPoseId())));
       }
     }
   }
 }
-
-/* ************************************************************************* */
-int main() { TestResult tr; return TestRegistry::runAllTests(tr);}
-/* ************************************************************************* */
