@@ -2,8 +2,6 @@
 // the terms of the MPL2 license (see the COPYING.md file).
 
 #include "aliceVision/multiview/NViewDataSet.hpp"
-#include "CppUnitLite/TestHarness.h"
-#include "testing/testing.h"
 
 #include "aliceVision/linearProgramming/lInfinityCV/resection_kernel.hpp"
 #include "aliceVision/robustEstimation/maxConsensus.hpp"
@@ -13,10 +11,14 @@
 #include <iostream>
 #include <vector>
 
+#define BOOST_TEST_MODULE ResectionLInfinityRobust
+#include <boost/test/included/unit_test.hpp>
+#include <boost/test/floating_point_comparison.hpp>
+
 using namespace aliceVision;
 using namespace aliceVision::robustEstimation;
 
-TEST(Resection_L_Infinity, Robust_OutlierFree) {
+BOOST_AUTO_TEST_CASE(Resection_L_Infinity_Robust_OutlierFree) {
 
   const int nViews = 3;
   const int nbPoints = 10;
@@ -54,12 +56,12 @@ TEST(Resection_L_Infinity, Robust_OutlierFree) {
     d2._t[nResectionCameraIndex] = t;
 
     //CHeck matrix to GT, and residual
-    EXPECT_NEAR( 0.0, FrobeniusDistance(GT_ProjectionMatrix, COMPUTED_ProjectionMatrix), 1e-1 );
-    EXPECT_NEAR( 0.0, reprojectionErrorRMSE(pt2D, pt3D.colwise().homogeneous(), COMPUTED_ProjectionMatrix), 1e-1);
+    BOOST_CHECK_SMALL(FrobeniusDistance(GT_ProjectionMatrix, COMPUTED_ProjectionMatrix), 1e-1 );
+    BOOST_CHECK_SMALL(reprojectionErrorRMSE(pt2D, pt3D.colwise().homogeneous(), COMPUTED_ProjectionMatrix), 1e-1);
   }
 }
 
-TEST(Resection_L_Infinity, Robust_OneOutlier) {
+BOOST_AUTO_TEST_CASE(Resection_L_Infinity_Robust_OneOutlier) {
 
   const int nViews = 3;
   const int nbPoints = 20;
@@ -107,12 +109,8 @@ TEST(Resection_L_Infinity, Robust_OneOutlier) {
     d2._t[nResectionCameraIndex] = t;
 
     //CHeck matrix to GT, and residual
-    EXPECT_NEAR( 0.0, FrobeniusDistance(GT_ProjectionMatrix, estimatedProjectionMatrix), 1e-1 );
-    EXPECT_NEAR( 0.0, reprojectionErrorRMSE(pt2D, pt3D.colwise().homogeneous(), estimatedProjectionMatrix), 0.75);
+    BOOST_CHECK_SMALL(FrobeniusDistance(GT_ProjectionMatrix, estimatedProjectionMatrix), 1e-1 );
+    BOOST_CHECK_SMALL(reprojectionErrorRMSE(pt2D, pt3D.colwise().homogeneous(), estimatedProjectionMatrix), 0.75);
   }
   d2.ExportToPLY("test_After_Infinity.ply");
 }
-
-/* ************************************************************************* */
-int main() { TestResult tr; return TestRegistry::runAllTests(tr);}
-/* ************************************************************************* */

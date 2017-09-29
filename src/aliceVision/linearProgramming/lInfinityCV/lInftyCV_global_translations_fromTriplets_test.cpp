@@ -6,14 +6,18 @@
 #include "aliceVision/linearProgramming/lInfinityCV/global_translations_fromTriplets.hpp"
 
 #include "aliceVision/multiview/translationAveraging/translationAveragingTest.hpp"
-#include "testing/testing.h"
+
+#define BOOST_TEST_MODULE globalTi_from_tijs_Triplets
+#include <boost/test/included/unit_test.hpp>
+#include <boost/test/floating_point_comparison.hpp>
+#include <aliceVision/unitTest.hpp>
 
 using namespace aliceVision;
 using namespace aliceVision::linearProgramming;
 using namespace lInfinityCV;
 using namespace std;
 
-TEST(translation_averaging, globalTi_from_tijs_Triplets) {
+BOOST_AUTO_TEST_CASE(translation_averaging_globalTi_from_tijs_Triplets) {
 
   const int focal = 1000;
   const int principal_Point = 500;
@@ -58,7 +62,7 @@ TEST(translation_averaging, globalTi_from_tijs_Triplets) {
   cstBuilder.Build(constraint);
   solverLP.setup(constraint);
   //-- Solving
-  EXPECT_TRUE(solverLP.solve()); // the linear program must have a solution
+  BOOST_CHECK(solverLP.solve()); // the linear program must have a solution
 
   //- d. Get back the estimated parameters.
   solverLP.getSolution(vec_solution);
@@ -67,7 +71,7 @@ TEST(translation_averaging, globalTi_from_tijs_Triplets) {
   //--
   //-- Unit test checking about the found solution
   //--
-  EXPECT_NEAR(0.0, gamma, 1e-6); // Gamma must be 0, no noise, perfect data have been sent
+  BOOST_CHECK_SMALL(gamma, 1e-6); // Gamma must be 0, no noise, perfect data have been sent
 
   ALICEVISION_LOG_DEBUG("Found solution with gamma = " << gamma);
 
@@ -78,7 +82,7 @@ TEST(translation_averaging, globalTi_from_tijs_Triplets) {
   //-- Get back computed lambda factors
   std::vector<double> vec_camRelLambdas(&vec_solution[iNviews*3], &vec_solution[iNviews*3 + vec_relative_estimates.size()/3]);
   // lambda factors must be equal to 1.0 (no compression, no dilation);
-  EXPECT_NEAR(vec_relative_estimates.size()/3, std::accumulate (vec_camRelLambdas.begin(), vec_camRelLambdas.end(), 0.0), 1e-6);
+  BOOST_CHECK_SMALL((vec_relative_estimates.size()/3)-std::accumulate (vec_camRelLambdas.begin(), vec_camRelLambdas.end(), 0.0), 1e-6);
 
   // Get back the camera translations in the global frame:
   ALICEVISION_LOG_DEBUG(std::endl << "Camera centers (Computed): ");
@@ -91,10 +95,6 @@ TEST(translation_averaging, globalTi_from_tijs_Triplets) {
     const Vec3 C_computed = - Ri.transpose() * t;
 
     //-- Check that found camera position is equal to GT value
-    EXPECT_NEAR(0.0, DistanceLInfinity(C_computed, C_GT), 1e-6);
+    BOOST_CHECK_SMALL(DistanceLInfinity(C_computed, C_GT), 1e-6);
   }
 }
-
-/* ************************************************************************* */
-int main() { TestResult tr; return TestRegistry::runAllTests(tr);}
-/* ************************************************************************* */

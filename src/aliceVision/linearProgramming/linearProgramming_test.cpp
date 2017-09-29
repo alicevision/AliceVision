@@ -6,12 +6,14 @@
 #include <vector>
 
 #include <aliceVision/config.hpp>
-#include "testing/testing.h"
 #if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_MOSEK)
 #include "aliceVision/linearProgramming/MOSEKSolver.hpp"
 #endif
 #include "aliceVision/linearProgramming/OSIXSolver.hpp"
 
+#define BOOST_TEST_MODULE linearProgramming
+#include <boost/test/included/unit_test.hpp>
+#include <boost/test/floating_point_comparison.hpp>
 
 using namespace aliceVision;
 using namespace aliceVision::linearProgramming;
@@ -55,7 +57,7 @@ void BuildLinearProblem(LPConstraints & cstraint)
 
 #if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_MOSEK)
 // LP_Solve website example solving with the HighLevelFramework
-TEST(linearProgramming, MOSEK_dense_sample) {
+BOOST_AUTO_TEST_CASE(linearProgramming_MOSEK_dense_sample) {
 
   LPConstraints cstraint;
   BuildLinearProblem(cstraint);
@@ -65,17 +67,17 @@ TEST(linearProgramming, MOSEK_dense_sample) {
   MOSEKSolver solver(2);
   solver.setup(cstraint);
 
-  EXPECT_TRUE(solver.solve());
+  BOOST_CHECK(solver.solve());
   solver.getSolution(vec_solution);
 
-  EXPECT_NEAR( 21.875000, vec_solution[0], 1e-6);
-  EXPECT_NEAR( 53.125000, vec_solution[1], 1e-6);
+  BOOST_CHECK_SMALL( 21.875000-vec_solution[0], 1e-6);
+  BOOST_CHECK_SMALL( 53.125000-vec_solution[1], 1e-6);
 
   ALICEVISION_LOG_DEBUG("Solution : " << vec_solution[0] << " " << vec_solution[1]);
 }
 #endif // ALICEVISION_HAVE_MOSEK
 
-TEST(linearProgramming, osiclp_dense_sample) {
+BOOST_AUTO_TEST_CASE(linearProgramming_osiclp_dense_sample) {
 
   LPConstraints cstraint;
   BuildLinearProblem(cstraint);
@@ -85,11 +87,11 @@ TEST(linearProgramming, osiclp_dense_sample) {
   OSI_CISolverWrapper solver(2);
   solver.setup(cstraint);
 
-  EXPECT_TRUE(solver.solve());
+  BOOST_CHECK(solver.solve());
   solver.getSolution(vec_solution);
 
-  EXPECT_NEAR( 21.875000, vec_solution[0], 1e-6);
-  EXPECT_NEAR( 53.125000, vec_solution[1], 1e-6);
+  BOOST_CHECK_SMALL( 21.875000-vec_solution[0], 1e-6);
+  BOOST_CHECK_SMALL( 53.125000-vec_solution[1], 1e-6);
 }
 
 // Setup example from MOSEK API
@@ -153,7 +155,7 @@ void BuildSparseLinearProblem(LPConstraintsSparse & cstraint)
 
 #if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_MOSEK)
 // Unit test on mosek Sparse constraint
-TEST(linearProgramming, mosek_sparse_sample) {
+BOOST_AUTO_TEST_CASE(linearProgramming_mosek_sparse_sample) {
 
   LPConstraintsSparse cstraint;
   BuildSparseLinearProblem(cstraint);
@@ -163,17 +165,17 @@ TEST(linearProgramming, mosek_sparse_sample) {
   MOSEKSolver solver(4);
   solver.setup(cstraint);
 
-  EXPECT_TRUE(solver.solve());
+  BOOST_CHECK(solver.solve());
   solver.getSolution(vec_solution);
 
-  EXPECT_NEAR( 0.00, vec_solution[0], 1e-2);
-  EXPECT_NEAR( 0.00, vec_solution[1], 1e-2);
-  EXPECT_NEAR( 15, vec_solution[2], 1e-2);
-  EXPECT_NEAR( 8.33, vec_solution[3], 1e-2);
+  BOOST_CHECK_SMALL(vec_solution[0], 1e-2);
+  BOOST_CHECK_SMALL(vec_solution[1], 1e-2);
+  BOOST_CHECK_SMALL( 15-vec_solution[2], 1e-2);
+  BOOST_CHECK_SMALL( 8.33-vec_solution[3], 1e-2);
 }
 #endif // #if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_MOSEK)
 
-TEST(linearProgramming, osiclp_sparse_sample) {
+BOOST_AUTO_TEST_CASE(linearProgramming_osiclp_sparse_sample) {
 
   LPConstraintsSparse cstraint;
   BuildSparseLinearProblem(cstraint);
@@ -183,17 +185,17 @@ TEST(linearProgramming, osiclp_sparse_sample) {
   OSI_CISolverWrapper solver(4);
   solver.setup(cstraint);
 
-  EXPECT_TRUE(solver.solve());
+  BOOST_CHECK(solver.solve());
   solver.getSolution(vec_solution);
 
-  EXPECT_NEAR( 0.00, vec_solution[0], 1e-2);
-  EXPECT_NEAR( 0.00, vec_solution[1], 1e-2);
-  EXPECT_NEAR( 15, vec_solution[2], 1e-2);
-  EXPECT_NEAR( 8.33, vec_solution[3], 1e-2);
+  BOOST_CHECK_SMALL(vec_solution[0], 1e-2);
+  BOOST_CHECK_SMALL(vec_solution[1], 1e-2);
+  BOOST_CHECK_SMALL( 15-vec_solution[2], 1e-2);
+  BOOST_CHECK_SMALL( 8.33-vec_solution[3], 1e-2);
 }
 
 #if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_MOSEK)
-TEST(linearProgramming, osi_mosek_sparse_sample) {
+BOOST_AUTO_TEST_CASE(linearProgramming_osi_mosek_sparse_sample) {
 
   LPConstraintsSparse cstraint;
   BuildSparseLinearProblem(cstraint);
@@ -203,18 +205,12 @@ TEST(linearProgramming, osi_mosek_sparse_sample) {
   OSI_MOSEK_SolverWrapper solver(4);
   solver.setup(cstraint);
 
-  EXPECT_TRUE(solver.solve());
+  BOOST_CHECK(solver.solve());
   solver.getSolution(vec_solution);
 
-  EXPECT_NEAR( 0.00, vec_solution[0], 1e-2);
-  EXPECT_NEAR( 0.00, vec_solution[1], 1e-2);
-  EXPECT_NEAR( 15, vec_solution[2], 1e-2);
-  EXPECT_NEAR( 8.33, vec_solution[3], 1e-2);
+  BOOST_CHECK_SMALL(vec_solution[0], 1e-2);
+  BOOST_CHECK_SMALL(vec_solution[1], 1e-2);
+  BOOST_CHECK_SMALL( 15-vec_solution[2], 1e-2);
+  BOOST_CHECK_SMALL( 8.33-vec_solution[3], 1e-2);
 }
 #endif // #if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_MOSEK)
-
-
-
-/* ************************************************************************* */
-int main() { TestResult tr; return TestRegistry::runAllTests(tr);}
-/* ************************************************************************* */

@@ -5,7 +5,6 @@
 #include "aliceVision/multiview/NViewDataSet.hpp"
 #include "aliceVision/numeric/numeric.hpp"
 #include <aliceVision/config.hpp>
-#include "testing/testing.h"
 
 #include "aliceVision/multiview/projection.hpp"
 
@@ -21,12 +20,16 @@
 #include <iostream>
 #include <vector>
 
+#define BOOST_TEST_MODULE TranslationStructureLInfinityNoisy
+#include <boost/test/included/unit_test.hpp>
+#include <boost/test/floating_point_comparison.hpp>
+
 using namespace aliceVision;
 
 using namespace linearProgramming;
 using namespace lInfinityCV;
 
-TEST(Translation_Structure_L_Infinity_Noisy, Outlier_OSICLP_SOLVER) {
+BOOST_AUTO_TEST_CASE(Translation_Structure_L_Infinity_Noisy_Outlier_OSICLP_SOLVER) {
 
   const int nViews = 5;
   const int nbPoints = 5;
@@ -123,7 +126,7 @@ TEST(Translation_Structure_L_Infinity_Noisy, Outlier_OSICLP_SOLVER) {
           //  check were the measurement are noisy, the residual is important
           //if ((i != 0 && k != 0) || (i!=3 && k !=3))
           if ((i != 0 && k != 0) && (i!=3 && k !=3)) {
-            EXPECT_NEAR(0.0, residual, 1e-5);
+            BOOST_CHECK_SMALL(residual, 1e-5);
             xsum += residual;
           }
         }
@@ -132,14 +135,14 @@ TEST(Translation_Structure_L_Infinity_Noisy, Outlier_OSICLP_SOLVER) {
     double dResidual = xsum / (d2._n*d._x[0].cols());
     ALICEVISION_LOG_DEBUG(std::endl << "Residual mean in not noisy measurement: " << dResidual);
     // Check that 2D re-projection and 3D point are near to GT.
-    EXPECT_NEAR(0.0, dResidual, 1e-1);
+    BOOST_CHECK_SMALL(dResidual, 1e-1);
   }
 
   d2.ExportToPLY("test_After_Infinity.ply");
 }
 
 #if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_MOSEK)
-TEST(Translation_Structure_L_Infinity_Noisy, Outlier_MOSEK) {
+BOOST_AUTO_TEST_CASE(Translation_Structure_L_Infinity_Noisy_Outlier_MOSEK) {
 
   const int nViews = 5;
   const int nbPoints = 5;
@@ -237,7 +240,7 @@ TEST(Translation_Structure_L_Infinity_Noisy, Outlier_MOSEK) {
           //  check were the measurement are noisy, the residual is important
           //if ((i != 0 && k != 0) || (i!=3 && k !=3))
           if ((i != 0 && k != 0) && (i!=3 && k !=3)) {
-            EXPECT_NEAR(0.0, residual, 1e-6);
+            BOOST_CHECK_SMALL(residual, 1e-6);
             xsum += residual;
           }
         }
@@ -246,13 +249,9 @@ TEST(Translation_Structure_L_Infinity_Noisy, Outlier_MOSEK) {
     double dResidual = xsum / (d2._n*d._x[0].cols());
     ALICEVISION_LOG_DEBUG(std::endl << "Residual mean in not noisy measurement: " << dResidual);
     // Check that 2D re-projection and 3D point are near to GT.
-    EXPECT_NEAR(0.0, dResidual, 1e-1);
+    BOOST_CHECK_SMALL(dResidual, 1e-1);
   }
 
   d2.ExportToPLY("test_After_Infinity.ply");
 }
 #endif // ALICEVISION_HAVE_MOSEK
-
-/* ************************************************************************* */
-int main() { TestResult tr; return TestRegistry::runAllTests(tr);}
-/* ************************************************************************* */

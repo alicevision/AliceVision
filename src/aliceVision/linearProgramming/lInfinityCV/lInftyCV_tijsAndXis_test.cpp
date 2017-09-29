@@ -4,11 +4,7 @@
 #include "aliceVision/multiview/NViewDataSet.hpp"
 #include "aliceVision/numeric/numeric.hpp"
 #include <aliceVision/config.hpp>
-#include "CppUnitLite/TestHarness.h"
-#include "testing/testing.h"
-
 #include "aliceVision/multiview/projection.hpp"
-
 #include "aliceVision/linearProgramming/ISolver.hpp"
 #include "aliceVision/linearProgramming/OSIXSolver.hpp"
 #if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_MOSEK)
@@ -21,12 +17,16 @@
 #include <iostream>
 #include <vector>
 
+#define BOOST_TEST_MODULE TranslationStructureLInfinity
+#include <boost/test/included/unit_test.hpp>
+#include <boost/test/floating_point_comparison.hpp>
+
 using namespace aliceVision;
 
 using namespace linearProgramming;
 using namespace lInfinityCV;
 
-TEST(Translation_Structure_L_Infinity, OSICLP_SOLVER) {
+BOOST_AUTO_TEST_CASE(Translation_Structure_L_Infinity_OSICLP_SOLVER) {
 
   const size_t nViews = 3;
   const size_t nbPoints = 6;
@@ -65,7 +65,7 @@ TEST(Translation_Structure_L_Infinity, OSICLP_SOLVER) {
 
     OSI_CISolverWrapper wrapperOSICLPSolver(vec_solution.size());
     Translation_Structure_L1_ConstraintBuilder cstBuilder( d._R, megaMat);
-    EXPECT_TRUE(
+    BOOST_CHECK(
       (BisectionLP<Translation_Structure_L1_ConstraintBuilder, LPConstraintsSparse>(
       wrapperOSICLPSolver,
       cstBuilder,
@@ -104,13 +104,13 @@ TEST(Translation_Structure_L_Infinity, OSICLP_SOLVER) {
     double dResidual2D = (xsum.array().sqrt().sum());
 
     // Check that 2D re-projection and 3D point are near to GT.
-    EXPECT_NEAR(0.0, dResidual2D, 1e-4);
+    BOOST_CHECK_SMALL(dResidual2D, 1e-4);
   }
 
   d2.ExportToPLY("test_After_Infinity.ply");
 }
 
-TEST(Translation_Structure_L_Infinity, OSICLP_SOLVER_K) {
+BOOST_AUTO_TEST_CASE(Translation_Structure_L_Infinity_OSICLP_SOLVER_K) {
 
   const size_t nViews = 3;
   const size_t nbPoints = 6;
@@ -153,7 +153,7 @@ TEST(Translation_Structure_L_Infinity, OSICLP_SOLVER_K) {
 
     OSI_CISolverWrapper wrapperOSICLPSolver(vec_solution.size());
     Translation_Structure_L1_ConstraintBuilder cstBuilder( vec_KR, megaMat);
-    EXPECT_TRUE(
+    BOOST_CHECK(
       (BisectionLP<Translation_Structure_L1_ConstraintBuilder, LPConstraintsSparse>(
       wrapperOSICLPSolver,
       cstBuilder,
@@ -192,14 +192,14 @@ TEST(Translation_Structure_L_Infinity, OSICLP_SOLVER_K) {
     double dResidual2D = (xsum.array().sqrt().sum());
 
     // Check that 2D re-projection and 3D point are near to GT.
-    EXPECT_NEAR(0.0, dResidual2D, 1e-4);
+    BOOST_CHECK_SMALL(dResidual2D, 1e-4);
   }
 
   d2.ExportToPLY("test_After_Infinity.ply");
 }
 
 #if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_MOSEK)
-TEST(Translation_Structure_L_Infinity, MOSEK) {
+BOOST_AUTO_TEST_CASE(Translation_Structure_L_Infinity_MOSEK) {
 
   const size_t nViews = 3;
   const size_t nbPoints = 6;
@@ -238,7 +238,7 @@ TEST(Translation_Structure_L_Infinity, MOSEK) {
 
     MOSEKSolver wrapperMosek(vec_solution.size());
     Translation_Structure_L1_ConstraintBuilder cstBuilder( d._R, megaMat);
-    EXPECT_TRUE(
+    BOOST_CHECK(
       (BisectionLP<Translation_Structure_L1_ConstraintBuilder, LPConstraintsSparse>(
       wrapperMosek,
       cstBuilder,
@@ -277,13 +277,9 @@ TEST(Translation_Structure_L_Infinity, MOSEK) {
     double dResidual2D = (xsum.array().sqrt().sum());
 
     // Check that 2D re-projection and 3D point are near to GT.
-    EXPECT_NEAR(0.0, dResidual2D, 1e-4);
+    BOOST_CHECK_SMALL(dResidual2D, 1e-4);
   }
 
   d2.ExportToPLY("test_After_Infinity.ply");
 }
 #endif // ALICEVISION_HAVE_MOSEK
-
-/* ************************************************************************* */
-int main() { TestResult tr; return TestRegistry::runAllTests(tr);}
-/* ************************************************************************* */

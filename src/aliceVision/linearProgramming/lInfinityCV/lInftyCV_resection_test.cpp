@@ -8,9 +8,6 @@
 #include "aliceVision/multiview/projection.hpp"
 #include <aliceVision/config.hpp>
 
-#include "CppUnitLite/TestHarness.h"
-#include "testing/testing.h"
-
 #include "aliceVision/linearProgramming/ISolver.hpp"
 #include "aliceVision/linearProgramming/OSIXSolver.hpp"
 #if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_MOSEK)
@@ -18,6 +15,12 @@
 #endif // ALICEVISION_HAVE_MOSEK
 #include "aliceVision/linearProgramming/bisectionLP.hpp"
 #include "aliceVision/linearProgramming/lInfinityCV/resection.hpp"
+
+
+#define BOOST_TEST_MODULE ResectionLInfinity
+#include <boost/test/included/unit_test.hpp>
+#include <boost/test/floating_point_comparison.hpp>
+#include <aliceVision/unitTest.hpp>
 
 using namespace aliceVision;
 
@@ -32,7 +35,7 @@ void translate(const Mat3X & X, const Vec3 & vecTranslation,
     }
 }
 
-TEST(Resection_L_Infinity, OSICLP) {
+BOOST_AUTO_TEST_CASE(Resection_L_Infinity_OSICLP) {
 
   const int nViews = 3;
   const int nbPoints = 10;
@@ -64,7 +67,7 @@ TEST(Resection_L_Infinity, OSICLP) {
 
     OSI_CISolverWrapper wrapperOSICLPSolver(vec_solution.size());
     Resection_L1_ConstraintBuilder cstBuilder(d2._x[nResectionCameraIndex], XPoints);
-    EXPECT_TRUE(
+    BOOST_CHECK(
       (BisectionLP<Resection_L1_ConstraintBuilder, LPConstraintsSparse>(
       wrapperOSICLPSolver,
       cstBuilder,
@@ -90,7 +93,7 @@ TEST(Resection_L_Infinity, OSICLP) {
 }
 
 #if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_MOSEK)
-TEST(Resection_L_Infinity, MOSEK) {
+BOOST_AUTO_TEST_CASE(Resection_L_Infinity_MOSEK) {
 
   const int nViews = 3;
   const int nbPoints = 10;
@@ -122,7 +125,7 @@ TEST(Resection_L_Infinity, MOSEK) {
 
     MOSEKSolver wrapperMosek(vec_solution.size());
     Resection_L1_ConstraintBuilder cstBuilder(d2._x[nResectionCameraIndex], XPoints);
-    EXPECT_TRUE(
+    BOOST_CHECK(
       (BisectionLP<Resection_L1_ConstraintBuilder, LPConstraintsSparse>(
       wrapperMosek,
       cstBuilder,
@@ -147,7 +150,3 @@ TEST(Resection_L_Infinity, MOSEK) {
   d2.ExportToPLY("test_After_Infinity.ply");
 }
 #endif // #if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_MOSEK)
-
-/* ************************************************************************* */
-int main() { TestResult tr; return TestRegistry::runAllTests(tr);}
-/* ************************************************************************* */

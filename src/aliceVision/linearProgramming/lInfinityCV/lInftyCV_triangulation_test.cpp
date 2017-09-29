@@ -7,7 +7,6 @@
 #include "aliceVision/multiview/NViewDataSet.hpp"
 #include "aliceVision/numeric/numeric.hpp"
 #include <aliceVision/config.hpp>
-#include "testing/testing.h"
 
 #include "aliceVision/multiview/projection.hpp"
 
@@ -20,11 +19,15 @@
 #include "aliceVision/linearProgramming/bisectionLP.hpp"
 #include "aliceVision/linearProgramming/lInfinityCV/triangulation.hpp"
 
+#define BOOST_TEST_MODULE lInfinityCVTriangulation
+#include <boost/test/included/unit_test.hpp>
+#include <boost/test/floating_point_comparison.hpp>
+
 using namespace aliceVision;
 using namespace linearProgramming;
 using namespace lInfinityCV;
 
-TEST(lInfinityCV, Triangulation_OSICLPSOLVER) {
+BOOST_AUTO_TEST_CASE(lInfinityCV_Triangulation_OSICLPSOLVER) {
 
   NViewDataSet d = NRealisticCamerasRing(6, 10,
     NViewDatasetConfigurator(1,1,0,0,5,0)); // Suppose a camera with Unit matrix as K
@@ -52,7 +55,7 @@ TEST(lInfinityCV, Triangulation_OSICLPSOLVER) {
     Triangulation_L1_ConstraintBuilder cstBuilder(vec_Pi, x_ij);
     // Use bisection in order to find the global optimum and so find the
     //  best triangulated point under the L_infinity norm
-    EXPECT_TRUE(
+    BOOST_CHECK(
       (BisectionLP<Triangulation_L1_ConstraintBuilder,LPConstraints>(
       wrapperOSICLPSolver,
       cstBuilder,
@@ -77,14 +80,14 @@ TEST(lInfinityCV, Triangulation_OSICLPSOLVER) {
     double dResidual3D = DistanceLInfinity(XSolution, Vec3(d._X.col(k)));
 
     // Check that 2D re-projection and 3D point are near to GT.
-    EXPECT_NEAR(0.0, dResidual2D, 1e-5);
-    EXPECT_NEAR(0.0, dResidual3D, 1e-5);
+    BOOST_CHECK_SMALL(dResidual2D, 1e-5);
+    BOOST_CHECK_SMALL(dResidual3D, 1e-5);
   }
   d2.ExportToPLY("test_After_Infinity_Triangulation_OSICLP.ply");
 }
 
 #if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_MOSEK)
-TEST(computervision, Triangulation_MOSEK) {
+BOOST_AUTO_TEST_CASE(computervision_Triangulation_MOSEK) {
 
   NViewDataSet d = NRealisticCamerasRing(6, 10,
     NViewDatasetConfigurator(1,1,0,0,5,0)); // Suppose a camera with Unit matrix as K
@@ -112,7 +115,7 @@ TEST(computervision, Triangulation_MOSEK) {
     Triangulation_L1_ConstraintBuilder cstBuilder(vec_Pi, x_ij);
     // Use bisection in order to find the global optimum and so find the
     //  best triangulated point under the L_infinity norm
-    EXPECT_TRUE(
+    BOOST_CHECK(
       (BisectionLP<Triangulation_L1_ConstraintBuilder,LPConstraints>(
       wrapperLpSolve,
       cstBuilder,
@@ -137,13 +140,9 @@ TEST(computervision, Triangulation_MOSEK) {
     double dResidual3D = DistanceLInfinity(XSolution, Vec3(d._X.col(k)));
 
     // Check that 2D re-projection and 3D point are near to GT.
-    EXPECT_NEAR(0.0, dResidual2D, 1e-5);
-    EXPECT_NEAR(0.0, dResidual3D, 1e-5);
+    BOOST_CHECK_SMALL(dResidual2D, 1e-5);
+    BOOST_CHECK_SMALL(dResidual3D, 1e-5);
   }
   d2.ExportToPLY("test_After_Infinity_Triangulation_MOSEK.ply");
 }
 #endif // ALICEVISION_HAVE_MOSEK
-
-/* ************************************************************************* */
-int main() { TestResult tr; return TestRegistry::runAllTests(tr);}
-/* ************************************************************************* */

@@ -6,14 +6,18 @@
 #include "aliceVision/linearProgramming/lInfinityCV/global_translations_fromTij.hpp"
 
 #include "aliceVision/multiview/translationAveraging/translationAveragingTest.hpp"
-#include "testing/testing.h"
+
+#define BOOST_TEST_MODULE translation_averaging_globalTi_from_tijs
+#include <boost/test/included/unit_test.hpp>
+#include <boost/test/floating_point_comparison.hpp>
+#include <aliceVision/unitTest.hpp>
 
 using namespace aliceVision;
 using namespace aliceVision::linearProgramming;
 using namespace lInfinityCV;
 using namespace std;
 
-TEST(translation_averaging, globalTi_from_tijs) {
+BOOST_AUTO_TEST_CASE(translation_averaging_globalTi_from_tijs) {
 
   const int focal = 1000;
   const int principal_Point = 500;
@@ -57,7 +61,7 @@ TEST(translation_averaging, globalTi_from_tijs) {
   cstBuilder.Build(constraint);
   solverLP.setup(constraint);
   //-- Solving
-  EXPECT_TRUE(solverLP.solve()); // the linear program must have a solution
+  BOOST_CHECK(solverLP.solve()); // the linear program must have a solution
 
   //- d. Get back the estimated parameters.
   solverLP.getSolution(vec_solution);
@@ -66,7 +70,7 @@ TEST(translation_averaging, globalTi_from_tijs) {
   //--
   //-- Unit test checking about the found solution
   //--
-  EXPECT_NEAR(0.0, gamma, 1e-6); // Gamma must be 0, no noise, perfect data have been sent
+  BOOST_CHECK_SMALL(gamma, 1e-6); // Gamma must be 0, no noise, perfect data have been sent
 
   ALICEVISION_LOG_DEBUG("Found solution with gamma = " << gamma);
 
@@ -92,12 +96,7 @@ TEST(translation_averaging, globalTi_from_tijs) {
       EXPECT_MATRIX_NEAR(C_computed, C_GT, 1e-6);
     }
     else  {
-     EXPECT_NEAR(0.0, DistanceLInfinity(C_computed.normalized(), C_GT.normalized()), 1e-6);
+     BOOST_CHECK_SMALL(DistanceLInfinity(C_computed.normalized(), C_GT.normalized()), 1e-6);
     }
   }
 }
-
-/* ************************************************************************* */
-int main() { TestResult tr; return TestRegistry::runAllTests(tr);}
-/* ************************************************************************* */
-
