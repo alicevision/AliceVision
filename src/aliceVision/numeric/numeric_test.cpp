@@ -3,21 +3,24 @@
 
 #include <iostream>
 #include <aliceVision/system/Logger.hpp>
-#include "CppUnitLite/TestHarness.h"
 #include "aliceVision/numeric/numeric.hpp"
-#include "testing/testing.h"
+
+#define BOOST_TEST_MODULE numeric
+#include <boost/test/included/unit_test.hpp>
+#include <boost/test/floating_point_comparison.hpp>
+#include <aliceVision/unitTest.hpp>
 
 using namespace aliceVision;
 using namespace std;
 
 //-- Assert that stream interface is available
-TEST ( TinyMatrix, print )
+BOOST_AUTO_TEST_CASE ( TinyMatrix_print )
 {
   Mat3 testMatrix = Mat3::Identity();
   ALICEVISION_LOG_DEBUG(testMatrix);
 }
 
-TEST ( TinyMatrix, checkIdentity )
+BOOST_AUTO_TEST_CASE ( TinyMatrix_checkIdentity )
 {
   Mat3 testMatrix, expected;
 
@@ -31,7 +34,7 @@ TEST ( TinyMatrix, checkIdentity )
   EXPECT_MATRIX_NEAR( expected, testMatrix, 1e-8);
 }
 
-TEST ( TinyMatrix, product )
+BOOST_AUTO_TEST_CASE ( TinyMatrix_product )
 {
   Mat3 a, b, expected;
 
@@ -67,7 +70,7 @@ TEST ( TinyMatrix, product )
   EXPECT_MATRIX_NEAR( expected_resBxA, resBxA, 1e-8);
 }
 
-TEST(TinyMatrix, LookAt) {
+BOOST_AUTO_TEST_CASE(TinyMatrix_LookAt) {
   // Simple orthogonality check.
   Vec3 e; e[0]= 1; e[1] = 2; e[2] = 3;
   Mat3 R = LookAt(e);
@@ -79,19 +82,19 @@ TEST(TinyMatrix, LookAt) {
   EXPECT_MATRIX_NEAR(I, RTR, 1e-15);
 }
 
-TEST(Numeric, ExtractColumns) {
+BOOST_AUTO_TEST_CASE(Numeric_ExtractColumns) {
   Mat2X A(2, 5);
   A << 1, 2, 3, 4, 5,
        6, 7, 8, 9, 10;
   Vec2i columns; columns << 0, 2;
   Mat2X extracted = ExtractColumns(A, columns);
-  EXPECT_NEAR(1, extracted(0,0), 1e-15);
-  EXPECT_NEAR(3, extracted(0,1), 1e-15);
-  EXPECT_NEAR(6, extracted(1,0), 1e-15);
-  EXPECT_NEAR(8, extracted(1,1), 1e-15);
+  BOOST_CHECK_SMALL(1- extracted(0,0), 1e-15);
+  BOOST_CHECK_SMALL(3- extracted(0,1), 1e-15);
+  BOOST_CHECK_SMALL(6- extracted(1,0), 1e-15);
+  BOOST_CHECK_SMALL(8- extracted(1,1), 1e-15);
 }
 
-TEST(Numeric, MeanAndVarianceAlongRows) {
+BOOST_AUTO_TEST_CASE(Numeric_MeanAndVarianceAlongRows) {
   int n = 4;
   Mat points(2,n);
   points << 0, 0, 1, 1,
@@ -100,12 +103,8 @@ TEST(Numeric, MeanAndVarianceAlongRows) {
   Vec mean, variance;
   MeanAndVarianceAlongRows(points, &mean, &variance);
 
-  EXPECT_NEAR(0.5, mean(0), 1e-8);
-  EXPECT_NEAR(1.5, mean(1), 1e-8);
-  EXPECT_NEAR(0.25, variance(0), 1e-8);
-  EXPECT_NEAR(1.25, variance(1), 1e-8);
+  BOOST_CHECK_SMALL(0.5-mean(0), 1e-8);
+  BOOST_CHECK_SMALL(1.5-mean(1), 1e-8);
+  BOOST_CHECK_SMALL(0.25-variance(0), 1e-8);
+  BOOST_CHECK_SMALL(1.25-variance(1), 1e-8);
 }
-
-/* ************************************************************************* */
-int main() { TestResult tr; return TestRegistry::runAllTests(tr);}
-/* ************************************************************************* */

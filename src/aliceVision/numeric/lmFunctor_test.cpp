@@ -7,9 +7,13 @@
 #include <aliceVision/system/Logger.hpp>
 #include "aliceVision/numeric/numeric.hpp"
 #include "aliceVision/numeric/LMFunctor.hpp"
-#include "testing/testing.h"
 
 #include "dependencies/vectorGraphics/svgDrawer.hpp"
+
+#define BOOST_TEST_MODULE LMFunctor
+#include <boost/test/included/unit_test.hpp>
+#include <boost/test/floating_point_comparison.hpp>
+#include <aliceVision/unitTest.hpp>
 
 using namespace aliceVision;
 using namespace svg;
@@ -43,7 +47,7 @@ struct lm_Refine_functor : LMFunctor<double>
   const Vec & _x, & _y; // Store data reference for cost evaluation
 };
 
-TEST(LM, MimimaSearchViaLM) {
+BOOST_AUTO_TEST_CASE(LM_MimimaSearchViaLM) {
 
   Vec x(10);
   x << .5, 1, 1.5, 2, 2.5, 3, 3.5, 4, 4.5, 5;
@@ -78,7 +82,7 @@ TEST(LM, MimimaSearchViaLM) {
   // Evaluation of the residual of the found solution
   Vec fvec(10);
   functor(xlm, fvec);
-  DOUBLES_EQUAL(0.0, fvec.norm(), 1e-3);
+  BOOST_CHECK_SMALL(fvec.norm(), 1e-3);
   // We cannot expect more precision since input data are limited in precision
 
   // Export computed result to a SVG file
@@ -110,7 +114,3 @@ TEST(LM, MimimaSearchViaLM) {
     svgFile << svgSurface.closeSvgFile().str();
   }
 }
-
-/* ************************************************************************* */
-int main() { TestResult tr; return TestRegistry::runAllTests(tr);}
-/* ************************************************************************* */

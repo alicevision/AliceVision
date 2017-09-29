@@ -4,7 +4,10 @@
 #include "CppUnitLite/TestHarness.h"
 #include "aliceVision/numeric/numeric.hpp"
 #include "aliceVision/numeric/polynomial.hpp"
-#include "testing/testing.h"
+
+#define BOOST_TEST_MODULE polynomial
+#include <boost/test/included/unit_test.hpp>
+#include <boost/test/floating_point_comparison.hpp>
 
 using namespace aliceVision;
 
@@ -38,46 +41,42 @@ void CoeffsForQuarticZeros(double a, double b, double c, double d,
   *s = a * b * c *d;
 }
 
-TEST(Poly, SolveCubicPolynomial) {
+BOOST_AUTO_TEST_CASE(Poly_SolveCubicPolynomial) {
   double a, b, c, aa, bb, cc;
   double p, q, r;
 
   a = 1; b = 2; c = 3;
   CoeffsForCubicZeros(a, b, c, &p, &q, &r);
-  CHECK_EQUAL(3, SolveCubicPolynomial(p,q,r, &aa, &bb, &cc));
-  EXPECT_NEAR(a, aa, 1e-10);
-  EXPECT_NEAR(b, bb, 1e-10);
-  EXPECT_NEAR(c, cc, 1e-10);
+  BOOST_CHECK_EQUAL(3, SolveCubicPolynomial(p,q,r, &aa, &bb, &cc));
+  BOOST_CHECK_SMALL(a-aa, 1e-10);
+  BOOST_CHECK_SMALL(b-bb, 1e-10);
+  BOOST_CHECK_SMALL(c-cc, 1e-10);
 
   a = 0; b = 1; c = 3;
   CoeffsForCubicZeros(a, b, c, &p, &q, &r);
-  CHECK_EQUAL(3, SolveCubicPolynomial(p,q,r, &aa, &bb, &cc));
-  EXPECT_NEAR(a, aa, 1e-10);
-  EXPECT_NEAR(b, bb, 1e-10);
-  EXPECT_NEAR(c, cc, 1e-10);
+  BOOST_CHECK_EQUAL(3, SolveCubicPolynomial(p,q,r, &aa, &bb, &cc));
+  BOOST_CHECK_SMALL(a-aa, 1e-10);
+  BOOST_CHECK_SMALL(b-bb, 1e-10);
+  BOOST_CHECK_SMALL(c-cc, 1e-10);
 
   a = -10; b = 0; c = 1;
   CoeffsForCubicZeros(a, b, c, &p, &q, &r);
-  CHECK_EQUAL(3, SolveCubicPolynomial(p,q,r, &aa, &bb, &cc));
-  EXPECT_NEAR(a, aa, 1e-10);
-  EXPECT_NEAR(b, bb, 1e-10);
-  EXPECT_NEAR(c, cc, 1e-10);
+  BOOST_CHECK_EQUAL(3, SolveCubicPolynomial(p,q,r, &aa, &bb, &cc));
+  BOOST_CHECK_SMALL(a-aa, 1e-10);
+  BOOST_CHECK_SMALL(b-bb, 1e-10);
+  BOOST_CHECK_SMALL(c-cc, 1e-10);
 
   a = -8; b = 1; c = 3;
   CoeffsForCubicZeros(a, b, c, &p, &q, &r);
-  CHECK_EQUAL(3, SolveCubicPolynomial(p,q,r, &aa, &bb, &cc));
-  EXPECT_NEAR(a, aa, 1e-10);
-  EXPECT_NEAR(b, bb, 1e-10);
-  EXPECT_NEAR(c, cc, 1e-10);
+  BOOST_CHECK_EQUAL(3, SolveCubicPolynomial(p,q,r, &aa, &bb, &cc));
+  BOOST_CHECK_SMALL(a-aa, 1e-10);
+  BOOST_CHECK_SMALL(b-bb, 1e-10);
+  BOOST_CHECK_SMALL(c-cc, 1e-10);
 
   a = 28; b = 28; c = 105;
   CoeffsForCubicZeros(a, b, c, &p, &q, &r);
-  CHECK_EQUAL(3, SolveCubicPolynomial(p,q,r, &aa, &bb, &cc));
-  EXPECT_NEAR(a, aa, 1e-10);
-  EXPECT_NEAR(b, bb, 1e-10);
-  EXPECT_NEAR(c, cc, 1e-10);
+  BOOST_CHECK_EQUAL(3, SolveCubicPolynomial(p,q,r, &aa, &bb, &cc));
+  BOOST_CHECK_SMALL(a-aa, 1e-10);
+  BOOST_CHECK_SMALL(b-bb, 1e-10);
+  BOOST_CHECK_SMALL(c-cc, 1e-10);
 }
-
-/* ************************************************************************* */
-int main() { TestResult tr; return TestRegistry::runAllTests(tr);}
-/* ************************************************************************* */
