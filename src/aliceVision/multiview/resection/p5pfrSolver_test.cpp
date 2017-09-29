@@ -3,7 +3,10 @@
 
 #include <vector>
 #include "aliceVision/multiview/resection/P5PfrSolver.hpp"
-#include "testing/testing.h"
+
+#define BOOST_TEST_MODULE P5PfrSolver
+#include <boost/test/included/unit_test.hpp>
+#include <boost/test/floating_point_comparison.hpp>
 
 using namespace std;
 using namespace aliceVision;
@@ -78,7 +81,7 @@ bool testSolutions(const std::vector<resection::p5pfrModel> &solutions, const st
   return true;
 }
 
-TEST(Resection_P5Pfr, RandomRealExample)
+BOOST_AUTO_TEST_CASE(Resection_P5Pfr_RandomRealExample)
 {
   // DATA
   Mat pt2D = Mat(2, 5);
@@ -160,12 +163,12 @@ TEST(Resection_P5Pfr, RandomRealExample)
   resection::P5PfrSolver::solve(pt2D, pt3D, 1, &models);
   std::sort(models.begin(), models.end(), sortM);
 
-  // TEST
+  // BOOST_AUTO_TEST_CASE
   const double eps = 1e-4;
-  EXPECT_TRUE(testSolutions(solutions, models, eps));
+  BOOST_CHECK(testSolutions(solutions, models, eps));
 }
 
-TEST(Resection_P5Pfr, Test01)
+BOOST_AUTO_TEST_CASE(Resection_P5Pfr_Test01)
 {
   // DATA
   Mat pt2D = Mat(2, 5);
@@ -217,12 +220,12 @@ TEST(Resection_P5Pfr, Test01)
   resection::P5PfrSolver::solve(pt2D, pt3D, 1, &models);
   std::sort(models.begin(), models.end(), sortM);
 
-  // TEST
+  // BOOST_AUTO_TEST_CASE
   const double eps = 1e-4;
-  EXPECT_TRUE(testSolutions(solutions, models, eps));
+  BOOST_CHECK(testSolutions(solutions, models, eps));
 }
 
-TEST(Resection_P5Pfr, Test02)
+BOOST_AUTO_TEST_CASE(Resection_P5Pfr_Test02)
 {
   // DATA
   Mat pt2D = Mat(2, 5);
@@ -273,12 +276,12 @@ TEST(Resection_P5Pfr, Test02)
   resection::P5PfrSolver::solve(pt2D, pt3D, 1, &models);
   std::sort(models.begin(), models.end(), sortM);
 
-  // TEST
+  // BOOST_AUTO_TEST_CASE
   const double eps = 1e-4;
-  EXPECT_TRUE(testSolutions(solutions, models, eps));
+  BOOST_CHECK(testSolutions(solutions, models, eps));
 }
 
-TEST(Resection_P5Pfr, Test03)
+BOOST_AUTO_TEST_CASE(Resection_P5Pfr_Test03)
 {
   // DATA
   Mat pt2D = Mat(2, 5);
@@ -329,12 +332,12 @@ TEST(Resection_P5Pfr, Test03)
   resection::P5PfrSolver::solve(pt2D, pt3D, 3, &models);
   std::sort(models.begin(), models.end(), sortM);
 
-  // TEST
+  // BOOST_AUTO_TEST_CASE
   const double eps = 1e-4;
-  EXPECT_TRUE(testSolutions(solutions, models, eps));
+  BOOST_CHECK(testSolutions(solutions, models, eps));
 }
 
-TEST(Resection_P5Pfr, Test04)
+BOOST_AUTO_TEST_CASE(Resection_P5Pfr_Test04)
 {
   // DATA
   Mat pt2D = Mat(2, 5);
@@ -385,12 +388,12 @@ TEST(Resection_P5Pfr, Test04)
   resection::P5PfrSolver::solve(pt2D, pt3D, 2, &models);
   std::sort(models.begin(), models.end(), sortM);
 
-  // TEST
+  // BOOST_AUTO_TEST_CASE
   const double eps = 1e-3;
-  EXPECT_TRUE(testSolutions(solutions, models, eps));
+  BOOST_CHECK(testSolutions(solutions, models, eps));
 }
 
-TEST(Resection_P5Pfr, Test05)
+BOOST_AUTO_TEST_CASE(Resection_P5Pfr_Test05)
 {
   // DATA
   Mat pt2D = Mat(2, 5);
@@ -471,12 +474,12 @@ TEST(Resection_P5Pfr, Test05)
   resection::P5PfrSolver::solve(pt2D, pt3D, 1, &models);
   std::sort(models.begin(), models.end(), sortM);
 
-  // TEST
+  // BOOST_AUTO_TEST_CASE
   const double eps = 1e-4;
-  EXPECT_TRUE(testSolutions(solutions, models, eps));
+  BOOST_CHECK(testSolutions(solutions, models, eps));
 }
 
-TEST(Resection_P5Pfr, Test06)
+BOOST_AUTO_TEST_CASE(Resection_P5Pfr_Test06)
 {
   // DATA
   Mat pt2D = Mat(2, 5);
@@ -557,12 +560,12 @@ TEST(Resection_P5Pfr, Test06)
   resection::P5PfrSolver::solve(pt2D, pt3D, 1, &models);
   std::sort(models.begin(), models.end(), sortM);
 
-  // TEST
+  // BOOST_AUTO_TEST_CASE
   const double eps = 1e-4;
-  EXPECT_TRUE(testSolutions(solutions, models, eps));
+  BOOST_CHECK(testSolutions(solutions, models, eps));
 }
 
-TEST(Resection_P5Pfr, ReprojectionErrRD)
+BOOST_AUTO_TEST_CASE(Resection_P5Pfr_ReprojectionErrRD)
 {
   // DATA
   Mat R1 = Mat(3, 3);
@@ -590,17 +593,17 @@ TEST(Resection_P5Pfr, ReprojectionErrRD)
   u << -5.083665639282905e+02, -1.888279680387158e+02,  5.485850494158182e+02, 6.057378448766012e+02, 1.049611103316406e+02,
         6.135576285838145e+02, -1.221172634793433e+03, -3.523254600615324e+02, 3.014526831471967e+02, 6.551794931115911e+02;
 
-  // PROCESS & TEST
+  // PROCESS & BOOST_AUTO_TEST_CASE
   const double eps = 1e-4;
   for(int i = 0; i < 5; ++i)
   {
     Mat ui = u.col(i);
     Mat Xi = X.col(i);
-    EXPECT_TRUE(resection::reprojectionErrorRD(m1, Map<Vec2>(ui.data(), 2), Map<Vec3>(Xi.data(), 3)) < eps);
+    BOOST_CHECK(resection::reprojectionErrorRD(m1, Map<Vec2>(ui.data(), 2), Map<Vec3>(Xi.data(), 3)) < eps);
   }
 }
 
-TEST(Resection_P5Pfr, ReprojectionErrRP)
+BOOST_AUTO_TEST_CASE(Resection_P5Pfr_ReprojectionErrRP)
 {
   // DATA
   Mat R1 = Mat(3, 3);
@@ -628,17 +631,17 @@ TEST(Resection_P5Pfr, ReprojectionErrRP)
   u << -7.157065483965156e+02,  2.214390204167765e+02, -2.039687171099566e+02, 4.045162808436347e+02, 5.240453162355445e+01,
         3.053701505359891e+02, -4.762317643178445e+02,  1.542630206562505e+02, 6.822162604030057e+02, 9.904720783975658e+02;
 
-  // PROCESS & TEST
+  // PROCESS & BOOST_AUTO_TEST_CASE
   const double eps = 1e-3;
   for(int i = 0; i < 1; ++i)
   {
     Mat ui = u.col(i);
     Mat Xi = X.col(i);
-    EXPECT_TRUE(resection::reprojectionErrorRP(m1, Map<Vec2>(ui.data(), 2), Map<Vec3>(Xi.data(), 3)) < eps);
+    BOOST_CHECK(resection::reprojectionErrorRP(m1, Map<Vec2>(ui.data(), 2), Map<Vec3>(Xi.data(), 3)) < eps);
   }
 }
 
-TEST(Resection_P5Pfr, ConversionRD2RP)
+BOOST_AUTO_TEST_CASE(Resection_P5Pfr_ConversionRD2RP)
 {
   // DATA
   Mat pt2D = Mat(2, 5);
@@ -686,14 +689,14 @@ TEST(Resection_P5Pfr, ConversionRD2RP)
   Mat pt2D_radius = pt2D.colwise().norm();
 
   m1._r = divisionToPolynomialModelDistortion(m1, pt2D_radius.maxCoeff(), (1 / f1) * pt2D_radius);
-  EXPECT_TRUE(checkNear(m1._r, e_r1, eps));
+  BOOST_CHECK(checkNear(m1._r, e_r1, eps));
 
   m2._r = divisionToPolynomialModelDistortion(m2, pt2D_radius.maxCoeff(), (1 / f2) * pt2D_radius);
-  EXPECT_TRUE(checkNear(m2._r, e_r2, eps));
+  BOOST_CHECK(checkNear(m2._r, e_r2, eps));
 }
 
 
-//TEST(Resection_P5Pfr, RandomRealExample) {
+//BOOST_AUTO_TEST_CASE(Resection_P5Pfr_RandomRealExample) {
 //
 //
 //  // PROCESS
@@ -701,15 +704,7 @@ TEST(Resection_P5Pfr, ConversionRD2RP)
 //  resection::P5PfrSolver::Solve(pt2D, pt3D, &models);
 //  std::sort(models.begin(), models.end(), sortM);
 //
-//  // TEST
+//  // BOOST_AUTO_TEST_CASE
 //  double eps = 1e-4;
-//  EXPECT_TRUE(testSolutions(solutions, models, eps));
+//  BOOST_CHECK(testSolutions(solutions, models, eps));
 //}
-
-/* ************************************************************************* */
-int main()
-{
-  TestResult tr;
-  return TestRegistry::runAllTests(tr);
-}
-/* ************************************************************************* */

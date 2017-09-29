@@ -1,13 +1,17 @@
 // This file is part of the AliceVision project and is made available under
 // the terms of the MPL2 license (see the COPYING.md file).
 
-#include "testing/testing.h"
 #include <aliceVision/system/Logger.hpp>
 #include <aliceVision/multiview/affineSolver.hpp>
 
+#define BOOST_TEST_MODULE multiviewAffineSolver
+#include <boost/test/included/unit_test.hpp>
+#include <boost/test/floating_point_comparison.hpp>
+#include <aliceVision/unitTest.hpp>
+
 using namespace aliceVision;
 
-TEST(Affine2DTest, TranslationX) {
+BOOST_AUTO_TEST_CASE(Affine2DTest_TranslationX) {
   Mat x1(2, 3);
   x1 <<  0, 1, 2,
          0, 1, 1;
@@ -17,7 +21,7 @@ TEST(Affine2DTest, TranslationX) {
          0, 1, 1;
 
   Mat3 AffineMat;
-  EXPECT_TRUE(Affine2DFromCorrespondencesLinear(x1, x2, &AffineMat));
+  BOOST_CHECK(Affine2DFromCorrespondencesLinear(x1, x2, &AffineMat));
   ALICEVISION_LOG_DEBUG("Mat Affine2D:\n" << AffineMat);
   Mat3 ground_truth;
   ground_truth << 1,0,1,
@@ -26,7 +30,7 @@ TEST(Affine2DTest, TranslationX) {
   EXPECT_MATRIX_NEAR(AffineMat, ground_truth,1e-8);
 }
 
-TEST(Affine2DTest, TranslationXY) {
+BOOST_AUTO_TEST_CASE(Affine2DTest_TranslationXY) {
   Mat x1(2, 3);
   x1 <<  0, 1, 2,
          0, 1, 1;
@@ -36,7 +40,7 @@ TEST(Affine2DTest, TranslationXY) {
          1, 2, 2;
 
   Mat3 affine_mat;
-  EXPECT_TRUE(Affine2DFromCorrespondencesLinear(x1, x2, &affine_mat));
+  BOOST_CHECK(Affine2DFromCorrespondencesLinear(x1, x2, &affine_mat));
   ALICEVISION_LOG_DEBUG("Mat Affine2D:\n" << affine_mat);
   Mat3 ground_truth;
   ground_truth << 1,0,1,
@@ -45,7 +49,7 @@ TEST(Affine2DTest, TranslationXY) {
   EXPECT_MATRIX_NEAR(affine_mat, ground_truth,1e-8);
 }
 
-TEST(Affine2DTest, Rotation45) {
+BOOST_AUTO_TEST_CASE(Affine2DTest_Rotation45) {
   Mat x1(2, 4);
   x1 <<  0, 1, 2, 5,
          0, 1, 2, 3;
@@ -61,12 +65,12 @@ TEST(Affine2DTest, Rotation45) {
   }
 
   Mat3 affine_mat;
-  EXPECT_TRUE(Affine2DFromCorrespondencesLinear(x1, x2, &affine_mat));
+  BOOST_CHECK(Affine2DFromCorrespondencesLinear(x1, x2, &affine_mat));
   ALICEVISION_LOG_DEBUG("Mat Affine2D " << affine_mat);
   EXPECT_MATRIX_NEAR(affine_mat, rot, 1e-8);
 }
 
-TEST(Affine2DTest, Rotation45AndTranslationXY) {
+BOOST_AUTO_TEST_CASE(Affine2DTest_Rotation45AndTranslationXY) {
   Mat x1(2, 4);
   x1 <<  0, 1, 2, 5,
          0, 1, 2, 3;
@@ -85,12 +89,12 @@ TEST(Affine2DTest, Rotation45AndTranslationXY) {
   }
 
   Mat3 affine_mat;
-  EXPECT_TRUE(Affine2DFromCorrespondencesLinear(x1, x2, &affine_mat));
+  BOOST_CHECK(Affine2DFromCorrespondencesLinear(x1, x2, &affine_mat));
   ALICEVISION_LOG_DEBUG("Mat Affine2D:\n" << affine_mat);
   EXPECT_MATRIX_NEAR(affine_mat, rot, 1e-8);
 }
 
-TEST(Affine2DTest, AffineGeneral) {
+BOOST_AUTO_TEST_CASE(Affine2DTest_AffineGeneral) {
   Mat x1(2, 4);
   x1 <<  0, 1, 2, 5,
          0, 1, 2, 3;
@@ -107,12 +111,12 @@ TEST(Affine2DTest, AffineGeneral) {
   }
 
   Mat3 affine_mat;
-  EXPECT_TRUE(Affine2DFromCorrespondencesLinear(x1, x2, &affine_mat));
+  BOOST_CHECK(Affine2DFromCorrespondencesLinear(x1, x2, &affine_mat));
   ALICEVISION_LOG_DEBUG("Mat Affine2D:\n" << affine_mat);
   EXPECT_MATRIX_NEAR(affine_mat, m, 1e-8);
 }
 
-TEST(Affine3DTest, TranslationZ) {
+BOOST_AUTO_TEST_CASE(Affine3DTest_TranslationZ) {
   Mat x1(3, 4);
   x1 <<  0, 1, 2, 3,
          0, 5, 1, 3,
@@ -124,7 +128,7 @@ TEST(Affine3DTest, TranslationZ) {
          1, 2, 8, 4;
 
   Mat4 AffineMat;
-  EXPECT_TRUE(Affine3DFromCorrespondencesLinear(x1, x2, &AffineMat));
+  BOOST_CHECK(Affine3DFromCorrespondencesLinear(x1, x2, &AffineMat));
   ALICEVISION_LOG_DEBUG("Mat Affine3D:\n" << AffineMat);
   Mat4 ground_truth;
   ground_truth << 1,0,0,0,
@@ -134,7 +138,7 @@ TEST(Affine3DTest, TranslationZ) {
   EXPECT_MATRIX_NEAR(AffineMat, ground_truth,1e-8);
 }
 
-TEST(Affine3DTest, TranslationXYZ) {
+BOOST_AUTO_TEST_CASE(Affine3DTest_TranslationXYZ) {
   Mat x1(3, 4);
   x1 <<  0, 1, 2, 3,
          0, 5, 1, 3,
@@ -146,7 +150,7 @@ TEST(Affine3DTest, TranslationXYZ) {
          1, 2, 8, 4;
 
   Mat4 affine_mat;
-  EXPECT_TRUE(Affine3DFromCorrespondencesLinear(x1, x2, &affine_mat));
+  BOOST_CHECK(Affine3DFromCorrespondencesLinear(x1, x2, &affine_mat));
   ALICEVISION_LOG_DEBUG("Mat Affine3D:\n" << affine_mat);
   Mat4 ground_truth;
   ground_truth << 1,0,0, 2,
@@ -156,7 +160,7 @@ TEST(Affine3DTest, TranslationXYZ) {
   EXPECT_MATRIX_NEAR(affine_mat, ground_truth,1e-8);
 }
 
-TEST(Affine3DTest, RotationAndTranslationXYZ) {
+BOOST_AUTO_TEST_CASE(Affine3DTest_RotationAndTranslationXYZ) {
   Mat x1(3, 4);
   x1 <<  0, 1, 2, 5,
          0, 1, 2, 3,
@@ -199,12 +203,12 @@ TEST(Affine3DTest, RotationAndTranslationXYZ) {
   }
 
   Mat4 affine_mat;
-  EXPECT_TRUE(Affine3DFromCorrespondencesLinear(x1, x2, &affine_mat));
+  BOOST_CHECK(Affine3DFromCorrespondencesLinear(x1, x2, &affine_mat));
   ALICEVISION_LOG_DEBUG("Mat Affine3D:\n" << affine_mat);
   EXPECT_MATRIX_NEAR(affine_mat, M, 1e-8);
 }
 
-TEST(Affine3DTest, AffineGeneral) {
+BOOST_AUTO_TEST_CASE(Affine3DTest_AffineGeneral) {
   Mat x1(3, 4);
   x1 <<  0, 1, 2, 5,
          0, 1, 2, 3,
@@ -223,11 +227,7 @@ TEST(Affine3DTest, AffineGeneral) {
   }
 
   Mat4 affine_mat;
-  EXPECT_TRUE(Affine3DFromCorrespondencesLinear(x1, x2, &affine_mat));
+  BOOST_CHECK(Affine3DFromCorrespondencesLinear(x1, x2, &affine_mat));
   ALICEVISION_LOG_DEBUG("Mat Affine3D:\n" << affine_mat);
   EXPECT_MATRIX_NEAR(affine_mat, m, 1e-8);
 }
-
-/* ************************************************************************* */
-int main() { TestResult tr; return TestRegistry::runAllTests(tr);}
-/* ************************************************************************* */

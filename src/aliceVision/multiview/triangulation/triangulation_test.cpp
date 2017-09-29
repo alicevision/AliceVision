@@ -3,13 +3,16 @@
 
 #include "aliceVision/multiview/triangulation/Triangulation.hpp"
 #include "aliceVision/multiview/NViewDataSet.hpp"
-#include "testing/testing.h"
+
+#define BOOST_TEST_MODULE Triangulation
+#include <boost/test/included/unit_test.hpp>
+#include <boost/test/floating_point_comparison.hpp>
 
 #include <vector>
 
 using namespace aliceVision;
 
-TEST(Triangulate_NView, FiveViews)
+BOOST_AUTO_TEST_CASE(Triangulate_NView_FiveViews)
 {
   const int nviews = 5;
   const int npoints = 6;
@@ -39,12 +42,12 @@ TEST(Triangulate_NView, FiveViews)
       Vec3 x_reprojected = Ps[j]*X;
       x_reprojected /= x_reprojected(2);
       const double error = (x_reprojected.head(2) - xs.col(j)).norm();
-      EXPECT_NEAR(error, 0.0, 1e-9);
+      BOOST_CHECK_SMALL(error, 1e-9);
     }
   }
 }
 
-TEST(Triangulate_NViewAlgebraic, FiveViews) {
+BOOST_AUTO_TEST_CASE(Triangulate_NViewAlgebraic_FiveViews) {
   const int nviews = 5;
   const int npoints = 6;
   const NViewDataSet d = NRealisticCamerasRing(nviews, npoints);
@@ -73,12 +76,12 @@ TEST(Triangulate_NViewAlgebraic, FiveViews) {
       Vec3 x_reprojected = Ps[j]*X;
       x_reprojected /= x_reprojected(2);
       const double error = (x_reprojected.head<2>() - xs.col(j)).norm();
-      EXPECT_NEAR(error, 0.0, 1e-9);
+      BOOST_CHECK_SMALL(error, 1e-9);
     }
   }
 }
 
-TEST(Triangulate_NViewIterative, FiveViews)
+BOOST_AUTO_TEST_CASE(Triangulate_NViewIterative_FiveViews)
 {
   const int nviews = 5;
   const int npoints = 6;
@@ -93,18 +96,13 @@ TEST(Triangulate_NViewIterative, FiveViews)
 
     const Vec3 X = triangulationObj.compute();
     // Check reprojection error. Should be nearly zero.
-    EXPECT_NEAR(triangulationObj.error(X), 0.0, 1e-9);
+    BOOST_CHECK_SMALL(triangulationObj.error(X), 1e-9);
     for (int j = 0; j < nviews; ++j)
     {
       Vec3 x_reprojected = d.P(j) * Vec4(X(0), X(1), X(2), 1.0);
       x_reprojected /= x_reprojected(2);
       const double error = (x_reprojected.head<2>() - d._x[j].col(i)).norm();
-      EXPECT_NEAR(error, 0.0, 1e-9);
+      BOOST_CHECK_SMALL(error, 1e-9);
     }
   }
 }
-
-
-/* ************************************************************************* */
-int main() { TestResult tr; return TestRegistry::runAllTests(tr);}
-/* ************************************************************************* */

@@ -14,11 +14,13 @@
 #include <aliceVision/geometry/Pose3.hpp>
 #include <aliceVision/numeric/numeric.hpp>
 
-#include "testing/testing.h"
-
 #include <vector>
 #include <random>
 #include <algorithm>
+
+#define BOOST_TEST_MODULE ResectionLORansac
+#include <boost/test/included/unit_test.hpp>
+#include <boost/test/floating_point_comparison.hpp>
 
 using namespace aliceVision;
 
@@ -80,7 +82,7 @@ bool refinePoseAsItShouldbe(const Mat & pt3D,
 }
 
 // test LORansac repetability over the same test case
-TEST(P3P_Ransac, noisyFromImagePoints)
+BOOST_AUTO_TEST_CASE(P3P_Ransac_noisyFromImagePoints)
 {
   // camera and image parameters
   const std::size_t WIDTH = 1600;
@@ -202,7 +204,7 @@ TEST(P3P_Ransac, noisyFromImagePoints)
     const std::size_t numInliersFound = vec_inliers.size();
     const std::size_t numInliersExpected = nbPoints-vec_outliers.size();
     
-    CHECK(numInliersFound > KernelType::MINIMUM_SAMPLES *2.5);
+    BOOST_CHECK(numInliersFound > KernelType::MINIMUM_SAMPLES *2.5);
     
     Mat3 Rest;
     Mat3 Kest;
@@ -217,7 +219,7 @@ TEST(P3P_Ransac, noisyFromImagePoints)
     ALICEVISION_LOG_DEBUG("Solution found with " << numInliersFound << " inliers");
     ALICEVISION_LOG_DEBUG("Expected number of inliers " << numInliersExpected);
 
-    CHECK_EQUAL(numInliersFound, numInliersExpected);
+    BOOST_CHECK_EQUAL(numInliersFound, numInliersExpected);
     
     const double angError = R2D(getRotationMagnitude(Rgt * Rest.transpose()));
     ALICEVISION_LOG_DEBUG("Angular error: " << angError);
@@ -237,8 +239,8 @@ TEST(P3P_Ransac, noisyFromImagePoints)
     ALICEVISION_LOG_DEBUG("Final angular error #"<<trial<<" : " << angErrorRef);
     ALICEVISION_LOG_DEBUG("Final baseline error #"<<trial<<" : " << baselineErrorRef);
     
-    EXPECT_NEAR(angErrorRef, 0.0, maxAngularError);
-    EXPECT_NEAR(baselineErrorRef, 0.0, maxBaselineError);
+    BOOST_CHECK_SMALL(angErrorRef, maxAngularError);
+    BOOST_CHECK_SMALL(baselineErrorRef, maxBaselineError);
 
     ALICEVISION_LOG_DEBUG("Refined pose:\n"
                 << "\nEst: Rest:\n" << pose.rotation()
@@ -256,15 +258,7 @@ TEST(P3P_Ransac, noisyFromImagePoints)
       inters.resize(it-inters.begin());
       if(inters.size() > 0)
         ALICEVISION_LOG_WARNING("******* there are " << inters.size() << " outliers considered as inliers");
-      CHECK_EQUAL(inters.size(), 0);
+      BOOST_CHECK_EQUAL(inters.size(), 0);
     }
   }
 }
-
-/* ************************************************************************* */
-int main()
-{
-  TestResult tr;
-  return TestRegistry::runAllTests(tr);
-}
-/* ************************************************************************* */

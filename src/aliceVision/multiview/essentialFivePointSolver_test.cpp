@@ -7,9 +7,12 @@
 #include "aliceVision/multiview/essential.hpp"
 #include "aliceVision/multiview/projection.hpp"
 #include "aliceVision/multiview/essentialFivePointSolver.hpp"
-#include "testing/testing.h"
-
 #include "aliceVision/multiview/NViewDataSet.hpp"
+
+#define BOOST_TEST_MODULE essentialFivePointSolver
+#include <boost/test/included/unit_test.hpp>
+#include <boost/test/floating_point_comparison.hpp>
+#include <aliceVision/unitTest.hpp>
 
 using namespace aliceVision;
 
@@ -56,7 +59,7 @@ TestData SomeTestData() {
   return d;
 }
 
-TEST(FivePointsNullspaceBasis, SatisfyEpipolarConstraint) {
+BOOST_AUTO_TEST_CASE(FivePointsNullspaceBasis_SatisfyEpipolarConstraint) {
 
   TestData d = SomeTestData();
 
@@ -72,7 +75,7 @@ TEST(FivePointsNullspaceBasis, SatisfyEpipolarConstraint) {
     for (int i = 0; i < d.x1.cols(); ++i) {
       Vec3 x1(d.x1(0,i), d.x1(1,i), 1);
       Vec3 x2(d.x2(0,i), d.x2(1,i), 1);
-      EXPECT_NEAR(0, x2.dot(E * x1), 1e-6);
+      BOOST_CHECK_SMALL(x2.dot(E * x1), 1e-6);
     }
   }
 }
@@ -100,7 +103,7 @@ double EvalPolynomial(Vec p, double x, double y, double z) {
        + p(coef_1)   * 1;
 }
 
-TEST(o1, Evaluation) {
+BOOST_AUTO_TEST_CASE(o1_Evaluation) {
 
   Vec p1 = Vec::Zero(20), p2 = Vec::Zero(20);
   p1(coef_x) = double(rand()) / RAND_MAX;
@@ -117,7 +120,7 @@ TEST(o1, Evaluation) {
   for (double z = -5; z < 5; ++z) {
     for (double y = -5; y < 5; ++y) {
       for (double x = -5; x < 5; ++x) {
-        EXPECT_NEAR(EvalPolynomial(p3, x, y, z),
+        BOOST_CHECK_SMALL(EvalPolynomial(p3, x, y, z)-
                     EvalPolynomial(p1, x, y, z) * EvalPolynomial(p2, x, y, z),
                     1e-8);
       }
@@ -125,7 +128,7 @@ TEST(o1, Evaluation) {
   }
 }
 
-TEST(o2, Evaluation) {
+BOOST_AUTO_TEST_CASE(o2_Evaluation) {
 
   Vec p1 = Vec::Zero(20), p2 = Vec::Zero(20);
   p1(coef_xx) = double(rand()) / RAND_MAX;
@@ -148,7 +151,7 @@ TEST(o2, Evaluation) {
   for (double z = -5; z < 5; ++z) {
     for (double y = -5; y < 5; ++y) {
       for (double x = -5; x < 5; ++x) {
-        EXPECT_NEAR(EvalPolynomial(p3, x, y, z),
+        BOOST_CHECK_SMALL(EvalPolynomial(p3, x, y, z)-
                     EvalPolynomial(p1, x, y, z) * EvalPolynomial(p2, x, y, z),
                     1e-8);
       }
@@ -160,13 +163,13 @@ TEST(o2, Evaluation) {
 /// Determinant is 0
 ///
 #define EXPECT_ESSENTIAL_MATRIX_PROPERTIES(E, expectedPrecision) { \
-  EXPECT_NEAR(0, E.determinant(), expectedPrecision); \
+  BOOST_CHECK_SMALL(E.determinant(), expectedPrecision); \
   Mat3 O = 2 * E * E.transpose() * E - (E * E.transpose()).trace() * E; \
   Mat3 zero3x3 = Mat3::Zero(); \
   EXPECT_MATRIX_NEAR(zero3x3, O, expectedPrecision);\
 }
 
-TEST(FivePointsRelativePose, Random) {
+BOOST_AUTO_TEST_CASE(FivePointsRelativePose_Random) {
 
   TestData d = SomeTestData();
 
@@ -181,7 +184,7 @@ TEST(FivePointsRelativePose, Random) {
   for (size_t s = 0; s < Es.size(); ++s) {
     Vec2 x1Col = d.x1.col(0);
     Vec2 x2Col = d.x2.col(0);
-    CHECK(
+    BOOST_CHECK(
       MotionFromEssentialAndCorrespondence(Es[s],
                                          Mat3::Identity(),
                                          x1Col,
@@ -194,6 +197,8 @@ TEST(FivePointsRelativePose, Random) {
   bool bsolution_found = false;
   for (size_t i = 0; i < Es.size(); ++i) {
 
+    std::cout << i << std::endl;
+
     // Check that we find the correct relative orientation.
     if (FrobeniusDistance(d.R, Rs[i]) < 1e-3
         && (d.t / d.t.norm() - ts[i] / ts[i].norm()).norm() < 1e-3 ) {
@@ -203,10 +208,10 @@ TEST(FivePointsRelativePose, Random) {
     }
   }
   //-- Almost one solution must find the correct relative orientation
-  CHECK(bsolution_found);
+  BOOST_CHECK(bsolution_found);
 }
 
-TEST(FivePointsRelativePose, test_data_sets) {
+BOOST_AUTO_TEST_CASE(FivePointsRelativePose_test_data_sets) {
 
   //-- Setup a circular camera rig and assert that 5PT relative pose works.
   const int iNviews = 5;
@@ -226,7 +231,7 @@ TEST(FivePointsRelativePose, test_data_sets) {
     for (size_t s = 0; s < Es.size(); ++s) {
       Vec2 x1Col = d._x[0].col(0);
       Vec2 x2Col = d._x[i].col(0);
-      CHECK(
+      BOOST_CHECK(
         MotionFromEssentialAndCorrespondence(Es[s],
         d._K[0],
         x1Col,
@@ -254,10 +259,6 @@ TEST(FivePointsRelativePose, test_data_sets) {
       }
     }
     //-- Almost one solution must find the correct relative orientation
-    CHECK(bsolution_found);
+    BOOST_CHECK(bsolution_found);
   }
 }
-
-/* ************************************************************************* */
-int main() { TestResult tr; return TestRegistry::runAllTests(tr);}
-/* ************************************************************************* */

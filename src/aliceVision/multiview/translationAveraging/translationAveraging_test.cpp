@@ -4,18 +4,22 @@
 #include "aliceVision/multiview/translationAveraging/common.hpp"
 #include "aliceVision/multiview/translationAveraging/solver.hpp"
 #include "aliceVision/multiview/translationAveraging/translationAveragingTest.hpp"
-#include "testing/testing.h"
 
 #include <fstream>
 #include <map>
 #include <utility>
 #include <vector>
 
+#define BOOST_TEST_MODULE translationAveraging
+#include <boost/test/included/unit_test.hpp>
+#include <boost/test/floating_point_comparison.hpp>
+#include <aliceVision/unitTest.hpp>
+
 using namespace aliceVision;
 using namespace aliceVision::translationAveraging;
 using namespace std;
 
-TEST(translation_averaging, globalTi_from_tijs_Triplets_softL1_Ceres) {
+BOOST_AUTO_TEST_CASE(translation_averaging_globalTi_from_tijs_Triplets_softL1_Ceres) {
 
   const int focal = 1000;
   const int principal_Point = 500;
@@ -40,10 +44,10 @@ TEST(translation_averaging, globalTi_from_tijs_Triplets_softL1_Ceres) {
 
   // Solve the translation averaging problem:
   std::vector<Vec3> vec_translations;
-  EXPECT_TRUE(solve_translations_problem_softl1(
+  BOOST_CHECK(solve_translations_problem_softl1(
     vec_relative_estimates, bRelative_Translation_PerTriplet, iNviews, vec_translations));
 
-  EXPECT_EQ(iNviews, vec_translations.size());
+  BOOST_CHECK_EQUAL(iNviews, vec_translations.size());
 
   // Check accuracy of the found translations
   for (unsigned i = 0; i < iNviews; ++i)
@@ -59,12 +63,12 @@ TEST(translation_averaging, globalTi_from_tijs_Triplets_softL1_Ceres) {
       EXPECT_MATRIX_NEAR(C_computed, C_GT, 1e-6);
     }
     else  {
-     EXPECT_NEAR(0.0, DistanceLInfinity(C_computed.normalized(), C_GT.normalized()), 1e-6);
+     BOOST_CHECK_SMALL(DistanceLInfinity(C_computed.normalized(), C_GT.normalized()), 1e-6);
     }
   }
 }
 
-TEST(translation_averaging, globalTi_from_tijs_softl1_Ceres) {
+BOOST_AUTO_TEST_CASE(translation_averaging_globalTi_from_tijs_softl1_Ceres) {
 
   const int focal = 1000;
   const int principal_Point = 500;
@@ -89,10 +93,10 @@ TEST(translation_averaging, globalTi_from_tijs_softl1_Ceres) {
 
   // Solve the translation averaging problem:
   std::vector<Vec3> vec_translations;
-  EXPECT_TRUE(solve_translations_problem_softl1(
+  BOOST_CHECK(solve_translations_problem_softl1(
     vec_relative_estimates, bRelative_Translation_PerTriplet, iNviews, vec_translations));
 
-  EXPECT_EQ(iNviews, vec_translations.size());
+  BOOST_CHECK_EQUAL(iNviews, vec_translations.size());
 
   // Check accuracy of the found translations
   for (unsigned i = 0; i < iNviews; ++i)
@@ -108,12 +112,12 @@ TEST(translation_averaging, globalTi_from_tijs_softl1_Ceres) {
       EXPECT_MATRIX_NEAR(C_computed, C_GT, 1e-6);
     }
     else  {
-     EXPECT_NEAR(0.0, DistanceLInfinity(C_computed.normalized(), C_GT.normalized()), 1e-6);
+     BOOST_CHECK_SMALL(DistanceLInfinity(C_computed.normalized(), C_GT.normalized()), 1e-6);
     }
   }
 }
 
-TEST(translation_averaging, globalTi_from_tijs_Triplets_l2_chordal) {
+BOOST_AUTO_TEST_CASE(translation_averaging_globalTi_from_tijs_Triplets_l2_chordal) {
 
   const int focal = 1000;
   const int principal_Point = 500;
@@ -167,7 +171,7 @@ TEST(translation_averaging, globalTi_from_tijs_Triplets_l2_chordal) {
 
   std::vector<double> X(iNviews*3);
 
-  EXPECT_TRUE(
+  BOOST_CHECK(
     solve_translations_problem_l2_chordal(
       &vec_edges[0],
       &vec_poses[0],
@@ -184,7 +188,7 @@ TEST(translation_averaging, globalTi_from_tijs_Triplets_l2_chordal) {
   {
     if (i==0) {  //First camera supposed to be at Identity
       const Vec3 C0(X[0], X[1], X[2]);
-      EXPECT_NEAR(0.0, DistanceLInfinity(C0, Vec3(0,0,0)), 1e-6);
+      BOOST_CHECK_SMALL(DistanceLInfinity(C0, Vec3(0,0,0)), 1e-6);
     }
     else  {
       const Vec3 t_GT = (d._C[i] - d._C[0]);
@@ -194,12 +198,7 @@ TEST(translation_averaging, globalTi_from_tijs_Triplets_l2_chordal) {
       const Vec3 t_computed = CI - C0;
 
       //-- Check that vector are colinear
-      EXPECT_NEAR(0.0, DistanceLInfinity(t_computed.normalized(), t_GT.normalized()), 1e-6);
+      BOOST_CHECK_SMALL(DistanceLInfinity(t_computed.normalized(), t_GT.normalized()), 1e-6);
     }
   }
 }
-
-/* ************************************************************************* */
-int main() { TestResult tr; return TestRegistry::runAllTests(tr);}
-/* ************************************************************************* */
-

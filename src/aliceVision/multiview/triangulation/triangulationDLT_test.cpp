@@ -4,12 +4,15 @@
 #include "aliceVision/multiview/projection.hpp"
 #include "aliceVision/multiview/NViewDataSet.hpp"
 #include "aliceVision/multiview/triangulation/triangulationDLT.hpp"
-#include "testing/testing.h"
+
+#define BOOST_TEST_MODULE triangulationDLT
+#include <boost/test/included/unit_test.hpp>
+#include <boost/test/floating_point_comparison.hpp>
 
 using namespace aliceVision;
 using namespace std;
 
-TEST(Triangulation, TriangulateDLT) {
+BOOST_AUTO_TEST_CASE(Triangulation_TriangulateDLT) {
 
   NViewDataSet d = NRealisticCamerasRing(2, 12);
 
@@ -20,11 +23,6 @@ TEST(Triangulation, TriangulateDLT) {
     Vec3 X_estimated, X_gt;
     X_gt = d._X.col(i);
     TriangulateDLT(d.P(0), x1, d.P(1), x2, &X_estimated);
-    EXPECT_NEAR(0, DistanceLInfinity(X_estimated, X_gt), 1e-8);
+    BOOST_CHECK_SMALL(DistanceLInfinity(X_estimated, X_gt), 1e-8);
   }
 }
-
-/* ************************************************************************* */
-int main() { TestResult tr; return TestRegistry::runAllTests(tr);}
-/* ************************************************************************* */
-

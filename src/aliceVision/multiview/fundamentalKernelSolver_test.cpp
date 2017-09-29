@@ -3,7 +3,10 @@
 
 #include "aliceVision/multiview/fundamentalKernelSolver.hpp"
 #include "aliceVision/multiview/projection.hpp"
-#include "testing/testing.h"
+
+#define BOOST_TEST_MODULE fundamentalKernelSolver
+#include <boost/test/included/unit_test.hpp>
+#include <boost/test/floating_point_comparison.hpp>
 
 using namespace aliceVision;
 using namespace std;
@@ -74,46 +77,42 @@ bool ExpectKernelProperties(const Mat &x1,
   return bOk;
 }
 
-TEST(SevenPointTest, EasyCase) {
+BOOST_AUTO_TEST_CASE(SevenPointTest_EasyCase) {
   Mat x1(2, 7), x2(2, 7);
   x1 << 0, 0, 0, 1, 1, 1, 2,
         0, 1, 2, 0, 1, 2, 0;
   x2 << 0, 0, 0, 1, 1, 1, 2,
         1, 2, 3, 1, 2, 3, 1;
   typedef fundamental::kernel::SevenPointKernel Kernel;
-  EXPECT_TRUE(ExpectKernelProperties<Kernel>(x1, x2));
+  BOOST_CHECK(ExpectKernelProperties<Kernel>(x1, x2));
 }
 
-TEST(SevenPointTest_Normalized, EasyCase) {
+BOOST_AUTO_TEST_CASE(SevenPointTest_Normalized_EasyCase) {
   Mat x1(2, 7), x2(2, 7);
   x1 << 0, 0, 0, 1, 1, 1, 2,
     0, 1, 2, 0, 1, 2, 0;
   x2 << 0, 0, 0, 1, 1, 1, 2,
     1, 2, 3, 1, 2, 3, 1;
   typedef fundamental::kernel::NormalizedSevenPointKernel Kernel;
-  EXPECT_TRUE(ExpectKernelProperties<Kernel>(x1, x2));
+  BOOST_CHECK(ExpectKernelProperties<Kernel>(x1, x2));
 }
 
-TEST(EightPointTest, EasyCase) {
+BOOST_AUTO_TEST_CASE(EightPointTest_EasyCase) {
   Mat x1(2, 8), x2(2, 8);
   x1 << 0, 0, 0, 1, 1, 1, 2, 2,
         0, 1, 2, 0, 1, 2, 0, 1;
   x2 << 0, 0, 0, 1, 1, 1, 2, 2,
         1, 2, 3, 1, 2, 3, 1, 2;
   typedef fundamental::kernel::EightPointKernel Kernel;
-  EXPECT_TRUE(ExpectKernelProperties<Kernel>(x1, x2));
+  BOOST_CHECK(ExpectKernelProperties<Kernel>(x1, x2));
 }
 
-TEST(EightPointTest_Normalized, EasyCase) {
+BOOST_AUTO_TEST_CASE(EightPointTest_Normalized_EasyCase) {
   Mat x1(2, 8), x2(2, 8);
   x1 << 0, 0, 0, 1, 1, 1, 2, 2,
     0, 1, 2, 0, 1, 2, 0, 1;
   x2 << 0, 0, 0, 1, 1, 1, 2, 2,
     1, 2, 3, 1, 2, 3, 1, 2;
   typedef fundamental::kernel::NormalizedEightPointKernel Kernel;
-  EXPECT_TRUE(ExpectKernelProperties<Kernel>(x1, x2));
+  BOOST_CHECK(ExpectKernelProperties<Kernel>(x1, x2));
 }
-
-/* ************************************************************************* */
-int main() { TestResult tr; return TestRegistry::runAllTests(tr);}
-/* ************************************************************************* */

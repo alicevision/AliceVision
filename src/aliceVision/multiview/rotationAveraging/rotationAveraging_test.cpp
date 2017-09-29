@@ -5,8 +5,6 @@
 #include "aliceVision/multiview/rotationAveraging/rotationAveraging.hpp"
 #include "aliceVision/multiview/essential.hpp"
 #include <aliceVision/system/Logger.hpp>
-#include "testing/testing.h"
-
 #include "aliceVision/multiview/NViewDataSet.hpp"
 
 #include <iostream>
@@ -15,12 +13,17 @@
 #include <iterator>
 #include <utility>
 
+#define BOOST_TEST_MODULE rotationAveraging
+#include <boost/test/included/unit_test.hpp>
+#include <boost/test/floating_point_comparison.hpp>
+#include <aliceVision/unitTest.hpp>
+
 using namespace aliceVision;
 using namespace aliceVision::rotationAveraging;
 using namespace aliceVision::rotationAveraging::l1;
 using namespace aliceVision::rotationAveraging::l2;
 
-TEST ( rotationAveraging, ClosestSVDRotationMatrix )
+BOOST_AUTO_TEST_CASE ( rotationAveraging_ClosestSVDRotationMatrix )
 {
   Mat3 rotx = RotationAroundX(0.3);
 
@@ -29,13 +32,13 @@ TEST ( rotationAveraging, ClosestSVDRotationMatrix )
   // Check that SVD have rebuilt the matrix correctly
   EXPECT_MATRIX_NEAR( rotx, Approximative_rotx, 1e-8);
   // Check the Frobenius distance between the approximated rot matrix and the GT
-  EXPECT_NEAR( 0.0, FrobeniusDistance( rotx, Approximative_rotx), 1e-8);
+  BOOST_CHECK_SMALL(FrobeniusDistance( rotx, Approximative_rotx), 1e-8);
   // Check that the Matrix is a rotation matrix (determinant == 1)
-  EXPECT_NEAR( 1.0, Approximative_rotx.determinant(), 1e-8);
+  BOOST_CHECK_SMALL( 1.0 - Approximative_rotx.determinant(), 1e-8);
 }
 
 
-TEST ( rotationAveraging, ClosestSVDRotationMatrixNoisy )
+BOOST_AUTO_TEST_CASE ( rotationAveraging_ClosestSVDRotationMatrixNoisy )
 {
   Mat3 rotx = RotationAroundX(0.3);
 
@@ -44,9 +47,9 @@ TEST ( rotationAveraging, ClosestSVDRotationMatrixNoisy )
   Mat3 Approximative_rotx = rotationAveraging::l2::ClosestSVDRotationMatrix(rotx);
 
   // Check the Frobenius distance between the approximated rot matrix and the GT
-  CHECK( FrobeniusDistance( rotx, Approximative_rotx) < 0.02);
+  BOOST_CHECK( FrobeniusDistance( rotx, Approximative_rotx) < 0.02);
   // Check that the Matrix is a rotation matrix (determinant == 1)
-  EXPECT_NEAR( 1.0, Approximative_rotx.determinant(), 1e-8);
+  BOOST_CHECK_SMALL( 1.0 - Approximative_rotx.determinant(), 1e-8);
 }
 
 // Rotation averaging in a triplet:
@@ -55,7 +58,7 @@ TEST ( rotationAveraging, ClosestSVDRotationMatrixNoisy )
 //   \   /
 //    \ /
 //     1
-TEST ( rotationAveraging, RotationLeastSquare_3_Camera)
+BOOST_AUTO_TEST_CASE ( rotationAveraging_RotationLeastSquare_3_Camera)
 {
   using namespace std;
 
@@ -76,7 +79,7 @@ TEST ( rotationAveraging, RotationLeastSquare_3_Camera)
   //- Solve the global rotation estimation problem :
   std::vector<Mat3> vec_globalR;
   L2RotationAveraging(3, vec_relativeRotEstimate, vec_globalR);
-  EXPECT_EQ(3, vec_globalR.size());
+  BOOST_CHECK_EQUAL(3, vec_globalR.size());
   // Check that the loop is closing
   EXPECT_MATRIX_NEAR(Mat3::Identity(), (vec_globalR[0]*vec_globalR[1]*vec_globalR[2]), 1e-8);
 
@@ -88,16 +91,16 @@ TEST ( rotationAveraging, RotationLeastSquare_3_Camera)
   Mat3 R;
   Vec3 t, t0 = Vec3::Zero(), t1 = Vec3::Zero();
   RelativeCameraMotion(vec_globalR[0], t0, vec_globalR[1], t1, &R, &t);
-  EXPECT_NEAR( 0, FrobeniusDistance( R01, R), 1e-2);
+  BOOST_CHECK_SMALL(FrobeniusDistance( R01, R), 1e-2);
 
   RelativeCameraMotion(vec_globalR[1], t0, vec_globalR[2], t1, &R, &t);
-  EXPECT_NEAR( 0, FrobeniusDistance( R12, R), 1e-2);
+  BOOST_CHECK_SMALL(FrobeniusDistance( R12, R), 1e-2);
 
   RelativeCameraMotion(vec_globalR[2], t0, vec_globalR[0], t1, &R, &t);
-  EXPECT_NEAR( 0, FrobeniusDistance( R20, R), 1e-2);
+  BOOST_CHECK_SMALL(FrobeniusDistance( R20, R), 1e-2);
 }
 
-TEST ( rotationAveraging, RefineRotationsAvgL1IRLS_SimpleTriplet)
+BOOST_AUTO_TEST_CASE ( rotationAveraging_RefineRotationsAvgL1IRLS_SimpleTriplet)
 {
   using namespace std;
 
@@ -120,7 +123,7 @@ TEST ( rotationAveraging, RefineRotationsAvgL1IRLS_SimpleTriplet)
   //- Solve the global rotation estimation problem :
   Matrix3x3Arr vec_globalR(3);
   std::size_t nMainViewID = 0;
-  EXPECT_TRUE(GlobalRotationsRobust(vec_relativeRotEstimate, vec_globalR, nMainViewID, 0.0f, NULL));
+  BOOST_CHECK(GlobalRotationsRobust(vec_relativeRotEstimate, vec_globalR, nMainViewID, 0.0f, NULL));
 
   // Check that the loop is closing
   EXPECT_MATRIX_NEAR(Mat3::Identity(), (vec_globalR[0]*vec_globalR[1]*vec_globalR[2]), 1e-4);
@@ -133,17 +136,17 @@ TEST ( rotationAveraging, RefineRotationsAvgL1IRLS_SimpleTriplet)
   Mat3 R;
   Vec3 t, t0 = Vec3::Zero(), t1 = Vec3::Zero();
   RelativeCameraMotion(vec_globalR[0], t0, vec_globalR[1], t1, &R, &t);
-  EXPECT_NEAR( 0, FrobeniusDistance( R01, R), 1e-8);
+  BOOST_CHECK_SMALL(FrobeniusDistance( R01, R), 1e-8);
 
   RelativeCameraMotion(vec_globalR[1], t0, vec_globalR[2], t1, &R, &t);
-  EXPECT_NEAR( 0, FrobeniusDistance( R12, R), 1e-8);
+  BOOST_CHECK_SMALL(FrobeniusDistance( R12, R), 1e-8);
 
   RelativeCameraMotion(vec_globalR[2], t0, vec_globalR[0], t1, &R, &t);
-  EXPECT_NEAR( 0, FrobeniusDistance( R20, R), 1e-8);
+  BOOST_CHECK_SMALL(FrobeniusDistance( R20, R), 1e-8);
 }
 
 // Test over a loop of cameras
-TEST ( rotationAveraging, RefineRotationsAvgL1IRLS_CompleteGraph)
+BOOST_AUTO_TEST_CASE ( rotationAveraging_RefineRotationsAvgL1IRLS_CompleteGraph)
 {
   //-- Setup a circular camera rig
   const int iNviews = 5;
@@ -176,7 +179,7 @@ TEST ( rotationAveraging, RefineRotationsAvgL1IRLS_CompleteGraph)
   Matrix3x3Arr vec_globalR(iNviews);
   std::size_t nMainViewID = 0;
   bool bTest = GlobalRotationsRobust(vec_relativeRotEstimate, vec_globalR, nMainViewID, 0.0f, NULL);
-  EXPECT_TRUE(bTest);
+  BOOST_CHECK(bTest);
 
   // Check that the loop is closing
   Mat3 rotCumul = Mat3::Identity();
@@ -197,14 +200,14 @@ TEST ( rotationAveraging, RefineRotationsAvgL1IRLS_CompleteGraph)
   // Check that each global rotations is near the true ones
   for (std::size_t i = 0; i < iNviews; ++i)
   {
-    EXPECT_NEAR(0.0, FrobeniusDistance(d._R[i], vec_globalR[i]), 1e-8);
+    BOOST_CHECK_SMALL(FrobeniusDistance(d._R[i], vec_globalR[i]), 1e-8);
   }
   EXPECT_MATRIX_NEAR(Mat3::Identity(), rotCumul, 1e-4);
 }
 
 
 // Test over a loop of camera that have 2 relative outliers rotations
-TEST ( rotationAveraging, RefineRotationsAvgL1IRLS_CompleteGraph_outliers)
+BOOST_AUTO_TEST_CASE ( rotationAveraging_RefineRotationsAvgL1IRLS_CompleteGraph_outliers)
 {
   //-- Setup a circular camera rig
   const int iNviews = 5;
@@ -267,15 +270,15 @@ TEST ( rotationAveraging, RefineRotationsAvgL1IRLS_CompleteGraph_outliers)
   std::size_t nMainViewID = 0;
   std::vector<bool> vec_inliers;
   bool bTest = GlobalRotationsRobust(vec_relativeRotEstimate, vec_globalR, nMainViewID, 0.0f, &vec_inliers);
-  EXPECT_TRUE(bTest);
+  BOOST_CHECK(bTest);
 
   ALICEVISION_LOG_DEBUG("Inliers: " << vec_inliers);
 
   // Check inlier list
-  CHECK(std::accumulate(vec_inliers.begin(), vec_inliers.end(), 0) == 8);
+  BOOST_CHECK(std::accumulate(vec_inliers.begin(), vec_inliers.end(), 0) == 8);
   // Check outlier have been found
-  CHECK(vec_inliers[0]== 0);
-  CHECK(vec_inliers[3] == 0);
+  BOOST_CHECK(vec_inliers[0]== 0);
+  BOOST_CHECK(vec_inliers[3] == 0);
 
   // Remove outliers and refine
   RelativeRotations vec_relativeRotEstimateTemp;
@@ -285,7 +288,7 @@ TEST ( rotationAveraging, RefineRotationsAvgL1IRLS_CompleteGraph_outliers)
       vec_relativeRotEstimateTemp.push_back(vec_relativeRotEstimate[i]);
   }
   vec_relativeRotEstimate.swap(vec_relativeRotEstimateTemp);
-  EXPECT_TRUE( GlobalRotationsRobust(vec_relativeRotEstimate, vec_globalR, nMainViewID, 0.0f, &vec_inliers));
+  BOOST_CHECK( GlobalRotationsRobust(vec_relativeRotEstimate, vec_globalR, nMainViewID, 0.0f, &vec_inliers));
 
   // Check that the loop is closing
   Mat3 rotCumul = vec_globalR[0];
@@ -308,7 +311,7 @@ TEST ( rotationAveraging, RefineRotationsAvgL1IRLS_CompleteGraph_outliers)
   // Check that each global rotations is near the true ones
   for (std::size_t i = 0; i < iNviews; ++i)
   {
-    EXPECT_NEAR(0.0, FrobeniusDistance(d._R[i], vec_globalR[i]), 1e-8);
+    BOOST_CHECK_SMALL(FrobeniusDistance(d._R[i], vec_globalR[i]), 1e-8);
   }
 }
 
@@ -385,12 +388,9 @@ bool TestRobustRegressionL1PD()
 
 }
 
-TEST ( rotationAveraging, RobustRegressionL1PD)
+BOOST_AUTO_TEST_CASE ( rotationAveraging_RobustRegressionL1PD)
 {
   TestRobustRegressionL1PD();
-}*/
-
-/* ************************************************************************* */
-int main() { TestResult tr; return TestRegistry::runAllTests(tr);}
-/* ************************************************************************* */
+}
+*/
 

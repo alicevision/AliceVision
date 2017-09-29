@@ -4,12 +4,17 @@
 #include "aliceVision/multiview/NViewDataSet.hpp"
 #include "aliceVision/multiview/resection/ResectionKernel.hpp"
 #include "aliceVision/multiview/resection/P3PSolver.hpp"
-#include "testing/testing.h"
+
 #include <vector>
+
+#define BOOST_TEST_MODULE ResectionKernel
+#include <boost/test/included/unit_test.hpp>
+#include <boost/test/floating_point_comparison.hpp>
+#include <aliceVision/unitTest.hpp>
 
 using namespace aliceVision;
 
-TEST(Resection_Kernel, Multiview) {
+BOOST_AUTO_TEST_CASE(Resection_Kernel_Multiview) {
 
   const int nViews = 3;
   const int nbPoints = 10;
@@ -29,10 +34,10 @@ TEST(Resection_Kernel, Multiview) {
     std::vector<Mat34> Ps;
     kernel.Fit(samples, &Ps);
     for (std::size_t i = 0; i < x.cols(); ++i) {
-      EXPECT_NEAR(0.0, kernel.Error(i, Ps[0]), 1e-8);
+      BOOST_CHECK_SMALL(kernel.Error(i, Ps[0]), 1e-8);
     }
 
-    CHECK_EQUAL(1, Ps.size());
+    BOOST_CHECK_EQUAL(1, Ps.size());
 
     // Check that Projection matrix is near to the GT :
     Mat34 GT_ProjectionMatrix = d.P(nResectionCameraIndex).array()
@@ -42,7 +47,7 @@ TEST(Resection_Kernel, Multiview) {
   }
 }
 
-TEST(P3P_Kneip_CVPR11, Multiview) {
+BOOST_AUTO_TEST_CASE(P3P_Kneip_CVPR11_Multiview) {
 
   const int nViews = 3;
   const int nbPoints = 3;
@@ -75,12 +80,12 @@ TEST(P3P_Kneip_CVPR11, Multiview) {
         index = i;
       }
     }
-    EXPECT_TRUE(bFound);
+    BOOST_CHECK(bFound);
 
     // Check that for the found matrix residual is small
     for (std::size_t i = 0; i < x.cols(); ++i)
     {
-      EXPECT_NEAR(0.0, kernel.Error(i,Ps[index]), 1e-8);
+      BOOST_CHECK_SMALL(kernel.Error(i,Ps[index]), 1e-8);
     }
   }
 }
@@ -131,7 +136,7 @@ void CreateCameraSystem(const Mat3& KK,
 };
 
 
-TEST(EuclideanResection, Points6AllRandomInput) {
+BOOST_AUTO_TEST_CASE(EuclideanResection_Points6AllRandomInput) {
   Mat3 KK;
   KK << 2796, 0,    800,
         0 ,   2796, 600,
@@ -176,7 +181,7 @@ TEST(EuclideanResection, Points6AllRandomInput) {
     std::vector<Mat34> Ps;
     kernel.Fit(samples, &Ps);
 
-    CHECK_EQUAL(1, Ps.size());
+    BOOST_CHECK_EQUAL(1, Ps.size());
 
     bool bFound = false;
     for (std::size_t i = 0; i < Ps.size(); ++i)
@@ -189,11 +194,7 @@ TEST(EuclideanResection, Points6AllRandomInput) {
            NormLInfinity(R_output-R_expected) < 1e-8)
           bFound = true;
     }
-    EXPECT_TRUE(bFound);
+    BOOST_CHECK(bFound);
   }
 
 }
-
-/* ************************************************************************* */
-int main() { TestResult tr; return TestRegistry::runAllTests(tr);}
-/* ************************************************************************* */

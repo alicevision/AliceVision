@@ -5,27 +5,25 @@
 
 #include "aliceVision/multiview/essential.hpp"
 #include "aliceVision/multiview/translationAveraging/common.hpp"
-
+#include "aliceVision/multiview/NViewDataSet.hpp"
 #include "aliceVision/graph/Triplet.hpp"
-using namespace aliceVision::graph;
 
 #include "dependencies/vectorGraphics/svgDrawer.hpp"
-using namespace svg;
 
-#include "aliceVision/multiview/NViewDataSet.hpp"
-#include "testing/testing.h"
+#include "ceres/ceres.h"
+#include "ceres/rotation.h"
 
 #include <fstream>
 #include <map>
 #include <utility>
 #include <vector>
-
-#include "ceres/ceres.h"
-#include "ceres/rotation.h"
 #include <numeric>
 
 using namespace aliceVision;
+using namespace aliceVision::graph;
+
 using namespace std;
+using namespace svg;
 
 int modifiedMod
 (

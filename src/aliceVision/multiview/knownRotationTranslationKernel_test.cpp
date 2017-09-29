@@ -4,14 +4,19 @@
 #include "aliceVision/multiview/NViewDataSet.hpp"
 #include "aliceVision/multiview/essential.hpp"
 #include "aliceVision/multiview/knownRotationTranslationKernel.hpp"
-#include "testing/testing.h"
+
 #include <vector>
+
+#define BOOST_TEST_MODULE knownRotationTranslationKernel
+#include <boost/test/included/unit_test.hpp>
+#include <boost/test/floating_point_comparison.hpp>
+#include <aliceVision/unitTest.hpp>
 
 using namespace aliceVision;
 
 // Estimate the translation for a pair of view for which the relative rotation is known
 // Use a 2 correspondences based solver
-TEST(Translation_knownRotation_Kernel, Multiview) {
+BOOST_AUTO_TEST_CASE(Translation_knownRotation_Kernel_Multiview) {
 
   const int nViews = 10;
   const int nbPoints = 2;
@@ -37,19 +42,15 @@ TEST(Translation_knownRotation_Kernel, Multiview) {
     std::vector<Vec3> vec_t;
     kernel.Fit(samples, &vec_t);
 
-    CHECK_EQUAL(1, vec_t.size());
+    BOOST_CHECK_EQUAL(1, vec_t.size());
 
     // Check that the fitted model is compatible with the data
     // Here the distance to the epipolar line is used
     for (std::size_t i = 0; i < x0.cols(); ++i) {
-      EXPECT_NEAR(0.0, kernel.Error(i, vec_t[0]), 1e-8);
+      BOOST_CHECK_SMALL(kernel.Error(i, vec_t[0]), 1e-8);
     }
 
     // Check that the GT translation and the estimated one are equal
     EXPECT_MATRIX_NEAR(t_GT.normalized(), vec_t[0].normalized(), 1e-8);
   }
 }
-
-/* ************************************************************************* */
-int main() { TestResult tr; return TestRegistry::runAllTests(tr);}
-/* ************************************************************************* */

@@ -4,9 +4,12 @@
 #include "aliceVision/multiview/essential.hpp"
 #include "aliceVision/multiview/essentialKernelSolver.hpp"
 #include "aliceVision/multiview/projection.hpp"
-#include "testing/testing.h"
-
 #include "aliceVision/multiview/NViewDataSet.hpp"
+
+#define BOOST_TEST_MODULE essentialKernelSolver
+#include <boost/test/included/unit_test.hpp>
+#include <boost/test/floating_point_comparison.hpp>
+#include <aliceVision/unitTest.hpp>
 
 using namespace aliceVision;
 
@@ -14,13 +17,13 @@ using namespace aliceVision;
 /// Determinant is 0
 ///
 #define EXPECT_ESSENTIAL_MATRIX_PROPERTIES(E, expectedPrecision) { \
-  EXPECT_NEAR(0, E.determinant(), expectedPrecision); \
+  BOOST_CHECK_SMALL(E.determinant(), expectedPrecision); \
   Mat3 O = 2 * E * E.transpose() * E - (E * E.transpose()).trace() * E; \
   Mat3 zero3x3 = Mat3::Zero(); \
   EXPECT_MATRIX_NEAR(zero3x3, O, expectedPrecision);\
 }
 
-TEST(EightPointsRelativePose, EightPointsRelativePose_Kernel_IdFocal) {
+BOOST_AUTO_TEST_CASE(EightPointsRelativePose_EightPointsRelativePose_Kernel_IdFocal) {
 
   //-- Setup a circular camera rig and assert that 8PT relative pose works.
   const int iNviews = 5;
@@ -41,7 +44,7 @@ TEST(EightPointsRelativePose, EightPointsRelativePose_Kernel_IdFocal) {
       Vec2 x1Col, x2Col;
       x1Col << d._x[i].col(0);
       x2Col << d._x[(i+1)%iNviews].col(0);
-      CHECK(
+      BOOST_CHECK(
         MotionFromEssentialAndCorrespondence(Es[s],
         d._K[i], x1Col,
         d._K[(i+1)%iNviews], x2Col,
@@ -67,11 +70,11 @@ TEST(EightPointsRelativePose, EightPointsRelativePose_Kernel_IdFocal) {
       }
     }
     //-- Almost one solution must find the correct relative orientation
-    CHECK(bsolution_found);
+    BOOST_CHECK(bsolution_found);
   }
 }
 
-TEST(EightPointsRelativePose, EightPointsRelativePose_Kernel) {
+BOOST_AUTO_TEST_CASE(EightPointsRelativePose_EightPointsRelativePose_Kernel) {
 
   typedef essential::kernel::EightPointKernel Kernel;
 
@@ -107,7 +110,7 @@ TEST(EightPointsRelativePose, EightPointsRelativePose_Kernel) {
       Vec2 x1Col, x2Col;
       x1Col << d._x[i].col(0);
       x2Col << d._x[(i+1)%iNviews].col(0);
-      CHECK(
+      BOOST_CHECK(
         MotionFromEssentialAndCorrespondence(Es[s],
         d._K[i], x1Col,
         d._K[(i+1)%iNviews], x2Col,
@@ -133,11 +136,11 @@ TEST(EightPointsRelativePose, EightPointsRelativePose_Kernel) {
       }
     }
     //-- Almost one solution must find the correct relative orientation
-    CHECK(bsolution_found);
+    BOOST_CHECK(bsolution_found);
   }
 }
 
-TEST(FivePointKernelTest, KernelError) {
+BOOST_AUTO_TEST_CASE(FivePointKernelTest_KernelError) {
 
   Mat x1(2, 5), x2(2, 5);
   x1 << 0,   0,  0, .8, .8,
@@ -158,11 +161,11 @@ TEST(FivePointKernelTest, KernelError) {
   bOk &= (!Es.empty());
   for (int i = 0; i < Es.size(); ++i) {
     for(int j = 0; j < x1.cols(); ++j)
-      EXPECT_NEAR(0.0, kernel.Error(j,Es[i]), 1e-8);
+      BOOST_CHECK_SMALL(kernel.Error(j,Es[i]), 1e-8);
   }
 }
 
-TEST(FivePointKernelTest, FivePointsRelativePose_Kernel) {
+BOOST_AUTO_TEST_CASE(FivePointKernelTest_FivePointsRelativePose_Kernel) {
 
   typedef essential::kernel::FivePointKernel Kernel;
 
@@ -199,7 +202,7 @@ TEST(FivePointKernelTest, FivePointsRelativePose_Kernel) {
       Vec2 x1Col, x2Col;
       x1Col << d._x[0].col(0);
       x2Col << d._x[i].col(0);
-      CHECK(
+      BOOST_CHECK(
         MotionFromEssentialAndCorrespondence(Es[s],
         d._K[0], x1Col,
         d._K[i], x2Col,
@@ -225,13 +228,9 @@ TEST(FivePointKernelTest, FivePointsRelativePose_Kernel) {
       }
     }
     //-- Almost one solution must find the correct relative orientation
-    CHECK(bsolution_found);
+    BOOST_CHECK(bsolution_found);
     if (bsolution_found)
       found++;
   }
-  CHECK_EQUAL(iNviews-1, found);
+  BOOST_CHECK_EQUAL(iNviews-1, found);
 }
-
-/* ************************************************************************* */
-int main() { TestResult tr; return TestRegistry::runAllTests(tr);}
-/* ************************************************************************* */

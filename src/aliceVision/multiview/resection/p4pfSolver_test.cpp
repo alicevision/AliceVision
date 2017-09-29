@@ -5,9 +5,11 @@
 #include "aliceVision/multiview/resection/P4PfSolver.hpp"
 #include "aliceVision/multiview/NViewDataSet.hpp"
 
-#include "testing/testing.h"
-
 #include <vector>
+
+#define BOOST_TEST_MODULE P4PfSolver
+#include <boost/test/included/unit_test.hpp>
+#include <boost/test/floating_point_comparison.hpp>
 
 using namespace aliceVision;
 
@@ -19,7 +21,7 @@ bool isEqual(const resection::p4fSolution first, const resection::p4fSolution se
           abs(first._f - second._f) < first._f * eps);
 }
 
-TEST(Resection_P4Pf, AssignmentWithOneResult)
+BOOST_AUTO_TEST_CASE(Resection_P4Pf_AssignmentWithOneResult)
 {
   // INPUT DATA
   Mat pt2D_1 = Mat(2, 4);
@@ -44,10 +46,10 @@ TEST(Resection_P4Pf, AssignmentWithOneResult)
   bool pass = true;
   if(!(models_1.size() == 1 && isEqual(models_1.at(0), sol_1)))
     pass = false;
-  EXPECT_TRUE(pass);
+  BOOST_CHECK(pass);
 }
 
-TEST(Resection_P4Pf, AssignmentWithMoreResults)
+BOOST_AUTO_TEST_CASE(Resection_P4Pf_AssignmentWithMoreResults)
 {
   // DATA
   Mat pt2D_2 = Mat(2, 4);
@@ -85,10 +87,10 @@ TEST(Resection_P4Pf, AssignmentWithMoreResults)
           && isEqual(models_2.at(1), sol_22)
           && isEqual(models_2.at(2), sol_23)))
     pass = false;
-  EXPECT_TRUE(pass);
+  BOOST_CHECK(pass);
 }
 
-TEST(Resection_P4Pf, AssignmentWithNoResults)
+BOOST_AUTO_TEST_CASE(Resection_P4Pf_AssignmentWithNoResults)
 {
   // DATA
   Mat pt2D_3 = Mat(2, 4);
@@ -106,13 +108,5 @@ TEST(Resection_P4Pf, AssignmentWithNoResults)
   bool pass = true;
   if(models_3.size() != 0)
     pass = false;
-  EXPECT_TRUE(pass);
+  BOOST_CHECK(pass);
 }
-
-/* ************************************************************************* */
-int main()
-{
-  TestResult tr;
-  return TestRegistry::runAllTests(tr);
-}
-/* ************************************************************************* */

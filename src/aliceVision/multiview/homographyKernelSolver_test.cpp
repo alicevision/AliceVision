@@ -3,12 +3,16 @@
 
 #include <vector>
 #include "aliceVision/multiview/homographyKernelSolver.hpp"
-#include "testing/testing.h"
+
+#define BOOST_TEST_MODULE homographyKernelSolver
+#include <boost/test/included/unit_test.hpp>
+#include <boost/test/floating_point_comparison.hpp>
+#include <aliceVision/unitTest.hpp>
 
 using namespace std;
 using namespace aliceVision;
 
-TEST(HomographyKernelTest, Fitting_Unnormalized) {
+BOOST_AUTO_TEST_CASE(HomographyKernelTest_Fitting_Unnormalized) {
   // Define 3 knows homographies (Use as GT).
   vector<Mat3> H_gt(3);
 
@@ -38,14 +42,14 @@ TEST(HomographyKernelTest, Fitting_Unnormalized) {
     for (size_t j = 4; samples.size() < x.cols(); samples.push_back(j++)) {
       vector<Mat3> Hs;
       kernel.Fit(samples, &Hs);
-      CHECK_EQUAL(1, Hs.size());
+      BOOST_CHECK_EQUAL(1, Hs.size());
       // Check that found matrix is equal to the GT
       EXPECT_MATRIX_PROP(H_gt[i], Hs[0], 1e-6);
     }
   }
 }
 
-TEST(HomographyKernelTest, Fitting_Normalized) {
+BOOST_AUTO_TEST_CASE(HomographyKernelTest_Fitting_Normalized) {
   // Define 3 knows homographies (Use as GT).
   vector<Mat3> H_gt(3);
 
@@ -75,13 +79,9 @@ TEST(HomographyKernelTest, Fitting_Normalized) {
     for (size_t j = 4; samples.size() < x.cols(); samples.push_back(j++)) {
       vector<Mat3> Hs;
       kernel.Fit(samples, &Hs);
-      CHECK_EQUAL(1, Hs.size());
+      BOOST_CHECK_EQUAL(1, Hs.size());
       // Check that found matrix is equal to the GT
       EXPECT_MATRIX_PROP(H_gt[i], Hs[0], 1e-6);
     }
   }
 }
-
-/* ************************************************************************* */
-int main() { TestResult tr; return TestRegistry::runAllTests(tr);}
-/* ************************************************************************* */
