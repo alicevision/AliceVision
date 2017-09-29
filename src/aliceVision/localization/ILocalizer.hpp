@@ -20,7 +20,7 @@ struct LocalizerParameters
   _visualDebug(""),
   _refineIntrinsics(false),
   _fDistRatio(0.8),
-  _featurePreset(feature::EDESCRIBER_PRESET::ULTRA_PRESET),
+  _featurePreset(feature::EImageDescriberPreset::ULTRA),
   _errorMax(std::numeric_limits<double>::infinity()),
   _resectionEstimator(robustEstimation::ROBUST_ESTIMATOR_ACRANSAC),
   _matchingEstimator(robustEstimation::ROBUST_ESTIMATOR_ACRANSAC),
@@ -36,7 +36,7 @@ struct LocalizerParameters
   /// the distance ratio to use when matching feature with the ratio test
   float _fDistRatio;
   /// the preset to use for feature extraction of the query image
-  feature::EDESCRIBER_PRESET _featurePreset;
+  feature::EImageDescriberPreset _featurePreset;
   /// maximum reprojection error allowed for resectioning
   double _errorMax;
   /// the type of *sac framework to use for resection

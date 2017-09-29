@@ -62,37 +62,37 @@ struct SiftParams
   //
   bool _root_sift;        // see [1]
   
-  bool setPreset(EDESCRIBER_PRESET preset) // TODO: void
+  bool setPreset(EImageDescriberPreset preset) // TODO: void
   {
     switch(preset)
     {
-    case LOW_PRESET:
+    case EImageDescriberPreset::LOW:
     {
       _maxTotalKeypoints = 1000;
       _peak_threshold = 0.04f;
       _first_octave = 2;
       break;
     }
-    case MEDIUM_PRESET:
+    case EImageDescriberPreset::MEDIUM:
     {
       _maxTotalKeypoints = 5000;
       _peak_threshold = 0.04f;
       _first_octave = 1;
       break;
     }
-    case NORMAL_PRESET:
+    case EImageDescriberPreset::NORMAL:
     {
       _maxTotalKeypoints = 10000;
       _peak_threshold = 0.04f;
       break;
     }
-    case HIGH_PRESET:
+    case EImageDescriberPreset::HIGH:
     {
       _maxTotalKeypoints = 50000;
       _peak_threshold = 0.01f;
       break;
     }
-    case ULTRA_PRESET:
+    case EImageDescriberPreset::ULTRA:
     {
       _maxTotalKeypoints = 100000;
       _peak_threshold = 0.01f;

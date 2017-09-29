@@ -32,7 +32,7 @@ public:
     return EImageDescriberType::CCTAG3;
   }
   
-  bool Set_configuration_preset(EDESCRIBER_PRESET preset) override;
+  bool Set_configuration_preset(EImageDescriberPreset preset) override;
 
   void setUseCuda(bool) override;
 
@@ -57,7 +57,7 @@ public:
     CCTagParameters(size_t nRings);
     ~CCTagParameters();
 
-    bool setPreset(EDESCRIBER_PRESET preset);
+    bool setPreset(EImageDescriberPreset preset);
 
     float _cannyThrLow;
     float _cannyThrHigh;

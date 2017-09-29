@@ -63,19 +63,19 @@ public:
     throw std::logic_error("Unknown AKAZE type.");
   }
   
-  bool Set_configuration_preset(EDESCRIBER_PRESET preset) override
+  bool Set_configuration_preset(EImageDescriberPreset preset) override
   {
     switch(preset)
     {
-    case LOW_PRESET:
-    case MEDIUM_PRESET:
-    case NORMAL_PRESET:
+    case EImageDescriberPreset::LOW:
+    case EImageDescriberPreset::MEDIUM:
+    case EImageDescriberPreset::NORMAL:
       _params._options.fThreshold = AKAZEConfig().fThreshold;
     break;
-    case HIGH_PRESET:
+    case EImageDescriberPreset::HIGH:
       _params._options.fThreshold = AKAZEConfig().fThreshold/10.;
     break;
-    case ULTRA_PRESET:
+    case EImageDescriberPreset::ULTRA:
      _params._options.fThreshold = AKAZEConfig().fThreshold/100.;
     break;
     default: return false;

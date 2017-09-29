@@ -39,7 +39,7 @@ public:
    * @param[in] preset The preset configuration
    * @return True if configuration succeed. (here always false)
    */
-  bool Set_configuration_preset(EDESCRIBER_PRESET preset) override
+  bool Set_configuration_preset(EImageDescriberPreset preset) override
   {
     return false;
   }

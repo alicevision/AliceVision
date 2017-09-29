@@ -19,13 +19,13 @@ namespace feature {
 /**
  * @brief The preset to control the number of detected regions
  */
-enum EDESCRIBER_PRESET
+enum class EImageDescriberPreset
 {
-  LOW_PRESET = 0,
-  MEDIUM_PRESET,
-  NORMAL_PRESET,
-  HIGH_PRESET,
-  ULTRA_PRESET
+  LOW = 0,
+  MEDIUM,
+  NORMAL,
+  HIGH,
+  ULTRA
 };
 
 /**
@@ -33,14 +33,14 @@ enum EDESCRIBER_PRESET
  * @param[in] sPreset the input string.
  * @return the associated describer preset.
  */
-EDESCRIBER_PRESET describerPreset_stringToEnum(const std::string& sPreset);
+EImageDescriberPreset EImageDescriberPreset_stringToEnum(const std::string& sPreset);
 
 /**
  * @brief It converts a preset to a string.
  * @param[in] preset the describer preset enum to convert.
  * @return the string associated to the describer preset.
  */
-std::string describerPreset_enumToString(const EDESCRIBER_PRESET preset);
+std::string EImageDescriberPreset_enumToString(const EImageDescriberPreset preset);
 
 /**
  * @brief It write a describer preset into a stream by converting it to a string. 
@@ -48,7 +48,7 @@ std::string describerPreset_enumToString(const EDESCRIBER_PRESET preset);
  * @param[in] p the preset to write.
  * @return the modified stream.
  */
-std::ostream& operator<<(std::ostream& os, EDESCRIBER_PRESET p);
+std::ostream& operator<<(std::ostream& os, EImageDescriberPreset p);
 
 /**
  * @brief It read a describer preset from a stream. 
@@ -56,7 +56,7 @@ std::ostream& operator<<(std::ostream& os, EDESCRIBER_PRESET p);
  * @param[out] p the preset read from the stream.
  * @return the modified stream without the read preset.
  */
-std::istream& operator>>(std::istream& in, EDESCRIBER_PRESET& p);
+std::istream& operator>>(std::istream& in, EImageDescriberPreset& p);
 
 
 /// A pure virtual class for image description computation
@@ -73,14 +73,14 @@ public:
   @param preset The preset configuration
   @return True if configuration succeed.
   */
-  virtual bool Set_configuration_preset(EDESCRIBER_PRESET preset) = 0;
+  virtual bool Set_configuration_preset(EImageDescriberPreset preset) = 0;
 
   virtual void setUseCuda(bool useCuda) {}
   virtual void setCudaPipe(int pipe) {}
 
   bool Set_configuration_preset(const std::string& preset)
   {
-    return Set_configuration_preset(describerPreset_stringToEnum(preset));
+    return Set_configuration_preset(EImageDescriberPreset_stringToEnum(preset));
   }
   
   /**

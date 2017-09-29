@@ -14,29 +14,29 @@
 namespace aliceVision {
 namespace feature {
 
-bool SIFT_openCV_Params::Set_configuration_preset(EDESCRIBER_PRESET preset)
+bool SIFT_openCV_Params::Set_configuration_preset(EImageDescriberPreset preset)
 {
     switch(preset)
     {
-      case LOW_PRESET:
+      case EImageDescriberPreset::LOW:
         contrastThreshold = 0.01;
         maxTotalKeypoints = 1000;
         break;
-      case MEDIUM_PRESET:
+      case EImageDescriberPreset::MEDIUM:
         contrastThreshold = 0.005;
         maxTotalKeypoints = 5000;
         break;
-      case NORMAL_PRESET:
+      case EImageDescriberPreset::NORMAL:
         contrastThreshold = 0.005;
         edgeThreshold = 15;
         maxTotalKeypoints = 10000;
         break;
-      case HIGH_PRESET:
+      case EImageDescriberPreset::HIGH:
         contrastThreshold = 0.005;
         edgeThreshold = 20;
         maxTotalKeypoints = 20000;
         break;
-      case ULTRA_PRESET:
+      case EImageDescriberPreset::ULTRA:
         contrastThreshold = 0.005;
         edgeThreshold = 20;
         maxTotalKeypoints = 40000;

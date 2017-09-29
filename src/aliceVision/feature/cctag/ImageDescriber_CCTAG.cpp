@@ -22,20 +22,20 @@ ImageDescriber_CCTAG::CCTagParameters::~CCTagParameters()
 {
 }
 
-bool ImageDescriber_CCTAG::CCTagParameters::setPreset(EDESCRIBER_PRESET preset)
+bool ImageDescriber_CCTAG::CCTagParameters::setPreset(EImageDescriberPreset preset)
 {
   switch(preset)
   {
   // Normal lighting conditions: normal contrast
-  case LOW_PRESET:
-  case MEDIUM_PRESET:
-  case NORMAL_PRESET:
+  case EImageDescriberPreset::LOW:
+  case EImageDescriberPreset::MEDIUM:
+  case EImageDescriberPreset::NORMAL:
     _cannyThrLow = 0.01f;
     _cannyThrHigh = 0.04f;
   break;
   // Low lighting conditions: very low contrast
-  case HIGH_PRESET:
-  case ULTRA_PRESET:
+  case EImageDescriberPreset::HIGH:
+  case EImageDescriberPreset::ULTRA:
     _cannyThrLow = 0.002f;
     _cannyThrHigh = 0.01f;
   break;
@@ -58,7 +58,7 @@ void ImageDescriber_CCTAG::Allocate(std::unique_ptr<Regions> &regions) const
   regions.reset( new CCTAG_Regions );
 }
 
-bool ImageDescriber_CCTAG::Set_configuration_preset(EDESCRIBER_PRESET preset)
+bool ImageDescriber_CCTAG::Set_configuration_preset(EImageDescriberPreset preset)
 {
   return _params.setPreset(preset);
 }

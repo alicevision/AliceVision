@@ -23,46 +23,46 @@
 namespace aliceVision{
 namespace feature{
 
-EDESCRIBER_PRESET describerPreset_stringToEnum(const std::string& sPreset)
+EImageDescriberPreset EImageDescriberPreset_stringToEnum(const std::string& sPreset)
 {
   if(sPreset == "LOW")
-    return LOW_PRESET;
+    return EImageDescriberPreset::LOW;
   if (sPreset == "MEDIUM")
-    return MEDIUM_PRESET;
+    return EImageDescriberPreset::MEDIUM;
   if(sPreset == "NORMAL")
-    return NORMAL_PRESET;
+    return EImageDescriberPreset::NORMAL;
   if (sPreset == "HIGH")
-    return HIGH_PRESET;
+    return EImageDescriberPreset::HIGH;
   if (sPreset == "ULTRA")
-    return ULTRA_PRESET;
+    return EImageDescriberPreset::ULTRA;
   throw std::invalid_argument("Invalid descriptor preset: " + sPreset);
 }
 
-std::string describerPreset_enumToString(const EDESCRIBER_PRESET preset)
+std::string EImageDescriberPreset_enumToString(const EImageDescriberPreset preset)
 {
-  if(preset == LOW_PRESET)
+  if(preset == EImageDescriberPreset::LOW)
     return "LOW";
-  if (preset == MEDIUM_PRESET)
+  if (preset == EImageDescriberPreset::MEDIUM)
     return "MEDIUM";
-  if(preset == NORMAL_PRESET)
+  if(preset == EImageDescriberPreset::NORMAL)
     return "NORMAL";
-  if (preset == HIGH_PRESET)
+  if (preset == EImageDescriberPreset::HIGH)
     return "HIGH";
-  if (preset == ULTRA_PRESET)
+  if (preset == EImageDescriberPreset::ULTRA)
     return "ULTRA";
-  throw std::invalid_argument("Unrecognized EDESCRIBER_PRESET "+std::to_string(preset));
+  throw std::invalid_argument("Unrecognized EImageDescriberPreset");
 }
 
-std::ostream& operator<<(std::ostream& os, EDESCRIBER_PRESET p)
+std::ostream& operator<<(std::ostream& os, EImageDescriberPreset p)
 {
-    return os << describerPreset_enumToString(p);
+    return os << EImageDescriberPreset_enumToString(p);
 }
 
-std::istream& operator>>(std::istream& in, EDESCRIBER_PRESET& p)
+std::istream& operator>>(std::istream& in, EImageDescriberPreset& p)
 {
     std::string token;
     in >> token;
-    p = describerPreset_stringToEnum(token);
+    p = EImageDescriberPreset_stringToEnum(token);
     return in;
 }
 

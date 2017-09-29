@@ -216,7 +216,7 @@ int main(int argc, char **argv)
   // user optional parameters
 
   std::string describerTypesName = EImageDescriberType_enumToString(EImageDescriberType::SIFT);
-  std::string describerPreset = describerPreset_enumToString(EDESCRIBER_PRESET::NORMAL_PRESET);
+  std::string describerPreset = EImageDescriberPreset_enumToString(EImageDescriberPreset::NORMAL);
   bool describersAreUpRight = false;
   int rangeStart = -1;
   int rangeSize = 1;
