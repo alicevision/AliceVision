@@ -2,17 +2,20 @@
 // the terms of the MPL2 license (see the COPYING.md file).
 
 #include "aliceVision/feature/feature.hpp"
-using namespace aliceVision;
-using namespace aliceVision::feature;
-
-#include "testing/testing.h"
 
 #include <iostream>
 #include <fstream>
 #include <iterator>
 #include <vector>
+
+#define BOOST_TEST_MODULE Feature
+#include <boost/test/included/unit_test.hpp>
+#include <boost/test/floating_point_comparison.hpp>
+
 using namespace std;
 using std::string;
+using namespace aliceVision;
+using namespace aliceVision::feature;
 
 // Define a feature and a container of features
 typedef SIOPointFeature Feature_T;
@@ -29,44 +32,44 @@ typedef std::vector<Desc_T> Descs_T;
 
 static const int CARD = 12;
 
-TEST(featureIO, NON_EXISTING_FILE) {
+BOOST_AUTO_TEST_CASE(featureIO_NON_EXISTING_FILE) {
 
   // Try to read a non-existing feature file
   Feats_T vec_feats;
-  EXPECT_FALSE(loadFeatsFromFile("x.feat", vec_feats));
+  BOOST_CHECK(!loadFeatsFromFile("x.feat", vec_feats));
 
   // Try to read a non-existing descriptor file
   Descs_T vec_descs;
-  EXPECT_FALSE(loadDescsFromFile("x.desc", vec_descs));
-  EXPECT_FALSE(loadDescsFromBinFile("x.desc", vec_descs));
+  BOOST_CHECK(!loadDescsFromFile("x.desc", vec_descs));
+  BOOST_CHECK(!loadDescsFromBinFile("x.desc", vec_descs));
 }
 
-TEST(featureIO, ASCII) {
+BOOST_AUTO_TEST_CASE(featureIO_ASCII) {
   Feats_T vec_feats;
   for(int i = 0; i < CARD; ++i)  {
     vec_feats.push_back(Feature_T(i, i*2, i*3, i*4));
   }
 
   //Save them to a file
-  EXPECT_TRUE(saveFeatsToFile("tempFeats.feat", vec_feats));
+  BOOST_CHECK(saveFeatsToFile("tempFeats.feat", vec_feats));
 
   //Read the saved data and compare to input (to check write/read IO)
   Feats_T vec_feats_read;
-  EXPECT_TRUE(loadFeatsFromFile("tempFeats.feat", vec_feats_read));
-  EXPECT_EQ(CARD, vec_feats_read.size());
+  BOOST_CHECK(loadFeatsFromFile("tempFeats.feat", vec_feats_read));
+  BOOST_CHECK_EQUAL(CARD, vec_feats_read.size());
 
   for(int i = 0; i < CARD; ++i) {
-    EXPECT_EQ(vec_feats[i], vec_feats_read[i]);
-    EXPECT_EQ(vec_feats[i].coords(), vec_feats_read[i].coords());
-    EXPECT_EQ(vec_feats[i].scale(), vec_feats_read[i].scale());
-    EXPECT_EQ(vec_feats[i].orientation(), vec_feats_read[i].orientation());
+    BOOST_CHECK_EQUAL(vec_feats[i], vec_feats_read[i]);
+    BOOST_CHECK_EQUAL(vec_feats[i].coords(), vec_feats_read[i].coords());
+    BOOST_CHECK_EQUAL(vec_feats[i].scale(), vec_feats_read[i].scale());
+    BOOST_CHECK_EQUAL(vec_feats[i].orientation(), vec_feats_read[i].orientation());
   }
 }
 
 //--
 //-- Descriptors interface test
 //--
-TEST(descriptorIO, ASCII) {
+BOOST_AUTO_TEST_CASE(descriptorIO_ASCII) {
   // Create an input series of descriptor
   Descs_T vec_descs;
   for(int i = 0; i < CARD; ++i)  {
@@ -77,21 +80,21 @@ TEST(descriptorIO, ASCII) {
   }
 
   //Save them to a file
-  EXPECT_TRUE(saveDescsToFile("tempDescs.desc", vec_descs));
+  BOOST_CHECK(saveDescsToFile("tempDescs.desc", vec_descs));
 
   //Read the saved data and compare to input (to check write/read IO)
   Descs_T vec_descs_read;
-  EXPECT_TRUE(loadDescsFromFile("tempDescs.desc", vec_descs_read));
-  EXPECT_EQ(CARD, vec_descs_read.size());
+  BOOST_CHECK(loadDescsFromFile("tempDescs.desc", vec_descs_read));
+  BOOST_CHECK_EQUAL(CARD, vec_descs_read.size());
 
   for(int i = 0; i < CARD; ++i) {
     for (int j = 0; j < DESC_LENGTH; ++j)
-      EXPECT_EQ(vec_descs[i][j], vec_descs_read[i][j]);
+      BOOST_CHECK_EQUAL(vec_descs[i][j], vec_descs_read[i][j]);
   }
 }
 
 //Test binary export of descriptor
-TEST(descriptorIO, BINARY) {
+BOOST_AUTO_TEST_CASE(descriptorIO_BINARY) {
   // Create an input series of descriptor
   Descs_T vec_descs;
   for(int i = 0; i < CARD; ++i)
@@ -103,19 +106,15 @@ TEST(descriptorIO, BINARY) {
   }
 
   //Save them to a file
-  EXPECT_TRUE(saveDescsToBinFile("tempDescsBin.desc", vec_descs));
+  BOOST_CHECK(saveDescsToBinFile("tempDescsBin.desc", vec_descs));
 
   //Read the saved data and compare to input (to check write/read IO)
   Descs_T vec_descs_read;
-  EXPECT_TRUE(loadDescsFromBinFile("tempDescsBin.desc", vec_descs_read));
-  EXPECT_EQ(CARD, vec_descs_read.size());
+  BOOST_CHECK(loadDescsFromBinFile("tempDescsBin.desc", vec_descs_read));
+  BOOST_CHECK_EQUAL(CARD, vec_descs_read.size());
 
   for(int i = 0; i < CARD; ++i) {
     for (int j = 0; j < DESC_LENGTH; ++j)
-      EXPECT_EQ(vec_descs[i][j], vec_descs_read[i][j]);
+      BOOST_CHECK_EQUAL(vec_descs[i][j], vec_descs_read[i][j]);
   }
 }
-
-/* ************************************************************************* */
-int main() { TestResult tr; return TestRegistry::runAllTests(tr);}
-/* ************************************************************************* */
