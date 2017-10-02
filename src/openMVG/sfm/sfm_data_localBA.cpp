@@ -226,11 +226,13 @@ void LocalBA_Data::computeDistancesMaps(const SfM_Data& sfm_data)
   } 
   
   // (Optionnal) Display result: viewId -> distance to recent cameras
-  OPENMVG_LOG_INFO("-- Map <ViewId -> Distance>: ");
+  OPENMVG_LOG_INFO("-- Distribution ViewId(Distance): ");
   for (auto & itVMap: map_viewId_distance)
   {
-    OPENMVG_LOG_INFO( itVMap.first << " -> " << itVMap.second);
+    std::cout << itVMap.first << "(" << itVMap.second << ") ";
+//    OPENMVG_LOG_INFO( itVMap.first << " -> " << itVMap.second);
   }
+  std::cout << "\n";
 }
 
 void LocalBA_Data::addIntrinsicsToHistory(const SfM_Data& sfm_data)
@@ -354,7 +356,7 @@ void LocalBA_Data::exportIntrinsicsHistory(const std::string& folder)
   {
     IndexT idIntr = itIntr.first;
     
-    std::string filename = folder + "/K" + std::to_string(idIntr) + ".txt";
+    std::string filename = folder + "K" + std::to_string(idIntr) + ".txt";
     std::ofstream os;
     os.open(filename, std::ios::app);
     os.seekp(0, std::ios::end); //put the cursor at the end

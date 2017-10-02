@@ -174,7 +174,7 @@ void SequentialSfMReconstructionEngine::RobustResectionOfImages(
   std::vector<size_t> vec_possible_resection_indexes;
   
   if (_uselocalBundleAdjustment)  
-    _localBA_data->exportIntrinsicsHistory(_sOutDirectory); // export EXIF
+    _localBA_data->exportIntrinsicsHistory(_sOutDirectory + "/LocalBA/"); // export EXIF
   
   while (FindNextImagesGroupForResection(vec_possible_resection_indexes, set_remainingViewId))
   {
@@ -246,10 +246,11 @@ void SequentialSfMReconstructionEngine::RobustResectionOfImages(
       OPENMVG_LOG_DEBUG("Bundle with " << bundleAdjustmentIteration << " iterations took " << std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - chrono_start).count() << " msec.");
       chrono_start = std::chrono::steady_clock::now();
       
-      std::cout << "-- eraseUnstablePosesAndObservations" << std::endl;
       if (_uselocalBundleAdjustment)
       {
-        _localBA_data->exportIntrinsicsHistory(_sOutDirectory);
+        // Local BA activated 
+        // Save the new values of each intrinsic in a backup file
+        _localBA_data->exportIntrinsicsHistory(_sOutDirectory + "/LocalBA/");
         
         Poses poses_saved =  _sfm_data.poses;
         std::set<IndexT> removed_posesId, removed_viewsId;
@@ -259,14 +260,14 @@ void SequentialSfMReconstructionEngine::RobustResectionOfImages(
           // If poses have been removed (may be useless ?)
           if (poses_saved !=  _sfm_data.poses)
           {
-            // Get removed POSES
+            // Get removed POSES index
             for (const auto& pose : poses_saved)
             {
               IndexT id_pose = pose.first;
               if (_sfm_data.poses.find(id_pose) == _sfm_data.poses.end()) // id not found = removed
                 removed_posesId.insert(id_pose);
             }
-            // Get removed VIEWS
+            // Get removed VIEWS index
             for (const auto& itView : _sfm_data.GetViews())
             {
               if (_sfm_data.IsPoseAndIntrinsicDefined(itView.second->id_view))
@@ -277,7 +278,7 @@ void SequentialSfMReconstructionEngine::RobustResectionOfImages(
             }
             // Remove removed views to the graph
             _localBA_data->removeViewsToTheGraph(removed_viewsId);
-            
+            OPENMVG_LOG_DEBUG("Poses (index) removed to the reconstruction: " << removed_posesId);
           }
         }
       }
@@ -1605,9 +1606,6 @@ bool SequentialSfMReconstructionEngine::localBundleAdjustment(const std::string&
   Local_Bundle_Adjustment_Ceres localBA_obj(options);
   if (options.isLocalBAEnabled())
   {
-    // Compute the 'connexity-distance' for each poses according to the newly added views :
-    std::cout << "in: localBundleAdjustment" << std::endl;
-    
     // Update the 'reconstructionGraph' using the recently added cameras
     _localBA_data->updateGraph(_sfm_data, _map_tracksPerView);
     
@@ -1616,7 +1614,7 @@ bool SequentialSfMReconstructionEngine::localBundleAdjustment(const std::string&
       duration.reset();
     }
     
-    //
+    // Compute the 'connexity-distance' for each poses according to the newly added views
     _localBA_data->computeDistancesMaps(_sfm_data);
     
     {
@@ -1624,6 +1622,8 @@ bool SequentialSfMReconstructionEngine::localBundleAdjustment(const std::string&
       duration.reset();
     }
     
+    // Determine the LocalBA_State (reffine, constant, ignored) for all the
+    // parameters (landmarks, cameras poses and intrinsics)
     localBA_obj.computeStatesMaps_strategy4(_sfm_data, _localBA_data);    
     
     {
@@ -1643,8 +1643,6 @@ bool SequentialSfMReconstructionEngine::localBundleAdjustment(const std::string&
   //  else
   isBaSucceed = localBA_obj.Adjust(_sfm_data);
   
-  
-  
   // Update 'map_intrinsicsHistorical' and compute 'map_intrinsicsLimits'
   //  checkIntrinsicParametersLimits(map_intrinsicsHistorical, map_intrinsicsLimits);
   _localBA_data->addIntrinsicsToHistory(_sfm_data);
@@ -1652,12 +1650,12 @@ bool SequentialSfMReconstructionEngine::localBundleAdjustment(const std::string&
   
   times.adjusting = duration.elapsed(); 
   times.allLocalBA = durationLBA.elapsed();  
-  times.exportTimes(_sOutDirectory + name);
+  times.exportTimes(_sOutDirectory + "/LocalBA/times_" +name);
   times.showTimes();
   
   // Save data about the 
   std::cout << "Export statistics... " << std::endl;
-  localBA_obj.exportStatistics(_sOutDirectory);
+  localBA_obj.exportStatistics(_sOutDirectory + "/LocalBA/");
   std::cout << "Export statistics: done" << std::endl;
   return isBaSucceed;
 }

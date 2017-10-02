@@ -62,7 +62,7 @@ public:
   /// @details Pipeline:
   /// \b H: the history of all the concidered parameter
   /// \b S: the subpart of H including the last \a wondowSize values only.
-  /// \b sigma = stddev(S)
+  /// \b sigma = stddev(S)  
   /// \b sigma_normalized = sigma / (max(H) - min(H))
   /// \c if sigma_normalized < \a stdevPercentageLimit \c then the limit is reached.
   /// @param[in] parameter The \a EIntrinsicParameter you want to check.
@@ -87,6 +87,8 @@ public:
   void exportIntrinsicsHistory(const std::string& folder);
   
   /// @brief updateGraph Complete the graph with the newly resected views \a set_newViewsId, or all the posed views if the graph is empty.
+  /// @param[in] sfm_data 
+  /// @param[in] map_tracksPerView A map giving the tracks for each view
   void updateGraph(
       const SfM_Data& sfm_data, 
       const tracks::TracksPerView& map_tracksPerView);

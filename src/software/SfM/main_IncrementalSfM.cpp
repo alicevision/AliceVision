@@ -208,6 +208,13 @@ int main(int argc, char **argv)
   if (!stlplus::folder_exists(sOutDir))
     stlplus::folder_create(sOutDir);
 
+  // Local bundle adjustment 
+  if (localBA)
+  {
+    if (!stlplus::folder_exists(sOutDir+"/LocalBA/"))
+      stlplus::folder_create(sOutDir+"/LocalBA/");
+  }
+    
   //---------------------------------------
   // Sequential reconstruction process
   //---------------------------------------
