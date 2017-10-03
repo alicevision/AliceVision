@@ -47,7 +47,6 @@ public:
    * if graph is empty. 
    */
   bool Adjust(SfM_Data & sfm_data);
-  bool AdjustNoChanges(const SfM_Data & sfm_data2);
 
 //  void computeStatesMaps_strategy1(const SfM_Data & sfm_data,  const std::size_t distanceLimit);
 
