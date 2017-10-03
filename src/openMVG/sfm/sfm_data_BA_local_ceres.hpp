@@ -48,9 +48,9 @@ public:
    */
   bool Adjust(SfM_Data & sfm_data);
 
-//  void computeStatesMaps_strategy1(const SfM_Data & sfm_data,  const std::size_t distanceLimit);
+  void computeStatesMaps_strategy1(const SfM_Data & sfm_data, const std::shared_ptr<LocalBA_Data> localBA_data);
 
-//  void computeStatesMaps_strategy2(const SfM_Data & sfm_data, const std::size_t distanceLimit);
+  void computeStatesMaps_strategy2(const SfM_Data & sfm_data, const std::shared_ptr<LocalBA_Data> localBA_data);
 
   void computeStatesMaps_strategy3(const SfM_Data & sfm_data, const std::shared_ptr<LocalBA_Data> localBA_data);
 
