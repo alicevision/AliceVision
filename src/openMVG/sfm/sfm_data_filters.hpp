@@ -116,7 +116,7 @@ static IndexT RemoveOutliers_AngleError
     else
       ++iterTracks;
   }
-  return removedTrack_count;
+  return removedTrack_count;  
 }
 
 static bool eraseUnstablePoses(SfM_Data & sfm_data, const IndexT min_points_per_pose)
