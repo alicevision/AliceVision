@@ -104,17 +104,31 @@ public:
   
 private:
   
+  /// @brief selectViewsToAddToTheGraph Return the index of all the posed views not added to the distance graph yet.
+  /// It means all the poses if the graph is empty.
+  /// @param[in] sfm_data
+  /// @return A set of views index
   std::set<IndexT> selectViewsToAddToTheGraph(const SfM_Data& sfm_data);
   
-  std::map<Pair, std::size_t> countMatchesPerImagesPair(
+  /// @brief countMatchesWithCamerasOfTheReconstruction Extract the images per between the views \c newViewsId and the already recontructed cameras, 
+  /// and count the number of commun matches between these pairs.
+  /// @param[in] sfm_data
+  /// @param[in] map_tracksPerView
+  /// @param[in] newViewsId A set with the views index that we want to count matches with resected cameras. 
+  /// @return A map giving the number of matches for each images pair.
+  std::map<Pair, std::size_t> countMatchesWithCamerasOfTheReconstruction(
       const SfM_Data& sfm_data,
       const tracks::TracksPerView& map_tracksPerView,
-      const std::set<IndexT>& addedViewsId);
+      const std::set<IndexT>& newViewsId);
+ 
  
   std::vector<IndexT> getIntrinsicLimitIds(const IndexT intrinsicId) const {return intrinsicsLimitIds.at(intrinsicId);}
   
   std::vector<double> getLastIntrinsicParameters(const IndexT intrinsicId) const {return intrinsicsHistory.at(intrinsicId).back().second;}
   
+  /// @brief standardDeviation Compute the standard deviation.
+  /// @param[in] The values
+  /// @return The standard deviation
   template<typename T> 
   double standardDeviation(const std::vector<T>& data);
   
