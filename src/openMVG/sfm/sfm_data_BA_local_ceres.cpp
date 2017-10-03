@@ -159,6 +159,7 @@ bool Local_Bundle_Adjustment_Ceres::Adjust(SfM_Data& sfm_data)
     }
   }
   
+  OPENMVG_LOG_DEBUG("Solving ceres problem...");
   ceres::Solver::Summary summary;
   if (!solveBA(problem, solver_options, summary))
     return false;
@@ -184,10 +185,10 @@ bool Local_Bundle_Adjustment_Ceres::Adjust(SfM_Data& sfm_data)
   {
     // Display statistics about "parameter ordering"
     OPENMVG_LOG_DEBUG(
-          "Parameter ordering statistics:\n"
-          " (group 0 (landmarks)): " << solver_options.linear_solver_ordering->GroupSize(0) << "\n"
-                                                                                               " (group 1 (intrinsics)): " << solver_options.linear_solver_ordering->GroupSize(1) << "\n"
-                                                                                                                                                                                     " (group 2 (poses)): " << solver_options.linear_solver_ordering->GroupSize(2) << "\n"
+          "Parameter ordering statistics:"
+          << "\n (group 0 (landmarks)): " << solver_options.linear_solver_ordering->GroupSize(0) 
+          << "\n (group 1 (intrinsics)): " << solver_options.linear_solver_ordering->GroupSize(1) 
+          << "\n (group 2 (poses)): " << solver_options.linear_solver_ordering->GroupSize(2) << "\n"
           );
   }
   
@@ -202,7 +203,7 @@ bool Local_Bundle_Adjustment_Ceres::Adjust(SfM_Data& sfm_data)
   if (_LBA_openMVG_options._bVerbose && _LBA_openMVG_options.isLocalBAEnabled())
   {
     //    // Generate the histogram <distance, NbOfPoses>
-    //    for (auto it: _map_poseId_distance) // distanceToRecentPoses: <poseId, distance>
+//        for (auto it: _map_poseId_distance) // distanceToRecentPoses: <poseId, distance>
     //    {
     //      auto itHisto = _LBA_statistics.map_distance_numCameras.find(it.second);
     //      if(itHisto != _LBA_statistics.map_distance_numCameras.end())
@@ -231,6 +232,7 @@ bool Local_Bundle_Adjustment_Ceres::Adjust(SfM_Data& sfm_data)
   
   // Update camera intrinsics with refined data
   updateCameraIntrinsics(map_intrinsicsBlocks, sfm_data.intrinsics);
+
   return true;
 }
 
