@@ -191,8 +191,14 @@ private:
    */
   bool BundleAdjustment(bool fixedIntrinsics);
   
-  /// .... [TO COMMENT] ....
-  bool localBundleAdjustment(const string& filename);
+  /**
+   * @brief localBundleAdjustment Apply the bundle adjustment choosing a small amount of parameters.
+   * It reduces drastically the reconstruction time for big dataset of images.
+   * @details The parameters to refine (landmarks, intrinsics, poses) are choosen according to the their 
+   * proximity to the cameras newly added to the reconstruction.
+   * @return true if succeed
+   */
+  bool localBundleAdjustment();
 
   /// Discard track with too large residual error
   bool badTrackRejector(double dPrecision, size_t count = 0);

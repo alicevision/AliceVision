@@ -326,7 +326,7 @@ void SequentialSfMReconstructionEngine::RobustResectionOfImages(
         auto chrono2_start = std::chrono::steady_clock::now();
 
         if (_uselocalBundleAdjustment)
-          localBundleAdjustment("first"); 
+          localBundleAdjustment(); 
         else
           BundleAdjustment(_bFixedIntrinsics);
         
@@ -1711,7 +1711,7 @@ bool SequentialSfMReconstructionEngine::BundleAdjustment(bool fixedIntrinsics)
 }
 
 /// Local Bundle Adjustment to refine only the parameters close to the newly resected views.
-bool SequentialSfMReconstructionEngine::localBundleAdjustment(const std::string& name = "first")
+bool SequentialSfMReconstructionEngine::localBundleAdjustment()
 {
   LocalBA_timeProfiler times;
   
@@ -1721,7 +1721,6 @@ bool SequentialSfMReconstructionEngine::localBundleAdjustment(const std::string&
   if (_sfm_data.GetPoses().size() > 100) // default value: 100 
   {
     options.setSparseBA();
-    //    if (name == "first")
     options.enableLocalBA();
   }
   else
@@ -1766,20 +1765,15 @@ bool SequentialSfMReconstructionEngine::localBundleAdjustment(const std::string&
   duration.reset();
   
   // Run Bundle Adjustment:
-  bool isBaSucceed;
-  //  if (name == "first")
-  //    isBaSucceed = localBA_obj.AdjustNoChanges(_sfm_data);
-  //  else
-  isBaSucceed = localBA_obj.Adjust(_sfm_data);
+  bool isBaSucceed = localBA_obj.Adjust(_sfm_data);
   
   // Update 'map_intrinsicsHistorical' and compute 'map_intrinsicsLimits'
   //  checkIntrinsicParametersLimits(map_intrinsicsHistorical, map_intrinsicsLimits);
   _localBA_data->addIntrinsicsToHistory(_sfm_data);
   
-  
   times.adjusting = duration.elapsed(); 
   times.allLocalBA = durationLBA.elapsed();  
-  times.exportTimes(_sOutDirectory + "/LocalBA/times_" +name);
+  times.exportTimes(_sOutDirectory + "/LocalBA/times.txt");
   times.showTimes();
   
   // Save data about the 

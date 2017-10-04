@@ -29,95 +29,6 @@ using Landmarks = Hash_Map<IndexT, Landmark>;
 /// Define a collection of Rig
 using Rigs = std::map<IndexT, Rig>;
 
-/// Contain all the information about a Bundle Adjustment loop
-struct LocalBA_statistics
-{
-  LocalBA_statistics(const std::set<IndexT>& newlyResectedViewsId = std::set<IndexT>()) {newViewsId = newlyResectedViewsId;}
-  
-  // Parameters returned by Ceres:
-  double time = 0.0;                          // spent time to solve the BA (s)
-  std::size_t numSuccessfullIterations = 0;   // number of successfull iterations
-  std::size_t numUnsuccessfullIterations = 0; // number of unsuccessfull iterations
-  
-  std::size_t numResidualBlocks = 0;          // num. of resiudal block in the Ceres problem
-  
-  double RMSEinitial = 0.0; // sqrt(initial_cost / num_residuals)
-  double RMSEfinal = 0.0;   // sqrt(final_cost / num_residuals)
-  
-  // Parameters specifically used by Local BA:
-  std::size_t numRefinedPoses = 0;           // number of refined poses among all the estimated views          
-  std::size_t numConstantPoses = 0;          // number of poses set constant in the BA solver
-  std::size_t numIgnoredPoses = 0;           // number of not added poses to the BA solver
-  std::size_t numRefinedIntrinsics = 0;      // num. of refined intrinsics
-  std::size_t numConstantIntrinsics = 0;     // num. of intrinsics set constant in the BA solver
-  std::size_t numIgnoredIntrinsics = 0;      // num. of not added intrinsicsto the BA solver
-  std::size_t numRefinedLandmarks = 0;       // num. of refined landmarks
-  std::size_t numConstantLandmarks = 0;      // num. of landmarks set constant in the BA solver
-  std::size_t numIgnoredLandmarks = 0;       // num. of not added landmarks to the BA solver
-  
-  std::map<int, std::size_t> map_distance_numCameras; // distribution of the cameras for each graph distance
-  
-  std::set<IndexT> newViewsId;  // index of the new views added (newly resected)
-};
-
-struct LocalBA_timeProfiler
-{
-  double graphUpdating = 0.0;
-  double distMapsComputing = 0.0;
-  double statesMapsComputing = 0.0;
-  double adjusting = 0.0;
-  double allLocalBA = 0.0;
-  
-  bool exportTimes(const std::string& filename)
-  {
-    std::ofstream os;
-    os.open(filename, std::ios::app);
-    os.seekp(0, std::ios::end); //put the cursor at the end
-    if (!os.is_open())
-    {
-      OPENMVG_LOG_DEBUG("Unable to open the Time profiling file '" << filename << "'.");
-      return false;
-    }
-    
-    if (os.tellp() == 0) // 'tellp' return the cursor's position
-    {
-      // If the file does't exist: add a header.
-      std::vector<std::string> header;
-      header.push_back("graphUpdating (s)");
-      header.push_back("distMapsComputing (s)"); 
-      header.push_back("statesMapsComputing (s)"); 
-      header.push_back("adjusting (s)"); 
-      header.push_back("allLocalBA (s)"); 
-      
-      for (std::string & head : header)
-        os << head << "\t";
-      os << "\n"; 
-    }
-    
-    os << graphUpdating << "\t"
-       << distMapsComputing << "\t"
-       << statesMapsComputing << "\t"
-       << adjusting << "\t"
-       << allLocalBA << "\t";
-    
-    os << "\n";
-    os.close();
-    return true;
-  }
-  
-  void showTimes()
-  {
-    std::cout << "\n----- Local BA durations ------" << std::endl;
-    std::cout << "graph updating : " << graphUpdating << " ms" << std::endl;
-    std::cout << "dist. Maps Computing : " << distMapsComputing << " ms" << std::endl;
-    std::cout << "states Maps Computing : " << statesMapsComputing << " ms" << std::endl;
-    std::cout << "adjusting : " << adjusting << " ms" << std::endl;
-    std::cout << "** all Local BA: " << allLocalBA << " ms" << std::endl;
-    std::cout << "-------------------------------\n" << std::endl;
-  }
-};
-
-
 /// Generic SfM data container
 /// Store structure and camera properties:
 class SfM_Data
@@ -211,30 +122,6 @@ public:
     for(auto v: views)
       viewKeys.insert(v.first);
     return viewKeys;
-  }
-  
-  /**
-  * @brief GetIntrinsicsUsage
-  * @return 
-  */
-  std::map<IndexT, std::size_t> GetIntrinsicsUsage() const
-  {
-    std::map<IndexT, std::size_t> map_intrinsicId_usageNum;
-    
-    for (const auto& itView : views)
-    {
-      const View * view = itView.second.get();
-      
-      if (IsPoseAndIntrinsicDefined(view))
-      {
-        auto itIntr = map_intrinsicId_usageNum.find(view->getIntrinsicId());
-        if (itIntr == map_intrinsicId_usageNum.end())
-          map_intrinsicId_usageNum[view->getIntrinsicId()] = 1;
-        else
-          map_intrinsicId_usageNum[view->getIntrinsicId()]++;
-      }
-    }
-    return map_intrinsicId_usageNum;
   }
   
   //  const Landmarks & GetLandmarks() const {return structure;}

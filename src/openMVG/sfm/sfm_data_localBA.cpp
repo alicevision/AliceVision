@@ -1,4 +1,3 @@
-
 // Copyright (c) 2015 Pierre MOULON.
 
 // This Source Code Form is subject to the terms of the Mozilla Public
@@ -55,8 +54,11 @@ std::set<IndexT> LocalBA_Data::selectViewsToAddToTheGraph(const SfM_Data& sfm_da
   if (graph_poses.maxNodeId() == -1) // empty graph 
   {
     OPENMVG_LOG_INFO("'map_viewId_node' is empty: first local BA.");
-    for (auto & it : sfm_data.GetPoses())
-      addedViewsId.insert(it.first);
+    for (auto & it : sfm_data.GetViews())
+    {
+      if (sfm_data.IsPoseAndIntrinsicDefined(it.first))
+          addedViewsId.insert(it.first);
+    }
   }
   else // not empty graph 
   {
@@ -75,10 +77,10 @@ std::set<IndexT> LocalBA_Data::selectViewsToAddToTheGraph(const SfM_Data& sfm_da
   return addedViewsId;
 }
 
-std::map<Pair, std::size_t> LocalBA_Data::countMatchesPerImagesPair(
+std::map<Pair, std::size_t> LocalBA_Data::countMatchesWithCamerasOfTheReconstruction(
     const SfM_Data& sfm_data,
     const tracks::TracksPerView& map_tracksPerView,
-    const std::set<IndexT>& addedViewsId)
+    const std::set<IndexT>& newViewsId)
 {
   // An edge is created between 2 views when they share at least 'L' landmarks (by default L=100).
   // At first, we need to count the number of shared landmarks between all the new views 
@@ -91,7 +93,7 @@ std::map<Pair, std::size_t> LocalBA_Data::countMatchesPerImagesPair(
                  std::inserter(landmarkIds, landmarkIds.begin()),
                  stl::RetrieveKey());
   
-  for(const auto& viewId: addedViewsId)
+  for(const auto& viewId: newViewsId)
   {
     // Get all the tracks of the new added view
     const openMVG::tracks::TrackIdSet& newView_trackIds = map_tracksPerView.at(viewId);
@@ -135,7 +137,7 @@ void LocalBA_Data::updateGraph(
   std::set<IndexT> addedViewsId = selectViewsToAddToTheGraph(sfm_data);
   
   std::map<Pair, std::size_t> map_imagesPair_nbSharedLandmarks 
-      = countMatchesPerImagesPair(sfm_data, map_tracksPerView, addedViewsId);
+      = countMatchesWithCamerasOfTheReconstruction(sfm_data, map_tracksPerView, addedViewsId);
   
   // -- Add nodes to the graph
   for (auto& viewId : addedViewsId)
@@ -230,19 +232,33 @@ void LocalBA_Data::computeDistancesMaps(const SfM_Data& sfm_data)
   for (auto & itVMap: map_viewId_distance)
   {
     std::cout << itVMap.first << "(" << itVMap.second << ") ";
-//    OPENMVG_LOG_INFO( itVMap.first << " -> " << itVMap.second);
   }
   std::cout << "\n";
 }
 
 void LocalBA_Data::addIntrinsicsToHistory(const SfM_Data& sfm_data)
 {
-  std::map<IndexT, std::size_t> map_intrId_numPoses = sfm_data.GetIntrinsicsUsage();
+  // Count the number of poses for each intrinsic
+  std::map<IndexT, std::size_t> map_intrinsicId_usageNum;
+  for (const auto& itView : sfm_data.GetViews())
+  {
+    const View * view = itView.second.get();
+    
+    if (sfm_data.IsPoseAndIntrinsicDefined(view))
+    {
+      auto itIntr = map_intrinsicId_usageNum.find(view->getIntrinsicId());
+      if (itIntr == map_intrinsicId_usageNum.end())
+        map_intrinsicId_usageNum[view->getIntrinsicId()] = 1;
+      else
+        map_intrinsicId_usageNum[view->getIntrinsicId()]++;
+    }
+  }
   
+  // Complete the intrinsics history
   for (auto& it : sfm_data.intrinsics)
   {
     intrinsicsHistory.at(it.first).push_back(
-          std::make_pair(map_intrId_numPoses[it.first],
+          std::make_pair(map_intrinsicId_usageNum[it.first],
           sfm_data.GetIntrinsicPtr(it.first)->getParams())
         );
   }
