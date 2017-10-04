@@ -124,30 +124,6 @@ public:
     return viewKeys;
   }
   
-  /**
-  * @brief GetIntrinsicsUsage
-  * @return 
-  */
-  std::map<IndexT, std::size_t> GetIntrinsicsUsage() const
-  {
-    std::map<IndexT, std::size_t> map_intrinsicId_usageNum;
-    
-    for (const auto& itView : views)
-    {
-      const View * view = itView.second.get();
-      
-      if (IsPoseAndIntrinsicDefined(view))
-      {
-        auto itIntr = map_intrinsicId_usageNum.find(view->getIntrinsicId());
-        if (itIntr == map_intrinsicId_usageNum.end())
-          map_intrinsicId_usageNum[view->getIntrinsicId()] = 1;
-        else
-          map_intrinsicId_usageNum[view->getIntrinsicId()]++;
-      }
-    }
-    return map_intrinsicId_usageNum;
-  }
-  
   //  const Landmarks & GetLandmarks() const {return structure;}
   //  const Landmarks & GetControl_Points() const {return control_points;}
   

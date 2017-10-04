@@ -238,12 +238,27 @@ void LocalBA_Data::computeDistancesMaps(const SfM_Data& sfm_data)
 
 void LocalBA_Data::addIntrinsicsToHistory(const SfM_Data& sfm_data)
 {
-  std::map<IndexT, std::size_t> map_intrId_numPoses = sfm_data.GetIntrinsicsUsage();
+  // Count the number of poses for each intrinsic
+  std::map<IndexT, std::size_t> map_intrinsicId_usageNum;
+  for (const auto& itView : sfm_data.GetViews())
+  {
+    const View * view = itView.second.get();
+    
+    if (sfm_data.IsPoseAndIntrinsicDefined(view))
+    {
+      auto itIntr = map_intrinsicId_usageNum.find(view->getIntrinsicId());
+      if (itIntr == map_intrinsicId_usageNum.end())
+        map_intrinsicId_usageNum[view->getIntrinsicId()] = 1;
+      else
+        map_intrinsicId_usageNum[view->getIntrinsicId()]++;
+    }
+  }
   
+  // Complete the intrinsics history
   for (auto& it : sfm_data.intrinsics)
   {
     intrinsicsHistory.at(it.first).push_back(
-          std::make_pair(map_intrId_numPoses[it.first],
+          std::make_pair(map_intrinsicId_usageNum[it.first],
           sfm_data.GetIntrinsicPtr(it.first)->getParams())
         );
   }
