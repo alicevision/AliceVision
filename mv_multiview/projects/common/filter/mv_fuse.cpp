@@ -580,7 +580,6 @@ void mv_fuse::divideSpace(point3d* hexah, float& minPixSize)
 //              << "Z(" << mind3 << ", " << maxd3 << "), "
 //              << std::endl;
 
-    
     hexah[0] = cg + v1 * maxd1 + v2 * maxd2 + v3 * maxd3;
     hexah[1] = cg + v1 * mind1 + v2 * maxd2 + v3 * maxd3;
     hexah[2] = cg + v1 * mind1 + v2 * mind2 + v3 * maxd3;
