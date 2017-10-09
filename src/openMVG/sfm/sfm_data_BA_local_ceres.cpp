@@ -171,13 +171,13 @@ bool Local_Bundle_Adjustment_Ceres::Adjust(SfM_Data& sfm_data)
     OPENMVG_LOG_DEBUG(
           "Bundle Adjustment statistics (approximated RMSE):\n"
           " #views: " << sfm_data.views.size() << "\n"
-          " #poses: " << sfm_data.GetPoses().size() << "\n"
-          " #intrinsics: " << sfm_data.intrinsics.size() << "\n"
-          " #tracks: " << sfm_data.structure.size() << "\n"
-          " #residuals: " << summary.num_residuals << "\n"
-          " Initial RMSE: " << std::sqrt( summary.initial_cost / summary.num_residuals) << "\n"
-          " Final RMSE: " << std::sqrt( summary.final_cost / summary.num_residuals) << "\n"
-                                                                                                                                                                                                                                                                                                                                                                                                 " Time (s): " << summary.total_time_in_seconds << "\n"
+                                                  " #poses: " << sfm_data.GetPoses().size() << "\n"
+                                                                                               " #intrinsics: " << sfm_data.intrinsics.size() << "\n"
+                                                                                                                                                 " #tracks: " << sfm_data.structure.size() << "\n"
+                                                                                                                                                                                              " #residuals: " << summary.num_residuals << "\n"
+                                                                                                                                                                                                                                          " Initial RMSE: " << std::sqrt( summary.initial_cost / summary.num_residuals) << "\n"
+                                                                                                                                                                                                                                                                                                                           " Final RMSE: " << std::sqrt( summary.final_cost / summary.num_residuals) << "\n"
+                                                                                                                                                                                                                                                                                                                                                                                                        " Time (s): " << summary.total_time_in_seconds << "\n"
           );
   }
   
@@ -203,7 +203,7 @@ bool Local_Bundle_Adjustment_Ceres::Adjust(SfM_Data& sfm_data)
   if (_LBA_openMVG_options._bVerbose && _LBA_openMVG_options.isLocalBAEnabled())
   {
     //    // Generate the histogram <distance, NbOfPoses>
-//        for (auto it: _map_poseId_distance) // distanceToRecentPoses: <poseId, distance>
+    //        for (auto it: _map_poseId_distance) // distanceToRecentPoses: <poseId, distance>
     //    {
     //      auto itHisto = _LBA_statistics.map_distance_numCameras.find(it.second);
     //      if(itHisto != _LBA_statistics.map_distance_numCameras.end())
@@ -232,8 +232,54 @@ bool Local_Bundle_Adjustment_Ceres::Adjust(SfM_Data& sfm_data)
   
   // Update camera intrinsics with refined data
   updateCameraIntrinsics(map_intrinsicsBlocks, sfm_data.intrinsics);
-
+  
   return true;
+}
+
+bool Local_Bundle_Adjustment_Ceres::Adjust(const SfM_Data& const_sfm_data)
+{
+  SfM_Data sfm_data;
+  sfm_data._poses = const_sfm_data._poses;
+  sfm_data.structure = const_sfm_data.structure;
+  // clone views
+  for (const auto& it : const_sfm_data.views)
+    sfm_data.views[it.first] = std::make_shared<View>(*(it.second));
+  sfm_data.intrinsics = const_sfm_data.GetIntrinsics();
+  
+  return Adjust(sfm_data);
+}
+
+void Local_Bundle_Adjustment_Ceres::computeStatesMaps_strategy0(const SfM_Data & sfm_data)
+{
+  // reset the maps
+  _map_poseId_LBAState.clear();
+  _map_intrinsicId_LBAState.clear();
+  _map_landmarkId_LBAState.clear();
+  
+  // ----------------------------------------------------
+  // -- Strategy 0 : EVERYTHING IS REFINED (No Local BA)
+  // ----------------------------------------------------
+  
+  // -- Poses
+  for (Poses::const_iterator itPose = sfm_data.GetPoses().begin(); itPose != sfm_data.GetPoses().end(); ++itPose)
+  {
+    const IndexT poseId = itPose->first;
+    _map_poseId_LBAState[poseId] = LocalBAState::refined;
+  }
+  
+  // -- Instrinsics
+  for(const auto& itIntrinsic: sfm_data.GetIntrinsics())
+  {
+    const IndexT intrinsicId = itIntrinsic.first;
+    _map_intrinsicId_LBAState[intrinsicId] = LocalBAState::refined;
+  }
+  
+  // -- Landmarks
+  for(const auto& itLandmark: sfm_data.structure)
+  {
+    const IndexT landmarkId = itLandmark.first;
+    _map_landmarkId_LBAState[landmarkId] = LocalBAState::refined;
+  }
 }
 
 void Local_Bundle_Adjustment_Ceres::computeStatesMaps_strategy1(const SfM_Data & sfm_data,  const std::shared_ptr<LocalBA_Data> localBA_data)
@@ -242,7 +288,7 @@ void Local_Bundle_Adjustment_Ceres::computeStatesMaps_strategy1(const SfM_Data &
   _map_poseId_LBAState.clear();
   _map_intrinsicId_LBAState.clear();
   _map_landmarkId_LBAState.clear();
-
+  
   // ----------------------------------------------------
   // -- Strategy 1 : (2017.07.14)
   //  D = distanceLimit
@@ -255,7 +301,7 @@ void Local_Bundle_Adjustment_Ceres::computeStatesMaps_strategy1(const SfM_Data &
   //    - else ignored
   // ----------------------------------------------------
   const std::size_t kDistanceLimit = 1;
-
+  
   // -- Poses
   for (Poses::const_iterator itPose = sfm_data.GetPoses().begin(); itPose != sfm_data.GetPoses().end(); ++itPose)
   {
@@ -266,22 +312,22 @@ void Local_Bundle_Adjustment_Ceres::computeStatesMaps_strategy1(const SfM_Data &
     else
       _map_poseId_LBAState[poseId] = LocalBAState::constant;
   }
-
+  
   // -- Instrinsics
   for(const auto& itIntrinsic: sfm_data.GetIntrinsics())
   {
     const IndexT intrinsicId = itIntrinsic.first;
     _map_intrinsicId_LBAState[intrinsicId] = LocalBAState::refined;
   }
-
+  
   // -- Landmarks
   for(const auto& itLandmark: sfm_data.structure)
   {
     const IndexT landmarkId = itLandmark.first;
     const Observations & observations = itLandmark.second.observations;
-
+    
     _map_landmarkId_LBAState[landmarkId] = LocalBAState::ignored;
-
+    
     for(const auto& observationIt: observations)
     {
       int dist = localBA_data->getViewDistance(observationIt.first);
@@ -300,7 +346,7 @@ void Local_Bundle_Adjustment_Ceres::computeStatesMaps_strategy2(const SfM_Data &
   _map_poseId_LBAState.clear();
   _map_intrinsicId_LBAState.clear();
   _map_landmarkId_LBAState.clear();
-
+  
   // ----------------------------------------------------
   // -- Strategy 2 : (2017.07.19)
   //  D = distanceLimit
@@ -314,7 +360,7 @@ void Local_Bundle_Adjustment_Ceres::computeStatesMaps_strategy2(const SfM_Data &
   //    - else ignored
   // ----------------------------------------------------
   const std::size_t kDistanceLimit = 1;
-
+  
   // -- Poses
   for (Poses::const_iterator itPose = sfm_data.GetPoses().begin(); itPose != sfm_data.GetPoses().end(); ++itPose)
   {
@@ -327,22 +373,22 @@ void Local_Bundle_Adjustment_Ceres::computeStatesMaps_strategy2(const SfM_Data &
     else // +2
       _map_poseId_LBAState[poseId] = LocalBAState::ignored;
   }
-
+  
   // -- Instrinsics
   for(const auto& itIntrinsic: sfm_data.GetIntrinsics())
   {
     const IndexT intrinsicId = itIntrinsic.first;
     _map_intrinsicId_LBAState[intrinsicId] = LocalBAState::refined;
   }
-
+  
   // -- Landmarks
   for(const auto& itLandmark: sfm_data.structure)
   {
     const IndexT landmarkId = itLandmark.first;
     const Observations & observations = itLandmark.second.observations;
-
+    
     _map_landmarkId_LBAState[landmarkId] = LocalBAState::ignored;
-
+    
     for(const auto& observationIt: observations)
     {
       int dist = localBA_data->getViewDistance(observationIt.first);
@@ -473,7 +519,7 @@ void Local_Bundle_Adjustment_Ceres::computeStatesMaps_strategy4(
   //  W = windowSize
   //  - cameras:
   //    - dist <= D: refined
-  //    - dist == D+1: fixed
+  //    - dist == D+1: constant
   //    - else ignored
   //  - intrinsic:
   //    All the parameters of each intrinic are saved.        [*NEW*]
@@ -532,7 +578,7 @@ void Local_Bundle_Adjustment_Ceres::computeStatesMaps_strategy4(
     }
   }
 }
-  
+
 Hash_Map<IndexT, std::vector<double> > Local_Bundle_Adjustment_Ceres::addPosesToCeresProblem(
     const Poses & poses,
     ceres::Problem & problem)
@@ -776,7 +822,7 @@ bool Local_Bundle_Adjustment_Ceres::exportStatistics(const std::string& path)
   //      posesWthDistUpperThanTen += _LBA_statistics.map_distance_numCameras.at(i);
   //    }
   //  }
-
+  
   os << _LBA_statistics.time << "\t"
         
      << _LBA_statistics.numRefinedPoses << "\t"

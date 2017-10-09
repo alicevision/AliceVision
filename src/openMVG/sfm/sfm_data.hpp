@@ -40,6 +40,12 @@ public:
   Intrinsics intrinsics;
   /// Structure (3D points with their 2D observations)
   Landmarks structure;
+  
+  /// Considered poses (indexed by view.getPoseId())
+  Poses _poses;
+  /// Considered rigs
+  Rigs _rigs;
+  
   /// Controls points (stored as Landmarks (id_feat has no meaning here))
   Landmarks control_points;
   /// Root Views path
@@ -248,10 +254,6 @@ public:
 
 private:
 
-  /// Considered poses (indexed by view.getPoseId())
-  Poses _poses;
-  /// Considered rigs
-  Rigs _rigs;
 
   /**
    * @brief Get Rig pose of a given camera view

@@ -198,7 +198,7 @@ private:
    * proximity to the cameras newly added to the reconstruction.
    * @return true if succeed
    */
-  bool localBundleAdjustment();
+  bool localBundleAdjustment(const string &name = "");
 
   /// Discard track with too large residual error
   bool badTrackRejector(double dPrecision, size_t count = 0);
@@ -229,6 +229,7 @@ private:
   int _minTrackLength = 2;
   int _minPointsPerPose = 30;
   bool _uselocalBundleAdjustment = false;
+  bool _compareBAAndLocalBA = false;
   
   //-- Data provider
   features::FeaturesPerView  * _featuresPerView;

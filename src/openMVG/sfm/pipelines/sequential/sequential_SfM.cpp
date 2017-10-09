@@ -277,6 +277,7 @@ void SequentialSfMReconstructionEngine::RobustResectionOfImages(
         break;
       }
     }
+    
     OPENMVG_LOG_DEBUG("Resection of " << vec_possible_resection_indexes.size() << " new images took " << std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - chrono_start).count() << " msec.");
 
     // get new reconstructed views
@@ -321,12 +322,24 @@ void SequentialSfMReconstructionEngine::RobustResectionOfImages(
       // Perform BA until all point are under the given precision
       std::size_t nbRejectedTracks;
       
+      // [TEMP] used to run Local BA (without save changes due to adjustment) the BA (saving adjustments)
+      // It's useful to compare time spent in the different adjustments 
+      _compareBAAndLocalBA = true;
+      
       do
       {
         auto chrono2_start = std::chrono::steady_clock::now();
 
         if (_uselocalBundleAdjustment)
-          localBundleAdjustment(); 
+        {
+          if (_compareBAAndLocalBA)
+          {
+            localBundleAdjustment("localBA");
+            localBundleAdjustment("BA"); 
+          }
+          else
+            localBundleAdjustment();
+        }
         else
           BundleAdjustment(_bFixedIntrinsics);
         
@@ -1711,7 +1724,7 @@ bool SequentialSfMReconstructionEngine::BundleAdjustment(bool fixedIntrinsics)
 }
 
 /// Local Bundle Adjustment to refine only the parameters close to the newly resected views.
-bool SequentialSfMReconstructionEngine::localBundleAdjustment()
+bool SequentialSfMReconstructionEngine::localBundleAdjustment(const std::string& name)
 {
   LocalBA_timeProfiler times;
   
@@ -1732,12 +1745,12 @@ bool SequentialSfMReconstructionEngine::localBundleAdjustment()
   openMVG::system::Timer duration;
   
   Local_Bundle_Adjustment_Ceres localBA_obj(options);
-  if (options.isLocalBAEnabled())
+  if (options.isLocalBAEnabled() && name != "BA")
   {
     // Update the 'reconstructionGraph' using the recently added cameras
     _localBA_data->updateGraph(_sfm_data, _map_tracksPerView);
     
-    {
+    { // -- update timer
       times.graphUpdating = duration.elapsed(); 
       duration.reset();
     }
@@ -1745,7 +1758,7 @@ bool SequentialSfMReconstructionEngine::localBundleAdjustment()
     // Compute the 'connexity-distance' for each poses according to the newly added views
     _localBA_data->computeDistancesMaps(_sfm_data);
     
-    {
+    { // -- update timer
       times.distMapsComputing = duration.elapsed(); 
       duration.reset();
     }
@@ -1754,10 +1767,6 @@ bool SequentialSfMReconstructionEngine::localBundleAdjustment()
     // parameters (landmarks, cameras poses and intrinsics)
     localBA_obj.computeStatesMaps_strategy4(_sfm_data, _localBA_data);    
     
-    {
-      times.statesMapsComputing = duration.elapsed(); 
-      duration.reset();
-    }    
   }
   
   localBA_obj.initStatistics(_localBA_data->getNewViewsId());
@@ -1765,7 +1774,14 @@ bool SequentialSfMReconstructionEngine::localBundleAdjustment()
   duration.reset();
   
   // Run Bundle Adjustment:
-  bool isBaSucceed = localBA_obj.Adjust(_sfm_data);
+  bool isBaSucceed;
+  if (name == "localBA")  // do not save changes in reconstruction
+  {
+    const SfM_Data& const_sfm_data = Get_SfM_Data();
+    isBaSucceed = localBA_obj.Adjust(const_sfm_data);
+  }
+  else // save the changes due to the adjustment
+    isBaSucceed = localBA_obj.Adjust(_sfm_data);
   
   // Update 'map_intrinsicsHistorical' and compute 'map_intrinsicsLimits'
   //  checkIntrinsicParametersLimits(map_intrinsicsHistorical, map_intrinsicsLimits);
@@ -1773,13 +1789,11 @@ bool SequentialSfMReconstructionEngine::localBundleAdjustment()
   
   times.adjusting = duration.elapsed(); 
   times.allLocalBA = durationLBA.elapsed();  
-  times.exportTimes(_sOutDirectory + "/LocalBA/times.txt");
+  times.exportTimes(_sOutDirectory + "/LocalBA/times_"+ name +".txt");
   times.showTimes();
   
   // Save data about the 
-  std::cout << "Export statistics... " << std::endl;
   localBA_obj.exportStatistics(_sOutDirectory + "/LocalBA/");
-  std::cout << "Export statistics: done" << std::endl;
   return isBaSucceed;
 }
 

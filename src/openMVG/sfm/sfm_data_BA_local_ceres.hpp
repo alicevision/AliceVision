@@ -47,6 +47,10 @@ public:
    * if graph is empty. 
    */
   bool Adjust(SfM_Data & sfm_data);
+  
+  bool Adjust(const SfM_Data & const_sfm_data);
+
+  void computeStatesMaps_strategy0(const SfM_Data & sfm_data);
 
   void computeStatesMaps_strategy1(const SfM_Data & sfm_data, const std::shared_ptr<LocalBA_Data> localBA_data);
 
@@ -55,7 +59,7 @@ public:
   void computeStatesMaps_strategy3(const SfM_Data & sfm_data, const std::shared_ptr<LocalBA_Data> localBA_data);
 
   void computeStatesMaps_strategy4(const SfM_Data & sfm_data, std::shared_ptr<LocalBA_Data> localBA_data);
-
+  
   void initStatistics(const std::set<IndexT>& newViewsId) {_LBA_statistics = LocalBA_statistics(newViewsId);}
 
   /// \brief Export statistics about bundle adjustment in a TXT file ("BaStats.txt")
