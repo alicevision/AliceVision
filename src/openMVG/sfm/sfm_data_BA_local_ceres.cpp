@@ -139,8 +139,8 @@ bool Local_Bundle_Adjustment_Ceres::Adjust(SfM_Data& sfm_data)
         if (_LBA_openMVG_options.isParameterOrderingEnabled()) 
         {
           solver_options.linear_solver_ordering->AddElementToGroup(landmarkBlock, 0);
-          solver_options.linear_solver_ordering->AddElementToGroup(intrinsicBlock, 1);
-          solver_options.linear_solver_ordering->AddElementToGroup(poseBlock, 2);
+          solver_options.linear_solver_ordering->AddElementToGroup(poseBlock, 1);
+          solver_options.linear_solver_ordering->AddElementToGroup(intrinsicBlock, 2);
         }
         // Set to constant parameters previoously set as Constant by the Local BA strategy
         if (_LBA_openMVG_options.isLocalBAEnabled())
