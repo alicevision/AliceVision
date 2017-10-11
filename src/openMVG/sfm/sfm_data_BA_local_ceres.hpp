@@ -60,6 +60,8 @@ public:
 
   void computeStatesMaps_strategy4(const SfM_Data & sfm_data, std::shared_ptr<LocalBA_Data> localBA_data);
   
+  std::size_t getNumberOfCamerasInTheSolver();
+  
   void initStatistics(const std::set<IndexT>& newViewsId) {_LBA_statistics = LocalBA_statistics(newViewsId);}
 
   /// \brief Export statistics about bundle adjustment in a TXT file ("BaStats.txt")
@@ -74,21 +76,21 @@ private:
   LocalBA_statistics _LBA_statistics;
   
   // Define the state of the all parameter of the reconstruction (structure, poses, intrinsics) in the BA:
-  enum LocalBAState { 
+  enum ELocalBAState { 
     refined,  //< will be adjuted by the BA solver
     constant, //< will be set as constant in the sover
     ignored   //< will not be set into the BA solver
   };
   
-  // Store the LocalBAState of each parameter (structure, poses, intrinsics) :
-  std::map<IndexT, LocalBAState> _map_poseId_LBAState;
-  std::map<IndexT, LocalBAState> _map_intrinsicId_LBAState;
-  std::map<IndexT, LocalBAState> _map_landmarkId_LBAState;
+  // Store the ELocalBAState of each parameter (structure, poses, intrinsics) :
+  std::map<IndexT, ELocalBAState> _map_poseId_LBAState;
+  std::map<IndexT, ELocalBAState> _map_intrinsicId_LBAState;
+  std::map<IndexT, ELocalBAState> _map_landmarkId_LBAState;
   
-  // Get back the 'LocalBAState' for a specific parameter :
-  LocalBAState getPoseState(const IndexT poseId)            {return _map_poseId_LBAState.find(poseId)->second;}
-  LocalBAState getIntrinsicsState(const IndexT intrinsicId) {return _map_intrinsicId_LBAState.find(intrinsicId)->second;}
-  LocalBAState getLandmarkState(const IndexT landmarkId)    {return _map_landmarkId_LBAState.find(landmarkId)->second;}
+  // Get back the 'ELocalBAState' for a specific parameter :
+  ELocalBAState getPoseState(const IndexT poseId)            {return _map_poseId_LBAState.find(poseId)->second;}
+  ELocalBAState getIntrinsicsState(const IndexT intrinsicId) {return _map_intrinsicId_LBAState.find(intrinsicId)->second;}
+  ELocalBAState getLandmarkState(const IndexT landmarkId)    {return _map_landmarkId_LBAState.find(landmarkId)->second;}
 
 
   void setSolverOptions(ceres::Solver::Options& solver_options);

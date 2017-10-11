@@ -1767,6 +1767,10 @@ bool SequentialSfMReconstructionEngine::localBundleAdjustment(const std::string&
     // parameters (landmarks, cameras poses and intrinsics)
     localBA_obj.computeStatesMaps_strategy4(_sfm_data, _localBA_data);    
     
+    // If the number of cameras that will be added to the solver is <= 100
+    // we have to modify the BA mode to Dense.
+    if (localBA_obj.getNumberOfCamerasInTheSolver() <= 100)
+      options.setDenseBA();
   }
   
   localBA_obj.initStatistics(_localBA_data->getNewViewsId());
