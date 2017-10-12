@@ -7,6 +7,7 @@
 #include <aliceVision/exif/sensorWidthDatabase/parseDatabase.hpp>
 #include <aliceVision/stl/split.hpp>
 #include <aliceVision/system/Logger.hpp>
+#include <aliceVision/system/cmdline.hpp>
 
 #include <dependencies/stlplus3/filesystemSimplified/file_system.hpp>
 
@@ -579,16 +580,16 @@ int main(int argc, char **argv)
     ("defaultIntrinsics", po::value<std::string>(&userKMatrix)->default_value(userKMatrix),
       "Intrinsics Kmatrix \"f;0;ppx;0;f;ppy;0;0;1\".")
     ("defaultCameraModel", po::value<std::string>(&userCameraModelName)->default_value(userCameraModelName),
-      "Camera model type (pinhole, radial1, radial3, brown or fisheye4).")
+      "Camera model type (pinhole, radial1, radial3, brown, fisheye4).")
     ("groupCameraModel", po::value<int>(&userGroupCameraModel)->default_value(userGroupCameraModel),
-      "- 0: each view have its own camera intrinsic parameters\n"
-      "- 1: view share camera intrinsic parameters based on metadata, if no metadata each view has its own camera intrinsic parameters\n"
-      "- 2: view share camera intrinsic parameters based on metadata, if no metadata they are grouped by folder\n");
+      "* 0: each view have its own camera intrinsic parameters\n"
+      "* 1: view share camera intrinsic parameters based on metadata, if no metadata each view has its own camera intrinsic parameters\n"
+      "* 2: view share camera intrinsic parameters based on metadata, if no metadata they are grouped by folder\n");
 
   po::options_description logParams("Log parameters");
   logParams.add_options()
     ("verboseLevel,v", po::value<std::string>(&verboseLevel)->default_value(verboseLevel),
-      "verbosity level (fatal,  error, warning, info, debug, trace).");
+      "verbosity level (fatal, error, warning, info, debug, trace).");
 
   allParams.add(requiredParams).add(optionalParams).add(logParams);
 
@@ -617,18 +618,8 @@ int main(int argc, char **argv)
     return EXIT_FAILURE;
   }
 
-  ALICEVISION_COUT("Program called with the following parameters: " <<std::endl
-    << "\t" << argv[0] << std::endl
-    << "\t--imageDirectory " << imageDirectory << std::endl
-    << "\t--jsonFile " << jsonFile << std::endl
-    << "\t--sensorDatabase " << sensorDatabasePath << std::endl
-    << "\t--output " << outputDirectory << std::endl
-    << "\t--defaultFocalLengthPix " << userFocalLengthPixel << std::endl
-    << "\t--defaultSensorWidth " << userSensorWidth << std::endl
-    << "\t--defaultIntrinsics " << userKMatrix << std::endl
-    << "\t--defaultCameraModel " << userCameraModelName << std::endl
-    << "\t--groupCameraModel " << userGroupCameraModel << std::endl
-    << "\t--verboseLevel " << verboseLevel);
+  ALICEVISION_COUT("Program called with the following parameters:");
+  ALICEVISION_COUT(vm);
 
   // set verbose level
   system::Logger::get()->setLogLevel(verboseLevel);
@@ -869,8 +860,6 @@ int main(int argc, char **argv)
                             << "] image file: '" << stlplus::filename_part(imagePath) << "'");
         }
 
-        IndexT viewId = views.size();
-
         const std::string imageAbsPath = (imageDirectory.empty()) ? imagePath : stlplus::create_filespec(imageDirectory, imagePath);
         const std::string imageFolder = stlplus::folder_part(imageAbsPath);
 
@@ -982,14 +971,14 @@ int main(int argc, char **argv)
           }
         }
 
-        // change viewId if user wants to use UID
-        //if(useUid)
-        //{
-        //  EasyExifIO exifReader;
-        //  exifReader.open(imageAbsPath);
-        //
-        //  viewId = (IndexT)computeUID(exifReader, imagePath);
-        //}
+        // Init viewId from metadata
+        IndexT viewId = views.size();
+        {
+          EasyExifIO exifReader;
+          exifReader.open(imageAbsPath);
+        
+          viewId = (IndexT)computeUID(exifReader, imagePath);
+        }
 
         // check duplicated view identifier
         if(views.count(viewId))

@@ -1,29 +1,30 @@
 // This file is part of the AliceVision project and is made available under
 // the terms of the MPL2 license (see the COPYING.md file).
 
-#include "aliceVision/sfm/SfMData.hpp"
-#include "aliceVision/sfm/sfmDataIO.hpp"
-#include "aliceVision/sfm/pipeline/regionsIO.hpp"
-#include "aliceVision/sfm/pipeline/ReconstructionEngine.hpp"
-#include "aliceVision/feature/FeaturesPerView.hpp"
-#include "aliceVision/feature/RegionsPerView.hpp"
-#include "aliceVision/feature/ImageDescriber.hpp"
-#include "aliceVision/feature/imageDescriberCommon.hpp"
-#include "aliceVision/matchingImageCollection/matchingCommon.hpp"
-#include "aliceVision/matchingImageCollection/ImageCollectionMatcher_generic.hpp"
-#include "aliceVision/matchingImageCollection/ImageCollectionMatcher_cascadeHashing.hpp"
-#include "aliceVision/matchingImageCollection/GeometricFilter.hpp"
-#include "aliceVision/matchingImageCollection/GeometricFilterMatrix_F_AC.hpp"
-#include "aliceVision/matchingImageCollection/GeometricFilterMatrix_E_AC.hpp"
-#include "aliceVision/matchingImageCollection/GeometricFilterMatrix_H_AC.hpp"
-#include "aliceVision/matching/pairwiseAdjacencyDisplay.hpp"
-#include "aliceVision/matching/io.hpp"
-#include "aliceVision/system/Timer.hpp"
-#include "aliceVision/feature/selection.hpp"
-#include "aliceVision/graph/graph.hpp"
-#include "aliceVision/stl/stl.hpp"
+#include <aliceVision/sfm/SfMData.hpp>
+#include <aliceVision/sfm/sfmDataIO.hpp>
+#include <aliceVision/sfm/pipeline/regionsIO.hpp>
+#include <aliceVision/sfm/pipeline/ReconstructionEngine.hpp>
+#include <aliceVision/feature/FeaturesPerView.hpp>
+#include <aliceVision/feature/RegionsPerView.hpp>
+#include <aliceVision/feature/ImageDescriber.hpp>
+#include <aliceVision/feature/imageDescriberCommon.hpp>
+#include <aliceVision/matchingImageCollection/matchingCommon.hpp>
+#include <aliceVision/matchingImageCollection/ImageCollectionMatcher_generic.hpp>
+#include <aliceVision/matchingImageCollection/ImageCollectionMatcher_cascadeHashing.hpp>
+#include <aliceVision/matchingImageCollection/GeometricFilter.hpp>
+#include <aliceVision/matchingImageCollection/GeometricFilterMatrix_F_AC.hpp>
+#include <aliceVision/matchingImageCollection/GeometricFilterMatrix_E_AC.hpp>
+#include <aliceVision/matchingImageCollection/GeometricFilterMatrix_H_AC.hpp>
+#include <aliceVision/matching/pairwiseAdjacencyDisplay.hpp>
+#include <aliceVision/matching/io.hpp>
+#include <aliceVision/system/Timer.hpp>
+#include <aliceVision/system/cmdline.hpp>
+#include <aliceVision/feature/selection.hpp>
+#include <aliceVision/graph/graph.hpp>
+#include <aliceVision/stl/stl.hpp>
 
-#include "dependencies/stlplus3/filesystemSimplified/file_system.hpp"
+#include <dependencies/stlplus3/filesystemSimplified/file_system.hpp>
 
 #include <boost/program_options.hpp>
 
@@ -98,7 +99,7 @@ int main(int argc, char **argv)
   std::string geometricModel = "f";
   std::string describerTypesName = feature::EImageDescriberType_enumToString(feature::EImageDescriberType::SIFT);
   float distRatio = 0.8f;
-  int matchingVideoMode = -1;
+  int matchingVideoMode = 0;
   std::string predefinedPairList;
   int rangeStart = -1;
   int rangeSize = 0;
@@ -132,9 +133,9 @@ int main(int argc, char **argv)
   optionalParams.add_options()
     ("geometricModel,g", po::value<std::string>(&geometricModel)->default_value(geometricModel),
       "Pairwise correspondences filtering thanks to robust model estimation:\n"
-      "- f: fundamental matrix\n"
-      "- e: essential matrix\n"
-      "- h: homography matrix")
+      "* f: fundamental matrix\n"
+      "* e: essential matrix\n"
+      "* h: homography matrix")
     ("describerTypes,d", po::value<std::string>(&describerTypesName)->default_value(describerTypesName),
       feature::EImageDescriberType_informations().c_str())
     ("featuresDirectory,f", po::value<std::string>(&featuresDirectory)->default_value(featuresDirectory),
@@ -143,17 +144,17 @@ int main(int argc, char **argv)
       "Path to a file which contains the list of image pairs to match.")
     ("photometricMatchingMethod,p", po::value<std::string>(&nearestMatchingMethod)->default_value(nearestMatchingMethod),
       "For Scalar based regions descriptor:\n"
-      "- BRUTE_FORCE_L2: L2 BruteForce matching\n"
-      "- ANN_L2: L2 Approximate Nearest Neighbor matching\n"
-      "- CASCADE_HASHING_L2: L2 Cascade Hashing matching\n"
-      "- FAST_CASCADE_HASHING_L2: L2 Cascade Hashing with precomputed hashed regions\n"
+      "* BRUTE_FORCE_L2: L2 BruteForce matching\n"
+      "* ANN_L2: L2 Approximate Nearest Neighbor matching\n"
+      "* CASCADE_HASHING_L2: L2 Cascade Hashing matching\n"
+      "* FAST_CASCADE_HASHING_L2: L2 Cascade Hashing with precomputed hashed regions\n"
       "(faster than CASCADE_HASHING_L2 but use more memory)\n"
       "For Binary based descriptor:\n"
-      "- BRUTE_FORCE_HAMMING: BruteForce Hamming matching")
+      "* BRUTE_FORCE_HAMMING: BruteForce Hamming matching")
     ("geometricEstimator", po::value<std::string>(&geometricEstimatorName)->default_value(geometricEstimatorName),
       "Geometric estimator:\n"
-      "- acransac: A-Contrario Ransac\n"
-      "- loransac: LO-Ransac (only available for fundamental matrix)")
+      "* acransac: A-Contrario Ransac\n"
+      "* loransac: LO-Ransac (only available for fundamental matrix)")
     ("savePutativeMatches", po::bool_switch(&savePutativeMatches)->default_value(savePutativeMatches),
       "Save putative matches.")
     ("guidedMatching", po::bool_switch(&guidedMatching)->default_value(guidedMatching),
@@ -164,9 +165,9 @@ int main(int argc, char **argv)
       "Distance ratio to discard non meaningful matches.")
     ("videoModeMatching", po::value<int>(&matchingVideoMode)->default_value(matchingVideoMode),
       "sequence matching with an overlap of X images:\n"
-      "- X: with match 0 with (1->X), ...\n"
-      "- 2: will match 0 with (1,2), 1 with (2,3), ...\n"
-      "- 3: will match 0 with (1,2,3), 1 with (2,3,4), ...")
+      "* 0: will match 0 with (1->X), ...\n"
+      "* 2: will match 0 with (1,2), 1 with (2,3), ...\n"
+      "* 3: will match 0 with (1,2,3), 1 with (2,3,4), ...")
     ("maxIteration", po::value<int>(&maxIteration)->default_value(maxIteration),
       "Maximum number of iterations allowed in ransac step.")
     ("useGridSort", po::bool_switch(&useGridSort)->default_value(useGridSort),
@@ -185,7 +186,7 @@ int main(int argc, char **argv)
   po::options_description logParams("Log parameters");
   logParams.add_options()
     ("verboseLevel,v", po::value<std::string>(&verboseLevel)->default_value(verboseLevel),
-      "verbosity level (fatal,  error, warning, info, debug, trace).");
+      "verbosity level (fatal, error, warning, info, debug, trace).");
 
   allParams.add(requiredParams).add(optionalParams).add(logParams);
 
@@ -214,33 +215,13 @@ int main(int argc, char **argv)
     return EXIT_FAILURE;
   }
 
-  ALICEVISION_COUT("Program called with the following parameters: " << std::endl
-    << "\t" << argv[0] << std::endl
-    << "\t--input " << sfmDataFilename << std::endl
-    << "\t--output " << matchesDirectory << std::endl
-    << "\t--geometricModel " << geometricModel << std::endl
-    << "\t--describerTypes " << describerTypesName << std::endl
-    << "\t--featuresDirectory " << featuresDirectory
-    << "\t--imagePairs " << predefinedPairList << std::endl
-    << "\t--photometricMatchingMethod " << nearestMatchingMethod << std::endl
-    << "\t--geometricEstimator " << geometricEstimatorName << std::endl
-    << "\t--savePutativeMatches " << savePutativeMatches << std::endl
-    << "\t--guidedMatching " << guidedMatching << std::endl
-    << "\t--matchFilePerImage " << matchFilePerImage << std::endl
-    << "\t--distanceRatio " << distRatio << std::endl
-    << "\t--videoModeMatching " << matchingVideoMode << std::endl
-    << "\t--maxIteration " << maxIteration << std::endl
-    << "\t--useGridSort " << useGridSort << std::endl
-    << "\t--exportDebugFiles " << exportDebugFiles  << std::endl
-    << "\t--maxMatches " << numMatchesToKeep  << std::endl
-    << "\t--rangeStart " << rangeStart <<  std::endl
-    << "\t--rangeSize " << rangeSize << std::endl
-    << "\t--verboseLevel " << verboseLevel);
+  ALICEVISION_COUT("Program called with the following parameters:");
+  ALICEVISION_COUT(vm);
 
   // set verbose level
   system::Logger::get()->setLogLevel(verboseLevel);
 
-  EPairMode pairMode = (matchingVideoMode == -1 ) ? PAIR_EXHAUSTIVE : PAIR_CONTIGUOUS;
+  EPairMode pairMode = (matchingVideoMode == 0 ) ? PAIR_EXHAUSTIVE : PAIR_CONTIGUOUS;
 
   if(predefinedPairList.length()) {
     pairMode = PAIR_FROM_FILE;

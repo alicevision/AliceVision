@@ -1,17 +1,18 @@
 // This file is part of the AliceVision project and is made available under
 // the terms of the MPL2 license (see the COPYING.md file).
 
-#include "aliceVision/config.hpp"
-#include "aliceVision/image/image.hpp"
-#include "aliceVision/sfm/sfm.hpp"
-#include "aliceVision/feature/imageDescriberCommon.hpp"
-#include "aliceVision/feature/feature.hpp"
-#include "aliceVision/exif/EasyExifIO.hpp"
-#include "aliceVision/stl/split.hpp"
-#include "aliceVision/system/Timer.hpp"
-#include "aliceVision/system/Logger.hpp"
+#include <aliceVision/config.hpp>
+#include <aliceVision/image/image.hpp>
+#include <aliceVision/sfm/sfm.hpp>
+#include <aliceVision/feature/imageDescriberCommon.hpp>
+#include <aliceVision/feature/feature.hpp>
+#include <aliceVision/exif/EasyExifIO.hpp>
+#include <aliceVision/stl/split.hpp>
+#include <aliceVision/system/Timer.hpp>
+#include <aliceVision/system/Logger.hpp>
+#include <aliceVision/system/cmdline.hpp>
 
-#include "dependencies/stlplus3/filesystemSimplified/file_system.hpp"
+#include <dependencies/stlplus3/filesystemSimplified/file_system.hpp>
 
 #include <boost/progress.hpp>
 #include <boost/program_options.hpp>
@@ -250,7 +251,7 @@ int main(int argc, char **argv)
   po::options_description logParams("Log parameters");
   logParams.add_options()
     ("verboseLevel,v", po::value<std::string>(&verboseLevel)->default_value(verboseLevel),
-      "verbosity level (fatal,  error, warning, info, debug, trace).");
+      "verbosity level (fatal, error, warning, info, debug, trace).");
 
   allParams.add(requiredParams).add(optionalParams).add(logParams);
 
@@ -279,16 +280,8 @@ int main(int argc, char **argv)
     return EXIT_FAILURE;
   }
 
-  ALICEVISION_COUT("Program called with the following parameters: " << std::endl
-    << "\t" << argv[0] << std::endl
-    << "\t--input " << sfmDataFilename << std::endl
-    << "\t--output " << outputDirectory << std::endl
-    << "\t--describerTypes " << describerTypesName << std::endl
-    << "\t--describerPreset " << (describerPreset.empty() ? "NORMAL" : describerPreset) << std::endl
-    << "\t--upright " << describersAreUpRight << std::endl
-    << "\t--rangeStart " << rangeStart << std::endl
-    << "\t--rangeSize " << rangeSize << std::endl
-    << "\t--verboseLevel " << verboseLevel);
+  ALICEVISION_COUT("Program called with the following parameters:");
+  ALICEVISION_COUT(vm);
 
   // set verbose level
   system::Logger::get()->setLogLevel(verboseLevel);

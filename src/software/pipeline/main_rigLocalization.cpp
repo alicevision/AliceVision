@@ -12,6 +12,7 @@
 #include <aliceVision/feature/ImageDescriber.hpp>
 #include <aliceVision/robustEstimation/estimators.hpp>
 #include <aliceVision/system/Logger.hpp>
+#include <aliceVision/system/cmdline.hpp>
 
 #include <boost/filesystem.hpp>
 #include <boost/progress.hpp>
@@ -114,8 +115,8 @@ int main(int argc, char** argv)
   /// the estimator to use for matching
   robustEstimation::ERobustEstimator matchingEstimator = robustEstimation::ERobustEstimator::ACRANSAC;
   /// the possible choices for the estimators as strings
-  const std::string str_estimatorChoices = ""+robustEstimation::ERobustEstimator_enumToString(robustEstimation::ERobustEstimator::ACRANSAC)
-                                          +","+robustEstimation::ERobustEstimator_enumToString(robustEstimation::ERobustEstimator::LORANSAC);
+  const std::string str_estimatorChoices = robustEstimation::ERobustEstimator_enumToString(robustEstimation::ERobustEstimator::ACRANSAC)
+                                          +", "+robustEstimation::ERobustEstimator_enumToString(robustEstimation::ERobustEstimator::LORANSAC);
   bool refineIntrinsics = false;
   bool useLocalizeRigNaive = false;
   /// the maximum error allowed for resection
@@ -174,10 +175,10 @@ int main(int argc, char** argv)
           "{LOW,MEDIUM,NORMAL,HIGH,ULTRA}")
       ("resectionEstimator", po::value<robustEstimation::ERobustEstimator>(&resectionEstimator)->default_value(resectionEstimator),
           std::string("The type of *sac framework to use for resection "
-          "{"+str_estimatorChoices+"}").c_str())
+          "("+str_estimatorChoices+")").c_str())
       ("matchingEstimator", po::value<robustEstimation::ERobustEstimator>(&matchingEstimator)->default_value(matchingEstimator),
           std::string("The type of *sac framework to use for matching "
-          "{"+str_estimatorChoices+"}").c_str())
+          "("+str_estimatorChoices+")").c_str())
       ("refineIntrinsics", po::bool_switch(&refineIntrinsics),
           "Enable/Disable camera intrinsics refinement for each localized image")
       ("reprojectionError", po::value<double>(&resectionErrorMax)->default_value(resectionErrorMax), 
@@ -279,43 +280,8 @@ int main(int argc, char** argv)
                         (matchDescTypes.front() == feature::EImageDescriberType::CCTAG4)));
 #endif
 
-  // just debugging prints, print out all the parameters
-  {
-    ALICEVISION_COUT("Program called with the following parameters:");
-    ALICEVISION_COUT("\tsfmdata: " << sfmFilePath);
-    ALICEVISION_COUT("\tpreset: " << featurePreset);
-    ALICEVISION_COUT("\tmediapath: " << mediaPath);
-    ALICEVISION_COUT("\tcameraIntrinsics: " << cameraIntrinsics);
-    ALICEVISION_COUT("\tcalibration: " << rigCalibPath);
-    ALICEVISION_COUT("\tresectionEstimator: " << resectionEstimator);
-    ALICEVISION_COUT("\tmatchingEstimator: " << matchingEstimator);
-    ALICEVISION_COUT("\tdescriptorPath: " << descriptorsFolder);
-    ALICEVISION_COUT("\trefineIntrinsics: " << refineIntrinsics);
-    ALICEVISION_COUT("\tuseLocalizeRigNaive: " << useLocalizeRigNaive);
-    ALICEVISION_COUT("\treprojectionError: " << resectionErrorMax);
-    ALICEVISION_COUT("\tangularThreshold: " << angularThreshold);
-    ALICEVISION_COUT("\tnCameras: " << numCameras);
-    ALICEVISION_COUT("\tmatching descriptor types: " << matchDescTypeNames);
-    if(useVoctreeLocalizer)
-    {
-      // parameters for voctree localizer
-      ALICEVISION_COUT("\tvoctree: " << vocTreeFilepath);
-      ALICEVISION_COUT("\tweights: " << weightsFilepath);
-      ALICEVISION_COUT("\tnbImageMatch: " << numResults);
-      ALICEVISION_COUT("\tmaxResults: " << maxResults);
-      ALICEVISION_COUT("\talgorithm: " << algostring);
-      ALICEVISION_COUT("\tmatchingError: " << matchingErrorMax);
-    }
-#if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_CCTAG)
-    else
-    {
-      ALICEVISION_COUT("\tnNearestKeyFrames: " << nNearestKeyFrames);
-    }
-#endif
-#if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_ALEMBIC)
-    ALICEVISION_COUT("\toutputAlembic: " << exportAlembicFile);
-#endif
-  }
+  ALICEVISION_COUT("Program called with the following parameters:");
+  ALICEVISION_COUT(vm);
 
   std::unique_ptr<localization::LocalizerParameters> param;
   

@@ -1,6 +1,7 @@
 // This file is part of the AliceVision project and is made available under
 // the terms of the MPL2 license (see the COPYING.md file).
 #include <aliceVision/system/Logger.hpp>
+#include <aliceVision/system/cmdline.hpp>
 #include <aliceVision/voctree/Database.hpp>
 #include <aliceVision/voctree/VocabularyTree.hpp>
 #include <aliceVision/voctree/databaseIO.hpp>
@@ -239,7 +240,7 @@ int main(int argc, char** argv)
   po::options_description logParams("Log parameters");
   logParams.add_options()
       ("verboseLevel,v", po::value<std::string>(&verboseLevel)->default_value(verboseLevel),
-        "verbosity level (fatal,  error, warning, info, debug, trace).");
+        "verbosity level (fatal, error, warning, info, debug, trace).");
 
   allParams.add(requiredParams).add(optionalParams).add(logParams);
 
@@ -268,15 +269,8 @@ int main(int argc, char** argv)
     return EXIT_FAILURE;
   }
 
-  ALICEVISION_COUT("Program called with the following parameters: " <<std::endl
-    << argv[0] << std::endl
-    << "\t--input " << sfmDataFilename << std::endl
-    << "\t--tree " << treeName << std::endl
-    << "\t--output " << outputFile << std::endl
-    << "\t--maxDescriptors " << nbMaxDescriptors << std::endl
-    << "\t--nbMatches " << numImageQuery << std::endl
-    << "\t--weights " << weightsName << std::endl
-    << "\t--verboseLevel " << verboseLevel);
+  ALICEVISION_COUT("Program called with the following parameters:");
+  ALICEVISION_COUT(vm);
 
   // set verbose level
   system::Logger::get()->setLogLevel(verboseLevel);

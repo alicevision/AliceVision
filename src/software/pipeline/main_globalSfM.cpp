@@ -1,12 +1,14 @@
 // This file is part of the AliceVision project and is made available under
 // the terms of the MPL2 license (see the COPYING.md file).
 
-#include "aliceVision/sfm/pipeline/regionsIO.hpp"
-#include "aliceVision/feature/imageDescriberCommon.hpp"
-#include "aliceVision/sfm/pipeline/global/ReconstructionEngine_globalSfM.hpp"
-#include "aliceVision/system/Timer.hpp"
+#include <aliceVision/sfm/pipeline/regionsIO.hpp>
+#include <aliceVision/feature/imageDescriberCommon.hpp>
+#include <aliceVision/sfm/pipeline/global/ReconstructionEngine_globalSfM.hpp>
+#include <aliceVision/system/Timer.hpp>
+#include <aliceVision/system/Logger.hpp>
+#include <aliceVision/system/cmdline.hpp>
 
-#include "dependencies/stlplus3/filesystemSimplified/file_system.hpp"
+#include <dependencies/stlplus3/filesystemSimplified/file_system.hpp>
 
 #include <boost/program_options.hpp>
 
@@ -57,18 +59,18 @@ int main(int argc, char **argv)
     ("describerTypes,d", po::value<std::string>(&describerTypesName)->default_value(describerTypesName),
       feature::EImageDescriberType_informations().c_str())
     ("rotationAveraging", po::value<int>(&rotationAveragingMethod)->default_value(rotationAveragingMethod),
-      "- 1: L1 minimization\n"
-      "- 2: L2 minimization")
+      "* 1: L1 minimization\n"
+      "* 2: L2 minimization")
     ("translationAveraging", po::value<int>(&translationAveragingMethod)->default_value(translationAveragingMethod),
-      "- 1: L1 minimization\n"
-      "- 2: L2 minimization of sum of squared Chordal distances")
+      "* 1: L1 minimization\n"
+      "* 2: L2 minimization of sum of squared Chordal distances")
     ("refineIntrinsics", po::bool_switch(&refineIntrinsics)->default_value(refineIntrinsics),
       "Refine intrinsic parameters.");
 
   po::options_description logParams("Log parameters");
   logParams.add_options()
     ("verboseLevel,v", po::value<std::string>(&verboseLevel)->default_value(verboseLevel),
-      "verbosity level (fatal,  error, warning, info, debug, trace).");
+      "verbosity level (fatal, error, warning, info, debug, trace).");
 
   allParams.add(requiredParams).add(optionalParams).add(logParams);
 
@@ -97,17 +99,8 @@ int main(int argc, char **argv)
     return EXIT_FAILURE;
   }
 
-  ALICEVISION_COUT("Program called with the following parameters: " << std::endl
-    << "\t" << argv[0] << std::endl
-    << "\t--input " << sfmDataFilename << std::endl
-    << "\t--output " << outDirectory << std::endl
-    << "\t--matchesDirectory " << matchesDirectory << std::endl
-    << "\t--outSfMDataFilename " << outSfMDataFilename << std::endl
-    << "\t--describerTypes " << describerTypesName << std::endl
-    << "\t--rotationAveraging " << rotationAveragingMethod << std::endl
-    << "\t--translationAveraging " << translationAveragingMethod << std::endl
-    << "\t--refineIntrinsics " << refineIntrinsics << std::endl
-    << "\t--verboseLevel " << verboseLevel);
+  ALICEVISION_COUT("Program called with the following parameters:");
+  ALICEVISION_COUT(vm);
 
   // set verbose level
   system::Logger::get()->setLogLevel(verboseLevel);

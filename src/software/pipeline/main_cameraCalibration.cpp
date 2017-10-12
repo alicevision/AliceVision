@@ -11,6 +11,7 @@
 #include <aliceVision/calibration/exportData.hpp>
 #include <aliceVision/system/Timer.hpp>
 #include <aliceVision/system/Logger.hpp>
+#include <aliceVision/system/cmdline.hpp>
 #include <aliceVision/config.hpp>
 
 #include <boost/program_options.hpp>
@@ -68,11 +69,11 @@ int main(int argc, char** argv)
           ("output,o", po::value<std::string>(&outputFilename)->required(),
            "Output filename for intrinsic [and extrinsic] parameters.\n")
           ("pattern,p", po::value<aliceVision::calibration::Pattern>(&patternType)->default_value(patternType),
-           "Type of pattern: 'CHESSBOARD', 'CIRCLES', 'ASYMMETRIC_CIRCLES'"
+           "Type of pattern (CHESSBOARD, CIRCLES, ASYMMETRIC_CIRCLES"
             #if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_CCTAG)
-                      " or 'ASYMMETRIC_CCTAG'"
+                      ", ASYMMETRIC_CCTAG"
             #endif
-          ".\n")
+          ").\n")
           ("size,s", po::value<std::vector < std::size_t >> (&checkerboardSize)->multitoken(),
            "Number of inner corners per one of board dimension like W H.\n")
           ("squareSize", po::value<double> (&squareSize)->default_value(squareSize),
@@ -137,6 +138,9 @@ int main(int argc, char** argv)
   {
     throw std::logic_error("Check the value for maxFrames, maxCalibFrames & minInputFrames. It must be decreasing.");
   }
+
+  ALICEVISION_COUT("Program called with the following parameters:");
+  ALICEVISION_COUT(vm);
 
   bool writeExtrinsics = false;
   bool writePoints = false;

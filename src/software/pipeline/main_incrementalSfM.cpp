@@ -1,12 +1,14 @@
 // This file is part of the AliceVision project and is made available under
 // the terms of the MPL2 license (see the COPYING.md file).
 
-#include "aliceVision/feature/imageDescriberCommon.hpp"
-#include "aliceVision/sfm/sfm.hpp"
-#include "aliceVision/sfm/pipeline/regionsIO.hpp"
-#include "aliceVision/system/Timer.hpp"
+#include <aliceVision/feature/imageDescriberCommon.hpp>
+#include <aliceVision/sfm/sfm.hpp>
+#include <aliceVision/sfm/pipeline/regionsIO.hpp>
+#include <aliceVision/system/Timer.hpp>
+#include <aliceVision/system/Logger.hpp>
+#include <aliceVision/system/cmdline.hpp>
 
-#include "dependencies/stlplus3/filesystemSimplified/file_system.hpp"
+#include <dependencies/stlplus3/filesystemSimplified/file_system.hpp>
 
 #include <boost/program_options.hpp>
 
@@ -123,9 +125,9 @@ int main(int argc, char **argv)
     ("minInputTrackLength", po::value<int>(&minInputTrackLength)->default_value(minInputTrackLength),
       "Minimum track length in input of SfM")
     ("cameraModel", po::value<int>(&userCameraModel)->default_value(userCameraModel),
-      "- 1: Pinhole\n"
-      "- 2: Pinhole radial 1\n"
-      "- 3: Pinhole radial 3")
+      "* 1: Pinhole\n"
+      "* 2: Pinhole radial 1\n"
+      "* 3: Pinhole radial 3")
     ("initialPairA", po::value<std::string>(&initialPairString.first)->default_value(initialPairString.first),
       "filename of the first image (without path).")
     ("initialPairB", po::value<std::string>(&initialPairString.second)->default_value(initialPairString.second),
@@ -139,7 +141,7 @@ int main(int argc, char **argv)
   po::options_description logParams("Log parameters");
   logParams.add_options()
     ("verboseLevel,v", po::value<std::string>(&verboseLevel)->default_value(verboseLevel),
-      "verbosity level (fatal,  error, warning, info, debug, trace).");
+      "verbosity level (fatal, error, warning, info, debug, trace).");
 
   allParams.add(requiredParams).add(optionalParams).add(logParams);
 
@@ -168,21 +170,8 @@ int main(int argc, char **argv)
     return EXIT_FAILURE;
   }
 
-  ALICEVISION_COUT("Program called with the following parameters: " << std::endl
-    << "\t" << argv[0] << std::endl
-    << "\t--input " << sfmDataFilename << std::endl
-    << "\t--output " << outDirectory << std::endl
-    << "\t--featuresDirectory " << featuresDirectory << std::endl
-    << "\t--matchesDirectory " << matchesDirectory << std::endl
-    << "\t--outSfMDataFilename " << outSfMDataFilename << std::endl
-    << "\t--describerTypes " << describerTypesName << std::endl
-    << "\t--interFileExtension " << outInterFileExtension << std::endl
-    << "\t--minInputTrackLength " << minInputTrackLength << std::endl
-    << "\t--cameraModel " << userCameraModel << std::endl
-    << "\t--initialPair (" << initialPairString.first << "," << initialPairString.second << ")" << std::endl
-    << "\t--refineIntrinsics " << refineIntrinsics << std::endl
-    << "\t--allowUserInteraction " << allowUserInteraction << std::endl
-    << "\t--verboseLevel " << verboseLevel);
+  ALICEVISION_COUT("Program called with the following parameters:");
+  ALICEVISION_COUT(vm);
 
   // set verbose level
   system::Logger::get()->setLogLevel(verboseLevel);

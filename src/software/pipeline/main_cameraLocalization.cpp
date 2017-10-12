@@ -15,6 +15,7 @@
 #include <aliceVision/feature/imageDescriberCommon.hpp>
 #include <aliceVision/robustEstimation/estimators.hpp>
 #include <aliceVision/system/Logger.hpp>
+#include <aliceVision/system/cmdline.hpp>
 
 #include <boost/filesystem.hpp>
 #include <boost/progress.hpp>
@@ -114,8 +115,8 @@ int main(int argc, char** argv)
   /// the estimator to use for matching
   robustEstimation::ERobustEstimator matchingEstimator = robustEstimation::ERobustEstimator::ACRANSAC;
   /// the possible choices for the estimators as strings
-  const std::string str_estimatorChoices = ""+robustEstimation::ERobustEstimator_enumToString(robustEstimation::ERobustEstimator::ACRANSAC)
-                                          +","+robustEstimation::ERobustEstimator_enumToString(robustEstimation::ERobustEstimator::LORANSAC);
+  const std::string str_estimatorChoices = robustEstimation::ERobustEstimator_enumToString(robustEstimation::ERobustEstimator::ACRANSAC)
+                                          +", "+robustEstimation::ERobustEstimator_enumToString(robustEstimation::ERobustEstimator::LORANSAC);
   bool refineIntrinsics = false;
   /// the maximum reprojection error allowed for resection
   double resectionErrorMax = 4.0;  
@@ -188,10 +189,10 @@ int main(int argc, char** argv)
           "{LOW,MEDIUM,NORMAL,HIGH,ULTRA}")
       ("resectionEstimator", po::value<robustEstimation::ERobustEstimator>(&resectionEstimator)->default_value(resectionEstimator),
           std::string("The type of *sac framework to use for resection "
-          "{"+str_estimatorChoices+"}").c_str())
+          "("+str_estimatorChoices+")").c_str())
       ("matchingEstimator", po::value<robustEstimation::ERobustEstimator>(&matchingEstimator)->default_value(matchingEstimator),
           std::string("The type of *sac framework to use for matching "
-          "{"+str_estimatorChoices+"}").c_str())
+          "("+str_estimatorChoices+")").c_str())
       ("calibration", po::value<std::string>(&calibFile)/*->required( )*/, 
           "Calibration file")
       ("refineIntrinsics", po::bool_switch(&refineIntrinsics), 
@@ -312,49 +313,10 @@ int main(int argc, char** argv)
                         (matchDescTypes.front() == feature::EImageDescriberType::CCTAG4)));
 #endif
   
-  // just for debugging purpose, print out all the parameters
-  {
-    // the bundle adjustment can be run for now only if the refine intrinsics option is not set
-    globalBundle = (globalBundle && !refineIntrinsics);
-    ALICEVISION_COUT("Program called with the following parameters:");
-    ALICEVISION_COUT("\tsfmdata: " << sfmFilePath);
-    ALICEVISION_COUT("\tmatching descriptor types: " << matchDescTypeNames);
-    ALICEVISION_COUT("\tpreset: " << featurePreset);
-    ALICEVISION_COUT("\tresectionEstimator: " << resectionEstimator);
-    ALICEVISION_COUT("\tmatchingEstimator: " << matchingEstimator);
-    ALICEVISION_COUT("\tcalibration: " << calibFile);
-    ALICEVISION_COUT("\tdescriptorPath: " << descriptorsFolder);
-    ALICEVISION_COUT("\trefineIntrinsics: " << refineIntrinsics);
-    ALICEVISION_COUT("\treprojectionError: " << resectionErrorMax);
-    ALICEVISION_COUT("\tmediafile: " << mediaFilepath);
-    if(useVoctreeLocalizer)
-    {
-      ALICEVISION_COUT("\tvoctree: " << vocTreeFilepath);
-      ALICEVISION_COUT("\tweights: " << weightsFilepath);
-      ALICEVISION_COUT("\tnbImageMatch: " << numResults);
-      ALICEVISION_COUT("\tmaxResults: " << maxResults);
-      ALICEVISION_COUT("\tcommon views: " << numCommonViews);
-      ALICEVISION_COUT("\talgorithm: " << algostring);
-      ALICEVISION_COUT("\tmatchingError: " << matchingErrorMax);
-      ALICEVISION_COUT("\tnbFrameBufferMatching: " << nbFrameBufferMatching);
-      ALICEVISION_COUT("\trobustMatching: " << robustMatching);
-    }
-#if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_CCTAG) 
-    else
-    {
-      ALICEVISION_COUT("\tnNearestKeyFrames: " << nNearestKeyFrames);
-    }
-#endif 
-    ALICEVISION_COUT("\tminPointVisibility: " << minPointVisibility);
-    ALICEVISION_COUT("\tglobalBundle: " << globalBundle);
-    ALICEVISION_COUT("\tnoDistortion: " << noDistortion);
-    ALICEVISION_COUT("\tnoBArefineIntrinsics: " << noBArefineIntrinsics);
-#if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_ALEMBIC)
-    ALICEVISION_COUT("\toutputAlembic: " << exportAlembicFile);
-#endif
-    ALICEVISION_COUT("\toutputBinary: " << exportBinaryFile);
-    ALICEVISION_COUT("\tvisualDebug: " << visualDebug);
-  }
+  // the bundle adjustment can be run for now only if the refine intrinsics option is not set
+  globalBundle = (globalBundle && !refineIntrinsics);
+  ALICEVISION_COUT("Program called with the following parameters:");
+  ALICEVISION_COUT(vm);
 
   // if the provided directory for visual debugging does not exist create it
   // recursively
