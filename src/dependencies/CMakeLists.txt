@@ -1,5 +1,4 @@
-## AliceVision
-## Dependencies
+## AliceVision dependencies
 
 # libs should be static
 set(BUILD_SHARED_LIBS OFF)

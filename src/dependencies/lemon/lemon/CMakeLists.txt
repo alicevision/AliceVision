@@ -56,7 +56,6 @@ ENDIF()
 
 ADD_LIBRARY(lemon ${LEMON_SOURCES})
 IF(UNIX)
-#  SET_TARGET_PROPERTIES(lemon PROPERTIES OUTPUT_NAME emon)
   SET_TARGET_PROPERTIES(lemon PROPERTIES OUTPUT_NAME lemon)
 ENDIF()
 
@@ -84,12 +83,6 @@ INSTALL(
 #  DESTINATION include/lemon
 #  COMPONENT headers
 #  FILES_MATCHING PATTERN "*.h"
-#)
-
-#INSTALL(
-#  FILES ${CMAKE_CURRENT_BINARY_DIR}/config.h
-#  DESTINATION include/aliceVision_dependencies/lemon
-#  COMPONENT headers
 #)
 
 #INSTALL(
