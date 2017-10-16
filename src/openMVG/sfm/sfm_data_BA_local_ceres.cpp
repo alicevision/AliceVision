@@ -507,7 +507,7 @@ void Local_Bundle_Adjustment_Ceres::computeStatesMaps_strategy4(
   
   for(const auto& itIntrinsic: sfm_data.GetIntrinsics())
   {
-    if (localBA_data->isLimitReached(itIntrinsic.first, LocalBA_Data::EIntrinsicParameter::Focal))
+    if (localBA_data->isIntrinsicLimitReached(itIntrinsic.first, LocalBA_Data::EIntrinsicParameter::Focal))
       _map_intrinsicId_LBAState[itIntrinsic.first] = LocalBAState::constant;
     else
       _map_intrinsicId_LBAState[itIntrinsic.first] = LocalBAState::refined;

@@ -128,7 +128,7 @@ std::map<Pair, std::size_t> LocalBA_Data::countMatchesWithCamerasOfTheReconstruc
   return map_imagesPair_nbSharedLandmarks;
 }
 
-void LocalBA_Data::updateGraph(
+void LocalBA_Data::updateGraphWithNewViews(
     const SfM_Data& sfm_data, 
     const tracks::TracksPerView& map_tracksPerView)
 {

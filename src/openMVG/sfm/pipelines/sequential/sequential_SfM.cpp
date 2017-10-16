@@ -1735,7 +1735,7 @@ bool SequentialSfMReconstructionEngine::localBundleAdjustment()
   if (options.isLocalBAEnabled())
   {
     // Update the 'reconstructionGraph' using the recently added cameras
-    _localBA_data->updateGraph(_sfm_data, _map_tracksPerView);
+    _localBA_data->updateGraphWithNewViews(_sfm_data, _map_tracksPerView);
     
     {
       times.graphUpdating = duration.elapsed(); 

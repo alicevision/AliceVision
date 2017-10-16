@@ -76,20 +76,20 @@ public:
   /// @brief checkAllParametersLimits Run \a checkParameterLimits() for each \a EIntrinsicParameter.
   void checkAllParametersLimits(const std::size_t kWindowSize, const double kStdDevPercentage);
   
-  /// @brief isLimitReached Giving an intrinsic index and the wished parameter, is return \c true if the limit has alerady been reached, else \c false.
+  /// @brief isIntrinsicLimitReached Giving an intrinsic index and the wished parameter, is return \c true if the limit has alerady been reached, else \c false.
   /// @param[in] intrinsicId The intrinsic index.
   /// @param[in] parameter The \a EIntrinsicParameter to observe.
   /// @return true if the limit is reached, else false
-  bool isLimitReached(const IndexT intrinsicId, const EIntrinsicParameter parameter) const { return intrinsicsLimitIds.at(intrinsicId).at(parameter) != 0;}
+  bool isIntrinsicLimitReached(const IndexT intrinsicId, const EIntrinsicParameter parameter) const { return intrinsicsLimitIds.at(intrinsicId).at(parameter) != 0;}
   
   /// @brief exportIntrinsicsHistory Save the history of each intrinsic. It create a file \b K<intrinsic_index>.txt in \a folder.
   /// @param[in] folder The folder in which the \b K*.txt are saved.
   void exportIntrinsicsHistory(const std::string& folder);
   
-  /// @brief updateGraph Complete the graph with the newly resected views \a set_newViewsId, or all the posed views if the graph is empty.
+  /// @brief updateGraphWithNewViews Complete the graph with the newly resected views \a set_newViewsId, or all the posed views if the graph is empty.
   /// @param[in] sfm_data 
   /// @param[in] map_tracksPerView A map giving the tracks for each view
-  void updateGraph(
+  void updateGraphWithNewViews(
       const SfM_Data& sfm_data, 
       const tracks::TracksPerView& map_tracksPerView);
   
