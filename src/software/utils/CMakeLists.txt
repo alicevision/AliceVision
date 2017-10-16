@@ -188,24 +188,47 @@ install(TARGETS aliceVision_utils_sfmLocalization
   DESTINATION bin/
 )
 
-# Keyframe selection
-# - export keyframes from video files / image sequence directories
-
 if(ALICEVISION_HAVE_OIIO)
-	add_executable(aliceVision_utils_keyframeSelection main_keyframeSelection.cpp)
 
-	target_link_libraries(aliceVision_utils_keyframeSelection
-	  aliceVision_system
-	  aliceVision_keyframe
-	  ${OPENIMAGEIO_LIBRARIES}
-	  ${Boost_LIBRARIES}
-	)
+  # Keyframe selection
+  # - export keyframes from video files / image sequence directories
 
-	set_property(TARGET aliceVision_utils_keyframeSelection
-	  PROPERTY FOLDER AliceVision/Software/Utils
-	)
+  add_executable(aliceVision_utils_keyframeSelection main_keyframeSelection.cpp)
 
-	install(TARGETS aliceVision_utils_keyframeSelection
-	  DESTINATION bin/
-	)
+  target_link_libraries(aliceVision_utils_keyframeSelection
+    aliceVision_system
+    aliceVision_keyframe
+    ${OPENIMAGEIO_LIBRARIES}
+    ${Boost_LIBRARIES}
+  )
+
+  set_property(TARGET aliceVision_utils_keyframeSelection
+    PROPERTY FOLDER AliceVision/Software/Utils
+  )
+
+  install(TARGETS aliceVision_utils_keyframeSelection
+    DESTINATION bin/
+  )
+
+  # Split 360 images in input in order to export square images
+
+  add_executable(aliceVision_utils_split360Images main_split360Images.cpp)
+  target_link_libraries(aliceVision_utils_split360Images
+    aliceVision_system
+    aliceVision_keyframe
+    aliceVision_numeric
+    aliceVision_image
+    ${OPENIMAGEIO_LIBRARIES}
+    ${Boost_LIBRARIES}
+  )
+
+  set_property(TARGET aliceVision_utils_split360Images
+    PROPERTY FOLDER AliceVision/Software/Pipeline
+  )
+
+  install(TARGETS aliceVision_utils_split360Images
+    DESTINATION bin/
+  )
+
+
 endif()
