@@ -18,27 +18,15 @@
 namespace aliceVision {
 namespace voctree {
 
-/**
- * @brief Given a vocabulary tree and a set of features it builds a database
- *
- * @param[in] fileFullPath A file containing the path the features to load, 
- * it could be a .txt or an AliceVision .json or the path to a directory containing
- * the feature. In the case of a json, it is assumed that the descriptors are
- * in the same folder as the file. 
- * @param[in] tree The vocabulary tree to be used for feature quantization
- * @param[out] db The built database
- * @param[out] documents A map containing for each image the list of associated visual words
- * @param[in] Nmax The maximum number of features loaded in each desc file. For Nmax = 0 (default), all the descriptors are loaded.
- * @return the number of overall features read
- */
 template<class DescriptorT, class VocDescriptorT>
-std::size_t populateDatabase(const std::string &fileFullPath,
+std::size_t populateDatabase(const std::string &filepath,
+                             const std::string &descFolder,
                              const VocabularyTree<VocDescriptorT> &tree,
                              Database &db,
                              const int Nmax)
 {
   std::map<IndexT, std::string> descriptorsFiles;
-  getListOfDescriptorFiles(fileFullPath, descriptorsFiles);
+  getListOfDescriptorFiles(filepath, descFolder, descriptorsFiles);
   std::size_t numDescriptors = 0;
   
   // Read the descriptors
@@ -71,14 +59,15 @@ std::size_t populateDatabase(const std::string &fileFullPath,
 }
 
 template<class DescriptorT, class VocDescriptorT>
-std::size_t populateDatabase(const std::string &fileFullPath,
+std::size_t populateDatabase(const std::string &filepath,
+                             const std::string &descFolder,
                              const VocabularyTree<VocDescriptorT> &tree,
                              Database &db,
                              std::map<size_t, std::vector<DescriptorT>> &allDescriptors,
                              const int Nmax)
 {
   std::map<IndexT, std::string> descriptorsFiles;
-  getListOfDescriptorFiles(fileFullPath, descriptorsFiles);
+  getListOfDescriptorFiles(filepath, descFolder, descriptorsFiles);
   std::size_t numDescriptors = 0;
 
   // Read the descriptors
@@ -111,20 +100,6 @@ std::size_t populateDatabase(const std::string &fileFullPath,
   return numDescriptors;
 }
 
-/**
- * @brief Given an non empty database, it queries the database with a set of images
- * and their associated features and returns, for each image, the first \p numResults best
- * matching documents in the database
- * 
- * @param[in] fileFullPath A file containing the path the features to load, it could be a .txt or an AliceVision .json
- * @param[in] tree The vocabulary tree to be used for feature quantization
- * @param[in] db The built database
- * @param[in] numResults The number of results to retrieve for each image
- * @param[out] allMatches The matches for all the images
- * @param[in] distanceMethod the method used to compute distance between histograms.
- * @param[in] Nmax The maximum number of features loaded in each desc file. For Nmax = 0 (default), all the descriptors are loaded. 
- * @see queryDatabase()
- */
 template<class DescriptorT, class VocDescriptorT>
 void queryDatabase(const std::string &fileFullPath,
                    const VocabularyTree<VocDescriptorT> &tree,
@@ -143,7 +118,8 @@ void queryDatabase(const std::string &fileFullPath,
  * and their associated features and returns, for each image, the first \p numResults best
  * matching documents in the database
  * 
- * @param[in] fileFullPath A file containing the path the features to load, it could be a .txt or an AliceVision .json
+ * @param[in] filepath A file containing the path the features to load, it could be a .txt or an AliceVision .json
+ * @param[in] descFolder The folder containing the descriptor files (optional)
  * @param[in] tree The vocabulary tree to be used for feature quantization
  * @param[in] db The built database
  * @param[in] numResults The number of results to retrieve for each image
@@ -153,7 +129,8 @@ void queryDatabase(const std::string &fileFullPath,
  * @param[in] Nmax The maximum number of features loaded in each desc file. For Nmax = 0 (default), all the descriptors are loaded.
  */
 template<class DescriptorT, class VocDescriptorT>
-void queryDatabase(const std::string &fileFullPath,
+void queryDatabase(const std::string &filepath,
+                   const std::string &descFolder,
                    const VocabularyTree<VocDescriptorT> &tree,
                    const Database &db,
                    size_t numResults,
@@ -163,7 +140,7 @@ void queryDatabase(const std::string &fileFullPath,
                    const int Nmax)
 {
   std::map<IndexT, std::string> descriptorsFiles;
-  getListOfDescriptorFiles(fileFullPath, descriptorsFiles);
+  getListOfDescriptorFiles(filepath, descFolder, descriptorsFiles);
   
   // Read the descriptors
   ALICEVISION_LOG_DEBUG("queryDatabase: Reading the descriptors from " << descriptorsFiles.size() << " files...");
@@ -199,26 +176,17 @@ void queryDatabase(const std::string &fileFullPath,
   }
 }
 
-/**
- * @brief Returns some statistics (histogram) 
- * 
- * @param[in] fileFullPath A file containing the path the features to load, it could be a .txt or an AliceVision .json
- * @param[in] tree The vocabulary tree to be used for feature quantization
- * @param[in] db The built database
- * @param[in] distanceMethod The distance method used for create the pair list
- * @param[in/out] globalHistogram The histogram of the "population" of voctree leaves. 
- * @see queryDatabase()
- */
 template<class DescriptorT, class VocDescriptorT>
 void voctreeStatistics(
-    const std::string &fileFullPath,
+    const std::string &filepath,
+    const std::string &descFolder,
     const VocabularyTree<VocDescriptorT> &tree,
     const Database &db,
     const std::string &distanceMethod,
     std::map<int, int> &globalHistogram)
 {
   std::map<IndexT, std::string> descriptorsFiles;
-  getListOfDescriptorFiles(fileFullPath, descriptorsFiles);
+  getListOfDescriptorFiles(filepath, descFolder, descriptorsFiles);
   
   // Read the descriptors
   ALICEVISION_LOG_DEBUG("Reading the descriptors from " << descriptorsFiles.size() << " files.");

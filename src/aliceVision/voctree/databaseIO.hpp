@@ -15,6 +15,7 @@ namespace voctree {
  * @brief Given a vocabulary tree and a set of features it builds a database
  *
  * @param[in] fileFullPath A file containing the path the features to load, it could be a .txt or an AliceVision .json
+ * @param[in] descFolder The folder containing the descriptor files (optional)
  * @param[in] tree The vocabulary tree to be used for feature quantization
  * @param[out] db The built database
  * @param[out] documents A map containing for each image the list of associated visual words
@@ -22,7 +23,8 @@ namespace voctree {
  * @return the number of overall features read
  */
 template<class DescriptorT, class VocDescriptorT>
-std::size_t populateDatabase(const std::string &fileFullPath,
+std::size_t populateDatabase(const std::string &filepath,
+                             const std::string &descFolder,
                              const VocabularyTree<VocDescriptorT> &tree,
                              Database &db,
                              const int Nmax = 0);
@@ -32,7 +34,8 @@ std::size_t populateDatabase(const std::string &fileFullPath,
  * and their associated features and returns, for each image, the first \p numResults best
  * matching documents in the database
  * 
- * @param[in] fileFullPath A file containithe path the features to load, it could be a .txt or an AliceVision .json
+ * @param[in] filepath A file containithe path the features to load, it could be a .txt or an AliceVision .json
+ * @param[in] descFolder The folder containing the descriptor files (optional)
  * @param[in] tree The vocabulary tree to be usedng  for feature quantization
  * @param[in] db The built database
  * @param[in] numResults The number of results to retrieve for each image
@@ -42,7 +45,8 @@ std::size_t populateDatabase(const std::string &fileFullPath,
  * @see queryDatabase()
  */
 template<class DescriptorT, class VocDescriptorT>
-void queryDatabase(const std::string &fileFullPath,
+void queryDatabase(const std::string &filepath,
+                   const std::string &descFolder,
                    const VocabularyTree<VocDescriptorT> &tree,
                    const Database &db,
                    size_t numResults,
@@ -55,7 +59,8 @@ void queryDatabase(const std::string &fileFullPath,
  * and their associated features and returns, for each image, the first \p numResults best
  * matching documents in the database
  * 
- * @param[in] fileFullPath A file containing the path the features to load, it could be a .txt or an AliceVision .json
+ * @param[in] filepath A file containing the path the features to load, it could be a .txt or an AliceVision .json
+ * @param[in] descFolder The folder containing the descriptor files (optional)
  * @param[in] tree The vocabulary tree to be used for feature quantization
  * @param[in] db The built database
  * @param[in] numResults The number of results to retrieve for each image
@@ -65,7 +70,8 @@ void queryDatabase(const std::string &fileFullPath,
  * @param[in] Nmax The maximum number of features loaded in each desc file. For Nmax = 0 (default), all the descriptors are loaded.
  */
 template<class DescriptorT, class VocDescriptorT>
-void queryDatabase(const std::string &fileFullPath,
+void queryDatabase(const std::string &filepath,
+                   const std::string &descFolder,
                    const VocabularyTree<VocDescriptorT> &tree,
                    const Database &db,
                    size_t numResults,
@@ -78,6 +84,7 @@ void queryDatabase(const std::string &fileFullPath,
  * @brief Returns some statistics (histogram) 
  * 
  * @param[in] fileFullPath A file containing the path the features to load, it could be a .txt or an AliceVision .json
+ * @param[in] descFolder The folder containing the descriptor files (optional)
  * @param[in] tree The vocabulary tree to be used for feature quantization
  * @param[in] db The built database
  * @param[in] distanceMethod The distance method used for create the pair list
@@ -86,7 +93,8 @@ void queryDatabase(const std::string &fileFullPath,
  */
 template<class DescriptorT, class VocDescriptorT>
 void voctreeStatistics(
-    const std::string &fileFullPath,
+    const std::string &filepath,
+    const std::string &descFolder,
     const VocabularyTree<VocDescriptorT> &tree,
     const Database &db,
     const std::string &distanceMethod,

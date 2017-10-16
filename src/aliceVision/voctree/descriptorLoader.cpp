@@ -54,7 +54,7 @@ void getInfoBinFile(const std::string &path, int dim, size_t &numDescriptors, in
   }
 }
 
-void getListOfDescriptorFiles(const std::string &fileFullPath, std::map<IndexT, std::string> &descriptorsFiles)
+void getListOfDescriptorFiles(const std::string &filepath, const std::string &descFolder, std::map<IndexT, std::string> &descriptorsFiles)
 {
   namespace bfs = boost::filesystem;
   std::ifstream fs;
@@ -62,7 +62,7 @@ void getListOfDescriptorFiles(const std::string &fileFullPath, std::map<IndexT, 
   
   descriptorsFiles.clear();
 
-  bfs::path bp(fileFullPath);
+  bfs::path bp(filepath);
 
   // If the input is a directory, list all .desc files recursively.
   if(bfs::is_directory(bp))
@@ -80,9 +80,9 @@ void getListOfDescriptorFiles(const std::string &fileFullPath, std::map<IndexT, 
   
   if(!bp.has_extension())
   {
-    ALICEVISION_CERR("File without extension not recognized! " << fileFullPath);
-    ALICEVISION_CERR("The file  " + fileFullPath + " is neither a JSON nor a txt file");
-    throw std::invalid_argument("Unrecognized extension for " + fileFullPath);
+    ALICEVISION_CERR("File without extension not recognized! " << filepath);
+    ALICEVISION_CERR("The file  " + filepath + " is neither a JSON nor a txt file");
+    throw std::invalid_argument("Unrecognized extension for " + filepath);
   }
 
   // get the extension of the file and put it lowercase
@@ -98,14 +98,14 @@ void getListOfDescriptorFiles(const std::string &fileFullPath, std::map<IndexT, 
     // processing a file .txt containing the relative paths
 
     // Extract the folder path from the list file path
-    pathToFiles = bfs::path(fileFullPath).parent_path();
+    pathToFiles = bfs::path(filepath).parent_path();
 
     // Open file
-    fs.open(fileFullPath, std::ios::in);
+    fs.open(filepath, std::ios::in);
     if(!fs.is_open())
     {
-      ALICEVISION_CERR("Error while opening " << fileFullPath);
-      throw std::invalid_argument("Error while opening " + fileFullPath);
+      ALICEVISION_CERR("Error while opening " << filepath);
+      throw std::invalid_argument("Error while opening " + filepath);
     }
 
     // read the file line by line and store in the vector the descriptors paths
@@ -127,19 +127,22 @@ void getListOfDescriptorFiles(const std::string &fileFullPath, std::map<IndexT, 
 
     // open the sfm_data file
     sfm::SfMData sfmdata;
-    sfm::Load(sfmdata, fileFullPath, sfm::ESfMData::VIEWS);
+    sfm::Load(sfmdata, filepath, sfm::ESfMData::VIEWS);
 
     // get the number of files to load
     size_t numberOfFiles = sfmdata.GetViews().size();
 
     if(numberOfFiles == 0)
     {
-      ALICEVISION_CERR("It seems like there are no views in " << fileFullPath);
+      ALICEVISION_CERR("There are no Views in " << filepath);
       return;
     }
 
-    // get the base path for the files
-    pathToFiles = bfs::path(fileFullPath).parent_path();
+    // get the base path for the descriptor files
+    if(!descFolder.empty())
+        pathToFiles = descFolder;
+    else
+        pathToFiles = bfs::path(filepath).parent_path();
 
     // explore the sfm_data container to get the files path
     for(const auto &view : sfmdata.GetViews())

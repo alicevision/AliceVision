@@ -46,11 +46,12 @@ void getInfoBinFile(const std::string &path, int dim, size_t &numDescriptors, in
  * 
  * 3. a path to a directory containing the features and the descriptors. The function
  * looks for all .desc files there inside.
- *  
+ *
  * @param[in] listFile The input filename containing the list of files to read
+ * @param[in] descFolder The folder containing the descriptor files (optional)
  * @param[out] descriptorsFiles A list of descriptor files 
  */
-void getListOfDescriptorFiles(const std::string &fileFullPath, std::map<IndexT, std::string> &descriptorsFiles);
+void getListOfDescriptorFiles(const std::string &fileFullPath, const std::string &descFolder, std::map<IndexT, std::string> &descriptorsFiles);
 
 /**
  * @brief Read a set of descriptors from a file containing the path to the descriptor files.
@@ -81,14 +82,15 @@ void getListOfDescriptorFiles(const std::string &fileFullPath, std::map<IndexT, 
  * could contain SIFT descriptors stored as uchar (the default type) and we want 
  * to cast these into SIFT descriptors stored in memory as floats.
  *
- * @param[in] fileFullPath the input filename containing the list of files to read
+ * @param[in] filepath the input filename containing the list of files to read
+ * @param[in] descFolder The folder containing the descriptor files (optional)
  * @param[in,out] descriptors the vector to which append all the read descriptors
  * @param[in,out] numFeatures a vector collecting for each file read the number of features read
  * @return the total number of features read
  *
  */
 template<class DescriptorT, class FileDescriptorT>
-size_t readDescFromFiles(const std::string &fileFullPath, std::vector<DescriptorT>& descriptors, std::vector<size_t> &numFeatures);
+size_t readDescFromFiles(const std::string &filepath, const std::string &descFolder, std::vector<DescriptorT>& descriptors, std::vector<size_t> &numFeatures);
 
 } // namespace voctree
 } // namespace aliceVision
