@@ -2,7 +2,7 @@
 #include <openMVG/image/image.hpp>
 #include <openMVG/features/sift/SIFT_describer.hpp>
 #include <openMVG/exif/sensor_width_database/ParseDatabase.hpp>
-#include <openMVG/logger.hpp>
+#include <openMVG/system/Logger.hpp>
 
 #include <tuple>
 #include <cassert>

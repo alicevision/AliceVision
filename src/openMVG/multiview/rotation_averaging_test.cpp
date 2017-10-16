@@ -7,6 +7,7 @@
 #include "CppUnitLite/TestHarness.h"
 #include "openMVG/multiview/rotation_averaging.hpp"
 #include "openMVG/multiview/essential.hpp"
+#include <openMVG/system/Logger.hpp>
 #include "testing/testing.h"
 
 #include "openMVG/multiview/test_data_sets.hpp"

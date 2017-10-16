@@ -60,8 +60,8 @@ void SfM_Data_Structure_Computation_Blind::triangulate(SfM_Data & sfm_data) cons
         const View * view = sfm_data.views.at(itObs.first).get();
         if (sfm_data.IsPoseAndIntrinsicDefined(view))
         {
-          const IntrinsicBase * cam = sfm_data.GetIntrinsics().at(view->id_intrinsic).get();
-          const Pose3 pose = sfm_data.GetPoseOrDie(view);
+          const IntrinsicBase * cam = sfm_data.GetIntrinsics().at(view->getIntrinsicId()).get();
+          const Pose3 pose = sfm_data.getPose(*view);
           trianObj.add(
             cam->get_projective_equivalent(pose),
             cam->get_ud_pixel(itObs.second.x));
@@ -198,8 +198,8 @@ bool SfM_Data_Structure_Computation_Robust::robust_triangulation(
       Observations::const_iterator itObs = observations.begin();
       std::advance(itObs, it);
       const View * view = sfm_data.views.at(itObs->first).get();
-      const IntrinsicBase * cam = sfm_data.GetIntrinsics().at(view->id_intrinsic).get();
-      const Pose3 pose = sfm_data.GetPoseOrDie(view);
+      const IntrinsicBase * cam = sfm_data.GetIntrinsics().at(view->getIntrinsicId()).get();
+      const Pose3 pose = sfm_data.getPose(*view);
       const double z = pose.depth(current_model); // TODO: cam->depth(pose(X));
       bChierality &= z > 0;
     }
@@ -214,10 +214,11 @@ bool SfM_Data_Structure_Computation_Robust::robust_triangulation(
     for (const auto& itObs : observations)
     {
       const View * view = sfm_data.views.at(itObs.first).get();
-      const IntrinsicBase * intrinsic = sfm_data.GetIntrinsics().at(view->id_intrinsic).get();
-      const Pose3 pose = sfm_data.GetPoseOrDie(view);
+      const IntrinsicBase * intrinsic = sfm_data.GetIntrinsics().at(view->getIntrinsicId()).get();
+      const Pose3 pose = sfm_data.getPose(*view);
       const Vec2 residual = intrinsic->residual(pose, current_model, itObs.second.x);
       const double residual_d = residual.norm();
+
       if (residual_d < dThresholdPixel)
       {
         inlier_set.insert(itObs.first);
@@ -253,8 +254,8 @@ Vec3 SfM_Data_Structure_Computation_Robust::track_sample_triangulation(
     Observations::const_iterator itObs = observations.begin();
     std::advance(itObs, idx);
     const View * view = sfm_data.views.at(itObs->first).get();
-    const IntrinsicBase * cam = sfm_data.GetIntrinsics().at(view->id_intrinsic).get();
-    const Pose3 pose = sfm_data.GetPoseOrDie(view);
+    const IntrinsicBase * cam = sfm_data.GetIntrinsics().at(view->getIntrinsicId()).get();
+    const Pose3 pose = sfm_data.getPose(*view);
     trianObj.add(
       cam->get_projective_equivalent(pose),
       cam->get_ud_pixel(itObs->second.x));

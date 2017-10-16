@@ -12,27 +12,32 @@ using namespace openMVG::sfm;
 
 // Create a SfM scene with desired count of views & poses & intrinsic (shared or not)
 // Add a 3D point with observation in 2 view (just in order to have non empty data)
-SfM_Data create_test_scene(const IndexT viewsCount, const IndexT pointCount, const bool bSharedIntrinsic)
+SfM_Data create_test_scene(IndexT singleViewsCount,
+                           IndexT pointCount,
+                           IndexT rigCount,
+                           IndexT subPoseCount,
+                           bool bSharedIntrinsic)
 {
   SfM_Data sfm_data;
   sfm_data.s_root_path = "./";
 
   std::srand(time(nullptr));
 
-  for(IndexT i = 0; i < viewsCount; ++i)
+  for(IndexT i = 0; i < singleViewsCount; ++i)
   {
     // Add views
     std::ostringstream os;
     os << "dataset/" << i << ".jpg";
     const IndexT id_view = i, id_pose = i;
     const IndexT id_intrinsic = bSharedIntrinsic ? 0 : i; //(shared or not intrinsics)
-    sfm_data.views[id_view] = std::make_shared<View>(os.str(),id_view, id_intrinsic, id_pose, 1000, 1000);
+
+    std::shared_ptr<View> view = std::make_shared<View>(os.str(),id_view, id_intrinsic, id_pose, 1000, 1000);
+    sfm_data.views[id_view] = view;
 
     // Add poses
     const Mat3 r = Mat3::Random();
     const Vec3 c = Vec3::Random();
-    sfm_data.poses[i] = geometry::Pose3(r, c);
-    // sfm_data.poses[i] = Pose3();
+    sfm_data.setPose(*view, geometry::Pose3(r, c));
 
     // Add intrinsics
     if (bSharedIntrinsic)
@@ -44,6 +49,51 @@ SfM_Data create_test_scene(const IndexT viewsCount, const IndexT pointCount, con
     {
       sfm_data.intrinsics[i] = std::make_shared<cameras::Pinhole_Intrinsic>(1000, 1000, 36.0, std::rand()%10000, std::rand()%10000);
     }
+  }
+
+
+  std::size_t nbIntrinsics = (bSharedIntrinsic ? 1 : singleViewsCount);
+  std::size_t nbPoses = singleViewsCount;
+  std::size_t nbViews = singleViewsCount;
+  const std::size_t nbRigPoses = 5;
+
+  for(IndexT rigId = 0; rigId < rigCount; ++rigId)
+  {
+    sfm_data.getRigs().emplace(rigId, Rig(subPoseCount));
+    Rig& rig = sfm_data.getRigs().at(rigId);
+
+    for(IndexT subPoseId = 0; subPoseId < subPoseCount; ++subPoseId)
+    {
+      rig.setSubPose(subPoseId, RigSubPose());
+      sfm_data.intrinsics[nbIntrinsics + subPoseId] = std::make_shared<cameras::Pinhole_Intrinsic>(1000, 1000, 36.0, std::rand()%10000, std::rand()%10000);
+
+      for(std::size_t pose = 0; pose < nbRigPoses; ++pose)
+      {
+        std::ostringstream os;
+        os << "dataset/rig_" << rigId << "_"  <<  subPoseId << "_" << pose << ".jpg";
+
+        std::shared_ptr<View> view = std::make_shared<View>(os.str(),
+                                                            nbViews,
+                                                            nbIntrinsics + subPoseId,
+                                                            nbPoses + pose,
+                                                            1000,
+                                                            1000,
+                                                            rigId,
+                                                            subPoseId);
+
+        if((pose == 0) || (subPoseId == 0))
+        {
+          const Mat3 r = Mat3::Random();
+          const Vec3 c = Vec3::Random();
+          sfm_data.setPose(*view, geometry::Pose3(r, c));
+        }
+
+        sfm_data.views[nbViews] = view;
+        ++nbViews;
+      }
+    }
+    nbPoses += nbRigPoses;
+    nbIntrinsics += subPoseCount;
   }
 
   // Fill with not meaningful tracks
@@ -77,7 +127,7 @@ TEST(AlembicImporter, importExport) {
     int flags = ALL;
 
     // Create a random scene
-    const SfM_Data sfm_data = create_test_scene(5, 50, true);
+    const SfM_Data sfm_data = create_test_scene(5, 50, 2, 3, true);
     
 
     /*********************************************************************/
@@ -118,7 +168,7 @@ TEST(AlembicImporter, importExport) {
     {
         EXPECT_TRUE(Save(
         sfm_data,
-        abcFile.c_str(),
+        abcFile.c_str(),              
         ESfM_Data(flags)));
     }
 
@@ -163,7 +213,7 @@ TEST(AlembicImporter, importExport) {
     {
         EXPECT_TRUE(Load(sfmJsonToABC, jsonFile3, ESfM_Data(flags)));
         EXPECT_EQ( sfm_data.views.size(), sfmJsonToABC.views.size());
-        EXPECT_EQ( sfm_data.poses.size(), sfmJsonToABC.poses.size());
+        EXPECT_EQ( sfm_data.GetPoses().size(), sfmJsonToABC.GetPoses().size());
         EXPECT_EQ( sfm_data.intrinsics.size(), sfmJsonToABC.intrinsics.size());
         EXPECT_EQ( sfm_data.structure.size(), sfmJsonToABC.structure.size());
         EXPECT_EQ( sfm_data.control_points.size(), sfmJsonToABC.control_points.size());
@@ -183,7 +233,7 @@ TEST(AlembicImporter, importExport) {
     {
         EXPECT_TRUE(Load(sfmJsonToABC2, abcFile3, ESfM_Data(flags)));
         EXPECT_EQ( sfm_data.views.size(), sfmJsonToABC2.views.size());
-        EXPECT_EQ( sfm_data.poses.size(), sfmJsonToABC2.poses.size());
+        EXPECT_EQ( sfm_data.GetPoses().size(), sfmJsonToABC2.GetPoses().size());
         EXPECT_EQ( sfm_data.intrinsics.size(), sfmJsonToABC2.intrinsics.size());
         EXPECT_EQ( sfm_data.structure.size(), sfmJsonToABC2.structure.size());
         EXPECT_EQ( sfm_data.control_points.size(), sfmJsonToABC2.control_points.size());
@@ -203,7 +253,7 @@ TEST(AlembicImporter, importExport) {
     {
         EXPECT_TRUE(Load(sfmJsonToABC3, abcFile4, ESfM_Data(flags)));
         EXPECT_EQ( sfm_data.views.size(), sfmJsonToABC3.views.size());
-        EXPECT_EQ( sfm_data.poses.size(), sfmJsonToABC3.poses.size());
+        EXPECT_EQ( sfm_data.GetPoses().size(), sfmJsonToABC3.GetPoses().size());
         EXPECT_EQ( sfm_data.intrinsics.size(), sfmJsonToABC3.intrinsics.size());
         EXPECT_EQ( sfm_data.structure.size(), sfmJsonToABC3.structure.size());
         EXPECT_EQ( sfm_data.control_points.size(), sfmJsonToABC3.control_points.size());

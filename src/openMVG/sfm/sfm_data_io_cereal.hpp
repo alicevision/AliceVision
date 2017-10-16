@@ -1,16 +1,7 @@
+#pragma once
 
-// Copyright (c) 2015 Pierre MOULON.
-
-// This Source Code Form is subject to the terms of the Mozilla Public
-// License, v. 2.0. If a copy of the MPL was not distributed with this
-// file, You can obtain one at http://mozilla.org/MPL/2.0/.
-
-
-#ifndef OPENMVG_SFM_DATA_IO_CEREAL_HPP
-#define OPENMVG_SFM_DATA_IO_CEREAL_HPP
-
-#include "openMVG/sfm/sfm_data_io.hpp"
-#include "openMVG/stl/split.hpp"
+#include <openMVG/sfm/sfm_data_io.hpp>
+#include <openMVG/stl/split.hpp>
 
 #include <cereal/archives/portable_binary.hpp>
 #include <cereal/archives/xml.hpp>
@@ -76,45 +67,38 @@ bool Load_Cereal(
     
     if (b_views)
       archive(cereal::make_nvp("views", data.views));
-    else
-      if (bBinary) { // Binary file require read all the member
-        Views views;
-        archive(cereal::make_nvp("views", views));
-      }
+    else if (bBinary) // Binary file require read all the member
+      archive(cereal::make_nvp("views", Views()));
+
 
     if (b_intrinsics)
       archive(cereal::make_nvp("intrinsics", data.intrinsics));
-    else
-      if (bBinary) { // Binary file require read all the member
-        Intrinsics intrinsics;
-        archive(cereal::make_nvp("intrinsics", intrinsics));
-      }
+    else if (bBinary) // Binary file require read all the member
+      archive(cereal::make_nvp("intrinsics", Intrinsics()));
 
     if (b_extrinsics)
-      archive(cereal::make_nvp("extrinsics", data.poses));
-    else
-      if (bBinary) { // Binary file require read all the member
-        Poses poses;
-        archive(cereal::make_nvp("extrinsics", poses));
-      }
+    {
+      archive(cereal::make_nvp("extrinsics", data.GetPoses()));
+      archive(cereal::make_nvp("rigs", data.getRigs()));
+    }
+    else if (bBinary)
+    {
+      // Binary file require read all the member
+      archive(cereal::make_nvp("extrinsics", Poses()));
+      archive(cereal::make_nvp("rigs", Rigs()));
+    }
 
     if (b_structure)
       archive(cereal::make_nvp("structure", data.structure));
-    else
-      if (bBinary) { // Binary file require read all the member
-        Landmarks structure;
-        archive(cereal::make_nvp("structure", structure));
-      }
+    else if (bBinary) // Binary file require read all the member
+      archive(cereal::make_nvp("structure", Landmarks()));
 
     if (versions[1] > 1) // version > 0.1
     {
       if (b_control_point)
         archive(cereal::make_nvp("control_points", data.control_points));
-      else
-        if (bBinary) { // Binary file require read all the member
-          Landmarks control_points;
-          archive(cereal::make_nvp("control_points", control_points));
-        }
+      else if (bBinary) // Binary file require read all the member
+        archive(cereal::make_nvp("control_points", Landmarks()));
     }
   }
   catch (const cereal::Exception & e)
@@ -153,7 +137,7 @@ bool Save_Cereal(
     archiveType archive(stream);
     // since OpenMVG 0.9, the sfm_data version 0.2 is introduced
     //  - it adds control_points storage
-    const std::string version = "0.3.0";
+    const std::string version = "0.3.1";
     archive(cereal::make_nvp("sfm_data_version", version));
     archive(cereal::make_nvp("root_path", data.s_root_path));
     archive(cereal::make_nvp("featureFolder", data._featureFolder));
@@ -170,9 +154,15 @@ bool Save_Cereal(
       archive(cereal::make_nvp("intrinsics", Intrinsics()));
 
     if (b_extrinsics)
-      archive(cereal::make_nvp("extrinsics", data.poses));
+    {
+      archive(cereal::make_nvp("extrinsics", data.GetPoses()));
+      archive(cereal::make_nvp("rigs", data.getRigs()));
+    }
     else
+    {
       archive(cereal::make_nvp("extrinsics", Poses()));
+      archive(cereal::make_nvp("rigs", Rigs()));
+    }
 
     // Structure -> See for export in another file
     if (b_structure)
@@ -192,5 +182,3 @@ bool Save_Cereal(
 
 } // namespace sfm
 } // namespace openMVG
-
-#endif // OPENMVG_SFM_DATA_IO_CEREAL_HPP

@@ -63,12 +63,12 @@ int main(int argc, char *argv[]) {
       iter != sfm_data.GetViews().end(); ++iter, ++my_progress_bar)
     {
       const View * view = iter->second.get();
-      bool bIntrinsicDefined = view->id_intrinsic != UndefinedIndexT &&
-        sfm_data.GetIntrinsics().find(view->id_intrinsic) != sfm_data.GetIntrinsics().end();
+      bool bIntrinsicDefined = view->getIntrinsicId() != UndefinedIndexT &&
+        sfm_data.GetIntrinsics().find(view->getIntrinsicId()) != sfm_data.GetIntrinsics().end();
 
-      Intrinsics::const_iterator iterIntrinsic = sfm_data.GetIntrinsics().find(view->id_intrinsic);
+      Intrinsics::const_iterator iterIntrinsic = sfm_data.GetIntrinsics().find(view->getIntrinsicId());
 
-      const std::string srcImage = stlplus::create_filespec(sfm_data.s_root_path, view->s_Img_path);
+      const std::string srcImage = stlplus::create_filespec(sfm_data.s_root_path, view->getImagePath());
       const std::string dstImage = stlplus::create_filespec(
         sOutDir, stlplus::filename_part(srcImage));
 

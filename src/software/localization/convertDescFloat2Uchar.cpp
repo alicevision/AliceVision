@@ -1,5 +1,5 @@
 #include <openMVG/features/descriptor.hpp>
-#include <openMVG/logger.hpp>
+#include <openMVG/system/Logger.hpp>
 
 #include <boost/progress.hpp>
 #include <boost/filesystem.hpp>

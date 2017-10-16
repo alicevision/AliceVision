@@ -56,8 +56,8 @@ void GroupSharedIntrinsics(SfM_Data & sfm_data)
   {
     View * v = iterView->second.get();
     // Update the Id only if a corresponding index exists
-    if (old_new_reindex.count(v->id_intrinsic))
-      v->id_intrinsic = old_new_reindex[v->id_intrinsic];
+    if (old_new_reindex.count(v->getIntrinsicId()))
+      v->setIntrinsicId(old_new_reindex[v->getIntrinsicId()]);
   }
 }
 

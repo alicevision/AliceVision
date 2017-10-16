@@ -1,6 +1,6 @@
 #include "openMVG/calibration/calibration.hpp"
 
-#include <openMVG/logger.hpp>
+#include <openMVG/system/Logger.hpp>
 #include <openMVG/system/timer.hpp>
 
 #include <ctime>

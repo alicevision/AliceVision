@@ -45,7 +45,7 @@ TEST(GLOBAL_SFM, RotationAveragingL2_TranslationAveragingL1) {
 
   // Remove poses and structure
   SfM_Data sfm_data_2 = sfm_data;
-  sfm_data_2.poses.clear();
+  sfm_data_2.GetPoses().clear();
   sfm_data_2.structure.clear();
 
   GlobalSfMReconstructionEngine_RelativeMotions sfmEngine(
@@ -95,7 +95,7 @@ TEST(GLOBAL_SFM, RotationAveragingL1_TranslationAveragingL1) {
 
   // Remove poses and structure
   SfM_Data sfm_data_2 = sfm_data;
-  sfm_data_2.poses.clear();
+  sfm_data_2.GetPoses().clear();
   sfm_data_2.structure.clear();
 
   GlobalSfMReconstructionEngine_RelativeMotions sfmEngine(
@@ -145,7 +145,7 @@ TEST(GLOBAL_SFM, RotationAveragingL2_TranslationAveragingL2_Chordal) {
 
   // Remove poses and structure
   SfM_Data sfm_data_2 = sfm_data;
-  sfm_data_2.poses.clear();
+  sfm_data_2.GetPoses().clear();
   sfm_data_2.structure.clear();
 
   GlobalSfMReconstructionEngine_RelativeMotions sfmEngine(
@@ -194,7 +194,7 @@ TEST(GLOBAL_SFM, RotationAveragingL2_TranslationAveragingSoftL1) {
 
   // Remove poses and structure
   SfM_Data sfm_data_2 = sfm_data;
-  sfm_data_2.poses.clear();
+  sfm_data_2.GetPoses().clear();
   sfm_data_2.structure.clear();
 
   GlobalSfMReconstructionEngine_RelativeMotions sfmEngine(

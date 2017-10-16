@@ -11,7 +11,7 @@
 #include <openMVG/sfm/pipelines/sfm_robust_model_estimation.hpp>
 
 #include <openMVG/system/timer.hpp>
-#include <openMVG/logger.hpp>
+#include <openMVG/system/Logger.hpp>
 
 #include <third_party/progress/progress.hpp>
 
@@ -108,7 +108,7 @@ bool CCTagLocalizer::loadReconstructionDescriptors(const sfm::SfM_Data & sfm_dat
   // Read for each view the corresponding Regions and store them
   for(const auto &iter : _sfm_data.GetViews())
   {
-    const IndexT id_view = iter.second->id_view;
+    const IndexT id_view = iter.second->getViewId();
     if(observationsPerView.count(id_view) == 0)
       continue;
     const auto& observations = observationsPerView.at(id_view);
@@ -138,9 +138,9 @@ bool CCTagLocalizer::loadReconstructionDescriptors(const sfm::SfM_Data & sfm_dat
     // and create an histogram of cctags per image
     for(const auto &iter : sfm_data.GetViews())
     {
-      const IndexT id_view = iter.second->id_view;
+      const IndexT id_view = iter.second->getViewId();
       const features::Regions& regions = _regionsPerView.getRegions(id_view, _cctagDescType);
-      const std::string &sImageName = iter.second.get()->s_Img_path;
+      const std::string &sImageName = iter.second.get()->getImagePath();
       std::stringstream ss;
 
       ss << "Image " << sImageName;
@@ -773,7 +773,7 @@ void CCTagLocalizer::getAllAssociations(const features::CCTAG_Regions &queryRegi
   for(const IndexT keyframeId : nearestKeyFrames)
   {
     OPENMVG_LOG_DEBUG(keyframeId);
-    OPENMVG_LOG_DEBUG(_sfm_data.GetViews().at(keyframeId)->s_Img_path);
+    OPENMVG_LOG_DEBUG(_sfm_data.GetViews().at(keyframeId)->getImagePath());
     const features::Regions& matchedRegions = _regionsPerView.getRegions(keyframeId, _cctagDescType);
     const ReconstructedRegionsMapping& regionsMapping = _reconstructedRegionsMappingPerView.at(keyframeId).at(_cctagDescType);
     const features::CCTAG_Regions & matchedCCtagRegions = dynamic_cast<const features::CCTAG_Regions &>(matchedRegions);
@@ -790,8 +790,8 @@ void CCTagLocalizer::getAllAssociations(const features::CCTAG_Regions &queryRegi
       namespace bfs = boost::filesystem;
       const sfm::View *mview = _sfm_data.GetViews().at(keyframeId).get();
       const std::string queryImage = bfs::path(imagePath).stem().string();
-      const std::string matchedImage = bfs::path(mview->s_Img_path).stem().string();
-      const std::string matchedPath = (bfs::path(_sfm_data.s_root_path) /  bfs::path(mview->s_Img_path)).string();
+      const std::string matchedImage = bfs::path(mview->getImagePath()).stem().string();
+      const std::string matchedPath = (bfs::path(_sfm_data.s_root_path) /  bfs::path(mview->getImagePath())).string();
 
       // the directory where to save the feature matches
       const auto baseDir = bfs::path(param._visualDebug) / queryImage;
@@ -813,7 +813,7 @@ void CCTagLocalizer::getAllAssociations(const features::CCTAG_Regions &queryRegi
                                      imageSize, 
                                      queryRegions,
                                      matchedPath,
-                                     std::make_pair(mview->ui_width, mview->ui_height), 
+                                     std::make_pair(mview->getWidth(), mview->getHeight()),
                                      matchedCCtagRegions,
                                      vec_featureMatches,
                                      outputName.string(),

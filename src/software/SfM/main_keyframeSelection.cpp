@@ -1,5 +1,5 @@
 #include <openMVG/keyframe/KeyframeSelector.hpp>
-#include <openMVG/logger.hpp>
+#include <openMVG/system/Logger.hpp>
 
 #include <boost/filesystem.hpp>
 #include <boost/program_options.hpp> 

@@ -8,7 +8,7 @@
 #ifndef OPENMVG_ROBUST_ESTIMATION_SIMPLE_RANSAC_H_
 #define OPENMVG_ROBUST_ESTIMATION_SIMPLE_RANSAC_H_
 
-#include "openMVG/logger.hpp"
+#include <openMVG/system/Logger.hpp>
 #include "openMVG/robust_estimation/rand_sampling.hpp"
 #include "openMVG/robust_estimation/robust_ransac_tools.hpp"
 #include <limits>

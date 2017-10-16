@@ -6,9 +6,10 @@
 
 #pragma once
 
-#include "openMVG/types.hpp"
-#include "openMVG/stl/split.hpp"
-#include "openMVG/sfm/sfm_data.hpp"
+#include <openMVG/types.hpp>
+#include <openMVG/stl/split.hpp>
+#include <openMVG/sfm/sfm_data.hpp>
+#include <openMVG/system/Logger.hpp>
 
 #include <set>
 #include <iostream>

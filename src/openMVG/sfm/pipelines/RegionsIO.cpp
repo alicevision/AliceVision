@@ -60,15 +60,15 @@ bool loadRegionsPerView(features::RegionsPerView& regionsPerView,
    {
      for(std::size_t i = 0; i < imageDescriberTypes.size(); ++i)
      {
-       if(viewIdFilter.empty() || viewIdFilter.find(iter->second.get()->id_view) != viewIdFilter.end())
+       if(viewIdFilter.empty() || viewIdFilter.find(iter->second.get()->getViewId()) != viewIdFilter.end())
        {
-         std::unique_ptr<features::Regions> regionsPtr = loadRegions(folder, iter->second.get()->id_view, *imageDescribers[i]);
+         std::unique_ptr<features::Regions> regionsPtr = loadRegions(folder, iter->second.get()->getViewId(), *imageDescribers[i]);
 
          if(regionsPtr)
          {
   #pragma omp critical
            {
-             regionsPerView.addRegions(iter->second.get()->id_view, imageDescriberTypes[i], regionsPtr.release());
+             regionsPerView.addRegions(iter->second.get()->getViewId(), imageDescriberTypes[i], regionsPtr.release());
              ++my_progress_bar;
            }
          }
@@ -111,7 +111,7 @@ bool loadFeaturesPerView(features::FeaturesPerView& featuresPerView,
       for(std::size_t i = 0; i < imageDescriberTypes.size(); ++i)
       {
         const std::string featFile = stlplus::create_filespec(storageDirectory,
-                std::to_string(iter->second->id_view),
+                std::to_string(iter->second->getViewId()),
                 EImageDescriberType_enumToString(imageDescriberTypes[i]) + ".feat");
 
         OPENMVG_LOG_TRACE("featFilename: " << featFile);
@@ -128,7 +128,7 @@ bool loadFeaturesPerView(features::FeaturesPerView& featuresPerView,
 #pragma omp critical
         {
           // save loaded Features as PointFeature
-          featuresPerView.addFeatures(iter->second.get()->id_view, imageDescriberTypes[i], regionsPtr->GetRegionsPositions());
+          featuresPerView.addFeatures(iter->second.get()->getViewId(), imageDescriberTypes[i], regionsPtr->GetRegionsPositions());
           ++my_progress_bar;
         }
       }

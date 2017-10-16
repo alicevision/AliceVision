@@ -37,8 +37,8 @@ TEST(SfM_Data_IntrinsicGrouping, Grouping_One)
   CHECK_EQUAL(2, sfm_data.intrinsics.size());
   GroupSharedIntrinsics(sfm_data);
   CHECK_EQUAL(1, sfm_data.intrinsics.size());
-  CHECK_EQUAL(0, sfm_data.views[0]->id_intrinsic);
-  CHECK_EQUAL(0, sfm_data.views[1]->id_intrinsic);
+  CHECK_EQUAL(0, sfm_data.views[0]->getIntrinsicId());
+  CHECK_EQUAL(0, sfm_data.views[1]->getIntrinsicId());
 }
 
 // Unique intrinsics object must not be grouped
@@ -84,7 +84,7 @@ TEST(SfM_Data_IntrinsicGrouping, Grouping_Two)
   std::map<IndexT, std::set<IndexT> > map_viewCount_per_intrinsic_id;
   for (const auto & val : sfm_data.GetViews())
   {
-    map_viewCount_per_intrinsic_id[val.second->id_intrinsic].insert(val.second->id_view);
+    map_viewCount_per_intrinsic_id[val.second->getIntrinsicId()].insert(val.second->getViewId());
   }
   // Check that two view Id are linked to 0 and 1
   CHECK_EQUAL(2, map_viewCount_per_intrinsic_id.size());
@@ -121,7 +121,7 @@ TEST(SfM_Data_IntrinsicGrouping, Grouping_Two_Different_Camera_Type)
   std::map<IndexT, std::set<IndexT> > map_viewCount_per_intrinsic_id;
   for (const auto & val : sfm_data.GetViews())
   {
-    map_viewCount_per_intrinsic_id[val.second->id_intrinsic].insert(val.second->id_view);
+    map_viewCount_per_intrinsic_id[val.second->getIntrinsicId()].insert(val.second->getViewId());
   }
   // Check that two view Id are linked to 0 and 1
   CHECK_EQUAL(2, map_viewCount_per_intrinsic_id.size());

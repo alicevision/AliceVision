@@ -9,7 +9,7 @@
 #include <openMVG/features/regions_factory.hpp>
 
 #include <openMVG/types.hpp>
-#include <openMVG/logger.hpp>
+#include <openMVG/system/Logger.hpp>
 
 #include <stdint.h>
 #include <vector>

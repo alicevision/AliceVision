@@ -6,6 +6,8 @@
 #include <openMVG/cameras/Camera_Pinhole.hpp>
 #include <openMVG/types.hpp>
 
+#include <Alembic/Abc/OObject.h>
+
 #include <memory>
 #include <string>
 
@@ -20,48 +22,79 @@ public:
 
   /**
    * @brief Add a set of 3D points from a SFM scene
-   * @param points The 3D points to add
+   * @param[in] points The 3D points to add
    */
   void addPoints(const sfm::Landmarks &points,
                  bool withVisibility=true);
 
+
+  /**
+   * @brief Add a camera rig
+   *
+   * @param[in] rigId The rig Id
+   * @param[in] rigPoseId The rig pose Id
+   * @param[in] views rig views
+   * @param[in] viewsImagePaths The Paths to the images
+   * @param[in] intrinsics The cameras intrinsics
+   * @param[in] rigPose The rig pose
+   * @param[in] subPoses The sub-poses
+   */
+  void appendCameraRig(IndexT rigId,
+                       IndexT rigPoseId,
+                       const std::vector<View>& views,
+                       const std::vector<std::string>& viewsImagePaths,
+                       const std::vector<cameras::Pinhole_Intrinsic*>& intrinsics,
+                       const geometry::Pose3& rigPose,
+                       const std::vector<RigSubPose>& subPoses);
+
+
   /**
    * @brief Add a single camera
-   * 
-   * @param[in] name An identifier for the camera
+   *
+   * @param[in] cameraName The camera name
+   * @param[in] view The corresponding view
+   * @param[in] intrinsic The camera intrinsic
    * @param[in] pose The camera pose
-   * @param[in] cam The camera intrinsics
-   * @param[in] imagePath Path to the image
-   * @param[in] id_view View id
-   * @param[in] id_intrinsic Intrinsic id
-   * @param[in] sensorWidth_mm Width of the sensor in millimeters
-   * @param[in] id_pose Pose id
+   * @param[in] viewImagePath The Path to the image
    */
-  void appendCamera(const std::string &name, 
-                    const geometry::Pose3 &pose, 
-                    const cameras::Pinhole_Intrinsic *cam,
-                    const std::string &imagePath,
-                    const IndexT id_view,
-                    const IndexT id_intrinsic,
-                    const float sensorWidth_mm=36.0,
-                    const IndexT id_pose=UndefinedIndexT);
-  
+  void appendCamera(const std::string& cameraName,
+                    const View& view,
+                    const std::string& viewImagePath,
+                    const cameras::Pinhole_Intrinsic* intrinsic,
+                    const geometry::Pose3& pose);
+  /**
+   * @brief Add a single camera
+   *
+   * @param[in] cameraName The camera name
+   * @param[in] view The corresponding view
+   * @param[in] intrinsic The camera intrinsics
+   * @param[in] pose The camera pose
+   * @param[in] viewImagePath The Path to the image
+   * @param[in,out] parent The Alembic parent node
+   */
+  void appendCamera(const std::string& cameraName,
+                    const View& view,
+                    const std::string& viewImagePath,
+                    const cameras::Pinhole_Intrinsic* intrinsic,
+                    const geometry::Pose3& pose,
+                    Alembic::Abc::OObject& parent);
+
   /**
    * @brief Initiate an animated camera
    * 
-   * @param cameraName An identifier for the camera
+   * @param[in] cameraName An identifier for the camera
    */
   void initAnimatedCamera(const std::string &cameraName);
   
   /**
    * @brief Add a keyframe to the animated camera
    * 
-   * @param pose The camera pose
-   * @param cam The camera intrinsics parameters
-   * @param imagePath The localized image path
-   * @param id_view View id
-   * @param id_intrinsic Intrinsic id
-   * @param sensorWidth_mm Width of the sensor in millimeters
+   * @param[in] pose The camera pose
+   * @param[in] cam The camera intrinsics parameters
+   * @param[in] imagePath The localized image path
+   * @param[in] id_view View id
+   * @param[in] id_intrinsic Intrinsic id
+   * @param[in] sensorWidth_mm Width of the sensor in millimeters
    */
   void addCameraKeyframe(const geometry::Pose3 &pose,
                            const cameras::Pinhole_Intrinsic *cam,
@@ -78,8 +111,8 @@ public:
   /**
    * @brief Add SfM Data
    * 
-   * @param sfmdata SfM_Data container
-   * @param flags_part filter the elements to add
+   * @param[in] sfmdata SfM_Data container
+   * @param[in] flags_part filter the elements to add
    */
   void add(const sfm::SfM_Data &sfmdata, sfm::ESfM_Data flags_part = sfm::ESfM_Data::ALL);
 

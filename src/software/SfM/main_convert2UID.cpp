@@ -69,16 +69,16 @@ int main(int argc, char** argv) {
     std::string filename;
     std::string newname;
     std::string compared2(1,'/');
-    std::string id = to_string(view->id_view);
+    std::string id = to_string(view->getViewId());
             
     if (directory.substr(directory.size() - 1, directory.size()).compare(compared2) == 0)
     {
-      filename = directory + view->s_Img_path.substr(1 ,view->s_Img_path.find('.'));
+      filename = directory + view->getImagePath().substr(1 ,view->getImagePath().find('.'));
       newname = directory + id;
     }
     else 
     {
-      filename = directory + view->s_Img_path.substr(0 ,view->s_Img_path.find('.') + 1);
+      filename = directory + view->getImagePath().substr(0 ,view->getImagePath().find('.') + 1);
       newname = directory + compared2 + id;
     }
    

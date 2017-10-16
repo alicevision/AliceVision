@@ -147,8 +147,8 @@ double RMSE(const SfM_Data & sfm_data)
       itObs != observations.end(); ++itObs)
     {
       const View * view = sfm_data.GetViews().find(itObs->first)->second.get();
-      const Pose3 pose = sfm_data.GetPoseOrDie(view);
-      const std::shared_ptr<IntrinsicBase> intrinsic = sfm_data.GetIntrinsics().find(view->id_intrinsic)->second;
+      const Pose3 pose = sfm_data.getPose(*view);
+      const std::shared_ptr<IntrinsicBase> intrinsic = sfm_data.GetIntrinsics().find(view->getIntrinsicId())->second;
       const Vec2 residual = intrinsic->residual(pose, iterTracks->second.X, itObs->second.x);
       vec.push_back( residual(0) );
       vec.push_back( residual(1) );
@@ -186,7 +186,7 @@ SfM_Data getInputScene(const NViewDataSet & d, const nViewDatasetConfigurator & 
   for (int i = 0; i < nviews; ++i)
   {
     Pose3 pose(d._R[i], d._C[i]);
-    sfm_data.poses[i] = pose;
+    sfm_data.setPose(*sfm_data.views.at(i), pose);
   }
 
   // 3. Intrinsic data (shared, so only one camera intrinsic is defined)

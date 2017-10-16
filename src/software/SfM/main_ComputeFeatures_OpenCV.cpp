@@ -560,11 +560,11 @@ int main(int argc, char **argv)
     {
       const View * view = iterViews->second.get();
       const std::string sView_filename = stlplus::create_filespec(sfm_data.s_root_path,
-        view->s_Img_path);
+        view->getImagePath());
       const std::string sFeat = stlplus::create_filespec(sOutDir,
-        stlplus::basename_part(std::to_string(view->id_view)), "feat");
+        stlplus::basename_part(std::to_string(view->getViewId())), "feat");
       const std::string sDesc = stlplus::create_filespec(sOutDir,
-        stlplus::basename_part(std::to_string(view->id_view)), "desc");
+        stlplus::basename_part(std::to_string(view->getViewId())), "desc");
       
 
       //If features or descriptors file are missing, compute them
@@ -577,7 +577,7 @@ int main(int argc, char **argv)
         }
 
         // Compute features and descriptors and export them to files
-        std::cout << "Extracting features from image " << view->id_view << " - (" << sFeat << ")" << std::endl;
+        std::cout << "Extracting features from image " << view->getViewId() << " - (" << sFeat << ")" << std::endl;
         std::unique_ptr<Regions> regions;
 
         image_describer->Describe(imageGray, regions);

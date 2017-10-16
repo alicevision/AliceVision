@@ -29,8 +29,8 @@ bool computeSimilarity(const SfM_Data & sfmDataA,
   for (size_t i = 0; i  < commonViewIds.size(); ++i)
   {
     IndexT viewId = commonViewIds[i];
-    xA.col(i) = sfmDataA.GetPoses().at(sfmDataA.GetViews().at(viewId)->id_pose).center();
-    xB.col(i) = sfmDataB.GetPoses().at(sfmDataB.GetViews().at(viewId)->id_pose).center();
+    xA.col(i) = sfmDataA.GetPoses().at(sfmDataA.GetViews().at(viewId)->getPoseId()).center();
+    xB.col(i) = sfmDataB.GetPoses().at(sfmDataB.GetViews().at(viewId)->getPoseId()).center();
   }
 
   // Compute rigid transformation p'i = S R pi + t

@@ -32,7 +32,7 @@ set(sfm_files_headers
   sfm_landmark.hpp
   sfm_report.hpp
   sfm_view.hpp
-  sfm_view_metadata.hpp
+  Rig.hpp
   utils/alignment.hpp
   utils/sfm_data_UID_utils.hpp
 )
@@ -112,6 +112,7 @@ install(TARGETS openMVG_sfm
 UNIT_TEST(openMVG sfm_data_io    "openMVG_features;openMVG_sfm;openMVG_system;stlplus")
 UNIT_TEST(openMVG sfm_data_BA    "openMVG_multiview_test_data;openMVG_features;openMVG_multiview;openMVG_sfm;openMVG_system;stlplus")
 UNIT_TEST(openMVG sfm_data_utils "openMVG_features;openMVG_multiview;openMVG_system;openMVG_sfm;stlplus")
+UNIT_TEST(openMVG Rig            "openMVG_features;openMVG_sfm;openMVG_system;stlplus")
 
 if(OPENMVG_HAVE_ALEMBIC)
   UNIT_TEST(openMVG AlembicImporter "openMVG_sfm;${ABC_LIBRARIES}")

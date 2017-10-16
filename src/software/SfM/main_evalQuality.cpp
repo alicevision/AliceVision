@@ -79,7 +79,7 @@ int main(int argc, char **argv)
     std::cerr << "The input SfM_Data file \""<< sComputedFile << "\" cannot be read." << std::endl;
     return EXIT_FAILURE;
   }
-  std::cout << sfm_data_gt.poses.size() << " gt cameras have been found" << std::endl;
+  std::cout << sfm_data_gt.GetPoses().size() << " gt cameras have been found" << std::endl;
 
   //-- Load the camera that we have to evaluate
   SfM_Data sfm_data;
@@ -97,19 +97,19 @@ int main(int argc, char **argv)
   {
     const auto &view = iter.second;
     // Jump to next view if there is no correponding pose in reconstruction
-    if(sfm_data.GetPoses().find(view->id_pose) == sfm_data.GetPoses().end())
+    if(sfm_data.GetPoses().find(view->getPoseId()) == sfm_data.GetPoses().end())
     {
-      std::cout << "no pose in input (" << view->id_pose << ")" << std::endl;
+      std::cout << "no pose in input (" << view->getPoseId() << ")" << std::endl;
       continue;
     }
 
     // Jump to next view if there is no corresponding view in GT
-    if(sfm_data_gt.GetViews().find(view->id_view) == sfm_data_gt.GetViews().end())
+    if(sfm_data_gt.GetViews().find(view->getViewId()) == sfm_data_gt.GetViews().end())
     {
-      std::cout << "no view in GT (" << view->id_view << ")" << std::endl;
+      std::cout << "no view in GT (" << view->getViewId() << ")" << std::endl;
       continue;
     }
-    const int idPoseGT = sfm_data_gt.GetViews().at(view->id_view)->id_pose;
+    const int idPoseGT = sfm_data_gt.GetViews().at(view->getViewId())->getPoseId();
 
     //-- GT
     const geometry::Pose3 pose_gt = sfm_data_gt.GetPoses().at(idPoseGT);
@@ -117,7 +117,7 @@ int main(int argc, char **argv)
     vec_camRotGT.push_back(pose_gt.rotation());
 
     //-- Data to evaluate
-    const geometry::Pose3 pose_eval = sfm_data.GetPoses().at(view->id_pose);
+    const geometry::Pose3 pose_eval = sfm_data.GetPoses().at(view->getPoseId());
     vec_C.push_back(pose_eval.center());
     vec_camRot.push_back(pose_eval.rotation());
   }

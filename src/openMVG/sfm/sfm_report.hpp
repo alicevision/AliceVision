@@ -34,8 +34,8 @@ static bool Generate_SfM_Report
       itObs != observations.end(); ++itObs)
     {
       const View * view = sfm_data.GetViews().at(itObs->first).get();
-      const geometry::Pose3 pose = sfm_data.GetPoseOrDie(view);
-      const cameras::IntrinsicBase * intrinsic = sfm_data.GetIntrinsics().at(view->id_intrinsic).get();
+      const geometry::Pose3 pose = sfm_data.getPose(*view);
+      const cameras::IntrinsicBase * intrinsic = sfm_data.GetIntrinsics().at(view->getIntrinsicId()).get();
       // Use absolute values
       const Vec2 residual = intrinsic->residual(pose, iterTracks->second.X, itObs->second.x).array().abs();
       residuals_per_view[itObs->first].push_back(residual(0));
@@ -59,7 +59,8 @@ static bool Generate_SfM_Report
   htmlDocStream.pushInfo( "Dataset info:" + sNewLine );
 
   std::ostringstream os;
-  os << " #views: " << sfm_data.GetViews().size() << sNewLine
+  os << "#views: " << sfm_data.GetViews().size() << sNewLine
+  << " #valid views: " << sfm_data.getValidViews().size() << sNewLine
   << " #poses: " << sfm_data.GetPoses().size() << sNewLine
   << " #intrinsics: " << sfm_data.GetIntrinsics().size() << sNewLine
   << " #tracks: " << sfm_data.GetLandmarks().size() << sNewLine
@@ -86,12 +87,12 @@ static bool Generate_SfM_Report
     ++iterV)
   {
     const View * v = iterV->second.get();
-    const IndexT id_view = v->id_view;
+    const IndexT id_view = v->getViewId();
 
     os.str("");
     os << sRowBegin
       << sColBegin << id_view << sColEnd
-      << sColBegin + stlplus::basename_part(v->s_Img_path) + sColEnd;
+      << sColBegin + stlplus::basename_part(v->getImagePath()) + sColEnd;
 
     // IdView | basename | #Observations | residuals min | residual median | residual max
     if (sfm_data.IsPoseAndIntrinsicDefined(v))

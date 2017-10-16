@@ -7,7 +7,7 @@
 
 #include "VideoFeed.hpp"
 
-#include <openMVG/logger.hpp>
+#include <openMVG/system/Logger.hpp>
 #include <openMVG/image/image_converter.hpp>
 
 #include <opencv2/core.hpp>

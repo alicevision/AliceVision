@@ -110,10 +110,10 @@ bool exportToMVE2Format(
       if (!sfm_data.IsPoseAndIntrinsicDefined(view))
         continue;
 
-      viewIdToviewIndex[view->id_view] = view_index;
+      viewIdToviewIndex[view->getViewId()] = view_index;
       // Create current view subdirectory 'view_xxxx.mve'
       std::ostringstream padding;
-      // Warning: We use view_index instead of view->id_view because MVE use indexes instead of IDs.
+      // Warning: We use view_index instead of view->getViewId() because MVE use indexes instead of IDs.
       padding << std::setw(4) << std::setfill('0') << view_index;
 
       sOutViewIteratorDirectory = stlplus::folder_append_separator(sOutViewsDirectory) + "view_" + padding.str() + ".mve";
@@ -123,11 +123,11 @@ bool exportToMVE2Format(
       }
 
       // We have a valid view with a corresponding camera & pose
-      const std::string srcImage = stlplus::create_filespec(sfm_data.s_root_path, view->s_Img_path);
+      const std::string srcImage = stlplus::create_filespec(sfm_data.s_root_path, view->getImagePath());
       const std::string dstImage =
         stlplus::create_filespec(stlplus::folder_append_separator(sOutViewIteratorDirectory), "undistorted","png");
 
-      Intrinsics::const_iterator iterIntrinsic = sfm_data.GetIntrinsics().find(view->id_intrinsic);
+      Intrinsics::const_iterator iterIntrinsic = sfm_data.GetIntrinsics().find(view->getIntrinsicId());
       const IntrinsicBase * cam = iterIntrinsic->second.get();
       if (cam->isValid() && cam->have_disto())
       {
@@ -152,7 +152,7 @@ bool exportToMVE2Format(
       }
 
       // Prepare to write an MVE 'meta.ini' file for the current view
-      const Pose3 pose = sfm_data.GetPoseOrDie(view);
+      const Pose3 pose = sfm_data.getPose(*view);
       const Pinhole_Intrinsic * pinhole_cam = static_cast<const Pinhole_Intrinsic *>(cam);
 
       const Mat3 rotation = pose.rotation();

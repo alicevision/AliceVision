@@ -6,7 +6,7 @@
  */
 
 #include <openMVG/voctree/tree_builder.hpp>
-#include <openMVG/logger.hpp>
+#include <openMVG/system/Logger.hpp>
 
 #include <testing/testing.h>
 

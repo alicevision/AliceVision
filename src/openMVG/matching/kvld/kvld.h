@@ -19,6 +19,8 @@ the terms of the BSD license (see the COPYING file).
 #include <vector>
 #include <sstream>
 #include "algorithm.h"
+
+#include <openMVG/system/Logger.hpp>
 #include <openMVG/image/pixel_types.hpp>
 #include <openMVG/numeric/numeric.h>
 

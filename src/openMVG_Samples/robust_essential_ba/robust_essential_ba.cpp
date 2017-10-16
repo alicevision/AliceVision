@@ -208,21 +208,21 @@ int main() {
     const bool bSharedIntrinsic = (iBAType == 2 || iBAType == 3) ? true : false;
 
     // Setup a SfM scene with two view corresponding the pictures
-    SfM_Data tiny_scene;
-    tiny_scene.views[0].reset(new View("", 0, bSharedIntrinsic ? 0 : 1, 0, imageL.Width(), imageL.Height()));
-    tiny_scene.views[1].reset(new View("", 1, bSharedIntrinsic ? 0 : 1, 1, imageR.Width(), imageR.Height()));
+    SfM_Data tinyScene;
+    tinyScene.views[0].reset(new View("", 0, bSharedIntrinsic ? 0 : 1, 0, imageL.Width(), imageL.Height()));
+    tinyScene.views[1].reset(new View("", 1, bSharedIntrinsic ? 0 : 1, 1, imageR.Width(), imageR.Height()));
     // Setup intrinsics camera data
     switch (iBAType)
     {
       case 1: // Each view use it's own pinhole camera intrinsic
-        tiny_scene.intrinsics[0].reset(new Pinhole_Intrinsic(imageL.Width(), imageL.Height(), K(0, 0), K(0, 2), K(1, 2)));
-        tiny_scene.intrinsics[1].reset(new Pinhole_Intrinsic(imageR.Width(), imageR.Height(), K(0, 0), K(0, 2), K(1, 2)));
+        tinyScene.intrinsics[0].reset(new Pinhole_Intrinsic(imageL.Width(), imageL.Height(), K(0, 0), K(0, 2), K(1, 2)));
+        tinyScene.intrinsics[1].reset(new Pinhole_Intrinsic(imageR.Width(), imageR.Height(), K(0, 0), K(0, 2), K(1, 2)));
         break;
       case 2: // Shared pinhole camera intrinsic
-        tiny_scene.intrinsics[0].reset(new Pinhole_Intrinsic(imageL.Width(), imageL.Height(), K(0, 0), K(0, 2), K(1, 2)));
+        tinyScene.intrinsics[0].reset(new Pinhole_Intrinsic(imageL.Width(), imageL.Height(), K(0, 0), K(0, 2), K(1, 2)));
         break;
       case 3: // Shared pinhole camera intrinsic with radial K3 distortion
-        tiny_scene.intrinsics[0].reset(new Pinhole_Intrinsic_Radial_K3(imageL.Width(), imageL.Height(), K(0, 0), K(0, 2), K(1, 2)));
+        tinyScene.intrinsics[0].reset(new Pinhole_Intrinsic_Radial_K3(imageL.Width(), imageL.Height(), K(0, 0), K(0, 2), K(1, 2)));
         break;
       default:
         std::cerr << "Invalid input number" << std::endl;
@@ -230,13 +230,16 @@ int main() {
     }
 
     // Setup poses camera data
-    const Pose3 pose0 = tiny_scene.poses[tiny_scene.views[0]->id_pose] = Pose3(Mat3::Identity(), Vec3::Zero());
-    const Pose3 pose1 = tiny_scene.poses[tiny_scene.views[1]->id_pose] = relativePose_info.relativePose;
+    const Pose3 pose0 = Pose3(Mat3::Identity(), Vec3::Zero());
+    const Pose3 pose1 = relativePose_info.relativePose;
+
+    tinyScene.setPose(*tinyScene.views.at(0), pose0);
+    tinyScene.setPose(*tinyScene.views.at(1), pose1);
 
     // Init structure by inlier triangulation
-    const Mat34 P1 = tiny_scene.intrinsics[tiny_scene.views[0]->id_intrinsic]->get_projective_equivalent(pose0);
-    const Mat34 P2 = tiny_scene.intrinsics[tiny_scene.views[1]->id_intrinsic]->get_projective_equivalent(pose1);
-    Landmarks & landmarks = tiny_scene.structure;
+    const Mat34 P1 = tinyScene.intrinsics[tinyScene.views[0]->getIntrinsicId()]->get_projective_equivalent(pose0);
+    const Mat34 P2 = tinyScene.intrinsics[tinyScene.views[1]->getIntrinsicId()]->get_projective_equivalent(pose1);
+    Landmarks & landmarks = tinyScene.structure;
     for (size_t i = 0; i < relativePose_info.vec_inliers.size(); ++i)  {
       const SIOPointFeature & LL = regionsL->Features()[vec_PutativeMatches[relativePose_info.vec_inliers[i]]._i];
       const SIOPointFeature & RR = regionsR->Features()[vec_PutativeMatches[relativePose_info.vec_inliers[i]]._j];
@@ -247,18 +250,18 @@ int main() {
       if (pose0.depth(X) < 0 && pose1.depth(X) < 0)
           continue;
       // Add a new landmark (3D point with it's 2d observations)
-      landmarks[i].observations[tiny_scene.views[0]->id_view] = Observation(LL.coords().cast<double>(), vec_PutativeMatches[relativePose_info.vec_inliers[i]]._i);
-      landmarks[i].observations[tiny_scene.views[1]->id_view] = Observation(RR.coords().cast<double>(), vec_PutativeMatches[relativePose_info.vec_inliers[i]]._j);
+      landmarks[i].observations[tinyScene.views[0]->getViewId()] = Observation(LL.coords().cast<double>(), vec_PutativeMatches[relativePose_info.vec_inliers[i]]._i);
+      landmarks[i].observations[tinyScene.views[1]->getViewId()] = Observation(RR.coords().cast<double>(), vec_PutativeMatches[relativePose_info.vec_inliers[i]]._j);
       landmarks[i].X = X;
     }
-    Save(tiny_scene, "EssentialGeometry_start.ply", ESfM_Data(ALL));
+    Save(tinyScene, "EssentialGeometry_start.ply", ESfM_Data(ALL));
 
     //D. Perform Bundle Adjustment of the scene
 
     Bundle_Adjustment_Ceres bundle_adjustment_obj;
-    bundle_adjustment_obj.Adjust(tiny_scene);
+    bundle_adjustment_obj.Adjust(tinyScene);
 
-    Save(tiny_scene, "EssentialGeometry_refined.ply", ESfM_Data(ALL));
+    Save(tinyScene, "EssentialGeometry_refined.ply", ESfM_Data(ALL));
   }
   return EXIT_SUCCESS;
 }

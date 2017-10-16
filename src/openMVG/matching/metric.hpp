@@ -13,7 +13,7 @@
 #include <openMVG/config.hpp>
 
 #if OPENMVG_IS_DEFINED(OPENMVG_HAVE_SSE)
-#include <openMVG/logger.hpp>
+#include <openMVG/system/Logger.hpp>
 #include <xmmintrin.h>
 #endif
 

@@ -9,7 +9,7 @@
 #define OPENMVG_SFM_MATCHES_PROVIDER_HPP
 
 #include <openMVG/types.hpp>
-#include <openMVG/logger.hpp>
+#include <openMVG/system/Logger.hpp>
 #include <openMVG/sfm/sfm_data.hpp>
 #include <openMVG/matching/indMatch.hpp>
 #include <openMVG/matching/indMatch_utils.hpp>
