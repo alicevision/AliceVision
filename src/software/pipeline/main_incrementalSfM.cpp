@@ -11,6 +11,7 @@
 #include <dependencies/stlplus3/filesystemSimplified/file_system.hpp>
 
 #include <boost/program_options.hpp>
+#include <boost/filesystem.hpp>
 
 #include <cstdlib>
 
@@ -85,11 +86,11 @@ int main(int argc, char **argv)
   std::string sfmDataFilename;
   std::string featuresDirectory;
   std::string matchesDirectory;
-  std::string outDirectory;
+  std::string outputSfM;
 
   // user optional parameters
 
-  std::string outSfMDataFilename = "SfmData.json";
+  std::string extraInfoDirectory;
   std::string describerTypesName = feature::EImageDescriberType_enumToString(feature::EImageDescriberType::SIFT);
   std::string outInterFileExtension = ".ply";
   std::pair<std::string,std::string> initialPairString("","");
@@ -107,8 +108,8 @@ int main(int argc, char **argv)
   requiredParams.add_options()
     ("input,i", po::value<std::string>(&sfmDataFilename)->required(),
       "SfMData file.")
-    ("output,o", po::value<std::string>(&outDirectory)->required(),
-      "Path of the output directory.")
+    ("output,o", po::value<std::string>(&outputSfM)->required(),
+      "Path to the output SfMData file.")
     ("featuresDirectory,f", po::value<std::string>(&featuresDirectory)->required(),
       "Path to a directory containing the extracted features.")
     ("matchesDirectory,m", po::value<std::string>(&matchesDirectory)->required(),
@@ -116,8 +117,8 @@ int main(int argc, char **argv)
 
   po::options_description optionalParams("Optional parameters");
   optionalParams.add_options()
-    ("outSfMDataFilename", po::value<std::string>(&outSfMDataFilename)->default_value(outSfMDataFilename),
-      "Filename of the output SfMData file.")
+    ("extraInfoDirectory", po::value<std::string>(&extraInfoDirectory)->default_value(extraInfoDirectory),
+      "Directory for intermediate reconstruction files and additional reconstruction information files.")
     ("describerTypes,d", po::value<std::string>(&describerTypesName)->default_value(describerTypesName),
       feature::EImageDescriberType_informations().c_str())
     ("interFileExtension", po::value<std::string>(&outInterFileExtension)->default_value(outInterFileExtension),
@@ -209,14 +210,19 @@ int main(int argc, char **argv)
     return EXIT_FAILURE;
   }
 
-  if (outDirectory.empty())
+  if (outputSfM.empty())
   {
-    std::cerr << "\nIt is an invalid output directory" << std::endl;
+    std::cerr << "\nIt is an invalid SfMData file path." << std::endl;
     return EXIT_FAILURE;
   }
+  if(extraInfoDirectory.empty())
+  {
+    namespace bfs = boost::filesystem;
+    extraInfoDirectory = bfs::path(outputSfM).parent_path().string();
+  }
 
-  if (!stlplus::folder_exists(outDirectory))
-    stlplus::folder_create(outDirectory);
+  if (!stlplus::folder_exists(extraInfoDirectory))
+    stlplus::folder_create(extraInfoDirectory);
 
   //---------------------------------------
   // Sequential reconstruction process
@@ -225,8 +231,8 @@ int main(int argc, char **argv)
   aliceVision::system::Timer timer;
   ReconstructionEngine_sequentialSfM sfmEngine(
     sfmData,
-    outDirectory,
-    stlplus::create_filespec(outDirectory, "sfm_log.html"));
+    extraInfoDirectory,
+    stlplus::create_filespec(extraInfoDirectory, "sfm_log.html"));
 
   // Configure the featuresPerView & the matches_provider
   sfmEngine.setFeatures(&featuresPerView);
@@ -278,15 +284,14 @@ int main(int argc, char **argv)
 
   std::cout << "...Generating SfM_Report.html" << std::endl;
   Generate_SfM_Report(sfmEngine.Get_SfMData(),
-    stlplus::create_filespec(outDirectory, "sfm_report.html"));
+    stlplus::create_filespec(extraInfoDirectory, "sfm_report.html"));
 
   //-- Export to disk computed scene (data & visualizable results)
-  std::cout << "...Export SfMData to disk:" << std::endl;
-  std::cout << "   " << outSfMDataFilename << std::endl;
+  std::cout << "...Export SfMData to disk:" << outputSfM << std::endl;
 
-  Save(sfmEngine.Get_SfMData(), outSfMDataFilename, ESfMData(ALL));
+  Save(sfmEngine.Get_SfMData(), outputSfM, ESfMData(ALL));
 
-  Save(sfmEngine.Get_SfMData(), stlplus::create_filespec(outDirectory, "cloud_and_poses", outInterFileExtension), ESfMData(VIEWS | EXTRINSICS | INTRINSICS | STRUCTURE));
+  Save(sfmEngine.Get_SfMData(), stlplus::create_filespec(extraInfoDirectory, "cloud_and_poses", outInterFileExtension), ESfMData(VIEWS | EXTRINSICS | INTRINSICS | STRUCTURE));
 
   return EXIT_SUCCESS;
 }
