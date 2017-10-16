@@ -291,6 +291,27 @@ install(TARGETS aliceVision_rigLocalization
 	DESTINATION bin/
 )
 
+# Prepare dense scene for MVS
+
+add_executable(aliceVision_prepareDenseScene main_prepareDenseScene.cpp)
+
+target_link_libraries(aliceVision_prepareDenseScene
+  aliceVision_system
+  aliceVision_image
+  aliceVision_feature
+  aliceVision_sfm
+  stlplus
+  ${BOOST_LIBRARIES}
+)
+
+set_property(TARGET aliceVision_prepareDenseScene
+  PROPERTY FOLDER AliceVision/Software/Pipeline
+)
+
+install(TARGETS aliceVision_prepareDenseScene
+  DESTINATION bin/
+)
+
 ##
 # Export tutorial with valid path thanks to a configuration file
 ##

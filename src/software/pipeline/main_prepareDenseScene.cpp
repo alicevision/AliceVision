@@ -155,7 +155,7 @@ std::string replaceAll( std::string const& original, std::string const& from, st
     return results;
 }
 
-bool exportToCMPMVS2Format(
+bool prepareDenseScene(
   const SfMData & sfm_data,
   int scale,
   const std::string & sOutDirectory // Output CMPMVS files directory
@@ -353,7 +353,7 @@ int main(int argc, char *argv[])
   std::string outDirectory;
   int scale = 2;
 
-  po::options_description allParams("AliceVision exportCMPMVS2");
+  po::options_description allParams("AliceVision prepareDenseScene");
 
   po::options_description requiredParams("Required parameters");
   requiredParams.add_options()
@@ -370,7 +370,7 @@ int main(int argc, char *argv[])
   po::options_description logParams("Log parameters");
   logParams.add_options()
     ("verboseLevel,v", po::value<std::string>(&verboseLevel)->default_value(verboseLevel),
-      "verbosity level (fatal,  error, warning, info, debug, trace).");
+      "verbosity level (fatal, error, warning, info, debug, trace).");
 
   allParams.add(requiredParams).add(optionalParams).add(logParams);
 
@@ -419,7 +419,7 @@ int main(int argc, char *argv[])
       return EXIT_FAILURE;
     }
 
-    if (!exportToCMPMVS2Format(sfm_data, scale, stlplus::filespec_to_path(outDirectory, "_tmp_scale" + std::to_string(scale))))
+    if (!prepareDenseScene(sfm_data, scale, stlplus::filespec_to_path(outDirectory, "_tmp_scale" + std::to_string(scale))))
       return EXIT_FAILURE;
   }
 

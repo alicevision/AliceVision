@@ -124,27 +124,6 @@ install(TARGETS aliceVision_exportCMPMVS
   DESTINATION bin/
 )
 
-# Export a SfM aliceVision scene to CMPMVS format
-
-add_executable(aliceVision_exportCMPMVS2 main_exportCMPMVS2.cpp)
-
-target_link_libraries(aliceVision_exportCMPMVS2
-  aliceVision_system
-  aliceVision_image
-  aliceVision_feature
-  aliceVision_sfm
-  stlplus
-  ${BOOST_LIBRARIES}
-)
-
-set_property(TARGET aliceVision_exportCMPMVS2
-  PROPERTY FOLDER AliceVision/Software/Export
-)
-
-install(TARGETS aliceVision_exportCMPMVS2
-  DESTINATION bin/
-)
-
 # Export a SfM aliceVision scene to MVE(v2) format
 
 add_executable(aliceVision_exportMVE2 main_exportMVE2.cpp)
