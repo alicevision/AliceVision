@@ -57,6 +57,7 @@ install:
 before_script:
   - . ./ci/env.sh
   - export CXX="g++-4.8"
+  - export CTEST_OUTPUT_ON_FAILURE=1
   - mkdir $ALICEVISION_BUILD
   - cd $ALICEVISION_BUILD
   - >
