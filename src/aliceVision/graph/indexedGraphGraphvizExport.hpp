@@ -118,18 +118,18 @@ bool exportToGraphvizFormat_Image(
   return os.good();
 }
 
+/**
+ * @brief Generate a graphviz file.
+ *
+ * For instance, you can convert this export to SVG with the following command:
+ *  > neato -Tsvg -O -Goverlap=scale -Gsplines=false /path/to/file.dot
+ */
 template <typename GraphT>
-void exportToGraphvizData(const std::string& sfile, const GraphT & graph){
-  //Prepare Data
-
+void exportToGraphvizData(const std::string& sfile, const GraphT & graph)
+{
   std::ofstream file(sfile.c_str());
   aliceVision::graph::exportToGraphvizFormat_Nodal(graph, file);
   file.close();
-
-  //Use Graphviz
-  const std::string cmd = "neato -Tsvg -O -Goverlap=scale -Gsplines=false " + sfile;
-  int ret = std::system(cmd.c_str());
-  (void)ret;
 }
 
 } // namespace graph

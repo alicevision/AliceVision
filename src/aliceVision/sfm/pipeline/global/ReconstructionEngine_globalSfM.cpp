@@ -231,18 +231,18 @@ bool ReconstructionEngine_globalSfM::Compute_Global_Rotations
         const std::string sGraph_name = "global_relative_rotation_pose_graph_final";
         graph::indexedGraph putativeGraph(set_pose_ids, rotationAveraging_solver.GetUsedPairs());
         graph::exportToGraphvizData(
-          stlplus::create_filespec(_sOutDirectory, sGraph_name),
+          stlplus::create_filespec(_sOutDirectory, sGraph_name, "dot"),
           putativeGraph.g);
 
+        /*
         using namespace htmlDocument;
         std::ostringstream os;
-
         os << "<br>" << sGraph_name << "<br>"
            << "<img src=\""
            << stlplus::create_filespec(_sOutDirectory, sGraph_name, "svg")
            << "\" height=\"600\">\n";
-
         _htmlDocStream->pushInfo(os.str());
+        */
       }
     }
   }
@@ -676,7 +676,7 @@ void ReconstructionEngine_globalSfM::Compute_Relative_Rotations
         std::inserter(set_ViewIds, set_ViewIds.begin()), stl::RetrieveKey());
       graph::indexedGraph putativeGraph(set_ViewIds, getImagePairs(*_pairwiseMatches));
       graph::exportToGraphvizData(
-        stlplus::create_filespec(_sOutDirectory, "global_relative_rotation_view_graph"),
+        stlplus::create_filespec(_sOutDirectory, "global_relative_rotation_view_graph.dot"),
         putativeGraph.g);
     }
 
@@ -694,17 +694,18 @@ void ReconstructionEngine_globalSfM::Compute_Relative_Rotations
       const std::string sGraph_name = "global_relative_rotation_pose_graph";
       graph::indexedGraph putativeGraph(set_pose_ids, relative_pose_pairs);
       graph::exportToGraphvizData(
-        stlplus::create_filespec(_sOutDirectory, sGraph_name),
+        stlplus::create_filespec(_sOutDirectory, sGraph_name, "dot"),
         putativeGraph.g);
-            using namespace htmlDocument;
+      /*
+      using namespace htmlDocument;
       std::ostringstream os;
 
       os << "<br>" << "global_relative_rotation_pose_graph" << "<br>"
          << "<img src=\""
          << stlplus::create_filespec(_sOutDirectory, "global_relative_rotation_pose_graph", "svg")
          << "\" height=\"600\">\n";
-
       _htmlDocStream->pushInfo(os.str());
+      */
     }
   }
 }

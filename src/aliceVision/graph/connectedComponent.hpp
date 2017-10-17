@@ -53,7 +53,7 @@ std::set<IndexT> CleanGraph_KeepLargestBiEdge_Nodes(
   {
     // Save the graph before cleaning:
     imageGraph::exportToGraphvizData(
-    stlplus::create_filespec(_sOutDirectory, "initialGraph"),
+    stlplus::create_filespec(_sOutDirectory, "initialGraph.dot"),
     putativeGraph.g);
   }
   */
@@ -134,7 +134,7 @@ std::set<IndexT> CleanGraph_KeepLargestBiEdge_Nodes(
   {
     // Save the graph after cleaning:
     imageGraph::exportToGraphvizData(
-      stlplus::create_filespec(_sOutDirectory, "cleanedGraph"),
+      stlplus::create_filespec(_sOutDirectory, "cleanedGraph.dot"),
       putativeGraph.g);
   }*/
 
