@@ -1,15 +1,12 @@
-#
-# http://travis-ci.org configuration file for openMVG
-#
+# http://travis-ci.org configuration file for AliceVision
 
 language: cpp
-dist: precise 
+dist: precise
+sudo: false
 compiler:
   - gcc
   #- clang: #Consider clang later, since cereal does not build fine on the clang CI version
   #  - "3.3"
-
-sudo: false
 
 addons:
   apt:
@@ -60,25 +57,25 @@ install:
 before_script:
   - . ./ci/env.sh
   - export CXX="g++-4.8"
-  - mkdir $OPENMVG_BUILD
-  - cd $OPENMVG_BUILD
+  - mkdir $ALICEVISION_BUILD
+  - cd $ALICEVISION_BUILD
   - >
      cmake \
        -DCMAKE_BUILD_TYPE=${BUILD_TYPE} \
-       -DOPENMVG_BUILD_TESTS=ON \
-       -DOPENMVG_BUILD_EXAMPLES=ON \
-       -DOPENMVG_USE_OPENCV=ON \
+       -DALICEVISION_BUILD_TESTS=ON \
+       -DALICEVISION_BUILD_EXAMPLES=ON \
+       -DALICEVISION_USE_OPENCV=ON \
        -DOpenCV_DIR="${DEPS_INSTALL_PATH}/share/OpenCV" \
-       -DOPENMVG_USE_OPENGV=ON \
+       -DALICEVISION_USE_OPENGV=ON \
        -DOPENGV_DIR="${DEPS_INSTALL_PATH}" \
        -DBOOST_NO_CXX11=ON \
-       -DOPENMVG_USE_INTERNAL_CERES=OFF \
+       -DALICEVISION_USE_INTERNAL_CERES=OFF \
        -DCeres_DIR="${DEPS_INSTALL_PATH}/share/Ceres" \
        -DEIGEN_INCLUDE_DIR_HINTS="${DEPS_INSTALL_PATH}" \
-       -DOPENMVG_USE_CCTAG=OFF \
-       . $OPENMVG_SOURCE
+       -DALICEVISION_USE_CCTAG=OFF \
+       . $ALICEVISION_SOURCE
   # Build for code coverage evaluation
-  #- cmake -DOPENMVG_BUILD_COVERAGE=ON -DOPENMVG_BUILD_TESTS=ON -DOPENMVG_BUILD_EXAMPLES=ON . ../openMVG/src
+  #- cmake -DALICEVISION_BUILD_COVERAGE=ON -DALICEVISION_BUILD_TESTS=ON -DALICEVISION_BUILD_EXAMPLES=ON . ../AliceVision
 
 script:
 # limit GCC builds to a reduced number of thread for the virtual machine
@@ -96,7 +93,7 @@ script:
       fi
       cd $GT_TEST_SOURCE
       git pull
-      python EvaluationLauncher.py -s "$OPENMVG_BUILD/$BUILD_SYSTEM-$BUILD_PROCESSOR-$BUILD_TYPE" -i Benchmarking_Camera_Calibration_2008/ -o ${GT_TEST_OUTPUT} -r ${GT_TEST_RESULTS} --limit 3
+      python EvaluationLauncher.py -s "$ALICEVISION_BUILD/$BUILD_SYSTEM-$BUILD_PROCESSOR-$BUILD_TYPE" -i Benchmarking_Camera_Calibration_2008/ -o ${GT_TEST_OUTPUT} -r ${GT_TEST_RESULTS} --limit 3
       cat ${GT_TEST_RESULTS}
       # Return to root and remove GT huge files to avoid cache problems
       cd $TRAVIS_BUILD_DIR
@@ -105,11 +102,11 @@ script:
     fi
 
 #after_success:
-#  - cd ../openMVG
+#  - cd ../AliceVision
 #  # If GCC: compute code coverage and export it to coveralls
 #  - if [ "$CC" = "gcc" ];
 #    then
-#      lcov --directory ../build/openMVG --base-directory=./src --capture --output-file=coverage.info;
+#      lcov --directory ../build/AliceVision --base-directory=. --capture --output-file=coverage.info;
 #      lcov --remove coverage.info '/usr*' -o coverage.info;
 #      lcov --remove coverage.info '*_test.cpp*' -o coverage.info;
 #      lcov --remove coverage.info '*/third_party/*' -o coverage.info;
