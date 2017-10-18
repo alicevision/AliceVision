@@ -1,3 +1,4 @@
+message("CMake version: ${CMAKE_MAJOR_VERSION}.${CMAKE_MINOR_VERSION}")
 cmake_minimum_required(VERSION 3.4)
 project(CMPMVS LANGUAGES CXX C)
 
@@ -13,10 +14,13 @@ SET_PROPERTY(GLOBAL PROPERTY USE_FOLDERS ON)
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
 
-# There was a bug in FindCUDA fixed in cmake 3.10 that creates empty strings
+# There was a bug in FindCUDA fixed in cmake 3.10 that creates empty strings on the nvcc command line.
+# The solution merged in cmake 3.10 use the command COMMAND_EXPAND_LISTS only available from cmake >= 3.8
 # https://gitlab.kitware.com/cmake/cmake/merge_requests/1008
-# See also: https://gitlab.kitware.com/cmake/cmake/issues/16411
-if("${CMAKE_MAJOR_VERSION}.${CMAKE_MINOR_VERSION}" LESS 3.10)
+# So we use another solution compatible with cmake >= 3.4 proposed here:
+# https://gitlab.kitware.com/cmake/cmake/issues/16411
+# if cmake version < 3.10 use our hacked version of FindCUDA:
+if(${CMAKE_MAJOR_VERSION}.${CMAKE_MINOR_VERSION} VERSION_LESS 3.10)
   set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_CURRENT_SOURCE_DIR}/cmake/compatibilityCUDA)
 endif()
 
