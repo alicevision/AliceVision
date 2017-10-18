@@ -30,6 +30,15 @@ add_definitions(-DBOOST_ALL_DYN_LINK)
 # http://stackoverflow.com/questions/35007134/c-boost-undefined-reference-to-boostfilesystemdetailcopy-file
 add_definitions(-DBOOST_NO_CXX11_SCOPED_ENUMS)
 
+if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+  if(CMAKE_CXX_COMPILER_VERSION VERSION_GREATER "4.9.3")
+    if(CUDA_VERSION VERSION_LESS "8.0")
+      MESSAGE(STATUS "Found gcc >=5 and CUDA <= 7.5, adding workaround C++ flags")
+      set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D_FORCE_INLINES -D_MWAITXINTRIN_H_INCLUDED -D__STRICT_ANSI__")
+    endif(CUDA_VERSION VERSION_LESS "8.0")
+  endif(CMAKE_CXX_COMPILER_VERSION VERSION_GREATER "4.9.3")
+endif(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+
 # GEOGRAM
 find_package(Geogram REQUIRED)
 message(INFO "Geogram: ${GEOGRAM_LIBRARY}, ${GEOGRAM_INCLUDE_DIR}")
