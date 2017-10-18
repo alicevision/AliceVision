@@ -46,13 +46,13 @@ bool computeSimilarity(
     return false;
 
   vec_camPosComputed_T.resize(vec_camPosGT.size());
-  std::vector<double> vec_residualErrors(vec_camPosGT.size());
+  // std::vector<double> vec_residualErrors(vec_camPosGT.size());
   for(size_t i = 0; i < vec_camPosGT.size(); ++i)
   {
     Vec3 newPos = S * R * (vec_camPosComputed[i]) + t;
     vec_camPosComputed_T[i] = newPos;
-    const double dResidual = (newPos - vec_camPosGT[i]).norm();
-    vec_residualErrors[i] = dResidual;
+    // const double dResidual = (newPos - vec_camPosGT[i]).norm();
+    // vec_residualErrors[i] = dResidual;
   }
 
   *Sout = S;
