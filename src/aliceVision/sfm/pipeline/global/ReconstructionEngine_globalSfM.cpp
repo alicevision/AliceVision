@@ -658,8 +658,8 @@ void ReconstructionEngine_globalSfM::Compute_Relative_Rotations
     {
       vec_count.push_back(relative_rotation_info.weight);
     }
-    std::partial_sort(vec_count.begin(), vec_count.begin() + vec_count.size() / 2.0, vec_count.end());
-    const float thTrustPair = vec_count[vec_count.size() / 2.0];
+    std::partial_sort(vec_count.begin(), vec_count.begin() + vec_count.size() / 2, vec_count.end());
+    // const float thTrustPair = vec_count[vec_count.size() / 2];
     for(auto & relative_rotation_info : vec_relatives_R)
     {
       relative_rotation_info.weight = std::min(relative_rotation_info.weight, 1.f);
