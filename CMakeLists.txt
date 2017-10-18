@@ -13,6 +13,13 @@ SET_PROPERTY(GLOBAL PROPERTY USE_FOLDERS ON)
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
 
+# There was a bug in FindCUDA fixed in cmake 3.10 that creates empty strings
+# https://gitlab.kitware.com/cmake/cmake/merge_requests/1008
+# See also: https://gitlab.kitware.com/cmake/cmake/issues/16411
+if("${CMAKE_MAJOR_VERSION}.${CMAKE_MINOR_VERSION}" LESS 3.10)
+  set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_CURRENT_SOURCE_DIR}/cmake/compatibilityCUDA)
+endif()
+
 # ZLIB
 find_package(ZLIB REQUIRED)
 
@@ -62,16 +69,10 @@ endif()
 
 set(CUDA_SEPARABLE_COMPILATION ON)
 
-if(CMAKE_BUILD_TYPE STREQUAL "Debug")
-  message("DEBUG mode")
-  # Need to set it only in Debug mode else it creates "" artifacts on command line.
-  # See: https://gitlab.kitware.com/cmake/cmake/issues/16411
-  set(CUDA_NVCC_FLAGS_DEBUG   "${CUDA_NVCC_FLAGS_DEBUG};-G;-g")
-else()
-  # Same artifact in the other direction in Release
-  message("RELEASE mode")
-  set(CUDA_NVCC_FLAGS_RELEASE "${CUDA_NVCC_FLAGS_RELEASE};-O3")
-endif()
+message("Build Mode: ${CMAKE_BUILD_TYPE}")
+
+set(CUDA_NVCC_FLAGS_DEBUG   "${CUDA_NVCC_FLAGS_DEBUG};-G;-g")
+set(CUDA_NVCC_FLAGS_RELEASE "${CUDA_NVCC_FLAGS_RELEASE};-O3")
 
 set(CUDA_NVCC_FLAGS         "${CUDA_NVCC_FLAGS};-gencode;arch=compute_20,code=sm_20")
 set(CUDA_NVCC_FLAGS         "${CUDA_NVCC_FLAGS};-gencode;arch=compute_30,code=sm_30")
