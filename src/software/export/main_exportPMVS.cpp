@@ -324,7 +324,7 @@ int main(int argc, char *argv[])
       "Divide image coefficient")
     ("nbCore", po::value<int>(&nbCore)->default_value(nbCore),
       "Nb core")
-    ("useVisData", po::bool_switch(&useVisData)->default_value(useVisData),
+    ("useVisData", po::value<bool>(&useVisData)->default_value(useVisData),
       "Use visibility information.");
 
   po::options_description logParams("Log parameters");

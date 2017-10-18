@@ -207,9 +207,9 @@ int main(int argc, char **argv)
     ("describerPreset,p", po::value<std::string>(&describerPreset)->default_value(describerPreset),
       "Control the ImageDescriber configuration (low, medium, normal, high, ultra).\n"
       "Configuration 'ultra' can take long time !")
-    ("featureRepeatability", po::bool_switch(&featureRepeatability)->default_value(featureRepeatability),
+    ("featureRepeatability", po::value<bool>(&featureRepeatability)->default_value(featureRepeatability),
       "Feature repeatability.")
-    ("matchingRepeatability", po::bool_switch(&matchingRepeatability)->default_value(matchingRepeatability),
+    ("matchingRepeatability", po::value<bool>(&matchingRepeatability)->default_value(matchingRepeatability),
       "MatchingRepeatability.");
 
   po::variables_map vm;

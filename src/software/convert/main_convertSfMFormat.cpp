@@ -50,17 +50,17 @@ int main(int argc, char **argv)
 
   po::options_description optionalParams("Optional parameters");
   optionalParams.add_options()
-    ("views", po::bool_switch(&flagViews)->default_value(flagViews),
+    ("views", po::value<bool>(&flagViews)->default_value(flagViews),
       "Export views.")
-    ("intrinsics", po::bool_switch(&flagIntrinsics)->default_value(flagIntrinsics),
+    ("intrinsics", po::value<bool>(&flagIntrinsics)->default_value(flagIntrinsics),
       "Export intrinsics.")
-    ("extrinsics", po::bool_switch(&flagExtrinsics)->default_value(flagExtrinsics),
+    ("extrinsics", po::value<bool>(&flagExtrinsics)->default_value(flagExtrinsics),
       "Export extrinsics.")
-    ("structure", po::bool_switch(&flagStructure)->default_value(flagStructure),
+    ("structure", po::value<bool>(&flagStructure)->default_value(flagStructure),
       "Export structure.")
-    ("observations", po::bool_switch(&flagObservations)->default_value(flagObservations),
+    ("observations", po::value<bool>(&flagObservations)->default_value(flagObservations),
       "Export observations.")
-    ("regenerateUID", po::bool_switch(&recomputeUID)->default_value(recomputeUID),
+    ("regenerateUID", po::value<bool>(&recomputeUID)->default_value(recomputeUID),
       "Regenerate UID.");
 
   po::options_description logParams("Log parameters");

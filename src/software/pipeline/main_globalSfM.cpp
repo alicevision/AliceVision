@@ -64,7 +64,7 @@ int main(int argc, char **argv)
     ("translationAveraging", po::value<int>(&translationAveragingMethod)->default_value(translationAveragingMethod),
       "* 1: L1 minimization\n"
       "* 2: L2 minimization of sum of squared Chordal distances")
-    ("refineIntrinsics", po::bool_switch(&refineIntrinsics)->default_value(refineIntrinsics),
+    ("refineIntrinsics", po::value<bool>(&refineIntrinsics)->default_value(refineIntrinsics),
       "Refine intrinsic parameters.");
 
   po::options_description logParams("Log parameters");

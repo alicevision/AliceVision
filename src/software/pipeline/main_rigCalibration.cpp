@@ -181,7 +181,7 @@ int main(int argc, char** argv)
       ("matchingEstimator", po::value<robustEstimation::ERobustEstimator>(&matchingEstimator)->default_value(matchingEstimator),
           std::string("The type of *sac framework to use for matching "
           "("+str_estimatorChoices+")").c_str())
-      ("refineIntrinsics", po::bool_switch(&refineIntrinsics),
+      ("refineIntrinsics", po::value<bool>(&refineIntrinsics),
           "Enable/Disable camera intrinsics refinement for each localized image")
       ("reprojectionError", po::value<double>(&resectionErrorMax)->default_value(resectionErrorMax), 
           "Maximum reprojection error (in pixels) allowed for resectioning. If set "

@@ -195,7 +195,7 @@ int main(int argc, char** argv)
           "("+str_estimatorChoices+")").c_str())
       ("calibration", po::value<std::string>(&calibFile)/*->required( )*/, 
           "Calibration file")
-      ("refineIntrinsics", po::bool_switch(&refineIntrinsics), 
+      ("refineIntrinsics", po::value<bool>(&refineIntrinsics), 
           "Enable/Disable camera intrinsics refinement for each localized image")
       ("reprojectionError", po::value<double>(&resectionErrorMax)->default_value(resectionErrorMax), 
           "Maximum reprojection error (in pixels) allowed for resectioning. If set "
@@ -238,13 +238,13 @@ int main(int argc, char** argv)
 // final bundle adjustment options
   po::options_description bundleParams("Parameters specific for final (optional) bundle adjustment optimization of the sequence");
   bundleParams.add_options()
-      ("globalBundle", po::bool_switch(&globalBundle), 
+      ("globalBundle", po::value<bool>(&globalBundle), 
           "[bundle adjustment] If --refineIntrinsics is not set, this option "
           "allows to run a final global budndle adjustment to refine the scene")
-      ("noDistortion", po::bool_switch(&noDistortion), 
+      ("noDistortion", po::value<bool>(&noDistortion), 
           "[bundle adjustment] It does not take into account distortion during "
           "the BA, it consider the distortion coefficients all equal to 0")
-      ("noBArefineIntrinsics", po::bool_switch(&noBArefineIntrinsics), 
+      ("noBArefineIntrinsics", po::value<bool>(&noBArefineIntrinsics), 
           "[bundle adjustment] It does not refine intrinsics during BA")
       ("minPointVisibility", po::value<size_t>(&minPointVisibility)->default_value(minPointVisibility), 
           "[bundle adjustment] Minimum number of observation that a point must "

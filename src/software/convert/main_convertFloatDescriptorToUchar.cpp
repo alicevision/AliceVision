@@ -29,7 +29,7 @@ int main( int argc, char** argv )
   desc.add_options()
         ("inputFolder,i", po::value<std::string>(&inputFolder)->required(), "Input folder containing the sift in float format.")
         ("outputFolder,o", po::value<std::string>(&outputFolder)->required(), "Output folder that stores the sift in uchar format.")
-        ("sanityCheck,s", po::bool_switch(&doSanityCheck)->default_value(doSanityCheck), "Perform a sanity check to check that the conversion and the genrated files are the same.");
+        ("sanityCheck,s", po::value<bool>(&doSanityCheck)->default_value(doSanityCheck), "Perform a sanity check to check that the conversion and the genrated files are the same.");
 
   po::variables_map vm;
 

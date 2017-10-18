@@ -155,11 +155,11 @@ int main(int argc, char **argv)
       "Geometric estimator:\n"
       "* acransac: A-Contrario Ransac\n"
       "* loransac: LO-Ransac (only available for fundamental matrix)")
-    ("savePutativeMatches", po::bool_switch(&savePutativeMatches)->default_value(savePutativeMatches),
+    ("savePutativeMatches", po::value<bool>(&savePutativeMatches)->default_value(savePutativeMatches),
       "Save putative matches.")
-    ("guidedMatching", po::bool_switch(&guidedMatching)->default_value(guidedMatching),
+    ("guidedMatching", po::value<bool>(&guidedMatching)->default_value(guidedMatching),
       "Use the found model to improve the pairwise correspondences.")
-    ("matchFilePerImage", po::bool_switch(&matchFilePerImage)->default_value(matchFilePerImage),
+    ("matchFilePerImage", po::value<bool>(&matchFilePerImage)->default_value(matchFilePerImage),
       "Save matches in a separate file per image.")
     ("distanceRatio", po::value<float>(&distRatio)->default_value(distRatio),
       "Distance ratio to discard non meaningful matches.")
@@ -170,9 +170,9 @@ int main(int argc, char **argv)
       "* 3: will match 0 with (1,2,3), 1 with (2,3,4), ...")
     ("maxIteration", po::value<int>(&maxIteration)->default_value(maxIteration),
       "Maximum number of iterations allowed in ransac step.")
-    ("useGridSort", po::bool_switch(&useGridSort)->default_value(useGridSort),
+    ("useGridSort", po::value<bool>(&useGridSort)->default_value(useGridSort),
       "Use matching grid sort.")
-    ("exportDebugFiles", po::bool_switch(&exportDebugFiles)->default_value(exportDebugFiles),
+    ("exportDebugFiles", po::value<bool>(&exportDebugFiles)->default_value(exportDebugFiles),
       "Export debug files (svg, dot).")
     ("fileExtension", po::value<std::string>(&fileExtension)->default_value(fileExtension),
       "File extension to store matches (bin or txt).")

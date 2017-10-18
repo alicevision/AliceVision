@@ -239,7 +239,7 @@ int main(int argc, char **argv)
     ("describerPreset,p", po::value<std::string>(&describerPreset)->default_value(describerPreset),
       "Control the ImageDescriber configuration (low, medium, normal, high, ultra).\n"
       "Configuration 'ultra' can take long time !")
-    ("upright,u", po::bool_switch(&describersAreUpRight)->default_value(describersAreUpRight),
+    ("upright,u", po::value<bool>(&describersAreUpRight)->default_value(describersAreUpRight),
       "Use Upright feature.")
     ("rangeStart", po::value<int>(&rangeStart)->default_value(rangeStart),
       "Range image index start.")

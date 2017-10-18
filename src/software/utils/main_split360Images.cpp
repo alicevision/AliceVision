@@ -341,7 +341,7 @@ int main(int argc, char** argv)
         "Equirectangular number of splits")
       ("equirectangularSplitResolution", po::value<std::size_t>(&equirectangularSplitResolution)->default_value(1200),
         "Equirectangular split resolution")
-      ("equirectangularDemoMode", po::bool_switch(&equirectangularDemoMode)->default_value(false),
+      ("equirectangularDemoMode", po::value<bool>(&equirectangularDemoMode)->default_value(false),
         "Export a SVG file that simulate the split");
 
   allParams.add(inputParams);

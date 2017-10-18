@@ -164,7 +164,7 @@ int main(int argc, char** argv)
               "method to use to describe an image")   
           ("results,r", bpo::value<std::size_t>(&numImageQuery)->default_value(numImageQuery),
               "The number of matches to retrieve for each image, 0 to retrieve all the images")
-          ("matlab,", bpo::bool_switch(&matlabOutput)->default_value(matlabOutput),
+          ("matlab,", bpo::value<bool>(&matlabOutput)->default_value(matlabOutput),
               "It produces an output readable by matlab")
           ("outfile,o", bpo::value<std::string>(&outfile),
               "Name of the output file")
