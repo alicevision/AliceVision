@@ -63,6 +63,7 @@ before_script:
   - >
      cmake \
        -DCMAKE_BUILD_TYPE=${BUILD_TYPE} \
+       -DTARGET_ARCHITECTURE=core \
        -DALICEVISION_BUILD_TESTS=ON \
        -DALICEVISION_BUILD_EXAMPLES=ON \
        -DALICEVISION_USE_OPENCV=ON \
