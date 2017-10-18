@@ -253,16 +253,6 @@ bool largeScale::generateSpace(int maxPts, int ocTreeDim)
     if(isSpaceSaved())
     {
         loadSpaceFromFile();
-
-        /*
-        staticVector<int> *usedCams = new staticVector<int>(mp->ncams);
-        for (int rc=0;rc<mp->ncams;rc++) { usedCams->push_back(rc); };
-        mv_fuse *fs = new mv_fuse(mp,pc);
-        fs->filterDepthMaps(usedCams,2);
-        delete fs;
-        delete usedCams;
-        */
-
         return false;
     }
 
