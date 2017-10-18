@@ -1015,23 +1015,21 @@ double ReconstructionEngine_sequentialSfM::ComputeResidualsHistogram(Histogram<d
 
   assert(!vec_residuals.empty());
 
-  float dMin, dMax, dMean, dMedian;
-  minMaxMeanMedian<float>(vec_residuals.begin(), vec_residuals.end(),
-                          dMin, dMax, dMean, dMedian);
+  MinMaxMeanMedian<float> stats(vec_residuals.begin(), vec_residuals.end());
   if (histo)  {
-    *histo = Histogram<double>(dMin, dMax, 10);
+    *histo = Histogram<double>(stats.min, stats.max, 10);
     histo->Add(vec_residuals.begin(), vec_residuals.end());
   }
 
   ALICEVISION_LOG_DEBUG(
     "\nReconstructionEngine_sequentialSfM::ComputeResidualsMSE.\n"
     "\t-- #Tracks:\t" << _sfm_data.GetLandmarks().size() << "\n"
-    "\t-- Residual min:\t" << dMin << "\n"
-    "\t-- Residual median:\t" << dMedian << "\n"
-    "\t-- Residual max:\t "  << dMax << "\n"
-    "\t-- Residual mean:\t " << dMean);
+    "\t-- Residual min:\t" << stats.min << "\n"
+    "\t-- Residual median:\t" << stats.median << "\n"
+    "\t-- Residual max:\t "  << stats.max << "\n"
+    "\t-- Residual mean:\t " << stats.mean);
 
-  return dMean;
+  return stats.mean;
 }
 
 double ReconstructionEngine_sequentialSfM::ComputeTracksLengthsHistogram(Histogram<double> * histo) const
@@ -1050,27 +1048,24 @@ double ReconstructionEngine_sequentialSfM::ComputeTracksLengthsHistogram(Histogr
   }
 
   assert(!vec_nbTracks.empty());
-  
-  float dMin, dMax, dMean, dMedian;
-  minMaxMeanMedian<float>(
-    vec_nbTracks.begin(), vec_nbTracks.end(),
-    dMin, dMax, dMean, dMedian);
+
+  MinMaxMeanMedian<float> stats(vec_nbTracks.begin(), vec_nbTracks.end());
 
   if (histo)
   {
-    *histo = Histogram<double>(dMin, dMax, dMax-dMin+1);
+    *histo = Histogram<double>(stats.min, stats.max, stats.max - stats.min + 1);
     histo->Add(vec_nbTracks.begin(), vec_nbTracks.end());
   }
 
   ALICEVISION_LOG_DEBUG(
     "\nReconstructionEngine_sequentialSfM::ComputeTracksLengthsHistogram.\n"
     "\t-- #Tracks:\t" << _sfm_data.GetLandmarks().size() << "\n"
-    "\t-- Tracks Length min:\t" << dMin << "\n"
-    "\t-- Tracks Length median:\t" << dMedian << "\n"
-    "\t-- Tracks Length max:\t "  << dMax << "\n"
-    "\t-- Tracks Length mean:\t " << dMean);
+    "\t-- Tracks Length min:\t" << stats.min << "\n"
+    "\t-- Tracks Length median:\t" << stats.median << "\n"
+    "\t-- Tracks Length max:\t "  << stats.max << "\n"
+    "\t-- Tracks Length mean:\t " << stats.mean);
 
-  return dMean;
+  return stats.mean;
 }
 
 std::size_t ReconstructionEngine_sequentialSfM::computeImageScore(std::size_t viewId, const std::vector<std::size_t>& trackIds) const

@@ -486,13 +486,12 @@ REAL RelRotationAvgError(const RelativeRotations& RelRs, const Matrix3x3Arr& Rs,
     const RelativeRotation& relR = RelRs[i];
     vec_err[i] = aliceVision::FrobeniusNorm(relR.Rij  - (Rs[relR.j]*Rs[relR.i].transpose()));
   }
-  float min, max, mean, median;
-  minMaxMeanMedian(vec_err.begin(), vec_err.end(), min, max, mean, median);
+  MinMaxMeanMedian<float> stats(vec_err.begin(), vec_err.end());
   if (pMin)
-    *pMin = min;
+    *pMin = stats.min;
   if (pMax)
-    *pMax = max;
-  return mean;
+    *pMax = stats.max;
+  return stats.mean;
 #endif
 }
 //----------------------------------------------------------------

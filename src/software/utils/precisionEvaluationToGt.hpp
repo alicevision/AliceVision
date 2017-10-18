@@ -162,15 +162,11 @@ void EvaluteToGT(
 //  std::cout << "\nAngular residuals (Degree) \n";
 //  copy(vec_angularErrors.begin(), vec_angularErrors.end(), std::ostream_iterator<double>(std::cout, " , "));
 
-  std::cout << std::endl << "\nBaseline error statistics : \n ";
-  minMaxMeanMedian<double>(vec_baselineErrors.begin(), vec_baselineErrors.end());
-  double minB = -1., maxB = -1., meanB = -1., medianB = -1.;
-  minMaxMeanMedian<double>(vec_baselineErrors.begin(), vec_baselineErrors.end(), minB, maxB, meanB, medianB);
+  MinMaxMeanMedian<double> statsBaseline(vec_baselineErrors.begin(), vec_baselineErrors.end());
+  std::cout << std::endl << "\nBaseline error statistics:\n" << statsBaseline;
 
-  std::cout << std::endl << "\nAngular error statistics : \n ";
-  minMaxMeanMedian<double>(vec_angularErrors.begin(), vec_angularErrors.end());
-  double minA = -1., maxA = -1., meanA = -1., medianA = -1.;
-  minMaxMeanMedian<double>(vec_angularErrors.begin(), vec_angularErrors.end(), minA, maxA, meanA, medianA);
+  MinMaxMeanMedian<double> statsAngular(vec_angularErrors.begin(), vec_angularErrors.end());
+  std::cout << std::endl << "\nAngular error statistics:\n" << statsAngular;
 
   // Export camera position (viewable)
   exportToPly(vec_camCenterGT, vec_camPosComputed_T,
@@ -200,20 +196,20 @@ void EvaluteToGT(
     htmlDocStream->pushInfo( htmlDocument::htmlMarkup("pre", os.str()));
 
     os.str("");
-    os << "min = " << minB;
+    os << "min = " << statsBaseline.min;
     htmlDocStream->pushInfo(sFullLine);
     htmlDocStream->pushInfo( htmlDocument::htmlMarkup("pre", os.str()));
 
     os.str("");
-    os << "max = " << maxB;
+    os << "max = " << statsBaseline.max;
     htmlDocStream->pushInfo( htmlDocument::htmlMarkup("pre", os.str()));
 
     os.str("");
-    os << "mean = " << meanB;
+    os << "mean = " << statsBaseline.mean;
     htmlDocStream->pushInfo( htmlDocument::htmlMarkup("pre", os.str()));
 
     os.str("");
-    os << "median = " << medianB;
+    os << "median = " << statsBaseline.median;
     htmlDocStream->pushInfo( htmlDocument::htmlMarkup("pre", os.str()));
 
     const double maxRange = *std::max_element(vec_baselineErrors.begin(), vec_baselineErrors.end());
@@ -259,20 +255,20 @@ void EvaluteToGT(
     htmlDocStream->pushInfo( htmlDocument::htmlMarkup("pre", os.str()));
 
     os.str("");
-    os << "min = " << minA;
+    os << "min = " << statsAngular.min;
     htmlDocStream->pushInfo(sFullLine);
     htmlDocStream->pushInfo( htmlDocument::htmlMarkup("pre", os.str()));
 
     os.str("");
-    os << "max = " << maxA;
+    os << "max = " << statsAngular.max;
     htmlDocStream->pushInfo( htmlDocument::htmlMarkup("pre", os.str()));
 
     os.str("");
-    os << "mean = " << meanA;
+    os << "mean = " << statsAngular.mean;
     htmlDocStream->pushInfo( htmlDocument::htmlMarkup("pre", os.str()));
 
     os.str("");
-    os << "median = " << medianA;
+    os << "median = " << statsAngular.median;
     htmlDocStream->pushInfo( htmlDocument::htmlMarkup("pre", os.str()));
     
     const double maxRangeAngular = *std::max_element(vec_angularErrors.begin(), vec_angularErrors.end());

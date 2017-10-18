@@ -172,17 +172,14 @@ int main() {
       svgFile.close();
 
       // Display some statistics of reprojection errors
-      float dMin, dMax, dMean, dMedian;
-      minMaxMeanMedian<float>(vec_residuals.begin(), vec_residuals.end(),
-                            dMin, dMax, dMean, dMedian);
+      MinMaxMeanMedian<float> stats(vec_residuals.begin(), vec_residuals.end());
 
       std::cout << std::endl
         << "Homography matrix estimation, residuals statistics:" << "\n"
-        << "\t-- Residual min:\t" << dMin << std::endl
-        << "\t-- Residual median:\t" << dMedian << std::endl
-        << "\t-- Residual max:\t "  << dMax << std::endl
-        << "\t-- Residual mean:\t " << dMean << std::endl;
-
+        << "\t-- Residual min:\t" << stats.min << std::endl
+        << "\t-- Residual median:\t" << stats.median << std::endl
+        << "\t-- Residual max:\t "  << stats.max << std::endl
+        << "\t-- Residual mean:\t " << stats.mean << std::endl;
 
       //---------------------------------------
       // Warp the images to fit the reference view

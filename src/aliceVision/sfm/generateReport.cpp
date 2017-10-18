@@ -95,13 +95,12 @@ bool Generate_SfM_Report(const SfMData & sfm_data,
         const std::vector<double> & residuals = residuals_per_view.at(id_view);
         if (!residuals.empty())
         {
-          double min, max, mean, median;
-          minMaxMeanMedian(residuals.begin(), residuals.end(), min, max, mean, median);
+          MinMaxMeanMedian<double> stats(residuals.begin(), residuals.end());
           os << sColBegin << residuals.size()/2 << sColEnd // #observations
-            << sColBegin << min << sColEnd
-            << sColBegin << median << sColEnd
-            << sColBegin << mean << sColEnd
-            << sColBegin << max <<sColEnd;
+            << sColBegin << stats.min << sColEnd
+            << sColBegin << stats.median << sColEnd
+            << sColBegin << stats.mean << sColEnd
+            << sColBegin << stats.max <<sColEnd;
         }
       }
     }

@@ -213,16 +213,14 @@ int main() {
     }
 
     // Display some statistics of reprojection errors
-    float dMin, dMax, dMean, dMedian;
-    minMaxMeanMedian<float>(vec_residuals.begin(), vec_residuals.end(),
-      dMin, dMax, dMean, dMedian);
+    MinMaxMeanMedian<float> stats(vec_residuals.begin(), vec_residuals.end());
 
     std::cout << std::endl
       << "Triangulation residuals statistics:" << "\n"
-      << "\t-- Residual min:\t" << dMin << "\n"
-      << "\t-- Residual median:\t" << dMedian << "\n"
-      << "\t-- Residual max:\t " << dMax << "\n"
-      << "\t-- Residual mean:\t " << dMean << std::endl;
+      << "\t-- Residual min:\t" << stats.min << "\n"
+      << "\t-- Residual median:\t" << stats.median << "\n"
+      << "\t-- Residual max:\t " << stats.max << "\n"
+      << "\t-- Residual mean:\t " << stats.mean << std::endl;
 
       // Export as PLY (camera pos + 3Dpoints)
       std::vector<Vec3> vec_camPos;

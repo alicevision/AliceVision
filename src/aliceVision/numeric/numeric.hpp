@@ -405,43 +405,50 @@ inline int is_finite(const double val)
 #endif
 }
 
-/// Get back the min, mean, median and the max
-///  values of an iterable sequence.
-template <typename Type, typename DataInputIterator>
-void minMaxMeanMedian(DataInputIterator begin, DataInputIterator end,
-                      Type & min, Type & max, Type & mean, Type & median)
+/** Get back the min, mean, median and the max
+ *  values of an iterable sequence.
+ */
+template <typename Type>
+struct MinMaxMeanMedian
 {
-  if(std::distance(begin, end) < 1)
-  {
-    min = 0;
-    max = 0;
-    mean = 0;
-    median = 0;
-    return;
-  }
+    Type min, max, mean, median;
 
-  std::vector<Type> vec_val(begin, end);
-  std::sort(vec_val.begin(), vec_val.end());
-  min = vec_val[0];
-  max = vec_val[vec_val.size() - 1];
-  mean = accumulate(vec_val.begin(), vec_val.end(), Type(0))
-          / static_cast<Type> (vec_val.size());
-  median = vec_val[vec_val.size() / 2];
-}
+    template <typename DataInputIterator>
+    MinMaxMeanMedian(DataInputIterator begin, DataInputIterator end)
+    {
+      compute(begin, end);
+    }
 
-/// Display to the console the min, mean, median and the max
-///  values of an iterable sequence.
+    template <typename DataInputIterator>
+    void compute(DataInputIterator begin, DataInputIterator end)
+    {
+      if(std::distance(begin, end) < 1)
+      {
+        min = 0;
+        max = 0;
+        mean = 0;
+        median = 0;
+        return;
+      }
 
-template <typename Type, typename DataInputIterator>
-void minMaxMeanMedian(DataInputIterator begin, DataInputIterator end)
+      std::vector<Type> vec_val(begin, end);
+      std::sort(vec_val.begin(), vec_val.end());
+      min = vec_val[0];
+      max = vec_val[vec_val.size() - 1];
+      mean = accumulate(vec_val.begin(), vec_val.end(), Type(0))
+              / static_cast<Type> (vec_val.size());
+      median = vec_val[vec_val.size() / 2];
+    }
+};
+
+template <typename Type>
+inline std::ostream& operator<<(std::ostream& os, const MinMaxMeanMedian<Type> obj)
 {
-  Type min, max, mean, median;
-  minMaxMeanMedian(begin, end, min, max, mean, median);
-  ALICEVISION_LOG_DEBUG("\n"
-          "\t min: " << min << "\n"
-          "\t mean: " << mean << "\n"
-          "\t median: " << median << "\n"
-          "\t max: " << max);
+  os << "\t min: " << obj.min << "\n"
+        "\t mean: " << obj.mean << "\n"
+        "\t median: " << obj.median << "\n"
+        "\t max: " << obj.max;
+  return os;
 }
 
 /**
