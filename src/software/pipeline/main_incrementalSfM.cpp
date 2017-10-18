@@ -134,7 +134,7 @@ int main(int argc, char **argv)
     ("initialPairB", po::value<std::string>(&initialPairString.second)->default_value(initialPairString.second),
       "filename of the second image (without path).")
     ("refineIntrinsics", po::value<bool>(&refineIntrinsics)->default_value(refineIntrinsics),
-      "Refine intrinsic parameters.");
+      "Refine intrinsic parameters.")
     ("allowUserInteraction", po::value<bool>(&allowUserInteraction)->default_value(allowUserInteraction),
       "Enable/Disable user interactions.\n"
       "If the process is done on renderfarm, it doesn't make sense to wait for user inputs");
