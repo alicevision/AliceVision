@@ -158,26 +158,28 @@ private:
   // The bundle adjustment will be processed on the closest poses only.
   // ------------------------
   
-  // Ensure a minimum number of landmarks in common to consider 2 views as connected in the graph.
+  /// Ensure a minimum number of landmarks in common to consider 2 views as connected in the graph.
   static std::size_t const _kMinNbOfMatches = 100;
   
-  // A graph where nodes are poses and an edge exists when 2 poses shared at least 'kMinNbOfMatches' matches.
+  /// A graph where nodes are poses and an edge exists when 2 poses shared at least 'kMinNbOfMatches' matches.
   lemon::ListGraph _graph; 
   
-  // A map associating each view index at its node in the graph 'graph_poses'.
+  /// A map associating each view index at its node in the graph 'graph_poses'.
   std::map<IndexT, lemon::ListGraph::Node> map_viewId_node;
   
-  // Contains all the last resected cameras
+  /// Contains all the last resected cameras
   std::set<IndexT> _newViewsId; 
   
-  // Store the graph-distances to the new poses/views. 
-  // If the view/pose is not connected to the new poses/views, its distance is -1.
+  /// Store the graph-distances from the new views (0: is a new view, -1: is not connected to the new views)
   std::map<IndexT, int> _mapDistancePerViewId;
+  /// Store the graph-distances from the new poses (0: is a new pose, -1: is not connected to the new poses)
   std::map<IndexT, int> _mapDistancePerPoseId;
   
-  // Store the ELocalBAState of each parameter (structure, poses, intrinsics) :
+  /// Store the \c ELocalBAState of each pose in the scene.
   std::map<IndexT, ELocalBAState> _mapLBAStatePerPoseId;
+  /// Store the \c ELocalBAState of each intrinsic in the scene.
   std::map<IndexT, ELocalBAState> _mapLBAStatePerIntrinsicId;
+  /// Store the \c ELocalBAState of each landmark in the scene.
   std::map<IndexT, ELocalBAState> _mapLBAStatePerLandmarkId;
   
   // ------------------------
@@ -186,11 +188,11 @@ private:
   // When camera parameters are enought reffined (no variation) they are set to constant in the BA.
   // ------------------------
   
-  // Backup of the intrinsics parameters
+  /// Backup of the intrinsics parameters
   IntrinicsHistory _intrinsicsHistory; 
   
-  // Store, for each parameter of each intrinsic, the BA's index from which it has been concidered as constant.
-  // <IntrinsicIndex, <F_limitId, CX_limitId, CY_limitId>>
+  /// Store, for each parameter of each intrinsic, the BA's index from which it has been concidered as constant.
+  /// <IntrinsicIndex, <F_limitId, CX_limitId, CY_limitId>>
   std::map<IndexT, std::vector<IndexT>> _intrinsicsLimitIds; 
 };
 
