@@ -324,7 +324,7 @@ void SequentialSfMReconstructionEngine::RobustResectionOfImages(
       
       // [TEMP] used to run Local BA (without save changes due to adjustment) the BA (saving adjustments)
       // It's useful to compare time spent in the different adjustments 
-      _compareBAAndLocalBA = true;
+      _compareBAAndLocalBA = false;
       
       do
       {
@@ -1748,7 +1748,7 @@ bool SequentialSfMReconstructionEngine::localBundleAdjustment(const std::string&
   if (options.isLocalBAEnabled() && name != "BA")
   {
     // Update the 'reconstructionGraph' using the recently added cameras
-    _localBA_data->updateGraph(_sfm_data, _map_tracksPerView);
+    _localBA_data->updateGraphWithNewViews(_sfm_data, _map_tracksPerView);
     
     { // -- update timer
       times.graphUpdating = duration.elapsed(); 
@@ -1765,11 +1765,12 @@ bool SequentialSfMReconstructionEngine::localBundleAdjustment(const std::string&
     
     // Determine the LocalBA_State (reffine, constant, ignored) for all the
     // parameters (landmarks, cameras poses and intrinsics)
-    localBA_obj.computeStatesMaps_strategy4(_sfm_data, _localBA_data);    
+//    localBA_obj.computeStatesMaps_strategy4(_sfm_data, _localBA_data);    
+    _localBA_data->computeStatesMaps_strategy4(_sfm_data);    
     
     // If the number of cameras that will be added to the solver is <= 100
     // we have to modify the BA mode to Dense.
-    if (localBA_obj.getNumberOfCamerasInTheSolver() <= 100)
+    if (_localBA_data->getNumberOfConstantAndRefinedCameras() <= 100)
       options.setDenseBA();
   }
   
@@ -1782,22 +1783,23 @@ bool SequentialSfMReconstructionEngine::localBundleAdjustment(const std::string&
   if (name == "localBA")  // do not save changes in reconstruction
   {
     const SfM_Data& const_sfm_data = Get_SfM_Data();
-    isBaSucceed = localBA_obj.Adjust(const_sfm_data);
+    isBaSucceed = localBA_obj.Adjust(const_sfm_data, *_localBA_data);
   }
   else // save the changes due to the adjustment
-    isBaSucceed = localBA_obj.Adjust(_sfm_data);
-  
-  // Update 'map_intrinsicsHistorical' and compute 'map_intrinsicsLimits'
-  //  checkIntrinsicParametersLimits(map_intrinsicsHistorical, map_intrinsicsLimits);
-  _localBA_data->addIntrinsicsToHistory(_sfm_data);
+    isBaSucceed = localBA_obj.Adjust(_sfm_data, *_localBA_data);
   
   times.adjusting = duration.elapsed(); 
   times.allLocalBA = durationLBA.elapsed();  
   times.exportTimes(_sOutDirectory + "/LocalBA/times_"+ name +".txt");
   times.showTimes();
+
+  // Update 'map_intrinsicsHistorical' and compute 'map_intrinsicsLimits'
+  //  checkIntrinsicParametersLimits(map_intrinsicsHistorical, map_intrinsicsLimits);
+  _localBA_data->addIntrinsicsToHistory(_sfm_data);
   
-  // Save data about the 
+  // Save data about the Ceres Sover refinement:
   localBA_obj.exportStatistics(_sOutDirectory + "/LocalBA/");
+
   return isBaSucceed;
 }
 

@@ -76,20 +76,21 @@ public:
   /// @brief checkAllParametersLimits Run \a checkParameterLimits() for each \a EIntrinsicParameter.
   void checkAllParametersLimits(const std::size_t kWindowSize, const double kStdDevPercentage);
   
-  /// @brief isLimitReached Giving an intrinsic index and the wished parameter, is return \c true if the limit has alerady been reached, else \c false.
+  /// @brief isIntrinsicLimitReached Giving an intrinsic index and the wished parameter, is return \c true if the limit has alerady been reached, else \c false.
   /// @param[in] intrinsicId The intrinsic index.
   /// @param[in] parameter The \a EIntrinsicParameter to observe.
   /// @return true if the limit is reached, else false
-  bool isLimitReached(const IndexT intrinsicId, const EIntrinsicParameter parameter) const { return intrinsicsLimitIds.at(intrinsicId).at(parameter) != 0;}
+  bool isIntrinsicLimitReached(const IndexT intrinsicId, const EIntrinsicParameter parameter) const 
+    { return intrinsicsLimitIds.at(intrinsicId).at(parameter) != 0;}
   
   /// @brief exportIntrinsicsHistory Save the history of each intrinsic. It create a file \b K<intrinsic_index>.txt in \a folder.
   /// @param[in] folder The folder in which the \b K*.txt are saved.
   void exportIntrinsicsHistory(const std::string& folder);
   
-  /// @brief updateGraph Complete the graph with the newly resected views \a set_newViewsId, or all the posed views if the graph is empty.
+  /// @brief updateGraphWithNewViews Complete the graph with the newly resected views \a set_newViewsId, or all the posed views if the graph is empty.
   /// @param[in] sfm_data 
   /// @param[in] map_tracksPerView A map giving the tracks for each view
-  void updateGraph(
+  void updateGraphWithNewViews(
       const SfM_Data& sfm_data, 
       const tracks::TracksPerView& map_tracksPerView);
   
@@ -101,7 +102,27 @@ public:
   /// @brief computeDistancesMaps Add the newly resected views 'newViewsIds' into a graph (nodes: cameras, egdes: matching)
   /// and compute the intragraph-distance between these new cameras and all the others.
   void computeDistancesMaps(const SfM_Data& sfm_data);
+
+  void computeStatesMaps_strategy4(const SfM_Data & sfm_data);
   
+ // Define the state of the all parameter of the reconstruction (structure, poses, intrinsics) in the BA:
+  enum ELocalBAState { 
+    refined,  //< will be adjuted by the BA solver
+    constant, //< will be set as constant in the sover
+    ignored   //< will not be set into the BA solver
+  };
+  
+  // Get back the 'ELocalBAState' for a specific parameter :
+  ELocalBAState getPoseState(const IndexT poseId) const             
+    {return _map_poseId_LBAState.find(poseId)->second;}
+  ELocalBAState getIntrinsicsState(const IndexT intrinsicId) const  
+    {return _map_intrinsicId_LBAState.find(intrinsicId)->second;}
+  ELocalBAState getLandmarkState(const IndexT landmarkId) const     
+    {return _map_landmarkId_LBAState.find(landmarkId)->second;}
+
+  std::size_t getNumberOfConstantAndRefinedCameras();
+
+
 private:
   
   /// @brief selectViewsToAddToTheGraph Return the index of all the posed views not added to the distance graph yet.
@@ -155,6 +176,13 @@ private:
   std::map<IndexT, int> map_viewId_distance;
   std::map<IndexT, int> map_poseId_distance;
   
+   
+  
+  // Store the ELocalBAState of each parameter (structure, poses, intrinsics) :
+  std::map<IndexT, ELocalBAState> _map_poseId_LBAState;
+  std::map<IndexT, ELocalBAState> _map_intrinsicId_LBAState;
+  std::map<IndexT, ELocalBAState> _map_landmarkId_LBAState;
+  
   // ------------------------
   // - Intrinsics data -
   // Local BA needs to know the evolution of all the intrinsics parameters.
@@ -167,7 +195,6 @@ private:
   // Store, for each parameter of each intrinsic, the BA's index from which it has been concidered as constant.
   // <IntrinsicIndex, <F_limitId, CX_limitId, CY_limitId>>
   std::map<IndexT, std::vector<IndexT>> intrinsicsLimitIds; 
-  
 };
 
 //------------------------------------------------------------------------------------------------------------------------
@@ -180,6 +207,7 @@ private:
 struct LocalBA_statistics
 {
   LocalBA_statistics(const std::set<IndexT>& newlyResectedViewsId = std::set<IndexT>()) {newViewsId = newlyResectedViewsId;}
+  
   
   // Parameters returned by Ceres:
   double time = 0.0;                          // spent time to solve the BA (s)

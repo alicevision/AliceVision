@@ -128,7 +128,7 @@ std::map<Pair, std::size_t> LocalBA_Data::countMatchesWithCamerasOfTheReconstruc
   return map_imagesPair_nbSharedLandmarks;
 }
 
-void LocalBA_Data::updateGraph(
+void LocalBA_Data::updateGraphWithNewViews(
     const SfM_Data& sfm_data, 
     const tracks::TracksPerView& map_tracksPerView)
 {
@@ -234,6 +234,91 @@ void LocalBA_Data::computeDistancesMaps(const SfM_Data& sfm_data)
     std::cout << itVMap.first << "(" << itVMap.second << ") ";
   }
   std::cout << "\n";
+}
+
+void LocalBA_Data::computeStatesMaps_strategy4(const SfM_Data & sfm_data)
+{
+  // reset the maps
+  _map_poseId_LBAState.clear();
+  _map_intrinsicId_LBAState.clear();
+  _map_landmarkId_LBAState.clear();
+  
+  // ----------------------------------------------------
+  // -- Strategy 4 : (2017.09.25)
+  //  D = distanceLimit
+  //  L = percentageLimit
+  //  W = windowSize
+  //  - cameras:
+  //    - dist <= D: refined
+  //    - dist == D+1: constant
+  //    - else ignored
+  //  - intrinsic:
+  //    All the parameters of each intrinic are saved.        [*NEW*]
+  //    All the intrinsics are set to Refined by default.     [*NEW*]
+  //    An intrinsic is set to contant when its focal lenght  [*NEW*]
+  //    is considered as stable in its W last saved values
+  //    according to all of its values.                       
+  //  - landmarks:
+  //    - connected to a refined camera: refined
+  //    - else ignored
+  // ----------------------------------------------------
+  const std::size_t kDistanceLimit = 1; // graph distance
+  const std::size_t kWindowSize = 25;   // nb of the last value in which compute the variation
+  const double kStdevPercentage = 1.0;  // limit percentage of the Std deviation according to the range of all the parameters (e.i. focal)
+  
+  // -- Poses
+  for (Poses::const_iterator itPose = sfm_data.GetPoses().begin(); itPose != sfm_data.GetPoses().end(); ++itPose)
+  {
+    const IndexT poseId = itPose->first;
+    int dist = getPoseDistance(poseId);
+    if (dist >= 0 && dist <= kDistanceLimit) 
+      _map_poseId_LBAState[poseId] = ELocalBAState::refined;
+    else if (dist == kDistanceLimit + 1)
+      _map_poseId_LBAState[poseId] = ELocalBAState::constant;
+    else // dist < 0 (not connected to the node) or > D + 1
+      _map_poseId_LBAState[poseId] = ELocalBAState::ignored;
+  }
+  
+  // -- Instrinsics
+  checkParameterLimits(EIntrinsicParameter::Focal, kWindowSize, kStdevPercentage); 
+  
+  for(const auto& itIntrinsic: sfm_data.GetIntrinsics())
+  {
+    if (isIntrinsicLimitReached(itIntrinsic.first, EIntrinsicParameter::Focal))
+      _map_intrinsicId_LBAState[itIntrinsic.first] = ELocalBAState::constant;
+    else
+      _map_intrinsicId_LBAState[itIntrinsic.first] = ELocalBAState::refined;
+  }
+  
+  // -- Landmarks
+  for(const auto& itLandmark: sfm_data.structure)
+  {
+    const IndexT landmarkId = itLandmark.first;
+    const Observations & observations = itLandmark.second.observations;
+    
+    _map_landmarkId_LBAState[landmarkId] = ELocalBAState::ignored;
+    
+    for(const auto& observationIt: observations)
+    {
+      int dist = getViewDistance(observationIt.first);
+      if(dist <= kDistanceLimit)
+      {
+        _map_landmarkId_LBAState[landmarkId] = ELocalBAState::refined;
+        continue;
+      }
+    }
+  }
+}
+
+std::size_t LocalBA_Data::getNumberOfConstantAndRefinedCameras()
+{
+  std::size_t num = 0;
+  for (auto it : _map_poseId_LBAState)
+  {
+    if (it.second == LocalBA_Data::ELocalBAState::refined || it.second == LocalBA_Data::ELocalBAState::constant)
+      num++;
+  }
+  return num;
 }
 
 void LocalBA_Data::addIntrinsicsToHistory(const SfM_Data& sfm_data)

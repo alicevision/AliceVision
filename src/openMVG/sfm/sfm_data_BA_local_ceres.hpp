@@ -46,21 +46,21 @@ public:
    * @brief Ajust parameters according to the reconstruction graph or refine everything
    * if graph is empty. 
    */
-  bool Adjust(SfM_Data & sfm_data);
+  bool Adjust(SfM_Data & sfm_data, const LocalBA_Data& localBA_data);
   
-  bool Adjust(const SfM_Data & const_sfm_data);
+  bool Adjust(const SfM_Data & const_sfm_data, const LocalBA_Data& localBA_data);
 
-  void computeStatesMaps_strategy0(const SfM_Data & sfm_data);
+//  void computeStatesMaps_strategy0(const SfM_Data & sfm_data);
 
-  void computeStatesMaps_strategy1(const SfM_Data & sfm_data, const std::shared_ptr<LocalBA_Data> localBA_data);
+//  void computeStatesMaps_strategy1(const SfM_Data & sfm_data, const std::shared_ptr<LocalBA_Data> localBA_data);
 
-  void computeStatesMaps_strategy2(const SfM_Data & sfm_data, const std::shared_ptr<LocalBA_Data> localBA_data);
+//  void computeStatesMaps_strategy2(const SfM_Data & sfm_data, const std::shared_ptr<LocalBA_Data> localBA_data);
 
-  void computeStatesMaps_strategy3(const SfM_Data & sfm_data, const std::shared_ptr<LocalBA_Data> localBA_data);
+//  void computeStatesMaps_strategy3(const SfM_Data & sfm_data, const std::shared_ptr<LocalBA_Data> localBA_data);
 
-  void computeStatesMaps_strategy4(const SfM_Data & sfm_data, std::shared_ptr<LocalBA_Data> localBA_data);
+//  void computeStatesMaps_strategy4(const SfM_Data & sfm_data, std::shared_ptr<LocalBA_Data> localBA_data);
   
-  std::size_t getNumberOfCamerasInTheSolver();
+//  std::size_t getNumberOfCamerasInTheSolver();
   
   void initStatistics(const std::set<IndexT>& newViewsId) {_LBA_statistics = LocalBA_statistics(newViewsId);}
 
@@ -75,22 +75,22 @@ private:
   LocalBA_options _LBA_openMVG_options;
   LocalBA_statistics _LBA_statistics;
   
-  // Define the state of the all parameter of the reconstruction (structure, poses, intrinsics) in the BA:
-  enum ELocalBAState { 
-    refined,  //< will be adjuted by the BA solver
-    constant, //< will be set as constant in the sover
-    ignored   //< will not be set into the BA solver
-  };
+//  // Define the state of the all parameter of the reconstruction (structure, poses, intrinsics) in the BA:
+//  enum ELocalBAState { 
+//    refined,  //< will be adjuted by the BA solver
+//    constant, //< will be set as constant in the sover
+//    ignored   //< will not be set into the BA solver
+//  };
   
-  // Store the ELocalBAState of each parameter (structure, poses, intrinsics) :
-  std::map<IndexT, ELocalBAState> _map_poseId_LBAState;
-  std::map<IndexT, ELocalBAState> _map_intrinsicId_LBAState;
-  std::map<IndexT, ELocalBAState> _map_landmarkId_LBAState;
+//  // Store the ELocalBAState of each parameter (structure, poses, intrinsics) :
+//  std::map<IndexT, ELocalBAState> _map_poseId_LBAState;
+//  std::map<IndexT, ELocalBAState> _map_intrinsicId_LBAState;
+//  std::map<IndexT, ELocalBAState> _map_landmarkId_LBAState;
   
-  // Get back the 'ELocalBAState' for a specific parameter :
-  ELocalBAState getPoseState(const IndexT poseId)            {return _map_poseId_LBAState.find(poseId)->second;}
-  ELocalBAState getIntrinsicsState(const IndexT intrinsicId) {return _map_intrinsicId_LBAState.find(intrinsicId)->second;}
-  ELocalBAState getLandmarkState(const IndexT landmarkId)    {return _map_landmarkId_LBAState.find(landmarkId)->second;}
+//  // Get back the 'ELocalBAState' for a specific parameter :
+//  ELocalBAState getPoseState(const IndexT poseId)            {return _map_poseId_LBAState.find(poseId)->second;}
+//  ELocalBAState getIntrinsicsState(const IndexT intrinsicId) {return _map_intrinsicId_LBAState.find(intrinsicId)->second;}
+//  ELocalBAState getLandmarkState(const IndexT landmarkId)    {return _map_landmarkId_LBAState.find(landmarkId)->second;}
 
 
   void setSolverOptions(ceres::Solver::Options& solver_options);
@@ -112,13 +112,15 @@ private:
     ceres::Solver::Summary &summary);
 
   // Update camera poses with refined data
-  void updateCameraPoses(
-    const Hash_Map<IndexT, std::vector<double>> & map_poses,
+  void updateCameraPoses(const Hash_Map<IndexT, 
+    std::vector<double>> & map_poseblocks, 
+    const LocalBA_Data &localBA_data,
     Poses & poses);
     
   // Update camera intrinsics with refined data
   void updateCameraIntrinsics(
-    const Hash_Map<IndexT, std::vector<double>> & map_intrinsics,
+    const Hash_Map<IndexT, std::vector<double>> & map_intrinsicblocks,
+    const LocalBA_Data &localBA_data,
     Intrinsics & intrinsics);
 };
 
