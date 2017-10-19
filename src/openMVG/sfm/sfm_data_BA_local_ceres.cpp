@@ -24,7 +24,7 @@ using namespace openMVG::geometry;
 
 Local_Bundle_Adjustment_Ceres::Local_Bundle_Adjustment_Ceres(Local_Bundle_Adjustment_Ceres::LocalBA_options options)
   : 
-    _LBA_openMVG_options(options)
+    _LBAOptions(options)
 {}
 
 bool Local_Bundle_Adjustment_Ceres::Adjust(SfM_Data& sfm_data, const LocalBA_Data& localBA_data)
@@ -40,7 +40,7 @@ bool Local_Bundle_Adjustment_Ceres::Adjust(SfM_Data& sfm_data, const LocalBA_Dat
   
   ceres::Solver::Options solver_options;
   setSolverOptions(solver_options);
-  if (_LBA_openMVG_options.isParameterOrderingEnabled()) 
+  if (_LBAOptions.isParameterOrderingEnabled()) 
     solver_options.linear_solver_ordering.reset(new ceres::ParameterBlockOrdering);
   
   ceres::Problem problem;
@@ -56,30 +56,30 @@ bool Local_Bundle_Adjustment_Ceres::Adjust(SfM_Data& sfm_data, const LocalBA_Dat
   map_intrinsicsBlocks = addIntrinsicsToCeresProblem(sfm_data, problem);
   
   // Count the number of Refined, Constant & Ignored parameters
-  if (_LBA_openMVG_options.isLocalBAEnabled())
+  if (_LBAOptions.isLocalBAEnabled())
   {
     for (auto it : map_intrinsicsBlocks)
     {
       IndexT intrinsicId = it.first;
-      if (localBA_data.getIntrinsicsState(intrinsicId) == LocalBA_Data::ELocalBAState::refined)  ++_LBA_statistics.numRefinedIntrinsics;
-      if (localBA_data.getIntrinsicsState(intrinsicId) == LocalBA_Data::ELocalBAState::constant) ++_LBA_statistics.numConstantIntrinsics;
-      if (localBA_data.getIntrinsicsState(intrinsicId) == LocalBA_Data::ELocalBAState::ignored)  ++_LBA_statistics.numIgnoredIntrinsics;
+      if (localBA_data.getIntrinsicState(intrinsicId) == LocalBA_Data::ELocalBAState::refined)  ++_LBAStatistics._numRefinedIntrinsics;
+      if (localBA_data.getIntrinsicState(intrinsicId) == LocalBA_Data::ELocalBAState::constant) ++_LBAStatistics._numConstantIntrinsics;
+      if (localBA_data.getIntrinsicState(intrinsicId) == LocalBA_Data::ELocalBAState::ignored)  ++_LBAStatistics._numIgnoredIntrinsics;
     }
     for (auto it : map_posesBlocks)
     {
       IndexT poseId = it.first;
-      if (localBA_data.getPoseState(poseId) == LocalBA_Data::ELocalBAState::refined)  ++_LBA_statistics.numRefinedPoses;
-      if (localBA_data.getPoseState(poseId) == LocalBA_Data::ELocalBAState::constant) ++_LBA_statistics.numConstantPoses;
-      if (localBA_data.getPoseState(poseId) == LocalBA_Data::ELocalBAState::ignored)  ++_LBA_statistics.numIgnoredPoses;
+      if (localBA_data.getPoseState(poseId) == LocalBA_Data::ELocalBAState::refined)  ++_LBAStatistics._numRefinedPoses;
+      if (localBA_data.getPoseState(poseId) == LocalBA_Data::ELocalBAState::constant) ++_LBAStatistics._numConstantPoses;
+      if (localBA_data.getPoseState(poseId) == LocalBA_Data::ELocalBAState::ignored)  ++_LBAStatistics._numIgnoredPoses;
     }
   }   
   else
   {
-    _LBA_statistics.numRefinedPoses = map_posesBlocks.size();
-    _LBA_statistics.numRefinedIntrinsics = map_intrinsicsBlocks.size();
+    _LBAStatistics._numRefinedPoses = map_posesBlocks.size();
+    _LBAStatistics._numRefinedIntrinsics = map_intrinsicsBlocks.size();
   }
   
-  if (_LBA_statistics.numConstantPoses == 0 && _LBA_statistics.numIgnoredPoses != 0)
+  if (_LBAStatistics._numConstantPoses == 0 && _LBAStatistics._numIgnoredPoses != 0)
   {
     OPENMVG_LOG_WARNING("Local bundle adjustment not executed: There is no pose set to Constant in the solver.");
     // It happens when the added pose(s) is(are) not connected to the rest of the graph.
@@ -97,9 +97,9 @@ bool Local_Bundle_Adjustment_Ceres::Adjust(SfM_Data& sfm_data, const LocalBA_Dat
     IndexT landmarkId = landmarkIt.first;
     
     // Count the number of Refined, Constant & Ignored landmarks
-    if (localBA_data.getLandmarkState(landmarkId) == LocalBA_Data::ELocalBAState::refined)  ++_LBA_statistics.numRefinedLandmarks;
-    if (localBA_data.getLandmarkState(landmarkId) == LocalBA_Data::ELocalBAState::constant) ++_LBA_statistics.numConstantLandmarks;
-    if (localBA_data.getLandmarkState(landmarkId) == LocalBA_Data::ELocalBAState::ignored)  ++_LBA_statistics.numIgnoredLandmarks;
+    if (localBA_data.getLandmarkState(landmarkId) == LocalBA_Data::ELocalBAState::refined)  ++_LBAStatistics._numRefinedLandmarks;
+    if (localBA_data.getLandmarkState(landmarkId) == LocalBA_Data::ELocalBAState::constant) ++_LBAStatistics._numConstantLandmarks;
+    if (localBA_data.getLandmarkState(landmarkId) == LocalBA_Data::ELocalBAState::ignored)  ++_LBAStatistics._numIgnoredLandmarks;
     
     const Observations & observations = landmarkIt.second.observations;
     // Iterate over 2D observation associated to the 3D landmark
@@ -112,10 +112,10 @@ bool Local_Bundle_Adjustment_Ceres::Adjust(SfM_Data& sfm_data, const LocalBA_Dat
       
       // Do not create a residual block if the pose, the intrinsic or the landmark 
       // have been set as Ignored by the Local BA strategy
-      if (_LBA_openMVG_options.isLocalBAEnabled())
+      if (_LBAOptions.isLocalBAEnabled())
       {
         if (localBA_data.getPoseState(poseId) == LocalBA_Data::ELocalBAState::ignored 
-            || localBA_data.getIntrinsicsState(intrinsicId) == LocalBA_Data::ELocalBAState::ignored 
+            || localBA_data.getIntrinsicState(intrinsicId) == LocalBA_Data::ELocalBAState::ignored 
             || localBA_data.getLandmarkState(landmarkId) == LocalBA_Data::ELocalBAState::ignored)
         {
           continue;
@@ -136,16 +136,16 @@ bool Local_Bundle_Adjustment_Ceres::Adjust(SfM_Data& sfm_data, const LocalBA_Dat
         double* landmarkBlock = landmarkIt.second.X.data();
         
         // Apply a specific parameter ordering: 
-        if (_LBA_openMVG_options.isParameterOrderingEnabled()) 
+        if (_LBAOptions.isParameterOrderingEnabled()) 
         {
           solver_options.linear_solver_ordering->AddElementToGroup(landmarkBlock, 0);
           solver_options.linear_solver_ordering->AddElementToGroup(poseBlock, 1);
           solver_options.linear_solver_ordering->AddElementToGroup(intrinsicBlock, 2);
         }
         // Set to constant parameters previoously set as Constant by the Local BA strategy
-        if (_LBA_openMVG_options.isLocalBAEnabled())
+        if (_LBAOptions.isLocalBAEnabled())
         {
-          if (localBA_data.getIntrinsicsState(intrinsicId) == LocalBA_Data::ELocalBAState::constant) problem.SetParameterBlockConstant(intrinsicBlock);        
+          if (localBA_data.getIntrinsicState(intrinsicId) == LocalBA_Data::ELocalBAState::constant) problem.SetParameterBlockConstant(intrinsicBlock);        
           if (localBA_data.getPoseState(poseId) == LocalBA_Data::ELocalBAState::constant)            problem.SetParameterBlockConstant(poseBlock);
           if (localBA_data.getLandmarkState(landmarkId) == LocalBA_Data::ELocalBAState::constant)    problem.SetParameterBlockConstant(landmarkBlock);
         } 
@@ -165,7 +165,7 @@ bool Local_Bundle_Adjustment_Ceres::Adjust(SfM_Data& sfm_data, const LocalBA_Dat
     return false;
   
   // Solution is usable
-  if (_LBA_openMVG_options._bVerbose)
+  if (_LBAOptions._bVerbose)
   {
     // Display statistics about the minimization
     OPENMVG_LOG_DEBUG(
@@ -181,7 +181,7 @@ bool Local_Bundle_Adjustment_Ceres::Adjust(SfM_Data& sfm_data, const LocalBA_Dat
           );
   }
   
-  if (_LBA_openMVG_options._bVerbose && _LBA_openMVG_options.isParameterOrderingEnabled())
+  if (_LBAOptions._bVerbose && _LBAOptions.isParameterOrderingEnabled())
   {
     // Display statistics about "parameter ordering"
     OPENMVG_LOG_DEBUG(
@@ -193,27 +193,27 @@ bool Local_Bundle_Adjustment_Ceres::Adjust(SfM_Data& sfm_data, const LocalBA_Dat
   }
   
   // Add statitics about the BA loop:
-  _LBA_statistics.time = summary.total_time_in_seconds;
-  _LBA_statistics.numSuccessfullIterations = summary.num_successful_steps;
-  _LBA_statistics.numUnsuccessfullIterations = summary.num_unsuccessful_steps;
-  _LBA_statistics.numResidualBlocks = summary.num_residuals;
-  _LBA_statistics.RMSEinitial = std::sqrt( summary.initial_cost / summary.num_residuals);
-  _LBA_statistics.RMSEfinal = std::sqrt( summary.final_cost / summary.num_residuals);
+  _LBAStatistics._time = summary.total_time_in_seconds;
+  _LBAStatistics._numSuccessfullIterations = summary.num_successful_steps;
+  _LBAStatistics._numUnsuccessfullIterations = summary.num_unsuccessful_steps;
+  _LBAStatistics._numResidualBlocks = summary.num_residuals;
+  _LBAStatistics._RMSEinitial = std::sqrt( summary.initial_cost / summary.num_residuals);
+  _LBAStatistics._RMSEfinal = std::sqrt( summary.final_cost / summary.num_residuals);
   
-  if (_LBA_openMVG_options._bVerbose && _LBA_openMVG_options.isLocalBAEnabled())
+  if (_LBAOptions._bVerbose && _LBAOptions.isLocalBAEnabled())
   {    
     // Display statistics about the Local BA
     OPENMVG_LOG_DEBUG(
           "Local BA statistics:\n"
-          " #poses: " << _LBA_statistics.numRefinedPoses << " refined, " 
-          << _LBA_statistics.numConstantPoses << " constant, "
-          << _LBA_statistics.numIgnoredPoses << " ignored.\n"
-                                                " #intrinsics: " << _LBA_statistics.numRefinedIntrinsics << " refined, " 
-          << _LBA_statistics.numConstantIntrinsics << " constant, "
-          << _LBA_statistics.numIgnoredIntrinsics<< " ignored.\n"   
-                                                    " #landmarks: " << _LBA_statistics.numRefinedLandmarks << " refined, " 
-          << _LBA_statistics.numConstantLandmarks << " constant, "
-          << _LBA_statistics.numIgnoredLandmarks << " ignored.\n"
+          " #poses: " << _LBAStatistics._numRefinedPoses << " refined, " 
+          << _LBAStatistics._numConstantPoses << " constant, "
+          << _LBAStatistics._numIgnoredPoses << " ignored.\n"
+                                                " #intrinsics: " << _LBAStatistics._numRefinedIntrinsics << " refined, " 
+          << _LBAStatistics._numConstantIntrinsics << " constant, "
+          << _LBAStatistics._numIgnoredIntrinsics<< " ignored.\n"   
+                                                    " #landmarks: " << _LBAStatistics._numRefinedLandmarks << " refined, " 
+          << _LBAStatistics._numConstantLandmarks << " constant, "
+          << _LBAStatistics._numIgnoredLandmarks << " ignored.\n"
           );
   }
   
@@ -349,13 +349,13 @@ Hash_Map<IndexT, std::vector<double>> Local_Bundle_Adjustment_Ceres::addIntrinsi
 /// Transfert the BA options from OpenMVG to Ceres
 void Local_Bundle_Adjustment_Ceres::setSolverOptions(ceres::Solver::Options& solver_options)
 {
-  solver_options.preconditioner_type = _LBA_openMVG_options._preconditioner_type;
-  solver_options.linear_solver_type = _LBA_openMVG_options._linear_solver_type;
-  solver_options.sparse_linear_algebra_library_type = _LBA_openMVG_options._sparse_linear_algebra_library_type;
-  solver_options.minimizer_progress_to_stdout = _LBA_openMVG_options._bVerbose;
+  solver_options.preconditioner_type = _LBAOptions._preconditioner_type;
+  solver_options.linear_solver_type = _LBAOptions._linear_solver_type;
+  solver_options.sparse_linear_algebra_library_type = _LBAOptions._sparse_linear_algebra_library_type;
+  solver_options.minimizer_progress_to_stdout = _LBAOptions._bVerbose;
   solver_options.logging_type = ceres::SILENT;
-  solver_options.num_threads = _LBA_openMVG_options._nbThreads;
-  solver_options.num_linear_solver_threads = _LBA_openMVG_options._nbThreads;
+  solver_options.num_threads = _LBAOptions._nbThreads;
+  solver_options.num_linear_solver_threads = _LBAOptions._nbThreads;
 }
 
 bool Local_Bundle_Adjustment_Ceres::solveBA(
@@ -367,7 +367,7 @@ bool Local_Bundle_Adjustment_Ceres::solveBA(
   // Solve BA
   
   ceres::Solve(options, &problem, &summary);
-  if (_LBA_openMVG_options._bCeres_Summary)
+  if (_LBAOptions._bCeres_Summary)
     OPENMVG_LOG_DEBUG(summary.FullReport());
   
   // If no error, get back refined parameters
@@ -390,7 +390,7 @@ void Local_Bundle_Adjustment_Ceres::updateCameraPoses(
     const IndexT poseId = itPose->first;
     
     // Do not update a camera pose set as Ignored or Constant in the Local BA strategy
-    if (_LBA_openMVG_options.isLocalBAEnabled() )
+    if (_LBAOptions.isLocalBAEnabled() )
     {
       if (localBA_data.getPoseState(poseId) == LocalBA_Data::ELocalBAState::ignored) 
         continue;
@@ -417,11 +417,11 @@ void Local_Bundle_Adjustment_Ceres::updateCameraIntrinsics(
     const IndexT intrinsicId = intrinsicsV.first;
     
     // Do not update an camera intrinsic set as Ignored or Constant in the Local BA strategy
-    if (_LBA_openMVG_options.isLocalBAEnabled() )
+    if (_LBAOptions.isLocalBAEnabled() )
     {
-      if (localBA_data.getIntrinsicsState(intrinsicId) == LocalBA_Data::ELocalBAState::ignored) 
+      if (localBA_data.getIntrinsicState(intrinsicId) == LocalBA_Data::ELocalBAState::ignored) 
         continue;
-      if (localBA_data.getIntrinsicsState(intrinsicId) == LocalBA_Data::ELocalBAState::constant) 
+      if (localBA_data.getIntrinsicState(intrinsicId) == LocalBA_Data::ELocalBAState::constant) 
         continue;
     }
     
@@ -470,7 +470,7 @@ bool Local_Bundle_Adjustment_Ceres::exportStatistics(const std::string& path)
   // remind: distances range is {-1; 10+} so 11th element is the dist. 10
   std::size_t posesWthDistUpperThanTen = 0;
   
-  for (const auto& it : _LBA_statistics.map_distance_numCameras)
+  for (const auto& it : _LBAStatistics.map_distance_numCameras)
   {
     if (it.first >= 10)
       posesWthDistUpperThanTen += it.second;
@@ -485,39 +485,39 @@ bool Local_Bundle_Adjustment_Ceres::exportStatistics(const std::string& path)
   //    }
   //  }
   
-  os << _LBA_statistics.time << "\t"
+  os << _LBAStatistics._time << "\t"
         
-     << _LBA_statistics.numRefinedPoses << "\t"
-     << _LBA_statistics.numConstantPoses << "\t"
-     << _LBA_statistics.numIgnoredPoses << "\t"
-     << _LBA_statistics.numRefinedLandmarks << "\t"
-     << _LBA_statistics.numConstantLandmarks << "\t"
-     << _LBA_statistics.numIgnoredLandmarks << "\t"
-     << _LBA_statistics.numRefinedIntrinsics << "\t"
-     << _LBA_statistics.numConstantIntrinsics << "\t"
-     << _LBA_statistics.numIgnoredIntrinsics << "\t"
+     << _LBAStatistics._numRefinedPoses << "\t"
+     << _LBAStatistics._numConstantPoses << "\t"
+     << _LBAStatistics._numIgnoredPoses << "\t"
+     << _LBAStatistics._numRefinedLandmarks << "\t"
+     << _LBAStatistics._numConstantLandmarks << "\t"
+     << _LBAStatistics._numIgnoredLandmarks << "\t"
+     << _LBAStatistics._numRefinedIntrinsics << "\t"
+     << _LBAStatistics._numConstantIntrinsics << "\t"
+     << _LBAStatistics._numIgnoredIntrinsics << "\t"
         
-     << _LBA_statistics.numResidualBlocks << "\t"
-     << _LBA_statistics.numSuccessfullIterations << "\t"
-     << _LBA_statistics.numUnsuccessfullIterations << "\t"
+     << _LBAStatistics._numResidualBlocks << "\t"
+     << _LBAStatistics._numSuccessfullIterations << "\t"
+     << _LBAStatistics._numUnsuccessfullIterations << "\t"
         
-     << _LBA_statistics.RMSEinitial << "\t"
-     << _LBA_statistics.RMSEfinal << "\t"
+     << _LBAStatistics._RMSEinitial << "\t"
+     << _LBAStatistics._RMSEfinal << "\t"
         
-     << _LBA_statistics.map_distance_numCameras[-1] << "\t"
-     << _LBA_statistics.map_distance_numCameras[0] << "\t"
-     << _LBA_statistics.map_distance_numCameras[1] << "\t"
-     << _LBA_statistics.map_distance_numCameras[2] << "\t"
-     << _LBA_statistics.map_distance_numCameras[3] << "\t"
-     << _LBA_statistics.map_distance_numCameras[4] << "\t"
-     << _LBA_statistics.map_distance_numCameras[5] << "\t"
-     << _LBA_statistics.map_distance_numCameras[6] << "\t"
-     << _LBA_statistics.map_distance_numCameras[7] << "\t"
-     << _LBA_statistics.map_distance_numCameras[8] << "\t"
-     << _LBA_statistics.map_distance_numCameras[9] << "\t"
+     << _LBAStatistics.map_distance_numCameras[-1] << "\t"
+     << _LBAStatistics.map_distance_numCameras[0] << "\t"
+     << _LBAStatistics.map_distance_numCameras[1] << "\t"
+     << _LBAStatistics.map_distance_numCameras[2] << "\t"
+     << _LBAStatistics.map_distance_numCameras[3] << "\t"
+     << _LBAStatistics.map_distance_numCameras[4] << "\t"
+     << _LBAStatistics.map_distance_numCameras[5] << "\t"
+     << _LBAStatistics.map_distance_numCameras[6] << "\t"
+     << _LBAStatistics.map_distance_numCameras[7] << "\t"
+     << _LBAStatistics.map_distance_numCameras[8] << "\t"
+     << _LBAStatistics.map_distance_numCameras[9] << "\t"
      << posesWthDistUpperThanTen << "\t";
   
-  for (const IndexT id : _LBA_statistics.newViewsId)
+  for (const IndexT id : _LBAStatistics._newViewsId)
   {
     os << id << "\t";
   }

@@ -1751,7 +1751,7 @@ bool SequentialSfMReconstructionEngine::localBundleAdjustment(const std::string&
     _localBA_data->updateGraphWithNewViews(_sfm_data, _map_tracksPerView);
     
     { // -- update timer
-      times.graphUpdating = duration.elapsed(); 
+      times._graphUpdating = duration.elapsed(); 
       duration.reset();
     }
     
@@ -1759,7 +1759,7 @@ bool SequentialSfMReconstructionEngine::localBundleAdjustment(const std::string&
     _localBA_data->computeDistancesMaps(_sfm_data);
     
     { // -- update timer
-      times.distMapsComputing = duration.elapsed(); 
+      times._distMapsComputing = duration.elapsed(); 
       duration.reset();
     }
     
@@ -1787,8 +1787,8 @@ bool SequentialSfMReconstructionEngine::localBundleAdjustment(const std::string&
   else // save the changes due to the adjustment
     isBaSucceed = localBA_obj.Adjust(_sfm_data, *_localBA_data);
   
-  times.adjusting = duration.elapsed(); 
-  times.allLocalBA = durationLBA.elapsed();  
+  times._adjusting = duration.elapsed(); 
+  times._allLocalBA = durationLBA.elapsed();  
   times.exportTimes(_sOutDirectory + "/LocalBA/times_"+ name +".txt");
   times.showTimes();
 

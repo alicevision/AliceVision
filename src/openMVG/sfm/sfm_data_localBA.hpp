@@ -42,11 +42,11 @@ public:
   
   int getViewDistance(const IndexT viewId) const;
   
-  std::set<IndexT> getNewViewsId() const {return set_newViewsId;}
+  std::set<IndexT> getNewViewsId() const {return _newViewsId;}
   
   // -- Setters
   
-  void setNewViewsId(const std::set<IndexT>& newPosesId) {set_newViewsId = newPosesId;}
+  void setNewViewsId(const std::set<IndexT>& newPosesId) {_newViewsId = newPosesId;}
   
   // -- Methods
   
@@ -81,7 +81,7 @@ public:
   /// @param[in] parameter The \a EIntrinsicParameter to observe.
   /// @return true if the limit is reached, else false
   bool isIntrinsicLimitReached(const IndexT intrinsicId, const EIntrinsicParameter parameter) const 
-    { return intrinsicsLimitIds.at(intrinsicId).at(parameter) != 0;}
+    { return _intrinsicsLimitIds.at(intrinsicId).at(parameter) != 0;}
   
   /// @brief exportIntrinsicsHistory Save the history of each intrinsic. It create a file \b K<intrinsic_index>.txt in \a folder.
   /// @param[in] folder The folder in which the \b K*.txt are saved.
@@ -114,14 +114,13 @@ public:
   
   // Get back the 'ELocalBAState' for a specific parameter :
   ELocalBAState getPoseState(const IndexT poseId) const             
-    {return _map_poseId_LBAState.find(poseId)->second;}
-  ELocalBAState getIntrinsicsState(const IndexT intrinsicId) const  
-    {return _map_intrinsicId_LBAState.find(intrinsicId)->second;}
+    {return _mapLBAStatePerPoseId.find(poseId)->second;}
+  ELocalBAState getIntrinsicState(const IndexT intrinsicId) const  
+    {return _mapLBAStatePerIntrinsicId.find(intrinsicId)->second;}
   ELocalBAState getLandmarkState(const IndexT landmarkId) const     
-    {return _map_landmarkId_LBAState.find(landmarkId)->second;}
+    {return _mapLBAStatePerLandmarkId.find(landmarkId)->second;}
 
   std::size_t getNumberOfConstantAndRefinedCameras();
-
 
 private:
   
@@ -143,9 +142,9 @@ private:
       const std::set<IndexT>& newViewsId);
  
  
-  std::vector<IndexT> getIntrinsicLimitIds(const IndexT intrinsicId) const {return intrinsicsLimitIds.at(intrinsicId);}
+  std::vector<IndexT> getIntrinsicLimitIds(const IndexT intrinsicId) const {return _intrinsicsLimitIds.at(intrinsicId);}
   
-  std::vector<double> getLastIntrinsicParameters(const IndexT intrinsicId) const {return intrinsicsHistory.at(intrinsicId).back().second;}
+  std::vector<double> getLastIntrinsicParameters(const IndexT intrinsicId) const {return _intrinsicsHistory.at(intrinsicId).back().second;}
   
   /// @brief standardDeviation Compute the standard deviation.
   /// @param[in] The values
@@ -160,28 +159,26 @@ private:
   // ------------------------
   
   // Ensure a minimum number of landmarks in common to consider 2 views as connected in the graph.
-  static std::size_t const kMinNbOfMatches = 100;
+  static std::size_t const _kMinNbOfMatches = 100;
   
   // A graph where nodes are poses and an edge exists when 2 poses shared at least 'kMinNbOfMatches' matches.
-  lemon::ListGraph graph_poses; 
+  lemon::ListGraph _graph; 
   
   // A map associating each view index at its node in the graph 'graph_poses'.
   std::map<IndexT, lemon::ListGraph::Node> map_viewId_node;
   
   // Contains all the last resected cameras
-  std::set<IndexT> set_newViewsId; 
+  std::set<IndexT> _newViewsId; 
   
   // Store the graph-distances to the new poses/views. 
   // If the view/pose is not connected to the new poses/views, its distance is -1.
-  std::map<IndexT, int> map_viewId_distance;
-  std::map<IndexT, int> map_poseId_distance;
-  
-   
+  std::map<IndexT, int> _mapDistancePerViewId;
+  std::map<IndexT, int> _mapDistancePerPoseId;
   
   // Store the ELocalBAState of each parameter (structure, poses, intrinsics) :
-  std::map<IndexT, ELocalBAState> _map_poseId_LBAState;
-  std::map<IndexT, ELocalBAState> _map_intrinsicId_LBAState;
-  std::map<IndexT, ELocalBAState> _map_landmarkId_LBAState;
+  std::map<IndexT, ELocalBAState> _mapLBAStatePerPoseId;
+  std::map<IndexT, ELocalBAState> _mapLBAStatePerIntrinsicId;
+  std::map<IndexT, ELocalBAState> _mapLBAStatePerLandmarkId;
   
   // ------------------------
   // - Intrinsics data -
@@ -190,11 +187,11 @@ private:
   // ------------------------
   
   // Backup of the intrinsics parameters
-  IntrinicsHistory intrinsicsHistory; 
+  IntrinicsHistory _intrinsicsHistory; 
   
   // Store, for each parameter of each intrinsic, the BA's index from which it has been concidered as constant.
   // <IntrinsicIndex, <F_limitId, CX_limitId, CY_limitId>>
-  std::map<IndexT, std::vector<IndexT>> intrinsicsLimitIds; 
+  std::map<IndexT, std::vector<IndexT>> _intrinsicsLimitIds; 
 };
 
 //------------------------------------------------------------------------------------------------------------------------
@@ -206,33 +203,33 @@ private:
 /// Contain all the information about a Bundle Adjustment loop
 struct LocalBA_statistics
 {
-  LocalBA_statistics(const std::set<IndexT>& newlyResectedViewsId = std::set<IndexT>()) {newViewsId = newlyResectedViewsId;}
+  LocalBA_statistics(const std::set<IndexT>& newlyResectedViewsId = std::set<IndexT>()) {_newViewsId = newlyResectedViewsId;}
   
   
   // Parameters returned by Ceres:
-  double time = 0.0;                          // spent time to solve the BA (s)
-  std::size_t numSuccessfullIterations = 0;   // number of successfull iterations
-  std::size_t numUnsuccessfullIterations = 0; // number of unsuccessfull iterations
+  double _time = 0.0;                          // spent time to solve the BA (s)
+  std::size_t _numSuccessfullIterations = 0;   // number of successfull iterations
+  std::size_t _numUnsuccessfullIterations = 0; // number of unsuccessfull iterations
   
-  std::size_t numResidualBlocks = 0;          // num. of resiudal block in the Ceres problem
+  std::size_t _numResidualBlocks = 0;          // num. of resiudal block in the Ceres problem
   
-  double RMSEinitial = 0.0; // sqrt(initial_cost / num_residuals)
-  double RMSEfinal = 0.0;   // sqrt(final_cost / num_residuals)
+  double _RMSEinitial = 0.0; // sqrt(initial_cost / num_residuals)
+  double _RMSEfinal = 0.0;   // sqrt(final_cost / num_residuals)
   
   // Parameters specifically used by Local BA:
-  std::size_t numRefinedPoses = 0;           // number of refined poses among all the estimated views          
-  std::size_t numConstantPoses = 0;          // number of poses set constant in the BA solver
-  std::size_t numIgnoredPoses = 0;           // number of not added poses to the BA solver
-  std::size_t numRefinedIntrinsics = 0;      // num. of refined intrinsics
-  std::size_t numConstantIntrinsics = 0;     // num. of intrinsics set constant in the BA solver
-  std::size_t numIgnoredIntrinsics = 0;      // num. of not added intrinsicsto the BA solver
-  std::size_t numRefinedLandmarks = 0;       // num. of refined landmarks
-  std::size_t numConstantLandmarks = 0;      // num. of landmarks set constant in the BA solver
-  std::size_t numIgnoredLandmarks = 0;       // num. of not added landmarks to the BA solver
+  std::size_t _numRefinedPoses = 0;           // number of refined poses among all the estimated views          
+  std::size_t _numConstantPoses = 0;          // number of poses set constant in the BA solver
+  std::size_t _numIgnoredPoses = 0;           // number of not added poses to the BA solver
+  std::size_t _numRefinedIntrinsics = 0;      // num. of refined intrinsics
+  std::size_t _numConstantIntrinsics = 0;     // num. of intrinsics set constant in the BA solver
+  std::size_t _numIgnoredIntrinsics = 0;      // num. of not added intrinsicsto the BA solver
+  std::size_t _numRefinedLandmarks = 0;       // num. of refined landmarks
+  std::size_t _numConstantLandmarks = 0;      // num. of landmarks set constant in the BA solver
+  std::size_t _numIgnoredLandmarks = 0;       // num. of not added landmarks to the BA solver
   
   std::map<int, std::size_t> map_distance_numCameras; // distribution of the cameras for each graph distance
   
-  std::set<IndexT> newViewsId;  // index of the new views added (newly resected)
+  std::set<IndexT> _newViewsId;  // index of the new views added (newly resected)
 };
 
 //------------------------------------------------------------------------------------------------------------------------
@@ -243,11 +240,11 @@ struct LocalBA_statistics
 
 struct LocalBA_timeProfiler
 {
-  double graphUpdating = 0.0;
-  double distMapsComputing = 0.0;
-  double statesMapsComputing = 0.0;
-  double adjusting = 0.0;
-  double allLocalBA = 0.0;
+  double _graphUpdating = 0.0;
+  double _distMapsComputing = 0.0;
+  double _statesMapsComputing = 0.0;
+  double _adjusting = 0.0;
+  double _allLocalBA = 0.0;
   
   bool exportTimes(const std::string& filename)
   {
@@ -275,11 +272,11 @@ struct LocalBA_timeProfiler
       os << "\n"; 
     }
     
-    os << graphUpdating << "\t"
-       << distMapsComputing << "\t"
-       << statesMapsComputing << "\t"
-       << adjusting << "\t"
-       << allLocalBA << "\t";
+    os << _graphUpdating << "\t"
+       << _distMapsComputing << "\t"
+       << _statesMapsComputing << "\t"
+       << _adjusting << "\t"
+       << _allLocalBA << "\t";
     
     os << "\n";
     os.close();
@@ -289,11 +286,11 @@ struct LocalBA_timeProfiler
   void showTimes()
   {
     std::cout << "\n----- Local BA durations ------" << std::endl;
-    std::cout << "graph updating : " << graphUpdating << " ms" << std::endl;
-    std::cout << "dist. Maps Computing : " << distMapsComputing << " ms" << std::endl;
-    std::cout << "states Maps Computing : " << statesMapsComputing << " ms" << std::endl;
-    std::cout << "adjusting : " << adjusting << " ms" << std::endl;
-    std::cout << "** all Local BA: " << allLocalBA << " ms" << std::endl;
+    std::cout << "graph updating : " << _graphUpdating << " ms" << std::endl;
+    std::cout << "dist. Maps Computing : " << _distMapsComputing << " ms" << std::endl;
+    std::cout << "states Maps Computing : " << _statesMapsComputing << " ms" << std::endl;
+    std::cout << "adjusting : " << _adjusting << " ms" << std::endl;
+    std::cout << "** all Local BA: " << _allLocalBA << " ms" << std::endl;
     std::cout << "-------------------------------\n" << std::endl;
   }
 };

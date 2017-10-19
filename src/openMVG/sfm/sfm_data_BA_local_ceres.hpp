@@ -50,7 +50,7 @@ public:
   
   bool Adjust(const SfM_Data & const_sfm_data, const LocalBA_Data& localBA_data);
   
-  void initStatistics(const std::set<IndexT>& newViewsId) {_LBA_statistics = LocalBA_statistics(newViewsId);}
+  void initStatistics(const std::set<IndexT>& newViewsId) {_LBAStatistics = LocalBA_statistics(newViewsId);}
 
   /// \brief Export statistics about bundle adjustment in a TXT file ("BaStats.txt")
   /// The contents of the file have been writen such that it is easy to handle it with
@@ -60,8 +60,8 @@ public:
 private:
 
   // Used for Local BA approach: 
-  LocalBA_options _LBA_openMVG_options;
-  LocalBA_statistics _LBA_statistics;
+  LocalBA_options _LBAOptions;
+  LocalBA_statistics _LBAStatistics;
   
   void setSolverOptions(ceres::Solver::Options& solver_options);
 
