@@ -77,7 +77,7 @@ std::set<IndexT> LocalBA_Data::selectViewsToAddToTheGraph(const SfM_Data& sfm_da
   return addedViewsId;
 }
 
-std::map<Pair, std::size_t> LocalBA_Data::countMatchesWithCamerasOfTheReconstruction(
+std::map<Pair, std::size_t> LocalBA_Data::countSharedLandmarksPerImagesPair(
     const SfM_Data& sfm_data,
     const tracks::TracksPerView& map_tracksPerView,
     const std::set<IndexT>& newViewsId)
@@ -88,6 +88,7 @@ std::map<Pair, std::size_t> LocalBA_Data::countMatchesWithCamerasOfTheReconstruc
   std::map<Pair, std::size_t> map_imagesPair_nbSharedLandmarks;
   
   // Get landmarks id. of all the reconstructed 3D points (: landmarks)
+  // TODO: avoid copy and use boost::transform_iterator
   std::set<IndexT> landmarkIds;
   std::transform(sfm_data.GetLandmarks().begin(), sfm_data.GetLandmarks().end(),
                  std::inserter(landmarkIds, landmarkIds.begin()),
@@ -137,7 +138,7 @@ void LocalBA_Data::updateGraphWithNewViews(
   std::set<IndexT> addedViewsId = selectViewsToAddToTheGraph(sfm_data);
   
   std::map<Pair, std::size_t> map_imagesPair_nbSharedLandmarks 
-      = countMatchesWithCamerasOfTheReconstruction(sfm_data, map_tracksPerView, addedViewsId);
+      = countSharedLandmarksPerImagesPair(sfm_data, map_tracksPerView, addedViewsId);
   
   // -- Add nodes to the graph
   for (auto& viewId : addedViewsId)
@@ -236,7 +237,7 @@ void LocalBA_Data::computeDistancesMaps(const SfM_Data& sfm_data)
   std::cout << "\n";
 }
 
-void LocalBA_Data::computeStatesMaps_strategy4(const SfM_Data & sfm_data)
+void LocalBA_Data::convertDistancesToLBAStates(const SfM_Data & sfm_data)
 {
   // reset the maps
   _map_poseId_LBAState.clear();
@@ -244,7 +245,6 @@ void LocalBA_Data::computeStatesMaps_strategy4(const SfM_Data & sfm_data)
   _map_landmarkId_LBAState.clear();
   
   // ----------------------------------------------------
-  // -- Strategy 4 : (2017.09.25)
   //  D = distanceLimit
   //  L = percentageLimit
   //  W = windowSize
@@ -253,9 +253,9 @@ void LocalBA_Data::computeStatesMaps_strategy4(const SfM_Data & sfm_data)
   //    - dist == D+1: constant
   //    - else ignored
   //  - intrinsic:
-  //    All the parameters of each intrinic are saved.        [*NEW*]
-  //    All the intrinsics are set to Refined by default.     [*NEW*]
-  //    An intrinsic is set to contant when its focal lenght  [*NEW*]
+  //    All the parameters of each intrinic are saved.        
+  //    All the intrinsics are set to Refined by default.     
+  //    An intrinsic is set to contant when its focal lenght  
   //    is considered as stable in its W last saved values
   //    according to all of its values.                       
   //  - landmarks:

@@ -103,7 +103,7 @@ public:
   /// and compute the intragraph-distance between these new cameras and all the others.
   void computeDistancesMaps(const SfM_Data& sfm_data);
 
-  void computeStatesMaps_strategy4(const SfM_Data & sfm_data);
+  void convertDistancesToLBAStates(const SfM_Data & sfm_data);
   
  // Define the state of the all parameter of the reconstruction (structure, poses, intrinsics) in the BA:
   enum ELocalBAState { 
@@ -131,13 +131,13 @@ private:
   /// @return A set of views index
   std::set<IndexT> selectViewsToAddToTheGraph(const SfM_Data& sfm_data);
   
-  /// @brief countMatchesWithCamerasOfTheReconstruction Extract the images per between the views \c newViewsId and the already recontructed cameras, 
+  /// @brief countSharedLandmarksPerImagesPair Extract the images per between the views \c newViewsId and the already recontructed cameras, 
   /// and count the number of commun matches between these pairs.
   /// @param[in] sfm_data
   /// @param[in] map_tracksPerView
   /// @param[in] newViewsId A set with the views index that we want to count matches with resected cameras. 
   /// @return A map giving the number of matches for each images pair.
-  std::map<Pair, std::size_t> countMatchesWithCamerasOfTheReconstruction(
+  std::map<Pair, std::size_t> countSharedLandmarksPerImagesPair(
       const SfM_Data& sfm_data,
       const tracks::TracksPerView& map_tracksPerView,
       const std::set<IndexT>& newViewsId);

@@ -1765,8 +1765,7 @@ bool SequentialSfMReconstructionEngine::localBundleAdjustment(const std::string&
     
     // Determine the LocalBA_State (reffine, constant, ignored) for all the
     // parameters (landmarks, cameras poses and intrinsics)
-//    localBA_obj.computeStatesMaps_strategy4(_sfm_data, _localBA_data);    
-    _localBA_data->computeStatesMaps_strategy4(_sfm_data);    
+    _localBA_data->convertDistancesToLBAStates(_sfm_data);    
     
     // If the number of cameras that will be added to the solver is <= 100
     // we have to modify the BA mode to Dense.
