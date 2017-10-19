@@ -18,13 +18,7 @@ namespace openMVG {
 namespace sfm {
 
 
-/// Intrinsic parameters 
-/// <NbOfPosesWithACommonIntrinsic, IntrinsicParameters>
-using IntrinsicParams = std::pair<std::size_t, std::vector<double>>;
 
-/// Save the progression for all the intrinsics parameters
-/// <IntrinsicId, IntrinsicsParametersHistory>
-using IntrinicsHistory = std::map<IndexT, std::vector<IntrinsicParams>>;
 
 /// Contains all the data needed to apply a Local Bundle Adjustment.
 class LocalBA_Data
@@ -53,35 +47,6 @@ public:
   /// @brief addIntrinsicsToHistory Add the current intrinsics of the reconstruction in the intrinsics history.
   /// @param[in] sfm_data Contains all the information about the reconstruction, notably current intrinsics
   void addIntrinsicsToHistory(const SfM_Data& sfm_data);
-  
-  /// @brief EIntrinsicParameter
-  enum EIntrinsicParameter{Focal, Cx, Cy};
-  
-  /// @brief checkParameterLimits Compute, for each camera/intrinsic, the variation of the last \a windowSize values of the \a parameter.
-  /// If it consideres the variation of \a parameter as enought constant it updates \a intrinsicsLimitIds.
-  /// @details Pipeline:
-  /// \b H: the history of all the concidered parameter
-  /// \b S: the subpart of H including the last \a wondowSize values only.
-  /// \b sigma = stddev(S)  
-  /// \b sigma_normalized = sigma / (max(H) - min(H))
-  /// \c if sigma_normalized < \a stdevPercentageLimit \c then the limit is reached.
-  /// @param[in] parameter The \a EIntrinsicParameter you want to check.
-  /// @param[in] windowSize Compute the variation on the \a windowSize parameter
-  /// @param[in] stdevPercentageLimit The limit is reached when the standard deviation of the \a windowSize values is less than \a stdevPecentageLimit % of the range of all the values.
-  void checkParameterLimits(
-      const EIntrinsicParameter parameter, 
-      const std::size_t windowSize, 
-      const double stdevPercentageLimit);
-  
-  /// @brief checkAllParametersLimits Run \a checkParameterLimits() for each \a EIntrinsicParameter.
-  void checkAllParametersLimits(const std::size_t kWindowSize, const double kStdDevPercentage);
-  
-  /// @brief isIntrinsicLimitReached Giving an intrinsic index and the wished parameter, is return \c true if the limit has alerady been reached, else \c false.
-  /// @param[in] intrinsicId The intrinsic index.
-  /// @param[in] parameter The \a EIntrinsicParameter to observe.
-  /// @return true if the limit is reached, else false
-  bool isIntrinsicLimitReached(const IndexT intrinsicId, const EIntrinsicParameter parameter) const 
-    { return _intrinsicsLimitIds.at(intrinsicId).at(parameter) != 0;}
   
   /// @brief exportIntrinsicsHistory Save the history of each intrinsic. It create a file \b K<intrinsic_index>.txt in \a folder.
   /// @param[in] folder The folder in which the \b K*.txt are saved.
@@ -113,17 +78,26 @@ public:
   };
   
   // Get back the 'ELocalBAState' for a specific parameter :
-  ELocalBAState getPoseState(const IndexT poseId) const             
-    {return _mapLBAStatePerPoseId.find(poseId)->second;}
-  ELocalBAState getIntrinsicState(const IndexT intrinsicId) const  
-    {return _mapLBAStatePerIntrinsicId.find(intrinsicId)->second;}
-  ELocalBAState getLandmarkState(const IndexT landmarkId) const     
-    {return _mapLBAStatePerLandmarkId.find(landmarkId)->second;}
+  ELocalBAState getPoseState(const IndexT poseId) const {return _mapLBAStatePerPoseId.find(poseId)->second;}
+  ELocalBAState getIntrinsicState(const IndexT intrinsicId) const {return _mapLBAStatePerIntrinsicId.find(intrinsicId)->second;}
+  ELocalBAState getLandmarkState(const IndexT landmarkId) const {return _mapLBAStatePerLandmarkId.find(landmarkId)->second;}
 
   std::size_t getNumberOfConstantAndRefinedCameras();
 
 private:
-  
+    
+  /// @brief checkIntrinsicsConsistency Compute, for each camera/intrinsic, the variation of the last \a windowSize values of the focal length.
+  /// If it consideres the focal lenght variations as enought constant it updates \a _intrinsicIsConstant.
+  /// @details Pipeline:
+  /// \b H: the history of all the focal length for a given intrinsic
+  /// \b S: the subpart of H including the last \a wondowSize values only.
+  /// \b sigma = stddev(S)  
+  /// \b sigma_normalized = sigma / (max(H) - min(H))
+  /// \c if sigma_normalized < \a stdevPercentageLimit \c then the limit is reached.
+  /// @param[in] windowSize Compute the variation on the \a windowSize parameter
+  /// @param[in] stdevPercentageLimit The limit is reached when the standard deviation of the \a windowSize values is less than \a stdevPecentageLimit % of the range of all the values.
+  void checkIntrinsicsConsistency(const std::size_t windowSize, const double stdevPercentageLimit);
+ 
   /// @brief selectViewsToAddToTheGraph Return the index of all the posed views not added to the distance graph yet.
   /// It means all the poses if the graph is empty.
   /// @param[in] sfm_data
@@ -141,10 +115,14 @@ private:
       const tracks::TracksPerView& map_tracksPerView,
       const std::set<IndexT>& newViewsId);
  
- 
-  std::vector<IndexT> getIntrinsicLimitIds(const IndexT intrinsicId) const {return _intrinsicsLimitIds.at(intrinsicId);}
+     
+  /// @brief isIntrinsicConstant Giving an intrinsic index and the wished parameter, is return \c true if the limit has alerady been reached, else \c false.
+  /// @param[in] intrinsicId The intrinsic index.
+  /// @param[in] parameter The \a EIntrinsicParameter to observe.
+  /// @return true if the limit is reached, else false
+  bool isIntrinsicConstant(const IndexT intrinsicId) const { return _mapIntrinsicIsConstant.at(intrinsicId);}
   
-  std::vector<double> getLastIntrinsicParameters(const IndexT intrinsicId) const {return _intrinsicsHistory.at(intrinsicId).back().second;}
+  double getLastFocalLength(const IndexT intrinsicId) const {return _intrinsicsHistory.at(intrinsicId).back().second;}
   
   /// @brief standardDeviation Compute the standard deviation.
   /// @param[in] The values
@@ -187,13 +165,23 @@ private:
   // Local BA needs to know the evolution of all the intrinsics parameters.
   // When camera parameters are enought reffined (no variation) they are set to constant in the BA.
   // ------------------------
-  
-  /// Backup of the intrinsics parameters
+ 
+  /// Save the progression for all the intrinsics parameters
+  /// <IntrinsicId, std::vector<std::pair<NumOfPosesCamerasWithThisIntrinsic, FocalLengthHistory>
+  /// K1:
+  ///   0 1200 
+  ///   1 1250
+  ///   ...
+  /// K2:
+  ///   ... 
+  using IntrinicsHistory = std::map<IndexT, std::vector<std::pair<std::size_t, double>>>;
+
+  /// Backup of the intrinsics focal length values
   IntrinicsHistory _intrinsicsHistory; 
   
   /// Store, for each parameter of each intrinsic, the BA's index from which it has been concidered as constant.
-  /// <IntrinsicIndex, <F_limitId, CX_limitId, CY_limitId>>
-  std::map<IndexT, std::vector<IndexT>> _intrinsicsLimitIds; 
+  /// <IntrinsicId, isConsideredAsConstant>
+  std::map<IndexT, bool> _mapIntrinsicIsConstant; 
 };
 
 //------------------------------------------------------------------------------------------------------------------------

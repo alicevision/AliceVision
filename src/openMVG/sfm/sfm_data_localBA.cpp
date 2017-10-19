@@ -16,9 +16,9 @@ LocalBA_Data::LocalBA_Data(const SfM_Data& sfm_data)
   for (const auto& it : sfm_data.intrinsics)
   {
     _intrinsicsHistory[it.first];
-    _intrinsicsHistory.at(it.first).push_back(std::make_pair(0, sfm_data.GetIntrinsicPtr(it.first)->getParams()));
-    _intrinsicsLimitIds[it.first];
-    _intrinsicsLimitIds.at(it.first) = std::vector<IndexT> (3, 0); 
+    _intrinsicsHistory.at(it.first).push_back(std::make_pair(0, sfm_data.GetIntrinsicPtr(it.first)->getParams().at(0)));
+    _mapIntrinsicIsConstant[it.first];
+    _mapIntrinsicIsConstant.at(it.first) = false; 
   }
 }
 
@@ -27,7 +27,7 @@ int LocalBA_Data::getPoseDistance(const IndexT poseId) const
 {
   if (_mapDistancePerPoseId.find(poseId) == _mapDistancePerPoseId.end())
   {
-    OPENMVG_LOG_DEBUG("The pose #" << poseId << " does not exist in the 'map_poseId_distance':\n"
+    OPENMVG_LOG_DEBUG("The pose #" << poseId << " does not exist in the '_mapDistancePerPoseId':\n"
                       << _mapDistancePerPoseId);
     return -1;
   }
@@ -38,7 +38,7 @@ int LocalBA_Data::getViewDistance(const IndexT viewId) const
 {
   if (_mapDistancePerViewId.find(viewId) == _mapDistancePerViewId.end())
   {
-    OPENMVG_LOG_DEBUG("The view #" << viewId << " does not exist in the 'map_viewId_distance':\n"
+    OPENMVG_LOG_DEBUG("The view #" << viewId << " does not exist in the '_mapDistancePerViewId':\n"
                       << _mapDistancePerViewId);
     return -1;
   }
@@ -240,7 +240,7 @@ void LocalBA_Data::computeDistancesMaps(const SfM_Data& sfm_data)
 void LocalBA_Data::convertDistancesToLBAStates(const SfM_Data & sfm_data)
 {
   // reset the maps
-  _mapDistancePerViewId.clear();
+  _mapLBAStatePerPoseId.clear();
   _mapLBAStatePerIntrinsicId.clear();
   _mapLBAStatePerLandmarkId.clear();
   
@@ -280,11 +280,11 @@ void LocalBA_Data::convertDistancesToLBAStates(const SfM_Data & sfm_data)
   }
   
   // -- Instrinsics
-  checkParameterLimits(EIntrinsicParameter::Focal, kWindowSize, kStdevPercentage); 
+  checkIntrinsicsConsistency(kWindowSize, kStdevPercentage); 
   
   for(const auto& itIntrinsic: sfm_data.GetIntrinsics())
   {
-    if (isIntrinsicLimitReached(itIntrinsic.first, EIntrinsicParameter::Focal))
+    if (isIntrinsicConstant(itIntrinsic.first))
       _mapLBAStatePerIntrinsicId[itIntrinsic.first] = ELocalBAState::constant;
     else
       _mapLBAStatePerIntrinsicId[itIntrinsic.first] = ELocalBAState::refined;
@@ -339,30 +339,26 @@ void LocalBA_Data::addIntrinsicsToHistory(const SfM_Data& sfm_data)
     }
   }
   
-  // Complete the intrinsics history
+  // Complete the intrinsics history withe the current focal lengths
   for (auto& it : sfm_data.intrinsics)
   {
     _intrinsicsHistory.at(it.first).push_back(
           std::make_pair(map_intrinsicId_usageNum[it.first],
-          sfm_data.GetIntrinsicPtr(it.first)->getParams())
+          sfm_data.GetIntrinsicPtr(it.first)->getParams().at(0))
         );
   }
 }
 
-void LocalBA_Data::checkParameterLimits(const EIntrinsicParameter parameter, const std::size_t windowSize, const double stdevPercentageLimit)
+void LocalBA_Data::checkIntrinsicsConsistency(const std::size_t windowSize, const double stdevPercentageLimit)
 {
-  std::string paramName;
-  if (parameter == EIntrinsicParameter::Focal) paramName = "Focal";
-  if (parameter == EIntrinsicParameter::Cx) paramName = "Principal Point X";
-  if (parameter == EIntrinsicParameter::Cy) paramName = "Principal Point Y";
-  OPENMVG_LOG_INFO("Checking, for each camera, if the " << paramName << " is stable...");
+  OPENMVG_LOG_INFO("Checking, for each camera, if the focal length is stable...");
   
   for (auto& elt : _intrinsicsHistory)
   {
     IndexT idIntr = elt.first;
     
-    // Do not compute limits if there are already reached for each parameter
-    if (_intrinsicsLimitIds.at(idIntr).at(parameter) != 0)
+    // Do not compute the variation, if the intrinsic has already be regarded as constant.
+    if (isIntrinsicConstant(idIntr))
       continue;
     
     // Get the full history of intrinsic parameters
@@ -372,7 +368,7 @@ void LocalBA_Data::checkParameterLimits(const EIntrinsicParameter parameter, con
     for (const auto& pair_uses_params : _intrinsicsHistory.at(idIntr))
     {
       allNumPosesVec.push_back(pair_uses_params.first);
-      allValuesVec.push_back(pair_uses_params.second.at(parameter));
+      allValuesVec.push_back(pair_uses_params.second);
     }
     
     // Clean 'intrinsicsHistorical':
@@ -420,24 +416,19 @@ void LocalBA_Data::checkParameterLimits(const EIntrinsicParameter parameter, con
     double normStdev = stdev / (maxVal - minVal);
     
     // Check if the normed standard deviation is < stdevPercentageLimit
-    if (normStdev*100.0 <= stdevPercentageLimit && _intrinsicsLimitIds.at(idIntr).at(parameter) == 0)
+    if (normStdev*100.0 <= stdevPercentageLimit)
     {
-      _intrinsicsLimitIds.at(idIntr).at(parameter) = numPosesEndWindow;
+      _mapIntrinsicIsConstant.at(idIntr) = true;
       
-      OPENMVG_LOG_INFO("The " << paramName << " is considered to be stable.\n" 
-                       << "- minimum value = " << minVal << "\n"
-                       << "- maximal value = " << minVal << "\n"
+      OPENMVG_LOG_INFO("The intrinsic #" << idIntr << " is considered to be stable.\n" 
+                       << "- minimum focal = " << minVal << "\n"
+                       << "- maximal focal = " << minVal << "\n"
                        << "- std. dev. (normalized) = " << normStdev << "\n"
-                       << "- current value = " << filteredValuesVec.back() << " (= constant) \n");
+                       << "- current focal = " << filteredValuesVec.back() << " (= constant) \n");
     }
+    else
+      _mapIntrinsicIsConstant.at(idIntr) = false;
   }
-}
-
-void LocalBA_Data::checkAllParametersLimits(const std::size_t kWindowSize, const double kStdDevPercentage)
-{
-  checkParameterLimits(EIntrinsicParameter::Focal, kWindowSize, kStdDevPercentage); 
-  checkParameterLimits(EIntrinsicParameter::Cx, kWindowSize, kStdDevPercentage); 
-  checkParameterLimits(EIntrinsicParameter::Cy, kWindowSize, kStdDevPercentage); 
 }
 
 template<typename T> 
@@ -471,14 +462,7 @@ void LocalBA_Data::exportIntrinsicsHistory(const std::string& folder)
         std::vector<std::string> header;
         header.push_back("#poses");
         header.push_back("f"); 
-        header.push_back("ppx"); 
-        header.push_back("ppy"); 
-        header.push_back("d1"); 
-        header.push_back("d2"); 
-        header.push_back("d3"); 
-        header.push_back("f_limit"); 
-        header.push_back("ppx_limit"); 
-        header.push_back("ppy_limit");  
+        header.push_back("isConstant"); 
         for (std::string & head : header)
           os << head << "\t";
         os << "\n"; 
@@ -486,31 +470,16 @@ void LocalBA_Data::exportIntrinsicsHistory(const std::string& folder)
       
       // -- EXIF DATA
       os << 0 << "\t";
-      os << getLastIntrinsicParameters(idIntr).at(0) << "\t";
-      os << getLastIntrinsicParameters(idIntr).at(1) << "\t";
-      os << getLastIntrinsicParameters(idIntr).at(2) << "\t";
-      os << getLastIntrinsicParameters(idIntr).at(3) << "\t";
-      os << getLastIntrinsicParameters(idIntr).at(4) << "\t";
-      os << getLastIntrinsicParameters(idIntr).at(5) << "\t";
-      os << getIntrinsicLimitIds(idIntr).at(0) << "\t";
-      os << getIntrinsicLimitIds(idIntr).at(1) << "\t";
-      os << getIntrinsicLimitIds(idIntr).at(2) << "\t";
+      os << getLastFocalLength(idIntr) << "\t";
+      os << isIntrinsicConstant(idIntr) << "\t";
       os << "\n";
     }
     else // Write the last intrinsics
     {
       // -- DATA
-      IntrinsicParams lastParams = _intrinsicsHistory.at(idIntr).back();
-      os << lastParams.first << "\t";
-      os << lastParams.second.at(0) << "\t";
-      os << lastParams.second.at(1) << "\t";
-      os << lastParams.second.at(2) << "\t";
-      os << lastParams.second.at(3) << "\t";
-      os << lastParams.second.at(4) << "\t";
-      os << lastParams.second.at(5) << "\t";
-      os << getIntrinsicLimitIds(idIntr).at(0) << "\t";
-      os << getIntrinsicLimitIds(idIntr).at(1) << "\t";
-      os << getIntrinsicLimitIds(idIntr).at(2) << "\t";
+      os << _intrinsicsHistory.at(idIntr).back().first << "\t";
+      os << _intrinsicsHistory.at(idIntr).back().second << "\t";
+      os << isIntrinsicConstant(idIntr) << "\t";
       os << "\n";
     }
     os.close();
