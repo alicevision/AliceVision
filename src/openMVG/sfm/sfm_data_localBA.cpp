@@ -301,10 +301,10 @@ void LocalBA_Data::convertDistancesToLBAStates(const SfM_Data & sfm_data)
     for(const auto& observationIt: observations)
     {
       int dist = getViewDistance(observationIt.first);
-      if(dist <= kDistanceLimit)
+      if(dist >= 0 && dist <= kDistanceLimit)
       {
         _map_landmarkId_LBAState[landmarkId] = ELocalBAState::refined;
-        continue;
+        break;
       }
     }
   }
