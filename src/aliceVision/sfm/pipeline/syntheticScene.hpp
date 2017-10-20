@@ -1,35 +1,108 @@
 // This file is part of the AliceVision project and is made available under
 // the terms of the MPL2 license (see the COPYING.md file).
 
-#include "aliceVision/multiview/NViewDataSet.hpp"
-#include "aliceVision/sfm/sfm.hpp"
+#include <aliceVision/sfm/SfMData.hpp>
+#include <aliceVision/feature/FeaturesPerView.hpp>
+#include <aliceVision/multiview/NViewDataSet.hpp>
+#include <aliceVision/sfm/sfm.hpp>
 
 #include <random>
 #include <iostream>
 
-using namespace aliceVision;
-using namespace aliceVision::sfm;
+namespace aliceVision {
+namespace sfm {
 
-// Create from a synthetic scene (NViewDataSet) some SfM pipelines data provider:
-//  - for contiguous triplets store the corresponding observations indexes
+/**
+ * @brief Create features from a known SfMData (synthetic scene).
+ *
+ * @param[out] out_featuresPerView
+ * @param[in] sfmData synthetic SfM dataset
+ * @param[in] descType
+ * @param[in] noise
+ */
+template <typename NoiseGenerator>
+void generateSyntheticFeatures(feature::FeaturesPerView& out_featuresPerView, feature::EImageDescriberType descType, const SfMData & sfmData, NoiseGenerator & noise)
+{
+  assert(descType != feature::EImageDescriberType::UNINITIALIZED);
+  std::default_random_engine generator;
 
-inline bool generateSyntheticMatches(
-  matching::PairwiseMatches& pairwiseMatches,
-  const NViewDataSet & synthetic_data,
+  // precompute output feature vectors size and resize
+  {
+    std::map<IndexT, std::size_t> nbFeatPerView;
+    for(const auto& it: sfmData.GetViews())
+    {
+      nbFeatPerView[it.first] = 0;
+    }
+    for(const auto& it: sfmData.GetLandmarks())
+    {
+      const Landmark& landmark = it.second;
+
+      for(const auto& obsIt: landmark.observations)
+      {
+        const IndexT viewId = obsIt.first;
+        const Observation& obs = obsIt.second;
+        nbFeatPerView[viewId] = std::max(nbFeatPerView[viewId], std::size_t(obs.id_feat+1));
+      }
+    }
+    for(auto& it: nbFeatPerView)
+    {
+      // create Point Features vectors at the right size
+      feature::PointFeatures pointFeatures(it.second);
+      out_featuresPerView.addFeatures(it.first, descType, pointFeatures);
+    }
+  }
+  // Fill with the observation values
+  for(const auto& it: sfmData.GetLandmarks())
+  {
+    const Landmark& landmark = it.second;
+
+    for(const auto& obsIt: landmark.observations)
+    {
+      const IndexT viewId = obsIt.first;
+      const Observation& obs = obsIt.second;
+
+      out_featuresPerView.getFeaturesPerDesc(viewId)[descType][obs.id_feat] = feature::PointFeature(obs.x(0) + noise(generator), obs.x(1) + noise(generator));
+    }
+  }
+}
+
+/**
+ * Generate features matches between views from a known SfMData (synthetic scene).
+ *
+ * @param[out] out_pairwiseMatches
+ * @param[in] sfmData synthetic SfM dataset
+ * @param[in] descType
+ */
+inline void generateSyntheticMatches(
+  matching::PairwiseMatches& out_pairwiseMatches,
+  const SfMData & sfmData,
   feature::EImageDescriberType descType)
 {
-  // For each view
-  for (int j = 0; j < synthetic_data._n; ++j)
+
+  for(const auto& it: sfmData.GetLandmarks())
   {
-    for (int jj = j+1; jj < j+3 ; ++jj)
+    const Landmark& landmark = it.second;
+    const std::size_t limitMatches = std::min(std::size_t(3), landmark.observations.size());
+
+    for(auto obsItI = landmark.observations.begin(); obsItI != landmark.observations.end(); ++obsItI)
     {
-      for (int idx = 0; idx < synthetic_data._x[j].cols(); ++idx)
+      const Observation& obsI = obsItI->second;
+      // We don't need matches between all observations.
+      // We will limit to matches between 3 observations of the same landmark.
+      // At the end of the reconstruction process, they should be be fused again into one landmark.
+      auto obsItJ = obsItI;
+      for(std::size_t j = 1; j < limitMatches; ++j)
       {
-        pairwiseMatches[Pair(j,(jj)%synthetic_data._n)][descType].emplace_back(idx,idx);
+        ++obsItJ;
+        if(obsItJ == landmark.observations.end())
+          obsItJ = landmark.observations.begin();
+
+        const Observation& obsJ = obsItJ->second;
+
+        out_pairwiseMatches[Pair(obsItI->first, obsItJ->first)][descType].emplace_back(obsItI->second.id_feat, obsItJ->second.id_feat);
       }
     }
   }
-  return true;
 }
 
 
@@ -117,7 +190,8 @@ SfMData getInputScene
   }
 
   // 4. Landmarks
-  for (int i = 0; i < npoints; ++i) {
+  for (int i = 0; i < npoints; ++i)
+  {
     // Collect the image of point i in each frame.
     Landmark landmark;
     landmark.X = d._X.col(i);
@@ -133,11 +207,9 @@ SfMData getInputScene
 
 // Translate a synthetic scene into a valid SfMData scene
 // As only one intrinsic is defined we used shared intrinsic
-SfMData getInputRigScene(const NViewDataSet& d,
+inline SfMData getInputRigScene(const NViewDataSet& d,
                           const NViewDatasetConfigurator& config,
-                          camera::EINTRINSIC eintrinsic,
-                          std::size_t nbSubposes,
-                          std::size_t nbPosesPerCamera)
+                          camera::EINTRINSIC eintrinsic)
 {
   // 1. Rig
   // 2. Views
@@ -152,37 +224,37 @@ SfMData getInputRigScene(const NViewDataSet& d,
   const std::size_t nbPoints = d._X.cols();
 
   // 1. Rig
-
   const IndexT rigId = 0;
+  const std::size_t nbSubposes = 2;
   sfmData.getRigs().emplace(rigId, Rig(nbSubposes));
+  Rig& rig = sfmData.getRigs().at(rigId);
+  rig.getSubPose(0) = RigSubPose(geometry::Pose3(Mat3::Identity(), Vec3(-0.01, 0, 0)), ERigSubPoseStatus::CONSTANT);
+  rig.getSubPose(1) = RigSubPose(geometry::Pose3(Mat3::Identity(), Vec3(+0.01, 0, 0)), ERigSubPoseStatus::CONSTANT);
 
   // 2. Views
-  for (std::size_t cameraId = 0; cameraId < nbSubposes; ++cameraId)
+  for(std::size_t poseId = 0; poseId < nbPoses; ++poseId)
   {
-    for(std::size_t frameId = 0; frameId < nbPosesPerCamera; ++frameId)
+    for(std::size_t subposeI = 0; subposeI < nbSubposes; ++subposeI)
     {
-      const IndexT id_view = cameraId * nbPosesPerCamera + frameId;
-      const IndexT id_pose = frameId;
-      const IndexT id_intrinsic = 0; //(shared intrinsics)
+      const IndexT viewId = poseId * nbSubposes + subposeI;
+      const IndexT intrinsicId = 0; //(shared intrinsics)
 
-      sfmData.views[id_view] = std::make_shared<View>("",
-                                                 id_view,
-                                                 id_intrinsic,
-                                                 id_pose,
+      sfmData.views[viewId] = std::make_shared<View>("",
+                                                 viewId,
+                                                 intrinsicId,
+                                                 poseId,
                                                  config._cx *2,
                                                  config._cy *2,
-                                                 0,
-                                                 cameraId);
+                                                 rigId,
+                                                 subposeI);
     }
   }
+  const std::size_t nbViews = sfmData.views.size();
 
   // 3. Poses
-  for (int i = 0; i < nbPoses; ++i)
+  for (int poseId = 0; poseId < nbPoses; ++poseId)
   {
-    if((i < nbPosesPerCamera) || (i % nbPosesPerCamera == 0))
-    {
-      sfmData.setPose(*sfmData.views.at(i), geometry::Pose3(d._R[i], d._C[i]));
-    }
+    sfmData.GetPoses()[poseId] = geometry::Pose3(d._R[poseId], d._C[poseId]);
   }
 
   // 4. Intrinsic data (shared, so only one camera intrinsic is defined)
@@ -204,21 +276,28 @@ SfMData getInputRigScene(const NViewDataSet& d,
           (w, h, config._fx, config._cx, config._cy, 0., 0., 0.);
       break;
       default:
-        ALICEVISION_LOG_DEBUG("Not yet supported");
+      throw std::runtime_error("Intrinsic type is not implemented.");
     }
   }
 
   // 5. Landmarks
-  for (int i = 0; i < nbPoints; ++i) {
+  for(int landmarkId = 0; landmarkId < nbPoints; ++landmarkId)
+  {
     // Collect the image of point i in each frame.
     Landmark landmark;
-    landmark.X = d._X.col(i);
-    for (int j = 0; j < nbPoses; ++j) {
-      const Vec2 pt = d._x[j].col(i);
-      landmark.observations[j] = Observation(pt, i);
+    landmark.X = d._X.col(landmarkId);
+    for(int viewId = 0; viewId < nbViews; ++viewId)
+    {
+      const View& view = *sfmData.views.at(viewId);
+      geometry::Pose3 camPose = sfmData.getPose(view);
+      const Vec2 pt = Project(sfmData.intrinsics.at(0)->get_projective_equivalent(camPose), landmark.X);
+      landmark.observations[viewId] = Observation(pt, landmarkId);
     }
-    sfmData.structure[i] = landmark;
+    sfmData.structure[landmarkId] = landmark;
   }
 
   return sfmData;
+}
+
+}
 }

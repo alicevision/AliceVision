@@ -85,32 +85,7 @@ public:
     assert(descType != feature::EImageDescriberType::UNINITIALIZED);
     _data[viewId][descType] = pointFeatures;
   }
-  
-  /**
-   * @brief Add synthtic data into the container for the given describerType
-   * @param synthetic_data
-   * @param noise
-   * @return true if success
-   */
-  // Create from a synthetic scene (NViewDataSet) some SfM pipelines data provider:
-//  - for each view store the observations point as PointFeatures
-  template <typename NoiseGenerator>
-  bool createSyntheticData(feature::EImageDescriberType descType, const NViewDataSet & synthetic_data, NoiseGenerator & noise)
-  {
-    assert(descType != feature::EImageDescriberType::UNINITIALIZED);
-    std::default_random_engine generator;
 
-    for (std::size_t j = 0; j < synthetic_data._n; ++j) // For each view
-    {
-      for (Mat::Index i = 0; i < synthetic_data._x[j].cols(); ++i) // For each new point visibility
-      {
-        const Vec2 pt = synthetic_data._x[j].col(i);
-        _data[j][descType].push_back(feature::PointFeature(pt(0) + noise(generator), pt(1) + noise(generator)));
-      }
-    }
-    return true;
-  }
-  
   /**
    * @brief Get a reference of private container data
    * @return MapFeaturesPerView reference

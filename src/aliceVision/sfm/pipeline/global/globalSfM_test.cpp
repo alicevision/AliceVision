@@ -35,27 +35,27 @@ BOOST_AUTO_TEST_CASE(GLOBAL_SFM_RotationAveragingL2_TranslationAveragingL1) {
   const NViewDataSet d = NRealisticCamerasRing(nviews, npoints, config);
 
   // Translate the input dataset to a SfMData scene
-  const SfMData sfm_data = getInputScene(d, config, PINHOLE_CAMERA);
+  const SfMData sfmData = getInputScene(d, config, PINHOLE_CAMERA);
 
   // Remove poses and structure
-  SfMData sfm_data_2 = sfm_data;
-  sfm_data_2.GetPoses().clear();
-  sfm_data_2.structure.clear();
+  SfMData sfmData2 = sfmData;
+  sfmData2.GetPoses().clear();
+  sfmData2.structure.clear();
 
   ReconstructionEngine_globalSfM sfmEngine(
-    sfm_data_2,
+    sfmData2,
     "./",
     stlplus::create_filespec("./", "Reconstruction_Report.html"));
 
-  // Configure the featuresPerView & the matches_provider from the synthetic dataset
-  feature::FeaturesPerView featuresPerView;
-  
   // Add a tiny noise in 2D observations to make data more realistic
   std::normal_distribution<double> distribution(0.0,0.5);
-  featuresPerView.createSyntheticData(feature::EImageDescriberType::UNKNOWN, d, distribution);
+
+  // Configure the featuresPerView & the matches_provider from the synthetic dataset
+  feature::FeaturesPerView featuresPerView;
+  generateSyntheticFeatures(featuresPerView, feature::EImageDescriberType::UNKNOWN, sfmData, distribution);
 
   matching::PairwiseMatches pairwiseMatches;
-  generateSyntheticMatches(pairwiseMatches, d, feature::EImageDescriberType::UNKNOWN);
+  generateSyntheticMatches(pairwiseMatches, sfmData, feature::EImageDescriberType::UNKNOWN);
 
   // Configure data provider (Features and Matches)
   sfmEngine.SetFeaturesProvider(&featuresPerView);
@@ -85,27 +85,27 @@ BOOST_AUTO_TEST_CASE(GLOBAL_SFM_RotationAveragingL1_TranslationAveragingL1) {
   const NViewDataSet d = NRealisticCamerasRing(nviews, npoints, config);
 
   // Translate the input dataset to a SfMData scene
-  const SfMData sfm_data = getInputScene(d, config, PINHOLE_CAMERA);
+  const SfMData sfmData = getInputScene(d, config, PINHOLE_CAMERA);
 
   // Remove poses and structure
-  SfMData sfm_data_2 = sfm_data;
-  sfm_data_2.GetPoses().clear();
-  sfm_data_2.structure.clear();
+  SfMData sfmData2 = sfmData;
+  sfmData2.GetPoses().clear();
+  sfmData2.structure.clear();
 
   ReconstructionEngine_globalSfM sfmEngine(
-    sfm_data_2,
+    sfmData2,
     "./",
     stlplus::create_filespec("./", "Reconstruction_Report.html"));
 
-  // Configure the featuresPerView & the matches_provider from the synthetic dataset
-  feature::FeaturesPerView featuresPerView;
-  
   // Add a tiny noise in 2D observations to make data more realistic
   std::normal_distribution<double> distribution(0.0,0.5);
-  featuresPerView.createSyntheticData(feature::EImageDescriberType::UNKNOWN, d, distribution);
+
+  // Configure the featuresPerView & the matches_provider from the synthetic dataset
+  feature::FeaturesPerView featuresPerView;
+  generateSyntheticFeatures(featuresPerView, feature::EImageDescriberType::UNKNOWN, sfmData, distribution);
 
   matching::PairwiseMatches pairwiseMatches;
-  generateSyntheticMatches(pairwiseMatches, d, feature::EImageDescriberType::UNKNOWN);
+  generateSyntheticMatches(pairwiseMatches, sfmData, feature::EImageDescriberType::UNKNOWN);
 
   // Configure data provider (Features and Matches)
   sfmEngine.SetFeaturesProvider(&featuresPerView);
@@ -135,26 +135,27 @@ BOOST_AUTO_TEST_CASE(GLOBAL_SFM_RotationAveragingL2_TranslationAveragingL2_Chord
   const NViewDataSet d = NRealisticCamerasRing(nviews, npoints, config);
 
   // Translate the input dataset to a SfMData scene
-  const SfMData sfm_data = getInputScene(d, config, PINHOLE_CAMERA);
+  const SfMData sfmData = getInputScene(d, config, PINHOLE_CAMERA);
 
   // Remove poses and structure
-  SfMData sfm_data_2 = sfm_data;
-  sfm_data_2.GetPoses().clear();
-  sfm_data_2.structure.clear();
+  SfMData sfmData2 = sfmData;
+  sfmData2.GetPoses().clear();
+  sfmData2.structure.clear();
 
   ReconstructionEngine_globalSfM sfmEngine(
-    sfm_data_2,
+    sfmData2,
     "./",
     stlplus::create_filespec("./", "Reconstruction_Report.html"));
 
-  // Configure the featuresPerView & the matches_provider from the synthetic dataset
-  feature::FeaturesPerView featuresPerView;
   // Add a tiny noise in 2D observations to make data more realistic
   std::normal_distribution<double> distribution(0.0,0.5);
-  featuresPerView.createSyntheticData(feature::EImageDescriberType::UNKNOWN, d, distribution);
+
+  // Configure the featuresPerView & the matches_provider from the synthetic dataset
+  feature::FeaturesPerView featuresPerView;
+  generateSyntheticFeatures(featuresPerView, feature::EImageDescriberType::UNKNOWN, sfmData, distribution);
 
   matching::PairwiseMatches pairwiseMatches;
-  generateSyntheticMatches(pairwiseMatches, d, feature::EImageDescriberType::UNKNOWN);
+  generateSyntheticMatches(pairwiseMatches, sfmData, feature::EImageDescriberType::UNKNOWN);
 
   // Configure data provider (Features and Matches)
   sfmEngine.SetFeaturesProvider(&featuresPerView);
@@ -184,27 +185,27 @@ BOOST_AUTO_TEST_CASE(GLOBAL_SFM_RotationAveragingL2_TranslationAveragingSoftL1) 
   const NViewDataSet d = NRealisticCamerasRing(nviews, npoints, config);
 
   // Translate the input dataset to a SfMData scene
-  const SfMData sfm_data = getInputScene(d, config, PINHOLE_CAMERA);
+  const SfMData sfmData = getInputScene(d, config, PINHOLE_CAMERA);
 
   // Remove poses and structure
-  SfMData sfm_data_2 = sfm_data;
-  sfm_data_2.GetPoses().clear();
-  sfm_data_2.structure.clear();
+  SfMData sfmData2 = sfmData;
+  sfmData2.GetPoses().clear();
+  sfmData2.structure.clear();
 
   ReconstructionEngine_globalSfM sfmEngine(
-    sfm_data_2,
+    sfmData2,
     "./",
     stlplus::create_filespec("./", "Reconstruction_Report.html"));
 
-  // Configure the featuresPerView & the matches_provider from the synthetic dataset
-  feature::FeaturesPerView featuresPerView;
-  
   // Add a tiny noise in 2D observations to make data more realistic
   std::normal_distribution<double> distribution(0.0,0.5);
-   featuresPerView.createSyntheticData(feature::EImageDescriberType::UNKNOWN, d, distribution);
 
-   matching::PairwiseMatches pairwiseMatches;
-   generateSyntheticMatches(pairwiseMatches, d, feature::EImageDescriberType::UNKNOWN);
+  // Configure the featuresPerView & the matches_provider from the synthetic dataset
+  feature::FeaturesPerView featuresPerView;
+  generateSyntheticFeatures(featuresPerView, feature::EImageDescriberType::UNKNOWN, sfmData, distribution);
+
+  matching::PairwiseMatches pairwiseMatches;
+  generateSyntheticMatches(pairwiseMatches, sfmData, feature::EImageDescriberType::UNKNOWN);
 
   // Configure data provider (Features and Matches)
   sfmEngine.SetFeaturesProvider(&featuresPerView);
