@@ -132,7 +132,7 @@ BOOST_AUTO_TEST_CASE(AlembicImporter_importExport) {
     int flags = ALL;
 
     // Create a random scene
-    const SfMData sfm_data = create_test_scene(5, 50, 2, 3, true);
+    const SfMData sfmData = create_test_scene(5, 50, 2, 3, true);
     
 
     /*********************************************************************/
@@ -143,7 +143,7 @@ BOOST_AUTO_TEST_CASE(AlembicImporter_importExport) {
     const std::string jsonFile = "jsonToJson.json";
     {
         BOOST_CHECK(Save(
-        sfm_data,
+        sfmData,
         jsonFile.c_str(),
         ESfMData(flags)));
     }
@@ -152,7 +152,7 @@ BOOST_AUTO_TEST_CASE(AlembicImporter_importExport) {
     SfMData sfmJsonToJson;
     {
         BOOST_CHECK(Load(sfmJsonToJson, jsonFile, ESfMData(flags)));
-        BOOST_CHECK(sfm_data == sfmJsonToJson);
+        BOOST_CHECK(sfmData == sfmJsonToJson);
     }
 
     // Export as JSON
@@ -172,7 +172,7 @@ BOOST_AUTO_TEST_CASE(AlembicImporter_importExport) {
     const std::string abcFile = "abcToAbc.abc";
     {
         BOOST_CHECK(Save(
-        sfm_data,
+        sfmData,
         abcFile.c_str(),              
         ESfMData(flags)));
     }
@@ -186,7 +186,7 @@ BOOST_AUTO_TEST_CASE(AlembicImporter_importExport) {
         sfmAbcToAbc,
         abcFile2.c_str(),
         ESfMData(flags)));
-        BOOST_CHECK(sfm_data == sfmAbcToAbc);
+        BOOST_CHECK(sfmData == sfmAbcToAbc);
     }
 
     // Export as ABC
@@ -208,7 +208,7 @@ BOOST_AUTO_TEST_CASE(AlembicImporter_importExport) {
     const std::string jsonFile3 = "jsonToABC.json";
     {
         BOOST_CHECK(Save(
-        sfm_data,
+        sfmData,
         jsonFile3.c_str(),
         ESfMData(flags)));
     }
@@ -217,11 +217,11 @@ BOOST_AUTO_TEST_CASE(AlembicImporter_importExport) {
     SfMData sfmJsonToABC;
     {
         BOOST_CHECK(Load(sfmJsonToABC, jsonFile3, ESfMData(flags)));
-        BOOST_CHECK_EQUAL( sfm_data.views.size(), sfmJsonToABC.views.size());
-        BOOST_CHECK_EQUAL( sfm_data.GetPoses().size(), sfmJsonToABC.GetPoses().size());
-        BOOST_CHECK_EQUAL( sfm_data.intrinsics.size(), sfmJsonToABC.intrinsics.size());
-        BOOST_CHECK_EQUAL( sfm_data.structure.size(), sfmJsonToABC.structure.size());
-        BOOST_CHECK_EQUAL( sfm_data.control_points.size(), sfmJsonToABC.control_points.size());
+        BOOST_CHECK_EQUAL( sfmData.views.size(), sfmJsonToABC.views.size());
+        BOOST_CHECK_EQUAL( sfmData.GetPoses().size(), sfmJsonToABC.GetPoses().size());
+        BOOST_CHECK_EQUAL( sfmData.intrinsics.size(), sfmJsonToABC.intrinsics.size());
+        BOOST_CHECK_EQUAL( sfmData.structure.size(), sfmJsonToABC.structure.size());
+        BOOST_CHECK_EQUAL( sfmData.control_points.size(), sfmJsonToABC.control_points.size());
     }
 
     // Export as ABC
@@ -237,11 +237,11 @@ BOOST_AUTO_TEST_CASE(AlembicImporter_importExport) {
     SfMData sfmJsonToABC2;
     {
         BOOST_CHECK(Load(sfmJsonToABC2, abcFile3, ESfMData(flags)));
-        BOOST_CHECK_EQUAL( sfm_data.views.size(), sfmJsonToABC2.views.size());
-        BOOST_CHECK_EQUAL( sfm_data.GetPoses().size(), sfmJsonToABC2.GetPoses().size());
-        BOOST_CHECK_EQUAL( sfm_data.intrinsics.size(), sfmJsonToABC2.intrinsics.size());
-        BOOST_CHECK_EQUAL( sfm_data.structure.size(), sfmJsonToABC2.structure.size());
-        BOOST_CHECK_EQUAL( sfm_data.control_points.size(), sfmJsonToABC2.control_points.size());
+        BOOST_CHECK_EQUAL( sfmData.views.size(), sfmJsonToABC2.views.size());
+        BOOST_CHECK_EQUAL( sfmData.GetPoses().size(), sfmJsonToABC2.GetPoses().size());
+        BOOST_CHECK_EQUAL( sfmData.intrinsics.size(), sfmJsonToABC2.intrinsics.size());
+        BOOST_CHECK_EQUAL( sfmData.structure.size(), sfmJsonToABC2.structure.size());
+        BOOST_CHECK_EQUAL( sfmData.control_points.size(), sfmJsonToABC2.control_points.size());
     }
 
     // Export as ABC
@@ -257,11 +257,11 @@ BOOST_AUTO_TEST_CASE(AlembicImporter_importExport) {
     SfMData sfmJsonToABC3;
     {
         BOOST_CHECK(Load(sfmJsonToABC3, abcFile4, ESfMData(flags)));
-        BOOST_CHECK_EQUAL( sfm_data.views.size(), sfmJsonToABC3.views.size());
-        BOOST_CHECK_EQUAL( sfm_data.GetPoses().size(), sfmJsonToABC3.GetPoses().size());
-        BOOST_CHECK_EQUAL( sfm_data.intrinsics.size(), sfmJsonToABC3.intrinsics.size());
-        BOOST_CHECK_EQUAL( sfm_data.structure.size(), sfmJsonToABC3.structure.size());
-        BOOST_CHECK_EQUAL( sfm_data.control_points.size(), sfmJsonToABC3.control_points.size());
+        BOOST_CHECK_EQUAL( sfmData.views.size(), sfmJsonToABC3.views.size());
+        BOOST_CHECK_EQUAL( sfmData.GetPoses().size(), sfmJsonToABC3.GetPoses().size());
+        BOOST_CHECK_EQUAL( sfmData.intrinsics.size(), sfmJsonToABC3.intrinsics.size());
+        BOOST_CHECK_EQUAL( sfmData.structure.size(), sfmJsonToABC3.structure.size());
+        BOOST_CHECK_EQUAL( sfmData.control_points.size(), sfmJsonToABC3.control_points.size());
     }
 
     // Export as JSON
