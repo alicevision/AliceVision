@@ -45,11 +45,11 @@ public:
        IndexT subPoseId = UndefinedIndexT,
        const std::map<std::string, std::string>& metadata = std::map<std::string, std::string>())
     : _imagePath(imagePath)
+    , _width(width)
+    , _height(height)
     , _viewId(viewId)
     , _intrinsicId(intrinsicId)
     , _poseId(poseId)
-    , _width(width)
-    , _height(height)
     , _rigId(rigId)
     , _subPoseId(subPoseId)
     , _metadata(metadata)
@@ -80,7 +80,7 @@ public:
    * @brief Get view image width
    * @return image width
    */
-  const std::size_t getWidth() const
+  std::size_t getWidth() const
   {
     return _width;
   }
@@ -89,7 +89,7 @@ public:
    * @brief Get view image height
    * @return image height
    */
-  const std::size_t getHeight() const
+  std::size_t getHeight() const
   {
     return _height;
   }
