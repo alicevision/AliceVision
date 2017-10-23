@@ -30,17 +30,28 @@ It also contains few files with different licenses:
 This program is based on works distributed under the terms of another license(s) and other copyright notice(s).
 
 *   __ceres-solver__
-    <[http://ceres-solver.org/](http://ceres-solver.org/)><br />
+    [http://ceres-solver.org/](http://ceres-solver.org/)
     Copyright 2015 Google Inc. All rights reserved.
     Licensed under the [New BSD licence](http://ceres-solver.org/license.html).
 
 *   __Boost__
     [http://www.boost.org](http://www.boost.org)
-    Distributed under the [Boost Software License](http://www.boost.org/users/license.html)
+    Distributed under the [Boost Software License](http://www.boost.org/users/license.html).
 
 *   __OpenImageIO__ (optional)
+    [https://openimageio.org](https://openimageio.org)
     Copyright 2008-2016 Larry Gritz et al.
-    Distributed under the [BSD-3-Clause](https://github.com/OpenImageIO/oiio/blob/master/LICENSE)
+    Distributed under the [BSD-3-Clause](https://github.com/OpenImageIO/oiio/blob/master/LICENSE).
+
+*   __OpenCV__ (optional)
+    [https://opencv.org](https://opencv.org)
+    Copyright (C) 2000-2016, Intel Corporation, all rights reserved.
+    Copyright (C) 2009-2011, Willow Garage Inc., all rights reserved.
+    Copyright (C) 2009-2016, NVIDIA Corporation, all rights reserved.
+    Copyright (C) 2010-2013, Advanced Micro Devices, Inc., all rights reserved.
+    Copyright (C) 2015-2016, OpenCV Foundation, all rights reserved.
+    Copyright (C) 2015-2016, Itseez Inc., all rights reserved.
+    Distributed under the [BSD-3-Clause](https://github.com/OpenImageIO/oiio/blob/master/LICENSE).
 
 *   __cxsparse__  (optional)
     Copyright (c) 2006-2012, Timothy A. Davis.
