@@ -1,5 +1,4 @@
-// This file is part of the AliceVision project and is made available under
-// the terms of the MPL2 license (see the COPYING.md file).
+// This file is part of the AliceVision project.
 
 // Copyright (C) 2013 The Regents of the University of California (Regents).
 // All rights reserved.

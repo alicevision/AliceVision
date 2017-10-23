@@ -3,7 +3,22 @@
 
 AliceVision is licensed under the [MPL2 license](LICENSE-MPL2.md).
 
-[libmv](https://github.com/libmv/libmv) has been an important source of inspiration for the design and part of the code of the "multiview" and "robustEstimation" modules are based on the libmv code released under MIT, see [LICENSE-MIT-libmv.md](LICENSE-MIT-libmv.md).
+[libmv](https://github.com/libmv/libmv) has been an important source of inspiration for the design and part of the code of the "multiview" and "robustEstimation"
+modules are based on the libmv code released under MIT, see [LICENSE-MIT-libmv.md](LICENSE-MIT-libmv.md).
+
+
+It also contains 2 files with different licenses:
+
+*   __solverL2Chordal__
+    [src/aliceVision/multiview/translationAveraging/solverL2Chordal.cpp](src/aliceVision/multiview/translationAveraging/solverL2Chordal.cpp)
+    Copyright (c) 2014, Kyle Wilson
+    This file is released under BSD-2-Clause license, see [LICENSE-BSD-2-Clause](http://opensource.org/licenses/BSD-2-Clause).
+
+*   __cascadeHasher__
+    [src/aliceVision/matching/CascadeHasher.hpp](src/aliceVision/matching/CascadeHasher.hpp)
+    Copyright (C) 2013 The Regents of the University of California (Regents).
+    This file is released under BSD-3-Clause license, see [LICENSE-BSD-3-Clause](http://opensource.org/licenses/BSD-3-Clause).
+
 
 ## Third parties licenses
 
