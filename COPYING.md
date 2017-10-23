@@ -29,14 +29,15 @@ This program is based on works distributed under the terms of another license(s)
     Copyright 2015 Google Inc. All rights reserved.
     Licensed under the [New BSD licence](http://ceres-solver.org/license.html).
 
-*   __cmdLine__
-    Copyright (c) Pascal Monasse.
-    Licensed under the [MPL2 license](http://opensource.org/licenses/MPL-2.0).
+*   __Boost__
+    [http://www.boost.org](http://www.boost.org)
+    Distributed under the [Boost Software License](http://www.boost.org/users/license.html)
 
-*   __CppUnitLite__ (optionnal)
-    Public domain.
+*   __OpenImageIO__ (optional)
+    Copyright 2008-2016 Larry Gritz et al.
+    Distributed under the [BSD-3-Clause](https://github.com/OpenImageIO/oiio/blob/master/LICENSE)
 
-*   __cxsparse__  (optionnal)
+*   __cxsparse__  (optional)
     Copyright (c) 2006-2012, Timothy A. Davis.
     Distributed under the [GNU LGPL license](http://opensource.org/licenses/lgpl-license).
 
@@ -70,7 +71,7 @@ This program is based on works distributed under the terms of another license(s)
     Copyright (c) Lemon authors.
     Licensed under the [Boost License 1.0](http://www.boost.org/LICENSE_1_0.txt).
 
-*   __png__ (optionnal)
+*   __png__ (optional)
     Copyright (c) 2004, 2006-2015 Glenn Randers-Pehrson
     Licensed under the [lib png license](http://www.libpng.org/pub/png/src/libpng-LICENSE.txt).
 
@@ -82,7 +83,7 @@ This program is based on works distributed under the terms of another license(s)
     Copyright (c) 1999-2004 Southampton University, 2004 onwards Andy Rushton. All rights reserved.
     Licensed under the [BSD license](http://opensource.org/licenses/bsd-license.php).
 
-*   __tiff__ (optionnal)
+*   __tiff__ (optional)
     Copyright (c) 1988-1997 Sam Leffler
     Copyright (c) 1991-1997 Silicon Graphics, Inc.
     Licensed under a BSD-like license.
@@ -91,7 +92,7 @@ This program is based on works distributed under the terms of another license(s)
     Copyright (c) Pierre Moulon
     Licensed under the [MPL2 license](http://opensource.org/licenses/MPL-2.0).
 
-*   __zlib__  (optionnal)
+*   __zlib__  (optional)
     Copyright (C) 1995-2005 Jean-loup Gailly
     Licensed under the [zlib license](http://opensource.org/licenses/Zlib).
 
