@@ -7,7 +7,12 @@ AliceVision is licensed under the [MPL2 license](LICENSE-MPL2.md).
 modules are based on the libmv code released under MIT, see [LICENSE-MIT-libmv.md](LICENSE-MIT-libmv.md).
 
 
-It also contains 2 files with different licenses:
+It also contains few files with different licenses:
+
+*   __kvld__
+    [src/aliceVision/matching/kvld](src/aliceVision/matching/kvld)
+    Copyright (C) 2011-12 Zhe Liu and Pierre Moulon.
+    This file is released under BSD-2-Clause license, see [LICENSE-BSD-2-Clause](http://opensource.org/licenses/BSD-2-Clause).
 
 *   __solverL2Chordal__
     [src/aliceVision/multiview/translationAveraging/solverL2Chordal.cpp](src/aliceVision/multiview/translationAveraging/solverL2Chordal.cpp)
