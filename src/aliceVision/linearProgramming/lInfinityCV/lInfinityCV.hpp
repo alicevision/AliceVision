@@ -1,5 +1,7 @@
-// This file is part of the AliceVision project and is made available under
-// the terms of the MPL2 license (see the COPYING.md file).
+// This file is part of the AliceVision project.
+// This Source Code Form is subject to the terms of the Mozilla Public License,
+// v. 2.0. If a copy of the MPL was not distributed with this file,
+// You can obtain one at https://mozilla.org/MPL/2.0/.
 
 #ifndef ALICEVISION_L_INFINITY_COMPUTER_VISION_H_
 #define ALICEVISION_L_INFINITY_COMPUTER_VISION_H_
