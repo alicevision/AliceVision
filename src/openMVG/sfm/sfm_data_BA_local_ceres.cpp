@@ -171,13 +171,13 @@ bool Local_Bundle_Adjustment_Ceres::Adjust(SfM_Data& sfm_data, const LocalBA_Dat
     OPENMVG_LOG_DEBUG(
           "Bundle Adjustment statistics (approximated RMSE):\n"
           " #views: " << sfm_data.views.size() << "\n"
-                                                  " #poses: " << sfm_data.GetPoses().size() << "\n"
-                                                                                               " #intrinsics: " << sfm_data.intrinsics.size() << "\n"
-                                                                                                                                                 " #tracks: " << sfm_data.structure.size() << "\n"
-                                                                                                                                                                                              " #residuals: " << summary.num_residuals << "\n"
-                                                                                                                                                                                                                                          " Initial RMSE: " << std::sqrt( summary.initial_cost / summary.num_residuals) << "\n"
-                                                                                                                                                                                                                                                                                                                           " Final RMSE: " << std::sqrt( summary.final_cost / summary.num_residuals) << "\n"
-                                                                                                                                                                                                                                                                                                                                                                                                        " Time (s): " << summary.total_time_in_seconds << "\n"
+          << " #poses: " << sfm_data.GetPoses().size() << "\n"
+          << " #intrinsics: " << sfm_data.intrinsics.size() << "\n"
+                                                               " #tracks: " << sfm_data.structure.size() << "\n"
+          << " #residuals: " << summary.num_residuals << "\n"
+          << " Initial RMSE: " << std::sqrt( summary.initial_cost / summary.num_residuals) << "\n"
+          << " Final RMSE: " << std::sqrt( summary.final_cost / summary.num_residuals) << "\n"
+          << " Time (s): " << summary.total_time_in_seconds << "\n"
           );
   }
   

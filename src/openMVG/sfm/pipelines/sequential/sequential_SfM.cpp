@@ -21,7 +21,6 @@
 #include "openMVG/multiview/triangulation_nview.hpp"
 #include "openMVG/graph/connectedComponent.hpp"
 #include "openMVG/stl/stl.hpp"
-#include "openMVG/system/timer.hpp"
 #include "openMVG/system/cpu.hpp"
 #include "openMVG/system/memoryInfo.hpp"
 #include <openMVG/config.hpp>
@@ -1725,8 +1724,6 @@ bool SequentialSfMReconstructionEngine::BundleAdjustment(bool fixedIntrinsics)
 /// Local Bundle Adjustment to refine only the parameters close to the newly resected views.
 bool SequentialSfMReconstructionEngine::localBundleAdjustment(const std::string& name)
 {
-  LocalBA_timeProfiler times;
-  
   Local_Bundle_Adjustment_Ceres::LocalBA_options options;
   options.enableParametersOrdering();
   
@@ -1740,8 +1737,6 @@ bool SequentialSfMReconstructionEngine::localBundleAdjustment(const std::string&
     options.setDenseBA();
   }
   
-  openMVG::system::Timer durationLBA;
-  openMVG::system::Timer duration;
   
   Local_Bundle_Adjustment_Ceres localBA_ceres(options);
   if (options.isLocalBAEnabled() && name != "BA")
@@ -1791,9 +1786,8 @@ bool SequentialSfMReconstructionEngine::localBundleAdjustment(const std::string&
   
   localBA_ceres.initStatistics(_localBA_data->getNewViewsId());
   
-  duration.reset();
-  
   // Run Bundle Adjustment:
+  _localBA_data->_timeSummary.resetTimer();
   bool isBaSucceed;
   if (name == "localBA")  // do not save changes in reconstruction
   {
@@ -1802,15 +1796,12 @@ bool SequentialSfMReconstructionEngine::localBundleAdjustment(const std::string&
   }
   else // save the changes due to the adjustment
     isBaSucceed = localBA_ceres.Adjust(_sfm_data, *_localBA_data);
-  
-  times._adjusting = duration.elapsed(); 
-  times._allLocalBA = durationLBA.elapsed();  
-  times.exportTimes(_sOutDirectory + "/LocalBA/times_"+ name +".txt");
-  times.showTimes();
+  _localBA_data->_timeSummary.saveTime(TimeSummary::EStep::ADJUSTMENT);
   
   // Update 'map_intrinsicsHistorical' and compute 'map_intrinsicsLimits'
   _localBA_data->addIntrinsicsToHistory(_sfm_data);
   
+  _localBA_data->_timeSummary.exportTimes(_sOutDirectory + "/LocalBA/times_"+ name +".txt");
   
   // Save data about the Ceres Sover refinement:
   localBA_ceres.exportStatistics(_sOutDirectory + "/LocalBA/");

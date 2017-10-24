@@ -10,6 +10,102 @@
 namespace openMVG {
 namespace sfm {
 
+//------------------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------------------
+//                                                 TimeSummary      
+//------------------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------------------
+void TimeSummary::showTimes()
+{
+  std::cout << "\n----- Local BA durations ------" << std::endl;
+  std::cout << "graph updating : " << _graphUpdating << " ms" << std::endl;
+  std::cout << "dist. Maps Computing : " << _distancesComputing << " ms" << std::endl;
+  std::cout << "states Maps Computing : " << _distancesConversion << " ms" << std::endl;
+  std::cout << "adjusting : " << _adjusting << " ms" << std::endl;
+  std::cout << "** all Local BA: " << getTotalTime() << " ms" << std::endl;
+  std::cout << "-------------------------------\n" << std::endl;
+}
+
+bool TimeSummary::exportTimes(const std::string& filename)
+{
+  showTimes();
+  
+  std::ofstream os;
+  os.open(filename, std::ios::app);
+  os.seekp(0, std::ios::end); //put the cursor at the end
+  if (!os.is_open())
+  {
+    OPENMVG_LOG_DEBUG("Unable to open the Time profiling file '" << filename << "'.");
+    return false;
+  }
+  
+  if (os.tellp() == 0) // 'tellp' return the cursor's position
+  {
+    // If the file does't exist: add a header.
+    std::vector<std::string> header;
+    header.push_back("graphUpdating (s)");
+    header.push_back("distMapsComputing (s)"); 
+    header.push_back("statesMapsComputing (s)"); 
+    header.push_back("adjusting (s)"); 
+    header.push_back("intrinsicsSaving(s)"); 
+    header.push_back("allLocalBA (s)"); 
+    
+    for (std::string & head : header)
+      os << head << "\t";
+    os << "\n"; 
+  }
+  
+  os << _graphUpdating << "\t"
+     << _distancesComputing << "\t"
+     << _distancesConversion << "\t"
+     << _adjusting << "\t"
+     << _saveIntrinsics << "\t"
+     << getTotalTime() << "\t";
+  
+  os << "\n";
+  os.close();
+  return true;
+}
+
+
+void TimeSummary::saveTime(EStep step)
+{
+  switch (step) {
+  case EStep::UPDATE_GRAPH:
+    _graphUpdating = _timer.elapsed();
+    break;
+  case EStep::COMPUTE_DISTANCES:
+    _distancesComputing = _timer.elapsed();
+    break; 
+  case EStep::CONVERT_DISTANCES2STATES:
+    _distancesConversion = _timer.elapsed();
+    break; 
+  case EStep::ADJUSTMENT:
+    _adjusting = _timer.elapsed();
+    break; 
+  case EStep::SAVE_INTRINSICS:
+    _saveIntrinsics = _timer.elapsed();
+    break; 
+  default:
+    break;
+  }
+}
+
+double TimeSummary::getTotalTime() 
+{
+  return _graphUpdating 
+      + _distancesComputing 
+      + _distancesConversion 
+      + _adjusting 
+      + _saveIntrinsics;
+}
+
+//------------------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------------------
+//                                                     LocalBA_Data      
+//------------------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------------------
+
 // -- Constructor
 LocalBA_Data::LocalBA_Data(const SfM_Data& sfm_data)
 {
@@ -134,6 +230,8 @@ void LocalBA_Data::updateGraphWithNewViews(
     const SfM_Data& sfm_data, 
     const tracks::TracksPerView& map_tracksPerView)
 {
+  _timeSummary.resetTimer();
+  
   OPENMVG_LOG_INFO("Updating the distances graph with newly resected views...");
   
   std::set<IndexT> addedViewsId = selectViewsToAddToTheGraph(sfm_data);
@@ -162,6 +260,8 @@ void LocalBA_Data::updateGraphWithNewViews(
   OPENMVG_LOG_INFO("The distances graph has been completed with " 
                    << addedViewsId.size() << " nodes & " << numEdges << " edges.");
   OPENMVG_LOG_INFO("It contains " << _graph.maxNodeId() << " nodes & " << _graph.maxEdgeId() << " edges");                   
+  
+  _timeSummary.saveTime(TimeSummary::EStep::UPDATE_GRAPH);
 }
 
 void LocalBA_Data::drawGraph(const SfM_Data &sfm_data, const std::string& dir)
@@ -236,6 +336,8 @@ bool LocalBA_Data::removeViewsToTheGraph(const std::set<IndexT>& removedViewsId)
 
 void LocalBA_Data::computeDistancesMaps(const SfM_Data& sfm_data)
 { 
+  _timeSummary.resetTimer();
+  
   OPENMVG_LOG_INFO("Computing distance maps...");
   _mapDistancePerViewId.clear();
   _mapDistancePerPoseId.clear();
@@ -279,6 +381,8 @@ void LocalBA_Data::computeDistancesMaps(const SfM_Data& sfm_data)
     else
       _mapDistancePerPoseId[idPose] = it.second;
   } 
+  
+  _timeSummary.saveTime(TimeSummary::EStep::COMPUTE_DISTANCES);
   
   // (Optionnal) Display result: viewId -> distance to recent cameras
   OPENMVG_LOG_INFO("-- Distribution ViewId(Distance): ");
@@ -335,6 +439,8 @@ void LocalBA_Data::removeIntrinsicEdgesToTheGraph()
 
 void LocalBA_Data::convertDistancesToLBAStates(const SfM_Data & sfm_data)
 {
+  _timeSummary.resetTimer();
+  
   // reset the maps
   _mapLBAStatePerPoseId.clear();
   _mapLBAStatePerIntrinsicId.clear();
@@ -358,7 +464,7 @@ void LocalBA_Data::convertDistancesToLBAStates(const SfM_Data & sfm_data)
   //    - connected to a refined camera: refined
   //    - else ignored
   // ----------------------------------------------------
-  const std::size_t kDistanceLimit = 30; // graph distance
+  const std::size_t kDistanceLimit = 1; // graph distance
   const std::size_t kWindowSize = 25;   // nb of the last value in which compute the variation
   const double kStdevPercentage = 1.0;  // limit percentage of the Std deviation according to the range of all the parameters (e.i. focal)
   
@@ -404,6 +510,8 @@ void LocalBA_Data::convertDistancesToLBAStates(const SfM_Data & sfm_data)
       }
     }
   }
+  
+  _timeSummary.saveTime(TimeSummary::EStep::CONVERT_DISTANCES2STATES);
 }
 
 std::size_t LocalBA_Data::getNumberOfConstantAndRefinedCameras()
@@ -419,6 +527,8 @@ std::size_t LocalBA_Data::getNumberOfConstantAndRefinedCameras()
 
 void LocalBA_Data::addIntrinsicsToHistory(const SfM_Data& sfm_data)
 {
+  _timeSummary.resetTimer();
+  
   // Count the number of poses for each intrinsic
   std::map<IndexT, std::size_t> map_intrinsicId_usageNum;
   for (const auto& itView : sfm_data.GetViews())
@@ -443,6 +553,8 @@ void LocalBA_Data::addIntrinsicsToHistory(const SfM_Data& sfm_data)
           sfm_data.GetIntrinsicPtr(it.first)->getParams().at(0))
         );
   }
+  
+  _timeSummary.saveTime(TimeSummary::EStep::SAVE_INTRINSICS);
 }
 
 void LocalBA_Data::checkIntrinsicsConsistency(const std::size_t windowSize, const double stdevPercentageLimit)

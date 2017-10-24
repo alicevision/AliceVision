@@ -13,12 +13,43 @@
 #include "lemon/list_graph.h"
 #include "lemon/bfs.h"
 #include "openMVG/stl/stlMap.hpp"
+#include "openMVG/system/timer.hpp"
+
 
 namespace openMVG {
 namespace sfm {
 
-
-
+/// Allows to store the time spend in each step of the Local BA.
+struct TimeSummary
+{
+public:
+  
+  enum EStep {UPDATE_GRAPH, 
+              COMPUTE_DISTANCES, 
+              CONVERT_DISTANCES2STATES, 
+              ADJUSTMENT,
+              SAVE_INTRINSICS};
+  
+  void resetTimer() {_timer.reset();}
+  
+  void saveTime(EStep step);
+   
+  bool exportTimes(const std::string& filename);
+  
+  void showTimes();
+  
+private:
+  
+  openMVG::system::Timer _timer;
+  
+  double _graphUpdating = 0.0;
+  double _distancesComputing = 0.0;
+  double _distancesConversion = 0.0;
+  double _adjusting = 0.0;
+  double _saveIntrinsics = 0.0;
+  
+  double getTotalTime();
+};
 
 /// Contains all the data needed to apply a Local Bundle Adjustment.
 class LocalBA_Data
@@ -43,7 +74,7 @@ public:
   void setNewViewsId(const std::set<IndexT>& newPosesId) {_newViewsId = newPosesId;}
   
   // -- Methods
-
+  
   /// @brief addIntrinsicsToHistory Add the current intrinsics of the reconstruction in the intrinsics history.
   /// @param[in] sfm_data Contains all the information about the reconstruction, notably current intrinsics
   void addIntrinsicsToHistory(const SfM_Data& sfm_data);
@@ -51,7 +82,7 @@ public:
   std::size_t addIntrinsicEdgesToTheGraph(const SfM_Data& sfm_data);
   
   void removeIntrinsicEdgesToTheGraph();
-
+  
   
   
   /// @brief exportIntrinsicsHistory Save the history of each intrinsic. It create a file \b K<intrinsic_index>.txt in \a folder.
@@ -64,10 +95,10 @@ public:
   void updateGraphWithNewViews(
       const SfM_Data& sfm_data, 
       const tracks::TracksPerView& map_tracksPerView);
-      
+  
   void drawGraph(const SfM_Data& sfm_data, const std::string& dir);
   void drawGraph(const SfM_Data &sfm_data, const std::string& dir, const std::string& nameComplement);
-
+  
   /// @brief removeViewsToTheGraph Remove some views to the graph. It delete the node and all the incident arcs for each removed view.
   /// @param[in] removedViewsId Set of views index to remove
   /// @return true if the number of removed node is equal to the size of \c removedViewsId
@@ -76,10 +107,10 @@ public:
   /// @brief computeDistancesMaps Add the newly resected views 'newViewsIds' into a graph (nodes: cameras, egdes: matching)
   /// and compute the intragraph-distance between these new cameras and all the others.
   void computeDistancesMaps(const SfM_Data& sfm_data);
-
+  
   void convertDistancesToLBAStates(const SfM_Data & sfm_data);
   
- // Define the state of the all parameter of the reconstruction (structure, poses, intrinsics) in the BA:
+  // Define the state of the all parameter of the reconstruction (structure, poses, intrinsics) in the BA:
   enum ELocalBAState { 
     refined,  //< will be adjuted by the BA solver
     constant, //< will be set as constant in the sover
@@ -90,11 +121,13 @@ public:
   ELocalBAState getPoseState(const IndexT poseId) const {return _mapLBAStatePerPoseId.find(poseId)->second;}
   ELocalBAState getIntrinsicState(const IndexT intrinsicId) const {return _mapLBAStatePerIntrinsicId.find(intrinsicId)->second;}
   ELocalBAState getLandmarkState(const IndexT landmarkId) const {return _mapLBAStatePerLandmarkId.find(landmarkId)->second;}
-
+  
   std::size_t getNumberOfConstantAndRefinedCameras();
-
+  
+  TimeSummary _timeSummary;
+  
 private:
-    
+  
   /// @brief checkIntrinsicsConsistency Compute, for each camera/intrinsic, the variation of the last \a windowSize values of the focal length.
   /// If it consideres the focal lenght variations as enought constant it updates \a _intrinsicIsConstant.
   /// @details Pipeline:
@@ -106,7 +139,7 @@ private:
   /// @param[in] windowSize Compute the variation on the \a windowSize parameter
   /// @param[in] stdevPercentageLimit The limit is reached when the standard deviation of the \a windowSize values is less than \a stdevPecentageLimit % of the range of all the values.
   void checkIntrinsicsConsistency(const std::size_t windowSize, const double stdevPercentageLimit);
- 
+  
   /// @brief selectViewsToAddToTheGraph Return the index of all the posed views not added to the distance graph yet.
   /// It means all the poses if the graph is empty.
   /// @param[in] sfm_data
@@ -123,8 +156,8 @@ private:
       const SfM_Data& sfm_data,
       const tracks::TracksPerView& map_tracksPerView,
       const std::set<IndexT>& newViewsId);
- 
-     
+  
+  
   /// @brief isIntrinsicConstant Giving an intrinsic index and the wished parameter, is return \c true if the limit has alerady been reached, else \c false.
   /// @param[in] intrinsicId The intrinsic index.
   /// @param[in] parameter The \a EIntrinsicParameter to observe.
@@ -177,7 +210,7 @@ private:
   // Local BA needs to know the evolution of all the intrinsics parameters.
   // When camera parameters are enought reffined (no variation) they are set to constant in the BA.
   // ------------------------
- 
+  
   /// Save the progression for all the intrinsics parameters
   /// <IntrinsicId, std::vector<std::pair<NumOfPosesCamerasWithThisIntrinsic, FocalLengthHistory>
   /// K1:
@@ -187,7 +220,7 @@ private:
   /// K2:
   ///   ... 
   using IntrinicsHistory = std::map<IndexT, std::vector<std::pair<std::size_t, double>>>;
-
+  
   /// Backup of the intrinsics focal length values
   IntrinicsHistory _intrinsicsHistory; 
   
@@ -195,6 +228,11 @@ private:
   /// <IntrinsicId, isConsideredAsConstant>
   std::map<IndexT, bool> _mapIntrinsicIsConstant; 
 };
+
+
+
+
+
 
 //------------------------------------------------------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------------------------------------
@@ -234,68 +272,7 @@ struct LocalBA_statistics
   std::set<IndexT> _newViewsId;  // index of the new views added (newly resected)
 };
 
-//------------------------------------------------------------------------------------------------------------------------
-//------------------------------------------------------------------------------------------------------------------------
-//                                                 LocalBA_timeProfiler      
-//------------------------------------------------------------------------------------------------------------------------
-//------------------------------------------------------------------------------------------------------------------------
 
-struct LocalBA_timeProfiler
-{
-  double _graphUpdating = 0.0;
-  double _distMapsComputing = 0.0;
-  double _statesMapsComputing = 0.0;
-  double _adjusting = 0.0;
-  double _allLocalBA = 0.0;
-  
-  bool exportTimes(const std::string& filename)
-  {
-    std::ofstream os;
-    os.open(filename, std::ios::app);
-    os.seekp(0, std::ios::end); //put the cursor at the end
-    if (!os.is_open())
-    {
-      OPENMVG_LOG_DEBUG("Unable to open the Time profiling file '" << filename << "'.");
-      return false;
-    }
-    
-    if (os.tellp() == 0) // 'tellp' return the cursor's position
-    {
-      // If the file does't exist: add a header.
-      std::vector<std::string> header;
-      header.push_back("graphUpdating (s)");
-      header.push_back("distMapsComputing (s)"); 
-      header.push_back("statesMapsComputing (s)"); 
-      header.push_back("adjusting (s)"); 
-      header.push_back("allLocalBA (s)"); 
-      
-      for (std::string & head : header)
-        os << head << "\t";
-      os << "\n"; 
-    }
-    
-    os << _graphUpdating << "\t"
-       << _distMapsComputing << "\t"
-       << _statesMapsComputing << "\t"
-       << _adjusting << "\t"
-       << _allLocalBA << "\t";
-    
-    os << "\n";
-    os.close();
-    return true;
-  }
-  
-  void showTimes()
-  {
-    std::cout << "\n----- Local BA durations ------" << std::endl;
-    std::cout << "graph updating : " << _graphUpdating << " ms" << std::endl;
-    std::cout << "dist. Maps Computing : " << _distMapsComputing << " ms" << std::endl;
-    std::cout << "states Maps Computing : " << _statesMapsComputing << " ms" << std::endl;
-    std::cout << "adjusting : " << _adjusting << " ms" << std::endl;
-    std::cout << "** all Local BA: " << _allLocalBA << " ms" << std::endl;
-    std::cout << "-------------------------------\n" << std::endl;
-  }
-};
 
 } // namespace sfm
 } // namespace openMVG
