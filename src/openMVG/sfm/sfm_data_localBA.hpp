@@ -43,10 +43,16 @@ public:
   void setNewViewsId(const std::set<IndexT>& newPosesId) {_newViewsId = newPosesId;}
   
   // -- Methods
-  
+
   /// @brief addIntrinsicsToHistory Add the current intrinsics of the reconstruction in the intrinsics history.
   /// @param[in] sfm_data Contains all the information about the reconstruction, notably current intrinsics
   void addIntrinsicsToHistory(const SfM_Data& sfm_data);
+  
+  std::size_t addIntrinsicEdgesToTheGraph(const SfM_Data& sfm_data);
+  
+  void removeIntrinsicEdgesToTheGraph();
+
+  
   
   /// @brief exportIntrinsicsHistory Save the history of each intrinsic. It create a file \b K<intrinsic_index>.txt in \a folder.
   /// @param[in] folder The folder in which the \b K*.txt are saved.
@@ -58,7 +64,10 @@ public:
   void updateGraphWithNewViews(
       const SfM_Data& sfm_data, 
       const tracks::TracksPerView& map_tracksPerView);
-  
+      
+  void drawGraph(const SfM_Data& sfm_data, const std::string& dir);
+  void drawGraph(const SfM_Data &sfm_data, const std::string& dir, const std::string& nameComplement);
+
   /// @brief removeViewsToTheGraph Remove some views to the graph. It delete the node and all the incident arcs for each removed view.
   /// @param[in] removedViewsId Set of views index to remove
   /// @return true if the number of removed node is equal to the size of \c removedViewsId
@@ -143,7 +152,10 @@ private:
   lemon::ListGraph _graph; 
   
   /// A map associating each view index at its node in the graph 'graph_poses'.
-  std::map<IndexT, lemon::ListGraph::Node> map_viewId_node;
+  std::map<IndexT, lemon::ListGraph::Node> _mapNodePerViewId;
+  std::map<lemon::ListGraph::Node, IndexT> _mapViewIdPerNode;
+  std::set<int> _intrinsicEdgesId; // indexed by Edge id.
+  
   
   /// Contains all the last resected cameras
   std::set<IndexT> _newViewsId; 
