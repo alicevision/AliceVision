@@ -119,7 +119,7 @@ std::pair<double, bool> computeInliers(const std::vector<Mat> &vec_pts2d,
                                        const std::vector<Mat> &vec_pts3d,
                                        const std::vector<cameras::Pinhole_Intrinsic_Radial_K3 > &vec_queryIntrinsics,
                                        const std::vector<geometry::Pose3 > &vec_subPoses,
-                                       const double maxReprojectionError,
+                                       double maxReprojectionError,
                                        const geometry::Pose3 &rigPose,
                                        std::vector<std::vector<std::size_t> > &vec_inliers);
 

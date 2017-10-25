@@ -904,7 +904,7 @@ void kNearestKeyFrames(const features::CCTAG_Regions & queryRegions,
                        const features::RegionsPerView & regionsPerView,
                        std::size_t nNearestKeyFrames,
                        std::vector<IndexT> & out_kNearestFrames,
-                       const float similarityThreshold /*=.0f*/)
+                       float similarityThreshold /*=.0f*/)
 {
   out_kNearestFrames.clear();
   

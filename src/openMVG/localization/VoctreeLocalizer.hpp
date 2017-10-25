@@ -303,10 +303,10 @@ private:
                       const cameras::IntrinsicBase * queryIntrinsics,// the intrinsics of the image we are using as reference
                       const features::MapRegionsPerDesc & regionsToMatch,
                       const cameras::IntrinsicBase * matchedIntrinsics,
-                      const float fDistRatio,
-                      const double matchingError,
-                      const bool useGeometricFiltering,
-                      const bool useGuidedMatching,
+                      float fDistRatio,
+                      double matchingError,
+                      bool useGeometricFiltering,
+                      bool useGuidedMatching,
                       const std::pair<size_t,size_t> & imageSizeI,     // size of the image in matcher  
                       const std::pair<size_t,size_t> & imageSizeJ,     // size of the query image
                       matching::MatchesPerDescType & out_featureMatches,

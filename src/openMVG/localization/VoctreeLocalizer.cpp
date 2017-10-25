@@ -1048,10 +1048,10 @@ bool VoctreeLocalizer::robustMatching(matching::RegionsDatabaseMatcherPerDesc & 
                                       const cameras::IntrinsicBase * queryIntrinsicsBase,   // the intrinsics of the image we are using as reference
                                       const features::MapRegionsPerDesc & matchedRegions,
                                       const cameras::IntrinsicBase * matchedIntrinsicsBase,
-                                      const float fDistRatio,
-                                      const double matchingError,
-                                      const bool useGeometricFiltering,
-                                      const bool useGuidedMatching,
+                                      float fDistRatio,
+                                      double matchingError,
+                                      bool useGeometricFiltering,
+                                      bool useGuidedMatching,
                                       const std::pair<std::size_t,std::size_t> & imageSizeI,     // size of the first image @fixme change the API of the kernel!! 
                                       const std::pair<std::size_t,std::size_t> & imageSizeJ,     // size of the second image
                                       matching::MatchesPerDescType & out_featureMatches,
