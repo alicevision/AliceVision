@@ -322,7 +322,7 @@ void SequentialSfMReconstructionEngine::RobustResectionOfImages(
       
       // [TEMP] used to run Local BA (without save changes due to adjustment) the BA (saving adjustments)
       // It's useful to compare time spent in the different adjustments 
-      _compareBAAndLocalBA = false;
+      //      _compareBAAndLocalBA = false;
       
       do
       {
@@ -330,13 +330,14 @@ void SequentialSfMReconstructionEngine::RobustResectionOfImages(
         
         if (_uselocalBundleAdjustment)
         {
-          if (_compareBAAndLocalBA)
-          {
-            localBundleAdjustment("localBA");
-            localBundleAdjustment("BA"); 
-          }
-          else
-            localBundleAdjustment();
+          //          if (_compareBAAndLocalBA)
+          //          {
+          //            localBundleAdjustment("localBA");
+          //            localBundleAdjustment("BA"); 
+          //          }
+          //          else
+          if (!localBundleAdjustment())
+            break;
         }
         else
           BundleAdjustment(_bFixedIntrinsics);
@@ -370,19 +371,19 @@ void SequentialSfMReconstructionEngine::RobustResectionOfImages(
           if (poses_saved !=  _sfm_data.GetPoses())
           {
             // Get removed POSES index
-            for (const auto& pose : poses_saved)
+            for (const auto& x : poses_saved)
             {
-              IndexT id_pose = pose.first;
+              IndexT id_pose = x.first;
               if (_sfm_data.GetPoses().find(id_pose) == _sfm_data.GetPoses().end()) // id not found = removed
                 removed_posesId.insert(id_pose);
             }
             // Get removed VIEWS index
-            for (const auto& itView : _sfm_data.GetViews())
+            for (const auto& x : _sfm_data.GetViews())
             {
-              if (_sfm_data.IsPoseAndIntrinsicDefined(itView.second->getViewId()))
+              if (_sfm_data.IsPoseAndIntrinsicDefined(x.second->getViewId()))
               {
-                if (removed_posesId.find(itView.second->getPoseId()) != removed_posesId.end())
-                  removed_viewsId.insert(itView.second->getViewId());
+                if (removed_posesId.find(x.second->getPoseId()) != removed_posesId.end())
+                  removed_viewsId.insert(x.second->getViewId());
               }
             }
             
@@ -1760,14 +1761,14 @@ bool SequentialSfMReconstructionEngine::localBundleAdjustment(const std::string&
     // temp
     if (drawGraphs) // <------------
     { 
-      _localBA_data-> computeDistancesMaps(_sfm_data);
+      _localBA_data->computeDistancesMaps(_sfm_data);
       _localBA_data->drawGraph(_sfm_data, _sOutDirectory+"/LocalBA/", "a_noK");
     }
     
     if (withIntrinsicEdges)
       _localBA_data->addIntrinsicEdgesToTheGraph(_sfm_data);
     
-    _localBA_data-> computeDistancesMaps(_sfm_data);
+    _localBA_data->computeDistancesMaps(_sfm_data);
     
     if (drawGraphs) // <------------
       _localBA_data->drawGraph(_sfm_data, _sOutDirectory+"/LocalBA/", "b_Kadded");
@@ -1779,10 +1780,10 @@ bool SequentialSfMReconstructionEngine::localBundleAdjustment(const std::string&
     
     if (drawGraphs) // <------------
     {
-      _localBA_data-> computeDistancesMaps(_sfm_data);
+      _localBA_data->computeDistancesMaps(_sfm_data);
       _localBA_data->drawGraph(_sfm_data, _sOutDirectory+"/LocalBA/", "c_Kremoved");
     }
-      
+    
     // Restore the Dense mode of Ceres if the number of cameras in the solver will be < 100
     if (_localBA_data->getNumberOfConstantAndRefinedCameras() <= 100)
       options.setDenseBA();
@@ -1800,7 +1801,7 @@ bool SequentialSfMReconstructionEngine::localBundleAdjustment(const std::string&
   }
   else // save the changes due to the adjustment
     isBaSucceed = localBA_ceres.Adjust(_sfm_data, *_localBA_data);
-    
+  
   _localBA_data->_timeSummary.saveTime(TimeSummary::EStep::ADJUSTMENT);
   
   // Update 'map_intrinsicsHistorical' and compute 'map_intrinsicsLimits'

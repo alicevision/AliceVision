@@ -146,12 +146,12 @@ std::map<int, std::size_t> LocalBA_Data::getDistancesHistogram() const
 {
   std::map<int, std::size_t> hist;
   
-  for (auto & i : _mapDistancePerViewId)
+  for (const auto& x : _mapDistancePerViewId)
   {
-    if (hist.find(i.second) == hist.end())
-      hist[i.second] = 1;
+    if (hist.find(x.second) == hist.end())
+      hist[x.second] = 1;
     else
-      hist.at(i.second)++;
+      hist.at(x.second)++;
   }
   
   return hist;
@@ -167,10 +167,10 @@ std::set<IndexT> LocalBA_Data::selectViewsToAddToTheGraph(const SfM_Data& sfm_da
   if (_graph.maxNodeId() == -1) // empty graph 
   {
     OPENMVG_LOG_INFO("'_mapNodePerViewId' is empty: first local BA.");
-    for (auto & i : sfm_data.GetViews())
+    for (const auto & x : sfm_data.GetViews())
     {
-      if (sfm_data.IsPoseAndIntrinsicDefined(i.first))
-        addedViewsId.insert(i.first);
+      if (sfm_data.IsPoseAndIntrinsicDefined(x.first))
+        addedViewsId.insert(x.first);
     }
   }
   else // not empty graph 
@@ -221,16 +221,16 @@ std::map<Pair, std::size_t> LocalBA_Data::countSharedLandmarksPerImagesPair(
                           std::back_inserter(newView_landmarks));
     
     // Retrieve the common track Ids
-    for(auto landmark: newView_landmarks)
+    for(const auto& landmarkId: newView_landmarks)
     {
-      for(auto viewObs: sfm_data.structure.at(landmark).observations)
+      for(const auto& observations: sfm_data.structure.at(landmarkId).observations)
       {
-        if (viewObs.first == viewId) continue; // do not compare an observation with itself
+        if (observations.first == viewId) continue; // do not compare an observation with itself
         
         // Increment the number of common landmarks between the new view and the already 
         // reconstructed cameras (observations).
         // format: pair<min_viewid, max_viewid>
-        auto viewPair = std::make_pair(std::min(viewId, viewObs.first), std::max(viewId, viewObs.first));
+        auto viewPair = std::make_pair(std::min(viewId, observations.first), std::max(viewId, observations.first));
         auto it = map_imagesPair_nbSharedLandmarks.find(viewPair);
         if(it == map_imagesPair_nbSharedLandmarks.end())  // the first common landmark
           map_imagesPair_nbSharedLandmarks[viewPair] = 1;
@@ -256,7 +256,7 @@ void LocalBA_Data::updateGraphWithNewViews(
       = countSharedLandmarksPerImagesPair(sfm_data, map_tracksPerView, addedViewsId);
   
   // -- Add nodes to the graph
-  for (auto& viewId : addedViewsId)
+  for (const auto& viewId : addedViewsId)
   {
     lemon::ListGraph::Node newNode = _graph.addNode();
     _mapNodePerViewId[viewId] = newNode;  
@@ -265,11 +265,11 @@ void LocalBA_Data::updateGraphWithNewViews(
   
   // -- Add edges to the graph
   std::size_t numEdges = 0;
-  for(auto& it: map_imagesPair_nbSharedLandmarks)
+  for(const auto& x: map_imagesPair_nbSharedLandmarks)
   {
-    if(it.second > _kMinNbOfMatches) // ensure a minimum number of landmarks in common to consider the link
+    if(x.second > _kMinNbOfMatches) // ensure a minimum number of landmarks in common to consider the link
     {
-      _graph.addEdge(_mapNodePerViewId.at(it.first.first), _mapNodePerViewId.at(it.first.second));
+      _graph.addEdge(_mapNodePerViewId.at(x.first.first), _mapNodePerViewId.at(x.first.second));
       numEdges++;
     }
   }
@@ -373,15 +373,15 @@ void LocalBA_Data::computeDistancesMaps(const SfM_Data& sfm_data)
   bfs.start();
   
   // Handle bfs results (distances)
-  for(auto it: _mapNodePerViewId) // each node in the graph
+  for(const auto& x : _mapNodePerViewId) // each node in the graph
   {
-    auto& node = it.second;
+    auto& node = x.second;
     int d = -1; 
     
     if (bfs.reached(node))
       d = bfs.dist(node);
     
-    _mapDistancePerViewId[it.first] = d;
+    _mapDistancePerViewId[x.first] = d;
   }
   
   // Re-mapping: from <ViewId, distance> to <PoseId, distance>:
@@ -401,12 +401,16 @@ void LocalBA_Data::computeDistancesMaps(const SfM_Data& sfm_data)
   _timeSummary.saveTime(TimeSummary::EStep::COMPUTE_DISTANCES);
   
   // (Optionnal) Display result: viewId -> distance to recent cameras
-  OPENMVG_LOG_INFO("-- Distribution 'viewId(distance)': ");
-  for (auto & itVMap: _mapDistancePerViewId)
+  OPENMVG_LOG_INFO("Graph-distances histogram <distance|numOfPosedCameras> :");
+  for (const auto& x : getDistancesHistogram())
   {
-    std::cout << itVMap.first << "(" << itVMap.second << ") ";
+    std::string complement;
+    if (x.first == -1) 
+      complement = "(= not connected to the new cameras)";
+    if (x.first == 0) 
+      complement = "(= new cameras)";
+    OPENMVG_LOG_INFO("|- graph-distance " << x.first << "\t- " << x.second << " posed cameras " << complement);
   }
-  std::cout << "\n";
 }
 
 std::size_t LocalBA_Data::addIntrinsicEdgesToTheGraph(const SfM_Data& sfm_data)
@@ -421,17 +425,17 @@ std::size_t LocalBA_Data::addIntrinsicEdgesToTheGraph(const SfM_Data& sfm_data)
     if (isIntrinsicConstant(newViewIntrinsicId)) // do not add edges for a consisitent intrinsic
       continue;
     
-    for (auto it : _mapNodePerViewId) // for each view in the graph
+    for (const auto& x : _mapNodePerViewId) // for each view in the graph
     {
-      if (newViewId == it.first)  // do not compare a view with itself
+      if (newViewId == x.first)  // do not compare a view with itself
         continue; 
       
-      IndexT oldViewIntrinsicId = sfm_data.GetViews().at(it.first)->getIntrinsicId();
+      IndexT oldViewIntrinsicId = sfm_data.GetViews().at(x.first)->getIntrinsicId();
       
       if (oldViewIntrinsicId == newViewIntrinsicId)
       {
-        IndexT minId = std::min(it.first, newViewId);
-        IndexT maxId = std::max(it.first, newViewId);
+        IndexT minId = std::min(x.first, newViewId);
+        IndexT maxId = std::max(x.first, newViewId);
         
         lemon::ListGraph::Edge edge = _graph.addEdge(_mapNodePerViewId[minId], _mapNodePerViewId[maxId]);
         _intrinsicEdgesId.insert(_graph.id(edge));
@@ -480,7 +484,7 @@ void LocalBA_Data::convertDistancesToLBAStates(const SfM_Data & sfm_data)
   //    - connected to a refined camera: refined
   //    - else ignored
   // ----------------------------------------------------
-  const std::size_t kDistanceLimit = 30; // graph distance
+  const std::size_t kDistanceLimit = 1; // graph distance
   const std::size_t kWindowSize = 25;   // nb of the last value in which compute the variation
   const double kStdevPercentage = 1.0;  // limit percentage of the Std deviation according to the range of all the parameters (e.i. focal)
   
@@ -533,9 +537,9 @@ void LocalBA_Data::convertDistancesToLBAStates(const SfM_Data & sfm_data)
 std::size_t LocalBA_Data::getNumberOfConstantAndRefinedCameras()
 {
   std::size_t num = 0;
-  for (auto it : _mapLBAStatePerPoseId)
+  for (const auto& x : _mapLBAStatePerPoseId)
   {
-    if (it.second == LocalBA_Data::ELocalBAState::refined || it.second == LocalBA_Data::ELocalBAState::constant)
+    if (x.second == LocalBA_Data::ELocalBAState::refined || x.second == LocalBA_Data::ELocalBAState::constant)
       num++;
   }
   return num;
@@ -562,11 +566,11 @@ void LocalBA_Data::addIntrinsicsToHistory(const SfM_Data& sfm_data)
   }
   
   // Complete the intrinsics history withe the current focal lengths
-  for (auto& it : sfm_data.intrinsics)
+  for (const auto& x : sfm_data.intrinsics)
   {
-    _intrinsicsHistory.at(it.first).push_back(
-          std::make_pair(map_intrinsicId_usageNum[it.first],
-          sfm_data.GetIntrinsicPtr(it.first)->getParams().at(0))
+    _intrinsicsHistory.at(x.first).push_back(
+          std::make_pair(map_intrinsicId_usageNum[x.first],
+          sfm_data.GetIntrinsicPtr(x.first)->getParams().at(0))
         );
   }
   
@@ -577,9 +581,9 @@ void LocalBA_Data::checkIntrinsicsConsistency(const std::size_t windowSize, cons
 {
   OPENMVG_LOG_INFO("Checking, for each camera, if the focal length is stable...");
   
-  for (auto& elt : _intrinsicsHistory)
+  for (const auto& x : _intrinsicsHistory)
   {
-    IndexT idIntr = elt.first;
+    IndexT idIntr = x.first;
     
     // Do not compute the variation, if the intrinsic has already be regarded as constant.
     if (isIntrinsicConstant(idIntr))
@@ -668,9 +672,9 @@ double LocalBA_Data::standardDeviation(const std::vector<T>& data)
 void LocalBA_Data::exportIntrinsicsHistory(const std::string& folder)
 {
   OPENMVG_LOG_INFO("Exporting intrinsics history...");
-  for (auto& itIntr : _intrinsicsHistory)
+  for (const auto& x : _intrinsicsHistory)
   {
-    IndexT idIntr = itIntr.first;
+    IndexT idIntr = x.first;
     
     std::string filename = folder + "K" + std::to_string(idIntr) + ".txt";
     std::ofstream os;

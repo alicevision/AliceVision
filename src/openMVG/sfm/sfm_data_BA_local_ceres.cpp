@@ -89,7 +89,10 @@ bool Local_Bundle_Adjustment_Ceres::Adjust(SfM_Data& sfm_data, const LocalBA_Dat
       _LBAStatistics._numIgnoredIntrinsics = 0;
       _LBAStatistics._numRefinedPoses = 0;
       _LBAStatistics._numConstantPoses = 0;
-      _LBAStatistics._numIgnoredPoses = 0;   
+      _LBAStatistics._numIgnoredPoses = 0;  
+      _LBAStatistics._numRefinedLandmarks = 0;
+      _LBAStatistics._numConstantLandmarks= 0;
+      _LBAStatistics._numIgnoredLandmarks= 0;   
       OPENMVG_LOG_WARNING("Local bundle adjustment not executed: There is no pose set to Constant in the solver (this generally happens when new views are not connected to the rest of the graph).");
       // It happens when the added pose(s) is(are) not connected to the rest of the graph.
       return false;
