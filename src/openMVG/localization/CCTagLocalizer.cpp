@@ -249,7 +249,7 @@ bool CCTagLocalizer::localize(const features::MapRegionsPerDesc & genQueryRegion
                               const std::string& imagePath)
 {
   namespace bfs = boost::filesystem;
-  
+
   const CCTagLocalizer::Parameters *param = dynamic_cast<const CCTagLocalizer::Parameters *>(parameters);
   if(!param)
   {
@@ -853,12 +853,12 @@ void CCTagLocalizer::getAllAssociations(const features::CCTAG_Regions &queryRegi
     {
       const auto &key = idx.first;
       const auto &value = idx.second;
-       OPENMVG_LOG_DEBUG("[matching]\tAssociations "
-               << features::EImageDescriberType_enumToString(key.descType) << " "
-               << key.landmarkId << "," << key.featId <<" found "
-               << value << " times.");
-       if(value > maxOcc)
-         maxOcc = value;
+      OPENMVG_LOG_DEBUG("[matching]\tAssociations "
+             << features::EImageDescriberType_enumToString(key.descType) << " "
+             << key.landmarkId << "," << key.featId <<" found "
+             << value << " times.");
+      if(value > maxOcc)
+        maxOcc = value;
     }
     
     std::size_t numOccTreated = 0;
