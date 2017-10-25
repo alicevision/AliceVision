@@ -204,13 +204,13 @@ public:
    * @param[out] associationIDs the ids of the 2D-3D correspondences used to compute the pose
    * @return true if the localization is successful
    */
-  bool localizeFirstBestResult(const features::MapRegionsPerDesc & queryRegions,
-                               const std::pair<std::size_t, std::size_t> imageSize,
+  bool localizeFirstBestResult(const features::MapRegionsPerDesc &queryRegions,
+                               const std::pair<std::size_t, std::size_t> &imageSize,
                                const Parameters &param,
                                bool useInputIntrinsics,
                                cameras::Pinhole_Intrinsic_Radial_K3 &queryIntrinsics,
                                LocalizationResult &localizationResult,
-                               const std::string& imagePath = std::string());
+                               const std::string &imagePath = std::string());
 
   /**
    * @brief Try to localize an image in the database: it queries the database to 
@@ -230,7 +230,7 @@ public:
    * @return true if the localization is successful
    */
   bool localizeAllResults(const features::MapRegionsPerDesc & queryRegions,
-                          const std::pair<std::size_t, std::size_t> imageSize,
+                          const std::pair<std::size_t, std::size_t> & imageSize,
                           const Parameters &param,
                           bool useInputIntrinsics,
                           cameras::Pinhole_Intrinsic_Radial_K3 &queryIntrinsics,
@@ -313,7 +313,7 @@ private:
                       robust::EROBUST_ESTIMATOR estimator = robust::ROBUST_ESTIMATOR_ACRANSAC) const;
   
   void getAssociationsFromBuffer(matching::RegionsDatabaseMatcherPerDesc& matchers,
-                                 const std::pair<std::size_t, std::size_t> imageSize,
+                                 const std::pair<std::size_t, std::size_t> & imageSize,
                                  const Parameters &param,
                                  bool useInputIntrinsics,
                                  const cameras::Pinhole_Intrinsic_Radial_K3 &queryIntrinsics,

@@ -382,12 +382,12 @@ bool VoctreeLocalizer::initDatabase(const std::string & vocTreeFilepath,
 }
 
 bool VoctreeLocalizer::localizeFirstBestResult(const features::MapRegionsPerDesc &queryRegions,
-                                               const std::pair<std::size_t, std::size_t> queryImageSize,
+                                               const std::pair<std::size_t, std::size_t> &queryImageSize,
                                                const Parameters &param,
                                                bool useInputIntrinsics,
                                                cameras::Pinhole_Intrinsic_Radial_K3 &queryIntrinsics,
                                                LocalizationResult &localizationResult,
-                                               const std::string& imagePath)
+                                               const std::string &imagePath)
 {
   // A. Find the (visually) similar images in the database 
   OPENMVG_LOG_DEBUG("[database]\tRequest closest images from voctree");
@@ -601,7 +601,7 @@ bool VoctreeLocalizer::localizeFirstBestResult(const features::MapRegionsPerDesc
  } 
 
 bool VoctreeLocalizer::localizeAllResults(const features::MapRegionsPerDesc &queryRegions,
-                                          const std::pair<std::size_t, std::size_t> queryImageSize,
+                                          const std::pair<std::size_t, std::size_t> & queryImageSize,
                                           const Parameters &param,
                                           bool useInputIntrinsics,
                                           cameras::Pinhole_Intrinsic_Radial_K3 &queryIntrinsics,
@@ -973,7 +973,7 @@ void VoctreeLocalizer::getAllAssociations(const features::MapRegionsPerDesc &que
 }
 
 void VoctreeLocalizer::getAssociationsFromBuffer(matching::RegionsDatabaseMatcherPerDesc & matchers,
-                                                 const std::pair<std::size_t, std::size_t> queryImageSize,
+                                                 const std::pair<std::size_t, std::size_t> & queryImageSize,
                                                  const Parameters &param,
                                                  bool useInputIntrinsics,
                                                  const cameras::Pinhole_Intrinsic_Radial_K3 &queryIntrinsics,
