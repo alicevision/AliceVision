@@ -385,13 +385,13 @@ bool VoctreeLocalizer::initDatabase(const std::string & vocTreeFilepath,
   return true;
 }
 
-bool VoctreeLocalizer::localizeFirstBestResult(const feature::MapRegionsPerDesc &queryRegions,
-                                               const std::pair<std::size_t, std::size_t> queryImageSize,
+bool VoctreeLocalizer::localizeFirstBestResult(const features::MapRegionsPerDesc &queryRegions,
+                                               const std::pair<std::size_t, std::size_t> &queryImageSize,
                                                const Parameters &param,
                                                bool useInputIntrinsics,
                                                camera::PinholeRadialK3 &queryIntrinsics,
                                                LocalizationResult &localizationResult,
-                                               const std::string& imagePath)
+                                               const std::string &imagePath)
 {
   // A. Find the (visually) similar images in the database 
   ALICEVISION_LOG_DEBUG("[database]\tRequest closest images from voctree");
@@ -601,11 +601,10 @@ bool VoctreeLocalizer::localizeFirstBestResult(const feature::MapRegionsPerDesc 
   }
   //@todo deal with unsuccesful case...
   return localizationResult.isValid();
-  
- } 
+} 
 
-bool VoctreeLocalizer::localizeAllResults(const feature::MapRegionsPerDesc &queryRegions,
-                                          const std::pair<std::size_t, std::size_t> queryImageSize,
+bool VoctreeLocalizer::localizeAllResults(const features::MapRegionsPerDesc &queryRegions,
+                                          const std::pair<std::size_t, std::size_t> & queryImageSize,
                                           const Parameters &param,
                                           bool useInputIntrinsics,
                                           camera::PinholeRadialK3 &queryIntrinsics,
@@ -977,7 +976,7 @@ void VoctreeLocalizer::getAllAssociations(const feature::MapRegionsPerDesc &quer
 }
 
 void VoctreeLocalizer::getAssociationsFromBuffer(matching::RegionsDatabaseMatcherPerDesc & matchers,
-                                                 const std::pair<std::size_t, std::size_t> queryImageSize,
+                                                 const std::pair<std::size_t, std::size_t> & queryImageSize,
                                                  const Parameters &param,
                                                  bool useInputIntrinsics,
                                                  const camera::PinholeRadialK3 &queryIntrinsics,

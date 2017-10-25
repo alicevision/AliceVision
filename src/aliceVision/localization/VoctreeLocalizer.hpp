@@ -202,13 +202,13 @@ public:
    * @param[out] associationIDs the ids of the 2D-3D correspondences used to compute the pose
    * @return true if the localization is successful
    */
-  bool localizeFirstBestResult(const feature::MapRegionsPerDesc & queryRegions,
-                               const std::pair<std::size_t, std::size_t> imageSize,
+  bool localizeFirstBestResult(const features::MapRegionsPerDesc &queryRegions,
+                               const std::pair<std::size_t, std::size_t> &imageSize,
                                const Parameters &param,
                                bool useInputIntrinsics,
                                camera::PinholeRadialK3 &queryIntrinsics,
                                LocalizationResult &localizationResult,
-                               const std::string& imagePath = std::string());
+                               const std::string &imagePath = std::string());
 
   /**
    * @brief Try to localize an image in the database: it queries the database to 
@@ -227,8 +227,8 @@ public:
    * @param[out] associationIDs the ids of the 2D-3D correspondences used to compute the pose
    * @return true if the localization is successful
    */
-  bool localizeAllResults(const feature::MapRegionsPerDesc & queryRegions,
-                          const std::pair<std::size_t, std::size_t> imageSize,
+  bool localizeAllResults(const features::MapRegionsPerDesc & queryRegions,
+                          const std::pair<std::size_t, std::size_t> & imageSize,
                           const Parameters &param,
                           bool useInputIntrinsics,
                           camera::PinholeRadialK3 &queryIntrinsics,
@@ -311,7 +311,7 @@ private:
                       robustEstimation::ERobustEstimator estimator = robustEstimation::ERobustEstimator::ACRANSAC) const;
   
   void getAssociationsFromBuffer(matching::RegionsDatabaseMatcherPerDesc& matchers,
-                                 const std::pair<std::size_t, std::size_t> imageSize,
+                                 const std::pair<std::size_t, std::size_t> & imageSize,
                                  const Parameters &param,
                                  bool useInputIntrinsics,
                                  const camera::PinholeRadialK3 &queryIntrinsics,
