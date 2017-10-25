@@ -202,7 +202,7 @@ public:
    * @param[out] associationIDs the ids of the 2D-3D correspondences used to compute the pose
    * @return true if the localization is successful
    */
-  bool localizeFirstBestResult(const features::MapRegionsPerDesc &queryRegions,
+  bool localizeFirstBestResult(const feature::MapRegionsPerDesc &queryRegions,
                                const std::pair<std::size_t, std::size_t> &imageSize,
                                const Parameters &param,
                                bool useInputIntrinsics,
@@ -227,7 +227,7 @@ public:
    * @param[out] associationIDs the ids of the 2D-3D correspondences used to compute the pose
    * @return true if the localization is successful
    */
-  bool localizeAllResults(const features::MapRegionsPerDesc & queryRegions,
+  bool localizeAllResults(const feature::MapRegionsPerDesc & queryRegions,
                           const std::pair<std::size_t, std::size_t> & imageSize,
                           const Parameters &param,
                           bool useInputIntrinsics,
@@ -298,9 +298,9 @@ private:
    * @return
    */
   bool robustMatching(matching::RegionsDatabaseMatcherPerDesc & matchers,
-                      const cameras::IntrinsicBase * queryIntrinsics,// the intrinsics of the image we are using as reference
-                      const features::MapRegionsPerDesc & regionsToMatch,
-                      const cameras::IntrinsicBase * matchedIntrinsics,
+                      const camera::IntrinsicBase * queryIntrinsics,// the intrinsics of the image we are using as reference
+                      const feature::MapRegionsPerDesc & regionsToMatch,
+                      const camera::IntrinsicBase * matchedIntrinsics,
                       float fDistRatio,
                       double matchingError,
                       bool useGeometricFiltering,

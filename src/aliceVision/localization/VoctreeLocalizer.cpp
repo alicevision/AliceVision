@@ -385,7 +385,7 @@ bool VoctreeLocalizer::initDatabase(const std::string & vocTreeFilepath,
   return true;
 }
 
-bool VoctreeLocalizer::localizeFirstBestResult(const features::MapRegionsPerDesc &queryRegions,
+bool VoctreeLocalizer::localizeFirstBestResult(const feature::MapRegionsPerDesc &queryRegions,
                                                const std::pair<std::size_t, std::size_t> &queryImageSize,
                                                const Parameters &param,
                                                bool useInputIntrinsics,
@@ -603,7 +603,7 @@ bool VoctreeLocalizer::localizeFirstBestResult(const features::MapRegionsPerDesc
   return localizationResult.isValid();
 } 
 
-bool VoctreeLocalizer::localizeAllResults(const features::MapRegionsPerDesc &queryRegions,
+bool VoctreeLocalizer::localizeAllResults(const feature::MapRegionsPerDesc &queryRegions,
                                           const std::pair<std::size_t, std::size_t> & queryImageSize,
                                           const Parameters &param,
                                           bool useInputIntrinsics,
@@ -1048,9 +1048,9 @@ void VoctreeLocalizer::getAssociationsFromBuffer(matching::RegionsDatabaseMatche
 }
 
 bool VoctreeLocalizer::robustMatching(matching::RegionsDatabaseMatcherPerDesc & matchers,
-                                      const cameras::IntrinsicBase * queryIntrinsicsBase,   // the intrinsics of the image we are using as reference
-                                      const features::MapRegionsPerDesc & matchedRegions,
-                                      const cameras::IntrinsicBase * matchedIntrinsicsBase,
+                                      const camera::IntrinsicBase * queryIntrinsicsBase,   // the intrinsics of the image we are using as reference
+                                      const feature::MapRegionsPerDesc & matchedRegions,
+                                      const camera::IntrinsicBase * matchedIntrinsicsBase,
                                       float fDistRatio,
                                       double matchingError,
                                       bool useGeometricFiltering,
