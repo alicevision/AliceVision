@@ -628,8 +628,7 @@ std::tuple<double, double, double> computeStatistics(const Mat &pts2D,
 {
   if(currInliers.empty())
     return std::make_tuple(0., 0., 0.);
-  
-  const std::size_t numPts = pts2D.cols();
+
   Mat2X residuals = currCamera.residuals(subPoses*rigPose, pts3D, pts2D);
 
   Vec sqrErrors = (residuals.cwiseProduct(residuals)).colwise().sum();
