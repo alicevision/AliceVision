@@ -811,7 +811,7 @@ int main(int argc, char **argv)
     std::string brand;
     std::string model;
 
-    bool operator==(sensorInfo& other) const
+    bool operator==(const sensorInfo& other) const
     {
       return (brand == other.brand &&
               model == other.model);
