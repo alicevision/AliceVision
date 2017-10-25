@@ -298,13 +298,13 @@ private:
    * @return
    */
   bool robustMatching(matching::RegionsDatabaseMatcherPerDesc & matchers,
-                      const camera::IntrinsicBase * queryIntrinsics,// the intrinsics of the image we are using as reference
-                      const feature::MapRegionsPerDesc & regionsToMatch,
-                      const camera::IntrinsicBase * matchedIntrinsics,
-                      const float fDistRatio,
-                      const double matchingError,
-                      const bool useGeometricFiltering,
-                      const bool useGuidedMatching,
+                      const cameras::IntrinsicBase * queryIntrinsics,// the intrinsics of the image we are using as reference
+                      const features::MapRegionsPerDesc & regionsToMatch,
+                      const cameras::IntrinsicBase * matchedIntrinsics,
+                      float fDistRatio,
+                      double matchingError,
+                      bool useGeometricFiltering,
+                      bool useGuidedMatching,
                       const std::pair<size_t,size_t> & imageSizeI,     // size of the image in matcher  
                       const std::pair<size_t,size_t> & imageSizeJ,     // size of the query image
                       matching::MatchesPerDescType & out_featureMatches,
