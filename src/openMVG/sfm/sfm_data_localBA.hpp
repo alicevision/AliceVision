@@ -19,6 +19,12 @@
 namespace openMVG {
 namespace sfm {
 
+//------------------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------------------
+//                                                 TimeSummary      
+//------------------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------------------
+
 /// Allows to store the time spend in each step of the Local BA.
 struct TimeSummary
 {
@@ -33,7 +39,7 @@ public:
   void resetTimer() {_timer.reset();}
   
   void saveTime(EStep step);
-   
+  
   bool exportTimes(const std::string& filename);
   
   void showTimes();
@@ -50,6 +56,12 @@ private:
   
   double getTotalTime();
 };
+
+//------------------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------------------
+//                                                     LocalBA_Data      
+//------------------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------------------
 
 /// Contains all the data needed to apply a Local Bundle Adjustment.
 class LocalBA_Data
@@ -68,6 +80,8 @@ public:
   int getViewDistance(const IndexT viewId) const;
   
   std::set<IndexT> getNewViewsId() const {return _newViewsId;}
+  
+  std::map<int, std::size_t> getDistancesHistogram() const;
   
   // -- Setters
   
@@ -118,9 +132,10 @@ public:
   };
   
   // Get back the 'ELocalBAState' for a specific parameter :
-  ELocalBAState getPoseState(const IndexT poseId) const {return _mapLBAStatePerPoseId.find(poseId)->second;}
-  ELocalBAState getIntrinsicState(const IndexT intrinsicId) const {return _mapLBAStatePerIntrinsicId.find(intrinsicId)->second;}
-  ELocalBAState getLandmarkState(const IndexT landmarkId) const {return _mapLBAStatePerLandmarkId.find(landmarkId)->second;}
+  ELocalBAState getPoseState(const IndexT poseId) const           {return _mapLBAStatePerPoseId.at(poseId);}
+  ELocalBAState getIntrinsicState(const IndexT intrinsicId) const {return _mapLBAStatePerIntrinsicId.at(intrinsicId);}
+  ELocalBAState getLandmarkState(const IndexT landmarkId) const   {return _mapLBAStatePerLandmarkId.at(landmarkId);
+  }
   
   std::size_t getNumberOfConstantAndRefinedCameras();
   
@@ -230,10 +245,6 @@ private:
 };
 
 
-
-
-
-
 //------------------------------------------------------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------------------------------------
 //                                                 LocalBA_statistics      
@@ -243,7 +254,13 @@ private:
 /// Contain all the information about a Bundle Adjustment loop
 struct LocalBA_statistics
 {
-  LocalBA_statistics(const std::set<IndexT>& newlyResectedViewsId = std::set<IndexT>()) {_newViewsId = newlyResectedViewsId;}
+  LocalBA_statistics(
+      const std::set<IndexT>& newlyResectedViewsId = std::set<IndexT>(),
+      const std::map<int, std::size_t>& distancesHistogram = std::map<int, std::size_t>()) 
+  {
+    _newViewsId = newlyResectedViewsId;
+    _numCamerasPerDistance = distancesHistogram;
+  }
   
   
   // Parameters returned by Ceres:
@@ -267,7 +284,7 @@ struct LocalBA_statistics
   std::size_t _numConstantLandmarks = 0;      // num. of landmarks set constant in the BA solver
   std::size_t _numIgnoredLandmarks = 0;       // num. of not added landmarks to the BA solver
   
-  std::map<int, std::size_t> map_distance_numCameras; // distribution of the cameras for each graph distance
+  std::map<int, std::size_t> _numCamerasPerDistance; // distribution of the cameras for each graph distance
   
   std::set<IndexT> _newViewsId;  // index of the new views added (newly resected)
 };

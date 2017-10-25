@@ -15,6 +15,7 @@ namespace sfm {
 //                                                 TimeSummary      
 //------------------------------------------------------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------------------------------------
+
 void TimeSummary::showTimes()
 {
   std::cout << "\n----- Local BA durations ------" << std::endl;
@@ -141,6 +142,21 @@ int LocalBA_Data::getViewDistance(const IndexT viewId) const
   return _mapDistancePerViewId.at(viewId);
 }
 
+std::map<int, std::size_t> LocalBA_Data::getDistancesHistogram() const
+{
+  std::map<int, std::size_t> hist;
+  
+  for (auto & i : _mapDistancePerViewId)
+  {
+    if (hist.find(i.second) == hist.end())
+      hist[i.second] = 1;
+    else
+      hist.at(i.second)++;
+  }
+  
+  return hist;
+}
+
 // -- Methods 
 
 std::set<IndexT> LocalBA_Data::selectViewsToAddToTheGraph(const SfM_Data& sfm_data)
@@ -151,10 +167,10 @@ std::set<IndexT> LocalBA_Data::selectViewsToAddToTheGraph(const SfM_Data& sfm_da
   if (_graph.maxNodeId() == -1) // empty graph 
   {
     OPENMVG_LOG_INFO("'_mapNodePerViewId' is empty: first local BA.");
-    for (auto & it : sfm_data.GetViews())
+    for (auto & i : sfm_data.GetViews())
     {
-      if (sfm_data.IsPoseAndIntrinsicDefined(it.first))
-        addedViewsId.insert(it.first);
+      if (sfm_data.IsPoseAndIntrinsicDefined(i.first))
+        addedViewsId.insert(i.first);
     }
   }
   else // not empty graph 
@@ -257,9 +273,9 @@ void LocalBA_Data::updateGraphWithNewViews(
       numEdges++;
     }
   }
-  OPENMVG_LOG_INFO("The distances graph has been completed with " 
+  OPENMVG_LOG_INFO("|- The distances graph has been completed with " 
                    << addedViewsId.size() << " nodes & " << numEdges << " edges.");
-  OPENMVG_LOG_INFO("It contains " << _graph.maxNodeId() << " nodes & " << _graph.maxEdgeId() << " edges");                   
+  OPENMVG_LOG_INFO("|- It contains " << _graph.maxNodeId() << " nodes & " << _graph.maxEdgeId() << " edges");                   
   
   _timeSummary.saveTime(TimeSummary::EStep::UPDATE_GRAPH);
 }
@@ -385,7 +401,7 @@ void LocalBA_Data::computeDistancesMaps(const SfM_Data& sfm_data)
   _timeSummary.saveTime(TimeSummary::EStep::COMPUTE_DISTANCES);
   
   // (Optionnal) Display result: viewId -> distance to recent cameras
-  OPENMVG_LOG_INFO("-- Distribution ViewId(Distance): ");
+  OPENMVG_LOG_INFO("-- Distribution 'viewId(distance)': ");
   for (auto & itVMap: _mapDistancePerViewId)
   {
     std::cout << itVMap.first << "(" << itVMap.second << ") ";
@@ -464,7 +480,7 @@ void LocalBA_Data::convertDistancesToLBAStates(const SfM_Data & sfm_data)
   //    - connected to a refined camera: refined
   //    - else ignored
   // ----------------------------------------------------
-  const std::size_t kDistanceLimit = 1; // graph distance
+  const std::size_t kDistanceLimit = 30; // graph distance
   const std::size_t kWindowSize = 25;   // nb of the last value in which compute the variation
   const double kStdevPercentage = 1.0;  // limit percentage of the Std deviation according to the range of all the parameters (e.i. focal)
   
@@ -473,11 +489,11 @@ void LocalBA_Data::convertDistancesToLBAStates(const SfM_Data & sfm_data)
   {
     const IndexT poseId = itPose->first;
     int dist = getPoseDistance(poseId);
-    if (dist >= 0 && dist <= kDistanceLimit) 
+    if (dist >= 0 && dist <= kDistanceLimit) // [0; D]
       _mapLBAStatePerPoseId[poseId] = ELocalBAState::refined;
-    else if (dist == kDistanceLimit + 1)
+    else if (dist == kDistanceLimit + 1)  // {D+1}
       _mapLBAStatePerPoseId[poseId] = ELocalBAState::constant;
-    else // dist < 0 (not connected to the node) or > D + 1
+    else // [-inf; 0[ U [D+2; +inf.[  (-1: not connected to the new views)
       _mapLBAStatePerPoseId[poseId] = ELocalBAState::ignored;
   }
   
@@ -503,7 +519,7 @@ void LocalBA_Data::convertDistancesToLBAStates(const SfM_Data & sfm_data)
     for(const auto& observationIt: observations)
     {
       int dist = getViewDistance(observationIt.first);
-      if(dist >= 0 && dist <= kDistanceLimit)
+      if(dist >= 0 && dist <= kDistanceLimit) // [0; D]
       {
         _mapLBAStatePerLandmarkId[landmarkId] = ELocalBAState::refined;
         break;

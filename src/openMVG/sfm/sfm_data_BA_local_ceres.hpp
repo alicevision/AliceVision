@@ -50,7 +50,10 @@ public:
   
   bool Adjust(const SfM_Data & const_sfm_data, const LocalBA_Data& localBA_data);
   
-  void initStatistics(const std::set<IndexT>& newViewsId) {_LBAStatistics = LocalBA_statistics(newViewsId);}
+  void initStatistics(const LocalBA_Data& localBA_data) 
+  { 
+    _LBAStatistics = LocalBA_statistics(localBA_data.getNewViewsId(), localBA_data.getDistancesHistogram());
+  }
 
   /// \brief Export statistics about bundle adjustment in a TXT file ("BaStats.txt")
   /// The contents of the file have been writen such that it is easy to handle it with

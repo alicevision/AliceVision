@@ -353,8 +353,10 @@ void SequentialSfMReconstructionEngine::RobustResectionOfImages(
       
       if (_uselocalBundleAdjustment)
       {
-        // Local BA activated 
-        // Save the new values of each intrinsic in a backup file
+        // 1. Save new values for each intrinsic in a backup file
+        // 2. Filter unstable poses & observations
+        // 3. Remove erased poses to the graph
+        
         _localBA_data->exportIntrinsicsHistory(_sOutDirectory + "/LocalBA/K/");
         
         Poses poses_saved =  _sfm_data.GetPoses();
@@ -362,6 +364,8 @@ void SequentialSfMReconstructionEngine::RobustResectionOfImages(
         // Remove unstable poses & extract removed poses id
         if (eraseUnstablePosesAndObservations(this->_sfm_data, _minPointsPerPose, _minTrackLength))
         {
+          // Get back removed poses and view indexes
+          
           // If poses have been removed (may be useless ?)
           if (poses_saved !=  _sfm_data.GetPoses())
           {
@@ -381,6 +385,7 @@ void SequentialSfMReconstructionEngine::RobustResectionOfImages(
                   removed_viewsId.insert(itView.second->getViewId());
               }
             }
+            
             // Remove removed views to the graph
             _localBA_data->removeViewsToTheGraph(removed_viewsId);
             OPENMVG_LOG_DEBUG("Poses (index) removed to the reconstruction: " << removed_posesId);
@@ -1727,7 +1732,7 @@ bool SequentialSfMReconstructionEngine::localBundleAdjustment(const std::string&
   Local_Bundle_Adjustment_Ceres::LocalBA_options options;
   options.enableParametersOrdering();
   
-  if (_sfm_data.GetPoses().size() > 10) // default value: 100 
+  if (_sfm_data.GetPoses().size() > 100) // default value: 100 
   {
     options.setSparseBA();
     options.enableLocalBA();
@@ -1736,7 +1741,6 @@ bool SequentialSfMReconstructionEngine::localBundleAdjustment(const std::string&
   {
     options.setDenseBA();
   }
-  
   
   Local_Bundle_Adjustment_Ceres localBA_ceres(options);
   if (options.isLocalBAEnabled() && name != "BA")
@@ -1784,7 +1788,7 @@ bool SequentialSfMReconstructionEngine::localBundleAdjustment(const std::string&
       options.setDenseBA();
   }
   
-  localBA_ceres.initStatistics(_localBA_data->getNewViewsId());
+  localBA_ceres.initStatistics(*_localBA_data);
   
   // Run Bundle Adjustment:
   _localBA_data->_timeSummary.resetTimer();
@@ -1796,6 +1800,7 @@ bool SequentialSfMReconstructionEngine::localBundleAdjustment(const std::string&
   }
   else // save the changes due to the adjustment
     isBaSucceed = localBA_ceres.Adjust(_sfm_data, *_localBA_data);
+    
   _localBA_data->_timeSummary.saveTime(TimeSummary::EStep::ADJUSTMENT);
   
   // Update 'map_intrinsicsHistorical' and compute 'map_intrinsicsLimits'
