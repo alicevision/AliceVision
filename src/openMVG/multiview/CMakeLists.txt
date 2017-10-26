@@ -17,13 +17,14 @@ set(multiview_files_headers
   solver_resection_p4pf.hpp
   solver_resection_p5pfr.hpp
   solver_translation_knownRotation_kernel.hpp
+  solver_triangulate_nviews_LORansac.hpp
   translation_averaging_common.hpp
   translation_averaging_solver.hpp
   triangulation_nview.hpp
   triangulation.hpp
   two_view_kernel.hpp
 )
-
+ 
 # Sources
 set(multiview_files_sources
   conditioning.cpp
@@ -106,6 +107,7 @@ UNIT_TEST(openMVG solver_resection_p4pf "openMVG_multiview;openMVG_multiview_tes
 UNIT_TEST(openMVG solver_resection_p5pfr "openMVG_multiview;openMVG_multiview_test_data")
 UNIT_TEST(openMVG solver_resection_LORansac "openMVG_multiview;openMVG_features;openMVG_sfm;openMVG_multiview_test_data;${CERES_LIBRARIES}")
 UNIT_TEST(openMVG solver_translation_knownRotation_kernel "openMVG_multiview;openMVG_multiview_test_data")
+UNIT_TEST(openMVG solver_triangulate_nviews_LORansac "openMVG_multiview;openMVG_multiview_test_data")
 
 # Averaging routines
 UNIT_TEST(openMVG rotation_averaging    "openMVG_multiview;openMVG_multiview_test_data;${CERES_LIBRARIES}")
