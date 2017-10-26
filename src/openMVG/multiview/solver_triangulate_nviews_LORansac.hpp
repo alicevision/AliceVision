@@ -13,17 +13,6 @@ namespace openMVG {
 namespace multiview {
 namespace kernel {
 
-// @todo move it to numeric
-template <typename T>
-void pick(std::vector<T>& result, const std::vector<T>& in, const std::vector<typename std::vector<T>::size_type>& s) 
-{
-  result.reserve(s.size());
-  std::transform(s.begin(), s.end(), std::back_inserter(result),
-                 [&in](typename std::vector<T>::size_type idx) {
-                   return in.at(idx);
-                 });
-}
-
 
 /**
  * @brief The kernel for triangulating a point from N views to be used with
@@ -227,3 +216,116 @@ using LORansacTriangulationKernel =  NViewsTriangulationLORansac<TriangulateNVie
                                     UnnormalizerT,
                                     TriangulateNViewsSolver>;
 
+/**************************/
+
+//template <typename SolverArg,
+//          typename ErrorArg,
+//          typename UnnormalizerArg,
+//          typename SolverLSArg,
+//          typename ModelArg = Vec4>
+//class AdvancedTriangulationLORansac : 
+//    public robust::LORansacGenericKernel<SolverArg, ErrorArg, UnnormalizerArg, SolverLSArg, ModelArg>
+//{
+//   
+//  private:
+//    const Mat2X& _pt2d;
+//    const std::vector< Mat34 >& _projMatrices;
+//    
+//  public:
+//    typedef SolverArg Solver;
+//    typedef ModelArg Model;
+//    typedef ErrorArg ErrorT;
+//    typedef SolverLSArg SolverLS;
+//    
+//  enum
+//  {
+//    MINIMUM_SAMPLES = Solver::MINIMUM_SAMPLES,
+//    MINIMUM_LSSAMPLES = SolverLS::MINIMUM_SAMPLES
+//  };
+//  
+//  /**
+//   * @brief 
+//   * @param x
+//   * @param Ps
+//   */
+//  AdvancedTriangulationLORansac(const Mat2X &x, const std::vector< Mat34 > &Ps) 
+//  : _pt2d(x),
+//    _projMatrices(Ps)
+//  {
+//    assert(_projMatrices.size() == _pt2d.cols());
+//  }
+//  
+//  void Fit(const std::vector<std::size_t> &samples, std::vector<Model> *models) const override
+//  {
+//    const Mat p2d = ExtractColumns(_pt2d, samples);
+//    std::vector< Mat34 > sampledMats;
+//    pick(sampledMats, _projMatrices, samples);
+//    Solver::Solve(p2d, sampledMats, *models);
+//  }
+//  
+//  void FitLS(const std::vector<std::size_t> &inliers, 
+//              std::vector<Model> *models, 
+//              const std::vector<double> *weights = nullptr) const override
+//  {
+//    const Mat p2d = ExtractColumns(_pt2d, inliers);
+//    std::vector< Mat34 > sampledMats;
+//    pick(sampledMats, _projMatrices, inliers);
+//    SolverLS::Solve(p2d, sampledMats, *models, *weights);
+//  }
+//  
+//  void computeWeights(const Model & model, 
+//                      const std::vector<std::size_t> &inliers, 
+//                      std::vector<double> & vec_weights, 
+//                      const double eps = 0.001) const override
+//  {
+//    const auto numInliers = inliers.size();
+//    vec_weights.resize(numInliers);
+//    for(std::size_t sample = 0; sample < numInliers; ++sample)
+//    {
+//      const auto idx = inliers[sample];
+//      vec_weights[sample] = ErrorT::Error(_pt2d.col(idx), _projMatrices[idx], model);
+//      // avoid division by zero
+//      vec_weights[sample] = 1/std::pow(std::max(eps, vec_weights[sample]), 2);
+//    }
+//  }
+//  
+//  /**
+//   * @brief Error for the i-th view
+//   * @param sample
+//   * @param model
+//   * @return 
+//   */
+//  double Error(std::size_t sample, const Model &model) const override
+//  {
+//    return ErrorT::Error(_pt2d.col(sample), _projMatrices[sample], model);
+//  }
+//
+//  /**
+//   * @brief Error for each view
+//   * @param model
+//   * @param vec_errors
+//   */
+//  void Errors(const Model & model, std::vector<double> & vec_errors) const override
+//  {
+//    vec_errors.resize(NumSamples());
+//    for(Mat::Index i = 0; i < _pt2d.cols(); ++i)
+//    {
+//      vec_errors[i] = Error(i, model);
+//    }
+//  }
+//  
+//  void Unnormalize(Model * model) const override
+//  {
+//    
+//  }
+//  
+//  std::size_t NumSamples() const override
+//  {
+//    return _pt2d.cols();
+//  }
+//  
+//};
+
+}
+}
+}
