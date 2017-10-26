@@ -8,6 +8,12 @@
 
 namespace aliceVision {
 
+
+//#include "openMVG/multiview/triangulation_nview.hpp"
+//#include "openMVG/multiview/projection.hpp"
+//#include "openMVG/numeric/numeric.h"
+
+
 void TriangulateNView(const Mat2X &x,
                       const std::vector< Mat34 > &Ps,
                       Vec4 *X, 
@@ -29,17 +35,6 @@ void TriangulateNView(const Mat2X &x,
   *X = X_and_alphas.head(4);
 }
 
-// @todo move it to numeric
-typedef Eigen::Matrix<double, 2, 3> Mat23;
-
-inline Mat23 SkewMatMinimal(const Vec2 &x)
-{
-  Mat23 skew;
-  skew <<
-          0, -1, x(1),
-          1, 0, -x(0);
-  return skew;
-}
 
 void TriangulateNViewAlgebraic(const Mat2X &x,
                                const std::vector< Mat34 > &Ps,

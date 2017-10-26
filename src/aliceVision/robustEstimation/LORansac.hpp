@@ -302,9 +302,9 @@ double localOptimization(const Kernel &kernel,
   
   // LS model from the above inliers
   std::vector<typename Kernel::Model> models;
-  OPENMVG_LOG_DEBUG("[localOptim] before: ");
+  ALICEVISION_LOG_DEBUG("[localOptim] before: ");
   kernel.FitLS(inliersBase, &models);
-  OPENMVG_LOG_DEBUG("[localOptim] after: ");
+  ALICEVISION_LOG_DEBUG("[localOptim] after: ");
   assert(models.size()==1);   // LS fitting must always return 1 model
   
   // find inliers with t again over all the samples

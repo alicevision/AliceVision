@@ -61,11 +61,13 @@ typedef Eigen::Quaternion<double> Quaternion;
 typedef Eigen::Matrix<double, 3, 3> Mat3;
 
 #if defined(ENV32BIT)
+typedef Eigen::Matrix<double, 2, 3, Eigen::DontAlign> Mat23;
 typedef Eigen::Matrix<double, 3, 4, Eigen::DontAlign> Mat34;
 typedef Eigen::Matrix<double, 2, 1, Eigen::DontAlign> Vec2;
 typedef Eigen::Matrix<double, 4, 1, Eigen::DontAlign> Vec4;
 typedef Eigen::Matrix<double, 6, 1, Eigen::DontAlign> Vec6;
 #else // 64 bits compiler
+typedef Eigen::Matrix<double, 2, 3> Mat23;
 typedef Eigen::Matrix<double, 3, 4> Mat34;
 typedef Eigen::Vector2d Vec2;
 typedef Eigen::Vector4d Vec4;
@@ -116,6 +118,19 @@ inline T clamp(const T & val, const T& min, const T & max)
   //(val < min) ? val : ((val>max) ? val : max);
 }
 
+
+/**
+ * @brief Create a minimal skew matrix from a 2d vector.
+ * @param[in] x A 2d vector whose 3rd coordinate is supposed to be 1.
+ * @return The minimal ske matrix: [0, -1, x(1); 1, 0, -x(0);]
+ */
+Mat23 SkewMatMinimal(const Vec2 &x);
+
+/**
+ * @brief Create a cross product matrix from a 3d vector.
+ * @param x A 3d vector.
+ * @return the cross matrix representation of the input vector.
+ */
 Mat3 CrossProductMatrix(const Vec3 &x);
 
 // Create a rotation matrix around axis X with the provided radian angle
