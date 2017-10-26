@@ -407,14 +407,22 @@ TMat ExtractColumns(const TMat &A, const TCols &columns)
   return compressed;
 }
 
-// @todo move it to numeric
+/**
+ * @brief Given a vector of element and a vector containing a selection of its indices,
+ * it returns a new vector containing only the selected elements of the original vector
+ * @tparam T The type of data contained in the vector.
+ * @param[out] result The output vector containing only the selected original elements.
+ * @param[in] input The input vector.
+ * @param[in] selection The vector containing the selection of elements of \p input
+ * through the indices specified in \p selection.
+ */
 template <typename T>
-void pick(std::vector<T>& result, const std::vector<T>& in, const std::vector<typename std::vector<T>::size_type>& s)
+void pick(std::vector<T>& result, const std::vector<T>& input, const std::vector<typename std::vector<T>::size_type>& selection)
 {
-  result.reserve(s.size());
-  std::transform(s.begin(), s.end(), std::back_inserter(result),
-                 [&in](typename std::vector<T>::size_type idx) {
-                   return in.at(idx);
+  result.reserve(selection.size());
+  std::transform(selection.begin(), selection.end(), std::back_inserter(result),
+                 [&input](typename std::vector<T>::size_type idx) {
+                   return input.at(idx);
                  });
 }
 
