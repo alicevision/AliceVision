@@ -32,13 +32,14 @@ namespace openMVG {
 
 void TriangulateNView(const Mat2X &x,
                       const std::vector< Mat34 > &Ps,
-                      Vec4 *X)
+                      Vec4 *X, 
+                      const std::vector<double> *weights)
 {
   Mat2X::Index nviews = x.cols();
-  assert(nviews == Ps.size());
+  assert(static_cast<std::size_t>(nviews) == Ps.size());
 
   Mat design = Mat::Zero(3 * nviews, 4 + nviews);
-  for(int i = 0; i < nviews; i++)
+  for(Mat2X::Index i = 0; i < nviews; i++)
   {
     design.block<3, 4>(3 * i, 0) = -Ps[i];
     design(3 * i + 0, 4 + i) = x(0, i);
@@ -50,6 +51,7 @@ void TriangulateNView(const Mat2X &x,
   *X = X_and_alphas.head(4);
 }
 
+// @todo move it to numeric
 typedef Eigen::Matrix<double, 2, 3> Mat23;
 
 inline Mat23 SkewMatMinimal(const Vec2 &x)
@@ -63,17 +65,21 @@ inline Mat23 SkewMatMinimal(const Vec2 &x)
 
 void TriangulateNViewAlgebraic(const Mat2X &x,
                                const std::vector< Mat34 > &Ps,
-                               Vec4 *X)
+                               Vec4 *X, 
+                               const std::vector<double> *weights)
 {
   assert(X != nullptr);
   Mat2X::Index nviews = x.cols();
-  assert(nviews == Ps.size());
+  assert(static_cast<std::size_t>(nviews) == Ps.size());
 
   Mat design(2 * nviews, 4);
-  for(int i = 0; i < nviews; i++)
   for(Mat2X::Index i = 0; i < nviews; ++i)
   {
     design.block<2, 4>(2 * i, 0) = SkewMatMinimal(x.col(i)) * Ps[i];
+    if(weights != nullptr)
+    {
+      design.block<2, 4>(2 * i, 0) *= (*weights)[i];
+    }
   }
   Nullspace(&design, X);
 }
@@ -81,21 +87,20 @@ void TriangulateNViewAlgebraic(const Mat2X &x,
 double Triangulation::error(const Vec3 &X) const
 {
   double squared_reproj_error = 0.0;
-  for(std::size_t i = 0; i < views.size(); ++i)
+  for (const auto &view : views)
   {
-    const Mat34& PMat = views[i].first;
-    const Vec2 & xy = views[i].second;
+    const Mat34& PMat = view.first;
+    const Vec2 & xy = view.second;
     const Vec2 p = Project(PMat, X);
     squared_reproj_error += (xy - p).norm();
   }
   return squared_reproj_error;
 }
 
-// Camera triangulation using the iterated linear method
 
 Vec3 Triangulation::compute(int iter) const
 {
-  const int nviews = int(views.size());
+  const auto nviews = views.size();
   assert(nviews >= 2);
 
   // Iterative weighted linear least squares
@@ -106,7 +111,7 @@ Vec3 Triangulation::compute(int iter) const
   {
     AtA.fill(0.0);
     Atb.fill(0.0);
-    for(int i = 0; i < nviews; ++i)
+    for(std::size_t i = 0; i < nviews; ++i)
     {
       const Mat34& PMat = views[i].first;
       const Vec2 & p = views[i].second;
@@ -138,7 +143,7 @@ Vec3 Triangulation::compute(int iter) const
     zmin = std::numeric_limits<double>::max();
     zmax = -std::numeric_limits<double>::max();
     err = 0;
-    for(int i = 0; i < nviews; ++i)
+    for(std::size_t i = 0; i < nviews; ++i)
     {
       const Mat34& PMat = views[i].first;
       const Vec2 & p = views[i].second;
@@ -154,6 +159,24 @@ Vec3 Triangulation::compute(int iter) const
   return X;
 }
 
+
+
+void TriangulateNViewsSolver::Solve(const Mat2X& x, const std::vector<Mat34>& Ps, std::vector<Vec4> &X)
+{
+  Vec4 pt3d;
+  TriangulateNViewAlgebraic(x, Ps, &pt3d);
+  X.push_back(pt3d);
+  assert(X.size() == 1);
+}
+
+void TriangulateNViewsSolver::Solve(const Mat2X& x, const std::vector<Mat34>& Ps, std::vector<Vec4> &X, const std::vector<double> &weights)
+{
+  Vec4 pt3d;
+  TriangulateNViewAlgebraic(x, Ps, &pt3d, &weights);
+  X.push_back(pt3d);
+  assert(X.size() == 1);
+
+}
 
 }  // namespace openMVG
 
