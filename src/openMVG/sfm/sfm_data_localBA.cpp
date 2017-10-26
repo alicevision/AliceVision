@@ -19,11 +19,11 @@ namespace sfm {
 void TimeSummary::showTimes()
 {
   std::cout << "\n----- Local BA durations ------" << std::endl;
-  std::cout << "graph updating : " << _graphUpdating << " ms" << std::endl;
-  std::cout << "dist. Maps Computing : " << _distancesComputing << " ms" << std::endl;
-  std::cout << "states Maps Computing : " << _distancesConversion << " ms" << std::endl;
-  std::cout << "adjusting : " << _adjusting << " ms" << std::endl;
-  std::cout << "** all Local BA: " << getTotalTime() << " ms" << std::endl;
+  std::cout << "graph updating : " << _graphUpdating << " s" << std::endl;
+  std::cout << "dist. Maps Computing : " << _distancesComputing << " s" << std::endl;
+  std::cout << "states Maps Computing : " << _distancesConversion << " s" << std::endl;
+  std::cout << "adjusting : " << _adjusting << " s" << std::endl;
+  std::cout << "** all Local BA: " << getTotalTime() << " s" << std::endl;
   std::cout << "-------------------------------\n" << std::endl;
 }
 
@@ -65,6 +65,7 @@ bool TimeSummary::exportTimes(const std::string& filename)
   
   os << "\n";
   os.close();
+  
   return true;
 }
 
@@ -116,6 +117,16 @@ LocalBA_Data::LocalBA_Data(const SfM_Data& sfm_data)
     _intrinsicsHistory.at(it.first).push_back(std::make_pair(0, sfm_data.GetIntrinsicPtr(it.first)->getParams().at(0)));
     _mapIntrinsicIsConstant[it.first];
     _mapIntrinsicIsConstant.at(it.first) = false; 
+    
+    _parametersCounter[std::make_pair(EParameter::pose, EState::refined)] = 0;
+    _parametersCounter[std::make_pair(EParameter::pose, EState::constant)] = 0;
+    _parametersCounter[std::make_pair(EParameter::pose, EState::ignored)] = 0;
+    _parametersCounter[std::make_pair(EParameter::intrinsic, EState::refined)] = 0;
+    _parametersCounter[std::make_pair(EParameter::intrinsic, EState::constant)] = 0;
+    _parametersCounter[std::make_pair(EParameter::intrinsic, EState::ignored)] = 0;
+    _parametersCounter[std::make_pair(EParameter::landmark, EState::refined)] = 0;
+    _parametersCounter[std::make_pair(EParameter::landmark, EState::constant)] = 0;
+    _parametersCounter[std::make_pair(EParameter::landmark, EState::ignored)] = 0;
   }
 }
 
@@ -158,37 +169,6 @@ std::map<int, std::size_t> LocalBA_Data::getDistancesHistogram() const
 }
 
 // -- Methods 
-
-std::set<IndexT> LocalBA_Data::selectViewsToAddToTheGraph(const SfM_Data& sfm_data)
-{
-  std::set<IndexT> addedViewsId;
-  
-  // Identify the view we need to add to the graph:
-  if (_graph.maxNodeId() == -1) // empty graph 
-  {
-    OPENMVG_LOG_INFO("'_mapNodePerViewId' is empty: first local BA.");
-    for (const auto & x : sfm_data.GetViews())
-    {
-      if (sfm_data.IsPoseAndIntrinsicDefined(x.first))
-        addedViewsId.insert(x.first);
-    }
-  }
-  else // not empty graph 
-  {
-    for (const IndexT viewId : _newViewsId)
-    {
-      auto it = _mapNodePerViewId.find(viewId);
-      if (it == _mapNodePerViewId.end()) // the view does not already have an associated node
-        addedViewsId.insert(viewId);
-    }
-  }
-  
-  if (addedViewsId.empty())
-  {
-    OPENMVG_LOG_DEBUG("No views is add to the graph.");
-  }
-  return addedViewsId;
-}
 
 std::map<Pair, std::size_t> LocalBA_Data::countSharedLandmarksPerImagesPair(
     const SfM_Data& sfm_data,
@@ -250,33 +230,71 @@ void LocalBA_Data::updateGraphWithNewViews(
   
   OPENMVG_LOG_INFO("Updating the distances graph with newly resected views...");
   
-  std::set<IndexT> addedViewsId = selectViewsToAddToTheGraph(sfm_data);
+  // -- Identify the views we need to add to the graph
+  std::set<IndexT> addedViewsId;
+  
+  if (_graph.maxNodeId() == -1) // the graph is empty: add all the posed views
+  {
+    OPENMVG_LOG_INFO("|- The graph is empty: all posed views will be added.");
+    for (const auto & x : sfm_data.GetViews())
+    {
+      if (sfm_data.IsPoseAndIntrinsicDefined(x.first))
+        addedViewsId.insert(x.first);
+    }
+  }
+  else // the graph is not empty
+    addedViewsId = _newViewsId;
   
   std::map<Pair, std::size_t> map_imagesPair_nbSharedLandmarks 
       = countSharedLandmarksPerImagesPair(sfm_data, map_tracksPerView, addedViewsId);
   
   // -- Add nodes to the graph
+  std::vector<lemon::ListGraph::Node> newNodes;
   for (const auto& viewId : addedViewsId)
   {
     lemon::ListGraph::Node newNode = _graph.addNode();
+    newNodes.push_back(newNode);
     _mapNodePerViewId[viewId] = newNode;  
     _mapViewIdPerNode[newNode] = viewId;
   }
   
+  OPENMVG_LOG_INFO("Added edges <nodeViewId|nodeViewId>:");
   // -- Add edges to the graph
   std::size_t numEdges = 0;
+  
   for(const auto& x: map_imagesPair_nbSharedLandmarks)
   {
     if(x.second > _kMinNbOfMatches) // ensure a minimum number of landmarks in common to consider the link
     {
       _graph.addEdge(_mapNodePerViewId.at(x.first.first), _mapNodePerViewId.at(x.first.second));
       numEdges++;
+      std::cout << x.first.first << "|" << x.first.second << " , ";
     }
   }
+  std::cout << "\n";
+  
+  OPENMVG_LOG_INFO("Num of Edges in the New nodes: ");
+  for (const lemon::ListGraph::Node& node : newNodes)
+  {
+    int numConnectedEdges = lemon::countIncEdges(_graph, node);
+    
+    std::cout << "New node #" << _mapViewIdPerNode[node] << " has " << numConnectedEdges << " edges" << std::endl;
+  }
+  
+  OPENMVG_LOG_INFO("Num of edge in ALL the node: <nodeViewId(nbEdges)>");
+  for (const auto& x : sfm_data.GetViews())
+  {
+    if (sfm_data.IsPoseAndIntrinsicDefined(x.second->getViewId()))
+    {
+      lemon::ListGraph::Node node = _mapNodePerViewId[x.second->getViewId()];
+      std::cout << x.second->getViewId()<< "(" << lemon::countIncEdges(_graph, node) << "e) , ";
+    }
+  }
+  std::cout << "\n";
+  
   OPENMVG_LOG_INFO("|- The distances graph has been completed with " 
                    << addedViewsId.size() << " nodes & " << numEdges << " edges.");
   OPENMVG_LOG_INFO("|- It contains " << _graph.maxNodeId() << " nodes & " << _graph.maxEdgeId() << " edges");                   
-  
   _timeSummary.saveTime(TimeSummary::EStep::UPDATE_GRAPH);
 }
 
@@ -357,6 +375,7 @@ void LocalBA_Data::computeDistancesMaps(const SfM_Data& sfm_data)
   OPENMVG_LOG_INFO("Computing distance maps...");
   _mapDistancePerViewId.clear();
   _mapDistancePerPoseId.clear();
+  _mapViewsIdPerDistance.clear();
   
   // Setup Breadth First Search using Lemon
   lemon::Bfs<lemon::ListGraph> bfs(_graph);
@@ -382,20 +401,22 @@ void LocalBA_Data::computeDistancesMaps(const SfM_Data& sfm_data)
       d = bfs.dist(node);
     
     _mapDistancePerViewId[x.first] = d;
+    
+    _mapViewsIdPerDistance[d].insert(x.first);
   }
   
   // Re-mapping: from <ViewId, distance> to <PoseId, distance>:
-  for(auto it: _mapDistancePerViewId)
+  for(auto x: _mapDistancePerViewId)
   {
     // Get the poseId of the camera no. viewId
-    IndexT idPose = sfm_data.GetViews().at(it.first)->getPoseId(); // PoseId of a resected camera
+    IndexT idPose = sfm_data.GetViews().at(x.first)->getPoseId(); // PoseId of a resected camera
     
     auto poseIt = _mapDistancePerPoseId.find(idPose);
     // If multiple views share the same pose
     if(poseIt != _mapDistancePerPoseId.end())
-      poseIt->second = std::min(poseIt->second, it.second);
+      poseIt->second = std::min(poseIt->second, x.second);
     else
-      _mapDistancePerPoseId[idPose] = it.second;
+      _mapDistancePerPoseId[idPose] = x.second;
   } 
   
   _timeSummary.saveTime(TimeSummary::EStep::COMPUTE_DISTANCES);
@@ -404,12 +425,7 @@ void LocalBA_Data::computeDistancesMaps(const SfM_Data& sfm_data)
   OPENMVG_LOG_INFO("Graph-distances histogram <distance|numOfPosedCameras> :");
   for (const auto& x : getDistancesHistogram())
   {
-    std::string complement;
-    if (x.first == -1) 
-      complement = "(= not connected to the new cameras)";
-    if (x.first == 0) 
-      complement = "(= new cameras)";
-    OPENMVG_LOG_INFO("|- graph-distance " << x.first << "\t- " << x.second << " posed cameras " << complement);
+    OPENMVG_LOG_INFO("|- graph-distance " << x.first << "\t- " << x.second << " posed cameras : " << _mapViewsIdPerDistance[x.first]);
   }
 }
 
@@ -465,6 +481,8 @@ void LocalBA_Data::convertDistancesToLBAStates(const SfM_Data & sfm_data)
   _mapLBAStatePerPoseId.clear();
   _mapLBAStatePerIntrinsicId.clear();
   _mapLBAStatePerLandmarkId.clear();
+  for(auto& x : _parametersCounter)
+    x.second = 0;
   
   // ----------------------------------------------------
   //  D = distanceLimit
@@ -484,7 +502,7 @@ void LocalBA_Data::convertDistancesToLBAStates(const SfM_Data & sfm_data)
   //    - connected to a refined camera: refined
   //    - else ignored
   // ----------------------------------------------------
-  const std::size_t kDistanceLimit = 1; // graph distance
+  const std::size_t kDistanceLimit = 30; // graph distance
   const std::size_t kWindowSize = 25;   // nb of the last value in which compute the variation
   const double kStdevPercentage = 1.0;  // limit percentage of the Std deviation according to the range of all the parameters (e.i. focal)
   
@@ -494,11 +512,20 @@ void LocalBA_Data::convertDistancesToLBAStates(const SfM_Data & sfm_data)
     const IndexT poseId = itPose->first;
     int dist = getPoseDistance(poseId);
     if (dist >= 0 && dist <= kDistanceLimit) // [0; D]
-      _mapLBAStatePerPoseId[poseId] = ELocalBAState::refined;
+    {
+      _mapLBAStatePerPoseId[poseId] = EState::refined;
+      _parametersCounter.at(StatedParameter(EParameter::pose, EState::refined))++;
+    }
     else if (dist == kDistanceLimit + 1)  // {D+1}
-      _mapLBAStatePerPoseId[poseId] = ELocalBAState::constant;
+    {
+      _mapLBAStatePerPoseId[poseId] = EState::constant;
+      _parametersCounter.at(StatedParameter(EParameter::pose, EState::constant))++;
+    }
     else // [-inf; 0[ U [D+2; +inf.[  (-1: not connected to the new views)
-      _mapLBAStatePerPoseId[poseId] = ELocalBAState::ignored;
+    {
+      _mapLBAStatePerPoseId[poseId] = EState::ignored;
+      _parametersCounter.at(StatedParameter(EParameter::pose, EState::ignored))++;
+    }
   }
   
   // -- Instrinsics
@@ -507,9 +534,15 @@ void LocalBA_Data::convertDistancesToLBAStates(const SfM_Data & sfm_data)
   for(const auto& itIntrinsic: sfm_data.GetIntrinsics())
   {
     if (isIntrinsicConstant(itIntrinsic.first))
-      _mapLBAStatePerIntrinsicId[itIntrinsic.first] = ELocalBAState::constant;
+    {
+      _mapLBAStatePerIntrinsicId[itIntrinsic.first] = EState::constant;
+      _parametersCounter.at(StatedParameter(EParameter::intrinsic, EState::constant))++;
+    }
     else
-      _mapLBAStatePerIntrinsicId[itIntrinsic.first] = ELocalBAState::refined;
+    {
+      _mapLBAStatePerIntrinsicId[itIntrinsic.first] = EState::refined;
+      _parametersCounter.at(StatedParameter(EParameter::intrinsic, EState::refined))++;
+    }
   }
   
   // -- Landmarks
@@ -518,31 +551,36 @@ void LocalBA_Data::convertDistancesToLBAStates(const SfM_Data & sfm_data)
     const IndexT landmarkId = itLandmark.first;
     const Observations & observations = itLandmark.second.observations;
     
-    _mapLBAStatePerLandmarkId[landmarkId] = ELocalBAState::ignored;
+    _mapLBAStatePerLandmarkId[landmarkId] = EState::ignored;
+    _parametersCounter.at(StatedParameter(EParameter::landmark, EState::ignored))++;
+
     
     for(const auto& observationIt: observations)
     {
       int dist = getViewDistance(observationIt.first);
       if(dist >= 0 && dist <= kDistanceLimit) // [0; D]
       {
-        _mapLBAStatePerLandmarkId[landmarkId] = ELocalBAState::refined;
+        _mapLBAStatePerLandmarkId[landmarkId] = EState::refined;
+        _parametersCounter.at(StatedParameter(EParameter::landmark, EState::refined))++;
+        _parametersCounter.at(StatedParameter(EParameter::landmark, EState::ignored))--;
         break;
       }
     }
   }
-  
+    
   _timeSummary.saveTime(TimeSummary::EStep::CONVERT_DISTANCES2STATES);
 }
 
 std::size_t LocalBA_Data::getNumberOfConstantAndRefinedCameras()
 {
-  std::size_t num = 0;
-  for (const auto& x : _mapLBAStatePerPoseId)
-  {
-    if (x.second == LocalBA_Data::ELocalBAState::refined || x.second == LocalBA_Data::ELocalBAState::constant)
-      num++;
-  }
-  return num;
+//  std::size_t num = 0;
+//  for (const auto& x : _mapLBAStatePerPoseId)
+//  {
+//    if (x.second == LocalBA_Data::EState::refined || x.second == LocalBA_Data::EState::constant)
+//      num++;
+//  }
+//  return num;
+  return getNumberOf(EParameter::pose, EState::refined) + getNumberOf(EParameter::pose, EState::constant);
 }
 
 void LocalBA_Data::addIntrinsicsToHistory(const SfM_Data& sfm_data)
@@ -713,6 +751,8 @@ void LocalBA_Data::exportIntrinsicsHistory(const std::string& folder)
     os.close();
   }
 }
+
+
 
 } // namespace sfm
 } // namespace openMVG

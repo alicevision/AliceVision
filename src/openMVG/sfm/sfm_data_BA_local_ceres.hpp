@@ -47,9 +47,7 @@ public:
    * if graph is empty. 
    */
   bool Adjust(SfM_Data & sfm_data, const LocalBA_Data& localBA_data);
-  
-  bool Adjust(const SfM_Data & const_sfm_data, const LocalBA_Data& localBA_data);
-  
+   
   void initStatistics(const LocalBA_Data& localBA_data) 
   { 
     _LBAStatistics = LocalBA_statistics(localBA_data.getNewViewsId(), localBA_data.getDistancesHistogram());
@@ -59,6 +57,8 @@ public:
   /// The contents of the file have been writen such that it is easy to handle it with
   /// a Python script or any spreadsheets (e.g. by copy/past the full content to LibreOffice) 
   bool exportStatistics(const std::string& path);
+  
+  void showStatistics();
   
 private:
 

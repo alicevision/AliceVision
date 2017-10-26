@@ -320,24 +320,17 @@ void SequentialSfMReconstructionEngine::RobustResectionOfImages(
       // Perform BA until all point are under the given precision
       std::size_t nbRejectedTracks;
       
-      // [TEMP] used to run Local BA (without save changes due to adjustment) the BA (saving adjustments)
-      // It's useful to compare time spent in the different adjustments 
-      //      _compareBAAndLocalBA = false;
-      
       do
       {
         auto chrono2_start = std::chrono::steady_clock::now();
         
         if (_uselocalBundleAdjustment)
         {
-          //          if (_compareBAAndLocalBA)
-          //          {
-          //            localBundleAdjustment("localBA");
-          //            localBundleAdjustment("BA"); 
-          //          }
-          //          else
           if (!localBundleAdjustment())
+          {
+            nbRejectedTracks = badTrackRejector(4.0, nbOutliersThreshold);  
             break;
+          }
         }
         else
           BundleAdjustment(_bFixedIntrinsics);
@@ -354,9 +347,11 @@ void SequentialSfMReconstructionEngine::RobustResectionOfImages(
       
       if (_uselocalBundleAdjustment)
       {
+        // -----
         // 1. Save new values for each intrinsic in a backup file
         // 2. Filter unstable poses & observations
         // 3. Remove erased poses to the graph
+        // -----
         
         _localBA_data->exportIntrinsicsHistory(_sOutDirectory + "/LocalBA/K/");
         
@@ -1728,7 +1723,7 @@ bool SequentialSfMReconstructionEngine::BundleAdjustment(bool fixedIntrinsics)
 }
 
 /// Local Bundle Adjustment to refine only the parameters close to the newly resected views.
-bool SequentialSfMReconstructionEngine::localBundleAdjustment(const std::string& name)
+bool SequentialSfMReconstructionEngine::localBundleAdjustment()
 {
   Local_Bundle_Adjustment_Ceres::LocalBA_options options;
   options.enableParametersOrdering();
@@ -1744,17 +1739,20 @@ bool SequentialSfMReconstructionEngine::localBundleAdjustment(const std::string&
   }
   
   Local_Bundle_Adjustment_Ceres localBA_ceres(options);
-  if (options.isLocalBAEnabled() && name != "BA")
+  if (options.isLocalBAEnabled())
   {
     bool withIntrinsicEdges = false;
     bool drawGraphs = false;
     
-    // 1. Add the new views to the graph (1 node per new view - 1 edge connecting to views sharing matches)
-    // (optional) Add edges when intrinsics are not consistent
-    // 2. Compute the distance from the new views to all the other posed views.
-    // 3. Use the graph-distances to assign a LBA state (refined, constant, ignored) 
-    //    to each parameter of the problem (points, poses, landmarks)
-    // (optional) Remove the previous edges (added because of intrinsics)
+    // ------------------------
+    // Steps:
+    //   1. Add the new views to the graph (1 node per new view - 1 edge connecting to views sharing matches)
+    //   (optional) Add edges when intrinsics are not consistent
+    //   2. Compute the distance from the new views to all the other posed views.
+    //   3. Convert each graph-distances to the corresponding LBA state (refined, constant, ignored) 
+    //      for every parameters included in the problem (points, poses, landmarks)
+    //   (optional) Remove the previous edges (added because of intrinsics)
+    // ------------------------
     
     _localBA_data->updateGraphWithNewViews(_sfm_data, _map_tracksPerView);
     
@@ -1787,19 +1785,41 @@ bool SequentialSfMReconstructionEngine::localBundleAdjustment(const std::string&
     // Restore the Dense mode of Ceres if the number of cameras in the solver will be < 100
     if (_localBA_data->getNumberOfConstantAndRefinedCameras() <= 100)
       options.setDenseBA();
-  }
+    
+    std::cout << "-----" << std::endl;
+    std::cout << "pose ref = " << _localBA_data->getNumberOf(LocalBA_Data::EParameter::pose,      LocalBA_Data::EState::refined) << std::endl;
+    std::cout << "pose cst = " << _localBA_data->getNumberOf(LocalBA_Data::EParameter::pose,      LocalBA_Data::EState::constant) << std::endl;
+    std::cout << "pose ign = " << _localBA_data->getNumberOf(LocalBA_Data::EParameter::pose,      LocalBA_Data::EState::ignored) << std::endl;  
+    std::cout << "intr ref = " << _localBA_data->getNumberOf(LocalBA_Data::EParameter::intrinsic, LocalBA_Data::EState::refined) << std::endl;
+    std::cout << "intr cst = " << _localBA_data->getNumberOf(LocalBA_Data::EParameter::intrinsic, LocalBA_Data::EState::constant) << std::endl;
+    std::cout << "intr ign = " << _localBA_data->getNumberOf(LocalBA_Data::EParameter::intrinsic, LocalBA_Data::EState::ignored) << std::endl;
+    std::cout << "land ref = " << _localBA_data->getNumberOf(LocalBA_Data::EParameter::landmark,  LocalBA_Data::EState::refined) << std::endl;
+    std::cout << "land cst = " << _localBA_data->getNumberOf(LocalBA_Data::EParameter::landmark,  LocalBA_Data::EState::constant) << std::endl;
+    std::cout << "land ign = " << _localBA_data->getNumberOf(LocalBA_Data::EParameter::landmark,  LocalBA_Data::EState::ignored) << std::endl;
+    std::cout << "nb new added cam = " << _localBA_data->getNewViewsId().size() << std::endl;   
+    std::cout << "-----" << std::endl;
+  }   
   
   localBA_ceres.initStatistics(*_localBA_data);
   
   // Run Bundle Adjustment:
   _localBA_data->_timeSummary.resetTimer();
-  bool isBaSucceed;
-  if (name == "localBA")  // do not save changes in reconstruction
+  
+  
+  bool isBaSucceed = false;
+  if (options.isLocalBAEnabled())
   {
-    const SfM_Data& const_sfm_data = Get_SfM_Data();
-    isBaSucceed = localBA_ceres.Adjust(const_sfm_data, *_localBA_data);
+    // Refine parameters only if the number of cameras to refine is > number of newly added cameras.
+    // - if there are equal: it meens that none of the new cameras is connected to the local BA graph,
+    //    so the refinement would be done on those cameras only, without any constant parameters.
+    // - the number of cameras to refine cannot be < number of newly added cameras (set to 'refine' by default)
+    if (_localBA_data->getNumberOf(LocalBA_Data::EParameter::pose, LocalBA_Data::EState::refined) >
+        _localBA_data->getNewViewsId().size())
+      isBaSucceed = localBA_ceres.Adjust(_sfm_data, *_localBA_data);
+    else
+      OPENMVG_LOG_WARNING("The refined has not been done because the new cameras are not connected to the rest of the local BA graph.");
   }
-  else // save the changes due to the adjustment
+  else
     isBaSucceed = localBA_ceres.Adjust(_sfm_data, *_localBA_data);
   
   _localBA_data->_timeSummary.saveTime(TimeSummary::EStep::ADJUSTMENT);
@@ -1807,7 +1827,7 @@ bool SequentialSfMReconstructionEngine::localBundleAdjustment(const std::string&
   // Update 'map_intrinsicsHistorical' and compute 'map_intrinsicsLimits'
   _localBA_data->addIntrinsicsToHistory(_sfm_data);
   
-  _localBA_data->_timeSummary.exportTimes(_sOutDirectory + "/LocalBA/times_"+ name +".txt");
+  _localBA_data->_timeSummary.exportTimes(_sOutDirectory + "/LocalBA/times.txt");
   
   // Save data about the Ceres Sover refinement:
   localBA_ceres.exportStatistics(_sOutDirectory + "/LocalBA/");

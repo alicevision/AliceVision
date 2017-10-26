@@ -124,18 +124,26 @@ public:
   
   void convertDistancesToLBAStates(const SfM_Data & sfm_data);
   
+  enum EParameter { 
+    pose,
+    intrinsic,
+    landmark
+  };
+  
   // Define the state of the all parameter of the reconstruction (structure, poses, intrinsics) in the BA:
-  enum ELocalBAState { 
+  enum EState { 
     refined,  //< will be adjuted by the BA solver
     constant, //< will be set as constant in the sover
     ignored   //< will not be set into the BA solver
   };
   
-  // Get back the 'ELocalBAState' for a specific parameter :
-  ELocalBAState getPoseState(const IndexT poseId) const           {return _mapLBAStatePerPoseId.at(poseId);}
-  ELocalBAState getIntrinsicState(const IndexT intrinsicId) const {return _mapLBAStatePerIntrinsicId.at(intrinsicId);}
-  ELocalBAState getLandmarkState(const IndexT landmarkId) const   {return _mapLBAStatePerLandmarkId.at(landmarkId);
-  }
+  
+  std::size_t getNumberOf(EParameter param, EState state) const {return _parametersCounter.at(StatedParameter(param, state));}
+  
+  // Get back the 'EState' for a specific parameter :
+  EState getPoseState(const IndexT poseId) const           {return _mapLBAStatePerPoseId.at(poseId);}
+  EState getIntrinsicState(const IndexT intrinsicId) const {return _mapLBAStatePerIntrinsicId.at(intrinsicId);}
+  EState getLandmarkState(const IndexT landmarkId) const   {return _mapLBAStatePerLandmarkId.at(landmarkId);}
   
   std::size_t getNumberOfConstantAndRefinedCameras();
   
@@ -154,12 +162,6 @@ private:
   /// @param[in] windowSize Compute the variation on the \a windowSize parameter
   /// @param[in] stdevPercentageLimit The limit is reached when the standard deviation of the \a windowSize values is less than \a stdevPecentageLimit % of the range of all the values.
   void checkIntrinsicsConsistency(const std::size_t windowSize, const double stdevPercentageLimit);
-  
-  /// @brief selectViewsToAddToTheGraph Return the index of all the posed views not added to the distance graph yet.
-  /// It means all the poses if the graph is empty.
-  /// @param[in] sfm_data
-  /// @return A set of views index
-  std::set<IndexT> selectViewsToAddToTheGraph(const SfM_Data& sfm_data);
   
   /// @brief countSharedLandmarksPerImagesPair Extract the images per between the views \c newViewsId and the already recontructed cameras, 
   /// and count the number of commun matches between these pairs.
@@ -213,13 +215,20 @@ private:
   /// Store the graph-distances from the new poses (0: is a new pose, -1: is not connected to the new poses)
   std::map<IndexT, int> _mapDistancePerPoseId;
   
-  /// Store the \c ELocalBAState of each pose in the scene.
-  std::map<IndexT, ELocalBAState> _mapLBAStatePerPoseId;
-  /// Store the \c ELocalBAState of each intrinsic in the scene.
-  std::map<IndexT, ELocalBAState> _mapLBAStatePerIntrinsicId;
-  /// Store the \c ELocalBAState of each landmark in the scene.
-  std::map<IndexT, ELocalBAState> _mapLBAStatePerLandmarkId;
+  std::map<int, std::set<IndexT>> _mapViewsIdPerDistance;
   
+  /// Store the \c EState of each pose in the scene.
+  std::map<IndexT, EState> _mapLBAStatePerPoseId;
+  /// Store the \c EState of each intrinsic in the scene.
+  std::map<IndexT, EState> _mapLBAStatePerIntrinsicId;
+  /// Store the \c EState of each landmark in the scene.
+  std::map<IndexT, EState> _mapLBAStatePerLandmarkId;
+  
+  
+  
+  using StatedParameter = std::pair<EParameter, EState>;
+  std::map<StatedParameter, int> _parametersCounter;
+
   // ------------------------
   // - Intrinsics data -
   // Local BA needs to know the evolution of all the intrinsics parameters.

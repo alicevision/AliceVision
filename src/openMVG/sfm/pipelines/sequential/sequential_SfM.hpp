@@ -198,7 +198,7 @@ private:
    * proximity to the cameras newly added to the reconstruction.
    * @return true if succeed
    */
-  bool localBundleAdjustment(const string &name = "");
+  bool localBundleAdjustment();
 
   /// Discard track with too large residual error
   bool badTrackRejector(double dPrecision, size_t count = 0);
@@ -260,6 +260,8 @@ private:
   tracks::TracksPyramidPerView _map_featsPyramidPerView;
   /// Per camera confidence (A contrario estimated threshold error)
   Hash_Map<IndexT, double> _map_ACThreshold;
+  
+  Hash_Map<Pair, std::size_t> _map_sharedTracksPerImagesPair;
   
   /// Remaining camera index that can be used for resection
   std::set<size_t> _set_remainingViewId;
