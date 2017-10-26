@@ -43,6 +43,7 @@
 #include <Eigen/SVD>
 #include <Eigen/StdVector>
 
+#include <algorithm>
 #include <cmath>
 #include <numeric>
 #include <string>
@@ -427,6 +428,17 @@ TMat ExtractColumns(const TMat &A, const TCols &columns)
     compressed.col(i) = A.col(columns[i]);
   }
   return compressed;
+}
+
+// @todo move it to numeric
+template <typename T>
+void pick(std::vector<T>& result, const std::vector<T>& in, const std::vector<typename std::vector<T>::size_type>& s)
+{
+  result.reserve(s.size());
+  std::transform(s.begin(), s.end(), std::back_inserter(result),
+                 [&in](typename std::vector<T>::size_type idx) {
+                   return in.at(idx);
+                 });
 }
 
 void MeanAndVarianceAlongRows(const Mat &A,
