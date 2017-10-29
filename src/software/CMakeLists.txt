@@ -58,6 +58,23 @@ install(TARGETS aliceVision_exportDepthMap DESTINATION bin/)
 
 
 
+
+## Meshing
+set(SOURCES_files_meshing main_meshing.cpp)
+source_group("aliceVision_meshing" FILES main_meshing.cpp)
+
+add_executable(aliceVision_meshing ${SOURCES_files_meshing})
+target_link_libraries(aliceVision_meshing PUBLIC mv_structures mv_cudaInterfaces
+                                    mv_mesh mv_largeScale
+                                    mv_filter mv_delaunaycut
+                                    mv_cudaInterfaces mv_prematching
+                                    eig33
+                                    ${Boost_LIBRARIES} ${ZLIB_LIBRARIES}
+                                    ${GMP_LIBRARIES} ${MPFR_LIBRARIES})
+install(TARGETS aliceVision_meshing DESTINATION bin/)
+
+
+## Texturing
 set(SOURCES_files_texturing main_texturing.cpp)
 source_group("aliceVision_texturing" FILES main_texturing.cpp)
 
@@ -69,6 +86,4 @@ target_link_libraries(aliceVision_texturing PUBLIC mv_structures mv_cudaInterfac
                                     eig33
                                     ${Boost_LIBRARIES} ${ZLIB_LIBRARIES}
                                     ${GMP_LIBRARIES} ${MPFR_LIBRARIES})
-
-## Install rule
 install(TARGETS aliceVision_texturing DESTINATION bin/)
