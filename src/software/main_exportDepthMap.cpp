@@ -28,7 +28,7 @@ int main(int argc, char* argv[])
     std::string cameraFilepath;
     std::string outputWrlFilepath;
 
-    po::options_description inputParams;
+    po::options_description inputParams("Export depth map into image and mesh.");
 
     inputParams.add_options()
         ("image", po::value<std::string>(&imageFilepath)->required(),

@@ -56,7 +56,48 @@ target_link_libraries(aliceVision_exportDepthMap PUBLIC mv_structures mv_cudaInt
 install(TARGETS aliceVision_exportDepthMap DESTINATION bin/)
 
 
+## Compute Nearby Cameras
+set(SOURCES_files_nearbyCameras main_nearbyCameras.cpp)
+source_group("aliceVision_nearbyCameras" FILES main_nearbyCameras.cpp)
 
+add_executable(aliceVision_nearbyCameras ${SOURCES_files_nearbyCameras})
+target_link_libraries(aliceVision_nearbyCameras PUBLIC mv_structures mv_cudaInterfaces
+                                    mv_mesh mv_largeScale
+                                    mv_filter mv_delaunaycut
+                                    mv_cudaInterfaces mv_prematching
+                                    eig33
+                                    ${Boost_LIBRARIES} ${ZLIB_LIBRARIES}
+                                    ${GMP_LIBRARIES} ${MPFR_LIBRARIES})
+install(TARGETS aliceVision_nearbyCameras DESTINATION bin/)
+
+
+## Depth Map Estimation
+set(SOURCES_files_depthMapEstimation main_depthMapEstimation.cpp)
+source_group("aliceVision_depthMapEstimation" FILES main_depthMapEstimation.cpp)
+
+add_executable(aliceVision_depthMapEstimation ${SOURCES_files_depthMapEstimation})
+target_link_libraries(aliceVision_depthMapEstimation PUBLIC mv_structures mv_cudaInterfaces
+                                    mv_mesh mv_largeScale
+                                    mv_filter mv_delaunaycut
+                                    mv_cudaInterfaces mv_prematching
+                                    eig33
+                                    ${Boost_LIBRARIES} ${ZLIB_LIBRARIES}
+                                    ${GMP_LIBRARIES} ${MPFR_LIBRARIES})
+install(TARGETS aliceVision_depthMapEstimation DESTINATION bin/)
+
+## Depth Map Filtering
+set(SOURCES_files_depthMapFiltering main_depthMapFiltering.cpp)
+source_group("aliceVision_depthMapFiltering" FILES main_depthMapFiltering.cpp)
+
+add_executable(aliceVision_depthMapFiltering ${SOURCES_files_depthMapFiltering})
+target_link_libraries(aliceVision_depthMapFiltering PUBLIC mv_structures mv_cudaInterfaces
+                                    mv_mesh mv_largeScale
+                                    mv_filter mv_delaunaycut
+                                    mv_cudaInterfaces mv_prematching
+                                    eig33
+                                    ${Boost_LIBRARIES} ${ZLIB_LIBRARIES}
+                                    ${GMP_LIBRARIES} ${MPFR_LIBRARIES})
+install(TARGETS aliceVision_depthMapFiltering DESTINATION bin/)
 
 
 ## Meshing

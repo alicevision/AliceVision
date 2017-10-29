@@ -12,11 +12,6 @@
 namespace bfs = boost::filesystem;
 namespace po = boost::program_options;
 
-bfs::path absolutePathNoExt(const bfs::path& p)
-{
-    return p.parent_path() / p.stem();
-}
-
 #define ALICEVISION_COUT(x) std::cout << x << std::endl
 #define ALICEVISION_CERR(x) std::cerr << x << std::endl
 
