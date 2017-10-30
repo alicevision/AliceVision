@@ -678,7 +678,7 @@ __device__ float refineDepthSubPixel(const float3& depths, const float3& sims)
 //    float floatDepth = depths.y;
     float outDepth = -1.0f;
 
-    // subpixel refienement
+    // subpixel refinement
     // subpixel refine by Stereo Matching with Color-Weighted Correlation, Hierarchical Belief Propagation, and
     // Occlusion Handling Qingxiong pami08
     // quadratic polynomial interpolation is used to approximate the cost function between three discrete depth

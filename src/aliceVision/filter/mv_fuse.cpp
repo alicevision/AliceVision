@@ -3,6 +3,8 @@
 #include <aliceVision/structures/mv_filesio.hpp>
 
 #include <boost/filesystem.hpp>
+#include <boost/accumulators/accumulators.hpp>
+#include <boost/accumulators/statistics.hpp>
 
 #include <iostream>
 
@@ -510,29 +512,19 @@ void mv_fuse::divideSpace(point3d* hexah, float& minPixSize)
     float d1, d2, d3;
     s3d.getEigenVectorsDesc(cg, v1, v2, v3, d1, d2, d3);
 
-    float mind1 = std::numeric_limits<float>::max();
-    float maxd1 = -std::numeric_limits<float>::max();
-    float mind2 = std::numeric_limits<float>::max();
-    float maxd2 = -std::numeric_limits<float>::max();
-    float mind3 = std::numeric_limits<float>::max();
-    float maxd3 = -std::numeric_limits<float>::max();
+    using namespace boost::accumulators;
+    using Accumulator = accumulator_set<float, stats<
+            tag::tail_quantile<right>
+            >>;
+    const std::size_t cacheSize =  10000;
+    Accumulator accX1( tag::tail<right>::cache_size = cacheSize );
+    Accumulator accX2( tag::tail<right>::cache_size = cacheSize );
+    Accumulator accY1( tag::tail<right>::cache_size = cacheSize );
+    Accumulator accY2( tag::tail<right>::cache_size = cacheSize );
+    Accumulator accZ1( tag::tail<right>::cache_size = cacheSize );
+    Accumulator accZ2( tag::tail<right>::cache_size = cacheSize );
 
-    int maxpts = 100000;
-    int step = (int)s3d.count / maxpts + 1;
-    staticVector<float>* x1dists = new staticVector<float>(maxpts);
-    staticVector<float>* x2dists = new staticVector<float>(maxpts);
-    staticVector<float>* y1dists = new staticVector<float>(maxpts);
-    staticVector<float>* y2dists = new staticVector<float>(maxpts);
-    staticVector<float>* z1dists = new staticVector<float>(maxpts);
-    staticVector<float>* z2dists = new staticVector<float>(maxpts);
-
-    int jx1 = 0;
-    int jx2 = 0;
-    int jy1 = 0;
-    int jy2 = 0;
-    int jz1 = 0;
-    int jz2 = 0;
-    for(int rc = 0; rc < mp->ncams; rc++)
+    for(int rc = 0; rc < mp->ncams; ++rc)
     {
         int h = mp->mip->getHeight(rc);
         staticVector<float>* depthMap =
@@ -545,64 +537,24 @@ void mv_fuse::divideSpace(point3d* hexah, float& minPixSize)
             if(depth > 0.0f)
             {
                 point3d p = mp->CArr[rc] + (mp->iCamArr[rc] * point2d((float)x, (float)y)).normalize() * depth;
-                d1 = orientedPointPlaneDistance(p, cg, v1);
-                d2 = orientedPointPlaneDistance(p, cg, v2);
-                d3 = orientedPointPlaneDistance(p, cg, v3);
-                if(d1 < 0)
-                {
-                    if(jx1 % step == 0)
-                    {
-                        x1dists->push_back(fabs(d1));
-                    }
-                    jx1++;
-                }
-                else
-                {
-                    if(jx2 % step == 0)
-                    {
-                        x2dists->push_back(fabs(d1));
-                    }
-                    jx2++;
-                }
-                if(d2 < 0)
-                {
-                    if(jy1 % step == 0)
-                    {
-                        y1dists->push_back(fabs(d2));
-                    }
-                    jy1++;
-                }
-                else
-                {
-                    if(jy2 % step == 0)
-                    {
-                        y2dists->push_back(fabs(d2));
-                    }
-                    jy2++;
-                }
-                if(d3 < 0)
-                {
-                    if(jz1 % step == 0)
-                    {
-                        z1dists->push_back(fabs(d3));
-                    }
-                    jz1++;
-                }
-                else
-                {
-                    if(jz2 % step == 0)
-                    {
-                        z2dists->push_back(fabs(d3));
-                    }
-                    jz2++;
-                }
+                float d1 = orientedPointPlaneDistance(p, cg, v1);
+                float d2 = orientedPointPlaneDistance(p, cg, v2);
+                float d3 = orientedPointPlaneDistance(p, cg, v3);
 
-                mind1 = std::min(d1, mind1);
-                mind2 = std::min(d2, mind2);
-                mind3 = std::min(d3, mind3);
-                maxd1 = std::max(d1, maxd1);
-                maxd2 = std::max(d2, maxd2);
-                maxd3 = std::max(d3, maxd3);
+                if(d1 < 0)
+                    accX1(fabs(d1));
+                else
+                    accX2(fabs(d1));
+
+                if(d2 < 0)
+                    accY1(fabs(d2));
+                else
+                    accY2(fabs(d2));
+
+                if(d3 < 0)
+                    accZ1(fabs(d3));
+                else
+                    accZ2(fabs(d3));
             }
         }
         delete depthMap;
@@ -611,27 +563,21 @@ void mv_fuse::divideSpace(point3d* hexah, float& minPixSize)
     }
     finishEstimate();
 
-    qsort(&(*x1dists)[0], x1dists->size(), sizeof(float), qSortCompareFloatAsc);
-    qsort(&(*y1dists)[0], y1dists->size(), sizeof(float), qSortCompareFloatAsc);
-    qsort(&(*z1dists)[0], z1dists->size(), sizeof(float), qSortCompareFloatAsc);
-    qsort(&(*x2dists)[0], x2dists->size(), sizeof(float), qSortCompareFloatAsc);
-    qsort(&(*y2dists)[0], y2dists->size(), sizeof(float), qSortCompareFloatAsc);
-    qsort(&(*z2dists)[0], z2dists->size(), sizeof(float), qSortCompareFloatAsc);
     float perc = (float)mp->mip->_ini.get<double>("largeScale.universePercentile", 0.999f);
-    mind1 = -(*x1dists)[(int)((float)x1dists->size() * perc)];
-    mind2 = -(*y1dists)[(int)((float)y1dists->size() * perc)];
-    mind3 = -(*z1dists)[(int)((float)z1dists->size() * perc)];
-    maxd1 = (*x2dists)[(int)((float)x2dists->size() * perc)];
-    maxd2 = (*y2dists)[(int)((float)y2dists->size() * perc)];
-    maxd3 = (*z2dists)[(int)((float)z2dists->size() * perc)];
 
-    delete x1dists;
-    delete y1dists;
-    delete z1dists;
-    delete x2dists;
-    delete y2dists;
-    delete z2dists;
-    
+    float mind1 = -quantile(accX1, quantile_probability = perc);
+    float maxd1 = quantile(accX2, quantile_probability = perc);
+    float mind2 = -quantile(accY1, quantile_probability = perc);
+    float maxd2 = quantile(accY2, quantile_probability = perc);
+    float mind3 = -quantile(accZ1, quantile_probability = perc);
+    float maxd3 = quantile(accZ2, quantile_probability = perc);
+
+//    std::cout << "quantile accumulators:" << std::endl;
+//    std::cout << "X(" << mind1 << ", " << maxd1 << "), "
+//              << "Y(" << mind2 << ", " << maxd2 << "), "
+//              << "Z(" << mind3 << ", " << maxd3 << "), "
+//              << std::endl;
+
     hexah[0] = cg + v1 * maxd1 + v2 * maxd2 + v3 * maxd3;
     hexah[1] = cg + v1 * mind1 + v2 * maxd2 + v3 * maxd3;
     hexah[2] = cg + v1 * mind1 + v2 * mind2 + v3 * maxd3;

@@ -2992,7 +2992,7 @@ void mv_delaunay_GC::reconstructExpetiments(staticVector<int>* cams, std::string
         if(mp->verbose)
             printf("Jancosek IJCV method ( delta*100 = %d ) : \n", (int)(delta * 100.0f));
 
-        // compute weights on edge between tetrahedrons
+        // compute weights on edge between tetrahedra
         fillGraph(fixesSigma, sigma, true, false, false, true, distFcnHeight);
 
         if(update) // true by default
