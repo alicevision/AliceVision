@@ -140,9 +140,10 @@ ps_depthSimMap* ps_refine_rc::refineAndFuseDepthSimMapCUDA(ps_depthSimMap* depth
     {
         int hPartHeight = std::min(h11, (hPart + 1) * hPartHeightGlob) - hPart * hPartHeightGlob;
 
+        // vector of one depthSimMap tile per Tc
         staticVector<staticVector<DepthSim>*>* dataMapsHPart =
             new staticVector<staticVector<DepthSim>*>(dataMaps->size());
-        for(int i = 0; i < dataMaps->size(); i++)
+        for(int i = 0; i < dataMaps->size(); i++) // iterate over Tc cameras
         {
             staticVector<DepthSim>* dataMapHPart = new staticVector<DepthSim>(w11 * hPartHeight);
             dataMapHPart->resize(w11 * hPartHeight);

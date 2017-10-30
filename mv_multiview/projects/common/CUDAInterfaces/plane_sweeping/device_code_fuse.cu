@@ -1,5 +1,7 @@
-
-__global__ void fuse_computeGaussianKernelVotingSampleMap_kernel(float* gsvSampleMap, int gsvSampleMap_p,
+/**
+ * @param[in] s: iteration over nSamplesHalf
+ */
+__global__ void fuse_computeGaussianKernelVotingSampleMap_kernel(float* out_gsvSampleMap, int out_gsvSampleMap_p,
                                                                  float2* depthSimMap, int depthSimMap_p,
                                                                  float2* midDepthPixSizeMap, int midDepthPixSizeMap_p,
                                                                  int width, int height, float s, int idCam,
@@ -12,8 +14,8 @@ __global__ void fuse_computeGaussianKernelVotingSampleMap_kernel(float* gsvSampl
     {
         float2 midDepthPixSize = *get2DBufferAt(midDepthPixSizeMap, midDepthPixSizeMap_p, x, y);
         float2 depthSim = *get2DBufferAt(depthSimMap, depthSimMap_p, x, y);
-        float* gsvSample_ptr = get2DBufferAt(gsvSampleMap, gsvSampleMap_p, x, y);
-        float gsvSample = (idCam == 0) ? 0.0f : *gsvSample_ptr;
+        float* out_gsvSample_ptr = get2DBufferAt(out_gsvSampleMap, out_gsvSampleMap_p, x, y);
+        float gsvSample = (idCam == 0) ? 0.0f : *out_gsvSample_ptr;
 
         if((midDepthPixSize.x > 0.0f) && (depthSim.x > 0.0f))
         {
@@ -22,9 +24,10 @@ __global__ void fuse_computeGaussianKernelVotingSampleMap_kernel(float* gsvSampl
             float sim = -sigmoid(0.0f, 1.0f, 0.7f, -0.7f, depthSim.y);
             gsvSample += sim * expf(-((i - s) * (i - s)) / twoTimesSigmaPowerTwo);
         };
-        *gsvSample_ptr = gsvSample;
+        *out_gsvSample_ptr = gsvSample;
     };
 }
+
 
 __global__ void fuse_updateBestGaussianKernelVotingSampleMap_kernel(float2* bestGsvSampleMap, int bestGsvSampleMap_p,
                                                                     float* gsvSampleMap, int gsvSampleMap_p, int width,
@@ -154,7 +157,7 @@ __device__ float2 getCellSmoothStepEnergy(const int2& cell0)
     return out;
 }
 
-__global__ void fuse_optimizeDepthSimMap_kernel(float2* optDepthSimMap, int optDepthSimMap_p,
+__global__ void fuse_optimizeDepthSimMap_kernel(float2* out_optDepthSimMap, int optDepthSimMap_p,
                                                 float2* midDepthPixSizeMap, int midDepthPixSizeMap_p,
                                                 float2* fusedDepthSimMap, int fusedDepthSimMap_p, int width, int height,
                                                 int iter, float samplesPerPixSize, int yFrom)
@@ -167,10 +170,10 @@ __global__ void fuse_optimizeDepthSimMap_kernel(float2* optDepthSimMap, int optD
     {
         float2 midDepthPixSize = *get2DBufferAt(midDepthPixSizeMap, midDepthPixSizeMap_p, x, y);
         float2 fusedDepthSim = *get2DBufferAt(fusedDepthSimMap, fusedDepthSimMap_p, x, y);
-        float2* optDepthSim_ptr = get2DBufferAt(optDepthSimMap, optDepthSimMap_p, x, y);
-        float2 optDepthSim = (iter == 0) ? make_float2(midDepthPixSize.x, fusedDepthSim.y) : *optDepthSim_ptr;
+        float2* out_optDepthSim_ptr = get2DBufferAt(out_optDepthSimMap, optDepthSimMap_p, x, y);
+        float2 out_optDepthSim = (iter == 0) ? make_float2(midDepthPixSize.x, fusedDepthSim.y) : *out_optDepthSim_ptr;
 
-        float depthOpt = optDepthSim.x;
+        float depthOpt = out_optDepthSim.x;
 
         if(depthOpt > 0.0f)
         {
@@ -222,14 +225,14 @@ __global__ void fuse_optimizeDepthSimMap_kernel(float2* optDepthSimMap, int optD
 
             float depthOptStep = visWeight*depthVisStep + (1.0f - visWeight)*(photoWeight*simWeight*depthPhotoStep + smoothWeight*depthSmoothStep);
 
-            optDepthSim.x = depthOpt + depthOptStep;
+            out_optDepthSim.x = depthOpt + depthOptStep;
 
             // archive: 
             // optDepthSim.y = -photoWeight * simWeight
             // 0.6:
-            optDepthSim.y = (1.0f - visWeight)*photoWeight*simWeight*depthPhotoStepVal + (1.0f - visWeight)*smoothWeight*(depthSmoothVal / 20.0f);
+            out_optDepthSim.y = (1.0f - visWeight)*photoWeight*simWeight*depthPhotoStepVal + (1.0f - visWeight)*smoothWeight*(depthSmoothVal / 20.0f);
         };
 
-        *optDepthSim_ptr = optDepthSim;
+        *out_optDepthSim_ptr = out_optDepthSim;
     };
 }
