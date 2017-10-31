@@ -21,8 +21,8 @@ int main(int argc, char* argv[])
     long startTime = clock();
 
     std::string iniFilepath;
-    int rangeStart = 0;
-    int rangeSize = 0;
+    int rangeStart = -1;
+    int rangeSize = -1;
     po::options_description inputParams("Estimate depth map for each input image.");
 
     inputParams.add_options()
@@ -85,7 +85,7 @@ int main(int argc, char* argv[])
         if(cams.empty())
         {
             ALICEVISION_COUT("No camera to process");
-            return EXIT_SUCCESS;
+            return EXIT_FAILURE;
         }
     }
 
