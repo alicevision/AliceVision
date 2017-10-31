@@ -57,18 +57,18 @@ install(TARGETS aliceVision_exportDepthMap DESTINATION bin/)
 
 
 ## Compute Nearby Cameras
-set(SOURCES_files_nearbyCameras main_nearbyCameras.cpp)
-source_group("aliceVision_nearbyCameras" FILES main_nearbyCameras.cpp)
+set(SOURCES_files_cameraConnection main_cameraConnection.cpp)
+source_group("aliceVision_cameraConnection" FILES main_cameraConnection.cpp)
 
-add_executable(aliceVision_nearbyCameras ${SOURCES_files_nearbyCameras})
-target_link_libraries(aliceVision_nearbyCameras PUBLIC mv_structures mv_cudaInterfaces
+add_executable(aliceVision_cameraConnection ${SOURCES_files_cameraConnection})
+target_link_libraries(aliceVision_cameraConnection PUBLIC mv_structures mv_cudaInterfaces
                                     mv_mesh mv_largeScale
                                     mv_filter mv_delaunaycut
                                     mv_cudaInterfaces mv_prematching
                                     eig33
                                     ${Boost_LIBRARIES} ${ZLIB_LIBRARIES}
                                     ${GMP_LIBRARIES} ${MPFR_LIBRARIES})
-install(TARGETS aliceVision_nearbyCameras DESTINATION bin/)
+install(TARGETS aliceVision_cameraConnection DESTINATION bin/)
 
 
 ## Depth Map Estimation
