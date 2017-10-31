@@ -1,6 +1,6 @@
 #pragma once
 
 // Function used to safely check defines
-#define CMPMVS_IS_DEFINED(F) F() == 1
+#define ALICEVISION_IS_DEFINED(F) F() == 1
 
-#define CMPMVS_HAVE_OPENMP() @CMPMVS_HAVE_OPENMP@
+#define ALICEVISION_HAVE_OPENMP() @ALICEVISION_HAVE_OPENMP@

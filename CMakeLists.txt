@@ -1,9 +1,9 @@
 message("CMake version: ${CMAKE_MAJOR_VERSION}.${CMAKE_MINOR_VERSION}")
 cmake_minimum_required(VERSION 3.4)
-project(CMPMVS LANGUAGES CXX C)
+project(aliceVisionMVS LANGUAGES CXX C)
 
 # options
-option(CMPMVS_USE_OPENMP "Enable OpenMP parallelization" ON)
+option(ALICEVISION_USE_OPENMP "Enable OpenMP parallelization" ON)
 
 # C++11
 set(CMAKE_CXX_STANDARD 11)
@@ -55,13 +55,13 @@ find_package(Geogram REQUIRED)
 message(INFO "Geogram: ${GEOGRAM_LIBRARY}, ${GEOGRAM_INCLUDE_DIR}")
 
 # OpenMP
-if(CMPMVS_USE_OPENMP)
+if(ALICEVISION_USE_OPENMP)
   find_package(OpenMP REQUIRED)
   set (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
   set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
-  set(CMPMVS_HAVE_OPENMP 1)
+  set(ALICEVISION_HAVE_OPENMP 1)
 else()
-  set(CMPMVS_HAVE_OPENMP 0)
+  set(ALICEVISION_HAVE_OPENMP 0)
 endif()
 
 # CUDA
@@ -117,11 +117,13 @@ cuda_find_library_local_first(CUDA_CUDADEVRT_LIBRARY cudadevrt "\"cudadevrt\" li
 set(generatedDir "${CMAKE_CURRENT_BINARY_DIR}/generated")
 
 # contains the "root" directory from which including all headers
-set(CMPMVS_INCLUDE_DIR ${PROJECT_SOURCE_DIR}/mv_multiview/projects/common)
+set(ALICEVISION_INCLUDE_DIR ${PROJECT_SOURCE_DIR}/src)
 
-add_subdirectory(mv_multiview/projects/common)
-add_subdirectory(mv_multiview/projects/CMPMVS)
+add_subdirectory(src/aliceVision)
+add_subdirectory(src/software)
 # create the config.hpp file containing all the preprocessor definitions
-set(configfile "${generatedDir}/CMPMVS/config.hpp")
+set(configfile "${generatedDir}/aliceVision/config.hpp")
 configure_file("${CMAKE_SOURCE_DIR}/cmake/config.hpp.in"
                "${configfile}" @ONLY)
+
+
