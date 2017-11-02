@@ -13,18 +13,55 @@
 #include "lemon/list_graph.h"
 #include "lemon/bfs.h"
 #include "openMVG/stl/stlMap.hpp"
+#include "openMVG/system/timer.hpp"
+
 
 namespace openMVG {
 namespace sfm {
 
+//------------------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------------------
+//                                                 TimeSummary      
+//------------------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------------------
 
-/// Intrinsic parameters 
-/// <NbOfPosesWithACommonIntrinsic, IntrinsicParameters>
-using IntrinsicParams = std::pair<std::size_t, std::vector<double>>;
+/// Allows to store the time spend in each step of the Local BA.
+struct TimeSummary
+{
+public:
+  
+  enum EStep {updateGraph, 
+              computeDistances, 
+              convertDistances2States, 
+              adjustment,
+              saveIntrinsics};
+  
+  void resetTimer() {_timer.reset();}
+  
+  void saveTime(EStep step);
+  
+  bool exportTimes(const std::string& filename);
+  
+  void showTimes();
+  
+private:
+  
+  openMVG::system::Timer _timer;
+  
+  double _graphUpdating = 0.0;
+  double _distancesComputing = 0.0;
+  double _distancesConversion = 0.0;
+  double _adjusting = 0.0;
+  double _saveIntrinsics = 0.0;
+  
+  double getTotalTime();
+};
 
-/// Save the progression for all the intrinsics parameters
-/// <IntrinsicId, IntrinsicsParametersHistory>
-using IntrinicsHistory = std::map<IndexT, std::vector<IntrinsicParams>>;
+//------------------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------------------
+//                                                     LocalBA_Data      
+//------------------------------------------------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------------------
 
 /// Contains all the data needed to apply a Local Bundle Adjustment.
 class LocalBA_Data
@@ -42,46 +79,20 @@ public:
   
   int getViewDistance(const IndexT viewId) const;
   
-  std::set<IndexT> getNewViewsId() const {return set_newViewsId;}
+  std::set<IndexT> getNewViewsId() const {return _newViewsId;}
+  
+  std::map<int, std::size_t> getDistancesHistogram() const;
   
   // -- Setters
   
-  void setNewViewsId(const std::set<IndexT>& newPosesId) {set_newViewsId = newPosesId;}
+  void setNewViewsId(const std::set<IndexT>& newPosesId) {_newViewsId = newPosesId;}
   
   // -- Methods
   
   /// @brief addIntrinsicsToHistory Add the current intrinsics of the reconstruction in the intrinsics history.
   /// @param[in] sfm_data Contains all the information about the reconstruction, notably current intrinsics
   void addIntrinsicsToHistory(const SfM_Data& sfm_data);
-  
-  /// @brief EIntrinsicParameter
-  enum EIntrinsicParameter{Focal, Cx, Cy};
-  
-  /// @brief checkParameterLimits Compute, for each camera/intrinsic, the variation of the last \a windowSize values of the \a parameter.
-  /// If it consideres the variation of \a parameter as enought constant it updates \a intrinsicsLimitIds.
-  /// @details Pipeline:
-  /// \b H: the history of all the concidered parameter
-  /// \b S: the subpart of H including the last \a wondowSize values only.
-  /// \b sigma = stddev(S)  
-  /// \b sigma_normalized = sigma / (max(H) - min(H))
-  /// \c if sigma_normalized < \a stdevPercentageLimit \c then the limit is reached.
-  /// @param[in] parameter The \a EIntrinsicParameter you want to check.
-  /// @param[in] windowSize Compute the variation on the \a windowSize parameter
-  /// @param[in] stdevPercentageLimit The limit is reached when the standard deviation of the \a windowSize values is less than \a stdevPecentageLimit % of the range of all the values.
-  void checkParameterLimits(
-      const EIntrinsicParameter parameter, 
-      const std::size_t windowSize, 
-      const double stdevPercentageLimit);
-  
-  /// @brief checkAllParametersLimits Run \a checkParameterLimits() for each \a EIntrinsicParameter.
-  void checkAllParametersLimits(const std::size_t kWindowSize, const double kStdDevPercentage);
-  
-  /// @brief isIntrinsicLimitReached Giving an intrinsic index and the wished parameter, is return \c true if the limit has alerady been reached, else \c false.
-  /// @param[in] intrinsicId The intrinsic index.
-  /// @param[in] parameter The \a EIntrinsicParameter to observe.
-  /// @return true if the limit is reached, else false
-  bool isIntrinsicLimitReached(const IndexT intrinsicId, const EIntrinsicParameter parameter) const { return intrinsicsLimitIds.at(intrinsicId).at(parameter) != 0;}
-  
+
   /// @brief exportIntrinsicsHistory Save the history of each intrinsic. It create a file \b K<intrinsic_index>.txt in \a folder.
   /// @param[in] folder The folder in which the \b K*.txt are saved.
   void exportIntrinsicsHistory(const std::string& folder);
@@ -91,7 +102,8 @@ public:
   /// @param[in] map_tracksPerView A map giving the tracks for each view
   void updateGraphWithNewViews(
       const SfM_Data& sfm_data, 
-      const tracks::TracksPerView& map_tracksPerView);
+      const tracks::TracksPerView& map_tracksPerView, 
+      const std::size_t kMinNbOfMatches = 50);
   
   /// @brief removeViewsToTheGraph Remove some views to the graph. It delete the node and all the incident arcs for each removed view.
   /// @param[in] removedViewsId Set of views index to remove
@@ -102,29 +114,71 @@ public:
   /// and compute the intragraph-distance between these new cameras and all the others.
   void computeDistancesMaps(const SfM_Data& sfm_data);
   
+  void convertDistancesToLBAStates(const SfM_Data & sfm_data, const std::size_t kLimitDistance = 1);
+  
+  enum EParameter { 
+    pose,
+    intrinsic,
+    landmark
+  };
+  
+  // Define the state of the all parameter of the reconstruction (structure, poses, intrinsics) in the BA:
+  enum EState { 
+    refined,  //< will be adjuted by the BA solver
+    constant, //< will be set as constant in the sover
+    ignored   //< will not be set into the BA solver
+  };
+  
+  // Get back the 'EState' for a specific parameter :
+  EState getPoseState(const IndexT poseId) const           {return _mapLBAStatePerPoseId.at(poseId);}
+  EState getIntrinsicState(const IndexT intrinsicId) const {return _mapLBAStatePerIntrinsicId.at(intrinsicId);}
+  EState getLandmarkState(const IndexT landmarkId) const   {return _mapLBAStatePerLandmarkId.at(landmarkId);}
+
+  std::size_t getNumberOf(EParameter param, EState state) const {return _parametersCounter.at(std::make_pair(param, state));}
+  
+  TimeSummary _timeSummary;
+  
+  
+  std::size_t addIntrinsicEdgesToTheGraph(const SfM_Data& sfm_data);
+  
+  void removeIntrinsicEdgesToTheGraph();
+    
+  void drawGraph(const SfM_Data& sfm_data, const std::string& dir);
+  void drawGraph(const SfM_Data &sfm_data, const std::string& dir, const std::string& nameComplement);
+
 private:
   
-  /// @brief selectViewsToAddToTheGraph Return the index of all the posed views not added to the distance graph yet.
-  /// It means all the poses if the graph is empty.
-  /// @param[in] sfm_data
-  /// @return A set of views index
-  std::set<IndexT> selectViewsToAddToTheGraph(const SfM_Data& sfm_data);
+  /// @brief checkIntrinsicsConsistency Compute, for each camera/intrinsic, the variation of the last \a windowSize values of the focal length.
+  /// If it consideres the focal lenght variations as enought constant it updates \a _intrinsicIsConstant.
+  /// @details Pipeline:
+  /// \b H: the history of all the focal length for a given intrinsic
+  /// \b S: the subpart of H including the last \a wondowSize values only.
+  /// \b sigma = stddev(S)  
+  /// \b sigma_normalized = sigma / (max(H) - min(H))
+  /// \c if sigma_normalized < \a stdevPercentageLimit \c then the limit is reached.
+  /// @param[in] windowSize Compute the variation on the \a windowSize parameter
+  /// @param[in] stdevPercentageLimit The limit is reached when the standard deviation of the \a windowSize values is less than \a stdevPecentageLimit % of the range of all the values.
+  void checkIntrinsicsConsistency(const std::size_t windowSize, const double stdevPercentageLimit);
   
-  /// @brief countMatchesWithCamerasOfTheReconstruction Extract the images per between the views \c newViewsId and the already recontructed cameras, 
+  /// @brief countSharedLandmarksPerImagesPair Extract the images per between the views \c newViewsId and the already recontructed cameras, 
   /// and count the number of commun matches between these pairs.
   /// @param[in] sfm_data
   /// @param[in] map_tracksPerView
   /// @param[in] newViewsId A set with the views index that we want to count matches with resected cameras. 
   /// @return A map giving the number of matches for each images pair.
-  std::map<Pair, std::size_t> countMatchesWithCamerasOfTheReconstruction(
+  std::map<Pair, std::size_t> countSharedLandmarksPerImagesPair(
       const SfM_Data& sfm_data,
       const tracks::TracksPerView& map_tracksPerView,
       const std::set<IndexT>& newViewsId);
- 
- 
-  std::vector<IndexT> getIntrinsicLimitIds(const IndexT intrinsicId) const {return intrinsicsLimitIds.at(intrinsicId);}
   
-  std::vector<double> getLastIntrinsicParameters(const IndexT intrinsicId) const {return intrinsicsHistory.at(intrinsicId).back().second;}
+  
+  /// @brief isIntrinsicConstant Giving an intrinsic index and the wished parameter, is return \c true if the limit has alerady been reached, else \c false.
+  /// @param[in] intrinsicId The intrinsic index.
+  /// @param[in] parameter The \a EIntrinsicParameter to observe.
+  /// @return true if the limit is reached, else false
+  bool isIntrinsicConstant(const IndexT intrinsicId) const { return _mapIntrinsicIsConstant.at(intrinsicId);}
+  
+  double getLastFocalLength(const IndexT intrinsicId) const {return _intrinsicsHistory.at(intrinsicId).back().second;}
   
   /// @brief standardDeviation Compute the standard deviation.
   /// @param[in] The values
@@ -137,38 +191,62 @@ private:
   // Local BA needs to know the distance of all the old posed views to the new resected views.
   // The bundle adjustment will be processed on the closest poses only.
   // ------------------------
+    
+  /// A graph where nodes are poses and an edge exists when 2 poses shared at least 'kMinNbOfMatches' matches.
+  lemon::ListGraph _graph; 
   
-  // Ensure a minimum number of landmarks in common to consider 2 views as connected in the graph.
-  static std::size_t const kMinNbOfMatches = 100;
+  /// Associates each view (indexed by its viewId) to its corresponding node in the graph.
+  std::map<IndexT, lemon::ListGraph::Node> _mapNodePerViewId;
+  /// Associates each node (in the graph) to its corresponding view.
+  std::map<lemon::ListGraph::Node, IndexT> _mapViewIdPerNode;
   
-  // A graph where nodes are poses and an edge exists when 2 poses shared at least 'kMinNbOfMatches' matches.
-  lemon::ListGraph graph_poses; 
+  /// [IntrinsicsEdges] List of the  
+  std::set<int> _intrinsicEdgesId; 
   
-  // A map associating each view index at its node in the graph 'graph_poses'.
-  std::map<IndexT, lemon::ListGraph::Node> map_viewId_node;
   
-  // Contains all the last resected cameras
-  std::set<IndexT> set_newViewsId; 
+  /// Contains all the last resected cameras
+  std::set<IndexT> _newViewsId; 
   
-  // Store the graph-distances to the new poses/views. 
-  // If the view/pose is not connected to the new poses/views, its distance is -1.
-  std::map<IndexT, int> map_viewId_distance;
-  std::map<IndexT, int> map_poseId_distance;
+  /// Store the graph-distances from the new views (0: is a new view, -1: is not connected to the new views)
+  std::map<IndexT, int> _mapDistancePerViewId;
+  /// Store the graph-distances from the new poses (0: is a new pose, -1: is not connected to the new poses)
+  std::map<IndexT, int> _mapDistancePerPoseId;
   
+  std::map<int, std::set<IndexT>> _mapViewsIdPerDistance;
+  
+  /// Store the \c EState of each pose in the scene.
+  std::map<IndexT, EState> _mapLBAStatePerPoseId;
+  /// Store the \c EState of each intrinsic in the scene.
+  std::map<IndexT, EState> _mapLBAStatePerIntrinsicId;
+  /// Store the \c EState of each landmark in the scene.
+  std::map<IndexT, EState> _mapLBAStatePerLandmarkId;
+  
+  std::map<std::pair<EParameter, EState>, int> _parametersCounter;
+
   // ------------------------
   // - Intrinsics data -
   // Local BA needs to know the evolution of all the intrinsics parameters.
   // When camera parameters are enought reffined (no variation) they are set to constant in the BA.
   // ------------------------
   
-  // Backup of the intrinsics parameters
-  IntrinicsHistory intrinsicsHistory; 
+  /// Save the progression for all the intrinsics parameters
+  /// <IntrinsicId, std::vector<std::pair<NumOfPosesCamerasWithThisIntrinsic, FocalLengthHistory>
+  /// K1:
+  ///   0 1200 
+  ///   1 1250
+  ///   ...
+  /// K2:
+  ///   ... 
+  using IntrinsicsHistory = std::map<IndexT, std::vector<std::pair<std::size_t, double>>>;
   
-  // Store, for each parameter of each intrinsic, the BA's index from which it has been concidered as constant.
-  // <IntrinsicIndex, <F_limitId, CX_limitId, CY_limitId>>
-  std::map<IndexT, std::vector<IndexT>> intrinsicsLimitIds; 
+  /// Backup of the intrinsics focal length values
+  IntrinsicsHistory _intrinsicsHistory; 
   
+  /// Store, for each parameter of each intrinsic, the BA's index from which it has been concidered as constant.
+  /// <IntrinsicId, isConsideredAsConstant>
+  std::map<IndexT, bool> _mapIntrinsicIsConstant; 
 };
+
 
 //------------------------------------------------------------------------------------------------------------------------
 //------------------------------------------------------------------------------------------------------------------------
@@ -179,96 +257,42 @@ private:
 /// Contain all the information about a Bundle Adjustment loop
 struct LocalBA_statistics
 {
-  LocalBA_statistics(const std::set<IndexT>& newlyResectedViewsId = std::set<IndexT>()) {newViewsId = newlyResectedViewsId;}
+  LocalBA_statistics(
+      const std::set<IndexT>& newlyResectedViewsId = std::set<IndexT>(),
+      const std::map<int, std::size_t>& distancesHistogram = std::map<int, std::size_t>()) 
+  {
+    _newViewsId = newlyResectedViewsId;
+    _numCamerasPerDistance = distancesHistogram;
+  }
+  
   
   // Parameters returned by Ceres:
-  double time = 0.0;                          // spent time to solve the BA (s)
-  std::size_t numSuccessfullIterations = 0;   // number of successfull iterations
-  std::size_t numUnsuccessfullIterations = 0; // number of unsuccessfull iterations
+  double _time = 0.0;                          // spent time to solve the BA (s)
+  std::size_t _numSuccessfullIterations = 0;   // number of successfull iterations
+  std::size_t _numUnsuccessfullIterations = 0; // number of unsuccessfull iterations
   
-  std::size_t numResidualBlocks = 0;          // num. of resiudal block in the Ceres problem
+  std::size_t _numResidualBlocks = 0;          // num. of resiudal block in the Ceres problem
   
-  double RMSEinitial = 0.0; // sqrt(initial_cost / num_residuals)
-  double RMSEfinal = 0.0;   // sqrt(final_cost / num_residuals)
+  double _RMSEinitial = 0.0; // sqrt(initial_cost / num_residuals)
+  double _RMSEfinal = 0.0;   // sqrt(final_cost / num_residuals)
   
   // Parameters specifically used by Local BA:
-  std::size_t numRefinedPoses = 0;           // number of refined poses among all the estimated views          
-  std::size_t numConstantPoses = 0;          // number of poses set constant in the BA solver
-  std::size_t numIgnoredPoses = 0;           // number of not added poses to the BA solver
-  std::size_t numRefinedIntrinsics = 0;      // num. of refined intrinsics
-  std::size_t numConstantIntrinsics = 0;     // num. of intrinsics set constant in the BA solver
-  std::size_t numIgnoredIntrinsics = 0;      // num. of not added intrinsicsto the BA solver
-  std::size_t numRefinedLandmarks = 0;       // num. of refined landmarks
-  std::size_t numConstantLandmarks = 0;      // num. of landmarks set constant in the BA solver
-  std::size_t numIgnoredLandmarks = 0;       // num. of not added landmarks to the BA solver
+  std::size_t _numRefinedPoses = 0;           // number of refined poses among all the estimated views          
+  std::size_t _numConstantPoses = 0;          // number of poses set constant in the BA solver
+  std::size_t _numIgnoredPoses = 0;           // number of not added poses to the BA solver
+  std::size_t _numRefinedIntrinsics = 0;      // num. of refined intrinsics
+  std::size_t _numConstantIntrinsics = 0;     // num. of intrinsics set constant in the BA solver
+  std::size_t _numIgnoredIntrinsics = 0;      // num. of not added intrinsicsto the BA solver
+  std::size_t _numRefinedLandmarks = 0;       // num. of refined landmarks
+  std::size_t _numConstantLandmarks = 0;      // num. of landmarks set constant in the BA solver
+  std::size_t _numIgnoredLandmarks = 0;       // num. of not added landmarks to the BA solver
   
-  std::map<int, std::size_t> map_distance_numCameras; // distribution of the cameras for each graph distance
+  std::map<int, std::size_t> _numCamerasPerDistance; // distribution of the cameras for each graph distance
   
-  std::set<IndexT> newViewsId;  // index of the new views added (newly resected)
+  std::set<IndexT> _newViewsId;  // index of the new views added (newly resected)
 };
 
-//------------------------------------------------------------------------------------------------------------------------
-//------------------------------------------------------------------------------------------------------------------------
-//                                                 LocalBA_timeProfiler      
-//------------------------------------------------------------------------------------------------------------------------
-//------------------------------------------------------------------------------------------------------------------------
 
-struct LocalBA_timeProfiler
-{
-  double graphUpdating = 0.0;
-  double distMapsComputing = 0.0;
-  double statesMapsComputing = 0.0;
-  double adjusting = 0.0;
-  double allLocalBA = 0.0;
-  
-  bool exportTimes(const std::string& filename)
-  {
-    std::ofstream os;
-    os.open(filename, std::ios::app);
-    os.seekp(0, std::ios::end); //put the cursor at the end
-    if (!os.is_open())
-    {
-      OPENMVG_LOG_DEBUG("Unable to open the Time profiling file '" << filename << "'.");
-      return false;
-    }
-    
-    if (os.tellp() == 0) // 'tellp' return the cursor's position
-    {
-      // If the file does't exist: add a header.
-      std::vector<std::string> header;
-      header.push_back("graphUpdating (s)");
-      header.push_back("distMapsComputing (s)"); 
-      header.push_back("statesMapsComputing (s)"); 
-      header.push_back("adjusting (s)"); 
-      header.push_back("allLocalBA (s)"); 
-      
-      for (std::string & head : header)
-        os << head << "\t";
-      os << "\n"; 
-    }
-    
-    os << graphUpdating << "\t"
-       << distMapsComputing << "\t"
-       << statesMapsComputing << "\t"
-       << adjusting << "\t"
-       << allLocalBA << "\t";
-    
-    os << "\n";
-    os.close();
-    return true;
-  }
-  
-  void showTimes()
-  {
-    std::cout << "\n----- Local BA durations ------" << std::endl;
-    std::cout << "graph updating : " << graphUpdating << " ms" << std::endl;
-    std::cout << "dist. Maps Computing : " << distMapsComputing << " ms" << std::endl;
-    std::cout << "states Maps Computing : " << statesMapsComputing << " ms" << std::endl;
-    std::cout << "adjusting : " << adjusting << " ms" << std::endl;
-    std::cout << "** all Local BA: " << allLocalBA << " ms" << std::endl;
-    std::cout << "-------------------------------\n" << std::endl;
-  }
-};
 
 } // namespace sfm
 } // namespace openMVG

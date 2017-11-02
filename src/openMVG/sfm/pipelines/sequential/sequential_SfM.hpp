@@ -229,6 +229,7 @@ private:
   int _minTrackLength = 2;
   int _minPointsPerPose = 30;
   bool _uselocalBundleAdjustment = false;
+  bool _compareBAAndLocalBA = false;
   
   //-- Data provider
   features::FeaturesPerView  * _featuresPerView;

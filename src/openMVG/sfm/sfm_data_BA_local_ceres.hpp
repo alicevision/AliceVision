@@ -46,47 +46,26 @@ public:
    * @brief Ajust parameters according to the reconstruction graph or refine everything
    * if graph is empty. 
    */
-  bool Adjust(SfM_Data & sfm_data);
-
-  void computeStatesMaps_strategy1(const SfM_Data & sfm_data, const std::shared_ptr<LocalBA_Data> localBA_data);
-
-  void computeStatesMaps_strategy2(const SfM_Data & sfm_data, const std::shared_ptr<LocalBA_Data> localBA_data);
-
-  void computeStatesMaps_strategy3(const SfM_Data & sfm_data, const std::shared_ptr<LocalBA_Data> localBA_data);
-
-  void computeStatesMaps_strategy4(const SfM_Data & sfm_data, std::shared_ptr<LocalBA_Data> localBA_data);
-
-  void initStatistics(const std::set<IndexT>& newViewsId) {_LBA_statistics = LocalBA_statistics(newViewsId);}
+  bool Adjust(SfM_Data & sfm_data, const LocalBA_Data& localBA_data);
+   
+  void initStatistics(const LocalBA_Data& localBA_data) 
+  { 
+    _LBAStatistics = LocalBA_statistics(localBA_data.getNewViewsId(), localBA_data.getDistancesHistogram());
+  }
 
   /// \brief Export statistics about bundle adjustment in a TXT file ("BaStats.txt")
   /// The contents of the file have been writen such that it is easy to handle it with
   /// a Python script or any spreadsheets (e.g. by copy/past the full content to LibreOffice) 
-  bool exportStatistics(const std::string& path);
+  bool exportStatistics(const std::string& path, const std::size_t& kMinNbOfMatches, const std::size_t kLimitDistance);
+  
+  void showStatistics();
   
 private:
 
   // Used for Local BA approach: 
-  LocalBA_options _LBA_openMVG_options;
-  LocalBA_statistics _LBA_statistics;
+  LocalBA_options _LBAOptions;
+  LocalBA_statistics _LBAStatistics;
   
-  // Define the state of the all parameter of the reconstruction (structure, poses, intrinsics) in the BA:
-  enum LocalBAState { 
-    refined,  //< will be adjuted by the BA solver
-    constant, //< will be set as constant in the sover
-    ignored   //< will not be set into the BA solver
-  };
-  
-  // Store the LocalBAState of each parameter (structure, poses, intrinsics) :
-  std::map<IndexT, LocalBAState> _map_poseId_LBAState;
-  std::map<IndexT, LocalBAState> _map_intrinsicId_LBAState;
-  std::map<IndexT, LocalBAState> _map_landmarkId_LBAState;
-  
-  // Get back the 'LocalBAState' for a specific parameter :
-  LocalBAState getPoseState(const IndexT poseId)            {return _map_poseId_LBAState.find(poseId)->second;}
-  LocalBAState getIntrinsicsState(const IndexT intrinsicId) {return _map_intrinsicId_LBAState.find(intrinsicId)->second;}
-  LocalBAState getLandmarkState(const IndexT landmarkId)    {return _map_landmarkId_LBAState.find(landmarkId)->second;}
-
-
   void setSolverOptions(ceres::Solver::Options& solver_options);
 
   // Create a parameter block for each pose according to the Ceres format: [Rx, Ry, Rz, tx, ty, tz]
@@ -106,13 +85,15 @@ private:
     ceres::Solver::Summary &summary);
 
   // Update camera poses with refined data
-  void updateCameraPoses(
-    const Hash_Map<IndexT, std::vector<double>> & map_poses,
+  void updateCameraPoses(const Hash_Map<IndexT, 
+    std::vector<double>> & map_poseblocks, 
+    const LocalBA_Data &localBA_data,
     Poses & poses);
     
   // Update camera intrinsics with refined data
   void updateCameraIntrinsics(
-    const Hash_Map<IndexT, std::vector<double>> & map_intrinsics,
+    const Hash_Map<IndexT, std::vector<double>> & map_intrinsicblocks,
+    const LocalBA_Data &localBA_data,
     Intrinsics & intrinsics);
 };
 
