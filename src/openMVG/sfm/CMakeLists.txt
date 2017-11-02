@@ -18,7 +18,6 @@ set(sfm_files_headers
   sfm_data.hpp
   sfm_data_BA.hpp
   sfm_data_BA_ceres.hpp
-  sfm_data_BA_local_ceres.hpp
   sfm_data_BA_ceres_camera_functor.hpp
   sfm_data_filters.hpp
   sfm_data_filters_frustum.hpp
@@ -28,6 +27,7 @@ set(sfm_files_headers
   sfm_data_io_gt.hpp
   sfm_data_io_ply.hpp
   sfm_data_localBA.hpp
+  sfm_data_localBA_ceres.hpp
   sfm_data_triangulation.hpp
   sfm_data_utils.hpp
   sfm_filters.hpp
@@ -52,11 +52,11 @@ set(sfm_files_sources
   pipelines/RegionsIO.cpp
   sfm_data.cpp
   sfm_data_BA_ceres.cpp
-  sfm_data_BA_local_ceres.cpp
   sfm_data_filters_frustum.cpp
   sfm_data_io.cpp
   sfm_data_io_gt.cpp
   sfm_data_localBA.cpp
+  sfm_data_localBA_ceres.cpp
   sfm_data_triangulation.cpp
   sfm_data_utils.cpp
   utils/alignment.cpp

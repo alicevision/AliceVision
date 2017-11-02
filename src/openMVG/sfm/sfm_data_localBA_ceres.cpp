@@ -4,7 +4,7 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-#include "openMVG/sfm/sfm_data_BA_local_ceres.hpp"
+#include "openMVG/sfm/sfm_data_localBA_ceres.hpp"
 #include "openMVG/sfm/pipelines/sequential/sequential_SfM.hpp"
 #include <openMVG/config.hpp>
 #include <openMVG/openmvg_omp.hpp>

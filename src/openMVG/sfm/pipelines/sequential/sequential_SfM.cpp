@@ -10,7 +10,7 @@
 #include "openMVG/sfm/pipelines/sfm_robust_model_estimation.hpp"
 #include "openMVG/sfm/sfm_data_io.hpp"
 #include "openMVG/sfm/sfm_data_BA_ceres.hpp"
-#include "openMVG/sfm/sfm_data_BA_local_ceres.hpp"
+#include "openMVG/sfm/sfm_data_localBA_ceres.hpp"
 #include "openMVG/sfm/sfm_data_filters.hpp"
 #include "openMVG/sfm/pipelines/localization/SfM_Localizer.hpp"
 

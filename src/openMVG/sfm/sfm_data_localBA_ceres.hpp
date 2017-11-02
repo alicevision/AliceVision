@@ -4,8 +4,8 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-#ifndef OPENMVG_SFM_DATA_BA_LOCAL_CERES_HPP
-#define OPENMVG_SFM_DATA_BA_LOCAL_CERES_HPP
+#ifndef OPENMVG_SFM_DATA_LOCALBA_CERES_HPP
+#define OPENMVG_SFM_DATA_LOCALBA_CERES_HPP
 
 #include "openMVG/sfm/sfm_data_BA_ceres.hpp"
 #include "openMVG/sfm/sfm_data_localBA.hpp"
@@ -142,4 +142,4 @@ private:
 } // namespace sfm
 } // namespace openMVG
 
-#endif // OPENMVG_SFM_DATA_BA_LOCAL_CERES_HPP
+#endif // OPENMVG_SFM_DATA_LOCALBA_CERES_HPP
