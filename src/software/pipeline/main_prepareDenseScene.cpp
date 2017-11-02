@@ -333,7 +333,7 @@ bool prepareDenseScene(
     baseFilenameSS << std::setw(5) << std::setfill('0') << contiguousViewIndex;
     const std::string baseFilename = baseFilenameSS.str();
 
-    os << baseFilename << "=" << view->getWidth() / (double)scale << "x" << view->getHeight() / (double)scale << os.widen('\n');
+    os << baseFilename << "=" << int(view->getWidth() / (double)scale) << "x" << int(view->getHeight() / (double)scale) << os.widen('\n');
   }
 
 
