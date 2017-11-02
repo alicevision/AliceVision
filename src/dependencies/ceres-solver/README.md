@@ -1,0 +1,9 @@
+Project: ceres-solver
+URL: http://ceres-solver.org/
+License: BSD License
+Upstream version: 1.10.0
+
+Local modifications:
+
+  * Use minilog to avoid using glog
+  * Remove automatic headers search to limit to aliceVision libraries scope

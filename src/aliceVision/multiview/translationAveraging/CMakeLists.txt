@@ -1,0 +1,1 @@
+UNIT_TEST(aliceVision translationAveraging "aliceVision_multiview;aliceVision_multiview_test_data;${CERES_LIBRARIES}")

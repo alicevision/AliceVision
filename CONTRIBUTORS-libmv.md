@@ -1,0 +1,22 @@
+libmv Contributors
+==================
+
+A subpart of libmv has been included in the "multiview" module and continue to evolve.
+
+Andrew Chant <andrew.chant@gmail.com>
+Daniel Waterworth <da.waterworth@gmail.com>
+Darius Blaszyk <dblaszyk@gmail.com>
+David Roberts <dvdr18@gmail.com>
+Jose Gonzalez <de0a100@gmail.com>
+Julien Michot <julien.michot.fr@gmail.com>
+Keir Mierle <mierle@gmail.com>
+Marco Molteni <marco.molteni@laposte.net>
+Matthias Fauconneau <matthias.fauconneau@gmail.com>
+Nathan Wiegand <nathanwiegand@gmail.com>
+Pau Gargallo <pau.gargallo@gmail.com>
+Pierre Moulon <pmoulon@gmail.com>
+Rehno Lindeque <errantkid@gmail.com>
+Slava Vishnyakov <bomboze@gmail.com>
+Vess Perfanov <vessper@gmail.com>
+W. James MacLean <w.james.maclean@gmail.com>
+

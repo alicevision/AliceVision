@@ -1,5 +1,5 @@
 #
-# This module tries to find and setup an Alembic configuration for openMVG.
+# This module tries to find and setup an Alembic configuration for aliceVision.
 # You can help the search by providing several environment variable or cmake 
 # variable:
 # ALEMBIC_ROOT

@@ -1,8 +1,7 @@
-add_subdirectory(SfM)
-add_subdirectory(localization)
-add_subdirectory(colorHarmonize)
-#add_subdirectory(opencv)
+## AliceVision
+## Software
 
-if(OPENMVG_HAVE_BOOST)
- add_subdirectory(calibration)
-endif()
+add_subdirectory(convert)
+add_subdirectory(export)
+add_subdirectory(pipeline)
+add_subdirectory(utils)

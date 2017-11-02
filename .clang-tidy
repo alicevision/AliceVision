@@ -1,0 +1,39 @@
+---
+Checks:          'clang-diagnostic-*,clang-analyzer-*,-clang-analyzer-alpha*,cppcoreguidelines-*,modernize-*,readability-*,-readability-braces-around-statements,-modernize-use-auto,-modernize-use-using,-readability-function-size,-readability-identifier-naming,-modernize-pass-by-value,-google-readability-braces-around-statements,-cppcoreguidelines-pro-type-member-init,-modernize-raw-string-literal,-modernize-loop-convert,misc-unused-parameters'
+#WarningsAsErrors: ''
+HeaderFilterRegex: ''
+AnalyzeTemporaryDtors: false
+User:            faca
+CheckOptions:
+  - key:             cert-oop11-cpp.UseCERTSemantics
+    value:           '1'
+  - key:             cppcoreguidelines-pro-bounds-constant-array-index.GslHeader
+    value:           ''
+  - key:             cppcoreguidelines-pro-bounds-constant-array-index.IncludeStyle
+    value:           '0'
+  - key:             google-readability-function-size.StatementThreshold
+    value:           '800'
+  - key:             google-readability-namespace-comments.ShortNamespaceLines
+    value:           '10'
+  - key:             google-readability-namespace-comments.SpacesBeforeComments
+    value:           '2'
+  - key:             modernize-loop-convert.MaxCopySize
+    value:           '16'
+  - key:             modernize-loop-convert.MinConfidence
+    value:           reasonable
+  - key:             modernize-loop-convert.NamingStyle
+    value:           CamelCase
+  - key:             modernize-replace-auto-ptr.IncludeStyle
+    value:           llvm
+  - key:             modernize-use-emplace.ContainersWithPushBack
+    value:           '::std::vector;::std::list;::std::deque'
+  - key:             modernize-use-emplace.SmartPointers
+    value:           '::std::shared_ptr;::std::unique_ptr;::std::auto_ptr;::std::weak_ptr'
+  - key:             modernize-use-nullptr.NullMacros
+    value:           'NULL'
+  - key:             readability-simplify-boolean-expr.ChainedConditionalAssignment
+    value:           '0'
+  - key:             readability-simplify-boolean-expr.ChainedConditionalReturn
+    value:           '0'
+...
+

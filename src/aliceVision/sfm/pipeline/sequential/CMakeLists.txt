@@ -1,0 +1,1 @@
+UNIT_TEST(aliceVision sequentialSfM "aliceVision_multiview_test_data;aliceVision_feature;aliceVision_multiview;aliceVision_sfm;aliceVision_system;stlplus")

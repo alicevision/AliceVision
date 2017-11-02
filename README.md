@@ -1,92 +1,70 @@
-OpenMVG (open Multiple View Geometry)
+![AliceVision](https://github.com/alicevision/AliceVision/raw/develop/docs/logo/AliceVision.png) AliceVision - Photogrammetric Computer Vision Framework
 =====================================
 
-![Logo](https://github.com/openMVG/openMVG/raw/master/logo/openMVG_Logo.png)
+[AliceVision](http://alicevision.github.io) is a Photogrammetric Computer Vision Framework which provides a 3D Reconstruction and Camera Tracking algorithms.
+AliceVision aims to provide strong software basis with state-of-the-art computer vision algorithms that can be tested, analyzed and reused.
+The project is a result of collaboration between academia and industry to provide cutting-edge algorithms with the robustness and the quality required for production usage.
 
-------------
-Introduction
-------------
+Learn more details about the pipeline and tools based on it on [AliceVision website](http://alicevision.github.io).
 
-[OpenMVG (Multiple View Geometry)](http://imagine.enpc.fr/~moulonp/openMVG/) "open Multiple View Geometry" is a library for computer-vision scientists and especially targeted to the Multiple View Geometry community. It is designed to provide an easy access to the classical problem solvers in Multiple View Geometry and solve them accurately.
-
-The openMVG credo is: "Keep it simple, keep it maintainable". OpenMVG targets readable code that is easy to use and modify by the community.
-
-All the features and modules are unit tested. This test driven development ensures that the code works as it should and enables more consistent repeatability. Furthermore, it makes it easier for the user to understand and learn the given features.
-
---------
-Building
---------
-
-See [INSTALL.md](INSTALL.md) text file
-
-Continuous integration [![Build Status](https://travis-ci.org/alicevision/openMVG.png?branch=popart_develop)](https://travis-ci.org/alicevision/openMVG) [![Coverage Status](https://coveralls.io/repos/github/alicevision/openMVG/badge.png?branch=popart_develop)](https://coveralls.io/github/alicevision/openMVG?branch=popart_develop):
- - develop branch: BUILD + UNIT TESTING
- - linux 64 bits (GCC + clang).
+See [results of the pipeline on sketchfab](http://sketchfab.com/AliceVision).
 
 
--------
-License
--------
+## Photogrammetry
 
-See [LICENSE MPL2](https://github.com/openMVG/openMVG/raw/master/license.openMVG) text file
+Photogrammetry is the science of making measurements from photographs.
+It infers the geometry of a scene from a set of unordered photographies or videos.
+Photography is the projection of a 3D scene onto a 2D plane, losing depth information.
+The goal of photogrammetry is to reverse this process.
 
--------
-Authors
--------
-
-See [Authors](AUTHORS) text file
-
--------
-Documentation
--------
-
-See [documentation](http://openmvg.readthedocs.org/en/latest)
-
-----------------
-Acknowledgements
-----------------
-
-openMVG authors would like to thanks libmv authors for providing an inspiring 
-base to design openMVG. Authors also would like to thanks Mikros Image [1] 
-and LIGM-Imagine laboratory [2] for support and authorization to make this
-library an opensource project.
-
-[1] [http://www.mikrosimage.eu/](http://www.mikrosimage.eu/)
-[2] [http://imagine.enpc.fr/](http://imagine.enpc.fr/)
-
----------
-Contact
----------
-
-openmvg-team[AT]googlegroups.com
+See the [presentation of the pipeline steps](http://alicevision.github.io/#photogrammetry).
 
 
----------
-Citations
----------
+## License
 
-If you find the library or some part of it useful, then following
-publications are relevant:
+The project is released under MPLv2, see [**COPYING.md**](COPYING.md).
 
-[3] Moulon Pierre, Monasse Pascal and Marlet Renaud. ACCV 2012.
-[Adaptive Structure from Motion with a contrario model estimation.](http://hal.archives-ouvertes.fr/index.php?halsid=1n2qdqiv2a0l5eq7qpos9us752&view_this_doc=hal-00769266&version=1)
 
-[4] Moulon Pierre and Monasse Pascal. CVMP 2012.
-[Unordered feature tracking made fast and easy.](http://hal.archives-ouvertes.fr/index.php?halsid=ggdarhl8cv1j6ohq2073eok8q3&view_this_doc=hal-00769267&version=1)
+## Get the project
 
-[5] Moisan Lionel, Moulon Pierre and Monasse Pascal. IPOL 2012.
-[Automatic Homographic Registration of a Pair of Images, with A Contrario Elimination of Outliers.](http://dx.doi.org/10.5201/ipol.2012.mmm-oh)
+Get the source code: `git clone --recursive git://github.com/alicevision/AliceVision`
 
-[6] Moulon Pierre, Monasse Pascal and Marlet Renaud. ICCV 2013.
-[Global Fusion of Relative Motions for Robust, Accurate and Scalable Structure from Motion.](http://imagine.enpc.fr/~moulonp/publis/iccv2013/index.html)
+See [**INSTALL.md**](INSTALL.md) to build the project.
 
-or cite it as:
+Continuous integration status: [![Build Status](https://travis-ci.org/alicevision/AliceVision.png?branch=develop)](https://travis-ci.org/alicevision/AliceVision) [![Coverage Status](https://coveralls.io/repos/github/alicevision/AliceVision/badge.png?branch=develop)](https://coveralls.io/github/alicevision/AliceVision?branch=develop).
 
-```
-  @misc{openMVG,
-    author = "Pierre Moulon and Pascal Monasse and Renaud Marlet and Others",
-     title = "OpenMVG. An Open Multiple View Geometry library.",
-    howpublished = "\url{https://github.com/openMVG/openMVG}",
-  }
-```
+
+## Contact
+
+Use the public mailing-list to ask questions or request features. It is also a good place for informal discussions like sharing results, interesting related technologies or publications:
+> [alicevision@googlegroups.com](mailto:alicevision@googlegroups.com)
+> [http://groups.google.com/group/alicevision](http://groups.google.com/group/alicevision)
+
+You can also contact the core team privately on: [alicevision-team@googlegroups.com](mailto:alicevision-team@googlegroups.com).
+
+
+## Contributing
+
+Beyond open source interest to foster developments, open source is a way of life. The project has started as a collaborative project and aims to continue. We love to exchange ideas, improve ourselves while making improvements for other people and discover new collaboration opportunities to expand everybody’s horizon.
+Contributions are welcome. We integrate all contributions as soon as it is useful for someone, don't create troubles for others and the code quality is good enough for maintainance.
+
+Please have a look at the [project code of conduct](CODE_OF_CONDUCT.md) to provide a friendly, motivating and welcoming environment for all.
+Please have a look at the [project contributing guide](CONTRIBUTING.md) to provide an efficient workflow that minimize waste of time for contributors and maintainers as well as maximizing the project quality and efficiency.
+
+Use github Pull Requests to submit contributions:
+> [http://github.com/alicevision/AliceVision/issues](http://github.com/alicevision/AliceVision/issues)
+
+Use the public mailing-list to ask questions or request features and use github issues to report bugs:
+> [http://github.com/alicevision/AliceVision/pulls](http://github.com/alicevision/AliceVision/pulls)
+
+
+## Project history
+
+In 2009, CMP research team from CTU started the PhD thesis of Michal Jancosek supervised by Tomas Pajdla. They released windows binaries of their MVS pipeline, called CMPMVS, in 2012.
+In 2009, INPT, INRIA and Duran Duboi started a French ANR project to create a model based Camera Tracking solution based on natural features and a new marker design called CCTag.
+In 2010, Mikros Image and IMAGINE research team (a joint research group between Ecole des Ponts ParisTech and Centre Scientifique et Technique du Batiment) started a partnership around Pierre Moulon’s thesis, supervised by Renaud Marlet and Pascal Monasse on the academic side and Benoit Maujean on the industrial side. In 2013, they released an open source SfM pipeline, called openMVG (“Multiple View Geometry”), to provide the basis of a better solution for the creation of visual effects matte-paintings.
+In 2015, Simula, INPT and Mikros Image joined their efforts in the EU project POPART to create a Previz system based on AliceVision.
+In 2017, CTU join the team in the EU project LADIO to create a central hub with structured access to all data generated on set based on AliceVision.
+
+See [CONTRIBUTORS.md](CONTRIBUTORS.md) for the full list of contributors. We hope to see you in this list soon!
 

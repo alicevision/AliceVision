@@ -1,0 +1,136 @@
+// This file is part of the AliceVision project.
+// This Source Code Form is subject to the terms of the Mozilla Public License,
+// v. 2.0. If a copy of the MPL was not distributed with this file,
+// You can obtain one at https://mozilla.org/MPL/2.0/.
+
+#include "aliceVision/sfm/sfm.hpp"
+#include "aliceVision/image/image.hpp"
+
+#include "dependencies/stlplus3/filesystemSimplified/file_system.hpp"
+
+#include <boost/program_options.hpp>
+
+#include <fstream>
+
+using namespace aliceVision;
+using namespace aliceVision::camera;
+using namespace aliceVision::geometry;
+using namespace aliceVision::sfm;
+namespace po = boost::program_options;
+
+int main(int argc, char **argv)
+{
+  // command-line parameters
+
+  std::string verboseLevel = system::EVerboseLevel_enumToString(system::Logger::getDefaultVerboseLevel());
+  std::string sfmDataFilename;
+  std::string outDirectory;
+
+  po::options_description allParams("AliceVision exportMVSTexturing");
+
+  po::options_description requiredParams("Required parameters");
+  requiredParams.add_options()
+    ("input,i", po::value<std::string>(&sfmDataFilename)->required(),
+      "SfMData file.")
+    ("output,o", po::value<std::string>(&outDirectory)->required(),
+      "Output directory.");
+
+  po::options_description logParams("Log parameters");
+  logParams.add_options()
+    ("verboseLevel,v", po::value<std::string>(&verboseLevel)->default_value(verboseLevel),
+      "verbosity level (fatal,  error, warning, info, debug, trace).");
+
+  allParams.add(requiredParams).add(logParams);
+
+  po::variables_map vm;
+  try
+  {
+    po::store(po::parse_command_line(argc, argv, allParams), vm);
+
+    if(vm.count("help") || (argc == 1))
+    {
+      ALICEVISION_COUT(allParams);
+      return EXIT_SUCCESS;
+    }
+    po::notify(vm);
+  }
+  catch(boost::program_options::required_option& e)
+  {
+    ALICEVISION_CERR("ERROR: " << e.what());
+    ALICEVISION_COUT("Usage:\n\n" << allParams);
+    return EXIT_FAILURE;
+  }
+  catch(boost::program_options::error& e)
+  {
+    ALICEVISION_CERR("ERROR: " << e.what());
+    ALICEVISION_COUT("Usage:\n\n" << allParams);
+    return EXIT_FAILURE;
+  }
+
+  // set verbose level
+  system::Logger::get()->setLogLevel(verboseLevel);
+
+  bool bOneHaveDisto = false;
+  
+  // Create output dir
+  if (!stlplus::folder_exists(outDirectory))
+    stlplus::folder_create( outDirectory );
+
+  // Read the SfM scene
+  SfMData sfm_data;
+  if (!Load(sfm_data, sfmDataFilename, ESfMData(VIEWS|INTRINSICS|EXTRINSICS))) {
+    std::cerr << std::endl
+      << "The input SfMData file \""<< sfmDataFilename << "\" cannot be read." << std::endl;
+    return EXIT_FAILURE;
+  }
+
+  for(Views::const_iterator iter = sfm_data.GetViews().begin();
+      iter != sfm_data.GetViews().end(); ++iter)
+  {
+    const View * view = iter->second.get();
+    if (!sfm_data.IsPoseAndIntrinsicDefined(view))
+        continue;
+    
+    // Valid view, we can ask a pose & intrinsic data
+    const Pose3 pose = sfm_data.getPose(*view);
+    Intrinsics::const_iterator iterIntrinsic = sfm_data.GetIntrinsics().find(view->getIntrinsicId());
+    const IntrinsicBase * cam = iterIntrinsic->second.get();
+    
+    if (!camera::isPinhole(cam->getType()))
+        continue;
+    const Pinhole * pinhole_cam = static_cast<const Pinhole *>(cam);
+    
+    // Extrinsic
+    const Vec3 t = pose.translation();
+    const Mat3 R = pose.rotation();
+    // Intrinsic
+    const double f = pinhole_cam->focal();
+    const Vec2 pp = pinhole_cam->principal_point();
+
+    // Image size in px
+    const int w = pinhole_cam->w();
+    const int h = pinhole_cam->h();
+    
+    // We can now create the .cam file for the View in the output dir 
+    std::ofstream outfile( stlplus::create_filespec(
+                outDirectory, stlplus::basename_part(view->getImagePath()), "cam" ).c_str() );
+    // See https://github.com/nmoehrle/mvs-texturing/blob/master/Arguments.cpp
+    // for full specs
+    const int largerDim = w > h ? w : h;
+    outfile << t(0) << " " << t(1) << " " << t(2) << " "
+        << R(0,0) << " " << R(0,1) << " " << R(0,2) << " "
+        << R(1,0) << " " << R(1,1) << " " << R(1,2) << " "
+        << R(2,0) << " " << R(2,1) << " " << R(2,2) << "\n"
+        << f / largerDim << " 0 0 1 " << pp(0) / w << " " << pp(1) / h;
+    outfile.close();
+    
+    if(cam->have_disto())
+      bOneHaveDisto = true;
+  }
+  
+  const std::string sUndistMsg = bOneHaveDisto ? "undistorded" : "";
+  const std::string sQuitMsg = std::string("Your SfMData file was succesfully converted!\n") +
+    "Now you can copy your " + sUndistMsg + " images in the \"" + outDirectory + "\" directory and run MVS Texturing";
+  std::cout << sQuitMsg << std::endl;
+  return EXIT_SUCCESS;
+}

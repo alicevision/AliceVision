@@ -1,6 +1,6 @@
 
-OpenMVG (open Multiple View Geometry)
-=====================================
+AliceVision
+===========
 
 
 Build instructions
@@ -14,29 +14,27 @@ Required tools:
 Getting the sources:
 
 ```bash
-git clone --recursive https://github.com/alicevision/openMVG.git
+git clone --recursive https://github.com/alicevision/aliceVision.git
 ```
 
 or
 
 ```bash
-git clone https://github.com/alicevision/openMVG.git
-cd openMVG
+git clone https://github.com/alicevision/aliceVision.git
+cd aliceVision
 git submodule init
 git submodule update
 ```
 
-As openMVG use some C++11 features you must have a c++11 ready compiler:
+As aliceVision use some C++11 features you must have a c++11 ready compiler:
 - Visual studio >= 2013
 - GCC >= 4.7
-
---------------------------
 
 
 Building using external dependencies
 --------------------------
 
-OpenMVG source tree contains all the mandatory dependencies that are needed to build the library, and which will be built together with the libray. In order to build the library with existing versions of the dependencies (e.g. system installed libraries or user built libraries), and thus reduce the compilation time and favour the modularization, the paths where to find such libraries can be given at cmake command line. In particular:
+AliceVision source tree contains some of the mandatory dependencies that are needed to build the library, and which will be built together with the libray. In order to build the library with existing versions of the dependencies (e.g. system installed libraries or user built libraries), and thus reduce the compilation time and favour the modularization, the paths where to find such libraries can be given at cmake command line. In particular:
 
 * For Ceres solver library, `Ceres_DIR` can be passed pointing to where CeresConfig.cmake can be found.
   e.g. `-DCeres_DIR:PATH=/path/to/ceres/install/share/Ceres/`
@@ -62,68 +60,75 @@ At the end of the cmake process, a report shows for each library which version (
 -- LEMON: 1.3 (internal)
 ```
 
---------------------------
-
 
 CMake Options
 --------------------------
-
-* `OPENMVG_USE_BOOST` (default `ON`)
-  Use Boost library (enable modules like localization/voctree and other features and optimizations.
 
 * `BOOST_NO_CXX11` (default `OFF`)
   If your Boost binaries are compiled without C++11 support, you need to set this option to avoid compilation errors.
   This is most likely to be the case if you use the system packages to install boost.
 
-* `OPENMVG_USE_OPENMP` (default `ON`)
+* `ALICEVISION_USE_OPENMP` (default `ON`)
   Use OpenMP parallelization (huge impact on performances)
 
-* `OPENMVG_USE_CCTAG` (default `ON`)
+* `ALICEVISION_USE_CCTAG` (default `ON`)
   Build with CCTag markers support.
   `-DCCTag_DIR:PATH=/path/to/cctag/install/lib/cmake/CCTag` (where CCTagConfig.cmake can be found)
 
-* `OPENMVG_USE_OPENGV` (default `OFF`)
+* `ALICEVISION_USE_OPENGV` (default `AUTO`)
   Build with openGV for multi-cameras localization.
   `-DOPENGV_DIR:PATH=/path/to/opengv/install/` (where "include" and "lib" folders can be found)
   We recommend: `git clone https://github.com/alicevision/opengv.git --branch=cmake_fix_install`
 
-* `OPENMVG_USE_ALEMBIC` (default `OFF`)
+* `ALICEVISION_USE_ALEMBIC` (default `AUTO`)
   Build with Alembic file format support.
   `-DAlembic_DIR:PATH=/path/to/alembic/install/lib/cmake/Alembic/` (where AlembicConfig.cmake can be found)
   With old Alembic versions (<1.6), you need to set many variables: `ALEMBIC_ROOT`, `ALEMBIC_HDF5_ROOT`, `ALEMBIC_ILMBASE_ROOT`, `ALEMBIC_OPENEXR_ROOT`.
+  
+* `ALICEVISION_USE_OIIO` (default: `AUTO`)
+  Build code depending on OpenImageIO
+  
+* `ALICEVISION_USE_OPENMP` (default: `AUTO`)
+  Enable OpenMP parallelization
 
-* `OPENMVG_USE_OPENCV` (default: `OFF`): Build with openCV
+* `ALICEVISION_USE_CCTAG` (default: `AUTO`)
+  Enable CCTAG markers
+  
+* `ALICEVISION_USE_POPSIFT` (default: `AUTO`)
+  Enable GPU SIFT implementation
+  
+* `ALICEVISION_USE_OPENGV` (default: `AUTO`)
+  Enable use of OpenGV algorithms
+  
+* `ALICEVISION_USE_OPENCV` (default: `OFF`)
+  Build with openCV
   `-DOpenCV_DIR:PATH=/path/to/opencv/install/share/OpenCV/` (where OpenCVConfig.cmake can be found)
+  
+* `ALICEVISION_REQUIRE_CERES_WITH_SUITESPARSE` (default: `ON`)
+  By default, aliceVision requires Ceres built with SuiteSparse to ensure best performances but you can make SuiteSparse optional with this flag.
 
-* `OPENMVG_REQUIRE_CERES_WITH_SUITESPARSE` (default: `ON`)
-  By default, openMVG requires Ceres built with SuiteSparse to ensure best performances but you can make SuiteSparse optional with this flag.
+* `ALICEVISION_BUILD_SHARED` (default `OFF`)
+  Build AliceVision as shared libs (instead of static libs)
 
-* `OPENMVG_BUILD_SHARED` (default `OFF`)
-  Build OpenMVG as shared libs (instead of static libs)
+* `ALICEVISION_BUILD_TESTS` (default `OFF`)
+  Build AliceVision tests
 
-* `OPENMVG_BUILD_TESTS` (default `OFF`)
-  Build OpenMVG tests
+* `ALICEVISION_BUILD_DOC` (default `AUTO`)
+  Build AliceVision documentation
 
-* `OPENMVG_BUILD_DOC` (default `ON`)
-  Build OpenMVG documentation
+* `ALICEVISION_BUILD_EXAMPLES` (default `ON`)
+  Build AliceVision samples applications (aliceVision software are still built)
 
-* `OPENMVG_BUILD_EXAMPLES` (default `ON`)
-  Build OpenMVG samples applications (openMVG software are still built)
-
-* `OPENMVG_BUILD_COVERAGE` (default `OFF`)
+* `ALICEVISION_BUILD_COVERAGE` (default `OFF`)
   Enable code coverage generation (gcc only)
 
 
---------
 
-
-General informations for openMVG SfM pipelines
+General informations for aliceVision SfM pipelines
 --------------------------
 
-OpenMVG can export graphs as graphviz .dot files and render them as SVG files.
+AliceVision can export graphs as graphviz .dot files and render them as SVG files.
 If you want consider this graph visualization feature, please consider to install Graphviz.
-
------------------
 
 
 Linux compilation
@@ -139,20 +144,20 @@ Linux compilation
 ### Clone and configure the project:
 
 ```bash
- git clone --recursive https://github.com/alicevision/openMVG.git
- mkdir openMVG_Build
- cd openMVG_Build
- cmake -DCMAKE_BUILD_TYPE=RELEASE . ../openMVG/src/
+ git clone --recursive https://github.com/alicevision/aliceVision.git
+ mkdir aliceVision_Build
+ cd aliceVision_Build
+ cmake -DCMAKE_BUILD_TYPE=RELEASE . ../aliceVision/src/
 ```
 
 If you want enable unit tests and examples to the build:
 ```bash
-cmake -DCMAKE_BUILD_TYPE=RELEASE -DOpenMVG_BUILD_TESTS=ON -DOpenMVG_BUILD_EXAMPLES=ON . ../openMVG/src/
+cmake -DCMAKE_BUILD_TYPE=RELEASE -DALICEVISION_BUILD_TESTS=ON -DALICEVISION_BUILD_EXAMPLES=ON . ../aliceVision/src/
 ```
 
-In order to use the MOSEK 6 back-end for the linear programming openMVG module:
+In order to use the MOSEK 6 back-end for the linear programming aliceVision module:
 
-- Check that you have an up-to-date MOSEK licence, else openMVG MOSEK unit test will fail.
+- Check that you have an up-to-date MOSEK licence, else aliceVision MOSEK unit test will fail.
 
 - Then:
 
@@ -160,13 +165,13 @@ In order to use the MOSEK 6 back-end for the linear programming openMVG module:
   cmake -DCMAKE_BUILD_TYPE=RELEASE \
         -DMOSEK_SEARCH_HEADER="~/Documents/Lib/mosek/6/tools/platform/linux64x86/h" \
         -DMOSEK_SEARCH_LIB="~/Documents/Lib/mosek/6/tools/platform/linux64x86/bin" \
-        . ../openMVG/src/
+        . ../aliceVision/src/
   ```
 
 If you want to have an IDE openable project with codeblocks:
 
 ```bash
-cmake -G "CodeBlocks - Unix Makefiles" -DCMAKE_BUILD_TYPE=RELEASE . ../openMVG/src/
+cmake -G "CodeBlocks - Unix Makefiles" -DCMAKE_BUILD_TYPE=RELEASE . ../aliceVision/src/
 ```
 
 ### Compile the project
@@ -187,7 +192,7 @@ make test
 
 Have fun with the samples
 ```bash
-cd openMVG_Samples
+cd aliceVision_Samples
 ```
 -------------------
 
@@ -196,9 +201,9 @@ Windows compilation
 -------------------
 
 * Checkout the project
-  `git clone --recursive https://github.com/alicevision/openMVG.git`
+  `git clone --recursive https://github.com/alicevision/aliceVision.git`
 * Open cmake-gui
-  * Fill the source path with the src openMVG path.
+  * Fill the source path with the src aliceVision path.
   * Fill the build path with a new directory
   * Select your Visual Studio IDE and click configure and then generate
 * Open the .sln solution created in your build directory.
@@ -211,18 +216,18 @@ Windows compilation
 Mac OSX compilation
 -------------------
 ```bash
-git clone --recursive https://github.com/alicevision/openMVG.git
-mkdir openMVG_Build
-cd openMVG_Build
-cmake -DCMAKE_BUILD_TYPE=RELEASE -G "Xcode" . ../openMVG/src/
+git clone --recursive https://github.com/alicevision/aliceVision.git
+mkdir aliceVision_Build
+cd aliceVision_Build
+cmake -DCMAKE_BUILD_TYPE=RELEASE -G "Xcode" . ../aliceVision/src/
 ```
 If you want enable unit tests and examples to the build:
 ```bash
 cmake -DCMAKE_BUILD_TYPE=RELEASE \
-      -DOpenMVG_BUILD_TESTS=ON \
-      -DOpenMVG_BUILD_EXAMPLES=ON \
+      -DALICEVISION_BUILD_TESTS=ON \
+      -DALICEVISION_BUILD_EXAMPLES=ON \
       -G "Xcode" \
-      . ../openMVG/src/
+      . ../aliceVision/src/
 xcodebuild -configuration Release
 ```
 --------------------
@@ -231,35 +236,35 @@ xcodebuild -configuration Release
 Using openCV sample
 --------------------
 
-Add `-DOpenMVG_USE_OPENCV=ON` to your cmake command line and set `OpenCV_DIR` variable to your openCV install directory where the OpenCVConfigure.cmake file can be found, i.e.: 
-`-DOpenCV_DIR="/home/user/Dev/github/itseez/opencv_Build/install/share/OpenCV/" -DOpenMVG_USE_OPENCV=ON`
+Add `-DAliceVision_USE_OPENCV=ON` to your cmake command line and set `OpenCV_DIR` variable to your openCV install directory where the OpenCVConfigure.cmake file can be found, i.e.: 
+`-DOpenCV_DIR="/home/user/Dev/github/itseez/opencv_Build/install/share/OpenCV/" -DAliceVision_USE_OPENCV=ON`
 
 ------------------------------------------------------------
 
 
-Using OpenMVG as a third party library dependency in cmake
+Using AliceVision as a third party library dependency in cmake
 -------------------------------------------------------------
 
-OpenMVG can be used as a third party once it have been installed.
+AliceVision can be used as a third party once it have been installed.
 Because it can use its own Ceres version, it is better to install it locally and not in system files.
 So please consider using the `CMAKE_INSTALL_PREFIX` cmake variable to specify a local installation directory.
 
 Here the syntax to add the variable to the cmake command line (use absolute path), e.g.: 
 ```bash
--DCMAKE_INSTALL_PREFIX:STRING="/home/user/Dev/github/openMVG_Build/openMVG_install"
+-DCMAKE_INSTALL_PREFIX:STRING="/home/user/Dev/github/aliceVision_Build/aliceVision_install"
 ```
 
 Perform `make` and `make install`
 
-Once the library has been installed, go to your project that want use OpenMVG as an external library and add:
+Once the library has been installed, go to your project that want use AliceVision as an external library and add:
 ```cmake
-FIND_PACKAGE(OpenMVG REQUIRED)
-INCLUDE_DIRECTORIES(${OPENMVG_INCLUDE_DIRS})
+FIND_PACKAGE(AliceVision REQUIRED)
+INCLUDE_DIRECTORIES(${ALICEVISION_INCLUDE_DIRS})
 ADD_EXECUTABLE(main main.cpp)
-TARGET_LINK_LIBRARIES(main ${OPENMVG_LIBRARIES})
+TARGET_LINK_LIBRARIES(main ${ALICEVISION_LIBRARIES})
 ```
 
-Specify to CMake where OpenMVG have been installed by using the cmake `OpenMVG_DIR` variable that must point to: `-DOpenMVG_DIR:STRING="YourInstallPath"/share/openMVG/cmake`
+Specify to CMake where AliceVision have been installed by using the cmake `AliceVision_DIR` variable that must point to: `-DAliceVision_DIR:STRING="YourInstallPath"/share/aliceVision/cmake`
 
-A message will be displayed if OpenMVG is found or not at the cmake configure step.
+A message will be displayed if AliceVision is found or not at the cmake configure step.
 

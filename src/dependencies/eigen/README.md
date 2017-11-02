@@ -1,0 +1,14 @@
+Project: Eigen
+URL: http://eigen.tuxfamily.org/
+License: MPL2
+Upstream version: Eigen 3.2.4, Archive from January 21, 2015.
++ Including this fix: http://eigen.tuxfamily.org/bz/show_bug.cgi?id=857
+
+Local modifications:
+
+Note: 
+- Only the license and Eigen/ directory is included.
+- the CMake build system for Eigen is not included because we only
+need the headers.
+- aliceVision used on the MPL2 licensed code checked thanks to the CMAKE 
+  EIGEN_MPL2_ONLY preprocessor.

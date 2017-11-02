@@ -26,16 +26,16 @@ add_library(vlsift ${FEATS})
 
 install(TARGETS vlsift
   DESTINATION lib
-  EXPORT openMVG-targets
+  EXPORT aliceVision-targets
 )
 
 set_property(TARGET vlsift
-  PROPERTY FOLDER OpenMVG/nonFree
+  PROPERTY FOLDER AliceVision/nonFree
 )
 
 install(
   DIRECTORY .
-  DESTINATION include/openMVG_dependencies/nonFree/sift
+  DESTINATION include/aliceVision_dependencies/nonFree/sift
   COMPONENT headers
   FILES_MATCHING PATTERN "*.hpp" PATTERN "*.h"
 )

@@ -28,9 +28,9 @@ openMVG provides a generic container for LP (Linear Programming problems) that c
 .. code-block:: c++
 
   // Dense LP
-  LP_Constraints
+  LPConstraints
   // Sparse LP
-  LP_Constraints_Sparse
+  LPConstraintsSparse
 
 
 It allows to embed:
@@ -67,15 +67,15 @@ Here an example of usage of the framework:
 .. code-block:: c++
   
   // Setup the LP (fill A,b,c and the constraint over x)
-  LP_Constraints cstraint;
+  LPConstraints cstraint;
   BuildLinearProblem(cstraint);
 
   // Solve the LP with the solver of your choice
   std::vector<double> vec_solution(2);
   #if OPENMVG_HAVE_MOSEK  
-    MOSEK_SolveWrapper solver(2);
+    MOSEKSolver solver(2);
   #else
-    OSI_CLP_SolverWrapper solver(2);
+    OSI_CISolverWrapper solver(2);
   #endif
   // Send constraint to the LP solver
   solver.setup(cstraint);
@@ -111,7 +111,7 @@ Optimization of this upper bound parameter can be done by iterating over all the
   Ensure: the optimal gamma value, or return infeasibility of the contraints set.
   
   BisectionLP(
-    LP_Solver & solver,
+    ISolver & solver,
     ConstraintBuilder & cstraintBuilder,
     double gammaUp  = 1.0,  // Upper bound
     double gammaLow = 0.0,  // lower bound

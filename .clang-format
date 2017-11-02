@@ -1,0 +1,28 @@
+---
+IndentWidth: 4
+TabWidth: 4
+UseTab: Never
+ColumnLimit: 120
+AllowShortFunctionsOnASingleLine: Inline
+AllowShortIfStatementsOnASingleLine: false
+BreakConstructorInitializersBeforeComma: true
+IndentCaseLabels: true
+BreakBeforeBraces: Allman
+NamespaceIndentation: None
+MaxEmptyLinesToKeep: 1
+KeepEmptyLinesAtTheStartOfBlocks: true
+PointerAlignment: Left
+SpaceBeforeParens: Never
+SpaceBeforeAssignmentOperators: true
+SpacesInParentheses: false
+AlwaysBreakTemplateDeclarations: true
+Standard: Cpp11
+AccessModifierOffset: -4
+IncludeCategories:
+  - Regex:           '^".*"'
+    Priority:        1
+  - Regex:           '^<aliceVision/.*>'
+    Priority:        2
+  - Regex:           '^<.*>'
+    Priority:        3
+SortIncludes: false
