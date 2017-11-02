@@ -138,12 +138,13 @@ public:
   
   TimeSummary _timeSummary;
   
-  
+  // no longer used
   std::size_t addIntrinsicEdgesToTheGraph(const SfM_Data& sfm_data);
   
   void removeIntrinsicEdgesToTheGraph();
     
   void drawGraph(const SfM_Data& sfm_data, const std::string& dir);
+  
   void drawGraph(const SfM_Data &sfm_data, const std::string& dir, const std::string& nameComplement);
 
 private:

@@ -1729,39 +1729,23 @@ bool SequentialSfMReconstructionEngine::localBundleAdjustment()
     options.setDenseBA();
   }
   
-  Local_Bundle_Adjustment_Ceres localBA_ceres(options);
-  
   const std::size_t kLimitDistance = 1;
   const std::size_t kMinNbOfMatches = 50;
   
+  Local_Bundle_Adjustment_Ceres localBA_ceres(options);
   if (options.isLocalBAEnabled())
   {
-
-    bool withIntrinsicEdges = false;
-    
-    // ------------------------
-    // Steps:
-    //   1. Add the new views to the graph (1 node per new view - 1 edge connecting to views sharing matches)
-    //   (optional) Add edges when intrinsics are not consistent
-    //   2. Compute the distance from the new views to all the other posed views.
-    //   3. Convert each graph-distances to the corresponding LBA state (refined, constant, ignored) 
-    //      for every parameters included in the problem (points, poses, landmarks)
-    //   (optional) Remove the previous edges (added because of intrinsics)
-    // ------------------------
-    
+    // -- Add the new views to the graph (1 node per new view - 1 edge connecting to views sharing matches)
     _localBA_data->updateGraphWithNewViews(_sfm_data, _map_tracksPerView, kMinNbOfMatches);
     
-    if (withIntrinsicEdges)
-      _localBA_data->addIntrinsicEdgesToTheGraph(_sfm_data);
-    
+    // -- Compute the distances from the new views to all the other posed views.
     _localBA_data->computeDistancesMaps(_sfm_data);
     
+    // -- Convert each graph-distances to the corresponding LBA state (refined, constant, ignored) 
     _localBA_data->convertDistancesToLBAStates(_sfm_data, kLimitDistance);    
-    
-    if (withIntrinsicEdges)
-      _localBA_data->removeIntrinsicEdgesToTheGraph();
-    
+   
     // Restore the Dense mode of Ceres if the number of cameras in the solver will be <= 100
+    //  for every parameters included in the problem (points, poses, landmarks)
     if (_localBA_data->getNumberOf(LocalBA_Data::EParameter::pose, LocalBA_Data::EState::refined) 
         + _localBA_data->getNumberOf(LocalBA_Data::EParameter::pose, LocalBA_Data::EState::constant) 
         <= 100)
@@ -1789,17 +1773,14 @@ bool SequentialSfMReconstructionEngine::localBundleAdjustment()
   else
     isBaSucceed = localBA_ceres.Adjust(_sfm_data, *_localBA_data);
   
+   // Save data about the spent time for each step of the Local BA
   _localBA_data->_timeSummary.saveTime(TimeSummary::EStep::adjustment);
-  
-  _localBA_data->addIntrinsicsToHistory(_sfm_data);
-  
-  
   _localBA_data->_timeSummary.exportTimes(_sOutDirectory + "/LocalBA/times.txt");
   
   // Save data about the Ceres Sover refinement:
   localBA_ceres.exportStatistics(_sOutDirectory+"/LocalBA/", kMinNbOfMatches, kLimitDistance);
   
-  
+  _localBA_data->addIntrinsicsToHistory(_sfm_data);
   
   return isBaSucceed;
 }
