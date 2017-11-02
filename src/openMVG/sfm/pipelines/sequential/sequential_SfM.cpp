@@ -318,29 +318,20 @@ void SequentialSfMReconstructionEngine::RobustResectionOfImages(
       std::size_t bundleAdjustmentIteration = 0;
       const std::size_t nbOutliersThreshold = 50;
       // Perform BA until all point are under the given precision
-      std::size_t nbRejectedTracks;
-      
       do
       {
         auto chrono2_start = std::chrono::steady_clock::now();
         
         if (_uselocalBundleAdjustment)
-        {
-          if (!localBundleAdjustment())
-          {
-            nbRejectedTracks = badTrackRejector(4.0, nbOutliersThreshold);  
-            break;
-          }
-        }
+          localBundleAdjustment();
         else
           BundleAdjustment(_bFixedIntrinsics);
         
         OPENMVG_LOG_DEBUG("Resection group index: " << resectionGroupIndex << ", bundle iteration: " << bundleAdjustmentIteration
                           << " took " << std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - chrono2_start).count() << " msec.");
         ++bundleAdjustmentIteration;
-        nbRejectedTracks = badTrackRejector(4.0, nbOutliersThreshold);   
       }
-      while (nbRejectedTracks != 0);
+      while (badTrackRejector(4.0, nbOutliersThreshold));
       
       OPENMVG_LOG_DEBUG("Bundle with " << bundleAdjustmentIteration << " iterations took " << std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - chrono_start).count() << " msec.");
       chrono_start = std::chrono::steady_clock::now();
@@ -1739,10 +1730,13 @@ bool SequentialSfMReconstructionEngine::localBundleAdjustment()
   }
   
   Local_Bundle_Adjustment_Ceres localBA_ceres(options);
+  
+  const std::size_t kLimitDistance = 1;
+  const std::size_t kMinNbOfMatches = 50;
+  
   if (options.isLocalBAEnabled())
   {
     bool withIntrinsicEdges = false;
-    bool drawGraphs = false;
     
     // ------------------------
     // Steps:
@@ -1754,50 +1748,23 @@ bool SequentialSfMReconstructionEngine::localBundleAdjustment()
     //   (optional) Remove the previous edges (added because of intrinsics)
     // ------------------------
     
-    _localBA_data->updateGraphWithNewViews(_sfm_data, _map_tracksPerView);
-    
-    // temp
-    if (drawGraphs) // <------------
-    { 
-      _localBA_data->computeDistancesMaps(_sfm_data);
-      _localBA_data->drawGraph(_sfm_data, _sOutDirectory+"/LocalBA/", "a_noK");
-    }
+    _localBA_data->updateGraphWithNewViews(_sfm_data, _map_tracksPerView, kMinNbOfMatches);
     
     if (withIntrinsicEdges)
       _localBA_data->addIntrinsicEdgesToTheGraph(_sfm_data);
     
     _localBA_data->computeDistancesMaps(_sfm_data);
     
-    if (drawGraphs) // <------------
-      _localBA_data->drawGraph(_sfm_data, _sOutDirectory+"/LocalBA/", "b_Kadded");
-    
-    _localBA_data->convertDistancesToLBAStates(_sfm_data);    
+    _localBA_data->convertDistancesToLBAStates(_sfm_data, kLimitDistance);    
     
     if (withIntrinsicEdges)
       _localBA_data->removeIntrinsicEdgesToTheGraph();
     
-    if (drawGraphs) // <------------
-    {
-      _localBA_data->computeDistancesMaps(_sfm_data);
-      _localBA_data->drawGraph(_sfm_data, _sOutDirectory+"/LocalBA/", "c_Kremoved");
-    }
-    
-    // Restore the Dense mode of Ceres if the number of cameras in the solver will be < 100
-    if (_localBA_data->getNumberOfConstantAndRefinedCameras() <= 100)
+    // Restore the Dense mode of Ceres if the number of cameras in the solver will be <= 100
+    if (_localBA_data->getNumberOf(LocalBA_Data::EParameter::pose, LocalBA_Data::EState::refined) 
+        + _localBA_data->getNumberOf(LocalBA_Data::EParameter::pose, LocalBA_Data::EState::constant) 
+        <= 100)
       options.setDenseBA();
-    
-    std::cout << "-----" << std::endl;
-    std::cout << "pose ref = " << _localBA_data->getNumberOf(LocalBA_Data::EParameter::pose,      LocalBA_Data::EState::refined) << std::endl;
-    std::cout << "pose cst = " << _localBA_data->getNumberOf(LocalBA_Data::EParameter::pose,      LocalBA_Data::EState::constant) << std::endl;
-    std::cout << "pose ign = " << _localBA_data->getNumberOf(LocalBA_Data::EParameter::pose,      LocalBA_Data::EState::ignored) << std::endl;  
-    std::cout << "intr ref = " << _localBA_data->getNumberOf(LocalBA_Data::EParameter::intrinsic, LocalBA_Data::EState::refined) << std::endl;
-    std::cout << "intr cst = " << _localBA_data->getNumberOf(LocalBA_Data::EParameter::intrinsic, LocalBA_Data::EState::constant) << std::endl;
-    std::cout << "intr ign = " << _localBA_data->getNumberOf(LocalBA_Data::EParameter::intrinsic, LocalBA_Data::EState::ignored) << std::endl;
-    std::cout << "land ref = " << _localBA_data->getNumberOf(LocalBA_Data::EParameter::landmark,  LocalBA_Data::EState::refined) << std::endl;
-    std::cout << "land cst = " << _localBA_data->getNumberOf(LocalBA_Data::EParameter::landmark,  LocalBA_Data::EState::constant) << std::endl;
-    std::cout << "land ign = " << _localBA_data->getNumberOf(LocalBA_Data::EParameter::landmark,  LocalBA_Data::EState::ignored) << std::endl;
-    std::cout << "nb new added cam = " << _localBA_data->getNewViewsId().size() << std::endl;   
-    std::cout << "-----" << std::endl;
   }   
   
   localBA_ceres.initStatistics(*_localBA_data);
@@ -1805,8 +1772,7 @@ bool SequentialSfMReconstructionEngine::localBundleAdjustment()
   // Run Bundle Adjustment:
   _localBA_data->_timeSummary.resetTimer();
   
-  
-  bool isBaSucceed = false;
+  bool isBaSucceed;
   if (options.isLocalBAEnabled())
   {
     // Refine parameters only if the number of cameras to refine is > number of newly added cameras.
@@ -1822,15 +1788,17 @@ bool SequentialSfMReconstructionEngine::localBundleAdjustment()
   else
     isBaSucceed = localBA_ceres.Adjust(_sfm_data, *_localBA_data);
   
-  _localBA_data->_timeSummary.saveTime(TimeSummary::EStep::ADJUSTMENT);
+  _localBA_data->_timeSummary.saveTime(TimeSummary::EStep::adjustment);
   
-  // Update 'map_intrinsicsHistorical' and compute 'map_intrinsicsLimits'
   _localBA_data->addIntrinsicsToHistory(_sfm_data);
+  
   
   _localBA_data->_timeSummary.exportTimes(_sOutDirectory + "/LocalBA/times.txt");
   
   // Save data about the Ceres Sover refinement:
-  localBA_ceres.exportStatistics(_sOutDirectory + "/LocalBA/");
+  localBA_ceres.exportStatistics(_sOutDirectory+"/LocalBA/", kMinNbOfMatches, kLimitDistance);
+  
+  
   
   return isBaSucceed;
 }
@@ -1846,13 +1814,11 @@ bool SequentialSfMReconstructionEngine::localBundleAdjustment()
  */
 bool SequentialSfMReconstructionEngine::badTrackRejector(double dPrecision, std::size_t count)
 {
-  std::cout << "-- badTrackrejector" << std::endl;
   const std::size_t nbOutliers_residualErr = RemoveOutliers_PixelResidualError(_sfm_data, dPrecision, 2);
   const std::size_t nbOutliers_angleErr = RemoveOutliers_AngleError(_sfm_data, 2.0);
   
   OPENMVG_LOG_DEBUG("badTrackRejector: nbOutliers_residualErr: " << nbOutliers_residualErr << ", nbOutliers_angleErr: " << nbOutliers_angleErr);
-  std::cout << "-- badTrackrejector: done " << std::endl;
-  return nbOutliers_residualErr + nbOutliers_angleErr;
+  return nbOutliers_residualErr + nbOutliers_angleErr > count;
 }
 
 /**

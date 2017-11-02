@@ -30,11 +30,11 @@ struct TimeSummary
 {
 public:
   
-  enum EStep {UPDATE_GRAPH, 
-              COMPUTE_DISTANCES, 
-              CONVERT_DISTANCES2STATES, 
-              ADJUSTMENT,
-              SAVE_INTRINSICS};
+  enum EStep {updateGraph, 
+              computeDistances, 
+              convertDistances2States, 
+              adjustment,
+              saveIntrinsics};
   
   void resetTimer() {_timer.reset();}
   
@@ -93,12 +93,6 @@ public:
   /// @param[in] sfm_data Contains all the information about the reconstruction, notably current intrinsics
   void addIntrinsicsToHistory(const SfM_Data& sfm_data);
   
-  std::size_t addIntrinsicEdgesToTheGraph(const SfM_Data& sfm_data);
-  
-  void removeIntrinsicEdgesToTheGraph();
-  
-  
-  
   /// @brief exportIntrinsicsHistory Save the history of each intrinsic. It create a file \b K<intrinsic_index>.txt in \a folder.
   /// @param[in] folder The folder in which the \b K*.txt are saved.
   void exportIntrinsicsHistory(const std::string& folder);
@@ -108,10 +102,8 @@ public:
   /// @param[in] map_tracksPerView A map giving the tracks for each view
   void updateGraphWithNewViews(
       const SfM_Data& sfm_data, 
-      const tracks::TracksPerView& map_tracksPerView);
-  
-  void drawGraph(const SfM_Data& sfm_data, const std::string& dir);
-  void drawGraph(const SfM_Data &sfm_data, const std::string& dir, const std::string& nameComplement);
+      const tracks::TracksPerView& map_tracksPerView, 
+      const std::size_t kMinNbOfMatches = 50);
   
   /// @brief removeViewsToTheGraph Remove some views to the graph. It delete the node and all the incident arcs for each removed view.
   /// @param[in] removedViewsId Set of views index to remove
@@ -122,7 +114,7 @@ public:
   /// and compute the intragraph-distance between these new cameras and all the others.
   void computeDistancesMaps(const SfM_Data& sfm_data);
   
-  void convertDistancesToLBAStates(const SfM_Data & sfm_data);
+  void convertDistancesToLBAStates(const SfM_Data & sfm_data, const std::size_t kLimitDistance = 1);
   
   enum EParameter { 
     pose,
@@ -137,18 +129,23 @@ public:
     ignored   //< will not be set into the BA solver
   };
   
-  
-  std::size_t getNumberOf(EParameter param, EState state) const {return _parametersCounter.at(StatedParameter(param, state));}
-  
   // Get back the 'EState' for a specific parameter :
   EState getPoseState(const IndexT poseId) const           {return _mapLBAStatePerPoseId.at(poseId);}
   EState getIntrinsicState(const IndexT intrinsicId) const {return _mapLBAStatePerIntrinsicId.at(intrinsicId);}
   EState getLandmarkState(const IndexT landmarkId) const   {return _mapLBAStatePerLandmarkId.at(landmarkId);}
-  
-  std::size_t getNumberOfConstantAndRefinedCameras();
+
+  std::size_t getNumberOf(EParameter param, EState state) const {return _parametersCounter.at(std::make_pair(param, state));}
   
   TimeSummary _timeSummary;
   
+  
+  std::size_t addIntrinsicEdgesToTheGraph(const SfM_Data& sfm_data);
+  
+  void removeIntrinsicEdgesToTheGraph();
+    
+  void drawGraph(const SfM_Data& sfm_data, const std::string& dir);
+  void drawGraph(const SfM_Data &sfm_data, const std::string& dir, const std::string& nameComplement);
+
 private:
   
   /// @brief checkIntrinsicsConsistency Compute, for each camera/intrinsic, the variation of the last \a windowSize values of the focal length.
@@ -194,17 +191,17 @@ private:
   // Local BA needs to know the distance of all the old posed views to the new resected views.
   // The bundle adjustment will be processed on the closest poses only.
   // ------------------------
-  
-  /// Ensure a minimum number of landmarks in common to consider 2 views as connected in the graph.
-  static std::size_t const _kMinNbOfMatches = 100;
-  
+    
   /// A graph where nodes are poses and an edge exists when 2 poses shared at least 'kMinNbOfMatches' matches.
   lemon::ListGraph _graph; 
   
-  /// A map associating each view index at its node in the graph 'graph_poses'.
+  /// Associates each view (indexed by its viewId) to its corresponding node in the graph.
   std::map<IndexT, lemon::ListGraph::Node> _mapNodePerViewId;
+  /// Associates each node (in the graph) to its corresponding view.
   std::map<lemon::ListGraph::Node, IndexT> _mapViewIdPerNode;
-  std::set<int> _intrinsicEdgesId; // indexed by Edge id.
+  
+  /// [IntrinsicsEdges] List of the  
+  std::set<int> _intrinsicEdgesId; 
   
   
   /// Contains all the last resected cameras
@@ -224,10 +221,7 @@ private:
   /// Store the \c EState of each landmark in the scene.
   std::map<IndexT, EState> _mapLBAStatePerLandmarkId;
   
-  
-  
-  using StatedParameter = std::pair<EParameter, EState>;
-  std::map<StatedParameter, int> _parametersCounter;
+  std::map<std::pair<EParameter, EState>, int> _parametersCounter;
 
   // ------------------------
   // - Intrinsics data -
@@ -243,10 +237,10 @@ private:
   ///   ...
   /// K2:
   ///   ... 
-  using IntrinicsHistory = std::map<IndexT, std::vector<std::pair<std::size_t, double>>>;
+  using IntrinsicsHistory = std::map<IndexT, std::vector<std::pair<std::size_t, double>>>;
   
   /// Backup of the intrinsics focal length values
-  IntrinicsHistory _intrinsicsHistory; 
+  IntrinsicsHistory _intrinsicsHistory; 
   
   /// Store, for each parameter of each intrinsic, the BA's index from which it has been concidered as constant.
   /// <IntrinsicId, isConsideredAsConstant>

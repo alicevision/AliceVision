@@ -56,7 +56,7 @@ public:
   /// \brief Export statistics about bundle adjustment in a TXT file ("BaStats.txt")
   /// The contents of the file have been writen such that it is easy to handle it with
   /// a Python script or any spreadsheets (e.g. by copy/past the full content to LibreOffice) 
-  bool exportStatistics(const std::string& path);
+  bool exportStatistics(const std::string& path, const std::size_t& kMinNbOfMatches, const std::size_t kLimitDistance);
   
   void showStatistics();
   

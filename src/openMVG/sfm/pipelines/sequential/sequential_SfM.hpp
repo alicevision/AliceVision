@@ -261,8 +261,6 @@ private:
   /// Per camera confidence (A contrario estimated threshold error)
   Hash_Map<IndexT, double> _map_ACThreshold;
   
-  Hash_Map<Pair, std::size_t> _map_sharedTracksPerImagesPair;
-  
   /// Remaining camera index that can be used for resection
   std::set<size_t> _set_remainingViewId;
 };

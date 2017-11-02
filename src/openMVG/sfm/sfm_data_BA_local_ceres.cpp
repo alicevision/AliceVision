@@ -14,8 +14,6 @@
 #include "lemon/bfs.h"
 #include <fstream>
 
-//#include "openMVG/tracks/tracks.hpp"
-
 namespace openMVG {
 namespace sfm {
 
@@ -133,7 +131,6 @@ bool Local_Bundle_Adjustment_Ceres::Adjust(SfM_Data& sfm_data, const LocalBA_Dat
   
   // 4. Store statisics
   // Solution is usable
-  
   if (_LBAOptions.isLocalBAEnabled())
   {
     _LBAStatistics._numRefinedPoses       = localBA_data.getNumberOf(LocalBA_Data::EParameter::pose,      LocalBA_Data::EState::refined);
@@ -403,11 +400,11 @@ void Local_Bundle_Adjustment_Ceres::updateCameraIntrinsics(
   }
 }
 
-bool Local_Bundle_Adjustment_Ceres::exportStatistics(const std::string& path)
+bool Local_Bundle_Adjustment_Ceres::exportStatistics(const std::string& path, const std::size_t& kMinNbOfMatches, const std::size_t kLimitDistance)
 {
   showStatistics();
   
-  std::string filename = stlplus::folder_append_separator(path)+"BaStats.txt";
+  std::string filename = stlplus::folder_append_separator(path)+"BaStats_M" + std::to_string(kMinNbOfMatches) + "_D" + std::to_string(kLimitDistance) + ".txt";
   std::ofstream os;
   os.open(filename, std::ios::app);
   os.seekp(0, std::ios::end); //put the cursor at the end
