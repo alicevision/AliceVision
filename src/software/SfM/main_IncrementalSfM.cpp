@@ -213,8 +213,6 @@ int main(int argc, char **argv)
   {
     if (!stlplus::folder_exists(sOutDir+"/LocalBA/"))
       stlplus::folder_create(sOutDir+"/LocalBA/");
-    if (!stlplus::folder_exists(sOutDir+"/LocalBA/Graphs/"))
-      stlplus::folder_create(sOutDir+"/LocalBA/Graphs/");
     if (!stlplus::folder_exists(sOutDir+"/LocalBA/K/"))
       stlplus::folder_create(sOutDir+"/LocalBA/K/");  
   }

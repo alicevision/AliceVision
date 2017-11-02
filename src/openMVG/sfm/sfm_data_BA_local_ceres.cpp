@@ -20,9 +20,12 @@ namespace sfm {
 using namespace openMVG::cameras;
 using namespace openMVG::geometry;
 
-Local_Bundle_Adjustment_Ceres::Local_Bundle_Adjustment_Ceres(Local_Bundle_Adjustment_Ceres::LocalBA_options options)
+Local_Bundle_Adjustment_Ceres::Local_Bundle_Adjustment_Ceres(
+  const Local_Bundle_Adjustment_Ceres::LocalBA_options& options, 
+  const LocalBA_Data& localBA_data)
   : 
-    _LBAOptions(options)
+    _LBAOptions(options),
+    _LBAStatistics(localBA_data.getNewViewsId(), localBA_data.getDistancesHistogram())
 {}
 
 bool Local_Bundle_Adjustment_Ceres::Adjust(SfM_Data& sfm_data, const LocalBA_Data& localBA_data)

@@ -18,16 +18,16 @@ namespace sfm {
 class Local_Bundle_Adjustment_Ceres : public Bundle_Adjustment_Ceres
 {
 public:
+  
   struct LocalBA_options : public Bundle_Adjustment_Ceres::BA_options
   {
-  
     LocalBA_options(const bool bVerbose = true, bool bmultithreaded = true) 
       : Bundle_Adjustment_Ceres::BA_options(bVerbose, bmultithreaded)
     {
       _useParametersOrdering = false;
       _useLocalBA = false;
     }
-
+    
     bool _useParametersOrdering; 
     void enableParametersOrdering() {_useParametersOrdering = true;}
     void disableParametersOrdering() {_useParametersOrdering = false;}
@@ -39,20 +39,28 @@ public:
     bool isLocalBAEnabled() {return _useLocalBA;}
   };
   
-  Local_Bundle_Adjustment_Ceres(Local_Bundle_Adjustment_Ceres::LocalBA_options options = LocalBA_options());
-
+private:
+  // Used for Local BA approach: 
+  LocalBA_options _LBAOptions;
+  LocalBA_statistics _LBAStatistics;
+  
+public : 
+  Local_Bundle_Adjustment_Ceres(
+    const Local_Bundle_Adjustment_Ceres::LocalBA_options& options, 
+    const LocalBA_Data& localBA_data);
+    
   /**
    * @see Bundle_Adjustment::AdjustPartialReconstruction
    * @brief Ajust parameters according to the reconstruction graph or refine everything
    * if graph is empty. 
    */
   bool Adjust(SfM_Data & sfm_data, const LocalBA_Data& localBA_data);
-   
+  
   void initStatistics(const LocalBA_Data& localBA_data) 
   { 
     _LBAStatistics = LocalBA_statistics(localBA_data.getNewViewsId(), localBA_data.getDistancesHistogram());
   }
-
+  
   /// \brief Export statistics about bundle adjustment in a TXT file ("BaStats.txt")
   /// The contents of the file have been writen such that it is easy to handle it with
   /// a Python script or any spreadsheets (e.g. by copy/past the full content to LibreOffice) 
@@ -61,40 +69,36 @@ public:
   void showStatistics();
   
 private:
-
-  // Used for Local BA approach: 
-  LocalBA_options _LBAOptions;
-  LocalBA_statistics _LBAStatistics;
-  
+    
   void setSolverOptions(ceres::Solver::Options& solver_options);
-
+  
   // Create a parameter block for each pose according to the Ceres format: [Rx, Ry, Rz, tx, ty, tz]
   Hash_Map<IndexT, std::vector<double>> addPosesToCeresProblem(
-    const Poses & poses, 
-    ceres::Problem & problem);
-    
+      const Poses & poses, 
+      ceres::Problem & problem);
+  
   // Create a parameter block for each intrinsic according to the Ceres format
   Hash_Map<IndexT, std::vector<double>> addIntrinsicsToCeresProblem(
-    const SfM_Data & sfm_data, 
-    ceres::Problem & problem);
+      const SfM_Data & sfm_data, 
+      ceres::Problem & problem);
   
   // Run the Ceres solver
   bool solveBA(
-    ceres::Problem & problem, 
-    ceres::Solver::Options &options, 
-    ceres::Solver::Summary &summary);
-
+      ceres::Problem & problem, 
+      ceres::Solver::Options &options, 
+      ceres::Solver::Summary &summary);
+  
   // Update camera poses with refined data
   void updateCameraPoses(const Hash_Map<IndexT, 
-    std::vector<double>> & map_poseblocks, 
-    const LocalBA_Data &localBA_data,
-    Poses & poses);
-    
+                         std::vector<double>> & map_poseblocks, 
+                         const LocalBA_Data &localBA_data,
+                         Poses & poses);
+  
   // Update camera intrinsics with refined data
   void updateCameraIntrinsics(
-    const Hash_Map<IndexT, std::vector<double>> & map_intrinsicblocks,
-    const LocalBA_Data &localBA_data,
-    Intrinsics & intrinsics);
+      const Hash_Map<IndexT, std::vector<double>> & map_intrinsicblocks,
+      const LocalBA_Data &localBA_data,
+      Intrinsics & intrinsics);
 };
 
 } // namespace sfm

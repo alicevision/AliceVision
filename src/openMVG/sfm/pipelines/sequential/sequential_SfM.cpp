@@ -339,12 +339,9 @@ void SequentialSfMReconstructionEngine::RobustResectionOfImages(
       if (_uselocalBundleAdjustment)
       {
         // -----
-        // 1. Save new values for each intrinsic in a backup file
-        // 2. Filter unstable poses & observations
-        // 3. Remove erased poses to the graph
+        // 1. Filter unstable poses & observations
+        // 2. Remove erased poses to the graph
         // -----
-        
-        _localBA_data->exportFocalLengthsHistory(_sOutDirectory + "/LocalBA/K/");
         
         Poses poses_saved =  _sfm_data.GetPoses();
         std::set<IndexT> removed_posesId, removed_viewsId;
@@ -1736,7 +1733,6 @@ bool SequentialSfMReconstructionEngine::localBundleAdjustment()
   const std::size_t kLimitDistance = 1;
   const std::size_t kMinNbOfMatches = 50;
   
-  Local_Bundle_Adjustment_Ceres localBA_ceres(options);
   if (options.isLocalBAEnabled())
   {
     // Add the new views to the graph (1 node per new view - 1 edge connecting to views sharing matches)
@@ -1754,9 +1750,9 @@ bool SequentialSfMReconstructionEngine::localBundleAdjustment()
       options.setDenseBA();
   }   
   
-  localBA_ceres.initStatistics(*_localBA_data);
-  
   // -- Run Bundle Adjustment with the Local BA if necessary
+
+  Local_Bundle_Adjustment_Ceres localBA_ceres(options, *_localBA_data);
   
   bool isBaSucceed;
   if (options.isLocalBAEnabled())
@@ -1773,10 +1769,11 @@ bool SequentialSfMReconstructionEngine::localBundleAdjustment()
   else
     isBaSucceed = localBA_ceres.Adjust(_sfm_data, *_localBA_data);
   
-  // Save data about the Ceres Sover refinement:
-  localBA_ceres.exportStatistics(_sOutDirectory+"/LocalBA/", kMinNbOfMatches, kLimitDistance);
-  
   _localBA_data->addFocalLengthsToHistory(_sfm_data);
+  
+  // -- Export data about Local BA
+  _localBA_data->exportFocalLengthsHistory(_sOutDirectory+"/LocalBA/K/");
+  localBA_ceres.exportStatistics(_sOutDirectory+"/LocalBA/", kMinNbOfMatches, kLimitDistance);
   
   return isBaSucceed;
 }
