@@ -19,50 +19,6 @@
 namespace openMVG {
 namespace sfm {
 
-//------------------------------------------------------------------------------------------------------------------------
-//------------------------------------------------------------------------------------------------------------------------
-//                                                 TimeSummary      
-//------------------------------------------------------------------------------------------------------------------------
-//------------------------------------------------------------------------------------------------------------------------
-
-/// Allows to store the time spend in each step of the Local BA.
-struct TimeSummary
-{
-public:
-  
-  enum EStep {updateGraph, 
-              computeDistances, 
-              convertDistances2States, 
-              adjustment,
-              saveIntrinsics};
-  
-  void resetTimer() {_timer.reset();}
-  
-  void saveTime(EStep step);
-  
-  bool exportTimes(const std::string& filename);
-  
-  void showTimes();
-  
-private:
-  
-  openMVG::system::Timer _timer;
-  
-  double _graphUpdating = 0.0;
-  double _distancesComputing = 0.0;
-  double _distancesConversion = 0.0;
-  double _adjusting = 0.0;
-  double _saveIntrinsics = 0.0;
-  
-  double getTotalTime();
-};
-
-//------------------------------------------------------------------------------------------------------------------------
-//------------------------------------------------------------------------------------------------------------------------
-//                                                     LocalBA_Data      
-//------------------------------------------------------------------------------------------------------------------------
-//------------------------------------------------------------------------------------------------------------------------
-
 /// Contains all the data needed to apply a Local Bundle Adjustment.
 class LocalBA_Data
 {
@@ -136,15 +92,10 @@ public:
 
   std::size_t getNumberOf(EParameter param, EState state) const {return _parametersCounter.at(std::make_pair(param, state));}
   
-  TimeSummary _timeSummary;
-  
-  // no longer used
+  // (no longer used)
   std::size_t addIntrinsicEdgesToTheGraph(const SfM_Data& sfm_data);
-  
   void removeIntrinsicEdgesToTheGraph();
-    
   void drawGraph(const SfM_Data& sfm_data, const std::string& dir);
-  
   void drawGraph(const SfM_Data &sfm_data, const std::string& dir, const std::string& nameComplement);
 
 private:

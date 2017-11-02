@@ -248,7 +248,7 @@ private:
 #endif
   
   // Local Bundle Adjustment data
-  // Contains all needed data to Local BA approach (poses graph, intrinsics history etc.)
+  // Contains all needed data to the Local BA approach (poses graph, intrinsics history etc.)
   std::shared_ptr<LocalBA_Data> _localBA_data;
   
   // Temporary data

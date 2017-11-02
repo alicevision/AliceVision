@@ -1755,8 +1755,6 @@ bool SequentialSfMReconstructionEngine::localBundleAdjustment()
   localBA_ceres.initStatistics(*_localBA_data);
   
   // Run Bundle Adjustment:
-  _localBA_data->_timeSummary.resetTimer();
-  
   bool isBaSucceed;
   if (options.isLocalBAEnabled())
   {
@@ -1772,10 +1770,6 @@ bool SequentialSfMReconstructionEngine::localBundleAdjustment()
   }
   else
     isBaSucceed = localBA_ceres.Adjust(_sfm_data, *_localBA_data);
-  
-   // Save data about the spent time for each step of the Local BA
-  _localBA_data->_timeSummary.saveTime(TimeSummary::EStep::adjustment);
-  _localBA_data->_timeSummary.exportTimes(_sOutDirectory + "/LocalBA/times.txt");
   
   // Save data about the Ceres Sover refinement:
   localBA_ceres.exportStatistics(_sOutDirectory+"/LocalBA/", kMinNbOfMatches, kLimitDistance);
