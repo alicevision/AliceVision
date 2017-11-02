@@ -22,10 +22,11 @@ using namespace openMVG::geometry;
 
 Local_Bundle_Adjustment_Ceres::Local_Bundle_Adjustment_Ceres(
   const Local_Bundle_Adjustment_Ceres::LocalBA_options& options, 
-  const LocalBA_Data& localBA_data)
+  const LocalBA_Data& localBA_data,
+  const std::set<IndexT>& newReconstructedViews)
   : 
     _LBAOptions(options),
-    _LBAStatistics(localBA_data.getNewViewsId(), localBA_data.getDistancesHistogram())
+    _LBAStatistics(newReconstructedViews, localBA_data.getDistancesHistogram())
 {}
 
 bool Local_Bundle_Adjustment_Ceres::Adjust(SfM_Data& sfm_data, const LocalBA_Data& localBA_data)
@@ -403,7 +404,11 @@ void Local_Bundle_Adjustment_Ceres::updateCameraIntrinsics(
   }
 }
 
-bool Local_Bundle_Adjustment_Ceres::exportStatistics(const std::string& path, const std::size_t& kMinNbOfMatches, const std::size_t kLimitDistance)
+bool Local_Bundle_Adjustment_Ceres::exportStatistics(
+  const std::string& path, 
+  const std::set<IndexT>& newReconstructedViews,
+  const std::size_t& kMinNbOfMatches, 
+  const std::size_t kLimitDistance)
 {
   showStatistics();
   
@@ -484,7 +489,7 @@ bool Local_Bundle_Adjustment_Ceres::exportStatistics(const std::string& path, co
      << _LBAStatistics._numCamerasPerDistance[9] << "\t"
      << posesWthDistUpperThanTen << "\t";
   
-  for (const IndexT id : _LBAStatistics._newViewsId)
+  for (const IndexT id : newReconstructedViews)
   {
     os << id << "\t";
   }

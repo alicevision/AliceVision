@@ -123,12 +123,21 @@ std::map<Pair, std::size_t> LocalBA_Data::countSharedLandmarksPerImagesPair(
 void LocalBA_Data::updateGraphWithNewViews(
     const SfM_Data& sfm_data, 
     const tracks::TracksPerView& map_tracksPerView,
+    const std::set<IndexT>& newReconstructedViews,
     const std::size_t kMinNbOfMatches)
 {
+  // -----------
+  // Identify the views we need to add to the graph:
+  // - this is the first Local BA: the graph is still empty, so add all the posed views of the scene
+  // - else: add the newly posed views only.
+  // Add the posed views to the graph:
+  // - each node represents the posed views
+  // - each edge links 2 views if they share at least 'kMinNbOfMatches' matches
+  // -----------
   
   OPENMVG_LOG_INFO("Updating the distances graph with newly resected views...");
   
-  // -- Identify the views we need to add to the graph
+  // Identify the views we need to add to the graph:
   std::set<IndexT> addedViewsId;
   
   if (_graph.maxNodeId() == -1) // the graph is empty: add all the posed views
@@ -141,7 +150,7 @@ void LocalBA_Data::updateGraphWithNewViews(
     }
   }
   else // the graph is not empty
-    addedViewsId = _newViewsId;
+    addedViewsId = newReconstructedViews;
   
   std::map<Pair, std::size_t> map_imagesPair_nbSharedLandmarks 
       = countSharedLandmarksPerImagesPair(sfm_data, map_tracksPerView, addedViewsId);
@@ -173,54 +182,6 @@ void LocalBA_Data::updateGraphWithNewViews(
   OPENMVG_LOG_INFO("|- It contains " << _graph.maxNodeId() << " nodes & " << _graph.maxEdgeId() << " edges");                   
 }
 
-void LocalBA_Data::drawGraph(const SfM_Data &sfm_data, const std::string& dir)
-{
-  drawGraph(sfm_data, dir, "");
-}
-
-void LocalBA_Data::drawGraph(const SfM_Data& sfm_data, const std::string& dir, const std::string& nameComplement)
-{
-  
-  std::stringstream dotStream;
-  dotStream << "digraph lemon_dot_example {" << "\n";
-  
-  // -- Node
-  dotStream << "  node [ shape=ellipse, penwidth=5.0, fontname=Helvetica, fontsize=40 ];" << "\n";
-  for(lemon::ListGraph::NodeIt n(_graph); n!=lemon::INVALID; ++n)
-  {
-    IndexT viewId = _mapViewIdPerNode[n];
-    int viewDist = _mapDistancePerViewId[viewId];
-    
-    std::string color = ", color=";
-    if (viewDist == 0) color += "red";
-    else if (viewDist == 1 ) color += "green";
-    else if (viewDist == 2 ) color += "blue";
-    else color += "black";
-    dotStream << "  n" << _graph.id(n)
-              << " [ label=\"" << viewId << ": D" << viewDist << " K" << sfm_data.GetViews().at(viewId)->getIntrinsicId() << "\"" << color << "]; " << "\n";
-  }
-  
-  // -- Edge
-  dotStream << "  edge [ shape=ellipse, fontname=Helvetica, fontsize=5, color=black ];" << "\n";
-  for(lemon::ListGraph::EdgeIt e(_graph); e!=lemon::INVALID; ++e)
-  {
-    dotStream << "  n" << _graph.id(_graph.u(e)) << " -> " << " n" << _graph.id(_graph.v(e));
-    if (_intrinsicEdgesId.find(_graph.id(e)) != _intrinsicEdgesId.end())
-      dotStream << " [color=red]\n";
-    else
-      dotStream << "\n";
-  }
-  dotStream << "}" << "\n";
-  
-  const std::string dotFilepath = stlplus::create_filespec(dir, "/Graphs/graph_" + std::to_string(_mapViewIdPerNode.size())  + "_" + nameComplement + ".dot");
-  std::ofstream dotFile;
-  dotFile.open(dotFilepath);
-  dotFile.write(dotStream.str().c_str(), dotStream.str().length());
-  dotFile.close();
-  
-  OPENMVG_LOG_INFO("The graph '"<< dir << "/Graphs/graph_" << std::to_string(_mapViewIdPerNode.size()) << "_" << nameComplement << ".dot' has been saved.");
-}
-
 bool LocalBA_Data::removeViewsToTheGraph(const std::set<IndexT>& removedViewsId)
 {
   std::size_t numRemovedNode = 0;
@@ -243,19 +204,20 @@ bool LocalBA_Data::removeViewsToTheGraph(const std::set<IndexT>& removedViewsId)
   return numRemovedNode == removedViewsId.size();
 }
 
-void LocalBA_Data::computeDistancesMaps(const SfM_Data& sfm_data)
+void LocalBA_Data::computeGraphDistances(const SfM_Data& sfm_data, const std::set<IndexT>& newReconstructedViews)
 { 
-  OPENMVG_LOG_INFO("Computing distance maps...");
+  OPENMVG_LOG_INFO("Computing graph-distances...");
+  // reset the maps
   _mapDistancePerViewId.clear();
   _mapDistancePerPoseId.clear();
   _mapViewsIdPerDistance.clear();
   
-  // Setup Breadth First Search using Lemon
+  // -- Setup Breadth First Search using Lemon
   lemon::Bfs<lemon::ListGraph> bfs(_graph);
   bfs.init();
   
-  // Add source views for the bfs visit of the _graph
-  for(const IndexT viewId: _newViewsId)
+  // -- Add source views for the bfs visit of the _graph
+  for(const IndexT viewId: newReconstructedViews)
   {
     auto it = _mapNodePerViewId.find(viewId);
     if (it == _mapNodePerViewId.end())
@@ -264,21 +226,23 @@ void LocalBA_Data::computeDistancesMaps(const SfM_Data& sfm_data)
   }
   bfs.start();
   
-  // Handle bfs results (distances)
+  // -- Handle bfs results (distances)
   for(const auto& x : _mapNodePerViewId) // each node in the graph
   {
     auto& node = x.second;
     int d = -1; 
     
     if (bfs.reached(node))
+    {
       d = bfs.dist(node);
-    
+      // dist(): "If node v is not reached from the root(s), then the return value of this function is undefined."
+      // This is why the distance is previously set to -1.
+    }
     _mapDistancePerViewId[x.first] = d;
-    
     _mapViewsIdPerDistance[d].insert(x.first);
   }
   
-  // Re-mapping: from <ViewId, distance> to <PoseId, distance>:
+  // -- Re-mapping from <ViewId, distance> to <PoseId, distance>:
   for(auto x: _mapDistancePerViewId)
   {
     // Get the poseId of the camera no. viewId
@@ -291,58 +255,7 @@ void LocalBA_Data::computeDistancesMaps(const SfM_Data& sfm_data)
     else
       _mapDistancePerPoseId[idPose] = x.second;
   } 
-  
-  // (Optionnal) Display result: viewId -> distance to recent cameras
-  OPENMVG_LOG_INFO("Graph-distances histogram <distance|numOfPosedCameras> :");
-  for (const auto& x : getDistancesHistogram())
-  {
-    OPENMVG_LOG_INFO("|- graph-distance " << x.first << "\t- " << x.second << " posed cameras : " << _mapViewsIdPerDistance[x.first]);
-  }
 }
-
-std::size_t LocalBA_Data::addIntrinsicEdgesToTheGraph(const SfM_Data& sfm_data)
-{
-  std::size_t numAddedEdges = 0;
-  
-  // TODO: maintain a map<IntrinsicId, vector<ViewId>>
-  for (IndexT newViewId : _newViewsId) // for each new view
-  {
-    IndexT newViewIntrinsicId = sfm_data.GetViews().at(newViewId)->getIntrinsicId();
-    
-    if (isFocalLengthConstant(newViewIntrinsicId)) // do not add edges for a consisitent intrinsic
-      continue;
-    
-    for (const auto& x : _mapNodePerViewId) // for each view in the graph
-    {
-      if (newViewId == x.first)  // do not compare a view with itself
-        continue; 
-      
-      IndexT oldViewIntrinsicId = sfm_data.GetViews().at(x.first)->getIntrinsicId();
-      
-      if (oldViewIntrinsicId == newViewIntrinsicId)
-      {
-        IndexT minId = std::min(x.first, newViewId);
-        IndexT maxId = std::max(x.first, newViewId);
-        
-        lemon::ListGraph::Edge edge = _graph.addEdge(_mapNodePerViewId[minId], _mapNodePerViewId[maxId]);
-        _intrinsicEdgesId.insert(_graph.id(edge));
-        numAddedEdges++;
-        std::cout << "added intrinicsn edge: " << minId << " - " << maxId << " (#" << _graph.id(edge) << ")" << std::endl;
-      }
-    }
-  }
-  return numAddedEdges;
-}
-
-void LocalBA_Data::removeIntrinsicEdgesToTheGraph()
-{
-  for(int edgeId : _intrinsicEdgesId)
-  {
-    _graph.erase(_graph.fromId(edgeId, lemon::ListGraph::Edge()));
-  }
-  _intrinsicEdgesId.clear();
-}
-
 
 void LocalBA_Data::convertDistancesToLBAStates(const SfM_Data & sfm_data, const std::size_t kLimitDistance)
 {
@@ -353,27 +266,25 @@ void LocalBA_Data::convertDistancesToLBAStates(const SfM_Data & sfm_data, const 
   for(auto& x : _parametersCounter)
     x.second = 0;
   
-  // ----------------------------------------------------
-  //  D = distanceLimit
-  //  L = percentageLimit
-  //  W = windowSize
-  //  - cameras:
-  //    - dist <= D: refined
-  //    - dist == D+1: constant
-  //    - else ignored
-  //  - intrinsic:
-  //    All the parameters of each intrinic are saved.        
-  //    All the intrinsics are set to Refined by default.     
-  //    An intrinsic is set to contant when its focal lenght  
-  //    is considered as stable in its W last saved values
-  //    according to all of its values.                       
-  //  - landmarks:
-  //    - connected to a refined camera: refined
-  //    - else ignored
-  // ----------------------------------------------------
   const std::size_t kWindowSize = 25;   // nb of the last value in which compute the variation
   const double kStdevPercentage = 1.0;  // limit percentage of the Std deviation according to the range of all the parameters (e.i. focal)
   
+  // ----------------------------------------------------
+  //  D = the distance of the 'active' region (kLimitDistance)
+  //  W = the range (in term of num. of poses) on which to study the focal length variations (kWindowSize)
+  //  L = the max. percentage of the variations of the focal length to consider it as cosntant (kStdevPercentage)
+  //  - A posed views is setas to:
+  //    - Refined <=> dist <= D
+  //    - Constant <=> dist == D+1
+  //    - Ignored <=> else (dist = -1 U [D+2; +inf.[)
+  //  - An intrinsic is set to:
+  //    - Refined by default
+  //    - Constant <=> its focal lenght is considered as stable in its W last saved values
+  //    according to all of its values.                       
+  //  - A landmarks is set to:
+  //    - Ignored by default
+  //    - Refined <=> its connected to a refined camera
+  // ----------------------------------------------------
   // -- Poses
   for (Poses::const_iterator itPose = sfm_data.GetPoses().begin(); itPose != sfm_data.GetPoses().end(); ++itPose)
   {
@@ -397,7 +308,7 @@ void LocalBA_Data::convertDistancesToLBAStates(const SfM_Data & sfm_data, const 
   }
   
   // -- Instrinsics
-  checkIntrinsicsConsistency(kWindowSize, kStdevPercentage); 
+  checkFocalLengthsConsistency(kWindowSize, kStdevPercentage); 
   
   for(const auto& itIntrinsic: sfm_data.GetIntrinsics())
   {
@@ -437,7 +348,7 @@ void LocalBA_Data::convertDistancesToLBAStates(const SfM_Data & sfm_data, const 
   }
 }
 
-void LocalBA_Data::addFocalLengthsToHistory(const SfM_Data& sfm_data)
+void LocalBA_Data::saveFocalLengths(const SfM_Data& sfm_data)
 {
   // Count the number of poses for each intrinsic
   std::map<IndexT, std::size_t> map_intrinsicId_usageNum;
@@ -465,7 +376,7 @@ void LocalBA_Data::addFocalLengthsToHistory(const SfM_Data& sfm_data)
   }
 }
 
-void LocalBA_Data::checkIntrinsicsConsistency(const std::size_t windowSize, const double stdevPercentageLimit)
+void LocalBA_Data::checkFocalLengthsConsistency(const std::size_t windowSize, const double stdevPercentageLimit)
 {
   OPENMVG_LOG_INFO("Checking, for each camera, if the focal length is stable...");
   
@@ -557,7 +468,7 @@ double LocalBA_Data::standardDeviation(const std::vector<T>& data)
   return std::sqrt(sq_sum / data.size());
 }  
 
-void LocalBA_Data::exportFocalLengthsHistory(const std::string& folder)
+void LocalBA_Data::exportFocalLengths(const std::string& folder)
 {
   OPENMVG_LOG_INFO("Exporting focal lengths history...");
   for (const auto& x : _focalLengthsHistory)
@@ -599,6 +510,97 @@ void LocalBA_Data::exportFocalLengthsHistory(const std::string& folder)
     }
     os.close();
   }
+}
+
+void LocalBA_Data::drawGraph(const SfM_Data &sfm_data, const std::string& dir)
+{
+  drawGraph(sfm_data, dir, "");
+}
+
+void LocalBA_Data::drawGraph(const SfM_Data& sfm_data, const std::string& dir, const std::string& nameComplement)
+{
+  
+  std::stringstream dotStream;
+  dotStream << "digraph lemon_dot_example {" << "\n";
+  
+  // -- Node
+  dotStream << "  node [ shape=ellipse, penwidth=5.0, fontname=Helvetica, fontsize=40 ];" << "\n";
+  for(lemon::ListGraph::NodeIt n(_graph); n!=lemon::INVALID; ++n)
+  {
+    IndexT viewId = _mapViewIdPerNode[n];
+    int viewDist = _mapDistancePerViewId[viewId];
+    
+    std::string color = ", color=";
+    if (viewDist == 0) color += "red";
+    else if (viewDist == 1 ) color += "green";
+    else if (viewDist == 2 ) color += "blue";
+    else color += "black";
+    dotStream << "  n" << _graph.id(n)
+              << " [ label=\"" << viewId << ": D" << viewDist << " K" << sfm_data.GetViews().at(viewId)->getIntrinsicId() << "\"" << color << "]; " << "\n";
+  }
+  
+  // -- Edge
+  dotStream << "  edge [ shape=ellipse, fontname=Helvetica, fontsize=5, color=black ];" << "\n";
+  for(lemon::ListGraph::EdgeIt e(_graph); e!=lemon::INVALID; ++e)
+  {
+    dotStream << "  n" << _graph.id(_graph.u(e)) << " -> " << " n" << _graph.id(_graph.v(e));
+    if (_intrinsicEdgesId.find(_graph.id(e)) != _intrinsicEdgesId.end())
+      dotStream << " [color=red]\n";
+    else
+      dotStream << "\n";
+  }
+  dotStream << "}" << "\n";
+  
+  const std::string dotFilepath = stlplus::create_filespec(dir, "/Graphs/graph_" + std::to_string(_mapViewIdPerNode.size())  + "_" + nameComplement + ".dot");
+  std::ofstream dotFile;
+  dotFile.open(dotFilepath);
+  dotFile.write(dotStream.str().c_str(), dotStream.str().length());
+  dotFile.close();
+  
+  OPENMVG_LOG_INFO("The graph '"<< dir << "/Graphs/graph_" << std::to_string(_mapViewIdPerNode.size()) << "_" << nameComplement << ".dot' has been saved.");
+}
+
+std::size_t LocalBA_Data::addIntrinsicEdgesToTheGraph(const SfM_Data& sfm_data, const std::set<IndexT>& newReconstructedViews)
+{
+  std::size_t numAddedEdges = 0;
+  
+  // TODO: maintain a map<IntrinsicId, vector<ViewId>>
+  for (IndexT newViewId : newReconstructedViews) // for each new view
+  {
+    IndexT newViewIntrinsicId = sfm_data.GetViews().at(newViewId)->getIntrinsicId();
+    
+    if (isFocalLengthConstant(newViewIntrinsicId)) // do not add edges for a consisitent intrinsic
+      continue;
+    
+    for (const auto& x : _mapNodePerViewId) // for each view in the graph
+    {
+      if (newViewId == x.first)  // do not compare a view with itself
+        continue; 
+      
+      IndexT oldViewIntrinsicId = sfm_data.GetViews().at(x.first)->getIntrinsicId();
+      
+      if (oldViewIntrinsicId == newViewIntrinsicId)
+      {
+        IndexT minId = std::min(x.first, newViewId);
+        IndexT maxId = std::max(x.first, newViewId);
+        
+        lemon::ListGraph::Edge edge = _graph.addEdge(_mapNodePerViewId[minId], _mapNodePerViewId[maxId]);
+        _intrinsicEdgesId.insert(_graph.id(edge));
+        numAddedEdges++;
+        std::cout << "added intrinicsn edge: " << minId << " - " << maxId << " (#" << _graph.id(edge) << ")" << std::endl;
+      }
+    }
+  }
+  return numAddedEdges;
+}
+
+void LocalBA_Data::removeIntrinsicEdgesToTheGraph()
+{
+  for(int edgeId : _intrinsicEdgesId)
+  {
+    _graph.erase(_graph.fromId(edgeId, lemon::ListGraph::Edge()));
+  }
+  _intrinsicEdgesId.clear();
 }
 
 } // namespace sfm

@@ -195,7 +195,7 @@ private:
    * proximity to the cameras newly added to the reconstruction.
    * @return true if succeed
    */
-  bool localBundleAdjustment();
+  bool localBundleAdjustment(const std::set<IndexT>& newReconstructedViews);
 
   /// Discard track with too large residual error
   bool badTrackRejector(double dPrecision, size_t count = 0);

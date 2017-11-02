@@ -25,11 +25,11 @@ class LocalBA_Data
   
 public:
 
-  // Define the state of the all parameter of the reconstruction (structure, poses, intrinsics) in the BA:
+  /// Define the state of the all parameter of the reconstruction (structure, poses, intrinsics) in the BA:
   enum EState { 
-    refined,  //< will be adjuted by the BA solver
-    constant, //< will be set as constant in the sover
-    ignored   //< will not be set into the BA solver
+    refined,  ///< will be adjuted by the BA solver
+    constant, ///< will be set as constant in the sover
+    ignored   ///< will not be set into the BA solver
   };
  
   // -- Constructor
@@ -38,50 +38,73 @@ public:
   
   // -- Getters
   
+  /// @brief Return the distance between a specific pose and the new posed views.
+  /// @param[in] poseId is the index of the poseId
+  /// @details Return \c -1 if the pose is not connected to any new posed view.
   int getPoseDistance(const IndexT poseId) const;
   
+  /// @brief Return the distance between a specific view and the new posed views.
+  /// @param[in] viewId is the index of the view
+  /// @details Return \c -1 if the view is not connected to any new posed view.
   int getViewDistance(const IndexT viewId) const;
   
-  std::set<IndexT> getNewViewsId() const {return _newViewsId;}
-  
+  /// Return the number of posed views for each graph-distance.
   std::map<int, std::size_t> getDistancesHistogram() const;
-  
+    
+    
+  /// Return the \c EState for a specific pose.
   EState getPoseState(const IndexT poseId) const           {return _mapLBAStatePerPoseId.at(poseId);}
-  
+ 
+  /// Return the \c EState for a specific intrinsic.
   EState getIntrinsicState(const IndexT intrinsicId) const {return _mapLBAStatePerIntrinsicId.at(intrinsicId);}
-  
+
+  /// Return the \c EState for a specific landmark.
   EState getLandmarkState(const IndexT landmarkId) const   {return _mapLBAStatePerLandmarkId.at(landmarkId);}
+
   
+  /// Return the number of refined poses.
   std::size_t getNumOfRefinedPoses() const        {return getNumberOf(LocalBA_Data::EParameter::pose, LocalBA_Data::EState::refined);}
+ 
+  /// Return the number of constant poses.
   std::size_t getNumOfConstantPoses() const       {return getNumberOf(LocalBA_Data::EParameter::pose, LocalBA_Data::EState::constant);}
+
+  /// Return the number of ignored poses.
   std::size_t getNumOfIgnoredPoses() const        {return getNumberOf(LocalBA_Data::EParameter::pose, LocalBA_Data::EState::ignored);}
+
+  /// Return the number of refined landmarks.
   std::size_t getNumOfRefinedLandmarks() const    {return getNumberOf(LocalBA_Data::EParameter::landmark, LocalBA_Data::EState::refined);}
+ 
+  /// Return the number of constant landmarks.
   std::size_t getNumOfConstantLandmarks() const   {return getNumberOf(LocalBA_Data::EParameter::landmark, LocalBA_Data::EState::constant);}
+ 
+  /// Return the number of ignored landmarks.
   std::size_t getNumOfIgnoredLandmarks() const    {return getNumberOf(LocalBA_Data::EParameter::landmark, LocalBA_Data::EState::ignored);}
+ 
+  /// Return the number of refined intrinsics.
   std::size_t getNumOfRefinedIntrinsics() const   {return getNumberOf(LocalBA_Data::EParameter::intrinsic, LocalBA_Data::EState::refined);}
+ 
+  /// Return the number of constant intrinsics.
   std::size_t getNumOfConstantIntrinsics() const  {return getNumberOf(LocalBA_Data::EParameter::intrinsic, LocalBA_Data::EState::constant);}
+
+  /// Return the number of ignored intrinsics.
   std::size_t getNumOfIgnoredIntrinsics() const   {return getNumberOf(LocalBA_Data::EParameter::intrinsic, LocalBA_Data::EState::ignored);}
-  
-  // -- Setters
-  
-  void setNewViewsId(const std::set<IndexT>& newPosesId) {_newViewsId = newPosesId;}
   
   // -- Methods
   
   /// @brief addFocalLengthsToHistory Add the current focal lengths of the reconstruction in the history.
   /// @param[in] sfm_data Contains all the information about the reconstruction, notably current focal lengths
-  void addFocalLengthsToHistory(const SfM_Data& sfm_data);
+  void saveFocalLengths(const SfM_Data& sfm_data);
   
   /// @brief exportFocalLengthsHistory Save the history of each focal length. It create a file \b K<intrinsic_index>.txt in \a folder.
   /// @param[in] folder The folder in which the \b K*.txt are saved.
-  void exportFocalLengthsHistory(const std::string& folder);
+  void exportFocalLengths(const std::string& folder);
   
   /// @brief updateGraphWithNewViews Complete the graph with the newly resected views \a set_newViewsId, or all the posed views if the graph is empty.
   /// @param[in] sfm_data 
   /// @param[in] map_tracksPerView A map giving the tracks for each view
-  void updateGraphWithNewViews(
-      const SfM_Data& sfm_data, 
+  void updateGraphWithNewViews(const SfM_Data& sfm_data, 
       const tracks::TracksPerView& map_tracksPerView, 
+      const std::set<IndexT> &newReconstructedViews, 
       const std::size_t kMinNbOfMatches = 50);
   
   /// @brief removeViewsToTheGraph Remove some views to the graph. It delete the node and all the incident arcs for each removed view.
@@ -89,14 +112,14 @@ public:
   /// @return true if the number of removed node is equal to the size of \c removedViewsId
   bool removeViewsToTheGraph(const std::set<IndexT>& removedViewsId);
   
-  /// @brief computeDistancesMaps Add the newly resected views 'newViewsIds' into a graph (nodes: cameras, egdes: matching)
+  /// @brief computeDistances Add the newly resected views 'newViewsIds' into a graph (nodes: cameras, egdes: matching)
   /// and compute the intragraph-distance between these new cameras and all the others.
-  void computeDistancesMaps(const SfM_Data& sfm_data);
+  void computeGraphDistances(const SfM_Data& sfm_data, const std::set<IndexT> &newReconstructedViews);
   
   void convertDistancesToLBAStates(const SfM_Data & sfm_data, const std::size_t kLimitDistance = 1);
   
   // (no longer used)
-  std::size_t addIntrinsicEdgesToTheGraph(const SfM_Data& sfm_data);
+  std::size_t addIntrinsicEdgesToTheGraph(const SfM_Data& sfm_data, const std::set<IndexT> &newReconstructedViews);
   void removeIntrinsicEdgesToTheGraph();
   void drawGraph(const SfM_Data& sfm_data, const std::string& dir);
   void drawGraph(const SfM_Data &sfm_data, const std::string& dir, const std::string& nameComplement);
@@ -121,7 +144,7 @@ private:
   /// \c if sigma_normalized < \a stdevPercentageLimit \c then the limit is reached.
   /// @param[in] windowSize Compute the variation on the \a windowSize parameter
   /// @param[in] stdevPercentageLimit The limit is reached when the standard deviation of the \a windowSize values is less than \a stdevPecentageLimit % of the range of all the values.
-  void checkIntrinsicsConsistency(const std::size_t windowSize, const double stdevPercentageLimit);
+  void checkFocalLengthsConsistency(const std::size_t windowSize, const double stdevPercentageLimit);
   
   /// @brief countSharedLandmarksPerImagesPair Extract the images per between the views \c newViewsId and the already recontructed cameras, 
   /// and count the number of commun matches between these pairs.
@@ -147,7 +170,7 @@ private:
   /// @param[in] The values
   /// @return The standard deviation
   template<typename T> 
-  double standardDeviation(const std::vector<T>& data);
+  static double standardDeviation(const std::vector<T>& data);
   
   // ------------------------
   // - Distances data -
@@ -165,11 +188,7 @@ private:
   
   /// [IntrinsicsEdges] List of the  
   std::set<int> _intrinsicEdgesId; 
-  
-  
-  /// Contains all the last resected cameras
-  std::set<IndexT> _newViewsId; 
-  
+    
   /// Store the graph-distances from the new views (0: is a new view, -1: is not connected to the new views)
   std::map<IndexT, int> _mapDistancePerViewId;
   /// Store the graph-distances from the new poses (0: is a new pose, -1: is not connected to the new poses)

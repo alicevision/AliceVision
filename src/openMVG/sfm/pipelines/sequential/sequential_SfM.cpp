@@ -174,8 +174,9 @@ void SequentialSfMReconstructionEngine::RobustResectionOfImages(
   std::set<size_t> set_remainingViewId(viewIds);
   std::vector<size_t> vec_possible_resection_indexes;
   
+  // export EXIF
   if (_uselocalBundleAdjustment)  
-    _localBA_data->exportFocalLengthsHistory(_sOutDirectory + "/LocalBA/K/"); // export EXIF
+    _localBA_data->exportFocalLengths(_sOutDirectory+"/LocalBA/K/"); 
   
   while (FindNextImagesGroupForResection(vec_possible_resection_indexes, set_remainingViewId))
   {
@@ -299,9 +300,6 @@ void SequentialSfMReconstructionEngine::RobustResectionOfImages(
     // triangulate
     triangulate(_sfm_data, prevReconstructedViews, newReconstructedViews);
     
-    if (_uselocalBundleAdjustment)
-      _localBA_data->setNewViewsId(newReconstructedViews);
-    
     if (bImageAdded)
     {
       if((resectionGroupIndex % 10) == 0)
@@ -323,7 +321,7 @@ void SequentialSfMReconstructionEngine::RobustResectionOfImages(
         auto chrono2_start = std::chrono::steady_clock::now();
         
         if (_uselocalBundleAdjustment)
-          localBundleAdjustment();
+          localBundleAdjustment(newReconstructedViews);
         else
           BundleAdjustment(_bFixedIntrinsics);
         
@@ -1689,7 +1687,7 @@ bool SequentialSfMReconstructionEngine::BundleAdjustment(bool fixedIntrinsics)
 }
 
 /// Local Bundle Adjustment to refine only the parameters close to the newly resected views.
-bool SequentialSfMReconstructionEngine::localBundleAdjustment()
+bool SequentialSfMReconstructionEngine::localBundleAdjustment(const std::set<IndexT>& newReconstructedViews)
 {
   // -- Manage Ceres options (parameter ordering, local BA, sparse/dense mode, etc.)
   
@@ -1713,14 +1711,18 @@ bool SequentialSfMReconstructionEngine::localBundleAdjustment()
   
   if (options.isLocalBAEnabled())
   {
-    // Add the new views to the graph (1 node per new view - 1 edge connecting to views sharing matches)
-    _localBA_data->updateGraphWithNewViews(_sfm_data, _map_tracksPerView, kMinNbOfMatches);
+    // ----------------
+    // Steps:
+    // 1. Add the new views to the graph (1 node per new view & 1 edge connecting to views sharing matches)
+    // 2. Compute the distances from the new views to all the other posed views.
+    // 3. Convert each graph-distances to the corresponding LBA state (refined, constant, ignored) 
+    //    for every parameters included in the ceres problem (points, poses, landmarks)
+    // ----------------
     
-    // Compute the distances from the new views to all the other posed views.
-    _localBA_data->computeDistancesMaps(_sfm_data);
+    _localBA_data->updateGraphWithNewViews(_sfm_data, _map_tracksPerView, newReconstructedViews, kMinNbOfMatches);
     
-    // Convert each graph-distances to the corresponding LBA state (refined, constant, ignored) 
-    //  for every parameters included in the ceres problem (points, poses, landmarks)
+    _localBA_data->computeGraphDistances(_sfm_data, newReconstructedViews);
+    
     _localBA_data->convertDistancesToLBAStates(_sfm_data, kLimitDistance);    
     
     // Restore the Ceres Dense mode if the number of cameras in the solver is <= 100
@@ -1730,7 +1732,7 @@ bool SequentialSfMReconstructionEngine::localBundleAdjustment()
   
   // -- Run Bundle Adjustment with the Local BA if necessary
   
-  Local_Bundle_Adjustment_Ceres localBA_ceres(options, *_localBA_data);
+  Local_Bundle_Adjustment_Ceres localBA_ceres(options, *_localBA_data, newReconstructedViews);
   
   bool isBaSucceed;
   if (options.isLocalBAEnabled())
@@ -1739,19 +1741,21 @@ bool SequentialSfMReconstructionEngine::localBundleAdjustment()
     // - if there are equal: it meens that none of the new cameras is connected to the local BA graph,
     //    so the refinement would be done on those cameras only, without any constant parameters.
     // - the number of cameras to refine cannot be < to the number of newly added cameras (set to 'refine' by default)
-    if (_localBA_data->getNumOfRefinedPoses() > _localBA_data->getNewViewsId().size())
+    if (_localBA_data->getNumOfRefinedPoses() > newReconstructedViews.size())
+    {
       isBaSucceed = localBA_ceres.Adjust(_sfm_data, *_localBA_data);
+    }
     else
-      OPENMVG_LOG_WARNING("The refined has not been done because the new cameras are not connected to the rest of the local BA graph.");
+      OPENMVG_LOG_WARNING("The refinement has not been done: the new cameras are not connected to the rest of the local BA graph.");
   }
   else
     isBaSucceed = localBA_ceres.Adjust(_sfm_data, *_localBA_data);
   
-  _localBA_data->addFocalLengthsToHistory(_sfm_data);
+  _localBA_data->saveFocalLengths(_sfm_data);
   
   // -- Export data about Local BA
-  _localBA_data->exportFocalLengthsHistory(_sOutDirectory+"/LocalBA/K/");
-  localBA_ceres.exportStatistics(_sOutDirectory+"/LocalBA/", kMinNbOfMatches, kLimitDistance);
+  _localBA_data->exportFocalLengths(_sOutDirectory+"/LocalBA/K/");
+  localBA_ceres.exportStatistics(_sOutDirectory+"/LocalBA/", newReconstructedViews, kMinNbOfMatches, kLimitDistance);
   
   return isBaSucceed;
 }

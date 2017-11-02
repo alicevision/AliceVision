@@ -47,7 +47,8 @@ private:
 public : 
   Local_Bundle_Adjustment_Ceres(
     const Local_Bundle_Adjustment_Ceres::LocalBA_options& options, 
-    const LocalBA_Data& localBA_data);
+    const LocalBA_Data& localBA_data, 
+    const std::set<IndexT> &newReconstructedViews);
     
   /**
    * @see Bundle_Adjustment::AdjustPartialReconstruction
@@ -55,16 +56,15 @@ public :
    * if graph is empty. 
    */
   bool Adjust(SfM_Data & sfm_data, const LocalBA_Data& localBA_data);
-  
-  void initStatistics(const LocalBA_Data& localBA_data) 
-  { 
-    _LBAStatistics = LocalBA_statistics(localBA_data.getNewViewsId(), localBA_data.getDistancesHistogram());
-  }
-  
+    
   /// \brief Export statistics about bundle adjustment in a TXT file ("BaStats.txt")
   /// The contents of the file have been writen such that it is easy to handle it with
   /// a Python script or any spreadsheets (e.g. by copy/past the full content to LibreOffice) 
-  bool exportStatistics(const std::string& path, const std::size_t& kMinNbOfMatches = 50, const std::size_t kLimitDistance = 1);
+  bool exportStatistics(
+    const std::string& path, 
+    const std::set<IndexT>& newReconstructedViews,
+    const std::size_t& kMinNbOfMatches = 50, 
+    const std::size_t kLimitDistance = 1);
   
   void showStatistics();
   
