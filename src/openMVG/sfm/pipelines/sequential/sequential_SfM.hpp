@@ -111,9 +111,6 @@ public:
       _localBA_data = std::make_shared<LocalBA_Data>(_sfm_data);
   }
   
-protected:
-  
-  
 private:
   /// Image score contains <ImageId, NbPutativeCommonPoint, score, isIntrinsicsReconstructed>
   typedef std::tuple<IndexT, std::size_t, std::size_t, bool> ViewConnectionScore;

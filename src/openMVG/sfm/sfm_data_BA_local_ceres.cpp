@@ -133,15 +133,15 @@ bool Local_Bundle_Adjustment_Ceres::Adjust(SfM_Data& sfm_data, const LocalBA_Dat
   // Solution is usable
   if (_LBAOptions.isLocalBAEnabled())
   {
-    _LBAStatistics._numRefinedPoses       = localBA_data.getNumberOf(LocalBA_Data::EParameter::pose,      LocalBA_Data::EState::refined);
-    _LBAStatistics._numConstantPoses      = localBA_data.getNumberOf(LocalBA_Data::EParameter::pose,      LocalBA_Data::EState::constant);
-    _LBAStatistics._numIgnoredPoses       = localBA_data.getNumberOf(LocalBA_Data::EParameter::pose,      LocalBA_Data::EState::ignored);  
-    _LBAStatistics._numRefinedIntrinsics  = localBA_data.getNumberOf(LocalBA_Data::EParameter::intrinsic, LocalBA_Data::EState::refined);
-    _LBAStatistics._numConstantIntrinsics = localBA_data.getNumberOf(LocalBA_Data::EParameter::intrinsic, LocalBA_Data::EState::constant);
-    _LBAStatistics._numIgnoredIntrinsics  = localBA_data.getNumberOf(LocalBA_Data::EParameter::intrinsic, LocalBA_Data::EState::ignored);
-    _LBAStatistics._numRefinedLandmarks   = localBA_data.getNumberOf(LocalBA_Data::EParameter::landmark,  LocalBA_Data::EState::refined);
-    _LBAStatistics._numConstantLandmarks  = localBA_data.getNumberOf(LocalBA_Data::EParameter::landmark,  LocalBA_Data::EState::constant);
-    _LBAStatistics._numIgnoredLandmarks   = localBA_data.getNumberOf(LocalBA_Data::EParameter::landmark,  LocalBA_Data::EState::ignored);   
+    _LBAStatistics._numRefinedPoses       = localBA_data.getNumOfRefinedPoses();
+    _LBAStatistics._numConstantPoses      = localBA_data.getNumOfConstantPoses();
+    _LBAStatistics._numIgnoredPoses       = localBA_data.getNumOfIgnoredPoses();
+    _LBAStatistics._numRefinedIntrinsics  = localBA_data.getNumOfRefinedIntrinsics();
+    _LBAStatistics._numConstantIntrinsics = localBA_data.getNumOfConstantIntrinsics();
+    _LBAStatistics._numIgnoredIntrinsics  = localBA_data.getNumOfIgnoredIntrinsics();
+    _LBAStatistics._numRefinedLandmarks   = localBA_data.getNumOfRefinedLandmarks();
+    _LBAStatistics._numConstantLandmarks  = localBA_data.getNumOfConstantLandmarks();
+    _LBAStatistics._numIgnoredLandmarks   = localBA_data.getNumOfIgnoredLandmarks();
   }   
   else
   {

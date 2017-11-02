@@ -14,10 +14,10 @@ LocalBA_Data::LocalBA_Data(const SfM_Data& sfm_data)
 {
   for (const auto& it : sfm_data.intrinsics)
   {
-    _intrinsicsHistory[it.first];
-    _intrinsicsHistory.at(it.first).push_back(std::make_pair(0, sfm_data.GetIntrinsicPtr(it.first)->getParams().at(0)));
-    _mapIntrinsicIsConstant[it.first];
-    _mapIntrinsicIsConstant.at(it.first) = false; 
+    _focalLengthsHistory[it.first];
+    _focalLengthsHistory.at(it.first).push_back(std::make_pair(0, sfm_data.GetIntrinsicPtr(it.first)->getParams().at(0)));
+    _mapFocalIsConstant[it.first];
+    _mapFocalIsConstant.at(it.first) = false; 
     
     _parametersCounter[std::make_pair(EParameter::pose, EState::refined)] = 0;
     _parametersCounter[std::make_pair(EParameter::pose, EState::constant)] = 0;
@@ -309,7 +309,7 @@ std::size_t LocalBA_Data::addIntrinsicEdgesToTheGraph(const SfM_Data& sfm_data)
   {
     IndexT newViewIntrinsicId = sfm_data.GetViews().at(newViewId)->getIntrinsicId();
     
-    if (isIntrinsicConstant(newViewIntrinsicId)) // do not add edges for a consisitent intrinsic
+    if (isFocalLengthConstant(newViewIntrinsicId)) // do not add edges for a consisitent intrinsic
       continue;
     
     for (const auto& x : _mapNodePerViewId) // for each view in the graph
@@ -401,7 +401,7 @@ void LocalBA_Data::convertDistancesToLBAStates(const SfM_Data & sfm_data, const 
   
   for(const auto& itIntrinsic: sfm_data.GetIntrinsics())
   {
-    if (isIntrinsicConstant(itIntrinsic.first))
+    if (isFocalLengthConstant(itIntrinsic.first))
     {
       _mapLBAStatePerIntrinsicId[itIntrinsic.first] = EState::constant;
       _parametersCounter.at(std::make_pair(EParameter::intrinsic, EState::constant))++;
@@ -437,7 +437,7 @@ void LocalBA_Data::convertDistancesToLBAStates(const SfM_Data & sfm_data, const 
   }
 }
 
-void LocalBA_Data::addIntrinsicsToHistory(const SfM_Data& sfm_data)
+void LocalBA_Data::addFocalLengthsToHistory(const SfM_Data& sfm_data)
 {
   // Count the number of poses for each intrinsic
   std::map<IndexT, std::size_t> map_intrinsicId_usageNum;
@@ -455,10 +455,10 @@ void LocalBA_Data::addIntrinsicsToHistory(const SfM_Data& sfm_data)
     }
   }
   
-  // Complete the intrinsics history withe the current focal lengths
+  // Complete the intrinsics history with the current focal lengths
   for (const auto& x : sfm_data.intrinsics)
   {
-    _intrinsicsHistory.at(x.first).push_back(
+    _focalLengthsHistory.at(x.first).push_back(
           std::make_pair(map_intrinsicId_usageNum[x.first],
           sfm_data.GetIntrinsicPtr(x.first)->getParams().at(0))
         );
@@ -469,19 +469,19 @@ void LocalBA_Data::checkIntrinsicsConsistency(const std::size_t windowSize, cons
 {
   OPENMVG_LOG_INFO("Checking, for each camera, if the focal length is stable...");
   
-  for (const auto& x : _intrinsicsHistory)
+  for (const auto& x : _focalLengthsHistory)
   {
     IndexT idIntr = x.first;
     
     // Do not compute the variation, if the intrinsic has already be regarded as constant.
-    if (isIntrinsicConstant(idIntr))
+    if (isFocalLengthConstant(idIntr))
       continue;
     
     // Get the full history of intrinsic parameters
     std::vector<std::size_t> allNumPosesVec;
     std::vector<double> allValuesVec; 
     
-    for (const auto& pair_uses_params : _intrinsicsHistory.at(idIntr))
+    for (const auto& pair_uses_params : _focalLengthsHistory.at(idIntr))
     {
       allNumPosesVec.push_back(pair_uses_params.first);
       allValuesVec.push_back(pair_uses_params.second);
@@ -534,7 +534,7 @@ void LocalBA_Data::checkIntrinsicsConsistency(const std::size_t windowSize, cons
     // Check if the normed standard deviation is < stdevPercentageLimit
     if (normStdev*100.0 <= stdevPercentageLimit)
     {
-      _mapIntrinsicIsConstant.at(idIntr) = true;
+      _mapFocalIsConstant.at(idIntr) = true;
       
       OPENMVG_LOG_INFO("The intrinsic #" << idIntr << " is considered to be stable.\n" 
                        << "- minimum focal = " << minVal << "\n"
@@ -543,7 +543,7 @@ void LocalBA_Data::checkIntrinsicsConsistency(const std::size_t windowSize, cons
                        << "- current focal = " << filteredValuesVec.back() << " (= constant) \n");
     }
     else
-      _mapIntrinsicIsConstant.at(idIntr) = false;
+      _mapFocalIsConstant.at(idIntr) = false;
   }
 }
 
@@ -557,10 +557,10 @@ double LocalBA_Data::standardDeviation(const std::vector<T>& data)
   return std::sqrt(sq_sum / data.size());
 }  
 
-void LocalBA_Data::exportIntrinsicsHistory(const std::string& folder)
+void LocalBA_Data::exportFocalLengthsHistory(const std::string& folder)
 {
-  OPENMVG_LOG_INFO("Exporting intrinsics history...");
-  for (const auto& x : _intrinsicsHistory)
+  OPENMVG_LOG_INFO("Exporting focal lengths history...");
+  for (const auto& x : _focalLengthsHistory)
   {
     IndexT idIntr = x.first;
     
@@ -569,8 +569,7 @@ void LocalBA_Data::exportIntrinsicsHistory(const std::string& folder)
     os.open(filename, std::ios::app);
     os.seekp(0, std::ios::end); //put the cursor at the end
     
-    
-    if (_intrinsicsHistory.at(idIntr).size() == 1) // 'intrinsicsHistory' contains EXIF data only
+    if (_focalLengthsHistory.at(idIntr).size() == 1) // 'intrinsicsHistory' contains EXIF data only
     {
       // -- HEADER
       if (os.tellp() == 0) // 'tellp' return the cursor's position
@@ -587,15 +586,15 @@ void LocalBA_Data::exportIntrinsicsHistory(const std::string& folder)
       // -- EXIF DATA
       os << 0 << "\t";
       os << getLastFocalLength(idIntr) << "\t";
-      os << isIntrinsicConstant(idIntr) << "\t";
+      os << isFocalLengthConstant(idIntr) << "\t";
       os << "\n";
     }
     else // Write the last intrinsics
     {
       // -- DATA
-      os << _intrinsicsHistory.at(idIntr).back().first << "\t";
-      os << _intrinsicsHistory.at(idIntr).back().second << "\t";
-      os << isIntrinsicConstant(idIntr) << "\t";
+      os << _focalLengthsHistory.at(idIntr).back().first << "\t";
+      os << _focalLengthsHistory.at(idIntr).back().second << "\t";
+      os << isFocalLengthConstant(idIntr) << "\t";
       os << "\n";
     }
     os.close();

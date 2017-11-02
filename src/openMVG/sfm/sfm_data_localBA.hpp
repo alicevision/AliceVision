@@ -24,7 +24,14 @@ class LocalBA_Data
 {
   
 public:
-  
+
+  // Define the state of the all parameter of the reconstruction (structure, poses, intrinsics) in the BA:
+  enum EState { 
+    refined,  //< will be adjuted by the BA solver
+    constant, //< will be set as constant in the sover
+    ignored   //< will not be set into the BA solver
+  };
+ 
   // -- Constructor
   
   LocalBA_Data(const SfM_Data& sfm_data);
@@ -39,19 +46,35 @@ public:
   
   std::map<int, std::size_t> getDistancesHistogram() const;
   
+  EState getPoseState(const IndexT poseId) const           {return _mapLBAStatePerPoseId.at(poseId);}
+  
+  EState getIntrinsicState(const IndexT intrinsicId) const {return _mapLBAStatePerIntrinsicId.at(intrinsicId);}
+  
+  EState getLandmarkState(const IndexT landmarkId) const   {return _mapLBAStatePerLandmarkId.at(landmarkId);}
+  
+  std::size_t getNumOfRefinedPoses() const        {return getNumberOf(LocalBA_Data::EParameter::pose, LocalBA_Data::EState::refined);}
+  std::size_t getNumOfConstantPoses() const       {return getNumberOf(LocalBA_Data::EParameter::pose, LocalBA_Data::EState::constant);}
+  std::size_t getNumOfIgnoredPoses() const        {return getNumberOf(LocalBA_Data::EParameter::pose, LocalBA_Data::EState::ignored);}
+  std::size_t getNumOfRefinedLandmarks() const    {return getNumberOf(LocalBA_Data::EParameter::landmark, LocalBA_Data::EState::refined);}
+  std::size_t getNumOfConstantLandmarks() const   {return getNumberOf(LocalBA_Data::EParameter::landmark, LocalBA_Data::EState::constant);}
+  std::size_t getNumOfIgnoredLandmarks() const    {return getNumberOf(LocalBA_Data::EParameter::landmark, LocalBA_Data::EState::ignored);}
+  std::size_t getNumOfRefinedIntrinsics() const   {return getNumberOf(LocalBA_Data::EParameter::intrinsic, LocalBA_Data::EState::refined);}
+  std::size_t getNumOfConstantIntrinsics() const  {return getNumberOf(LocalBA_Data::EParameter::intrinsic, LocalBA_Data::EState::constant);}
+  std::size_t getNumOfIgnoredIntrinsics() const   {return getNumberOf(LocalBA_Data::EParameter::intrinsic, LocalBA_Data::EState::ignored);}
+  
   // -- Setters
   
   void setNewViewsId(const std::set<IndexT>& newPosesId) {_newViewsId = newPosesId;}
   
   // -- Methods
   
-  /// @brief addIntrinsicsToHistory Add the current intrinsics of the reconstruction in the intrinsics history.
-  /// @param[in] sfm_data Contains all the information about the reconstruction, notably current intrinsics
-  void addIntrinsicsToHistory(const SfM_Data& sfm_data);
-
-  /// @brief exportIntrinsicsHistory Save the history of each intrinsic. It create a file \b K<intrinsic_index>.txt in \a folder.
+  /// @brief addFocalLengthsToHistory Add the current focal lengths of the reconstruction in the history.
+  /// @param[in] sfm_data Contains all the information about the reconstruction, notably current focal lengths
+  void addFocalLengthsToHistory(const SfM_Data& sfm_data);
+  
+  /// @brief exportFocalLengthsHistory Save the history of each focal length. It create a file \b K<intrinsic_index>.txt in \a folder.
   /// @param[in] folder The folder in which the \b K*.txt are saved.
-  void exportIntrinsicsHistory(const std::string& folder);
+  void exportFocalLengthsHistory(const std::string& folder);
   
   /// @brief updateGraphWithNewViews Complete the graph with the newly resected views \a set_newViewsId, or all the posed views if the graph is empty.
   /// @param[in] sfm_data 
@@ -72,33 +95,21 @@ public:
   
   void convertDistancesToLBAStates(const SfM_Data & sfm_data, const std::size_t kLimitDistance = 1);
   
+  // (no longer used)
+  std::size_t addIntrinsicEdgesToTheGraph(const SfM_Data& sfm_data);
+  void removeIntrinsicEdgesToTheGraph();
+  void drawGraph(const SfM_Data& sfm_data, const std::string& dir);
+  void drawGraph(const SfM_Data &sfm_data, const std::string& dir, const std::string& nameComplement);
+  
+private:
+   
   enum EParameter { 
     pose,
     intrinsic,
     landmark
   };
   
-  // Define the state of the all parameter of the reconstruction (structure, poses, intrinsics) in the BA:
-  enum EState { 
-    refined,  //< will be adjuted by the BA solver
-    constant, //< will be set as constant in the sover
-    ignored   //< will not be set into the BA solver
-  };
-  
-  // Get back the 'EState' for a specific parameter :
-  EState getPoseState(const IndexT poseId) const           {return _mapLBAStatePerPoseId.at(poseId);}
-  EState getIntrinsicState(const IndexT intrinsicId) const {return _mapLBAStatePerIntrinsicId.at(intrinsicId);}
-  EState getLandmarkState(const IndexT landmarkId) const   {return _mapLBAStatePerLandmarkId.at(landmarkId);}
-
   std::size_t getNumberOf(EParameter param, EState state) const {return _parametersCounter.at(std::make_pair(param, state));}
-  
-  // (no longer used)
-  std::size_t addIntrinsicEdgesToTheGraph(const SfM_Data& sfm_data);
-  void removeIntrinsicEdgesToTheGraph();
-  void drawGraph(const SfM_Data& sfm_data, const std::string& dir);
-  void drawGraph(const SfM_Data &sfm_data, const std::string& dir, const std::string& nameComplement);
-
-private:
   
   /// @brief checkIntrinsicsConsistency Compute, for each camera/intrinsic, the variation of the last \a windowSize values of the focal length.
   /// If it consideres the focal lenght variations as enought constant it updates \a _intrinsicIsConstant.
@@ -128,9 +139,9 @@ private:
   /// @param[in] intrinsicId The intrinsic index.
   /// @param[in] parameter The \a EIntrinsicParameter to observe.
   /// @return true if the limit is reached, else false
-  bool isIntrinsicConstant(const IndexT intrinsicId) const { return _mapIntrinsicIsConstant.at(intrinsicId);}
+  bool isFocalLengthConstant(const IndexT intrinsicId) const { return _mapFocalIsConstant.at(intrinsicId);}
   
-  double getLastFocalLength(const IndexT intrinsicId) const {return _intrinsicsHistory.at(intrinsicId).back().second;}
+  double getLastFocalLength(const IndexT intrinsicId) const {return _focalLengthsHistory.at(intrinsicId).back().second;}
   
   /// @brief standardDeviation Compute the standard deviation.
   /// @param[in] The values
@@ -143,7 +154,7 @@ private:
   // Local BA needs to know the distance of all the old posed views to the new resected views.
   // The bundle adjustment will be processed on the closest poses only.
   // ------------------------
-    
+  
   /// A graph where nodes are poses and an edge exists when 2 poses shared at least 'kMinNbOfMatches' matches.
   lemon::ListGraph _graph; 
   
@@ -174,7 +185,7 @@ private:
   std::map<IndexT, EState> _mapLBAStatePerLandmarkId;
   
   std::map<std::pair<EParameter, EState>, int> _parametersCounter;
-
+  
   // ------------------------
   // - Intrinsics data -
   // Local BA needs to know the evolution of all the intrinsics parameters.
@@ -192,11 +203,11 @@ private:
   using IntrinsicsHistory = std::map<IndexT, std::vector<std::pair<std::size_t, double>>>;
   
   /// Backup of the intrinsics focal length values
-  IntrinsicsHistory _intrinsicsHistory; 
+  IntrinsicsHistory _focalLengthsHistory; 
   
   /// Store, for each parameter of each intrinsic, the BA's index from which it has been concidered as constant.
   /// <IntrinsicId, isConsideredAsConstant>
-  std::map<IndexT, bool> _mapIntrinsicIsConstant; 
+  std::map<IndexT, bool> _mapFocalIsConstant; 
 };
 
 
