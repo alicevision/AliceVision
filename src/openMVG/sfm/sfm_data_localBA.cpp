@@ -73,9 +73,6 @@ std::map<Pair, std::size_t> LocalBA_Data::countSharedLandmarksPerImagesPair(
     const tracks::TracksPerView& map_tracksPerView,
     const std::set<IndexT>& newViewsId)
 {
-  // An edge is created between 2 views when they share at least 'L' landmarks (by default L=100).
-  // At first, we need to count the number of shared landmarks between all the new views 
-  // and each already resected cameras (already in the graph)
   std::map<Pair, std::size_t> map_imagesPair_nbSharedLandmarks;
   
   // Get landmarks id. of all the reconstructed 3D points (: landmarks)
@@ -210,7 +207,7 @@ void LocalBA_Data::computeGraphDistances(const SfM_Data& sfm_data, const std::se
   // reset the maps
   _mapDistancePerViewId.clear();
   _mapDistancePerPoseId.clear();
-  _mapViewsIdPerDistance.clear();
+//  _mapViewsIdPerDistance.clear();
   
   // -- Setup Breadth First Search using Lemon
   lemon::Bfs<lemon::ListGraph> bfs(_graph);
@@ -239,7 +236,7 @@ void LocalBA_Data::computeGraphDistances(const SfM_Data& sfm_data, const std::se
       // This is why the distance is previously set to -1.
     }
     _mapDistancePerViewId[x.first] = d;
-    _mapViewsIdPerDistance[d].insert(x.first);
+//    _mapViewsIdPerDistance[d].insert(x.first);
   }
   
   // -- Re-mapping from <ViewId, distance> to <PoseId, distance>:
@@ -512,14 +509,11 @@ void LocalBA_Data::exportFocalLengths(const std::string& folder)
   }
 }
 
-void LocalBA_Data::drawGraph(const SfM_Data &sfm_data, const std::string& dir)
-{
-  drawGraph(sfm_data, dir, "");
-}
-
 void LocalBA_Data::drawGraph(const SfM_Data& sfm_data, const std::string& dir, const std::string& nameComplement)
 {
-  
+  if (!stlplus::folder_exists(dir))
+      stlplus::folder_create(dir);
+      
   std::stringstream dotStream;
   dotStream << "digraph lemon_dot_example {" << "\n";
   
@@ -551,13 +545,13 @@ void LocalBA_Data::drawGraph(const SfM_Data& sfm_data, const std::string& dir, c
   }
   dotStream << "}" << "\n";
   
-  const std::string dotFilepath = stlplus::create_filespec(dir, "/Graphs/graph_" + std::to_string(_mapViewIdPerNode.size())  + "_" + nameComplement + ".dot");
+  const std::string dotFilepath = stlplus::create_filespec(dir, "/graph_" + std::to_string(_mapViewIdPerNode.size())  + "_" + nameComplement + ".dot");
   std::ofstream dotFile;
   dotFile.open(dotFilepath);
   dotFile.write(dotStream.str().c_str(), dotStream.str().length());
   dotFile.close();
   
-  OPENMVG_LOG_INFO("The graph '"<< dir << "/Graphs/graph_" << std::to_string(_mapViewIdPerNode.size()) << "_" << nameComplement << ".dot' has been saved.");
+  OPENMVG_LOG_INFO("The graph '"<< dir << "/graph_" << std::to_string(_mapViewIdPerNode.size()) << "_" << nameComplement << ".dot' has been saved.");
 }
 
 std::size_t LocalBA_Data::addIntrinsicEdgesToTheGraph(const SfM_Data& sfm_data, const std::set<IndexT>& newReconstructedViews)

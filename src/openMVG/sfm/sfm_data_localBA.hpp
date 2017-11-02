@@ -25,7 +25,7 @@ class LocalBA_Data
   
 public:
 
-  /// Define the state of the all parameter of the reconstruction (structure, poses, intrinsics) in the BA:
+  /// Defines the state of the all parameter of the reconstruction (structure, poses, intrinsics) in the BA:
   enum EState { 
     refined,  ///< will be adjuted by the BA solver
     constant, ///< will be set as constant in the sover
@@ -91,83 +91,119 @@ public:
   
   // -- Methods
   
-  /// @brief addFocalLengthsToHistory Add the current focal lengths of the reconstruction in the history.
-  /// @param[in] sfm_data Contains all the information about the reconstruction, notably current focal lengths
+  /// @brief Save all the focal lengths to the memory to retain the evolution of each focal length during the reconstruction.
+  /// @param[in] sfm_data contains all the information about the reconstruction, notably current focal lengths
   void saveFocalLengths(const SfM_Data& sfm_data);
   
-  /// @brief exportFocalLengthsHistory Save the history of each focal length. It create a file \b K<intrinsic_index>.txt in \a folder.
-  /// @param[in] folder The folder in which the \b K*.txt are saved.
+  /// @brief Export the history of each focal length. It create a file \a K<intrinsic_index>.txt in \c folder.
+  /// @param[in] folder The folder in which the \a K*.txt files are saved.
   void exportFocalLengths(const std::string& folder);
   
-  /// @brief updateGraphWithNewViews Complete the graph with the newly resected views \a set_newViewsId, or all the posed views if the graph is empty.
+  /// @brief Complete the graph with the newly resected views or all the posed views if the graph is empty.
   /// @param[in] sfm_data 
   /// @param[in] map_tracksPerView A map giving the tracks for each view
+  /// @param[in] newReconstructedViews The list of the newly resected views
+  /// @param[in] kMinNbOfMatches The min. number of shared matches to create an edge between two views (nodes)
   void updateGraphWithNewViews(const SfM_Data& sfm_data, 
       const tracks::TracksPerView& map_tracksPerView, 
       const std::set<IndexT> &newReconstructedViews, 
       const std::size_t kMinNbOfMatches = 50);
   
-  /// @brief removeViewsToTheGraph Remove some views to the graph. It delete the node and all the incident arcs for each removed view.
+  /// @brief Remove some views to the graph. It delete the node and all the incident edges for each removed view.
   /// @param[in] removedViewsId Set of views index to remove
   /// @return true if the number of removed node is equal to the size of \c removedViewsId
   bool removeViewsToTheGraph(const std::set<IndexT>& removedViewsId);
   
-  /// @brief computeDistances Add the newly resected views 'newViewsIds' into a graph (nodes: cameras, egdes: matching)
-  /// and compute the intragraph-distance between these new cameras and all the others.
+  /// @brief Compute the intragraph-distance between all the nodes of the graph (posed views) and the newly resected
+  /// views.
+  /// @details The graph-distances are computed using a Breadth-first Search (BFS) method.
+  /// @param[in] sfm_data contains all the information about the reconstruction, notably the posed views
+  /// @param[in] newReconstructedViews The list of the newly resected views used (used as source in the BFS algorithm)
   void computeGraphDistances(const SfM_Data& sfm_data, const std::set<IndexT> &newReconstructedViews);
   
-  void convertDistancesToLBAStates(const SfM_Data & sfm_data, const std::size_t kLimitDistance = 1);
+  /// @brief Use the graph-distances of each posed view to set each parameter of the problem (poses, intrinsics, landmarks)
+  /// as Refined (will be refined during the adjustment), Constant (will be set as constant in the adjustment) 
+  /// or Ignored (won't be used during th adjustment).
+  /// @details Here is the algorithm assignating a state at each parameter : 
+  ///     \b D = the distance of the 'active' region (\c kLimitDistance)
+  ///     \b W = the range (in term of num. of poses) on which to study the focal length variations (kWindowSize)
+  ///     \b L = the max. percentage of the variations of the focal length to consider it as constant (kStdevPercentage)
+  ///     - a Pose is set to:
+  ///       - \a Refined <=> dist <= D
+  ///       - \a Constant <=> dist == D+1
+  ///       - \a Ignored <=> else (dist = -1 U [D+2; +inf.[)
+  ///     - an Intrinsic is set to:
+  ///       - \a Refined by default
+  ///       - \a Constant <=> its focal lenght is considered as stable in its W last saved values
+  ///         according to all of its values.                       
+  ///     - a Landmarks is set to:
+  ///       - \a Ignored by default
+  ///       - \a Refined <=> its connected to a refined camera
+  /// @param[in] sfm_data
+  /// @param[in] kLimitDistance the distance of the active region
+  void convertDistancesToLBAStates(const SfM_Data & sfm_data, const std::size_t kLimitDistance);
   
-  // (no longer used)
+  /// @brief Add an edge in the graph when 2 views share a same intrinsic not considered as Constant
+  /// @details (no longer used)
   std::size_t addIntrinsicEdgesToTheGraph(const SfM_Data& sfm_data, const std::set<IndexT> &newReconstructedViews);
+  
+  /// @brief Remove all the edges added by the \c addIntrinsicEdgesToTheGraph function.
   void removeIntrinsicEdgesToTheGraph();
-  void drawGraph(const SfM_Data& sfm_data, const std::string& dir);
-  void drawGraph(const SfM_Data &sfm_data, const std::string& dir, const std::string& nameComplement);
+
+  /// @brief Draw the current graph in the given directory. 
+  /// @details The file is name \a graph_<numOfNodes>_<nameComplement>. 
+  /// Node format: [<viewId>: D<distance> K<intrinsics>].
+  /// Node color: red (D=0), green (D=1), blue (D=2) or black (D>2 or D=-1)
+  /// Edge color: black (classic) or red (due to the intrinsic edges)
+  /// @param[in] sfm_data 
+  /// @param[in] dir 
+  /// @param[in] nameComplement 
+  void drawGraph(const SfM_Data &sfm_data, const std::string& dir, const std::string& nameComplement = "");
   
 private:
    
+  /// Defines all the types of parameter adjusted during bundle adjustment.
   enum EParameter { 
-    pose,
-    intrinsic,
-    landmark
+    pose,       ///< The pose
+    intrinsic,  ///< The intrinsic
+    landmark    ///< The landmark
   };
   
+  /// Return the number of parameters \c EParameter being in the \c EState state.
   std::size_t getNumberOf(EParameter param, EState state) const {return _parametersCounter.at(std::make_pair(param, state));}
   
-  /// @brief checkIntrinsicsConsistency Compute, for each camera/intrinsic, the variation of the last \a windowSize values of the focal length.
-  /// If it consideres the focal lenght variations as enought constant it updates \a _intrinsicIsConstant.
+  /// @brief Compute, for each camera the variation of the last \a windowSize values of the focal length.
+  /// If the focal lenght variations are considered as enought constant the function updates \a _mapFocalIsConstant.
   /// @details Pipeline:
-  /// \b H: the history of all the focal length for a given intrinsic
-  /// \b S: the subpart of H including the last \a wondowSize values only.
-  /// \b sigma = stddev(S)  
-  /// \b sigma_normalized = sigma / (max(H) - min(H))
-  /// \c if sigma_normalized < \a stdevPercentageLimit \c then the limit is reached.
-  /// @param[in] windowSize Compute the variation on the \a windowSize parameter
+  ///   \b H: the history of all the focal length for a given intrinsic
+  ///   \b S: the subpart of H including the last \a wondowSize values only.
+  ///   \b sigma = stddev(S)  
+  ///   \b sigma_normalized = sigma / (max(H) - min(H))
+  ///   \c if sigma_normalized < \a stdevPercentageLimit \c then the limit is reached.
+  /// @param[in] windowSize Compute the variation on the \a windowSize parameters
   /// @param[in] stdevPercentageLimit The limit is reached when the standard deviation of the \a windowSize values is less than \a stdevPecentageLimit % of the range of all the values.
   void checkFocalLengthsConsistency(const std::size_t windowSize, const double stdevPercentageLimit);
   
-  /// @brief countSharedLandmarksPerImagesPair Extract the images per between the views \c newViewsId and the already recontructed cameras, 
-  /// and count the number of commun matches between these pairs.
+  /// @brief Count the number of shared landmarks between all the new views and each already resected cameras.
   /// @param[in] sfm_data
   /// @param[in] map_tracksPerView
   /// @param[in] newViewsId A set with the views index that we want to count matches with resected cameras. 
   /// @return A map giving the number of matches for each images pair.
-  std::map<Pair, std::size_t> countSharedLandmarksPerImagesPair(
+  static std::map<Pair, std::size_t> countSharedLandmarksPerImagesPair(
       const SfM_Data& sfm_data,
       const tracks::TracksPerView& map_tracksPerView,
       const std::set<IndexT>& newViewsId);
   
-  
-  /// @brief isIntrinsicConstant Giving an intrinsic index and the wished parameter, is return \c true if the limit has alerady been reached, else \c false.
-  /// @param[in] intrinsicId The intrinsic index.
-  /// @param[in] parameter The \a EIntrinsicParameter to observe.
-  /// @return true if the limit is reached, else false
+  /// @brief Return the state of the focal length (constant or not) for a specific intrinsic.
+  /// @details To update the focal lengths states, use \c LocalBA_Data::checkFocalLengthsConsistency()
+  /// @return true if the focal length is considered as Constant
   bool isFocalLengthConstant(const IndexT intrinsicId) const { return _mapFocalIsConstant.at(intrinsicId);}
   
+  /// Return the last value of the focal length for a specific intrinsic.
   double getLastFocalLength(const IndexT intrinsicId) const {return _focalLengthsHistory.at(intrinsicId).back().second;}
   
   /// @brief standardDeviation Compute the standard deviation.
-  /// @param[in] The values
+  /// @param[in] The vector of values
   /// @return The standard deviation
   template<typename T> 
   static double standardDeviation(const std::vector<T>& data);
@@ -185,16 +221,11 @@ private:
   std::map<IndexT, lemon::ListGraph::Node> _mapNodePerViewId;
   /// Associates each node (in the graph) to its corresponding view.
   std::map<lemon::ListGraph::Node, IndexT> _mapViewIdPerNode;
-  
-  /// [IntrinsicsEdges] List of the  
-  std::set<int> _intrinsicEdgesId; 
     
   /// Store the graph-distances from the new views (0: is a new view, -1: is not connected to the new views)
   std::map<IndexT, int> _mapDistancePerViewId;
   /// Store the graph-distances from the new poses (0: is a new pose, -1: is not connected to the new poses)
   std::map<IndexT, int> _mapDistancePerPoseId;
-  
-  std::map<int, std::set<IndexT>> _mapViewsIdPerDistance;
   
   /// Store the \c EState of each pose in the scene.
   std::map<IndexT, EState> _mapLBAStatePerPoseId;
@@ -203,6 +234,7 @@ private:
   /// Store the \c EState of each landmark in the scene.
   std::map<IndexT, EState> _mapLBAStatePerLandmarkId;
   
+  /// Store the number of parameter \c EParameter in a specific state \c EState
   std::map<std::pair<EParameter, EState>, int> _parametersCounter;
   
   // ------------------------
@@ -227,6 +259,10 @@ private:
   /// Store, for each parameter of each intrinsic, the BA's index from which it has been concidered as constant.
   /// <IntrinsicId, isConsideredAsConstant>
   std::map<IndexT, bool> _mapFocalIsConstant; 
+  
+  /// @brief Store the Lemon index of the edges added thanks to the intrinsics "the intrinsic-edges" 
+  /// @details (no longer used)
+  std::set<int> _intrinsicEdgesId; 
 };
 
 
