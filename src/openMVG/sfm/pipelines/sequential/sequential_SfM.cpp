@@ -338,40 +338,20 @@ void SequentialSfMReconstructionEngine::RobustResectionOfImages(
       
       if (_uselocalBundleAdjustment)
       {
-        // -----
-        // 1. Filter unstable poses & observations
-        // 2. Remove erased poses to the graph
-        // -----
-        
-        Poses poses_saved =  _sfm_data.GetPoses();
-        std::set<IndexT> removed_posesId, removed_viewsId;
-        std::set<IndexT> removedPosesId_test;
+        std::set<IndexT> removedPosesId, removedViewsId;
         // Remove unstable poses & extract removed poses id
-        if (eraseUnstablePosesAndObservations(this->_sfm_data, _minPointsPerPose, _minTrackLength, &removedPosesId_test))
+        if (eraseUnstablePosesAndObservations(this->_sfm_data, _minPointsPerPose, _minTrackLength, &removedPosesId))
         {
-          // Get back removed poses and view indexes
-          
-          // Get removed POSES index
-          for (const auto& x : poses_saved)
-          {
-            IndexT id_pose = x.first;
-            if (_sfm_data.GetPoses().find(id_pose) == _sfm_data.GetPoses().end()) // id not found = removed
-              removed_posesId.insert(id_pose);
-          }
-          
           // Get removed VIEWS index
           for (const auto& x : _sfm_data.GetViews())
           {
-            if (_sfm_data.IsPoseAndIntrinsicDefined(x.second->getViewId()))
-            {
-              if (removed_posesId.find(x.second->getPoseId()) != removed_posesId.end())
-                removed_viewsId.insert(x.second->getViewId());
-            }
+            if (removedPosesId.find(x.second->getPoseId()) != removedPosesId.end())
+              removedViewsId.insert(x.second->getViewId());
           }
           
           // Remove removed views to the graph
-          _localBA_data->removeViewsToTheGraph(removed_viewsId);
-          OPENMVG_LOG_DEBUG("Poses (index) removed to the reconstruction: " << removed_posesId);
+          _localBA_data->removeViewsToTheGraph(removedViewsId);
+          OPENMVG_LOG_DEBUG("Poses (index) removed to the reconstruction: " << removedPosesId);
         }
       }
       else
