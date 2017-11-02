@@ -207,7 +207,6 @@ void LocalBA_Data::computeGraphDistances(const SfM_Data& sfm_data, const std::se
   // reset the maps
   _mapDistancePerViewId.clear();
   _mapDistancePerPoseId.clear();
-//  _mapViewsIdPerDistance.clear();
   
   // -- Setup Breadth First Search using Lemon
   lemon::Bfs<lemon::ListGraph> bfs(_graph);
@@ -236,7 +235,6 @@ void LocalBA_Data::computeGraphDistances(const SfM_Data& sfm_data, const std::se
       // This is why the distance is previously set to -1.
     }
     _mapDistancePerViewId[x.first] = d;
-//    _mapViewsIdPerDistance[d].insert(x.first);
   }
   
   // -- Re-mapping from <ViewId, distance> to <PoseId, distance>:
