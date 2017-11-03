@@ -1689,6 +1689,8 @@ bool SequentialSfMReconstructionEngine::BundleAdjustment(bool fixedIntrinsics)
 /// Local Bundle Adjustment to refine only the parameters close to the newly resected views.
 bool SequentialSfMReconstructionEngine::localBundleAdjustment(const std::set<IndexT>& newReconstructedViews)
 {
+  Local_Bundle_Adjustment_Ceres localBA_ceres;
+  
   // -- Manage Ceres options (parameter ordering, local BA, sparse/dense mode, etc.)
   
   Local_Bundle_Adjustment_Ceres::LocalBA_options options;
@@ -1704,39 +1706,29 @@ bool SequentialSfMReconstructionEngine::localBundleAdjustment(const std::set<Ind
     options.setDenseBA();
   }
   
-  // -- Prepare the Local BA strategy
+  const std::size_t kLimitDistance = 1; // default value: 1 
+  const std::size_t kMinNbOfMatches = 50; // default value: 50 
+  bool isBaSucceed;
   
-  const std::size_t kLimitDistance = 1;
-  const std::size_t kMinNbOfMatches = 50;
+  // -- Prepare Local BA & Adjust
   
-  if (options.isLocalBAEnabled())
+  if (options.isLocalBAEnabled()) // Local Bundle Adjustment
   {
-    // ----------------
-    // Steps:
+    // -- Update all the data needed to apply Local BA:
     // 1. Add the new views to the graph (1 node per new view & 1 edge connecting to views sharing matches)
-    // 2. Compute the distances from the new views to all the other posed views.
+    // 2. Compute the graph-distances from the new views to all the other posed views.
     // 3. Convert each graph-distances to the corresponding LBA state (refined, constant, ignored) 
     //    for every parameters included in the ceres problem (points, poses, landmarks)
-    // ----------------
-    
-    _localBA_data->updateGraphWithNewViews(_sfm_data, _map_tracksPerView, newReconstructedViews, kMinNbOfMatches);
-    
-    _localBA_data->computeGraphDistances(_sfm_data, newReconstructedViews);
-    
-    _localBA_data->convertDistancesToLBAStates(_sfm_data, kLimitDistance);    
-    
+    _localBA_data->updateParametersState(_sfm_data, _map_tracksPerView, newReconstructedViews, kMinNbOfMatches, kLimitDistance);
+      
+    // -- Check Ceres mode: 
     // Restore the Ceres Dense mode if the number of cameras in the solver is <= 100
     if (_localBA_data->getNumOfRefinedPoses() + _localBA_data->getNumOfConstantPoses() <= 100)
       options.setDenseBA();
-  }   
-  
-  // -- Run Bundle Adjustment with the Local BA if necessary
-  
-  Local_Bundle_Adjustment_Ceres localBA_ceres(options, *_localBA_data, newReconstructedViews);
-  
-  bool isBaSucceed;
-  if (options.isLocalBAEnabled())
-  {
+      
+    localBA_ceres = Local_Bundle_Adjustment_Ceres(options, *_localBA_data, newReconstructedViews);
+    
+    // -- Refine
     // Parameters are refined only if the number of cameras to refine is > to the number of newly added cameras.
     // - if there are equal: it meens that none of the new cameras is connected to the local BA graph,
     //    so the refinement would be done on those cameras only, without any constant parameters.
@@ -1747,14 +1739,21 @@ bool SequentialSfMReconstructionEngine::localBundleAdjustment(const std::set<Ind
     }
     else
       OPENMVG_LOG_WARNING("The refinement has not been done: the new cameras are not connected to the rest of the local BA graph.");
-  }
-  else
+  }   
+  else // Classic Bundle Adjustment
+  {
+    _localBA_data->setAllParametersToRefine(_sfm_data);
+    
+    localBA_ceres = Local_Bundle_Adjustment_Ceres(options, *_localBA_data, newReconstructedViews);
+  
     isBaSucceed = localBA_ceres.Adjust(_sfm_data, *_localBA_data);
+  }
   
+  // -- Export the focal length for each intrinsic : 
   _localBA_data->saveFocalLengths(_sfm_data);
-  
-  // -- Export data about Local BA
   _localBA_data->exportFocalLengths(_sOutDirectory+"/LocalBA/K/");
+  
+  // -- Export data about the refinement
   localBA_ceres.exportStatistics(_sOutDirectory+"/LocalBA/", newReconstructedViews, kMinNbOfMatches, kLimitDistance);
   
   return isBaSucceed;

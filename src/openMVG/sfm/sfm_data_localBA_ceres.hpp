@@ -83,6 +83,9 @@ private:
   LocalBA_statistics _LBAStatistics;
   
 public : 
+
+  Local_Bundle_Adjustment_Ceres() {;}
+  
   Local_Bundle_Adjustment_Ceres(
       const Local_Bundle_Adjustment_Ceres::LocalBA_options& options, 
       const LocalBA_Data& localBA_data, 

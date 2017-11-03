@@ -91,6 +91,17 @@ public:
   
   // -- Methods
   
+  void updateParametersState(
+    const SfM_Data& sfm_data, 
+    const tracks::TracksPerView& map_tracksPerView, 
+    const std::set<IndexT> &newReconstructedViews, 
+    const std::size_t kMinNbOfMatches,
+    const std::size_t kLimitDistance);
+    
+  void setAllParametersToRefine(const SfM_Data& sfm_data);
+  
+  void resetParametersCounter();
+
   /// @brief Save all the focal lengths to the memory to retain the evolution of each focal length during the reconstruction.
   /// @param[in] sfm_data contains all the information about the reconstruction, notably current focal lengths
   void saveFocalLengths(const SfM_Data& sfm_data);

@@ -19,15 +19,7 @@ LocalBA_Data::LocalBA_Data(const SfM_Data& sfm_data)
     _mapFocalIsConstant[it.first];
     _mapFocalIsConstant.at(it.first) = false; 
     
-    _parametersCounter[std::make_pair(EParameter::pose, EState::refined)] = 0;
-    _parametersCounter[std::make_pair(EParameter::pose, EState::constant)] = 0;
-    _parametersCounter[std::make_pair(EParameter::pose, EState::ignored)] = 0;
-    _parametersCounter[std::make_pair(EParameter::intrinsic, EState::refined)] = 0;
-    _parametersCounter[std::make_pair(EParameter::intrinsic, EState::constant)] = 0;
-    _parametersCounter[std::make_pair(EParameter::intrinsic, EState::ignored)] = 0;
-    _parametersCounter[std::make_pair(EParameter::landmark, EState::refined)] = 0;
-    _parametersCounter[std::make_pair(EParameter::landmark, EState::constant)] = 0;
-    _parametersCounter[std::make_pair(EParameter::landmark, EState::ignored)] = 0;
+    resetParametersCounter();
   }
 }
 
@@ -66,6 +58,70 @@ std::map<int, std::size_t> LocalBA_Data::getDistancesHistogram() const
   }
   
   return hist;
+}
+
+void LocalBA_Data::updateParametersState(
+    const SfM_Data& sfm_data, 
+    const tracks::TracksPerView& map_tracksPerView, 
+    const std::set<IndexT> &newReconstructedViews, 
+    const std::size_t kMinNbOfMatches,
+    const std::size_t kLimitDistance)
+{
+  // ----------------
+  // Steps:
+  // 1. Add the new views to the graph (1 node per new view & 1 edge connecting to views sharing matches)
+  // 2. Compute the graph-distances from the new views to all the other posed views.
+  // 3. Convert each graph-distances to the corresponding LBA state (refined, constant, ignored) 
+  //    for every parameters included in the ceres problem (points, poses, landmarks)
+  // ----------------
+  updateGraphWithNewViews(sfm_data, map_tracksPerView, newReconstructedViews, kMinNbOfMatches);
+  
+  computeGraphDistances(sfm_data, newReconstructedViews);
+  
+  convertDistancesToLBAStates(sfm_data, kLimitDistance); 
+}
+
+void LocalBA_Data::setAllParametersToRefine(const SfM_Data& sfm_data)
+{
+  _mapDistancePerViewId.clear();
+  _mapDistancePerPoseId.clear();
+  _mapLBAStatePerPoseId.clear();
+  _mapLBAStatePerIntrinsicId.clear();
+  _mapLBAStatePerLandmarkId.clear();
+  resetParametersCounter();
+  
+  // -- Poses
+  for (Poses::const_iterator itPose = sfm_data.GetPoses().begin(); itPose != sfm_data.GetPoses().end(); ++itPose)
+  {
+    _mapLBAStatePerPoseId[itPose->first] = EState::refined;
+    _parametersCounter.at(std::make_pair(EParameter::pose, EState::refined))++;
+  }
+  // -- Instrinsics
+  for(const auto& itIntrinsic: sfm_data.GetIntrinsics())
+  {
+      _mapLBAStatePerIntrinsicId[itIntrinsic.first] = EState::refined;
+      _parametersCounter.at(std::make_pair(EParameter::intrinsic, EState::refined))++;
+  }
+  // -- Landmarks
+  for(const auto& itLandmark: sfm_data.structure)
+  {
+    _mapLBAStatePerLandmarkId[itLandmark.first] = EState::refined;
+    _parametersCounter.at(std::make_pair(EParameter::landmark, EState::refined))++;
+  }  
+}
+
+void LocalBA_Data::resetParametersCounter()
+{
+  _parametersCounter.clear();
+  _parametersCounter[std::make_pair(EParameter::pose, EState::refined)] = 0;
+  _parametersCounter[std::make_pair(EParameter::pose, EState::constant)] = 0;
+  _parametersCounter[std::make_pair(EParameter::pose, EState::ignored)] = 0;
+  _parametersCounter[std::make_pair(EParameter::intrinsic, EState::refined)] = 0;
+  _parametersCounter[std::make_pair(EParameter::intrinsic, EState::constant)] = 0;
+  _parametersCounter[std::make_pair(EParameter::intrinsic, EState::ignored)] = 0;
+  _parametersCounter[std::make_pair(EParameter::landmark, EState::refined)] = 0;
+  _parametersCounter[std::make_pair(EParameter::landmark, EState::constant)] = 0;
+  _parametersCounter[std::make_pair(EParameter::landmark, EState::ignored)] = 0;
 }
 
 std::map<Pair, std::size_t> LocalBA_Data::countSharedLandmarksPerImagesPair(
@@ -173,7 +229,7 @@ void LocalBA_Data::updateGraphWithNewViews(
       numEdges++;
     }
   }
-    
+  
   OPENMVG_LOG_INFO("|- The distances graph has been completed with " 
                    << addedViewsId.size() << " nodes & " << numEdges << " edges.");
   OPENMVG_LOG_INFO("|- It contains " << _graph.maxNodeId() << " nodes & " << _graph.maxEdgeId() << " edges");                   
@@ -258,8 +314,7 @@ void LocalBA_Data::convertDistancesToLBAStates(const SfM_Data & sfm_data, const 
   _mapLBAStatePerPoseId.clear();
   _mapLBAStatePerIntrinsicId.clear();
   _mapLBAStatePerLandmarkId.clear();
-  for(auto& x : _parametersCounter)
-    x.second = 0;
+  resetParametersCounter();
   
   const std::size_t kWindowSize = 25;   // nb of the last value in which compute the variation
   const double kStdevPercentage = 1.0;  // limit percentage of the Std deviation according to the range of all the parameters (e.i. focal)
@@ -327,7 +382,7 @@ void LocalBA_Data::convertDistancesToLBAStates(const SfM_Data & sfm_data, const 
     
     _mapLBAStatePerLandmarkId[landmarkId] = EState::ignored;
     _parametersCounter.at(std::make_pair(EParameter::landmark, EState::ignored))++;
-
+    
     
     for(const auto& observationIt: observations)
     {
@@ -510,8 +565,8 @@ void LocalBA_Data::exportFocalLengths(const std::string& folder)
 void LocalBA_Data::drawGraph(const SfM_Data& sfm_data, const std::string& dir, const std::string& nameComplement)
 {
   if (!stlplus::folder_exists(dir))
-      stlplus::folder_create(dir);
-      
+    stlplus::folder_create(dir);
+  
   std::stringstream dotStream;
   dotStream << "digraph lemon_dot_example {" << "\n";
   
