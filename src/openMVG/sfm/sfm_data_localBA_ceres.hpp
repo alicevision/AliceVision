@@ -19,6 +19,7 @@ class Local_Bundle_Adjustment_Ceres : public Bundle_Adjustment_Ceres
 {
 public:
   
+  /// Contains all the OpenMVG's options to communicate to the Ceres Solver
   struct LocalBA_options : public Bundle_Adjustment_Ceres::BA_options
   {
     LocalBA_options(const bool bVerbose = true, bool bmultithreaded = true) 
@@ -39,7 +40,7 @@ public:
     bool isLocalBAEnabled() {return _useLocalBA;}
   };
   
-  /// Contain all the information about a Bundle Adjustment loop
+  /// Contains all the informations relating to the last BA performed.
   struct LocalBA_statistics
   {
     LocalBA_statistics(
@@ -51,39 +52,40 @@ public:
     }
     
     // Parameters returned by Ceres:
-    double _time = 0.0;                          // spent time to solve the BA (s)
-    std::size_t _numSuccessfullIterations = 0;   // number of successfull iterations
-    std::size_t _numUnsuccessfullIterations = 0; // number of unsuccessfull iterations
+    double _time = 0.0;                          ///< The spent time to solve the BA (s)
+    std::size_t _numSuccessfullIterations = 0;   ///< The number of successful iterations
+    std::size_t _numUnsuccessfullIterations = 0; ///< The number of unsuccessful iterations
     
-    std::size_t _numResidualBlocks = 0;          // num. of resiudal block in the Ceres problem
+    std::size_t _numResidualBlocks = 0;          ///< The num. of resiudal blocks in the Ceres problem
     
-    double _RMSEinitial = 0.0; // sqrt(initial_cost / num_residuals)
-    double _RMSEfinal = 0.0;   // sqrt(final_cost / num_residuals)
+    double _RMSEinitial = 0.0; ///< sqrt(initial_cost / num_residuals)
+    double _RMSEfinal = 0.0;   ///< sqrt(final_cost / num_residuals)
     
     // Parameters specifically used by Local BA:
-    std::size_t _numRefinedPoses = 0;           // number of refined poses among all the estimated views          
-    std::size_t _numConstantPoses = 0;          // number of poses set constant in the BA solver
-    std::size_t _numIgnoredPoses = 0;           // number of not added poses to the BA solver
-    std::size_t _numRefinedIntrinsics = 0;      // num. of refined intrinsics
-    std::size_t _numConstantIntrinsics = 0;     // num. of intrinsics set constant in the BA solver
-    std::size_t _numIgnoredIntrinsics = 0;      // num. of not added intrinsicsto the BA solver
-    std::size_t _numRefinedLandmarks = 0;       // num. of refined landmarks
-    std::size_t _numConstantLandmarks = 0;      // num. of landmarks set constant in the BA solver
-    std::size_t _numIgnoredLandmarks = 0;       // num. of not added landmarks to the BA solver
+    std::size_t _numRefinedPoses = 0;           ///< The num. of refined poses    
+    std::size_t _numConstantPoses = 0;          ///< The num. of poses set to Constant in the BA solver
+    std::size_t _numIgnoredPoses = 0;           ///< The num. of poses not added to the BA solver
+    std::size_t _numRefinedIntrinsics = 0;      ///< The num. of refined intrinsics
+    std::size_t _numConstantIntrinsics = 0;     ///< The num. of intrinsics set Constant in the BA solver
+    std::size_t _numIgnoredIntrinsics = 0;      ///< The num. of intrinsics not added to the BA solver
+    std::size_t _numRefinedLandmarks = 0;       ///< The num. of refined landmarks
+    std::size_t _numConstantLandmarks = 0;      ///< The num. of landmarks set constant in the BA solver
+    std::size_t _numIgnoredLandmarks = 0;       ///< The num. of landmarks not added to the BA solver
     
-    std::map<int, std::size_t> _numCamerasPerDistance; // distribution of the cameras for each graph distance
+    std::map<int, std::size_t> _numCamerasPerDistance; ///< The distribution of the cameras for each graph distance <distance, numOfCam>
     
-    std::set<IndexT> _newViewsId;  // index of the new views added (newly resected)
+    std::set<IndexT> _newViewsId;               ///< The index of the new views (newly resected)
+    
+    void show();
   };
-  
   
 private:
   // Used for Local BA approach: 
-  LocalBA_options _LBAOptions;
-  LocalBA_statistics _LBAStatistics;
+  LocalBA_options _LBAOptions;        ///< Contains all the OpenMVG's options to communicate to the Ceres Solver
+  LocalBA_statistics _LBAStatistics;  ///< Contains all the informations relating to the last BA performed.
   
 public : 
-
+  
   Local_Bundle_Adjustment_Ceres() {;}
   
   Local_Bundle_Adjustment_Ceres(
@@ -91,54 +93,69 @@ public :
       const LocalBA_Data& localBA_data, 
       const std::set<IndexT> &newReconstructedViews);
   
-  /**
-   * @see Bundle_Adjustment::AdjustPartialReconstruction
-   * @brief Ajust parameters according to the reconstruction graph or refine everything
-   * if graph is empty. 
-   */
+  /// @brief Ajust parameters according to the reconstruction graph or refine everything
+  /// if graph is empty. 
+  /// @param[in,out] sfm_data contains all the information about the reconstruction
+  /// @param[in] localBA_data contains all the information about the Local BA approach, notably
+  /// the state of each parameter of the solver (refined, constant, ignored)
+  /// @return \c false if the refinement failed else \c true
   bool Adjust(SfM_Data & sfm_data, const LocalBA_Data& localBA_data);
   
-  /// \brief Export statistics about bundle adjustment in a TXT file ("BaStats.txt")
+  /// @brief Export statistics about bundle adjustment in a TXT file  \a BaStats_<nameComplement>.txt
   /// The contents of the file have been writen such that it is easy to handle it with
   /// a Python script or any spreadsheets (e.g. by copy/past the full content to LibreOffice) 
-  bool exportStatistics(
-      const std::string& path, 
-      const std::set<IndexT>& newReconstructedViews,
-      const std::size_t& kMinNbOfMatches = 50, 
-      const std::size_t kLimitDistance = 1);
-  
-  void showStatistics();
+  /// @param[in] dir The directory where you want to save the \a BaStats.txt file.
+  /// @param[in] nameComplement Add this string at the end of the file's name 
+  /// @return false it cannot open the file, true if it succeed
+  bool exportStatistics(const std::string& dir, const std::string& nameComplement = "");
   
 private:
   
+  /// @brief Transfer the options from OpenMVG to Ceres Solver.
   void setSolverOptions(ceres::Solver::Options& solver_options);
   
-  // Create a parameter block for each pose according to the Ceres format: [Rx, Ry, Rz, tx, ty, tz]
+  /// @brief Create a parameter block for each pose according to the Ceres format: [Rx, Ry, Rz, tx, ty, tz]
+  /// @param[in] poses The poses to add in the BA problem
+  /// @param[in] problem The Ceres problem
+  /// @return The map including all the poses blocks added to the Ceres problem
   Hash_Map<IndexT, std::vector<double>> addPosesToCeresProblem(
       const Poses & poses, 
       ceres::Problem & problem);
   
-  // Create a parameter block for each intrinsic according to the Ceres format
+  /// @brief Create a parameter block for each intrinsic according to the Ceres format
+  /// @param[in] sfm_data All the informations about the recontructions, notably the intrinsics
+  /// @param[in] problem The Ceres problem
+  /// @return The map including all the intrinsics blocks added to the Ceres problem
   Hash_Map<IndexT, std::vector<double>> addIntrinsicsToCeresProblem(
       const SfM_Data & sfm_data, 
       ceres::Problem & problem);
   
-  // Run the Ceres solver
+  /// @brief Run the Ceres solver
+  /// @param problem The Ceres problem
+  /// @param options The Ceres options
+  /// @param options The Ceres summary, including some statistics about the refinement
+  /// @return true if Ceres considers the solution as usable, else false
   bool solveBA(
       ceres::Problem & problem, 
-      ceres::Solver::Options &options, 
-      ceres::Solver::Summary &summary);
+      ceres::Solver::Options & options, 
+      ceres::Solver::Summary & summary);
   
-  // Update camera poses with refined data
-  void updateCameraPoses(const Hash_Map<IndexT, 
-                         std::vector<double>> & map_poseblocks, 
-                         const LocalBA_Data &localBA_data,
-                         Poses & poses);
+  /// @brief Update camera poses with refined data
+  /// @param[in] map_poseblocks The refined blocks
+  /// @param[in] localBA_data Contains the state of each pose
+  /// @param[out] poses The reference to the poses to update
+  void updateCameraPoses(
+      const Hash_Map<IndexT, std::vector<double>> & map_poseblocks, 
+      const LocalBA_Data & localBA_data,
+      Poses & poses);
   
-  // Update camera intrinsics with refined data
+  /// @brief Update camera intrinsics with refined data
+  /// @param[in] map_intrinsicblocks The refined blocks
+  /// @param[in] localBA_data Contains the state of each intrinsics
+  /// @param[out] intrinsics The reference to the intrinsics to update  
   void updateCameraIntrinsics(
       const Hash_Map<IndexT, std::vector<double>> & map_intrinsicblocks,
-      const LocalBA_Data &localBA_data,
+      const LocalBA_Data & localBA_data,
       Intrinsics & intrinsics);
 };
 

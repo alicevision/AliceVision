@@ -1746,10 +1746,11 @@ bool SequentialSfMReconstructionEngine::localBundleAdjustment(const std::set<Ind
   
   // -- Save & export the focal length for each intrinsic : 
   _localBA_data->saveFocalLengths(_sfm_data);
-  _localBA_data->exportFocalLengths(_sOutDirectory+"/LocalBA/K/");
+  _localBA_data->exportFocalLengths(stlplus::folder_append_separator(_sOutDirectory)+"LocalBA/K/");
   
   // -- Export data about the refinement
-  localBA_ceres.exportStatistics(_sOutDirectory+"/LocalBA/", newReconstructedViews, kMinNbOfMatches, kLimitDistance);
+  std::string namecomplement = "_M" + std::to_string(kMinNbOfMatches) + "_D" + std::to_string(kLimitDistance);
+  localBA_ceres.exportStatistics(stlplus::folder_append_separator(_sOutDirectory)+"LocalBA/", namecomplement);
   
   return isBaSucceed;
 }

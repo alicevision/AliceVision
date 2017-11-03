@@ -123,7 +123,7 @@ void LocalBA_Data::exportFocalLengths(const std::string& folder)
   {
     IndexT idIntr = x.first;
     
-    std::string filename = folder + "K" + std::to_string(idIntr) + ".txt";
+    std::string filename = stlplus::folder_append_separator(folder) + "K" + std::to_string(idIntr) + ".txt";
     std::ofstream os;
     os.open(filename, std::ios::app);
     os.seekp(0, std::ios::end); //put the cursor at the end

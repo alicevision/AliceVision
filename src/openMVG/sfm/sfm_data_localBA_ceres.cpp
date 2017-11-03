@@ -20,6 +20,35 @@ namespace sfm {
 using namespace openMVG::cameras;
 using namespace openMVG::geometry;
 
+void Local_Bundle_Adjustment_Ceres::LocalBA_statistics::show()
+{
+  std::cout << "\n----- Local BA Ceres statistics ------" << std::endl;
+  std::cout << "|- adjutment duration: " << _numRefinedPoses << " ms" << std::endl;
+  std::cout << "|- poses: " 
+            << _numRefinedPoses << " refined, "
+            << _numConstantPoses << " constant, "
+            << _numIgnoredPoses << " ignored" << std::endl;  
+  std::cout << "|- landmarks: " 
+            << _numRefinedLandmarks << " refined, "
+            << _numConstantLandmarks << " constant, "
+            << _numIgnoredLandmarks<< " ignored" << std::endl;
+  std::cout << "|- intrinsics: " 
+            << _numRefinedIntrinsics << " refined, "
+            << _numConstantIntrinsics << " constant, "
+            << _numIgnoredIntrinsics << " ignored" << std::endl;
+  std::cout << "|- #residual blocks = " << _numResidualBlocks << std::endl;
+  std::cout << "|- #successful iterations = " << _numSuccessfullIterations << std::endl;
+  std::cout << "|- #unsuccessful iterations = " << _numUnsuccessfullIterations << std::endl;
+  std::cout << "|- initial RMSE = " << _RMSEinitial << std::endl;
+  std::cout << "|- final RMSE = " << _RMSEfinal<< std::endl;
+  std::cout << "|- graph-distances: " << std::endl;
+  for (int i = -1; i < 10; i++)
+  {
+    std::cout << "D(" << i << ") : " << _numCamerasPerDistance[i] << std::endl;
+  }
+  std::cout << "---------------------------------------\n" << std::endl;
+}
+  
 Local_Bundle_Adjustment_Ceres::Local_Bundle_Adjustment_Ceres(
   const Local_Bundle_Adjustment_Ceres::LocalBA_options& options, 
   const LocalBA_Data& localBA_data,
@@ -33,11 +62,11 @@ bool Local_Bundle_Adjustment_Ceres::Adjust(SfM_Data& sfm_data, const LocalBA_Dat
 {
   //----------
   // Steps:
-  // 1. Generate parameter block with all the poses & intrinsics
-  // 2. Create residuals for each observation in the bundle adjustment problem seen by a view with a non-"ignored" pose and intrinsic.
+  // 1. Generate parameter blocks (using poses & intrinsics)
+  // 2. Create residuals for each observation seen by a view with a non-"ignored" pose and intrinsic.
   // 3. Solve the minimization.
   // 4. Store statisics
-  // 5. Update the scene with the new poses, landmarks & intrinsics (set to Refine)  
+  // 5. Update the scene with the new poses & intrinsics (set to Refine)  
   //----------
   
   ceres::Solver::Options solver_options;
@@ -204,12 +233,106 @@ bool Local_Bundle_Adjustment_Ceres::Adjust(SfM_Data& sfm_data, const LocalBA_Dat
     }
   }
   
-  // 5. Update the scene with the new poses, landmarks & intrinsics (set to Refine)  
+  // 5. Update the scene with the new poses & intrinsics (set to Refine)  
   // Update camera poses with refined data
   updateCameraPoses(map_posesBlocks, localBA_data, sfm_data.GetPoses());
 
   // Update camera intrinsics with refined data
   updateCameraIntrinsics(map_intrinsicsBlocks, localBA_data, sfm_data.intrinsics);
+  
+  return true;
+}
+
+bool Local_Bundle_Adjustment_Ceres::exportStatistics(const std::string& dir, const std::string& nameComplement)
+{
+  _LBAStatistics.show();
+  
+  std::string filename = stlplus::folder_append_separator(dir)+"BaStats";
+  if (!nameComplement.empty())
+    filename += "_" + nameComplement;
+  filename += ".txt";
+  std::ofstream os;
+  os.open(filename, std::ios::app);
+  os.seekp(0, std::ios::end); //put the cursor at the end
+  if (!os.is_open())
+  {
+    OPENMVG_LOG_DEBUG("Unable to open the Bundle adjustment stat file '" << filename << "'.");
+    return false;
+  }
+  
+  if (os.tellp() == 0) // 'tellp' return the cursor's position
+  {
+    // If the file does't exist: add a header.
+    std::vector<std::string> header;
+    header.push_back("Time/BA(s)");
+    header.push_back("RefinedPose"); header.push_back("ConstPose");  header.push_back("IgnoredPose");
+    header.push_back("RefinedPts");  header.push_back("ConstPts");   header.push_back("IgnoredPts");
+    header.push_back("RefinedK");    header.push_back("ConstK");     header.push_back("IgnoredK");
+    header.push_back("ResidualBlocks");
+    header.push_back("SuccessIter"); header.push_back("BadIter");
+    header.push_back("InitRMSE"); header.push_back("FinalRMSE");
+    header.push_back("dAR=-1");
+    header.push_back("dAR=0"); header.push_back("dAR=1"); header.push_back("dAR=2");
+    header.push_back("dAR=3"); header.push_back("dAR=4"); header.push_back("dAR=5");   
+    header.push_back("dAR=6"); header.push_back("dAR=7"); header.push_back("dAR=8"); 
+    header.push_back("dAR=9"); header.push_back("dAR=10+");
+    header.
+        push_back("New Views");
+    
+    for (std::string & head : header)
+      os << head << "\t";
+    os << "\n"; 
+  }
+  
+  // Add the '_LBA_statistics' contents:
+  // Compute the number of poses with a distanceToRecenteCameras > 10
+  // remind: distances range is {-1; 10+} so 11th element is the dist. 10
+  std::size_t posesWthDistUpperThanTen = 0;
+  
+  for (const auto& it : _LBAStatistics._numCamerasPerDistance)
+  {
+    if (it.first >= 10)
+      posesWthDistUpperThanTen += it.second;
+  }
+  
+  os << _LBAStatistics._time << "\t"
+        
+     << _LBAStatistics._numRefinedPoses << "\t"
+     << _LBAStatistics._numConstantPoses << "\t"
+     << _LBAStatistics._numIgnoredPoses << "\t"
+     << _LBAStatistics._numRefinedLandmarks << "\t"
+     << _LBAStatistics._numConstantLandmarks << "\t"
+     << _LBAStatistics._numIgnoredLandmarks << "\t"
+     << _LBAStatistics._numRefinedIntrinsics << "\t"
+     << _LBAStatistics._numConstantIntrinsics << "\t"
+     << _LBAStatistics._numIgnoredIntrinsics << "\t"
+        
+     << _LBAStatistics._numResidualBlocks << "\t"
+     << _LBAStatistics._numSuccessfullIterations << "\t"
+     << _LBAStatistics._numUnsuccessfullIterations << "\t"
+        
+     << _LBAStatistics._RMSEinitial << "\t"
+     << _LBAStatistics._RMSEfinal << "\t"
+        
+     << _LBAStatistics._numCamerasPerDistance[-1] << "\t"
+     << _LBAStatistics._numCamerasPerDistance[0] << "\t"
+     << _LBAStatistics._numCamerasPerDistance[1] << "\t"
+     << _LBAStatistics._numCamerasPerDistance[2] << "\t"
+     << _LBAStatistics._numCamerasPerDistance[3] << "\t"
+     << _LBAStatistics._numCamerasPerDistance[4] << "\t"
+     << _LBAStatistics._numCamerasPerDistance[5] << "\t"
+     << _LBAStatistics._numCamerasPerDistance[6] << "\t"
+     << _LBAStatistics._numCamerasPerDistance[7] << "\t"
+     << _LBAStatistics._numCamerasPerDistance[8] << "\t"
+     << _LBAStatistics._numCamerasPerDistance[9] << "\t"
+     << posesWthDistUpperThanTen << "\t";
+  
+  for (const IndexT id : _LBAStatistics._newViewsId)
+  {
+    os << id << "\t";
+  }
+  os << "\n";
+  os.close();
   
   return true;
 }
@@ -403,132 +526,6 @@ void Local_Bundle_Adjustment_Ceres::updateCameraIntrinsics(
     intrinsics[intrinsicId]->updateFromParams(intrinsicsV.second);
   }
 }
-
-bool Local_Bundle_Adjustment_Ceres::exportStatistics(
-  const std::string& path, 
-  const std::set<IndexT>& newReconstructedViews,
-  const std::size_t& kMinNbOfMatches, 
-  const std::size_t kLimitDistance)
-{
-  showStatistics();
-  
-  std::string filename = stlplus::folder_append_separator(path)+"BaStats_M" + std::to_string(kMinNbOfMatches) + "_D" + std::to_string(kLimitDistance) + ".txt";
-  std::ofstream os;
-  os.open(filename, std::ios::app);
-  os.seekp(0, std::ios::end); //put the cursor at the end
-  if (!os.is_open())
-  {
-    OPENMVG_LOG_DEBUG("Unable to open the Bundle adjustment stat file '" << filename << "'.");
-    return false;
-  }
-  
-  if (os.tellp() == 0) // 'tellp' return the cursor's position
-  {
-    // If the file does't exist: add a header.
-    std::vector<std::string> header;
-    header.push_back("Time/BA(s)");
-    header.push_back("RefinedPose"); header.push_back("ConstPose");  header.push_back("IgnoredPose");
-    header.push_back("RefinedPts");  header.push_back("ConstPts");   header.push_back("IgnoredPts");
-    header.push_back("RefinedK");    header.push_back("ConstK");     header.push_back("IgnoredK");
-    header.push_back("ResidualBlocks");
-    header.push_back("SuccessIter"); header.push_back("BadIter");
-    header.push_back("InitRMSE"); header.push_back("FinalRMSE");
-    header.push_back("dAR=-1");
-    header.push_back("dAR=0"); header.push_back("dAR=1"); header.push_back("dAR=2");
-    header.push_back("dAR=3"); header.push_back("dAR=4"); header.push_back("dAR=5");   
-    header.push_back("dAR=6"); header.push_back("dAR=7"); header.push_back("dAR=8"); 
-    header.push_back("dAR=9"); header.push_back("dAR=10+");
-    header.
-        push_back("New Views");
-    
-    for (std::string & head : header)
-      os << head << "\t";
-    os << "\n"; 
-  }
-  
-  // Add the '_LBA_statistics' contents:
-  // Compute the number of poses with a distanceToRecenteCameras > 10
-  // remind: distances range is {-1; 10+} so 11th element is the dist. 10
-  std::size_t posesWthDistUpperThanTen = 0;
-  
-  for (const auto& it : _LBAStatistics._numCamerasPerDistance)
-  {
-    if (it.first >= 10)
-      posesWthDistUpperThanTen += it.second;
-  }
-  
-  os << _LBAStatistics._time << "\t"
-        
-     << _LBAStatistics._numRefinedPoses << "\t"
-     << _LBAStatistics._numConstantPoses << "\t"
-     << _LBAStatistics._numIgnoredPoses << "\t"
-     << _LBAStatistics._numRefinedLandmarks << "\t"
-     << _LBAStatistics._numConstantLandmarks << "\t"
-     << _LBAStatistics._numIgnoredLandmarks << "\t"
-     << _LBAStatistics._numRefinedIntrinsics << "\t"
-     << _LBAStatistics._numConstantIntrinsics << "\t"
-     << _LBAStatistics._numIgnoredIntrinsics << "\t"
-        
-     << _LBAStatistics._numResidualBlocks << "\t"
-     << _LBAStatistics._numSuccessfullIterations << "\t"
-     << _LBAStatistics._numUnsuccessfullIterations << "\t"
-        
-     << _LBAStatistics._RMSEinitial << "\t"
-     << _LBAStatistics._RMSEfinal << "\t"
-        
-     << _LBAStatistics._numCamerasPerDistance[-1] << "\t"
-     << _LBAStatistics._numCamerasPerDistance[0] << "\t"
-     << _LBAStatistics._numCamerasPerDistance[1] << "\t"
-     << _LBAStatistics._numCamerasPerDistance[2] << "\t"
-     << _LBAStatistics._numCamerasPerDistance[3] << "\t"
-     << _LBAStatistics._numCamerasPerDistance[4] << "\t"
-     << _LBAStatistics._numCamerasPerDistance[5] << "\t"
-     << _LBAStatistics._numCamerasPerDistance[6] << "\t"
-     << _LBAStatistics._numCamerasPerDistance[7] << "\t"
-     << _LBAStatistics._numCamerasPerDistance[8] << "\t"
-     << _LBAStatistics._numCamerasPerDistance[9] << "\t"
-     << posesWthDistUpperThanTen << "\t";
-  
-  for (const IndexT id : newReconstructedViews)
-  {
-    os << id << "\t";
-  }
-  os << "\n";
-  os.close();
-  
-  return true;
-}
-
-void Local_Bundle_Adjustment_Ceres::showStatistics()
-{
-  std::cout << "\n----- Local BA Ceres statistics ------" << std::endl;
-  std::cout << "|- adjutment duration: " << _LBAStatistics._numRefinedPoses << " ms" << std::endl;
-  std::cout << "|- poses: " 
-            << _LBAStatistics._numRefinedPoses << " refined, "
-            << _LBAStatistics._numConstantPoses << " constant, "
-            << _LBAStatistics._numIgnoredPoses << " ignored" << std::endl;  
-  std::cout << "|- landmarks: " 
-            << _LBAStatistics._numRefinedLandmarks << " refined, "
-            << _LBAStatistics._numConstantLandmarks << " constant, "
-            << _LBAStatistics._numIgnoredLandmarks<< " ignored" << std::endl;
-  std::cout << "|- intrinsics: " 
-            << _LBAStatistics._numRefinedIntrinsics << " refined, "
-            << _LBAStatistics._numConstantIntrinsics << " constant, "
-            << _LBAStatistics._numIgnoredIntrinsics << " ignored" << std::endl;
-  std::cout << "|- #residual blocks = " << _LBAStatistics._numResidualBlocks << std::endl;
-  std::cout << "|- #successful iterations = " << _LBAStatistics._numSuccessfullIterations << std::endl;
-  std::cout << "|- #unsuccessful iterations = " << _LBAStatistics._numUnsuccessfullIterations << std::endl;
-  std::cout << "|- initial RMSE = " << _LBAStatistics._RMSEinitial << std::endl;
-  std::cout << "|- final RMSE = " << _LBAStatistics._RMSEfinal<< std::endl;
-  std::cout << "|- graph-distances: " << std::endl;
-  for (int i = -1; i < 10; i++)
-  {
-    std::cout << "D(" << i << ") : " << _LBAStatistics._numCamerasPerDistance[i] << std::endl;
-  }
-  std::cout << "---------------------------------------\n" << std::endl;
-}
-
-
 
 } // namespace sfm
 } // namespace openMVG
