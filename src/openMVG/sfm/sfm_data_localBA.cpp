@@ -23,28 +23,6 @@ LocalBA_Data::LocalBA_Data(const SfM_Data& sfm_data)
   }
 }
 
-int LocalBA_Data::getPoseDistance(const IndexT poseId) const
-{
-  if (_mapDistancePerPoseId.find(poseId) == _mapDistancePerPoseId.end())
-  {
-    OPENMVG_LOG_DEBUG("The pose #" << poseId << " does not exist in the '_mapDistancePerPoseId':\n"
-                      << _mapDistancePerPoseId);
-    return -1;
-  }
-  return _mapDistancePerPoseId.at(poseId);
-}
-
-int LocalBA_Data::getViewDistance(const IndexT viewId) const
-{
-  if (_mapDistancePerViewId.find(viewId) == _mapDistancePerViewId.end())
-  {
-    OPENMVG_LOG_DEBUG("The view #" << viewId << " does not exist in the '_mapDistancePerViewId':\n"
-                      << _mapDistancePerViewId);
-    return -1;
-  }
-  return _mapDistancePerViewId.at(viewId);
-}
-
 std::map<int, std::size_t> LocalBA_Data::getDistancesHistogram() const
 {
   std::map<int, std::size_t> hist;
@@ -58,27 +36,6 @@ std::map<int, std::size_t> LocalBA_Data::getDistancesHistogram() const
   }
   
   return hist;
-}
-
-void LocalBA_Data::updateParametersState(
-    const SfM_Data& sfm_data, 
-    const tracks::TracksPerView& map_tracksPerView, 
-    const std::set<IndexT> &newReconstructedViews, 
-    const std::size_t kMinNbOfMatches,
-    const std::size_t kLimitDistance)
-{
-  // ----------------
-  // Steps:
-  // 1. Add the new views to the graph (1 node per new view & 1 edge connecting to views sharing matches)
-  // 2. Compute the graph-distances from the new views to all the other posed views.
-  // 3. Convert each graph-distances to the corresponding LBA state (refined, constant, ignored) 
-  //    for every parameters included in the ceres problem (points, poses, landmarks)
-  // ----------------
-  updateGraphWithNewViews(sfm_data, map_tracksPerView, newReconstructedViews, kMinNbOfMatches);
-  
-  computeGraphDistances(sfm_data, newReconstructedViews);
-  
-  convertDistancesToLBAStates(sfm_data, kLimitDistance); 
 }
 
 void LocalBA_Data::setAllParametersToRefine(const SfM_Data& sfm_data)
@@ -110,6 +67,143 @@ void LocalBA_Data::setAllParametersToRefine(const SfM_Data& sfm_data)
   }  
 }
 
+void LocalBA_Data::updateParametersState(
+    const SfM_Data& sfm_data, 
+    const tracks::TracksPerView& map_tracksPerView, 
+    const std::set<IndexT> &newReconstructedViews, 
+    const std::size_t kMinNbOfMatches,
+    const std::size_t kLimitDistance)
+{
+  // ----------------
+  // Steps:
+  // 1. Add the new views to the graph (1 node per new view & 1 edge connecting to views sharing matches)
+  // 2. Compute the graph-distances from the new views to all the other posed views.
+  // 3. Convert each graph-distances to the corresponding LBA state (refined, constant, ignored) 
+  //    for every parameters included in the ceres problem (poses, landmarks, intrinsics)
+  // ----------------
+  updateGraphWithNewViews(sfm_data, map_tracksPerView, newReconstructedViews, kMinNbOfMatches);
+  
+  computeGraphDistances(sfm_data, newReconstructedViews);
+  
+  convertDistancesToLBAStates(sfm_data, kLimitDistance); 
+}
+
+void LocalBA_Data::saveFocalLengths(const SfM_Data& sfm_data)
+{
+  // Count the number of poses for each intrinsic
+  std::map<IndexT, std::size_t> map_intrinsicId_usageNum;
+  for (const auto& itView : sfm_data.GetViews())
+  {
+    const View * view = itView.second.get();
+    
+    if (sfm_data.IsPoseAndIntrinsicDefined(view))
+    {
+      auto itIntr = map_intrinsicId_usageNum.find(view->getIntrinsicId());
+      if (itIntr == map_intrinsicId_usageNum.end())
+        map_intrinsicId_usageNum[view->getIntrinsicId()] = 1;
+      else
+        map_intrinsicId_usageNum[view->getIntrinsicId()]++;
+    }
+  }
+  
+  // Complete the intrinsics history with the current focal lengths
+  for (const auto& x : sfm_data.intrinsics)
+  {
+    _focalLengthsHistory.at(x.first).push_back(
+          std::make_pair(map_intrinsicId_usageNum[x.first],
+          sfm_data.GetIntrinsicPtr(x.first)->getParams().at(0))
+        );
+  }
+}
+
+void LocalBA_Data::exportFocalLengths(const std::string& folder)
+{
+  OPENMVG_LOG_INFO("Exporting focal lengths history...");
+  for (const auto& x : _focalLengthsHistory)
+  {
+    IndexT idIntr = x.first;
+    
+    std::string filename = folder + "K" + std::to_string(idIntr) + ".txt";
+    std::ofstream os;
+    os.open(filename, std::ios::app);
+    os.seekp(0, std::ios::end); //put the cursor at the end
+    
+    if (_focalLengthsHistory.at(idIntr).size() == 1) // 'intrinsicsHistory' contains EXIF data only
+    {
+      // -- HEADER
+      if (os.tellp() == 0) // 'tellp' return the cursor's position
+      {
+        std::vector<std::string> header;
+        header.push_back("#poses");
+        header.push_back("f"); 
+        header.push_back("isConstant"); 
+        for (std::string & head : header)
+          os << head << "\t";
+        os << "\n"; 
+      }
+      
+      // -- EXIF DATA
+      os << 0 << "\t";
+      os << getLastFocalLength(idIntr) << "\t";
+      os << isFocalLengthConstant(idIntr) << "\t";
+      os << "\n";
+    }
+    else // Write the last intrinsics
+    {
+      // -- DATA
+      os << _focalLengthsHistory.at(idIntr).back().first << "\t";
+      os << _focalLengthsHistory.at(idIntr).back().second << "\t";
+      os << isFocalLengthConstant(idIntr) << "\t";
+      os << "\n";
+    }
+    os.close();
+  }
+}
+
+bool LocalBA_Data::removeViewsToTheGraph(const std::set<IndexT>& removedViewsId)
+{
+  std::size_t numRemovedNode = 0;
+  for (const IndexT& viewId : removedViewsId)
+  {
+    auto it = _mapNodePerViewId.find(viewId);
+    if (it != _mapNodePerViewId.end())
+    {
+      _graph.erase(it->second); // this function erase a node with its incident arcs
+      _mapNodePerViewId.erase(it);
+      _mapViewIdPerNode.erase(it->second);
+      
+      numRemovedNode++;
+      OPENMVG_LOG_INFO("The view #" << viewId << " has been successfully removed to the distance graph.");
+    }
+    else 
+      OPENMVG_LOG_DEBUG("The removed view #" << viewId << " does not exist in the '_mapNodePerViewId'.");
+  }
+  
+  return numRemovedNode == removedViewsId.size();
+}
+
+int LocalBA_Data::getPoseDistance(const IndexT poseId) const
+{
+  if (_mapDistancePerPoseId.find(poseId) == _mapDistancePerPoseId.end())
+  {
+    OPENMVG_LOG_DEBUG("The pose #" << poseId << " does not exist in the '_mapDistancePerPoseId':\n"
+                      << _mapDistancePerPoseId);
+    return -1;
+  }
+  return _mapDistancePerPoseId.at(poseId);
+}
+
+int LocalBA_Data::getViewDistance(const IndexT viewId) const
+{
+  if (_mapDistancePerViewId.find(viewId) == _mapDistancePerViewId.end())
+  {
+    OPENMVG_LOG_DEBUG("The view #" << viewId << " does not exist in the '_mapDistancePerViewId':\n"
+                      << _mapDistancePerViewId);
+    return -1;
+  }
+  return _mapDistancePerViewId.at(viewId);
+}
+
 void LocalBA_Data::resetParametersCounter()
 {
   _parametersCounter.clear();
@@ -122,55 +216,6 @@ void LocalBA_Data::resetParametersCounter()
   _parametersCounter[std::make_pair(EParameter::landmark, EState::refined)] = 0;
   _parametersCounter[std::make_pair(EParameter::landmark, EState::constant)] = 0;
   _parametersCounter[std::make_pair(EParameter::landmark, EState::ignored)] = 0;
-}
-
-std::map<Pair, std::size_t> LocalBA_Data::countSharedLandmarksPerImagesPair(
-    const SfM_Data& sfm_data,
-    const tracks::TracksPerView& map_tracksPerView,
-    const std::set<IndexT>& newViewsId)
-{
-  std::map<Pair, std::size_t> map_imagesPair_nbSharedLandmarks;
-  
-  // Get landmarks id. of all the reconstructed 3D points (: landmarks)
-  // TODO: avoid copy and use boost::transform_iterator
-  std::set<IndexT> landmarkIds;
-  std::transform(sfm_data.GetLandmarks().begin(), sfm_data.GetLandmarks().end(),
-                 std::inserter(landmarkIds, landmarkIds.begin()),
-                 stl::RetrieveKey());
-  
-  for(const auto& viewId: newViewsId)
-  {
-    // Get all the tracks of the new added view
-    const openMVG::tracks::TrackIdSet& newView_trackIds = map_tracksPerView.at(viewId);
-    
-    // Keep the reconstructed tracks (with an associated landmark)
-    std::vector<IndexT> newView_landmarks; // all landmarks (already reconstructed) visible from the new view
-    
-    newView_landmarks.reserve(newView_trackIds.size());
-    std::set_intersection(newView_trackIds.begin(), newView_trackIds.end(),
-                          landmarkIds.begin(), landmarkIds.end(),
-                          std::back_inserter(newView_landmarks));
-    
-    // Retrieve the common track Ids
-    for(const auto& landmarkId: newView_landmarks)
-    {
-      for(const auto& observations: sfm_data.structure.at(landmarkId).observations)
-      {
-        if (observations.first == viewId) continue; // do not compare an observation with itself
-        
-        // Increment the number of common landmarks between the new view and the already 
-        // reconstructed cameras (observations).
-        // format: pair<min_viewid, max_viewid>
-        auto viewPair = std::make_pair(std::min(viewId, observations.first), std::max(viewId, observations.first));
-        auto it = map_imagesPair_nbSharedLandmarks.find(viewPair);
-        if(it == map_imagesPair_nbSharedLandmarks.end())  // the first common landmark
-          map_imagesPair_nbSharedLandmarks[viewPair] = 1;
-        else
-          it->second++;
-      }
-    }
-  }
-  return map_imagesPair_nbSharedLandmarks;
 }
 
 void LocalBA_Data::updateGraphWithNewViews(
@@ -233,28 +278,6 @@ void LocalBA_Data::updateGraphWithNewViews(
   OPENMVG_LOG_INFO("|- The distances graph has been completed with " 
                    << addedViewsId.size() << " nodes & " << numEdges << " edges.");
   OPENMVG_LOG_INFO("|- It contains " << _graph.maxNodeId() << " nodes & " << _graph.maxEdgeId() << " edges");                   
-}
-
-bool LocalBA_Data::removeViewsToTheGraph(const std::set<IndexT>& removedViewsId)
-{
-  std::size_t numRemovedNode = 0;
-  for (const IndexT& viewId : removedViewsId)
-  {
-    auto it = _mapNodePerViewId.find(viewId);
-    if (it != _mapNodePerViewId.end())
-    {
-      _graph.erase(it->second); // this function erase a node with its incident arcs
-      _mapNodePerViewId.erase(it);
-      _mapViewIdPerNode.erase(it->second);
-      
-      numRemovedNode++;
-      OPENMVG_LOG_INFO("The view #" << viewId << " has been successfully removed to the distance graph.");
-    }
-    else 
-      OPENMVG_LOG_DEBUG("The removed view #" << viewId << " does not exist in the '_mapNodePerViewId'.");
-  }
-  
-  return numRemovedNode == removedViewsId.size();
 }
 
 void LocalBA_Data::computeGraphDistances(const SfM_Data& sfm_data, const std::set<IndexT>& newReconstructedViews)
@@ -398,32 +421,53 @@ void LocalBA_Data::convertDistancesToLBAStates(const SfM_Data & sfm_data, const 
   }
 }
 
-void LocalBA_Data::saveFocalLengths(const SfM_Data& sfm_data)
+std::map<Pair, std::size_t> LocalBA_Data::countSharedLandmarksPerImagesPair(
+    const SfM_Data& sfm_data,
+    const tracks::TracksPerView& map_tracksPerView,
+    const std::set<IndexT>& newViewsId)
 {
-  // Count the number of poses for each intrinsic
-  std::map<IndexT, std::size_t> map_intrinsicId_usageNum;
-  for (const auto& itView : sfm_data.GetViews())
+  std::map<Pair, std::size_t> map_imagesPair_nbSharedLandmarks;
+  
+  // Get landmarks id. of all the reconstructed 3D points (: landmarks)
+  // TODO: avoid copy and use boost::transform_iterator
+  std::set<IndexT> landmarkIds;
+  std::transform(sfm_data.GetLandmarks().begin(), sfm_data.GetLandmarks().end(),
+                 std::inserter(landmarkIds, landmarkIds.begin()),
+                 stl::RetrieveKey());
+  
+  for(const auto& viewId: newViewsId)
   {
-    const View * view = itView.second.get();
+    // Get all the tracks of the new added view
+    const openMVG::tracks::TrackIdSet& newView_trackIds = map_tracksPerView.at(viewId);
     
-    if (sfm_data.IsPoseAndIntrinsicDefined(view))
+    // Keep the reconstructed tracks (with an associated landmark)
+    std::vector<IndexT> newView_landmarks; // all landmarks (already reconstructed) visible from the new view
+    
+    newView_landmarks.reserve(newView_trackIds.size());
+    std::set_intersection(newView_trackIds.begin(), newView_trackIds.end(),
+                          landmarkIds.begin(), landmarkIds.end(),
+                          std::back_inserter(newView_landmarks));
+    
+    // Retrieve the common track Ids
+    for(const auto& landmarkId: newView_landmarks)
     {
-      auto itIntr = map_intrinsicId_usageNum.find(view->getIntrinsicId());
-      if (itIntr == map_intrinsicId_usageNum.end())
-        map_intrinsicId_usageNum[view->getIntrinsicId()] = 1;
-      else
-        map_intrinsicId_usageNum[view->getIntrinsicId()]++;
+      for(const auto& observations: sfm_data.structure.at(landmarkId).observations)
+      {
+        if (observations.first == viewId) continue; // do not compare an observation with itself
+        
+        // Increment the number of common landmarks between the new view and the already 
+        // reconstructed cameras (observations).
+        // format: pair<min_viewid, max_viewid>
+        auto viewPair = std::make_pair(std::min(viewId, observations.first), std::max(viewId, observations.first));
+        auto it = map_imagesPair_nbSharedLandmarks.find(viewPair);
+        if(it == map_imagesPair_nbSharedLandmarks.end())  // the first common landmark
+          map_imagesPair_nbSharedLandmarks[viewPair] = 1;
+        else
+          it->second++;
+      }
     }
   }
-  
-  // Complete the intrinsics history with the current focal lengths
-  for (const auto& x : sfm_data.intrinsics)
-  {
-    _focalLengthsHistory.at(x.first).push_back(
-          std::make_pair(map_intrinsicId_usageNum[x.first],
-          sfm_data.GetIntrinsicPtr(x.first)->getParams().at(0))
-        );
-  }
+  return map_imagesPair_nbSharedLandmarks;
 }
 
 void LocalBA_Data::checkFocalLengthsConsistency(const std::size_t windowSize, const double stdevPercentageLimit)
@@ -518,49 +562,7 @@ double LocalBA_Data::standardDeviation(const std::vector<T>& data)
   return std::sqrt(sq_sum / data.size());
 }  
 
-void LocalBA_Data::exportFocalLengths(const std::string& folder)
-{
-  OPENMVG_LOG_INFO("Exporting focal lengths history...");
-  for (const auto& x : _focalLengthsHistory)
-  {
-    IndexT idIntr = x.first;
-    
-    std::string filename = folder + "K" + std::to_string(idIntr) + ".txt";
-    std::ofstream os;
-    os.open(filename, std::ios::app);
-    os.seekp(0, std::ios::end); //put the cursor at the end
-    
-    if (_focalLengthsHistory.at(idIntr).size() == 1) // 'intrinsicsHistory' contains EXIF data only
-    {
-      // -- HEADER
-      if (os.tellp() == 0) // 'tellp' return the cursor's position
-      {
-        std::vector<std::string> header;
-        header.push_back("#poses");
-        header.push_back("f"); 
-        header.push_back("isConstant"); 
-        for (std::string & head : header)
-          os << head << "\t";
-        os << "\n"; 
-      }
-      
-      // -- EXIF DATA
-      os << 0 << "\t";
-      os << getLastFocalLength(idIntr) << "\t";
-      os << isFocalLengthConstant(idIntr) << "\t";
-      os << "\n";
-    }
-    else // Write the last intrinsics
-    {
-      // -- DATA
-      os << _focalLengthsHistory.at(idIntr).back().first << "\t";
-      os << _focalLengthsHistory.at(idIntr).back().second << "\t";
-      os << isFocalLengthConstant(idIntr) << "\t";
-      os << "\n";
-    }
-    os.close();
-  }
-}
+
 
 void LocalBA_Data::drawGraph(const SfM_Data& sfm_data, const std::string& dir, const std::string& nameComplement)
 {

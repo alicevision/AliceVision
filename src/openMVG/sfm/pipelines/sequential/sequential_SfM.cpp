@@ -1714,11 +1714,6 @@ bool SequentialSfMReconstructionEngine::localBundleAdjustment(const std::set<Ind
   
   if (options.isLocalBAEnabled()) // Local Bundle Adjustment
   {
-    // -- Update all the data needed to apply Local BA:
-    // 1. Add the new views to the graph (1 node per new view & 1 edge connecting to views sharing matches)
-    // 2. Compute the graph-distances from the new views to all the other posed views.
-    // 3. Convert each graph-distances to the corresponding LBA state (refined, constant, ignored) 
-    //    for every parameters included in the ceres problem (points, poses, landmarks)
     _localBA_data->updateParametersState(_sfm_data, _map_tracksPerView, newReconstructedViews, kMinNbOfMatches, kLimitDistance);
       
     // -- Check Ceres mode: 
@@ -1749,7 +1744,7 @@ bool SequentialSfMReconstructionEngine::localBundleAdjustment(const std::set<Ind
     isBaSucceed = localBA_ceres.Adjust(_sfm_data, *_localBA_data);
   }
   
-  // -- Export the focal length for each intrinsic : 
+  // -- Save & export the focal length for each intrinsic : 
   _localBA_data->saveFocalLengths(_sfm_data);
   _localBA_data->exportFocalLengths(_sOutDirectory+"/LocalBA/K/");
   
