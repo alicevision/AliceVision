@@ -154,7 +154,7 @@ void LocalBA_Data::exportFocalLengths(const std::string& folder)
       os << _focalLengthsHistory.at(idIntr).back().first << "\t";
       os << _focalLengthsHistory.at(idIntr).back().second << "\t";
       os << isFocalLengthConstant(idIntr) << "\t";
-      os << "\n";
+      os << "\n"; 
     }
     os.close();
   }
@@ -473,14 +473,17 @@ std::map<Pair, std::size_t> LocalBA_Data::countSharedLandmarksPerImagesPair(
 void LocalBA_Data::checkFocalLengthsConsistency(const std::size_t windowSize, const double stdevPercentageLimit)
 {
   OPENMVG_LOG_INFO("Checking, for each camera, if the focal length is stable...");
-  
+  std::size_t numOfConstFocal = 0;
   for (const auto& x : _focalLengthsHistory)
   {
     IndexT idIntr = x.first;
     
     // Do not compute the variation, if the intrinsic has already be regarded as constant.
     if (isFocalLengthConstant(idIntr))
+    {
+      numOfConstFocal++;
       continue;
+    }
     
     // Get the full history of intrinsic parameters
     std::vector<std::size_t> allNumPosesVec;
@@ -540,16 +543,13 @@ void LocalBA_Data::checkFocalLengthsConsistency(const std::size_t windowSize, co
     if (normStdev*100.0 <= stdevPercentageLimit)
     {
       _mapFocalIsConstant.at(idIntr) = true;
-      
-      OPENMVG_LOG_INFO("The intrinsic #" << idIntr << " is considered to be stable.\n" 
-                       << "- minimum focal = " << minVal << "\n"
-                       << "- maximal focal = " << minVal << "\n"
-                       << "- std. dev. (normalized) = " << normStdev << "\n"
-                       << "- current focal = " << filteredValuesVec.back() << " (= constant) \n");
+      numOfConstFocal++;
+      OPENMVG_LOG_INFO("|- The intrinsic #" << idIntr << " is now considered to be stable.\n");
     }
     else
       _mapFocalIsConstant.at(idIntr) = false;
   }
+  OPENMVG_LOG_INFO("|- " << numOfConstFocal << "/" << _mapFocalIsConstant.size() << " intrinsics with a stable focal.");
 }
 
 template<typename T> 

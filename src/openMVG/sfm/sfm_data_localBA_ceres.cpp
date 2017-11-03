@@ -23,36 +23,38 @@ using namespace openMVG::geometry;
 void Local_Bundle_Adjustment_Ceres::LocalBA_statistics::show()
 {
   std::cout << "\n----- Local BA Ceres statistics ------" << std::endl;
-  std::cout << "|- adjutment duration: " << _numRefinedPoses << " ms" << std::endl;
-  std::cout << "|- poses: " 
-            << _numRefinedPoses << " refined, "
-            << _numConstantPoses << " constant, "
+  std::cout << "|- adjutment duration: " << _time << " s" << std::endl;
+  std::cout << "|- poses: \t" 
+            << _numRefinedPoses << " refined, \t"
+            << _numConstantPoses << " constant, \t"
             << _numIgnoredPoses << " ignored" << std::endl;  
-  std::cout << "|- landmarks: " 
-            << _numRefinedLandmarks << " refined, "
-            << _numConstantLandmarks << " constant, "
+  std::cout << "|- landmarks: \t" 
+            << _numRefinedLandmarks << " refined, \t"
+            << _numConstantLandmarks << " constant, \t"
             << _numIgnoredLandmarks<< " ignored" << std::endl;
-  std::cout << "|- intrinsics: " 
-            << _numRefinedIntrinsics << " refined, "
-            << _numConstantIntrinsics << " constant, "
+  std::cout << "|- intrinsics: \t" 
+            << _numRefinedIntrinsics << " refined, \t"
+            << _numConstantIntrinsics << " constant, \t"
             << _numIgnoredIntrinsics << " ignored" << std::endl;
   std::cout << "|- #residual blocks = " << _numResidualBlocks << std::endl;
   std::cout << "|- #successful iterations = " << _numSuccessfullIterations << std::endl;
   std::cout << "|- #unsuccessful iterations = " << _numUnsuccessfullIterations << std::endl;
   std::cout << "|- initial RMSE = " << _RMSEinitial << std::endl;
   std::cout << "|- final RMSE = " << _RMSEfinal<< std::endl;
-  std::cout << "|- graph-distances: " << std::endl;
+  std::cout << "|- {distance, numViews} (num views > 0 only): ";
   for (int i = -1; i < 10; i++)
   {
-    std::cout << "D(" << i << ") : " << _numCamerasPerDistance[i] << std::endl;
+    if (_numCamerasPerDistance[i] > 0)
+      std::cout << "{" << i << ", " << _numCamerasPerDistance[i] << "} ";
+    //    std::cout << "D(" << i << ") : " << _numCamerasPerDistance[i] << std::endl;
   }
-  std::cout << "---------------------------------------\n" << std::endl;
+  std::cout << "\n---------------------------------------\n" << std::endl;
 }
-  
+
 Local_Bundle_Adjustment_Ceres::Local_Bundle_Adjustment_Ceres(
-  const Local_Bundle_Adjustment_Ceres::LocalBA_options& options, 
-  const LocalBA_Data& localBA_data,
-  const std::set<IndexT>& newReconstructedViews)
+    const Local_Bundle_Adjustment_Ceres::LocalBA_options& options, 
+    const LocalBA_Data& localBA_data,
+    const std::set<IndexT>& newReconstructedViews)
   : 
     _LBAOptions(options),
     _LBAStatistics(newReconstructedViews, localBA_data.getDistancesHistogram())
@@ -71,6 +73,7 @@ bool Local_Bundle_Adjustment_Ceres::Adjust(SfM_Data& sfm_data, const LocalBA_Dat
   
   ceres::Solver::Options solver_options;
   setSolverOptions(solver_options);
+  
   if (_LBAOptions.isParameterOrderingEnabled()) 
     solver_options.linear_solver_ordering.reset(new ceres::ParameterBlockOrdering);
   
@@ -157,7 +160,6 @@ bool Local_Bundle_Adjustment_Ceres::Adjust(SfM_Data& sfm_data, const LocalBA_Dat
   }
   
   // 3. Solve the minimization.
-  OPENMVG_LOG_DEBUG("Solving ceres problem...");
   ceres::Solver::Summary summary;
   if (!solveBA(problem, solver_options, summary))
     return false;
@@ -192,51 +194,12 @@ bool Local_Bundle_Adjustment_Ceres::Adjust(SfM_Data& sfm_data, const LocalBA_Dat
   _LBAStatistics._RMSEinitial = std::sqrt( summary.initial_cost / summary.num_residuals);
   _LBAStatistics._RMSEfinal = std::sqrt( summary.final_cost / summary.num_residuals);
   
-  if (_LBAOptions._bVerbose)
-  {
-    // Display statistics about the minimization
-    OPENMVG_LOG_DEBUG(
-          "Bundle Adjustment statistics (approximated RMSE):\n"
-          " #views: " << sfm_data.views.size() << "\n"
-          << " #poses: " << sfm_data.GetPoses().size() << "\n"
-          << " #intrinsics: " << sfm_data.intrinsics.size() << "\n"
-                                                               " #tracks: " << sfm_data.structure.size() << "\n"
-          << " #residuals: " << summary.num_residuals << "\n"
-          << " Initial RMSE: " << std::sqrt( summary.initial_cost / summary.num_residuals) << "\n"
-          << " Final RMSE: " << std::sqrt( summary.final_cost / summary.num_residuals) << "\n"
-          << " Time (s): " << summary.total_time_in_seconds << "\n"
-          );
-    
-    // Display statistics about the Local BA
-    OPENMVG_LOG_DEBUG(
-          "Local BA statistics:\n"
-          << " #poses: " << _LBAStatistics._numRefinedPoses << " refined, " 
-          << _LBAStatistics._numConstantPoses << " constant, "
-          << _LBAStatistics._numIgnoredPoses << " ignored.\n"
-          << " #intrinsics: " << _LBAStatistics._numRefinedIntrinsics << " refined, " 
-          << _LBAStatistics._numConstantIntrinsics << " constant, "
-          << _LBAStatistics._numIgnoredIntrinsics<< " ignored.\n"   
-          << " #landmarks: " << _LBAStatistics._numRefinedLandmarks << " refined, " 
-          << _LBAStatistics._numConstantLandmarks << " constant, "
-          << _LBAStatistics._numIgnoredLandmarks << " ignored.\n"
-          );
-    
-    if (_LBAOptions.isParameterOrderingEnabled())
-    {
-      // Display statistics about "parameter ordering"
-      OPENMVG_LOG_DEBUG(
-            "Parameter ordering statistics:"
-            << "\n (group 0 (landmarks)): " << solver_options.linear_solver_ordering->GroupSize(0) 
-            << "\n (group 1 (intrinsics)): " << solver_options.linear_solver_ordering->GroupSize(1) 
-            << "\n (group 2 (poses)): " << solver_options.linear_solver_ordering->GroupSize(2) << "\n"
-            );
-    }
-  }
+  _LBAStatistics.show();
   
   // 5. Update the scene with the new poses & intrinsics (set to Refine)  
   // Update camera poses with refined data
   updateCameraPoses(map_posesBlocks, localBA_data, sfm_data.GetPoses());
-
+  
   // Update camera intrinsics with refined data
   updateCameraIntrinsics(map_intrinsicsBlocks, localBA_data, sfm_data.intrinsics);
   
@@ -245,12 +208,7 @@ bool Local_Bundle_Adjustment_Ceres::Adjust(SfM_Data& sfm_data, const LocalBA_Dat
 
 bool Local_Bundle_Adjustment_Ceres::exportStatistics(const std::string& dir, const std::string& nameComplement)
 {
-  _LBAStatistics.show();
-  
-  std::string filename = stlplus::folder_append_separator(dir)+"BaStats";
-  if (!nameComplement.empty())
-    filename += "_" + nameComplement;
-  filename += ".txt";
+  std::string filename = stlplus::folder_append_separator(dir) +"BaStats" + nameComplement + ".txt";
   std::ofstream os;
   os.open(filename, std::ios::app);
   os.seekp(0, std::ios::end); //put the cursor at the end
@@ -461,6 +419,15 @@ bool Local_Bundle_Adjustment_Ceres::solveBA(
     ceres::Solver::Options& options, 
     ceres::Solver::Summary& summary)
 {
+if (_LBAOptions._linear_solver_type == ceres::LinearSolverType::DENSE_SCHUR)
+    OPENMVG_LOG_DEBUG("Solving ceres problem (linear solver type: DENSE_SCHUR)...");
+  else if (_LBAOptions._linear_solver_type == ceres::LinearSolverType::SPARSE_SCHUR)
+    OPENMVG_LOG_DEBUG("Solving ceres problem (linear solver type: SPARSE_SCHUR)...");
+  else if (_LBAOptions._linear_solver_type == ceres::LinearSolverType::ITERATIVE_SCHUR)
+    OPENMVG_LOG_DEBUG("Solving ceres problem (linear solver type: ITERATIVE_SCHUR)...");
+  else
+    OPENMVG_LOG_DEBUG("Solving ceres problem...");
+    
   // Configure a BA engine and run it
   // Solve BA
   

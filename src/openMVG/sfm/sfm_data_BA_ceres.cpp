@@ -144,8 +144,6 @@ Bundle_Adjustment_Ceres::BA_options::BA_options(const bool bVerbose, bool bmulti
     _nbThreads = 1;
 
   _bCeres_Summary = false;
-//  useParametersOrdering = false;
-//  useLocalBA = false;
   
   // Use dense BA by default
   setDenseBA();

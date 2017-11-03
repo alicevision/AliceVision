@@ -1715,15 +1715,18 @@ bool SequentialSfMReconstructionEngine::localBundleAdjustment(const std::set<Ind
   if (options.isLocalBAEnabled()) // Local Bundle Adjustment
   {
     _localBA_data->updateParametersState(_sfm_data, _map_tracksPerView, newReconstructedViews, kMinNbOfMatches, kLimitDistance);
-      
+    
     // -- Check Ceres mode: 
     // Restore the Ceres Dense mode if the number of cameras in the solver is <= 100
     if (_localBA_data->getNumOfRefinedPoses() + _localBA_data->getNumOfConstantPoses() <= 100)
+    {
       options.setDenseBA();
-      
+    }
+    
     localBA_ceres = Local_Bundle_Adjustment_Ceres(options, *_localBA_data, newReconstructedViews);
     
-    // -- Refine
+    // -- Refine:
+    
     // Parameters are refined only if the number of cameras to refine is > to the number of newly added cameras.
     // - if there are equal: it meens that none of the new cameras is connected to the local BA graph,
     //    so the refinement would be done on those cameras only, without any constant parameters.
@@ -1740,7 +1743,7 @@ bool SequentialSfMReconstructionEngine::localBundleAdjustment(const std::set<Ind
     _localBA_data->setAllParametersToRefine(_sfm_data);
     
     localBA_ceres = Local_Bundle_Adjustment_Ceres(options, *_localBA_data, newReconstructedViews);
-  
+    
     isBaSucceed = localBA_ceres.Adjust(_sfm_data, *_localBA_data);
   }
   
