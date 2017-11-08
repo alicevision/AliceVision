@@ -16,7 +16,7 @@
 #include <memory>
 #include <limits>
 
-namespace oiio = OpenImageIO;
+namespace oiio = OIIO;
 
 namespace aliceVision {
 

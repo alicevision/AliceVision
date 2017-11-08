@@ -27,7 +27,7 @@
 using namespace aliceVision;
 namespace bfs = boost::filesystem;
 namespace po = boost::program_options;
-namespace oiio = OpenImageIO;
+namespace oiio = OIIO;
 
 /**
  * @brief A pinhole camera with its associated rotation
