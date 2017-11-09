@@ -166,7 +166,7 @@ bool LoadMatchFilePerImage(
     {
       #pragma omp critical
       {
-        ALICEVISION_LOG_WARNING("Unable to load match file: " << folder << "/" << matchFilename);
+        ALICEVISION_LOG_DEBUG("Unable to load match file: " << folder << "/" << matchFilename);
       }
       continue;
     }
