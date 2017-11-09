@@ -432,7 +432,7 @@ bool ReconstructionEngine_sequentialSfM::Process()
 
   //-- Reconstruction done.
   //-- Display some statistics
-  ALICEVISION_LOG_DEBUG(
+  ALICEVISION_LOG_INFO(
     "-------------------------------\n"
     "-- Structure from Motion (statistics):\n"
     "-- #Camera calibrated: " << _sfm_data.GetPoses().size() <<
@@ -442,11 +442,11 @@ bool ReconstructionEngine_sequentialSfM::Process()
 
   Histogram<double> h;
   ComputeResidualsHistogram(&h);
-  ALICEVISION_LOG_DEBUG("Histogram of residuals:" << h.ToString());
+  ALICEVISION_LOG_INFO("Histogram of residuals:" << h.ToString());
     
   Histogram<double> hTracks;
   ComputeTracksLengthsHistogram(&hTracks);
-  ALICEVISION_LOG_DEBUG("Histogram of tracks length:" << hTracks.ToString());
+  ALICEVISION_LOG_INFO("Histogram of tracks length:" << hTracks.ToString());
   
   if (!_sLoggingFile.empty())
   {
@@ -785,7 +785,7 @@ bool ReconstructionEngine_sequentialSfM::getBestInitialImagePairs(std::vector<Pa
   }
   if (bestImagePairs.empty())
   {
-    ALICEVISION_LOG_DEBUG("No valid initial pair found automatically.");
+    ALICEVISION_LOG_ERROR("Error: No valid initial pair found automatically.");
     return false;
   }
   out_bestImagePairs.reserve(bestImagePairs.size());
@@ -809,7 +809,7 @@ bool ReconstructionEngine_sequentialSfM::MakeInitialPair3D(const Pair& current_p
   const View * viewJ = _sfm_data.GetViews().at(J).get();
   const Intrinsics::const_iterator iterIntrinsicJ = _sfm_data.GetIntrinsics().find(viewJ->getIntrinsicId());
 
-  ALICEVISION_LOG_DEBUG("Initial pair is:\n"
+  ALICEVISION_LOG_INFO("Initial pair is:\n"
           << "  A - Id: " << I << " - " << " filepath: " << viewI->getImagePath() << "\n"
           << "  B - Id: " << J << " - " << " filepath: " << viewJ->getImagePath());
 
@@ -852,7 +852,7 @@ bool ReconstructionEngine_sequentialSfM::MakeInitialPair3D(const Pair& current_p
     feat = _featuresPerView->getFeatures(J, iterT->second.descType)[j].coords().cast<double>();
     xJ.col(cptIndex) = camJ->get_ud_pixel(feat);
   }
-  ALICEVISION_LOG_DEBUG(n << " matches in the image pair for the initial pose estimation.");
+  ALICEVISION_LOG_INFO(n << " matches in the image pair for the initial pose estimation.");
 
   // c. Robust estimation of the relative pose
   RelativePoseInfo relativePose_info;
