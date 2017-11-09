@@ -21,11 +21,6 @@ namespace camera {
  */
 class PinholeFisheye : public Pinhole
 {
-  protected:
-  // center of distortion is applied by the Intrinsics class
-  std::vector<double> _distortionParams; // K1, K2, K3, K4
-
-
   public:
 
   PinholeFisheye(
@@ -34,7 +29,7 @@ class PinholeFisheye : public Pinhole
     double k1 = 0.0, double k2 = 0.0, double k3 = 0.0, double k4 = 0.0)
         :Pinhole(w, h, focal, ppx, ppy)
   {
-    _distortionParams = {k1, k2, k3, k4};
+    setDistortionParams({k1, k2, k3, k4});
   }
 
   PinholeFisheye* clone() const { return new PinholeFisheye(*this); }
@@ -46,8 +41,9 @@ class PinholeFisheye : public Pinhole
 
   virtual Vec2 add_disto(const Vec2 & p) const
   {
+    const std::vector<double>& distortionParams = getDistortionParams();
     const double eps = 1e-8;
-    const double k1 = _distortionParams[0], k2 = _distortionParams[1], k3 = _distortionParams[2], k4 = _distortionParams[3];
+    const double k1 = _distortionParams.at(0), k2 = _distortionParams.at(1), k3 = _distortionParams.at(2), k4 = _distortionParams.at(3);
     const double r = std::hypot(p(0), p(1));
     const double theta = std::atan(r);
     const double
@@ -81,42 +77,14 @@ class PinholeFisheye : public Pinhole
           theta6 = theta4*theta2,
           theta8 = theta6*theta2;
         theta = theta_dist /
-          (1 + _distortionParams[0] * theta2
-             + _distortionParams[1] * theta4
-             + _distortionParams[2] * theta6
-             + _distortionParams[3] * theta8);
+          (1 + _distortionParams.at(0) * theta2
+             + _distortionParams.at(1) * theta4
+             + _distortionParams.at(2) * theta6
+             + _distortionParams.at(3) * theta8);
       }
       scale = std::tan(theta) / theta_dist;
     }
     return p * scale;
-  }
-
-  // Data wrapper for non linear optimization (get data)
-  virtual std::vector<double> getParams() const
-  {
-    std::vector<double> params = Pinhole::getParams();
-    params.push_back(_distortionParams[0]);
-    params.push_back(_distortionParams[1]);
-    params.push_back(_distortionParams[2]);
-    params.push_back(_distortionParams[3]);
-    return params;
-  }
-
-  virtual std::vector<double> getDistortionParams() const
-  {
-    return _distortionParams;
-  }
-
-  // Data wrapper for non linear optimization (update from data)
-  virtual bool updateFromParams(const std::vector<double> & params)
-  {
-    if (params.size() == 7)
-    {
-      this->setK(params[0], params[1], params[2]);
-      _distortionParams = {params[3], params[4], params[5], params[6]};
-      return true;
-    }
-    return false;
   }
 
   /// Return the un-distorted pixel (with removed distortion)

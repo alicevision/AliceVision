@@ -23,10 +23,6 @@ namespace camera {
  */
 class PinholeFisheye1 : public Pinhole
 {
-protected:
-  // center of distortion is applied by the Intrinsics class
-  std::vector<double> _distortionParams; // K1
-
 public:
 
   PinholeFisheye1(
@@ -35,7 +31,7 @@ public:
     double k1 = 0.0)
         :Pinhole(w, h, focal, ppx, ppy)
   {
-    _distortionParams = {k1};
+    setDistortionParams({k1});
   }
 
   PinholeFisheye1* clone() const { return new PinholeFisheye1(*this); }
@@ -47,7 +43,7 @@ public:
 
   virtual Vec2 add_disto(const Vec2 & p) const
   {
-    const double k1 = _distortionParams[0];
+    const double k1 = _distortionParams.at(0);
     const double r = std::hypot(p(0), p(1));
     const double coef = (std::atan(2.0 * r * std::tan(0.5 * k1)) / k1) / r;
     return  p * coef;
@@ -55,35 +51,10 @@ public:
 
   virtual Vec2 remove_disto(const Vec2 & p) const
   {
-    const double k1 = _distortionParams[0];
+    const double k1 = _distortionParams.at(0);
     const double r = std::hypot(p(0), p(1));
     const double coef = 0.5 * std::tan(r * k1) / (std::tan(0.5 * k1) * r);
     return  p * coef;
-  }
-
-  // Data wrapper for non linear optimization (get data)
-  virtual std::vector<double> getParams() const
-  {
-    std::vector<double> params = Pinhole::getParams();
-    params.push_back(_distortionParams[0]);
-    return params;
-  }
-
-  virtual std::vector<double> getDistortionParams() const
-  {
-    return _distortionParams;
-  }
-
-  // Data wrapper for non linear optimization (update from data)
-  virtual bool updateFromParams(const std::vector<double> & params)
-  {
-    if (params.size() == 7)
-    {
-      this->setK(params[0], params[1], params[2]);
-      _distortionParams = {params[3]};
-      return true;
-    }
-    return false;
   }
 
   /// Return the un-distorted pixel (with removed distortion)
