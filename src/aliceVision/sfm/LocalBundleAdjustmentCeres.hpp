@@ -5,23 +5,22 @@
 
 #pragma once
 
-#include "openMVG/sfm/sfm_data_BA_ceres.hpp"
-#include "openMVG/sfm/sfm_data_localBA.hpp"
-#include "openMVG/tracks/tracks.hpp"
-#include "lemon/bfs.h"
 
-namespace openMVG {
+#include "aliceVision/sfm/BundleAdjustmentCeres.hpp"
+#include "aliceVision/sfm/LocalBundleAdjustmentData.hpp"
+
+namespace aliceVision {
 namespace sfm {
 
-class Local_Bundle_Adjustment_Ceres : public Bundle_Adjustment_Ceres
+class LocalBundleAdjustmentCeres : public BundleAdjustmentCeres
 {
 public:
   
   /// Contains all the OpenMVG's options to communicate to the Ceres Solver
-  struct LocalBA_options : public Bundle_Adjustment_Ceres::BA_options
+  struct LocalBA_options : public BundleAdjustmentCeres::BA_options
   {
     LocalBA_options(const bool bVerbose = true, bool bmultithreaded = true) 
-      : Bundle_Adjustment_Ceres::BA_options(bVerbose, bmultithreaded)
+      : BundleAdjustmentCeres::BA_options(bVerbose, bmultithreaded)
     {
       _useParametersOrdering = false;
       _useLocalBA = false;
@@ -84,11 +83,11 @@ private:
   
 public : 
   
-  Local_Bundle_Adjustment_Ceres() {;}
+  LocalBundleAdjustmentCeres() {;}
   
-  Local_Bundle_Adjustment_Ceres(
-      const Local_Bundle_Adjustment_Ceres::LocalBA_options& options, 
-      const LocalBA_Data& localBA_data, 
+  LocalBundleAdjustmentCeres(
+      const LocalBundleAdjustmentCeres::LocalBA_options& options, 
+      const LocalBundleAdjustmentData& localBA_data, 
       const std::set<IndexT> &newReconstructedViews);
   
   /// @brief Ajust parameters according to the reconstruction graph or refine everything
@@ -97,7 +96,7 @@ public :
   /// @param[in] localBA_data contains all the information about the Local BA approach, notably
   /// the state of each parameter of the solver (refined, constant, ignored)
   /// @return \c false if the refinement failed else \c true
-  bool Adjust(SfM_Data & sfm_data, const LocalBA_Data& localBA_data);
+  bool Adjust(SfMData & sfm_data, const LocalBundleAdjustmentData& localBA_data);
   
   /// @brief Export statistics about bundle adjustment in a TXT file  \a BaStats_<nameComplement>.txt
   /// The contents of the file have been writen such that it is easy to handle it with
@@ -116,7 +115,7 @@ private:
   /// @param[in] poses The poses to add in the BA problem
   /// @param[in] problem The Ceres problem
   /// @return The map including all the poses blocks added to the Ceres problem
-  Hash_Map<IndexT, std::vector<double>> addPosesToCeresProblem(
+  std::map<IndexT, std::vector<double>> addPosesToCeresProblem(
       const Poses & poses, 
       ceres::Problem & problem);
   
@@ -124,8 +123,8 @@ private:
   /// @param[in] sfm_data All the informations about the recontructions, notably the intrinsics
   /// @param[in] problem The Ceres problem
   /// @return The map including all the intrinsics blocks added to the Ceres problem
-  Hash_Map<IndexT, std::vector<double>> addIntrinsicsToCeresProblem(
-      const SfM_Data & sfm_data, 
+  std::map<IndexT, std::vector<double>> addIntrinsicsToCeresProblem(
+      const SfMData & sfm_data, 
       ceres::Problem & problem);
   
   /// @brief Run the Ceres solver
@@ -143,8 +142,8 @@ private:
   /// @param[in] localBA_data Contains the state of each pose
   /// @param[out] poses The reference to the poses to update
   void updateCameraPoses(
-      const Hash_Map<IndexT, std::vector<double>> & map_poseblocks, 
-      const LocalBA_Data & localBA_data,
+      const std::map<IndexT, std::vector<double>> & map_poseblocks, 
+      const LocalBundleAdjustmentData & localBA_data,
       Poses & poses);
   
   /// @brief Update camera intrinsics with refined data
@@ -152,10 +151,10 @@ private:
   /// @param[in] localBA_data Contains the state of each intrinsics
   /// @param[out] intrinsics The reference to the intrinsics to update  
   void updateCameraIntrinsics(
-      const Hash_Map<IndexT, std::vector<double>> & map_intrinsicblocks,
-      const LocalBA_Data & localBA_data,
+      const std::map<IndexT, std::vector<double>> & map_intrinsicblocks,
+      const LocalBundleAdjustmentData & localBA_data,
       Intrinsics & intrinsics);
 };
 
 } // namespace sfm
-} // namespace openMVG
+} // namespace aliceVision

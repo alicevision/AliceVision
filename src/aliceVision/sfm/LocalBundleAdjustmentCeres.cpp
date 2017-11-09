@@ -1,26 +1,17 @@
-// Copyright (c) 2015 Pierre Moulon.
+// This file is part of the AliceVision project.
+// This Source Code Form is subject to the terms of the Mozilla Public License,
+// v. 2.0. If a copy of the MPL was not distributed with this file,
+// You can obtain one at https://mozilla.org/MPL/2.0/.
 
-// This Source Code Form is subject to the terms of the Mozilla Public
-// License, v. 2.0. If a copy of the MPL was not distributed with this
-// file, You can obtain one at http://mozilla.org/MPL/2.0/.
+#include "aliceVision/sfm/LocalBundleAdjustmentCeres.hpp"
 
-#include "openMVG/sfm/sfm_data_localBA_ceres.hpp"
-#include "openMVG/sfm/pipelines/sequential/sequential_SfM.hpp"
-#include <openMVG/config.hpp>
-#include <openMVG/openmvg_omp.hpp>
-
-#include "openMVG/stl/stlMap.hpp"
-#include "ceres/rotation.h"
-#include "lemon/bfs.h"
-#include <fstream>
-
-namespace openMVG {
+namespace aliceVision {
 namespace sfm {
 
-using namespace openMVG::cameras;
-using namespace openMVG::geometry;
+using namespace aliceVision::camera;
+using namespace aliceVision::geometry;
 
-void Local_Bundle_Adjustment_Ceres::LocalBA_statistics::show()
+void LocalBundleAdjustmentCeres::LocalBA_statistics::show()
 {
   std::cout << "\n----- Local BA Ceres statistics ------" << std::endl;
   std::cout << "|- adjutment duration: " << _time << " s" << std::endl;
@@ -51,16 +42,16 @@ void Local_Bundle_Adjustment_Ceres::LocalBA_statistics::show()
   std::cout << "\n---------------------------------------\n" << std::endl;
 }
 
-Local_Bundle_Adjustment_Ceres::Local_Bundle_Adjustment_Ceres(
-    const Local_Bundle_Adjustment_Ceres::LocalBA_options& options, 
-    const LocalBA_Data& localBA_data,
+LocalBundleAdjustmentCeres::LocalBundleAdjustmentCeres(
+    const LocalBundleAdjustmentCeres::LocalBA_options& options, 
+    const LocalBundleAdjustmentData& localBA_data,
     const std::set<IndexT>& newReconstructedViews)
   : 
     _LBAOptions(options),
     _LBAStatistics(newReconstructedViews, localBA_data.getDistancesHistogram())
 {}
 
-bool Local_Bundle_Adjustment_Ceres::Adjust(SfM_Data& sfm_data, const LocalBA_Data& localBA_data)
+bool LocalBundleAdjustmentCeres::Adjust(SfMData& sfm_data, const LocalBundleAdjustmentData& localBA_data)
 {
   //----------
   // Steps:
@@ -80,8 +71,8 @@ bool Local_Bundle_Adjustment_Ceres::Adjust(SfM_Data& sfm_data, const LocalBA_Dat
   ceres::Problem problem;
   
   // Data wrapper for refinement:
-  Hash_Map<IndexT, std::vector<double> > map_posesBlocks;
-  Hash_Map<IndexT, std::vector<double> > map_intrinsicsBlocks;
+  std::map<IndexT, std::vector<double> > map_posesBlocks;
+  std::map<IndexT, std::vector<double> > map_intrinsicsBlocks;
   
   // 1. Generate parameter block with all the poses & intrinsics
   // Add Poses data to the Ceres problem as Parameter Blocks (do not take care of Local BA strategy)
@@ -114,9 +105,9 @@ bool Local_Bundle_Adjustment_Ceres::Adjust(SfM_Data& sfm_data, const LocalBA_Dat
       // have been set as Ignored by the Local BA strategy
       if (_LBAOptions.isLocalBAEnabled())
       {
-        if (localBA_data.getPoseState(poseId) == LocalBA_Data::EState::ignored 
-            || localBA_data.getIntrinsicState(intrinsicId) == LocalBA_Data::EState::ignored 
-            || localBA_data.getLandmarkState(landmarkId) == LocalBA_Data::EState::ignored)
+        if (localBA_data.getPoseState(poseId) == LocalBundleAdjustmentData::EState::ignored 
+            || localBA_data.getIntrinsicState(intrinsicId) == LocalBundleAdjustmentData::EState::ignored 
+            || localBA_data.getLandmarkState(landmarkId) == LocalBundleAdjustmentData::EState::ignored)
         {
           continue;
         }
@@ -145,9 +136,9 @@ bool Local_Bundle_Adjustment_Ceres::Adjust(SfM_Data& sfm_data, const LocalBA_Dat
         // Set to constant parameters previoously set as Constant by the Local BA strategy
         if (_LBAOptions.isLocalBAEnabled())
         {
-          if (localBA_data.getIntrinsicState(intrinsicId) == LocalBA_Data::EState::constant)  problem.SetParameterBlockConstant(intrinsicBlock);        
-          if (localBA_data.getPoseState(poseId) == LocalBA_Data::EState::constant)            problem.SetParameterBlockConstant(poseBlock);
-          if (localBA_data.getLandmarkState(landmarkId) == LocalBA_Data::EState::constant)    problem.SetParameterBlockConstant(landmarkBlock);
+          if (localBA_data.getIntrinsicState(intrinsicId) == LocalBundleAdjustmentData::EState::constant)  problem.SetParameterBlockConstant(intrinsicBlock);        
+          if (localBA_data.getPoseState(poseId) == LocalBundleAdjustmentData::EState::constant)            problem.SetParameterBlockConstant(poseBlock);
+          if (localBA_data.getLandmarkState(landmarkId) == LocalBundleAdjustmentData::EState::constant)    problem.SetParameterBlockConstant(landmarkBlock);
         } 
         // Create a residual block:
         problem.AddResidualBlock(cost_function,
@@ -206,7 +197,7 @@ bool Local_Bundle_Adjustment_Ceres::Adjust(SfM_Data& sfm_data, const LocalBA_Dat
   return true;
 }
 
-bool Local_Bundle_Adjustment_Ceres::exportStatistics(const std::string& dir, const std::string& nameComplement)
+bool LocalBundleAdjustmentCeres::exportStatistics(const std::string& dir, const std::string& nameComplement)
 {
   std::string filename = stlplus::folder_append_separator(dir) +"BaStats" + nameComplement + ".txt";
   std::ofstream os;
@@ -214,7 +205,7 @@ bool Local_Bundle_Adjustment_Ceres::exportStatistics(const std::string& dir, con
   os.seekp(0, std::ios::end); //put the cursor at the end
   if (!os.is_open())
   {
-    OPENMVG_LOG_DEBUG("Unable to open the Bundle adjustment stat file '" << filename << "'.");
+    ALICEVISION_LOG_DEBUG("Unable to open the Bundle adjustment stat file '" << filename << "'.");
     return false;
   }
   
@@ -295,12 +286,12 @@ bool Local_Bundle_Adjustment_Ceres::exportStatistics(const std::string& dir, con
   return true;
 }
 
-Hash_Map<IndexT, std::vector<double> > Local_Bundle_Adjustment_Ceres::addPosesToCeresProblem(
+std::map<IndexT, std::vector<double> > LocalBundleAdjustmentCeres::addPosesToCeresProblem(
     const Poses & poses,
     ceres::Problem & problem)
 {
   // Data wrapper for refinement:
-  Hash_Map<IndexT, std::vector<double> > map_poses;
+  std::map<IndexT, std::vector<double> > map_poses;
   
   // Setup Poses data 
   for (Poses::const_iterator itPose = poses.begin(); itPose != poses.end(); ++itPose)
@@ -327,11 +318,11 @@ Hash_Map<IndexT, std::vector<double> > Local_Bundle_Adjustment_Ceres::addPosesTo
   return map_poses;
 }
 
-Hash_Map<IndexT, std::vector<double>> Local_Bundle_Adjustment_Ceres::addIntrinsicsToCeresProblem(
-    const SfM_Data & sfm_data,
+std::map<IndexT, std::vector<double>> LocalBundleAdjustmentCeres::addIntrinsicsToCeresProblem(
+    const SfMData & sfm_data,
     ceres::Problem & problem)
 {
-  Hash_Map<IndexT, std::size_t> intrinsicsUsage;
+  std::map<IndexT, std::size_t> intrinsicsUsage;
   
   // Setup Intrinsics data 
   // Count how many posed views use each intrinsic
@@ -352,7 +343,7 @@ Hash_Map<IndexT, std::vector<double>> Local_Bundle_Adjustment_Ceres::addIntrinsi
     }
   }
   
-  Hash_Map<IndexT, std::vector<double>> map_intrinsics;
+  std::map<IndexT, std::vector<double>> map_intrinsics;
   for(const auto& itIntrinsic: sfm_data.GetIntrinsics())
   {
     const IndexT intrinsicIds = itIntrinsic.first;
@@ -403,7 +394,7 @@ Hash_Map<IndexT, std::vector<double>> Local_Bundle_Adjustment_Ceres::addIntrinsi
 } 
 
 /// Transfert the BA options from OpenMVG to Ceres
-void Local_Bundle_Adjustment_Ceres::setSolverOptions(ceres::Solver::Options& solver_options)
+void LocalBundleAdjustmentCeres::setSolverOptions(ceres::Solver::Options& solver_options)
 {
   solver_options.preconditioner_type = _LBAOptions._preconditioner_type;
   solver_options.linear_solver_type = _LBAOptions._linear_solver_type;
@@ -414,39 +405,39 @@ void Local_Bundle_Adjustment_Ceres::setSolverOptions(ceres::Solver::Options& sol
   solver_options.num_linear_solver_threads = _LBAOptions._nbThreads;
 }
 
-bool Local_Bundle_Adjustment_Ceres::solveBA(
+bool LocalBundleAdjustmentCeres::solveBA(
     ceres::Problem& problem, 
     ceres::Solver::Options& options, 
     ceres::Solver::Summary& summary)
 {
 if (_LBAOptions._linear_solver_type == ceres::LinearSolverType::DENSE_SCHUR)
-    OPENMVG_LOG_DEBUG("Solving ceres problem (linear solver type: DENSE_SCHUR)...");
+    ALICEVISION_LOG_DEBUG("Solving ceres problem (linear solver type: DENSE_SCHUR)...");
   else if (_LBAOptions._linear_solver_type == ceres::LinearSolverType::SPARSE_SCHUR)
-    OPENMVG_LOG_DEBUG("Solving ceres problem (linear solver type: SPARSE_SCHUR)...");
+    ALICEVISION_LOG_DEBUG("Solving ceres problem (linear solver type: SPARSE_SCHUR)...");
   else if (_LBAOptions._linear_solver_type == ceres::LinearSolverType::ITERATIVE_SCHUR)
-    OPENMVG_LOG_DEBUG("Solving ceres problem (linear solver type: ITERATIVE_SCHUR)...");
+    ALICEVISION_LOG_DEBUG("Solving ceres problem (linear solver type: ITERATIVE_SCHUR)...");
   else
-    OPENMVG_LOG_DEBUG("Solving ceres problem...");
+    ALICEVISION_LOG_DEBUG("Solving ceres problem...");
     
   // Configure a BA engine and run it
   // Solve BA
   
   ceres::Solve(options, &problem, &summary);
   if (_LBAOptions._bCeres_Summary)
-    OPENMVG_LOG_DEBUG(summary.FullReport());
+    ALICEVISION_LOG_DEBUG(summary.FullReport());
   
   // If no error, get back refined parameters
   if (!summary.IsSolutionUsable())
   {
-    OPENMVG_LOG_WARNING("Bundle Adjustment failed.");
+    ALICEVISION_LOG_WARNING("Bundle Adjustment failed.");
     return false;
   }
   return true;
 }
 
-void Local_Bundle_Adjustment_Ceres::updateCameraPoses(
-    const Hash_Map<IndexT, std::vector<double>> & map_poseblocks,
-    const LocalBA_Data& localBA_data,
+void LocalBundleAdjustmentCeres::updateCameraPoses(
+    const std::map<IndexT, std::vector<double>> & map_poseblocks,
+    const LocalBundleAdjustmentData& localBA_data,
     Poses & poses)
 {
   for (Poses::iterator itPose = poses.begin();
@@ -457,9 +448,9 @@ void Local_Bundle_Adjustment_Ceres::updateCameraPoses(
     // Do not update a camera pose set as Ignored or Constant in the Local BA strategy
     if (_LBAOptions.isLocalBAEnabled() )
     {
-      if (localBA_data.getPoseState(poseId) == LocalBA_Data::EState::ignored) 
+      if (localBA_data.getPoseState(poseId) == LocalBundleAdjustmentData::EState::ignored) 
         continue;
-      if (localBA_data.getPoseState(poseId) == LocalBA_Data::EState::constant) 
+      if (localBA_data.getPoseState(poseId) == LocalBundleAdjustmentData::EState::constant) 
         continue;
     }
     
@@ -472,9 +463,9 @@ void Local_Bundle_Adjustment_Ceres::updateCameraPoses(
   }
 }
 
-void Local_Bundle_Adjustment_Ceres::updateCameraIntrinsics(
-    const Hash_Map<IndexT, std::vector<double>> & map_intrinsicblocks,
-    const LocalBA_Data& localBA_data, 
+void LocalBundleAdjustmentCeres::updateCameraIntrinsics(
+    const std::map<IndexT, std::vector<double>> & map_intrinsicblocks,
+    const LocalBundleAdjustmentData& localBA_data, 
     Intrinsics & intrinsics)
 {
   for (const auto& intrinsicsV: map_intrinsicblocks)
@@ -484,9 +475,9 @@ void Local_Bundle_Adjustment_Ceres::updateCameraIntrinsics(
     // Do not update an camera intrinsic set as Ignored or Constant in the Local BA strategy
     if (_LBAOptions.isLocalBAEnabled() )
     {
-      if (localBA_data.getIntrinsicState(intrinsicId) == LocalBA_Data::EState::ignored) 
+      if (localBA_data.getIntrinsicState(intrinsicId) == LocalBundleAdjustmentData::EState::ignored) 
         continue;
-      if (localBA_data.getIntrinsicState(intrinsicId) == LocalBA_Data::EState::constant) 
+      if (localBA_data.getIntrinsicState(intrinsicId) == LocalBundleAdjustmentData::EState::constant) 
         continue;
     }
     
@@ -495,5 +486,5 @@ void Local_Bundle_Adjustment_Ceres::updateCameraIntrinsics(
 }
 
 } // namespace sfm
-} // namespace openMVG
+} // namespace aliceVision
 

@@ -5,20 +5,15 @@
 
 #pragma once
 
-#include "openMVG/types.hpp"
-#include "openMVG/sfm/sfm_data.hpp"
-#include "openMVG/tracks/tracks.hpp"
-#include "lemon/list_graph.h"
-#include "lemon/bfs.h"
-#include "openMVG/stl/stlMap.hpp"
-#include "openMVG/system/timer.hpp"
+#include "aliceVision/sfm/SfMData.hpp"
+#include "aliceVision/types.hpp"
+#include "aliceVision/track/Track.hpp"
 
-
-namespace openMVG {
+namespace aliceVision {
 namespace sfm {
 
 /// Contains all the data needed to apply a Local Bundle Adjustment.
-class LocalBA_Data
+class LocalBundleAdjustmentData
 {
   
 public:
@@ -32,7 +27,7 @@ public:
  
   // -- Constructor
   
-  LocalBA_Data(const SfM_Data& sfm_data);
+  LocalBundleAdjustmentData(const SfMData& sfm_data);
   
   // -- Getters
 
@@ -49,37 +44,37 @@ public:
   EState getLandmarkState(const IndexT landmarkId) const   {return _mapLBAStatePerLandmarkId.at(landmarkId);}
   
   /// Return the number of refined poses.
-  std::size_t getNumOfRefinedPoses() const        {return getNumberOf(LocalBA_Data::EParameter::pose, LocalBA_Data::EState::refined);}
+  std::size_t getNumOfRefinedPoses() const        {return getNumberOf(LocalBundleAdjustmentData::EParameter::pose, LocalBundleAdjustmentData::EState::refined);}
  
   /// Return the number of constant poses.
-  std::size_t getNumOfConstantPoses() const       {return getNumberOf(LocalBA_Data::EParameter::pose, LocalBA_Data::EState::constant);}
+  std::size_t getNumOfConstantPoses() const       {return getNumberOf(LocalBundleAdjustmentData::EParameter::pose, LocalBundleAdjustmentData::EState::constant);}
 
   /// Return the number of ignored poses.
-  std::size_t getNumOfIgnoredPoses() const        {return getNumberOf(LocalBA_Data::EParameter::pose, LocalBA_Data::EState::ignored);}
+  std::size_t getNumOfIgnoredPoses() const        {return getNumberOf(LocalBundleAdjustmentData::EParameter::pose, LocalBundleAdjustmentData::EState::ignored);}
 
   /// Return the number of refined landmarks.
-  std::size_t getNumOfRefinedLandmarks() const    {return getNumberOf(LocalBA_Data::EParameter::landmark, LocalBA_Data::EState::refined);}
+  std::size_t getNumOfRefinedLandmarks() const    {return getNumberOf(LocalBundleAdjustmentData::EParameter::landmark, LocalBundleAdjustmentData::EState::refined);}
  
   /// Return the number of constant landmarks.
-  std::size_t getNumOfConstantLandmarks() const   {return getNumberOf(LocalBA_Data::EParameter::landmark, LocalBA_Data::EState::constant);}
+  std::size_t getNumOfConstantLandmarks() const   {return getNumberOf(LocalBundleAdjustmentData::EParameter::landmark, LocalBundleAdjustmentData::EState::constant);}
  
   /// Return the number of ignored landmarks.
-  std::size_t getNumOfIgnoredLandmarks() const    {return getNumberOf(LocalBA_Data::EParameter::landmark, LocalBA_Data::EState::ignored);}
+  std::size_t getNumOfIgnoredLandmarks() const    {return getNumberOf(LocalBundleAdjustmentData::EParameter::landmark, LocalBundleAdjustmentData::EState::ignored);}
  
   /// Return the number of refined intrinsics.
-  std::size_t getNumOfRefinedIntrinsics() const   {return getNumberOf(LocalBA_Data::EParameter::intrinsic, LocalBA_Data::EState::refined);}
+  std::size_t getNumOfRefinedIntrinsics() const   {return getNumberOf(LocalBundleAdjustmentData::EParameter::intrinsic, LocalBundleAdjustmentData::EState::refined);}
  
   /// Return the number of constant intrinsics.
-  std::size_t getNumOfConstantIntrinsics() const  {return getNumberOf(LocalBA_Data::EParameter::intrinsic, LocalBA_Data::EState::constant);}
+  std::size_t getNumOfConstantIntrinsics() const  {return getNumberOf(LocalBundleAdjustmentData::EParameter::intrinsic, LocalBundleAdjustmentData::EState::constant);}
 
   /// Return the number of ignored intrinsics.
-  std::size_t getNumOfIgnoredIntrinsics() const   {return getNumberOf(LocalBA_Data::EParameter::intrinsic, LocalBA_Data::EState::ignored);}
+  std::size_t getNumOfIgnoredIntrinsics() const   {return getNumberOf(LocalBundleAdjustmentData::EParameter::intrinsic, LocalBundleAdjustmentData::EState::ignored);}
   
   // -- Methods
     
   /// @brief Set every parameters of the BA problem to Refine: the Local BA becomes a classic BA.
   /// @param[in] sfm_data contains all the data about the reconstruction.
-  void setAllParametersToRefine(const SfM_Data& sfm_data);
+  void setAllParametersToRefine(const SfMData& sfm_data);
   
   /// @brief Add the newly resected views into a graph and use this graph to set an \c EState (refined, constant, ignored) for 
   /// each parameter in the bundle adjutment (poses, landmarks, intrinsics).
@@ -95,15 +90,15 @@ public:
   /// @param[in] kMinNbOfMatches is the min. number of shared matches between 2 resected views needed to create an edge in the graph (~ outliers filter).
   /// @param[in] kLimitDistance defines the limit between the Active & the Passive regions in the step #3.
   void updateParametersState(
-    const SfM_Data& sfm_data, 
-    const tracks::TracksPerView& map_tracksPerView, 
+    const SfMData& sfm_data, 
+    const track::TracksPerView& map_tracksPerView, 
     const std::set<IndexT> &newReconstructedViews, 
     const std::size_t kMinNbOfMatches,
     const std::size_t kLimitDistance);
 
   /// @brief Save all the focal lengths to the memory to retain the evolution of each focal length during the reconstruction.
   /// @param[in] sfm_data contains all the information about the reconstruction, notably current focal lengths
-  void saveFocalLengths(const SfM_Data& sfm_data);
+  void saveFocalLengths(const SfMData& sfm_data);
   
   /// @brief Export the history of each focal length. It create a file \a K<intrinsic_index>.txt in \c folder.
   /// @param[in] folder The folder in which the \a K*.txt files are saved.
@@ -142,8 +137,8 @@ private:
   /// @param[in] map_tracksPerView A map giving the tracks for each view
   /// @param[in] newReconstructedViews The list of the newly resected views
   /// @param[in] kMinNbOfMatches The min. number of shared matches to create an edge between two views (nodes)
-  void updateGraphWithNewViews(const SfM_Data& sfm_data, 
-      const tracks::TracksPerView& map_tracksPerView, 
+  void updateGraphWithNewViews(const SfMData& sfm_data, 
+      const track::TracksPerView& map_tracksPerView, 
       const std::set<IndexT> &newReconstructedViews, 
       const std::size_t kMinNbOfMatches = 50);
   
@@ -152,7 +147,7 @@ private:
   /// @details The graph-distances are computed using a Breadth-first Search (BFS) method.
   /// @param[in] sfm_data contains all the information about the reconstruction, notably the posed views
   /// @param[in] newReconstructedViews The list of the newly resected views used (used as source in the BFS algorithm)
-  void computeGraphDistances(const SfM_Data& sfm_data, const std::set<IndexT> &newReconstructedViews);
+  void computeGraphDistances(const SfMData& sfm_data, const std::set<IndexT> &newReconstructedViews);
   
   /// @brief Use the graph-distances of each posed view to set each parameter of the problem (poses, intrinsics, landmarks)
   /// as Refined (will be refined during the adjustment), Constant (will be set as constant in the adjustment) 
@@ -174,7 +169,7 @@ private:
   ///       - \a Refined <=> its connected to a refined camera
   /// @param[in] sfm_data
   /// @param[in] kLimitDistance the distance of the active region
-  void convertDistancesToLBAStates(const SfM_Data & sfm_data, const std::size_t kLimitDistance);
+  void convertDistancesToLBAStates(const SfMData & sfm_data, const std::size_t kLimitDistance);
 
   /// @brief Draw the current graph in the given directory. 
   /// @details The file is name \a graph_<numOfNodes>_<nameComplement>. 
@@ -184,7 +179,7 @@ private:
   /// @param[in] sfm_data 
   /// @param[in] dir 
   /// @param[in] nameComplement 
-  void drawGraph(const SfM_Data &sfm_data, const std::string& dir, const std::string& nameComplement = "");
+  void drawGraph(const SfMData &sfm_data, const std::string& dir, const std::string& nameComplement = "");
 
   /// Return the number of parameters \c EParameter being in the \c EState state.
   std::size_t getNumberOf(EParameter param, EState state) const {return _parametersCounter.at(std::make_pair(param, state));}
@@ -207,12 +202,12 @@ private:
   /// @param[in] newViewsId A set with the views index that we want to count matches with resected cameras. 
   /// @return A map giving the number of matches for each images pair.
   static std::map<Pair, std::size_t> countSharedLandmarksPerImagesPair(
-      const SfM_Data& sfm_data,
-      const tracks::TracksPerView& map_tracksPerView,
+      const SfMData& sfm_data,
+      const track::TracksPerView& map_tracksPerView,
       const std::set<IndexT>& newViewsId);
   
   /// @brief Return the state of the focal length (constant or not) for a specific intrinsic.
-  /// @details To update the focal lengths states, use \c LocalBA_Data::checkFocalLengthsConsistency()
+  /// @details To update the focal lengths states, use \c LocalBundleAdjustmentData::checkFocalLengthsConsistency()
   /// @return true if the focal length is considered as Constant
   bool isFocalLengthConstant(const IndexT intrinsicId) const { return _mapFocalIsConstant.at(intrinsicId);}
   
@@ -227,7 +222,7 @@ private:
     
   /// @brief Add an edge in the graph when 2 views share a same intrinsic not considered as Constant
   /// @details (no longer used)
-  std::size_t addIntrinsicEdgesToTheGraph(const SfM_Data& sfm_data, const std::set<IndexT> &newReconstructedViews);
+  std::size_t addIntrinsicEdgesToTheGraph(const SfMData& sfm_data, const std::set<IndexT> &newReconstructedViews);
   
   /// @brief Remove all the edges added by the \c addIntrinsicEdgesToTheGraph function.
   /// @details (no longer used)
@@ -291,4 +286,4 @@ private:
 };
 
 } // namespace sfm
-} // namespace openMVG
+} // namespace aliceVision
