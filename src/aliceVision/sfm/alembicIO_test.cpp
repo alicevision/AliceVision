@@ -19,7 +19,7 @@ using namespace aliceVision::sfm;
 
 // Create a SfM scene with desired count of views & poses & intrinsic (shared or not)
 // Add a 3D point with observation in 2 view (just in order to have non empty data)
-SfMData create_test_scene(IndexT singleViewsCount,
+SfMData createTestScene(IndexT singleViewsCount,
                            IndexT pointCount,
                            IndexT rigCount,
                            IndexT subPoseCount,
@@ -134,7 +134,7 @@ BOOST_AUTO_TEST_CASE(AlembicImporter_importExport) {
     int flags = ALL;
 
     // Create a random scene
-    const SfMData sfmData = create_test_scene(5, 50, 2, 3, true);
+    const SfMData sfmData = createTestScene(5, 50, 2, 3, true);
     
 
     /*********************************************************************/

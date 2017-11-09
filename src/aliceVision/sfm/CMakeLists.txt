@@ -25,6 +25,7 @@ set(sfm_files_headers
   sfmDataIO_baf.hpp
   sfmDataIO_cereal.hpp
   sfmDataIO_gt.hpp
+  sfmDataIO_json.hpp
   sfmDataIO_ply.hpp
   sfmDataTriangulation.hpp
   sfmDataUtils.hpp
@@ -55,6 +56,7 @@ set(sfm_files_sources
   sfmDataIO.cpp
   sfmDataIO_baf.cpp
   sfmDataIO_gt.cpp
+  sfmDataIO_json.cpp
   sfmDataIO_ply.cpp
   sfmDataTriangulation.cpp
   sfmDataUtils.cpp

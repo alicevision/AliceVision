@@ -3,6 +3,7 @@
 // v. 2.0. If a copy of the MPL was not distributed with this file,
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
+#include "aliceVision/system/Timer.hpp"
 #include "aliceVision/sfm/sfm.hpp"
 #include "dependencies/stlplus3/filesystemSimplified/file_system.hpp"
 #include <sstream>
@@ -18,7 +19,7 @@ using namespace aliceVision::sfm;
 
 // Create a SfM scene with desired count of views & poses & intrinsic (shared or not)
 // Add a 3D point with observation in 2 view (just in order to have non empty data)
-SfMData create_test_scene(IndexT viewsCount, bool bSharedIntrinsic)
+SfMData createTestScene(std::size_t viewsCount = 2, std::size_t observationCount = 2, bool sharedIntrinsic = true)
 {
   SfMData sfm_data;
   sfm_data.s_root_path = "./";
@@ -29,7 +30,7 @@ SfMData create_test_scene(IndexT viewsCount, bool bSharedIntrinsic)
     std::ostringstream os;
     os << "dataset/" << i << ".jpg";
     const IndexT id_view = i, id_pose = i;
-    const IndexT id_intrinsic = bSharedIntrinsic ? 0 : i; //(shared or not intrinsics)
+    const IndexT id_intrinsic = sharedIntrinsic ? 0 : i; //(shared or not intrinsics)
 
     std::shared_ptr<View> view = std::make_shared<View>(os.str(),id_view, id_intrinsic, id_pose, 1000, 1000);
 
@@ -39,7 +40,7 @@ SfMData create_test_scene(IndexT viewsCount, bool bSharedIntrinsic)
     sfm_data.setPose(*view, Pose3());
 
     // Add intrinsics
-    if (bSharedIntrinsic)
+    if (sharedIntrinsic)
     {
       if (i == 0)
         sfm_data.intrinsics[0] = std::make_shared<Pinhole>();
@@ -52,16 +53,21 @@ SfMData create_test_scene(IndexT viewsCount, bool bSharedIntrinsic)
 
   // Fill with not meaningful tracks
   Observations observations;
-  observations[0] = Observation( Vec2(10,20), 0);
-  observations[1] = Observation( Vec2(30,10), 1);
+  for(std::size_t i = 0; i < observationCount; ++i)
+  {
+    observations[i] = Observation( Vec2(i,i), i);
+  }
+
   sfm_data.structure[0].observations = observations;
   sfm_data.structure[0].X = Vec3(11,22,33);
+  sfm_data.structure[0].descType = feature::EImageDescriberType::SIFT;
+
   return sfm_data;
 }
 
 BOOST_AUTO_TEST_CASE(SfMData_IO_SAVE_LOAD_JSON) {
 
-  const std::vector<std::string> ext_Type = {"json", "bin", "xml"};
+  const std::vector<std::string> ext_Type = {"sfm","json", "bin", "xml"};
 
   for (int i=0; i < ext_Type.size(); ++i)
   {
@@ -72,13 +78,13 @@ BOOST_AUTO_TEST_CASE(SfMData_IO_SAVE_LOAD_JSON) {
 
   // SAVE
   {
-    const SfMData sfmData = create_test_scene(2, true);
+    const SfMData sfmData = createTestScene(2, 2, true);
     BOOST_CHECK( Save(sfmData, filename, ALL) );
   }
 
   // LOAD
   {
-    const SfMData sfmData = create_test_scene(2, true);
+    const SfMData sfmData = createTestScene(2, 2, true);
     BOOST_CHECK( Save(sfmData, filename, ALL) );
     SfMData sfm_data_load;
     ESfMData flags_part = ALL;
@@ -92,7 +98,7 @@ BOOST_AUTO_TEST_CASE(SfMData_IO_SAVE_LOAD_JSON) {
 
   // LOAD (only a subpart: VIEWS)
   {
-    const SfMData sfmData = create_test_scene(2, true);
+    const SfMData sfmData = createTestScene(2, 2, true);
     BOOST_CHECK( Save(sfmData, filename, ALL) );
     SfMData sfm_data_load;
     ESfMData flags_part = VIEWS;
@@ -106,7 +112,7 @@ BOOST_AUTO_TEST_CASE(SfMData_IO_SAVE_LOAD_JSON) {
 
   // LOAD (only a subpart: POSES)
   {
-    const SfMData sfmData = create_test_scene(2, true);
+    const SfMData sfmData = createTestScene(2, 2, true);
     BOOST_CHECK( Save(sfmData, filename, ALL) );
     SfMData sfm_data_load;
     ESfMData flags_part = EXTRINSICS;
@@ -120,7 +126,7 @@ BOOST_AUTO_TEST_CASE(SfMData_IO_SAVE_LOAD_JSON) {
 
   // LOAD (only a subpart: INTRINSICS)
   {
-    const SfMData sfmData = create_test_scene(2, true);
+    const SfMData sfmData = createTestScene(2, 2, true);
     BOOST_CHECK( Save(sfmData, filename, ALL) );
     SfMData sfm_data_load;
     ESfMData flags_part = INTRINSICS;
@@ -134,7 +140,7 @@ BOOST_AUTO_TEST_CASE(SfMData_IO_SAVE_LOAD_JSON) {
 
   // LOAD (subparts: COMBINED)
   {
-    const SfMData sfmData = create_test_scene(2,false); //2 intrinsics group here
+    const SfMData sfmData = createTestScene(2, 2, false); //2 intrinsics group here
     BOOST_CHECK( Save(sfmData, filename, ALL) );
     SfMData sfm_data_load;
     ESfMData flags_part = ESfMData(INTRINSICS | EXTRINSICS);
@@ -148,7 +154,7 @@ BOOST_AUTO_TEST_CASE(SfMData_IO_SAVE_LOAD_JSON) {
 
   // LOAD (subparts: COMBINED)
   {
-    const SfMData sfmData = create_test_scene(2, true);
+    const SfMData sfmData = createTestScene(2, 2, true);
     BOOST_CHECK( Save(sfmData, filename, ALL) );
     SfMData sfm_data_load;
     ESfMData flags_part = ESfMData(VIEWS | INTRINSICS | EXTRINSICS);
@@ -162,6 +168,44 @@ BOOST_AUTO_TEST_CASE(SfMData_IO_SAVE_LOAD_JSON) {
   }
 }
 
+/*
+BOOST_AUTO_TEST_CASE(SfMData_IO_BigFile) {
+  const int nbViews = 1000;
+  const int nbObservationPerView = 100000;
+  std::vector<std::string> ext_Type = {"sfm","json", "bin", "xml"};
+
+#if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_ALEMBIC)
+  ext_Type.push_back("abc");
+#endif
+
+  for (int i = 0; i < ext_Type.size(); ++i)
+  {
+    std::ostringstream os;
+    os << "BIG_SAVE_LOAD" << "." << ext_Type[i];
+    const std::string filename = os.str();
+    ALICEVISION_LOG_DEBUG("Testing:" << filename);
+
+    system::Timer timer;
+
+    // SAVE
+    {
+      const SfMData sfmData = createTestScene(nbViews, nbObservationPerView, true);
+      BOOST_CHECK( Save(sfmData, filename, ALL) );
+      ALICEVISION_LOG_DEBUG("Save Duration: " << system::prettyTime(timer.elapsedMs()));
+    }
+
+    timer.reset();
+
+    // LOAD
+    {
+      SfMData sfm_data_load;
+      BOOST_CHECK( Load(sfm_data_load, filename, ALL));
+      ALICEVISION_LOG_DEBUG("Load Duration: " << system::prettyTime(timer.elapsedMs()));
+    }
+  }
+}
+*/
+
 BOOST_AUTO_TEST_CASE(SfMData_IO_SAVE_PLY) {
 
   // SAVE as PLY
@@ -171,7 +215,7 @@ BOOST_AUTO_TEST_CASE(SfMData_IO_SAVE_PLY) {
     const std::string filename = os.str();
     ALICEVISION_LOG_DEBUG("Testing:" << filename);
 
-    const SfMData sfmData = create_test_scene(2, true);
+    const SfMData sfmData = createTestScene(2, 2, true);
     ESfMData flags_part = ESfMData(EXTRINSICS | STRUCTURE);
     BOOST_CHECK( Save(sfmData, filename, flags_part) );
     BOOST_CHECK( stlplus::is_file(filename) );
