@@ -33,6 +33,7 @@ set(sfm_files_headers
   Landmark.hpp
   generateReport.hpp
   View.hpp
+  viewIO.hpp
   Rig.hpp
   utils/alignment.hpp
   utils/uid.hpp
@@ -61,6 +62,7 @@ set(sfm_files_sources
   sfmDataTriangulation.cpp
   sfmDataUtils.cpp
   generateReport.cpp
+  viewIO.cpp
   utils/alignment.cpp
   utils/uid.cpp
 )
