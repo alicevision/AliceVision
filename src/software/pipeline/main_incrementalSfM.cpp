@@ -100,6 +100,7 @@ int main(int argc, char **argv)
   int userCameraModel = static_cast<int>(PINHOLE_CAMERA_RADIAL3);
   bool refineIntrinsics = true;
   bool allowUserInteraction = true;
+  bool useLocalBundleAdjustment = false;
 
   po::options_description allParams(
     "Sequential/Incremental reconstruction\n"
@@ -139,7 +140,10 @@ int main(int argc, char **argv)
       "Refine intrinsic parameters.")
     ("allowUserInteraction", po::value<bool>(&allowUserInteraction)->default_value(allowUserInteraction),
       "Enable/Disable user interactions.\n"
-      "If the process is done on renderfarm, it doesn't make sense to wait for user inputs");
+      "If the process is done on renderfarm, it doesn't make sense to wait for user inputs")
+    ("useLocalBA,l", po::value<bool>(&useLocalBundleAdjustment)->default_value(useLocalBundleAdjustment),
+      "Enable/Disable the Local bundle adjustment strategy.\n"
+      "It reduces the reconstruction time, expecially for big datasets (500+ images).\n");
 
   po::options_description logParams("Log parameters");
   logParams.add_options()
