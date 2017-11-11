@@ -7,6 +7,7 @@
 #include "aliceVision/sfm/pipeline/RelativePoseInfo.hpp"
 #include "aliceVision/sfm/sfmDataIO.hpp"
 #include "aliceVision/sfm/BundleAdjustmentCeres.hpp"
+#include "aliceVision/sfm/LocalBundleAdjustmentCeres.hpp"
 #include "aliceVision/sfm/sfmDataFilters.hpp"
 #include "aliceVision/sfm/pipeline/localization/SfMLocalizer.hpp"
 
@@ -169,6 +170,7 @@ void ReconstructionEngine_sequentialSfM::RobustResectionOfImages(
   size_t resectionGroupIndex = 0;
   std::set<size_t> set_remainingViewId(viewIds);
   std::vector<size_t> vec_possible_resection_indexes;
+  
   while (FindNextImagesGroupForResection(vec_possible_resection_indexes, set_remainingViewId))
   {
     if(vec_possible_resection_indexes.empty())
@@ -308,7 +310,12 @@ void ReconstructionEngine_sequentialSfM::RobustResectionOfImages(
       do
       {
         auto chrono2_start = std::chrono::steady_clock::now();
-        BundleAdjustment(_bFixedIntrinsics);
+        
+        if (_uselocalBundleAdjustment)
+          localBundleAdjustment(newReconstructedViews);
+        else
+          BundleAdjustment(_bFixedIntrinsics);
+        
         ALICEVISION_LOG_DEBUG("Resection group index: " << resectionGroupIndex << ", bundle iteration: " << bundleAdjustmentIteration
                   << " took " << std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - chrono2_start).count() << " msec.");
         ++bundleAdjustmentIteration;
@@ -316,7 +323,27 @@ void ReconstructionEngine_sequentialSfM::RobustResectionOfImages(
       while (badTrackRejector(4.0, nbOutliersThreshold));
       ALICEVISION_LOG_DEBUG("Bundle with " << bundleAdjustmentIteration << " iterations took " << std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - chrono_start).count() << " msec.");
       chrono_start = std::chrono::steady_clock::now();
-      eraseUnstablePosesAndObservations(this->_sfm_data, _minPointsPerPose, _minTrackLength);
+      
+      if (_uselocalBundleAdjustment)
+      {
+        std::set<IndexT> removedPosesId, removedViewsId;
+        // Remove unstable poses & extract removed poses id
+        if (eraseUnstablePosesAndObservations(this->_sfm_data, _minPointsPerPose, _minTrackLength, &removedPosesId))
+        {
+          // Get removed VIEWS index
+          for (const auto& x : _sfm_data.GetViews())
+          {
+            if (removedPosesId.find(x.second->getPoseId()) != removedPosesId.end())
+              removedViewsId.insert(x.second->getViewId());
+          }
+          
+          // Remove removed views to the graph
+          _localBA_data->removeViewsToTheGraph(removedViewsId);
+          ALICEVISION_LOG_DEBUG("Poses (index) removed to the reconstruction: " << removedPosesId);
+        }
+      }
+      else
+        eraseUnstablePosesAndObservations(this->_sfm_data, _minPointsPerPose, _minTrackLength);
       ALICEVISION_LOG_DEBUG("eraseUnstablePosesAndObservations took " << std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - chrono_start).count() << " msec.");
     }
     ++resectionGroupIndex;
@@ -1635,6 +1662,77 @@ bool ReconstructionEngine_sequentialSfM::BundleAdjustment(bool fixedIntrinsics)
   if(!fixedIntrinsics)
     refineOptions |= BA_REFINE_INTRINSICS_ALL;
   return bundle_adjustment_obj.Adjust(_sfm_data, refineOptions);
+}
+
+bool ReconstructionEngine_sequentialSfM::localBundleAdjustment(const std::set<IndexT>& newReconstructedViews)
+{
+  LocalBundleAdjustmentCeres localBA_ceres;
+  
+  // -- Manage Ceres options (parameter ordering, local BA, sparse/dense mode, etc.)
+  
+  LocalBundleAdjustmentCeres::LocalBA_options options;
+  options.enableParametersOrdering();
+  
+  if (_sfm_data.GetPoses().size() > 100) // default value: 100 
+  {
+    options.setSparseBA();
+    options.enableLocalBA();
+  }
+  else
+  {
+    options.setDenseBA();
+  }
+  
+  const std::size_t kLimitDistance = 1; // default value: 1 
+  const std::size_t kMinNbOfMatches = 50; // default value: 50 
+  bool isBaSucceed;
+  
+  // -- Prepare Local BA & Adjust
+  
+  if (options.isLocalBAEnabled()) // Local Bundle Adjustment
+  {
+    _localBA_data->updateParametersState(_sfm_data, _map_tracksPerView, newReconstructedViews, kMinNbOfMatches, kLimitDistance);
+    
+    // -- Check Ceres mode: 
+    // Restore the Ceres Dense mode if the number of cameras in the solver is <= 100
+    if (_localBA_data->getNumOfRefinedPoses() + _localBA_data->getNumOfConstantPoses() <= 100)
+    {
+      options.setDenseBA();
+    }
+    
+    localBA_ceres = LocalBundleAdjustmentCeres(options, *_localBA_data, newReconstructedViews);
+    
+    // -- Refine:
+    
+    // Parameters are refined only if the number of cameras to refine is > to the number of newly added cameras.
+    // - if there are equal: it meens that none of the new cameras is connected to the local BA graph,
+    //    so the refinement would be done on those cameras only, without any constant parameters.
+    // - the number of cameras to refine cannot be < to the number of newly added cameras (set to 'refine' by default)
+    if (_localBA_data->getNumOfRefinedPoses() > newReconstructedViews.size())
+    {
+      isBaSucceed = localBA_ceres.Adjust(_sfm_data, *_localBA_data);
+    }
+    else
+      ALICEVISION_LOG_WARNING("The refinement has not been done: the new cameras are not connected to the rest of the local BA graph.");
+  }   
+  else // Classic Bundle Adjustment
+  {
+    _localBA_data->setAllParametersToRefine(_sfm_data);
+    
+    localBA_ceres = LocalBundleAdjustmentCeres(options, *_localBA_data, newReconstructedViews);
+    
+    isBaSucceed = localBA_ceres.Adjust(_sfm_data, *_localBA_data);
+  }
+  
+  // -- Save & export the focal length for each intrinsic : 
+  _localBA_data->saveFocalLengths(_sfm_data);
+  _localBA_data->exportFocalLengths(stlplus::folder_append_separator(_sOutDirectory)+"localBA/K/");
+  
+  // -- Export data about the refinement
+  std::string namecomplement = "_M" + std::to_string(kMinNbOfMatches) + "_D" + std::to_string(kLimitDistance);
+  localBA_ceres.exportStatistics(stlplus::folder_append_separator(_sOutDirectory)+"localBA/", namecomplement);
+  
+  return isBaSucceed;
 }
 
 /**

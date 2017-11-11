@@ -88,7 +88,7 @@ IndexT RemoveOutliers_AngleError(SfMData& sfm_data, const double dMinAcceptedAng
   return removedTrack_count;
 }
 
-bool eraseUnstablePoses(SfMData& sfm_data, const IndexT min_points_per_pose)
+bool eraseUnstablePoses(SfMData& sfm_data, const IndexT min_points_per_pose, std::set<IndexT>* outRemovedPosedId)
 {
   IndexT removed_elements = 0;
   const Landmarks & landmarks = sfm_data.structure;
@@ -125,6 +125,8 @@ bool eraseUnstablePoses(SfMData& sfm_data, const IndexT min_points_per_pose)
     if (it->second < min_points_per_pose)
     {
       sfm_data.erasePose(it->first);
+      if (outRemovedPosedId != NULL)
+        outRemovedPosedId->insert(it->first);
       ++removed_elements;
     }
   }
@@ -172,14 +174,15 @@ bool eraseObservationsWithMissingPoses(SfMData& sfm_data, const IndexT min_point
 bool eraseUnstablePosesAndObservations(
   SfMData& sfm_data,
   const IndexT min_points_per_pose,
-  const IndexT min_points_per_landmark)
+  const IndexT min_points_per_landmark, 
+  std::set<IndexT>* outRemovedPosedId)
 {
   IndexT remove_iteration = 0;
   bool bRemovedContent = false;
   do
   {
     bRemovedContent = false;
-    if (eraseUnstablePoses(sfm_data, min_points_per_pose))
+    if (eraseUnstablePoses(sfm_data, min_points_per_pose, outRemovedPosedId))
     {
       bRemovedContent = eraseObservationsWithMissingPoses(sfm_data, min_points_per_landmark);
       // Erase some observations can make some Poses index disappear so perform the process in a loop

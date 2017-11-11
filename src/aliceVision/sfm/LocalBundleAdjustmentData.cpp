@@ -58,8 +58,8 @@ void LocalBundleAdjustmentData::setAllParametersToRefine(const SfMData& sfm_data
   // -- Instrinsics
   for(const auto& itIntrinsic: sfm_data.GetIntrinsics())
   {
-      _mapLBAStatePerIntrinsicId[itIntrinsic.first] = EState::refined;
-      _parametersCounter.at(std::make_pair(EParameter::intrinsic, EState::refined))++;
+    _mapLBAStatePerIntrinsicId[itIntrinsic.first] = EState::refined;
+    _parametersCounter.at(std::make_pair(EParameter::intrinsic, EState::refined))++;
   }
   // -- Landmarks
   for(const auto& itLandmark: sfm_data.structure)
@@ -124,13 +124,16 @@ void LocalBundleAdjustmentData::exportFocalLengths(const std::string& folder)
   for (const auto& x : _focalLengthsHistory)
   {
     IndexT idIntr = x.first;
-    
+    if (!stlplus::folder_exists(folder))
+      stlplus::folder_create(folder);
     std::string filename = stlplus::folder_append_separator(folder) + "K" + std::to_string(idIntr) + ".txt";
+    bool isNewFile = !stlplus::file_exists(filename);
+    
     std::ofstream os;
     os.open(filename, std::ios::app);
     os.seekp(0, std::ios::end); //put the cursor at the end
     
-    if (_focalLengthsHistory.at(idIntr).size() == 1) // 'intrinsicsHistory' contains EXIF data only
+    if (isNewFile) // Print EXIF data .
     {
       // -- HEADER
       if (os.tellp() == 0) // 'tellp' return the cursor's position
@@ -146,18 +149,16 @@ void LocalBundleAdjustmentData::exportFocalLengths(const std::string& folder)
       
       // -- EXIF DATA
       os << 0 << "\t";
-      os << getLastFocalLength(idIntr) << "\t";
+      os << _focalLengthsHistory.at(idIntr).at(0).second << "\t"; // first focallength = EXIF
       os << isFocalLengthConstant(idIntr) << "\t";
       os << "\n";
     }
-    else // Write the last intrinsics
-    {
-      // -- DATA
-      os << _focalLengthsHistory.at(idIntr).back().first << "\t";
-      os << _focalLengthsHistory.at(idIntr).back().second << "\t";
-      os << isFocalLengthConstant(idIntr) << "\t";
-      os << "\n"; 
-    }
+    
+    // -- DATA
+    os << _focalLengthsHistory.at(idIntr).back().first << "\t"; // num. of posed views with this intrinsic
+    os << _focalLengthsHistory.at(idIntr).back().second << "\t"; // last focallength value 
+    os << isFocalLengthConstant(idIntr) << "\t";
+    os << "\n"; 
     os.close();
   }
 }
@@ -189,7 +190,7 @@ int LocalBundleAdjustmentData::getPoseDistance(const IndexT poseId) const
   if (_mapDistancePerPoseId.find(poseId) == _mapDistancePerPoseId.end())
   {
     ALICEVISION_LOG_DEBUG("The pose #" << poseId << " does not exist in the '_mapDistancePerPoseId':\n"
-                      << _mapDistancePerPoseId);
+                          << _mapDistancePerPoseId);
     return -1;
   }
   return _mapDistancePerPoseId.at(poseId);
@@ -200,7 +201,7 @@ int LocalBundleAdjustmentData::getViewDistance(const IndexT viewId) const
   if (_mapDistancePerViewId.find(viewId) == _mapDistancePerViewId.end())
   {
     ALICEVISION_LOG_DEBUG("The view #" << viewId << " does not exist in the '_mapDistancePerViewId':\n"
-                      << _mapDistancePerViewId);
+                          << _mapDistancePerViewId);
     return -1;
   }
   return _mapDistancePerViewId.at(viewId);
@@ -278,7 +279,7 @@ void LocalBundleAdjustmentData::updateGraphWithNewViews(
   }
   
   ALICEVISION_LOG_INFO("|- The distances graph has been completed with " 
-                   << addedViewsId.size() << " nodes & " << numEdges << " edges.");
+                       << addedViewsId.size() << " nodes & " << numEdges << " edges.");
   ALICEVISION_LOG_INFO("|- It contains " << _graph.maxNodeId() << " nodes & " << _graph.maxEdgeId() << " edges");                   
 }
 

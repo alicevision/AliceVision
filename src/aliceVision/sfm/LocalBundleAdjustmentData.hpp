@@ -24,12 +24,8 @@ public:
     constant, ///< will be set as constant in the sover
     ignored   ///< will not be set into the BA solver
   };
- 
-  // -- Constructor
   
   LocalBundleAdjustmentData(const SfMData& sfm_data);
-  
-  // -- Getters
 
   /// Return the number of posed views for each graph-distance <distance, numViews>
   std::map<int, std::size_t> getDistancesHistogram() const;
@@ -69,8 +65,6 @@ public:
 
   /// Return the number of ignored intrinsics.
   std::size_t getNumOfIgnoredIntrinsics() const   {return getNumberOf(LocalBundleAdjustmentData::EParameter::intrinsic, LocalBundleAdjustmentData::EState::ignored);}
-  
-  // -- Methods
     
   /// @brief Set every parameters of the BA problem to Refine: the Local BA becomes a classic BA.
   /// @param[in] sfm_data contains all the data about the reconstruction.
@@ -210,10 +204,7 @@ private:
   /// @details To update the focal lengths states, use \c LocalBundleAdjustmentData::checkFocalLengthsConsistency()
   /// @return true if the focal length is considered as Constant
   bool isFocalLengthConstant(const IndexT intrinsicId) const { return _mapFocalIsConstant.at(intrinsicId);}
-  
-  /// Return the last value of the focal length for a specific intrinsic.
-  double getLastFocalLength(const IndexT intrinsicId) const {return _focalLengthsHistory.at(intrinsicId).back().second;}
-  
+    
   /// @brief standardDeviation Compute the standard deviation.
   /// @param[in] The vector of values
   /// @return The standard deviation
@@ -276,7 +267,7 @@ private:
   /// Backup of the intrinsics focal length values
   IntrinsicsHistory _focalLengthsHistory; 
   
-  /// Store, for each parameter of each intrinsic, the BA's index from which it has been concidered as constant.
+  /// Indicates, for each intrinsic, if its focallength has been concidered as constant.
   /// <IntrinsicId, isConsideredAsConstant>
   std::map<IndexT, bool> _mapFocalIsConstant; 
   
