@@ -86,8 +86,8 @@ public :
   LocalBundleAdjustmentCeres() {;}
   
   LocalBundleAdjustmentCeres(
-      const LocalBundleAdjustmentCeres::LocalBA_options& options, 
       const LocalBundleAdjustmentData& localBA_data, 
+      const LocalBundleAdjustmentCeres::LocalBA_options& options, 
       const std::set<IndexT> &newReconstructedViews);
   
   /// @brief Ajust parameters according to the reconstruction graph or refine everything
@@ -104,7 +104,7 @@ public :
   /// @param[in] dir The directory where you want to save the \a BaStats.txt file.
   /// @param[in] nameComplement Add this string at the end of the file's name 
   /// @return false it cannot open the file, true if it succeed
-  bool exportStatistics(const std::string& dir, const std::string& nameComplement = "");
+  bool exportStatistics(const std::string& dir, const std::string& filename = "");
   
 private:
   

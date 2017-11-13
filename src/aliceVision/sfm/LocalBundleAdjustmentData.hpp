@@ -66,6 +66,12 @@ public:
   /// Return the number of ignored intrinsics.
   std::size_t getNumOfIgnoredIntrinsics() const   {return getNumberOf(LocalBundleAdjustmentData::EParameter::intrinsic, LocalBundleAdjustmentData::EState::ignored);}
     
+  /// Get the output path where Local BA outputs are saved
+  std::string getOutDirectory() const             {return stlplus::folder_append_separator(_outFolder);}
+  
+  /// Set the output path where Local BA outputs will be saved
+  void setOutDirectory(const std::string& dir)    {_outFolder = dir;}
+    
   /// @brief Set every parameters of the BA problem to Refine: the Local BA becomes a classic BA.
   /// @param[in] sfm_data contains all the data about the reconstruction.
   void setAllParametersToRefine(const SfMData& sfm_data);
@@ -92,7 +98,7 @@ public:
 
   /// @brief Save all the focal lengths to the memory to retain the evolution of each focal length during the reconstruction.
   /// @param[in] sfm_data contains all the information about the reconstruction, notably current focal lengths
-  void saveFocalLengths(const SfMData& sfm_data);
+  void saveFocallengthsToHistory(const SfMData& sfm_data);
   
   /// @brief Export the history of each focal length. It create a file \a K<intrinsic_index>.txt in \c folder.
   /// @param[in] folder The folder in which the \a K*.txt files are saved.
@@ -274,6 +280,9 @@ private:
   /// @brief Store the Lemon index of the edges added thanks to the intrinsics "the intrinsic-edges" 
   /// @details (no longer used)
   std::set<int> _intrinsicEdgesId; 
+  
+  /// Output path where Local BA outputs will be saved
+  std::string _outFolder;
 };
 
 } // namespace sfm

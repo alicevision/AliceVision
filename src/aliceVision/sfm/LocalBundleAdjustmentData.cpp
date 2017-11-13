@@ -90,7 +90,7 @@ void LocalBundleAdjustmentData::updateParametersState(
   convertDistancesToLBAStates(sfm_data, kLimitDistance); 
 }
 
-void LocalBundleAdjustmentData::saveFocalLengths(const SfMData& sfm_data)
+void LocalBundleAdjustmentData::saveFocallengthsToHistory(const SfMData& sfm_data)
 {
   // Count the number of poses for each intrinsic
   std::map<IndexT, std::size_t> map_intrinsicId_usageNum;
@@ -120,20 +120,19 @@ void LocalBundleAdjustmentData::saveFocalLengths(const SfMData& sfm_data)
 
 void LocalBundleAdjustmentData::exportFocalLengths(const std::string& folder)
 {
-  ALICEVISION_LOG_INFO("Exporting focal lengths history...");
+  ALICEVISION_LOG_DEBUG("Exporting focal lengths history...");
   for (const auto& x : _focalLengthsHistory)
   {
     IndexT idIntr = x.first;
-    if (!stlplus::folder_exists(folder))
-      stlplus::folder_create(folder);
-    std::string filename = stlplus::folder_append_separator(folder) + "K" + std::to_string(idIntr) + ".txt";
+    std::string filename = stlplus::create_filespec(stlplus::folder_append_separator(folder),  "K" + std::to_string(idIntr), "txt");
+    
     bool isNewFile = !stlplus::file_exists(filename);
     
     std::ofstream os;
     os.open(filename, std::ios::app);
     os.seekp(0, std::ios::end); //put the cursor at the end
     
-    if (isNewFile) // Print EXIF data .
+    if (isNewFile) // Print Header + EXIF data .
     {
       // -- HEADER
       if (os.tellp() == 0) // 'tellp' return the cursor's position
@@ -155,10 +154,13 @@ void LocalBundleAdjustmentData::exportFocalLengths(const std::string& folder)
     }
     
     // -- DATA
-    os << _focalLengthsHistory.at(idIntr).back().first << "\t"; // num. of posed views with this intrinsic
-    os << _focalLengthsHistory.at(idIntr).back().second << "\t"; // last focallength value 
-    os << isFocalLengthConstant(idIntr) << "\t";
-    os << "\n"; 
+    if (_focalLengthsHistory.at(idIntr).back().first != 0) // print EXIF once only
+    {
+      os << _focalLengthsHistory.at(idIntr).back().first << "\t"; // num. of posed views with this intrinsic
+      os << _focalLengthsHistory.at(idIntr).back().second << "\t"; // last focallength value 
+      os << isFocalLengthConstant(idIntr) << "\t";
+      os << "\n"; 
+    }
     os.close();
   }
 }
@@ -176,7 +178,7 @@ bool LocalBundleAdjustmentData::removeViewsToTheGraph(const std::set<IndexT>& re
       _mapViewIdPerNode.erase(it->second);
       
       numRemovedNode++;
-      ALICEVISION_LOG_INFO("The view #" << viewId << " has been successfully removed to the distance graph.");
+      ALICEVISION_LOG_DEBUG("The view #" << viewId << " has been successfully removed to the distance graph.");
     }
     else 
       ALICEVISION_LOG_DEBUG("The removed view #" << viewId << " does not exist in the '_mapNodePerViewId'.");
@@ -236,14 +238,14 @@ void LocalBundleAdjustmentData::updateGraphWithNewViews(
   // - each edge links 2 views if they share at least 'kMinNbOfMatches' matches
   // -----------
   
-  ALICEVISION_LOG_INFO("Updating the distances graph with newly resected views...");
+  ALICEVISION_LOG_DEBUG("Updating the distances graph with newly resected views...");
   
   // Identify the views we need to add to the graph:
   std::set<IndexT> addedViewsId;
   
   if (_graph.maxNodeId() == -1) // the graph is empty: add all the posed views
   {
-    ALICEVISION_LOG_INFO("|- The graph is empty: all posed views will be added.");
+    ALICEVISION_LOG_DEBUG("|- The graph is empty: all posed views will be added.");
     for (const auto & x : sfm_data.GetViews())
     {
       if (sfm_data.IsPoseAndIntrinsicDefined(x.first))
@@ -278,14 +280,14 @@ void LocalBundleAdjustmentData::updateGraphWithNewViews(
     }
   }
   
-  ALICEVISION_LOG_INFO("|- The distances graph has been completed with " 
+  ALICEVISION_LOG_DEBUG("|- The distances graph has been completed with " 
                        << addedViewsId.size() << " nodes & " << numEdges << " edges.");
-  ALICEVISION_LOG_INFO("|- It contains " << _graph.maxNodeId() << " nodes & " << _graph.maxEdgeId() << " edges");                   
+  ALICEVISION_LOG_DEBUG("|- It contains " << _graph.maxNodeId() << " nodes & " << _graph.maxEdgeId() << " edges");                   
 }
 
 void LocalBundleAdjustmentData::computeGraphDistances(const SfMData& sfm_data, const std::set<IndexT>& newReconstructedViews)
 { 
-  ALICEVISION_LOG_INFO("Computing graph-distances...");
+  ALICEVISION_LOG_DEBUG("Computing graph-distances...");
   // reset the maps
   _mapDistancePerViewId.clear();
   _mapDistancePerPoseId.clear();
@@ -475,7 +477,7 @@ std::map<Pair, std::size_t> LocalBundleAdjustmentData::countSharedLandmarksPerIm
 
 void LocalBundleAdjustmentData::checkFocalLengthsConsistency(const std::size_t windowSize, const double stdevPercentageLimit)
 {
-  ALICEVISION_LOG_INFO("Checking, for each camera, if the focal length is stable...");
+  ALICEVISION_LOG_DEBUG("Checking, for each camera, if the focal length is stable...");
   std::size_t numOfConstFocal = 0;
   for (const auto& x : _focalLengthsHistory)
   {
@@ -547,12 +549,12 @@ void LocalBundleAdjustmentData::checkFocalLengthsConsistency(const std::size_t w
     {
       _mapFocalIsConstant.at(idIntr) = true;
       numOfConstFocal++;
-      ALICEVISION_LOG_INFO("|- The intrinsic #" << idIntr << " is now considered to be stable.\n");
+      ALICEVISION_LOG_DEBUG("|- The intrinsic #" << idIntr << " is now considered to be stable.\n");
     }
     else
       _mapFocalIsConstant.at(idIntr) = false;
   }
-  ALICEVISION_LOG_INFO("|- " << numOfConstFocal << "/" << _mapFocalIsConstant.size() << " intrinsics with a stable focal.");
+  ALICEVISION_LOG_DEBUG("|- " << numOfConstFocal << "/" << _mapFocalIsConstant.size() << " intrinsics with a stable focal.");
 }
 
 template<typename T> 
@@ -609,7 +611,7 @@ void LocalBundleAdjustmentData::drawGraph(const SfMData& sfm_data, const std::st
   dotFile.write(dotStream.str().c_str(), dotStream.str().length());
   dotFile.close();
   
-  ALICEVISION_LOG_INFO("The graph '"<< dir << "/graph_" << std::to_string(_mapViewIdPerNode.size()) << "_" << nameComplement << ".dot' has been saved.");
+  ALICEVISION_LOG_DEBUG("The graph '"<< dir << "/graph_" << std::to_string(_mapViewIdPerNode.size()) << "_" << nameComplement << ".dot' has been saved.");
 }
 
 std::size_t LocalBundleAdjustmentData::addIntrinsicEdgesToTheGraph(const SfMData& sfm_data, const std::set<IndexT>& newReconstructedViews)

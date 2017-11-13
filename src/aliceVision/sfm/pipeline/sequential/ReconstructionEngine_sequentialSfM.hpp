@@ -105,7 +105,14 @@ public:
   {
     _uselocalBundleAdjustment = v;
     if (v)
+    {
       _localBA_data = std::make_shared<LocalBundleAdjustmentData>(_sfm_data);
+      _localBA_data->setOutDirectory(stlplus::folder_append_separator(_sOutDirectory)+"localBA/");
+      // delete all the previous data about the Local BA.
+      if (stlplus::folder_exists(_localBA_data->getOutDirectory()))
+        stlplus::folder_delete(_localBA_data->getOutDirectory(), true);
+      stlplus::folder_create(_localBA_data->getOutDirectory());
+    }
   }
 protected:
 

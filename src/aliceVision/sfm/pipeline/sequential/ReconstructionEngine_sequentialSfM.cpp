@@ -1666,7 +1666,6 @@ bool ReconstructionEngine_sequentialSfM::BundleAdjustment(bool fixedIntrinsics)
 
 bool ReconstructionEngine_sequentialSfM::localBundleAdjustment(const std::set<IndexT>& newReconstructedViews)
 {
-  LocalBundleAdjustmentCeres localBA_ceres;
   
   // -- Manage Ceres options (parameter ordering, local BA, sparse/dense mode, etc.)
   
@@ -1688,9 +1687,11 @@ bool ReconstructionEngine_sequentialSfM::localBundleAdjustment(const std::set<In
   bool isBaSucceed;
   
   // -- Prepare Local BA & Adjust
+  LocalBundleAdjustmentCeres localBA_ceres;
   
   if (options.isLocalBAEnabled()) // Local Bundle Adjustment
   {
+    ALICEVISION_LOG_DEBUG("Local BA is activated: YES");
     _localBA_data->updateParametersState(_sfm_data, _map_tracksPerView, newReconstructedViews, kMinNbOfMatches, kLimitDistance);
     
     // -- Check Ceres mode: 
@@ -1700,7 +1701,7 @@ bool ReconstructionEngine_sequentialSfM::localBundleAdjustment(const std::set<In
       options.setDenseBA();
     }
     
-    localBA_ceres = LocalBundleAdjustmentCeres(options, *_localBA_data, newReconstructedViews);
+    localBA_ceres = LocalBundleAdjustmentCeres(*_localBA_data, options, newReconstructedViews);
     
     // -- Refine:
     
@@ -1717,20 +1718,24 @@ bool ReconstructionEngine_sequentialSfM::localBundleAdjustment(const std::set<In
   }   
   else // Classic Bundle Adjustment
   {
+    ALICEVISION_LOG_DEBUG("Local BA is activated: NO");
+
     _localBA_data->setAllParametersToRefine(_sfm_data);
     
-    localBA_ceres = LocalBundleAdjustmentCeres(options, *_localBA_data, newReconstructedViews);
+    localBA_ceres = LocalBundleAdjustmentCeres(*_localBA_data, options, newReconstructedViews);
     
     isBaSucceed = localBA_ceres.Adjust(_sfm_data, *_localBA_data);
   }
   
-  // -- Save & export the focal length for each intrinsic : 
-  _localBA_data->saveFocalLengths(_sfm_data);
-  _localBA_data->exportFocalLengths(stlplus::folder_append_separator(_sOutDirectory)+"localBA/K/");
+  // Save the current focal lengths values (for each intrinsic) in the history  
+  _localBA_data->saveFocallengthsToHistory(_sfm_data);
+  // (optional) Export the current focallengths value to a txt file. 
+  _localBA_data->exportFocalLengths(_localBA_data->getOutDirectory());
   
   // -- Export data about the refinement
   std::string namecomplement = "_M" + std::to_string(kMinNbOfMatches) + "_D" + std::to_string(kLimitDistance);
-  localBA_ceres.exportStatistics(stlplus::folder_append_separator(_sOutDirectory)+"localBA/", namecomplement);
+  std::string filename =  "BaStats" + namecomplement + ".txt";
+  localBA_ceres.exportStatistics(_localBA_data->getOutDirectory(), filename);
   
   return isBaSucceed;
 }

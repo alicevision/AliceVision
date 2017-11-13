@@ -13,39 +13,31 @@ using namespace aliceVision::geometry;
 
 void LocalBundleAdjustmentCeres::LocalBA_statistics::show()
 {
-  std::cout << "\n----- Local BA Ceres statistics ------" << std::endl;
-  std::cout << "|- adjutment duration: " << _time << " s" << std::endl;
-  std::cout << "|- poses: \t" 
-            << _numRefinedPoses << " refined, \t"
-            << _numConstantPoses << " constant, \t"
-            << _numIgnoredPoses << " ignored" << std::endl;  
-  std::cout << "|- landmarks: \t" 
-            << _numRefinedLandmarks << " refined, \t"
-            << _numConstantLandmarks << " constant, \t"
-            << _numIgnoredLandmarks<< " ignored" << std::endl;
-  std::cout << "|- intrinsics: \t" 
-            << _numRefinedIntrinsics << " refined, \t"
-            << _numConstantIntrinsics << " constant, \t"
-            << _numIgnoredIntrinsics << " ignored" << std::endl;
-  std::cout << "|- #residual blocks = " << _numResidualBlocks << std::endl;
-  std::cout << "|- #successful iterations = " << _numSuccessfullIterations << std::endl;
-  std::cout << "|- #unsuccessful iterations = " << _numUnsuccessfullIterations << std::endl;
-  std::cout << "|- initial RMSE = " << _RMSEinitial << std::endl;
-  std::cout << "|- final RMSE = " << _RMSEfinal<< std::endl;
-  std::cout << "|- {distance, numViews} (num views > 0 only): ";
-  for (int i = -1; i < 10; i++)
-  {
-    if (_numCamerasPerDistance[i] > 0)
-      std::cout << "{" << i << ", " << _numCamerasPerDistance[i] << "} ";
-    //    std::cout << "D(" << i << ") : " << _numCamerasPerDistance[i] << std::endl;
-  }
-  std::cout << "\n---------------------------------------\n" << std::endl;
+  ALICEVISION_LOG_DEBUG("\n----- Local BA Ceres statistics ------\n" 
+                        << "|- adjutment duration: " << _time << " s \n"
+                        << "|- poses: \t" 
+                        << _numRefinedPoses << " refined, \t"
+                        << _numConstantPoses << " constant, \t"
+                        << _numIgnoredPoses << " ignored \n" 
+                        << "|- landmarks: \t" 
+                        << _numRefinedLandmarks << " refined, \t"
+                        << _numConstantLandmarks << " constant, \t"
+                        << _numIgnoredLandmarks<< " ignored \n"
+                        << "|- intrinsics: \t" 
+                        << _numRefinedIntrinsics << " refined, \t"
+                        << _numConstantIntrinsics << " constant, \t"
+                        << _numIgnoredIntrinsics << " ignored \n"
+                        << "|- #residual blocks = " << _numResidualBlocks << "\n"
+                        << "|- #successful iterations = " << _numSuccessfullIterations<< "\n"
+                        << "|- #unsuccessful iterations = " << _numUnsuccessfullIterations<< "\n"
+                        << "|- initial RMSE = " << _RMSEinitial << "\n"
+                        << "|- final RMSE = " << _RMSEfinal << "\n"
+                        << "---------------------------------------");
 }
 
-LocalBundleAdjustmentCeres::LocalBundleAdjustmentCeres(
-    const LocalBundleAdjustmentCeres::LocalBA_options& options, 
-    const LocalBundleAdjustmentData& localBA_data,
-    const std::set<IndexT>& newReconstructedViews)
+LocalBundleAdjustmentCeres::LocalBundleAdjustmentCeres(const LocalBundleAdjustmentData& localBA_data,
+                                                       const LocalBundleAdjustmentCeres::LocalBA_options& options,
+                                                       const std::set<IndexT>& newReconstructedViews)
   : 
     _LBAOptions(options),
     _LBAStatistics(newReconstructedViews, localBA_data.getDistancesHistogram())
@@ -197,17 +189,16 @@ bool LocalBundleAdjustmentCeres::Adjust(SfMData& sfm_data, const LocalBundleAdju
   return true;
 }
 
-bool LocalBundleAdjustmentCeres::exportStatistics(const std::string& dir, const std::string& nameComplement)
+bool LocalBundleAdjustmentCeres::exportStatistics(const std::string& dir, const std::string& filename)
 {
-  std::string filename = stlplus::folder_append_separator(dir) +"BaStats" + nameComplement + ".txt";
   std::ofstream os;
-  os.open(filename, std::ios::app);
-  os.seekp(0, std::ios::end); //put the cursor at the end
+  os.open(stlplus::create_filespec(dir, filename), std::ios::app);
   if (!os.is_open())
   {
     ALICEVISION_LOG_DEBUG("Unable to open the Bundle adjustment stat file '" << filename << "'.");
     return false;
   }
+  os.seekp(0, std::ios::end); //put the cursor at the end
   
   if (os.tellp() == 0) // 'tellp' return the cursor's position
   {
@@ -410,7 +401,7 @@ bool LocalBundleAdjustmentCeres::solveBA(
     ceres::Solver::Options& options, 
     ceres::Solver::Summary& summary)
 {
-if (_LBAOptions._linear_solver_type == ceres::LinearSolverType::DENSE_SCHUR)
+  if (_LBAOptions._linear_solver_type == ceres::LinearSolverType::DENSE_SCHUR)
     ALICEVISION_LOG_DEBUG("Solving ceres problem (linear solver type: DENSE_SCHUR)...");
   else if (_LBAOptions._linear_solver_type == ceres::LinearSolverType::SPARSE_SCHUR)
     ALICEVISION_LOG_DEBUG("Solving ceres problem (linear solver type: SPARSE_SCHUR)...");
@@ -418,7 +409,7 @@ if (_LBAOptions._linear_solver_type == ceres::LinearSolverType::DENSE_SCHUR)
     ALICEVISION_LOG_DEBUG("Solving ceres problem (linear solver type: ITERATIVE_SCHUR)...");
   else
     ALICEVISION_LOG_DEBUG("Solving ceres problem...");
-    
+  
   // Configure a BA engine and run it
   // Solve BA
   

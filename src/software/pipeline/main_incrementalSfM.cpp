@@ -233,12 +233,6 @@ int main(int argc, char **argv)
   //---------------------------------------
   // Sequential reconstruction process
   //---------------------------------------
-  if (useLocalBundleAdjustment)
-  {
-    std::string localBaDirectory = stlplus::folder_append_separator(extraInfoDirectory) + "localBA";
-    if (!stlplus::folder_exists(localBaDirectory))
-      stlplus::folder_create(localBaDirectory);
-  }
   
   aliceVision::system::Timer timer;
   ReconstructionEngine_sequentialSfM sfmEngine(
