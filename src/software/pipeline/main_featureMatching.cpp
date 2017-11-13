@@ -93,11 +93,11 @@ int main(int argc, char **argv)
 
   std::string verboseLevel = system::EVerboseLevel_enumToString(system::Logger::getDefaultVerboseLevel());
   std::string sfmDataFilename;
-  std::string matchesDirectory;
+  std::string matchesFolder;
 
   // user optional parameters
 
-  std::string featuresDirectory = "";
+  std::string featuresFolder = "";
   std::string geometricModel = "f";
   std::string describerTypesName = feature::EImageDescriberType_enumToString(feature::EImageDescriberType::SIFT);
   float distRatio = 0.8f;
@@ -128,8 +128,8 @@ int main(int argc, char **argv)
   requiredParams.add_options()
     ("input,i", po::value<std::string>(&sfmDataFilename)->required(),
       "SfMData file.")
-    ("output,o", po::value<std::string>(&matchesDirectory)->required(),
-      "Path to a directory in which computed matches will be stored.");
+    ("output,o", po::value<std::string>(&matchesFolder)->required(),
+      "Path to a folder in which computed matches will be stored.");
 
   po::options_description optionalParams("Optional parameters");
   optionalParams.add_options()
@@ -140,8 +140,8 @@ int main(int argc, char **argv)
       "* h: homography matrix")
     ("describerTypes,d", po::value<std::string>(&describerTypesName)->default_value(describerTypesName),
       feature::EImageDescriberType_informations().c_str())
-    ("featuresDirectory,f", po::value<std::string>(&featuresDirectory)->default_value(featuresDirectory),
-      "Path to a directory containing the extracted features.")
+    ("featuresFolder,f", po::value<std::string>(&featuresFolder)->default_value(featuresFolder),
+      "Path to a folder containing the extracted features.")
     ("imagePairsList,l", po::value<std::string>(&predefinedPairList)->default_value(predefinedPairList),
       "Path to a file which contains the list of image pairs to match.")
     ("photometricMatchingMethod,p", po::value<std::string>(&nearestMatchingMethod)->default_value(nearestMatchingMethod),
@@ -233,8 +233,8 @@ int main(int argc, char **argv)
     }
   }
 
-  if(matchesDirectory.empty() || !stlplus::is_folder(matchesDirectory))  {
-    std::cerr << "\nIt is an invalid output directory" << std::endl;
+  if(matchesFolder.empty() || !stlplus::is_folder(matchesFolder))  {
+    std::cerr << "\nIt is an invalid output folder" << std::endl;
     return EXIT_FAILURE;
   }
 
@@ -244,8 +244,8 @@ int main(int argc, char **argv)
     return EXIT_FAILURE;
   }
 
-  if(featuresDirectory.empty()) {
-    featuresDirectory = matchesDirectory;
+  if(featuresFolder.empty()) {
+    featuresFolder = matchesFolder;
   }
 
   EGeometricModel geometricModelToCompute = FUNDAMENTAL_MATRIX;
@@ -357,7 +357,7 @@ int main(int argc, char **argv)
   // Perform the matching
   system::Timer timer;
 
-  if(!sfm::loadRegionsPerView(regionPerView, sfmData, featuresDirectory, describerTypes, filter))
+  if(!sfm::loadRegionsPerView(regionPerView, sfmData, featuresFolder, describerTypes, filter))
   {
     std::cerr << std::endl << "Invalid regions." << std::endl;
     return EXIT_FAILURE;
@@ -393,7 +393,7 @@ int main(int argc, char **argv)
   //-- Export putative matches
   //---------------------------------------
   if(savePutativeMatches)
-    Save(mapPutativesMatches, matchesDirectory, "putative", fileExtension, matchFilePerImage);
+    Save(mapPutativesMatches, matchesFolder, "putative", fileExtension, matchFilePerImage);
 
   std::cout << "Task (Regions Matching) done in (s): " << timer.elapsed() << std::endl;
 
@@ -404,7 +404,7 @@ int main(int argc, char **argv)
     //-- export putative matches Adjacency matrix
     PairwiseMatchingToAdjacencyMatrixSVG(sfmData.GetViews().size(),
       mapPutativesMatches,
-      stlplus::create_filespec(matchesDirectory, "PutativeAdjacencyMatrix", "svg"));
+      stlplus::create_filespec(matchesFolder, "PutativeAdjacencyMatrix", "svg"));
     //-- export view pair graph once putative graph matches have been computed
     {
       std::set<IndexT> set_ViewIds;
@@ -415,7 +415,7 @@ int main(int argc, char **argv)
       graph::indexedGraph putativeGraph(set_ViewIds, getPairs(mapPutativesMatches));
 
       graph::exportToGraphvizData(
-        stlplus::create_filespec(matchesDirectory, "putative_matches.dot"),
+        stlplus::create_filespec(matchesFolder, "putative_matches.dot"),
         putativeGraph.g);
     }
   }
@@ -556,7 +556,7 @@ int main(int argc, char **argv)
   //-- Export geometric filtered matches
   //---------------------------------------
   std::cout << "Save geometric matches." << std::endl;
-  Save(finalMatches, matchesDirectory, geometricMode, fileExtension, matchFilePerImage);
+  Save(finalMatches, matchesFolder, geometricMode, fileExtension, matchFilePerImage);
 
   std::cout << "Task done in (s): " << timer.elapsed() << std::endl;
 
@@ -567,7 +567,7 @@ int main(int argc, char **argv)
       << std::endl;
     PairwiseMatchingToAdjacencyMatrixSVG(sfmData.GetViews().size(),
       finalMatches,
-      stlplus::create_filespec(matchesDirectory, "GeometricAdjacencyMatrix", "svg"));
+      stlplus::create_filespec(matchesFolder, "GeometricAdjacencyMatrix", "svg"));
     /*
     //-- export view pair graph once geometric filter have been done
     {
@@ -576,7 +576,7 @@ int main(int argc, char **argv)
         std::inserter(set_ViewIds, set_ViewIds.begin()), stl::RetrieveKey());
       graph::indexedGraph putativeGraph(set_ViewIds, getPairs(finalMatches));
       graph::exportToGraphvizData(
-        stlplus::create_filespec(matchesDirectory, "geometric_matches.dot"),
+        stlplus::create_filespec(matchesFolder, "geometric_matches.dot"),
         putativeGraph.g);
     }
     */

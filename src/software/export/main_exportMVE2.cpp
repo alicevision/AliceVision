@@ -49,14 +49,14 @@ create_thumbnail
 
 bool exportToMVE2Format(
   const SfMData & sfm_data,
-  const std::string & sOutDirectory // Output MVE2 files directory
+  const std::string & sOutDirectory // Output MVE2 files folder
   )
 {
   bool bOk = true;
-  // Create basis directory structure
+  // Create basis folder structure
   if (!stlplus::is_folder(sOutDirectory))
   {
-    std::cout << "\033[1;31mCreating directory:  " << sOutDirectory << "\033[0m\n";
+    std::cout << "\033[1;31mCreating folder:  " << sOutDirectory << "\033[0m\n";
     stlplus::folder_create(sOutDirectory);
     bOk = stlplus::is_folder(sOutDirectory);
   }
@@ -69,11 +69,11 @@ bool exportToMVE2Format(
 
   // Export the SfMData scene to the MVE2 format
   {
-    // Create 'views' subdirectory
+    // Create 'views' subfolder
     const std::string sOutViewsDirectory = stlplus::folder_append_separator(sOutDirectory) + "views";
     if (!stlplus::folder_exists(sOutViewsDirectory))
     {
-      std::cout << "\033[1;31mCreating directory:  " << sOutViewsDirectory << "\033[0m\n";
+      std::cout << "\033[1;31mCreating folder:  " << sOutViewsDirectory << "\033[0m\n";
       stlplus::folder_create(sOutViewsDirectory);
     }
 
@@ -109,7 +109,7 @@ bool exportToMVE2Format(
         continue;
 
       viewIdToviewIndex[view->getViewId()] = view_index;
-      // Create current view subdirectory 'view_xxxx.mve'
+      // Create current view subfolder 'view_xxxx.mve'
       std::ostringstream padding;
       // Warning: We use view_index instead of view->getViewId() because MVE use indexes instead of IDs.
       padding << std::setw(4) << std::setfill('0') << view_index;
@@ -250,7 +250,7 @@ int main(int argc, char *argv[])
     ("input,i", po::value<std::string>(&sfmDataFilename)->required(),
       "SfMData file.")
     ("output,o", po::value<std::string>(&outDirectory)->required(),
-      "Output directory.\n"
+      "Output folder.\n"
       "Note:  this program writes output in MVE file format");
 
   po::options_description logParams("Log parameters");

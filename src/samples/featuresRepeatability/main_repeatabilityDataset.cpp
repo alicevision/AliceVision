@@ -50,7 +50,7 @@ public:
   const size_t size() const { return vec_image_.size(); }
 
 private:
-  /// Load the images of a directory
+  /// Load the images of a folder
   bool loadImages()
   {
     std::cout << "Loading images of the dataset: " << stlplus::folder_part(folderPath_) << std::endl;
@@ -390,7 +390,7 @@ int main(int argc, char **argv)
     }
     else
     {
-      std::cerr << "Invalid dataset directory: " << dataset_path << std::endl;
+      std::cerr << "Invalid dataset folder: " << dataset_path << std::endl;
       return EXIT_FAILURE;
     }
   }

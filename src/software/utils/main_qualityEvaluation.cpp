@@ -27,7 +27,7 @@ int main(int argc, char **argv)
 
   std::string verboseLevel = system::EVerboseLevel_enumToString(system::Logger::getDefaultVerboseLevel());
   std::string sfmDataFilename;
-  std::string outputDirectory;
+  std::string outputFolder;
   std::string gtFilename;
 
   po::options_description allParams("AliceVision qualityEvaluation");
@@ -36,7 +36,7 @@ int main(int argc, char **argv)
   requiredParams.add_options()
     ("input,i", po::value<std::string>(&sfmDataFilename)->required(),
       "SfMData file.")
-    ("output,o", po::value<std::string>(&outputDirectory)->required(),
+    ("output,o", po::value<std::string>(&outputFolder)->required(),
       "Output path for statistics.")
     ("groundTruthPath", po::value<std::string>(&gtFilename)->required(),
       "Path to a ground truth reconstructed scene");
@@ -76,13 +76,13 @@ int main(int argc, char **argv)
   // set verbose level
   system::Logger::get()->setLogLevel(verboseLevel);
 
-  if (outputDirectory.empty())  {
-    std::cerr << "\nIt is an invalid output directory" << std::endl;
+  if (outputFolder.empty())  {
+    std::cerr << "\nIt is an invalid output folder" << std::endl;
     return EXIT_FAILURE;
   }
 
-  if (!stlplus::folder_exists(outputDirectory))
-    stlplus::folder_create(outputDirectory);
+  if (!stlplus::folder_exists(outputFolder))
+    stlplus::folder_create(outputFolder);
 
   //---------------------------------------
   // Quality evaluation
@@ -141,14 +141,14 @@ int main(int argc, char **argv)
   }
 
   // Visual output of the camera location
-  plyHelper::exportToPly(vec_camPosGT, string(stlplus::folder_append_separator(outputDirectory) + "camGT.ply").c_str());
-  plyHelper::exportToPly(vec_C, string(stlplus::folder_append_separator(outputDirectory) + "camComputed.ply").c_str());
+  plyHelper::exportToPly(vec_camPosGT, string(stlplus::folder_append_separator(outputFolder) + "camGT.ply").c_str());
+  plyHelper::exportToPly(vec_C, string(stlplus::folder_append_separator(outputFolder) + "camComputed.ply").c_str());
 
   // Evaluation
   htmlDocument::htmlDocumentStream _htmlDocStream("aliceVision Quality evaluation.");
-  EvaluteToGT(vec_camPosGT, vec_C, vec_camRotGT, vec_camRot, outputDirectory, &_htmlDocStream);
+  EvaluteToGT(vec_camPosGT, vec_C, vec_camRotGT, vec_camRot, outputFolder, &_htmlDocStream);
 
-  ofstream htmlFileStream( string(stlplus::folder_append_separator(outputDirectory) +
+  ofstream htmlFileStream( string(stlplus::folder_append_separator(outputFolder) +
     "ExternalCalib_Report.html"));
   htmlFileStream << _htmlDocStream.getDoc();
 

@@ -447,7 +447,7 @@ bool ColorHarmonizationEngineGlobal::ReadInputData()
       !stlplus::is_folder( _sOutDirectory) )
   {
     std::cerr << std::endl
-      << "One of the required directory is not a valid directory" << std::endl;
+      << "One of the required folder is not a valid folder" << std::endl;
     return false;
   }
 

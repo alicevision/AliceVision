@@ -78,7 +78,7 @@ int main(int argc, char **argv)
       return EXIT_FAILURE;
     }
 
-    // Assert that we can create the output directory/file
+    // Assert that we can create the output folder/file
     if (!stlplus::folder_exists( stlplus::folder_part(plyOutFilename) ))
       if(!stlplus::folder_create( stlplus::folder_part(plyOutFilename) ))
         return EXIT_FAILURE;

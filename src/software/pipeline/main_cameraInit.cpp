@@ -224,10 +224,10 @@ int main(int argc, char **argv)
     return EXIT_FAILURE;
   }
 
-  // check input directory
+  // check input folder
   if(!imageFolder.empty() && !stlplus::folder_exists(imageFolder))
   {
-    ALICEVISION_LOG_ERROR("Error: The input directory doesn't exist");
+    ALICEVISION_LOG_ERROR("Error: The input folder doesn't exist");
     return EXIT_FAILURE;
   }
 
@@ -245,7 +245,7 @@ int main(int argc, char **argv)
     return EXIT_FAILURE;
   }
 
-  // check if output directory exists, if no create it
+  // check if output folder exists, if no create it
   {
     const std::string outputFolderPart = stlplus::folder_part(outputFilePath);
 
@@ -253,7 +253,7 @@ int main(int argc, char **argv)
     {
       if(!stlplus::folder_create(outputFolderPart))
       {
-        ALICEVISION_LOG_ERROR("Error: Cannot create output directory");
+        ALICEVISION_LOG_ERROR("Error: Cannot create output folder");
         return EXIT_FAILURE;
       }
     }
