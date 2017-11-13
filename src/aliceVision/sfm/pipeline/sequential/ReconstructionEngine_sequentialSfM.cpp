@@ -127,9 +127,9 @@ ReconstructionEngine_sequentialSfM::ReconstructionEngine_sequentialSfM(
   if (!_sLoggingFile.empty())
   {
     // setup HTML logger
-    _htmlDocStream = std::make_shared<htmlDocument::htmlDocumentStream>("SequentialReconstructionEngine SFM report.");
+    _htmlDocStream = std::make_shared<htmlDocument::htmlDocumentStream>("[log] Sequential SfM reconstruction");
     _htmlDocStream->pushInfo(
-      htmlDocument::htmlMarkup("h1", std::string("ReconstructionEngine_sequentialSfM")));
+      htmlDocument::htmlMarkup("h1", std::string("[log] Sequential SfM reconstruction")));
     _htmlDocStream->pushInfo("<hr>");
 
     _htmlDocStream->pushInfo( "Dataset info:");
@@ -454,15 +454,13 @@ bool ReconstructionEngine_sequentialSfM::Process()
     std::ostringstream os;
     os << "Structure from Motion process finished.";
     _htmlDocStream->pushInfo("<hr>");
-    _htmlDocStream->pushInfo(htmlMarkup("h1",os.str()));
+    _htmlDocStream->pushInfo(htmlMarkup("h3",os.str()));
 
     os.str("");
-    os << "-------------------------------" << "<br>"
-      << "-- Structure from Motion (statistics):<br>"
-      << "-- #Camera calibrated: " << _sfm_data.GetPoses().size()
+    os<< "-- Structure from Motion (statistics):<br>"
+      << "-- # Camera calibrated: " << _sfm_data.GetPoses().size()
       << " from " <<_sfm_data.GetViews().size() << " input images.<br>"
-      << "-- #Tracks, #3D points: " << _sfm_data.GetLandmarks().size() << "<br>"
-      << "-------------------------------" << "<br>";
+      << "-- # Tracks, #3D points: " << _sfm_data.GetLandmarks().size() << "<br>";
     _htmlDocStream->pushInfo(os.str());
 
     _htmlDocStream->pushInfo(htmlMarkup("h2","Histogram of reprojection-residuals"));
@@ -941,30 +939,28 @@ bool ReconstructionEngine_sequentialSfM::MakeInitialPair3D(const Pair& current_p
     if (!_sLoggingFile.empty())
     {
       using namespace htmlDocument;
-      _htmlDocStream->pushInfo(htmlMarkup("h1","Essential Matrix."));
+      _htmlDocStream->pushInfo(htmlMarkup("h3","Essential Matrix."));
       std::ostringstream os;
       os << std::endl
-        << "-------------------------------" << "<br>"
-        << "-- Robust Essential matrix: <"  << I << "," <<J << "> images: "
-        << viewI->getImagePath() << ","
-        << viewJ->getImagePath() << "<br>"
-        << "-- Threshold: " << relativePose_info.found_residual_precision << "<br>"
-        << "-- Resection status: " << "OK" << "<br>"
-        << "-- Nb points used for robust Essential matrix estimation: "
+        << "<b>Robust Essential matrix:</b>" << "<br>"
+        << "-> View I:<br>id: " << I << "<br>image path: " << viewI->getImagePath() << "<br>"
+        << "-> View J:<br>id: " << J << "<br>image path: " << viewJ->getImagePath() << "<br><br>"
+        << "- Threshold: " << relativePose_info.found_residual_precision << "<br>"
+        << "- Resection status: " << "OK" << "<br>"
+        << "- # points used for robust Essential matrix estimation: "
         << xI.cols() << "<br>"
-        << "-- Nb points validated by robust estimation: "
+        << "- # points validated by robust estimation: "
         << _sfm_data.structure.size() << "<br>"
-        << "-- % points validated: "
+        << "- % points validated: "
         << _sfm_data.structure.size()/static_cast<float>(xI.cols())
-        << "<br>"
-        << "-------------------------------" << "<br>";
+        << "<br>";
       _htmlDocStream->pushInfo(os.str());
 
-      _htmlDocStream->pushInfo(htmlMarkup("h2",
-        "Residual of the robust estimation (Initial triangulation). Thresholded at: "
+      _htmlDocStream->pushInfo(htmlMarkup("h3",
+        "Initial triangulation - Residual of the robust estimation.<br>Thresholded at: "
         + toString(relativePose_info.found_residual_precision)));
 
-      _htmlDocStream->pushInfo(htmlMarkup("h2","Histogram of residuals"));
+      _htmlDocStream->pushInfo(htmlMarkup("h3","Histogram of residuals"));
 
       std::vector<double> xBin = histoResiduals.GetXbinsValue();
       std::pair< std::pair<double,double>, std::pair<double,double> > range =
@@ -982,8 +978,7 @@ bool ReconstructionEngine_sequentialSfM::MakeInitialPair3D(const Pair& current_p
       _htmlDocStream->pushInfo(jsxGraph.toStr());
       _htmlDocStream->pushInfo("<hr>");
 
-      std::ofstream htmlFileStream( std::string(stlplus::folder_append_separator(_sOutDirectory) +
-        "Reconstruction_Report.html").c_str());
+      std::ofstream htmlFileStream( std::string(stlplus::folder_append_separator(_sOutDirectory) + _sLoggingFile).c_str());
       htmlFileStream << _htmlDocStream->getDoc();
     }
   }
@@ -1345,22 +1340,18 @@ bool ReconstructionEngine_sequentialSfM::Resection(const std::size_t viewIndex)
   {
     using namespace htmlDocument;
     std::ostringstream os;
-    os << "Resection of Image index: <" << viewIndex << "> image: "
-      << view_I->getImagePath() <<"<br> \n";
-    _htmlDocStream->pushInfo(htmlMarkup("h1",os.str()));
+    os << "Robust resection of view " << viewIndex << ": <br>";
+    _htmlDocStream->pushInfo(htmlMarkup("h4",os.str()));
 
     os.str("");
     os << std::endl
-      << "-------------------------------" << "<br>"
-      << "-- Robust Resection of camera index: <" << viewIndex << "> image: "
-      <<  view_I->getImagePath() <<"<br>"
-      << "-- Threshold: " << resection_data.error_max << "<br>"
-      << "-- Resection status: " << (bResection ? "OK" : "FAILED") << "<br>"
-      << "-- Nb points used for Resection: " << vec_featIdForResection.size() << "<br>"
-      << "-- Nb points validated by robust estimation: " << resection_data.vec_inliers.size() << "<br>"
-      << "-- % points validated: "
-      << resection_data.vec_inliers.size()/static_cast<float>(vec_featIdForResection.size()) << "<br>"
-      << "-------------------------------" << "<br>";
+      << "- Image path: " << view_I->getImagePath() << "<br>"
+      << "- Threshold: " << resection_data.error_max << "<br>"
+      << "- Resection status: " << (bResection ? "OK" : "FAILED") << "<br>"
+      << "- # points used for Resection: " << vec_featIdForResection.size() << "<br>"
+      << "- # points validated by robust estimation: " << resection_data.vec_inliers.size() << "<br>"
+      << "- % points validated: "
+      << resection_data.vec_inliers.size()/static_cast<float>(vec_featIdForResection.size()) << "<br>";
     _htmlDocStream->pushInfo(os.str());
   }
 
