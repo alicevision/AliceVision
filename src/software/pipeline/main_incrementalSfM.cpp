@@ -97,6 +97,7 @@ int main(int argc, char **argv)
   std::string outInterFileExtension = ".ply";
   std::pair<std::string,std::string> initialPairString("","");
   int minInputTrackLength = 2;
+  int maxNbMatches = -1;
   int userCameraModel = static_cast<int>(PINHOLE_CAMERA_RADIAL3);
   bool refineIntrinsics = true;
   bool allowUserInteraction = true;
@@ -128,6 +129,9 @@ int main(int argc, char **argv)
       "Extension of the intermediate file export.")
     ("minInputTrackLength", po::value<int>(&minInputTrackLength)->default_value(minInputTrackLength),
       "Minimum track length in input of SfM")
+    ("maxNumberOfMatches", po::value<int>(&maxNbMatches)->default_value(maxNbMatches),
+      "Number of matches to load (per desc. type).\n"
+      "Reduce the number of matches reduces the reconstruction time.")
     ("cameraModel", po::value<int>(&userCameraModel)->default_value(userCameraModel),
       "* 1: Pinhole\n"
       "* 2: Pinhole radial 1\n"
@@ -210,7 +214,7 @@ int main(int argc, char **argv)
   // Matches reading
   matching::PairwiseMatches pairwiseMatches;
 
-  if(!loadPairwiseMatches(pairwiseMatches, sfmData, matchesDirectory, describerTypes, "f"))
+  if(!loadPairwiseMatches(pairwiseMatches, sfmData, matchesDirectory, describerTypes, "f", maxNbMatches))
   {
     std::cerr << std::endl << "Unable to load matches file from: " << matchesDirectory << std::endl;
     return EXIT_FAILURE;
