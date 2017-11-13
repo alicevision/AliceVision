@@ -266,16 +266,16 @@ int main(int argc, char **argv)
     return EXIT_FAILURE;
   }
 
-  // check if K matrix is valid
+  // read K matrix if valid
+  double defaultPPx = -1.0;
+  double defaultPPy = -1.0;
+
+  if(!defaultIntrinsicKMatrix.empty() && !checkIntrinsicStringValidity(defaultIntrinsicKMatrix, defaultFocalLengthPixel, defaultPPx, defaultPPy))
   {
-    double ppx = -1.0;
-    double ppy = -1.0;
-    if(!defaultIntrinsicKMatrix.empty() && !checkIntrinsicStringValidity(defaultIntrinsicKMatrix, defaultFocalLengthPixel, ppx, ppy))
-    {
-      ALICEVISION_LOG_ERROR("Error: --defaultIntrinsic Invalid K matrix input");
-      return EXIT_FAILURE;
-    }
+    ALICEVISION_LOG_ERROR("Error: --defaultIntrinsic Invalid K matrix input");
+    return EXIT_FAILURE;
   }
+
 
   // check sensor database
   std::vector<exif::sensordb::Datasheet> sensorDatabase;
@@ -365,7 +365,7 @@ int main(int argc, char **argv)
     else
       noMetadataImagePaths.emplace_back(view.getImagePath());
 
-    std::shared_ptr<camera::IntrinsicBase> intrinsic = getViewIntrinsic(view, sensorWidth, defaultFocalLengthPixel, defaultCameraModel);
+    std::shared_ptr<camera::IntrinsicBase> intrinsic = getViewIntrinsic(view, sensorWidth, defaultFocalLengthPixel, defaultCameraModel, defaultPPx, defaultPPy);
 
     if(intrinsic->initialFocalLengthPix() > 0)
       ++completeViewCount;

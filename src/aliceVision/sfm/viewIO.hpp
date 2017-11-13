@@ -23,15 +23,19 @@ void updateIncompleteView(View& view);
 /**
  * @brief creat an intrinsic for the given View
  * @param view The given view
- * @param defaultSensorWidth (-1 if unknown)
+ * @param sensorWidth (-1 if unknown)
  * @param defaultFocalLengthPx (-1 if unknown)
  * @param defaultIntrinsicType (PINHOLE_CAMERA_START if unknown)
+ * @param defaultPPx (-1 if unknown)
+ * @param defaultPPy (-1 if unknown)
  * @return shared_ptr IntrinsicBase
  */
 std::shared_ptr<camera::IntrinsicBase> getViewIntrinsic(const View& view,
-                                                double defaultSensorWidth = -1,
+                                                double sensorWidth = -1,
                                                 double defaultFocalLengthPx = -1,
-                                                camera::EINTRINSIC defaultIntrinsicType = camera::PINHOLE_CAMERA_START);
+                                                camera::EINTRINSIC defaultIntrinsicType = camera::PINHOLE_CAMERA_START,
+                                                double defaultPPx = -1,
+                                                double defaultPPy = -1);
 
 } // namespace sfm
 } // namespace aliceVision

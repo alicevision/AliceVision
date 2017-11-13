@@ -49,7 +49,7 @@ void updateIncompleteView(View& view)
   exifReader.open(view.getImagePath());
 
   // reset viewId
-  view.setViewId(computeUID(exifReader, view.getImagePath()));
+  view.setViewId(computeUID(exifReader, stlplus::filename_part(view.getImagePath())));
 
   // reset metadata
   if(view.getMetadata().empty())
@@ -73,7 +73,12 @@ void updateIncompleteView(View& view)
   }
 }
 
-std::shared_ptr<camera::IntrinsicBase> getViewIntrinsic(const View& view, double defaultSensorWidth, double defaultFocalLengthPx, camera::EINTRINSIC defaultIntrinsicType)
+std::shared_ptr<camera::IntrinsicBase> getViewIntrinsic(const View& view,
+                                                        double sensorWidth,
+                                                        double defaultFocalLengthPx,
+                                                        camera::EINTRINSIC defaultIntrinsicType,
+                                                        double defaultPPx,
+                                                        double defaultPPy)
 {
   // get view informations
   const std::string cameraBrand = view.hasMetadata("camera_make") ? view.getMetadata("camera_make") : "";
@@ -81,19 +86,18 @@ std::shared_ptr<camera::IntrinsicBase> getViewIntrinsic(const View& view, double
   const std::string bodySerialNumber = view.hasMetadata("serial_number") ? view.getMetadata("serial_number") : "";
   const std::string lensSerialNumber = view.hasMetadata("lens_serial_number") ? view.getMetadata("lens_serial_number") : "";
 
-  const double ppx = view.getWidth() / 2.0;
-  const double ppy = view.getHeight() / 2.0;
-
   float mmFocalLength = view.hasMetadata("lens_focal_length") ? std::stof(view.getMetadata("lens_focal_length")) : -1;
   double pxFocalLength = defaultFocalLengthPx;
-  double sensorWidth = defaultSensorWidth;
   camera::EINTRINSIC intrinsicType = defaultIntrinsicType;
+
+  double ppx = view.getWidth() / 2.0;
+  double ppy = view.getHeight() / 2.0;
 
   bool isResized = false;
 
-  // check if the image is resized
-  if(view.hasMetadata("image_width") && view.hasMetadata("image_height"))
+  if(view.hasMetadata("image_width") && view.hasMetadata("image_height")) // has metadata
   {
+    // check if the image is resized
     int exifWidth = std::stoi(view.getMetadata("image_width"));
     int exifHeight = std::stoi(view.getMetadata("image_height"));
 
@@ -110,6 +114,11 @@ std::shared_ptr<camera::IntrinsicBase> getViewIntrinsic(const View& view, double
                           << "\t- image size from exif metadata is: " << exifWidth << "x" << exifHeight << std::endl);
       isResized = true;
     }
+  }
+  else if(defaultPPx > 0 && defaultPPy > 0) // use default principal point
+  {
+    ppx = defaultPPx;
+    ppy = defaultPPy;
   }
 
   // handle case where focal length (mm) is unset or false
