@@ -7,6 +7,7 @@
 
 #include "aliceVision/config.hpp"
 #include "aliceVision/stl/mapUtils.hpp"
+#include "aliceVision/sfm/sfmDataIO_json.hpp"
 #include "aliceVision/sfm/sfmDataIO_cereal.hpp"
 #include "aliceVision/sfm/sfmDataIO_ply.hpp"
 #include "aliceVision/sfm/sfmDataIO_baf.hpp"
@@ -23,23 +24,23 @@ namespace aliceVision {
 namespace sfm {
 
 ///Check that each pose have a valid intrinsic and pose id in the existing View ids
-bool ValidIds(const SfMData & sfm_data, ESfMData flags_part)
+bool ValidIds(const SfMData& sfmData, ESfMData partFlag)
 {
-  const bool bCheck_Intrinsic = (flags_part & INTRINSICS);
-  const bool bCheck_Extrinsic = (flags_part & EXTRINSICS);
+  const bool bCheck_Intrinsic = (partFlag & INTRINSICS);
+  const bool bCheck_Extrinsic = (partFlag & EXTRINSICS);
 
   std::set<IndexT> intrinsicIdsDeclared;
-  transform(sfm_data.GetIntrinsics().begin(), sfm_data.GetIntrinsics().end(),
+  transform(sfmData.GetIntrinsics().begin(), sfmData.GetIntrinsics().end(),
     std::inserter(intrinsicIdsDeclared, intrinsicIdsDeclared.begin()), stl::RetrieveKey());
 
   std::set<IndexT> extrinsicIdsDeclared; //unique so can use a set
-  transform(sfm_data.GetPoses().begin(), sfm_data.GetPoses().end(),
+  transform(sfmData.GetPoses().begin(), sfmData.GetPoses().end(),
     std::inserter(extrinsicIdsDeclared, extrinsicIdsDeclared.begin()), stl::RetrieveKey());
 
   // Collect id_intrinsic and id_extrinsic referenced from views
   std::set<IndexT> intrinsicIdsReferenced;
   std::set<IndexT> extrinsicIdsReferenced;
-  for(const auto& v: sfm_data.GetViews())
+  for(const auto& v: sfmData.GetViews())
   {
     const IndexT id_intrinsic = v.second.get()->getIntrinsicId();
     intrinsicIdsReferenced.insert(id_intrinsic);
@@ -90,25 +91,27 @@ bool ValidIds(const SfMData & sfm_data, ESfMData flags_part)
   return bRet;
 }
 
-bool Load(SfMData & sfm_data, const std::string & filename, ESfMData flags_part)
+bool Load(SfMData& sfmData, const std::string& filename, ESfMData partFlag)
 {
   bool bStatus = false;
   const std::string ext = stlplus::extension_part(filename);
-  if (ext == "json")
-    bStatus = Load_Cereal<cereal::JSONInputArchive>(sfm_data, filename, flags_part);
+  if(ext == "sfm")
+    bStatus = loadJSON(sfmData, filename, partFlag);
+  else if (ext == "json")
+    bStatus = Load_Cereal<cereal::JSONInputArchive>(sfmData, filename, partFlag);
   else if (ext == "bin")
-    bStatus = Load_Cereal<cereal::PortableBinaryInputArchive>(sfm_data, filename, flags_part);
+    bStatus = Load_Cereal<cereal::PortableBinaryInputArchive>(sfmData, filename, partFlag);
   else if (ext == "xml")
-    bStatus = Load_Cereal<cereal::XMLInputArchive>(sfm_data, filename, flags_part);
+    bStatus = Load_Cereal<cereal::XMLInputArchive>(sfmData, filename, partFlag);
 #if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_ALEMBIC)
   else if (ext == "abc") {
-    aliceVision::sfm::AlembicImporter(filename).populate(sfm_data, flags_part);
+    aliceVision::sfm::AlembicImporter(filename).populate(sfmData, partFlag);
     bStatus = true;
   }
 #endif // ALICEVISION_HAVE_ALEMBIC
   else if (stlplus::folder_exists(filename))
   {
-    bStatus = readGt(filename, sfm_data);
+    bStatus = readGt(filename, sfmData);
   }
   // It is not a folder or known format, return false
   else
@@ -119,31 +122,33 @@ bool Load(SfMData & sfm_data, const std::string & filename, ESfMData flags_part)
 
   // Assert that loaded intrinsics | extrinsics are linked to valid view
   if(bStatus &&
-     (flags_part & VIEWS) &&
-     ((flags_part & INTRINSICS) || (flags_part & EXTRINSICS)))
+     (partFlag & VIEWS) &&
+     ((partFlag & INTRINSICS) || (partFlag & EXTRINSICS)))
   {
-    return ValidIds(sfm_data, flags_part);
+    return ValidIds(sfmData, partFlag);
   }
   return bStatus;
 }
 
-bool Save(const SfMData & sfm_data, const std::string & filename, ESfMData flags_part)
+bool Save(const SfMData& sfmData, const std::string& filename, ESfMData partFlag)
 {
   const std::string ext = stlplus::extension_part(filename);
-  if (ext == "json")
-    return Save_Cereal<cereal::JSONOutputArchive>(sfm_data, filename, flags_part);
+  if(ext == "sfm")
+    return saveJSON(sfmData, filename, partFlag);
+  else if (ext == "json")
+    return Save_Cereal<cereal::JSONOutputArchive>(sfmData, filename, partFlag);
   else if (ext == "bin")
-    return Save_Cereal<cereal::PortableBinaryOutputArchive>(sfm_data, filename, flags_part);
+    return Save_Cereal<cereal::PortableBinaryOutputArchive>(sfmData, filename, partFlag);
   else if (ext == "xml")
-    return Save_Cereal<cereal::XMLOutputArchive>(sfm_data, filename, flags_part);
+    return Save_Cereal<cereal::XMLOutputArchive>(sfmData, filename, partFlag);
   else if (ext == "ply")
-    return Save_PLY(sfm_data, filename, flags_part);
+    return Save_PLY(sfmData, filename, partFlag);
   else if (ext == "baf") // Bundle Adjustment file
-    return Save_BAF(sfm_data, filename, flags_part);
+    return Save_BAF(sfmData, filename, partFlag);
 #if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_ALEMBIC)
   else if (ext == "abc") // Alembic
   {
-    aliceVision::sfm::AlembicExporter(filename).add(sfm_data, flags_part);
+    aliceVision::sfm::AlembicExporter(filename).add(sfmData, partFlag);
     return true;
   }
 #endif // ALICEVISION_HAVE_ALEMBIC

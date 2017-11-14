@@ -32,7 +32,7 @@ int main(int argc, char **argv)
 {
   std::string imageAFilename;
   std::string imageBFilename;
-  std::string outputDirectory;
+  std::string outputFolder;
 
   po::options_description allParams("AliceVision Sample kvldFilter");
   allParams.add_options()
@@ -40,8 +40,8 @@ int main(int argc, char **argv)
       "Left image.")
     ("imageBFilename,b", po::value<std::string>(&imageBFilename)->required(),
       "Right image.");
-    ("output,o", po::value<std::string>(&outputDirectory)->required(),
-      "Output directory.");
+    ("output,o", po::value<std::string>(&outputFolder)->required(),
+      "Output folder.");
 
   po::variables_map vm;
   try
@@ -68,8 +68,8 @@ int main(int argc, char **argv)
     return EXIT_FAILURE;
   }
 
-  if (outputDirectory.empty())  {
-    std::cerr << "\nIt is an invalid output directory" << std::endl;
+  if (outputFolder.empty())  {
+    std::cerr << "\nIt is an invalid output folder" << std::endl;
     return EXIT_FAILURE;
   }
 
@@ -82,8 +82,8 @@ int main(int argc, char **argv)
   // -----------------------------
 
   // Create output dir
-  if (!stlplus::folder_exists(outputDirectory))
-    stlplus::folder_create( outputDirectory );
+  if (!stlplus::folder_exists(outputFolder))
+    stlplus::folder_create( outputFolder );
 
   const string jpg_filenameL = imageAFilename;
   const string jpg_filenameR = imageBFilename;
@@ -232,7 +232,7 @@ int main(int argc, char **argv)
       }
     }
     string out_filename = "05_KVLD_Matches.svg";
-    out_filename = stlplus::create_filespec(outputDirectory, out_filename);
+    out_filename = stlplus::create_filespec(outputFolder, out_filename);
     ofstream svgFile( out_filename.c_str() );
     svgFile << svgStream.closeSvgFile().str();
     svgFile.close();
@@ -261,7 +261,7 @@ int main(int argc, char **argv)
       }
     }
     string out_filename = "06_KVLD_Keypoints.svg";
-    out_filename = stlplus::create_filespec(outputDirectory, out_filename);
+    out_filename = stlplus::create_filespec(outputFolder, out_filename);
     ofstream svgFile( out_filename.c_str() );
     svgFile << svgStream.closeSvgFile().str();
     svgFile.close();
@@ -279,12 +279,12 @@ int main(int argc, char **argv)
 
   {
     string out_filename = "07_Left-K-VLD-MASK.jpg";
-    out_filename = stlplus::create_filespec(outputDirectory, out_filename);
+    out_filename = stlplus::create_filespec(outputFolder, out_filename);
     WriteImage(out_filename.c_str(), imageOutL);
   }
   {
     string out_filename = "08_Right-K-VLD-MASK.jpg";
-    out_filename = stlplus::create_filespec(outputDirectory, out_filename);
+    out_filename = stlplus::create_filespec(outputFolder, out_filename);
     WriteImage(out_filename.c_str(), imageOutR);
   }
 

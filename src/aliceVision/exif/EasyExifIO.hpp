@@ -238,6 +238,10 @@ class EasyExifIO : public ExifIO
         allExifData.emplace("flash_used", std::to_string(exifInfo_.Flash));
       if(exifInfo_.MeteringMode > 0)
         allExifData.emplace("metering_mode", std::to_string(exifInfo_.MeteringMode));
+      if(!exifInfo_.SerialNumber.empty())
+        allExifData.emplace("serial_number", exifInfo_.SerialNumber);
+      if(!exifInfo_.LensSerialNumber.empty())
+        allExifData.emplace("lens_serial_number", exifInfo_.LensSerialNumber);
       if(exifInfo_.FocalLength > 0)
         allExifData.emplace("lens_focal_length", std::to_string(exifInfo_.FocalLength));
       if(exifInfo_.FocalLengthIn35mm > 0)

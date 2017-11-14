@@ -36,8 +36,8 @@ int main(int argc, char **argv)
   std::string verboseLevel = system::EVerboseLevel_enumToString(system::Logger::getDefaultVerboseLevel());
   std::string sfmDataFilename;
   std::string describerTypesName = feature::EImageDescriberType_enumToString(feature::EImageDescriberType::SIFT);
-  std::string matchesDirectory;
-  std::string outputDirectory;
+  std::string matchesFolder;
+  std::string outputFolder;
   std::string queryImage;
   double maxResidualError = std::numeric_limits<double>::infinity();
 
@@ -49,10 +49,10 @@ int main(int argc, char **argv)
   requiredParams.add_options()
     ("input,i", po::value<std::string>(&sfmDataFilename)->required(),
       "SfMData file.")
-    ("output,o", po::value<std::string>(&outputDirectory)->required(),
+    ("output,o", po::value<std::string>(&outputFolder)->required(),
       "Output path.")
-    ("matchesDirectory,m", po::value<std::string>(&matchesDirectory)->required(),
-      "Path to a directory in which computed matches are stored.")
+    ("matchesFolder,m", po::value<std::string>(&matchesFolder)->required(),
+      "Path to a folder in which computed matches are stored.")
     ("queryImage", po::value<std::string>(&queryImage)->required(),
       "Path to the image that must be localized.");
 
@@ -138,20 +138,20 @@ int main(int argc, char **argv)
   {
     RegionsPerView regionsPerView;
 
-    if (!sfm::loadRegionsPerView(regionsPerView, sfmData, matchesDirectory, {describerType}))
+    if (!sfm::loadRegionsPerView(regionsPerView, sfmData, matchesFolder, {describerType}))
     {
       std::cerr << std::endl << "Invalid regions." << std::endl;
       return EXIT_FAILURE;
     }
 
-    if (outputDirectory.empty())
+    if (outputFolder.empty())
     {
-      std::cerr << "\nIt is an invalid output directory" << std::endl;
+      std::cerr << "\nIt is an invalid output folder" << std::endl;
       return EXIT_FAILURE;
     }
 
-    if (!stlplus::folder_exists(outputDirectory))
-      stlplus::folder_create(outputDirectory);
+    if (!stlplus::folder_exists(outputFolder))
+      stlplus::folder_create(outputFolder);
     
     if (!localizer.Init(sfmData, regionsPerView))
     {
@@ -242,8 +242,8 @@ int main(int argc, char **argv)
       std::unique_ptr<Regions> query_regions;
       imageDescribers->Allocate(query_regions);
       const std::string basename = stlplus::basename_part(sImagePath);
-      const std::string featFile = stlplus::create_filespec(matchesDirectory, basename, ".feat");
-      const std::string descFile = stlplus::create_filespec(matchesDirectory, basename, ".desc");
+      const std::string featFile = stlplus::create_filespec(matchesFolder, basename, ".feat");
+      const std::string descFile = stlplus::create_filespec(matchesFolder, basename, ".desc");
       if (!query_regions->Load(featFile, descFile))
       {
         std::cerr << "Invalid regions files for the view: " << sImagePath << std::endl;
@@ -308,7 +308,7 @@ int main(int argc, char **argv)
   }
 
   // Export the found camera position
-  const std::string out_file_name = stlplus::create_filespec(outputDirectory, "found_pose_centers", "ply");
+  const std::string out_file_name = stlplus::create_filespec(outputFolder, "found_pose_centers", "ply");
   {
     std::ofstream outfile;
     outfile.open(out_file_name.c_str(), std::ios_base::out);

@@ -24,7 +24,7 @@ namespace po = boost::program_options;
 
 bool exportToPMVSFormat(
   const SfMData & sfm_data,
-  const std::string & sOutDirectory,  //Output PMVS files directory
+  const std::string & sOutDirectory,  //Output PMVS files folder
   const int downsampling_factor,
   const int CPU_core_count,
   const bool b_VisData = true
@@ -37,7 +37,7 @@ bool exportToPMVSFormat(
     bOk = stlplus::is_folder(sOutDirectory);
   }
 
-  // Create basis directory structure
+  // Create basis folder structure
   stlplus::folder_create( stlplus::folder_append_separator(sOutDirectory) + "models");
   stlplus::folder_create( stlplus::folder_append_separator(sOutDirectory) + "txt");
   stlplus::folder_create( stlplus::folder_append_separator(sOutDirectory) + "visualize");
@@ -51,7 +51,7 @@ bool exportToPMVSFormat(
     bOk = true;
   }
   else  {
-    std::cerr << "Cannot access to one of the desired output directory" << std::endl;
+    std::cerr << "Cannot access to one of the desired output folder" << std::endl;
   }
 
   if (bOk)
@@ -305,7 +305,7 @@ int main(int argc, char *argv[])
 
   std::string verboseLevel = system::EVerboseLevel_enumToString(system::Logger::getDefaultVerboseLevel());
   std::string sfmDataFilename;
-  std::string outputDirectory;
+  std::string outputFolder;
 
   int resolution = 1;
   int nbCore = 8;
@@ -317,7 +317,7 @@ int main(int argc, char *argv[])
   requiredParams.add_options()
     ("input,i", po::value<std::string>(&sfmDataFilename)->required(),
       "SfMData file.")
-    ("output,o", po::value<std::string>(&outputDirectory)->required(),
+    ("output,o", po::value<std::string>(&outputFolder)->required(),
       "Output path for keypoints.");
 
   po::options_description optionalParams("Optional parameters");
@@ -365,8 +365,8 @@ int main(int argc, char *argv[])
   system::Logger::get()->setLogLevel(verboseLevel);
 
   // Create output dir
-  if (!stlplus::folder_exists(outputDirectory))
-    stlplus::folder_create( outputDirectory );
+  if (!stlplus::folder_exists(outputFolder))
+    stlplus::folder_create( outputFolder );
 
   SfMData sfm_data;
   if (!Load(sfm_data, sfmDataFilename, ESfMData(ALL))) {
@@ -377,15 +377,15 @@ int main(int argc, char *argv[])
 
   {
     exportToPMVSFormat(sfm_data,
-      stlplus::folder_append_separator(outputDirectory) + "PMVS",
+      stlplus::folder_append_separator(outputFolder) + "PMVS",
       resolution,
       nbCore,
       useVisData);
 
     exportToBundlerFormat(sfm_data,
-      stlplus::folder_append_separator(outputDirectory) +
+      stlplus::folder_append_separator(outputFolder) +
       stlplus::folder_append_separator("PMVS") + "bundle.rd.out",
-      stlplus::folder_append_separator(outputDirectory) +
+      stlplus::folder_append_separator(outputFolder) +
       stlplus::folder_append_separator("PMVS") + "list.txt"
       );
 

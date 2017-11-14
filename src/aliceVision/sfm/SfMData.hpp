@@ -60,14 +60,17 @@ public:
   // Accessors
 
   const Views& GetViews() const {return views;}
+  Views& GetViews() {return views;}
   const Poses& GetPoses() const {return _poses;}
   Poses& GetPoses() {return _poses;}
   const Rigs& getRigs() const {return _rigs;}
   Rigs& getRigs() {return _rigs;}
   const Intrinsics& GetIntrinsics() const {return intrinsics;}
+  Intrinsics& GetIntrinsics() {return intrinsics;}
   const Landmarks& GetLandmarks() const {return structure;}
   Landmarks& GetLandmarks() {return structure;}
   const Landmarks& GetControl_Points() const {return control_points;}
+  Landmarks& GetControl_Points() {return control_points;}
   const std::string& getFeatureFolder() const {return _featureFolder;}
   const std::string& getMatchingFolder() const {return _matchingFolder;}
 

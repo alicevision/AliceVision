@@ -38,7 +38,7 @@ int main(int argc, char **argv)
     ("ply", po::value<std::string>(&plyPath)->required(),
       "Ply.")
     ("output,o", po::value<std::string>(&outDirectory)->required(),
-      "Output directory.");
+      "Output folder.");
 
   po::options_description logParams("Log parameters");
   logParams.add_options()

@@ -28,7 +28,7 @@ int main(int argc, char** argv)
   std::vector<float> pxFocals;           // media focal (px) list
   std::string sensorDbPath;              // camera sensor width database
   std::string voctreeFilePath;           // SIFT voctree file path
-  std::string outputDirectory;           // output folder for keyframes
+  std::string outputFolder;           // output folder for keyframes
 
   // algorithm variables
 
@@ -48,8 +48,8 @@ int main(int argc, char** argv)
         "Camera sensor width database path.")
       ("voctreePath", po::value<std::string>(&voctreeFilePath)->required(),
         "Vocabulary tree path.")
-      ("outputDirectory", po::value<std::string>(&outputDirectory)->required(),
-        "Output keyframes directory for .jpg");
+      ("outputFolder", po::value<std::string>(&outputFolder)->required(),
+        "Output keyframes folder for .jpg");
 
   po::options_description metadataParams("Metadata parameters");  
   metadataParams.add_options()
@@ -103,13 +103,13 @@ int main(int argc, char** argv)
     return EXIT_FAILURE;
   }
   
-  // check output directory and update to its absolute path
+  // check output folder and update to its absolute path
   {
-    const bfs::path outDir = bfs::absolute(outputDirectory);
-    outputDirectory = outDir.string();
+    const bfs::path outDir = bfs::absolute(outputFolder);
+    outputFolder = outDir.string();
     if(!bfs::is_directory(outDir))
     {
-      ALICEVISION_CERR("ERROR: can't find directory " << outputDirectory);
+      ALICEVISION_CERR("ERROR: can't find folder " << outputFolder);
       return EXIT_FAILURE;
     }
   }
@@ -147,7 +147,7 @@ int main(int argc, char** argv)
 
     ALICEVISION_COUT("\tsensor database file path : "     << sensorDbPath    << std::endl
                  << "\tvocabulary tree file path : "  << voctreeFilePath << std::endl
-                 << "\toutput directory : "           << outputDirectory << std::endl
+                 << "\toutput folder : "           << outputFolder << std::endl
                  << "\tsharpness selection preset : " << sharpnessPreset << std::endl
                  << "\tsharp subset : "               << sharpSubset     << std::endl
                  << "\tmin frame step : "             << minFrameStep    << std::endl
@@ -156,7 +156,7 @@ int main(int argc, char** argv)
   }
 
   // initialize KeyframeSelector
-  KeyframeSelector selector(mediaPaths, sensorDbPath, voctreeFilePath, outputDirectory);
+  KeyframeSelector selector(mediaPaths, sensorDbPath, voctreeFilePath, outputFolder);
   
   // initialize media metadatas vector
   std::vector<KeyframeSelector::CameraInfo> cameraInfos(nbCameras);

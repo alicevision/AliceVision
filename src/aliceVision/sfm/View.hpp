@@ -181,6 +181,42 @@ public:
   }
 
   /**
+   * @brief Get the view metadata structure
+   * @return the view metadata
+   */
+  const std::map<std::string, std::string>& getMetadata() const
+  {
+    return _metadata;
+  }
+
+  /**
+   * @brief Set the given view image path
+   * @param[in] imagePath The given view image path
+   */
+  void setImagePath(const std::string& imagePath)
+  {
+    _imagePath = imagePath;
+  }
+
+  /**
+   * @brief  Set the given view image width
+   * @param[in] width The given view image width
+   */
+  void setWidth(std::size_t width)
+  {
+    _width = width;
+  }
+
+  /**
+   * @brief  Set the given view image height
+   * @param[in] height The given view image height
+   */
+  void setHeight(std::size_t height)
+  {
+    _height = height;
+  }
+
+  /**
    * @brief Set the given view id
    * @param[in] viewId The given view id
    */
@@ -196,6 +232,15 @@ public:
   void setIntrinsicId(IndexT intrinsicId)
   {
     _intrinsicId = intrinsicId;
+  }
+
+  /**
+   * @brief Set the given pose id
+   * @param[in] poseId The given pose id
+   */
+  void setPoseId(IndexT poseId)
+  {
+    _poseId = poseId;
   }
 
   /**
@@ -225,6 +270,16 @@ public:
   void setMetadata(const std::map<std::string, std::string>& metadata)
   {
     _metadata = metadata;
+  }
+
+  /**
+   * @brief Add view metadata
+   * @param[in] key The metadata key
+   * @param[in] value The metadata value
+   */
+  void addMetadata(const std::string& key, const std::string& value)
+  {
+    _metadata.emplace(key, value);
   }
 
   /**

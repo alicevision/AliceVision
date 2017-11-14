@@ -13,16 +13,54 @@
 
 #include <vector>
 #include <cassert>
+#include <algorithm>
+#include <stdexcept>
 
 namespace aliceVision {
 namespace sfm {
 
+/**
+ * @brief Rig sub-pose status enum
+ */
 enum class ERigSubPoseStatus: std::uint8_t
 {
   UNINITIALIZED = 0
   , ESTIMATED = 1
   , CONSTANT = 2
 };
+
+/**
+ * @brief convert an enum ERigSubPoseStatus to its corresponding string
+ * @param ERigSubPoseStatus
+ * @return String
+ */
+inline std::string ERigSubPoseStatus_enumToString(ERigSubPoseStatus rigSubPoseStatus)
+{
+  switch(rigSubPoseStatus)
+  {
+    case ERigSubPoseStatus::UNINITIALIZED: return "uninitialized";
+    case ERigSubPoseStatus::ESTIMATED:     return "estimated";
+    case ERigSubPoseStatus::CONSTANT:      return "constant";
+  }
+  throw std::out_of_range("Invalid rigSubPoseStatus enum");
+}
+
+/**
+ * @brief convert a string rigSubPoseStatus to its corresponding enum ERigSubPoseStatus
+ * @param String
+ * @return ERigSubPoseStatus
+ */
+inline ERigSubPoseStatus ERigSubPoseStatus_stringToEnum(const std::string& rigSubPoseStatus)
+{
+  std::string status = rigSubPoseStatus;
+  std::transform(status.begin(), status.end(), status.begin(), ::tolower); //tolower
+
+  if(status == "uninitialized") return ERigSubPoseStatus::UNINITIALIZED;
+  if(status == "estimated")     return ERigSubPoseStatus::ESTIMATED;
+  if(status == "constant")      return ERigSubPoseStatus::CONSTANT;
+
+  throw std::out_of_range("Invalid rigSubPoseStatus : " + rigSubPoseStatus);
+}
 
 struct RigSubPose
 {

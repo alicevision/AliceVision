@@ -35,8 +35,8 @@ int main(int argc, char ** argv)
 
   std::string verboseLevel = system::EVerboseLevel_enumToString(system::Logger::getDefaultVerboseLevel());
   std::string sfmDataFilename;
-  std::string outputDirectory;
-  std::string matchesDirectory;
+  std::string outputFolder;
+  std::string matchesFolder;
   std::string describerTypesName = feature::EImageDescriberType_enumToString(feature::EImageDescriberType::SIFT);
 
   po::options_description allParams("AliceVision exportKeypoints");
@@ -45,10 +45,10 @@ int main(int argc, char ** argv)
   requiredParams.add_options()
     ("input,i", po::value<std::string>(&sfmDataFilename)->required(),
       "SfMData file.")
-    ("output,o", po::value<std::string>(&outputDirectory)->required(),
+    ("output,o", po::value<std::string>(&outputFolder)->required(),
       "Output path for keypoints.")
-    ("matchesDirectory,m", po::value<std::string>(&matchesDirectory)->required(),
-      "Path to a directory in which computed matches are stored.");
+    ("matchesFolder,m", po::value<std::string>(&matchesFolder)->required(),
+      "Path to a folder in which computed matches are stored.");
 
   po::options_description optionalParams("Optional parameters");
   optionalParams.add_options()
@@ -90,9 +90,9 @@ int main(int argc, char ** argv)
   // set verbose level
   system::Logger::get()->setLogLevel(verboseLevel);
 
-  if (outputDirectory.empty())
+  if (outputFolder.empty())
   {
-    std::cerr << "\nIt is an invalid output directory" << std::endl;
+    std::cerr << "\nIt is an invalid output folder" << std::endl;
     return EXIT_FAILURE;
   }
 
@@ -116,7 +116,7 @@ int main(int argc, char ** argv)
 
   // Read the features
   feature::FeaturesPerView featuresPerView;
-  if (!sfm::loadFeaturesPerView(featuresPerView, sfm_data, matchesDirectory, describerMethodTypes)) {
+  if (!sfm::loadFeaturesPerView(featuresPerView, sfm_data, matchesFolder, describerMethodTypes)) {
     std::cerr << std::endl
       << "Invalid features." << std::endl;
     return EXIT_FAILURE;
@@ -126,7 +126,7 @@ int main(int argc, char ** argv)
   // For each image, export visually the keypoints
   // ------------
 
-  stlplus::folder_create(outputDirectory);
+  stlplus::folder_create(outputFolder);
   std::cout << "\n Export extracted keypoints for all images" << std::endl;
   boost::progress_display my_progress_bar( sfm_data.views.size() );
   for(const auto &iterViews : sfm_data.views)
@@ -142,7 +142,7 @@ int main(int argc, char ** argv)
 
     // output filename
     std::ostringstream os;
-    os << stlplus::folder_append_separator(outputDirectory)
+    os << stlplus::folder_append_separator(outputFolder)
       << stlplus::basename_part(sView_filename)
       << "_" << features.size() << "_.svg";
 

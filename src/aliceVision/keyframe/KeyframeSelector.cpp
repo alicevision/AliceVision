@@ -18,11 +18,11 @@ namespace keyframe {
 KeyframeSelector::KeyframeSelector(const std::vector<std::string>& mediaPaths,
                                    const std::string& sensorDbPath,
                                    const std::string& voctreeFilePath,
-                                   const std::string& outputDirectory)
+                                   const std::string& outputFolder)
   : _mediaPaths(mediaPaths)
   , _sensorDbPath(sensorDbPath)
   , _voctreeFilePath(voctreeFilePath)
-  , _outputDirectory(outputDirectory)
+  , _outputFolder(outputFolder)
 {
   // load vocabulary tree
   _voctree.reset(new aliceVision::voctree::VocabularyTree<DescriptorFloat>(voctreeFilePath));
@@ -348,7 +348,7 @@ void KeyframeSelector::writeKeyframe(const image::Image<image::RGBColor>& image,
                                      std::size_t mediaIndex)
 {
   const auto& mediaInfo = _mediasInfo.at(mediaIndex);
-  const auto filepath = _outputDirectory + "/frame_" + std::to_string(frameIndex) + "_media_" + std::to_string(mediaIndex) + ".jpg";
+  const auto filepath = _outputFolder + "/frame_" + std::to_string(frameIndex) + "_media_" + std::to_string(mediaIndex) + ".jpg";
 
   std::unique_ptr<oiio::ImageOutput> out(oiio::ImageOutput::create(filepath));
   

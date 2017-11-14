@@ -160,17 +160,17 @@ std::string replaceAll( std::string const& original, std::string const& from, st
 bool prepareDenseScene(
   const SfMData & sfm_data,
   int scale,
-  const std::string & sOutDirectory // Output CMPMVS files directory
+  const std::string & sOutDirectory // Output CMPMVS files folder
   )
 {
-  // Create basis directory structure
+  // Create basis folder structure
   if (!stlplus::is_folder(sOutDirectory))
   {
     stlplus::folder_create(sOutDirectory);
     bool bOk = stlplus::is_folder(sOutDirectory);
     if (!bOk)
     {
-      std::cerr << "Cannot access the output directory: " << sOutDirectory << std::endl;
+      std::cerr << "Cannot access the output folder: " << sOutDirectory << std::endl;
       return false;
     }
   }
@@ -352,7 +352,7 @@ int main(int argc, char *argv[])
 
   std::string verboseLevel = system::EVerboseLevel_enumToString(system::Logger::getDefaultVerboseLevel());
   std::string sfmDataFilename;
-  std::string outDirectory;
+  std::string outFolder;
   int scale = 2;
 
   po::options_description allParams("AliceVision prepareDenseScene");
@@ -361,8 +361,8 @@ int main(int argc, char *argv[])
   requiredParams.add_options()
     ("input,i", po::value<std::string>(&sfmDataFilename)->required(),
       "SfMData file.")
-    ("output,o", po::value<std::string>(&outDirectory)->required(),
-      "Output directory.");
+    ("output,o", po::value<std::string>(&outFolder)->required(),
+      "Output folder.");
 
   po::options_description optionalParams("Optional parameters");
   optionalParams.add_options()
@@ -406,11 +406,11 @@ int main(int argc, char *argv[])
 
   // export
   {
-    outDirectory = stlplus::folder_to_path(outDirectory);
+    outFolder = stlplus::folder_to_path(outFolder);
 
     // Create output dir
-    if (!stlplus::folder_exists(outDirectory))
-      stlplus::folder_create( outDirectory );
+    if (!stlplus::folder_exists(outFolder))
+      stlplus::folder_create( outFolder );
 
     // Read the input SfM scene
     SfMData sfm_data;
@@ -421,7 +421,7 @@ int main(int argc, char *argv[])
       return EXIT_FAILURE;
     }
 
-    if (!prepareDenseScene(sfm_data, scale, stlplus::filespec_to_path(outDirectory, "_tmp_scale" + std::to_string(scale))))
+    if (!prepareDenseScene(sfm_data, scale, stlplus::filespec_to_path(outFolder, "_tmp_scale" + std::to_string(scale))))
       return EXIT_FAILURE;
   }
 

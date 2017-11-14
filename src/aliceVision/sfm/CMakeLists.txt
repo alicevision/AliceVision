@@ -25,6 +25,7 @@ set(sfm_files_headers
   sfmDataIO_baf.hpp
   sfmDataIO_cereal.hpp
   sfmDataIO_gt.hpp
+  sfmDataIO_json.hpp
   sfmDataIO_ply.hpp
   sfmDataTriangulation.hpp
   sfmDataUtils.hpp
@@ -32,6 +33,7 @@ set(sfm_files_headers
   Landmark.hpp
   generateReport.hpp
   View.hpp
+  viewIO.hpp
   Rig.hpp
   utils/alignment.hpp
   utils/uid.hpp
@@ -55,10 +57,12 @@ set(sfm_files_sources
   sfmDataIO.cpp
   sfmDataIO_baf.cpp
   sfmDataIO_gt.cpp
+  sfmDataIO_json.cpp
   sfmDataIO_ply.cpp
   sfmDataTriangulation.cpp
   sfmDataUtils.cpp
   generateReport.cpp
+  viewIO.cpp
   utils/alignment.cpp
   utils/uid.cpp
 )

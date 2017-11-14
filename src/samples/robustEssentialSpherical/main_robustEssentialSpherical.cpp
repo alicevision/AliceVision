@@ -227,7 +227,7 @@ int main() {
             std::cout << "Found solution have too few 3D points." << std::endl;
           }
           else  {
-            std::cout << "Export found 3D scene in current directory." << std::endl;
+            std::cout << "Export found 3D scene in current folder." << std::endl;
             vec_inliers.clear();
             vec_inliers = vec_newInliers[index];
             std::ostringstream os;

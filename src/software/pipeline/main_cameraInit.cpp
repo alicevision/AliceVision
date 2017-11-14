@@ -3,9 +3,9 @@
 // v. 2.0. If a copy of the MPL was not distributed with this file,
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
-#include <aliceVision/image/image.hpp>
 #include <aliceVision/sfm/sfm.hpp>
-#include <aliceVision/exif/EasyExifIO.hpp>
+#include <aliceVision/sfm/viewIO.hpp>
+#include <aliceVision/sfm/sfmDataIO_json.hpp>
 #include <aliceVision/exif/sensorWidthDatabase/parseDatabase.hpp>
 #include <aliceVision/stl/split.hpp>
 #include <aliceVision/system/Logger.hpp>
@@ -21,17 +21,12 @@
 #include <memory>
 #include <string>
 #include <vector>
+#include <cstdlib>
 
 using namespace aliceVision;
-using namespace aliceVision::camera;
-using namespace aliceVision::exif;
-using namespace aliceVision::image;
 using namespace aliceVision::sfm;
-namespace po = boost::program_options;
 
-using ResourcePathsPerCamera = std::vector<std::vector<std::string>>;
-using Resources = std::vector<ResourcePathsPerCamera>;
-using ExifData = std::map<std::string, std::string>;
+namespace po = boost::program_options;
 
 /**
  * @brief Check that Kmatrix is a string like "f;0;ppx;0;f;ppy;0;0;1"
@@ -121,422 +116,6 @@ bool listFiles(const std::string& folderOrFile,
   return true;
 }
 
-/**
- * @brief Retrieve resources path from a json file
- * Need a "resource" variable in the json
- * @param jsonFile A JSON filepath
- * @param resourcesPaths list of resources
- * @return true if extraction is complete
- */
-bool retrieveResources(const std::string& jsonFile,
-                       const std::vector<std::string>& extensions,
-                       Resources& resources)
-{
-  if(!stlplus::file_exists(jsonFile))
-  {
-    ALICEVISION_LOG_ERROR("File \"" << jsonFile << "\" does not exists.");
-    return false;
-  }
-
-  // Read file
-  std::ifstream jsonStream(jsonFile, std::ifstream::binary);
-
-  if(!jsonStream.is_open())
-    throw std::runtime_error("Error: Unable to open " + jsonFile);
-
-  // get length of file:
-  jsonStream.seekg (0, jsonStream.end);
-  const int length = jsonStream.tellg();
-  jsonStream.seekg (0, jsonStream.beg);
-  // read data as a block:
-  std::string jsonString;
-  jsonString.resize(length);
-  jsonStream.read(&jsonString[0], length);
-  jsonStream.close();
-
-  // Parse json
-  rapidjson::Document document;
-  document.Parse<0>(&jsonString[0]);
-  if(!document.IsObject())
-  {
-    ALICEVISION_LOG_ERROR("Error: File '" << jsonFile << "' is not in json format.");
-    return false;
-  }
-  if(!document.HasMember("resources"))
-  {
-    ALICEVISION_LOG_ERROR("Error: No member 'resources' in json file");
-    return false;
-  }
-
-  rapidjson::Value& jsonResourcesArray = document["resources"];
-
-  if(!jsonResourcesArray.IsArray())
-  {
-    ALICEVISION_LOG_ERROR("Error: Member 'resources' in json file isn't an array");
-    return false;
-  }
-
-  bool canListFiles = true;
-
-  // fill imagePaths
-  for(rapidjson::Value::ConstValueIterator itrRig = jsonResourcesArray.Begin(); itrRig != jsonResourcesArray.End(); ++itrRig)
-  {
-    if(itrRig->IsString()) // single image path
-    {
-      std::vector<std::string> imagePaths;
-      if(!listFiles(itrRig->GetString(), extensions, imagePaths))
-        canListFiles = false;
-
-      for(const auto& path : imagePaths)
-        resources.push_back({{{path}}});
-    }
-    else if(itrRig->IsArray()) // rig or intrinsic group
-    {
-      ResourcePathsPerCamera imagePathsPerCamera;
-      std::vector<std::string> intrinsicImagePaths;
-      for(rapidjson::Value::ConstValueIterator itrCam = itrRig->Begin(); itrCam != itrRig->End(); ++itrCam)
-      {
-        if(itrCam->IsString()) // list of image paths with the same intrinsic
-        {
-          if(!listFiles(itrCam->GetString(), extensions, intrinsicImagePaths))
-             canListFiles = false;
-        }
-        else if(itrCam->IsArray()) // list of image paths of a rig
-        {
-          std::vector<std::string> rigImagePaths;
-          for(rapidjson::Value::ConstValueIterator itrVal = itrCam->Begin(); itrVal != itrCam->End(); ++itrVal)
-          {
-            if(itrVal->IsString()) // list of image paths of one camera of a rig
-            {
-              if(!listFiles(itrVal->GetString(), extensions, rigImagePaths))
-                 canListFiles = false;
-            }
-          }
-          imagePathsPerCamera.push_back(rigImagePaths);
-        }
-      }
-      if(!intrinsicImagePaths.empty())
-      {
-        imagePathsPerCamera.push_back(intrinsicImagePaths);
-      }
-      resources.push_back(imagePathsPerCamera);
-    }
-  }
-  return canListFiles;
-}
-
-class ImageMetadata
-{  
-public:
-
-  /**
-   * @brief ImageMetadata
-   * @param imageAbsPath
-   * @param width
-   * @param height
-   */
-  ImageMetadata(const std::string& imageAbsPath,
-            double width,
-            double height)
-    : _imageAbsPath(imageAbsPath)
-    , _width(width)
-    , _height(height)
-  {
-    _ppx = width / 2.0;
-    _ppy = height / 2.0;
-
-    EasyExifIO exifReader;
-    exifReader.open(imageAbsPath);
-
-    _cameraBrand = exifReader.getBrand();
-    _cameraModel = exifReader.getModel();
-    _serialNumber = exifReader.getSerialNumber() + exifReader.getLensSerialNumber();
-    _mmFocalLength = exifReader.getFocal();
-
-    _haveValidMetadata = (exifReader.doesHaveExifInfo() &&
-                        !_cameraBrand.empty() &&
-                        !_cameraModel.empty());
-
-    if(_cameraBrand.empty() || _cameraModel.empty())
-    {
-      _cameraBrand = "Custom";
-      _cameraModel = EINTRINSIC_enumToString(EINTRINSIC::PINHOLE_CAMERA_RADIAL3);
-      _mmFocalLength = 1.2f;
-    }
-
-    if(_haveValidMetadata)
-      _exifData = exifReader.getExifData();
-
-    if(!exifReader.doesHaveExifInfo())
-      ALICEVISION_LOG_WARNING("Warning: No Exif metadata for image '" << stlplus::filename_part(imageAbsPath) << "'" << std::endl);
-    else if(_cameraBrand.empty() || _cameraModel.empty())
-      ALICEVISION_LOG_WARNING("Warning: No Brand/Model in Exif metadata for image '" << stlplus::filename_part(imageAbsPath) << "'" << std::endl);
-
-    // find width/height in metadata
-    {
-      _metadataImageWidth = width;
-      _metadataImageHeight = height;
-
-      if(_exifData.count("image_width"))
-      {
-        const int exifWidth = std::stoi(_exifData.at("image_width"));
-        // if the metadata is bad, use the real image size
-        if(exifWidth <= 0)
-          _metadataImageWidth = exifWidth;
-      }
-
-      if(_exifData.count("image_height"))
-      {
-        const int exifHeight = std::stoi(_exifData.at("image_height"));
-        // if the metadata is bad, use the real image size
-        if(exifHeight <= 0)
-          _metadataImageHeight = exifHeight;
-      }
-
-      // if metadata is rotated
-      if(_metadataImageWidth == height && _metadataImageHeight == width)
-      {
-        _metadataImageWidth = width;
-        _metadataImageHeight = height;
-      }
-    }
-
-    // resized image
-    _isResized = (_metadataImageWidth != width || _metadataImageHeight != height);
-
-    if(_isResized)
-    {
-      ALICEVISION_LOG_WARNING("Warning: Resized image detected:" << std::endl
-                          << "\t- real image size: " << width << "x" << height << std::endl
-                          << "\t- image size from metadata is: " << _metadataImageWidth << "x" << _metadataImageHeight << std::endl);
-    }
-  }
-
-  /**
-   * @brief Get camera brand
-   * @return camera brand
-   */
-  std::string getCameraBrand() const
-  {
-    return _cameraBrand;
-  }
-
-  /**
-   * @brief Get camera model
-   * @return camera model
-   */
-  std::string getCameraModel() const
-  {
-    return _cameraModel;
-  }
-
-  /**
-   * @brief Get focal length (px)
-   * @return focal length (px)
-   */
-  double getFocalLengthPx() const
-  {
-    return _pxFocalLength;
-  }
-
-  /**
-   * @brief Get Exif metadata
-   * @return Exif metadata
-   */
-  const ExifData& getExifData() const
-  {
-    return _exifData;
-  }
-
-  /**
-   * @brief haveValidMetadata
-   * @return
-   */
-  bool haveValidExifMetadata() const
-  {
-    return _haveValidMetadata;
-  }
-
-  /**
-   * @brief setKMatrix
-   * @param kMatrix
-   * @return
-   */
-  bool setKMatrix(const std::string& kMatrix)
-  {
-    if(kMatrix.empty())
-      return false;
-
-    if(!checkIntrinsicStringValidity(kMatrix, _pxFocalLength, _ppx, _ppy))
-    {
-      _ppx = _width / 2.0;
-      _ppy = _height / 2.0;
-      _pxFocalLength = -1.0;
-      return false;
-    }
-    return true;
-  }
-
-  /**
-   * @brief setFocalLengthPixel
-   * @param pxFocalLengthPixel
-   */
-  void setFocalLengthPixel(double pxFocalLengthPixel)
-  {
-    _pxFocalLength = pxFocalLengthPixel;
-  }
-
-  /**
-   * @brief setSensorWidth
-   * @param sensorWidth
-   */
-  void setSensorWidth(double sensorWidth)
-  {
-    _ccdw = sensorWidth;
-    _exifData.emplace("sensor_width", std::to_string(_ccdw));
-  }
-
-  /**
-   * @brief setIntrinsicType
-   * @param intrinsicType
-   */
-  void setIntrinsicType(EINTRINSIC intrinsicType)
-  {
-    _intrinsicType = intrinsicType;
-  }
-
-  /**
-   * @brief compute sensor width
-   * @param database
-   */
-  bool computeSensorWidth(std::vector<sensordb::Datasheet>& database)
-  {
-    if(!_haveValidMetadata)
-    {
-      ALICEVISION_LOG_WARNING("Warning: No metadata in image '" << stlplus::filename_part(_imageAbsPath) << "'." << std::endl
-                          << "Use default sensor width." << std::endl);
-    }
-
-    aliceVision::exif::sensordb::Datasheet datasheet;
-    if(!getInfo(_cameraBrand, _cameraModel, database, datasheet))
-    {
-      return false;
-    }
-    // the camera model was found in the database so we can compute it's approximated focal length
-    setSensorWidth(datasheet._sensorSize);
-    return true;
-  }
-
-  /**
-   * @brief compute intrinsic
-   * @return
-   */
-  std::shared_ptr<IntrinsicBase> computeIntrinsic()
-  {
-    if(_pxFocalLength == -1.0) // focal length (px) unset
-    {
-      // handle case where focal length (mm) is equal to 0
-      if(_mmFocalLength <= .0f)
-      {
-        ALICEVISION_LOG_WARNING("Warning: image '" << stlplus::filename_part(_imageAbsPath) << "' focal length (in mm) metadata is missing." << std::endl
-                            << "Can't compute focal length (in px)." << std::endl);
-      }
-      else if(_ccdw != -1.0)
-      {
-        // Retrieve the focal from the metadata in mm and convert to pixel.
-        _pxFocalLength = std::max(_metadataImageWidth, _metadataImageHeight) * _mmFocalLength / _ccdw;
-      }
-    }
-
-    // if no user input choose a default camera model
-    if(_intrinsicType == PINHOLE_CAMERA_START)
-    {
-      // use standard lens with radial distortion by default
-      _intrinsicType = PINHOLE_CAMERA_RADIAL3;
-
-      if(_cameraBrand == "Custom")
-      {
-        _intrinsicType = EINTRINSIC_stringToEnum(_cameraModel);
-      }
-      else if(_isResized)
-      {
-        // if the image has been resized, we assume that it has been undistorted
-        // and we use a camera without lens distortion.
-        _intrinsicType = PINHOLE_CAMERA;
-      }
-      else if(_mmFocalLength > 0.0 && _mmFocalLength < 15)
-      {
-
-        // if the focal lens is short, the fisheye model should fit better.
-        _intrinsicType = PINHOLE_CAMERA_FISHEYE;
-      }
-    }
-
-    // create the desired intrinsic
-    std::shared_ptr<IntrinsicBase> intrinsic = createPinholeIntrinsic(_intrinsicType, _width, _height, _pxFocalLength, _ppx, _ppy);
-    intrinsic->setInitialFocalLengthPix(_pxFocalLength);
-
-    // initialize distortion parameters
-    switch(_intrinsicType)
-    {
-      case PINHOLE_CAMERA_FISHEYE:
-      {
-        if(_cameraBrand == "GoPro")
-          intrinsic->updateFromParams({_pxFocalLength, _ppx, _ppy, 0.0524, 0.0094, -0.0037, -0.0004});
-        break;
-      }
-      case PINHOLE_CAMERA_FISHEYE1:
-      {
-        if(_cameraBrand == "GoPro")
-          intrinsic->updateFromParams({_pxFocalLength, _ppx, _ppy, 1.04});
-        break;
-      }
-      default: break;
-    }
-
-    // not enough information to find intrinsics
-    if(_pxFocalLength <= 0 || _ppx <= 0 || _ppy <= 0)
-    {
-      ALICEVISION_LOG_WARNING("Warning: No instrinsics for '" << stlplus::filename_part(_imageAbsPath) << "':" << std::endl
-                           << "\t- width: " << _width << std::endl
-                           << "\t- height: " << _height << std::endl
-                           << "\t- camera brand: " << ((_cameraBrand.empty()) ? "unknown" : _cameraBrand) << std::endl
-                           << "\t- camera model: " << ((_cameraModel.empty()) ? "unknown" : _cameraModel) << std::endl
-                           << "\t- sensor width: " << ((_ccdw <= 0) ? "unknown" : std::to_string(_ccdw)) << std::endl
-                           << "\t- focal length (mm): " << ((_mmFocalLength <= 0) ? "unknown" : std::to_string(_mmFocalLength)) << std::endl
-                           << "\t- focal length (px): " << ((_pxFocalLength <= 0) ? "unknown" : std::to_string(_pxFocalLength)) << std::endl
-                           << "\t- ppx: " << ((_ppx <= 0) ? "unknown" : std::to_string(_ppx)) << std::endl
-                           << "\t- ppy: " << ((_ppy <= 0) ? "unknown" : std::to_string(_ppy)) << std::endl);
-    }
-
-    if(_haveValidMetadata)
-    {
-      intrinsic->setSerialNumber(_serialNumber);
-    }
-
-    return intrinsic;
-  }
-
-private:
-  const std::string _imageAbsPath;
-  const double _width;
-  const double _height;
-
-  std::string _cameraBrand;
-  std::string _cameraModel;
-  std::string _serialNumber;
-  int _metadataImageWidth;
-  int _metadataImageHeight;
-  double _ppx = -1.0;
-  double _ppy = -1.0;
-  double _ccdw = -1.0;
-  double _pxFocalLength = -1.0;
-  float _mmFocalLength = -1.0f;
-  bool _haveValidMetadata;
-  bool _isResized;
-  EINTRINSIC _intrinsicType = PINHOLE_CAMERA_START;
-  ExifData _exifData;
-};
 
 /**
  * @brief Create the description of an input image dataset for AliceVision toolsuite
@@ -547,43 +126,43 @@ int main(int argc, char **argv)
   // command-line parameters
 
   std::string verboseLevel = system::EVerboseLevel_enumToString(system::Logger::getDefaultVerboseLevel());
-  std::string imageDirectory;
-  std::string jsonFile;
+  std::string sfmFilePath;
+  std::string imageFolder;
   std::string sensorDatabasePath;
-  std::string outputDirectory;
+  std::string outputFilePath;
 
   // user optional parameters
 
-  std::string userKMatrix;
-  std::string userCameraModelName;
-  double userFocalLengthPixel = -1.0;
-  double userSensorWidth = -1.0;
-  int userGroupCameraModel = 1;
+  std::string defaultIntrinsicKMatrix;
+  std::string defaultCameraModelName;
+  double defaultFocalLengthPixel = -1.0;
+  double defaultSensorWidth = -1.0;
+  int groupCameraModel = 1;
 
   po::options_description allParams("AliceVision cameraInit");
 
   po::options_description requiredParams("Required parameters");
   requiredParams.add_options()
-    ("imageDirectory,i", po::value<std::string>(&imageDirectory)->default_value(imageDirectory),
+    ("input,i", po::value<std::string>(&sfmFilePath)->default_value(sfmFilePath),
+      "a SfMData file (*.sfm).")
+    ("imageFolder", po::value<std::string>(&imageFolder)->default_value(imageFolder),
       "Input images folder.")
-    ("jsonFile,j", po::value<std::string>(&jsonFile)->default_value(jsonFile),
-      "Input file with all the user options. It can be used to provide a list of images instead of a directory.")
     ("sensorDatabase,s", po::value<std::string>(&sensorDatabasePath)->required(),
       "Camera sensor width database path.")
-    ("output,o", po::value<std::string>(&outputDirectory)->required(),
-      "Output directory for the new SfMData file");
+    ("output,o", po::value<std::string>(&outputFilePath)->default_value("cameraInit.sfm"),
+      "Output file path for the new SfMData file");
 
   po::options_description optionalParams("Optional parameters");
   optionalParams.add_options()
-    ("defaultFocalLengthPix", po::value<double>(&userFocalLengthPixel)->default_value(userFocalLengthPixel),
+    ("defaultFocalLengthPix", po::value<double>(&defaultFocalLengthPixel)->default_value(defaultFocalLengthPixel),
       "Focal length in pixels.")
-    ("defaultSensorWidth", po::value<double>(&userSensorWidth)->default_value(userSensorWidth),
+    ("defaultSensorWidth", po::value<double>(&defaultSensorWidth)->default_value(defaultSensorWidth),
       "Sensor width in mm.")
-    ("defaultIntrinsics", po::value<std::string>(&userKMatrix)->default_value(userKMatrix),
+    ("defaultIntrinsic", po::value<std::string>(&defaultIntrinsicKMatrix)->default_value(defaultIntrinsicKMatrix),
       "Intrinsics Kmatrix \"f;0;ppx;0;f;ppy;0;0;1\".")
-    ("defaultCameraModel", po::value<std::string>(&userCameraModelName)->default_value(userCameraModelName),
+    ("defaultCameraModel", po::value<std::string>(&defaultCameraModelName)->default_value(defaultCameraModelName),
       "Camera model type (pinhole, radial1, radial3, brown, fisheye4).")
-    ("groupCameraModel", po::value<int>(&userGroupCameraModel)->default_value(userGroupCameraModel),
+    ("groupCameraModel", po::value<int>(&groupCameraModel)->default_value(groupCameraModel),
       "* 0: each view have its own camera intrinsic parameters\n"
       "* 1: view share camera intrinsic parameters based on metadata, if no metadata each view has its own camera intrinsic parameters\n"
       "* 2: view share camera intrinsic parameters based on metadata, if no metadata they are grouped by folder\n");
@@ -627,459 +206,236 @@ int main(int argc, char **argv)
   system::Logger::get()->setLogLevel(verboseLevel);
 
   // set user camera model
-  EINTRINSIC userCameraModel = PINHOLE_CAMERA_START;
+  camera::EINTRINSIC defaultCameraModel = camera::EINTRINSIC::PINHOLE_CAMERA_START;
+  if(!defaultCameraModelName.empty())
+      defaultCameraModel = camera::EINTRINSIC_stringToEnum(defaultCameraModelName);
 
-  if(!userCameraModelName.empty())
+  // check user choose at least one input option
+  if(imageFolder.empty() && sfmFilePath.empty())
   {
-    userCameraModel = EINTRINSIC_stringToEnum(userCameraModelName);
+    ALICEVISION_LOG_ERROR("Error: Program need -i or -f option");
+    return EXIT_FAILURE;
   }
 
   // check user don't choose both input options
-  if(!imageDirectory.empty() && !jsonFile.empty())
+  if(!imageFolder.empty() && !sfmFilePath.empty())
   {
-    ALICEVISION_LOG_ERROR("Error: Cannot combine -i and -j options");
+    ALICEVISION_LOG_ERROR("Error: Cannot combine -i and -f options");
     return EXIT_FAILURE;
   }
 
-  // check input directory
-  if(!imageDirectory.empty() && !stlplus::folder_exists(imageDirectory))
+  // check input folder
+  if(!imageFolder.empty() && !stlplus::folder_exists(imageFolder))
   {
-    ALICEVISION_LOG_ERROR("Error: The input directory doesn't exist");
+    ALICEVISION_LOG_ERROR("Error: The input folder doesn't exist");
     return EXIT_FAILURE;
   }
 
-  // check output directory string
-  if(outputDirectory.empty())
+  // check sfm file
+  if(!sfmFilePath.empty() && !stlplus::file_exists(sfmFilePath))
   {
-    ALICEVISION_LOG_ERROR("Error: Invalid output directory");
+    ALICEVISION_LOG_ERROR("Error: The input sfm file doesn't exist");
     return EXIT_FAILURE;
   }
 
-  // check if output directory exists, if no create it
-  if(!stlplus::folder_exists(outputDirectory))
+  // check output  string
+  if(outputFilePath.empty())
   {
-    if(!stlplus::folder_create(outputDirectory))
+    ALICEVISION_LOG_ERROR("Error: Invalid output");
+    return EXIT_FAILURE;
+  }
+
+  // check if output folder exists, if no create it
+  {
+    const std::string outputFolderPart = stlplus::folder_part(outputFilePath);
+
+    if(!outputFolderPart.empty() && !stlplus::folder_exists(outputFolderPart))
     {
-      ALICEVISION_LOG_ERROR("Error: Cannot create output directory");
-      return EXIT_FAILURE;
+      if(!stlplus::folder_create(outputFolderPart))
+      {
+        ALICEVISION_LOG_ERROR("Error: Cannot create output folder");
+        return EXIT_FAILURE;
+      }
     }
   }
 
   // check user don't combine focal and K matrix
-  if(userKMatrix.size() > 0 && userFocalLengthPixel != -1.0)
+  if(!defaultIntrinsicKMatrix.empty() && defaultFocalLengthPixel != -1.0)
   {
-    ALICEVISION_LOG_ERROR("Error: Cannot combine -f and -k options");
+    ALICEVISION_LOG_ERROR("Error: Cannot combine --defaultIntrinsic and --defaultFocalLengthPix options");
     return EXIT_FAILURE;
   }
 
-  // check if K matrix is valid
+  // read K matrix if valid
+  double defaultPPx = -1.0;
+  double defaultPPy = -1.0;
+
+  if(!defaultIntrinsicKMatrix.empty() && !checkIntrinsicStringValidity(defaultIntrinsicKMatrix, defaultFocalLengthPixel, defaultPPx, defaultPPy))
   {
-    double ppx = -1.0;
-    double ppy = -1.0;
-    if(userKMatrix.size() > 0 && !checkIntrinsicStringValidity(userKMatrix, userFocalLengthPixel, ppx, ppy))
-    {
-      ALICEVISION_LOG_ERROR("Error: Invalid K matrix input");
-      return EXIT_FAILURE;
-    }
+    ALICEVISION_LOG_ERROR("Error: --defaultIntrinsic Invalid K matrix input");
+    return EXIT_FAILURE;
   }
 
+
   // check sensor database
-  std::vector<sensordb::Datasheet> database;
+  std::vector<exif::sensordb::Datasheet> sensorDatabase;
   if(!sensorDatabasePath.empty())
   {
-    if(!sensordb::parseDatabase(sensorDatabasePath, database))
+    if(!exif::sensordb::parseDatabase(sensorDatabasePath, sensorDatabase))
     {
       ALICEVISION_LOG_ERROR("Error: Invalid input database '" << sensorDatabasePath << "', please specify a valid file.");
       return EXIT_FAILURE;
     }
   }
 
-  // retrieve image paths
-  Resources allImagePaths;
-  const std::vector<std::string> supportedExtensions{"jpg", "jpeg"};
+  // use current time as seed for random generator for intrinsic Id without metadata
+  std::srand(std::time(0));
 
-  // retrieve resources from json file
-  if(imageDirectory.empty())
+  std::vector<std::string> noMetadataImagePaths;
+  std::map<std::pair<std::string, std::string>, std::string> unknownSensors; // key (make,model) value (first imagePath)
+
+  SfMData sfmData;
+
+  // number of views with an initialized intrinsic
+  std::size_t completeViewCount = 0;
+
+  // load known informations
+  if(imageFolder.empty())
   {
-    if(!retrieveResources(jsonFile, supportedExtensions, allImagePaths))
-    {
-      ALICEVISION_LOG_ERROR("Error: Can't retrieve image paths in '" << jsonFile << "'");
-      return EXIT_FAILURE;
-    } 
+    // fill SfMData from the JSON file
+    sfm::loadJSON(sfmData, sfmFilePath, ESfMData(VIEWS|INTRINSICS|EXTRINSICS), true);
   }
   else
   {
-    std::vector<std::string> imagePaths = stlplus::folder_files(imageDirectory);
-    if(!imagePaths.empty())
+    // fill SfMData with the images in the input folder
+    Views& views = sfmData.GetViews();
+    std::vector<std::string> imagePaths;
+
+    if(listFiles(imageFolder, {"jpg", "jpeg"},  imagePaths))
     {
-      std::sort(imagePaths.begin(), imagePaths.end());
-      for(const std::string& imagePath : imagePaths)
+      for(const auto& imagePath : imagePaths)
       {
-        allImagePaths.push_back({{imagePath}});
+        View view = View(imagePath);
+        sfm::updateIncompleteView(view);
+        views.emplace(view.getViewId(), std::make_shared<View>(view));
       }
     }
     else
-    {
-      ALICEVISION_LOG_ERROR("Error: Can't find image paths in '" << imageDirectory << "'");
       return EXIT_FAILURE;
-    }
   }
 
-  // check the number of groups
-  if(allImagePaths.empty())
+  if(sfmData.GetViews().empty())
   {
-    ALICEVISION_LOG_ERROR("Error: No image paths given");
+    ALICEVISION_LOG_ERROR("Error: Can't find views in input.");
     return EXIT_FAILURE;
   }
 
-
-  // check rigs and display retrieve informations
-  std::size_t nbTotalImages = 0;
+  // create missing intrinsics
+  for(auto& viewPair : sfmData.GetViews())
   {
-    std::size_t nbSingleImages = 0;
-    std::size_t nbInstrinsicGroup = 0;
-    std::size_t nbRigs = 0;
+    View& view = *(viewPair.second);
+    IndexT intrinsicId = view.getIntrinsicId();
 
-    for(const auto& groupImagePaths : allImagePaths)
+    if(intrinsicId != UndefinedIndexT)
     {
-      const std::size_t nbCameras = groupImagePaths.size();
-      const std::size_t nbCamImages = groupImagePaths.front().size();
-
-      if(nbCameras > 1) //is a rig
+      std::shared_ptr<camera::IntrinsicBase> intrinsic = sfmData.GetIntrinsicSharedPtr(view.getIntrinsicId());
+      if(intrinsic != nullptr)
       {
-        nbTotalImages += nbCameras * nbCamImages;
-        ++nbRigs;
-
-        for(const auto& cameraImagePaths : groupImagePaths)
-        {
-          if(cameraImagePaths.size() != nbCamImages)
-          {
-            ALICEVISION_LOG_ERROR("Error: Each camera of a rig must have the same number of images.");
-            return EXIT_FAILURE;
-          }
-        }
+        if(intrinsic->initialFocalLengthPix() > 0)
+          ++completeViewCount;
+        continue;
       }
+    }
+
+    bool hasCameraMetadata = (view.hasMetadata("camera_make") && view.hasMetadata("camera_model"));
+    double sensorWidth = -1;
+
+    if(hasCameraMetadata)
+    {
+      aliceVision::exif::sensordb::Datasheet datasheet;
+      if(getInfo(view.getMetadata("camera_make"), view.getMetadata("camera_model"), sensorDatabase, datasheet))
+        sensorWidth = datasheet._sensorSize;
       else
       {
-        if(nbCamImages > 1) // is an intrinsic group
-        {
-          nbTotalImages += nbCamImages;
-          ++nbInstrinsicGroup;
-        }
-        else
-        {
-          ++nbTotalImages;
-          ++nbSingleImages;
-        }
+        unknownSensors.emplace(std::make_pair(view.getMetadata("camera_make"),view.getMetadata("camera_model")), view.getImagePath()); // will throw an error message and exit program
+        continue;
       }
+
     }
+    else
+      noMetadataImagePaths.emplace_back(view.getImagePath());
 
-    ALICEVISION_LOG_INFO("Retrive: " << std::endl
-                      << "\t- # single image(s): " << nbSingleImages << std::endl
-                      << "\t- # intrinsic group(s): " << nbInstrinsicGroup << std::endl
-                      << "\t- # rig(s): " << nbRigs << std::endl);
-  }
+    std::shared_ptr<camera::IntrinsicBase> intrinsic = getViewIntrinsic(view, sensorWidth, defaultFocalLengthPixel, defaultCameraModel, defaultPPx, defaultPPy);
 
+    if(intrinsic->initialFocalLengthPix() > 0)
+      ++completeViewCount;
 
-  // configure an empty scene with Views and their corresponding cameras
-  SfMData sfm_data;
-
-  // setup main image root_path
-  if(jsonFile.empty())
-  {
-    sfm_data.s_root_path = imageDirectory;
-  }
-  else
-  {
-    sfm_data.s_root_path = "";
-  }
-
-  Views& views = sfm_data.views;
-  Intrinsics& intrinsics = sfm_data.intrinsics;
-  Rigs& rigs = sfm_data.getRigs();
-
-  std::size_t rigId = 0;
-  std::size_t poseId = 0;
-  std::size_t intrinsicId = 0;
-  std::size_t nbCurrImages = 0;
-
-  struct sensorInfo
-  {
-    std::string filePath;
-    std::string brand;
-    std::string model;
-
-    bool operator==(sensorInfo& other) const
+    // override serial number if necessary
+    if(!hasCameraMetadata)
     {
-      return (brand == other.brand &&
-              model == other.model);
-    }
-  };
-
-  std::vector<sensorInfo> unknownSensorImages;
-  std::vector<std::string> noMetadataImages;
-
-  ALICEVISION_LOG_TRACE("Start image listing :" << std::endl);
-
-  for(std::size_t groupId = 0; groupId < allImagePaths.size(); ++groupId) // intrinsic group or rig
-  {
-    const auto& groupImagePaths = allImagePaths.at(groupId);
-    const std::size_t nbCameras = groupImagePaths.size();
-    const bool isRig = (nbCameras > 1);
-
-    for(std::size_t cameraId = 0; cameraId < nbCameras; ++cameraId) // camera in the group (cameraId always 0 if single image)
-    {
-      bool isCameraFirstImage = true;
-      double cameraWidth = .0;
-      double cameraHeight = .0;
-      IndexT cameraIntrincicId = intrinsicId; // we assume intrinsic doesn't change over time
-      ExifData cameraExifData; // we assume exifData doesn't change over time
-
-      ++intrinsicId;
-
-      const auto& cameraImagePaths = groupImagePaths.at(cameraId);
-      const std::size_t nbImages = cameraImagePaths.size();
-      const bool isGroup = (nbImages > 1);
-
-      if(isRig)
+      if(groupCameraModel == 2)
       {
-        rigs[rigId] = Rig(nbCameras);
+        // when we have no metadata at all, we create one intrinsic group per folder.
+        // the use case is images extracted from a video without metadata and assumes fixed intrinsics in the video.
+        intrinsic->setSerialNumber(stlplus::folder_part(view.getImagePath()));
       }
 
-      for(std::size_t frameId = 0; frameId < nbImages; ++frameId) //view in the group (always 0 if single image)
+      if(view.isPartOfRig())
       {
-        const std::string& imagePath = cameraImagePaths.at(frameId);
-
-        if(isRig)
-        {
-          ALICEVISION_LOG_TRACE("[" << (1 + nbCurrImages) << "/" << nbTotalImages << "] "
-                            << "rig [" << std::to_string(1 + cameraId) << "/" << nbCameras << "]"
-                            << " file: '" << stlplus::filename_part(imagePath) << "'");
-        }
-        else
-        {
-          ALICEVISION_LOG_TRACE("[" << (1 + nbCurrImages) << "/" << nbTotalImages
-                            << "] image file: '" << stlplus::filename_part(imagePath) << "'");
-        }
-
-        const std::string imageAbsPath = (imageDirectory.empty()) ? imagePath : stlplus::create_filespec(imageDirectory, imagePath);
-        const std::string imageFolder = stlplus::folder_part(imageAbsPath);
-
-        // test if the image format is supported
-        if(aliceVision::image::GetFormat(imageAbsPath.c_str()) == aliceVision::image::Unknown)
-        {
-          ALICEVISION_LOG_WARNING("Warning: Unknown image file format '" << stlplus::filename_part(imageAbsPath) << "'." << std::endl
-                              << "Skip image." << std::endl);
-          continue; // image cannot be opened
-        }
-
-        // read image header
-        ImageHeader imgHeader;
-        if(!aliceVision::image::ReadImageHeader(imageAbsPath.c_str(), &imgHeader))
-        {
-          ALICEVISION_LOG_WARNING("Warning: Can't read image header '" << stlplus::filename_part(imageAbsPath) << "'." << std::endl
-                              << "Skip image." << std::endl);
-          continue; // image cannot be read
-        }
-
-        const double width = imgHeader.width;
-        const double height = imgHeader.height;
-
-        //check dimensions
-        if(width <= 0 || height <= 0)
-        {
-          ALICEVISION_LOG_WARNING("Error: Image size is invalid '" << imagePath << "'." << std::endl
-                              << "\t- width: " << width << std::endl
-                              << "\t- height: " << height << std::endl
-                              << "Skip image." << std::endl);
-          continue;
-        }
-
-        if(isCameraFirstImage) // get intrinsic and metadata from first view of the group
-        {
-          // set camera dimensions
-          cameraWidth = width;
-          cameraHeight = height;
-
-          ImageMetadata imageMetadata(imageAbsPath, width, height);
-
-          // add user custom metadata
-          if(!userCameraModelName.empty())
-            imageMetadata.setIntrinsicType(userCameraModel);
-
-          if(!userKMatrix.empty())
-            imageMetadata.setKMatrix(userKMatrix);
-
-          if(userFocalLengthPixel != -1.0)
-            imageMetadata.setFocalLengthPixel(userFocalLengthPixel);
-
-          // find image sensor width
-          if(userSensorWidth != -1.0)
-          {
-            imageMetadata.setSensorWidth(userSensorWidth);
-          }
-          else
-          {
-            if(!imageMetadata.computeSensorWidth(database) &&
-                imageMetadata.haveValidExifMetadata() &&
-               (imageMetadata.getFocalLengthPx() == -1))
-            {
-              unknownSensorImages.push_back({imagePath, imageMetadata.getCameraBrand(), imageMetadata.getCameraModel()});
-            }
-          }
-
-          if(!imageMetadata.haveValidExifMetadata())
-          {
-            noMetadataImages.push_back(imagePath);
-          }
-
-          // retrieve intrinsic
-          std::shared_ptr<IntrinsicBase> intrinsic = imageMetadata.computeIntrinsic();
-
-          if(!imageMetadata.haveValidExifMetadata())
-          {
-
-            if(userGroupCameraModel == 2)
-            {
-              // when we have no metadata at all, we create one intrinsic group per folder.
-              // the use case is images extracted from a video without metadata and assumes fixed intrinsics in the video.
-              intrinsic->setSerialNumber(imageFolder);
-            }
-            else if(isRig)
-            {
-              // when we have no metadata for rig images, we create an intrinsic per camera.
-              intrinsic->setSerialNumber("no_metadata_rig_" + std::to_string(groupId) + "_" + std::to_string(cameraId));
-            }
-            else if(isGroup)
-            {
-              intrinsic->setSerialNumber("no_metadata_intrincic_group_" + std::to_string(groupId));
-            }
-          }
-
-          cameraExifData = imageMetadata.getExifData();
-
-          // add the intrinsic to the sfm_container
-          intrinsics[cameraIntrincicId] = intrinsic;
-
-          isCameraFirstImage = false;
-        }
-        else
-        {
-          if((width != cameraWidth) && (height != cameraHeight))
-          {
-            // if not the first image check dimensions
-            ALICEVISION_LOG_ERROR("Error: rig camera images don't have the same dimensions" << std::endl);
-            return EXIT_FAILURE;
-          }
-        }
-
-        // Init viewId from metadata
-        IndexT viewId = views.size();
-        {
-          EasyExifIO exifReader;
-          exifReader.open(imageAbsPath);
-        
-          viewId = (IndexT)computeUID(exifReader, imagePath);
-        }
-
-        // check duplicated view identifier
-        if(views.count(viewId))
-        {
-          ALICEVISION_LOG_WARNING("Warning: view identifier already use, duplicated image in input (" << imageAbsPath << ")." << std::endl
-                              << "Skip image." << std::endl);
-          continue;
-        }
-
-        // build the view corresponding to the image and add to the sfm_container
-        const std::size_t cameraPoseId = (isRig) ? poseId + frameId : poseId;
-        auto& currView = views[viewId];
-
-        currView = std::make_shared<View>(imagePath, viewId, cameraIntrincicId, cameraPoseId, width, height);
-        currView->setMetadata(cameraExifData);
-
-        if(isRig)
-        {
-          currView->setRigAndSubPoseId(rigId, cameraId);
-        }
-        else
-        {
-          ++poseId; // one pose per view
-        }
-
-        ++nbCurrImages;
+        // when we have no metadata for rig images, we create an intrinsic per camera.
+        intrinsic->setSerialNumber("no_metadata_rig_" + std::to_string(view.getRigId()) + "_" + std::to_string(view.getSubPoseId()));
       }
     }
 
-    if(isRig)
-    {
-      ++rigId;
-      poseId += groupImagePaths.front().size(); // one pose for all camera for a given time
-    }
+    // create intrinsic id
+    // group camera that share common properties (leads to more faster & stable BA).
+    if(intrinsicId == UndefinedIndexT)
+      intrinsicId = intrinsic->hashValue();
+
+    // don't group camera that share common properties
+    if(!groupCameraModel)
+      intrinsicId = std::rand(); // random number
+
+    view.setIntrinsicId(intrinsicId);
+    sfmData.GetIntrinsics().emplace(intrinsicId, intrinsic);
   }
 
-  if(!noMetadataImages.empty())
+  if(!noMetadataImagePaths.empty())
   {
     ALICEVISION_LOG_WARNING("Warning: No metadata in image(s) :");
-    for(const auto& imagePath : noMetadataImages)
-    {
+    for(const auto& imagePath : noMetadataImagePaths)
       ALICEVISION_LOG_WARNING("\t- '" << imagePath << "'");
-    }
-    ALICEVISION_LOG_WARNING(std::endl);
   }
 
-  if(!unknownSensorImages.empty())
+  if(!unknownSensors.empty())
   {
-    unknownSensorImages.erase(unique(unknownSensorImages.begin(), unknownSensorImages.end()), unknownSensorImages.end());
     ALICEVISION_LOG_ERROR("Error: Sensor width doesn't exist in the database for image(s) :");
-
-    for(const auto& unknownSensor : unknownSensorImages)
-    {
-      ALICEVISION_LOG_ERROR("image: '" << stlplus::filename_part(unknownSensor.filePath) << "'" << std::endl
-                        << "\t- camera brand: " << unknownSensor.brand <<  std::endl
-                        << "\t- camera model: " << unknownSensor.model <<  std::endl);
-    }
+    for(const auto& unknownSensor : unknownSensors)
+      ALICEVISION_LOG_ERROR("image: '" << stlplus::filename_part(unknownSensor.second) << "'" << std::endl
+                        << "\t- camera brand: " << unknownSensor.first.first <<  std::endl
+                        << "\t- camera model: " << unknownSensor.first.second <<  std::endl);
     ALICEVISION_LOG_ERROR("Please add camera model(s) and sensor width(s) in the database." << std::endl);
     return EXIT_FAILURE;
   }
 
-
-  // group camera that share common properties if desired (leads to more faster & stable BA).
-  if(userGroupCameraModel)
+  if(completeViewCount < 2)
   {
-    GroupSharedIntrinsics(sfm_data);
+    ALICEVISION_LOG_ERROR("Error: At least two images should have an initialized intrinsic." << std::endl
+                          << "Check your input images metadata (brand, model, focal length, ...), more should be set and correct." << std::endl);
+    return EXIT_FAILURE;
   }
 
   // store SfMData views & intrinsic data
-  if (!Save(sfm_data, stlplus::create_filespec( outputDirectory, "sfm_data.json" ).c_str(), ESfMData(VIEWS|INTRINSICS|EXTRINSICS)))
+  if (!Save(sfmData, outputFilePath, ESfMData(VIEWS|INTRINSICS|EXTRINSICS)))
   {
     return EXIT_FAILURE;
-  }
-
-  // count view without intrinsic
-  std::size_t viewsWithoutIntrinsic = 0;
-
-  for(const auto& viewValue: sfm_data.GetViews())
-  {
-    if(viewValue.second->getIntrinsicId() == UndefinedIndexT)
-      ++viewsWithoutIntrinsic;
   }
 
   // print report
-  ALICEVISION_LOG_INFO("SfMInit_ImageListing report:" << std::endl
-                   << "\t- # input image path(s): " << nbTotalImages << std::endl
-                   << "\t- # view(s) listed in sfm_data: " << sfm_data.GetViews().size() << std::endl
-                   << "\t- # view(s) listed in sfm_data without intrinsic: " << viewsWithoutIntrinsic << std::endl
-                   << "\t- # intrinsic(s) listed in sfm_data: " << sfm_data.GetIntrinsics().size());
-
-  if(viewsWithoutIntrinsic == sfm_data.GetViews().size())
-  {
-    ALICEVISION_LOG_ERROR("Error: No metadata in all images." << std::endl);
-    return EXIT_FAILURE;
-  }
-  else if(viewsWithoutIntrinsic > 0)
-  {
-    ALICEVISION_LOG_WARNING("Warning: " << viewsWithoutIntrinsic << " views without metadata. It may fail the reconstruction." << std::endl);
-  }
+  ALICEVISION_LOG_INFO("CameraInit report:" << std::endl
+                   << "\t- # view(s) listed in SfMData: " << sfmData.GetViews().size() << std::endl
+                   << "\t- # view(s) with an initialized intrinsic listed in SfMData: " << completeViewCount << std::endl
+                   << "\t- # intrinsic(s) listed in SfMData: " << sfmData.GetIntrinsics().size());
 
   return EXIT_SUCCESS;
 }

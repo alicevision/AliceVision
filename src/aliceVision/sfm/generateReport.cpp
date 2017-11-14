@@ -46,9 +46,9 @@ bool Generate_SfM_Report(const SfMData & sfm_data,
     sColBegin = "<td>", sColEnd = "</td>",
     sNewLine = "<br>", sFullLine = "<hr>";
 
-  htmlDocument::htmlDocumentStream htmlDocStream("SFM report.");
+  htmlDocument::htmlDocumentStream htmlDocStream("[report] SfM reconstruction");
   htmlDocStream.pushInfo(
-  htmlDocument::htmlMarkup("h1", std::string("SFM report.")));
+  htmlDocument::htmlMarkup("h1", std::string("[report] SfM reconstruction")));
   htmlDocStream.pushInfo(sFullLine);
 
   htmlDocStream.pushInfo( "Dataset info:" + sNewLine );

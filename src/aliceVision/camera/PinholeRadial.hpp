@@ -48,10 +48,6 @@ namespace radial_distortion{
 /// x_d = x_u (1 + K_1 r^2)
 class PinholeRadialK1 : public Pinhole
 {
-  protected:
-  // center of distortion is applied by the Intrinsics class
-  std::vector<double> _distortionParams; // K1
-
   public:
 
   PinholeRadialK1(
@@ -60,8 +56,7 @@ class PinholeRadialK1 : public Pinhole
     double k1 = 0.0)
       :Pinhole(w, h, focal, ppx, ppy)
   {
-    _distortionParams.resize(1);
-    _distortionParams[0] = k1;
+    setDistortionParams({k1});
   }
 
   PinholeRadialK1* clone() const { return new PinholeRadialK1(*this); }
@@ -74,7 +69,7 @@ class PinholeRadialK1 : public Pinhole
   /// Add distortion to the point p (assume p is in the camera frame [normalized coordinates])
   virtual Vec2 add_disto(const Vec2 & p) const {
 
-    const double k1 = _distortionParams[0];
+    const double k1 = _distortionParams.at(0);
 
     const double r2 = p(0)*p(0) + p(1)*p(1);
     const double r_coeff = (1. + k1*r2);
@@ -92,36 +87,6 @@ class PinholeRadialK1 : public Pinhole
       1. :
       ::sqrt(radial_distortion::bisection_Radius_Solve(_distortionParams, r2, distoFunctor) / r2);
     return radius * p;
-  }
-
-  // Data wrapper for non linear optimization (get data)
-  virtual std::vector<double> getParams() const
-  {
-    std::vector<double> params = Pinhole::getParams();
-    params.push_back(_distortionParams[0]);
-    return params;
-  }
-
-  virtual std::vector<double> getDistortionParams() const
-  {
-    return _distortionParams;
-  }
-
-  // Data wrapper for non linear optimization (update from data)
-  virtual bool updateFromParams(const std::vector<double> & params)
-  {
-    if (params.size() == 4)
-    {
-      this->setK(params[0], params[1], params[2]);
-      _distortionParams = {
-        params[3] // K1
-      };
-      return true;
-    }
-    else
-    {
-      return false;
-    }
   }
 
   /// Return the un-distorted pixel (with removed distortion)
@@ -166,10 +131,6 @@ class PinholeRadialK1 : public Pinhole
 /// x_d = x_u (1 + K_1 r^2 + K_2 r^4 + K_3 r^6)
 class PinholeRadialK3 : public Pinhole
 {
-  protected:
-  // center of distortion is applied by the Intrinsics class
-  std::vector<double> _distortionParams; // K1, K2, K3
-
   public:
 
   PinholeRadialK3(
@@ -178,10 +139,7 @@ class PinholeRadialK3 : public Pinhole
     double k1 = 0.0, double k2 = 0.0, double k3 = 0.0)
       :Pinhole(w, h, focal, ppx, ppy)
   {
-    _distortionParams.resize(3);
-    _distortionParams[0] = k1;
-    _distortionParams[1] = k2;
-    _distortionParams[2] = k3;
+    setDistortionParams({k1, k2, k3});
   }
 
   PinholeRadialK3* clone() const { return new PinholeRadialK3(*this); }
@@ -192,8 +150,8 @@ class PinholeRadialK3 : public Pinhole
   virtual bool have_disto() const {  return true; }
 
   /// Add distortion to the point p (assume p is in the camera frame [normalized coordinates])
-  virtual Vec2 add_disto(const Vec2 & p) const {
-
+  virtual Vec2 add_disto(const Vec2 & p) const
+  {
     const double k1 = _distortionParams[0], k2 = _distortionParams[1], k3 = _distortionParams[2];
 
     const double r2 = p(0)*p(0) + p(1)*p(1);
@@ -214,35 +172,6 @@ class PinholeRadialK3 : public Pinhole
       1. :
       ::sqrt(radial_distortion::bisection_Radius_Solve(_distortionParams, r2, distoFunctor) / r2);
     return radius * p;
-  }
-
-  // Data wrapper for non linear optimization (get data)
-  virtual std::vector<double> getParams() const
-  {
-    std::vector<double> params = Pinhole::getParams();
-    params.push_back(_distortionParams[0]);
-    params.push_back(_distortionParams[1]);
-    params.push_back(_distortionParams[2]);
-    return params;
-  }
-
-  virtual std::vector<double> getDistortionParams() const
-  {
-    return _distortionParams;
-  }
-
-  // Data wrapper for non linear optimization (update from data)
-  virtual bool updateFromParams(const std::vector<double> & params)
-  {
-    if (params.size() == 6)
-    {
-      this->setK(params[0], params[1], params[2]);
-      _distortionParams = {
-        params[3], params[4], params[5] // K1, K2, K3
-      };
-      return true;
-    }
-    return false;
   }
 
   /// Return the un-distorted pixel (with removed distortion)

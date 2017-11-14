@@ -28,12 +28,12 @@ int main(int argc, char **argv)
   std::string verboseLevel = system::EVerboseLevel_enumToString(system::Logger::getDefaultVerboseLevel());
   std::string sfmDataFilename;
   std::string outSfMDataFilename;
-  std::string featuresDirectory;
+  std::string featuresFolder;
 
   // user optional parameters
 
   std::string describerTypesName = feature::EImageDescriberType_enumToString(feature::EImageDescriberType::SIFT);
-  std::string matchesDirectory;
+  std::string matchesFolder;
   std::string matchesGeometricModel = "f";
 
   po::options_description allParams("AliceVision ComputeStructureFromKnownPoses");
@@ -42,8 +42,8 @@ int main(int argc, char **argv)
   requiredParams.add_options()
     ("input,i", po::value<std::string>(&sfmDataFilename)->required(),
       "SfMData file.")
-    ("featuresDirectory,f", po::value<std::string>(&featuresDirectory)->required(),
-      "Path to a directory containing the extracted features.")
+    ("featuresFolder,f", po::value<std::string>(&featuresFolder)->required(),
+      "Path to a folder containing the extracted features.")
     ("output,o", po::value<std::string>(&outSfMDataFilename)->required(),
       "Output path for the features and descriptors files (*.feat, *.desc).");
 
@@ -51,8 +51,8 @@ int main(int argc, char **argv)
   optionalParams.add_options()
     ("describerTypes,d", po::value<std::string>(&describerTypesName)->default_value(describerTypesName),
       feature::EImageDescriberType_informations().c_str())
-    ("matchesDirectory,m", po::value<std::string>(&matchesDirectory)->default_value(matchesDirectory),
-      "Path to a directory containing the matches.")
+    ("matchesFolder,m", po::value<std::string>(&matchesFolder)->default_value(matchesFolder),
+      "Path to a folder containing the matches.")
     ("matchesGeometricModel,g", po::value<std::string>(&matchesGeometricModel)->default_value(matchesGeometricModel),
       "Matches geometric Model :\n"
       "* f: fundamental matrix\n"
@@ -114,7 +114,7 @@ int main(int argc, char **argv)
 
   // Prepare the Regions provider
   RegionsPerView regionsPerView;
-  if(!sfm::loadRegionsPerView(regionsPerView, sfm_data, featuresDirectory, describerMethodTypes))
+  if(!sfm::loadRegionsPerView(regionsPerView, sfm_data, featuresFolder, describerMethodTypes))
   {
     std::cerr << std::endl
       << "Invalid regions." << std::endl;
@@ -128,7 +128,7 @@ int main(int argc, char **argv)
   //     (keep pairs that have valid Intrinsic & Pose ids).
   //--
   PairSet pairs;
-  if (matchesDirectory.empty())
+  if (matchesFolder.empty())
   {
     // No image pair provided, so we use cameras frustum intersection.
     // Build the list of connected images pairs from frustum intersections
@@ -138,7 +138,7 @@ int main(int argc, char **argv)
   {
     // Load pre-computed matches
     matching::PairwiseMatches matches;
-    if (!matching::Load(matches, sfm_data.GetViewsKeys(), matchesDirectory, describerMethodTypes, matchesGeometricModel))
+    if (!matching::Load(matches, sfm_data.GetViewsKeys(), matchesFolder, describerMethodTypes, matchesGeometricModel))
     {
       std::cerr<< "Unable to read the matches file." << std::endl;
       return EXIT_FAILURE;
