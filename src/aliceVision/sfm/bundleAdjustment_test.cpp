@@ -24,6 +24,8 @@ double RMSE(const SfMData & sfmData);
 
 SfMData getInputScene(const NViewDataSet & d, const NViewDatasetConfigurator & config, EINTRINSIC eintrinsic);
 
+track::TracksPerView getTracksPerViews(const SfMData& sfmData);
+
 // Test summary:
 // - Create a SfMData scene from a synthetic dataset
 //   - since random noise have been added on 2d data point (initial residual is not small)
@@ -130,6 +132,99 @@ BOOST_AUTO_TEST_CASE(BUNDLE_ADJUSTMENT_EffectiveMinimization_PinholeFisheye) {
   BOOST_CHECK( dResidual_before > dResidual_after);
 }
 
+BOOST_AUTO_TEST_CASE(LOCAL_BUNDLE_ADJUSTMENT_EffectiveMinimization_Pinhole_CamerasRing) {
+
+  const int nviews = 4;
+  const int npoints = 3;
+  const NViewDatasetConfigurator config;
+  const NViewDataSet d = NRealisticCamerasRing(nviews, npoints, config);
+
+  // Translate the input dataset to a SfMData scene
+  SfMData sfmData = getInputScene(d, config, PINHOLE_CAMERA);
+  SfMData sfmData_notRefined = getInputScene(d, config, PINHOLE_CAMERA); // used to compate which parameters are refined.
+
+  // Transform the views scheme
+  //          v0 - v3
+  //  from    |  X  |     =>  where each view sees all the 3D points p0, p1 and p2
+  //          v1 - v2
+  //
+  //  to      v0   v3             p0   p1   p2
+  //          |     |     =>     /  \ /  \ /  \
+  //          v1 - v2           v0   v1   v2   v3
+  // removing adequate observations:
+  sfmData.structure[0].observations.erase(2);
+  sfmData.structure[0].observations.erase(3);
+  sfmData.structure[1].observations.erase(0);
+  sfmData.structure[1].observations.erase(3);
+  sfmData.structure[2].observations.erase(0);
+  sfmData.structure[2].observations.erase(1);
+
+  track::TracksPerView tracksPerView = getTracksPerViews(sfmData);
+
+  // Set the view "v0' as new (graph-distance(v0) = 0):
+  std::set<IndexT> newReconstructedViews;
+  newReconstructedViews.insert(0);
+
+  const double dResidual_before = RMSE(sfmData);
+
+  // Call the Local BA interface and let it refine
+  LocalBundleAdjustmentCeres::LocalBA_options options;
+  options.setDenseBA();
+  options.enableLocalBA();
+  LocalBundleAdjustmentData localBAData(sfmData);
+
+  const std::size_t kMinNbOfMatches = 1;
+  const std::size_t kLimitDistance = 1;
+
+  // DETAILS: With the previous reconstruction scheme & parameters:
+  // -- Graph-distances:
+  //   dist(v0) == 0 [because it is set to New]
+  //   dist(v1) == 1 [because it shares 'p0' with v0]
+  //   dist(v2) == 2 [because it shares 'p1' with v1]
+  //   dist(v3) == 3 [because it shares 'p2' with v2]
+  // -- Local BA state: (due to the graph-distance)
+  //   state(v0) = refined  [because its dist. is <= kLimitDistance]
+  //   state(v1) = refined  [because its dist. is <= kLimitDistance]
+  //   state(v2) = constant [because its dist. is == kLimitDistance + 1]
+  //   state(v3) = ignored  [because its dist. is > kLimitDistance]
+  //   state(p0) = refined  [because it is seen by at least one refined view (v0 & v1)]
+  //   state(p1) = refined  [because it is seen by at least one refined view (v1)]
+  //   state(p2) = ignored  [because it is not seen by any refined view]
+
+  // Assign the refinement rule for all the parameters (poses, landmarks & intrinsics) according to the LBA strategy:
+  localBAData.updateParametersState(sfmData, tracksPerView, newReconstructedViews, kMinNbOfMatches, kLimitDistance);
+  BOOST_CHECK( localBAData.getNumOfRefinedPoses() == 2 );     // v0 & v1
+  BOOST_CHECK( localBAData.getNumOfConstantPoses() == 1 );    // v2
+  BOOST_CHECK( localBAData.getNumOfIgnoredPoses() == 1 );     // v3
+  BOOST_CHECK( localBAData.getNumOfRefinedLandmarks() == 2 ); // p0 & p1
+  BOOST_CHECK( localBAData.getNumOfConstantLandmarks() == 0 );
+  BOOST_CHECK( localBAData.getNumOfIgnoredLandmarks() == 1 ); // p2
+
+  std::shared_ptr<LocalBundleAdjustmentCeres> lba_object = std::make_shared<LocalBundleAdjustmentCeres>(localBAData, options, newReconstructedViews);
+  BOOST_CHECK( lba_object->Adjust(sfmData, localBAData) );
+
+  // Check views:
+  BOOST_CHECK( !(sfmData.getPose(*sfmData.views[0].get())
+    == sfmData_notRefined.getPose(*sfmData_notRefined.views[0].get())) ); // v0 refined
+  BOOST_CHECK( !(sfmData.getPose(*sfmData.views[1].get())
+    == sfmData_notRefined.getPose(*sfmData_notRefined.views[1].get())) ); // v1 refined
+  BOOST_CHECK( sfmData.getPose(*sfmData.views[2].get())
+    == sfmData_notRefined.getPose(*sfmData_notRefined.views[2].get()) ); // v2 constant
+  BOOST_CHECK( sfmData.getPose(*sfmData.views[2].get())
+    == sfmData_notRefined.getPose(*sfmData_notRefined.views[2].get()) ); // v2 ignored
+
+  // Check 3D points
+  BOOST_CHECK( sfmData.structure[0].X != sfmData_notRefined.structure[0].X ); // p0 refined
+  BOOST_CHECK( sfmData.structure[1].X != sfmData_notRefined.structure[1].X ); // p1 refined
+  BOOST_CHECK( sfmData.structure[2].X == sfmData_notRefined.structure[2].X ); // p2 ignored
+
+  // Not refined parameters:
+  BOOST_CHECK( sfmData.structure[2].X == sfmData_notRefined.structure[2].X );
+
+  const double dResidual_after = RMSE(sfmData);
+  BOOST_CHECK( dResidual_before > dResidual_after);
+}
+
 /// Compute the Root Mean Square Error of the residuals
 double RMSE(const SfMData & sfm_data)
 {
@@ -195,6 +290,7 @@ SfMData getInputScene(const NViewDataSet & d, const NViewDatasetConfigurator & c
 
   // 4. Landmarks
   for (int i = 0; i < npoints; ++i) {
+
     // Collect the image of point i in each frame.
     Landmark landmark;
     landmark.X = d._X.col(i);
@@ -211,3 +307,29 @@ SfMData getInputScene(const NViewDataSet & d, const NViewDatasetConfigurator & c
 
   return sfm_data;
 }
+
+track::TracksPerView getTracksPerViews(const SfMData& sfmData)
+{
+  track::TracksPerView tracksPerView;
+  for (const auto& landIt : sfmData.GetLandmarks())
+  {
+    for (const auto& obsIt : landIt.second.observations)
+    {
+      IndexT viewId = obsIt.first;
+      track::TrackIdSet& tracksSet = tracksPerView[viewId];
+      tracksSet.push_back(landIt.first);
+    }
+  }
+
+  // sort tracks Ids in each view
+  #pragma omp parallel for
+  for(int i = 0; i < tracksPerView.size(); ++i)
+  {
+    track::TracksPerView::iterator it = tracksPerView.begin();
+    std::advance(it, i);
+    std::sort(it->second.begin(), it->second.end());
+  }
+
+  return tracksPerView;
+}
+

@@ -13,8 +13,24 @@ using namespace aliceVision::geometry;
 
 void LocalBundleAdjustmentCeres::LocalBA_statistics::show()
 {
+  int numCamDistEqOne = 0;
+  if (_numCamerasPerDistance.find(1) != _numCamerasPerDistance.end())
+    numCamDistEqOne = _numCamerasPerDistance.at(1);
+  
+  int numCamDistUpperOne = 0;
+  for (const auto & camdistIt : _numCamerasPerDistance)
+  {
+    if (camdistIt.first > 1)
+      numCamDistUpperOne += camdistIt.second;
+  }
+  
   ALICEVISION_LOG_DEBUG("\n----- Local BA Ceres statistics ------\n" 
                         << "|- adjutment duration: " << _time << " s \n"
+                        << "|- graph-distances distribution: \n"
+                        << "  * not connected: " << _numCamerasPerDistance[-1] << " cameras \n"
+                        << "  * D = 0: " << _numCamerasPerDistance[0] << " cameras \n"
+                        << "  * D = 1: " << numCamDistEqOne << " cameras \n"
+                        << "  * D > 1: " << numCamDistUpperOne << " cameras \n"
                         << "|- poses: \t" 
                         << _numRefinedPoses << " refined, \t"
                         << _numConstantPoses << " constant, \t"
