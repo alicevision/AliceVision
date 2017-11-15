@@ -24,10 +24,10 @@ int main( int argc, char **argv )
 
   std::string verboseLevel = system::EVerboseLevel_enumToString(system::Logger::getDefaultVerboseLevel());
   std::string sfmDataFilename;
-  std::string matchesDirectory;
+  std::string matchesFolder;
   std::string describerTypesName = feature::EImageDescriberType_enumToString(feature::EImageDescriberType::SIFT);
   std::string matchesGeometricModel = "f";
-  std::string outputDirectory ;
+  std::string outputFolder ;
   int selectionMethod;
   int imgRef;
 
@@ -37,10 +37,10 @@ int main( int argc, char **argv )
   requiredParams.add_options()
     ("input,i", po::value<std::string>(&sfmDataFilename)->required(),
       "SfMData file.")
-    ("output,o", po::value<std::string>(&outputDirectory)->required(),
+    ("output,o", po::value<std::string>(&outputFolder)->required(),
       "Output path.")
-    ("matchesDirectory,m", po::value<std::string>(&matchesDirectory)->required(),
-      "Path to a directory in which computed matches are stored.")
+    ("matchesFolder,m", po::value<std::string>(&matchesFolder)->required(),
+      "Path to a folder in which computed matches are stored.")
     ("referenceImage", po::value<int>(&imgRef)->required(),
       "Reference image id.")
     ("selectionMethod", po::value<int>(&selectionMethod)->required(),
@@ -102,8 +102,8 @@ int main( int argc, char **argv )
 
   const std::vector<feature::EImageDescriberType> describerTypes = feature::EImageDescriberType_stringToEnums(describerTypesName);
 
-  if ( !stlplus::folder_exists( outputDirectory ) )
-    stlplus::folder_create( outputDirectory );
+  if ( !stlplus::folder_exists( outputFolder ) )
+    stlplus::folder_create( outputFolder );
 
   //---------------------------------------
   // Harmonization process
@@ -112,9 +112,9 @@ int main( int argc, char **argv )
   aliceVision::system::Timer timer;
 
   ColorHarmonizationEngineGlobal colorHarmonizeEngine(sfmDataFilename,
-    matchesDirectory,
+    matchesFolder,
     matchesGeometricModel,
-    outputDirectory,
+    outputFolder,
     describerTypes,
     selectionMethod,
     imgRef);

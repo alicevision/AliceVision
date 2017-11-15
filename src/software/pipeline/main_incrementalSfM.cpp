@@ -49,31 +49,18 @@ bool retrieveViewIdFromImageName(
     std::string filename;
     
     if(isName)
-    {
       filename = stlplus::filename_part(v->getImagePath());
-    }
+    else if(stlplus::is_full_path(v->getImagePath()))
+      filename = v->getImagePath();
     else
-    {
-      if(stlplus::is_full_path(v->getImagePath()))
-      {
-        filename = v->getImagePath();
-      }
-      else
-      {
-        filename = sfm_data.s_root_path + v->getImagePath();
-      }
-    }
+      filename = sfm_data.s_root_path + v->getImagePath();
     
     if (filename == initialName)
     {
       if(out_viewId == UndefinedIndexT)
-      {
           out_viewId = v->getViewId();
-      }
       else
-      {
         std::cout<<"Error: Two pictures named :" << initialName << " !" << std::endl;
-      }
     }
   }
   return out_viewId != UndefinedIndexT;
@@ -86,13 +73,14 @@ int main(int argc, char **argv)
 
   std::string verboseLevel = system::EVerboseLevel_enumToString(system::Logger::getDefaultVerboseLevel());
   std::string sfmDataFilename;
-  std::string featuresDirectory;
-  std::string matchesDirectory;
+  std::string featuresFolder;
+  std::string matchesFolder;
   std::string outputSfM;
 
   // user optional parameters
 
-  std::string extraInfoDirectory;
+  std::string outputSfMViewsAndPoses;
+  std::string extraInfoFolder;
   std::string describerTypesName = feature::EImageDescriberType_enumToString(feature::EImageDescriberType::SIFT);
   std::string outInterFileExtension = ".ply";
   std::pair<std::string,std::string> initialPairString("","");
@@ -114,15 +102,17 @@ int main(int argc, char **argv)
       "SfMData file.")
     ("output,o", po::value<std::string>(&outputSfM)->required(),
       "Path to the output SfMData file.")
-    ("featuresDirectory,f", po::value<std::string>(&featuresDirectory)->required(),
-      "Path to a directory containing the extracted features.")
-    ("matchesDirectory,m", po::value<std::string>(&matchesDirectory)->required(),
-      "Path to a directory in which computed matches are stored.");
+    ("featuresFolder,f", po::value<std::string>(&featuresFolder)->required(),
+      "Path to a folder containing the extracted features.")
+    ("matchesFolder,m", po::value<std::string>(&matchesFolder)->required(),
+      "Path to a folder in which computed matches are stored.");
 
   po::options_description optionalParams("Optional parameters");
   optionalParams.add_options()
-    ("extraInfoDirectory", po::value<std::string>(&extraInfoDirectory)->default_value(extraInfoDirectory),
-      "Directory for intermediate reconstruction files and additional reconstruction information files.")
+    ("outputViewsAndPoses", po::value<std::string>(&outputSfMViewsAndPoses)->default_value(outputSfMViewsAndPoses),
+      "Path to the output SfMData (with only views and poses) file")
+    ("extraInfoFolder", po::value<std::string>(&extraInfoFolder)->default_value(extraInfoFolder),
+      "Folder for intermediate reconstruction files and additional reconstruction information files.")
     ("describerTypes,d", po::value<std::string>(&describerTypesName)->default_value(describerTypesName),
       feature::EImageDescriberType_informations().c_str())
     ("interFileExtension", po::value<std::string>(&outInterFileExtension)->default_value(outInterFileExtension),
@@ -187,16 +177,23 @@ int main(int argc, char **argv)
   // set verbose level
   system::Logger::get()->setLogLevel(verboseLevel);
 
-  // Load input SfMData scene
-  SfMData sfmData;
-  if (!Load(sfmData, sfmDataFilename, ESfMData(ALL))) {
-    std::cerr << std::endl
-      << "The input SfMData file \""<< sfmDataFilename << "\" cannot be read." << std::endl;
+  // check output SfM path
+  if(outputSfM.empty())
+  {
+    ALICEVISION_LOG_ERROR("Error: Invalid output SfMData file path.");
     return EXIT_FAILURE;
   }
 
-  if(featuresDirectory.empty()) {
-    featuresDirectory = matchesDirectory;
+  // Check feature folder
+  if(featuresFolder.empty()) {
+    featuresFolder = matchesFolder;
+  }
+
+  // Load input SfMData scene
+  SfMData sfmData;
+  if(!Load(sfmData, sfmDataFilename, ESfMData(ALL))) {
+    ALICEVISION_LOG_ERROR("Error: The input SfMData file '" + sfmDataFilename + "' cannot be read.");
+    return EXIT_FAILURE;
   }
 
   // Get imageDescriberMethodType
@@ -204,10 +201,9 @@ int main(int argc, char **argv)
 
   // Features reading
   feature::FeaturesPerView featuresPerView;
-  if(!sfm::loadFeaturesPerView(featuresPerView, sfmData, featuresDirectory, describerTypes))
+  if(!sfm::loadFeaturesPerView(featuresPerView, sfmData, featuresFolder, describerTypes))
   {
-    std::cerr << std::endl
-      << "Invalid features." << std::endl;
+    ALICEVISION_LOG_ERROR("Error: Invalid features.");
     return EXIT_FAILURE;
   }
   
@@ -216,33 +212,26 @@ int main(int argc, char **argv)
 
   if(!loadPairwiseMatches(pairwiseMatches, sfmData, matchesDirectory, describerTypes, "f", maxNbMatches))
   {
-    std::cerr << std::endl << "Unable to load matches file from: " << matchesDirectory << std::endl;
+    ALICEVISION_LOG_ERROR("Error: Unable to load matches file from '" + matchesFolder + "'.");
     return EXIT_FAILURE;
   }
 
-  if (outputSfM.empty())
-  {
-    std::cerr << "\nIt is an invalid SfMData file path." << std::endl;
-    return EXIT_FAILURE;
-  }
-  if(extraInfoDirectory.empty())
+  if(extraInfoFolder.empty())
   {
     namespace bfs = boost::filesystem;
-    extraInfoDirectory = bfs::path(outputSfM).parent_path().string();
+    extraInfoFolder = bfs::path(outputSfM).parent_path().string();
   }
 
-  if (!stlplus::folder_exists(extraInfoDirectory))
-    stlplus::folder_create(extraInfoDirectory);
+  if (!stlplus::folder_exists(extraInfoFolder))
+    stlplus::folder_create(extraInfoFolder);
 
-  //---------------------------------------
   // Sequential reconstruction process
-  //---------------------------------------
   
   aliceVision::system::Timer timer;
   ReconstructionEngine_sequentialSfM sfmEngine(
     sfmData,
-    extraInfoDirectory,
-    stlplus::create_filespec(extraInfoDirectory, "sfm_log.html"));
+    extraInfoFolder,
+    stlplus::create_filespec(extraInfoFolder, "sfm_log.html"));
 
   // Configure the featuresPerView & the matches_provider
   sfmEngine.setFeatures(&featuresPerView);
@@ -257,11 +246,11 @@ int main(int argc, char **argv)
   sfmEngine.setUseLocalBundleAdjustmentStrategy(useLocalBundleAdjustment);
 
   // Handle Initial pair parameter
-  if (!initialPairString.first.empty() && !initialPairString.second.empty())
+  if(!initialPairString.first.empty() && !initialPairString.second.empty())
   {
-    if (initialPairString.first == initialPairString.second)
+    if(initialPairString.first == initialPairString.second)
     {
-      std::cerr << "\nInvalid image names. You cannot use the same image to initialize a pair." << std::endl;
+      ALICEVISION_LOG_ERROR("Error: Invalid image names. You cannot use the same image to initialize a pair.");
       return EXIT_FAILURE;
     }
 
@@ -269,40 +258,36 @@ int main(int argc, char **argv)
     if(!retrieveViewIdFromImageName(sfmData, initialPairString.first, initialPairIndex.first)
             || !retrieveViewIdFromImageName(sfmData, initialPairString.second, initialPairIndex.second))
     {
-        std::cerr << "Could not find the initial pairs <" << initialPairString.first
-          <<  ", " << initialPairString.second << ">!\n";
-        return EXIT_FAILURE;
+      ALICEVISION_LOG_ERROR("Could not find the initial pairs (" + initialPairString.first + ", " + initialPairString.second + ") !");
+      return EXIT_FAILURE;
     }
- 
     sfmEngine.setInitialPair(initialPairIndex);
   }
 
-  if (!sfmEngine.Process())
-  {
+  if(!sfmEngine.Process())
     return EXIT_FAILURE;
-  }
 
-  // get the color for the 3D points
+  // Get the color for the 3D points
   if(!sfmEngine.Colorize())
-  {
-    std::cerr << "Colorize failed!" << std::endl;
-  }
-  
-  sfmEngine.Get_SfMData().setFeatureFolder(featuresDirectory);
-  sfmEngine.Get_SfMData().setMatchingFolder(matchesDirectory);
+    ALICEVISION_LOG_ERROR("Error: Colorize failed !");
 
-  std::cout << std::endl << " Total Ac-Sfm took (s): " << timer.elapsed() << std::endl;
+  sfmEngine.Get_SfMData().setFeatureFolder(featuresFolder);
+  sfmEngine.Get_SfMData().setMatchingFolder(matchesFolder);
 
-  std::cout << "...Generating SfM_Report.html" << std::endl;
+  ALICEVISION_LOG_INFO("Structure from motion took (s): " + std::to_string(timer.elapsed()));
+  ALICEVISION_LOG_INFO("Generating HTML report...");
+
   Generate_SfM_Report(sfmEngine.Get_SfMData(),
-    stlplus::create_filespec(extraInfoDirectory, "sfm_report.html"));
+    stlplus::create_filespec(extraInfoFolder, "sfm_report.html"));
 
-  //-- Export to disk computed scene (data & visualizable results)
-  std::cout << "...Export SfMData to disk:" << outputSfM << std::endl;
+  // Export to disk computed scene (data & visualizable results)
+  ALICEVISION_LOG_INFO("Export SfMData to disk:" + outputSfM);
 
+  Save(sfmEngine.Get_SfMData(), stlplus::create_filespec(extraInfoFolder, "cloud_and_poses", outInterFileExtension), ESfMData(VIEWS | EXTRINSICS | INTRINSICS | STRUCTURE));
   Save(sfmEngine.Get_SfMData(), outputSfM, ESfMData(ALL));
 
-  Save(sfmEngine.Get_SfMData(), stlplus::create_filespec(extraInfoDirectory, "cloud_and_poses", outInterFileExtension), ESfMData(VIEWS | EXTRINSICS | INTRINSICS | STRUCTURE));
+  if(!outputSfMViewsAndPoses.empty())
+    Save(sfmEngine.Get_SfMData(), outputSfMViewsAndPoses, ESfMData(VIEWS | EXTRINSICS | INTRINSICS));
 
   return EXIT_SUCCESS;
 }

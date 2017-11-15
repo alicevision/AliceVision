@@ -214,7 +214,7 @@ int main(int argc, char **argv)
 
   std::string verboseLevel = system::EVerboseLevel_enumToString(system::Logger::getDefaultVerboseLevel());
   std::string sfmDataFilename;
-  std::string outputDirectory;
+  std::string outputFolder;
 
   // user optional parameters
 
@@ -231,7 +231,7 @@ int main(int argc, char **argv)
   requiredParams.add_options()
     ("input,i", po::value<std::string>(&sfmDataFilename)->required(),
       "SfMData file.")
-    ("output,o", po::value<std::string>(&outputDirectory)->required(),
+    ("output,o", po::value<std::string>(&outputFolder)->required(),
       "Output path for the features and descriptors files (*.feat, *.desc).");
 
   po::options_description optionalParams("Optional parameters");
@@ -298,18 +298,18 @@ int main(int argc, char **argv)
     } 
   }
 
-  if (outputDirectory.empty())
+  if (outputFolder.empty())
   {
-    std::cerr << "\nIt is an invalid output directory" << std::endl;
+    std::cerr << "\nIt is an invalid output folder" << std::endl;
     return EXIT_FAILURE;
   }
 
   // Create output dir
-  if (!stlplus::folder_exists(outputDirectory))
+  if (!stlplus::folder_exists(outputFolder))
   {
-    if (!stlplus::folder_create(outputDirectory))
+    if (!stlplus::folder_create(outputFolder))
     {
-      std::cerr << "Cannot create output directory" << std::endl;
+      std::cerr << "Cannot create output folder" << std::endl;
       return EXIT_FAILURE;
     }
   }
@@ -442,9 +442,9 @@ int main(int argc, char **argv)
       {
         DescriberComputeMethod computeMethod;
         
-        computeMethod.featFilename = stlplus::create_filespec(outputDirectory,
+        computeMethod.featFilename = stlplus::create_filespec(outputFolder,
               stlplus::basename_part(std::to_string(view->getViewId())), imageDescribers[i].typeName + ".feat");
-        computeMethod.descFilename = stlplus::create_filespec(outputDirectory,
+        computeMethod.descFilename = stlplus::create_filespec(outputFolder,
               stlplus::basename_part(std::to_string(view->getViewId())), imageDescribers[i].typeName + ".desc");
       
         if (stlplus::file_exists(computeMethod.featFilename) &&

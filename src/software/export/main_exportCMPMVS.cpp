@@ -40,11 +40,11 @@ std::string replaceAll( std::string const& original, std::string const& from, st
 
 bool exportToCMPMVSFormat(
   const SfMData & sfm_data,
-  const std::string & sOutDirectory // Output CMPMVS files directory
+  const std::string & sOutDirectory // Output CMPMVS files folder
   )
 {
   bool bOk = true;
-  // Create basis directory structure
+  // Create basis folder structure
   if (!stlplus::is_folder(sOutDirectory))
   {
     stlplus::folder_create(sOutDirectory);
@@ -53,7 +53,7 @@ bool exportToCMPMVSFormat(
 
   if (!bOk)
   {
-    std::cerr << "Cannot access to one of the desired output directory" << std::endl;
+    std::cerr << "Cannot access to one of the desired output folder" << std::endl;
     return false;
   }
   else
@@ -270,7 +270,7 @@ int main(int argc, char *argv[])
     ("input,i", po::value<std::string>(&sfmDataFilename)->required(),
       "SfMData file.")
     ("output,o", po::value<std::string>(&outDirectory)->required(),
-      "Output directory.");
+      "Output folder.");
 
   po::options_description logParams("Log parameters");
   logParams.add_options()

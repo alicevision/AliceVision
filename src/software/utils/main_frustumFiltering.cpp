@@ -47,7 +47,7 @@ PairSet BuildPairsFromFrustumsIntersections(
   const SfMData & sfm_data,
   const double z_near = -1., // default near plane
   const double z_far = -1.,  // default far plane
-  const std::string& sOutDirectory = "") // output directory to save frustums as PLY
+  const std::string& sOutDirectory = "") // output folder to save frustums as PLY
 {
   const FrustumFilter frustum_filter(sfm_data, z_near, z_far);
   if (!sOutDirectory.empty())
@@ -118,7 +118,7 @@ int main(int argc, char **argv)
   // set verbose level
   system::Logger::get()->setLogLevel(verboseLevel);
 
-  // Assert that we can create the output directory
+  // Assert that we can create the output folder
   if (!stlplus::folder_exists( stlplus::folder_part(outputFilename) ))
     if(!stlplus::folder_create( stlplus::folder_part(outputFilename) ))
       return EXIT_FAILURE;

@@ -30,7 +30,7 @@ int main(int argc, char** argv)
 
   std::string verboseLevel = system::EVerboseLevel_enumToString(system::Logger::getDefaultVerboseLevel());
   std::string sfmDataFilename;
-  std::string featuresDirectory;
+  std::string featuresFolder;
   
   po::options_description allParams("AliceVision convertUID");
 
@@ -38,8 +38,8 @@ int main(int argc, char** argv)
   requiredParams.add_options()
     ("input,i", po::value<std::string>(&sfmDataFilename)->required(),
       "SfMData file.")
-    ("featuresDirectory,f", po::value<std::string>(&featuresDirectory)->required(),
-      "ath to a directory containing the extracted features.");
+    ("featuresFolder,f", po::value<std::string>(&featuresFolder)->required(),
+      "ath to a folder containing the extracted features.");
   
   po::options_description logParams("Log parameters");
   logParams.add_options()
@@ -76,10 +76,10 @@ int main(int argc, char** argv)
   // set verbose level
   system::Logger::get()->setLogLevel(verboseLevel);
 
-  //Check directory name
-  if (!stlplus::is_folder(featuresDirectory))
+  //Check folder name
+  if (!stlplus::is_folder(featuresFolder))
   {
-    std::cout << "The directory can't be found" << std::endl;
+    std::cout << "The folder can't be found" << std::endl;
     return false;
   }
   
@@ -103,15 +103,15 @@ int main(int argc, char** argv)
     std::string compared2(1,'/');
     std::string id = to_string(view->getViewId());
             
-    if (featuresDirectory.substr(featuresDirectory.size() - 1, featuresDirectory.size()).compare(compared2) == 0)
+    if (featuresFolder.substr(featuresFolder.size() - 1, featuresFolder.size()).compare(compared2) == 0)
     {
-      filename = featuresDirectory + view->getImagePath().substr(1 ,view->getImagePath().find('.'));
-      newname = featuresDirectory + id;
+      filename = featuresFolder + view->getImagePath().substr(1 ,view->getImagePath().find('.'));
+      newname = featuresFolder + id;
     }
     else 
     {
-      filename = featuresDirectory + view->getImagePath().substr(0 ,view->getImagePath().find('.') + 1);
-      newname = featuresDirectory + compared2 + id;
+      filename = featuresFolder + view->getImagePath().substr(0 ,view->getImagePath().find('.') + 1);
+      newname = featuresFolder + compared2 + id;
     }
     
     std::string oldDesc = filename + "desc";

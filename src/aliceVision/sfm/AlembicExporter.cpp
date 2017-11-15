@@ -8,8 +8,7 @@
 #include <aliceVision/version.hpp>
 
 #include <Alembic/AbcGeom/All.h>
-#include <Alembic/AbcCoreHDF5/All.h>
-
+#include <Alembic/AbcCoreOgawa/All.h>
 #include <numeric>
 
 namespace aliceVision {
@@ -23,7 +22,7 @@ using namespace AbcG;
 struct AlembicExporter::DataImpl
 {
   DataImpl(const std::string &filename)
-  : _archive(Alembic::AbcCoreHDF5::WriteArchive(), filename)
+  : _archive(Alembic::AbcCoreOgawa::WriteArchive(), filename)
   , _topObj(_archive, Alembic::Abc::kTop)
   {
     // Create MVG hierarchy

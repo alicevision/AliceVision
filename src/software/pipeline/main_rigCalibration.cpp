@@ -352,7 +352,7 @@ int main(int argc, char** argv)
     ALICEVISION_COUT("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n\n");
     const std::string &calibFile = cameraIntrinsics[idCamera];
     const std::string &feedPath = mediaPath[idCamera];
-    // contains the directory where the video, the images or the filelist is
+    // contains the folder where the video, the images or the filelist is
     const std::string subMediaFilepath = 
         bfs::is_directory(bfs::path(mediaPath[idCamera])) ? 
           (mediaPath[idCamera]) : 

@@ -62,11 +62,11 @@ int main( int argc, char** argv )
 
   if(!(bfs::exists(inputFolder) && bfs::is_directory(inputFolder)))
   {
-    ALICEVISION_CERR("ERROR: " << inputFolder << " does not exists or it is not a directory" << std::endl);
+    ALICEVISION_CERR("ERROR: " << inputFolder << " does not exists or it is not a folder" << std::endl);
     return EXIT_FAILURE;
   }
 
-  // if the directory does not exist create it (recursively)
+  // if the folder does not exist create it (recursively)
   if(!bfs::exists(outputFolder))
   {
     bfs::create_directories(outputFolder);
@@ -85,7 +85,7 @@ int main( int argc, char** argv )
 
     if(ext == ".feat")
     {
-      // just copy the file into the output directory
+      // just copy the file into the output folder
       bfs::copy_file(iterator->path(), bfs::path(outputFolder)/bfs::path(filename), bfs::copy_option::overwrite_if_exists);
       
       ++countFeat;

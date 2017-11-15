@@ -35,7 +35,7 @@ int main(int argc, char *argv[])
     ("input,i", po::value<std::string>(&sfmDataFilename)->required(),
       "SfMData file.")
     ("output,o", po::value<std::string>(&outDirectory)->required(),
-      "Output directory.");
+      "Output folder.");
 
   po::options_description logParams("Log parameters");
   logParams.add_options()

@@ -19,11 +19,8 @@ namespace camera {
 ///  with intrinsic parameters defining the K calibration matrix
 class Pinhole : public IntrinsicBase
 {
-  protected:
-    // Focal & principal point are embed into the calibration matrix K
-    Mat3 _K, _Kinv;
-
   public:
+
   Pinhole(
     unsigned int w, unsigned int h,
     const Mat3 K)
@@ -32,6 +29,7 @@ class Pinhole : public IntrinsicBase
     _K = K;
     _Kinv = _K.inverse();
   }
+
   Pinhole(
     unsigned int w = 0, unsigned int h = 0,
     double focal_length_pix = 0.0,
@@ -50,6 +48,10 @@ class Pinhole : public IntrinsicBase
   
   virtual EINTRINSIC getType() const { return PINHOLE_CAMERA; }
   std::string getTypeStr() const { return EINTRINSIC_enumToString(getType()); }
+
+  double getPxFocalLength() const { return _K(0,0); }
+
+  Vec2 getPrincipalPoint() const { return Vec2(_K(0,2), _K(1,2)); }
 
   const Mat3& K() const { return _K; }
   const Mat3& Kinv() const { return _Kinv; }
@@ -101,27 +103,33 @@ class Pinhole : public IntrinsicBase
   }
 
   // Data wrapper for non linear optimization (get data)
-  virtual std::vector<double> getParams() const
+  std::vector<double> getParams() const
   {
-    const std::vector<double> params = {_K(0,0), _K(0,2), _K(1,2)};
+    std::vector<double> params = {_K(0,0), _K(0,2), _K(1,2)};
+    params.insert(params.end(), _distortionParams.begin(), _distortionParams.end());
     return params;
   }
   
-  virtual std::vector<double> getDistortionParams() const
+  const std::vector<double>& getDistortionParams() const
   {
-    // No distortion
-    return std::vector<double>();
+    return _distortionParams;
+  }
+
+  void setDistortionParams(const std::vector<double>& distortionParams)
+  {
+    _distortionParams = distortionParams;
   }
 
   // Data wrapper for non linear optimization (update from data)
-  virtual bool updateFromParams(const std::vector<double> & params)
+  bool updateFromParams(const std::vector<double>& params)
   {
-    if (params.size() == 3)
-    {
-      this->setK(params[0], params[1], params[2]);
-      return true;
-    }
-    return false;
+    if (params.size() != (3 + _distortionParams.size()))
+      return false;
+
+    this->setK(params[0], params[1], params[2]);
+    _distortionParams = {params.begin() + 3, params.end()};
+
+    return true;
   }
 
   /// Return the un-distorted pixel (with removed distortion)
@@ -151,6 +159,12 @@ class Pinhole : public IntrinsicBase
     ar(cereal::make_nvp("principal_point", pp));
     this->setK(focal_length, pp[0], pp[1]);
   }
+
+private:
+  // Focal & principal point are embed into the calibration matrix K
+  Mat3 _K, _Kinv;
+protected:
+  std::vector<double> _distortionParams;
 };
 
 } // namespace camera

@@ -257,8 +257,8 @@ int main(int argc, char** argv)
   outputParams.add_options()
       ("help,h", "Print this message")
       ("visualDebug", po::value<std::string>(&visualDebug), 
-          "If a directory is provided it enables visual debug and saves all the "
-          "debugging info in that directory")
+          "If a folder is provided it enables visual debug and saves all the "
+          "debugging info in that folder")
 
 #if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_ALEMBIC)
       ("outputAlembic", po::value<std::string>(&exportAlembicFile)->default_value(exportAlembicFile),
@@ -320,7 +320,7 @@ int main(int argc, char** argv)
   ALICEVISION_COUT("Program called with the following parameters:");
   ALICEVISION_COUT(vm);
 
-  // if the provided directory for visual debugging does not exist create it
+  // if the provided folder for visual debugging does not exist create it
   // recursively
   if((!visualDebug.empty()) && (!bfs::exists(visualDebug)))
   {

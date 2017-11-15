@@ -33,7 +33,7 @@ int main(int argc, char **argv)
     ("input,i", po::value<std::string>(&sfmDataFilename)->required(),
       "SfMData file.")
     ("output,o", po::value<std::string>(&outDirectory)->required(),
-      "Output directory.");
+      "Output folder.");
 
   po::options_description logParams("Log parameters");
   logParams.add_options()
@@ -130,7 +130,7 @@ int main(int argc, char **argv)
   
   const std::string sUndistMsg = bOneHaveDisto ? "undistorded" : "";
   const std::string sQuitMsg = std::string("Your SfMData file was succesfully converted!\n") +
-    "Now you can copy your " + sUndistMsg + " images in the \"" + outDirectory + "\" directory and run MVS Texturing";
+    "Now you can copy your " + sUndistMsg + " images in the \"" + outDirectory + "\" folder and run MVS Texturing";
   std::cout << sQuitMsg << std::endl;
   return EXIT_SUCCESS;
 }

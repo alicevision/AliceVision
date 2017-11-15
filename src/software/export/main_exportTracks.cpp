@@ -33,8 +33,8 @@ int main(int argc, char ** argv)
 
   std::string verboseLevel = system::EVerboseLevel_enumToString(system::Logger::getDefaultVerboseLevel());
   std::string sfmDataFilename;
-  std::string outputDirectory;
-  std::string matchesDirectory;
+  std::string outputFolder;
+  std::string matchesFolder;
   std::string describerTypesName = feature::EImageDescriberType_enumToString(feature::EImageDescriberType::SIFT);
   std::string matchesGeometricModel = "f";
 
@@ -44,10 +44,10 @@ int main(int argc, char ** argv)
   requiredParams.add_options()
     ("input,i", po::value<std::string>(&sfmDataFilename)->required(),
       "SfMData file.")
-    ("output,o", po::value<std::string>(&outputDirectory)->required(),
+    ("output,o", po::value<std::string>(&outputFolder)->required(),
       "Output path for tracks.")
-    ("matchesDirectory,m", po::value<std::string>(&matchesDirectory)->required(),
-      "Path to a directory in which computed matches are stored.");
+    ("matchesFolder,m", po::value<std::string>(&matchesFolder)->required(),
+      "Path to a folder in which computed matches are stored.");
 
   po::options_description optionalParams("Optional parameters");
   optionalParams.add_options()
@@ -94,8 +94,8 @@ int main(int argc, char ** argv)
   // set verbose level
   system::Logger::get()->setLogLevel(verboseLevel);
 
-  if (outputDirectory.empty())  {
-    std::cerr << "\nIt is an invalid output directory" << std::endl;
+  if (outputFolder.empty())  {
+    std::cerr << "\nIt is an invalid output folder" << std::endl;
     return EXIT_FAILURE;
   }
 
@@ -119,7 +119,7 @@ int main(int argc, char ** argv)
 
   // Read the features
   feature::FeaturesPerView featuresPerView;
-  if (!sfm::loadFeaturesPerView(featuresPerView, sfm_data, matchesDirectory, describerMethodTypes)) {
+  if (!sfm::loadFeaturesPerView(featuresPerView, sfm_data, matchesFolder, describerMethodTypes)) {
     std::cerr << std::endl
       << "Invalid features." << std::endl;
     return EXIT_FAILURE;
@@ -127,7 +127,7 @@ int main(int argc, char ** argv)
 
   // Read the matches
   matching::PairwiseMatches pairwiseMatches;
-  if (!loadPairwiseMatches(pairwiseMatches, sfm_data, matchesDirectory, describerMethodTypes, matchesGeometricModel))
+  if (!loadPairwiseMatches(pairwiseMatches, sfm_data, matchesFolder, describerMethodTypes, matchesGeometricModel))
   {
     std::cerr << "\nInvalid matches file." << std::endl;
     return EXIT_FAILURE;
@@ -150,7 +150,7 @@ int main(int argc, char ** argv)
   // ------------
   const size_t viewCount = sfm_data.GetViews().size();
 
-  stlplus::folder_create(outputDirectory);
+  stlplus::folder_create(outputFolder);
   std::cout << "\n viewCount: " << viewCount << std::endl;
   std::cout << "\n Export pairwise tracks" << std::endl;
   boost::progress_display my_progress_bar( (viewCount*(viewCount-1)) / 2.0 );
@@ -231,7 +231,7 @@ int main(int argc, char ** argv)
             3.0, svgStyle().stroke(featColor, 2.0));
         }
         std::ostringstream os;
-        os << stlplus::folder_append_separator(outputDirectory)
+        os << stlplus::folder_append_separator(outputFolder)
            << I << "_" << J
            << "_" << map_tracksCommon.size() << "_.svg";
         ofstream svgFile( os.str().c_str() );

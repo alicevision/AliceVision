@@ -131,7 +131,7 @@ int main(int argc, char *argv[])
 
   std::string verboseLevel = system::EVerboseLevel_enumToString(system::Logger::getDefaultVerboseLevel());
   std::string sfmDataFilename;
-  std::string outputDirectory;
+  std::string outputFolder;
 
   po::options_description allParams("AliceVision exportMatlab");
 
@@ -139,8 +139,8 @@ int main(int argc, char *argv[])
   requiredParams.add_options()
     ("input,i", po::value<std::string>(&sfmDataFilename)->required(),
       "SfMData file.")
-    ("output,o", po::value<std::string>(&outputDirectory)->required(),
-      "Output directory.");
+    ("output,o", po::value<std::string>(&outputFolder)->required(),
+      "Output folder.");
 
   po::options_description logParams("Log parameters");
   logParams.add_options()
@@ -179,11 +179,11 @@ int main(int argc, char *argv[])
 
   // export
   {
-    outputDirectory = stlplus::folder_to_path(outputDirectory);
+    outputFolder = stlplus::folder_to_path(outputFolder);
 
     // Create output dir
-    if (!stlplus::folder_exists(outputDirectory))
-      stlplus::folder_create( outputDirectory );
+    if (!stlplus::folder_exists(outputFolder))
+      stlplus::folder_create( outputFolder );
 
     // Read the input SfM scene
     SfMData sfmData;
@@ -194,7 +194,7 @@ int main(int argc, char *argv[])
       return EXIT_FAILURE;
     }
 
-    if (!exportToMatlab(sfmData, outputDirectory))
+    if (!exportToMatlab(sfmData, outputFolder))
       return EXIT_FAILURE;
   }
 

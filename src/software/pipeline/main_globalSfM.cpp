@@ -28,7 +28,7 @@ int main(int argc, char **argv)
 
   std::string verboseLevel = system::EVerboseLevel_enumToString(system::Logger::getDefaultVerboseLevel());
   std::string sfmDataFilename;
-  std::string matchesDirectory;
+  std::string matchesFolder;
   std::string outDirectory;
 
   // user optional parameters
@@ -50,9 +50,9 @@ int main(int argc, char **argv)
     ("input,i", po::value<std::string>(&sfmDataFilename)->required(),
       "SfMData file.")
     ("output,o", po::value<std::string>(&outDirectory)->required(),
-      "Path of the output directory.")
-    ("matchesDirectory,m", po::value<std::string>(&matchesDirectory)->required(),
-      "Path to a directory in which computed matches are stored.");
+      "Path of the output folder.")
+    ("matchesFolder,m", po::value<std::string>(&matchesFolder)->required(),
+      "Path to a folder in which computed matches are stored.");
 
   po::options_description optionalParams("Optional parameters");
   optionalParams.add_options()
@@ -140,7 +140,7 @@ int main(int argc, char **argv)
 
   // Features reading
   FeaturesPerView featuresPerView;
-  if (!sfm::loadFeaturesPerView(featuresPerView, sfmData, matchesDirectory, describerTypes)) {
+  if (!sfm::loadFeaturesPerView(featuresPerView, sfmData, matchesFolder, describerTypes)) {
     std::cerr << std::endl
       << "Invalid features." << std::endl;
     return EXIT_FAILURE;
@@ -149,15 +149,15 @@ int main(int argc, char **argv)
   matching::PairwiseMatches pairwiseMatches;
   // Load the match file (try to read the two matches file formats)
 
-  if(!sfm::loadPairwiseMatches(pairwiseMatches, sfmData, matchesDirectory, describerTypes, "e"))
+  if(!sfm::loadPairwiseMatches(pairwiseMatches, sfmData, matchesFolder, describerTypes, "e"))
   {
-    std::cerr << std::endl << "Unable to load matches files from: " << matchesDirectory << std::endl;
+    std::cerr << std::endl << "Unable to load matches files from: " << matchesFolder << std::endl;
     return EXIT_FAILURE;
   }
 
   if (outDirectory.empty())
   {
-    std::cerr << "\nIt is an invalid output directory" << std::endl;
+    std::cerr << "\nIt is an invalid output folder" << std::endl;
     return EXIT_FAILURE;
   }
 

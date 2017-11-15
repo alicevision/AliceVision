@@ -18,10 +18,6 @@ namespace camera {
 /// y_d = y_u (1 + K_1 r^2 + K_2 r^4 + K_3 r^6) + (T_1 (r^2 + 2 y_u^2) + 2 T_2 x_u y_u)
 class PinholeBrownT2 : public Pinhole
 {
-    protected:
-    // center of distortion is applied by the Intrinsics class
-    std::vector<double> _distortionParams; // K1, K2, K3, T1, T2
-
     public:
 
     PinholeBrownT2(
@@ -31,7 +27,7 @@ class PinholeBrownT2 : public Pinhole
         double t1 = 0.0, double t2 = 0.0)
             :Pinhole(w, h, focal, ppx, ppy)
     {
-        _distortionParams = {k1, k2, k3, t1, t2};
+        setDistortionParams({k1, k2, k3, t1, t2});
     }
 
     PinholeBrownT2* clone() const { return new PinholeBrownT2(*this); }
@@ -59,38 +55,6 @@ class PinholeBrownT2 : public Pinhole
         }
 
         return p_u;
-    }
-
-    // Data wrapper for non linear optimization (get data)
-    virtual std::vector<double> getParams() const
-    {
-        std::vector<double> params = Pinhole::getParams();
-        params.push_back(_distortionParams[0]);
-        params.push_back(_distortionParams[1]);
-        params.push_back(_distortionParams[2]);
-        params.push_back(_distortionParams[3]);
-        params.push_back(_distortionParams[4]);
-        return params;
-    }
-
-    virtual std::vector<double> getDistortionParams() const
-    {
-      return _distortionParams;
-    }
-
-    // Data wrapper for non linear optimization (update from data)
-    virtual bool updateFromParams(const std::vector<double> & params)
-    {
-      if (params.size() == 8)
-      {
-        this->setK(params[0], params[1], params[2]);
-        _distortionParams = {
-          params[3], params[4], params[5], // K1, K2, K3
-          params[6], params[7]             // T1, T2
-        };
-        return true;
-      }
-      return false;
     }
 
     /// Return the un-distorted pixel (with removed distortion)
