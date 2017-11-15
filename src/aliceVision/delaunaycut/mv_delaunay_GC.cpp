@@ -297,7 +297,7 @@ staticVector<int> mv_delaunay_GC::getIsUsedPerCamera() const
     staticVector<int> cams;
     cams.resize_with(mp->mip->getNbCameras(), 0);
 
-#pragma omp parallel for
+//#pragma omp parallel for
     for(int vi = 0; vi < _verticesAttr.size(); ++vi)
     {
         const GC_vertexInfo& v = _verticesAttr[vi];
@@ -305,9 +305,9 @@ staticVector<int> mv_delaunay_GC::getIsUsedPerCamera() const
         {
             const int obsCam = v.cams[c];
 
-#pragma OMP_ATOMIC_WRITE
+//#pragma OMP_ATOMIC_WRITE
             {
-            cams[obsCam] = 1;
+                cams[obsCam] = 1;
             }
         }
     }
