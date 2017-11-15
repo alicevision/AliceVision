@@ -210,7 +210,7 @@ int main(int argc, char **argv)
   // Matches reading
   matching::PairwiseMatches pairwiseMatches;
 
-  if(!loadPairwiseMatches(pairwiseMatches, sfmData, matchesDirectory, describerTypes, "f", maxNbMatches))
+  if(!loadPairwiseMatches(pairwiseMatches, sfmData, matchesFolder, describerTypes, "f", maxNbMatches))
   {
     ALICEVISION_LOG_ERROR("Error: Unable to load matches file from '" + matchesFolder + "'.");
     return EXIT_FAILURE;
