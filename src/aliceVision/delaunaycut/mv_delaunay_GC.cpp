@@ -2838,7 +2838,7 @@ void mv_delaunay_GC::reconstructGC(float alphaQual, std::string baseName, static
     std::cout << "reconstructGC" << std::endl;
     long t_reconstructGC = clock();
 
-    MaxFlow<int, float> maxFlowGraph(getNbCells());
+    MaxFlow maxFlowGraph(_cellsAttr.size());
 
     // fill s-t edges
     for(CellIndex ci = 0; ci < _cellsAttr.size(); ++ci)
