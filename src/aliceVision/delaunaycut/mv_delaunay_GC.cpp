@@ -990,11 +990,6 @@ double mv_delaunay_GC::getFacetProjectionMaxEdge(Facet& f, int cam) const
     return std::max(a, std::max(b, c));
 }
 
-double mv_delaunay_GC::conj(double val) const
-{
-    return val;
-}
-
 double mv_delaunay_GC::cellMaxEdgeLength(CellIndex ci) const
 {
     double dmax = 0.0f;

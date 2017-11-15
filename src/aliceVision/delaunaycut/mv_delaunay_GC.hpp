@@ -222,7 +222,8 @@ public:
 
     float distFcn(float maxDist, float dist, float distFcnHeight) const;
     double facetArea(const Facet& f) const;
-    double conj(double val) const;
+
+    inline double conj(double val) const { return val; }
     double cellMaxEdgeLength(CellIndex ci) const;
     double cellMinEdgeLength(CellIndex ci);
     double facetMaxEdgeLength(Facet& f1) const;
