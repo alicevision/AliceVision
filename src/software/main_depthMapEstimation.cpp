@@ -90,7 +90,7 @@ int main(int argc, char* argv[])
         if(cams.empty())
         {
             ALICEVISION_COUT("No camera to process");
-            return EXIT_FAILURE;
+            return EXIT_SUCCESS;
         }
     }
 
