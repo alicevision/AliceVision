@@ -55,13 +55,14 @@ public:
     std::vector<point3d> _verticesCoords; /// 3D points coordinates
     std::vector<GC_vertexInfo> _verticesAttr; /// Information attached to each vertex
     std::vector<GC_cellInfo> _cellsAttr; /// Information attached to each cell
+    std::vector<bool> _cellIsFull; /// isFull info per cell: true is full / false is empty
+
     std::vector<int> _camsVertexes;
     std::map<VertexIndex, std::set<CellIndex>> _vertexToNeighboringCells;
 
     static const GEO::index_t NO_TETRAHEDRON = GEO::NO_CELL;
 
     std::size_t getNbVertices() const { return _verticesAttr.size(); }
-    std::size_t getNbCells() const { return _cellsAttr.size(); }
 
     GEO::index_t nearestVertexInCell(GEO::index_t cellIndex, const point3d& p) const
     {
@@ -179,7 +180,7 @@ public:
     void initCells();
     void displayStatistics();
 
-    void loadDhInfo(std::string fileNameInfo, bool doNotCangeFull = false);
+    void loadDhInfo(std::string fileNameInfo);
     void loadDh(std::string fileNameDh, std::string fileNameInfo);
 
     void saveDhInfo(std::string fileNameInfo);
@@ -272,8 +273,6 @@ public:
     void saveMaxflowToWrl(std::string dirName, std::string fileNameTxt, std::string fileNameTxtCam,
                           std::string fileNameWrl, std::string fileNameWrlTex, std::string fileNamePly,
                           int camerasPerOneOmni, staticVector<int>* cams);
-
-    void segmentCells();
 
     void reconstructGC(float alphaQual, std::string baseName, staticVector<int>* cams, std::string folderName,
                        std::string fileNameStGraph, std::string fileNameStSolution, std::string fileNameTxt,

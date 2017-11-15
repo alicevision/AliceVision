@@ -58,11 +58,7 @@ public:
     size_t capacity() const { return _data.capacity(); }
     void reserve(int n) { _data.reserve(n); }
     void resize(int n) { _data.resize(n); }
-    void resize_with(int n, const T& val)
-    {
-        resize(n);
-        std::fill(_data.begin(), _data.end(), val);
-    }
+    void resize_with(int n, const T& val) { _data.resize(n, val); }
     void swap( staticVector& other ) { _data.swap(other._data); }
 
     void shrink_to_fit()

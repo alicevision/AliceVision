@@ -14,13 +14,10 @@
 
 struct GC_cellInfo
 {
-    int cellId = -1;
     /// initialized to a large value if the tetrahedron is directly in front of one camera ELSE set to 0
     float cellSWeight = 0.0f;
     /// strong fullness: sum of weights for being the tetrahedron 2*sigma behind the point p
     float cellTWeight = 0.0f;
-    /// true - occupied - full, false - free
-    bool full = false;
     // float gEdgePhotoWeight[4];
     /// score for emptiness along each egde/facet
     std::array<float, 4> gEdgeVisWeight{{0.0f, 0.0f, 0.0f, 0.0f}};
@@ -30,15 +27,11 @@ struct GC_cellInfo
     float out = 0.0f;
     /// first full tetrahedron score: sum of weights for T1 (tetrahedron just after the point p)
     float on = 0.0f;
-    int color; // TODO FACA: label for connected components? // TODO FACA: not initialized
-
 
     void fwriteinfo(FILE* f) const
     {
-        fwrite(&cellId, sizeof(int), 1, f);
         fwrite(&cellSWeight, sizeof(float), 1, f);
         fwrite(&cellTWeight, sizeof(float), 1, f);
-        fwrite(&full, sizeof(bool), 1, f);
         fwrite(&in, sizeof(float), 1, f);
         fwrite(&out, sizeof(float), 1, f);
         fwrite(&on, sizeof(float), 1, f);
@@ -47,20 +40,10 @@ struct GC_cellInfo
         fwrite(&gEdgeVisWeight.front(), sizeof(float), 4, f);
     }
 
-    void freadinfo(FILE* f, bool doNotCangeFull)
+    void freadinfo(FILE* f)
     {
-        fread(&cellId, sizeof(int), 1, f);
         fread(&cellSWeight, sizeof(float), 1, f);
         fread(&cellTWeight, sizeof(float), 1, f);
-        if(doNotCangeFull == true)
-        {
-            bool fullTmp;
-            fread(&fullTmp, sizeof(bool), 1, f);
-        }
-        else
-        {
-            fread(&full, sizeof(bool), 1, f);
-        }
         fread(&in, sizeof(float), 1, f);
         fread(&out, sizeof(float), 1, f);
         fread(&on, sizeof(float), 1, f);
