@@ -24,8 +24,8 @@ public:
     constant, ///< will be set as constant in the sover
     ignored   ///< will not be set into the BA solver
   };
-  
-  LocalBundleAdjustmentData(const SfMData& sfm_data);
+
+  explicit LocalBundleAdjustmentData(const SfMData& sfm_data);
 
   /// Return the number of posed views for each graph-distance <distance, numViews>
   std::map<int, std::size_t> getDistancesHistogram() const;

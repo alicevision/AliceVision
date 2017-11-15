@@ -42,12 +42,10 @@ public:
   {
     LocalBA_statistics(
         const std::set<IndexT>& newlyResectedViewsId = std::set<IndexT>(),
-        const std::map<int, std::size_t>& distancesHistogram = std::map<int, std::size_t>()) 
-    {
-      _newViewsId = newlyResectedViewsId;
-      _numCamerasPerDistance = distancesHistogram;
-    }
-    
+        const std::map<int, std::size_t>& distancesHistogram = std::map<int, std::size_t>()) : 
+      _newViewsId(newlyResectedViewsId), 
+      _numCamerasPerDistance(distancesHistogram) {;}
+
     // Parameters returned by Ceres:
     double _time = 0.0;                          ///< The spent time to solve the BA (s)
     std::size_t _numSuccessfullIterations = 0;   ///< The number of successful iterations

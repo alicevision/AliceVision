@@ -381,8 +381,6 @@ std::map<IndexT, std::vector<double>> LocalBundleAdjustmentCeres::addIntrinsicsT
       problem.SetParameterLowerBound(parameter_block, 0, 0.0);
     }
     
-    const std::size_t minImagesForOpticalCenter = 3;
-    
     // Optical center
     // Refine optical center within 10% of the image size.
     assert(map_intrinsics[intrinsicIds].size() >= 3);
