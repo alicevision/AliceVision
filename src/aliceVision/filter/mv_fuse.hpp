@@ -27,8 +27,8 @@ public:
     bool filterDepthMapsRC(int rc, int minNumOfModals, int minNumOfModalsWSP2SSP);
 
     void visualizeDepthMap(int rc, std::string wrlFileName, staticVector<float>* depthMap, staticVector<float>* simMap,
-                           int scale, int step, int scales);
-    void visualizeDepthMap(int rc, std::string wrlFileName, int scale, int step, int scales);
+                           int scale, int step);
+    void visualizeDepthMap(int rc, std::string wrlFileName, int scale, int step);
     void divideSpace(point3d* hexah, float& minPixSize);
     void filterSmallConnComponents(float alpha, int minSegSize, int scale);
 

@@ -31,6 +31,9 @@ int main(int argc, char* argv[])
     std::string imageFilepath;
     std::string depthMapFilepath;
     std::string cameraFilepath;
+    int scale = 1;
+    int step = 1;
+    bool transpose = false;
     std::string outputWrlFilepath;
 
     po::options_description inputParams("Export depth map into image and mesh.");
@@ -41,7 +44,13 @@ int main(int argc, char* argv[])
         ("depthMap", po::value<std::string>(&depthMapFilepath)->required(),
             "Depth map filepath.")
         ("cameraFilepath", po::value<std::string>(&cameraFilepath)->required(),
-            "camera filepath")
+            "Camera filepath")
+        ("scale", po::value<int>(&scale)->default_value(scale),
+            "Depth Map Scale")
+        ("step", po::value<int>(&step)->default_value(step),
+            "Depth Map Step")
+        ("transpose", po::value<bool>(&transpose)->default_value(transpose),
+            "Transpose Depth Map buffer.")
         ("output", po::value<std::string>(&outputWrlFilepath)->required(),
             "Output WRL filepath. It will also generate other wrl files with different scales in the same folder and one png file to visualize the depth map.");
     po::variables_map vm;
@@ -86,11 +95,36 @@ int main(int argc, char* argv[])
 
     mv_fuse fuse(&mp, nullptr);
 
+    int w = mip.getWidth(0);
+    int h = mip.getHeight(0);
+    std::cerr << "Image resolution: w=" << w << ", h=" << h << std::endl;
+
     std::unique_ptr<staticVector<float>> depthMap(loadArrayFromFile<float>(depthMapFilepath));
-    int scale = 1;
-    int step = 1;
-    int scales = 1;
-    fuse.visualizeDepthMap(0, outputWrlFilepath, depthMap.get(), nullptr, std::max(1, scale), step, scales);
+
+    std::cout << "Nb pixels in depth map: " << depthMap->size() << std::endl;
+    std::cout << "Scale: " << scale << std::endl;
+    std::cout << "Step: " << step << std::endl;
+    if((w*h)/(scale*scale*step*step) != depthMap->size())
+    {
+        std::cerr << "Scale/step does not match between the image size and the number of pixels in the depth map." << std::endl;
+        exit(-1);
+    }
+
+    if(transpose)
+    {
+        staticVector<float> depthMapT;
+        depthMapT.swap(*depthMap);
+        int sw = w / (scale*step);
+        int sh = h / (scale*step);
+        for(int y = 0; y < sh; ++y)
+        {
+            for(int x = 0; x < sw; ++x)
+            {
+                (*depthMap)[y*sw+x] = depthMapT[x*sh+y];
+            }
+        }
+    }
+    fuse.visualizeDepthMap(0, outputWrlFilepath, depthMap.get(), nullptr, std::max(1, scale), step);
 
     printfElapsedTime(startTime, "#");
 

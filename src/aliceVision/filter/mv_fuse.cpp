@@ -27,15 +27,15 @@ mv_fuse::~mv_fuse()
 }
 
 void mv_fuse::visualizeDepthMap(int rc, std::string wrlFileName, staticVector<float>* depthMap,
-                                staticVector<float>* simMap, int scale, int step, int scales)
+                                staticVector<float>* simMap, int scale, int step)
 {
     float mindepth = std::numeric_limits<float>::max();
     float maxdepth = 0.0f;
 
     point3d cg = point3d(0.0f, 0.0f, 0.0f);
     float ncg = 0.0f;
-    int w = mp->mip->getWidth(rc) / scale;
-    int h = mp->mip->getHeight(rc) / scale;
+    int w = mp->mip->getWidth(rc) / (scale * step);
+    int h = mp->mip->getHeight(rc) / (scale * step);
     staticVector<point3d>* pts = new staticVector<point3d>(w * h);
     staticVector<voxel>* ptsCls = new staticVector<voxel>(w * h);
     mp->CArr[rc].doprintf();
@@ -47,11 +47,11 @@ void mv_fuse::visualizeDepthMap(int rc, std::string wrlFileName, staticVector<fl
         int y = i % h;
         float depth = (*depthMap)[i];
         float sim = simMap != nullptr ? (*simMap)[i] : -1.0;
-        if((depth > 0.0f) && (x % step == 0) && (y % step == 0))
+        if(depth > 0.0f) // && (x % step == 0) && (y % step == 0))
         {
             point3d p =
                 mp->CArr[rc] +
-                (mp->iCamArr[rc] * point2d((float)x * (float)scale, (float)y * (float)scale)).normalize() * depth;
+                (mp->iCamArr[rc] * point2d((float)x * (float)scale * (float)step, (float)y * (float)scale * (float)step)).normalize() * depth;
             // if (i%3==0) {
             pts->push_back(p);
             if(sim < mp->simThr)
@@ -107,8 +107,8 @@ void mv_fuse::visualizeDepthMap(int rc, std::string wrlFileName, staticVector<fl
     for(int stepDetail = 1; stepDetail <= 3; stepDetail++)
     {
         mv_mesh* me = new mv_mesh();
-        me->initFromDepthMap(stepDetail, mp, &(*depthMap)[0], rc, scale, 1,
-                             10.0f * (float)stepDetail * (float)step * (float)scales);
+        me->initFromDepthMap(stepDetail, mp, &(*depthMap)[0], rc, scale, step,
+                             10.0f * (float)stepDetail * (float)step * (float)scale);
         o3d = new mv_output3D(mp);
         o3d->saveMvMeshToWrl(me, wrlFileName + "mesh" + num2str(stepDetail) + ".wrl");
         delete o3d;
@@ -118,13 +118,13 @@ void mv_fuse::visualizeDepthMap(int rc, std::string wrlFileName, staticVector<fl
     delete pts;
 }
 
-void mv_fuse::visualizeDepthMap(int rc, std::string wrlFileName, int scale, int step, int scales)
+void mv_fuse::visualizeDepthMap(int rc, std::string wrlFileName, int scale, int step)
 {
     staticVector<float>* depthMap =
         loadArrayFromFile<float>(mv_getFileName(mp->mip, rc + 1, mp->mip->MV_FILE_TYPE_depthMap, scale));
     staticVector<float>* simMap =
         loadArrayFromFile<float>(mv_getFileName(mp->mip, rc + 1, mp->mip->MV_FILE_TYPE_simMap, scale));
-    visualizeDepthMap(rc, wrlFileName, depthMap, simMap, std::max(1, scale), step, scales);
+    visualizeDepthMap(rc, wrlFileName, depthMap, simMap, std::max(1, scale), step);
     delete depthMap;
     delete simMap;
 }
@@ -168,7 +168,6 @@ unsigned long mv_fuse::computeNumberOfAllPoints(int scale)
  * @param[in] depthMap
  * @param[in] simMap
  * @param[in] scale
- * @param[in] scales
  */
 bool mv_fuse::updateInSurr(int pixSizeBall, int pixSizeBallWSP, point3d& p, int rc, int tc,
                            staticVector<int>* numOfPtsMap, staticVector<float>* depthMap, staticVector<float>* simMap,
