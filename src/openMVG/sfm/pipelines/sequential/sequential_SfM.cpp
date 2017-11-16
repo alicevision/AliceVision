@@ -291,7 +291,7 @@ void SequentialSfMReconstructionEngine::RobustResectionOfImages(
     //BundleAdjustment();
 
     // triangulate
-    triangulateMultiView(_sfm_data, prevReconstructedViews, newReconstructedViews);
+    triangulateMultiViews(_sfm_data, prevReconstructedViews, newReconstructedViews);
 //    triangulate(_sfm_data, prevReconstructedViews, newReconstructedViews);
     
     if (bImageAdded)
@@ -1473,7 +1473,7 @@ bool SequentialSfMReconstructionEngine::Resection(const std::size_t viewIndex)
   return true;
 }
 
-void SequentialSfMReconstructionEngine::triangulateMultiView(SfM_Data& scene, const std::set<IndexT>& previousReconstructedViews, const std::set<IndexT>& newReconstructedViews)
+void SequentialSfMReconstructionEngine::triangulateMultiViews(SfM_Data& scene, const std::set<IndexT>& previousReconstructedViews, const std::set<IndexT>& newReconstructedViews)
 {
   // Pipeline (Per-Track approach)
   //  1. From the new views, find all the tracks that can be updated or reconstructed
@@ -1533,7 +1533,7 @@ void SequentialSfMReconstructionEngine::triangulateMultiView(SfM_Data& scene, co
                      std::inserter(commonTracksId, commonTracksId.begin()),
                      stl::RetrieveKey());
       
-      std::cout << "Views #" << I << " - #" << J << " : " << commonTracksId.size() << " common tracks" << std::endl;
+//      std::cout << "Views #" << I << " - #" << J << " : " << commonTracksId.size() << " common tracks" << std::endl;
       
       for (std::size_t trackId : commonTracksId)
       {
@@ -1547,10 +1547,14 @@ void SequentialSfMReconstructionEngine::triangulateMultiView(SfM_Data& scene, co
   for (const auto & trackIt : map_viewsPerTriangulatedTrack)
   {
     const std::size_t trackId = trackIt.first;
-    
     const tracks::Track & track = _map_tracks.at(trackId);
     const bool trackAlreadyExists = scene.structure.find(trackId) != scene.structure.end();
     const std::set<IndexT>& viewsSharingTrack = trackIt.second; // all views possessing the track
+    
+    // Triangulate a track only if it is seen by a min. number of views
+    const std::size_t nbOfViewsToTringulate = 2;
+    if (viewsSharingTrack.size() < nbOfViewsToTringulate)
+      continue;
     
     Mat2X features(2, viewsSharingTrack.size());
     std::vector< Mat34 > Ps; // 
@@ -1631,10 +1635,10 @@ void SequentialSfMReconstructionEngine::triangulateMultiView(SfM_Data& scene, co
   } // for all shared tracks 
   
   std::cout << map_viewsPerTriangulatedTrack.size() << " tracks" << std::endl;
+  std::cout << numPutativeTracks << " putative tracks" << std::endl;
   std::cout << numNotValidTracks << " not valid tracks" << std::endl;
   std::cout << numNewTracks << " new tracks" << std::endl;
   std::cout << numUpdatedTracks << " updated tracks" << std::endl;
-  std::cout << numPutativeTracks << " putative tracks" << std::endl;
   
 //  getchar();
 }    
