@@ -178,6 +178,8 @@ private:
    */
   void triangulate(SfM_Data& scene, const std::set<IndexT>& previousReconstructedViews, const std::set<IndexT>& newReconstructedViews);
 
+  void triangulateMultiViews(SfM_Data& scene, const std::set<IndexT>& previousReconstructedViews, const std::set<IndexT>& newReconstructedViews);
+
   /**
    * @brief Bundle adjustment to refine Structure; Motion and Intrinsics
    * @param fixedIntrinsics
