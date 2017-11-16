@@ -4,7 +4,10 @@
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
 #include "Triangulation.hpp"
+#include "NViewsTriangulationLORansac.hpp"
 #include <aliceVision/multiview/projection.hpp>
+#include <aliceVision/robustEstimation/LORansac.hpp>
+#include <aliceVision/robustEstimation/ScoreEvaluator.hpp>
 
 namespace aliceVision {
 
@@ -55,6 +58,18 @@ void TriangulateNViewAlgebraic(const Mat2X &x,
     }
   }
   Nullspace(&design, X);
+}
+
+void TriangulateNViewLORANSAC(const Mat2X &x, 
+                              const std::vector< Mat34 > &Ps,
+                              Vec4 *X, 
+                              std::vector<std::size_t> & inliersIndex, 
+                              const double & thresholdError)
+{
+  using TriangulationKernel = LORansacTriangulationKernel<>;
+  TriangulationKernel kernel(x, Ps);
+  robustEstimation::ScoreEvaluator<TriangulationKernel> scorer(thresholdError);
+  *X = robustEstimation::LO_RANSAC(kernel, scorer, &inliersIndex, NULL, false);
 }
 
 double Triangulation::error(const Vec3 &X) const

@@ -44,6 +44,12 @@ void TriangulateNViewAlgebraic(const Mat2X &x,
                                const std::vector< Mat34 > &Ps,
                                Vec4 *X, 
                                const std::vector<double> *weights = nullptr);
+                               
+void TriangulateNViewLORANSAC(const Mat2X &x, 
+                              const std::vector< Mat34 > &Ps,
+                              Vec4 *X,
+                              std::vector<std::size_t> & inliersIndex,
+                              const double & thresholdError = 4.0);                               
 
 //Iterated linear method
 

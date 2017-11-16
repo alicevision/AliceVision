@@ -196,6 +196,25 @@ private:
    */
   void triangulate(SfMData& scene, const std::set<IndexT>& previousReconstructedViews, const std::set<IndexT>& newReconstructedViews);
 
+  void identifyTracksToTriangulate(const std::set<IndexT>& previousReconstructedViews, 
+    const std::set<IndexT>& newReconstructedViews, 
+    std::map<IndexT, std::set<IndexT> > &mapTracksToTriangulate);
+  
+  bool validChieralities(const Vec3& pt3D, const std::set<IndexT> &viewsId, const SfMData& scene);
+  
+  bool validAngles(const Vec3& pt3D, const std::set<IndexT> &viewsId, const SfMData& scene, const double & kMinAngle);
+
+  void prepareTheTrackTriangulation(
+    const std::size_t& trackId, 
+    const std::set<IndexT>& observations,
+    const SfMData& scene,
+    Mat2X& features, 
+    std::vector< Mat34 >& Ps);
+    
+  void triangulateMultiViews_SVD(SfMData& scene, const std::set<IndexT>& previousReconstructedViews, const std::set<IndexT>& newReconstructedViews);
+  
+  void triangulateMultiViews_LORANSAC(SfMData& scene, const std::set<IndexT>& previousReconstructedViews, const std::set<IndexT>& newReconstructedViews);
+
   /**
    * @brief Bundle adjustment to refine Structure; Motion and Intrinsics
    * @param fixedIntrinsics
@@ -219,7 +238,7 @@ private:
   //----
   //-- Data
   //----
-
+  
   // HTML logger
   std::shared_ptr<htmlDocument::htmlDocumentStream> _htmlDocStream;
   std::string _sLoggingFile;
