@@ -8,7 +8,6 @@
 #include <aliceVision/sfm/sfm.hpp>
 #include <aliceVision/feature/imageDescriberCommon.hpp>
 #include <aliceVision/feature/feature.hpp>
-#include <aliceVision/exif/EasyExifIO.hpp>
 #include <aliceVision/stl/split.hpp>
 #include <aliceVision/system/Timer.hpp>
 #include <aliceVision/system/Logger.hpp>

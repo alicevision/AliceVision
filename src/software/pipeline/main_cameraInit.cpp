@@ -6,7 +6,7 @@
 #include <aliceVision/sfm/sfm.hpp>
 #include <aliceVision/sfm/viewIO.hpp>
 #include <aliceVision/sfm/sfmDataIO_json.hpp>
-#include <aliceVision/exif/sensorWidthDatabase/parseDatabase.hpp>
+#include <aliceVision/sensorDB/parseDatabase.hpp>
 #include <aliceVision/stl/split.hpp>
 #include <aliceVision/system/Logger.hpp>
 #include <aliceVision/system/cmdline.hpp>
@@ -278,10 +278,10 @@ int main(int argc, char **argv)
 
 
   // check sensor database
-  std::vector<exif::sensordb::Datasheet> sensorDatabase;
+  std::vector<sensorDB::Datasheet> sensorDatabase;
   if(!sensorDatabasePath.empty())
   {
-    if(!exif::sensordb::parseDatabase(sensorDatabasePath, sensorDatabase))
+    if(!sensorDB::parseDatabase(sensorDatabasePath, sensorDatabase))
     {
       ALICEVISION_LOG_ERROR("Error: Invalid input database '" << sensorDatabasePath << "', please specify a valid file.");
       return EXIT_FAILURE;
@@ -352,7 +352,7 @@ int main(int argc, char **argv)
 
     if(hasCameraMetadata)
     {
-      aliceVision::exif::sensordb::Datasheet datasheet;
+      aliceVision::sensorDB::Datasheet datasheet;
       if(getInfo(view.getMetadata("Make"), view.getMetadata("Model"), sensorDatabase, datasheet))
         sensorWidth = datasheet._sensorSize;
       else

@@ -93,7 +93,6 @@ target_link_libraries(aliceVision_sfm
   aliceVision_feature
   aliceVision_geometry
   aliceVision_track
-  aliceVision_exif
   ${LOG_LIB}
 )
 

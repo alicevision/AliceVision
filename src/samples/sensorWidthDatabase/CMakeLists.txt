@@ -2,6 +2,7 @@ add_executable(aliceVision_samples_parseDatabase main_parseDatabase.cpp)
 
 target_link_libraries(aliceVision_samples_parseDatabase
   aliceVision_system
+  aliceVision_sensorDB
   stlplus
   ${BOOST_LIBRARIES}
 )

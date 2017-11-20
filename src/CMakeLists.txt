@@ -489,7 +489,6 @@ add_subdirectory(aliceVision)
 # ==============================================================================
 set(ALICEVISION_LIBRARIES
   aliceVision_dataio
-  aliceVision_exif
   aliceVision_feature
   aliceVision_image
   aliceVision_kvld
@@ -501,6 +500,7 @@ set(ALICEVISION_LIBRARIES
   aliceVision_multiview
   aliceVision_numeric
   aliceVision_rig
+  aliceVision_sensorDB
   aliceVision_sfm
   aliceVision_system
   aliceVision_voctree

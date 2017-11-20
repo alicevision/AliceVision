@@ -5,16 +5,15 @@
 
 #include "parseDatabase.hpp"
 
-#include "dependencies/stlplus3/filesystemSimplified/file_system.hpp"
+#include <dependencies/stlplus3/filesystemSimplified/file_system.hpp>
 
 #include <string>
-
 
 #define BOOST_TEST_MODULE parseDatabase
 #include <boost/test/included/unit_test.hpp>
 #include <boost/test/floating_point_comparison.hpp>
 
-using namespace aliceVision::exif::sensordb;
+using namespace aliceVision::sensorDB;
 
 static const std::string sDatabase = "sensor_width_camera_database.txt";
 BOOST_AUTO_TEST_CASE(InvalidDatabase)

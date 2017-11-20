@@ -93,10 +93,6 @@ if(DEFINED ALICEVISION_USE_INTERNAL_FLANN)
   )
 endif()
 
-# Exif data parsing
-set(EASYEXIF_INCLUDE_INSTALL_DIR ${CMAKE_INSTALL_PREFIX}/include/aliceVision/dependencies/easyexif)
-add_subdirectory(easyexif)
-
 ##
 # Install Header only libraries if necessary
 ## 

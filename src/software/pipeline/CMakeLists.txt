@@ -7,11 +7,10 @@ add_executable(aliceVision_cameraInit main_cameraInit.cpp)
 
 target_link_libraries(aliceVision_cameraInit
   aliceVision_system
+  aliceVision_sensorDB
   aliceVision_image
   aliceVision_feature
-  aliceVision_exif
   aliceVision_sfm
-  easyexif
   ${BOOST_LIBRARIES}
 )
 
@@ -33,8 +32,6 @@ target_link_libraries(aliceVision_featureExtraction
   aliceVision_feature
   aliceVision_multiview
   aliceVision_sfm
-  aliceVision_exif
-  easyexif
   stlplus
   vlsift
   ${BOOST_LIBRARIES}
