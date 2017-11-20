@@ -12,16 +12,24 @@
 #include <boost/graph/compressed_sparse_row_graph.hpp>
 #include <boost/graph/boykov_kolmogorov_max_flow.hpp>
 
+#include <boost/container/flat_map.hpp>
+
 #include <iostream>
 
 
 class MaxFlow
 {
 public:
-    using NodeType = int;
+    using NodeType = unsigned int;
     using ValueType = float;
 
-    using edge_descriptor = typename boost::compressed_sparse_row_graph<boost::directedS>::edge_descriptor;
+    using edge_descriptor = typename boost::compressed_sparse_row_graph<
+        boost::directedS,
+        boost::no_property, // VertexProperty
+        boost::no_property, // EdgeProperty
+        unsigned int, // Vertex
+        unsigned int // EdgeIndex
+        >::edge_descriptor;
 
     struct Vertex {
         boost::default_color_type color{};
@@ -47,17 +55,17 @@ public:
     using Graph = boost::compressed_sparse_row_graph<
         boost::directedS,
         Vertex, // VertexProperty
-        Edge // EdgeProperty
+        Edge, // EdgeProperty
+        unsigned int, // Vertex
+        unsigned int // EdgeIndex
         >;
     using vertex_descriptor = typename Graph::vertex_descriptor;
     using vertex_size_type = typename Graph::vertices_size_type;
     using edges_size_type = typename Graph::edges_size_type;
-    // using VertexIterator = typename Graph::vertex_iterator;
 
 public:
     MaxFlow(size_t numNodes)
-        // : _graph(numNodes+2)
-        : _numNodes(numNodes)
+        : _numNodes(numNodes+2)
         , _S(NodeType(numNodes))
         , _T(NodeType(numNodes+1))
     {
@@ -104,26 +112,43 @@ public:
         printStats();
         std::cout << "Compute boykov_kolmogorov_max_flow" << std::endl;
 
-        Graph graph(boost::edges_are_unsorted_multi_pass, _edges.begin(), _edges.end(), _numNodes);
+        Graph graph(boost::edges_are_unsorted_multi_pass, _edges.begin(), _edges.end(), _edgesData.begin(), _numNodes);
+        // Graph graph(boost::edges_are_unsorted, _edges.begin(), _edges.end(), _edgesData.begin(), _numNodes);
+        // Graph graph(boost::edges_are_sorted, _edges.begin(), _edges.end(), _edgesData.begin(), _numNodes);
 
         const vertex_size_type nbVertices = boost::num_vertices(graph);
         const edges_size_type nbEdges = boost::num_edges(graph);
 
         std::cout << "nbVertices: " << nbVertices << ", nbEdges: " << nbEdges << std::endl;
 
-        Graph::edge_iterator edgeIt, edgeItEnd;
-        for(boost::tie(edgeIt, edgeItEnd) = boost::edges(graph);
-            edgeIt != edgeItEnd;)
+        /*
+        Graph::edge_iterator ei, ee;
+        for(boost::tie(ei, ee) = boost::edges(graph); ei != ee; ++ei)
         {
-          Graph::vertex_descriptor v1 = boost::source(*edgeIt, graph);
-          Graph::vertex_descriptor v2 = boost::target(*edgeIt, graph);
-          Graph::edge_iterator edgeItA = edgeIt++;
-          Graph::edge_iterator edgeItB = edgeIt++;
+            Graph::vertex_descriptor v1 = boost::source(*ei, graph);
+            Graph::vertex_descriptor v2 = boost::target(*ei, graph);
+            std::pair<Graph::edge_descriptor, bool> opp_edge = boost::edge(v2, v1, graph); // VERY compute intensive
 
-          graph[*edgeItA].reverse = *edgeItB;
-          graph[*edgeItB].reverse = *edgeItA;
+            graph[opp_edge.first].reverse = *ei; // and edge_reverse of *ei will be (or already have been) set by the opp_edge
         }
-
+        */
+        {
+            boost::container::flat_map<std::pair<Graph::vertex_descriptor, Graph::vertex_descriptor>, Graph::edge_descriptor> edgeDescriptors;
+            Graph::edge_iterator ei, ee;
+            for(boost::tie(ei, ee) = boost::edges(graph); ei != ee; ++ei)
+            {
+                Graph::vertex_descriptor v1 = boost::source(*ei, graph);
+                Graph::vertex_descriptor v2 = boost::target(*ei, graph);
+                edgeDescriptors[std::make_pair(v1, v2)] = *ei;
+            }
+            for(boost::tie(ei, ee) = boost::edges(graph); ei != ee; ++ei)
+            {
+                Graph::vertex_descriptor v1 = boost::source(*ei, graph);
+                Graph::vertex_descriptor v2 = boost::target(*ei, graph);
+                graph[*ei].reverse = edgeDescriptors[std::make_pair(v2, v1)];
+            }
+        }
+        std::cout << "boykov_kolmogorov_max_flow: start" << std::endl;
         ValueType v = boost::boykov_kolmogorov_max_flow(graph,
             boost::get(&Edge::capacity, graph), // edge_capacity: The edge capacity property map.
             boost::get(&Edge::residual, graph), // edge_residual_capacity: The edge residual capacity property map.
@@ -134,6 +159,7 @@ public:
             boost::get(boost::vertex_index, graph), // this is not bundled, get it from graph
             _S, _T
             );
+        std::cout << "boykov_kolmogorov_max_flow: end" << std::endl;
 
         printColorStats();
         _isTarget.resize(nbVertices);
