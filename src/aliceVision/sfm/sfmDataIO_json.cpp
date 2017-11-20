@@ -120,33 +120,29 @@ void loadIntrinsic(IndexT& intrinsicId, std::shared_ptr<camera::IntrinsicBase>& 
   intrinsicId = intrinsicTree.get<IndexT>("intrinsicId");
   const unsigned int width = intrinsicTree.get<unsigned int>("width");
   const unsigned int height = intrinsicTree.get<unsigned int>("height");
-  const camera::EINTRINSIC descType = camera::EINTRINSIC_stringToEnum(intrinsicTree.get<std::string>("type"));
+  const camera::EINTRINSIC intrinsicType = camera::EINTRINSIC_stringToEnum(intrinsicTree.get<std::string>("type"));
   const double pxFocalLength = intrinsicTree.get<double>("pxFocalLength");
 
   // principal point
   Vec2 principalPoint;
   loadMatrix("principalPoint", principalPoint, intrinsicTree);
 
-  // pinhole parameters
-  if(camera::isPinhole(descType))
-  {
-    std::shared_ptr<camera::Pinhole> pinholeIntrinsic = camera::createPinholeIntrinsic(descType, width, height, pxFocalLength, principalPoint(0), principalPoint(1));
-    pinholeIntrinsic->setInitialFocalLengthPix(intrinsicTree.get<double>("pxInitialFocalLength"));
-    pinholeIntrinsic->setSerialNumber(intrinsicTree.get<std::string>("serialNumber"));
-
-    std::vector<double> distortionParams;
-
-    for(bpt::ptree::value_type &paramNode : intrinsicTree.get_child("distortionParams"))
-      distortionParams.emplace_back(paramNode.second.get_value<double>());
-
-    pinholeIntrinsic->setDistortionParams(distortionParams);
-    intrinsic = std::static_pointer_cast<camera::IntrinsicBase>(pinholeIntrinsic);
-  }
-  else
-  {
-    // camera is not a Pinhole model
+  // check if the camera is a Pinhole model
+  if(!camera::isPinhole(intrinsicType))
     throw std::out_of_range("Only Pinhole camera model supported");
-  }
+
+  // pinhole parameters
+  std::shared_ptr<camera::Pinhole> pinholeIntrinsic = camera::createPinholeIntrinsic(intrinsicType, width, height, pxFocalLength, principalPoint(0), principalPoint(1));
+  pinholeIntrinsic->setInitialFocalLengthPix(intrinsicTree.get<double>("pxInitialFocalLength"));
+  pinholeIntrinsic->setSerialNumber(intrinsicTree.get<std::string>("serialNumber"));
+
+  std::vector<double> distortionParams;
+
+  for(bpt::ptree::value_type &paramNode : intrinsicTree.get_child("distortionParams"))
+    distortionParams.emplace_back(paramNode.second.get_value<double>());
+
+  pinholeIntrinsic->setDistortionParams(distortionParams);
+  intrinsic = std::static_pointer_cast<camera::IntrinsicBase>(pinholeIntrinsic);
 }
 
 void saveRig(const std::string& name, IndexT rigId, const Rig& rig, bpt::ptree& parentTree)
@@ -247,7 +243,7 @@ void loadLandmark(IndexT& landmarkId, Landmark& landmark, bpt::ptree& landmarkTr
 
 bool saveJSON(const SfMData& sfmData, const std::string& filename, ESfMData partFlag)
 {
-  const Vec3 version = {0, 0, 0};
+  const Vec3 version = {1, 0, 0};
 
   // save flags
   const bool saveViews = (partFlag & VIEWS) == VIEWS;
