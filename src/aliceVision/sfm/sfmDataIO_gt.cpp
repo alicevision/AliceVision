@@ -4,7 +4,8 @@
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
 #include <aliceVision/sfm/sfmDataIO_gt.hpp>
-#include <aliceVision/exif/EasyExifIO.hpp>
+#include <aliceVision/sfm/viewIO.hpp>
+#include <aliceVision/sfm/utils/uid.hpp>
 
 #include <dependencies/stlplus3/filesystemSimplified/file_system.hpp>
 
@@ -177,22 +178,13 @@ bool readGt(const std::string & sRootPath, SfMData & sfm_data, bool useUID)
     const std::string sImgName = stlplus::basename_part(*iter);
     const std::string sImgFile = stlplus::create_filespec(sImgPath, sImgName);
 
-    IndexT used_id = index;
-    if(useUID)
-    {
-      // Generate UID
-      if (!stlplus::file_exists(sImgFile))
-      {
-        throw std::logic_error("Impossible to generate UID from this file, because it does not exists: "+sImgFile);
-      }
-      exif::EasyExifIO exifReader;
-      exifReader.open( sImgFile );
-      used_id = (IndexT) computeUID(exifReader, sImgName);
-    }
+    std::shared_ptr<View> viewPtr = std::make_shared<View>(stlplus::basename_part(*iter), UndefinedIndexT, index);
+
+    updateIncompleteView(*viewPtr);
 
     // Update intrinsics with width and height of image
-    sfm_data.views.emplace(used_id, std::make_shared<View>(stlplus::basename_part(*iter), used_id, index, index, pinholeIntrinsic->w(), pinholeIntrinsic->h()));
-    sfm_data.setPose(*sfm_data.views.at(used_id), pose);
+    sfm_data.views.emplace(viewPtr->getViewId(), viewPtr);
+    sfm_data.setPose(*sfm_data.views.at(viewPtr->getViewId()), pose);
     sfm_data.intrinsics.emplace(index, pinholeIntrinsic);
   }
   return true;
