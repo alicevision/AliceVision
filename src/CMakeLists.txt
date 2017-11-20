@@ -1,4 +1,3 @@
-
 # ==============================================================================
 # AliceVision version
 # ==============================================================================
@@ -102,18 +101,6 @@ if(ALICEVISION_BUILD_COVERAGE AND CMAKE_COMPILER_IS_GNUCXX)
   set(CMAKE_EXE_LINKER_FLAGS
     "${CMAKE_EXE_LINKER_FLAGS} -fprofile-arcs -ftest-coverage")
 endif()
-
-# ==============================================================================
-# IMAGE IO detection
-# ==============================================================================
-if(NOT APPLE)
-  find_package(JPEG QUIET)
-  find_package(PNG QUIET)
-  find_package(TIFF QUIET)
-endif()
-
-# Folders
-set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 
 # ==============================================================================
 # SUBMODULE CONFIGURATION
@@ -461,9 +448,6 @@ message("generatedDir: ${generatedDir}")
 set(ALICEVISION_INCLUDE_DIRS
   ${CMAKE_CURRENT_SOURCE_DIR} 
   ${generatedDir}
-  ${JPEG_INCLUDE_DIR}
-  ${PNG_INCLUDE_DIRS}
-  ${TIFF_INCLUDE_DIR}
   ${CMAKE_CURRENT_SOURCE_DIR}/dependencies
   ${CMAKE_CURRENT_SOURCE_DIR}/dependencies/cereal/include
   ${LEMON_INCLUDE_DIRS}
@@ -597,24 +581,6 @@ if(ALICEVISION_USE_INTERNAL_FLANN)
   message(STATUS "FLANN: " ${FLANN_VERSION} " (internal)")
 else()
   message(STATUS "FLANN: " ${FLANN_VERSION} " (external)")
-endif()
-
-if(ALICEVISION_USE_INTERNAL_TIFF)
-  message(STATUS "LIBTIFF: " ${TIFF_VERSION_STRING} " (internal)")
-else()
-  message(STATUS "LIBTIFF: " ${TIFF_VERSION_STRING} " (external)")
-endif()
-
-if(ALICEVISION_USE_INTERNAL_PNG)
-  message(STATUS "LIBPNG: " ${PNG_VERSION_STRING} " (internal)")
-else()
-  message(STATUS "LIBPNG: " ${PNG_VERSION_STRING} " (external)")
-endif()
-
-if(ALICEVISION_USE_INTERNAL_JPEG)
-  message(STATUS "LIBJPEG (internal)")
-else()
-  message(STATUS "LIBJPEG (external)")
 endif()
 
 if(ALICEVISION_USE_INTERNAL_CLP)
