@@ -159,13 +159,10 @@ public:
      */
     CellIndex vertexToCells(VertexIndex vi, int lvi) const
     {
-        const std::set<CellIndex>& n = _vertexToNeighboringCells.at(vi);
-        if(lvi > n.size())
+        const std::vector<CellIndex>& localCells = _neighboringCellsPerVertex.at(vi);
+        if(lvi >= localCells.size())
             return GEO::NO_CELL;
-        auto it = n.cbegin();
-        for(int i = 0; i < lvi; ++i)
-            ++it;
-        return *it;
+        return localCells[lvi];
     }
 
     bool btest;
