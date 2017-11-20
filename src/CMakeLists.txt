@@ -446,21 +446,11 @@ endif()
 # ==============================================================================
 # OpenImageIO
 # ==============================================================================
-# - optional, it allows to use keyframeSelection
-# ==============================================================================
-if(ALICEVISION_USE_OIIO STREQUAL "OFF")
-  set(ALICEVISION_HAVE_OIIO 0)
-else() # ON OR AUTO
-  find_package(OpenImageIO)
-  if(OPENIMAGEIO_FOUND)
-    set(ALICEVISION_HAVE_OIIO 1)
-    message(STATUS "OpenImageIO found.")
-  elseif(ALICEVISION_USE_OIIO STREQUAL "ON")
-    set(ALICEVISION_HAVE_OIIO 0)
-    message(SEND_ERROR "Failed to find OpenImageIO.")
-  else()
-    set(ALICEVISION_HAVE_OIIO 0)
-  endif()
+find_package(OpenImageIO)
+if(OPENIMAGEIO_FOUND)
+  message(STATUS "OpenImageIO found.")
+else()
+  message(SEND_ERROR "Failed to find OpenImageIO.")
 endif()
 
 # ==============================================================================
@@ -581,7 +571,6 @@ message("** Build Shared libs: " ${ALICEVISION_BUILD_SHARED})
 message("** Build AliceVision tests: " ${ALICEVISION_BUILD_TESTS})
 message("** Build AliceVision samples applications: " ${ALICEVISION_BUILD_EXAMPLES})
 message("** Build AliceVision documentation: " ${ALICEVISION_HAVE_DOC})
-message("** Build the keyframeSelection module: " ${ALICEVISION_HAVE_OIIO})
 message("** Enable code coverage generation: " ${ALICEVISION_BUILD_COVERAGE})
 message("** Enable OpenMP parallelization: " ${ALICEVISION_HAVE_OPENMP})
 message("** Build OpenCV+AliceVision samples programs: " ${ALICEVISION_HAVE_OPENCV})

@@ -6,6 +6,7 @@ add_subdirectory(feature)
 add_subdirectory(geometry)
 add_subdirectory(graph)
 add_subdirectory(image)
+add_subdirectory(keyframe)
 add_subdirectory(linearProgramming)
 add_subdirectory(localization)
 add_subdirectory(matching)
@@ -22,10 +23,6 @@ add_subdirectory(voctree)
 
 if(ALICEVISION_HAVE_OPENCV)
   add_subdirectory(calibration)
-endif()
-
-if(ALICEVISION_HAVE_OIIO)
-  add_subdirectory(keyframe)
 endif()
 
 # Install rules
