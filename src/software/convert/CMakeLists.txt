@@ -79,3 +79,21 @@ set_property(TARGET aliceVision_convertUID
 install(TARGETS aliceVision_convertUID
   DESTINATION bin/
 )
+
+# Convert image to EXR
+
+add_executable(aliceVision_convertImageToEXR main_convertImageToEXR.cpp)
+
+target_link_libraries(aliceVision_convertImageToEXR
+  aliceVision_localization
+  aliceVision_feature
+  ${Boost_LIBRARIES}
+)
+
+set_property(TARGET aliceVision_convertImageToEXR
+  PROPERTY FOLDER AliceVision/Software/Convert
+)
+
+install(TARGETS aliceVision_convertImageToEXR
+  DESTINATION bin/
+)
