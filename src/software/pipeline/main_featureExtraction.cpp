@@ -292,14 +292,14 @@ int main(int argc, char **argv)
     std::cout << "--jobs " << maxJobs << std::endl;
     if (maxJobs < 0) 
     {
-      std::cerr << "\nInvalid value for -j option, the value must be >= 0" << std::endl;
+      ALICEVISION_LOG_ERROR("Error: Invalid value for -j option, the value must be >= 0");
       return EXIT_FAILURE;
     } 
   }
 
   if (outputFolder.empty())
   {
-    std::cerr << "\nIt is an invalid output folder" << std::endl;
+    ALICEVISION_LOG_ERROR("Error: It is an invalid output folder");
     return EXIT_FAILURE;
   }
 
@@ -308,54 +308,27 @@ int main(int argc, char **argv)
   {
     if (!stlplus::folder_create(outputFolder))
     {
-      std::cerr << "Cannot create output folder" << std::endl;
+      ALICEVISION_LOG_ERROR("Error: Cannot create output folder");
       return EXIT_FAILURE;
     }
   }
 
-  //---------------------------------------
   // a. Load input scene
-  //---------------------------------------
-  SfMData sfm_data;
-  if(sfmDataFilename.empty())
+
+  SfMData sfmData;
+
+  if(stlplus::is_file(sfmDataFilename))
   {
-    std::cerr << "\nError: The input file argument is required." << std::endl;
-    return EXIT_FAILURE;
-  }
-  else if(stlplus::is_file( sfmDataFilename))
-  {
-    if(!Load(sfm_data, sfmDataFilename, ESfMData(VIEWS|INTRINSICS)))
+    if(!Load(sfmData, sfmDataFilename, ESfMData(VIEWS|INTRINSICS)))
     {
-      std::cerr << std::endl
-        << "The input file \""<< sfmDataFilename << "\" cannot be read" << std::endl;
+      ALICEVISION_LOG_ERROR("Error: The input file '" + sfmDataFilename + "' cannot be read");
       return EXIT_FAILURE;
     }
   }
-  else if(stlplus::is_folder(sfmDataFilename))
+  else
   {
-    // Retrieve image paths
-    std::vector<std::string> vec_images;
-    const std::vector<std::string> supportedExtensions {"jpg", "jpeg"};
-    
-    vec_images = stlplus::folder_files(sfmDataFilename);
-    std::sort(vec_images.begin(), vec_images.end());
-    
-    sfm_data.s_root_path = "";
-    if(!sfmDataFilename.empty())
-      sfm_data.s_root_path = sfmDataFilename; // Setup main image root_path
-    Views & views = sfm_data.views;
-    
-    for(const auto &imageName : vec_images)
-    {
-      exif::EasyExifIO exifReader(imageName);
-
-      const std::size_t uid = exif::computeUID(exifReader, imageName);
-
-      // Build the view corresponding to the image
-      View v(imageName, (IndexT)uid);
-      v.setIntrinsicId(UndefinedIndexT);
-      views[v.getViewId()] = std::make_shared<View>(v);
-    }
+    ALICEVISION_LOG_ERROR("Error: The input file argument is required.");
+    return EXIT_FAILURE;
   }
 
   // b. Init vector of imageDescriber 
@@ -396,15 +369,15 @@ int main(int argc, char **argv)
   // - if no file, compute features
   {
     system::Timer timer;
-    boost::progress_display my_progress_bar( sfm_data.GetViews().size(),
+    boost::progress_display my_progress_bar( sfmData.GetViews().size(),
       std::cout, "\n- EXTRACT FEATURES -\n" );
 
-    Views::const_iterator iterViews = sfm_data.views.begin();
-    Views::const_iterator iterViewsEnd = sfm_data.views.end();
+    Views::const_iterator iterViews = sfmData.views.begin();
+    Views::const_iterator iterViewsEnd = sfmData.views.end();
     
     if(rangeStart != -1)
     {
-      if(rangeStart < 0 || rangeStart > sfm_data.views.size())
+      if(rangeStart < 0 || rangeStart > sfmData.views.size())
       {
         std::cerr << "Bad specific index" << std::endl;
         return EXIT_FAILURE;
@@ -414,8 +387,8 @@ int main(int argc, char **argv)
         std::cerr << "Bad range size. " << std::endl;
         return EXIT_FAILURE;
       }
-      if(rangeStart + rangeSize > sfm_data.views.size())
-        rangeSize = sfm_data.views.size() - rangeStart;
+      if(rangeStart + rangeSize > sfmData.views.size())
+        rangeSize = sfmData.views.size() - rangeStart;
 
       std::advance(iterViews, rangeStart);
       iterViewsEnd = iterViews;
@@ -432,7 +405,7 @@ int main(int argc, char **argv)
     for(; iterViews != iterViewsEnd; ++iterViews, ++my_progress_bar)
     {
       const View* view = iterViews->second.get();
-      const std::string viewFilename = stlplus::create_filespec(sfm_data.s_root_path, view->getImagePath());
+      const std::string viewFilename = stlplus::create_filespec(sfmData.s_root_path, view->getImagePath());
       std::cout << "Extract features in view: " << viewFilename << std::endl;
       
       std::vector<DescriberComputeMethod> computeMethods;
