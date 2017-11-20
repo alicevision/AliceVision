@@ -243,7 +243,7 @@ bool prepareDenseScene(
 
       const IntrinsicBase * cam = iterIntrinsic->second.get();
       Image<RGBColor> image;
-      ReadImage(srcImage.c_str(), &image);
+      readImage(srcImage, image);
       
       // Undistort
       Image<RGBColor> image_ud;
@@ -292,7 +292,7 @@ bool prepareDenseScene(
         std::cerr << "Rescale not implemented." << std::endl;
         image_ud_scaled = image_ud;
       }
-      WriteImage(dstColorImage.c_str(), image_ud_scaled);
+      writeImage(dstColorImage, image_ud_scaled);
     }
     
     // Export Seeds

@@ -4,10 +4,49 @@
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
 #include "uid.hpp"
-#include "aliceVision/exif/EasyExifIO.hpp"
+
+#include <aliceVision/sfm/View.hpp>
 
 namespace aliceVision {
 namespace sfm {
+
+std::size_t computeUID(const View& view)
+{
+  std::size_t uid = 0;
+
+  if(view.hasMetadata("Exif:ImageUniqueID") ||
+     view.hasMetadata("Exif:BodySerialNumber") ||
+     view.hasMetadata("Exif:LensSerialNumber"))
+  {
+    stl::hash_combine(uid, view.getMetadataOrEmpty("Exif:ImageUniqueID"));
+    stl::hash_combine(uid, view.getMetadataOrEmpty("Exif:BodySerialNumber"));
+    stl::hash_combine(uid, view.getMetadataOrEmpty("Exif:LensSerialNumber"));
+  }
+  else
+  {
+    // No metadata to identify the image, fallback to the filename
+    stl::hash_combine(uid, view.getImagePath());
+  }
+
+  if(view.hasMetadata("Exif:DateTimeOriginal"))
+  {
+    stl::hash_combine(uid, view.getMetadataOrEmpty("Exif:DateTimeOriginal"));
+    stl::hash_combine(uid, view.getMetadataOrEmpty("Exif:SubsecTimeOriginal"));
+  }
+  else
+  {
+    // If no original date/time, fallback to the file date/time
+    stl::hash_combine(uid, view.getMetadataOrEmpty("DateTime"));
+  }
+
+  stl::hash_combine(uid, view.getWidth());
+  stl::hash_combine(uid, view.getHeight());
+
+  // Limit to integer to maximize compatibility (like Alembic in Maya)
+  uid = std::abs((int) uid);
+
+  return uid;
+}
 
 void updateStructureWithNewUID(Landmarks &landmarks, const std::map<std::size_t, std::size_t> &oldIdToNew)
 {
@@ -80,12 +119,9 @@ void regenerateViewUIDs(Views &views, std::map<std::size_t, std::size_t> &oldIdT
   for(auto const &iter : views)
   {
     const View& currentView = *iter.second.get();
-    const auto &imageName = currentView.getImagePath();
-    
-    exif::EasyExifIO exifReader(imageName);
 
     // compute the view UID
-    const std::size_t uid = exif::computeUID(exifReader, imageName);
+    const std::size_t uid = computeUID(currentView);
 
     // update the mapping
     assert(oldIdToNew.count(currentView.getViewId()) == 0);

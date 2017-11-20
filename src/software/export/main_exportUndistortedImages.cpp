@@ -83,45 +83,36 @@ int main(int argc, char *argv[])
     return EXIT_FAILURE;
   }
 
-  bool bOk = true;
+  // Export views as undistorted images (those with valid Intrinsics)
+  Image<RGBColor> image, image_ud;
+  boost::progress_display my_progress_bar( sfm_data.GetViews().size() );
+  for(Views::const_iterator iter = sfm_data.GetViews().begin();
+    iter != sfm_data.GetViews().end(); ++iter, ++my_progress_bar)
   {
-    // Export views as undistorted images (those with valid Intrinsics)
-    Image<RGBColor> image, image_ud;
-    boost::progress_display my_progress_bar( sfm_data.GetViews().size() );
-    for(Views::const_iterator iter = sfm_data.GetViews().begin();
-      iter != sfm_data.GetViews().end(); ++iter, ++my_progress_bar)
+    const View * view = iter->second.get();
+    bool bIntrinsicDefined = view->getIntrinsicId() != UndefinedIndexT &&
+      sfm_data.GetIntrinsics().find(view->getIntrinsicId()) != sfm_data.GetIntrinsics().end();
+
+    Intrinsics::const_iterator iterIntrinsic = sfm_data.GetIntrinsics().find(view->getIntrinsicId());
+
+    const std::string srcImage = stlplus::create_filespec(sfm_data.s_root_path, view->getImagePath());
+    const std::string dstImage = stlplus::create_filespec(
+      outDirectory, stlplus::filename_part(srcImage));
+
+    const IntrinsicBase * cam = iterIntrinsic->second.get();
+    if (cam->isValid() && cam->have_disto())
     {
-      const View * view = iter->second.get();
-      bool bIntrinsicDefined = view->getIntrinsicId() != UndefinedIndexT &&
-        sfm_data.GetIntrinsics().find(view->getIntrinsicId()) != sfm_data.GetIntrinsics().end();
-
-      Intrinsics::const_iterator iterIntrinsic = sfm_data.GetIntrinsics().find(view->getIntrinsicId());
-
-      const std::string srcImage = stlplus::create_filespec(sfm_data.s_root_path, view->getImagePath());
-      const std::string dstImage = stlplus::create_filespec(
-        outDirectory, stlplus::filename_part(srcImage));
-
-      const IntrinsicBase * cam = iterIntrinsic->second.get();
-      if (cam->isValid() && cam->have_disto())
-      {
-        // undistort the image and save it
-        if (ReadImage( srcImage.c_str(), &image))
-        {
-          UndistortImage(image, cam, image_ud, BLACK);
-          bOk &= WriteImage(dstImage.c_str(), image_ud);
-        }
-      }
-      else // (no distortion)
-      {
-        // copy the image since there is no distortion
-        stlplus::file_copy(srcImage, dstImage);
-      }
+      // undistort the image and save it
+      readImage(srcImage, image);
+      UndistortImage(image, cam, image_ud, BLACK);
+      writeImage(dstImage, image_ud);
+    }
+    else // (no distortion)
+    {
+      // copy the image since there is no distortion
+      stlplus::file_copy(srcImage, dstImage);
     }
   }
 
-  // Exit program
-  if (bOk)
-    return( EXIT_SUCCESS );
-  else
-    return( EXIT_FAILURE );
+  return EXIT_SUCCESS ;
 }

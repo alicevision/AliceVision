@@ -167,11 +167,8 @@ int main(int argc, char **argv)
     std::unique_ptr<Regions> query_regions;
     image::Image<unsigned char> imageGray;
     {
-      if (!image::ReadImage(queryImage.c_str(), &imageGray))
-      {
-        std::cerr << "Cannot open the input provided image" << std::endl;
-        return EXIT_FAILURE;
-      }
+      image::readImage(queryImage, imageGray);
+
       // Compute features and descriptors
       imageDescribers->Describe(imageGray, query_regions);
       std::cout << "#regions detected in query image: " << query_regions->RegionCount() << std::endl;

@@ -107,42 +107,37 @@ int main(int argc, char **argv)
     const string sOutFileName =
       stlplus::create_filespec(outputImagePath, stlplus::basename_part(vec_fileNames[j]), "JPG");
     const string sInFileName = stlplus::create_filespec(inputImagePath, stlplus::basename_part(vec_fileNames[j]));
-    const int res = ReadImage(sInFileName.c_str(), &tmp_vec, &w, &h, &depth);
+    readImage(sInFileName, tmp_vec, w, h, depth);
 
     const PinholeRadialK3 cam(w, h, f, c(0), c(1), k(0), k(1), k(2));
 
-    if (res == 1)
+    switch(depth)
     {
-      switch(depth)
-      {
-        case 1: //Greyscale
-          {
-            imageGreyIn = Eigen::Map<Image<unsigned char>::Base>(&tmp_vec[0], h, w);
-            UndistortImage(imageGreyIn, &cam, imageGreyU);
-            WriteImage(sOutFileName.c_str(), imageGreyU);
-            break;
-          }
-        case 3: //RGB
-          {
-            imageRGBIn = Eigen::Map<Image<RGBColor>::Base>((RGBColor*) &tmp_vec[0], h, w);
-            UndistortImage(imageRGBIn, &cam, imageRGBU);
-            WriteImage(sOutFileName.c_str(), imageRGBU);
-            break;
-          }
-        case 4: //RGBA
-          {
-            imageRGBAIn = Eigen::Map<Image<RGBAColor>::Base>((RGBAColor*) &tmp_vec[0], h, w);
-            UndistortImage(imageRGBAIn, &cam, imageRGBAU);
-            WriteImage(sOutFileName.c_str(), imageRGBAU);
-            break;
-          }
-      }
-
-    }//end if res==1
-    else
-    {
-      std::cerr << "\nThe image contains " << depth << "layers. This depth is not supported!\n";
+      case 1: //Greyscale
+        {
+          imageGreyIn = Eigen::Map<Image<unsigned char>::Base>(&tmp_vec[0], h, w);
+          UndistortImage(imageGreyIn, &cam, imageGreyU);
+          writeImage(sOutFileName, imageGreyU);
+          break;
+        }
+      case 3: //RGB
+        {
+          imageRGBIn = Eigen::Map<Image<RGBColor>::Base>((RGBColor*) &tmp_vec[0], h, w);
+          UndistortImage(imageRGBIn, &cam, imageRGBU);
+          writeImage(sOutFileName, imageRGBU);
+          break;
+        }
+      /*
+      case 4: //RGBA
+        {
+          imageRGBAIn = Eigen::Map<Image<RGBAColor>::Base>((RGBAColor*) &tmp_vec[0], h, w);
+          UndistortImage(imageRGBAIn, &cam, imageRGBAU);
+          writeImage(sOutFileName, imageRGBAU);
+          break;
+        }
+        */
     }
+
   } //end loop for each file
   return EXIT_SUCCESS;
 }

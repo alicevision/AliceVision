@@ -347,17 +347,17 @@ int main(int argc, char **argv)
       }
     }
 
-    bool hasCameraMetadata = (view.hasMetadata("camera_make") && view.hasMetadata("camera_model"));
+    bool hasCameraMetadata = (view.hasMetadata("Make") && view.hasMetadata("Model"));
     double sensorWidth = -1;
 
     if(hasCameraMetadata)
     {
       aliceVision::exif::sensordb::Datasheet datasheet;
-      if(getInfo(view.getMetadata("camera_make"), view.getMetadata("camera_model"), sensorDatabase, datasheet))
+      if(getInfo(view.getMetadata("Make"), view.getMetadata("Model"), sensorDatabase, datasheet))
         sensorWidth = datasheet._sensorSize;
       else
       {
-        unknownSensors.emplace(std::make_pair(view.getMetadata("camera_make"),view.getMetadata("camera_model")), view.getImagePath()); // will throw an error message and exit program
+        unknownSensors.emplace(std::make_pair(view.getMetadata("Make"),view.getMetadata("Model")), view.getImagePath()); // will throw an error message and exit program
         continue;
       }
 

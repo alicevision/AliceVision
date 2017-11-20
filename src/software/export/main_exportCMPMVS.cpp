@@ -160,9 +160,9 @@ bool exportToCMPMVSFormat(
         if (cam->isValid() && cam->have_disto())
         {
           // undistort the image and save it
-          ReadImage( srcImage.c_str(), &image);
+          readImage( srcImage, image);
           UndistortImage(image, cam, image_ud, BLACK);
-          WriteImage(dstImage.c_str(), image_ud);
+          writeImage(dstImage, image_ud);
         }
         else // (no distortion)
         {
@@ -174,8 +174,8 @@ bool exportToCMPMVSFormat(
           }
           else
           {
-            ReadImage( srcImage.c_str(), &image);
-            WriteImage( dstImage.c_str(), image);
+            readImage( srcImage, image);
+            writeImage( dstImage, image);
           }
         }
       }

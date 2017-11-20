@@ -89,8 +89,8 @@ int main(int argc, char **argv)
   const string jpg_filenameR = imageBFilename;
 
   Image<unsigned char> imageL, imageR;
-  ReadImage(jpg_filenameL.c_str(), &imageL);
-  ReadImage(jpg_filenameR.c_str(), &imageR);
+  readImage(jpg_filenameL, imageL);
+  readImage(jpg_filenameR, imageR);
 
 //--
   // Detect regions thanks to an image_describer
@@ -113,7 +113,7 @@ int main(int argc, char **argv)
     Image<unsigned char> concat;
     ConcatH(imageL, imageR, concat);
     string out_filename = "00_images.jpg";
-    WriteImage(out_filename.c_str(), concat);
+    writeImage(out_filename, concat);
   }
 
   //- Draw features on the two image (side by side)
@@ -131,7 +131,7 @@ int main(int argc, char **argv)
       DrawCircle(point.x()+imageL.Width(), point.y(), point.scale(), 255, &concat);
     }
     string out_filename = "01_features.jpg";
-    WriteImage(out_filename.c_str(), concat);
+    writeImage(out_filename, concat);
   }
 
   std::vector<IndMatch> vec_PutativeMatches;
@@ -280,12 +280,12 @@ int main(int argc, char **argv)
   {
     string out_filename = "07_Left-K-VLD-MASK.jpg";
     out_filename = stlplus::create_filespec(outputFolder, out_filename);
-    WriteImage(out_filename.c_str(), imageOutL);
+    writeImage(out_filename, imageOutL);
   }
   {
     string out_filename = "08_Right-K-VLD-MASK.jpg";
     out_filename = stlplus::create_filespec(outputFolder, out_filename);
-    WriteImage(out_filename.c_str(), imageOutR);
+    writeImage(out_filename, imageOutR);
   }
 
   return EXIT_SUCCESS;

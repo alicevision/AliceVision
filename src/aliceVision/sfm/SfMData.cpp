@@ -250,11 +250,8 @@ bool ColorizeTracks( SfMData & sfm_data )
     const std::string sView_filename = stlplus::create_filespec(sfm_data.s_root_path,
       view->getImagePath());
     Image<RGBColor> image;
-    if(!ReadImage(sView_filename.c_str(), &image))
-    {
-      ALICEVISION_LOG_WARNING("Unable to read image: " << sView_filename);
-      return false;
-    }
+
+    readImage(sView_filename, image);
 
     // Iterate through the remaining track to color
     // - look if the current view is present to color the track

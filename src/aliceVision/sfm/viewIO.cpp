@@ -5,9 +5,9 @@
 
 #include "viewIO.hpp"
 
+#include <aliceVision/sfm/utils/uid.hpp>
 #include <aliceVision/camera/camera.hpp>
-#include <aliceVision/image/image.hpp>
-#include <aliceVision/exif/EasyExifIO.hpp>
+#include <aliceVision/image/io.hpp>
 
 #include <stdexcept>
 
@@ -16,44 +16,20 @@ namespace sfm {
 
 void updateIncompleteView(View& view)
 {
-  // check if the image format is supported
-  if(aliceVision::image::GetFormat(view.getImagePath().c_str()) == aliceVision::image::Unknown)
-  {
-    ALICEVISION_LOG_ERROR("Error: Unknown image file format '" << stlplus::filename_part(view.getImagePath()) << "'." << std::endl);
-    throw std::invalid_argument("Error: Unknown image file format '" + stlplus::filename_part(view.getImagePath()) + "'.");
-  }
+  int width, height;
+  std::map<std::string, std::string> metadata;
 
-  // read image header
-  image::ImageHeader imgHeader;
-  if(!aliceVision::image::ReadImageHeader(view.getImagePath().c_str(), &imgHeader))
-  {
-    ALICEVISION_LOG_ERROR("Error: Can't read image header '" << stlplus::filename_part(view.getImagePath()) << "'." << std::endl);
-    throw std::invalid_argument("Error: Can't read image header '" + stlplus::filename_part(view.getImagePath()) + "'.");
-  }
+  image::readImageMetadata(view.getImagePath(), width, height, metadata);
 
-  // reset width and height
-  view.setWidth(imgHeader.width);
-  view.setHeight(imgHeader.height);
-
-  //check dimensions
-  if(view.getWidth() <= 0 || view.getHeight() <= 0)
-  {
-    ALICEVISION_LOG_ERROR("Error: Image size is invalid '" << stlplus::filename_part(view.getImagePath())  << "'." << std::endl
-                        << "\t- width: " << view.getWidth() << std::endl
-                        << "\t- height: " << view.getHeight() << std::endl);
-    throw std::invalid_argument("Error: Image size is invalid '" + stlplus::filename_part(view.getImagePath()) + "'.");
-   }
-
-  // read exif metadata
-  exif::EasyExifIO exifReader;
-  exifReader.open(view.getImagePath());
-
-  // reset viewId
-  view.setViewId(computeUID(exifReader, stlplus::filename_part(view.getImagePath())));
+  view.setWidth(width);
+  view.setHeight(height);
 
   // reset metadata
   if(view.getMetadata().empty())
-    view.setMetadata(exifReader.getExifData());
+    view.setMetadata(metadata);
+
+  // reset viewId
+  view.setViewId(computeUID(view));
 
   if(view.getPoseId() == UndefinedIndexT)
   {
@@ -81,12 +57,12 @@ std::shared_ptr<camera::IntrinsicBase> getViewIntrinsic(const View& view,
                                                         double defaultPPy)
 {
   // get view informations
-  const std::string cameraBrand = view.hasMetadata("camera_make") ? view.getMetadata("camera_make") : "";
-  const std::string cameraModel = view.hasMetadata("camera_model") ? view.getMetadata("camera_model") : "";
-  const std::string bodySerialNumber = view.hasMetadata("serial_number") ? view.getMetadata("serial_number") : "";
-  const std::string lensSerialNumber = view.hasMetadata("lens_serial_number") ? view.getMetadata("lens_serial_number") : "";
+  const std::string cameraBrand = view.getMetadataOrEmpty("Make");
+  const std::string cameraModel = view.getMetadataOrEmpty("Model");
+  const std::string bodySerialNumber = view.getMetadataOrEmpty("Exif:BodySerialNumber");
+  const std::string lensSerialNumber = view.getMetadataOrEmpty("Exif:LensSerialNumber");
 
-  float mmFocalLength = view.hasMetadata("lens_focal_length") ? std::stof(view.getMetadata("lens_focal_length")) : -1;
+  float mmFocalLength = view.hasMetadata("Exif:FocalLength") ? std::stof(view.getMetadata("Exif:FocalLength")) : -1;
   double pxFocalLength = defaultFocalLengthPx;
   camera::EINTRINSIC intrinsicType = defaultIntrinsicType;
 
@@ -95,11 +71,11 @@ std::shared_ptr<camera::IntrinsicBase> getViewIntrinsic(const View& view,
 
   bool isResized = false;
 
-  if(view.hasMetadata("image_width") && view.hasMetadata("image_height")) // has metadata
+  if(view.hasMetadata("Exif:PixelXDimension") && view.hasMetadata("Exif:PixelYDimension")) // has dimension metadata
   {
     // check if the image is resized
-    int exifWidth = std::stoi(view.getMetadata("image_width"));
-    int exifHeight = std::stoi(view.getMetadata("image_height"));
+    int exifWidth = std::stoi(view.getMetadata("Exif:PixelXDimension"));
+    int exifHeight = std::stoi(view.getMetadata("Exif:PixelYDimension"));
 
     // if metadata is rotated
     if(exifWidth == view.getHeight() && exifHeight == view.getWidth())

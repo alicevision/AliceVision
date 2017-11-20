@@ -71,11 +71,7 @@ public:
 
       ALICEVISION_LOG_DEBUG(imageName);
 
-      if (!image::ReadImage(imageName.c_str(), &image))
-      {
-        ALICEVISION_LOG_WARNING("Error while opening image " << imageName);
-        throw std::invalid_argument("Error while opening image " + imageName);
-      }
+      image::readImage(imageName, image);
       return true;
     }
     return true;
@@ -109,11 +105,8 @@ private:
     const std::string rootPath = _sfmdata.s_root_path;
     const sfm::View *view = _viewIterator->second.get();
     imageName = (bf::path(rootPath) / bf::path(view->getImagePath())).string();
-    if (!image::ReadImage(imageName.c_str(), &image))
-    {
-      ALICEVISION_LOG_WARNING("Error while opening image " << imageName);
-      return false;
-    }
+    image::readImage(imageName, image);
+
     // get the associated Intrinsics
     if((view->getIntrinsicId() == UndefinedIndexT) || (!_sfmdata.GetIntrinsics().count(view->getIntrinsicId())))
     {

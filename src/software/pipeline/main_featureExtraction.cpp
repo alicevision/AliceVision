@@ -464,8 +464,8 @@ int main(int argc, char **argv)
       {
         auto computeFunction = [&]() {
             Image<unsigned char> imageGray;
-            if (!ReadImage(viewFilename.c_str(), &imageGray))
-              return;
+
+            readImage(viewFilename, imageGray);
 
             for(auto& compute : computeMethods)
             {
