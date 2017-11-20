@@ -2729,14 +2729,42 @@ void mv_delaunay_GC::addToInfiniteSw(float sW)
 void mv_delaunay_GC::reconstructGC(float alphaQual, std::string baseName, staticVector<int>* cams,
                                    std::string folderName, std::string fileNameStGraph, std::string fileNameStSolution,
                                    std::string fileNameTxt, std::string fileNameTxtCam, int camerasPerOneOmni,
-                                   bool  /*doRemoveBubbles*/, staticVector<point3d>* /*hexahsToExcludeFromResultingMesh*/,
+                                   bool doRemoveBubbles, staticVector<point3d>* hexahsToExcludeFromResultingMesh,
                                    bool saveToWrl, point3d* hexah) // alphaQual=5.0f
 {
     std::cout << "reconstructGC" << std::endl;
-    long t_reconstructGC = clock();
 
+    maxflow();
+
+    std::cout << "Maxflow: convert result to surface" << std::endl;
+    // Convert cells FULL/EMPTY into surface
+    setIsOnSurface();
+
+    if(saveToWrl)
+    {
+        std::string fileNameWrl = folderName + baseName + ".wrl";
+        std::string fileNameWrlTex = folderName + baseName + "Textured.wrl";
+        std::string fileNamePly = folderName + baseName + ".ply";
+        saveMaxflowToWrl(folderName, fileNameTxt, fileNameTxtCam, fileNameWrl, fileNameWrlTex, fileNamePly,
+                         camerasPerOneOmni, cams);
+    }
+
+    std::string resultFolderName = folderName + baseName + "/";
+    bfs::create_directory(resultFolderName);
+
+    freeUnwantedFullCells(resultFolderName, hexah);
+
+    std::cout << "reconstructGC end" << std::endl;
+}
+
+void mv_delaunay_GC::maxflow()
+{
+    long t_maxflow = clock();
+
+    std::cout << "Maxflow: start allocation" << std::endl;
     MaxFlow maxFlowGraph(_cellsAttr.size());
 
+    std::cout << "Maxflow: add nodes" << std::endl;
     // fill s-t edges
     for(CellIndex ci = 0; ci < _cellsAttr.size(); ++ci)
     {
@@ -2752,6 +2780,7 @@ void mv_delaunay_GC::reconstructGC(float alphaQual, std::string baseName, static
         maxFlowGraph.addNode(ci, ws, wt);
     }
 
+    std::cout << "Maxflow: add edges" << std::endl;
     const float CONSTalphaVIS = 1.0f;
     const float CONSTalphaPHOTO = 5.0f;
 
@@ -2788,15 +2817,18 @@ void mv_delaunay_GC::reconstructGC(float alphaQual, std::string baseName, static
         }
     }
 
+    std::cout << "Maxflow: clear cells info" << std::endl;
     const std::size_t nbCells = _cellsAttr.size();
     std::vector<GC_cellInfo>().swap(_cellsAttr); // force clear
 
-    long t_maxflow = clock();
+    long t_maxflow_compute = clock();
     // Find graph-cut solution
+    std::cout << "Maxflow: compute" << std::endl;
     const float totalFlow = maxFlowGraph.compute();
-    printfElapsedTime(t_maxflow, "Maxflow computation ");
+    printfElapsedTime(t_maxflow_compute, "Maxflow computation ");
     std::cout << "totalFlow: " << totalFlow << std::endl;
 
+    std::cout << "Maxflow: update full/empty cells status" << std::endl;
     _cellIsFull.resize(nbCells);
     // Update FULL/EMPTY status of all cells
     for(CellIndex ci = 0; ci < nbCells; ++ci)
@@ -2804,26 +2836,9 @@ void mv_delaunay_GC::reconstructGC(float alphaQual, std::string baseName, static
         _cellIsFull[ci] = maxFlowGraph.isTarget(ci);
     }
 
-    // Convert cells FULL/EMPTY into surface
-    setIsOnSurface();
+    printfElapsedTime(t_maxflow, "Full maxflow step");
 
-    if(saveToWrl)
-    {
-        std::string fileNameWrl = folderName + baseName + ".wrl";
-        std::string fileNameWrlTex = folderName + baseName + "Textured.wrl";
-        std::string fileNamePly = folderName + baseName + ".ply";
-        saveMaxflowToWrl(folderName, fileNameTxt, fileNameTxtCam, fileNameWrl, fileNameWrlTex, fileNamePly,
-                         camerasPerOneOmni, cams);
-    }
-
-    std::string resultFolderName = folderName + baseName + "/";
-    bfs::create_directory(resultFolderName);
-
-    freeUnwantedFullCells(resultFolderName, hexah);
-
-    printfElapsedTime(t_reconstructGC, "ReconstructGC computation (full maxflow) ");
-
-    std::cout << "reconstructGC end" << std::endl;
+    std::cout << "Maxflow: end" << std::endl;
 }
 
 void mv_delaunay_GC::reconstructExpetiments(staticVector<int>* cams, std::string folderName,

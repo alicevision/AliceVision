@@ -295,6 +295,8 @@ public:
                        std::string fileNameTxtCam, int camerasPerOneOmni, bool doRemoveBubbles,
                        staticVector<point3d>* hexahsToExcludeFromResultingMesh, bool saveToWrl, point3d* hexah);
 
+    void maxflow();
+
     void reconstructExpetiments(staticVector<int>* cams, std::string folderName, std::string fileNameStGraph,
                                 std::string fileNameStSolution, std::string fileNameTxt, std::string fileNameTxtCam,
                                 int camerasPerOneOmni, bool update, point3d hexahInflated[8],
