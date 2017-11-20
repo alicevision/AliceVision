@@ -161,12 +161,17 @@ int main(int argc, char* argv[])
                 voxelsGrid vg(ls->dimensions, &ls->space[0], ls->mp, ls->pc, ls->spaceVoxelsFolderName);
                 ntracks = vg.getNTracks();
                 delete ls;
+                ALICEVISION_COUT("Number of track candidates: " << ntracks);
                 if(ntracks > maxPts)
                 {
+                    ALICEVISION_COUT("ocTreeDim: " << ocTreeDim);
                     double t = (double)ntracks / (double)maxPts;
+                    ALICEVISION_COUT("downsample: " << ((t < 2.0) ? "slow" : "fast"));
                     ocTreeDim = (t < 2.0) ? ocTreeDim-100 : ocTreeDim*0.5;
                 }
             }
+            ALICEVISION_COUT("Number of tracks: " << ntracks);
+            ALICEVISION_COUT("ocTreeDim: " << ocTreeDim);
             largeScale lsbase(&mp, &pc, mip.mvDir + "largeScaleMaxPts" + num2strFourDecimal(ocTreeDim) + "/");
             lsbase.loadSpaceFromFile();
             reconstructionPlan rp(lsbase.dimensions, &lsbase.space[0], lsbase.mp, lsbase.pc, lsbase.spaceVoxelsFolderName);
