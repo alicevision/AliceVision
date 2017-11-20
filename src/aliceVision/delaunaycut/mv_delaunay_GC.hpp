@@ -58,7 +58,7 @@ public:
     std::vector<bool> _cellIsFull; /// isFull info per cell: true is full / false is empty
 
     std::vector<int> _camsVertexes;
-    std::map<VertexIndex, std::set<CellIndex>> _vertexToNeighboringCells;
+    std::vector<std::vector<CellIndex>> _neighboringCellsPerVertex;
 
     static const GEO::index_t NO_TETRAHEDRON = GEO::NO_CELL;
 
@@ -98,7 +98,7 @@ public:
     }
 
     /**
-     * @brief A cell is infinite if one the its vertices is infinite.
+     * @brief A cell is infinite if one of its vertices is infinite.
      */
     inline bool isInfiniteCell(CellIndex ci) const
     {
@@ -137,21 +137,39 @@ public:
     }
     void updateVertexToCellsCache()
     {
-        _vertexToNeighboringCells.clear();
+        _neighboringCellsPerVertex.clear();
 
+        std::map<VertexIndex, std::set<CellIndex>> neighboringCellsPerVertexTmp;
+        int coutInvalidVertices = 0;
         for(CellIndex ci = 0, nbCells = _tetrahedralization->nb_cells(); ci < nbCells; ++ci)
         {
             for(VertexIndex k = 0; k < 4; ++k)
             {
                 CellIndex vi = _tetrahedralization->cell_vertex(ci, k);
-                _vertexToNeighboringCells[vi].insert(ci);
+                if(vi == GEO::NO_VERTEX || vi >= _verticesCoords.size())
+                {
+                    ++coutInvalidVertices;
+                    continue;
+                }
+                neighboringCellsPerVertexTmp[vi].insert(ci);
             }
         }
+        std::cout << "coutInvalidVertices: " << coutInvalidVertices << std::endl;
+        std::cout << "neighboringCellsPerVertexTmp.size(): " << neighboringCellsPerVertexTmp.size() << std::endl;
+        _neighboringCellsPerVertex.resize(_verticesCoords.size());
+        std::cout << "_verticesCoords.size(): " << _verticesCoords.size() << std::endl;
+        for(const auto& it: neighboringCellsPerVertexTmp)
+        {
+            const std::set<CellIndex>& input = it.second;
+            std::vector<CellIndex>& output = _neighboringCellsPerVertex[it.first];
+            output.assign(input.begin(), input.end());
+        }
     }
+
     /**
      * @brief vertexToCells
      *
-     * It's a replacement for GEO::Delaunay::next_around_vertex which doesn't work as expected.
+     * It is a replacement for GEO::Delaunay::next_around_vertex which doesn't work as expected.
      *
      * @param vi
      * @param lvi
