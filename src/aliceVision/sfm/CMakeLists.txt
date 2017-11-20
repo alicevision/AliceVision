@@ -36,6 +36,8 @@ set(sfm_files_headers
   Rig.hpp
   utils/alignment.hpp
   utils/uid.hpp
+  utils/statistics.hpp
+  utils/syntheticScene.hpp
 )
 
 # Sources
@@ -63,6 +65,8 @@ set(sfm_files_sources
   viewIO.cpp
   utils/alignment.cpp
   utils/uid.cpp
+  utils/statistics.cpp
+  utils/syntheticScene.cpp
 )
 
 if(ALICEVISION_HAVE_ALEMBIC)

@@ -3,9 +3,8 @@
 // v. 2.0. If a copy of the MPL was not distributed with this file,
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
-#include <aliceVision/sfm/SfMData.hpp>
-#include <aliceVision/feature/FeaturesPerView.hpp>
-#include <aliceVision/multiview/NViewDataSet.hpp>
+#include "syntheticScene.hpp"
+
 #include <aliceVision/sfm/sfm.hpp>
 
 #include <random>
@@ -14,73 +13,11 @@
 namespace aliceVision {
 namespace sfm {
 
-/**
- * @brief Create features from a known SfMData (synthetic scene).
- *
- * @param[out] out_featuresPerView
- * @param[in] sfmData synthetic SfM dataset
- * @param[in] descType
- * @param[in] noise
- */
-template <typename NoiseGenerator>
-void generateSyntheticFeatures(feature::FeaturesPerView& out_featuresPerView, feature::EImageDescriberType descType, const SfMData & sfmData, NoiseGenerator & noise)
-{
-  assert(descType != feature::EImageDescriberType::UNINITIALIZED);
-  std::default_random_engine generator;
-
-  // precompute output feature vectors size and resize
-  {
-    std::map<IndexT, std::size_t> nbFeatPerView;
-    for(const auto& it: sfmData.GetViews())
-    {
-      nbFeatPerView[it.first] = 0;
-    }
-    for(const auto& it: sfmData.GetLandmarks())
-    {
-      const Landmark& landmark = it.second;
-
-      for(const auto& obsIt: landmark.observations)
-      {
-        const IndexT viewId = obsIt.first;
-        const Observation& obs = obsIt.second;
-        nbFeatPerView[viewId] = std::max(nbFeatPerView[viewId], std::size_t(obs.id_feat+1));
-      }
-    }
-    for(auto& it: nbFeatPerView)
-    {
-      // create Point Features vectors at the right size
-      feature::PointFeatures pointFeatures(it.second);
-      out_featuresPerView.addFeatures(it.first, descType, pointFeatures);
-    }
-  }
-  // Fill with the observation values
-  for(const auto& it: sfmData.GetLandmarks())
-  {
-    const Landmark& landmark = it.second;
-
-    for(const auto& obsIt: landmark.observations)
-    {
-      const IndexT viewId = obsIt.first;
-      const Observation& obs = obsIt.second;
-
-      out_featuresPerView.getFeaturesPerDesc(viewId)[descType][obs.id_feat] = feature::PointFeature(obs.x(0) + noise(generator), obs.x(1) + noise(generator));
-    }
-  }
-}
-
-/**
- * Generate features matches between views from a known SfMData (synthetic scene).
- *
- * @param[out] out_pairwiseMatches
- * @param[in] sfmData synthetic SfM dataset
- * @param[in] descType
- */
-inline void generateSyntheticMatches(
+void generateSyntheticMatches(
   matching::PairwiseMatches& out_pairwiseMatches,
   const SfMData & sfmData,
   feature::EImageDescriberType descType)
 {
-
   for(const auto& it: sfmData.GetLandmarks())
   {
     const Landmark& landmark = it.second;
@@ -107,36 +44,6 @@ inline void generateSyntheticMatches(
   }
 }
 
-
-/// Compute the Root Mean Square Error of the residuals
-inline double RMSE(const SfMData & sfm_data)
-{
-  // Compute residuals for each observation
-  std::vector<double> vec;
-  for(Landmarks::const_iterator iterTracks = sfm_data.GetLandmarks().begin();
-      iterTracks != sfm_data.GetLandmarks().end();
-      ++iterTracks)
-  {
-    const Observations & obs = iterTracks->second.observations;
-    for(Observations::const_iterator itObs = obs.begin();
-      itObs != obs.end(); ++itObs)
-    {
-      const View * view = sfm_data.GetViews().find(itObs->first)->second.get();
-      const geometry::Pose3 pose = sfm_data.getPose(*view);
-      const std::shared_ptr<camera::IntrinsicBase> intrinsic = sfm_data.GetIntrinsics().at(view->getIntrinsicId());
-      const Vec2 residual = intrinsic->residual(pose, iterTracks->second.X, itObs->second.x);
-      //ALICEVISION_LOG_DEBUG(residual);
-      vec.push_back( residual(0) );
-      vec.push_back( residual(1) );
-    }
-  }
-  const Eigen::Map<Eigen::RowVectorXd> residuals(&vec[0], vec.size());
-  const double RMSE = std::sqrt(residuals.squaredNorm() / vec.size());
-  return RMSE;
-}
-
-// Translate a synthetic scene into a valid SfMData scene
-// As only one intrinsic is defined we used shared intrinsic
 SfMData getInputScene
 (
   const NViewDataSet & d,
@@ -207,11 +114,9 @@ SfMData getInputScene
   return sfm_data;
 }
 
-// Translate a synthetic scene into a valid SfMData scene
-// As only one intrinsic is defined we used shared intrinsic
-inline SfMData getInputRigScene(const NViewDataSet& d,
-                          const NViewDatasetConfigurator& config,
-                          camera::EINTRINSIC eintrinsic)
+SfMData getInputRigScene(const NViewDataSet& d,
+                         const NViewDatasetConfigurator& config,
+                         camera::EINTRINSIC eintrinsic)
 {
   // 1. Rig
   // 2. Views
@@ -301,5 +206,5 @@ inline SfMData getInputRigScene(const NViewDataSet& d,
   return sfmData;
 }
 
-}
-}
+} // namespace sfm
+} // namespace aliceVision
