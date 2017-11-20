@@ -28,7 +28,6 @@ set(sfm_files_headers
   sfmDataIO_json.hpp
   sfmDataIO_ply.hpp
   sfmDataTriangulation.hpp
-  sfmDataUtils.hpp
   filters.hpp
   Landmark.hpp
   generateReport.hpp
@@ -60,7 +59,6 @@ set(sfm_files_sources
   sfmDataIO_json.cpp
   sfmDataIO_ply.cpp
   sfmDataTriangulation.cpp
-  sfmDataUtils.cpp
   generateReport.cpp
   viewIO.cpp
   utils/alignment.cpp
@@ -119,7 +117,6 @@ install(TARGETS aliceVision_sfm
 )
 
 UNIT_TEST(aliceVision sfmDataIO          "aliceVision_feature;aliceVision_sfm;aliceVision_system;stlplus")
-UNIT_TEST(aliceVision sfmDataUtils       "aliceVision_feature;aliceVision_multiview;aliceVision_system;aliceVision_sfm;stlplus")
 UNIT_TEST(aliceVision bundleAdjustment   "aliceVision_multiview_test_data;aliceVision_feature;aliceVision_multiview;aliceVision_sfm;aliceVision_system;stlplus")
 UNIT_TEST(aliceVision rig                "aliceVision_feature;aliceVision_sfm;aliceVision_system")
 
