@@ -3,12 +3,14 @@
 // v. 2.0. If a copy of the MPL was not distributed with this file,
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
-#include "MaxFlow.hpp"
+#include "MaxFlow_AdjList.hpp"
 
 
-void MaxFlow::printStats() const
+void MaxFlow_AdjList::printStats() const
 {
-    /*
+    std::cout << "nb vertices: " << _graph.m_vertices.size() << ", capacity: " << _graph.m_vertices.capacity() << std::endl;
+    // std::cout << "nb edges: " << _graph.m_edges.size() << ", capacity: " << _graph.m_edges.capacity() << std::endl;
+
     VertexIterator vi, vi_end;
 
     std::map<std::size_t, int> histSize;
@@ -39,12 +41,10 @@ void MaxFlow::printStats() const
     {
       std::cout << "capacity[" << it.first << "]: " << it.second << std::endl;
     }
-    */
 }
 
-void MaxFlow::printColorStats() const
+void MaxFlow_AdjList::printColorStats() const
 {
-  /*
   std::map<int, int> histColor;
 
   for(const auto& color: _color)
@@ -63,5 +63,4 @@ void MaxFlow::printColorStats() const
   {
     std::cout << "color[" << it.first << "]: " << it.second << std::endl;
   }
-  */
 }

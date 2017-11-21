@@ -17,7 +17,7 @@
 #include <iostream>
 
 
-class MaxFlow
+class MaxFlow_CSR
 {
 public:
     using NodeType = unsigned int;
@@ -64,7 +64,7 @@ public:
     using edges_size_type = typename Graph::edges_size_type;
 
 public:
-    MaxFlow(size_t numNodes)
+    MaxFlow_CSR(size_t numNodes)
         : _numNodes(numNodes+2)
         , _S(NodeType(numNodes))
         , _T(NodeType(numNodes+1))
@@ -104,12 +104,8 @@ public:
         _edgesData.push_back(Edge(reverseCapacity, defaultResidual)); //, edgeIndex));
     }
 
-    void printStats() const;
-    void printColorStats() const;
-
     inline ValueType compute()
     {
-        printStats();
         std::cout << "Compute boykov_kolmogorov_max_flow" << std::endl;
 
         Graph graph(boost::edges_are_unsorted_multi_pass, _edges.begin(), _edges.end(), _edgesData.begin(), _numNodes);
@@ -161,7 +157,6 @@ public:
             );
         std::cout << "boykov_kolmogorov_max_flow: end" << std::endl;
 
-        printColorStats();
         _isTarget.resize(nbVertices);
         for(std::size_t vi = 0; vi < nbVertices; ++vi)
         {

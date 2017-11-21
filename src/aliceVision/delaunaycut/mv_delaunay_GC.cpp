@@ -7,7 +7,8 @@
 #include "mv_delaunay_helpers.hpp"
 #include "mv_delaunay_meshSmooth.hpp"
 
-#include "MaxFlow.hpp"
+#include "MaxFlow_CSR.hpp"
+// #include "MaxFlow_AdjList.hpp"
 
 #include <aliceVision/structures/mv_filesio.hpp>
 #include <aliceVision/structures/mv_universe.hpp>
@@ -2762,7 +2763,7 @@ void mv_delaunay_GC::maxflow()
     long t_maxflow = clock();
 
     std::cout << "Maxflow: start allocation" << std::endl;
-    MaxFlow maxFlowGraph(_cellsAttr.size());
+    MaxFlow_CSR maxFlowGraph(_cellsAttr.size());
 
     std::cout << "Maxflow: add nodes" << std::endl;
     // fill s-t edges
