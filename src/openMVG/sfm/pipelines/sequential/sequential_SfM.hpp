@@ -178,7 +178,22 @@ private:
    */
   void triangulate(SfM_Data& scene, const std::set<IndexT>& previousReconstructedViews, const std::set<IndexT>& newReconstructedViews);
 
-  void triangulateMultiViews(SfM_Data& scene, const std::set<IndexT>& previousReconstructedViews, const std::set<IndexT>& newReconstructedViews);
+  void identifyTracksToTriangulate(const std::set<IndexT>& previousReconstructedViews, 
+    const std::set<IndexT>& newReconstructedViews, 
+    std::map<IndexT, std::set<IndexT> > &mapTracksToTriangulate);
+  
+  bool checkChierality(const Vec3& pt, std::set<IndexT> & viewsId, const SfM_Data& scene);
+
+  void prepareTheTrackTriangulation(
+    const std::size_t& trackId, 
+    const std::set<IndexT>& observations,
+    const SfM_Data& scene,
+    Mat2X& features, 
+    std::vector< Mat34 >& Ps);
+    
+  void triangulateMultiViews_SVD(SfM_Data& scene, const std::set<IndexT>& previousReconstructedViews, const std::set<IndexT>& newReconstructedViews);
+  
+  void triangulateMultiViews_LORANSAC(SfM_Data& scene, const std::set<IndexT>& previousReconstructedViews, const std::set<IndexT>& newReconstructedViews);
 
   /**
    * @brief Bundle adjustment to refine Structure; Motion and Intrinsics
