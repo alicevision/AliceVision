@@ -97,8 +97,8 @@ int main(int argc, char* argv[])
     mv_prematch_cams pc(&mp);
 
     // .ini parsing
-    const int maxPts = mip._ini.get<int>("largeScale.planMaxPts", 30000000);
-    const int maxPtsPerVoxel = std::max(maxPts, mip._ini.get<int>("largeScale.planMaxPtsPerVoxel", 30000000));
+    const int maxPts = mip._ini.get<int>("largeScale.planMaxPts", 6000000);
+    const int maxPtsPerVoxel = std::max(maxPts, mip._ini.get<int>("largeScale.planMaxPtsPerVoxel", 6000000));
     int ocTreeDim = mip._ini.get<int>("largeScale.gridLevel0", 1024);
     const auto baseDir = mip._ini.get<std::string>("largeScale.baseDirName", "root01024");
 
