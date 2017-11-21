@@ -17,6 +17,14 @@
 #include <iostream>
 
 
+/**
+ * @brief Maxflow computation based on a compressed sparse row graph reprensentation.
+ *
+ * @note: The graph itself consumes much less memory than AdjList, but this improvement is
+ * limited by the creation of the reverse edges which requires the creation of a temporary map.
+ * The memory peak is still slightly better than AdjList version, but it would be great to find
+ * another way to retrieve the reverse edges, as it could reduce a lot the required amount of memory.
+ */
 class MaxFlow_CSR
 {
 public:
@@ -118,6 +126,7 @@ public:
         std::cout << "nbVertices: " << nbVertices << ", nbEdges: " << nbEdges << std::endl;
 
         /*
+        // Cannot be used as it is far too compute intensive
         Graph::edge_iterator ei, ee;
         for(boost::tie(ei, ee) = boost::edges(graph); ei != ee; ++ei)
         {
@@ -129,6 +138,8 @@ public:
         }
         */
         {
+            // flat_map use less memory than std::map
+            // This step represent the memory peak, would be great to find a way to reduce it.
             boost::container::flat_map<std::pair<Graph::vertex_descriptor, Graph::vertex_descriptor>, Graph::edge_descriptor> edgeDescriptors;
             Graph::edge_iterator ei, ee;
             for(boost::tie(ei, ee) = boost::edges(graph); ei != ee; ++ei)

@@ -14,6 +14,11 @@
 #include <iostream>
 
 
+/**
+ * @brief Maxflow computation based on a standard Adjacency List graph reprensentation.
+ *
+ * @see MaxFlow_CSR which use less memory.
+ */
 class MaxFlow_AdjList
 {
 public:
