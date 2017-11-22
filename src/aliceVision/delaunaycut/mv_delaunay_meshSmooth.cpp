@@ -95,8 +95,7 @@ void meshPostProcessing(mv_mesh*& inout_mesh, staticVector<staticVector<int>*>*&
 
         int bandType = 0;
         mv_images_cache* ic = new mv_images_cache(&mp, bandType, true);
-        cuda_plane_sweeping* cps =
-            new cuda_plane_sweeping(mp.CUDADeviceNo, ic, &mp, &pc, 1);
+        cuda_plane_sweeping* cps = nullptr; // new cuda_plane_sweeping(mp.CUDADeviceNo, ic, &mp, &pc, 1);
         ps_sgm_params* sp = new ps_sgm_params(&mp, &pc, cps);
 
         mv_mesh_energy_opt_photo_mem* meOpt = new mv_mesh_energy_opt_photo_mem(&mp, sp, usedCams);

@@ -55,13 +55,14 @@ public:
     std::vector<point3d> _verticesCoords; /// 3D points coordinates
     std::vector<GC_vertexInfo> _verticesAttr; /// Information attached to each vertex
     std::vector<GC_cellInfo> _cellsAttr; /// Information attached to each cell
+    std::vector<bool> _cellIsFull; /// isFull info per cell: true is full / false is empty
+
     std::vector<int> _camsVertexes;
-    std::map<VertexIndex, std::set<CellIndex>> _vertexToNeighboringCells;
+    std::vector<std::vector<CellIndex>> _neighboringCellsPerVertex;
 
     static const GEO::index_t NO_TETRAHEDRON = GEO::NO_CELL;
 
     std::size_t getNbVertices() const { return _verticesAttr.size(); }
-    std::size_t getNbCells() const { return _cellsAttr.size(); }
 
     GEO::index_t nearestVertexInCell(GEO::index_t cellIndex, const point3d& p) const
     {
@@ -97,7 +98,7 @@ public:
     }
 
     /**
-     * @brief A cell is infinite if one the its vertices is infinite.
+     * @brief A cell is infinite if one of its vertices is infinite.
      */
     inline bool isInfiniteCell(CellIndex ci) const
     {
@@ -136,21 +137,39 @@ public:
     }
     void updateVertexToCellsCache()
     {
-        _vertexToNeighboringCells.clear();
+        _neighboringCellsPerVertex.clear();
 
+        std::map<VertexIndex, std::set<CellIndex>> neighboringCellsPerVertexTmp;
+        int coutInvalidVertices = 0;
         for(CellIndex ci = 0, nbCells = _tetrahedralization->nb_cells(); ci < nbCells; ++ci)
         {
             for(VertexIndex k = 0; k < 4; ++k)
             {
                 CellIndex vi = _tetrahedralization->cell_vertex(ci, k);
-                _vertexToNeighboringCells[vi].insert(ci);
+                if(vi == GEO::NO_VERTEX || vi >= _verticesCoords.size())
+                {
+                    ++coutInvalidVertices;
+                    continue;
+                }
+                neighboringCellsPerVertexTmp[vi].insert(ci);
             }
         }
+        std::cout << "coutInvalidVertices: " << coutInvalidVertices << std::endl;
+        std::cout << "neighboringCellsPerVertexTmp.size(): " << neighboringCellsPerVertexTmp.size() << std::endl;
+        _neighboringCellsPerVertex.resize(_verticesCoords.size());
+        std::cout << "_verticesCoords.size(): " << _verticesCoords.size() << std::endl;
+        for(const auto& it: neighboringCellsPerVertexTmp)
+        {
+            const std::set<CellIndex>& input = it.second;
+            std::vector<CellIndex>& output = _neighboringCellsPerVertex[it.first];
+            output.assign(input.begin(), input.end());
+        }
     }
+
     /**
      * @brief vertexToCells
      *
-     * It's a replacement for GEO::Delaunay::next_around_vertex which doesn't work as expected.
+     * It is a replacement for GEO::Delaunay::next_around_vertex which doesn't work as expected.
      *
      * @param vi
      * @param lvi
@@ -158,13 +177,10 @@ public:
      */
     CellIndex vertexToCells(VertexIndex vi, int lvi) const
     {
-        const std::set<CellIndex>& n = _vertexToNeighboringCells.at(vi);
-        if(lvi > n.size())
+        const std::vector<CellIndex>& localCells = _neighboringCellsPerVertex.at(vi);
+        if(lvi >= localCells.size())
             return GEO::NO_CELL;
-        auto it = n.cbegin();
-        for(int i = 0; i < lvi; ++i)
-            ++it;
-        return *it;
+        return localCells[lvi];
     }
 
     bool btest;
@@ -179,7 +195,7 @@ public:
     void initCells();
     void displayStatistics();
 
-    void loadDhInfo(std::string fileNameInfo, bool doNotCangeFull = false);
+    void loadDhInfo(std::string fileNameInfo);
     void loadDh(std::string fileNameDh, std::string fileNameInfo);
 
     void saveDhInfo(std::string fileNameInfo);
@@ -221,7 +237,8 @@ public:
 
     float distFcn(float maxDist, float dist, float distFcnHeight) const;
     double facetArea(const Facet& f) const;
-    double conj(double val) const;
+
+    inline double conj(double val) const { return val; }
     double cellMaxEdgeLength(CellIndex ci) const;
     double cellMinEdgeLength(CellIndex ci);
     double facetMaxEdgeLength(Facet& f1) const;
@@ -273,12 +290,12 @@ public:
                           std::string fileNameWrl, std::string fileNameWrlTex, std::string fileNamePly,
                           int camerasPerOneOmni, staticVector<int>* cams);
 
-    void segmentCells();
-
     void reconstructGC(float alphaQual, std::string baseName, staticVector<int>* cams, std::string folderName,
                        std::string fileNameStGraph, std::string fileNameStSolution, std::string fileNameTxt,
                        std::string fileNameTxtCam, int camerasPerOneOmni, bool doRemoveBubbles,
                        staticVector<point3d>* hexahsToExcludeFromResultingMesh, bool saveToWrl, point3d* hexah);
+
+    void maxflow();
 
     void reconstructExpetiments(staticVector<int>* cams, std::string folderName, std::string fileNameStGraph,
                                 std::string fileNameStSolution, std::string fileNameTxt, std::string fileNameTxtCam,

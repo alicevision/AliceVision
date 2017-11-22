@@ -7,7 +7,8 @@
 #include "mv_delaunay_helpers.hpp"
 #include "mv_delaunay_meshSmooth.hpp"
 
-#include "MaxFlow.hpp"
+#include "MaxFlow_CSR.hpp"
+// #include "MaxFlow_AdjList.hpp"
 
 #include <aliceVision/structures/mv_filesio.hpp>
 #include <aliceVision/structures/mv_universe.hpp>
@@ -65,7 +66,7 @@ void mv_delaunay_GC::saveDhInfo(std::string fileNameInfo)
     if(mp->verbose)
         printf(".");
 
-    int ncells = getNbCells();
+    int ncells = _cellsAttr.size();
     fwrite(&ncells, sizeof(int), 1, f);
     for(const GC_cellInfo& c: _cellsAttr)
     {
@@ -141,13 +142,11 @@ void mv_delaunay_GC::initCells()
     {
         GC_cellInfo& c = _cellsAttr[i];
 
-        c.cellId = i;
         c.cellSWeight = 0.0f;
         c.cellTWeight = 0.0f;
         c.on = 0.0f;
         c.in = 0.0f;
         c.out = 0.0f;
-        c.full = false; // is free
         for(int s = 0; s < 4; ++s)
         {
             c.gEdgeVisWeight[s] = 0.0f; // weights for the 4 faces of the tetrahedron
@@ -177,7 +176,7 @@ void mv_delaunay_GC::displayStatistics()
     delete ptsNrcsHist;
 }
 
-void mv_delaunay_GC::loadDhInfo(std::string fileNameInfo, bool doNotCangeFull)
+void mv_delaunay_GC::loadDhInfo(std::string fileNameInfo)
 {
     if(mp->verbose)
         printf(".");
@@ -198,7 +197,7 @@ void mv_delaunay_GC::loadDhInfo(std::string fileNameInfo, bool doNotCangeFull)
     _cellsAttr.resize(ncells);
     for(GC_cellInfo& c: _cellsAttr)
     {
-        c.freadinfo(f, doNotCangeFull);
+        c.freadinfo(f);
     }
     fclose(f);
 }
@@ -212,7 +211,7 @@ void mv_delaunay_GC::loadDh(std::string fileNameDh, std::string fileNameInfo)
     std::ifstream iFileT(fileNameDh.c_str());
     // iFileT >> *_tetrahedralization;
 
-    loadDhInfo(fileNameInfo, false);
+    loadDhInfo(fileNameInfo);
 
     printfElapsedTime(t1);
 }
@@ -297,7 +296,7 @@ staticVector<int> mv_delaunay_GC::getIsUsedPerCamera() const
     staticVector<int> cams;
     cams.resize_with(mp->mip->getNbCameras(), 0);
 
-#pragma omp parallel for
+//#pragma omp parallel for
     for(int vi = 0; vi < _verticesAttr.size(); ++vi)
     {
         const GC_vertexInfo& v = _verticesAttr[vi];
@@ -305,9 +304,9 @@ staticVector<int> mv_delaunay_GC::getIsUsedPerCamera() const
         {
             const int obsCam = v.cams[c];
 
-#pragma OMP_ATOMIC_WRITE
+//#pragma OMP_ATOMIC_WRITE
             {
-            cams[obsCam] = 1;
+                cams[obsCam] = 1;
             }
         }
     }
@@ -936,7 +935,7 @@ bool mv_delaunay_GC::isIncidentToSink(VertexIndex vi, bool sink) const
         if(isInfiniteCell(adjCellIndex))
             continue;
 
-        if(_cellsAttr[adjCellIndex].full == sink)
+        if(_cellIsFull[adjCellIndex] == sink)
             return true;
     }
 
@@ -990,11 +989,6 @@ double mv_delaunay_GC::getFacetProjectionMaxEdge(Facet& f, int cam) const
     double c = (pixc - pixb).size();
 
     return std::max(a, std::max(b, c));
-}
-
-double mv_delaunay_GC::conj(double val) const
-{
-    return val;
 }
 
 double mv_delaunay_GC::cellMaxEdgeLength(CellIndex ci) const
@@ -1263,7 +1257,6 @@ void mv_delaunay_GC::fillGraph(bool fixesSigma, float nPixelSizeBehind, bool all
         c.in = 0.0f;
         c.out = 0.0f;
         c.on = 0.0f;
-        c.color = 0;
         for(int s = 0; s < 4; s++)
         {
             c.gEdgeVisWeight[s] = 0.0f;
@@ -1414,7 +1407,7 @@ void mv_delaunay_GC::fillGraphPartPtRc(int& out_nstepsFront, int& out_nstepsBehi
 
         point3d p = po; // HAS TO BE HERE !!!
 
-        bool ok = (ci != GEO::NO_CELL) && ((allPoints) || (_cellsAttr[ci].full));
+        bool ok = (ci != GEO::NO_CELL) && allPoints;
         while(ok)
         {
             GC_cellInfo& c = _cellsAttr[ci];
@@ -1435,7 +1428,7 @@ void mv_delaunay_GC::fillGraphPartPtRc(int& out_nstepsFront, int& out_nstepsBehi
             point3d lpi;
             // find cell which is farest to the cam and which intersect cam-p ray
             if((!farestNeighCellToTheCamOnTheRay(mp->CArr[cam], p, ci, f1, f2, lpi)) ||
-               ((po - pold).size() >= maxDist) || ((!allPoints) && (!c.full)))
+               ((po - pold).size() >= maxDist) || (!allPoints))
             {
                 ok = false;
             }
@@ -2057,19 +2050,19 @@ int mv_delaunay_GC::setIsOnSurface()
 
     int nbSurfaceFacets = 0;
     // loop over all facets
-    for(CellIndex ci = 0; ci < _cellsAttr.size(); ++ci)
+    for(CellIndex ci = 0; ci < _cellIsFull.size(); ++ci)
     {
         for(VertexIndex k = 0; k < 4; ++k)
         {
             Facet f1(ci, k);
-            bool uo = _cellsAttr[f1.cellIndex].full; // get if it is occupied
+            bool uo = _cellIsFull[f1.cellIndex]; // get if it is occupied
             if(!uo)
                 continue;
 
             Facet f2 = mirrorFacet(f1);
             if(isInvalidOrInfiniteCell(f2.cellIndex))
                 continue;
-            bool vo = _cellsAttr[f2.cellIndex].full; // get if it is occupied
+            bool vo = _cellIsFull[f2.cellIndex]; // get if it is occupied
 
             if(uo == vo)
                 continue;
@@ -2254,20 +2247,20 @@ int mv_delaunay_GC::erosionDilatation(bool sink)
 
     int nmorphed = 0;
 
-    staticVector<CellIndex> toDoInverse(_cellsAttr.size());
+    staticVector<CellIndex> toDoInverse;
+    toDoInverse.reserve(_cellIsFull.size());
 
     // standalone tetrahedrons
-    for(CellIndex ci = 0; ci < _cellsAttr.size(); ++ci)
+    for(CellIndex ci = 0; ci < _cellIsFull.size(); ++ci)
     {
-        GC_cellInfo& c = _cellsAttr[ci];
         bool doInverse = false;
 
         const CellIndex nci0 = _tetrahedralization->cell_adjacent(ci, 0);
         const CellIndex nci1 = _tetrahedralization->cell_adjacent(ci, 1);
         const CellIndex nci2 = _tetrahedralization->cell_adjacent(ci, 2);
         const CellIndex nci3 = _tetrahedralization->cell_adjacent(ci, 3);
-        if(((c.full == sink) && (_cellsAttr[nci0].full == !sink)) ||
-           (_cellsAttr[nci1].full == !sink) || (_cellsAttr[nci2].full == !sink) || (_cellsAttr[nci3].full == !sink))
+        if(((_cellIsFull[ci] == sink) && (_cellIsFull[nci0] == !sink)) ||
+           (_cellIsFull[nci1] == !sink) || (_cellIsFull[nci2] == !sink) || (_cellIsFull[nci3] == !sink))
         {
             doInverse = true;
             ++nmorphed;
@@ -2280,8 +2273,7 @@ int mv_delaunay_GC::erosionDilatation(bool sink)
     for(std::size_t i = 0; i < toDoInverse.size(); ++i)
     {
         CellIndex ci = toDoInverse[i];
-        GC_cellInfo& c = _cellsAttr[ci];
-        c.full = !c.full;
+        _cellIsFull[ci] = !_cellIsFull[ci];
     }
 
     if(mp->verbose)
@@ -2297,18 +2289,17 @@ void mv_delaunay_GC::graphCutPostProcessing()
     invertFullStatusForSmallLabels();
 
     staticVector<CellIndex> toDoInverse;
-    toDoInverse.reserve(getNbCells());
+    toDoInverse.reserve(_cellIsFull.size());
 
-    for(CellIndex ci = 0; ci < _cellsAttr.size(); ++ci)
+    for(CellIndex ci = 0; ci < _cellIsFull.size(); ++ci)
     {
-        GC_cellInfo& c = _cellsAttr[ci];
         int count = 0;
         for(int k = 0; k < 4; ++k)
         {
             const CellIndex nci = _tetrahedralization->cell_adjacent(ci, k);
             if(nci == GEO::NO_CELL)
                 continue;
-            count += (_cellsAttr[nci].full != c.full);
+            count += (_cellIsFull[nci] != _cellIsFull[ci]);
         }
         if(count > 2)
             toDoInverse.push_back(ci);
@@ -2316,8 +2307,7 @@ void mv_delaunay_GC::graphCutPostProcessing()
     for(std::size_t i = 0; i < toDoInverse.size(); ++i)
     {
         CellIndex ci = toDoInverse[i];
-        GC_cellInfo& c = _cellsAttr[ci];
-        c.full = !c.full;
+        _cellIsFull[ci] = !_cellIsFull[ci];
     }
     std::cout << "Graph cut post-processing done." << std::endl;
 
@@ -2346,8 +2336,6 @@ float mv_delaunay_GC::getAveragePixelSize() const
 
 void mv_delaunay_GC::freeUnwantedFullCells(std::string  /*folderName*/, point3d* hexah)
 {
-    setIsOnSurface();
-
     if(mp->verbose)
         printf("freeUnwantedFullCells\n");
 
@@ -2376,8 +2364,7 @@ void mv_delaunay_GC::freeUnwantedFullCells(std::string  /*folderName*/, point3d*
             if(isInfiniteCell(adjCellIndex))
                 continue;
 
-            GC_cellInfo& c = _cellsAttr[adjCellIndex];
-            c.full = false;
+            _cellIsFull[adjCellIndex] = false;
         }
     }
 
@@ -2387,10 +2374,9 @@ void mv_delaunay_GC::freeUnwantedFullCells(std::string  /*folderName*/, point3d*
         int nremoved = 0;
         point3d hexahinf[8];
         inflateHexahedron(hexah, hexahinf, 1.001);
-        for(CellIndex ci = 0; ci < _cellsAttr.size(); ++ci)
+        for(CellIndex ci = 0; ci < _cellIsFull.size(); ++ci)
         {
-            GC_cellInfo& c = _cellsAttr[ci];
-            if(isInfiniteCell(ci) || !c.full)
+            if(isInfiniteCell(ci) || !_cellIsFull[ci])
                 continue;
 
             const point3d& pa = _verticesCoords[_tetrahedralization->cell_vertex(ci, 0)];
@@ -2403,7 +2389,7 @@ void mv_delaunay_GC::freeUnwantedFullCells(std::string  /*folderName*/, point3d*
                (!isPointInHexahedron(pc, hexahinf)) ||
                (!isPointInHexahedron(pd, hexahinf)))
             {
-                c.full = false;
+                _cellIsFull[ci] = false;
                 ++nremoved;
             }
         }
@@ -2452,17 +2438,17 @@ void mv_delaunay_GC::saveMaxflowToWrl(std::string  /*dirName*/, std::string file
 
     // loop over all facets
     int nttt = 0;
-    for(CellIndex ci = 0; ci < _cellsAttr.size(); ++ci)
+    for(CellIndex ci = 0; ci < _cellIsFull.size(); ++ci)
     {
         for(VertexIndex k = 0; k < 4; ++k)
         {
             Facet f1(ci, k);
-            bool uo = _cellsAttr[f1.cellIndex].full; // get if it is occupied
+            bool uo = _cellIsFull[f1.cellIndex]; // get if it is occupied
             if(!uo)
                 continue;
 
             Facet f2 = mirrorFacet(f1);
-            bool vo = _cellsAttr[f2.cellIndex].full; // get if it is occupied
+            bool vo = _cellIsFull[f2.cellIndex]; // get if it is occupied
 
             if(uo != vo)
             {
@@ -2475,19 +2461,19 @@ void mv_delaunay_GC::saveMaxflowToWrl(std::string  /*dirName*/, std::string file
     fprintf(f, "%i\n", nttt);
 
     // loop over all facets
-    for(CellIndex ci = 0; ci < _cellsAttr.size(); ++ci)
+    for(CellIndex ci = 0; ci < _cellIsFull.size(); ++ci)
     {
         for(VertexIndex k = 0; k < 4; ++k)
         {
             Facet f1(ci, k);
-            bool uo = _cellsAttr[f1.cellIndex].full; // get if it is occupied
+            bool uo = _cellIsFull[f1.cellIndex]; // get if it is occupied
             if(!uo)
                 continue;
 
             Facet f2 = mirrorFacet(f1);
             if(isInvalidOrInfiniteCell(f2.cellIndex))
                 continue;
-            bool vo = _cellsAttr[f2.cellIndex].full; // get if it is occupied
+            bool vo = _cellIsFull[f2.cellIndex]; // get if it is occupied
 
             if(uo == vo)
                 continue;
@@ -2600,118 +2586,31 @@ void mv_delaunay_GC::saveMaxflowToWrl(std::string  /*dirName*/, std::string file
         printf("done\n");
 }
 
-void mv_delaunay_GC::segmentCells()
-{
-    if(mp->verbose)
-        printf("segmenting cells\n");
-
-    int n = getNbCells(); // number of tetrahedrons
-
-    staticVector<int>* colors = new staticVector<int>(n);
-    colors->resize_with(n, -1);
-
-    staticVector<sortedId>* ncolors = new staticVector<sortedId>(n);
-    ncolors->resize(n);
-    for(int i = 0; i < n; i++)
-    {
-        (*ncolors)[i].id = i;
-        (*ncolors)[i].value = 0.0;
-    }
-
-    staticVector<CellIndex>* buff = new staticVector<CellIndex>(n);
-
-    int col = 0;
-
-    for(CellIndex ci = 0; ci < _cellsAttr.size(); ++ci)
-    {
-        GC_cellInfo& c = _cellsAttr[ci];
-        assert(c.cellId > -1);
-
-        if(((*colors)[c.cellId] == -1) && (c.full))
-        {
-            // backtrack all connected interior cells
-            buff->resize(0);
-            buff->push_back(ci);
-
-            (*colors)[c.cellId] = col;
-            (*ncolors)[col].value += 1.0;
-
-            while(buff->size() > 0)
-            {
-                CellIndex tmp_ci = buff->pop();
-
-                for(int k = 0; k < 4; ++k)
-                {
-                    const CellIndex nci = _tetrahedralization->cell_adjacent(tmp_ci, k);
-                    if(nci == GEO::NO_CELL)
-                        continue;
-                    const GC_cellInfo& nc = _cellsAttr[nci];
-                    if((nc.cellId > -1) && ((*colors)[nc.cellId] == -1) && (nc.full))
-                    {
-                        (*colors)[nc.cellId] = col;
-                        (*ncolors)[col].value += 1.0;
-                        buff->push_back(nci);
-                    }
-                }
-            }
-            ++col;
-        }
-    }
-
-    qsort(&(*ncolors)[0], col, sizeof(sortedId), qsortCompareSortedIdDesc);
-    int bestcolor = (*ncolors)[0].id;
-
-    if(mp->verbose)
-        printf("all %i, first best %f, second best %f, colors %i\n", n, (*ncolors)[0].value,
-               (*ncolors)[std::max(col - 1, 1)].value, col);
-
-    // TODO FACA: same as leaveLargestFullSegmentOnly?
-    for(CellIndex ci = 0; ci < _cellsAttr.size(); ++ci)
-    {
-        GC_cellInfo& c = _cellsAttr[ci];
-        assert(c.cellId > -1);
-
-        c.full = ((*colors)[c.cellId] == bestcolor);
-    }
-
-    delete ncolors;
-    delete colors;
-}
-
 void mv_delaunay_GC::invertFullStatusForSmallLabels()
 {
     if(mp->verbose)
         printf("filling small holes\n");
 
-    const int n = getNbCells();
-    staticVector<int>* colors = new staticVector<int>(n);
-    colors->resize_with(n, -1);
+    const std::size_t nbCells = _cellIsFull.size();
+    staticVector<int>* colorPerCell = new staticVector<int>(nbCells);
+    colorPerCell->resize_with(nbCells, -1);
 
-    staticVector<sortedId>* ncolors = new staticVector<sortedId>(n);
-    ncolors->resize(n);
-    for(int i = 0; i < n; ++i)
+    staticVector<int>* nbCellsPerColor = new staticVector<int>(100);
+    nbCellsPerColor->resize_with(1, 0);
+    int lastColorId = 0;
+
+    staticVector<CellIndex>* buff = new staticVector<CellIndex>(nbCells);
+
+    for(CellIndex ci = 0; ci < nbCells; ++ci)
     {
-        (*ncolors)[i].id = i;
-        (*ncolors)[i].value = 0.0;
-    }
-
-    staticVector<CellIndex>* buff = new staticVector<CellIndex>(n);
-
-    int col = 0;
-
-    for(CellIndex ci = 0; ci < _cellsAttr.size(); ++ci)
-    {
-        GC_cellInfo& c = _cellsAttr[ci];
-        assert(c.cellId > -1);
-
-        if((*colors)[c.cellId] == -1)
+        if((*colorPerCell)[ci] == -1)
         {
             // backtrack all connected interior cells
             buff->resize(0);
             buff->push_back(ci);
 
-            (*colors)[c.cellId] = col;
-            (*ncolors)[col].value += 1.0;
+            (*colorPerCell)[ci] = lastColorId;
+            (*nbCellsPerColor)[lastColorId] += 1;
 
             while(buff->size() > 0)
             {
@@ -2722,38 +2621,37 @@ void mv_delaunay_GC::invertFullStatusForSmallLabels()
                     const CellIndex nci = _tetrahedralization->cell_adjacent(tmp_ci, k);
                     if(nci == GEO::NO_CELL)
                         continue;
-                    const GC_cellInfo& nc = _cellsAttr[nci];
-                    if((nc.cellId > -1) && ((*colors)[nc.cellId] == -1) && (nc.full == c.full))
+                    if(((*colorPerCell)[nci] == -1) && (_cellIsFull[nci] == _cellIsFull[ci]))
                     {
-                        (*colors)[nc.cellId] = col;
-                        (*ncolors)[col].value += 1.0;
+                        (*colorPerCell)[nci] = lastColorId;
+                        (*nbCellsPerColor)[lastColorId] += 1;
                         buff->push_back(nci);
                     }
                 }
             }
-            ++col;
+            nbCellsPerColor->push_back(0); // add new color with 0 cell
+            ++lastColorId;
+            assert(lastColorId == nbCellsPerColor->size() - 1);
         }
     }
+    assert((*nbCellsPerColor)[nbCellsPerColor->size()-1] == 0);
+    nbCellsPerColor->resize(nbCellsPerColor->size()-1); // remove last empty element
 
     int nfilled = 0;
-    for(CellIndex ci = 0; ci < _cellsAttr.size(); ++ci)
+    for(CellIndex ci = 0; ci < nbCells; ++ci)
     {
-        GC_cellInfo& c = _cellsAttr[ci];
-        assert(c.cellId > -1);
-
-        int col = (*colors)[c.cellId];
-        if((*ncolors)[col].value < 100.0f)
+        if((*nbCellsPerColor)[(*colorPerCell)[ci]] < 100)
         {
-            c.full = !c.full;
+            _cellIsFull[ci] = !_cellIsFull[ci];
             ++nfilled;
         }
     }
 
     if(mp->verbose)
-        printf("all %i, colors %i, filled %i\n", n, col, nfilled);
+        printf("Full number of cells: %i, Number of labels: %i, Number of cells changed: %i\n", nbCells, nbCellsPerColor->size(), nfilled);
 
-    delete ncolors;
-    delete colors;
+    delete nbCellsPerColor;
+    delete colorPerCell;
 }
 
 void mv_delaunay_GC::reconstructVoxel(point3d hexah[8], staticVector<int>* voxelsIds, std::string folderName,
@@ -2832,19 +2730,46 @@ void mv_delaunay_GC::addToInfiniteSw(float sW)
 void mv_delaunay_GC::reconstructGC(float alphaQual, std::string baseName, staticVector<int>* cams,
                                    std::string folderName, std::string fileNameStGraph, std::string fileNameStSolution,
                                    std::string fileNameTxt, std::string fileNameTxtCam, int camerasPerOneOmni,
-                                   bool  /*doRemoveBubbles*/, staticVector<point3d>* /*hexahsToExcludeFromResultingMesh*/,
+                                   bool doRemoveBubbles, staticVector<point3d>* hexahsToExcludeFromResultingMesh,
                                    bool saveToWrl, point3d* hexah) // alphaQual=5.0f
 {
     std::cout << "reconstructGC" << std::endl;
-    long t_reconstructGC = clock();
 
-    MaxFlow<int, float> maxFlowGraph(getNbCells());
+    maxflow();
 
+    std::cout << "Maxflow: convert result to surface" << std::endl;
+    // Convert cells FULL/EMPTY into surface
+    setIsOnSurface();
+
+    if(saveToWrl)
+    {
+        std::string fileNameWrl = folderName + baseName + ".wrl";
+        std::string fileNameWrlTex = folderName + baseName + "Textured.wrl";
+        std::string fileNamePly = folderName + baseName + ".ply";
+        saveMaxflowToWrl(folderName, fileNameTxt, fileNameTxtCam, fileNameWrl, fileNameWrlTex, fileNamePly,
+                         camerasPerOneOmni, cams);
+    }
+
+    std::string resultFolderName = folderName + baseName + "/";
+    bfs::create_directory(resultFolderName);
+
+    freeUnwantedFullCells(resultFolderName, hexah);
+
+    std::cout << "reconstructGC end" << std::endl;
+}
+
+void mv_delaunay_GC::maxflow()
+{
+    long t_maxflow = clock();
+
+    std::cout << "Maxflow: start allocation" << std::endl;
+    MaxFlow_CSR maxFlowGraph(_cellsAttr.size());
+
+    std::cout << "Maxflow: add nodes" << std::endl;
     // fill s-t edges
     for(CellIndex ci = 0; ci < _cellsAttr.size(); ++ci)
     {
         GC_cellInfo& c = _cellsAttr[ci];
-        assert(c.cellId > -1);
         float ws = c.cellSWeight;
         float wt = c.cellTWeight;
 
@@ -2853,9 +2778,10 @@ void mv_delaunay_GC::reconstructGC(float alphaQual, std::string baseName, static
         assert(!std::isnan(ws));
         assert(!std::isnan(wt));
 
-        maxFlowGraph.addNode(c.cellId, ws, wt);
+        maxFlowGraph.addNode(ci, ws, wt);
     }
 
+    std::cout << "Maxflow: add edges" << std::endl;
     const float CONSTalphaVIS = 1.0f;
     const float CONSTalphaPHOTO = 5.0f;
 
@@ -2868,9 +2794,6 @@ void mv_delaunay_GC::reconstructGC(float alphaQual, std::string baseName, static
             Facet fv = mirrorFacet(fu);
             if(isInvalidOrInfiniteCell(fv.cellIndex))
                 continue;
-
-            assert(_cellsAttr[fu.cellIndex].cellId > -1);
-            assert(_cellsAttr[fv.cellIndex].cellId > -1);
 
             float a1 = 0.0f;
             float a2 = 0.0f;
@@ -2895,40 +2818,28 @@ void mv_delaunay_GC::reconstructGC(float alphaQual, std::string baseName, static
         }
     }
 
-    long t_maxflow = clock();
-    // Find graph-cut solution
-    const float totalFlow = maxFlowGraph.compute();
-    printfElapsedTime(t_maxflow, "Maxflow computation ");
+    std::cout << "Maxflow: clear cells info" << std::endl;
+    const std::size_t nbCells = _cellsAttr.size();
+    std::vector<GC_cellInfo>().swap(_cellsAttr); // force clear
 
+    long t_maxflow_compute = clock();
+    // Find graph-cut solution
+    std::cout << "Maxflow: compute" << std::endl;
+    const float totalFlow = maxFlowGraph.compute();
+    printfElapsedTime(t_maxflow_compute, "Maxflow computation ");
     std::cout << "totalFlow: " << totalFlow << std::endl;
 
+    std::cout << "Maxflow: update full/empty cells status" << std::endl;
+    _cellIsFull.resize(nbCells);
     // Update FULL/EMPTY status of all cells
-    for(CellIndex i = 0; i < _cellsAttr.size(); ++i)
+    for(CellIndex ci = 0; ci < nbCells; ++ci)
     {
-        GC_cellInfo& c = _cellsAttr[i];
-        c.full = !maxFlowGraph.isSource(i);
+        _cellIsFull[ci] = maxFlowGraph.isTarget(ci);
     }
 
-    // Convert cells FULL/EMPTY into surface
-    setIsOnSurface();
+    printfElapsedTime(t_maxflow, "Full maxflow step");
 
-    if(saveToWrl)
-    {
-        std::string fileNameWrl = folderName + baseName + ".wrl";
-        std::string fileNameWrlTex = folderName + baseName + "Textured.wrl";
-        std::string fileNamePly = folderName + baseName + ".ply";
-        saveMaxflowToWrl(folderName, fileNameTxt, fileNameTxtCam, fileNameWrl, fileNameWrlTex, fileNamePly,
-                         camerasPerOneOmni, cams);
-    }
-
-    std::string resultFolderName = folderName + baseName + "/";
-    bfs::create_directory(resultFolderName);
-
-    freeUnwantedFullCells(resultFolderName, hexah);
-
-    printfElapsedTime(t_reconstructGC, "ReconstructGC computation (full maxflow) ");
-
-    std::cout << "reconstructGC end" << std::endl;
+    std::cout << "Maxflow: end" << std::endl;
 }
 
 void mv_delaunay_GC::reconstructExpetiments(staticVector<int>* cams, std::string folderName,
@@ -3052,19 +2963,19 @@ float mv_delaunay_GC::computeSurfaceArea()
 {
     float area = 0.0f;
     // loop over all facets
-    for(CellIndex ci = 0; ci < _cellsAttr.size(); ++ci)
+    for(CellIndex ci = 0; ci < _cellIsFull.size(); ++ci)
     {
         for(VertexIndex k = 0; k < 4; ++k)
         {
             Facet f1(ci, k);
-            bool uo = _cellsAttr[f1.cellIndex].full; // get if it is occupied
+            bool uo = _cellIsFull[f1.cellIndex]; // get if it is occupied
             if(!uo)
                 continue;
 
             Facet f2 = mirrorFacet(f1);
             if(isInvalidOrInfiniteCell(f2.cellIndex))
                 continue;
-            bool vo = _cellsAttr[f2.cellIndex].full; // get if it is occupied
+            bool vo = _cellIsFull[f2.cellIndex]; // get if it is occupied
 
             if(uo != vo)
             {
@@ -3082,10 +2993,14 @@ mv_mesh* mv_delaunay_GC::createMesh()
 
     int nbSurfaceFacets = setIsOnSurface();
 
-    mv_mesh* me = new mv_mesh();
-    // TODO: copy only surface points and remap visibilities
+    std::cout << "Nb surface facets: " << nbSurfaceFacets << std::endl;
+    std::cout << "Nb vertixes: " << _verticesCoords.size() << std::endl;
+    std::cout << "_cellIsFull.size(): " << _cellIsFull.size() << std::endl;
 
-    me->pts = new staticVector<point3d>(getNbVertices());
+    mv_mesh* me = new mv_mesh();
+
+    // TODO: copy only surface points and remap visibilities
+    me->pts = new staticVector<point3d>(_verticesCoords.size());
     for(const point3d& p: _verticesCoords)
     {
         me->pts->push_back(p);
@@ -3093,19 +3008,19 @@ mv_mesh* mv_delaunay_GC::createMesh()
 
     me->tris = new staticVector<mv_mesh::triangle>(nbSurfaceFacets);
     // loop over all facets
-    for(CellIndex ci = 0; ci < _cellsAttr.size(); ++ci)
+    for(CellIndex ci = 0; ci < _cellIsFull.size(); ++ci)
     {
         for(VertexIndex k = 0; k < 4; ++k)
         {
             Facet f1(ci, k);
-            bool uo = _cellsAttr[f1.cellIndex].full; // get if it is occupied
+            bool uo = _cellIsFull[f1.cellIndex]; // get if it is occupied
             if(!uo)
                 continue;
 
             Facet f2 = mirrorFacet(f1);
             if(isInvalidOrInfiniteCell(f2.cellIndex))
                 continue;
-            bool vo = _cellsAttr[f2.cellIndex].full; // get if it is occupied
+            bool vo = _cellIsFull[f2.cellIndex]; // get if it is occupied
 
             if(uo == vo)
                 continue;
@@ -3485,19 +3400,17 @@ void mv_delaunay_GC::segmentFullOrFree(bool full, staticVector<int>** out_fullSe
     if(mp->verbose)
         printf("segmenting connected space\n");
 
-    staticVector<int>* colors = new staticVector<int>(_cellsAttr.size());
-    colors->resize_with(_cellsAttr.size(), -1);
+    staticVector<int>* colors = new staticVector<int>(_cellIsFull.size());
+    colors->resize_with(_cellIsFull.size(), -1);
 
-    staticVector<CellIndex>* buff = new staticVector<CellIndex>(_cellsAttr.size());
+    staticVector<CellIndex>* buff = new staticVector<CellIndex>(_cellIsFull.size());
 
     int col = 0;
 
     // segment connected free space
-    for(CellIndex ci = 0; ci < _cellsAttr.size(); ++ci)
+    for(CellIndex ci = 0; ci < _cellIsFull.size(); ++ci)
     {
-        GC_cellInfo& c = _cellsAttr[ci];
-
-        if((!isInfiniteCell(ci)) && ((*colors)[c.cellId] == -1) && (c.full == full))
+        if((!isInfiniteCell(ci)) && ((*colors)[ci] == -1) && (_cellIsFull[ci] == full))
         {
             // backtrack all connected interior cells
             buff->resize(0);
@@ -3506,18 +3419,16 @@ void mv_delaunay_GC::segmentFullOrFree(bool full, staticVector<int>** out_fullSe
             while(buff->size() > 0)
             {
                 CellIndex tmp_ci = buff->pop();
-                GC_cellInfo& tmp_c = _cellsAttr[tmp_ci];
 
-                (*colors)[tmp_c.cellId] = col;
+                (*colors)[tmp_ci] = col;
 
                 for(int k = 0; k < 4; ++k)
                 {
                     const CellIndex nci = _tetrahedralization->cell_adjacent(tmp_ci, k);
                     if(nci == GEO::NO_CELL)
                         continue;
-                    const GC_cellInfo& nc = _cellsAttr[nci];
-                    if((!isInfiniteCell(nci)) && (nc.cellId > -1) && ((*colors)[nc.cellId] == -1) &&
-                       (nc.full == full))
+                    if((!isInfiniteCell(nci)) && ((*colors)[nci] == -1) &&
+                       (_cellIsFull[nci] == full))
                     {
                         buff->push_back(nci);
                     }
@@ -3547,11 +3458,9 @@ int mv_delaunay_GC::removeBubbles()
     colorsToFill->resize_with(nbEmptySegments, true);
 
     // all free space segments which contains camera has to remain free
-    for(CellIndex ci = 0; ci < _cellsAttr.size(); ++ci)
+    for(CellIndex ci = 0; ci < _cellIsFull.size(); ++ci)
     {
-        GC_cellInfo& cell = _cellsAttr[ci];
-
-        if(isInfiniteCell(ci) || (*emptySegColors)[cell.cellId] < 0)
+        if(isInfiniteCell(ci) || (*emptySegColors)[ci] < 0)
             continue;
 
         const GC_vertexInfo& a = _verticesAttr[_tetrahedralization->cell_vertex(ci, 0)];
@@ -3561,7 +3470,7 @@ int mv_delaunay_GC::removeBubbles()
         if( a.isVirtual() || b.isVirtual() || c.isVirtual() || d.isVirtual())
         {
             // TODO FACA: check helper points are not connected to cameras?
-            (*colorsToFill)[(*emptySegColors)[cell.cellId]] = false;
+            (*colorsToFill)[(*emptySegColors)[ci]] = false;
         }
     }
 
@@ -3574,12 +3483,11 @@ int mv_delaunay_GC::removeBubbles()
         }
     }
 
-    for(CellIndex ci = 0; ci < _cellsAttr.size(); ++ci)
+    for(CellIndex ci = 0; ci < _cellIsFull.size(); ++ci)
     {
-        GC_cellInfo& c = _cellsAttr[ci];
-        if((!isInfiniteCell(ci)) && ((*emptySegColors)[c.cellId] >= 0) && ((*colorsToFill)[(*emptySegColors)[c.cellId]]))
+        if((!isInfiniteCell(ci)) && ((*emptySegColors)[ci] >= 0) && ((*colorsToFill)[(*emptySegColors)[ci]]))
         {
-            c.full = true;
+            _cellIsFull[ci] = true;
         }
     }
 
@@ -3607,23 +3515,21 @@ int mv_delaunay_GC::removeDust(int minSegSize)
     colorsSize->resize_with(nbFullSegments, 0);
 
     // all free space segments which contains camera has to remain free
-    for(CellIndex ci = 0; ci < _cellsAttr.size(); ++ci)
+    for(CellIndex ci = 0; ci < _cellIsFull.size(); ++ci)
     {
-        GC_cellInfo& c = _cellsAttr[ci];
-        if((*fullSegsColor)[c.cellId] >= 0) // if we have a valid color: non empty and non infinit cell
+        if((*fullSegsColor)[ci] >= 0) // if we have a valid color: non empty and non infinit cell
         {
-            (*colorsSize)[(*fullSegsColor)[c.cellId]] += 1; // count the number of cells in the segment
+            (*colorsSize)[(*fullSegsColor)[ci]] += 1; // count the number of cells in the segment
         }
     }
 
     int ndust = 0;
-    for(CellIndex ci = 0; ci < _cellsAttr.size(); ++ci)
+    for(CellIndex ci = 0; ci < _cellIsFull.size(); ++ci)
     {
-        GC_cellInfo& c = _cellsAttr[ci];
         // if number of cells in the segment is too small, we change the status to "empty"
-        if(((*fullSegsColor)[c.cellId] >= 0) && ((*colorsSize)[(*fullSegsColor)[c.cellId]] < minSegSize))
+        if(((*fullSegsColor)[ci] >= 0) && ((*colorsSize)[(*fullSegsColor)[ci]] < minSegSize))
         {
-            c.full = false;
+            _cellIsFull[ci] = false;
             ++ndust;
         }
     }
@@ -3632,7 +3538,7 @@ int mv_delaunay_GC::removeDust(int minSegSize)
     delete fullSegsColor;
 
     if(mp->verbose)
-        printf("%i, all segs %i\n", ndust, nbFullSegments);
+        printf("Removed dust cells: %i, Number of segments: %i\n", ndust, nbFullSegments);
 
     setIsOnSurface();
 
@@ -3654,10 +3560,9 @@ void mv_delaunay_GC::leaveLargestFullSegmentOnly()
     // all free space segments which contains camera has to remain free
     int largestColor = -1;
     int maxn = 0;
-    for(CellIndex ci = 0; ci < _cellsAttr.size(); ++ci)
+    for(CellIndex ci = 0; ci < _cellIsFull.size(); ++ci)
     {
-        GC_cellInfo& c = _cellsAttr[ci];
-        int color = (*colors)[c.cellId];
+        int color = (*colors)[ci];
         if(color >= 0)
         {
             (*colorsSize)[color] += 1;
@@ -3670,12 +3575,11 @@ void mv_delaunay_GC::leaveLargestFullSegmentOnly()
         }
     }
 
-    for(CellIndex ci = 0; ci < _cellsAttr.size(); ++ci)
+    for(CellIndex ci = 0; ci < _cellIsFull.size(); ++ci)
     {
-        GC_cellInfo& c = _cellsAttr[ci];
-        if((*colors)[c.cellId] != largestColor)
+        if((*colors)[ci] != largestColor)
         {
-            c.full = false;
+            _cellIsFull[ci] = false;
         }
     }
 
@@ -3693,9 +3597,8 @@ staticVector<float>* mv_delaunay_GC::computeSegmentsSurfaceArea(bool full, stati
     staticVector<float>* segmentsSurfAreas = new staticVector<float>(nsegments);
     segmentsSurfAreas->resize_with(nsegments, 0.0f);
 
-
     // loop over all facets
-    for(CellIndex ci = 0; ci < _cellsAttr.size(); ++ci)
+    for(CellIndex ci = 0; ci < _cellIsFull.size(); ++ci)
     {
         for(VertexIndex k = 0; k < 4; ++k)
         {
@@ -3703,8 +3606,8 @@ staticVector<float>* mv_delaunay_GC::computeSegmentsSurfaceArea(bool full, stati
             Facet f2 = mirrorFacet(f1);
             if(isInvalidOrInfiniteCell(f2.cellIndex))
                 continue;
-            bool uo = _cellsAttr[f1.cellIndex].full; // get if it is occupied
-            bool vo = _cellsAttr[f2.cellIndex].full; // get if it is occupied
+            bool uo = _cellIsFull[f1.cellIndex]; // get if it is occupied
+            bool vo = _cellIsFull[f2.cellIndex]; // get if it is occupied
 
             if(uo == vo)
                 continue;
@@ -3712,8 +3615,8 @@ staticVector<float>* mv_delaunay_GC::computeSegmentsSurfaceArea(bool full, stati
             if(!uo)
                 continue;
 
-            int col1 = colors[_cellsAttr[f1.cellIndex].cellId];
-            int col2 = colors[_cellsAttr[f2.cellIndex].cellId];
+            int col1 = colors[f1.cellIndex];
+            int col2 = colors[f2.cellIndex];
 
             if((uo == full) && (col1 > -1))
             {

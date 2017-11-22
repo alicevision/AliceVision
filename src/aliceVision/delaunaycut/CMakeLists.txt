@@ -7,6 +7,10 @@ set(SOURCES_files_delaunaycut
   mv_delaunay_meshSmooth.cpp
   mv_delaunay_meshSmooth.hpp
   mv_delaunay_types.hpp
+  MaxFlow_CSR.cpp
+  MaxFlow_CSR.hpp
+  MaxFlow_AdjList.cpp
+  MaxFlow_AdjList.hpp
 )
 source_group("delaunaycut" FILES ${SOURCES_files_delaunaycut})
 
