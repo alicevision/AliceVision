@@ -294,6 +294,7 @@ void SequentialSfMReconstructionEngine::RobustResectionOfImages(
     
     // triangulate
     triangulateMultiViews_LORANSAC(_sfm_data, prevReconstructedViews, newReconstructedViews);
+//    triangulateMultiViews_SVD(_sfm_data, prevReconstructedViews, newReconstructedViews);
     //    triangulate(_sfm_data, prevReconstructedViews, newReconstructedViews);
     
     if (bImageAdded)
@@ -1562,7 +1563,7 @@ void SequentialSfMReconstructionEngine::prepareTheTrackTriangulation(
 
 bool SequentialSfMReconstructionEngine::checkChierality(
   const Vec3& pt, 
-  std::set<IndexT> & viewsId, 
+  const std::set<IndexT> & viewsId, 
   const SfM_Data& scene)
 {
   bool isChieral = true;  
@@ -1575,7 +1576,7 @@ bool SequentialSfMReconstructionEngine::checkChierality(
     if (pose.depth(pt) < 0 ) 
     { 
       isChieral = false;
-      continue;
+      break;
     }
   }
   return isChieral;
@@ -1685,7 +1686,7 @@ void SequentialSfMReconstructionEngine::triangulateMultiViews_SVD(SfM_Data& scen
       
 void SequentialSfMReconstructionEngine::triangulateMultiViews_LORANSAC(SfM_Data& scene, const std::set<IndexT>& previousReconstructedViews, const std::set<IndexT>& newReconstructedViews)
 {
-    // Pipeline (Per-Track approach)
+  // Pipeline (Per-Track approach)
   //  1. From the new views, find all the tracks that can be updated or reconstructed
   //  2. For each track, 
   //     a) if the track is already recosntructed -> redo a robust triangulation with Lo-Ransac
@@ -1697,9 +1698,9 @@ void SequentialSfMReconstructionEngine::triangulateMultiViews_LORANSAC(SfM_Data&
   identifyTracksToTriangulate(previousReconstructedViews, newReconstructedViews, mapTracksToTriangulate);
   
   /* Inputs parameters */
-  const std::size_t kMinNbObservations = 4;
-  const double threshold = 1.0;
-  const double outliersProbability = 0.3;
+  const std::size_t kMinNbObservations = 2;
+  const double threshold = 4.0;
+  const double outliersProbability = 0.01;
   
   std::size_t numNewTracks = 0, numUpdatedTracks = 0, numNotValidTracks = 0, numPutativeTracks = 0, numNoChieralTracks = 0;
   for (auto & trackIt : mapTracksToTriangulate)

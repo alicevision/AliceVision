@@ -182,7 +182,7 @@ private:
     const std::set<IndexT>& newReconstructedViews, 
     std::map<IndexT, std::set<IndexT> > &mapTracksToTriangulate);
   
-  bool checkChierality(const Vec3& pt, std::set<IndexT> & viewsId, const SfM_Data& scene);
+  bool checkChierality(const Vec3& pt, const std::set<IndexT> &viewsId, const SfM_Data& scene);
 
   void prepareTheTrackTriangulation(
     const std::size_t& trackId, 
