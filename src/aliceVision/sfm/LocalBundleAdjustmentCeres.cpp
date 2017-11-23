@@ -25,7 +25,7 @@ void LocalBundleAdjustmentCeres::LocalBA_statistics::show()
   }
   
   ALICEVISION_LOG_DEBUG("\n----- Local BA Ceres statistics ------\n" 
-                        << "|- adjutment duration: " << _time << " s \n"
+                        << "|- adjustment duration: " << _time << " s \n"
                         << "|- graph-distances distribution: \n"
                         << "  * not connected: " << _numCamerasPerDistance[-1] << " cameras \n"
                         << "  * D = 0: " << _numCamerasPerDistance[0] << " cameras \n"
@@ -232,8 +232,7 @@ bool LocalBundleAdjustmentCeres::exportStatistics(const std::string& dir, const 
     header.push_back("dAR=3"); header.push_back("dAR=4"); header.push_back("dAR=5");   
     header.push_back("dAR=6"); header.push_back("dAR=7"); header.push_back("dAR=8"); 
     header.push_back("dAR=9"); header.push_back("dAR=10+");
-    header.
-        push_back("New Views");
+    header.push_back("New Views");
     
     for (std::string & head : header)
       os << head << "\t";
@@ -243,12 +242,12 @@ bool LocalBundleAdjustmentCeres::exportStatistics(const std::string& dir, const 
   // Add the '_LBA_statistics' contents:
   // Compute the number of poses with a distanceToRecenteCameras > 10
   // remind: distances range is {-1; 10+} so 11th element is the dist. 10
-  std::size_t posesWthDistUpperThanTen = 0;
+  std::size_t posesWithDistUpperThanTen = 0;
   
   for (const auto& it : _LBAStatistics._numCamerasPerDistance)
   {
     if (it.first >= 10)
-      posesWthDistUpperThanTen += it.second;
+      posesWithDistUpperThanTen += it.second;
   }
   
   os << _LBAStatistics._time << "\t"
@@ -281,7 +280,7 @@ bool LocalBundleAdjustmentCeres::exportStatistics(const std::string& dir, const 
      << _LBAStatistics._numCamerasPerDistance[7] << "\t"
      << _LBAStatistics._numCamerasPerDistance[8] << "\t"
      << _LBAStatistics._numCamerasPerDistance[9] << "\t"
-     << posesWthDistUpperThanTen << "\t";
+     << posesWithDistUpperThanTen << "\t";
   
   for (const IndexT id : _LBAStatistics._newViewsId)
   {
@@ -332,7 +331,7 @@ std::map<IndexT, std::vector<double>> LocalBundleAdjustmentCeres::addIntrinsicsT
   std::map<IndexT, std::size_t> intrinsicsUsage;
   
   // Setup Intrinsics data 
-  // Count how many posed views use each intrinsic
+  // Count the number of reconstructed views per intrinsic
   for(const auto& itView: sfm_data.GetViews())
   {
     const View* view = itView.second.get();
@@ -398,7 +397,7 @@ std::map<IndexT, std::vector<double>> LocalBundleAdjustmentCeres::addIntrinsicsT
   return map_intrinsics;
 } 
 
-/// Transfert the BA options from OpenMVG to Ceres
+/// Set BA options to Ceres
 void LocalBundleAdjustmentCeres::setSolverOptions(ceres::Solver::Options& solver_options)
 {
   solver_options.preconditioner_type = _LBAOptions._preconditioner_type;

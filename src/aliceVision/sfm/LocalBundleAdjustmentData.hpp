@@ -20,7 +20,7 @@ public:
 
   /// Defines the state of the all parameter of the reconstruction (structure, poses, intrinsics) in the BA:
   enum EState { 
-    refined,  ///< will be adjuted by the BA solver
+    refined,  ///< will be adjusted by the BA solver
     constant, ///< will be set as constant in the sover
     ignored   ///< will not be set into the BA solver
   };
@@ -40,31 +40,31 @@ public:
   EState getLandmarkState(const IndexT landmarkId) const   {return _mapLBAStatePerLandmarkId.at(landmarkId);}
   
   /// Return the number of refined poses.
-  std::size_t getNumOfRefinedPoses() const        {return getNumberOf(LocalBundleAdjustmentData::EParameter::pose, LocalBundleAdjustmentData::EState::refined);}
+  std::size_t getNumOfRefinedPoses() const        {return getNumberOf(EParameter::pose, EState::refined);}
  
   /// Return the number of constant poses.
-  std::size_t getNumOfConstantPoses() const       {return getNumberOf(LocalBundleAdjustmentData::EParameter::pose, LocalBundleAdjustmentData::EState::constant);}
+  std::size_t getNumOfConstantPoses() const       {return getNumberOf(EParameter::pose, EState::constant);}
 
   /// Return the number of ignored poses.
-  std::size_t getNumOfIgnoredPoses() const        {return getNumberOf(LocalBundleAdjustmentData::EParameter::pose, LocalBundleAdjustmentData::EState::ignored);}
+  std::size_t getNumOfIgnoredPoses() const        {return getNumberOf(EParameter::pose, EState::ignored);}
 
   /// Return the number of refined landmarks.
-  std::size_t getNumOfRefinedLandmarks() const    {return getNumberOf(LocalBundleAdjustmentData::EParameter::landmark, LocalBundleAdjustmentData::EState::refined);}
+  std::size_t getNumOfRefinedLandmarks() const    {return getNumberOf(EParameter::landmark, EState::refined);}
  
   /// Return the number of constant landmarks.
-  std::size_t getNumOfConstantLandmarks() const   {return getNumberOf(LocalBundleAdjustmentData::EParameter::landmark, LocalBundleAdjustmentData::EState::constant);}
+  std::size_t getNumOfConstantLandmarks() const   {return getNumberOf(EParameter::landmark, EState::constant);}
  
   /// Return the number of ignored landmarks.
-  std::size_t getNumOfIgnoredLandmarks() const    {return getNumberOf(LocalBundleAdjustmentData::EParameter::landmark, LocalBundleAdjustmentData::EState::ignored);}
+  std::size_t getNumOfIgnoredLandmarks() const    {return getNumberOf(EParameter::landmark, EState::ignored);}
  
   /// Return the number of refined intrinsics.
-  std::size_t getNumOfRefinedIntrinsics() const   {return getNumberOf(LocalBundleAdjustmentData::EParameter::intrinsic, LocalBundleAdjustmentData::EState::refined);}
+  std::size_t getNumOfRefinedIntrinsics() const   {return getNumberOf(EParameter::intrinsic, EState::refined);}
  
   /// Return the number of constant intrinsics.
-  std::size_t getNumOfConstantIntrinsics() const  {return getNumberOf(LocalBundleAdjustmentData::EParameter::intrinsic, LocalBundleAdjustmentData::EState::constant);}
+  std::size_t getNumOfConstantIntrinsics() const  {return getNumberOf(EParameter::intrinsic, EState::constant);}
 
   /// Return the number of ignored intrinsics.
-  std::size_t getNumOfIgnoredIntrinsics() const   {return getNumberOf(LocalBundleAdjustmentData::EParameter::intrinsic, LocalBundleAdjustmentData::EState::ignored);}
+  std::size_t getNumOfIgnoredIntrinsics() const   {return getNumberOf(EParameter::intrinsic, EState::ignored);}
     
   /// Get the output path where Local BA outputs are saved
   std::string getOutDirectory() const             {return stlplus::folder_append_separator(_outFolder);}
@@ -77,7 +77,7 @@ public:
   void setAllParametersToRefine(const SfMData& sfm_data);
   
   /// @brief Add the newly resected views into a graph and use this graph to set an \c EState (refined, constant, ignored) for 
-  /// each parameter in the bundle adjutment (poses, landmarks, intrinsics).
+  /// each parameter in the bundle adjustment (poses, landmarks, intrinsics).
   /// @details 
   ///   Steps:
   ///     1. Add the new views to the graph (1 node per new view & 1 edge connecting to views sharing matches)

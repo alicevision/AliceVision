@@ -137,7 +137,7 @@ int main(int argc, char **argv)
       "If the process is done on renderfarm, it doesn't make sense to wait for user inputs")
     ("useLocalBA,l", po::value<bool>(&useLocalBundleAdjustment)->default_value(useLocalBundleAdjustment),
       "Enable/Disable the Local bundle adjustment strategy.\n"
-      "It reduces the reconstruction time, expecially for big datasets (500+ images).\n");
+      "It reduces the reconstruction time, especially for big datasets (500+ images).\n");
 
   po::options_description logParams("Log parameters");
   logParams.add_options()

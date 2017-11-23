@@ -106,7 +106,7 @@ public :
   
 private:
   
-  /// @brief Transfer the options from OpenMVG to Ceres Solver.
+  /// @brief Set BA options to Ceres
   void setSolverOptions(ceres::Solver::Options& solver_options);
   
   /// @brief Create a parameter block for each pose according to the Ceres format: [Rx, Ry, Rz, tx, ty, tz]
