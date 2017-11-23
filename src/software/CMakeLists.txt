@@ -115,6 +115,17 @@ target_link_libraries(aliceVision_meshing PUBLIC mv_structures mv_cudaInterfaces
 install(TARGETS aliceVision_meshing DESTINATION bin/)
 
 
+## Mesh Resampling
+set(SOURCES_files_meshResampling main_meshResampling.cpp)
+source_group("aliceVision_meshResampling" FILES main_meshResampling.cpp)
+
+add_executable(aliceVision_meshResampling ${SOURCES_files_meshResampling})
+target_link_libraries(aliceVision_meshResampling PUBLIC mv_structures
+                                    ${Boost_LIBRARIES}
+                                    Geogram::geogram)
+install(TARGETS aliceVision_meshResampling DESTINATION bin/)
+
+
 ## Texturing
 set(SOURCES_files_texturing main_texturing.cpp)
 source_group("aliceVision_texturing" FILES main_texturing.cpp)
