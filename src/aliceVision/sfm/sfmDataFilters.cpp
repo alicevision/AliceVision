@@ -174,24 +174,29 @@ bool eraseObservationsWithMissingPoses(SfMData& sfm_data, const IndexT min_point
 bool eraseUnstablePosesAndObservations(
   SfMData& sfm_data,
   const IndexT min_points_per_pose,
-  const IndexT min_points_per_landmark, 
+  const IndexT min_points_per_landmark,
   std::set<IndexT>* outRemovedPosedId)
 {
   IndexT remove_iteration = 0;
   bool bRemovedContent = false;
+  bool bRemovedPoses = false;
+  bool bRemovedObservations = false;
   do
   {
     bRemovedContent = false;
     if (eraseUnstablePoses(sfm_data, min_points_per_pose, outRemovedPosedId))
     {
+      bRemovedPoses = true;
       bRemovedContent = eraseObservationsWithMissingPoses(sfm_data, min_points_per_landmark);
+      if (bRemovedContent)
+        bRemovedObservations = true;
       // Erase some observations can make some Poses index disappear so perform the process in a loop
     }
     remove_iteration += bRemovedContent ? 1 : 0;
   }
   while (bRemovedContent);
 
-  return remove_iteration > 0;
+  return bRemovedPoses || bRemovedObservations;
 }
 
 } // namespace sfm
