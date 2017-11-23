@@ -259,7 +259,7 @@ double localOptimization(const Kernel &kernel,
                          double mtheta = std::sqrt(2),
                          std::size_t numRep = 10,
                          std::size_t minSampleSize = 10,
-                         bool verbose = true)
+                         bool verbose = false)
 {
   const std::size_t total_samples = kernel.NumSamples();
   const std::size_t min_samples = Kernel::MINIMUM_LSSAMPLES;
@@ -297,9 +297,9 @@ double localOptimization(const Kernel &kernel,
   
   // LS model from the above inliers
   std::vector<typename Kernel::Model> models;
-  OPENMVG_LOG_DEBUG("[localOptim] before: ");
+//  OPENMVG_LOG_DEBUG("[localOptim] before: ");
   kernel.FitLS(inliersBase, &models);
-  OPENMVG_LOG_DEBUG("[localOptim] after: ");
+//  OPENMVG_LOG_DEBUG("[localOptim] after: ");
   assert(models.size()==1);   // LS fitting must always return 1 model
   
   // find inliers with t again over all the samples

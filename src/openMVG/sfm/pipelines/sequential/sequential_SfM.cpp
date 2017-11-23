@@ -290,12 +290,25 @@ void SequentialSfMReconstructionEngine::RobustResectionOfImages(
     
     OPENMVG_LOG_DEBUG("Triangulation of the " << newReconstructedViews.size() << " newly reconstructed views.");
     
+    auto chrono_triangulation_start = std::chrono::steady_clock::now();
     //BundleAdjustment();
-    
     // triangulate
-    triangulateMultiViews_LORANSAC(_sfm_data, prevReconstructedViews, newReconstructedViews);
-//    triangulateMultiViews_SVD(_sfm_data, prevReconstructedViews, newReconstructedViews);
+    //    triangulateMultiViews_SVD(_sfm_data, prevReconstructedViews, newReconstructedViews);
     //    triangulate(_sfm_data, prevReconstructedViews, newReconstructedViews);
+    triangulateMultiViews_LORANSAC(_sfm_data, prevReconstructedViews, newReconstructedViews);
+    
+    
+    /////////// TEMP ///////////////
+    double triangulation_time_ms = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - chrono_triangulation_start).count();
+    std::string triangulation_filename = _sOutDirectory + "/triangulation_times_ms.txt";
+    std::ofstream os;
+    os.open(triangulation_filename, std::ios::app);
+    os.seekp(0, std::ios::end); //put the cursor at the end
+   
+    os << triangulation_time_ms << "\n";
+    os.close();
+    ////////////////////////////////
+    
     
     if (bImageAdded)
     {
@@ -1562,9 +1575,9 @@ void SequentialSfMReconstructionEngine::prepareTheTrackTriangulation(
 }
 
 bool SequentialSfMReconstructionEngine::checkChierality(
-  const Vec3& pt, 
-  const std::set<IndexT> & viewsId, 
-  const SfM_Data& scene)
+    const Vec3& pt, 
+    const std::set<IndexT> & viewsId, 
+    const SfM_Data& scene)
 {
   bool isChieral = true;  
   for (const IndexT & viewId : viewsId)
@@ -1597,7 +1610,7 @@ void SequentialSfMReconstructionEngine::triangulateMultiViews_SVD(SfM_Data& scen
   std::map<IndexT, std::set<IndexT>> mapTracksToTriangulate; // <trackId, set<viewId>> 
   identifyTracksToTriangulate(previousReconstructedViews, newReconstructedViews, mapTracksToTriangulate);
   
-  const std::size_t kMinNbObservations = 3;
+  const std::size_t kMinNbObservations = 2;
   
   std::size_t numNewTracks = 0, numUpdatedTracks = 0, numNotValidTracks = 0, numPutativeTracks = 0, numNoChieralTracks = 0;
   for (auto & trackIt : mapTracksToTriangulate)
@@ -1633,7 +1646,7 @@ void SequentialSfMReconstructionEngine::triangulateMultiViews_SVD(SfM_Data& scen
     {
       const View* view = scene.GetViews().at(viewId).get();
       const Pose3 pose = scene.getPose(*view);
-        
+      
       const IntrinsicBase* cam = scene.GetIntrinsics().at(view->getIntrinsicId()).get();
       const Vec2 x = _featuresPerView->getFeatures(viewId, track.descType)[track.featPerView.at(viewId)].coords().cast<double>();
       
@@ -1683,9 +1696,10 @@ void SequentialSfMReconstructionEngine::triangulateMultiViews_SVD(SfM_Data& scen
 }    
 
 
-      
+
 void SequentialSfMReconstructionEngine::triangulateMultiViews_LORANSAC(SfM_Data& scene, const std::set<IndexT>& previousReconstructedViews, const std::set<IndexT>& newReconstructedViews)
 {
+   OPENMVG_LOG_DEBUG("Triangulating (mode: multi-view LO-RANSAC)... ");
   // Pipeline (Per-Track approach)
   //  1. From the new views, find all the tracks that can be updated or reconstructed
   //  2. For each track, 
@@ -1702,13 +1716,21 @@ void SequentialSfMReconstructionEngine::triangulateMultiViews_LORANSAC(SfM_Data&
   const double threshold = 4.0;
   const double outliersProbability = 0.01;
   
-  std::size_t numNewTracks = 0, numUpdatedTracks = 0, numNotValidTracks = 0, numPutativeTracks = 0, numNoChieralTracks = 0;
-  for (auto & trackIt : mapTracksToTriangulate)
+  std::vector<IndexT> setTracksId;
+  std::transform(mapTracksToTriangulate.begin(), mapTracksToTriangulate.end(),
+                 std::inserter(setTracksId, setTracksId.begin()),
+                 stl::RetrieveKey());
+  
+#pragma omp parallel for 
+  for (int i = 0; i < setTracksId.size(); i++)
   {
-    const IndexT trackId = trackIt.first;
+    const IndexT trackId = setTracksId.at(i);
     const tracks::Track & track = _map_tracks.at(trackId);
-    std::set<IndexT> & observations = trackIt.second; // all views possessing the track
-    bool trackAlreadyExists = scene.structure.find(trackId) != scene.structure.end();
+    std::set<IndexT> & observations = mapTracksToTriangulate.at(trackId); // all views possessing the track
+    
+    bool trackAlreadyExists = false;
+    if (scene.structure.find(trackId) != scene.structure.end())
+      trackAlreadyExists = true;
     
     // The track needs to be seen by a min. number of views to be triangulated
     if (observations.size() < kMinNbObservations)
@@ -1737,26 +1759,34 @@ void SequentialSfMReconstructionEngine::triangulateMultiViews_LORANSAC(SfM_Data&
     for (const auto & id : inliersIndex)
       inliers.insert(*std::next(observations.begin(), id));
     
-    ++numPutativeTracks;
-        
+    
     // Check triangulation results:
     if (!checkChierality(X_euclidean, inliers, scene) || inliers.size() < 2)
     {
       if (trackAlreadyExists)
-          scene.structure.erase(trackId);
+      {
+#pragma omp critical
+        scene.structure.erase(trackId);
+      }
       continue;  
     }
-        
+    
     // Add the the landmar to the scene
     if (trackAlreadyExists)
-          scene.structure.erase(trackId);
-    Landmark & landmark = scene.structure[trackId];
-    landmark.X = X_euclidean;
-    landmark.descType = track.descType;
-    for (const IndexT & viewId : inliers) // add inliers as observations
     {
-      const Vec2 x = _featuresPerView->getFeatures(viewId, track.descType)[track.featPerView.at(viewId)].coords().cast<double>();
-      landmark.observations[viewId] = Observation(x, track.featPerView.at(viewId));
+#pragma omp critical
+      scene.structure.erase(trackId);
+    }
+#pragma omp critical
+    {
+      Landmark & landmark = scene.structure[trackId];
+      landmark.X = X_euclidean;
+      landmark.descType = track.descType;
+      for (const IndexT & viewId : inliers) // add inliers as observations
+      {
+        const Vec2 x = _featuresPerView->getFeatures(viewId, track.descType)[track.featPerView.at(viewId)].coords().cast<double>();
+        landmark.observations[viewId] = Observation(x, track.featPerView.at(viewId));
+      }
     }
   } // for all shared tracks 
 }    
