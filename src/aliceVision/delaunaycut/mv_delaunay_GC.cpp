@@ -346,6 +346,7 @@ void mv_delaunay_GC::addPointsFromCameraCenters(staticVector<int>* cams, float m
 
             if((vi == GEO::NO_VERTEX) || ((npp - mp->CArr[rc]).size() > minDist))
             {
+                vi = _verticesCoords.size();
                 _verticesCoords.push_back(p);
 
                 GC_vertexInfo newv;
