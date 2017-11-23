@@ -76,6 +76,17 @@ void LocalBundleAdjustmentData::updateParametersState(
     const std::size_t kMinNbOfMatches,
     const std::size_t kLimitDistance)
 {
+  // Do not update graph/distances/states if all the new reconstructed views are already in the graph.
+  bool newViewDetected = false;
+  for (const auto& viewId : newReconstructedViews)
+  {
+    if (_mapNodePerViewId.find(viewId) == _mapNodePerViewId.end())
+    {
+      newViewDetected = true;
+      break;
+    }
+  }
+
   // ----------------
   // Steps:
   // 1. Add the new views to the graph (1 node per new view & 1 edge connecting to views sharing matches)
@@ -202,8 +213,7 @@ int LocalBundleAdjustmentData::getViewDistance(const IndexT viewId) const
 {
   if (_mapDistancePerViewId.find(viewId) == _mapDistancePerViewId.end())
   {
-    ALICEVISION_LOG_DEBUG("The view #" << viewId << " does not exist in the '_mapDistancePerViewId':\n"
-                          << _mapDistancePerViewId);
+    ALICEVISION_LOG_DEBUG("Cannot get the graph-distance of the view #" << viewId << ": does not exist in the '_mapDistancePerViewId':\n");
     return -1;
   }
   return _mapDistancePerViewId.at(viewId);
@@ -243,7 +253,7 @@ void LocalBundleAdjustmentData::updateGraphWithNewViews(
   // Identify the views we need to add to the graph:
   std::set<IndexT> addedViewsId;
   
-  if (_graph.maxNodeId() == -1) // the graph is empty: add all the posed views
+  if (_graph.maxNodeId() + 1 == 0) // the graph is empty: add all the posed views
   {
     ALICEVISION_LOG_DEBUG("|- The graph is empty: all posed views will be added.");
     for (const auto & x : sfm_data.GetViews())
@@ -259,11 +269,13 @@ void LocalBundleAdjustmentData::updateGraphWithNewViews(
       = countSharedLandmarksPerImagesPair(sfm_data, map_tracksPerView, addedViewsId);
   
   // -- Add nodes to the graph
-  std::vector<lemon::ListGraph::Node> newNodes;
   for (const auto& viewId : addedViewsId)
   {
+    // Do not add a view to the graph if it already exists in it.
+    if (_mapNodePerViewId.find(viewId) != _mapNodePerViewId.end())
+      continue;
+      
     lemon::ListGraph::Node newNode = _graph.addNode();
-    newNodes.push_back(newNode);
     _mapNodePerViewId[viewId] = newNode;  
     _mapViewIdPerNode[newNode] = viewId;
   }
@@ -282,7 +294,7 @@ void LocalBundleAdjustmentData::updateGraphWithNewViews(
   
   ALICEVISION_LOG_DEBUG("|- The distances graph has been completed with " 
                        << addedViewsId.size() << " nodes & " << numEdges << " edges.");
-  ALICEVISION_LOG_DEBUG("|- It contains " << _graph.maxNodeId() << " nodes & " << _graph.maxEdgeId() << " edges");                   
+  ALICEVISION_LOG_DEBUG("|- It contains " << _graph.maxNodeId() + 1 << " nodes & " << _graph.maxEdgeId() + 1 << " edges");                   
 }
 
 void LocalBundleAdjustmentData::computeGraphDistances(const SfMData& sfm_data, const std::set<IndexT>& newReconstructedViews)
@@ -641,7 +653,6 @@ std::size_t LocalBundleAdjustmentData::addIntrinsicEdgesToTheGraph(const SfMData
         lemon::ListGraph::Edge edge = _graph.addEdge(_mapNodePerViewId[minId], _mapNodePerViewId[maxId]);
         _intrinsicEdgesId.insert(_graph.id(edge));
         numAddedEdges++;
-        std::cout << "added intrinicsn edge: " << minId << " - " << maxId << " (#" << _graph.id(edge) << ")" << std::endl;
       }
     }
   }
