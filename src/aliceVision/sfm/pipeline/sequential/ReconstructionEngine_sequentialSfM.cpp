@@ -324,26 +324,22 @@ void ReconstructionEngine_sequentialSfM::RobustResectionOfImages(
       ALICEVISION_LOG_DEBUG("Bundle with " << bundleAdjustmentIteration << " iterations took " << std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - chrono_start).count() << " msec.");
       chrono_start = std::chrono::steady_clock::now();
       
-      if (_uselocalBundleAdjustment)
+      std::set<IndexT> removedPosesId;
+      bool contentRemoved = eraseUnstablePosesAndObservations(this->_sfm_data, _minPointsPerPose, _minTrackLength, &removedPosesId);
+      
+      if (_uselocalBundleAdjustment && contentRemoved)
       {
-        std::set<IndexT> removedPosesId, removedViewsId;
-        // Remove unstable poses & extract removed poses id
-        if (eraseUnstablePosesAndObservations(this->_sfm_data, _minPointsPerPose, _minTrackLength, &removedPosesId))
+        // Get removed VIEWS index
+        std::set<IndexT> removedViewsId;
+        for (const auto& x : _sfm_data.GetViews())
         {
-          // Get removed VIEWS index
-          for (const auto& x : _sfm_data.GetViews())
-          {
-            if (removedPosesId.find(x.second->getPoseId()) != removedPosesId.end())
-              removedViewsId.insert(x.second->getViewId());
-          }
-          
-          // Remove removed views to the graph
-          _localBA_data->removeViewsToTheGraph(removedViewsId);
-          ALICEVISION_LOG_DEBUG("Poses (index) removed to the reconstruction: " << removedPosesId);
+          if (removedPosesId.find(x.second->getPoseId()) != removedPosesId.end())
+            removedViewsId.insert(x.second->getViewId());
         }
+        // Remove removed views to the graph
+        _localBA_data->removeViewsToTheGraph(removedViewsId);
+        ALICEVISION_LOG_DEBUG("Poses (index) removed to the reconstruction: " << removedPosesId);
       }
-      else
-        eraseUnstablePosesAndObservations(this->_sfm_data, _minPointsPerPose, _minTrackLength);
       ALICEVISION_LOG_DEBUG("eraseUnstablePosesAndObservations took " << std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - chrono_start).count() << " msec.");
     }
     ++resectionGroupIndex;
