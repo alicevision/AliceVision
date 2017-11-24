@@ -163,7 +163,7 @@ void saveRig(const std::string& name, IndexT rigId, const Rig& rig, bpt::ptree& 
      rigSubPosesTree.push_back(std::make_pair("", rigSubPoseTree));
   }
 
-  rigTree.add_child("subposes", rigSubPosesTree);
+  rigTree.add_child("subPoses", rigSubPosesTree);
 
   parentTree.push_back(std::make_pair(name, rigTree));
 }
@@ -172,6 +172,7 @@ void saveRig(const std::string& name, IndexT rigId, const Rig& rig, bpt::ptree& 
 void loadRig(IndexT& rigId, Rig& rig, bpt::ptree& rigTree)
 {
   rigId =  rigTree.get<IndexT>("rigId");
+  rig = Rig(rigTree.get_child("subPoses").size());
   int subPoseId = 0;
 
   for(bpt::ptree::value_type &subPoseNode : rigTree.get_child("subPoses"))
