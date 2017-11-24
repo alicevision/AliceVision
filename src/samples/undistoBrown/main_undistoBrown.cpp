@@ -94,49 +94,19 @@ int main(int argc, char **argv)
   std::cout << "\nLocated " << vec_fileNames.size() << " files in " << inputImagePath
     << " with suffix " << suffix;
 
-  Image<unsigned char > imageGreyIn, imageGreyU;
-  Image<RGBColor> imageRGBIn, imageRGBU;
-  Image<RGBAColor> imageRGBAIn, imageRGBAU;
-
   boost::progress_display my_progress_bar( vec_fileNames.size() );
   for (size_t j = 0; j < vec_fileNames.size(); ++j, ++my_progress_bar)
   {
-    //read the depth
-    int w,h,depth;
-    vector<unsigned char> tmp_vec;
-    const string sOutFileName =
-      stlplus::create_filespec(outputImagePath, stlplus::basename_part(vec_fileNames[j]), "JPG");
-    const string sInFileName = stlplus::create_filespec(inputImagePath, stlplus::basename_part(vec_fileNames[j]));
-    readImage(sInFileName, tmp_vec, w, h, depth);
+    const string inFileName = stlplus::create_filespec(inputImagePath, stlplus::basename_part(vec_fileNames[j]));
+    const string outFileName = stlplus::create_filespec(outputImagePath, stlplus::basename_part(vec_fileNames[j]), "JPG");
 
-    const PinholeRadialK3 cam(w, h, f, c(0), c(1), k(0), k(1), k(2));
+    Image<RGBColor> image, imageUd;
+    readImage(inFileName, image);
 
-    switch(depth)
-    {
-      case 1: //Greyscale
-        {
-          imageGreyIn = Eigen::Map<Image<unsigned char>::Base>(&tmp_vec[0], h, w);
-          UndistortImage(imageGreyIn, &cam, imageGreyU);
-          writeImage(sOutFileName, imageGreyU);
-          break;
-        }
-      case 3: //RGB
-        {
-          imageRGBIn = Eigen::Map<Image<RGBColor>::Base>((RGBColor*) &tmp_vec[0], h, w);
-          UndistortImage(imageRGBIn, &cam, imageRGBU);
-          writeImage(sOutFileName, imageRGBU);
-          break;
-        }
-      /*
-      case 4: //RGBA
-        {
-          imageRGBAIn = Eigen::Map<Image<RGBAColor>::Base>((RGBAColor*) &tmp_vec[0], h, w);
-          UndistortImage(imageRGBAIn, &cam, imageRGBAU);
-          writeImage(sOutFileName, imageRGBAU);
-          break;
-        }
-        */
-    }
+    const PinholeRadialK3 cam(image.Width(), image.Height(), f, c(0), c(1), k(0), k(1), k(2));
+
+    UndistortImage(image, &cam, imageUd, BLACK);
+    writeImage(outFileName, imageUd);
 
   } //end loop for each file
   return EXIT_SUCCESS;

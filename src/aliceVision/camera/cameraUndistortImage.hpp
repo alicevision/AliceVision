@@ -5,26 +5,46 @@
 
 #pragma once
 
-#include "aliceVision/image/image.hpp"
-#include "aliceVision/config.hpp"
+#include <aliceVision/config.hpp>
+#include <aliceVision/system/Logger.hpp>
+#include <aliceVision/image/Image.hpp>
+#include <aliceVision/image/Sampler.hpp>
+#include <aliceVision/camera/cameraCommon.hpp>
+#include <aliceVision/camera/IntrinsicBase.hpp>
+#include <aliceVision/camera/Pinhole.hpp>
+
+#include <memory>
 
 namespace aliceVision {
 namespace camera {
 
-/// Undistort an image according a given camera & it's distortion model
-template <typename Image>
+/// Undistort an image according a given camera and its distortion model
+template <typename T>
 void UndistortImage(
-  const Image& imageIn,
-  const IntrinsicBase * cam,
-  Image & image_ud,
-  typename Image::Tpixel fillcolor = typename Image::Tpixel(0))
+  const image::Image<T>& imageIn,
+  const camera::IntrinsicBase* intrinsicPtr,
+  image::Image<T>& image_ud,
+  T fillcolor,
+  bool correctPrincipalPoint = false)
 {
-  if (!cam->have_disto()) // no distortion, perform a direct copy
+  if (!intrinsicPtr->have_disto()) // no distortion, perform a direct copy
   {
     image_ud = imageIn;
   }
   else // There is distortion
   {
+    const Vec2 center(imageIn.Width() * 0.5, imageIn.Height() * 0.5);
+    Vec2 ppCorrection(0.0, 0.0);
+
+    if(correctPrincipalPoint)
+    {
+      if(camera::isPinhole(intrinsicPtr->getType()))
+      {
+        const camera::Pinhole* pinholePtr = dynamic_cast<const camera::Pinhole*>(intrinsicPtr);
+        ppCorrection = pinholePtr->principal_point() - center;
+      }
+    }
+
     image_ud.resize(imageIn.Width(), imageIn.Height(), true, fillcolor);
     const image::Sampler2d<image::SamplerLinear> sampler;
 
@@ -33,8 +53,10 @@ void UndistortImage(
       for (int i = 0; i < imageIn.Width(); ++i)
       {
         const Vec2 undisto_pix(i,j);
+
         // compute coordinates with distortion
-        const Vec2 disto_pix = cam->get_d_pixel(undisto_pix);
+        const Vec2 disto_pix = intrinsicPtr->get_d_pixel(undisto_pix) + ppCorrection;
+
         // pick pixel if it is in the image domain
         if ( imageIn.Contains(disto_pix(1), disto_pix(0)) )
           image_ud( j, i ) = sampler(imageIn, disto_pix(1), disto_pix(0));

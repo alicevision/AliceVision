@@ -160,6 +160,7 @@ std::string replaceAll( std::string const& original, std::string const& from, st
 bool prepareDenseScene(
   const SfMData & sfm_data,
   int scale,
+  bool exportFloatUndistortedImages,
   const std::string & sOutDirectory // Output CMPMVS files folder
   )
 {
@@ -237,20 +238,23 @@ bool prepareDenseScene(
     // Export undistort image
     {
       const std::string srcImage = stlplus::create_filespec(sfm_data.s_root_path, view->getImagePath());
+      std::string dstColorImage = stlplus::create_filespec(stlplus::folder_append_separator(sOutDirectory), baseFilename + "._c", "png");
 
-      std::string dstColorImage = stlplus::create_filespec(
-        stlplus::folder_append_separator(sOutDirectory), baseFilename + "._c", "png");
+      if(exportFloatUndistortedImages)
+      {
+        dstColorImage = stlplus::create_filespec(stlplus::folder_append_separator(sOutDirectory), baseFilename + "._c", "exr");
+      }
 
       const IntrinsicBase * cam = iterIntrinsic->second.get();
-      Image<RGBColor> image;
+      Image<RGBfColor> image, image_ud, image_ud_scaled;
+
       readImage(srcImage, image);
       
       // Undistort
-      Image<RGBColor> image_ud;
       if (cam->isValid() && cam->have_disto())
       {
         // undistort the image and save it
-        UndistortImage(image, cam, image_ud, BLACK);
+        UndistortImage(image, cam, image_ud, FBLACK);
       }
       else
       {
@@ -258,7 +262,6 @@ bool prepareDenseScene(
       }
       
       // Rescale
-      Image<RGBColor> image_ud_scaled;
       if(scale == 1)
       {
         image_ud_scaled = image_ud;
@@ -353,6 +356,7 @@ int main(int argc, char *argv[])
   std::string verboseLevel = system::EVerboseLevel_enumToString(system::Logger::getDefaultVerboseLevel());
   std::string sfmDataFilename;
   std::string outFolder;
+  bool exportFloatUndistortedImages = false;
   int scale = 2;
 
   po::options_description allParams("AliceVision prepareDenseScene");
@@ -367,7 +371,9 @@ int main(int argc, char *argv[])
   po::options_description optionalParams("Optional parameters");
   optionalParams.add_options()
     ("scale", po::value<int>(&scale)->default_value(scale),
-      "Image downscale factor.");
+      "Image downscale factor.")
+    ("exportFloatUndistortedImages", po::value<bool>(&exportFloatUndistortedImages)->default_value(exportFloatUndistortedImages),
+      "Undistorted images in EXR if true or JPG if false.");
 
   po::options_description logParams("Log parameters");
   logParams.add_options()
@@ -421,7 +427,7 @@ int main(int argc, char *argv[])
       return EXIT_FAILURE;
     }
 
-    if (!prepareDenseScene(sfm_data, scale, stlplus::filespec_to_path(outFolder, "_tmp_scale" + std::to_string(scale))))
+    if (!prepareDenseScene(sfm_data, scale, exportFloatUndistortedImages, stlplus::filespec_to_path(outFolder, "_tmp_scale" + std::to_string(scale))))
       return EXIT_FAILURE;
   }
 

@@ -25,9 +25,10 @@ int main(int argc, char *argv[])
   std::string verboseLevel = system::EVerboseLevel_enumToString(system::Logger::getDefaultVerboseLevel());
   std::string sfmDataFilename;
   std::string outDirectory;
+  bool exportFloatUndistortedImages = false;
 
   po::options_description allParams(
-    "Export undistorted images related to a sfm_data file.\n"
+    "Export undistorted images related to a sfmData file.\n"
     "AliceVision exportUndistortedImages");
 
   po::options_description requiredParams("Required parameters");
@@ -37,12 +38,17 @@ int main(int argc, char *argv[])
     ("output,o", po::value<std::string>(&outDirectory)->required(),
       "Output folder.");
 
+  po::options_description optionalParams("Optional parameters");
+  optionalParams.add_options()
+    ("exportFloatUndistortedImages", po::value<bool>(&exportFloatUndistortedImages)->default_value(exportFloatUndistortedImages),
+      "Undistorted images in EXR if true or JPG if false.");
+
   po::options_description logParams("Log parameters");
   logParams.add_options()
     ("verboseLevel,v", po::value<std::string>(&verboseLevel)->default_value(verboseLevel),
       "verbosity level (fatal,  error, warning, info, debug, trace).");
 
-  allParams.add(requiredParams).add(logParams);
+  allParams.add(requiredParams).add(optionalParams).add(logParams);
 
   po::variables_map vm;
   try
@@ -84,7 +90,7 @@ int main(int argc, char *argv[])
   }
 
   // Export views as undistorted images (those with valid Intrinsics)
-  Image<RGBColor> image, image_ud;
+  Image<RGBfColor> image, image_ud;
   boost::progress_display my_progress_bar( sfm_data.GetViews().size() );
   for(Views::const_iterator iter = sfm_data.GetViews().begin();
     iter != sfm_data.GetViews().end(); ++iter, ++my_progress_bar)
@@ -96,15 +102,15 @@ int main(int argc, char *argv[])
     Intrinsics::const_iterator iterIntrinsic = sfm_data.GetIntrinsics().find(view->getIntrinsicId());
 
     const std::string srcImage = stlplus::create_filespec(sfm_data.s_root_path, view->getImagePath());
-    const std::string dstImage = stlplus::create_filespec(
-      outDirectory, stlplus::filename_part(srcImage));
+    const std::string dstImage = stlplus::create_filespec(outDirectory, stlplus::basename_part(srcImage) +
+                                                          (exportFloatUndistortedImages ? ".exr" : ".jpg"));
 
     const IntrinsicBase * cam = iterIntrinsic->second.get();
     if (cam->isValid() && cam->have_disto())
     {
       // undistort the image and save it
       readImage(srcImage, image);
-      UndistortImage(image, cam, image_ud, BLACK);
+      UndistortImage(image, cam, image_ud, FBLACK);
       writeImage(dstImage, image_ud);
     }
     else // (no distortion)
