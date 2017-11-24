@@ -16,6 +16,14 @@ namespace sfm {
 
 void updateIncompleteView(View& view)
 {
+  // check if the view is complete
+  if(view.getViewId() != UndefinedIndexT &&
+     view.getIntrinsicId() != UndefinedIndexT &&
+     view.getPoseId() == view.getViewId() &&
+     view.getHeight() > 0 &&
+     view.getWidth() >  0)
+    return;
+
   int width, height;
   std::map<std::string, std::string> metadata;
 
