@@ -192,10 +192,10 @@ void convert_scale(Image &src)
 }
 
 /// Constructor with input arguments
-AKAZE::AKAZE(const Image<unsigned char> & in, const AKAZEConfig & options):
+AKAZE::AKAZE(const Image<float> & in, const AKAZEConfig & options):
+    in_(in),
     options_(options)
 {
-  in_ = in.GetMat().cast<float>() / 255.f;
   options_.fDesc_factor = std::max(6.f*sqrtf(2.f), options_.fDesc_factor);
   //-- Safety check to limit the computable octave count
   const int nbOctaveMax = ceil(std::log2( std::min(in_.Width(), in_.Height())));

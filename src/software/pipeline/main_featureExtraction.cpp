@@ -337,7 +337,7 @@ int main(int argc, char **argv)
   {
     std::string typeName;
     EImageDescriberType type;
-    std::shared_ptr<ImageDescriber> describer; //TODO
+    std::shared_ptr<ImageDescriber> describer;
   };
   std::vector<DescriberMethod> imageDescribers;
   
@@ -352,7 +352,7 @@ int main(int argc, char **argv)
     for(const auto& describerMethod: describerMethodsVec)
     {
       DescriberMethod method;
-      method.typeName = EImageDescriberType_enumToString(describerMethod); // TODO: DELI ?
+      method.typeName = EImageDescriberType_enumToString(describerMethod);
       method.type = describerMethod;
       method.describer = createImageDescriber(method.type);
       method.describer->Set_configuration_preset(describerPreset);
@@ -435,16 +435,29 @@ int main(int argc, char **argv)
       if(!computeMethods.empty())
       {
         auto computeFunction = [&]() {
-            Image<unsigned char> imageGray;
+            Image<float> imageGrayFloat;
+            Image<unsigned char> imageGrayUChar;
 
-            readImage(viewFilename, imageGray);
+            readImage(viewFilename, imageGrayFloat);
 
             for(auto& compute : computeMethods)
             {
               // Compute features and descriptors and export them to files
-              std::cout << "Extracting "<< imageDescribers[compute.methodIndex].typeName  << " features from image " << view->getViewId() << std::endl;
+              ALICEVISION_LOG_INFO("Extracting " + imageDescribers[compute.methodIndex].typeName  + " features from image " + std::to_string(view->getViewId()) + "  " + view->getImagePath());
               std::unique_ptr<Regions> regions;
-              imageDescribers[compute.methodIndex].describer->Describe(imageGray, regions);
+
+              if(imageDescribers[compute.methodIndex].describer->useFloatImage())
+              {
+                // image buffer use float image, use the read buffer
+                imageDescribers[compute.methodIndex].describer->Describe(imageGrayFloat, regions);
+              }
+              else
+              {
+                // image buffer can't use float image
+                if(imageGrayUChar.Width() == 0) // the first time, convert the float buffer to uchar
+                  imageGrayUChar = imageGrayFloat.GetMat().cast<unsigned char>() * 255;
+                imageDescribers[compute.methodIndex].describer->Describe(imageGrayUChar, regions);
+              }
               imageDescribers[compute.methodIndex].describer->Save(regions.get(), compute.featFilename, compute.descFilename);
             }
         };

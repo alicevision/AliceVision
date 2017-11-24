@@ -284,8 +284,8 @@ void DescriptorExtractor_LIOP::CreateLIOP_GOrder(
 }
 
 void DescriptorExtractor_LIOP::extract(
-  const image::Image<unsigned char> & I,
-  const SIOPointFeature & feat,
+  const image::Image<float>& I,
+  const SIOPointFeature& feat,
   float desc[144])
 {
   memset(desc, 0, sizeof(float)*144);

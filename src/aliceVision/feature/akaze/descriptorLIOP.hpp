@@ -41,7 +41,7 @@ public:
   DescriptorExtractor_LIOP();
 
   void extract(
-    const image::Image<unsigned char> & I,
+    const image::Image<float> & I,
     const SIOPointFeature & feat,
     float desc[144]);
 

@@ -14,8 +14,8 @@ namespace aliceVision {
 namespace feature {
 
 bool ImageDescriber_AKAZE_OCV::Describe(const image::Image<unsigned char>& image,
-                                           std::unique_ptr<Regions> &regions,
-                                           const image::Image<unsigned char> * mask)
+                                           std::unique_ptr<Regions>& regions,
+                                           const image::Image<unsigned char>* mask)
 {
   cv::Mat img;
   cv::eigen2cv(image.GetMat(), img);

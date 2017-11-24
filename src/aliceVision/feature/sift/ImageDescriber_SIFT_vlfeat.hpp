@@ -41,6 +41,15 @@ public:
   }
 
   /**
+   * @brief Check if the image describer use float image
+   * @return True if the image describer use float image
+   */
+  bool useFloatImage() const override
+  {
+    return true;
+  }
+
+  /**
    * @brief Get the corresponding EImageDescriberType
    * @return EImageDescriberType
    */
@@ -69,14 +78,14 @@ public:
   }
 
   /**
-   * @brief Detect regions on the image and compute their attributes (description)
+   * @brief Detect regions on the float image and compute their attributes (description)
    * @param[in] image Image.
    * @param[out] regions The detected regions and attributes (the caller must delete the allocated data)
    * @param[in] mask 8-bit gray image for keypoint filtering (optional).
    *    Non-zero values depict the region of interest.
    * @return True if detection succed.
    */
-  bool Describe(const image::Image<unsigned char>& image,
+  bool Describe(const image::Image<float>& image,
     std::unique_ptr<Regions>& regions,
     const image::Image<unsigned char>* mask = NULL) override
   {
