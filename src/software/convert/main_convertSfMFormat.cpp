@@ -37,7 +37,7 @@ int main(int argc, char **argv)
   bool flagExtrinsics = true;
   bool flagStructure = true;
   bool flagObservations = true;
-  bool recomputeUID = true;
+  bool recomputeUID = false;
 
   po::options_description allParams("AliceVision convertSfMFormat");
 
