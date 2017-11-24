@@ -85,7 +85,7 @@ int main(int argc, char **argv)
   std::string outInterFileExtension = ".ply";
   std::pair<std::string,std::string> initialPairString("","");
   int minInputTrackLength = 2;
-  int maxNbMatches = -1;
+  int maxNbMatches = 0;
   int userCameraModel = static_cast<int>(PINHOLE_CAMERA_RADIAL3);
   bool refineIntrinsics = true;
   bool allowUserInteraction = true;
@@ -120,8 +120,8 @@ int main(int argc, char **argv)
     ("minInputTrackLength", po::value<int>(&minInputTrackLength)->default_value(minInputTrackLength),
       "Minimum track length in input of SfM")
     ("maxNumberOfMatches", po::value<int>(&maxNbMatches)->default_value(maxNbMatches),
-      "Number of matches to load (per desc. type).\n"
-      "Reduce the number of matches reduces the reconstruction time.")
+      "Maximum number of matches per image pair (and per feature type). "
+      "This can be useful to have a quick reconstruction overview. 0 means no limit.")
     ("cameraModel", po::value<int>(&userCameraModel)->default_value(userCameraModel),
       "* 1: Pinhole\n"
       "* 2: Pinhole radial 1\n"

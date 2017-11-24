@@ -46,14 +46,14 @@ bool LoadMatchFilePerImage(
  * @param[in] folder: folder containing the match files
  * @param[in] descTypes
  * @param[in] mode: type of matching, it could be: "f", "e" or "putative".
- * @param[in] maxNbMatches: to load the N first matches for each desc. type. Load all the matches by default (-1)
+ * @param[in] maxNbMatches: to load the N first matches for each desc. type. Load all the matches by default (: 0)
  */
 bool Load(PairwiseMatches & matches,
   const std::set<IndexT> & viewsKeysFilter,
   const std::string & folder,
   const std::vector<feature::EImageDescriberType>& descTypesFilter,
   const std::string & mode,
-  const int maxNbMatches = -1);
+  const int maxNbMatches = 0);
 
 /**
  * @brief Filter to keep only specific viewIds.
