@@ -95,7 +95,7 @@ void saveIntrinsic(const std::string& name, IndexT intrinsicId, const std::share
 
   if(camera::isPinhole(intrinsicType))
   {
-    const camera::Pinhole& pinholeIntrinsic = static_cast<camera::Pinhole&>(*intrinsic);
+    const camera::Pinhole& pinholeIntrinsic = dynamic_cast<camera::Pinhole&>(*intrinsic);
 
     intrinsicTree.put("pxFocalLength", pinholeIntrinsic.getPxFocalLength());
     saveMatrix("principalPoint", pinholeIntrinsic.getPrincipalPoint(), intrinsicTree);
