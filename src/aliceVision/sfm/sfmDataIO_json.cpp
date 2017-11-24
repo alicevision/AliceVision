@@ -374,16 +374,36 @@ bool loadJSON(SfMData& sfmData, const std::string& filename, ESfMData partFlag, 
   {
     Views& views = sfmData.GetViews();
 
-    for(bpt::ptree::value_type &viewNode : fileTree.get_child("views"))
+    if(incompleteViews)
     {
-      View view;
+      // store incomplete views in a vector
+      std::vector<View> incompleteViews(fileTree.get_child("views").size());
 
-      loadView(view, viewNode.second);
+      int viewIndex = 0;
+      for(bpt::ptree::value_type &viewNode : fileTree.get_child("views"))
+      {
+        loadView(incompleteViews.at(viewIndex), viewNode.second);
+        ++viewIndex;
+      }
 
-      if(incompleteViews)
-        updateIncompleteView(view);
+      // update incomplete views
+      #pragma omp parallel for
+      for(int i = 0; i < incompleteViews.size(); ++i)
+        updateIncompleteView(incompleteViews.at(i));
 
-      views.emplace(view.getViewId(), std::make_shared<View>(view));
+      // copy complete views in the SfMData views map
+      for(const View& view : incompleteViews)
+        views.emplace(view.getViewId(), std::make_shared<View>(view));
+    }
+    else
+    {
+      // store directly in the SfMData views map
+      for(bpt::ptree::value_type &viewNode : fileTree.get_child("views"))
+      {
+        View view;
+        loadView(view, viewNode.second);
+        views.emplace(view.getViewId(), std::make_shared<View>(view));
+      }
     }
   }
 

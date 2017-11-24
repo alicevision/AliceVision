@@ -311,14 +311,20 @@ int main(int argc, char **argv)
     Views& views = sfmData.GetViews();
     std::vector<std::string> imagePaths;
 
-    if(listFiles(imageFolder, {"jpg", "jpeg"},  imagePaths))
+    if(listFiles(imageFolder, {"jpg", "jpeg", "tif", "tiff", "exr"},  imagePaths))
     {
-      for(const auto& imagePath : imagePaths)
+      std::vector<View> incompleteViews(imagePaths.size());
+
+      #pragma omp parallel for
+      for(int i = 0; i < incompleteViews.size(); ++i)
       {
-        View view = View(imagePath);
+        View& view = incompleteViews.at(i);
+        view.setImagePath(imagePaths.at(i));
         sfm::updateIncompleteView(view);
-        views.emplace(view.getViewId(), std::make_shared<View>(view));
       }
+
+      for(const auto& view : incompleteViews)
+        views.emplace(view.getViewId(), std::make_shared<View>(view));
     }
     else
       return EXIT_FAILURE;
@@ -331,9 +337,12 @@ int main(int argc, char **argv)
   }
 
   // create missing intrinsics
-  for(auto& viewPair : sfmData.GetViews())
+  auto viewPairItBegin = sfmData.GetViews().begin();
+
+  #pragma omp parallel for
+  for(int i = 0; i < sfmData.GetViews().size(); ++i)
   {
-    View& view = *(viewPair.second);
+    View& view = *(std::next(viewPairItBegin,i)->second);
     IndexT intrinsicId = view.getIntrinsicId();
 
     if(intrinsicId != UndefinedIndexT)
@@ -342,7 +351,10 @@ int main(int argc, char **argv)
       if(intrinsic != nullptr)
       {
         if(intrinsic->initialFocalLengthPix() > 0)
+        {
+          #pragma omp atomic
           ++completeViewCount;
+        }
         continue;
       }
     }
@@ -357,18 +369,25 @@ int main(int argc, char **argv)
         sensorWidth = datasheet._sensorSize;
       else
       {
+        #pragma omp critical
         unknownSensors.emplace(std::make_pair(view.getMetadata("Make"),view.getMetadata("Model")), view.getImagePath()); // will throw an error message and exit program
         continue;
       }
 
     }
     else
+    {
+      #pragma omp critical
       noMetadataImagePaths.emplace_back(view.getImagePath());
+    }
 
     std::shared_ptr<camera::IntrinsicBase> intrinsic = getViewIntrinsic(view, sensorWidth, defaultFocalLengthPixel, defaultCameraModel, defaultPPx, defaultPPy);
 
     if(intrinsic->initialFocalLengthPix() > 0)
+    {
+      #pragma omp atomic
       ++completeViewCount;
+    }
 
     // override serial number if necessary
     if(!hasCameraMetadata)
@@ -396,8 +415,11 @@ int main(int argc, char **argv)
     if(!groupCameraModel)
       intrinsicId = std::rand(); // random number
 
-    view.setIntrinsicId(intrinsicId);
-    sfmData.GetIntrinsics().emplace(intrinsicId, intrinsic);
+    #pragma omp critical
+    {
+      view.setIntrinsicId(intrinsicId);
+      sfmData.GetIntrinsics().emplace(intrinsicId, intrinsic);
+    }
   }
 
   if(!noMetadataImagePaths.empty())
