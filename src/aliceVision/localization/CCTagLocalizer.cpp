@@ -795,7 +795,7 @@ void CCTagLocalizer::getAllAssociations(const feature::CCTAG_Regions &queryRegio
       const sfm::View *mview = _sfm_data.GetViews().at(keyframeId).get();
       const std::string queryImage = bfs::path(imagePath).stem().string();
       const std::string matchedImage = bfs::path(mview->getImagePath()).stem().string();
-      const std::string matchedPath = (bfs::path(_sfm_data.s_root_path) /  bfs::path(mview->getImagePath())).string();
+      const std::string matchedPath = mview->getImagePath();
 
       // the directory where to save the feature matches
       const auto baseDir = bfs::path(param._visualDebug) / queryImage;

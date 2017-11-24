@@ -95,13 +95,13 @@ int main(int argc, char *argv[])
   for(Views::const_iterator iter = sfm_data.GetViews().begin();
     iter != sfm_data.GetViews().end(); ++iter, ++my_progress_bar)
   {
-    const View * view = iter->second.get();
+    const View* view = iter->second.get();
     bool bIntrinsicDefined = view->getIntrinsicId() != UndefinedIndexT &&
       sfm_data.GetIntrinsics().find(view->getIntrinsicId()) != sfm_data.GetIntrinsics().end();
 
     Intrinsics::const_iterator iterIntrinsic = sfm_data.GetIntrinsics().find(view->getIntrinsicId());
 
-    const std::string srcImage = stlplus::create_filespec(sfm_data.s_root_path, view->getImagePath());
+    const std::string srcImage = view->getImagePath();
     const std::string dstImage = stlplus::create_filespec(outDirectory, stlplus::basename_part(srcImage) +
                                                           (exportFloatUndistortedImages ? ".exr" : ".jpg"));
 

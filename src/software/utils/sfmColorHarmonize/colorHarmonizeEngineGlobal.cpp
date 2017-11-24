@@ -471,7 +471,7 @@ bool ColorHarmonizationEngineGlobal::ReadInputData()
     iter != sfm_data.GetViews().end(); ++iter)
   {
     const View * v = iter->second.get();
-    _vec_fileNames.push_back( stlplus::create_filespec(sfm_data.s_root_path, v->getImagePath()));
+    _vec_fileNames.push_back(v->getImagePath());
     _vec_imageSize.push_back( std::make_pair( v->getWidth(), v->getHeight() ));
   }
 

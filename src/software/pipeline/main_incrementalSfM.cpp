@@ -53,7 +53,7 @@ bool retrieveViewIdFromImageName(
     else if(stlplus::is_full_path(v->getImagePath()))
       filename = v->getImagePath();
     else
-      filename = sfm_data.s_root_path + v->getImagePath();
+      filename = v->getImagePath();
     
     if (filename == initialName)
     {

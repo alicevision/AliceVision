@@ -237,7 +237,7 @@ bool prepareDenseScene(
     
     // Export undistort image
     {
-      const std::string srcImage = stlplus::create_filespec(sfm_data.s_root_path, view->getImagePath());
+      const std::string srcImage = view->getImagePath();
       std::string dstColorImage = stlplus::create_filespec(stlplus::folder_append_separator(sOutDirectory), baseFilename + "._c", "png");
 
       if(exportFloatUndistortedImages)

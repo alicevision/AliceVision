@@ -121,7 +121,7 @@ bool exportToMVE2Format(
       }
 
       // We have a valid view with a corresponding camera & pose
-      const std::string srcImage = stlplus::create_filespec(sfm_data.s_root_path, view->getImagePath());
+      const std::string srcImage = view->getImagePath();
       const std::string dstImage =
         stlplus::create_filespec(stlplus::folder_append_separator(sOutViewIteratorDirectory), "undistorted","png");
 

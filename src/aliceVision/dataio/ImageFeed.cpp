@@ -102,9 +102,8 @@ private:
     namespace bf = boost::filesystem;
 
     // get the image
-    const std::string rootPath = _sfmdata.s_root_path;
     const sfm::View *view = _viewIterator->second.get();
-    imageName = (bf::path(rootPath) / bf::path(view->getImagePath())).string();
+    imageName = view->getImagePath();
     image::readImage(imageName, image);
 
     // get the associated Intrinsics

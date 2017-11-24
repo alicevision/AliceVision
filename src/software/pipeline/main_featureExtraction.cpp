@@ -392,7 +392,7 @@ int main(int argc, char **argv)
     for(; iterViews != iterViewsEnd; ++iterViews, ++my_progress_bar)
     {
       const View* view = iterViews->second.get();
-      const std::string viewFilename = stlplus::create_filespec(sfmData.s_root_path, view->getImagePath());
+      const std::string viewFilename = view->getImagePath();
       std::cout << "Extract features in view: " << viewFilename << std::endl;
       
       std::vector<DescriberComputeMethod> computeMethods;

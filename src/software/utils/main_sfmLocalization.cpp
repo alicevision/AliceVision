@@ -232,7 +232,7 @@ int main(int argc, char **argv)
     {
       const View * view = viewIter.second.get();
       // Load an image, extract the regions and match
-      const std::string sImagePath = sfmData.s_root_path + view->getImagePath();
+      const std::string sImagePath = view->getImagePath();
 
       std::cout << "SfM::localization => try with image: " << sImagePath << std::endl;
 

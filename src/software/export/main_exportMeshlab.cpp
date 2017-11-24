@@ -116,7 +116,7 @@ int main(int argc, char **argv)
     Intrinsics::const_iterator iterIntrinsic = sfm_data.GetIntrinsics().find(view->getIntrinsicId());
 
     // We have a valid view with a corresponding camera & pose
-    const std::string srcImage = stlplus::create_filespec(sfm_data.s_root_path, view->getImagePath());
+    const std::string srcImage = view->getImagePath();
     const IntrinsicBase * cam = iterIntrinsic->second.get();
     Mat34 P = cam->get_projective_equivalent(pose);
 
