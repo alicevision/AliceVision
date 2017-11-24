@@ -123,7 +123,7 @@ unsigned long peakMemory(pid_t processID)
 
 // This function dispatch the compute function on several sub processes
 // keeping the maximum number of subprocesses under maxJobs
-void dispatch(const int &maxJobs, std::function<void()> compute)
+void dispatch(const int maxJobs, std::function<void()> compute)
 {
   static int nbJobs;
   static unsigned int subProcessPeakMemory = 0;
@@ -191,10 +191,11 @@ void waitForCompletion()
 
 #else // __linux__
 
-void dispatch(const int &maxJobs, std::function<void()> compute)
+void dispatch(const int maxJobs, std::function<void()> compute)
 {
+  if(maxJobs != 0)
     omp_set_num_threads(maxJobs);
-    compute();
+  compute();
 }
 void waitForCompletion() {}
 int remainingJobSlots(unsigned long jobMemoryRequirement) {return 1;}  
@@ -205,10 +206,6 @@ int remainingJobSlots(unsigned long jobMemoryRequirement) {return 1;}
 /// - Export computed data
 int main(int argc, char **argv)
 {
-  // MAX_JOBS_DEFAULT is the default value for maxJobs which keeps 
-  // the original behavior of the program:
-  constexpr static int MAX_JOBS_DEFAULT = std::numeric_limits<int>::max();
-
   // command-line parameters
 
   std::string verboseLevel = system::EVerboseLevel_enumToString(system::Logger::getDefaultVerboseLevel());
@@ -222,7 +219,7 @@ int main(int argc, char **argv)
   bool describersAreUpRight = false;
   int rangeStart = -1;
   int rangeSize = 1;
-  int maxJobs = MAX_JOBS_DEFAULT;
+  int maxJobs = 0;
 
   po::options_description allParams("AliceVision featureExtraction");
 
@@ -286,16 +283,6 @@ int main(int argc, char **argv)
 
   // set verbose level
   system::Logger::get()->setLogLevel(verboseLevel);
-
-  if (maxJobs != MAX_JOBS_DEFAULT)
-  {
-    std::cout << "--jobs " << maxJobs << std::endl;
-    if (maxJobs < 0) 
-    {
-      ALICEVISION_LOG_ERROR("Error: Invalid value for -j option, the value must be >= 0");
-      return EXIT_FAILURE;
-    } 
-  }
 
   if (outputFolder.empty())
   {
@@ -462,14 +449,14 @@ int main(int argc, char **argv)
             }
         };
         
-        if (maxJobs != MAX_JOBS_DEFAULT)
-          dispatch(maxJobs, computeFunction);
-        else
+        if (maxJobs == 1)
           computeFunction();
+        else
+          dispatch(maxJobs, computeFunction);
       }
     }
 
-    if (maxJobs != MAX_JOBS_DEFAULT) waitForCompletion();
+    if (maxJobs != 1) waitForCompletion();
 
     std::cout << "Task done in (s): " << timer.elapsed() << std::endl;
   }
