@@ -220,7 +220,7 @@ BOOST_AUTO_TEST_CASE(read_write_from_rgb_to_grayscale) {
 
   for(const auto& extension : extensions)
   {
-    const std::string filename = "test_write_from_grayscala." + extension;
+    const std::string filename = "test_write_from_grayscale." + extension;
     BOOST_CHECK_NO_THROW(writeImage(filename, imageRGB));
 
     Image<unsigned char> read_image;

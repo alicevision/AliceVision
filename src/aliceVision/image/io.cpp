@@ -10,6 +10,8 @@
 #include <OpenImageIO/imagebuf.h>
 #include <OpenImageIO/imagebufalgo.h>
 
+#include <OpenEXR/half.h>
+
 #include <cstring>
 #include <stdexcept>
 #include <iostream>
@@ -20,8 +22,7 @@ namespace oiio = OIIO;
 namespace aliceVision {
 namespace image {
 
-template<typename T>
-void readImage(const std::string& path, oiio::TypeDesc format, std::vector<T>& pixels, int& w, int& h, int& nchannels)
+void readImageMetadata(const std::string& path, int& width, int& height, std::map<std::string, std::string>& metadata)
 {
   std::unique_ptr<oiio::ImageInput> in(oiio::ImageInput::open(path));
 
@@ -29,13 +30,12 @@ void readImage(const std::string& path, oiio::TypeDesc format, std::vector<T>& p
     throw std::invalid_argument("Can't find/open image file '" + path + "'.");
 
   const oiio::ImageSpec &spec = in->spec();
-  w = spec.width;
-  h = spec.height;
-  nchannels = spec.nchannels;
-  pixels.resize(w * h * nchannels);
 
-  if(!in->read_image(format, pixels.data()))
-    throw std::invalid_argument("Can't read image file '" + path + "'.");
+  width = spec.width;
+  height = spec.height;
+
+  for(const auto& param : spec.extra_attribs)
+    metadata.emplace(param.name().string(), param.get_string());
 
   in->close();
 }
@@ -112,46 +112,46 @@ void readImage(const std::string& path, oiio::TypeDesc format, int nchannels, Im
   image = Eigen::Map<typename Image<T>::Base>(pixels.data(), inSpec.height, inSpec.width);
 }
 
-void readImageMetadata(const std::string& path, int& width, int& height, std::map<std::string, std::string>& metadata)
-{
-  std::unique_ptr<oiio::ImageInput> in(oiio::ImageInput::open(path));
-
-  if(!in)
-    throw std::invalid_argument("Can't find/open image file '" + path + "'.");
-
-  const oiio::ImageSpec &spec = in->spec();
-
-  width = spec.width;
-  height = spec.height;
-
-  for(const auto& param : spec.extra_attribs)
-    metadata.emplace(param.name().string(), param.get_string());
-
-  in->close();
-}
-
 template<typename T>
 void writeImage(const std::string& path, oiio::TypeDesc typeDesc, int nchannels, Image<T>& image)
 {
-  oiio::ImageSpec outSpec(image.Width(), image.Height(), nchannels, typeDesc);
-  outSpec.attribute("jpeg:subsampling", "4:4:4"); // if possible, always subsampling 4:4:4 for jpeg
-  outSpec.attribute("compression", "none");       // if possible, no compression
-  outSpec.attribute("CompressionQuality", 100);   // if possible, best compression quality
+  bool isEXR = (path.size() > 4 && path.compare(path.size() - 4, 4, ".exr") == 0);
 
-  std::unique_ptr<oiio::ImageOutput> out(oiio::ImageOutput::create(path));
+  oiio::ImageSpec imageSpec(image.Width(), image.Height(), nchannels, typeDesc);
 
-  if(!out)
-    throw std::invalid_argument("Can't create output image file '" + path + "'.");
+  if(isEXR)
+  {
+    oiio::ImageBuf buf(imageSpec, image.data());
 
-  if(!out->open(path, outSpec))
-    throw std::invalid_argument("Can't open output image file '" + path + "'.");
+    imageSpec.format = oiio::TypeDesc::HALF;     // override format
+    imageSpec.attribute("compression", "piz");   // if possible, PIZ compression for openEXR
 
-  if(!out->write_image(typeDesc, image.data()))
-    throw std::invalid_argument("Can't write output image file '" + path + "'.");
+    // conversion to half
+    oiio::ImageBuf outBuf(imageSpec);
+    outBuf.copy_pixels(buf);
 
-  out->close();
+    // write image
+    if(!outBuf.write(path))
+      throw std::invalid_argument("Can't write output image file '" + path + "'.");
+  }
+  else
+  {
+    imageSpec.attribute("jpeg:subsampling", "4:4:4"); // if possible, always subsampling 4:4:4 for jpeg
+    imageSpec.attribute("CompressionQuality", 100);   // if possible, best compression quality
+    imageSpec.attribute("compression", "none");       // if possible, no compression
+
+    oiio::ImageBuf outBuf(imageSpec, image.data());
+
+    // write image
+    if(!outBuf.write(path))
+      throw std::invalid_argument("Can't write output image file '" + path + "'.");
+  }
 }
 
+void readImage(const std::string& path, Image<float>& image)
+{
+  readImage(path, oiio::TypeDesc::FLOAT, 1, image);
+}
 
 void readImage(const std::string& path, Image<unsigned char>& image)
 {
@@ -171,11 +171,6 @@ void readImage(const std::string& path, Image<RGBfColor>& image)
 void readImage(const std::string& path, Image<RGBColor>& image)
 {
   readImage(path, oiio::TypeDesc::UINT8, 3, image);
-}
-
-void readImage(const std::string& path, std::vector<unsigned char>& pixels, int& w, int& h, int& nchannels)
-{
-  readImage(path, oiio::TypeDesc::UINT8, pixels, w, h, nchannels);
 }
 
 void writeImage(const std::string& path, Image<unsigned char>& image)
