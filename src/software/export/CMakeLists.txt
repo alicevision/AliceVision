@@ -103,10 +103,29 @@ install(TARGETS aliceVision_exportPMVS
   DESTINATION bin/
 )
 
+# Export a SfM aliceVision scene to MayaMVG
 
+if(ALICEVISION_HAVE_ALEMBIC) # maya can read alembic file
+  add_executable(aliceVision_exportMayaMVG main_exportMayaMVG.cpp)
 
+  target_link_libraries(aliceVision_exportMayaMVG
+    aliceVision_system
+    aliceVision_image
+    aliceVision_feature
+    aliceVision_sfm
+    stlplus
+    ${BOOST_LIBRARIES}
+    ${OPENIMAGEIO_LIBRARIES}
+  )
 
+  set_property(TARGET aliceVision_exportMayaMVG
+    PROPERTY FOLDER AliceVision/Software/Export
+  )
 
+  install(TARGETS aliceVision_exportMayaMVG
+    DESTINATION bin/
+  )
+endif()
 
 # Export a SfM aliceVision scene to MVE(v2) format
 
