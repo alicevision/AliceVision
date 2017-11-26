@@ -40,6 +40,7 @@ int main(int argc, char* argv[])
     long startTime = clock();
 
     std::string iniFilepath;
+    std::string inputDenseReconstruction;
     std::string inputMeshFilepath;
     std::string outputFolder;
     bool flipNormals = false;
@@ -49,7 +50,9 @@ int main(int argc, char* argv[])
 
     inputParams.add_options()
         ("ini", po::value<std::string>(&iniFilepath)->required(),
-            "Configuration file (mvs.ini).")
+            "Configuration file: mvs.ini (the undistorted images and camera poses should be in the same folder)).")
+        ("inputDenseReconstruction", po::value<std::string>(&inputDenseReconstruction)->required(),
+            "Path to the dense reconstruction (mesh with per vertex visibility).")
         ("output", po::value<std::string>(&outputFolder)->required(),
             "Folder for output mesh: OBJ, material and texture files.")
         ("textureSide", po::value<unsigned int>(&texParams.textureSide),
@@ -59,7 +62,7 @@ int main(int argc, char* argv[])
         ("downscale", po::value<unsigned int>(&texParams.downscale),
             "Texture downscale factor")
         ("inputMesh", po::value<std::string>(&inputMeshFilepath),
-            "Optional input mesh to texture. By default, it will texture the result of the reconstruction.")
+            "Optional input mesh to texture. By default, it will texture the inputReconstructionMesh.")
         ("flipNormals", po::bool_switch(&flipNormals),
             "Option to flip face normals. It can be needed as it depends on the vertices order in triangles and the convention change from one software to another.");
     po::variables_map vm;
@@ -102,19 +105,19 @@ int main(int argc, char* argv[])
     multiviewParams mp(mip.getNbCameras(), &mip, (float) simThr);
     mv_prematch_cams pc(&mp);
 
-    std::string refMeshFilepath = mip.mvDir + "mesh.bin";
-
     meshRetex mesh;
     mesh.texParams = texParams;
     mesh.me = new mv_mesh();
 
-    if(!mesh.me->loadFromBin(refMeshFilepath))
+    if(!mesh.me->loadFromBin(inputDenseReconstruction))
     {
-        std::cerr << "Unable to load: " << refMeshFilepath << std::endl;
+        std::cerr << "Unable to load: " << inputDenseReconstruction << std::endl;
         return EXIT_FAILURE;
     }
 
-    staticVector<staticVector<int>*>* ptsCams = loadArrayOfArraysFromFile<int>(mip.mvDir + "meshPtsCamsFromDGC.bin");
+    bfs::path reconstructionMeshFolder = bfs::path(inputDenseReconstruction).parent_path();
+
+    staticVector<staticVector<int>*>* ptsCams = loadArrayOfArraysFromFile<int>((reconstructionMeshFolder/"meshPtsCamsFromDGC.bin").string());
     if(ptsCams->size() != mesh.me->pts->size())
         throw std::runtime_error("Error: Reference mesh and associated visibilities don't have the same size.");
     // filterPtsCamsByMinimalPixelSize(refMesh, refPtsCams, &mp);
@@ -125,6 +128,7 @@ int main(int argc, char* argv[])
     // texturing from input mesh
     if(!inputMeshFilepath.empty())
     {
+        ALICEVISION_COUT("An external input mesh is provided, so we remap the visibility from the reconstruction on it.");
         // remap visibilities from reconstruction onto input mesh
         mv_delaunay_GC delaunayGC(&mp, &pc);
         delaunayGC.initTetrahedralizationFromMeshVertices(mesh.me, false);
@@ -137,6 +141,7 @@ int main(int argc, char* argv[])
     }
     if(!mesh.hasUVs())
     {
+        ALICEVISION_COUT("The input mesh has no UV, so we generate them.");
         // generate UV coordinates based on automatic uv atlas
         auto* updatedPtsCams = mesh.generateUVs(mp, ptsCams);
         std::swap(ptsCams, updatedPtsCams);
@@ -145,6 +150,7 @@ int main(int argc, char* argv[])
     }
 
     // generate textures
+    ALICEVISION_COUT("Generate textures.");
     mesh.generateTextures(mp, ptsCams, outputFolder);
 
     printfElapsedTime(startTime, "#");
