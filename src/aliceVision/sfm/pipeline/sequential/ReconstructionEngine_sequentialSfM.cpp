@@ -334,8 +334,14 @@ void ReconstructionEngine_sequentialSfM::RobustResectionOfImages(
         for (const auto& x : _sfm_data.GetViews())
         {
           if (removedPosesId.find(x.second->getPoseId()) != removedPosesId.end())
-            removedViewsId.insert(x.second->getViewId());
+          {
+            if (!_sfm_data.IsPoseAndIntrinsicDefined(x.second->getViewId()))
+              removedViewsId.insert(x.second->getViewId());
+            else
+              ALICEVISION_LOG_WARNING("The view #" << x.second->getViewId() << " is set as Removed while it is still in the scene.");
+          }
         }
+        
         // Remove removed views to the graph
         _localBA_data->removeViewsToTheGraph(removedViewsId);
         ALICEVISION_LOG_DEBUG("Poses (index) removed to the reconstruction: " << removedPosesId);
@@ -1673,15 +1679,23 @@ bool ReconstructionEngine_sequentialSfM::localBundleAdjustment(const std::set<In
   const std::size_t kMinNbOfMatches = 50; // default value: 50 
   bool isBaSucceed;
   
+  // Add the new reconstructed views to the graph
+  _localBA_data->updateGraphWithNewViews(_sfm_data, _map_tracksPerView, newReconstructedViews, kMinNbOfMatches);
+  
   // -- Prepare Local BA & Adjust
   LocalBundleAdjustmentCeres localBA_ceres;
   
   if (options.isLocalBAEnabled()) // Local Bundle Adjustment
   {
     ALICEVISION_LOG_DEBUG("Local BA is activated: YES");
-    _localBA_data->updateParametersState(_sfm_data, _map_tracksPerView, newReconstructedViews, kMinNbOfMatches, kLimitDistance);
     
-    // -- Check Ceres mode: 
+    // Compute the graph-distance between each newly reconstructed views and all the reconstructed views
+    _localBA_data->computeGraphDistances(_sfm_data, newReconstructedViews);
+
+    // Use the graph-distances to assign a LBA state (Refine, Constant & Ignore) for each parameter (poses, intrinsics & landmarks)
+    _localBA_data->convertDistancesToLBAStates(_sfm_data, kLimitDistance); 
+
+    // Check Ceres mode: 
     // Restore the Ceres Dense mode if the number of cameras in the solver is <= 100
     if (_localBA_data->getNumOfRefinedPoses() + _localBA_data->getNumOfConstantPoses() <= 100)
     {

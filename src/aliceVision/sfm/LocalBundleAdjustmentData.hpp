@@ -75,27 +75,7 @@ public:
   /// @brief Set every parameters of the BA problem to Refine: the Local BA becomes a classic BA.
   /// @param[in] sfm_data contains all the data about the reconstruction.
   void setAllParametersToRefine(const SfMData& sfm_data);
-  
-  /// @brief Add the newly resected views into a graph and use this graph to set an \c EState (refined, constant, ignored) for 
-  /// each parameter in the bundle adjustment (poses, landmarks, intrinsics).
-  /// @details 
-  ///   Steps:
-  ///     1. Add the new views to the graph (1 node per new view & 1 edge connecting to views sharing matches)
-  ///     2. Compute the graph-distances from the new views to all the other posed views.
-  ///     3. Devine the Active & Passive regions & convert each graph-distances to the corresponding LBA state (refined, constant, ignored) 
-  ///         for every parameters included in the ceres problem (poses, landmarks, intrinsics)
-  /// @param[in] sfm_data contains all the data about the reconstruction notably the parameters (poses, landmarks, intrinsics).
-  /// @param[in] map_tracksPerView contains the list of all the tracks id for every view.
-  /// @param[in] newReconstructedViews the indexes of the views newly resected.
-  /// @param[in] kMinNbOfMatches is the min. number of shared matches between 2 resected views needed to create an edge in the graph (~ outliers filter).
-  /// @param[in] kLimitDistance defines the limit between the Active & the Passive regions in the step #3.
-  void updateParametersState(
-    const SfMData& sfm_data, 
-    const track::TracksPerView& map_tracksPerView, 
-    const std::set<IndexT> &newReconstructedViews, 
-    const std::size_t kMinNbOfMatches,
-    const std::size_t kLimitDistance);
-
+ 
   /// @brief Save all the focal lengths to the memory to retain the evolution of each focal length during the reconstruction.
   /// @param[in] sfm_data contains all the information about the reconstruction, notably current focal lengths
   void saveFocallengthsToHistory(const SfMData& sfm_data);
@@ -108,29 +88,6 @@ public:
   /// @param[in] removedViewsId Set of views index to remove
   /// @return true if the number of removed node is equal to the size of \c removedViewsId
   bool removeViewsToTheGraph(const std::set<IndexT>& removedViewsId);
-  
-private:
-   
-  /// Defines all the types of parameter adjusted during bundle adjustment.
-  enum EParameter { 
-    pose,       ///< The pose
-    intrinsic,  ///< The intrinsic
-    landmark    ///< The landmark
-  };
-  
-  /// @brief Return the distance between a specific pose and the new posed views.
-  /// @param[in] poseId is the index of the poseId
-  /// @details Return \c -1 if the pose is not connected to any new posed view.
-  int getPoseDistance(const IndexT poseId) const;
-  
-  /// @brief Return the distance between a specific view and the new posed views.
-  /// @param[in] viewId is the index of the view
-  /// @details Return \c -1 if the view is not connected to any new posed view.
-  int getViewDistance(const IndexT viewId) const;
-      
-  /// @brief All the values of the structure counting the number of parameters \c EParameter being in a specific state \c EState
-  /// are set to 0.
-  void resetParametersCounter();
   
   /// @brief Complete the graph with the newly resected views or all the posed views if the graph is empty.
   /// @param[in] sfm_data 
@@ -170,6 +127,29 @@ private:
   /// @param[in] sfm_data
   /// @param[in] kLimitDistance the distance of the active region
   void convertDistancesToLBAStates(const SfMData & sfm_data, const std::size_t kLimitDistance);
+   
+private:
+   
+  /// Defines all the types of parameter adjusted during bundle adjustment.
+  enum EParameter { 
+    pose,       ///< The pose
+    intrinsic,  ///< The intrinsic
+    landmark    ///< The landmark
+  };
+  
+  /// @brief Return the distance between a specific pose and the new posed views.
+  /// @param[in] poseId is the index of the poseId
+  /// @details Return \c -1 if the pose is not connected to any new posed view.
+  int getPoseDistance(const IndexT poseId) const;
+  
+  /// @brief Return the distance between a specific view and the new posed views.
+  /// @param[in] viewId is the index of the view
+  /// @details Return \c -1 if the view is not connected to any new posed view.
+  int getViewDistance(const IndexT viewId) const;
+      
+  /// @brief All the values of the structure counting the number of parameters \c EParameter being in a specific state \c EState
+  /// are set to 0.
+  void resetParametersCounter();
 
   /// @brief Draw the current graph in the given directory. 
   /// @details The file is name \a graph_<numOfNodes>_<nameComplement>. 

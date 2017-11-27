@@ -66,39 +66,7 @@ void LocalBundleAdjustmentData::setAllParametersToRefine(const SfMData& sfm_data
   {
     _mapLBAStatePerLandmarkId[itLandmark.first] = EState::refined;
     _parametersCounter.at(std::make_pair(EParameter::landmark, EState::refined))++;
-  }  
-}
-
-void LocalBundleAdjustmentData::updateParametersState(
-    const SfMData& sfm_data, 
-    const track::TracksPerView& map_tracksPerView, 
-    const std::set<IndexT> &newReconstructedViews, 
-    const std::size_t kMinNbOfMatches,
-    const std::size_t kLimitDistance)
-{
-  // Do not update graph/distances/states if all the new reconstructed views are already in the graph.
-  bool newViewDetected = false;
-  for (const auto& viewId : newReconstructedViews)
-  {
-    if (_mapNodePerViewId.find(viewId) == _mapNodePerViewId.end())
-    {
-      newViewDetected = true;
-      break;
-    }
   }
-
-  // ----------------
-  // Steps:
-  // 1. Add the new views to the graph (1 node per new view & 1 edge connecting to views sharing matches)
-  // 2. Compute the graph-distances from the new views to all the other posed views.
-  // 3. Convert each graph-distances to the corresponding LBA state (refined, constant, ignored) 
-  //    for every parameters included in the ceres problem (poses, landmarks, intrinsics)
-  // ----------------
-  updateGraphWithNewViews(sfm_data, map_tracksPerView, newReconstructedViews, kMinNbOfMatches);
-  
-  computeGraphDistances(sfm_data, newReconstructedViews);
-  
-  convertDistancesToLBAStates(sfm_data, kLimitDistance); 
 }
 
 void LocalBundleAdjustmentData::saveFocallengthsToHistory(const SfMData& sfm_data)
@@ -185,16 +153,16 @@ bool LocalBundleAdjustmentData::removeViewsToTheGraph(const std::set<IndexT>& re
     if (it != _mapNodePerViewId.end())
     {
       _graph.erase(it->second); // this function erase a node with its incident arcs
-      _mapNodePerViewId.erase(it);
+      _mapNodePerViewId.erase(it->first);
       _mapViewIdPerNode.erase(it->second);
-      
+
       numRemovedNode++;
       ALICEVISION_LOG_DEBUG("The view #" << viewId << " has been successfully removed to the distance graph.");
     }
-    else 
-      ALICEVISION_LOG_DEBUG("The removed view #" << viewId << " does not exist in the '_mapNodePerViewId'.");
+    else
+      ALICEVISION_LOG_WARNING("The removed view #" << viewId << " does not exist in the graph.");
   }
-  
+
   return numRemovedNode == removedViewsId.size();
 }
 
@@ -202,8 +170,7 @@ int LocalBundleAdjustmentData::getPoseDistance(const IndexT poseId) const
 {
   if (_mapDistancePerPoseId.find(poseId) == _mapDistancePerPoseId.end())
   {
-    ALICEVISION_LOG_DEBUG("The pose #" << poseId << " does not exist in the '_mapDistancePerPoseId':\n"
-                          << _mapDistancePerPoseId);
+    ALICEVISION_LOG_DEBUG("The pose #" << poseId << " does not exist in the '_mapDistancePerPoseId' (map size: " << _mapDistancePerPoseId.size() << ") \n");
     return -1;
   }
   return _mapDistancePerPoseId.at(poseId);
@@ -249,13 +216,12 @@ void LocalBundleAdjustmentData::updateGraphWithNewViews(
   // -----------
   
   ALICEVISION_LOG_DEBUG("Updating the distances graph with newly resected views...");
-  
   // Identify the views we need to add to the graph:
   std::set<IndexT> addedViewsId;
   
-  if (_graph.maxNodeId() + 1 == 0) // the graph is empty: add all the posed views
+  if (_graph.maxNodeId() + 1 == 0) // the graph is empty: add all the poses of the scene 
   {
-    ALICEVISION_LOG_DEBUG("|- The graph is empty: all posed views will be added.");
+    ALICEVISION_LOG_DEBUG("|- The graph is empty: initial pair & new view(s) added.");
     for (const auto & x : sfm_data.GetViews())
     {
       if (sfm_data.IsPoseAndIntrinsicDefined(x.first))
@@ -265,25 +231,44 @@ void LocalBundleAdjustmentData::updateGraphWithNewViews(
   else // the graph is not empty
     addedViewsId = newReconstructedViews;
   
-  std::map<Pair, std::size_t> map_imagesPair_nbSharedLandmarks 
-      = countSharedLandmarksPerImagesPair(sfm_data, map_tracksPerView, addedViewsId);
-  
+  // --------------------------  
   // -- Add nodes to the graph
+  // --------------------------  
   for (const auto& viewId : addedViewsId)
   {
-    // Do not add a view to the graph if it already exists in it.
+    // Check if the node does not already exist in the graph
     if (_mapNodePerViewId.find(viewId) != _mapNodePerViewId.end())
+    {
+      ALICEVISION_LOG_WARNING("Is trying to add a non-posed view to the graph (view #" << viewId << ")");
       continue;
-      
+    }
+
+    // Check if the node corresponds to a posed views
+    if (!sfm_data.IsPoseAndIntrinsicDefined(viewId))
+    {
+      ALICEVISION_LOG_WARNING("Is trying to add a non-posed view to the graph (view #" << viewId << ")");
+      continue;
+    }
+     
     lemon::ListGraph::Node newNode = _graph.addNode();
     _mapNodePerViewId[viewId] = newNode;  
     _mapViewIdPerNode[newNode] = viewId;
   }
   
+  // Check consistency between the map/graph & the scene   
+  if (_mapNodePerViewId.size() != sfm_data.GetPoses().size())
+    ALICEVISION_LOG_WARNING("The number of poses in the map (summarizing the graph content) "
+                            "and in the scene is different (" << _mapNodePerViewId.size() << " vs. " << sfm_data.GetPoses().size() << ")");
+
+  // -------------------------- 
   // -- Add edges to the graph
-  std::size_t numEdges = 0;
+  // -------------------------- 
   
-  for(const auto& x: map_imagesPair_nbSharedLandmarks)
+  // Count the nb of common landmarks between the new views and the all the reconstructed views of the scene
+  std::map<Pair, std::size_t> nbSharedLandmarksPerImagesPair = countSharedLandmarksPerImagesPair(sfm_data, map_tracksPerView, addedViewsId);
+
+  std::size_t numEdges = 0;
+  for(const auto& x: nbSharedLandmarksPerImagesPair)
   {
     if(x.second > kMinNbOfMatches) // ensure a minimum number of landmarks in common to consider the link
     {
@@ -293,7 +278,7 @@ void LocalBundleAdjustmentData::updateGraphWithNewViews(
   }
   
   ALICEVISION_LOG_DEBUG("|- The distances graph has been completed with " 
-                       << addedViewsId.size() << " nodes & " << numEdges << " edges.");
+                        << addedViewsId.size() << " nodes & " << numEdges << " edges.");
   ALICEVISION_LOG_DEBUG("|- It contains " << _graph.maxNodeId() + 1 << " nodes & " << _graph.maxEdgeId() + 1 << " edges");                   
 }
 
@@ -313,8 +298,9 @@ void LocalBundleAdjustmentData::computeGraphDistances(const SfMData& sfm_data, c
   {
     auto it = _mapNodePerViewId.find(viewId);
     if (it == _mapNodePerViewId.end())
-      ALICEVISION_LOG_DEBUG("The removed view #" << viewId << " does not exist in the '_mapNodePerViewId'.");
-    bfs.addSource(it->second);
+      ALICEVISION_LOG_WARNING("The reconstructed view #" << viewId << " cannot be added as source for the BFS: does not exist in the graph.");
+    else
+      bfs.addSource(it->second);
   }
   bfs.start();
   
