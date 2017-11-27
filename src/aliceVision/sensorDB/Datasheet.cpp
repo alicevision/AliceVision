@@ -25,7 +25,7 @@ bool Datasheet::operator==(const Datasheet& ds) const
 
   for ( std::vector<std::string>::const_iterator iter_brand = vec_brand.begin();
           iter_brand != vec_brand.end();
-          iter_brand++ )
+          ++iter_brand )
   {
     std::string brandlower2 = *iter_brand;
     std::transform(brandlower2.begin(), brandlower2.end(),
@@ -40,7 +40,7 @@ bool Datasheet::operator==(const Datasheet& ds) const
       bool isAllFind = true;
       for ( std::vector<std::string>::const_iterator iter_model1 = vec_model1.begin();
           iter_model1 != vec_model1.end();
-          iter_model1++ )
+          ++iter_model1 )
       {
         bool hasDigit = false;
         for(std::string::const_iterator c = (*iter_model1).begin(); c != (*iter_model1).end(); ++c )
@@ -61,7 +61,7 @@ bool Datasheet::operator==(const Datasheet& ds) const
           bool isFind = false;
           for ( std::vector<std::string>::const_iterator iter_model2 = vec_model2.begin();
                 iter_model2 != vec_model2.end();
-                iter_model2++ )
+                ++iter_model2 )
           {
             std::string modellower2 = *iter_model2;
             for ( int index = 0; index < modellower2.length(); index++ )
