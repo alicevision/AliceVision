@@ -31,7 +31,10 @@ void meshPostProcessing(mv_mesh*& inout_mesh, staticVector<staticVector<int>*>*&
     std::cout << "meshPostProcessing" << std::endl;
     mv_output3D o3d(&mp);
 
-    o3d.saveMvMeshToObj(inout_mesh, resultFolderName + "rawGraphCut.obj");
+    bool exportDebug = (float)mp.mip->_ini.get<bool>("delaunaycut.exportDebugGC", false);
+
+    if(exportDebug)
+        o3d.saveMvMeshToObj(inout_mesh, resultFolderName + "rawGraphCut.obj");
 
     const auto doRemoveHugeTriangles =
             mp.mip->_ini.get<bool>("hallucinationsFiltering.doRemoveHugeTriangles", false);
@@ -105,7 +108,8 @@ void meshPostProcessing(mv_mesh*& inout_mesh, staticVector<staticVector<int>*>*&
         meOpt->init();
         meOpt->cleanMesh(10);
 
-        o3d.saveMvMeshToObj(meOpt, resultFolderName + "mesh_clean.obj");
+        if(exportDebug)
+            o3d.saveMvMeshToObj(meOpt, resultFolderName + "mesh_clean.obj");
 
         /////////////////////////////
         {
@@ -182,7 +186,8 @@ void meshPostProcessing(mv_mesh*& inout_mesh, staticVector<staticVector<int>*>*&
             int type = mp.mip->_ini.get<int>("meshEnergyOpt.smoothType", 3); // 0, 1, 2, 3, 4 => only 1 and 3 works
             meOpt->optimizeSmooth(lambda, epsilon, type, niter, ptsCanMove);
 
-            o3d.saveMvMeshToObj(meOpt, resultFolderName + "mesh_smoothed.obj");
+            if(exportDebug)
+                o3d.saveMvMeshToObj(meOpt, resultFolderName + "mesh_smoothed.obj");
         }
 
         bool doLaplacianSmoothMesh =
@@ -198,7 +203,8 @@ void meshPostProcessing(mv_mesh*& inout_mesh, staticVector<staticVector<int>*>*&
             }
             deleteArrayOfArrays<int>(&ptsNei);
 
-            o3d.saveMvMeshToObj(meOpt, resultFolderName + "mesh_laplacianSmoothed.obj");
+            if(exportDebug)
+                o3d.saveMvMeshToObj(meOpt, resultFolderName + "mesh_laplacianSmoothed.obj");
         }
 
         bool doOptimizeMesh =
@@ -216,7 +222,8 @@ void meshPostProcessing(mv_mesh*& inout_mesh, staticVector<staticVector<int>*>*&
 
             deleteArrayOfArrays<int>(&camsPts);
 
-            o3d.saveMvMeshToObj(meOpt, resultFolderName + "mesh_optimized.obj");
+            if(exportDebug)
+                o3d.saveMvMeshToObj(meOpt, resultFolderName + "mesh_optimized.obj");
         }
 
         delete ptsCanMove;
