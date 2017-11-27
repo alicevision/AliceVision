@@ -100,6 +100,14 @@ public:
   {
     _minTrackLength = minTrackLength;
   }
+  
+  void setLocalBundleAdjustmentGraphDistance(std::size_t distance)
+  {
+    if (!_uselocalBundleAdjustment)
+      ALICEVISION_LOG_WARNING("Cannot set the local BA graph-distance limit: local BA not enabled.");
+    else
+      _localBA_data->setGraphDistanceLimit(distance);
+  }
 
   void setUseLocalBundleAdjustmentStrategy(bool v)
   {

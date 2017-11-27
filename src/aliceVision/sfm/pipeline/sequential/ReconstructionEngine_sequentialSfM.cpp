@@ -1675,7 +1675,6 @@ bool ReconstructionEngine_sequentialSfM::localBundleAdjustment(const std::set<In
     options.setDenseBA();
   }
   
-  const std::size_t kLimitDistance = 1; // default value: 1 
   const std::size_t kMinNbOfMatches = 50; // default value: 50 
   bool isBaSucceed;
   
@@ -1693,7 +1692,7 @@ bool ReconstructionEngine_sequentialSfM::localBundleAdjustment(const std::set<In
     _localBA_data->computeGraphDistances(_sfm_data, newReconstructedViews);
 
     // Use the graph-distances to assign a LBA state (Refine, Constant & Ignore) for each parameter (poses, intrinsics & landmarks)
-    _localBA_data->convertDistancesToLBAStates(_sfm_data, kLimitDistance); 
+    _localBA_data->convertDistancesToLBAStates(_sfm_data); 
 
     // Check Ceres mode: 
     // Restore the Ceres Dense mode if the number of cameras in the solver is <= 100
@@ -1734,7 +1733,7 @@ bool ReconstructionEngine_sequentialSfM::localBundleAdjustment(const std::set<In
   _localBA_data->exportFocalLengths(_localBA_data->getOutDirectory());
   
   // -- Export data about the refinement
-  std::string namecomplement = "_M" + std::to_string(kMinNbOfMatches) + "_D" + std::to_string(kLimitDistance);
+  std::string namecomplement = "_M" + std::to_string(kMinNbOfMatches) + "_D" + std::to_string(_localBA_data->getGraphDistanceLimit());
   std::string filename =  "BaStats" + namecomplement + ".txt";
   localBA_ceres.exportStatistics(_localBA_data->getOutDirectory(), filename);
   

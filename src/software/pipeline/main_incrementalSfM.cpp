@@ -90,6 +90,7 @@ int main(int argc, char **argv)
   bool refineIntrinsics = true;
   bool allowUserInteraction = true;
   bool useLocalBundleAdjustment = false;
+  std::size_t localBundelAdjustementGraphDistanceLimit = 1;
 
   po::options_description allParams(
     "Sequential/Incremental reconstruction\n"
@@ -137,7 +138,9 @@ int main(int argc, char **argv)
       "If the process is done on renderfarm, it doesn't make sense to wait for user inputs")
     ("useLocalBA,l", po::value<bool>(&useLocalBundleAdjustment)->default_value(useLocalBundleAdjustment),
       "Enable/Disable the Local bundle adjustment strategy.\n"
-      "It reduces the reconstruction time, especially for big datasets (500+ images).\n");
+      "It reduces the reconstruction time, especially for big datasets (500+ images).\n")
+    ("localBAGraphDistance", po::value<std::size_t>(&localBundelAdjustementGraphDistanceLimit)->default_value(localBundelAdjustementGraphDistanceLimit),
+      "Graph-distance limit setting the Active region in the Local Bundle Adjustment strategy (by default: 1).\n");
 
   po::options_description logParams("Log parameters");
   logParams.add_options()
@@ -244,6 +247,7 @@ int main(int argc, char **argv)
   sfmEngine.setSfmdataInterFileExtension(outInterFileExtension);
   sfmEngine.setAllowUserInteraction(allowUserInteraction);
   sfmEngine.setUseLocalBundleAdjustmentStrategy(useLocalBundleAdjustment);
+  sfmEngine.setLocalBundleAdjustmentGraphDistance(localBundelAdjustementGraphDistanceLimit);
 
   // Handle Initial pair parameter
   if(!initialPairString.first.empty() && !initialPairString.second.empty())

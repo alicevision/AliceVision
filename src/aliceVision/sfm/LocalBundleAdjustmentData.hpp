@@ -65,12 +65,18 @@ public:
 
   /// Return the number of ignored intrinsics.
   std::size_t getNumOfIgnoredIntrinsics() const   {return getNumberOf(EParameter::intrinsic, EState::ignored);}
+
+  /// Get the graph-distance limit setting the Active region
+  std::size_t getGraphDistanceLimit() const       {return _graphDistanceLimit;}
     
   /// Get the output path where Local BA outputs are saved
   std::string getOutDirectory() const             {return stlplus::folder_append_separator(_outFolder);}
   
   /// Set the output path where Local BA outputs will be saved
   void setOutDirectory(const std::string& dir)    {_outFolder = dir;}
+  
+  /// Set the graph-distance limit setting the Active region
+  void setGraphDistanceLimit(const std::size_t& limit)  {_graphDistanceLimit = limit;}
     
   /// @brief Set every parameters of the BA problem to Refine: the Local BA becomes a classic BA.
   /// @param[in] sfm_data contains all the data about the reconstruction.
@@ -126,7 +132,7 @@ public:
   ///       - \a Refined <=> its connected to a refined camera
   /// @param[in] sfm_data
   /// @param[in] kLimitDistance the distance of the active region
-  void convertDistancesToLBAStates(const SfMData & sfm_data, const std::size_t kLimitDistance);
+  void convertDistancesToLBAStates(const SfMData & sfm_data);
    
 private:
    
@@ -213,6 +219,9 @@ private:
   
   /// A graph where nodes are poses and an edge exists when 2 poses shared at least 'kMinNbOfMatches' matches.
   lemon::ListGraph _graph; 
+  
+  /// The graph-distance limit setting the Active region (default value: 1)
+  std::size_t _graphDistanceLimit = 1;
   
   /// Associates each view (indexed by its viewId) to its corresponding node in the graph.
   std::map<IndexT, lemon::ListGraph::Node> _mapNodePerViewId;

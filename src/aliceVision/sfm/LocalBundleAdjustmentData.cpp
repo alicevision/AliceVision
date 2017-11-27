@@ -234,25 +234,28 @@ void LocalBundleAdjustmentData::updateGraphWithNewViews(
   // --------------------------  
   // -- Add nodes to the graph
   // --------------------------  
-  for (const auto& viewId : addedViewsId)
+  std::size_t nbAddedNodes = 0;
+  for (const IndexT& viewId : addedViewsId)
   {
     // Check if the node does not already exist in the graph
+    // It happens when multiple local BA are run successively, with no new reconstructed views.
     if (_mapNodePerViewId.find(viewId) != _mapNodePerViewId.end())
     {
-      ALICEVISION_LOG_WARNING("Is trying to add a non-posed view to the graph (view #" << viewId << ")");
+      ALICEVISION_LOG_DEBUG("Cannot add the view #" << viewId << " to the graph: already exists in the graph.");
       continue;
     }
 
     // Check if the node corresponds to a posed views
     if (!sfm_data.IsPoseAndIntrinsicDefined(viewId))
     {
-      ALICEVISION_LOG_WARNING("Is trying to add a non-posed view to the graph (view #" << viewId << ")");
+      ALICEVISION_LOG_WARNING("Cannot add the view #" << viewId << " to the graph: its pose & intrinsic are not defined.");
       continue;
     }
      
     lemon::ListGraph::Node newNode = _graph.addNode();
     _mapNodePerViewId[viewId] = newNode;  
     _mapViewIdPerNode[newNode] = viewId;
+    ++nbAddedNodes;
   }
   
   // Check consistency between the map/graph & the scene   
@@ -263,22 +266,23 @@ void LocalBundleAdjustmentData::updateGraphWithNewViews(
   // -------------------------- 
   // -- Add edges to the graph
   // -------------------------- 
-  
-  // Count the nb of common landmarks between the new views and the all the reconstructed views of the scene
-  std::map<Pair, std::size_t> nbSharedLandmarksPerImagesPair = countSharedLandmarksPerImagesPair(sfm_data, map_tracksPerView, addedViewsId);
-
-  std::size_t numEdges = 0;
-  for(const auto& x: nbSharedLandmarksPerImagesPair)
+  std::size_t numAddedEdges = 0;
+  if (!addedViewsId.empty())
   {
-    if(x.second > kMinNbOfMatches) // ensure a minimum number of landmarks in common to consider the link
+    // Count the nb of common landmarks between the new views and the all the reconstructed views of the scene
+    std::map<Pair, std::size_t> nbSharedLandmarksPerImagesPair = countSharedLandmarksPerImagesPair(sfm_data, map_tracksPerView, addedViewsId);
+    
+    for(const auto& x: nbSharedLandmarksPerImagesPair)
     {
-      _graph.addEdge(_mapNodePerViewId.at(x.first.first), _mapNodePerViewId.at(x.first.second));
-      numEdges++;
+      if(x.second > kMinNbOfMatches) // ensure a minimum number of landmarks in common to consider the link
+      {
+        _graph.addEdge(_mapNodePerViewId.at(x.first.first), _mapNodePerViewId.at(x.first.second));
+        numAddedEdges++;
+      }
     }
   }
   
-  ALICEVISION_LOG_DEBUG("|- The distances graph has been completed with " 
-                        << addedViewsId.size() << " nodes & " << numEdges << " edges.");
+  ALICEVISION_LOG_DEBUG("|- The distances graph has been completed with " << nbAddedNodes<< " nodes & " << numAddedEdges << " edges.");
   ALICEVISION_LOG_DEBUG("|- It contains " << _graph.maxNodeId() + 1 << " nodes & " << _graph.maxEdgeId() + 1 << " edges");                   
 }
 
@@ -334,7 +338,7 @@ void LocalBundleAdjustmentData::computeGraphDistances(const SfMData& sfm_data, c
   } 
 }
 
-void LocalBundleAdjustmentData::convertDistancesToLBAStates(const SfMData & sfm_data, const std::size_t kLimitDistance)
+void LocalBundleAdjustmentData::convertDistancesToLBAStates(const SfMData & sfm_data)
 {
   // reset the maps
   _mapLBAStatePerPoseId.clear();
@@ -366,12 +370,12 @@ void LocalBundleAdjustmentData::convertDistancesToLBAStates(const SfMData & sfm_
   {
     const IndexT poseId = itPose->first;
     int dist = getPoseDistance(poseId);
-    if (dist >= 0 && dist <= kLimitDistance) // [0; D]
+    if (dist >= 0 && dist <= _graphDistanceLimit) // [0; D]
     {
       _mapLBAStatePerPoseId[poseId] = EState::refined;
       _parametersCounter.at(std::make_pair(EParameter::pose, EState::refined))++;
     }
-    else if (dist == kLimitDistance + 1)  // {D+1}
+    else if (dist == _graphDistanceLimit + 1)  // {D+1}
     {
       _mapLBAStatePerPoseId[poseId] = EState::constant;
       _parametersCounter.at(std::make_pair(EParameter::pose, EState::constant))++;
@@ -413,7 +417,7 @@ void LocalBundleAdjustmentData::convertDistancesToLBAStates(const SfMData & sfm_
     for(const auto& observationIt: observations)
     {
       int dist = getViewDistance(observationIt.first);
-      if(dist >= 0 && dist <= kLimitDistance) // [0; D]
+      if(dist >= 0 && dist <= _graphDistanceLimit) // [0; D]
       {
         _mapLBAStatePerLandmarkId[landmarkId] = EState::refined;
         _parametersCounter.at(std::make_pair(EParameter::landmark, EState::refined))++;
