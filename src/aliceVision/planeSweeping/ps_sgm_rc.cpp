@@ -719,7 +719,7 @@ void computeDepthMapsPSSGM(int CUDADeviceNo, multiviewParams* mp, mv_prematch_ca
     if(scale == -1)
     {
         // Compute the number of scales that will be used in the plane sweeping.
-        // The higest scale should have a minimum resolution of 700x550.
+        // The highest scale should have a minimum resolution of 700x550.
         int width = mp->mip->getMaxImageWidth();
         int height = mp->mip->getMaxImageHeight();
         int scaleTmp = computeStep(mp->mip, 1, (width > height ? 700 : 550), (width > height ? 550 : 700));

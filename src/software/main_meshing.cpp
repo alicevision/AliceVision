@@ -21,26 +21,26 @@ namespace po = boost::program_options;
 #define ALICEVISION_CERR(x) std::cerr << x << std::endl
 
 
-enum EMeshingMode {
+enum EPartitioning {
     eUndefined = 0,
-    eLimited = 1,
-    eLargeScale = 2
+    eSingleBlock = 1,
+    eAuto = 2
 };
 
-EMeshingMode EMeshingMode_stringToEnum(const std::string& s)
+EPartitioning EPartitioning_stringToEnum(const std::string& s)
 {
-    if(s == "limited")
-        return eLimited;
-    if(s == "largeScale")
-        return eLargeScale;
+    if(s == "singleBlock")
+        return eSingleBlock;
+    if(s == "auto")
+        return eAuto;
     return eUndefined;
 }
 
-inline std::istream& operator>>(std::istream& in, EMeshingMode& mode)
+inline std::istream& operator>>(std::istream& in, EPartitioning& mode)
 {
     std::string s;
     in >> s;
-    mode = EMeshingMode_stringToEnum(s);
+    mode = EPartitioning_stringToEnum(s);
     return in;
 }
 
@@ -51,16 +51,24 @@ int main(int argc, char* argv[])
 
     std::string iniFilepath;
     std::string outputMesh;
-    EMeshingMode meshingMode = eLimited;
+    EPartitioning partitioning = eSingleBlock;
     po::options_description inputParams;
+
+    int maxPts = 6000000;
+    int maxPtsPerVoxel = 6000000;
 
     inputParams.add_options()
         ("ini", po::value<std::string>(&iniFilepath)->required(),
             "Configuration file (mvs.ini).")
         ("output", po::value<std::string>(&outputMesh)->required(),
             "Output mesh (OBJ file format).")
-        ("mode", po::value<EMeshingMode>(&meshingMode)->default_value(meshingMode),
-            "Meshing mode: limited or largeScale.");
+
+        ("maxPts", po::value<int>(&maxPts)->default_value(maxPts),
+            "Max points.")
+        ("maxPtsPerVoxel", po::value<int>(&maxPtsPerVoxel)->default_value(maxPtsPerVoxel),
+            "Max points per voxel.")
+        ("partitioning", po::value<EPartitioning>(&partitioning)->default_value(partitioning),
+            "Partitioning: singleBlock or auto.");
     po::variables_map vm;
 
     try
@@ -97,8 +105,6 @@ int main(int argc, char* argv[])
     mv_prematch_cams pc(&mp);
 
     // .ini parsing
-    const int maxPts = mip._ini.get<int>("largeScale.planMaxPts", 6000000);
-    const int maxPtsPerVoxel = std::max(maxPts, mip._ini.get<int>("largeScale.planMaxPtsPerVoxel", 6000000));
     int ocTreeDim = mip._ini.get<int>("largeScale.gridLevel0", 1024);
     const auto baseDir = mip._ini.get<std::string>("largeScale.baseDirName", "root01024");
 
@@ -106,12 +112,14 @@ int main(int argc, char* argv[])
     if(!bfs::is_directory(outDirectory))
         bfs::create_directory(outDirectory);
 
-    switch(meshingMode)
+    bfs::path tmpDirectory = outDirectory / "tmp";
+
+    switch(partitioning)
     {
-        case eLargeScale:
+        case eAuto:
         {
-            ALICEVISION_COUT("--- meshing (large scale)");
-            largeScale lsbase(&mp, &pc, mip.mvDir + baseDir + "/");
+            ALICEVISION_COUT("--- meshing partitioning: auto");
+            largeScale lsbase(&mp, &pc, tmpDirectory.string() + "/");
             lsbase.generateSpace(maxPtsPerVoxel, ocTreeDim);
             std::string voxelsArrayFileName = lsbase.spaceFolderName + "hexahsToReconstruct.bin";
             staticVector<point3d>* voxelsArray = nullptr;
@@ -134,8 +142,8 @@ int main(int argc, char* argv[])
 
             ALICEVISION_COUT("Saving joined meshes");
 
-            std::string spaceBinFileName = mip.mvDir + "mesh.bin";
-            mesh->saveToBin(spaceBinFileName);
+            bfs::path spaceBinFileName = outDirectory/"denseReconstruction.bin";
+            mesh->saveToBin(spaceBinFileName.string());
 
             // Export joined mesh to obj
             mv_output3D o3d(lsbase.mp);
@@ -145,19 +153,19 @@ int main(int argc, char* argv[])
 
             // Join ptsCams
             staticVector<staticVector<int>*>* ptsCams = loadLargeScalePtsCams(lsbase.getRecsDirs(voxelsArray));
-            saveArrayOfArraysToFile<int>(mip.mvDir + "meshPtsCamsFromDGC.bin", ptsCams);
+            saveArrayOfArraysToFile<int>((outDirectory/"meshPtsCamsFromDGC.bin").string(), ptsCams);
             deleteArrayOfArrays<int>(&ptsCams);
         }
-        case eLimited:
+        case eSingleBlock:
         {
-            ALICEVISION_COUT("--- meshing (limited scale)");
-            largeScale ls0(&mp, &pc, mip.mvDir + baseDir + "/");
+            ALICEVISION_COUT("--- meshing partitioning: single block");
+            largeScale ls0(&mp, &pc, tmpDirectory.string() + "/");
             ls0.generateSpace(maxPtsPerVoxel, ocTreeDim);
             unsigned long ntracks = std::numeric_limits<unsigned long>::max();
             while(ntracks > maxPts)
             {
-                std::string dirName = mip.mvDir + "largeScaleMaxPts" + num2strFourDecimal(ocTreeDim) + "/";
-                largeScale* ls = ls0.cloneSpaceIfDoesNotExists(ocTreeDim, dirName);
+                bfs::path dirName = outDirectory/("largeScaleMaxPts" + num2strFourDecimal(ocTreeDim));
+                largeScale* ls = ls0.cloneSpaceIfDoesNotExists(ocTreeDim, dirName.string() + "/");
                 voxelsGrid vg(ls->dimensions, &ls->space[0], ls->mp, ls->pc, ls->spaceVoxelsFolderName);
                 ntracks = vg.getNTracks();
                 delete ls;
@@ -172,7 +180,8 @@ int main(int argc, char* argv[])
             }
             ALICEVISION_COUT("Number of tracks: " << ntracks);
             ALICEVISION_COUT("ocTreeDim: " << ocTreeDim);
-            largeScale lsbase(&mp, &pc, mip.mvDir + "largeScaleMaxPts" + num2strFourDecimal(ocTreeDim) + "/");
+            bfs::path dirName = outDirectory/("largeScaleMaxPts" + num2strFourDecimal(ocTreeDim));
+            largeScale lsbase(&mp, &pc, dirName.string()+"/");
             lsbase.loadSpaceFromFile();
             reconstructionPlan rp(lsbase.dimensions, &lsbase.space[0], lsbase.mp, lsbase.pc, lsbase.spaceVoxelsFolderName);
             staticVector<int> voxelNeighs(rp.voxels->size() / 8);
@@ -181,26 +190,28 @@ int main(int argc, char* argv[])
             mv_delaunay_GC delaunayGC(lsbase.mp, lsbase.pc);
             staticVector<point3d>* hexahsToExcludeFromResultingMesh = nullptr;
             point3d* hexah = &lsbase.space[0];
-            delaunayGC.reconstructVoxel(hexah, &voxelNeighs, mip.mvDir, lsbase.getSpaceCamsTracksDir(), false, hexahsToExcludeFromResultingMesh,
+            delaunayGC.reconstructVoxel(hexah, &voxelNeighs, outDirectory.string()+"/", lsbase.getSpaceCamsTracksDir(), false, hexahsToExcludeFromResultingMesh,
                                   (voxelsGrid*)&rp, lsbase.getSpaceSteps());
 
             bool exportDebugGC = (float)mip._ini.get<bool>("delaunaycut.exportDebugGC", false);
             //if(exportDebugGC)
-            //    delaunayGC.saveMeshColoredByCamsConsistency(mip.mvDir + "meshColoredbyCamsConsistency.wrl", mip.mvDir + "meshColoredByVisibility.wrl");
+            //    delaunayGC.saveMeshColoredByCamsConsistency((outDirectory/"meshColoredbyCamsConsistency.wrl").string(),
+            //                                                (outDirectory/"meshColoredByVisibility.wrl").string());
 
             delaunayGC.graphCutPostProcessing();
             if(exportDebugGC)
-                delaunayGC.saveMeshColoredByCamsConsistency(mip.mvDir + "meshColoredbyCamsConsistency_postprocess.wrl", mip.mvDir + "meshColoredByVisibility_postprocess.wrl");
+                delaunayGC.saveMeshColoredByCamsConsistency((outDirectory/"meshColoredbyCamsConsistency_postprocess.wrl").string(),
+                                                            (outDirectory/"meshColoredByVisibility_postprocess.wrl").string());
 
             // Save mesh as .bin and .obj
             mv_mesh* mesh = delaunayGC.createMesh();
             staticVector<staticVector<int>*>* ptsCams = delaunayGC.createPtsCams();
             staticVector<int> usedCams = delaunayGC.getSortedUsedCams();
 
-            meshPostProcessing(mesh, ptsCams, usedCams, mp, pc, mip.mvDir, hexahsToExcludeFromResultingMesh, hexah);
-            mesh->saveToBin(mip.mvDir + "mesh.bin");
+            meshPostProcessing(mesh, ptsCams, usedCams, mp, pc, outDirectory.string()+"/", hexahsToExcludeFromResultingMesh, hexah);
+            mesh->saveToBin((outDirectory/"denseReconstruction.bin").string());
 
-            saveArrayOfArraysToFile<int>(mip.mvDir + "meshPtsCamsFromDGC.bin", ptsCams);
+            saveArrayOfArraysToFile<int>((outDirectory/"meshPtsCamsFromDGC.bin").string(), ptsCams);
             deleteArrayOfArrays<int>(&ptsCams);
 
             mv_output3D o3d(&mp);
