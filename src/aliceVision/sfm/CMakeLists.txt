@@ -18,6 +18,8 @@ set(sfm_files_headers
   SfMData.hpp
   BundleAdjustment.hpp
   BundleAdjustmentCeres.hpp
+  LocalBundleAdjustmentCeres.hpp
+  LocalBundleAdjustmentData.hpp
   ResidualErrorFunctor.hpp
   sfmDataFilters.hpp
   FrustumFilter.hpp
@@ -52,6 +54,8 @@ set(sfm_files_sources
   pipeline/regionsIO.cpp
   SfMData.cpp
   BundleAdjustmentCeres.cpp
+  LocalBundleAdjustmentCeres.cpp
+  LocalBundleAdjustmentData.cpp
   sfmDataFilters.cpp
   FrustumFilter.cpp
   sfmDataIO.cpp

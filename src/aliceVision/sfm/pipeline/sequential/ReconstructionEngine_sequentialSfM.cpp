@@ -7,6 +7,7 @@
 #include "aliceVision/sfm/pipeline/RelativePoseInfo.hpp"
 #include "aliceVision/sfm/sfmDataIO.hpp"
 #include "aliceVision/sfm/BundleAdjustmentCeres.hpp"
+#include "aliceVision/sfm/LocalBundleAdjustmentCeres.hpp"
 #include "aliceVision/sfm/sfmDataFilters.hpp"
 #include "aliceVision/sfm/pipeline/localization/SfMLocalizer.hpp"
 
@@ -169,6 +170,7 @@ void ReconstructionEngine_sequentialSfM::RobustResectionOfImages(
   size_t resectionGroupIndex = 0;
   std::set<size_t> set_remainingViewId(viewIds);
   std::vector<size_t> vec_possible_resection_indexes;
+  
   while (FindNextImagesGroupForResection(vec_possible_resection_indexes, set_remainingViewId))
   {
     if(vec_possible_resection_indexes.empty())
@@ -308,7 +310,12 @@ void ReconstructionEngine_sequentialSfM::RobustResectionOfImages(
       do
       {
         auto chrono2_start = std::chrono::steady_clock::now();
-        BundleAdjustment(_bFixedIntrinsics);
+        
+        if (_uselocalBundleAdjustment)
+          localBundleAdjustment(newReconstructedViews);
+        else
+          BundleAdjustment(_bFixedIntrinsics);
+        
         ALICEVISION_LOG_DEBUG("Resection group index: " << resectionGroupIndex << ", bundle iteration: " << bundleAdjustmentIteration
                   << " took " << std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - chrono2_start).count() << " msec.");
         ++bundleAdjustmentIteration;
@@ -316,7 +323,29 @@ void ReconstructionEngine_sequentialSfM::RobustResectionOfImages(
       while (badTrackRejector(4.0, nbOutliersThreshold));
       ALICEVISION_LOG_DEBUG("Bundle with " << bundleAdjustmentIteration << " iterations took " << std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - chrono_start).count() << " msec.");
       chrono_start = std::chrono::steady_clock::now();
-      eraseUnstablePosesAndObservations(this->_sfm_data, _minPointsPerPose, _minTrackLength);
+      
+      std::set<IndexT> removedPosesId;
+      bool contentRemoved = eraseUnstablePosesAndObservations(this->_sfm_data, _minPointsPerPose, _minTrackLength, &removedPosesId);
+      
+      if (_uselocalBundleAdjustment && contentRemoved)
+      {
+        // Get removed VIEWS index
+        std::set<IndexT> removedViewsId;
+        for (const auto& x : _sfm_data.GetViews())
+        {
+          if (removedPosesId.find(x.second->getPoseId()) != removedPosesId.end())
+          {
+            if (!_sfm_data.IsPoseAndIntrinsicDefined(x.second->getViewId()))
+              removedViewsId.insert(x.second->getViewId());
+            else
+              ALICEVISION_LOG_WARNING("The view #" << x.second->getViewId() << " is set as Removed while it is still in the scene.");
+          }
+        }
+        
+        // Remove removed views to the graph
+        _localBA_data->removeViewsToTheGraph(removedViewsId);
+        ALICEVISION_LOG_DEBUG("Poses (index) removed to the reconstruction: " << removedPosesId);
+      }
       ALICEVISION_LOG_DEBUG("eraseUnstablePosesAndObservations took " << std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - chrono_start).count() << " msec.");
     }
     ++resectionGroupIndex;
@@ -1626,6 +1655,89 @@ bool ReconstructionEngine_sequentialSfM::BundleAdjustment(bool fixedIntrinsics)
   if(!fixedIntrinsics)
     refineOptions |= BA_REFINE_INTRINSICS_ALL;
   return bundle_adjustment_obj.Adjust(_sfm_data, refineOptions);
+}
+
+bool ReconstructionEngine_sequentialSfM::localBundleAdjustment(const std::set<IndexT>& newReconstructedViews)
+{
+  
+  // -- Manage Ceres options (parameter ordering, local BA, sparse/dense mode, etc.)
+  
+  LocalBundleAdjustmentCeres::LocalBA_options options;
+  options.enableParametersOrdering();
+  
+  if (_sfm_data.GetPoses().size() > 100) // default value: 100 
+  {
+    options.setSparseBA();
+    options.enableLocalBA();
+  }
+  else
+  {
+    options.setDenseBA();
+  }
+  
+  const std::size_t kMinNbOfMatches = 50; // default value: 50 
+  bool isBaSucceed;
+  
+  // Add the new reconstructed views to the graph
+  _localBA_data->updateGraphWithNewViews(_sfm_data, _map_tracksPerView, newReconstructedViews, kMinNbOfMatches);
+  
+  // -- Prepare Local BA & Adjust
+  LocalBundleAdjustmentCeres localBA_ceres;
+  
+  if (options.isLocalBAEnabled()) // Local Bundle Adjustment
+  {
+    ALICEVISION_LOG_DEBUG("Local BA is activated: YES");
+    
+    // Compute the graph-distance between each newly reconstructed views and all the reconstructed views
+    _localBA_data->computeGraphDistances(_sfm_data, newReconstructedViews);
+
+    // Use the graph-distances to assign a LBA state (Refine, Constant & Ignore) for each parameter (poses, intrinsics & landmarks)
+    _localBA_data->convertDistancesToLBAStates(_sfm_data); 
+
+    // Check Ceres mode: 
+    // Restore the Ceres Dense mode if the number of cameras in the solver is <= 100
+    if (_localBA_data->getNumOfRefinedPoses() + _localBA_data->getNumOfConstantPoses() <= 100)
+    {
+      options.setDenseBA();
+    }
+    
+    localBA_ceres = LocalBundleAdjustmentCeres(*_localBA_data, options, newReconstructedViews);
+    
+    // -- Refine:
+    
+    // Parameters are refined only if the number of cameras to refine is > to the number of newly added cameras.
+    // - if there are equal: it meens that none of the new cameras is connected to the local BA graph,
+    //    so the refinement would be done on those cameras only, without any constant parameters.
+    // - the number of cameras to refine cannot be < to the number of newly added cameras (set to 'refine' by default)
+    if (_localBA_data->getNumOfRefinedPoses() > newReconstructedViews.size())
+    {
+      isBaSucceed = localBA_ceres.Adjust(_sfm_data, *_localBA_data);
+    }
+    else
+      ALICEVISION_LOG_WARNING("The refinement has not been done: the new cameras are not connected to the rest of the local BA graph.");
+  }   
+  else // Classic Bundle Adjustment
+  {
+    ALICEVISION_LOG_DEBUG("Local BA is activated: NO");
+
+    _localBA_data->setAllParametersToRefine(_sfm_data);
+    
+    localBA_ceres = LocalBundleAdjustmentCeres(*_localBA_data, options, newReconstructedViews);
+    
+    isBaSucceed = localBA_ceres.Adjust(_sfm_data, *_localBA_data);
+  }
+  
+  // Save the current focal lengths values (for each intrinsic) in the history  
+  _localBA_data->saveFocallengthsToHistory(_sfm_data);
+  // (optional) Export the current focallengths value to a txt file. 
+  _localBA_data->exportFocalLengths(_localBA_data->getOutDirectory());
+  
+  // -- Export data about the refinement
+  std::string namecomplement = "_M" + std::to_string(kMinNbOfMatches) + "_D" + std::to_string(_localBA_data->getGraphDistanceLimit());
+  std::string filename =  "BaStats" + namecomplement + ".txt";
+  localBA_ceres.exportStatistics(_localBA_data->getOutDirectory(), filename);
+  
+  return isBaSucceed;
 }
 
 /**

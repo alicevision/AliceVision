@@ -10,6 +10,7 @@
 #include "aliceVision/feature/FeaturesPerView.hpp"
 #include "aliceVision/sfm/pipeline/pairwiseMatchesIO.hpp"
 #include "aliceVision/track/Track.hpp"
+#include "aliceVision/sfm/LocalBundleAdjustmentData.hpp"
 
 #include "dependencies/htmlDoc/htmlDoc.hpp"
 #include "dependencies/histogram/histogram.hpp"
@@ -99,7 +100,28 @@ public:
   {
     _minTrackLength = minTrackLength;
   }
+  
+  void setLocalBundleAdjustmentGraphDistance(std::size_t distance)
+  {
+    if (!_uselocalBundleAdjustment)
+      ALICEVISION_LOG_WARNING("Cannot set the local BA graph-distance limit: local BA not enabled.");
+    else
+      _localBA_data->setGraphDistanceLimit(distance);
+  }
 
+  void setUseLocalBundleAdjustmentStrategy(bool v)
+  {
+    _uselocalBundleAdjustment = v;
+    if (v)
+    {
+      _localBA_data = std::make_shared<LocalBundleAdjustmentData>(_sfm_data);
+      _localBA_data->setOutDirectory(stlplus::folder_append_separator(_sOutDirectory)+"localBA/");
+      // delete all the previous data about the Local BA.
+      if (stlplus::folder_exists(_localBA_data->getOutDirectory()))
+        stlplus::folder_delete(_localBA_data->getOutDirectory(), true);
+      stlplus::folder_create(_localBA_data->getOutDirectory());
+    }
+  }
 protected:
 
 
@@ -179,7 +201,15 @@ private:
    * @param fixedIntrinsics
    */
   bool BundleAdjustment(bool fixedIntrinsics);
-
+  
+  /**
+     * @brief Apply the bundle adjustment choosing a small amount of parameters to reduce.
+     * It reduces drastically the reconstruction time for big dataset of images.
+     * @details The parameters to refine (landmarks, intrinsics, poses) are choosen according to the their 
+     * proximity to the cameras newly added to the reconstruction.
+     */
+  bool localBundleAdjustment(const std::set<IndexT>& newReconstructedViews);
+    
   /// Discard track with too large residual error
   bool badTrackRejector(double dPrecision, size_t count = 0);
 
@@ -205,6 +235,7 @@ private:
   int _minInputTrackLength = 2;
   int _minTrackLength = 2;
   int _minPointsPerPose = 30;
+  bool _uselocalBundleAdjustment = false;
   
   //-- Data provider
   feature::FeaturesPerView  * _featuresPerView;
@@ -229,6 +260,10 @@ private:
   track::TracksPyramidPerView _map_featsPyramidPerView;
   /// Per camera confidence (A contrario estimated threshold error)
   HashMap<IndexT, double> _map_ACThreshold;
+  
+  // Local Bundle Adjustment data
+  /// Contains all the data used by the Local BA approach
+  std::shared_ptr<LocalBundleAdjustmentData> _localBA_data;
 
   /// Remaining camera index that can be used for resection
   std::set<size_t> _set_remainingViewId;
