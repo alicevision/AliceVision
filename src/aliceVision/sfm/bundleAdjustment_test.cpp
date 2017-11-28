@@ -172,27 +172,34 @@ BOOST_AUTO_TEST_CASE(LOCAL_BUNDLE_ADJUSTMENT_EffectiveMinimization_Pinhole_Camer
   options.setDenseBA();
   options.enableLocalBA();
   LocalBundleAdjustmentData localBAData(sfmData);
+  localBAData.setGraphDistanceLimit(1); // the default value is '1'
 
-  const std::size_t kMinNbOfMatches = 1;
-  const std::size_t kLimitDistance = 1;
-
-  // DETAILS: With the previous reconstruction scheme & parameters:
-  // -- Graph-distances:
-  //   dist(v0) == 0 [because it is set to New]
-  //   dist(v1) == 1 [because it shares 'p0' with v0]
-  //   dist(v2) == 2 [because it shares 'p1' with v1]
-  //   dist(v3) == 3 [because it shares 'p2' with v2]
-  // -- Local BA state: (due to the graph-distance)
-  //   state(v0) = refined  [because its dist. is <= kLimitDistance]
-  //   state(v1) = refined  [because its dist. is <= kLimitDistance]
-  //   state(v2) = constant [because its dist. is == kLimitDistance + 1]
-  //   state(v3) = ignored  [because its dist. is > kLimitDistance]
-  //   state(p0) = refined  [because it is seen by at least one refined view (v0 & v1)]
-  //   state(p1) = refined  [because it is seen by at least one refined view (v1)]
-  //   state(p2) = ignored  [because it is not seen by any refined view]
-
+  /* DETAILS: 
+   * With the previous reconstruction scheme & parameters:
+   *  -- Graph-distances:
+   *    dist(v0) == 0 [because it is set to New]
+   *    dist(v1) == 1 [because it shares 'p0' with v0]
+   *    dist(v2) == 2 [because it shares 'p1' with v1]
+   *    dist(v3) == 3 [because it shares 'p2' with v2]
+   *  -- Local BA state: (due to the graph-distance)
+   *    state(v0) = refined  [because its dist. is <= kLimitDistance]
+   *    state(v1) = refined  [because its dist. is <= kLimitDistance]
+   *    state(v2) = constant [because its dist. is == kLimitDistance + 1]
+   *    state(v3) = ignored  [because its dist. is > kLimitDistance]
+   *    state(p0) = refined  [because it is seen by at least one refined view (v0 & v1)]
+   *    state(p1) = refined  [because it is seen by at least one refined view (v1)]
+   *    state(p2) = ignored  [because it is not seen by any refined view]
+   */
+   
   // Assign the refinement rule for all the parameters (poses, landmarks & intrinsics) according to the LBA strategy:
-  localBAData.updateParametersState(sfmData, tracksPerView, newReconstructedViews, kMinNbOfMatches, kLimitDistance);
+  // 1. Add the new reconstructed views to the graph
+  const std::size_t kMinNbOfMatches = 1;
+  localBAData.updateGraphWithNewViews(sfmData, tracksPerView, newReconstructedViews, kMinNbOfMatches);
+  // 2. Compute the graph-distance between each newly reconstructed views and all the reconstructed views
+  localBAData.computeGraphDistances(sfmData, newReconstructedViews);
+  // 3. Use the graph-distances to assign a LBA state (Refine, Constant & Ignore) for each parameter (poses, intrinsics & landmarks)
+  localBAData.convertDistancesToLBAStates(sfmData); 
+
   BOOST_CHECK( localBAData.getNumOfRefinedPoses() == 2 );     // v0 & v1
   BOOST_CHECK( localBAData.getNumOfConstantPoses() == 1 );    // v2
   BOOST_CHECK( localBAData.getNumOfIgnoredPoses() == 1 );     // v3
