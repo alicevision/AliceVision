@@ -5,6 +5,9 @@
 
 #include "aliceVision/sfm/LocalBundleAdjustmentCeres.hpp"
 
+#include <fstream>
+
+
 namespace aliceVision {
 namespace sfm {
 
