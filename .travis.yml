@@ -1,7 +1,7 @@
 # http://travis-ci.org configuration file for AliceVision
 
 language: cpp
-dist: precise
+dist: trusty
 sudo: false
 compiler:
   - gcc
