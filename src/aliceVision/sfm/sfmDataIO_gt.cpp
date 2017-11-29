@@ -178,7 +178,7 @@ bool readGt(const std::string & sRootPath, SfMData & sfm_data, bool useUID)
     const std::string sImgName = stlplus::basename_part(*iter);
     const std::string sImgFile = stlplus::create_filespec(sImgPath, sImgName);
 
-    std::shared_ptr<View> viewPtr = std::make_shared<View>(stlplus::basename_part(*iter), UndefinedIndexT, index);
+    std::shared_ptr<View> viewPtr = std::make_shared<View>(sImgFile, UndefinedIndexT, index);
 
     updateIncompleteView(*viewPtr);
 
