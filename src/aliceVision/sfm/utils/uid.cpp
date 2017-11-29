@@ -7,6 +7,10 @@
 
 #include <aliceVision/sfm/View.hpp>
 
+#include <boost/filesystem.hpp>
+
+namespace fs = boost::filesystem;
+
 namespace aliceVision {
 namespace sfm {
 
@@ -24,8 +28,9 @@ std::size_t computeUID(const View& view)
   }
   else
   {
-    // No metadata to identify the image, fallback to the filename
-    stl::hash_combine(uid, view.getImagePath());
+    // no metadata to identify the image, fallback to the filename
+    const fs::path imagePath = view.getImagePath();
+    stl::hash_combine(uid, imagePath.stem().string() + imagePath.extension().string());
   }
 
   if(view.hasMetadata("Exif:DateTimeOriginal"))
@@ -35,14 +40,21 @@ std::size_t computeUID(const View& view)
   }
   else
   {
-    // If no original date/time, fallback to the file date/time
+    // if no original date/time, fallback to the file date/time
     stl::hash_combine(uid, view.getMetadataOrEmpty("DateTime"));
   }
 
-  stl::hash_combine(uid, view.getWidth());
-  stl::hash_combine(uid, view.getHeight());
+  // can't use view.getWidth() and view.getHeight() directly
+  // because ground truth tests and previous version datasets
+  // view UID use EXIF width and height (or 0)
 
-  // Limit to integer to maximize compatibility (like Alembic in Maya)
+  if(view.hasMetadata("Exif:PixelXDimension"))
+    stl::hash_combine(uid, std::stoi(view.getMetadata("Exif:PixelXDimension")));
+
+  if(view.hasMetadata("Exif:PixelYDimension"))
+    stl::hash_combine(uid, std::stoi(view.getMetadata("Exif:PixelYDimension")));
+
+  // limit to integer to maximize compatibility (like Alembic in Maya)
   uid = std::abs((int) uid);
 
   return uid;
