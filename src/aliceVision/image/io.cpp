@@ -22,6 +22,53 @@ namespace oiio = OIIO;
 namespace aliceVision {
 namespace image {
 
+std::string EImageFileType_informations()
+{
+  return "Image file type :\n"
+         "* jpg \n"
+         "* png \n"
+         "* tif \n"
+         "* exr (half)";
+}
+
+EImageFileType EImageFileType_stringToEnum(const std::string& imageFileType)
+{
+  std::string type = imageFileType;
+  std::transform(type.begin(), type.end(), type.begin(), ::tolower); //tolower
+
+  if(type == "jpg" || type == "jpeg") return EImageFileType::JPEG;
+  if(type == "png")                   return EImageFileType::PNG;
+  if(type == "tif" || type == "tiff") return EImageFileType::TIFF;
+  if(type == "exr")                   return EImageFileType::EXR;
+
+  throw std::out_of_range("Invalid image file type : " + imageFileType);
+}
+
+std::string EImageFileType_enumToString(const EImageFileType imageFileType)
+{
+  switch(imageFileType)
+  {
+    case EImageFileType::JPEG:  return "jpg";
+    case EImageFileType::PNG:   return "png";
+    case EImageFileType::TIFF:  return "tif";
+    case EImageFileType::EXR:   return "exr";
+  }
+  throw std::out_of_range("Invalid EImageType enum");
+}
+
+std::ostream& operator<<(std::ostream& os, EImageFileType imageFileType)
+{
+  return os << EImageFileType_enumToString(imageFileType);
+}
+
+std::istream& operator>>(std::istream& in, EImageFileType& imageFileType)
+{
+  std::string token;
+  in >> token;
+  imageFileType = EImageFileType_stringToEnum(token);
+  return in;
+}
+
 void readImageMetadata(const std::string& path, int& width, int& height, std::map<std::string, std::string>& metadata)
 {
   std::unique_ptr<oiio::ImageInput> in(oiio::ImageInput::open(path));
