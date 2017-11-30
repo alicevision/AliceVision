@@ -242,7 +242,7 @@ int main(int argc, char **argv)
     ("rangeStart", po::value<int>(&rangeStart)->default_value(rangeStart),
       "Range image index start.")
     ("rangeSize", po::value<int>(&rangeSize)->default_value(rangeSize),
-      "Range size.");
+      "Range size.")
     ("jobs", po::value<int>(&maxJobs)->default_value(maxJobs),
       "Specifies the number of jobs to run simultaneously (0 for automatic mode).");
 
@@ -331,7 +331,7 @@ int main(int argc, char **argv)
   {
     if(describerTypesName.empty())
     {
-      std::cerr << "\nError: describerMethods argument is empty." << std::endl;
+      ALICEVISION_LOG_ERROR("Error: describerMethods argument is empty.");
       return EXIT_FAILURE;
     }
     std::vector<EImageDescriberType> describerMethodsVec = EImageDescriberType_stringToEnums(describerTypesName);
@@ -393,7 +393,7 @@ int main(int argc, char **argv)
     {
       const View* view = iterViews->second.get();
       const std::string viewFilename = view->getImagePath();
-      std::cout << "Extract features in view: " << viewFilename << std::endl;
+      ALICEVISION_LOG_INFO("Extract features in view : " << viewFilename);
       
       std::vector<DescriberComputeMethod> computeMethods;
       
@@ -430,7 +430,7 @@ int main(int argc, char **argv)
             for(auto& compute : computeMethods)
             {
               // Compute features and descriptors and export them to files
-              ALICEVISION_LOG_INFO("Extracting " + imageDescribers[compute.methodIndex].typeName  + " features from image " + std::to_string(view->getViewId()) + "  " + view->getImagePath());
+              ALICEVISION_LOG_INFO("Extracting " + imageDescribers[compute.methodIndex].typeName  + " features from view " + std::to_string(view->getViewId()) + " : '" + view->getImagePath() +"'");
               std::unique_ptr<Regions> regions;
 
               if(imageDescribers[compute.methodIndex].describer->useFloatImage())
@@ -445,6 +445,7 @@ int main(int argc, char **argv)
                   imageGrayUChar = imageGrayFloat.GetMat().cast<unsigned char>() * 255;
                 imageDescribers[compute.methodIndex].describer->Describe(imageGrayUChar, regions);
               }
+
               imageDescribers[compute.methodIndex].describer->Save(regions.get(), compute.featFilename, compute.descFilename);
             }
         };
