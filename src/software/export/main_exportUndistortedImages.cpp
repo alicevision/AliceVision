@@ -25,7 +25,7 @@ int main(int argc, char *argv[])
   std::string verboseLevel = system::EVerboseLevel_enumToString(system::Logger::getDefaultVerboseLevel());
   std::string sfmDataFilename;
   std::string outDirectory;
-  bool exportFloatUndistortedImages = false;
+  std::string outImageFileTypeName = image::EImageFileType_enumToString(image::EImageFileType::JPEG);
 
   po::options_description allParams(
     "Export undistorted images related to a sfmData file.\n"
@@ -40,8 +40,8 @@ int main(int argc, char *argv[])
 
   po::options_description optionalParams("Optional parameters");
   optionalParams.add_options()
-    ("exportFloatUndistortedImages", po::value<bool>(&exportFloatUndistortedImages)->default_value(exportFloatUndistortedImages),
-      "Undistorted images in EXR if true or JPG if false.");
+    ("outputFileType", po::value<std::string>(&outImageFileTypeName)->default_value(outImageFileTypeName),
+      image::EImageFileType_informations().c_str());
 
   po::options_description logParams("Log parameters");
   logParams.add_options()
@@ -78,32 +78,34 @@ int main(int argc, char *argv[])
   // set verbose level
   system::Logger::get()->setLogLevel(verboseLevel);
 
+  // set output file type
+  image::EImageFileType outputFileType = image::EImageFileType_stringToEnum(outImageFileTypeName);
+
   // Create output dir
   if (!stlplus::folder_exists(outDirectory))
-    stlplus::folder_create( outDirectory );
+    stlplus::folder_create(outDirectory);
 
-  SfMData sfm_data;
-  if (!Load(sfm_data, sfmDataFilename, ESfMData(VIEWS|INTRINSICS))) {
-    std::cerr << std::endl
-      << "The input SfMData file \""<< sfmDataFilename << "\" cannot be read." << std::endl;
+  SfMData sfmData;
+  if (!Load(sfmData, sfmDataFilename, ESfMData(VIEWS | INTRINSICS)))
+  {
+    ALICEVISION_LOG_ERROR("The input SfMData file \""<< sfmDataFilename << "\" cannot be read.");
     return EXIT_FAILURE;
   }
 
   // Export views as undistorted images (those with valid Intrinsics)
   Image<RGBfColor> image, image_ud;
-  boost::progress_display my_progress_bar( sfm_data.GetViews().size() );
-  for(Views::const_iterator iter = sfm_data.GetViews().begin();
-    iter != sfm_data.GetViews().end(); ++iter, ++my_progress_bar)
+  boost::progress_display my_progress_bar( sfmData.GetViews().size() );
+  for(Views::const_iterator iter = sfmData.GetViews().begin();
+    iter != sfmData.GetViews().end(); ++iter, ++my_progress_bar)
   {
     const View* view = iter->second.get();
     bool bIntrinsicDefined = view->getIntrinsicId() != UndefinedIndexT &&
-      sfm_data.GetIntrinsics().find(view->getIntrinsicId()) != sfm_data.GetIntrinsics().end();
+      sfmData.GetIntrinsics().find(view->getIntrinsicId()) != sfmData.GetIntrinsics().end();
 
-    Intrinsics::const_iterator iterIntrinsic = sfm_data.GetIntrinsics().find(view->getIntrinsicId());
+    Intrinsics::const_iterator iterIntrinsic = sfmData.GetIntrinsics().find(view->getIntrinsicId());
 
     const std::string srcImage = view->getImagePath();
-    const std::string dstImage = stlplus::create_filespec(outDirectory, stlplus::basename_part(srcImage) +
-                                                          (exportFloatUndistortedImages ? ".exr" : ".jpg"));
+    const std::string dstImage = stlplus::create_filespec(outDirectory, stlplus::basename_part(srcImage) + "." + image::EImageFileType_enumToString(outputFileType));
 
     const IntrinsicBase * cam = iterIntrinsic->second.get();
     if (cam->isValid() && cam->have_disto())
