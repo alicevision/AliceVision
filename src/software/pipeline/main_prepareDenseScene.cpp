@@ -160,7 +160,7 @@ std::string replaceAll( std::string const& original, std::string const& from, st
 bool prepareDenseScene(
   const SfMData & sfm_data,
   int scale,
-  bool exportFloatUndistortedImages,
+  image::EImageFileType outputFileType,
   const std::string & sOutDirectory // Output CMPMVS files folder
   )
 {
@@ -238,12 +238,7 @@ bool prepareDenseScene(
     // Export undistort image
     {
       const std::string srcImage = view->getImagePath();
-      std::string dstColorImage = stlplus::create_filespec(stlplus::folder_append_separator(sOutDirectory), baseFilename + "._c", "png");
-
-      if(exportFloatUndistortedImages)
-      {
-        dstColorImage = stlplus::create_filespec(stlplus::folder_append_separator(sOutDirectory), baseFilename + "._c", "exr");
-      }
+      std::string dstColorImage = stlplus::create_filespec(stlplus::folder_append_separator(sOutDirectory), baseFilename + "._c", image::EImageFileType_enumToString(outputFileType));
 
       const IntrinsicBase * cam = iterIntrinsic->second.get();
       Image<RGBfColor> image, image_ud, image_ud_scaled;
@@ -356,7 +351,7 @@ int main(int argc, char *argv[])
   std::string verboseLevel = system::EVerboseLevel_enumToString(system::Logger::getDefaultVerboseLevel());
   std::string sfmDataFilename;
   std::string outFolder;
-  bool exportFloatUndistortedImages = false;
+  std::string outImageFileTypeName = image::EImageFileType_enumToString(image::EImageFileType::PNG);
   int scale = 2;
 
   po::options_description allParams("AliceVision prepareDenseScene");
@@ -372,8 +367,8 @@ int main(int argc, char *argv[])
   optionalParams.add_options()
     ("scale", po::value<int>(&scale)->default_value(scale),
       "Image downscale factor.")
-    ("exportFloatUndistortedImages", po::value<bool>(&exportFloatUndistortedImages)->default_value(exportFloatUndistortedImages),
-      "Undistorted images in EXR if true or JPG if false.");
+    ("outputFileType", po::value<std::string>(&outImageFileTypeName)->default_value(outImageFileTypeName),
+      image::EImageFileType_informations().c_str());
 
   po::options_description logParams("Log parameters");
   logParams.add_options()
@@ -410,6 +405,9 @@ int main(int argc, char *argv[])
   // set verbose level
   system::Logger::get()->setLogLevel(verboseLevel);
 
+  // set output file type
+  image::EImageFileType outputFileType = image::EImageFileType_stringToEnum(outImageFileTypeName);
+
   // export
   {
     outFolder = stlplus::folder_to_path(outFolder);
@@ -427,7 +425,7 @@ int main(int argc, char *argv[])
       return EXIT_FAILURE;
     }
 
-    if (!prepareDenseScene(sfm_data, scale, exportFloatUndistortedImages, stlplus::filespec_to_path(outFolder, "_tmp_scale" + std::to_string(scale))))
+    if (!prepareDenseScene(sfm_data, scale, outputFileType, stlplus::filespec_to_path(outFolder, "_tmp_scale" + std::to_string(scale))))
       return EXIT_FAILURE;
   }
 
