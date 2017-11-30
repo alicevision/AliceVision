@@ -215,6 +215,8 @@ bool readCamera(const ICamera& camera, const M44d& mat, sfm::SfMData &sfmData, s
   std::vector<unsigned int> sensorSize_pix = {2048, 2048};
   std::string mvg_intrinsicType = EINTRINSIC_enumToString(PINHOLE_CAMERA);
   std::vector<double> mvg_intrinsicParams;
+  float imgWidth = 0;
+  float imgHeight = 0;
   IndexT viewId = sfmData.GetViews().size();
   IndexT poseId = sfmData.GetViews().size();
   IndexT intrinsicId = sfmData.GetIntrinsics().size();
@@ -224,128 +226,132 @@ bool readCamera(const ICamera& camera, const M44d& mat, sfm::SfMData &sfmData, s
 
   if(userProps)
   {
-    if(const Alembic::Abc::PropertyHeader *propHeader = userProps.getPropertyHeader("mvg_imagePath"))
+    if(flags_part & sfm::ESfMData::VIEWS)
     {
-      imagePath = getAbcProp<Alembic::Abc::IStringProperty>(userProps, *propHeader, "mvg_imagePath", sampleFrame);
-    }
-    if(userProps.getPropertyHeader("mvg_sensorSizePix"))
-    {
-      try {
-        getAbcArrayProp<Alembic::Abc::IUInt32ArrayProperty>(userProps, "mvg_sensorSizePix", sampleFrame, sensorSize_pix);
-      } catch(Alembic::Util::Exception&)
+      if(const Alembic::Abc::PropertyHeader *propHeader = userProps.getPropertyHeader("mvg_imagePath"))
       {
-        getAbcArrayProp<Alembic::Abc::IInt32ArrayProperty>(userProps, "mvg_sensorSizePix", sampleFrame, sensorSize_pix);
+        imagePath = getAbcProp<Alembic::Abc::IStringProperty>(userProps, *propHeader, "mvg_imagePath", sampleFrame);
       }
-      assert(sensorSize_pix.size() == 2);
-    }
-    if(const Alembic::Abc::PropertyHeader *propHeader = userProps.getPropertyHeader("mvg_intrinsicType"))
-    {
-      mvg_intrinsicType = getAbcProp<Alembic::Abc::IStringProperty>(userProps, *propHeader, "mvg_intrinsicType", sampleFrame);
-    }
-    if(userProps.getPropertyHeader("mvg_intrinsicParams"))
-    {
-      Alembic::Abc::IDoubleArrayProperty prop(userProps, "mvg_intrinsicParams");
-      std::shared_ptr<DoubleArraySample> sample;
-      prop.get(sample, ISampleSelector(sampleFrame));
-      mvg_intrinsicParams.assign(sample->get(), sample->get()+sample->size());
-    }
-    if(const Alembic::Abc::PropertyHeader *propHeader = userProps.getPropertyHeader("mvg_viewId"))
-    {
-      try {
-        viewId = getAbcProp<Alembic::Abc::IUInt32Property>(userProps, *propHeader, "mvg_viewId", sampleFrame);
-      } catch(Alembic::Util::Exception&)
+      if(const Alembic::Abc::PropertyHeader *propHeader = userProps.getPropertyHeader("mvg_viewId"))
       {
-        viewId = getAbcProp<Alembic::Abc::IInt32Property>(userProps, *propHeader, "mvg_viewId", sampleFrame);
+        try
+        {
+          viewId = getAbcProp<Alembic::Abc::IUInt32Property>(userProps, *propHeader, "mvg_viewId", sampleFrame);
+        }
+        catch(Alembic::Util::Exception&)
+        {
+          viewId = getAbcProp<Alembic::Abc::IInt32Property>(userProps, *propHeader, "mvg_viewId", sampleFrame);
+        }
+      }
+      if(const Alembic::Abc::PropertyHeader *propHeader = userProps.getPropertyHeader("mvg_poseId"))
+      {
+        try
+        {
+          poseId = getAbcProp<Alembic::Abc::IUInt32Property>(userProps, *propHeader, "mvg_poseId", sampleFrame);
+        }
+        catch(Alembic::Util::Exception&)
+        {
+          poseId = getAbcProp<Alembic::Abc::IInt32Property>(userProps, *propHeader, "mvg_poseId", sampleFrame);
+        }
+      }
+      if(const Alembic::Abc::PropertyHeader *propHeader = userProps.getPropertyHeader("mvg_intrinsicId"))
+      {
+        try
+        {
+          intrinsicId = getAbcProp<Alembic::Abc::IUInt32Property>(userProps, *propHeader, "mvg_intrinsicId", sampleFrame);
+        }
+        catch(Alembic::Util::Exception&)
+        {
+          intrinsicId = getAbcProp<Alembic::Abc::IInt32Property>(userProps, *propHeader, "mvg_intrinsicId", sampleFrame);
+        }
+      }
+      if(const Alembic::Abc::PropertyHeader *propHeader = userProps.getPropertyHeader("mvg_rigId"))
+      {
+        try
+        {
+          rigId = getAbcProp<Alembic::Abc::IUInt32Property>(userProps, *propHeader, "mvg_rigId", sampleFrame);
+        }
+        catch(Alembic::Util::Exception&)
+        {
+          rigId = getAbcProp<Alembic::Abc::IInt32Property>(userProps, *propHeader, "mvg_rigId", sampleFrame);
+        }
+      }
+      if(const Alembic::Abc::PropertyHeader *propHeader = userProps.getPropertyHeader("mvg_subPoseId"))
+      {
+        try
+        {
+          subPoseId = getAbcProp<Alembic::Abc::IUInt32Property>(userProps, *propHeader, "mvg_subPoseId", sampleFrame);
+        }
+        catch(Alembic::Util::Exception&)
+        {
+          subPoseId = getAbcProp<Alembic::Abc::IInt32Property>(userProps, *propHeader, "mvg_subPoseId", sampleFrame);
+        }
+      }
+      if(const Alembic::Abc::PropertyHeader *propHeader = userProps.getPropertyHeader("mvg_resectionId"))
+      {
+        try
+        {
+          resectionId = getAbcProp<Alembic::Abc::IUInt32Property>(userProps, *propHeader, "mvg_resectionId", sampleFrame);
+        }
+        catch(Alembic::Util::Exception&)
+        {
+          resectionId = getAbcProp<Alembic::Abc::IInt32Property>(userProps, *propHeader, "mvg_resectionId", sampleFrame);
+        }
       }
     }
-    if(const Alembic::Abc::PropertyHeader *propHeader = userProps.getPropertyHeader("mvg_poseId"))
+
+    if(flags_part & sfm::ESfMData::INTRINSICS)
     {
-      try {
-        poseId = getAbcProp<Alembic::Abc::IUInt32Property>(userProps, *propHeader, "mvg_poseId", sampleFrame);
-      } catch(Alembic::Util::Exception&)
+      if(userProps.getPropertyHeader("mvg_sensorSizePix"))
       {
-        poseId = getAbcProp<Alembic::Abc::IInt32Property>(userProps, *propHeader, "mvg_poseId", sampleFrame);
+        try
+        {
+          getAbcArrayProp<Alembic::Abc::IUInt32ArrayProperty>(userProps, "mvg_sensorSizePix", sampleFrame, sensorSize_pix);
+        }
+        catch(Alembic::Util::Exception&)
+        {
+          getAbcArrayProp<Alembic::Abc::IInt32ArrayProperty>(userProps, "mvg_sensorSizePix", sampleFrame, sensorSize_pix);
+        }
+        assert(sensorSize_pix.size() == 2);
       }
-    }
-    if(const Alembic::Abc::PropertyHeader *propHeader = userProps.getPropertyHeader("mvg_intrinsicId"))
-    {
-      try {
-        intrinsicId = getAbcProp<Alembic::Abc::IUInt32Property>(userProps, *propHeader, "mvg_intrinsicId", sampleFrame);
-      } catch(Alembic::Util::Exception&)
+      if(const Alembic::Abc::PropertyHeader *propHeader = userProps.getPropertyHeader("mvg_intrinsicType"))
       {
-        intrinsicId = getAbcProp<Alembic::Abc::IInt32Property>(userProps, *propHeader, "mvg_intrinsicId", sampleFrame);
+        mvg_intrinsicType = getAbcProp<Alembic::Abc::IStringProperty>(userProps, *propHeader, "mvg_intrinsicType", sampleFrame);
       }
-    }
-    if(const Alembic::Abc::PropertyHeader *propHeader = userProps.getPropertyHeader("mvg_rigId"))
-    {
-      try {
-        rigId = getAbcProp<Alembic::Abc::IUInt32Property>(userProps, *propHeader, "mvg_rigId", sampleFrame);
-      } catch(Alembic::Util::Exception&)
+      if(userProps.getPropertyHeader("mvg_intrinsicParams"))
       {
-        rigId = getAbcProp<Alembic::Abc::IInt32Property>(userProps, *propHeader, "mvg_rigId", sampleFrame);
-      }
-    }
-    if(const Alembic::Abc::PropertyHeader *propHeader = userProps.getPropertyHeader("mvg_subPoseId"))
-    {
-      try {
-        subPoseId = getAbcProp<Alembic::Abc::IUInt32Property>(userProps, *propHeader, "mvg_subPoseId", sampleFrame);
-      } catch(Alembic::Util::Exception&)
-      {
-        subPoseId = getAbcProp<Alembic::Abc::IInt32Property>(userProps, *propHeader, "mvg_subPoseId", sampleFrame);
-      }
-    }
-    if(const Alembic::Abc::PropertyHeader *propHeader = userProps.getPropertyHeader("mvg_resectionId"))
-    {
-      try {
-        resectionId = getAbcProp<Alembic::Abc::IUInt32Property>(userProps, *propHeader, "mvg_resectionId", sampleFrame);
-      } catch(Alembic::Util::Exception&)
-      {
-        resectionId = getAbcProp<Alembic::Abc::IInt32Property>(userProps, *propHeader, "mvg_resectionId", sampleFrame);
+        Alembic::Abc::IDoubleArrayProperty prop(userProps, "mvg_intrinsicParams");
+        std::shared_ptr<DoubleArraySample> sample;
+        prop.get(sample, ISampleSelector(sampleFrame));
+        mvg_intrinsicParams.assign(sample->get(), sample->get()+sample->size());
       }
     }
   }
 
-  // AliceVision Camera
-  Mat3 camR;
-  camR(0,0) = mat[0][0];
-  camR(0,1) = mat[0][1];
-  camR(0,2) = mat[0][2];
-  camR(1,0) = mat[1][0];
-  camR(1,1) = mat[1][1];
-  camR(1,2) = mat[1][2];
-  camR(2,0) = mat[2][0];
-  camR(2,1) = mat[2][1];
-  camR(2,2) = mat[2][2];
+  if(flags_part & sfm::ESfMData::INTRINSICS)
+  {
+    // get known values from alembic
+    const float haperture_cm = camSample.getHorizontalAperture();
+    const float vaperture_cm = camSample.getVerticalAperture();
 
-  Vec3 camT;
-  camT(0) = mat[3][0];
-  camT(1) = mat[3][1];
-  camT(2) = mat[3][2];
+    // compute other needed values
+    const float sensorWidth_mm = std::max(vaperture_cm, haperture_cm) * 10.0;
+    const float mm2pix = sensorSize_pix.at(0) / sensorWidth_mm;
+    imgWidth = haperture_cm * 10.0 * mm2pix;
+    imgHeight = vaperture_cm * 10.0 * mm2pix;
 
-  // Correct camera orientation from alembic
-  const Mat3 scale = Vec3(1,-1,-1).asDiagonal();
-  camR = scale * camR;
+    // create intrinsic parameters object
+    std::shared_ptr<Pinhole> pinholeIntrinsic = createPinholeIntrinsic(EINTRINSIC_stringToEnum(mvg_intrinsicType));
 
-  Pose3 pose(camR, camT);
+    pinholeIntrinsic->setWidth(imgWidth);
+    pinholeIntrinsic->setHeight(imgHeight);
+    pinholeIntrinsic->updateFromParams(mvg_intrinsicParams);
 
-  // Get known values from alembic
-  const float haperture_cm = camSample.getHorizontalAperture();
-  const float vaperture_cm = camSample.getVerticalAperture();
+    sfmData.intrinsics[intrinsicId] = pinholeIntrinsic;
+  }
 
-  // Compute other needed values
-  const float sensorWidth_mm = std::max(vaperture_cm, haperture_cm) * 10.0;
-  const float mm2pix = sensorSize_pix.at(0) / sensorWidth_mm;
-  const float imgWidth = haperture_cm * 10.0 * mm2pix;
-  const float imgHeight = vaperture_cm * 10.0 * mm2pix;
-
-  // Create intrinsic parameters object
-  std::shared_ptr<Pinhole> pinholeIntrinsic = createPinholeIntrinsic(EINTRINSIC_stringToEnum(mvg_intrinsicType));
-
-  pinholeIntrinsic->setWidth(imgWidth);
-  pinholeIntrinsic->setHeight(imgHeight);
-  pinholeIntrinsic->updateFromParams(mvg_intrinsicParams);
-
-  // Add imported data to the SfMData container TODO use UID
+  // add imported data to the SfMData container TODO use UID
+  // this view is incomplete if no flag VIEWS
   std::shared_ptr<View> view = std::make_shared<View>(imagePath,
                                                       viewId,
                                                       intrinsicId,
@@ -354,27 +360,52 @@ bool readCamera(const ICamera& camera, const M44d& mat, sfm::SfMData &sfmData, s
                                                       imgHeight,
                                                       rigId,
                                                       subPoseId);
-  view->setResectionId(resectionId);
-
-  sfmData.views[viewId] = view;
-
-  if(view->isPartOfRig())
+  if(flags_part & sfm::ESfMData::VIEWS)
   {
-    Rig& rig = sfmData.getRigs().at(view->getRigId());
-    RigSubPose& subPose = rig.getSubPose(view->getSubPoseId());
-    if(subPose.status == ERigSubPoseStatus::UNINITIALIZED)
+    view->setResectionId(resectionId);
+    sfmData.views[viewId] = view;
+  }
+
+  if(flags_part & sfm::ESfMData::EXTRINSICS)
+  {
+    // camera
+    Mat3 camR;
+    camR(0,0) = mat[0][0];
+    camR(0,1) = mat[0][1];
+    camR(0,2) = mat[0][2];
+    camR(1,0) = mat[1][0];
+    camR(1,1) = mat[1][1];
+    camR(1,2) = mat[1][2];
+    camR(2,0) = mat[2][0];
+    camR(2,1) = mat[2][1];
+    camR(2,2) = mat[2][2];
+
+    Vec3 camT;
+    camT(0) = mat[3][0];
+    camT(1) = mat[3][1];
+    camT(2) = mat[3][2];
+
+    // correct camera orientation from alembic
+    const Mat3 scale = Vec3(1,-1,-1).asDiagonal();
+    camR = scale * camR;
+
+    Pose3 pose(camR, camT);
+
+    if(view->isPartOfRig())
     {
-      subPose.status = ERigSubPoseStatus::ESTIMATED;
-      subPose.pose = pose;
+      Rig& rig = sfmData.getRigs().at(view->getRigId());
+      RigSubPose& subPose = rig.getSubPose(view->getSubPoseId());
+      if(subPose.status == ERigSubPoseStatus::UNINITIALIZED)
+      {
+        subPose.status = ERigSubPoseStatus::ESTIMATED;
+        subPose.pose = pose;
+      }
     }
-
+    else
+    {
+      sfmData.setPose(*view, pose);
+    }
   }
-  else
-  {
-    sfmData.setPose(*view, pose);
-  }
-
-  sfmData.intrinsics[intrinsicId] = pinholeIntrinsic;
 
   return true;
 }
@@ -498,7 +529,9 @@ void visitObject(IObject iObj, M44d mat, sfm::SfMData &sfmdata, sfm::ESfMData fl
     IXform xform(iObj, kWrapExisting);
     readXform(xform, mat, sfmdata, flags_part);
   }
-  else if(ICamera::matches(md) && (flags_part & sfm::ESfMData::EXTRINSICS))
+  else if(ICamera::matches(md) && ((flags_part & sfm::ESfMData::VIEWS) ||
+                                   (flags_part & sfm::ESfMData::INTRINSICS) ||
+                                   (flags_part & sfm::ESfMData::EXTRINSICS)))
   {
     ICamera check_cam(iObj, kWrapExisting);
     // If it's not an animated camera we add it here
