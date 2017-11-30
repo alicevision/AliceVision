@@ -23,8 +23,9 @@ int main(int argc, char** argv)
   std::string verboseLevel = system::EVerboseLevel_enumToString(system::Logger::getDefaultVerboseLevel());
   std::vector<std::string> imagePaths;
   std::string outputFolder;
+  std::string outImageFileTypeName = image::EImageFileType_enumToString(image::EImageFileType::EXR);
 
-  po::options_description allParams("AliceVision convertImageToEXR");
+  po::options_description allParams("AliceVision convertRAW");
 
   po::options_description requiredParams("Required parameters");
   requiredParams.add_options()
@@ -33,12 +34,17 @@ int main(int argc, char** argv)
     ("outputFolder,o", po::value<std::string>(&outputFolder)->required(),
       "The convertion output folder.");
 
+  po::options_description optionalParams("Optional parameters");
+  optionalParams.add_options()
+    ("outputFileType", po::value<std::string>(&outImageFileTypeName)->default_value(outImageFileTypeName),
+      image::EImageFileType_informations().c_str());
+
   po::options_description logParams("Log parameters");
   logParams.add_options()
     ("verboseLevel,v", po::value<std::string>(&verboseLevel)->default_value(verboseLevel),
       "verbosity level (fatal,  error, warning, info, debug, trace).");
 
-  allParams.add(requiredParams).add(logParams);
+  allParams.add(requiredParams).add(optionalParams).add(logParams);
 
   po::variables_map vm;
   try
@@ -68,6 +74,9 @@ int main(int argc, char** argv)
   // set verbose level
   system::Logger::get()->setLogLevel(verboseLevel);
 
+  // set output file type
+  image::EImageFileType outputFileType = image::EImageFileType_stringToEnum(outImageFileTypeName);
+
   // check output folder
   if(!fs::is_directory(outputFolder))
     fs::create_directory(outputFolder);
@@ -82,7 +91,7 @@ int main(int argc, char** argv)
     }
 
     // genrate output filename
-    std::string outputPath = (outputFolder + fs::path(path).filename().replace_extension("exr").string());
+    std::string outputPath = (outputFolder + "/" + fs::path(path).filename().replace_extension(image::EImageFileType_enumToString(outputFileType)).string());
 
     if(fs::is_regular_file(outputPath))
     {
