@@ -85,9 +85,12 @@ int main(int argc, char **argv)
   std::string outInterFileExtension = ".ply";
   std::pair<std::string,std::string> initialPairString("","");
   int minInputTrackLength = 2;
+  int maxNbMatches = 0;
   int userCameraModel = static_cast<int>(PINHOLE_CAMERA_RADIAL3);
   bool refineIntrinsics = true;
   bool allowUserInteraction = true;
+  bool useLocalBundleAdjustment = false;
+  std::size_t localBundelAdjustementGraphDistanceLimit = 1;
 
   po::options_description allParams(
     "Sequential/Incremental reconstruction\n"
@@ -117,6 +120,9 @@ int main(int argc, char **argv)
       "Extension of the intermediate file export.")
     ("minInputTrackLength", po::value<int>(&minInputTrackLength)->default_value(minInputTrackLength),
       "Minimum track length in input of SfM")
+    ("maxNumberOfMatches", po::value<int>(&maxNbMatches)->default_value(maxNbMatches),
+      "Maximum number of matches per image pair (and per feature type). "
+      "This can be useful to have a quick reconstruction overview. 0 means no limit.")
     ("cameraModel", po::value<int>(&userCameraModel)->default_value(userCameraModel),
       "* 1: Pinhole\n"
       "* 2: Pinhole radial 1\n"
@@ -129,7 +135,12 @@ int main(int argc, char **argv)
       "Refine intrinsic parameters.")
     ("allowUserInteraction", po::value<bool>(&allowUserInteraction)->default_value(allowUserInteraction),
       "Enable/Disable user interactions.\n"
-      "If the process is done on renderfarm, it doesn't make sense to wait for user inputs");
+      "If the process is done on renderfarm, it doesn't make sense to wait for user inputs")
+    ("useLocalBA,l", po::value<bool>(&useLocalBundleAdjustment)->default_value(useLocalBundleAdjustment),
+      "Enable/Disable the Local bundle adjustment strategy.\n"
+      "It reduces the reconstruction time, especially for big datasets (500+ images).\n")
+    ("localBAGraphDistance", po::value<std::size_t>(&localBundelAdjustementGraphDistanceLimit)->default_value(localBundelAdjustementGraphDistanceLimit),
+      "Graph-distance limit setting the Active region in the Local Bundle Adjustment strategy (by default: 1).\n");
 
   po::options_description logParams("Log parameters");
   logParams.add_options()
@@ -202,7 +213,7 @@ int main(int argc, char **argv)
   // Matches reading
   matching::PairwiseMatches pairwiseMatches;
 
-  if(!loadPairwiseMatches(pairwiseMatches, sfmData, matchesFolder, describerTypes, "f"))
+  if(!loadPairwiseMatches(pairwiseMatches, sfmData, matchesFolder, describerTypes, "f", maxNbMatches))
   {
     ALICEVISION_LOG_ERROR("Error: Unable to load matches file from '" + matchesFolder + "'.");
     return EXIT_FAILURE;
@@ -218,6 +229,7 @@ int main(int argc, char **argv)
     stlplus::folder_create(extraInfoFolder);
 
   // Sequential reconstruction process
+  
   aliceVision::system::Timer timer;
   ReconstructionEngine_sequentialSfM sfmEngine(
     sfmData,
@@ -234,6 +246,8 @@ int main(int argc, char **argv)
   sfmEngine.setMinInputTrackLength(minInputTrackLength);
   sfmEngine.setSfmdataInterFileExtension(outInterFileExtension);
   sfmEngine.setAllowUserInteraction(allowUserInteraction);
+  sfmEngine.setUseLocalBundleAdjustmentStrategy(useLocalBundleAdjustment);
+  sfmEngine.setLocalBundleAdjustmentGraphDistance(localBundelAdjustementGraphDistanceLimit);
 
   // Handle Initial pair parameter
   if(!initialPairString.first.empty() && !initialPairString.second.empty())

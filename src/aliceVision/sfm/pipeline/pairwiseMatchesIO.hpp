@@ -27,10 +27,11 @@ inline bool loadPairwiseMatches(
     const SfMData& sfmData,
     const std::string& folder,
     const std::vector<feature::EImageDescriberType>& descTypes,
-    const std::string& matchesMode)
+    const std::string& matchesMode,
+    const int maxNbMatches = 0)
 {
   ALICEVISION_LOG_DEBUG("- Loading matches...");
-  if (!matching::Load(out_pairwiseMatches, sfmData.GetViewsKeys(), folder, descTypes, matchesMode))
+  if (!matching::Load(out_pairwiseMatches, sfmData.GetViewsKeys(), folder, descTypes, matchesMode, maxNbMatches))
   {
     ALICEVISION_LOG_WARNING("Unable to read the matches file(s) from: " << folder << " (mode: " << matchesMode << ")");
     return false;

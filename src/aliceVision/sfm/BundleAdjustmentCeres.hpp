@@ -14,9 +14,8 @@ namespace aliceVision {
 namespace sfm {
 
 /// Create the appropriate cost functor according the provided input camera intrinsic model
-ceres::CostFunction * IntrinsicsToCostFunction(
-  camera::IntrinsicBase * intrinsic,
-  const Vec2 & observation);
+ceres::CostFunction * createCostFunctionFromIntrinsics(camera::IntrinsicBase * intrinsic, const Vec2 & observation);
+ceres::CostFunction * createRigCostFunctionFromIntrinsics(camera::IntrinsicBase * intrinsic, const Vec2 & observation);
 
 class BundleAdjustmentCeres : public BundleAdjustment
 {

@@ -126,6 +126,23 @@ void filterMatchesByViews(
   matches.swap(filteredMatches);
 }
 
+void filterTopMatches(
+  PairwiseMatches & allMatches,
+  const int limitNum)
+{
+  if (limitNum <= 0)
+    return;
+
+  for(auto& matchesPerDesc: allMatches)
+  {
+    for(auto& matches: matchesPerDesc.second)
+    {
+      IndMatches& m = matches.second;
+      if (m.size() > limitNum)
+        m.erase(m.begin()+limitNum, m.end());
+    }
+  }
+}
 
 void filterMatchesByDesc(
   PairwiseMatches & allMatches,
@@ -204,7 +221,8 @@ bool Load(
   const std::set<IndexT> & viewsKeysFilter,
   const std::string & folder,
   const std::vector<feature::EImageDescriberType>& descTypesFilter,
-  const std::string & mode)
+  const std::string & mode,
+  const int maxNbMatches)
 {
   bool res = false;
   const std::string basename = "matches." + mode;
@@ -232,6 +250,9 @@ bool Load(
 
   if(!descTypesFilter.empty())
     filterMatchesByDesc(matches, descTypesFilter);
+
+  if(maxNbMatches > 0)
+    filterTopMatches(matches, maxNbMatches);
 
   ALICEVISION_LOG_TRACE("Matches per image pair");
   for(const auto& imagePairIt: matches)
