@@ -149,24 +149,24 @@ public:
 
   // IO - one file for region features, one file for region descriptors
 
-  virtual bool Load(Regions * regions,
+  virtual void Load(Regions * regions,
     const std::string& sfileNameFeats,
     const std::string& sfileNameDescs) const
   {
-    return regions->Load(sfileNameFeats, sfileNameDescs);
+    regions->Load(sfileNameFeats, sfileNameDescs);
   }
 
-  virtual bool Save(const Regions * regions,
+  virtual void Save(const Regions * regions,
     const std::string& sfileNameFeats,
     const std::string& sfileNameDescs) const
   {
-    return regions->Save(sfileNameFeats, sfileNameDescs);
+    regions->Save(sfileNameFeats, sfileNameDescs);
   }
 
-  virtual bool LoadFeatures(Regions * regions,
+  virtual void LoadFeatures(Regions * regions,
     const std::string& sfileNameFeats) const
   {
-    return regions->LoadFeatures(sfileNameFeats);
+    regions->LoadFeatures(sfileNameFeats);
   }
 };
 

@@ -241,9 +241,19 @@ int main(int argc, char **argv)
       const std::string basename = stlplus::basename_part(sImagePath);
       const std::string featFile = stlplus::create_filespec(matchesFolder, basename, ".feat");
       const std::string descFile = stlplus::create_filespec(matchesFolder, basename, ".desc");
-      if (!query_regions->Load(featFile, descFile))
+
+      try
       {
-        std::cerr << "Invalid regions files for the view: " << sImagePath << std::endl;
+        query_regions->Load(featFile, descFile);
+      }
+      catch(const std::exception& e)
+      {
+        std::stringstream ss;
+        ss << "Invalid regions files for the view " << basename << " : \n";
+        ss << "\t- Features file : " << featFile << "\n";
+        ss << "\t- Descriptors file: " << descFile << "\n";
+        ss << "\t  " << e.what() << "\n";
+        ALICEVISION_LOG_WARNING(ss.str());
         continue;
       }
 

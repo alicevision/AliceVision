@@ -27,13 +27,22 @@ std::unique_ptr<feature::Regions> loadRegions(const std::string& folder, IndexT 
   std::unique_ptr<feature::Regions> regionsPtr;
   imageDescriber.Allocate(regionsPtr);
 
-  if (!regionsPtr->Load(featFilename, descFilename))
+  try
+  {
+    regionsPtr->Load(featFilename, descFilename);
+  }
+  catch(const std::exception& e)
   {
     std::stringstream ss;
-    ss << "Invalid " << imageDescriberTypeName << " regions files for the view : " << basename << ", describer type: " << imageDescriberTypeName << "\n";
-    ss << "See features and descriptors files: " << featFilename << "\n" << descFilename << "\n";
-    throw std::runtime_error(ss.str());
+    ss << "Invalid " << imageDescriberTypeName << " regions files for the view " << basename << " : \n";
+    ss << "\t- Features file : " << featFilename << "\n";
+    ss << "\t- Descriptors file: " << descFilename << "\n";
+    ss << "\t  " << e.what() << "\n";
+    ALICEVISION_LOG_ERROR(ss.str());
+
+    throw std::runtime_error(e.what());
   }
+
   ALICEVISION_LOG_TRACE("RegionCount: " << regionsPtr->RegionCount());
   return regionsPtr;
 }
@@ -125,9 +134,13 @@ bool loadFeaturesPerView(feature::FeaturesPerView& featuresPerView,
         std::unique_ptr<feature::Regions> regionsPtr;
         imageDescribers[i]->Allocate(regionsPtr);
 
-        if (!regionsPtr->LoadFeatures(featFile))
+        try
         {
-          ALICEVISION_LOG_WARNING("Invalid feature file: " << featFile);
+          regionsPtr->LoadFeatures(featFile);
+        }
+        catch(const std::exception& e)
+        {
+          ALICEVISION_LOG_WARNING("Invalid features file: " << featFile << "\n" << e.what());
           invalid = true;
         }
 
