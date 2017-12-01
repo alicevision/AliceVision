@@ -51,15 +51,7 @@ void exportImages(aliceVision::dataio::FeedProvider& feed,
 
     aliceVision::camera::UndistortImage(inputImage, &camera, outputImage, static_cast<unsigned char>(0));
     const boost::filesystem::path imagePath = boost::filesystem::path(debugFolder) / (std::to_string(currentFrame) + suffix);
-    try
-    {
-      aliceVision::image::writeImage(imagePath.string(), outputImage);
-    }
-    catch(std::invalid_argument& e)
-    {
-      ALICEVISION_LOG_WARNING("Failed to export: " << imagePath);
-      ALICEVISION_LOG_WARNING(e.what());
-    }
+    aliceVision::image::writeImage(imagePath.string(), outputImage);
   }
   ALICEVISION_LOG_DEBUG("... finished");
 }

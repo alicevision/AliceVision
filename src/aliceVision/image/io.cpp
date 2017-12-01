@@ -74,7 +74,7 @@ void readImageMetadata(const std::string& path, int& width, int& height, std::ma
   std::unique_ptr<oiio::ImageInput> in(oiio::ImageInput::open(path));
 
   if(!in)
-    throw std::invalid_argument("Can't find/open image file '" + path + "'.");
+    throw std::runtime_error("Can't find/open image file '" + path + "'.");
 
   const oiio::ImageSpec &spec = in->spec();
 
@@ -104,13 +104,13 @@ void readImage(const std::string& path, oiio::TypeDesc format, int nchannels, Im
   oiio::ImageBuf inBuf(path, 0, 0, NULL, &configSpec);
 
   if(!inBuf.initialized())
-    throw std::invalid_argument("Can't find/open image file '" + path + "'.");
+    throw std::runtime_error("Can't find/open image file '" + path + "'.");
 
   const oiio::ImageSpec& inSpec = inBuf.spec();
 
   // check picture channels number
   if(inSpec.nchannels != 1 && inSpec.nchannels < 3)
-    throw std::invalid_argument("Can't load channels of image file '" + path + "'.");
+    throw std::runtime_error("Can't load channels of image file '" + path + "'.");
 
   // convert to grayscale if needed
   if(nchannels == 1 && inSpec.nchannels >= 3)
@@ -179,7 +179,7 @@ void writeImage(const std::string& path, oiio::TypeDesc typeDesc, int nchannels,
 
     // write image
     if(!outBuf.write(path))
-      throw std::invalid_argument("Can't write output image file '" + path + "'.");
+      throw std::runtime_error("Can't write output image file '" + path + "'.");
   }
   else
   {
@@ -191,7 +191,7 @@ void writeImage(const std::string& path, oiio::TypeDesc typeDesc, int nchannels,
 
     // write image
     if(!outBuf.write(path))
-      throw std::invalid_argument("Can't write output image file '" + path + "'.");
+      throw std::runtime_error("Can't write output image file '" + path + "'.");
   }
 }
 

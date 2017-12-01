@@ -25,7 +25,7 @@ static std::vector<std::string> extensions = {"jpg", "png", "pgm", "ppm", "tiff"
 BOOST_AUTO_TEST_CASE(read_unexisting) {
   Image<unsigned char> image;
   const std::string filename = string(THIS_SOURCE_DIR) + "/unexisting.jpg";
-  BOOST_CHECK_THROW(readImage(filename, image), std::invalid_argument);
+  BOOST_CHECK_THROW(readImage(filename, image), std::exception);
 }
 
 BOOST_AUTO_TEST_CASE(read_jpg_grayscale) {
