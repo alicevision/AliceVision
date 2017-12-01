@@ -682,9 +682,11 @@ __device__ float refineDepthSubPixel(const float3& depths, const float3& sims)
     // subpixel refine by Stereo Matching with Color-Weighted Correlation, Hierarchical Belief Propagation, and
     // Occlusion Handling Qingxiong pami08
     // quadratic polynomial interpolation is used to approximate the cost function between three discrete depth
-    // candidates: d, d, and d�. d is the
-    // discrete depth with the minimal cost, d � d  1, and d� � d � 1. The cost function is approximated as f�x� � ax2
-    // � bx � c:
+    // candidates: d, dA, and dB.
+    // TODO: get formula back from paper as it has been lost by encoding.
+    // d is the discrete depth with the minimal cost, dA ? d A 1, and dB ? d B 1. The cost function is approximated as f?x? ? ax2
+    // B bx B c.
+    
     float simM1 = sims.x;
     float simP1 = sims.z;
     float sim1 = sims.y;
