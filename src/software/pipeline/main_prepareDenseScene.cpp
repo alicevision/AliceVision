@@ -318,6 +318,7 @@ bool prepareDenseScene(
   << "outDir=../../meshes" << os.widen('\n')
   << "ncams=" << map_viewIdToContiguous.size() << os.widen('\n')
   << "scale=" << scale << os.widen('\n')
+  << "imgExt=_c." << image::EImageFileType_enumToString(outputFileType) << os.widen('\n')
   << "verbose=TRUE" << os.widen('\n')
   << os.widen('\n')
   << "[imageResolutions]" << os.widen('\n');
