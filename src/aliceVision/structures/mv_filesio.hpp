@@ -84,14 +84,14 @@ struct outStruct
     {
         op = orientedPoint();
         tarFeatId = -1;
-    };
+    }
 
     outStruct& operator=(const outStruct param)
     {
         op = param.op;
         tarFeatId = param.tarFeatId;
         return *this;
-    };
+    }
 };
 
 void savePrematchedToFile(outStruct* outv, int size, int refImgFileId, int tarImgFileId, multiviewInputParams* mip);
@@ -119,7 +119,7 @@ void imagesc(const std::string& imageFileName, int* data, int w, int h, int minV
 void imagesc(const std::string& imageFileName, unsigned short* data, int w, int h, unsigned short minVal,
              unsigned short maxVal, bool T);
 void imagesc(const std::string& imageFileName, float* data, int w, int h, bool T = false);
-void imagesc16bitGrayNpg(const std::string& imageFileName, float* data, int w, int h, float minVal, float maxVal);
+//void imagesc16bitGrayNpg(const std::string& imageFileName, float* data, int w, int h, float minVal, float maxVal);
 
 typedef struct SiftKeypoint
 {

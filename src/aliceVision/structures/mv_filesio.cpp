@@ -1801,6 +1801,7 @@ void imagesc(const std::string& imageFileName, int* data, int w, int h, int minV
     cvReleaseImage(&img);
 }
 
+/*
 void imagesc16bitGrayNpg(const std::string& imageFileName, float* data, int w, int h, float minVal, float maxVal)
 {
     // IplImage* img = cvCreateImage(cvSize(w,h), IPL_DEPTH_16U, 1);
@@ -1814,13 +1815,13 @@ void imagesc16bitGrayNpg(const std::string& imageFileName, float* data, int w, i
             float val = data[y * w + x];
             float s = 1.0f - (maxVal - std::max(minVal, val)) / (maxVal - minVal);
             short int ss = (short int)(s * 65535.0f);
-            /*
-            CvScalar c;
-            c.val[0] = ss;
-            c.val[1] = ss;
-            c.val[2] = ss;
-            cvSet2D(img,y,x,c);
-            */
+
+            // CvScalar c;
+            // c.val[0] = ss;
+            // c.val[1] = ss;
+            // c.val[2] = ss;
+            // cvSet2D(img,y,x,c);
+
             My[x] = ss;
         }
     }
@@ -1831,6 +1832,7 @@ void imagesc16bitGrayNpg(const std::string& imageFileName, float* data, int w, i
     // if(!cvSaveImage(imageFileName.c_str(),img)) printf("Could not save: %s\n",imageFileName.c_str());
     // cvReleaseImage(&img);
 }
+*/
 
 void imagesc(const std::string& imageFileName, float* data, int w, int h, bool T)
 {
