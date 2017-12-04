@@ -466,20 +466,6 @@ IplImage* ps_depthSimMap::convertToImage(float simThr)
     return img;
 }
 
-void ps_depthSimMap::show(float simThr)
-{
-    IplImage* img = convertToImage(simThr);
-    int scaleFactor = 1;
-
-    IplImage* imgr = cvCreateImage(cvSize((2 * w) / scaleFactor, h / scaleFactor), IPL_DEPTH_8U, 3);
-    cvResize(img, imgr);
-
-    cvShowImage("depthSimMap", imgr);
-    cvWaitKey();
-    cvReleaseImage(&img);
-    cvReleaseImage(&imgr);
-}
-
 void ps_depthSimMap::saveToWrlPng(std::string wrlFileName, int rc, float simThr)
 {
     saveToPng(wrlFileName + ".depthSimMap.png", simThr);

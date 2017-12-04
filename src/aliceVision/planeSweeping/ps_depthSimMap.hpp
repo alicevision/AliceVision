@@ -82,7 +82,7 @@ public:
     staticVector<float>* getSimMapStep1XPart(int xFrom, int partW);
 
     IplImage* convertToImage(float simThr);
-    void show(float simThr);
+
     void saveToPng(std::string pngFileName, float simThr);
     void saveToWrl(std::string wrlFileName, int rc);
     void saveToWrlPng(std::string wrlFileName, int rc, float simThr);

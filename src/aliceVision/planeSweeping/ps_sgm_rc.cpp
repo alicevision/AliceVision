@@ -615,8 +615,6 @@ bool ps_sgm_rc::sgmrc(bool checkIfExists)
     svol->copyVolume(simVolume, (*depthsTcamsLimits)[0].x, (*depthsTcamsLimits)[0].y);
     delete simVolume;
 
-    // svol->showVolume();
-
     for(int c = 1; c < tcams->size(); c++)
     {
         staticVector<float>* subDepths = getSubDepthsForTCam(c);
