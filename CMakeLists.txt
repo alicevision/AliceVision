@@ -64,6 +64,14 @@ else()
   set(ALICEVISION_HAVE_OPENMP 0)
 endif()
 
+# OpenImageIO
+find_package(OpenImageIO)
+if(OPENIMAGEIO_FOUND)
+  message(STATUS "OpenImageIO found.")
+else()
+  message(SEND_ERROR "Failed to find OpenImageIO.")
+endif()
+
 # CUDA
 find_package(CUDA 7.0)
 
