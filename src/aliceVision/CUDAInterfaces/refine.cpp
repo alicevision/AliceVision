@@ -10,9 +10,7 @@
 #include <aliceVision/structures/mv_geometry.hpp>
 #include <aliceVision/structures/mv_images_cache.hpp>
 #include <aliceVision/structures/mv_filesio.hpp>
-
-#include <opencv/cv.h>
-#include <opencv/highgui.h>
+#include <aliceVision/imageIO/image.hpp>
 
 #include <boost/filesystem.hpp>
 
@@ -69,11 +67,8 @@ void reprojectTargetImageToTheReferenceRGB(mv_images_cache* ic, int rc, int tc, 
 {
     staticVector<int>* visTrisRcTc = reprojectTargetImageToTheReferenceGetVisTrisRcTc(rc, tc, me, tmpDir);
 
-    staticVector<Color>* img = new staticVector<Color>(mp->mip->getSize(rc));
-    img->resize_with(mp->mip->getSize(rc), Color(-1.0f, -1.0f, -1.0f));
-
-    staticVector<point2d>* imgMap = new staticVector<point2d>(mp->mip->getSize(rc));
-    imgMap->resize_with(mp->mip->getSize(rc), point2d(-1.0f, -1.0f));
+    std::vector<Color> img(mp->mip->getSize(rc), Color(-1.0f, -1.0f, -1.0f));
+    std::vector<point2d> imgMap(mp->mip->getSize(rc), point2d(-1.0f, -1.0f));
 
     for(int i = 0; i < visTrisRcTc->size(); i++)
     {
@@ -90,7 +85,7 @@ void reprojectTargetImageToTheReferenceRGB(mv_images_cache* ic, int rc, int tc, 
         point2d tpix = H ^ rpixp;
         if((mp->isPixelInImage(rpixp, rc)) && (mp->isPixelInImage(tpix, tc)))
         {
-            (*img)[(int)rpixp.x * mp->mip->getHeight(rc) + (int)rpixp.y] = ic->getPixelValueInterpolated(&tpix, tc);
+            img.at((int)rpixp.x * mp->mip->getHeight(rc) + (int)rpixp.y) = ic->getPixelValueInterpolated(&tpix, tc);
         }
 
         pixel pix;
@@ -105,18 +100,16 @@ void reprojectTargetImageToTheReferenceRGB(mv_images_cache* ic, int rc, int tc, 
                     tpix = H ^ pixx;
                     if((mp->isPixelInImage(pixx, rc)) && (mp->isPixelInImage(tpix, tc)))
                     {
-                        (*img)[pix.x * mp->mip->getHeight(rc) + pix.y] = ic->getPixelValueInterpolated(&tpix, tc);
-                        (*imgMap)[pix.x * mp->mip->getHeight(rc) + pix.y] = tpix;
+                        img.at(pix.x * mp->mip->getHeight(rc) + pix.y) = ic->getPixelValueInterpolated(&tpix, tc);
+                        imgMap.at(pix.x * mp->mip->getHeight(rc) + pix.y) = tpix;
                     }
                 }
             }
         }
     }
 
-    saveToImg("rctc.png", &(*img)[0], mp->mip->getWidth(rc), mp->mip->getHeight(rc), false);
+    imageIO::writeImage("rctc.png", mp->mip->getWidth(rc), mp->mip->getHeight(rc), img);
 
-    delete img;
-    delete imgMap;
     delete visTrisRcTc;
 }
 
