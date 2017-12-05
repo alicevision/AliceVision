@@ -4,10 +4,7 @@
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
 #include "mv_mesh_orthomosaic.hpp"
-
-#include <opencv/cv.h>
-#include <opencv/highgui.h>
-
+#include <aliceVision/imageIO/image.hpp>
 
 mv_mesh_orthomosaic::mv_mesh_orthomosaic(std::string _tmpDir, std::string _demName, multiviewParams* _mp)
     : mv_mesh_dem(_tmpDir, -1, -1, _mp)
@@ -128,40 +125,25 @@ void mv_mesh_orthomosaic::computeRcOrthomosaic(int rc, staticVector<float>* dem,
             }
         }
 
-        IplImage* img = cvCreateImage(cvSize(demW, demH), IPL_DEPTH_8U, 3);
-        IplImage* imgMask = cvCreateImage(cvSize(demW, demH), IPL_DEPTH_8U, 1);
+        std::vector<Color> colorBuffer(demW * demH);
+        std::vector<float> maskBuffer(demW * demH);
+
         for(int y = 0; y < demH; y++)
         {
             for(int x = 0; x < demW; x++)
             {
-                CvScalar c;
-                c.val[2] = (*rcorm)[y * demW + x].x;
-                c.val[1] = (*rcorm)[y * demW + x].y;
-                c.val[0] = (*rcorm)[y * demW + x].z;
-                cvSet2D(img, y, x, c);
-                CvScalar cm;
-                cm.val[0] = (*rcorm)[y * demW + x].w * 255.0f;
-                cvSet2D(imgMask, y, x, cm);
+                const std::size_t index = y * demW + x;
+                const point4d p = (*rcorm)[index];
+                colorBuffer.at(index) = Color(p.x, p.y, p.z);
+                maskBuffer.at(index) = p.w;
             }
         }
 
         std::string imageFileName = tmpDir + num2strFourDecimal(rc) + "orthoMosaic.png";
-        if(cvSaveImage(imageFileName.c_str(), img) == 0)
-            printf("Could not save: %s\n", imageFileName.c_str());
+        imageIO::writeImage(imageFileName, demW, demH, colorBuffer);
 
         std::string imageMaskFileName = tmpDir + num2strFourDecimal(rc) + "orthoMosaicMask.png";
-        if(cvSaveImage(imageMaskFileName.c_str(), imgMask) == 0)
-            printf("Could not save: %s\n", imageMaskFileName.c_str());
-
-        std::string imageRGBAFileName = tmpDir + num2strFourDecimal(rc) + "orthoMosaicMask.tiff";
-
-        char buffer[5000];
-        sprintf(buffer, "convert %s %s -compose copy-opacity -composite %s", imageFileName.c_str(),
-                imageMaskFileName.c_str(), imageRGBAFileName.c_str());
-        system(buffer);
-
-        cvReleaseImage(&img);
-        cvReleaseImage(&imgMask);
+        imageIO::writeImage(imageMaskFileName, demW, demH, maskBuffer);
 
         delete rcorm;
     }

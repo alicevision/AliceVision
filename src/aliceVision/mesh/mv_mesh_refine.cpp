@@ -7,10 +7,6 @@
 
 #include <boost/filesystem.hpp>
 
-#include <opencv/cv.h>
-#include <opencv/highgui.h>
-
-
 namespace bfs = boost::filesystem;
 
 mv_mesh_refine::mv_mesh_refine(multiviewParams* _mp, mv_prematch_cams* _pc, std::string _tmpDir)

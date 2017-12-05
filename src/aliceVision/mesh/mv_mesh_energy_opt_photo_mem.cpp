@@ -6,6 +6,7 @@
 #include "mv_mesh_energy_opt_photo_mem.hpp"
 
 #include <aliceVision/structures/mv_filesio.hpp>
+#include <aliceVision/imageIO/imageScaledColors.hpp>
 
 #include <boost/filesystem.hpp>
 
@@ -197,7 +198,7 @@ staticVector<int>* mv_mesh_energy_opt_photo_mem::getRcTcNVisTrisMap(staticVector
     }
 
     std::string fn = tmpDir + "_ncTcNVisTrisMap.png";
-    imagesc(fn, &(*out)[0], sp->mp->ncams, sp->mp->ncams, 0, maxVal, true);
+    imageIO::writeImageScaledColors(fn, sp->mp->ncams, sp->mp->ncams, 0, maxVal, &(*out)[0], true);
 
     if(sp->mp->verbose)
         printf("done\n");

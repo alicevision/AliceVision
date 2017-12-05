@@ -10,9 +10,6 @@
 #include <aliceVision/structures/mv_geometry.hpp>
 #include <aliceVision/structures/quaternion.hpp>
 
-#include <opencv/cv.h>
-#include <opencv/highgui.h>
-
 #include <boost/filesystem.hpp>
 
 #include <fstream>

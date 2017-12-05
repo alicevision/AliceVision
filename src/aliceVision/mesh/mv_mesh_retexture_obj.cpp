@@ -7,6 +7,7 @@
 #include "mv_mesh_uvatlas.hpp"
 
 #include <aliceVision/structures/mv_geometry.hpp>
+#include <aliceVision/imageIO/image.hpp>
 
 #include <opencv/cv.h>
 #include <opencv2/opencv.hpp>
@@ -388,7 +389,8 @@ void meshRetex::generateTexture(const multiviewParams& mp, staticVector<staticVe
     std::cout << "- computing final (average) color" << std::endl;
 
     // save texture image
-    IplImage* image = cvCreateImage(cvSize(texParams.textureSide, texParams.textureSide), IPL_DEPTH_8U, 3);
+    std::vector<Color> colorBuffer(texParams.textureSide * texParams.textureSide);
+
     for(unsigned int yp = 0; yp < texParams.textureSide; ++yp)
     {
         unsigned int yoffset = yp * texParams.textureSide;
@@ -396,34 +398,31 @@ void meshRetex::generateTexture(const multiviewParams& mp, staticVector<staticVe
         {
             unsigned int xyoffset = yoffset + xp;
             int colorID = colorIDs[xyoffset];
-            Color color = colorID ? perPixelColors[colorID].average() : Color();
-            CvScalar c;
-            c.val[0] = color.b;
-            c.val[1] = color.g;
-            c.val[2] = color.r;
-            cvSet2D(image, yp, xp, c);
+            colorBuffer.at(yp * texParams.textureSide + xp) = colorID ? perPixelColors[colorID].average() : Color();
         }
     }
+
     perPixelColors.clear();
     colorIDs.clear();
-
-    // downscale texture if required
-    if(texParams.downscale > 1)
-    {
-        std::cout << "- downscaling texture (" << texParams.downscale << "x)" << std::endl;
-        const unsigned int dsTexSide = texParams.textureSide / texParams.downscale;
-        IplImage* scaledImage = cvCreateImage(cvSize(dsTexSide, dsTexSide), IPL_DEPTH_8U, 3);
-        cvResize(image, scaledImage);
-        cvReleaseImage(&image);
-        image = scaledImage;
-    }
 
     std::string textureName = "texture_" + std::to_string(atlasID) + ".png";
     bfs::path texturePath = outPath / textureName;
     std::cout << "- writing texture file " << texturePath.string() << std::endl;
-    if(!cvSaveImage(texturePath.string().c_str(), image))
-        std::cerr << "Could not save: " << texturePath << std::endl;
-    cvReleaseImage(&image);
+
+    // downscale texture if required
+    if(texParams.downscale > 1)
+    {
+        std::vector<Color> resizedColorBuffer;
+        const int resizedTextureSide = texParams.textureSide / texParams.downscale;
+
+        std::cout << "- downscaling texture (" << texParams.downscale << "x)" << std::endl;
+        imageIO::resizeImage(texParams.textureSide, texParams.textureSide, 1/texParams.downscale, colorBuffer, resizedColorBuffer);
+        imageIO::writeImage(texturePath.string(), resizedTextureSide, resizedTextureSide, resizedColorBuffer);
+    }
+    else
+    {
+        imageIO::writeImage(texturePath.string(), texParams.textureSide, texParams.textureSide, colorBuffer);
+    }
 }
 
 
