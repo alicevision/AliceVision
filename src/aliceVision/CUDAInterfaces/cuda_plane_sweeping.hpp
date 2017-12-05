@@ -11,9 +11,6 @@
 #include <aliceVision/structures/mv_images_cache.hpp>
 #include <aliceVision/planeSweeping/ps_depthSimMap.hpp>
 
-#include <opencv/cv.h>
-#include <opencv/highgui.h>
-
 class cuda_plane_sweeping
 {
 public:
