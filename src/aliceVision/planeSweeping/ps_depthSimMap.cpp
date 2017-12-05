@@ -7,6 +7,7 @@
 
 #include <aliceVision/structures/mv_filesio.hpp>
 #include <aliceVision/structures/mv_geometry.hpp>
+#include <aliceVision/imageIO/image.hpp>
 
 #include <iostream>
 
@@ -421,70 +422,53 @@ staticVector<float>* ps_depthSimMap::getSimMapTStep1()
     return simMap;
 }
 
-IplImage* ps_depthSimMap::convertToImage(float simThr)
-{
-    point2d maxMinDepth;
-    maxMinDepth.x = getPercentileDepth(0.9) * 1.1;
-    maxMinDepth.y = getPercentileDepth(0.01) * 0.8;
-
-    point2d maxMinSim = point2d(simThr, -1.0f);
-    if(simThr < -1.0f)
-    {
-        point2d autoMaxMinSim = getMaxMinSim();
-        // only use it if the default range is valid
-        if (std::abs(autoMaxMinSim.x - autoMaxMinSim.y) > std::numeric_limits<float>::epsilon())
-            maxMinSim = autoMaxMinSim;
-
-        if(mp->verbose)
-            printf("max %f, min %f\n", maxMinSim.x, maxMinSim.y);
-    }
-
-    IplImage* img = cvCreateImage(cvSize(2 * w, h), IPL_DEPTH_8U, 3);
-    for(int y = 0; y < h; y++)
-    {
-        for(int x = 0; x < w; x++)
-        {
-            CvScalar c;
-            rgb cc;
-            const DepthSim& depthSim = (*dsm)[y * w + x];
-            float depth = (depthSim.depth - maxMinDepth.y) / (maxMinDepth.x - maxMinDepth.y);
-            cc = getColorFromJetColorMap(depth);
-            c.val[0] = (float)cc.r;
-            c.val[1] = (float)cc.g;
-            c.val[2] = (float)cc.b;
-            cvSet2D(img, y, x, c);
-
-            float sim = (depthSim.sim - maxMinSim.y) / (maxMinSim.x - maxMinSim.y);
-            cc = getColorFromJetColorMap(sim);
-            c.val[0] = (float)cc.r;
-            c.val[1] = (float)cc.g;
-            c.val[2] = (float)cc.b;
-            cvSet2D(img, y, w + x, c);
-        }
-    }
-
-    return img;
-}
-
 void ps_depthSimMap::saveToWrlPng(std::string wrlFileName, int rc, float simThr)
 {
-    saveToPng(wrlFileName + ".depthSimMap.png", simThr);
+    saveToImage(wrlFileName + ".depthSimMap.png", simThr);
     saveToWrl(wrlFileName, rc);
 }
 
-void ps_depthSimMap::saveToPng(std::string pngFileName, float simThr)
+void ps_depthSimMap::saveToImage(std::string filename, float simThr)
 {
+    const int bufferWidth = 2 * w;
+    std::vector<Color> colorBuffer(bufferWidth * h);
+
     try 
     {
-        IplImage* img = convertToImage(simThr);
-        std::string imageFileName = pngFileName;
-        if (cvSaveImage(imageFileName.c_str(), img) == 0)
-            printf("Could not save: %s\n", imageFileName.c_str());
-        cvReleaseImage(&img);
+        point2d maxMinDepth;
+        maxMinDepth.x = getPercentileDepth(0.9) * 1.1;
+        maxMinDepth.y = getPercentileDepth(0.01) * 0.8;
+
+        point2d maxMinSim = point2d(simThr, -1.0f);
+        if(simThr < -1.0f)
+        {
+            point2d autoMaxMinSim = getMaxMinSim();
+            // only use it if the default range is valid
+            if (std::abs(autoMaxMinSim.x - autoMaxMinSim.y) > std::numeric_limits<float>::epsilon())
+                maxMinSim = autoMaxMinSim;
+
+            if(mp->verbose)
+                printf("max %f, min %f\n", maxMinSim.x, maxMinSim.y);
+        }
+
+        for(int y = 0; y < h; y++)
+        {
+            for(int x = 0; x < w; x++)
+            {
+                const DepthSim& depthSim = (*dsm)[y * w + x];
+                float depth = (depthSim.depth - maxMinDepth.y) / (maxMinDepth.x - maxMinDepth.y);
+                colorBuffer.at(y * bufferWidth + x) = getColorFromJetColorMap(depth);
+
+                float sim = (depthSim.sim - maxMinSim.y) / (maxMinSim.x - maxMinSim.y);
+                colorBuffer.at(y * bufferWidth + w + x) = getColorFromJetColorMap(sim);
+            }
+        }
+
+        imageIO::writeImage(filename, bufferWidth, h, colorBuffer);
     }
     catch(...)
     {
-        std::cout << "Failed to save " << pngFileName << " (simThr :" << simThr << ")" << std::endl;
+        std::cout << "Failed to save " << filename << " (simThr :" << simThr << ")" << std::endl;
     }
 }
 

@@ -8,7 +8,7 @@
 #include "ps_sgm_vol.hpp"
 
 #include <aliceVision/structures/mv_filesio.hpp>
-
+#include <aliceVision/imageIO/imageScaledColors.hpp>
 #include <aliceVision/omp.hpp>
 
 #include <boost/filesystem.hpp>
@@ -684,7 +684,7 @@ bool ps_sgm_rc::sgmrc(bool checkIfExists)
         volumeBestId->push_back(std::max(0, (*volumeBestIdVal)[i].id));
     }
     saveArrayToFile<unsigned short>(SGM_idDepthMapFileName, volumeBestId);
-    imagesc(SGM_idDepthMapFileName + ".png", &(*volumeBestId)[0], volDimX, volDimY, 0, depths->size(), true);
+    imageIO::writeImageScaledColors(SGM_idDepthMapFileName + ".png", volDimX, volDimY, 0, depths->size(), &(*volumeBestId)[0], true);
     delete volumeBestId;
 
     /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -693,7 +693,7 @@ bool ps_sgm_rc::sgmrc(bool checkIfExists)
     printfElapsedTime(tall, "PSSGM rc " + num2str(rc) + " of " + num2str(sp->mp->ncams));
 
     {
-        depthSimMapFinal->saveToPng(tmpDir + "ps_sgm_rc_SGM" + num2strFourDecimal(rc) + "_" + "scale" +
+        depthSimMapFinal->saveToImage(tmpDir + "ps_sgm_rc_SGM" + num2strFourDecimal(rc) + "_" + "scale" +
                                         num2str(depthSimMapFinal->scale) + "step" + num2str(depthSimMapFinal->step) +
                                         ".wrl.depthSimMap.png",
                                     1.0f);
