@@ -9,9 +9,6 @@
 #include "mv_geometry_triTri.hpp"
 #include "mv_filesio.hpp"
 
-#include <opencv/cv.h>
-#include <opencv/highgui.h>
-
 #ifdef _WIN32
 #include "Psapi.h"
 #endif
@@ -637,7 +634,7 @@ int myFact(int num)
  */
 
 // value from range 0.0 1.0
-rgb getColorFromJetColorMap(float value)
+rgb getRGBFromJetColorMap(float value)
 {
     if(value <= 0.0f)
         return rgb(0, 0, 0);
@@ -652,6 +649,24 @@ rgb getColorFromJetColorMap(float value)
     c.r = static_cast<unsigned char>((jetr[idx] * fractA + jetr[idx + 1] * fractB) * 255.0f);
     c.g = static_cast<unsigned char>((jetg[idx] * fractA + jetg[idx + 1] * fractB) * 255.0f);
     c.b = static_cast<unsigned char>((jetb[idx] * fractA + jetb[idx + 1] * fractB) * 255.0f);
+    return c;
+}
+
+Color getColorFromJetColorMap(float value)
+{
+    if(value <= 0.0f)
+        return Color(0, 0, 0);
+    if(value >= 1.0f)
+        return Color(1.0f, 1.0f, 1.0f);
+    float idx_f = value * 63.0f;
+    float fractA, fractB, integral;
+    fractB = std::modf(idx_f, &integral);
+    fractA = 1.0f - fractB;
+    int idx = static_cast<int>(integral);
+    Color c;
+    c.r = jetr[idx] * fractA + jetr[idx + 1] * fractB;
+    c.g = jetg[idx] * fractA + jetg[idx + 1] * fractB;
+    c.b = jetb[idx] * fractA + jetb[idx + 1] * fractB;
     return c;
 }
 

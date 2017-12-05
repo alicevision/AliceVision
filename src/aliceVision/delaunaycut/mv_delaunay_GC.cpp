@@ -3346,7 +3346,7 @@ void mv_delaunay_GC::saveMeshColoredByCamsConsistency(const std::string& consist
             colors.reserve(ptsScore.size());
             for(int idVertex = 0; idVertex < ptsScore.size(); ++idVertex)
             {
-                colors.push_back(getColorFromJetColorMap(ptsScore[idVertex]));
+                colors.push_back(getRGBFromJetColorMap(ptsScore[idVertex]));
             }
         }
         else
@@ -3360,7 +3360,7 @@ void mv_delaunay_GC::saveMeshColoredByCamsConsistency(const std::string& consist
                 {
                     minScore = std::min(minScore, ptsScore[(*mesh->tris)[idtri].i[k]]);
                 }
-                colors.push_back(getColorFromJetColorMap(minScore));
+                colors.push_back(getRGBFromJetColorMap(minScore));
             }
         }
 
@@ -3381,7 +3381,7 @@ void mv_delaunay_GC::saveMeshColoredByCamsConsistency(const std::string& consist
         for(int idVertex = 0; idVertex < ptsCams->size(); ++idVertex)
         {
             float score = float((*ptsCams)[idVertex]->size()) / float(maxVisibility);
-            colors.push_back(getColorFromJetColorMap(score));
+            colors.push_back(getRGBFromJetColorMap(score));
         }
 
         mv_output3D o3d(mp);

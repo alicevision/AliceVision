@@ -40,7 +40,8 @@ bool checkCamPairAngle(int rc, int tc, const multiviewParams* mp, float minAng, 
 bool isClique(int k, int* perm, unsigned char* confidenceMatrix, int n);
 // factorial
 int myFact(int num);
-rgb getColorFromJetColorMap(float value);
+rgb getRGBFromJetColorMap(float value);
+Color getColorFromJetColorMap(float value);
 
 void getHexahedronTriangles(point3d tris[12][3], point3d hexah[8]);
 void getCamRectangleHexahedron(const multiviewParams* mp, point3d hexah[8], int cam, float mind, float maxd, point2d P[4]);

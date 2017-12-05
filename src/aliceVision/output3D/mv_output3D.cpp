@@ -2719,7 +2719,7 @@ void mv_output3D::saveMvMeshToWrl(staticVector<float>* ptsValues, float minVal, 
     for(int i = 0; i < npts; i++)
     {
         float s = 1.0f - (maxVal - std::max(minVal, (*ptsValues)[i])) / (maxVal - minVal);
-        rgb col = getColorFromJetColorMap(s);
+        rgb col = getRGBFromJetColorMap(s);
         fprintf(f, "\t\t\t\t\t%f %f %f \n", (float)col.r / 255.0f, (float)col.g / 255.0f, (float)col.b / 255.0f);
     }
     fprintf(f, "] }\n\n");
