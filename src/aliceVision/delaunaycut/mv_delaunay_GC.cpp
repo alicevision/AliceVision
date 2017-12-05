@@ -11,6 +11,7 @@
 // #include "MaxFlow_AdjList.hpp"
 
 #include <aliceVision/common/fileIO.hpp>
+#include <aliceVision/structures/jetColorMap.hpp>
 #include <aliceVision/structures/mv_universe.hpp>
 #include <aliceVision/CUDAInterfaces/refine.hpp>
 #include <aliceVision/hallucinations/hallucinations.hpp>

@@ -7,6 +7,7 @@
 
 #include <aliceVision/common/fileIO.hpp>
 #include <aliceVision/structures/mv_geometry.hpp>
+#include <aliceVision/structures/jetColorMap.hpp>
 #include <aliceVision/imageIO/image.hpp>
 
 #include <iostream>

@@ -7,7 +7,7 @@
 
 #include <aliceVision/common/fileIO.hpp>
 #include <aliceVision/structures/mv_geometry.hpp>
-
+#include <aliceVision/structures/jetColorMap.hpp>
 #include <boost/filesystem.hpp>
 
 #include <opencv/cv.h>
