@@ -6,6 +6,7 @@
 #include "mv_fuse.hpp"
 
 #include <aliceVision/structures/mv_filesio.hpp>
+#include <aliceVision/imageIO/imageScaledColors.hpp>
 
 #include <boost/filesystem.hpp>
 #include <boost/accumulators/accumulators.hpp>
@@ -71,9 +72,9 @@ void mv_fuse::visualizeDepthMap(int rc, std::string wrlFileName, staticVector<fl
     }
     cg = cg / ncg;
 
-    imagesc(wrlFileName + "depth.png", &(*depthMap)[0], w, h, mindepth, maxdepth);
+    imageIO::writeImageScaledColors(wrlFileName + "depth.png", w, h, mindepth, maxdepth, &(*depthMap)[0]);
     if(simMap)
-        imagesc(wrlFileName + "sim.png", &(*simMap)[0], w, h, -1.0f, 1.0f);
+        imageIO::writeImageScaledColors(wrlFileName + "sim.png", w, h, -1.0f, 1.0f, &(*simMap)[0]);
 
     point3d rchexah[8];
     getCamHexahedron(mp, rchexah, rc, mindepth, maxdepth);
