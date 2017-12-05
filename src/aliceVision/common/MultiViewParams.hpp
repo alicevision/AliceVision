@@ -5,7 +5,7 @@
 
 #pragma once
 
-#include "mv_structures.hpp"
+#include <aliceVision/structures/mv_structures.hpp>
 
 #include <boost/property_tree/ptree.hpp>
 
@@ -20,8 +20,6 @@ struct timeIndex
     timeIndex();
     timeIndex(int _index);
 };
-
-
 
 struct multiviewInputParams
 {

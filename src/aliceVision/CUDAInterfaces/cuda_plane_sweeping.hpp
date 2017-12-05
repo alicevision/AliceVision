@@ -8,7 +8,7 @@
 #include <aliceVision/mesh/mv_mesh_retexture_obj.hpp>
 #include <aliceVision/prematching/mv_prematch_cams.hpp>
 #include <aliceVision/structures/mv_geometry.hpp>
-#include <aliceVision/structures/mv_images_cache.hpp>
+#include <aliceVision/common/ImagesCache.hpp>
 #include <aliceVision/planeSweeping/ps_depthSimMap.hpp>
 
 class cuda_plane_sweeping

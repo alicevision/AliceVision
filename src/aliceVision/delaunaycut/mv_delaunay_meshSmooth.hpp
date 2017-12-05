@@ -5,7 +5,7 @@
 
 #pragma once
 
-#include <aliceVision/structures/mv_multiview_params.hpp>
+#include <aliceVision/common/MultiViewParams.hpp>
 #include <aliceVision/structures/mv_staticVector.hpp>
 #include <aliceVision/mesh/mv_mesh.hpp>
 

@@ -3,11 +3,11 @@
 // v. 2.0. If a copy of the MPL was not distributed with this file,
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
-#include "mv_common.hpp"
+#include "common.hpp"
 
-#include "mv_geometry.hpp"
-#include "mv_geometry_triTri.hpp"
-#include "mv_filesio.hpp"
+#include <aliceVision/common/fileIO.hpp>
+#include <aliceVision/structures/mv_geometry.hpp>
+#include <aliceVision/structures/mv_geometry_triTri.hpp>
 
 #ifdef _WIN32
 #include "Psapi.h"

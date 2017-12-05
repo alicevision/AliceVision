@@ -14,7 +14,7 @@
 #include <geogram/basic/command_line.h>
 #include <geogram/basic/command_line_args.h>
 
-#include <aliceVision/structures/mv_common.hpp>
+#include <aliceVision/common/common.hpp>
 
 #include <boost/program_options.hpp>
 #include <boost/filesystem.hpp>

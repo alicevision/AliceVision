@@ -5,7 +5,7 @@
 
 #pragma once
 
-#include "mv_structures.hpp"
+#include <aliceVision/structures/mv_structures.hpp>
 
 #include <fstream>
 

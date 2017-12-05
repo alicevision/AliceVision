@@ -5,8 +5,8 @@
 
 #include "mv_prematch_cams.hpp"
 
-#include <aliceVision/structures/mv_filesio.hpp>
-#include <aliceVision/structures/mv_common.hpp>
+#include <aliceVision/common/fileIO.hpp>
+#include <aliceVision/common/common.hpp>
 
 #include <iostream>
 

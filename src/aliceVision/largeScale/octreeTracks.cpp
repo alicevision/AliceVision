@@ -5,7 +5,7 @@
 
 #include "octreeTracks.hpp"
 
-#include <aliceVision/structures/mv_filesio.hpp>
+#include <aliceVision/common/fileIO.hpp>
 
 #include <boost/accumulators/accumulators.hpp>
 #include <boost/accumulators/statistics.hpp>

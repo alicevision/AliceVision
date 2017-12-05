@@ -6,7 +6,7 @@
 #include "cuda_plane_sweeping.hpp"
 #include "common_gpu_cpu_structures.hpp"
 
-#include <aliceVision/structures/mv_filesio.hpp>
+#include <aliceVision/common/fileIO.hpp>
 
 #include <iostream>
 

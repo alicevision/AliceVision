@@ -5,7 +5,7 @@
 
 #include "mv_output3D.hpp"
 
-#include <aliceVision/structures/mv_filesio.hpp>
+#include <aliceVision/common/fileIO.hpp>
 #include <aliceVision/structures/mv_geometry.hpp>
 
 #include <boost/filesystem.hpp>
@@ -2139,6 +2139,7 @@ void mv_output3D::convertPly2Wrl(const std::string& wrlFileName, const std::stri
     // printf("nseeds: %i\n",npts);
 }
 
+
 void mv_output3D::create_wrl_for_delaunay_cut(const multiviewParams* mp, const std::string& inputFileNameT,
                                               const std::string& inputFileNameRC, const std::string& wrlFileName, const std::string& wrlDir,
                                               int camerasPerOneOmni)
@@ -2151,6 +2152,8 @@ void mv_output3D::create_wrl_for_delaunay_cut(const multiviewParams* mp, const s
     create_wrl_for_delaunay_cut(mp, inputFileNameT, inputFileNameRC, wrlFileName, wrlDir, camerasPerOneOmni, cams);
     delete cams;
 }
+
+
 
 void mv_output3D::create_wrl_for_delaunay_cut(const multiviewParams* mp, const std::string& inputFileNameT,
                                               const std::string& inputFileNameRC, const std::string& wrlFileName, const std::string& wrlDir,
@@ -2380,13 +2383,13 @@ void mv_output3D::create_wrl_for_delaunay_cut(const multiviewParams* mp, const s
     }
     finishEstimate();
 
-    /*
-    if (camerasPerOneOmni<=1) {
-            printfGroupCameras(f, mp, 0.001);
-    }else{
-            printfGroupCamerasOmniSequnece(f,mp,0.001,camerasPerOneOmni);
-    };
-    */
+
+    //if (camerasPerOneOmni<=1) {
+    //        printfGroupCameras(f, mp, 0.001);
+    //}else{
+    //        printfGroupCamerasOmniSequnece(f,mp,0.001,camerasPerOneOmni);
+    //};
+
 
     fclose(f);
 }

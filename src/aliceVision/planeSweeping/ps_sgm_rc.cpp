@@ -7,7 +7,7 @@
 #include "ps_sgm_rctc.hpp"
 #include "ps_sgm_vol.hpp"
 
-#include <aliceVision/structures/mv_filesio.hpp>
+#include <aliceVision/common/fileIO.hpp>
 #include <aliceVision/imageIO/imageScaledColors.hpp>
 #include <aliceVision/omp.hpp>
 

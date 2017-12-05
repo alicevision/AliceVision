@@ -3,11 +3,11 @@
 // v. 2.0. If a copy of the MPL was not distributed with this file,
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
-#include "mv_multiview_params.hpp"
-#include "mv_filesio.hpp"
-#include "mv_geometry.hpp"
-
-#include <aliceVision/structures/mv_common.hpp>
+#include "MultiViewParams.hpp"
+#include <aliceVision/structures/mv_geometry.hpp>
+#include <aliceVision/common/fileIO.hpp>
+#include <aliceVision/common/common.hpp>
+#include <aliceVision/imageIO/image.hpp>
 
 #include <boost/filesystem.hpp>
 #include <boost/property_tree/ini_parser.hpp>

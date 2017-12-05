@@ -5,7 +5,7 @@
 
 #include "mv_mesh_energy_opt_photo_mem.hpp"
 
-#include <aliceVision/structures/mv_filesio.hpp>
+#include <aliceVision/common/fileIO.hpp>
 #include <aliceVision/imageIO/imageScaledColors.hpp>
 
 #include <boost/filesystem.hpp>

@@ -49,4 +49,4 @@ target_include_directories(mv_cudaInterfaces
          $<INSTALL_INTERFACE:include>)
 
 # PUBLIC
-target_link_libraries(mv_cudaInterfaces aliceVision_imageIO mv_structures mv_prematching mv_mesh mv_output3D mv_delaunaycut)
+target_link_libraries(mv_cudaInterfaces mv_structures aliceVision_common aliceVision_imageIO mv_prematching mv_mesh mv_output3D mv_delaunaycut)

@@ -6,7 +6,7 @@
 #include "mv_delaunay_helpers.hpp"
 #include "mv_delaunay_types.hpp"
 
-#include <aliceVision/structures/mv_multiview_params.hpp>
+#include <aliceVision/common/MultiViewParams.hpp>
 
 
 staticVector<staticVector<int>*>* getPtsCamsFromInfoFile(const std::string& fileNameInfo)

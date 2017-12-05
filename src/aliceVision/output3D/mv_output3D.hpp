@@ -6,9 +6,9 @@
 #pragma once
 
 #include <aliceVision/mesh/mv_mesh_uvatlas.hpp>
-#include <aliceVision/structures/mv_multiview_params.hpp>
+#include <aliceVision/common/MultiViewParams.hpp>
 #include <aliceVision/structures/quaternion.hpp>
-#include <aliceVision/structures/mv_images_cache.hpp>
+#include <aliceVision/common/ImagesCache.hpp>
 #include <aliceVision/structures/mv_color.hpp>
 #include <boost/filesystem.hpp>
 

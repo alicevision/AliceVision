@@ -6,7 +6,7 @@
 #pragma once
 
 #include "mv_mesh.hpp"
-#include <aliceVision/structures/mv_images_cache.hpp>
+#include <aliceVision/common/ImagesCache.hpp>
 
 #include <boost/filesystem.hpp>
 

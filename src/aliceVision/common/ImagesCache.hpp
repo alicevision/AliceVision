@@ -5,8 +5,8 @@
 
 #pragma once
 
-#include <aliceVision/structures/mv_multiview_params.hpp>
 #include <aliceVision/structures/mv_color.hpp>
+#include <aliceVision/common/MultiViewParams.hpp>
 
 class mv_images_cache
 {

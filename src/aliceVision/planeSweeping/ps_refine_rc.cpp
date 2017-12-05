@@ -5,7 +5,7 @@
 
 #include "ps_refine_rc.hpp"
 
-#include <aliceVision/structures/mv_filesio.hpp>
+#include <aliceVision/common/fileIO.hpp>
 
 #include <aliceVision/omp.hpp>
 

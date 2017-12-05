@@ -5,7 +5,7 @@
 
 #include "mv_fuse.hpp"
 
-#include <aliceVision/structures/mv_filesio.hpp>
+#include <aliceVision/common/fileIO.hpp>
 #include <aliceVision/imageIO/imageScaledColors.hpp>
 
 #include <boost/filesystem.hpp>

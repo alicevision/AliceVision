@@ -5,7 +5,7 @@
 
 #include "ps_depthSimMap.hpp"
 
-#include <aliceVision/structures/mv_filesio.hpp>
+#include <aliceVision/common/fileIO.hpp>
 #include <aliceVision/structures/mv_geometry.hpp>
 #include <aliceVision/imageIO/image.hpp>
 

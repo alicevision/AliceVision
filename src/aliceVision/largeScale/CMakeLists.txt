@@ -17,4 +17,4 @@ target_include_directories(mv_largeScale
          $<BUILD_INTERFACE:${generatedDir}>
          $<INSTALL_INTERFACE:include>)
 
-target_link_libraries(mv_largeScale PUBLIC mv_prematching mv_output3D mv_filter mv_delaunaycut mv_rply mv_cudaInterfaces ${Boost_LIBRARIES})
+target_link_libraries(mv_largeScale PUBLIC aliceVision_common mv_prematching mv_output3D mv_filter mv_delaunaycut mv_rply mv_cudaInterfaces ${Boost_LIBRARIES})

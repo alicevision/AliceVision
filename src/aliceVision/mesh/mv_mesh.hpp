@@ -5,7 +5,7 @@
 
 #pragma once
 
-#include <aliceVision/structures/mv_common.hpp>
+#include <aliceVision/common/common.hpp>
 
 class mv_mesh
 {

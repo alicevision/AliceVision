@@ -21,4 +21,4 @@ target_include_directories(mv_delaunaycut
          $<BUILD_INTERFACE:${generatedDir}>
          $<INSTALL_INTERFACE:include>)
 
-target_link_libraries(mv_delaunaycut PUBLIC mv_largeScale mv_structures mv_cudaInterfaces mv_hallucinations mv_mesh ${Boost_LIBRARIES} Geogram::geogram)
+target_link_libraries(mv_delaunaycut PUBLIC mv_largeScale mv_structures aliceVision_common mv_cudaInterfaces mv_hallucinations mv_mesh ${Boost_LIBRARIES} Geogram::geogram)

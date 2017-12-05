@@ -10,7 +10,7 @@
 #include <aliceVision/prematching/mv_prematch_cams.hpp>
 #include "ps_depthSimMap.hpp"
 #include "ps_rctc.hpp"
-#include <aliceVision/structures/mv_images_cache.hpp>
+#include <aliceVision/common/ImagesCache.hpp>
 
 class ps_sgm_params
 {

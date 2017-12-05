@@ -10,7 +10,7 @@
 #include <aliceVision/delaunaycut/mv_delaunay_GC.hpp>
 #include <aliceVision/delaunaycut/mv_delaunay_meshSmooth.hpp>
 #include <aliceVision/rply/mv_plysaver.hpp>
-#include <aliceVision/structures/mv_filesio.hpp>
+#include <aliceVision/common/fileIO.hpp>
 
 #include <boost/filesystem.hpp>
 

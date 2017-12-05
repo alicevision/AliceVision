@@ -1,3 +1,4 @@
+add_subdirectory(common)
 add_subdirectory(CUDAInterfaces)
 add_subdirectory(delaunaycut)
 add_subdirectory(eig33)

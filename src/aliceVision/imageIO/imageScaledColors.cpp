@@ -5,7 +5,7 @@
 
 #include "imageScaledColors.hpp"
 
-#include <aliceVision/structures/mv_common.hpp>
+#include <aliceVision/common/common.hpp>
 #include <aliceVision/imageIO/image.hpp>
 
 namespace imageIO {

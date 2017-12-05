@@ -3,10 +3,10 @@
 // v. 2.0. If a copy of the MPL was not distributed with this file,
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
-#include "mv_filesio.hpp"
-#include "mv_multiview_params.hpp"
-
-#include <aliceVision/structures/mv_common.hpp>
+#include "fileIO.hpp"
+#include <aliceVision/common/common.hpp>
+#include <aliceVision/common/MultiViewParams.hpp>
+#include <aliceVision/imageIO/image.hpp>
 
 #include <opencv/cv.h>
 #include <opencv/highgui.h>

@@ -1,19 +1,12 @@
-
 set(SOURCES_files_structures
   mv_color.cpp
   mv_color.hpp
-  mv_common.cpp
-  mv_common.hpp
   mv_double3d.cpp
   mv_double3d.hpp
-  mv_filesio.cpp
-  mv_filesio.hpp
   mv_geometry.cpp
   mv_geometry.hpp
   mv_geometry_triTri.cpp
   mv_geometry_triTri.hpp
-  mv_images_cache.cpp
-  mv_images_cache.hpp
   mv_matrix.cpp
   mv_matrix.hpp
   mv_matrix2x2.cpp
@@ -22,8 +15,6 @@ set(SOURCES_files_structures
   mv_matrix3x3.hpp
   mv_matrix3x4.cpp
   mv_matrix3x4.hpp
-  mv_multiview_params.cpp
-  mv_multiview_params.hpp
   mv_point2d.cpp
   mv_point2d.hpp
   mv_point3d.cpp

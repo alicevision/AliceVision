@@ -5,9 +5,9 @@
 
 #pragma once
 
-#include "mv_multiview_params.hpp"
-#include <string>
+#include <aliceVision/common/MultiViewParams.hpp>
 
+#include <string>
 
 bool get2dLineImageIntersection(point2d* pFrom, point2d* pTo, point2d linePoint1, point2d linePoint2,
                                 const multiviewParams* mp, int camId);

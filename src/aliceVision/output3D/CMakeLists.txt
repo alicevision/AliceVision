@@ -12,5 +12,5 @@ target_include_directories(mv_output3D
          $<BUILD_INTERFACE:${generatedDir}>
          $<INSTALL_INTERFACE:include>)
 
-target_link_libraries(mv_output3D PUBLIC mv_structures)
+target_link_libraries(mv_output3D PUBLIC mv_structures aliceVision_common)
 

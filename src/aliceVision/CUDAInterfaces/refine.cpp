@@ -8,8 +8,8 @@
 #include <aliceVision/delaunaycut/mv_delaunay_helpers.hpp>
 #include <aliceVision/rply/mv_plyloader.hpp>
 #include <aliceVision/structures/mv_geometry.hpp>
-#include <aliceVision/structures/mv_images_cache.hpp>
-#include <aliceVision/structures/mv_filesio.hpp>
+#include <aliceVision/common/ImagesCache.hpp>
+#include <aliceVision/common/fileIO.hpp>
 #include <aliceVision/imageIO/image.hpp>
 
 #include <boost/filesystem.hpp>
