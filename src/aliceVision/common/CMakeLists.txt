@@ -21,4 +21,5 @@ add_library(aliceVision_common
 
 target_link_libraries(aliceVision_common
          mv_structures
+         aliceVision_imageIO
 )

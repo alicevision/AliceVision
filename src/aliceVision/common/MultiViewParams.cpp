@@ -15,15 +15,10 @@
 #include <boost/algorithm/string/classification.hpp>
 #include <boost/lexical_cast.hpp>
 
-#include <opencv/cv.h>
-#include <opencv/highgui.h>
-
 #include <iostream>
 #include <set>
 
-
 namespace bfs = boost::filesystem;
-
 
 timeIndex::timeIndex()
 {
@@ -44,16 +39,17 @@ multiviewInputParams::multiviewInputParams(const std::string& file)
 
 imageParams multiviewInputParams::addImageFile(const std::string& filename)
 {
-    auto image = cvLoadImage(filename.c_str());
-    if(!image)
-        throw std::runtime_error(std::string("can't load image ") + filename);
-    imageParams params(image->width, image->height);
+    int width = -1;
+    int height = -1;
+    int nchannels = -1;
 
-    maxImageWidth = std::max(maxImageWidth, image->width);
-    maxImageHeight = std::max(maxImageHeight, image->height);
+    imageIO::readImageSpec(filename, width, height, nchannels);
+    imageParams params(width, height);
+
+    maxImageWidth = std::max(maxImageWidth, width);
+    maxImageHeight = std::max(maxImageHeight, height);
 
     imps.push_back(params);
-    cvReleaseImage(&image);
     return params;
 }
 
