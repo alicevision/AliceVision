@@ -8,10 +8,6 @@
 #include <aliceVision/common/MultiViewParams.hpp>
 #include <aliceVision/imageIO/image.hpp>
 
-#include <opencv/cv.h>
-#include <opencv/highgui.h>
-#include <opencv2/opencv.hpp>
-
 #include <boost/filesystem/operations.hpp>
 #include <boost/filesystem/path.hpp>
 
@@ -425,87 +421,64 @@ void memcpyRGBImageFromFileToArr(int camId, rgb* imgArr, const std::string& file
     int w = mip->getWidth(camId) / std::max(scaleFactor, 1);
     int h = mip->getHeight(camId) / std::max(scaleFactor, 1);
 
-    IplImage* cimg = cvLoadImage(fileNameOrigStr.c_str());
-    if(cimg != nullptr)
+    int origWidth, origHeight;
+    std::vector<rgb> cimg;
+    imageIO::readImage(fileNameOrigStr, origWidth, origHeight, cimg);
+
+    // check image size...
+    if((mip->getWidth(camId) != origWidth) || (mip->getHeight(camId) != origHeight))
     {
-        // check image size...
-        if((mip->getWidth(camId) == cimg->width) && (mip->getHeight(camId) == cimg->height))
+        printf("!width, height \n");
+        exit(EXIT_FAILURE);
+    }
+
+    if(scaleFactor > 1)
+    {
+        std::vector<rgb> bmpr;
+        imageIO::resizeImage(origWidth, origHeight, scaleFactor, cimg, bmpr);
+        cimg = bmpr;
+    }
+
+    if(bandType == 1)
+    {
+
+        // IplImage* cimg1=cvCreateImage(cvSize(cimg->width,cimg->height),IPL_DEPTH_8U,3);
+        // cvSmooth(cimg1,cimg,CV_BILATERAL,11,0,10.0,5.0);
+        // cvReleaseImage(&cimg);
+        // cimg=cimg1;
+        std::vector<rgb> smooth;
+        imageIO::convolveImage(w, h, cimg, smooth, "gaussian", 11.0f, 11.0f);
+        cimg = smooth;
+    }
+
+    if(bandType == 2)
+    {
+        std::vector<rgb> bmps;
+        imageIO::convolveImage(w, h, cimg, bmps, "gaussian", 11.0f, 11.0f);
+
+        for(int y = 0; y < h; y++)
         {
-            if(scaleFactor > 1)
+            for(int x = 0; x < w; x++)
             {
-                IplImage* bmpr = cvCreateImage(cvSize(w, h), IPL_DEPTH_8U, 3);
-                cvResize(cimg, bmpr);
-                cvReleaseImage(&cimg);
-                cimg = bmpr;
+                const std::size_t index = y * w + x;
+                rgb& cimc = cimg.at(index);
+                cimc = cimc - bmps.at(index); //cimg(x, y) - bmps(x, y)
             }
-
-            if(bandType == 1)
-            {
-
-                // IplImage* cimg1=cvCreateImage(cvSize(cimg->width,cimg->height),IPL_DEPTH_8U,3);
-                // cvSmooth(cimg1,cimg,CV_BILATERAL,11,0,10.0,5.0);
-                // cvReleaseImage(&cimg);
-                // cimg=cimg1;
-                cvSmooth(cimg, cimg, CV_GAUSSIAN, 11);
-            }
-
-            if(bandType == 2)
-            {
-                IplImage* bmps = cvCreateImage(cvSize(w, h), IPL_DEPTH_8U, 3);
-                cvSmooth(cimg, bmps, CV_GAUSSIAN, 11);
-                for(int y = 0; y < h; y++)
-                {
-                    for(int x = 0; x < w; x++)
-                    {
-                        CvScalar s1, s2;
-                        s1 = cvGet2D(cimg, y, x);
-                        s2 = cvGet2D(bmps, y, x);
-                        s1.val[0] = s1.val[0] - s2.val[0];
-                        s1.val[1] = s1.val[1] - s2.val[1];
-                        s1.val[2] = s1.val[2] - s2.val[2];
-                        cvSet2D(cimg, y, x, s1);
-                    }
-                }
-                cvReleaseImage(&bmps);
-            }
-
-            for(int y = 0; y < h; y++)
-            {
-                for(int x = 0; x < w; x++)
-                {
-                    // CvScalar s;
-                    // s=cvGet2D(cimg,y,x);
-                    uchar B = ((uchar*)(cimg->imageData + y * cimg->widthStep))[x * cimg->nChannels + 0];
-                    uchar G = ((uchar*)(cimg->imageData + y * cimg->widthStep))[x * cimg->nChannels + 1];
-                    uchar R = ((uchar*)(cimg->imageData + y * cimg->widthStep))[x * cimg->nChannels + 2];
-
-                    if(transpose)
-                    {
-                        imgArr[y * w + x].b = B;
-                        imgArr[y * w + x].g = G;
-                        imgArr[y * w + x].r = R;
-                    }
-                    else
-                    {
-                        imgArr[x * h + y].b = B;
-                        imgArr[x * h + y].g = G;
-                        imgArr[x * h + y].r = R;
-                    }
-                }
-            }
-
-            cvReleaseImage(&cimg);
-        }
-        else
-        {
-            printf("!width, height \n");
-            exit(EXIT_FAILURE);
         }
     }
-    else
+
+    for(int y = 0; y < h; y++)
     {
-        printf("WARNING file %s does not exists!\n", fileNameOrigStr.c_str());
-        exit(EXIT_FAILURE);
+        for(int x = 0; x < w; x++)
+        {
+            const rgb color = cimg.at(y * w + x);
+
+            if(transpose)
+                imgArr[y * w + x] = color;
+            else
+                imgArr[x * h + y] = color;
+
+        }
     }
 }
 
