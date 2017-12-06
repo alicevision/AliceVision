@@ -15,7 +15,7 @@ target_include_directories(mv_prematching
          $<BUILD_INTERFACE:${ALICEVISION_INCLUDE_DIR}>
          $<BUILD_INTERFACE:${generatedDir}>
          $<INSTALL_INTERFACE:include>
-         ${OpenCV_INCLUDE_DIRS} ${Boost_INCLUDE_DIR} ${ZLIB_INCLUDE_DIR})
+         ${Boost_INCLUDE_DIR} ${ZLIB_INCLUDE_DIR})
 
-target_link_libraries(mv_prematching PUBLIC aliceVision_common ${OpenCV_LIBS} ${Boost_FILESYSTEM_LIBRARIES})
+target_link_libraries(mv_prematching PUBLIC aliceVision_common ${Boost_FILESYSTEM_LIBRARIES})
 

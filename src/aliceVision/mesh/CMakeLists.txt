@@ -24,6 +24,6 @@ target_include_directories(mv_mesh
          $<BUILD_INTERFACE:${ALICEVISION_INCLUDE_DIR}>
          $<BUILD_INTERFACE:${generatedDir}>
          $<INSTALL_INTERFACE:include>
-         ${OPENCV_INCLUDE_DIRS} ${Boost_INCLUDE_DIR})
+         ${Boost_INCLUDE_DIR})
 
-target_link_libraries(mv_mesh PUBLIC mv_structures aliceVision_common aliceVision_imageIO mv_planeSweeping mv_output3D mv_rply mv_cudaInterfaces mv_delaunaycut ${OPENCV_LIBRARIES} ${Boost_FILESYSTEM_LIBRARIES})
+target_link_libraries(mv_mesh PUBLIC mv_structures aliceVision_common aliceVision_imageIO mv_planeSweeping mv_output3D mv_rply mv_cudaInterfaces mv_delaunaycut ${Boost_FILESYSTEM_LIBRARIES})

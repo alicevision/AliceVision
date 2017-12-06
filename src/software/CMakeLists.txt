@@ -1,7 +1,7 @@
 
 # Runtime library paths
-SET(LIB_RUNTIME_PATHS ${Boost_LIBRARY_DIRS}
-                      ${_OpenCV_LIB_PATH})
+SET(LIB_RUNTIME_PATHS ${Boost_LIBRARY_DIRS})
+
 # "Escape" the list of library paths using $<SEMICOLON> to use it as a custom command argument
 string (REPLACE ";" "$<SEMICOLON>" LIB_RUNTIME_PATHS_ARG "${LIB_RUNTIME_PATHS}")
 

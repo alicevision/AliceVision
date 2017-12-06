@@ -27,11 +27,9 @@ endif()
 # ZLIB
 find_package(ZLIB REQUIRED)
 
-# OpenCV
-find_package(OpenCV REQUIRED COMPONENTS core highgui imgproc calib3d)
-
 # BOOST
 find_package(Boost REQUIRED thread filesystem system date_time graph program_options)
+
 # Disable BOOST autolink
 add_definitions(-DBOOST_ALL_NO_LIB)
 # Force BOOST to use dynamic libraries (avoid link error with boost program_options)

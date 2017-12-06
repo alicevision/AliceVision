@@ -32,15 +32,12 @@ set(SOURCES_files_structures
 )
 source_group("structures" FILES ${SOURCES_files_structures})
 
-# message(WARNING "OpenCV_INCLUDE_DIRS: ${OpenCV_INCLUDE_DIRS}")
-# message(WARNING "OpenCV_LIBS: ${OpenCV_LIBS}")
-
 add_library(mv_structures ${SOURCES_files_structures})
 target_include_directories(mv_structures
          PUBLIC
          $<BUILD_INTERFACE:${ALICEVISION_INCLUDE_DIR}>
          $<BUILD_INTERFACE:${generatedDir}>
          $<INSTALL_INTERFACE:include>
-         ${OpenCV_INCLUDE_DIRS} ${Boost_INCLUDE_DIR} ${ZLIB_INCLUDE_DIR})
+         ${Boost_INCLUDE_DIR} ${ZLIB_INCLUDE_DIR})
 
-target_link_libraries(mv_structures PUBLIC eig33 ${ZLIB_LIBRARIES} ${OpenCV_LIBS} ${Boost_FILESYSTEM_LIBRARIES})
+target_link_libraries(mv_structures PUBLIC eig33 ${ZLIB_LIBRARIES} ${Boost_FILESYSTEM_LIBRARIES})
