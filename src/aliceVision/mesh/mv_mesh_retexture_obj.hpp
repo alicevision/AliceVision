@@ -7,6 +7,7 @@
 
 #include "mv_mesh.hpp"
 #include <aliceVision/common/ImagesCache.hpp>
+#include <aliceVision/structures/image.hpp>
 
 #include <boost/filesystem.hpp>
 
@@ -65,14 +66,14 @@ public:
 
     /// Generate texture files for all texture atlases
     void generateTextures(const multiviewParams& mp, staticVector<staticVector<int>*>* ptsCams,
-                          const bfs::path &outPath);
+                          const bfs::path &outPath, EImageFileType textureFileType = EImageFileType::PNG);
 
     /// Generate texture files for the given texture atlas index
     void generateTexture(const multiviewParams& mp, staticVector<staticVector<int>*>* ptsCams,
                          size_t atlasID, mv_images_cache& imageCache,
-                         const bfs::path &outPath);
+                         const bfs::path &outPath, EImageFileType textureFileType = EImageFileType::PNG);
 
     /// Save textured mesh as an OBJ + MTL file
-    void saveAsOBJ(const bfs::path& dir, const std::string& basename);
+    void saveAsOBJ(const bfs::path& dir, const std::string& basename, EImageFileType textureFileType = EImageFileType::PNG);
 };
 

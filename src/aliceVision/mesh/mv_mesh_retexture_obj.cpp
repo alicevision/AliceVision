@@ -193,11 +193,11 @@ staticVector<staticVector<int>*>* meshRetex::generateUVs(multiviewParams& mp, st
 }
 
 void meshRetex::generateTextures(const multiviewParams &mp, staticVector<staticVector<int> *> *ptsCams,
-                                 const boost::filesystem::path &outPath)
+                                 const boost::filesystem::path &outPath, EImageFileType textureFileType)
 {
     mv_images_cache imageCache(&mp, 0, false);
     for(size_t atlasID = 0; atlasID < _atlases.size(); ++atlasID)
-        generateTexture(mp, ptsCams, atlasID, imageCache, outPath);
+        generateTexture(mp, ptsCams, atlasID, imageCache, outPath, textureFileType);
 }
 
 //// pixel coordinates mapping, between source and final image
@@ -227,7 +227,7 @@ struct AccuColor {
 // #define USE_BARYCENTRIC_COORDS
 
 void meshRetex::generateTexture(const multiviewParams& mp, staticVector<staticVector<int>*>* ptsCams,
-                                size_t atlasID, mv_images_cache& imageCache, const bfs::path& outPath)
+                                size_t atlasID, mv_images_cache& imageCache, const bfs::path& outPath, EImageFileType textureFileType)
 {
     if(atlasID >= _atlases.size())
         throw std::runtime_error("Invalid atlas ID " + std::to_string(atlasID));
@@ -395,14 +395,14 @@ void meshRetex::generateTexture(const multiviewParams& mp, staticVector<staticVe
         {
             unsigned int xyoffset = yoffset + xp;
             int colorID = colorIDs[xyoffset];
-            colorBuffer.at(yp * texParams.textureSide + xp) = colorID ? perPixelColors[colorID].average() : Color();
+            colorBuffer.at(yp * texParams.textureSide + xp) = (colorID >= 0) ? (perPixelColors[colorID].average() / 255.0f) : Color();
         }
     }
 
     perPixelColors.clear();
     colorIDs.clear();
 
-    std::string textureName = "texture_" + std::to_string(atlasID) + ".png";
+    std::string textureName = "texture_" + std::to_string(atlasID) + "." + EImageFileType_enumToString(textureFileType);
     bfs::path texturePath = outPath / textureName;
     std::cout << "- writing texture file " << texturePath.string() << std::endl;
 
@@ -447,7 +447,7 @@ void meshRetex::loadFromOBJ(const std::string& filename, bool flipNormals)
     }
 }
 
-void meshRetex::saveAsOBJ(const bfs::path& dir, const std::string& basename)
+void meshRetex::saveAsOBJ(const bfs::path& dir, const std::string& basename, EImageFileType textureFileType)
 {
     std::cout << "- writing .obj and .mtl file" << std::endl;
 
@@ -508,7 +508,7 @@ void meshRetex::saveAsOBJ(const bfs::path& dir, const std::string& basename)
     // for each atlas, create a new material with associated texture
     for(size_t atlasID=0; atlasID < _atlases.size(); ++atlasID)
     {
-        std::string textureName = "texture_" + std::to_string(atlasID) + ".png";
+        std::string textureName = "texture_" + std::to_string(atlasID) + "." + EImageFileType_enumToString(textureFileType);
         fprintf(fmtl, "\n");
         fprintf(fmtl, "newmtl TextureAtlas_%i\n", atlasID);
         fprintf(fmtl, "Ka  0.6 0.6 0.6\n");
