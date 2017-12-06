@@ -1,6 +1,8 @@
 set(SOURCES_files_structures
   jetColorMap.cpp
   jetColorMap.hpp
+  image.cpp
+  image.hpp
   mv_color.cpp
   mv_color.hpp
   mv_double3d.cpp
