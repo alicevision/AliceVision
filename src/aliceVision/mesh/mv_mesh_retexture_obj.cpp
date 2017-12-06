@@ -9,9 +9,6 @@
 #include <aliceVision/structures/mv_geometry.hpp>
 #include <aliceVision/imageIO/image.hpp>
 
-#include <opencv/cv.h>
-#include <opencv2/opencv.hpp>
-
 #include <map>
 #include <set>
 
@@ -416,7 +413,7 @@ void meshRetex::generateTexture(const multiviewParams& mp, staticVector<staticVe
         const int resizedTextureSide = texParams.textureSide / texParams.downscale;
 
         std::cout << "- downscaling texture (" << texParams.downscale << "x)" << std::endl;
-        imageIO::resizeImage(texParams.textureSide, texParams.textureSide, 1/texParams.downscale, colorBuffer, resizedColorBuffer);
+        imageIO::resizeImage(texParams.textureSide, texParams.textureSide, texParams.downscale, colorBuffer, resizedColorBuffer);
         imageIO::writeImage(texturePath.string(), resizedTextureSide, resizedTextureSide, resizedColorBuffer);
     }
     else

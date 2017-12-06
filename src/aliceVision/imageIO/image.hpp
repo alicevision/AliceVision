@@ -25,12 +25,14 @@ void readImageSpec(const std::string& path, int& width, int& height, int& nchann
 /**
  * @brief read an image with a given path and buffer
  * @param[in] path The given path to the image
+ * @param[out] width The output image width
+ * @param[out] height The output image height
  * @param[out] buffer The output image buffer
  */
-void readImage(const std::string& path, std::vector<unsigned char>& buffer);
-void readImage(const std::string& path, std::vector<rgb>& buffer);
-void readImage(const std::string& path, std::vector<float>& buffer);
-void readImage(const std::string& path, std::vector<Color>& buffer);
+void readImage(const std::string& path, int& width, int& height, std::vector<unsigned char>& buffer);
+void readImage(const std::string& path, int& width, int& height, std::vector<rgb>& buffer);
+void readImage(const std::string& path, int& width, int& height, std::vector<float>& buffer);
+void readImage(const std::string& path, int& width, int& height, std::vector<Color>& buffer);
 
 /**
  * @brief write an image with a given path and buffer
@@ -59,15 +61,35 @@ void transposeImage(int width, int height, std::vector<Color>& inBuffer);
  * @brief resize a given image buffer
  * @param[in] inWidth The input image buffer width
  * @param[in] inHeight The input image buffer height
- * @param[in] scale The resize scale
+ * @param[in] downscale The resize downscale
  * @param[in] inBuffer The input image buffer
  * @param[out] outBuffer The output image buffer
- * @param[in] filter The resize filter string
+ * @param[in] filter The name of a high-quality filter to use when resampling
+ *            Default is bilinear resampling
+ *            See openImageIO documentation "ImageBufAlgo filtername"
  * @param[in] filterSize The resize filter size
  */
-void resizeImage(int inWidth, int inHeight, float scale, std::vector<unsigned char>& inBuffer, std::vector<unsigned char>& outBuffer, const std::string& filter = "", float filterSize = 0);
-void resizeImage(int inWidth, int inHeight, float scale, std::vector<rgb>& inBuffer, std::vector<rgb>& outBuffer, const std::string& filter = "", float filterSize = 0);
-void resizeImage(int inWidth, int inHeight, float scale, std::vector<float>& inBuffer, std::vector<float>& outBuffer, const std::string& filter = "", float filterSize = 0);
-void resizeImage(int inWidth, int inHeight, float scale, std::vector<Color>& inBuffer, std::vector<Color>& outBuffer, const std::string& filter = "", float filterSize = 0);
+void resizeImage(int inWidth, int inHeight, int downscale, std::vector<unsigned char>& inBuffer, std::vector<unsigned char>& outBuffer, const std::string& filter = "", float filterSize = 0);
+void resizeImage(int inWidth, int inHeight, int downscale, std::vector<rgb>& inBuffer, std::vector<rgb>& outBuffer, const std::string& filter = "", float filterSize = 0);
+void resizeImage(int inWidth, int inHeight, int downscale, std::vector<float>& inBuffer, std::vector<float>& outBuffer, const std::string& filter = "", float filterSize = 0);
+void resizeImage(int inWidth, int inHeight, int downscale, std::vector<Color>& inBuffer, std::vector<Color>& outBuffer, const std::string& filter = "", float filterSize = 0);
+
+/**
+ * @brief convolve a given image buffer
+ * @param[in] inWidth The input image buffer width
+ * @param[in] inHeight The input image buffer heightt
+ * @param[in] inBuffer The input image buffer
+ * @param[out] outBuffer outBuffer The output image buffer
+ * @param[in] kernel The kernel name, can be "gaussian", "sharp-gaussian", "box", ...
+ *            Default is gaussian kernel
+ *            See openImageIO documentation "ImageBufAlgo.make_kernel"
+ * @param[in] kernelWidth The kernel width
+ * @param[in] kernelHeight The kernal height
+ */
+void convolveImage(int inWidth, int inHeight, std::vector<unsigned char>& inBuffer, std::vector<unsigned char>& outBuffer, const std::string& kernel = "gaussian", float kernelWidth = 5.0f, float kernelHeight = 5.0f);
+void convolveImage(int inWidth, int inHeight, std::vector<rgb>& inBuffer, std::vector<rgb>& outBuffer, const std::string& kernel = "gaussian", float kernelWidth = 5.0f, float kernelHeight = 5.0f);
+void convolveImage(int inWidth, int inHeight, std::vector<float>& inBuffer, std::vector<float>& outBuffer, const std::string& kernel = "gaussian", float kernelWidth = 5.0f, float kernelHeight = 5.0f);
+void convolveImage(int inWidth, int inHeight, std::vector<Color>& inBuffer, std::vector<Color>& outBuffer, const std::string& kernel = "gaussian", float kernelWidth = 5.0f, float kernelHeight = 5.0f);
+
 
 } // namespace imageIO

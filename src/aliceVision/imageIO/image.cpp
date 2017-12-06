@@ -20,7 +20,10 @@ namespace oiio = OIIO;
 
 namespace imageIO {
 
-void readImageSpec(const std::string& path, int& width, int& height, int& nchannels)
+void readImageSpec(const std::string& path,
+                   int& width,
+                   int& height,
+                   int& nchannels)
 {
   std::unique_ptr<oiio::ImageInput> in(oiio::ImageInput::open(path));
 
@@ -37,7 +40,12 @@ void readImageSpec(const std::string& path, int& width, int& height, int& nchann
 }
 
 template<typename T>
-void readImage(const std::string& path, oiio::TypeDesc typeDesc, int nchannels, std::vector<T>& buffer)
+void readImage(const std::string& path,
+               oiio::TypeDesc typeDesc,
+               int nchannels,
+               int& width,
+               int& height,
+               std::vector<T>& buffer)
 {
     // check requested channels number
     assert(nchannels == 1 || nchannels >= 3);
@@ -94,6 +102,9 @@ void readImage(const std::string& path, oiio::TypeDesc typeDesc, int nchannels, 
         inBuf.copy(requestedBuf);
     }
 
+    width = inSpec.width;
+    height = inSpec.height;
+
     buffer.resize(inSpec.width * inSpec.height * nchannels);
 
     {
@@ -105,28 +116,33 @@ void readImage(const std::string& path, oiio::TypeDesc typeDesc, int nchannels, 
     }
 }
 
-void readImage(const std::string& path, std::vector<unsigned char>& buffer)
+void readImage(const std::string& path, int& width, int& height, std::vector<unsigned char>& buffer)
 {
-    readImage(path, oiio::TypeDesc::UCHAR, 1, buffer);
+    readImage(path, oiio::TypeDesc::UCHAR, 1, width, height, buffer);
 }
 
-void readImage(const std::string& path, std::vector<rgb>& buffer)
+void readImage(const std::string& path, int& width, int& height, std::vector<rgb>& buffer)
 {
-    readImage(path, oiio::TypeDesc::UCHAR, 3, buffer);
+    readImage(path, oiio::TypeDesc::UCHAR, 3, width, height, buffer);
 }
 
-void readImage(const std::string& path, std::vector<float>& buffer)
+void readImage(const std::string& path, int& width, int& height, std::vector<float>& buffer)
 {
-    readImage(path, oiio::TypeDesc::FLOAT, 1, buffer);
+    readImage(path, oiio::TypeDesc::FLOAT, 1, width, height, buffer);
 }
 
-void readImage(const std::string& path, std::vector<Color>& buffer)
+void readImage(const std::string& path, int& width, int& height, std::vector<Color>& buffer)
 {
-    readImage(path, oiio::TypeDesc::FLOAT, 3, buffer);
+    readImage(path, oiio::TypeDesc::FLOAT, 3, width, height, buffer);
 }
 
 template<typename T>
-void writeImage(const std::string& path, oiio::TypeDesc typeDesc, int width, int height, int nchannels, std::vector<T>& buffer)
+void writeImage(const std::string& path,
+                oiio::TypeDesc typeDesc,
+                int width,
+                int height,
+                int nchannels,
+                std::vector<T>& buffer)
 {
     bool isEXR = (path.size() > 4 && path.compare(path.size() - 4, 4, ".exr") == 0);
 
@@ -182,7 +198,11 @@ void writeImage(const std::string& path, int width, int height, std::vector<Colo
 }
 
 template<typename T>
-void transposeImage(oiio::TypeDesc typeDesc, int width, int height, int nchannels, std::vector<T>& buffer)
+void transposeImage(oiio::TypeDesc typeDesc,
+                    int width,
+                    int height,
+                    int nchannels,
+                    std::vector<T>& buffer)
 {
     oiio::ImageSpec imageSpec(width, height, nchannels, typeDesc);
 
@@ -215,10 +235,18 @@ void transposeImage(int width, int height, std::vector<Color>& buffer)
 }
 
 template<typename T>
-void resizeImage(oiio::TypeDesc typeDesc, int inWidth, int inHeight, int nchannels, float scale, std::vector<T>& inBuffer, std::vector<T>& outBuffer, const std::string& filter = "", float filterSize = 0)
+void resizeImage(oiio::TypeDesc typeDesc,
+                 int inWidth,
+                 int inHeight,
+                 int nchannels,
+                 int downscale,
+                 std::vector<T>& inBuffer,
+                 std::vector<T>& outBuffer,
+                 const std::string& filter = "",
+                 float filterSize = 0)
 {
-    const int outWidth = inWidth * scale;
-    const int outHeight = inHeight * scale;
+    const int outWidth = inWidth / downscale;
+    const int outHeight = inHeight / downscale;
 
     outBuffer.resize(outWidth * outHeight);
 
@@ -228,24 +256,67 @@ void resizeImage(oiio::TypeDesc typeDesc, int inWidth, int inHeight, int nchanne
     oiio::ImageBufAlgo::resize(outBuf, inBuf, filter, filterSize, oiio::ROI::All());
 }
 
-void resizeImage(int inWidth, int inHeight, float scale, std::vector<unsigned char>& inBuffer, std::vector<unsigned char>& outBuffer, const std::string& filter, float filterSize)
+void resizeImage(int inWidth, int inHeight, int downscale, std::vector<unsigned char>& inBuffer, std::vector<unsigned char>& outBuffer, const std::string& filter, float filterSize)
 {
-    resizeImage(oiio::TypeDesc::UCHAR, inWidth, inHeight, 1, scale, inBuffer, outBuffer, filter, filterSize);
+    resizeImage(oiio::TypeDesc::UCHAR, inWidth, inHeight, 1, downscale, inBuffer, outBuffer, filter, filterSize);
 }
 
-void resizeImage(int inWidth, int inHeight, float scale, std::vector<rgb>& inBuffer, std::vector<rgb>& outBuffer, const std::string& filter, float filterSize)
+void resizeImage(int inWidth, int inHeight, int downscale, std::vector<rgb>& inBuffer, std::vector<rgb>& outBuffer, const std::string& filter, float filterSize)
 {
-    resizeImage(oiio::TypeDesc::UCHAR, inWidth, inHeight, 3, scale, inBuffer, outBuffer, filter, filterSize);
+    resizeImage(oiio::TypeDesc::UCHAR, inWidth, inHeight, 3, downscale, inBuffer, outBuffer, filter, filterSize);
 }
 
-void resizeImage(int inWidth, int inHeight, float scale, std::vector<float>& inBuffer, std::vector<float>& outBuffer, const std::string& filter, float filterSize)
+void resizeImage(int inWidth, int inHeight, int downscale, std::vector<float>& inBuffer, std::vector<float>& outBuffer, const std::string& filter, float filterSize)
 {
-    resizeImage(oiio::TypeDesc::FLOAT, inWidth, inHeight, 1, scale, inBuffer, outBuffer, filter, filterSize);
+    resizeImage(oiio::TypeDesc::FLOAT, inWidth, inHeight, 1, downscale, inBuffer, outBuffer, filter, filterSize);
 }
 
-void resizeImage(int inWidth, int inHeight, float scale, std::vector<Color>& inBuffer, std::vector<Color>& outBuffer, const std::string& filter, float filterSize)
+void resizeImage(int inWidth, int inHeight, int downscale, std::vector<Color>& inBuffer, std::vector<Color>& outBuffer, const std::string& filter, float filterSize)
 {
-    resizeImage(oiio::TypeDesc::FLOAT, inWidth, inHeight, 3, scale, inBuffer, outBuffer, filter, filterSize);
+    resizeImage(oiio::TypeDesc::FLOAT, inWidth, inHeight, 3, downscale, inBuffer, outBuffer, filter, filterSize);
+}
+
+template<typename T>
+void convolveImage(oiio::TypeDesc typeDesc,
+                   int inWidth,
+                   int inHeight,
+                   int nchannels,
+                   std::vector<T>& inBuffer,
+                   std::vector<T>& outBuffer,
+                   const std::string& kernel,
+                   float kernelWidth,
+                   float kernelHeight)
+{
+    outBuffer.resize(inBuffer.size());
+
+    oiio::ImageBuf inBuf(oiio::ImageSpec(inWidth, inHeight, nchannels, typeDesc), inBuffer.data());
+    oiio::ImageBuf outBuf(oiio::ImageSpec(inWidth, inHeight, nchannels, typeDesc), outBuffer.data());
+
+    oiio::ImageBuf K;
+    oiio::ImageBufAlgo::make_kernel(K, kernel, kernelWidth, kernelHeight);
+
+    oiio::ImageBufAlgo::convolve(outBuf, inBuf, K);
+}
+
+
+void convolveImage(int inWidth, int inHeight, std::vector<unsigned char>& inBuffer, std::vector<unsigned char>& outBuffer, const std::string& kernel, float kernelWidth, float kernelHeight)
+{
+  convolveImage(oiio::TypeDesc::UCHAR, inWidth, inHeight, 1, inBuffer, outBuffer, kernel, kernelWidth, kernelHeight);
+}
+
+void convolveImage(int inWidth, int inHeight, std::vector<rgb>& inBuffer, std::vector<rgb>& outBuffer, const std::string& kernel, float kernelWidth, float kernelHeight)
+{
+  convolveImage(oiio::TypeDesc::UCHAR, inWidth, inHeight, 3, inBuffer, outBuffer, kernel, kernelWidth, kernelHeight);
+}
+
+void convolveImage(int inWidth, int inHeight, std::vector<float>& inBuffer, std::vector<float>& outBuffer, const std::string& kernel, float kernelWidth, float kernelHeight)
+{
+  convolveImage(oiio::TypeDesc::FLOAT, inWidth, inHeight, 1, inBuffer, outBuffer, kernel, kernelWidth, kernelHeight);
+}
+
+void convolveImage(int inWidth, int inHeight, std::vector<Color>& inBuffer, std::vector<Color>& outBuffer, const std::string& kernel, float kernelWidth, float kernelHeight)
+{
+  convolveImage(oiio::TypeDesc::FLOAT, inWidth, inHeight, 3, inBuffer, outBuffer, kernel, kernelWidth, kernelHeight);
 }
 
 } // namespace imageIO
