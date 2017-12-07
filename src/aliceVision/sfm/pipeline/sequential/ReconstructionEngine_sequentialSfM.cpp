@@ -1598,20 +1598,11 @@ bool ReconstructionEngine_sequentialSfM::validAngles(const Vec3 &pt3D, const std
       {
         if (viewIdA < viewIdB)
         {
-          const Vec3 centerA = scene.getPose(*scene.GetViews().at(viewIdA).get()).center();
-          const Vec3 centerB = scene.getPose(*scene.GetViews().at(viewIdB).get()).center();
-          const double baseline = (centerA - centerB).norm();
-          const double rayA = (pt3D - centerA).norm();
-          const double rayB = (pt3D - centerB).norm();
-
-          const double angle_rad = std::abs(std::acos((rayA * rayA + rayB * rayB - baseline * baseline) / (2 * rayA * rayB)));
-          const double angle_deg = std::min(angle_rad, M_PI - angle_rad) * 180.0 / M_PI;
-          
+          double angle_deg = AngleBetweenRay(scene.getPose(*scene.GetViews().at(viewIdA).get()), 
+                                             scene.getPose(*scene.GetViews().at(viewIdB).get()),
+                                             pt3D);
           if (angle_deg >= kMinAngle)
-          {
-          
             return true;
-          }
         }      
       }
     }
@@ -1761,7 +1752,7 @@ void ReconstructionEngine_sequentialSfM::triangulateMultiViews_LORANSAC(SfMData&
     
     prepareTheTrackTriangulation(trackId, observations, scene, features, Ps);
     
-    // Triangulate 
+    // -- Triangulate 
     Vec4 X_homogeneous= Vec4::Zero();
     Vec3 X_euclidean = Vec3::Zero();
     
@@ -1784,6 +1775,8 @@ void ReconstructionEngine_sequentialSfM::triangulateMultiViews_LORANSAC(SfMData&
 //#pragma omp critical
       scene.structure.erase(trackId);
     }
+    
+    // -- Check triangulation result:
     
     // Check the number of cameras validing the track 
     if (inliers.size() < kMinNbObservations)
@@ -1808,7 +1801,8 @@ void ReconstructionEngine_sequentialSfM::triangulateMultiViews_LORANSAC(SfMData&
     
     ++numValidTracks;
     
-    // Add the point to tringulated point to the structure
+    // -- Add the point to tringulated point to the structure
+    
 //#pragma omp critical
 //    {
       Landmark & landmark = scene.structure[trackId];
