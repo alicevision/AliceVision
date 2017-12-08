@@ -552,30 +552,29 @@ void ps_depthSimMap::saveToWrl(std::string wrlFileName, int rc)
 
 void ps_depthSimMap::save(int rc, staticVector<int>* tcams)
 {
-    staticVector<float>* _depthMap = getDepthMapTStep1();
-    staticVector<float>* _simMap = getSimMapTStep1();
+    staticVector<float>* depthMap = getDepthMapStep1();
+    staticVector<float>* simMap = getSimMapStep1();
 
-	// TODO: remove "+ 1"
-    saveArrayToFile<float>(mv_getFileName(mp->mip, rc + 1, mp->mip->MV_FILE_TYPE_depthMap, scale), _depthMap);
-    saveArrayToFile<float>(mv_getFileName(mp->mip, rc + 1, mp->mip->MV_FILE_TYPE_simMap, scale), _simMap);
-    if(scale == 1) // TODO: check if necessary
+    const int width = mp->mip->getWidth(rc) / scale;
+    const int height = mp->mip->getHeight(rc) / scale;
+
+    std::cout << "* write image width : " << width << std::endl;
+    std::cout << "* write image height : " << height << std::endl;
+    std::cout << "* write image size : " << depthMap->size() << std::endl;
+
+    // TODO: remove "+ 1"
+    imageIO::writeImage(mv_getFileName(mp->mip, rc + 1, mp->mip->MV_FILE_TYPE_depthMap, scale), width, height, depthMap->getDataWritable());
+    imageIO::writeImage(mv_getFileName(mp->mip, rc + 1, mp->mip->MV_FILE_TYPE_simMap, scale), width, height, simMap->getDataWritable());
+
+//    if(scale == 1) // TODO: check if necessary
+//    {
+//        imageIO::writeImage(mv_getFileName(mp->mip, rc + 1, mp->mip->MV_FILE_TYPE_depthMap, 0), width, height, depthMap->getDataWritable());
+//        imageIO::writeImage(mv_getFileName(mp->mip, rc + 1, mp->mip->MV_FILE_TYPE_simMap, 0), width, height, simMap->getDataWritable());
+//    }
+
     {
-        saveArrayToFile<float>(mv_getFileName(mp->mip, rc + 1, mp->mip->MV_FILE_TYPE_depthMap, 0), _depthMap);
-        saveArrayToFile<float>(mv_getFileName(mp->mip, rc + 1, mp->mip->MV_FILE_TYPE_simMap, 0), _simMap);
-    }
-
-    delete _depthMap;
-    delete _simMap;
-
-    point2d maxMinDepth = getMaxMinDepth();
-
-    FILE* f = mv_openFile(mp->mip, mp->indexes[rc], mp->mip->MV_FILE_TYPE_depthMapInfo, "w");
-    if(f == nullptr)
-    {
-        printf("WARNING!!!!\n");
-    }
-    else
-    {
+        point2d maxMinDepth = getMaxMinDepth();
+        FILE* f = mv_openFile(mp->mip, mp->indexes[rc], mp->mip->MV_FILE_TYPE_depthMapInfo, "w");
         int nbTCs = tcams ? tcams->size() : 0;
         fprintf(f, "minDepth %f, maxDepth %f, ntcams %i, tcams", maxMinDepth.y, maxMinDepth.x, nbTCs);
         for(int c = 0; c < nbTCs; c++)
@@ -589,15 +588,18 @@ void ps_depthSimMap::save(int rc, staticVector<int>* tcams)
 
 void ps_depthSimMap::load(int rc, int fromScale)
 {
-    staticVector<float>* _depthMap =
-        loadArrayFromFile<float>(mv_getFileName(mp->mip, rc + 1, mp->mip->MV_FILE_TYPE_depthMap, fromScale));
-    staticVector<float>* _simMap =
-        loadArrayFromFile<float>(mv_getFileName(mp->mip, rc + 1, mp->mip->MV_FILE_TYPE_simMap, fromScale));
+    int width, height;
 
-    initFromDepthMapTAndSimMapT(_depthMap, _simMap, fromScale);
+    staticVector<float> depthMap;
+    staticVector<float> simMap;
 
-    delete _depthMap;
-    delete _simMap;
+    imageIO::readImage(mv_getFileName(mp->mip, rc + 1, mp->mip->MV_FILE_TYPE_depthMap, fromScale), width, height, depthMap.getDataWritable());
+    imageIO::readImage(mv_getFileName(mp->mip, rc + 1, mp->mip->MV_FILE_TYPE_simMap, fromScale), width, height, simMap.getDataWritable());
+
+    imageIO::transposeImage(width, height, depthMap.getDataWritable());
+    imageIO::transposeImage(width, height, simMap.getDataWritable());
+
+    initFromDepthMapTAndSimMapT(&depthMap, &simMap, fromScale);
 }
 
 void ps_depthSimMap::saveToBin(std::string depthMapFileName, std::string simMapFileName)

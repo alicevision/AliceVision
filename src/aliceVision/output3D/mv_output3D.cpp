@@ -2160,8 +2160,12 @@ void mv_output3D::create_wrl_for_delaunay_cut(const multiviewParams* mp, const s
         // check image size...
         if(mp->mip->getWidth(RC) == imageWidth && mp->mip->getHeight(RC) == imageHeight)
         {
-            printf("!width, height \n");
-            exit(EXIT_FAILURE);
+            std::stringstream s;
+            s << "Bad image dimension for camera : " << RC << "\n";
+            s << "- image path : " << fileNameStr << "\n";
+            s << "- expected dimension : " << mp->mip->getWidth(RC) << "x" << mp->mip->getHeight(RC) << "\n";
+            s << "- real dimension : " << imageWidth << "x" << imageHeight << "\n";
+            throw std::runtime_error(s.str());
         }
 
         imageIO::resizeImage(imageWidth, imageHeight, scaleFactor, bmp, bmpr);
@@ -2986,8 +2990,12 @@ void mv_output3D::saveMvMeshToWrl(int scaleFactor, mv_mesh* me, staticVector<Col
         // check image size...
         if(mp->mip->getWidth(RC) == imageWidth && mp->mip->getHeight(RC) == imageHeight)
         {
-          printf("!width, height \n");
-          exit(EXIT_FAILURE);
+              std::stringstream s;
+              s << "Bad image dimension for camera : " << RC << "\n";
+              s << "- image path : " << fileNameStr << "\n";
+              s << "- expected dimension : " << mp->mip->getWidth(RC) << "x" << mp->mip->getHeight(RC) << "\n";
+              s << "- real dimension : " << imageWidth << "x" << imageHeight << "\n";
+              throw std::runtime_error(s.str());
         }
 
         imageIO::resizeImage(mp->mip->getWidth(RC), mp->mip->getHeight(RC), scaleFactor, bmp, bmpr);

@@ -173,11 +173,11 @@ std::string mv_getFileName(multiviewInputParams* mip, int index, int mv_file_typ
     }
     if(mv_file_type == mip->MV_FILE_TYPE_depthMap)
     {
-        fileName += "_depthMap.bin";
+        fileName += "_depthMap.exr";
     }
     if(mv_file_type == mip->MV_FILE_TYPE_simMap)
     {
-        fileName += "_simMap.bin";
+        fileName += "_simMap.exr";
     }
     if(mv_file_type == mip->MV_FILE_TYPE_mapPtsTmp)
     {
@@ -197,7 +197,7 @@ std::string mv_getFileName(multiviewInputParams* mip, int index, int mv_file_typ
     }
     if(mv_file_type == mip->MV_FILE_TYPE_nmodMap)
     {
-        fileName += "_nmodMap.bin";
+        fileName += "_nmodMap.png";
     }
 
     return fileName;
@@ -214,11 +214,11 @@ std::string mv_getFileName(multiviewInputParams* mip, int index, int mv_file_typ
 
     if(mv_file_type == mip->MV_FILE_TYPE_depthMap)
     {
-        fileName += "_depthMap_scale" + num2str(scale) + ".bin";
+        fileName += "_depthMap_scale" + num2str(scale) + ".exr";
     }
     if(mv_file_type == mip->MV_FILE_TYPE_simMap)
     {
-        fileName += "_simMap_scale" + num2str(scale) + ".bin";
+        fileName += "_simMap_scale" + num2str(scale) + ".exr";
     }
     if(mv_file_type == mip->MV_FILE_TYPE_mapPtsTmp)
     {
@@ -238,16 +238,10 @@ std::string mv_getFileName(multiviewInputParams* mip, int index, int mv_file_typ
 
 FILE* mv_openFile(multiviewInputParams* mip, int index, int mv_file_type, const char* readWrite)
 {
-    std::string fileName = mv_getFileName(mip, index, mv_file_type);
-
+    const std::string fileName = mv_getFileName(mip, index, mv_file_type);
     FILE* out = fopen(fileName.c_str(), readWrite);
-
-    /*
-    if (out==NULL) {
-            printf("file %s does not exists!",  fileName.c_str());
-    };
-    */
-
+    if (out==NULL)
+        throw std::runtime_error(std::string("Cannot create file: ") + fileName);
     return out;
 }
 
@@ -428,8 +422,12 @@ void memcpyRGBImageFromFileToArr(int camId, rgb* imgArr, const std::string& file
     // check image size...
     if((mip->getWidth(camId) != origWidth) || (mip->getHeight(camId) != origHeight))
     {
-        printf("!width, height \n");
-        exit(EXIT_FAILURE);
+        std::stringstream s;
+        s << "Bad image dimension for camera : " << camId << "\n";
+        s << "- image path : " << fileNameOrigStr << "\n";
+        s << "- expected dimension : " << mip->getWidth(camId) << "x" << mip->getHeight(camId) << "\n";
+        s << "- real dimension : " << origWidth << "x" << origHeight << "\n";
+        throw std::runtime_error(s.str());
     }
 
     if(scaleFactor > 1)
