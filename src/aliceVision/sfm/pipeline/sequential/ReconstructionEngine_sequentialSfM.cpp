@@ -1501,74 +1501,7 @@ bool ReconstructionEngine_sequentialSfM::Resection(const std::size_t viewIndex)
   return true;
 }
 
-void ReconstructionEngine_sequentialSfM::identifyTracksToTriangulate(const std::set<IndexT>& previousReconstructedViews, 
-                                 const std::set<IndexT>& newReconstructedViews, 
-                                 std::map<IndexT, std::set<IndexT> > &mapTracksToTriangulate)
-{
-    //  #pragma omp parallel for schedule(dynamic)
-  for (ptrdiff_t i = 0; i < static_cast<ptrdiff_t>(previousReconstructedViews.size()); ++i)
-  {
-    std::set<IndexT>::const_iterator iter = previousReconstructedViews.begin();
-    std::advance(iter, i);
-    const IndexT indexPrev = *iter;
-    
-    for(IndexT indexNew: newReconstructedViews)
-    {
-      if(indexPrev == indexNew)
-        continue;
-      
-      const std::size_t I = std::min((IndexT)indexNew, indexPrev);
-      const std::size_t J = std::max((IndexT)indexNew, indexPrev);
-      
-      
-      // Find track correspondences between I and J
-      const std::set<std::size_t> set_viewIndex = { I, J };
-      track::TracksMap map_tracksCommonIJ;
-      track::TracksUtilsMap::GetTracksInImagesFast(set_viewIndex, _map_tracks, _map_tracksPerView, map_tracksCommonIJ);
-      
-      // Collect tracksIds
-      std::set<std::size_t> commonTracksId;
-      std::transform(map_tracksCommonIJ.begin(), map_tracksCommonIJ.end(),
-                     std::inserter(commonTracksId, commonTracksId.begin()),
-                     stl::RetrieveKey());
-      
-//      std::cout << "Views #" << I << " - #" << J << " : " << commonTracksId.size() << " common tracks" << std::endl;
-      
-      for (std::size_t trackId : commonTracksId)
-      {
-        mapTracksToTriangulate[trackId].insert(I);      
-        mapTracksToTriangulate[trackId].insert(J);      
-      } // tracks to reconstruct/update
-    } // new reconstructed view
-  } // all recontrusted views
-}
-
-void ReconstructionEngine_sequentialSfM::prepareTheTrackTriangulation(
-    const std::size_t& trackId, 
-    const std::set<IndexT>& observations,
-    const SfMData& scene,
-    Mat2X& features, 
-    std::vector< Mat34 >& Ps)
-{
-  const track::Track & track = _map_tracks.at(trackId);
-  
-  int i = 0;
-  for (const IndexT & viewId : observations)
-  {
-    const View* view = scene.GetViews().at(viewId).get();
-    const IntrinsicBase* cam = scene.GetIntrinsics().at(view->getIntrinsicId()).get();
-    const Pose3 pose = scene.getPose(*view);
-    const Vec2 x = _featuresPerView->getFeatures(viewId, track.descType)[track.featPerView.at(viewId)].coords().cast<double>();
-    const Vec2 x_ud = cam->get_ud_pixel(x); // undistorted 2D point
-    const Mat34 p = cam->get_projective_equivalent(pose);
-    features(0,i) = x_ud(0); 
-    features(1,i) = x_ud(1);
-    Ps.push_back(p);
-    i++;
-  }
-}
-
-bool ReconstructionEngine_sequentialSfM::validChieralities(
+bool ReconstructionEngine_sequentialSfM::checkChieralities(
   const Vec3& pt3D, 
   const std::set<IndexT> & viewsId, 
   const SfMData& scene)
@@ -1589,7 +1522,7 @@ bool ReconstructionEngine_sequentialSfM::validChieralities(
   return isChieral;
 }
 
-bool ReconstructionEngine_sequentialSfM::validAngles(const Vec3 &pt3D, const std::set<IndexT> &viewsId, const SfMData &scene, const double &kMinAngle)
+bool ReconstructionEngine_sequentialSfM::checkAngles(const Vec3 &pt3D, const std::set<IndexT> &viewsId, const SfMData &scene, const double &kMinAngle)
 { 
     for (const std::size_t & viewIdA : viewsId)  
     {
@@ -1665,17 +1598,6 @@ void ReconstructionEngine_sequentialSfM::triangulateMultiViews_LORANSAC(SfMData&
                    stl::RetrieveKey());
   }
   
-  
-  std::size_t numPutativeTracks = 0, 
-      numTriangulatedTracks = 0,
-      numTrackN2 = 0,
-      numTrackNX = 0,
-      numValidTracks = 0, 
-      numNotEnoughtObs = 0, 
-      numNotChieral = 0, 
-      numBadAngles = 0,
-      numBadResidual = 0;
-  
   //#pragma omp parallel for 
   for (int i = 0; i < setTracksId.size(); i++) // each track (already reconstructed or not)
   {
@@ -1687,7 +1609,6 @@ void ReconstructionEngine_sequentialSfM::triangulateMultiViews_LORANSAC(SfMData&
     if (observations.size() < kMinNbObservations)
       continue;
     
-    numPutativeTracks++;
     Vec3 X_euclidean = Vec3::Zero();
     std::set<IndexT> inliers;
     
@@ -1699,8 +1620,6 @@ void ReconstructionEngine_sequentialSfM::triangulateMultiViews_LORANSAC(SfMData&
 	    
     if (observations.size() == 2) // run classic 2-views triangulation
     {
-      ++numTrackN2;
-      
       inliers = observations;
       
       // -- Prepare data for the track triangulation
@@ -1718,7 +1637,6 @@ void ReconstructionEngine_sequentialSfM::triangulateMultiViews_LORANSAC(SfMData&
       const Vec2 xJ_ud = camJ->get_ud_pixel(xJ);
       const Mat34 pI = camI->get_projective_equivalent(poseI);
       const Mat34 pJ = camJ->get_projective_equivalent(poseJ);
-      
   
       // -- Triangulate
       TriangulateDLT(pI, xI_ud, pJ, xJ_ud, &X_euclidean);
@@ -1732,32 +1650,20 @@ void ReconstructionEngine_sequentialSfM::triangulateMultiViews_LORANSAC(SfMData&
       const Vec2 residualJ = camJ->residual(poseJ, X_euclidean, xJ);
       
       // TODO assert(acThresholdIt != _map_ACThreshold.end());
-      
       const auto& acThresholdItI = _map_ACThreshold.find(I);
       const auto& acThresholdItJ = _map_ACThreshold.find(J);
       const double& acThresholdI = (acThresholdItI != _map_ACThreshold.end()) ? acThresholdItI->second : 4.0;
       const double& acThresholdJ = (acThresholdItJ != _map_ACThreshold.end()) ? acThresholdItJ->second : 4.0;
       
-      if (angle < 3.0)
-      {
-      ++numBadAngles;
-      continue;
-      }
-      if (poseI.depth(X_euclidean) < 0 || poseJ.depth(X_euclidean) < 0)
-      {
-        ++numNotChieral;
+      if (angle < 3.0 ||
+          poseI.depth(X_euclidean) < 0 
+          || poseJ.depth(X_euclidean) < 0
+          || residualI.norm() > acThresholdI 
+          || residualJ.norm() > acThresholdJ)
         continue;
-      }
-      if (residualI.norm() > acThresholdI || residualJ.norm() > acThresholdJ)
-      {
-        numBadResidual++;
-        continue;
-      }
     }
     else // run LORANSAC multiviews triangulation     
     {
-      ++numTrackNX;
-      
       // -- Prepare data for the track triangulation 
       Mat2X features(2, observations.size()); // undistorted 2D features (one per pose)
       std::vector< Mat34 > Ps; // projective matrices (one per pose)
@@ -1787,8 +1693,6 @@ void ReconstructionEngine_sequentialSfM::triangulateMultiViews_LORANSAC(SfMData&
       
       HomogeneousToEuclidean(X_homogeneous, &X_euclidean);     
       
-      ++numTriangulatedTracks;
-      
       // observations = {350, 380, 442} | inliersIndex = [0, 1] | inliers = {350, 380}
       for (const auto & id : inliersIndex)
         inliers.insert(*std::next(observations.begin(), id));
@@ -1802,33 +1706,14 @@ void ReconstructionEngine_sequentialSfM::triangulateMultiViews_LORANSAC(SfMData&
       }
       
       // -- Check triangulation result:
-      
       // Check the number of cameras validing the track 
-      if (inliers.size() < kMinNbObservations)
-      {
-        ++numNotEnoughtObs;
+      if (inliers.size() < kMinNbObservations ||
+          !checkChieralities(X_euclidean, inliers, scene) ||
+          !checkAngles(X_euclidean, inliers, scene, kMinAngle))
         continue;
-      }
-      
-      // Check chierality
-      if (!validChieralities(X_euclidean, inliers, scene))
-      {
-        ++numNotChieral;
-        continue;
-      }
-      
-      // Check angle between the poses and its obervations
-      if (!validAngles(X_euclidean, inliers, scene, kMinAngle))
-      {
-        ++numBadAngles;
-        continue;
-      }
-      
-    }
-    ++numValidTracks;
-    
+    }  
+
     // -- Add the point to tringulated point to the structure
-    
     //#pragma omp critical
     //    {
     Landmark & landmark = scene.structure[trackId];
@@ -1841,16 +1726,6 @@ void ReconstructionEngine_sequentialSfM::triangulateMultiViews_LORANSAC(SfMData&
     }
     //    }
   } // for all shared tracks 
-  
-  std::cout << "Triangulation summary" << std::endl;
-  std::cout << "|- #tracks: " << setTracksId.size() << std::endl;
-  std::cout << "|- #tracks = 2 obs.: " << numTrackN2 << std::endl;
-  std::cout << "|- #tracks > 2 obs.: " << numTrackNX << std::endl;
-  std::cout << "Trangulation:" << std::endl;
-  std::cout << "|- #filtred by chierality: " << numNotChieral << std::endl;
-  std::cout << "|- #filtred by angles pts: " << numBadAngles << std::endl;
-  std::cout << "|- #filtred by residual: " << numBadResidual<< std::endl;
-  std::cout << "|- #valid pts: " << numValidTracks << std::endl;
 }    
 
 void ReconstructionEngine_sequentialSfM::triangulate(SfMData& scene, const std::set<IndexT>& previousReconstructedViews, const std::set<IndexT>& newReconstructedViews)
@@ -1977,18 +1852,6 @@ void ReconstructionEngine_sequentialSfM::triangulate(SfMData& scene, const std::
           const double& acThresholdI = (acThresholdItI != _map_ACThreshold.end()) ? acThresholdItI->second : 4.0;
           const double& acThresholdJ = (acThresholdItJ != _map_ACThreshold.end()) ? acThresholdItJ->second : 4.0;
           
-          std::cout << "I : " << I << std::endl;
-          std::cout << "trackId : " << trackId << std::endl;
-        std::cout << "poseI.center : " <<  poseI.center() << std::endl;
-        std::cout << "poseI.rotation : " <<  poseI.rotation() << std::endl;
-        std::cout << "pI : " <<  pI << std::endl;
-        std::cout << "xI : " <<  xI.transpose() << std::endl;
-        std::cout << "xI_ud : " <<  xI_ud.transpose() << std::endl;
-        std::cout << "X_euclidean : " << X_euclidean.transpose() << std::endl;
-        std::cout << "residualI = " << residualI.transpose() << std::endl;
-        std::cout << "residualI.norm()  = " << residualI.norm() << std::endl;
-        getchar();
-        
           if (angle > 3.0 &&
               poseI.depth(X_euclidean) > 0 &&
               poseJ.depth(X_euclidean) > 0 &&

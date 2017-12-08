@@ -198,21 +198,9 @@ private:
 
   void triangulateMultiViews_LORANSAC(SfMData& scene, const std::set<IndexT>& previousReconstructedViews, const std::set<IndexT>& newReconstructedViews);
   
-  void identifyTracksToTriangulate(const std::set<IndexT>& previousReconstructedViews, 
-    const std::set<IndexT>& newReconstructedViews, 
-    std::map<IndexT, std::set<IndexT> > &mapTracksToTriangulate);
+  bool checkChieralities(const Vec3& pt3D, const std::set<IndexT> &viewsId, const SfMData& scene);
   
-  bool validChieralities(const Vec3& pt3D, const std::set<IndexT> &viewsId, const SfMData& scene);
-  
-  bool validAngles(const Vec3& pt3D, const std::set<IndexT> &viewsId, const SfMData& scene, const double & kMinAngle);
-
-  void prepareTheTrackTriangulation(
-    const std::size_t& trackId, 
-    const std::set<IndexT>& observations,
-    const SfMData& scene,
-    Mat2X& features, 
-    std::vector< Mat34 >& Ps);
-    
+  bool checkAngles(const Vec3& pt3D, const std::set<IndexT> &viewsId, const SfMData& scene, const double & kMinAngle);
 
   /**
    * @brief Bundle adjustment to refine Structure; Motion and Intrinsics
