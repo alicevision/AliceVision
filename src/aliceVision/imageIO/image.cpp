@@ -25,6 +25,7 @@ void readImageSpec(const std::string& path,
                    int& height,
                    int& nchannels)
 {
+  std::cout << "[IO] Read Image Spec : " << path << std::endl;
   std::unique_ptr<oiio::ImageInput> in(oiio::ImageInput::open(path));
 
   if(!in)
@@ -47,6 +48,8 @@ void readImage(const std::string& path,
                int& height,
                std::vector<T>& buffer)
 {
+    std::cout << "[IO] Read Image : " << path << std::endl;
+
     // check requested channels number
     assert(nchannels == 1 || nchannels >= 3);
 
@@ -144,6 +147,8 @@ void writeImage(const std::string& path,
                 int nchannels,
                 std::vector<T>& buffer)
 {
+    std::cout << "[IO] Write Image : " << path << std::endl;
+
     bool isEXR = (path.size() > 4 && path.compare(path.size() - 4, 4, ".exr") == 0);
 
     oiio::ImageSpec imageSpec(width, height, nchannels, typeDesc);
@@ -157,7 +162,8 @@ void writeImage(const std::string& path,
 
         // conversion to half
         oiio::ImageBuf outBuf(imageSpec);
-        outBuf.copy_pixels(buf);
+        if(!outBuf.copy_pixels(buf))
+          throw std::runtime_error("Can't convert output image file to half '" + path + "'.");
 
         // write image
         if(!outBuf.write(path))
