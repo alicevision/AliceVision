@@ -205,6 +205,9 @@ int main(int argc, char* argv[])
 
             // Save mesh as .bin and .obj
             mv_mesh* mesh = delaunayGC.createMesh();
+            if(mesh->pts->empty())
+              throw std::runtime_error("Empty mesh");
+
             staticVector<staticVector<int>*>* ptsCams = delaunayGC.createPtsCams();
             staticVector<int> usedCams = delaunayGC.getSortedUsedCams();
 
