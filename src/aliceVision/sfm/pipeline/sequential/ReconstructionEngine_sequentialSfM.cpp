@@ -293,7 +293,6 @@ void ReconstructionEngine_sequentialSfM::RobustResectionOfImages(
 
     //BundleAdjustment();
     // triangulate
-//        triangulateMultiViews_SVD(_sfm_data, prevReconstructedViews, newReconstructedViews);
 //        triangulate(_sfm_data, prevReconstructedViews, newReconstructedViews);
     triangulateMultiViews_LORANSAC(_sfm_data, prevReconstructedViews, newReconstructedViews);
     
@@ -1608,105 +1607,6 @@ bool ReconstructionEngine_sequentialSfM::validAngles(const Vec3 &pt3D, const std
     }
     return false;;
 }
-
-void ReconstructionEngine_sequentialSfM::triangulateMultiViews_SVD(SfMData& scene, const std::set<IndexT>& previousReconstructedViews, const std::set<IndexT>& newReconstructedViews)
-{
-  // Pipeline (Per-Track approach)
-  //  1. From the new views, find all the tracks that can be updated or reconstructed
-  //  2. For each track, 
-  //     a) if the track is already recosntructed -> redo a robust triangulation with Lo-Ransac
-  //     b) do the robust reconstruction if there are enough features associated with cameras with known pose.
-  
-  
-  // This map contains all the tracks that will be triangulated (for the first time, or not)
-  // These tracks are seen by at least one new reconstructed view.
-  std::map<IndexT, std::set<IndexT>> mapTracksToTriangulate; // <trackId, set<viewId>> 
-  identifyTracksToTriangulate(previousReconstructedViews, newReconstructedViews, mapTracksToTriangulate);
-  
-  const std::size_t kMinNbObservations = 2;
-  
-  std::size_t numNewTracks = 0, numUpdatedTracks = 0, numNotValidTracks = 0, numPutativeTracks = 0, numNoChieralTracks = 0;
-  for (auto & trackIt : mapTracksToTriangulate)
-  {
-    const std::size_t trackId = trackIt.first;
-    const track::Track & track = _map_tracks.at(trackId);
-    const bool trackAlreadyExists = scene.structure.find(trackId) != scene.structure.end();
-    std::set<IndexT>& observations = trackIt.second; // all views possessing the track
-    
-    // The track needs to be seen by a min. number of views to be triangulated
-    if (observations.size() < kMinNbObservations)
-      continue;
-    
-    // Prepare data for triangulation (features: 2D points & Ps : projective matrices)
-    Mat2X features(2, observations.size());
-    std::vector< Mat34 > Ps; // 
-    
-    prepareTheTrackTriangulation(trackId, observations, scene, features, Ps);
-    
-    // Triangulate 
-    Vec4 X_homogeneous= Vec4::Zero();
-    
-    TriangulateNView(features, Ps, &X_homogeneous);
-    
-    Vec3 X_euclidean = Vec3::Zero();
-    HomogeneousToEuclidean(X_homogeneous, &X_euclidean);      
-    
-    ++numPutativeTracks;
-    // Check triangulation results:
-    
-    // Check the reprojection error: 
-    for (const IndexT & viewId : observations)
-    {
-      const View* view = scene.GetViews().at(viewId).get();
-      const Pose3 pose = scene.getPose(*view);
-      
-      const IntrinsicBase* cam = scene.GetIntrinsics().at(view->getIntrinsicId()).get();
-      const Vec2 x = _featuresPerView->getFeatures(viewId, track.descType)[track.featPerView.at(viewId)].coords().cast<double>();
-      
-      const Vec2 residual = cam->residual(pose, X_euclidean, x);
-      const auto& acThresholdIt = _map_ACThreshold.find(viewId);
-      const double& acThreshold = (acThresholdIt != _map_ACThreshold.end()) ? acThresholdIt->second : 4.0;
-      
-      if (residual.norm() > acThreshold)
-        observations.erase(viewId); 
-    }
-    
-    if (!validChieralities(X_euclidean, observations, scene) || observations.size() < 2)
-    {
-      numNotValidTracks++;
-      continue;
-    }
-    
-    if (scene.structure.find(trackId) != scene.structure.end()) // the track already exists
-    { 
-      // replace the associated landmark in the scene by the newly reconstructed one.
-      scene.structure.erase(trackId);
-      numUpdatedTracks++;
-    }
-    else
-      numNewTracks++;
-    
-    // Add the the landmar to the scene
-    Landmark & landmark = scene.structure[trackId];
-    landmark.X = X_euclidean;
-    landmark.descType = track.descType;
-    for (const IndexT & viewId : observations)
-    {
-      const Vec2 x = _featuresPerView->getFeatures(viewId, track.descType)[track.featPerView.at(viewId)].coords().cast<double>();
-      landmark.observations[viewId] = Observation(x, track.featPerView.at(viewId));
-    }
-  } // for all shared tracks 
-  
-  std::cout << "Triangulation summary" << std::endl;
-  std::cout << "|- #prev. views: " << previousReconstructedViews.size() << std::endl;
-  std::cout << "|- #new views: " << newReconstructedViews.size() << std::endl;
-  std::cout << "|- #landmarks: " << scene.structure.size() << std::endl;
-  std::cout << "|- #putative pts: " << mapTracksToTriangulate.size() << std::endl;
-  std::cout << "|- #pts 3+ obs: " << numPutativeTracks << std::endl;
-  std::cout << "|- #updated pts: " << numUpdatedTracks << std::endl;
-  std::cout << "|- #new pts: " << numNewTracks << std::endl;
-  std::cout << "|- #not valid pts: " << numNotValidTracks << std::endl;
-}    
 
 void ReconstructionEngine_sequentialSfM::triangulateMultiViews_LORANSAC(SfMData& scene, const std::set<IndexT>& previousReconstructedViews, const std::set<IndexT>& newReconstructedViews)
 {

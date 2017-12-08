@@ -196,6 +196,8 @@ private:
    */
   void triangulate(SfMData& scene, const std::set<IndexT>& previousReconstructedViews, const std::set<IndexT>& newReconstructedViews);
 
+  void triangulateMultiViews_LORANSAC(SfMData& scene, const std::set<IndexT>& previousReconstructedViews, const std::set<IndexT>& newReconstructedViews);
+  
   void identifyTracksToTriangulate(const std::set<IndexT>& previousReconstructedViews, 
     const std::set<IndexT>& newReconstructedViews, 
     std::map<IndexT, std::set<IndexT> > &mapTracksToTriangulate);
@@ -211,9 +213,6 @@ private:
     Mat2X& features, 
     std::vector< Mat34 >& Ps);
     
-  void triangulateMultiViews_SVD(SfMData& scene, const std::set<IndexT>& previousReconstructedViews, const std::set<IndexT>& newReconstructedViews);
-  
-  void triangulateMultiViews_LORANSAC(SfMData& scene, const std::set<IndexT>& previousReconstructedViews, const std::set<IndexT>& newReconstructedViews);
 
   /**
    * @brief Bundle adjustment to refine Structure; Motion and Intrinsics
