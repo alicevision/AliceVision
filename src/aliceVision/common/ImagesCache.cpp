@@ -20,7 +20,7 @@ mv_images_cache::mv_images_cache(const multiviewParams* _mp, int _bandType, bool
     std::vector<std::string> _imagesNames;
     for(int rc = 0; rc < _mp->ncams; rc++)
     {
-        _imagesNames.push_back(mv_getFileNamePrefix(_mp->mip, rc + 1) + "._c.png");
+        _imagesNames.push_back(mv_getFileNamePrefix(_mp->mip, rc + 1) + "." + _mp->mip->imageExt);
     }
     initIC(_bandType, _imagesNames, _transposed);
 }
