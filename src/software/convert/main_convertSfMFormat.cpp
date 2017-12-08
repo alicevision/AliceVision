@@ -28,7 +28,7 @@ int main(int argc, char **argv)
   std::string verboseLevel = system::EVerboseLevel_enumToString(system::Logger::getDefaultVerboseLevel());
   std::string sfmDataFilename;
   std::string outputSfMDataFilename;
-  std::string matchesFolder;
+  std::string featuresFolder;
 
   // user optional parameters
 
@@ -46,9 +46,7 @@ int main(int argc, char **argv)
     ("input,i", po::value<std::string>(&sfmDataFilename)->required(),
       "SfMData file.")
     ("output,o", po::value<std::string>(&outputSfMDataFilename)->required(),
-      "Path to the output Alembic file.")
-    ("matchesFolder,m", po::value<std::string>(&matchesFolder)->required(),
-      "Path to a folder in which computed matches are stored.");
+      "Path to the output Alembic file.");
 
   po::options_description optionalParams("Optional parameters");
   optionalParams.add_options()
@@ -63,7 +61,9 @@ int main(int argc, char **argv)
     ("observations", po::value<bool>(&flagObservations)->default_value(flagObservations),
       "Export observations.")
     ("regenerateUID", po::value<bool>(&recomputeUID)->default_value(recomputeUID),
-      "Regenerate UID.");
+      "Regenerate UID.")
+    ("featuresFolder,m", po::value<std::string>(&featuresFolder),
+      "Path to a folder in which computed features are stored to create links to files if 'regenerateUID' is used.");
 
   po::options_description logParams("Log parameters");
   logParams.add_options()
@@ -132,7 +132,7 @@ int main(int argc, char **argv)
     std::map<std::size_t, std::size_t> oldIdToNew;
     regenerateUID(sfm_data, oldIdToNew);
     
-    if(!matchesFolder.empty())
+    if(!featuresFolder.empty())
     {
       std::cout << "Generating alias for .feat and .desc with the UIDs" << std::endl;
       for(const auto& iter : oldIdToNew)
@@ -144,10 +144,10 @@ int main(int argc, char **argv)
         if(oldID == newID)
           continue;
         
-        const auto oldFeatfilename = stlplus::create_filespec(matchesFolder, std::to_string(oldID), ".feat");
-        const auto newFeatfilename = stlplus::create_filespec(matchesFolder, std::to_string(newID), ".feat");
-        const auto oldDescfilename = stlplus::create_filespec(matchesFolder, std::to_string(oldID), ".desc");
-        const auto newDescfilename = stlplus::create_filespec(matchesFolder, std::to_string(newID), ".desc");
+        const auto oldFeatfilename = stlplus::create_filespec(featuresFolder, std::to_string(oldID), ".feat");
+        const auto newFeatfilename = stlplus::create_filespec(featuresFolder, std::to_string(newID), ".feat");
+        const auto oldDescfilename = stlplus::create_filespec(featuresFolder, std::to_string(oldID), ".desc");
+        const auto newDescfilename = stlplus::create_filespec(featuresFolder, std::to_string(newID), ".desc");
 
         if(!(stlplus::is_file(oldFeatfilename) && stlplus::is_file(oldDescfilename)))
         {
