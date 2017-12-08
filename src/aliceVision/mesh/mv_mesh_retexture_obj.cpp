@@ -395,7 +395,7 @@ void meshRetex::generateTexture(const multiviewParams& mp, staticVector<staticVe
         {
             unsigned int xyoffset = yoffset + xp;
             int colorID = colorIDs[xyoffset];
-            colorBuffer.at(yp * texParams.textureSide + xp) = (colorID >= 0) ? (perPixelColors[colorID].average() / 255.0f) : Color();
+            colorBuffer.at(yp * texParams.textureSide + xp) = (colorID >= 0) ? perPixelColors[colorID].average() : Color();
         }
     }
 

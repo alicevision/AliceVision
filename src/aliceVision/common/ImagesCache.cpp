@@ -53,7 +53,7 @@ void mv_images_cache::initIC(int _bandType, std::vector<std::string>& _imagesNam
         imagesNames.push_back(_imagesNames[rc]);
     }
 
-    imgs = new rgb*[N_PRELOADED_IMAGES];
+    imgs = new Color*[N_PRELOADED_IMAGES];
 
     camIdMapId = new staticVector<int>(mp->ncams);
     mapIdCamId = new staticVector<int>(N_PRELOADED_IMAGES);
@@ -108,7 +108,7 @@ void mv_images_cache::refreshData(int camId)
         if (imgs[mapId] == nullptr)
         {
             size_t maxsize = mp->mip->getMaxImageWidth() * mp->mip->getMaxImageHeight();
-            imgs[mapId] = new rgb[maxsize];
+            imgs[mapId] = new Color[maxsize];
         }
 
         std::string imagePath = imagesNames[camId];
@@ -127,44 +127,39 @@ Color mv_images_cache::getPixelValueInterpolated(const point2d* pix, int camId)
     refreshData(camId);
 
     // get the image index in the memory
-    int i = (*camIdMapId)[camId];
-    const rgb* img = imgs[i];
+    const int i = (*camIdMapId)[camId];
+    const Color* img = imgs[i];
     
-    int xp = (int)pix->x;
-    int yp = (int)pix->y;
+    const int xp = static_cast<int>(pix->x);
+    const int yp = static_cast<int>(pix->y);
 
     // precision to 4 decimal places
-    float ui = pix->x - (float)xp;
-    float vi = pix->y - (float)yp;
+    const float ui = pix->x - static_cast<float>(xp);
+    const float vi = pix->y - static_cast<float>(yp);
 
-    rgb lu = img[getPixelId(xp, yp, camId)];
-    rgb ru = img[getPixelId(xp + 1, yp, camId)];
-    rgb rd = img[getPixelId(xp + 1, yp + 1, camId)];
-    rgb ld = img[getPixelId(xp, yp + 1, camId)];
+    const Color lu = img[getPixelId(xp,     yp,     camId)];
+    const Color ru = img[getPixelId(xp + 1, yp,     camId)];
+    const Color rd = img[getPixelId(xp + 1, yp + 1, camId)];
+    const Color ld = img[getPixelId(xp,     yp + 1, camId)];
 
     // bilinear interpolation of the pixel intensity value
-    float u = (float)lu.r + ((float)ru.r - (float)lu.r) * ui;
-    float d = (float)ld.r + ((float)rd.r - (float)ld.r) * ui;
-    float r = u + (d - u) * vi;
+    const Color u = lu + (ru - lu) * ui;
+    const Color d = ld + (rd - ld) * ui;
+    const Color out = u + (d - u) * vi;
 
-    u = (float)lu.g + ((float)ru.g - (float)lu.g) * ui;
-    d = (float)ld.g + ((float)rd.g - (float)ld.g) * ui;
-    float g = u + (d - u) * vi;
-
-    u = (float)lu.b + ((float)ru.b - (float)lu.b) * ui;
-    d = (float)ld.b + ((float)rd.b - (float)ld.b) * ui;
-    float b = u + (d - u) * vi;
-
-    return Color(r, g, b);
+    return out;
 }
 
-rgb mv_images_cache::getPixelValue(const pixel* pix, int camId)
+rgb mv_images_cache::getPixelValue(const pixel& pix, int camId)
 {
     refreshData(camId);
 
     // get the image index in the memory
-    const int i = (*camIdMapId)[camId];
-    const rgb* img = imgs[i];
+    const int imageId = (*camIdMapId)[camId];
+    const Color* img = imgs[imageId];
+    const Color floatRGB = img[getPixelId(pix.x, pix.y, camId)] * 255.0f;
 
-    return img[getPixelId(pix->x, pix->y, camId)];
+    return rgb(static_cast<unsigned char>(floatRGB.r),
+               static_cast<unsigned char>(floatRGB.g),
+               static_cast<unsigned char>(floatRGB.b));
 }

@@ -409,14 +409,14 @@ void load2dPoints(staticVector<point2d>* out, int imgFileId, multiviewInputParam
     fclose(f);
 }
 
-void memcpyRGBImageFromFileToArr(int camId, rgb* imgArr, const std::string& fileNameOrigStr, multiviewInputParams* mip,
+void memcpyRGBImageFromFileToArr(int camId, Color* imgArr, const std::string& fileNameOrigStr, multiviewInputParams* mip,
                                  bool transpose, int scaleFactor, int bandType)
 {
     int w = mip->getWidth(camId) / std::max(scaleFactor, 1);
     int h = mip->getHeight(camId) / std::max(scaleFactor, 1);
 
     int origWidth, origHeight;
-    std::vector<rgb> cimg;
+    std::vector<Color> cimg;
     imageIO::readImage(fileNameOrigStr, origWidth, origHeight, cimg);
 
     // check image size...
@@ -432,7 +432,7 @@ void memcpyRGBImageFromFileToArr(int camId, rgb* imgArr, const std::string& file
 
     if(scaleFactor > 1)
     {
-        std::vector<rgb> bmpr;
+        std::vector<Color> bmpr;
         imageIO::resizeImage(origWidth, origHeight, scaleFactor, cimg, bmpr);
         cimg = bmpr;
     }
@@ -444,14 +444,14 @@ void memcpyRGBImageFromFileToArr(int camId, rgb* imgArr, const std::string& file
         // cvSmooth(cimg1,cimg,CV_BILATERAL,11,0,10.0,5.0);
         // cvReleaseImage(&cimg);
         // cimg=cimg1;
-        std::vector<rgb> smooth;
+        std::vector<Color> smooth;
         imageIO::convolveImage(w, h, cimg, smooth, "gaussian", 11.0f, 11.0f);
         cimg = smooth;
     }
 
     if(bandType == 2)
     {
-        std::vector<rgb> bmps;
+        std::vector<Color> bmps;
         imageIO::convolveImage(w, h, cimg, bmps, "gaussian", 11.0f, 11.0f);
 
         for(int y = 0; y < h; y++)
@@ -459,7 +459,7 @@ void memcpyRGBImageFromFileToArr(int camId, rgb* imgArr, const std::string& file
             for(int x = 0; x < w; x++)
             {
                 const std::size_t index = y * w + x;
-                rgb& cimc = cimg.at(index);
+                Color& cimc = cimg.at(index);
                 cimc = cimc - bmps.at(index); //cimg(x, y) - bmps(x, y)
             }
         }
@@ -469,7 +469,7 @@ void memcpyRGBImageFromFileToArr(int camId, rgb* imgArr, const std::string& file
     {
         for(int x = 0; x < w; x++)
         {
-            const rgb color = cimg.at(y * w + x);
+            const Color color = cimg.at(y * w + x);
 
             if(transpose)
                 imgArr[y * w + x] = color;

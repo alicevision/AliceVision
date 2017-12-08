@@ -27,7 +27,7 @@ int get2dPointsNum(int imgFileId, multiviewInputParams* mip);
 int load2dPoints(point2d** _out, int imgFileId, multiviewInputParams* mip);
 staticVector<point2d>* load2dPoints(int imgFileId, multiviewInputParams* mip);
 void load2dPoints(staticVector<point2d>* out, int imgFileId, multiviewInputParams* mip);
-void memcpyRGBImageFromFileToArr(int camId, rgb* imgArr, const std::string& fileNameOrigStr, multiviewInputParams* mip,
+void memcpyRGBImageFromFileToArr(int camId, Color* imgArr, const std::string& fileNameOrigStr, multiviewInputParams* mip,
                                  bool transpose, int scaleFactor, int bandType);
 struct seed_io_block            // 80 bytes
 {

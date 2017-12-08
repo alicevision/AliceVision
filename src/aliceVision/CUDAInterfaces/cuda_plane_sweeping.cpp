@@ -340,7 +340,6 @@ void cps_fillCameraData(mv_images_cache* ic, cameraStruct* cam, int c, multiview
     //	cam->tex_hmh_b->getBuffer(), mp->indexes[c], mp->mip, true, 1, 0);
 
     ic->refreshData(c);
-    int icimgid = (*ic->camIdMapId)[c];
 
     pixel pix;
     for(pix.y = 0; pix.y < mp->mip->getHeight(c); pix.y++)
@@ -348,7 +347,7 @@ void cps_fillCameraData(mv_images_cache* ic, cameraStruct* cam, int c, multiview
         for(pix.x = 0; pix.x < mp->mip->getWidth(c); pix.x++)
         {
              uchar4& pix_rgba = ic->transposed ? (*cam->tex_rgba_hmh)(pix.x, pix.y) : (*cam->tex_rgba_hmh)(pix.y, pix.x);
-             const rgb& pc = ic->imgs[icimgid][ic->getPixelId(pix.x, pix.y, c)];
+             const rgb& pc = ic->getPixelValue(pix, c);
              pix_rgba.x = pc.r;
              pix_rgba.y = pc.g;
              pix_rgba.z = pc.b;
