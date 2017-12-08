@@ -55,16 +55,13 @@ void ps_depthSimMap::add11(ps_depthSimMap* depthSimMap)
 {
     if((scale != 1) || (step != 1))
     {
-        printf("Warning you can add just to cale1 step1 map!\n");
-        exit(1);
+        throw std::runtime_error("Error ps_depthSimMap: You can only add to scale1-step1 map.");
     }
 
     int k = (depthSimMap->step * depthSimMap->scale) / 2;
-    int k1 = (depthSimMap->step * depthSimMap->scale) / 2;
+    int k1 = k;
     if((depthSimMap->step * depthSimMap->scale) % 2 == 0)
-    {
-        k1 -= 1;
-    }
+        k -= 1;
 
     for(int i = 0; i < depthSimMap->dsm->size(); i++)
     {
@@ -80,7 +77,8 @@ void ps_depthSimMap::add11(ps_depthSimMap* depthSimMap)
             {
                 for(int xp = x - k; xp <= x + k1; xp++)
                 {
-                    if((xp >= 0) && (xp < w) && (yp >= 0) && (yp < h) && (depthSim.sim > (*dsm)[yp * w + xp].sim))
+                    if((xp >= 0) && (xp < w) && (yp >= 0) && (yp < h) && // check image borders
+                       (depthSim.sim > (*dsm)[yp * w + xp].sim))
                     {
                         isBest = false;
                     }
@@ -108,8 +106,7 @@ void ps_depthSimMap::add(ps_depthSimMap* depthSimMap)
 {
     if((scale != depthSimMap->scale) || (step != depthSimMap->step))
     {
-        printf("Warning you can add just to the same scale and step map!\n");
-        exit(1);
+        throw std::runtime_error("Error ps_depthSimMap: You can only add to the same scale and step map.");
     }
 
     for(int i = 0; i < dsm->size(); i++)
