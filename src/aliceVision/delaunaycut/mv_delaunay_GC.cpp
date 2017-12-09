@@ -2650,7 +2650,7 @@ void mv_delaunay_GC::invertFullStatusForSmallLabels()
     }
 
     if(mp->verbose)
-        printf("Full number of cells: %i, Number of labels: %i, Number of cells changed: %i\n", nbCells, nbCellsPerColor->size(), nfilled);
+        std::cout << "Full number of cells: " << nbCells << ", Number of labels: " << nbCellsPerColor->size() << ", Number of cells changed: " << nfilled << std::endl;
 
     delete nbCellsPerColor;
     delete colorPerCell;

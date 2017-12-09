@@ -343,7 +343,7 @@ void refineDepthMaps(multiviewParams* mp, mv_prematch_cams* pc, const staticVect
 {
     int num_gpus = listCUDADevices(true);
     int num_cpu_threads = omp_get_num_procs();
-    printf("GPU devicse %i, CPU threads %i\n", num_gpus, num_cpu_threads);
+    std::cout << "Number of GPU devices: " << num_gpus << ", number of CPU threads: " << num_cpu_threads << std::endl;
     int numthreads = std::min(num_gpus, num_cpu_threads);
 
     int num_gpus_to_use = mp->mip->_ini.get<int>("refineRc.num_gpus_to_use", 1);
@@ -363,7 +363,7 @@ void refineDepthMaps(multiviewParams* mp, mv_prematch_cams* pc, const staticVect
         {
             int cpu_thread_id = omp_get_thread_num();
             int CUDADeviceNo = cpu_thread_id % numthreads;
-            printf("CPU thread %d (of %d) uses CUDA device %d\n", cpu_thread_id, numthreads, CUDADeviceNo);
+            std::cout << "CPU thread " << cpu_thread_id << " (of " << numthreads << ") uses CUDA device: " << CUDADeviceNo << std::endl;
 
             int rcFrom = CUDADeviceNo * (cams.size() / numthreads);
             int rcTo = (CUDADeviceNo + 1) * (cams.size() / numthreads);
