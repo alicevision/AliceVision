@@ -5,20 +5,22 @@
 
 #pragma once
 
+#include "MultiViewParams.hpp"
+
 #include <aliceVision/structures/mv_structures.hpp>
 
 #include <fstream>
+
 
 struct multiviewInputParams;
 
 bool FileExists(const std::string& filePath);
 bool FolderExists(const std::string& folderPath);
 
-std::string mv_getFileNamePrefixRcTc(multiviewInputParams* mip, int rc, int tc);
-std::string mv_getFileNamePrefix(multiviewInputParams* mip, int index);
-std::string mv_getFileName(multiviewInputParams* mip, int index, int mv_file_type);
-std::string mv_getFileName(multiviewInputParams* mip, int index, int mv_file_type, int scale);
-FILE* mv_openFile(multiviewInputParams* mip, int index, int mv_file_type, const char* readWrite);
+std::string mv_getFileNamePrefixRcTc(const std::string& baseDir, multiviewInputParams* mip, int rc, int tc);
+std::string mv_getFileNamePrefix(const std::string& baseDir, multiviewInputParams* mip, int index);
+std::string mv_getFileName(multiviewInputParams* mip, int index, EFileType mv_file_type, int scale = 0);
+FILE* mv_openFile(multiviewInputParams* mip, int index, EFileType mv_file_type, const char* readWrite);
 point3d load3x1MatrixFromFile(FILE* fi);
 matrix3x3 load3x3MatrixFromFile(FILE* fi);
 matrix3x4 load3x4MatrixFromFile(FILE* fi);
@@ -42,16 +44,15 @@ struct seed_io_block            // 80 bytes
 };
 
 void saveSeedsToFile(staticVector<seedPoint>* seeds, const std::string& fileName);
-void saveSeedsToFile(staticVector<seedPoint>* seeds, int refImgFileId, multiviewInputParams* mip, int mv_file_type);
+void saveSeedsToFile(staticVector<seedPoint>* seeds, int refImgFileId, multiviewInputParams* mip, EFileType mv_file_type);
 bool loadSeedsFromFile(staticVector<seedPoint>** seeds, const std::string& fileName);
-bool loadSeedsFromFile(staticVector<seedPoint>** seeds, int refImgFileId, multiviewInputParams* mip, int mv_file_type);
-int getSeedsSizeFromFile(int refImgFileId, multiviewInputParams* mip, int mv_file_type);
+bool loadSeedsFromFile(staticVector<seedPoint>** seeds, int refImgFileId, multiviewInputParams* mip, EFileType mv_file_type);
+int getSeedsSizeFromFile(int refImgFileId, multiviewInputParams* mip, EFileType mv_file_type);
 //int getGrowedSizeFromFile(int refImgFileId, multiviewInputParams* mip);
 
 void saveUniqueIdAliveToFile(std::vector<bool>* uniqueIdAlive, multiviewInputParams* mip);
 void loadUniqueIdAliveFromFile(std::vector<bool>* uniqueIdAlive, multiviewInputParams* mip);
-void deletePremtachFiles(multiviewInputParams mip, int ncams);
-void deleteFilesOfType(multiviewInputParams& mip, int ncams, int mv_file_type);
+void deleteFilesOfType(multiviewInputParams& mip, int ncams, EFileType mv_file_type);
 void saveOrientedPointsToFile(staticVector<orientedPoint>* ops, int refImgFileId, multiviewInputParams* mip);
 staticVector<orientedPoint>* loadOrientedPointsFromFile(int refImgFileId, multiviewInputParams* mip);
 int getNumOrientedPointsFromFile(int refImgFileId, multiviewInputParams* mip);
@@ -77,14 +78,6 @@ struct outStruct
         return *this;
     }
 };
-
-void savePrematchedToFile(outStruct* outv, int size, int refImgFileId, int tarImgFileId, multiviewInputParams* mip);
-outStruct* loadPrematchedFromFile(int* sz, int refImgFileId, int tarImgFileId, multiviewInputParams* mip);
-
-//bool loadAgreedVisMapToFileFromFileWithoutAllocation(idValue* vm, int refImgFileId, multiviewInputParams* mip);
-//bool saveAgreedVisMapToFile(idValue* vm, int refImgFileId, multiviewInputParams* mip);
-//bool loadDiskSizeMapFromFileWithoutAllocation(int* vm, int refImgFileId, multiviewInputParams* mip);
-//bool saveDiskSizeMapToFile(int* vm, int refImgFileId, multiviewInputParams* mip);
 
 void deleteAllFiles(multiviewInputParams* mip);
 bool getDepthMapInfo(int refImgFileId, multiviewInputParams* mip, float& mindepth, float& maxdepth,

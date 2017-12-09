@@ -100,7 +100,7 @@ staticVector<float>* ps_sgm_rc::getTcSeedsRcPlaneDists(int rc, staticVector<int>
     for(int c = 0; c < tcams->size(); c++)
     {
         staticVector<seedPoint>* seeds;
-        loadSeedsFromFile(&seeds, sp->mp->indexes[(*tcams)[c]], sp->mp->mip, sp->mp->mip->MV_FILE_TYPE_seeds);
+        loadSeedsFromFile(&seeds, sp->mp->indexes[(*tcams)[c]], sp->mp->mip, EFileType::seeds);
         nTcSeeds += seeds->size();
         delete seeds;
     } // for c
@@ -110,7 +110,7 @@ staticVector<float>* ps_sgm_rc::getTcSeedsRcPlaneDists(int rc, staticVector<int>
     for(int c = 0; c < tcams->size(); c++)
     {
         staticVector<seedPoint>* seeds;
-        loadSeedsFromFile(&seeds, sp->mp->indexes[(*tcams)[c]], sp->mp->mip, sp->mp->mip->MV_FILE_TYPE_seeds);
+        loadSeedsFromFile(&seeds, sp->mp->indexes[(*tcams)[c]], sp->mp->mip, EFileType::seeds);
         for(int i = 0; i < seeds->size(); i++)
         {
             rcDists->push_back(pointPlaneDistance((*seeds)[i].op.p, rcplane.p, rcplane.n));

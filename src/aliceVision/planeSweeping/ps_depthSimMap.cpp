@@ -560,18 +560,18 @@ void ps_depthSimMap::save(int rc, staticVector<int>* tcams)
     std::cout << "* write image size : " << depthMap->size() << std::endl;
 
     // TODO: remove "+ 1"
-    imageIO::writeImage(mv_getFileName(mp->mip, rc + 1, mp->mip->MV_FILE_TYPE_depthMap, scale), width, height, depthMap->getDataWritable());
-    imageIO::writeImage(mv_getFileName(mp->mip, rc + 1, mp->mip->MV_FILE_TYPE_simMap, scale), width, height, simMap->getDataWritable());
+    imageIO::writeImage(mv_getFileName(mp->mip, rc + 1, EFileType::depthMap, scale), width, height, depthMap->getDataWritable());
+    imageIO::writeImage(mv_getFileName(mp->mip, rc + 1, EFileType::simMap, scale), width, height, simMap->getDataWritable());
 
 //    if(scale == 1) // TODO: check if necessary
 //    {
-//        imageIO::writeImage(mv_getFileName(mp->mip, rc + 1, mp->mip->MV_FILE_TYPE_depthMap, 0), width, height, depthMap->getDataWritable());
-//        imageIO::writeImage(mv_getFileName(mp->mip, rc + 1, mp->mip->MV_FILE_TYPE_simMap, 0), width, height, simMap->getDataWritable());
+//        imageIO::writeImage(mv_getFileName(mp->mip, rc + 1, EFileType::depthMap, 0), width, height, depthMap->getDataWritable());
+//        imageIO::writeImage(mv_getFileName(mp->mip, rc + 1, EFileType::simMap, 0), width, height, simMap->getDataWritable());
 //    }
 
     {
         point2d maxMinDepth = getMaxMinDepth();
-        FILE* f = mv_openFile(mp->mip, mp->indexes[rc], mp->mip->MV_FILE_TYPE_depthMapInfo, "w");
+        FILE* f = mv_openFile(mp->mip, mp->indexes[rc], EFileType::depthMapInfo, "w");
         int nbTCs = tcams ? tcams->size() : 0;
         fprintf(f, "minDepth %f, maxDepth %f, ntcams %i, tcams", maxMinDepth.y, maxMinDepth.x, nbTCs);
         for(int c = 0; c < nbTCs; c++)
@@ -590,8 +590,8 @@ void ps_depthSimMap::load(int rc, int fromScale)
     staticVector<float> depthMap;
     staticVector<float> simMap;
 
-    imageIO::readImage(mv_getFileName(mp->mip, rc + 1, mp->mip->MV_FILE_TYPE_depthMap, fromScale), width, height, depthMap.getDataWritable());
-    imageIO::readImage(mv_getFileName(mp->mip, rc + 1, mp->mip->MV_FILE_TYPE_simMap, fromScale), width, height, simMap.getDataWritable());
+    imageIO::readImage(mv_getFileName(mp->mip, rc + 1, EFileType::depthMap, fromScale), width, height, depthMap.getDataWritable());
+    imageIO::readImage(mv_getFileName(mp->mip, rc + 1, EFileType::simMap, fromScale), width, height, simMap.getDataWritable());
 
     imageIO::transposeImage(width, height, depthMap.getDataWritable());
     imageIO::transposeImage(width, height, simMap.getDataWritable());

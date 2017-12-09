@@ -21,222 +21,287 @@ bool FolderExists(const std::string& folderPath)
     return boost::filesystem::is_directory(folderPath);
 }
 
-std::string mv_getFileNamePrefixRcTc(multiviewInputParams* mip, int rc, int tc)
+std::string mv_getFileNamePrefixRcTc(const std::string& baseDir, multiviewInputParams* mip, int rc, int tc)
 {
-    return mip->mvDir + mip->prefix + num2strFourDecimal(rc) + "_" + num2strFourDecimal(tc);
+    return baseDir + mip->prefix + num2strFourDecimal(rc) + "_" + num2strFourDecimal(tc);
 }
 
-std::string mv_getFileNamePrefix(multiviewInputParams* mip, int index)
+std::string mv_getFileNamePrefix(const std::string& baseDir, multiviewInputParams* mip, int index)
 {
-    return mip->mvDir + mip->prefix + num2strFourDecimal(index);
+    return baseDir + mip->prefix + num2strFourDecimal(index);
 }
 
-std::string mv_getFileName(multiviewInputParams* mip, int index, int mv_file_type)
+std::string mv_getFileName(multiviewInputParams* mip, int index, EFileType mv_file_type, int scale)
 {
-    std::string fileName = mv_getFileNamePrefix(mip, index);
+    std::string suffix;
+    std::string ext;
+    std::string baseDir = mip->mvDir;
 
-    if(mv_file_type == mip->MV_FILE_TYPE_P)
+    switch(mv_file_type)
     {
-        fileName += "_P.txt";
+        case EFileType::P:
+        {
+            suffix = "_P";
+            ext = "txt";
+            break;
+        }
+        case EFileType::K:
+        {
+            suffix = "_K";
+            ext = "txt";
+            break;
+        }
+        case EFileType::iK:
+        {
+            suffix = "_iK";
+            ext = "txt";
+            break;
+        }
+        case EFileType::R:
+        {
+            suffix = "_R";
+            ext = "txt";
+            break;
+        }
+        case EFileType::iR:
+        {
+            suffix = "_iR";
+            ext = "txt";
+            break;
+        }
+        case EFileType::C:
+        {
+            suffix = "_C";
+            ext = "txt";
+            break;
+        }
+        case EFileType::iP:
+        {
+            suffix = "_iP";
+            ext = "txt";
+            break;
+        }
+        case EFileType::har:
+        {
+            suffix = "_har";
+            ext = "bin";
+            break;
+        }
+        case EFileType::prematched:
+        {
+            suffix = "_prematched";
+            ext = "bin";
+            break;
+        }
+        case EFileType::seeds:
+        {
+            suffix = "_seeds";
+            ext = "bin";
+            break;
+        }
+        case EFileType::growed:
+        {
+            suffix = "_growed";
+            ext = "bin";
+            break;
+        }
+        case EFileType::occMap:
+        {
+            suffix = "_occMap";
+            ext = "bin";
+            break;
+        }
+        case EFileType::nearMap:
+        {
+            suffix = "_nearMap";
+            ext = "bin";
+            break;
+        }
+        case EFileType::op:
+        {
+            suffix = "_op";
+            ext = "bin";
+            break;
+        }
+        case EFileType::wshed:
+        {
+            suffix = "_wshed";
+            ext = "bin";
+            break;
+        }
+        case EFileType::seeds_prm:
+        {
+            suffix = "_seeds_prm";
+            ext = "bin";
+            break;
+        }
+        case EFileType::seeds_flt:
+        {
+            suffix = "_seeds_flt";
+            ext = "bin";
+            break;
+        }
+        case EFileType::img:
+        {
+            suffix = "_img";
+            ext = "bin";
+            break;
+        }
+        case EFileType::imgT:
+        {
+            suffix = "_imgT";
+            ext = "bin";
+            break;
+        }
+        case EFileType::seeds_seg:
+        {
+            suffix = "_seeds_seg";
+            ext = "bin";
+            break;
+        }
+        case EFileType::graphCutMap:
+        {
+            suffix = "_graphCutMap";
+            ext = "bin";
+            break;
+        }
+        case EFileType::graphCutPts:
+        {
+            suffix = "_graphCutPts";
+            ext = "bin";
+            break;
+        }
+        case EFileType::growedMap:
+        {
+            suffix = "_growedMap";
+            ext = "bin";
+            break;
+        }
+        case EFileType::agreedMap:
+        {
+            suffix = "_agreedMap";
+            ext = "bin";
+            break;
+        }
+        case EFileType::agreedPts:
+        {
+            suffix = "_agreedPts";
+            ext = "bin";
+            break;
+        }
+        case EFileType::refinedMap:
+        {
+            suffix = "_refinedMap";
+            ext = "bin";
+            break;
+        }
+        case EFileType::seeds_sfm:
+        {
+            suffix = "_seeds_sfm";
+            ext = "bin";
+            break;
+        }
+        case EFileType::radial_disortion:
+        {
+            suffix = "_rd";
+            ext = "bin";
+            break;
+        }
+        case EFileType::graphCutMesh:
+        {
+            suffix = "_graphCutMesh";
+            ext = "bin";
+            break;
+        }
+        case EFileType::agreedMesh:
+        {
+            suffix = "_agreedMesh";
+            ext = "bin";
+            break;
+        }
+        case EFileType::nearestAgreedMap:
+        {
+            suffix = "_nearestAgreedMap";
+            ext = "bin";
+            break;
+        }
+        case EFileType::segPlanes:
+        {
+            suffix = "_segPlanes";
+            ext = "bin";
+            break;
+        }
+        case EFileType::agreedVisMap:
+        {
+            suffix = "_agreedVisMap";
+            ext = "bin";
+            break;
+        }
+        case EFileType::diskSizeMap:
+        {
+            suffix = "_diskSizeMap";
+            ext = "bin";
+            break;
+        }
+        case EFileType::depthMap:
+        {
+            suffix = "_depthMap";
+            ext = "exr";
+            break;
+        }
+        case EFileType::simMap:
+        {
+            suffix = "_simMap";
+            ext = "exr";
+            break;
+        }
+        case EFileType::mapPtsTmp:
+        {
+            suffix = "_mapPts";
+            ext = "tmp";
+            break;
+        }
+        case EFileType::mapPtsSimsTmp:
+        {
+            suffix = "_mapPtsSims";
+            ext = "tmp";
+            break;
+        }
+        case EFileType::depthMapInfo:
+        {
+            suffix = "_depthMapInfo";
+            ext = "tmp";
+            break;
+        }
+        case EFileType::camMap:
+        {
+            suffix = "_camMap";
+            ext = "bin";
+            break;
+        }
+        case EFileType::nmodMap:
+        {
+            suffix = "_nmodMap";
+            ext = "png";
+            break;
+        }
+        case EFileType::D:
+        {
+            suffix = "_D";
+            ext = "txt";
+            break;
+        }
     }
-    if(mv_file_type == mip->MV_FILE_TYPE_K)
+    if(scale != 0)
     {
-        fileName += "_K.txt";
-    }
-    if(mv_file_type == mip->MV_FILE_TYPE_iK)
-    {
-        fileName += "_iK.txt";
-    }
-    if(mv_file_type == mip->MV_FILE_TYPE_R)
-    {
-        fileName += "_R.txt";
-    }
-    if(mv_file_type == mip->MV_FILE_TYPE_iR)
-    {
-        fileName += "_iR.txt";
-    }
-    if(mv_file_type == mip->MV_FILE_TYPE_C)
-    {
-        fileName += "_C.txt";
-    }
-    if(mv_file_type == mip->MV_FILE_TYPE_iP)
-    {
-        fileName += "_iP.txt";
-    }
-    if(mv_file_type == mip->MV_FILE_TYPE_har)
-    {
-        fileName += "_har.bin";
-    }
-    if(mv_file_type == mip->MV_FILE_TYPE_prematched)
-    {
-        fileName += "_prematched.bin";
-    }
-    if(mv_file_type == mip->MV_FILE_TYPE_seeds)
-    {
-        fileName += "_seeds.bin";
-    }
-    if(mv_file_type == mip->MV_FILE_TYPE_growed)
-    {
-        fileName += "_growed.bin";
-    }
-    if(mv_file_type == mip->MV_FILE_TYPE_occMap)
-    {
-        fileName += "_occMap.bin";
-    }
-    if(mv_file_type == mip->MV_FILE_TYPE_nearMap)
-    {
-        fileName += "_nearMap.bin";
-    }
-    if(mv_file_type == mip->MV_FILE_TYPE_op)
-    {
-        fileName += "_op.bin";
-    }
-    if(mv_file_type == mip->MV_FILE_TYPE_wshed)
-    {
-        fileName += "_wshed.bin";
-    }
-    if(mv_file_type == mip->MV_FILE_TYPE_seeds_prm)
-    {
-        fileName += "_seeds_prm.bin";
-    }
-    if(mv_file_type == mip->MV_FILE_TYPE_seeds_flt)
-    {
-        fileName += "_seeds_flt.bin";
-    }
-    if(mv_file_type == mip->MV_FILE_TYPE_img)
-    {
-        fileName += "_img.bin";
-    }
-    if(mv_file_type == mip->MV_FILE_TYPE_imgT)
-    {
-        fileName += "_imgT.bin";
-    }
-    if(mv_file_type == mip->MV_FILE_TYPE_seeds_seg)
-    {
-        fileName += "_seeds_seg.bin";
-    }
-    if(mv_file_type == mip->MV_FILE_TYPE_graphCutMap)
-    {
-        fileName += "_graphCutMap.bin";
-    }
-    if(mv_file_type == mip->MV_FILE_TYPE_graphCutPts)
-    {
-        fileName += "_graphCutPts.bin";
-    }
-    if(mv_file_type == mip->MV_FILE_TYPE_growedMap)
-    {
-        fileName += "_growedMap.bin";
-    }
-    if(mv_file_type == mip->MV_FILE_TYPE_agreedMap)
-    {
-        fileName += "_agreedMap.bin";
-    }
-    if(mv_file_type == mip->MV_FILE_TYPE_agreedPts)
-    {
-        fileName += "_agreedPts.bin";
-    }
-    if(mv_file_type == mip->MV_FILE_TYPE_refinedMap)
-    {
-        fileName += "_refinedMap.bin";
-    }
-    if(mv_file_type == mip->MV_FILE_TYPE_seeds_sfm)
-    {
-        fileName += "_seeds_sfm.bin";
-    }
-    if(mv_file_type == mip->MV_FILE_TYPE_radial_disortion)
-    {
-        fileName += "_rd.bin";
-    }
-    if(mv_file_type == mip->MV_FILE_TYPE_graphCutMesh)
-    {
-        fileName += "_graphCutMesh.bin";
-    }
-    if(mv_file_type == mip->MV_FILE_TYPE_agreedMesh)
-    {
-        fileName += "_agreedMesh.bin";
-    }
-    if(mv_file_type == mip->MV_FILE_TYPE_nearestAgreedMap)
-    {
-        fileName += "_nearestAgreedMap.bin";
-    }
-    if(mv_file_type == mip->MV_FILE_TYPE_segPlanes)
-    {
-        fileName += "_segPlanes.bin";
-    }
-    if(mv_file_type == mip->MV_FILE_TYPE_agreedVisMap)
-    {
-        fileName += "_agreedVisMap.bin";
-    }
-    if(mv_file_type == mip->MV_FILE_TYPE_diskSizeMap)
-    {
-        fileName += "_diskSizeMap.bin";
-    }
-    if(mv_file_type == mip->MV_FILE_TYPE_depthMap)
-    {
-        fileName += "_depthMap.exr";
-    }
-    if(mv_file_type == mip->MV_FILE_TYPE_simMap)
-    {
-        fileName += "_simMap.exr";
-    }
-    if(mv_file_type == mip->MV_FILE_TYPE_mapPtsTmp)
-    {
-        fileName += "_mapPts.tmp";
-    }
-    if(mv_file_type == mip->MV_FILE_TYPE_mapPtsSimsTmp)
-    {
-        fileName += "_mapPtsSims.tmp";
-    }
-    if(mv_file_type == mip->MV_FILE_TYPE_depthMapInfo)
-    {
-        fileName += "_depthMapInfo.tmp";
-    }
-    if(mv_file_type == mip->MV_FILE_TYPE_camMap)
-    {
-        fileName += "_camMap.bin";
-    }
-    if(mv_file_type == mip->MV_FILE_TYPE_nmodMap)
-    {
-        fileName += "_nmodMap.png";
+        suffix += "_scale" + num2str(scale);
     }
 
+    std::string fileName = mv_getFileNamePrefix(baseDir, mip, index) + suffix + "." + ext;
     return fileName;
 }
 
-std::string mv_getFileName(multiviewInputParams* mip, int index, int mv_file_type, int scale)
-{
-    if(scale == 0)
-    {
-        return mv_getFileName(mip, index, mv_file_type);
-    }
-
-    std::string fileName = mv_getFileNamePrefix(mip, index);
-
-    if(mv_file_type == mip->MV_FILE_TYPE_depthMap)
-    {
-        fileName += "_depthMap_scale" + num2str(scale) + ".exr";
-    }
-    if(mv_file_type == mip->MV_FILE_TYPE_simMap)
-    {
-        fileName += "_simMap_scale" + num2str(scale) + ".exr";
-    }
-    if(mv_file_type == mip->MV_FILE_TYPE_mapPtsTmp)
-    {
-        fileName += "_mapPts_scale" + num2str(scale) + ".tmp";
-    }
-    if(mv_file_type == mip->MV_FILE_TYPE_depthMapInfo)
-    {
-        fileName += "_depthMapInfo_scale" + num2str(scale) + ".tmp";
-    }
-    if(mv_file_type == mip->MV_FILE_TYPE_camMap)
-    {
-        fileName += "_camMap_scale" + num2str(scale) + ".bin";
-    }
-
-    return fileName;
-}
-
-FILE* mv_openFile(multiviewInputParams* mip, int index, int mv_file_type, const char* readWrite)
+FILE* mv_openFile(multiviewInputParams* mip, int index, EFileType mv_file_type, const char* readWrite)
 {
     const std::string fileName = mv_getFileName(mip, index, mv_file_type);
     FILE* out = fopen(fileName.c_str(), readWrite);
@@ -324,7 +389,7 @@ point3d loadPoint3dFromFile(FILE* fi)
 
 int get2dPointsNum(int imgFileId, multiviewInputParams* mip)
 {
-    FILE* f = mv_openFile(mip, imgFileId, mip->MV_FILE_TYPE_har, "r");
+    FILE* f = mv_openFile(mip, imgFileId, EFileType::har, "r");
 
     if(f == nullptr)
     {
@@ -356,7 +421,7 @@ int load2dPoints(point2d** _out, int imgFileId, multiviewInputParams* mip)
     {
         out = new point2d[n];
 
-        FILE* f = mv_openFile(mip, imgFileId, mip->MV_FILE_TYPE_har, "r");
+        FILE* f = mv_openFile(mip, imgFileId, EFileType::har, "r");
 
         int i = 0;
         while(feof(f) == 0)
@@ -383,7 +448,7 @@ staticVector<point2d>* load2dPoints(int imgFileId, multiviewInputParams* mip)
 
     if(n > 0)
     {
-        FILE* f = mv_openFile(mip, imgFileId, mip->MV_FILE_TYPE_har, "r");
+        FILE* f = mv_openFile(mip, imgFileId, EFileType::har, "r");
         while(feof(f) == 0)
         {
             float a, b;
@@ -399,7 +464,7 @@ staticVector<point2d>* load2dPoints(int imgFileId, multiviewInputParams* mip)
 void load2dPoints(staticVector<point2d>* out, int imgFileId, multiviewInputParams* mip)
 {
     out->resize(0);
-    FILE* f = mv_openFile(mip, imgFileId, mip->MV_FILE_TYPE_har, "r");
+    FILE* f = mv_openFile(mip, imgFileId, EFileType::har, "r");
     while(feof(f) == 0)
     {
         float a, b;
@@ -522,7 +587,7 @@ void saveSeedsToFile(staticVector<seedPoint>* seeds, const std::string& fileName
     }
 }
 
-void saveSeedsToFile(staticVector<seedPoint>* seeds, int refImgFileId, multiviewInputParams* mip, int mv_file_type)
+void saveSeedsToFile(staticVector<seedPoint>* seeds, int refImgFileId, multiviewInputParams* mip, EFileType mv_file_type)
 {
     std::string fileName = mv_getFileName(mip, refImgFileId, mv_file_type);
     saveSeedsToFile(seeds, fileName);
@@ -581,13 +646,13 @@ bool loadSeedsFromFile(staticVector<seedPoint>** seeds, const std::string& fileN
     return true;
 }
 
-bool loadSeedsFromFile(staticVector<seedPoint>** seeds, int refImgFileId, multiviewInputParams* mip, int mv_file_type)
+bool loadSeedsFromFile(staticVector<seedPoint>** seeds, int refImgFileId, multiviewInputParams* mip, EFileType mv_file_type)
 {
     std::string fileName = mv_getFileName(mip, refImgFileId, mv_file_type);
     return loadSeedsFromFile(seeds, fileName);
 }
 
-int getSeedsSizeFromFile(int refImgFileId, multiviewInputParams* mip, int mv_file_type)
+int getSeedsSizeFromFile(int refImgFileId, multiviewInputParams* mip, EFileType mv_file_type)
 {
     FILE* f = mv_openFile(mip, refImgFileId, mv_file_type, "rb");
     if(f == nullptr)
@@ -603,7 +668,7 @@ int getSeedsSizeFromFile(int refImgFileId, multiviewInputParams* mip, int mv_fil
 
 int getGrowedSizeFromFile(int refImgFileId, multiviewInputParams* mip)
 {
-    FILE* f = mv_openFile(mip, refImgFileId, mip->MV_FILE_TYPE_growed, "rb");
+    FILE* f = mv_openFile(mip, refImgFileId, EFileType::growed, "rb");
     if(f == nullptr)
     {
         //
@@ -664,20 +729,7 @@ void loadUniqueIdAliveFromFile(std::vector<bool>* uniqueIdAlive, multiviewInputP
     }
 }
 
-void deletePremtachFiles(multiviewInputParams mip, int ncams)
-{
-    // delete files
-    for(int rc = 0; rc < ncams; rc++)
-    {
-        for(int tc = 0; tc < ncams; tc++)
-        {
-            std::string fileName = mv_getFileNamePrefixRcTc(&mip, rc + 1, tc + 1);
-            fileName += "_prematched.txt";
-            remove(fileName.c_str());
-        }
-    }
-}
-void deleteFilesOfType(multiviewInputParams& mip, int ncams, int mv_file_type)
+void deleteFilesOfType(multiviewInputParams& mip, int ncams, EFileType mv_file_type)
 {
     // delete files
     long t1 = initEstimate();
@@ -692,7 +744,7 @@ void deleteFilesOfType(multiviewInputParams& mip, int ncams, int mv_file_type)
 
 void saveOrientedPointsToFile(staticVector<orientedPoint>* ops, int refImgFileId, multiviewInputParams* mip)
 {
-    FILE* f = mv_openFile(mip, refImgFileId, mip->MV_FILE_TYPE_op, "wb");
+    FILE* f = mv_openFile(mip, refImgFileId, EFileType::op, "wb");
     if(f == nullptr)
     {
         //
@@ -708,7 +760,7 @@ void saveOrientedPointsToFile(staticVector<orientedPoint>* ops, int refImgFileId
 
 staticVector<orientedPoint>* loadOrientedPointsFromFile(int refImgFileId, multiviewInputParams* mip)
 {
-    FILE* f = mv_openFile(mip, refImgFileId, mip->MV_FILE_TYPE_op, "rb");
+    FILE* f = mv_openFile(mip, refImgFileId, EFileType::op, "rb");
     if(f == nullptr)
     {
         //
@@ -730,7 +782,7 @@ staticVector<orientedPoint>* loadOrientedPointsFromFile(int refImgFileId, multiv
 
 int getNumOrientedPointsFromFile(int refImgFileId, multiviewInputParams* mip)
 {
-    FILE* f = mv_openFile(mip, refImgFileId, mip->MV_FILE_TYPE_op, "rb");
+    FILE* f = mv_openFile(mip, refImgFileId, EFileType::op, "rb");
     if(f == nullptr)
     {
         //
@@ -750,7 +802,7 @@ int getNumOrientedPointsFromFile(int refImgFileId, multiviewInputParams* mip)
 /*
 void loadVisibilityMapFromFileWithAllocation(bool **vis, int refImgFileId, multiviewInputParams *mip)
 {
-        FILE *f = mv_openFile(mip, refImgFileId, mip->MV_FILE_TYPE_visibility_map, "rb");
+        FILE *f = mv_openFile(mip, refImgFileId, EFileType::visibility_map, "rb");
         if (f == NULL)
         {
                 //
@@ -766,7 +818,7 @@ void loadVisibilityMapFromFileWithAllocation(bool **vis, int refImgFileId, multi
 
 void saveVisibilityMapToFile(bool *vis, int size, int refImgFileId, multiviewInputParams *mip)
 {
-        FILE *f = mv_openFile(mip, refImgFileId, mip->MV_FILE_TYPE_visibility_map, "wb");
+        FILE *f = mv_openFile(mip, refImgFileId, EFileType::visibility_map, "wb");
         if (f == NULL)
         {
                 //
@@ -814,149 +866,42 @@ void savePairConfidenceMatrixToFile(unsigned char* cm, int32_t size, multiviewIn
     }
 }
 
-void savePrematchedToFile(outStruct* outv, int size, int refImgFileId, int tarImgFileId, multiviewInputParams* mip)
-{
-    std::string fileName = mv_getFileNamePrefixRcTc(mip, refImgFileId, tarImgFileId);
-    fileName += "_prematched.txt";
-    FILE* f = fopen(fileName.c_str(), "wb");
-
-    if(f == nullptr)
-    {
-        //
-    }
-    else
-    {
-        fwrite(&size, sizeof(int), 1, f);
-        fwrite(&outv[0], sizeof(outStruct), size, f);
-        fclose(f);
-    }
-}
-
-outStruct* loadPrematchedFromFile(int* sz, int refImgFileId, int tarImgFileId, multiviewInputParams* mip)
-{
-    outStruct* outv = nullptr;
-
-    std::string fileName = mv_getFileNamePrefixRcTc(mip, refImgFileId, tarImgFileId);
-    fileName += "_prematched.txt";
-    FILE* f = fopen(fileName.c_str(), "rb");
-
-    if(f == nullptr)
-    {
-        *sz = 0;
-        return nullptr;
-    }
-
-    int size;
-    fread(&size, sizeof(int), 1, f);
-    outv = new outStruct[size];
-    fread(&outv[0], sizeof(outStruct), size, f);
-    fclose(f);
-
-    *sz = size;
-
-    return outv;
-}
-/*
-bool loadAgreedVisMapToFileFromFileWithoutAllocation(idValue* vm, int refImgFileId, multiviewInputParams* mip)
-{
-    int32_t size = (mip->getWidth(rc)) * (mip->getHeight(rc));
-    FILE* f = mv_openFile(mip, refImgFileId, mip->MV_FILE_TYPE_agreedVisMap, "rb");
-    if(f == nullptr)
-    {
-        for(int i = 0; i < size; i++)
-        {
-            vm[i] = idValue(-1, -1.0);
-        }
-        return false;
-    }
-
-    fwrite(&vm[0], sizeof(idValue), size, f);
-    fclose(f);
-    return true;
-}
-
-bool saveAgreedVisMapToFile(idValue* vm, int refImgFileId, multiviewInputParams* mip)
-{
-    int32_t size = (mip->getWidth(rc)) * (mip->getHeigh(rc));
-    FILE* f = mv_openFile(mip, refImgFileId, mip->MV_FILE_TYPE_agreedVisMap, "wb");
-    if(f == nullptr)
-    {
-        return false;
-    }
-
-    fwrite(&vm[0], sizeof(idValue), size, f);
-    fclose(f);
-    return true;
-}
-
-bool loadDiskSizeMapFromFileWithoutAllocation(int* vm, int refImgFileId, multiviewInputParams* mip)
-{
-    int32_t size = (mip->getWidth(rc)) * (mip->getHeight(rc));
-    FILE* f = mv_openFile(mip, refImgFileId, mip->MV_FILE_TYPE_diskSizeMap, "rb");
-    if(f == nullptr)
-    {
-        for(int i = 0; i < size; i++)
-        {
-            vm[i] = (int)0;
-        }
-        return false;
-    }
-
-    fread(&vm[0], sizeof(int), size, f);
-    fclose(f);
-    return true;
-}
-
-bool saveDiskSizeMapToFile(int* vm, int refImgFileId, multiviewInputParams* mip)
-{
-    int32_t size = (mip->getWidth(rc)) * (mip->getHeight(rc));
-    FILE* f = mv_openFile(mip, refImgFileId, mip->MV_FILE_TYPE_diskSizeMap, "wb");
-    if(f == nullptr)
-    {
-        return false;
-    }
-
-    fwrite(&vm[0], sizeof(int), size, f);
-    fclose(f);
-    return true;
-}
-*/
 void deleteAllFiles(multiviewInputParams* mip)
 {
     printf("deleteing temporary files\n");
     // deletePremtachFiles(*mip,mip->getNbCameras());
-    deleteFilesOfType(*mip, mip->getNbCameras(), mip->MV_FILE_TYPE_seeds);
-    deleteFilesOfType(*mip, mip->getNbCameras(), mip->MV_FILE_TYPE_growed);
-    deleteFilesOfType(*mip, mip->getNbCameras(), mip->MV_FILE_TYPE_nearMap);
-    deleteFilesOfType(*mip, mip->getNbCameras(), mip->MV_FILE_TYPE_occMap);
-    deleteFilesOfType(*mip, mip->getNbCameras(), mip->MV_FILE_TYPE_op);
-    deleteFilesOfType(*mip, mip->getNbCameras(), mip->MV_FILE_TYPE_seeds_flt);
-    deleteFilesOfType(*mip, mip->getNbCameras(), mip->MV_FILE_TYPE_seeds_prm);
-    deleteFilesOfType(*mip, mip->getNbCameras(), mip->MV_FILE_TYPE_seeds_sfm);
-    deleteFilesOfType(*mip, mip->getNbCameras(), mip->MV_FILE_TYPE_refinedMap);
-    deleteFilesOfType(*mip, mip->getNbCameras(), mip->MV_FILE_TYPE_growedMap);
-    deleteFilesOfType(*mip, mip->getNbCameras(), mip->MV_FILE_TYPE_graphCutPts);
-    deleteFilesOfType(*mip, mip->getNbCameras(), mip->MV_FILE_TYPE_graphCutMap);
-    deleteFilesOfType(*mip, mip->getNbCameras(), mip->MV_FILE_TYPE_graphCutMesh);
-    deleteFilesOfType(*mip, mip->getNbCameras(), mip->MV_FILE_TYPE_agreedMap);
-    deleteFilesOfType(*mip, mip->getNbCameras(), mip->MV_FILE_TYPE_agreedPts);
-    deleteFilesOfType(*mip, mip->getNbCameras(), mip->MV_FILE_TYPE_agreedMesh);
-    deleteFilesOfType(*mip, mip->getNbCameras(), mip->MV_FILE_TYPE_nearMap);
-    deleteFilesOfType(*mip, mip->getNbCameras(), mip->MV_FILE_TYPE_occMap);
-    deleteFilesOfType(*mip, mip->getNbCameras(), mip->MV_FILE_TYPE_op);
-    deleteFilesOfType(*mip, mip->getNbCameras(), mip->MV_FILE_TYPE_nearestAgreedMap);
-    deleteFilesOfType(*mip, mip->getNbCameras(), mip->MV_FILE_TYPE_segPlanes);
-    deleteFilesOfType(*mip, mip->getNbCameras(), mip->MV_FILE_TYPE_agreedVisMap);
-    deleteFilesOfType(*mip, mip->getNbCameras(), mip->MV_FILE_TYPE_diskSizeMap);
-    deleteFilesOfType(*mip, mip->getNbCameras(), mip->MV_FILE_TYPE_depthMap);
-    deleteFilesOfType(*mip, mip->getNbCameras(), mip->MV_FILE_TYPE_simMap);
+    deleteFilesOfType(*mip, mip->getNbCameras(), EFileType::seeds);
+    deleteFilesOfType(*mip, mip->getNbCameras(), EFileType::growed);
+    deleteFilesOfType(*mip, mip->getNbCameras(), EFileType::nearMap);
+    deleteFilesOfType(*mip, mip->getNbCameras(), EFileType::occMap);
+    deleteFilesOfType(*mip, mip->getNbCameras(), EFileType::op);
+    deleteFilesOfType(*mip, mip->getNbCameras(), EFileType::seeds_flt);
+    deleteFilesOfType(*mip, mip->getNbCameras(), EFileType::seeds_prm);
+    deleteFilesOfType(*mip, mip->getNbCameras(), EFileType::seeds_sfm);
+    deleteFilesOfType(*mip, mip->getNbCameras(), EFileType::refinedMap);
+    deleteFilesOfType(*mip, mip->getNbCameras(), EFileType::growedMap);
+    deleteFilesOfType(*mip, mip->getNbCameras(), EFileType::graphCutPts);
+    deleteFilesOfType(*mip, mip->getNbCameras(), EFileType::graphCutMap);
+    deleteFilesOfType(*mip, mip->getNbCameras(), EFileType::graphCutMesh);
+    deleteFilesOfType(*mip, mip->getNbCameras(), EFileType::agreedMap);
+    deleteFilesOfType(*mip, mip->getNbCameras(), EFileType::agreedPts);
+    deleteFilesOfType(*mip, mip->getNbCameras(), EFileType::agreedMesh);
+    deleteFilesOfType(*mip, mip->getNbCameras(), EFileType::nearMap);
+    deleteFilesOfType(*mip, mip->getNbCameras(), EFileType::occMap);
+    deleteFilesOfType(*mip, mip->getNbCameras(), EFileType::op);
+    deleteFilesOfType(*mip, mip->getNbCameras(), EFileType::nearestAgreedMap);
+    deleteFilesOfType(*mip, mip->getNbCameras(), EFileType::segPlanes);
+    deleteFilesOfType(*mip, mip->getNbCameras(), EFileType::agreedVisMap);
+    deleteFilesOfType(*mip, mip->getNbCameras(), EFileType::diskSizeMap);
+    deleteFilesOfType(*mip, mip->getNbCameras(), EFileType::depthMap);
+    deleteFilesOfType(*mip, mip->getNbCameras(), EFileType::simMap);
 }
 
 bool getDepthMapInfo(int refImgFileId, multiviewInputParams* mip, float& mindepth, float& maxdepth,
                      staticVector<int>** tcams)
 {
     *tcams = nullptr;
-    FILE* f = mv_openFile(mip, refImgFileId, mip->MV_FILE_TYPE_depthMapInfo, "r");
+    FILE* f = mv_openFile(mip, refImgFileId, EFileType::depthMapInfo, "r");
     if(f == nullptr)
     {
         printf("WARNING!!!! depth map info %i does not exists!\n", refImgFileId);
@@ -978,7 +923,7 @@ bool getDepthMapInfo(int refImgFileId, multiviewInputParams* mip, float& mindept
 
 bool getDepthMapInfoDepthLimits(int refImgFileId, multiviewInputParams* mip, float& mindepth, float& maxdepth)
 {
-    FILE* f = mv_openFile(mip, refImgFileId, mip->MV_FILE_TYPE_depthMapInfo, "r");
+    FILE* f = mv_openFile(mip, refImgFileId, EFileType::depthMapInfo, "r");
     if(f == nullptr)
     {
         printf("WARNING!!!!\n");

@@ -127,8 +127,8 @@ void mv_fuse::visualizeDepthMap(int rc, std::string wrlFileName, int scale, int 
     staticVector<float> depthMap;
     staticVector<float> simMap;
 
-    imageIO::readImage(mv_getFileName(mp->mip, rc + 1, mp->mip->MV_FILE_TYPE_depthMap, scale), width, height, depthMap.getDataWritable());
-    imageIO::readImage(mv_getFileName(mp->mip, rc + 1, mp->mip->MV_FILE_TYPE_simMap, scale), width, height, simMap.getDataWritable());
+    imageIO::readImage(mv_getFileName(mp->mip, rc + 1, EFileType::depthMap, scale), width, height, depthMap.getDataWritable());
+    imageIO::readImage(mv_getFileName(mp->mip, rc + 1, EFileType::simMap, scale), width, height, simMap.getDataWritable());
 
     imageIO::transposeImage(width, height, depthMap.getDataWritable());
     imageIO::transposeImage(width, height, simMap.getDataWritable());
@@ -148,7 +148,7 @@ unsigned long mv_fuse::computeNumberOfAllPoints(int scale)
 
         staticVector<float> depthMap;
 
-        imageIO::readImage(mv_getFileName(mp->mip, rc + 1, mp->mip->MV_FILE_TYPE_depthMap, scale), width, height, depthMap.getDataWritable());
+        imageIO::readImage(mv_getFileName(mp->mip, rc + 1, EFileType::depthMap, scale), width, height, depthMap.getDataWritable());
         // no need to transpose for this operation
 
         for(int i = 0; i < sizeOfStaticVector<float>(&depthMap); i++)
@@ -249,7 +249,7 @@ void mv_fuse::filterGroups(const staticVector<int>& cams)
 // minNumOfModals number of other cams including this cam ... minNumOfModals /in 2,3,...
 bool mv_fuse::filterGroupsRC(int rc, int pixSizeBall, int pixSizeBallWSP, int nNearestCams)
 {
-    if(FileExists(mv_getFileName(mp->mip, rc + 1, mp->mip->MV_FILE_TYPE_nmodMap)))
+    if(FileExists(mv_getFileName(mp->mip, rc + 1, EFileType::nmodMap)))
     {
         return true;
     }
@@ -264,8 +264,8 @@ bool mv_fuse::filterGroupsRC(int rc, int pixSizeBall, int pixSizeBallWSP, int nN
     {
         int width, height;
 
-        imageIO::readImage(mv_getFileName(mp->mip, rc + 1, mp->mip->MV_FILE_TYPE_depthMap, 1), width, height, depthMap.getDataWritable());
-        imageIO::readImage(mv_getFileName(mp->mip, rc + 1, mp->mip->MV_FILE_TYPE_simMap, 1), width, height, simMap.getDataWritable());
+        imageIO::readImage(mv_getFileName(mp->mip, rc + 1, EFileType::depthMap, 1), width, height, depthMap.getDataWritable());
+        imageIO::readImage(mv_getFileName(mp->mip, rc + 1, EFileType::simMap, 1), width, height, simMap.getDataWritable());
 
         imageIO::transposeImage(width, height, depthMap.getDataWritable());
         imageIO::transposeImage(width, height, simMap.getDataWritable());
@@ -298,7 +298,7 @@ bool mv_fuse::filterGroupsRC(int rc, int pixSizeBall, int pixSizeBallWSP, int nN
         {
             int width, height;
 
-            imageIO::readImage(mv_getFileName(mp->mip, tc + 1, mp->mip->MV_FILE_TYPE_depthMap, 1), width, height, tcdepthMap.getDataWritable());
+            imageIO::readImage(mv_getFileName(mp->mip, tc + 1, EFileType::depthMap, 1), width, height, tcdepthMap.getDataWritable());
 
             // transpose image in-place, width/height are no more valid after this function.
             imageIO::transposeImage(width, height, tcdepthMap.getDataWritable());
@@ -328,7 +328,7 @@ bool mv_fuse::filterGroupsRC(int rc, int pixSizeBall, int pixSizeBallWSP, int nN
 
     {
       imageIO::transposeImage(h, w, numOfModalsMap);
-      imageIO::writeImage(mv_getFileName(mp->mip, rc + 1, mp->mip->MV_FILE_TYPE_nmodMap), w, h, numOfModalsMap);
+      imageIO::writeImage(mv_getFileName(mp->mip, rc + 1, EFileType::nmodMap), w, h, numOfModalsMap);
     }
 
     delete numOfPtsMap;
@@ -374,9 +374,9 @@ bool mv_fuse::filterDepthMapsRC(int rc, int minNumOfModals, int minNumOfModalsWS
     {
         int width, height;
 
-        imageIO::readImage(mv_getFileName(mp->mip, rc + 1, mp->mip->MV_FILE_TYPE_depthMap, 1), width, height, depthMap);
-        imageIO::readImage(mv_getFileName(mp->mip, rc + 1, mp->mip->MV_FILE_TYPE_simMap, 1), width, height, simMap);
-        imageIO::readImage(mv_getFileName(mp->mip, rc + 1, mp->mip->MV_FILE_TYPE_nmodMap), width, height, numOfModalsMap);
+        imageIO::readImage(mv_getFileName(mp->mip, rc + 1, EFileType::depthMap, 1), width, height, depthMap);
+        imageIO::readImage(mv_getFileName(mp->mip, rc + 1, EFileType::simMap, 1), width, height, simMap);
+        imageIO::readImage(mv_getFileName(mp->mip, rc + 1, EFileType::nmodMap), width, height, numOfModalsMap);
 
         imageIO::transposeImage(width, height, depthMap);
         imageIO::transposeImage(width, height, simMap);
@@ -411,8 +411,8 @@ bool mv_fuse::filterDepthMapsRC(int rc, int minNumOfModals, int minNumOfModalsWS
     imageIO::transposeImage(h, w, depthMap);
     imageIO::transposeImage(h, w, simMap);
 
-    imageIO::writeImage(mv_getFileName(mp->mip, rc + 1, mp->mip->MV_FILE_TYPE_depthMap, 0), w, h, depthMap);
-    imageIO::writeImage(mv_getFileName(mp->mip, rc + 1, mp->mip->MV_FILE_TYPE_simMap, 0), w, h, simMap);
+    imageIO::writeImage(mv_getFileName(mp->mip, rc + 1, EFileType::depthMap, 0), w, h, depthMap);
+    imageIO::writeImage(mv_getFileName(mp->mip, rc + 1, EFileType::simMap, 0), w, h, simMap);
 
     if(mp->verbose)
         printf("%i solved in ", rc);
@@ -444,7 +444,7 @@ float mv_fuse::computeAveragePixelSizeInHexahedron(point3d* hexah, int step, int
         {
             int width, height;
 
-            imageIO::readImage(mv_getFileName(mp->mip, rc + 1, mp->mip->MV_FILE_TYPE_depthMap, scale), width, height, rcdepthMap.getDataWritable());
+            imageIO::readImage(mv_getFileName(mp->mip, rc + 1, EFileType::depthMap, scale), width, height, rcdepthMap.getDataWritable());
 
             imageIO::transposeImage(width, height, rcdepthMap.getDataWritable());
         }
@@ -511,7 +511,7 @@ void mv_fuse::divideSpace(point3d* hexah, float& minPixSize)
         {
             int width, height;
 
-            imageIO::readImage(mv_getFileName(mp->mip, rc + 1, mp->mip->MV_FILE_TYPE_depthMap, scale), width, height, depthMap.getDataWritable());
+            imageIO::readImage(mv_getFileName(mp->mip, rc + 1, EFileType::depthMap, scale), width, height, depthMap.getDataWritable());
 
             imageIO::transposeImage(width, height, depthMap.getDataWritable());
         }
@@ -557,7 +557,7 @@ void mv_fuse::divideSpace(point3d* hexah, float& minPixSize)
         {
             int width, height;
 
-            imageIO::readImage(mv_getFileName(mp->mip, rc + 1, mp->mip->MV_FILE_TYPE_depthMap, scale), width, height, depthMap.getDataWritable());
+            imageIO::readImage(mv_getFileName(mp->mip, rc + 1, EFileType::depthMap, scale), width, height, depthMap.getDataWritable());
 
             imageIO::transposeImage(width, height, depthMap.getDataWritable());
         }
@@ -748,8 +748,8 @@ void mv_fuse::filterSmallConnComponents(float alpha, int minSegSize, int scale)
         {
             int width, height;
 
-            imageIO::readImage(mv_getFileName(mp->mip, rc + 1, mp->mip->MV_FILE_TYPE_depthMap, scale), width, height, depthMap.getDataWritable());
-            imageIO::readImage(mv_getFileName(mp->mip, rc + 1, mp->mip->MV_FILE_TYPE_simMap, scale), width, height, simMap.getDataWritable());
+            imageIO::readImage(mv_getFileName(mp->mip, rc + 1, EFileType::depthMap, scale), width, height, depthMap.getDataWritable());
+            imageIO::readImage(mv_getFileName(mp->mip, rc + 1, EFileType::simMap, scale), width, height, simMap.getDataWritable());
 
             imageIO::transposeImage(width, height, depthMap.getDataWritable());
             imageIO::transposeImage(width, height, simMap.getDataWritable());
@@ -777,8 +777,8 @@ void mv_fuse::filterSmallConnComponents(float alpha, int minSegSize, int scale)
         imageIO::transposeImage(h, w, depthMap.getDataWritable());
         imageIO::transposeImage(h, w, simMap.getDataWritable());
 
-        imageIO::writeImage(mv_getFileName(mp->mip, rc + 1, mp->mip->MV_FILE_TYPE_depthMap, scale), w, h, depthMap.getDataWritable());
-        imageIO::writeImage(mv_getFileName(mp->mip, rc + 1, mp->mip->MV_FILE_TYPE_simMap, scale), w, h, simMap.getDataWritable());
+        imageIO::writeImage(mv_getFileName(mp->mip, rc + 1, EFileType::depthMap, scale), w, h, depthMap.getDataWritable());
+        imageIO::writeImage(mv_getFileName(mp->mip, rc + 1, EFileType::simMap, scale), w, h, simMap.getDataWritable());
 
         // visualizeDepthMap(rc, mp->mip->newDir+num2strFourDecimal(rc)+"fused.wrl");
 
@@ -817,8 +817,8 @@ std::string generateTempPtsSimsFiles(std::string tmpDir, multiviewParams* mp, bo
             {
                 int width, height;
 
-                imageIO::readImage(mv_getFileName(mp->mip, rc + 1, mp->mip->MV_FILE_TYPE_depthMap, scale), width, height, depthMap.getDataWritable());
-                imageIO::readImage(mv_getFileName(mp->mip, rc + 1, mp->mip->MV_FILE_TYPE_simMap, scale), width, height, simMap.getDataWritable());
+                imageIO::readImage(mv_getFileName(mp->mip, rc + 1, EFileType::depthMap, scale), width, height, depthMap.getDataWritable());
+                imageIO::readImage(mv_getFileName(mp->mip, rc + 1, EFileType::simMap, scale), width, height, simMap.getDataWritable());
 
                 imageIO::transposeImage(width, height, depthMap.getDataWritable());
                 imageIO::transposeImage(width, height, simMap.getDataWritable());

@@ -78,7 +78,7 @@ void multiviewInputParams::initFromConfigFile(const std::string& iniFile)
             std::cout << "No 'imageResolutions' section, load from image files." << std::endl;
             for(std::size_t i = 0; i < ncams; ++i)
             {
-                const std::string filename = mv_getFileNamePrefix(this, static_cast<int>(i + 1)) + "." + imageExt;
+                const std::string filename = mv_getFileNamePrefix(mvDir, this, static_cast<int>(i + 1)) + "." + imageExt;
                 const imageParams params = addImageFile(filename);
                 dimensions.emplace(params.width, params.height);
             }
@@ -144,8 +144,8 @@ multiviewParams::multiviewParams(int _ncams, multiviewInputParams* _mip, float _
         }
         else
         {
-            std::string fileNameP = mv_getFileName(mip, indexes[i], mip->MV_FILE_TYPE_P);
-            std::string fileNameD = mv_getFileNamePrefix(mip, indexes[i]) + "_D.txt";
+            std::string fileNameP = mv_getFileName(mip, indexes[i], EFileType::P);
+            std::string fileNameD = mv_getFileName(mip, indexes[i], EFileType::D);
             loadCameraFile(i, fileNameP, fileNameD);
         }
 
@@ -291,7 +291,7 @@ void multiviewParams::addCam()
     indexes[i] = i + 1;
 
     FILE* f;
-    f = mv_openFile(mip, indexes[i], mip->MV_FILE_TYPE_P, "r");
+    f = mv_openFile(mip, indexes[i], EFileType::P, "r");
     camArr[i] = load3x4MatrixFromFile(f);
     fclose(f);
 
@@ -306,7 +306,7 @@ void multiviewParams::reloadLastCam()
     int i = ncams - 1;
 
     FILE* f;
-    f = mv_openFile(mip, indexes[i], mip->MV_FILE_TYPE_P, "r");
+    f = mv_openFile(mip, indexes[i], EFileType::P, "r");
     camArr[i] = load3x4MatrixFromFile(f);
     fclose(f);
 

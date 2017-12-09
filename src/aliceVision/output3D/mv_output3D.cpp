@@ -126,7 +126,7 @@ int mv_output3D::write2PlyPts(FILE* plyf, bool dobinary, int  /*ntris*/, int  /*
     float* ludm;
 
     // write pts
-    const std::string fileNameStrIn = mv_getFileNamePrefix(mp->mip, rc + 1) + "." + mp->mip->imageExt;
+    const std::string fileNameStrIn = mv_getFileNamePrefix(mp->mip->mvDir, mp->mip, rc + 1) + "." + mp->mip->imageExt;
 
     int rgbWidth, rgbHeight;
     std::vector<rgb> rgbBuffer;
@@ -410,7 +410,7 @@ void mv_output3D::savePrematchToWrl(const std::string& wrname, int shift, int st
     for(int rc = shift; rc < mp->ncams; rc += step)
     {
         staticVector<seedPoint>* seeds;
-        loadSeedsFromFile(&seeds, mp->indexes[rc], mp->mip, mp->mip->MV_FILE_TYPE_seeds);
+        loadSeedsFromFile(&seeds, mp->indexes[rc], mp->mip, EFileType::seeds);
 
         staticVector<orientedPoint>* ops = new staticVector<orientedPoint>(seeds->size());
 
@@ -458,7 +458,7 @@ void mv_output3D::savePrematchToWrl(const std::string& wrname)
     for(int rc = 0; rc < mp->ncams; rc++)
     {
         staticVector<seedPoint>* seeds;
-        loadSeedsFromFile(&seeds, mp->indexes[rc], mp->mip, mp->mip->MV_FILE_TYPE_seeds);
+        loadSeedsFromFile(&seeds, mp->indexes[rc], mp->mip, EFileType::seeds);
 
         staticVector<orientedPoint>* ops = new staticVector<orientedPoint>(seeds->size());
 
@@ -1274,7 +1274,7 @@ void mv_output3D::create_wrl(const multiviewParams* mp, int filerPerc, int winSi
 
         if(oldrc != seedsrc[i])
         {
-            const std::string fileNameStrIn = mv_getFileNamePrefix(mp->mip, seedsrc[i] + 1) + "." + mp->mip->imageExt;
+            const std::string fileNameStrIn = mv_getFileNamePrefix(mp->mip->mvDir, mp->mip, seedsrc[i] + 1) + "." + mp->mip->imageExt;
             int imageWidth, imageHeight;
             imageIO::readImage(fileNameStrIn, imageWidth, imageHeight, bmpimg);
         }
@@ -1652,7 +1652,7 @@ void mv_output3D::create_wrl_pts(const multiviewParams* mp, const std::string& w
     t1 = initEstimate();
     for(int rc = shift; rc < mp->ncams; rc += step)
     {
-        const std::string fileNameStrIn = mv_getFileNamePrefix(mp->mip, rc + 1) + "." + mp->mip->imageExt;
+        const std::string fileNameStrIn = mv_getFileNamePrefix(mp->mip->mvDir,mp->mip, rc + 1) + "." + mp->mip->imageExt;
         int imageWidth, imageHeight;
         std::vector<Color> colorBuffer;
         imageIO::readImage(fileNameStrIn, imageWidth, imageHeight, colorBuffer);
@@ -2147,7 +2147,7 @@ void mv_output3D::create_wrl_for_delaunay_cut(const multiviewParams* mp, const s
     {
         int RC = (*tcams)[C];
 
-        const std::string fileNameStr = mv_getFileNamePrefix(mp->mip, RC + 1) + "." + mp->mip->imageExt;
+        const std::string fileNameStr = mv_getFileNamePrefix(mp->mip->mvDir, mp->mip, RC + 1) + "." + mp->mip->imageExt;
 
         std::vector<Color> bmp, bmpr;
         int imageWidth, imageHeight;
@@ -2975,7 +2975,7 @@ void mv_output3D::saveMvMeshToWrl(int scaleFactor, mv_mesh* me, staticVector<Col
     {
         int RC = (*usedcams)[c];
 
-        const std::string fileNameStr = mv_getFileNamePrefix(mp->mip, RC + 1) + "." + mp->mip->imageExt;
+        const std::string fileNameStr = mv_getFileNamePrefix(mp->mip->mvDir, mp->mip, RC + 1) + "." + mp->mip->imageExt;
 
         std::vector<rgb> bmp, bmpr;
         int imageWidth, imageHeight;
@@ -3535,7 +3535,7 @@ void mv_output3D::writeCamerasToWrl(staticVector<int>* tcams, const std::string&
     {
         int rc = (*tcams)[c];
         staticVector<seedPoint>* seeds;
-        loadSeedsFromFile(&seeds, mp->indexes[rc], mp->mip, mp->mip->MV_FILE_TYPE_seeds);
+        loadSeedsFromFile(&seeds, mp->indexes[rc], mp->mip, EFileType::seeds);
 
         for(int i = 0; i < seeds->size(); i++)
         {

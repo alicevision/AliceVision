@@ -134,7 +134,7 @@ staticVector<int>* mv_prematch_cams::precomputeIncidentMatrixCamsFromSeeds()
     for(int rc = 0; rc < mp->ncams; rc++)
     {
         staticVector<seedPoint>* seeds;
-        loadSeedsFromFile(&seeds, mp->indexes[rc], mp->mip, mp->mip->MV_FILE_TYPE_seeds);
+        loadSeedsFromFile(&seeds, mp->indexes[rc], mp->mip, EFileType::seeds);
         for(int i = 0; i < seeds->size(); i++)
         {
             seedPoint* sp = &(*seeds)[i];

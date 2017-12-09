@@ -501,7 +501,7 @@ void cuda_plane_sweeping::getMinMaxdepths(int rc, staticVector<int>* tcams, floa
                                           float& maxDepth)
 {
     staticVector<seedPoint>* seeds;
-    loadSeedsFromFile(&seeds, mp->indexes[rc], mp->mip, mp->mip->MV_FILE_TYPE_seeds);
+    loadSeedsFromFile(&seeds, mp->indexes[rc], mp->mip, EFileType::seeds);
 
     float minCamDist = (float)mp->mip->_ini.get<double>("prematching.minCamDist", 0.0f);
     float maxCamDist = (float)mp->mip->_ini.get<double>("prematching.maxCamDist", 15.0f);

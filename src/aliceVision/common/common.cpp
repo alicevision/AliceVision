@@ -1284,7 +1284,7 @@ staticVector<int>* createRandomArrayOfIntegers(int n)
 float getCGDepthFromSeeds(const multiviewParams* mp, int rc)
 {
     staticVector<seedPoint>* seeds;
-    loadSeedsFromFile(&seeds, mp->indexes[rc], mp->mip, mp->mip->MV_FILE_TYPE_seeds);
+    loadSeedsFromFile(&seeds, mp->indexes[rc], mp->mip, EFileType::seeds);
 
     float midDepth = -1.0f;
 
