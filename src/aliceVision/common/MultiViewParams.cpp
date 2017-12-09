@@ -32,9 +32,11 @@ timeIndex::timeIndex(int _index)
     timeStamp = clock();
 }
 
-multiviewInputParams::multiviewInputParams(const std::string& file)
+multiviewInputParams::multiviewInputParams(const std::string& file, const std::string& depthMapFolder, const std::string& depthMapFilterFolder)
 {
     initFromConfigFile(file);
+    _depthMapFolder = depthMapFolder + "/";
+    _depthMapFilterFolder = depthMapFilterFolder + "/";
 }
 
 imageParams multiviewInputParams::addImageFile(const std::string& filename)
@@ -62,6 +64,8 @@ void multiviewInputParams::initFromConfigFile(const std::string& iniFile)
     // initialize directory names
     const auto rootPath = bfs::path(iniFile).parent_path().string() + "/";
     mvDir = rootPath;
+    _depthMapFolder = (bfs::path(rootPath) / "depthMap").string();
+    _depthMapFilterFolder = (bfs::path(rootPath) / "depthMapFilter").string();
 
     imageExt = _ini.get<std::string>("global.imgExt", imageExt);
     prefix = _ini.get<std::string>("global.prefix", prefix);

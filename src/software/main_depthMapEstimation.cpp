@@ -26,6 +26,7 @@ int main(int argc, char* argv[])
     long startTime = clock();
 
     std::string iniFilepath;
+    std::string outputFolder;
     int rangeStart = -1;
     int rangeSize = -1;
     po::options_description inputParams("Estimate depth map for each input image.");
@@ -33,6 +34,8 @@ int main(int argc, char* argv[])
     inputParams.add_options()
         ("ini", po::value<std::string>(&iniFilepath)->required(),
             "Configuration file (mvs.ini).")
+        ("output", po::value<std::string>(&outputFolder)->required(),
+            "Output folder for generated depth maps.")
         ("rangeStart", po::value<int>(&rangeStart)->default_value(rangeStart),
             "Compute a sub-range of images from index rangeStart to rangeStart+rangeSize.")
         ("rangeSize", po::value<int>(&rangeSize)->default_value(rangeSize),
@@ -67,7 +70,7 @@ int main(int argc, char* argv[])
     ALICEVISION_COUT("ini file: " << iniFilepath);
 
     // .ini parsing
-    multiviewInputParams mip(iniFilepath);
+    multiviewInputParams mip(iniFilepath, outputFolder, "");
     const double simThr = mip._ini.get<double>("global.simThr", 0.0);
     multiviewParams mp(mip.getNbCameras(), &mip, (float) simThr);
     mv_prematch_cams pc(&mp);

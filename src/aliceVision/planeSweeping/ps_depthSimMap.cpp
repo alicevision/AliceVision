@@ -563,12 +563,6 @@ void ps_depthSimMap::save(int rc, staticVector<int>* tcams)
     imageIO::writeImage(mv_getFileName(mp->mip, rc + 1, EFileType::depthMap, scale), width, height, depthMap->getDataWritable());
     imageIO::writeImage(mv_getFileName(mp->mip, rc + 1, EFileType::simMap, scale), width, height, simMap->getDataWritable());
 
-//    if(scale == 1) // TODO: check if necessary
-//    {
-//        imageIO::writeImage(mv_getFileName(mp->mip, rc + 1, EFileType::depthMap, 0), width, height, depthMap->getDataWritable());
-//        imageIO::writeImage(mv_getFileName(mp->mip, rc + 1, EFileType::simMap, 0), width, height, simMap->getDataWritable());
-//    }
-
     {
         point2d maxMinDepth = getMaxMinDepth();
         FILE* f = mv_openFile(mp->mip, mp->indexes[rc], EFileType::depthMapInfo, "w");

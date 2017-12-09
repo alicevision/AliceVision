@@ -206,7 +206,7 @@ int main(int argc, char* argv[])
     }
 
     // .ini parsing
-    multiviewInputParams mip(cmdline.iniFile);
+    multiviewInputParams mip(cmdline.iniFile, "", "");
     const double simThr = mip._ini.get<double>("global.simThr", 0.0);
     const int minNumOfConsistensCams = mip._ini.get<int>("filter.minNumOfConsistentCams", 3);
     const int maxPts = mip._ini.get<int>("largeScale.planMaxPts", 30000000);

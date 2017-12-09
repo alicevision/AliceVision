@@ -107,7 +107,7 @@ int main(int argc, char* argv[])
     const EImageFileType outputTextureFileType = EImageFileType_stringToEnum(outTextureFileTypeName);
 
     // .ini parsing
-    multiviewInputParams mip(iniFilepath);
+    multiviewInputParams mip(iniFilepath, "", "");
     const double simThr = mip._ini.get<double>("global.simThr", 0.0);
     multiviewParams mp(mip.getNbCameras(), &mip, (float) simThr);
     mv_prematch_cams pc(&mp);

@@ -16,7 +16,6 @@ public:
     bool refinercCUDA(bool checkIfExists = true);
 
     std::string outDir;
-    std::string tmpDir;
     bool _userTcOrPixSize;
     int _wsh;
     float _gammaC;

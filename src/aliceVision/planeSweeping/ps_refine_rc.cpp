@@ -24,12 +24,6 @@ ps_refine_rc::ps_refine_rc(int _rc, int _scale, int _step, ps_sgm_params* _sp)
         bfs::create_directory(outDir);
     }
 
-    tmpDir = sp->getREFINETmpDir();
-    if(!FolderExists(tmpDir))
-    {
-        bfs::create_directory(tmpDir);
-    }
-
     _nSamplesHalf = sp->mp->mip->_ini.get<int>("refineRc.nSamplesHalf", 150);
     _ndepthsToRefine = sp->mp->mip->_ini.get<int>("refineRc.ndepthsToRefine", 31);
     _sigma = (float)sp->mp->mip->_ini.get<double>("refineRc.sigma", 15.0);
@@ -129,7 +123,7 @@ ps_depthSimMap* ps_refine_rc::refineAndFuseDepthSimMapCUDA(ps_depthSimMap* depth
         dataMaps->push_back(depthSimMapC);
 
         if(sp->visualizePartialDepthMaps)
-            depthSimMapC->saveToWrlPng(tmpDir + "refineRc_Photo_" + num2strFourDecimal(rc) + "_tc_" +
+            depthSimMapC->saveToWrlPng(outDir + "refineRc_Photo_" + num2strFourDecimal(rc) + "_tc_" +
                                            num2strFourDecimal(tc) + ".wrl",
                                        rc, -2.0f);
 
@@ -259,12 +253,12 @@ bool ps_refine_rc::refinercCUDA(bool checkIfExists)
     ps_depthSimMap* depthPixSizeMapVis = getDepthPixSizeMapFromSGM();
 
     if(sp->visualizeDepthMaps)
-        depthPixSizeMapVis->saveToImage(tmpDir + "refineRc_" + num2strFourDecimal(rc) + "Vis.png", 0.0f);
+        depthPixSizeMapVis->saveToImage(outDir + "refineRc_" + num2strFourDecimal(rc) + "Vis.png", 0.0f);
 
     ps_depthSimMap* depthSimMapPhoto = refineAndFuseDepthSimMapCUDA(depthPixSizeMapVis);
 
     if(sp->visualizeDepthMaps)
-        depthSimMapPhoto->saveToImage(tmpDir + "refineRc_" + num2strFourDecimal(rc) + "Photo.png", 0.0f);
+        depthSimMapPhoto->saveToImage(outDir + "refineRc_" + num2strFourDecimal(rc) + "Photo.png", 0.0f);
 
     ps_depthSimMap* depthSimMapOpt = nullptr;
     if(sp->doRefineRc)
@@ -278,7 +272,7 @@ bool ps_refine_rc::refinercCUDA(bool checkIfExists)
     }
 
     if(sp->visualizeDepthMaps)
-        depthSimMapOpt->saveToImage(tmpDir + "refineRc_" + num2strFourDecimal(rc) + "Opt.png", 0.0f);
+        depthSimMapOpt->saveToImage(outDir + "refineRc_" + num2strFourDecimal(rc) + "Opt.png", 0.0f);
 
     depthSimMapOpt->save(rc, tcams);
 
@@ -290,9 +284,9 @@ bool ps_refine_rc::refinercCUDA(bool checkIfExists)
 
     if(sp->visualizeDepthMaps)
     {
-        depthSimMapOpt->saveToWrl(tmpDir + "refineRc_" + num2strFourDecimal(rc) + "Opt.wrl", rc);
-        depthSimMapPhoto->saveToWrl(tmpDir + "refineRc_" + num2strFourDecimal(rc) + "Photo.wrl", rc);
-        depthPixSizeMapVis->saveToWrl(tmpDir + "refineRc_" + num2strFourDecimal(rc) + "Vis.wrl", rc);
+        depthSimMapOpt->saveToWrl(outDir + "refineRc_" + num2strFourDecimal(rc) + "Opt.wrl", rc);
+        depthSimMapPhoto->saveToWrl(outDir + "refineRc_" + num2strFourDecimal(rc) + "Photo.wrl", rc);
+        depthPixSizeMapVis->saveToWrl(outDir + "refineRc_" + num2strFourDecimal(rc) + "Vis.wrl", rc);
     }
 
     delete depthPixSizeMapVis;

@@ -63,7 +63,6 @@ public:
                                                 int step, int rc, int zborder, staticVector<float>* planesDepths);
 
     std::string getREFINEOutDir();
-    std::string getREFINETmpDir();
     std::string getREFINE_photo_depthMapFileName(int cam, int scale, int step);
     std::string getREFINE_photo_simMapFileName(int cam, int scale, int step);
     std::string getREFINE_opt_depthMapFileName(int cam, int scale, int step);

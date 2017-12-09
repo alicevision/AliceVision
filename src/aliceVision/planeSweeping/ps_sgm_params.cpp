@@ -77,12 +77,7 @@ ps_sgm_params::~ps_sgm_params()
 
 std::string ps_sgm_params::getREFINEOutDir()
 {
-    return mp->mip->mvDir + "REFINERC/";
-}
-
-std::string ps_sgm_params::getREFINETmpDir()
-{
-    return mp->mip->mvDir + "REFINERC/_tmp/";
+    return mp->mip->_depthMapFolder + "REFINERC/";
 }
 
 std::string ps_sgm_params::getREFINE_photo_depthMapFileName(int cam, int scale, int step)
@@ -111,12 +106,12 @@ std::string ps_sgm_params::getREFINE_opt_simMapFileName(int cam, int scale, int 
 
 std::string ps_sgm_params::getSGMOutDir()
 {
-    return mp->mip->mvDir + SGMoutDirName + "/";
+    return mp->mip->_depthMapFolder + SGMoutDirName + "/";
 }
 
 std::string ps_sgm_params::getSGMTmpDir()
 {
-    return mp->mip->mvDir + SGMoutDirName + "/" + SGMtmpDirName + "/";
+    return mp->mip->_depthMapFolder + SGMoutDirName + "/" + SGMtmpDirName + "/";
 }
 
 std::string ps_sgm_params::getSGM_depthMapFileName(int cam, int scale, int step)

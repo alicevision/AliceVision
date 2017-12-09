@@ -72,7 +72,7 @@ struct multiviewInputParams
 
     multiviewInputParams() = default;
 
-    explicit multiviewInputParams(const std::string& file);
+    explicit multiviewInputParams(const std::string& file, const std::string& depthMapFolder, const std::string& depthMapFilterFolder);
 
     void initFromConfigFile(const std::string& iniFile);
 
@@ -94,7 +94,9 @@ struct multiviewInputParams
 
     std::string newDir;
     // int occMapScale;
-    std::string mvDir;
+    std::string mvDir; //< prepareDenseScene data
+    std::string _depthMapFolder; //< depthMapEstimate data folder
+    std::string _depthMapFilterFolder; //< depthMapFilter data folder
     std::string outDir;
     std::string prefix;
     std::string imageExt = "_c.png";

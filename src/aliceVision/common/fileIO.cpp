@@ -245,12 +245,20 @@ std::string mv_getFileName(multiviewInputParams* mip, int index, EFileType mv_fi
         }
         case EFileType::depthMap:
         {
+            if(scale == 0)
+                baseDir = mip->_depthMapFilterFolder;
+            else
+                baseDir = mip->_depthMapFolder;
             suffix = "_depthMap";
             ext = "exr";
             break;
         }
         case EFileType::simMap:
         {
+            if(scale == 0)
+                baseDir = mip->_depthMapFilterFolder;
+            else
+                baseDir = mip->_depthMapFolder;
             suffix = "_simMap";
             ext = "exr";
             break;
@@ -269,6 +277,7 @@ std::string mv_getFileName(multiviewInputParams* mip, int index, EFileType mv_fi
         }
         case EFileType::depthMapInfo:
         {
+            baseDir = mip->_depthMapFolder;
             suffix = "_depthMapInfo";
             ext = "tmp";
             break;
@@ -281,6 +290,7 @@ std::string mv_getFileName(multiviewInputParams* mip, int index, EFileType mv_fi
         }
         case EFileType::nmodMap:
         {
+            baseDir = mip->_depthMapFilterFolder;
             suffix = "_nmodMap";
             ext = "png";
             break;

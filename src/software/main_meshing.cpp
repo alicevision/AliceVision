@@ -51,6 +51,8 @@ int main(int argc, char* argv[])
 
     std::string iniFilepath;
     std::string outputMesh;
+    std::string depthMapFolder;
+    std::string depthMapFilterFolder;
     EPartitioning partitioning = eSingleBlock;
     po::options_description inputParams;
 
@@ -60,6 +62,10 @@ int main(int argc, char* argv[])
     inputParams.add_options()
         ("ini", po::value<std::string>(&iniFilepath)->required(),
             "Configuration file (mvs.ini).")
+        ("depthMapFolder", po::value<std::string>(&depthMapFolder)->required(),
+            "Input depth maps folder.")
+        ("depthMapFilterFolder", po::value<std::string>(&depthMapFilterFolder)->required(),
+            "Input filtered depth maps folder.")
         ("output", po::value<std::string>(&outputMesh)->required(),
             "Output mesh (OBJ file format).")
 
@@ -99,7 +105,7 @@ int main(int argc, char* argv[])
     ALICEVISION_COUT("ini file: " << iniFilepath);
 
     // .ini parsing
-    multiviewInputParams mip(iniFilepath);
+    multiviewInputParams mip(iniFilepath, depthMapFolder, depthMapFilterFolder);
     const double simThr = mip._ini.get<double>("global.simThr", 0.0);
     multiviewParams mp(mip.getNbCameras(), &mip, (float) simThr);
     mv_prematch_cams pc(&mp);
