@@ -208,15 +208,15 @@ int ps_listCUDADevices(bool verbose)
     CHECK_CUDA_ERROR();
     if(err != cudaSuccess)
     {
-        printf("Error getting device count\n");
-        return (1);
-    };
+        printf("Error getting cuda device count");
+        return 0;
+    }
 
     if(num_gpus < 1)
     {
-        printf("ERROR: no CUDA capable devices were detected\n");
-        // exit(1);
-    };
+        printf("ERROR: no CUDA capable devices detected");
+        return 0;
+    }
 
     if(verbose == true)
     {
@@ -228,7 +228,7 @@ int ps_listCUDADevices(bool verbose)
             cudaGetDeviceProperties(&dprop, i);
             printf("   %d: %s\n", i, dprop.name);
         }
-    };
+    }
 
     return num_gpus;
 };
