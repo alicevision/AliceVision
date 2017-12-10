@@ -625,8 +625,7 @@ staticVector<float>* cuda_plane_sweeping::getDepthsByPixelSize(int rc, float min
             {
                 printf("%f\n", (*out)[j]);
             }
-            printf("WARNING getDepthsByPixelSize not asc!!!\n");
-            exit(1);
+            throw std::runtime_error("getDepthsByPixelSize not asc.");
         }
     }
 

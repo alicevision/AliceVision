@@ -2212,8 +2212,7 @@ void mv_mesh::subdivideMeshMaxEdgeLengthUpdatePtsCams(const multiviewParams* mp,
                 if(((*oldTris)[idTri].i[0] >= oldNPts) || ((*oldTris)[idTri].i[1] >= oldNPts) ||
                    ((*oldTris)[idTri].i[2] >= oldNPts))
                 {
-                    printf("WARNING OUT OF RANGE!\n");
-                    exit(1);
+                    throw std::runtime_error("subdivideMeshMaxEdgeLengthUpdatePtsCams: out of range.");
                 }
 
                 int maxcams = sizeOfStaticVector<int>((*ptsCams)[(*oldTris)[idTri].i[0]]) +
@@ -2234,8 +2233,7 @@ void mv_mesh::subdivideMeshMaxEdgeLengthUpdatePtsCams(const multiviewParams* mp,
 
         if(ptsCams->size() != pts->size())
         {
-            printf("WARNING different size!\n");
-            exit(1);
+            throw std::runtime_error("subdivideMeshMaxEdgeLengthUpdatePtsCams: different size!");
         }
 
         delete newPtsOldTriId;
@@ -3702,13 +3700,9 @@ int mv_mesh::getTriPtIndex(int triId, int ptId, bool failIfDoesNotExists)
 
     if(failIfDoesNotExists)
     {
-        printf("ERROR getTriPtIndex\n");
-        exit(1);
+        throw std::runtime_error("mv_mesh::getTriPtIndex: ptId does not exist: " + std::to_string(ptId));
     }
-    else
-    {
-        return -1;
-    }
+    return -1;
 }
 
 pixel mv_mesh::getTriOtherPtsIds(int triId, int _ptId)
@@ -3726,8 +3720,7 @@ pixel mv_mesh::getTriOtherPtsIds(int triId, int _ptId)
 
     if(nothers != 2)
     {
-        printf("WARNING pt X neighbouring tringle without pt X\n");
-        exit(1);
+        throw std::runtime_error("mv_mesh::getTriOtherPtsIds: pt X neighbouring tringle without pt X");
     }
 
     return pixel(others[0], others[1]);
@@ -3742,8 +3735,7 @@ int mv_mesh::getTriRemainingPtIndex(int triId, int ptId1, int ptId2)
             return k;
         }
     }
-    printf("ERROR getTriRemainingPtIndex\n");
-    exit(1);
+    throw std::runtime_error("mv_mesh::getTriRemainingPtIndex: ptId1 and ptId2 not found");
 }
 
 int mv_mesh::getTriRemainingPtId(int triId, int ptId1, int ptId2)
@@ -3756,8 +3748,7 @@ int mv_mesh::getTriRemainingPtId(int triId, int ptId1, int ptId2)
             return ptid;
         }
     }
-    printf("ERROR getTriRemainingPtIndex\n");
-    exit(1);
+    throw std::runtime_error("mv_mesh::getTriRemainingPtId: ptId1 and ptId2 not found");
 }
 
 bool mv_mesh::areTwoTrisSameOriented(int triId1, int triId2, int edgePtId1, int edgePtId2)
@@ -4258,8 +4249,7 @@ bool mv_mesh::loadFromObjAscii(int& nmtls, staticVector<int>** trisMtlIds, stati
 
                 if(!ok)
                 {
-                    printf("ERROR occured while reading obj file %s\n", objAsciiFileName.c_str());
-                    exit(1);
+                    throw std::runtime_error("mv_mesh: Error occured while reading obj file: " + objAsciiFileName);
                 }
 
                 triangle t;
@@ -4396,13 +4386,12 @@ staticVector<voxel>* mv_mesh::getTrisNeighsTris()
             pixel itr;
             if(!getEdgeNeighTrisInterval(itr, edge, edgesXStat, edgesXYStat))
             {
-                printf("WARNING mv_mesh::getTrisNeighsTris case 0\n");
-                exit(1);
+                throw std::runtime_error("mv_mesh::getTrisNeighsTris case 0: can't find edge.");
             }
             int nneighs = itr.y - itr.x + 1;
             if(nneighs > 2)
             {
-                printf("WARNING mv_mesh::getTrisNeighsTris triangle edge has more than one neighbours\n");
+                printf("WARNING mv_mesh::getTrisNeighsTris triangle edge has more than one neighbours.");
             }
 
             bool wasThere = false;
@@ -4420,8 +4409,7 @@ staticVector<voxel>* mv_mesh::getTrisNeighsTris()
             }
             if(!wasThere)
             {
-                printf("WARNING mv_mesh_clean2::init case 1\n");
-                exit(1);
+                throw std::runtime_error("mv_mesh_clean2::init case 1: not found.");
             }
         }
     }

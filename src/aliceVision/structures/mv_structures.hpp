@@ -417,8 +417,8 @@ public:
             cams[n] = cam;
             shifts[n] = point2d(0.0f, 0.0f);
             n++;
-        };
-    };
+        }
+    }
 
     inline int size() const { return n; }
 
@@ -430,7 +430,7 @@ public:
         {
             printf("reserve too many cams\n");
             // exit(1);
-        };
+        }
     }
 
     inline int indexOf(int what)

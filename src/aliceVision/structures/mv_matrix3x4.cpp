@@ -59,8 +59,7 @@ void matrix3x4::decomposeProjectionMatrix(matrix3x3& K, matrix3x3& R, point3d& C
     else
     {
         doprintf();
-        printf("WARNING affine camera\n");
-        exit(1);
+        throw std::runtime_error("matrix3x4::decomposeProjectionMatrix: affine camera.");
     }
 
     if(K.m11 < 0.0f)
@@ -84,7 +83,6 @@ void matrix3x4::decomposeProjectionMatrix(matrix3x3& K, matrix3x3& R, point3d& C
     else
     {
         doprintf();
-        printf("WARNING affine camera\n");
-        exit(1);
+        throw std::runtime_error("matrix3x4::decomposeProjectionMatrix: affine camera.");
     }
 }

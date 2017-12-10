@@ -728,8 +728,6 @@ bool mv_delanuay_GC_grid::reconstructVoxelGrid(point3d hexah[8], staticVector<in
     et = printfElapsedTime(t1);
     mp->printStringToLog("saveDhAndDeallocate: " + et);
 
-    // exit(1);
-
     //	loadDh(fileNameDh, fileNameInfo);
 
     //	reconstructExpetiments(cams, folderName, fileNameStGraph, fileNameStSolution, fileNameTxt, fileNameTxtCam,

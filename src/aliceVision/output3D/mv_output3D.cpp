@@ -365,8 +365,7 @@ void mv_output3D::depthMap2Ply(const std::string& plyFileName, staticVector<floa
 
     if(plyf == nullptr)
     {
-        printf("Could not open output ply file %s\n", plyFileName.c_str());
-        exit(1);
+        throw std::runtime_error("mv_output3D::depthMap2Ply: Could not open output ply file: " + plyFileName);
     }
 
     fprintf(plyf, "ply%c", 10);
