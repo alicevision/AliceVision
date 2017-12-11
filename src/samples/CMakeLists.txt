@@ -2,7 +2,6 @@
 ## Samples
 
 # add_subdirectory(accv12Demo)
-add_subdirectory(exifParsing)
 # add_subdirectory(featuresAKAZEDemo)
 add_subdirectory(featuresRepeatability)
 # add_subdirectory(imageData)

@@ -42,8 +42,8 @@ class CommonDataByPair_vldSegment  : public CommonDataByPair
     image::Image< unsigned char > & maskRight )
   {
     image::Image< unsigned char > imageL, imageR;
-    image::ReadImage( _sLeftImage.c_str(), &imageL );
-    image::ReadImage( _sRightImage.c_str(), &imageR );
+    image::readImage( _sLeftImage, imageL );
+    image::readImage( _sRightImage, imageR );
 
     image::Image< float > imgA ( imageL.GetMat().cast< float >() );
     image::Image< float > imgB(imageR.GetMat().cast< float >());

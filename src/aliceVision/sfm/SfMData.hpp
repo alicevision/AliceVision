@@ -46,8 +46,6 @@ public:
   Landmarks structure;
   /// Controls points (stored as Landmarks (id_feat has no meaning here))
   Landmarks control_points;
-  /// Root Views path
-  std::string s_root_path;
   /// Feature folder path
   std::string _featureFolder;
   /// Matching folder path

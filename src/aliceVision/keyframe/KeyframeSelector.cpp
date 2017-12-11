@@ -5,8 +5,8 @@
 
 #include "KeyframeSelector.hpp"
 #include <aliceVision/image/image.hpp>
+#include <aliceVision/sensorDB/parseDatabase.hpp>
 #include <aliceVision/feature/sift/ImageDescriber_SIFT.hpp>
-#include <aliceVision/exif/sensorWidthDatabase/parseDatabase.hpp>
 #include <aliceVision/system/Logger.hpp>
 
 #include <tuple>
@@ -370,11 +370,11 @@ void KeyframeSelector::convertFocalLengthInMM(CameraInfo& cameraInfo, int imageW
 {
   assert(imageWidth > 0);
   
-  exif::sensordb::Datasheet find;
-  std::vector<exif::sensordb::Datasheet> vecDatabase;
-  exif::sensordb::parseDatabase(_sensorDbPath, vecDatabase);
+  sensorDB::Datasheet find;
+  std::vector<sensorDB::Datasheet> vecDatabase;
+  sensorDB::parseDatabase(_sensorDbPath, vecDatabase);
 
-  if(exif::sensordb::getInfo(cameraInfo.brand, cameraInfo.model, vecDatabase, find))
+  if(sensorDB::getInfo(cameraInfo.brand, cameraInfo.model, vecDatabase, find))
   {
     cameraInfo.focalLength = (cameraInfo.focalLength * find._sensorSize) / imageWidth;
     cameraInfo.focalIsMM = true;

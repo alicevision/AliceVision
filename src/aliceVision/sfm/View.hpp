@@ -181,6 +181,19 @@ public:
   }
 
   /**
+   * @brief Get the corresponding metadata value for the given name or an empty string
+   * @param[in] name The metadata name
+   * @return the metadata value string or "" if no corresponding value
+   */
+  const std::string& getMetadataOrEmpty(const std::string& name) const
+  {
+    static std::string emptyString = "";
+    if(hasMetadata(name))
+      return _metadata.at(name);
+    return emptyString;
+  }
+
+  /**
    * @brief Get the view metadata structure
    * @return the view metadata
    */

@@ -27,41 +27,41 @@ public:
   typedef typename DescriptorsT::value_type DescriptorT;
 
   /// Read from files the feats and their corresponding descriptors.
-  bool loadFromFile(
+  void loadFromFile(
     const std::string& sfileNameFeats,
     const std::string& sfileNameDescs)
   {
-    return loadFeatsFromFile(sfileNameFeats, _feats)
-          & loadDescsFromFile(sfileNameDescs, _descs);
+    loadFeatsFromFile(sfileNameFeats, _feats);
+    loadDescsFromFile(sfileNameDescs, _descs);
   }
 
   /// Export in two separate files the feats and their corresponding descriptors.
-  bool saveToFile(
+  void saveToFile(
     const std::string& sfileNameFeats,
     const std::string& sfileNameDescs) const
   {
-    return saveFeatsToFile(sfileNameFeats, _feats)
-          & saveDescsToFile(sfileNameDescs, _descs);
+    saveFeatsToFile(sfileNameFeats, _feats);
+    saveDescsToFile(sfileNameDescs, _descs);
   }
 
   /// Read from files the feats and their corresponding descriptors
   ///  descriptor in binary to save place
-  bool loadFromBinFile(
+  void loadFromBinFile(
     const std::string& sfileNameFeats,
     const std::string& sfileNameDescs)
   {
-    return loadFeatsFromFile(sfileNameFeats, _feats)
-          & loadDescsFromBinFile(sfileNameDescs, _descs);
+    loadFeatsFromFile(sfileNameFeats, _feats);
+    loadDescsFromBinFile(sfileNameDescs, _descs);
   }
 
   /// Export in two separate files the feats and their corresponding descriptors
   ///  descriptor in binary to save place
-  bool saveToBinFile(
+  void saveToBinFile(
     const std::string& sfileNameFeats,
     const std::string& sfileNameDescs) const
   {
-    return saveFeatsToFile(sfileNameFeats, _feats)
-          & saveDescsToBinFile(sfileNameDescs, _descs);
+    saveFeatsToFile(sfileNameFeats, _feats);
+    saveDescsToBinFile(sfileNameDescs, _descs);
   }
 
   /// Mutable and non-mutable FeatureT getters.

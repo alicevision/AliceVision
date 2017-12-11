@@ -65,25 +65,19 @@ private:
     {
       const std::string path = stlplus::create_filespec(folderPath_, vec_image_basename[i]);
       image::Image<RGBColor> imageRGB;
-      const bool bReadOk = image::ReadImage(path.c_str(), &imageRGB);
-      if ( bReadOk )
+      try
       {
+        image::readImage(path, imageRGB);
         vec_image_[i] = imageRGB;
       }
-      else
+      catch(std::invalid_argument& e)
       {
         image::Image<unsigned char> imageGray;
-        if (image::ReadImage(path.c_str(), &imageGray))
-        {
-          image::ConvertPixelType(imageGray, &imageRGB);
-          vec_image_[i] = imageRGB;
-        }
-        else
-        {
-          std::cerr << "Error: unable to load image:\n" << path << std::endl;
-          return false;
-        }
+        image::readImage(path, imageGray);
+        image::ConvertPixelType(imageGray, &imageRGB);
+        vec_image_[i] = imageRGB;
       }
+
     }
     return true;
   }

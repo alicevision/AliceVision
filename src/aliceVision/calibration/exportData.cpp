@@ -5,6 +5,7 @@
 
 #include "exportData.hpp"
 
+#include <aliceVision/image/io.hpp>
 #include <aliceVision/system/Logger.hpp>
 #include <aliceVision/camera/cameraUndistortImage.hpp>
 
@@ -48,13 +49,9 @@ void exportImages(aliceVision::dataio::FeedProvider& feed,
 
     // drawChessboardCorners(view, boardSize, cv::Mat(pointbuf), found);
 
-    aliceVision::camera::UndistortImage(inputImage, &camera, outputImage, aliceVision::image::BLACK);
+    aliceVision::camera::UndistortImage(inputImage, &camera, outputImage, static_cast<unsigned char>(0));
     const boost::filesystem::path imagePath = boost::filesystem::path(debugFolder) / (std::to_string(currentFrame) + suffix);
-    const bool exportStatus = aliceVision::image::WriteImage(imagePath.string().c_str(), outputImage);
-    if (!exportStatus)
-    {
-      ALICEVISION_LOG_WARNING("Failed to export: " << imagePath);
-    }
+    aliceVision::image::writeImage(imagePath.string(), outputImage);
   }
   ALICEVISION_LOG_DEBUG("... finished");
 }

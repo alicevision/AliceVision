@@ -54,6 +54,19 @@ public:
     bool bOrientation = true
   ):ImageDescriber(), _params(params), _bOrientation(bOrientation) {}
 
+  /**
+   * @brief Check if the image describer use float image
+   * @return True if the image describer use float image
+   */
+  bool useFloatImage() const override
+  {
+    return true;
+  }
+
+  /**
+   * @brief Get the corresponding EImageDescriberType
+   * @return EImageDescriberType
+   */
   virtual EImageDescriberType getDescriberType() const override
   {
     switch(_params._eAkazeDescriptor)
@@ -65,6 +78,11 @@ public:
     throw std::logic_error("Unknown AKAZE type.");
   }
   
+  /**
+   * @brief Use a preset to control the number of detected regions
+   * @param[in] preset The preset configuration
+   * @return True if configuration succeed. (here always false)
+   */
   bool Set_configuration_preset(EImageDescriberPreset preset) override
   {
     switch(preset)
@@ -85,23 +103,30 @@ public:
     return true;
   }
   
+  /**
+   * @brief Set image describer always upRight
+   * @param[in] upRight
+   */
   void setUpRight(bool upRight) override
   {
     _bOrientation = !upRight;
   }
 
   /**
-  @brief Detect regions on the image and compute their attributes (description)
-  @param image Image.
-  @param regions The detected regions and attributes (the caller must delete the allocated data)
-  @param mask 8-bit gray image for keypoint filtering (optional).
-     Non-zero values depict the region of interest.
-  */
-  bool Describe(const image::Image<unsigned char>& image,
+   * @brief Detect regions on the float image and compute their attributes (description)
+   * @param[in] image Image.
+   * @param[out] regions The detected regions and attributes
+   * @param[in] mask 8-bit gray image for keypoint filtering (optional).
+   * Non-zero values depict the region of interest.
+   */
+  bool Describe(const image::Image<float>& image,
     std::unique_ptr<Regions> &regions,
     const image::Image<unsigned char> * mask = nullptr) override;
 
-  /// Allocate Regions type depending of the ImageDescriber
+  /**
+   * @brief Allocate Regions type depending of the ImageDescriber
+   * @param[in,out] regions
+   */
   void Allocate(std::unique_ptr<Regions> &regions) const override
   {
     switch(_params._eAkazeDescriptor)

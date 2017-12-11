@@ -1,20 +1,20 @@
 # Headers
 set(dataio_headers
-    FeedProvider.hpp
-    IFeed.hpp
-    ImageFeed.hpp
+  FeedProvider.hpp
+  IFeed.hpp
+  ImageFeed.hpp
 )
 
 # Sources
 set(dataio_sources
-    FeedProvider.cpp
-    IFeed.cpp
-    ImageFeed.cpp
+  FeedProvider.cpp
+  IFeed.cpp
+  ImageFeed.cpp
 )
 
 if(ALICEVISION_HAVE_OPENCV)
-    list(APPEND dataio_headers VideoFeed.hpp)
-    list(APPEND dataio_sources VideoFeed.cpp)
+  list(APPEND dataio_headers VideoFeed.hpp)
+  list(APPEND dataio_sources VideoFeed.cpp)
 endif()
 
 set_source_files_properties(${dataio_sources} PROPERTIES LANGUAGE CXX)

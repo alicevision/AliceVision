@@ -35,7 +35,6 @@ option(ALICEVISION_BUILD_EXAMPLES "Build AliceVision samples applications." ON)
 option(ALICEVISION_BUILD_COVERAGE "Enable code coverage generation (gcc only)" OFF)
 
 trilean_option(ALICEVISION_BUILD_DOC "Build AliceVision documentation" AUTO)
-trilean_option(ALICEVISION_USE_OIIO "Build code depending on OpenImageIO (keyframeSelection)" AUTO)
 trilean_option(ALICEVISION_USE_OPENMP "Enable OpenMP parallelization" AUTO)
 trilean_option(ALICEVISION_USE_CCTAG "Enable CCTAG markers" AUTO)
 trilean_option(ALICEVISION_USE_POPSIFT "Enable GPU SIFT implementation" AUTO)

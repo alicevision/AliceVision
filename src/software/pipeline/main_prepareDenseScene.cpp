@@ -103,7 +103,7 @@ void retrieveSeedsPerView(
     {
       const auto& obsACamId_it = map_viewIdToContiguous.find(obsA.first);
       if(obsACamId_it == map_viewIdToContiguous.end())
-        continue; // this view cannot be exported to cmpmvs, so we skip the observation
+        continue; // this view cannot be exported to mvs, so we skip the observation
       int obsACamId = obsACamId_it->second;
       const View& viewA = *sfm_data.GetViews().at(obsA.first).get();
       const geometry::Pose3& poseA = sfm_data.GetPoses().at(viewA.getPoseId());
@@ -116,7 +116,7 @@ void retrieveSeedsPerView(
           continue;
         const auto& obsBCamId_it = map_viewIdToContiguous.find(obsB.first);
         if(obsBCamId_it == map_viewIdToContiguous.end())
-          continue; // this view cannot be exported to cmpmvs, so we skip the observation
+          continue; // this view cannot be exported to mvs, so we skip the observation
         const View& viewB = *sfm_data.GetViews().at(obsB.first).get();
         const geometry::Pose3& poseB = sfm_data.GetPoses().at(viewB.getPoseId());
         const Pinhole * intrinsicsB = dynamic_cast<const Pinhole*>(sfm_data.GetIntrinsics().at(viewB.getIntrinsicId()).get());
@@ -160,22 +160,10 @@ std::string replaceAll( std::string const& original, std::string const& from, st
 bool prepareDenseScene(
   const SfMData & sfm_data,
   int scale,
-  const std::string & sOutDirectory // Output CMPMVS files folder
-  )
+  image::EImageFileType outputFileType,
+  const std::string & sOutDirectory)
 {
-  // Create basis folder structure
-  if (!stlplus::is_folder(sOutDirectory))
-  {
-    stlplus::folder_create(sOutDirectory);
-    bool bOk = stlplus::is_folder(sOutDirectory);
-    if (!bOk)
-    {
-      std::cerr << "Cannot access the output folder: " << sOutDirectory << std::endl;
-      return false;
-    }
-  }
-  
-  // Since CMPMVS requires contiguous camera indexes and some views may not have a pose,
+  // As the MVS requires contiguous camera indexes and some views may not have a pose,
   // we reindex the poses to ensure a contiguous pose list.
   HashMap<IndexT, IndexT> map_viewIdToContiguous;
   // Export valid views as Projective Cameras:
@@ -187,7 +175,7 @@ bool prepareDenseScene(
     Intrinsics::const_iterator iterIntrinsic = sfm_data.GetIntrinsics().find(view->getIntrinsicId());
     const IntrinsicBase * cam = iterIntrinsic->second.get();
     // View Id re-indexing
-    // Need to start at 1 for CMPMVS
+    // Need to start at 1 for MVS
     map_viewIdToContiguous.insert(std::make_pair(view->getViewId(), map_viewIdToContiguous.size() + 1));
   }
 
@@ -200,7 +188,7 @@ bool prepareDenseScene(
 
   // Export views:
   //   - 00001_P.txt (Pose of the reconstructed camera)
-  //   - 00001._c.png (undistorted & scaled colored image)
+  //   - 00001.exr (undistorted & scaled colored image)
   //   - 00001_seeds.bin (3d points visible in this image)
   #pragma omp parallel for num_threads(3)
   for(int i = 0; i < map_viewIdToContiguous.size(); ++i)
@@ -236,21 +224,19 @@ bool prepareDenseScene(
     
     // Export undistort image
     {
-      const std::string srcImage = stlplus::create_filespec(sfm_data.s_root_path, view->getImagePath());
-
-      std::string dstColorImage = stlplus::create_filespec(
-        stlplus::folder_append_separator(sOutDirectory), baseFilename + "._c", "png");
+      const std::string srcImage = view->getImagePath();
+      std::string dstColorImage = stlplus::create_filespec(stlplus::folder_append_separator(sOutDirectory), baseFilename, image::EImageFileType_enumToString(outputFileType));
 
       const IntrinsicBase * cam = iterIntrinsic->second.get();
-      Image<RGBColor> image;
-      ReadImage(srcImage.c_str(), &image);
+      Image<RGBfColor> image, image_ud, image_ud_scaled;
+
+      readImage(srcImage, image);
       
       // Undistort
-      Image<RGBColor> image_ud;
       if (cam->isValid() && cam->have_disto())
       {
         // undistort the image and save it
-        UndistortImage(image, cam, image_ud, BLACK);
+        UndistortImage(image, cam, image_ud, FBLACK);
       }
       else
       {
@@ -258,7 +244,6 @@ bool prepareDenseScene(
       }
       
       // Rescale
-      Image<RGBColor> image_ud_scaled;
       if(scale == 1)
       {
         image_ud_scaled = image_ud;
@@ -292,7 +277,7 @@ bool prepareDenseScene(
         std::cerr << "Rescale not implemented." << std::endl;
         image_ud_scaled = image_ud;
       }
-      WriteImage(dstColorImage.c_str(), image_ud_scaled);
+      writeImage(dstColorImage, image_ud_scaled);
     }
     
     // Export Seeds
@@ -314,12 +299,13 @@ bool prepareDenseScene(
     ++my_progress_bar;
   }
 
-  // Write the cmpmvs ini file
+  // Write the mvs ini file
   std::ostringstream os;
   os << "[global]" << os.widen('\n')
   << "outDir=../../meshes" << os.widen('\n')
   << "ncams=" << map_viewIdToContiguous.size() << os.widen('\n')
   << "scale=" << scale << os.widen('\n')
+  << "imgExt=" << image::EImageFileType_enumToString(outputFileType) << os.widen('\n')
   << "verbose=TRUE" << os.widen('\n')
   << os.widen('\n')
   << "[imageResolutions]" << os.widen('\n');
@@ -335,7 +321,6 @@ bool prepareDenseScene(
 
     os << baseFilename << "=" << int(view->getWidth() / (double)scale) << "x" << int(view->getHeight() / (double)scale) << os.widen('\n');
   }
-
 
   std::ofstream file2(
     stlplus::create_filespec(stlplus::folder_append_separator(sOutDirectory),
@@ -353,6 +338,7 @@ int main(int argc, char *argv[])
   std::string verboseLevel = system::EVerboseLevel_enumToString(system::Logger::getDefaultVerboseLevel());
   std::string sfmDataFilename;
   std::string outFolder;
+  std::string outImageFileTypeName = image::EImageFileType_enumToString(image::EImageFileType::EXR);
   int scale = 2;
 
   po::options_description allParams("AliceVision prepareDenseScene");
@@ -367,7 +353,9 @@ int main(int argc, char *argv[])
   po::options_description optionalParams("Optional parameters");
   optionalParams.add_options()
     ("scale", po::value<int>(&scale)->default_value(scale),
-      "Image downscale factor.");
+      "Image downscale factor.")
+    ("outputFileType", po::value<std::string>(&outImageFileTypeName)->default_value(outImageFileTypeName),
+      image::EImageFileType_informations().c_str());
 
   po::options_description logParams("Log parameters");
   logParams.add_options()
@@ -404,13 +392,16 @@ int main(int argc, char *argv[])
   // set verbose level
   system::Logger::get()->setLogLevel(verboseLevel);
 
+  // set output file type
+  image::EImageFileType outputFileType = image::EImageFileType_stringToEnum(outImageFileTypeName);
+
   // export
   {
     outFolder = stlplus::folder_to_path(outFolder);
 
     // Create output dir
     if (!stlplus::folder_exists(outFolder))
-      stlplus::folder_create( outFolder );
+      stlplus::folder_create(outFolder);
 
     // Read the input SfM scene
     SfMData sfm_data;
@@ -421,7 +412,7 @@ int main(int argc, char *argv[])
       return EXIT_FAILURE;
     }
 
-    if (!prepareDenseScene(sfm_data, scale, stlplus::filespec_to_path(outFolder, "_tmp_scale" + std::to_string(scale))))
+    if (!prepareDenseScene(sfm_data, scale, outputFileType, outFolder))
       return EXIT_FAILURE;
   }
 

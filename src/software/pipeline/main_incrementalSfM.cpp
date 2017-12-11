@@ -53,7 +53,7 @@ bool retrieveViewIdFromImageName(
     else if(stlplus::is_full_path(v->getImagePath()))
       filename = v->getImagePath();
     else
-      filename = sfm_data.s_root_path + v->getImagePath();
+      filename = v->getImagePath();
     
     if (filename == initialName)
     {
@@ -111,7 +111,7 @@ int main(int argc, char **argv)
   po::options_description optionalParams("Optional parameters");
   optionalParams.add_options()
     ("outputViewsAndPoses", po::value<std::string>(&outputSfMViewsAndPoses)->default_value(outputSfMViewsAndPoses),
-      "Path to the output SfMData (with only views and poses) file")
+      "Path to the output SfMData (with only views and poses) file.")
     ("extraInfoFolder", po::value<std::string>(&extraInfoFolder)->default_value(extraInfoFolder),
       "Folder for intermediate reconstruction files and additional reconstruction information files.")
     ("describerTypes,d", po::value<std::string>(&describerTypesName)->default_value(describerTypesName),
@@ -119,7 +119,7 @@ int main(int argc, char **argv)
     ("interFileExtension", po::value<std::string>(&outInterFileExtension)->default_value(outInterFileExtension),
       "Extension of the intermediate file export.")
     ("minInputTrackLength", po::value<int>(&minInputTrackLength)->default_value(minInputTrackLength),
-      "Minimum track length in input of SfM")
+      "Minimum track length in input of SfM.")
     ("maxNumberOfMatches", po::value<int>(&maxNbMatches)->default_value(maxNbMatches),
       "Maximum number of matches per image pair (and per feature type). "
       "This can be useful to have a quick reconstruction overview. 0 means no limit.")
@@ -138,9 +138,9 @@ int main(int argc, char **argv)
       "If the process is done on renderfarm, it doesn't make sense to wait for user inputs")
     ("useLocalBA,l", po::value<bool>(&useLocalBundleAdjustment)->default_value(useLocalBundleAdjustment),
       "Enable/Disable the Local bundle adjustment strategy.\n"
-      "It reduces the reconstruction time, especially for big datasets (500+ images).\n")
+      "It reduces the reconstruction time, especially for big datasets (500+ images).")
     ("localBAGraphDistance", po::value<std::size_t>(&localBundelAdjustementGraphDistanceLimit)->default_value(localBundelAdjustementGraphDistanceLimit),
-      "Graph-distance limit setting the Active region in the Local Bundle Adjustment strategy (by default: 1).\n");
+      "Graph-distance limit setting the Active region in the Local Bundle Adjustment strategy.");
 
   po::options_description logParams("Log parameters");
   logParams.add_options()

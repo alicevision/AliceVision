@@ -4,10 +4,61 @@
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
 #include "uid.hpp"
-#include "aliceVision/exif/EasyExifIO.hpp"
+
+#include <aliceVision/sfm/View.hpp>
+
+#include <boost/filesystem.hpp>
+
+namespace fs = boost::filesystem;
 
 namespace aliceVision {
 namespace sfm {
+
+std::size_t computeUID(const View& view)
+{
+  std::size_t uid = 0;
+
+  if(view.hasMetadata("Exif:ImageUniqueID") ||
+     view.hasMetadata("Exif:BodySerialNumber") ||
+     view.hasMetadata("Exif:LensSerialNumber"))
+  {
+    stl::hash_combine(uid, view.getMetadataOrEmpty("Exif:ImageUniqueID"));
+    stl::hash_combine(uid, view.getMetadataOrEmpty("Exif:BodySerialNumber"));
+    stl::hash_combine(uid, view.getMetadataOrEmpty("Exif:LensSerialNumber"));
+  }
+  else
+  {
+    // no metadata to identify the image, fallback to the filename
+    const fs::path imagePath = view.getImagePath();
+    stl::hash_combine(uid, imagePath.stem().string() + imagePath.extension().string());
+  }
+
+  if(view.hasMetadata("Exif:DateTimeOriginal"))
+  {
+    stl::hash_combine(uid, view.getMetadataOrEmpty("Exif:DateTimeOriginal"));
+    stl::hash_combine(uid, view.getMetadataOrEmpty("Exif:SubsecTimeOriginal"));
+  }
+  else
+  {
+    // if no original date/time, fallback to the file date/time
+    stl::hash_combine(uid, view.getMetadataOrEmpty("DateTime"));
+  }
+
+  // can't use view.getWidth() and view.getHeight() directly
+  // because ground truth tests and previous version datasets
+  // view UID use EXIF width and height (or 0)
+
+  if(view.hasMetadata("Exif:PixelXDimension"))
+    stl::hash_combine(uid, std::stoi(view.getMetadata("Exif:PixelXDimension")));
+
+  if(view.hasMetadata("Exif:PixelYDimension"))
+    stl::hash_combine(uid, std::stoi(view.getMetadata("Exif:PixelYDimension")));
+
+  // limit to integer to maximize compatibility (like Alembic in Maya)
+  uid = std::abs((int) uid);
+
+  return uid;
+}
 
 void updateStructureWithNewUID(Landmarks &landmarks, const std::map<std::size_t, std::size_t> &oldIdToNew)
 {
@@ -80,12 +131,9 @@ void regenerateViewUIDs(Views &views, std::map<std::size_t, std::size_t> &oldIdT
   for(auto const &iter : views)
   {
     const View& currentView = *iter.second.get();
-    const auto &imageName = currentView.getImagePath();
-    
-    exif::EasyExifIO exifReader(imageName);
 
     // compute the view UID
-    const std::size_t uid = exif::computeUID(exifReader, imageName);
+    const std::size_t uid = computeUID(currentView);
 
     // update the mapping
     assert(oldIdToNew.count(currentView.getViewId()) == 0);

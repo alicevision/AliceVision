@@ -33,8 +33,8 @@ int main() {
     + "/imageData/StanfordMobileVisualSearch/Ace_1.png";
 
   Image<unsigned char> imageL, imageR;
-  ReadImage(jpg_filenameL.c_str(), &imageL);
-  ReadImage(jpg_filenameR.c_str(), &imageR);
+  readImage(jpg_filenameL, imageL);
+  readImage(jpg_filenameR, imageR);
 
   //--
   // Detect regions thanks to an image_describer
@@ -57,7 +57,7 @@ int main() {
     Image<unsigned char> concat;
     ConcatH(imageL, imageR, concat);
     string out_filename = "01_concat.jpg";
-    WriteImage(out_filename.c_str(), concat);
+    writeImage(out_filename, concat);
   }
 
   //- Draw features on the two image (side by side)
@@ -75,7 +75,7 @@ int main() {
       DrawCircle(point.x()+imageL.Width(), point.y(), point.scale(), 255, &concat);
     }
     string out_filename = "02_features.jpg";
-    WriteImage(out_filename.c_str(), concat);
+    writeImage(out_filename, concat);
   }
 
   std::vector<IndMatch> vec_PutativeMatches;
@@ -185,14 +185,14 @@ int main() {
       // Warp the images to fit the reference view
       //---------------------------------------
       // reread right image that will be warped to fit left image
-      ReadImage(jpg_filenameR.c_str(), &image);
-      WriteImage("query.png", image);
+      readImage(jpg_filenameR, image);
+      writeImage("query.png", image);
 
       // Create and fill the output image
       Image<RGBColor> imaOut(imageL.Width(), imageL.Height());
       image::Warp(image, H, imaOut);
       const std::string imageNameOut = "query_warped.png";
-      WriteImage(imageNameOut.c_str(), imaOut);
+      writeImage(imageNameOut, imaOut);
     }
     else  {
       std::cout << "ACRANSAC was unable to estimate a rigid homography"
