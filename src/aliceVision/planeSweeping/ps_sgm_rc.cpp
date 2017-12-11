@@ -8,6 +8,7 @@
 #include "ps_sgm_vol.hpp"
 
 #include <aliceVision/common/fileIO.hpp>
+#include <aliceVision/imageIO/image.hpp>
 #include <aliceVision/imageIO/imageScaledColors.hpp>
 #include <aliceVision/omp.hpp>
 
@@ -21,18 +22,6 @@ namespace bfs = boost::filesystem;
 ps_sgm_rc::ps_sgm_rc(bool doComputeDepthsAndResetTCams, int _rc, int _scale, int _step, ps_sgm_params* _sp)
 {
     sp = _sp;
-
-    outDir = sp->getSGMOutDir();
-    if(!FolderExists(outDir))
-    {
-        bfs::create_directory(outDir);
-    }
-
-    tmpDir = sp->getSGMTmpDir();
-    if(!FolderExists(tmpDir))
-    {
-        bfs::create_directory(tmpDir);
-    }
 
     rc = _rc;
     scale = _scale;
@@ -52,7 +41,7 @@ ps_sgm_rc::ps_sgm_rc(bool doComputeDepthsAndResetTCams, int _rc, int _scale, int
 
     tcamsFileName = sp->getSGM_tcamsFileName(rc);
     depthsFileName = sp->getSGM_depthsFileName(rc);
-    depthsTcamsLimitsFileName = outDir + num2strFourDecimal(rc) + "depthsTcamsLimits.bin";
+    depthsTcamsLimitsFileName =  sp->mp->mip->_depthMapFolder + num2strFourDecimal(rc + 1) + "_depthsTcamsLimits.bin";
     SGM_depthMapFileName = sp->getSGM_depthMapFileName(rc, scale, step);
     SGM_simMapFileName = sp->getSGM_simMapFileName(rc, scale, step);
     SGM_idDepthMapFileName = sp->getSGM_idDepthMapFileName(rc, scale, step);
@@ -669,7 +658,7 @@ bool ps_sgm_rc::sgmrc(bool checkIfExists)
     // Save to :
     //  - SGM/SGM_{RC}_scaleX_stepN_simMap.bin
     //  - SGM/SGM_{RC}_scaleX_stepN_depthMap.bin
-    depthSimMapFinal->saveToBin(SGM_depthMapFileName, SGM_simMapFileName);
+    //depthSimMapFinal->saveToBin(SGM_depthMapFileName, SGM_simMapFileName);
 
     // Save to :
     //  - {RC}_simMap_scaleX.bin
@@ -678,17 +667,16 @@ bool ps_sgm_rc::sgmrc(bool checkIfExists)
     //  - {RC}_dephMap.bin
     depthSimMapFinal->save(rc, tcams);
 
-    staticVector<unsigned short>* volumeBestId = new staticVector<unsigned short>(volumeBestIdVal->size());
-    for(int i = 0; i < volumeBestIdVal->size(); i++)
     {
-        volumeBestId->push_back(std::max(0, (*volumeBestIdVal)[i].id));
+        std::vector<unsigned short> volumeBestId(volumeBestIdVal->size());
+        for(int i = 0; i < volumeBestIdVal->size(); i++)
+            volumeBestId.at(i) = std::max(0, (*volumeBestIdVal)[i].id);
+
+        imageIO::writeImage(SGM_idDepthMapFileName, volDimX, volDimY, volumeBestId);
+
+        if(sp->visualizeDepthMaps)
+            imageIO::writeImageScaledColors("visualize_" + SGM_idDepthMapFileName, volDimX, volDimY, 0, depths->size(), volumeBestId.data(), true);
     }
-    saveArrayToFile<unsigned short>(SGM_idDepthMapFileName, volumeBestId);
-
-    if(sp->visualizeDepthMaps)
-        imageIO::writeImageScaledColors(SGM_idDepthMapFileName + ".png", volDimX, volDimY, 0, depths->size(), &(*volumeBestId)[0], true);
-
-    delete volumeBestId;
 
     /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

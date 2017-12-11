@@ -224,8 +224,8 @@ void mv_mesh_energy_opt_photo_mem::actualizePtsStats(staticVector<staticVector<i
         int w = mp->mip->getWidth(rc);
 
         ps_depthSimMap* dsmap = new ps_depthSimMap(rc, sp->mp, 1, 1);
-        if(dsmap->loadFromBin(sp->getREFINE_photo_depthMapFileName(rc, 1, 1),
-                              sp->getREFINE_photo_simMapFileName(rc, 1, 1)))
+        if(dsmap->loadRefine(sp->getREFINE_photo_depthMapFileName(rc, 1, 1),
+                             sp->getREFINE_photo_simMapFileName(rc, 1, 1)))
         {
             // dsmap->load(rc,1); //from opt is worser than from photo ... don't use it
             // long t2 = initEstimate();

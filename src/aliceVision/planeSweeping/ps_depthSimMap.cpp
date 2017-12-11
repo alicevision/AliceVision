@@ -555,10 +555,6 @@ void ps_depthSimMap::save(int rc, staticVector<int>* tcams)
     const int width = mp->mip->getWidth(rc) / scale;
     const int height = mp->mip->getHeight(rc) / scale;
 
-    std::cout << "* write image width : " << width << std::endl;
-    std::cout << "* write image height : " << height << std::endl;
-    std::cout << "* write image size : " << depthMap->size() << std::endl;
-
     // TODO: remove "+ 1"
     imageIO::writeImage(mv_getFileName(mp->mip, rc + 1, EFileType::depthMap, scale), width, height, depthMap->getDataWritable());
     imageIO::writeImage(mv_getFileName(mp->mip, rc + 1, EFileType::simMap, scale), width, height, simMap->getDataWritable());
@@ -593,65 +589,61 @@ void ps_depthSimMap::load(int rc, int fromScale)
     initFromDepthMapTAndSimMapT(&depthMap, &simMap, fromScale);
 }
 
-void ps_depthSimMap::saveToBin(std::string depthMapFileName, std::string simMapFileName)
+void ps_depthSimMap::saveRefine(int rc, std::string depthMapFileName, std::string simMapFileName)
 {
-    staticVector<float>* _depthMap = new staticVector<float>(dsm->size());
-    staticVector<float>* _simMap = new staticVector<float>(dsm->size());
-    _depthMap->resize(dsm->size());
-    _simMap->resize(dsm->size());
+    const int width = mp->mip->getWidth(rc);
+    const int height = mp->mip->getHeight(rc);
+    const int size = width * height;
 
-    for(int i = 0; i < dsm->size(); i++)
+    std::vector<float> depthMap(size);
+    std::vector<float> simMap(size);
+
+    for(int i = 0; i < dsm->size(); ++i)
     {
-        (*_depthMap)[i] = (*dsm)[i].depth;
-        (*_simMap)[i] = (*dsm)[i].sim;
+        depthMap.at(i) = (*dsm)[i].depth;
+        simMap.at(i) = (*dsm)[i].sim;
     }
-    saveArrayToFile<float>(depthMapFileName, _depthMap);
-    saveArrayToFile<float>(simMapFileName, _simMap);
-    delete _depthMap;
-    delete _simMap;
+
+    imageIO::writeImage(depthMapFileName, width, height, depthMap);
+    imageIO::writeImage(simMapFileName, width, height, simMap);
 }
 
-bool ps_depthSimMap::loadFromBin(std::string depthMapFileName, std::string simMapFileName)
+bool ps_depthSimMap::loadRefine(std::string depthMapFileName, std::string simMapFileName)
 {
-    staticVector<float>* _depthMap = loadArrayFromFile<float>(depthMapFileName, true);
-    staticVector<float>* _simMap = loadArrayFromFile<float>(simMapFileName, true);
-    bool ok = false;
+    int width;
+    int height;
 
-    if((_depthMap != nullptr) && (_simMap != nullptr))
+    std::vector<float> depthMap;
+    std::vector<float> simMap;
+
+    imageIO::readImage(depthMapFileName, width, height, depthMap);
+    imageIO::readImage(simMapFileName, width, height, simMap);
+
+    for(int i = 0; i < dsm->size(); ++i)
     {
-        for(int i = 0; i < dsm->size(); i++)
-        {
-            (*dsm)[i].depth = (*_depthMap)[i];
-            (*dsm)[i].sim = (*_simMap)[i];
-        }
-        ok = true;
+        (*dsm)[i].depth = depthMap.at(i);
+        (*dsm)[i].sim = simMap.at(i);
     }
-    if(_depthMap != nullptr)
-        delete _depthMap;
-    if(_simMap != nullptr)
-        delete _simMap;
 
-    return ok;
+    return true;
 }
 
-bool ps_depthSimMap::loadFromBin(std::string depthMapFileName, float defaultSim)
+bool ps_depthSimMap::loadRefine(std::string depthMapFileName, float defaultSim)
 {
-    staticVector<float>* _depthMap = loadArrayFromFile<float>(depthMapFileName, true);
-    bool ok = false;
+  int width;
+  int height;
 
-    if(_depthMap != nullptr)
-    {
-        for(int i = 0; i < dsm->size(); i++)
-        {
-            (*dsm)[i].depth = (*_depthMap)[i];
-            (*dsm)[i].sim = defaultSim;
-        }
-        ok = true;
-    }
-    if(_depthMap != nullptr)
-        delete _depthMap;
+  std::vector<float> depthMap;
 
-    return ok;
+  imageIO::readImage(depthMapFileName, width, height, depthMap);
+
+  for(int i = 0; i < dsm->size(); ++i)
+  {
+      (*dsm)[i].depth = depthMap.at(i);
+      (*dsm)[i].sim = defaultSim;
+  }
+
+  return true;
 }
 
 mv_universe* ps_depthSimMap::segment(float alpha, int rc)

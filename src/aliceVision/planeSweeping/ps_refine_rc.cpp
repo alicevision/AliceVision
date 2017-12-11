@@ -6,7 +6,7 @@
 #include "ps_refine_rc.hpp"
 
 #include <aliceVision/common/fileIO.hpp>
-
+#include <aliceVision/imageIO/image.hpp>
 #include <aliceVision/omp.hpp>
 
 #include <boost/filesystem.hpp>
@@ -17,13 +17,6 @@ namespace bfs = boost::filesystem;
 ps_refine_rc::ps_refine_rc(int _rc, int _scale, int _step, ps_sgm_params* _sp)
     : ps_sgm_rc(false, _rc, _scale, _step, _sp)
 {
-    // change out dir
-    outDir = sp->getREFINEOutDir();
-    if(!FolderExists(outDir))
-    {
-        bfs::create_directory(outDir);
-    }
-
     _nSamplesHalf = sp->mp->mip->_ini.get<int>("refineRc.nSamplesHalf", 150);
     _ndepthsToRefine = sp->mp->mip->_ini.get<int>("refineRc.ndepthsToRefine", 31);
     _sigma = (float)sp->mp->mip->_ini.get<double>("refineRc.sigma", 15.0);
@@ -52,22 +45,24 @@ ps_depthSimMap* ps_refine_rc::getDepthPixSizeMapFromSGM()
     int volDimY = h;
     int volDimZ = depths->size();
 
-    staticVector<unsigned short>* rcIdDepthMap = nullptr;
-
-    rcIdDepthMap = loadArrayFromFile<unsigned short>(SGM_idDepthMapFileName);
-
     staticVector<idValue>* volumeBestIdVal = new staticVector<idValue>(volDimX * volDimY);
-    for(int i = 0; i < volDimX * volDimY; i++)
-    {
-        // float sim = (*depthSimMapFinal->dsm)[i].y;
-        // sim = std::min(sim,mp->simThr);
-        float sim = sp->mp->simThr - 0.0001;
 
-        int id = (*rcIdDepthMap)[i];
-        id = (id > 0) && (id < volDimZ - sp->minObjectThickness - 1) ? id : 0;
-        volumeBestIdVal->push_back(idValue(id, sim));
+    {
+        std::vector<unsigned short> rcIdDepthMap;
+
+        imageIO::readImage(SGM_idDepthMapFileName, volDimX, volDimY, rcIdDepthMap);
+
+        for(int i = 0; i < volDimX * volDimY; i++)
+        {
+            // float sim = (*depthSimMapFinal->dsm)[i].y;
+            // sim = std::min(sim,mp->simThr);
+            float sim = sp->mp->simThr - 0.0001;
+
+            int id = rcIdDepthMap.at(i);
+            id = (id > 0) && (id < volDimZ - sp->minObjectThickness - 1) ? id : 0;
+            volumeBestIdVal->push_back(idValue(id, sim));
+        }
     }
-    delete rcIdDepthMap;
 
     int zborder = 2;
     ps_depthSimMap* depthSimMap =
@@ -276,9 +271,13 @@ bool ps_refine_rc::refinercCUDA(bool checkIfExists)
 
     depthSimMapOpt->save(rc, tcams);
 
-    depthSimMapPhoto->saveToBin(sp->getREFINE_photo_depthMapFileName(rc, 1, 1),
+    depthSimMapPhoto->saveRefine(rc,
+                                sp->getREFINE_photo_depthMapFileName(rc, 1, 1),
                                 sp->getREFINE_photo_simMapFileName(rc, 1, 1));
-    depthSimMapOpt->saveToBin(sp->getREFINE_opt_depthMapFileName(rc, 1, 1), sp->getREFINE_opt_simMapFileName(rc, 1, 1));
+
+    depthSimMapOpt->saveRefine(rc,
+                               sp->getREFINE_opt_depthMapFileName(rc, 1, 1),
+                               sp->getREFINE_opt_simMapFileName(rc, 1, 1));
 
     printfElapsedTime(tall, "REFINERC " + num2str(rc) + " of " + num2str(sp->mp->ncams));
 

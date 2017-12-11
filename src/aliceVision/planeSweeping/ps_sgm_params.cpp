@@ -75,38 +75,24 @@ ps_sgm_params::~ps_sgm_params()
     delete prt;
 }
 
-std::string ps_sgm_params::getREFINEOutDir()
-{
-    return mp->mip->_depthMapFolder + "REFINERC/";
-}
-
 std::string ps_sgm_params::getREFINE_photo_depthMapFileName(int cam, int scale, int step)
 {
-    return getREFINEOutDir() + "REFINE_photo_" + num2strFourDecimal(cam) + "_scale" + num2str(scale) + "_step" +
-           num2str(step) + "_depthMap.bin";
+    return mp->mip->_depthMapFolder + num2strFourDecimal(cam + 1) + "_depthMap_scale" + num2str(scale) + "_step" + num2str(step) + "_refinePhoto.exr";
 }
 
 std::string ps_sgm_params::getREFINE_photo_simMapFileName(int cam, int scale, int step)
 {
-    return getREFINEOutDir() + "REFINE_photo_" + num2strFourDecimal(cam) + "_scale" + num2str(scale) + "_step" +
-           num2str(step) + "_simMap.bin";
+    return mp->mip->_depthMapFolder + num2strFourDecimal(cam + 1) + "_simMap_scale" + num2str(scale) + "_step" + num2str(step) + "_refinePhoto.exr";
 }
 
 std::string ps_sgm_params::getREFINE_opt_depthMapFileName(int cam, int scale, int step)
 {
-    return getREFINEOutDir() + "REFINE_opt_" + num2strFourDecimal(cam) + "_scale" + num2str(scale) + "_step" +
-           num2str(step) + "_depthMap.bin";
+    return mp->mip->_depthMapFolder + num2strFourDecimal(cam + 1) + "_depthMap_scale" + num2str(scale) + "_step" + num2str(step) + "_refineOpt.exr";
 }
 
 std::string ps_sgm_params::getREFINE_opt_simMapFileName(int cam, int scale, int step)
 {
-    return getREFINEOutDir() + "REFINE_opt_" + num2strFourDecimal(cam) + "_scale" + num2str(scale) + "_step" +
-           num2str(step) + "_simMap.bin";
-}
-
-std::string ps_sgm_params::getSGMOutDir()
-{
-    return mp->mip->_depthMapFolder + SGMoutDirName + "/";
+    return mp->mip->_depthMapFolder + num2strFourDecimal(cam + 1) + "_simMap_scale" + num2str(scale) + "_step" + num2str(step) + "_refineOpt.exr";
 }
 
 std::string ps_sgm_params::getSGMTmpDir()
@@ -116,30 +102,27 @@ std::string ps_sgm_params::getSGMTmpDir()
 
 std::string ps_sgm_params::getSGM_depthMapFileName(int cam, int scale, int step)
 {
-    return getSGMOutDir() + "SGM_" + num2strFourDecimal(cam) + "_scale" + num2str(scale) + "_step" + num2str(step) +
-           "_depthMap.bin";
+    return mp->mip->_depthMapFolder + num2strFourDecimal(cam + 1) + "_depthMap_scale" + num2str(scale) + "_step" + num2str(step) + "_SGM.bin";
 }
 
 std::string ps_sgm_params::getSGM_simMapFileName(int cam, int scale, int step)
 {
-    return getSGMOutDir() + "SGM_" + num2strFourDecimal(cam) + "_scale" + num2str(scale) + "_step" + num2str(step) +
-           "_simMap.bin";
+    return mp->mip->_depthMapFolder + num2strFourDecimal(cam + 1) + "_simMap_scale" + num2str(scale) + "_step" + num2str(step) + "_SGM.bin";
 }
 
 std::string ps_sgm_params::getSGM_idDepthMapFileName(int cam, int scale, int step)
 {
-    return getSGMOutDir() + "SGM_" + num2strFourDecimal(cam) + "_scale" + num2str(scale) + "_step" + num2str(step) +
-           "_idDepthMap.bin";
+    return mp->mip->_depthMapFolder + num2strFourDecimal(cam + 1) + "_idDepthMap_scale" + num2str(scale) + "_step" + num2str(step) + "_SGM.png";
 }
 
 std::string ps_sgm_params::getSGM_tcamsFileName(int cam)
 {
-    return getSGMOutDir() + num2strFourDecimal(cam) + "tcams.bin";
+    return mp->mip->_depthMapFolder + num2strFourDecimal(cam + 1) + "_tcams.bin";
 }
 
 std::string ps_sgm_params::getSGM_depthsFileName(int cam)
 {
-    return getSGMOutDir() + num2strFourDecimal(cam) + "depths.bin";
+    return mp->mip->_depthMapFolder + num2strFourDecimal(cam + 1) + "_depths.bin";
 }
 
 ps_depthSimMap* ps_sgm_params::getDepthSimMapFromBestIdVal(int w, int h, staticVector<idValue>* volumeBestIdVal,

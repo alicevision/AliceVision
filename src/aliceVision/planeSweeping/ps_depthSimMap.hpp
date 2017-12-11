@@ -85,9 +85,9 @@ public:
     void save(int rc, staticVector<int>* tcams);
     void load(int rc, int fromScale);
 
-    void saveToBin(std::string depthMapFileName, std::string simMapFileName);
-    bool loadFromBin(std::string depthMapFileName, std::string simMapFileName);
-    bool loadFromBin(std::string depthMapFileName, float defaultSim);
+    void saveRefine(int rc, std::string depthMapFileName, std::string simMapFileName);
+    bool loadRefine(std::string depthMapFileName, std::string simMapFileName);
+    bool loadRefine(std::string depthMapFileName, float defaultSim);
 
     mv_universe* segment(float alpha, int rc);
     void removeSmallSegments(int minSegSize, float alpha, int rc);
