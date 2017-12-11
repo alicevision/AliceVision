@@ -20,6 +20,47 @@ namespace oiio = OIIO;
 
 namespace imageIO {
 
+std::string EImageQuality_informations()
+{
+  return "Image quality :\n"
+         "* optimized \n"
+         "* lossless ";
+}
+
+EImageQuality EImageQuality_stringToEnum(const std::string& imageQuality)
+{
+  std::string type = imageQuality;
+  std::transform(type.begin(), type.end(), type.begin(), ::tolower); //tolower
+
+  if(type == "optimized") return EImageQuality::OPTIMIZED;
+  if(type == "lossless")  return EImageQuality::LOSSLESS;
+
+  throw std::out_of_range("Invalid image quality : " + imageQuality);
+}
+
+std::string EImageQuality_enumToString(const EImageQuality imageQuality)
+{
+  switch(imageQuality)
+  {
+    case EImageQuality::OPTIMIZED:  return "optimized";
+    case EImageQuality::LOSSLESS:   return "lossless";
+  }
+  throw std::out_of_range("Invalid EImageQuality enum");
+}
+
+std::ostream& operator<<(std::ostream& os, EImageQuality imageQuality)
+{
+  return os << EImageQuality_enumToString(imageQuality);
+}
+
+std::istream& operator>>(std::istream& in, EImageQuality& imageQuality)
+{
+  std::string token;
+  in >> token;
+  imageQuality = EImageQuality_stringToEnum(token);
+  return in;
+}
+
 void readImageSpec(const std::string& path,
                    int& width,
                    int& height,
@@ -150,7 +191,8 @@ void writeImage(const std::string& path,
                 int width,
                 int height,
                 int nchannels,
-                const std::vector<T>& buffer)
+                const std::vector<T>& buffer,
+                EImageQuality imageQuality)
 {
     std::cout << "[IO] Write Image : " << path << std::endl;
     std::cout << "- width : " << width << std::endl;
@@ -163,57 +205,61 @@ void writeImage(const std::string& path,
 
     if(isEXR)
     {
-        const oiio::ImageBuf buf(imageSpec, const_cast<T*>(buffer.data()));
-
-        imageSpec.format = oiio::TypeDesc::HALF;     // override format
         imageSpec.attribute("compression", "piz");   // if possible, PIZ compression for openEXR
-
-        // conversion to half
-        oiio::ImageBuf outBuf(imageSpec);
-        if(!outBuf.copy_pixels(buf))
-          throw std::runtime_error("Can't convert output image file to half '" + path + "'.");
-
-        // write image
-        if(!outBuf.write(path))
-          throw std::runtime_error("Can't write output image file '" + path + "'.");
     }
     else
     {
         imageSpec.attribute("jpeg:subsampling", "4:4:4"); // if possible, always subsampling 4:4:4 for jpeg
         imageSpec.attribute("CompressionQuality", 100);   // if possible, best compression quality
         imageSpec.attribute("compression", "none");       // if possible, no compression
+    }
 
-        const oiio::ImageBuf outBuf(imageSpec, const_cast<T*>(buffer.data()));
+    const oiio::ImageBuf outBuf(imageSpec, const_cast<T*>(buffer.data()));
 
+    if(isEXR && imageQuality == EImageQuality::OPTIMIZED)
+    {
+        imageSpec.format = oiio::TypeDesc::HALF; // override format
+
+        // conversion to half
+        oiio::ImageBuf halfBuf(imageSpec);
+        if(!halfBuf.copy_pixels(outBuf))
+          throw std::runtime_error("Can't convert output image file to half '" + path + "'.");
+
+        // write image
+        if(!halfBuf.write(path))
+          throw std::runtime_error("Can't write output image file '" + path + "'.");
+    }
+    else
+    {
         // write image
         if(!outBuf.write(path))
           throw std::runtime_error("Can't write output image file '" + path + "'.");
     }
 }
 
-void writeImage(const std::string& path, int width, int height, const std::vector<unsigned char>& buffer)
+void writeImage(const std::string& path, int width, int height, const std::vector<unsigned char>& buffer, EImageQuality imageQuality)
 {
-    writeImage(path, oiio::TypeDesc::UCHAR, width, height, 1, buffer);
+    writeImage(path, oiio::TypeDesc::UCHAR, width, height, 1, buffer, imageQuality);
 }
 
-void writeImage(const std::string& path, int width, int height, const std::vector<unsigned short>& buffer)
+void writeImage(const std::string& path, int width, int height, const std::vector<unsigned short>& buffer, EImageQuality imageQuality)
 {
-    writeImage(path, oiio::TypeDesc::UINT16, width, height, 1, buffer);
+    writeImage(path, oiio::TypeDesc::UINT16, width, height, 1, buffer, imageQuality);
 }
 
-void writeImage(const std::string& path, int width, int height, const std::vector<rgb>& buffer)
+void writeImage(const std::string& path, int width, int height, const std::vector<rgb>& buffer, EImageQuality imageQuality)
 {
-    writeImage(path, oiio::TypeDesc::UCHAR, width, height, 3, buffer);
+    writeImage(path, oiio::TypeDesc::UCHAR, width, height, 3, buffer, imageQuality);
 }
 
-void writeImage(const std::string& path, int width, int height, const std::vector<float>& buffer)
+void writeImage(const std::string& path, int width, int height, const std::vector<float>& buffer, EImageQuality imageQuality)
 {
-    writeImage(path, oiio::TypeDesc::FLOAT, width, height, 1, buffer);
+    writeImage(path, oiio::TypeDesc::FLOAT, width, height, 1, buffer, imageQuality);
 }
 
-void writeImage(const std::string& path, int width, int height, const std::vector<Color>& buffer)
+void writeImage(const std::string& path, int width, int height, const std::vector<Color>& buffer, EImageQuality imageQuality)
 {
-    writeImage(path, oiio::TypeDesc::FLOAT, width, height, 3, buffer);
+    writeImage(path, oiio::TypeDesc::FLOAT, width, height, 3, buffer, imageQuality);
 }
 
 template<typename T>

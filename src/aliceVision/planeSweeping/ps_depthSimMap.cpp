@@ -556,7 +556,7 @@ void ps_depthSimMap::save(int rc, staticVector<int>* tcams)
     const int height = mp->mip->getHeight(rc) / scale;
 
     // TODO: remove "+ 1"
-    imageIO::writeImage(mv_getFileName(mp->mip, rc + 1, EFileType::depthMap, scale), width, height, depthMap->getDataWritable());
+    imageIO::writeImage(mv_getFileName(mp->mip, rc + 1, EFileType::depthMap, scale), width, height, depthMap->getDataWritable(), imageIO::EImageQuality::LOSSLESS);
     imageIO::writeImage(mv_getFileName(mp->mip, rc + 1, EFileType::simMap, scale), width, height, simMap->getDataWritable());
 
     {
@@ -604,7 +604,7 @@ void ps_depthSimMap::saveRefine(int rc, std::string depthMapFileName, std::strin
         simMap.at(i) = (*dsm)[i].sim;
     }
 
-    imageIO::writeImage(depthMapFileName, width, height, depthMap);
+    imageIO::writeImage(depthMapFileName, width, height, depthMap, imageIO::EImageQuality::LOSSLESS);
     imageIO::writeImage(simMapFileName, width, height, simMap);
 }
 

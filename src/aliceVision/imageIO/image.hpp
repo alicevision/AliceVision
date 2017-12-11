@@ -14,6 +14,51 @@ class Color;
 namespace imageIO {
 
 /**
+ * @brief Available image qualities for pipeline output
+ */
+enum class EImageQuality
+{
+  OPTIMIZED,
+  LOSSLESS
+};
+
+/**
+ * @brief get informations about each image quality
+ * @return String
+ */
+std::string EImageQuality_informations();
+
+/**
+ * @brief returns the EImageQuality enum from a string.
+ * @param[in] imageQuality the input string.
+ * @return the associated EImageQuality enum.
+ */
+EImageQuality EImageQuality_stringToEnum(const std::string& imageQuality);
+
+/**
+ * @brief converts an EImageQuality enum to a string.
+ * @param[in] imageQuality the EImageQuality enum to convert.
+ * @return the string associated to the EImageQuality enum.
+ */
+std::string EImageQuality_enumToString(const EImageQuality imageQuality);
+
+/**
+ * @brief write an EImageQuality enum into a stream by converting it to a string.
+ * @param[in] os the stream where to write the imageType.
+ * @param[in] imageQuality the EImageQuality enum to write.
+ * @return the modified stream.
+ */
+std::ostream& operator<<(std::ostream& os, EImageQuality imageQuality);
+
+/**
+ * @brief read a EImageQuality enum from a stream.
+ * @param[in] in the stream from which the enum is read.
+ * @param[out] imageQuality the EImageQuality enum read from the stream.
+ * @return the modified stream without the read enum.
+ */
+std::istream& operator>>(std::istream& in, EImageQuality& imageQuality);
+
+/**
  * @brief read image dimension from a given path
  * @param[in] path The given path to the image
  * @param[out] width The image width
@@ -42,11 +87,11 @@ void readImage(const std::string& path, int& width, int& height, std::vector<Col
  * @param[in] height The input image height
  * @param[in] buffer The input image buffer
  */
-void writeImage(const std::string& path, int width, int height, const std::vector<unsigned char>& buffer);
-void writeImage(const std::string& path, int width, int height, const std::vector<unsigned short>& buffer);
-void writeImage(const std::string& path, int width, int height, const std::vector<rgb>& buffer);
-void writeImage(const std::string& path, int width, int height, const std::vector<float>& buffer);
-void writeImage(const std::string& path, int width, int height, const std::vector<Color>& buffer);
+void writeImage(const std::string& path, int width, int height, const std::vector<unsigned char>& buffer, EImageQuality imageQuality = EImageQuality::OPTIMIZED);
+void writeImage(const std::string& path, int width, int height, const std::vector<unsigned short>& buffer, EImageQuality imageQuality = EImageQuality::OPTIMIZED);
+void writeImage(const std::string& path, int width, int height, const std::vector<rgb>& buffer, EImageQuality imageQuality = EImageQuality::OPTIMIZED);
+void writeImage(const std::string& path, int width, int height, const std::vector<float>& buffer, EImageQuality imageQuality = EImageQuality::OPTIMIZED);
+void writeImage(const std::string& path, int width, int height, const std::vector<Color>& buffer, EImageQuality imageQuality = EImageQuality::OPTIMIZED);
 
 /**
  * @brief transpose a given image buffer
@@ -92,6 +137,5 @@ void convolveImage(int inWidth, int inHeight, const std::vector<unsigned char>& 
 void convolveImage(int inWidth, int inHeight, const std::vector<rgb>& inBuffer, std::vector<rgb>& outBuffer, const std::string& kernel = "gaussian", float kernelWidth = 5.0f, float kernelHeight = 5.0f);
 void convolveImage(int inWidth, int inHeight, const std::vector<float>& inBuffer, std::vector<float>& outBuffer, const std::string& kernel = "gaussian", float kernelWidth = 5.0f, float kernelHeight = 5.0f);
 void convolveImage(int inWidth, int inHeight, const std::vector<Color>& inBuffer, std::vector<Color>& outBuffer, const std::string& kernel = "gaussian", float kernelWidth = 5.0f, float kernelHeight = 5.0f);
-
 
 } // namespace imageIO
