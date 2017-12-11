@@ -201,7 +201,7 @@ bool prepareDenseScene(
 
   // Export views:
   //   - 00001_P.txt (Pose of the reconstructed camera)
-  //   - 00001.png (undistorted & scaled colored image)
+  //   - 00001.exr (undistorted & scaled colored image)
   //   - 00001_seeds.bin (3d points visible in this image)
   #pragma omp parallel for num_threads(3)
   for(int i = 0; i < map_viewIdToContiguous.size(); ++i)
@@ -335,7 +335,6 @@ bool prepareDenseScene(
     os << baseFilename << "=" << int(view->getWidth() / (double)scale) << "x" << int(view->getHeight() / (double)scale) << os.widen('\n');
   }
 
-
   std::ofstream file2(
     stlplus::create_filespec(stlplus::folder_append_separator(sOutDirectory),
     "mvs", "ini").c_str());
@@ -352,7 +351,7 @@ int main(int argc, char *argv[])
   std::string verboseLevel = system::EVerboseLevel_enumToString(system::Logger::getDefaultVerboseLevel());
   std::string sfmDataFilename;
   std::string outFolder;
-  std::string outImageFileTypeName = image::EImageFileType_enumToString(image::EImageFileType::PNG);
+  std::string outImageFileTypeName = image::EImageFileType_enumToString(image::EImageFileType::EXR);
   int scale = 2;
 
   po::options_description allParams("AliceVision prepareDenseScene");
