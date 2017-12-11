@@ -3423,10 +3423,10 @@ void mv_output3D::printfGroupCamerasDepth(FILE* f, const multiviewParams* mp, st
         vx = Xl;
         vy = Yl;
 
-        float mind, maxd;
-        getDepthMapInfoDepthLimits(rc + 1, mp->mip, mind, maxd);
+        // float mind, maxd;
+        // getDepthMapInfoDepthLimits(rc + 1, mp->mip, mind, maxd);
         // maxd = (1.0f/(n-vx-vy).size())*maxd;
-        maxd = 10.0;
+        float maxd = 10.0;
 
         fprintf(f, "\t\t\t\t\t%7.8f %7.8f %7.8f \n", p.x, p.y, p.z);
         fprintf(f, "\t\t\t\t\t%7.8f %7.8f %7.8f \n", p.x + (n.x - vx.x - vy.x) * maxd, p.y + (n.y - vx.y - vy.y) * maxd,
