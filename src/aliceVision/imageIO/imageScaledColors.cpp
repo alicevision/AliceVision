@@ -12,7 +12,7 @@ namespace imageIO {
 
 template <typename T>
 void writeImageScaledColors(const std::string& savePath, T* buffer, int width, int height,
-                            unsigned short minVal, unsigned short maxVal, bool transpose)
+                            T minVal, T maxVal, bool transpose)
 {
     std::vector<Color> colorBuffer(width * height);
     std::size_t index = 0;
@@ -28,7 +28,7 @@ void writeImageScaledColors(const std::string& savePath, T* buffer, int width, i
             else
                 val = static_cast<float>(buffer[y * width + x]);
 
-            const float s = 1.0f - ((float)maxVal - std::max((float)minVal, (float)val)) / ((float)maxVal - (float)minVal);
+            const float s = 1.0f - (static_cast<float>(maxVal) - std::max(static_cast<float>(minVal), val) / static_cast<float>(maxVal) - static_cast<float>(minVal));
             colorBuffer.at(index++) = getColorFromJetColorMap(s);
         }
     }
@@ -57,20 +57,17 @@ void writeImageScaledColors(const std::string& path, int width, int height, floa
     writeImage(path, width, height, colorBuffer);
 }
 
-void writeImageScaledColors(const std::string& path, int width, int height, unsigned short minVal, unsigned short maxVal,
-                            float* buffer, bool transpose)
+void writeImageScaledColors(const std::string& path, int width, int height, float minVal, float maxVal, float* buffer, bool transpose)
 {
   writeImageScaledColors(path, buffer, width, height, minVal, maxVal, transpose);
 }
 
-void writeImageScaledColors(const std::string& path, int width, int height, unsigned short minVal, unsigned short maxVal,
-                            int* buffer, bool transpose)
+void writeImageScaledColors(const std::string& path, int width, int height, int minVal, int maxVal, int* buffer, bool transpose)
 {
   writeImageScaledColors(path, buffer, width, height, minVal, maxVal, transpose);
 }
 
-void writeImageScaledColors(const std::string& path, int width, int height, unsigned short minVal, unsigned short maxVal,
-                            unsigned short* buffer, bool transpose)
+void writeImageScaledColors(const std::string& path, int width, int height, unsigned short minVal, unsigned short maxVal, unsigned short* buffer, bool transpose)
 {
   writeImageScaledColors(path, buffer, width, height, minVal, maxVal, transpose);
 }

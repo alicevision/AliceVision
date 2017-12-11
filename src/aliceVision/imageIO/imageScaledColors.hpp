@@ -18,14 +18,8 @@ namespace imageIO {
  * @param[in] transpose
  */
 void writeImageScaledColors(const std::string& path, int width, int height, float* buffer, bool transpose = false);
-
-void writeImageScaledColors(const std::string& path, int width, int height, unsigned short minVal, unsigned short maxVal,
-                            float* buffer, bool transpose = false);
-
-void writeImageScaledColors(const std::string& path, int width, int height, unsigned short minVal, unsigned short maxVal,
-                            int* buffer, bool transpose = false);
-
-void writeImageScaledColors(const std::string& path, int width, int height, unsigned short minVal, unsigned short maxVal,
-                            unsigned short* buffer, bool transpose);
+void writeImageScaledColors(const std::string& path, int width, int height, float minVal, float maxVal, float* buffer, bool transpose = false);
+void writeImageScaledColors(const std::string& path, int width, int height, int minVal, int maxVal, int* buffer, bool transpose = false);
+void writeImageScaledColors(const std::string& path, int width, int height, unsigned short minVal, unsigned short maxVal, unsigned short* buffer, bool transpose);
 
 } // namespace imageIO
