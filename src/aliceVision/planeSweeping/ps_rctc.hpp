@@ -20,7 +20,7 @@ public:
     ps_rctc(multiviewParams* _mp, cuda_plane_sweeping* _cps);
     ~ps_rctc(void);
 
-    void refineRcTcDepthSimMap(bool userTcOrPixSize, ps_depthSimMap* depthSimMap, int rc, int tc, int ndepthsToRefine,
+    void refineRcTcDepthSimMap(bool useTcOrRcPixSize, ps_depthSimMap* depthSimMap, int rc, int tc, int ndepthsToRefine,
                                int wsh, float gammaC, float gammaP, float epipShift);
 
     void smoothDepthMap(ps_depthSimMap* depthSimMap, int rc, int wsh, float gammaC, float gammaP);

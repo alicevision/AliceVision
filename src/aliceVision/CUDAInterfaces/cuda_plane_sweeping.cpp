@@ -20,7 +20,7 @@ extern void ps_planeSweepingGPUPixels(CudaArray<uchar4, 2>** ps_texs_arr, CudaHo
                                       CudaHostMemoryHeap<float, 2>& depths_hmh, int slicesAtTime, int ntimes,
                                       int npixs, int wsh, int kernelSizeHalf, int nPlanes, int scale, int CUDAdeviceNo,
                                       int ncamsAllocated, int scales, bool verbose, bool doUsePixelsDepths, int nbest,
-                                      bool userTcOrPixSize, float gammaC, float gammaP, bool subPixel,
+                                      bool useTcOrRcPixSize, float gammaC, float gammaP, bool subPixel,
                                       float epipShift = 0.0f);
 
 */
@@ -35,7 +35,7 @@ extern float ps_planeSweepingGPUPixelsVolume(
     int volLUZ, CudaHostMemoryHeap<int4, 2>& volPixs_hmh, CudaHostMemoryHeap<float, 2>& depths_hmh,
     int nDepthsToSearch, int slicesAtTime, int ntimes, int npixs, int wsh, int kernelSizeHalf, int nPlanes, int scale,
     int CUDAdeviceNo, int ncamsAllocated, int scales, bool verbose, bool doUsePixelsDepths, int nbest,
-    bool userTcOrPixSize, float gammaC, float gammaP, bool subPixel, float epipShift);
+    bool useTcOrRcPixSize, float gammaC, float gammaP, bool subPixel, float epipShift);
 /*
 
 extern void ps_computeRcVolumeForTcDepthSimMaps(
@@ -853,7 +853,7 @@ staticVector<float>* cuda_plane_sweeping::getDepthsRcTc(int rc, int tc, int scal
 }
 /*
 
-bool cuda_plane_sweeping::refinePixelsAll(bool userTcOrPixSize, int ndepthsToRefine, staticVector<float>* pxsdepths,
+bool cuda_plane_sweeping::refinePixelsAll(bool useTcOrRcPixSize, int ndepthsToRefine, staticVector<float>* pxsdepths,
                                           staticVector<float>* pxssims, int rc, int wsh, float igammaC, float igammaP,
                                           staticVector<pixel>* pixels, int scale, staticVector<int>* tcams,
                                           float epipShift)
@@ -937,7 +937,7 @@ bool cuda_plane_sweeping::refinePixelsAll(bool userTcOrPixSize, int ndepthsToRef
     ps_planeSweepingGPUPixels((CudaArray<uchar4, 2>**)ps_texs_arr, &dptMap_hmh, &simMap_hmh, ttcams, camsids->size(),
                               w, h, pixs_hmh, pixsdepths_hmh, slicesAtTime, ntimes, npixs, wsh, nbestkernelSizeHalfr,
                               ndepthsToRefine, scale - 1, CUDADeviceNo, nImgsInGPUAtTime, scales, verbose, true, nbestr,
-                              userTcOrPixSize, _gammaC, _gammaP, subPixel, epipShift);
+                              useTcOrRcPixSize, _gammaC, _gammaP, subPixel, epipShift);
 
     for(int i = 0; i < npixs; i++)
     {
@@ -1487,7 +1487,7 @@ bool cuda_plane_sweeping::computeSimMapForRcTcDepthMap(staticVector<float>* oSim
     return true;
 }
 
-bool cuda_plane_sweeping::refineRcTcDepthMap(bool userTcOrPixSize, int nStepsToRefine, staticVector<float>* simMap,
+bool cuda_plane_sweeping::refineRcTcDepthMap(bool useTcOrRcPixSize, int nStepsToRefine, staticVector<float>* simMap,
                                              staticVector<float>* rcDepthMap, int rc, int tc, int scale, int wsh,
                                              float gammaC, float gammaP, float epipShift, int xFrom, int wPart)
 {
@@ -1528,7 +1528,7 @@ bool cuda_plane_sweeping::refineRcTcDepthMap(bool userTcOrPixSize, int nStepsToR
     ps_refineRcDepthMap((CudaArray<uchar4, 2>**)ps_texs_arr, simMap->getDataWritable().data(), rcDepthMap->getDataWritable().data(), nStepsToRefine,
                         ttcams, camsids->size(), w, h, mp->mip->getWidth(rc) / scale,
                         mp->mip->getHeight(rc) / scale, scale - 1, CUDADeviceNo, nImgsInGPUAtTime, scales, verbose, wsh,
-                        gammaC, gammaP, epipShift, userTcOrPixSize, xFrom);
+                        gammaC, gammaP, epipShift, useTcOrRcPixSize, xFrom);
 
     /*
     CudaHostMemoryHeap<float, 3> tmpSimVolume_hmh(CudaSize<3>(201, 201, nStepsToRefine));

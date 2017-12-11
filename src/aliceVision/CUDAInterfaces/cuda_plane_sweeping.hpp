@@ -86,7 +86,7 @@ public:
                                               int step, int maxDepthsHalf = 1024);
     staticVector<float>* getDepthsRcTc(int rc, int tc, int scale, float midDepth, int maxDepthsHalf = 1024);
 
-    bool refinePixelsAll(bool userTcOrPixSize, int ndepthsToRefine, staticVector<float>* pxsdepths,
+    bool refinePixelsAll(bool useTcOrRcPixSize, int ndepthsToRefine, staticVector<float>* pxsdepths,
                          staticVector<float>* pxssims, int rc, int wsh, float igammaC, float igammaP,
                          staticVector<pixel>* pixels, int scale, staticVector<int>* tcams, float epipShift = 0.0f);
     bool refinePixelsAllFine(staticVector<Color>* pxsnormals, staticVector<float>* pxsdepths,
@@ -107,7 +107,7 @@ public:
 
     bool computeSimMapForRcTcDepthMap(staticVector<float>* oSimMap, staticVector<float>* rcTcDepthMap, int rc, int tc,
                                       int wsh, float gammaC, float gammaP, float epipShift);
-    bool refineRcTcDepthMap(bool userTcOrPixSize, int nStepsToRefine, staticVector<float>* simMap,
+    bool refineRcTcDepthMap(bool useTcOrRcPixSize, int nStepsToRefine, staticVector<float>* simMap,
                             staticVector<float>* rcDepthMap, int rc, int tc, int scale, int wsh, float gammaC,
                             float gammaP, float epipShift, int xFrom, int wPart);
 

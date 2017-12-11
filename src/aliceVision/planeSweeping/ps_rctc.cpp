@@ -19,7 +19,7 @@ ps_rctc::~ps_rctc()
     delete o3d;
 }
 
-void ps_rctc::refineRcTcDepthSimMap(bool userTcOrPixSize, ps_depthSimMap* depthSimMap, int rc, int tc,
+void ps_rctc::refineRcTcDepthSimMap(bool useTcOrRcPixSize, ps_depthSimMap* depthSimMap, int rc, int tc,
                                     int ndepthsToRefine, int wsh, float gammaC, float gammaP, float epipShift)
 {
     int scale = depthSimMap->scale;
@@ -40,7 +40,7 @@ void ps_rctc::refineRcTcDepthSimMap(bool userTcOrPixSize, ps_depthSimMap* depthS
         staticVector<float>* depthMap = depthSimMap->getDepthMapStep1XPart(xFrom, wPartAct);
         staticVector<float>* simMap = depthSimMap->getSimMapStep1XPart(xFrom, wPartAct);
 
-        cps->refineRcTcDepthMap(userTcOrPixSize, ndepthsToRefine, simMap, depthMap, rc, tc, scale, wsh, gammaC, gammaP,
+        cps->refineRcTcDepthMap(useTcOrRcPixSize, ndepthsToRefine, simMap, depthMap, rc, tc, scale, wsh, gammaC, gammaP,
                                 epipShift, xFrom, wPartAct);
 
         for(int yp = 0; yp < h; yp++)

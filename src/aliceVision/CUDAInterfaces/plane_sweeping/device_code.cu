@@ -160,7 +160,7 @@ __device__ float move3DPointByTcOrRcPixStep(int2& pix, float3& p, float pixStep,
 }
 
 __device__ void computePatch(patch& ptch, int depthid, int ndepths, int2& pix, int pixid, int t, bool doUsePixelsDepths,
-                             bool userTcOrPixSize)
+                             bool useTcOrRcPixSize)
 {
     float3 p;
     float pixSize;
@@ -178,7 +178,7 @@ __device__ void computePatch(patch& ptch, int depthid, int ndepths, int2& pix, i
 
         float jump = (float)(depthid - ((ndepths - 1) / 2));
 
-        if(userTcOrPixSize == true)
+        if(useTcOrRcPixSize == true)
         {
             move3DPointByTcPixStep(prp, jump);
             p = prp;
@@ -217,7 +217,7 @@ __global__ void slice_kernel(float* slice, int slice_p,
                              int ndepths, int slicesAtTime,
                              int width, int height, int wsh, int t, int npixs,
                              int maxDepth,
-                             bool doUsePixelsDepths, bool userTcOrPixSize, const float gammaC, const float gammaP,
+                             bool doUsePixelsDepths, bool useTcOrRcPixSize, const float gammaC, const float gammaP,
                              const float epipShift)
 {
     int depthid = blockIdx.x * blockDim.x + threadIdx.x;
@@ -227,7 +227,7 @@ __global__ void slice_kernel(float* slice, int slice_p,
     {
         int2 pix = tex2D(pixsTex, pixid, t);
         patch ptcho;
-        computePatch(ptcho, depthid, ndepths, pix, pixid, t, doUsePixelsDepths, userTcOrPixSize);
+        computePatch(ptcho, depthid, ndepths, pix, pixid, t, doUsePixelsDepths, useTcOrRcPixSize);
 
         float sim = compNCCby3DptsYK(ptcho, wsh, width, height, gammaC, gammaP, epipShift);
 
@@ -515,7 +515,7 @@ __global__ void getBest_kernel(float* slice, int slice_p,
                                float* bestDpt, int bestDpt_p,
                                float* bestSim, int bestSim_p,
                                int slicesAtTime, int ndepths, int t, int npixs,
-                               int wsh, int width, int height, bool doUsePixelsDepths, int nbest, bool userTcOrPixSize,
+                               int wsh, int width, int height, bool doUsePixelsDepths, int nbest, bool useTcOrRcPixSize,
                                bool subPixel)
 {
     int pixid = blockIdx.x * blockDim.x + threadIdx.x;
@@ -539,7 +539,7 @@ __global__ void getBest_kernel(float* slice, int slice_p,
 
             int2 pix = tex2D(pixsTex, pixid, t);
             patch ptcho;
-            computePatch(ptcho, minDepthId, ndepths, pix, pixid, t, doUsePixelsDepths, userTcOrPixSize);
+            computePatch(ptcho, minDepthId, ndepths, pix, pixid, t, doUsePixelsDepths, useTcOrRcPixSize);
 
             float3 p = ptcho.p;
             float floatDepth = size(p - sg_s_rC);
@@ -551,14 +551,14 @@ __global__ void getBest_kernel(float* slice, int slice_p,
             if((subPixel == true) && (minDepthId > 0) && (minDepthId < ndepths - 1))
             {
                 float3 depths;
-                computePatch(ptcho, minDepthId - 1, ndepths, pix, pixid, t, doUsePixelsDepths, userTcOrPixSize);
+                computePatch(ptcho, minDepthId - 1, ndepths, pix, pixid, t, doUsePixelsDepths, useTcOrRcPixSize);
 
                 p = ptcho.p;
 
                 depths.x = size(p - sg_s_rC);
                 depths.y = floatDepth;
 
-                computePatch(ptcho, minDepthId + 1, ndepths, pix, pixid, t, doUsePixelsDepths, userTcOrPixSize);
+                computePatch(ptcho, minDepthId + 1, ndepths, pix, pixid, t, doUsePixelsDepths, useTcOrRcPixSize);
 
                 p = ptcho.p;
 

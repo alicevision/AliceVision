@@ -60,7 +60,7 @@ public:
     int wsh;
     float gammaC;
     float gammaP;
-    bool userTcOrPixSize;
+    bool useTcOrRcPixSize;
     int nSamplesHalf;
     int ndepthsToRefine;
     float sigma;

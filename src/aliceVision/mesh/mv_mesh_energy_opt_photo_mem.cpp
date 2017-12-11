@@ -118,7 +118,7 @@ mv_mesh_energy_opt_photo_mem::mv_mesh_energy_opt_photo_mem(multiviewParams* _mp,
     wsh = sp->mp->mip->_ini.get<int>("meshEnergyOpt.wsh", 2);
     gammaC = (float)sp->mp->mip->_ini.get<double>("meshEnergyOpt.gammaC", 105.5);
     gammaP = (float)sp->mp->mip->_ini.get<double>("meshEnergyOpt.gammaP", 4.0);
-    userTcOrPixSize = (bool)sp->mp->mip->_ini.get<bool>("meshEnergyOpt.userTcOrPixSize", false);
+    useTcOrRcPixSize = (bool)sp->mp->mip->_ini.get<bool>("meshEnergyOpt.useTcOrRcPixSize", false);
     nSamplesHalf = sp->mp->mip->_ini.get<int>("meshEnergyOpt.nSamplesHalf", 50);
     ndepthsToRefine = sp->mp->mip->_ini.get<int>("meshEnergyOpt.ndepthsToRefine", 11);
     sigma = (float)sp->mp->mip->_ini.get<double>("meshEnergyOpt.sigma", 10.0);
@@ -490,7 +490,7 @@ ps_depthSimMap* mv_mesh_energy_opt_photo_mem::getDepthPixSizeMap(staticVector<fl
             point3d p = sp->mp->CArr[rc] +
                         (sp->mp->iCamArr[rc] * point2d((float)x, (float)y)).normalize() *
                             (*depthSimMapScale1Step1->dsm)[y * w11 + x].depth;
-            if(userTcOrPixSize)
+            if(useTcOrRcPixSize)
             {
                 (*depthSimMapScale1Step1->dsm)[y * w11 + x].sim = sp->mp->getCamsMinPixelSize(p, *tcams);
             }
