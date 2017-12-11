@@ -212,11 +212,9 @@ bool readCamera(const ICamera& camera, const M44d& mat, sfm::SfMData &sfmData, s
   // Check if we have an associated image plane
   ICompoundProperty userProps = getAbcUserProperties(cs);
   std::string imagePath;
-  std::vector<unsigned int> sensorSize_pix = {2048, 2048};
+  std::vector<unsigned int> sensorSize_pix = {0, 0};
   std::string mvg_intrinsicType = EINTRINSIC_enumToString(PINHOLE_CAMERA);
   std::vector<double> mvg_intrinsicParams;
-  float imgWidth = 0;
-  float imgHeight = 0;
   IndexT viewId = sfmData.GetViews().size();
   IndexT poseId = sfmData.GetViews().size();
   IndexT intrinsicId = sfmData.GetIntrinsics().size();
@@ -226,7 +224,7 @@ bool readCamera(const ICamera& camera, const M44d& mat, sfm::SfMData &sfmData, s
 
   if(userProps)
   {
-    if(flags_part & sfm::ESfMData::VIEWS)
+    if(flags_part & sfm::ESfMData::VIEWS || flags_part & sfm::ESfMData::INTRINSICS)
     {
       if(const Alembic::Abc::PropertyHeader *propHeader = userProps.getPropertyHeader("mvg_imagePath"))
       {
@@ -298,10 +296,6 @@ bool readCamera(const ICamera& camera, const M44d& mat, sfm::SfMData &sfmData, s
           resectionId = getAbcProp<Alembic::Abc::IInt32Property>(userProps, *propHeader, "mvg_resectionId", sampleFrame);
         }
       }
-    }
-
-    if(flags_part & sfm::ESfMData::INTRINSICS)
-    {
       if(userProps.getPropertyHeader("mvg_sensorSizePix"))
       {
         try
@@ -331,20 +325,19 @@ bool readCamera(const ICamera& camera, const M44d& mat, sfm::SfMData &sfmData, s
   if(flags_part & sfm::ESfMData::INTRINSICS)
   {
     // get known values from alembic
-    const float haperture_cm = camSample.getHorizontalAperture();
-    const float vaperture_cm = camSample.getVerticalAperture();
-
+    // const float haperture_cm = camSample.getHorizontalAperture();
+    // const float vaperture_cm = camSample.getVerticalAperture();
     // compute other needed values
-    const float sensorWidth_mm = std::max(vaperture_cm, haperture_cm) * 10.0;
-    const float mm2pix = sensorSize_pix.at(0) / sensorWidth_mm;
-    imgWidth = haperture_cm * 10.0 * mm2pix;
-    imgHeight = vaperture_cm * 10.0 * mm2pix;
+    // const float sensorWidth_mm = std::max(vaperture_cm, haperture_cm) * 10.0;
+    // const float mm2pix = sensorSize_pix.at(0) / sensorWidth_mm;
+    // imgWidth = haperture_cm * 10.0 * mm2pix;
+    // imgHeight = vaperture_cm * 10.0 * mm2pix;
 
     // create intrinsic parameters object
     std::shared_ptr<Pinhole> pinholeIntrinsic = createPinholeIntrinsic(EINTRINSIC_stringToEnum(mvg_intrinsicType));
 
-    pinholeIntrinsic->setWidth(imgWidth);
-    pinholeIntrinsic->setHeight(imgHeight);
+    pinholeIntrinsic->setWidth(sensorSize_pix.at(0));
+    pinholeIntrinsic->setHeight(sensorSize_pix.at(1));
     pinholeIntrinsic->updateFromParams(mvg_intrinsicParams);
 
     sfmData.intrinsics[intrinsicId] = pinholeIntrinsic;
@@ -356,8 +349,8 @@ bool readCamera(const ICamera& camera, const M44d& mat, sfm::SfMData &sfmData, s
                                                       viewId,
                                                       intrinsicId,
                                                       poseId,
-                                                      imgWidth,
-                                                      imgHeight,
+                                                      sensorSize_pix.at(0),
+                                                      sensorSize_pix.at(1),
                                                       rigId,
                                                       subPoseId);
   if(flags_part & sfm::ESfMData::VIEWS)
