@@ -124,6 +124,11 @@ void readImage(const std::string& path, int& width, int& height, std::vector<uns
     readImage(path, oiio::TypeDesc::UCHAR, 1, width, height, buffer);
 }
 
+void readImage(const std::string& path, int& width, int& height, std::vector<unsigned short>& buffer)
+{
+    readImage(path, oiio::TypeDesc::UINT16, 1, width, height, buffer);
+}
+
 void readImage(const std::string& path, int& width, int& height, std::vector<rgb>& buffer)
 {
     readImage(path, oiio::TypeDesc::UCHAR, 3, width, height, buffer);
@@ -148,8 +153,11 @@ void writeImage(const std::string& path,
                 std::vector<T>& buffer)
 {
     std::cout << "[IO] Write Image : " << path << std::endl;
+    std::cout << "- width : " << width << std::endl;
+    std::cout << "- height : " << height << std::endl;
+    std::cout << "- channels : " << nchannels << std::endl;
 
-    bool isEXR = (path.size() > 4 && path.compare(path.size() - 4, 4, ".exr") == 0);
+    const bool isEXR = (path.size() > 4 && path.compare(path.size() - 4, 4, ".exr") == 0);
 
     oiio::ImageSpec imageSpec(width, height, nchannels, typeDesc);
 
@@ -186,6 +194,11 @@ void writeImage(const std::string& path,
 void writeImage(const std::string& path, int width, int height, std::vector<unsigned char>& buffer)
 {
     writeImage(path, oiio::TypeDesc::UCHAR, width, height, 1, buffer);
+}
+
+void writeImage(const std::string& path, int width, int height, std::vector<unsigned short>& buffer)
+{
+    writeImage(path, oiio::TypeDesc::UINT16, width, height, 1, buffer);
 }
 
 void writeImage(const std::string& path, int width, int height, std::vector<rgb>& buffer)

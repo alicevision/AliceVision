@@ -30,6 +30,7 @@ void readImageSpec(const std::string& path, int& width, int& height, int& nchann
  * @param[out] buffer The output image buffer
  */
 void readImage(const std::string& path, int& width, int& height, std::vector<unsigned char>& buffer);
+void readImage(const std::string& path, int& width, int& height, std::vector<unsigned short>& buffer);
 void readImage(const std::string& path, int& width, int& height, std::vector<rgb>& buffer);
 void readImage(const std::string& path, int& width, int& height, std::vector<float>& buffer);
 void readImage(const std::string& path, int& width, int& height, std::vector<Color>& buffer);
@@ -42,6 +43,7 @@ void readImage(const std::string& path, int& width, int& height, std::vector<Col
  * @param[in] buffer The input image buffer
  */
 void writeImage(const std::string& path, int width, int height, std::vector<unsigned char>& buffer);
+void writeImage(const std::string& path, int width, int height, std::vector<unsigned short>& buffer);
 void writeImage(const std::string& path, int width, int height, std::vector<rgb>& buffer);
 void writeImage(const std::string& path, int width, int height, std::vector<float>& buffer);
 void writeImage(const std::string& path, int width, int height, std::vector<Color>& buffer);
