@@ -26,8 +26,6 @@ public:
     staticVector<idValue>* getOrigVolumeBestIdValFromVolumeStepZ(int zborder);
 
     staticVector<unsigned char>* getZSlice(int z) const;
-    void showVolume() const;
-
 
 private:
     ps_sgm_params* sp;

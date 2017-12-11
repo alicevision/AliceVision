@@ -5,7 +5,7 @@
 
 #pragma once
 
-#include "mv_structures.hpp"
+#include <aliceVision/structures/mv_structures.hpp>
 
 #include <boost/property_tree/ptree.hpp>
 
@@ -21,57 +21,58 @@ struct timeIndex
     timeIndex(int _index);
 };
 
-
+enum class EFileType {
+    P = 0,
+    K = 1,
+    iK = 2,
+    R = 3,
+    iR = 4,
+    C = 5,
+    iP = 6,
+    har = 7,
+    prematched = 8,
+    seeds = 9,
+    growed = 10,
+    op = 11,
+    occMap = 12,
+    wshed = 13,
+    nearMap = 14,
+    seeds_prm = 15,
+    seeds_flt = 16,
+    img = 17,
+    seeds_seg = 18,
+    graphCutMap = 20,
+    graphCutPts = 21,
+    growedMap = 22,
+    agreedMap = 23,
+    agreedPts = 24,
+    refinedMap = 25,
+    seeds_sfm = 26,
+    radial_disortion = 27,
+    graphCutMesh = 28,
+    agreedMesh = 29,
+    nearestAgreedMap = 30,
+    segPlanes = 31,
+    agreedVisMap = 32,
+    diskSizeMap = 33,
+    imgT = 34,
+    depthMap = 35,
+    simMap = 36,
+    mapPtsTmp = 37,
+    depthMapInfo = 38,
+    camMap = 39,
+    mapPtsSimsTmp = 40,
+    nmodMap = 41,
+    D = 42,
+};
 
 struct multiviewInputParams
 {
-    static const int MV_FILE_TYPE_P = 0;
-    static const int MV_FILE_TYPE_K = 1;
-    static const int MV_FILE_TYPE_iK = 2;
-    static const int MV_FILE_TYPE_R = 3;
-    static const int MV_FILE_TYPE_iR = 4;
-    static const int MV_FILE_TYPE_C = 5;
-    static const int MV_FILE_TYPE_iP = 6;
-    static const int MV_FILE_TYPE_har = 7;
-    static const int MV_FILE_TYPE_prematched = 8;
-    static const int MV_FILE_TYPE_seeds = 9;
-    static const int MV_FILE_TYPE_growed = 10;
-    static const int MV_FILE_TYPE_op = 11;
-    static const int MV_FILE_TYPE_occMap = 12;
-    static const int MV_FILE_TYPE_wshed = 13;
-    static const int MV_FILE_TYPE_nearMap = 14;
-    static const int MV_FILE_TYPE_seeds_prm = 15;
-    static const int MV_FILE_TYPE_seeds_flt = 16;
-    static const int MV_FILE_TYPE_img = 17;
-    static const int MV_FILE_TYPE_seeds_seg = 18;
-    static const int MV_FILE_TYPE_graphCutMap = 20;
-    static const int MV_FILE_TYPE_graphCutPts = 21;
-    static const int MV_FILE_TYPE_growedMap = 22;
-    static const int MV_FILE_TYPE_agreedMap = 23;
-    static const int MV_FILE_TYPE_agreedPts = 24;
-    static const int MV_FILE_TYPE_refinedMap = 25;
-    static const int MV_FILE_TYPE_seeds_sfm = 26;
-    static const int MV_FILE_TYPE_radial_disortion = 27;
-    static const int MV_FILE_TYPE_graphCutMesh = 28;
-    static const int MV_FILE_TYPE_agreedMesh = 29;
-    static const int MV_FILE_TYPE_nearestAgreedMap = 30;
-    static const int MV_FILE_TYPE_segPlanes = 31;
-    static const int MV_FILE_TYPE_agreedVisMap = 32;
-    static const int MV_FILE_TYPE_diskSizeMap = 33;
-    static const int MV_FILE_TYPE_imgT = 34;
-    static const int MV_FILE_TYPE_depthMap = 35;
-    static const int MV_FILE_TYPE_simMap = 36;
-    static const int MV_FILE_TYPE_mapPtsTmp = 37;
-    static const int MV_FILE_TYPE_depthMapInfo = 38;
-    static const int MV_FILE_TYPE_camMap = 39;
-    static const int MV_FILE_TYPE_mapPtsSimsTmp = 40;
-    static const int MV_FILE_TYPE_nmodMap = 41;
-
     static const int N_SCALES = 4;
 
     multiviewInputParams() = default;
 
-    explicit multiviewInputParams(const std::string& file);
+    explicit multiviewInputParams(const std::string& file, const std::string& depthMapFolder, const std::string& depthMapFilterFolder);
 
     void initFromConfigFile(const std::string& iniFile);
 
@@ -93,7 +94,9 @@ struct multiviewInputParams
 
     std::string newDir;
     // int occMapScale;
-    std::string mvDir;
+    std::string mvDir; //< prepareDenseScene data
+    std::string _depthMapFolder; //< depthMapEstimate data folder
+    std::string _depthMapFilterFolder; //< depthMapFilter data folder
     std::string outDir;
     std::string prefix;
     std::string imageExt = "_c.png";

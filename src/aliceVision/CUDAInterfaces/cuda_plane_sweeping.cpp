@@ -6,7 +6,7 @@
 #include "cuda_plane_sweeping.hpp"
 #include "common_gpu_cpu_structures.hpp"
 
-#include <aliceVision/structures/mv_filesio.hpp>
+#include <aliceVision/common/fileIO.hpp>
 
 #include <iostream>
 
@@ -20,7 +20,7 @@ extern void ps_planeSweepingGPUPixels(CudaArray<uchar4, 2>** ps_texs_arr, CudaHo
                                       CudaHostMemoryHeap<float, 2>& depths_hmh, int slicesAtTime, int ntimes,
                                       int npixs, int wsh, int kernelSizeHalf, int nPlanes, int scale, int CUDAdeviceNo,
                                       int ncamsAllocated, int scales, bool verbose, bool doUsePixelsDepths, int nbest,
-                                      bool userTcOrPixSize, float gammaC, float gammaP, bool subPixel,
+                                      bool useTcOrRcPixSize, float gammaC, float gammaP, bool subPixel,
                                       float epipShift = 0.0f);
 
 */
@@ -35,7 +35,7 @@ extern float ps_planeSweepingGPUPixelsVolume(
     int volLUZ, CudaHostMemoryHeap<int4, 2>& volPixs_hmh, CudaHostMemoryHeap<float, 2>& depths_hmh,
     int nDepthsToSearch, int slicesAtTime, int ntimes, int npixs, int wsh, int kernelSizeHalf, int nPlanes, int scale,
     int CUDAdeviceNo, int ncamsAllocated, int scales, bool verbose, bool doUsePixelsDepths, int nbest,
-    bool userTcOrPixSize, float gammaC, float gammaP, bool subPixel, float epipShift);
+    bool useTcOrRcPixSize, float gammaC, float gammaP, bool subPixel, float epipShift);
 /*
 
 extern void ps_computeRcVolumeForTcDepthSimMaps(
@@ -340,7 +340,6 @@ void cps_fillCameraData(mv_images_cache* ic, cameraStruct* cam, int c, multiview
     //	cam->tex_hmh_b->getBuffer(), mp->indexes[c], mp->mip, true, 1, 0);
 
     ic->refreshData(c);
-    int icimgid = (*ic->camIdMapId)[c];
 
     pixel pix;
     for(pix.y = 0; pix.y < mp->mip->getHeight(c); pix.y++)
@@ -348,7 +347,7 @@ void cps_fillCameraData(mv_images_cache* ic, cameraStruct* cam, int c, multiview
         for(pix.x = 0; pix.x < mp->mip->getWidth(c); pix.x++)
         {
              uchar4& pix_rgba = ic->transposed ? (*cam->tex_rgba_hmh)(pix.x, pix.y) : (*cam->tex_rgba_hmh)(pix.y, pix.x);
-             const rgb& pc = ic->imgs[icimgid][ic->getPixelId(pix.x, pix.y, c)];
+             const rgb& pc = ic->getPixelValue(pix, c);
              pix_rgba.x = pc.r;
              pix_rgba.y = pc.g;
              pix_rgba.z = pc.b;
@@ -368,78 +367,6 @@ void cps_updateCamH(cameraStruct* cam, float** H)
     {
         cam->H = (*H);
     }
-}
-
-void showImageOpenCVT(uchar4* data, int w, int h, float minVal, float maxVal, int scaleFactor, int channel)
-{
-    float minV = 255.0f;
-    float maxV = 0.0f;
-
-    IplImage* img = cvCreateImage(cvSize(w, h), IPL_DEPTH_8U, 3);
-    for(int y = 0; y < h; y++)
-    {
-        for(int x = 0; x < w; x++)
-        {
-            float val;
-            if(channel == 0)
-                val = (float)data[y * w + x].x;
-            if(channel == 1)
-                val = (float)data[y * w + x].y;
-            if(channel == 2)
-                val = (float)data[y * w + x].z;
-            if(channel == 3)
-                val = (float)data[y * w + x].w;
-            minV = std::min(minV, val);
-            maxV = std::max(maxV, val);
-            float s = 1.0f - (maxVal - std::max(minVal, val)) / (maxVal - minVal);
-            rgb cc = getColorFromJetColorMap(s);
-            CvScalar c;
-            c.val[0] = (float)cc.r;
-            c.val[1] = (float)cc.g;
-            c.val[2] = (float)cc.b;
-            cvSet2D(img, y, x, c);
-        }
-    }
-
-    printf("minV %f, maxV %f \n", minV, maxV);
-
-    IplImage* imgr = cvCreateImage(cvSize(w / scaleFactor, h / scaleFactor), IPL_DEPTH_8U, 3);
-    cvResize(img, imgr);
-
-    cvShowImage("showImageOpenCV", imgr);
-    cvWaitKey();
-    cvReleaseImage(&img);
-    cvReleaseImage(&imgr);
-}
-
-void showVolumeSliceZOpenCVT(int z, unsigned char* data, int w, int h, unsigned char minVal, unsigned char maxVal,
-                             int scaleFactor)
-{
-    IplImage* img = cvCreateImage(cvSize(w, h), IPL_DEPTH_8U, 3);
-    for(int y = 0; y < h; y++)
-    {
-        for(int x = 0; x < w; x++)
-        {
-            float val = (float)data[z * w * h + y * w + x];
-            float s = 1.0f - ((float)maxVal - std::max((float)minVal, val)) / ((float)maxVal - (float)minVal);
-            rgb cc = getColorFromJetColorMap(s);
-            CvScalar c;
-            c.val[0] = (float)cc.r;
-            c.val[1] = (float)cc.g;
-            c.val[2] = (float)cc.b;
-            cvSet2D(img, y, x, c);
-        }
-    }
-
-    IplImage* imgr = cvCreateImage(cvSize(w / scaleFactor, h / scaleFactor), IPL_DEPTH_8U, 3);
-    cvResize(img, imgr);
-
-    cvShowImage("showImageOpenCV", imgr);
-    cvWaitKey(50);
-    // cvWaitKey();
-    cvDestroyWindow("showImageOpenCV");
-    cvReleaseImage(&img);
-    cvReleaseImage(&imgr);
 }
 
 cuda_plane_sweeping::cuda_plane_sweeping(int _CUDADeviceNo, mv_images_cache* _ic, multiviewParams* _mp,
@@ -574,7 +501,7 @@ void cuda_plane_sweeping::getMinMaxdepths(int rc, staticVector<int>* tcams, floa
                                           float& maxDepth)
 {
     staticVector<seedPoint>* seeds;
-    loadSeedsFromFile(&seeds, mp->indexes[rc], mp->mip, mp->mip->MV_FILE_TYPE_seeds);
+    loadSeedsFromFile(&seeds, mp->indexes[rc], mp->mip, EFileType::seeds);
 
     float minCamDist = (float)mp->mip->_ini.get<double>("prematching.minCamDist", 0.0f);
     float maxCamDist = (float)mp->mip->_ini.get<double>("prematching.maxCamDist", 15.0f);
@@ -698,8 +625,7 @@ staticVector<float>* cuda_plane_sweeping::getDepthsByPixelSize(int rc, float min
             {
                 printf("%f\n", (*out)[j]);
             }
-            printf("WARNING getDepthsByPixelSize not asc!!!\n");
-            exit(1);
+            throw std::runtime_error("getDepthsByPixelSize not asc.");
         }
     }
 
@@ -927,7 +853,7 @@ staticVector<float>* cuda_plane_sweeping::getDepthsRcTc(int rc, int tc, int scal
 }
 /*
 
-bool cuda_plane_sweeping::refinePixelsAll(bool userTcOrPixSize, int ndepthsToRefine, staticVector<float>* pxsdepths,
+bool cuda_plane_sweeping::refinePixelsAll(bool useTcOrRcPixSize, int ndepthsToRefine, staticVector<float>* pxsdepths,
                                           staticVector<float>* pxssims, int rc, int wsh, float igammaC, float igammaP,
                                           staticVector<pixel>* pixels, int scale, staticVector<int>* tcams,
                                           float epipShift)
@@ -1011,7 +937,7 @@ bool cuda_plane_sweeping::refinePixelsAll(bool userTcOrPixSize, int ndepthsToRef
     ps_planeSweepingGPUPixels((CudaArray<uchar4, 2>**)ps_texs_arr, &dptMap_hmh, &simMap_hmh, ttcams, camsids->size(),
                               w, h, pixs_hmh, pixsdepths_hmh, slicesAtTime, ntimes, npixs, wsh, nbestkernelSizeHalfr,
                               ndepthsToRefine, scale - 1, CUDADeviceNo, nImgsInGPUAtTime, scales, verbose, true, nbestr,
-                              userTcOrPixSize, _gammaC, _gammaP, subPixel, epipShift);
+                              useTcOrRcPixSize, _gammaC, _gammaP, subPixel, epipShift);
 
     for(int i = 0; i < npixs; i++)
     {
@@ -1392,10 +1318,6 @@ bool cuda_plane_sweeping::refineDepthMapReproject(staticVector<float>* depthMap,
                                ttcams, camsids->size(), w, h, scale - 1, CUDADeviceNo, nImgsInGPUAtTime, scales,
                                verbose, wsh, gammaC, gammaP, simThr, niters, moveByTcOrRc);
 
-    // showImageOpenCVT(otimg_hmh.getBuffer(), w, h, 0.0f, 255.0f, 1, 0);
-    // showImageOpenCVT(otimg_hmh.getBuffer(), w, h, 0.0f, 255.0f, 1, 1);
-    // showImageOpenCVT(otimg_hmh.getBuffer(), w, h, 0.0f, 255.0f, 1, 2);
-
     for(int i = 0; i < w * h; i++)
     {
         float depth = odpt_hmh.getBuffer()[i];
@@ -1475,10 +1397,6 @@ bool cuda_plane_sweeping::computeRcTcPhotoErrMapReproject(staticVector<point4d>*
                                        CUDADeviceNo, nImgsInGPUAtTime, scales, verbose, wsh, gammaC, gammaP,
                                        depthMapShift);
 
-    // showImageOpenCVT(otimg_hmh.getBuffer(), w, h, 0.0f, 255.0f, 1, 0);
-    // showImageOpenCVT(otimg_hmh.getBuffer(), w, h, 0.0f, 255.0f, 1, 1);
-    // showImageOpenCVT(otimg_hmh.getBuffer(), w, h, 0.0f, 255.0f, 1, 2);
-
     for(int j = 0; j < w * h; j++)
     {
         (*errMap)[j] = oerr_hmh.getBuffer()[j];
@@ -1551,10 +1469,6 @@ bool cuda_plane_sweeping::computeSimMapForRcTcDepthMap(staticVector<float>* oSim
                                     camsids->size(), w, h, scale - 1, CUDADeviceNo, nImgsInGPUAtTime, scales, verbose,
                                     wsh, gammaC, gammaP, epipShift);
 
-    // showImageOpenCVT(otimg_hmh.getBuffer(), w, h, 0.0f, 255.0f, 1, 0);
-    // showImageOpenCVT(otimg_hmh.getBuffer(), w, h, 0.0f, 255.0f, 1, 1);
-    // showImageOpenCVT(otimg_hmh.getBuffer(), w, h, 0.0f, 255.0f, 1, 2);
-
     for(int j = 0; j < w * h; j++)
     {
         (*oSimMap)[j] = simMap_hmh.getBuffer()[j];
@@ -1573,7 +1487,7 @@ bool cuda_plane_sweeping::computeSimMapForRcTcDepthMap(staticVector<float>* oSim
     return true;
 }
 
-bool cuda_plane_sweeping::refineRcTcDepthMap(bool userTcOrPixSize, int nStepsToRefine, staticVector<float>* simMap,
+bool cuda_plane_sweeping::refineRcTcDepthMap(bool useTcOrRcPixSize, int nStepsToRefine, staticVector<float>* simMap,
                                              staticVector<float>* rcDepthMap, int rc, int tc, int scale, int wsh,
                                              float gammaC, float gammaP, float epipShift, int xFrom, int wPart)
 {
@@ -1614,7 +1528,7 @@ bool cuda_plane_sweeping::refineRcTcDepthMap(bool userTcOrPixSize, int nStepsToR
     ps_refineRcDepthMap((CudaArray<uchar4, 2>**)ps_texs_arr, simMap->getDataWritable().data(), rcDepthMap->getDataWritable().data(), nStepsToRefine,
                         ttcams, camsids->size(), w, h, mp->mip->getWidth(rc) / scale,
                         mp->mip->getHeight(rc) / scale, scale - 1, CUDADeviceNo, nImgsInGPUAtTime, scales, verbose, wsh,
-                        gammaC, gammaP, epipShift, userTcOrPixSize, xFrom);
+                        gammaC, gammaP, epipShift, useTcOrRcPixSize, xFrom);
 
     /*
     CudaHostMemoryHeap<float, 3> tmpSimVolume_hmh(CudaSize<3>(201, 201, nStepsToRefine));
@@ -1631,11 +1545,6 @@ bool cuda_plane_sweeping::refineRcTcDepthMap(bool userTcOrPixSize, int nStepsToR
             verbose, wsh, gammaC, gammaP, epipShift,
             0.0001f, 1.0f
     );
-
-    for (int z=0;z<nStepsToRefine;z++)
-    {
-            showVolumeSliceZOpenCVT(z, tmpSimVolume_hmh.getBuffer(), 201, 201, -1.0f, 1.0f, 1);
-    };
     */
 
     for(int i = 0; i < camsids->size(); i++)
@@ -1746,11 +1655,6 @@ float cuda_plane_sweeping::sweepPixelsToVolume(int nDepthsToSearch, staticVector
         nbestkernelSizeHalf, depths->size(), scale - 1, CUDADeviceNo, nImgsInGPUAtTime, scales, verbose, false, nbest,
         true, gammaC, gammaP, subPixel, epipShift);
 
-// for (int z=0;z<volDimZ;z++)
-//{
-//	showVolumeSliceZOpenCVT(z, vol_hmh.getBuffer(), volDimX, volDimY, 0, 255, 1);
-//};
-
     for(int i = 0; i < camsids->size(); i++)
     {
         ttcams[i] = NULL;
@@ -1780,15 +1684,6 @@ bool cuda_plane_sweeping::SGMoptimizeSimVolume(int rc, staticVector<unsigned cha
     ps_SGMoptimizeSimVolume((CudaArray<uchar4, 2>**)ps_texs_arr, (cameraStruct*)(*cams)[addCam(rc, NULL, scale)],
                             volume->getDataWritable().data(), volDimX, volDimY, volDimZ, volStepXY, volLUX, volLUY, verbose, P1, P2, scale - 1, // TODO: move the '- 1' inside the function
                             CUDADeviceNo, nImgsInGPUAtTime, scales);
-
-// for (int z=0;z<volDimZ;z++)
-//{
-// showVolumeSliceZOpenCVT(z, vol_hmh.getBuffer(), volDimX, volDimY, -1.0f, 1.0f, 1);
-//};
-// showVolumeSliceZOpenCVT(0, vol_hmh.getBuffer(), volDimX, volDimY, -1.0f, 1.0f, 1);
-// showVolumeSliceZOpenCVT(1, vol_hmh.getBuffer(), volDimX, volDimY, -1.0f, 1.0f, 1);
-// showVolumeSliceZOpenCVT(volDimZ-2, vol_hmh.getBuffer(), volDimX, volDimY, -1.0f, 1.0f, 1);
-// showVolumeSliceZOpenCVT(volDimZ-1, vol_hmh.getBuffer(), volDimX, volDimY, -1.0f, 1.0f, 1);
 
     if(verbose)
         printfElapsedTime(t1);
@@ -1919,11 +1814,6 @@ bool cuda_plane_sweeping::computeRcVolumeForRcTcsDepthSimMaps(
                                         h, volStepXY, volDimX, volDimY, volDimZ, depths_hmh, depths->size(), scale - 1,
                                         CUDADeviceNo, nImgsInGPUAtTime, scales, rcTcsDepthSimMaps_hmh, verbose,
                                         maxTcRcPixSizeInVoxRatio, considerNegativeDepthAsInfinity);
-
-    // for (int z=0;z<volDimZ;z++)
-    //{
-    //	showVolumeSliceZOpenCVT(z, vol_hmh.getBuffer(), volDimX, volDimY, 0, 4, 1);
-    //};
 
     for(int zPart = 0; zPart < nZparts; zPart++)
     {
@@ -2180,8 +2070,6 @@ bool cuda_plane_sweeping::SGGCoptimizeSimVolume(staticVector<unsigned short>* ft
                                     vol_hmh, volDimX, volDimY, volDimZ, K);
     }
 
-// showVolumeSliceZOpenCVT(0, ftid_hmh.getBuffer(), volDimX, volDimY, 0, volDimZ, 1);
-
 #pragma omp parallel for
     for(int y = 0; y < volDimY; y++)
     {
@@ -2434,10 +2322,6 @@ bool cuda_plane_sweeping::computeSimMapReprojectByDepthMapMovedByStep(staticVect
     ps_computeSimMapReprojectByDepthMapMovedByStep(
         (CudaArray<uchar4, 2>**)ps_texs_arr, &osimMap_hmh, &iodepthMap_hmh, ttcams, camsids->size(), w, h, scale - 1,
         CUDADeviceNo, nImgsInGPUAtTime, scales, verbose, _wsh, _gammaC, _gammaP, moveByTcOrRc, moveStep);
-
-    // showImageOpenCVT(osimMap_hmh.getBuffer(), w, h, -1.0f, 1.0f, 2, 1000);
-    // showImageOpenCVT(otimg_hmh.getBuffer(), w, h, 0.0f, 255.0f, 1, 1);
-    // showImageOpenCVT(otimg_hmh.getBuffer(), w, h, 0.0f, 255.0f, 1, 2);
 
     for(int i = 0; i < w * h; i++)
     {

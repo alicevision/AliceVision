@@ -23,4 +23,4 @@ target_include_directories(mv_planeSweeping
          $<BUILD_INTERFACE:${generatedDir}>
          $<INSTALL_INTERFACE:include>)
 
-target_link_libraries(mv_planeSweeping PUBLIC mv_structures mv_mesh)
+target_link_libraries(mv_planeSweeping PUBLIC aliceVision_imageIO mv_structures mv_mesh)

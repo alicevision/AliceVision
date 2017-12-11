@@ -318,16 +318,3 @@ staticVector<unsigned char>* ps_sgm_vol::getZSlice(int z) const
     }
     return zs;
 }
-
-void ps_sgm_vol::showVolume() const
-{
-    printf("x %i, y %i, z %i, s %i\n", volDimX, volDimY, volDimZ, volStepZ);
-    for(int z = 0; z < volDimZ; z++)
-    {
-        staticVector<unsigned char>* zs = getZSlice(z);
-        showImageOpenCVT(&(*zs)[0], volDimX, volDimY, 0, 255, 1, 50);
-        delete zs;
-    }
-    cvDestroyWindow("showImageOpenCVT");
-}
-

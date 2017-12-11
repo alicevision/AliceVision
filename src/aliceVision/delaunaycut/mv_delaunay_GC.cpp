@@ -10,7 +10,8 @@
 #include "MaxFlow_CSR.hpp"
 // #include "MaxFlow_AdjList.hpp"
 
-#include <aliceVision/structures/mv_filesio.hpp>
+#include <aliceVision/common/fileIO.hpp>
+#include <aliceVision/structures/jetColorMap.hpp>
 #include <aliceVision/structures/mv_universe.hpp>
 #include <aliceVision/CUDAInterfaces/refine.hpp>
 #include <aliceVision/hallucinations/hallucinations.hpp>
@@ -2649,7 +2650,7 @@ void mv_delaunay_GC::invertFullStatusForSmallLabels()
     }
 
     if(mp->verbose)
-        printf("Full number of cells: %i, Number of labels: %i, Number of cells changed: %i\n", nbCells, nbCellsPerColor->size(), nfilled);
+        std::cout << "Full number of cells: " << nbCells << ", Number of labels: " << nbCellsPerColor->size() << ", Number of cells changed: " << nfilled << std::endl;
 
     delete nbCellsPerColor;
     delete colorPerCell;
@@ -3346,7 +3347,7 @@ void mv_delaunay_GC::saveMeshColoredByCamsConsistency(const std::string& consist
             colors.reserve(ptsScore.size());
             for(int idVertex = 0; idVertex < ptsScore.size(); ++idVertex)
             {
-                colors.push_back(getColorFromJetColorMap(ptsScore[idVertex]));
+                colors.push_back(getRGBFromJetColorMap(ptsScore[idVertex]));
             }
         }
         else
@@ -3360,7 +3361,7 @@ void mv_delaunay_GC::saveMeshColoredByCamsConsistency(const std::string& consist
                 {
                     minScore = std::min(minScore, ptsScore[(*mesh->tris)[idtri].i[k]]);
                 }
-                colors.push_back(getColorFromJetColorMap(minScore));
+                colors.push_back(getRGBFromJetColorMap(minScore));
             }
         }
 
@@ -3381,7 +3382,7 @@ void mv_delaunay_GC::saveMeshColoredByCamsConsistency(const std::string& consist
         for(int idVertex = 0; idVertex < ptsCams->size(); ++idVertex)
         {
             float score = float((*ptsCams)[idVertex]->size()) / float(maxVisibility);
-            colors.push_back(getColorFromJetColorMap(score));
+            colors.push_back(getRGBFromJetColorMap(score));
         }
 
         mv_output3D o3d(mp);

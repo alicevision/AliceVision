@@ -8,7 +8,8 @@
 #include <aliceVision/largeScale/reconstructionPlan.hpp>
 #include <aliceVision/planeSweeping/ps_refine_rc.hpp>
 #include <aliceVision/CUDAInterfaces/refine.hpp>
-#include <aliceVision/structures/mv_filesio.hpp>
+#include <aliceVision/common/fileIO.hpp>
+#include <aliceVision/structures/image.hpp>
 
 #include <boost/program_options.hpp>
 #include <boost/filesystem.hpp>
@@ -43,6 +44,7 @@ int main(int argc, char* argv[])
     std::string inputDenseReconstruction;
     std::string inputMeshFilepath;
     std::string outputFolder;
+    std::string outTextureFileTypeName = EImageFileType_enumToString(EImageFileType::PNG);
     bool flipNormals = false;
     TexturingParams texParams;
 
@@ -55,6 +57,8 @@ int main(int argc, char* argv[])
             "Path to the dense reconstruction (mesh with per vertex visibility).")
         ("output", po::value<std::string>(&outputFolder)->required(),
             "Folder for output mesh: OBJ, material and texture files.")
+        ("outputTextureFileType", po::value<std::string>(&outTextureFileTypeName)->default_value(outTextureFileTypeName),
+          EImageFileType_informations().c_str())
         ("textureSide", po::value<unsigned int>(&texParams.textureSide),
             "Output texture size")
         ("padding", po::value<unsigned int>(&texParams.padding),
@@ -99,8 +103,11 @@ int main(int argc, char* argv[])
     ALICEVISION_COUT("ini file: " << iniFilepath);
     ALICEVISION_COUT("inputMesh: " << inputMeshFilepath);
 
+    // set output texture file type
+    const EImageFileType outputTextureFileType = EImageFileType_stringToEnum(outTextureFileTypeName);
+
     // .ini parsing
-    multiviewInputParams mip(iniFilepath);
+    multiviewInputParams mip(iniFilepath, "", "");
     const double simThr = mip._ini.get<double>("global.simThr", 0.0);
     multiviewParams mp(mip.getNbCameras(), &mip, (float) simThr);
     mv_prematch_cams pc(&mp);
@@ -146,12 +153,12 @@ int main(int argc, char* argv[])
         auto* updatedPtsCams = mesh.generateUVs(mp, ptsCams);
         std::swap(ptsCams, updatedPtsCams);
         deleteArrayOfArrays<int>(&updatedPtsCams);
-        mesh.saveAsOBJ(outputFolder, "texturedMesh");
+        mesh.saveAsOBJ(outputFolder, "texturedMesh", outputTextureFileType);
     }
 
     // generate textures
     ALICEVISION_COUT("Generate textures.");
-    mesh.generateTextures(mp, ptsCams, outputFolder);
+    mesh.generateTextures(mp, ptsCams, outputFolder, outputTextureFileType);
 
     printfElapsedTime(startTime, "#");
     return EXIT_SUCCESS;

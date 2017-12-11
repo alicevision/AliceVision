@@ -25,41 +25,41 @@ struct pixel
         int m[2];
     };
 
-    int& operator[](const int index) { return m[index]; };
+    int& operator[](const int index) { return m[index]; }
 
     pixel()
     {
         x = 0;
         y = 0;
-    };
+    }
 
     pixel(const point2d& p)
     {
 
         x = (int)floor(p.x + 0.5);
         y = (int)floor(p.y + 0.5);
-    };
+    }
 
     pixel(const int _x, const int _y)
     {
         x = _x;
         y = _y;
-    };
+    }
 
     inline pixel& operator=(const pixel& param)
     {
         x = param.x;
         y = param.y;
         return *this;
-    };
+    }
 
-    inline bool operator==(const pixel& param) { return ((x == param.x) && (y == param.y)); };
+    inline bool operator==(const pixel& param) { return ((x == param.x) && (y == param.y)); }
 
-    inline pixel operator-(const pixel& _p) { return pixel(x - _p.x, y - _p.y); };
+    inline pixel operator-(const pixel& _p) { return pixel(x - _p.x, y - _p.y); }
 
-    inline pixel operator+(const pixel& _p) { return pixel(x + _p.x, y + _p.y); };
+    inline pixel operator+(const pixel& _p) { return pixel(x + _p.x, y + _p.y); }
 
-    inline pixel operator*(const int& d) { return pixel(x * d, y * d); };
+    inline pixel operator*(const int& d) { return pixel(x * d, y * d); }
 
     pixel operator/(int d)
     {
@@ -74,11 +74,11 @@ struct pixel
             p.y = (int)floor((float)y / (float)d + 0.5);
             return p;
         };
-    };
+    }
 
     friend int dot(const pixel& p1, const pixel& p2) { return p1.x * p2.x + p1.y * p2.y; }
 
-    inline float size() { return sqrt((float)(x * x + y * y)); };
+    inline float size() { return sqrt((float)(x * x + y * y)); }
 };
 
 template <class T>
@@ -88,20 +88,20 @@ public:
     T ref;
     T tar;
 
-    match(){};
+    match(){}
 
     match(const T& _ref, const T& _tar)
     {
         ref = _ref;
         tar = _tar;
-    };
+    }
 
     inline match& operator=(const match& param)
     {
         ref = param.ref;
         tar = param.tar;
         return *this;
-    };
+    }
 };
 
 struct voxel
@@ -166,7 +166,7 @@ struct voxel
         p.z = z + _p;
 
         return p;
-    };
+    }
 
     voxel operator*(const voxel& _p) const
     {
@@ -417,12 +417,12 @@ public:
             cams[n] = cam;
             shifts[n] = point2d(0.0f, 0.0f);
             n++;
-        };
-    };
+        }
+    }
 
-    inline int size() const { return n; };
+    inline int size() const { return n; }
 
-    inline void resize(int newSize) { n = newSize; };
+    inline void resize(int newSize) { n = newSize; }
 
     inline void reserve(int newSize)
     {
@@ -430,8 +430,8 @@ public:
         {
             printf("reserve too many cams\n");
             // exit(1);
-        };
-    };
+        }
+    }
 
     inline int indexOf(int what)
     {
@@ -450,9 +450,9 @@ public:
         return isthereindex;
     }
 
-    inline const unsigned short& operator[](int index) const { return cams[index]; };
+    inline const unsigned short& operator[](int index) const { return cams[index]; }
 
-    inline unsigned short& operator[](int index) { return cams[index]; };
+    inline unsigned short& operator[](int index) { return cams[index]; }
 };
 
 class seedPoint
@@ -473,9 +473,9 @@ public:
         op = orientedPoint();
         pixSize = 0.0;
         area = 0;
-    };
+    }
 
-    ~seedPoint() { cams.resize(0); };
+    ~seedPoint() { cams.resize(0); }
 
     seedPoint& operator=(const seedPoint& param)
     {
@@ -497,7 +497,7 @@ public:
         pixSize = param.pixSize;
         segId = param.segId;
         return *this;
-    };
+    }
 
     bool operator>(const seedPoint& param) const { return (op.sim > param.op.sim); }
     bool isThereCam(int c)
@@ -514,13 +514,13 @@ public:
         };
 
         return isThere;
-    };
+    }
 };
 
 class seedPoint_compare_ped
 {
 public:
-    bool operator()(const seedPoint& a, const seedPoint& b) { return a > b; };
+    bool operator()(const seedPoint& a, const seedPoint& b) { return a > b; }
 };
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -583,7 +583,7 @@ struct imageParams
         height = param.height;
         im_size = param.im_size;
         return *this;
-    };
+    }
 };
 
 
@@ -605,20 +605,20 @@ struct sortedId
     int id;
     float value;
 
-    sortedId(){};
+    sortedId(){}
 
     sortedId(int _id, float _value)
     {
         id = _id;
         value = _value;
-    };
+    }
 
     sortedId& operator=(const sortedId& param)
     {
         id = param.id;
         value = param.value;
         return *this;
-    };
+    }
 
     bool operator>(const sortedId& param) const { return (value > param.value); }
 
@@ -628,7 +628,7 @@ struct sortedId
 class sortedId_compare_ped
 {
 public:
-    bool operator()(const sortedId& a, const sortedId& b) { return a > b; };
+    bool operator()(const sortedId& a, const sortedId& b) { return a > b; }
 };
 
 int qSortCompareFloatAsc(const void* ia, const void* ib);
@@ -679,7 +679,7 @@ struct simStat
         censuslMidVal = 0.0;
         censusrMidVal = 0.0;
         censusSum = 0;
-    };
+    }
 
     void set(simStat* p)
     {
@@ -689,7 +689,7 @@ struct simStat
         xsum = p->xsum;
         ysum = p->ysum;
         count = p->count;
-    };
+    }
 
     void add(simStat* p)
     {
@@ -699,7 +699,7 @@ struct simStat
         xsum += p->xsum;
         ysum += p->ysum;
         count += p->count;
-    };
+    }
 
     void diff(simStat* p)
     {
@@ -709,7 +709,7 @@ struct simStat
         xsum -= p->xsum;
         ysum -= p->ysum;
         count -= p->count;
-    };
+    }
 
     simStat& operator=(const simStat& param)
     {
@@ -720,7 +720,7 @@ struct simStat
         ysum = param.ysum;
         count = param.count;
         return *this;
-    };
+    }
 
     simStat operator-(const simStat& p)
     {
@@ -764,7 +764,7 @@ struct simStat
             out.y = (float)v1;
         };
         return out;
-    };
+    }
 
     void getEigenVectors(point2d& n1, point2d& n2)
     {
@@ -775,7 +775,7 @@ struct simStat
         n2.y = (float)(xxsum / count - (xsum * xsum) / (count * count) - ev.y);
         n1 = n1.normalize();
         n2 = n2.normalize();
-    };
+    }
 
     void update(float g[2])
     {
@@ -785,7 +785,7 @@ struct simStat
         xxsum += (double)g[0] * (double)g[0];
         yysum += (double)g[1] * (double)g[1];
         xysum += (double)g[0] * (double)g[1];
-    };
+    }
 
     void update(float g0, float g1)
     {
@@ -793,9 +793,9 @@ struct simStat
         g[0] = g0;
         g[1] = g1;
         update(g);
-    };
+    }
 
-    point2d getCG() { return point2d((float)(xsum / count), (float)(ysum / count)); };
+    point2d getCG() { return point2d((float)(xsum / count), (float)(ysum / count)); }
 };
 
 struct stat3d
@@ -825,7 +825,7 @@ struct stat3d
         xzsum = 0.0;
         yzsum = 0.0;
         count = 0;
-    };
+    }
 
     void update(point3d* p)
     {
@@ -839,7 +839,7 @@ struct stat3d
         ysum += (double)p->y;
         zsum += (double)p->z;
         count += 1;
-    };
+    }
 
     void add(stat3d* p)
     {
@@ -877,7 +877,7 @@ struct stat3d
 
         // return   (((d[0]/(d[1]/100.0))<5.0)&&((d[1]/(d[2]/100.0))>25.0));
         return (d[0] / (d[1] / 100.0));
-    };
+    }
 
     point3d getBiggestEigenVector()
     {
@@ -900,7 +900,7 @@ struct stat3d
         eigen_decomposition(A, V[0], V[1], V[2], d);
 
         return point3d((float)V[0][2], (float)V[1][2], (float)V[2][2]).normalize();
-    };
+    }
 
     void getEigenVectorsDesc(point3d& cg, point3d& v1, point3d& v2, point3d& v3, float& d1, float& d2, float& d3)
     {
@@ -991,20 +991,20 @@ struct idValue
     int id;
     float value;
 
-    idValue(){};
+    idValue(){}
 
     idValue(int _id, float _value)
     {
         id = _id;
         value = _value;
-    };
+    }
 
     idValue& operator=(const idValue& param)
     {
         id = param.id;
         value = param.value;
         return *this;
-    };
+    }
 
     bool operator>(const idValue& param) const { return (value > param.value); }
 
@@ -1023,7 +1023,7 @@ struct mv2DTriangle
         pts[2] = m.pts[2];
         cam = m.cam;
         return *this;
-    };
+    }
 };
 
 struct mv3DTriangle
@@ -1036,7 +1036,7 @@ struct mv3DTriangle
         pts[1] = m.pts[1];
         pts[2] = m.pts[2];
         return *this;
-    };
+    }
 };
 
 struct line2d
@@ -1047,14 +1047,14 @@ struct line2d
     {
         pts[0] = a;
         pts[1] = b;
-    };
+    }
 
     line2d& operator=(const line2d& m)
     {
         pts[0] = m.pts[0];
         pts[1] = m.pts[1];
         return *this;
-    };
+    }
 };
 
 struct triangle2d
@@ -1066,7 +1066,7 @@ struct triangle2d
         pts[0] = a;
         pts[1] = b;
         pts[2] = c;
-    };
+    }
 
     triangle2d& operator=(const triangle2d& m)
     {
@@ -1074,7 +1074,7 @@ struct triangle2d
         pts[1] = m.pts[1];
         pts[2] = m.pts[2];
         return *this;
-    };
+    }
 };
 
 typedef unsigned char uchar;
@@ -1093,6 +1093,16 @@ struct rgb
         r = _r;
         g = _g;
         b = _b;
+    }
+
+    inline rgb operator-(const rgb& _p) const
+    {
+        return rgb(r - _p.r, g - _p.g, b - _p.b);
+    }
+
+    inline rgb operator+(const rgb& _p) const
+    {
+        return rgb(r + _p.r, g + _p.g, b + _p.b);
     }
 };
 rgb rgb_random();
@@ -1122,7 +1132,7 @@ public:
         {
             bits[i] = m->bits[i];
         };
-    };
+    }
 };
 
 int getANDBits(mv_bites_array* a1, mv_bites_array* a2);

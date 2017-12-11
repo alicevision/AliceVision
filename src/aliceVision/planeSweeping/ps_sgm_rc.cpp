@@ -7,8 +7,9 @@
 #include "ps_sgm_rctc.hpp"
 #include "ps_sgm_vol.hpp"
 
-#include <aliceVision/structures/mv_filesio.hpp>
-
+#include <aliceVision/common/fileIO.hpp>
+#include <aliceVision/imageIO/image.hpp>
+#include <aliceVision/imageIO/imageScaledColors.hpp>
 #include <aliceVision/omp.hpp>
 
 #include <boost/filesystem.hpp>
@@ -21,18 +22,6 @@ namespace bfs = boost::filesystem;
 ps_sgm_rc::ps_sgm_rc(bool doComputeDepthsAndResetTCams, int _rc, int _scale, int _step, ps_sgm_params* _sp)
 {
     sp = _sp;
-
-    outDir = sp->getSGMOutDir();
-    if(!FolderExists(outDir))
-    {
-        bfs::create_directory(outDir);
-    }
-
-    tmpDir = sp->getSGMTmpDir();
-    if(!FolderExists(tmpDir))
-    {
-        bfs::create_directory(tmpDir);
-    }
 
     rc = _rc;
     scale = _scale;
@@ -52,7 +41,7 @@ ps_sgm_rc::ps_sgm_rc(bool doComputeDepthsAndResetTCams, int _rc, int _scale, int
 
     tcamsFileName = sp->getSGM_tcamsFileName(rc);
     depthsFileName = sp->getSGM_depthsFileName(rc);
-    depthsTcamsLimitsFileName = outDir + num2strFourDecimal(rc) + "depthsTcamsLimits.bin";
+    depthsTcamsLimitsFileName =  sp->mp->mip->_depthMapFolder + num2strFourDecimal(rc + 1) + "_depthsTcamsLimits.bin";
     SGM_depthMapFileName = sp->getSGM_depthMapFileName(rc, scale, step);
     SGM_simMapFileName = sp->getSGM_simMapFileName(rc, scale, step);
     SGM_idDepthMapFileName = sp->getSGM_idDepthMapFileName(rc, scale, step);
@@ -100,7 +89,7 @@ staticVector<float>* ps_sgm_rc::getTcSeedsRcPlaneDists(int rc, staticVector<int>
     for(int c = 0; c < tcams->size(); c++)
     {
         staticVector<seedPoint>* seeds;
-        loadSeedsFromFile(&seeds, sp->mp->indexes[(*tcams)[c]], sp->mp->mip, sp->mp->mip->MV_FILE_TYPE_seeds);
+        loadSeedsFromFile(&seeds, sp->mp->indexes[(*tcams)[c]], sp->mp->mip, EFileType::seeds);
         nTcSeeds += seeds->size();
         delete seeds;
     } // for c
@@ -110,7 +99,7 @@ staticVector<float>* ps_sgm_rc::getTcSeedsRcPlaneDists(int rc, staticVector<int>
     for(int c = 0; c < tcams->size(); c++)
     {
         staticVector<seedPoint>* seeds;
-        loadSeedsFromFile(&seeds, sp->mp->indexes[(*tcams)[c]], sp->mp->mip, sp->mp->mip->MV_FILE_TYPE_seeds);
+        loadSeedsFromFile(&seeds, sp->mp->indexes[(*tcams)[c]], sp->mp->mip, EFileType::seeds);
         for(int i = 0; i < seeds->size(); i++)
         {
             rcDists->push_back(pointPlaneDistance((*seeds)[i].op.p, rcplane.p, rcplane.n));
@@ -615,8 +604,6 @@ bool ps_sgm_rc::sgmrc(bool checkIfExists)
     svol->copyVolume(simVolume, (*depthsTcamsLimits)[0].x, (*depthsTcamsLimits)[0].y);
     delete simVolume;
 
-    // svol->showVolume();
-
     for(int c = 1; c < tcams->size(); c++)
     {
         staticVector<float>* subDepths = getSubDepthsForTCam(c);
@@ -671,7 +658,7 @@ bool ps_sgm_rc::sgmrc(bool checkIfExists)
     // Save to :
     //  - SGM/SGM_{RC}_scaleX_stepN_simMap.bin
     //  - SGM/SGM_{RC}_scaleX_stepN_depthMap.bin
-    depthSimMapFinal->saveToBin(SGM_depthMapFileName, SGM_simMapFileName);
+    //depthSimMapFinal->saveToBin(SGM_depthMapFileName, SGM_simMapFileName);
 
     // Save to :
     //  - {RC}_simMap_scaleX.bin
@@ -680,30 +667,33 @@ bool ps_sgm_rc::sgmrc(bool checkIfExists)
     //  - {RC}_dephMap.bin
     depthSimMapFinal->save(rc, tcams);
 
-    staticVector<unsigned short>* volumeBestId = new staticVector<unsigned short>(volumeBestIdVal->size());
-    for(int i = 0; i < volumeBestIdVal->size(); i++)
     {
-        volumeBestId->push_back(std::max(0, (*volumeBestIdVal)[i].id));
+        std::vector<unsigned short> volumeBestId(volumeBestIdVal->size());
+        for(int i = 0; i < volumeBestIdVal->size(); i++)
+            volumeBestId.at(i) = std::max(0, (*volumeBestIdVal)[i].id);
+
+        imageIO::writeImage(SGM_idDepthMapFileName, volDimX, volDimY, volumeBestId);
+
+        if(sp->visualizeDepthMaps)
+            imageIO::writeImageScaledColors("visualize_" + SGM_idDepthMapFileName, volDimX, volDimY, 0, depths->size(), volumeBestId.data(), true);
     }
-    saveArrayToFile<unsigned short>(SGM_idDepthMapFileName, volumeBestId);
-    imagesc(SGM_idDepthMapFileName + ".png", &(*volumeBestId)[0], volDimX, volDimY, 0, depths->size(), true);
-    delete volumeBestId;
 
     /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
     printfElapsedTime(tall, "PSSGM rc " + num2str(rc) + " of " + num2str(sp->mp->ncams));
 
+    if(sp->visualizeDepthMaps)
     {
-        depthSimMapFinal->saveToPng(tmpDir + "ps_sgm_rc_SGM" + num2strFourDecimal(rc) + "_" + "scale" +
+        depthSimMapFinal->saveToImage(tmpDir + "ps_sgm_rc_SGM" + num2strFourDecimal(rc) + "_" + "scale" +
                                         num2str(depthSimMapFinal->scale) + "step" + num2str(depthSimMapFinal->step) +
                                         ".wrl.depthSimMap.png",
                                     1.0f);
-        if(sp->visualizeDepthMaps)
-            depthSimMapFinal->saveToWrl(tmpDir + "SGM" + num2strFourDecimal(rc) + "_" + "scale" +
-                                            num2str(depthSimMapFinal->scale) + "step" +
-                                            num2str(depthSimMapFinal->step) + ".wrl",
-                                        rc);
+
+        depthSimMapFinal->saveToWrl(tmpDir + "SGM" + num2strFourDecimal(rc) + "_" + "scale" +
+                                        num2str(depthSimMapFinal->scale) + "step" +
+                                        num2str(depthSimMapFinal->step) + ".wrl",
+                                    rc);
     }
 
     delete depthSimMapFinal;
@@ -759,7 +749,7 @@ void computeDepthMapsPSSGM(multiviewParams* mp, mv_prematch_cams* pc, const stat
 {
     int num_gpus = listCUDADevices(true);
     int num_cpu_threads = omp_get_num_procs();
-    printf("GPU devicse %i, CPU threads %i\n", num_gpus, num_cpu_threads);
+    std::cout << "Number of GPU devices: " << num_gpus << ", number of CPU threads: " << num_cpu_threads << std::endl;
     int numthreads = std::min(num_gpus, num_cpu_threads);
 
     int num_gpus_to_use = mp->mip->_ini.get<int>("semiGlobalMatching.num_gpus_to_use", 1);
@@ -779,7 +769,7 @@ void computeDepthMapsPSSGM(multiviewParams* mp, mv_prematch_cams* pc, const stat
         {
             int cpu_thread_id = omp_get_thread_num();
             int CUDADeviceNo = cpu_thread_id % numthreads;
-            printf("CPU thread %d (of %d) uses CUDA device %d\n", cpu_thread_id, numthreads, CUDADeviceNo);
+            std::cout << "CPU thread " << cpu_thread_id << " (of " << numthreads << ") uses CUDA device: " << CUDADeviceNo << std::endl;
 
             int rcFrom = CUDADeviceNo * (cams.size() / numthreads);
             int rcTo = (CUDADeviceNo + 1) * (cams.size() / numthreads);

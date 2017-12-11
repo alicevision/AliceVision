@@ -25,8 +25,9 @@ bool mv_mesh_clean::path::addNextTriIdToPathBack(int nextTriId, staticVector<mv_
 
     if((lastTriId == nextTriId) || ((ptId2 == others2.x) && (ptId2 == others2.y)))
     {
-        printf("WARNING addNextTriIdToPath %i %i %i %i %i\n", lastTriId, nextTriId, ptId2, others2.x, others2.y);
-        exit(1);
+        std::stringstream s;
+        s << "mv_mesh_clean::path::addNextTriIdToPath: lastTriId=" << lastTriId << ", nextTriId=" << nextTriId << ", ptId2=" << ptId2 << ", others2=" << others2.x << "," << others2.y;
+        throw std::runtime_error(s.str());
     }
 
     if(ptId2 == others2.x)
@@ -54,8 +55,9 @@ bool mv_mesh_clean::path::addNextTriIdToPathFront(int nextTriId, staticVector<mv
 
     if((firstTriId == nextTriId) || ((ptId1 == others2.x) && (ptId1 == others2.y)))
     {
-        printf("WARNING addNextTriIdToPath %i %i %i %i %i\n", firstTriId, nextTriId, ptId1, others2.x, others2.y);
-        exit(1);
+        std::stringstream s;
+        s << "mv_mesh_clean::path::addNextTriIdToPathFront: firstTriId=" << firstTriId << ", nextTriId=" << nextTriId << ", ptId1=" << ptId1 << ", other2=" << others2.x << "," << others2.y;
+        throw std::runtime_error(s.str());
     }
 
     if(ptId1 == others2.x)

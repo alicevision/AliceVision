@@ -7,8 +7,6 @@
 
 #include <aliceVision/output3D/mv_output3D.hpp>
 #include <aliceVision/structures/mv_universe.hpp>
-#include <opencv/cv.h>
-#include <opencv/highgui.h>
 
 class DepthSim
 {
@@ -81,17 +79,15 @@ public:
     staticVector<float>* getDepthMapStep1XPart(int xFrom, int partW);
     staticVector<float>* getSimMapStep1XPart(int xFrom, int partW);
 
-    IplImage* convertToImage(float simThr);
-    void show(float simThr);
-    void saveToPng(std::string pngFileName, float simThr);
+    void saveToImage(std::string pngFileName, float simThr);
     void saveToWrl(std::string wrlFileName, int rc);
     void saveToWrlPng(std::string wrlFileName, int rc, float simThr);
     void save(int rc, staticVector<int>* tcams);
     void load(int rc, int fromScale);
 
-    void saveToBin(std::string depthMapFileName, std::string simMapFileName);
-    bool loadFromBin(std::string depthMapFileName, std::string simMapFileName);
-    bool loadFromBin(std::string depthMapFileName, float defaultSim);
+    void saveRefine(int rc, std::string depthMapFileName, std::string simMapFileName);
+    bool loadRefine(std::string depthMapFileName, std::string simMapFileName);
+    bool loadRefine(std::string depthMapFileName, float defaultSim);
 
     mv_universe* segment(float alpha, int rc);
     void removeSmallSegments(int minSegSize, float alpha, int rc);

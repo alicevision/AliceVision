@@ -7,7 +7,7 @@
 
 #include <aliceVision/delaunaycut/mv_delaunay_types.hpp>
 #include <aliceVision/rply/mv_plyloader.hpp>
-#include <aliceVision/structures/mv_filesio.hpp>
+#include <aliceVision/common/fileIO.hpp>
 #include <aliceVision/omp.hpp>
 
 #include <boost/filesystem.hpp>

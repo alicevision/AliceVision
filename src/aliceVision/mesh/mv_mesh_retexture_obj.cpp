@@ -7,9 +7,7 @@
 #include "mv_mesh_uvatlas.hpp"
 
 #include <aliceVision/structures/mv_geometry.hpp>
-
-#include <opencv/cv.h>
-#include <opencv2/opencv.hpp>
+#include <aliceVision/imageIO/image.hpp>
 
 #include <map>
 #include <set>
@@ -195,11 +193,11 @@ staticVector<staticVector<int>*>* meshRetex::generateUVs(multiviewParams& mp, st
 }
 
 void meshRetex::generateTextures(const multiviewParams &mp, staticVector<staticVector<int> *> *ptsCams,
-                                 const boost::filesystem::path &outPath)
+                                 const boost::filesystem::path &outPath, EImageFileType textureFileType)
 {
     mv_images_cache imageCache(&mp, 0, false);
     for(size_t atlasID = 0; atlasID < _atlases.size(); ++atlasID)
-        generateTexture(mp, ptsCams, atlasID, imageCache, outPath);
+        generateTexture(mp, ptsCams, atlasID, imageCache, outPath, textureFileType);
 }
 
 //// pixel coordinates mapping, between source and final image
@@ -229,7 +227,7 @@ struct AccuColor {
 // #define USE_BARYCENTRIC_COORDS
 
 void meshRetex::generateTexture(const multiviewParams& mp, staticVector<staticVector<int>*>* ptsCams,
-                                size_t atlasID, mv_images_cache& imageCache, const bfs::path& outPath)
+                                size_t atlasID, mv_images_cache& imageCache, const bfs::path& outPath, EImageFileType textureFileType)
 {
     if(atlasID >= _atlases.size())
         throw std::runtime_error("Invalid atlas ID " + std::to_string(atlasID));
@@ -388,7 +386,8 @@ void meshRetex::generateTexture(const multiviewParams& mp, staticVector<staticVe
     std::cout << "- computing final (average) color" << std::endl;
 
     // save texture image
-    IplImage* image = cvCreateImage(cvSize(texParams.textureSide, texParams.textureSide), IPL_DEPTH_8U, 3);
+    std::vector<Color> colorBuffer(texParams.textureSide * texParams.textureSide);
+
     for(unsigned int yp = 0; yp < texParams.textureSide; ++yp)
     {
         unsigned int yoffset = yp * texParams.textureSide;
@@ -396,34 +395,31 @@ void meshRetex::generateTexture(const multiviewParams& mp, staticVector<staticVe
         {
             unsigned int xyoffset = yoffset + xp;
             int colorID = colorIDs[xyoffset];
-            Color color = colorID ? perPixelColors[colorID].average() : Color();
-            CvScalar c;
-            c.val[0] = color.b;
-            c.val[1] = color.g;
-            c.val[2] = color.r;
-            cvSet2D(image, yp, xp, c);
+            colorBuffer.at(yp * texParams.textureSide + xp) = (colorID >= 0) ? perPixelColors[colorID].average() : Color();
         }
     }
+
     perPixelColors.clear();
     colorIDs.clear();
+
+    std::string textureName = "texture_" + std::to_string(atlasID) + "." + EImageFileType_enumToString(textureFileType);
+    bfs::path texturePath = outPath / textureName;
+    std::cout << "- writing texture file " << texturePath.string() << std::endl;
 
     // downscale texture if required
     if(texParams.downscale > 1)
     {
-        std::cout << "- downscaling texture (" << texParams.downscale << "x)" << std::endl;
-        const unsigned int dsTexSide = texParams.textureSide / texParams.downscale;
-        IplImage* scaledImage = cvCreateImage(cvSize(dsTexSide, dsTexSide), IPL_DEPTH_8U, 3);
-        cvResize(image, scaledImage);
-        cvReleaseImage(&image);
-        image = scaledImage;
-    }
+        std::vector<Color> resizedColorBuffer;
+        const int resizedTextureSide = texParams.textureSide / texParams.downscale;
 
-    std::string textureName = "texture_" + std::to_string(atlasID) + ".png";
-    bfs::path texturePath = outPath / textureName;
-    std::cout << "- writing texture file " << texturePath.string() << std::endl;
-    if(!cvSaveImage(texturePath.string().c_str(), image))
-        std::cerr << "Could not save: " << texturePath << std::endl;
-    cvReleaseImage(&image);
+        std::cout << "- downscaling texture (" << texParams.downscale << "x)" << std::endl;
+        imageIO::resizeImage(texParams.textureSide, texParams.textureSide, texParams.downscale, colorBuffer, resizedColorBuffer);
+        imageIO::writeImage(texturePath.string(), resizedTextureSide, resizedTextureSide, resizedColorBuffer);
+    }
+    else
+    {
+        imageIO::writeImage(texturePath.string(), texParams.textureSide, texParams.textureSide, colorBuffer);
+    }
 }
 
 
@@ -451,7 +447,7 @@ void meshRetex::loadFromOBJ(const std::string& filename, bool flipNormals)
     }
 }
 
-void meshRetex::saveAsOBJ(const bfs::path& dir, const std::string& basename)
+void meshRetex::saveAsOBJ(const bfs::path& dir, const std::string& basename, EImageFileType textureFileType)
 {
     std::cout << "- writing .obj and .mtl file" << std::endl;
 
@@ -512,7 +508,7 @@ void meshRetex::saveAsOBJ(const bfs::path& dir, const std::string& basename)
     // for each atlas, create a new material with associated texture
     for(size_t atlasID=0; atlasID < _atlases.size(); ++atlasID)
     {
-        std::string textureName = "texture_" + std::to_string(atlasID) + ".png";
+        std::string textureName = "texture_" + std::to_string(atlasID) + "." + EImageFileType_enumToString(textureFileType);
         fprintf(fmtl, "\n");
         fprintf(fmtl, "newmtl TextureAtlas_%i\n", atlasID);
         fprintf(fmtl, "Ka  0.6 0.6 0.6\n");

@@ -3,38 +3,16 @@
 // v. 2.0. If a copy of the MPL was not distributed with this file,
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
-#include "mv_common.hpp"
+#include "common.hpp"
 
-#include "mv_geometry.hpp"
-#include "mv_geometry_triTri.hpp"
-#include "mv_filesio.hpp"
+#include <aliceVision/common/fileIO.hpp>
+#include <aliceVision/structures/mv_geometry.hpp>
+#include <aliceVision/structures/mv_geometry_triTri.hpp>
 
-#include <opencv/cv.h>
-#include <opencv/highgui.h>
 
 #ifdef _WIN32
 #include "Psapi.h"
 #endif
-
-float jetr[64] = {0,      0,      0,      0,      0,      0,      0,      0,      0,      0,      0,
-                  0,      0,      0,      0,      0,      0,      0,      0,      0,      0,      0,
-                  0,      0,      0.0625, 0.1250, 0.1875, 0.2500, 0.3125, 0.3750, 0.4375, 0.5000, 0.5625,
-                  0.6250, 0.6875, 0.7500, 0.8125, 0.8750, 0.9375, 1.0000, 1.0000, 1.0000, 1.0000, 1.0000,
-                  1.0000, 1.0000, 1.0000, 1.0000, 1.0000, 1.0000, 1.0000, 1.0000, 1.0000, 1.0000, 1.0000,
-                  1.0000, 0.9375, 0.8750, 0.8125, 0.7500, 0.6875, 0.6250, 0.5625, 0.5000};
-float jetg[64] = {0,      0,      0,      0,      0,      0,      0,      0,      0.0625, 0.1250, 0.1875,
-                  0.2500, 0.3125, 0.3750, 0.4375, 0.5000, 0.5625, 0.6250, 0.6875, 0.7500, 0.8125, 0.8750,
-                  0.9375, 1.0000, 1.0000, 1.0000, 1.0000, 1.0000, 1.0000, 1.0000, 1.0000, 1.0000, 1.0000,
-                  1.0000, 1.0000, 1.0000, 1.0000, 1.0000, 1.0000, 1.0000, 0.9375, 0.8750, 0.8125, 0.7500,
-                  0.6875, 0.6250, 0.5625, 0.5000, 0.4375, 0.3750, 0.3125, 0.2500, 0.1875, 0.1250, 0.0625,
-                  0,      0,      0,      0,      0,      0,      0,      0,      0};
-float jetb[64] = {0.5625, 0.6250, 0.6875, 0.7500, 0.8125, 0.8750, 0.9375, 1.0000, 1.0000, 1.0000, 1.0000,
-                  1.0000, 1.0000, 1.0000, 1.0000, 1.0000, 1.0000, 1.0000, 1.0000, 1.0000, 1.0000, 1.0000,
-                  1.0000, 1.0000, 0.9375, 0.8750, 0.8125, 0.7500, 0.6875, 0.6250, 0.5625, 0.5000, 0.4375,
-                  0.3750, 0.3125, 0.2500, 0.1875, 0.1250, 0.0625, 0,      0,      0,      0,      0,
-                  0,      0,      0,      0,      0,      0,      0,      0,      0,      0,      0,
-                  0,      0,      0,      0,      0,      0,      0,      0,      0};
-
 
 bool get2dLineImageIntersection(point2d* pFrom, point2d* pTo, point2d linePoint1, point2d linePoint2,
                                 const multiviewParams* mp, int camId)
@@ -627,34 +605,6 @@ int myFact(int num)
     return result;
 }
 
-/**
- * @brief Get the RGB color from the jet colormap for the given value.
- *
- *        Return values:
- *          - 0.0f > 'value' > 1.0f: color from jet colormap
- *          - 'value' <= 0.0f: black
- *          - 'value' >= 1.0f: white
- */
-
-// value from range 0.0 1.0
-rgb getColorFromJetColorMap(float value)
-{
-    if(value <= 0.0f)
-        return rgb(0, 0, 0);
-    if(value >= 1.0f)
-        return rgb(1, 1, 1);
-    float idx_f = value * 63.0f;
-    float fractA, fractB, integral;
-    fractB = std::modf(idx_f, &integral);
-    fractA = 1.0f - fractB;
-    int idx = static_cast<int>(integral);
-    rgb c;
-    c.r = static_cast<unsigned char>((jetr[idx] * fractA + jetr[idx + 1] * fractB) * 255.0f);
-    c.g = static_cast<unsigned char>((jetg[idx] * fractA + jetg[idx + 1] * fractB) * 255.0f);
-    c.b = static_cast<unsigned char>((jetb[idx] * fractA + jetb[idx + 1] * fractB) * 255.0f);
-    return c;
-}
-
 // hexahedron format ... 0-3 frontal face, 4-7 back face
 void getHexahedronTriangles(point3d tris[12][3], point3d hexah[8])
 {
@@ -1231,204 +1181,6 @@ int computeStep(multiviewInputParams* mip, int scale, int maxWidth, int maxHeigh
     return step;
 }
 
-void showImageOpenCV(unsigned char* data, int w, int h, float minVal, float maxVal, int scaleFactor)
-{
-    IplImage* img = cvCreateImage(cvSize(w, h), IPL_DEPTH_8U, 3);
-    for(int y = 0; y < h; y++)
-    {
-        for(int x = 0; x < w; x++)
-        {
-            float val = (float)data[x * h + y];
-            float s = 1.0f - (maxVal - std::max(minVal, val)) / (maxVal - minVal);
-            rgb cc = getColorFromJetColorMap(s);
-            CvScalar c;
-            c.val[0] = (float)cc.r;
-            c.val[1] = (float)cc.g;
-            c.val[2] = (float)cc.b;
-            cvSet2D(img, y, x, c);
-        }
-    }
-
-    IplImage* imgr = cvCreateImage(cvSize(w / scaleFactor, h / scaleFactor), IPL_DEPTH_8U, 3);
-    cvResize(img, imgr);
-
-    cvShowImage("showImageOpenCV", imgr);
-    cvWaitKey();
-    cvReleaseImage(&img);
-    cvReleaseImage(&imgr);
-}
-
-/*
-void showImageOpenCVT(unsigned char *data, int w, int h, float minVal, float maxVal, int scaleFactor)
-{
-        float minV = 255.0f;
-        float maxV = 0.0f;
-
-        IplImage* img = cvCreateImage(cvSize(w,h), IPL_DEPTH_8U, 3);
-        for (int y = 0; y < h; y++) {
-                for (int x = 0; x < w; x++) {
-                        float val = (float)data[y*w+x];
-                        minV = std::min(minV,val);
-                        maxV = std::max(maxV,val);
-                        float s = 1.0f-(maxVal - std::max(minVal,val))/(maxVal-minVal);
-                        rgb cc = getColorFromJetColorMap(s);
-                        CvScalar c;
-                        c.val[0] = (float)cc.r;
-                        c.val[1] = (float)cc.g;
-                        c.val[2] = (float)cc.b;
-                        cvSet2D(img,y,x,c);
-                };
-        };
-
-        printf("minV %f, maxV %f \n", minV, maxV);
-
-        IplImage* imgr=cvCreateImage(cvSize(w/scaleFactor,h/scaleFactor),IPL_DEPTH_8U,3);
-        cvResize(img,imgr);
-
-        cvShowImage("showImageOpenCV", imgr);
-        cvWaitKey();
-        cvReleaseImage(&img);
-        cvReleaseImage(&imgr);
-}
-*/
-void showImageOpenCV(float* data, int w, int h, float minVal, float maxVal, int scaleFactor)
-{
-    IplImage* img = cvCreateImage(cvSize(w, h), IPL_DEPTH_8U, 3);
-    for(int y = 0; y < h; y++)
-    {
-        for(int x = 0; x < w; x++)
-        {
-            float val = data[x * h + y];
-            float s = 1.0f - (maxVal - std::max(minVal, val)) / (maxVal - minVal);
-            rgb cc = getColorFromJetColorMap(s);
-            CvScalar c;
-            c.val[0] = (float)cc.r;
-            c.val[1] = (float)cc.g;
-            c.val[2] = (float)cc.b;
-            cvSet2D(img, y, x, c);
-        }
-    }
-
-    IplImage* imgr = cvCreateImage(cvSize(w / scaleFactor, h / scaleFactor), IPL_DEPTH_8U, 3);
-    cvResize(img, imgr);
-
-    cvShowImage("showImageOpenCV", imgr);
-    cvWaitKey();
-    cvReleaseImage(&img);
-    cvReleaseImage(&imgr);
-}
-
-void showImageOpenCVT(double* data, int w, int h, float minVal, float maxVal, int scaleFactor)
-{
-    IplImage* img = cvCreateImage(cvSize(w, h), IPL_DEPTH_8U, 3);
-    for(int y = 0; y < h; y++)
-    {
-        for(int x = 0; x < w; x++)
-        {
-            float val = data[y * w + x];
-            float s = 1.0f - (maxVal - std::max(minVal, val)) / (maxVal - minVal);
-            rgb cc = getColorFromJetColorMap(s);
-            CvScalar c;
-            c.val[0] = (float)cc.r;
-            c.val[1] = (float)cc.g;
-            c.val[2] = (float)cc.b;
-            cvSet2D(img, y, x, c);
-        }
-    }
-
-    IplImage* imgr = cvCreateImage(cvSize(w / scaleFactor, h / scaleFactor), IPL_DEPTH_8U, 3);
-    cvResize(img, imgr);
-
-    cvShowImage("Orig img double", imgr);
-    cvWaitKey();
-    cvReleaseImage(&img);
-    cvReleaseImage(&imgr);
-}
-
-void showImageOpenCVT(float* data, int w, int h, float minVal, float maxVal, int scaleFactor, int delay)
-{
-    IplImage* img = cvCreateImage(cvSize(w, h), IPL_DEPTH_8U, 3);
-    for(int y = 0; y < h; y++)
-    {
-        for(int x = 0; x < w; x++)
-        {
-            float val = (float)data[y * w + x];
-            float s = 1.0f - ((float)maxVal - std::max((float)minVal, val)) / ((float)maxVal - (float)minVal);
-            rgb cc = getColorFromJetColorMap(s);
-            CvScalar c;
-            c.val[0] = (float)cc.r;
-            c.val[1] = (float)cc.g;
-            c.val[2] = (float)cc.b;
-            cvSet2D(img, y, x, c);
-        }
-    }
-
-    IplImage* imgr = cvCreateImage(cvSize(w / scaleFactor, h / scaleFactor), IPL_DEPTH_8U, 3);
-    cvResize(img, imgr);
-
-    cvShowImage("showImageOpenCVT", imgr);
-    cvWaitKey(delay);
-    cvReleaseImage(&img);
-    cvReleaseImage(&imgr);
-    cvDestroyWindow("showImageOpenCVT");
-}
-
-void showImageOpenCVT(unsigned char* data, int w, int h, unsigned char minVal, unsigned char maxVal, int scaleFactor,
-                      int delay)
-{
-    IplImage* img = cvCreateImage(cvSize(w, h), IPL_DEPTH_8U, 3);
-    for(int y = 0; y < h; y++)
-    {
-        for(int x = 0; x < w; x++)
-        {
-            float val = (float)data[y * w + x];
-            float s = 1.0f - ((float)maxVal - std::max((float)minVal, val)) / ((float)maxVal - (float)minVal);
-            rgb cc = getColorFromJetColorMap(s);
-            CvScalar c;
-            c.val[0] = (float)cc.r;
-            c.val[1] = (float)cc.g;
-            c.val[2] = (float)cc.b;
-            cvSet2D(img, y, x, c);
-        }
-    }
-
-    IplImage* imgr = cvCreateImage(cvSize(w / scaleFactor, h / scaleFactor), IPL_DEPTH_8U, 3);
-    cvResize(img, imgr);
-
-    cvShowImage("showImageOpenCVT", imgr);
-    cvWaitKey(delay);
-    cvReleaseImage(&img);
-    cvReleaseImage(&imgr);
-    // cvDestroyWindow("showImageOpenCVT");
-}
-
-void showImageOpenCVT(int* data, int w, int h, int minVal, int maxVal, int scaleFactor)
-{
-    IplImage* img = cvCreateImage(cvSize(w, h), IPL_DEPTH_8U, 3);
-    for(int y = 0; y < h; y++)
-    {
-        for(int x = 0; x < w; x++)
-        {
-            float val = (float)data[y * w + x];
-            float s = 1.0f - ((float)maxVal - std::max((float)minVal, val)) / ((float)maxVal - (float)minVal);
-            rgb cc = getColorFromJetColorMap(s);
-            CvScalar c;
-            c.val[0] = (float)cc.r;
-            c.val[1] = (float)cc.g;
-            c.val[2] = (float)cc.b;
-            cvSet2D(img, y, x, c);
-        }
-    }
-    IplImage* imgr = cvCreateImage(cvSize(w / scaleFactor, h / scaleFactor), IPL_DEPTH_8U, 3);
-    cvResize(img, imgr);
-
-    cvShowImage("showImageOpenCVT", imgr);
-    cvWaitKey();
-    cvReleaseImage(&img);
-    cvReleaseImage(&imgr);
-    cvDestroyWindow("showImageOpenCVT");
-}
-
 staticVector<point3d>* computeVoxels(const point3d* space, const voxel& dimensions)
 {
     float voxelDimX = (float)dimensions.x;
@@ -1532,7 +1284,7 @@ staticVector<int>* createRandomArrayOfIntegers(int n)
 float getCGDepthFromSeeds(const multiviewParams* mp, int rc)
 {
     staticVector<seedPoint>* seeds;
-    loadSeedsFromFile(&seeds, mp->indexes[rc], mp->mip, mp->mip->MV_FILE_TYPE_seeds);
+    loadSeedsFromFile(&seeds, mp->indexes[rc], mp->mip, EFileType::seeds);
 
     float midDepth = -1.0f;
 

@@ -8,7 +8,7 @@
 #include <aliceVision/largeScale/reconstructionPlan.hpp>
 #include <aliceVision/planeSweeping/ps_refine_rc.hpp>
 #include <aliceVision/CUDAInterfaces/refine.hpp>
-#include <aliceVision/structures/mv_filesio.hpp>
+#include <aliceVision/common/fileIO.hpp>
 
 #include <boost/program_options.hpp>
 #include <boost/filesystem.hpp>
@@ -27,20 +27,42 @@ int main(int argc, char* argv[])
     long startTime = clock();
 
     std::string iniFilepath;
+    std::string depthMapFolder;
+    std::string outputFolder;
     int rangeStart = -1;
     int rangeSize = -1;
     int minNumOfConsistensCams = 3;
+    int minNumOfConsistensCamsWithLowSimilarity = 4;
+    int pixSizeBall = 0;
+    int pixSizeBallWithLowSimilarity = 0;
+    int nNearestCams = 10;
+
     po::options_description inputParams("Filter depth map to remove values that are not consistent with other depth maps.");
 
     inputParams.add_options()
         ("ini", po::value<std::string>(&iniFilepath)->required(),
             "Configuration file (mvs.ini).")
+        ("depthMapFolder", po::value<std::string>(&depthMapFolder)->required(),
+            "Input depth map folder.")
+        ("output", po::value<std::string>(&outputFolder)->required(),
+            "Output folder for filtered depth maps.")
+
         ("rangeStart", po::value<int>(&rangeStart)->default_value(rangeStart),
             "Compute only a sub-range of images from index rangeStart to rangeStart+rangeSize.")
         ("rangeSize", po::value<int>(&rangeSize)->default_value(rangeSize),
             "Compute only a sub-range of N images (N=rangeSize).")
+
         ("minNumOfConsistensCams", po::value<int>(&minNumOfConsistensCams)->default_value(minNumOfConsistensCams),
-            "Minimal number of consistent cameras to consider the pixel.");
+            "Minimal number of consistent cameras to consider the pixel.")
+        ("minNumOfConsistensCamsWithLowSimilarity", po::value<int>(&minNumOfConsistensCamsWithLowSimilarity)->default_value(minNumOfConsistensCamsWithLowSimilarity),
+            "Minimal number of consistent cameras to consider the pixel when the similarity is weak or ambiguous.")
+        ("pixSizeBall", po::value<int>(&pixSizeBall)->default_value(pixSizeBall),
+            "Filter ball size (in px).")
+        ("pixSizeBallWithLowSimilarity", po::value<int>(&pixSizeBallWithLowSimilarity)->default_value(pixSizeBallWithLowSimilarity),
+            "Filter ball size (in px) when the similarity is weak or ambiguous.")
+        ("nNearestCams", po::value<int>(&nNearestCams)->default_value(nNearestCams),
+            "Number of nearest cameras.");
+
     po::variables_map vm;
 
     try
@@ -71,7 +93,7 @@ int main(int argc, char* argv[])
     ALICEVISION_COUT("ini file: " << iniFilepath);
 
     // .ini parsing
-    multiviewInputParams mip(iniFilepath);
+    multiviewInputParams mip(iniFilepath, depthMapFolder, outputFolder);
     const double simThr = mip._ini.get<double>("global.simThr", 0.0);
     multiviewParams mp(mip.getNbCameras(), &mip, (float) simThr);
     mv_prematch_cams pc(&mp);
@@ -99,10 +121,11 @@ int main(int argc, char* argv[])
     }
 
     ALICEVISION_COUT("--- filter depthmap");
+
     {
         mv_fuse fs(&mp, &pc);
-        fs.filterGroups(cams);
-        fs.filterDepthMaps(cams, minNumOfConsistensCams);
+        fs.filterGroups(cams, pixSizeBall, pixSizeBallWithLowSimilarity, nNearestCams);
+        fs.filterDepthMaps(cams, minNumOfConsistensCams, minNumOfConsistensCamsWithLowSimilarity);
     }
 
     printfElapsedTime(startTime, "#");

@@ -8,7 +8,7 @@
 #include <aliceVision/largeScale/reconstructionPlan.hpp>
 #include <aliceVision/planeSweeping/ps_refine_rc.hpp>
 #include <aliceVision/CUDAInterfaces/refine.hpp>
-#include <aliceVision/structures/mv_filesio.hpp>
+#include <aliceVision/common/fileIO.hpp>
 #include <aliceVision/mesh/mv_mesh_retexture_obj.hpp>
 
 #include <boost/filesystem.hpp>
@@ -206,7 +206,7 @@ int main(int argc, char* argv[])
     }
 
     // .ini parsing
-    multiviewInputParams mip(cmdline.iniFile);
+    multiviewInputParams mip(cmdline.iniFile, "", "");
     const double simThr = mip._ini.get<double>("global.simThr", 0.0);
     const int minNumOfConsistensCams = mip._ini.get<int>("filter.minNumOfConsistentCams", 3);
     const int maxPts = mip._ini.get<int>("largeScale.planMaxPts", 30000000);
@@ -262,8 +262,8 @@ int main(int argc, char* argv[])
     {
         cout << "--- filter depthmap" << endl;
         mv_fuse fs(&mp, &pc);
-        fs.filterGroups(cams);
-        fs.filterDepthMaps(cams, minNumOfConsistensCams);
+        fs.filterGroups(cams, 0, 0, 10);
+        fs.filterDepthMaps(cams, minNumOfConsistensCams, 4); //minNumOfConsistensCamsWithLowSimilarity = 4
     }
 
     if(cmdline.steps.test(CommandLine::Step::MESHING))

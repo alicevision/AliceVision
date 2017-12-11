@@ -266,14 +266,6 @@ template <class T>
 void saveArrayToFile(std::string fileName, staticVector<T>* a, bool docompress = true)
 {
     std::cout << "[IO] saveArrayToFile: " << fileName << std::endl;
-    /*
-    gzFile f = gzopen(fileName.c_str(),"wb");
-    if (f==NULL) {printf("gzopen error\n");exit(1);};
-    int n = a->size();
-    if (gzwrite(&n,sizeof(int),1,f)==0) {printf("gzwrite error\n");exit(1);};
-    if (gzwrite(&(*a)[0],sizeof(T),n,f)==0) {printf("gzwrite error\n");exit(1);};
-    gzclose(f);
-    */
 
     if((docompress == false) || (a->size() < 1000))
     {
@@ -334,24 +326,6 @@ template <class T>
 staticVector<T>* loadArrayFromFile(std::string fileName, bool printfWarning = false)
 {
     std::cout << "[IO] loadArrayFromFile: " << fileName << std::endl;
-    /*
-    gzFile f = gzopen(fileName.c_str(),"rb");
-    if (f==NULL) {
-            if (printfWarning==true) {
-                    printf("WARNING: file %s does not exist!\n", fileName.c_str());
-            };
-            return NULL;
-    }else{
-            staticVector<T>* a = NULL;
-            int n=0;
-            if (gzread(&n,sizeof(int),1,f)==-1) {printf("gzread error\n");exit(1);};
-            a = new staticVector<T>(n);
-            a->resize(n);
-            if (gzread(&(*a)[0],sizeof(T),n,f)==-1) {printf("gzread error\n");exit(1);};
-            gzclose(f);
-            return a;
-    };
-    */
 
     FILE* f = fopen(fileName.c_str(), "rb");
     if(f == NULL)
@@ -381,13 +355,12 @@ staticVector<T>* loadArrayFromFile(std::string fileName, bool printfWarning = fa
             if(err != Z_OK)
             {
                 printf("uncompress error %i : %lu -> %lu, n %i \n", err, sizeof(T) * n, uncomprLen, n);
-            };
+            }
 
             if(uncomprLen != sizeof(T) * n)
             {
-                printf("WARNING uncompression failed uncomprLen!=sizeof(T)*n \n");
-                exit(1);
-            };
+                throw std::runtime_error("loadArrayFromFile: uncompression failed uncomprLen!=sizeof(T)*n");
+            }
 
             free(compr);
         }
@@ -396,95 +369,69 @@ staticVector<T>* loadArrayFromFile(std::string fileName, bool printfWarning = fa
             a = new staticVector<T>(n);
             a->resize(n);
             fread(&(*a)[0], sizeof(T), n, f);
-        };
+        }
 
         fclose(f);
 
         return a;
-    };
+    }
 }
 
 template <class T>
 void loadArrayFromFileIntoArray(staticVector<T>* a, std::string fileName, bool printfWarning = false)
 {
     std::cout << "[IO] loadArrayFromFileIntoArray: " << fileName << std::endl;
-    /*
-    gzFile f = gzopen(fileName.c_str(),"rb");
-    if (f==NULL) {
-            if (printfWarning==true) {
-                    printf("WARNING: file %s does not exist!\n", fileName.c_str());
-            };
-            return NULL;
-    }else{
-            staticVector<T>* a = NULL;
-            int n=0;
-            if (gzread(&n,sizeof(int),1,f)==-1) {printf("gzread error\n");exit(1);};
-            a = new staticVector<T>(n);
-            a->resize(n);
-            if (gzread(&(*a)[0],sizeof(T),n,f)==-1) {printf("gzread error\n");exit(1);};
-            gzclose(f);
-            return a;
-    };
-    */
 
     FILE* f = fopen(fileName.c_str(), "rb");
     if(f == NULL)
     {
-        if(printfWarning == true)
+        throw std::runtime_error("loadArrayFromFileIntoArray: can not open file: " + fileName);
+    }
+    int n = 0;
+    fread(&n, sizeof(int), 1, f);
+ 
+    if(n == -1)
+    {
+        fread(&n, sizeof(int), 1, f);
+        if(a->size() != n)
         {
-            printf("WARNING: file %s does not exist!\n", fileName.c_str());
-        };
-        // return NULL;
+            std::stringstream s;
+            s << "loadArrayFromFileIntoArray: expected length " << a->size() << " loaded length " << n;
+            throw std::runtime_error(s.str());
+        }
+ 
+        uLong comprLen;
+        fread(&comprLen, sizeof(uLong), 1, f);
+        Byte* compr = (Byte*)calloc((uInt)comprLen, 1);
+        fread(compr, sizeof(Byte), comprLen, f);
+ 
+        uLong uncomprLen = sizeof(T) * n;
+        int err = uncompress((Bytef*)(&(*a)[0]), &uncomprLen, compr, comprLen);
+ 
+        if(err != Z_OK)
+        {
+            printf("uncompress error %i : %lu -> %lu, n %i \n", err, sizeof(T) * n, uncomprLen, n);
+        }
+ 
+        if(uncomprLen != sizeof(T) * n)
+        {
+            throw std::runtime_error("loadArrayFromFileIntoArray: uncompression failed uncomprLen!=sizeof(T)*n");
+        }
+ 
+        free(compr);
     }
     else
     {
-        int n = 0;
-        fread(&n, sizeof(int), 1, f);
-
-        if(n == -1)
+        if(a->size() != n)
         {
-            fread(&n, sizeof(int), 1, f);
-            if(a->size() != n)
-            {
-                printf("ERROR loadArrayFromFileIntoArray expected length %i loaded length %i\n", a->size(), n);
-                exit(1);
-            };
-
-            uLong comprLen;
-            fread(&comprLen, sizeof(uLong), 1, f);
-            Byte* compr = (Byte*)calloc((uInt)comprLen, 1);
-            fread(compr, sizeof(Byte), comprLen, f);
-
-            uLong uncomprLen = sizeof(T) * n;
-            int err = uncompress((Bytef*)(&(*a)[0]), &uncomprLen, compr, comprLen);
-
-            if(err != Z_OK)
-            {
-                printf("uncompress error %i : %lu -> %lu, n %i \n", err, sizeof(T) * n, uncomprLen, n);
-            };
-
-            if(uncomprLen != sizeof(T) * n)
-            {
-                printf("WARNING uncompression failed uncomprLen!=sizeof(T)*n \n");
-                exit(1);
-            };
-
-            free(compr);
+            std::stringstream s;
+            s << "loadArrayFromFileIntoArray: expected length " << a->size() << " loaded length " << n;
+            throw std::runtime_error(s.str());
         }
-        else
-        {
-            if(a->size() != n)
-            {
-                printf("ERROR loadArrayFromFileIntoArray expected length %i loaded length %i\n", a->size(), n);
-                exit(1);
-            };
-            fread(&(*a)[0], sizeof(T), n, f);
-        };
-
-        fclose(f);
-
-        // return a;
-    };
+        fread(&(*a)[0], sizeof(T), n, f);
+    }
+ 
+    fclose(f);
 }
 
 int getArrayLengthFromFile(std::string fileName);

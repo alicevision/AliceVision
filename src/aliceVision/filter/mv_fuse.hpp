@@ -21,9 +21,9 @@ public:
 
     // minNumOfModals number of other cams including this cam ... minNumOfModals /in 2,3,... default 3
     // pixSizeBall = default 2
-    void filterGroups(const staticVector<int>& cams);
+    void filterGroups(const staticVector<int>& cams, int pixSizeBall, int pixSizeBallWSP, int nNearestCams);
     bool filterGroupsRC(int rc, int pixSizeBall, int pixSizeBallWSP, int nNearestCams);
-    void filterDepthMaps(const staticVector<int>& cams, int minNumOfModals);
+    void filterDepthMaps(const staticVector<int>& cams, int minNumOfModals, int minNumOfModalsWSP2SSP);
     bool filterDepthMapsRC(int rc, int minNumOfModals, int minNumOfModalsWSP2SSP);
 
     void visualizeDepthMap(int rc, std::string wrlFileName, staticVector<float>* depthMap, staticVector<float>* simMap,

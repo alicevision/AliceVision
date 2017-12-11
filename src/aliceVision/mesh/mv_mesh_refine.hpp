@@ -11,7 +11,7 @@
 #include <aliceVision/planeSweeping/ps_depthSimMap.hpp>
 #include <aliceVision/planeSweeping/ps_rctc.hpp>
 #include <aliceVision/prematching/mv_prematch_cams.hpp>
-#include <aliceVision/structures/mv_images_cache.hpp>
+#include <aliceVision/common/ImagesCache.hpp>
 
 class mv_mesh_refine : public mv_mesh
 {

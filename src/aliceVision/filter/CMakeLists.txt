@@ -12,5 +12,5 @@ target_include_directories(mv_filter
          $<BUILD_INTERFACE:${generatedDir}>
          $<INSTALL_INTERFACE:include>)
 
-target_link_libraries(mv_filter PUBLIC mv_cudaInterfaces mv_output3D mv_prematching)
+target_link_libraries(mv_filter PUBLIC aliceVision_common aliceVision_imageIO mv_cudaInterfaces mv_output3D mv_prematching)
 

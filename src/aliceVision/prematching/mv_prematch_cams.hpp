@@ -5,7 +5,7 @@
 
 #pragma once
 
-#include <aliceVision/structures/mv_multiview_params.hpp>
+#include <aliceVision/common/MultiViewParams.hpp>
 
 class mv_prematch_cams
 {

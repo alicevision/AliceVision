@@ -1,19 +1,16 @@
-
 set(SOURCES_files_structures
+  jetColorMap.cpp
+  jetColorMap.hpp
+  image.cpp
+  image.hpp
   mv_color.cpp
   mv_color.hpp
-  mv_common.cpp
-  mv_common.hpp
   mv_double3d.cpp
   mv_double3d.hpp
-  mv_filesio.cpp
-  mv_filesio.hpp
   mv_geometry.cpp
   mv_geometry.hpp
   mv_geometry_triTri.cpp
   mv_geometry_triTri.hpp
-  mv_images_cache.cpp
-  mv_images_cache.hpp
   mv_matrix.cpp
   mv_matrix.hpp
   mv_matrix2x2.cpp
@@ -22,8 +19,6 @@ set(SOURCES_files_structures
   mv_matrix3x3.hpp
   mv_matrix3x4.cpp
   mv_matrix3x4.hpp
-  mv_multiview_params.cpp
-  mv_multiview_params.hpp
   mv_point2d.cpp
   mv_point2d.hpp
   mv_point3d.cpp
@@ -39,15 +34,12 @@ set(SOURCES_files_structures
 )
 source_group("structures" FILES ${SOURCES_files_structures})
 
-# message(WARNING "OpenCV_INCLUDE_DIRS: ${OpenCV_INCLUDE_DIRS}")
-# message(WARNING "OpenCV_LIBS: ${OpenCV_LIBS}")
-
 add_library(mv_structures ${SOURCES_files_structures})
 target_include_directories(mv_structures
          PUBLIC
          $<BUILD_INTERFACE:${ALICEVISION_INCLUDE_DIR}>
          $<BUILD_INTERFACE:${generatedDir}>
          $<INSTALL_INTERFACE:include>
-         ${OpenCV_INCLUDE_DIRS} ${Boost_INCLUDE_DIR} ${ZLIB_INCLUDE_DIR})
+         ${Boost_INCLUDE_DIR} ${ZLIB_INCLUDE_DIR})
 
-target_link_libraries(mv_structures PUBLIC eig33 ${ZLIB_LIBRARIES} ${OpenCV_LIBS} ${Boost_FILESYSTEM_LIBRARIES})
+target_link_libraries(mv_structures PUBLIC eig33 ${ZLIB_LIBRARIES} ${Boost_FILESYSTEM_LIBRARIES})

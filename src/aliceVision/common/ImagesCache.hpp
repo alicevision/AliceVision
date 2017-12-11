@@ -5,8 +5,8 @@
 
 #pragma once
 
-#include <aliceVision/structures/mv_multiview_params.hpp>
 #include <aliceVision/structures/mv_color.hpp>
+#include <aliceVision/common/MultiViewParams.hpp>
 
 class mv_images_cache
 {
@@ -14,7 +14,7 @@ public:
     const multiviewParams* mp;
 
     int N_PRELOADED_IMAGES;
-    rgb** imgs;
+    Color** imgs;
 
     staticVector<int>* camIdMapId;
     staticVector<int>* mapIdCamId;
@@ -33,5 +33,5 @@ public:
     int getPixelId(int x, int y, int imgid);
     void refreshData(int camId);
     Color getPixelValueInterpolated(const point2d* pix, int camId);
-    rgb getPixelValue(const pixel* pix, int camId);
+    rgb getPixelValue(const pixel& pix, int camId);
 };

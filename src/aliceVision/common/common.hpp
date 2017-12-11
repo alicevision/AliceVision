@@ -5,9 +5,9 @@
 
 #pragma once
 
-#include "mv_multiview_params.hpp"
-#include <string>
+#include <aliceVision/common/MultiViewParams.hpp>
 
+#include <string>
 
 bool get2dLineImageIntersection(point2d* pFrom, point2d* pTo, point2d linePoint1, point2d linePoint2,
                                 const multiviewParams* mp, int camId);
@@ -40,7 +40,6 @@ bool checkCamPairAngle(int rc, int tc, const multiviewParams* mp, float minAng, 
 bool isClique(int k, int* perm, unsigned char* confidenceMatrix, int n);
 // factorial
 int myFact(int num);
-rgb getColorFromJetColorMap(float value);
 
 void getHexahedronTriangles(point3d tris[12][3], point3d hexah[8]);
 void getCamRectangleHexahedron(const multiviewParams* mp, point3d hexah[8], int cam, float mind, float maxd, point2d P[4]);
@@ -63,13 +62,7 @@ staticVector<staticVector<int>*>* convertObjectsCamsToCamsObjects(const multivie
 staticVector<staticVector<pixel>*>* convertObjectsCamsToCamsObjects(const multiviewParams* mp,
                                                                     staticVector<staticVector<pixel>*>* ptsCams);
 int computeStep(multiviewInputParams* mip, int scale, int maxWidth, int maxHeight);
-void showImageOpenCV(unsigned char* data, int w, int h, float minVal, float maxVal, int scaleFactor = 1);
-void showImageOpenCV(float* data, int w, int h, float minVal, float maxVal, int scaleFactor = 1);
-void showImageOpenCVT(double* data, int w, int h, float minVal, float maxVal, int scaleFactor = 1);
-void showImageOpenCVT(float* data, int w, int h, float minVal, float maxVal, int scaleFactor = 1, int delay = 0);
-void showImageOpenCVT(unsigned char* data, int w, int h, unsigned char minVal, unsigned char maxVal,
-                      int scaleFactor = 1, int delay = 0);
-void showImageOpenCVT(int* data, int w, int h, int minVal, int maxVal, int scaleFactor = 1);
+
 staticVector<point3d>* computeVoxels(const point3d* space, const voxel& dimensions);
 float getCGDepthFromSeeds(const multiviewParams* mp, int rc); // TODO: require seeds vector as input param
 staticVector<int>* createRandomArrayOfIntegers(int n);

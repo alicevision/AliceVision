@@ -10,7 +10,7 @@
 #include <aliceVision/prematching/mv_prematch_cams.hpp>
 #include "ps_depthSimMap.hpp"
 #include "ps_rctc.hpp"
-#include <aliceVision/structures/mv_images_cache.hpp>
+#include <aliceVision/common/ImagesCache.hpp>
 
 class ps_sgm_params
 {
@@ -62,14 +62,11 @@ public:
     ps_depthSimMap* getDepthSimMapFromBestIdVal(int w, int h, staticVector<idValue>* volumeBestIdVal, int scale,
                                                 int step, int rc, int zborder, staticVector<float>* planesDepths);
 
-    std::string getREFINEOutDir();
-    std::string getREFINETmpDir();
     std::string getREFINE_photo_depthMapFileName(int cam, int scale, int step);
     std::string getREFINE_photo_simMapFileName(int cam, int scale, int step);
     std::string getREFINE_opt_depthMapFileName(int cam, int scale, int step);
     std::string getREFINE_opt_simMapFileName(int cam, int scale, int step);
 
-    std::string getSGMOutDir();
     std::string getSGMTmpDir();
     std::string getSGM_idDepthMapFileName(int cam, int scale, int step);
     std::string getSGM_depthMapFileName(int cam, int scale, int step);

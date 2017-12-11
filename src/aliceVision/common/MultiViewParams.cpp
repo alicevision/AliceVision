@@ -3,11 +3,11 @@
 // v. 2.0. If a copy of the MPL was not distributed with this file,
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
-#include "mv_multiview_params.hpp"
-#include "mv_filesio.hpp"
-#include "mv_geometry.hpp"
-
-#include <aliceVision/structures/mv_common.hpp>
+#include "MultiViewParams.hpp"
+#include <aliceVision/structures/mv_geometry.hpp>
+#include <aliceVision/common/fileIO.hpp>
+#include <aliceVision/common/common.hpp>
+#include <aliceVision/imageIO/image.hpp>
 
 #include <boost/filesystem.hpp>
 #include <boost/property_tree/ini_parser.hpp>
@@ -15,15 +15,10 @@
 #include <boost/algorithm/string/classification.hpp>
 #include <boost/lexical_cast.hpp>
 
-#include <opencv/cv.h>
-#include <opencv/highgui.h>
-
 #include <iostream>
 #include <set>
 
-
 namespace bfs = boost::filesystem;
-
 
 timeIndex::timeIndex()
 {
@@ -37,23 +32,26 @@ timeIndex::timeIndex(int _index)
     timeStamp = clock();
 }
 
-multiviewInputParams::multiviewInputParams(const std::string& file)
+multiviewInputParams::multiviewInputParams(const std::string& file, const std::string& depthMapFolder, const std::string& depthMapFilterFolder)
 {
     initFromConfigFile(file);
+    _depthMapFolder = depthMapFolder + "/";
+    _depthMapFilterFolder = depthMapFilterFolder + "/";
 }
 
 imageParams multiviewInputParams::addImageFile(const std::string& filename)
 {
-    auto image = cvLoadImage(filename.c_str());
-    if(!image)
-        throw std::runtime_error(std::string("can't load image ") + filename);
-    imageParams params(image->width, image->height);
+    int width = -1;
+    int height = -1;
+    int nchannels = -1;
 
-    maxImageWidth = std::max(maxImageWidth, image->width);
-    maxImageHeight = std::max(maxImageHeight, image->height);
+    imageIO::readImageSpec(filename, width, height, nchannels);
+    imageParams params(width, height);
+
+    maxImageWidth = std::max(maxImageWidth, width);
+    maxImageHeight = std::max(maxImageHeight, height);
 
     imps.push_back(params);
-    cvReleaseImage(&image);
     return params;
 }
 
@@ -66,6 +64,8 @@ void multiviewInputParams::initFromConfigFile(const std::string& iniFile)
     // initialize directory names
     const auto rootPath = bfs::path(iniFile).parent_path().string() + "/";
     mvDir = rootPath;
+    _depthMapFolder = (bfs::path(rootPath) / "depthMap").string();
+    _depthMapFilterFolder = (bfs::path(rootPath) / "depthMapFilter").string();
 
     imageExt = _ini.get<std::string>("global.imgExt", imageExt);
     prefix = _ini.get<std::string>("global.prefix", prefix);
@@ -82,7 +82,7 @@ void multiviewInputParams::initFromConfigFile(const std::string& iniFile)
             std::cout << "No 'imageResolutions' section, load from image files." << std::endl;
             for(std::size_t i = 0; i < ncams; ++i)
             {
-                const std::string filename = mv_getFileNamePrefix(this, static_cast<int>(i + 1)) + "." + imageExt;
+                const std::string filename = mv_getFileNamePrefix(mvDir, this, static_cast<int>(i + 1)) + "." + imageExt;
                 const imageParams params = addImageFile(filename);
                 dimensions.emplace(params.width, params.height);
             }
@@ -148,8 +148,8 @@ multiviewParams::multiviewParams(int _ncams, multiviewInputParams* _mip, float _
         }
         else
         {
-            std::string fileNameP = mv_getFileName(mip, indexes[i], mip->MV_FILE_TYPE_P);
-            std::string fileNameD = mv_getFileNamePrefix(mip, indexes[i]) + "_D.txt";
+            std::string fileNameP = mv_getFileName(mip, indexes[i], EFileType::P);
+            std::string fileNameD = mv_getFileName(mip, indexes[i], EFileType::D);
             loadCameraFile(i, fileNameP, fileNameD);
         }
 
@@ -295,7 +295,7 @@ void multiviewParams::addCam()
     indexes[i] = i + 1;
 
     FILE* f;
-    f = mv_openFile(mip, indexes[i], mip->MV_FILE_TYPE_P, "r");
+    f = mv_openFile(mip, indexes[i], EFileType::P, "r");
     camArr[i] = load3x4MatrixFromFile(f);
     fclose(f);
 
@@ -310,7 +310,7 @@ void multiviewParams::reloadLastCam()
     int i = ncams - 1;
 
     FILE* f;
-    f = mv_openFile(mip, indexes[i], mip->MV_FILE_TYPE_P, "r");
+    f = mv_openFile(mip, indexes[i], EFileType::P, "r");
     camArr[i] = load3x4MatrixFromFile(f);
     fclose(f);
 

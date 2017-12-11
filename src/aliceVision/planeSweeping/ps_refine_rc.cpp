@@ -5,8 +5,8 @@
 
 #include "ps_refine_rc.hpp"
 
-#include <aliceVision/structures/mv_filesio.hpp>
-
+#include <aliceVision/common/fileIO.hpp>
+#include <aliceVision/imageIO/image.hpp>
 #include <aliceVision/omp.hpp>
 
 #include <boost/filesystem.hpp>
@@ -17,25 +17,12 @@ namespace bfs = boost::filesystem;
 ps_refine_rc::ps_refine_rc(int _rc, int _scale, int _step, ps_sgm_params* _sp)
     : ps_sgm_rc(false, _rc, _scale, _step, _sp)
 {
-    // change out dir
-    outDir = sp->getREFINEOutDir();
-    if(!FolderExists(outDir))
-    {
-        bfs::create_directory(outDir);
-    }
-
-    tmpDir = sp->getREFINETmpDir();
-    if(!FolderExists(tmpDir))
-    {
-        bfs::create_directory(tmpDir);
-    }
-
     _nSamplesHalf = sp->mp->mip->_ini.get<int>("refineRc.nSamplesHalf", 150);
     _ndepthsToRefine = sp->mp->mip->_ini.get<int>("refineRc.ndepthsToRefine", 31);
     _sigma = (float)sp->mp->mip->_ini.get<double>("refineRc.sigma", 15.0);
     _niters = sp->mp->mip->_ini.get<int>("refineRc.niters", 100);
 
-    _userTcOrPixSize = sp->mp->mip->_ini.get<bool>("refineRc.userTcOrPixSize", false);
+    _userTcOrPixSize = sp->mp->mip->_ini.get<bool>("refineRc.useTcOrRcPixSize", false);
     _wsh = sp->mp->mip->_ini.get<int>("refineRc.wsh", 3);
     _gammaC = (float)sp->mp->mip->_ini.get<double>("refineRc.gammaC", 15.5);
     _gammaP = (float)sp->mp->mip->_ini.get<double>("refineRc.gammaP", 8.0);
@@ -58,22 +45,24 @@ ps_depthSimMap* ps_refine_rc::getDepthPixSizeMapFromSGM()
     int volDimY = h;
     int volDimZ = depths->size();
 
-    staticVector<unsigned short>* rcIdDepthMap = nullptr;
-
-    rcIdDepthMap = loadArrayFromFile<unsigned short>(SGM_idDepthMapFileName);
-
     staticVector<idValue>* volumeBestIdVal = new staticVector<idValue>(volDimX * volDimY);
-    for(int i = 0; i < volDimX * volDimY; i++)
-    {
-        // float sim = (*depthSimMapFinal->dsm)[i].y;
-        // sim = std::min(sim,mp->simThr);
-        float sim = sp->mp->simThr - 0.0001;
 
-        int id = (*rcIdDepthMap)[i];
-        id = (id > 0) && (id < volDimZ - sp->minObjectThickness - 1) ? id : 0;
-        volumeBestIdVal->push_back(idValue(id, sim));
+    {
+        std::vector<unsigned short> rcIdDepthMap;
+
+        imageIO::readImage(SGM_idDepthMapFileName, volDimX, volDimY, rcIdDepthMap);
+
+        for(int i = 0; i < volDimX * volDimY; i++)
+        {
+            // float sim = (*depthSimMapFinal->dsm)[i].y;
+            // sim = std::min(sim,mp->simThr);
+            float sim = sp->mp->simThr - 0.0001;
+
+            int id = rcIdDepthMap.at(i);
+            id = (id > 0) && (id < volDimZ - sp->minObjectThickness - 1) ? id : 0;
+            volumeBestIdVal->push_back(idValue(id, sim));
+        }
     }
-    delete rcIdDepthMap;
 
     int zborder = 2;
     ps_depthSimMap* depthSimMap =
@@ -129,7 +118,7 @@ ps_depthSimMap* ps_refine_rc::refineAndFuseDepthSimMapCUDA(ps_depthSimMap* depth
         dataMaps->push_back(depthSimMapC);
 
         if(sp->visualizePartialDepthMaps)
-            depthSimMapC->saveToWrlPng(tmpDir + "refineRc_Photo_" + num2strFourDecimal(rc) + "_tc_" +
+            depthSimMapC->saveToWrlPng(outDir + "refineRc_Photo_" + num2strFourDecimal(rc) + "_tc_" +
                                            num2strFourDecimal(tc) + ".wrl",
                                        rc, -2.0f);
 
@@ -257,10 +246,14 @@ bool ps_refine_rc::refinercCUDA(bool checkIfExists)
     long tall = clock();
 
     ps_depthSimMap* depthPixSizeMapVis = getDepthPixSizeMapFromSGM();
-    depthPixSizeMapVis->saveToPng(tmpDir + "refineRc_" + num2strFourDecimal(rc) + "Vis.png", 0.0f);
+
+    if(sp->visualizeDepthMaps)
+        depthPixSizeMapVis->saveToImage(outDir + "refineRc_" + num2strFourDecimal(rc) + "Vis.png", 0.0f);
 
     ps_depthSimMap* depthSimMapPhoto = refineAndFuseDepthSimMapCUDA(depthPixSizeMapVis);
-    depthSimMapPhoto->saveToPng(tmpDir + "refineRc_" + num2strFourDecimal(rc) + "Photo.png", 0.0f);
+
+    if(sp->visualizeDepthMaps)
+        depthSimMapPhoto->saveToImage(outDir + "refineRc_" + num2strFourDecimal(rc) + "Photo.png", 0.0f);
 
     ps_depthSimMap* depthSimMapOpt = nullptr;
     if(sp->doRefineRc)
@@ -273,20 +266,26 @@ bool ps_refine_rc::refinercCUDA(bool checkIfExists)
         depthSimMapOpt->add(depthSimMapPhoto);
     }
 
-    depthSimMapOpt->saveToPng(tmpDir + "refineRc_" + num2strFourDecimal(rc) + "Opt.png", 0.0f);
+    if(sp->visualizeDepthMaps)
+        depthSimMapOpt->saveToImage(outDir + "refineRc_" + num2strFourDecimal(rc) + "Opt.png", 0.0f);
+
     depthSimMapOpt->save(rc, tcams);
 
-    depthSimMapPhoto->saveToBin(sp->getREFINE_photo_depthMapFileName(rc, 1, 1),
+    depthSimMapPhoto->saveRefine(rc,
+                                sp->getREFINE_photo_depthMapFileName(rc, 1, 1),
                                 sp->getREFINE_photo_simMapFileName(rc, 1, 1));
-    depthSimMapOpt->saveToBin(sp->getREFINE_opt_depthMapFileName(rc, 1, 1), sp->getREFINE_opt_simMapFileName(rc, 1, 1));
+
+    depthSimMapOpt->saveRefine(rc,
+                               sp->getREFINE_opt_depthMapFileName(rc, 1, 1),
+                               sp->getREFINE_opt_simMapFileName(rc, 1, 1));
 
     printfElapsedTime(tall, "REFINERC " + num2str(rc) + " of " + num2str(sp->mp->ncams));
 
     if(sp->visualizeDepthMaps)
     {
-        depthSimMapOpt->saveToWrl(tmpDir + "refineRc_" + num2strFourDecimal(rc) + "Opt.wrl", rc);
-        depthSimMapPhoto->saveToWrl(tmpDir + "refineRc_" + num2strFourDecimal(rc) + "Photo.wrl", rc);
-        depthPixSizeMapVis->saveToWrl(tmpDir + "refineRc_" + num2strFourDecimal(rc) + "Vis.wrl", rc);
+        depthSimMapOpt->saveToWrl(outDir + "refineRc_" + num2strFourDecimal(rc) + "Opt.wrl", rc);
+        depthSimMapPhoto->saveToWrl(outDir + "refineRc_" + num2strFourDecimal(rc) + "Photo.wrl", rc);
+        depthPixSizeMapVis->saveToWrl(outDir + "refineRc_" + num2strFourDecimal(rc) + "Vis.wrl", rc);
     }
 
     delete depthPixSizeMapVis;
@@ -337,7 +336,7 @@ void refineDepthMaps(multiviewParams* mp, mv_prematch_cams* pc, const staticVect
 {
     int num_gpus = listCUDADevices(true);
     int num_cpu_threads = omp_get_num_procs();
-    printf("GPU devicse %i, CPU threads %i\n", num_gpus, num_cpu_threads);
+    std::cout << "Number of GPU devices: " << num_gpus << ", number of CPU threads: " << num_cpu_threads << std::endl;
     int numthreads = std::min(num_gpus, num_cpu_threads);
 
     int num_gpus_to_use = mp->mip->_ini.get<int>("refineRc.num_gpus_to_use", 1);
@@ -357,7 +356,7 @@ void refineDepthMaps(multiviewParams* mp, mv_prematch_cams* pc, const staticVect
         {
             int cpu_thread_id = omp_get_thread_num();
             int CUDADeviceNo = cpu_thread_id % numthreads;
-            printf("CPU thread %d (of %d) uses CUDA device %d\n", cpu_thread_id, numthreads, CUDADeviceNo);
+            std::cout << "CPU thread " << cpu_thread_id << " (of " << numthreads << ") uses CUDA device: " << CUDADeviceNo << std::endl;
 
             int rcFrom = CUDADeviceNo * (cams.size() / numthreads);
             int rcTo = (CUDADeviceNo + 1) * (cams.size() / numthreads);

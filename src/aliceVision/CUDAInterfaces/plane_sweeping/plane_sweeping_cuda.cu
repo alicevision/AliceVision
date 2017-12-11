@@ -208,15 +208,15 @@ int ps_listCUDADevices(bool verbose)
     CHECK_CUDA_ERROR();
     if(err != cudaSuccess)
     {
-        printf("Error getting device count\n");
-        return (1);
-    };
+        printf("Error getting cuda device count");
+        return 0;
+    }
 
     if(num_gpus < 1)
     {
-        printf("ERROR: no CUDA capable devices were detected\n");
-        // exit(1);
-    };
+        printf("ERROR: no CUDA capable devices detected");
+        return 0;
+    }
 
     if(verbose == true)
     {
@@ -228,7 +228,7 @@ int ps_listCUDADevices(bool verbose)
             cudaGetDeviceProperties(&dprop, i);
             printf("   %d: %s\n", i, dprop.name);
         }
-    };
+    }
 
     return num_gpus;
 };
@@ -418,7 +418,7 @@ void ps_planeSweepingGPUPixels(CudaArray<uchar4, 2>** ps_texs_arr, CudaHostMemor
                                CudaHostMemoryHeap<float, 2>& depths_hmh, int slicesAtTime, int ntimes, int npixs,
                                int wsh, int kernelSizeHalf, int nPlanes, int scale, int CUDAdeviceNo,
                                int ncamsAllocated, int scales, bool verbose, bool doUsePixelsDepths, int nbest,
-                               bool userTcOrPixSize, float gammaC, float gammaP, bool subPixel, float epipShift = 0.0f
+                               bool useTcOrRcPixSize, float gammaC, float gammaP, bool subPixel, float epipShift = 0.0f
                                /*,
                                CudaHostMemoryHeap<float,2>  &sliceRef_hmh,
                                CudaHostMemoryHeap<float3,2>  &slicePts_hmh,
@@ -498,7 +498,7 @@ void ps_planeSweepingGPUPixels(CudaArray<uchar4, 2>** ps_texs_arr, CudaHostMemor
         slice_kernel<<<grid, block>>>(slice_dmp.getBuffer(), slice_dmp.stride()[0],
                                       // slicePts_dmp.getBuffer(), slicePts_dmp.stride()[0],
                                       nPlanes, slicesAtTime, width, height, wsh, t, npixs, nPlanes, doUsePixelsDepths,
-                                      userTcOrPixSize, gammaC, gammaP, epipShift);
+                                      useTcOrRcPixSize, gammaC, gammaP, epipShift);
         cudaThreadSynchronize();
 
         copy((slice_arr), slice_dmp);
@@ -508,7 +508,7 @@ void ps_planeSweepingGPUPixels(CudaArray<uchar4, 2>** ps_texs_arr, CudaHostMemor
                                                 // bdid_dmp.getBuffer(), bdid_dmp.stride()[0],
                                                 bd_dmp.getBuffer(), bd_dmp.stride()[0], bs_dmp.getBuffer(),
                                                 bs_dmp.stride()[0], slicesAtTime, nPlanes, t, npixs, wsh, width, height,
-                                                doUsePixelsDepths, nbest, userTcOrPixSize, subPixel);
+                                                doUsePixelsDepths, nbest, useTcOrRcPixSize, subPixel);
         cudaThreadSynchronize();
 
         cudaUnbindTexture(sliceTex);
@@ -951,7 +951,7 @@ void ps_computeSimilarityVolume(CudaArray<uchar4, 2>** ps_texs_arr,
                                 CudaHostMemoryHeap<float, 2>& depths_hmh, int nDepthsToSearch, int slicesAtTime,
                                 int ntimes, int npixs, int wsh, int kernelSizeHalf, int nDepths, int scale,
                                 int CUDAdeviceNo, int ncamsAllocated, int scales, bool verbose, bool doUsePixelsDepths,
-                                int nbest, bool userTcOrPixSize, float gammaC, float gammaP, bool subPixel,
+                                int nbest, bool useTcOrRcPixSize, float gammaC, float gammaP, bool subPixel,
                                 float epipShift)
 {
     clock_t tall = tic();
@@ -1025,7 +1025,7 @@ float ps_planeSweepingGPUPixelsVolume(CudaArray<uchar4, 2>** ps_texs_arr,
                                       CudaHostMemoryHeap<float, 2>& depths_hmh, int nDepthsToSearch, int slicesAtTime,
                                       int ntimes, int npixs, int wsh, int kernelSizeHalf, int nDepths, int scale,
                                       int CUDAdeviceNo, int ncamsAllocated, int scales, bool verbose,
-                                      bool doUsePixelsDepths, int nbest, bool userTcOrPixSize, float gammaC,
+                                      bool doUsePixelsDepths, int nbest, bool useTcOrRcPixSize, float gammaC,
                                       float gammaP, bool subPixel, float epipShift)
 {
     testCUDAdeviceNo(CUDAdeviceNo);
@@ -1042,7 +1042,7 @@ float ps_planeSweepingGPUPixelsVolume(CudaArray<uchar4, 2>** ps_texs_arr,
     ps_computeSimilarityVolume(ps_texs_arr, volSim_dmp, cams, ncams, width, height, volStepXY, volDimX, volDimY,
                                volDimZ, volLUX, volLUY, volLUZ, volPixs_hmh, depths_hmh, nDepthsToSearch, slicesAtTime,
                                ntimes, npixs, wsh, kernelSizeHalf, nDepths, scale, CUDAdeviceNo, ncamsAllocated, scales,
-                               verbose, doUsePixelsDepths, nbest, userTcOrPixSize, gammaC, gammaP, subPixel, epipShift);
+                               verbose, doUsePixelsDepths, nbest, useTcOrRcPixSize, gammaC, gammaP, subPixel, epipShift);
 
     //--------------------------------------------------------------------------------------------------
     // copy to host

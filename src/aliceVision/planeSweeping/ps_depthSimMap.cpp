@@ -5,8 +5,10 @@
 
 #include "ps_depthSimMap.hpp"
 
-#include <aliceVision/structures/mv_filesio.hpp>
+#include <aliceVision/common/fileIO.hpp>
 #include <aliceVision/structures/mv_geometry.hpp>
+#include <aliceVision/structures/jetColorMap.hpp>
+#include <aliceVision/imageIO/image.hpp>
 
 #include <iostream>
 
@@ -53,16 +55,13 @@ void ps_depthSimMap::add11(ps_depthSimMap* depthSimMap)
 {
     if((scale != 1) || (step != 1))
     {
-        printf("Warning you can add just to cale1 step1 map!\n");
-        exit(1);
+        throw std::runtime_error("Error ps_depthSimMap: You can only add to scale1-step1 map.");
     }
 
     int k = (depthSimMap->step * depthSimMap->scale) / 2;
-    int k1 = (depthSimMap->step * depthSimMap->scale) / 2;
+    int k1 = k;
     if((depthSimMap->step * depthSimMap->scale) % 2 == 0)
-    {
-        k1 -= 1;
-    }
+        k -= 1;
 
     for(int i = 0; i < depthSimMap->dsm->size(); i++)
     {
@@ -78,7 +77,8 @@ void ps_depthSimMap::add11(ps_depthSimMap* depthSimMap)
             {
                 for(int xp = x - k; xp <= x + k1; xp++)
                 {
-                    if((xp >= 0) && (xp < w) && (yp >= 0) && (yp < h) && (depthSim.sim > (*dsm)[yp * w + xp].sim))
+                    if((xp >= 0) && (xp < w) && (yp >= 0) && (yp < h) && // check image borders
+                       (depthSim.sim > (*dsm)[yp * w + xp].sim))
                     {
                         isBest = false;
                     }
@@ -106,8 +106,7 @@ void ps_depthSimMap::add(ps_depthSimMap* depthSimMap)
 {
     if((scale != depthSimMap->scale) || (step != depthSimMap->step))
     {
-        printf("Warning you can add just to the same scale and step map!\n");
-        exit(1);
+        throw std::runtime_error("Error ps_depthSimMap: You can only add to the same scale and step map.");
     }
 
     for(int i = 0; i < dsm->size(); i++)
@@ -421,84 +420,53 @@ staticVector<float>* ps_depthSimMap::getSimMapTStep1()
     return simMap;
 }
 
-IplImage* ps_depthSimMap::convertToImage(float simThr)
-{
-    point2d maxMinDepth;
-    maxMinDepth.x = getPercentileDepth(0.9) * 1.1;
-    maxMinDepth.y = getPercentileDepth(0.01) * 0.8;
-
-    point2d maxMinSim = point2d(simThr, -1.0f);
-    if(simThr < -1.0f)
-    {
-        point2d autoMaxMinSim = getMaxMinSim();
-        // only use it if the default range is valid
-        if (std::abs(autoMaxMinSim.x - autoMaxMinSim.y) > std::numeric_limits<float>::epsilon())
-            maxMinSim = autoMaxMinSim;
-
-        if(mp->verbose)
-            printf("max %f, min %f\n", maxMinSim.x, maxMinSim.y);
-    }
-
-    IplImage* img = cvCreateImage(cvSize(2 * w, h), IPL_DEPTH_8U, 3);
-    for(int y = 0; y < h; y++)
-    {
-        for(int x = 0; x < w; x++)
-        {
-            CvScalar c;
-            rgb cc;
-            const DepthSim& depthSim = (*dsm)[y * w + x];
-            float depth = (depthSim.depth - maxMinDepth.y) / (maxMinDepth.x - maxMinDepth.y);
-            cc = getColorFromJetColorMap(depth);
-            c.val[0] = (float)cc.r;
-            c.val[1] = (float)cc.g;
-            c.val[2] = (float)cc.b;
-            cvSet2D(img, y, x, c);
-
-            float sim = (depthSim.sim - maxMinSim.y) / (maxMinSim.x - maxMinSim.y);
-            cc = getColorFromJetColorMap(sim);
-            c.val[0] = (float)cc.r;
-            c.val[1] = (float)cc.g;
-            c.val[2] = (float)cc.b;
-            cvSet2D(img, y, w + x, c);
-        }
-    }
-
-    return img;
-}
-
-void ps_depthSimMap::show(float simThr)
-{
-    IplImage* img = convertToImage(simThr);
-    int scaleFactor = 1;
-
-    IplImage* imgr = cvCreateImage(cvSize((2 * w) / scaleFactor, h / scaleFactor), IPL_DEPTH_8U, 3);
-    cvResize(img, imgr);
-
-    cvShowImage("depthSimMap", imgr);
-    cvWaitKey();
-    cvReleaseImage(&img);
-    cvReleaseImage(&imgr);
-}
-
 void ps_depthSimMap::saveToWrlPng(std::string wrlFileName, int rc, float simThr)
 {
-    saveToPng(wrlFileName + ".depthSimMap.png", simThr);
+    saveToImage(wrlFileName + ".depthSimMap.png", simThr);
     saveToWrl(wrlFileName, rc);
 }
 
-void ps_depthSimMap::saveToPng(std::string pngFileName, float simThr)
+void ps_depthSimMap::saveToImage(std::string filename, float simThr)
 {
+    const int bufferWidth = 2 * w;
+    std::vector<Color> colorBuffer(bufferWidth * h);
+
     try 
     {
-        IplImage* img = convertToImage(simThr);
-        std::string imageFileName = pngFileName;
-        if (cvSaveImage(imageFileName.c_str(), img) == 0)
-            printf("Could not save: %s\n", imageFileName.c_str());
-        cvReleaseImage(&img);
+        point2d maxMinDepth;
+        maxMinDepth.x = getPercentileDepth(0.9) * 1.1;
+        maxMinDepth.y = getPercentileDepth(0.01) * 0.8;
+
+        point2d maxMinSim = point2d(simThr, -1.0f);
+        if(simThr < -1.0f)
+        {
+            point2d autoMaxMinSim = getMaxMinSim();
+            // only use it if the default range is valid
+            if (std::abs(autoMaxMinSim.x - autoMaxMinSim.y) > std::numeric_limits<float>::epsilon())
+                maxMinSim = autoMaxMinSim;
+
+            if(mp->verbose)
+                printf("max %f, min %f\n", maxMinSim.x, maxMinSim.y);
+        }
+
+        for(int y = 0; y < h; y++)
+        {
+            for(int x = 0; x < w; x++)
+            {
+                const DepthSim& depthSim = (*dsm)[y * w + x];
+                float depth = (depthSim.depth - maxMinDepth.y) / (maxMinDepth.x - maxMinDepth.y);
+                colorBuffer.at(y * bufferWidth + x) = getColorFromJetColorMap(depth);
+
+                float sim = (depthSim.sim - maxMinSim.y) / (maxMinSim.x - maxMinSim.y);
+                colorBuffer.at(y * bufferWidth + w + x) = getColorFromJetColorMap(sim);
+            }
+        }
+
+        imageIO::writeImage(filename, bufferWidth, h, colorBuffer);
     }
     catch(...)
     {
-        std::cout << "Failed to save " << pngFileName << " (simThr :" << simThr << ")" << std::endl;
+        std::cout << "Failed to save " << filename << " (simThr :" << simThr << ")" << std::endl;
     }
 }
 
@@ -581,30 +549,19 @@ void ps_depthSimMap::saveToWrl(std::string wrlFileName, int rc)
 
 void ps_depthSimMap::save(int rc, staticVector<int>* tcams)
 {
-    staticVector<float>* _depthMap = getDepthMapTStep1();
-    staticVector<float>* _simMap = getSimMapTStep1();
+    staticVector<float>* depthMap = getDepthMapStep1();
+    staticVector<float>* simMap = getSimMapStep1();
 
-	// TODO: remove "+ 1"
-    saveArrayToFile<float>(mv_getFileName(mp->mip, rc + 1, mp->mip->MV_FILE_TYPE_depthMap, scale), _depthMap);
-    saveArrayToFile<float>(mv_getFileName(mp->mip, rc + 1, mp->mip->MV_FILE_TYPE_simMap, scale), _simMap);
-    if(scale == 1) // TODO: check if necessary
+    const int width = mp->mip->getWidth(rc) / scale;
+    const int height = mp->mip->getHeight(rc) / scale;
+
+    // TODO: remove "+ 1"
+    imageIO::writeImage(mv_getFileName(mp->mip, rc + 1, EFileType::depthMap, scale), width, height, depthMap->getDataWritable(), imageIO::EImageQuality::LOSSLESS);
+    imageIO::writeImage(mv_getFileName(mp->mip, rc + 1, EFileType::simMap, scale), width, height, simMap->getDataWritable());
+
     {
-        saveArrayToFile<float>(mv_getFileName(mp->mip, rc + 1, mp->mip->MV_FILE_TYPE_depthMap, 0), _depthMap);
-        saveArrayToFile<float>(mv_getFileName(mp->mip, rc + 1, mp->mip->MV_FILE_TYPE_simMap, 0), _simMap);
-    }
-
-    delete _depthMap;
-    delete _simMap;
-
-    point2d maxMinDepth = getMaxMinDepth();
-
-    FILE* f = mv_openFile(mp->mip, mp->indexes[rc], mp->mip->MV_FILE_TYPE_depthMapInfo, "w");
-    if(f == nullptr)
-    {
-        printf("WARNING!!!!\n");
-    }
-    else
-    {
+        point2d maxMinDepth = getMaxMinDepth();
+        FILE* f = mv_openFile(mp->mip, mp->indexes[rc], EFileType::depthMapInfo, "w");
         int nbTCs = tcams ? tcams->size() : 0;
         fprintf(f, "minDepth %f, maxDepth %f, ntcams %i, tcams", maxMinDepth.y, maxMinDepth.x, nbTCs);
         for(int c = 0; c < nbTCs; c++)
@@ -618,76 +575,75 @@ void ps_depthSimMap::save(int rc, staticVector<int>* tcams)
 
 void ps_depthSimMap::load(int rc, int fromScale)
 {
-    staticVector<float>* _depthMap =
-        loadArrayFromFile<float>(mv_getFileName(mp->mip, rc + 1, mp->mip->MV_FILE_TYPE_depthMap, fromScale));
-    staticVector<float>* _simMap =
-        loadArrayFromFile<float>(mv_getFileName(mp->mip, rc + 1, mp->mip->MV_FILE_TYPE_simMap, fromScale));
+    int width, height;
 
-    initFromDepthMapTAndSimMapT(_depthMap, _simMap, fromScale);
+    staticVector<float> depthMap;
+    staticVector<float> simMap;
 
-    delete _depthMap;
-    delete _simMap;
+    imageIO::readImage(mv_getFileName(mp->mip, rc + 1, EFileType::depthMap, fromScale), width, height, depthMap.getDataWritable());
+    imageIO::readImage(mv_getFileName(mp->mip, rc + 1, EFileType::simMap, fromScale), width, height, simMap.getDataWritable());
+
+    imageIO::transposeImage(width, height, depthMap.getDataWritable());
+    imageIO::transposeImage(width, height, simMap.getDataWritable());
+
+    initFromDepthMapTAndSimMapT(&depthMap, &simMap, fromScale);
 }
 
-void ps_depthSimMap::saveToBin(std::string depthMapFileName, std::string simMapFileName)
+void ps_depthSimMap::saveRefine(int rc, std::string depthMapFileName, std::string simMapFileName)
 {
-    staticVector<float>* _depthMap = new staticVector<float>(dsm->size());
-    staticVector<float>* _simMap = new staticVector<float>(dsm->size());
-    _depthMap->resize(dsm->size());
-    _simMap->resize(dsm->size());
+    const int width = mp->mip->getWidth(rc);
+    const int height = mp->mip->getHeight(rc);
+    const int size = width * height;
 
-    for(int i = 0; i < dsm->size(); i++)
+    std::vector<float> depthMap(size);
+    std::vector<float> simMap(size);
+
+    for(int i = 0; i < dsm->size(); ++i)
     {
-        (*_depthMap)[i] = (*dsm)[i].depth;
-        (*_simMap)[i] = (*dsm)[i].sim;
+        depthMap.at(i) = (*dsm)[i].depth;
+        simMap.at(i) = (*dsm)[i].sim;
     }
-    saveArrayToFile<float>(depthMapFileName, _depthMap);
-    saveArrayToFile<float>(simMapFileName, _simMap);
-    delete _depthMap;
-    delete _simMap;
+
+    imageIO::writeImage(depthMapFileName, width, height, depthMap, imageIO::EImageQuality::LOSSLESS);
+    imageIO::writeImage(simMapFileName, width, height, simMap);
 }
 
-bool ps_depthSimMap::loadFromBin(std::string depthMapFileName, std::string simMapFileName)
+bool ps_depthSimMap::loadRefine(std::string depthMapFileName, std::string simMapFileName)
 {
-    staticVector<float>* _depthMap = loadArrayFromFile<float>(depthMapFileName, true);
-    staticVector<float>* _simMap = loadArrayFromFile<float>(simMapFileName, true);
-    bool ok = false;
+    int width;
+    int height;
 
-    if((_depthMap != nullptr) && (_simMap != nullptr))
+    std::vector<float> depthMap;
+    std::vector<float> simMap;
+
+    imageIO::readImage(depthMapFileName, width, height, depthMap);
+    imageIO::readImage(simMapFileName, width, height, simMap);
+
+    for(int i = 0; i < dsm->size(); ++i)
     {
-        for(int i = 0; i < dsm->size(); i++)
-        {
-            (*dsm)[i].depth = (*_depthMap)[i];
-            (*dsm)[i].sim = (*_simMap)[i];
-        }
-        ok = true;
+        (*dsm)[i].depth = depthMap.at(i);
+        (*dsm)[i].sim = simMap.at(i);
     }
-    if(_depthMap != nullptr)
-        delete _depthMap;
-    if(_simMap != nullptr)
-        delete _simMap;
 
-    return ok;
+    return true;
 }
 
-bool ps_depthSimMap::loadFromBin(std::string depthMapFileName, float defaultSim)
+bool ps_depthSimMap::loadRefine(std::string depthMapFileName, float defaultSim)
 {
-    staticVector<float>* _depthMap = loadArrayFromFile<float>(depthMapFileName, true);
-    bool ok = false;
+  int width;
+  int height;
 
-    if(_depthMap != nullptr)
-    {
-        for(int i = 0; i < dsm->size(); i++)
-        {
-            (*dsm)[i].depth = (*_depthMap)[i];
-            (*dsm)[i].sim = defaultSim;
-        }
-        ok = true;
-    }
-    if(_depthMap != nullptr)
-        delete _depthMap;
+  std::vector<float> depthMap;
 
-    return ok;
+  imageIO::readImage(depthMapFileName, width, height, depthMap);
+
+  for(int i = 0; i < dsm->size(); ++i)
+  {
+      (*dsm)[i].depth = depthMap.at(i);
+      (*dsm)[i].sim = defaultSim;
+  }
+
+  return true;
 }
 
 mv_universe* ps_depthSimMap::segment(float alpha, int rc)

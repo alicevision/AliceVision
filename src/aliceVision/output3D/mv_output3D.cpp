@@ -5,13 +5,11 @@
 
 #include "mv_output3D.hpp"
 
-#include <aliceVision/structures/mv_filesio.hpp>
+#include <aliceVision/common/fileIO.hpp>
+#include <aliceVision/imageIO/image.hpp>
 #include <aliceVision/structures/mv_geometry.hpp>
-
+#include <aliceVision/structures/jetColorMap.hpp>
 #include <boost/filesystem.hpp>
-
-#include <opencv/cv.h>
-#include <opencv/highgui.h>
 
 #include <unordered_map>
 #include <iostream>
@@ -128,8 +126,11 @@ int mv_output3D::write2PlyPts(FILE* plyf, bool dobinary, int  /*ntris*/, int  /*
     float* ludm;
 
     // write pts
-    const std::string fileNameStrIn = mv_getFileNamePrefix(mp->mip, rc + 1) + "." + mp->mip->imageExt;
-    IplImage* bmpimg = cvLoadImage(fileNameStrIn.c_str());
+    const std::string fileNameStrIn = mv_getFileNamePrefix(mp->mip->mvDir, mp->mip, rc + 1) + "." + mp->mip->imageExt;
+
+    int rgbWidth, rgbHeight;
+    std::vector<rgb> rgbBuffer;
+    imageIO::readImage(fileNameStrIn, rgbWidth, rgbHeight, rgbBuffer);
 
     ludm = &(*depthMap)[0 * height + 0];
     for(int x = 0; x < width; x++)
@@ -142,18 +143,12 @@ int mv_output3D::write2PlyPts(FILE* plyf, bool dobinary, int  /*ntris*/, int  /*
 
             if((*ludm) > 0.0)
             {
-                CvScalar lug;
+                rgb lug;
                 point3d p = mp->CArr[rc] + (mp->iCamArr[rc] * point2d(pix.x, pix.y)).normalize() * (*ludm);
                 if(textureOrRc)
-                {
-                    lug = cvGet2D(bmpimg, (int)pix.y, (int)pix.x);
-                }
+                    lug = rgbBuffer.at((int)pix.y * width + (int)pix.x); // rgbBuffer(pix.x, pix.y)
                 else
-                {
-                    lug.val[0] = col->z;
-                    lug.val[1] = col->y;
-                    lug.val[2] = col->x;
-                }
+                    lug= rgb(col->z, col->y, col->x);
 
                 if(dobinary)
                 {
@@ -178,7 +173,7 @@ int mv_output3D::write2PlyPts(FILE* plyf, bool dobinary, int  /*ntris*/, int  /*
                     if(write_color)
                     {
                         fprintf(plyf, "%f %f %f %i %i %i%c", (float)(p.x), (float)(p.y), (float)(p.z),
-                                (unsigned char)lug.val[0], (unsigned char)lug.val[1], (unsigned char)lug.val[2], 10);
+                                lug.r, lug.g, lug.b, 10);
                     }
                     else
                     {
@@ -191,8 +186,6 @@ int mv_output3D::write2PlyPts(FILE* plyf, bool dobinary, int  /*ntris*/, int  /*
             ++ludm;
         }
     }
-
-    cvReleaseImage(&bmpimg);
     return nwritten;
 }
 
@@ -372,8 +365,7 @@ void mv_output3D::depthMap2Ply(const std::string& plyFileName, staticVector<floa
 
     if(plyf == nullptr)
     {
-        printf("Could not open output ply file %s\n", plyFileName.c_str());
-        exit(1);
+        throw std::runtime_error("mv_output3D::depthMap2Ply: Could not open output ply file: " + plyFileName);
     }
 
     fprintf(plyf, "ply%c", 10);
@@ -417,7 +409,7 @@ void mv_output3D::savePrematchToWrl(const std::string& wrname, int shift, int st
     for(int rc = shift; rc < mp->ncams; rc += step)
     {
         staticVector<seedPoint>* seeds;
-        loadSeedsFromFile(&seeds, mp->indexes[rc], mp->mip, mp->mip->MV_FILE_TYPE_seeds);
+        loadSeedsFromFile(&seeds, mp->indexes[rc], mp->mip, EFileType::seeds);
 
         staticVector<orientedPoint>* ops = new staticVector<orientedPoint>(seeds->size());
 
@@ -465,7 +457,7 @@ void mv_output3D::savePrematchToWrl(const std::string& wrname)
     for(int rc = 0; rc < mp->ncams; rc++)
     {
         staticVector<seedPoint>* seeds;
-        loadSeedsFromFile(&seeds, mp->indexes[rc], mp->mip, mp->mip->MV_FILE_TYPE_seeds);
+        loadSeedsFromFile(&seeds, mp->indexes[rc], mp->mip, EFileType::seeds);
 
         staticVector<orientedPoint>* ops = new staticVector<orientedPoint>(seeds->size());
 
@@ -1131,7 +1123,7 @@ void mv_output3D::create_wrl(const multiviewParams* mp, int filerPerc, int winSi
     const std::string textName = mp->mip->newDir + wrlname + ".png";
     const std::string textFileName = wrlname + ".png";
 
-    IplImage* bmp = cvCreateImage(cvSize(wp, hp), IPL_DEPTH_8U, 3);
+    std::vector<Color> bmp(wp * hp);
 
     // save texture to file
     FILE* f = fopen(fileName.c_str(), "w");
@@ -1248,7 +1240,6 @@ void mv_output3D::create_wrl(const multiviewParams* mp, int filerPerc, int winSi
 
     fprintf(f, "\t\t\t\tcoord Coordinate { point [\n");
     int oldrc = -1;
-    IplImage* bmpimg = nullptr;
 
     for(int i = 0; i < (int)seeds.size(); i++)
     {
@@ -1278,14 +1269,13 @@ void mv_output3D::create_wrl(const multiviewParams* mp, int filerPerc, int winSi
         int yt = i - xt * h;
 
         // load original (color) image
+        std::vector<Color> bmpimg;
+
         if(oldrc != seedsrc[i])
         {
-            if(bmpimg != nullptr)
-            {
-                cvReleaseImage(&bmpimg);
-            }
-            const std::string fileNameStrIn = mv_getFileNamePrefix(mp->mip, seedsrc[i] + 1) + "." + mp->mip->imageExt;
-            bmpimg = cvLoadImage(fileNameStrIn.c_str());
+            const std::string fileNameStrIn = mv_getFileNamePrefix(mp->mip->mvDir, mp->mip, seedsrc[i] + 1) + "." + mp->mip->imageExt;
+            int imageWidth, imageHeight;
+            imageIO::readImage(fileNameStrIn, imageWidth, imageHeight, bmpimg);
         }
         oldrc = seedsrc[i];
 
@@ -1297,9 +1287,13 @@ void mv_output3D::create_wrl(const multiviewParams* mp, int filerPerc, int winSi
                 {
                     point3d X = seeds[i].op.p + vectx * pixSize * (float)x + vecty * pixSize * (float)y;
                     point2d pix;
+
+                    const int width = mp->mip->getWidth(seedsrc[i]);
+                    const int height = mp->mip->getHeight(seedsrc[i]);
+
                     mp->getPixelFor3DPoint(&pix, X, seedsrc[i]);
-                    if((pix.x > g_border) && (pix.x < mp->mip->getWidth(seedsrc[i])) && (pix.y > g_border) &&
-                       (pix.y < mp->mip->getHeight(seedsrc[i])))
+                    if((pix.x > g_border) && (pix.x < width) && (pix.y > g_border) &&
+                       (pix.y < height))
                     {
                         // bmpimg.GetPixel(pix.x, pix.y, &c);
 
@@ -1307,35 +1301,24 @@ void mv_output3D::create_wrl(const multiviewParams* mp, int filerPerc, int winSi
                         int yp = (int)floor(pix.y);
 
                         // precision to 4 decimal places
-                        float ui = pix.x - floor(pix.x);
-                        float vi = pix.y - floor(pix.y);
+                        const float ui = pix.x - floor(pix.x);
+                        const float vi = pix.y - floor(pix.y);
 
                         // bilinear interpolation of the pixel intensity value
-                        CvScalar lug = cvGet2D(bmpimg, yp, xp);
-                        CvScalar rug = cvGet2D(bmpimg, yp, (xp + 1));
-                        CvScalar rdg = cvGet2D(bmpimg, (yp + 1), (xp + 1));
-                        CvScalar ldg = cvGet2D(bmpimg, (yp + 1), xp);
+                        const std::size_t index = yp * width + xp;
+                        const Color lug = bmpimg.at(index);             //bmpimg(x, y)
+                        const Color rug = bmpimg.at(index + 1);         //bmpimg(x + 1, y)
+                        const Color rdg = bmpimg.at(index + width + 1); //bmpimg(x + 1, y + 1)
+                        const Color ldg = bmpimg.at(index + width);     //bmpimg(x, y + 1)
 
-                        float ugr = (float)lug.val[0] + (float)(rug.val[0] - lug.val[0]) * ui;
-                        float ugg = (float)lug.val[1] + (float)(rug.val[1] - lug.val[1]) * ui;
-                        float ugb = (float)lug.val[2] + (float)(rug.val[2] - lug.val[2]) * ui;
-
-                        float dgr = (float)ldg.val[0] + (float)(rdg.val[0] - ldg.val[0]) * ui;
-                        float dgg = (float)ldg.val[1] + (float)(rdg.val[1] - ldg.val[1]) * ui;
-                        float dgb = (float)ldg.val[2] + (float)(rdg.val[2] - ldg.val[2]) * ui;
-
-                        float gr = ugr + (dgr - ugr) * vi;
-                        float gg = ugg + (dgg - ugg) * vi;
-                        float gb = ugb + (dgb - ugb) * vi;
-
-                        CvScalar c;
-                        c.val[0] = gb;
-                        c.val[1] = gg;
-                        c.val[2] = gr;
+                        const Color ug = lug + (rug - lug) * ui;
+                        const Color dg = ldg + (rdg - ldg) * ui;
+                        const Color g = ug + (dg - ug) * vi;
 
                         xp = xt * s + x + winSizeHalf;
                         yp = yt * s + y + winSizeHalf;
-                        cvSet2D(bmp, yp, xp, c);
+
+                        bmp.at(yp * wp + xp) = g; // bmp(xp, yp)
                     }
                 }
             }
@@ -1347,13 +1330,14 @@ void mv_output3D::create_wrl(const multiviewParams* mp, int filerPerc, int winSi
             {
                 for(int y = -winSizeHalf; y <= winSizeHalf; y++)
                 {
-                    int xp = xt * s + x + winSizeHalf;
-                    int yp = yt * s + y + winSizeHalf;
-                    CvScalar c;
-                    c.val[0] = (unsigned char)colors[seedsrc[i]].x;
-                    c.val[1] = (unsigned char)colors[seedsrc[i]].y;
-                    c.val[2] = (unsigned char)colors[seedsrc[i]].z;
-                    cvSet2D(bmp, yp, xp, c);
+                    const int xp = xt * s + x + winSizeHalf;
+                    const int yp = yt * s + y + winSizeHalf;
+                    Color c;
+                    c.r = static_cast<float>(colors[seedsrc[i]].x);
+                    c.g = static_cast<float>(colors[seedsrc[i]].y);
+                    c.b = static_cast<float>(colors[seedsrc[i]].z);
+
+                    bmp.at(yp * wp + xp) = c;
                 }
             }
         }
@@ -1364,15 +1348,16 @@ void mv_output3D::create_wrl(const multiviewParams* mp, int filerPerc, int winSi
             {
                 for(int y = -winSizeHalf; y <= winSizeHalf; y++)
                 {
-                    float mar = 1.0 - fabs(simThr);
-                    unsigned char col = (unsigned char)((((-seeds[i].op.sim) - fabs(simThr)) / mar) * 256.0);
-                    int xp = xt * s + x + winSizeHalf;
-                    int yp = yt * s + y + winSizeHalf;
-                    CvScalar c;
-                    c.val[0] = 256 - col;
-                    c.val[1] = col;
-                    c.val[2] = 0;
-                    cvSet2D(bmp, yp, xp, c);
+                    const float mar = 1.0 - fabs(simThr);
+                    const float col = ((-seeds[i].op.sim) - fabs(simThr)) / mar;
+                    const int xp = xt * s + x + winSizeHalf;
+                    const int yp = yt * s + y + winSizeHalf;
+                    Color c;
+                    c.r = 1.0f - col;
+                    c.g = col;
+                    c.b = 0;
+
+                    bmp.at(yp * wp + xp) = c;
                 }
             }
         }
@@ -1427,14 +1412,7 @@ void mv_output3D::create_wrl(const multiviewParams* mp, int filerPerc, int winSi
 
     fclose(f);
 
-    if(bmpimg != nullptr)
-    {
-        cvReleaseImage(&bmpimg);
-    }
-
-    if(cvSaveImage(textName.c_str(), bmp) == 0)
-        printf("Could not save: %s\n", textName.c_str());
-    cvReleaseImage(&bmp);
+    imageIO::writeImage(textName, wp, hp, bmp);
 }
 
 void mv_output3D::printfGroupCamera_rc(FILE* f, const multiviewParams* mp, float ps, int rc)
@@ -1670,50 +1648,48 @@ void mv_output3D::create_wrl_pts(const multiviewParams* mp, const std::string& w
 
     // printf("writing cls\n");
 
-    IplImage* bmpimg = nullptr;
-
     t1 = initEstimate();
     for(int rc = shift; rc < mp->ncams; rc += step)
     {
-        const std::string fileNameStrIn = mv_getFileNamePrefix(mp->mip, rc + 1) + "." + mp->mip->imageExt;
-        bmpimg = cvLoadImage(fileNameStrIn.c_str());
+        const std::string fileNameStrIn = mv_getFileNamePrefix(mp->mip->mvDir,mp->mip, rc + 1) + "." + mp->mip->imageExt;
+        int imageWidth, imageHeight;
+        std::vector<Color> colorBuffer;
+        imageIO::readImage(fileNameStrIn, imageWidth, imageHeight, colorBuffer);
 
         // load all pts for reference camera
         staticVector<orientedPoint>* ops = loadOrientedPointsFromFile(mp->indexes[rc], mp->mip);
+
+        const int width = mp->mip->getWidth(rc);
+        const int height = mp->mip->getHeight(rc);
+
         for(int i = 0; i < ops->size(); i++)
         {
-            point3d p = (*ops)[i].p;
+            const point3d p = (*ops)[i].p;
 
             point2d pix;
             mp->getPixelFor3DPoint(&pix, p, rc);
-            if((pix.x > g_border) && (pix.x < mp->mip->getWidth(rc) - g_border) && (pix.y > g_border) &&
-               (pix.y < mp->mip->getHeight(rc) - g_border))
+            if((pix.x > g_border) && (pix.x < width - g_border) && (pix.y > g_border) &&
+               (pix.y < height - g_border))
             {
-                int xp = (int)floor(pix.x);
-                int yp = (int)floor(pix.y);
+                const int xp = (int)floor(pix.x);
+                const int yp = (int)floor(pix.y);
 
                 // precision to 4 decimal places
-                float ui = pix.x - floor(pix.x);
-                float vi = pix.y - floor(pix.y);
+                const float ui = pix.x - floor(pix.x);
+                const float vi = pix.y - floor(pix.y);
 
                 // bilinear interpolation of the pixel intensity value
-                CvScalar lug = cvGet2D(bmpimg, yp, xp);
-                CvScalar rug = cvGet2D(bmpimg, yp, (xp + 1));
-                CvScalar rdg = cvGet2D(bmpimg, (yp + 1), (xp + 1));
-                CvScalar ldg = cvGet2D(bmpimg, (yp + 1), xp);
-                float ugr = (float)lug.val[0] + (float)(rug.val[0] - lug.val[0]) * ui;
-                float ugg = (float)lug.val[1] + (float)(rug.val[1] - lug.val[1]) * ui;
-                float ugb = (float)lug.val[2] + (float)(rug.val[2] - lug.val[2]) * ui;
+                const std::size_t index = yp * width + xp;
+                const Color lug = colorBuffer.at(index);               //colorBuffer(xp, yp)
+                const Color rug = colorBuffer.at(index + 1);           //colorBuffer(xp + 1, yp)
+                const Color rdg = colorBuffer.at(index + width + 1);   //colorBuffer(xp + 1, yp + 1)
+                const Color ldg = colorBuffer.at(index + width);       //colorBuffer(xp, yp + 1)
 
-                float dgr = (float)ldg.val[0] + (float)(rdg.val[0] - ldg.val[0]) * ui;
-                float dgg = (float)ldg.val[1] + (float)(rdg.val[1] - ldg.val[1]) * ui;
-                float dgb = (float)ldg.val[2] + (float)(rdg.val[2] - ldg.val[2]) * ui;
+                const Color ug = lug + (rug - lug) * ui;
+                const Color dg = ldg + (rdg - ldg) * ui;
+                const Color g = ug + (dg - ug) * vi;
 
-                float gb = ugr + (dgr - ugr) * vi;
-                float gg = ugg + (dgg - ugg) * vi;
-                float gr = ugb + (dgb - ugb) * vi;
-
-                fprintf(f, "\t\t\t\t\t%7.8f %7.8f %7.8f \n", gr / 255.0f, gg / 255.0f, gb / 255.0f);
+                fprintf(f, "\t\t\t\t\t%7.8f %7.8f %7.8f \n", g.r, g.g, g.b);
                 // fprintf(f, "\t\t\t\t\t%7.8f %7.8f %7.8f \n", 0.0, 0.0, 0.0);
             }
             else
@@ -1721,8 +1697,6 @@ void mv_output3D::create_wrl_pts(const multiviewParams* mp, const std::string& w
                 fprintf(f, "\t\t\t\t\t%7.8f %7.8f %7.8f \n", 0.0, 0.0, 0.0);
             }
         }
-
-        cvReleaseImage(&bmpimg);
 
         delete ops;
         printfEstimate(rc, mp->ncams, t1);
@@ -2139,6 +2113,7 @@ void mv_output3D::convertPly2Wrl(const std::string& wrlFileName, const std::stri
     // printf("nseeds: %i\n",npts);
 }
 
+
 void mv_output3D::create_wrl_for_delaunay_cut(const multiviewParams* mp, const std::string& inputFileNameT,
                                               const std::string& inputFileNameRC, const std::string& wrlFileName, const std::string& wrlDir,
                                               int camerasPerOneOmni)
@@ -2151,6 +2126,8 @@ void mv_output3D::create_wrl_for_delaunay_cut(const multiviewParams* mp, const s
     create_wrl_for_delaunay_cut(mp, inputFileNameT, inputFileNameRC, wrlFileName, wrlDir, camerasPerOneOmni, cams);
     delete cams;
 }
+
+
 
 void mv_output3D::create_wrl_for_delaunay_cut(const multiviewParams* mp, const std::string& inputFileNameT,
                                               const std::string& inputFileNameRC, const std::string& wrlFileName, const std::string& wrlDir,
@@ -2169,35 +2146,31 @@ void mv_output3D::create_wrl_for_delaunay_cut(const multiviewParams* mp, const s
     {
         int RC = (*tcams)[C];
 
-        const std::string fileNameStr = mv_getFileNamePrefix(mp->mip, RC + 1) + "." + mp->mip->imageExt;
+        const std::string fileNameStr = mv_getFileNamePrefix(mp->mip->mvDir, mp->mip, RC + 1) + "." + mp->mip->imageExt;
 
-        IplImage* bmp = cvLoadImage(fileNameStr.c_str());
-        if(bmp != nullptr)
-        {
+        std::vector<Color> bmp, bmpr;
+        int imageWidth, imageHeight;
+        imageIO::readImage(fileNameStr, imageWidth, imageHeight, bmp);
 
-            // check image size...
-            if((mp->mip->getWidth(RC) == bmp->width) && (mp->mip->getHeight(RC) == bmp->height))
-            {
-                IplImage* bmpr = cvCreateImage(
-                    cvSize(mp->mip->getWidth(RC) / scaleFactor, mp->mip->getHeight(RC) / scaleFactor), IPL_DEPTH_8U, 3);
-                cvResize(bmp, bmpr);
-                const std::string fileNameStrOut = imgsdir + "/" + num2strFourDecimal(mp->indexes[RC]) + "._c.png";
-                if(cvSaveImage(fileNameStrOut.c_str(), bmpr) == 0)
-                    printf("Could not save: %s\n", fileNameStrOut.c_str());
-                cvReleaseImage(&bmpr);
-            }
-            else
-            {
-                printf("!width, height \n");
-                exit(EXIT_FAILURE);
-            }
-            cvReleaseImage(&bmp);
-        }
-        else
+        // resized image
+        const int w = mp->mip->getWidth(RC) / scaleFactor;
+        const int h = mp->mip->getHeight(RC) / scaleFactor;
+
+        // check image size...
+        if(mp->mip->getWidth(RC) == imageWidth && mp->mip->getHeight(RC) == imageHeight)
         {
-            printf("!LoadBitmapA(g_streamFactory, %s, bmp) \n", fileNameStr.c_str());
-            exit(EXIT_FAILURE);
+            std::stringstream s;
+            s << "Bad image dimension for camera : " << RC << "\n";
+            s << "- image path : " << fileNameStr << "\n";
+            s << "- expected dimension : " << mp->mip->getWidth(RC) << "x" << mp->mip->getHeight(RC) << "\n";
+            s << "- real dimension : " << imageWidth << "x" << imageHeight << "\n";
+            throw std::runtime_error(s.str());
         }
+
+        imageIO::resizeImage(imageWidth, imageHeight, scaleFactor, bmp, bmpr);
+
+        const std::string fileNameStrOut = imgsdir + "/" + num2strFourDecimal(mp->indexes[RC]) + "._c.png";
+        imageIO::writeImage(fileNameStrOut, w, h, bmpr);
     }
 
     long t1 = initEstimate();
@@ -2380,13 +2353,13 @@ void mv_output3D::create_wrl_for_delaunay_cut(const multiviewParams* mp, const s
     }
     finishEstimate();
 
-    /*
-    if (camerasPerOneOmni<=1) {
-            printfGroupCameras(f, mp, 0.001);
-    }else{
-            printfGroupCamerasOmniSequnece(f,mp,0.001,camerasPerOneOmni);
-    };
-    */
+
+    //if (camerasPerOneOmni<=1) {
+    //        printfGroupCameras(f, mp, 0.001);
+    //}else{
+    //        printfGroupCamerasOmniSequnece(f,mp,0.001,camerasPerOneOmni);
+    //};
+
 
     fclose(f);
 }
@@ -2719,7 +2692,7 @@ void mv_output3D::saveMvMeshToWrl(staticVector<float>* ptsValues, float minVal, 
     for(int i = 0; i < npts; i++)
     {
         float s = 1.0f - (maxVal - std::max(minVal, (*ptsValues)[i])) / (maxVal - minVal);
-        rgb col = getColorFromJetColorMap(s);
+        rgb col = getRGBFromJetColorMap(s);
         fprintf(f, "\t\t\t\t\t%f %f %f \n", (float)col.r / 255.0f, (float)col.g / 255.0f, (float)col.b / 255.0f);
     }
     fprintf(f, "] }\n\n");
@@ -3001,65 +2974,59 @@ void mv_output3D::saveMvMeshToWrl(int scaleFactor, mv_mesh* me, staticVector<Col
     {
         int RC = (*usedcams)[c];
 
-        const std::string fileNameStr = mv_getFileNamePrefix(mp->mip, RC + 1) + "." + mp->mip->imageExt;
+        const std::string fileNameStr = mv_getFileNamePrefix(mp->mip->mvDir, mp->mip, RC + 1) + "." + mp->mip->imageExt;
 
-        IplImage* bmp = cvLoadImage(fileNameStr.c_str());
+        std::vector<rgb> bmp, bmpr;
+        int imageWidth, imageHeight;
+        imageIO::readImage(fileNameStr, imageWidth, imageHeight, bmp);
+
+        // resized image
+        const int w = mp->mip->getWidth(RC) / scaleFactor;
+        const int h = mp->mip->getHeight(RC) / scaleFactor;
+
         // cvSmooth(bmp,bmp,CV_GAUSSIAN,11);
 
-        if(bmp != nullptr)
+        // check image size...
+        if(mp->mip->getWidth(RC) == imageWidth && mp->mip->getHeight(RC) == imageHeight)
         {
-
-            // check image size...
-            if((mp->mip->getWidth(RC) == bmp->width) && (mp->mip->getHeight(RC) == bmp->height))
-            {
-                IplImage* bmpr = cvCreateImage(
-                    cvSize(mp->mip->getWidth(RC) / scaleFactor, mp->mip->getHeight(RC) / scaleFactor), IPL_DEPTH_8U, 3);
-                cvResize(bmp, bmpr);
-
-                // staticVector<color> *camColScalesMap =
-                // loadArrayFromFile<color>(wrlDir+"colorScalesMap"+num2strFourDecimal(RC)+".bin");
-                // staticVector<color> *camColShiftsMap =
-                // loadArrayFromFile<color>(wrlDir+"colorShiftsMap"+num2strFourDecimal(RC)+".bin");
-
-                Color sc = (*camsColorScales)[RC];
-                Color sh = (*camsColorShifts)[RC];
-                int w = mp->mip->getWidth(RC) / scaleFactor;
-                int h = mp->mip->getHeight(RC) / scaleFactor;
-
-                for(int x = 0; x < w; x++)
-                {
-                    for(int y = 0; y < h; y++)
-                    {
-                        // color sc = (*camColScalesMap)[xx*hh+yy];
-                        // color sh = (*camColShiftsMap)[xx*hh+yy];
-                        CvScalar s = cvGet2D(bmpr, y, x);
-                        s.val[0] = (unsigned char)(std::max(0.0f, std::min(254.0f, (float)s.val[0] * sc.r + sh.r)));
-                        s.val[1] = (unsigned char)(std::max(0.0f, std::min(254.0f, (float)s.val[1] * sc.g + sh.g)));
-                        s.val[2] = (unsigned char)(std::max(0.0f, std::min(254.0f, (float)s.val[2] * sc.b + sh.b)));
-                        cvSet2D(bmpr, y, x, s);
-                    }
-                }
-
-                // delete camColScalesMap;
-                // delete camColShiftsMap;
-
-                const std::string fileNameStrOut = imgsdir + "/" + num2strFourDecimal(mp->indexes[RC]) + "._c.png";
-                if(cvSaveImage(fileNameStrOut.c_str(), bmpr) == 0)
-                    printf("Could not save: %s\n", fileNameStrOut.c_str());
-                cvReleaseImage(&bmpr);
-            }
-            else
-            {
-                printf("!width, height \n");
-                exit(EXIT_FAILURE);
-            }
-            cvReleaseImage(&bmp);
+              std::stringstream s;
+              s << "Bad image dimension for camera : " << RC << "\n";
+              s << "- image path : " << fileNameStr << "\n";
+              s << "- expected dimension : " << mp->mip->getWidth(RC) << "x" << mp->mip->getHeight(RC) << "\n";
+              s << "- real dimension : " << imageWidth << "x" << imageHeight << "\n";
+              throw std::runtime_error(s.str());
         }
-        else
+
+        imageIO::resizeImage(mp->mip->getWidth(RC), mp->mip->getHeight(RC), scaleFactor, bmp, bmpr);
+
+        // staticVector<color> *camColScalesMap =
+        // loadArrayFromFile<color>(wrlDir+"colorScalesMap"+num2strFourDecimal(RC)+".bin");
+        // staticVector<color> *camColShiftsMap =
+        // loadArrayFromFile<color>(wrlDir+"colorShiftsMap"+num2strFourDecimal(RC)+".bin");
+
+        Color sc = (*camsColorScales)[RC];
+        Color sh = (*camsColorShifts)[RC];
+
+        for(int x = 0; x < w; x++)
         {
-            printf("!LoadBitmapA(g_streamFactory, %s, bmp) \n", fileNameStr.c_str());
-            exit(EXIT_FAILURE);
+            for(int y = 0; y < h; y++)
+            {
+                // color sc = (*camColScalesMap)[xx*hh+yy];
+                // color sh = (*camColShiftsMap)[xx*hh+yy];
+
+                rgb& s = bmpr.at(y * w + x); //bmpr(x, y)
+
+                s.r = (unsigned char)(std::max(0.0f, std::min(254.0f, (float)s.r * sc.r + sh.r)));
+                s.g = (unsigned char)(std::max(0.0f, std::min(254.0f, (float)s.g * sc.g + sh.g)));
+                s.b = (unsigned char)(std::max(0.0f, std::min(254.0f, (float)s.b * sc.b + sh.b)));
+            }
         }
+
+        // delete camColScalesMap;
+        // delete camColShiftsMap;
+
+        const std::string fileNameStrOut = imgsdir + "/" + num2strFourDecimal(mp->indexes[RC]) + "._c.png";
+        imageIO::writeImage(fileNameStrOut, w, h, bmpr);
     }
 
     long t1 = initEstimate();
@@ -3456,10 +3423,10 @@ void mv_output3D::printfGroupCamerasDepth(FILE* f, const multiviewParams* mp, st
         vx = Xl;
         vy = Yl;
 
-        float mind, maxd;
-        getDepthMapInfoDepthLimits(rc + 1, mp->mip, mind, maxd);
+        // float mind, maxd;
+        // getDepthMapInfoDepthLimits(rc + 1, mp->mip, mind, maxd);
         // maxd = (1.0f/(n-vx-vy).size())*maxd;
-        maxd = 10.0;
+        float maxd = 10.0;
 
         fprintf(f, "\t\t\t\t\t%7.8f %7.8f %7.8f \n", p.x, p.y, p.z);
         fprintf(f, "\t\t\t\t\t%7.8f %7.8f %7.8f \n", p.x + (n.x - vx.x - vy.x) * maxd, p.y + (n.y - vx.y - vy.y) * maxd,
@@ -3567,7 +3534,7 @@ void mv_output3D::writeCamerasToWrl(staticVector<int>* tcams, const std::string&
     {
         int rc = (*tcams)[c];
         staticVector<seedPoint>* seeds;
-        loadSeedsFromFile(&seeds, mp->indexes[rc], mp->mip, mp->mip->MV_FILE_TYPE_seeds);
+        loadSeedsFromFile(&seeds, mp->indexes[rc], mp->mip, EFileType::seeds);
 
         for(int i = 0; i < seeds->size(); i++)
         {
@@ -3913,19 +3880,16 @@ int mv_output3D::saveMeshToWrlTrisAverageTextured(const std::string& dirName, co
         {
             ///////////////////////////////////////////////////////////////////////////////////////
             // create and fill texture map image
-            IplImage* bmp = cvCreateImage(cvSize(blockSide, blockSide), IPL_DEPTH_8U, 3);
+            std::vector<rgb> bmp(blockSide * blockSide);
             for(yp = 0; yp < blockSide; yp++)
             {
                 for(xp = 0; xp < blockSide; xp++)
                 {
-                    CvScalar c;
-                    c.val[0] =
-                        (unsigned char)std::min(254.0f, (*trisTextAvCols)[(ypg + yp) * blockSide + (xpg + xp)].b); // b
-                    c.val[1] =
-                        (unsigned char)std::min(254.0f, (*trisTextAvCols)[(ypg + yp) * blockSide + (xpg + xp)].g); // g
-                    c.val[2] =
-                        (unsigned char)std::min(254.0f, (*trisTextAvCols)[(ypg + yp) * blockSide + (xpg + xp)].r); // r
-                    cvSet2D(bmp, yp, xp, c);
+                    rgb c;
+                    c.r = static_cast<unsigned char>(std::min(254.0f, (*trisTextAvCols)[(ypg + yp) * blockSide + (xpg + xp)].r));
+                    c.g = static_cast<unsigned char>(std::min(254.0f, (*trisTextAvCols)[(ypg + yp) * blockSide + (xpg + xp)].g));
+                    c.b = static_cast<unsigned char>(std::min(254.0f, (*trisTextAvCols)[(ypg + yp) * blockSide + (xpg + xp)].b));
+                    bmp.at(yp * blockSide + xp) = c;
                 }
             }
             // int endIdTri = std::min(me->tris->size(),startIdTri+nTrisInBlock*2);
@@ -3936,9 +3900,7 @@ int mv_output3D::saveMeshToWrlTrisAverageTextured(const std::string& dirName, co
             const std::string textName = wrlName + "_" + num2str(idBlock) + ".png";
             const std::string textFileName = dirName + textName;
 
-            if(cvSaveImage(textFileName.c_str(), bmp) == 0)
-                printf("Could not save: %s\n", textFileName.c_str());
-            cvReleaseImage(&bmp);
+            imageIO::writeImage(textFileName, blockSide, blockSide, bmp);
 
             fprintf(f, "Group {\nchildren [\n");
             fprintf(f, "\tWorldInfo {\n");
@@ -4176,43 +4138,39 @@ void mv_output3D::groupTexturesToOneFile(mv_mesh* me, int newTextureSide, const 
 
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     // join texture files
-    IplImage* bmpo =
-        cvCreateImage(cvSize(gridSideSize * partScaledSide, gridSideSize * partScaledSide), IPL_DEPTH_8U, 3);
-    for(int gy = 0; gy < gridSideSize; gy++)
     {
-        for(int gx = 0; gx < gridSideSize; gx++)
+        std::vector<Color> bmpo(newTextureSide * newTextureSide);
+
+        for(int gy = 0; gy < gridSideSize; gy++)
         {
-            int atlasId = gy * gridSideSize + gx;
-            if(atlasId < natlases)
+            for(int gx = 0; gx < gridSideSize; gx++)
             {
-                const std::string textureFileName = wrlMeshFileName + "_" + num2str(atlasId) + ".png";
-                IplImage* bmp = cvLoadImage(textureFileName.c_str());
-
-                IplImage* bmpr = cvCreateImage(cvSize(partScaledSide, partScaledSide), IPL_DEPTH_8U, 3);
-                cvResize(bmp, bmpr);
-
-                for(int y = 0; y < partScaledSide; y++)
+                int atlasId = gy * gridSideSize + gx;
+                if(atlasId < natlases)
                 {
-                    for(int x = 0; x < partScaledSide; x++)
+                    const std::string textureFileName = wrlMeshFileName + "_" + num2str(atlasId) + ".png";
+
+                    std::vector<Color> bmp, bmpr;
+                    int imageWidth, imageHeight;
+                    imageIO::readImage(textureFileName, imageWidth, imageHeight, bmp);
+                    imageIO::resizeImage(textureSide, textureSide, scale, bmp, bmpr);
+
+                    for(int y = 0; y < partScaledSide; y++)
                     {
-                        CvScalar c;
-                        c = cvGet2D(bmpr, y, x);
-                        int xn = gx * partScaledSide + x;
-                        int yn = gy * partScaledSide + y;
-                        cvSet2D(bmpo, yn, xn, c);
+                        for(int x = 0; x < partScaledSide; x++)
+                        {
+                            const int xn = gx * partScaledSide + x;
+                            const int yn = gy * partScaledSide + y;
+                            bmpo.at(yn * newTextureSide + xn) = bmpr.at(y * partScaledSide + x); // bmpo(xn, yn) = bmpr(x, y)
+                        }
                     }
                 }
-                cvReleaseImage(&bmp);
-                cvReleaseImage(&bmpr);
             }
         }
+
+        const std::string newTextNameOrig = outDir + "meshAvImgTexRes.png";
+        imageIO::writeImage(newTextNameOrig, newTextureSide, newTextureSide, bmpo);
     }
-
-    const std::string newTextNameOrig = outDir + "meshAvImgTexRes.png";
-    if(cvSaveImage(newTextNameOrig.c_str(), bmpo) == 0)
-        printf("Could not save: %s\n", newTextNameOrig.c_str());
-
-    cvReleaseImage(&bmpo);
 
     for(int i = 0; i < meshPtsUV->size(); i++)
     {

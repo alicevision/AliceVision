@@ -9,10 +9,6 @@
 
 #include <boost/filesystem.hpp>
 
-#include <opencv/cv.h>
-#include <opencv/highgui.h>
-
-
 namespace bfs = boost::filesystem;
 
 mv_mesh_unwrap::universe::universe(int elements, int _ncams)
