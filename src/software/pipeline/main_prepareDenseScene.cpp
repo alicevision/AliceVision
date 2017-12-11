@@ -201,7 +201,7 @@ bool prepareDenseScene(
 
   // Export views:
   //   - 00001_P.txt (Pose of the reconstructed camera)
-  //   - 00001._c.png (undistorted & scaled colored image)
+  //   - 00001.png (undistorted & scaled colored image)
   //   - 00001_seeds.bin (3d points visible in this image)
   #pragma omp parallel for num_threads(3)
   for(int i = 0; i < map_viewIdToContiguous.size(); ++i)
@@ -238,7 +238,7 @@ bool prepareDenseScene(
     // Export undistort image
     {
       const std::string srcImage = view->getImagePath();
-      std::string dstColorImage = stlplus::create_filespec(stlplus::folder_append_separator(sOutDirectory), baseFilename + "._c", image::EImageFileType_enumToString(outputFileType));
+      std::string dstColorImage = stlplus::create_filespec(stlplus::folder_append_separator(sOutDirectory), baseFilename, image::EImageFileType_enumToString(outputFileType));
 
       const IntrinsicBase * cam = iterIntrinsic->second.get();
       Image<RGBfColor> image, image_ud, image_ud_scaled;
@@ -318,7 +318,7 @@ bool prepareDenseScene(
   << "outDir=../../meshes" << os.widen('\n')
   << "ncams=" << map_viewIdToContiguous.size() << os.widen('\n')
   << "scale=" << scale << os.widen('\n')
-  << "imgExt=_c." << image::EImageFileType_enumToString(outputFileType) << os.widen('\n')
+  << "imgExt=" << image::EImageFileType_enumToString(outputFileType) << os.widen('\n')
   << "verbose=TRUE" << os.widen('\n')
   << os.widen('\n')
   << "[imageResolutions]" << os.widen('\n');
