@@ -29,7 +29,7 @@ ps_refine_rc::ps_refine_rc(int _rc, int _scale, int _step, ps_sgm_params* _sp)
     _sigma = (float)sp->mp->mip->_ini.get<double>("refineRc.sigma", 15.0);
     _niters = sp->mp->mip->_ini.get<int>("refineRc.niters", 100);
 
-    _userTcOrPixSize = sp->mp->mip->_ini.get<bool>("refineRc.userTcOrPixSize", false);
+    _userTcOrPixSize = sp->mp->mip->_ini.get<bool>("refineRc.useTcOrRcPixSize", false);
     _wsh = sp->mp->mip->_ini.get<int>("refineRc.wsh", 3);
     _gammaC = (float)sp->mp->mip->_ini.get<double>("refineRc.gammaC", 15.5);
     _gammaP = (float)sp->mp->mip->_ini.get<double>("refineRc.gammaP", 8.0);

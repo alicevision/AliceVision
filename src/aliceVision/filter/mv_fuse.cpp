@@ -228,14 +228,10 @@ bool mv_fuse::updateInSurr(int pixSizeBall, int pixSizeBallWSP, point3d& p, int 
 }
 
 // minNumOfModals number of other cams including this cam ... minNumOfModals /in 2,3,...
-void mv_fuse::filterGroups(const staticVector<int>& cams)
+void mv_fuse::filterGroups(const staticVector<int>& cams, int pixSizeBall, int pixSizeBallWSP, int nNearestCams)
 {
     printf("Precomputing groups\n");
     long t1 = clock();
-    int pixSizeBall = mp->mip->_ini.get<int>("filter.pixSizeBall", 0);
-    int pixSizeBallWSP = mp->mip->_ini.get<int>("filter.pixSizeBallWSP", 0);
-    int nNearestCams = mp->mip->_ini.get<int>("prematching.nNearestCams", 10);
-
 #pragma omp parallel for
     for(int c = 0; c < cams.size(); c++)
     {
@@ -342,13 +338,10 @@ bool mv_fuse::filterGroupsRC(int rc, int pixSizeBall, int pixSizeBallWSP, int nN
 }
 
 // minNumOfModals number of other cams including this cam ... minNumOfModals /in 2,3,...
-void mv_fuse::filterDepthMaps(const staticVector<int>& cams, int minNumOfModals)
+void mv_fuse::filterDepthMaps(const staticVector<int>& cams, int minNumOfModals, int minNumOfModalsWSP2SSP)
 {
     printf("Filtering depth maps\n");
     long t1 = clock();
-    int minNumOfModalsWSP2SSP = mp->mip->_ini.get<int>("filter.minNumOfConsistentCamsWSP2SSP", 4);
-    int pixSizeBall = mp->mip->_ini.get<int>("filter.pixSizeBall", 0);
-    int pixSizeBallWSP = mp->mip->_ini.get<int>("filter.pixSizeBallWSP", 0);
 
 #pragma omp parallel for
     for(int c = 0; c < cams.size(); c++)

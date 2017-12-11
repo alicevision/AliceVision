@@ -72,6 +72,22 @@ int main(int argc, char* argv[])
     // .ini parsing
     multiviewInputParams mip(iniFilepath, outputFolder, "");
     const double simThr = mip._ini.get<double>("global.simThr", 0.0);
+
+    mip._ini.put("semiGlobalMatching.maxTCams", 10);
+    mip._ini.put("semiGlobalMatching.wsh", 4);
+    mip._ini.put("semiGlobalMatching.gammaC", 5.5);
+    mip._ini.put("semiGlobalMatching.gammaP", 8.0);
+
+    mip._ini.put("refineRc.nSamplesHalf", 150);
+    mip._ini.put("refineRc.ndepthsToRefine", 31);
+    mip._ini.put("refineRc.sigma", 15.0);
+    mip._ini.put("refineRc.niters", 100);
+    mip._ini.put("refineRc.useTcOrRcPixSize", false);
+    mip._ini.put("refineRc.wsh", 3);
+    mip._ini.put("refineRc.gammaC", 15.5);
+    mip._ini.put("refineRc.gammaP", 8.0);
+    mip._ini.put("refineRc.maxTCams", 6);
+
     multiviewParams mp(mip.getNbCameras(), &mip, (float) simThr);
     mv_prematch_cams pc(&mp);
 

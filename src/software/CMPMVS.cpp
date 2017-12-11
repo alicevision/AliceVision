@@ -262,8 +262,8 @@ int main(int argc, char* argv[])
     {
         cout << "--- filter depthmap" << endl;
         mv_fuse fs(&mp, &pc);
-        fs.filterGroups(cams);
-        fs.filterDepthMaps(cams, minNumOfConsistensCams);
+        fs.filterGroups(cams, 0, 0, 10);
+        fs.filterDepthMaps(cams, minNumOfConsistensCams, 4); //minNumOfConsistensCamsWithLowSimilarity = 4
     }
 
     if(cmdline.steps.test(CommandLine::Step::MESHING))
