@@ -160,7 +160,7 @@ void readImage(const std::string& path, oiio::TypeDesc format, int nchannels, Im
 }
 
 template<typename T>
-void writeImage(const std::string& path, oiio::TypeDesc typeDesc, int nchannels, Image<T>& image)
+void writeImage(const std::string& path, oiio::TypeDesc typeDesc, int nchannels, const Image<T>& image)
 {
   bool isEXR = (path.size() > 4 && path.compare(path.size() - 4, 4, ".exr") == 0);
 
@@ -168,7 +168,7 @@ void writeImage(const std::string& path, oiio::TypeDesc typeDesc, int nchannels,
 
   if(isEXR)
   {
-    oiio::ImageBuf buf(imageSpec, image.data());
+    oiio::ImageBuf buf(imageSpec, const_cast<T*>(image.data()));
 
     imageSpec.format = oiio::TypeDesc::HALF;     // override format
     imageSpec.attribute("compression", "piz");   // if possible, PIZ compression for openEXR
@@ -187,7 +187,7 @@ void writeImage(const std::string& path, oiio::TypeDesc typeDesc, int nchannels,
     imageSpec.attribute("CompressionQuality", 100);   // if possible, best compression quality
     imageSpec.attribute("compression", "none");       // if possible, no compression
 
-    oiio::ImageBuf outBuf(imageSpec, image.data());
+    oiio::ImageBuf outBuf(imageSpec, const_cast<T*>(image.data()));
 
     // write image
     if(!outBuf.write(path))
@@ -220,22 +220,22 @@ void readImage(const std::string& path, Image<RGBColor>& image)
   readImage(path, oiio::TypeDesc::UINT8, 3, image);
 }
 
-void writeImage(const std::string& path, Image<unsigned char>& image)
+void writeImage(const std::string& path, const Image<unsigned char>& image)
 {
   writeImage(path, oiio::TypeDesc::UINT8, 1, image);
 }
 
-void writeImage(const std::string& path, Image<RGBAColor>& image)
+void writeImage(const std::string& path, const Image<RGBAColor>& image)
 {
   writeImage(path, oiio::TypeDesc::UINT8, 4, image);
 }
 
-void writeImage(const std::string& path, Image<RGBfColor>& image)
+void writeImage(const std::string& path, const Image<RGBfColor>& image)
 {
   writeImage(path, oiio::TypeDesc::FLOAT, 3, image);
 }
 
-void writeImage(const std::string& path, Image<RGBColor>& image)
+void writeImage(const std::string& path, const Image<RGBColor>& image)
 {
   writeImage(path, oiio::TypeDesc::UINT8, 3, image);
 }

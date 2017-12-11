@@ -85,10 +85,10 @@ void readImage(const std::string& path, Image<RGBColor>& image);
  * @param[in] path The given path to the image
  * @param[in] image The output image buffer
  */
-void writeImage(const std::string& path, Image<unsigned char>& image);
-void writeImage(const std::string& path, Image<RGBAColor>& image);
-void writeImage(const std::string& path, Image<RGBfColor>& image);
-void writeImage(const std::string& path, Image<RGBColor>& image);
+void writeImage(const std::string& path, const Image<unsigned char>& image);
+void writeImage(const std::string& path, const Image<RGBAColor>& image);
+void writeImage(const std::string& path, const Image<RGBfColor>& image);
+void writeImage(const std::string& path, const Image<RGBColor>& image);
 
 }  // namespace image
 }  // namespace aliceVision
