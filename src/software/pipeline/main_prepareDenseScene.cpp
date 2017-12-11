@@ -103,7 +103,7 @@ void retrieveSeedsPerView(
     {
       const auto& obsACamId_it = map_viewIdToContiguous.find(obsA.first);
       if(obsACamId_it == map_viewIdToContiguous.end())
-        continue; // this view cannot be exported to cmpmvs, so we skip the observation
+        continue; // this view cannot be exported to mvs, so we skip the observation
       int obsACamId = obsACamId_it->second;
       const View& viewA = *sfm_data.GetViews().at(obsA.first).get();
       const geometry::Pose3& poseA = sfm_data.GetPoses().at(viewA.getPoseId());
@@ -116,7 +116,7 @@ void retrieveSeedsPerView(
           continue;
         const auto& obsBCamId_it = map_viewIdToContiguous.find(obsB.first);
         if(obsBCamId_it == map_viewIdToContiguous.end())
-          continue; // this view cannot be exported to cmpmvs, so we skip the observation
+          continue; // this view cannot be exported to mvs, so we skip the observation
         const View& viewB = *sfm_data.GetViews().at(obsB.first).get();
         const geometry::Pose3& poseB = sfm_data.GetPoses().at(viewB.getPoseId());
         const Pinhole * intrinsicsB = dynamic_cast<const Pinhole*>(sfm_data.GetIntrinsics().at(viewB.getIntrinsicId()).get());
@@ -161,22 +161,9 @@ bool prepareDenseScene(
   const SfMData & sfm_data,
   int scale,
   image::EImageFileType outputFileType,
-  const std::string & sOutDirectory // Output CMPMVS files folder
-  )
+  const std::string & sOutDirectory)
 {
-  // Create basis folder structure
-  if (!stlplus::is_folder(sOutDirectory))
-  {
-    stlplus::folder_create(sOutDirectory);
-    bool bOk = stlplus::is_folder(sOutDirectory);
-    if (!bOk)
-    {
-      std::cerr << "Cannot access the output folder: " << sOutDirectory << std::endl;
-      return false;
-    }
-  }
-  
-  // Since CMPMVS requires contiguous camera indexes and some views may not have a pose,
+  // As the MVS requires contiguous camera indexes and some views may not have a pose,
   // we reindex the poses to ensure a contiguous pose list.
   HashMap<IndexT, IndexT> map_viewIdToContiguous;
   // Export valid views as Projective Cameras:
@@ -188,7 +175,7 @@ bool prepareDenseScene(
     Intrinsics::const_iterator iterIntrinsic = sfm_data.GetIntrinsics().find(view->getIntrinsicId());
     const IntrinsicBase * cam = iterIntrinsic->second.get();
     // View Id re-indexing
-    // Need to start at 1 for CMPMVS
+    // Need to start at 1 for MVS
     map_viewIdToContiguous.insert(std::make_pair(view->getViewId(), map_viewIdToContiguous.size() + 1));
   }
 
@@ -312,7 +299,7 @@ bool prepareDenseScene(
     ++my_progress_bar;
   }
 
-  // Write the cmpmvs ini file
+  // Write the mvs ini file
   std::ostringstream os;
   os << "[global]" << os.widen('\n')
   << "outDir=../../meshes" << os.widen('\n')
@@ -414,7 +401,7 @@ int main(int argc, char *argv[])
 
     // Create output dir
     if (!stlplus::folder_exists(outFolder))
-      stlplus::folder_create( outFolder );
+      stlplus::folder_create(outFolder);
 
     // Read the input SfM scene
     SfMData sfm_data;
@@ -425,7 +412,7 @@ int main(int argc, char *argv[])
       return EXIT_FAILURE;
     }
 
-    if (!prepareDenseScene(sfm_data, scale, outputFileType, stlplus::filespec_to_path(outFolder, "_tmp_scale" + std::to_string(scale))))
+    if (!prepareDenseScene(sfm_data, scale, outputFileType, outFolder))
       return EXIT_FAILURE;
   }
 
