@@ -775,16 +775,18 @@ bool ReconstructionEngine_sequentialSfM::getBestInitialImagePairs(std::vector<Pa
         vec_angles.begin() + median_index,
         vec_angles.end());
       const float scoring_angle = vec_angles[median_index];
-      // Store the pair iff the pair is in the asked angle range [fRequired_min_angle;fLimit_max_angle]
-      if (scoring_angle > fRequired_min_angle &&
-          scoring_angle < fLimit_max_angle)
-      {
-        const double imagePairScore = std::min(computeImageScore(I, validCommonTracksIds), computeImageScore(J, validCommonTracksIds));
-        const double score = scoring_angle * imagePairScore;
+      const double imagePairScore = std::min(computeImageScore(I, validCommonTracksIds), computeImageScore(J, validCommonTracksIds));
+      double score = scoring_angle * imagePairScore;
 
-        #pragma omp critical
-        bestImagePairs.emplace_back(score, imagePairScore, scoring_angle, relativePose_info.vec_inliers.size(), current_pair);
-      }
+      // If the image pair is outside the reasonable angle range: [fRequired_min_angle;fLimit_max_angle]
+      // we put it in negative to ensure that image pairs with reasonable angle will win,
+      // but keep the score ordering.
+      if (scoring_angle < fRequired_min_angle ||
+          scoring_angle > fLimit_max_angle)
+        score = - 1.0 / score;
+
+      #pragma omp critical
+      bestImagePairs.emplace_back(score, imagePairScore, scoring_angle, relativePose_info.vec_inliers.size(), current_pair);
     }
   }
   // We print the N best scores and return the best one.
