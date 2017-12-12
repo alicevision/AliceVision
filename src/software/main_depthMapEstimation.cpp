@@ -27,8 +27,26 @@ int main(int argc, char* argv[])
 
     std::string iniFilepath;
     std::string outputFolder;
+
     int rangeStart = -1;
     int rangeSize = -1;
+
+    // semiGlobalMatching
+    int sgmMaxTCams = 10;
+    int sgmWSH = 4;
+    double sgmGammaC = 5.5;
+    double sgmGammaP = 8.0;
+
+    // refineRc
+    int refineNSamplesHalf = 150;
+    int refineNDepthsToRefine = 31;
+    int refineNiters = 100;
+    int refineWSH = 3;
+    int refineMaxTCams = 6;
+    double refineSigma = 15.0;
+    double refineGammaC = 15.5;
+    double refineGammaP = 8.0;
+    bool refineUseTcOrRcPixSize = false;
 
     po::options_description allParams("AliceVision depthMapEstimation\n"
                                       "Estimate depth map for each input image");
@@ -45,7 +63,31 @@ int main(int argc, char* argv[])
         ("rangeStart", po::value<int>(&rangeStart)->default_value(rangeStart),
             "Compute a sub-range of images from index rangeStart to rangeStart+rangeSize.")
         ("rangeSize", po::value<int>(&rangeSize)->default_value(rangeSize),
-         "Compute a sub-range of N images (N=rangeSize).");
+            "Compute a sub-range of N images (N=rangeSize).")
+        ("sgmMaxTCams", po::value<int>(&sgmMaxTCams)->default_value(sgmMaxTCams),
+            "Semi Global Matching: Number of neighbour cameras.")
+        ("sgmWSH", po::value<int>(&sgmWSH)->default_value(sgmWSH),
+            "Semi Global Matching: Size of the patch used to compute the similarity.")
+        ("sgmGammaC", po::value<double>(&sgmGammaC)->default_value(sgmGammaC),
+            "Semi Global Matching: GammaC threshold.")
+        ("sgmGammaP", po::value<double>(&sgmGammaP)->default_value(sgmGammaP),
+            "Semi Global Matching: GammaP threshold.")
+        ("refineNSamplesHalf", po::value<int>(&refineNSamplesHalf)->default_value(refineNSamplesHalf),
+            "Refine: Number of samples.")
+        ("refineNDepthsToRefine", po::value<int>(&refineNDepthsToRefine)->default_value(refineNDepthsToRefine),
+            "Refine: Number of depths.")
+        ("refineNiters", po::value<int>(&refineNiters)->default_value(refineNiters),
+            "Refine: Number of iterations.")
+        ("refineMaxTCams", po::value<int>(&refineMaxTCams)->default_value(refineMaxTCams),
+            "Refine: Number of neighbour cameras.")
+        ("refineSigma", po::value<double>(&refineSigma)->default_value(refineSigma),
+            "Refine: Sigma threshold.")
+        ("refineGammaC", po::value<double>(&refineGammaC)->default_value(refineGammaC),
+            "Refine: GammaC threshold.")
+        ("refineGammaP", po::value<double>(&refineGammaP)->default_value(refineGammaP),
+            "Refine: GammaP threshold.")
+        ("refineUseTcOrRcPixSize", po::value<bool>(&refineUseTcOrRcPixSize)->default_value(refineUseTcOrRcPixSize),
+            "Refine: Use current camera pixel size or minimum pixel size of neighbour cameras.");
 
     allParams.add(requiredParams).add(optionalParams);
 
@@ -82,20 +124,24 @@ int main(int argc, char* argv[])
     multiviewInputParams mip(iniFilepath, outputFolder, "");
     const double simThr = mip._ini.get<double>("global.simThr", 0.0);
 
-    mip._ini.put("semiGlobalMatching.maxTCams", 10);
-    mip._ini.put("semiGlobalMatching.wsh", 4);
-    mip._ini.put("semiGlobalMatching.gammaC", 5.5);
-    mip._ini.put("semiGlobalMatching.gammaP", 8.0);
+    // set params in bpt
 
-    mip._ini.put("refineRc.nSamplesHalf", 150);
-    mip._ini.put("refineRc.ndepthsToRefine", 31);
-    mip._ini.put("refineRc.sigma", 15.0);
-    mip._ini.put("refineRc.niters", 100);
-    mip._ini.put("refineRc.useTcOrRcPixSize", false);
-    mip._ini.put("refineRc.wsh", 3);
-    mip._ini.put("refineRc.gammaC", 15.5);
-    mip._ini.put("refineRc.gammaP", 8.0);
-    mip._ini.put("refineRc.maxTCams", 6);
+    // semiGlobalMatching
+    mip._ini.put("semiGlobalMatching.maxTCams", sgmMaxTCams);
+    mip._ini.put("semiGlobalMatching.wsh", sgmWSH);
+    mip._ini.put("semiGlobalMatching.gammaC", sgmGammaC);
+    mip._ini.put("semiGlobalMatching.gammaP", sgmGammaP);
+
+    // refineRc
+    mip._ini.put("refineRc.nSamplesHalf", refineNSamplesHalf);
+    mip._ini.put("refineRc.ndepthsToRefine", refineNDepthsToRefine);
+    mip._ini.put("refineRc.niters", refineNiters);
+    mip._ini.put("refineRc.wsh", refineWSH);
+    mip._ini.put("refineRc.maxTCams", refineMaxTCams);
+    mip._ini.put("refineRc.sigma", refineSigma);
+    mip._ini.put("refineRc.gammaC", refineGammaC);
+    mip._ini.put("refineRc.gammaP", refineGammaP);
+    mip._ini.put("refineRc.useTcOrRcPixSize", refineUseTcOrRcPixSize);
 
     multiviewParams mp(mip.getNbCameras(), &mip, (float) simThr);
     mv_prematch_cams pc(&mp);
