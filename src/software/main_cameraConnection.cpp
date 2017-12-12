@@ -26,20 +26,26 @@ int main(int argc, char* argv[])
     long startTime = clock();
 
     std::string iniFilepath;
-    po::options_description inputParams("Select best neighboring cameras of each camera.");
 
-    inputParams.add_options()
+    po::options_description allParams("AliceVision cameraConnection\n"
+                                      "Select best neighboring cameras of each camera");
+
+    po::options_description requiredParams("Required parameters");
+    requiredParams.add_options()
         ("ini", po::value<std::string>(&iniFilepath)->required(),
             "Configuration file (mvs.ini).");
+
+    allParams.add(requiredParams);
+
     po::variables_map vm;
 
     try
     {
-      po::store(po::parse_command_line(argc, argv, inputParams), vm);
+      po::store(po::parse_command_line(argc, argv, allParams), vm);
 
       if(vm.count("help") || (argc == 1))
       {
-        ALICEVISION_COUT(inputParams);
+        ALICEVISION_COUT(allParams);
         return EXIT_SUCCESS;
       }
 
@@ -48,13 +54,13 @@ int main(int argc, char* argv[])
     catch(boost::program_options::required_option& e)
     {
       ALICEVISION_CERR("ERROR: " << e.what() << std::endl);
-      ALICEVISION_COUT("Usage:\n\n" << inputParams);
+      ALICEVISION_COUT("Usage:\n\n" << allParams);
       return EXIT_FAILURE;
     }
     catch(boost::program_options::error& e)
     {
       ALICEVISION_CERR("ERROR: " << e.what() << std::endl);
-      ALICEVISION_COUT("Usage:\n\n" << inputParams);
+      ALICEVISION_COUT("Usage:\n\n" << allParams);
       return EXIT_FAILURE;
     }
 

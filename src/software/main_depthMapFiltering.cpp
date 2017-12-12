@@ -37,21 +37,24 @@ int main(int argc, char* argv[])
     int pixSizeBallWithLowSimilarity = 0;
     int nNearestCams = 10;
 
-    po::options_description inputParams("Filter depth map to remove values that are not consistent with other depth maps.");
+    po::options_description allParams("AliceVision depthMapFiltering\n"
+                                      "Filter depth map to remove values that are not consistent with other depth maps");
 
-    inputParams.add_options()
+    po::options_description requiredParams("Required parameters");
+    requiredParams.add_options()
         ("ini", po::value<std::string>(&iniFilepath)->required(),
             "Configuration file (mvs.ini).")
         ("depthMapFolder", po::value<std::string>(&depthMapFolder)->required(),
             "Input depth map folder.")
-        ("output", po::value<std::string>(&outputFolder)->required(),
-            "Output folder for filtered depth maps.")
+        ("output,o", po::value<std::string>(&outputFolder)->required(),
+            "Output folder for filtered depth maps.");
 
+    po::options_description optionalParams("Optional parameters");
+    optionalParams.add_options()
         ("rangeStart", po::value<int>(&rangeStart)->default_value(rangeStart),
             "Compute only a sub-range of images from index rangeStart to rangeStart+rangeSize.")
         ("rangeSize", po::value<int>(&rangeSize)->default_value(rangeSize),
             "Compute only a sub-range of N images (N=rangeSize).")
-
         ("minNumOfConsistensCams", po::value<int>(&minNumOfConsistensCams)->default_value(minNumOfConsistensCams),
             "Minimal number of consistent cameras to consider the pixel.")
         ("minNumOfConsistensCamsWithLowSimilarity", po::value<int>(&minNumOfConsistensCamsWithLowSimilarity)->default_value(minNumOfConsistensCamsWithLowSimilarity),
@@ -63,15 +66,17 @@ int main(int argc, char* argv[])
         ("nNearestCams", po::value<int>(&nNearestCams)->default_value(nNearestCams),
             "Number of nearest cameras.");
 
+    allParams.add(requiredParams).add(optionalParams);
+
     po::variables_map vm;
 
     try
     {
-      po::store(po::parse_command_line(argc, argv, inputParams), vm);
+      po::store(po::parse_command_line(argc, argv, allParams), vm);
 
       if(vm.count("help") || (argc == 1))
       {
-        ALICEVISION_COUT(inputParams);
+        ALICEVISION_COUT(allParams);
         return EXIT_SUCCESS;
       }
 
@@ -80,13 +85,13 @@ int main(int argc, char* argv[])
     catch(boost::program_options::required_option& e)
     {
       ALICEVISION_CERR("ERROR: " << e.what() << std::endl);
-      ALICEVISION_COUT("Usage:\n\n" << inputParams);
+      ALICEVISION_COUT("Usage:\n\n" << allParams);
       return EXIT_FAILURE;
     }
     catch(boost::program_options::error& e)
     {
       ALICEVISION_CERR("ERROR: " << e.what() << std::endl);
-      ALICEVISION_COUT("Usage:\n\n" << inputParams);
+      ALICEVISION_COUT("Usage:\n\n" << allParams);
       return EXIT_FAILURE;
     }
 

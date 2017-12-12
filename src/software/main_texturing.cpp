@@ -48,36 +48,43 @@ int main(int argc, char* argv[])
     bool flipNormals = false;
     TexturingParams texParams;
 
-    po::options_description inputParams;
+    po::options_description allParams("AliceVision texturing");
 
-    inputParams.add_options()
+    po::options_description requiredParams("Required parameters");
+    requiredParams.add_options()
         ("ini", po::value<std::string>(&iniFilepath)->required(),
             "Configuration file: mvs.ini (the undistorted images and camera poses should be in the same folder)).")
         ("inputDenseReconstruction", po::value<std::string>(&inputDenseReconstruction)->required(),
             "Path to the dense reconstruction (mesh with per vertex visibility).")
-        ("output", po::value<std::string>(&outputFolder)->required(),
-            "Folder for output mesh: OBJ, material and texture files.")
+        ("output,o", po::value<std::string>(&outputFolder)->required(),
+            "Folder for output mesh: OBJ, material and texture files.");
+
+    po::options_description optionalParams("Optional parameters");
+    optionalParams.add_options()
         ("outputTextureFileType", po::value<std::string>(&outTextureFileTypeName)->default_value(outTextureFileTypeName),
           EImageFileType_informations().c_str())
-        ("textureSide", po::value<unsigned int>(&texParams.textureSide),
+        ("textureSide", po::value<unsigned int>(&texParams.textureSide)->default_value(texParams.textureSide),
             "Output texture size")
-        ("padding", po::value<unsigned int>(&texParams.padding),
+        ("padding", po::value<unsigned int>(&texParams.padding)->default_value(texParams.padding),
             "Texture edge padding size in pixel")
-        ("downscale", po::value<unsigned int>(&texParams.downscale),
+        ("downscale", po::value<unsigned int>(&texParams.downscale)->default_value(texParams.downscale),
             "Texture downscale factor")
         ("inputMesh", po::value<std::string>(&inputMeshFilepath),
             "Optional input mesh to texture. By default, it will texture the inputReconstructionMesh.")
         ("flipNormals", po::bool_switch(&flipNormals),
             "Option to flip face normals. It can be needed as it depends on the vertices order in triangles and the convention change from one software to another.");
+
+    allParams.add(requiredParams).add(optionalParams);
+
     po::variables_map vm;
 
     try
     {
-      po::store(po::parse_command_line(argc, argv, inputParams), vm);
+      po::store(po::parse_command_line(argc, argv, allParams), vm);
 
       if(vm.count("help") || (argc == 1))
       {
-        ALICEVISION_COUT(inputParams);
+        ALICEVISION_COUT(allParams);
         return EXIT_SUCCESS;
       }
 
@@ -86,13 +93,13 @@ int main(int argc, char* argv[])
     catch(boost::program_options::required_option& e)
     {
       ALICEVISION_CERR("ERROR: " << e.what() << std::endl);
-      ALICEVISION_COUT("Usage:\n\n" << inputParams);
+      ALICEVISION_COUT("Usage:\n\n" << allParams);
       return EXIT_FAILURE;
     }
     catch(boost::program_options::error& e)
     {
       ALICEVISION_CERR("ERROR: " << e.what() << std::endl);
-      ALICEVISION_COUT("Usage:\n\n" << inputParams);
+      ALICEVISION_COUT("Usage:\n\n" << allParams);
       return EXIT_FAILURE;
     }
 

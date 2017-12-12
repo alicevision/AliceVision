@@ -36,32 +36,40 @@ int main(int argc, char* argv[])
     bool transpose = false;
     std::string outputWrlFilepath;
 
-    po::options_description inputParams("Export depth map into image and mesh.");
+    po::options_description allParams("AliceVision exportDepthMap\n"
+                                      "Export depth map into image and mesh");
 
-    inputParams.add_options()
+    po::options_description requiredParams("Required parameters");
+    requiredParams.add_options()
         ("image", po::value<std::string>(&imageFilepath)->required(),
             "image filepath.")
         ("depthMap", po::value<std::string>(&depthMapFilepath)->required(),
             "Depth map filepath.")
         ("cameraFilepath", po::value<std::string>(&cameraFilepath)->required(),
             "Camera filepath")
+        ("output,o", po::value<std::string>(&outputWrlFilepath)->required(),
+            "Output WRL filepath. It will also generate other wrl files with different scales in the same folder and one png file to visualize the depth map.");
+
+    po::options_description optionalParams("Optional parameters");
+    optionalParams.add_options()
         ("scale", po::value<int>(&scale)->default_value(scale),
             "Depth Map Scale")
         ("step", po::value<int>(&step)->default_value(step),
             "Depth Map Step")
         ("transpose", po::value<bool>(&transpose)->default_value(transpose),
-            "Transpose Depth Map buffer.")
-        ("output", po::value<std::string>(&outputWrlFilepath)->required(),
-            "Output WRL filepath. It will also generate other wrl files with different scales in the same folder and one png file to visualize the depth map.");
+            "Transpose Depth Map buffer.");
+
+    allParams.add(requiredParams).add(optionalParams);
+
     po::variables_map vm;
 
     try
     {
-      po::store(po::parse_command_line(argc, argv, inputParams), vm);
+      po::store(po::parse_command_line(argc, argv, allParams), vm);
 
       if(vm.count("help") || (argc == 1))
       {
-        ALICEVISION_COUT(inputParams);
+        ALICEVISION_COUT(allParams);
         return EXIT_SUCCESS;
       }
 
@@ -70,13 +78,13 @@ int main(int argc, char* argv[])
     catch(boost::program_options::required_option& e)
     {
       ALICEVISION_CERR("ERROR: " << e.what() << std::endl);
-      ALICEVISION_COUT("Usage:\n\n" << inputParams);
+      ALICEVISION_COUT("Usage:\n\n" << allParams);
       return EXIT_FAILURE;
     }
     catch(boost::program_options::error& e)
     {
       ALICEVISION_CERR("ERROR: " << e.what() << std::endl);
-      ALICEVISION_COUT("Usage:\n\n" << inputParams);
+      ALICEVISION_COUT("Usage:\n\n" << allParams);
       return EXIT_FAILURE;
     }
 

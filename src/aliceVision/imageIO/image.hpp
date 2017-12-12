@@ -99,10 +99,10 @@ void writeImage(const std::string& path, int width, int height, const std::vecto
  * @param[in] height The image buffer height
  * @param[in,out] buffer The image buffer
  */
-void transposeImage(int width, int height, std::vector<unsigned char>& inBuffer);
-void transposeImage(int width, int height, std::vector<rgb>& inBuffer);
-void transposeImage(int width, int height, std::vector<float>& inBuffer);
-void transposeImage(int width, int height, std::vector<Color>& inBuffer);
+void transposeImage(int width, int height, std::vector<unsigned char>& buffer);
+void transposeImage(int width, int height, std::vector<rgb>& buffer);
+void transposeImage(int width, int height, std::vector<float>& buffer);
+void transposeImage(int width, int height, std::vector<Color>& buffer);
 
 /**
  * @brief resize a given image buffer
