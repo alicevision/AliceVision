@@ -37,16 +37,19 @@ int main(int argc, char* argv[])
     int fixedNbVertices = 0;
     int minVertices = 0;
     int maxVertices = 0;
-
     unsigned int nbLloydIter = 40;
 
-    po::options_description inputParams;
+    po::options_description allParams("AliceVision meshResampling");
 
-    inputParams.add_options()
-        ("input", po::value<std::string>(&inputMeshPath)->required(),
+    po::options_description requiredParams("Required parameters");
+    requiredParams.add_options()
+        ("input,i", po::value<std::string>(&inputMeshPath)->required(),
             "Input Mesh (OBJ file format).")
-        ("output", po::value<std::string>(&outputMeshPath)->required(),
-            "Output mesh (OBJ file format).")
+        ("output,o", po::value<std::string>(&outputMeshPath)->required(),
+            "Output mesh (OBJ file format).");
+
+    po::options_description optionalParams("Optional parameters");
+    optionalParams.add_options()
         ("simplificationFactor", po::value<float>(&simplificationFactor)->default_value(simplificationFactor),
             "Simplification factor.")
         ("nbVertices", po::value<int>(&fixedNbVertices)->default_value(fixedNbVertices),
@@ -55,18 +58,20 @@ int main(int argc, char* argv[])
             "Min number of output vertices.")
         ("maxVertices", po::value<int>(&maxVertices)->default_value(maxVertices),
             "Max number of output vertices.")
-
         ("nbLloydIter", po::value<unsigned int>(&nbLloydIter)->default_value(nbLloydIter),
             "Number of iterations for Lloyd pre-smoothing.");
+
+    allParams.add(requiredParams).add(optionalParams);
+
     po::variables_map vm;
 
     try
     {
-      po::store(po::parse_command_line(argc, argv, inputParams), vm);
+      po::store(po::parse_command_line(argc, argv, allParams), vm);
 
       if(vm.count("help") || (argc == 1))
       {
-        ALICEVISION_COUT(inputParams);
+        ALICEVISION_COUT(allParams);
         return EXIT_SUCCESS;
       }
 
@@ -75,13 +80,13 @@ int main(int argc, char* argv[])
     catch(boost::program_options::required_option& e)
     {
       ALICEVISION_CERR("ERROR: " << e.what() << std::endl);
-      ALICEVISION_COUT("Usage:\n\n" << inputParams);
+      ALICEVISION_COUT("Usage:\n\n" << allParams);
       return EXIT_FAILURE;
     }
     catch(boost::program_options::error& e)
     {
       ALICEVISION_CERR("ERROR: " << e.what() << std::endl);
-      ALICEVISION_COUT("Usage:\n\n" << inputParams);
+      ALICEVISION_COUT("Usage:\n\n" << allParams);
       return EXIT_FAILURE;
     }
 

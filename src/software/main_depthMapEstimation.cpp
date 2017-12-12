@@ -29,26 +29,35 @@ int main(int argc, char* argv[])
     std::string outputFolder;
     int rangeStart = -1;
     int rangeSize = -1;
-    po::options_description inputParams("Estimate depth map for each input image.");
 
-    inputParams.add_options()
+    po::options_description allParams("AliceVision depthMapEstimation\n"
+                                      "Estimate depth map for each input image");
+
+    po::options_description requiredParams("Required parameters");
+    requiredParams.add_options()
         ("ini", po::value<std::string>(&iniFilepath)->required(),
             "Configuration file (mvs.ini).")
-        ("output", po::value<std::string>(&outputFolder)->required(),
-            "Output folder for generated depth maps.")
+        ("output,o", po::value<std::string>(&outputFolder)->required(),
+            "Output folder for generated depth maps.");
+
+    po::options_description optionalParams("Optional parameters");
+    optionalParams.add_options()
         ("rangeStart", po::value<int>(&rangeStart)->default_value(rangeStart),
             "Compute a sub-range of images from index rangeStart to rangeStart+rangeSize.")
         ("rangeSize", po::value<int>(&rangeSize)->default_value(rangeSize),
          "Compute a sub-range of N images (N=rangeSize).");
+
+    allParams.add(requiredParams).add(optionalParams);
+
     po::variables_map vm;
 
     try
     {
-      po::store(po::parse_command_line(argc, argv, inputParams), vm);
+      po::store(po::parse_command_line(argc, argv, allParams), vm);
 
       if(vm.count("help") || (argc == 1))
       {
-        ALICEVISION_COUT(inputParams);
+        ALICEVISION_COUT(allParams);
         return EXIT_SUCCESS;
       }
 
@@ -57,13 +66,13 @@ int main(int argc, char* argv[])
     catch(boost::program_options::required_option& e)
     {
       ALICEVISION_CERR("ERROR: " << e.what() << std::endl);
-      ALICEVISION_COUT("Usage:\n\n" << inputParams);
+      ALICEVISION_COUT("Usage:\n\n" << allParams);
       return EXIT_FAILURE;
     }
     catch(boost::program_options::error& e)
     {
       ALICEVISION_CERR("ERROR: " << e.what() << std::endl);
-      ALICEVISION_COUT("Usage:\n\n" << inputParams);
+      ALICEVISION_COUT("Usage:\n\n" << allParams);
       return EXIT_FAILURE;
     }
 

@@ -55,35 +55,42 @@ int main(int argc, char* argv[])
     std::string depthMapFilterFolder;
     EPartitioning partitioning = eSingleBlock;
     po::options_description inputParams;
-
     int maxPts = 6000000;
     int maxPtsPerVoxel = 6000000;
 
-    inputParams.add_options()
+    po::options_description allParams("AliceVision meshing");
+
+    po::options_description requiredParams("Required parameters");
+    requiredParams.add_options()
         ("ini", po::value<std::string>(&iniFilepath)->required(),
             "Configuration file (mvs.ini).")
         ("depthMapFolder", po::value<std::string>(&depthMapFolder)->required(),
             "Input depth maps folder.")
         ("depthMapFilterFolder", po::value<std::string>(&depthMapFilterFolder)->required(),
             "Input filtered depth maps folder.")
-        ("output", po::value<std::string>(&outputMesh)->required(),
-            "Output mesh (OBJ file format).")
+        ("output,o", po::value<std::string>(&outputMesh)->required(),
+            "Output mesh (OBJ file format).");
 
+    po::options_description optionalParams("Optional parameters");
+    optionalParams.add_options()
         ("maxPts", po::value<int>(&maxPts)->default_value(maxPts),
             "Max points.")
         ("maxPtsPerVoxel", po::value<int>(&maxPtsPerVoxel)->default_value(maxPtsPerVoxel),
             "Max points per voxel.")
         ("partitioning", po::value<EPartitioning>(&partitioning)->default_value(partitioning),
             "Partitioning: singleBlock or auto.");
+
+    allParams.add(requiredParams).add(optionalParams);
+
     po::variables_map vm;
 
     try
     {
-      po::store(po::parse_command_line(argc, argv, inputParams), vm);
+      po::store(po::parse_command_line(argc, argv, allParams), vm);
 
       if(vm.count("help") || (argc == 1))
       {
-        ALICEVISION_COUT(inputParams);
+        ALICEVISION_COUT(allParams);
         return EXIT_SUCCESS;
       }
 
@@ -92,13 +99,13 @@ int main(int argc, char* argv[])
     catch(boost::program_options::required_option& e)
     {
       ALICEVISION_CERR("ERROR: " << e.what() << std::endl);
-      ALICEVISION_COUT("Usage:\n\n" << inputParams);
+      ALICEVISION_COUT("Usage:\n\n" << allParams);
       return EXIT_FAILURE;
     }
     catch(boost::program_options::error& e)
     {
       ALICEVISION_CERR("ERROR: " << e.what() << std::endl);
-      ALICEVISION_COUT("Usage:\n\n" << inputParams);
+      ALICEVISION_COUT("Usage:\n\n" << allParams);
       return EXIT_FAILURE;
     }
 
