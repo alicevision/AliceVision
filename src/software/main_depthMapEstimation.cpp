@@ -78,6 +78,8 @@ int main(int argc, char* argv[])
             "Refine: Number of depths.")
         ("refineNiters", po::value<int>(&refineNiters)->default_value(refineNiters),
             "Refine: Number of iterations.")
+        ("refineWSH", po::value<int>(&refineWSH)->default_value(refineWSH),
+            "Refine: Size of the patch used to compute the similarity.")
         ("refineMaxTCams", po::value<int>(&refineMaxTCams)->default_value(refineMaxTCams),
             "Refine: Number of neighbour cameras.")
         ("refineSigma", po::value<double>(&refineSigma)->default_value(refineSigma),
