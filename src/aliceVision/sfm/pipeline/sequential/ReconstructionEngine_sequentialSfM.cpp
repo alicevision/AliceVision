@@ -1621,11 +1621,15 @@ void ReconstructionEngine_sequentialSfM::triangulateMultiViews_LORANSAC(SfMData&
       }
     }
     
-    if (observations.size() == 2) // run classic 2-views triangulation
+    if (observations.size() == 2) 
     {
+      /* --------------------------------------------
+       *    2 obsevations : triangulation using DLT
+       * -------------------------------------------- */ 
+       
       inliers = observations;
       
-      // -- Prepare data for the track triangulation
+      // -- Prepare:
       IndexT I =  *(observations.begin());
       IndexT J =  *(observations.rbegin());
       const View* viewI = scene.GetViews().at(I).get();
@@ -1636,38 +1640,38 @@ void ReconstructionEngine_sequentialSfM::triangulateMultiViews_LORANSAC(SfMData&
       const Pose3 poseJ = scene.getPose(*viewJ);
       const Vec2 xI = _featuresPerView->getFeatures(I, track.descType)[track.featPerView.at(I)].coords().cast<double>();
       const Vec2 xJ = _featuresPerView->getFeatures(J, track.descType)[track.featPerView.at(J)].coords().cast<double>();
-      const Vec2 xI_ud = camI->get_ud_pixel(xI);
-      const Vec2 xJ_ud = camJ->get_ud_pixel(xJ);
-      const Mat34 pI = camI->get_projective_equivalent(poseI);
-      const Mat34 pJ = camJ->get_projective_equivalent(poseJ);
   
-      // -- Triangulate
-      TriangulateDLT(pI, xI_ud, pJ, xJ_ud, &X_euclidean);
+      // -- Triangulate:
+      TriangulateDLT(camI->get_projective_equivalent(poseI), 
+                     camI->get_ud_pixel(xI), 
+                     camJ->get_projective_equivalent(poseJ), 
+                     camI->get_ud_pixel(xJ), 
+                     &X_euclidean);
       
-      // -- Check triangulation results
-      //  - Check angle (small angle leads imprecise triangulation)
-      //  - Check positive depth
-      //  - Check residual values
-      const double angle = AngleBetweenRay(poseI, camI, poseJ, camJ, xI, xJ);
-      const Vec2 residualI = camI->residual(poseI, X_euclidean, xI);
-      const Vec2 residualJ = camJ->residual(poseJ, X_euclidean, xJ);
-      
+      // -- Check:
+      //  - angle (small angle leads imprecise triangulation)
+      //  - positive depth
+      //  - residual values
       // TODO assert(acThresholdIt != _map_ACThreshold.end());
       const auto& acThresholdItI = _map_ACThreshold.find(I);
       const auto& acThresholdItJ = _map_ACThreshold.find(J);
       const double& acThresholdI = (acThresholdItI != _map_ACThreshold.end()) ? acThresholdItI->second : 4.0;
       const double& acThresholdJ = (acThresholdItJ != _map_ACThreshold.end()) ? acThresholdItJ->second : 4.0;
       
-      if (angle < 3.0 ||
-          poseI.depth(X_euclidean) < 0 
-          || poseJ.depth(X_euclidean) < 0
-          || residualI.norm() > acThresholdI 
-          || residualJ.norm() > acThresholdJ)
+      if (AngleBetweenRay(poseI, camI, poseJ, camJ, xI, xJ) < 3.0 || 
+          poseI.depth(X_euclidean) < 0 || 
+          poseJ.depth(X_euclidean) < 0 || 
+          camI->residual(poseI, X_euclidean, xI).norm() > acThresholdI || 
+          camJ->residual(poseJ, X_euclidean, xJ).norm() > acThresholdJ)
         continue;
     }
-    else // run LORANSAC multiviews triangulation     
+    else 
     {
-      // -- Prepare data for the track triangulation 
+      /* -------------------------------------------------------
+       *    N obsevations (N>2) : triangulation using LORANSAC 
+       * ------------------------------------------------------- */ 
+     
+      // -- Prepare:
       Mat2X features(2, observations.size()); // undistorted 2D features (one per pose)
       std::vector< Mat34 > Ps; // projective matrices (one per pose)
       {
@@ -1678,18 +1682,15 @@ void ReconstructionEngine_sequentialSfM::triangulateMultiViews_LORANSAC(SfMData&
         {
           const View* view = scene.GetViews().at(viewId).get();
           const IntrinsicBase* cam = scene.GetIntrinsics().at(view->getIntrinsicId()).get();
-          const Pose3 pose = scene.getPose(*view);
-          const Vec2 x = _featuresPerView->getFeatures(viewId, track.descType)[track.featPerView.at(viewId)].coords().cast<double>();
-          const Vec2 x_ud = cam->get_ud_pixel(x); // undistorted 2D point
-          const Mat34 p = cam->get_projective_equivalent(pose);
+          const Vec2 x_ud = cam->get_ud_pixel(_featuresPerView->getFeatures(viewId, track.descType)[track.featPerView.at(viewId)].coords().cast<double>()); // undistorted 2D point
           features(0,i) = x_ud(0); 
           features(1,i) = x_ud(1);  
-          Ps.push_back(p);
+          Ps.push_back(cam->get_projective_equivalent(scene.getPose(*view)));
           i++;
         }
       }
       
-      // -- Triangulate 
+      // -- Triangulate: 
       Vec4 X_homogeneous = Vec4::Zero();
       std::vector<std::size_t> inliersIndex;
       
@@ -1701,11 +1702,13 @@ void ReconstructionEngine_sequentialSfM::triangulateMultiViews_LORANSAC(SfMData&
       for (const auto & id : inliersIndex)
         inliers.insert(*std::next(observations.begin(), id));
 
-      // -- Check triangulation result:
-      // Check the number of cameras validing the track 
+      // -- Check:
+      //  - nb of cameras validing the track 
+      //  - angle (small angle leads imprecise triangulation)
+      //  - positive depth (chierality)
       if (inliers.size() < kMinNbObservations ||
-          !checkChieralities(X_euclidean, inliers, scene) ||
-          !checkAngles(X_euclidean, inliers, scene, kMinAngle))
+          !checkAngles(X_euclidean, inliers, scene, kMinAngle) ||
+          !checkChieralities(X_euclidean, inliers, scene))
         continue;
     }  
 
