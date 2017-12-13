@@ -108,9 +108,7 @@ public:
 
   void setLocalBundleAdjustmentGraphDistance(std::size_t distance)
   {
-    if (!_uselocalBundleAdjustment)
-      ALICEVISION_LOG_WARNING("Cannot set the local BA graph-distance limit: local BA not enabled.");
-    else
+    if (_uselocalBundleAdjustment)
       _localBA_data->setGraphDistanceLimit(distance);
   }
 
