@@ -296,18 +296,6 @@ void ReconstructionEngine_sequentialSfM::RobustResectionOfImages(
 //        triangulate(_sfm_data, prevReconstructedViews, newReconstructedViews);
     triangulateMultiViews_LORANSAC(_sfm_data, prevReconstructedViews, newReconstructedViews);
     
-    /////////// TEMP ///////////////
-    double triangulation_time_ms = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - chrono_triangulation_start).count();
-    std::string triangulation_filename = _sOutDirectory + "/triangulation_times_ms.txt";
-    std::ofstream os;
-    os.open(triangulation_filename, std::ios::app);
-    os.seekp(0, std::ios::end); //put the cursor at the end
-   
-    os << triangulation_time_ms << "\n";
-    os.close();
-    ////////////////////////////////
-    
-    
     if (bImageAdded)
     {
       if((resectionGroupIndex % 3) == 0)
@@ -1545,10 +1533,6 @@ void ReconstructionEngine_sequentialSfM::triangulateMultiViews_LORANSAC(SfMData&
 {
   ALICEVISION_LOG_DEBUG("Triangulating (mode: multi-view LO-RANSAC)... ");
   
-  /* Inputs parameters */
-  const std::size_t kMinNbObservations = 2;
-  const double kMinAngle = 3.0; // [deg.]
-  
   // -- Identify the track to triangulate :
   // This map contains all the tracks that will be triangulated (for the first time, or not)
   // These tracks are seen by at least one new reconstructed view.
@@ -1607,7 +1591,7 @@ void ReconstructionEngine_sequentialSfM::triangulateMultiViews_LORANSAC(SfMData&
     std::set<IndexT> & observations = mapTracksToTriangulate.at(trackId); // all the posed views possessing the track
     
     // The track needs to be seen by a min. number of views to be triangulated
-    if (observations.size() < kMinNbObservations)
+    if (observations.size() < _minNbObservationsForTriangulation)
       continue;
     
     Vec3 X_euclidean = Vec3::Zero();
@@ -1658,7 +1642,7 @@ void ReconstructionEngine_sequentialSfM::triangulateMultiViews_LORANSAC(SfMData&
       const double& acThresholdI = (acThresholdItI != _map_ACThreshold.end()) ? acThresholdItI->second : 4.0;
       const double& acThresholdJ = (acThresholdItJ != _map_ACThreshold.end()) ? acThresholdItJ->second : 4.0;
       
-      if (AngleBetweenRay(poseI, camI, poseJ, camJ, xI, xJ) < 3.0 || 
+      if (AngleBetweenRay(poseI, camI, poseJ, camJ, xI, xJ) < _minAngleForTriangulation || 
           poseI.depth(X_euclidean) < 0 || 
           poseJ.depth(X_euclidean) < 0 || 
           camI->residual(poseI, X_euclidean, xI).norm() > acThresholdI || 
@@ -1706,8 +1690,8 @@ void ReconstructionEngine_sequentialSfM::triangulateMultiViews_LORANSAC(SfMData&
       //  - nb of cameras validing the track 
       //  - angle (small angle leads imprecise triangulation)
       //  - positive depth (chierality)
-      if (inliers.size() < kMinNbObservations ||
-          !checkAngles(X_euclidean, inliers, scene, kMinAngle) ||
+      if (inliers.size() < _minNbObservationsForTriangulation ||
+          !checkAngles(X_euclidean, inliers, scene, _minAngleForTriangulation) ||
           !checkChieralities(X_euclidean, inliers, scene))
         continue;
     }  
@@ -1851,7 +1835,7 @@ void ReconstructionEngine_sequentialSfM::triangulate(SfMData& scene, const std::
           const double& acThresholdI = (acThresholdItI != _map_ACThreshold.end()) ? acThresholdItI->second : 4.0;
           const double& acThresholdJ = (acThresholdItJ != _map_ACThreshold.end()) ? acThresholdItJ->second : 4.0;
           
-          if (angle > 3.0 &&
+          if (angle > _minAngleForTriangulation &&
               poseI.depth(X_euclidean) > 0 &&
               poseJ.depth(X_euclidean) > 0 &&
               residualI.norm() < acThresholdI &&

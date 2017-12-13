@@ -101,6 +101,11 @@ public:
     _minTrackLength = minTrackLength;
   }
   
+  void setNbOfObservationsForTriangulation(std::size_t minNbObservationsForTriangulation)
+  {
+    _minNbObservationsForTriangulation = minNbObservationsForTriangulation;
+  }
+
   void setLocalBundleAdjustmentGraphDistance(std::size_t distance)
   {
     if (!_uselocalBundleAdjustment)
@@ -242,6 +247,8 @@ private:
   int _minTrackLength = 2;
   int _minPointsPerPose = 30;
   bool _uselocalBundleAdjustment = false;
+  std::size_t _minNbObservationsForTriangulation = 2;
+  double _minAngleForTriangulation = 3.0;
   
   //-- Data provider
   feature::FeaturesPerView  * _featuresPerView;

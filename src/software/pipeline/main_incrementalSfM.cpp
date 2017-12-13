@@ -86,6 +86,7 @@ int main(int argc, char **argv)
   std::pair<std::string,std::string> initialPairString("","");
   int minInputTrackLength = 2;
   int maxNbMatches = 0;
+  std::size_t minNbObservationsForTriangulation = 2;
   int userCameraModel = static_cast<int>(PINHOLE_CAMERA_RADIAL3);
   bool refineIntrinsics = true;
   bool allowUserInteraction = true;
@@ -123,6 +124,9 @@ int main(int argc, char **argv)
     ("maxNumberOfMatches", po::value<int>(&maxNbMatches)->default_value(maxNbMatches),
       "Maximum number of matches per image pair (and per feature type). "
       "This can be useful to have a quick reconstruction overview. 0 means no limit.")
+    ("minNumberOfObservationsForTriangulation", po::value<std::size_t>(&minNbObservationsForTriangulation)->default_value(minNbObservationsForTriangulation),
+      "Minimum number of observations to triangulate a point.\n"
+      "Set it to 3 (or more) reduces drastically the noise in the point cloud, but the number of final poses is a little bit reduced (from 1.5% to 11% on the tested datasets).")
     ("cameraModel", po::value<int>(&userCameraModel)->default_value(userCameraModel),
       "* 1: Pinhole\n"
       "* 2: Pinhole radial 1\n"
@@ -248,6 +252,7 @@ int main(int argc, char **argv)
   sfmEngine.setAllowUserInteraction(allowUserInteraction);
   sfmEngine.setUseLocalBundleAdjustmentStrategy(useLocalBundleAdjustment);
   sfmEngine.setLocalBundleAdjustmentGraphDistance(localBundelAdjustementGraphDistanceLimit);
+  sfmEngine.setNbOfObservationsForTriangulation(minNbObservationsForTriangulation);
 
   // Handle Initial pair parameter
   if(!initialPairString.first.empty() && !initialPairString.second.empty())
