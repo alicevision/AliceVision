@@ -198,11 +198,33 @@ private:
    * @param newReconstructedViews
    */
   void triangulate(SfMData& scene, const std::set<IndexT>& previousReconstructedViews, const std::set<IndexT>& newReconstructedViews);
-
+  
+  /**
+   * @brief Triangulate new possible 2D tracks
+   * List tracks that share content with this view and run a multiview triangulation on them, using the Lo-RANSAC algorithm.
+   * @param[in/out] scene All the data about the 3D reconstruction. 
+   * @param[in] previousReconstructedViews The list of the old reconstructed views (views index).
+   * @param[in] newReconstructedViews The list of the new reconstructed views (views index).
+   */
   void triangulateMultiViews_LORANSAC(SfMData& scene, const std::set<IndexT>& previousReconstructedViews, const std::set<IndexT>& newReconstructedViews);
   
+  /**
+   * @brief Check if a 3D points is well located in front of a set of views.
+   * @param[in] pt3D A 3D point (euclidian coordinates)
+   * @param[in] viewsId A set of views index
+   * @param[in] scene All the data about the 3D reconstruction. 
+   * @return false if the 3D points is located behind one view (or more), else \c true.
+   */
   bool checkChieralities(const Vec3& pt3D, const std::set<IndexT> &viewsId, const SfMData& scene);
   
+  /**
+   * @brief Check if the maximal angle formed by a 3D points and 2 views exceeds a min. angle, among a set of views.
+   * @param[in] pt3D A 3D point (euclidian coordinates)
+   * @param[in] viewsId A set of views index   
+   * @param[in] scene All the data about the 3D reconstruction. 
+   * @param[in] kMinAngle The angle limit.
+   * @return false if the maximal angle does not exceed the limit, else \c true.
+   */
   bool checkAngles(const Vec3& pt3D, const std::set<IndexT> &viewsId, const SfMData& scene, const double & kMinAngle);
 
   /**
@@ -245,8 +267,8 @@ private:
   int _minTrackLength = 2;
   int _minPointsPerPose = 30;
   bool _uselocalBundleAdjustment = false;
-  std::size_t _minNbObservationsForTriangulation = 2;
-  double _minAngleForTriangulation = 3.0;
+  std::size_t _minNbObservationsForTriangulation = 2; /// a 3D point must have at least N obersvations to be triangulated.
+  double _minAngleForTriangulation = 3.0; /// a 3D point must have at least 2 obervations not too much aligned.
   
   //-- Data provider
   feature::FeaturesPerView  * _featuresPerView;

@@ -1678,7 +1678,7 @@ void ReconstructionEngine_sequentialSfM::triangulateMultiViews_LORANSAC(SfMData&
       Vec4 X_homogeneous = Vec4::Zero();
       std::vector<std::size_t> inliersIndex;
       
-      TriangulateNViewLORANSAC(features, Ps, &X_homogeneous, inliersIndex);
+      TriangulateNViewLORANSAC(features, Ps, &X_homogeneous, &inliersIndex);
       
       HomogeneousToEuclidean(X_homogeneous, &X_euclidean);     
       

@@ -63,13 +63,13 @@ void TriangulateNViewAlgebraic(const Mat2X &x,
 void TriangulateNViewLORANSAC(const Mat2X &x, 
                               const std::vector< Mat34 > &Ps,
                               Vec4 *X, 
-                              std::vector<std::size_t> & inliersIndex, 
+                              std::vector<std::size_t> *inliersIndex, 
                               const double & thresholdError)
 {
   using TriangulationKernel = LORansacTriangulationKernel<>;
   TriangulationKernel kernel(x, Ps);
   robustEstimation::ScoreEvaluator<TriangulationKernel> scorer(thresholdError);
-  *X = robustEstimation::LO_RANSAC(kernel, scorer, &inliersIndex, NULL, false);
+  *X = robustEstimation::LO_RANSAC(kernel, scorer, inliersIndex);
 }
 
 double Triangulation::error(const Vec3 &X) const

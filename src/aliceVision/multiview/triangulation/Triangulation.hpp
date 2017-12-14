@@ -44,11 +44,23 @@ void TriangulateNViewAlgebraic(const Mat2X &x,
                                const std::vector< Mat34 > &Ps,
                                Vec4 *X, 
                                const std::vector<double> *weights = nullptr);
-                               
+
+/**
+ * @brief Compute a 3D position of a point from several images of it. In particular,
+ * compute the projective point X in R^4 such that x ~ PX.
+ * Algorithm is Lo-RANSAC
+ * It can return the the list of the cameras set as intlier by the Lo-RANSAC algorithm.
+ * 
+ * @param[in] x are 2D coordinates (x,y,1) in each image
+ * @param[in] Ps is the list of projective matrices for each camera
+ * @param[out] X is the estimated 3D point
+ * @param[out] inliersIndex (optional) store the index of the cameras (following Ps ordering, not the view_id) set as Inliers by Lo-RANSAC
+ * @param[in] thresholdError (optional) set a threashold value to the Lo-RANSAC scorer
+ */                               
 void TriangulateNViewLORANSAC(const Mat2X &x, 
                               const std::vector< Mat34 > &Ps,
                               Vec4 *X,
-                              std::vector<std::size_t> & inliersIndex,
+                              std::vector<std::size_t> *inliersIndex = NULL,
                               const double & thresholdError = 4.0);                               
 
 //Iterated linear method
