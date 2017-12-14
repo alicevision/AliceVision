@@ -3,8 +3,7 @@
 // v. 2.0. If a copy of the MPL was not distributed with this file,
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
-#ifndef ALICEVISION_FEATURES_FEATURE_HPP
-#define ALICEVISION_FEATURES_FEATURE_HPP
+#pragma once
 
 #include "aliceVision/numeric/numeric.hpp"
 #include <iostream>
@@ -103,11 +102,11 @@ public:
     return (_scale == b.scale()) &&
            (_orientation == b.orientation()) &&
            (x() == b.x()) && (y() == b.y()) ;
-  };
+  }
 
   bool operator !=(const SIOPointFeature& b) const {
     return !((*this)==b);
-  };
+  }
 
   template<class Archive>
   void serialize(Archive & ar)
@@ -138,39 +137,43 @@ inline std::istream& operator>>(std::istream& in, SIOPointFeature& obj)
 
 /// Read feats from file
 template<typename FeaturesT >
-inline bool loadFeatsFromFile(
+inline void loadFeatsFromFile(
   const std::string & sfileNameFeats,
   FeaturesT & vec_feat)
 {
   vec_feat.clear();
 
   std::ifstream fileIn(sfileNameFeats);
+
   if(!fileIn.is_open())
-    return false;
+    throw std::runtime_error("Can't load features file, can't open '" + sfileNameFeats + "' !");
   
   std::copy(
     std::istream_iterator<typename FeaturesT::value_type >(fileIn),
     std::istream_iterator<typename FeaturesT::value_type >(),
     std::back_inserter(vec_feat));
-  const bool bOk = !fileIn.bad();
+  if(fileIn.bad())
+    throw std::runtime_error("Can't load features file, '" + sfileNameFeats + "' is incorrect !");
   fileIn.close();
-  return bOk;
 }
 
 /// Write feats to file
 template<typename FeaturesT >
-inline bool saveFeatsToFile(
+inline void saveFeatsToFile(
   const std::string & sfileNameFeats,
   FeaturesT & vec_feat)
 {
   std::ofstream file(sfileNameFeats.c_str());
+
   if (!file.is_open())
-    return false;
-  std::copy(vec_feat.begin(), vec_feat.end(),
-            std::ostream_iterator<typename FeaturesT::value_type >(file,"\n"));
-  const bool bOk = file.good();
+    throw std::runtime_error("Can't save features file, can't open '" + sfileNameFeats + "' !");
+
+  std::copy(vec_feat.begin(), vec_feat.end(), std::ostream_iterator<typename FeaturesT::value_type >(file,"\n"));
+
+  if(!file.good())
+    throw std::runtime_error("Can't save features file, '" + sfileNameFeats + "' is incorrect !");
+
   file.close();
-  return bOk;
 }
 
 /// Export point feature based vector to a matrix [(x,y)'T, (x,y)'T]
@@ -193,5 +196,3 @@ void PointsToMat(
 
 } // namespace feature
 } // namespace aliceVision
-
-#endif // ALICEVISION_FEATURES_FEATURE_HPP

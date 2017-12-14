@@ -3,8 +3,7 @@
 // v. 2.0. If a copy of the MPL was not distributed with this file,
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
-#ifndef ALICEVISION_FEATURES_AKAZE_H
-#define ALICEVISION_FEATURES_AKAZE_H
+#pragma once
 
 #ifdef _MSC_VER
 #pragma warning(once:4244)
@@ -31,12 +30,12 @@
 //  TrueVision Solutions (2)
 //------
 
-#include "aliceVision/image/image.hpp"
-#include "aliceVision/numeric/numeric.hpp"
-#include "aliceVision/numeric/MathTrait.hpp"
+#include <aliceVision/image/image.hpp>
+#include <aliceVision/numeric/numeric.hpp>
+#include <aliceVision/numeric/MathTrait.hpp>
 
-#include "aliceVision/feature/PointFeature.hpp"
-#include "aliceVision/feature/Descriptor.hpp"
+#include <aliceVision/feature/PointFeature.hpp>
+#include <aliceVision/feature/Descriptor.hpp>
 
 #include <cereal/cereal.hpp>
 
@@ -101,7 +100,7 @@ private:
 public:
 
   /// Constructor
-  AKAZE(const image::Image<unsigned char> & in, const AKAZEConfig & options);
+  AKAZE(const image::Image<float> & in, const AKAZEConfig & options);
 
   /// Compute the AKAZE non linear diffusion scale space per slice
   void Compute_AKAZEScaleSpace(void);
@@ -148,9 +147,6 @@ public:
     const image::Image<float> & src,
     const float percentile );
 };
-/* ************************************************************************* */
 
 } // namespace feature
 } // namespace aliceVision
-
-#endif //ALICEVISION_FEATURES_AKAZE_H

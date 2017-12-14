@@ -370,6 +370,9 @@ namespace aliceVision
     const RGBColor YELLOW( 255, 255, 0 );
     const RGBColor CYAN( 0, 255, 255 );
     const RGBColor MAGENTA( 255, 0, 255 );
+
+    const RGBfColor FWHITE(1.0f, 1.0f, 1.0f);
+    const RGBfColor FBLACK( .0f,  .0f,  .0f);
     
   } // namespace image
 } // namespace aliceVision

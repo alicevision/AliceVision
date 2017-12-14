@@ -535,7 +535,7 @@ void AlembicExporter::add(const sfm::SfMData& sfmData, sfm::ESfMData flags_part)
         continue;
       }
 
-      const std::string viewImagePath = stlplus::create_filespec(sfmData.s_root_path, view->getImagePath());
+      const std::string& viewImagePath = view->getImagePath();
       
       // TODO: store full metadata
       appendCamera(stlplus::basename_part(view->getImagePath()),
@@ -566,7 +566,7 @@ void AlembicExporter::add(const sfm::SfMData& sfmData, sfm::ESfMData flags_part)
           const View& view = subPoseIt.second;
 
           subPoses.push_back(view);
-          viewsImagePaths.push_back(stlplus::create_filespec(sfmData.s_root_path, view.getImagePath()));
+          viewsImagePaths.push_back(view.getImagePath());
           intrinsics.push_back(dynamic_cast<aliceVision::camera::Pinhole*>(sfmData.GetIntrinsics().at(view.getIntrinsicId()).get()));
           rigSubPoses.push_back(rig.getSubPose(subPoseId));
         }

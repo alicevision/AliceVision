@@ -5,10 +5,10 @@
 
 #pragma once
 
-#include "aliceVision/feature/Descriptor.hpp"
-#include "aliceVision/feature/PointFeature.hpp"
-#include "aliceVision/image/image.hpp"
-#include "aliceVision/numeric/MathTrait.hpp"
+#include <aliceVision/feature/Descriptor.hpp>
+#include <aliceVision/feature/PointFeature.hpp>
+#include <aliceVision/image/image.hpp>
+#include <aliceVision/numeric/MathTrait.hpp>
 
 namespace aliceVision {
 namespace feature {

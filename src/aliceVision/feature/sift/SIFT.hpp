@@ -160,36 +160,33 @@ inline void convertSIFT<unsigned char>(
 
 /**
  * @brief Extract SIFT regions (in float or unsigned char).
- * 
+ *
  * @param image
  * @param regions
  * @param params
- * @param bOrientation
+ * @param orientation
  * @param mask
- * @return 
+ * @return
  */
-template < typename T >
-bool extractSIFT(const image::Image<unsigned char>& image,
-    std::unique_ptr<Regions> &regions,
+template <typename T>
+bool extractSIFT(const image::Image<float>& image,
+    std::unique_ptr<Regions>& regions,
     const SiftParams& params,
-    bool bOrientation,
-    const image::Image<unsigned char> * mask)
+    bool orientation,
+    const image::Image<unsigned char>* mask)
 {
   const int w = image.Width(), h = image.Height();
-  //Convert to float
-  const image::Image<float> imageFloat(image.GetMat().cast<float>());
-
   VlSiftFilt *filt = vl_sift_new(w, h, params._num_octaves, params._num_scales, params._first_octave);
   if (params._edge_threshold >= 0)
     vl_sift_set_edge_thresh(filt, params._edge_threshold);
   if (params._peak_threshold >= 0)
-    vl_sift_set_peak_thresh(filt, 255.0 * params._peak_threshold/params._num_scales);
+    vl_sift_set_peak_thresh(filt, params._peak_threshold/params._num_scales);
 
   Descriptor<vl_sift_pix, 128> vlFeatDescriptor;
   Descriptor<T, 128> descriptor;
 
   // Process SIFT computation
-  vl_sift_process_first_octave(filt, imageFloat.data());
+  vl_sift_process_first_octave(filt, image.data());
 
   typedef ScalarRegions<SIOPointFeature,T,128> SIFT_Region_T;
   regions.reset( new SIFT_Region_T );
@@ -225,7 +222,7 @@ bool extractSIFT(const image::Image<unsigned char>& image,
 
       double angles [4] = {0.0, 0.0, 0.0, 0.0};
       int nangles = 1; // by default (1 upright feature)
-      if (bOrientation)
+      if (orientation)
       { // compute from 1 to 4 orientations
         nangles = vl_sift_calc_keypoint_orientations(filt, angles, keys+i);
       }

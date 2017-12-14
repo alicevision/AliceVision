@@ -34,8 +34,8 @@ int main() {
   const string jpg_filenameR = sInputDir + "100_7102.jpg";
 
   Image<unsigned char> imageL, imageR;
-  ReadImage(jpg_filenameL.c_str(), &imageL);
-  ReadImage(jpg_filenameR.c_str(), &imageR);
+  readImage(jpg_filenameL, imageL);
+  readImage(jpg_filenameR, imageR);
 
   //--
   // Detect regions thanks to an image_describer
@@ -58,7 +58,7 @@ int main() {
     Image<unsigned char> concat;
     ConcatH(imageL, imageR, concat);
     string out_filename = "01_concat.jpg";
-    WriteImage(out_filename.c_str(), concat);
+    writeImage(out_filename, concat);
   }
 
   //- Draw features on the two image (side by side)
@@ -76,7 +76,7 @@ int main() {
       DrawCircle(point.x()+imageL.Width(), point.y(), point.scale(), 255, &concat);
     }
     string out_filename = "02_features.jpg";
-    WriteImage(out_filename.c_str(), concat);
+    writeImage(out_filename, concat);
   }
 
   std::vector<IndMatch> vec_PutativeMatches;

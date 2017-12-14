@@ -5,6 +5,7 @@
 
 #include "aliceVision/sfm/pipeline/sequential/ReconstructionEngine_sequentialSfM.hpp"
 #include "aliceVision/sfm/pipeline/RelativePoseInfo.hpp"
+#include "aliceVision/sfm/utils/statistics.hpp"
 #include "aliceVision/sfm/sfmDataIO.hpp"
 #include "aliceVision/sfm/BundleAdjustmentCeres.hpp"
 #include "aliceVision/sfm/LocalBundleAdjustmentCeres.hpp"
@@ -623,36 +624,25 @@ bool ReconstructionEngine_sequentialSfM::InitLandmarkTracks()
     computeTracksPyramidPerView(
             _map_tracksPerView, _map_tracks, _sfm_data.views, *_featuresPerView, _pyramidBase, _pyramidDepth, _map_featsPyramidPerView);
 
-    ALICEVISION_LOG_DEBUG("Track stats");
     {
-      std::ostringstream osTrack;
       //-- Display stats :
       //    - number of images
       //    - number of tracks
       std::set<size_t> set_imagesId;
       track::TracksUtilsMap::ImageIdInTracks(_map_tracksPerView, set_imagesId);
-      osTrack << "------------------" << "\n"
-              << "-- Tracks Stats --" << "\n"
-              << " Number of tracks: " << tracksBuilder.NbTracks() << "\n"
-              << " Number of images in tracks: " << set_imagesId.size() << "\n";
-      //        << " Images Id: " << "\n";
-      //      std::copy(set_imagesId.begin(),
-      //        set_imagesId.end(),
-      //        std::ostream_iterator<size_t>(osTrack, ", "));
-      osTrack << "\n------------------" << "\n";
-      
+      ALICEVISION_LOG_INFO("Number of tracks: " << tracksBuilder.NbTracks());
+      ALICEVISION_LOG_INFO("Number of images in tracks: " << set_imagesId.size());
+
       std::map<size_t, size_t> map_Occurence_TrackLength;
       track::TracksUtilsMap::TracksLength(_map_tracks, map_Occurence_TrackLength);
-      osTrack << "TrackLength, Occurrence" << "\n";
+      ALICEVISION_LOG_INFO("TrackLength, Occurrence");
       for(const auto& iter: map_Occurence_TrackLength)
       {
-        osTrack << "\t" << iter.first << "\t" << iter.second << "\n";
+        ALICEVISION_LOG_INFO("\t" << iter.first << "\t" << iter.second);
         // Add input tracks histogram
         _tree.add("sfm.inputtracks_histogram."
           + std::to_string(iter.first), iter.second);
       }
-      osTrack << "\n";
-      ALICEVISION_LOG_DEBUG(osTrack.str());
     }
   }
   return _map_tracks.size() > 0;
@@ -791,16 +781,18 @@ bool ReconstructionEngine_sequentialSfM::getBestInitialImagePairs(std::vector<Pa
             vec_angles.begin() + median_index,
             vec_angles.end());
       const float scoring_angle = vec_angles[median_index];
-      // Store the pair iff the pair is in the asked angle range [fRequired_min_angle;fLimit_max_angle]
-      if (scoring_angle > fRequired_min_angle &&
-          scoring_angle < fLimit_max_angle)
-      {
-        const double imagePairScore = std::min(computeImageScore(I, validCommonTracksIds), computeImageScore(J, validCommonTracksIds));
-        const double score = scoring_angle * imagePairScore;
-        
-#pragma omp critical
-        bestImagePairs.emplace_back(score, imagePairScore, scoring_angle, relativePose_info.vec_inliers.size(), current_pair);
-      }
+      const double imagePairScore = std::min(computeImageScore(I, validCommonTracksIds), computeImageScore(J, validCommonTracksIds));
+      double score = scoring_angle * imagePairScore;
+
+      // If the image pair is outside the reasonable angle range: [fRequired_min_angle;fLimit_max_angle]
+      // we put it in negative to ensure that image pairs with reasonable angle will win,
+      // but keep the score ordering.
+      if (scoring_angle < fRequired_min_angle ||
+          scoring_angle > fLimit_max_angle)
+        score = - 1.0 / score;
+
+      #pragma omp critical
+      bestImagePairs.emplace_back(score, imagePairScore, scoring_angle, relativePose_info.vec_inliers.size(), current_pair);
     }
   }
   // We print the N best scores and return the best one.
@@ -1088,17 +1080,15 @@ double ReconstructionEngine_sequentialSfM::ComputeTracksLengthsHistogram(Histogr
 
   if (histo)
   {
-    *histo = Histogram<double>(stats.min, stats.max, stats.max - stats.min + 1);
+    *histo = Histogram<double>(stats.min, stats.max + 1, stats.max - stats.min + 1);
     histo->Add(vec_nbTracks.begin(), vec_nbTracks.end());
   }
 
-  ALICEVISION_LOG_DEBUG(
-    "\nReconstructionEngine_sequentialSfM::ComputeTracksLengthsHistogram.\n"
-    "\t-- #Tracks:\t" << _sfm_data.GetLandmarks().size() << "\n"
-    "\t-- Tracks Length min:\t" << stats.min << "\n"
-    "\t-- Tracks Length median:\t" << stats.median << "\n"
-    "\t-- Tracks Length max:\t "  << stats.max << "\n"
-    "\t-- Tracks Length mean:\t " << stats.mean);
+  ALICEVISION_LOG_INFO("Tracks: " << _sfm_data.GetLandmarks().size());
+  ALICEVISION_LOG_INFO("Tracks Length min: " << stats.min);
+  ALICEVISION_LOG_INFO("Tracks Length median: " << stats.median);
+  ALICEVISION_LOG_INFO("Tracks Length max: "  << stats.max);
+  ALICEVISION_LOG_INFO("Tracks Length mean: " << stats.mean);
 
   return stats.mean;
 }
@@ -2001,9 +1991,14 @@ void ReconstructionEngine_sequentialSfM::exportStatistics(double time_sfm)
 {
   // Put nb images, nb poses, nb points
   _tree.put("sfm.views", _sfm_data.GetViews().size());
+  _tree.put("sfm.validViews", _sfm_data.getValidViews().size());
   _tree.put("sfm.poses", _sfm_data.GetPoses().size());
   _tree.put("sfm.points", _sfm_data.GetLandmarks().size());
-  
+
+  const double residual = RMSE(_sfm_data);
+  ALICEVISION_LOG_INFO("RMSE residual: " << residual);
+  _tree.put("sfm.residual", residual);
+
   // Add observations histogram
   std::map<std::size_t, std::size_t> obsHistogram;
   for (const auto & iterTracks : _sfm_data.GetLandmarks())

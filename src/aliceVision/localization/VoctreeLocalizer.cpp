@@ -484,7 +484,7 @@ bool VoctreeLocalizer::localizeFirstBestResult(const feature::MapRegionsPerDesc 
       const sfm::View *mview = _sfm_data.GetViews().at(matchedViewId).get();
       const std::string queryimage = bfs::path(imagePath).stem().string();
       const std::string matchedImage = bfs::path(mview->getImagePath()).stem().string();
-      const std::string matchedPath = (bfs::path(_sfm_data.s_root_path) /  bfs::path(mview->getImagePath())).string();
+      const std::string matchedPath = mview->getImagePath();
       
       feature::saveMatches2SVG(imagePath,
                       queryImageSize,
@@ -859,7 +859,7 @@ void VoctreeLocalizer::getAllAssociations(const feature::MapRegionsPerDesc &quer
       // the matching image without extension
       const auto matchedImage = bfs::path(mview->getImagePath()).stem();
       // the full path of the matching image
-      const auto matchedPath = (bfs::path(_sfm_data.s_root_path) /  bfs::path(mview->getImagePath())).string();
+      const auto matchedPath = mview->getImagePath();
 
       // the directory where to save the feature matches
       const auto baseDir = bfs::path(param._visualDebug) / queryImage;

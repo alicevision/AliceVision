@@ -3,13 +3,12 @@
 // v. 2.0. If a copy of the MPL was not distributed with this file,
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
-#ifndef ALICEVISION_FEATURES_IMAGE_DESCRIBER_HPP
-#define ALICEVISION_FEATURES_IMAGE_DESCRIBER_HPP
+#pragma once
 
-#include "aliceVision/numeric/numeric.hpp"
-#include "aliceVision/feature/imageDescriberCommon.hpp"
-#include "aliceVision/feature/Regions.hpp"
-#include "aliceVision/image/Image.hpp"
+#include <aliceVision/numeric/numeric.hpp>
+#include <aliceVision/feature/imageDescriberCommon.hpp>
+#include <aliceVision/feature/Regions.hpp>
+#include <aliceVision/image/Image.hpp>
 #include <memory>
 
 #include <string>
@@ -67,69 +66,109 @@ class ImageDescriber
 public:
   ImageDescriber() {}
   virtual ~ImageDescriber() {}
-  
+
+  /**
+   * @brief Check if the image describer use float image
+   * @return True if the image describer use float image
+   */
+  virtual bool useFloatImage() const = 0;
+
+  /**
+   * @brief Get the corresponding EImageDescriberType
+   * @return EImageDescriberType
+   */
   virtual EImageDescriberType getDescriberType() const = 0;
 
   /**
-  @brief Use a preset to control the number of detected regions
-  @param preset The preset configuration
-  @return True if configuration succeed.
-  */
+   * @brief Use a preset to control the number of detected regions
+   * @param[in] preset The preset configuration
+   * @return True if configuration succeed. (here always false)
+   */
   virtual bool Set_configuration_preset(EImageDescriberPreset preset) = 0;
 
+  /**
+   * @brief Set if yes or no imageDescriber need to use cuda implementation
+   * @param[in] useCuda
+   */
   virtual void setUseCuda(bool useCuda) {}
+
   virtual void setCudaPipe(int pipe) {}
 
+  /**
+   * @brief Use a preset to control the number of detected regions
+   * @param[in] preset The preset configuration string
+   * @return True if configuration succeed. (here always false)
+   */
   bool Set_configuration_preset(const std::string& preset)
   {
     return Set_configuration_preset(EImageDescriberPreset_stringToEnum(preset));
   }
   
   /**
-   @brief Set image describer always upRight
-   @param upRight
+   * @brief Set image describer always upRight
+   * @param[in] upRight
    */
   virtual void setUpRight(bool upRight) {}
 
   /**
-  @brief Detect regions on the image and compute their attributes (description)
-  @param image Image.
-  @param regions The detected regions and attributes
-  @param mask 8-bit gray image for keypoint filtering (optional).
-     Non-zero values depict the region of interest.
-  */
+   * @brief Detect regions on the 8-bit image and compute their attributes (description)
+   * @param[in] image Image.
+   * @param[out] regions The detected regions and attributes
+   * @param[in] mask 8-bit gray image for keypoint filtering (optional).
+   * Non-zero values depict the region of interest.
+   */
   virtual bool Describe(const image::Image<unsigned char> & image,
     std::unique_ptr<Regions> &regions,
-    const image::Image<unsigned char> * mask = nullptr) = 0;
+    const image::Image<unsigned char> * mask = nullptr)
+  {
+    throw std::logic_error("Can't use" + EImageDescriberType_enumToString(getDescriberType()) + " image describer with an 8-bit image.");
+    return false;
+  }
 
-  /// Allocate regions depending of the ImageDescriber
+  /**
+   * @brief Detect regions on the float image and compute their attributes (description)
+   * @param[in] image Image.
+   * @param[out] regions The detected regions and attributes
+   * @param[in] mask 8-bit gray image for keypoint filtering (optional).
+   * Non-zero values depict the region of interest.
+   */
+  virtual bool Describe(const image::Image<float> & image,
+    std::unique_ptr<Regions> &regions,
+    const image::Image<unsigned char> * mask = nullptr)
+  {
+    throw std::logic_error("Can't use" + EImageDescriberType_enumToString(getDescriberType()) + " image describer with a float image.");
+    return false;
+  }
+
+  /**
+   * @brief Allocate Regions type depending of the ImageDescriber
+   * @param[in,out] regions
+   */
   virtual void Allocate(std::unique_ptr<Regions> &regions) const = 0;
 
-  //--
+
   // IO - one file for region features, one file for region descriptors
-  //--
 
-  virtual bool Load(Regions * regions,
+  virtual void Load(Regions * regions,
     const std::string& sfileNameFeats,
     const std::string& sfileNameDescs) const
   {
-    return regions->Load(sfileNameFeats, sfileNameDescs);
+    regions->Load(sfileNameFeats, sfileNameDescs);
   }
 
-  virtual bool Save(const Regions * regions,
+  virtual void Save(const Regions * regions,
     const std::string& sfileNameFeats,
     const std::string& sfileNameDescs) const
   {
-    return regions->Save(sfileNameFeats, sfileNameDescs);
+    regions->Save(sfileNameFeats, sfileNameDescs);
   }
 
-  virtual bool LoadFeatures(Regions * regions,
+  virtual void LoadFeatures(Regions * regions,
     const std::string& sfileNameFeats) const
   {
-    return regions->LoadFeatures(sfileNameFeats);
+    regions->LoadFeatures(sfileNameFeats);
   }
 };
-
 
 /**
  * @brief Create the desired ImageDescriber method.
@@ -137,8 +176,5 @@ public:
  */
 std::unique_ptr<ImageDescriber> createImageDescriber(EImageDescriberType imageDescriberType);
 
-
 } // namespace feature
 } // namespace aliceVision
-
-#endif // ALICEVISION_FEATURES_IMAGE_DESCRIBER_HPP

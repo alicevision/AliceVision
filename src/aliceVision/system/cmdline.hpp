@@ -39,9 +39,17 @@ inline std::ostream& operator<<(std::ostream& os, const boost::any& value)
     {
         os << boost::any_cast<int>(value);
     }
+    else if(value.type() == typeid(std::size_t))
+    {
+        os << boost::any_cast<std::size_t>(value);
+    }
     else if(((boost::any)value).type() == typeid(bool))
     {
         os << boost::any_cast<bool>(value);
+    }
+    else if(value.type() == typeid(float))
+    {
+        os << boost::any_cast<float>(value);
     }
     else if(value.type() == typeid(double))
     {

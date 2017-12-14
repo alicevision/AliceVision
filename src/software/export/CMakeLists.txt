@@ -103,26 +103,29 @@ install(TARGETS aliceVision_exportPMVS
   DESTINATION bin/
 )
 
-# Export a SfM aliceVision scene to CMPMVS format
+# Export a SfM aliceVision scene to MayaMVG
 
-add_executable(aliceVision_exportCMPMVS main_exportCMPMVS.cpp)
+if(ALICEVISION_HAVE_ALEMBIC) # maya can read alembic file
+  add_executable(aliceVision_exportMayaMVG main_exportMayaMVG.cpp)
 
-target_link_libraries(aliceVision_exportCMPMVS
-  aliceVision_system
-  aliceVision_image
-  aliceVision_feature
-  aliceVision_sfm
-  stlplus
-  ${BOOST_LIBRARIES}
-)
+  target_link_libraries(aliceVision_exportMayaMVG
+    aliceVision_system
+    aliceVision_image
+    aliceVision_feature
+    aliceVision_sfm
+    stlplus
+    ${BOOST_LIBRARIES}
+    ${OPENIMAGEIO_LIBRARIES}
+  )
 
-set_property(TARGET aliceVision_exportCMPMVS
-  PROPERTY FOLDER AliceVision/Software/Export
-)
+  set_property(TARGET aliceVision_exportMayaMVG
+    PROPERTY FOLDER AliceVision/Software/Export
+  )
 
-install(TARGETS aliceVision_exportCMPMVS
-  DESTINATION bin/
-)
+  install(TARGETS aliceVision_exportMayaMVG
+    DESTINATION bin/
+  )
+endif()
 
 # Export a SfM aliceVision scene to MVE(v2) format
 

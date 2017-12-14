@@ -100,7 +100,7 @@ bool exportToPMVSFormat(
       Intrinsics::const_iterator iterIntrinsic = sfm_data.GetIntrinsics().find(view->getIntrinsicId());
 
       // We have a valid view with a corresponding camera & pose
-      const std::string srcImage = stlplus::create_filespec(sfm_data.s_root_path, view->getImagePath());
+      const std::string srcImage = view->getImagePath();
       std::ostringstream os;
       os << std::setw(8) << std::setfill('0') << map_viewIdToContiguous[view->getViewId()];
       const std::string dstImage = stlplus::create_filespec(
@@ -110,9 +110,9 @@ bool exportToPMVSFormat(
       if (cam->isValid() && cam->have_disto())
       {
         // undistort the image and save it
-        ReadImage( srcImage.c_str(), &image);
+        readImage( srcImage, image);
         UndistortImage(image, cam, image_ud, BLACK);
-        WriteImage(dstImage.c_str(), image_ud);
+        writeImage(dstImage, image_ud);
       }
       else // (no distortion)
       {
@@ -124,8 +124,8 @@ bool exportToPMVSFormat(
         }
         else
         {
-          ReadImage( srcImage.c_str(), &image);
-          WriteImage( dstImage.c_str(), image);
+          readImage(srcImage, image);
+          writeImage(dstImage, image);
         }
       }
     }

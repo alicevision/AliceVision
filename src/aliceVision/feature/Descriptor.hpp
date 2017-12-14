@@ -169,39 +169,44 @@ std::istream& Descriptor<T,N>::read(std::istream& in)
 
 /// Read descriptors from file
 template<typename DescriptorsT >
-inline bool loadDescsFromFile(
+inline void loadDescsFromFile(
   const std::string & sfileNameDescs,
   DescriptorsT & vec_desc)
 {
   vec_desc.clear();
 
   std::ifstream fileIn(sfileNameDescs.c_str());
-  if (!fileIn.is_open())
-    return false;
+  if(!fileIn.is_open())
+    throw std::runtime_error("Can't load descriptor file, can't open '" + sfileNameDescs + "' !");
 
   std::copy(
     std::istream_iterator<typename DescriptorsT::value_type >(fileIn),
     std::istream_iterator<typename DescriptorsT::value_type >(),
     std::back_inserter(vec_desc));
-  const bool bOk = !fileIn.bad();
+
+  if(fileIn.bad())
+    throw std::runtime_error("Can't load descriptor file, '" + sfileNameDescs + "' is incorrect !");
+
   fileIn.close();
-  return bOk;
 }
 
 /// Write descriptors to file
 template<typename DescriptorsT >
-inline bool saveDescsToFile(
+inline void saveDescsToFile(
   const std::string & sfileNameDescs,
   DescriptorsT & vec_desc)
 {
   std::ofstream file(sfileNameDescs.c_str());
-  if (!file.is_open())
-    return false;
+  if(!file.is_open())
+    throw std::runtime_error("Can't save descriptor file, can't open '" + sfileNameDescs + "' !");
+
   std::copy(vec_desc.begin(), vec_desc.end(),
             std::ostream_iterator<typename DescriptorsT::value_type >(file,"\n"));
-  const bool bOk = file.good();
+
+  if(!file.good())
+    throw std::runtime_error("Can't save descriptor file, '" + sfileNameDescs + "' is incorrect !");
+
   file.close();
-  return bOk;
 }
 
 /**
@@ -245,7 +250,7 @@ void convertDesc(
  * @return true if everything went well
  */
 template<typename DescriptorT, typename FileDescriptorT = DescriptorT>
-inline bool loadDescsFromBinFile(
+inline void loadDescsFromBinFile(
   const std::string & sfileNameDescs,
   std::vector<DescriptorT> & vec_desc,
   bool append = false,
@@ -255,8 +260,9 @@ inline bool loadDescsFromBinFile(
     vec_desc.clear();
 
   std::ifstream fileIn(sfileNameDescs.c_str(), std::ios::in | std::ios::binary);
+
   if(!fileIn.is_open())
-    return false;
+    throw std::runtime_error("Can't load descriptor binary file, can't open '" + sfileNameDescs + "' !");
 
   //Read the number of descriptor in the file
   std::size_t cardDesc = 0;
@@ -281,22 +287,26 @@ inline bool loadDescsFromBinFile(
     fileIn.read((char*)fileDescriptor.getData(), oneDescSize);
     convertDesc<FileDescriptorT, DescriptorT>(fileDescriptor, *iter);
   }
-  const bool bOk = !fileIn.bad();
+
+  if(fileIn.bad())
+    throw std::runtime_error("Can't load descriptor binary file, '" + sfileNameDescs + "' is incorrect !");
+
   fileIn.close();
-  return bOk;
 }
 
 /// Write descriptors to file (in binary mode)
 template<typename DescriptorsT >
-inline bool saveDescsToBinFile(
+inline void saveDescsToBinFile(
   const std::string & sfileNameDescs,
   DescriptorsT & vec_desc)
 {
   typedef typename DescriptorsT::value_type VALUE;
 
   std::ofstream file(sfileNameDescs.c_str(), std::ios::out | std::ios::binary);
+
   if (!file.is_open())
-    return false;
+    throw std::runtime_error("Can't save descriptor binary file, can't open '" + sfileNameDescs + "' !");
+
   //Write the number of descriptor
   const std::size_t cardDesc = vec_desc.size();
   file.write((const char*) &cardDesc,  sizeof(std::size_t));
@@ -306,9 +316,11 @@ inline bool saveDescsToBinFile(
     file.write((const char*) (*iter).getData(),
       VALUE::static_size*sizeof(typename VALUE::bin_type));
   }
-  const bool bOk = file.good();
+
+  if(!file.good())
+    throw std::runtime_error("Can't save descriptor binary file, '" + sfileNameDescs + "' is incorrect !");
+
   file.close();
-  return bOk;
 }
 
 } // namespace feature

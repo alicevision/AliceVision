@@ -8,7 +8,6 @@
 #include <aliceVision/sfm/sfm.hpp>
 #include <aliceVision/feature/imageDescriberCommon.hpp>
 #include <aliceVision/feature/feature.hpp>
-#include <aliceVision/exif/EasyExifIO.hpp>
 #include <aliceVision/stl/split.hpp>
 #include <aliceVision/system/Timer.hpp>
 #include <aliceVision/system/Logger.hpp>
@@ -124,7 +123,7 @@ unsigned long peakMemory(pid_t processID)
 
 // This function dispatch the compute function on several sub processes
 // keeping the maximum number of subprocesses under maxJobs
-void dispatch(const int &maxJobs, std::function<void()> compute)
+void dispatch(const int maxJobs, std::function<void()> compute)
 {
   static int nbJobs;
   static unsigned int subProcessPeakMemory = 0;
@@ -192,10 +191,11 @@ void waitForCompletion()
 
 #else // __linux__
 
-void dispatch(const int &maxJobs, std::function<void()> compute)
+void dispatch(const int maxJobs, std::function<void()> compute)
 {
+  if(maxJobs != 0)
     omp_set_num_threads(maxJobs);
-    compute();
+  compute();
 }
 void waitForCompletion() {}
 int remainingJobSlots(unsigned long jobMemoryRequirement) {return 1;}  
@@ -206,10 +206,6 @@ int remainingJobSlots(unsigned long jobMemoryRequirement) {return 1;}
 /// - Export computed data
 int main(int argc, char **argv)
 {
-  // MAX_JOBS_DEFAULT is the default value for maxJobs which keeps 
-  // the original behavior of the program:
-  constexpr static int MAX_JOBS_DEFAULT = std::numeric_limits<int>::max();
-
   // command-line parameters
 
   std::string verboseLevel = system::EVerboseLevel_enumToString(system::Logger::getDefaultVerboseLevel());
@@ -223,7 +219,7 @@ int main(int argc, char **argv)
   bool describersAreUpRight = false;
   int rangeStart = -1;
   int rangeSize = 1;
-  int maxJobs = MAX_JOBS_DEFAULT;
+  int maxJobs = 0;
 
   po::options_description allParams("AliceVision featureExtraction");
 
@@ -246,7 +242,7 @@ int main(int argc, char **argv)
     ("rangeStart", po::value<int>(&rangeStart)->default_value(rangeStart),
       "Range image index start.")
     ("rangeSize", po::value<int>(&rangeSize)->default_value(rangeSize),
-      "Range size.");
+      "Range size.")
     ("jobs", po::value<int>(&maxJobs)->default_value(maxJobs),
       "Specifies the number of jobs to run simultaneously (0 for automatic mode).");
 
@@ -288,19 +284,9 @@ int main(int argc, char **argv)
   // set verbose level
   system::Logger::get()->setLogLevel(verboseLevel);
 
-  if (maxJobs != MAX_JOBS_DEFAULT)
-  {
-    std::cout << "--jobs " << maxJobs << std::endl;
-    if (maxJobs < 0) 
-    {
-      std::cerr << "\nInvalid value for -j option, the value must be >= 0" << std::endl;
-      return EXIT_FAILURE;
-    } 
-  }
-
   if (outputFolder.empty())
   {
-    std::cerr << "\nIt is an invalid output folder" << std::endl;
+    ALICEVISION_LOG_ERROR("Error: It is an invalid output folder");
     return EXIT_FAILURE;
   }
 
@@ -309,54 +295,27 @@ int main(int argc, char **argv)
   {
     if (!stlplus::folder_create(outputFolder))
     {
-      std::cerr << "Cannot create output folder" << std::endl;
+      ALICEVISION_LOG_ERROR("Error: Cannot create output folder");
       return EXIT_FAILURE;
     }
   }
 
-  //---------------------------------------
   // a. Load input scene
-  //---------------------------------------
-  SfMData sfm_data;
-  if(sfmDataFilename.empty())
+
+  SfMData sfmData;
+
+  if(stlplus::is_file(sfmDataFilename))
   {
-    std::cerr << "\nError: The input file argument is required." << std::endl;
-    return EXIT_FAILURE;
-  }
-  else if(stlplus::is_file( sfmDataFilename))
-  {
-    if(!Load(sfm_data, sfmDataFilename, ESfMData(VIEWS|INTRINSICS)))
+    if(!Load(sfmData, sfmDataFilename, ESfMData(VIEWS|INTRINSICS)))
     {
-      std::cerr << std::endl
-        << "The input file \""<< sfmDataFilename << "\" cannot be read" << std::endl;
+      ALICEVISION_LOG_ERROR("Error: The input file '" + sfmDataFilename + "' cannot be read");
       return EXIT_FAILURE;
     }
   }
-  else if(stlplus::is_folder(sfmDataFilename))
+  else
   {
-    // Retrieve image paths
-    std::vector<std::string> vec_images;
-    const std::vector<std::string> supportedExtensions {"jpg", "jpeg"};
-    
-    vec_images = stlplus::folder_files(sfmDataFilename);
-    std::sort(vec_images.begin(), vec_images.end());
-    
-    sfm_data.s_root_path = "";
-    if(!sfmDataFilename.empty())
-      sfm_data.s_root_path = sfmDataFilename; // Setup main image root_path
-    Views & views = sfm_data.views;
-    
-    for(const auto &imageName : vec_images)
-    {
-      exif::EasyExifIO exifReader(imageName);
-
-      const std::size_t uid = exif::computeUID(exifReader, imageName);
-
-      // Build the view corresponding to the image
-      View v(imageName, (IndexT)uid);
-      v.setIntrinsicId(UndefinedIndexT);
-      views[v.getViewId()] = std::make_shared<View>(v);
-    }
+    ALICEVISION_LOG_ERROR("Error: The input file argument is required.");
+    return EXIT_FAILURE;
   }
 
   // b. Init vector of imageDescriber 
@@ -365,14 +324,14 @@ int main(int argc, char **argv)
   {
     std::string typeName;
     EImageDescriberType type;
-    std::shared_ptr<ImageDescriber> describer; //TODO
+    std::shared_ptr<ImageDescriber> describer;
   };
   std::vector<DescriberMethod> imageDescribers;
   
   {
     if(describerTypesName.empty())
     {
-      std::cerr << "\nError: describerMethods argument is empty." << std::endl;
+      ALICEVISION_LOG_ERROR("Error: describerMethods argument is empty.");
       return EXIT_FAILURE;
     }
     std::vector<EImageDescriberType> describerMethodsVec = EImageDescriberType_stringToEnums(describerTypesName);
@@ -380,7 +339,7 @@ int main(int argc, char **argv)
     for(const auto& describerMethod: describerMethodsVec)
     {
       DescriberMethod method;
-      method.typeName = EImageDescriberType_enumToString(describerMethod); // TODO: DELI ?
+      method.typeName = EImageDescriberType_enumToString(describerMethod);
       method.type = describerMethod;
       method.describer = createImageDescriber(method.type);
       method.describer->Set_configuration_preset(describerPreset);
@@ -397,15 +356,15 @@ int main(int argc, char **argv)
   // - if no file, compute features
   {
     system::Timer timer;
-    boost::progress_display my_progress_bar( sfm_data.GetViews().size(),
+    boost::progress_display my_progress_bar( sfmData.GetViews().size(),
       std::cout, "\n- EXTRACT FEATURES -\n" );
 
-    Views::const_iterator iterViews = sfm_data.views.begin();
-    Views::const_iterator iterViewsEnd = sfm_data.views.end();
+    Views::const_iterator iterViews = sfmData.views.begin();
+    Views::const_iterator iterViewsEnd = sfmData.views.end();
     
     if(rangeStart != -1)
     {
-      if(rangeStart < 0 || rangeStart > sfm_data.views.size())
+      if(rangeStart < 0 || rangeStart > sfmData.views.size())
       {
         std::cerr << "Bad specific index" << std::endl;
         return EXIT_FAILURE;
@@ -415,8 +374,8 @@ int main(int argc, char **argv)
         std::cerr << "Bad range size. " << std::endl;
         return EXIT_FAILURE;
       }
-      if(rangeStart + rangeSize > sfm_data.views.size())
-        rangeSize = sfm_data.views.size() - rangeStart;
+      if(rangeStart + rangeSize > sfmData.views.size())
+        rangeSize = sfmData.views.size() - rangeStart;
 
       std::advance(iterViews, rangeStart);
       iterViewsEnd = iterViews;
@@ -433,8 +392,8 @@ int main(int argc, char **argv)
     for(; iterViews != iterViewsEnd; ++iterViews, ++my_progress_bar)
     {
       const View* view = iterViews->second.get();
-      const std::string viewFilename = stlplus::create_filespec(sfm_data.s_root_path, view->getImagePath());
-      std::cout << "Extract features in view: " << viewFilename << std::endl;
+      const std::string viewFilename = view->getImagePath();
+      ALICEVISION_LOG_INFO("Extract features in view : " << viewFilename);
       
       std::vector<DescriberComputeMethod> computeMethods;
       
@@ -463,28 +422,42 @@ int main(int argc, char **argv)
       if(!computeMethods.empty())
       {
         auto computeFunction = [&]() {
-            Image<unsigned char> imageGray;
-            if (!ReadImage(viewFilename.c_str(), &imageGray))
-              return;
+            Image<float> imageGrayFloat;
+            Image<unsigned char> imageGrayUChar;
+
+            readImage(viewFilename, imageGrayFloat);
 
             for(auto& compute : computeMethods)
             {
               // Compute features and descriptors and export them to files
-              std::cout << "Extracting "<< imageDescribers[compute.methodIndex].typeName  << " features from image " << view->getViewId() << std::endl;
+              ALICEVISION_LOG_INFO("Extracting " + imageDescribers[compute.methodIndex].typeName  + " features from view " + std::to_string(view->getViewId()) + " : '" + view->getImagePath() +"'");
               std::unique_ptr<Regions> regions;
-              imageDescribers[compute.methodIndex].describer->Describe(imageGray, regions);
+
+              if(imageDescribers[compute.methodIndex].describer->useFloatImage())
+              {
+                // image buffer use float image, use the read buffer
+                imageDescribers[compute.methodIndex].describer->Describe(imageGrayFloat, regions);
+              }
+              else
+              {
+                // image buffer can't use float image
+                if(imageGrayUChar.Width() == 0) // the first time, convert the float buffer to uchar
+                  imageGrayUChar = imageGrayFloat.GetMat().cast<unsigned char>() * 255;
+                imageDescribers[compute.methodIndex].describer->Describe(imageGrayUChar, regions);
+              }
+
               imageDescribers[compute.methodIndex].describer->Save(regions.get(), compute.featFilename, compute.descFilename);
             }
         };
         
-        if (maxJobs != MAX_JOBS_DEFAULT)
-          dispatch(maxJobs, computeFunction);
-        else
+        if (maxJobs == 1)
           computeFunction();
+        else
+          dispatch(maxJobs, computeFunction);
       }
     }
 
-    if (maxJobs != MAX_JOBS_DEFAULT) waitForCompletion();
+    if (maxJobs != 1) waitForCompletion();
 
     std::cout << "Task done in (s): " << timer.elapsed() << std::endl;
   }

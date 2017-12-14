@@ -27,8 +27,8 @@ int main() {
     + "/imageData/StanfordMobileVisualSearch/Ace_1.png";
 
   Image<unsigned char> imageL, imageR;
-  ReadImage(jpg_filenameL.c_str(), &imageL);
-  ReadImage(jpg_filenameR.c_str(), &imageR);
+  readImage(jpg_filenameL, imageL);
+  readImage(jpg_filenameR, imageR);
 
   //--
   // Detect regions thanks to an image_describer
@@ -48,7 +48,7 @@ int main() {
     Image<unsigned char> concat;
     ConcatH(imageL, imageR, concat);
     string out_filename = "00_images.jpg";
-    WriteImage(out_filename.c_str(), concat);
+    writeImage(out_filename, concat);
   }
 
   const SIFT_Regions* regionsL = dynamic_cast<SIFT_Regions*>(regions_perImage.at(0).get());
@@ -69,7 +69,7 @@ int main() {
       DrawCircle(point.x()+imageL.Width(), point.y(), point.scale(), 255, &concat);
     }
     const std::string out_filename = "01_features.jpg";
-    WriteImage(out_filename.c_str(), concat);
+    writeImage(out_filename, concat);
   }
 
   //-- Perform matching -> find Nearest neighbor, filtered with Distance ratio

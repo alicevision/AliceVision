@@ -25,9 +25,10 @@ int main(int argc, char *argv[])
   std::string verboseLevel = system::EVerboseLevel_enumToString(system::Logger::getDefaultVerboseLevel());
   std::string sfmDataFilename;
   std::string outDirectory;
+  std::string outImageFileTypeName = image::EImageFileType_enumToString(image::EImageFileType::JPEG);
 
   po::options_description allParams(
-    "Export undistorted images related to a sfm_data file.\n"
+    "Export undistorted images related to a sfmData file.\n"
     "AliceVision exportUndistortedImages");
 
   po::options_description requiredParams("Required parameters");
@@ -37,12 +38,17 @@ int main(int argc, char *argv[])
     ("output,o", po::value<std::string>(&outDirectory)->required(),
       "Output folder.");
 
+  po::options_description optionalParams("Optional parameters");
+  optionalParams.add_options()
+    ("outputFileType", po::value<std::string>(&outImageFileTypeName)->default_value(outImageFileTypeName),
+      image::EImageFileType_informations().c_str());
+
   po::options_description logParams("Log parameters");
   logParams.add_options()
     ("verboseLevel,v", po::value<std::string>(&verboseLevel)->default_value(verboseLevel),
       "verbosity level (fatal,  error, warning, info, debug, trace).");
 
-  allParams.add(requiredParams).add(logParams);
+  allParams.add(requiredParams).add(optionalParams).add(logParams);
 
   po::variables_map vm;
   try
@@ -72,56 +78,49 @@ int main(int argc, char *argv[])
   // set verbose level
   system::Logger::get()->setLogLevel(verboseLevel);
 
+  // set output file type
+  image::EImageFileType outputFileType = image::EImageFileType_stringToEnum(outImageFileTypeName);
+
   // Create output dir
   if (!stlplus::folder_exists(outDirectory))
-    stlplus::folder_create( outDirectory );
+    stlplus::folder_create(outDirectory);
 
-  SfMData sfm_data;
-  if (!Load(sfm_data, sfmDataFilename, ESfMData(VIEWS|INTRINSICS))) {
-    std::cerr << std::endl
-      << "The input SfMData file \""<< sfmDataFilename << "\" cannot be read." << std::endl;
+  SfMData sfmData;
+  if (!Load(sfmData, sfmDataFilename, ESfMData(VIEWS | INTRINSICS)))
+  {
+    ALICEVISION_LOG_ERROR("The input SfMData file \""<< sfmDataFilename << "\" cannot be read.");
     return EXIT_FAILURE;
   }
 
-  bool bOk = true;
+  // Export views as undistorted images (those with valid Intrinsics)
+  Image<RGBfColor> image, image_ud;
+  boost::progress_display my_progress_bar( sfmData.GetViews().size() );
+  for(Views::const_iterator iter = sfmData.GetViews().begin();
+    iter != sfmData.GetViews().end(); ++iter, ++my_progress_bar)
   {
-    // Export views as undistorted images (those with valid Intrinsics)
-    Image<RGBColor> image, image_ud;
-    boost::progress_display my_progress_bar( sfm_data.GetViews().size() );
-    for(Views::const_iterator iter = sfm_data.GetViews().begin();
-      iter != sfm_data.GetViews().end(); ++iter, ++my_progress_bar)
+    const View* view = iter->second.get();
+    bool bIntrinsicDefined = view->getIntrinsicId() != UndefinedIndexT &&
+      sfmData.GetIntrinsics().find(view->getIntrinsicId()) != sfmData.GetIntrinsics().end();
+
+    Intrinsics::const_iterator iterIntrinsic = sfmData.GetIntrinsics().find(view->getIntrinsicId());
+
+    const std::string srcImage = view->getImagePath();
+    const std::string dstImage = stlplus::create_filespec(outDirectory, stlplus::basename_part(srcImage) + "." + image::EImageFileType_enumToString(outputFileType));
+
+    const IntrinsicBase * cam = iterIntrinsic->second.get();
+    if (cam->isValid() && cam->have_disto())
     {
-      const View * view = iter->second.get();
-      bool bIntrinsicDefined = view->getIntrinsicId() != UndefinedIndexT &&
-        sfm_data.GetIntrinsics().find(view->getIntrinsicId()) != sfm_data.GetIntrinsics().end();
-
-      Intrinsics::const_iterator iterIntrinsic = sfm_data.GetIntrinsics().find(view->getIntrinsicId());
-
-      const std::string srcImage = stlplus::create_filespec(sfm_data.s_root_path, view->getImagePath());
-      const std::string dstImage = stlplus::create_filespec(
-        outDirectory, stlplus::filename_part(srcImage));
-
-      const IntrinsicBase * cam = iterIntrinsic->second.get();
-      if (cam->isValid() && cam->have_disto())
-      {
-        // undistort the image and save it
-        if (ReadImage( srcImage.c_str(), &image))
-        {
-          UndistortImage(image, cam, image_ud, BLACK);
-          bOk &= WriteImage(dstImage.c_str(), image_ud);
-        }
-      }
-      else // (no distortion)
-      {
-        // copy the image since there is no distortion
-        stlplus::file_copy(srcImage, dstImage);
-      }
+      // undistort the image and save it
+      readImage(srcImage, image);
+      UndistortImage(image, cam, image_ud, FBLACK);
+      writeImage(dstImage, image_ud);
+    }
+    else // (no distortion)
+    {
+      // copy the image since there is no distortion
+      stlplus::file_copy(srcImage, dstImage);
     }
   }
 
-  // Exit program
-  if (bOk)
-    return( EXIT_SUCCESS );
-  else
-    return( EXIT_FAILURE );
+  return EXIT_SUCCESS ;
 }

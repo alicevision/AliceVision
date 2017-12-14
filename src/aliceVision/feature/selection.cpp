@@ -75,7 +75,7 @@ void thresholdMatches(aliceVision::matching::IndMatches& outputMatches, const st
 }
 
 /**
- * @brief Perform the gris filtering on the matches
+ * @brief Perform the grid filtering on the matches
  * @param[in] lRegions The regions of the first picture
  * @param[in] rRegions The regions of the second picture
  * @param[in] indexImagePair The Pair of matched images

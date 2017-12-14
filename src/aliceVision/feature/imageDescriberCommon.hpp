@@ -6,6 +6,7 @@
 #pragma once
 
 #include <aliceVision/config.hpp>
+
 #include <string>
 #include <vector>
 #include <stdexcept>

@@ -13,6 +13,13 @@ namespace aliceVision {
 namespace sfm {
 
 /**
+ * @brief computeUID
+ * @param view
+ * @return
+ */
+std::size_t computeUID(const View& view);
+
+/**
  * @brief Update all viewID referenced in the observation of each landmark according 
  * to the provided mapping.
  * 

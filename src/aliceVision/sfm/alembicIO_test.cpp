@@ -26,7 +26,6 @@ SfMData createTestScene(IndexT singleViewsCount,
                            bool bSharedIntrinsic)
 {
   SfMData sfm_data;
-  sfm_data.s_root_path = "./";
 
   std::srand(time(nullptr));
 

@@ -180,11 +180,9 @@ int main(int argc, char ** argv)
     const size_t J = iter->second;
 
     const View * view_I = sfm_data.GetViews().at(I).get();
-    const std::string sView_I= stlplus::create_filespec(sfm_data.s_root_path,
-      view_I->getImagePath());
+    const std::string sView_I= view_I->getImagePath();
     const View * view_J = sfm_data.GetViews().at(J).get();
-    const std::string sView_J= stlplus::create_filespec(sfm_data.s_root_path,
-      view_J->getImagePath());
+    const std::string sView_J= view_J->getImagePath();
 
     const std::pair<size_t, size_t>
       dimImage_I = std::make_pair(view_I->getWidth(), view_I->getHeight()),

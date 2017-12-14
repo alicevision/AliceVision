@@ -441,7 +441,7 @@ int main(int argc, char** argv)
       }
       sylinkName = bfs::path(it->second->getImagePath()).filename();
       dirname = bfs::path(outDir) / sylinkName;
-      absoluteFilename = bfs::path(sfmdataQuery->s_root_path) / sylinkName;
+      absoluteFilename = it->second->getImagePath();
       bfs::create_directories(dirname);
       bfs::create_symlink(absoluteFilename, dirname / sylinkName);
       
@@ -512,10 +512,8 @@ int main(int argc, char** argv)
         aliceVision::sfm::Views::const_iterator it = sfmdata.GetViews().find(matches[j].id);
         if(it != sfmdata.GetViews().end())
         {
-          bfs::path imgName(it->second->getImagePath());
-          sylinkName = bfs::path(myToString(j, 4) + "." + std::to_string(matches[j].score) + "." + imgName.filename().string());
-          bfs::path imgPath(sfmdata.s_root_path);
-          absoluteFilename = imgPath / imgName;
+          absoluteFilename = it->second->getImagePath();
+          sylinkName = bfs::path(myToString(j, 4) + "." + std::to_string(matches[j].score) + "." + absoluteFilename.filename().string());
         }
         else
         {

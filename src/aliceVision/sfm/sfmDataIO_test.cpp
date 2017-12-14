@@ -22,7 +22,6 @@ using namespace aliceVision::sfm;
 SfMData createTestScene(std::size_t viewsCount = 2, std::size_t observationCount = 2, bool sharedIntrinsic = true)
 {
   SfMData sfm_data;
-  sfm_data.s_root_path = "./";
 
   for(IndexT i = 0; i < viewsCount; ++i)
   {
