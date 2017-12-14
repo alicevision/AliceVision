@@ -252,6 +252,11 @@ int main(int argc, char **argv)
   sfmEngine.setAllowUserInteraction(allowUserInteraction);
   sfmEngine.setUseLocalBundleAdjustmentStrategy(useLocalBundleAdjustment);
   sfmEngine.setLocalBundleAdjustmentGraphDistance(localBundelAdjustementGraphDistanceLimit);
+  if (minNbObservationsForTriangulation < 2)
+  {
+    ALICEVISION_LOG_ERROR("Error: The value associated to the argument '--minNbObservationsForTriangulation' must be >= 2 ");
+    return EXIT_FAILURE;
+  }
   sfmEngine.setNbOfObservationsForTriangulation(minNbObservationsForTriangulation);
 
   // Handle Initial pair parameter
