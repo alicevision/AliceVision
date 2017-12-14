@@ -11,12 +11,6 @@
 
 namespace aliceVision {
 
-
-//#include "openMVG/multiview/triangulation_nview.hpp"
-//#include "openMVG/multiview/projection.hpp"
-//#include "openMVG/numeric/numeric.h"
-
-
 void TriangulateNView(const Mat2X &x,
                       const std::vector< Mat34 > &Ps,
                       Vec4 *X, 
@@ -37,7 +31,6 @@ void TriangulateNView(const Mat2X &x,
   Nullspace(&design, &X_and_alphas);
   *X = X_and_alphas.head(4);
 }
-
 
 void TriangulateNViewAlgebraic(const Mat2X &x,
                                const std::vector< Mat34 > &Ps,
@@ -63,13 +56,13 @@ void TriangulateNViewAlgebraic(const Mat2X &x,
 void TriangulateNViewLORANSAC(const Mat2X &x, 
                               const std::vector< Mat34 > &Ps,
                               Vec4 *X, 
-                              std::vector<std::size_t> & inliersIndex, 
+                              std::vector<std::size_t> *inliersIndex, 
                               const double & thresholdError)
 {
   using TriangulationKernel = LORansacTriangulationKernel<>;
   TriangulationKernel kernel(x, Ps);
   robustEstimation::ScoreEvaluator<TriangulationKernel> scorer(thresholdError);
-  *X = robustEstimation::LO_RANSAC(kernel, scorer, &inliersIndex, NULL, false);
+  *X = robustEstimation::LO_RANSAC(kernel, scorer, inliersIndex);
 }
 
 double Triangulation::error(const Vec3 &X) const
@@ -84,7 +77,6 @@ double Triangulation::error(const Vec3 &X) const
   }
   return squared_reproj_error;
 }
-
 
 Vec3 Triangulation::compute(int iter) const
 {
@@ -161,7 +153,6 @@ void TriangulateNViewsSolver::Solve(const Mat2X& x, const std::vector<Mat34>& Ps
   TriangulateNViewAlgebraic(x, Ps, &pt3d, &weights);
   X.push_back(pt3d);
   assert(X.size() == 1);
-
 }
 
 }  // namespace aliceCision
