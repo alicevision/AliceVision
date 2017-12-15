@@ -4,9 +4,10 @@
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
 #pragma once
-#include "aliceVision/feature/imageDescriberCommon.hpp"
-#include "aliceVision/feature/ImageDescriber.hpp"
-#include "aliceVision/feature/regionsFactory.hpp"
+
+#include <aliceVision/feature/imageDescriberCommon.hpp>
+#include <aliceVision/feature/ImageDescriber.hpp>
+#include <aliceVision/feature/regionsFactory.hpp>
 
 namespace aliceVision {
 
@@ -28,6 +29,15 @@ class ImageDescriber_AKAZE_OCV : public ImageDescriber
 public:
 
   /**
+   * @brief Check if the image describer use float image
+   * @return True if the image describer use float image
+   */
+  bool useFloatImage() const override
+  {
+    return false;
+  }
+
+  /**
    * @brief Get the corresponding EImageDescriberType
    * @return EImageDescriberType
    */
@@ -47,7 +57,7 @@ public:
   }
 
   /**
-   * @brief Detect regions on the image and compute their attributes (description)
+   * @brief Detect regions on the 8-bit image and compute their attributes (description)
    * @param[in] image Image.
    * @param[out] regions The detected regions and attributes (the caller must delete the allocated data)
    * @param[in] mask 8-bit gray image for keypoint filtering (optional).
@@ -55,8 +65,9 @@ public:
    * @return True if detection succed.
    */
   bool Describe(const image::Image<unsigned char>& image,
-                std::unique_ptr<Regions> &regions,
-                const image::Image<unsigned char> * mask = NULL) override;
+                std::unique_ptr<Regions>& regions,
+                const image::Image<unsigned char>* mask = NULL) override;
+
 
   /**
    * @brief Allocate Regions type depending of the ImageDescriber

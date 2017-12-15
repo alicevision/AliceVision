@@ -13,6 +13,7 @@
 #if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_CCTAG)
 #include <aliceVision/feature/cctag/ImageDescriber_CCTAG.hpp>
 #endif //ALICEVISION_HAVE_CCTAG
+
 #if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_OPENCV)
 #if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_OCVSIFT)
 #include <aliceVision/feature/openCV/ImageDescriber_SIFT_OCV.hpp>

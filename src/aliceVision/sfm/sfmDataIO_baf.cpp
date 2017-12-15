@@ -120,8 +120,7 @@ bool Save_BAF(
       iterV != sfm_data.GetViews().end();
       ++ iterV)
     {
-      const std::string sView_filename = stlplus::create_filespec(sfm_data.s_root_path,
-        iterV->second->getImagePath());
+      const std::string sView_filename = iterV->second->getImagePath();
       stream
         << sView_filename
         << ' ' << iterV->second->getIntrinsicId()

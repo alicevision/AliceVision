@@ -1,9 +1,9 @@
 // This file is part of the AliceVision project and is made available under
 // the terms of the MPL2 license (see the COPYING.md file).
 
-#include "aliceVision/config.hpp"
-#include "aliceVision/system/Logger.hpp"
-#include "aliceVision/exif/sensorWidthDatabase/parseDatabase.hpp"
+#include <aliceVision/config.hpp>
+#include <aliceVision/system/Logger.hpp>
+#include <aliceVision/sensorDB/parseDatabase.hpp>
 
 #include <boost/program_options.hpp>
 
@@ -49,16 +49,16 @@ int main(int argc, char ** argv)
     return EXIT_FAILURE;
   }
 
-  std::vector<aliceVision::exif::sensordb::Datasheet> vec_database;
-  aliceVision::exif::sensordb::Datasheet datasheet;
+  std::vector<aliceVision::sensorDB::Datasheet> vec_database;
+  aliceVision::sensorDB::Datasheet datasheet;
 
-  if ( !aliceVision::exif::sensordb::parseDatabase( sensorDatabasePath, vec_database ) )
+  if ( !aliceVision::sensorDB::parseDatabase( sensorDatabasePath, vec_database ) )
   {
     std::cout << "Database creation failure from the file : " << sensorDatabasePath  << std::endl;
     return EXIT_FAILURE;
   }
 
-  if ( !aliceVision::exif::sensordb::getInfo( brandName, modelName, vec_database, datasheet ) )
+  if ( !aliceVision::sensorDB::getInfo( brandName, modelName, vec_database, datasheet ) )
   {
     std::cout << "The camera " << modelName << " doesn't exist in the database" << std::endl;
     return EXIT_FAILURE;

@@ -10,8 +10,8 @@ namespace feature {
 
 using namespace std;
 
-bool ImageDescriber_AKAZE::Describe(const image::Image<unsigned char>& image,
-  std::unique_ptr<Regions> &regions,
+bool ImageDescriber_AKAZE::Describe(const image::Image<float>& image,
+  std::unique_ptr<Regions>& regions,
   const image::Image<unsigned char>* mask)
 {
   _params._options.fDesc_factor =
@@ -163,7 +163,7 @@ bool ImageDescriber_AKAZE::Describe(const image::Image<unsigned char>& image,
     break;
   }
   return true;
-};
+}
 
 } // namespace feature
 } // namespace aliceVision

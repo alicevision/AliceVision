@@ -7,11 +7,10 @@ add_executable(aliceVision_cameraInit main_cameraInit.cpp)
 
 target_link_libraries(aliceVision_cameraInit
   aliceVision_system
+  aliceVision_sensorDB
   aliceVision_image
   aliceVision_feature
-  aliceVision_exif
   aliceVision_sfm
-  easyexif
   ${BOOST_LIBRARIES}
 )
 
@@ -33,8 +32,6 @@ target_link_libraries(aliceVision_featureExtraction
   aliceVision_feature
   aliceVision_multiview
   aliceVision_sfm
-  aliceVision_exif
-  easyexif
   stlplus
   vlsift
   ${BOOST_LIBRARIES}
@@ -311,21 +308,3 @@ set_property(TARGET aliceVision_prepareDenseScene
 install(TARGETS aliceVision_prepareDenseScene
   DESTINATION bin/
 )
-
-##
-# Export tutorial with valid path thanks to a configuration file
-##
-#set(ALICEVISION_SOFTWARE_SFM_SRC_DIR ${CMAKE_CURRENT_LIST_DIR})
-#if(MSVC OR APPLE)
-#  set(ALICEVISION_SOFTWARE_SFM_BUILD_DIR "${EXECUTABLE_OUTPUT_PATH}/${CMAKE_BUILD_TYPE}")
-#else()
-#  set(ALICEVISION_SOFTWARE_SFM_BUILD_DIR ${EXECUTABLE_OUTPUT_PATH})
-#endif()
-
-#set(ALICEVISION_TUTORIAL_IN_FILE "${CMAKE_CURRENT_LIST_DIR}/tutorial_demo.py.in")
-#configure_file(${ALICEVISION_TUTORIAL_IN_FILE}
-#    "${CMAKE_CURRENT_BINARY_DIR}/tutorial_demo.py" @ONLY)
-
-#set(ALICEVISION_TUTORIAL_IN_FILE "${CMAKE_CURRENT_LIST_DIR}/pipeline.py.in")
-#configure_file(${ALICEVISION_TUTORIAL_IN_FILE}
-#    "${CMAKE_CURRENT_BINARY_DIR}/pipeline.py" @ONLY)

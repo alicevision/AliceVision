@@ -53,17 +53,17 @@ public:
   // IO - one file for region features, one file for region descriptors
   //--
 
-  virtual bool Load(
+  virtual void Load(
     const std::string& sfileNameFeats,
     const std::string& sfileNameDescs) = 0;
 
-  virtual bool Save(
+  virtual void Save(
     const std::string& sfileNameFeats,
     const std::string& sfileNameDescs) const = 0;
 
-  virtual bool SaveDesc(const std::string& sfileNameDescs) const = 0;
+  virtual void SaveDesc(const std::string& sfileNameDescs) const = 0;
 
-  virtual bool LoadFeatures(
+  virtual void LoadFeatures(
     const std::string& sfileNameFeats) = 0;
 
   //--
@@ -134,9 +134,9 @@ protected:
   std::vector<FeatureT> _vec_feats;    // region features
 
 public:
-  bool LoadFeatures(const std::string& sfileNameFeats)
+  void LoadFeatures(const std::string& sfileNameFeats)
   {
-    return loadFeatsFromFile(sfileNameFeats, _vec_feats);
+    loadFeatsFromFile(sfileNameFeats, _vec_feats);
   }
 
   PointFeatures GetRegionsPositions() const
@@ -217,26 +217,26 @@ public:
   }
 
   /// Read from files the regions and their corresponding descriptors.
-  bool Load(
+  void Load(
     const std::string& sfileNameFeats,
     const std::string& sfileNameDescs) override
   {
-    return loadFeatsFromFile(sfileNameFeats, this->_vec_feats)
-          & loadDescsFromBinFile(sfileNameDescs, _vec_descs);
+    loadFeatsFromFile(sfileNameFeats, this->_vec_feats);
+    loadDescsFromBinFile(sfileNameDescs, _vec_descs);
   }
 
   /// Export in two separate files the regions and their corresponding descriptors.
-  bool Save(
+  void Save(
     const std::string& sfileNameFeats,
     const std::string& sfileNameDescs) const override
   {
-    return saveFeatsToFile(sfileNameFeats, this->_vec_feats)
-          & saveDescsToBinFile(sfileNameDescs, _vec_descs);
+    saveFeatsToFile(sfileNameFeats, this->_vec_feats);
+    saveDescsToBinFile(sfileNameDescs, _vec_descs);
   }
 
-  bool SaveDesc(const std::string& sfileNameDescs) const override
+  void SaveDesc(const std::string& sfileNameDescs) const override
   {
-    return saveDescsToBinFile(sfileNameDescs, _vec_descs);
+    saveDescsToBinFile(sfileNameDescs, _vec_descs);
   }
 
   /// Mutable and non-mutable DescriptorT getters.

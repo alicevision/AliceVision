@@ -1,4 +1,3 @@
-
 # ==============================================================================
 # AliceVision version
 # ==============================================================================
@@ -102,18 +101,6 @@ if(ALICEVISION_BUILD_COVERAGE AND CMAKE_COMPILER_IS_GNUCXX)
   set(CMAKE_EXE_LINKER_FLAGS
     "${CMAKE_EXE_LINKER_FLAGS} -fprofile-arcs -ftest-coverage")
 endif()
-
-# ==============================================================================
-# IMAGE IO detection
-# ==============================================================================
-if(NOT APPLE)
-  find_package(JPEG QUIET)
-  find_package(PNG QUIET)
-  find_package(TIFF QUIET)
-endif()
-
-# Folders
-set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 
 # ==============================================================================
 # SUBMODULE CONFIGURATION
@@ -446,21 +433,11 @@ endif()
 # ==============================================================================
 # OpenImageIO
 # ==============================================================================
-# - optional, it allows to use keyframeSelection
-# ==============================================================================
-if(ALICEVISION_USE_OIIO STREQUAL "OFF")
-  set(ALICEVISION_HAVE_OIIO 0)
-else() # ON OR AUTO
-  find_package(OpenImageIO)
-  if(OPENIMAGEIO_FOUND)
-    set(ALICEVISION_HAVE_OIIO 1)
-    message(STATUS "OpenImageIO found.")
-  elseif(ALICEVISION_USE_OIIO STREQUAL "ON")
-    set(ALICEVISION_HAVE_OIIO 0)
-    message(SEND_ERROR "Failed to find OpenImageIO.")
-  else()
-    set(ALICEVISION_HAVE_OIIO 0)
-  endif()
+find_package(OpenImageIO)
+if(OPENIMAGEIO_FOUND)
+  message(STATUS "OpenImageIO found.")
+else()
+  message(SEND_ERROR "Failed to find OpenImageIO.")
 endif()
 
 # ==============================================================================
@@ -471,9 +448,6 @@ message("generatedDir: ${generatedDir}")
 set(ALICEVISION_INCLUDE_DIRS
   ${CMAKE_CURRENT_SOURCE_DIR} 
   ${generatedDir}
-  ${JPEG_INCLUDE_DIR}
-  ${PNG_INCLUDE_DIRS}
-  ${TIFF_INCLUDE_DIR}
   ${CMAKE_CURRENT_SOURCE_DIR}/dependencies
   ${CMAKE_CURRENT_SOURCE_DIR}/dependencies/cereal/include
   ${LEMON_INCLUDE_DIRS}
@@ -499,7 +473,6 @@ add_subdirectory(aliceVision)
 # ==============================================================================
 set(ALICEVISION_LIBRARIES
   aliceVision_dataio
-  aliceVision_exif
   aliceVision_feature
   aliceVision_image
   aliceVision_kvld
@@ -511,6 +484,7 @@ set(ALICEVISION_LIBRARIES
   aliceVision_multiview
   aliceVision_numeric
   aliceVision_rig
+  aliceVision_sensorDB
   aliceVision_sfm
   aliceVision_system
   aliceVision_voctree
@@ -581,7 +555,6 @@ message("** Build Shared libs: " ${ALICEVISION_BUILD_SHARED})
 message("** Build AliceVision tests: " ${ALICEVISION_BUILD_TESTS})
 message("** Build AliceVision samples applications: " ${ALICEVISION_BUILD_EXAMPLES})
 message("** Build AliceVision documentation: " ${ALICEVISION_HAVE_DOC})
-message("** Build the keyframeSelection module: " ${ALICEVISION_HAVE_OIIO})
 message("** Enable code coverage generation: " ${ALICEVISION_BUILD_COVERAGE})
 message("** Enable OpenMP parallelization: " ${ALICEVISION_HAVE_OPENMP})
 message("** Build OpenCV+AliceVision samples programs: " ${ALICEVISION_HAVE_OPENCV})
@@ -608,24 +581,6 @@ if(ALICEVISION_USE_INTERNAL_FLANN)
   message(STATUS "FLANN: " ${FLANN_VERSION} " (internal)")
 else()
   message(STATUS "FLANN: " ${FLANN_VERSION} " (external)")
-endif()
-
-if(ALICEVISION_USE_INTERNAL_TIFF)
-  message(STATUS "LIBTIFF: " ${TIFF_VERSION_STRING} " (internal)")
-else()
-  message(STATUS "LIBTIFF: " ${TIFF_VERSION_STRING} " (external)")
-endif()
-
-if(ALICEVISION_USE_INTERNAL_PNG)
-  message(STATUS "LIBPNG: " ${PNG_VERSION_STRING} " (internal)")
-else()
-  message(STATUS "LIBPNG: " ${PNG_VERSION_STRING} " (external)")
-endif()
-
-if(ALICEVISION_USE_INTERNAL_JPEG)
-  message(STATUS "LIBJPEG (internal)")
-else()
-  message(STATUS "LIBJPEG (external)")
 endif()
 
 if(ALICEVISION_USE_INTERNAL_CLP)

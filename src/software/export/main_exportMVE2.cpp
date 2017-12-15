@@ -121,7 +121,7 @@ bool exportToMVE2Format(
       }
 
       // We have a valid view with a corresponding camera & pose
-      const std::string srcImage = stlplus::create_filespec(sfm_data.s_root_path, view->getImagePath());
+      const std::string srcImage = view->getImagePath();
       const std::string dstImage =
         stlplus::create_filespec(stlplus::folder_append_separator(sOutViewIteratorDirectory), "undistorted","png");
 
@@ -130,9 +130,9 @@ bool exportToMVE2Format(
       if (cam->isValid() && cam->have_disto())
       {
         // Undistort and save the image
-        ReadImage(srcImage.c_str(), &image);
+        readImage(srcImage, image);
         UndistortImage(image, cam, image_ud, BLACK);
-        WriteImage(dstImage.c_str(), image_ud);
+        writeImage(dstImage, image_ud);
       }
       else // (no distortion)
       {
@@ -144,8 +144,8 @@ bool exportToMVE2Format(
         }
         else
         {
-          ReadImage( srcImage.c_str(), &image);
-          WriteImage( dstImage.c_str(), image);
+          readImage( srcImage, image);
+          writeImage( dstImage, image);
         }
       }
 
@@ -201,7 +201,7 @@ bool exportToMVE2Format(
       thumbnail = create_thumbnail(image, 50, 50);
       const std::string dstThumbnailImage =
         stlplus::create_filespec(stlplus::folder_append_separator(sOutViewIteratorDirectory), "thumbnail","png");
-      WriteImage(dstThumbnailImage.c_str(), thumbnail);
+      writeImage(dstThumbnailImage, thumbnail);
       
       ++view_index;
     }

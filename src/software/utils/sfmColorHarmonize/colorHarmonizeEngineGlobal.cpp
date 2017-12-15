@@ -283,14 +283,14 @@ bool ColorHarmonizationEngineGlobal::Process()
       string out_filename_J = "00_mask_J.png";
       out_filename_J = stlplus::create_filespec( sEdge, out_filename_J );
 
-      WriteImage( out_filename_I.c_str(), maskI );
-      WriteImage( out_filename_J.c_str(), maskJ );
+      writeImage(out_filename_I, maskI);
+      writeImage(out_filename_J, maskJ);
     }
 
     //-- Compute the histograms
     Image< RGBColor > imageI, imageJ;
-    ReadImage( p_imaNames.first.c_str(), &imageI );
-    ReadImage( p_imaNames.second.c_str(), &imageJ );
+    readImage(p_imaNames.first, imageI);
+    readImage(p_imaNames.second, imageJ);
 
     Histogram< double > histoI( minvalue, maxvalue, bin);
     Histogram< double > histoJ( minvalue, maxvalue, bin);
@@ -417,7 +417,7 @@ bool ColorHarmonizationEngineGlobal::Process()
     }
 
     Image< RGBColor > image_c;
-    ReadImage( _vec_fileNames[ imaNum ].c_str(), &image_c );
+    readImage( _vec_fileNames[ imaNum ], image_c );
 
     #pragma omp parallel for
     for( int j = 0; j < image_c.Height(); ++j )
@@ -436,7 +436,7 @@ bool ColorHarmonizationEngineGlobal::Process()
       stlplus::folder_create( out_folder );
     const std::string out_filename = stlplus::create_filespec( out_folder, stlplus::filename_part(_vec_fileNames[ imaNum ]) );
 
-    WriteImage( out_filename.c_str(), image_c );
+    writeImage( out_filename, image_c );
   }
   return true;
 }
@@ -471,7 +471,7 @@ bool ColorHarmonizationEngineGlobal::ReadInputData()
     iter != sfm_data.GetViews().end(); ++iter)
   {
     const View * v = iter->second.get();
-    _vec_fileNames.push_back( stlplus::create_filespec(sfm_data.s_root_path, v->getImagePath()));
+    _vec_fileNames.push_back(v->getImagePath());
     _vec_imageSize.push_back( std::make_pair( v->getWidth(), v->getHeight() ));
   }
 

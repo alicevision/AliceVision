@@ -132,8 +132,7 @@ int main(int argc, char ** argv)
   for(const auto &iterViews : sfm_data.views)
   {
     const View * view = iterViews.second.get();
-    const std::string sView_filename = stlplus::create_filespec(sfm_data.s_root_path,
-      view->getImagePath());
+    const std::string sView_filename = view->getImagePath();
 
     const std::pair<size_t, size_t>
       dimImage = std::make_pair(view->getWidth(), view->getHeight());

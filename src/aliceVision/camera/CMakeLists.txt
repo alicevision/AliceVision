@@ -13,10 +13,10 @@ set(camera_files_headers
 
 # Sources
 set(camera_files_test
-    pinholeBrown_test.cpp
-    pinholeFisheye1_test.cpp
-    pinholeFisheye_test.cpp
-    pinholeRadial_test.cpp
+  pinholeBrown_test.cpp
+  pinholeFisheye1_test.cpp
+  pinholeFisheye_test.cpp
+  pinholeRadial_test.cpp
 )
 
 add_library(aliceVision_camera INTERFACE)

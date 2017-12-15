@@ -95,7 +95,7 @@ void saveIntrinsic(const std::string& name, IndexT intrinsicId, const std::share
 
   if(camera::isPinhole(intrinsicType))
   {
-    const camera::Pinhole& pinholeIntrinsic = static_cast<camera::Pinhole&>(*intrinsic);
+    const camera::Pinhole& pinholeIntrinsic = dynamic_cast<camera::Pinhole&>(*intrinsic);
 
     intrinsicTree.put("pxFocalLength", pinholeIntrinsic.getPxFocalLength());
     saveMatrix("principalPoint", pinholeIntrinsic.getPrincipalPoint(), intrinsicTree);
@@ -120,33 +120,29 @@ void loadIntrinsic(IndexT& intrinsicId, std::shared_ptr<camera::IntrinsicBase>& 
   intrinsicId = intrinsicTree.get<IndexT>("intrinsicId");
   const unsigned int width = intrinsicTree.get<unsigned int>("width");
   const unsigned int height = intrinsicTree.get<unsigned int>("height");
-  const camera::EINTRINSIC descType = camera::EINTRINSIC_stringToEnum(intrinsicTree.get<std::string>("type"));
+  const camera::EINTRINSIC intrinsicType = camera::EINTRINSIC_stringToEnum(intrinsicTree.get<std::string>("type"));
   const double pxFocalLength = intrinsicTree.get<double>("pxFocalLength");
 
   // principal point
   Vec2 principalPoint;
   loadMatrix("principalPoint", principalPoint, intrinsicTree);
 
-  // pinhole parameters
-  if(camera::isPinhole(descType))
-  {
-    std::shared_ptr<camera::Pinhole> pinholeIntrinsic = camera::createPinholeIntrinsic(descType, width, height, pxFocalLength, principalPoint(0), principalPoint(1));
-    pinholeIntrinsic->setInitialFocalLengthPix(intrinsicTree.get<double>("pxInitialFocalLength"));
-    pinholeIntrinsic->setSerialNumber(intrinsicTree.get<std::string>("serialNumber"));
-
-    std::vector<double> distortionParams;
-
-    for(bpt::ptree::value_type &paramNode : intrinsicTree.get_child("distortionParams"))
-      distortionParams.emplace_back(paramNode.second.get_value<double>());
-
-    pinholeIntrinsic->setDistortionParams(distortionParams);
-    intrinsic = std::static_pointer_cast<camera::IntrinsicBase>(pinholeIntrinsic);
-  }
-  else
-  {
-    // camera is not a Pinhole model
+  // check if the camera is a Pinhole model
+  if(!camera::isPinhole(intrinsicType))
     throw std::out_of_range("Only Pinhole camera model supported");
-  }
+
+  // pinhole parameters
+  std::shared_ptr<camera::Pinhole> pinholeIntrinsic = camera::createPinholeIntrinsic(intrinsicType, width, height, pxFocalLength, principalPoint(0), principalPoint(1));
+  pinholeIntrinsic->setInitialFocalLengthPix(intrinsicTree.get<double>("pxInitialFocalLength"));
+  pinholeIntrinsic->setSerialNumber(intrinsicTree.get<std::string>("serialNumber"));
+
+  std::vector<double> distortionParams;
+
+  for(bpt::ptree::value_type &paramNode : intrinsicTree.get_child("distortionParams"))
+    distortionParams.emplace_back(paramNode.second.get_value<double>());
+
+  pinholeIntrinsic->setDistortionParams(distortionParams);
+  intrinsic = std::static_pointer_cast<camera::IntrinsicBase>(pinholeIntrinsic);
 }
 
 void saveRig(const std::string& name, IndexT rigId, const Rig& rig, bpt::ptree& parentTree)
@@ -167,7 +163,7 @@ void saveRig(const std::string& name, IndexT rigId, const Rig& rig, bpt::ptree& 
      rigSubPosesTree.push_back(std::make_pair("", rigSubPoseTree));
   }
 
-  rigTree.add_child("subposes", rigSubPosesTree);
+  rigTree.add_child("subPoses", rigSubPosesTree);
 
   parentTree.push_back(std::make_pair(name, rigTree));
 }
@@ -176,6 +172,7 @@ void saveRig(const std::string& name, IndexT rigId, const Rig& rig, bpt::ptree& 
 void loadRig(IndexT& rigId, Rig& rig, bpt::ptree& rigTree)
 {
   rigId =  rigTree.get<IndexT>("rigId");
+  rig = Rig(rigTree.get_child("subPoses").size());
   int subPoseId = 0;
 
   for(bpt::ptree::value_type &subPoseNode : rigTree.get_child("subPoses"))
@@ -247,7 +244,7 @@ void loadLandmark(IndexT& landmarkId, Landmark& landmark, bpt::ptree& landmarkTr
 
 bool saveJSON(const SfMData& sfmData, const std::string& filename, ESfMData partFlag)
 {
-  const Vec3 version = {0, 0, 0};
+  const Vec3 version = {1, 0, 0};
 
   // save flags
   const bool saveViews = (partFlag & VIEWS) == VIEWS;
@@ -378,16 +375,36 @@ bool loadJSON(SfMData& sfmData, const std::string& filename, ESfMData partFlag, 
   {
     Views& views = sfmData.GetViews();
 
-    for(bpt::ptree::value_type &viewNode : fileTree.get_child("views"))
+    if(incompleteViews)
     {
-      View view;
+      // store incomplete views in a vector
+      std::vector<View> incompleteViews(fileTree.get_child("views").size());
 
-      loadView(view, viewNode.second);
+      int viewIndex = 0;
+      for(bpt::ptree::value_type &viewNode : fileTree.get_child("views"))
+      {
+        loadView(incompleteViews.at(viewIndex), viewNode.second);
+        ++viewIndex;
+      }
 
-      if(incompleteViews)
-        updateIncompleteView(view);
+      // update incomplete views
+      #pragma omp parallel for
+      for(int i = 0; i < incompleteViews.size(); ++i)
+        updateIncompleteView(incompleteViews.at(i));
 
-      views.emplace(view.getViewId(), std::make_shared<View>(view));
+      // copy complete views in the SfMData views map
+      for(const View& view : incompleteViews)
+        views.emplace(view.getViewId(), std::make_shared<View>(view));
+    }
+    else
+    {
+      // store directly in the SfMData views map
+      for(bpt::ptree::value_type &viewNode : fileTree.get_child("views"))
+      {
+        View view;
+        loadView(view, viewNode.second);
+        views.emplace(view.getViewId(), std::make_shared<View>(view));
+      }
     }
   }
 

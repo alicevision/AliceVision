@@ -38,12 +38,12 @@ BOOST_AUTO_TEST_CASE(featureIO_NON_EXISTING_FILE) {
 
   // Try to read a non-existing feature file
   Feats_T vec_feats;
-  BOOST_CHECK(!loadFeatsFromFile("x.feat", vec_feats));
+  BOOST_CHECK_THROW(loadFeatsFromFile("x.feat", vec_feats), std::exception);
 
   // Try to read a non-existing descriptor file
   Descs_T vec_descs;
-  BOOST_CHECK(!loadDescsFromFile("x.desc", vec_descs));
-  BOOST_CHECK(!loadDescsFromBinFile("x.desc", vec_descs));
+  BOOST_CHECK_THROW(loadDescsFromFile("x.desc", vec_descs), std::exception);
+  BOOST_CHECK_THROW(loadDescsFromBinFile("x.desc", vec_descs), std::exception);
 }
 
 BOOST_AUTO_TEST_CASE(featureIO_ASCII) {
@@ -53,11 +53,11 @@ BOOST_AUTO_TEST_CASE(featureIO_ASCII) {
   }
 
   //Save them to a file
-  BOOST_CHECK(saveFeatsToFile("tempFeats.feat", vec_feats));
+  BOOST_CHECK_NO_THROW(saveFeatsToFile("tempFeats.feat", vec_feats));
 
   //Read the saved data and compare to input (to check write/read IO)
   Feats_T vec_feats_read;
-  BOOST_CHECK(loadFeatsFromFile("tempFeats.feat", vec_feats_read));
+  BOOST_CHECK_NO_THROW(loadFeatsFromFile("tempFeats.feat", vec_feats_read));
   BOOST_CHECK_EQUAL(CARD, vec_feats_read.size());
 
   for(int i = 0; i < CARD; ++i) {
@@ -82,11 +82,11 @@ BOOST_AUTO_TEST_CASE(descriptorIO_ASCII) {
   }
 
   //Save them to a file
-  BOOST_CHECK(saveDescsToFile("tempDescs.desc", vec_descs));
+  BOOST_CHECK_NO_THROW(saveDescsToFile("tempDescs.desc", vec_descs));
 
   //Read the saved data and compare to input (to check write/read IO)
   Descs_T vec_descs_read;
-  BOOST_CHECK(loadDescsFromFile("tempDescs.desc", vec_descs_read));
+  BOOST_CHECK_NO_THROW(loadDescsFromFile("tempDescs.desc", vec_descs_read));
   BOOST_CHECK_EQUAL(CARD, vec_descs_read.size());
 
   for(int i = 0; i < CARD; ++i) {
@@ -108,11 +108,11 @@ BOOST_AUTO_TEST_CASE(descriptorIO_BINARY) {
   }
 
   //Save them to a file
-  BOOST_CHECK(saveDescsToBinFile("tempDescsBin.desc", vec_descs));
+  BOOST_CHECK_NO_THROW(saveDescsToBinFile("tempDescsBin.desc", vec_descs));
 
   //Read the saved data and compare to input (to check write/read IO)
   Descs_T vec_descs_read;
-  BOOST_CHECK(loadDescsFromBinFile("tempDescsBin.desc", vec_descs_read));
+  BOOST_CHECK_NO_THROW(loadDescsFromBinFile("tempDescsBin.desc", vec_descs_read));
   BOOST_CHECK_EQUAL(CARD, vec_descs_read.size());
 
   for(int i = 0; i < CARD; ++i) {

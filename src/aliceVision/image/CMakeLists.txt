@@ -30,11 +30,13 @@ add_library(aliceVision_image
   ${image_files_sources}
 )
 
+target_include_directories(aliceVision_image
+  PUBLIC ${OPENIMAGEIO_INCLUDE_DIRS}
+)
+
 target_link_libraries(aliceVision_image
   aliceVision_numeric
-  ${PNG_LIBRARIES}
-  ${JPEG_LIBRARIES}
-  ${TIFF_LIBRARIES}
+  ${OPENIMAGEIO_LIBRARIES}
   ${LOG_LIB}
 )
 

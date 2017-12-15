@@ -3,12 +3,11 @@
 // v. 2.0. If a copy of the MPL was not distributed with this file,
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
-#ifndef ALICEVISION_IMAGE_DESCRIPTION_MSURF_DESCRIPTOR_H
-#define ALICEVISION_IMAGE_DESCRIPTION_MSURF_DESCRIPTOR_H
+#pragma once
 
-#include "aliceVision/feature/Descriptor.hpp"
-#include "aliceVision/feature/PointFeature.hpp"
-#include "aliceVision/numeric/MathTrait.hpp"
+#include <aliceVision/feature/Descriptor.hpp>
+#include <aliceVision/feature/PointFeature.hpp>
+#include <aliceVision/numeric/MathTrait.hpp>
 
 namespace aliceVision {
 namespace feature {
@@ -157,5 +156,3 @@ namespace feature {
 
 } // namespace feature
 } // namespace aliceVision
-
-#endif

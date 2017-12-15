@@ -20,38 +20,65 @@ namespace cctag {
 namespace aliceVision {
 namespace feature {
 
-
-/** @brief CCTag filter pixel type */
+/**
+ * @brief Create an ImageDescriber interface for CCTag feature extractor
+ */
 class ImageDescriber_CCTAG : public ImageDescriber
 {
 public:
   ImageDescriber_CCTAG(const std::size_t nRings = 3);
   ~ImageDescriber_CCTAG();
 
+  /**
+   * @brief Check if the image describer use float image
+   * @return True if the image describer use float image
+   */
+  bool useFloatImage() const override
+  {
+    return false;
+  }
+
+  /**
+   * @brief Get the corresponding EImageDescriberType
+   * @return EImageDescriberType
+   */
   EImageDescriberType getDescriberType() const override
   {
     // TODO: check nRings to decide between CCTAG3 and CCTAG4
     return EImageDescriberType::CCTAG3;
   }
   
+  /**
+   * @brief Use a preset to control the number of detected regions
+   * @param[in] preset The preset configuration
+   * @return True if configuration succeed. (here always false)
+   */
   bool Set_configuration_preset(EImageDescriberPreset preset) override;
 
+  /**
+   * @brief Set if yes or no imageDescriber need to use cuda implementation
+   * @param[in] useCuda
+   */
   void setUseCuda(bool) override;
 
   void setCudaPipe(int pipe) override { _cudaPipe = pipe; }
 
   /**
-  @brief Detect regions on the image and compute their attributes (description)
-  @param image Image.
-  @param regions The detected regions and attributes (the caller must delete the allocated data)
-  @param mask 8-bit gray image for keypoint filtering (optional).
-     Non-zero values depict the region of interest.
-  */
+   * @brief Detect regions on the 8-bit image and compute their attributes (description)
+   * @param[in] image Image.
+   * @param[out] regions The detected regions and attributes (the caller must delete the allocated data)
+   * @param[in] mask 8-bit gray image for keypoint filtering (optional).
+   *    Non-zero values depict the region of interest.
+   * @return True if detection succed.
+   */
   bool Describe(const image::Image<unsigned char>& image,
     std::unique_ptr<Regions> &regions,
     const image::Image<unsigned char> * mask = nullptr) override;
 
-  /// Allocate Regions type depending of the ImageDescriber
+  /**
+   * @brief Allocate Regions type depending of the ImageDescriber
+   * @param[in,out] regions
+   */
   void Allocate(std::unique_ptr<Regions> &regions) const override;
 
   struct CCTagParameters

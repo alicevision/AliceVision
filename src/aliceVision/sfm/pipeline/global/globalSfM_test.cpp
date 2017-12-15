@@ -3,7 +3,8 @@
 // v. 2.0. If a copy of the MPL was not distributed with this file,
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
-#include "aliceVision/sfm/pipeline/syntheticScene.hpp"
+#include "aliceVision/sfm/utils/statistics.hpp"
+#include "aliceVision/sfm/utils/syntheticScene.hpp"
 #include "aliceVision/feature/FeaturesPerView.hpp"
 #include "aliceVision/matching/IndMatch.hpp"
 #include "aliceVision/sfm/sfm.hpp"

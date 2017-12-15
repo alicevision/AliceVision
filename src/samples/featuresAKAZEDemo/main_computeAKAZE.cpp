@@ -67,8 +67,8 @@ int main( int argc , char ** argv )
   // Compute base output filename
   const std::string outputBaseName = stlplus::basename_part( sOuputFile ) ;
 
-  Image<unsigned char> src ;
-  ReadImage( sInputImage.c_str() , &src ) ;
+  image::Image<unsigned char> src;
+  readImageadImage(sInputImage, src);
 
   Timer t;
   t.reset();
@@ -103,7 +103,7 @@ int main( int argc , char ** argv )
     DrawCircle(kp.x, kp.y, kp.size*2.5, 255, &src);
   }
 
-  WriteImage( (outputBaseName + std::string("_feat.png")).c_str(), src);
+  writeImage(outputBaseName + std::string("_feat.png"), src);
 
   svgDrawer svgStream( src.Width(), src.Height());
   svgStream.drawImage(sInputImage, src.Width(), src.Height());

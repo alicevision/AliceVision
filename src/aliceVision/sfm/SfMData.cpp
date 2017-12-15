@@ -31,7 +31,7 @@ bool SfMData::operator==(const SfMData& other) const {
         return false;
 
       // Image paths
-      if(s_root_path + view1.getImagePath() != other.s_root_path + view2.getImagePath())
+      if(view1.getImagePath() != view2.getImagePath())
         return false;
   }
 
@@ -247,14 +247,10 @@ bool ColorizeTracks( SfMData & sfm_data )
     std::advance(iterTT, packet_vec[0].index);
     const size_t view_index = iterTT->first;
     const View * view = sfm_data.GetViews().at(view_index).get();
-    const std::string sView_filename = stlplus::create_filespec(sfm_data.s_root_path,
-      view->getImagePath());
+    const std::string sView_filename = view->getImagePath();
     Image<RGBColor> image;
-    if(!ReadImage(sView_filename.c_str(), &image))
-    {
-      ALICEVISION_LOG_WARNING("Unable to read image: " << sView_filename);
-      return false;
-    }
+
+    readImage(sView_filename, image);
 
     // Iterate through the remaining track to color
     // - look if the current view is present to color the track

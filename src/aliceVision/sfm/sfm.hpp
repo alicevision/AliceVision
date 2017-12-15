@@ -19,7 +19,6 @@
 
 #include "aliceVision/sfm/SfMData.hpp"
 #include "aliceVision/sfm/sfmDataIO.hpp"
-#include "aliceVision/sfm/sfmDataUtils.hpp"
 #include "aliceVision/sfm/sfmDataFilters.hpp"
 #include "aliceVision/sfm/sfmDataTriangulation.hpp"
 

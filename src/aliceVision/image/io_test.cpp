@@ -3,10 +3,6 @@
 // v. 2.0. If a copy of the MPL was not distributed with this file,
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
-#include <cstdio>
-#include <iostream>
-#include <string>
-
 #include <aliceVision/system/Logger.hpp>
 #include "aliceVision/image/image.hpp"
 
@@ -14,247 +10,248 @@
 #include <boost/test/included/unit_test.hpp>
 #include <boost/test/floating_point_comparison.hpp>
 
+#include <cstdio>
+#include <iostream>
+#include <vector>
+#include <string>
+
 using namespace aliceVision;
 using namespace aliceVision::image;
 using std::string;
 
-BOOST_AUTO_TEST_CASE(ReadJpg_Jpg_Color) {
-  Image<RGBColor> image;
-  const std::string jpg_filename = string(THIS_SOURCE_DIR) + "/image_test/two_pixels_color.jpg";
-  BOOST_CHECK(ReadImage(jpg_filename.c_str(), &image));
-  BOOST_CHECK_EQUAL(2, image.Width());
-  BOOST_CHECK_EQUAL(1, image.Height());
-  BOOST_CHECK_EQUAL(3, image.Depth());
-  BOOST_CHECK_EQUAL(image(0,0), RGBColor(255, 125, 11));
-  BOOST_CHECK_EQUAL(image(0,1), RGBColor( 20, 127, 255));
+// tested extensions
+static std::vector<std::string> extensions = {"jpg", "png", "pgm", "ppm", "tiff", "exr"};
+
+BOOST_AUTO_TEST_CASE(read_unexisting) {
+  Image<unsigned char> image;
+  const std::string filename = string(THIS_SOURCE_DIR) + "/unexisting.jpg";
+  BOOST_CHECK_THROW(readImage(filename, image), std::exception);
 }
 
-BOOST_AUTO_TEST_CASE(ReadJpg_Jpg_Monochrome) {
+BOOST_AUTO_TEST_CASE(read_jpg_grayscale) {
   Image<unsigned char> image;
   const std::string jpg_filename = string(THIS_SOURCE_DIR) + "/image_test/two_pixels_monochrome.jpg";
-  BOOST_CHECK(ReadImage(jpg_filename.c_str(), &image));
+  BOOST_CHECK_NO_THROW(readImage(jpg_filename, image));
   BOOST_CHECK_EQUAL(2, image.Width());
   BOOST_CHECK_EQUAL(1, image.Height());
   BOOST_CHECK_EQUAL(1, image.Depth());
   BOOST_CHECK_EQUAL(image(0,0), (unsigned char)255);
-  BOOST_CHECK_EQUAL(image(0,1), (unsigned char)0);
+  BOOST_CHECK_EQUAL(image(0,1), (unsigned char)  0);
 }
 
-BOOST_AUTO_TEST_CASE(ReadPng_Png_Color) {
+BOOST_AUTO_TEST_CASE(read_jpg_rgb) {
+  Image<RGBColor> image;
+  const std::string jpg_filename = string(THIS_SOURCE_DIR) + "/image_test/two_pixels_color.jpg";
+  BOOST_CHECK_NO_THROW(readImage(jpg_filename, image));
+  BOOST_CHECK_EQUAL(2, image.Width());
+  BOOST_CHECK_EQUAL(1, image.Height());
+  BOOST_CHECK_EQUAL(3, image.Depth());
+  BOOST_CHECK_EQUAL(image(0,0).r(), 255);
+  BOOST_CHECK_EQUAL(image(0,0).g(), 125);
+  BOOST_CHECK_EQUAL(image(0,0).b(),  11);
+  BOOST_CHECK_EQUAL(image(0,1).r(),  20);
+  BOOST_CHECK_EQUAL(image(0,1).g(), 127);
+  BOOST_CHECK_EQUAL(image(0,1).b(), 255);
+}
+
+BOOST_AUTO_TEST_CASE(read_png_grayscale) {
+  Image<unsigned char> image;
+  const std::string png_filename = string(THIS_SOURCE_DIR) + "/image_test/two_pixels_monochrome.png";
+  BOOST_CHECK_NO_THROW(readImage(png_filename, image));
+  BOOST_CHECK_EQUAL(2, image.Width());
+  BOOST_CHECK_EQUAL(1, image.Height());
+  BOOST_CHECK_EQUAL(1, image.Depth());
+  BOOST_CHECK_EQUAL(image(0,0), (unsigned char)255);
+  BOOST_CHECK_EQUAL(image(0,1), (unsigned char)  0);
+}
+
+BOOST_AUTO_TEST_CASE(read_png_rgb) {
+  Image<RGBColor> image;
+  const std::string png_filename = string(THIS_SOURCE_DIR) + "/image_test/two_pixels_color.png";
+  BOOST_CHECK_NO_THROW(readImage(png_filename, image));
+  BOOST_CHECK_EQUAL(2, image.Width());
+  BOOST_CHECK_EQUAL(1, image.Height());
+  BOOST_CHECK_EQUAL(3, image.Depth());
+  BOOST_CHECK_EQUAL(image(0,0).r(), 255);
+  BOOST_CHECK_EQUAL(image(0,0).g(), 125);
+  BOOST_CHECK_EQUAL(image(0,0).b(),  10);
+  BOOST_CHECK_EQUAL(image(0,1).r(),  20);
+  BOOST_CHECK_EQUAL(image(0,1).g(), 127);
+  BOOST_CHECK_EQUAL(image(0,1).b(), 255);
+}
+
+BOOST_AUTO_TEST_CASE(read_png_rgba) {
   Image<RGBAColor> image;
   const std::string png_filename = string(THIS_SOURCE_DIR) + "/image_test/two_pixels_color.png";
-  BOOST_CHECK(ReadImage(png_filename.c_str(), &image));
-  // Depth is 4 (RGBA by default)
+  BOOST_CHECK_NO_THROW(readImage(png_filename, image));
   BOOST_CHECK_EQUAL(2, image.Width());
   BOOST_CHECK_EQUAL(1, image.Height());
   BOOST_CHECK_EQUAL(4, image.Depth());
-  BOOST_CHECK_EQUAL(image(0,0), RGBAColor(255, 125, 10, 255));
-  BOOST_CHECK_EQUAL(image(0,1), RGBAColor( 20, 127, 255,255));
+  BOOST_CHECK_EQUAL(image(0,0).r(), 255);
+  BOOST_CHECK_EQUAL(image(0,0).g(), 125);
+  BOOST_CHECK_EQUAL(image(0,0).b(),  10);
+  BOOST_CHECK_EQUAL(image(0,0).a(), 255);
+  BOOST_CHECK_EQUAL(image(0,1).r(),  20);
+  BOOST_CHECK_EQUAL(image(0,1).g(), 127);
+  BOOST_CHECK_EQUAL(image(0,1).b(), 255);
+  BOOST_CHECK_EQUAL(image(0,0).a(), 255);
 }
 
-BOOST_AUTO_TEST_CASE(ReadPng_Png_Monochrome) {
-  Image<unsigned char> image;
-  const std::string png_filename = string(THIS_SOURCE_DIR) + "/image_test/two_pixels_monochrome.png";
-  BOOST_CHECK(ReadImage(png_filename.c_str(), &image));
-  BOOST_CHECK_EQUAL(2, image.Width());
-  BOOST_CHECK_EQUAL(1, image.Height());
-  BOOST_CHECK_EQUAL(1, image.Depth());
-  BOOST_CHECK_EQUAL(image(0,0), (unsigned char)255);
-  BOOST_CHECK_EQUAL(image(0,1), (unsigned char)0);
-}
-
-BOOST_AUTO_TEST_CASE(GetFormat_filenames) {
-  BOOST_CHECK_EQUAL(GetFormat("something.jpg"), aliceVision::image::Jpg);
-  BOOST_CHECK_EQUAL(GetFormat("something.png"), aliceVision::image::Png);
-  BOOST_CHECK_EQUAL(GetFormat("something.pnm"), aliceVision::image::Pnm);
-  BOOST_CHECK_EQUAL(GetFormat("something.tif"), aliceVision::image::Tiff);
-  BOOST_CHECK_EQUAL(GetFormat("/some/thing.JpG"), aliceVision::image::Jpg);
-  BOOST_CHECK_EQUAL(GetFormat("/some/thing.pNG"), aliceVision::image::Png);
-  BOOST_CHECK_EQUAL(GetFormat("some/thing.PNm"), aliceVision::image::Pnm);
-  BOOST_CHECK_EQUAL(GetFormat("some/thing.TIf"), aliceVision::image::Tiff);
-  BOOST_CHECK_EQUAL(GetFormat(".s/o.m/e.t/h.i/n.g.JPG"), aliceVision::image::Jpg);
-  BOOST_CHECK_EQUAL(GetFormat(".s/o.m/e.t/h.i/n.g.PNG"), aliceVision::image::Png);
-  BOOST_CHECK_EQUAL(GetFormat(".s/o.m/e.t/h.i/n.g.PNM"), aliceVision::image::Pnm);
-  BOOST_CHECK_EQUAL(GetFormat(".s/o.m/e.t/h.i/n.g.TIF"), aliceVision::image::Tiff);
-}
-
-BOOST_AUTO_TEST_CASE(ImageIOTest_Png_Out) {
-  Image<unsigned char> image(1,2);
-  image(0,0) = 255;
-  image(1,0) = 0;
-  const std::string out_filename = ("test_write_png.png");
-  BOOST_CHECK(WriteImage(out_filename.c_str(), image));
-
-  Image<unsigned char> read_image;
-  BOOST_CHECK(ReadImage(out_filename.c_str(), &read_image));
-  BOOST_CHECK(read_image == image);
-  remove(out_filename.c_str());
-}
-
-BOOST_AUTO_TEST_CASE(ImageIOTest_Png_Out_Color) {
-  Image<RGBColor> image(1,2);
-  image(0,0) = RGBColor(255,127,0);
-  image(1,0) = RGBColor(0,127,255);
-  const std::string out_filename = ("test_write_png_color.png");
-  BOOST_CHECK(WriteImage(out_filename.c_str(), image));
-
-  Image<RGBColor> read_image;
-  BOOST_CHECK(ReadImage(out_filename.c_str(), &read_image));
-  BOOST_CHECK(read_image == image);
-  remove(out_filename.c_str());
-}
-
-BOOST_AUTO_TEST_CASE(ImageIOTest_InvalidFiles) {
-  Image<unsigned char> image;
-  const std::string filename = string(THIS_SOURCE_DIR) + "/donotexist.jpg";
-  BOOST_CHECK(!ReadImage(filename.c_str(), &image));
-  BOOST_CHECK(!ReadImage("hopefully_unexisting_file", &image));
-  remove(filename.c_str());
-}
-
-BOOST_AUTO_TEST_CASE(ImageIOTest_Jpg) {
-  Image<unsigned char> image(1,2);
-  image(0,0) = 255;
-  image(1,0) = 0;
-  const std::string filename = ("test_write_jpg.jpg");
-  BOOST_CHECK(WriteJpg(filename.c_str(), image, 100));
-
-  Image<unsigned char> read_image;
-  BOOST_CHECK(ReadImage(filename.c_str(), &read_image));
-  BOOST_CHECK(read_image == image);
-  remove(filename.c_str());
-}
-
-BOOST_AUTO_TEST_CASE(ReadPnm_Pgm) {
+BOOST_AUTO_TEST_CASE(read_pgm) {
   Image<unsigned char> image;
   const std::string pgm_filename = string(THIS_SOURCE_DIR) + "/image_test/two_pixels.pgm";
-  BOOST_CHECK(ReadImage(pgm_filename.c_str(), &image));
+  BOOST_CHECK_NO_THROW(readImage(pgm_filename, image));
   BOOST_CHECK_EQUAL(2, image.Width());
   BOOST_CHECK_EQUAL(1, image.Height());
   BOOST_CHECK_EQUAL(1, image.Depth());
   BOOST_CHECK_EQUAL(image(0,0), (unsigned char)255);
-  BOOST_CHECK_EQUAL(image(0,1), (unsigned char)0);
+  BOOST_CHECK_EQUAL(image(0,1), (unsigned char)  0);
 }
 
-BOOST_AUTO_TEST_CASE(ReadPnm_PgmComments) {
+BOOST_AUTO_TEST_CASE(read_pgm_withcomments) {
   Image<unsigned char> image;
   const std::string pgm_filename = string(THIS_SOURCE_DIR) + "/image_test/two_pixels_gray.pgm";
-  BOOST_CHECK(ReadImage(pgm_filename.c_str(), &image));
+  BOOST_CHECK_NO_THROW(readImage(pgm_filename, image));
   BOOST_CHECK_EQUAL(2, image.Width());
   BOOST_CHECK_EQUAL(1, image.Height());
   BOOST_CHECK_EQUAL(1, image.Depth());
   BOOST_CHECK_EQUAL(image(0,0), (unsigned char)255);
-  BOOST_CHECK_EQUAL(image(0,1), (unsigned char)0);
+  BOOST_CHECK_EQUAL(image(0,1), (unsigned char)  0);
 }
 
-
-BOOST_AUTO_TEST_CASE(ImageIOTest_Pgm) {
-  Image<unsigned char> image(1,2);
-  image(0,0) = 255;
-  image(1,0) = 0;
-  const std::string out_filename = "test_write_pnm.pgm";
-  BOOST_CHECK(WriteImage(out_filename.c_str(),image));
-
-  Image<unsigned char> read_image;
-  BOOST_CHECK(ReadImage(out_filename.c_str(), &read_image));
-  BOOST_CHECK(read_image == image);
-  remove(out_filename.c_str());
-}
-
-BOOST_AUTO_TEST_CASE(ReadPnm_Ppm) {
+BOOST_AUTO_TEST_CASE(read_ppm) {
   Image<RGBColor> image;
   const std::string ppm_filename = string(THIS_SOURCE_DIR) + "/image_test/two_pixels.ppm";
-  BOOST_CHECK(ReadImage(ppm_filename.c_str(), &image));
+  BOOST_CHECK_NO_THROW(readImage(ppm_filename, image));
   BOOST_CHECK_EQUAL(2, image.Width());
   BOOST_CHECK_EQUAL(1, image.Height());
   BOOST_CHECK_EQUAL(3, image.Depth());
-  BOOST_CHECK_EQUAL(image(0,0), RGBColor( (unsigned char)255));
-  BOOST_CHECK_EQUAL(image(0,1), RGBColor( (unsigned char)0));
+
+  BOOST_CHECK_EQUAL(image(0,0).r(), 255);
+  BOOST_CHECK_EQUAL(image(0,0).g(), 255);
+  BOOST_CHECK_EQUAL(image(0,0).b(), 255);
+  BOOST_CHECK_EQUAL(image(0,1).r(),   0);
+  BOOST_CHECK_EQUAL(image(0,1).g(),   0);
+  BOOST_CHECK_EQUAL(image(0,1).b(),   0);
 }
 
-BOOST_AUTO_TEST_CASE(ImageIOTest_Ppm) {
-  Image<RGBColor> image(1,2);
-  image(0,0) = RGBColor((unsigned char)255);
-  image(1,0) = RGBColor((unsigned char)0);
-  const std::string out_filename = "test_write_pnm.ppm";
-  BOOST_CHECK(WriteImage(out_filename.c_str(), image));
-
-  Image<RGBColor> read_image;
-  BOOST_CHECK(ReadImage(out_filename.c_str(), &read_image));
-  BOOST_CHECK(read_image == image);
-  remove(out_filename.c_str());
-}
-
-BOOST_AUTO_TEST_CASE(ImageIOTest_Tiff_Gray) {
+BOOST_AUTO_TEST_CASE(read_write_grayscale) {
   Image<unsigned char> image(1,2);
   image(0,0) = 255;
   image(1,0) = 0;
-  const std::string filename = ("test_write_tiff.tif");
-  BOOST_CHECK(WriteImage(filename.c_str(), image));
 
-  Image<unsigned char> read_image;
-  BOOST_CHECK(ReadImage(filename.c_str(), &read_image));
-  BOOST_CHECK(read_image == image);
-  remove(filename.c_str());
-}
-
-BOOST_AUTO_TEST_CASE(ImageIOTest_Tiff_RGB) {
-  Image<RGBColor> image(1,2);
-  image(0,0) = RGBColor((unsigned char)255);
-  image(1,0) = RGBColor((unsigned char)0);
-  const std::string filename = ("test_write_tiff.tif");
-  BOOST_CHECK(WriteImage(filename.c_str(), image));
-
-  Image<RGBColor> read_image;
-  BOOST_CHECK(ReadImage(filename.c_str(), &read_image));
-  BOOST_CHECK(read_image == image);
-  remove(filename.c_str());
-}
-
-BOOST_AUTO_TEST_CASE(ImageIOTest_Tiff_RGBA) {
-  Image<RGBAColor> image(1,2);
-  image(0,0) = RGBAColor(255, 125, 10, 255);
-  image(1,0) = RGBAColor(2, 3, 4, 255);
-  const std::string filename = ("test_write_tiff.tif");
-  BOOST_CHECK(WriteImage(filename.c_str(), image));
-
-  Image<RGBAColor> read_image;
-  BOOST_CHECK(ReadImage(filename.c_str(), &read_image));
-  BOOST_CHECK(read_image == image);
-  remove(filename.c_str());
-}
-
-BOOST_AUTO_TEST_CASE(ImageHeader_AllFormats) {
-
-  const std::vector<std::string> ext_Type = {"jpg", "png", "tif", "png", "pgm"};
-  const int image_border_size = 10;
-  for (int i=0; i < ext_Type.size(); ++i)
+  for(const auto& extension : extensions)
   {
-    std::ostringstream os;
-    os << "img" << "." << ext_Type[i];
-    const std::string filename = os.str();
-    ALICEVISION_LOG_DEBUG("Testing:" << filename);
+    const std::string filename = "test_write." + extension;
+    BOOST_CHECK_NO_THROW(writeImage(filename, image));
 
-    // Test for gray images
-    {
-      Image<unsigned char> gray_image(image_border_size, image_border_size);
-      BOOST_CHECK(WriteImage(filename.c_str(), gray_image));
-      ImageHeader imgHeader;
-      BOOST_CHECK(ReadImageHeader(filename.c_str(), &imgHeader));
-      BOOST_CHECK_EQUAL(image_border_size, imgHeader.width);
-      BOOST_CHECK_EQUAL(image_border_size, imgHeader.height);
-      remove(filename.c_str());
-    }
+    Image<unsigned char> read_image;
+    BOOST_CHECK_NO_THROW(readImage(filename, read_image));
+    BOOST_CHECK_EQUAL(read_image(0,0), image(0,0));
+    BOOST_CHECK_EQUAL(read_image(1,0), image(1,0));
+    remove(filename.c_str());
+  }
+}
 
-    // Test for RGB images
+BOOST_AUTO_TEST_CASE(read_write_rgb) {
+  Image<RGBColor> image(1,2);
+  image(0,0) = RGBColor(255,   0, 255);
+  image(1,0) = RGBColor(  0, 255,   0);
+
+  for(const auto& extension : extensions)
+  {
+    const std::string filename = "test_write_rgb." + extension;
+    BOOST_CHECK_NO_THROW(writeImage(filename, image));
+
+    Image<RGBColor> read_image;
+    BOOST_CHECK_NO_THROW(readImage(filename, read_image));
+
+    if(extension != "jpg")
     {
-      Image<RGBColor> rgb_image(image_border_size, image_border_size);
-      ImageHeader imgHeader;
-      BOOST_CHECK(WriteImage(filename.c_str(), rgb_image));
-      BOOST_CHECK(ReadImageHeader(filename.c_str(), &imgHeader));
-      BOOST_CHECK_EQUAL(image_border_size, imgHeader.width);
-      BOOST_CHECK_EQUAL(image_border_size, imgHeader.height);
-      remove(filename.c_str());
+      // doesn't have compression
+      BOOST_CHECK_EQUAL(read_image(0,0).r(), image(0,0).r());
+      BOOST_CHECK_EQUAL(read_image(0,0).g(), image(0,0).g());
+      BOOST_CHECK_EQUAL(read_image(0,0).b(), image(0,0).b());
+      BOOST_CHECK_EQUAL(read_image(1,0).r(), image(1,0).r());
+      BOOST_CHECK_EQUAL(read_image(1,0).g(), image(1,0).g());
+      BOOST_CHECK_EQUAL(read_image(1,0).b(), image(1,0).b());
     }
+    remove(filename.c_str());
+  }
+}
+
+BOOST_AUTO_TEST_CASE(read_write_rgba) {
+  Image<RGBAColor> image(1,2);
+  image(0,0) = RGBAColor(255,   0, 255, 255);
+  image(1,0) = RGBAColor(  0, 255,   0, 255);
+
+  for(const auto& extension : extensions)
+  {
+    if(extension == "jpg" ||
+       extension == "pgm" ||
+       extension == "ppm")
+      continue; // doesn't support 4 channels
+
+    const std::string filename = "test_write_rgba." + extension;
+    BOOST_CHECK_NO_THROW(writeImage(filename, image));
+
+    Image<RGBAColor> read_image;
+    BOOST_CHECK_NO_THROW(readImage(filename, read_image));
+    BOOST_CHECK_EQUAL(read_image(0,0).r(), image(0,0).r());
+    BOOST_CHECK_EQUAL(read_image(0,0).g(), image(0,0).g());
+    BOOST_CHECK_EQUAL(read_image(0,0).b(), image(0,0).b());
+    BOOST_CHECK_EQUAL(read_image(0,0).a(), image(0,0).a());
+    BOOST_CHECK_EQUAL(read_image(1,0).r(), image(1,0).r());
+    BOOST_CHECK_EQUAL(read_image(1,0).g(), image(1,0).g());
+    BOOST_CHECK_EQUAL(read_image(1,0).b(), image(1,0).b());
+    BOOST_CHECK_EQUAL(read_image(1,0).a(), image(1,0).a());
+    remove(filename.c_str());
+  }
+}
+
+BOOST_AUTO_TEST_CASE(read_write_from_rgb_to_grayscale) {
+  Image<RGBColor> imageRGB(1,2);
+  imageRGB(0,0) = RGBColor(  0,    0,    0);
+  imageRGB(1,0) = RGBColor(255,  255,  255);
+
+  Image<unsigned char> imageGrayscale(1,2);
+  imageGrayscale(0,0) =   0;
+  imageGrayscale(1,0) = 255;
+
+  for(const auto& extension : extensions)
+  {
+    const std::string filename = "test_write_from_grayscale." + extension;
+    BOOST_CHECK_NO_THROW(writeImage(filename, imageRGB));
+
+    Image<unsigned char> read_image;
+    BOOST_CHECK_NO_THROW(readImage(filename, read_image));
+    BOOST_CHECK_EQUAL(read_image, imageGrayscale);
+    remove(filename.c_str());
+  }
+}
+
+BOOST_AUTO_TEST_CASE(read_write_from_grayscale_to_rgb) {
+  Image<RGBColor> imageRGB(1,2);
+  imageRGB(0,0) = RGBColor(  0,    0,    0);
+  imageRGB(1,0) = RGBColor(255,  255,  255);
+
+  Image<unsigned char> imageGrayscale(1,2);
+  imageGrayscale(0,0) =   0;
+  imageGrayscale(1,0) = 255;
+
+  for(const auto& extension : extensions)
+  {
+    const std::string filename = "test_write_from_rgb." + extension;
+    BOOST_CHECK_NO_THROW(writeImage(filename, imageGrayscale));
+
+    Image<RGBColor> read_image;
+    BOOST_CHECK_NO_THROW(readImage(filename, read_image));
+    BOOST_CHECK_EQUAL(read_image(0,0).r(), imageRGB(0,0).r());
+    BOOST_CHECK_EQUAL(read_image(0,0).g(), imageRGB(0,0).g());
+    BOOST_CHECK_EQUAL(read_image(0,0).b(), imageRGB(0,0).b());
+    BOOST_CHECK_EQUAL(read_image(1,0).r(), imageRGB(1,0).r());
+    BOOST_CHECK_EQUAL(read_image(1,0).g(), imageRGB(1,0).g());
+    BOOST_CHECK_EQUAL(read_image(1,0).b(), imageRGB(1,0).b());
+    remove(filename.c_str());
   }
 }

@@ -110,9 +110,9 @@ int main(int argc, char **argv)
   bool savePutativeMatches = false;
   bool guidedMatching = false;
   int maxIteration = 2048;
-  bool matchFilePerImage = false;
+  bool matchFilePerImage = true;
   size_t numMatchesToKeep = 0;
-  bool useGridSort = false;
+  bool useGridSort = true;
   bool exportDebugFiles = false;
   std::string fileExtension = "bin";
 
@@ -499,11 +499,6 @@ int main(int argc, char **argv)
   //---------------------------------------
   PairwiseMatches finalMatches;
 
-  if(numMatchesToKeep == 0)
-  {
-    finalMatches.swap(map_GeometricMatches);
-  }
-  else
   {
     for(const auto& matchGeo: map_GeometricMatches)
     {
@@ -529,11 +524,14 @@ int main(int argc, char **argv)
 
           if(useGridSort)
           {
+            // TODO: rename as matchesGridOrdering
             matchesGridFiltering(*lRegions, *rRegions, indexImagePair, sfmData, outMatches);
           }
-
-          size_t finalSize = std::min(numMatchesToKeep, outMatches.size());
-          outMatches.resize(finalSize);
+          if(numMatchesToKeep > 0)
+          {
+            size_t finalSize = std::min(numMatchesToKeep, outMatches.size());
+            outMatches.resize(finalSize);
+          }
 
           // std::cout << "Left features: " << lRegions->Features().size() << ", right features: " << rRegions->Features().size() << ", num matches: " << inputMatches.size() << ", num filtered matches: " << outMatches.size() << std::endl;
           finalMatches[indexImagePair].insert(std::make_pair(descType, outMatches));

@@ -104,7 +104,8 @@ public:
   // Get frequencies
   const std::vector<size_t> & GetHist() const {return freq;}
   // Get XbinsValue
-  std::vector<T> GetXbinsValue() const {
+  std::vector<T> GetXbinsValue() const
+  {
     std::vector<T> vec_XbinValue(nBins, T(0));
     double val = (End-Start)/static_cast<double>(nBins-1);
     for (size_t i = 0; i < nBins; ++i)
