@@ -217,7 +217,7 @@ inline double AngleBetweenRay(
   const double ray1 = (pt3D - center1).norm();
   const double ray2 = (pt3D - center2).norm();
   const double angle_rad = std::abs(std::acos((ray1 * ray1 + ray2 * ray2 - baseline * baseline) / (2 * ray1 * ray2)));
-  return std::min(angle_rad, M_PI - angle_rad) * 180.0 / M_PI;
+  return R2D(angle_rad);
 }
 
 } // namespace camera
