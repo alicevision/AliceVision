@@ -59,53 +59,6 @@ BOOST_AUTO_TEST_CASE(matchingImageCollection_exhaustivePairs)
   }
 }
 
-BOOST_AUTO_TEST_CASE(matchingImageCollection_contiguousWithOverlap)
-{
-  sfm::Views views;
-  {
-    // Empty
-    PairSet pairSet = contiguousWithOverlap(views, 1);
-    BOOST_CHECK_EQUAL( 0, pairSet.size());
-  }
-  {
-    std::vector<IndexT> indexes = {{ 12, 54, 65, 89 }};
-    for( IndexT i: indexes )
-    {
-      views[i] = std::make_shared<sfm::View>("filepath", i);
-    }
-
-    PairSet pairSet = contiguousWithOverlap(views, 1);
-    BOOST_CHECK( checkPairOrder(pairSet) );
-    BOOST_CHECK_EQUAL( 3, pairSet.size());
-    BOOST_CHECK( pairSet.find(std::make_pair(12, 54)) != pairSet.end() );
-    BOOST_CHECK( pairSet.find(std::make_pair(54, 65)) != pairSet.end() );
-    BOOST_CHECK( pairSet.find(std::make_pair(65, 89)) != pairSet.end() );
-  }
-  {
-    std::vector<IndexT> indexes = {{ 11, 12, 54, 65, 89, 99 }};
-    for( IndexT i: indexes )
-    {
-      views[i] = std::make_shared<sfm::View>("filepath", i);
-    }
-
-    PairSet pairSet = contiguousWithOverlap(views, 3);
-    BOOST_CHECK( checkPairOrder(pairSet) );
-    BOOST_CHECK_EQUAL( 12, pairSet.size());
-    BOOST_CHECK( pairSet.find(std::make_pair(11, 12)) != pairSet.end() );
-    BOOST_CHECK( pairSet.find(std::make_pair(11, 54)) != pairSet.end() );
-    BOOST_CHECK( pairSet.find(std::make_pair(11, 65)) != pairSet.end() );
-    BOOST_CHECK( pairSet.find(std::make_pair(12, 54)) != pairSet.end() );
-    BOOST_CHECK( pairSet.find(std::make_pair(12,65)) != pairSet.end() );
-    BOOST_CHECK( pairSet.find(std::make_pair(12,89)) != pairSet.end() );
-    BOOST_CHECK( pairSet.find(std::make_pair(54,65)) != pairSet.end() );
-    BOOST_CHECK( pairSet.find(std::make_pair(54,89)) != pairSet.end() );
-    BOOST_CHECK( pairSet.find(std::make_pair(54,99)) != pairSet.end() );
-    BOOST_CHECK( pairSet.find(std::make_pair(65,89)) != pairSet.end() );
-    BOOST_CHECK( pairSet.find(std::make_pair(65,99)) != pairSet.end() );
-    BOOST_CHECK( pairSet.find(std::make_pair(89,99)) != pairSet.end() );
-  }
-}
-
 BOOST_AUTO_TEST_CASE(matchingImageCollection_IO)
 {
   PairSet pairSetGT;

@@ -15,10 +15,6 @@ namespace aliceVision {
 /// Generate all the (I,J) pairs of the upper diagonal of the NxN matrix
 PairSet exhaustivePairs(const sfm::Views& views, int rangeStart=-1, int rangeSize=0);
 
-/// Generate the pairs that have a distance inferior to the overlapSize
-/// Usable to match video sequence
-PairSet contiguousWithOverlap(const sfm::Views& views, const size_t overlapSize, int rangeStart=-1, int rangeSize=0);
-
 /// Load a set of PairSet from a file
 /// I J K L (pair that link I)
 bool loadPairs(

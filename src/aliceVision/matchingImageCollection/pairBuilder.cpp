@@ -41,42 +41,6 @@ PairSet exhaustivePairs(const sfm::Views& views, int rangeStart, int rangeSize)
   return pairs;
 }
 
-/// Generate the pairs that have a distance inferior to the overlapSize
-/// Usable to match video sequence
-PairSet contiguousWithOverlap(const sfm::Views& views, const size_t overlapSize, int rangeStart, int rangeSize)
-{
-  PairSet pairs;
-  sfm::Views::const_iterator itA = views.begin();
-  sfm::Views::const_iterator itAEnd = views.end();
-
-  // If we have a rangeStart, only compute the matching for (rangeStart, X).
-  if(rangeStart != -1 && rangeSize != 0)
-  {
-    if(rangeStart >= views.size())
-      return pairs;
-    std::advance(itA, rangeStart);
-    itAEnd = views.begin();
-    std::advance(itAEnd, std::min(std::size_t(rangeStart+rangeSize), views.size()));
-  }
-
-  for(; itA != itAEnd; ++itA)
-  {
-    sfm::Views::const_iterator itB = itA;
-    std::advance(itB, 1);
-    sfm::Views::const_iterator itBEnd = itA;
-    std::size_t advanceSize = overlapSize;
-    if(std::distance(itBEnd, views.end()) < 1 + overlapSize)
-    {
-      advanceSize = std::distance(itBEnd, views.end()) - 1;
-    }
-    std::advance(itBEnd, 1 + advanceSize);
-
-    for(; itB != views.end() && itB != itBEnd; ++itB)
-      pairs.insert(std::make_pair(itA->first, itB->first));
-  }
-  return pairs;
-}
-
 bool loadPairs(const std::string &sFileName,
                PairSet & pairs,
                int rangeStart,
