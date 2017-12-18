@@ -258,33 +258,27 @@ void ReconstructionEngine_sequentialSfM::robustResectionOfImages(
         }
         
         bool bResect = false;
-        ResectionData resectionData;
+        ResectionData newResectionData;
+        bResect = computeResection(possible_resection_index, newResectionData);
 #pragma omp critical      
         {
-          bResect = resection(possible_resection_index, resectionData);
-          updateScene(possible_resection_index, resectionData);
-          bImageAdded |= bResect;
-        }
-        
-        if (!bResect)
-        {
-#pragma omp critical                              
-          set_rejectedViewId.insert(possible_resection_index);
-          
-          ALICEVISION_LOG_DEBUG("Resection of image " << currentIndex << " ID=" << possible_resection_index << " was not possible.");
-        }
-        else
-        {
-#pragma omp critical    
+          if (bResect)
           {
+            bImageAdded |= bResect;
+            updateScene(possible_resection_index, newResectionData);
             set_reconstructedViewId.insert(possible_resection_index);
             ALICEVISION_LOG_DEBUG("Resection of image: " << currentIndex << " ID=" << possible_resection_index << " succeed.");
             _sfm_data.GetViews().at(possible_resection_index)->setResectionId(resectionId);
             ++resectionId;
-          }                          
+          }
+          else
+          {
+            set_rejectedViewId.insert(possible_resection_index);
+            ALICEVISION_LOG_DEBUG("Resection of image " << currentIndex << " ID=" << possible_resection_index << " was not possible.");
+          }
+          
+          set_remainingViewId.erase(possible_resection_index);
         }
-#pragma omp critical    
-        set_remainingViewId.erase(possible_resection_index);
       }
     }
     ALICEVISION_LOG_DEBUG("Resection of " << vec_possible_resection_indexes.size() << " new images took " << std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - chrono_start).count() << " msec.");
@@ -1303,7 +1297,7 @@ bool ReconstructionEngine_sequentialSfM::findNextImagesGroupForResection(
  * C. Do the resectioning: compute the camera pose.
  * D. Refine the pose of the found camera
  */
-bool ReconstructionEngine_sequentialSfM::resection(const std::size_t viewIndex, ResectionData & resectionData)
+bool ReconstructionEngine_sequentialSfM::computeResection(const std::size_t viewIndex, ResectionData & resectionData)
 {
   using namespace track;
 

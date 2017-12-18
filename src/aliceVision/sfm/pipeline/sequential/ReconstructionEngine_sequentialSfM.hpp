@@ -198,7 +198,7 @@ private:
    * @param[out] resectionData: contains the result (P) and all the data used during the resection.
    * @return false if resection failed
    */
-  bool resection(const std::size_t viewIndex, 
+  bool computeResection(const std::size_t viewIndex, 
                  ResectionData & resectionData);
 
   /**
