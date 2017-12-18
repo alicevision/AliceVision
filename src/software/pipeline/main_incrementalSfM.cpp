@@ -86,7 +86,6 @@ int main(int argc, char **argv)
   std::pair<std::string,std::string> initialPairString("","");
   int minInputTrackLength = 2;
   int maxNbMatches = 0;
-  int userCameraModel = static_cast<int>(PINHOLE_CAMERA_RADIAL3);
   bool refineIntrinsics = true;
   bool allowUserInteraction = true;
   bool useLocalBundleAdjustment = false;
@@ -123,10 +122,6 @@ int main(int argc, char **argv)
     ("maxNumberOfMatches", po::value<int>(&maxNbMatches)->default_value(maxNbMatches),
       "Maximum number of matches per image pair (and per feature type). "
       "This can be useful to have a quick reconstruction overview. 0 means no limit.")
-    ("cameraModel", po::value<int>(&userCameraModel)->default_value(userCameraModel),
-      "* 1: Pinhole\n"
-      "* 2: Pinhole radial 1\n"
-      "* 3: Pinhole radial 3")
     ("initialPairA", po::value<std::string>(&initialPairString.first)->default_value(initialPairString.first),
       "filename of the first image (without path).")
     ("initialPairB", po::value<std::string>(&initialPairString.second)->default_value(initialPairString.second),
@@ -245,7 +240,6 @@ int main(int argc, char **argv)
 
   // Configure reconstruction parameters
   sfmEngine.Set_bFixedIntrinsics(!refineIntrinsics);
-  sfmEngine.SetUnknownCameraType(EINTRINSIC(userCameraModel));
   sfmEngine.setMinInputTrackLength(minInputTrackLength);
   sfmEngine.setSfmdataInterFileExtension(outInterFileExtension);
   sfmEngine.setAllowUserInteraction(allowUserInteraction);

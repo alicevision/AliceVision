@@ -66,17 +66,6 @@ public:
 
   /// Automatic initial pair selection (based on a 'baseline' computation score)
   bool getBestInitialImagePairs(std::vector<Pair>& out_bestImagePairs) const;
-
-  /**
-   * Set the default lens distortion type to use if it is declared unknown
-   * in the intrinsics camera parameters by the previous steps.
-   *
-   * It can be declared unknown if the type cannot be deduced from the metadata.
-   */
-  void SetUnknownCameraType(const camera::EINTRINSIC camType)
-  {
-    _camType = camType;
-  }
   
   /**
    * @brief Extension of the file format to store intermediate reconstruction files.
@@ -229,9 +218,8 @@ private:
   ESfMData _sfmdataInterFilter = ESfMData(EXTRINSICS | INTRINSICS | STRUCTURE | OBSERVATIONS | CONTROL_POINTS);
 
   // Parameter
-  bool _userInteraction = true;
+  bool _userInteraction = false;
   Pair _userInitialImagePair;
-  camera::EINTRINSIC _camType; // The camera type for the unknown cameras
   int _minInputTrackLength = 2;
   int _minTrackLength = 2;
   int _minPointsPerPose = 30;

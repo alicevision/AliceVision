@@ -123,8 +123,7 @@ ReconstructionEngine_sequentialSfM::ReconstructionEngine_sequentialSfM(
   const std::string & sloggingFile)
   : ReconstructionEngine(sfm_data, soutDirectory),
     _sLoggingFile(sloggingFile),
-    _userInitialImagePair(Pair(0,0)),
-    _camType(EINTRINSIC(PINHOLE_CAMERA_RADIAL3))
+    _userInitialImagePair(Pair(0,0))
 {
   if (!_sLoggingFile.empty())
   {
@@ -1384,12 +1383,17 @@ bool ReconstructionEngine_sequentialSfM::Resection(const std::size_t viewIndex)
   // We use a local scene with only the 3D points and the new camera.
   {
     camera::Pinhole * pinhole_cam = dynamic_cast<camera::Pinhole *>(optionalIntrinsic.get());
-    const bool b_new_intrinsic = (optionalIntrinsic == nullptr) || (pinhole_cam && !pinhole_cam->isValid());
+
+    if(optionalIntrinsic == nullptr)
+      throw std::runtime_error("Intrinsic " + std::to_string(view_I->getIntrinsicId()) + " is not initialized, all intrinsics should be initialized" );
+
+    bool invalidIntrinsic = pinhole_cam && !pinhole_cam->isValid();
+
     // A valid pose has been found (try to refine it):
     // If no valid intrinsic as input:
     //  init a new one from the projection matrix decomposition
     // Else use the existing one and consider it as constant.
-    if (b_new_intrinsic)
+    if(invalidIntrinsic)
     {
       // setup a default camera model from the found projection matrix
       Mat3 K, R;
@@ -1399,24 +1403,17 @@ bool ReconstructionEngine_sequentialSfM::Resection(const std::size_t viewIndex)
       const double focal = (K(0,0) + K(1,1))/2.0;
       const Vec2 principal_point(K(0,2), K(1,2));
 
-      if(optionalIntrinsic == nullptr)
-      {
-        // Create the new camera intrinsic group
-        optionalIntrinsic = createPinholeIntrinsic(_camType, view_I->getWidth(), view_I->getHeight(), focal, principal_point(0), principal_point(1));
-      }
-      else if(pinhole_cam)
-      {
-        // Fill the uninitialized camera intrinsic group
-        pinhole_cam->setK(focal, principal_point(0), principal_point(1));
-      }
+      // Fill the uninitialized camera intrinsic group
+      pinhole_cam->setK(focal, principal_point(0), principal_point(1));
     }
+
     const std::set<IndexT> reconstructedIntrinsics = _sfm_data.getReconstructedIntrinsics();
     // If we use a camera intrinsic for the first time we need to refine it.
     const bool intrinsicsFirstUsage = (reconstructedIntrinsics.count(view_I->getIntrinsicId()) == 0);
 
     if(!sfm::SfMLocalizer::RefinePose(
       optionalIntrinsic.get(), pose,
-      resection_data, true, b_new_intrinsic || intrinsicsFirstUsage))
+      resection_data, true, invalidIntrinsic || intrinsicsFirstUsage))
     {
       ALICEVISION_LOG_DEBUG("Resection of view " << viewIndex << " failed during pose refinement.");
       return false;
@@ -1430,7 +1427,7 @@ bool ReconstructionEngine_sequentialSfM::Resection(const std::size_t viewIndex)
     const View& view = *_sfm_data.views.at(viewIndex);
     _sfm_data.setPose(view, pose);
 
-    if (b_new_intrinsic)
+    if (invalidIntrinsic)
     {
       // Since the view have not yet an intrinsic group before, create a new one
       IndexT new_intrinsic_id = 0;
