@@ -11,6 +11,7 @@
 #include "aliceVision/sfm/pipeline/pairwiseMatchesIO.hpp"
 #include "aliceVision/track/Track.hpp"
 #include "aliceVision/sfm/LocalBundleAdjustmentData.hpp"
+#include "aliceVision/sfm/pipeline/localization/SfMLocalizer.hpp"
 
 #include "dependencies/htmlDoc/htmlDoc.hpp"
 #include "dependencies/histogram/histogram.hpp"
@@ -189,8 +190,17 @@ private:
    * @param imageIndex
    * @return false if resection failed
    */
-  bool Resection(const size_t imageIndex);
+  bool Resection(const std::size_t viewIndex, 
+                 ImageLocalizerMatchData & resection_data, 
+                 geometry::Pose3 & pose, 
+                 std::set<std::size_t> & set_trackIdForResection, 
+                 std::vector<track::TracksUtilsMap::FeatureId> & vec_featIdForResection);
 
+  bool updateScene(const std::size_t viewIndex, 
+                   const ImageLocalizerMatchData & resection_data, 
+                   const geometry::Pose3 & pose, 
+                   const std::set<std::size_t> & set_trackIdForResection,
+                   const std::vector<track::TracksUtilsMap::FeatureId> & vec_featIdForResection);
   /**
    * @brief  Triangulate new possible 2D tracks
    * List tracks that share content with this view and add observations and new 3D track if required.
