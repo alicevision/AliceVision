@@ -592,9 +592,9 @@ bool VoctreeLocalizer::localizeFirstBestResult(const feature::MapRegionsPerDesc 
       ALICEVISION_LOG_DEBUG("K refined\n" << queryIntrinsics.K());
       ALICEVISION_LOG_DEBUG("R_gt\n" << referencePose.rotation());
       ALICEVISION_LOG_DEBUG("t_gt\n" << referencePose.translation());
-      ALICEVISION_LOG_DEBUG("angular difference: " << R2D(getRotationMagnitude(pose.rotation()*referencePose.rotation().inverse())) << "deg");
+      ALICEVISION_LOG_DEBUG("angular difference: " << radianToDegree(getRotationMagnitude(pose.rotation()*referencePose.rotation().inverse())) << "deg");
       ALICEVISION_LOG_DEBUG("center difference: " << (pose.center()-referencePose.center()).norm());
-      ALICEVISION_LOG_DEBUG("err = [err; " << R2D(getRotationMagnitude(pose.rotation()*referencePose.rotation().inverse())) << ", "<< (pose.center()-referencePose.center()).norm() << "];");
+      ALICEVISION_LOG_DEBUG("err = [err; " << radianToDegree(getRotationMagnitude(pose.rotation()*referencePose.rotation().inverse())) << ", "<< (pose.center()-referencePose.center()).norm() << "];");
     }
     localizationResult = LocalizationResult(resectionData, associationIDs, pose, queryIntrinsics, matchedImages, refineStatus);
     break;

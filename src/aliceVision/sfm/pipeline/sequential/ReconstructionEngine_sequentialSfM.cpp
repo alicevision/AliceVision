@@ -276,7 +276,6 @@ void ReconstructionEngine_sequentialSfM::robustResectionOfImages(
             set_rejectedViewId.insert(possible_resection_index);
             ALICEVISION_LOG_DEBUG("Resection of image " << currentIndex << " ID=" << possible_resection_index << " was not possible.");
           }
-          
           set_remainingViewId.erase(possible_resection_index);
         }
       }
@@ -323,11 +322,13 @@ void ReconstructionEngine_sequentialSfM::robustResectionOfImages(
       {
         auto chrono2_start = std::chrono::steady_clock::now();
         
+        std::cout << "BA READY" << std::endl;
         if (_uselocalBundleAdjustment)
           localBundleAdjustment(newReconstructedViews);
         else
           BundleAdjustment(_bFixedIntrinsics);
         
+        std::cout << "BA DONE" << std::endl;
         ALICEVISION_LOG_DEBUG("Resection group index: " << resectionGroupIndex << ", bundle iteration: " << bundleAdjustmentIteration
                   << " took " << std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - chrono2_start).count() << " msec.");
         ++bundleAdjustmentIteration;

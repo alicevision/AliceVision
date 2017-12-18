@@ -19,6 +19,7 @@
 #include <Eigen/SparseCore>
 #include <Eigen/SVD>
 #include <Eigen/StdVector>
+#include <boost/math/constants/constants.hpp>
 
 #include <algorithm>
 #include <cmath>
@@ -146,17 +147,17 @@ Mat3 RotationAroundZ(double angle);
 Mat3 rotationXYZ(double angleX, double angleY, double angleZ);
 
 // Degree to Radian (suppose input in [0;360])
-
-inline double D2R(double degree)
+template <class T> 
+inline T degreeToRadian(T degree)
 {
-  return degree * M_PI / 180.0;
+   return degree * boost::math::constants::pi<T>() / 180.0; 
 }
 
 // Radian to degree
-
-inline double R2D(double radian)
+template <class T> 
+inline T radianToDegree(T radian)
 {
-  return radian / M_PI * 180.0;
+   return radian / boost::math::constants::pi<T>() * 180.0; 
 }
 
 /// Return in radian the mean rotation amplitude of the given rotation matrix

@@ -201,7 +201,7 @@ inline double AngleBetweenRay(
   const Vec3 ray2 = (pose2.rotation().transpose() * intrinsic2->operator()(x2)).normalized();
   const double mag = ray1.norm() * ray2.norm();
   const double dotAngle = ray1.dot(ray2);
-  return R2D(acos(clamp(dotAngle/mag, -1.0 + 1.e-8, 1.0 - 1.e-8)));
+  return radianToDegree(acos(clamp(dotAngle/mag, -1.0 + 1.e-8, 1.0 - 1.e-8)));
 }
 
 /// Return the angle (degree) between two poses and a 3D point.
@@ -217,7 +217,7 @@ inline double AngleBetweenRay(
   const double ray1 = (pt3D - center1).norm();
   const double ray2 = (pt3D - center2).norm();
   const double angle_rad = std::abs(std::acos((ray1 * ray1 + ray2 * ray2 - baseline * baseline) / (2 * ray1 * ray2)));
-  return R2D(angle_rad);
+  return radianToDegree(angle_rad);
 }
 
 } // namespace camera

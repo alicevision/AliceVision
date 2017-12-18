@@ -27,7 +27,7 @@ struct LocalizerParameters
   _resectionEstimator(robustEstimation::ERobustEstimator::ACRANSAC),
   _matchingEstimator(robustEstimation::ERobustEstimator::ACRANSAC),
   _useLocalizeRigNaive(false),
-  _angularThreshold(D2R(0.1)) { }
+  _angularThreshold(degreeToRadian(0.1)) { }
 
   virtual ~LocalizerParameters() = 0;
 
