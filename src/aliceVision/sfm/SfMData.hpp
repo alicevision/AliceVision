@@ -274,6 +274,13 @@ public:
       rigIt.second.reset();
   }
 
+  /**
+   * @brief Combine two SfMData
+   * Copy all data from the input sfmData
+   * @param[in] sfmData A given SfMData
+   */
+  void combine(const SfMData& sfmData);
+
 private:
 
   /// Considered poses (indexed by view.getPoseId())

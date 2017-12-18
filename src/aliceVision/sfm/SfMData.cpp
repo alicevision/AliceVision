@@ -175,6 +175,37 @@ void SfMData::setPose(const View& view, const geometry::Pose3& absolutePose)
   }
 }
 
+void SfMData::combine(const SfMData& sfmData)
+{
+  if(!_rigs.empty() && !sfmData._rigs.empty())
+    throw std::runtime_error("Can't combine two SfMData with rigs");
+
+  // feature folder
+  _featuresFolders.insert(_featuresFolders.end(), sfmData._featuresFolders.begin(), sfmData._featuresFolders.end());
+
+  // matching folder
+  _matchesFolders.insert(_matchesFolders.end(), sfmData._matchesFolders.begin(), sfmData._matchesFolders.end());
+
+  // views
+  views.insert(sfmData.views.begin(), sfmData.views.end());
+
+  // intrinsics
+  intrinsics.insert(sfmData.intrinsics.begin(), sfmData.intrinsics.end());
+
+  // poses
+  _poses.insert(sfmData._poses.begin(), sfmData._poses.end());
+
+  // rigs
+  _rigs.insert(sfmData._rigs.begin(), sfmData._rigs.end());
+
+  // structure
+  structure.insert(sfmData.structure.begin(), sfmData.structure.end());
+
+  // control points
+  control_points.insert(sfmData.control_points.begin(), sfmData.control_points.end());
+
+}
+
 /// Find the color of the SfMData Landmarks/structure
 bool ColorizeTracks( SfMData & sfm_data )
 {
