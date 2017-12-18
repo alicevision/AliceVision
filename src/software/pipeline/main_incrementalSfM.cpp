@@ -87,7 +87,6 @@ int main(int argc, char **argv)
   int minInputTrackLength = 2;
   int maxNbMatches = 0;
   std::size_t minNbObservationsForTriangulation = 2;
-  int userCameraModel = static_cast<int>(PINHOLE_CAMERA_RADIAL3);
   bool refineIntrinsics = true;
   bool allowUserInteraction = true;
   bool useLocalBundleAdjustment = false;
@@ -128,11 +127,7 @@ int main(int argc, char **argv)
     ("minNumberOfObservationsForTriangulation", po::value<std::size_t>(&minNbObservationsForTriangulation)->default_value(minNbObservationsForTriangulation),
       "Minimum number of observations to triangulate a point.\n"
       "Set it to 3 (or more) reduces drastically the noise in the point cloud, but the number of final poses is a little bit reduced (from 1.5% to 11% on the tested datasets).\n"
-      "(temp) Hack: set it to 0 or 1 to use the old triangulation algorithm (using 2 views only) during resection.")
-    ("cameraModel", po::value<int>(&userCameraModel)->default_value(userCameraModel),
-      "* 1: Pinhole\n"
-      "* 2: Pinhole radial 1\n"
-      "* 3: Pinhole radial 3")
+      "Note: set it to 0 or 1 to use the old triangulation algorithm (using 2 views only) during resection.")
     ("initialPairA", po::value<std::string>(&initialPairString.first)->default_value(initialPairString.first),
       "filename of the first image (without path).")
     ("initialPairB", po::value<std::string>(&initialPairString.second)->default_value(initialPairString.second),
@@ -253,18 +248,16 @@ int main(int argc, char **argv)
 
   // Configure reconstruction parameters
   sfmEngine.Set_bFixedIntrinsics(!refineIntrinsics);
-  sfmEngine.setUnknownCameraType(EINTRINSIC(userCameraModel));
   sfmEngine.setMinInputTrackLength(minInputTrackLength);
   sfmEngine.setSfmdataInterFileExtension(outInterFileExtension);
   sfmEngine.setAllowUserInteraction(allowUserInteraction);
   sfmEngine.setUseLocalBundleAdjustmentStrategy(useLocalBundleAdjustment);
   sfmEngine.setLocalBundleAdjustmentGraphDistance(localBundelAdjustementGraphDistanceLimit);
   sfmEngine.setLocalizerEstimator(robustEstimation::ERobustEstimator_stringToEnum(localizerEstimatorName));
-  if (minNbObservationsForTriangulation < 2)
+  if(minNbObservationsForTriangulation < 2)
   {
-      // TEMPORARY HACK: allows to keep an access to the old triangulatation algorithm (using 2 views only) during resection.
-      minNbObservationsForTriangulation = 0;      
-      
+      // Allows to use to the old triangulatation algorithm (using 2 views only) during resection.
+      minNbObservationsForTriangulation = 0;
 //    ALICEVISION_LOG_ERROR("Error: The value associated to the argument '--minNbObservationsForTriangulation' must be >= 2 ");
 //    return EXIT_FAILURE;
   }
