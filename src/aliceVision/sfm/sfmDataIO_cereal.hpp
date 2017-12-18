@@ -65,8 +65,8 @@ bool Load_Cereal(
 
     if(versions[1] > 2) // version > 0.2
     {
-      archive(cereal::make_nvp("featureFolder", data._featureFolder));
-      archive(cereal::make_nvp("matchingFolder", data._matchingFolder));
+      archive(cereal::make_nvp("featuresFolders", data._featuresFolders));
+      archive(cereal::make_nvp("matchesFolders", data._matchesFolders));
     }
     
     if (b_views)
@@ -143,8 +143,8 @@ bool Save_Cereal(
     //  - it adds control_points storage
     const std::string version = "0.3.1";
     archive(cereal::make_nvp("sfm_data_version", version));
-    archive(cereal::make_nvp("featureFolder", data._featureFolder));
-    archive(cereal::make_nvp("matchingFolder", data._matchingFolder));
+    archive(cereal::make_nvp("featuresFolders", data._featuresFolders));
+    archive(cereal::make_nvp("matchesFolders", data._matchesFolders));
 
     if (b_views)
       archive(cereal::make_nvp("views", data.views));

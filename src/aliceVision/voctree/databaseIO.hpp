@@ -5,12 +5,17 @@
 
 #pragma once
 
-#include "Database.hpp"
-#include "VocabularyTree.hpp"
+#include <aliceVision/voctree/Database.hpp>
+#include <aliceVision/voctree/VocabularyTree.hpp>
 
 #include <string>
 
 namespace aliceVision {
+
+namespace sfm {
+class SfMData;
+}
+
 namespace voctree {
 
 /**
@@ -25,7 +30,7 @@ namespace voctree {
  * @return the number of overall features read
  */
 template<class DescriptorT, class VocDescriptorT>
-std::size_t populateDatabase(const std::string &filepath,
+std::size_t populateDatabase(const sfm::SfMData &sfmData,
                              const std::string &descFolder,
                              const VocabularyTree<VocDescriptorT> &tree,
                              Database &db,
@@ -47,7 +52,7 @@ std::size_t populateDatabase(const std::string &filepath,
  * @see queryDatabase()
  */
 template<class DescriptorT, class VocDescriptorT>
-void queryDatabase(const std::string &filepath,
+void queryDatabase(const sfm::SfMData &sfmData,
                    const std::string &descFolder,
                    const VocabularyTree<VocDescriptorT> &tree,
                    const Database &db,
@@ -72,7 +77,7 @@ void queryDatabase(const std::string &filepath,
  * @param[in] Nmax The maximum number of features loaded in each desc file. For Nmax = 0 (default), all the descriptors are loaded.
  */
 template<class DescriptorT, class VocDescriptorT>
-void queryDatabase(const std::string &filepath,
+void queryDatabase(const sfm::SfMData &sfmData,
                    const std::string &descFolder,
                    const VocabularyTree<VocDescriptorT> &tree,
                    const Database &db,
@@ -95,7 +100,7 @@ void queryDatabase(const std::string &filepath,
  */
 template<class DescriptorT, class VocDescriptorT>
 void voctreeStatistics(
-    const std::string &filepath,
+    const sfm::SfMData &sfmData,
     const std::string &descFolder,
     const VocabularyTree<VocDescriptorT> &tree,
     const Database &db,

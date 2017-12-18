@@ -6,23 +6,45 @@
 #include "regionsIO.hpp"
 
 #include <boost/progress.hpp>
+#include <boost/filesystem.hpp>
 
 #include <atomic>
+#include <cassert>
 
+namespace fs = boost::filesystem;
 
 namespace aliceVision {
 namespace sfm {
 
-
-std::unique_ptr<feature::Regions> loadRegions(const std::string& folder, IndexT id_view, const feature::ImageDescriber& imageDescriber)
+std::unique_ptr<feature::Regions> loadRegions(const std::vector<std::string>& folders,
+                                              IndexT viewId,
+                                              const feature::ImageDescriber& imageDescriber)
 {
-  const std::string imageDescriberTypeName = feature::EImageDescriberType_enumToString(imageDescriber.getDescriberType());
-  const std::string basename = std::to_string(id_view);
+  assert(!folders.empty());
 
-  const std::string featFilename = stlplus::create_filespec(folder, basename, imageDescriberTypeName + ".feat");
-  const std::string descFilename = stlplus::create_filespec(folder, basename, imageDescriberTypeName + ".desc");
-  ALICEVISION_LOG_TRACE("featFilename: " << featFilename);
-  ALICEVISION_LOG_TRACE("descFilename: " << descFilename);
+  const std::string imageDescriberTypeName = feature::EImageDescriberType_enumToString(imageDescriber.getDescriberType());
+  const std::string basename = std::to_string(viewId);
+
+  std::string featFilename;
+  std::string descFilename;
+
+  for(const std::string& folder : folders)
+  {
+    const fs::path featPath = fs::path(folder) / std::string(basename + "." + imageDescriberTypeName + ".feat");
+    const fs::path descPath = fs::path(folder) / std::string(basename + "." + imageDescriberTypeName + ".desc");
+
+    if(fs::exists(featPath) && fs::exists(descPath))
+    {
+      featFilename = featPath.string();
+      descFilename = descPath.string();
+    }
+  }
+
+  if(featFilename.empty() || descFilename.empty())
+    throw std::runtime_error("Can't find view " + basename + " region files");
+
+  ALICEVISION_LOG_TRACE("Features filename: "    << featFilename);
+  ALICEVISION_LOG_TRACE("Descriptors filename: " << descFilename);
 
   std::unique_ptr<feature::Regions> regionsPtr;
   imageDescriber.Allocate(regionsPtr);
@@ -43,13 +65,58 @@ std::unique_ptr<feature::Regions> loadRegions(const std::string& folder, IndexT 
     throw std::runtime_error(e.what());
   }
 
-  ALICEVISION_LOG_TRACE("RegionCount: " << regionsPtr->RegionCount());
+  ALICEVISION_LOG_TRACE("Region count: " << regionsPtr->RegionCount());
+  return regionsPtr;
+}
+
+std::unique_ptr<feature::Regions> loadFeatures(const std::vector<std::string>& folders,
+                                              IndexT viewId,
+                                              const feature::ImageDescriber& imageDescriber)
+{
+  assert(!folders.empty());
+
+  const std::string imageDescriberTypeName = feature::EImageDescriberType_enumToString(imageDescriber.getDescriberType());
+  const std::string basename = std::to_string(viewId);
+
+  std::string featFilename;
+
+  for(const std::string& folder : folders)
+  {
+    const fs::path featPath = fs::path(folder) / std::string(basename + "." + imageDescriberTypeName + ".feat");
+    if(fs::exists(featPath))
+      featFilename = featPath.string();
+  }
+
+  if(featFilename.empty() )
+    throw std::runtime_error("Can't find view " + basename + " features file");
+
+  ALICEVISION_LOG_TRACE("Features filename: " << featFilename);
+
+  std::unique_ptr<feature::Regions> regionsPtr;
+  imageDescriber.Allocate(regionsPtr);
+
+  try
+  {
+    regionsPtr->LoadFeatures(featFilename);
+  }
+  catch(const std::exception& e)
+  {
+    std::stringstream ss;
+    ss << "Invalid " << imageDescriberTypeName << " features file for the view " << basename << " : \n";
+    ss << "\t- Features file : " << featFilename << "\n";
+    ss << "\t  " << e.what() << "\n";
+    ALICEVISION_LOG_ERROR(ss.str());
+
+    throw std::runtime_error(e.what());
+  }
+
+  ALICEVISION_LOG_TRACE("Feature count: " << regionsPtr->RegionCount());
   return regionsPtr;
 }
 
 bool loadRegionsPerView(feature::RegionsPerView& regionsPerView,
             const SfMData& sfmData,
-            const std::string& folder,
+            const std::vector<std::string>& folders,
             const std::vector<feature::EImageDescriberType>& imageDescriberTypes,
             const std::set<IndexT>& viewIdFilter)
 {
@@ -62,10 +129,7 @@ bool loadRegionsPerView(feature::RegionsPerView& regionsPerView,
   imageDescribers.resize(imageDescriberTypes.size());
 
   for(std::size_t i =0; i < imageDescriberTypes.size(); ++i)
-  {
     imageDescribers[i] = createImageDescriber(imageDescriberTypes[i]);
-  }
-
 
 #pragma omp parallel num_threads(3)
  for (auto iter = sfmData.GetViews().begin();
@@ -77,7 +141,7 @@ bool loadRegionsPerView(feature::RegionsPerView& regionsPerView,
      {
        if(viewIdFilter.empty() || viewIdFilter.find(iter->second.get()->getViewId()) != viewIdFilter.end())
        {
-         std::unique_ptr<feature::Regions> regionsPtr = loadRegions(folder, iter->second.get()->getViewId(), *imageDescribers[i]);
+         std::unique_ptr<feature::Regions> regionsPtr = loadRegions(folders, iter->second.get()->getViewId(), *imageDescribers[i]);
 
          if(regionsPtr)
          {
@@ -101,7 +165,7 @@ bool loadRegionsPerView(feature::RegionsPerView& regionsPerView,
 
 bool loadFeaturesPerView(feature::FeaturesPerView& featuresPerView,
                       const SfMData& sfmData,
-                      const std::string& storageDirectory,
+                      const std::vector<std::string>& folders,
                       const std::vector<feature::EImageDescriberType>& imageDescriberTypes)
 {
   boost::progress_display my_progress_bar( sfmData.GetViews().size(), std::cout, "\n- Features Loading -\n" );
@@ -125,24 +189,7 @@ bool loadFeaturesPerView(feature::FeaturesPerView& featuresPerView,
     {
       for(std::size_t i = 0; i < imageDescriberTypes.size(); ++i)
       {
-        const std::string featFile = stlplus::create_filespec(storageDirectory,
-                std::to_string(iter->second->getViewId()),
-                EImageDescriberType_enumToString(imageDescriberTypes[i]) + ".feat");
-
-        ALICEVISION_LOG_TRACE("featFilename: " << featFile);
-
-        std::unique_ptr<feature::Regions> regionsPtr;
-        imageDescribers[i]->Allocate(regionsPtr);
-
-        try
-        {
-          regionsPtr->LoadFeatures(featFile);
-        }
-        catch(const std::exception& e)
-        {
-          ALICEVISION_LOG_WARNING("Invalid features file: " << featFile << "\n" << e.what());
-          invalid = true;
-        }
+        std::unique_ptr<feature::Regions> regionsPtr = loadFeatures(folders, iter->second.get()->getViewId(), *imageDescribers[i]);
 
 #pragma omp critical
         {

@@ -17,11 +17,11 @@ namespace aliceVision {
 namespace voctree {
 
 template<class DescriptorT, class FileDescriptorT>
-size_t readDescFromFiles(const std::string &filepath, const std::string &descFolder, std::vector<DescriptorT>& descriptors, std::vector<size_t> &numFeatures)
+size_t readDescFromFiles(const sfm::SfMData &sfmData, const std::string &descFolder, std::vector<DescriptorT>& descriptors, std::vector<size_t> &numFeatures)
 {
   namespace bfs = boost::filesystem;
   std::map<IndexT, std::string> descriptorsFiles;
-  getListOfDescriptorFiles(filepath, descFolder, descriptorsFiles);
+  getListOfDescriptorFiles(sfmData, descFolder, descriptorsFiles);
   std::size_t numDescriptors = 0;
 
   // Allocate the memory by reading in a first time the files to get the number
@@ -51,7 +51,7 @@ size_t readDescFromFiles(const std::string &filepath, const std::string &descFol
   ALICEVISION_LOG_DEBUG("Found " << numDescriptors << " descriptors overall, allocating memory...");
   if(bytesPerElement == 0)
   {
-    ALICEVISION_LOG_DEBUG("WARNING: Empty descriptor file: " << filepath);
+    ALICEVISION_LOG_WARNING("No descriptor file found");
     return 0;
   }
 

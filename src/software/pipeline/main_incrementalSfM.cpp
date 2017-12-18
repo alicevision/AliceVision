@@ -113,7 +113,7 @@ int main(int argc, char **argv)
   po::options_description optionalParams("Optional parameters");
   optionalParams.add_options()
     ("outputViewsAndPoses", po::value<std::string>(&outputSfMViewsAndPoses)->default_value(outputSfMViewsAndPoses),
-      "Path to the output SfMData (with only views and poses) file.")
+      "Path to the output SfMData file (with only views and poses).")
     ("extraInfoFolder", po::value<std::string>(&extraInfoFolder)->default_value(extraInfoFolder),
       "Folder for intermediate reconstruction files and additional reconstruction information files.")
     ("describerTypes,d", po::value<std::string>(&describerTypesName)->default_value(describerTypesName),
@@ -211,8 +211,11 @@ int main(int argc, char **argv)
   const std::vector<feature::EImageDescriberType> describerTypes = feature::EImageDescriberType_stringToEnums(describerTypesName);
 
   // Features reading
+  std::vector<std::string> featuresFolders = sfmData.getFeaturesFolders();
+  featuresFolders.emplace_back(featuresFolder);
+
   feature::FeaturesPerView featuresPerView;
-  if(!sfm::loadFeaturesPerView(featuresPerView, sfmData, featuresFolder, describerTypes))
+  if(!sfm::loadFeaturesPerView(featuresPerView, sfmData, featuresFolders, describerTypes))
   {
     ALICEVISION_LOG_ERROR("Error: Invalid features.");
     return EXIT_FAILURE;
@@ -293,8 +296,8 @@ int main(int argc, char **argv)
   if(!sfmEngine.Colorize())
     ALICEVISION_LOG_ERROR("Error: Colorize failed !");
 
-  sfmEngine.Get_SfMData().setFeatureFolder(featuresFolder);
-  sfmEngine.Get_SfMData().setMatchingFolder(matchesFolder);
+  sfmEngine.Get_SfMData().addFeaturesFolder(featuresFolder);
+  sfmEngine.Get_SfMData().addMatchesFolder(matchesFolder);
 
   ALICEVISION_LOG_INFO("Structure from motion took (s): " + std::to_string(timer.elapsed()));
   ALICEVISION_LOG_INFO("Generating HTML report...");

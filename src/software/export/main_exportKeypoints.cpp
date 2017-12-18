@@ -3,17 +3,19 @@
 // v. 2.0. If a copy of the MPL was not distributed with this file,
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
-#include "aliceVision/matching/IndMatch.hpp"
-#include "aliceVision/matching/io.hpp"
-#include "aliceVision/feature/svgVisualization.hpp"
-#include "aliceVision/image/all.hpp"
-#include "aliceVision/sfm/sfm.hpp"
-#include "aliceVision/sfm/pipeline/regionsIO.hpp"
+#include <aliceVision/matching/IndMatch.hpp>
+#include <aliceVision/matching/io.hpp>
+#include <aliceVision/feature/svgVisualization.hpp>
+#include <aliceVision/image/all.hpp>
+#include <aliceVision/sfm/sfm.hpp>
+#include <aliceVision/sfm/pipeline/regionsIO.hpp>
+#include <aliceVision/system/Logger.hpp>
+#include <aliceVision/system/cmdline.hpp>
 
-#include "dependencies/stlplus3/filesystemSimplified/file_system.hpp"
-#include "dependencies/vectorGraphics/svgDrawer.hpp"
+#include <dependencies/vectorGraphics/svgDrawer.hpp>
 
 #include <boost/program_options.hpp>
+#include <boost/filesystem.hpp>
 #include <boost/progress.hpp>
 
 #include <cstdlib>
@@ -23,11 +25,13 @@
 #include <map>
 
 using namespace aliceVision;
+using namespace aliceVision::feature;
 using namespace aliceVision::matching;
 using namespace aliceVision::sfm;
 using namespace svg;
-namespace po = boost::program_options;
 
+namespace po = boost::program_options;
+namespace fs = boost::filesystem;
 
 int main(int argc, char ** argv)
 {
@@ -36,7 +40,7 @@ int main(int argc, char ** argv)
   std::string verboseLevel = system::EVerboseLevel_enumToString(system::Logger::getDefaultVerboseLevel());
   std::string sfmDataFilename;
   std::string outputFolder;
-  std::string matchesFolder;
+  std::string featuresFolder;
   std::string describerTypesName = feature::EImageDescriberType_enumToString(feature::EImageDescriberType::SIFT);
 
   po::options_description allParams("AliceVision exportKeypoints");
@@ -47,8 +51,8 @@ int main(int argc, char ** argv)
       "SfMData file.")
     ("output,o", po::value<std::string>(&outputFolder)->required(),
       "Output path for keypoints.")
-    ("matchesFolder,m", po::value<std::string>(&matchesFolder)->required(),
-      "Path to a folder in which computed matches are stored.");
+    ("featuresFolder,f", po::value<std::string>(&featuresFolder)->required(),
+      "Path to a folder containing the extracted features.");
 
   po::options_description optionalParams("Optional parameters");
   optionalParams.add_options()
@@ -87,52 +91,50 @@ int main(int argc, char ** argv)
     return EXIT_FAILURE;
   }
 
+  ALICEVISION_COUT("Program called with the following parameters:");
+  ALICEVISION_COUT(vm);
+
   // set verbose level
   system::Logger::get()->setLogLevel(verboseLevel);
 
   if (outputFolder.empty())
   {
-    std::cerr << "\nIt is an invalid output folder" << std::endl;
+    ALICEVISION_LOG_ERROR("Invalid output folder");
     return EXIT_FAILURE;
   }
 
-  //---------------------------------------
-  // Read SfM Scene (image view names)
-  //---------------------------------------
-  SfMData sfm_data;
-  if (!Load(sfm_data, sfmDataFilename, ESfMData(VIEWS|INTRINSICS))) {
-    std::cerr << std::endl
-      << "The input SfMData file \""<< sfmDataFilename << "\" cannot be read." << std::endl;
+  // read SfM Scene (image view names)
+
+  SfMData sfmData;
+  if (!sfm::Load(sfmData, sfmDataFilename, sfm::ESfMData(VIEWS|INTRINSICS))) {
+    ALICEVISION_LOG_ERROR("The input SfMData file '"<< sfmDataFilename << "' cannot be read.");
     return EXIT_FAILURE;
   }
 
-  //---------------------------------------
-  // Load SfM Scene regions
-  //---------------------------------------
-  using namespace aliceVision::feature;
+  // load SfM Scene regions
   
-  // Get imageDescriberMethodType
+  // get imageDescriberMethodType
   std::vector<EImageDescriberType> describerMethodTypes = EImageDescriberType_stringToEnums(describerTypesName);
 
-  // Read the features
+  // read the features
+  std::vector<std::string> featuresFolders = sfmData.getFeaturesFolders();
+  featuresFolders.emplace_back(featuresFolder);
+
   feature::FeaturesPerView featuresPerView;
-  if (!sfm::loadFeaturesPerView(featuresPerView, sfm_data, matchesFolder, describerMethodTypes)) {
-    std::cerr << std::endl
-      << "Invalid features." << std::endl;
+  if (!sfm::loadFeaturesPerView(featuresPerView, sfmData, featuresFolders, describerMethodTypes)) {
+    ALICEVISION_LOG_ERROR("Invalid features");
     return EXIT_FAILURE;
   }
 
-  // ------------
-  // For each image, export visually the keypoints
-  // ------------
+  // for each image, export visually the keypoints
 
-  stlplus::folder_create(outputFolder);
-  std::cout << "\n Export extracted keypoints for all images" << std::endl;
-  boost::progress_display my_progress_bar( sfm_data.views.size() );
-  for(const auto &iterViews : sfm_data.views)
+  fs::create_directory(outputFolder);
+  ALICEVISION_LOG_INFO("Export extracted keypoints for all images");
+  boost::progress_display myProgressBar(sfmData.views.size());
+  for(const auto &iterViews : sfmData.views)
   {
     const View * view = iterViews.second.get();
-    const std::string sView_filename = view->getImagePath();
+    const std::string viewImagePath = view->getImagePath();
 
     const std::pair<size_t, size_t>
       dimImage = std::make_pair(view->getWidth(), view->getHeight());
@@ -140,17 +142,14 @@ int main(int argc, char ** argv)
     const MapFeaturesPerDesc& features = featuresPerView.getData().at(view->getViewId());
 
     // output filename
-    std::ostringstream os;
-    os << stlplus::folder_append_separator(outputFolder)
-      << stlplus::basename_part(sView_filename)
-      << "_" << features.size() << "_.svg";
+    fs::path outputFilename = fs::path(outputFolder) / std::string(std::to_string(view->getViewId()) + "_" + std::to_string(features.size()) + ".svg");
 
-    feature::saveFeatures2SVG(sView_filename,
+    feature::saveFeatures2SVG(viewImagePath,
                                dimImage,
                                featuresPerView.getData().at(view->getViewId()),
-                               os.str());
+                               outputFilename.string());
 
-    ++my_progress_bar;
+    ++myProgressBar;
   }
   
   return EXIT_SUCCESS;

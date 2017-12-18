@@ -570,15 +570,32 @@ void AlembicImporter::populate(sfm::SfMData &sfmdata, sfm::ESfMData flags_part)
   const index_t sampleFrame = 0;
   IObject rootObj = _objImpl->_rootEntity.getChild("mvgRoot");
   ICompoundProperty userProps = rootObj.getProperties();
+
+  if(userProps.getPropertyHeader("mvg_featuresFolders"))
+  {
+    std::vector<std::string> featuresFolders;
+    getAbcArrayProp<Alembic::Abc::IStringArrayProperty>(userProps, "mvg_featuresFolders", sampleFrame, featuresFolders);
+    sfmdata.setFeaturesFolders(featuresFolders);
+  }
+
+  if(userProps.getPropertyHeader("mvg_matchesFolders"))
+  {
+    std::vector<std::string> matchesFolders;
+    getAbcArrayProp<Alembic::Abc::IStringArrayProperty>(userProps, "mvg_matchesFolders", sampleFrame, matchesFolders);
+    sfmdata.setMatchesFolders(matchesFolders);
+  }
+
+  // keep compatibility with single folder for feature and matching
   if(const Alembic::Abc::PropertyHeader *propHeader = userProps.getPropertyHeader("mvg_featureFolder"))
   {
-    const std::string featureFolder = getAbcProp<Alembic::Abc::IStringProperty>(userProps, *propHeader, "mvg_featureFolder", sampleFrame);
-    sfmdata.setFeatureFolder(featureFolder);
+    const std::string featuresFolder = getAbcProp<Alembic::Abc::IStringProperty>(userProps, *propHeader, "mvg_featureFolder", sampleFrame);
+    sfmdata.addFeaturesFolder(featuresFolder);
   }
+
   if(const Alembic::Abc::PropertyHeader *propHeader = userProps.getPropertyHeader("mvg_matchingFolder"))
   {
-    const std::string matchingFolder = getAbcProp<Alembic::Abc::IStringProperty>(userProps, *propHeader, "mvg_matchingFolder", sampleFrame);
-    sfmdata.setMatchingFolder(matchingFolder);
+    const std::string matchesFolder = getAbcProp<Alembic::Abc::IStringProperty>(userProps, *propHeader, "mvg_matchingFolder", sampleFrame);
+    sfmdata.addMatchesFolder(matchesFolder);
   }
 
   // TODO : handle the case where the archive wasn't correctly opened

@@ -47,9 +47,9 @@ public:
   /// Controls points (stored as Landmarks (id_feat has no meaning here))
   Landmarks control_points;
   /// Feature folder path
-  std::string _featureFolder;
+  std::vector<std::string> _featuresFolders;
   /// Matching folder path
-  std::string _matchingFolder;
+  std::vector<std::string> _matchesFolders;
 
   // Operators
 
@@ -69,8 +69,8 @@ public:
   Landmarks& GetLandmarks() {return structure;}
   const Landmarks& GetControl_Points() const {return control_points;}
   Landmarks& GetControl_Points() {return control_points;}
-  const std::string& getFeatureFolder() const {return _featureFolder;}
-  const std::string& getMatchingFolder() const {return _matchingFolder;}
+  const std::vector<std::string>& getFeaturesFolders() const {return _featuresFolders;}
+  const std::vector<std::string>& getMatchesFolders() const {return _matchesFolders;}
 
   /**
    * @brief List the view indexes that have valid camera intrinsic and pose.
@@ -197,14 +197,40 @@ public:
     return _rigs.at(view.getRigId());
   }
 
-  void setFeatureFolder(const std::string& featureFolder)
+  /**
+   * @brief Add the given features Folder
+   * @param[in] featuresFolder The given features folder
+   */
+  void addFeaturesFolder(const std::string& featuresFolder)
   {
-    _featureFolder = featureFolder;
+    _featuresFolders.emplace_back(featuresFolder);
   }
 
-  void setMatchingFolder(const std::string& matchingFolder)
+  /**
+   * @brief A the given matches Folder
+   * @param[in] matchesFolder The given mathes folder
+   */
+  void addMatchesFolder(const std::string& matchesFolder)
   {
-    _matchingFolder = matchingFolder;
+    _matchesFolders.emplace_back(matchesFolder);
+  }
+
+  /**
+   * @brief Set the given features folders
+   * @param[in] featuresFolders The given features folders
+   */
+  void setFeaturesFolders(const std::vector<std::string>& featuresFolders)
+  {
+    _featuresFolders = featuresFolders;
+  }
+
+  /**
+   * @brief Set the given mathes folders
+   * @param[in] matchesFolders The given mathes folders
+   */
+  void setMatchesFolders(const std::vector<std::string>& matchesFolders)
+  {
+    _matchesFolders = matchesFolders;
   }
 
   /**
