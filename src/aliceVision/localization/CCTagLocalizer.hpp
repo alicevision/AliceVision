@@ -39,7 +39,7 @@ class CCTagLocalizer : public ILocalizer
   
 public:
   
-  CCTagLocalizer(const std::string &sfmFilePath,
+  CCTagLocalizer(const sfm::SfMData &sfmData,
                  const std::string &descriptorsFolder);
    
   void setCudaPipe( int i ) override;

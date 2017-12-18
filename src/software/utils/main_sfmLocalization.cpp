@@ -36,7 +36,7 @@ int main(int argc, char **argv)
   std::string verboseLevel = system::EVerboseLevel_enumToString(system::Logger::getDefaultVerboseLevel());
   std::string sfmDataFilename;
   std::string describerTypesName = feature::EImageDescriberType_enumToString(feature::EImageDescriberType::SIFT);
-  std::string matchesFolder;
+  std::string featuresFolder;
   std::string outputFolder;
   std::string queryImage;
   double maxResidualError = std::numeric_limits<double>::infinity();
@@ -51,8 +51,8 @@ int main(int argc, char **argv)
       "SfMData file.")
     ("output,o", po::value<std::string>(&outputFolder)->required(),
       "Output path.")
-    ("matchesFolder,m", po::value<std::string>(&matchesFolder)->required(),
-      "Path to a folder in which computed matches are stored.")
+    ("featuresFolder,f", po::value<std::string>(&featuresFolder)->required(),
+      "Path to a folder containing the extracted features.")
     ("queryImage", po::value<std::string>(&queryImage)->required(),
       "Path to the image that must be localized.");
 
@@ -138,7 +138,10 @@ int main(int argc, char **argv)
   {
     RegionsPerView regionsPerView;
 
-    if (!sfm::loadRegionsPerView(regionsPerView, sfmData, matchesFolder, {describerType}))
+    std::vector<std::string> featuresFolders = sfmData.getFeaturesFolders();
+    featuresFolders.emplace_back(featuresFolder);
+
+    if (!sfm::loadRegionsPerView(regionsPerView, sfmData, featuresFolders, {describerType}))
     {
       std::cerr << std::endl << "Invalid regions." << std::endl;
       return EXIT_FAILURE;
@@ -239,8 +242,8 @@ int main(int argc, char **argv)
       std::unique_ptr<Regions> query_regions;
       imageDescribers->Allocate(query_regions);
       const std::string basename = stlplus::basename_part(sImagePath);
-      const std::string featFile = stlplus::create_filespec(matchesFolder, basename, ".feat");
-      const std::string descFile = stlplus::create_filespec(matchesFolder, basename, ".desc");
+      const std::string featFile = stlplus::create_filespec(featuresFolder, basename, ".feat");
+      const std::string descFile = stlplus::create_filespec(featuresFolder, basename, ".desc");
 
       try
       {

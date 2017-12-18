@@ -35,6 +35,7 @@ class ColorHarmonizationEngineGlobal
 public:
   ColorHarmonizationEngineGlobal(
     const std::string & sSfMData_Filename,
+    const std::string & featuresFolder,
     const std::string & sMatchesPath,
     const std::string & sMatchesGeometricModel,
     const std::string & sOutDirectory,
@@ -80,7 +81,8 @@ private:
 
   //
   std::string _sSfMData_Path;// Path to the Sfm_Scene
-  std::string _sMatchesPath;  // Path to correspondences and features
+  std::string _sMatchesPath;  // Path to matches
+  std::string _featuresFolder;  // Path to features
   std::string _sOutDirectory; // Output path where outputs will be stored
 };
 

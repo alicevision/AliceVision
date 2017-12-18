@@ -117,7 +117,7 @@ VoctreeLocalizer::Algorithm VoctreeLocalizer::initFromString(const std::string &
 }
 
 
-VoctreeLocalizer::VoctreeLocalizer(const std::string &sfmFilePath,
+VoctreeLocalizer::VoctreeLocalizer(const sfm::SfMData &sfmData,
                                    const std::string &descriptorsFolder,
                                    const std::string &vocTreeFilepath,
                                    const std::string &weightsFilepath,
@@ -134,31 +134,14 @@ VoctreeLocalizer::VoctreeLocalizer(const std::string &sfmFilePath,
     _imageDescribers.push_back(createImageDescriber(matchingDescType));
   }
 
-  // load the sfm data containing the 3D reconstruction info
-  ALICEVISION_LOG_DEBUG("Loading SFM data...");
-  if (!Load(_sfm_data, sfmFilePath, sfm::ESfMData::ALL)) 
-  {
-    ALICEVISION_CERR("The input SfMData file " << sfmFilePath << " cannot be read!");
-    ALICEVISION_CERR("\n\nIf the error says \"JSON Parsing failed - provided NVP not found\" "
-            "it's likely that you have to convert your sfm_data to a recent version supporting "
-            "polymorphic Views. You can run the python script convertSfmData.py to update an existing sfmdata.");
-    _isInit = false;
-    return;
-  }
-
-  ALICEVISION_LOG_DEBUG("SfM data loaded from " << sfmFilePath << " containing: ");
-  ALICEVISION_LOG_DEBUG("\tnumber of views      : " << _sfm_data.GetViews().size());
-  ALICEVISION_LOG_DEBUG("\tnumber of poses      : " << _sfm_data.GetPoses().size());
-  ALICEVISION_LOG_DEBUG("\tnumber of points     : " << _sfm_data.GetLandmarks().size());
-  ALICEVISION_LOG_DEBUG("\tnumber of intrinsics : " << _sfm_data.GetIntrinsics().size());
+  _sfm_data = sfmData;
 
   // load the features and descriptors
   // initially we need all the feature in order to create the database
   // then we can store only those associated to 3D points
   //? can we use Feature_Provider to load the features and filter them later?
 
-  const std::string descFolder = descriptorsFolder.empty() ? _sfm_data.getFeatureFolder() : descriptorsFolder;
-  _isInit = initDatabase(vocTreeFilepath, weightsFilepath, descFolder);
+  _isInit = initDatabase(vocTreeFilepath, weightsFilepath, descriptorsFolder);
 }
 
 bool VoctreeLocalizer::localize(const feature::MapRegionsPerDesc & queryRegions,
@@ -269,7 +252,7 @@ bool VoctreeLocalizer::loadReconstructionDescriptors(const sfm::SfMData & sfm_da
  */
 bool VoctreeLocalizer::initDatabase(const std::string & vocTreeFilepath,
                                     const std::string & weightsFilepath,
-                                    const std::string & feat_directory)
+                                    const std::string & featFolder)
 {
 
   bool withWeights = !weightsFilepath.empty();
@@ -325,6 +308,10 @@ bool VoctreeLocalizer::initDatabase(const std::string & vocTreeFilepath,
     }
   }
 
+  std::vector<std::string> featuresFolders = _sfm_data.getFeaturesFolders();
+  if(!featFolder.empty())
+    featuresFolders.emplace_back(featFolder);
+
   // Read for each view the corresponding Regions and store them
 #pragma omp parallel for num_threads(3)
   for(int i = 0; i < _sfm_data.GetViews().size(); ++i)
@@ -357,7 +344,7 @@ bool VoctreeLocalizer::initDatabase(const std::string & vocTreeFilepath,
       }
 
       // Load from files
-      std::unique_ptr<feature::Regions> currRegions = sfm::loadRegions(feat_directory, id_view, *imageDescriber);
+      std::unique_ptr<feature::Regions> currRegions = sfm::loadRegions(featuresFolders, id_view, *imageDescriber);
 
       if(descType == _voctreeDescType)
       {

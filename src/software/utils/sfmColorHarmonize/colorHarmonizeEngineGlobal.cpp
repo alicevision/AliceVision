@@ -54,6 +54,7 @@ typedef vector< FeatureT > featsT;
 
 ColorHarmonizationEngineGlobal::ColorHarmonizationEngineGlobal(
   const string & sSfMData_Filename,
+  const std::string & featuresFolder,
   const string & sMatchesPath,
   const std::string & sMatchesGeometricModel,
   const string & sOutDirectory,
@@ -61,6 +62,7 @@ ColorHarmonizationEngineGlobal::ColorHarmonizationEngineGlobal(
   int selectionMethod,
   int imgRef):
   _sSfMData_Path(sSfMData_Filename),
+  _featuresFolder(featuresFolder),
   _sMatchesPath(sMatchesPath),
   _sMatchesGeometricModel(sMatchesGeometricModel),
   _sOutDirectory(sOutDirectory),
@@ -483,7 +485,11 @@ bool ColorHarmonizationEngineGlobal::ReadInputData()
   }
 
   // Read features:
-  if(!sfm::loadRegionsPerView(_regionsPerView, sfm_data, _sMatchesPath, _descTypes))
+
+  std::vector<std::string> featuresFolders = sfm_data.getFeaturesFolders();
+  featuresFolders.emplace_back(_featuresFolder);
+
+  if(!sfm::loadRegionsPerView(_regionsPerView, sfm_data, featuresFolders, _descTypes))
   {
     cerr << "Can't load feature files" << endl;
     return false;

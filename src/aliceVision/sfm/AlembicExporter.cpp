@@ -498,11 +498,11 @@ void AlembicExporter::add(const sfm::SfMData& sfmData, sfm::ESfMData flags_part)
 {
   auto userProps = _data->_mvgRoot.getProperties();
 
-  OStringProperty propFeatureFolder(userProps, "mvg_featureFolder");
-  propFeatureFolder.set(sfmData.getFeatureFolder());
+  OStringArrayProperty propFeatureFolders(userProps, "mvg_featuresFolders");
+  propFeatureFolders.set(sfmData.getFeaturesFolders());
 
-  OStringProperty propMatchingFolder(userProps, "mvg_matchingFolder");
-  propMatchingFolder.set(sfmData.getMatchingFolder());
+  OStringArrayProperty propMatchingFolders(userProps, "mvg_matchesFolders");
+  propMatchingFolders.set(sfmData.getMatchesFolders());
 
   if(flags_part & sfm::ESfMData::VIEWS || flags_part & sfm::ESfMData::EXTRINSICS)
   {
