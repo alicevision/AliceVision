@@ -9,7 +9,6 @@ target_link_libraries(aliceVision_exportKeypoints
   aliceVision_system
   aliceVision_feature
   aliceVision_sfm
-  stlplus
   ${BOOST_LIBRARIES}
 )
 
@@ -29,7 +28,6 @@ target_link_libraries(aliceVision_exportMatches
   aliceVision_system
   aliceVision_feature
   aliceVision_sfm
-  stlplus
   ${BOOST_LIBRARIES}
 )
 
@@ -49,7 +47,6 @@ target_link_libraries(aliceVision_exportTracks
   aliceVision_system
   aliceVision_feature
   aliceVision_sfm
-  stlplus
   ${BOOST_LIBRARIES}
 )
 
