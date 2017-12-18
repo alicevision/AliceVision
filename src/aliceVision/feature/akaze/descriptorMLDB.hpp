@@ -7,7 +7,7 @@
 
 #include <aliceVision/feature/Descriptor.hpp>
 #include <aliceVision/feature/PointFeature.hpp>
-#include <aliceVision/image/image.hpp>
+#include <aliceVision/image/all.hpp>
 #include <aliceVision/numeric/MathTrait.hpp>
 
 namespace aliceVision {

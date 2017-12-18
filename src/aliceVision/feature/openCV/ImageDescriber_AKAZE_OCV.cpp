@@ -5,7 +5,7 @@
 
 #include "ImageDescriber_AKAZE_OCV.hpp"
 
-#include "aliceVision/image/image.hpp"
+#include "aliceVision/image/all.hpp"
 
 #include <opencv2/opencv.hpp>
 #include <opencv2/core/eigen.hpp>
