@@ -44,7 +44,7 @@ public:
     _pairwiseMatches = pairwiseMatches;
   }
 
-  void RobustResectionOfImages(
+  void robustResectionOfImages(
     const std::set<size_t>& viewIds,
     std::set<size_t>& set_reconstructedViewId,
     std::set<size_t>& set_rejectedViewId);
@@ -57,13 +57,13 @@ public:
   }
 
   /// Initialize tracks
-  bool InitLandmarkTracks();
+  bool initLandmarkTracks();
 
   /// Select a candidate initial pair
-  bool ChooseInitialPair(Pair & initialPairIndex) const;
+  bool chooseInitialPair(Pair & initialPairIndex) const;
 
   /// Compute the initial 3D seed (First camera t=0; R=Id, second estimated by 5 point algorithm)
-  bool MakeInitialPair3D(const Pair & initialPair);
+  bool makeInitialPair3D(const Pair & initialPair);
 
   /// Automatic initial pair selection (based on a 'baseline' computation score)
   bool getBestInitialImagePairs(std::vector<Pair>& out_bestImagePairs) const;
@@ -74,7 +74,7 @@ public:
    *
    * It can be declared unknown if the type cannot be deduced from the metadata.
    */
-  void SetUnknownCameraType(const camera::EINTRINSIC camType)
+  void setUnknownCameraType(const camera::EINTRINSIC camType)
   {
     _camType = camType;
   }
@@ -134,10 +134,10 @@ private:
   typedef std::tuple<IndexT, std::size_t, std::size_t, bool> ViewConnectionScore;
 
   /// Return MSE (Mean Square Error) and a histogram of residual values.
-  double ComputeResidualsHistogram(Histogram<double> * histo) const;
+  double computeResidualsHistogram(Histogram<double> * histo) const;
 
   /// Return MSE (Mean Square Error) and a histogram of tracks size.
-  double ComputeTracksLengthsHistogram(Histogram<double> * histo) const;
+  double computeTracksLengthsHistogram(Histogram<double> * histo) const;
 
   /**
    * @brief Compute a score of the view for a subset of features. This is
@@ -168,7 +168,7 @@ private:
    * @param[in] remainingViewIds: input list of remaining view IDs in which we will search for connected views.
    * @return False if there is no view connected.
    */
-  bool FindConnectedViews(
+  bool findConnectedViews(
     std::vector<ViewConnectionScore>& out_connectedViews,
     const std::set<size_t>& remainingViewIds) const;
 
@@ -181,26 +181,35 @@ private:
    * @param[in] remainingViewIds: input list of remaining view IDs in which we will search for the best ones for resectioning.
    * @return False if there is no possible resection.
    */
-  bool FindNextImagesGroupForResection(
+  bool findNextImagesGroupForResection(
     std::vector<size_t>& out_selectedViewIds,
     const std::set<size_t>& remainingViewIds) const;
 
+  struct ResectionData : ImageLocalizerMatchData
+  {
+    std::set<std::size_t> tracksId; /// tracks index for resection
+    std::vector<track::TracksUtilsMap::FeatureId> featuresId; /// features index for resection
+    geometry::Pose3 pose; // pose estimated by the resection
+  };
+
   /**
-   * @brief Add a single Image to the scene and triangulate new possible tracks.
-   * @param imageIndex
+   * @brief Apply the resection on a single view.
+   * @param[in] viewIndex: image index to add to the reconstruction.
+   * @param[out] resectionData: contains the result (P) and all the data used during the resection.
    * @return false if resection failed
    */
-  bool Resection(const std::size_t viewIndex, 
-                 ImageLocalizerMatchData & resection_data, 
-                 geometry::Pose3 & pose, 
-                 std::set<std::size_t> & set_trackIdForResection, 
-                 std::vector<track::TracksUtilsMap::FeatureId> & vec_featIdForResection);
+  bool resection(const std::size_t viewIndex, 
+                 ResectionData & resectionData);
 
-  bool updateScene(const std::size_t viewIndex, 
-                   const ImageLocalizerMatchData & resection_data, 
-                   const geometry::Pose3 & pose, 
-                   const std::set<std::size_t> & set_trackIdForResection,
-                   const std::vector<track::TracksUtilsMap::FeatureId> & vec_featIdForResection);
+  /**
+   * @brief Update the global scene with the new found camera pose, intrinsic (if not defined) and 
+   * Update its observations into the global scene structure.
+   * @param[in] viewIndex: image index added to the reconstruction.
+   * @param[in] resectionData: contains the pose all the data used during the resection.
+   */
+  void updateScene(const std::size_t viewIndex, 
+                   const ResectionData & resectionData);
+                   
   /**
    * @brief  Triangulate new possible 2D tracks
    * List tracks that share content with this view and add observations and new 3D track if required.

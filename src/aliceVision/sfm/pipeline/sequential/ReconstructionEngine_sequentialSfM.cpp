@@ -161,7 +161,7 @@ ReconstructionEngine_sequentialSfM::~ReconstructionEngine_sequentialSfM()
 
 // Compute robust Resection of remaining images
 // - group of images will be selected and resection + scene completion will be tried
-void ReconstructionEngine_sequentialSfM::RobustResectionOfImages(
+void ReconstructionEngine_sequentialSfM::robustResectionOfImages(
   const std::set<size_t>& viewIds,
   std::set<size_t>& set_reconstructedViewId,
   std::set<size_t>& set_rejectedViewId)
@@ -174,7 +174,7 @@ void ReconstructionEngine_sequentialSfM::RobustResectionOfImages(
   std::set<size_t> set_remainingViewId(viewIds);
   std::vector<size_t> vec_possible_resection_indexes;
   
-  while (FindNextImagesGroupForResection(vec_possible_resection_indexes, set_remainingViewId))
+  while (findNextImagesGroupForResection(vec_possible_resection_indexes, set_remainingViewId))
   {
     if(vec_possible_resection_indexes.empty())
     {
@@ -257,15 +257,12 @@ void ReconstructionEngine_sequentialSfM::RobustResectionOfImages(
           }
         }
         
-        bool bResect = false, bUpdate = false;
-        ImageLocalizerMatchData resectionData;
-        geometry::Pose3 pose;
-        std::set<std::size_t> set_trackIdForResection;
-        std::vector<track::TracksUtilsMap::FeatureId> vec_featIdForResection;
+        bool bResect = false;
+        ResectionData resectionData;
 #pragma omp critical      
         {
-          bResect = Resection(possible_resection_index, resectionData, pose, set_trackIdForResection, vec_featIdForResection);
-          bUpdate = updateScene(possible_resection_index, resectionData, pose, set_trackIdForResection, vec_featIdForResection);
+          bResect = resection(possible_resection_index, resectionData);
+          updateScene(possible_resection_index, resectionData);
           bImageAdded |= bResect;
         }
         
@@ -399,7 +396,7 @@ bool ReconstructionEngine_sequentialSfM::Process()
   //-------------------
   //-- Incremental reconstruction
   //-------------------
-  if (!InitLandmarkTracks())
+  if (!initLandmarkTracks())
     return false;
   
   // Initial pair choice
@@ -411,7 +408,7 @@ bool ReconstructionEngine_sequentialSfM::Process()
       if(_userInteraction)
       {
         // Cannot find a valid initial pair, try to set it by hand?
-        if(!ChooseInitialPair(_userInitialImagePair))
+        if(!chooseInitialPair(_userInitialImagePair))
           return false;
       }
       else
@@ -430,7 +427,7 @@ bool ReconstructionEngine_sequentialSfM::Process()
   // Initial pair Essential Matrix and [R|t] estimation.
   for(const auto& initialPairCandidate: initialImagePairCandidates)
   {
-    if(MakeInitialPair3D(initialPairCandidate))
+    if(makeInitialPair3D(initialPairCandidate))
     {
       // Successfully found an initial image pair
       ALICEVISION_LOG_DEBUG("Initial pair is: " << initialPairCandidate.first << ", " << initialPairCandidate.second);
@@ -457,7 +454,7 @@ bool ReconstructionEngine_sequentialSfM::Process()
     
     // Compute robust Resection of remaining images
     // - group of images will be selected and resection + scene completion will be tried
-    RobustResectionOfImages(
+    robustResectionOfImages(
           _set_remainingViewId,
           reconstructedViewIds,
           rejectedViewIds);
@@ -491,11 +488,11 @@ bool ReconstructionEngine_sequentialSfM::Process()
     "-------------------------------");
 
   Histogram<double> h;
-  ComputeResidualsHistogram(&h);
+  computeResidualsHistogram(&h);
   ALICEVISION_LOG_INFO("Histogram of residuals:" << h.ToString());
   
   Histogram<double> hTracks;
-  ComputeTracksLengthsHistogram(&hTracks);
+  computeTracksLengthsHistogram(&hTracks);
   ALICEVISION_LOG_INFO("Histogram of tracks length:" << hTracks.ToString());
   
   if (!_sLoggingFile.empty())
@@ -531,7 +528,7 @@ bool ReconstructionEngine_sequentialSfM::Process()
 }
 
 /// Select a candidate initial pair
-bool ReconstructionEngine_sequentialSfM::ChooseInitialPair(Pair & initialPairIndex) const
+bool ReconstructionEngine_sequentialSfM::chooseInitialPair(Pair & initialPairIndex) const
 {
   if (_userInitialImagePair != Pair(0,0))
   {
@@ -616,7 +613,7 @@ bool ReconstructionEngine_sequentialSfM::ChooseInitialPair(Pair & initialPairInd
   return true;
 }
 
-bool ReconstructionEngine_sequentialSfM::InitLandmarkTracks()
+bool ReconstructionEngine_sequentialSfM::initLandmarkTracks()
 {
   // Compute tracks from matches
   track::TracksBuilder tracksBuilder;
@@ -836,7 +833,7 @@ bool ReconstructionEngine_sequentialSfM::getBestInitialImagePairs(std::vector<Pa
 }
 
 /// Compute the initial 3D seed (First camera t=0; R=Id, second estimated by 5 point algorithm)
-bool ReconstructionEngine_sequentialSfM::MakeInitialPair3D(const Pair& current_pair)
+bool ReconstructionEngine_sequentialSfM::makeInitialPair3D(const Pair& current_pair)
 {
   // Compute robust Essential matrix for ImageId [I,J]
   // use min max to have I < J
@@ -977,7 +974,7 @@ bool ReconstructionEngine_sequentialSfM::MakeInitialPair3D(const Pair& current_p
     Histogram<double> histoResiduals;
     ALICEVISION_LOG_DEBUG(
       "=========================\n"
-      " MSE Residual InitialPair Inlier: " << ComputeResidualsHistogram(&histoResiduals) << "\n"
+      " MSE Residual InitialPair Inlier: " << computeResidualsHistogram(&histoResiduals) << "\n"
       "=========================");
 
     if (!_sLoggingFile.empty())
@@ -1032,7 +1029,7 @@ bool ReconstructionEngine_sequentialSfM::MakeInitialPair3D(const Pair& current_p
   return !_sfm_data.structure.empty();
 }
 
-double ReconstructionEngine_sequentialSfM::ComputeResidualsHistogram(Histogram<double> * histo) const
+double ReconstructionEngine_sequentialSfM::computeResidualsHistogram(Histogram<double> * histo) const
 {
   if (_sfm_data.GetLandmarks().empty())
     return -1.0;
@@ -1074,7 +1071,7 @@ double ReconstructionEngine_sequentialSfM::ComputeResidualsHistogram(Histogram<d
   return stats.mean;
 }
 
-double ReconstructionEngine_sequentialSfM::ComputeTracksLengthsHistogram(Histogram<double> * histo) const
+double ReconstructionEngine_sequentialSfM::computeTracksLengthsHistogram(Histogram<double> * histo) const
 {
   if (_sfm_data.GetLandmarks().empty())
     return -1.0;
@@ -1131,7 +1128,7 @@ std::size_t ReconstructionEngine_sequentialSfM::computeImageScore(std::size_t vi
 #endif
 }
 
-bool ReconstructionEngine_sequentialSfM::FindConnectedViews(
+bool ReconstructionEngine_sequentialSfM::findConnectedViews(
   std::vector<ViewConnectionScore>& out_connectedViews,
   const std::set<size_t>& remainingViewIds) const
 {
@@ -1217,14 +1214,14 @@ bool ReconstructionEngine_sequentialSfM::FindConnectedViews(
   return !out_connectedViews.empty();
 }
 
-bool ReconstructionEngine_sequentialSfM::FindNextImagesGroupForResection(
+bool ReconstructionEngine_sequentialSfM::findNextImagesGroupForResection(
   std::vector<size_t> & out_selectedViewIds,
   const std::set<size_t>& remainingViewIds) const
 {
   out_selectedViewIds.clear();
   auto chrono_start = std::chrono::steady_clock::now();
   std::vector<ViewConnectionScore> vec_viewsScore;
-  if(!FindConnectedViews(vec_viewsScore, remainingViewIds))
+  if(!findConnectedViews(vec_viewsScore, remainingViewIds))
   {
     ALICEVISION_LOG_DEBUG("FindConnectedViews does not find connected new views ");
     return false;
@@ -1299,19 +1296,14 @@ bool ReconstructionEngine_sequentialSfM::FindNextImagesGroupForResection(
  * @brief Add one image to the 3D reconstruction. To the resectioning of
  * the camera.
  * @param[in] viewIndex: image index to add to the reconstruction.
+ * @param[out] resectionData: contains the pose all the data used during the resection.
  *
  * A. Compute 2D/3D matches
  * B. Look if intrinsic data is known or not
  * C. Do the resectioning: compute the camera pose.
  * D. Refine the pose of the found camera
- * E. Update the global scene with the new camera pose or rig pose/sub-pose
- * F. Update the observations into the global scene structure
  */
-bool ReconstructionEngine_sequentialSfM::Resection(const std::size_t viewIndex, 
-                                                   ImageLocalizerMatchData & resection_data,
-                                                   geometry::Pose3 & pose,
-                                                   std::set<std::size_t> & set_trackIdForResection,
-                                                   std::vector<track::TracksUtilsMap::FeatureId> & vec_featIdForResection)
+bool ReconstructionEngine_sequentialSfM::resection(const std::size_t viewIndex, ResectionData & resectionData)
 {
   using namespace track;
 
@@ -1326,13 +1318,12 @@ bool ReconstructionEngine_sequentialSfM::Resection(const std::size_t viewIndex,
                  stl::RetrieveKey());
   
   // Get the ids of the already reconstructed tracks
-//  std::set<std::size_t> set_trackIdForResection;
   std::set_intersection(set_tracksIds.begin(), set_tracksIds.end(),
                         reconstructed_trackId.begin(),
                         reconstructed_trackId.end(),
-                        std::inserter(set_trackIdForResection, set_trackIdForResection.begin()));
+                        std::inserter(resectionData.tracksId, resectionData.tracksId.begin()));
   
-  if (set_trackIdForResection.empty())
+  if (resectionData.tracksId.empty())
   {
     // No match. The image has no connection with already reconstructed points.
     ALICEVISION_LOG_DEBUG("Resection failed as there is no connection with already reconstructed points");
@@ -1341,33 +1332,30 @@ bool ReconstructionEngine_sequentialSfM::Resection(const std::size_t viewIndex,
   
   // Get back featId associated to a tracksID already reconstructed.
   // These 2D/3D associations will be used for the resection.
-//  std::vector<TracksUtilsMap::FeatureId> vec_featIdForResection;
-  
   TracksUtilsMap::GetFeatureIdInViewPerTrack(_map_tracks,
-                                             set_trackIdForResection,
+                                             resectionData.tracksId,
                                              viewIndex,
-                                             &vec_featIdForResection);
+                                             &resectionData.featuresId);
   
   // Localize the image inside the SfM reconstruction
-//  ImageLocalizerMatchData resection_data;
-  resection_data.pt2D.resize(2, set_trackIdForResection.size());
-  resection_data.pt3D.resize(3, set_trackIdForResection.size());
-  resection_data.vec_descType.resize(set_trackIdForResection.size());
+  resectionData.pt2D.resize(2, resectionData.tracksId.size());
+  resectionData.pt3D.resize(3, resectionData.tracksId.size());
+  resectionData.vec_descType.resize(resectionData.tracksId.size());
   
   // B. Look if intrinsic data is known or not
   const View * view_I = _sfm_data.GetViews().at(viewIndex).get();
   std::shared_ptr<camera::IntrinsicBase> optionalIntrinsic = _sfm_data.GetIntrinsicSharedPtr(view_I->getIntrinsicId());
   
   std::size_t cpt = 0;
-  std::set<std::size_t>::const_iterator iterTrackId = set_trackIdForResection.begin();
-  for (std::vector<TracksUtilsMap::FeatureId>::const_iterator iterfeatId = vec_featIdForResection.begin();
-       iterfeatId != vec_featIdForResection.end();
+  std::set<std::size_t>::const_iterator iterTrackId = resectionData.tracksId.begin();
+  for (std::vector<TracksUtilsMap::FeatureId>::const_iterator iterfeatId = resectionData.featuresId.begin();
+       iterfeatId != resectionData.featuresId.end();
        ++iterfeatId, ++iterTrackId, ++cpt)
   {
     const feature::EImageDescriberType descType = iterfeatId->first;
-    resection_data.pt3D.col(cpt) = _sfm_data.GetLandmarks().at(*iterTrackId).X;
-    resection_data.pt2D.col(cpt) = _featuresPerView->getFeatures(viewIndex, descType)[iterfeatId->second].coords().cast<double>();
-    resection_data.vec_descType.at(cpt) = descType;
+    resectionData.pt3D.col(cpt) = _sfm_data.GetLandmarks().at(*iterTrackId).X;
+    resectionData.pt2D.col(cpt) = _featuresPerView->getFeatures(viewIndex, descType)[iterfeatId->second].coords().cast<double>();
+    resectionData.vec_descType.at(cpt) = descType;
   }
   
   // C. Do the resectioning: compute the camera pose.
@@ -1379,8 +1367,8 @@ bool ReconstructionEngine_sequentialSfM::Resection(const std::size_t viewIndex,
   const bool bResection = sfm::SfMLocalizer::Localize(
       Pair(view_I->getWidth(), view_I->getHeight()),
       optionalIntrinsic.get(),
-      resection_data,
-      pose
+      resectionData,
+      resectionData.pose
     );
 
   if (!_sLoggingFile.empty())
@@ -1393,12 +1381,12 @@ bool ReconstructionEngine_sequentialSfM::Resection(const std::size_t viewIndex,
     os.str("");
     os << std::endl
       << "- Image path: " << view_I->getImagePath() << "<br>"
-      << "- Threshold: " << resection_data.error_max << "<br>"
+      << "- Threshold: " << resectionData.error_max << "<br>"
       << "- Resection status: " << (bResection ? "OK" : "FAILED") << "<br>"
-      << "- # points used for Resection: " << vec_featIdForResection.size() << "<br>"
-      << "- # points validated by robust estimation: " << resection_data.vec_inliers.size() << "<br>"
+      << "- # points used for Resection: " << resectionData.featuresId.size() << "<br>"
+      << "- # points validated by robust estimation: " << resectionData.vec_inliers.size() << "<br>"
       << "- % points validated: "
-      << resection_data.vec_inliers.size()/static_cast<float>(vec_featIdForResection.size()) << "<br>";
+      << resectionData.vec_inliers.size()/static_cast<float>(resectionData.featuresId.size()) << "<br>";
 
     _htmlDocStream->pushInfo(os.str());
   }
@@ -1423,7 +1411,7 @@ bool ReconstructionEngine_sequentialSfM::Resection(const std::size_t viewIndex,
       // setup a default camera model from the found projection matrix
       Mat3 K, R;
       Vec3 t;
-      KRt_From_P(resection_data.projection_matrix, &K, &R, &t);
+      KRt_From_P(resectionData.projection_matrix, &K, &R, &t);
       
       const double focal = (K(0,0) + K(1,1))/2.0;
       const Vec2 principal_point(K(0,2), K(1,2));
@@ -1444,77 +1432,30 @@ bool ReconstructionEngine_sequentialSfM::Resection(const std::size_t viewIndex,
     const bool intrinsicsFirstUsage = (reconstructedIntrinsics.count(view_I->getIntrinsicId()) == 0);
 
     if(!sfm::SfMLocalizer::RefinePose(
-      optionalIntrinsic.get(), pose,
-      resection_data, true, b_new_intrinsic || intrinsicsFirstUsage))
+      optionalIntrinsic.get(), resectionData.pose,
+      resectionData, true, b_new_intrinsic || intrinsicsFirstUsage))
     {
       ALICEVISION_LOG_DEBUG("Resection of view " << viewIndex << " failed during pose refinement.");
       return false;
     }
-    
-//    // E. Update the global scene with the new found camera pose, intrinsic (if not defined)
-    
-//    // update the view pose or rig pose/sub-pose
-//    _map_ACThreshold.insert(std::make_pair(viewIndex, resection_data.error_max));
-    
-//    const View& view = *_sfm_data.views.at(viewIndex);
-//    _sfm_data.setPose(view, pose);
-    
-//    if (b_new_intrinsic)
-//    {
-//      // Since the view have not yet an intrinsic group before, create a new one
-//      IndexT new_intrinsic_id = 0;
-//      if (!_sfm_data.GetIntrinsics().empty())
-//      {
-//        // Since some intrinsic Id already exists,
-//        //  we have to create a new unique identifier following the existing one
-//        std::set<IndexT> existing_intrinsicId;
-//        std::transform(_sfm_data.GetIntrinsics().begin(), _sfm_data.GetIntrinsics().end(),
-//                       std::inserter(existing_intrinsicId, existing_intrinsicId.begin()),
-//                       stl::RetrieveKey());
-//        new_intrinsic_id = (*existing_intrinsicId.rbegin())+1;
-//      }
-//      _sfm_data.views.at(viewIndex).get()->setIntrinsicId(new_intrinsic_id);
-//      _sfm_data.intrinsics[new_intrinsic_id]= optionalIntrinsic;
-//    }
-//  }
-  
-//  // F. Update the observations into the global scene structure
-//  // - Add the new 2D observations to the reconstructed tracks
-//  iterTrackId = set_trackIdForResection.begin();
-//  for (std::size_t i = 0; i < resection_data.pt2D.cols(); ++i, ++iterTrackId)
-//  {
-//    const Vec3 X = resection_data.pt3D.col(i);
-//    const Vec2 x = resection_data.pt2D.col(i);
-//    const Vec2 residual = optionalIntrinsic->residual(pose, X, x);
-//    if (residual.norm() < resection_data.error_max &&
-//        pose.depth(X) > 0)
-//    {
-//      // Inlier, add the point to the reconstructed track
-//      _sfm_data.structure[*iterTrackId].observations[viewIndex] = Observation(x, vec_featIdForResection[i].second);
-//    }
   }
-  
   return true;
 }
 
-bool ReconstructionEngine_sequentialSfM::updateScene(const std::size_t viewIndex, 
-                                                     const ImageLocalizerMatchData & resection_data,
-                                                     const geometry::Pose3 & pose,
-                                                     const std::set<std::size_t> & set_trackIdForResection, 
-                                                     const std::vector<track::TracksUtilsMap::FeatureId> & vec_featIdForResection)
+void ReconstructionEngine_sequentialSfM::updateScene(const std::size_t viewIndex, const ResectionData & resectionData)
 {
   const View * view_I = _sfm_data.GetViews().at(viewIndex).get();
   std::shared_ptr<camera::IntrinsicBase> optionalIntrinsic = _sfm_data.GetIntrinsicSharedPtr(view_I->getIntrinsicId());
   camera::Pinhole * pinhole_cam = dynamic_cast<camera::Pinhole *>(optionalIntrinsic.get());
   const bool b_new_intrinsic = (optionalIntrinsic == nullptr) || (pinhole_cam && !pinhole_cam->isValid());
   
-  // E. Update the global scene with the new found camera pose, intrinsic (if not defined)
+  // A. Update the global scene with the new found camera pose, intrinsic (if not defined)
   
   // update the view pose or rig pose/sub-pose
-  _map_ACThreshold.insert(std::make_pair(viewIndex, resection_data.error_max));
+  _map_ACThreshold.insert(std::make_pair(viewIndex, resectionData.error_max));
   
   const View& view = *_sfm_data.views.at(viewIndex);
-  _sfm_data.setPose(view, pose);
+  _sfm_data.setPose(view, resectionData.pose);
   
   if (b_new_intrinsic)
   {
@@ -1534,22 +1475,21 @@ bool ReconstructionEngine_sequentialSfM::updateScene(const std::size_t viewIndex
     _sfm_data.intrinsics[new_intrinsic_id]= optionalIntrinsic;
   }
   
-  // F. Update the observations into the global scene structure
+  // B. Update the observations into the global scene structure
   // - Add the new 2D observations to the reconstructed tracks
-  std::set<std::size_t>::const_iterator iterTrackId = set_trackIdForResection.begin();
-  for (std::size_t i = 0; i < resection_data.pt2D.cols(); ++i, ++iterTrackId)
+  std::set<std::size_t>::const_iterator iterTrackId = resectionData.tracksId.begin();
+  for (std::size_t i = 0; i < resectionData.pt2D.cols(); ++i, ++iterTrackId)
   {
-    const Vec3 X = resection_data.pt3D.col(i);
-    const Vec2 x = resection_data.pt2D.col(i);
-    const Vec2 residual = optionalIntrinsic->residual(pose, X, x);
-    if (residual.norm() < resection_data.error_max &&
-        pose.depth(X) > 0)
+    const Vec3 X = resectionData.pt3D.col(i);
+    const Vec2 x = resectionData.pt2D.col(i);
+    const Vec2 residual = optionalIntrinsic->residual(resectionData.pose, X, x);
+    if (residual.norm() < resectionData.error_max &&
+        resectionData.pose.depth(X) > 0)
     {
       // Inlier, add the point to the reconstructed track
-      _sfm_data.structure[*iterTrackId].observations[viewIndex] = Observation(x, vec_featIdForResection[i].second);
+      _sfm_data.structure[*iterTrackId].observations[viewIndex] = Observation(x, resectionData.featuresId[i].second);
     }
   }
-  return true;
 }
 
 bool ReconstructionEngine_sequentialSfM::checkChieralities(

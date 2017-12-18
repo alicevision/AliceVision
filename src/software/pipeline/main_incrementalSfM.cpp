@@ -246,7 +246,7 @@ int main(int argc, char **argv)
 
   // Configure reconstruction parameters
   sfmEngine.Set_bFixedIntrinsics(!refineIntrinsics);
-  sfmEngine.SetUnknownCameraType(EINTRINSIC(userCameraModel));
+  sfmEngine.setUnknownCameraType(EINTRINSIC(userCameraModel));
   sfmEngine.setMinInputTrackLength(minInputTrackLength);
   sfmEngine.setSfmdataInterFileExtension(outInterFileExtension);
   sfmEngine.setAllowUserInteraction(allowUserInteraction);
