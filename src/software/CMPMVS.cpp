@@ -206,7 +206,12 @@ int main(int argc, char* argv[])
     }
 
     // .ini parsing
-    multiviewInputParams mip(cmdline.iniFile, "", "");
+    const auto rootPath = bfs::path(cmdline.iniFile).parent_path();
+    const auto depthMapFolder = rootPath / "depthMap";
+    const auto depthMapFilterFolder = rootPath / "depthMapFilter";
+    bfs::create_directory(depthMapFolder);
+    bfs::create_directory(depthMapFilterFolder);
+    multiviewInputParams mip(cmdline.iniFile, depthMapFolder.string(), depthMapFilterFolder.string());
     const double simThr = mip._ini.get<double>("global.simThr", 0.0);
     const int minNumOfConsistensCams = mip._ini.get<int>("filter.minNumOfConsistentCams", 3);
     const int maxPts = mip._ini.get<int>("largeScale.planMaxPts", 30000000);
