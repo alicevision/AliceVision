@@ -1487,20 +1487,15 @@ bool ReconstructionEngine_sequentialSfM::checkChieralities(
   const std::set<IndexT> & viewsId, 
   const SfMData& scene)
 {
-  bool isChieral = true;  
   for (const IndexT & viewId : viewsId)
   {
     const View* view = scene.GetViews().at(viewId).get();
     const Pose3 pose = scene.getPose(*view);
-    
     // Check that the point is in front of all the cameras.
-    if (pose.depth(pt3D) < 0 ) 
-    { 
-      isChieral = false;
-      break;
-    }
+    if (pose.depth(pt3D) < 0) 
+      return false;
   }
-  return isChieral;
+  return true;
 }
 
 bool ReconstructionEngine_sequentialSfM::checkAngles(const Vec3 &pt3D, const std::set<IndexT> &viewsId, const SfMData &scene, const double &kMinAngle)
