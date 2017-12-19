@@ -1339,7 +1339,7 @@ bool ReconstructionEngine_sequentialSfM::computeResection(const std::size_t view
   
   // B. Look if intrinsic data is known or not
   const View * view_I = _sfm_data.GetViews().at(viewIndex).get();
-  std::shared_ptr<camera::IntrinsicBase> optionalIntrinsic = _sfm_data.GetIntrinsicSharedPtr(view_I->getIntrinsicId());
+  resectionData.optionalIntrinsic = _sfm_data.GetIntrinsicSharedPtr(view_I->getIntrinsicId());
   
   std::size_t cpt = 0;
   std::set<std::size_t>::const_iterator iterTrackId = resectionData.tracksId.begin();
@@ -1358,10 +1358,9 @@ bool ReconstructionEngine_sequentialSfM::computeResection(const std::size_t view
     "-------------------------------\n"
     "-- Robust Resection of view: " << viewIndex);
 
-//  geometry::Pose3 pose;
   const bool bResection = sfm::SfMLocalizer::Localize(
       Pair(view_I->getWidth(), view_I->getHeight()),
-      optionalIntrinsic.get(),
+      resectionData.optionalIntrinsic.get(),
       resectionData,
       resectionData.pose
     );
@@ -1395,13 +1394,13 @@ bool ReconstructionEngine_sequentialSfM::computeResection(const std::size_t view
   // D. Refine the pose of the found camera.
   // We use a local scene with only the 3D points and the new camera.
   {
-    camera::Pinhole * pinhole_cam = dynamic_cast<camera::Pinhole *>(optionalIntrinsic.get());
-    const bool b_new_intrinsic = (optionalIntrinsic == nullptr) || (pinhole_cam && !pinhole_cam->isValid());
+    camera::Pinhole * pinhole_cam = dynamic_cast<camera::Pinhole *>(resectionData.optionalIntrinsic.get());
+    resectionData.isNewIntrinsic = (resectionData.optionalIntrinsic == nullptr) || (pinhole_cam && !pinhole_cam->isValid());
     // A valid pose has been found (try to refine it):
     // If no valid intrinsic as input:
     //  init a new one from the projection matrix decomposition
     // Else use the existing one and consider it as constant.
-    if (b_new_intrinsic)
+    if (resectionData.isNewIntrinsic)
     {
       // setup a default camera model from the found projection matrix
       Mat3 K, R;
@@ -1411,10 +1410,11 @@ bool ReconstructionEngine_sequentialSfM::computeResection(const std::size_t view
       const double focal = (K(0,0) + K(1,1))/2.0;
       const Vec2 principal_point(K(0,2), K(1,2));
       
-      if(optionalIntrinsic == nullptr)
+      if(resectionData.optionalIntrinsic == nullptr)
       {
         // Create the new camera intrinsic group
-        optionalIntrinsic = createPinholeIntrinsic(_camType, view_I->getWidth(), view_I->getHeight(), focal, principal_point(0), principal_point(1));
+        resectionData.optionalIntrinsic = createPinholeIntrinsic(_camType, view_I->getWidth(), view_I->getHeight(), focal, principal_point(0), principal_point(1));
+        
       }
       else if(pinhole_cam)
       {
@@ -1427,8 +1427,8 @@ bool ReconstructionEngine_sequentialSfM::computeResection(const std::size_t view
     const bool intrinsicsFirstUsage = (reconstructedIntrinsics.count(view_I->getIntrinsicId()) == 0);
 
     if(!sfm::SfMLocalizer::RefinePose(
-      optionalIntrinsic.get(), resectionData.pose,
-      resectionData, true, b_new_intrinsic || intrinsicsFirstUsage))
+      resectionData.optionalIntrinsic.get(), resectionData.pose,
+      resectionData, true, resectionData.isNewIntrinsic || intrinsicsFirstUsage))
     {
       ALICEVISION_LOG_DEBUG("Resection of view " << viewIndex << " failed during pose refinement.");
       return false;
@@ -1438,12 +1438,7 @@ bool ReconstructionEngine_sequentialSfM::computeResection(const std::size_t view
 }
 
 void ReconstructionEngine_sequentialSfM::updateScene(const std::size_t viewIndex, const ResectionData & resectionData)
-{
-  const View * view_I = _sfm_data.GetViews().at(viewIndex).get();
-  std::shared_ptr<camera::IntrinsicBase> optionalIntrinsic = _sfm_data.GetIntrinsicSharedPtr(view_I->getIntrinsicId());
-  camera::Pinhole * pinhole_cam = dynamic_cast<camera::Pinhole *>(optionalIntrinsic.get());
-  const bool b_new_intrinsic = (optionalIntrinsic == nullptr) || (pinhole_cam && !pinhole_cam->isValid());
-  
+{ 
   // A. Update the global scene with the new found camera pose, intrinsic (if not defined)
   
   // update the view pose or rig pose/sub-pose
@@ -1452,7 +1447,7 @@ void ReconstructionEngine_sequentialSfM::updateScene(const std::size_t viewIndex
   const View& view = *_sfm_data.views.at(viewIndex);
   _sfm_data.setPose(view, resectionData.pose);
   
-  if (b_new_intrinsic)
+  if (resectionData.isNewIntrinsic)
   {
     // Since the view have not yet an intrinsic group before, create a new one
     IndexT new_intrinsic_id = 0;
@@ -1467,7 +1462,7 @@ void ReconstructionEngine_sequentialSfM::updateScene(const std::size_t viewIndex
       new_intrinsic_id = (*existing_intrinsicId.rbegin())+1;
     }
     _sfm_data.views.at(viewIndex).get()->setIntrinsicId(new_intrinsic_id);
-    _sfm_data.intrinsics[new_intrinsic_id]= optionalIntrinsic;
+    _sfm_data.intrinsics[new_intrinsic_id] = resectionData.optionalIntrinsic;
   }
   
   // B. Update the observations into the global scene structure
@@ -1477,7 +1472,7 @@ void ReconstructionEngine_sequentialSfM::updateScene(const std::size_t viewIndex
   {
     const Vec3 X = resectionData.pt3D.col(i);
     const Vec2 x = resectionData.pt2D.col(i);
-    const Vec2 residual = optionalIntrinsic->residual(resectionData.pose, X, x);
+    const Vec2 residual = resectionData.optionalIntrinsic->residual(resectionData.pose, X, x);
     if (residual.norm() < resectionData.error_max &&
         resectionData.pose.depth(X) > 0)
     {

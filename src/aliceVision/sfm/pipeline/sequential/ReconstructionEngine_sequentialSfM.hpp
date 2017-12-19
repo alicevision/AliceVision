@@ -189,7 +189,9 @@ private:
   {
     std::set<std::size_t> tracksId; /// tracks index for resection
     std::vector<track::TracksUtilsMap::FeatureId> featuresId; /// features index for resection
-    geometry::Pose3 pose; // pose estimated by the resection
+    geometry::Pose3 pose; /// pose estimated by the resection
+    std::shared_ptr<camera::IntrinsicBase> optionalIntrinsic = nullptr; /// intrinsic estimated by resection
+    bool isNewIntrinsic = true; /// the instrinsic already exists in the scene or not.
   };
 
   /**
@@ -199,7 +201,7 @@ private:
    * @return false if resection failed
    */
   bool computeResection(const std::size_t viewIndex, 
-                 ResectionData & resectionData);
+                        ResectionData & resectionData);
 
   /**
    * @brief Update the global scene with the new found camera pose, intrinsic (if not defined) and 
