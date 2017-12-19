@@ -1514,7 +1514,7 @@ bool ReconstructionEngine_sequentialSfM::checkAngles(const Vec3 &pt3D, const std
         }      
       }
     }
-    return false;;
+    return false;
 }
 
 void ReconstructionEngine_sequentialSfM::triangulateMultiViews_LORANSAC(SfMData& scene, const std::set<IndexT>& previousReconstructedViews, const std::set<IndexT>& newReconstructedViews)
