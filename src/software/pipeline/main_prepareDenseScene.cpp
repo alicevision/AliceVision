@@ -4,7 +4,7 @@
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
 #include <aliceVision/sfm/sfm.hpp>
-#include <aliceVision/image/image.hpp>
+#include <aliceVision/image/all.hpp>
 #include <aliceVision/image/convertion.hpp>
 #include <aliceVision/config.hpp>
 

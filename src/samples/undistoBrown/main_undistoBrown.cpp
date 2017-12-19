@@ -1,7 +1,7 @@
 // This file is part of the AliceVision project and is made available under
 // the terms of the MPL2 license (see the COPYING.md file).
 
-#include "aliceVision/image/image.hpp"
+#include "aliceVision/image/all.hpp"
 #include "aliceVision/camera/camera.hpp"
 
 #include "dependencies/stlplus3/filesystemSimplified/file_system.hpp"

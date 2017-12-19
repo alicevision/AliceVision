@@ -3,7 +3,7 @@
 // v. 2.0. If a copy of the MPL was not distributed with this file,
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
-#include "aliceVision/image/image.hpp"
+#include "aliceVision/image/all.hpp"
 #include "aliceVision/sfm/sfm.hpp"
 #include "aliceVision/system/Timer.hpp"
 
