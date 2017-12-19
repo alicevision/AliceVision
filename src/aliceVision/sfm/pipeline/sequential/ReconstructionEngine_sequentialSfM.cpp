@@ -257,9 +257,8 @@ void ReconstructionEngine_sequentialSfM::robustResectionOfImages(
           }
         }
         
-        bool bResect = false;
         ResectionData newResectionData;
-        bResect = computeResection(possible_resection_index, newResectionData);
+        bool bResect = computeResection(possible_resection_index, newResectionData);
 #pragma omp critical      
         {
           if (bResect)

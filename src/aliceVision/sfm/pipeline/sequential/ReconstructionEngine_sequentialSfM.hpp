@@ -191,7 +191,7 @@ private:
     std::vector<track::TracksUtilsMap::FeatureId> featuresId; /// features index for resection
     geometry::Pose3 pose; /// pose estimated by the resection
     std::shared_ptr<camera::IntrinsicBase> optionalIntrinsic = nullptr; /// intrinsic estimated by resection
-    bool isNewIntrinsic = true; /// the instrinsic already exists in the scene or not.
+    bool isNewIntrinsic; /// the instrinsic already exists in the scene or not.
   };
 
   /**
