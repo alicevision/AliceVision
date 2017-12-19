@@ -14,6 +14,8 @@
 #include <aliceVision/multiview/projection.hpp>
 
 #include <vector>
+#include <sstream>
+
 
 namespace aliceVision {
 namespace camera {
@@ -23,6 +25,9 @@ namespace camera {
 class Pinhole : public IntrinsicBase
 {
   public:
+
+  Pinhole()
+    {}
 
   Pinhole(
     unsigned int w, unsigned int h,
@@ -34,14 +39,15 @@ class Pinhole : public IntrinsicBase
   }
 
   Pinhole(
-    unsigned int w = 0, unsigned int h = 0,
-    double focal_length_pix = 0.0,
-    double ppx = 0.0, double ppy = 0.0)
-    :IntrinsicBase(w,h)
+    unsigned int w, unsigned int h,
+    double focal_length_pix,
+    double ppx, double ppy, const std::vector<double>& distortionParams = {})
+    : IntrinsicBase(w,h)
+    , _distortionParams(distortionParams)
   {
     setK(focal_length_pix, ppx, ppy);
   }
-  
+
   virtual ~Pinhole() {}
 
   virtual Pinhole* clone() const { return new Pinhole(*this); }
@@ -120,6 +126,12 @@ class Pinhole : public IntrinsicBase
 
   void setDistortionParams(const std::vector<double>& distortionParams)
   {
+    if(distortionParams.size() != _distortionParams.size())
+    {
+        std::stringstream s;
+        s << "Pinhole::setDistortionParams: wrong number of distortion parameters (expected: " << _distortionParams.size() << ", given:" << distortionParams.size() << ").";
+        throw std::runtime_error(s.str());
+    }
     _distortionParams = distortionParams;
   }
 
@@ -130,7 +142,7 @@ class Pinhole : public IntrinsicBase
       return false;
 
     this->setK(params[0], params[1], params[2]);
-    _distortionParams = {params.begin() + 3, params.end()};
+    setDistortionParams({params.begin() + 3, params.end()});
 
     return true;
   }

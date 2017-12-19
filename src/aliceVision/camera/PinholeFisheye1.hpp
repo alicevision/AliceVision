@@ -30,9 +30,8 @@ public:
     int w = 0, int h = 0,
     double focal = 0.0, double ppx = 0, double ppy = 0,
     double k1 = 0.0)
-        :Pinhole(w, h, focal, ppx, ppy)
+        :Pinhole(w, h, focal, ppx, ppy, {k1})
   {
-    setDistortionParams({k1});
   }
 
   PinholeFisheye1* clone() const { return new PinholeFisheye1(*this); }
