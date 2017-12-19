@@ -141,11 +141,9 @@ int main(int argc, char **argv)
   {
     // Load pre-computed matches
     matching::PairwiseMatches matches;
-    if (!matching::Load(matches, sfm_data.GetViewsKeys(), matchesFolder, describerMethodTypes, matchesGeometricModel))
-    {
-      std::cerr<< "Unable to read the matches file." << std::endl;
+    if(!sfm::loadPairwiseMatches(matches, sfm_data, matchesFolder, describerMethodTypes, matchesGeometricModel))
       return EXIT_FAILURE;
-    }
+
     pairs = matching::getImagePairs(matches);
     // Keep only Pairs that belong to valid view indexes.
     const std::set<IndexT> valid_viewIdx = sfm_data.getValidViews();
