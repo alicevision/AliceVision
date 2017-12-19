@@ -478,11 +478,8 @@ bool ColorHarmonizationEngineGlobal::ReadInputData()
   }
 
   // b. Read matches
-  if ( !matching::Load(_pairwiseMatches, sfm_data.GetViewsKeys(), _sMatchesPath, _descTypes, _sMatchesGeometricModel) )
-  {
-    cerr<< "Unable to read the geometric matrix matches" << endl;
+  if ( !sfm::loadPairwiseMatches(_pairwiseMatches, sfm_data, _sMatchesPath, _descTypes, _sMatchesGeometricModel) )
     return false;
-  }
 
   // Read features:
 

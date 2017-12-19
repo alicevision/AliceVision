@@ -27,7 +27,7 @@ namespace matching {
 
 bool LoadMatchFile(
   PairwiseMatches & matches,
-  const std::string & folder,
+  const std::string& folder,
   const std::string & filename)
 {
   if(!stlplus::is_file(stlplus::create_filespec(folder, filename)))
@@ -36,7 +36,7 @@ bool LoadMatchFile(
   const std::string ext = stlplus::extension_part(filename);
   const std::string filepath = folder + "/" + filename;
 
-  if (ext == "txt")
+  if(ext == "txt")
   {
     std::ifstream stream(filepath.c_str());
     if (!stream.is_open())
@@ -164,10 +164,10 @@ void filterMatchesByDesc(
 
 
 bool LoadMatchFilePerImage(
-  PairwiseMatches & matches,
-  const std::set<IndexT> & viewsKeys,
-  const std::string & folder,
-  const std::string & basename)
+  PairwiseMatches& matches,
+  const std::set<IndexT>& viewsKeys,
+  const std::string& folder,
+  const std::string& basename)
 {
   int nbLoadedMatchFiles = 0;
   // Load one match file per image
@@ -183,7 +183,7 @@ bool LoadMatchFilePerImage(
     {
       #pragma omp critical
       {
-        ALICEVISION_LOG_DEBUG("Unable to load match file: " << folder << "/" << matchFilename);
+        ALICEVISION_LOG_DEBUG("Unable to load match file: " << matchFilename);
       }
       continue;
     }
@@ -197,7 +197,7 @@ bool LoadMatchFilePerImage(
       }
     }
   }
-  if( nbLoadedMatchFiles == 0 )
+  if(nbLoadedMatchFiles == 0)
   {
     ALICEVISION_LOG_WARNING("No matches file loaded in: " << folder);
     return false;
@@ -208,9 +208,7 @@ bool LoadMatchFilePerImage(
     std::stringstream ss;
     ss << " * " << imagePairIt.first.first << "-" << imagePairIt.first.second << ": " << imagePairIt.second.getNbAllMatches() << "    ";
     for(const auto& matchesPerDeskIt: imagePairIt.second)
-    {
        ss << " [" << feature::EImageDescriberType_enumToString(matchesPerDeskIt.first) << ": " << matchesPerDeskIt.second.size() << "]";
-    }
     ALICEVISION_LOG_TRACE(ss.str());
   }
   return true;
@@ -219,31 +217,36 @@ bool LoadMatchFilePerImage(
 bool Load(
   PairwiseMatches & matches,
   const std::set<IndexT> & viewsKeysFilter,
-  const std::string & folder,
+  const std::vector<std::string>& folders,
   const std::vector<feature::EImageDescriberType>& descTypesFilter,
   const std::string & mode,
   const int maxNbMatches)
 {
   bool res = false;
   const std::string basename = "matches." + mode;
-  if(stlplus::is_file(stlplus::create_filespec(folder, basename + ".txt")))
+
+  for(const std::string& folder : folders)
   {
-    res = LoadMatchFile(matches, folder, basename + ".txt");
+    if(stlplus::is_file(stlplus::create_filespec(folder, basename + ".txt")))
+    {
+      res = LoadMatchFile(matches, folder, basename + ".txt");
+    }
+    else if(stlplus::is_file(stlplus::create_filespec(folder, basename + ".bin")))
+    {
+      res = LoadMatchFile(matches, folder, basename + ".bin");
+    }
+    else if(!stlplus::folder_wildcard(folder, "*."+basename+".txt", false, true).empty())
+    {
+      res = LoadMatchFilePerImage(matches, viewsKeysFilter, folder, basename + ".txt");
+    }
+    else if(!stlplus::folder_wildcard(folder, "*."+basename+".bin", false, true).empty())
+    {
+      res = LoadMatchFilePerImage(matches, viewsKeysFilter, folder, basename + ".bin");
+    }
   }
-  else if(stlplus::is_file(stlplus::create_filespec(folder, basename + ".bin")))
-  {
-    res = LoadMatchFile(matches, folder, basename + ".bin");
-  }
-  else if(!stlplus::folder_wildcard(folder, "*."+basename+".txt", false, true).empty())
-  {
-    res = LoadMatchFilePerImage(matches, viewsKeysFilter, folder, basename + ".txt");
-  }
-  else if(!stlplus::folder_wildcard(folder, "*."+basename+".bin", false, true).empty())
-  {
-    res = LoadMatchFilePerImage(matches, viewsKeysFilter, folder, basename + ".bin");
-  }
+
   if(!res)
-    return res;
+    return false;
 
   if(!viewsKeysFilter.empty())
     filterMatchesByViews(matches, viewsKeysFilter);
