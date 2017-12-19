@@ -1684,9 +1684,8 @@ void ReconstructionEngine_sequentialSfM::triangulateMultiViews_LORANSAC(SfMData&
     }  
 
     // -- Add the tringulated point to the scene
-#pragma omp critical
     {
-      Landmark & landmark = scene.structure[trackId];
+      Landmark landmark;
       landmark.X = X_euclidean;
       landmark.descType = track.descType;
       for (const IndexT & viewId : inliers) // add inliers as observations
@@ -1694,6 +1693,10 @@ void ReconstructionEngine_sequentialSfM::triangulateMultiViews_LORANSAC(SfMData&
         const Vec2 x = _featuresPerView->getFeatures(viewId, track.descType)[track.featPerView.at(viewId)].coords().cast<double>();
         landmark.observations[viewId] = Observation(x, track.featPerView.at(viewId));
       }
+#pragma omp critical
+      {
+        scene.structure[trackId] = landmark;
+      }      
     }
   } // for all shared tracks 
 }    
