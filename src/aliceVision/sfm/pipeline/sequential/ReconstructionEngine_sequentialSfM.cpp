@@ -208,75 +208,75 @@ void ReconstructionEngine_sequentialSfM::robustResectionOfImages(
     // get reconstructed views before resection
     const std::set<IndexT> prevReconstructedViews = _sfm_data.getValidViews();
     
+    // Limit to a maximum number of cameras added to ensure that
+    // we don't add too much data in one step without bundle adjustment.
+    if(vec_possible_resection_indexes.size() > maxImagesPerGroup)
+      vec_possible_resection_indexes.resize(maxImagesPerGroup);
+      
     // add images to the 3D reconstruction
 #pragma omp parallel for 
     for (std::size_t i = 0; i < vec_possible_resection_indexes.size(); i++)
     {
-      // Limit to a maximum number of cameras added to ensure that
-      // we don't add too much data in one step without bundle adjustment.
-      if(_sfm_data.getValidViews().size() - prevReconstructedViews.size() <= maxImagesPerGroup)
+      const std::size_t possible_resection_index = vec_possible_resection_indexes.at(i);
+      const std::size_t currentIndex = imageIndex;
+      ++imageIndex;
+      
       {
-        const std::size_t possible_resection_index = vec_possible_resection_indexes.at(i);
-        const std::size_t currentIndex = imageIndex;
-        ++imageIndex;
+        const View& view = *_sfm_data.views.at(possible_resection_index);
         
+        if(view.isPartOfRig())
         {
-          const View& view = *_sfm_data.views.at(possible_resection_index);
-          
-          if(view.isPartOfRig())
+          // Some views can become indirectly localized when the sub-pose becomes defined
+          if(_sfm_data.IsPoseAndIntrinsicDefined(view.getViewId()))
           {
-            // Some views can become indirectly localized when the sub-pose becomes defined
-            if(_sfm_data.IsPoseAndIntrinsicDefined(view.getViewId()))
-            {
-              ALICEVISION_LOG_DEBUG("Resection of image " << currentIndex << " ID=" << possible_resection_index << " was skipped." << std::endl
-                                    << "RigID=" << view.getRigId() << " Sub-poseID=" << view.getSubPoseId()
-                                    << " sub-pose and pose defined.");
+            ALICEVISION_LOG_DEBUG("Resection of image " << currentIndex << " ID=" << possible_resection_index << " was skipped." << std::endl
+                                  << "RigID=" << view.getRigId() << " Sub-poseID=" << view.getSubPoseId()
+                                  << " sub-pose and pose defined.");
 #pragma omp critical                              
-              set_remainingViewId.erase(possible_resection_index);
-              
-              continue;
-            }
+            set_remainingViewId.erase(possible_resection_index);
             
-            // We cannot localize a view if it is part of an initialized RIG with unknown Rig Pose
-            const bool knownPose = _sfm_data.existsPose(view);
-            const Rig& rig = _sfm_data.getRig(view);
-            const RigSubPose& subpose = rig.getSubPose(view.getSubPoseId());
-            
-            if(rig.isInitialized() &&
-               !knownPose &&
-               (subpose.status == ERigSubPoseStatus::UNINITIALIZED))
-            {
-              ALICEVISION_LOG_DEBUG("Resection of image " << currentIndex << " ID=" << possible_resection_index << " was skipped." << std::endl
-                                    << "RigID=" << view.getRigId() << " Sub-poseID=" << view.getSubPoseId()
-                                    << " Rig initialized but unkown pose and sub-pose.");
+            continue;
+          }
+          
+          // We cannot localize a view if it is part of an initialized RIG with unknown Rig Pose
+          const bool knownPose = _sfm_data.existsPose(view);
+          const Rig& rig = _sfm_data.getRig(view);
+          const RigSubPose& subpose = rig.getSubPose(view.getSubPoseId());
+          
+          if(rig.isInitialized() &&
+             !knownPose &&
+             (subpose.status == ERigSubPoseStatus::UNINITIALIZED))
+          {
+            ALICEVISION_LOG_DEBUG("Resection of image " << currentIndex << " ID=" << possible_resection_index << " was skipped." << std::endl
+                                  << "RigID=" << view.getRigId() << " Sub-poseID=" << view.getSubPoseId()
+                                  << " Rig initialized but unkown pose and sub-pose.");
 #pragma omp critical   
-              set_remainingViewId.erase(possible_resection_index);
-              
-              continue;
-            }
+            set_remainingViewId.erase(possible_resection_index);
+            
+            continue;
           }
         }
-        
-        ResectionData newResectionData;
-        bool bResect = computeResection(possible_resection_index, newResectionData);
+      }
+      
+      ResectionData newResectionData;
+      bool bResect = computeResection(possible_resection_index, newResectionData);
 #pragma omp critical      
+      {
+        if (bResect)
         {
-          if (bResect)
-          {
-            bImageAdded |= bResect;
-            updateScene(possible_resection_index, newResectionData);
-            set_reconstructedViewId.insert(possible_resection_index);
-            ALICEVISION_LOG_DEBUG("Resection of image: " << currentIndex << " ID=" << possible_resection_index << " succeed.");
-            _sfm_data.GetViews().at(possible_resection_index)->setResectionId(resectionId);
-            ++resectionId;
-          }
-          else
-          {
-            set_rejectedViewId.insert(possible_resection_index);
-            ALICEVISION_LOG_DEBUG("Resection of image " << currentIndex << " ID=" << possible_resection_index << " was not possible.");
-          }
-          set_remainingViewId.erase(possible_resection_index);
+          bImageAdded |= bResect;
+          updateScene(possible_resection_index, newResectionData);
+          set_reconstructedViewId.insert(possible_resection_index);
+          ALICEVISION_LOG_DEBUG("Resection of image: " << currentIndex << " ID=" << possible_resection_index << " succeed.");
+          _sfm_data.GetViews().at(possible_resection_index)->setResectionId(resectionId);
+          ++resectionId;
         }
+        else
+        {
+          set_rejectedViewId.insert(possible_resection_index);
+          ALICEVISION_LOG_DEBUG("Resection of image " << currentIndex << " ID=" << possible_resection_index << " was not possible.");
+        }
+        set_remainingViewId.erase(possible_resection_index);
       }
     }
     ALICEVISION_LOG_DEBUG("Resection of " << vec_possible_resection_indexes.size() << " new images took " << std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - chrono_start).count() << " msec.");
