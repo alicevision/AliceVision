@@ -3,11 +3,11 @@
 // v. 2.0. If a copy of the MPL was not distributed with this file,
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
-#include "aliceVision/sfm/sfm.hpp"
-#include "aliceVision/sfm/utils/uid.hpp"
+#include <aliceVision/sfm/sfm.hpp>
+#include <aliceVision/sfm/utils/uid.hpp>
 #include <aliceVision/config.hpp>
-
-#include "dependencies/stlplus3/filesystemSimplified/file_system.hpp"
+#include <aliceVision/system/Logger.hpp>
+#include <aliceVision/system/cmdline.hpp>
 
 #include <boost/program_options.hpp>
 #include <boost/system/error_code.hpp>
@@ -19,6 +19,7 @@
 using namespace aliceVision;
 using namespace aliceVision::sfm;
 namespace po = boost::program_options;
+namespace fs = boost::filesystem;
 
 // Convert from a SfMData format to another
 int main(int argc, char **argv)
@@ -37,7 +38,6 @@ int main(int argc, char **argv)
   bool flagExtrinsics = true;
   bool flagStructure = true;
   bool flagObservations = true;
-  bool recomputeUID = false;
 
   po::options_description allParams("AliceVision convertSfMFormat");
 
@@ -60,8 +60,6 @@ int main(int argc, char **argv)
       "Export structure.")
     ("observations", po::value<bool>(&flagObservations)->default_value(flagObservations),
       "Export observations.")
-    ("regenerateUID", po::value<bool>(&recomputeUID)->default_value(recomputeUID),
-      "Regenerate UID.")
     ("featuresFolder,m", po::value<std::string>(&featuresFolder),
       "Path to a folder in which computed features are stored to create links to files if 'regenerateUID' is used.");
 
@@ -97,86 +95,39 @@ int main(int argc, char **argv)
     return EXIT_FAILURE;
   }
 
+  ALICEVISION_COUT("Program called with the following parameters:");
+  ALICEVISION_COUT(vm);
+
   // set verbose level
   system::Logger::get()->setLogLevel(verboseLevel);
 
   if (sfmDataFilename.empty() || outputSfMDataFilename.empty())
   {
-    std::cerr << "Invalid input or output filename." << std::endl;
+    ALICEVISION_LOG_ERROR("Invalid input or output filename");
     return EXIT_FAILURE;
   }
 
   // OptionSwitch is cloned in cmd.add(),
   // so we must use cmd.used() instead of testing OptionSwitch.used
-  int flags =
-    (flagViews ? VIEWS      : 0)
-  | (flagIntrinsics ? INTRINSICS : 0)
-  | (flagExtrinsics ? EXTRINSICS : 0)
-  | (flagObservations ? OBSERVATIONS : 0)
-  | (flagStructure ? STRUCTURE  : 0);
-
+  int flags = (flagViews ? VIEWS      : 0)
+       | (flagIntrinsics ? INTRINSICS : 0)
+       | (flagExtrinsics ? EXTRINSICS : 0)
+       | (flagObservations ? OBSERVATIONS : 0)
+       | (flagStructure ? STRUCTURE  : 0);
   flags = (flags) ? flags : ALL;
 
-  // Load input SfMData scene
+  // load input SfMData scene
   SfMData sfm_data;
   if (!Load(sfm_data, sfmDataFilename, ESfMData(ALL)))
   {
-    std::cerr << std::endl
-      << "The input SfMData file \"" << sfmDataFilename << "\" cannot be read." << std::endl;
+    ALICEVISION_LOG_ERROR("The input SfMData file '" << sfmDataFilename << "' cannot be read");
     return EXIT_FAILURE;
   }
-  
-  if(recomputeUID)
-  {
-    std::cout << "Recomputing the UID of the views..." << std::endl;
-    std::map<std::size_t, std::size_t> oldIdToNew;
-    regenerateUID(sfm_data, oldIdToNew);
-    
-    if(!featuresFolder.empty())
-    {
-      std::cout << "Generating alias for .feat and .desc with the UIDs" << std::endl;
-      for(const auto& iter : oldIdToNew)
-      {
-        const auto oldID = iter.first;
-        const auto newID = iter.second;
-        
-        // nothing to do if the ids are the same
-        if(oldID == newID)
-          continue;
-        
-        const auto oldFeatfilename = stlplus::create_filespec(featuresFolder, std::to_string(oldID), ".feat");
-        const auto newFeatfilename = stlplus::create_filespec(featuresFolder, std::to_string(newID), ".feat");
-        const auto oldDescfilename = stlplus::create_filespec(featuresFolder, std::to_string(oldID), ".desc");
-        const auto newDescfilename = stlplus::create_filespec(featuresFolder, std::to_string(newID), ".desc");
 
-        if(!(stlplus::is_file(oldFeatfilename) && stlplus::is_file(oldDescfilename)))
-        {
-          std::cerr << "Cannot find the features file for view ID " << oldID
-                      << std::endl;
-          return EXIT_FAILURE;
-        }
-        boost::system::error_code ec;
-        boost::filesystem::create_symlink(oldFeatfilename, newFeatfilename, ec);
-        if(ec)
-        {
-          std::cerr << "Error while creating " << newFeatfilename << ": " << ec.message() << std::endl;
-          return EXIT_FAILURE;
-        }
-        boost::filesystem::create_symlink(oldDescfilename, newDescfilename, ec);
-        if(ec)
-        {
-          std::cerr << "Error while creating " << newDescfilename << ": " << ec.message() << std::endl;
-          return EXIT_FAILURE;
-        }
-      }
-    }
-  }
-
-  // Export the SfMData scene in the expected format
-  if (!Save(sfm_data, outputSfMDataFilename, ESfMData(flags)))
+  // export the SfMData scene in the expected format
+  if(!Save(sfm_data, outputSfMDataFilename, ESfMData(flags)))
   {
-    std::cerr << std::endl
-      << "An error occured while trying to save \"" << outputSfMDataFilename << "\"." << std::endl;
+    ALICEVISION_LOG_ERROR("An error occured while trying to save '" << outputSfMDataFilename << "'");
     return EXIT_FAILURE;
   }
   return EXIT_SUCCESS;

@@ -9,7 +9,6 @@ target_link_libraries(aliceVision_convertSfMFormat
 	aliceVision_system
 	aliceVision_feature
 	aliceVision_sfm
-	stlplus
 	${Boost_LIBRARIES}
 )
 
