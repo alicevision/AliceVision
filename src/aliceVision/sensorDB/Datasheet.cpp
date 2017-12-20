@@ -5,7 +5,7 @@
 
 #include "Datasheet.hpp"
 
-#include <aliceVision/stl/split.hpp>
+#include <boost/algorithm/string.hpp>
 
 #include <iterator>
 #include <algorithm>
@@ -17,7 +17,8 @@ bool Datasheet::operator==(const Datasheet& ds) const
 {
   bool isEqual = false;
   std::vector<std::string> vec_brand;
-  stl::split(ds._brand, " ", vec_brand);
+  boost::split(vec_brand, ds._brand, boost::is_any_of(" "));
+
   std::string brandlower = _brand;
 
   std::transform(brandlower.begin(), brandlower.end(),
@@ -34,9 +35,9 @@ bool Datasheet::operator==(const Datasheet& ds) const
     if ( brandlower.compare( brandlower2 ) == 0 )
     {
       std::vector<std::string> vec_model1;
-      stl::split(ds._model, " ", vec_model1);
+      boost::split(vec_model1, ds._model, boost::is_any_of(" "));
       std::vector<std::string> vec_model2;
-      stl::split(_model, " ", vec_model2);
+      boost::split(vec_model2, _model, boost::is_any_of(" "));
       bool isAllFind = true;
       for ( std::vector<std::string>::const_iterator iter_model1 = vec_model1.begin();
           iter_model1 != vec_model1.end();

@@ -8,7 +8,6 @@
 #include <aliceVision/sfm/sfm.hpp>
 #include <aliceVision/feature/imageDescriberCommon.hpp>
 #include <aliceVision/feature/feature.hpp>
-#include <aliceVision/stl/split.hpp>
 #include <aliceVision/system/Timer.hpp>
 #include <aliceVision/system/Logger.hpp>
 #include <aliceVision/system/cmdline.hpp>
@@ -356,8 +355,7 @@ int main(int argc, char **argv)
   // - if no file, compute features
   {
     system::Timer timer;
-    boost::progress_display my_progress_bar( sfmData.GetViews().size(),
-      std::cout, "\n- EXTRACT FEATURES -\n" );
+    boost::progress_display my_progress_bar( sfmData.GetViews().size(), std::cout, "Extract features\n" );
 
     Views::const_iterator iterViews = sfmData.views.begin();
     Views::const_iterator iterViewsEnd = sfmData.views.end();
@@ -366,14 +364,15 @@ int main(int argc, char **argv)
     {
       if(rangeStart < 0 || rangeStart > sfmData.views.size())
       {
-        std::cerr << "Bad specific index" << std::endl;
+       ALICEVISION_LOG_ERROR("Bad specific index");
         return EXIT_FAILURE;
       }
       if(rangeSize < 0)
       {
-        std::cerr << "Bad range size. " << std::endl;
+        ALICEVISION_LOG_ERROR("Bad range size");
         return EXIT_FAILURE;
       }
+
       if(rangeStart + rangeSize > sfmData.views.size())
         rangeSize = sfmData.views.size() - rangeStart;
 
