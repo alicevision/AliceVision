@@ -49,7 +49,6 @@ if(ALICEVISION_HAVE_ALEMBIC)
 		aliceVision_system
 		aliceVision_feature
 		aliceVision_sfm
-		stlplus
     ${BOOST_LIBRARIES}
 	)
 
