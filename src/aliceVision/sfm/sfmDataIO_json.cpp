@@ -264,28 +264,28 @@ bool saveJSON(const SfMData& sfmData, const std::string& filename, ESfMData part
   {
     bpt::ptree featureFoldersTree;
 
-    for(const std::string& featureFolder : sfmData.getFeaturesFolders())
+    for(const std::string& featuresFolder : sfmData.getFeaturesFolders())
     {
       bpt::ptree featureFolderTree;
-      featureFolderTree.put("", featureFolder);
+      featureFolderTree.put("", featuresFolder);
       featureFoldersTree.push_back(std::make_pair("", featureFolderTree));
     }
 
-    fileTree.put("featuresFolders", featureFoldersTree);
+    fileTree.add_child("featuresFolders", featureFoldersTree);
   }
 
   if(!sfmData.getMatchesFolders().empty())
   {
     bpt::ptree matchingFoldersTree;
 
-    for(const std::string& matchingFolder : sfmData.getMatchesFolders())
+    for(const std::string& matchesFolder : sfmData.getMatchesFolders())
     {
       bpt::ptree matchingFolderTree;
-      matchingFolderTree.put("", matchingFolder);
+      matchingFolderTree.put("", matchesFolder);
       matchingFoldersTree.push_back(std::make_pair("", matchingFolderTree));
     }
 
-    fileTree.put("matchesFolders", matchingFoldersTree);
+    fileTree.add_child("matchesFolders", matchingFoldersTree);
   }
 
   // views
