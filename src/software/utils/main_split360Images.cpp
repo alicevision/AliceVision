@@ -3,11 +3,11 @@
 // v. 2.0. If a copy of the MPL was not distributed with this file,
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
-#include <aliceVision/system/Logger.hpp>
-#include <aliceVision/system/cmdline.hpp>
 #include <aliceVision/numeric/numeric.hpp>
 #include <aliceVision/image/io.hpp>
 #include <aliceVision/image/Sampler.hpp>
+#include <aliceVision/system/Logger.hpp>
+#include <aliceVision/system/cmdline.hpp>
 
 #include <dependencies/vectorGraphics/svgDrawer.hpp>
 
@@ -25,7 +25,7 @@
 #include <vector>
 
 using namespace aliceVision;
-namespace bfs = boost::filesystem;
+namespace fs = boost::filesystem;
 namespace po = boost::program_options;
 namespace oiio = OIIO;
 
@@ -308,37 +308,46 @@ bool splitEquirectangularDemo(const std::string& imagePath, const std::string& o
 int main(int argc, char** argv)
 {
   // command-line parameters
-  
+  std::string verboseLevel = system::EVerboseLevel_enumToString(system::Logger::getDefaultVerboseLevel());
   std::string inputPath;                      // media file path list
-  std::string outputFolder;                // output folder for splited images
+  std::string outputFolder;                   // output folder for splited images
   std::string splitMode;                      // split mode (exif, dualfisheye, equirectangular)
   std::string dualFisheyeSplitPreset;         // dual-fisheye split type preset
   std::size_t equirectangularNbSplits;        // nb splits for equirectangular image
   std::size_t equirectangularSplitResolution; // split resolution for equirectangular image
   bool equirectangularDemoMode;
 
-  po::options_description allParams("This program is used to extract multiple images from equirectangular or dualfisheye images or image folder");
+  po::options_description allParams("This program is used to extract multiple images from equirectangular or dualfisheye images or image folder\n"
+                                    "AliceVision split360Images");
 
-  po::options_description inputParams("Required parameters");  
-  inputParams.add_options()
-      ("imagePath,i", po::value<std::string>(&inputPath)->required(),
-        "Input image file or image folder.")
-      ("outputFolder,o", po::value<std::string>(&outputFolder)->required(),
-        "Output keyframes folder for .jpg")
-      ("splitMode,m", po::value<std::string>(&splitMode)->default_value("equirectangular"),
-        "Split mode "
-        "(exif, equirectangular, dualfisheye)")
-      ("dualFisheyeSplitPreset", po::value<std::string>(&dualFisheyeSplitPreset)->default_value("center"),
-        "Dual-Fisheye split type preset "
-        "(center, top, bottom)")
-      ("equirectangularNbSplits", po::value<std::size_t>(&equirectangularNbSplits)->default_value(2),
-        "Equirectangular number of splits")
-      ("equirectangularSplitResolution", po::value<std::size_t>(&equirectangularSplitResolution)->default_value(1200),
-        "Equirectangular split resolution")
-      ("equirectangularDemoMode", po::value<bool>(&equirectangularDemoMode)->default_value(false),
-        "Export a SVG file that simulate the split");
+  po::options_description requiredParams("Required parameters");
+  requiredParams.add_options()
+    ("input,i", po::value<std::string>(&inputPath)->required(),
+      "Input image file or image folder.")
+    ("output,o", po::value<std::string>(&outputFolder)->required(),
+      "Output keyframes folder for .jpg");
 
-  allParams.add(inputParams);
+  po::options_description optionalParams("Optional parameters");
+  optionalParams.add_options()
+    ("splitMode,m", po::value<std::string>(&splitMode)->default_value("equirectangular"),
+      "Split mode "
+      "(exif, equirectangular, dualfisheye)")
+    ("dualFisheyeSplitPreset", po::value<std::string>(&dualFisheyeSplitPreset)->default_value("center"),
+      "Dual-Fisheye split type preset "
+      "(center, top, bottom)")
+    ("equirectangularNbSplits", po::value<std::size_t>(&equirectangularNbSplits)->default_value(2),
+      "Equirectangular number of splits")
+    ("equirectangularSplitResolution", po::value<std::size_t>(&equirectangularSplitResolution)->default_value(1200),
+      "Equirectangular split resolution")
+    ("equirectangularDemoMode", po::value<bool>(&equirectangularDemoMode)->default_value(false),
+      "Export a SVG file that simulate the split");
+
+  po::options_description logParams("Log parameters");
+  logParams.add_options()
+    ("verboseLevel,v", po::value<std::string>(&verboseLevel)->default_value(verboseLevel),
+      "verbosity level (fatal,  error, warning, info, debug, trace).");
+
+  allParams.add(requiredParams).add(optionalParams).add(logParams);
 
   po::variables_map vm;
   try
@@ -364,14 +373,20 @@ int main(int argc, char** argv)
     ALICEVISION_COUT("Usage:\n\n" << allParams);
     return EXIT_FAILURE;
   }
+
+  ALICEVISION_COUT("Program called with the following parameters:");
+  ALICEVISION_COUT(vm);
+
+  // set verbose level
+  system::Logger::get()->setLogLevel(verboseLevel);
   
   // check output folder and update to its absolute path
   {
-    const bfs::path outDir = bfs::absolute(outputFolder);
+    const fs::path outDir = fs::absolute(outputFolder);
     outputFolder = outDir.string();
-    if(!bfs::is_directory(outDir))
+    if(!fs::is_directory(outDir))
     {
-      ALICEVISION_CERR("ERROR: can't find folder " << outputFolder);
+      ALICEVISION_LOG_ERROR("Can't find folder " << outputFolder);
       return EXIT_FAILURE;
     }
   }
@@ -385,7 +400,7 @@ int main(int argc, char** argv)
        splitMode != "equirectangular" &&
        splitMode != "dualfisheye")
     {
-      ALICEVISION_CERR("ERROR: invalid split mode : " << splitMode);
+      ALICEVISION_LOG_ERROR("Invalid split mode : " << splitMode);
       return EXIT_FAILURE;
     }
   }
@@ -399,33 +414,30 @@ int main(int argc, char** argv)
        dualFisheyeSplitPreset != "bottom" &&
        dualFisheyeSplitPreset != "center")
     {
-      ALICEVISION_CERR("ERROR: invalid dual-fisheye split preset : " << dualFisheyeSplitPreset);
+      ALICEVISION_LOG_ERROR("Invalid dual-fisheye split preset : " << dualFisheyeSplitPreset);
       return EXIT_FAILURE;
     }
   }
-
-  ALICEVISION_COUT("Program called with the following parameters:");
-  ALICEVISION_COUT(vm);
 
   std::vector<std::string> imagePaths;
   std::vector<std::string> badPaths;
 
   {
-    const bfs::path path = bfs::absolute(inputPath);
-    if(bfs::exists(path) && bfs::is_directory(path))
+    const fs::path path = fs::absolute(inputPath);
+    if(fs::exists(path) && fs::is_directory(path))
     {
-      for(bfs::directory_entry& entry : boost::make_iterator_range(bfs::directory_iterator(path), {}))
+      for(fs::directory_entry& entry : boost::make_iterator_range(fs::directory_iterator(path), {}))
         imagePaths.push_back(entry.path().string());
 
       ALICEVISION_LOG_INFO("Find " << imagePaths.size() << " file paths.");
     }
-    else if(bfs::exists(path))
+    else if(fs::exists(path))
     {
       imagePaths.push_back(path.string());
     }
     else
     {
-      ALICEVISION_CERR("ERROR: can't find file or folder " << inputPath);
+      ALICEVISION_LOG_ERROR("Can't find file or folder " << inputPath);
       return EXIT_FAILURE;
     }
   }
