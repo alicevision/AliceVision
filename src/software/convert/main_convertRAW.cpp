@@ -5,6 +5,8 @@
 
 #include <aliceVision/image/image.hpp>
 #include <aliceVision/image/io.hpp>
+#include <aliceVision/system/Logger.hpp>
+#include <aliceVision/system/cmdline.hpp>
 
 #include <boost/program_options.hpp>
 #include <boost/filesystem.hpp>
@@ -70,6 +72,9 @@ int main(int argc, char** argv)
     ALICEVISION_COUT("Usage:\n\n" << allParams);
     return EXIT_FAILURE;
   }
+
+  ALICEVISION_COUT("Program called with the following parameters:");
+  ALICEVISION_COUT(vm);
 
   // set verbose level
   system::Logger::get()->setLogLevel(verboseLevel);
