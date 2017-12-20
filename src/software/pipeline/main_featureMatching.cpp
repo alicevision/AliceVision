@@ -267,7 +267,7 @@ int main(int argc, char **argv)
   SfMData sfmData;
   if(!Load(sfmData, sfmDataFilename, ESfMData(VIEWS|INTRINSICS)))
   {
-    ALICEVISION_LOG_ERROR("The input SfMData file '" + sfmDataFilename + "' cannot be read.");
+    ALICEVISION_LOG_ERROR("The input SfMData file '" << sfmDataFilename << "' cannot be read.");
     return EXIT_FAILURE;
   }
 
@@ -285,7 +285,7 @@ int main(int argc, char **argv)
   }
   else
   {
-    ALICEVISION_LOG_INFO("Load pair list from file: " + predefinedPairList);
+    ALICEVISION_LOG_INFO("Load pair list from file: " << predefinedPairList);
     if(!loadPairs(predefinedPairList, pairs, rangeStart, rangeSize))
         return EXIT_FAILURE;
   }
@@ -297,7 +297,7 @@ int main(int argc, char **argv)
     return rangeSize ? EXIT_SUCCESS : EXIT_FAILURE;
   }
 
-  ALICEVISION_LOG_INFO("Number of pairs: " + pairs.size());
+  ALICEVISION_LOG_INFO("Number of pairs: " << pairs.size());
 
   // filter creation
   for(const auto& pair: pairs)
@@ -352,10 +352,10 @@ int main(int argc, char **argv)
     return rangeSize ? EXIT_SUCCESS : EXIT_FAILURE;
   }
 
-  ALICEVISION_LOG_INFO(mapPutativesMatches.size() + " putative image pair matches");
+  ALICEVISION_LOG_INFO(std::to_string(mapPutativesMatches.size()) << " putative image pair matches");
 
   for(const auto& imageMatch: mapPutativesMatches)
-    ALICEVISION_LOG_INFO(" * image pair " + std::to_string(imageMatch.first.first) << ", " + std::to_string(imageMatch.first.second) + ": " + std::to_string(imageMatch.second.getNbAllMatches()) + " putative matches.");
+    ALICEVISION_LOG_INFO("\t- image pair (" + std::to_string(imageMatch.first.first) << ", " + std::to_string(imageMatch.first.second) + ") contains " + std::to_string(imageMatch.second.getNbAllMatches()) + " putative matches.");
 
   // export putative matches
   if(savePutativeMatches)
@@ -401,7 +401,7 @@ int main(int argc, char **argv)
   GeometricFilter geometricFilter(&sfmData, regionPerView);
 
   timer.reset();
-  ALICEVISION_LOG_INFO("Geometric filtering:");
+  ALICEVISION_LOG_INFO("Geometric filtering");
 
   matching::PairwiseMatches map_GeometricMatches;
   switch(geometricModelToCompute)
@@ -454,7 +454,7 @@ int main(int argc, char **argv)
 
   ALICEVISION_LOG_INFO(std::to_string(map_GeometricMatches.size()) + " geometric image pair matches:");
   for(const auto& matchGeo: map_GeometricMatches)
-    ALICEVISION_LOG_INFO(" * Image pair (" + std::to_string(matchGeo.first.first) + ", " + std::to_string(matchGeo.first.second) + ") contains " + std::to_string(matchGeo.second.getNbAllMatches()) + " geometric matches.");
+    ALICEVISION_LOG_INFO("\t- image pair (" + std::to_string(matchGeo.first.first) + ", " + std::to_string(matchGeo.first.second) + ") contains " + std::to_string(matchGeo.second.getNbAllMatches()) + " geometric matches.");
 
   // grid filtering
 
@@ -506,7 +506,7 @@ int main(int argc, char **argv)
 
     ALICEVISION_LOG_INFO("After grid filtering:");
     for(const auto& matchGridFiltering: finalMatches)
-      ALICEVISION_LOG_INFO(" * Image pair (" + std::to_string(matchGridFiltering.first.first) + ", " + std::to_string(matchGridFiltering.first.second) + ") contains " + std::to_string(matchGridFiltering.second.getNbAllMatches()) + " geometric matches.");
+      ALICEVISION_LOG_INFO("\t- image pair (" + std::to_string(matchGridFiltering.first.first) + ", " + std::to_string(matchGridFiltering.first.second) + ") contains " + std::to_string(matchGridFiltering.second.getNbAllMatches()) + " geometric matches.");
 
   }
 
