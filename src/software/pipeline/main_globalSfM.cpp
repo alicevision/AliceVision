@@ -132,7 +132,13 @@ int main(int argc, char **argv)
     return EXIT_FAILURE;
   }
 
-  if(!sfmData.getRigs().empty() > 0)
+  if(!sfmData.structure.empty())
+  {
+    ALICEVISION_LOG_ERROR("Input SfMData in part computed are not currently supported in Global SfM." << std::endl << "Please use Incremental SfM. Aborted");
+    return EXIT_FAILURE;
+  }
+
+  if(!sfmData.getRigs().empty())
   {
     ALICEVISION_LOG_ERROR("Rigs are not currently supported in Global SfM." << std::endl << "Please use Incremental SfM. Aborted");
     return EXIT_FAILURE;
