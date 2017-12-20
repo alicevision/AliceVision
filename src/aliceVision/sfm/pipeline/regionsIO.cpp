@@ -120,10 +120,9 @@ bool loadRegionsPerView(feature::RegionsPerView& regionsPerView,
             const std::vector<feature::EImageDescriberType>& imageDescriberTypes,
             const std::set<IndexT>& viewIdFilter)
 {
-  boost::progress_display my_progress_bar( sfmData.GetViews().size() * imageDescriberTypes.size(), std::cout, "\n- Regions Loading -\n");
+  boost::progress_display my_progress_bar( sfmData.GetViews().size() * imageDescriberTypes.size(), std::cout, "Loading regions\n");
 
   std::atomic_bool invalid(false);
-
 
   std::vector< std::unique_ptr<feature::ImageDescriber> > imageDescribers;
   imageDescribers.resize(imageDescriberTypes.size());
@@ -168,7 +167,7 @@ bool loadFeaturesPerView(feature::FeaturesPerView& featuresPerView,
                       const std::vector<std::string>& folders,
                       const std::vector<feature::EImageDescriberType>& imageDescriberTypes)
 {
-  boost::progress_display my_progress_bar( sfmData.GetViews().size(), std::cout, "\n- Features Loading -\n" );
+  boost::progress_display my_progress_bar( sfmData.GetViews().size(), std::cout, "Loading features\n" );
 
   // Read for each view the corresponding features and store them as PointFeatures
   std::atomic_bool invalid(false);
