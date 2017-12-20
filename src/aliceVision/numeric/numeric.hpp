@@ -147,17 +147,15 @@ Mat3 RotationAroundZ(double angle);
 Mat3 rotationXYZ(double angleX, double angleY, double angleZ);
 
 // Degree to Radian (suppose input in [0;360])
-template <class T> 
-inline T degreeToRadian(T degree)
+inline double degreeToRadian(double degree)
 {
-   return degree * boost::math::constants::pi<T>() / 180.0; 
+   return degree * M_PI / 180.0; 
 }
 
 // Radian to degree
-template <class T> 
-inline T radianToDegree(T radian)
+inline double radianToDegree(double radian)
 {
-   return radian / boost::math::constants::pi<T>() * 180.0; 
+   return radian / M_PI * 180.0; 
 }
 
 /// Return in radian the mean rotation amplitude of the given rotation matrix
