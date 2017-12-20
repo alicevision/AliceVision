@@ -168,7 +168,6 @@ void ReconstructionEngine_sequentialSfM::robustResectionOfImages(
 {
   static const std::size_t maxImagesPerGroup = 30;
   
-  IndexT resectionId = 0;
   size_t imageIndex = 0;
   size_t resectionGroupIndex = 0;
   std::set<size_t> set_remainingViewId(viewIds);
@@ -268,8 +267,7 @@ void ReconstructionEngine_sequentialSfM::robustResectionOfImages(
           updateScene(possible_resection_index, newResectionData);
           set_reconstructedViewId.insert(possible_resection_index);
           ALICEVISION_LOG_DEBUG("Resection of image: " << currentIndex << " ID=" << possible_resection_index << " succeed.");
-          _sfm_data.GetViews().at(possible_resection_index)->setResectionId(resectionId);
-          ++resectionId;
+          _sfm_data.GetViews().at(possible_resection_index)->setResectionId(resectionGroupIndex);
         }
         else
         {
@@ -321,13 +319,11 @@ void ReconstructionEngine_sequentialSfM::robustResectionOfImages(
       {
         auto chrono2_start = std::chrono::steady_clock::now();
         
-        std::cout << "BA READY" << std::endl;
         if (_uselocalBundleAdjustment)
           localBundleAdjustment(newReconstructedViews);
         else
           BundleAdjustment(_bFixedIntrinsics);
         
-        std::cout << "BA DONE" << std::endl;
         ALICEVISION_LOG_DEBUG("Resection group index: " << resectionGroupIndex << ", bundle iteration: " << bundleAdjustmentIteration
                   << " took " << std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - chrono2_start).count() << " msec.");
         ++bundleAdjustmentIteration;
@@ -1290,7 +1286,7 @@ bool ReconstructionEngine_sequentialSfM::findNextImagesGroupForResection(
  * @brief Add one image to the 3D reconstruction. To the resectioning of
  * the camera.
  * @param[in] viewIndex: image index to add to the reconstruction.
- * @param[out] resectionData: contains the pose all the data used during the resection.
+ * @param[out] resectionData: contains the camera pose and all data used during the resection.
  *
  * A. Compute 2D/3D matches
  * B. Look if intrinsic data is known or not

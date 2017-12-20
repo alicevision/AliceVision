@@ -207,7 +207,7 @@ private:
    * @brief Update the global scene with the new found camera pose, intrinsic (if not defined) and 
    * Update its observations into the global scene structure.
    * @param[in] viewIndex: image index added to the reconstruction.
-   * @param[in] resectionData: contains the pose all the data used during the resection.
+   * @param[in] resectionData: contains the camera pose and all data used during the resection.
    */
   void updateScene(const std::size_t viewIndex, 
                    const ResectionData & resectionData);
