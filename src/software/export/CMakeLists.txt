@@ -110,7 +110,6 @@ if(ALICEVISION_HAVE_ALEMBIC) # maya can read alembic file
     aliceVision_image
     aliceVision_feature
     aliceVision_sfm
-    stlplus
     ${BOOST_LIBRARIES}
     ${OPENIMAGEIO_LIBRARIES}
   )
@@ -216,7 +215,6 @@ target_link_libraries(aliceVision_exportCameraFrustums
   aliceVision_system
   aliceVision_feature
   aliceVision_sfm
-  stlplus
   ${BOOST_LIBRARIES}
 )
 
