@@ -174,6 +174,7 @@ bool TracksUtilsMap::GetTracksInImages(
       if (iterSearch == trackIn.second.featPerView.end())
           break; // at least one request image is not in the track
       map_temp.featPerView[iterSearch->first] = iterSearch->second;
+      map_temp.descType = trackIn.second.descType;
     }
     // if we have a feature for each input image
     // we can add it to the output tracks.
