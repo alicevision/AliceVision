@@ -4,7 +4,7 @@
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
 #include "KeyframeSelector.hpp"
-#include <aliceVision/image/image.hpp>
+#include <aliceVision/image/all.hpp>
 #include <aliceVision/sensorDB/parseDatabase.hpp>
 #include <aliceVision/feature/sift/ImageDescriber_SIFT.hpp>
 #include <aliceVision/system/Logger.hpp>

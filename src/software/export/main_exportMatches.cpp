@@ -5,7 +5,7 @@
 
 #include "aliceVision/matching/IndMatch.hpp"
 #include "aliceVision/matching/io.hpp"
-#include "aliceVision/image/image.hpp"
+#include "aliceVision/image/all.hpp"
 #include "aliceVision/sfm/sfm.hpp"
 #include "aliceVision/sfm/pipeline/regionsIO.hpp"
 #include "aliceVision/feature/svgVisualization.hpp"
