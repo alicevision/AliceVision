@@ -5,8 +5,8 @@
 
 #include <aliceVision/sfm/AlembicExporter.hpp>
 #include <aliceVision/sfm/sfmDataIO_gt.hpp>
-
-#include <dependencies/stlplus3/filesystemSimplified/file_system.hpp>
+#include <aliceVision/system/Logger.hpp>
+#include <aliceVision/system/cmdline.hpp>
 
 #include <boost/program_options.hpp>
 
@@ -28,11 +28,16 @@ int main(int argc, char **argv)
   po::options_description requiredParams("Required parameters");
   requiredParams.add_options()
     ("input,i", po::value<std::string>(&sfmDataFilename)->required(),
-      "SfMData file.")
+      "SfMData gt file.")
     ("output,o", po::value<std::string>(&outputSfMDataFilename)->required(),
       "Path to the output Alembic file.");
 
-  allParams.add(requiredParams);
+  po::options_description logParams("Log parameters");
+  logParams.add_options()
+    ("verboseLevel,v", po::value<std::string>(&verboseLevel)->default_value(verboseLevel),
+      "verbosity level (fatal,  error, warning, info, debug, trace).");
+
+  allParams.add(requiredParams).add(logParams);
 
   po::variables_map vm;
   try
@@ -59,11 +64,8 @@ int main(int argc, char **argv)
     return EXIT_FAILURE;
   }
 
-  ALICEVISION_COUT("Program called with the following parameters: " << std::endl
-    << "\t" << argv[0] << std::endl
-    << "\t--input " << sfmDataFilename << std::endl
-    << "\t--output " << outputSfMDataFilename << std::endl
-    << "\t--verboseLevel "<< verboseLevel);
+  ALICEVISION_COUT("Program called with the following parameters:");
+  ALICEVISION_COUT(vm);
 
   // set verbose level
   system::Logger::get()->setLogLevel(verboseLevel);
@@ -71,29 +73,28 @@ int main(int argc, char **argv)
 
   if (sfmDataFilename.empty() || outputSfMDataFilename.empty())
   {
-    std::cerr << "Invalid input or output filename." << std::endl;
+    ALICEVISION_LOG_ERROR("Invalid input or output filename");
     return EXIT_FAILURE;
   }
 
-  // Load input SfMData scene
-  SfMData sfm_data;
-  if (!readGt(sfmDataFilename, sfm_data, false))
+  // load input SfMData scene
+  SfMData sfmData;
+  if (!readGt(sfmDataFilename, sfmData, false))
   {
-    std::cerr << std::endl
-      << "The input SfMData file \"" << sfmDataFilename << "\" cannot be read." << std::endl;
+    ALICEVISION_LOG_ERROR("The input SfMData file '" << sfmDataFilename << "' cannot be read");
     return EXIT_FAILURE;
   }
 
   // init alembic exporter
-  sfm::AlembicExporter exporter( outputSfMDataFilename );
+  sfm::AlembicExporter exporter(outputSfMDataFilename);
   exporter.initAnimatedCamera("camera");
 
-  for(const auto &iter : sfm_data.GetViews())
+  for(const auto &iter : sfmData.GetViews())
   {
     const auto &view = iter.second;
-    const geometry::Pose3 pose_gt = sfm_data.GetPoses().at(view->getPoseId());
+    const geometry::Pose3 pose_gt = sfmData.GetPoses().at(view->getPoseId());
     std::shared_ptr<camera::IntrinsicBase> intrinsic_gt = std::make_shared<camera::Pinhole>();
-    intrinsic_gt = sfm_data.GetIntrinsics().at(view->getIntrinsicId());
+    intrinsic_gt = sfmData.GetIntrinsics().at(view->getIntrinsicId());
     exporter.addCameraKeyframe(pose_gt, dynamic_cast<camera::Pinhole*>(intrinsic_gt.get()), view->getImagePath(), view->getViewId(), view->getIntrinsicId());
   }
   return EXIT_SUCCESS;
