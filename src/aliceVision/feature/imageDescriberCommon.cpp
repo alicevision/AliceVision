@@ -5,8 +5,9 @@
 
 #include "imageDescriberCommon.hpp"
 
-#include "aliceVision/types.hpp"
-#include "aliceVision/stl/split.hpp"
+#include <aliceVision/types.hpp>
+
+#include <boost/algorithm/string.hpp>
 
 #include <cassert>
 
@@ -92,7 +93,7 @@ std::vector<EImageDescriberType> EImageDescriberType_stringToEnums(const std::st
 {
   std::vector<EImageDescriberType> out;
   std::vector<std::string> describerMethodsVec;
-  stl::split(describerMethods, ",", describerMethodsVec);
+  boost::split(describerMethodsVec, describerMethods, boost::is_any_of(","));
 
   for(const auto& describerMethod: describerMethodsVec)
   {

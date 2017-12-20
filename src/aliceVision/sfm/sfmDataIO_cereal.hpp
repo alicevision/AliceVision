@@ -6,7 +6,6 @@
 #pragma once
 
 #include <aliceVision/sfm/sfmDataIO.hpp>
-#include <aliceVision/stl/split.hpp>
 
 #include <cereal/archives/portable_binary.hpp>
 #include <cereal/archives/xml.hpp>
@@ -16,6 +15,8 @@
 #include <cereal/types/unordered_map.hpp>
 #include <cereal/types/vector.hpp>
 #include <cereal/types/string.hpp>
+
+#include <boost/algorithm/string.hpp>
 
 #include <iomanip>
 #include <fstream>
@@ -58,7 +59,9 @@ bool Load_Cereal(
     std::vector<int> versions;
     {
       std::vector<std::string> versionsStr;
-      stl::split(versionStr, ".", versionsStr);
+      boost::trim(versionStr);
+      boost::split(versionsStr, versionStr, boost::is_any_of("."));
+
       for(auto& v: versionsStr)
         versions.push_back(std::stoi(v));
     }

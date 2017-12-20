@@ -26,7 +26,7 @@ static const int DIMENSION = 128;
 
 using namespace std;
 namespace po = boost::program_options;
-namespace bfs = boost::filesystem;
+namespace fs = boost::filesystem;
 
 
 typedef aliceVision::feature::Descriptor<float, DIMENSION> DescriptorFloat;
@@ -59,10 +59,10 @@ std::ostream& operator<<(std::ostream& os, const PairList & pl)
 {
   for(PairList::const_iterator plIter = pl.begin(); plIter != pl.end(); ++plIter)
   {
-    os << plIter->first << " ";
+    os << plIter->first;
     for(ImageID id : plIter->second)
     {
-      os << id << " ";
+      os << " " << id;
     }
     os << "\n";
   }
@@ -80,10 +80,10 @@ std::ostream& operator<<(std::ostream& os, const OrderedPairList & pl)
 {
   for(OrderedPairList::const_iterator plIter = pl.begin(); plIter != pl.end(); ++plIter)
   {
-    os << plIter->first << " ";
+    os << plIter->first;
     for(ImageID id : plIter->second)
     {
-      os << id << " ";
+      os << " " << id;
     }
     os << "\n";
   }
@@ -403,9 +403,9 @@ int main(int argc, char** argv)
     return EXIT_FAILURE;
   }
 
-  if(useMultiSfM && !sfm::Load(sfmDataB, sfmDataFilenameA, sfm::ESfMData::ALL))
+  if(useMultiSfM && !sfm::Load(sfmDataB, sfmDataFilenameB, sfm::ESfMData::ALL))
   {
-    ALICEVISION_LOG_ERROR("The input SfMData file '" + sfmDataFilenameA + "' cannot be read.");
+    ALICEVISION_LOG_ERROR("The input SfMData file '" + sfmDataFilenameB + "' cannot be read.");
     return EXIT_FAILURE;
   }
 
@@ -424,7 +424,7 @@ int main(int argc, char** argv)
 
   if(treeName.empty() || (descriptorsFilesA.size() + descriptorsFilesB.size()) < minNbImages)
   {
-    // brute force generation
+    ALICEVISION_LOG_INFO("Brute force generation");
     if(modeMultiSfM == EImageMatchingMultiSfM::A_AB)
       generateAllMatchesInOneMap(descriptorsFilesA, selectedPairs);
     if(useMultiSfM)
@@ -437,13 +437,17 @@ int main(int argc, char** argv)
   {
     // load vocabulary tree
 
-    printf("Loading vocabulary tree\n");
+    ALICEVISION_LOG_INFO("Loading vocabulary tree");
     auto loadVoctree_start = std::chrono::steady_clock::now();
     aliceVision::voctree::VocabularyTree<DescriptorFloat> tree(treeName);
     auto loadVoctree_elapsed = std::chrono::duration_cast<std::chrono::seconds>(std::chrono::steady_clock::now() - loadVoctree_start);
-    std::cout << "tree loaded with" << endl << "\t" << tree.levels() << " levels" << std::endl
-            << "\t" << tree.splits() << " branching factor" << std::endl
-            << "\t in " << loadVoctree_elapsed.count() << " seconds" << std::endl;
+    {
+      std::stringstream ss;
+      ss << "tree loaded with:" << std::endl << "\t- " << tree.levels() << " levels" << std::endl;
+      ss << "\t- " << tree.splits() << " branching factor" << std::endl;
+      ss << "\tin " << loadVoctree_elapsed.count() << " seconds" << std::endl;
+      ALICEVISION_LOG_INFO(ss.str());
+    }
 
     // create the database
     ALICEVISION_LOG_INFO("Creating the database...");
@@ -493,7 +497,7 @@ int main(int argc, char** argv)
     }
 
     ALICEVISION_LOG_INFO("Read " << db.getSparseHistogramPerImage().size() << " sets of descriptors for a total of " << (nbFeaturesLoadedInputA + nbFeaturesLoadedInputB) << " features");
-    ALICEVISION_LOG_INFO("Reading took " << detect_elapsed.count() << " sec");
+    ALICEVISION_LOG_INFO("Reading took " << detect_elapsed.count() << " sec.");
 
     if(!withWeights)
     {
@@ -562,7 +566,7 @@ int main(int argc, char** argv)
       }
     }
     detect_elapsed = std::chrono::duration_cast<std::chrono::seconds>(std::chrono::steady_clock::now() - detect_start);
-    ALICEVISION_LOG_INFO("Query of all documents took " << detect_elapsed.count() << " sec.");
+    ALICEVISION_LOG_INFO("Query all documents took " << detect_elapsed.count() << " sec.");
 
     // process pair list
 
@@ -575,11 +579,11 @@ int main(int argc, char** argv)
   }
 
   // check if the output folder exists
-  const auto basePath = bfs::path(outputFile).parent_path();
-  if(!basePath.empty() && !bfs::exists(basePath))
+  const auto basePath = fs::path(outputFile).parent_path();
+  if(!basePath.empty() && !fs::exists(basePath))
   {
     // then create the missing folder
-    if(!bfs::create_directories(basePath))
+    if(!fs::create_directories(basePath))
     {
       ALICEVISION_LOG_ERROR("Unable to create folders: " << basePath);
       return EXIT_FAILURE;

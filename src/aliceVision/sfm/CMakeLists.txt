@@ -99,14 +99,9 @@ target_link_libraries(aliceVision_sfm
   aliceVision_feature
   aliceVision_geometry
   aliceVision_track
+  ${Boost_LIBRARIES}
   ${LOG_LIB}
 )
-
-if(Boost_FOUND)
-  target_link_libraries(aliceVision_sfm
-    ${Boost_LIBRARIES}
-  )
-endif()
 
 set_target_properties(aliceVision_sfm
   PROPERTIES SOVERSION ${ALICEVISION_VERSION_MAJOR}

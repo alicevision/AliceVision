@@ -5,13 +5,15 @@
 
 #include "pairBuilder.hpp"
 
-#include <aliceVision/stl/split.hpp>
 #include <aliceVision/system/Logger.hpp>
+
+#include <boost/algorithm/string.hpp>
 
 #include <set>
 #include <iostream>
 #include <fstream>
 #include <sstream>
+
 namespace aliceVision {
 
 /// Generate all the (I,J) pairs of the upper diagonal of the NxN matrix
@@ -54,7 +56,7 @@ bool loadPairs(const std::string &sFileName,
   }
   std::size_t nbLine = 0;
   std::string sValue;
-  std::vector<std::string> vec_str;
+
   for(; std::getline( in, sValue ); ++nbLine)
   {
     if(rangeStart != -1 && rangeSize != 0)
@@ -64,8 +66,11 @@ bool loadPairs(const std::string &sFileName,
       if(nbLine >= rangeStart + rangeSize)
         break;
     }
-    vec_str.clear();
-    stl::split(sValue, " ", vec_str);
+
+    std::vector<std::string> vec_str;
+    boost::trim(sValue);
+    boost::split(vec_str, sValue, boost::is_any_of("\t "), boost::token_compress_on);
+
     const size_t str_size = vec_str.size();
     if (str_size < 2)
     {
@@ -89,8 +94,9 @@ bool loadPairs(const std::string &sFileName,
       if(pairs.find(pairToInsert) != pairs.end())
       {
         // There is no reason to have the same image pair twice in the list of image pairs to match.
-        ALICEVISION_LOG_WARNING("loadPairs: Image pair " << I << ", " << J << " already added. File: \"" << sFileName << "\".");
+        ALICEVISION_LOG_WARNING("loadPairs: image pair (" << I << ", " << J << ") already added. File: \"" << sFileName << "\".");
       }
+      ALICEVISION_LOG_INFO("loadPairs: image pair (" << I << ", " << J << ") added. File: \"" << sFileName << "\".");
       pairs.insert(pairToInsert);
     }
   }
