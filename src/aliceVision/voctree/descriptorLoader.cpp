@@ -74,7 +74,7 @@ void getListOfDescriptorFiles(const sfm::SfMData& sfmData, const std::string& de
     if(bfs::exists(filepath))
     {
       descriptorsFiles[view.first] = filepath;
-      return;
+      continue;
     }
 
     std::stringstream featureFoldersS;
@@ -85,7 +85,7 @@ void getListOfDescriptorFiles(const sfm::SfMData& sfmData, const std::string& de
       if(bfs::exists(filepathFromSfMData))
       {
         descriptorsFiles[view.first] = filepathFromSfMData;
-        return;
+        break;
       }
       featureFoldersS << "\n\t- " << filepathFromSfMData;
     }
