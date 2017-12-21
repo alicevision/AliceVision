@@ -6,7 +6,7 @@
 #include "colorHarmonizeEngineGlobal.hpp"
 #include "software/utils/sfmHelper/sfmIOHelper.hpp"
 
-#include "aliceVision/image/image.hpp"
+#include "aliceVision/image/all.hpp"
 //-- Load features per view
 #include <aliceVision/sfm/pipeline/regionsIO.hpp>
 //-- Feature matches
