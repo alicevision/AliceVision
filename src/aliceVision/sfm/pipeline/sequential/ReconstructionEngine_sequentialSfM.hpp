@@ -44,10 +44,7 @@ public:
     _pairwiseMatches = pairwiseMatches;
   }
 
-  void robustResectionOfImages(
-    const std::set<size_t>& viewIds,
-    std::set<size_t>& set_reconstructedViewId,
-    std::set<size_t>& set_rejectedViewId);
+  void robustResectionOfImages(const std::set<size_t>& viewIds);
 
   virtual bool Process();
 
