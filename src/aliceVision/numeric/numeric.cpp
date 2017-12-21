@@ -10,6 +10,15 @@
 
 namespace aliceVision {
 
+Mat23 SkewMatMinimal(const Vec2 &x)
+{
+  Mat23 skew;
+  skew <<
+       0, -1, x(1),
+          1, 0, -x(0);
+  return skew;
+}
+
 Mat3 CrossProductMatrix(const Vec3 &x) {
   Mat3 X;
   X << 0, -x(2),  x(1),

@@ -132,7 +132,6 @@ BOOST_AUTO_TEST_CASE(SEQUENTIAL_SFM_Partially_Known_Intrinsics)
 
   // Configure reconstruction parameters
   sfmEngine.Set_bFixedIntrinsics(true);
-
   BOOST_CHECK (sfmEngine.Process());
 
   const SfMData& finalSfMData = sfmEngine.Get_SfMData();

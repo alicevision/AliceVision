@@ -19,7 +19,9 @@
 #include <Eigen/SparseCore>
 #include <Eigen/SVD>
 #include <Eigen/StdVector>
+#include <boost/math/constants/constants.hpp>
 
+#include <algorithm>
 #include <cmath>
 #include <numeric>
 #include <string>
@@ -61,11 +63,13 @@ typedef Eigen::Quaternion<double> Quaternion;
 typedef Eigen::Matrix<double, 3, 3> Mat3;
 
 #if defined(ENV32BIT)
+typedef Eigen::Matrix<double, 2, 3, Eigen::DontAlign> Mat23;
 typedef Eigen::Matrix<double, 3, 4, Eigen::DontAlign> Mat34;
 typedef Eigen::Matrix<double, 2, 1, Eigen::DontAlign> Vec2;
 typedef Eigen::Matrix<double, 4, 1, Eigen::DontAlign> Vec4;
 typedef Eigen::Matrix<double, 6, 1, Eigen::DontAlign> Vec6;
 #else // 64 bits compiler
+typedef Eigen::Matrix<double, 2, 3> Mat23;
 typedef Eigen::Matrix<double, 3, 4> Mat34;
 typedef Eigen::Vector2d Vec2;
 typedef Eigen::Vector4d Vec4;
@@ -116,6 +120,19 @@ inline T clamp(const T & val, const T& min, const T & max)
   //(val < min) ? val : ((val>max) ? val : max);
 }
 
+
+/**
+ * @brief Create a minimal skew matrix from a 2d vector.
+ * @param[in] x A 2d vector whose 3rd coordinate is supposed to be 1.
+ * @return The minimal ske matrix: [0, -1, x(1); 1, 0, -x(0);]
+ */
+Mat23 SkewMatMinimal(const Vec2 &x);
+
+/**
+ * @brief Create a cross product matrix from a 3d vector.
+ * @param x A 3d vector.
+ * @return the cross matrix representation of the input vector.
+ */
 Mat3 CrossProductMatrix(const Vec3 &x);
 
 // Create a rotation matrix around axis X with the provided radian angle
@@ -130,17 +147,15 @@ Mat3 RotationAroundZ(double angle);
 Mat3 rotationXYZ(double angleX, double angleY, double angleZ);
 
 // Degree to Radian (suppose input in [0;360])
-
-inline double D2R(double degree)
+inline double degreeToRadian(double degree)
 {
-  return degree * M_PI / 180.0;
+   return degree * M_PI / 180.0; 
 }
 
 // Radian to degree
-
-inline double R2D(double radian)
+inline double radianToDegree(double radian)
 {
-  return radian / M_PI * 180.0;
+   return radian / M_PI * 180.0; 
 }
 
 /// Return in radian the mean rotation amplitude of the given rotation matrix
@@ -389,6 +404,25 @@ TMat ExtractColumns(const TMat &A, const TCols &columns)
     compressed.col(i) = A.col(columns[i]);
   }
   return compressed;
+}
+
+/**
+ * @brief Given a vector of element and a vector containing a selection of its indices,
+ * it returns a new vector containing only the selected elements of the original vector
+ * @tparam T The type of data contained in the vector.
+ * @param[out] result The output vector containing only the selected original elements.
+ * @param[in] input The input vector.
+ * @param[in] selection The vector containing the selection of elements of \p input
+ * through the indices specified in \p selection.
+ */
+template <typename T>
+void pick(std::vector<T>& result, const std::vector<T>& input, const std::vector<typename std::vector<T>::size_type>& selection)
+{
+  result.reserve(selection.size());
+  std::transform(selection.begin(), selection.end(), std::back_inserter(result),
+                 [&input](typename std::vector<T>::size_type idx) {
+                   return input.at(idx);
+                 });
 }
 
 void MeanAndVarianceAlongRows(const Mat &A,

@@ -260,9 +260,9 @@ BOOST_AUTO_TEST_CASE ( rotationAveraging_RefineRotationsAvgL1IRLS_CompleteGraph_
   for (std::size_t i = 0; i < vec_relativeRotEstimate.size(); ++i)
   {
     if( vec_relativeRotEstimate[i].i == 0 && vec_relativeRotEstimate[i].j == 1)
-      vec_relativeRotEstimate[i] = RelativeRotation(0, 1, RotationAroundX(D2R(0.1)), 0.5);
+      vec_relativeRotEstimate[i] = RelativeRotation(0, 1, RotationAroundX(degreeToRadian(0.1)), 0.5);
     if( vec_relativeRotEstimate[i].i == 2 && vec_relativeRotEstimate[i].j == 3)
-      vec_relativeRotEstimate[i] = RelativeRotation(2, 3, RotationAroundX(D2R(0.6)), 0.5);
+      vec_relativeRotEstimate[i] = RelativeRotation(2, 3, RotationAroundX(degreeToRadian(0.6)), 0.5);
   }
 
   //- Solve the global rotation estimation problem :

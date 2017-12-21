@@ -65,7 +65,7 @@ bool RefineRotationsAvgL1IRLS(
   const RelativeRotations& RelRs,
   Matrix3x3Arr& Rs,
   const size_t nMainViewID,
-  REAL sigma=aliceVision::D2R(5));
+  REAL sigma=aliceVision::degreeToRadian(5));
 
 /**
  * @brief Sort relative rotation as inlier, outlier rotations.

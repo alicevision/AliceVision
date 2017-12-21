@@ -173,7 +173,7 @@ EstimationStatus rigResection(const std::vector<Mat> &pts2d,
       "-- #Points used for Resection: " << numTotalPoints << "\n"
       "-- #Points validated by robust Resection: " << numInliers << "\n"
       "-- #Iterations needed: " << ransac.iterations_ << "\n"
-      "-- #Thresehold used: " << ransac.threshold_ <<  " (" << R2D(angularThreshold) << "deg)\n"
+      "-- #Thresehold used: " << ransac.threshold_ <<  " (" << radianToDegree(angularThreshold) << "deg)\n"
       "-- Time spent in ransac [ms]: " << detect_elapsed.count() << "\n"
       "-------------------------------");
   }

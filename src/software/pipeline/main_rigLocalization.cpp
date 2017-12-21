@@ -340,7 +340,7 @@ int main(int argc, char** argv)
   param->_resectionEstimator = resectionEstimator;
   param->_matchingEstimator = matchingEstimator;
   param->_useLocalizeRigNaive = useLocalizeRigNaive;
-  param->_angularThreshold = D2R(angularThreshold);
+  param->_angularThreshold = degreeToRadian(angularThreshold);
 
   if(!localizer->isInit())
   {

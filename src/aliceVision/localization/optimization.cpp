@@ -29,7 +29,7 @@ bool refineSequence(std::vector<LocalizationResult> & vec_localizationResult,
                     bool b_no_distortion /*= false*/,
                     bool b_refine_pose /*= true*/,
                     bool b_refine_structure /*= false*/,
-                    const std::string outputFilename /*= ""*/,
+                    const std::string & outputFilename /*= ""*/,
                     std::size_t minPointVisibility /*=0*/)
 {
   
@@ -338,7 +338,7 @@ bool refineSequence(std::vector<LocalizationResult> & vec_localizationResult,
 }
 
 bool refineRigPose(const std::vector<geometry::Pose3 > &vec_subPoses,
-                   const std::vector<localization::LocalizationResult> vec_localizationResults,
+                   const std::vector<localization::LocalizationResult> & vec_localizationResults,
                    geometry::Pose3 & rigPose)
 {
   const std::size_t numCameras = vec_localizationResults.size();
@@ -628,8 +628,7 @@ std::tuple<double, double, double> computeStatistics(const Mat &pts2D,
 {
   if(currInliers.empty())
     return std::make_tuple(0., 0., 0.);
-  
-  const std::size_t numPts = pts2D.cols();
+
   Mat2X residuals = currCamera.residuals(subPoses*rigPose, pts3D, pts2D);
 
   Vec sqrErrors = (residuals.cwiseProduct(residuals)).colwise().sum();
@@ -697,7 +696,7 @@ std::pair<double, bool> computeInliers(const std::vector<Mat> &vec_pts2d,
                                        const std::vector<Mat> &vec_pts3d,
                                        const std::vector<camera::PinholeRadialK3 > &vec_queryIntrinsics,
                                        const std::vector<geometry::Pose3 > &vec_subPoses,
-                                       const double maxReprojectionError,
+                                       double maxReprojectionError,
                                        const geometry::Pose3 &rigPose,
                                        std::vector<std::vector<std::size_t> > &vec_inliers)
 {

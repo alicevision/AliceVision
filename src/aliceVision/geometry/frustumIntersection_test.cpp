@@ -104,7 +104,7 @@ BOOST_AUTO_TEST_CASE(empty_intersection)
     std::vector<Frustum> vec_frustum;
     for (int i=0; i < iNviews; ++i)
     {
-      const Mat3 flipMatrix = RotationAroundY(D2R(180));
+      const Mat3 flipMatrix = RotationAroundY(degreeToRadian(180));
       vec_frustum.push_back(
         Frustum(principal_Point*2, principal_Point*2, d._K[i], d._R[i]*flipMatrix, d._C[i]));
       BOOST_CHECK(vec_frustum[i].isInfinite());
@@ -143,7 +143,7 @@ BOOST_AUTO_TEST_CASE(empty_intersection)
         if (depth > maxDepth)
           maxDepth = depth;
       }
-      const Mat3 flipMatrix = RotationAroundY(D2R(180));
+      const Mat3 flipMatrix = RotationAroundY(degreeToRadian(180));
       vec_frustum.push_back(
         Frustum(principal_Point*2, principal_Point*2,
           d._K[i], d._R[i]*flipMatrix, d._C[i], minDepth, maxDepth));
