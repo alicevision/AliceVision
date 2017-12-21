@@ -101,7 +101,7 @@ public:
  * @param thetaMax camera FoV
  * @return
  */
-double focalFromPinholeHeight(int height, double thetaMax = degreeToRadian(60))
+double focalFromPinholeHeight(int height, double thetaMax = degreeToRadian(60.0))
 {
   float f = 1.f;
   while (thetaMax < atan2(height / (2 * f) , 1))
@@ -188,7 +188,7 @@ bool splitEquirectangular(const std::string& imagePath, const std::string& outpu
 
   const double twoPi = M_PI * 2.0;
   const double alpha = twoPi / static_cast<double>(nbSplits);
-  const double focal = focalFromPinholeHeight(inHeight, degreeToRadian(60));
+  const double focal = focalFromPinholeHeight(inHeight, degreeToRadian(60.0));
 
   double angle = 0.0;
   for(std::size_t i = 0; i < nbSplits; ++i)
@@ -249,7 +249,7 @@ bool splitEquirectangularDemo(const std::string& imagePath, const std::string& o
 
   const double twoPi = M_PI * 2.0;
   const double alpha = twoPi / static_cast<double>(nbSplits);
-  const double focal = focalFromPinholeHeight(inHeight, degreeToRadian(60));
+  const double focal = focalFromPinholeHeight(inHeight, degreeToRadian(60.0));
 
   double angle = 0.0;
   for(std::size_t i = 0; i < nbSplits; ++i)
