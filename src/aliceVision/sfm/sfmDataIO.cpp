@@ -74,8 +74,7 @@ bool ValidIds(const SfMData& sfmData, ESfMData partFlag)
   
   if (bCheck_Extrinsic && extrinsicIdsDeclared != extrinsicIdsReferenced)
   {
-    ALICEVISION_LOG_WARNING("The number of extrinsics is incoherent:");
-    ALICEVISION_LOG_WARNING(extrinsicIdsDeclared.size() << " extrinsics declared and " << extrinsicIdsReferenced.size() << " extrinsics used.");
+    ALICEVISION_LOG_TRACE(extrinsicIdsDeclared.size() << " extrinsics declared and " << extrinsicIdsReferenced.size() << " extrinsics used.");
     std::set<IndexT> undefinedExtrinsicIds;
     // undefinedExtrinsicIds = extrinsicIdsReferenced - extrinsicIdsDeclared
     std::set_difference(extrinsicIdsDeclared.begin(), extrinsicIdsDeclared.end(),
