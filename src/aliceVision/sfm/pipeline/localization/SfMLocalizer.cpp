@@ -170,14 +170,11 @@ bool SfMLocalizer::Localize
     KRt_From_P(P, &K, &R, &t);
     pose = geometry::Pose3(R, -R.transpose() * t);
   }
-  ALICEVISION_LOG_DEBUG(
-    "-------------------------------\n"
-    "-- Robust Resection\n"
-    "-- Resection status: " << bResection << "\n"
-    "-- #Points used for Resection: " << resection_data.pt2D.cols() << "\n"
-    "-- #Points validated by robust Resection: " << resection_data.vec_inliers.size() << "\n"
-    "-- Threshold: " << resection_data.error_max << "\n"
-    "-------------------------------");
+  ALICEVISION_LOG_INFO("Robust Resection information:\n"
+    "\t- resection status: " << bResection << "\n"
+    "\t- threshold: " << resection_data.error_max << "\n"
+    "\t- # points used for resection: " << resection_data.pt2D.cols() << "\n"
+    "\t- # points validated by robust resection: " << resection_data.vec_inliers.size());
   return bResection;
 }
 

@@ -458,10 +458,10 @@ bool ReconstructionEngine_sequentialSfM::Process()
       _set_remainingViewId.erase(v);
     }
 
-    ALICEVISION_LOG_DEBUG("SequentialSfM -- nbRejectedLoops: " << nbRejectedLoops);
-    ALICEVISION_LOG_DEBUG("SequentialSfM -- reconstructedViewIds: " << reconstructedViewIds.size());
-    ALICEVISION_LOG_DEBUG("SequentialSfM -- rejectedViewIds: " << rejectedViewIds.size());
-    ALICEVISION_LOG_DEBUG("SequentialSfM -- _set_remainingViewId: " << _set_remainingViewId.size());
+    ALICEVISION_LOG_DEBUG("\t- nbRejectedLoops: " << nbRejectedLoops);
+    ALICEVISION_LOG_DEBUG("\t- reconstructedViewIds: " << reconstructedViewIds.size());
+    ALICEVISION_LOG_DEBUG("\t- rejectedViewIds: " << rejectedViewIds.size());
+    ALICEVISION_LOG_DEBUG("\t- remainingViewId: " << _set_remainingViewId.size());
     
     ++nbRejectedLoops;
     // Retry to perform the resectioning of all the rejected views,
@@ -473,13 +473,14 @@ bool ReconstructionEngine_sequentialSfM::Process()
   
   //-- Reconstruction done.
   //-- Display some statistics
-  ALICEVISION_LOG_INFO(
-    "-------------------------------\n"
-    "-- Structure from Motion (statistics):\n"
-    "-- #Camera calibrated: " << _sfm_data.GetPoses().size() <<
-    " from " << _sfm_data.GetViews().size() << " input images.\n"
-    "-- #Tracks, #3D points: " << _sfm_data.GetLandmarks().size() << "\n"
-    "-------------------------------");
+  {
+    std::stringstream ss;
+    ss << "Structure from Motion (statistics):" << std::endl;
+    ss << "\tfrom " << _sfm_data.GetViews().size() << " input images." << std::endl;
+    ss << "\t- # camera calibrated: " << _sfm_data.GetPoses().size() << std::endl;
+    ss << "\t- # tracks: " << _sfm_data.GetLandmarks().size();
+    ALICEVISION_LOG_INFO(ss.str());
+  }
 
   Histogram<double> h;
   computeResidualsHistogram(&h);
@@ -1056,12 +1057,12 @@ double ReconstructionEngine_sequentialSfM::computeResidualsHistogram(Histogram<d
   }
 
   ALICEVISION_LOG_DEBUG(
-    "\nReconstructionEngine_sequentialSfM::ComputeResidualsMSE.\n"
-    "\t-- #Tracks:\t" << _sfm_data.GetLandmarks().size() << "\n"
-    "\t-- Residual min:\t" << stats.min << "\n"
-    "\t-- Residual median:\t" << stats.median << "\n"
-    "\t-- Residual max:\t "  << stats.max << "\n"
-    "\t-- Residual mean:\t " << stats.mean);
+    "ReconstructionEngine_sequentialSfM::ComputeResidualsMSE.\n"
+    "\t- #Tracks: " << _sfm_data.GetLandmarks().size() << "\n"
+    "\t- Residual min: " << stats.min << "\n"
+    "\t- Residual median: " << stats.median << "\n"
+    "\t- Residual max: "  << stats.max << "\n"
+    "\t- Residual mean: " << stats.mean);
 
   return stats.mean;
 }
@@ -1091,7 +1092,7 @@ double ReconstructionEngine_sequentialSfM::computeTracksLengthsHistogram(Histogr
     histo->Add(vec_nbTracks.begin(), vec_nbTracks.end());
   }
 
-  ALICEVISION_LOG_INFO("Tracks: " << _sfm_data.GetLandmarks().size());
+  ALICEVISION_LOG_INFO("# tracks: " << _sfm_data.GetLandmarks().size());
   ALICEVISION_LOG_INFO("Tracks Length min: " << stats.min);
   ALICEVISION_LOG_INFO("Tracks Length median: " << stats.median);
   ALICEVISION_LOG_INFO("Tracks Length max: "  << stats.max);
@@ -1354,9 +1355,7 @@ bool ReconstructionEngine_sequentialSfM::computeResection(const std::size_t view
   }
   
   // C. Do the resectioning: compute the camera pose.
-  ALICEVISION_LOG_DEBUG(
-    "-------------------------------\n"
-    "-- Robust Resection of view: " << viewIndex);
+  ALICEVISION_LOG_INFO("Robust Resection of view: " << viewIndex);
 
   const bool bResection = sfm::SfMLocalizer::Localize(
       Pair(view_I->getWidth(), view_I->getHeight()),
@@ -1388,7 +1387,7 @@ bool ReconstructionEngine_sequentialSfM::computeResection(const std::size_t view
   
   if (!bResection)
   {
-    ALICEVISION_LOG_DEBUG("Resection of view " << viewIndex << " failed.");
+    ALICEVISION_LOG_INFO("Resection of view " << viewIndex << " failed.");
     return false;
   }
 
@@ -1427,7 +1426,7 @@ bool ReconstructionEngine_sequentialSfM::computeResection(const std::size_t view
       resectionData.optionalIntrinsic.get(), resectionData.pose,
       resectionData, true, resectionData.isNewIntrinsic || intrinsicsFirstUsage))
     {
-      ALICEVISION_LOG_DEBUG("Resection of view " << viewIndex << " failed during pose refinement.");
+      ALICEVISION_LOG_INFO("Resection of view " << viewIndex << " failed during pose refinement.");
       return false;
     }
   }
