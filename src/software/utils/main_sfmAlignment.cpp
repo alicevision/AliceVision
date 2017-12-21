@@ -3,11 +3,11 @@
 // v. 2.0. If a copy of the MPL was not distributed with this file,
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
-#include "aliceVision/sfm/sfm.hpp"
-#include "aliceVision/sfm/utils/alignment.hpp"
+#include <aliceVision/sfm/sfm.hpp>
+#include <aliceVision/sfm/utils/alignment.hpp>
 #include <aliceVision/config.hpp>
-
-#include "dependencies/stlplus3/filesystemSimplified/file_system.hpp"
+#include <aliceVision/system/Logger.hpp>
+#include <aliceVision/system/cmdline.hpp>
 
 #include <boost/program_options.hpp>
 
@@ -19,9 +19,29 @@ using namespace aliceVision;
 using namespace aliceVision::sfm;
 namespace po = boost::program_options;
 
-static bool parseAlignScale(const std::string& alignScale, double& S, Mat3& R, Vec3& t);
+static bool parseAlignScale(const std::string& alignScale, double& S, Mat3& R, Vec3& t)
+{
+  double rx, ry, rz, rr;
 
-// Convert from a SfMData format to another
+  {
+    char delim[4];
+    std::istringstream iss(alignScale);
+    if (!(iss >> rx >> delim[0] >> ry >> delim[1] >> rz >> delim[2] >> rr >> delim[3] >> S))
+      return false;
+    if (delim[0] != ',' || delim[1] != ',' || delim[2] != ';' || delim[3] != ';')
+      return false;
+  }
+
+  auto q = Eigen::Quaterniond::FromTwoVectors(Vec3(rx, ry, rz), Vec3::UnitY());
+  auto r = Eigen::AngleAxisd(rr*M_PI/180, Vec3::UnitY());
+
+  R = r * q.toRotationMatrix();
+
+  t = Vec3::Zero();
+
+  return true;
+}
+
 int main(int argc, char **argv)
 {
   // command-line parameters
@@ -83,27 +103,31 @@ int main(int argc, char **argv)
     return EXIT_FAILURE;
   }
 
+
+  ALICEVISION_COUT("Program called with the following parameters:");
+  ALICEVISION_COUT(vm);
+
   // set verbose level
   system::Logger::get()->setLogLevel(verboseLevel);
   
   if (sfmDataFilename.empty() ||
       outSfMDataFilename.empty())
   {
-    std::cerr << "Invalid input or output filename." << std::endl;
+    ALICEVISION_LOG_ERROR("Invalid input or output filename");
     return EXIT_FAILURE;
   }
 
   if (sfmDataReferenceFilename.empty() &&
       sfmDataYAlignScale.empty())
   {
-    std::cerr << "At least one of -y and -r must be specified." << std::endl;
+    ALICEVISION_LOG_ERROR("At least one of -y and -r must be specified.");
     return EXIT_FAILURE;
   }
   
   if (!sfmDataReferenceFilename.empty() &&
       !sfmDataYAlignScale.empty())
   {
-    std::cerr << "Must specify exactly one of alignment and reference scene." << std::endl;
+    ALICEVISION_LOG_ERROR("Must specify exactly one of alignment and reference scene");
     return EXIT_FAILURE;
   }
 
@@ -111,8 +135,7 @@ int main(int argc, char **argv)
   SfMData sfm_data_in;
   if (!Load(sfm_data_in, sfmDataFilename, ESfMData(ALL)))
   {
-    std::cerr << std::endl
-      << "The input SfMData file \"" << sfmDataFilename << "\" cannot be read." << std::endl;
+    ALICEVISION_LOG_ERROR("The input SfMData file '" << sfmDataFilename << "' cannot be read");
     return EXIT_FAILURE;
   }
 
@@ -126,8 +149,7 @@ int main(int argc, char **argv)
     SfMData sfm_data_inRef;
     if (!Load(sfm_data_inRef, sfmDataReferenceFilename, ESfMData(ALL)))
     {
-      std::cerr << std::endl
-        << "The reference SfMData file \"" << sfmDataReferenceFilename << "\" cannot be read." << std::endl;
+      ALICEVISION_LOG_ERROR("The reference SfMData file '" << sfmDataReferenceFilename << "' cannot be read");
       return EXIT_FAILURE;
     }
 
@@ -135,59 +157,39 @@ int main(int argc, char **argv)
     bool hasValidSimilarity = computeSimilarity(sfm_data_in, sfm_data_inRef, &S, &R, &t);
     if(!hasValidSimilarity)
     {
-      std::cerr << std::endl
-        << "Failed to find similarity between the 2 SfM scenes:"
-        << "\"" << sfmDataFilename << "\", "
-        << "\"" << sfmDataReferenceFilename << "\""
-        << std::endl;
+      std::stringstream ss;
+      ss << "Failed to find similarity between the 2 SfM scenes:";
+      ss << "\t- " << sfmDataFilename << std::endl;
+      ss << "\t- " << sfmDataReferenceFilename << std::endl;
+      ALICEVISION_LOG_ERROR(ss.str());
       return EXIT_FAILURE;
     }
   }
   else if (!parseAlignScale(sfmDataYAlignScale, S, R, t))
   {
-    std::cerr << std::endl << "Failed to parse align/scale argument.";
+    ALICEVISION_LOG_ERROR("Failed to parse align/scale argument");
     return EXIT_FAILURE;
   }
-  
-  std::cout << "Apply transformation:" << std::endl;
-  std::cout << " - Scale: " << S << std::endl;
-  std::cout << " - Rotation:\n" << R << std::endl;
-  std::cout << " - Translate: " << t.transpose() << std::endl;
+
+  {
+    std::stringstream ss;
+    ss << "Apply transformation:" << std::endl;
+    ss << "\t- Scale: " << S << std::endl;
+    ss << "\t- Rotation:\n" << R << std::endl;
+    ss << "\t- Translate: " << t.transpose() << std::endl;
+    ALICEVISION_LOG_INFO(ss);
+  }
 
   applyTransform(sfm_data_in, S, R, t);
   
-  std::cout << "Save into \"" << outSfMDataFilename << "\"" << std::endl;
+  ALICEVISION_LOG_INFO("Save into '" << outSfMDataFilename << "'");
   
   // Export the SfMData scene in the expected format
-  if (!Save(sfm_data_in, outSfMDataFilename, ESfMData(ALL)))
+  if (!Save(sfm_data_in, outSfMDataFilename, ESfMData::ALL))
   {
-    std::cerr << std::endl
-      << "An error occurred while trying to save \"" << outSfMDataFilename << "\"." << std::endl;
+    ALICEVISION_LOG_ERROR("An error occurred while trying to save '" << outSfMDataFilename << "'");
     return EXIT_FAILURE;
   }
 
   return EXIT_SUCCESS;
-}
-
-static bool parseAlignScale(const std::string& alignScale, double& S, Mat3& R, Vec3& t)
-{
-  double rx, ry, rz, rr;
-  
-  {
-    char delim[4];
-    std::istringstream iss(alignScale);
-    if (!(iss >> rx >> delim[0] >> ry >> delim[1] >> rz >> delim[2] >> rr >> delim[3] >> S))
-      return false;
-    if (delim[0] != ',' || delim[1] != ',' || delim[2] != ';' || delim[3] != ';')
-      return false;
-  }
-  
-  auto q = ::Eigen::Quaterniond::FromTwoVectors(Vec3(rx, ry, rz), Vec3::UnitY());
-  auto r = ::Eigen::AngleAxisd(rr*M_PI/180, Vec3::UnitY());
-
-  R = r * q.toRotationMatrix();
-
-  t = Vec3::Zero();
-  
-  return true;
 }
