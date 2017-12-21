@@ -160,10 +160,7 @@ ReconstructionEngine_sequentialSfM::~ReconstructionEngine_sequentialSfM()
 
 // Compute robust Resection of remaining images
 // - group of images will be selected and resection + scene completion will be tried
-void ReconstructionEngine_sequentialSfM::robustResectionOfImages(
-  const std::set<size_t>& viewIds,
-  std::set<size_t>& set_reconstructedViewId,
-  std::set<size_t>& set_rejectedViewId)
+void ReconstructionEngine_sequentialSfM::robustResectionOfImages(const std::set<size_t>& viewIds)
 {
   static const std::size_t maxImagesPerGroup = 30;
   
@@ -171,6 +168,8 @@ void ReconstructionEngine_sequentialSfM::robustResectionOfImages(
   size_t resectionGroupIndex = 0;
   std::set<size_t> set_remainingViewId(viewIds);
   std::vector<size_t> vec_possible_resection_indexes;
+  std::set<std::size_t> set_reconstructedViewId;
+  std::set<std::size_t> set_rejectedViewId;
   
   while (findNextImagesGroupForResection(vec_possible_resection_indexes, set_remainingViewId))
   {
@@ -433,36 +432,10 @@ bool ReconstructionEngine_sequentialSfM::Process()
   // timer for stats
   aliceVision::system::Timer timer_sfm;
 
-  std::set<std::size_t> reconstructedViewIds;
-  std::set<std::size_t> rejectedViewIds;
-  std::size_t nbRejectedLoops = 0;
-  do
-  {
-    reconstructedViewIds.clear();
-    rejectedViewIds.clear();
-    
-    // Compute robust Resection of remaining images
-    // - group of images will be selected and resection + scene completion will be tried
-    robustResectionOfImages(
-          _set_remainingViewId,
-          reconstructedViewIds,
-          rejectedViewIds);
-    // Remove all reconstructed views from the remaining views
-    for(const std::size_t v: reconstructedViewIds)
-    {
-      _set_remainingViewId.erase(v);
-    }
+  // Compute robust Resection of remaining images
+  // - group of images will be selected and resection + scene completion will be tried
+  robustResectionOfImages(_set_remainingViewId);
 
-    ALICEVISION_LOG_DEBUG("\t- nbRejectedLoops: " << nbRejectedLoops);
-    ALICEVISION_LOG_DEBUG("\t- reconstructedViewIds: " << reconstructedViewIds.size());
-    ALICEVISION_LOG_DEBUG("\t- rejectedViewIds: " << rejectedViewIds.size());
-    ALICEVISION_LOG_DEBUG("\t- remainingViewId: " << _set_remainingViewId.size());
-    
-    ++nbRejectedLoops;
-    // Retry to perform the resectioning of all the rejected views,
-    // as long as new views are successfully added.
-  } while( !reconstructedViewIds.empty() && !_set_remainingViewId.empty() );
-  
   // timer for stats
   const double time_sfm = timer_sfm.elapsed();
   
