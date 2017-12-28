@@ -114,7 +114,7 @@ void LocalBundleAdjustmentData::exportFocalLengths(const std::string& folder)
     if (isNewFile) // Print Header + EXIF data .
     {
       // -- HEADER
-      if (os.tellp() == 0) // 'tellp' return the cursor's position
+      if (os.tellp() == std::streampos(0)) // 'tellp' return the cursor's position
       {
         std::vector<std::string> header;
         header.push_back("#poses");

@@ -219,7 +219,7 @@ bool LocalBundleAdjustmentCeres::exportStatistics(const std::string& dir, const 
   }
   os.seekp(0, std::ios::end); //put the cursor at the end
   
-  if (os.tellp() == 0) // 'tellp' return the cursor's position
+  if (os.tellp() == std::streampos(0)) // 'tellp' return the cursor's position
   {
     // If the file does't exist: add a header.
     std::vector<std::string> header;
