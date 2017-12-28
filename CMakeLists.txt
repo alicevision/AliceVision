@@ -26,6 +26,9 @@ function(trilean_option NAME DESCRIPTION DEFAULT_VALUE)
   endif()
 endfunction()
 
+# Enable folders in supported IDEs
+set_property(GLOBAL PROPERTY USE_FOLDERS ON)
+
 # ==============================================================================
 # AliceVision build options
 # ==============================================================================
