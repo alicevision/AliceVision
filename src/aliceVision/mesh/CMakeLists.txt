@@ -1,6 +1,8 @@
 set(SOURCES_files_mesh
   mv_mesh.cpp
   mv_mesh.hpp
+  meshVisibility.cpp
+  meshVisibility.hpp
   mv_mesh_analyze.cpp
   mv_mesh_analyze.hpp
   mv_mesh_clean.cpp
