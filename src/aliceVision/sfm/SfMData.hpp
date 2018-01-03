@@ -275,8 +275,8 @@ public:
   }
 
   /**
-   * @brief Combine two SfMData
-   * Copy all data from the input sfmData
+   * @brief Insert data from the given sfmData if possible.
+   * note: This operation doesn't override existing data.
    * @param[in] sfmData A given SfMData
    */
   void combine(const SfMData& sfmData);
