@@ -392,12 +392,12 @@ bool loadJSON(SfMData& sfmData, const std::string& filename, ESfMData partFlag, 
   loadMatrix("version", version, fileTree);
 
   // folders
-  if(fileTree.count("featureFolders"))
-    for(bpt::ptree::value_type& featureFolderNode : fileTree.get_child("featureFolders"))
+  if(fileTree.count("featuresFolders"))
+    for(bpt::ptree::value_type& featureFolderNode : fileTree.get_child("featuresFolders"))
       sfmData.addFeaturesFolder(featureFolderNode.second.get_value<std::string>());
 
-  if(fileTree.count("matchingFolders"))
-    for(bpt::ptree::value_type& matchingFolderNode : fileTree.get_child("matchingFolders"))
+  if(fileTree.count("matchesFolders"))
+    for(bpt::ptree::value_type& matchingFolderNode : fileTree.get_child("matchesFolders"))
       sfmData.addMatchesFolder(matchingFolderNode.second.get_value<std::string>());
 
   // views
