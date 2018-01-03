@@ -179,45 +179,33 @@ int main(int argc, char **argv)
   // set verbose level
   system::Logger::get()->setLogLevel(verboseLevel);
 
-  // check output SfM path
-  if(outputSfM.empty())
-  {
-    ALICEVISION_LOG_ERROR("Error: Invalid output SfMData file path.");
-    return EXIT_FAILURE;
-  }
-
-  // Check feature folder
-  if(featuresFolder.empty()) {
-    featuresFolder = matchesFolder;
-  }
-
-  // Load input SfMData scene
+  // load input SfMData scene
   SfMData sfmData;
-  if(!Load(sfmData, sfmDataFilename, ESfMData(ALL))) {
+  if(!Load(sfmData, sfmDataFilename, ESfMData::ALL))
+  {
     ALICEVISION_LOG_ERROR("Error: The input SfMData file '" + sfmDataFilename + "' cannot be read.");
     return EXIT_FAILURE;
   }
 
-  // Get imageDescriberMethodType
+  // get imageDescriberMethodType
   const std::vector<feature::EImageDescriberType> describerTypes = feature::EImageDescriberType_stringToEnums(describerTypesName);
 
-  // Features reading
+  // features reading
   std::vector<std::string> featuresFolders = sfmData.getFeaturesFolders();
   featuresFolders.emplace_back(featuresFolder);
 
   feature::FeaturesPerView featuresPerView;
   if(!sfm::loadFeaturesPerView(featuresPerView, sfmData, featuresFolders, describerTypes))
   {
-    ALICEVISION_LOG_ERROR("Error: Invalid features.");
+    ALICEVISION_LOG_ERROR("Invalid features.");
     return EXIT_FAILURE;
   }
   
-  // Matches reading
+  // matches reading
   matching::PairwiseMatches pairwiseMatches;
-
   if(!loadPairwiseMatches(pairwiseMatches, sfmData, matchesFolder, describerTypes, "f", maxNbMatches))
   {
-    ALICEVISION_LOG_ERROR("Error: Unable to load matches file from '" + matchesFolder + "'.");
+    ALICEVISION_LOG_ERROR("Unable to load matches file from '" + matchesFolder + "'.");
     return EXIT_FAILURE;
   }
 
@@ -230,7 +218,7 @@ int main(int argc, char **argv)
   if (!stlplus::folder_exists(extraInfoFolder))
     stlplus::folder_create(extraInfoFolder);
 
-  // Sequential reconstruction process
+  // sequential reconstruction process
   
   aliceVision::system::Timer timer;
   ReconstructionEngine_sequentialSfM sfmEngine(
@@ -238,11 +226,11 @@ int main(int argc, char **argv)
     extraInfoFolder,
     stlplus::create_filespec(extraInfoFolder, "sfm_log.html"));
 
-  // Configure the featuresPerView & the matches_provider
+  // configure the featuresPerView & the matches_provider
   sfmEngine.setFeatures(&featuresPerView);
   sfmEngine.setMatches(&pairwiseMatches);
 
-  // Configure reconstruction parameters
+  // configure reconstruction parameters
   sfmEngine.Set_bFixedIntrinsics(!refineIntrinsics);
   sfmEngine.setMinInputTrackLength(minInputTrackLength);
   sfmEngine.setSfmdataInterFileExtension(outInterFileExtension);
@@ -251,17 +239,17 @@ int main(int argc, char **argv)
   sfmEngine.setLocalBundleAdjustmentGraphDistance(localBundelAdjustementGraphDistanceLimit);
   if(minNbObservationsForTriangulation < 2)
   {
-    ALICEVISION_LOG_ERROR("Error: The value associated to the argument '--minNbObservationsForTriangulation' must be >= 2 ");
+    ALICEVISION_LOG_ERROR("The value associated to the argument '--minNbObservationsForTriangulation' must be >= 2 ");
     return EXIT_FAILURE;
   }
   sfmEngine.setNbOfObservationsForTriangulation(minNbObservationsForTriangulation);
 
-  // Handle Initial pair parameter
+  // handle Initial pair parameter
   if(!initialPairString.first.empty() && !initialPairString.second.empty())
   {
     if(initialPairString.first == initialPairString.second)
     {
-      ALICEVISION_LOG_ERROR("Error: Invalid image names. You cannot use the same image to initialize a pair.");
+      ALICEVISION_LOG_ERROR("Invalid image names. You cannot use the same image to initialize a pair.");
       return EXIT_FAILURE;
     }
 
@@ -278,9 +266,9 @@ int main(int argc, char **argv)
   if(!sfmEngine.Process())
     return EXIT_FAILURE;
 
-  // Get the color for the 3D points
+  // get the color for the 3D points
   if(!sfmEngine.Colorize())
-    ALICEVISION_LOG_ERROR("Error: Colorize failed !");
+    ALICEVISION_LOG_ERROR("Colorize failed !");
 
   sfmEngine.Get_SfMData().addFeaturesFolder(featuresFolder);
   sfmEngine.Get_SfMData().addMatchesFolder(matchesFolder);
@@ -288,11 +276,10 @@ int main(int argc, char **argv)
   ALICEVISION_LOG_INFO("Structure from motion took (s): " + std::to_string(timer.elapsed()));
   ALICEVISION_LOG_INFO("Generating HTML report...");
 
-  Generate_SfM_Report(sfmEngine.Get_SfMData(),
-    stlplus::create_filespec(extraInfoFolder, "sfm_report.html"));
+  Generate_SfM_Report(sfmEngine.Get_SfMData(), stlplus::create_filespec(extraInfoFolder, "sfm_report.html"));
 
-  // Export to disk computed scene (data & visualizable results)
-  ALICEVISION_LOG_INFO("Export SfMData to disk:" + outputSfM);
+  // export to disk computed scene (data & visualizable results)
+  ALICEVISION_LOG_INFO("Export SfMData to disk: " + outputSfM);
 
   Save(sfmEngine.Get_SfMData(), stlplus::create_filespec(extraInfoFolder, "cloud_and_poses", outInterFileExtension), ESfMData(VIEWS | EXTRINSICS | INTRINSICS | STRUCTURE));
   Save(sfmEngine.Get_SfMData(), outputSfM, ESfMData(ALL));
