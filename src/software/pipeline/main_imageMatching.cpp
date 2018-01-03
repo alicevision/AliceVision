@@ -308,7 +308,7 @@ int main(int argc, char** argv)
   /// the multiple SfM mode
   std::string modeMultiSfMName = EImageMatchingMultiSfM_enumToString(EImageMatchingMultiSfM::A_AB);
   /// the combine SfM output
-  std::string outputCombineSfM;
+  std::string outputCombinedSfM;
 
   po::options_description allParams(
     "The objective of this software is to find images that are looking to the same areas of the scene. "
@@ -349,8 +349,8 @@ int main(int argc, char** argv)
         "SfMData file.")
       ("modeMultiSfM", po::value<std::string>(&modeMultiSfMName)->default_value(modeMultiSfMName),
         EImageMatchingMultiSfM_description().c_str())
-      ("outputCombineSfM", po::value<std::string>(&outputCombineSfM)->default_value(outputCombineSfM),
-        "Output file path for the combine SfMData file (if empty, don't combine).");
+      ("outputCombinedSfM", po::value<std::string>(&outputCombinedSfM)->default_value(outputCombinedSfM),
+        "Output file path for the combined SfMData file (if empty, don't combine).");
 
   po::options_description logParams("Log parameters");
   logParams.add_options()
@@ -598,13 +598,15 @@ int main(int argc, char** argv)
 
   ALICEVISION_LOG_INFO("pairList exported in: " << outputFile);
 
-  if(useMultiSfM && !outputCombineSfM.empty())
+  if(useMultiSfM && !outputCombinedSfM.empty())
   {
-    sfmDataA.combine(sfmDataB);
+    // Combine A to B
+    // Should not loose B data
+    sfmDataB.combine(sfmDataA);
 
-    if(!sfm::Save(sfmDataA, outputCombineSfM, sfm::ESfMData::ALL))
+    if(!sfm::Save(sfmDataB, outputCombinedSfM, sfm::ESfMData::ALL))
     {
-      ALICEVISION_LOG_ERROR("Unable to save combined SfM: " << outputCombineSfM);
+      ALICEVISION_LOG_ERROR("Unable to save combined SfM: " << outputCombinedSfM);
       return EXIT_FAILURE;
     }
   }

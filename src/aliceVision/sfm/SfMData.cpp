@@ -203,7 +203,6 @@ void SfMData::combine(const SfMData& sfmData)
 
   // control points
   control_points.insert(sfmData.control_points.begin(), sfmData.control_points.end());
-
 }
 
 /// Find the color of the SfMData Landmarks/structure
