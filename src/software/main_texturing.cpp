@@ -71,7 +71,7 @@ int main(int argc, char* argv[])
             "Texture downscale factor")
         ("inputMesh", po::value<std::string>(&inputMeshFilepath),
             "Optional input mesh to texture. By default, it will texture the inputReconstructionMesh.")
-        ("flipNormals", po::bool_switch(&flipNormals),
+        ("flipNormals", po::value<bool>(&flipNormals),
             "Option to flip face normals. It can be needed as it depends on the vertices order in triangles and the convention change from one software to another.");
 
     allParams.add(requiredParams).add(optionalParams);
