@@ -22,6 +22,8 @@ class staticVector
 
     typedef typename std::vector<T>::iterator Iterator;
     typedef typename std::vector<T>::const_iterator ConstIterator;
+    typedef typename std::vector<T>::reference Reference;
+    typedef typename std::vector<T>::const_reference ConstReference;
 
 public:
     staticVector()
@@ -51,6 +53,9 @@ public:
     ConstIterator begin() const { return _data.begin(); }
     ConstIterator end() const { return _data.end(); }
 
+    Reference front() { return _data.front(); }
+    ConstReference front() const { return _data.front(); }
+
     const std::vector<T>& getData() const { return _data; }
     std::vector<T>& getDataWritable() { return _data; }
     int size() const { return _data.size(); }
@@ -58,6 +63,7 @@ public:
     size_t capacity() const { return _data.capacity(); }
     void reserve(int n) { _data.reserve(n); }
     void resize(int n) { _data.resize(n); }
+    void resize(int n, T value) { _data.resize(n, value); }
     void resize_with(int n, const T& val) { _data.resize(n, val); }
     void swap( staticVector& other ) { _data.swap(other._data); }
 
