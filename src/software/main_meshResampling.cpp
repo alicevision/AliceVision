@@ -165,6 +165,10 @@ int main(int argc, char* argv[])
         ALICEVISION_CERR("Failed: the output mesh is empty.");
         return 1;
     }
+    for(GEO::index_t i = 0; i < M_out.facets.nb(); ++i)
+    {
+        M_out.facets.flip(i);
+    }
 
     ALICEVISION_COUT("Save mesh");
     if(!GEO::mesh_save(M_out, outputMeshPath))
