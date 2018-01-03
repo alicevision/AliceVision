@@ -3284,11 +3284,11 @@ float mv_mesh::getCurvatureAngle(int idpt, staticVector<staticVector<int>*>* pts
 
 void mv_mesh::invertTriangleOrientations()
 {
-    for(int i = 0; i < tris->size(); i++)
+    std::cout << "invertTriangleOrientations" << std::endl;
+    for(int i = 0; i < tris->size(); ++i)
     {
-        int tmp = (*tris)[i].i[1];
-        (*tris)[i].i[1] = (*tris)[i].i[2];
-        (*tris)[i].i[2] = tmp;
+        mv_mesh::triangle& t = (*tris)[i];
+        std::swap(t.i[1], t.i[2]);
     }
 }
 
