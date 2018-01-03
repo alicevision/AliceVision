@@ -4008,7 +4008,8 @@ void mv_output3D::saveMvMeshToObj(mv_mesh* me, const std::string& objFileName)
 
     for(int i = 0; i < me->tris->size(); i++)
     {
-        fprintf(f, "f %i %i %i\n", (*me->tris)[i].i[0] + 1, (*me->tris)[i].i[1] + 1, (*me->tris)[i].i[2] + 1);
+        mv_mesh::triangle& t = (*me->tris)[i];
+        fprintf(f, "f %i %i %i\n", t.i[0] + 1, t.i[1] + 1, t.i[2] + 1);
     }
     fclose(f);
 
