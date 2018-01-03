@@ -88,7 +88,6 @@ int main(int argc, char **argv)
   int maxNbMatches = 0;
   std::size_t minNbObservationsForTriangulation = 2;
   bool refineIntrinsics = true;
-  bool allowUserInteraction = true;
   bool useLocalBundleAdjustment = false;
   std::size_t localBundelAdjustementGraphDistanceLimit = 1;
   std::string localizerEstimatorName = robustEstimation::ERobustEstimator_enumToString(robustEstimation::ERobustEstimator::ACRANSAC);
@@ -134,9 +133,6 @@ int main(int argc, char **argv)
       "filename of the second image (without path).")
     ("refineIntrinsics", po::value<bool>(&refineIntrinsics)->default_value(refineIntrinsics),
       "Refine intrinsic parameters.")
-    ("allowUserInteraction", po::value<bool>(&allowUserInteraction)->default_value(allowUserInteraction),
-      "Enable/Disable user interactions.\n"
-      "If the process is done on renderfarm, it doesn't make sense to wait for user inputs")
     ("useLocalBA,l", po::value<bool>(&useLocalBundleAdjustment)->default_value(useLocalBundleAdjustment),
       "Enable/Disable the Local bundle adjustment strategy.\n"
       "It reduces the reconstruction time, especially for big datasets (500+ images).")
@@ -237,8 +233,7 @@ int main(int argc, char **argv)
   // configure reconstruction parameters
   sfmEngine.Set_bFixedIntrinsics(!refineIntrinsics);
   sfmEngine.setMinInputTrackLength(minInputTrackLength);
-  sfmEngine.setSfmdataInterFileExtension(outInterFileExtension);
-  sfmEngine.setAllowUserInteraction(allowUserInteraction);
+  sfmEngine.setIntermediateFileExtension(outInterFileExtension);
   sfmEngine.setUseLocalBundleAdjustmentStrategy(useLocalBundleAdjustment);
   sfmEngine.setLocalBundleAdjustmentGraphDistance(localBundelAdjustementGraphDistanceLimit);
   sfmEngine.setLocalizerEstimator(robustEstimation::ERobustEstimator_stringToEnum(localizerEstimatorName));
