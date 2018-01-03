@@ -78,21 +78,26 @@ void getListOfDescriptorFiles(const sfm::SfMData& sfmData, const std::string& de
     }
 
     std::stringstream featureFoldersS;
+    bool found = false;
 
     for(const std::string& featureFolder : sfmData.getFeaturesFolders())
     {
       const std::string filepathFromSfMData = bfs::path(bfs::path(featureFolder) / (std::to_string(view.first) + ".SIFT.desc")).string();
+
       if(bfs::exists(filepathFromSfMData))
       {
         descriptorsFiles[view.first] = filepathFromSfMData;
+        found = true;
         break;
       }
       featureFoldersS << "\n\t- " << filepathFromSfMData;
     }
 
-    featureFoldersS << "\n\t- " << filepath;
-
-    throw std::runtime_error("Can't find descriptor " + std::to_string(view.first) + " in : " + featureFoldersS.str());
+    if(!found)
+    {
+      featureFoldersS << "\n\t- " << filepath;
+      throw std::runtime_error("Can't find descriptor " + std::to_string(view.first) + " in : " + featureFoldersS.str());
+    }
   }
 }
 
