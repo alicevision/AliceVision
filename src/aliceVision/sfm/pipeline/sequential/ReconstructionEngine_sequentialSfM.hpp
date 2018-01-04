@@ -187,11 +187,11 @@ private:
 
   struct ResectionData : ImageLocalizerMatchData
   {
-    std::set<std::size_t> tracksId; /// tracks index for resection
-    std::vector<track::TracksUtilsMap::FeatureId> featuresId; /// features index for resection
-    geometry::Pose3 pose; /// pose estimated by the resection
-    std::shared_ptr<camera::IntrinsicBase> optionalIntrinsic = nullptr; /// intrinsic estimated by resection
-    bool isNewIntrinsic; /// the instrinsic already exists in the scene or not.
+    std::set<std::size_t> tracksId;                                     //< tracks index for resection
+    std::vector<track::TracksUtilsMap::FeatureId> featuresId;           //< features index for resection
+    geometry::Pose3 pose;                                               //< pose estimated by the resection
+    std::shared_ptr<camera::IntrinsicBase> optionalIntrinsic = nullptr; //< intrinsic estimated by resection
+    bool isNewIntrinsic;                                                //< the instrinsic already exists in the scene or not.
   };
 
   /**
@@ -288,8 +288,8 @@ private:
   int _minTrackLength = 2;
   int _minPointsPerPose = 30;
   bool _uselocalBundleAdjustment = false;
-  std::size_t _minNbObservationsForTriangulation = 2; /// a 3D point must have at least N obersvations to be triangulated.
-  double _minAngleForTriangulation = 3.0; /// a 3D point must have at least 2 obervations not too much aligned.
+  std::size_t _minNbObservationsForTriangulation = 2; //< a 3D point must have at least N obersvations to be triangulated.
+  double _minAngleForTriangulation = 3.0; //< a 3D point must have at least 2 obervations not too much aligned.
   
   //-- Data provider
   feature::FeaturesPerView  * _featuresPerView;
