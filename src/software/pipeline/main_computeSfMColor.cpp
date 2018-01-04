@@ -80,40 +80,33 @@ int main(int argc, char **argv)
   // set verbose level
   system::Logger::get()->setLogLevel(verboseLevel);
 
-  if (outputSfMDataFilename.empty())
+  if(outputSfMDataFilename.empty())
   {
-    std::cerr << std::endl
-      << "No output filename specified." << std::endl;
+    ALICEVISION_LOG_ERROR("No output filename specified.");
     return EXIT_FAILURE;
   }
 
   // Load input SfMData scene
   SfMData sfm_data;
-  std::cout << "Loading sfm data from " << sfmDataFilename << "..." << std::endl;
-  if (!Load(sfm_data, sfmDataFilename, ESfMData(ALL)))
+  if(!Load(sfm_data, sfmDataFilename, ESfMData(ALL)))
   {
-    std::cerr << std::endl
-      << "The input SfMData file \"" << sfmDataFilename << "\" cannot be read." << std::endl;
+    ALICEVISION_LOG_ERROR("Error: The input SfMData file '" + sfmDataFilename + "' cannot be read.");
     return EXIT_FAILURE;
   }
-  std::cout << "Done!" << std::endl;
 
   // Compute the scene structure color
   if (!ColorizeTracks(sfm_data))
   {
-    std::cerr << "Error while trying to colorize the tracks! Aborting..." << std::endl;
-    return EXIT_FAILURE;
+    ALICEVISION_LOG_ERROR("Error while trying to colorize the tracks! Aborting...");
   }
 
   // Export the SfMData scene in the expected format
-  std::cout << "Saving output result to " << outputSfMDataFilename << "..." << std::endl;
+  ALICEVISION_LOG_INFO("Saving output result to " << outputSfMDataFilename << "...");
   if (!Save(sfm_data, outputSfMDataFilename.c_str(), ESfMData(ALL)))
   {
-    std::cerr << std::endl
-      << "An error occured while trying to save \"" << outputSfMDataFilename << "\"." << std::endl;
+    ALICEVISION_LOG_ERROR("Error: The output SfMData file '" + sfmDataFilename + "' cannot be save.");
     return EXIT_FAILURE;
   }
-  std::cout << "Done!" << std::endl;
 
   return EXIT_SUCCESS;
 }

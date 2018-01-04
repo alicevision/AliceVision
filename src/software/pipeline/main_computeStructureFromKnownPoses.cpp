@@ -100,9 +100,9 @@ int main(int argc, char **argv)
   
   // Load input SfMData scene
   SfMData sfm_data;
-  if (!Load(sfm_data, sfmDataFilename, ESfMData(VIEWS|INTRINSICS|EXTRINSICS))) {
-    std::cerr << std::endl
-      << "The input SfMData file \""<< sfmDataFilename << "\" cannot be read." << std::endl;
+  if (!Load(sfm_data, sfmDataFilename, ESfMData(VIEWS|INTRINSICS|EXTRINSICS)))
+  {
+    ALICEVISION_LOG_ERROR("The input SfMData file '" << sfmDataFilename << "' cannot be read.");
     return EXIT_FAILURE;
   }
 
@@ -167,9 +167,8 @@ int main(int argc, char **argv)
 
   RemoveOutliers_AngleError(sfm_data, 2.0);
 
-  std::cout
-    << "\nStructure estimation took (s): " << timer.elapsed() << "." << std::endl
-    << "#landmark found: " << sfm_data.GetLandmarks().size() << std::endl;
+  ALICEVISION_LOG_INFO("Structure estimation took (s): " << timer.elapsed() << "." << std::endl
+    << "\t- # landmarks found: " << sfm_data.GetLandmarks().size());
 
   if (stlplus::extension_part(outSfMDataFilename) != "ply")
   {
@@ -183,6 +182,6 @@ int main(int argc, char **argv)
   if (Save(sfm_data, outSfMDataFilename, ESfMData(ALL)))
     return EXIT_SUCCESS;
   
-  std::cout << "Error while saving the sfm data!" << std::endl;
+  ALICEVISION_LOG_ERROR("Can't save the output SfMData");
   return EXIT_FAILURE;
 }
