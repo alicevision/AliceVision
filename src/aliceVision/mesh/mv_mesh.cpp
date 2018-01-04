@@ -1460,64 +1460,59 @@ staticVector<staticVector<int>*>* mv_mesh::getTrisNeighTris()
     return trisNeighTris;
 }
 
-mv_mesh* mv_mesh::generateMeshFromTrianglesSubset(staticVector<int>* visTris, staticVector<int>** ptIdToNewPtId)
+mv_mesh* mv_mesh::generateMeshFromTrianglesSubset(const staticVector<int>& visTris, staticVector<int>** out_ptIdToNewPtId) const
 {
-    mv_mesh* me = new mv_mesh();
+    mv_mesh* outMesh = new mv_mesh();
 
-    staticVector<int>* pts1 = new staticVector<int>(pts->size());
-    pts1->resize_with(pts->size(), -1);
-    for(int i = 0; i < visTris->size(); i++)
+    staticVector<int> newIndexPerInputPts;
+    newIndexPerInputPts.resize_with(pts->size(), -1); // -1 means unused
+    for(int i = 0; i < visTris.size(); i++)
     {
-        int idTri = (*visTris)[i];
-        (*pts1)[(*tris)[idTri].i[0]] = 0;
-        (*pts1)[(*tris)[idTri].i[1]] = 0;
-        (*pts1)[(*tris)[idTri].i[2]] = 0;
+        int idTri = visTris[i];
+        newIndexPerInputPts[(*tris)[idTri].i[0]] = 0; // 0 means used
+        newIndexPerInputPts[(*tris)[idTri].i[1]] = 0;
+        newIndexPerInputPts[(*tris)[idTri].i[2]] = 0;
     }
 
     int j = 0;
     for(int i = 0; i < pts->size(); i++)
     {
-        if((*pts1)[i] > -1)
+        if(newIndexPerInputPts[i] == 0) // if input point used
         {
-            (*pts1)[i] = j;
-            j++;
+            newIndexPerInputPts[i] = j;
+            ++j;
         }
     }
 
-    if(ptIdToNewPtId != nullptr)
-    {
-        (*ptIdToNewPtId) = new staticVector<int>(pts1->size());
-        for(int i = 0; i < pts1->size(); i++)
-        {
-            (*ptIdToNewPtId)->push_back((*pts1)[i]);
-        }
-    }
-
-    me->pts = new staticVector<point3d>(j);
+    outMesh->pts = new staticVector<point3d>(j);
 
     for(int i = 0; i < pts->size(); i++)
     {
-        if((*pts1)[i] > -1)
+        if(newIndexPerInputPts[i] > -1)
         {
-            me->pts->push_back((*pts)[i]);
+            outMesh->pts->push_back((*pts)[i]);
         }
     }
 
-    me->tris = new staticVector<mv_mesh::triangle>(visTris->size());
-    for(int i = 0; i < visTris->size(); i++)
+    outMesh->tris = new staticVector<mv_mesh::triangle>(visTris.size());
+    for(int i = 0; i < visTris.size(); i++)
     {
-        int idTri = (*visTris)[i];
+        int idTri = visTris[i];
         mv_mesh::triangle t;
         t.alive = true;
-        t.i[0] = (*pts1)[(*tris)[idTri].i[0]];
-        t.i[1] = (*pts1)[(*tris)[idTri].i[1]];
-        t.i[2] = (*pts1)[(*tris)[idTri].i[2]];
-        me->tris->push_back(t);
+        t.i[0] = newIndexPerInputPts[(*tris)[idTri].i[0]];
+        t.i[1] = newIndexPerInputPts[(*tris)[idTri].i[1]];
+        t.i[2] = newIndexPerInputPts[(*tris)[idTri].i[2]];
+        outMesh->tris->push_back(t);
     }
 
-    delete pts1;
+    if(out_ptIdToNewPtId != nullptr)
+    {
+        (*out_ptIdToNewPtId) = new staticVector<int>();
+        (*out_ptIdToNewPtId)->swap(newIndexPerInputPts);
+    }
 
-    return me;
+    return outMesh;
 }
 
 void mv_mesh::getNotOrientedEdges(staticVector<staticVector<int>*>** edgesNeighTris,
@@ -1871,39 +1866,24 @@ staticVector<point3d>* mv_mesh::computeSmoothUnitVectsForPts(staticVector<static
     return nms;
 }
 
-void mv_mesh::removeFreePointsFromMesh()
-{
-    removeFreePointsFromMesh(nullptr);
-}
-
-void mv_mesh::removeFreePointsFromMesh(staticVector<int>** ptIdToNewPtId)
+void mv_mesh::removeFreePointsFromMesh(staticVector<int>** out_ptIdToNewPtId)
 {
     printf("removeFreePointsFromMesh\n");
 
-    staticVector<int>* visTris = new staticVector<int>(tris->size());
-    for(int i = 0; i < tris->size(); i++)
+    // declare all triangles as used
+    staticVector<int> visTris;
+    visTris.reserve(tris->size());
+    for(int i = 0; i < tris->size(); ++i)
     {
-        visTris->push_back(i);
+        visTris.push_back(i);
     }
-    mv_mesh* me1 = generateMeshFromTrianglesSubset(visTris, ptIdToNewPtId);
-    delete visTris;
+    // generate a new mesh from all triangles so all unused points will be removed
+    mv_mesh* cleanedMesh = generateMeshFromTrianglesSubset(visTris, out_ptIdToNewPtId);
 
-    delete pts;
-    delete tris;
+    std::swap(cleanedMesh->pts, pts);
+    std::swap(cleanedMesh->tris, tris);
 
-    pts = new staticVector<point3d>(me1->pts->size());
-    for(int i = 0; i < me1->pts->size(); i++)
-    {
-        pts->push_back((*me1->pts)[i]);
-    }
-
-    tris = new staticVector<mv_mesh::triangle>(me1->tris->size());
-    for(int i = 0; i < me1->tris->size(); i++)
-    {
-        tris->push_back((*me1->tris)[i]);
-    }
-
-    delete me1;
+    delete cleanedMesh;
 }
 
 float mv_mesh::computeTriangleProjectionArea(triangle_proj& tp)
