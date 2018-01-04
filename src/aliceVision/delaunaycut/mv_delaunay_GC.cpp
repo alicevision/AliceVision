@@ -2989,7 +2989,7 @@ float mv_delaunay_GC::computeSurfaceArea()
     return area;
 }
 
-mv_mesh* mv_delaunay_GC::createMesh()
+mv_mesh* mv_delaunay_GC::createMesh(bool filterHelperPointsTriangles)
 {
     std::cout << "Extract mesh from GC" << std::endl;
 
@@ -3006,6 +3006,52 @@ mv_mesh* mv_delaunay_GC::createMesh()
     for(const point3d& p: _verticesCoords)
     {
         me->pts->push_back(p);
+    }
+
+    std::vector<bool> reliableVertices;
+    if(filterHelperPointsTriangles)
+    {
+        // Some vertices have not been created by depth maps but
+        // have been created for the tetrahedralization like
+        // camera centers, helper points, etc.
+        // These points have no visibility information (nrc == 0).
+        // We want to remove these fake points, but we don't want to create holes.
+        // So if the vertex is alone in the middle of valid points, we want to keep it.
+        //
+        // Algo: For each surface vertex without visibility,
+        // we check the neighbor surface vertices. If there is another one
+        // without visibility, we declare it unreliable.
+        reliableVertices.resize(_verticesCoords.size());
+        for(VertexIndex vi = 0; vi < _verticesCoords.size(); ++vi)
+        {
+            if(!_verticesAttr[vi].isOnSurface)
+            {
+                // this vertex is not on the surface, so no interest to spend time here
+                reliableVertices[vi] = false;
+            }
+            else if(_verticesAttr[vi].nrc > 0)
+            {
+                // this is a valid point without ambiguity
+                reliableVertices[vi] = true;
+            }
+            else
+            {
+                // this vertex has no visibility, check if it is connected to other weak vertices
+                reliableVertices[vi] = true; // reliable by default
+                GEO::vector<GEO::index_t> neighbors;
+                _tetrahedralization->get_neighbors(vi, neighbors);
+                for(GEO::index_t nvi: neighbors)
+                {
+                    if(_verticesAttr[nvi].isOnSurface && (_verticesAttr[nvi].nrc == 0))
+                    {
+                        // this vertex has no visibility and is connected to another
+                        // surface vertex without visibility, so we declare it unreliable.
+                        reliableVertices[vi] = false;
+                        break;
+                    }
+                }
+            }
+        }
     }
 
     me->tris = new staticVector<mv_mesh::triangle>(nbSurfaceFacets);
@@ -3031,6 +3077,22 @@ mv_mesh* mv_delaunay_GC::createMesh()
             vertices[0] = getVertexIndex(f1, 0);
             vertices[1] = getVertexIndex(f1, 1);
             vertices[2] = getVertexIndex(f1, 2);
+
+            if(filterHelperPointsTriangles)
+            {
+                // We skip triangles if it contains one unreliable vertex.
+                bool invalidTriangle = false;
+                for(int k = 0; k < 3; ++k)
+                {
+                    if(!reliableVertices[vertices[k]])
+                    {
+                        invalidTriangle = true;
+                        break;
+                    }
+                }
+                if(invalidTriangle)
+                    continue;
+            }
 
             point3d points[3];
             for(int k = 0; k < 3; ++k)
