@@ -113,14 +113,10 @@ int main(int argc, char **argv)
   std::vector<EImageDescriberType> describerMethodTypes = EImageDescriberType_stringToEnums(describerTypesName);
 
   // Prepare the Regions provider
-  std::vector<std::string> featuresFolders = sfm_data.getFeaturesFolders();
-  featuresFolders.emplace_back(featuresFolder);
-
   RegionsPerView regionsPerView;
-  if(!sfm::loadRegionsPerView(regionsPerView, sfm_data, featuresFolders, describerMethodTypes))
+  if(!sfm::loadRegionsPerView(regionsPerView, sfm_data, featuresFolder, describerMethodTypes))
   {
-    std::cerr << std::endl
-      << "Invalid regions." << std::endl;
+    ALICEVISION_LOG_ERROR("Invalid regions.");
     return EXIT_FAILURE;
   }
 

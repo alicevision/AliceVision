@@ -319,19 +319,15 @@ int main(int argc, char **argv)
   ALICEVISION_LOG_INFO("There are " + std::to_string(sfmData.GetViews().size()) + " views and " + std::to_string(pairs.size()) + " image pairs.");
 
   // load the corresponding view regions
-  RegionsPerView regionPerView;
-
-  std::vector<std::string> featuresFolders = sfmData.getFeaturesFolders();
-  featuresFolders.emplace_back(featuresFolder);
-
-  // perform the matching
-  system::Timer timer;
-
-  if(!sfm::loadRegionsPerView(regionPerView, sfmData, featuresFolders, describerTypes, filter))
+  RegionsPerView regionPerView;;
+  if(!sfm::loadRegionsPerView(regionPerView, sfmData, featuresFolder, describerTypes, filter))
   {
     ALICEVISION_LOG_ERROR("Invalid regions in '" + sfmDataFilename + "'");
     return EXIT_FAILURE;
   }
+
+  // perform the matching
+  system::Timer timer;
 
   for(const feature::EImageDescriberType descType : describerTypes)
   {

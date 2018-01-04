@@ -141,11 +141,7 @@ int main(int argc, char **argv)
   sfm::SfMLocalizationSingle3DTrackObservationDatabase localizer;
   {
     RegionsPerView regionsPerView;
-
-    std::vector<std::string> featuresFolders = sfmData.getFeaturesFolders();
-    featuresFolders.emplace_back(featuresFolder);
-
-    if (!sfm::loadRegionsPerView(regionsPerView, sfmData, featuresFolders, {describerType}))
+    if (!sfm::loadRegionsPerView(regionsPerView, sfmData, featuresFolder, {describerType}))
     {
       ALICEVISION_LOG_ERROR("Invalid regions.");
       return EXIT_FAILURE;

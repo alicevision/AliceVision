@@ -187,15 +187,12 @@ int main(int argc, char **argv)
     return EXIT_FAILURE;
   }
 
-  // get imageDescriberMethodType
+  // get imageDescriber type
   const std::vector<feature::EImageDescriberType> describerTypes = feature::EImageDescriberType_stringToEnums(describerTypesName);
 
   // features reading
-  std::vector<std::string> featuresFolders = sfmData.getFeaturesFolders();
-  featuresFolders.emplace_back(featuresFolder);
-
   feature::FeaturesPerView featuresPerView;
-  if(!sfm::loadFeaturesPerView(featuresPerView, sfmData, featuresFolders, describerTypes))
+  if(!sfm::loadFeaturesPerView(featuresPerView, sfmData, featuresFolder, describerTypes))
   {
     ALICEVISION_LOG_ERROR("Invalid features.");
     return EXIT_FAILURE;
@@ -203,7 +200,7 @@ int main(int argc, char **argv)
   
   // matches reading
   matching::PairwiseMatches pairwiseMatches;
-  if(!loadPairwiseMatches(pairwiseMatches, sfmData, matchesFolder, describerTypes, "f", maxNbMatches))
+  if(!sfm::loadPairwiseMatches(pairwiseMatches, sfmData, matchesFolder, describerTypes, "f", maxNbMatches))
   {
     ALICEVISION_LOG_ERROR("Unable to load matches file from '" + matchesFolder + "'.");
     return EXIT_FAILURE;

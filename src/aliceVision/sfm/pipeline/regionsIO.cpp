@@ -116,10 +116,13 @@ std::unique_ptr<feature::Regions> loadFeatures(const std::vector<std::string>& f
 
 bool loadRegionsPerView(feature::RegionsPerView& regionsPerView,
             const SfMData& sfmData,
-            const std::vector<std::string>& folders,
+            const std::string& folder,
             const std::vector<feature::EImageDescriberType>& imageDescriberTypes,
             const std::set<IndexT>& viewIdFilter)
 {
+  std::vector<std::string> featuresFolders = sfmData.getFeaturesFolders();
+  featuresFolders.emplace_back(folder);
+
   boost::progress_display my_progress_bar( sfmData.GetViews().size() * imageDescriberTypes.size(), std::cout, "Loading regions\n");
 
   std::atomic_bool invalid(false);
@@ -140,7 +143,7 @@ bool loadRegionsPerView(feature::RegionsPerView& regionsPerView,
      {
        if(viewIdFilter.empty() || viewIdFilter.find(iter->second.get()->getViewId()) != viewIdFilter.end())
        {
-         std::unique_ptr<feature::Regions> regionsPtr = loadRegions(folders, iter->second.get()->getViewId(), *imageDescribers[i]);
+         std::unique_ptr<feature::Regions> regionsPtr = loadRegions(featuresFolders, iter->second.get()->getViewId(), *imageDescribers[i]);
 
          if(regionsPtr)
          {
@@ -164,9 +167,12 @@ bool loadRegionsPerView(feature::RegionsPerView& regionsPerView,
 
 bool loadFeaturesPerView(feature::FeaturesPerView& featuresPerView,
                       const SfMData& sfmData,
-                      const std::vector<std::string>& folders,
+                      const std::string& folder,
                       const std::vector<feature::EImageDescriberType>& imageDescriberTypes)
 {
+  std::vector<std::string> featuresFolders = sfmData.getFeaturesFolders();
+  featuresFolders.emplace_back(folder);
+
   boost::progress_display my_progress_bar( sfmData.GetViews().size(), std::cout, "Loading features\n" );
 
   // Read for each view the corresponding features and store them as PointFeatures
@@ -188,7 +194,7 @@ bool loadFeaturesPerView(feature::FeaturesPerView& featuresPerView,
     {
       for(std::size_t i = 0; i < imageDescriberTypes.size(); ++i)
       {
-        std::unique_ptr<feature::Regions> regionsPtr = loadFeatures(folders, iter->second.get()->getViewId(), *imageDescribers[i]);
+        std::unique_ptr<feature::Regions> regionsPtr = loadFeatures(featuresFolders, iter->second.get()->getViewId(), *imageDescribers[i]);
 
 #pragma omp critical
         {

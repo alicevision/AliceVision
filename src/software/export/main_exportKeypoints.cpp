@@ -117,11 +117,9 @@ int main(int argc, char ** argv)
   std::vector<EImageDescriberType> describerMethodTypes = EImageDescriberType_stringToEnums(describerTypesName);
 
   // read the features
-  std::vector<std::string> featuresFolders = sfmData.getFeaturesFolders();
-  featuresFolders.emplace_back(featuresFolder);
-
   feature::FeaturesPerView featuresPerView;
-  if (!sfm::loadFeaturesPerView(featuresPerView, sfmData, featuresFolders, describerMethodTypes)) {
+  if (!sfm::loadFeaturesPerView(featuresPerView, sfmData, featuresFolder, describerMethodTypes))
+  {
     ALICEVISION_LOG_ERROR("Invalid features");
     return EXIT_FAILURE;
   }

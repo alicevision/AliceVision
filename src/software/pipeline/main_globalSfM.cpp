@@ -134,7 +134,7 @@ int main(int argc, char **argv)
 
   if(!sfmData.structure.empty())
   {
-    ALICEVISION_LOG_ERROR("Input SfMData in part computed are not currently supported in Global SfM." << std::endl << "Please use Incremental SfM. Aborted");
+    ALICEVISION_LOG_ERROR("Part computed SfMData are not currently supported in Global SfM." << std::endl << "Please use Incremental SfM. Aborted");
     return EXIT_FAILURE;
   }
 
@@ -148,20 +148,16 @@ int main(int argc, char **argv)
   const std::vector<feature::EImageDescriberType> describerTypes = feature::EImageDescriberType_stringToEnums(describerTypesName);
 
   // features reading
-  std::vector<std::string> featuresFolders = sfmData.getFeaturesFolders();
-  featuresFolders.emplace_back(featuresFolder);
-
   FeaturesPerView featuresPerView;
-  if(!sfm::loadFeaturesPerView(featuresPerView, sfmData, featuresFolders, describerTypes))
+  if(!sfm::loadFeaturesPerView(featuresPerView, sfmData, featuresFolder, describerTypes))
   {
     ALICEVISION_LOG_ERROR("Invalid features");
     return EXIT_FAILURE;
   }
 
   // matches reading
+  // Load the match file (try to read the two matches file formats).
   matching::PairwiseMatches pairwiseMatches;
-
-  // load the match file (try to read the two matches file formats)
   if(!sfm::loadPairwiseMatches(pairwiseMatches, sfmData, matchesFolder, describerTypes, "e"))
   {
     ALICEVISION_LOG_ERROR("Unable to load matches files from: " << matchesFolder);
