@@ -39,14 +39,14 @@ std::unique_ptr<feature::Regions> loadFeatures(const std::vector<std::string>& f
  * @brief Load Regions (Features & Descriptors) for each view of the provided SfMData container.
  * @param[in,out] regionsPerView
  * @param[in] sfmData The provided SfMData container
- * @param[in] folders The list of featureFolders
+ * @param[in] folder The feature Folder
  * @param[in] imageDescriberType The imageDescriber type
  * @param[in] filter To load Regions only for a sub-set of the views contained in the sfmData
  * @return true if the regions are correctlty loaded
  */
 bool loadRegionsPerView(feature::RegionsPerView& regionsPerView,
                         const SfMData& sfmData,
-                        const std::vector<std::string>& folders,
+                        const std::string& folders,
                         const std::vector<feature::EImageDescriberType>& imageDescriberTypes,
                         const std::set<IndexT>& filter = std::set<IndexT>());
 
@@ -54,13 +54,13 @@ bool loadRegionsPerView(feature::RegionsPerView& regionsPerView,
  * @brief Load Features for each view of the provided SfMData container.
  * @param[in,out] featuresPerView
  * @param[in] sfmData The provided SfMData container
- * @param[in] folder The list of featureFolders
+ * @param[in] folder The feature Folder
  * @param[in] imageDescriberType The imageDescriber type
  * @return true if the features are correctlty loaded
  */
 bool loadFeaturesPerView(feature::FeaturesPerView& featuresPerView,
                          const SfMData& sfmData,
-                         const std::vector<std::string>& folders,
+                         const std::string& folder,
                          const std::vector<feature::EImageDescriberType>& imageDescriberTypes);
 
 } // namespace sfm

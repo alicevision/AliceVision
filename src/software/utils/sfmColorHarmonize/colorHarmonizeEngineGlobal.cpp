@@ -482,16 +482,11 @@ bool ColorHarmonizationEngineGlobal::ReadInputData()
     return false;
 
   // Read features:
-
-  std::vector<std::string> featuresFolders = sfm_data.getFeaturesFolders();
-  featuresFolders.emplace_back(_featuresFolder);
-
-  if(!sfm::loadRegionsPerView(_regionsPerView, sfm_data, featuresFolders, _descTypes))
+  if(!sfm::loadRegionsPerView(_regionsPerView, sfm_data, _featuresFolder, _descTypes))
   {
     cerr << "Can't load feature files" << endl;
     return false;
   }
-
 
   graph::indexedGraph putativeGraph(getImagePairs(_pairwiseMatches));
 
