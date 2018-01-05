@@ -19,15 +19,6 @@
 namespace bfs = boost::filesystem;
 namespace po = boost::program_options;
 
-bool checkHardwareCompatibility()
-{
-    if(listCUDADevices(false) < 1)
-    {
-        std::cerr << "ERROR: no CUDA capable devices were detected." << std::endl;
-        return false;
-    }
-    return true;
-}
 
 bfs::path absolutePathNoExt(const bfs::path& p)
 {
@@ -103,10 +94,6 @@ int main(int argc, char* argv[])
       ALICEVISION_COUT("Usage:\n\n" << allParams);
       return EXIT_FAILURE;
     }
-
-    // check hardware compatibility
-    if(!checkHardwareCompatibility())
-        return EXIT_FAILURE;
 
     ALICEVISION_COUT("ini file: " << iniFilepath);
     ALICEVISION_COUT("inputMesh: " << inputMeshFilepath);
