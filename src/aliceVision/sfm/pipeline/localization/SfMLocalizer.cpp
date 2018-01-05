@@ -172,7 +172,7 @@ bool SfMLocalizer::Localize
   }
   ALICEVISION_LOG_INFO("Robust Resection information:\n"
     "\t- resection status: " << bResection << "\n"
-    "\t- threshold: " << resection_data.error_max << "\n"
+    "\t- threshold (error max): " << resection_data.error_max << "\n"
     "\t- # points used for resection: " << resection_data.pt2D.cols() << "\n"
     "\t- # points validated by robust resection: " << resection_data.vec_inliers.size());
   return bResection;

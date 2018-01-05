@@ -1337,7 +1337,7 @@ bool ReconstructionEngine_sequentialSfM::computeResection(const IndexT viewIndex
     os.str("");
     os << std::endl
       << "- Image path: " << view_I->getImagePath() << "<br>"
-      << "- Threshold: " << resectionData.error_max << "<br>"
+      << "- Threshold (error max): " << resectionData.error_max << "<br>"
       << "- Resection status: " << (bResection ? "OK" : "FAILED") << "<br>"
       << "- # points used for Resection: " << resectionData.featuresId.size() << "<br>"
       << "- # points validated by robust estimation: " << resectionData.vec_inliers.size() << "<br>"
