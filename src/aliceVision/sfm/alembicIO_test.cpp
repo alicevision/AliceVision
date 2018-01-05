@@ -13,6 +13,8 @@
 #include <boost/test/included/unit_test.hpp>
 #include <boost/test/floating_point_comparison.hpp>
 
+#include <iostream>
+
 using namespace aliceVision;
 using namespace aliceVision::sfm;
 
@@ -38,6 +40,9 @@ SfMData createTestScene(IndexT singleViewsCount,
     const IndexT id_intrinsic = bSharedIntrinsic ? 0 : i; //(shared or not intrinsics)
 
     std::shared_ptr<View> view = std::make_shared<View>(os.str(),id_view, id_intrinsic, id_pose, 1000, 1000);
+    view->addMetadata("A","A");
+    view->addMetadata("B","B");
+    view->addMetadata("C","C");
     sfm_data.views[id_view] = view;
 
     // Add poses
@@ -135,13 +140,10 @@ BOOST_AUTO_TEST_CASE(AlembicImporter_importExport) {
     // Create a random scene
     const SfMData sfmData = createTestScene(5, 50, 2, 3, true);
     
-
-    /*********************************************************************/
-    /*****************              JSON -> JSON           ***************/
-    /*********************************************************************/
+    // JSON -> JSON
 
     // Export as JSON
-    const std::string jsonFile = "jsonToJson.json";
+    const std::string jsonFile = "importExport.sfm";
     {
         BOOST_CHECK(Save(
         sfmData,
@@ -155,19 +157,8 @@ BOOST_AUTO_TEST_CASE(AlembicImporter_importExport) {
         BOOST_CHECK(Load(sfmJsonToJson, jsonFile, ESfMData(flags)));
         BOOST_CHECK(sfmData == sfmJsonToJson);
     }
-
-    // Export as JSON
-    const std::string jsonFile2 = "jsonToJson2.json";
-    {
-        BOOST_CHECK(Save(
-        sfmJsonToJson,
-        jsonFile2.c_str(),
-        ESfMData(flags)));
-    }
     
-    /*********************************************************************/
-    /*****************              ABC -> ABC           *****************/
-    /*********************************************************************/
+    // ABC -> ABC
 
     // Export as ABC
     const std::string abcFile = "abcToAbc.abc";
@@ -182,7 +173,7 @@ BOOST_AUTO_TEST_CASE(AlembicImporter_importExport) {
     SfMData sfmAbcToAbc;
     {
         BOOST_CHECK(Load(sfmAbcToAbc, abcFile, ESfMData(flags)));
-        std::string abcFile2 = "abcToJson.json";
+        std::string abcFile2 = "abcToJson.sfm";
         BOOST_CHECK(Save(
         sfmAbcToAbc,
         abcFile2.c_str(),
@@ -199,14 +190,10 @@ BOOST_AUTO_TEST_CASE(AlembicImporter_importExport) {
         ESfMData(flags)));
     }
 
-
-
-    /*********************************************************************/
-    /****************      JSON -> ABC -> ABC -> JSON       **************/
-    /*********************************************************************/
+    // JSON -> ABC -> ABC -> JSON
 
     // Export as JSON
-    const std::string jsonFile3 = "jsonToABC.json";
+    const std::string jsonFile3 = "jsonToABC.sfm";
     {
         BOOST_CHECK(Save(
         sfmData,
@@ -266,7 +253,7 @@ BOOST_AUTO_TEST_CASE(AlembicImporter_importExport) {
     }
 
     // Export as JSON
-    const std::string jsonFile4 = "jsonToABC2.json";
+    const std::string jsonFile4 = "jsonToABC2.sfm";
     {
         BOOST_CHECK(Save(
         sfmJsonToABC3,

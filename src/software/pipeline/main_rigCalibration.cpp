@@ -346,7 +346,7 @@ int main(int argc, char** argv)
 
 #if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_ALEMBIC)
   sfm::AlembicExporter exporter(exportFile);
-  exporter.addPoints(localizer->getSfMData().GetLandmarks());
+  exporter.addLandmarks(localizer->getSfMData().GetLandmarks());
 #endif
 
   // Create a camera rig
@@ -430,20 +430,18 @@ int main(int argc, char** argv)
 #if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_ALEMBIC)
       if(localizationResult.isValid())
       {
-        exporter.appendCamera("camera"+std::to_string(idCamera)+"."+myToString(currentFrame,4),
-                              sfm::View(subMediaFilepath, currentFrame, currentFrame),
-                              subMediaFilepath,
-                              &queryIntrinsics,
-                              localizationResult.getPose());
+        exporter.addCamera("camera"+std::to_string(idCamera)+"."+myToString(currentFrame,4),
+                           sfm::View(subMediaFilepath, currentFrame, currentFrame),
+                           &localizationResult.getPose(),
+                           &queryIntrinsics);
       }
       else
       {
         // @fixme for now just add a fake camera so that it still can be see in MAYA
-        exporter.appendCamera("camera"+std::to_string(idCamera)+".V."+myToString(currentFrame,4),
-                              sfm::View(subMediaFilepath, currentFrame, currentFrame),
-                              subMediaFilepath,
-                              &queryIntrinsics,
-                              localizationResult.getPose());
+        exporter.addCamera("camera"+std::to_string(idCamera)+".V."+myToString(currentFrame,4),
+                           sfm::View(subMediaFilepath, currentFrame, currentFrame),
+                           &localizationResult.getPose(),
+                           &queryIntrinsics);
       }
 #endif
       ++iInputFrame;
