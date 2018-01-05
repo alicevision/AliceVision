@@ -104,7 +104,7 @@ bool Load(SfMData& sfmData, const std::string& filename, ESfMData partFlag)
     bStatus = Load_Cereal<cereal::XMLInputArchive>(sfmData, filename, partFlag);
 #if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_ALEMBIC)
   else if (ext == "abc") {
-    aliceVision::sfm::AlembicImporter(filename).populate(sfmData, partFlag);
+    AlembicImporter(filename).populateSfM(sfmData, partFlag);
     bStatus = true;
   }
 #endif // ALICEVISION_HAVE_ALEMBIC
@@ -147,7 +147,7 @@ bool Save(const SfMData& sfmData, const std::string& filename, ESfMData partFlag
 #if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_ALEMBIC)
   else if (ext == "abc") // Alembic
   {
-    aliceVision::sfm::AlembicExporter(filename).add(sfmData, partFlag);
+    aliceVision::sfm::AlembicExporter(filename).addSfM(sfmData, partFlag);
     return true;
   }
 #endif // ALICEVISION_HAVE_ALEMBIC

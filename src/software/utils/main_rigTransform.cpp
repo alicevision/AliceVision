@@ -131,7 +131,7 @@ int main(int argc, char** argv)
     exporter.addCameraKeyframe(rigPose, &intrinsics, "", idx, idx);
     ++idx;
   }
-  exporter.addPoints(sfmData.GetLandmarks());
+  exporter.addLandmarks(sfmData.GetLandmarks());
 
   return EXIT_SUCCESS;
 }
