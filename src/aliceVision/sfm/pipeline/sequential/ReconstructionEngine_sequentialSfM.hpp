@@ -126,6 +126,12 @@ public:
       stlplus::folder_create(_localBA_data->getOutDirectory());
     }
   }
+
+  void setLocalizerEstimator(robustEstimation::ERobustEstimator estimator)
+  {
+    _localizerEstimator = estimator;
+  }
+
 protected:
 
 
@@ -290,7 +296,8 @@ private:
   bool _uselocalBundleAdjustment = false;
   std::size_t _minNbObservationsForTriangulation = 2; //< a 3D point must have at least N obersvations to be triangulated.
   double _minAngleForTriangulation = 3.0; //< a 3D point must have at least 2 obervations not too much aligned.
-  
+  robustEstimation::ERobustEstimator _localizerEstimator = robustEstimation::ERobustEstimator::ACRANSAC;
+
   //-- Data provider
   feature::FeaturesPerView  * _featuresPerView;
   matching::PairwiseMatches  * _pairwiseMatches;

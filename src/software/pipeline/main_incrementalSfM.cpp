@@ -92,6 +92,7 @@ int main(int argc, char **argv)
   bool allowUserInteraction = true;
   bool useLocalBundleAdjustment = false;
   std::size_t localBundelAdjustementGraphDistanceLimit = 1;
+  std::string localizerEstimatorName = robustEstimation::ERobustEstimator_enumToString(robustEstimation::ERobustEstimator::ACRANSAC);
 
   po::options_description allParams(
     "Sequential/Incremental reconstruction\n"
@@ -144,7 +145,9 @@ int main(int argc, char **argv)
       "Enable/Disable the Local bundle adjustment strategy.\n"
       "It reduces the reconstruction time, especially for big datasets (500+ images).")
     ("localBAGraphDistance", po::value<std::size_t>(&localBundelAdjustementGraphDistanceLimit)->default_value(localBundelAdjustementGraphDistanceLimit),
-      "Graph-distance limit setting the Active region in the Local Bundle Adjustment strategy.");
+      "Graph-distance limit setting the Active region in the Local Bundle Adjustment strategy.")
+    ("localizerEstimator", po::value<std::string>(&localizerEstimatorName)->default_value(localizerEstimatorName),
+      "Estimator type used to localize cameras (acransac (default), ransac, lsmeds, loransac, maxconsensus)");
 
   po::options_description logParams("Log parameters");
   logParams.add_options()
@@ -252,6 +255,7 @@ int main(int argc, char **argv)
   sfmEngine.setAllowUserInteraction(allowUserInteraction);
   sfmEngine.setUseLocalBundleAdjustmentStrategy(useLocalBundleAdjustment);
   sfmEngine.setLocalBundleAdjustmentGraphDistance(localBundelAdjustementGraphDistanceLimit);
+  sfmEngine.setLocalizerEstimator(robustEstimation::ERobustEstimator_stringToEnum(localizerEstimatorName));
   if (minNbObservationsForTriangulation < 2)
   {
     ALICEVISION_LOG_ERROR("Error: The value associated to the argument '--minNbObservationsForTriangulation' must be >= 2 ");

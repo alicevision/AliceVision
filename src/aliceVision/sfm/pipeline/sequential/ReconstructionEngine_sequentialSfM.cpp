@@ -1357,7 +1357,8 @@ bool ReconstructionEngine_sequentialSfM::computeResection(const std::size_t view
       Pair(view_I->getWidth(), view_I->getHeight()),
       resectionData.optionalIntrinsic.get(),
       resectionData,
-      resectionData.pose
+      resectionData.pose, 
+      _localizerEstimator
     );
 
   if (!_sLoggingFile.empty())
