@@ -1578,6 +1578,7 @@ void ReconstructionEngine_sequentialSfM::triangulateMultiViews_LORANSAC(SfMData&
   for (int i = 0; i < setTracksId.size(); i++) // each track (already reconstructed or not)
   {
     const IndexT trackId = setTracksId.at(i);
+    bool isValidTrack = true;
     const track::Track & track = _map_tracks.at(trackId);
     std::set<IndexT> & observations = mapTracksToTriangulate.at(trackId); // all the posed views possessing the track
     
@@ -1587,14 +1588,6 @@ void ReconstructionEngine_sequentialSfM::triangulateMultiViews_LORANSAC(SfMData&
     
     Vec3 X_euclidean = Vec3::Zero();
     std::set<IndexT> inliers;
-    
-#pragma omp critical
-    {
-      if (scene.structure.find(trackId) != scene.structure.end()) 
-      {
-        scene.structure.erase(trackId);
-      }
-    }
     
     if (observations.size() == 2) 
     {
@@ -1638,7 +1631,7 @@ void ReconstructionEngine_sequentialSfM::triangulateMultiViews_LORANSAC(SfMData&
           poseJ.depth(X_euclidean) < 0 || 
           camI->residual(poseI, X_euclidean, xI).norm() > acThresholdI || 
           camJ->residual(poseJ, X_euclidean, xJ).norm() > acThresholdJ)
-        continue;
+        isValidTrack = false;
     }
     else 
     {
@@ -1684,10 +1677,11 @@ void ReconstructionEngine_sequentialSfM::triangulateMultiViews_LORANSAC(SfMData&
       if (inliers.size() < _minNbObservationsForTriangulation ||
           !checkAngles(X_euclidean, inliers, scene, _minAngleForTriangulation) ||
           !checkChieralities(X_euclidean, inliers, scene))
-        continue;
+        isValidTrack = false;
     }  
 
     // -- Add the tringulated point to the scene
+    if (isValidTrack)
     {
       Landmark landmark;
       landmark.X = X_euclidean;
@@ -1701,6 +1695,16 @@ void ReconstructionEngine_sequentialSfM::triangulateMultiViews_LORANSAC(SfMData&
       {
         scene.structure[trackId] = landmark;
       }      
+    }
+    else
+    {
+      if (scene.structure.find(trackId) != scene.structure.end()) 
+      {
+#pragma omp critical
+        {
+          scene.structure.erase(trackId);
+        }
+      }
     }
   } // for all shared tracks 
 }    
