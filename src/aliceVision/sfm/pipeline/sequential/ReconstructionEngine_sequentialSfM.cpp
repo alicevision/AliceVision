@@ -1599,7 +1599,7 @@ void ReconstructionEngine_sequentialSfM::triangulateMultiViews_LORANSAC(SfMData&
     if (observations.size() == 2) 
     {
       /* --------------------------------------------
-       *    2 obsevations : triangulation using DLT
+       *    2 observations : triangulation using DLT
        * -------------------------------------------- */ 
        
       inliers = observations;
