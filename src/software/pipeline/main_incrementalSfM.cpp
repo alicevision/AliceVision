@@ -127,7 +127,8 @@ int main(int argc, char **argv)
       "This can be useful to have a quick reconstruction overview. 0 means no limit.")
     ("minNumberOfObservationsForTriangulation", po::value<std::size_t>(&minNbObservationsForTriangulation)->default_value(minNbObservationsForTriangulation),
       "Minimum number of observations to triangulate a point.\n"
-      "Set it to 3 (or more) reduces drastically the noise in the point cloud, but the number of final poses is a little bit reduced (from 1.5% to 11% on the tested datasets).")
+      "Set it to 3 (or more) reduces drastically the noise in the point cloud, but the number of final poses is a little bit reduced (from 1.5% to 11% on the tested datasets).\n"
+      "(temp) Hack: set it to 0 or 1 to use the old triangulation algorithm (using 2 views only) during resection.")
     ("cameraModel", po::value<int>(&userCameraModel)->default_value(userCameraModel),
       "* 1: Pinhole\n"
       "* 2: Pinhole radial 1\n"
@@ -258,8 +259,11 @@ int main(int argc, char **argv)
   sfmEngine.setLocalizerEstimator(robustEstimation::ERobustEstimator_stringToEnum(localizerEstimatorName));
   if (minNbObservationsForTriangulation < 2)
   {
-    ALICEVISION_LOG_ERROR("Error: The value associated to the argument '--minNbObservationsForTriangulation' must be >= 2 ");
-    return EXIT_FAILURE;
+      // TEMPORARY HACK: allows to keep an access to the old triangulatation algorithm (using 2 views only) during resection.
+      minNbObservationsForTriangulation = 0;      
+      
+//    ALICEVISION_LOG_ERROR("Error: The value associated to the argument '--minNbObservationsForTriangulation' must be >= 2 ");
+//    return EXIT_FAILURE;
   }
   sfmEngine.setNbOfObservationsForTriangulation(minNbObservationsForTriangulation);
 

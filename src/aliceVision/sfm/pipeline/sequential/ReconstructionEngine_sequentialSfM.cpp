@@ -295,8 +295,15 @@ void ReconstructionEngine_sequentialSfM::robustResectionOfImages(
 
     // Triangulate
     chrono_start = std::chrono::steady_clock::now();
-    // triangulate(_sfm_data, prevReconstructedViews, newReconstructedViews);
-    triangulateMultiViews_LORANSAC(_sfm_data, prevReconstructedViews, newReconstructedViews);
+    
+    // TEMPORARY HACK: allows to keep an access to the old triangulatation algorithm (using 2 views only) 
+    if (_minNbObservationsForTriangulation == 0)
+      triangulate(_sfm_data, prevReconstructedViews, newReconstructedViews);
+    else
+      triangulateMultiViews_LORANSAC(_sfm_data, prevReconstructedViews, newReconstructedViews);
+    
+    // triangulateMultiViews_LORANSAC(_sfm_data, prevReconstructedViews, newReconstructedViews);
+    
     ALICEVISION_LOG_DEBUG("Triangulation of the " << newReconstructedViews.size() << " newly reconstructed views took " << std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - chrono_start).count() << " msec.");
     
     if (bImageAdded)
