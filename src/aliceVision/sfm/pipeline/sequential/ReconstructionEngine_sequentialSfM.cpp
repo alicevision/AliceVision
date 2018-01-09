@@ -1528,20 +1528,24 @@ void ReconstructionEngine_sequentialSfM::triangulateMultiViews_LORANSAC(SfMData&
   std::map<IndexT, std::set<IndexT>> mapTracksToTriangulate; // <trackId, observations> 
   std::vector<IndexT> setTracksId; // <trackId>
   {
+    std::set<IndexT> allReconstructedViews;
+    allReconstructedViews.insert(previousReconstructedViews.begin(), previousReconstructedViews.end());
+    allReconstructedViews.insert(newReconstructedViews.begin(), newReconstructedViews.end());
+  
 #pragma omp parallel for 
-    for (ptrdiff_t i = 0; i < static_cast<ptrdiff_t>(previousReconstructedViews.size()); ++i)
+    for (ptrdiff_t i = 0; i < static_cast<ptrdiff_t>(allReconstructedViews.size()); ++i)
     {
-      std::set<IndexT>::const_iterator iter = previousReconstructedViews.begin();
+      std::set<IndexT>::const_iterator iter = allReconstructedViews.begin();
       std::advance(iter, i);
-      const IndexT indexPrev = *iter;
+      const IndexT indexAll = *iter;
       
       for(IndexT indexNew: newReconstructedViews)
       {
-        if(indexPrev == indexNew)
+        if(indexAll == indexNew)
           continue;
         
-        const std::size_t I = std::min((IndexT)indexNew, indexPrev);
-        const std::size_t J = std::max((IndexT)indexNew, indexPrev);
+        const std::size_t I = std::min((IndexT)indexNew, indexAll);
+        const std::size_t J = std::max((IndexT)indexNew, indexAll);
         
         // Find track correspondences between I and J
         const std::set<std::size_t> set_viewIndex = { I, J };
@@ -1715,24 +1719,24 @@ void ReconstructionEngine_sequentialSfM::triangulate(SfMData& scene, const std::
     assert(intersection.empty());
   }
   
-  std::set<IndexT> reconstructedViews;
-  reconstructedViews.insert(previousReconstructedViews.begin(), previousReconstructedViews.end());
-  reconstructedViews.insert(newReconstructedViews.begin(), newReconstructedViews.end());
+  std::set<IndexT> allReconstructedViews;
+  allReconstructedViews.insert(previousReconstructedViews.begin(), previousReconstructedViews.end());
+  allReconstructedViews.insert(newReconstructedViews.begin(), newReconstructedViews.end());
   
 #pragma omp parallel for schedule(dynamic)
-  for (ptrdiff_t i = 0; i < static_cast<ptrdiff_t>(reconstructedViews.size()); ++i)
+  for (ptrdiff_t i = 0; i < static_cast<ptrdiff_t>(allReconstructedViews.size()); ++i)
   {
-    std::set<IndexT>::const_iterator iter = reconstructedViews.begin();
+    std::set<IndexT>::const_iterator iter = allReconstructedViews.begin();
     std::advance(iter, i);
-    const IndexT indexPrev = *iter;
+    const IndexT indexAll = *iter;
     
     for(IndexT indexNew: newReconstructedViews)
     {
-      if(indexPrev == indexNew)
+      if(indexAll == indexNew)
         continue;
       
-      const std::size_t I = std::min((IndexT)indexNew, indexPrev);
-      const std::size_t J = std::max((IndexT)indexNew, indexPrev);
+      const std::size_t I = std::min((IndexT)indexNew, indexAll);
+      const std::size_t J = std::max((IndexT)indexNew, indexAll);
       
       // Find track correspondences between I and J
       const std::set<std::size_t> set_viewIndex = { I, J };
