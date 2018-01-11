@@ -174,7 +174,7 @@ int main(int argc, char ** argv)
       std::set<size_t> set_imageIndex;
       set_imageIndex.insert(I);
       set_imageIndex.insert(J);
-      TracksUtilsMap::GetTracksInImages(set_imageIndex, map_tracks, map_tracksCommon);
+      TracksUtilsMap::GetCommonTracksInImages(set_imageIndex, map_tracks, map_tracksCommon);
 
       if (!map_tracksCommon.empty())
       {
