@@ -273,7 +273,20 @@ private:
 
   /// Export statistics in a JSON file
   void exportStatistics(double time_sfm);
-
+  
+  /**
+   * @brief Select the tracks whose are affected by the next triangulation. 
+   * @details A track is considered as triangulable if it is visible by at least one new reconsutructed 
+   * view and at least \c _minNbObservationsForTriangulation (new and previous) reconstructed view.
+   * @param[in] previousReconstructedViews The old reconstructed views.
+   * @param[in] newReconstructedViews The newly reconstructed views.
+   * @param[out] mapTracksToTriangulate A map with the tracks to triangulate and the observations to do it.
+   */
+  void getTracksToTriangulate(
+      const std::set<IndexT> & previousReconstructedViews, 
+      const std::set<IndexT> & newReconstructedViews, 
+      std::map<IndexT, std::set<IndexT> > & mapTracksToTriangulate);      
+    
   //----
   //-- Data
   //----

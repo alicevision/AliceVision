@@ -627,6 +627,7 @@ bool ReconstructionEngine_sequentialSfM::initLandmarkTracks()
     tracksBuilder.ExportToSTL(_map_tracks);
     ALICEVISION_LOG_DEBUG("Build tracks per view");
     track::TracksUtilsMap::computeTracksPerView(_map_tracks, _map_tracksPerView);
+    
     ALICEVISION_LOG_DEBUG("Build tracks pyramid per view");
     computeTracksPyramidPerView(
             _map_tracksPerView, _map_tracks, _sfm_data.views, *_featuresPerView, _pyramidBase, _pyramidDepth, _map_featsPyramidPerView);
@@ -723,7 +724,7 @@ bool ReconstructionEngine_sequentialSfM::getBestInitialImagePairs(std::vector<Pa
 
     aliceVision::track::TracksMap map_tracksCommon;
     const std::set<size_t> set_imageIndex= {I, J};
-    track::TracksUtilsMap::GetTracksInImagesFast(set_imageIndex, _map_tracks, _map_tracksPerView, map_tracksCommon);
+    track::TracksUtilsMap::GetCommonTracksInImagesFast(set_imageIndex, _map_tracks, _map_tracksPerView, map_tracksCommon);
 
     // Copy points correspondences to arrays for relative pose estimation
     const size_t n = map_tracksCommon.size();
@@ -865,7 +866,7 @@ bool ReconstructionEngine_sequentialSfM::makeInitialPair3D(const Pair& current_p
   // use the track to have a more dense match correspondence set
   aliceVision::track::TracksMap map_tracksCommon;
   const std::set<std::size_t> set_imageIndex= {I, J};
-  track::TracksUtilsMap::GetTracksInImagesFast(set_imageIndex, _map_tracks, _map_tracksPerView, map_tracksCommon);
+  track::TracksUtilsMap::GetCommonTracksInImagesFast(set_imageIndex, _map_tracks, _map_tracksPerView, map_tracksCommon);
   
   //-- Copy point to arrays
   const std::size_t n = map_tracksCommon.size();
@@ -1518,60 +1519,110 @@ bool ReconstructionEngine_sequentialSfM::checkAngles(const Vec3 &pt3D, const std
     return false;
 }
 
+/* Previous algo. */
+//void ReconstructionEngine_sequentialSfM::getTracksToTriangulate(const std::set<IndexT>& previousReconstructedViews, 
+//                                                                const std::set<IndexT>& newReconstructedViews, 
+//                                                                std::map<IndexT, std::set<IndexT>> & mapTracksToTriangulate)
+//{
+//  std::set<IndexT> allReconstructedViews;
+//  allReconstructedViews.insert(previousReconstructedViews.begin(), previousReconstructedViews.end());
+//  allReconstructedViews.insert(newReconstructedViews.begin(), newReconstructedViews.end());
+  
+//#pragma omp parallel for 
+//  for (ptrdiff_t i = 0; i < static_cast<ptrdiff_t>(allReconstructedViews.size()); ++i)
+//  {
+//    std::set<IndexT>::const_iterator iter = allReconstructedViews.begin();
+//    std::advance(iter, i);
+//    const IndexT indexAll = *iter;
+    
+//    for(IndexT indexNew: newReconstructedViews)
+//    {
+//      if(indexAll == indexNew)
+//        continue;
+      
+//      const std::size_t I = std::min((IndexT)indexNew, indexAll);
+//      const std::size_t J = std::max((IndexT)indexNew, indexAll);
+//      // Find track correspondences between I and J
+//      const std::set<std::size_t> set_viewIndex = { I, J };
+//      track::TracksMap map_tracksCommonIJ;
+//      track::TracksUtilsMap::GetCommonTracksInImagesFast(set_viewIndex, _map_tracks, _map_tracksPerView, map_tracksCommonIJ);
+      
+//      if (map_tracksCommonIJ.empty())
+//        continue;
+        
+//      // Collect tracksIds
+//      std::set<std::size_t> commonTracksId;
+//      std::transform(map_tracksCommonIJ.begin(), map_tracksCommonIJ.end(),
+//                     std::inserter(commonTracksId, commonTracksId.begin()),
+//                     stl::RetrieveKey());
+      
+//#pragma omp critical        
+//      for (std::size_t trackId : commonTracksId)
+//      {
+//        mapTracksToTriangulate[trackId].insert(I);      
+//        mapTracksToTriangulate[trackId].insert(J);      
+//      } // tracks to reconstruct/update
+//    } // new reconstructed view
+//  } // all recontrusted views
+//}
+
+void ReconstructionEngine_sequentialSfM::getTracksToTriangulate(const std::set<IndexT>& previousReconstructedViews, 
+                                                                const std::set<IndexT>& newReconstructedViews, 
+                                                                std::map<IndexT, std::set<IndexT>> & mapTracksToTriangulate)
+{
+  std::set<IndexT> allReconstructedViews;
+  allReconstructedViews.insert(previousReconstructedViews.begin(), previousReconstructedViews.end());
+  allReconstructedViews.insert(newReconstructedViews.begin(), newReconstructedViews.end());
+  
+  std::set<IndexT> allTracksInNewViews;
+  track::TracksUtilsMap::GetTracksInImagesFast(newReconstructedViews, _map_tracksPerView, allTracksInNewViews);
+  
+  std::set<IndexT>::iterator it;
+#pragma omp parallel private(it)
+  {
+    for (it = allTracksInNewViews.begin(); it != allTracksInNewViews.end(); it++)
+    {
+#pragma omp single nowait
+      {
+        const std::size_t trackId = *it;
+        
+        const track::Track & track = _map_tracks.at(trackId);
+        
+        std::set<IndexT> allViewsSharingTheTrack;
+        std::transform(track.featPerView.begin(), track.featPerView.end(),
+                       std::inserter(allViewsSharingTheTrack, allViewsSharingTheTrack.begin()),
+                       stl::RetrieveKey());
+        
+        std::set<IndexT> allReconstructedViewsSharingTheTrack;
+        std::set_intersection(allViewsSharingTheTrack.begin(), allViewsSharingTheTrack.end(),
+                              allReconstructedViews.begin(), allReconstructedViews.end(),
+                              std::inserter(allReconstructedViewsSharingTheTrack, allReconstructedViewsSharingTheTrack.begin()));
+        
+        if (allReconstructedViewsSharingTheTrack.size() >= _minNbObservationsForTriangulation)
+        {
+#pragma omp critical        
+          mapTracksToTriangulate[trackId] = allReconstructedViewsSharingTheTrack;
+        }
+      }
+    }
+  }
+}
+
 void ReconstructionEngine_sequentialSfM::triangulateMultiViews_LORANSAC(SfMData& scene, const std::set<IndexT>& previousReconstructedViews, const std::set<IndexT>& newReconstructedViews)
 {
   ALICEVISION_LOG_DEBUG("Triangulating (mode: multi-view LO-RANSAC)... ");
-  
+
   // -- Identify the track to triangulate :
   // This map contains all the tracks that will be triangulated (for the first time, or not)
-  // These tracks are seen by at least one new reconstructed view.
+  // These tracks are seen by at least one new reconstructed view.  
   std::map<IndexT, std::set<IndexT>> mapTracksToTriangulate; // <trackId, observations> 
+  getTracksToTriangulate(previousReconstructedViews, newReconstructedViews, mapTracksToTriangulate);
+  
   std::vector<IndexT> setTracksId; // <trackId>
-  {
-    std::set<IndexT> allReconstructedViews;
-    allReconstructedViews.insert(previousReconstructedViews.begin(), previousReconstructedViews.end());
-    allReconstructedViews.insert(newReconstructedViews.begin(), newReconstructedViews.end());
-  
-#pragma omp parallel for 
-    for (ptrdiff_t i = 0; i < static_cast<ptrdiff_t>(allReconstructedViews.size()); ++i)
-    {
-      std::set<IndexT>::const_iterator iter = allReconstructedViews.begin();
-      std::advance(iter, i);
-      const IndexT indexAll = *iter;
-      
-      for(IndexT indexNew: newReconstructedViews)
-      {
-        if(indexAll == indexNew)
-          continue;
-        
-        const std::size_t I = std::min((IndexT)indexNew, indexAll);
-        const std::size_t J = std::max((IndexT)indexNew, indexAll);
-        
-        // Find track correspondences between I and J
-        const std::set<std::size_t> set_viewIndex = { I, J };
-        track::TracksMap map_tracksCommonIJ;
-        track::TracksUtilsMap::GetTracksInImagesFast(set_viewIndex, _map_tracks, _map_tracksPerView, map_tracksCommonIJ);
-        
-        // Collect tracksIds
-        std::set<std::size_t> commonTracksId;
-        std::transform(map_tracksCommonIJ.begin(), map_tracksCommonIJ.end(),
-                       std::inserter(commonTracksId, commonTracksId.begin()),
-                       stl::RetrieveKey());
-        
-#pragma omp critical        
-        for (std::size_t trackId : commonTracksId)
-        {
-          mapTracksToTriangulate[trackId].insert(I);      
-          mapTracksToTriangulate[trackId].insert(J);      
-        } // tracks to reconstruct/update
-      } // new reconstructed view
-    } // all recontrusted views
-
-    std::transform(mapTracksToTriangulate.begin(), mapTracksToTriangulate.end(),
-                   std::inserter(setTracksId, setTracksId.begin()),
-                   stl::RetrieveKey());
-  }
-  
+  std::transform(mapTracksToTriangulate.begin(), mapTracksToTriangulate.end(),
+                 std::inserter(setTracksId, setTracksId.begin()),
+                 stl::RetrieveKey());
+                   
 #pragma omp parallel for 
   for (int i = 0; i < setTracksId.size(); i++) // each track (already reconstructed or not)
   {
@@ -1741,7 +1792,7 @@ void ReconstructionEngine_sequentialSfM::triangulate(SfMData& scene, const std::
       // Find track correspondences between I and J
       const std::set<std::size_t> set_viewIndex = { I, J };
       track::TracksMap map_tracksCommonIJ;
-      track::TracksUtilsMap::GetTracksInImagesFast(set_viewIndex, _map_tracks, _map_tracksPerView, map_tracksCommonIJ);
+      track::TracksUtilsMap::GetCommonTracksInImagesFast(set_viewIndex, _map_tracks, _map_tracksPerView, map_tracksCommonIJ);
 
       const View* viewI = scene.GetViews().at(I).get();
       const View* viewJ = scene.GetViews().at(J).get();
