@@ -30,8 +30,14 @@ public:
    * @param[in] points The 3D points to add
    */
   void addPoints(const sfm::Landmarks &points,
+                 const sfm::LandmarksUncertainty &landmarksUncertainty,
                  bool withVisibility=true);
 
+  inline void addPoints(const sfm::Landmarks &points,
+                        bool withVisibility=true)
+  {
+      addPoints(points, sfm::LandmarksUncertainty(), withVisibility);
+  }
 
   /**
    * @brief Add a camera rig
@@ -65,8 +71,9 @@ public:
   void appendCamera(const std::string& cameraName,
                     const View& view,
                     const std::string& viewImagePath,
-                    const camera::Pinhole* intrinsic,
-                    const geometry::Pose3& pose);
+                    const camera::Pinhole& intrinsic,
+                    const geometry::Pose3& pose,
+                    const Vec6* uncertainty = nullptr);
   /**
    * @brief Add a single camera
    *
@@ -80,8 +87,9 @@ public:
   void appendCamera(const std::string& cameraName,
                     const View& view,
                     const std::string& viewImagePath,
-                    const camera::Pinhole* intrinsic,
+                    const camera::Pinhole& intrinsic,
                     const geometry::Pose3& pose,
+                    const Vec6* uncertainty,
                     Alembic::Abc::OObject& parent);
 
   /**

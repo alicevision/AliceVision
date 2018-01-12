@@ -66,94 +66,108 @@ AlembicExporter::~AlembicExporter()
 {
 }
 
-void AlembicExporter::addPoints(const sfm::Landmarks &landmarks, bool withVisibility)
+void AlembicExporter::addPoints(const sfm::Landmarks &landmarks, const sfm::LandmarksUncertainty &landmarksUncertainty, bool withVisibility)
 {
   if(landmarks.empty())
     return;
 
-  // Fill vector with the values taken from AliceVision 
-  std::vector<V3f> positions;
-  std::vector<Imath::C3f> colors;
-  std::vector<Alembic::Util::uint32_t> descTypes;
-  positions.reserve(landmarks.size());
-  descTypes.reserve(landmarks.size());
+    std::vector<V3f> positions;
+    std::vector<Imath::C3f> colors;
+    std::vector<Alembic::Util::uint32_t> descTypes;
+    positions.reserve(landmarks.size());
+    descTypes.reserve(landmarks.size());
 
-  // For all the 3d points in the hash_map
-  for(const auto landmark : landmarks)
-  {
-    const aliceVision::Vec3& pt = landmark.second.X;
-    const aliceVision::image::RGBColor& color = landmark.second.rgb;
-    positions.emplace_back(pt[0], pt[1], pt[2]);
-    colors.emplace_back(color.r()/255.f, color.g()/255.f, color.b()/255.f);
-    descTypes.emplace_back(static_cast<Alembic::Util::uint8_t>(landmark.second.descType));
-  }
-
-  std::vector<Alembic::Util::uint64_t> ids(positions.size());
-  std::iota(begin(ids), end(ids), 0);
-
-  OPoints partsOut(_data->_mvgPointCloud, "particleShape1");
-  OPointsSchema &pSchema = partsOut.getSchema();
-
-  OPointsSchema::Sample psamp(std::move(V3fArraySample(positions)), std::move(UInt64ArraySample(ids)));
-  pSchema.set(psamp);
-
-  OCompoundProperty arbGeom = pSchema.getArbGeomParams();
-
-  C3fArraySample cval_samp(&colors[0], colors.size());
-  OC3fGeomParam::Sample color_samp(cval_samp, kVertexScope);
-
-  OC3fGeomParam rgbOut(arbGeom, "color", false, kVertexScope, 1);
-  rgbOut.set(color_samp);
-
-  OCompoundProperty userProps = pSchema.getUserProperties();
-
-  OUInt32ArrayProperty descTypeOut(userProps, "mvg_describerType");
-  descTypeOut.set(descTypes);
-
-  if(withVisibility)
-  {
-    std::vector<::uint32_t> visibilitySize;
-    visibilitySize.reserve(positions.size());
+    // For all the 3d points in the hash_map
     for(const auto landmark : landmarks)
     {
-      visibilitySize.emplace_back(landmark.second.observations.size());
+      const aliceVision::Vec3& pt = landmark.second.X;
+      const aliceVision::image::RGBColor& color = landmark.second.rgb;
+      positions.emplace_back(pt[0], pt[1], pt[2]);
+      colors.emplace_back(color.r()/255.f, color.g()/255.f, color.b()/255.f);
+      descTypes.emplace_back(static_cast<Alembic::Util::uint8_t>(landmark.second.descType));
     }
-    std::size_t nbObservations = std::accumulate(visibilitySize.begin(), visibilitySize.end(), 0);
-    
-    // Use std::vector<::uint32_t> and std::vector<float> instead of std::vector<V2i> and std::vector<V2f>
-    // Because Maya don't import them correctly
-    std::vector<::uint32_t> visibilityIds;
-    visibilityIds.reserve(nbObservations*2);
-    std::vector<float>featPos2d;
-    featPos2d.reserve(nbObservations*2);
 
-    for(sfm::Landmarks::const_iterator itLandmark = landmarks.cbegin(), itLandmarkEnd = landmarks.cend();
-       itLandmark != itLandmarkEnd; ++itLandmark)
+    std::vector<Alembic::Util::uint64_t> ids(positions.size());
+    std::iota(begin(ids), end(ids), 0);
+
+    OPoints partsOut(_data->_mvgPointCloud, "particleShape1");
+    OPointsSchema &pSchema = partsOut.getSchema();
+
+    OPointsSchema::Sample psamp(std::move(V3fArraySample(positions)), std::move(UInt64ArraySample(ids)));
+    pSchema.set(psamp);
+
+    OCompoundProperty arbGeom = pSchema.getArbGeomParams();
+
+    C3fArraySample cval_samp(&colors[0], colors.size());
+    OC3fGeomParam::Sample color_samp(cval_samp, kVertexScope);
+
+    OC3fGeomParam rgbOut(arbGeom, "color", false, kVertexScope, 1);
+    rgbOut.set(color_samp);
+
+    OCompoundProperty userProps = pSchema.getUserProperties();
+
+    OUInt32ArrayProperty descTypeOut(userProps, "mvg_describerType");
+    descTypeOut.set(descTypes);
+
+    if(withVisibility)
     {
-      const sfm::Observations& observations = itLandmark->second.observations;
-      for(const auto vObs: observations )
+      std::vector<::uint32_t> visibilitySize;
+      visibilitySize.reserve(positions.size());
+      for(const auto landmark : landmarks)
       {
-        const sfm::Observation& obs = vObs.second;
-        // (View ID, Feature ID)
-        visibilityIds.emplace_back(vObs.first);
-        visibilityIds.emplace_back(obs.id_feat);
-        // Feature 2D position (x, y))
-        featPos2d.emplace_back(obs.x[0]);
-        featPos2d.emplace_back(obs.x[1]);
+        visibilitySize.emplace_back(landmark.second.observations.size());
       }
+      std::size_t nbObservations = std::accumulate(visibilitySize.begin(), visibilitySize.end(), 0);
+    
+      // Use std::vector<::uint32_t> and std::vector<float> instead of std::vector<V2i> and std::vector<V2f>
+      // Because Maya don't import them correctly
+      std::vector<::uint32_t> visibilityIds;
+      visibilityIds.reserve(nbObservations*2);
+      std::vector<float>featPos2d;
+      featPos2d.reserve(nbObservations*2);
+
+      for(sfm::Landmarks::const_iterator itLandmark = landmarks.cbegin(), itLandmarkEnd = landmarks.cend();
+         itLandmark != itLandmarkEnd; ++itLandmark)
+      {
+        const sfm::Observations& observations = itLandmark->second.observations;
+        for(const auto vObs: observations )
+        {
+          const sfm::Observation& obs = vObs.second;
+          // (View ID, Feature ID)
+          visibilityIds.emplace_back(vObs.first);
+          visibilityIds.emplace_back(obs.id_feat);
+          // Feature 2D position (x, y))
+          featPos2d.emplace_back(obs.x[0]);
+          featPos2d.emplace_back(obs.x[1]);
+        }
+      }
+
+      OUInt32ArrayProperty propVisibilitySize( userProps, "mvg_visibilitySize" );
+      propVisibilitySize.set(visibilitySize);
+
+      // (viewID, featID)
+      OUInt32ArrayProperty propVisibilityIds( userProps, "mvg_visibilityIds" );
+      propVisibilityIds.set(visibilityIds);
+
+      // Feature position (x,y)
+      OFloatArrayProperty propFeatPos2d( userProps, "mvg_visibilityFeatPos" );
+      propFeatPos2d.set(featPos2d);
     }
+    if(!landmarksUncertainty.empty())
+    {
+      std::vector<V3d> uncertainties;
 
-    OUInt32ArrayProperty propVisibilitySize( userProps, "mvg_visibilitySize" );
-    propVisibilitySize.set(visibilitySize);
-
-    // (viewID, featID)
-    OUInt32ArrayProperty propVisibilityIds( userProps, "mvg_visibilityIds" );
-    propVisibilityIds.set(visibilityIds);
-
-    // Feature position (x,y)
-    OFloatArrayProperty propFeatPos2d( userProps, "mvg_visibilityFeatPos" );
-    propFeatPos2d.set(featPos2d);
-  }
+      std::size_t indexLandmark = 0;
+      for (Landmarks::const_iterator itLandmark = landmarks.begin(); itLandmark != landmarks.end(); ++itLandmark, ++indexLandmark)
+      {
+        const IndexT idLandmark = itLandmark->first;
+        const Vec3& u = landmarksUncertainty.at(idLandmark);
+        uncertainties.emplace_back(u[0], u[1], u[2]);
+      }
+      // Uncertainty eigen values (x,y,z)
+      OV3dArrayProperty propUncertainty(userProps, "mvg_uncertaintyEigenValues");
+      propUncertainty.set(uncertainties);
+    }
 }
 
 
@@ -217,8 +231,9 @@ void AlembicExporter::appendCameraRig(IndexT rigId,
     appendCamera(stlplus::basename_part(viewsImagePaths.at(i)),
                  views.at(i),
                  viewsImagePaths.at(i),
-                 intrinsics.at(i),
+                 *intrinsics.at(i),
                  subPoses.at(i).pose,
+                 nullptr,
                  xform);
   }
 }
@@ -226,28 +241,32 @@ void AlembicExporter::appendCameraRig(IndexT rigId,
 void AlembicExporter::appendCamera(const std::string& cameraName,
                                    const View& view,
                                    const std::string& viewImagePath,
-                                   const camera::Pinhole* intrinsic,
-                                   const geometry::Pose3& pose)
+                                   const camera::Pinhole &intrinsic,
+                                   const geometry::Pose3& pose,
+                                   const Vec6* uncertainty)
 {
   appendCamera(cameraName,
                view,
                viewImagePath,
                intrinsic,
                pose,
+               uncertainty,
                _data->_mvgCameras);
 }
 
 void AlembicExporter::appendCamera(const std::string& cameraName,
                                    const View& view,
                                    const std::string& viewImagePath,
-                                   const camera::Pinhole* intrinsic,
+                                   const camera::Pinhole& intrinsic,
                                    const geometry::Pose3& pose,
+                                   const Vec6* uncertainty,
                                    Alembic::Abc::OObject& parent)
 {
   // Use a common sensor width if we don't have this information.
   // We chose a full frame 24x36 camera
   float sensorWidth_mm = 36.0;
 
+  // TODO FACA: move sensor_width to intrinsics?
   static const std::string kSensorWidth("sensor_width");
   if(view.hasMetadata(kSensorWidth))
     sensorWidth_mm = std::stof(view.getMetadata(kSensorWidth));
@@ -297,12 +316,12 @@ void AlembicExporter::appendCamera(const std::string& cameraName,
   CameraSample camSample;
 
   // Take the max of the image size to handle the case where the image is in portrait mode 
-  const float imgWidth = intrinsic->w();
-  const float imgHeight = intrinsic->h();
+  const float imgWidth = intrinsic.w();
+  const float imgHeight = intrinsic.h();
   const float sensorWidth_pix = std::max(imgWidth, imgHeight);
   const float sensorHeight_pix = std::min(imgWidth, imgHeight);
   //const float imgRatio = sensorHeight_pix / sensorWidth_pix;
-  const float focalLength_pix = intrinsic->focal();
+  const float focalLength_pix = intrinsic.focal();
   //const float sensorHeight_mm = sensorWidth_mm * imgRatio;
   const float focalLength_mm = sensorWidth_mm * focalLength_pix / sensorWidth_pix;
   const float pix2mm = sensorWidth_mm / sensorWidth_pix;
@@ -329,6 +348,7 @@ void AlembicExporter::appendCamera(const std::string& cameraName,
     OStringProperty imagePlane(userProps, "mvg_imagePath");
     imagePlane.set(viewImagePath.c_str());
   }
+  // TODO: store metadata
 
   OUInt32Property propViewId(userProps, "mvg_viewId");
   propViewId.set(view.getViewId());
@@ -340,9 +360,9 @@ void AlembicExporter::appendCamera(const std::string& cameraName,
   propIntrinsicId.set(view.getIntrinsicId());
   
   OStringProperty mvg_intrinsicType(userProps, "mvg_intrinsicType");
-  mvg_intrinsicType.set(intrinsic->getTypeStr());
+  mvg_intrinsicType.set(intrinsic.getTypeStr());
   
-  std::vector<double> intrinsicParams = intrinsic->getParams();
+  std::vector<double> intrinsicParams = intrinsic.getParams();
   ODoubleArrayProperty mvg_intrinsicParams(userProps, "mvg_intrinsicParams");
   mvg_intrinsicParams.set(intrinsicParams);
 
@@ -357,6 +377,13 @@ void AlembicExporter::appendCamera(const std::string& cameraName,
 
   OUInt32Property propSubPoseId(userProps, "mvg_resectionId");
   propSubPoseId.set(view.getResectionId());
+
+  if(uncertainty)
+  {
+      std::vector<double> uncertaintyParams(uncertainty->data(), uncertainty->data()+6);
+      ODoubleArrayProperty mvg_uncertaintyParams(userProps, "mvg_uncertaintyEigenValues");
+      mvg_uncertaintyParams.set(uncertaintyParams);
+  }
 
   camObj.getSchema().set(camSample);
 }
@@ -536,13 +563,17 @@ void AlembicExporter::add(const sfm::SfMData& sfmData, sfm::ESfMData flags_part)
       }
 
       const std::string& viewImagePath = view->getImagePath();
-      
-      // TODO: store full metadata
+
+      const Vec6* uncertainty = NULL;
+      if((flags_part & sfm::ESfMData::POSES_UNCERTAINTY) && !sfmData._posesUncertainty.empty())
+          uncertainty = &sfmData._posesUncertainty.at(view->getPoseId());
+
       appendCamera(stlplus::basename_part(view->getImagePath()),
                    *view,
                    viewImagePath,
-                   intrinsic,
-                   pose);
+                   *intrinsic,
+                   pose,
+                   uncertainty);
     }
 
     for(const auto rigIt : viewRigs)
@@ -583,7 +614,11 @@ void AlembicExporter::add(const sfm::SfMData& sfmData, sfm::ESfMData flags_part)
   }
   if(flags_part & sfm::ESfMData::STRUCTURE)
   {
-    addPoints(sfmData.GetLandmarks(), (flags_part & sfm::ESfMData::OBSERVATIONS));
+    const sfm::LandmarksUncertainty noUncertainty;
+
+    addPoints(sfmData.GetLandmarks(),
+              (flags_part & sfm::ESfMData::LANDMARKS_UNCERTAINTY) ? sfmData._landmarksUncertainty : noUncertainty,
+              (flags_part & sfm::ESfMData::OBSERVATIONS));
   }
 }
 

@@ -7,7 +7,7 @@
 #include <aliceVision/config.hpp>
 #include <aliceVision/alicevision_omp.hpp>
 
-#include "ceres/rotation.h"
+#include <ceres/rotation.h>
 
 namespace aliceVision {
 namespace sfm {
@@ -83,6 +83,7 @@ ceres::CostFunction * createRigCostFunctionFromIntrinsics(IntrinsicBase * intrin
 void addPose(ceres::Problem& problem,
              BA_Refine refineOptions,
              const Pose3 & pose,
+             std::vector<double*>& out_parameterBlocks,
              std::vector<double>& out_poseParams)
 {
   const Mat3 R = pose.rotation();
@@ -100,6 +101,7 @@ void addPose(ceres::Problem& problem,
 
   double * parameter_block = &out_poseParams[0];
   problem.AddParameterBlock(parameter_block, 6);
+  out_parameterBlocks.push_back(parameter_block);
   // Keep the camera extrinsics constants
   if (!(refineOptions & BA_REFINE_TRANSLATION) && !(refineOptions & BA_REFINE_ROTATION))
   {
@@ -192,9 +194,7 @@ BundleAdjustmentCeres::BundleAdjustmentCeres(
   : _aliceVision_options(options)
 {}
 
-bool BundleAdjustmentCeres::Adjust(
-  SfMData & sfm_data,     // the SfM scene to refine
-  BA_Refine refineOptions)
+void BundleAdjustmentCeres::createProblem(SfMData & sfm_data, BA_Refine refineOptions, ceres::Problem& problem)
 {
   // Ensure we are not using incompatible options:
   //  - BA_REFINE_INTRINSICS_OPTICALCENTER_ALWAYS and BA_REFINE_INTRINSICS_OPTICALCENTER_IF_ENOUGH_DATA cannot be used at the same time
@@ -209,22 +209,17 @@ bool BundleAdjustmentCeres::Adjust(
   // parameters for cameras and points are added automatically.
   //----------
 
-  ceres::Problem problem;
+  parameterBlocks.reserve(sfm_data.GetPoses().size() + sfm_data.structure.size());
 
-  // Data wrapper for refinement:
-  HashMap<IndexT, std::vector<double> > map_poses;
-  
   // Setup Poses data & subparametrization
   for (Poses::const_iterator itPose = sfm_data.GetPoses().begin(); itPose != sfm_data.GetPoses().end(); ++itPose)
   {
     const IndexT indexPose = itPose->first;
     const Pose3& pose = itPose->second;
 
-    addPose(problem, refineOptions, pose, map_poses[indexPose]);
+    addPose(problem, refineOptions, pose, parameterBlocks, map_poses[indexPose]);
   }
 
-  // Setup rig sub-poses
-  HashMap<IndexT, HashMap<IndexT, std::vector<double>>> map_subposes;
   for(const auto& rigIt : sfm_data.getRigs())
   {
     const IndexT rigId = rigIt.first;
@@ -238,7 +233,7 @@ bool BundleAdjustmentCeres::Adjust(
       if(rigSubPose.status == ERigSubPoseStatus::UNINITIALIZED)
         continue;
 
-      addPose(problem, refineOptions, rigSubPose.pose, map_subposes[rigId][subPoseId]);
+      addPose(problem, refineOptions, rigSubPose.pose, parameterBlocks, map_subposes[rigId][subPoseId]);
     }
   }
 
@@ -266,7 +261,6 @@ bool BundleAdjustmentCeres::Adjust(
     }
   }
 
-  HashMap<IndexT, std::vector<double> > map_intrinsics;
   // Setup Intrinsics data & subparametrization
   for(const auto& itIntrinsic: sfm_data.GetIntrinsics())
   {
@@ -364,7 +358,6 @@ bool BundleAdjustmentCeres::Adjust(
   ceres::LossFunction * p_LossFunction = new ceres::HuberLoss(Square(4.0));
   // TODO: make the LOSS function and the parameter an option
 
-
   // For all visibility add reprojections errors:
   for(auto& landmarkIt: sfm_data.structure)
   {
@@ -409,9 +402,34 @@ bool BundleAdjustmentCeres::Adjust(
           landmarkIt.second.X.data()); //Do we need to copy 3D point to avoid false motion, if failure ?
       }
     }
+    parameterBlocks.push_back(landmarkIt.second.X.data());
     if (!(refineOptions & BA_REFINE_STRUCTURE))
       problem.SetParameterBlockConstant(landmarkIt.second.X.data());
   }
+}
+
+void BundleAdjustmentCeres::createJacobian(SfMData & sfm_data, BA_Refine refineOptions, ceres::CRSMatrix &jacobian)
+{
+  ceres::Problem problem;
+  createProblem(sfm_data, refineOptions, problem);
+
+  // Configure Jacobian engine
+  double cost = 0.0;
+  ceres::Problem::EvaluateOptions evalOpt;
+  evalOpt.parameter_blocks = parameterBlocks;
+  evalOpt.num_threads = 8;
+  evalOpt.apply_loss_function = true;
+
+  // create Jacobain
+  problem.Evaluate(evalOpt, &cost, NULL, NULL, &jacobian);
+}
+
+bool BundleAdjustmentCeres::Adjust(
+  SfMData & sfm_data,     // the SfM scene to refine
+  BA_Refine refineOptions)
+{
+  ceres::Problem problem;
+  createProblem(sfm_data, refineOptions, problem);
 
   // Configure a BA engine and run it
   //  Make Ceres automatically detect the bundle structure.
@@ -489,6 +507,10 @@ bool BundleAdjustmentCeres::Adjust(
   }
 
   // Update camera intrinsics with refined data
+  const bool refineIntrinsicsOpticalCenter = (refineOptions & BA_REFINE_INTRINSICS_OPTICALCENTER_ALWAYS) || (refineOptions & BA_REFINE_INTRINSICS_OPTICALCENTER_IF_ENOUGH_DATA);
+  const bool refineIntrinsics = (refineOptions & BA_REFINE_INTRINSICS_FOCAL) ||
+                                (refineOptions & BA_REFINE_INTRINSICS_DISTORTION) ||
+                                refineIntrinsicsOpticalCenter;
   if (refineIntrinsics)
   {
     for (const auto& intrinsicsV: map_intrinsics)

@@ -33,6 +33,10 @@ using Landmarks = HashMap<IndexT, Landmark>;
 /// Define a collection of Rig
 using Rigs = std::map<IndexT, Rig>;
 
+using PosesUncertainty = HashMap<IndexT, Vec6>;
+using LandmarksUncertainty = HashMap<IndexT, Vec3>;
+
+
 /// Generic SfM data container
 /// Store structure and camera properties:
 class SfMData
@@ -46,6 +50,10 @@ public:
   Landmarks structure;
   /// Controls points (stored as Landmarks (id_feat has no meaning here))
   Landmarks control_points;
+
+  PosesUncertainty _posesUncertainty;
+  LandmarksUncertainty _landmarksUncertainty;
+
   /// Feature folder path
   std::string _featureFolder;
   /// Matching folder path

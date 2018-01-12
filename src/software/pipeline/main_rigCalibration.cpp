@@ -425,7 +425,7 @@ int main(int argc, char** argv)
         exporter.appendCamera("camera"+std::to_string(idCamera)+"."+myToString(currentFrame,4),
                               sfm::View(subMediaFilepath, currentFrame, currentFrame),
                               subMediaFilepath,
-                              &queryIntrinsics,
+                              queryIntrinsics,
                               localizationResult.getPose());
       }
       else
@@ -434,7 +434,7 @@ int main(int argc, char** argv)
         exporter.appendCamera("camera"+std::to_string(idCamera)+".V."+myToString(currentFrame,4),
                               sfm::View(subMediaFilepath, currentFrame, currentFrame),
                               subMediaFilepath,
-                              &queryIntrinsics,
+                              queryIntrinsics,
                               localizationResult.getPose());
       }
 #endif
