@@ -778,7 +778,7 @@ bool ReconstructionEngine_sequentialSfM::getBestInitialImagePairs(std::vector<Pa
         auto iter = map_tracksCommon[trackId].featPerView.begin();
         const Vec2 featI = _featuresPerView->getFeatures(I, map_tracksCommon[trackId].descType)[iter->second].coords().cast<double>();
         const Vec2 featJ = _featuresPerView->getFeatures(J, map_tracksCommon[trackId].descType)[(++iter)->second].coords().cast<double>();
-        vec_angles[i] = AngleBetweenRay(pose_I, cam_I, pose_J, cam_J, featI, featJ);
+        vec_angles[i] = AngleBetweenRays(pose_I, cam_I, pose_J, cam_J, featI, featJ);
         validCommonTracksIds[i] = trackId;
         ++i;
       }
@@ -1508,7 +1508,7 @@ bool ReconstructionEngine_sequentialSfM::checkAngles(const Vec3 &pt3D, const std
       {
         if (viewIdA < viewIdB)
         {
-          double angle_deg = AngleBetweenRay(scene.getPose(*scene.GetViews().at(viewIdA).get()), 
+          double angle_deg = AngleBetweenRays(scene.getPose(*scene.GetViews().at(viewIdA).get()), 
                                              scene.getPose(*scene.GetViews().at(viewIdB).get()),
                                              pt3D);
           if (angle_deg >= kMinAngle)
@@ -1675,7 +1675,7 @@ void ReconstructionEngine_sequentialSfM::triangulateMultiViews_LORANSAC(SfMData&
       const double& acThresholdI = (acThresholdItI != _map_ACThreshold.end()) ? acThresholdItI->second : 4.0;
       const double& acThresholdJ = (acThresholdItJ != _map_ACThreshold.end()) ? acThresholdItJ->second : 4.0;
       
-      if (AngleBetweenRay(poseI, camI, poseJ, camJ, xI, xJ) < _minAngleForTriangulation || 
+      if (AngleBetweenRays(poseI, camI, poseJ, camJ, xI, xJ) < _minAngleForTriangulation || 
           poseI.depth(X_euclidean) < 0 || 
           poseJ.depth(X_euclidean) < 0 || 
           camI->residual(poseI, X_euclidean, xI).norm() > acThresholdI || 
@@ -1868,7 +1868,7 @@ void ReconstructionEngine_sequentialSfM::triangulate(SfMData& scene, const std::
           //  - Check angle (small angle leads imprecise triangulation)
           //  - Check positive depth
           //  - Check residual values
-          const double angle = AngleBetweenRay(poseI, camI, poseJ, camJ, xI, xJ);
+          const double angle = AngleBetweenRays(poseI, camI, poseJ, camJ, xI, xJ);
           const Vec2 residualI = camI->residual(poseI, X_euclidean, xI);
           const Vec2 residualJ = camJ->residual(poseJ, X_euclidean, xJ);
           

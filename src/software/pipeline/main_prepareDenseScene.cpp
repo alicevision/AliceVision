@@ -121,7 +121,7 @@ void retrieveSeedsPerView(
         const geometry::Pose3& poseB = sfm_data.GetPoses().at(viewB.getPoseId());
         const Pinhole * intrinsicsB = dynamic_cast<const Pinhole*>(sfm_data.GetIntrinsics().at(viewB.getIntrinsicId()).get());
 
-        const double angle = AngleBetweenRay(
+        const double angle = AngleBetweenRays(
           poseA, intrinsicsA, poseB, intrinsicsB, obsA.second.x, obsB.second.x);
  
         if(angle < minAngle)
