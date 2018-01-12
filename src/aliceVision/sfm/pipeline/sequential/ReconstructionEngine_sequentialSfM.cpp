@@ -1568,7 +1568,7 @@ bool ReconstructionEngine_sequentialSfM::checkAngles(const Vec3 &pt3D, const std
 
 void ReconstructionEngine_sequentialSfM::getTracksToTriangulate(const std::set<IndexT>& previousReconstructedViews, 
                                                                 const std::set<IndexT>& newReconstructedViews, 
-                                                                std::map<IndexT, std::set<IndexT>> & mapTracksToTriangulate)
+                                                                std::map<IndexT, std::set<IndexT>> & mapTracksToTriangulate) const
 {
   std::set<IndexT> allReconstructedViews;
   allReconstructedViews.insert(previousReconstructedViews.begin(), previousReconstructedViews.end());
@@ -1580,7 +1580,7 @@ void ReconstructionEngine_sequentialSfM::getTracksToTriangulate(const std::set<I
   std::set<IndexT>::iterator it;
 #pragma omp parallel private(it)
   {
-    for (it = allTracksInNewViews.begin(); it != allTracksInNewViews.end(); it++)
+    for (it = allTracksInNewViews.begin(); it != allTracksInNewViews.end(); ++it)
     {
 #pragma omp single nowait
       {
