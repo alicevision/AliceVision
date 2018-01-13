@@ -333,7 +333,7 @@ public:
     void leaveLargestFullSegmentOnly();
     staticVector<float>* computeSegmentsSurfaceArea(bool full, staticVector<int>& colors, int nsegments);
 
-    mv_mesh* createMesh();
+    mv_mesh* createMesh(bool filterHelperPointsTriangles = true);
     staticVector<rgb>* getPtsColorsByNCams();
 
     void initTetrahedralizationFromMeshTrianglesCenter(mv_mesh* mesh, bool _addPointsToPreventSingularities);

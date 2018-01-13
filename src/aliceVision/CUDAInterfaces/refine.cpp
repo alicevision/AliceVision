@@ -290,7 +290,7 @@ void visualiseTrisVisFile(std::string wrlPrefix, std::string trisVisFileName, mu
             }
         }
 
-        mv_mesh* me1 = me->generateMeshFromTrianglesSubset(visTris, NULL);
+        mv_mesh* me1 = me->generateMeshFromTrianglesSubset(*visTris, NULL);
         mv_output3D* o3d = new mv_output3D(mp);
         std::string fileNameWrl = wrlPrefix + num2strFourDecimal(rc) + ".wrl";
         o3d->saveMvMeshToWrl(me1, fileNameWrl);

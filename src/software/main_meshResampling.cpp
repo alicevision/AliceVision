@@ -38,6 +38,7 @@ int main(int argc, char* argv[])
     int minVertices = 0;
     int maxVertices = 0;
     unsigned int nbLloydIter = 40;
+    bool flipNormals = false;
 
     po::options_description allParams("AliceVision meshResampling");
 
@@ -59,7 +60,9 @@ int main(int argc, char* argv[])
         ("maxVertices", po::value<int>(&maxVertices)->default_value(maxVertices),
             "Max number of output vertices.")
         ("nbLloydIter", po::value<unsigned int>(&nbLloydIter)->default_value(nbLloydIter),
-            "Number of iterations for Lloyd pre-smoothing.");
+            "Number of iterations for Lloyd pre-smoothing.")
+        ("flipNormals", po::value<bool>(&flipNormals)->default_value(flipNormals),
+            "Option to flip face normals. It can be needed as it depends on the vertices order in triangles and the convention change from one software to another.");
 
     allParams.add(requiredParams).add(optionalParams);
 
@@ -164,6 +167,13 @@ int main(int argc, char* argv[])
     {
         ALICEVISION_CERR("Failed: the output mesh is empty.");
         return 1;
+    }
+    if(flipNormals)
+    {
+        for(GEO::index_t i = 0; i < M_out.facets.nb(); ++i)
+        {
+            M_out.facets.flip(i);
+        }
     }
 
     ALICEVISION_COUT("Save mesh");

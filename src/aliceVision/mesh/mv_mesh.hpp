@@ -139,7 +139,7 @@ public:
     staticVector<int>* getVisibleTrianglesIndexes(staticVector<float>* depthMap, const multiviewParams* mp, int rc, int w,
                                                   int h);
 
-    mv_mesh* generateMeshFromTrianglesSubset(staticVector<int>* visTris, staticVector<int>** ptIdToNewPtId);
+    mv_mesh* generateMeshFromTrianglesSubset(const staticVector<int> &visTris, staticVector<int>** out_ptIdToNewPtId) const;
 
     void getNotOrientedEdges(staticVector<staticVector<int>*>** edgesNeighTris, staticVector<pixel>** edgesPointsPairs);
     staticVector<pixel>* getNotOrientedEdgesAsPointsPairs();
@@ -160,8 +160,7 @@ public:
     float computeTriangleMaxEdgeLength(int idTri) const;
     float computeTriangleAverageEdgeLength(int idTri);
 
-    void removeFreePointsFromMesh();
-    void removeFreePointsFromMesh(staticVector<int>** ptIdToNewPtId);
+    void removeFreePointsFromMesh(staticVector<int>** out_ptIdToNewPtId = nullptr);
 
     void letJustTringlesIdsInMesh(staticVector<int>* trisIdsToStay);
 

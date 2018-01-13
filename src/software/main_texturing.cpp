@@ -3,6 +3,7 @@
 // v. 2.0. If a copy of the MPL was not distributed with this file,
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
+#include <aliceVision/mesh/meshVisibility.hpp>
 #include <aliceVision/delaunaycut/mv_delaunay_GC.hpp>
 #include <aliceVision/delaunaycut/mv_delaunay_meshSmooth.hpp>
 #include <aliceVision/largeScale/reconstructionPlan.hpp>
@@ -18,15 +19,6 @@
 namespace bfs = boost::filesystem;
 namespace po = boost::program_options;
 
-bool checkHardwareCompatibility()
-{
-    if(listCUDADevices(false) < 1)
-    {
-        std::cerr << "ERROR: no CUDA capable devices were detected." << std::endl;
-        return false;
-    }
-    return true;
-}
 
 bfs::path absolutePathNoExt(const bfs::path& p)
 {
@@ -71,7 +63,7 @@ int main(int argc, char* argv[])
             "Texture downscale factor")
         ("inputMesh", po::value<std::string>(&inputMeshFilepath),
             "Optional input mesh to texture. By default, it will texture the inputReconstructionMesh.")
-        ("flipNormals", po::bool_switch(&flipNormals),
+        ("flipNormals", po::value<bool>(&flipNormals)->default_value(flipNormals),
             "Option to flip face normals. It can be needed as it depends on the vertices order in triangles and the convention change from one software to another.");
 
     allParams.add(requiredParams).add(optionalParams);
@@ -103,10 +95,6 @@ int main(int argc, char* argv[])
       return EXIT_FAILURE;
     }
 
-    // check hardware compatibility
-    if(!checkHardwareCompatibility())
-        return EXIT_FAILURE;
-
     ALICEVISION_COUT("ini file: " << iniFilepath);
     ALICEVISION_COUT("inputMesh: " << inputMeshFilepath);
 
@@ -131,7 +119,7 @@ int main(int argc, char* argv[])
 
     bfs::path reconstructionMeshFolder = bfs::path(inputDenseReconstruction).parent_path();
 
-    staticVector<staticVector<int>*>* ptsCams = loadArrayOfArraysFromFile<int>((reconstructionMeshFolder/"meshPtsCamsFromDGC.bin").string());
+    mesh::PointsVisibility* ptsCams = loadArrayOfArraysFromFile<int>((reconstructionMeshFolder/"meshPtsCamsFromDGC.bin").string());
     if(ptsCams->size() != mesh.me->pts->size())
         throw std::runtime_error("Error: Reference mesh and associated visibilities don't have the same size.");
     // filterPtsCamsByMinimalPixelSize(refMesh, refPtsCams, &mp);
@@ -144,14 +132,14 @@ int main(int argc, char* argv[])
     {
         ALICEVISION_COUT("An external input mesh is provided, so we remap the visibility from the reconstruction on it.");
         // remap visibilities from reconstruction onto input mesh
-        mv_delaunay_GC delaunayGC(&mp, &pc);
-        delaunayGC.initTetrahedralizationFromMeshVertices(mesh.me, false);
-        delete mesh.me;
-        mesh.me = new mv_mesh();
-        mesh.loadFromOBJ(inputMeshFilepath, flipNormals);
-        staticVector<staticVector<int>*>* otherPtsCams = delaunayGC.createPtsCamsForAnotherMesh(ptsCams, *mesh.me);
-        std::swap(ptsCams, otherPtsCams);    
-        deleteArrayOfArrays<int>(&otherPtsCams);
+        meshRetex otherMesh;
+        mesh::PointsVisibility otherPtsVisibilities;
+        otherMesh.me = new mv_mesh();
+        otherMesh.loadFromOBJ(inputMeshFilepath, flipNormals);
+        mesh::remapMeshVisibilities(*mesh.me, *ptsCams, *otherMesh.me, otherPtsVisibilities);
+
+        std::swap(mesh.me, otherMesh.me);
+        ptsCams->swap(otherPtsVisibilities);
     }
     if(!mesh.hasUVs())
     {

@@ -160,10 +160,10 @@ void mv_mesh_uvatlas::packCharts(vector<Chart>& charts, multiviewParams& mp)
     }
     edges.clear();
 
-    // remove merged and invisible charts
+    // remove merged charts
     charts.erase(remove_if(charts.begin(), charts.end(), [](Chart& c)
             {
-                return (c.mergedWith >= 0) || (c.commonCameraIDs.empty());
+                return (c.mergedWith >= 0);
             }), charts.end());
 }
 
@@ -174,7 +174,8 @@ void mv_mesh_uvatlas::finalizeCharts(vector<Chart>& charts, multiviewParams& mp)
     for(auto&c : charts)
     {
         // select reference cam
-        assert(!c.commonCameraIDs.empty());
+        if(c.commonCameraIDs.empty())
+            continue; // skip triangles without visibility information
         c.refCameraID = c.commonCameraIDs[0]; // picking the first!
         // filter triangles (make unique)
         sort(c.triangleIDs.begin(), c.triangleIDs.end());

@@ -133,15 +133,20 @@ staticVector<staticVector<int>*>* meshRetex::generateUVs(multiviewParams& mp, st
                     int pointId = (*me->tris)[triangleID].i[k];
                     // get 3d triangle points
                     point3d p = (*me->pts)[pointId];
-                    point2d pix;
-                    mp.getPixelFor3DPoint(&pix, p, chart.refCameraID);
-                    if(!mp.isPixelInImage(pix, chart.refCameraID))
-                        continue;
-                    // compute the final pixel coordinates
-                    point2d uvPix = (pix + point2d(offset.x, offset.y)) / (float)mua.textureSide();
-                    uvPix.y = 1.0f - uvPix.y;
-                    if(uvPix.x >= mua.textureSide() || uvPix.y >= mua.textureSide())
-                        continue;
+                    point2d uvPix;
+                    if(chart.refCameraID != -1)
+                    {
+                        point2d pix;
+                        mp.getPixelFor3DPoint(&pix, p, chart.refCameraID);
+                        if(mp.isPixelInImage(pix, chart.refCameraID))
+                        {
+                            // compute the final pixel coordinates
+                            uvPix = (pix + point2d(offset.x, offset.y)) / (float)mua.textureSide();
+                            uvPix.y = 1.0 - uvPix.y;
+                            if(uvPix.x >= mua.textureSide() || uvPix.y >= mua.textureSide())
+                                uvPix = point2d();
+                        }
+                    }
 
                     auto it = vertexCache.find(pointId);
                     int newPointIdx;
@@ -175,7 +180,6 @@ staticVector<staticVector<int>*>* meshRetex::generateUVs(multiviewParams& mp, st
                     else
                         uvIdx = uvcacheIt->second;
                     triUv.m[k] = uvIdx;
-
                 }
                 m->tris->push_back(t);
                 trisUvIds->push_back(triUv);
