@@ -519,7 +519,7 @@ bool ReconstructionEngine_sequentialSfM::Process()
   }
   exportStatistics(time_sfm);
 
-  return true;
+  return !_sfm_data.GetPoses().empty();
 }
 
 /// Select a candidate initial pair
