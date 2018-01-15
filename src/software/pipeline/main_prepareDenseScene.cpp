@@ -208,18 +208,38 @@ bool prepareDenseScene(
     baseFilenameSS << std::setw(5) << std::setfill('0') << contiguousViewIndex;
     const std::string baseFilename = baseFilenameSS.str();
 
-    // Export camera pose
+    // Export camera
     {
+      // Export camera pose
       const Pose3 pose = sfm_data.getPose(*view);
       Mat34 P = iterIntrinsic->second.get()->get_projective_equivalent(pose);
-      std::ofstream file(
+      std::ofstream fileP(
         stlplus::create_filespec(stlplus::folder_append_separator(sOutDirectory),
         baseFilename + "_P", "txt").c_str());
-      file << std::setprecision(10)
+      fileP << std::setprecision(10)
            << P(0, 0) / (double)scale << " " << P(0, 1) / (double)scale << " "  << P(0, 2) / (double)scale << " "  << P(0, 3) / (double)scale << "\n"
            << P(1, 0) / (double)scale << " " << P(1, 1) / (double)scale << " "  << P(1, 2) / (double)scale << " "  << P(1, 3) / (double)scale << "\n"
            << P(2, 0) << " " << P(2, 1) << " "  << P(2, 2) << " "  << P(2, 3) << "\n";
-      file.close();
+      fileP.close();
+
+      // Export camera intrinsics
+      const Mat3 K = dynamic_cast<const Pinhole*>(sfm_data.GetIntrinsicPtr(view->getIntrinsicId()))->K();
+      const Mat3 R = pose.rotation();
+      const Vec3 t = pose.translation();
+      std::ofstream fileKRt(
+        stlplus::create_filespec(stlplus::folder_append_separator(sOutDirectory),
+        baseFilename + "_KRt", "txt").c_str());
+      fileKRt << std::setprecision(10)
+           << K(0, 0) / (double)scale << " " << K(0, 1) / (double)scale << " " << K(0, 2) / (double)scale << "\n"
+           << K(1, 0) / (double)scale << " " << K(1, 1) / (double)scale << " " << K(1, 2) / (double)scale << "\n"
+           << K(2, 0) << " " << K(2, 1) << " "  << K(2, 2) << "\n"
+           << "\n"
+           << R(0, 0) << " " << R(0, 1) << " " << R(0, 2) << "\n"
+           << R(1, 0) << " " << R(1, 1) << " " << R(1, 2) << "\n"
+           << R(2, 0) << " " << R(2, 1) << " " << R(2, 2) << "\n"
+           << "\n"
+           << t(0) << " " << t(1) << " " << t(2) << "\n";
+      fileKRt.close();
     }
     
     // Export undistort image
