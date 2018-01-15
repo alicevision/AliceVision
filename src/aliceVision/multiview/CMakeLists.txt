@@ -22,6 +22,7 @@ set(multiview_files_headers
   translationAveraging/solver.hpp
   triangulation/Triangulation.hpp
   triangulation/triangulationDLT.hpp
+  triangulation/NViewsTriangulationLORansac.hpp
 )
 
 # Sources

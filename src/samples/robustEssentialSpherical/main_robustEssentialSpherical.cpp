@@ -161,7 +161,7 @@ int main() {
       const double & threshold = ACRansacOut.first;
       const double & NFA = ACRansacOut.second;
 
-      std::cout << "\n Angular threshold found: " << R2D(threshold) << "(Degree)"<<std::endl;
+      std::cout << "\n Angular threshold found: " << radianToDegree(threshold) << "(Degree)"<<std::endl;
       std::cout << "\n #Putatives/#inliers : " << xL_spherical.cols() << "/" << vec_inliers.size() << "\n" << std::endl;
 
       if (vec_inliers.size() > 120)

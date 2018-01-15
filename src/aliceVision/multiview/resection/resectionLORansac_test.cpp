@@ -223,7 +223,7 @@ BOOST_AUTO_TEST_CASE(P3P_Ransac_noisyFromImagePoints)
 
     BOOST_CHECK_EQUAL(numInliersFound, numInliersExpected);
     
-    const double angError = R2D(getRotationMagnitude(Rgt * Rest.transpose()));
+    const double angError = radianToDegree(getRotationMagnitude(Rgt * Rest.transpose()));
     ALICEVISION_LOG_DEBUG("Angular error: " << angError);
     ALICEVISION_LOG_DEBUG("Baseline error: " << (Test - Tgt).squaredNorm());
 
@@ -236,7 +236,7 @@ BOOST_AUTO_TEST_CASE(P3P_Ransac_noisyFromImagePoints)
                            true,
                            false );
 
-    const double angErrorRef = R2D(getRotationMagnitude(Rgt * pose.rotation().transpose()));
+    const double angErrorRef = radianToDegree(getRotationMagnitude(Rgt * pose.rotation().transpose()));
     const double baselineErrorRef = (Tgt - pose.translation()).squaredNorm();
     ALICEVISION_LOG_DEBUG("Final angular error #"<<trial<<" : " << angErrorRef);
     ALICEVISION_LOG_DEBUG("Final baseline error #"<<trial<<" : " << baselineErrorRef);

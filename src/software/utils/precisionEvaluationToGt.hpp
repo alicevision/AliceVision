@@ -153,7 +153,7 @@ void EvaluteToGT(
         const Mat3 R1 = *iter1; //GT
         const Mat3 R2T = *iter2 * R.transpose(); // Computed
 
-        const double angularErrorDegree = R2D(getRotationMagnitude(R1 * R2T.transpose()));
+        const double angularErrorDegree = radianToDegree(getRotationMagnitude(R1 * R2T.transpose()));
         vec_angularErrors.push_back(angularErrorDegree);
     }
   }

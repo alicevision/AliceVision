@@ -183,7 +183,7 @@ void GlobalSfMRotationAveragingSolver::TripletRotationRejection(
       map_relatives.at(ki).Rij : Mat3(map_relatives.at(ik).Rij.transpose());
 
     const Mat3 Rot_To_Identity = RIJ * RJK * RKI; // motion composition
-    const float angularErrorDegree = static_cast<float>(R2D(getRotationMagnitude(Rot_To_Identity)));
+    const float angularErrorDegree = static_cast<float>(radianToDegree(getRotationMagnitude(Rot_To_Identity)));
     vec_errToIdentityPerTriplet.push_back(angularErrorDegree);
 
     if (angularErrorDegree < max_angular_error)

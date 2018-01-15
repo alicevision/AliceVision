@@ -181,7 +181,7 @@ struct TracksUtilsMap
    * @param[in] map_tracksIn: all tracks of the scene
    * @param[out] map_tracksOut: output with only the common tracks
    */
-  static bool GetTracksInImages(
+  static bool GetCommonTracksInImages(
     const std::set<std::size_t> & set_imageIndex,
     const TracksMap & map_tracksIn,
     TracksMap & map_tracksOut);
@@ -206,25 +206,60 @@ struct TracksUtilsMap
    * @param[in] map_tracksPerView: for each view the id of the visible tracks.
    * @param[out] map_tracksOut: output with only the common tracks.
    */
-  static bool GetTracksInImagesFast(
+  static bool GetCommonTracksInImagesFast(
     const std::set<std::size_t> & set_imageIndex,
     const TracksMap & map_tracksIn,
     const TracksPerView & map_tracksPerView,
     TracksMap & map_tracksOut);
+  
+  /**
+   * @brief Find all the visible tracks from a set of images.
+   * @param[in] imagesId set of images we are looking for tracks.
+   * @param[in] map_tracks all tracks of the scene.
+   * @param[out] tracksId the tracks in the images
+   */
+  static void GetTracksInImages(
+    const std::set<std::size_t> & imagesId,
+    const TracksMap & map_tracks,
+    std::set<std::size_t> & tracksId);
+  
+  /**
+   * @brief Find all the visible tracks from a set of images.
+   * @param[in] imagesId set of images we are looking for tracks.
+   * @param[in] map_tracksPerView for each view the id of the visible tracks.
+   * @param[out] tracksId the tracks in the images
+   */
+  static void GetTracksInImagesFast(
+    const std::set<IndexT> & imagesId,
+    const TracksPerView & map_tracksPerView,
+    std::set<IndexT> & tracksId);
 
   /// Return the tracksId of one image
-  static void GetImageTracksId(
-    const TracksMap & map_tracks,
+  static void GetTracksInImage(
     const std::size_t & imageIndex,
-    std::set<std::size_t> * set_tracksIds)
+    const TracksMap & map_tracks,
+    std::set<std::size_t> & set_tracksIds)
   {
-    set_tracksIds->clear();
+    set_tracksIds.clear();
     for (auto& track: map_tracks)
     {
       const auto iterSearch = track.second.featPerView.find(imageIndex);
       if (iterSearch != track.second.featPerView.end())
-        set_tracksIds->insert(track.first);
+        set_tracksIds.insert(track.first);
     }
+  }
+  
+  static void GetTracksInImageFast(
+    const std::size_t & imageId,
+    const TracksPerView & map_tracksPerView,
+    std::set<std::size_t> & set_tracksIds)
+  {
+    if (map_tracksPerView.find(imageId) == map_tracksPerView.end())
+      return;
+      
+    const TrackIdSet& imageTracks = map_tracksPerView.at(imageId);
+    set_tracksIds.clear();
+    set_tracksIds.insert(imageTracks.cbegin(), imageTracks.cend());
   }
 
   static void computeTracksPerView(const TracksMap & map_tracks, TracksPerView& map_tracksPerView);

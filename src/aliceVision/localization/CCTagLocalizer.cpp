@@ -253,7 +253,7 @@ bool CCTagLocalizer::localize(const feature::MapRegionsPerDesc & genQueryRegions
                               const std::string& imagePath)
 {
   namespace bfs = boost::filesystem;
-  
+
   const CCTagLocalizer::Parameters *param = dynamic_cast<const CCTagLocalizer::Parameters *>(parameters);
   if(!param)
   {
@@ -857,12 +857,12 @@ void CCTagLocalizer::getAllAssociations(const feature::CCTAG_Regions &queryRegio
     {
       const auto &key = idx.first;
       const auto &value = idx.second;
-       ALICEVISION_LOG_DEBUG("[matching]\tAssociations "
-               << feature::EImageDescriberType_enumToString(key.descType) << " "
-               << key.landmarkId << "," << key.featId <<" found "
-               << value << " times.");
-       if(value > maxOcc)
-         maxOcc = value;
+      ALICEVISION_LOG_DEBUG("[matching]\tAssociations "
+              << feature::EImageDescriberType_enumToString(key.descType) << " "
+              << key.landmarkId << "," << key.featId <<" found "
+              << value << " times.");
+      if(value > maxOcc)
+        maxOcc = value;
     }
     
     std::size_t numOccTreated = 0;
@@ -908,7 +908,7 @@ void kNearestKeyFrames(const feature::CCTAG_Regions & queryRegions,
                        const feature::RegionsPerView & regionsPerView,
                        std::size_t nNearestKeyFrames,
                        std::vector<IndexT> & out_kNearestFrames,
-                       const float similarityThreshold /*=.0f*/)
+                       float similarityThreshold /*=.0f*/)
 {
   out_kNearestFrames.clear();
   

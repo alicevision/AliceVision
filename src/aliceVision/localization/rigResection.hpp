@@ -53,7 +53,7 @@ EstimationStatus rigResection(const std::vector<Mat> &vec_pts2d,
                   const std::vector< std::vector<feature::EImageDescriberType> > * descTypesPerCamera,
                   geometry::Pose3 &rigPose,
                   std::vector<std::vector<std::size_t> > &inliers,
-                  double threshold = D2R(0.1),
+                  double threshold = degreeToRadian(0.1),
                   std::size_t maxIterations = 100,
                   bool verbosity = true);
 

@@ -86,11 +86,13 @@ int main(int argc, char **argv)
   std::pair<std::string,std::string> initialPairString("","");
   int minInputTrackLength = 2;
   int maxNbMatches = 0;
+  std::size_t minNbObservationsForTriangulation = 2;
   int userCameraModel = static_cast<int>(PINHOLE_CAMERA_RADIAL3);
   bool refineIntrinsics = true;
   bool allowUserInteraction = true;
   bool useLocalBundleAdjustment = false;
   std::size_t localBundelAdjustementGraphDistanceLimit = 1;
+  std::string localizerEstimatorName = robustEstimation::ERobustEstimator_enumToString(robustEstimation::ERobustEstimator::ACRANSAC);
 
   po::options_description allParams(
     "Sequential/Incremental reconstruction\n"
@@ -123,6 +125,10 @@ int main(int argc, char **argv)
     ("maxNumberOfMatches", po::value<int>(&maxNbMatches)->default_value(maxNbMatches),
       "Maximum number of matches per image pair (and per feature type). "
       "This can be useful to have a quick reconstruction overview. 0 means no limit.")
+    ("minNumberOfObservationsForTriangulation", po::value<std::size_t>(&minNbObservationsForTriangulation)->default_value(minNbObservationsForTriangulation),
+      "Minimum number of observations to triangulate a point.\n"
+      "Set it to 3 (or more) reduces drastically the noise in the point cloud, but the number of final poses is a little bit reduced (from 1.5% to 11% on the tested datasets).\n"
+      "(temp) Hack: set it to 0 or 1 to use the old triangulation algorithm (using 2 views only) during resection.")
     ("cameraModel", po::value<int>(&userCameraModel)->default_value(userCameraModel),
       "* 1: Pinhole\n"
       "* 2: Pinhole radial 1\n"
@@ -140,7 +146,9 @@ int main(int argc, char **argv)
       "Enable/Disable the Local bundle adjustment strategy.\n"
       "It reduces the reconstruction time, especially for big datasets (500+ images).")
     ("localBAGraphDistance", po::value<std::size_t>(&localBundelAdjustementGraphDistanceLimit)->default_value(localBundelAdjustementGraphDistanceLimit),
-      "Graph-distance limit setting the Active region in the Local Bundle Adjustment strategy.");
+      "Graph-distance limit setting the Active region in the Local Bundle Adjustment strategy.")
+    ("localizerEstimator", po::value<std::string>(&localizerEstimatorName)->default_value(localizerEstimatorName),
+      "Estimator type used to localize cameras (acransac (default), ransac, lsmeds, loransac, maxconsensus)");
 
   po::options_description logParams("Log parameters");
   logParams.add_options()
@@ -242,12 +250,22 @@ int main(int argc, char **argv)
 
   // Configure reconstruction parameters
   sfmEngine.Set_bFixedIntrinsics(!refineIntrinsics);
-  sfmEngine.SetUnknownCameraType(EINTRINSIC(userCameraModel));
+  sfmEngine.setUnknownCameraType(EINTRINSIC(userCameraModel));
   sfmEngine.setMinInputTrackLength(minInputTrackLength);
   sfmEngine.setSfmdataInterFileExtension(outInterFileExtension);
   sfmEngine.setAllowUserInteraction(allowUserInteraction);
   sfmEngine.setUseLocalBundleAdjustmentStrategy(useLocalBundleAdjustment);
   sfmEngine.setLocalBundleAdjustmentGraphDistance(localBundelAdjustementGraphDistanceLimit);
+  sfmEngine.setLocalizerEstimator(robustEstimation::ERobustEstimator_stringToEnum(localizerEstimatorName));
+  if (minNbObservationsForTriangulation < 2)
+  {
+      // TEMPORARY HACK: allows to keep an access to the old triangulatation algorithm (using 2 views only) during resection.
+      minNbObservationsForTriangulation = 0;      
+      
+//    ALICEVISION_LOG_ERROR("Error: The value associated to the argument '--minNbObservationsForTriangulation' must be >= 2 ");
+//    return EXIT_FAILURE;
+  }
+  sfmEngine.setNbOfObservationsForTriangulation(minNbObservationsForTriangulation);
 
   // Handle Initial pair parameter
   if(!initialPairString.first.empty() && !initialPairString.second.empty())

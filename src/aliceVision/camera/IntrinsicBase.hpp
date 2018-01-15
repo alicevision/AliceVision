@@ -186,7 +186,15 @@ struct IntrinsicBase
 };
 
 /// Return the angle (degree) between two bearing vector rays
-inline double AngleBetweenRay(
+inline double AngleBetweenRays(const Vec3 & ray1, const Vec3 & ray2)
+{
+  const double mag = ray1.norm() * ray2.norm();
+  const double dotAngle = ray1.dot(ray2);
+  return radianToDegree(acos(clamp(dotAngle/mag, -1.0 + 1.e-8, 1.0 - 1.e-8)));
+}
+
+/// Return the angle (degree) between two bearing vector rays
+inline double AngleBetweenRays(
   const geometry::Pose3 & pose1,
   const IntrinsicBase * intrinsic1,
   const geometry::Pose3 & pose2,
@@ -199,9 +207,18 @@ inline double AngleBetweenRay(
   // ray = X - C = R.t() * K.inv() * x
   const Vec3 ray1 = (pose1.rotation().transpose() * intrinsic1->operator()(x1)).normalized();
   const Vec3 ray2 = (pose2.rotation().transpose() * intrinsic2->operator()(x2)).normalized();
-  const double mag = ray1.norm() * ray2.norm();
-  const double dotAngle = ray1.dot(ray2);
-  return R2D(acos(clamp(dotAngle/mag, -1.0 + 1.e-8, 1.0 - 1.e-8)));
+  return AngleBetweenRays(ray1, ray2);
+}
+
+/// Return the angle (degree) between two poses and a 3D point.
+inline double AngleBetweenRays(
+  const geometry::Pose3 & pose1,
+  const geometry::Pose3 & pose2,
+  const Vec3 & pt3D)
+{
+  const Vec3 ray1 = pt3D - pose1.center();
+  const Vec3 ray2 = pt3D - pose2.center();
+  return AngleBetweenRays(ray1, ray2);
 }
 
 } // namespace camera

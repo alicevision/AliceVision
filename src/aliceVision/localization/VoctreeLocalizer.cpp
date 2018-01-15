@@ -386,12 +386,12 @@ bool VoctreeLocalizer::initDatabase(const std::string & vocTreeFilepath,
 }
 
 bool VoctreeLocalizer::localizeFirstBestResult(const feature::MapRegionsPerDesc &queryRegions,
-                                               const std::pair<std::size_t, std::size_t> queryImageSize,
+                                               const std::pair<std::size_t, std::size_t> &queryImageSize,
                                                const Parameters &param,
                                                bool useInputIntrinsics,
                                                camera::PinholeRadialK3 &queryIntrinsics,
                                                LocalizationResult &localizationResult,
-                                               const std::string& imagePath)
+                                               const std::string &imagePath)
 {
   // A. Find the (visually) similar images in the database 
   ALICEVISION_LOG_DEBUG("[database]\tRequest closest images from voctree");
@@ -592,20 +592,19 @@ bool VoctreeLocalizer::localizeFirstBestResult(const feature::MapRegionsPerDesc 
       ALICEVISION_LOG_DEBUG("K refined\n" << queryIntrinsics.K());
       ALICEVISION_LOG_DEBUG("R_gt\n" << referencePose.rotation());
       ALICEVISION_LOG_DEBUG("t_gt\n" << referencePose.translation());
-      ALICEVISION_LOG_DEBUG("angular difference: " << R2D(getRotationMagnitude(pose.rotation()*referencePose.rotation().inverse())) << "deg");
+      ALICEVISION_LOG_DEBUG("angular difference: " << radianToDegree(getRotationMagnitude(pose.rotation()*referencePose.rotation().inverse())) << "deg");
       ALICEVISION_LOG_DEBUG("center difference: " << (pose.center()-referencePose.center()).norm());
-      ALICEVISION_LOG_DEBUG("err = [err; " << R2D(getRotationMagnitude(pose.rotation()*referencePose.rotation().inverse())) << ", "<< (pose.center()-referencePose.center()).norm() << "];");
+      ALICEVISION_LOG_DEBUG("err = [err; " << radianToDegree(getRotationMagnitude(pose.rotation()*referencePose.rotation().inverse())) << ", "<< (pose.center()-referencePose.center()).norm() << "];");
     }
     localizationResult = LocalizationResult(resectionData, associationIDs, pose, queryIntrinsics, matchedImages, refineStatus);
     break;
   }
   //@todo deal with unsuccesful case...
   return localizationResult.isValid();
-  
- } 
+} 
 
 bool VoctreeLocalizer::localizeAllResults(const feature::MapRegionsPerDesc &queryRegions,
-                                          const std::pair<std::size_t, std::size_t> queryImageSize,
+                                          const std::pair<std::size_t, std::size_t> & queryImageSize,
                                           const Parameters &param,
                                           bool useInputIntrinsics,
                                           camera::PinholeRadialK3 &queryIntrinsics,
@@ -977,7 +976,7 @@ void VoctreeLocalizer::getAllAssociations(const feature::MapRegionsPerDesc &quer
 }
 
 void VoctreeLocalizer::getAssociationsFromBuffer(matching::RegionsDatabaseMatcherPerDesc & matchers,
-                                                 const std::pair<std::size_t, std::size_t> queryImageSize,
+                                                 const std::pair<std::size_t, std::size_t> & queryImageSize,
                                                  const Parameters &param,
                                                  bool useInputIntrinsics,
                                                  const camera::PinholeRadialK3 &queryIntrinsics,
@@ -1052,10 +1051,10 @@ bool VoctreeLocalizer::robustMatching(matching::RegionsDatabaseMatcherPerDesc & 
                                       const camera::IntrinsicBase * queryIntrinsicsBase,   // the intrinsics of the image we are using as reference
                                       const feature::MapRegionsPerDesc & matchedRegions,
                                       const camera::IntrinsicBase * matchedIntrinsicsBase,
-                                      const float fDistRatio,
-                                      const double matchingError,
-                                      const bool useGeometricFiltering,
-                                      const bool useGuidedMatching,
+                                      float fDistRatio,
+                                      double matchingError,
+                                      bool useGeometricFiltering,
+                                      bool useGuidedMatching,
                                       const std::pair<std::size_t,std::size_t> & imageSizeI,     // size of the first image @fixme change the API of the kernel!! 
                                       const std::pair<std::size_t,std::size_t> & imageSizeJ,     // size of the second image
                                       matching::MatchesPerDescType & out_featureMatches,

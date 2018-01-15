@@ -71,7 +71,7 @@ IndexT RemoveOutliers_AngleError(SfMData& sfm_data, const double dMinAcceptedAng
         const geometry::Pose3 pose2 = sfm_data.getPose(*view2);
         const camera::IntrinsicBase * intrinsic2 = sfm_data.intrinsics.at(view2->getIntrinsicId()).get();
 
-        const double angle = AngleBetweenRay(
+        const double angle = AngleBetweenRays(
           pose1, intrinsic1, pose2, intrinsic2,
           itObs1->second.x, itObs2->second.x);
         max_angle = std::max(angle, max_angle);

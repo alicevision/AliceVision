@@ -155,7 +155,7 @@ void TracksBuilder::ExportToSTL(TracksMap & allTracks) const
   }
 }
 
-bool TracksUtilsMap::GetTracksInImages(
+bool TracksUtilsMap::GetCommonTracksInImages(
   const std::set<std::size_t>& set_imageIndex,
   const TracksMap& map_tracksIn,
   TracksMap& map_tracksOut)
@@ -230,7 +230,7 @@ void TracksUtilsMap::GetCommonTracksInImages(
   }
 }
 
-bool TracksUtilsMap::GetTracksInImagesFast(
+bool TracksUtilsMap::GetCommonTracksInImagesFast(
   const std::set<std::size_t>& set_imageIndex,
   const TracksMap& map_tracksIn,
   const TracksPerView& map_tracksPerView,
@@ -262,6 +262,34 @@ bool TracksUtilsMap::GetTracksInImagesFast(
   return !map_tracksOut.empty();
 }
 
+void TracksUtilsMap::GetTracksInImages(
+    const std::set<std::size_t> & imagesId,
+    const TracksMap & map_tracks,
+    std::set<std::size_t> & tracksId)
+{
+  tracksId.clear();
+  for (const std::size_t id : imagesId)
+  {
+    std::set<std::size_t> currentImageTracks;
+    GetTracksInImage(id, map_tracks, currentImageTracks);
+    tracksId.insert(currentImageTracks.begin(), currentImageTracks.end());
+  }
+}
+
+void TracksUtilsMap::GetTracksInImagesFast(
+    const std::set<IndexT> & imagesId,
+    const TracksPerView & map_tracksPerView,
+    std::set<IndexT> & tracksId)
+{
+  tracksId.clear();
+  for (const std::size_t id : imagesId)
+  {
+    std::set<std::size_t> currentImageTracks;
+    GetTracksInImageFast(id, map_tracksPerView, currentImageTracks);
+    tracksId.insert(currentImageTracks.begin(), currentImageTracks.end());
+  }
+}
+  
 void TracksUtilsMap::computeTracksPerView(const TracksMap & map_tracks, TracksPerView& map_tracksPerView)
 {
   for (const auto& track: map_tracks)
