@@ -300,7 +300,6 @@ void AlembicExporter::appendCamera(const std::string& cameraName,
   const float imgWidth = intrinsic->w();
   const float imgHeight = intrinsic->h();
   const float sensorWidth_pix = std::max(imgWidth, imgHeight);
-  const float sensorHeight_pix = std::min(imgWidth, imgHeight);
   //const float imgRatio = sensorHeight_pix / sensorWidth_pix;
   const float focalLength_pix = intrinsic->focal();
   //const float sensorHeight_mm = sensorWidth_mm * imgRatio;
@@ -319,7 +318,7 @@ void AlembicExporter::appendCamera(const std::string& cameraName,
   
   // Add sensor width (largest image side) in pixels as custom property
   OUInt32ArrayProperty propSensorSize_pix(userProps, "mvg_sensorSizePix");
-  std::vector<::uint32_t> sensorSize_pix = {::uint32_t(sensorWidth_pix), ::uint32_t(sensorHeight_pix)};
+  std::vector<::uint32_t> sensorSize_pix = {intrinsic->w(), intrinsic->h()};
   propSensorSize_pix.set(sensorSize_pix);
 
   // Add viewImagePath as custom property
@@ -441,10 +440,7 @@ void AlembicExporter::addCameraKeyframe(const geometry::Pose3 &pose,
   const float imgWidth = cam->w();
   const float imgHeight = cam->h();
   const float sensorWidth_pix = std::max(imgWidth, imgHeight);
-  const float sensorHeight_pix = std::min(imgWidth, imgHeight);
-  //const float imgRatio = sensorHeight_pix / sensorWidth_pix;
   const float focalLength_pix = cam->focal();
-  //const float sensorHeight_mm = sensorWidth_mm * imgRatio;
   const float focalLength_mm = sensorWidth_mm * focalLength_pix / sensorWidth_pix;
   const float pix2mm = sensorWidth_mm / sensorWidth_pix;
 
@@ -458,8 +454,8 @@ void AlembicExporter::addCameraKeyframe(const geometry::Pose3 &pose,
   camSample.setHorizontalAperture(haperture_cm);
   camSample.setVerticalAperture(vaperture_cm);
   
-  // Add sensor width (largest image side) in pixels as custom property
-  std::vector<::uint32_t> sensorSize_pix = {::uint32_t(sensorWidth_pix), ::uint32_t(sensorHeight_pix)};
+  // Add sensor size in pixels as custom property
+  std::vector<::uint32_t> sensorSize_pix = {cam->w(), cam->h()};
   _data->_propSensorSize_pix.set(sensorSize_pix);
   
   // Set custom attributes
