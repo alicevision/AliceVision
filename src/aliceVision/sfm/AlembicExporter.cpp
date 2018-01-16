@@ -336,7 +336,6 @@ void AlembicExporter::addCamera(const std::string& name,
   auto userProps = camObj.getSchema().getUserProperties();
 
   // set view custom properties
-
   if(!view.getImagePath().empty())
     OStringProperty(userProps, "mvg_imagePath").set(view.getImagePath().c_str());
 
@@ -386,7 +385,6 @@ void AlembicExporter::addCamera(const std::string& name,
     const float imgWidth = pinhole->w();
     const float imgHeight = pinhole->h();
     const float sensorWidth_pix = std::max(imgWidth, imgHeight);
-    const float sensorHeight_pix = std::min(imgWidth, imgHeight);
     const float focalLength_pix = pinhole->focal();
     const float focalLength_mm = sensorWidth_mm * focalLength_pix / sensorWidth_pix;
     const float pix2mm = sensorWidth_mm / sensorWidth_pix;
@@ -402,7 +400,7 @@ void AlembicExporter::addCamera(const std::string& name,
     camSample.setVerticalAperture(vaperture_cm);
 
     // Add sensor width (largest image side) in pixels as custom property
-    std::vector<::uint32_t> sensorSize_pix = {::uint32_t(sensorWidth_pix), ::uint32_t(sensorHeight_pix)};
+    std::vector<::uint32_t> sensorSize_pix = {pinhole->w(), pinhole->h()};
 
     OUInt32ArrayProperty(userProps, "mvg_sensorSizePix").set(sensorSize_pix);
     OStringProperty(userProps, "mvg_intrinsicType").set(pinhole->getTypeStr());
@@ -498,10 +496,7 @@ void AlembicExporter::addCameraKeyframe(const geometry::Pose3& pose,
   const float imgWidth = cam->w();
   const float imgHeight = cam->h();
   const float sensorWidth_pix = std::max(imgWidth, imgHeight);
-  const float sensorHeight_pix = std::min(imgWidth, imgHeight);
-  //const float imgRatio = sensorHeight_pix / sensorWidth_pix;
   const float focalLength_pix = cam->focal();
-  //const float sensorHeight_mm = sensorWidth_mm * imgRatio;
   const float focalLength_mm = sensorWidth_mm * focalLength_pix / sensorWidth_pix;
   const float pix2mm = sensorWidth_mm / sensorWidth_pix;
 
@@ -515,8 +510,8 @@ void AlembicExporter::addCameraKeyframe(const geometry::Pose3& pose,
   camSample.setHorizontalAperture(haperture_cm);
   camSample.setVerticalAperture(vaperture_cm);
   
-  // Add sensor width (largest image side) in pixels as custom property
-  std::vector<::uint32_t> sensorSize_pix = {::uint32_t(sensorWidth_pix), ::uint32_t(sensorHeight_pix)};
+  // Add sensor size in pixels as custom property
+  std::vector<::uint32_t> sensorSize_pix = {cam->w(), cam->h()};
   _dataImpl->_propSensorSize_pix.set(sensorSize_pix);
   
   // Set custom attributes
