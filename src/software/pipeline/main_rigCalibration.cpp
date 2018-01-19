@@ -12,6 +12,8 @@
 #include <aliceVision/image/io.hpp>
 #include <aliceVision/dataio/FeedProvider.hpp>
 #include <aliceVision/feature/ImageDescriber.hpp>
+#include <aliceVision/sfm/SfMData.hpp>
+#include <aliceVision/sfm/sfmDataIO.hpp>
 #include <aliceVision/robustEstimation/estimators.hpp>
 #include <aliceVision/system/Logger.hpp>
 #include <aliceVision/system/cmdline.hpp>
@@ -286,12 +288,20 @@ int main(int argc, char** argv)
   std::unique_ptr<localization::LocalizerParameters> param;
   
   std::unique_ptr<localization::ILocalizer> localizer;
+
+  // load SfMData
+  sfm::SfMData sfmData;
+  if(!sfm::Load(sfmData, sfmFilePath, sfm::ESfMData::ALL))
+  {
+    ALICEVISION_LOG_ERROR("The input SfMData file '" + sfmFilePath + "' cannot be read.");
+    return EXIT_FAILURE;
+  }
   
   // initialize the localizer according to the chosen type of describer
   if(useVoctreeLocalizer)
   {
     ALICEVISION_COUT("Calibrating sequence using the voctree localizer");
-    localization::VoctreeLocalizer* tmpLoc = new localization::VoctreeLocalizer(sfmFilePath,
+    localization::VoctreeLocalizer* tmpLoc = new localization::VoctreeLocalizer(sfmData,
                                                             descriptorsFolder,
                                                             vocTreeFilepath,
                                                             weightsFilepath,
@@ -311,7 +321,7 @@ int main(int argc, char** argv)
 #if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_CCTAG)
   else
   {
-    localization::CCTagLocalizer* tmpLoc = new localization::CCTagLocalizer(sfmFilePath, descriptorsFolder);
+    localization::CCTagLocalizer* tmpLoc = new localization::CCTagLocalizer(sfmData, descriptorsFolder);
     localizer.reset(tmpLoc);
     
     localization::CCTagLocalizer::Parameters *tmpParam = new localization::CCTagLocalizer::Parameters();
@@ -338,7 +348,7 @@ int main(int argc, char** argv)
 
 #if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_ALEMBIC)
   sfm::AlembicExporter exporter(exportFile);
-  exporter.addPoints(localizer->getSfMData().GetLandmarks());
+  exporter.addLandmarks(localizer->getSfMData().GetLandmarks());
 #endif
 
   // Create a camera rig
@@ -422,20 +432,18 @@ int main(int argc, char** argv)
 #if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_ALEMBIC)
       if(localizationResult.isValid())
       {
-        exporter.appendCamera("camera"+std::to_string(idCamera)+"."+myToString(currentFrame,4),
-                              sfm::View(subMediaFilepath, currentFrame, currentFrame),
-                              subMediaFilepath,
-                              &queryIntrinsics,
-                              localizationResult.getPose());
+        exporter.addCamera("camera"+std::to_string(idCamera)+"."+myToString(currentFrame,4),
+                           sfm::View(subMediaFilepath, currentFrame, currentFrame),
+                           &localizationResult.getPose(),
+                           &queryIntrinsics);
       }
       else
       {
         // @fixme for now just add a fake camera so that it still can be see in MAYA
-        exporter.appendCamera("camera"+std::to_string(idCamera)+".V."+myToString(currentFrame,4),
-                              sfm::View(subMediaFilepath, currentFrame, currentFrame),
-                              subMediaFilepath,
-                              &queryIntrinsics,
-                              localizationResult.getPose());
+        exporter.addCamera("camera"+std::to_string(idCamera)+".V."+myToString(currentFrame,4),
+                           sfm::View(subMediaFilepath, currentFrame, currentFrame),
+                           &localizationResult.getPose(),
+                           &queryIntrinsics);
       }
 #endif
       ++iInputFrame;

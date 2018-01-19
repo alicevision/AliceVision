@@ -54,6 +54,7 @@ typedef vector< FeatureT > featsT;
 
 ColorHarmonizationEngineGlobal::ColorHarmonizationEngineGlobal(
   const string & sSfMData_Filename,
+  const std::string & featuresFolder,
   const string & sMatchesPath,
   const std::string & sMatchesGeometricModel,
   const string & sOutDirectory,
@@ -61,6 +62,7 @@ ColorHarmonizationEngineGlobal::ColorHarmonizationEngineGlobal(
   int selectionMethod,
   int imgRef):
   _sSfMData_Path(sSfMData_Filename),
+  _featuresFolder(featuresFolder),
   _sMatchesPath(sMatchesPath),
   _sMatchesGeometricModel(sMatchesGeometricModel),
   _sOutDirectory(sOutDirectory),
@@ -476,19 +478,15 @@ bool ColorHarmonizationEngineGlobal::ReadInputData()
   }
 
   // b. Read matches
-  if ( !matching::Load(_pairwiseMatches, sfm_data.GetViewsKeys(), _sMatchesPath, _descTypes, _sMatchesGeometricModel) )
-  {
-    cerr<< "Unable to read the geometric matrix matches" << endl;
+  if ( !sfm::loadPairwiseMatches(_pairwiseMatches, sfm_data, _sMatchesPath, _descTypes, _sMatchesGeometricModel) )
     return false;
-  }
 
   // Read features:
-  if(!sfm::loadRegionsPerView(_regionsPerView, sfm_data, _sMatchesPath, _descTypes))
+  if(!sfm::loadRegionsPerView(_regionsPerView, sfm_data, _featuresFolder, _descTypes))
   {
     cerr << "Can't load feature files" << endl;
     return false;
   }
-
 
   graph::indexedGraph putativeGraph(getImagePairs(_pairwiseMatches));
 

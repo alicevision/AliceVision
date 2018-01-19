@@ -7,13 +7,13 @@
 #include <aliceVision/sfm/viewIO.hpp>
 #include <aliceVision/sfm/sfmDataIO_json.hpp>
 #include <aliceVision/sensorDB/parseDatabase.hpp>
-#include <aliceVision/stl/split.hpp>
 #include <aliceVision/system/Logger.hpp>
 #include <aliceVision/system/cmdline.hpp>
 
 #include <dependencies/stlplus3/filesystemSimplified/file_system.hpp>
 
 #include <boost/program_options.hpp>
+#include <boost/algorithm/string.hpp>
 
 #include <iostream>
 #include <fstream>
@@ -42,7 +42,7 @@ bool checkIntrinsicStringValidity(const std::string& Kmatrix,
                                   double& ppy)
 {
   std::vector<std::string> vec_str;
-  stl::split(Kmatrix, ";", vec_str);
+  boost::split(vec_str, Kmatrix, boost::is_any_of(";"));
   if (vec_str.size() != 9)
   {
     ALICEVISION_LOG_ERROR("Error: In K matrix string, missing ';' character");
@@ -455,9 +455,9 @@ int main(int argc, char **argv)
 
   // print report
   ALICEVISION_LOG_INFO("CameraInit report:" << std::endl
-                   << "\t- # view(s) listed in SfMData: " << sfmData.GetViews().size() << std::endl
-                   << "\t- # view(s) with an initialized intrinsic listed in SfMData: " << completeViewCount << std::endl
-                   << "\t- # intrinsic(s) listed in SfMData: " << sfmData.GetIntrinsics().size());
+                   << "\t- # views listed in SfMData: " << sfmData.GetViews().size() << std::endl
+                   << "\t- # views with an initialized intrinsic listed in SfMData: " << completeViewCount << std::endl
+                   << "\t- # intrinsics listed in SfMData: " << sfmData.GetIntrinsics().size());
 
   return EXIT_SUCCESS;
 }

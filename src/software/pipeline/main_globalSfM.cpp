@@ -28,6 +28,7 @@ int main(int argc, char **argv)
 
   std::string verboseLevel = system::EVerboseLevel_enumToString(system::Logger::getDefaultVerboseLevel());
   std::string sfmDataFilename;
+  std::string featuresFolder;
   std::string matchesFolder;
   std::string outDirectory;
 
@@ -51,6 +52,8 @@ int main(int argc, char **argv)
       "SfMData file.")
     ("output,o", po::value<std::string>(&outDirectory)->required(),
       "Path of the output folder.")
+    ("featuresFolder,f", po::value<std::string>(&featuresFolder)->required(),
+      "Path to a folder containing the extracted features.")
     ("matchesFolder,m", po::value<std::string>(&matchesFolder)->required(),
       "Path to a folder in which computed matches are stored.");
 
@@ -108,86 +111,87 @@ int main(int argc, char **argv)
   system::Logger::get()->setLogLevel(verboseLevel);
 
   if (rotationAveragingMethod < ROTATION_AVERAGING_L1 ||
-      rotationAveragingMethod > ROTATION_AVERAGING_L2 )  {
-    std::cerr << "\n Rotation averaging method is invalid" << std::endl;
+      rotationAveragingMethod > ROTATION_AVERAGING_L2 )
+  {
+    ALICEVISION_LOG_ERROR("Rotation averaging method is invalid");
     return EXIT_FAILURE;
   }
 
   if (translationAveragingMethod < TRANSLATION_AVERAGING_L1 ||
-      translationAveragingMethod > TRANSLATION_AVERAGING_SOFTL1 )  {
-    std::cerr << "\n Translation averaging method is invalid" << std::endl;
-    return EXIT_FAILURE;
-  }
-
-  // Load input SfMData scene
-  SfMData sfmData;
-  if (!Load(sfmData, sfmDataFilename, ESfMData(VIEWS|INTRINSICS))) {
-    std::cerr << std::endl
-      << "The input SfMData file \""<< sfmDataFilename << "\" cannot be read." << std::endl;
-    return EXIT_FAILURE;
-  }
-
-  if(!sfmData.getRigs().empty() > 0)
+      translationAveragingMethod > TRANSLATION_AVERAGING_SOFTL1 )
   {
-    std::cerr << "Rigs are not currently supported in Global SfM." << std::endl
-              << "Please use Incremental SfM. Aborted" << std::endl;
-
+    ALICEVISION_LOG_ERROR("Translation averaging method is invalid");
     return EXIT_FAILURE;
   }
 
-  // Get describerTypes
+  // load input SfMData scene
+  SfMData sfmData;
+  if (!Load(sfmData, sfmDataFilename, ESfMData(VIEWS|INTRINSICS)))
+  {
+    ALICEVISION_LOG_ERROR("The input SfMData file '" << sfmDataFilename << "' cannot be read.");
+    return EXIT_FAILURE;
+  }
+
+  if(!sfmData.structure.empty())
+  {
+    ALICEVISION_LOG_ERROR("Part computed SfMData are not currently supported in Global SfM." << std::endl << "Please use Incremental SfM. Aborted");
+    return EXIT_FAILURE;
+  }
+
+  if(!sfmData.getRigs().empty())
+  {
+    ALICEVISION_LOG_ERROR("Rigs are not currently supported in Global SfM." << std::endl << "Please use Incremental SfM. Aborted");
+    return EXIT_FAILURE;
+  }
+
+  // get describerTypes
   const std::vector<feature::EImageDescriberType> describerTypes = feature::EImageDescriberType_stringToEnums(describerTypesName);
 
-  // Features reading
+  // features reading
   FeaturesPerView featuresPerView;
-  if (!sfm::loadFeaturesPerView(featuresPerView, sfmData, matchesFolder, describerTypes)) {
-    std::cerr << std::endl
-      << "Invalid features." << std::endl;
+  if(!sfm::loadFeaturesPerView(featuresPerView, sfmData, featuresFolder, describerTypes))
+  {
+    ALICEVISION_LOG_ERROR("Invalid features");
     return EXIT_FAILURE;
   }
-  // Matches reading
-  matching::PairwiseMatches pairwiseMatches;
-  // Load the match file (try to read the two matches file formats)
 
+  // matches reading
+  // Load the match file (try to read the two matches file formats).
+  matching::PairwiseMatches pairwiseMatches;
   if(!sfm::loadPairwiseMatches(pairwiseMatches, sfmData, matchesFolder, describerTypes, "e"))
   {
-    std::cerr << std::endl << "Unable to load matches files from: " << matchesFolder << std::endl;
+    ALICEVISION_LOG_ERROR("Unable to load matches files from: " << matchesFolder);
     return EXIT_FAILURE;
   }
 
   if (outDirectory.empty())
   {
-    std::cerr << "\nIt is an invalid output folder" << std::endl;
+    ALICEVISION_LOG_ERROR("It is an invalid output folder");
     return EXIT_FAILURE;
   }
 
   if (!stlplus::folder_exists(outDirectory))
     stlplus::folder_create(outDirectory);
 
-  //---------------------------------------
-  // Global SfM reconstruction process
-  //---------------------------------------
-
+  // global SfM reconstruction process
   aliceVision::system::Timer timer;
   ReconstructionEngine_globalSfM sfmEngine(
     sfmData,
     outDirectory,
     stlplus::create_filespec(outDirectory, "sfm_log.html"));
 
-  // Configure the featuresPerView & the matches_provider
+  // configure the featuresPerView & the matches_provider
   sfmEngine.SetFeaturesProvider(&featuresPerView);
   sfmEngine.SetMatchesProvider(&pairwiseMatches);
 
-  // Configure reconstruction parameters
+  // configure reconstruction parameters
   sfmEngine.Set_bFixedIntrinsics(!refineIntrinsics);
 
-  // Configure motion averaging method
-  sfmEngine.SetRotationAveragingMethod(
-    ERotationAveragingMethod(rotationAveragingMethod));
-  sfmEngine.SetTranslationAveragingMethod(
-    ETranslationAveragingMethod(translationAveragingMethod));
+  // configure motion averaging method
+  sfmEngine.SetRotationAveragingMethod(ERotationAveragingMethod(rotationAveragingMethod));
+  sfmEngine.SetTranslationAveragingMethod(ETranslationAveragingMethod(translationAveragingMethod));
 
-  if (!sfmEngine.Process())
+  if(!sfmEngine.Process())
   {
     return EXIT_FAILURE;
   }
@@ -195,18 +199,16 @@ int main(int argc, char **argv)
   // get the color for the 3D points
   if(!sfmEngine.Colorize())
   {
-    std::cerr << "Colorize failed!" << std::endl;
+    ALICEVISION_LOG_ERROR("Colorize failed!");
   }
 
-  std::cout << std::endl << " Total Ac-Global-Sfm took (s): " << timer.elapsed() << std::endl;
+  ALICEVISION_LOG_INFO("Total Ac-Global-Sfm took (s): " << timer.elapsed());
+  ALICEVISION_LOG_INFO("Generating HTML report");
+  Generate_SfM_Report(sfmEngine.Get_SfMData(), stlplus::create_filespec(outDirectory, "sfm_report.html"));
 
-  std::cout << "...Generating SfM_Report.html" << std::endl;
-  Generate_SfM_Report(sfmEngine.Get_SfMData(),
-    stlplus::create_filespec(outDirectory, "sfm_report.html"));
-
-  //-- Export to disk computed scene (data & visualizable results)
-  std::cout << "...Export SfMData to disk." << std::endl;
-  Save(sfmEngine.Get_SfMData(), outSfMDataFilename, ESfMData(ALL));
+  // export to disk computed scene (data & visualizable results)
+  ALICEVISION_LOG_INFO("Export SfMData to disk");
+  Save(sfmEngine.Get_SfMData(), outSfMDataFilename, ESfMData::ALL);
 
   Save(sfmEngine.Get_SfMData(),
     stlplus::create_filespec(outDirectory, "cloud_and_poses", ".ply"),

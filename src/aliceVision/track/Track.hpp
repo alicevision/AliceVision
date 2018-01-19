@@ -282,7 +282,7 @@ struct TracksUtilsMap
   static bool GetFeatureIdInViewPerTrack(
     const TracksMap & allTracks,
     const std::set<size_t> & trackIds,
-    size_t viewId,
+    IndexT viewId,
     std::vector<FeatureId> * out_featId)
   {
     for (size_t trackId: trackIds)

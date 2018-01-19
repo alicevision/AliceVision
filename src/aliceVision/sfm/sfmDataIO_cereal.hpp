@@ -6,7 +6,6 @@
 #pragma once
 
 #include <aliceVision/sfm/sfmDataIO.hpp>
-#include <aliceVision/stl/split.hpp>
 
 #include <cereal/archives/portable_binary.hpp>
 #include <cereal/archives/xml.hpp>
@@ -16,6 +15,8 @@
 #include <cereal/types/unordered_map.hpp>
 #include <cereal/types/vector.hpp>
 #include <cereal/types/string.hpp>
+
+#include <boost/algorithm/string.hpp>
 
 #include <iomanip>
 #include <fstream>
@@ -58,15 +59,17 @@ bool Load_Cereal(
     std::vector<int> versions;
     {
       std::vector<std::string> versionsStr;
-      stl::split(versionStr, ".", versionsStr);
+      boost::trim(versionStr);
+      boost::split(versionsStr, versionStr, boost::is_any_of("."));
+
       for(auto& v: versionsStr)
         versions.push_back(std::stoi(v));
     }
 
     if(versions[1] > 2) // version > 0.2
     {
-      archive(cereal::make_nvp("featureFolder", data._featureFolder));
-      archive(cereal::make_nvp("matchingFolder", data._matchingFolder));
+      archive(cereal::make_nvp("featuresFolders", data._featuresFolders));
+      archive(cereal::make_nvp("matchesFolders", data._matchesFolders));
     }
     
     if (b_views)
@@ -143,8 +146,8 @@ bool Save_Cereal(
     //  - it adds control_points storage
     const std::string version = "0.3.1";
     archive(cereal::make_nvp("sfm_data_version", version));
-    archive(cereal::make_nvp("featureFolder", data._featureFolder));
-    archive(cereal::make_nvp("matchingFolder", data._matchingFolder));
+    archive(cereal::make_nvp("featuresFolders", data._featuresFolders));
+    archive(cereal::make_nvp("matchesFolders", data._matchesFolders));
 
     if (b_views)
       archive(cereal::make_nvp("views", data.views));

@@ -6,7 +6,6 @@ set(stl_files_headers
   FlatSet.hpp
   hash.hpp
   indexedSort.hpp
-  split.hpp
   stl.hpp
   mapUtils.hpp
 )
@@ -19,7 +18,6 @@ target_link_libraries(aliceVision_stl
   INTERFACE ${LOG_LIB}
 )
 
-UNIT_TEST(aliceVision split         "aliceVision_stl")
 UNIT_TEST(aliceVision dynamicBitset "aliceVision_stl")
 
 add_custom_target(aliceVision_stl_ide SOURCES ${stl_files_headers})

@@ -63,7 +63,6 @@ target_link_libraries(aliceVision_utils_frustumFiltering
   aliceVision_feature
   aliceVision_sfm
   aliceVision_matchingImageCollection
-  stlplus
   ${BOOST_LIBRARIES}
 )
 

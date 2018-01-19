@@ -3,29 +3,34 @@
 // v. 2.0. If a copy of the MPL was not distributed with this file,
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
-#include "aliceVision/matching/IndMatch.hpp"
-#include "aliceVision/matching/io.hpp"
-#include "aliceVision/image/all.hpp"
-#include "aliceVision/feature/feature.hpp"
-#include "aliceVision/track/Track.hpp"
-#include "aliceVision/sfm/sfm.hpp"
-#include "aliceVision/sfm/pipeline/regionsIO.hpp"
-#include "aliceVision/feature/svgVisualization.hpp"
+#include <aliceVision/matching/IndMatch.hpp>
+#include <aliceVision/matching/io.hpp>
+#include <aliceVision/image/all.hpp>
+#include <aliceVision/feature/feature.hpp>
+#include <aliceVision/track/Track.hpp>
+#include <aliceVision/sfm/sfm.hpp>
+#include <aliceVision/sfm/pipeline/regionsIO.hpp>
+#include <aliceVision/feature/svgVisualization.hpp>
+#include <aliceVision/system/Logger.hpp>
+#include <aliceVision/system/cmdline.hpp>
 
-#include "software/utils/sfmHelper/sfmIOHelper.hpp"
+#include <software/utils/sfmHelper/sfmIOHelper.hpp>
 
-#include "dependencies/stlplus3/filesystemSimplified/file_system.hpp"
-#include "dependencies/vectorGraphics/svgDrawer.hpp"
+#include <dependencies/vectorGraphics/svgDrawer.hpp>
 
 #include <boost/program_options.hpp>
+#include <boost/filesystem.hpp>
 #include <boost/progress.hpp>
 
 using namespace aliceVision;
+using namespace aliceVision::feature;
 using namespace aliceVision::matching;
 using namespace aliceVision::sfm;
 using namespace aliceVision::track;
 using namespace svg;
+
 namespace po = boost::program_options;
+namespace fs = boost::filesystem;
 
 int main(int argc, char ** argv)
 {
@@ -34,6 +39,7 @@ int main(int argc, char ** argv)
   std::string verboseLevel = system::EVerboseLevel_enumToString(system::Logger::getDefaultVerboseLevel());
   std::string sfmDataFilename;
   std::string outputFolder;
+  std::string featuresFolder;
   std::string matchesFolder;
   std::string describerTypesName = feature::EImageDescriberType_enumToString(feature::EImageDescriberType::SIFT);
   std::string matchesGeometricModel = "f";
@@ -46,6 +52,8 @@ int main(int argc, char ** argv)
       "SfMData file.")
     ("output,o", po::value<std::string>(&outputFolder)->required(),
       "Output path for tracks.")
+    ("featuresFolder,f", po::value<std::string>(&featuresFolder)->required(),
+      "Path to a folder containing the extracted features.")
     ("matchesFolder,m", po::value<std::string>(&matchesFolder)->required(),
       "Path to a folder in which computed matches are stored.");
 
@@ -91,148 +99,145 @@ int main(int argc, char ** argv)
     return EXIT_FAILURE;
   }
 
+  ALICEVISION_COUT("Program called with the following parameters:");
+  ALICEVISION_COUT(vm);
+
   // set verbose level
   system::Logger::get()->setLogLevel(verboseLevel);
 
-  if (outputFolder.empty())  {
-    std::cerr << "\nIt is an invalid output folder" << std::endl;
+  if(outputFolder.empty())
+  {
+    ALICEVISION_LOG_ERROR("It is an invalid output folder");
     return EXIT_FAILURE;
   }
 
-  //---------------------------------------
-  // Read SfM Scene (image view names)
-  //---------------------------------------
-  SfMData sfm_data;
-  if (!Load(sfm_data, sfmDataFilename, ESfMData(VIEWS|INTRINSICS))) {
-    std::cerr << std::endl
-      << "The input SfMData file \""<< sfmDataFilename << "\" cannot be read." << std::endl;
+  // read SfM Scene (image view names)
+  SfMData sfmData;
+  if(!Load(sfmData, sfmDataFilename, ESfMData(VIEWS|INTRINSICS)))
+  {
+    ALICEVISION_LOG_ERROR("The input SfMData file '" << sfmDataFilename << "' cannot be read.");
     return EXIT_FAILURE;
   }
-
-  //---------------------------------------
-  // Load SfM Scene regions
-  //---------------------------------------
-  using namespace aliceVision::feature;
   
-  // Get imageDescriberMethodType
+  // get imageDescriberMethodTypes
   std::vector<EImageDescriberType> describerMethodTypes = EImageDescriberType_stringToEnums(describerTypesName);
 
-  // Read the features
+  // read the features
   feature::FeaturesPerView featuresPerView;
-  if (!sfm::loadFeaturesPerView(featuresPerView, sfm_data, matchesFolder, describerMethodTypes)) {
-    std::cerr << std::endl
-      << "Invalid features." << std::endl;
+  if(!sfm::loadFeaturesPerView(featuresPerView, sfmData, featuresFolder, describerMethodTypes))
+  {
+    ALICEVISION_LOG_ERROR("Invalid features");
     return EXIT_FAILURE;
   }
 
-  // Read the matches
+  // read the matches
   matching::PairwiseMatches pairwiseMatches;
-  if (!loadPairwiseMatches(pairwiseMatches, sfm_data, matchesFolder, describerMethodTypes, matchesGeometricModel))
+  if(!sfm::loadPairwiseMatches(pairwiseMatches, sfmData, matchesFolder, describerMethodTypes, matchesGeometricModel))
   {
-    std::cerr << "\nInvalid matches file." << std::endl;
+    ALICEVISION_LOG_ERROR("Invalid matches file");
     return EXIT_FAILURE;
   }
 
-  //---------------------------------------
-  // Compute tracks from matches
-  //---------------------------------------
-  track::TracksMap map_tracks;
+  const std::size_t viewCount = sfmData.GetViews().size();
+  ALICEVISION_LOG_INFO("# views: " << viewCount);
+
+  // compute tracks from matches
+  track::TracksMap mapTracks;
   {
-    const aliceVision::matching::PairwiseMatches & map_Matches = pairwiseMatches;
+    const aliceVision::matching::PairwiseMatches& map_Matches = pairwiseMatches;
     track::TracksBuilder tracksBuilder;
     tracksBuilder.Build(map_Matches);
     tracksBuilder.Filter();
-    tracksBuilder.ExportToSTL(map_tracks);
+    tracksBuilder.ExportToSTL(mapTracks);
+
+    ALICEVISION_LOG_INFO("# tracks: " << tracksBuilder.NbTracks());
   }
 
-  // ------------
-  // For each pair, export the matches
-  // ------------
-  const size_t viewCount = sfm_data.GetViews().size();
+  // for each pair, export the matches
+  fs::create_directory(outputFolder);
+  boost::progress_display myProgressBar( (viewCount*(viewCount-1)) / 2.0 , std::cout, "Export pairwise tracks\n");
 
-  stlplus::folder_create(outputFolder);
-  std::cout << "\n viewCount: " << viewCount << std::endl;
-  std::cout << "\n Export pairwise tracks" << std::endl;
-  boost::progress_display my_progress_bar( (viewCount*(viewCount-1)) / 2.0 );
-
-  for (size_t I = 0; I < viewCount; ++I)
+  for(std::size_t I = 0; I < viewCount; ++I)
   {
-    for (size_t J = I+1; J < viewCount; ++J, ++my_progress_bar)
+    auto itI = sfmData.GetViews().begin();
+    std::advance(itI, I);
+
+    const View* viewI = itI->second.get();
+
+    for(std::size_t J = I+1; J < viewCount; ++J, ++myProgressBar)
     {
+      auto itJ = sfmData.GetViews().begin();
+      std::advance(itJ, J);
 
-      const View * view_I = sfm_data.GetViews().at(I).get();
-      const std::string sView_I= view_I->getImagePath();
-      const View * view_J = sfm_data.GetViews().at(J).get();
-      const std::string sView_J= view_J->getImagePath();
+      const View* viewJ = itJ->second.get();
 
-      const std::pair<size_t, size_t>
-        dimImage_I = std::make_pair(view_I->getWidth(), view_I->getHeight()),
-        dimImage_J = std::make_pair(view_J->getWidth(), view_J->getHeight());
+      const std::string& viewImagePathI = viewI->getImagePath();
+      const std::string& viewImagePathJ = viewJ->getImagePath();
 
-      //Get common tracks between view I and J
-      track::TracksMap map_tracksCommon;
-      std::set<size_t> set_imageIndex;
-      set_imageIndex.insert(I);
-      set_imageIndex.insert(J);
-      TracksUtilsMap::GetCommonTracksInImages(set_imageIndex, map_tracks, map_tracksCommon);
+      const std::pair<std::size_t, std::size_t> dimImageI = std::make_pair(viewI->getWidth(), viewI->getHeight());
+      const std::pair<std::size_t, std::size_t> dimImageJ = std::make_pair(viewJ->getWidth(), viewJ->getHeight());
 
-      if (!map_tracksCommon.empty())
+      // get common tracks between view I and J
+      track::TracksMap mapTracksCommon;
+      std::set<std::size_t> setImageIndex;
+
+      setImageIndex.insert(viewI->getViewId());
+      setImageIndex.insert(viewJ->getViewId());
+
+      TracksUtilsMap::GetCommonTracksInImages(setImageIndex, mapTracks, mapTracksCommon);
+
+      if(mapTracksCommon.empty())
       {
-        svgDrawer svgStream( dimImage_I.first + dimImage_J.first, max(dimImage_I.second, dimImage_J.second));
-        svgStream.drawImage(sView_I,
-          dimImage_I.first,
-          dimImage_I.second);
-        svgStream.drawImage(sView_J,
-          dimImage_J.first,
-          dimImage_J.second, dimImage_I.first);
+        ALICEVISION_LOG_TRACE("no common tracks for pair (" << viewI->getViewId() << ", " << viewJ->getViewId() << ")");
+      }
+      else
+      {
+        svgDrawer svgStream(dimImageI.first + dimImageJ.first, max(dimImageI.second, dimImageJ.second));
+        svgStream.drawImage(viewImagePathI, dimImageI.first, dimImageI.second);
+        svgStream.drawImage(viewImagePathJ, dimImageJ.first, dimImageJ.second, dimImageI.first);
 
-        //-- Draw link between features :
-        for (track::TracksMap::const_iterator tracksIt = map_tracksCommon.begin();
-          tracksIt != map_tracksCommon.end(); ++tracksIt)
+        // draw link between features :
+        for (track::TracksMap::const_iterator tracksIt = mapTracksCommon.begin();
+          tracksIt != mapTracksCommon.end(); ++tracksIt)
         {
           const feature::EImageDescriberType descType = tracksIt->second.descType;
           assert(descType != feature::EImageDescriberType::UNINITIALIZED);
           track::Track::FeatureIdPerView::const_iterator obsIt = tracksIt->second.featPerView.begin();
 
-          const PointFeatures& vec_feat_I = featuresPerView.getFeatures(view_I->getViewId(), descType);
-          const PointFeatures& vec_feat_J = featuresPerView.getFeatures(view_J->getViewId(), descType);
+          const PointFeatures& featuresI = featuresPerView.getFeatures(viewI->getViewId(), descType);
+          const PointFeatures& featuresJ = featuresPerView.getFeatures(viewJ->getViewId(), descType);
 
-          const PointFeature& imaA = vec_feat_I[obsIt->second];
+          const PointFeature& imaA = featuresI[obsIt->second];
           ++obsIt;
-          const PointFeature& imaB = vec_feat_J[obsIt->second];
+          const PointFeature& imaB = featuresJ[obsIt->second];
 
-          svgStream.drawLine(imaA.x(), imaA.y(),
-            imaB.x()+dimImage_I.first, imaB.y(),
-            svgStyle().stroke("green", 2.0));
+          svgStream.drawLine(imaA.x(), imaA.y(), imaB.x()+dimImageI.first, imaB.y(), svgStyle().stroke("green", 2.0));
         }
 
-        //-- Draw features (in two loop, in order to have the features upper the link, svg layer order):
-        for (track::TracksMap::const_iterator tracksIt = map_tracksCommon.begin();
-          tracksIt != map_tracksCommon.end(); ++ tracksIt)
+        // draw features (in two loop, in order to have the features upper the link, svg layer order):
+        for(track::TracksMap::const_iterator tracksIt = mapTracksCommon.begin();
+          tracksIt != mapTracksCommon.end(); ++ tracksIt)
         {
           const feature::EImageDescriberType descType = tracksIt->second.descType;
           assert(descType != feature::EImageDescriberType::UNINITIALIZED);
           track::Track::FeatureIdPerView::const_iterator obsIt = tracksIt->second.featPerView.begin();
 
-          const PointFeatures& vec_feat_I = featuresPerView.getFeatures(view_I->getViewId(), descType);
-          const PointFeatures& vec_feat_J = featuresPerView.getFeatures(view_J->getViewId(), descType);
+          const PointFeatures& featuresI = featuresPerView.getFeatures(viewI->getViewId(), descType);
+          const PointFeatures& featuresJ = featuresPerView.getFeatures(viewJ->getViewId(), descType);
 
-          const PointFeature& imaA = vec_feat_I[obsIt->second];
+          const PointFeature& imaA = featuresI[obsIt->second];
           ++obsIt;
-          const PointFeature& imaB = vec_feat_J[obsIt->second];
+          const PointFeature& imaB = featuresJ[obsIt->second];
 
           const std::string featColor = describerTypeColor(descType);
 
-          svgStream.drawCircle(imaA.x(), imaA.y(),
-            3.0, svgStyle().stroke(featColor, 2.0));
-          svgStream.drawCircle(imaB.x() + dimImage_I.first,imaB.y(),
-            3.0, svgStyle().stroke(featColor, 2.0));
+          svgStream.drawCircle(imaA.x(), imaA.y(), 3.0, svgStyle().stroke(featColor, 2.0));
+          svgStream.drawCircle(imaB.x() + dimImageI.first,imaB.y(), 3.0, svgStyle().stroke(featColor, 2.0));
         }
-        std::ostringstream os;
-        os << stlplus::folder_append_separator(outputFolder)
-           << I << "_" << J
-           << "_" << map_tracksCommon.size() << "_.svg";
-        ofstream svgFile( os.str().c_str() );
+
+        fs::path outputFilename = fs::path(outputFolder) / std::string(std::to_string(viewI->getViewId()) + "_" + std::to_string(viewJ->getViewId()) + "_" + std::to_string(mapTracksCommon.size()) + ".svg");
+
+        ofstream svgFile(outputFilename.string());
         svgFile << svgStream.closeSvgFile().str();
       }
     }

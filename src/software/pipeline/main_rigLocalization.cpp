@@ -12,6 +12,8 @@
 #include <aliceVision/image/io.hpp>
 #include <aliceVision/dataio/FeedProvider.hpp>
 #include <aliceVision/feature/ImageDescriber.hpp>
+#include <aliceVision/sfm/SfMData.hpp>
+#include <aliceVision/sfm/sfmDataIO.hpp>
 #include <aliceVision/robustEstimation/estimators.hpp>
 #include <aliceVision/system/Logger.hpp>
 #include <aliceVision/system/cmdline.hpp>
@@ -288,12 +290,20 @@ int main(int argc, char** argv)
   std::unique_ptr<localization::LocalizerParameters> param;
   
   std::unique_ptr<localization::ILocalizer> localizer;
+
+  // load SfMData
+  sfm::SfMData sfmData;
+  if(!sfm::Load(sfmData, sfmFilePath, sfm::ESfMData::ALL))
+  {
+    ALICEVISION_LOG_ERROR("The input SfMData file '" + sfmFilePath + "' cannot be read.");
+    return EXIT_FAILURE;
+  }
   
   // initialize the localizer according to the chosen type of describer
   if(useVoctreeLocalizer)
   {
     ALICEVISION_COUT("Localizing sequence using the voctree localizer");
-    localization::VoctreeLocalizer* tmpLoc = new localization::VoctreeLocalizer(sfmFilePath,
+    localization::VoctreeLocalizer* tmpLoc = new localization::VoctreeLocalizer(sfmData,
                                                             descriptorsFolder,
                                                             vocTreeFilepath,
                                                             weightsFilepath,
@@ -313,7 +323,7 @@ int main(int argc, char** argv)
 #if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_CCTAG)
   else
   {
-    localization::CCTagLocalizer* tmpLoc = new localization::CCTagLocalizer(sfmFilePath, descriptorsFolder);
+    localization::CCTagLocalizer* tmpLoc = new localization::CCTagLocalizer(sfmData, descriptorsFolder);
     localizer.reset(tmpLoc);
     
     localization::CCTagLocalizer::Parameters *tmpParam = new localization::CCTagLocalizer::Parameters();
@@ -343,7 +353,7 @@ int main(int argc, char** argv)
 #if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_ALEMBIC)
   sfm::AlembicExporter exporter(exportAlembicFile);
   exporter.initAnimatedCamera("rig");
-  exporter.addPoints(localizer->getSfMData().GetLandmarks());
+  exporter.addLandmarks(localizer->getSfMData().GetLandmarks());
   
   boost::ptr_vector<sfm::AlembicExporter> cameraExporters;
   cameraExporters.reserve(numCameras);

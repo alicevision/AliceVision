@@ -81,7 +81,7 @@ public:
   /**
    * @brief Initialize a localizer based on a vocabulary tree
    * 
-   * @param[in] sfmFilePath The path to the sfmdata file containing the scene 
+   * @param[in] sfmData The sfmdata containing the scene
    * reconstruction.
    * @param[in] descriptorsFolder The path to the directory containing the features 
    * of the scene (.desc and .feat files).
@@ -94,7 +94,7 @@ public:
    *
    * It enable the use of combined SIFT and CCTAG features.
    */
-  VoctreeLocalizer(const std::string &sfmFilePath,
+  VoctreeLocalizer(const sfm::SfMData &sfmData,
                    const std::string &descriptorsFolder,
                    const std::string &vocTreeFilepath,
                    const std::string &weightsFilepath,
@@ -278,7 +278,7 @@ private:
    */
   bool initDatabase(const std::string & vocTreeFilepath,
                     const std::string & weightsFilepath,
-                    const std::string & feat_directory);
+                    const std::string & featFolder);
 
   /**
    * @brief robustMatching

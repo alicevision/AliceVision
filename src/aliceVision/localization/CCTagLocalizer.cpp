@@ -29,29 +29,17 @@
 namespace aliceVision {
 namespace localization {
 
-CCTagLocalizer::CCTagLocalizer(const std::string &sfmFilePath,
+CCTagLocalizer::CCTagLocalizer(const sfm::SfMData &sfmData,
                                const std::string &descriptorsFolder)
     : _cudaPipe( 0 )
 {
-  using namespace aliceVision::feature;
+  _sfm_data = sfmData;
 
-  // load the sfm data containing the 3D reconstruction info
-  if (!Load(_sfm_data, sfmFilePath, sfm::ESfMData::ALL))
-  {
-    ALICEVISION_CERR("The input SfMData file "<< sfmFilePath << " cannot be read.");
-    ALICEVISION_CERR("\n\nIf the error says \"JSON Parsing failed - provided NVP not found\" "
-        "it's likely that you have to convert your sfm_data to a recent version supporting "
-        "polymorphic Views. You can run the python script convertSfmData.py to update an existing sfmdata.");
-    throw std::invalid_argument("The input SfMData file "+ sfmFilePath + " cannot be read.");
-  }
-
-  const std::string descFolder = descriptorsFolder.empty() ? _sfm_data.getFeatureFolder() : descriptorsFolder;
-  
-  bool loadSuccessful = loadReconstructionDescriptors(_sfm_data, descFolder);
+  bool loadSuccessful = loadReconstructionDescriptors(_sfm_data, descriptorsFolder);
   
   if(!loadSuccessful)
   {
-    ALICEVISION_CERR("Unable to load the descriptors");
+    ALICEVISION_LOG_ERROR("Unable to load the descriptors");
     throw std::invalid_argument("Unable to load the descriptors from "+descriptorsFolder);
   }
   
@@ -109,6 +97,9 @@ bool CCTagLocalizer::loadReconstructionDescriptors(const sfm::SfMData & sfm_data
 
   ALICEVISION_LOG_DEBUG("Load Features and Descriptors per view");
 
+  std::vector<std::string> featuresFolders = _sfm_data.getFeaturesFolders();
+  featuresFolders.emplace_back(feat_directory);
+
   // Read for each view the corresponding Regions and store them
   for(const auto &iter : _sfm_data.GetViews())
   {
@@ -127,7 +118,7 @@ bool CCTagLocalizer::loadReconstructionDescriptors(const sfm::SfMData & sfm_data
       }
 
       // Load from files
-      std::unique_ptr<feature::Regions> currRegions = sfm::loadRegions(feat_directory, id_view, _imageDescriber);
+      std::unique_ptr<feature::Regions> currRegions = sfm::loadRegions(featuresFolders, id_view, _imageDescriber);
 
       // Filter descriptors to keep only the 3D reconstructed points
       _regionsPerView.getData()[id_view][descType] = createFilteredRegions(*currRegions, observations.at(descType), _reconstructedRegionsMappingPerView[id_view][descType]);

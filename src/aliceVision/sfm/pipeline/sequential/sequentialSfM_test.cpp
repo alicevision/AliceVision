@@ -97,15 +97,15 @@ BOOST_AUTO_TEST_CASE(SEQUENTIAL_SFM_Partially_Known_Intrinsics)
   SfMData sfmData2 = sfmData;
   sfmData2.GetPoses().clear();
   sfmData2.structure.clear();
-  // Only the first two views will have valid intrinsics
-  // Remaining one will have undefined intrinsics
-  for (Views::iterator iterV = sfmData2.views.begin();
-    iterV != sfmData2.views.end(); ++iterV)
+
+  // The first two views will have valid intrinsics.
+  // The third one will have an invalid intrinsic (unknown focal length)
   {
-    if (std::distance(sfmData2.views.begin(),iterV) >1)
-    {
-      iterV->second.get()->setIntrinsicId(UndefinedIndexT);
-    }
+    // Create the intrinsic with unknown focal length
+    sfmData2.intrinsics[1] = std::make_shared<camera::Pinhole>
+        (config._cx*2, config._cy*2, -1, config._cx, config._cy);
+    // The 3rd view use this invalid intrinsic
+    sfmData2.views[2]->setIntrinsicId(1);
   }
 
   ReconstructionEngine_sequentialSfM sfmEngine(
@@ -128,17 +128,21 @@ BOOST_AUTO_TEST_CASE(SEQUENTIAL_SFM_Partially_Known_Intrinsics)
   sfmEngine.setMatches(&pairwiseMatches);
 
   // Set an initial pair
-  sfmEngine.setInitialPair(Pair(0,1));
+//  sfmEngine.setInitialPair(Pair(0,1)); // TODO: test without
 
   // Configure reconstruction parameters
   sfmEngine.Set_bFixedIntrinsics(true);
   BOOST_CHECK (sfmEngine.Process());
 
-  const double dResidual = RMSE(sfmEngine.Get_SfMData());
+  const SfMData& finalSfMData = sfmEngine.Get_SfMData();
+  const double dResidual = RMSE(finalSfMData);
   ALICEVISION_LOG_DEBUG("RMSE residual: " << dResidual);
   BOOST_CHECK_LT(dResidual, 0.5);
-  BOOST_CHECK_EQUAL(nviews, sfmEngine.Get_SfMData().GetPoses().size());
-  BOOST_CHECK_EQUAL(npoints, sfmEngine.Get_SfMData().GetLandmarks().size());
+  BOOST_CHECK_EQUAL(nviews, finalSfMData.GetPoses().size());
+  BOOST_CHECK_EQUAL(npoints, finalSfMData.GetLandmarks().size());
+  BOOST_CHECK_NE(
+      reinterpret_cast<const camera::Pinhole*>(finalSfMData.GetIntrinsics().at(0).get())->getPxFocalLength(),
+      reinterpret_cast<const camera::Pinhole*>(finalSfMData.GetIntrinsics().at(1).get())->getPxFocalLength());
 }
 
 BOOST_AUTO_TEST_CASE(SEQUENTIAL_SFM_Known_Rig)

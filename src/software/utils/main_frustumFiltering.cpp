@@ -3,13 +3,14 @@
 // v. 2.0. If a copy of the MPL was not distributed with this file,
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
-#include "aliceVision/sfm/sfm.hpp"
-#include "aliceVision/system/Timer.hpp"
-#include "aliceVision/matchingImageCollection/pairBuilder.hpp"
-
-#include "dependencies/stlplus3/filesystemSimplified/file_system.hpp"
+#include <aliceVision/sfm/sfm.hpp>
+#include <aliceVision/system/Timer.hpp>
+#include <aliceVision/matchingImageCollection/pairBuilder.hpp>
+#include <aliceVision/system/Logger.hpp>
+#include <aliceVision/system/cmdline.hpp>
 
 #include <boost/program_options.hpp>
+#include <boost/filesystem.hpp>
 
 #include <cstdlib>
 
@@ -17,14 +18,15 @@ using namespace aliceVision;
 using namespace aliceVision::sfm;
 using namespace std;
 namespace po = boost::program_options;
+namespace fs = boost::filesystem;
 
 /// Build a list of pair that share visibility content from the SfMData structure
-PairSet BuildPairsFromStructureObservations(const SfMData & sfm_data)
+PairSet BuildPairsFromStructureObservations(const SfMData& sfmData)
 {
   PairSet pairs;
 
-  for (Landmarks::const_iterator itL = sfm_data.GetLandmarks().begin();
-    itL != sfm_data.GetLandmarks().end(); ++itL)
+  for (Landmarks::const_iterator itL = sfmData.GetLandmarks().begin();
+    itL != sfmData.GetLandmarks().end(); ++itL)
   {
     const Landmark & landmark = itL->second;
     for(const auto& iterI : landmark.observations)
@@ -44,12 +46,12 @@ PairSet BuildPairsFromStructureObservations(const SfMData & sfm_data)
 
 /// Build a list of pair from the camera frusta intersections
 PairSet BuildPairsFromFrustumsIntersections(
-  const SfMData & sfm_data,
+  const SfMData & sfmData,
   const double z_near = -1., // default near plane
   const double z_far = -1.,  // default far plane
   const std::string& sOutDirectory = "") // output folder to save frustums as PLY
 {
-  const FrustumFilter frustum_filter(sfm_data, z_near, z_far);
+  const FrustumFilter frustum_filter(sfmData, z_near, z_far);
   if (!sOutDirectory.empty())
     frustum_filter.export_Ply(stlplus::create_filespec(sOutDirectory, "frustums.ply"));
   return frustum_filter.getFrustumIntersectionPairs();
@@ -115,39 +117,36 @@ int main(int argc, char **argv)
     return EXIT_FAILURE;
   }
 
+  ALICEVISION_COUT("Program called with the following parameters:");
+  ALICEVISION_COUT(vm);
+
   // set verbose level
   system::Logger::get()->setLogLevel(verboseLevel);
 
-  // Assert that we can create the output folder
-  if (!stlplus::folder_exists( stlplus::folder_part(outputFilename) ))
-    if(!stlplus::folder_create( stlplus::folder_part(outputFilename) ))
+  // check that we can create the output folder
+  if(!fs::exists(fs::path(outputFilename).parent_path()))
+    if(!fs::exists(fs::path(outputFilename).parent_path()))
       return EXIT_FAILURE;
 
-  // Load input SfMData scene
-  SfMData sfm_data;
-  if (!Load(sfm_data, sfmDataFilename, ESfMData(ALL))) {
-    std::cerr << std::endl
-      << "The input SfMData file \""<< sfmDataFilename << "\" cannot be read." << std::endl;
+  // load input SfMData scene
+  SfMData sfmData;
+  if(!Load(sfmData, sfmDataFilename, ESfMData::ALL))
+  {
+    ALICEVISION_LOG_ERROR("The input SfMData file '"<< sfmDataFilename << "' cannot be read");
     return EXIT_FAILURE;
   }
 
   aliceVision::system::Timer timer;
 
-  const PairSet pairs = BuildPairsFromFrustumsIntersections(sfm_data, zNear, zFar, stlplus::folder_part(outputFilename));
+  const PairSet pairs = BuildPairsFromFrustumsIntersections(sfmData, zNear, zFar, stlplus::folder_part(outputFilename));
   /*const PairSet pairs = BuildPairsFromStructureObservations(sfm_data); */
 
-  std::cout << "#pairs: " << pairs.size() << std::endl;
-  std::cout << std::endl << " Pair filtering took (s): " << timer.elapsed() << std::endl;
+  ALICEVISION_LOG_INFO("# pairs: " << pairs.size());
+  ALICEVISION_LOG_INFO("Pair filtering took: " << timer.elapsed() << " s");
 
   // export pairs on disk
-  if (savePairs(outputFilename, pairs))
-  {
+  if(savePairs(outputFilename, pairs))
     return EXIT_SUCCESS;
-  }
   else
-  {
     return EXIT_FAILURE;
-  }
-
-
 }

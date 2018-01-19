@@ -23,77 +23,62 @@ class AlembicExporter
 {
 public:
 
-  AlembicExporter(const std::string &filename);
+  explicit AlembicExporter(const std::string& filename);
+
+  ~AlembicExporter();
 
   /**
-   * @brief Add a set of 3D points from a SFM scene
+   * @brief Return the filename associated to the alembic file.
+   * @return the filename associated to the alembic file.
+   */
+  std::string getFilename() const;
+
+  /**
+   * @brief Add SfM Data
+   * @param[in] sfmdata SfMData container
+   * @param[in] flagsPart filter the elements to add
+   */
+  void addSfM(const sfm::SfMData& sfmdata, ESfMData flagsPart = ESfMData::ALL);
+
+  /**
+   * @brief Add a SfM single camera
+   * @param sfmData The corresponding view scene
+   * @param view The corresponding view
+   */
+  void addSfMSingleCamera(const SfMData& sfmData, const View& view);
+
+  /**
+   * @brief Add a SfM camera rig
+   * @param sfmData The corresponding rig scene
+   * @param rigId The rig Id in the scene
+   * @param viewIds The sub-pose view ids in the scene
+   */
+  void addSfMCameraRig(const SfMData& sfmData,
+                    IndexT rigId,
+                    const std::vector<IndexT>& viewIds);
+
+  /**
+   * @brief Add a set of 3d points
    * @param[in] points The 3D points to add
    */
-  void addPoints(const sfm::Landmarks &points,
-                 bool withVisibility=true);
-
+  void addLandmarks(const Landmarks& points, bool withVisibility = true);
 
   /**
-   * @brief Add a camera rig
-   *
-   * @param[in] rigId The rig Id
-   * @param[in] rigPoseId The rig pose Id
-   * @param[in] views rig views
-   * @param[in] viewsImagePaths The Paths to the images
-   * @param[in] intrinsics The cameras intrinsics
-   * @param[in] rigPose The rig pose
-   * @param[in] subPoses The sub-poses
-   */
-  void appendCameraRig(IndexT rigId,
-                       IndexT rigPoseId,
-                       const std::vector<View>& views,
-                       const std::vector<std::string>& viewsImagePaths,
-                       const std::vector<camera::Pinhole*>& intrinsics,
-                       const geometry::Pose3& rigPose,
-                       const std::vector<RigSubPose>& subPoses);
-
-
-  /**
-   * @brief Add a single camera
-   *
-   * @param[in] cameraName The camera name
+   * @brief Add a camera
+   * @param[in] name The camera identifier
    * @param[in] view The corresponding view
-   * @param[in] intrinsic The camera intrinsic
-   * @param[in] pose The camera pose
-   * @param[in] viewImagePath The Path to the image
-   */
-  void appendCamera(const std::string& cameraName,
-                    const View& view,
-                    const std::string& viewImagePath,
-                    const camera::Pinhole* intrinsic,
-                    const geometry::Pose3& pose);
-  /**
-   * @brief Add a single camera
-   *
-   * @param[in] cameraName The camera name
-   * @param[in] view The corresponding view
-   * @param[in] intrinsic The camera intrinsics
-   * @param[in] pose The camera pose
-   * @param[in] viewImagePath The Path to the image
+   * @param[in] pose The camera pose (nullptr if undefined)
+   * @param[in] intrinsic The camera intrinsic (nullptr if undefined)
    * @param[in,out] parent The Alembic parent node
    */
-  void appendCamera(const std::string& cameraName,
-                    const View& view,
-                    const std::string& viewImagePath,
-                    const camera::Pinhole* intrinsic,
-                    const geometry::Pose3& pose,
-                    Alembic::Abc::OObject& parent);
+  void addCamera(const std::string& name,
+                 const View& view,
+                 const geometry::Pose3* pose = nullptr,
+                 const camera::IntrinsicBase* intrinsic = nullptr,
+                 Alembic::Abc::OObject* parent = nullptr);
 
   /**
-   * @brief Initiate an animated camera
-   * 
-   * @param[in] cameraName An identifier for the camera
-   */
-  void initAnimatedCamera(const std::string &cameraName);
-  
-  /**
    * @brief Add a keyframe to the animated camera
-   * 
    * @param[in] pose The camera pose
    * @param[in] cam The camera intrinsics parameters
    * @param[in] imagePath The localized image path
@@ -102,40 +87,30 @@ public:
    * @param[in] sensorWidth_mm Width of the sensor in millimeters
    */
   void addCameraKeyframe(const geometry::Pose3 &pose,
-                           const camera::Pinhole *cam,
-                           const std::string &imagePath,
-                           const IndexT id_view,
-                           const IndexT id_intrinsic,
-                           const float sensorWidth_mm=36.0);
+                         const camera::Pinhole *cam,
+                         const std::string &imagePath,
+                         const IndexT id_view,
+                         const IndexT id_intrinsic,
+                         const float sensorWidth_mm=36.0);
+
+  /**
+   * @brief Initiate an animated camera
+   * @param[in] name The camera identifier
+   */
+  void initAnimatedCamera(const std::string &name);
   
+
+
   /**
    * @brief Register keyframe on the previous values
+   * @param[in] imagePath The Path to the image
    */
-  void jumpKeyframe(const std::string &imagePath = std::string());
-  
-  /**
-   * @brief Add SfM Data
-   * 
-   * @param[in] sfmdata SfMData container
-   * @param[in] flags_part filter the elements to add
-   */
-  void add(const sfm::SfMData &sfmdata, sfm::ESfMData flags_part = sfm::ESfMData::ALL);
-
-  /**
-   * @brief Return the filename associated to the alembic file.
-   * @return the filename associated to the alembivc file.
-   */
-  std::string getFilename();
-
-  virtual ~AlembicExporter();
+  void jumpKeyframe(const std::string& imagePath = std::string());
 
 private:
-  
   struct DataImpl;
-  std::unique_ptr<DataImpl> _data;
-
+  std::unique_ptr<DataImpl> _dataImpl;
 };
 
 } // namespace sfm
 } // namespace aliceVision
-

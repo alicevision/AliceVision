@@ -3,17 +3,18 @@
 // v. 2.0. If a copy of the MPL was not distributed with this file,
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
-#include "aliceVision/sfm/sfm.hpp"
-#include "aliceVision/system/Timer.hpp"
-
-#include "dependencies/stlplus3/filesystemSimplified/file_system.hpp"
+#include <aliceVision/sfm/sfm.hpp>
+#include <aliceVision/system/Timer.hpp>
+#include <aliceVision/system/Logger.hpp>
+#include <aliceVision/system/cmdline.hpp>
 
 #include <boost/program_options.hpp>
+#include <boost/filesystem.hpp>
 
 using namespace aliceVision;
 using namespace aliceVision::sfm;
-using namespace std;
 namespace po = boost::program_options;
+namespace fs = boost::filesystem;
 
 /// Export camera frustrums as a triangle PLY file
 int main(int argc, char **argv)
@@ -24,7 +25,8 @@ int main(int argc, char **argv)
   std::string sfmDataFilename;
   std::string plyOutFilename;
 
-  po::options_description allParams("AliceVision exportCameraFrustums");
+  po::options_description allParams("Export camera frustrums as a triangle PLY file\n"
+                                    "AliceVision exportCameraFrustums");
 
   po::options_description requiredParams("Required parameters");
   requiredParams.add_options()
@@ -65,31 +67,32 @@ int main(int argc, char **argv)
     return EXIT_FAILURE;
   }
 
+  ALICEVISION_COUT("Program called with the following parameters:");
+  ALICEVISION_COUT(vm);
+
   // set verbose level
   system::Logger::get()->setLogLevel(verboseLevel);
 
-  // export
+  // load input SfMData scene
+  SfMData sfmData;
+  if(!Load(sfmData, sfmDataFilename, ESfMData(VIEWS|INTRINSICS|EXTRINSICS)))
   {
-    // Load input SfMData scene
-    SfMData sfmData;
-    if (!Load(sfmData, sfmDataFilename, ESfMData(VIEWS|INTRINSICS|EXTRINSICS))) {
-      std::cerr << std::endl
-        << "The input SfMData file \""<< sfmDataFilename << "\" cannot be read." << std::endl;
-      return EXIT_FAILURE;
-    }
-
-    // Assert that we can create the output folder/file
-    if (!stlplus::folder_exists( stlplus::folder_part(plyOutFilename) ))
-      if(!stlplus::folder_create( stlplus::folder_part(plyOutFilename) ))
-        return EXIT_FAILURE;
-
-    // If sfm_data have not structure, cameras are displayed as tiny normalized cones
-    const FrustumFilter frustum_filter(sfmData);
-    if (!plyOutFilename.empty())
-    {
-      if (frustum_filter.export_Ply(plyOutFilename))
-        return EXIT_SUCCESS;
-    }
+    ALICEVISION_LOG_ERROR("The input SfMData file '"<< sfmDataFilename << "' cannot be read.");
+    return EXIT_FAILURE;
   }
+
+  // check that we can create the output folder/file
+  if(!fs::exists(fs::path(plyOutFilename).parent_path()))
+    if(!fs::create_directory(fs::path(plyOutFilename).parent_path()))
+      return EXIT_FAILURE;
+
+  // if sfmData have not structure, cameras are displayed as tiny normalized cones
+  const FrustumFilter frustumFilter(sfmData);
+  if(!plyOutFilename.empty())
+  {
+    if(frustumFilter.export_Ply(plyOutFilename))
+      return EXIT_SUCCESS;
+  }
+
   return EXIT_FAILURE;
 }

@@ -8,6 +8,8 @@
 #include <aliceVision/feature/feature.hpp>
 #include <aliceVision/image/all.hpp>
 #include <aliceVision/system/Timer.hpp>
+#include <aliceVision/system/Logger.hpp>
+#include <aliceVision/system/cmdline.hpp>
 
 #include <dependencies/stlplus3/filesystemSimplified/file_system.hpp>
 
@@ -36,7 +38,7 @@ int main(int argc, char **argv)
   std::string verboseLevel = system::EVerboseLevel_enumToString(system::Logger::getDefaultVerboseLevel());
   std::string sfmDataFilename;
   std::string describerTypesName = feature::EImageDescriberType_enumToString(feature::EImageDescriberType::SIFT);
-  std::string matchesFolder;
+  std::string featuresFolder;
   std::string outputFolder;
   std::string queryImage;
   double maxResidualError = std::numeric_limits<double>::infinity();
@@ -51,8 +53,8 @@ int main(int argc, char **argv)
       "SfMData file.")
     ("output,o", po::value<std::string>(&outputFolder)->required(),
       "Output path.")
-    ("matchesFolder,m", po::value<std::string>(&matchesFolder)->required(),
-      "Path to a folder in which computed matches are stored.")
+    ("featuresFolder,f", po::value<std::string>(&featuresFolder)->required(),
+      "Path to a folder containing the extracted features.")
     ("queryImage", po::value<std::string>(&queryImage)->required(),
       "Path to the image that must be localized.");
 
@@ -95,21 +97,23 @@ int main(int argc, char **argv)
     return EXIT_FAILURE;
   }
 
+  ALICEVISION_COUT("Program called with the following parameters:");
+  ALICEVISION_COUT(vm);
+
   // set verbose level
   system::Logger::get()->setLogLevel(verboseLevel);
 
   // Load input SfM_Data scene
   SfMData sfmData;
-  if (!Load(sfmData, sfmDataFilename, ESfMData(ALL))) {
-    std::cerr << std::endl
-      << "The input SfM_Data file \""<< sfmDataFilename << "\" cannot be read." << std::endl;
+  if (!Load(sfmData, sfmDataFilename, ESfMData(ALL)))
+  {
+    ALICEVISION_LOG_ERROR("The input SfMData file '"<< sfmDataFilename << "' cannot be read");
     return EXIT_FAILURE;
   }
 
   if (sfmData.GetPoses().empty() || sfmData.GetLandmarks().empty())
   {
-    std::cerr << std::endl
-      << "The input SfM_Data file have not 3D content to match with." << std::endl;
+    ALICEVISION_LOG_ERROR("The input SfM_Data file have not 3D content to match with.");
     return EXIT_FAILURE;
   }
 
@@ -137,25 +141,24 @@ int main(int argc, char **argv)
   sfm::SfMLocalizationSingle3DTrackObservationDatabase localizer;
   {
     RegionsPerView regionsPerView;
-
-    if (!sfm::loadRegionsPerView(regionsPerView, sfmData, matchesFolder, {describerType}))
+    if (!sfm::loadRegionsPerView(regionsPerView, sfmData, featuresFolder, {describerType}))
     {
-      std::cerr << std::endl << "Invalid regions." << std::endl;
+      ALICEVISION_LOG_ERROR("Invalid regions.");
       return EXIT_FAILURE;
     }
 
     if (outputFolder.empty())
     {
-      std::cerr << "\nIt is an invalid output folder" << std::endl;
+      ALICEVISION_LOG_ERROR("It is an invalid output folder");
       return EXIT_FAILURE;
     }
 
     if (!stlplus::folder_exists(outputFolder))
       stlplus::folder_create(outputFolder);
     
-    if (!localizer.Init(sfmData, regionsPerView))
+    if(!localizer.Init(sfmData, regionsPerView))
     {
-      std::cerr << "Cannot initialize the SfM localizer" << std::endl;
+      ALICEVISION_LOG_ERROR("Cannot initialize the SfM localizer");
     }
   }
   
@@ -163,7 +166,7 @@ int main(int argc, char **argv)
 
   if (!queryImage.empty())
   {
-    std::cout << "SfM::localization => try with image: " << queryImage << std::endl;
+    ALICEVISION_LOG_INFO("SfM::localization => try with image: " << queryImage);
     std::unique_ptr<Regions> query_regions;
     image::Image<unsigned char> imageGray;
     {
@@ -171,7 +174,7 @@ int main(int argc, char **argv)
 
       // Compute features and descriptors
       imageDescribers->Describe(imageGray, query_regions);
-      std::cout << "#regions detected in query image: " << query_regions->RegionCount() << std::endl;
+      ALICEVISION_LOG_INFO("# regions detected in query image: " << query_regions->RegionCount());
     }
 
     // Suppose intrinsic as unknown
@@ -189,7 +192,7 @@ int main(int argc, char **argv)
       pose,
       &matching_data))
     {
-      std::cerr << "Cannot locate the image" << std::endl;
+      ALICEVISION_LOG_ERROR("Cannot locate the image");
     }
     else
     {
@@ -223,10 +226,7 @@ int main(int argc, char **argv)
   }
   else
   {
-    std::cout << "----------------\n"
-      << " DEMONSTRATION \n"
-      << "----------------\n" << std::endl;
-    std::cout << "Will try to locate all the view of the loaded sfm_data file." << std::endl;
+    ALICEVISION_LOG_INFO("DEMONSTRATION" << std::endl << "Will try to locate all the view of the loaded sfm_data file.");
 
     for (const auto & viewIter : sfmData.GetViews())
     {
@@ -234,13 +234,13 @@ int main(int argc, char **argv)
       // Load an image, extract the regions and match
       const std::string sImagePath = view->getImagePath();
 
-      std::cout << "SfM::localization => try with image: " << sImagePath << std::endl;
+      ALICEVISION_LOG_INFO("SfM::localization => try with image: " << sImagePath);
 
       std::unique_ptr<Regions> query_regions;
       imageDescribers->Allocate(query_regions);
       const std::string basename = stlplus::basename_part(sImagePath);
-      const std::string featFile = stlplus::create_filespec(matchesFolder, basename, ".feat");
-      const std::string descFile = stlplus::create_filespec(matchesFolder, basename, ".desc");
+      const std::string featFile = stlplus::create_filespec(featuresFolder, basename, ".feat");
+      const std::string descFile = stlplus::create_filespec(featuresFolder, basename, ".desc");
 
       try
       {
@@ -276,7 +276,7 @@ int main(int argc, char **argv)
         pose,
         &matching_data))
       {
-        std::cerr << "Cannot locate the image" << std::endl;
+        ALICEVISION_LOG_ERROR("Cannot locate the image");
       }
       else
       {
@@ -308,10 +308,8 @@ int main(int argc, char **argv)
         vec_found_poses.push_back(pose.center());
       }
     }
-    std::cout
-      << "\n#images found: " << vec_found_poses.size()
-      << "\n#sfm_data view count: " << sfmData.GetViews().size()
-      << std::endl;
+    ALICEVISION_LOG_INFO("# images found: " << vec_found_poses.size());
+    ALICEVISION_LOG_INFO("# sfmData view count: " << sfmData.GetViews().size());
   }
 
   // Export the found camera position

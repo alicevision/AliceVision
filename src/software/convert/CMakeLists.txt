@@ -9,7 +9,6 @@ target_link_libraries(aliceVision_convertSfMFormat
 	aliceVision_system
 	aliceVision_feature
 	aliceVision_sfm
-	stlplus
 	${Boost_LIBRARIES}
 )
 
@@ -49,7 +48,6 @@ if(ALICEVISION_HAVE_ALEMBIC)
 		aliceVision_system
 		aliceVision_feature
 		aliceVision_sfm
-		stlplus
     ${BOOST_LIBRARIES}
 	)
 
@@ -61,24 +59,6 @@ if(ALICEVISION_HAVE_ALEMBIC)
 		DESTINATION bin/
 	)
 endif()
-
-# Convert uid
-
-add_executable(aliceVision_convertUID main_convertUID.cpp)
-
-target_link_libraries(aliceVision_convertUID
-  aliceVision_localization
-  aliceVision_feature
-  ${Boost_LIBRARIES}
-)
-
-set_property(TARGET aliceVision_convertUID
-  PROPERTY FOLDER AliceVision/Software/Convert
-)
-
-install(TARGETS aliceVision_convertUID
-  DESTINATION bin/
-)
 
 # Convert image to EXR
 
