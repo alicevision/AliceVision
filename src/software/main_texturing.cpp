@@ -131,14 +131,16 @@ int main(int argc, char* argv[])
     if(!inputMeshFilepath.empty())
     {
         ALICEVISION_COUT("An external input mesh is provided, so we remap the visibility from the reconstruction on it.");
+        // keep previous mesh as reference
+        mv_mesh* refMesh = mesh.me;
+        // load input obj file
+        mesh.me = new mv_mesh();
+        mesh.loadFromOBJ(inputMeshFilepath, flipNormals);
         // remap visibilities from reconstruction onto input mesh
-        meshRetex otherMesh;
         mesh::PointsVisibility otherPtsVisibilities;
-        otherMesh.me = new mv_mesh();
-        otherMesh.loadFromOBJ(inputMeshFilepath, flipNormals);
-        mesh::remapMeshVisibilities(*mesh.me, *ptsCams, *otherMesh.me, otherPtsVisibilities);
+        mesh::remapMeshVisibilities(*refMesh, *ptsCams, *mesh.me, otherPtsVisibilities);
 
-        std::swap(mesh.me, otherMesh.me);
+        delete refMesh;
         ptsCams->swap(otherPtsVisibilities);
     }
     if(!mesh.hasUVs())
