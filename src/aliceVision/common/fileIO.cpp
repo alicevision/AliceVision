@@ -302,7 +302,7 @@ std::string mv_getFileName(multiviewInputParams* mip, int index, EFileType mv_fi
             break;
         }
     }
-    if(scale != 0)
+    if(scale > 1)
     {
         suffix += "_scale" + num2str(scale);
     }
