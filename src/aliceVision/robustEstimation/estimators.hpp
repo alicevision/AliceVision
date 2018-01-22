@@ -7,6 +7,7 @@
 
 #include <string>
 #include <iostream>
+#include <aliceVision/system/Logger.hpp>
 
 namespace aliceVision {
 namespace robustEstimation {
@@ -69,6 +70,47 @@ inline std::istream& operator>>(std::istream& in, robustEstimation::ERobustEstim
     in >> token;
     estimatorType = robustEstimation::ERobustEstimator_stringToEnum(token);
     return in;
+}
+
+/**
+ * @brief It checks if the value for the reprojection error or the matching error
+ * is compatible with the given robust estimator. The value cannot be 0 for 
+ * LORansac, for ACRansac a value of 0 means to use infinity (ie estimate the 
+ * threshold during ransac process)
+ * @param e The estimator to be checked.
+ * @param value The value for the reprojection or matching error.
+ * @return true if the value is compatible
+ */
+inline bool checkRobustEstimator(ERobustEstimator e, double &value)
+{
+  if(e != ERobustEstimator::LORANSAC &&
+     e != ERobustEstimator::ACRANSAC)
+  {
+    ALICEVISION_CERR("Only " << ERobustEstimator::ACRANSAC
+            << " and " << ERobustEstimator::LORANSAC
+            << " are supported.");
+    return false;
+  }
+  if(value == 0 && 
+     e == ERobustEstimator::ACRANSAC)
+  {
+    // for acransac set it to infinity
+    value = std::numeric_limits<double>::infinity();
+  }
+  // for loransac we need thresholds > 0
+  if(e == ERobustEstimator::LORANSAC)
+  {
+    const double minThreshold = 1e-6;
+    if( value <= minThreshold)
+    {
+      ALICEVISION_CERR("Error: errorMax and matchingError cannot be 0 with " 
+              << ERobustEstimator::LORANSAC
+              << " estimator.");
+      return false;     
+    }
+  }
+
+  return true;
 }
 
 } //namespace robustEstimation
