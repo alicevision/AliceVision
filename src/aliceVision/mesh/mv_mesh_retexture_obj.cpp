@@ -204,12 +204,6 @@ void meshRetex::generateTextures(const multiviewParams &mp, staticVector<staticV
         generateTexture(mp, ptsCams, atlasID, imageCache, outPath, textureFileType);
 }
 
-//// pixel coordinates mapping, between source and final image
-struct PixelMapping {
-    point2d coordinatesInTC;
-    size_t indexInFinalImg;
-};
-
 /// accumulates colors and keeps count for providing average
 struct AccuColor {
     Color colorSum;
@@ -226,10 +220,6 @@ struct AccuColor {
     }
 };
 
-// alternative method to iterate over UV triangles' pixels
-// wip: fails on some triangles smaller than a pixel
-// #define USE_BARYCENTRIC_COORDS
-
 void meshRetex::generateTexture(const multiviewParams& mp, staticVector<staticVector<int>*>* ptsCams,
                                 size_t atlasID, mv_images_cache& imageCache, const bfs::path& outPath, EImageFileType textureFileType)
 {
@@ -237,114 +227,89 @@ void meshRetex::generateTexture(const multiviewParams& mp, staticVector<staticVe
         throw std::runtime_error("Invalid atlas ID " + std::to_string(atlasID));
 
     unsigned int textureSize = texParams.textureSide * texParams.textureSide;
-    std::vector<std::vector<PixelMapping*>> perCamPixelMapping(mp.ncams);
     std::vector<int> colorIDs(textureSize, -1);
+
+    std::vector<std::vector<unsigned int>> camTriangles(mp.ncams);
 
     std::cout << "Generating texture for atlas " << atlasID + 1 << "/" << _atlases.size()
               << " (" << _atlases[atlasID].size() << " triangles)" << std::endl;
-    std::cout << "- pixel mapping " << std::endl;
 
     // iterate over atlas' triangles
     for(size_t i = 0; i < _atlases[atlasID].size(); ++i)
     {
         int triangleId = _atlases[atlasID][i];
-        point2d triPixs[3];
-        point3d triPts[3];
         std::set<int> triCams;
-        // get corresponding 3D coordinates, UVs coordinates and report visibilities
+        // retrieve triangle visibilities (set of triangle's points visibilities)
         for(int k = 0; k < 3; k++)
         {
             const int pointIndex = (*me->tris)[triangleId].i[k];
-            triPts[k] = (*me->pts)[pointIndex];                               // 3D coordinate
-            const int uvPointIndex = (*trisUvIds)[triangleId].m[k];
-            triPixs[k] = (*uvCoords)[uvPointIndex] * texParams.textureSide;   // UV coordinate
-
-            // retrieve triangle visibilities (set of triangle's points visibilities)
-            if((*ptsCams)[pointIndex] != nullptr)
-                std::copy((*ptsCams)[pointIndex]->begin(), (*ptsCams)[pointIndex]->end(), std::inserter(triCams, triCams.end()));
-        }
-        if(triCams.empty()) // early-exit: triangle has no visibility
-        {
-            continue;
-        }
-
-#ifdef USE_BARYCENTRIC_COORDS
-        // (2D) get every texture pixels contained inside the UV triangle
-        staticVector<point2d>* triTexturePixels = getObjTexturePixelsForObjTriangleIdInTriBarycCoord(triPixs);
-
-        // project in cameras seeing that triangle
-        for(const point2d& coord : *triTexturePixels)
-        {
-            // convert barycentric coordinates to uv
-            point2d pix = barycentricToCartesian(triPixs, coord);
-
-#else
-        double sa = std::max(2.0, (triPixs[1] - triPixs[0]).size() + 1);
-        double sb = std::max(2.0, (triPixs[2] - triPixs[0]).size() + 1);
-        point3d coeff3D_a = (triPts[1] - triPts[0]) / sa;
-        point3d coeff3D_b = (triPts[2] - triPts[0]) / sb;
-        point2d coeff2D_a = (triPixs[1] - triPixs[0]) / sa;
-        point2d coeff2D_b = (triPixs[2] - triPixs[0]) / sb;
-
-        // get pixels inside this triangle
-        //
-        // we iterate over half pixels to avoid precision issues (missing pixels in final texture)
-        // if a pixel already has color info, it's skipped; impact on performance is minor
-        for(double ti = 0.; ti <= sa; ti+=0.5)
-        {
-        for(double tj = 0.; tj <= ((sa - ti) / sa) * sb; tj+=0.5)
-        {
-            point2d pix = triPixs[0] + coeff2D_a * ti + coeff2D_b * tj;
-#endif
-            // get 1D pixel index
-            pix.y = texParams.textureSide - pix.y;
-            size_t xyoffset = (int)pix.y * texParams.textureSide + (int)pix.x;
-            if(colorIDs[xyoffset] != -1)
-                continue;
-            // store color id for this index (used later for padding)
-            colorIDs[xyoffset] = xyoffset;
-
-#ifdef USE_BARYCENTRIC_COORDS
-            point3d pt3d = barycentricToCartesian(triPts, coord);
-#else
-            point3d pt3d = triPts[0] + coeff3D_a * ti + coeff3D_b * tj;
-#endif
-            for(const auto& camId : triCams)
+            const staticVector<int>* pointVisibilities = (*ptsCams)[pointIndex];
+            if(pointVisibilities != nullptr)
             {
-                point2d pixRC;
-                mp.getPixelFor3DPoint(&pixRC, pt3d, camId);
-                if(!mp.isPixelInImage(pixRC, camId))
-                    continue;
-                // store pixel mapping
-                PixelMapping* pi = new PixelMapping();
-                pi->coordinatesInTC = pixRC;
-                pi->indexInFinalImg = xyoffset;
-                perCamPixelMapping[camId].emplace_back(pi);
+                std::copy(pointVisibilities->begin(), pointVisibilities->end(), std::inserter(triCams, triCams.end()));
             }
         }
-#ifdef USE_BARYCENTRIC_COORDS
-        delete triTexturePixels;
-#else
-        }
-#endif
+        // register this triangle in cameras seeing it
+        for(int camId : triCams)
+            camTriangles[camId].push_back(triangleId);
     }
 
     std::cout << "- reading pixel color" << std::endl;
 
     std::vector<AccuColor> perPixelColors(textureSize);
-    for(size_t camId = 0; camId < perCamPixelMapping.size(); ++camId)
+    int camId = 0;
+
+    // iterate over triangles for each camera
+    for(std::vector<unsigned int>& triangles : camTriangles)
     {
-        auto& camPixelMappings = perCamPixelMapping[camId];
-        for(auto* pi : camPixelMappings)
+        for(unsigned int triangleId : triangles)
         {
-            // read from image cache
-            size_t xyoffset = pi->indexInFinalImg;
-            perPixelColors[xyoffset].add(imageCache.getPixelValueInterpolated(&(pi->coordinatesInTC), camId));
-            delete pi;
+            point2d triPixs[3];
+            point3d triPts[3];
+
+            for(int k = 0; k < 3; k++)
+            {
+                const int pointIndex = (*me->tris)[triangleId].i[k];
+                triPts[k] = (*me->pts)[pointIndex];                               // 3D coordinate
+                const int uvPointIndex = (*trisUvIds)[triangleId].m[k];
+                triPixs[k] = (*uvCoords)[uvPointIndex] * texParams.textureSide;   // UV coordinate
+            }
+
+            double sa = std::max(2.0, (triPixs[1] - triPixs[0]).size() + 1);
+            double sb = std::max(2.0, (triPixs[2] - triPixs[0]).size() + 1);
+            point3d coeff3D_a = (triPts[1] - triPts[0]) / sa;
+            point3d coeff3D_b = (triPts[2] - triPts[0]) / sb;
+            point2d coeff2D_a = (triPixs[1] - triPixs[0]) / sa;
+            point2d coeff2D_b = (triPixs[2] - triPixs[0]) / sb;
+
+            // get pixels inside this triangle
+            for(double ti = 0.0; ti <= sa; ti+=1.0)
+            {
+                // we iterate over half pixels to avoid precision issues (missing pixels in final texture)
+                for(double tj = 0.0; tj <= ((sa - ti) / sa) * sb; tj+=0.5)
+                {
+                    point2d pix = triPixs[0] + coeff2D_a * ti + coeff2D_b * tj;
+
+                    // get 1D pixel index
+                    pix.y = texParams.textureSide - pix.y;
+                    unsigned int xyoffset = (int)pix.y * texParams.textureSide + (int)pix.x;
+                    // store color id for this index (used later for padding)
+                    if(colorIDs[xyoffset] == -1)
+                        colorIDs[xyoffset] = xyoffset;
+
+                    point3d pt3d = triPts[0] + coeff3D_a * ti + coeff3D_b * tj;
+                    point2d pixRC;
+                    mp.getPixelFor3DPoint(&pixRC, pt3d, camId);
+                    if(!mp.isPixelInImage(pixRC, camId))
+                        continue;
+                    perPixelColors[xyoffset].add(imageCache.getPixelValueInterpolated(&pixRC, camId));
+                }
+            }
         }
-        camPixelMappings.clear();
+        triangles.clear();
+        camId++;
     }
-    perCamPixelMapping.clear();
+    camTriangles.clear();
 
     std::cout << "- edge padding (" << texParams.padding << " pixels)" << std::endl;
     // edge padding (dilate gutter)
@@ -399,7 +364,7 @@ void meshRetex::generateTexture(const multiviewParams& mp, staticVector<staticVe
         {
             unsigned int xyoffset = yoffset + xp;
             int colorID = colorIDs[xyoffset];
-            colorBuffer.at(yp * texParams.textureSide + xp) = (colorID >= 0) ? perPixelColors[colorID].average() : Color();
+            colorBuffer[yp * texParams.textureSide + xp] = (colorID >= 0) ? perPixelColors[colorID].average() : Color();
         }
     }
 
