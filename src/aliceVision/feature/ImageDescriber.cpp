@@ -26,47 +26,47 @@
 namespace aliceVision{
 namespace feature{
 
-EImageDescriberPreset EImageDescriberPreset_stringToEnum(const std::string& sPreset)
+EImageDescriberPreset EImageDescriberPreset_stringToEnum(const std::string& preset)
 {
-  if(sPreset == "LOW")
+  if(preset == "LOW")
     return EImageDescriberPreset::LOW;
-  if (sPreset == "MEDIUM")
+  if(preset == "MEDIUM")
     return EImageDescriberPreset::MEDIUM;
-  if(sPreset == "NORMAL")
+  if(preset == "NORMAL")
     return EImageDescriberPreset::NORMAL;
-  if (sPreset == "HIGH")
+  if(preset == "HIGH")
     return EImageDescriberPreset::HIGH;
-  if (sPreset == "ULTRA")
+  if(preset == "ULTRA")
     return EImageDescriberPreset::ULTRA;
-  throw std::invalid_argument("Invalid descriptor preset: " + sPreset);
+  throw std::invalid_argument("Invalid descriptor preset: " + preset);
 }
 
 std::string EImageDescriberPreset_enumToString(const EImageDescriberPreset preset)
 {
   if(preset == EImageDescriberPreset::LOW)
     return "LOW";
-  if (preset == EImageDescriberPreset::MEDIUM)
+  if(preset == EImageDescriberPreset::MEDIUM)
     return "MEDIUM";
   if(preset == EImageDescriberPreset::NORMAL)
     return "NORMAL";
-  if (preset == EImageDescriberPreset::HIGH)
+  if(preset == EImageDescriberPreset::HIGH)
     return "HIGH";
-  if (preset == EImageDescriberPreset::ULTRA)
+  if(preset == EImageDescriberPreset::ULTRA)
     return "ULTRA";
   throw std::invalid_argument("Unrecognized EImageDescriberPreset");
 }
 
 std::ostream& operator<<(std::ostream& os, EImageDescriberPreset p)
 {
-    return os << EImageDescriberPreset_enumToString(p);
+  return os << EImageDescriberPreset_enumToString(p);
 }
 
 std::istream& operator>>(std::istream& in, EImageDescriberPreset& p)
 {
-    std::string token;
-    in >> token;
-    p = EImageDescriberPreset_stringToEnum(token);
-    return in;
+  std::string token;
+  in >> token;
+  p = EImageDescriberPreset_stringToEnum(token);
+  return in;
 }
 
 std::unique_ptr<ImageDescriber> createImageDescriber(EImageDescriberType imageDescriberType)

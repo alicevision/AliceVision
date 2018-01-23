@@ -199,12 +199,12 @@ bool VoctreeLocalizer::localize(const image::Image<unsigned char> & imageGrey,
     const auto descType = imageDescriber->getDescriberType();
     auto & queryRegions = queryRegionsPerDesc[descType];
 
-    imageDescriber->Allocate(queryRegions);
+    imageDescriber->allocate(queryRegions);
 
     system::Timer timer;
     imageDescriber->setCudaPipe(_cudaPipe);
-    imageDescriber->Set_configuration_preset(param->_featurePreset);
-    imageDescriber->Describe(imageGrey, queryRegions, nullptr);
+    imageDescriber->setConfigurationPreset(param->_featurePreset);
+    imageDescriber->describe(imageGrey, queryRegions, nullptr);
 
     ALICEVISION_LOG_DEBUG("[features]\tExtract " << feature::EImageDescriberType_enumToString(descType) << " done: found " << queryRegions->RegionCount() << " features in " << timer.elapsedMs() << " [ms]");
   }
@@ -338,7 +338,7 @@ bool VoctreeLocalizer::initDatabase(const std::string & vocTreeFilepath,
           // so you have a data structure with 0 element and you don't need to add
           // special cases everywhere for empty elements.
           _reconstructedRegionsMappingPerView[id_view][descType] = std::move(mapping);
-          imageDescriber->Allocate(_regionsPerView.getData()[id_view][descType]);
+          imageDescriber->allocate(_regionsPerView.getData()[id_view][descType]);
         }
         continue;
       }
@@ -1159,7 +1159,7 @@ bool VoctreeLocalizer::localizeRig(const std::vector<image::Image<unsigned char>
     for(auto& imageDescriber: _imageDescribers)
     {
       ALICEVISION_LOG_DEBUG("[features]\tExtract " << feature::EImageDescriberType_enumToString(imageDescriber->getDescriberType()) << " from query image...");
-      imageDescriber->Describe(vec_imageGrey[i], vec_queryRegions[i][imageDescriber->getDescriberType()]);
+      imageDescriber->describe(vec_imageGrey[i], vec_queryRegions[i][imageDescriber->getDescriberType()]);
       ALICEVISION_LOG_DEBUG("[features]\tExtract done: found " <<  vec_queryRegions[i][imageDescriber->getDescriberType()]->RegionCount() << " features");
     }
     ALICEVISION_LOG_DEBUG("[features]\tAll descriptors extracted. Found " <<  vec_queryRegions[i].getNbAllRegions() << " features");

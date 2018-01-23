@@ -30,6 +30,12 @@ public:
   ~ImageDescriber_CCTAG();
 
   /**
+   * @brief Check if the image describer use CUDA
+   * @return True if the image describer use CUDA
+   */
+  bool useCuda() const override;
+
+  /**
    * @brief Check if the image describer use float image
    * @return True if the image describer use float image
    */
@@ -47,13 +53,18 @@ public:
     // TODO: check nRings to decide between CCTAG3 and CCTAG4
     return EImageDescriberType::CCTAG3;
   }
-  
+
   /**
-   * @brief Use a preset to control the number of detected regions
-   * @param[in] preset The preset configuration
-   * @return True if configuration succeed. (here always false)
+   * @brief Get the total amount of RAM needed for a
+   * feature extraction of an image of the given dimension.
+   * @param[in] width The image width
+   * @param[in] height The image height
+   * @return total amount of memory needed
    */
-  bool Set_configuration_preset(EImageDescriberPreset preset) override;
+  std::size_t getMemoryConsumption(std::size_t width, std::size_t height) const override
+  {
+    return 3 * width * height * sizeof(unsigned char);
+  }
 
   /**
    * @brief Set if yes or no imageDescriber need to use cuda implementation
@@ -61,17 +72,31 @@ public:
    */
   void setUseCuda(bool) override;
 
-  void setCudaPipe(int pipe) override { _cudaPipe = pipe; }
+  /**
+   * @brief set the CUDA pipe
+   * @param[in] pipe The CUDA pipe id
+   */
+  void setCudaPipe(int pipe) override
+  {
+    _cudaPipe = pipe;
+  }
+
+  /**
+   * @brief Use a preset to control the number of detected regions
+   * @param[in] preset The preset configuration
+   * @return True if configuration succeed. (here always false)
+   */
+  void setConfigurationPreset(EImageDescriberPreset preset) override;
 
   /**
    * @brief Detect regions on the 8-bit image and compute their attributes (description)
    * @param[in] image Image.
    * @param[out] regions The detected regions and attributes (the caller must delete the allocated data)
-   * @param[in] mask 8-bit gray image for keypoint filtering (optional).
+   * @param[in] mask 8-bit grayscale image for keypoint filtering (optional)
    *    Non-zero values depict the region of interest.
    * @return True if detection succed.
    */
-  bool Describe(const image::Image<unsigned char>& image,
+  bool describe(const image::Image<unsigned char>& image,
     std::unique_ptr<Regions> &regions,
     const image::Image<unsigned char> * mask = nullptr) override;
 
@@ -79,7 +104,7 @@ public:
    * @brief Allocate Regions type depending of the ImageDescriber
    * @param[in,out] regions
    */
-  void Allocate(std::unique_ptr<Regions> &regions) const override;
+  void allocate(std::unique_ptr<Regions> &regions) const override;
 
   struct CCTagParameters
   {

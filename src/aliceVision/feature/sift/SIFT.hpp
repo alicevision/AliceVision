@@ -29,85 +29,84 @@ namespace feature {
 
 struct SiftParams
 {
-  SiftParams(
-    int first_octave = 0,
-    int num_octaves = 6,
-    int num_scales = 3,
-    float edge_threshold = 10.0f,
-    float peak_threshold = 0.04f,
-    //
-    std::size_t gridSize = 4,
-    std::size_t maxTotalKeypoints = 1000,
-    //
-    bool root_sift = true
-  ):
-    _first_octave(first_octave),
-    _num_octaves(num_octaves),
-    _num_scales(num_scales),
-    _edge_threshold(edge_threshold),
-    _peak_threshold(peak_threshold),
-    //
-    _gridSize(gridSize),
-    _maxTotalKeypoints(maxTotalKeypoints),
-    //
-    _root_sift(root_sift) {}
+  SiftParams(int firstOctave = 0,
+             int numOctaves = 6,
+             int numScales = 3,
+             float edgeThreshold = 10.0f,
+             float peakThreshold = 0.04f,
+             std::size_t gridSize = 4,
+             std::size_t maxTotalKeypoints = 1000,
+             bool rootSift = true)
+    : _firstOctave(firstOctave)
+    , _numOctaves(numOctaves)
+    , _numScales(numScales)
+    , _edgeThreshold(edgeThreshold)
+    , _peakThreshold(peakThreshold)
+    , _gridSize(gridSize)
+    , _maxTotalKeypoints(maxTotalKeypoints)
+    , _rootSift(rootSift)
+  {}
 
   // Parameters
-  int _first_octave;      // Use original image, or perform an upscale if == -1
-  int _num_octaves;       // Max octaves count
-  int _num_scales;        // Scales per octave
-  float _edge_threshold;  // Max ratio of Hessian eigenvalues
-  float _peak_threshold;  // Min contrast
-  //
+
+  /// Use original image, or perform an upscale if == -1
+  int _firstOctave;
+  /// Max octaves count
+  int _numOctaves;
+  /// Scales per octave
+  int _numScales;
+  /// Max ratio of Hessian eigenvalues
+  float _edgeThreshold;
+  /// Min contrast
+  float _peakThreshold;
   std::size_t _gridSize;
   std::size_t _maxTotalKeypoints;
-  //
-  bool _root_sift;        // see [1]
+  /// see [1]
+  bool _rootSift;
   
-  bool setPreset(EImageDescriberPreset preset) // TODO: void
+  void setPreset(EImageDescriberPreset preset)
   {
     switch(preset)
     {
-    case EImageDescriberPreset::LOW:
-    {
-      _maxTotalKeypoints = 1000;
-      _peak_threshold = 0.04f;
-      _first_octave = 2;
-      break;
+      case EImageDescriberPreset::LOW:
+      {
+        _maxTotalKeypoints = 1000;
+        _peakThreshold = 0.04f;
+        _firstOctave = 2;
+        break;
+      }
+      case EImageDescriberPreset::MEDIUM:
+      {
+        _maxTotalKeypoints = 5000;
+        _peakThreshold = 0.04f;
+        _firstOctave = 1;
+        break;
+      }
+      case EImageDescriberPreset::NORMAL:
+      {
+        _maxTotalKeypoints = 10000;
+        _peakThreshold = 0.04f;
+        _firstOctave = 0;
+        break;
+      }
+      case EImageDescriberPreset::HIGH:
+      {
+        _maxTotalKeypoints = 50000;
+        _peakThreshold = 0.01f;
+        _firstOctave = 0;
+        break;
+      }
+      case EImageDescriberPreset::ULTRA:
+      {
+        _maxTotalKeypoints = 100000;
+        _peakThreshold = 0.01f;
+        _firstOctave = -1;
+        break;
+      }
+      default:
+        throw std::out_of_range("Invalid image describer preset enum");
     }
-    case EImageDescriberPreset::MEDIUM:
-    {
-      _maxTotalKeypoints = 5000;
-      _peak_threshold = 0.04f;
-      _first_octave = 1;
-      break;
-    }
-    case EImageDescriberPreset::NORMAL:
-    {
-      _maxTotalKeypoints = 10000;
-      _peak_threshold = 0.04f;
-      break;
-    }
-    case EImageDescriberPreset::HIGH:
-    {
-      _maxTotalKeypoints = 50000;
-      _peak_threshold = 0.01f;
-      break;
-    }
-    case EImageDescriberPreset::ULTRA:
-    {
-      _maxTotalKeypoints = 100000;
-      _peak_threshold = 0.01f;
-      _first_octave = -1;
-      break;
-    }
-    default:
-      throw std::out_of_range("Invalid Preset enum");
-    }
-    return true;
   }
-  
-  
 };
 
 //convertSIFT
@@ -159,6 +158,34 @@ inline void convertSIFT<unsigned char>(
 }
 
 /**
+ * @brief Get the total amount of RAM needed for a
+ * feature extraction of an image of the given dimension.
+ * @param[in] width The image width
+ * @param[in] height The image height
+ * @return total amount of memory needed
+ */
+inline std::size_t getMemoryConsumptionVLFeat(std::size_t width, std::size_t height, const SiftParams& params)
+{
+  double scaleFactor = 1.0;
+  if(params._firstOctave > 0)
+    scaleFactor = 1.0/params._firstOctave;
+  else if(params._firstOctave < 0)
+    scaleFactor = 2.0 * -params._firstOctave;
+  std::size_t fullImgSize = width * height * scaleFactor * scaleFactor;
+
+  std::size_t pyramidMemoryConsuption = 0;
+  double downscale = 1.0;
+  for(int octave = 0; octave < params._numOctaves; ++octave)
+  {
+    pyramidMemoryConsuption += fullImgSize / (downscale*downscale);
+    downscale *= 2.0;
+  }
+  pyramidMemoryConsuption *= params._numScales * sizeof(float);
+
+  return 4 * pyramidMemoryConsuption + (3 * width * height * sizeof(float)) + (params._maxTotalKeypoints * 128 * sizeof(float));
+}
+
+/**
  * @brief Extract SIFT regions (in float or unsigned char).
  *
  * @param image
@@ -176,11 +203,11 @@ bool extractSIFT(const image::Image<float>& image,
     const image::Image<unsigned char>* mask)
 {
   const int w = image.Width(), h = image.Height();
-  VlSiftFilt *filt = vl_sift_new(w, h, params._num_octaves, params._num_scales, params._first_octave);
-  if (params._edge_threshold >= 0)
-    vl_sift_set_edge_thresh(filt, params._edge_threshold);
-  if (params._peak_threshold >= 0)
-    vl_sift_set_peak_thresh(filt, params._peak_threshold/params._num_scales);
+  VlSiftFilt *filt = vl_sift_new(w, h, params._numOctaves, params._numScales, params._firstOctave);
+  if (params._edgeThreshold >= 0)
+    vl_sift_set_edge_thresh(filt, params._edgeThreshold);
+  if (params._peakThreshold >= 0)
+    vl_sift_set_peak_thresh(filt, params._peakThreshold/params._numScales);
 
   Descriptor<vl_sift_pix, 128> vlFeatDescriptor;
   Descriptor<T, 128> descriptor;
@@ -233,7 +260,7 @@ bool extractSIFT(const image::Image<float>& image,
         const SIOPointFeature fp(keys[i].x, keys[i].y,
           keys[i].sigma, static_cast<float>(angles[q]));
 
-        convertSIFT<T>(&vlFeatDescriptor[0], descriptor, params._root_sift);
+        convertSIFT<T>(&vlFeatDescriptor[0], descriptor, params._rootSift);
         
         #pragma omp critical
         {
@@ -311,7 +338,7 @@ bool extractSIFT(const image::Image<float>& image,
       if( filtered_indexes.size() < params._maxTotalKeypoints )
       {
         const std::size_t remainingElements = std::min(rejected_indexes.size(), params._maxTotalKeypoints - filtered_indexes.size());
-        std::cout << "Grid filtering -- Copy remaining points: " << remainingElements << std::endl;
+        ALICEVISION_LOG_TRACE("Grid filtering -- Copy remaining points: " << remainingElements);
         filtered_indexes.insert(filtered_indexes.end(), rejected_indexes.begin(), rejected_indexes.begin() + remainingElements);
       }
 

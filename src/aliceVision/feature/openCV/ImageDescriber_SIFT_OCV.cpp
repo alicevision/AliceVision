@@ -16,38 +16,39 @@
 namespace aliceVision {
 namespace feature {
 
-bool SIFT_openCV_Params::Set_configuration_preset(EImageDescriberPreset preset)
+void SIFT_openCV_Params::setConfigurationPreset(EImageDescriberPreset preset)
 {
     switch(preset)
     {
       case EImageDescriberPreset::LOW:
         contrastThreshold = 0.01;
         maxTotalKeypoints = 1000;
-        break;
+      break;
       case EImageDescriberPreset::MEDIUM:
         contrastThreshold = 0.005;
         maxTotalKeypoints = 5000;
-        break;
+      break;
       case EImageDescriberPreset::NORMAL:
         contrastThreshold = 0.005;
         edgeThreshold = 15;
         maxTotalKeypoints = 10000;
-        break;
+      break;
       case EImageDescriberPreset::HIGH:
         contrastThreshold = 0.005;
         edgeThreshold = 20;
         maxTotalKeypoints = 20000;
-        break;
+      break;
       case EImageDescriberPreset::ULTRA:
         contrastThreshold = 0.005;
         edgeThreshold = 20;
         maxTotalKeypoints = 40000;
-        break;
+      break;
+      default:
+        throw std::out_of_range("Invalid image describer preset enum");
     }
-    return true;
 }
 
-bool ImageDescriber_SIFT_openCV::Describe(const image::Image<unsigned char>& image,
+bool ImageDescriber_SIFT_openCV::describe(const image::Image<unsigned char>& image,
                                           std::unique_ptr<Regions> &regions,
                                           const image::Image<unsigned char> * mask)
 {
@@ -142,7 +143,7 @@ bool ImageDescriber_SIFT_openCV::Describe(const image::Image<unsigned char>& ima
   auto desc_elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(desc_end - desc_start);
   ALICEVISION_LOG_TRACE("Compute descriptors: " << desc_elapsed.count() << " milliseconds." << std::endl);
 
-  Allocate(regions);
+  allocate(regions);
 
   // Build alias to cached data
   SIFT_Regions * regionsCasted = dynamic_cast<SIFT_Regions*>(regions.get());

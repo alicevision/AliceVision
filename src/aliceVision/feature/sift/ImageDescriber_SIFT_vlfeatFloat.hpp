@@ -11,7 +11,7 @@
 #include <aliceVision/feature/sift/SIFT.hpp>
 
 extern "C" {
-#include "nonFree/sift/vl/sift.h"
+#include <nonFree/sift/vl/sift.h>
 }
 
 #include <iostream>
@@ -41,6 +41,15 @@ public:
   }
 
   /**
+   * @brief Check if the image describer use CUDA
+   * @return True if the image describer use CUDA
+   */
+  bool useCuda() const override
+  {
+    return false;
+  }
+
+  /**
    * @brief Check if the image describer use float image
    * @return True if the image describer use float image
    */
@@ -57,18 +66,19 @@ public:
   {
     return EImageDescriberType::SIFT_FLOAT;
   }
-  
+
   /**
-   * @brief Use a preset to control the number of detected regions
-   * @param[in] preset The preset configuration
-   * @return True if configuration succeed. (here always false)
+   * @brief Get the total amount of RAM needed for a
+   * feature extraction of an image of the given dimension.
+   * @param[in] width The image width
+   * @param[in] height The image height
+   * @return total amount of memory needed
    */
-  bool Set_configuration_preset(EImageDescriberPreset preset) override
+  std::size_t getMemoryConsumption(std::size_t width, std::size_t height) const override
   {
-    return _params.setPreset(preset);
+    return getMemoryConsumptionVLFeat(width, height, _params);
   }
   
-
   /**
    * @brief Set image describer always upRight
    * @param[in] upRight
@@ -79,14 +89,23 @@ public:
   }
 
   /**
+   * @brief Use a preset to control the number of detected regions
+   * @param[in] preset The preset configuration
+   */
+  void setConfigurationPreset(EImageDescriberPreset preset) override
+  {
+    return _params.setPreset(preset);
+  }
+
+  /**
    * @brief Detect regions on the float image and compute their attributes (description)
    * @param[in] image Image.
    * @param[out] regions The detected regions and attributes (the caller must delete the allocated data)
-   * @param[in] mask 8-bit gray image for keypoint filtering (optional).
+   * @param[in] mask 8-bit grayscale image for keypoint filtering (optional)
    *    Non-zero values depict the region of interest.
    * @return True if detection succed.
    */
-  bool Describe(const image::Image<float>& image,
+  bool describe(const image::Image<float>& image,
     std::unique_ptr<Regions>& regions,
     const image::Image<unsigned char>* mask = NULL) override
   {
@@ -97,7 +116,7 @@ public:
    * @brief Allocate Regions type depending of the ImageDescriber
    * @param[in,out] regions
    */
-  void Allocate(std::unique_ptr<Regions>& regions) const override
+  void allocate(std::unique_ptr<Regions>& regions) const override
   {
     regions.reset(new SIFT_Float_Regions);
   }

@@ -55,14 +55,19 @@ ImageDescriber_CCTAG::~ImageDescriber_CCTAG()
 {
 }
 
-void ImageDescriber_CCTAG::Allocate(std::unique_ptr<Regions> &regions) const
+bool ImageDescriber_CCTAG::useCuda() const
+{
+  return _params._internalParams->_useCuda;
+}
+
+void ImageDescriber_CCTAG::allocate(std::unique_ptr<Regions> &regions) const
 {
   regions.reset( new CCTAG_Regions );
 }
 
-bool ImageDescriber_CCTAG::Set_configuration_preset(EImageDescriberPreset preset)
+void ImageDescriber_CCTAG::setConfigurationPreset(EImageDescriberPreset preset)
 {
-  return _params.setPreset(preset);
+  _params.setPreset(preset);
 }
 
 void ImageDescriber_CCTAG::setUseCuda(bool useCuda)
@@ -70,13 +75,13 @@ void ImageDescriber_CCTAG::setUseCuda(bool useCuda)
   _params._internalParams->_useCuda = useCuda;
 }
 
-bool ImageDescriber_CCTAG::Describe(const image::Image<unsigned char>& image,
+bool ImageDescriber_CCTAG::describe(const image::Image<unsigned char>& image,
     std::unique_ptr<Regions> &regions,
     const image::Image<unsigned char> * mask)
 {
 
   if ( !_doAppend )
-    Allocate(regions);
+    allocate(regions);
   // else regions are added to the current vector of features/descriptors
 
   // Build alias to cached data

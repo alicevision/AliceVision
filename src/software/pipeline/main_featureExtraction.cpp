@@ -341,9 +341,9 @@ int main(int argc, char **argv)
       method.typeName = EImageDescriberType_enumToString(describerMethod);
       method.type = describerMethod;
       method.describer = createImageDescriber(method.type);
-      method.describer->Set_configuration_preset(describerPreset);
       method.describer->setUpRight(describersAreUpRight);
       imageDescribers.push_back(method);
+      imageDescriber->setConfigurationPreset(describerPreset);
     }
   }
 

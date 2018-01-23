@@ -37,12 +37,12 @@ public:
     cudaDeviceReset();
 
     popsift::Config config;
-    config.setOctaves(_params._num_octaves);
-    config.setLevels(_params._num_scales);
-    config.setDownsampling(_params._first_octave);
-    config.setThreshold(  _params._peak_threshold);
-    config.setEdgeLimit(  _params._edge_threshold);
-    config.setUseRootSift(_params._root_sift);
+    config.setOctaves(_params._numOctaves);
+    config.setLevels(_params._numScales);
+    config.setDownsampling(_params._firstOctave);
+    config.setThreshold(  _params._peakThreshold);
+    config.setEdgeLimit(  _params._edgeThreshold);
+    config.setUseRootSift(_params._rootSift);
     config.setNormalizationMultiplier(9); // 2^9 = 512
 
     popsift::cuda::device_prop_t deviceInfo;
@@ -51,6 +51,15 @@ public:
     deviceInfo.print();
 
     _popSift.reset( new PopSift(config) );
+  }
+
+  /**
+   * @brief Check if the image describer use CUDA
+   * @return True if the image describer use CUDA
+   */
+  bool useCuda() const override
+  {
+    return true;
   }
 
   /**
@@ -72,13 +81,15 @@ public:
   }
 
   /**
-   * @brief Use a preset to control the number of detected regions
-   * @param[in] preset The preset configuration
-   * @return True if configuration succeed. (here always false)
+   * @brief Get the total amount of RAM needed for a
+   * feature extraction of an image of the given dimension.
+   * @param[in] width The image width
+   * @param[in] height The image height
+   * @return total amount of memory needed
    */
-  bool Set_configuration_preset(EImageDescriberPreset preset) override
+  virtual std::size_t getMemoryConsumption(std::size_t width, std::size_t height) const override
   {
-    return _params.setPreset(preset);
+    return 3 * width * height * sizeof(float); //  GPU only
   }
 
   /**
@@ -91,14 +102,23 @@ public:
   }
 
   /**
+   * @brief Use a preset to control the number of detected regions
+   * @param[in] preset The preset configuration
+   */
+  void setConfigurationPreset(EImageDescriberPreset preset) override
+  {
+    _params.setPreset(preset);
+  }
+
+  /**
    * @brief Detect regions on the 8-bit image and compute their attributes (description)
    * @param[in] image Image.
    * @param[out] regions The detected regions and attributes (the caller must delete the allocated data)
-   * @param[in] mask 8-bit gray image for keypoint filtering (optional).
+   * @param[in] mask 8-bit grayscale image for keypoint filtering (optional)
    *    Non-zero values depict the region of interest.
    * @return True if detection succed.
    */
-  bool Describe(const image::Image<unsigned char>& image,
+  bool describe(const image::Image<unsigned char>& image,
                 std::unique_ptr<Regions>& regions,
                 const image::Image<unsigned char>* mask = NULL) override;
 
@@ -106,7 +126,7 @@ public:
    * @brief Allocate Regions type depending of the ImageDescriber
    * @param[in,out] regions
    */
-  void Allocate(std::unique_ptr<Regions>& regions) const override
+  void allocate(std::unique_ptr<Regions>& regions) const override
   {
     regions.reset(new SIFT_Regions);
   }
@@ -114,7 +134,6 @@ public:
 private:
   SiftParams _params;
   bool _isOriented = true;
-
   static std::unique_ptr<PopSift> _popSift;
 };
 

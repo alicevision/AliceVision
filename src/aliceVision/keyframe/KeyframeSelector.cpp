@@ -316,7 +316,7 @@ bool KeyframeSelector::computeFrameData(const image::Image<image::RGBColor>& ima
 
     // compute current frame sparse histogram
     std::unique_ptr<feature::Regions> regions;
-    _imageDescriber->Describe(imageGrayHalfSample, regions);
+    _imageDescriber->describe(imageGrayHalfSample, regions);
     currMediaData.histogram = voctree::SparseHistogram(_voctree->quantizeToSparse(dynamic_cast<feature::SIFT_Regions*>(regions.get())->Descriptors()));
 
     // compute sparseDistance

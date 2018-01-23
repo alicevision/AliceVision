@@ -281,11 +281,7 @@ int main(int argc, char **argv)
       }
       else
       {
-        if (!image_describer->Set_configuration_preset(describerPreset))
-        {
-          std::cerr << "Preset configuration failed." << std::endl;
-          return EXIT_FAILURE;
-        }
+        image_describer->setConfigurationPreset(describerPreset);
       }
 
       // For each image computes the regions:
@@ -294,7 +290,7 @@ int main(int argc, char **argv)
       for (size_t i = 0; i < dataset.size(); ++i)
       {
         image::ConvertPixelType(dataset.image(i), &imageGray);
-        image_describer->Describe(imageGray, map_regions[i]);
+        image_describer->describe(imageGray, map_regions[i]);
         std::cout << "image: " << i << "\t #found features: " << map_regions[i]->RegionCount() << std::endl;
       }
 

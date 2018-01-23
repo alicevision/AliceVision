@@ -36,8 +36,8 @@ int main() {
   using namespace aliceVision::feature;
   std::unique_ptr<ImageDescriber> image_describer(new ImageDescriber_SIFT());
   std::map<IndexT, std::unique_ptr<feature::Regions> > regions_perImage;
-  image_describer->Describe(imageL, regions_perImage[0]);
-  image_describer->Describe(imageR, regions_perImage[1]);
+  image_describer->describe(imageL, regions_perImage[0]);
+  image_describer->describe(imageR, regions_perImage[1]);
 
   const PointFeatures
     featsL = regions_perImage.at(0)->GetRegionsPositions(),
