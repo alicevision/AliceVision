@@ -1,6 +1,7 @@
 # Headers
 set(system_files_headers
   cpu.hpp
+  gpu.hpp
   MemoryInfo.hpp
   system.hpp
   Timer.hpp
@@ -23,7 +24,6 @@ add_library(aliceVision_system
 set_property(TARGET aliceVision_system
   PROPERTY FOLDER AliceVision/AliceVision
 )
-
 
 target_link_libraries(aliceVision_system ${Boost_LIBRARIES})
 

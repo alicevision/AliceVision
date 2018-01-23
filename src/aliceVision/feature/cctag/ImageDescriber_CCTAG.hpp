@@ -48,11 +48,7 @@ public:
    * @brief Get the corresponding EImageDescriberType
    * @return EImageDescriberType
    */
-  EImageDescriberType getDescriberType() const override
-  {
-    // TODO: check nRings to decide between CCTAG3 and CCTAG4
-    return EImageDescriberType::CCTAG3;
-  }
+  EImageDescriberType getDescriberType() const override;
 
   /**
    * @brief Get the total amount of RAM needed for a

@@ -4,6 +4,7 @@
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
 #include "ImageDescriber_CCTAG.hpp"
+#include <aliceVision/system/gpu.hpp>
 
 #include <cctag/ICCTag.hpp>
 #include <cctag/utils/LogTime.hpp>
@@ -18,6 +19,11 @@ namespace feature {
 ImageDescriber_CCTAG::CCTagParameters::CCTagParameters(size_t nRings)
   : _internalParams(new cctag::Parameters(nRings))
 {
+#ifdef WITH_CUDA // CCTAG_WITH_CUDA
+  _internalParams->_useCuda = system::gpuSupportCUDA(3,5);
+else
+  _internalParams->_useCuda = false;
+#endif
 }
 
 ImageDescriber_CCTAG::CCTagParameters::~CCTagParameters()
@@ -68,6 +74,15 @@ void ImageDescriber_CCTAG::allocate(std::unique_ptr<Regions> &regions) const
 void ImageDescriber_CCTAG::setConfigurationPreset(EImageDescriberPreset preset)
 {
   _params.setPreset(preset);
+}
+
+EImageDescriberType ImageDescriber_CCTAG::getDescriberType() const
+{
+  if(_params._internalParams->_nCrowns == 3)
+    return EImageDescriberType::CCTAG3;
+  if(_params._internalParams->_nCrowns == 4)
+    return EImageDescriberType::CCTAG4;
+  throw std::out_of_range("Invalid number of rings, can't find CCTag imageDescriber type !");
 }
 
 void ImageDescriber_CCTAG::setUseCuda(bool useCuda)

@@ -32,7 +32,6 @@ target_link_libraries(aliceVision_featureExtraction
   aliceVision_feature
   aliceVision_multiview
   aliceVision_sfm
-  stlplus
   vlsift
   ${BOOST_LIBRARIES}
 )

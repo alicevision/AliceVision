@@ -370,6 +370,7 @@ else() # ON OR AUTO
 
     if(CCTag_FOUND)
       set(ALICEVISION_HAVE_CCTAG 1)
+      set(ALICEVISION_HAVE_CUDA 1)
       message(STATUS "CCTAG ${CCTag_VERSION} found.")
     elseif(ALICEVISION_USE_CCTAG STREQUAL "ON")
       set(ALICEVISION_HAVE_CCTAG 0)
@@ -395,6 +396,7 @@ else() # ON OR AUTO
 
   if(PopSift_FOUND)
     set(ALICEVISION_HAVE_POPSIFT 1)
+    set(ALICEVISION_HAVE_CUDA 1)
     message(STATUS "PopSIFT found.")
   elseif(ALICEVISION_USE_POPSIFT STREQUAL "ON")
     set(ALICEVISION_HAVE_POPSIFT 0)
@@ -402,6 +404,19 @@ else() # ON OR AUTO
   else()
     set(ALICEVISION_HAVE_POPSIFT 0)
   endif()
+endif()
+
+# ==============================================================================
+# CUDA
+# ==============================================================================
+find_package(CUDA 7.0)
+
+if(CUDA_FOUND)
+  message(STATUS "CUDA found.")
+  set(ALICEVISION_HAVE_CUDA 1)
+  include_directories(${CUDA_INCLUDE_DIRS})
+else()
+  set(ALICEVISION_HAVE_CUDA 0)
 endif()
 
 # ==============================================================================
