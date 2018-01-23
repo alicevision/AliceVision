@@ -323,25 +323,21 @@ void meshRetex::generateTexture(const multiviewParams& mp, staticVector<staticVe
                 unsigned int xyoffset = yoffset + x;
                 if(colorIDs[xyoffset] > 0)
                     continue;
-                if(colorIDs[xyoffset-1] > 0)
+                else if(colorIDs[xyoffset-1] > 0)
                 {
                     colorIDs[xyoffset] = (xyoffset-1)*-1;
-                    continue;
                 }
-                if(colorIDs[xyoffset+1] > 0)
+                else if(colorIDs[xyoffset+1] > 0)
                 {
                     colorIDs[xyoffset] = (xyoffset+1)*-1;
-                    continue;
                 }
-                if(colorIDs[xyoffset+texParams.textureSide] > 0)
+                else if(colorIDs[xyoffset+texParams.textureSide] > 0)
                 {
                     colorIDs[xyoffset] = (xyoffset+texParams.textureSide)*-1;
-                    continue;
                 }
-                if(colorIDs[xyoffset-texParams.textureSide] > 0)
+                else if(colorIDs[xyoffset-texParams.textureSide] > 0)
                 {
                     colorIDs[xyoffset] = (xyoffset-texParams.textureSide)*-1;
-                    continue;
                 }
             }
         }

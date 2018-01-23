@@ -105,7 +105,6 @@ int main(int argc, char* argv[])
     multiviewInputParams mip(iniFilepath, "", "");
     const double simThr = mip._ini.get<double>("global.simThr", 0.0);
     multiviewParams mp(mip.getNbCameras(), &mip, (float) simThr);
-    mv_prematch_cams pc(&mp);
 
     meshRetex mesh;
     mesh.texParams = texParams;
