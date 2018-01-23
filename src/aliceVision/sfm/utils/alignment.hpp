@@ -5,14 +5,14 @@
 
 #pragma once
 
-#include "aliceVision/sfm/SfMData.hpp"
-#include "aliceVision/geometry/Pose3.hpp"
+#include <aliceVision/sfm/SfMData.hpp>
+#include <aliceVision/geometry/Pose3.hpp>
 
 namespace aliceVision {
 namespace sfm {
 
-inline void getCommonViews(const SfMData & sfmDataA,
-                           const SfMData & sfmDataB,
+inline void getCommonViews(const SfMData& sfmDataA,
+                           const SfMData& sfmDataB,
                            std::vector<IndexT>& outIndexes)
 {
   for(const auto& viewA: sfmDataA.GetViews())
@@ -24,8 +24,8 @@ inline void getCommonViews(const SfMData & sfmDataA,
   }
 }
 
-inline void getCommonViewsWithPoses(const SfMData & sfmDataA,
-                                    const SfMData & sfmDataB,
+inline void getCommonViewsWithPoses(const SfMData& sfmDataA,
+                                    const SfMData& sfmDataB,
                                     std::vector<IndexT>& outIndexes)
 {
   for(const auto& viewA: sfmDataA.GetViews())
@@ -53,14 +53,23 @@ inline void getCommonViewsWithPoses(const SfMData & sfmDataA,
  * @param[out] out_t output translation vector
  * @return true if it finds a similarity transformation
  */
-bool computeSimilarity(const SfMData & sfmDataA,
-                       const SfMData & sfmDataB,
-                       double * out_S,
-                       Mat3 * out_R,
-                       Vec3 * out_t);
+bool computeSimilarity(const SfMData& sfmDataA,
+                       const SfMData& sfmDataB,
+                       double* out_S,
+                       Mat3* out_R,
+                       Vec3* out_t);
 
 
-inline void applyTransform(SfMData & sfmData,
+/**
+ * @brief Apply a transformation the given SfMData
+ *
+ * @param sfmData The goiven SfMData
+ * @param S scale
+ * @param R rotation
+ * @param t translation
+ * @param transformControlPoints
+ */
+inline void applyTransform(SfMData& sfmData,
                            const double S,
                            const Mat3& R,
                            const Vec3& t,
@@ -69,9 +78,12 @@ inline void applyTransform(SfMData & sfmData,
   for(auto& viewPair: sfmData.views)
   {
     const View& view = *viewPair.second;
-    geometry::Pose3 pose = sfmData.getPose(view);
-    pose = pose.transformSRt(S, R, t);
-    sfmData.setPose(view, pose);
+    if(sfmData.existsPose(view))
+    {
+      geometry::Pose3 pose = sfmData.getPose(view);
+      pose = pose.transformSRt(S, R, t);
+      sfmData.setPose(view, pose);
+    }
   }
   
   for(auto& landmark: sfmData.structure)
@@ -88,5 +100,42 @@ inline void applyTransform(SfMData & sfmData,
   }
 }
 
-}
-}
+/**
+ * @brief Compute the new coordinate system in the given reconstruction so that the mean
+ * of the camera centers is the origin of the world coordinate system, a
+ * dominant plane P is fitted to the set of the optical centers and the scene
+ * aligned so that P roughly define the (x,y) plane, and the scale is set so
+ * that the optical centers RMS is "1.0".
+ * (Hartley-like normalization, p.180)
+ *
+ * @param[in] sfmData
+ * @param[out] out_S scale
+ * @param[out] out_R rotation
+ * @param[out] out_t translation
+ */
+void computeNewCoordinateSystemFromCameras(const SfMData& sfmData,
+                                           double& out_S,
+                                           Mat3& out_R,
+                                           Vec3& out_t);
+
+/**
+ * @brief Compute the new coordinate system in the given reconstruction so that a landmark (e.g. artificial)
+ * defines the origin of the world coordinate system, a dominant plane P is fitted from
+ * a subset of landmarks (e.g. artificial ones) and the scene aligned so that P
+ * roughly defined the (x,y) plane, and scale is set so that their RMS is "1.0".
+ * (Hartley-like normalization, p.180)
+ *
+ * @param[in] sfmData
+ * @param[in] imageDescriberTypes Image describer types used for compute the mean of the point cloud
+ * @param[out] out_S scale
+ * @param[out] out_R rotation
+ * @param[out] out_t translation
+ */
+void computeNewCoordinateSystemFromLandmarks(const SfMData& sfmData,
+                                             const std::vector<feature::EImageDescriberType>& imageDescriberTypes,
+                                             double& out_S,
+                                             Mat3& out_R,
+                                             Vec3& out_t);
+
+} // namespace sfm
+} // namespace aliceVision
