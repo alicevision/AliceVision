@@ -36,21 +36,10 @@ public:
     // Process SIFT computation
     cudaDeviceReset();
 
-    popsift::Config config;
-    config.setOctaves(_params._numOctaves);
-    config.setLevels(_params._numScales);
-    config.setDownsampling(_params._firstOctave);
-    config.setThreshold(  _params._peakThreshold);
-    config.setEdgeLimit(  _params._edgeThreshold);
-    config.setUseRootSift(_params._rootSift);
-    config.setNormalizationMultiplier(9); // 2^9 = 512
-
     popsift::cuda::device_prop_t deviceInfo;
-
     deviceInfo.set(0, true); //Use only the first device
-    deviceInfo.print();
-
-    _popSift.reset( new PopSift(config) );
+    //deviceInfo.print();
+    resetConfiguration();
   }
 
   /**
@@ -68,7 +57,7 @@ public:
    */
   bool useFloatImage() const override
   {
-    return false;
+    return true;
   }
 
   /**
@@ -108,6 +97,7 @@ public:
   void setConfigurationPreset(EImageDescriberPreset preset) override
   {
     _params.setPreset(preset);
+    resetConfiguration();
   }
 
   /**
@@ -118,7 +108,7 @@ public:
    *    Non-zero values depict the region of interest.
    * @return True if detection succed.
    */
-  bool describe(const image::Image<unsigned char>& image,
+  bool describe(const image::Image<float>& image,
                 std::unique_ptr<Regions>& regions,
                 const image::Image<unsigned char>* mask = NULL) override;
 
@@ -132,6 +122,23 @@ public:
   }
 
 private:
+
+  void resetConfiguration()
+  {
+    popsift::Config config;
+    config.setOctaves(_params._numOctaves);
+    config.setLevels(_params._numScales);
+    config.setDownsampling(_params._firstOctave);
+    config.setThreshold(_params._peakThreshold);
+    config.setEdgeLimit(_params._edgeThreshold);
+    config.setNormalizationMultiplier(9); // 2^9 = 512
+    config.setNormMode( _params._rootSift ? popsift::Config::RootSift : popsift::Config::Classic);
+    config.setFilterMaxExtrema(_params._maxTotalKeypoints);
+    config.setFilterSorting(popsift::Config::LargestScaleFirst);
+
+    _popSift.reset(new PopSift(config, popsift::Config::ExtractingMode, PopSift::FloatImages));
+  }
+
   SiftParams _params;
   bool _isOriented = true;
   static std::unique_ptr<PopSift> _popSift;

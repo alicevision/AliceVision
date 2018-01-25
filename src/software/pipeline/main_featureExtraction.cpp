@@ -194,7 +194,7 @@ private:
       const std::string imageDescriberTypeName = feature::EImageDescriberType_enumToString(imageDescriberType);
 
       // Compute features and descriptors and export them to files
-      ALICEVISION_LOG_INFO("Extracting " + imageDescriberTypeName  + " features from view '" + job.view.getImagePath() + (useGPU ? " [gpu]" : " [cpu]"));
+      ALICEVISION_LOG_INFO("Extracting " + imageDescriberTypeName  + " features from view '" + job.view.getImagePath() + "' " + (useGPU ? "[gpu]" : "[cpu]"));
 
       std::unique_ptr<feature::Regions> regions;
       if(imageDescriber->useFloatImage())

@@ -11,7 +11,7 @@ namespace feature {
 
 std::unique_ptr<PopSift> ImageDescriber_SIFT_popSIFT::_popSift = nullptr;
 
-bool ImageDescriber_SIFT_popSIFT::describe(const image::Image<unsigned char>& image,
+bool ImageDescriber_SIFT_popSIFT::describe(const image::Image<float>& image,
                                       std::unique_ptr<Regions>& regions,
                                       const image::Image<unsigned char>* mask)
 {
