@@ -89,7 +89,7 @@ class FeatureExtractor
 
 public:
 
-  FeatureExtractor(const sfm::SfMData& sfmData)
+  explicit FeatureExtractor(const sfm::SfMData& sfmData)
     : _sfmData(sfmData)
   {}
 
