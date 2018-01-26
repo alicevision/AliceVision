@@ -49,7 +49,7 @@ Institutions
   http://cmp.felk.cvut.cz
 - IMAGINE from the Universite Paris Est, LIGM Gaspard-Monge, France  
   http://imagine.enpc.fr
-- Institut National Polytechnique de Toulouse (INPT), France  
+- Institut National Polytechnique de Toulouse (Toulouse INP), France  
   http://www.inp-toulouse.fr
 - Mikros Image, Post-Production Company in Paris, France  
   http://www.mikrosimage.com
