@@ -194,7 +194,7 @@ private:
       const std::string imageDescriberTypeName = feature::EImageDescriberType_enumToString(imageDescriberType);
 
       // Compute features and descriptors and export them to files
-      ALICEVISION_LOG_INFO("Extracting " + imageDescriberTypeName  + " features from view '" + job.view.getImagePath() + "' " + (useGPU ? "[gpu]" : "[cpu]"));
+      ALICEVISION_LOG_INFO("Extracting " << imageDescriberTypeName  << " features from view '" << job.view.getImagePath() << "' " << (useGPU ? "[gpu]" : "[cpu]"));
 
       std::unique_ptr<feature::Regions> regions;
       if(imageDescriber->useFloatImage())
@@ -210,7 +210,7 @@ private:
         imageDescriber->describe(imageGrayUChar, regions);
       }
       imageDescriber->Save(regions.get(), job.getFeaturesPath(imageDescriberType), job.getDescriptorPath(imageDescriberType));
-      ALICEVISION_LOG_INFO("Extraction of " + imageDescriberTypeName  + " features from view '" + job.view.getImagePath() + "' done.");
+      ALICEVISION_LOG_INFO(std::setw(5) << regions->RegionCount() << " " << imageDescriberTypeName  << " features extracted from view '" << job.view.getImagePath() << "'");
     }
   }
 
