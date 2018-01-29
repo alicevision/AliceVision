@@ -114,12 +114,13 @@ public:
     // iteration on each view in the range in order
     // to prepare viewJob stack
     sfm::Views::const_iterator itViewBegin = _sfmData.GetViews().begin();
-    sfm::Views::const_iterator itViewEnd = _sfmData.GetViews().begin();
+    sfm::Views::const_iterator itViewEnd = _sfmData.GetViews().end();
 
     if(_rangeStart != -1)
     {
       std::advance(itViewBegin, _rangeStart);
-      std::advance(itViewEnd, _rangeStart + _rangeSize);
+      itViewEnd = itViewBegin;
+      std::advance(itViewEnd, _rangeSize);
     }
 
     std::size_t jobMaxMemoryConsuption = 0;
@@ -160,6 +161,9 @@ public:
 
       // nbThreads should not be higher than the core number
       nbThreads = std::min(static_cast<std::size_t>(omp_get_num_procs()), nbThreads);
+
+      // nbThreads should not be higher than the job number
+      nbThreads = std::min(_cpuJobs.size(), nbThreads);
 
       ALICEVISION_LOG_DEBUG("# threads for extraction: " << nbThreads);
       omp_set_nested(1);
