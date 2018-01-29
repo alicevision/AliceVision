@@ -286,5 +286,10 @@ int main(int argc, char **argv)
   if(!outputSfMViewsAndPoses.empty())
     Save(sfmEngine.Get_SfMData(), outputSfMViewsAndPoses, ESfMData(VIEWS | EXTRINSICS | INTRINSICS));
 
+  ALICEVISION_LOG_INFO("Structure from Motion results:" << std::endl
+    << "\t- # input images: " << sfmEngine.Get_SfMData().GetViews().size() << std::endl
+    << "\t- # cameras calibrated: " << sfmEngine.Get_SfMData().GetPoses().size() << std::endl
+    << "\t- # landmarks: " << sfmEngine.Get_SfMData().GetLandmarks().size());
+
   return EXIT_SUCCESS;
 }
