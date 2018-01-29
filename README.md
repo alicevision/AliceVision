@@ -1,4 +1,5 @@
-![AliceVision](https://github.com/alicevision/AliceVision/raw/develop/docs/logo/AliceVision.png) AliceVision - Photogrammetric Computer Vision Framework
+![AliceVision](https://github.com/alicevision/AliceVision/raw/develop/docs/logo/AliceVision_170.png) 
+AliceVision - Photogrammetric Computer Vision Framework
 =====================================
 
 [AliceVision](http://alicevision.github.io) is a Photogrammetric Computer Vision Framework which provides a 3D Reconstruction and Camera Tracking algorithms.
