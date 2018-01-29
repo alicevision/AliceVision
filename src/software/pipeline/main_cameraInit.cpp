@@ -137,7 +137,7 @@ int main(int argc, char **argv)
   std::string defaultCameraModelName;
   double defaultFocalLengthPixel = -1.0;
   double defaultSensorWidth = -1.0;
-  int groupCameraModel = 1;
+  int groupCameraModel = 2;
   bool allowIncompleteOutput = false;
   bool allowSingleView = false;
 
@@ -352,7 +352,10 @@ int main(int argc, char **argv)
   {
     View& view = *(std::next(viewPairItBegin,i)->second);
     IndexT intrinsicId = view.getIntrinsicId();
+    double sensorWidth = -1;
+    const bool hasCameraMetadata = (view.hasMetadata("Make") && view.hasMetadata("Model"));
 
+    // check if the view intrinsic is already defined
     if(intrinsicId != UndefinedIndexT)
     {
       std::shared_ptr<camera::IntrinsicBase> intrinsic = sfmData.GetIntrinsicSharedPtr(view.getIntrinsicId());
@@ -360,21 +363,32 @@ int main(int argc, char **argv)
       {
         if(intrinsic->initialFocalLengthPix() > 0)
         {
+          // the view intrinsic is initialized
           #pragma omp atomic
           ++completeViewCount;
         }
+        else
+        {
+          // intrinsic px focal length is undefined
+          // check if it is because the sensor is not in the database
+          aliceVision::sensorDB::Datasheet datasheet;
+          if(hasCameraMetadata && !getInfo(view.getMetadata("Make"), view.getMetadata("Model"), sensorDatabase, datasheet))
+          {
+            #pragma omp critical
+            unknownSensors.emplace(std::make_pair(view.getMetadata("Make"),view.getMetadata("Model")), view.getImagePath()); // will throw an error message
+          }
+        }
+        // don't need to build a new intrinsic
         continue;
       }
     }
 
-    bool hasCameraMetadata = (view.hasMetadata("Make") && view.hasMetadata("Model"));
-    double sensorWidth = -1;
-
+    // get view intrinsic sensor width
     if(hasCameraMetadata)
     {
       aliceVision::sensorDB::Datasheet datasheet;
       if(getInfo(view.getMetadata("Make"), view.getMetadata("Model"), sensorDatabase, datasheet))
-        sensorWidth = datasheet._sensorSize;
+        sensorWidth = datasheet._sensorSize; // sensor is in the database
       else
       {
         #pragma omp critical
@@ -385,14 +399,24 @@ int main(int argc, char **argv)
     }
     else
     {
+      // no metadata 'Make' and 'Model' can't find sensor width
       #pragma omp critical
-      noMetadataImagePaths.emplace_back(view.getImagePath());
+      noMetadataImagePaths.emplace_back(view.getImagePath()); // will throw a warning message
+
+      if(allowIncompleteOutput)
+      {
+        view.setIntrinsicId(UndefinedIndexT);
+        // don't build an intrinsic
+        continue;
+      }
     }
 
+    // build intrinsic
     std::shared_ptr<camera::IntrinsicBase> intrinsic = getViewIntrinsic(view, sensorWidth, defaultFocalLengthPixel, defaultCameraModel, defaultPPx, defaultPPy);
 
     if(intrinsic->initialFocalLengthPix() > 0)
     {
+      // the view intrinsic is initialized
       #pragma omp atomic
       ++completeViewCount;
     }
@@ -420,7 +444,7 @@ int main(int argc, char **argv)
       intrinsicId = intrinsic->hashValue();
 
     // don't group camera that share common properties
-    if(!groupCameraModel)
+    if(groupCameraModel == 0)
       intrinsicId = std::rand(); // random number
 
     #pragma omp critical
