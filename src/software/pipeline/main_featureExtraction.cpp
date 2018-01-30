@@ -99,6 +99,11 @@ public:
     _rangeSize = rangeSize;
   }
 
+  void setMaxThreads(int maxThreads)
+  {
+    _maxThreads = maxThreads;
+  }
+
   void setOutputFolder(const std::string& folder)
   {
     _outputFolder = folder;
@@ -159,6 +164,10 @@ public:
         nbThreads = 1;
       }
 
+      // nbThreads should not be higher than user maxThreads param
+      if(_maxThreads > 0)
+        nbThreads = std::min(static_cast<std::size_t>(_maxThreads), nbThreads);
+
       // nbThreads should not be higher than the core number
       nbThreads = std::min(static_cast<std::size_t>(omp_get_num_procs()), nbThreads);
 
@@ -214,7 +223,7 @@ private:
         imageDescriber->describe(imageGrayUChar, regions);
       }
       imageDescriber->Save(regions.get(), job.getFeaturesPath(imageDescriberType), job.getDescriptorPath(imageDescriberType));
-      ALICEVISION_LOG_INFO(std::setw(5) << regions->RegionCount() << " " << imageDescriberTypeName  << " features extracted from view '" << job.view.getImagePath() << "'");
+      ALICEVISION_LOG_INFO(std::left << std::setw(6) << regions->RegionCount() << " " << imageDescriberTypeName  << " features extracted from view '" << job.view.getImagePath() << "'");
     }
   }
 
@@ -223,6 +232,7 @@ private:
   std::string _outputFolder;
   int _rangeStart = -1;
   int _rangeSize = -1;
+  int _maxThreads = -1;
   std::vector<ViewJob> _cpuJobs;
   std::vector<ViewJob> _gpuJobs;
 };
@@ -340,6 +350,9 @@ int main(int argc, char **argv)
   // create feature extractor
   FeatureExtractor extractor(sfmData);
   extractor.setOutputFolder(outputFolder);
+
+  // set maxThreads
+  extractor.setMaxThreads(maxJobs);
 
   // set extraction range
   if(rangeStart != -1)
