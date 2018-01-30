@@ -47,7 +47,7 @@ std::unique_ptr<feature::Regions> loadRegions(const std::vector<std::string>& fo
   ALICEVISION_LOG_TRACE("Descriptors filename: " << descFilename);
 
   std::unique_ptr<feature::Regions> regionsPtr;
-  imageDescriber.Allocate(regionsPtr);
+  imageDescriber.allocate(regionsPtr);
 
   try
   {
@@ -93,7 +93,7 @@ std::unique_ptr<feature::Regions> loadFeatures(const std::vector<std::string>& f
   ALICEVISION_LOG_TRACE("Features filename: " << featFilename);
 
   std::unique_ptr<feature::Regions> regionsPtr;
-  imageDescriber.Allocate(regionsPtr);
+  imageDescriber.allocate(regionsPtr);
 
   try
   {

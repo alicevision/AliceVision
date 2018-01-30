@@ -113,7 +113,7 @@ bool CCTagLocalizer::loadReconstructionDescriptors(const sfm::SfMData & sfm_data
       if(observations.count(descType) == 0)
       {
         // no descriptor of this type reconstructed in this View
-        _imageDescriber.Allocate(_regionsPerView.getData()[id_view][descType]);
+        _imageDescriber.allocate(_regionsPerView.getData()[id_view][descType]);
         continue;
       }
 
@@ -204,8 +204,8 @@ bool CCTagLocalizer::localize(const image::Image<unsigned char> & imageGrey,
   feature::MapRegionsPerDesc tmpQueryRegions;
 
   _imageDescriber.setCudaPipe( _cudaPipe );
-  _imageDescriber.Set_configuration_preset(param->_featurePreset);
-  _imageDescriber.Describe(imageGrey, tmpQueryRegions[_cctagDescType]);
+  _imageDescriber.setConfigurationPreset(param->_featurePreset);
+  _imageDescriber.describe(imageGrey, tmpQueryRegions[_cctagDescType]);
   ALICEVISION_LOG_DEBUG("[features]\tExtract CCTAG done: found " << tmpQueryRegions.at(_cctagDescType)->RegionCount() << " features");
   
   std::pair<std::size_t, std::size_t> imageSize = std::make_pair(imageGrey.Width(),imageGrey.Height());
@@ -401,8 +401,8 @@ bool CCTagLocalizer::localizeRig(const std::vector<image::Image<unsigned char> >
   {
     // extract descriptors and features from each image
     ALICEVISION_LOG_DEBUG("[features]\tExtract CCTag from query image...");
-    _imageDescriber.Set_configuration_preset(param->_featurePreset);
-    _imageDescriber.Describe(vec_imageGrey[i], vec_queryRegions[i][_imageDescriber.getDescriberType()]);
+    _imageDescriber.setConfigurationPreset(param->_featurePreset);
+    _imageDescriber.describe(vec_imageGrey[i], vec_queryRegions[i][_imageDescriber.getDescriberType()]);
     ALICEVISION_LOG_DEBUG("[features]\tExtract CCTAG done: found " <<  vec_queryRegions[i].at(_imageDescriber.getDescriberType())->RegionCount() << " features");
     // add the image size for this image
     vec_imageSize.emplace_back(vec_imageGrey[i].Width(), vec_imageGrey[i].Height());

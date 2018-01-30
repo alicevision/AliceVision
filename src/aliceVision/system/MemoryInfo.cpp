@@ -4,7 +4,11 @@
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
 #include "MemoryInfo.hpp"
-#include "system.hpp"
+
+#include <aliceVision/system/system.hpp>
+
+#include <cmath>
+#include <iomanip>
 
 #if defined(__WINDOWS__)
 #include <windows.h>
@@ -96,11 +100,13 @@ MemoryInfo getMemoryInfo()
 
 std::ostream& operator<<(std::ostream& os, const MemoryInfo& infos)
 {
-    os << "total ram:" << infos.totalRam << std::endl
-       << "free ram:" << infos.freeRam << std::endl
-       << "total swap:" << infos.totalSwap << std::endl
-       << "free swap:" << infos.freeSwap << std::endl;
-    return os;
+  const float convertionGb = std::pow(2,30);
+  os << std::setw(5)
+     << "\t- Total RAM:  " << (infos.totalRam  / convertionGb) << " GB" << std::endl
+     << "\t- Free RAM:   " << (infos.freeRam   / convertionGb) << " GB" << std::endl
+     << "\t- Total swap: " << (infos.totalSwap / convertionGb) << " GB" << std::endl
+     << "\t- Free swap:  " << (infos.freeSwap  / convertionGb) << " GB" << std::endl;
+  return os;
 }
 
 }

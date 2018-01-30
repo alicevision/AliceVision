@@ -31,10 +31,10 @@ enum class EImageDescriberPreset
 
 /**
  * @brief It returns the preset from a string.
- * @param[in] sPreset the input string.
+ * @param[in] preset the input string.
  * @return the associated describer preset.
  */
-EImageDescriberPreset EImageDescriberPreset_stringToEnum(const std::string& sPreset);
+EImageDescriberPreset EImageDescriberPreset_stringToEnum(const std::string& preset);
 
 /**
  * @brief It converts a preset to a string.
@@ -59,13 +59,21 @@ std::ostream& operator<<(std::ostream& os, EImageDescriberPreset p);
  */
 std::istream& operator>>(std::istream& in, EImageDescriberPreset& p);
 
-
-/// A pure virtual class for image description computation
+/**
+ * @brief A pure virtual class for image description computation
+ */
 class ImageDescriber
 {
 public:
   ImageDescriber() {}
+
   virtual ~ImageDescriber() {}
+
+  /**
+   * @brief Check if the image describer use CUDA
+   * @return True if the image describer use CUDA
+   */
+  virtual bool useCuda() const = 0;
 
   /**
    * @brief Check if the image describer use float image
@@ -80,30 +88,14 @@ public:
   virtual EImageDescriberType getDescriberType() const = 0;
 
   /**
-   * @brief Use a preset to control the number of detected regions
-   * @param[in] preset The preset configuration
-   * @return True if configuration succeed. (here always false)
+   * @brief Get the total amount of RAM needed for a
+   * feature extraction of an image of the given dimension.
+   * @param[in] width The image width
+   * @param[in] height The image height
+   * @return total amount of memory needed
    */
-  virtual bool Set_configuration_preset(EImageDescriberPreset preset) = 0;
+  virtual std::size_t getMemoryConsumption(std::size_t width, std::size_t height) const = 0;
 
-  /**
-   * @brief Set if yes or no imageDescriber need to use cuda implementation
-   * @param[in] useCuda
-   */
-  virtual void setUseCuda(bool useCuda) {}
-
-  virtual void setCudaPipe(int pipe) {}
-
-  /**
-   * @brief Use a preset to control the number of detected regions
-   * @param[in] preset The preset configuration string
-   * @return True if configuration succeed. (here always false)
-   */
-  bool Set_configuration_preset(const std::string& preset)
-  {
-    return Set_configuration_preset(EImageDescriberPreset_stringToEnum(preset));
-  }
-  
   /**
    * @brief Set image describer always upRight
    * @param[in] upRight
@@ -111,15 +103,42 @@ public:
   virtual void setUpRight(bool upRight) {}
 
   /**
+   * @brief Set if yes or no imageDescriber need to use cuda implementation
+   * @param[in] useCuda
+   */
+  virtual void setUseCuda(bool useCuda) {}
+
+  /**
+   * @brief set the CUDA pipe
+   * @param[in] pipe The CUDA pipe id
+   */
+  virtual void setCudaPipe(int pipe) {}
+
+  /**
+   * @brief Use a preset to control the number of detected regions
+   * @param[in] preset The preset configuration
+   */
+  virtual void setConfigurationPreset(EImageDescriberPreset preset) = 0;
+
+  /**
+   * @brief Use a preset to control the number of detected regions
+   * @param[in] preset The preset configuration string
+   */
+  void setConfigurationPreset(const std::string& preset)
+  {
+    setConfigurationPreset(EImageDescriberPreset_stringToEnum(preset));
+  }
+  
+  /**
    * @brief Detect regions on the 8-bit image and compute their attributes (description)
    * @param[in] image Image.
    * @param[out] regions The detected regions and attributes
-   * @param[in] mask 8-bit gray image for keypoint filtering (optional).
+   * @param[in] mask 8-bit grayscale image for keypoint filtering (optional)
    * Non-zero values depict the region of interest.
    */
-  virtual bool Describe(const image::Image<unsigned char> & image,
-    std::unique_ptr<Regions> &regions,
-    const image::Image<unsigned char> * mask = nullptr)
+  virtual bool describe(const image::Image<unsigned char>& image,
+                        std::unique_ptr<Regions>& regions,
+                        const image::Image<unsigned char>* mask = nullptr)
   {
     throw std::logic_error("Can't use" + EImageDescriberType_enumToString(getDescriberType()) + " image describer with an 8-bit image.");
     return false;
@@ -129,12 +148,12 @@ public:
    * @brief Detect regions on the float image and compute their attributes (description)
    * @param[in] image Image.
    * @param[out] regions The detected regions and attributes
-   * @param[in] mask 8-bit gray image for keypoint filtering (optional).
+   * @param[in] mask 8-bit grayscale image for keypoint filtering (optional)
    * Non-zero values depict the region of interest.
    */
-  virtual bool Describe(const image::Image<float> & image,
-    std::unique_ptr<Regions> &regions,
-    const image::Image<unsigned char> * mask = nullptr)
+  virtual bool describe(const image::Image<float>& image,
+                        std::unique_ptr<Regions>& regions,
+                        const image::Image<unsigned char>* mask = nullptr)
   {
     throw std::logic_error("Can't use" + EImageDescriberType_enumToString(getDescriberType()) + " image describer with a float image.");
     return false;
@@ -144,8 +163,7 @@ public:
    * @brief Allocate Regions type depending of the ImageDescriber
    * @param[in,out] regions
    */
-  virtual void Allocate(std::unique_ptr<Regions> &regions) const = 0;
-
+  virtual void allocate(std::unique_ptr<Regions>& regions) const = 0;
 
   // IO - one file for region features, one file for region descriptors
 

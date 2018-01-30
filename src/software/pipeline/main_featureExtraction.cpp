@@ -1,205 +1,242 @@
-// This file is part of the AliceVision project.
+﻿// This file is part of the AliceVision project.
 // This Source Code Form is subject to the terms of the Mozilla Public License,
 // v. 2.0. If a copy of the MPL was not distributed with this file,
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
 #include <aliceVision/config.hpp>
+#include <aliceVision/alicevision_omp.hpp>
 #include <aliceVision/image/all.hpp>
 #include <aliceVision/sfm/sfm.hpp>
 #include <aliceVision/feature/imageDescriberCommon.hpp>
 #include <aliceVision/feature/feature.hpp>
+#include <aliceVision/system/MemoryInfo.hpp>
 #include <aliceVision/system/Timer.hpp>
 #include <aliceVision/system/Logger.hpp>
 #include <aliceVision/system/cmdline.hpp>
 
-#include <dependencies/stlplus3/filesystemSimplified/file_system.hpp>
-
-#include <boost/progress.hpp>
 #include <boost/program_options.hpp>
+#include <boost/filesystem.hpp>
+#include <boost/progress.hpp>
 
-#include <cereal/archives/json.hpp>
-
-#include <cstdlib>
+#include <string>
 #include <fstream>
 #include <sstream>
 #include <iostream>
 #include <functional>
+#include <memory>
 #include <limits>
 
 using namespace aliceVision;
-using namespace aliceVision::image;
-using namespace aliceVision::feature;
-using namespace aliceVision::sfm;
-using namespace std;
 namespace po = boost::program_options;
+namespace fs = boost::filesystem;
 
-// ----------
-// Dispatcher
-// ----------
-
-#ifdef __linux__
-#include <unistd.h>
-#include <sys/wait.h>
-
-// Returns a map containing information about the memory usage o
-// of the system, it basically reads /proc/meminfo  
-std::map<std::string, unsigned long> memInfos()
+class FeatureExtractor
 {
-  std::map<std::string, unsigned long> memoryInfos;
-  std::ifstream meminfoFile("/proc/meminfo");
-  if (meminfoFile.is_open())
+  struct ViewJob
   {
-    std::string line;
-    while(getline(meminfoFile, line))
+    const sfm::View& view;
+    std::size_t memoryConsuption = 0;
+    std::string outputBasename;
+    std::vector<std::size_t> cpuImageDescriberIndexes;
+    std::vector<std::size_t> gpuImageDescriberIndexes;
+
+    ViewJob(const sfm::View& view,
+            const std::string& outputFolder)
+      : view(view)
+      , outputBasename(fs::path(fs::path(outputFolder) / fs::path(std::to_string(view.getViewId()))).string())
+    {}
+
+    bool useGPU() const
     {
-      auto separator = line.find(":"); 
-      if (separator!=std::string::npos)
+      return !gpuImageDescriberIndexes.empty();
+    }
+
+    bool useCPU() const
+    {
+      return !cpuImageDescriberIndexes.empty();
+    }
+
+    std::string getFeaturesPath(feature::EImageDescriberType imageDescriberType) const
+    {
+      return outputBasename + "." + feature::EImageDescriberType_enumToString(imageDescriberType) + ".feat";
+    }
+
+    std::string getDescriptorPath(feature::EImageDescriberType imageDescriberType) const
+    {
+      return outputBasename + "." + feature::EImageDescriberType_enumToString(imageDescriberType) + ".desc";
+    }
+
+    void setImageDescribers(const std::vector<std::shared_ptr<feature::ImageDescriber>>& imageDescribers)
+    {
+      for(std::size_t i = 0; i < imageDescribers.size(); ++i)
       {
-        const std::string key = line.substr(0, separator);
-        const std::string value = line.substr(separator+1);
-        memoryInfos[key] = std::strtoul(value.c_str(), nullptr, 10);
+        const std::shared_ptr<feature::ImageDescriber>& imageDescriber = imageDescribers.at(i);
+        feature::EImageDescriberType imageDescriberType = imageDescriber->getDescriberType();
+
+        if(fs::exists(getFeaturesPath(imageDescriberType)) &&
+           fs::exists(getDescriptorPath(imageDescriberType)))
+          continue;
+
+        memoryConsuption += imageDescriber->getMemoryConsumption(view.getWidth(), view.getHeight());
+
+        if(imageDescriber->useCuda())
+          gpuImageDescriberIndexes.push_back(i);
+        else
+          cpuImageDescriberIndexes.push_back(i);
       }
     }
-  }
-  return memoryInfos;
-}
+  };
 
+public:
 
-// Count the number of processors of the machine using /proc/cpuinfo
-unsigned int countProcessors()
-{
-  unsigned int nprocessors = 0;
-  std::ifstream cpuinfoFile("/proc/cpuinfo");
-  if (cpuinfoFile.is_open())
+  explicit FeatureExtractor(const sfm::SfMData& sfmData)
+    : _sfmData(sfmData)
+  {}
+
+  void setRange(int rangeStart, int rangeSize)
   {
-    std::string line;
-    while(getline(cpuinfoFile, line))
+    _rangeStart = rangeStart;
+    _rangeSize = rangeSize;
+  }
+
+  void setMaxThreads(int maxThreads)
+  {
+    _maxThreads = maxThreads;
+  }
+
+  void setOutputFolder(const std::string& folder)
+  {
+    _outputFolder = folder;
+  }
+
+  void addImageDescriber(std::shared_ptr<feature::ImageDescriber>& imageDescriber)
+  {
+    _imageDescribers.push_back(imageDescriber);
+  }
+
+  void process()
+  {
+    // iteration on each view in the range in order
+    // to prepare viewJob stack
+    sfm::Views::const_iterator itViewBegin = _sfmData.GetViews().begin();
+    sfm::Views::const_iterator itViewEnd = _sfmData.GetViews().end();
+
+    if(_rangeStart != -1)
     {
-        // The line must start with the word "processor"
-        if (line.compare(0, std::strlen("processor"), "processor") == 0)
-            nprocessors++;
+      std::advance(itViewBegin, _rangeStart);
+      itViewEnd = itViewBegin;
+      std::advance(itViewEnd, _rangeSize);
     }
-  }
-  return nprocessors; 
-}
 
-// Returns the number of jobs to run simultaneously if one job should 
-// run with jobMemoryRequirement Kb 
-int remainingJobSlots(unsigned long jobMemoryRequirement)
-{
-  assert(jobMemoryRequirement!=0);
-  auto meminfos = memInfos();
-  const unsigned long available = meminfos["MemFree"] + meminfos["Buffers"] + meminfos["Cached"]; 
-  const unsigned int memSlots = static_cast<unsigned int>(available/jobMemoryRequirement); 
-  const unsigned int cpuSlots = countProcessors(); 
-  return std::max(std::min(memSlots, cpuSlots), 1u);
-}
+    std::size_t jobMaxMemoryConsuption = 0;
 
-// Returns the peak virtual memory of the process processID
-// returns 0 if the process is not alive anymore, ie the 
-// /proc/pid/status can't be opened
-unsigned long peakMemory(pid_t processID)
-{  
-  char processStatusFileName[256];
-  snprintf(processStatusFileName, 256, "/proc/%d/status", processID);
-  std::ifstream processStatusFile(processStatusFileName);
-  if (processStatusFile.is_open())
-  {
-    std::string line;
-    constexpr const char *peakString = "VmPeak:";
-    constexpr size_t peakStringLen = std::strlen(peakString);
-    while(getline(processStatusFile, line))
+    for(auto it = itViewBegin; it != itViewEnd; ++it)
     {
-      if (line.compare(0, peakStringLen, peakString) == 0)
+      const sfm::View& view = *(it->second.get());
+      ViewJob viewJob(view, _outputFolder);
+
+      viewJob.setImageDescribers(_imageDescribers);
+      jobMaxMemoryConsuption = std::max(jobMaxMemoryConsuption, viewJob.memoryConsuption);
+
+      if(viewJob.useCPU())
+        _cpuJobs.push_back(viewJob);
+
+      if(viewJob.useGPU())
+        _gpuJobs.push_back(viewJob);
+    }
+
+    if(!_cpuJobs.empty())
+    {
+      system::MemoryInfo memoryInformation = system::getMemoryInfo();
+
+      ALICEVISION_LOG_DEBUG("Job max memory consumption: " << jobMaxMemoryConsuption << " B");
+      ALICEVISION_LOG_DEBUG("Memory information: " << std::endl <<memoryInformation);
+
+      if(jobMaxMemoryConsuption == 0)
+        throw std::runtime_error("Can't compute feature extraction job max memory consuption.");
+
+      std::size_t nbThreads =  (0.9 * memoryInformation.freeRam) / jobMaxMemoryConsuption;
+
+      if(memoryInformation.freeRam == 0)
       {
-        const std::string value = line.substr(peakStringLen);
-        return std::strtoul(value.c_str(), nullptr, 10);  
+        ALICEVISION_LOG_WARNING("Can't find available system memory, this can be due to OS limitations.\n"
+                                "Use only one thread for CPU feature extraction.");
+        nbThreads = 1;
       }
-    }
-  }
-  return 0ul;
-}
 
-// This function dispatch the compute function on several sub processes
-// keeping the maximum number of subprocesses under maxJobs
-void dispatch(const int maxJobs, std::function<void()> compute)
-{
-  static int nbJobs;
-  static unsigned int subProcessPeakMemory = 0;
-  static int possibleJobs=0;
-  pid_t pid = fork();
-  if (pid < 0)           
-  {                      
-    // Something bad happened
-    std::cerr << "fork failed\n";
-    _exit(EXIT_FAILURE);
-  }
-  else if(pid == 0)
-  {
-    // Disable OpenMP as we dispatch the work on multiple sub processes
-    // and we don't want that each subprocess use all the cpu ressource
-    omp_set_num_threads(1); 
-    compute();
-    _exit(EXIT_SUCCESS);
-  }
-  else 
-  {
-    nbJobs++;
-    // Use subprocess peak memory and assume the next job will use the 
-    // same amount of memory. It allows to roughly determine the number 
-    // of possible jobs running simultaneously
-    if (subProcessPeakMemory==0)
-    {
-      unsigned int readPeak = peakMemory(pid);
-      while(readPeak != 0) 
-      { // sample memory of the first job 
-        sleep(0.2); // sample every 0.2 seconds;
-        if( subProcessPeakMemory < readPeak )
-        {
-          subProcessPeakMemory = readPeak;
-        }  
-        readPeak = peakMemory(pid);
-      } 
-      possibleJobs = remainingJobSlots(subProcessPeakMemory);
+      // nbThreads should not be higher than user maxThreads param
+      if(_maxThreads > 0)
+        nbThreads = std::min(static_cast<std::size_t>(_maxThreads), nbThreads);
+
+      // nbThreads should not be higher than the core number
+      nbThreads = std::min(static_cast<std::size_t>(omp_get_num_procs()), nbThreads);
+
+      // nbThreads should not be higher than the job number
+      nbThreads = std::min(_cpuJobs.size(), nbThreads);
+
+      ALICEVISION_LOG_DEBUG("# threads for extraction: " << nbThreads);
+      omp_set_nested(1);
+
+#pragma omp parallel for num_threads(nbThreads)
+      for(int i = 0; i < _cpuJobs.size(); ++i)
+        computeViewJob(_cpuJobs.at(i));
     }
-    
-    // Wait for a subprocess to stop when no more job slots are available
-    if (nbJobs >= possibleJobs || (maxJobs != 0 && nbJobs >= maxJobs))
+
+    if(!_gpuJobs.empty())
     {
-      pid_t pids;
-      while(pids = waitpid(-1, NULL, 0)) 
+      for(const auto& job : _gpuJobs)
+        computeViewJob(job, true);
+    }
+  }
+
+private:
+
+  void computeViewJob(const ViewJob& job, bool useGPU = false)
+  {
+    image::Image<float> imageGrayFloat;
+    image::Image<unsigned char> imageGrayUChar;
+
+    image::readImage(job.view.getImagePath(), imageGrayFloat);
+
+    const auto imageDescriberIndexes = useGPU ? job.gpuImageDescriberIndexes : job.cpuImageDescriberIndexes;
+
+    for(auto& imageDescriberIndex : imageDescriberIndexes)
+    {
+      const auto& imageDescriber = _imageDescribers.at(imageDescriberIndex);
+      const feature::EImageDescriberType imageDescriberType = imageDescriber->getDescriberType();
+      const std::string imageDescriberTypeName = feature::EImageDescriberType_enumToString(imageDescriberType);
+
+      // Compute features and descriptors and export them to files
+      ALICEVISION_LOG_INFO("Extracting " << imageDescriberTypeName  << " features from view '" << job.view.getImagePath() << "' " << (useGPU ? "[gpu]" : "[cpu]"));
+
+      std::unique_ptr<feature::Regions> regions;
+      if(imageDescriber->useFloatImage())
       {
-        nbJobs--;
-        break;
+        // image buffer use float image, use the read buffer
+        imageDescriber->describe(imageGrayFloat, regions);
       }
+      else
+      {
+        // image buffer can't use float image
+        if(imageGrayUChar.Width() == 0) // the first time, convert the float buffer to uchar
+          imageGrayUChar = (imageGrayFloat.GetMat() * 255.f).cast<unsigned char>();
+        imageDescriber->describe(imageGrayUChar, regions);
+      }
+      imageDescriber->Save(regions.get(), job.getFeaturesPath(imageDescriberType), job.getDescriptorPath(imageDescriberType));
+      ALICEVISION_LOG_INFO(std::left << std::setw(6) << regions->RegionCount() << " " << imageDescriberTypeName  << " features extracted from view '" << job.view.getImagePath() << "'");
     }
   }
-}
 
-// Waits for all subprocesses to terminate 
-void waitForCompletion()
-{
-  pid_t pids;
-  while(pids = waitpid(-1, NULL, 0)) 
-  {
-    if (errno == ECHILD)
-        break;
-  }
-}
+  const sfm::SfMData& _sfmData;
+  std::vector<std::shared_ptr<feature::ImageDescriber>> _imageDescribers;
+  std::string _outputFolder;
+  int _rangeStart = -1;
+  int _rangeSize = -1;
+  int _maxThreads = -1;
+  std::vector<ViewJob> _cpuJobs;
+  std::vector<ViewJob> _gpuJobs;
+};
 
-
-#else // __linux__
-
-void dispatch(const int maxJobs, std::function<void()> compute)
-{
-  if(maxJobs != 0)
-    omp_set_num_threads(maxJobs);
-  compute();
-}
-void waitForCompletion() {}
-int remainingJobSlots(unsigned long jobMemoryRequirement) {return 1;}  
-
-#endif // __linux__
 
 /// - Compute view image description (feature & descriptor extraction)
 /// - Export computed data
@@ -213,12 +250,13 @@ int main(int argc, char **argv)
 
   // user optional parameters
 
-  std::string describerTypesName = EImageDescriberType_enumToString(EImageDescriberType::SIFT);
-  std::string describerPreset = EImageDescriberPreset_enumToString(EImageDescriberPreset::NORMAL);
+  std::string describerTypesName = feature::EImageDescriberType_enumToString(feature::EImageDescriberType::SIFT);
+  std::string describerPreset = feature::EImageDescriberPreset_enumToString(feature::EImageDescriberPreset::NORMAL);
   bool describersAreUpRight = false;
   int rangeStart = -1;
   int rangeSize = 1;
   int maxJobs = 0;
+  bool forceCpuExtraction = false;
 
   po::options_description allParams("AliceVision featureExtraction");
 
@@ -232,12 +270,14 @@ int main(int argc, char **argv)
   po::options_description optionalParams("Optional parameters");
   optionalParams.add_options()
     ("describerTypes,d", po::value<std::string>(&describerTypesName)->default_value(describerTypesName),
-      EImageDescriberType_informations().c_str())
+      feature::EImageDescriberType_informations().c_str())
     ("describerPreset,p", po::value<std::string>(&describerPreset)->default_value(describerPreset),
       "Control the ImageDescriber configuration (low, medium, normal, high, ultra).\n"
       "Configuration 'ultra' can take long time !")
     ("upright,u", po::value<bool>(&describersAreUpRight)->default_value(describersAreUpRight),
       "Use Upright feature.")
+    ("forceCpuExtraction", po::value<bool>(&forceCpuExtraction)->default_value(forceCpuExtraction),
+      "Use only CPU feature extraction methods.")
     ("rangeStart", po::value<int>(&rangeStart)->default_value(rangeStart),
       "Range image index start.")
     ("rangeSize", po::value<int>(&rangeSize)->default_value(rangeSize),
@@ -283,182 +323,79 @@ int main(int argc, char **argv)
   // set verbose level
   system::Logger::get()->setLogLevel(verboseLevel);
 
-  if (outputFolder.empty())
+  if(describerTypesName.empty())
   {
-    ALICEVISION_LOG_ERROR("Error: It is an invalid output folder");
+    ALICEVISION_LOG_ERROR("--describerTypes option is empty.");
     return EXIT_FAILURE;
   }
 
-  // Create output dir
-  if (!stlplus::folder_exists(outputFolder))
+  // create output folder
+  if(!fs::exists(outputFolder))
   {
-    if (!stlplus::folder_create(outputFolder))
+    if(!fs::create_directory(outputFolder))
     {
-      ALICEVISION_LOG_ERROR("Error: Cannot create output folder");
+      ALICEVISION_LOG_ERROR("Cannot create output folder");
       return EXIT_FAILURE;
     }
   }
 
-  // a. Load input scene
-
-  SfMData sfmData;
-
-  if(stlplus::is_file(sfmDataFilename))
+  // load input scene
+  sfm::SfMData sfmData;
+  if(!sfm::Load(sfmData, sfmDataFilename, sfm::ESfMData(sfm::VIEWS|sfm::INTRINSICS)))
   {
-    if(!Load(sfmData, sfmDataFilename, ESfMData(VIEWS|INTRINSICS)))
-    {
-      ALICEVISION_LOG_ERROR("Error: The input file '" + sfmDataFilename + "' cannot be read");
-      return EXIT_FAILURE;
-    }
-  }
-  else
-  {
-    ALICEVISION_LOG_ERROR("Error: The input file argument is required.");
+    ALICEVISION_LOG_ERROR("The input file '" + sfmDataFilename + "' cannot be read");
     return EXIT_FAILURE;
   }
 
-  // b. Init vector of imageDescriber 
-  
-  struct DescriberMethod
+  // create feature extractor
+  FeatureExtractor extractor(sfmData);
+  extractor.setOutputFolder(outputFolder);
+
+  // set maxThreads
+  extractor.setMaxThreads(maxJobs);
+
+  // set extraction range
+  if(rangeStart != -1)
   {
-    std::string typeName;
-    EImageDescriberType type;
-    std::shared_ptr<ImageDescriber> describer;
-  };
-  std::vector<DescriberMethod> imageDescribers;
-  
-  {
-    if(describerTypesName.empty())
+    if(rangeStart < 0 || rangeSize < 0 ||
+       rangeStart > sfmData.GetViews().size())
     {
-      ALICEVISION_LOG_ERROR("Error: describerMethods argument is empty.");
+      ALICEVISION_LOG_ERROR("Range is incorrect");
       return EXIT_FAILURE;
     }
-    std::vector<EImageDescriberType> describerMethodsVec = EImageDescriberType_stringToEnums(describerTypesName);
 
-    for(const auto& describerMethod: describerMethodsVec)
+    if(rangeStart + rangeSize > sfmData.views.size())
+      rangeSize = sfmData.views.size() - rangeStart;
+
+    extractor.setRange(rangeStart, rangeSize);
+  }
+
+  // initialize feature extractor imageDescribers
+  {
+    std::vector<feature::EImageDescriberType> imageDescriberTypes = feature::EImageDescriberType_stringToEnums(describerTypesName);
+
+    for(const auto& imageDescriberType: imageDescriberTypes)
     {
-      DescriberMethod method;
-      method.typeName = EImageDescriberType_enumToString(describerMethod);
-      method.type = describerMethod;
-      method.describer = createImageDescriber(method.type);
-      method.describer->Set_configuration_preset(describerPreset);
-      method.describer->setUpRight(describersAreUpRight);
-      imageDescribers.push_back(method);
+      std::shared_ptr<feature::ImageDescriber> imageDescriber = feature::createImageDescriber(imageDescriberType);
+      imageDescriber->setConfigurationPreset(describerPreset);
+      imageDescriber->setUpRight(describersAreUpRight);
+      if(forceCpuExtraction)
+        imageDescriber->setUseCuda(false);
+
+      extractor.addImageDescriber(imageDescriber);
     }
   }
 
-  using namespace aliceVision::feature;
-
-  // Feature extraction routines
-  // For each View of the SfMData container:
+  // feature extraction routines
+  // for each View of the SfMData container:
   // - if regions file exist continue,
   // - if no file, compute features
   {
     system::Timer timer;
-    boost::progress_display my_progress_bar( sfmData.GetViews().size(), std::cout, "Extract features\n" );
 
-    Views::const_iterator iterViews = sfmData.views.begin();
-    Views::const_iterator iterViewsEnd = sfmData.views.end();
-    
-    if(rangeStart != -1)
-    {
-      if(rangeStart < 0 || rangeStart > sfmData.views.size())
-      {
-       ALICEVISION_LOG_ERROR("Bad specific index");
-        return EXIT_FAILURE;
-      }
-      if(rangeSize < 0)
-      {
-        ALICEVISION_LOG_ERROR("Bad range size");
-        return EXIT_FAILURE;
-      }
+    extractor.process();
 
-      if(rangeStart + rangeSize > sfmData.views.size())
-        rangeSize = sfmData.views.size() - rangeStart;
-
-      std::advance(iterViews, rangeStart);
-      iterViewsEnd = iterViews;
-      std::advance(iterViewsEnd, rangeSize);
-    }
-    
-    struct DescriberComputeMethod
-    {
-      std::size_t methodIndex;
-      std::string featFilename;
-      std::string descFilename;
-    };
-    
-    for(; iterViews != iterViewsEnd; ++iterViews, ++my_progress_bar)
-    {
-      const View* view = iterViews->second.get();
-      const std::string viewFilename = view->getImagePath();
-      ALICEVISION_LOG_INFO("Extract features in view : " << viewFilename);
-      
-      std::vector<DescriberComputeMethod> computeMethods;
-      
-      for(std::size_t i = 0; i < imageDescribers.size(); ++i)
-      {
-        DescriberComputeMethod computeMethod;
-        
-        computeMethod.featFilename = stlplus::create_filespec(outputFolder,
-              stlplus::basename_part(std::to_string(view->getViewId())), imageDescribers[i].typeName + ".feat");
-        computeMethod.descFilename = stlplus::create_filespec(outputFolder,
-              stlplus::basename_part(std::to_string(view->getViewId())), imageDescribers[i].typeName + ".desc");
-      
-        if (stlplus::file_exists(computeMethod.featFilename) &&
-            stlplus::file_exists(computeMethod.descFilename))
-        {
-          // Skip the feature extraction as the results are already computed.
-          continue;
-        }
-        
-        computeMethod.methodIndex = i;
-        
-        // If features or descriptors file are missing, compute and export them
-        computeMethods.push_back(computeMethod);
-      }
-      
-      if(!computeMethods.empty())
-      {
-        auto computeFunction = [&]() {
-            Image<float> imageGrayFloat;
-            Image<unsigned char> imageGrayUChar;
-
-            readImage(viewFilename, imageGrayFloat);
-
-            for(auto& compute : computeMethods)
-            {
-              // Compute features and descriptors and export them to files
-              ALICEVISION_LOG_INFO("Extracting " + imageDescribers[compute.methodIndex].typeName  + " features from view " + std::to_string(view->getViewId()) + " : '" + view->getImagePath() +"'");
-              std::unique_ptr<Regions> regions;
-
-              if(imageDescribers[compute.methodIndex].describer->useFloatImage())
-              {
-                // image buffer use float image, use the read buffer
-                imageDescribers[compute.methodIndex].describer->Describe(imageGrayFloat, regions);
-              }
-              else
-              {
-                // image buffer can't use float image
-                if(imageGrayUChar.Width() == 0) // the first time, convert the float buffer to uchar
-                  imageGrayUChar = imageGrayFloat.GetMat().cast<unsigned char>() * 255;
-                imageDescribers[compute.methodIndex].describer->Describe(imageGrayUChar, regions);
-              }
-
-              imageDescribers[compute.methodIndex].describer->Save(regions.get(), compute.featFilename, compute.descFilename);
-            }
-        };
-        
-        if (maxJobs == 1)
-          computeFunction();
-        else
-          dispatch(maxJobs, computeFunction);
-      }
-    }
-
-    if (maxJobs != 1) waitForCompletion();
-
-    std::cout << "Task done in (s): " << timer.elapsed() << std::endl;
+    ALICEVISION_LOG_INFO("Task done in (s): " + std::to_string(timer.elapsed()));
   }
   return EXIT_SUCCESS;
 }
