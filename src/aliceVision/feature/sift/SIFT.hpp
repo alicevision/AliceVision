@@ -85,7 +85,7 @@ struct SiftParams
       case EImageDescriberPreset::NORMAL:
       {
         _maxTotalKeypoints = 10000;
-        _peakThreshold = 0.04f;
+        _peakThreshold = 0.02f;
         _firstOctave = 0;
         break;
       }
