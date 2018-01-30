@@ -138,6 +138,26 @@ install(TARGETS aliceVision_utils_sfmAlignment
   DESTINATION bin/
 )
 
+# SfM transform
+
+add_executable(aliceVision_utils_sfmTransform main_sfmTransform.cpp)
+
+target_link_libraries(aliceVision_utils_sfmTransform
+  aliceVision_system
+  aliceVision_feature
+  aliceVision_sfm
+  stlplus
+  ${BOOST_LIBRARIES}
+)
+
+set_property(TARGET aliceVision_utils_sfmTransform
+  PROPERTY FOLDER AliceVision/Software/Utils
+)
+
+install(TARGETS aliceVision_utils_sfmTransform
+  DESTINATION bin/
+)
+
 # SfM color harmonize
 
 add_executable(aliceVision_utils_sfmColorHarmonize

@@ -42,8 +42,8 @@ int main() {
   using namespace aliceVision::feature;
   std::unique_ptr<ImageDescriber> image_describer(new ImageDescriber_SIFT(SiftParams(-1)));
   std::map<IndexT, std::unique_ptr<feature::Regions> > regions_perImage;
-  image_describer->Describe(imageL, regions_perImage[0]);
-  image_describer->Describe(imageR, regions_perImage[1]);
+  image_describer->describe(imageL, regions_perImage[0]);
+  image_describer->describe(imageR, regions_perImage[1]);
 
   const SIFT_Regions* regionsL = dynamic_cast<SIFT_Regions*>(regions_perImage.at(0).get());
   const SIFT_Regions* regionsR = dynamic_cast<SIFT_Regions*>(regions_perImage.at(1).get());

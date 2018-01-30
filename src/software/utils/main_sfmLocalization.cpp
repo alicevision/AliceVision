@@ -173,7 +173,7 @@ int main(int argc, char **argv)
       image::readImage(queryImage, imageGray);
 
       // Compute features and descriptors
-      imageDescribers->Describe(imageGray, query_regions);
+      imageDescribers->describe(imageGray, query_regions);
       ALICEVISION_LOG_INFO("# regions detected in query image: " << query_regions->RegionCount());
     }
 
@@ -237,7 +237,7 @@ int main(int argc, char **argv)
       ALICEVISION_LOG_INFO("SfM::localization => try with image: " << sImagePath);
 
       std::unique_ptr<Regions> query_regions;
-      imageDescribers->Allocate(query_regions);
+      imageDescribers->allocate(query_regions);
       const std::string basename = stlplus::basename_part(sImagePath);
       const std::string featFile = stlplus::create_filespec(featuresFolder, basename, ".feat");
       const std::string descFile = stlplus::create_filespec(featuresFolder, basename, ".desc");

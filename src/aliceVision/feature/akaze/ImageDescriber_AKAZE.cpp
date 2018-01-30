@@ -10,7 +10,7 @@ namespace feature {
 
 using namespace std;
 
-bool ImageDescriber_AKAZE::Describe(const image::Image<float>& image,
+bool ImageDescriber_AKAZE::describe(const image::Image<float>& image,
   std::unique_ptr<Regions>& regions,
   const image::Image<unsigned char>* mask)
 {
@@ -26,7 +26,7 @@ bool ImageDescriber_AKAZE::Describe(const image::Image<float>& image,
   akaze.Feature_Detection(kpts);
   akaze.Do_Subpixel_Refinement(kpts);
 
-  Allocate(regions);
+  allocate(regions);
 
   switch(_params._eAkazeDescriptor)
   {
@@ -37,7 +37,7 @@ bool ImageDescriber_AKAZE::Describe(const image::Image<float>& image,
       regionsCasted->Features().resize(kpts.size());
       regionsCasted->Descriptors().resize(kpts.size());
 
-      #pragma omp parallel for
+#pragma omp parallel for
       for (int i = 0; i < static_cast<int>(kpts.size()); ++i)
       {
         AKAZEKeypoint ptAkaze = kpts[i];
@@ -76,7 +76,7 @@ bool ImageDescriber_AKAZE::Describe(const image::Image<float>& image,
       // Init LIOP extractor
       DescriptorExtractor_LIOP liop_extractor;
 
-      #pragma omp parallel for
+#pragma omp parallel for
       for (int i = 0; i < static_cast<int>(kpts.size()); ++i)
       {
         AKAZEKeypoint ptAkaze = kpts[i];
@@ -121,7 +121,7 @@ bool ImageDescriber_AKAZE::Describe(const image::Image<float>& image,
       regionsCasted->Features().resize(kpts.size());
       regionsCasted->Descriptors().resize(kpts.size());
 
-      #pragma omp parallel for
+#pragma omp parallel for
       for (int i = 0; i < static_cast<int>(kpts.size()); ++i)
       {
         AKAZEKeypoint ptAkaze = kpts[i];

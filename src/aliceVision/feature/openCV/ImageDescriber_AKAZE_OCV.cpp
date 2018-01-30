@@ -13,7 +13,7 @@
 namespace aliceVision {
 namespace feature {
 
-bool ImageDescriber_AKAZE_OCV::Describe(const image::Image<unsigned char>& image,
+bool ImageDescriber_AKAZE_OCV::describe(const image::Image<unsigned char>& image,
                                            std::unique_ptr<Regions>& regions,
                                            const image::Image<unsigned char>* mask)
 {
@@ -31,7 +31,7 @@ bool ImageDescriber_AKAZE_OCV::Describe(const image::Image<unsigned char>& image
     return false;
   }
 
-  Allocate(regions);
+  allocate(regions);
 
   // Build alias to cached data
   AKAZE_Float_Regions* regionsCasted = dynamic_cast<AKAZE_Float_Regions*>(regions.get());

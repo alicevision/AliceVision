@@ -55,6 +55,15 @@ public:
   ):ImageDescriber(), _params(params), _bOrientation(bOrientation) {}
 
   /**
+   * @brief Check if the image describer use CUDA
+   * @return True if the image describer use CUDA
+   */
+  bool useCuda() const override
+  {
+    return false;
+  }
+
+  /**
    * @brief Check if the image describer use float image
    * @return True if the image describer use float image
    */
@@ -77,32 +86,28 @@ public:
     }
     throw std::logic_error("Unknown AKAZE type.");
   }
-  
+
   /**
-   * @brief Use a preset to control the number of detected regions
-   * @param[in] preset The preset configuration
-   * @return True if configuration succeed. (here always false)
+   * @brief Get the total amount of RAM needed for a
+   * feature extraction of an image of the given dimension.
+   * @param[in] width The image width
+   * @param[in] height The image height
+   * @return total amount of memory needed
    */
-  bool Set_configuration_preset(EImageDescriberPreset preset) override
+  std::size_t getMemoryConsumption(std::size_t width, std::size_t height) const override
   {
-    switch(preset)
+    std::size_t fullImgSize = width * height;
+    std::size_t memoryConsuption = 0;
+    double downscale = 1.0;
+    for(int octave = 0; octave < _params._options.iNbOctave; ++octave)
     {
-    case EImageDescriberPreset::LOW:
-    case EImageDescriberPreset::MEDIUM:
-    case EImageDescriberPreset::NORMAL:
-      _params._options.fThreshold = AKAZEConfig().fThreshold;
-    break;
-    case EImageDescriberPreset::HIGH:
-      _params._options.fThreshold = AKAZEConfig().fThreshold/10.;
-    break;
-    case EImageDescriberPreset::ULTRA:
-     _params._options.fThreshold = AKAZEConfig().fThreshold/100.;
-    break;
-    default: return false;
+      memoryConsuption += fullImgSize / (downscale * downscale);
+      downscale *= 2.0;
     }
-    return true;
+    memoryConsuption *= _params._options.iNbSlicePerOctave * sizeof(float);
+    return 4 * memoryConsuption + (3 * width * height * sizeof(float)) + 1.5 * std::pow(2,30); // add arbitrary 1.5 GB
   }
-  
+
   /**
    * @brief Set image describer always upRight
    * @param[in] upRight
@@ -113,13 +118,37 @@ public:
   }
 
   /**
+   * @brief Use a preset to control the number of detected regions
+   * @param[in] preset The preset configuration
+   */
+  void setConfigurationPreset(EImageDescriberPreset preset) override
+  {
+    switch(preset)
+    {
+      case EImageDescriberPreset::LOW:
+      case EImageDescriberPreset::MEDIUM:
+      case EImageDescriberPreset::NORMAL:
+        _params._options.fThreshold = AKAZEConfig().fThreshold;
+      break;
+      case EImageDescriberPreset::HIGH:
+        _params._options.fThreshold = AKAZEConfig().fThreshold/10.;
+      break;
+      case EImageDescriberPreset::ULTRA:
+       _params._options.fThreshold = AKAZEConfig().fThreshold/100.;
+      break;
+      default:
+        throw std::out_of_range("Invalid image describer preset enum");
+    }
+  }
+
+  /**
    * @brief Detect regions on the float image and compute their attributes (description)
    * @param[in] image Image.
    * @param[out] regions The detected regions and attributes
-   * @param[in] mask 8-bit gray image for keypoint filtering (optional).
+   * @param[in] mask 8-bit grayscale image for keypoint filtering (optional)
    * Non-zero values depict the region of interest.
    */
-  bool Describe(const image::Image<float>& image,
+  bool describe(const image::Image<float>& image,
     std::unique_ptr<Regions> &regions,
     const image::Image<unsigned char> * mask = nullptr) override;
 
@@ -127,7 +156,7 @@ public:
    * @brief Allocate Regions type depending of the ImageDescriber
    * @param[in,out] regions
    */
-  void Allocate(std::unique_ptr<Regions> &regions) const override
+  void allocate(std::unique_ptr<Regions> &regions) const override
   {
     switch(_params._eAkazeDescriptor)
     {
