@@ -555,8 +555,11 @@ void ps_depthSimMap::save(int rc, staticVector<int>* tcams)
     const int width = mp->mip->getWidth(rc) / scale;
     const int height = mp->mip->getHeight(rc) / scale;
 
+    oiio::ParamValueList metadata;
+    metadata.emplace_back(oiio::ParamValue("AliceVision:CArr", oiio::TypeDesc(oiio::TypeDesc::DOUBLE, oiio::TypeDesc::VEC3), 1, mp->CArr[rc].m));
+    metadata.emplace_back(oiio::ParamValue("AliceVision:iCamArr", oiio::TypeDesc(oiio::TypeDesc::DOUBLE, oiio::TypeDesc::MATRIX33), 1, mp->iCamArr[rc].m));
     // TODO: remove "+ 1"
-    imageIO::writeImage(mv_getFileName(mp->mip, rc + 1, EFileType::depthMap, scale), width, height, depthMap->getDataWritable(), imageIO::EImageQuality::LOSSLESS);
+    imageIO::writeImage(mv_getFileName(mp->mip, rc + 1, EFileType::depthMap, scale), width, height, depthMap->getDataWritable(), imageIO::EImageQuality::LOSSLESS, metadata);
     imageIO::writeImage(mv_getFileName(mp->mip, rc + 1, EFileType::simMap, scale), width, height, simMap->getDataWritable());
 
     {
@@ -604,7 +607,11 @@ void ps_depthSimMap::saveRefine(int rc, std::string depthMapFileName, std::strin
         simMap.at(i) = (*dsm)[i].sim;
     }
 
-    imageIO::writeImage(depthMapFileName, width, height, depthMap, imageIO::EImageQuality::LOSSLESS);
+    oiio::ParamValueList metadata;
+    metadata.emplace_back(oiio::ParamValue("AliceVision:CArr", oiio::TypeDesc(oiio::TypeDesc::DOUBLE, oiio::TypeDesc::VEC3), 1, mp->CArr[rc].m));
+    metadata.emplace_back(oiio::ParamValue("AliceVision:iCamArr", oiio::TypeDesc(oiio::TypeDesc::DOUBLE, oiio::TypeDesc::MATRIX33), 1, mp->iCamArr[rc].m));
+
+    imageIO::writeImage(depthMapFileName, width, height, depthMap, imageIO::EImageQuality::LOSSLESS, metadata);
     imageIO::writeImage(simMapFileName, width, height, simMap);
 }
 

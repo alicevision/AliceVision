@@ -404,7 +404,11 @@ bool mv_fuse::filterDepthMapsRC(int rc, int minNumOfModals, int minNumOfModalsWS
     imageIO::transposeImage(h, w, depthMap);
     imageIO::transposeImage(h, w, simMap);
 
-    imageIO::writeImage(mv_getFileName(mp->mip, rc + 1, EFileType::depthMap, 0), w, h, depthMap, imageIO::EImageQuality::LOSSLESS);
+    oiio::ParamValueList metadata;
+    metadata.emplace_back(oiio::ParamValue("AliceVision:CArr", oiio::TypeDesc(oiio::TypeDesc::DOUBLE, oiio::TypeDesc::VEC3), 1, mp->CArr[rc].m));
+    metadata.emplace_back(oiio::ParamValue("AliceVision:iCamArr", oiio::TypeDesc(oiio::TypeDesc::DOUBLE, oiio::TypeDesc::MATRIX33), 1, mp->iCamArr[rc].m));
+
+    imageIO::writeImage(mv_getFileName(mp->mip, rc + 1, EFileType::depthMap, 0), w, h, depthMap, imageIO::EImageQuality::LOSSLESS, metadata);
     imageIO::writeImage(mv_getFileName(mp->mip, rc + 1, EFileType::simMap, 0), w, h, simMap);
 
     if(mp->verbose)
@@ -770,7 +774,11 @@ void mv_fuse::filterSmallConnComponents(float alpha, int minSegSize, int scale)
         imageIO::transposeImage(h, w, depthMap.getDataWritable());
         imageIO::transposeImage(h, w, simMap.getDataWritable());
 
-        imageIO::writeImage(mv_getFileName(mp->mip, rc + 1, EFileType::depthMap, scale), w, h, depthMap.getDataWritable(), imageIO::EImageQuality::LOSSLESS);
+        oiio::ParamValueList metadata;
+        metadata.emplace_back(oiio::ParamValue("AliceVision:CArr", oiio::TypeDesc(oiio::TypeDesc::DOUBLE, oiio::TypeDesc::VEC3), 1, mp->CArr[rc].m));
+        metadata.emplace_back(oiio::ParamValue("AliceVision:iCamArr", oiio::TypeDesc(oiio::TypeDesc::DOUBLE, oiio::TypeDesc::MATRIX33), 1, mp->iCamArr[rc].m));
+
+        imageIO::writeImage(mv_getFileName(mp->mip, rc + 1, EFileType::depthMap, scale), w, h, depthMap.getDataWritable(), imageIO::EImageQuality::LOSSLESS, metadata);
         imageIO::writeImage(mv_getFileName(mp->mip, rc + 1, EFileType::simMap, scale), w, h, simMap.getDataWritable());
 
         // visualizeDepthMap(rc, mp->mip->newDir+num2strFourDecimal(rc)+"fused.wrl");
