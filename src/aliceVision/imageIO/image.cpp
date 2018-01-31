@@ -16,8 +16,6 @@
 
 #include <stdexcept>
 
-namespace oiio = OIIO;
-
 namespace imageIO {
 
 std::string EImageQuality_informations()
@@ -192,7 +190,8 @@ void writeImage(const std::string& path,
                 int height,
                 int nchannels,
                 const std::vector<T>& buffer,
-                EImageQuality imageQuality)
+                EImageQuality imageQuality,
+                const oiio::ParamValueList& metadata)
 {
     std::cout << "[IO] Write Image : " << path << std::endl;
     std::cout << "- width : " << width << std::endl;
@@ -202,6 +201,7 @@ void writeImage(const std::string& path,
     const bool isEXR = (path.size() > 4 && path.compare(path.size() - 4, 4, ".exr") == 0);
 
     oiio::ImageSpec imageSpec(width, height, nchannels, typeDesc);
+    imageSpec.extra_attribs = metadata;
 
     if(isEXR)
     {
@@ -237,29 +237,29 @@ void writeImage(const std::string& path,
     }
 }
 
-void writeImage(const std::string& path, int width, int height, const std::vector<unsigned char>& buffer, EImageQuality imageQuality)
+void writeImage(const std::string& path, int width, int height, const std::vector<unsigned char>& buffer, EImageQuality imageQuality, const oiio::ParamValueList& metadata)
 {
-    writeImage(path, oiio::TypeDesc::UCHAR, width, height, 1, buffer, imageQuality);
+    writeImage(path, oiio::TypeDesc::UCHAR, width, height, 1, buffer, imageQuality, metadata);
 }
 
-void writeImage(const std::string& path, int width, int height, const std::vector<unsigned short>& buffer, EImageQuality imageQuality)
+void writeImage(const std::string& path, int width, int height, const std::vector<unsigned short>& buffer, EImageQuality imageQuality, const oiio::ParamValueList& metadata)
 {
-    writeImage(path, oiio::TypeDesc::UINT16, width, height, 1, buffer, imageQuality);
+    writeImage(path, oiio::TypeDesc::UINT16, width, height, 1, buffer, imageQuality, metadata);
 }
 
-void writeImage(const std::string& path, int width, int height, const std::vector<rgb>& buffer, EImageQuality imageQuality)
+void writeImage(const std::string& path, int width, int height, const std::vector<rgb>& buffer, EImageQuality imageQuality, const oiio::ParamValueList& metadata)
 {
-    writeImage(path, oiio::TypeDesc::UCHAR, width, height, 3, buffer, imageQuality);
+    writeImage(path, oiio::TypeDesc::UCHAR, width, height, 3, buffer, imageQuality, metadata);
 }
 
-void writeImage(const std::string& path, int width, int height, const std::vector<float>& buffer, EImageQuality imageQuality)
+void writeImage(const std::string& path, int width, int height, const std::vector<float>& buffer, EImageQuality imageQuality, const oiio::ParamValueList& metadata)
 {
-    writeImage(path, oiio::TypeDesc::FLOAT, width, height, 1, buffer, imageQuality);
+    writeImage(path, oiio::TypeDesc::FLOAT, width, height, 1, buffer, imageQuality, metadata);
 }
 
-void writeImage(const std::string& path, int width, int height, const std::vector<Color>& buffer, EImageQuality imageQuality)
+void writeImage(const std::string& path, int width, int height, const std::vector<Color>& buffer, EImageQuality imageQuality, const oiio::ParamValueList& metadata)
 {
-    writeImage(path, oiio::TypeDesc::FLOAT, width, height, 3, buffer, imageQuality);
+    writeImage(path, oiio::TypeDesc::FLOAT, width, height, 3, buffer, imageQuality, metadata);
 }
 
 template<typename T>

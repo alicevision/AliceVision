@@ -13,7 +13,13 @@
 class matrix3x4
 {
 public:
-    double m11, m12, m13, m14, m21, m22, m23, m24, m31, m32, m33, m34;
+    union {
+        struct
+        {
+            double m11, m12, m13, m14, m21, m22, m23, m24, m31, m32, m33, m34;
+        };
+        double m[12];
+    };
 
     inline matrix3x4()
     {
