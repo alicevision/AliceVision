@@ -235,6 +235,8 @@ int main(int argc, char* argv[])
 
             delete mesh;
         }
+        case eUndefined:
+            throw std::invalid_argument("Partitioning not defined");
     }
 
     printfElapsedTime(startTime, "#");
