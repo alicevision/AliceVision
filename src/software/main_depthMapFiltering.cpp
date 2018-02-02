@@ -19,7 +19,6 @@ namespace po = boost::program_options;
 
 #define ALICEVISION_COUT(x) std::cout << x << std::endl
 #define ALICEVISION_CERR(x) std::cerr << x << std::endl
-#define EXIT_FAILURE -1;
 
 
 int main(int argc, char* argv[])
