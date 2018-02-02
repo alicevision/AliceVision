@@ -206,7 +206,7 @@ int main(int argc, char* argv[])
             delaunayGC.reconstructVoxel(hexah, &voxelNeighs, outDirectory.string()+"/", lsbase.getSpaceCamsTracksDir(), false, hexahsToExcludeFromResultingMesh,
                                   (voxelsGrid*)&rp, lsbase.getSpaceSteps());
 
-            bool exportDebugGC = (float)mip._ini.get<bool>("delaunaycut.exportDebugGC", false);
+            bool exportDebugGC = mip._ini.get<bool>("delaunaycut.exportDebugGC", false);
             //if(exportDebugGC)
             //    delaunayGC.saveMeshColoredByCamsConsistency((outDirectory/"meshColoredbyCamsConsistency.wrl").string(),
             //                                                (outDirectory/"meshColoredByVisibility.wrl").string());
