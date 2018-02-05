@@ -223,7 +223,7 @@ private:
         imageDescriber->describe(imageGrayUChar, regions);
       }
       imageDescriber->Save(regions.get(), job.getFeaturesPath(imageDescriberType), job.getDescriptorPath(imageDescriberType));
-      ALICEVISION_LOG_INFO(std::left << std::setw(6) << regions->RegionCount() << " " << imageDescriberTypeName  << " features extracted from view '" << job.view.getImagePath() << "'");
+      ALICEVISION_LOG_INFO(std::left << std::setw(6) << " " << regions->RegionCount() << " " << imageDescriberTypeName  << " features extracted from view '" << job.view.getImagePath() << "'");
     }
   }
 
@@ -255,7 +255,7 @@ int main(int argc, char **argv)
   bool describersAreUpRight = false;
   int rangeStart = -1;
   int rangeSize = 1;
-  int maxJobs = 0;
+  int maxThreads = 0;
   bool forceCpuExtraction = false;
 
   po::options_description allParams("AliceVision featureExtraction");
@@ -282,8 +282,8 @@ int main(int argc, char **argv)
       "Range image index start.")
     ("rangeSize", po::value<int>(&rangeSize)->default_value(rangeSize),
       "Range size.")
-    ("jobs", po::value<int>(&maxJobs)->default_value(maxJobs),
-      "Specifies the number of jobs to run simultaneously (0 for automatic mode).");
+    ("maxThreads", po::value<int>(&maxThreads)->default_value(maxThreads),
+      "Specifies the maximum number of threads to run simultaneously (0 for automatic mode).");
 
   po::options_description logParams("Log parameters");
   logParams.add_options()
@@ -352,7 +352,7 @@ int main(int argc, char **argv)
   extractor.setOutputFolder(outputFolder);
 
   // set maxThreads
-  extractor.setMaxThreads(maxJobs);
+  extractor.setMaxThreads(maxThreads);
 
   // set extraction range
   if(rangeStart != -1)
