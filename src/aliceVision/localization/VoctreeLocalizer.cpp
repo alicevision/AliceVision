@@ -11,7 +11,6 @@
 #include <aliceVision/sfm/pipeline/RelativePoseInfo.hpp>
 #include <aliceVision/sfm/BundleAdjustmentCeres.hpp>
 #include <aliceVision/sfm/pipeline/regionsIO.hpp>
-#include <aliceVision/feature/regionsTypeIO.hpp>
 #include <aliceVision/feature/svgVisualization.hpp>
 #include <aliceVision/matching/RegionsMatcher.hpp>
 #include <aliceVision/matchingImageCollection/IImageCollectionMatcher.hpp>

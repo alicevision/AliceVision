@@ -22,7 +22,9 @@ using namespace aliceVision::camera;
 using namespace aliceVision::sfm;
 using namespace aliceVision::feature;
 using namespace std;
+
 namespace po = boost::program_options;
+namespace fs = boost::filesystem;
 
 /**
  * @brief Retrieve the view id in the sfmData from the image filename.
@@ -208,8 +210,7 @@ int main(int argc, char **argv)
 
   if(extraInfoFolder.empty())
   {
-    namespace bfs = boost::filesystem;
-    extraInfoFolder = bfs::path(outputSfM).parent_path().string();
+    extraInfoFolder = fs::path(outputSfM).parent_path().string();
   }
 
   if (!stlplus::folder_exists(extraInfoFolder))
@@ -234,6 +235,7 @@ int main(int argc, char **argv)
   sfmEngine.setUseLocalBundleAdjustmentStrategy(useLocalBundleAdjustment);
   sfmEngine.setLocalBundleAdjustmentGraphDistance(localBundelAdjustementGraphDistanceLimit);
   sfmEngine.setLocalizerEstimator(robustEstimation::ERobustEstimator_stringToEnum(localizerEstimatorName));
+
   if(minNbObservationsForTriangulation < 2)
   {
       // allows to use to the old triangulatation algorithm (using 2 views only) during resection.

@@ -3,7 +3,7 @@
 // v. 2.0. If a copy of the MPL was not distributed with this file,
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
-#include "aliceVision/camera/camera.hpp"
+#include <aliceVision/camera/camera.hpp>
 
 #define BOOST_TEST_MODULE pinholeBrown
 #include <boost/test/included/unit_test.hpp>

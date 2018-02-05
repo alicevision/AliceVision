@@ -5,12 +5,10 @@
 
 #pragma once
 
-#include "aliceVision/numeric/numeric.hpp"
-#include "aliceVision/camera/cameraCommon.hpp"
-#include "aliceVision/geometry/Pose3.hpp"
-#include "aliceVision/stl/hash.hpp"
-
-#include <cereal/cereal.hpp>
+#include <aliceVision/numeric/numeric.hpp>
+#include <aliceVision/camera/cameraCommon.hpp>
+#include <aliceVision/geometry/Pose3.hpp>
+#include <aliceVision/stl/hash.hpp>
 
 #include <vector>
 
@@ -134,41 +132,6 @@ struct IntrinsicBase
 
   /// Return the intrinsic (interior & exterior) as a simplified projective projection
   virtual Mat34 get_projective_equivalent(const geometry::Pose3 & pose) const = 0;
-
-  /// Serialization out
-  template <class Archive>
-  void save( Archive & ar) const
-  {
-    ar(cereal::make_nvp("width", _w));
-    ar(cereal::make_nvp("height", _h));
-    ar(cereal::make_nvp("serialNumber", _serialNumber));
-    ar(cereal::make_nvp("initialFocalLengthPix", _initialFocalLengthPix));
-  }
-
-  /// Serialization in
-  template <class Archive>
-  void load( Archive & ar)
-  {
-    ar(cereal::make_nvp("width", _w));
-    ar(cereal::make_nvp("height", _h));
-    // compatibility with older versions
-    try
-    {
-      ar(cereal::make_nvp("serialNumber", _serialNumber));
-    }
-    catch(cereal::Exception& e)
-    {
-      _serialNumber = "";
-    }
-    try
-    {
-      ar(cereal::make_nvp("initialFocalLengthPix", _initialFocalLengthPix));
-    }
-    catch(cereal::Exception& e)
-    {
-      _initialFocalLengthPix = -1;
-    }
-  }
 
   /// Generate an unique Hash from the camera parameters (used for grouping)
   virtual std::size_t hashValue() const

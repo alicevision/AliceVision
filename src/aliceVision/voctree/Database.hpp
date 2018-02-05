@@ -6,12 +6,6 @@
 #pragma once
 
 #include "VocabularyTree.hpp"
-
-#include <cereal/cereal.hpp> // Serialization
-#include <cereal/archives/binary.hpp>
-#include <cereal/types/vector.hpp>
-#include <cereal/types/map.hpp>
-
 #include <aliceVision/types.hpp>
 
 #include <map>
@@ -31,12 +25,13 @@ struct DocMatch
   DocId id;
   float score;
 
-  DocMatch() { }
-
-  DocMatch(DocId _id, float _score) : id(_id), score(_score) { }
+  DocMatch() {}
+  DocMatch(DocId _id, float _score)
+    : id(_id)
+    , score(_score)
+  {}
 
   /// Allows sorting DocMatches in best-to-worst order with std::sort.
-
   bool operator<(const DocMatch& other) const
   {
     return score < other.score;
@@ -50,14 +45,6 @@ struct DocMatch
   bool operator!=(const DocMatch& other) const
   {
     return !(*this == other);
-  }
-
-  // Serialization
-  template <class Archive>
-  void serialize(Archive & ar)
-  {
-    ar(cereal::make_nvp("id", id),
-       cereal::make_nvp("score", score));
   }
 };
 
@@ -139,14 +126,6 @@ public:
   //void save(const std::string& file) const;
   //void load(const std::string& file);
 
-  // Cereal serialize method
-
-  template<class Archive>
-  void serialize(Archive & archive)
-  {
-    archive(word_files_, word_weights_, database_);
-  }
-
   const SparseHistogramPerImage& getSparseHistogramPerImage() const
   {
     return database_;
@@ -159,20 +138,11 @@ private:
     DocId id;
     uint32_t count;
 
-    WordFrequency()
-    {
-    }
-
-    WordFrequency(DocId _id, uint32_t _count) : id(_id), count(_count)
-    {
-    }
-
-    // Cereal serialize method
-    template<class Archive>
-    void serialize(Archive & archive)
-    {
-      archive(id, count);
-    }
+    WordFrequency() {}
+    WordFrequency(DocId _id, uint32_t _count)
+      : id(_id)
+      , count(_count)
+    {}
   };
 
   // Stored in increasing order by DocId
@@ -181,7 +151,7 @@ private:
   /// @todo Use sorted vector?
   // typedef std::vector< std::pair<Word, float> > DocumentVector;
   
-  friend std::ostream& operator<<(std::ostream& os, const SparseHistogram &dv);	
+  friend std::ostream& operator<<(std::ostream& os, const SparseHistogram& dv);
 
   std::vector<InvertedFile> word_files_;
   std::vector<float> word_weights_;

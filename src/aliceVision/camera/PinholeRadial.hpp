@@ -5,9 +5,9 @@
 
 #pragma once
 
-#include "aliceVision/numeric/numeric.hpp"
-#include "aliceVision/camera/cameraCommon.hpp"
-#include "aliceVision/camera/Pinhole.hpp"
+#include <aliceVision/numeric/numeric.hpp>
+#include <aliceVision/camera/cameraCommon.hpp>
+#include <aliceVision/camera/Pinhole.hpp>
 
 #include <vector>
 
@@ -101,22 +101,6 @@ class PinholeRadialK1 : public Pinhole
     return cam2ima( add_disto(ima2cam(p)) );
   }
 
-  // Serialization
-  template <class Archive>
-  void save( Archive & ar) const
-  {
-    Pinhole::save(ar);
-    ar(cereal::make_nvp("disto_k1", _distortionParams));
-  }
-
-  // Serialization
-  template <class Archive>
-  void load( Archive & ar)
-  {
-    Pinhole::load(ar);
-    ar(cereal::make_nvp("disto_k1", _distortionParams));
-  }
-
   private:
 
   /// Functor to solve Square(disto(radius(p'))) = r^2
@@ -186,22 +170,6 @@ class PinholeRadialK3 : public Pinhole
     return cam2ima( add_disto(ima2cam(p)) );
   }
 
-  // Serialization
-  template <class Archive>
-  void save( Archive & ar) const
-  {
-    Pinhole::save(ar);
-    ar(cereal::make_nvp("disto_k3", _distortionParams));
-  }
-
-  // Serialization
-  template <class Archive>
-  void load( Archive & ar)
-  {
-    Pinhole::load(ar);
-    ar(cereal::make_nvp("disto_k3", _distortionParams));
-  }
-
   private:
 
   /// Functor to solve Square(disto(radius(p'))) = r^2
@@ -214,10 +182,3 @@ class PinholeRadialK3 : public Pinhole
 
 } // namespace camera
 } // namespace aliceVision
-
-#include <cereal/types/polymorphic.hpp>
-#include <cereal/types/vector.hpp>
-
-CEREAL_REGISTER_TYPE_WITH_NAME(aliceVision::camera::PinholeRadialK1, "PinholeRadialK1");
-CEREAL_REGISTER_TYPE_WITH_NAME(aliceVision::camera::PinholeRadialK3, "PinholeRadialK3");
-

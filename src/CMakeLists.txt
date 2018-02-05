@@ -14,7 +14,7 @@ set(ALICEVISION_VERSION ${ALICEVISION_VERSION_MAJOR}.${ALICEVISION_VERSION_MINOR
 # ==============================================================================
 # Check that submodule have been initialized and updated
 # ==============================================================================
-if(NOT EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/dependencies/cereal/include)
+if(NOT EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/dependencies/osi_clp/CoinUtils)
   message(FATAL_ERROR
     "\n submodule(s) are missing, please update your repository:\n"
     "  > git submodule update -i\n")
@@ -464,7 +464,6 @@ set(ALICEVISION_INCLUDE_DIRS
   ${CMAKE_CURRENT_SOURCE_DIR} 
   ${generatedDir}
   ${CMAKE_CURRENT_SOURCE_DIR}/dependencies
-  ${CMAKE_CURRENT_SOURCE_DIR}/dependencies/cereal/include
   ${LEMON_INCLUDE_DIRS}
   ${EIGEN_INCLUDE_DIRS}
   ${CERES_INCLUDE_DIRS}

@@ -5,10 +5,10 @@
 
 #pragma once
 
-#include "aliceVision/numeric/numeric.hpp"
-#include "aliceVision/camera/cameraCommon.hpp"
-#include "aliceVision/camera/IntrinsicBase.hpp"
-#include "aliceVision/geometry/Pose3.hpp"
+#include <aliceVision/numeric/numeric.hpp>
+#include <aliceVision/camera/cameraCommon.hpp>
+#include <aliceVision/camera/IntrinsicBase.hpp>
+#include <aliceVision/geometry/Pose3.hpp>
 
 #include <vector>
 
@@ -138,28 +138,6 @@ class Pinhole : public IntrinsicBase
   /// Return the distorted pixel (with added distortion)
   virtual Vec2 get_d_pixel(const Vec2& p) const {return p;}
 
-  // Serialization
-  template <class Archive>
-  void save( Archive & ar) const
-  {
-    IntrinsicBase::save(ar);
-    ar(cereal::make_nvp("focal_length", _K(0,0) ));
-    const std::vector<double> pp = {_K(0,2), _K(1,2)};
-    ar(cereal::make_nvp("principal_point", pp));
-  }
-
-  // Serialization
-  template <class Archive>
-  void load( Archive & ar)
-  {
-    IntrinsicBase::load(ar);
-    double focal_length;
-    ar(cereal::make_nvp("focal_length", focal_length ));
-    std::vector<double> pp(2);
-    ar(cereal::make_nvp("principal_point", pp));
-    this->setK(focal_length, pp[0], pp[1]);
-  }
-
 private:
   // Focal & principal point are embed into the calibration matrix K
   Mat3 _K, _Kinv;
@@ -169,8 +147,3 @@ protected:
 
 } // namespace camera
 } // namespace aliceVision
-
-#include <cereal/types/polymorphic.hpp>
-#include <cereal/types/vector.hpp>
-
-CEREAL_REGISTER_TYPE_WITH_NAME(aliceVision::camera::Pinhole, "pinhole");

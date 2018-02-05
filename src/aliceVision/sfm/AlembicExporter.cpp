@@ -9,6 +9,8 @@
 #include <Alembic/AbcGeom/All.h>
 #include <Alembic/AbcCoreOgawa/All.h>
 
+#include <dependencies/stlplus3/filesystemSimplified/file_system.hpp>
+
 #include <numeric>
 
 namespace aliceVision {

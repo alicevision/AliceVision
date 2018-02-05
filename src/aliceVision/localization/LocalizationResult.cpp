@@ -4,25 +4,25 @@
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
 #include "LocalizationResult.hpp"
+#include <aliceVision/sfm/sfmDataIO_json.hpp>
 
-#include <cereal/archives/portable_binary.hpp>
-#include <cereal/types/utility.hpp>  // needed to serialize std::pair
+#include <boost/property_tree/ptree.hpp>
+#include <boost/property_tree/json_parser.hpp>
 
 #include <limits>
+#include <memory>
 
 namespace aliceVision {
 namespace localization {
 
-LocalizationResult::LocalizationResult() : 
-        _isValid(false)
-{
-}
+namespace bpt = boost::property_tree;
 
+LocalizationResult::LocalizationResult() : _isValid(false) {}
 LocalizationResult::LocalizationResult(
-        const sfm::ImageLocalizerMatchData & matchData,
-        const std::vector<IndMatch3D2D> & indMatch3D2D,
-        const geometry::Pose3 & pose,
-        const camera::PinholeRadialK3 & intrinsics,
+        const sfm::ImageLocalizerMatchData& matchData,
+        const std::vector<IndMatch3D2D>& indMatch3D2D,
+        const geometry::Pose3& pose,
+        const camera::PinholeRadialK3& intrinsics,
         const std::vector<voctree::DocMatch>& matchedImages,
         bool isValid) :
         _matchData(matchData),
@@ -37,14 +37,12 @@ LocalizationResult::LocalizationResult(
   assert(_matchData.pt2D.cols() == _indMatch3D2D.size());
 }
         
-LocalizationResult::~LocalizationResult()
-{
-}
+LocalizationResult::~LocalizationResult() {}
 
 const Mat LocalizationResult::retrieveUndistortedPt2D() const
 {
-  const auto &intrinsics =  getIntrinsics();
-  const auto &distorted = getPt2D();
+  const auto& intrinsics =  getIntrinsics();
+  const auto& distorted = getPt2D();
   if(!intrinsics.have_disto() || !intrinsics.isValid())
   {
     return getPt2D();
@@ -60,22 +58,22 @@ const Mat LocalizationResult::retrieveUndistortedPt2D() const
 
 Mat2X LocalizationResult::computeAllResiduals() const 
 {
-  const Mat2X &orig2d = getPt2D();
-  const Mat3X &orig3d = getPt3D();
+  const Mat2X& orig2d = getPt2D();
+  const Mat3X& orig3d = getPt3D();
   assert(orig2d.cols()==orig3d.cols());
   
-  const auto &intrinsics = getIntrinsics();
+  const auto& intrinsics = getIntrinsics();
   return intrinsics.residuals(getPose(), orig3d, orig2d);
 }
 
 Mat2X LocalizationResult::computeInliersResiduals() const 
 {
   // get the inliers.
-  const auto &currInliers = getInliers();
+  const auto& currInliers = getInliers();
   const std::size_t numInliers = currInliers.size();
 
-  const Mat2X &orig2d = getPt2D();
-  const Mat3X &orig3d = getPt3D();
+  const Mat2X& orig2d = getPt2D();
+  const Mat3X& orig3d = getPt3D();
   Mat2X inliers2d = Mat2X(2, numInliers);
   Mat3X inliers3d = Mat3X(3, numInliers);
 
@@ -128,14 +126,14 @@ Vec LocalizationResult::computeReprojectionErrorPerPoint() const
 
 std::size_t LocalizationResult::selectBestInliers(double maxReprojectionError)
 {
-   const auto &residuals = computeReprojectionErrorPerPoint();
-   auto &inliers = _matchData.vec_inliers;
+   const auto& residuals = computeReprojectionErrorPerPoint();
+   auto& inliers = _matchData.vec_inliers;
    ALICEVISION_LOG_DEBUG("Inliers before: " << inliers.size());
    inliers.clear();
    // at worst they could all be inliers
    inliers.reserve(getPt2D().size());
    
-   for(std::size_t i = 0; i < residuals.size(); ++i )
+   for(std::size_t i = 0; i < residuals.size(); ++i)
    {
      if(residuals[i] < maxReprojectionError)
      {
@@ -153,85 +151,187 @@ std::size_t LocalizationResult::selectBestInliers()
    return selectBestInliers(threshold);
 }
 
-bool load(LocalizationResult & res, const std::string & filename)
+
+void LocalizationResult::load(std::vector<LocalizationResult>& localizationResults, const std::string& filename)
 {
-  //Create the stream and check it is ok
-  std::ifstream stream(filename, std::ios::binary | std::ios::in);
-  if(!stream.is_open())
+  using namespace aliceVision::sfm;
+
+  // empty output vector
+  localizationResults.clear();
+
+  Vec3 version;
+
+  // main tree
+  bpt::ptree fileTree;
+
+  // read the json file and initialize the tree
+  bpt::read_json(filename, fileTree);
+
+  // version
+  loadMatrix("version", version, fileTree);
+
+  if(fileTree.count("localizationResults"))
   {
-    ALICEVISION_LOG_WARNING("Unable to load file " << filename);
-    return false;
+    for(bpt::ptree::value_type& lrNode : fileTree.get_child("localizationResults"))
+    {
+      // localization result tree
+      bpt::ptree lrTree = lrNode.second;
+
+      LocalizationResult lr;
+
+      lr._isValid = lrTree.get<bool>("isValid");
+      loadPose3("pose", lr._pose, lrTree);
+
+      // indMatch3D2D
+      if(lrTree.count("indMatch3D2D"))
+      {
+        for(bpt::ptree::value_type& itNode : lrTree.get_child("indMatch3D2D"))
+        {
+          bpt::ptree& itTree = itNode.second;
+
+          IndMatch3D2D indMatch;
+
+          indMatch.landmarkId = itTree.get<IndexT>("landmarkId");
+          indMatch.featId = itTree.get<IndexT>("featureId");
+          indMatch.descType = feature::EImageDescriberType_stringToEnum(itTree.get<std::string>("descType"));
+
+          lr._indMatch3D2D.emplace_back(indMatch);
+        }
+      }
+
+      // intrinsic
+      {
+        IndexT intrinsicId;
+        std::shared_ptr<camera::IntrinsicBase> intrinsicPtr;
+        loadIntrinsic(intrinsicId, intrinsicPtr, lrTree.get_child("intrinsic"));
+        lr._intrinsics = *(dynamic_cast<camera::PinholeRadialK3*>(intrinsicPtr.get()));
+      }
+
+      // inliers
+      if(lrTree.count("inliers"))
+      {
+        for(bpt::ptree::value_type& itNode : lrTree.get_child("inliers"))
+          lr._matchData.vec_inliers.emplace_back(itNode.second.get_value<std::size_t>());
+      }
+
+      const std::size_t nbPts = lrTree.get<std::size_t>("nbPts");
+
+      lr._matchData.pt3D = Mat(3, nbPts);
+      lr._matchData.pt2D = Mat(2, nbPts);
+
+      loadMatrix("pt3D", lr._matchData.pt3D, lrTree);
+      loadMatrix("pt2D", lr._matchData.pt2D, lrTree);
+      loadMatrix("projectionMatrix", lr._matchData.projection_matrix, lrTree);
+
+      lr._matchData.error_max = std::stod(lrTree.get<std::string>("errorMax"));
+      lr._matchData.max_iteration = lrTree.get<std::size_t>("maxIteration");
+
+      // matchedImages;
+      if(lrTree.count("matchedImages"))
+      {
+        for(bpt::ptree::value_type& itNode : lrTree.get_child("matchedImages"))
+        {
+          bpt::ptree& itTree = itNode.second;
+
+          voctree::DocMatch docMatch;
+
+          docMatch.id = itTree.get<voctree::DocId>("id");
+          docMatch.score = itTree.get<float>("score");
+
+          lr._matchedImages.emplace_back(docMatch);
+        }
+      }
+      localizationResults.emplace_back(lr);
+    }
   }
-  try
-  {
-    cereal::PortableBinaryInputArchive archive(stream);
-    archive(cereal::make_nvp("result", res));
-  }
-  catch (const cereal::Exception & e)
-  {
-    ALICEVISION_LOG_WARNING(e.what());
-    return false;
-  }
-  return true;
 }
 
-
-bool load(std::vector<LocalizationResult> & res, const std::string & filename)
+void LocalizationResult::save(const std::vector<LocalizationResult>& localizationResults, const std::string& filename)
 {
-  //Create the stream and check it is ok
-  std::ifstream stream(filename, std::ios::binary | std::ios::in);
-  if(!stream.is_open())
+  using namespace aliceVision::sfm;
+
+  const Vec3 version = {1, 0, 0};
+
+  // main tree
+  bpt::ptree fileTree;
+
+  // file version
+  saveMatrix("version", version, fileTree);
+
+  // localizationResults tree
+  bpt::ptree localizationResultsTree;
+
+  for(const LocalizationResult& lr : localizationResults)
   {
-    ALICEVISION_LOG_WARNING("Unable to load file " << filename);
-    return false;
+    bpt::ptree lrTree;
+
+    lrTree.put("isValid", lr._isValid);
+    savePose3("pose", lr._pose, lrTree);
+
+    // indMatch3D2D
+    {
+      bpt::ptree indMatch3D2DTree;
+
+      for(const IndMatch3D2D& indMatch3D2D : lr._indMatch3D2D)
+      {
+        bpt::ptree itTree;
+        itTree.put("landmarkId", indMatch3D2D.landmarkId);
+        itTree.put("featureId", indMatch3D2D.featId);
+        itTree.put("descType", feature::EImageDescriberType_enumToString(indMatch3D2D.descType));
+        indMatch3D2DTree.push_back(std::make_pair("", itTree));
+      }
+      lrTree.add_child("indMatch3D2D", indMatch3D2DTree);
+    }
+
+    //intrinsic
+    {
+      std::shared_ptr<camera::PinholeRadialK3> intrinsicPtr(new camera::PinholeRadialK3());
+      *intrinsicPtr = lr._intrinsics;
+      saveIntrinsic("intrinsic", UndefinedIndexT, std::dynamic_pointer_cast<camera::IntrinsicBase>(intrinsicPtr), lrTree);
+    }
+
+    // inliers
+    {
+      bpt::ptree inliersTree;
+      for(std::size_t index : lr._matchData.vec_inliers)
+      {
+        bpt::ptree inlierTree;
+        inlierTree.put("",index);
+        inliersTree.push_back(std::make_pair("", inlierTree));
+      }
+      lrTree.add_child("inliers", inliersTree);
+    }
+
+    // needed for loading
+    lrTree.put("nbPts", lr._matchData.pt3D.cols());
+
+    saveMatrix("pt3D", lr._matchData.pt3D, lrTree);
+    saveMatrix("pt2D", lr._matchData.pt2D, lrTree);
+    saveMatrix("projectionMatrix", lr._matchData.projection_matrix, lrTree);
+
+    lrTree.put("errorMax", lr._matchData.error_max);
+    lrTree.put("maxIteration", lr._matchData.max_iteration);
+
+    // matchedImages
+    {
+      bpt::ptree matchedImagesTree;
+
+      for(const voctree::DocMatch& docMatch : lr._matchedImages)
+      {
+        bpt::ptree itTree;
+        itTree.put("id", docMatch.id);
+        itTree.put("score", docMatch.score);
+        matchedImagesTree.push_back(std::make_pair("", itTree));
+      }
+      lrTree.add_child("matchedImages", matchedImagesTree);
+    }
+    localizationResultsTree.push_back(std::make_pair("", lrTree));
   }
-  try
-  {
-    cereal::PortableBinaryInputArchive archive(stream);
-    archive(cereal::make_nvp("results", res));
-  }
-  catch (const cereal::Exception & e)
-  {
-    ALICEVISION_LOG_WARNING(e.what());
-    return false;
-  }
-  return true;
+  fileTree.add_child("localizationResults", localizationResultsTree);
+
+  // write the json file with the tree
+  bpt::write_json(filename, fileTree);
 }
-
-
-bool save(const LocalizationResult & res, const std::string & filename)
-{
-  //Create the stream and check it is ok
-  std::ofstream stream(filename, std::ios::binary | std::ios::out);
-  if(!stream.is_open())
-  {
-    ALICEVISION_LOG_WARNING("Unable to create file " << filename);
-    return false;
-  }
-
-  cereal::PortableBinaryOutputArchive archive(stream);
-  archive(res);
-
-  return true; 
-}
-
-bool save(const std::vector<LocalizationResult> & res, const std::string & filename)
-{
-  //Create the stream and check it is ok
-  std::ofstream stream(filename, std::ios::binary | std::ios::out);
-  if(!stream.is_open())
-  {
-    ALICEVISION_LOG_WARNING("Unable to create file " << filename);
-    return false;
-  }
-
-  cereal::PortableBinaryOutputArchive archive(stream);
-  archive(cereal::make_nvp("results", res));
-
-  return true;  
-}
-
-
 
 void updateRigPoses(std::vector<LocalizationResult>& vec_localizationResults,
                     const geometry::Pose3 &rigPose,

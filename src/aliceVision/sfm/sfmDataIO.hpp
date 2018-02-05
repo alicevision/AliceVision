@@ -5,7 +5,7 @@
 
 #pragma once
 
-#include "aliceVision/sfm/SfMData.hpp"
+#include <aliceVision/sfm/SfMData.hpp>
 
 namespace aliceVision {
 namespace sfm {
@@ -22,13 +22,13 @@ enum ESfMData
 };
 
 ///Check that each pose have a valid intrinsic and pose id in the existing View ids
-bool ValidIds(const SfMData & sfm_data, ESfMData flags_part);
+bool ValidIds(const SfMData& sfmData, ESfMData partFlag);
 
 /// Load SfMData SfM scene from a file
-bool Load(SfMData & sfm_data, const std::string & filename, ESfMData flags_part);
+bool Load(SfMData& sfmData, const std::string& filename, ESfMData partFlag);
 
 /// Save SfMData SfM scene to a file
-bool Save(const SfMData & sfm_data, const std::string & filename, ESfMData flags_part);
+bool Save(const SfMData& sfmData, const std::string& filename, ESfMData partFlag);
 
 } // namespace sfm
 } // namespace aliceVision

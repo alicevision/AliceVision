@@ -21,7 +21,6 @@ set(features_files_headers
   Regions.hpp
   regionsFactory.hpp
   RegionsPerView.hpp
-  regionsTypeIO.hpp
   selection.hpp
   svgVisualization.hpp
 )

@@ -8,49 +8,12 @@
 #include <aliceVision/sfm/pipeline/localization/SfMLocalizer.hpp>
 #include <aliceVision/voctree/Database.hpp>
 
-#include <cereal/cereal.hpp>
-
 #include <vector>
 #include <utility>
 #include <string>
 
-namespace cereal{
-
-template<class Archive>
-void save(Archive & archive, aliceVision::Mat34 const & mat)
-{ 
-  std::vector<double> vec(mat.data(), mat.data() + mat.rows() * mat.cols());
-  archive(vec); 
-}
-
-template<class Archive>
-void load(Archive & archive, aliceVision::Mat34 & m)
-{
-  std::vector<double> vec(12);
-  archive(vec); 
-  m = Eigen::Map<aliceVision::Mat34>(vec.data(), 3, 4);
-}
-
-}
-
 namespace aliceVision {
 namespace localization {
-
-template<class Archive>
-void saveMat(Archive & archive, const std::string &name, Mat const & mat)
-{ 
-  std::vector<double> vec(mat.data(), mat.data() + mat.rows() * mat.cols());
-  archive(cereal::make_nvp(name, vec)); 
-}
-
-template<class Archive>
-void loadMat(Archive & archive, const std::string &name, const std::size_t rows, aliceVision::Mat & m)
-{
-  std::vector<double> vec;
-  archive(cereal::make_nvp(name, vec));
-  const std::size_t cols = vec.size() / rows;
-  m = Eigen::Map<aliceVision::Mat>(vec.data(), rows, cols);
-}
 
 struct IndMatch3D2D
 {
@@ -68,12 +31,6 @@ struct IndMatch3D2D
     return landmarkId < other.landmarkId;
   }
 
-  template <class Archive>
-  void serialize( Archive & ar )
-  {
-    ar(landmarkId, descType, featId);
-  }
-
   IndexT landmarkId = UndefinedIndexT;
   feature::EImageDescriberType descType = feature::EImageDescriberType::UNINITIALIZED;
   IndexT featId = UndefinedIndexT;
@@ -86,40 +43,43 @@ public:
   
   LocalizationResult();
   
-  LocalizationResult(const sfm::ImageLocalizerMatchData & matchData,
-                     const std::vector<IndMatch3D2D> & indMatch3D2D,
-                     const geometry::Pose3 & pose,
-                     const camera::PinholeRadialK3 & intrinsics,
+  LocalizationResult(const sfm::ImageLocalizerMatchData& matchData,
+                     const std::vector<IndMatch3D2D>& indMatch3D2D,
+                     const geometry::Pose3& pose,
+                     const camera::PinholeRadialK3& intrinsics,
                      const std::vector<voctree::DocMatch>& matchedImages,
                      bool isValid = true);
   
   virtual ~LocalizationResult();
   
-  const std::vector<std::size_t> & getInliers() const 
+  const std::vector<std::size_t>& getInliers() const
   {
     return _matchData.vec_inliers;
   }
 
-  const Mat & getPt2D() const 
+  const Mat34& getProjection() const
+  {
+    return _matchData.projection_matrix;
+  }
+
+  const Mat& getPt2D() const
   {
     return _matchData.pt2D;
   }
 
-  const Mat retrieveUndistortedPt2D() const;
-
-  const Mat & getPt3D() const 
+  const Mat& getPt3D() const
   {
     return _matchData.pt3D;
   }
 
-  const Mat34 & getProjection() const
-  {
-    return _matchData.projection_matrix;
-  }
+  const Mat retrieveUndistortedPt2D() const;
   
-  const sfm::ImageLocalizerMatchData& getMatchData() const { return _matchData; }
+  const sfm::ImageLocalizerMatchData& getMatchData() const
+  {
+    return _matchData;
+  }
 
-  const std::vector<IndMatch3D2D> & getIndMatch3D2D() const
+  const std::vector<IndMatch3D2D>& getIndMatch3D2D() const
   {
     return _indMatch3D2D;
   }
@@ -129,7 +89,7 @@ public:
     return _matchedImages;
   }
   
-  const geometry::Pose3 & getPose() const
+  const geometry::Pose3& getPose() const
   {
     return _pose;
   }
@@ -139,17 +99,17 @@ public:
     _pose = pose;
   }
 
-  const camera::PinholeRadialK3 & getIntrinsics() const
+  const camera::PinholeRadialK3& getIntrinsics() const
   {
     return _intrinsics;
   }
 
-  camera::PinholeRadialK3 & getIntrinsics()
+  camera::PinholeRadialK3& getIntrinsics()
   {
     return _intrinsics;
   }
 
-  void updateIntrinsics(const std::vector<double> & params)
+  void updateIntrinsics(const std::vector<double>& params)
   {
     _intrinsics.updateFromParams(params);
   }
@@ -211,42 +171,8 @@ public:
   
   double getMaxReprojectionError() const { return _matchData.error_max;}
 
-  // Serialization
-  template<class Archive>
-  void save(Archive & ar) const
-  {
-    ar(cereal::make_nvp("isValid", _isValid));
-    ar(cereal::make_nvp("pose", _pose));
-    ar(cereal::make_nvp("indMatch3D2D", _indMatch3D2D));
-    ar(cereal::make_nvp("intrinsics", _intrinsics));
-    ar(cereal::make_nvp("inliers", _matchData.vec_inliers));
-    saveMat(ar, "pt3D", _matchData.pt3D);
-    saveMat(ar, "pt2D", _matchData.pt2D);
-    ar(cereal::make_nvp("projection_matrix", _matchData.projection_matrix));
-    ar(cereal::make_nvp("error_max", _matchData.error_max));
-    ar(cereal::make_nvp("max_iteration", _matchData.max_iteration));
-    ar(cereal::make_nvp("matchedImages", _matchedImages));
-  }
-
-  template<class Archive>
-  void load(Archive & ar)
-  {
-    ar(cereal::make_nvp("isValid", _isValid));
-    ar(cereal::make_nvp("pose", _pose));
-    ar(cereal::make_nvp("indMatch3D2D", _indMatch3D2D));
-    ar(cereal::make_nvp("intrinsics", _intrinsics));
-    ar(cereal::make_nvp("inliers", _matchData.vec_inliers));
-    loadMat(ar, "pt3D", 3, _matchData.pt3D);
-    loadMat(ar, "pt2D", 2 , _matchData.pt2D);
-    ar(cereal::make_nvp("projection_matrix", _matchData.projection_matrix));
-    ar(cereal::make_nvp("error_max", _matchData.error_max));
-    ar(cereal::make_nvp("max_iteration", _matchData.max_iteration));
-    try
-    {
-      ar(cereal::make_nvp("matchedImages", _matchedImages));
-    } catch(cereal::Exception&)
-    {}
-  }
+  static void save(const std::vector<LocalizationResult>& localizationResults, const std::string& filename);
+  static void load(std::vector<LocalizationResult>& localizationResults, const std::string& filename);
   
 private:
   
@@ -270,16 +196,7 @@ private:
   
   /// True if the localization succeeded, false otherwise
   bool _isValid; 
-  
-
 };
-
-bool load(LocalizationResult & res, const std::string & filename);
-bool load(std::vector<LocalizationResult> & res, const std::string & filename);
-
-
-bool save(const LocalizationResult & res, const std::string & filename);
-bool save(const std::vector<LocalizationResult> & res, const std::string & filename);
 
 /**
  * @brief It recompute the pose of each camera in Localization results according

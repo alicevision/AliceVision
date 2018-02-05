@@ -3,7 +3,7 @@
 // v. 2.0. If a copy of the MPL was not distributed with this file,
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
-#include "aliceVision/camera/camera.hpp"
+#include <aliceVision/camera/camera.hpp>
 
 #define BOOST_TEST_MODULE pinholeRadial
 #include <boost/test/included/unit_test.hpp>
@@ -29,7 +29,7 @@ BOOST_AUTO_TEST_CASE(cameraPinholeRadial_disto_undisto_K1) {
     0.1);
 
   const double epsilon = 1e-4;
-  for (int i = 0; i < 10; ++i)
+  for(int i = 0; i < 10; ++i)
   {
     // generate random point inside the image domain (last random to avoid 0,0)
     const Vec2 ptImage = (Vec2::Random() * 800./2.) + Vec2(500,500) + Vec2::Random();
@@ -62,7 +62,7 @@ BOOST_AUTO_TEST_CASE(cameraPinholeRadial_disto_undisto_K3) {
   // Check that adding and removing distortion give the same coordinates
 
   const double epsilon = 1e-4;
-  for (int i = 0; i < 10; ++i)
+  for(int i = 0; i < 10; ++i)
   {
     // generate random point inside the image domain (last random to avoid 0,0)
     const Vec2 ptImage = (Vec2::Random() * 800./2.) + Vec2(500,500) + Vec2::Random();

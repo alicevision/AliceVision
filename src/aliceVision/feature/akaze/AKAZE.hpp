@@ -37,8 +37,6 @@
 #include <aliceVision/feature/PointFeature.hpp>
 #include <aliceVision/feature/Descriptor.hpp>
 
-#include <cereal/cereal.hpp>
-
 namespace aliceVision {
 namespace feature {
 
@@ -87,7 +85,6 @@ struct TEvolution
     Lhess;  ///< Current Determinant of Hessian
 };
 
-/* ************************************************************************* */
 // AKAZE Class Declaration
 class AKAZE {
 

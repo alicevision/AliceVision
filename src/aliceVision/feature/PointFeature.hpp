@@ -36,12 +36,6 @@ public:
   float& y() { return _coords(1); }
   Vec2f& coords() { return _coords;}
 
-  template<class Archive>
-  void serialize(Archive & ar)
-  {
-    ar (_coords(0), _coords(1));
-  }
-
 protected:
   Vec2f _coords;  // (x, y)
 };
@@ -106,15 +100,6 @@ public:
 
   bool operator !=(const SIOPointFeature& b) const {
     return !((*this)==b);
-  }
-
-  template<class Archive>
-  void serialize(Archive & ar)
-  {
-    ar (
-      _coords(0), _coords(1),
-      _scale,
-      _orientation);
   }
 
 protected:
