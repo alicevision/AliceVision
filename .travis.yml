@@ -97,7 +97,7 @@ script:
         git clone --branch master https://github.com/alicevision/SfM_quality_evaluation.git $GT_TEST_SOURCE;
       fi
       cd $GT_TEST_SOURCE
-      git checkout c02bf0392491b89daf01ad30ff900e7e64fe1c24 # checkout a specific commit to ensure repeatability
+      git checkout cf5f091e8a4246407898ebf1e181e7bd811448ee # checkout a specific commit to ensure repeatability
       python EvaluationLauncher.py -s "$ALICEVISION_BUILD/$BUILD_SYSTEM-$BUILD_PROCESSOR-$BUILD_TYPE" -i Benchmarking_Camera_Calibration_2008/ -o ${GT_TEST_OUTPUT} -r ${GT_TEST_RESULTS} --limit 3
       cat ${GT_TEST_RESULTS}
       # Return to root and remove GT huge files to avoid cache problems
