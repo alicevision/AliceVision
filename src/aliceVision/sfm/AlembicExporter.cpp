@@ -78,8 +78,8 @@ void AlembicExporter::addSfM(const SfMData& sfmData, ESfMData flagsPart)
 {
   OCompoundProperty userProps = _dataImpl->_mvgRoot.getProperties();
 
-  OStringArrayProperty(userProps, "mvg_featuresFolders").set(sfmData.getFeaturesFolders());
-  OStringArrayProperty(userProps, "mvg_matchesFolders").set(sfmData.getMatchesFolders());
+  OStringArrayProperty(userProps, "mvg_featuresFolders").set(sfmData.getRelativeFeaturesFolders());
+  OStringArrayProperty(userProps, "mvg_matchesFolders").set(sfmData.getRelativeMatchesFolders());
 
   if(flagsPart & ESfMData::STRUCTURE)
     addLandmarks(sfmData.GetLandmarks(), (flagsPart & ESfMData::OBSERVATIONS));

@@ -8,6 +8,7 @@
 #include "aliceVision/image/io.hpp"
 #include "aliceVision/stl/stl.hpp"
 
+#include <boost/filesystem.hpp>
 #include <boost/progress.hpp>
 
 namespace aliceVision {
@@ -16,6 +17,8 @@ namespace sfm {
 using namespace aliceVision::geometry;
 using namespace aliceVision::camera;
 using namespace aliceVision::image;
+
+namespace fs = boost::filesystem;
 
 bool SfMData::operator==(const SfMData& other) const {
 
@@ -86,6 +89,24 @@ bool SfMData::operator==(const SfMData& other) const {
 
   return true;
 
+}
+
+std::vector<std::string> SfMData::getFeaturesFolders() const
+{
+  fs::path sfmFolder = fs::path(_absolutePath).parent_path();
+  std::vector<std::string> absolutePaths(_featuresFolders.size());
+  for(int i = 0; i < absolutePaths.size(); ++i)
+    absolutePaths.at(i) = fs::canonical(fs::path(_featuresFolders.at(i)), sfmFolder).string();
+  return absolutePaths;
+}
+
+std::vector<std::string> SfMData::getMatchesFolders() const
+{
+  fs::path sfmFolder = fs::path(_absolutePath).parent_path();
+  std::vector<std::string> absolutePaths(_matchesFolders.size());
+  for(int i = 0; i < absolutePaths.size(); ++i)
+    absolutePaths.at(i) = fs::canonical(fs::path(_matchesFolders.at(i)), sfmFolder).string();
+  return absolutePaths;
 }
 
 std::set<IndexT> SfMData::getValidViews() const

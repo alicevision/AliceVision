@@ -271,8 +271,16 @@ int main(int argc, char **argv)
   if(!sfmEngine.Colorize())
     ALICEVISION_LOG_ERROR("Colorize failed !");
 
-  sfmEngine.Get_SfMData().addFeaturesFolder(featuresFolder);
-  sfmEngine.Get_SfMData().addMatchesFolder(matchesFolder);
+  // set featuresFolder and matchesFolder relative paths
+  {
+    const fs::path sfmFolder = fs::path(outputSfM).remove_filename();
+    const std::string relativeFeaturesFolder = fs::relative(fs::path(featuresFolder), sfmFolder).string();
+    const std::string relativeMatchesFolder = fs::relative(fs::path(matchesFolder), sfmFolder).string();
+
+    sfmEngine.Get_SfMData().addFeaturesFolder(relativeFeaturesFolder);
+    sfmEngine.Get_SfMData().addMatchesFolder(relativeMatchesFolder);
+    sfmEngine.Get_SfMData().setAbsolutePath(outputSfM);
+  }
 
   ALICEVISION_LOG_INFO("Structure from motion took (s): " + std::to_string(timer.elapsed()));
   ALICEVISION_LOG_INFO("Generating HTML report...");

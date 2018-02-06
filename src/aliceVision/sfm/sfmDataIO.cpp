@@ -116,6 +116,9 @@ bool Load(SfMData& sfmData, const std::string& filename, ESfMData partFlag)
     return false;
   }
 
+  if(status)
+    sfmData.setAbsolutePath(filename);
+
   // Assert that loaded intrinsics | extrinsics are linked to valid view
   if(status && (partFlag & VIEWS) && ((partFlag & INTRINSICS) || (partFlag & EXTRINSICS)))
     return ValidIds(sfmData, partFlag);
