@@ -15,7 +15,7 @@ target_link_libraries(CMPMVS PUBLIC mv_structures
                                     aliceVision_common
                                     mv_cudaInterfaces
                                     mv_mesh mv_largeScale
-                                    mv_filter mv_delaunaycut
+                                    mv_delaunaycut
                                     mv_cudaInterfaces mv_prematching
                                     eig33
                                     ${Boost_LIBRARIES} ${ZLIB_LIBRARIES}
@@ -50,7 +50,7 @@ target_link_libraries(aliceVision_exportDepthMap PUBLIC mv_structures
                                     aliceVision_common
                                     mv_cudaInterfaces
                                     mv_mesh mv_largeScale
-                                    mv_filter mv_delaunaycut
+                                    mv_delaunaycut
                                     mv_cudaInterfaces mv_prematching
                                     eig33
                                     ${Boost_LIBRARIES} ${ZLIB_LIBRARIES}
@@ -69,7 +69,7 @@ target_link_libraries(aliceVision_cameraConnection PUBLIC mv_structures
                                     aliceVision_common
                                     mv_cudaInterfaces
                                     mv_mesh mv_largeScale
-                                    mv_filter mv_delaunaycut
+                                    mv_delaunaycut
                                     mv_cudaInterfaces mv_prematching
                                     eig33
                                     ${Boost_LIBRARIES} ${ZLIB_LIBRARIES}
@@ -86,7 +86,7 @@ target_link_libraries(aliceVision_depthMapEstimation PUBLIC mv_structures
                                     aliceVision_common
                                     mv_cudaInterfaces
                                     mv_mesh mv_largeScale
-                                    mv_filter mv_delaunaycut
+                                    mv_delaunaycut
                                     mv_cudaInterfaces mv_prematching
                                     eig33
                                     ${Boost_LIBRARIES} ${ZLIB_LIBRARIES}
@@ -102,7 +102,7 @@ target_link_libraries(aliceVision_depthMapFiltering PUBLIC mv_structures
                                     aliceVision_common
                                     mv_cudaInterfaces
                                     mv_mesh mv_largeScale
-                                    mv_filter mv_delaunaycut
+                                    mv_delaunaycut
                                     mv_cudaInterfaces mv_prematching
                                     eig33
                                     ${Boost_LIBRARIES} ${ZLIB_LIBRARIES}
@@ -119,7 +119,7 @@ target_link_libraries(aliceVision_meshing PUBLIC mv_structures
                                     aliceVision_common
                                     mv_cudaInterfaces
                                     mv_mesh mv_largeScale
-                                    mv_filter mv_delaunaycut
+                                    mv_delaunaycut
                                     mv_cudaInterfaces mv_prematching
                                     eig33
                                     ${Boost_LIBRARIES} ${ZLIB_LIBRARIES}
@@ -148,7 +148,7 @@ target_link_libraries(aliceVision_texturing PUBLIC mv_structures
                                     aliceVision_common
                                     mv_cudaInterfaces
                                     mv_mesh mv_largeScale
-                                    mv_filter mv_delaunaycut
+                                    mv_delaunaycut
                                     mv_cudaInterfaces mv_prematching
                                     eig33
                                     ${Boost_LIBRARIES} ${ZLIB_LIBRARIES}
