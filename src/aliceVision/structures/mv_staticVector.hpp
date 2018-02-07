@@ -5,7 +5,6 @@
 
 #pragma once
 
-#include <aliceVision/eig33/eig33.hpp>
 #include <algorithm>
 #include <assert.h>
 #include <cstdlib>

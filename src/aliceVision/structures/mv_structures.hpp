@@ -984,6 +984,8 @@ struct stat3d
     }
 
     point3d getCG() { return point3d((float)(xsum / count), (float)(ysum / count), (float)(zsum / count)); }
+private:
+    static void eigen_decomposition(double A[3][3], double V0[], double V1[], double V2[], double d[]);
 };
 
 struct idValue
