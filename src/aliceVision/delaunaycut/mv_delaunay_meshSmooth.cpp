@@ -8,8 +8,7 @@
 
 #include <aliceVision/CUDAInterfaces/cuda_plane_sweeping.hpp>
 #include <aliceVision/CUDAInterfaces/refine.hpp>
-
-#include <aliceVision/hallucinations/hallucinations.hpp>
+#include <aliceVision/delaunaycut/hallucinations.hpp>
 #include <aliceVision/mesh/mv_mesh_energy_opt_photo_mem.hpp>
 #include <aliceVision/output3D/mv_output3D.hpp>
 #include <aliceVision/planeSweeping/ps_sgm_params.hpp>
