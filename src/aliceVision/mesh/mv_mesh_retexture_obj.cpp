@@ -9,70 +9,35 @@
 #include <aliceVision/structures/mv_geometry.hpp>
 #include <aliceVision/imageIO/image.hpp>
 
+#include <geogram/basic/geometry_nd.h>
+
 #include <map>
 #include <set>
 
 
-staticVector<point2d>* getObjTexturePixelsForObjTriangleIdInTriBarycCoord(point2d* pixs)
+/**
+ * @brief Return whether a pixel is contained in or intersected by a 2D triangle.
+ * @param[in] triangle the triangle as an array of 3 point2Ds
+ * @param[in] pixel the pixel to test
+ * @param[out] barycentricCoords the barycentric
+ *  coordinates of this pixel relative to \p triangle
+ * @return
+ */
+bool isPixelInTriangle(const point2d* triangle, const pixel& pixel, point2d& barycentricCoords)
 {
-    pixel LU, RD;
-    LU.x = (int)(std::min(std::min(pixs[0].x, pixs[1].x), pixs[2].x));
-    LU.y = (int)(std::min(std::min(pixs[0].y, pixs[1].y), pixs[2].y));
-    RD.x = (int)(std::max(std::max(pixs[0].x, pixs[1].x), pixs[2].x)) + 1;
-    RD.y = (int)(std::max(std::max(pixs[0].y, pixs[1].y), pixs[2].y)) + 1;
-
-    pixel dim = RD - LU;
-    staticVector<point2d>* out = new staticVector<point2d>((dim.x + 1) * (dim.y + 1));
-
-    auto checkCorners = [&](int x, int y, point2d* pixs) -> bool
-    {
-        for(int i = 0; i <= 1; ++i)
-        {
-            for(int j=0; j <= 1; ++j)
-            {
-                point2d pix(x + i, y + j);
-                point2d pixCornerBarycUv = computeBarycentricCoordinates(pixs[0], pixs[1], pixs[2], pix);
-                if(isPointInTriangle(pixCornerBarycUv))
-                {
-                    return true;
-                }
-            }
-        }
-        return false;
-    };
-
-    const bool tolerant = false; // TODO: still excluding some subpixelic triangles
-
-    for(int y = LU.y; y <= RD.y; y++)
-    {
-        for(int x = LU.x; x <= RD.x; x++)
-        {
-            point2d pix(x + 0.5f, y + 0.5f);
-            point2d pixBarycUv = computeBarycentricCoordinates(pixs[0], pixs[1], pixs[2], pix);
-            if(!tolerant)
-            {
-                if(isPointInTriangle(pixBarycUv))
-                    out->push_back(pixBarycUv);
-            }
-            else
-            {
-                if(dim.x <= 2 && dim.y <= 2)
-                {
-                    out->push_back(pixBarycUv);
-                    continue;
-                }
-                else if(isPointInTriangle(pixBarycUv))
-                {
-                    out->push_back(pixBarycUv);
-                }
-                else if(checkCorners(x, y, pixs))
-                {
-                    out->push_back(pixBarycUv);
-                }
-            }
-        }
-    }
-    return out;
+    // get pixel center
+    GEO::vec2 p(pixel.x + 0.5, pixel.y + 0.5);
+    GEO::vec2 V0(triangle[0].x, triangle[0].y);
+    GEO::vec2 V1(triangle[1].x, triangle[1].y);
+    GEO::vec2 V2(triangle[2].x, triangle[2].y);
+    GEO::vec2 closestPoint;
+    double l1, l2, l3;
+    double dist = GEO::Geom::point_triangle_squared_distance<GEO::vec2>(p, V0, V1, V2, closestPoint, l1, l2, l3);
+    // fill barycentric coordinates as expected by other internal methods
+    barycentricCoords.x = l3;
+    barycentricCoords.y = l2;
+    // tolerance threshold of 1/2 pixel for pixels on the edges of the triangle
+    return dist < 0.5 + std::numeric_limits<double>::epsilon();
 }
 
 point2d barycentricToCartesian(const point2d* triangle, const point2d& coords)
@@ -94,6 +59,7 @@ staticVector<staticVector<int>*>* meshRetex::generateUVs(multiviewParams& mp, st
     // automatic uv atlasing
     std::cout << "- generating UVs (textureSide: " << texParams.textureSide << "; padding: " << texParams.padding << ") " << std::endl;
     mv_mesh_uvatlas mua(*me, mp, ptsCams, texParams.textureSide, texParams.padding);
+
     // create a new mesh to store data
     mv_mesh* m = new mv_mesh();
     m->pts = new staticVector<point3d>(me->pts->size());
@@ -218,7 +184,19 @@ struct AccuColor {
     Color average() const {
         return count > 0 ? colorSum / count : colorSum;
     }
+
+    void operator+(const Color& other)
+    {
+        add(other);
+    }
+
+    AccuColor& operator+=(const Color& other)
+    {
+        add(other);
+        return *this;
+    }
 };
+
 
 void meshRetex::generateTexture(const multiviewParams& mp, staticVector<staticVector<int>*>* ptsCams,
                                 size_t atlasID, mv_images_cache& imageCache, const bfs::path& outPath, EImageFileType textureFileType)
@@ -262,51 +240,65 @@ void meshRetex::generateTexture(const multiviewParams& mp, staticVector<staticVe
     // iterate over triangles for each camera
     for(std::vector<unsigned int>& triangles : camTriangles)
     {
-        for(unsigned int triangleId : triangles)
+        // no triangles in this atlas seen by this camera, continue
+        if(triangles.empty())
+            continue;
+
+        for(const auto& triangleId : triangles)
         {
+            // retrieve triangle 3D and UV coordinates
             point2d triPixs[3];
             point3d triPts[3];
 
             for(int k = 0; k < 3; k++)
             {
                 const int pointIndex = (*me->tris)[triangleId].i[k];
-                triPts[k] = (*me->pts)[pointIndex];                               // 3D coordinate
+                triPts[k] = (*me->pts)[pointIndex];                               // 3D coordinates
                 const int uvPointIndex = (*trisUvIds)[triangleId].m[k];
-                triPixs[k] = (*uvCoords)[uvPointIndex] * texParams.textureSide;   // UV coordinate
+                triPixs[k] = (*uvCoords)[uvPointIndex] * texParams.textureSide;   // UV coordinates
             }
 
-            double sa = std::max(2.0, (triPixs[1] - triPixs[0]).size() + 1);
-            double sb = std::max(2.0, (triPixs[2] - triPixs[0]).size() + 1);
-            point3d coeff3D_a = (triPts[1] - triPts[0]) / sa;
-            point3d coeff3D_b = (triPts[2] - triPts[0]) / sb;
-            point2d coeff2D_a = (triPixs[1] - triPixs[0]) / sa;
-            point2d coeff2D_b = (triPixs[2] - triPixs[0]) / sb;
+            // compute triangle bounding box
+            // cast to int (floor) to get pixel indexes based on their top-left corners
+            unsigned int LUx = static_cast<unsigned int>(std::min(std::min(triPixs[0].x, triPixs[1].x), triPixs[2].x));
+            unsigned int LUy = static_cast<unsigned int>(std::min(std::min(triPixs[0].y, triPixs[1].y), triPixs[2].y));
+            unsigned int RDx = static_cast<unsigned int>(std::max(std::max(triPixs[0].x, triPixs[1].x), triPixs[2].x));
+            unsigned int RDy = static_cast<unsigned int>(std::max(std::max(triPixs[0].y, triPixs[1].y), triPixs[2].y));
 
-            // get pixels inside this triangle
-            for(double ti = 0.0; ti <= sa; ti+=1.0)
+            // iterate over bounding box's pixels
+            for(unsigned int y = LUy; y <= RDy; y++)
             {
-                // we iterate over half pixels to avoid precision issues (missing pixels in final texture)
-                for(double tj = 0.0; tj <= ((sa - ti) / sa) * sb; tj+=0.5)
+                for(unsigned int x = LUx; x <= RDx; x++)
                 {
-                    point2d pix = triPixs[0] + coeff2D_a * ti + coeff2D_b * tj;
+                    pixel pix(x, y); // top-left corner of the pixel
+                    point2d barycCoords;
 
-                    // get 1D pixel index
-                    pix.y = texParams.textureSide - pix.y;
-                    unsigned int xyoffset = (int)pix.y * texParams.textureSide + (int)pix.x;
-                    // store color id for this index (used later for padding)
-                    if(colorIDs[xyoffset] == -1)
-                        colorIDs[xyoffset] = xyoffset;
+                    // test if the pixel is inside triangle
+                    // and retrieve its barycentric coordinates
+                    if(!isPixelInTriangle(triPixs, pix, barycCoords))
+                    {
+                        continue;
+                    }
 
-                    point3d pt3d = triPts[0] + coeff3D_a * ti + coeff3D_b * tj;
+                    // remap 'y' to image coordinates system (inverted Y axis)
+                    const unsigned int y_ = (texParams.textureSide - 1) - y;
+                    // 1D pixel index
+                    unsigned int xyoffset = y_ * texParams.textureSide + x;
+                    // get 3D coordinates
+                    point3d pt3d = barycentricToCartesian(triPts, barycCoords);
+                    // get 2D coordinates in source image
                     point2d pixRC;
                     mp.getPixelFor3DPoint(&pixRC, pt3d, camId);
+                    // exclude out of bounds pixels
                     if(!mp.isPixelInImage(pixRC, camId))
                         continue;
-                    perPixelColors[xyoffset].add(imageCache.getPixelValueInterpolated(&pixRC, camId));
+                    // fill the colorID map
+                    colorIDs[xyoffset] = xyoffset;
+                    // fill the accumulated color map for this pixel
+                    perPixelColors[xyoffset] += imageCache.getPixelValueInterpolated(&pixRC, camId);
                 }
             }
         }
-        triangles.clear();
         camId++;
     }
     camTriangles.clear();
