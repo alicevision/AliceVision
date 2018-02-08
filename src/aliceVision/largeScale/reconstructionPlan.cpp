@@ -9,7 +9,7 @@
 #include <aliceVision/CUDAInterfaces/refine.hpp>
 #include <aliceVision/delaunaycut/mv_delaunay_GC.hpp>
 #include <aliceVision/delaunaycut/mv_delaunay_meshSmooth.hpp>
-#include <aliceVision/rply/mv_plysaver.hpp>
+#include <aliceVision/mesh/mv_plysaver.hpp>
 #include <aliceVision/common/fileIO.hpp>
 
 #include <boost/filesystem.hpp>

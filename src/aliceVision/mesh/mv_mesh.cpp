@@ -5,8 +5,8 @@
 
 #include "mv_mesh.hpp"
 
-#include <aliceVision/rply/mv_plyloader.hpp>
-#include <aliceVision/rply/mv_plysaver.hpp>
+#include <aliceVision/mesh/mv_plyloader.hpp>
+#include <aliceVision/mesh/mv_plysaver.hpp>
 #include <aliceVision/structures/mv_geometry.hpp>
 #include <aliceVision/structures/quaternion.hpp>
 

@@ -6,7 +6,7 @@
 #include "voxelsGrid.hpp"
 
 #include <aliceVision/delaunaycut/mv_delaunay_types.hpp>
-#include <aliceVision/rply/mv_plyloader.hpp>
+#include <aliceVision/mesh/mv_plyloader.hpp>
 #include <aliceVision/common/fileIO.hpp>
 #include <aliceVision/omp.hpp>
 

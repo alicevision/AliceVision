@@ -36,7 +36,6 @@ target_link_libraries(mv_delaunaycut
          mv_structures
          aliceVision_common
          mv_cudaInterfaces
-         mv_mesh
          ${Boost_LIBRARIES}
          Geogram::geogram
 )

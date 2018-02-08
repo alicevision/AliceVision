@@ -13,8 +13,9 @@ source_group("CMPMVS" FILES CMPMVS.cpp)
 add_executable(CMPMVS ${SOURCES_files_CMPMVS})
 target_link_libraries(CMPMVS PUBLIC mv_structures
                                     aliceVision_common
+                                    aliceVision_mesh
                                     mv_cudaInterfaces
-                                    mv_mesh mv_largeScale
+                                    mv_largeScale
                                     mv_delaunaycut
                                     mv_cudaInterfaces mv_prematching
                                     ${Boost_LIBRARIES} ${ZLIB_LIBRARIES}
@@ -47,8 +48,9 @@ source_group("aliceVision_exportDepthMap" FILES main_exportDepthMap.cpp)
 add_executable(aliceVision_exportDepthMap ${SOURCES_files_exportDepthMap})
 target_link_libraries(aliceVision_exportDepthMap PUBLIC mv_structures
                                     aliceVision_common
+                                    aliceVision_mesh
                                     mv_cudaInterfaces
-                                    mv_mesh mv_largeScale
+                                    mv_largeScale
                                     mv_delaunaycut
                                     mv_cudaInterfaces mv_prematching
                                     ${Boost_LIBRARIES} ${ZLIB_LIBRARIES}
@@ -65,8 +67,9 @@ source_group("aliceVision_cameraConnection" FILES main_cameraConnection.cpp)
 add_executable(aliceVision_cameraConnection ${SOURCES_files_cameraConnection})
 target_link_libraries(aliceVision_cameraConnection PUBLIC mv_structures
                                     aliceVision_common
+                                    aliceVision_mesh
                                     mv_cudaInterfaces
-                                    mv_mesh mv_largeScale
+                                    mv_largeScale
                                     mv_delaunaycut
                                     mv_cudaInterfaces mv_prematching
                                     ${Boost_LIBRARIES} ${ZLIB_LIBRARIES}
@@ -81,8 +84,9 @@ source_group("aliceVision_depthMapEstimation" FILES main_depthMapEstimation.cpp)
 add_executable(aliceVision_depthMapEstimation ${SOURCES_files_depthMapEstimation})
 target_link_libraries(aliceVision_depthMapEstimation PUBLIC mv_structures
                                     aliceVision_common
+                                    aliceVision_mesh
                                     mv_cudaInterfaces
-                                    mv_mesh mv_largeScale
+                                    mv_largeScale
                                     mv_delaunaycut
                                     mv_cudaInterfaces mv_prematching
                                     ${Boost_LIBRARIES} ${ZLIB_LIBRARIES}
@@ -96,8 +100,9 @@ source_group("aliceVision_depthMapFiltering" FILES main_depthMapFiltering.cpp)
 add_executable(aliceVision_depthMapFiltering ${SOURCES_files_depthMapFiltering})
 target_link_libraries(aliceVision_depthMapFiltering PUBLIC mv_structures
                                     aliceVision_common
+                                    aliceVision_mesh
                                     mv_cudaInterfaces
-                                    mv_mesh mv_largeScale
+                                    mv_largeScale
                                     mv_delaunaycut
                                     mv_cudaInterfaces mv_prematching
                                     ${Boost_LIBRARIES} ${ZLIB_LIBRARIES}
@@ -112,8 +117,9 @@ source_group("aliceVision_meshing" FILES main_meshing.cpp)
 add_executable(aliceVision_meshing ${SOURCES_files_meshing})
 target_link_libraries(aliceVision_meshing PUBLIC mv_structures
                                     aliceVision_common
+                                    aliceVision_mesh
                                     mv_cudaInterfaces
-                                    mv_mesh mv_largeScale
+                                    mv_largeScale
                                     mv_delaunaycut
                                     mv_cudaInterfaces mv_prematching
                                     ${Boost_LIBRARIES} ${ZLIB_LIBRARIES}
@@ -140,8 +146,9 @@ source_group("aliceVision_texturing" FILES main_texturing.cpp)
 add_executable(aliceVision_texturing ${SOURCES_files_texturing})
 target_link_libraries(aliceVision_texturing PUBLIC mv_structures
                                     aliceVision_common
+                                    aliceVision_mesh
                                     mv_cudaInterfaces
-                                    mv_mesh mv_largeScale
+                                    mv_largeScale
                                     mv_delaunaycut
                                     mv_cudaInterfaces mv_prematching
                                     ${Boost_LIBRARIES} ${ZLIB_LIBRARIES}

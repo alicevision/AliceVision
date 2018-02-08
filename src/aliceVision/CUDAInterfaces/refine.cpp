@@ -6,7 +6,7 @@
 #include "refine.hpp"
 
 #include <aliceVision/delaunaycut/mv_delaunay_helpers.hpp>
-#include <aliceVision/rply/mv_plyloader.hpp>
+#include <aliceVision/mesh/mv_plyloader.hpp>
 #include <aliceVision/structures/mv_geometry.hpp>
 #include <aliceVision/common/ImagesCache.hpp>
 #include <aliceVision/common/fileIO.hpp>

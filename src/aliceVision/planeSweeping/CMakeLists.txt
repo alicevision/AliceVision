@@ -17,10 +17,16 @@ source_group("planeSweeping" FILES ${SOURCES_files_planeSweeping})
 
 
 add_library(mv_planeSweeping ${SOURCES_files_planeSweeping})
+
 target_include_directories(mv_planeSweeping
          PUBLIC 
          $<BUILD_INTERFACE:${ALICEVISION_INCLUDE_DIR}>
          $<BUILD_INTERFACE:${generatedDir}>
-         $<INSTALL_INTERFACE:include>)
+         $<INSTALL_INTERFACE:include>
+)
 
-target_link_libraries(mv_planeSweeping PUBLIC aliceVision_imageIO mv_structures mv_mesh)
+target_link_libraries(mv_planeSweeping
+  PUBLIC aliceVision_imageIO
+         aliceVision_mesh
+         mv_structures
+)
