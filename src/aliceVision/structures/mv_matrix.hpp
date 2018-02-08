@@ -13,7 +13,13 @@
 
 struct matrix2x3
 {
-    double m11, m12, m13, m21, m22, m23;
+    union {
+        struct
+        {
+            double m11, m12, m13, m21, m22, m23;
+        };
+        double m[6];
+    };
 
     inline matrix2x3& operator=(const matrix2x3& m)
     {
@@ -30,7 +36,13 @@ struct matrix2x3
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 struct matrix4x3
 {
-    double m11, m12, m13, m21, m22, m23, m31, m32, m33, m41, m42, m43;
+    union {
+        struct
+        {
+            double m11, m12, m13, m21, m22, m23, m31, m32, m33, m41, m42, m43;
+        };
+        double m[12];
+    };
 
     inline matrix4x3& operator=(const matrix4x3& m)
     {
@@ -52,7 +64,13 @@ struct matrix4x3
 
 struct matrix4x4
 {
-    double m11, m12, m13, m14, m21, m22, m23, m24, m31, m32, m33, m34, m41, m42, m43, m44;
+    union {
+        struct
+        {
+            double m11, m12, m13, m14, m21, m22, m23, m24, m31, m32, m33, m34, m41, m42, m43, m44;
+        };
+        double m[16];
+    };
 
     inline matrix4x4& operator=(const matrix4x4& m)
     {

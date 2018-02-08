@@ -14,7 +14,13 @@
 class matrix2x2
 {
 public:
-    double m11, m12, m21, m22;
+    union {
+        struct
+        {
+            double m11, m12, m21, m22;
+        };
+        double m[4];
+    };
 
     inline matrix2x2()
     {
