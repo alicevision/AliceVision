@@ -684,17 +684,10 @@ bool ps_sgm_rc::sgmrc(bool checkIfExists)
     printfElapsedTime(tall, "PSSGM rc " + num2str(rc) + " of " + num2str(sp->mp->ncams));
 
     if(sp->visualizeDepthMaps)
-    {
         depthSimMapFinal->saveToImage(tmpDir + "ps_sgm_rc_SGM" + num2strFourDecimal(rc) + "_" + "scale" +
                                         num2str(depthSimMapFinal->scale) + "step" + num2str(depthSimMapFinal->step) +
-                                        ".wrl.depthSimMap.png",
-                                    1.0f);
+                                        ".depthSimMap.png", 1.0f);
 
-        depthSimMapFinal->saveToWrl(tmpDir + "SGM" + num2strFourDecimal(rc) + "_" + "scale" +
-                                        num2str(depthSimMapFinal->scale) + "step" +
-                                        num2str(depthSimMapFinal->step) + ".wrl",
-                                    rc);
-    }
 
     delete depthSimMapFinal;
     delete volumeBestIdVal;

@@ -420,12 +420,6 @@ staticVector<float>* ps_depthSimMap::getSimMapTStep1()
     return simMap;
 }
 
-void ps_depthSimMap::saveToWrlPng(std::string wrlFileName, int rc, float simThr)
-{
-    saveToImage(wrlFileName + ".depthSimMap.png", simThr);
-    saveToWrl(wrlFileName, rc);
-}
-
 void ps_depthSimMap::saveToImage(std::string filename, float simThr)
 {
     const int bufferWidth = 2 * w;
@@ -468,83 +462,6 @@ void ps_depthSimMap::saveToImage(std::string filename, float simThr)
     {
         std::cout << "Failed to save " << filename << " (simThr :" << simThr << ")" << std::endl;
     }
-}
-
-void ps_depthSimMap::saveToWrl(std::string wrlFileName, int rc)
-{
-    point3d cg = point3d(0.0f, 0.0f, 0.0f);
-    float ncg = 0.0f;
-    staticVector<point3d>* pts = new staticVector<point3d>(w * h);
-    staticVector<voxel>* ptsCls = new staticVector<voxel>(w * h);
-    for(int i = 0; i < dsm->size(); i++)
-    {
-        int x = (i % w) * step;
-        int y = (i / w) * step;
-        float depth = (*dsm)[i].depth;
-        float sim = (*dsm)[i].sim;
-        if(depth > 0.0f)
-        {
-            point3d p =
-                mp->CArr[rc] +
-                (mp->iCamArr[rc] * point2d((float)x * (float)scale, (float)y * (float)scale)).normalize() * depth;
-            pts->push_back(p);
-            if(sim < mp->simThr)
-            {
-                ptsCls->push_back(voxel(0, 0, 0));
-                cg = cg + p;
-                ncg += 1.0f;
-            }
-            else
-            {
-                ptsCls->push_back(voxel(255, 0, 0));
-            }
-        }
-    }
-    cg = cg / ncg;
-
-    point2d maxMinDepth = getMaxMinDepth();
-
-    point3d rchexah[8];
-    getCamHexahedron(mp, rchexah, rc, maxMinDepth.y, maxMinDepth.x);
-    staticVector<int>* rcams = new staticVector<int>(1);
-    rcams->push_back(rc);
-
-    FILE* f = fopen(wrlFileName.c_str(), "w");
-    fprintf(f, "#VRML V2.0 utf8\n");
-
-    o3d->printf_wrl_pts_cls(f, pts, ptsCls, mp);
-    o3d->printfHexahedron(rchexah, f, mp);
-
-    {
-        mv_mesh* meCams = createMeshForCameras(rcams, mp, 0.000001f, 0, 1, 0.0f);
-        o3d->printfGroupCameras(meCams, rcams, f, mp, 0.000001f, 0.0f);
-        delete meCams;
-
-        mv_mesh* mecenter = createMeshForFrontPlanePolygonOfCamera(rc, mp, (float)(h / 4), cg);
-        rgb colorOfTris;
-        colorOfTris.r = 255;
-        colorOfTris.g = 0;
-        colorOfTris.b = 0;
-        o3d->printfMvMeshToWrl(f, colorOfTris, mecenter);
-        delete mecenter;
-    }
-
-    fclose(f);
-
-    delete rcams;
-    delete ptsCls;
-    delete pts;
-
-    staticVector<float>* depthMapT = getDepthMapTStep1();
-    for(int stepDetail = 1; stepDetail <= 3; stepDetail++)
-    {
-        mv_mesh* me = new mv_mesh();
-        me->initFromDepthMap(stepDetail, mp, &(*depthMapT)[0], rc, scale, 1,
-                             10.0f * (float)stepDetail * (float)step * (float)scale);
-        o3d->saveMvMeshToWrl(me, wrlFileName + "mesh" + num2str(stepDetail) + ".wrl");
-        delete me;
-    }
-    delete depthMapT;
 }
 
 void ps_depthSimMap::save(int rc, staticVector<int>* tcams)

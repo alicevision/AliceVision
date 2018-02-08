@@ -17,7 +17,6 @@ ps_sgm_params::ps_sgm_params(multiviewParams* _mp, mv_prematch_cams* _pc, cuda_p
     mp = _mp;
     pc = _pc;
     cps = _cps;
-    o3d = new mv_output3D(mp);
     prt = new ps_rctc(mp, cps);
 
     visualizeDepthMaps = mp->mip->_ini.get<bool>("semiGlobalMatching.visualizeDepthMaps", false);
@@ -71,7 +70,6 @@ ps_sgm_params::ps_sgm_params(multiviewParams* _mp, mv_prematch_cams* _pc, cuda_p
 
 ps_sgm_params::~ps_sgm_params()
 {
-    delete o3d;
     delete prt;
 }
 

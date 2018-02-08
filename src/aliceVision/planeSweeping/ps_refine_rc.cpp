@@ -118,10 +118,8 @@ ps_depthSimMap* ps_refine_rc::refineAndFuseDepthSimMapCUDA(ps_depthSimMap* depth
         dataMaps->push_back(depthSimMapC);
 
         if(sp->visualizePartialDepthMaps)
-            depthSimMapC->saveToWrlPng(outDir + "refineRc_Photo_" + num2strFourDecimal(rc) + "_tc_" +
-                                           num2strFourDecimal(tc) + ".wrl",
-                                       rc, -2.0f);
-
+            depthSimMapC->saveToImage(outDir + "refineRc_Photo_" + num2strFourDecimal(rc) + "_tc_" +
+                                           num2strFourDecimal(tc) + ".depthSimMap.png", -2.0f);
     }
 
     // in order to fit into GPU memory
@@ -280,13 +278,6 @@ bool ps_refine_rc::refinercCUDA(bool checkIfExists)
                                sp->getREFINE_opt_simMapFileName(rc, 1, 1));
 
     printfElapsedTime(tall, "REFINERC " + num2str(rc) + " of " + num2str(sp->mp->ncams));
-
-    if(sp->visualizeDepthMaps)
-    {
-        depthSimMapOpt->saveToWrl(outDir + "refineRc_" + num2strFourDecimal(rc) + "Opt.wrl", rc);
-        depthSimMapPhoto->saveToWrl(outDir + "refineRc_" + num2strFourDecimal(rc) + "Photo.wrl", rc);
-        depthPixSizeMapVis->saveToWrl(outDir + "refineRc_" + num2strFourDecimal(rc) + "Vis.wrl", rc);
-    }
 
     delete depthPixSizeMapVis;
     delete depthSimMapPhoto;

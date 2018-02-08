@@ -27,6 +27,6 @@ target_include_directories(mv_planeSweeping
 
 target_link_libraries(mv_planeSweeping
   PUBLIC aliceVision_imageIO
-         aliceVision_mesh
          mv_structures
+         mv_cudaInterfaces
 )

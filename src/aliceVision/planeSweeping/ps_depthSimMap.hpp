@@ -80,8 +80,6 @@ public:
     staticVector<float>* getSimMapStep1XPart(int xFrom, int partW);
 
     void saveToImage(std::string pngFileName, float simThr);
-    void saveToWrl(std::string wrlFileName, int rc);
-    void saveToWrlPng(std::string wrlFileName, int rc, float simThr);
     void save(int rc, staticVector<int>* tcams);
     void load(int rc, int fromScale);
 

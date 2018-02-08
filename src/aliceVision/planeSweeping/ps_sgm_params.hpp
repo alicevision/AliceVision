@@ -17,7 +17,6 @@ class ps_sgm_params
 public:
     multiviewParams* mp;
     mv_prematch_cams* pc;
-    mv_output3D* o3d;
     ps_rctc* prt;
     cuda_plane_sweeping* cps;
     mv_images_cache* ic;
