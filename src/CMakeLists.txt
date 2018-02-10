@@ -446,6 +446,16 @@ if(ALICEVISION_HAVE_OPENGV)
 endif()
 
 # ==============================================================================
+# OpenEXR
+# ==============================================================================
+find_package(OpenEXR)
+if(OPENEXR_FOUND)
+  message(STATUS "OpenEXR found. (Version ${OPENEXR_VERSION})")
+else()
+  message(SEND_ERROR "Failed to find OpenEXR.")
+endif()
+
+# ==============================================================================
 # OpenImageIO
 # ==============================================================================
 find_package(OpenImageIO)
