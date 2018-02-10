@@ -29,6 +29,7 @@ git submodule update
 As aliceVision use some C++11 features you must have a c++11 ready compiler:
 - Visual studio >= 2013
 - GCC >= 4.7
+- Clang >= 3.3
 
 
 Building using external dependencies
