@@ -7,7 +7,7 @@ Build instructions
 ------------------
 
 Required tools:
-* Cmake 
+* Cmake >= 3.3
 * Git
 * c/c++ compiler (gcc or visual studio or clang)
 
