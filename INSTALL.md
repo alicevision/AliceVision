@@ -26,10 +26,37 @@ git submodule init
 git submodule update
 ```
 
-As aliceVision use some C++11 features you must have a c++11 ready compiler:
+As AliceVision use some C++11 features you must have a c++11 ready compiler:
 - Visual studio >= 2013
 - GCC >= 4.7
 - Clang >= 3.3
+
+Dependencies
+------------
+
+AliceVision depends on:
+
+* Boost >= 1.53
+* Eigen 3.2.4 
+* Ceres 1.10.0
+* Flann 1.8.4
+* CoinUtils 2.9.3
+* Coin-or linear programming (Clp)
+* Open Solver Interface (Osi) 0.106.10
+* Lemon 1.3
+* OpenEXR 2.2.0
+* OpenImageIO >= 1.7
+
+Other optional libraries can enable specific features (check "CMake Options" for enabling them):
+
+* OpenMP (enable multi-threading)
+* Mosek (linear programming)
+* OpenCV >= 3.0 (feature extraction, calibration module)
+* Alembic (data I/O)
+* CCTag (feature extraction/matching and localization)
+* PopSift (feature extraction/matching)
+* Cuda >=7.0 (feature extraction)
+* OpenGV (rig calibration and localization)
 
 
 Building using external dependencies
