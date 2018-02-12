@@ -44,7 +44,7 @@ target_link_libraries(aliceVision_mesh
   PUBLIC aliceVision_structures
          aliceVision_common
          aliceVision_imageIO
-         aliceVision_planeSweeping
+         aliceVision_depthMap
          Geogram::geogram
          ${Boost_FILESYSTEM_LIBRARIES}
 )

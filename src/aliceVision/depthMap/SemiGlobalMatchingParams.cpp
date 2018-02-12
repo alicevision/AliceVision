@@ -3,21 +3,20 @@
 // v. 2.0. If a copy of the MPL was not distributed with this file,
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
-#include "ps_sgm_params.hpp"
+#include "SemiGlobalMatchingParams.hpp"
 #include <aliceVision/common/common.hpp>
 #include <aliceVision/common/fileIO.hpp>
 
 #include <boost/filesystem.hpp>
 
-
 namespace bfs = boost::filesystem;
 
-ps_sgm_params::ps_sgm_params(multiviewParams* _mp, mv_prematch_cams* _pc, cuda_plane_sweeping* _cps)
+SemiGlobalMatchingParams::SemiGlobalMatchingParams(multiviewParams* _mp, mv_prematch_cams* _pc, PlaneSweepingCuda* _cps)
 {
     mp = _mp;
     pc = _pc;
     cps = _cps;
-    prt = new ps_rctc(mp, cps);
+    prt = new RcTc(mp, cps);
 
     visualizeDepthMaps = mp->mip->_ini.get<bool>("semiGlobalMatching.visualizeDepthMaps", false);
     visualizePartialDepthMaps =
@@ -68,62 +67,62 @@ ps_sgm_params::ps_sgm_params(multiviewParams* _mp, mv_prematch_cams* _pc, cuda_p
     silhouetteMaskColor.b = mp->mip->_ini.get<int>("global.silhouetteMaskColorB", 0);
 }
 
-ps_sgm_params::~ps_sgm_params()
+SemiGlobalMatchingParams::~SemiGlobalMatchingParams()
 {
     delete prt;
 }
 
-std::string ps_sgm_params::getREFINE_photo_depthMapFileName(int cam, int scale, int step)
+std::string SemiGlobalMatchingParams::getREFINE_photo_depthMapFileName(int cam, int scale, int step)
 {
     return mp->mip->_depthMapFolder + num2strFourDecimal(cam + 1) + "_depthMap_scale" + num2str(scale) + "_step" + num2str(step) + "_refinePhoto.exr";
 }
 
-std::string ps_sgm_params::getREFINE_photo_simMapFileName(int cam, int scale, int step)
+std::string SemiGlobalMatchingParams::getREFINE_photo_simMapFileName(int cam, int scale, int step)
 {
     return mp->mip->_depthMapFolder + num2strFourDecimal(cam + 1) + "_simMap_scale" + num2str(scale) + "_step" + num2str(step) + "_refinePhoto.exr";
 }
 
-std::string ps_sgm_params::getREFINE_opt_depthMapFileName(int cam, int scale, int step)
+std::string SemiGlobalMatchingParams::getREFINE_opt_depthMapFileName(int cam, int scale, int step)
 {
     return mp->mip->_depthMapFolder + num2strFourDecimal(cam + 1) + "_depthMap_scale" + num2str(scale) + "_step" + num2str(step) + "_refineOpt.exr";
 }
 
-std::string ps_sgm_params::getREFINE_opt_simMapFileName(int cam, int scale, int step)
+std::string SemiGlobalMatchingParams::getREFINE_opt_simMapFileName(int cam, int scale, int step)
 {
     return mp->mip->_depthMapFolder + num2strFourDecimal(cam + 1) + "_simMap_scale" + num2str(scale) + "_step" + num2str(step) + "_refineOpt.exr";
 }
 
-std::string ps_sgm_params::getSGMTmpDir()
+std::string SemiGlobalMatchingParams::getSGMTmpDir()
 {
     return mp->mip->_depthMapFolder + SGMoutDirName + "/" + SGMtmpDirName + "/";
 }
 
-std::string ps_sgm_params::getSGM_depthMapFileName(int cam, int scale, int step)
+std::string SemiGlobalMatchingParams::getSGM_depthMapFileName(int cam, int scale, int step)
 {
     return mp->mip->_depthMapFolder + num2strFourDecimal(cam + 1) + "_depthMap_scale" + num2str(scale) + "_step" + num2str(step) + "_SGM.bin";
 }
 
-std::string ps_sgm_params::getSGM_simMapFileName(int cam, int scale, int step)
+std::string SemiGlobalMatchingParams::getSGM_simMapFileName(int cam, int scale, int step)
 {
     return mp->mip->_depthMapFolder + num2strFourDecimal(cam + 1) + "_simMap_scale" + num2str(scale) + "_step" + num2str(step) + "_SGM.bin";
 }
 
-std::string ps_sgm_params::getSGM_idDepthMapFileName(int cam, int scale, int step)
+std::string SemiGlobalMatchingParams::getSGM_idDepthMapFileName(int cam, int scale, int step)
 {
     return mp->mip->_depthMapFolder + num2strFourDecimal(cam + 1) + "_idDepthMap_scale" + num2str(scale) + "_step" + num2str(step) + "_SGM.png";
 }
 
-std::string ps_sgm_params::getSGM_tcamsFileName(int cam)
+std::string SemiGlobalMatchingParams::getSGM_tcamsFileName(int cam)
 {
     return mp->mip->_depthMapFolder + num2strFourDecimal(cam + 1) + "_tcams.bin";
 }
 
-std::string ps_sgm_params::getSGM_depthsFileName(int cam)
+std::string SemiGlobalMatchingParams::getSGM_depthsFileName(int cam)
 {
     return mp->mip->_depthMapFolder + num2strFourDecimal(cam + 1) + "_depths.bin";
 }
 
-ps_depthSimMap* ps_sgm_params::getDepthSimMapFromBestIdVal(int w, int h, staticVector<idValue>* volumeBestIdVal,
+DepthSimMap* SemiGlobalMatchingParams::getDepthSimMapFromBestIdVal(int w, int h, staticVector<idValue>* volumeBestIdVal,
                                                            int scale, int step, int rc, int zborder,
                                                            staticVector<float>* planesDepths)
 {
@@ -132,7 +131,7 @@ ps_depthSimMap* ps_sgm_params::getDepthSimMapFromBestIdVal(int w, int h, staticV
     int volDimX = w;
     int volDimY = h;
 
-    ps_depthSimMap* depthSimMap = new ps_depthSimMap(rc, mp, scale, step);
+    DepthSimMap* depthSimMap = new DepthSimMap(rc, mp, scale, step);
 
 #pragma omp parallel for
     for(int y = 0; y < volDimY; y++)

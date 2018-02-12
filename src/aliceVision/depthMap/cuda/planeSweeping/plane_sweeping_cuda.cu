@@ -1,11 +1,11 @@
 #ifndef PLANE_SWEEPING_CU
 #define PLANE_SWEEPING_CU
 
-#include <aliceVision/planeSweeping/cuda/common_gpu_cpu_structures.hpp>
-#include <aliceVision/planeSweeping/cuda/device_common/device_color.cu>
-#include <aliceVision/planeSweeping/cuda/device_common/device_patch_es.cu>
-#include <aliceVision/planeSweeping/cuda/device_common/device_eig33.cu>
-//---#include <aliceVision/planeSweeping/cuda/patch_es/patch_es.cu>
+#include <aliceVision/depthMap/cuda/commonStructures.hpp>
+#include <aliceVision/depthMap/cuda/deviceCommon/device_color.cu>
+#include <aliceVision/depthMap/cuda/deviceCommon/device_patch_es.cu>
+#include <aliceVision/depthMap/cuda/deviceCommon/device_eig33.cu>
+//---#include <aliceVision/depthMap/cuda/patch_es/patch_es.cu>
 
 #include "device_code.cu"
 #include "device_code_refine.cu"

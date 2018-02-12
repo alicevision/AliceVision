@@ -97,7 +97,7 @@ void mv_mesh_energy_opt_photo_mem::ptStat::addCamPtStat(camPtStat& cptst)
     }
 }
 
-mv_mesh_energy_opt_photo_mem::mv_mesh_energy_opt_photo_mem(multiviewParams* _mp, ps_sgm_params* _sp,
+mv_mesh_energy_opt_photo_mem::mv_mesh_energy_opt_photo_mem(multiviewParams* _mp, SemiGlobalMatchingParams* _sp,
                                                            const staticVector<int>& _usedCams)
     : mv_mesh_energy_opt(_mp)
     , usedCams(_usedCams)
@@ -223,7 +223,7 @@ void mv_mesh_energy_opt_photo_mem::actualizePtsStats(staticVector<staticVector<i
         int rc = usedCams[c];
         int w = mp->mip->getWidth(rc);
 
-        ps_depthSimMap* dsmap = new ps_depthSimMap(rc, sp->mp, 1, 1);
+        DepthSimMap* dsmap = new DepthSimMap(rc, sp->mp, 1, 1);
         if(dsmap->loadRefine(sp->getREFINE_photo_depthMapFileName(rc, 1, 1),
                              sp->getREFINE_photo_simMapFileName(rc, 1, 1)))
         {
@@ -473,13 +473,13 @@ point4d mv_mesh_energy_opt_photo_mem::getPtCurvatures(int ptId, staticVector<poi
     return out;
 }
 
-ps_depthSimMap* mv_mesh_energy_opt_photo_mem::getDepthPixSizeMap(staticVector<float>* rcDepthMap, int rc,
+DepthSimMap* mv_mesh_energy_opt_photo_mem::getDepthPixSizeMap(staticVector<float>* rcDepthMap, int rc,
                                                                  staticVector<int>* tcams)
 {
     int w11 = sp->mp->mip->getWidth(rc);
     int h11 = sp->mp->mip->getHeight(rc);
 
-    ps_depthSimMap* depthSimMapScale1Step1 = new ps_depthSimMap(rc, sp->mp, 1, 1);
+    DepthSimMap* depthSimMapScale1Step1 = new DepthSimMap(rc, sp->mp, 1, 1);
     depthSimMapScale1Step1->initJustFromDepthMap(rcDepthMap, -1.0f);
 
     // set sim (y) to pixsize

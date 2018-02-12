@@ -5,13 +5,13 @@
 
 #pragma once
 
-#include "ps_sgm_rc.hpp"
+#include "SemiGlobalMatchingRc.hpp"
 
-class ps_refine_rc : public ps_sgm_rc
+class RefineRc : public SemiGlobalMatchingRc
 {
 public:
-    ps_refine_rc(int _rc, int _scale, int _step, ps_sgm_params* _sp);
-    ~ps_refine_rc(void);
+    RefineRc(int _rc, int _scale, int _step, SemiGlobalMatchingParams* _sp);
+    ~RefineRc(void);
 
     bool refinercCUDA(bool checkIfExists = true);
 
@@ -27,9 +27,9 @@ private:
     float _sigma;
     int _niters;
 
-    ps_depthSimMap* getDepthPixSizeMapFromSGM();
-    ps_depthSimMap* refineAndFuseDepthSimMapCUDA(ps_depthSimMap* depthPixSizeMapVis);
-    ps_depthSimMap* optimizeDepthSimMapCUDA(ps_depthSimMap* depthPixSizeMapVis, ps_depthSimMap* depthSimMapPhoto);
+    DepthSimMap* getDepthPixSizeMapFromSGM();
+    DepthSimMap* refineAndFuseDepthSimMapCUDA(DepthSimMap* depthPixSizeMapVis);
+    DepthSimMap* optimizeDepthSimMapCUDA(DepthSimMap* depthPixSizeMapVis, DepthSimMap* depthSimMapPhoto);
 };
 
 void refineDepthMaps(multiviewParams* mp, mv_prematch_cams* pc, const staticVector<int>& cams);

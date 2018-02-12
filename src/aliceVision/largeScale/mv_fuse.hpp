@@ -5,7 +5,7 @@
 
 #pragma once
 
-#include <aliceVision/planeSweeping/cuda/cuda_plane_sweeping.hpp>
+#include <aliceVision/depthMap/cuda/PlaneSweepingCuda.hpp>
 #include <aliceVision/common/PreMatchCams.hpp>
 #include <aliceVision/structures/mv_universe.hpp>
 

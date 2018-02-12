@@ -977,8 +977,6 @@ bool getDirectoryFiles(std::vector<std::string>& out, const std::string& sPath, 
 
 void readSifts(const std::string& fileName, staticVector<float>** descriptors, staticVector<SiftKeypoint>** keys)
 {
-    // std::string fname = "D:/jancom1/DATA/templeRing/planeSweepingScale1/00001.ppm.sift";
-
     FILE* f = fopen(fileName.c_str(), "rb");
 
     int n;

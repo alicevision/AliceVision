@@ -6,7 +6,7 @@
 #include <aliceVision/delaunaycut/mv_delaunay_GC.hpp>
 #include <aliceVision/delaunaycut/mv_delaunay_meshSmooth.hpp>
 #include <aliceVision/largeScale/reconstructionPlan.hpp>
-#include <aliceVision/planeSweeping/ps_refine_rc.hpp>
+#include <aliceVision/depthMap/RefineRc.hpp>
 #include <aliceVision/common/fileIO.hpp>
 #include <aliceVision/mesh/mv_mesh_retexture_obj.hpp>
 

@@ -6,10 +6,10 @@
 #include "mv_delaunay_meshSmooth.hpp"
 #include "mv_delaunay_GC.hpp"
 
-#include <aliceVision/planeSweeping/cuda/cuda_plane_sweeping.hpp>
+#include <aliceVision/depthMap/cuda/PlaneSweepingCuda.hpp>
 #include <aliceVision/delaunaycut/hallucinations.hpp>
 #include <aliceVision/mesh/mv_mesh_energy_opt_photo_mem.hpp>
-#include <aliceVision/planeSweeping/ps_sgm_params.hpp>
+#include <aliceVision/depthMap/SemiGlobalMatchingParams.hpp>
 #include <aliceVision/common/ImagesCache.hpp>
 #include <aliceVision/structures/mv_point3d.hpp>
 #include <aliceVision/structures/mv_staticVector.hpp>
@@ -95,8 +95,8 @@ void meshPostProcessing(mv_mesh*& inout_mesh, staticVector<staticVector<int>*>*&
 
         int bandType = 0;
         mv_images_cache* ic = new mv_images_cache(&mp, bandType, true);
-        cuda_plane_sweeping* cps = nullptr; // new cuda_plane_sweeping(mp.CUDADeviceNo, ic, &mp, &pc, 1);
-        ps_sgm_params* sp = new ps_sgm_params(&mp, &pc, cps);
+        PlaneSweepingCuda* cps = nullptr; // new PlaneSweepingCuda(mp.CUDADeviceNo, ic, &mp, &pc, 1);
+        SemiGlobalMatchingParams* sp = new SemiGlobalMatchingParams(&mp, &pc, cps);
 
         mv_mesh_energy_opt_photo_mem* meOpt = new mv_mesh_energy_opt_photo_mem(&mp, sp, usedCams);
         meOpt->addMesh(inout_mesh);

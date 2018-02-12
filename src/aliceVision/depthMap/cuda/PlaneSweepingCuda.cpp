@@ -3,8 +3,8 @@
 // v. 2.0. If a copy of the MPL was not distributed with this file,
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
-#include "cuda_plane_sweeping.hpp"
-#include "common_gpu_cpu_structures.hpp"
+#include "PlaneSweepingCuda.hpp"
+#include "commonStructures.hpp"
 #include <aliceVision/common/common.hpp>
 #include <aliceVision/common/fileIO.hpp>
 
@@ -369,7 +369,7 @@ void cps_updateCamH(cameraStruct* cam, float** H)
     }
 }
 
-cuda_plane_sweeping::cuda_plane_sweeping(int _CUDADeviceNo, mv_images_cache* _ic, multiviewParams* _mp,
+PlaneSweepingCuda::PlaneSweepingCuda(int _CUDADeviceNo, mv_images_cache* _ic, multiviewParams* _mp,
                                          mv_prematch_cams* _pc, int _scales)
 {
     CUDADeviceNo = _CUDADeviceNo;
@@ -438,7 +438,7 @@ cuda_plane_sweeping::cuda_plane_sweeping(int _CUDADeviceNo, mv_images_cache* _ic
     }
 }
 
-int cuda_plane_sweeping::addCam(int rc, float** H, int scale)
+int PlaneSweepingCuda::addCam(int rc, float** H, int scale)
 {
     // fist is oldest
     int id = camsRcs->indexOf(rc);
@@ -475,7 +475,7 @@ int cuda_plane_sweeping::addCam(int rc, float** H, int scale)
     return id;
 }
 
-cuda_plane_sweeping::~cuda_plane_sweeping(void)
+PlaneSweepingCuda::~PlaneSweepingCuda(void)
 {
     /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     // deallocate global on the device
@@ -497,7 +497,7 @@ cuda_plane_sweeping::~cuda_plane_sweeping(void)
     mp = NULL;
 }
 
-void cuda_plane_sweeping::getMinMaxdepths(int rc, staticVector<int>* tcams, float& minDepth, float& midDepth,
+void PlaneSweepingCuda::getMinMaxdepths(int rc, staticVector<int>* tcams, float& minDepth, float& midDepth,
                                           float& maxDepth)
 {
     staticVector<seedPoint>* seeds;
@@ -558,7 +558,7 @@ void cuda_plane_sweeping::getMinMaxdepths(int rc, staticVector<int>* tcams, floa
     delete seeds;
 }
 
-staticVector<float>* cuda_plane_sweeping::getDepthsByPixelSize(int rc, float minDepth, float midDepth, float maxDepth,
+staticVector<float>* PlaneSweepingCuda::getDepthsByPixelSize(int rc, float minDepth, float midDepth, float maxDepth,
                                                                int scale, int step, int maxDepthsHalf)
 {
     float d = (float)step;
@@ -632,7 +632,7 @@ staticVector<float>* cuda_plane_sweeping::getDepthsByPixelSize(int rc, float min
     return out;
 }
 
-staticVector<float>* cuda_plane_sweeping::getDepthsRcTc(int rc, int tc, int scale, float midDepth,
+staticVector<float>* PlaneSweepingCuda::getDepthsRcTc(int rc, int tc, int scale, float midDepth,
                                                         int maxDepthsHalf)
 {
     orientedPoint rcplane;
@@ -853,7 +853,7 @@ staticVector<float>* cuda_plane_sweeping::getDepthsRcTc(int rc, int tc, int scal
 }
 /*
 
-bool cuda_plane_sweeping::refinePixelsAll(bool useTcOrRcPixSize, int ndepthsToRefine, staticVector<float>* pxsdepths,
+bool PlaneSweepingCuda::refinePixelsAll(bool useTcOrRcPixSize, int ndepthsToRefine, staticVector<float>* pxsdepths,
                                           staticVector<float>* pxssims, int rc, int wsh, float igammaC, float igammaP,
                                           staticVector<pixel>* pixels, int scale, staticVector<int>* tcams,
                                           float epipShift)
@@ -960,7 +960,7 @@ bool cuda_plane_sweeping::refinePixelsAll(bool useTcOrRcPixSize, int ndepthsToRe
     return true;
 }
 
-bool cuda_plane_sweeping::refinePixelsAllFine(staticVector<Color>* pxsnormals, staticVector<float>* pxsdepths,
+bool PlaneSweepingCuda::refinePixelsAllFine(staticVector<Color>* pxsnormals, staticVector<float>* pxsdepths,
                                               staticVector<float>* pxssims, int rc, int wsh, float gammaC, float gammaP,
                                               staticVector<pixel>* pixels, int scale, staticVector<int>* tcams,
                                               float epipShift)
@@ -1081,7 +1081,7 @@ void loadRGBImage(multiviewParams* mp, CudaHostMemoryHeap<uchar4, 2>& rimg_hmh, 
 }
 
 */
-bool cuda_plane_sweeping::smoothDepthMap(staticVector<float>* depthMap, int rc, int scale, float igammaC, float igammaP,
+bool PlaneSweepingCuda::smoothDepthMap(staticVector<float>* depthMap, int rc, int scale, float igammaC, float igammaP,
                                          int wsh)
 {
     int w = mp->mip->getWidth(rc) / scale;
@@ -1126,7 +1126,7 @@ bool cuda_plane_sweeping::smoothDepthMap(staticVector<float>* depthMap, int rc, 
     return true;
 }
 
-bool cuda_plane_sweeping::filterDepthMap(staticVector<float>* depthMap, int rc, int scale, float igammaC,
+bool PlaneSweepingCuda::filterDepthMap(staticVector<float>* depthMap, int rc, int scale, float igammaC,
                                          float minCostThr, int wsh)
 {
     int w = mp->mip->getWidth(rc) / scale;
@@ -1171,7 +1171,7 @@ bool cuda_plane_sweeping::filterDepthMap(staticVector<float>* depthMap, int rc, 
     return true;
 }
 
-bool cuda_plane_sweeping::computeNormalMap(staticVector<float>* depthMap, staticVector<Color>* normalMap, int rc,
+bool PlaneSweepingCuda::computeNormalMap(staticVector<float>* depthMap, staticVector<Color>* normalMap, int rc,
                                            int scale, float igammaC, float igammaP, int wsh)
 {
     int w = mp->mip->getWidth(rc) / scale;
@@ -1219,7 +1219,7 @@ bool cuda_plane_sweeping::computeNormalMap(staticVector<float>* depthMap, static
     return true;
 }
 
-void cuda_plane_sweeping::alignSourceDepthMapToTarget(staticVector<float>* sourceDepthMap,
+void PlaneSweepingCuda::alignSourceDepthMapToTarget(staticVector<float>* sourceDepthMap,
                                                       staticVector<float>* targetDepthMap, int rc, int scale,
                                                       float igammaC, int wsh, float maxPixelSizeDist)
 {
@@ -1266,7 +1266,7 @@ void cuda_plane_sweeping::alignSourceDepthMapToTarget(staticVector<float>* sourc
         printfElapsedTime(t1);
 }
 
-bool cuda_plane_sweeping::refineDepthMapReproject(staticVector<float>* depthMap, staticVector<float>* simMap, int rc,
+bool PlaneSweepingCuda::refineDepthMapReproject(staticVector<float>* depthMap, staticVector<float>* simMap, int rc,
                                                   int tc, int wsh, float gammaC, float gammaP, float simThr, int niters,
                                                   bool moveByTcOrRc)
 {
@@ -1341,7 +1341,7 @@ bool cuda_plane_sweeping::refineDepthMapReproject(staticVector<float>* depthMap,
     return true;
 }
 
-bool cuda_plane_sweeping::computeRcTcPhotoErrMapReproject(staticVector<point4d>* sdpiMap, staticVector<float>* errMap,
+bool PlaneSweepingCuda::computeRcTcPhotoErrMapReproject(staticVector<point4d>* sdpiMap, staticVector<float>* errMap,
                                                           staticVector<float>* derrMap, staticVector<float>* rcDepthMap,
                                                           staticVector<float>* tcDepthMap, int rc, int tc, int wsh,
                                                           float gammaC, float gammaP, float depthMapShift)
@@ -1420,7 +1420,7 @@ bool cuda_plane_sweeping::computeRcTcPhotoErrMapReproject(staticVector<point4d>*
     return true;
 }
 
-bool cuda_plane_sweeping::computeSimMapForRcTcDepthMap(staticVector<float>* oSimMap, staticVector<float>* rcTcDepthMap,
+bool PlaneSweepingCuda::computeSimMapForRcTcDepthMap(staticVector<float>* oSimMap, staticVector<float>* rcTcDepthMap,
                                                        int rc, int tc, int wsh, float gammaC, float gammaP,
                                                        float epipShift)
 {
@@ -1487,7 +1487,7 @@ bool cuda_plane_sweeping::computeSimMapForRcTcDepthMap(staticVector<float>* oSim
     return true;
 }
 
-bool cuda_plane_sweeping::refineRcTcDepthMap(bool useTcOrRcPixSize, int nStepsToRefine, staticVector<float>* simMap,
+bool PlaneSweepingCuda::refineRcTcDepthMap(bool useTcOrRcPixSize, int nStepsToRefine, staticVector<float>* simMap,
                                              staticVector<float>* rcDepthMap, int rc, int tc, int scale, int wsh,
                                              float gammaC, float gammaP, float epipShift, int xFrom, int wPart)
 {
@@ -1560,7 +1560,7 @@ bool cuda_plane_sweeping::refineRcTcDepthMap(bool useTcOrRcPixSize, int nStepsTo
     return true;
 }
 
-float cuda_plane_sweeping::sweepPixelsToVolume(int nDepthsToSearch, staticVector<unsigned char>* volume, int volDimX,
+float PlaneSweepingCuda::sweepPixelsToVolume(int nDepthsToSearch, staticVector<unsigned char>* volume, int volDimX,
                                                int volDimY, int volDimZ, int volStepXY, int volLUX, int volLUY,
                                                int volLUZ, staticVector<float>* depths, int rc, int wsh, float gammaC,
                                                float gammaP, staticVector<voxel>* pixels, int scale, int step,
@@ -1671,7 +1671,7 @@ float cuda_plane_sweeping::sweepPixelsToVolume(int nDepthsToSearch, staticVector
 /**
  * @param[inout] volume input similarity volume (after Z reduction)
  */
-bool cuda_plane_sweeping::SGMoptimizeSimVolume(int rc, staticVector<unsigned char>* volume, 
+bool PlaneSweepingCuda::SGMoptimizeSimVolume(int rc, staticVector<unsigned char>* volume, 
                                                int volDimX, int volDimY, int volDimZ, 
                                                int volStepXY, int volLUX, int volLUY, int scale,
                                                unsigned char P1, unsigned char P2)
@@ -1692,14 +1692,14 @@ bool cuda_plane_sweeping::SGMoptimizeSimVolume(int rc, staticVector<unsigned cha
 }
 
 // make_float3(avail,total,used)
-point3d cuda_plane_sweeping::getDeviceMemoryInfo()
+point3d PlaneSweepingCuda::getDeviceMemoryInfo()
 {
     float3 dmif3 = ps_getDeviceMemoryInfo();
     return point3d(dmif3.x, dmif3.y, dmif3.z);
 }
 /*
 
-bool cuda_plane_sweeping::transposeVolume(staticVector<unsigned char>* volume, const voxel& dimIn, const voxel& dimTrn,
+bool PlaneSweepingCuda::transposeVolume(staticVector<unsigned char>* volume, const voxel& dimIn, const voxel& dimTrn,
                                           voxel& dimOut)
 {
     if(verbose)
@@ -1746,7 +1746,7 @@ bool cuda_plane_sweeping::transposeVolume(staticVector<unsigned char>* volume, c
     return true;
 }
 
-bool cuda_plane_sweeping::computeRcVolumeForRcTcsDepthSimMaps(
+bool PlaneSweepingCuda::computeRcVolumeForRcTcsDepthSimMaps(
     staticVector<unsigned int>* volume, staticVector<staticVector<point2d>*>* rcTcsDepthSimMaps, int volDimX,
     int volDimY, int volDimZ, int volStepXY, staticVector<float>* depths, int scale, int step,
     staticVector<int>* rtcams, staticVector<point2d>* rtCamsMinMaxFpDepths, const float maxTcRcPixSizeInVoxRatio,
@@ -1857,7 +1857,7 @@ bool cuda_plane_sweeping::computeRcVolumeForRcTcsDepthSimMaps(
     return true;
 }
 *
-bool cuda_plane_sweeping::filterRcIdDepthMapByTcDepthMap(staticVector<unsigned short>* rcIdDepthMap,
+bool PlaneSweepingCuda::filterRcIdDepthMapByTcDepthMap(staticVector<unsigned short>* rcIdDepthMap,
                                                          staticVector<float>* tcDepthMap, int volDimX, int volDimY,
                                                          int volDimZ, int volStepXY, staticVector<float>* depths,
                                                          int scale, int step, staticVector<int>* rtcams, int distLimit)
@@ -1939,7 +1939,7 @@ bool cuda_plane_sweeping::filterRcIdDepthMapByTcDepthMap(staticVector<unsigned s
     return true;
 }
 *
-bool cuda_plane_sweeping::filterRcIdDepthMapByTcDepthMaps(staticVector<unsigned short>* nModalsMap,
+bool PlaneSweepingCuda::filterRcIdDepthMapByTcDepthMaps(staticVector<unsigned short>* nModalsMap,
                                                           staticVector<unsigned short>* rcIdDepthMap,
                                                           staticVector<staticVector<float>*>* tcDepthMaps, int volDimX,
                                                           int volDimY, int volDimZ, int volStepXY,
@@ -2031,7 +2031,7 @@ bool cuda_plane_sweeping::filterRcIdDepthMapByTcDepthMaps(staticVector<unsigned 
     return true;
 }
 
-bool cuda_plane_sweeping::SGGCoptimizeSimVolume(staticVector<unsigned short>* ftidMap,
+bool PlaneSweepingCuda::SGGCoptimizeSimVolume(staticVector<unsigned short>* ftidMap,
                                                 staticVector<unsigned int>* ivolume, int _volDimX, int volDimY,
                                                 int volDimZ, int xFrom, int xTo, int K)
 {
@@ -2086,7 +2086,7 @@ bool cuda_plane_sweeping::SGGCoptimizeSimVolume(staticVector<unsigned short>* ft
 }
 
 */
-bool cuda_plane_sweeping::fuseDepthSimMapsGaussianKernelVoting(int w, int h, staticVector<DepthSim>* oDepthSimMap,
+bool PlaneSweepingCuda::fuseDepthSimMapsGaussianKernelVoting(int w, int h, staticVector<DepthSim>* oDepthSimMap,
                                                                const staticVector<staticVector<DepthSim>*>* dataMaps,
                                                                int nSamplesHalf, int nDepthsToRefine, float sigma)
 {
@@ -2137,7 +2137,7 @@ bool cuda_plane_sweeping::fuseDepthSimMapsGaussianKernelVoting(int w, int h, sta
     return true;
 }
 
-bool cuda_plane_sweeping::optimizeDepthSimMapGradientDescent(staticVector<DepthSim>* oDepthSimMap,
+bool PlaneSweepingCuda::optimizeDepthSimMapGradientDescent(staticVector<DepthSim>* oDepthSimMap,
                                                              staticVector<staticVector<DepthSim>*>* dataMaps, int rc,
                                                              int nSamplesHalf, int nDepthsToRefine, float sigma,
                                                              int nIters, int yFrom, int hPart)
@@ -2222,7 +2222,7 @@ bool cuda_plane_sweeping::optimizeDepthSimMapGradientDescent(staticVector<DepthS
 }
 
 /*
-bool cuda_plane_sweeping::computeDP1Volume(staticVector<int>* ovolume, staticVector<unsigned int>* ivolume,
+bool PlaneSweepingCuda::computeDP1Volume(staticVector<int>* ovolume, staticVector<unsigned int>* ivolume,
                                            int _volDimX, int volDimY, int volDimZ, int xFrom, int xTo)
 {
     int volDimX = xTo - xFrom + 1;
@@ -2270,7 +2270,7 @@ bool cuda_plane_sweeping::computeDP1Volume(staticVector<int>* ovolume, staticVec
     return true;
 }
 
-bool cuda_plane_sweeping::computeSimMapReprojectByDepthMapMovedByStep(staticVector<float>* osimMap,
+bool PlaneSweepingCuda::computeSimMapReprojectByDepthMapMovedByStep(staticVector<float>* osimMap,
                                                                       staticVector<float>* iodepthMap, int rc, int tc,
                                                                       int _wsh, float _gammaC, float _gammaP,
                                                                       bool moveByTcOrRc, float moveStep)
@@ -2342,7 +2342,7 @@ bool cuda_plane_sweeping::computeSimMapReprojectByDepthMapMovedByStep(staticVect
     return true;
 }
 
-bool cuda_plane_sweeping::computeRcTcdepthMap(staticVector<float>* iRcDepthMap_oRcTcDepthMap,
+bool PlaneSweepingCuda::computeRcTcdepthMap(staticVector<float>* iRcDepthMap_oRcTcDepthMap,
                                               staticVector<float>* tcDdepthMap, int rc, int tc, float pixSizeRatioThr)
 {
     if(verbose)
@@ -2394,7 +2394,7 @@ bool cuda_plane_sweeping::computeRcTcdepthMap(staticVector<float>* iRcDepthMap_o
 }
 
 */
-bool cuda_plane_sweeping::getSilhoueteMap(staticVectorBool* oMap, int scale, int step, const rgb maskColor, int rc)
+bool PlaneSweepingCuda::getSilhoueteMap(staticVectorBool* oMap, int scale, int step, const rgb maskColor, int rc)
 {
     if(verbose)
         printf("getSilhoueteeMap rc: %i\n", rc);

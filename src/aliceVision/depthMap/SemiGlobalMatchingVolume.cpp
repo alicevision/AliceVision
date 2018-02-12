@@ -3,10 +3,10 @@
 // v. 2.0. If a copy of the MPL was not distributed with this file,
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
-#include "ps_sgm_vol.hpp"
+#include "SemiGlobalMatchingVolume.hpp"
 #include <aliceVision/common/common.hpp>
 
-ps_sgm_vol::ps_sgm_vol(float _volGpuMB, int _volDimX, int _volDimY, int _volDimZ, ps_sgm_params* _sp)
+SemiGlobalMatchingVolume::SemiGlobalMatchingVolume(float _volGpuMB, int _volDimX, int _volDimY, int _volDimZ, SemiGlobalMatchingParams* _sp)
 {
     sp = _sp;
 
@@ -49,7 +49,7 @@ ps_sgm_vol::ps_sgm_vol(float _volGpuMB, int _volDimX, int _volDimY, int _volDimZ
     _volumeBestZ->resize_with(volDimX * volDimY * (volDimZ / volStepZ), -1);
 }
 
-ps_sgm_vol::~ps_sgm_vol()
+SemiGlobalMatchingVolume::~SemiGlobalMatchingVolume()
 {
     delete _volume;
     delete _volumeStepZ;
@@ -62,7 +62,7 @@ ps_sgm_vol::~ps_sgm_vol()
  *        Inside each chunk of 'step' values, we keep the best similarity value
  *        in 'volumeStepZ' and store the original Z index in 'volumeBestZ'.
  */
-void ps_sgm_vol::cloneVolumeStepZ()
+void SemiGlobalMatchingVolume::cloneVolumeStepZ()
 {
     long tall = clock();
 
@@ -97,10 +97,10 @@ void ps_sgm_vol::cloneVolumeStepZ()
     _volume = nullptr;
 
     if(sp->mp->verbose)
-        printfElapsedTime(tall, "ps_sgm_vol::cloneVolumeStepZ ");
+        printfElapsedTime(tall, "SemiGlobalMatchingVolume::cloneVolumeStepZ ");
 }
 
-void ps_sgm_vol::cloneVolumeSecondStepZ()
+void SemiGlobalMatchingVolume::cloneVolumeSecondStepZ()
 {
     long tall = clock();
 
@@ -131,13 +131,13 @@ void ps_sgm_vol::cloneVolumeSecondStepZ()
     }
 
     if (sp->mp->verbose)
-        printfElapsedTime(tall, "ps_sgm_vol::cloneVolumeSecondStepZ ");
+        printfElapsedTime(tall, "SemiGlobalMatchingVolume::cloneVolumeSecondStepZ ");
 }
 
 /**
  * @param[in] volStepXY step in the image space
  */
-void ps_sgm_vol::SGMoptimizeVolumeStepZ(int rc, int volStepXY, int volLUX, int volLUY, int scale)
+void SemiGlobalMatchingVolume::SGMoptimizeVolumeStepZ(int rc, int volStepXY, int volLUX, int volLUY, int scale)
 {
     long tall = clock();
 
@@ -145,10 +145,10 @@ void ps_sgm_vol::SGMoptimizeVolumeStepZ(int rc, int volStepXY, int volLUX, int v
                                   scale, sp->P1, sp->P2);
 
     if(sp->mp->verbose)
-        printfElapsedTime(tall, "ps_sgm_vol::SGMoptimizeVolumeStepZ");
+        printfElapsedTime(tall, "SemiGlobalMatchingVolume::SGMoptimizeVolumeStepZ");
 }
 
-staticVector<idValue>* ps_sgm_vol::getOrigVolumeBestIdValFromVolumeStepZ(int zborder)
+staticVector<idValue>* SemiGlobalMatchingVolume::getOrigVolumeBestIdValFromVolumeStepZ(int zborder)
 {
     long tall = clock();
 
@@ -187,12 +187,12 @@ staticVector<idValue>* ps_sgm_vol::getOrigVolumeBestIdValFromVolumeStepZ(int zbo
     }
 
     if(sp->mp->verbose)
-        printfElapsedTime(tall, "ps_sgm_vol::getOrigVolumeBestIdValFromVolumeStepZ ");
+        printfElapsedTime(tall, "SemiGlobalMatchingVolume::getOrigVolumeBestIdValFromVolumeStepZ ");
 
     return volumeBestIdVal;
 }
 
-void ps_sgm_vol::copyVolume(const staticVector<unsigned char>* volume, int zFrom, int nZSteps)
+void SemiGlobalMatchingVolume::copyVolume(const staticVector<unsigned char>* volume, int zFrom, int nZSteps)
 {
     unsigned char* _volumePtr = _volume->getDataWritable().data();
     const unsigned char* volumePtr = volume->getData().data();
@@ -210,7 +210,7 @@ void ps_sgm_vol::copyVolume(const staticVector<unsigned char>* volume, int zFrom
     }
 }
 
-void ps_sgm_vol::copyVolume(const staticVector<int>* volume)
+void SemiGlobalMatchingVolume::copyVolume(const staticVector<int>* volume)
 {
     unsigned char* _volumePtr = _volume->getDataWritable().data();
     const int* volumePtr = volume->getData().data();
@@ -228,7 +228,7 @@ void ps_sgm_vol::copyVolume(const staticVector<int>* volume)
     }
 }
 
-void ps_sgm_vol::addVolumeMin(const staticVector<unsigned char>* volume, int zFrom, int nZSteps)
+void SemiGlobalMatchingVolume::addVolumeMin(const staticVector<unsigned char>* volume, int zFrom, int nZSteps)
 {
     unsigned char* _volumePtr = _volume->getDataWritable().data();
     const unsigned char* volumePtr = volume->getData().data();
@@ -248,7 +248,7 @@ void ps_sgm_vol::addVolumeMin(const staticVector<unsigned char>* volume, int zFr
     }
 }
 
-void ps_sgm_vol::addVolumeSecondMin(const staticVector<unsigned char>* volume, int zFrom, int nZSteps)
+void SemiGlobalMatchingVolume::addVolumeSecondMin(const staticVector<unsigned char>* volume, int zFrom, int nZSteps)
 {
     unsigned char* _volumePtr = _volume->getDataWritable().data();
     unsigned char* _volumeSecondBestPtr = _volumeSecondBest->getDataWritable().data();
@@ -279,7 +279,7 @@ void ps_sgm_vol::addVolumeSecondMin(const staticVector<unsigned char>* volume, i
     }
 }
 
-void ps_sgm_vol::addVolumeAvg(int n, const staticVector<unsigned char>* volume, int zFrom, int nZSteps)
+void SemiGlobalMatchingVolume::addVolumeAvg(int n, const staticVector<unsigned char>* volume, int zFrom, int nZSteps)
 {
     unsigned char* _volumePtr = _volume->getDataWritable().data();
     const unsigned char* volumePtr = volume->getData().data();
@@ -303,7 +303,7 @@ void ps_sgm_vol::addVolumeAvg(int n, const staticVector<unsigned char>* volume, 
 
 
 
-staticVector<unsigned char>* ps_sgm_vol::getZSlice(int z) const
+staticVector<unsigned char>* SemiGlobalMatchingVolume::getZSlice(int z) const
 {
     unsigned char* _volumePtr = _volume->getDataWritable().data();
     staticVector<unsigned char>* zs = new staticVector<unsigned char>(volDimY * volDimX);

@@ -5,13 +5,13 @@
 
 #pragma once
 
-#include "ps_sgm_params.hpp"
+#include <aliceVision/depthMap/SemiGlobalMatchingParams.hpp>
 
-class ps_sgm_vol
+class SemiGlobalMatchingVolume
 {
 public:
-    ps_sgm_vol(float _volGpuMB, int _volDimX, int _volDimY, int _volDimZ, ps_sgm_params* _sp);
-    ~ps_sgm_vol(void);
+    SemiGlobalMatchingVolume(float _volGpuMB, int _volDimX, int _volDimY, int _volDimZ, SemiGlobalMatchingParams* _sp);
+    ~SemiGlobalMatchingVolume(void);
 
     void copyVolume(const staticVector<int>* volume);
     void copyVolume(const staticVector<unsigned char>* volume, int zFrom, int nZSteps);
@@ -28,7 +28,7 @@ public:
     staticVector<unsigned char>* getZSlice(int z) const;
 
 private:
-    ps_sgm_params* sp;
+    SemiGlobalMatchingParams* sp;
 
     float volGpuMB;
     int volDimX;

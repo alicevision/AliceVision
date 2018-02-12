@@ -3,7 +3,7 @@
 // v. 2.0. If a copy of the MPL was not distributed with this file,
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
-#include "ps_depthSimMap.hpp"
+#include "DepthSimMap.hpp"
 #include <aliceVision/common/common.hpp>
 #include <aliceVision/common/fileIO.hpp>
 #include <aliceVision/structures/mv_geometry.hpp>
@@ -12,7 +12,7 @@
 
 #include <iostream>
 
-ps_depthSimMap::ps_depthSimMap(int _rc, multiviewParams* _mp, int _scale, int _step)
+DepthSimMap::DepthSimMap(int _rc, multiviewParams* _mp, int _scale, int _step)
 {
     rc = _rc;
     mp = _mp;
@@ -24,12 +24,12 @@ ps_depthSimMap::ps_depthSimMap(int _rc, multiviewParams* _mp, int _scale, int _s
     dsm->resize_with(w * h, DepthSim(-1.0f, 1.0f));
 }
 
-ps_depthSimMap::~ps_depthSimMap()
+DepthSimMap::~DepthSimMap()
 {
     delete dsm;
 }
 
-point3d ps_depthSimMap::get3DPtOfPixel(const pixel& pix, int pixScale, int rc)
+point3d DepthSimMap::get3DPtOfPixel(const pixel& pix, int pixScale, int rc)
 {
     pixel pix11 = pixel(pix.x * pixScale, pix.y * pixScale);
     int i = (pix11.y / (scale * step)) * w + pix11.x / (scale * step);
@@ -41,18 +41,18 @@ point3d ps_depthSimMap::get3DPtOfPixel(const pixel& pix, int pixScale, int rc)
                depth;
 }
 
-float ps_depthSimMap::getFPDepthOfPixel(const pixel& pix, int pixScale, int rc)
+float DepthSimMap::getFPDepthOfPixel(const pixel& pix, int pixScale, int rc)
 {
     point3d p = get3DPtOfPixel(pix, pixScale, rc);
     point3d zVect = (mp->iRArr[rc] * point3d(0.0f, 0.0f, 1.0f)).normalize();
     return pointPlaneDistance(p, mp->CArr[rc], zVect);
 }
 
-void ps_depthSimMap::add11(ps_depthSimMap* depthSimMap)
+void DepthSimMap::add11(DepthSimMap* depthSimMap)
 {
     if((scale != 1) || (step != 1))
     {
-        throw std::runtime_error("Error ps_depthSimMap: You can only add to scale1-step1 map.");
+        throw std::runtime_error("Error DepthSimMap: You can only add to scale1-step1 map.");
     }
 
     int k = (depthSimMap->step * depthSimMap->scale) / 2;
@@ -99,11 +99,11 @@ void ps_depthSimMap::add11(ps_depthSimMap* depthSimMap)
     }
 }
 
-void ps_depthSimMap::add(ps_depthSimMap* depthSimMap)
+void DepthSimMap::add(DepthSimMap* depthSimMap)
 {
     if((scale != depthSimMap->scale) || (step != depthSimMap->step))
     {
-        throw std::runtime_error("Error ps_depthSimMap: You can only add to the same scale and step map.");
+        throw std::runtime_error("Error DepthSimMap: You can only add to the same scale and step map.");
     }
 
     for(int i = 0; i < dsm->size(); i++)
@@ -118,7 +118,7 @@ void ps_depthSimMap::add(ps_depthSimMap* depthSimMap)
     }
 }
 
-void ps_depthSimMap::getReconstructedPixelsDepthsSims(staticVector<pixel>* pixels, staticVector<float>* depths,
+void DepthSimMap::getReconstructedPixelsDepthsSims(staticVector<pixel>* pixels, staticVector<float>* depths,
                                                       staticVector<float>* sims)
 {
     for(int j = 0; j < w * h; j++)
@@ -132,7 +132,7 @@ void ps_depthSimMap::getReconstructedPixelsDepthsSims(staticVector<pixel>* pixel
     }
 }
 
-point2d ps_depthSimMap::getMaxMinDepth()
+point2d DepthSimMap::getMaxMinDepth()
 {
     float maxDepth = -1.0f;
     float minDepth = std::numeric_limits<float>::max();
@@ -147,7 +147,7 @@ point2d ps_depthSimMap::getMaxMinDepth()
     return point2d(maxDepth, minDepth);
 }
 
-point2d ps_depthSimMap::getMaxMinSim()
+point2d DepthSimMap::getMaxMinSim()
 {
     float maxSim = -1.0f;
     float minSim = std::numeric_limits<float>::max();
@@ -162,7 +162,7 @@ point2d ps_depthSimMap::getMaxMinSim()
     return point2d(maxSim, minSim);
 }
 
-void ps_depthSimMap::setUsedCellsSimTo(float defaultSim)
+void DepthSimMap::setUsedCellsSimTo(float defaultSim)
 {
     for(int j = 0; j < w * h; j++)
     {
@@ -173,7 +173,7 @@ void ps_depthSimMap::setUsedCellsSimTo(float defaultSim)
     }
 }
 
-float ps_depthSimMap::getPercentileDepth(float perc)
+float DepthSimMap::getPercentileDepth(float perc)
 {
 
     int step = std::max(1, (w * h) / 50000);
@@ -202,7 +202,7 @@ float ps_depthSimMap::getPercentileDepth(float perc)
  * @brief Get depth map at the size of our input image (with scale applied)
  *        from an internal buffer only computed for a subpart (based on the step).
  */
-staticVector<float>* ps_depthSimMap::getDepthMapStep1()
+staticVector<float>* DepthSimMap::getDepthMapStep1()
 {
 	// Size of our input image (with scale applied)
     int wdm = mp->mip->getWidth(rc) / scale;
@@ -228,7 +228,7 @@ staticVector<float>* ps_depthSimMap::getDepthMapStep1()
     return depthMap;
 }
 
-staticVector<float>* ps_depthSimMap::getSimMapStep1()
+staticVector<float>* DepthSimMap::getSimMapStep1()
 {
     int wdm = mp->mip->getWidth(rc) / scale;
     int hdm = mp->mip->getHeight(rc) / scale;
@@ -249,7 +249,7 @@ staticVector<float>* ps_depthSimMap::getSimMapStep1()
     return simMap;
 }
 
-staticVector<float>* ps_depthSimMap::getDepthMapStep1XPart(int xFrom, int partW)
+staticVector<float>* DepthSimMap::getDepthMapStep1XPart(int xFrom, int partW)
 {
     int wdm = mp->mip->getWidth(rc) / scale;
     int hdm = mp->mip->getHeight(rc) / scale;
@@ -273,7 +273,7 @@ staticVector<float>* ps_depthSimMap::getDepthMapStep1XPart(int xFrom, int partW)
     return depthMap;
 }
 
-staticVector<float>* ps_depthSimMap::getSimMapStep1XPart(int xFrom, int partW)
+staticVector<float>* DepthSimMap::getSimMapStep1XPart(int xFrom, int partW)
 {
     int wdm = mp->mip->getWidth(rc) / scale;
     int hdm = mp->mip->getHeight(rc) / scale;
@@ -297,7 +297,7 @@ staticVector<float>* ps_depthSimMap::getSimMapStep1XPart(int xFrom, int partW)
     return simMap;
 }
 
-void ps_depthSimMap::initJustFromDepthMapT(staticVector<float>* depthMapT, float defaultSim)
+void DepthSimMap::initJustFromDepthMapT(staticVector<float>* depthMapT, float defaultSim)
 {
     int hdm = mp->mip->getHeight(rc) / scale;
 
@@ -313,7 +313,7 @@ void ps_depthSimMap::initJustFromDepthMapT(staticVector<float>* depthMapT, float
     }
 }
 
-void ps_depthSimMap::initJustFromDepthMap(staticVector<float>* depthMap, float defaultSim)
+void DepthSimMap::initJustFromDepthMap(staticVector<float>* depthMap, float defaultSim)
 {
     int wdm = mp->mip->getWidth(rc) / scale;
 
@@ -329,7 +329,7 @@ void ps_depthSimMap::initJustFromDepthMap(staticVector<float>* depthMap, float d
     }
 }
 
-void ps_depthSimMap::initFromDepthMapTAndSimMapT(staticVector<float>* depthMapT, staticVector<float>* simMapT,
+void DepthSimMap::initFromDepthMapTAndSimMapT(staticVector<float>* depthMapT, staticVector<float>* simMapT,
                                                  int depthSimMapsScale)
 {
     int wdm = mp->mip->getWidth(rc) / depthSimMapsScale;
@@ -347,7 +347,7 @@ void ps_depthSimMap::initFromDepthMapTAndSimMapT(staticVector<float>* depthMapT,
     }
 }
 
-void ps_depthSimMap::initFromDepthMapAndSimMap(staticVector<float>* depthMap, staticVector<float>* simMap,
+void DepthSimMap::initFromDepthMapAndSimMap(staticVector<float>* depthMap, staticVector<float>* simMap,
                                                int depthSimMapsScale)
 {
     int wdm = mp->mip->getWidth(rc) / depthSimMapsScale;
@@ -365,7 +365,7 @@ void ps_depthSimMap::initFromDepthMapAndSimMap(staticVector<float>* depthMap, st
     }
 }
 
-staticVector<float>* ps_depthSimMap::getDepthMapTStep1()
+staticVector<float>* DepthSimMap::getDepthMapTStep1()
 {
     int wdm = mp->mip->getWidth(rc) / scale;
     int hdm = mp->mip->getHeight(rc) / scale;
@@ -386,7 +386,7 @@ staticVector<float>* ps_depthSimMap::getDepthMapTStep1()
     return depthMap;
 }
 
-staticVector<float>* ps_depthSimMap::getDepthMap()
+staticVector<float>* DepthSimMap::getDepthMap()
 {
     staticVector<float>* depthMap = new staticVector<float>(dsm->size());
     for(int i = 0; i < dsm->size(); i++)
@@ -396,7 +396,7 @@ staticVector<float>* ps_depthSimMap::getDepthMap()
     return depthMap;
 }
 
-staticVector<float>* ps_depthSimMap::getSimMapTStep1()
+staticVector<float>* DepthSimMap::getSimMapTStep1()
 {
     int wdm = mp->mip->getWidth(rc) / scale;
     int hdm = mp->mip->getHeight(rc) / scale;
@@ -417,7 +417,7 @@ staticVector<float>* ps_depthSimMap::getSimMapTStep1()
     return simMap;
 }
 
-void ps_depthSimMap::saveToImage(std::string filename, float simThr)
+void DepthSimMap::saveToImage(std::string filename, float simThr)
 {
     const int bufferWidth = 2 * w;
     std::vector<Color> colorBuffer(bufferWidth * h);
@@ -461,7 +461,7 @@ void ps_depthSimMap::saveToImage(std::string filename, float simThr)
     }
 }
 
-void ps_depthSimMap::save(int rc, staticVector<int>* tcams)
+void DepthSimMap::save(int rc, staticVector<int>* tcams)
 {
     staticVector<float>* depthMap = getDepthMapStep1();
     staticVector<float>* simMap = getSimMapStep1();
@@ -490,7 +490,7 @@ void ps_depthSimMap::save(int rc, staticVector<int>* tcams)
     }
 }
 
-void ps_depthSimMap::load(int rc, int fromScale)
+void DepthSimMap::load(int rc, int fromScale)
 {
     int width, height;
 
@@ -506,7 +506,7 @@ void ps_depthSimMap::load(int rc, int fromScale)
     initFromDepthMapTAndSimMapT(&depthMap, &simMap, fromScale);
 }
 
-void ps_depthSimMap::saveRefine(int rc, std::string depthMapFileName, std::string simMapFileName)
+void DepthSimMap::saveRefine(int rc, std::string depthMapFileName, std::string simMapFileName)
 {
     const int width = mp->mip->getWidth(rc);
     const int height = mp->mip->getHeight(rc);
@@ -529,7 +529,7 @@ void ps_depthSimMap::saveRefine(int rc, std::string depthMapFileName, std::strin
     imageIO::writeImage(simMapFileName, width, height, simMap);
 }
 
-bool ps_depthSimMap::loadRefine(std::string depthMapFileName, std::string simMapFileName)
+bool DepthSimMap::loadRefine(std::string depthMapFileName, std::string simMapFileName)
 {
     int width;
     int height;
@@ -549,7 +549,7 @@ bool ps_depthSimMap::loadRefine(std::string depthMapFileName, std::string simMap
     return true;
 }
 
-bool ps_depthSimMap::loadRefine(std::string depthMapFileName, float defaultSim)
+bool DepthSimMap::loadRefine(std::string depthMapFileName, float defaultSim)
 {
   int width;
   int height;
@@ -567,7 +567,7 @@ bool ps_depthSimMap::loadRefine(std::string depthMapFileName, float defaultSim)
   return true;
 }
 
-mv_universe* ps_depthSimMap::segment(float alpha, int rc)
+mv_universe* DepthSimMap::segment(float alpha, int rc)
 {
     printf("segmenting to connected components \n");
 
@@ -617,11 +617,11 @@ mv_universe* ps_depthSimMap::segment(float alpha, int rc)
     return u;
 }
 
-void ps_depthSimMap::removeSmallSegments(int minSegSize, float alpha, int rc)
+void DepthSimMap::removeSmallSegments(int minSegSize, float alpha, int rc)
 {
     long tall = clock();
 
-    mv_universe* u = ps_depthSimMap::segment(alpha, rc);
+    mv_universe* u = DepthSimMap::segment(alpha, rc);
 
     for(int i = 0; i < w * h; i++)
     {
@@ -640,7 +640,7 @@ void ps_depthSimMap::removeSmallSegments(int minSegSize, float alpha, int rc)
         printfElapsedTime(tall, "removeSmallSegments");
 }
 
-void ps_depthSimMap::cutout(const pixel& LU, const pixel& RD)
+void DepthSimMap::cutout(const pixel& LU, const pixel& RD)
 {
     int wdm = mp->mip->getWidth(rc) / scale;
     int hdm = mp->mip->getHeight(rc) / scale;
@@ -657,7 +657,7 @@ void ps_depthSimMap::cutout(const pixel& LU, const pixel& RD)
     }
 }
 
-float ps_depthSimMap::getAngleBetwABandACdepth(int rc, const pixel& cellA, float dA, const pixel& cellB, float dB,
+float DepthSimMap::getAngleBetwABandACdepth(int rc, const pixel& cellA, float dA, const pixel& cellB, float dB,
                                                const pixel& cellC, float dC)
 {
     point3d pA =
@@ -672,12 +672,12 @@ float ps_depthSimMap::getAngleBetwABandACdepth(int rc, const pixel& cellA, float
     return 180.0f - angleBetwABandAC(pA, pB, pC);
 }
 
-float ps_depthSimMap::getCellSmoothEnergy(int rc, const int cellId, float defaultE)
+float DepthSimMap::getCellSmoothEnergy(int rc, const int cellId, float defaultE)
 {
     return getCellSmoothEnergy(rc, pixel(cellId % w, cellId / w), defaultE);
 }
 
-float ps_depthSimMap::getCellSmoothEnergy(int rc, const pixel& cell, float defaultE)
+float DepthSimMap::getCellSmoothEnergy(int rc, const pixel& cell, float defaultE)
 {
     if((cell.x <= 0) || (cell.x >= w - 1) || (cell.y <= 0) || (cell.y >= h - 1))
     {
@@ -714,7 +714,7 @@ float ps_depthSimMap::getCellSmoothEnergy(int rc, const pixel& cell, float defau
     return (ok) ? e : defaultE;
 }
 
-float ps_depthSimMap::getASmoothStepBetwABandACdepth(int rc, const pixel& cellA, float dA, const pixel& cellB, float dB,
+float DepthSimMap::getASmoothStepBetwABandACdepth(int rc, const pixel& cellA, float dA, const pixel& cellB, float dB,
                                                      const pixel& cellC, float dC)
 {
     point3d pA =
@@ -736,12 +736,12 @@ float ps_depthSimMap::getASmoothStepBetwABandACdepth(int rc, const pixel& cellA,
     return (mp->CArr[rc] - pS).size() - dA;
 }
 
-float ps_depthSimMap::getCellSmoothStep(int rc, const int cellId)
+float DepthSimMap::getCellSmoothStep(int rc, const int cellId)
 {
     return getCellSmoothStep(rc, pixel(cellId % w, cellId / w));
 }
 
-float ps_depthSimMap::getCellSmoothStep(int rc, const pixel& cell)
+float DepthSimMap::getCellSmoothStep(int rc, const pixel& cell)
 {
     if((cell.x <= 0) || (cell.x >= w - 1) || (cell.y <= 0) || (cell.y >= h - 1))
     {

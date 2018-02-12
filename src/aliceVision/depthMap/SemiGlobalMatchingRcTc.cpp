@@ -3,10 +3,10 @@
 // v. 2.0. If a copy of the MPL was not distributed with this file,
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
-#include "ps_sgm_rctc.hpp"
+#include "SemiGlobalMatchingRcTc.hpp"
 #include <aliceVision/common/common.hpp>
 
-ps_sgm_rctc::ps_sgm_rctc(staticVector<float>* _rcTcDepths, int _rc, int _tc, int _scale, int _step, ps_sgm_params* _sp,
+SemiGlobalMatchingRcTc::SemiGlobalMatchingRcTc(staticVector<float>* _rcTcDepths, int _rc, int _tc, int _scale, int _step, SemiGlobalMatchingParams* _sp,
                          staticVectorBool* _rcSilhoueteMap)
 {
     sp = _sp;
@@ -25,12 +25,12 @@ ps_sgm_rctc::ps_sgm_rctc(staticVector<float>* _rcTcDepths, int _rc, int _tc, int
     rcSilhoueteMap = _rcSilhoueteMap;
 }
 
-ps_sgm_rctc::~ps_sgm_rctc()
+SemiGlobalMatchingRcTc::~SemiGlobalMatchingRcTc()
 {
     //
 }
 
-staticVector<voxel>* ps_sgm_rctc::getPixels()
+staticVector<voxel>* SemiGlobalMatchingRcTc::getPixels()
 {
     staticVector<voxel>* pixels = new staticVector<voxel>(w * h);
     for(int y = 0; y < h; y++)
@@ -54,7 +54,7 @@ staticVector<voxel>* ps_sgm_rctc::getPixels()
     return pixels;
 }
 
-staticVector<unsigned char>* ps_sgm_rctc::computeDepthSimMapVolume(float& volumeMBinGPUMem, int wsh, float gammaC,
+staticVector<unsigned char>* SemiGlobalMatchingRcTc::computeDepthSimMapVolume(float& volumeMBinGPUMem, int wsh, float gammaC,
                                                                    float gammaP)
 {
     long tall = clock();
@@ -79,7 +79,7 @@ staticVector<unsigned char>* ps_sgm_rctc::computeDepthSimMapVolume(float& volume
     delete tcams;
 
     if(sp->mp->verbose)
-        printfElapsedTime(tall, "ps_sgm_rctc::computeDepthSimMapVolume ");
+        printfElapsedTime(tall, "SemiGlobalMatchingRcTc::computeDepthSimMapVolume ");
 
     if(sp->P3 > 0)
     {

@@ -6,8 +6,8 @@
 #pragma once
 
 #include "mv_mesh_energy_opt.hpp"
-#include <aliceVision/planeSweeping/ps_depthSimMap.hpp>
-#include <aliceVision/planeSweeping/ps_sgm_params.hpp>
+#include <aliceVision/depthMap/DepthSimMap.hpp>
+#include <aliceVision/depthMap/SemiGlobalMatchingParams.hpp>
 
 class mv_mesh_energy_opt_photo_mem : public mv_mesh_energy_opt
 {
@@ -50,7 +50,7 @@ public:
         void addCamPtStat(camPtStat& cptst);
     };
 
-    ps_sgm_params* sp;
+    SemiGlobalMatchingParams* sp;
     std::string tmpDir;
     std::string meshDepthMapsDir;
     staticVector<ptStat*>* ptsStats;
@@ -66,7 +66,7 @@ public:
     float sigma;
     float pixSizeRatioThr;
 
-    mv_mesh_energy_opt_photo_mem(multiviewParams* _mp, ps_sgm_params* _sp, const staticVector<int>& _usedCams);
+    mv_mesh_energy_opt_photo_mem(multiviewParams* _mp, SemiGlobalMatchingParams* _sp, const staticVector<int>& _usedCams);
     ~mv_mesh_energy_opt_photo_mem();
 
     void allocatePtsStats();
@@ -94,7 +94,7 @@ public:
 
     point4d getPtCurvatures(int ptId, staticVector<point3d>* lapPts);
 
-    ps_depthSimMap* getDepthPixSizeMap(staticVector<float>* rcDepthMap, int rc, staticVector<int>* tcams);
+    DepthSimMap* getDepthPixSizeMap(staticVector<float>* rcDepthMap, int rc, staticVector<int>* tcams);
 
     staticVector<staticVector<int>*>* getRcTcamsFromPtsCams(int minPairPts, staticVector<staticVector<int>*>* ptsCams);
 

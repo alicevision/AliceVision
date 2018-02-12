@@ -7,8 +7,8 @@
 
 #include "mv_mesh.hpp"
 
-#include <aliceVision/planeSweeping/ps_depthSimMap.hpp>
-#include <aliceVision/planeSweeping/ps_rctc.hpp>
+#include <aliceVision/depthMap/DepthSimMap.hpp>
+#include <aliceVision/depthMap/RcTc.hpp>
 #include <aliceVision/common/PreMatchCams.hpp>
 #include <aliceVision/common/ImagesCache.hpp>
 
@@ -22,14 +22,14 @@ public:
     std::string tmpDirOld;
     staticVector<staticVector<int>*>* ptsCams;
     mv_images_cache* ic;
-    cuda_plane_sweeping* cps;
-    ps_rctc* prt;
+    PlaneSweepingCuda* cps;
+    RcTc* prt;
 
     mv_mesh_refine(multiviewParams* _mp, mv_prematch_cams* _pc, std::string _tmpDir = "");
     ~mv_mesh_refine();
 
     void smoothDepthMapsAdaptiveByImages(staticVector<int>* usedCams);
-    void smoothDepthMapAdaptiveByImage(ps_rctc* prt, int rc, staticVector<float>* tmpDepthMap);
+    void smoothDepthMapAdaptiveByImage(RcTc* prt, int rc, staticVector<float>* tmpDepthMap);
 
     void transposeDepthMap(staticVector<float>* depthMapTransposed, staticVector<float>* depthMap, int w, int h);
     void alignSourceDepthMapToTarget(staticVector<float>* sourceDepthMapT, staticVector<float>* targetDepthMapT, int rc,

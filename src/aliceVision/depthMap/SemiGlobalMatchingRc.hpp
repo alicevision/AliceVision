@@ -5,13 +5,13 @@
 
 #pragma once
 
-#include "ps_sgm_params.hpp"
+#include <aliceVision/depthMap/SemiGlobalMatchingParams.hpp>
 
-class ps_sgm_rc
+class SemiGlobalMatchingRc
 {
 public:
-    ps_sgm_rc(bool doComputeDepthsAndResetTCams, int _rc, int _scale, int _step, ps_sgm_params* _sp);
-    ~ps_sgm_rc(void);
+    SemiGlobalMatchingRc(bool doComputeDepthsAndResetTCams, int _rc, int _scale, int _step, SemiGlobalMatchingParams* _sp);
+    ~SemiGlobalMatchingRc(void);
 
     bool sgmrc(bool checkIfExists = true);
     staticVector<int>* tcams;
@@ -32,7 +32,7 @@ protected:
 
     staticVector<float>* getSubDepthsForTCam(int tcamid);
 
-    ps_sgm_params* sp;
+    SemiGlobalMatchingParams* sp;
 
     int rc, scale, step;
     int wsh;

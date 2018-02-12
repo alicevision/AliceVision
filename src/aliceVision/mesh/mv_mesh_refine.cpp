@@ -33,8 +33,8 @@ mv_mesh_refine::mv_mesh_refine(multiviewParams* _mp, mv_prematch_cams* _pc, std:
 
     int bandType = 0;
     ic = new mv_images_cache(mp, bandType, true);
-    cps = new cuda_plane_sweeping(mp->CUDADeviceNo, ic, mp, pc, 1);
-    prt = new ps_rctc(mp, cps);
+    cps = new PlaneSweepingCuda(mp->CUDADeviceNo, ic, mp, pc, 1);
+    prt = new RcTc(mp, cps);
 }
 
 mv_mesh_refine::~mv_mesh_refine()
@@ -44,9 +44,9 @@ mv_mesh_refine::~mv_mesh_refine()
     delete prt;
 }
 
-void mv_mesh_refine::smoothDepthMapAdaptiveByImage(ps_rctc* prt, int rc, staticVector<float>* tmpDepthMap)
+void mv_mesh_refine::smoothDepthMapAdaptiveByImage(RcTc* prt, int rc, staticVector<float>* tmpDepthMap)
 {
-    ps_depthSimMap* depthSimMap = new ps_depthSimMap(rc, mp, 1, 1);
+    DepthSimMap* depthSimMap = new DepthSimMap(rc, mp, 1, 1);
     depthSimMap->initJustFromDepthMapT(tmpDepthMap, -1.0f);
 
     const bool doSmooth = mp->mip->_ini.get<bool>("grow2.smooth", true);

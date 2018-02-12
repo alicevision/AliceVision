@@ -5,19 +5,19 @@
 
 #pragma once
 
-#include <aliceVision/planeSweeping/cuda/cuda_plane_sweeping.hpp>
-#include <aliceVision/common/PreMatchCams.hpp>
-#include "ps_depthSimMap.hpp"
-#include "ps_rctc.hpp"
+#include <aliceVision/depthMap/DepthSimMap.hpp>
+#include <aliceVision/depthMap/RcTc.hpp>
+#include <aliceVision/depthMap/cuda/PlaneSweepingCuda.hpp>
 #include <aliceVision/common/ImagesCache.hpp>
+#include <aliceVision/common/PreMatchCams.hpp>
 
-class ps_sgm_params
+class SemiGlobalMatchingParams
 {
 public:
     multiviewParams* mp;
     mv_prematch_cams* pc;
-    ps_rctc* prt;
-    cuda_plane_sweeping* cps;
+    RcTc* prt;
+    PlaneSweepingCuda* cps;
     mv_images_cache* ic;
     bool visualizeDepthMaps;
     bool visualizePartialDepthMaps;
@@ -54,10 +54,10 @@ public:
     bool useSilhouetteMaskCodedByColor;
     rgb silhouetteMaskColor;
 
-    ps_sgm_params(multiviewParams* _mp, mv_prematch_cams* _pc, cuda_plane_sweeping* _cps);
-    ~ps_sgm_params(void);
+    SemiGlobalMatchingParams(multiviewParams* _mp, mv_prematch_cams* _pc, PlaneSweepingCuda* _cps);
+    ~SemiGlobalMatchingParams(void);
 
-    ps_depthSimMap* getDepthSimMapFromBestIdVal(int w, int h, staticVector<idValue>* volumeBestIdVal, int scale,
+    DepthSimMap* getDepthSimMapFromBestIdVal(int w, int h, staticVector<idValue>* volumeBestIdVal, int scale,
                                                 int step, int rc, int zborder, staticVector<float>* planesDepths);
 
     std::string getREFINE_photo_depthMapFileName(int cam, int scale, int step);

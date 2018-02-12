@@ -35,7 +35,7 @@ target_link_libraries(aliceVision_delaunaycut
          aliceVision_common
          aliceVision_mesh
          aliceVision_largeScale
-         aliceVision_planeSweeping
+         aliceVision_depthMap
          Geogram::geogram
          ${Boost_LIBRARIES}
 )

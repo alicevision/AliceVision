@@ -1,7 +1,7 @@
 #ifndef DEVICE_COLOR_CU
 #define DEVICE_COLOR_CU
 
-#include "../plane_sweeping/device_utils.cu"
+#include "../planeSweeping/device_utils.cu"
 
 
 inline __device__ float Euclidean(const float3 x1, const float3 x2)

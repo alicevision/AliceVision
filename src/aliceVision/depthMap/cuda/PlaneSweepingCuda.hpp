@@ -5,13 +5,12 @@
 
 #pragma once
 
-//#include <aliceVision/mesh/mv_mesh_retexture_obj.hpp>
 #include <aliceVision/common/PreMatchCams.hpp>
 #include <aliceVision/structures/mv_geometry.hpp>
 #include <aliceVision/common/ImagesCache.hpp>
-#include <aliceVision/planeSweeping/ps_depthSimMap.hpp>
+#include <aliceVision/depthMap/DepthSimMap.hpp>
 
-class cuda_plane_sweeping
+class PlaneSweepingCuda
 {
 public:
     struct parameters
@@ -74,9 +73,9 @@ public:
     // float gammaC,gammaP;
     mv_images_cache* ic;
 
-    cuda_plane_sweeping(int _CUDADeviceNo, mv_images_cache* _ic, multiviewParams* _mp, mv_prematch_cams* _pc,
+    PlaneSweepingCuda(int _CUDADeviceNo, mv_images_cache* _ic, multiviewParams* _mp, mv_prematch_cams* _pc,
                         int _scales);
-    ~cuda_plane_sweeping(void);
+    ~PlaneSweepingCuda(void);
 
     int addCam(int rc, float** H, int scale);
 

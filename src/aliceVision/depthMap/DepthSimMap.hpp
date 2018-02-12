@@ -42,15 +42,15 @@ public:
 };
 
 
-class ps_depthSimMap
+class DepthSimMap
 {
 public:
     multiviewParams* mp;
     int rc, w, h, scale, step;
     staticVector<DepthSim>* dsm; //< depth similarity map
 
-    ps_depthSimMap(int rc, multiviewParams* _mp, int _scale, int _step);
-    ~ps_depthSimMap(void);
+    DepthSimMap(int rc, multiviewParams* _mp, int _scale, int _step);
+    ~DepthSimMap(void);
 
     point3d get3DPtOfPixel(const pixel& pix, int pixScale, int rc);
     float getFPDepthOfPixel(const pixel& pix, int pixScale, int rc);
@@ -62,8 +62,8 @@ public:
     void initFromDepthMapAndSimMap(staticVector<float>* depthMap, staticVector<float>* simMap, int depthSimMapsScale);
     void setUsedCellsSimTo(float defaultSim);
 
-    void add11(ps_depthSimMap* depthSimMap);
-    void add(ps_depthSimMap* depthSimMap);
+    void add11(DepthSimMap* depthSimMap);
+    void add(DepthSimMap* depthSimMap);
 
     void getReconstructedPixelsDepthsSims(staticVector<pixel>* pixels, staticVector<float>* depths,
                                           staticVector<float>* sims);

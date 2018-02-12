@@ -3,20 +3,20 @@
 // v. 2.0. If a copy of the MPL was not distributed with this file,
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
-#include "ps_rctc.hpp"
+#include "RcTc.hpp"
 #include <aliceVision/common/common.hpp>
 
-ps_rctc::ps_rctc(multiviewParams* _mp, cuda_plane_sweeping* _cps)
+RcTc::RcTc(multiviewParams* _mp, PlaneSweepingCuda* _cps)
 {
     cps = _cps;
     mp = _mp;
     verbose = mp->verbose;
 }
 
-ps_rctc::~ps_rctc()
+RcTc::~RcTc()
 {}
 
-void ps_rctc::refineRcTcDepthSimMap(bool useTcOrRcPixSize, ps_depthSimMap* depthSimMap, int rc, int tc,
+void RcTc::refineRcTcDepthSimMap(bool useTcOrRcPixSize, DepthSimMap* depthSimMap, int rc, int tc,
                                     int ndepthsToRefine, int wsh, float gammaC, float gammaP, float epipShift)
 {
     int scale = depthSimMap->scale;
@@ -64,7 +64,7 @@ void ps_rctc::refineRcTcDepthSimMap(bool useTcOrRcPixSize, ps_depthSimMap* depth
     }
 }
 
-void ps_rctc::smoothDepthMap(ps_depthSimMap* depthSimMap, int rc, int wsh, float gammaC, float gammaP)
+void RcTc::smoothDepthMap(DepthSimMap* depthSimMap, int rc, int wsh, float gammaC, float gammaP)
 {
     long t1 = clock();
 
@@ -84,7 +84,7 @@ void ps_rctc::smoothDepthMap(ps_depthSimMap* depthSimMap, int rc, int wsh, float
     delete depthMap;
 }
 
-void ps_rctc::filterDepthMap(ps_depthSimMap* depthSimMap, int rc, int wsh, float gammaC)
+void RcTc::filterDepthMap(DepthSimMap* depthSimMap, int rc, int wsh, float gammaC)
 {
     long t1 = clock();
 
@@ -106,7 +106,7 @@ void ps_rctc::filterDepthMap(ps_depthSimMap* depthSimMap, int rc, int wsh, float
     delete depthMap;
 }
 
-void ps_rctc::computeRotCSRcTcEpip(point3d& p, point3d& n, point3d& x, point3d& y, int rc, int tc)
+void RcTc::computeRotCSRcTcEpip(point3d& p, point3d& n, point3d& x, point3d& y, int rc, int tc)
 {
     n = (mp->CArr[rc] - p).normalize();
     x = (mp->CArr[tc] - mp->CArr[rc]).normalize();

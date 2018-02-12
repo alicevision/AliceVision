@@ -1,7 +1,7 @@
 #ifndef DEVICE_GLOBAL_CU
 #define DEVICE_GLOBAL_CU
 
-#include <aliceVision/planeSweeping/cuda/common_gpu_cpu_structures.hpp>
+#include <aliceVision/depthMap/cuda/commonStructures.hpp>
 
 ////////////////////////////////////////////////////////////////////////////////
 // Helper functions
