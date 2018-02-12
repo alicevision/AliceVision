@@ -19,28 +19,27 @@ set(delaunayCut_files_sources
   MaxFlow_AdjList.cpp
 )
 
-add_library(mv_delaunaycut
+add_library(aliceVision_delaunaycut
   ${delaunayCut_files_headers}
   ${delaunayCut_files_sources}
 )
 
-target_include_directories(mv_delaunaycut 
-  PUBLIC
-  $<BUILD_INTERFACE:${ALICEVISION_INCLUDE_DIR}>
-  $<BUILD_INTERFACE:${generatedDir}>
-  $<INSTALL_INTERFACE:include>
+target_include_directories(aliceVision_delaunaycut
+  PUBLIC $<BUILD_INTERFACE:${ALICEVISION_INCLUDE_DIR}>
+         $<BUILD_INTERFACE:${generatedDir}>
+         $<INSTALL_INTERFACE:include>
 )
 
-target_link_libraries(mv_delaunaycut
-  PUBLIC mv_largeScale
-         mv_structures
+target_link_libraries(aliceVision_delaunaycut
+  PUBLIC aliceVision_largeScale
+         aliceVision_structures
          aliceVision_common
          aliceVision_mesh
-         mv_cudaInterfaces
-         ${Boost_LIBRARIES}
+         aliceVision_cudaInterfaces
          Geogram::geogram
+         ${Boost_LIBRARIES}
 )
 
-set_property(TARGET mv_delaunaycut
+set_property(TARGET aliceVision_delaunaycut
   PROPERTY FOLDER AliceVision
 )

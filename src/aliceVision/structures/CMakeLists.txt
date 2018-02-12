@@ -38,24 +38,24 @@ set(structures_files_sources
   quaternion.cpp
 )
 
-add_library(mv_structures
+add_library(aliceVision_structures
   ${structures_files_headers}
   ${structures_files_sources}
 )
 
-target_include_directories(mv_structures
-  PUBLIC
-  $<BUILD_INTERFACE:${ALICEVISION_INCLUDE_DIR}>
-  $<BUILD_INTERFACE:${generatedDir}>
-  $<INSTALL_INTERFACE:include>
-  ${Boost_INCLUDE_DIR} ${ZLIB_INCLUDE_DIR}
+target_include_directories(aliceVision_structures
+  PUBLIC $<BUILD_INTERFACE:${ALICEVISION_INCLUDE_DIR}>
+         $<BUILD_INTERFACE:${generatedDir}>
+         $<INSTALL_INTERFACE:include>
+         ${ZLIB_INCLUDE_DIR}
+         ${Boost_INCLUDE_DIR}
 )
 
-target_link_libraries(mv_structures
+target_link_libraries(aliceVision_structures
   PUBLIC ${ZLIB_LIBRARIES}
          ${Boost_FILESYSTEM_LIBRARIES}
 )
 
-set_property(TARGET mv_structures
+set_property(TARGET aliceVision_structures
   PROPERTY FOLDER AliceVision
 )

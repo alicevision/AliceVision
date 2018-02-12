@@ -35,24 +35,21 @@ add_library(aliceVision_mesh
 )
 
 target_include_directories(aliceVision_mesh
-  PUBLIC
-  $<BUILD_INTERFACE:${ALICEVISION_INCLUDE_DIR}>
-  $<BUILD_INTERFACE:${generatedDir}>
-  $<INSTALL_INTERFACE:include>
+  PUBLIC $<BUILD_INTERFACE:${ALICEVISION_INCLUDE_DIR}>
+         $<BUILD_INTERFACE:${generatedDir}>
+         $<INSTALL_INTERFACE:include>
 )
 
 target_link_libraries(aliceVision_mesh
-  PUBLIC mv_structures
+  PUBLIC aliceVision_structures
          aliceVision_common
          aliceVision_imageIO
-         mv_planeSweeping
-         mv_cudaInterfaces
-         ${Boost_FILESYSTEM_LIBRARIES}
+         aliceVision_planeSweeping
+         aliceVision_cudaInterfaces
          Geogram::geogram
+         ${Boost_FILESYSTEM_LIBRARIES}
 )
 
 set_property(TARGET aliceVision_mesh
   PROPERTY FOLDER AliceVision
 )
-
-

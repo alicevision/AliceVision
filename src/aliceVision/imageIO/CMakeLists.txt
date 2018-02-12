@@ -16,10 +16,17 @@ add_library(aliceVision_imageIO
 )
 
 target_include_directories(aliceVision_imageIO
-  PUBLIC ${OPENIMAGEIO_INCLUDE_DIRS}
+  PUBLIC $<BUILD_INTERFACE:${ALICEVISION_INCLUDE_DIR}>
+         $<BUILD_INTERFACE:${generatedDir}>
+         $<INSTALL_INTERFACE:include>
+         ${OPENIMAGEIO_INCLUDE_DIRS}
 )
 
 target_link_libraries(aliceVision_imageIO
-  PUBLIC ${OPENIMAGEIO_LIBRARIES}
-         mv_structures
+  PUBLIC aliceVision_structures
+         ${OPENIMAGEIO_LIBRARIES}
+)
+
+set_property(TARGET aliceVision_imageIO
+  PROPERTY FOLDER AliceVision
 )

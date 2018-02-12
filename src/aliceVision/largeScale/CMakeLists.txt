@@ -16,27 +16,26 @@ set(largeScale_files_sources
   mv_fuse.cpp
 )
 
-add_library(mv_largeScale
+add_library(aliceVision_largeScale
   ${largeScale_files_headers}
   ${largeScale_files_sources}
 )
 
-target_include_directories(mv_largeScale
-  PUBLIC
-  $<BUILD_INTERFACE:${ALICEVISION_INCLUDE_DIR}>
-  $<BUILD_INTERFACE:${generatedDir}>
-  $<INSTALL_INTERFACE:include>
+target_include_directories(aliceVision_largeScale
+  PUBLIC $<BUILD_INTERFACE:${ALICEVISION_INCLUDE_DIR}>
+         $<BUILD_INTERFACE:${generatedDir}>
+         $<INSTALL_INTERFACE:include>
 )
 
-target_link_libraries(mv_largeScale
+target_link_libraries(aliceVision_largeScale
   PUBLIC aliceVision_common
          aliceVision_imageIO
-         mv_prematching
-         mv_cudaInterfaces
-         ${Boost_LIBRARIES}
+         aliceVision_prematching
+         aliceVision_cudaInterfaces
          Geogram::geogram
+         ${Boost_LIBRARIES}
 )
 
-set_property(TARGET mv_largeScale
+set_property(TARGET aliceVision_largeScale
   PROPERTY FOLDER AliceVision
 )
