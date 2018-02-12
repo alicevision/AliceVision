@@ -1,5 +1,4 @@
 add_subdirectory(common)
-add_subdirectory(CUDAInterfaces)
 add_subdirectory(delaunaycut)
 add_subdirectory(imageIO)
 add_subdirectory(largeScale)

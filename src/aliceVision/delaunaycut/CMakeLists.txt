@@ -31,11 +31,11 @@ target_include_directories(aliceVision_delaunaycut
 )
 
 target_link_libraries(aliceVision_delaunaycut
-  PUBLIC aliceVision_largeScale
-         aliceVision_structures
+  PUBLIC aliceVision_structures
          aliceVision_common
          aliceVision_mesh
-         aliceVision_cudaInterfaces
+         aliceVision_largeScale
+         aliceVision_planeSweeping
          Geogram::geogram
          ${Boost_LIBRARIES}
 )
