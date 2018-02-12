@@ -7,19 +7,16 @@
 #include <aliceVision/delaunaycut/mv_delaunay_meshSmooth.hpp>
 #include <aliceVision/largeScale/reconstructionPlan.hpp>
 #include <aliceVision/planeSweeping/ps_refine_rc.hpp>
-#include <aliceVision/CUDAInterfaces/refine.hpp>
 #include <aliceVision/common/fileIO.hpp>
 
 #include <boost/program_options.hpp>
 #include <boost/filesystem.hpp>
-
 
 namespace bfs = boost::filesystem;
 namespace po = boost::program_options;
 
 #define ALICEVISION_COUT(x) std::cout << x << std::endl
 #define ALICEVISION_CERR(x) std::cerr << x << std::endl
-
 
 enum EPartitioning {
     eUndefined = 0,

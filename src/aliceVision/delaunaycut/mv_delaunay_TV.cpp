@@ -4,10 +4,7 @@
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
 #include "mv_delaunay_TV.hpp"
-
-#include <aliceVision/CUDAInterfaces/refine.hpp>
 #include <aliceVision/delaunaycut/hallucinations.hpp>
-
 
 void mv_delanuay_TV::updateHistogram(GC_Cell_handle ch, int rc, float depths, float voxSize, float sigma, int weight)
 {

@@ -4,8 +4,6 @@
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
 #include "hallucinations.hpp"
-
-#include <aliceVision/CUDAInterfaces/refine.hpp>
 #include <aliceVision/delaunaycut/mv_delaunay_GC.hpp>
 #include <aliceVision/delaunaycut/mv_delaunay_helpers.hpp>
 

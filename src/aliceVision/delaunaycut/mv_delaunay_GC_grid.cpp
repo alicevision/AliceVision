@@ -4,10 +4,7 @@
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
 #include "mv_delaunay_GC_grid.hpp"
-
-#include <aliceVision/CUDAInterfaces/refine.hpp>
 #include <aliceVision/structures/mv_bin_search.hpp>
-
 
 void mv_delanuay_GC_grid::addCams(GC_Vertex_handle& vh, staticVector<int>* ptcams)
 {

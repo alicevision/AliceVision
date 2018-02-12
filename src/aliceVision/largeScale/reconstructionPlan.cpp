@@ -9,7 +9,6 @@
 #include <aliceVision/mesh/mv_plysaver.hpp>
 #include <aliceVision/delaunaycut/mv_delaunay_GC.hpp>
 #include <aliceVision/delaunaycut/mv_delaunay_meshSmooth.hpp>
-#include <aliceVision/CUDAInterfaces/refine.hpp>
 #include <aliceVision/largeScale/voxelsGrid.hpp>
 
 #include <boost/filesystem.hpp>

@@ -13,7 +13,6 @@
 #include <aliceVision/common/fileIO.hpp>
 #include <aliceVision/structures/jetColorMap.hpp>
 #include <aliceVision/structures/mv_universe.hpp>
-#include <aliceVision/CUDAInterfaces/refine.hpp>
 #include <aliceVision/delaunaycut/hallucinations.hpp>
 #include <aliceVision/mesh/mv_mesh_energy_opt_photo_mem.hpp>
 

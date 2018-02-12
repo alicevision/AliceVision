@@ -7,7 +7,6 @@
 #include "mv_delaunay_GC.hpp"
 
 #include <aliceVision/CUDAInterfaces/cuda_plane_sweeping.hpp>
-#include <aliceVision/CUDAInterfaces/refine.hpp>
 #include <aliceVision/delaunaycut/hallucinations.hpp>
 #include <aliceVision/mesh/mv_mesh_energy_opt_photo_mem.hpp>
 #include <aliceVision/planeSweeping/ps_sgm_params.hpp>

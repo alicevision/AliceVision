@@ -32,8 +32,6 @@ set(SOURCES_files_cudaInterfaces
   common_gpu_cpu_structures.hpp
   cuda_plane_sweeping.cpp
   cuda_plane_sweeping.hpp
-  refine.cpp
-  refine.hpp
   ${SOURCES_files_cudaInterfaces_plane_sweeping}
   ${HEADER_files_cudaInterfaces_plane_sweeping}
   ${HEADER_files_cudaInterfaces_device_common}
