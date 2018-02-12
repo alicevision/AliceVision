@@ -5,8 +5,6 @@
 
 #include "mv_mesh_unwrap.hpp"
 
-#include <aliceVision/output3D/mv_output3D.hpp>
-
 #include <boost/filesystem.hpp>
 
 namespace bfs = boost::filesystem;

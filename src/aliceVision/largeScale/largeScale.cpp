@@ -4,18 +4,16 @@
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
 #include "largeScale.hpp"
-
-#include <aliceVision/delaunaycut/mv_delaunay_GC.hpp>
+#include <aliceVision/common/common.hpp>
 #include <aliceVision/common/fileIO.hpp>
+#include <aliceVision/delaunaycut/mv_delaunay_GC.hpp>
 
 #include <boost/filesystem.hpp>
-
 
 namespace bfs = boost::filesystem;
 
 largeScale::largeScale(multiviewParams* _mp, mv_prematch_cams* _pc, std::string _spaceFolderName)
-  : o3d(_mp)
-  , mp(_mp)
+  : mp(_mp)
   , pc(_pc)
   , spaceFolderName(_spaceFolderName)
   , spaceVoxelsFolderName(_spaceFolderName + "_data/")
@@ -25,7 +23,6 @@ largeScale::largeScale(multiviewParams* _mp, mv_prematch_cams* _pc, std::string 
     bfs::create_directory(spaceVoxelsFolderName);
 
     doVisualize = mp->mip->_ini.get<bool>("largeScale.doVisualizeOctreeTracks", false);
-    doVisualizeVoxels = mp->mip->_ini.get<bool>("largeScale.doVisualizeVoxels", false);
 }
 
 largeScale::~largeScale()
@@ -77,114 +74,6 @@ void largeScale::initialEstimateSpace(int maxOcTreeDim)
     delete fs;
 }
 
-void largeScale::visualizeVoxels()
-{
-    voxelsGrid* vg = new voxelsGrid(dimensions, &space[0], mp, pc, spaceVoxelsFolderName);
-
-    {
-        std::string camerasToWrlFileName = spaceFolderName + "cameras.wrl";
-        if(!FileExists(camerasToWrlFileName))
-        {
-            o3d.writeCamerasToWrl(camerasToWrlFileName, mp, 0, 0.0f);
-
-            camerasToWrlFileName = spaceFolderName + "camerasStreetView.wrl";
-            o3d.writeCamerasToWrl(camerasToWrlFileName, mp, 6, 0.0f);
-
-            camerasToWrlFileName = spaceFolderName + "camerasStreetViewUp.wrl";
-            o3d.writeCamerasToWrl(camerasToWrlFileName, mp, 6, 100.0f);
-
-            std::string camerasDepthToWrlFileName = spaceFolderName + "camerasDepth.wrl";
-            o3d.writeCamerasDepthToWrl(camerasDepthToWrlFileName, mp);
-        }
-    }
-
-    std::string spaceWrlFileName = spaceFolderName + "space.wrl";
-
-    std::string spaceVoxelsWrlFileName = spaceFolderName + "spaceVoxels.wrl";
-    {
-        FILE* f = fopen(spaceVoxelsWrlFileName.c_str(), "w");
-        fprintf(f, "#VRML V2.0 utf8\n");
-        // printf("creating wrl\n");
-
-        for(int i = 0; i < vg->voxels->size() / 8; i++)
-        {
-            std::string vfn = vg->getVoxelFolderName(i);
-            if(FolderExists(vfn))
-            {
-                o3d.printfHexahedron(&(*vg->voxels)[i * 8], f, mp);
-            }
-        }
-        // printfGroupCameras(f, mp, 0.001);
-
-        fclose(f);
-    }
-
-    std::string spacePtsWrlFileName = spaceFolderName + "spacePts.wrl";
-    if(!FileExists(spacePtsWrlFileName))
-    {
-        o3d.savePrematchToWrl(spacePtsWrlFileName, 0, 1);
-    }
-
-    FILE* f = fopen(spaceWrlFileName.c_str(), "w");
-    fprintf(f, "#VRML V2.0 utf8\n");
-    fprintf(f, "Background {\n skyColor 1 1 1 \n } \n");
-    fprintf(f, "Inline{ url [\"spaceVoxels.wrl\"] \n }\n");
-    fprintf(f, "Inline{ url [\"spaceVoxelsNames.wrl\"] \n }\n");
-    fprintf(f, "Inline{ url [\"spacePts.wrl\"] \n }\n");
-    fprintf(f, "Inline{ url [\"cameras.wrl\"] \n }\n");
-    fclose(f);
-
-    ////////////////////////////////////////////////////////////////////////////////////////////////
-    ////////////////////////////////////////////////////////////////////////////////////////////////
-    ////////////////////////////////////////////////////////////////////////////////////////////////
-
-    std::string fn = spaceFolderName + "spaceVoxelsNames.wrl";
-    f = fopen(fn.c_str(), "w");
-    fprintf(f, "#VRML V2.0 utf8\n");
-    fprintf(f, "Background {\n skyColor 1 1 1 \n } \n");
-
-    for(int i = 0; i < vg->voxels->size() / 8; i++)
-    {
-        std::string vfn = vg->getVoxelFolderName(i);
-        if(FolderExists(vfn))
-        {
-            voxel v = vg->getVoxelForId(i);
-            point3d voxelcg = point3d(0.0f, 0.0f, 0.0f);
-            for(int j = 0; j < 8; j++)
-            {
-                voxelcg = voxelcg + (*vg->voxels)[i * 8 + j];
-            }
-            voxelcg = voxelcg / 8.0f;
-            float ts = ((*vg->voxels)[i * 8 + 0] - (*vg->voxels)[i * 8 + 1]).size() / 10.0f;
-
-            fprintf(f, "Transform {\n");
-            fprintf(f, "\t translation  %f %f %f \n", (float)voxelcg.x, (float)voxelcg.y, (float)voxelcg.z);
-            fprintf(f, "\t\t children [\n");
-            fprintf(f, "\t\t\t Shape {\n");
-            fprintf(f, "\t\t\t\t appearance Appearance {\n");
-            fprintf(f, "\t\t\t\t\t material Material { diffuseColor 1 0 0 }\n");
-            fprintf(f, "\t\t\t\t }\n");
-            fprintf(f, "\t\t\t\t geometry Text{\n");
-            std::string text = num2str(i) + "-" + num2str(v.x) + "," + num2str(v.y) + "," + num2str(v.z);
-            fprintf(f, "\t\t\t\t\t string [ \"%s\" ]\n", text.c_str());
-            fprintf(f, "\t\t\t\t\t fontStyle FontStyle {\n");
-            fprintf(f, "\t\t\t\t\t\t family  \"SANS\"\n");
-            fprintf(f, "\t\t\t\t\t\t style   \"BOLD\"\n");
-            fprintf(f, "\t\t\t\t\t\t size    %f\n", ts);
-            fprintf(f, "\t\t\t\t\t\t justify \"MIDDLE\"\n");
-            fprintf(f, "\t\t\t\t\t }\n");
-            fprintf(f, "\t\t\t\t }\n");
-            fprintf(f, "\t\t\t }\n");
-            fprintf(f, "\t\t ]\n");
-            fprintf(f, " }\n");
-        }
-    }
-
-    fclose(f);
-
-    delete vg;
-}
-
 std::string largeScale::getSpaceCamsTracksDir()
 {
     voxelsGrid* vg = new voxelsGrid(dimensions, &space[0], mp, pc, spaceVoxelsFolderName);
@@ -199,15 +88,11 @@ largeScale* largeScale::cloneSpaceIfDoesNotExists(int newOcTreeDim, std::string 
     {
         loadSpaceFromFile();
         
-        if(doVisualizeVoxels)
-            visualizeVoxels();
-
         largeScale* out = new largeScale(mp, pc, newSpaceFolderName);
+
         if(out->isSpaceSaved())
         {
             out->loadSpaceFromFile();
-            if(doVisualizeVoxels)
-                out->visualizeVoxels();
             return out;
         }
 
@@ -240,8 +125,6 @@ largeScale* largeScale::cloneSpaceIfDoesNotExists(int newOcTreeDim, std::string 
         delete vgactual;
 
         out->saveSpaceToFile();
-        if(doVisualizeVoxels)
-            out->visualizeVoxels();
 
         if(mp->verbose)
             printfElapsedTime(t1, "space cloned in:");
@@ -310,9 +193,6 @@ bool largeScale::generateSpace(int maxPts, int ocTreeDim)
     delete reconstructionPlan;
 
     saveSpaceToFile();
-
-    if(doVisualizeVoxels)
-        visualizeVoxels();
 
     return true;
 }

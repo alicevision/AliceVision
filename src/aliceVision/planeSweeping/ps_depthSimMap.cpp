@@ -4,7 +4,7 @@
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
 #include "ps_depthSimMap.hpp"
-
+#include <aliceVision/common/common.hpp>
 #include <aliceVision/common/fileIO.hpp>
 #include <aliceVision/structures/mv_geometry.hpp>
 #include <aliceVision/structures/jetColorMap.hpp>
@@ -12,12 +12,10 @@
 
 #include <iostream>
 
-
 ps_depthSimMap::ps_depthSimMap(int _rc, multiviewParams* _mp, int _scale, int _step)
 {
     rc = _rc;
     mp = _mp;
-    o3d = new mv_output3D(mp);
     scale = _scale;
     step = _step;
     w = mp->mip->getWidth(rc) / (scale * step);
@@ -28,7 +26,6 @@ ps_depthSimMap::ps_depthSimMap(int _rc, multiviewParams* _mp, int _scale, int _s
 
 ps_depthSimMap::~ps_depthSimMap()
 {
-    delete o3d;
     delete dsm;
 }
 

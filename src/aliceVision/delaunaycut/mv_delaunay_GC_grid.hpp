@@ -7,9 +7,6 @@
 
 #include "mv_delaunay_GC.hpp"
 
-#include <aliceVision/output3D/mv_output3D.hpp>
-
-
 class mv_delanuay_GC_grid : public mv_delanuay_GC
 {
 public:
@@ -17,7 +14,8 @@ public:
     float sx, sy, sz;
 
     mv_delanuay_GC_grid(multiviewParams* _mp, mv_prematch_cams* _pc)
-        : mv_delanuay_GC(_mp, _pc){};
+        : mv_delanuay_GC(_mp, _pc)
+    {}
 
     void addCams(GC_Vertex_handle& vh, staticVector<int>* ptcams);
 

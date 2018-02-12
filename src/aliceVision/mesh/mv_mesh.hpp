@@ -103,6 +103,7 @@ public:
     bool loadFromPly(std::string plyFileName);
     void saveToPly(std::string plyFileName);
     void saveToPly(std::string plyFileName, staticVector<rgb>* triColors);
+    void saveToObj(const std::string& filename);
 
     void loadFromMesh(std::string fileName);
     void saveToOFF(std::string fileName);

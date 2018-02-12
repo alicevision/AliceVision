@@ -5,8 +5,10 @@
 
 #pragma once
 
-#include <aliceVision/output3D/mv_output3D.hpp>
 #include <aliceVision/structures/mv_universe.hpp>
+#include <aliceVision/structures/mv_structures.hpp>
+#include <aliceVision/structures/mv_staticVector.hpp>
+#include <aliceVision/common/MultiViewParams.hpp>
 
 class DepthSim
 {
@@ -44,7 +46,6 @@ class ps_depthSimMap
 {
 public:
     multiviewParams* mp;
-    mv_output3D* o3d;
     int rc, w, h, scale, step;
     staticVector<DepthSim>* dsm; //< depth similarity map
 

@@ -17,5 +17,8 @@ target_include_directories(mv_prematching
          $<INSTALL_INTERFACE:include>
          ${Boost_INCLUDE_DIR} ${ZLIB_INCLUDE_DIR})
 
-target_link_libraries(mv_prematching PUBLIC aliceVision_common ${Boost_FILESYSTEM_LIBRARIES})
+target_link_libraries(mv_prematching
+  PUBLIC aliceVision_common
+         ${Boost_FILESYSTEM_LIBRARIES}
+)
 

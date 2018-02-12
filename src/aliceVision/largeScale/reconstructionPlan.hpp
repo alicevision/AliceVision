@@ -4,8 +4,9 @@
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
 #pragma once
-#include "largeScale.hpp"
-#include "voxelsGrid.hpp"
+#include <aliceVision/largeScale/largeScale.hpp>
+#include <aliceVision/largeScale/voxelsGrid.hpp>
+#include <aliceVision/mesh/mv_mesh.hpp>
 
 class reconstructionPlan : public voxelsGrid
 {

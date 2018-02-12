@@ -6,7 +6,6 @@
 #pragma once
 
 #include <aliceVision/CUDAInterfaces/cuda_plane_sweeping.hpp>
-#include <aliceVision/output3D/mv_output3D.hpp>
 #include <aliceVision/prematching/mv_prematch_cams.hpp>
 #include "ps_depthSimMap.hpp"
 #include "ps_rctc.hpp"

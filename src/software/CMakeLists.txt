@@ -39,27 +39,6 @@ add_custom_target("bundle"
                   -P ${CMAKE_CURRENT_SOURCE_DIR}/MakeBundle.cmake)
 set_target_properties("bundle" PROPERTIES FOLDER Packaging)
 
-
-
-
-set(SOURCES_files_exportDepthMap main_exportDepthMap.cpp)
-source_group("aliceVision_exportDepthMap" FILES main_exportDepthMap.cpp)
-
-add_executable(aliceVision_exportDepthMap ${SOURCES_files_exportDepthMap})
-target_link_libraries(aliceVision_exportDepthMap PUBLIC mv_structures
-                                    aliceVision_common
-                                    aliceVision_mesh
-                                    mv_cudaInterfaces
-                                    mv_largeScale
-                                    mv_delaunaycut
-                                    mv_cudaInterfaces mv_prematching
-                                    ${Boost_LIBRARIES} ${ZLIB_LIBRARIES}
-                                    ${GMP_LIBRARIES} ${MPFR_LIBRARIES})
-
-## Install rule
-install(TARGETS aliceVision_exportDepthMap DESTINATION bin/)
-
-
 ## Compute Nearby Cameras
 set(SOURCES_files_cameraConnection main_cameraConnection.cpp)
 source_group("aliceVision_cameraConnection" FILES main_cameraConnection.cpp)

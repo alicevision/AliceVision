@@ -58,7 +58,6 @@ public:
     Node* root_;
     int size_;
     int leafsNumber_;
-    mv_output3D* o3d;
 
     // trackStruct* at( int x, int y, int z );
     trackStruct* getTrack(int x, int y, int z);
@@ -96,7 +95,6 @@ public:
     void updateOctreeTracksCams(staticVector<trackStruct*>* tracks);
     staticVector<trackStruct*>* fillOctreeFromTracks(staticVector<trackStruct*>* tracksIn);
     staticVector<trackStruct*>* fillOctree(int maxPts, std::string depthMapsPtsSimsTmpDir);
-    void visualizeTracks(std::string foldername, staticVector<octreeTracks::trackStruct*>* tracks);
     staticVector<int>* getTracksCams(staticVector<octreeTracks::trackStruct*>* tracks);
 
     staticVector<int>* getNPointsByLevels();

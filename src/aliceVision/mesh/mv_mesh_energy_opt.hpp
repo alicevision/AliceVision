@@ -6,7 +6,6 @@
 #pragma once
 
 #include "mv_mesh_analyze.hpp"
-#include <aliceVision/output3D/mv_output3D.hpp>
 
 class mv_mesh_energy_opt : public mv_mesh_analyze
 {

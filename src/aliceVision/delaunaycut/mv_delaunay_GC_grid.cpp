@@ -664,16 +664,6 @@ bool mv_delanuay_GC_grid::reconstructVoxelGrid(point3d hexah[8], staticVector<in
                                                std::string tmpCamsPtsFolderName, int numSubVoxs,
                                                bool doMoveIntoGridPosition)
 {
-
-    {
-        staticVector<int>* hcams = pc->findCamsWhichAreInHexahedron(hexah);
-        std::string hexahCamsWrlFileName = folderName + "hexahCams.wrl";
-        mv_output3D* o3d = new mv_output3D(mp);
-        o3d->writeCamerasToWrl(hcams, hexahCamsWrlFileName, mp, 0, 0.0f);
-        delete o3d;
-        delete hcams;
-    }
-
     staticVector<int>* cams = pc->findCamsWhichInteresctsHexahedron(hexah);
 
     if(cams->size() < 1)
@@ -692,9 +682,6 @@ bool mv_delanuay_GC_grid::reconstructVoxelGrid(point3d hexah[8], staticVector<in
     std::string fileNameDelanuayVerticesWrl = folderName + "delanuayVertices.wrl";
     std::string fileNameDelanuayVerticesSegWrl = folderName + "delanuayVerticesSeg.wrl";
     std::string fileNameCams = folderName + "cams.bin";
-    std::string fileNameDelanuayVerticesSegFilteredWrl = folderName + "delanuayVerticesSegFiltered.wrl";
-    std::string fileNameWrl = folderName + "delanuayTrinaglesMaxflow.wrl";
-    std::string fileNameWrlTex = folderName + "delanuayTrinaglesMaxflowTextured.wrl";
     std::string fileNamePly = folderName + "delanuayTrinaglesMaxflow.ply";
 
     saveArrayToFile<int>(fileNameCams, cams);

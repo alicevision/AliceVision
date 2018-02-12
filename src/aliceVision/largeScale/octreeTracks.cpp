@@ -4,7 +4,7 @@
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
 #include "octreeTracks.hpp"
-
+#include <aliceVision/common/common.hpp>
 #include <aliceVision/common/fileIO.hpp>
 
 #include <boost/accumulators/accumulators.hpp>
@@ -509,8 +509,6 @@ octreeTracks::octreeTracks(const point3d* _voxel, multiviewParams* _mp, mv_prema
 
     root_ = nullptr;
     leafsNumber_ = 0;
-
-    o3d = new mv_output3D(mp);
 }
 
 octreeTracks::~octreeTracks()
@@ -521,7 +519,6 @@ octreeTracks::~octreeTracks()
         delete reinterpret_cast<Branch*>(root_);
     }
     // printf("deleted\n");
-    delete o3d;
 }
 
 bool octreeTracks::getVoxelOfOctreeFor3DPoint(voxel& out, point3d& tp)
@@ -957,44 +954,4 @@ staticVector<int>* octreeTracks::getTracksCams(staticVector<octreeTracks::trackS
 
     delete camsb;
     return cams;
-}
-
-void octreeTracks::visualizeTracks(std::string foldername, staticVector<octreeTracks::trackStruct*>* tracks)
-{
-    if((FolderExists(foldername)) && (tracks != nullptr) && (tracks->size() > 0))
-    {
-        staticVector<point3d>* pts = new staticVector<point3d>(tracks->size());
-        for(int i = 0; i < tracks->size(); i++)
-        {
-            pts->push_back((*tracks)[i]->point);
-        }
-
-        staticVector<point3d>* voxx = new staticVector<point3d>(8);
-        for(int i = 0; i < 8; i++)
-        {
-            voxx->push_back(vox[i]);
-        }
-
-        staticVector<int>* cams = getTracksCams(tracks);
-
-        std::string camerasToWrlFileName = foldername + "tracksCameras.wrl";
-        o3d->writeCamerasToWrl(cams, camerasToWrlFileName, mp, 0, 0.0f);
-        std::string spaceVoxelWrlFileName = foldername + "tracksVoxel.wrl";
-        o3d->saveVoxelsToWrl(spaceVoxelWrlFileName, mp, voxx);
-        std::string spaceVoxelPtsWrlFileName = foldername + "tracksPts.wrl";
-        o3d->create_wrl_pts(pts, mp, spaceVoxelPtsWrlFileName);
-
-        std::string spaceWrlFileName = foldername + "tracks.wrl";
-        FILE* f = fopen(spaceWrlFileName.c_str(), "w");
-        fprintf(f, "#VRML V2.0 utf8\n");
-        fprintf(f, "Background {\n skyColor 1 1 1 \n } \n");
-        fprintf(f, "Inline{ url [\"tracksCameras.wrl\"] \n }\n");
-        fprintf(f, "Inline{ url [\"tracksVoxel.wrl\"] \n }\n");
-        fprintf(f, "Inline{ url [\"tracksPts.wrl\"] \n }\n");
-        fclose(f);
-
-        delete cams;
-        delete voxx;
-        delete pts;
-    }
 }

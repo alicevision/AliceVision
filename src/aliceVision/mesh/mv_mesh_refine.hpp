@@ -7,7 +7,6 @@
 
 #include "mv_mesh.hpp"
 
-#include <aliceVision/output3D/mv_output3D.hpp>
 #include <aliceVision/planeSweeping/ps_depthSimMap.hpp>
 #include <aliceVision/planeSweeping/ps_rctc.hpp>
 #include <aliceVision/prematching/mv_prematch_cams.hpp>
@@ -22,7 +21,6 @@ public:
     std::string meshDepthMapsDir;
     std::string tmpDirOld;
     staticVector<staticVector<int>*>* ptsCams;
-    mv_output3D* o3d;
     mv_images_cache* ic;
     cuda_plane_sweeping* cps;
     ps_rctc* prt;

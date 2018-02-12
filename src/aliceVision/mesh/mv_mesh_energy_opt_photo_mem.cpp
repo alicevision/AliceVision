@@ -606,12 +606,7 @@ bool mv_mesh_energy_opt_photo_mem::optimizePhoto(int niters, staticVectorBool* p
 
     float avEdgeLength = computeAverageEdgeLength();
 
-    bool visualizeOptimizationWrl = mp->mip->_ini.get<bool>("meshEnergyOpt.visualizeOptimizationWrl", false);
-    bool visualizeOptimizationStat =
-        mp->mip->_ini.get<bool>("meshEnergyOpt.visualizeOptimizationStat", false);
-
-    if(visualizeOptimizationWrl)
-        o3d->saveMvMeshToWrl(this, tmpDir + "iterOrig.wrl");
+    bool visualizeOptimizationStat = mp->mip->_ini.get<bool>("meshEnergyOpt.visualizeOptimizationStat", false);
 
     FILE* fe = nullptr;
 
@@ -633,11 +628,6 @@ bool mv_mesh_energy_opt_photo_mem::optimizePhoto(int niters, staticVectorBool* p
 
         staticVector<point3d>* nms = new staticVector<point3d>(pts->size());
         nms->resize(pts->size());
-
-        if((visualizeOptimizationWrl) && (iter % 500 == 0))
-        {
-            visualizeMeshNormalsSmoothingVectors(iter);
-        }
 
         if((iter > 0) && ((iter % 50 == 0) || (iter == 10) || (iter == 20)))
         {
@@ -685,84 +675,7 @@ bool mv_mesh_energy_opt_photo_mem::optimizePhoto(int niters, staticVectorBool* p
         fclose(fe);
     }
 
-    if(visualizeOptimizationWrl)
-    {
-        visualizeMeshNormalsSmoothingVectors(niters);
-    }
-
     return true;
-}
-
-void mv_mesh_energy_opt_photo_mem::visualizeMeshNormalsSmoothingVectors(int iter)
-{
-
-    std::string meshFileName = tmpDir + "iter" + num2strFourDecimal(iter) + "mesh.wrl";
-    o3d->saveMvMeshToWrl(this, meshFileName);
-
-    staticVector<point3d>* lapPts = computeLaplacianPts();
-
-    staticVector<point3d>* svs = new staticVector<point3d>(pts->size());
-    svs->resize_with(pts->size(), point3d(0.0f, 0.0f, 0.0f));
-
-    staticVector<point3d>* nms = new staticVector<point3d>(pts->size());
-    nms->resize_with(pts->size(), point3d(0.0f, 0.0f, 0.0f));
-
-    mv_mesh* mePhoto = new mv_mesh();
-    mePhoto->addMesh(this);
-
-    for(int i = 0; i < pts->size(); i++)
-    {
-        float step = (*ptsStats)[i]->step;
-
-        point3d N;
-        getVertexSurfaceNormal(i, N);
-        N = N.normalize() * (step * 50.0f);
-        if(std::isnan(N.x) || std::isnan(N.y) || std::isnan(N.z) || (N.x != N.x) || (N.y != N.y) ||
-           (N.z != N.z)) // check if is not NaN
-        {
-            //
-        }
-        else
-        {
-            (*nms)[i] = N;
-        }
-
-        point3d tp, n;
-        double smoothStep;
-        double K1, K2, area, avNeighEdegeLenth;
-        if((!isIsBoundaryPt(i)) && (getBiLaplacianSmoothingVectorAndPrincipalCurvatures(
-                                       i, lapPts, tp, n, N, smoothStep, K1, K2, area, avNeighEdegeLenth)))
-        {
-            (*svs)[i] = n * (step * 50.0f);
-        }
-
-        (*mePhoto->pts)[i] = (*ptsStats)[i]->optDepthMapsPt;
-    }
-
-    std::string normalsFileName = tmpDir + "iter" + num2strFourDecimal(iter) + "normals.wrl";
-    o3d->create_wrl_pts_nms(pts, nms, mp, normalsFileName, 0.0f, 1.0f, 0.0f);
-
-    std::string smootingVectorsFileName = tmpDir + "iter" + num2strFourDecimal(iter) + "smoothingNormals.wrl";
-    o3d->create_wrl_pts_nms(pts, svs, mp, smootingVectorsFileName, 1.0f, 0.0f, 0.0f);
-
-    std::string photoMeshFileName = tmpDir + "iter" + num2strFourDecimal(iter) + "photoMesh.wrl";
-    o3d->saveMvMeshToWrl(mePhoto, photoMeshFileName);
-
-    delete mePhoto;
-
-    std::string allFileName = tmpDir + "iter" + num2strFourDecimal(iter) + "all.wrl";
-    FILE* f = fopen(allFileName.c_str(), "w");
-    fprintf(f, "#VRML V2.0 utf8\n");
-    fprintf(f, "Background {\n skyColor 1 1 1 \n } \n");
-    fprintf(f, "Inline{ url [\"%s\"] \n }\n", meshFileName.c_str());
-    fprintf(f, "Inline{ url [\"%s\"] \n }\n", normalsFileName.c_str());
-    fprintf(f, "Inline{ url [\"%s\"] \n }\n", smootingVectorsFileName.c_str());
-    fprintf(f, "Inline{ url [\"%s\"] \n }\n", photoMeshFileName.c_str());
-    fclose(f);
-
-    delete lapPts;
-    delete svs;
-    delete nms;
 }
 
 staticVector<staticVector<int>*>*

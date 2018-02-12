@@ -241,9 +241,6 @@ void mv_delanuay_TV::initTvData(staticVector<int>* cams, float voxSize, float si
         cls->push_back(c);
     }
 
-    mv_output3D* o3d = new mv_output3D(mp);
-    o3d->create_wrl_pts_cls(pts, cls, mp, "gridColored.wrl");
-    delete o3d;
     delete pts;
     delete cls;
 }

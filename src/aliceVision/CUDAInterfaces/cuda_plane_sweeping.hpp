@@ -5,7 +5,7 @@
 
 #pragma once
 
-#include <aliceVision/mesh/mv_mesh_retexture_obj.hpp>
+//#include <aliceVision/mesh/mv_mesh_retexture_obj.hpp>
 #include <aliceVision/prematching/mv_prematch_cams.hpp>
 #include <aliceVision/structures/mv_geometry.hpp>
 #include <aliceVision/common/ImagesCache.hpp>

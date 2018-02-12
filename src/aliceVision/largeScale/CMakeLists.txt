@@ -31,9 +31,7 @@ target_include_directories(mv_largeScale
 target_link_libraries(mv_largeScale
   PUBLIC aliceVision_common
          aliceVision_imageIO
-         aliceVision_mesh
          mv_prematching
-         mv_output3D
          mv_cudaInterfaces
          ${Boost_LIBRARIES}
          Geogram::geogram

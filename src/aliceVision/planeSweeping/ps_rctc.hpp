@@ -6,14 +6,12 @@
 #pragma once
 
 #include <aliceVision/CUDAInterfaces/cuda_plane_sweeping.hpp>
-#include <aliceVision/output3D/mv_output3D.hpp>
 #include "ps_depthSimMap.hpp"
 
 class ps_rctc
 {
 public:
     multiviewParams* mp;
-    mv_output3D* o3d;
     cuda_plane_sweeping* cps;
     bool verbose;
 

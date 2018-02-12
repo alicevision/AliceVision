@@ -11,8 +11,6 @@ mv_mesh_orthomosaic::mv_mesh_orthomosaic(std::string _tmpDir, std::string _demNa
 {
     demName = _demName;
 
-    o3d = new mv_output3D(mp);
-
     initDEMFromFile(demName);
 
     demPixS.x = dim.x / (float)demW;
@@ -40,7 +38,6 @@ mv_mesh_orthomosaic::mv_mesh_orthomosaic(std::string _tmpDir, std::string _demNa
 
 mv_mesh_orthomosaic::~mv_mesh_orthomosaic()
 {
-    delete o3d;
     delete ic;
     // deleteArrayOfArrays<int>(&camsPts);
     delete orm;
@@ -147,69 +144,4 @@ void mv_mesh_orthomosaic::computeRcOrthomosaic(int rc, staticVector<float>* dem,
 
         delete rcorm;
     }
-}
-
-void mv_mesh_orthomosaic::saveDem2Wrl(std::string wrlFileName, staticVector<float>* dem)
-{
-    int LUX = mp->mip->_ini.get<int>("orthomosaic.LUX", 0);
-    int RDX = mp->mip->_ini.get<int>("orthomosaic.RDX", demW);
-
-    int LUY = mp->mip->_ini.get<int>("orthomosaic.LUY", 0);
-    int RDY = mp->mip->_ini.get<int>("orthomosaic.RDY", demH);
-
-    mv_mesh* me = new mv_mesh();
-    me->pts = new staticVector<point3d>(demW * demH);
-    me->tris = new staticVector<mv_mesh::triangle>(2 * demW * demH);
-
-    staticVector<int>* pixId2PtId = new staticVector<int>(demW * demH);
-    for(int y = 0; y < demH; y++)
-    {
-        for(int x = 0; x < demW; x++)
-        {
-            int ptid = -1;
-            if((x >= LUX) && (x <= RDX) && (y >= LUY) && (y <= RDY))
-            {
-                float demz = (*dem)[y * demW + x];
-                if((demz == demz) && (!std::isnan(demz)) && (demz > 0.0f) && (demz < dim.z))
-                {
-                    point3d p = oax + xax * (demPixS.x * (float)x) + yax * (demPixS.y * (float)y) + zax * demz;
-                    me->pts->push_back(p);
-                    ptid = me->pts->size() - 1;
-                }
-            }
-            pixId2PtId->push_back(ptid);
-        }
-    }
-
-    for(int y = LUY; y < RDY - 1; y++)
-    {
-        for(int x = LUX; x < RDX - 1; x++)
-        {
-            int id1 = (*pixId2PtId)[y * demW + x];
-            int id2 = (*pixId2PtId)[y * demW + (x + 1)];
-            int id3 = (*pixId2PtId)[(y + 1) * demW + (x + 1)];
-            int id4 = (*pixId2PtId)[(y + 1) * demW + x];
-
-            if((id1 >= 0) && (id2 >= 0) && (id3 >= 0) && (id4 >= 0))
-            {
-                mv_mesh::triangle t1;
-                t1.i[2] = id1;
-                t1.i[1] = id2;
-                t1.i[0] = id3;
-                t1.alive = true;
-                me->tris->push_back(t1);
-                mv_mesh::triangle t2;
-                t2.i[2] = id3;
-                t2.i[1] = id4;
-                t2.i[0] = id1;
-                t2.alive = true;
-                me->tris->push_back(t2);
-            }
-        }
-    }
-
-    o3d->saveMvMeshToWrl(me, wrlFileName);
-
-    delete me;
-    delete pixId2PtId;
 }

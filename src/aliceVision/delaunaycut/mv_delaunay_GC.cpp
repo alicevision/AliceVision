@@ -40,7 +40,6 @@ mv_delaunay_GC::mv_delaunay_GC(multiviewParams* _mp, mv_prematch_cams* _pc)
     _camsVertexes.resize(mp->ncams, -1);
 
     saveTemporaryBinFiles = mp->mip->_ini.get<bool>("largeScale.saveTemporaryBinFiles", false);
-    saveTemporaryWrlFiles = mp->mip->_ini.get<bool>("largeScale.saveTemporaryWrlFiles", false);
 
     GEO::initialize();
     _tetrahedralization = GEO::Delaunay::create(3, "BDEL");
@@ -573,7 +572,7 @@ void mv_delaunay_GC::createTetrahedralizationFromDepthMapsCamsVoxel(staticVector
     displayStatistics();
 }
 
-void mv_delaunay_GC::computeVerticesSegSize(const std::string& fileNameWrl, bool allPoints, float alpha, bool saveWrl) // allPoints=true, alpha=0
+void mv_delaunay_GC::computeVerticesSegSize(bool allPoints, float alpha) // allPoints=true, alpha=0
 {
     if(mp->verbose)
         printf("creating universe\n");
@@ -654,64 +653,10 @@ void mv_delaunay_GC::computeVerticesSegSize(const std::string& fileNameWrl, bool
         v.segId = a;
     }
 
-    if(saveWrl)
-    {
-        saveSegsWrl(fileNameWrl);
-    }
-
     delete u;
     if(mp->verbose)
         printf("creating universe done.\n");
 }
-
-void mv_delaunay_GC::saveSegsWrl(const std::string& fileNameWrl)
-{
-    if(mp->verbose)
-        std::cout << "saveSegsWrl: " << fileNameWrl << std::endl;
-    const std::size_t numvertices = getNbVertices();
-
-    int maxSegId = 0;
-    staticVector<int>* segs = new staticVector<int>(numvertices);
-    staticVector<point3d>* pts = new staticVector<point3d>(numvertices);
-
-    for(int i = 0; i < _verticesAttr.size(); ++i)
-    {
-        const GC_vertexInfo& v = _verticesAttr[i];
-        if(v.isVirtual())
-            continue;
-
-        const point3d& p = _verticesCoords[i];
-        int segId = v.segId;
-        segs->push_back(segId);
-        pts->push_back(p);
-        maxSegId = std::max(maxSegId, segId);
-    }
-
-    staticVector<voxel>* segscls = new staticVector<voxel>(maxSegId + 1);
-    for(int i = 0; i < maxSegId + 1; i++)
-    {
-        voxel v;
-        v.x = (uchar)(((float)rand() / (float)RAND_MAX) * 256.0);
-        v.y = (uchar)(((float)rand() / (float)RAND_MAX) * 256.0);
-        v.z = (uchar)(((float)rand() / (float)RAND_MAX) * 256.0);
-        segscls->push_back(v);
-    }
-
-    staticVector<voxel>* cls = new staticVector<voxel>(pts->size());
-    for(int i = 0; i < pts->size(); i++)
-    {
-        voxel v = (*segscls)[(*segs)[i]];
-        cls->push_back(v);
-    }
-
-    mv_output3D* o3d = new mv_output3D(mp);
-    o3d->create_wrl_pts_cls(pts, cls, mp, fileNameWrl);
-    delete o3d;
-    delete pts;
-    delete segscls;
-    delete segs;
-}
-
 
 void mv_delaunay_GC::removeSmallSegs(int minSegSize)
 {
@@ -2559,31 +2504,6 @@ void mv_delaunay_GC::saveMaxflowToWrl(std::string  /*dirName*/, std::string file
     if(mp->verbose)
         printf("n of maxflow is %i\n", nttt);
 
-    mv_output3D* o3d = new mv_output3D(mp);
-
-    if(saveTemporaryWrlFiles)
-    {
-        o3d->writeCamerasToWrl(cams, fileNameWrl + "_cams.wrl", mp, camerasPerOneOmni, 0.0f);
-        o3d->inline2Wrls(fileNameWrl + "_meshCams.wrl", fileNameWrl, fileNameWrl + "_cams.wrl");
-        o3d->save_triangulation_to_wrl(mp, fileNameTxt, fileNameWrl);
-    }
-
-    // o3d->create_wrl_for_delaunay_cut(mp, fileNameTxt, fileNameTxtCam,
-    // fileNameWrlTex, dirName,
-    // camerasPerOneOmni, cams);
-    // o3d->create_ply_for_delaunay_cut_strecha(mp, fileNameTxt, fileNamePly);
-    mv_mesh* me = new mv_mesh();
-    me->loadFromTxt(fileNameTxt);
-
-    // std::string fileNameWrl1 = fileNameWrl + "_clored.wrl";
-    // o3d->saveMvMeshToWrl(me, fileNameWrl1.c_str(), trisColors);
-
-    delete me;
-
-    delete o3d;
-
-    // delete trisColors;
-
     if(mp->verbose)
         printf("done\n");
 }
@@ -2673,8 +2593,6 @@ void mv_delaunay_GC::reconstructVoxel(point3d hexah[8], staticVector<int>* voxel
     std::string fileNameStSolution = folderName + "stGraphSolution.bin";
     std::string fileNameTxt = folderName + "delaunayTrianglesMaxflow.txt";
     std::string fileNameTxtCam = folderName + "delaunayTrianglesCamerasForColoringMaxflow.txt";
-    std::string fileNameDelanuayVerticesSegWrl = folderName + "delaunayVerticesSeg.wrl";
-    std::string fileNameDelanuayVerticesSegFilteredWrl = folderName + "delaunayVerticesSegFiltered.wrl";
 
     // Load tracks and create tetrahedralization (into T variable)
     createTetrahedralizationFromDepthMapsCamsVoxel(cams, voxelsIds, hexah, ls);
@@ -2683,11 +2601,10 @@ void mv_delaunay_GC::reconstructVoxel(point3d hexah[8], staticVector<int>* voxel
     //filterPointsWithHigherPixelSize(true, nPixelSizeBehind);
     // initTriangulationDefaults(folderName + "delaunayVerticesFiltered.wrl");
 
-    computeVerticesSegSize(fileNameDelanuayVerticesSegWrl, true, 0.0f, saveTemporaryWrlFiles);
+    computeVerticesSegSize(true, 0.0f);
     if(removeSmallSegments) // false
     {
         removeSmallSegs(2500); // TODO FACA: to decide
-        saveSegsWrl(fileNameDelanuayVerticesSegFilteredWrl);
     }
 
     bool updateLSC = mp->mip->_ini.get<bool>("largeScale.updateLSC", true);
@@ -2732,8 +2649,7 @@ void mv_delaunay_GC::addToInfiniteSw(float sW)
 void mv_delaunay_GC::reconstructGC(float alphaQual, std::string baseName, staticVector<int>* cams,
                                    std::string folderName, std::string fileNameStGraph, std::string fileNameStSolution,
                                    std::string fileNameTxt, std::string fileNameTxtCam, int camerasPerOneOmni,
-                                   bool doRemoveBubbles, staticVector<point3d>* hexahsToExcludeFromResultingMesh,
-                                   bool saveToWrl, point3d* hexah) // alphaQual=5.0f
+                                   bool doRemoveBubbles, staticVector<point3d>* hexahsToExcludeFromResultingMesh, point3d* hexah) // alphaQual=5.0f
 {
     std::cout << "reconstructGC" << std::endl;
 
@@ -2742,15 +2658,6 @@ void mv_delaunay_GC::reconstructGC(float alphaQual, std::string baseName, static
     std::cout << "Maxflow: convert result to surface" << std::endl;
     // Convert cells FULL/EMPTY into surface
     setIsOnSurface();
-
-    if(saveToWrl)
-    {
-        std::string fileNameWrl = folderName + baseName + ".wrl";
-        std::string fileNameWrlTex = folderName + baseName + "Textured.wrl";
-        std::string fileNamePly = folderName + baseName + ".ply";
-        saveMaxflowToWrl(folderName, fileNameTxt, fileNameTxtCam, fileNameWrl, fileNameWrlTex, fileNamePly,
-                         camerasPerOneOmni, cams);
-    }
 
     std::string resultFolderName = folderName + baseName + "/";
     bfs::create_directory(resultFolderName);
@@ -2897,7 +2804,7 @@ void mv_delaunay_GC::reconstructExpetiments(staticVector<int>* cams, std::string
             saveDhInfo(folderName + "delaunayTriangulationInfoAfterForce.bin");
 
         reconstructGC(5.0f, "", cams, folderName, fileNameStGraph, fileNameStSolution, fileNameTxt,
-                      fileNameTxtCam, camerasPerOneOmni, true, hexahsToExcludeFromResultingMesh, saveTemporaryWrlFiles, hexahInflated);
+                      fileNameTxtCam, camerasPerOneOmni, true, hexahsToExcludeFromResultingMesh, hexahInflated);
 
         if(saveTemporaryBinFiles)
             saveDhInfo(folderName + "delaunayTriangulationInfoAfterHallRemoving.bin");
@@ -2933,7 +2840,7 @@ void mv_delaunay_GC::reconstructExpetiments(staticVector<int>* cams, std::string
             saveDhInfo(folderName + "delaunayTriangulationInfoAfterForce.bin");
 
         reconstructGC(5.0f, "", cams, folderName, fileNameStGraph, fileNameStSolution, fileNameTxt,
-                      fileNameTxtCam, camerasPerOneOmni, true, hexahsToExcludeFromResultingMesh, saveTemporaryWrlFiles, hexahInflated);
+                      fileNameTxtCam, camerasPerOneOmni, true, hexahsToExcludeFromResultingMesh, hexahInflated);
 
         if(saveTemporaryBinFiles)
             saveDhInfo(folderName + "delaunayTriangulationInfoAfterHallRemoving.bin");
@@ -2954,7 +2861,7 @@ void mv_delaunay_GC::reconstructExpetiments(staticVector<int>* cams, std::string
             saveDhInfo(folderName + "delaunayTriangulationInfoInit.bin");
 
         reconstructGC(5.0f, "", cams, folderName, fileNameStGraph, fileNameStSolution, fileNameTxt,
-                      fileNameTxtCam, camerasPerOneOmni, true, hexahsToExcludeFromResultingMesh, saveTemporaryWrlFiles, hexahInflated);
+                      fileNameTxtCam, camerasPerOneOmni, true, hexahsToExcludeFromResultingMesh, hexahInflated);
 
         if(saveTemporaryBinFiles)
             saveDhInfo(folderName + "delaunayTriangulationInfoAfterHallRemoving.bin");
@@ -3356,107 +3263,6 @@ staticVector<int>* mv_delaunay_GC::getNearestPtsFromMesh(mv_mesh& otherMesh)
         printf("getNearestPtsFromMesh end\n");
 
     return nearestPtsIds;
-}
-
-void mv_delaunay_GC::saveMeshColoredByCamsConsistency(const std::string& consistencyWrlFilepath, const std::string& nbCamsWrlFilepath)
-{
-    if(mp->verbose)
-        std::cout << "saveMeshColoredByCamsConsistency: " << consistencyWrlFilepath << ", " << nbCamsWrlFilepath << std::endl;
-    long timer = std::clock();
-    int maxLevel = 2;
-
-    mv_mesh* mesh = createMesh();
-    staticVector<staticVector<int>*>* ptsCams = createPtsCams();
-
-    // Export colors per cams consistency
-    {
-        staticVector<staticVector<int>*>* ptsNeighPts = mesh->getPtsNeighPtsOrdered();
-
-        staticVector<float> ptsScore;
-        ptsScore.resize(mesh->pts->size());
-        //long t1 = initEstimate();
-    #pragma omp parallel for
-        for(int idPt = 0; idPt < mesh->pts->size(); idPt++)
-        {
-            staticVector<int> camsHist;
-            camsHist.resize_with(mp->ncams, 0);
-            int maxBinValue = 0;
-            staticVector<int>* nptsids = mesh->getNearPointsIds(idPt, maxLevel, ptsNeighPts); // neighbors points
-            nptsids->push_front(idPt); // add itself
-            for(int i = 0; i < nptsids->size(); i++)
-            {
-                staticVector<int>* tcams = (*ptsCams)[(*nptsids)[i]];
-                for(int c = 0; c < sizeOfStaticVector<int>(tcams); c++)
-                {
-                    int* h = &camsHist[(*tcams)[c]];
-                    if(i == 0 || *h > 0)
-                        (*h)++;
-                    maxBinValue = std::max(maxBinValue, *h);
-                }
-            }
-            ptsScore[idPt] = float(maxBinValue) / float(nptsids->size());
-            delete nptsids;
-
-            //printfEstimate(idPt, mesh->pts->size(), t1);
-        }
-        //finishEstimate();
-
-        bool colorPerVertex = true;
-        staticVector<rgb> colors;
-
-        if(colorPerVertex)
-        {
-            colors.reserve(ptsScore.size());
-            for(int idVertex = 0; idVertex < ptsScore.size(); ++idVertex)
-            {
-                colors.push_back(getRGBFromJetColorMap(ptsScore[idVertex]));
-            }
-        }
-        else
-        {
-            colors.reserve(mesh->tris->size());
-            for(int idtri = 0; idtri < mesh->tris->size(); ++idtri)
-            {
-                // min score accross the vertices of the face
-                float minScore = 1.0;
-                for(int k = 0; k < 3; k++)
-                {
-                    minScore = std::min(minScore, ptsScore[(*mesh->tris)[idtri].i[k]]);
-                }
-                colors.push_back(getRGBFromJetColorMap(minScore));
-            }
-        }
-
-        mv_output3D o3d(mp);
-        o3d.saveMvMeshToWrl(mesh, consistencyWrlFilepath, &colors, true, colorPerVertex);
-        deleteArrayOfArrays<int>(&ptsNeighPts);
-    }
-
-    // Export colors per number of cameras
-    {
-        staticVector<rgb> colors;
-        colors.reserve(ptsCams->size());
-        int maxVisibility = 0;
-        for(int idVertex = 0; idVertex < ptsCams->size(); ++idVertex)
-        {
-            maxVisibility = std::max(maxVisibility, (*ptsCams)[idVertex]->size());
-        }
-        for(int idVertex = 0; idVertex < ptsCams->size(); ++idVertex)
-        {
-            float score = float((*ptsCams)[idVertex]->size()) / float(maxVisibility);
-            colors.push_back(getRGBFromJetColorMap(score));
-        }
-
-        mv_output3D o3d(mp);
-        o3d.saveMvMeshToWrl(mesh, nbCamsWrlFilepath, &colors, true, true);
-    }
-
-    deleteArrayOfArrays<int>(&ptsCams);
-    delete mesh;
-
-    printfElapsedTime(timer, "saveMeshColoredByCamsConsistency ");
-    if(mp->verbose)
-        std::cout << "saveMeshColoredByCamsConsistency end" << std::endl;
 }
 
 void mv_delaunay_GC::segmentFullOrFree(bool full, staticVector<int>** out_fullSegsColor, int& out_nsegments)

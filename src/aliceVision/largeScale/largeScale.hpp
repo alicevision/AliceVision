@@ -5,10 +5,9 @@
 
 #pragma once
 
-#include "octreeTracks.hpp"
-
-#include <aliceVision/output3D/mv_output3D.hpp>
+#include <aliceVision/common/common.hpp>
 #include <aliceVision/prematching/mv_prematch_cams.hpp>
+#include <aliceVision/largeScale/octreeTracks.hpp>
 
 #include <array>
 
@@ -17,7 +16,6 @@ class largeScale
 public:
     multiviewParams* mp;
     mv_prematch_cams* pc;
-    mv_output3D o3d;
     std::string spaceFolderName;
     std::string spaceVoxelsFolderName;
     std::string spaceFileName;
@@ -25,7 +23,6 @@ public:
     voxel dimensions;
     int maxOcTreeDim;
     bool doVisualize;
-    bool doVisualizeVoxels;
 
     largeScale(multiviewParams* _mp, mv_prematch_cams* _pc, std::string _spaceFolderName);
     ~largeScale();
@@ -35,7 +32,6 @@ public:
     void saveSpaceToFile();
     void loadSpaceFromFile();
     void initialEstimateSpace(int maxOcTreeDim);
-    void visualizeVoxels();
     largeScale* cloneSpaceIfDoesNotExists(int newOcTreeDim, std::string newSpaceFolderName);
     bool generateSpace(int maxPts, int ocTreeDim);
     point3d getSpaceSteps();

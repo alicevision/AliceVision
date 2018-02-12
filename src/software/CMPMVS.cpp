@@ -305,8 +305,7 @@ int main(int argc, char* argv[])
             mesh->saveToBin(spaceBinFileName);
 
             // Export joined mesh to obj
-            mv_output3D o3d(lsbase.mp);
-            o3d.saveMvMeshToObj(mesh, (outPath / "mesh.obj").string());
+            mesh->saveToObj((outPath / "mesh.obj").string());
 
             delete mesh;
 
@@ -347,13 +346,7 @@ int main(int argc, char* argv[])
             delaunayGC.reconstructVoxel(hexah, &voxelNeighs, mip.mvDir, lsbase.getSpaceCamsTracksDir(), false, hexahsToExcludeFromResultingMesh,
                                   (voxelsGrid*)&rp, lsbase.getSpaceSteps());
 
-            bool exportDebugGC = (float)mip._ini.get<bool>("delaunaycut.exportDebugGC", true);
-            //if(exportDebugGC)
-            //    delaunayGC.saveMeshColoredByCamsConsistency(mip.mvDir + "meshColoredbyCamsConsistency.wrl", mip.mvDir + "meshColoredByVisibility.wrl");
-
             delaunayGC.graphCutPostProcessing();
-            if(exportDebugGC)
-                delaunayGC.saveMeshColoredByCamsConsistency(mip.mvDir + "meshColoredbyCamsConsistency_postprocess.wrl", mip.mvDir + "meshColoredByVisibility_postprocess.wrl");
 
             // Save mesh as .bin and .obj
             mv_mesh* mesh = delaunayGC.createMesh();
@@ -366,8 +359,7 @@ int main(int argc, char* argv[])
             saveArrayOfArraysToFile<int>(mip.mvDir + "meshPtsCamsFromDGC.bin", ptsCams);
             deleteArrayOfArrays<int>(&ptsCams);
 
-            mv_output3D o3d(&mp);
-            o3d.saveMvMeshToObj(mesh, (outPath / "mesh.obj").string());
+            mesh->saveToObj((outPath / "mesh.obj").string());
 
             delete mesh;
         }

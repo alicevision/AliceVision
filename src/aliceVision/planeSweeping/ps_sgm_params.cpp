@@ -4,7 +4,7 @@
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
 #include "ps_sgm_params.hpp"
-
+#include <aliceVision/common/common.hpp>
 #include <aliceVision/common/fileIO.hpp>
 
 #include <boost/filesystem.hpp>

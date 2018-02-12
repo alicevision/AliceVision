@@ -4,7 +4,7 @@
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
 #include "mv_fuse.hpp"
-
+#include <aliceVision/common/common.hpp>
 #include <aliceVision/common/fileIO.hpp>
 #include <aliceVision/imageIO/image.hpp>
 #include <aliceVision/imageIO/imageScaledColors.hpp>
@@ -26,114 +26,6 @@ mv_fuse::mv_fuse(const multiviewParams* _mp, mv_prematch_cams* _pc)
 
 mv_fuse::~mv_fuse()
 {
-}
-
-void mv_fuse::visualizeDepthMap(int rc, std::string wrlFileName, staticVector<float>* depthMap,
-                                staticVector<float>* simMap, int scale, int step)
-{
-    float mindepth = std::numeric_limits<float>::max();
-    float maxdepth = 0.0f;
-
-    point3d cg = point3d(0.0f, 0.0f, 0.0f);
-    float ncg = 0.0f;
-    int w = mp->mip->getWidth(rc) / (scale * step);
-    int h = mp->mip->getHeight(rc) / (scale * step);
-    staticVector<point3d>* pts = new staticVector<point3d>(w * h);
-    staticVector<voxel>* ptsCls = new staticVector<voxel>(w * h);
-    mp->CArr[rc].doprintf();
-    mp->iCamArr[rc].doprintf();
-
-    for(int i = 0; i < depthMap->size(); i++)
-    {
-        int x = i / h;
-        int y = i % h;
-        float depth = (*depthMap)[i];
-        float sim = simMap != nullptr ? (*simMap)[i] : -1.0;
-        if(depth > 0.0f) // && (x % step == 0) && (y % step == 0))
-        {
-            point3d p =
-                mp->CArr[rc] +
-                (mp->iCamArr[rc] * point2d((float)x * (float)scale * (float)step, (float)y * (float)scale * (float)step)).normalize() * depth;
-            // if (i%3==0) {
-            pts->push_back(p);
-            if(sim < mp->simThr)
-            {
-                ptsCls->push_back(voxel(0, 0, 0));
-                cg = cg + p;
-                ncg += 1.0f;
-            }
-            else
-            {
-                ptsCls->push_back(voxel(255, 0, 0));
-            }
-            //};
-            mindepth = std::min(mindepth, depth);
-            maxdepth = std::max(maxdepth, depth);
-        }
-    }
-    cg = cg / ncg;
-
-    imageIO::writeImageScaledColors(wrlFileName + "depth.png", w, h, mindepth, maxdepth, &(*depthMap)[0]);
-    if(simMap)
-        imageIO::writeImageScaledColors(wrlFileName + "sim.png", w, h, -1.0f, 1.0f, &(*simMap)[0]);
-
-    point3d rchexah[8];
-    getCamHexahedron(mp, rchexah, rc, mindepth, maxdepth);
-    staticVector<int>* rcams = new staticVector<int>(1);
-    rcams->push_back(rc);
-
-    FILE* f = fopen(wrlFileName.c_str(), "w");
-    fprintf(f, "#VRML V2.0 utf8\n");
-    mv_output3D* o3d = new mv_output3D(mp);
-    o3d->printf_wrl_pts_cls(f, pts, ptsCls, mp);
-    o3d->printfHexahedron(rchexah, f, mp);
-    mv_mesh* meCams = createMeshForCameras(rcams, mp, 0.000001f, 0, 1, 0.0f);
-    o3d->printfGroupCameras(meCams, rcams, f, mp, 0.000001f, 0.0f);
-    delete meCams;
-
-    {
-        mv_mesh* mecenter = createMeshForFrontPlanePolygonOfCamera(rc, mp, (float)(h / 4), cg);
-        rgb colorOfTris;
-        colorOfTris.r = 255;
-        colorOfTris.g = 0;
-        colorOfTris.b = 0;
-        o3d->printfMvMeshToWrl(f, colorOfTris, mecenter);
-        delete mecenter;
-    }
-
-    delete o3d;
-    fclose(f);
-
-    delete rcams;
-
-    for(int stepDetail = 1; stepDetail <= 3; stepDetail++)
-    {
-        mv_mesh* me = new mv_mesh();
-        me->initFromDepthMap(stepDetail, mp, &(*depthMap)[0], rc, scale, step,
-                             10.0f * (float)stepDetail * (float)step * (float)scale);
-        o3d = new mv_output3D(mp);
-        o3d->saveMvMeshToWrl(me, wrlFileName + "mesh" + num2str(stepDetail) + ".wrl");
-        delete o3d;
-    }
-
-    delete ptsCls;
-    delete pts;
-}
-
-void mv_fuse::visualizeDepthMap(int rc, std::string wrlFileName, int scale, int step)
-{
-    int width, height;
-
-    staticVector<float> depthMap;
-    staticVector<float> simMap;
-
-    imageIO::readImage(mv_getFileName(mp->mip, rc + 1, EFileType::depthMap, scale), width, height, depthMap.getDataWritable());
-    imageIO::readImage(mv_getFileName(mp->mip, rc + 1, EFileType::simMap, scale), width, height, simMap.getDataWritable());
-
-    imageIO::transposeImage(width, height, depthMap.getDataWritable());
-    imageIO::transposeImage(width, height, simMap.getDataWritable());
-
-    visualizeDepthMap(rc, wrlFileName, &depthMap, &simMap, std::max(1, scale), step);
 }
 
 unsigned long mv_fuse::computeNumberOfAllPoints(int scale)

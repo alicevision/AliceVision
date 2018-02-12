@@ -4,13 +4,13 @@
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
 #include "reconstructionPlan.hpp"
-#include "voxelsGrid.hpp"
-
-#include <aliceVision/CUDAInterfaces/refine.hpp>
+#include <aliceVision/common/common.hpp>
+#include <aliceVision/common/fileIO.hpp>
+#include <aliceVision/mesh/mv_plysaver.hpp>
 #include <aliceVision/delaunaycut/mv_delaunay_GC.hpp>
 #include <aliceVision/delaunaycut/mv_delaunay_meshSmooth.hpp>
-#include <aliceVision/mesh/mv_plysaver.hpp>
-#include <aliceVision/common/fileIO.hpp>
+#include <aliceVision/CUDAInterfaces/refine.hpp>
+#include <aliceVision/largeScale/voxelsGrid.hpp>
 
 #include <boost/filesystem.hpp>
 
@@ -354,22 +354,6 @@ staticVector<point3d>* reconstructionPlan::computeReconstructionPlanBinSearch(un
             {
                 hexahsToReconstruct->push_back(hexahinf[k]);
             }
-
-            /*
-            {
-                    std::string hexahsWrlFileName = mp->mip->newDir + "reconstructionPlanVoxels.wrl";
-                    FILE *f = fopen(hexahsWrlFileName.c_str(),"w");
-                    fprintf(f,"#VRML V2.0 utf8\n");
-                    fprintf(f,"Background {\n skyColor 1 1 1 \n } \n");
-                    for (int i=0;i<hexahsToReconstruct->size()/8;i++) {
-                            mv_output3D *o3d = new mv_output3D(mp);
-                            o3d->printfHexahedron(&(*hexahsToReconstruct)[i*8],f,mp);
-                            delete o3d;
-                    };
-                    fprintf(f,"Inline{ url [\"cameras.wrl\"] \n }\n");
-                    fclose(f);
-            };
-            */
         }
     }
 
@@ -507,68 +491,6 @@ void reconstructSpaceAccordingToVoxelsArray(const std::string& voxelsArrayFileNa
 {
     staticVector<point3d>* voxelsArray = loadArrayFromFile<point3d>(voxelsArrayFileName);
 
-    {
-        std::string fn1 = ls->spaceFolderName + "reconstructionPlanVoxels.wrl";
-        FILE* f = fopen(fn1.c_str(), "w");
-        fprintf(f, "#VRML V2.0 utf8\n");
-        fprintf(f, "Background {\n skyColor 1 1 1 \n } \n");
-        for(int i = 0; i < voxelsArray->size() / 8; i++)
-        {
-            ls->o3d.printfHexahedron(&(*voxelsArray)[i * 8], f, ls->mp);
-        }
-        fprintf(f, "Inline{ url [\"cameras.wrl\"] \n }\n");
-        fclose(f);
-
-        std::string fn2 = ls->spaceFolderName + "reconstructionPlanVoxelsNames.wrl";
-        f = fopen(fn2.c_str(), "w");
-        fprintf(f, "#VRML V2.0 utf8\n");
-        fprintf(f, "Background {\n skyColor 1 1 1 \n } \n");
-
-        for(int i = 0; i < voxelsArray->size() / 8; i++)
-        {
-            point3d voxelcg = point3d(0.0f, 0.0f, 0.0f);
-            for(int j = 0; j < 8; j++)
-            {
-                voxelcg = voxelcg + (*voxelsArray)[i * 8 + j];
-            }
-            voxelcg = voxelcg / 8.0f;
-            float ts = ((*voxelsArray)[i * 8 + 0] - (*voxelsArray)[i * 8 + 1]).size() / 10.0f;
-
-            fprintf(f, "Transform {\n");
-            fprintf(f, "\t translation  %f %f %f \n", voxelcg.x, voxelcg.y, voxelcg.z);
-            fprintf(f, "\t\t children [\n");
-            fprintf(f, "\t\t\t Shape {\n");
-            fprintf(f, "\t\t\t\t appearance Appearance {\n");
-            fprintf(f, "\t\t\t\t\t material Material { diffuseColor 1 0 0 }\n");
-            fprintf(f, "\t\t\t\t }\n");
-            fprintf(f, "\t\t\t\t geometry Text{\n");
-            std::string text = num2str(i);
-            fprintf(f, "\t\t\t\t\t string [ \"%s\" ]\n", text.c_str());
-            fprintf(f, "\t\t\t\t\t fontStyle FontStyle {\n");
-            fprintf(f, "\t\t\t\t\t\t family  \"SANS\"\n");
-            fprintf(f, "\t\t\t\t\t\t style   \"BOLD\"\n");
-            fprintf(f, "\t\t\t\t\t\t size    %f\n", ts);
-            fprintf(f, "\t\t\t\t\t\t justify \"MIDDLE\"\n");
-            fprintf(f, "\t\t\t\t\t }\n");
-            fprintf(f, "\t\t\t\t }\n");
-            fprintf(f, "\t\t\t }\n");
-            fprintf(f, "\t\t ]\n");
-            fprintf(f, " }\n");
-        }
-
-        fclose(f);
-
-        std::string fn3 = ls->spaceFolderName + "reconstructionPlan.wrl";
-        f = fopen(fn3.c_str(), "w");
-        fprintf(f, "#VRML V2.0 utf8\n");
-        fprintf(f, "Background {\n skyColor 1 1 1 \n } \n");
-        fprintf(f, "Inline{ url [\"reconstructionPlanVoxels.wrl\"] \n }\n");
-        fprintf(f, "Inline{ url [\"reconstructionPlanVoxelsNames.wrl\"] \n }\n");
-        fprintf(f, "Inline{ url [\"spacePts.wrl\"] \n }\n");
-        fprintf(f, "Inline{ url [\"cameras.wrl\"] \n }\n");
-        fclose(f);
-    }
-
     reconstructionPlan* rp =
         new reconstructionPlan(ls->dimensions, &ls->space[0], ls->mp, ls->pc, ls->spaceVoxelsFolderName);
 
@@ -597,12 +519,10 @@ void reconstructSpaceAccordingToVoxelsArray(const std::string& voxelsArrayFileNa
 
             meshPostProcessing(mesh, ptsCams, usedCams, *ls->mp, *ls->pc, ls->mp->mip->mvDir, hexahsToExcludeFromResultingMesh, hexah);
             mesh->saveToBin(folderName + "mesh.bin");
+            mesh->saveToObj(folderName + "mesh.obj");
 
             saveArrayOfArraysToFile<int>(folderName + "meshPtsCamsFromDGC.bin", ptsCams);
             deleteArrayOfArrays<int>(&ptsCams);
-
-            mv_output3D o3d(ls->mp);
-            o3d.saveMvMeshToObj(mesh, folderName + "mesh.obj");
 
             delete mesh;
         }

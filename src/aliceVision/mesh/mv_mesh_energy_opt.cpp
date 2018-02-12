@@ -172,7 +172,7 @@ bool mv_mesh_energy_opt::optimizeSmooth(float lambda, float epsilon, int type, i
     {
         updateGradientParallel(lambda, epsilon, type, LU, RD, ptsCanMove);
         if(saveDebug)
-            o3d->saveMvMeshToObj(this, mp->mip->mvDir + "mesh_smoothed_" + std::to_string(i) + ".obj");
+            saveToObj(mp->mip->mvDir + "mesh_smoothed_" + std::to_string(i) + ".obj");
     }
 
     return true;

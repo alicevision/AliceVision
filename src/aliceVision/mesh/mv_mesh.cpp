@@ -43,6 +43,28 @@ void mv_mesh::saveToPly(std::string plyFileName, staticVector<rgb>* triColors)
     mv_saveply(plyFileName, this, triColors);
 }
 
+void mv_mesh::saveToObj(const std::string& filename)
+{
+  std::cout << "saveToObj: " << filename << std::endl;
+  FILE* f = fopen(filename.c_str(), "w");
+
+  fprintf(f, "# \n");
+  fprintf(f, "# Wavefront OBJ file\n");
+  fprintf(f, "# Created with AliceVision\n");
+  fprintf(f, "# \n");
+  fprintf(f, "g Mesh\n");
+  for(int i = 0; i < pts->size(); i++)
+      fprintf(f, "v %f %f %f\n", (*pts)[i].x, (*pts)[i].y, (*pts)[i].z);
+
+  for(int i = 0; i < tris->size(); i++)
+  {
+      mv_mesh::triangle& t = (*tris)[i];
+      fprintf(f, "f %i %i %i\n", t.i[0] + 1, t.i[1] + 1, t.i[2] + 1);
+  }
+  fclose(f);
+  std::cout << "saveToObj done." << std::endl;
+}
+
 bool mv_mesh::loadFromBin(std::string binFileName)
 {
     FILE* f = fopen(binFileName.c_str(), "rb");

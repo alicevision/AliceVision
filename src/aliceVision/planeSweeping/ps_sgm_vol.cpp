@@ -4,7 +4,7 @@
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
 #include "ps_sgm_vol.hpp"
-
+#include <aliceVision/common/common.hpp>
 
 ps_sgm_vol::ps_sgm_vol(float _volGpuMB, int _volDimX, int _volDimY, int _volDimZ, ps_sgm_params* _sp)
 {

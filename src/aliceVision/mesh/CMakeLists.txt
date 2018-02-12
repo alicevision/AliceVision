@@ -46,9 +46,7 @@ target_link_libraries(aliceVision_mesh
          aliceVision_common
          aliceVision_imageIO
          mv_planeSweeping
-         mv_output3D
          mv_cudaInterfaces
-         mv_delaunaycut
          ${Boost_FILESYSTEM_LIBRARIES}
          Geogram::geogram
 )

@@ -5,11 +5,11 @@
 
 #pragma once
 
-#include "mv_delaunay_types.hpp"
-
-#include <aliceVision/output3D/mv_output3D.hpp>
+#include <aliceVision/common/common.hpp>
 #include <aliceVision/prematching/mv_prematch_cams.hpp>
+#include <aliceVision/delaunaycut/mv_delaunay_types.hpp>
 #include <aliceVision/largeScale/voxelsGrid.hpp>
+#include <aliceVision/mesh/mv_mesh.hpp>
 
 #include <geogram/delaunay/delaunay.h>
 #include <geogram/delaunay/delaunay_3d.h>
@@ -185,7 +185,6 @@ public:
 
     bool btest;
     bool saveTemporaryBinFiles;
-    bool saveTemporaryWrlFiles;
 
     mv_delaunay_GC(multiviewParams* _mp, mv_prematch_cams* _pc);
     virtual ~mv_delaunay_GC();
@@ -219,7 +218,7 @@ public:
     void createTetrahedralizationFromDepthMapsCamsVoxel(staticVector<int>* cams,
                                                    staticVector<int>* voxelsIds, point3d voxel[8], voxelsGrid* ls);
 
-    void computeVerticesSegSize(const std::string &fileNameWrl, bool allPoints, float alpha = 0.0f, bool saveWrl = true);
+    void computeVerticesSegSize(bool allPoints, float alpha = 0.0f);
     void removeSmallSegs(int minSegSize);
 
     bool rayCellIntersection(const point3d &camC, const point3d &p, int c, Facet& out_facet, bool nearestFarest,
@@ -293,7 +292,7 @@ public:
     void reconstructGC(float alphaQual, std::string baseName, staticVector<int>* cams, std::string folderName,
                        std::string fileNameStGraph, std::string fileNameStSolution, std::string fileNameTxt,
                        std::string fileNameTxtCam, int camerasPerOneOmni, bool doRemoveBubbles,
-                       staticVector<point3d>* hexahsToExcludeFromResultingMesh, bool saveToWrl, point3d* hexah);
+                       staticVector<point3d>* hexahsToExcludeFromResultingMesh, point3d* hexah);
 
     void maxflow();
 
@@ -338,11 +337,6 @@ public:
 
     void initTetrahedralizationFromMeshTrianglesCenter(mv_mesh* mesh, bool _addPointsToPreventSingularities);
     void initTetrahedralizationFromMeshVertices(mv_mesh* mesh, bool _addPointsToPreventSingularities);
-
-    void saveMeshColoredByCamsConsistency(const std::string &consistencyWrlFilepath, const std::string &nbCamsWrlFilepath);
-
-    void saveSegsWrl(const std::string &fileNameWrl);
-
 
     staticVector<staticVector<int>*>* createPtsCamsForAnotherMesh(staticVector<staticVector<int>*>* refPtsCams, mv_mesh& otherMesh);
 };

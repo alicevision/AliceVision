@@ -7,9 +7,7 @@
 
 #include "mv_delaunay_GC_grid.hpp"
 
-#include <aliceVision/output3D/mv_output3D.hpp>
 #include <aliceVision/prematching/mv_prematch_cams.hpp>
-
 
 class mv_delanuay_TV : public mv_delanuay_GC_grid
 {
@@ -26,7 +24,8 @@ public:
     staticVector<TV_cellInfo>* tvData;
 
     mv_delanuay_TV(multiviewParams* _mp, mv_prematch_cams* _pc)
-        : mv_delanuay_GC_grid(_mp, _pc){};
+        : mv_delanuay_GC_grid(_mp, _pc)
+    {}
 
     void updateHistogram(GC_Cell_handle ch, int rc, float depths, float voxSize, float sigma, int weight);
 

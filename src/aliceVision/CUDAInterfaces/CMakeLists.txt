@@ -43,10 +43,14 @@ source_group("cudaInterfaces" FILES ${SOURCES_files_cudaInterfaces})
 cuda_add_library(mv_cudaInterfaces ${SOURCES_files_cudaInterfaces})
 
 target_include_directories(mv_cudaInterfaces 
-         PUBLIC 
-         $<BUILD_INTERFACE:${ALICEVISION_INCLUDE_DIR}>
-         $<BUILD_INTERFACE:${generatedDir}>
-         $<INSTALL_INTERFACE:include>)
+   PUBLIC
+   $<BUILD_INTERFACE:${ALICEVISION_INCLUDE_DIR}>
+   $<BUILD_INTERFACE:${generatedDir}>
+   $<INSTALL_INTERFACE:include>
+)
 
 # PUBLIC
-target_link_libraries(mv_cudaInterfaces mv_structures aliceVision_common aliceVision_imageIO mv_prematching mv_mesh mv_output3D mv_delaunaycut)
+target_link_libraries(mv_cudaInterfaces
+  aliceVision_common
+  aliceVision_imageIO
+)

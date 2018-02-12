@@ -31,8 +31,6 @@ mv_mesh_refine::mv_mesh_refine(multiviewParams* _mp, mv_prematch_cams* _pc, std:
     meshDepthMapsDir = tmpDir + "meshDepthMapsDir/";
     bfs::create_directory(meshDepthMapsDir);
 
-    o3d = new mv_output3D(mp);
-
     int bandType = 0;
     ic = new mv_images_cache(mp, bandType, true);
     cps = new cuda_plane_sweeping(mp->CUDADeviceNo, ic, mp, pc, 1);
@@ -41,7 +39,6 @@ mv_mesh_refine::mv_mesh_refine(multiviewParams* _mp, mv_prematch_cams* _pc, std:
 
 mv_mesh_refine::~mv_mesh_refine()
 {
-    delete o3d;
     delete ic;
     delete cps;
     delete prt;

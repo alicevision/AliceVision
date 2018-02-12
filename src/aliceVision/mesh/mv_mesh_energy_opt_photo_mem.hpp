@@ -27,7 +27,7 @@ public:
             cam = param.cam;
             camPixSize = param.camPixSize;
             return *this;
-        };
+        }
     };
 
     class ptStat
@@ -91,8 +91,6 @@ public:
                        point3d& pt, point3d& normalVectorNormalized, double &smoothVal, double &simVal,
                        staticVectorBool* ptsCanMove);
     bool optimizePhoto(int niters, staticVectorBool* ptsCanMove, staticVector<staticVector<int>*>* camsPts);
-
-    void visualizeMeshNormalsSmoothingVectors(int iter);
 
     point4d getPtCurvatures(int ptId, staticVector<point3d>* lapPts);
 

@@ -4,9 +4,9 @@
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
 #include "ps_sgm_rc.hpp"
-#include "ps_sgm_rctc.hpp"
-#include "ps_sgm_vol.hpp"
-
+#include <aliceVision/planeSweeping/ps_sgm_rctc.hpp>
+#include <aliceVision/planeSweeping/ps_sgm_vol.hpp>
+#include <aliceVision/common/common.hpp>
 #include <aliceVision/common/fileIO.hpp>
 #include <aliceVision/imageIO/image.hpp>
 #include <aliceVision/imageIO/imageScaledColors.hpp>
@@ -15,7 +15,6 @@
 #include <boost/filesystem.hpp>
 
 #include <iostream>
-
 
 namespace bfs = boost::filesystem;
 

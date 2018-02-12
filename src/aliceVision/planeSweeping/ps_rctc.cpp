@@ -4,20 +4,17 @@
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
 #include "ps_rctc.hpp"
-
+#include <aliceVision/common/common.hpp>
 
 ps_rctc::ps_rctc(multiviewParams* _mp, cuda_plane_sweeping* _cps)
 {
     cps = _cps;
     mp = _mp;
-    o3d = new mv_output3D(mp);
     verbose = mp->verbose;
 }
 
 ps_rctc::~ps_rctc()
-{
-    delete o3d;
-}
+{}
 
 void ps_rctc::refineRcTcDepthSimMap(bool useTcOrRcPixSize, ps_depthSimMap* depthSimMap, int rc, int tc,
                                     int ndepthsToRefine, int wsh, float gammaC, float gammaP, float epipShift)

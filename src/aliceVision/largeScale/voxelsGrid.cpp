@@ -342,9 +342,6 @@ void voxelsGrid::generateTracksForEachVoxel(staticVector<point3d>* reconstructio
                 staticVector<int>* cams = ott->getTracksCams(tracks);
                 saveTracksToVoxelFiles(cams, tracks, i);
                 delete cams;
-
-                if(doVisualize)
-                    ott->visualizeTracks(folderName, tracks);
             }
             delete tracks;
             if(mp->verbose)
@@ -460,31 +457,13 @@ void voxelsGrid::generateSpace(voxelsGrid* vgnew, const voxel& LU, const voxel& 
                     voxel vglob = subLU + vact;
                     int newid = vgnew->getIdForVoxel(vglob);
 
-                    if(vgnew->saveTracksToVoxelFiles(cams, (*newVoxsTracks)[i], newid))
-                    {
-                        if(doVisualize)
-                        {
-                            octreeTracks* ott1 = new octreeTracks(&(*vgnew->voxels)[newid * 8], mp, pc, voxel(1, 1, 1));
-                            ott1->visualizeTracks(vgnew->getVoxelFolderName(newid), (*newVoxsTracks)[i]);
-                            delete ott1;
-                        }
-                    }
+                    vgnew->saveTracksToVoxelFiles(cams, (*newVoxsTracks)[i], newid);
 
                     /*
                     printf("idlocal %i of %i, voxel local %i %i %i, voxel global %i %i %i, id global %i, ntracks %i \n",
                             i,part.x*part.y*part.z, vact.x, vact.y, vact.z, vglob.x, vglob.y, vglob.z, newid,
                             (*newVoxsTracks)[i]->size()
                     );
-
-                    octreeTracks *ott1 = new octreeTracks(&(*vgg->voxels)[i*8],mp,pc,voxel(1,1,1));
-                    ott1->visualizeTracks(vgnew->getVoxelFolderName(newid), (*newVoxsTracks)[i]);
-                    delete ott1;
-
-                    std::string nfn = vgnew->getVoxelFolderName(newid) + "aaa/";
-                    bfs::create_directory(nfn);
-                    ott1 = new octreeTracks(&(*vgnew->voxels)[newid*8],mp,pc,voxel(1,1,1));
-                    ott1->visualizeTracks(nfn, (*newVoxsTracks)[i]);
-                    delete ott1;
                     */
                 }
 
@@ -532,9 +511,6 @@ void voxelsGrid::cloneSpaceVoxel(int voxelId, int numSubVoxs, voxelsGrid* newSpa
         delete tracksOld;
         newSpace->saveTracksToVoxelFiles(tcams, tracksNew, voxelId);
 
-        if(doVisualize)
-            ott->visualizeTracks(newSpace->getVoxelFolderName(voxelId), tracksNew);
-
         delete tcams;
         delete tracksNew; // DO NOT NEEDED TO DELETE PARTICULAR POINTERS BECAUSE THEY POINT TO ott STRUCTURES
         delete ott;
@@ -572,13 +548,6 @@ void voxelsGrid::copySpaceVoxel(int voxelId, voxelsGrid* newSpace)
         staticVector<int>* tcams;
         staticVector<octreeTracks::trackStruct*>* tracksOld = loadTracksFromVoxelFiles(&tcams, voxelId);
         newSpace->saveTracksToVoxelFiles(tcams, tracksOld, voxelId);
-
-        if(doVisualize)
-        {
-            octreeTracks* ott = new octreeTracks(&(*voxels)[voxelId * 8], mp, pc, voxelDim);
-            ott->visualizeTracks(newSpace->getVoxelFolderName(voxelId), tracksOld);
-            delete ott;
-        }
 
         for(int i = 0; i < tracksOld->size(); i++)
         {

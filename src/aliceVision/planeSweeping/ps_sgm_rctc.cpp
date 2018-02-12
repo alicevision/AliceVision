@@ -4,7 +4,7 @@
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
 #include "ps_sgm_rctc.hpp"
-
+#include <aliceVision/common/common.hpp>
 
 ps_sgm_rctc::ps_sgm_rctc(staticVector<float>* _rcTcDepths, int _rc, int _tc, int _scale, int _step, ps_sgm_params* _sp,
                          staticVectorBool* _rcSilhoueteMap)

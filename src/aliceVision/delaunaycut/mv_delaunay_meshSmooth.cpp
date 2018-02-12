@@ -10,7 +10,6 @@
 #include <aliceVision/CUDAInterfaces/refine.hpp>
 #include <aliceVision/delaunaycut/hallucinations.hpp>
 #include <aliceVision/mesh/mv_mesh_energy_opt_photo_mem.hpp>
-#include <aliceVision/output3D/mv_output3D.hpp>
 #include <aliceVision/planeSweeping/ps_sgm_params.hpp>
 #include <aliceVision/common/ImagesCache.hpp>
 #include <aliceVision/structures/mv_point3d.hpp>
@@ -28,12 +27,12 @@ void meshPostProcessing(mv_mesh*& inout_mesh, staticVector<staticVector<int>*>*&
 {
     long timer = std::clock();
     std::cout << "meshPostProcessing" << std::endl;
-    mv_output3D o3d(&mp);
+
 
     bool exportDebug = (float)mp.mip->_ini.get<bool>("delaunaycut.exportDebugGC", false);
 
     if(exportDebug)
-        o3d.saveMvMeshToObj(inout_mesh, resultFolderName + "rawGraphCut.obj");
+        inout_mesh->saveToObj(resultFolderName + "rawGraphCut.obj");
 
     const auto doRemoveHugeTriangles =
             mp.mip->_ini.get<bool>("hallucinationsFiltering.doRemoveHugeTriangles", false);
@@ -108,7 +107,7 @@ void meshPostProcessing(mv_mesh*& inout_mesh, staticVector<staticVector<int>*>*&
         meOpt->cleanMesh(10);
 
         if(exportDebug)
-            o3d.saveMvMeshToObj(meOpt, resultFolderName + "mesh_clean.obj");
+            meOpt->saveToObj(resultFolderName + "mesh_clean.obj");
 
         /////////////////////////////
         {
@@ -186,7 +185,7 @@ void meshPostProcessing(mv_mesh*& inout_mesh, staticVector<staticVector<int>*>*&
             meOpt->optimizeSmooth(lambda, epsilon, type, niter, ptsCanMove);
 
             if(exportDebug)
-                o3d.saveMvMeshToObj(meOpt, resultFolderName + "mesh_smoothed.obj");
+                meOpt->saveToObj(resultFolderName + "mesh_smoothed.obj");
         }
 
         bool doLaplacianSmoothMesh =
@@ -203,7 +202,7 @@ void meshPostProcessing(mv_mesh*& inout_mesh, staticVector<staticVector<int>*>*&
             deleteArrayOfArrays<int>(&ptsNei);
 
             if(exportDebug)
-                o3d.saveMvMeshToObj(meOpt, resultFolderName + "mesh_laplacianSmoothed.obj");
+                meOpt->saveToObj(resultFolderName + "mesh_laplacianSmoothed.obj");
         }
 
         bool doOptimizeMesh =
@@ -222,7 +221,7 @@ void meshPostProcessing(mv_mesh*& inout_mesh, staticVector<staticVector<int>*>*&
             deleteArrayOfArrays<int>(&camsPts);
 
             if(exportDebug)
-                o3d.saveMvMeshToObj(meOpt, resultFolderName + "mesh_optimized.obj");
+                meOpt->saveToObj(resultFolderName + "mesh_optimized.obj");
         }
 
         delete ptsCanMove;

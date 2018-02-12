@@ -6,7 +6,6 @@
 #pragma once
 
 #include <aliceVision/CUDAInterfaces/cuda_plane_sweeping.hpp>
-#include <aliceVision/output3D/mv_output3D.hpp>
 #include <aliceVision/prematching/mv_prematch_cams.hpp>
 #include <aliceVision/structures/mv_universe.hpp>
 
@@ -26,9 +25,6 @@ public:
     void filterDepthMaps(const staticVector<int>& cams, int minNumOfModals, int minNumOfModalsWSP2SSP);
     bool filterDepthMapsRC(int rc, int minNumOfModals, int minNumOfModalsWSP2SSP);
 
-    void visualizeDepthMap(int rc, std::string wrlFileName, staticVector<float>* depthMap, staticVector<float>* simMap,
-                           int scale, int step);
-    void visualizeDepthMap(int rc, std::string wrlFileName, int scale, int step);
     void divideSpace(point3d* hexah, float& minPixSize);
     void filterSmallConnComponents(float alpha, int minSegSize, int scale);
 

@@ -6,7 +6,6 @@
 #pragma once
 
 #include "mv_mesh.hpp"
-#include <aliceVision/output3D/mv_output3D.hpp>
 
 class mv_mesh_clean : public mv_mesh
 {
@@ -19,15 +18,16 @@ public:
             int triId;
             int ptsIds[2];
 
-			pathPart(): triId(-1)
-			{}
+            pathPart()
+              : triId(-1)
+            {}
 
             pathPart(int _triId, int _ptId1, int _ptId2)
             {
                 triId = _triId;
                 ptsIds[0] = _ptId1;
                 ptsIds[1] = _ptId2;
-            };
+            }
 
             pathPart& operator=(const pathPart& m)
             {
@@ -35,7 +35,7 @@ public:
                 ptsIds[0] = m.ptsIds[0];
                 ptsIds[1] = m.ptsIds[1];
                 return *this;
-            };
+            }
         };
 
         mv_mesh_clean* me;
@@ -51,7 +51,6 @@ public:
                                                staticVector<pathPart>* _pth);
         int getNextNeighBouringUnprocessedFirst(staticVector<int>* ptNeighTrisSortedAscToProcess,
                                                 staticVector<pathPart>* _pth);
-        void saveTrisToWrl(staticVector<int>* trisIds);
         int nCrossings(staticVector<pathPart>* _pth);
         staticVector<pathPart>* removeCycleFromPath(staticVector<pathPart>* _pth);
         void deployTriangle(int triId);
@@ -64,7 +63,6 @@ public:
         bool isWrongPt();
     };
 
-    mv_output3D* o3d;
     multiviewParams* mp;
 
     staticVector<staticVector<int>*>* ptsNeighTrisSortedAsc;
@@ -94,6 +92,4 @@ public:
 
     int cleanMesh();
     int cleanMesh(int maxIters);
-    void colorWrongPoints(std::string meshWrlFileName);
-
 };

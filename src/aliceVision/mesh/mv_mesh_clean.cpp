@@ -161,32 +161,6 @@ void mv_mesh_clean::path::printfState(staticVector<mv_mesh_clean::path::pathPart
     printf("-----------------------\n");
 }
 
-void mv_mesh_clean::path::saveTrisToWrl(staticVector<int>* trisIds)
-{
-    if(trisIds->size() > 0)
-    {
-        mv_mesh* mept = new mv_mesh();
-        mept->pts = new staticVector<point3d>(trisIds->size() * 3);
-        mept->tris = new staticVector<mv_mesh::triangle>(trisIds->size());
-        for(int i = 0; i < trisIds->size(); i++)
-        {
-            int idtri = (*trisIds)[i];
-            mept->pts->push_back((*me->pts)[(*me->tris)[idtri].i[0]]);
-            mept->pts->push_back((*me->pts)[(*me->tris)[idtri].i[1]]);
-            mept->pts->push_back((*me->pts)[(*me->tris)[idtri].i[2]]);
-            mv_mesh::triangle t;
-            t.i[0] = mept->pts->size() - 1 - 2;
-            t.i[1] = mept->pts->size() - 1 - 1;
-            t.i[2] = mept->pts->size() - 1 - 0;
-            mept->tris->push_back(t);
-        }
-
-        me->o3d->saveMvMeshToWrl(mept, me->mp->mip->newDir + "pt" + num2strFourDecimal(ptId) + "NeighTris.wrl");
-
-        delete mept;
-    }
-}
-
 int mv_mesh_clean::path::nCrossings(staticVector<mv_mesh_clean::path::pathPart>* _pth)
 {
     int n = 0;
@@ -586,8 +560,6 @@ mv_mesh_clean::mv_mesh_clean(multiviewParams* _mp)
     : mv_mesh()
 {
     mp = _mp;
-    o3d = new mv_output3D(mp);
-
     edgesNeigTris = nullptr;
     edgesNeigTrisAlive = nullptr;
     edgesXStat = nullptr;
@@ -600,8 +572,6 @@ mv_mesh_clean::mv_mesh_clean(multiviewParams* _mp)
 
 mv_mesh_clean::~mv_mesh_clean()
 {
-    delete o3d;
-
     deallocateCleaningAttributes();
 }
 
@@ -962,49 +932,4 @@ bool mv_mesh_clean::isIsBoundaryPt(int ptId)
     return (*ptsBoundary)[ptId];
 }
 
-void mv_mesh_clean::colorWrongPoints(std::string meshWrlFileName)
-{
-    staticVector<rgb>* triColors = new staticVector<rgb>(tris->size());
-    rgb green;
-    green.r = 0;
-    green.g = 255;
-    green.b = 0;
-    rgb red;
-    red.r = 255;
-    red.g = 0;
-    red.b = 0;
-    rgb blue;
-    blue.r = 0;
-    blue.g = 0;
-    blue.b = 255;
-    triColors->resize_with(tris->size(), green);
-
-    for(int i = 0; i < pts->size(); i++)
-    {
-        path* pth = new path(this, i);
-        bool isWrongPt = pth->isWrongPt();
-        delete pth;
-
-        if(isIsBoundaryPt(i))
-        {
-            staticVector<int>* ptNeighTris = (*ptsNeighTrisSortedAsc)[i];
-            for(int j = 0; j < ptNeighTris->size(); j++)
-            {
-                (*triColors)[(*ptNeighTris)[j]] = blue;
-            }
-        }
-
-        if(isWrongPt)
-        {
-            staticVector<int>* ptNeighTris = (*ptsNeighTrisSortedAsc)[i];
-            for(int j = 0; j < ptNeighTris->size(); j++)
-            {
-                (*triColors)[(*ptNeighTris)[j]] = red;
-            }
-        }
-    }
-
-    o3d->saveMvMeshToWrl(this, meshWrlFileName, triColors);
-    delete triColors;
-}
 
