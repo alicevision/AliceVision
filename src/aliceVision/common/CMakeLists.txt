@@ -4,6 +4,7 @@ set(common_files_headers
   fileIO.hpp
   ImagesCache.hpp
   MultiViewParams.hpp
+  PreMatchCams.hpp
 )
 
 # Sources
@@ -12,6 +13,7 @@ set(common_files_sources
   fileIO.cpp
   ImagesCache.cpp
   MultiViewParams.cpp
+  PreMatchCams.cpp
 )
 
 add_library(aliceVision_common

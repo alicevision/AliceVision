@@ -7,7 +7,7 @@
 
 #include "mv_delaunay_GC_grid.hpp"
 
-#include <aliceVision/prematching/mv_prematch_cams.hpp>
+#include <aliceVision/common/PreMatchCams.hpp>
 
 class mv_delanuay_TV : public mv_delanuay_GC_grid
 {

@@ -6,7 +6,7 @@
 #pragma once
 
 #include <aliceVision/common/common.hpp>
-#include <aliceVision/prematching/mv_prematch_cams.hpp>
+#include <aliceVision/common/PreMatchCams.hpp>
 #include <aliceVision/delaunaycut/mv_delaunay_types.hpp>
 #include <aliceVision/largeScale/voxelsGrid.hpp>
 #include <aliceVision/mesh/mv_mesh.hpp>

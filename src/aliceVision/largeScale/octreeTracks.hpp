@@ -6,7 +6,7 @@
 #pragma once
 
 #include <aliceVision/largeScale/mv_fuse.hpp>
-#include <aliceVision/prematching/mv_prematch_cams.hpp>
+#include <aliceVision/common/PreMatchCams.hpp>
 
 class octreeTracks : public mv_fuse
 {

@@ -6,7 +6,7 @@
 #pragma once
 
 #include <aliceVision/common/common.hpp>
-#include <aliceVision/prematching/mv_prematch_cams.hpp>
+#include <aliceVision/common/PreMatchCams.hpp>
 #include <aliceVision/largeScale/octreeTracks.hpp>
 
 #include <array>

@@ -30,7 +30,6 @@ target_include_directories(aliceVision_largeScale
 target_link_libraries(aliceVision_largeScale
   PUBLIC aliceVision_common
          aliceVision_imageIO
-         aliceVision_prematching
          aliceVision_cudaInterfaces
          Geogram::geogram
          ${Boost_LIBRARIES}

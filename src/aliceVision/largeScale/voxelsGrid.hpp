@@ -5,7 +5,7 @@
 
 #pragma once
 #include "octreeTracks.hpp"
-#include <aliceVision/prematching/mv_prematch_cams.hpp>
+#include <aliceVision/common/PreMatchCams.hpp>
 
 class voxelsGrid
 {

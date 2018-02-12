@@ -13,7 +13,6 @@ target_link_libraries(aliceVision_CMPMVS
          aliceVision_largeScale
          aliceVision_delaunaycut
          aliceVision_cudaInterfaces
-         aliceVision_prematching
          ${Boost_LIBRARIES}
 )
 
@@ -37,7 +36,6 @@ target_link_libraries(aliceVision_cameraConnection
          aliceVision_largeScale
          aliceVision_delaunaycut
          aliceVision_cudaInterfaces
-         aliceVision_prematching
          ${Boost_LIBRARIES}
 )
 
@@ -61,7 +59,6 @@ target_link_libraries(aliceVision_depthMapEstimation
          aliceVision_largeScale
          aliceVision_delaunaycut
          aliceVision_cudaInterfaces
-         aliceVision_prematching
          ${Boost_LIBRARIES}
 )
 
@@ -85,7 +82,6 @@ target_link_libraries(aliceVision_depthMapFiltering
          aliceVision_largeScale
          aliceVision_delaunaycut
          aliceVision_cudaInterfaces
-         aliceVision_prematching
          ${Boost_LIBRARIES}
 )
 
@@ -109,7 +105,6 @@ target_link_libraries(aliceVision_meshing
          aliceVision_largeScale
          aliceVision_delaunaycut
          aliceVision_cudaInterfaces
-         aliceVision_prematching
          ${Boost_LIBRARIES}
 )
 
@@ -152,7 +147,6 @@ target_link_libraries(aliceVision_texturing
          aliceVision_largeScale
          aliceVision_delaunaycut
          aliceVision_cudaInterfaces
-         aliceVision_prematching
          ${Boost_LIBRARIES}
 )
 

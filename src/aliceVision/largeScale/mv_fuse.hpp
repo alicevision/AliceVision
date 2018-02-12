@@ -6,7 +6,7 @@
 #pragma once
 
 #include <aliceVision/CUDAInterfaces/cuda_plane_sweeping.hpp>
-#include <aliceVision/prematching/mv_prematch_cams.hpp>
+#include <aliceVision/common/PreMatchCams.hpp>
 #include <aliceVision/structures/mv_universe.hpp>
 
 class mv_fuse

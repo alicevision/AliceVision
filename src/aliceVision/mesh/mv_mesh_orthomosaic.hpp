@@ -7,7 +7,7 @@
 
 #include "mv_mesh_dem.hpp"
 #include <aliceVision/CUDAInterfaces/cuda_plane_sweeping.hpp>
-#include <aliceVision/prematching/mv_prematch_cams.hpp>
+#include <aliceVision/common/PreMatchCams.hpp>
 
 class mv_mesh_orthomosaic : public mv_mesh_dem
 {

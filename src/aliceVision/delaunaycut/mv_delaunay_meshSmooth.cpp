@@ -13,7 +13,7 @@
 #include <aliceVision/common/ImagesCache.hpp>
 #include <aliceVision/structures/mv_point3d.hpp>
 #include <aliceVision/structures/mv_staticVector.hpp>
-#include <aliceVision/prematching/mv_prematch_cams.hpp>
+#include <aliceVision/common/PreMatchCams.hpp>
 
 #include <boost/filesystem/operations.hpp>
 

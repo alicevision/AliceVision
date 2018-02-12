@@ -33,6 +33,7 @@ target_include_directories(aliceVision_planeSweeping
 target_link_libraries(aliceVision_planeSweeping
   PUBLIC aliceVision_structures
          aliceVision_imageIO
+         aliceVision_common
          aliceVision_cudaInterfaces
 )
 

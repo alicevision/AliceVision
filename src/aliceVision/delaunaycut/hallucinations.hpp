@@ -7,7 +7,7 @@
 
 #include <aliceVision/mesh/mv_mesh.hpp>
 #include <aliceVision/structures/mv_geometry.hpp>
-#include <aliceVision/prematching/mv_prematch_cams.hpp>
+#include <aliceVision/common/PreMatchCams.hpp>
 
 //float confKernelVoting(staticVector<float>* confs, float c);
 void filterLargeEdgeTriangles(mv_mesh* me, float avelthr);
