@@ -363,7 +363,7 @@ void ReconstructionEngine_sequentialSfM::updateReconstruction(IndexT resectionId
 
   // add images to the 3D reconstruction
 #pragma omp parallel for
-  for(std::size_t i = 0; i < bestViewIds.size(); ++i)
+  for(int i = 0; i < bestViewIds.size(); ++i)
   {
     const IndexT viewId = bestViewIds.at(i);
     const View& view = *_sfm_data.GetViews().at(viewId);
@@ -622,7 +622,7 @@ bool ReconstructionEngine_sequentialSfM::findConnectedViews(
   const std::set<IndexT> reconstructedIntrinsics = _sfm_data.getReconstructedIntrinsics();
 
 #pragma omp parallel for
-  for(IndexT i = 0; i < remainingViewIds.size(); ++i)
+  for(int i = 0; i < remainingViewIds.size(); ++i)
   {
     std::set<IndexT>::const_iterator iter = remainingViewIds.cbegin();
     std::advance(iter, i);
