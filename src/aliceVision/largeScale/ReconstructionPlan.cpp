@@ -6,7 +6,7 @@
 #include "ReconstructionPlan.hpp"
 #include <aliceVision/common/common.hpp>
 #include <aliceVision/common/fileIO.hpp>
-#include <aliceVision/mesh/mv_plysaver.hpp>
+#include <aliceVision/mesh/plySaver.hpp>
 #include <aliceVision/delaunaycut/mv_delaunay_GC.hpp>
 #include <aliceVision/delaunaycut/mv_delaunay_meshSmooth.hpp>
 #include <aliceVision/largeScale/VoxelsGrid.hpp>
@@ -512,7 +512,7 @@ void reconstructSpaceAccordingToVoxelsArray(const std::string& voxelsArrayFileNa
             delete voxelsIds;
 
             // Save mesh as .bin and .obj
-            mv_mesh* mesh = delaunayGC.createMesh();
+            Mesh* mesh = delaunayGC.createMesh();
             staticVector<staticVector<int>*>* ptsCams = delaunayGC.createPtsCams();
             staticVector<int> usedCams = delaunayGC.getSortedUsedCams();
 
@@ -570,7 +570,7 @@ staticVector<staticVector<int>*>* loadLargeScalePtsCams(const std::vector<std::s
 }
 
 
-mv_mesh* joinMeshes(const std::vector<std::string>& recsDirs, staticVector<point3d>* voxelsArray,
+Mesh* joinMeshes(const std::vector<std::string>& recsDirs, staticVector<point3d>* voxelsArray,
                     LargeScale* ls)
 {
     ReconstructionPlan rp(ls->dimensions, &ls->space[0], ls->mp, ls->pc, ls->spaceVoxelsFolderName);
@@ -586,7 +586,7 @@ mv_mesh* joinMeshes(const std::vector<std::string>& recsDirs, staticVector<point
         std::string fileName = folderName + "mesh.bin";
         if(FileExists(fileName))
         {
-            mv_mesh* mei = new mv_mesh();
+            Mesh* mei = new Mesh();
             mei->loadFromBin(fileName);
             npts += mei->pts->size();
             ntris += mei->tris->size();
@@ -600,9 +600,9 @@ mv_mesh* joinMeshes(const std::vector<std::string>& recsDirs, staticVector<point
 
     if(ls->mp->verbose)
         printf("Creating mesh\n");
-    mv_mesh* me = new mv_mesh();
+    Mesh* me = new Mesh();
     me->pts = new staticVector<point3d>(npts);
-    me->tris = new staticVector<mv_mesh::triangle>(ntris);
+    me->tris = new staticVector<Mesh::triangle>(ntris);
 
     staticVector<rgb>* trisCols = new staticVector<rgb>(ntris);
     staticVector<rgb>* ptsCols = new staticVector<rgb>(npts);
@@ -618,7 +618,7 @@ mv_mesh* joinMeshes(const std::vector<std::string>& recsDirs, staticVector<point
         std::string fileName = folderName + "mesh.bin";
         if(FileExists(fileName))
         {
-            mv_mesh* mei = new mv_mesh();
+            Mesh* mei = new Mesh();
             mei->loadFromBin(fileName);
 
             // to remove artefacts on the border
@@ -674,7 +674,7 @@ mv_mesh* joinMeshes(const std::vector<std::string>& recsDirs, staticVector<point
     return me;
 }
 
-mv_mesh* joinMeshes(int gl, LargeScale* ls)
+Mesh* joinMeshes(int gl, LargeScale* ls)
 {
     ReconstructionPlan* rp =
         new ReconstructionPlan(ls->dimensions, &ls->space[0], ls->mp, ls->pc, ls->spaceVoxelsFolderName);
@@ -720,18 +720,18 @@ mv_mesh* joinMeshes(int gl, LargeScale* ls)
     delete optimalReconstructionPlan;
     delete rp;
 
-    mv_mesh* me = joinMeshes(recsDirs, voxelsArray, ls);
+    Mesh* me = joinMeshes(recsDirs, voxelsArray, ls);
     delete voxelsArray;
 
     return me;
 }
 
-mv_mesh* joinMeshes(const std::string& voxelsArrayFileName, LargeScale* ls)
+Mesh* joinMeshes(const std::string& voxelsArrayFileName, LargeScale* ls)
 {
     staticVector<point3d>* voxelsArray = loadArrayFromFile<point3d>(voxelsArrayFileName);
     std::vector<std::string> recsDirs = ls->getRecsDirs(voxelsArray);
 
-    mv_mesh* me = joinMeshes(recsDirs, voxelsArray, ls);
+    Mesh* me = joinMeshes(recsDirs, voxelsArray, ls);
     delete voxelsArray;
 
     return me;

@@ -3,10 +3,9 @@
 // v. 2.0. If a copy of the MPL was not distributed with this file,
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
-#include "mv_plysaver.hpp"
+#include "plySaver.hpp"
 
-
-int mv_saveply(std::string plyFileName, mv_mesh* me, bool diffuse)
+int savePLY(std::string plyFileName, Mesh* me, bool diffuse)
 {
     // printf("Writing to file %s \n",plyFileName.c_str());
 
@@ -122,7 +121,7 @@ int mv_saveply(std::string plyFileName, mv_mesh* me, bool diffuse)
     return 0;
 }
 
-staticVector<rgb>* getPtsColorsRgb(mv_mesh* me, staticVector<rgb>* triColors)
+staticVector<rgb>* getPtsColorsRgb(Mesh* me, staticVector<rgb>* triColors)
 {
     staticVector<Color>* ptsColors = new staticVector<Color>(me->pts->size());
     staticVector<float>* nptsColors = new staticVector<float>(me->pts->size());
@@ -160,7 +159,7 @@ staticVector<rgb>* getPtsColorsRgb(mv_mesh* me, staticVector<rgb>* triColors)
     return ptsColorsRgb;
 }
 
-staticVector<rgb>* getTrisColorsRgb(mv_mesh* me, staticVector<rgb>* ptsColors)
+staticVector<rgb>* getTrisColorsRgb(Mesh* me, staticVector<rgb>* ptsColors)
 {
     staticVector<rgb>* trisColors = new staticVector<rgb>(me->tris->size());
     trisColors->resize(me->tris->size());
@@ -182,7 +181,7 @@ staticVector<rgb>* getTrisColorsRgb(mv_mesh* me, staticVector<rgb>* ptsColors)
     return trisColors;
 }
 
-int mv_saveply(std::string plyFileName, mv_mesh* me, staticVector<rgb>* triColors, bool diffuse)
+int savePLY(std::string plyFileName, Mesh* me, staticVector<rgb>* triColors, bool diffuse)
 {
     staticVector<rgb>* ptsColors = getPtsColorsRgb(me, triColors);
 

@@ -5,11 +5,11 @@
 
 #pragma once
 
-#include "mv_mesh_energy_opt.hpp"
+#include <aliceVision/mesh/MeshEnergyOpt.hpp>
 #include <aliceVision/depthMap/DepthSimMap.hpp>
 #include <aliceVision/depthMap/SemiGlobalMatchingParams.hpp>
 
-class mv_mesh_energy_opt_photo_mem : public mv_mesh_energy_opt
+class MeshEnergyOptPhotoMem : public MeshEnergyOpt
 {
 public:
     struct camPtStat
@@ -66,8 +66,8 @@ public:
     float sigma;
     float pixSizeRatioThr;
 
-    mv_mesh_energy_opt_photo_mem(multiviewParams* _mp, SemiGlobalMatchingParams* _sp, const staticVector<int>& _usedCams);
-    ~mv_mesh_energy_opt_photo_mem();
+    MeshEnergyOptPhotoMem(multiviewParams* _mp, SemiGlobalMatchingParams* _sp, const staticVector<int>& _usedCams);
+    ~MeshEnergyOptPhotoMem();
 
     void allocatePtsStats();
     void deAllocatePtsStats();

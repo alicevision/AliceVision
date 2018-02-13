@@ -5,14 +5,13 @@
 
 #pragma once
 
-#include "mv_mesh.hpp"
-#include <aliceVision/common/ImagesCache.hpp>
 #include <aliceVision/structures/image.hpp>
+#include <aliceVision/common/ImagesCache.hpp>
+#include <aliceVision/mesh/Mesh.hpp>
 
 #include <boost/filesystem.hpp>
 
 namespace bfs = boost::filesystem;
-
 
 struct TexturingParams
 {
@@ -21,7 +20,7 @@ struct TexturingParams
     unsigned int downscale = 2;
 };
 
-struct meshRetex
+struct Retexturer
 {
     TexturingParams texParams;
 
@@ -31,12 +30,12 @@ struct meshRetex
     staticVector<voxel>* trisUvIds = nullptr;
     staticVector<point3d>* normals = nullptr;
     staticVector<voxel>* trisNormalsIds = nullptr;
-    mv_mesh* me = nullptr;
+    Mesh* me = nullptr;
 
     /// texture atlas to 3D triangle ids
     std::vector<std::vector<int>> _atlases;
 
-    ~meshRetex()
+    ~Retexturer()
     {
         delete trisMtlIds;
         delete uvCoords;

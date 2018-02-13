@@ -4,9 +4,10 @@
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
 #pragma once
+
 #include <aliceVision/largeScale/LargeScale.hpp>
 #include <aliceVision/largeScale/VoxelsGrid.hpp>
-#include <aliceVision/mesh/mv_mesh.hpp>
+#include <aliceVision/mesh/Mesh.hpp>
 
 class ReconstructionPlan : public VoxelsGrid
 {
@@ -32,9 +33,9 @@ public:
 void reconstructAccordingToOptimalReconstructionPlan(int gl, LargeScale* ls);
 void reconstructSpaceAccordingToVoxelsArray(const std::string& voxelsArrayFileName, LargeScale* ls,
                                             bool doComputeColoredMeshes);
-mv_mesh* joinMeshes(const std::vector<std::string>& recsDirs, staticVector<point3d>* voxelsArray, LargeScale* ls);
-mv_mesh* joinMeshes(int gl, LargeScale* ls);
-mv_mesh* joinMeshes(const std::string& voxelsArrayFileName, LargeScale* ls);
+Mesh* joinMeshes(const std::vector<std::string>& recsDirs, staticVector<point3d>* voxelsArray, LargeScale* ls);
+Mesh* joinMeshes(int gl, LargeScale* ls);
+Mesh* joinMeshes(const std::string& voxelsArrayFileName, LargeScale* ls);
 
 staticVector<staticVector<int>*>* loadLargeScalePtsCams(const std::vector<std::string>& recsDirs);
 

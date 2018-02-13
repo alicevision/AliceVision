@@ -3,8 +3,7 @@
 // v. 2.0. If a copy of the MPL was not distributed with this file,
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
-#include "mv_plyloader.hpp"
-
+#include "plyLoader.hpp"
 
 struct refine_tri
 {
@@ -80,7 +79,7 @@ static int face_cb(p_ply_argument argument)
     return 1;
 }
 
-bool mv_loadply(std::string plyFileName, mv_mesh* me)
+bool loadPLY(std::string plyFileName, Mesh* me)
 {
     printf("Reading file %s \n", plyFileName.c_str());
 
@@ -164,10 +163,10 @@ bool mv_loadply(std::string plyFileName, mv_mesh* me)
         me->pts->push_back(pts[i]);
     }
 
-    me->tris = new staticVector<mv_mesh::triangle>(ntriangles);
+    me->tris = new staticVector<Mesh::triangle>(ntriangles);
     for(int i = 0; i < ntriangles; i++)
     {
-        mv_mesh::triangle t;
+        Mesh::triangle t;
         t.i[0] = ids[i].i[0];
         t.i[1] = ids[i].i[1];
         t.i[2] = ids[i].i[2];
@@ -189,7 +188,7 @@ bool mv_loadply(std::string plyFileName, mv_mesh* me)
 }
 
 /*
-int mv_loadply(std::string plyFileName, mv_mesh *me)
+int loadPLY(std::string plyFileName, Mesh *me)
 {
         printf("Reading from file %s \n",plyFileName.c_str());
 

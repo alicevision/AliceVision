@@ -4,9 +4,8 @@
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
 #include "VoxelsGrid.hpp"
-
 #include <aliceVision/delaunaycut/mv_delaunay_types.hpp>
-#include <aliceVision/mesh/mv_plyloader.hpp>
+#include <aliceVision/mesh/plyLoader.hpp>
 #include <aliceVision/common/fileIO.hpp>
 #include <aliceVision/omp.hpp>
 

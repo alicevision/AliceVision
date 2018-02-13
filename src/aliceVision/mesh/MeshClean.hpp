@@ -5,9 +5,9 @@
 
 #pragma once
 
-#include "mv_mesh.hpp"
+#include <aliceVision/mesh/Mesh.hpp>
 
-class mv_mesh_clean : public mv_mesh
+class MeshClean : public Mesh
 {
 public:
     class path
@@ -38,10 +38,10 @@ public:
             }
         };
 
-        mv_mesh_clean* me;
+        MeshClean* me;
         int ptId;
 
-        path(mv_mesh_clean* _me, int _ptId);
+        path(MeshClean* _me, int _ptId);
         ~path();
 
         void printfState(staticVector<pathPart>* _pth);
@@ -77,8 +77,8 @@ public:
 
     int nPtsInit;
 
-    mv_mesh_clean(multiviewParams* _mp);
-    ~mv_mesh_clean();
+    MeshClean(multiviewParams* _mp);
+    ~MeshClean();
 
     bool getEdgeNeighTrisInterval(pixel& itr, int _ptId1, int _ptId2);
     bool isIsBoundaryPt(int ptId);

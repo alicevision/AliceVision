@@ -3,19 +3,16 @@
 // v. 2.0. If a copy of the MPL was not distributed with this file,
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
-#include "mv_mesh_analyze.hpp"
-
+#include "MeshAnalyze.hpp"
 #include <aliceVision/structures/mv_geometry.hpp>
 
+MeshAnalyze::MeshAnalyze(multiviewParams* _mp)
+    : MeshClean(_mp)
+{}
 
-mv_mesh_analyze::mv_mesh_analyze(multiviewParams* _mp)
-    : mv_mesh_clean(_mp)
-{
-}
+MeshAnalyze::~MeshAnalyze() = default;
 
-mv_mesh_analyze::~mv_mesh_analyze() = default;
-
-point3d mv_mesh_analyze::getCotAlphaCotBetaCotGammaForTriangle(int i)
+point3d MeshAnalyze::getCotAlphaCotBetaCotGammaForTriangle(int i)
 {
     float cotalpha =
         1.0f / tan(angleBetwABandAC((*pts)[(*tris)[i].i[1]], (*pts)[(*tris)[i].i[0]], (*pts)[(*tris)[i].i[2]]) *
@@ -29,7 +26,7 @@ point3d mv_mesh_analyze::getCotAlphaCotBetaCotGammaForTriangle(int i)
     return point3d(cotalpha, cotbeta, cotgamma);
 }
 
-point2d mv_mesh_analyze::getCotAlphaijAndCotBetaij(int i, int j, staticVector<int>* ptNeighPtsOrdered)
+point2d MeshAnalyze::getCotAlphaijAndCotBetaij(int i, int j, staticVector<int>* ptNeighPtsOrdered)
 {
     int jp1 = j + 1;
     if(jp1 >= ptNeighPtsOrdered->size())
@@ -53,7 +50,7 @@ point2d mv_mesh_analyze::getCotAlphaijAndCotBetaij(int i, int j, staticVector<in
     return point2d(cotalpha, cotbeta);
 }
 
-float mv_mesh_analyze::AreaVor(int i, staticVector<int>* ptNeighPtsOrdered)
+float MeshAnalyze::AreaVor(int i, staticVector<int>* ptNeighPtsOrdered)
 {
     float A = 0.0f;
     for(int j = 0; j < ptNeighPtsOrdered->size(); j++)
@@ -67,7 +64,7 @@ float mv_mesh_analyze::AreaVor(int i, staticVector<int>* ptNeighPtsOrdered)
     return A;
 }
 
-point3d mv_mesh_analyze::meanCurvVorAtPti(int i, staticVector<int>* ptNeighPtsOrdered)
+point3d MeshAnalyze::meanCurvVorAtPti(int i, staticVector<int>* ptNeighPtsOrdered)
 {
     point3d meancurv = point3d(0.0f, 0.0f, 0.0f);
     for(int j = 0; j < ptNeighPtsOrdered->size(); j++)
@@ -81,7 +78,7 @@ point3d mv_mesh_analyze::meanCurvVorAtPti(int i, staticVector<int>* ptNeighPtsOr
     return meancurv;
 }
 
-double mv_mesh_analyze::getCotanOfAngle(point3d& vo, point3d& v1, point3d& v2)
+double MeshAnalyze::getCotanOfAngle(point3d& vo, point3d& v1, point3d& v2)
 {
     /* cf. Appendix B of [Meyer et al 2002] */
 
@@ -99,7 +96,7 @@ double mv_mesh_analyze::getCotanOfAngle(point3d& vo, point3d& v1, point3d& v2)
     return (udotv / denom);
 }
 
-double mv_mesh_analyze::getAngleFromCotan(point3d& vo, point3d& v1, point3d& v2)
+double MeshAnalyze::getAngleFromCotan(point3d& vo, point3d& v1, point3d& v2)
 {
     /* cf. Appendix B and the caption of Table 1 from [Meyer et al 2002] */
     point3d u = v1 - vo;
@@ -112,7 +109,7 @@ double mv_mesh_analyze::getAngleFromCotan(point3d& vo, point3d& v1, point3d& v2)
     return (fabs(atan2(denom, udotv)));
 }
 
-double mv_mesh_analyze::getRegionArea(int vertexIdInTriangle, int triId)
+double MeshAnalyze::getRegionArea(int vertexIdInTriangle, int triId)
 {
     /* cf. Section 3.3 of [Meyer et al 2002] */
     double triArea = computeTriangleArea(triId);
@@ -135,7 +132,7 @@ double mv_mesh_analyze::getRegionArea(int vertexIdInTriangle, int triId)
     }
 }
 
-int mv_mesh_analyze::getVertexIdInTriangleForPtId(int ptId, int triId)
+int MeshAnalyze::getVertexIdInTriangleForPtId(int ptId, int triId)
 {
     for(int i = 0; i < 3; i++)
     {
@@ -147,7 +144,7 @@ int mv_mesh_analyze::getVertexIdInTriangleForPtId(int ptId, int triId)
     return -1;
 }
 
-bool mv_mesh_analyze::getVertexSurfaceNormal(int ptId, point3d& N)
+bool MeshAnalyze::getVertexSurfaceNormal(int ptId, point3d& N)
 {
     staticVector<int>* ptNeighPtsOrdered = (*ptsNeighPtsOrdered)[ptId];
     staticVector<int>* ptNeighTris = (*ptsNeighTrisSortedAsc)[ptId];
@@ -169,7 +166,7 @@ bool mv_mesh_analyze::getVertexSurfaceNormal(int ptId, point3d& N)
 }
 
 // gts_vertex_mean_curvature_normal [Meyer et al 2002]
-bool mv_mesh_analyze::getVertexMeanCurvatureNormal(int ptId, point3d& Kh)
+bool MeshAnalyze::getVertexMeanCurvatureNormal(int ptId, point3d& Kh)
 {
     staticVector<int>* ptNeighPtsOrdered = (*ptsNeighPtsOrdered)[ptId];
     staticVector<int>* ptNeighTris = (*ptsNeighTrisSortedAsc)[ptId];
@@ -219,7 +216,7 @@ bool mv_mesh_analyze::getVertexMeanCurvatureNormal(int ptId, point3d& Kh)
 }
 
 // gts_vertex_gaussian_curvature [Meyer et al 2002]
-bool mv_mesh_analyze::getVertexGaussianCurvature(int ptId, double& Kg)
+bool MeshAnalyze::getVertexGaussianCurvature(int ptId, double& Kg)
 {
     staticVector<int>* ptNeighPtsOrdered = (*ptsNeighPtsOrdered)[ptId];
     staticVector<int>* ptNeighTris = (*ptsNeighTrisSortedAsc)[ptId];
@@ -257,7 +254,7 @@ bool mv_mesh_analyze::getVertexGaussianCurvature(int ptId, double& Kg)
 }
 
 // gts_vertex_principal_curvatures [Meyer et al 2002]
-void mv_mesh_analyze::getVertexPrincipalCurvatures(double Kh, double Kg, double& K1, double& K2)
+void MeshAnalyze::getVertexPrincipalCurvatures(double Kh, double Kg, double& K1, double& K2)
 {
     double temp = Kh * Kh - Kg;
     if(temp < 0.0)
@@ -584,7 +581,7 @@ e2)
 // page 5 - U1 - laplacian is obtained wnen apply to origina pts , U2 - bi-laplacian is obtained when apply to laplacian
 // pts
 
-bool mv_mesh_analyze::applyLaplacianOperator(int ptId, staticVector<point3d>* ptsToApplyLaplacianOp, point3d& ln)
+bool MeshAnalyze::applyLaplacianOperator(int ptId, staticVector<point3d>* ptsToApplyLaplacianOp, point3d& ln)
 {
     staticVector<int>* ptNeighPtsOrdered = (*ptsNeighPtsOrdered)[ptId];
     if(ptNeighPtsOrdered == nullptr)
@@ -628,7 +625,7 @@ bool mv_mesh_analyze::applyLaplacianOperator(int ptId, staticVector<point3d>* pt
 
 // othake et al 00 Polyhedral Surface Smoothing with Simultaneous Mesh Regularization
 // page 3 eq (3)
-bool mv_mesh_analyze::getLaplacianSmoothingVector(int ptId, point3d& ln)
+bool MeshAnalyze::getLaplacianSmoothingVector(int ptId, point3d& ln)
 {
     return applyLaplacianOperator(ptId, pts, ln);
 }
@@ -636,7 +633,7 @@ bool mv_mesh_analyze::getLaplacianSmoothingVector(int ptId, point3d& ln)
 // kobbelt kampagna 98 Interactive Multi-Resolution Modeling on Arbitrary Meshes
 // page 5 - U1 - laplacian is obtained wnen apply to origina pts , U2 - bi-laplacian is obtained when apply to laplacian
 // pts
-bool mv_mesh_analyze::getBiLaplacianSmoothingVector(int ptId, staticVector<point3d>* ptsLaplacian, point3d& tp)
+bool MeshAnalyze::getBiLaplacianSmoothingVector(int ptId, staticVector<point3d>* ptsLaplacian, point3d& tp)
 {
     if(applyLaplacianOperator(ptId, ptsLaplacian, tp))
     {
@@ -679,7 +676,7 @@ bool mv_mesh_analyze::getBiLaplacianSmoothingVector(int ptId, staticVector<point
 // kobbelt kampagna 98 Interactive Multi-Resolution Modeling on Arbitrary Meshes
 // page 5 - U1 - laplacian is obtained wnen apply to origina pts , U2 - bi-laplacian is obtained when apply to laplacian
 // pts
-bool mv_mesh_analyze::getBiLaplacianSmoothingVectorAndPrincipalCurvatures(
+bool MeshAnalyze::getBiLaplacianSmoothingVectorAndPrincipalCurvatures(
     int ptId, staticVector<point3d>* ptsLaplacian, point3d& smoothingVector, point3d& smoothingVectorNormalized,
     point3d& normalVectorNormalized, double& smoothingVectorSize, double& K1, double& K2, double& area,
     double& avNeighEdegeLenth)
@@ -787,7 +784,7 @@ bool mv_mesh_analyze::getBiLaplacianSmoothingVectorAndPrincipalCurvatures(
 
 // othake et al 00 Polyhedral Surface Smoothing with Simultaneous Mesh Regularization
 // page 6 eq (13)
-bool mv_mesh_analyze::getMeanCurvAndLaplacianSmoothing(int ptId, point3d& F, float epsilon)
+bool MeshAnalyze::getMeanCurvAndLaplacianSmoothing(int ptId, point3d& F, float epsilon)
 {
     point3d Hn;
     if(!getVertexMeanCurvatureNormal(ptId, Hn))

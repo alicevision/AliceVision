@@ -9,7 +9,7 @@
 
 namespace mesh {
 
-int getNearestVertices(const mv_mesh& refMesh, const mv_mesh& mesh, staticVector<int>& out_nearestVertex)
+int getNearestVertices(const Mesh& refMesh, const Mesh& mesh, staticVector<int>& out_nearestVertex)
 {
     std::cout << "getNearestVertices begin" << std::endl;
     out_nearestVertex.resize(mesh.pts->size(), -1);
@@ -28,8 +28,8 @@ int getNearestVertices(const mv_mesh& refMesh, const mv_mesh& mesh, staticVector
 
 
 void remapMeshVisibilities(
-    const mv_mesh& refMesh, const PointsVisibility& refPtsVisibilities,
-    const mv_mesh& mesh, PointsVisibility& out_ptsVisibilities)
+    const Mesh& refMesh, const PointsVisibility& refPtsVisibilities,
+    const Mesh& mesh, PointsVisibility& out_ptsVisibilities)
 {
     std::cout << "remapMeshVisibility begin" << std::endl;
 

@@ -148,7 +148,7 @@ int main(int argc, char* argv[])
             }
             reconstructSpaceAccordingToVoxelsArray(voxelsArrayFileName, &lsbase, true);
             // Join meshes
-            mv_mesh* mesh = joinMeshes(voxelsArrayFileName, &lsbase);
+            Mesh* mesh = joinMeshes(voxelsArrayFileName, &lsbase);
 
             ALICEVISION_COUT("Saving joined meshes");
 
@@ -205,7 +205,7 @@ int main(int argc, char* argv[])
             delaunayGC.graphCutPostProcessing();
 
             // Save mesh as .bin and .obj
-            mv_mesh* mesh = delaunayGC.createMesh();
+            Mesh* mesh = delaunayGC.createMesh();
             if(mesh->pts->empty())
               throw std::runtime_error("Empty mesh");
 

@@ -14,7 +14,7 @@
 #include <aliceVision/structures/jetColorMap.hpp>
 #include <aliceVision/structures/mv_universe.hpp>
 #include <aliceVision/delaunaycut/hallucinations.hpp>
-#include <aliceVision/mesh/mv_mesh_energy_opt_photo_mem.hpp>
+#include <aliceVision/mesh/MeshEnergyOptPhotoMem.hpp>
 
 #include <boost/filesystem.hpp>
 #include <boost/filesystem/operations.hpp>
@@ -2895,7 +2895,7 @@ float mv_delaunay_GC::computeSurfaceArea()
     return area;
 }
 
-mv_mesh* mv_delaunay_GC::createMesh(bool filterHelperPointsTriangles)
+Mesh* mv_delaunay_GC::createMesh(bool filterHelperPointsTriangles)
 {
     std::cout << "Extract mesh from GC" << std::endl;
 
@@ -2905,7 +2905,7 @@ mv_mesh* mv_delaunay_GC::createMesh(bool filterHelperPointsTriangles)
     std::cout << "Nb vertixes: " << _verticesCoords.size() << std::endl;
     std::cout << "_cellIsFull.size(): " << _cellIsFull.size() << std::endl;
 
-    mv_mesh* me = new mv_mesh();
+    Mesh* me = new Mesh();
 
     // TODO: copy only surface points and remap visibilities
     me->pts = new staticVector<point3d>(_verticesCoords.size());
@@ -2960,7 +2960,7 @@ mv_mesh* mv_delaunay_GC::createMesh(bool filterHelperPointsTriangles)
         }
     }
 
-    me->tris = new staticVector<mv_mesh::triangle>(nbSurfaceFacets);
+    me->tris = new staticVector<Mesh::triangle>(nbSurfaceFacets);
     // loop over all facets
     for(CellIndex ci = 0; ci < _cellIsFull.size(); ++ci)
     {
@@ -3041,7 +3041,7 @@ mv_mesh* mv_delaunay_GC::createMesh(bool filterHelperPointsTriangles)
 
             if(clockwise)
             {
-                mv_mesh::triangle t;
+                Mesh::triangle t;
                 t.alive = true;
                 t.i[0] = vertices[0];
                 t.i[1] = vertices[1];
@@ -3050,7 +3050,7 @@ mv_mesh* mv_delaunay_GC::createMesh(bool filterHelperPointsTriangles)
             }
             else
             {
-                mv_mesh::triangle t;
+                Mesh::triangle t;
                 t.alive = true;
                 t.i[0] = vertices[0];
                 t.i[1] = vertices[2];
@@ -3100,7 +3100,7 @@ staticVector<rgb>* mv_delaunay_GC::getPtsColorsByNCams()
     return mePtsColors;
 }
 
-void mv_delaunay_GC::initTetrahedralizationFromMeshTrianglesCenter(mv_mesh* mesh, bool _addPointsToPreventSingularities)
+void mv_delaunay_GC::initTetrahedralizationFromMeshTrianglesCenter(Mesh* mesh, bool _addPointsToPreventSingularities)
 {
     if(mp->verbose)
         printf("creating 3D delaunay triangulation from mesh triangles center\n");
@@ -3155,7 +3155,7 @@ void mv_delaunay_GC::initTetrahedralizationFromMeshTrianglesCenter(mv_mesh* mesh
     computeDelaunay();
 }
 
-void mv_delaunay_GC::initTetrahedralizationFromMeshVertices(mv_mesh* mesh, bool _addPointsToPreventSingularities)
+void mv_delaunay_GC::initTetrahedralizationFromMeshVertices(Mesh* mesh, bool _addPointsToPreventSingularities)
 {
     if(mp->verbose)
         printf("creating 3D delaunay triangulation from mesh vertices\n");
@@ -3206,7 +3206,7 @@ void mv_delaunay_GC::initTetrahedralizationFromMeshVertices(mv_mesh* mesh, bool 
     computeDelaunay();
 }
 
-staticVector<int>* mv_delaunay_GC::getNearestTrisFromMeshTris(mv_mesh* otherMesh)
+staticVector<int>* mv_delaunay_GC::getNearestTrisFromMeshTris(Mesh* otherMesh)
 {
     ///////////////////////////////////////////////////////////////////////////////////////
     if(mp->verbose)
@@ -3234,7 +3234,7 @@ staticVector<int>* mv_delaunay_GC::getNearestTrisFromMeshTris(mv_mesh* otherMesh
     return nearestTrisIds;
 }
 
-staticVector<int>* mv_delaunay_GC::getNearestPtsFromMesh(mv_mesh& otherMesh)
+staticVector<int>* mv_delaunay_GC::getNearestPtsFromMesh(Mesh& otherMesh)
 {
     ///////////////////////////////////////////////////////////////////////////////////////
     if(mp->verbose)
@@ -3501,7 +3501,7 @@ staticVector<float>* mv_delaunay_GC::computeSegmentsSurfaceArea(bool full, stati
     return segmentsSurfAreas;
 }
 
-staticVector<staticVector<int>*>* mv_delaunay_GC::createPtsCamsForAnotherMesh(staticVector<staticVector<int>*>* refPtsCams, mv_mesh& otherMesh)
+staticVector<staticVector<int>*>* mv_delaunay_GC::createPtsCamsForAnotherMesh(staticVector<staticVector<int>*>* refPtsCams, Mesh& otherMesh)
 {
     std::cout << "createPtsCamsForAnotherMesh" << std::endl;
 

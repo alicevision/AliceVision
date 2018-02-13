@@ -5,15 +5,15 @@
 
 #pragma once
 
-#include "mv_mesh_analyze.hpp"
+#include <aliceVision/mesh/MeshAnalyze.hpp>
 
-class mv_mesh_energy_opt : public mv_mesh_analyze
+class MeshEnergyOpt : public MeshAnalyze
 {
 public:
     std::string tmpDir;
 
-    mv_mesh_energy_opt(multiviewParams* _mp);
-    ~mv_mesh_energy_opt();
+    MeshEnergyOpt(multiviewParams* _mp);
+    ~MeshEnergyOpt();
 
     staticVector<point3d>* computeLaplacianPts();
     staticVector<point3d>* computeLaplacianPtsParallel();

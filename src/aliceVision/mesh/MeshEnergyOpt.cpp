@@ -3,23 +3,22 @@
 // v. 2.0. If a copy of the MPL was not distributed with this file,
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
-#include "mv_mesh_energy_opt.hpp"
+#include "MeshEnergyOpt.hpp"
 
 #include <boost/filesystem.hpp>
 
-
 namespace bfs = boost::filesystem;
 
-mv_mesh_energy_opt::mv_mesh_energy_opt(multiviewParams* _mp)
-    : mv_mesh_analyze(_mp)
+MeshEnergyOpt::MeshEnergyOpt(multiviewParams* _mp)
+    : MeshAnalyze(_mp)
 {
 //    tmpDir = mp->mip->mvDir + "meshEnergyOpt/";
 //    bfs::create_directory(tmpDir);
 }
 
-mv_mesh_energy_opt::~mv_mesh_energy_opt() = default;
+MeshEnergyOpt::~MeshEnergyOpt() = default;
 
-staticVector<point3d>* mv_mesh_energy_opt::computeLaplacianPts()
+staticVector<point3d>* MeshEnergyOpt::computeLaplacianPts()
 {
     staticVector<point3d>* lapPts = new staticVector<point3d>(pts->size());
     lapPts->resize_with(pts->size(), point3d(0.0f, 0.0f, 0.f));
@@ -37,7 +36,7 @@ staticVector<point3d>* mv_mesh_energy_opt::computeLaplacianPts()
     return lapPts;
 }
 
-staticVector<point3d>* mv_mesh_energy_opt::computeLaplacianPtsParallel()
+staticVector<point3d>* MeshEnergyOpt::computeLaplacianPtsParallel()
 {
     staticVector<point3d>* lapPts = new staticVector<point3d>(pts->size());
     lapPts->resize_with(pts->size(), point3d(0.0f, 0.0f, 0.f));
@@ -57,7 +56,7 @@ staticVector<point3d>* mv_mesh_energy_opt::computeLaplacianPtsParallel()
     return lapPts;
 }
 
-void mv_mesh_energy_opt::updateGradientParallel(float lambda, float epsilon, int type, const point3d& LU,
+void MeshEnergyOpt::updateGradientParallel(float lambda, float epsilon, int type, const point3d& LU,
                                                 const point3d& RD, staticVectorBool* ptsCanMove)
 {
     // printf("nlabpts %i of %i\n",nlabpts,pts->size());
@@ -144,7 +143,7 @@ void mv_mesh_energy_opt::updateGradientParallel(float lambda, float epsilon, int
     delete lapPts;
 }
 
-bool mv_mesh_energy_opt::optimizeSmooth(float lambda, float epsilon, int type, int niter, staticVectorBool* ptsCanMove)
+bool MeshEnergyOpt::optimizeSmooth(float lambda, float epsilon, int type, int niter, staticVectorBool* ptsCanMove)
 {
     if(pts->size() <= 4)
     {

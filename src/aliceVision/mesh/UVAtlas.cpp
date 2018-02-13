@@ -3,14 +3,13 @@
 // v. 2.0. If a copy of the MPL was not distributed with this file,
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
-#include "mv_mesh_uvatlas.hpp"
+#include "UVAtlas.hpp"
 
 #include <iostream>
 
-
 using namespace std;
 
-mv_mesh_uvatlas::mv_mesh_uvatlas(const mv_mesh& mesh, multiviewParams& mp, staticVector<staticVector<int>*>* ptsCams,
+UVAtlas::UVAtlas(const Mesh& mesh, multiviewParams& mp, staticVector<staticVector<int>*>* ptsCams,
                                  unsigned int textureSide, unsigned int gutterSize)
     : _textureSide(textureSide)
     , _gutterSize(gutterSize)
@@ -31,7 +30,7 @@ mv_mesh_uvatlas::mv_mesh_uvatlas(const mv_mesh& mesh, multiviewParams& mp, stati
     createTextureAtlases(charts, mp);
 }
 
-void mv_mesh_uvatlas::createCharts(vector<Chart>& charts, multiviewParams& mp, staticVector<staticVector<int>*>* ptsCams)
+void UVAtlas::createCharts(vector<Chart>& charts, multiviewParams& mp, staticVector<staticVector<int>*>* ptsCams)
 {
     cout << "Creating texture charts" << endl;
 
@@ -51,7 +50,7 @@ void mv_mesh_uvatlas::createCharts(vector<Chart>& charts, multiviewParams& mp, s
             //if(!mesh.isTriangleVisibleInCam(i, &mp, cameraID))
             //    continue;
             // project triangle
-            mv_mesh::triangle_proj tp = _mesh.getTriangleProjection(i, &mp, cameraID, mp.mip->getWidth(cameraID), mp.mip->getHeight(cameraID));
+            Mesh::triangle_proj tp = _mesh.getTriangleProjection(i, &mp, cameraID, mp.mip->getWidth(cameraID), mp.mip->getHeight(cameraID));
             if(!mp.isPixelInImage(pixel(tp.tp2ds[0]), 10, cameraID)
                     || !mp.isPixelInImage(pixel(tp.tp2ds[1]), 10, cameraID)
                     || !mp.isPixelInImage(pixel(tp.tp2ds[2]), 10, cameraID))
@@ -70,7 +69,7 @@ void mv_mesh_uvatlas::createCharts(vector<Chart>& charts, multiviewParams& mp, s
     deleteArrayOfArrays<int>(&trisCams);
 }
 
-void mv_mesh_uvatlas::packCharts(vector<Chart>& charts, multiviewParams& mp)
+void UVAtlas::packCharts(vector<Chart>& charts, multiviewParams& mp)
 {
     cout << "Packing texture charts (" <<  charts.size() << " charts)" << endl;
 
@@ -167,7 +166,7 @@ void mv_mesh_uvatlas::packCharts(vector<Chart>& charts, multiviewParams& mp)
             }), charts.end());
 }
 
-void mv_mesh_uvatlas::finalizeCharts(vector<Chart>& charts, multiviewParams& mp)
+void UVAtlas::finalizeCharts(vector<Chart>& charts, multiviewParams& mp)
 {
     cout << "Finalize packed charts (" <<  charts.size() << " charts)" << endl;
 
@@ -186,7 +185,7 @@ void mv_mesh_uvatlas::finalizeCharts(vector<Chart>& charts, multiviewParams& mp)
         auto it = c.triangleIDs.begin();
         while(it != c.triangleIDs.end())
         {
-            mv_mesh::triangle_proj tp = _mesh.getTriangleProjection(*it, &mp, c.refCameraID, mp.mip->getWidth(c.refCameraID), mp.mip->getHeight(c.refCameraID));
+            Mesh::triangle_proj tp = _mesh.getTriangleProjection(*it, &mp, c.refCameraID, mp.mip->getWidth(c.refCameraID), mp.mip->getHeight(c.refCameraID));
             c.sourceLU.x = min(c.sourceLU.x, tp.lu.x);
             c.sourceLU.y = min(c.sourceLU.y, tp.lu.y);
             c.sourceRD.x = max(c.sourceRD.x, tp.rd.x);
@@ -196,7 +195,7 @@ void mv_mesh_uvatlas::finalizeCharts(vector<Chart>& charts, multiviewParams& mp)
     }
 }
 
-void mv_mesh_uvatlas::createTextureAtlases(vector<Chart>& charts, multiviewParams& mp)
+void UVAtlas::createTextureAtlases(vector<Chart>& charts, multiviewParams& mp)
 {
     cout << "Creating texture atlases" << endl;
 
@@ -258,7 +257,7 @@ void mv_mesh_uvatlas::createTextureAtlases(vector<Chart>& charts, multiviewParam
     }
 }
 
-void mv_mesh_uvatlas::ChartRect::clear()
+void UVAtlas::ChartRect::clear()
 {
     if(child[0])
         child[0]->clear();
@@ -268,7 +267,7 @@ void mv_mesh_uvatlas::ChartRect::clear()
     delete child[1];
 }
 
-mv_mesh_uvatlas::ChartRect* mv_mesh_uvatlas::ChartRect::insert(Chart& chart, size_t gutter)
+UVAtlas::ChartRect* UVAtlas::ChartRect::insert(Chart& chart, size_t gutter)
 {
     if(child[0] || child[1]) // not a leaf
     {

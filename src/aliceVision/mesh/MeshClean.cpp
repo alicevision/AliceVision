@@ -3,18 +3,17 @@
 // v. 2.0. If a copy of the MPL was not distributed with this file,
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
-#include "mv_mesh_clean.hpp"
+#include "MeshClean.hpp"
 
-
-mv_mesh_clean::path::path(mv_mesh_clean* _me, int _ptId)
+MeshClean::path::path(MeshClean* _me, int _ptId)
 {
     me = _me;
     ptId = _ptId;
 }
 
-mv_mesh_clean::path::~path() = default;
+MeshClean::path::~path() = default;
 
-bool mv_mesh_clean::path::addNextTriIdToPathBack(int nextTriId, staticVector<mv_mesh_clean::path::pathPart>* _pth)
+bool MeshClean::path::addNextTriIdToPathBack(int nextTriId, staticVector<MeshClean::path::pathPart>* _pth)
 {
     int lastTriId = (*_pth)[_pth->size() - 1].triId;
     int ptId2 = (*_pth)[_pth->size() - 1].ptsIds[1];
@@ -26,7 +25,7 @@ bool mv_mesh_clean::path::addNextTriIdToPathBack(int nextTriId, staticVector<mv_
     if((lastTriId == nextTriId) || ((ptId2 == others2.x) && (ptId2 == others2.y)))
     {
         std::stringstream s;
-        s << "mv_mesh_clean::path::addNextTriIdToPath: lastTriId=" << lastTriId << ", nextTriId=" << nextTriId << ", ptId2=" << ptId2 << ", others2=" << others2.x << "," << others2.y;
+        s << "MeshClean::path::addNextTriIdToPath: lastTriId=" << lastTriId << ", nextTriId=" << nextTriId << ", ptId2=" << ptId2 << ", others2=" << others2.x << "," << others2.y;
         throw std::runtime_error(s.str());
     }
 
@@ -46,7 +45,7 @@ bool mv_mesh_clean::path::addNextTriIdToPathBack(int nextTriId, staticVector<mv_
     return false;
 }
 
-bool mv_mesh_clean::path::addNextTriIdToPathFront(int nextTriId, staticVector<mv_mesh_clean::path::pathPart>* _pth)
+bool MeshClean::path::addNextTriIdToPathFront(int nextTriId, staticVector<MeshClean::path::pathPart>* _pth)
 {
     int firstTriId = (*_pth)[0].triId;
     int ptId1 = (*_pth)[0].ptsIds[0];
@@ -56,7 +55,7 @@ bool mv_mesh_clean::path::addNextTriIdToPathFront(int nextTriId, staticVector<mv
     if((firstTriId == nextTriId) || ((ptId1 == others2.x) && (ptId1 == others2.y)))
     {
         std::stringstream s;
-        s << "mv_mesh_clean::path::addNextTriIdToPathFront: firstTriId=" << firstTriId << ", nextTriId=" << nextTriId << ", ptId1=" << ptId1 << ", other2=" << others2.x << "," << others2.y;
+        s << "MeshClean::path::addNextTriIdToPathFront: firstTriId=" << firstTriId << ", nextTriId=" << nextTriId << ", ptId1=" << ptId1 << ", other2=" << others2.x << "," << others2.y;
         throw std::runtime_error(s.str());
     }
 
@@ -76,8 +75,8 @@ bool mv_mesh_clean::path::addNextTriIdToPathFront(int nextTriId, staticVector<mv
     return false;
 }
 
-int mv_mesh_clean::path::getNextNeighBouringUnprocessedLast(staticVector<int>* ptNeighTrisSortedAscToProcess,
-                                                            staticVector<mv_mesh_clean::path::pathPart>* _pth)
+int MeshClean::path::getNextNeighBouringUnprocessedLast(staticVector<int>* ptNeighTrisSortedAscToProcess,
+                                                            staticVector<MeshClean::path::pathPart>* _pth)
 {
     int lastTriId = (*_pth)[_pth->size() - 1].triId;
     int ptId2 = (*_pth)[_pth->size() - 1].ptsIds[1];
@@ -107,8 +106,8 @@ int mv_mesh_clean::path::getNextNeighBouringUnprocessedLast(staticVector<int>* p
     return -1;
 }
 
-int mv_mesh_clean::path::getNextNeighBouringUnprocessedFirst(staticVector<int>* ptNeighTrisSortedAscToProcess,
-                                                             staticVector<mv_mesh_clean::path::pathPart>* _pth)
+int MeshClean::path::getNextNeighBouringUnprocessedFirst(staticVector<int>* ptNeighTrisSortedAscToProcess,
+                                                             staticVector<MeshClean::path::pathPart>* _pth)
 {
     int firstTriId = (*_pth)[0].triId;
     int ptId1 = (*_pth)[0].ptsIds[0];
@@ -141,7 +140,7 @@ int mv_mesh_clean::path::getNextNeighBouringUnprocessedFirst(staticVector<int>* 
     return -1;
 }
 
-void mv_mesh_clean::path::printfState(staticVector<mv_mesh_clean::path::pathPart>* _pth)
+void MeshClean::path::printfState(staticVector<MeshClean::path::pathPart>* _pth)
 {
     printf("ptid %i\n", ptId);
     printf("tris in path : ");
@@ -161,7 +160,7 @@ void mv_mesh_clean::path::printfState(staticVector<mv_mesh_clean::path::pathPart
     printf("-----------------------\n");
 }
 
-int mv_mesh_clean::path::nCrossings(staticVector<mv_mesh_clean::path::pathPart>* _pth)
+int MeshClean::path::nCrossings(staticVector<MeshClean::path::pathPart>* _pth)
 {
     int n = 0;
 
@@ -192,8 +191,8 @@ int mv_mesh_clean::path::nCrossings(staticVector<mv_mesh_clean::path::pathPart>*
     return n;
 }
 
-staticVector<mv_mesh_clean::path::pathPart>*
-mv_mesh_clean::path::removeCycleFromPath(staticVector<mv_mesh_clean::path::pathPart>* _pth)
+staticVector<MeshClean::path::pathPart>*
+MeshClean::path::removeCycleFromPath(staticVector<MeshClean::path::pathPart>* _pth)
 {
     staticVector<pathPart>* pthNew = new staticVector<pathPart>(_pth->size());
 
@@ -238,7 +237,7 @@ mv_mesh_clean::path::removeCycleFromPath(staticVector<mv_mesh_clean::path::pathP
     return pthNew;
 }
 
-void mv_mesh_clean::path::deployTriangle(int triId)
+void MeshClean::path::deployTriangle(int triId)
 {
     // printf("triId %i\n");
     pixel others = me->getTriOtherPtsIds(triId, ptId);
@@ -262,7 +261,7 @@ void mv_mesh_clean::path::deployTriangle(int triId)
     }
 }
 
-int mv_mesh_clean::path::deployTriangles(staticVector<int>* trisIds, bool isBoundaryPt)
+int MeshClean::path::deployTriangles(staticVector<int>* trisIds, bool isBoundaryPt)
 {
     // add new pt to pts
     me->pts->resizeAddIfNeeded(1, 1000);
@@ -352,7 +351,7 @@ int mv_mesh_clean::path::deployTriangles(staticVector<int>* trisIds, bool isBoun
     return newPtId;
 }
 
-bool mv_mesh_clean::path::isClodePath(staticVector<mv_mesh_clean::path::pathPart>* _pth)
+bool MeshClean::path::isClodePath(staticVector<MeshClean::path::pathPart>* _pth)
 {
     if(_pth->size() < 3)
     {
@@ -361,7 +360,7 @@ bool mv_mesh_clean::path::isClodePath(staticVector<mv_mesh_clean::path::pathPart
     return ((*_pth)[0].ptsIds[0] == (*_pth)[_pth->size() - 1].ptsIds[1]);
 }
 
-void mv_mesh_clean::path::deployPath(staticVector<mv_mesh_clean::path::pathPart>* _pth)
+void MeshClean::path::deployPath(staticVector<MeshClean::path::pathPart>* _pth)
 {
     // printf("deploying path:\n");
     // printfState(_pth);
@@ -380,7 +379,7 @@ void mv_mesh_clean::path::deployPath(staticVector<mv_mesh_clean::path::pathPart>
     delete trisIds;
 }
 
-void mv_mesh_clean::path::updatePtNeighPtsOrderedByPath(int _ptId, staticVector<mv_mesh_clean::path::pathPart>* _pth)
+void MeshClean::path::updatePtNeighPtsOrderedByPath(int _ptId, staticVector<MeshClean::path::pathPart>* _pth)
 {
     if((*me->ptsNeighPtsOrdered)[_ptId] != nullptr)
     {
@@ -403,8 +402,8 @@ void mv_mesh_clean::path::updatePtNeighPtsOrderedByPath(int _ptId, staticVector<
     }
 }
 
-staticVector<mv_mesh_clean::path::pathPart>*
-mv_mesh_clean::path::createPath(staticVector<int>* ptNeighTrisSortedAscToProcess)
+staticVector<MeshClean::path::pathPart>*
+MeshClean::path::createPath(staticVector<int>* ptNeighTrisSortedAscToProcess)
 {
     staticVector<pathPart>* pth = new staticVector<pathPart>(sizeOfStaticVector<int>(ptNeighTrisSortedAscToProcess));
 
@@ -445,7 +444,7 @@ mv_mesh_clean::path::createPath(staticVector<int>* ptNeighTrisSortedAscToProcess
     return pth;
 }
 
-int mv_mesh_clean::path::deployAll()
+int MeshClean::path::deployAll()
 {
     if(sizeOfStaticVector<int>((*me->ptsNeighTrisSortedAsc)[ptId]) == 0)
     {
@@ -456,7 +455,7 @@ int mv_mesh_clean::path::deployAll()
     staticVector<int>* ptNeighTrisSortedAscToProcess =
         new staticVector<int>(sizeOfStaticVector<int>((*me->ptsNeighTrisSortedAsc)[ptId]));
     ptNeighTrisSortedAscToProcess->push_back_arr((*me->ptsNeighTrisSortedAsc)[ptId]);
-    staticVector<mv_mesh_clean::path::pathPart>* pth = createPath(ptNeighTrisSortedAscToProcess);
+    staticVector<MeshClean::path::pathPart>* pth = createPath(ptNeighTrisSortedAscToProcess);
 
     // if there are some not connected triangles then deploy them
     if(ptNeighTrisSortedAscToProcess->size() > 0)
@@ -473,7 +472,7 @@ int mv_mesh_clean::path::deployAll()
     // extract from path all cycles and last (cycle or path) remains
     while(pth->size() > 0)
     {
-        staticVector<mv_mesh_clean::path::pathPart>* pthNew = removeCycleFromPath(pth);
+        staticVector<MeshClean::path::pathPart>* pthNew = removeCycleFromPath(pth);
 
         if(pth->size() > 0)
         {
@@ -522,13 +521,13 @@ int mv_mesh_clean::path::deployAll()
     return nNewPts;
 }
 
-bool mv_mesh_clean::path::isWrongPt()
+bool MeshClean::path::isWrongPt()
 {
     int nNewPtsNeededToAdd = 0;
     staticVector<int>* ptNeighTrisSortedAscToProcess =
         new staticVector<int>(sizeOfStaticVector<int>((*me->ptsNeighTrisSortedAsc)[ptId]));
     ptNeighTrisSortedAscToProcess->push_back_arr((*me->ptsNeighTrisSortedAsc)[ptId]);
-    staticVector<mv_mesh_clean::path::pathPart>* pth = createPath(ptNeighTrisSortedAscToProcess);
+    staticVector<MeshClean::path::pathPart>* pth = createPath(ptNeighTrisSortedAscToProcess);
 
     // if there are some not connected triangles then deploy them
     if(ptNeighTrisSortedAscToProcess->size() > 0)
@@ -539,7 +538,7 @@ bool mv_mesh_clean::path::isWrongPt()
     // extract from path all cycles and last (cycle or path) remains
     while(pth->size() > 0)
     {
-        staticVector<mv_mesh_clean::path::pathPart>* pthNew = removeCycleFromPath(pth);
+        staticVector<MeshClean::path::pathPart>* pthNew = removeCycleFromPath(pth);
         if(pth->size() > 0)
         {
             nNewPtsNeededToAdd++;
@@ -556,8 +555,8 @@ bool mv_mesh_clean::path::isWrongPt()
     return (nNewPtsNeededToAdd > 0);
 }
 
-mv_mesh_clean::mv_mesh_clean(multiviewParams* _mp)
-    : mv_mesh()
+MeshClean::MeshClean(multiviewParams* _mp)
+    : Mesh()
 {
     mp = _mp;
     edgesNeigTris = nullptr;
@@ -570,12 +569,12 @@ mv_mesh_clean::mv_mesh_clean(multiviewParams* _mp)
     newPtsOldPtId = nullptr;
 }
 
-mv_mesh_clean::~mv_mesh_clean()
+MeshClean::~MeshClean()
 {
     deallocateCleaningAttributes();
 }
 
-void mv_mesh_clean::deallocateCleaningAttributes()
+void MeshClean::deallocateCleaningAttributes()
 {
     if(edgesNeigTris != nullptr)
     {
@@ -621,7 +620,7 @@ void mv_mesh_clean::deallocateCleaningAttributes()
     nPtsInit = -1;
 }
 
-bool mv_mesh_clean::getEdgeNeighTrisInterval(pixel& itr, int _ptId1, int _ptId2)
+bool MeshClean::getEdgeNeighTrisInterval(pixel& itr, int _ptId1, int _ptId2)
 {
     int ptId1 = std::max(_ptId1, _ptId2);
     int ptId2 = std::min(_ptId1, _ptId2);
@@ -648,7 +647,7 @@ bool mv_mesh_clean::getEdgeNeighTrisInterval(pixel& itr, int _ptId1, int _ptId2)
     return true;
 }
 
-void mv_mesh_clean::init()
+void MeshClean::init()
 {
     deallocateCleaningAttributes();
 
@@ -738,7 +737,7 @@ void mv_mesh_clean::init()
     finishEstimate();
 }
 
-void mv_mesh_clean::testPtsNeighTrisSortedAsc()
+void MeshClean::testPtsNeighTrisSortedAsc()
 {
     if(mp->verbose)
         printf("-------------------------------------------------------------------------------\n");
@@ -800,7 +799,7 @@ void mv_mesh_clean::testPtsNeighTrisSortedAsc()
         printf("-------------------------------------------------------------------------------\n");
 }
 
-void mv_mesh_clean::testEdgesNeighTris()
+void MeshClean::testEdgesNeighTris()
 {
     if(mp->verbose)
         printf("-------------------------------------------------------------------------------\n");
@@ -847,7 +846,7 @@ void mv_mesh_clean::testEdgesNeighTris()
         printf("-------------------------------------------------------------------------------\n");
 }
 
-void mv_mesh_clean::testPtsNeighPtsOrdered()
+void MeshClean::testPtsNeighPtsOrdered()
 {
     if(mp->verbose)
         printf("-------------------------------------------------------------------------------\n");
@@ -895,7 +894,7 @@ void mv_mesh_clean::testPtsNeighPtsOrdered()
         printf("-------------------------------------------------------------------------------\n");
 }
 
-int mv_mesh_clean::cleanMesh()
+int MeshClean::cleanMesh()
 {
     int nWrongPts = 0;
     int nv = pts->size();
@@ -910,7 +909,7 @@ int mv_mesh_clean::cleanMesh()
     return pts->size() - nv;
 }
 
-int mv_mesh_clean::cleanMesh(int maxIters)
+int MeshClean::cleanMesh(int maxIters)
 {
     testPtsNeighTrisSortedAsc();
     testEdgesNeighTris();
@@ -927,7 +926,7 @@ int mv_mesh_clean::cleanMesh(int maxIters)
     return nupd;
 }
 
-bool mv_mesh_clean::isIsBoundaryPt(int ptId)
+bool MeshClean::isIsBoundaryPt(int ptId)
 {
     return (*ptsBoundary)[ptId];
 }

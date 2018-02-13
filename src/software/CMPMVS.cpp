@@ -8,7 +8,7 @@
 #include <aliceVision/largeScale/ReconstructionPlan.hpp>
 #include <aliceVision/depthMap/RefineRc.hpp>
 #include <aliceVision/common/fileIO.hpp>
-#include <aliceVision/mesh/mv_mesh_retexture_obj.hpp>
+#include <aliceVision/mesh/Retexturer.hpp>
 
 #include <boost/filesystem.hpp>
 
@@ -296,7 +296,7 @@ int main(int argc, char* argv[])
             }
             reconstructSpaceAccordingToVoxelsArray(voxelsArrayFileName, &lsbase, true);
             // Join meshes
-            mv_mesh* mesh = joinMeshes(voxelsArrayFileName, &lsbase);
+            Mesh* mesh = joinMeshes(voxelsArrayFileName, &lsbase);
 
             std::cout << "Saving joined meshes" << std::endl;
 
@@ -348,7 +348,7 @@ int main(int argc, char* argv[])
             delaunayGC.graphCutPostProcessing();
 
             // Save mesh as .bin and .obj
-            mv_mesh* mesh = delaunayGC.createMesh();
+            Mesh* mesh = delaunayGC.createMesh();
             staticVector<staticVector<int>*>* ptsCams = delaunayGC.createPtsCams();
             staticVector<int> usedCams = delaunayGC.getSortedUsedCams();
 
@@ -370,8 +370,8 @@ int main(int argc, char* argv[])
         cout << "--- texturing" << endl;
 
         // load mesh
-        meshRetex texMesh;
-        texMesh.me = new mv_mesh();
+        Retexturer texMesh;
+        texMesh.me = new Mesh();
         if(!texMesh.me->loadFromBin(mip.mvDir + "mesh.bin"))
         {
             cerr << "Unable to load " << mip.mvDir << "mesh.bin" << endl;

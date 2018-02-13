@@ -5,14 +5,14 @@
 
 #pragma once
 
-#include "mv_mesh.hpp"
+#include "Mesh.hpp"
 
 #include <aliceVision/depthMap/DepthSimMap.hpp>
 #include <aliceVision/depthMap/RcTc.hpp>
 #include <aliceVision/common/PreMatchCams.hpp>
 #include <aliceVision/common/ImagesCache.hpp>
 
-class mv_mesh_refine : public mv_mesh
+class Mesh_refine : public Mesh
 {
 public:
     multiviewParams* mp;
@@ -25,8 +25,8 @@ public:
     PlaneSweepingCuda* cps;
     RcTc* prt;
 
-    mv_mesh_refine(multiviewParams* _mp, mv_prematch_cams* _pc, std::string _tmpDir = "");
-    ~mv_mesh_refine();
+    Mesh_refine(multiviewParams* _mp, mv_prematch_cams* _pc, std::string _tmpDir = "");
+    ~Mesh_refine();
 
     void smoothDepthMapsAdaptiveByImages(staticVector<int>* usedCams);
     void smoothDepthMapAdaptiveByImage(RcTc* prt, int rc, staticVector<float>* tmpDepthMap);

@@ -7,7 +7,7 @@
 
 #include <aliceVision/common/common.hpp>
 
-class mv_mesh
+class Mesh
 {
 public:
     struct triangle
@@ -94,11 +94,11 @@ public:
 
 public:
     staticVector<point3d>* pts = nullptr;
-    staticVector<mv_mesh::triangle>* tris = nullptr;
+    staticVector<Mesh::triangle>* tris = nullptr;
     matrix3x4 transformGlobal;
 
-    mv_mesh();
-    ~mv_mesh();
+    Mesh();
+    ~Mesh();
 
     bool loadFromPly(std::string plyFileName);
     void saveToPly(std::string plyFileName);
@@ -115,7 +115,7 @@ public:
                           staticVector<voxel>** trisNormalsIds, staticVector<point2d>** uvCoords,
                           staticVector<voxel>** trisUvIds, std::string objAsciiFileName);
 
-    void addMesh(mv_mesh* me);
+    void addMesh(Mesh* me);
 
     void updateStatMaps(staticVector<float>* depthMap, staticVector<float>* sigmaMap, pixel lu, pixel rd,
                         const multiviewParams* mp, int rc, int gridSize);
@@ -140,7 +140,7 @@ public:
     staticVector<int>* getVisibleTrianglesIndexes(staticVector<float>* depthMap, const multiviewParams* mp, int rc, int w,
                                                   int h);
 
-    mv_mesh* generateMeshFromTrianglesSubset(const staticVector<int> &visTris, staticVector<int>** out_ptIdToNewPtId) const;
+    Mesh* generateMeshFromTrianglesSubset(const staticVector<int> &visTris, staticVector<int>** out_ptIdToNewPtId) const;
 
     void getNotOrientedEdges(staticVector<staticVector<int>*>** edgesNeighTris, staticVector<pixel>** edgesPointsPairs);
     staticVector<pixel>* getNotOrientedEdgesAsPointsPairs();
@@ -179,20 +179,20 @@ public:
 public:
     float computeTriangleProjectionArea(triangle_proj& tp);
     float computeTriangleArea(int idTri);
-    mv_mesh::triangle_proj getTriangleProjection(int triid, const multiviewParams* mp, int rc, int w, int h) const;
-    bool isTriangleProjectionInImage(mv_mesh::triangle_proj tp, int w, int h) const;
+    Mesh::triangle_proj getTriangleProjection(int triid, const multiviewParams* mp, int rc, int w, int h) const;
+    bool isTriangleProjectionInImage(Mesh::triangle_proj tp, int w, int h) const;
     bool isTriangleInFrontOfCam(int triid, const multiviewParams* mp, int rc) const;
     bool isTriangleVisibleInCam(int triid, const multiviewParams* mp, int rc) const;
-    bool doesTriangleIntersectsRectangle(mv_mesh::triangle_proj* tp, mv_mesh::rectangle* re);
+    bool doesTriangleIntersectsRectangle(Mesh::triangle_proj* tp, Mesh::rectangle* re);
     bool doesTriangleIntersect4Poly(point2d* _p, point2d* A, point2d* B, point2d* C, point2d* P0, point2d* P1,
                                     point2d* P2, point2d* P3);
-    staticVector<point2d>* getTrianglePixelIntersectionsAndInternalPoints(mv_mesh::triangle_proj* tp,
-                                                                          mv_mesh::rectangle* re);
+    staticVector<point2d>* getTrianglePixelIntersectionsAndInternalPoints(Mesh::triangle_proj* tp,
+                                                                          Mesh::rectangle* re);
     staticVector<point3d>* getTrianglePixelIntersectionsAndInternalPoints(const multiviewParams* mp, int idTri, pixel& pix,
-                                                                          int rc, mv_mesh::triangle_proj* tp,
-                                                                          mv_mesh::rectangle* re);
+                                                                          int rc, Mesh::triangle_proj* tp,
+                                                                          Mesh::rectangle* re);
 
-    point2d getTrianglePixelInternalPoint(mv_mesh::triangle_proj* tp, mv_mesh::rectangle* re);
+    point2d getTrianglePixelInternalPoint(Mesh::triangle_proj* tp, Mesh::rectangle* re);
 
     void subdivideMesh(const multiviewParams* mp, float maxTriArea, std::string tmpDir, int maxMeshPts);
     void subdivideMeshMaxEdgeLength(const multiviewParams* mp, float maxEdgeLenght, int maxMeshPts);
@@ -204,11 +204,11 @@ public:
     int subdivideMesh(const multiviewParams* mp, float maxTriArea, float maxEdgeLength, bool useMaxTrisAreaOrAvEdgeLength,
                       staticVector<staticVector<int>*>* trisCams, staticVector<int>** trisCamsId);
     void subdivideMeshCase1(int i, staticVector<pixel>* edgesi, pixel& neptIdEdgeId,
-                            staticVector<mv_mesh::triangle>* tris1);
+                            staticVector<Mesh::triangle>* tris1);
     void subdivideMeshCase2(int i, staticVector<pixel>* edgesi, pixel& neptIdEdgeId1, pixel& neptIdEdgeId2,
-                            staticVector<mv_mesh::triangle>* tris1);
+                            staticVector<Mesh::triangle>* tris1);
     void subdivideMeshCase3(int i, staticVector<pixel>* edgesi, pixel& neptIdEdgeId1, pixel& neptIdEdgeId2,
-                            pixel& neptIdEdgeId3, staticVector<mv_mesh::triangle>* tris1);
+                            pixel& neptIdEdgeId3, staticVector<Mesh::triangle>* tris1);
 
     bool isPointVisibleInRcAndTc(int idPt, staticVector<staticVector<int>*>* ptsCams, int rc, int tc,
                                  const multiviewParams* mp);
@@ -264,10 +264,10 @@ public:
     void Transform(matrix3x3 Rs, point3d t);
 };
 
-mv_mesh* createMeshForCameras(staticVector<int>* tcams, const multiviewParams* mp, float ps, int shift, int step,
+Mesh* createMeshForCameras(staticVector<int>* tcams, const multiviewParams* mp, float ps, int shift, int step,
                               float upStep);
-mv_mesh* createMeshForCameras4(staticVector<matrix3x4>* cams, const multiviewParams* mp, float ps);
-mv_mesh* createMeshForCameras4(staticVector<int>* tcams, const multiviewParams* mp, float ps, int shift, int step,
+Mesh* createMeshForCameras4(staticVector<matrix3x4>* cams, const multiviewParams* mp, float ps);
+Mesh* createMeshForCameras4(staticVector<int>* tcams, const multiviewParams* mp, float ps, int shift, int step,
                                float upStep);
-mv_mesh* createMeshForFrontPlanePolygonOfCamera(int rc, const multiviewParams* mp, float border, point3d pivot);
-mv_mesh* computeBoxMeshFromPlaneMeshAndZDimSize(mv_mesh* mePlane, float boxZsize);
+Mesh* createMeshForFrontPlanePolygonOfCamera(int rc, const multiviewParams* mp, float border, point3d pivot);
+Mesh* computeBoxMeshFromPlaneMeshAndZDimSize(Mesh* mePlane, float boxZsize);

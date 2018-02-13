@@ -9,7 +9,7 @@
 #include <aliceVision/common/PreMatchCams.hpp>
 #include <aliceVision/delaunaycut/mv_delaunay_types.hpp>
 #include <aliceVision/largeScale/VoxelsGrid.hpp>
-#include <aliceVision/mesh/mv_mesh.hpp>
+#include <aliceVision/mesh/Mesh.hpp>
 
 #include <geogram/delaunay/delaunay.h>
 #include <geogram/delaunay/delaunay_3d.h>
@@ -323,8 +323,8 @@ public:
     void addNewPointsToOccupiedSpace();
     void clearOutAddIn();
     float computeSurfaceArea();
-    staticVector<int>* getNearestTrisFromMeshTris(mv_mesh* otherMesh);
-    staticVector<int>* getNearestPtsFromMesh(mv_mesh& otherMesh);
+    staticVector<int>* getNearestTrisFromMeshTris(Mesh* otherMesh);
+    staticVector<int>* getNearestPtsFromMesh(Mesh& otherMesh);
 
     void segmentFullOrFree(bool full, staticVector<int>** inColors, int& nsegments);
     int removeBubbles();
@@ -332,13 +332,13 @@ public:
     void leaveLargestFullSegmentOnly();
     staticVector<float>* computeSegmentsSurfaceArea(bool full, staticVector<int>& colors, int nsegments);
 
-    mv_mesh* createMesh(bool filterHelperPointsTriangles = true);
+    Mesh* createMesh(bool filterHelperPointsTriangles = true);
     staticVector<rgb>* getPtsColorsByNCams();
 
-    void initTetrahedralizationFromMeshTrianglesCenter(mv_mesh* mesh, bool _addPointsToPreventSingularities);
-    void initTetrahedralizationFromMeshVertices(mv_mesh* mesh, bool _addPointsToPreventSingularities);
+    void initTetrahedralizationFromMeshTrianglesCenter(Mesh* mesh, bool _addPointsToPreventSingularities);
+    void initTetrahedralizationFromMeshVertices(Mesh* mesh, bool _addPointsToPreventSingularities);
 
-    staticVector<staticVector<int>*>* createPtsCamsForAnotherMesh(staticVector<staticVector<int>*>* refPtsCams, mv_mesh& otherMesh);
+    staticVector<staticVector<int>*>* createPtsCamsForAnotherMesh(staticVector<staticVector<int>*>* refPtsCams, Mesh& otherMesh);
 };
 
 

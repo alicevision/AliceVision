@@ -5,8 +5,7 @@
 
 #pragma once
 
-#include "rply.h"
+#include <aliceVision/mesh/rply.h>
+#include <aliceVision/mesh/Mesh.hpp>
 
-#include <aliceVision/mesh/mv_mesh.hpp>
-
-bool mv_loadply(std::string plyFileName, mv_mesh* me);
+bool loadPLY(std::string plyFileName, Mesh* me);

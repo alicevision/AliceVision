@@ -3,9 +3,8 @@
 // v. 2.0. If a copy of the MPL was not distributed with this file,
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
-#include "mv_mesh_retexture_obj.hpp"
-#include "mv_mesh_uvatlas.hpp"
-
+#include "Retexturer.hpp"
+#include <aliceVision/mesh/UVAtlas.hpp>
 #include <aliceVision/structures/mv_geometry.hpp>
 #include <aliceVision/imageIO/image.hpp>
 
@@ -51,19 +50,18 @@ point3d barycentricToCartesian(const point3d* triangle, const point2d& coords)
 }
 
 
-staticVector<staticVector<int>*>* meshRetex::generateUVs(multiviewParams& mp, staticVector<staticVector<int>*>* ptsCams)
+staticVector<staticVector<int>*>* Retexturer::generateUVs(multiviewParams& mp, staticVector<staticVector<int>*>* ptsCams)
 {
     if(!me)
         throw std::runtime_error("Can't generate UVs without a mesh");
 
     // automatic uv atlasing
     std::cout << "- generating UVs (textureSide: " << texParams.textureSide << "; padding: " << texParams.padding << ") " << std::endl;
-    mv_mesh_uvatlas mua(*me, mp, ptsCams, texParams.textureSide, texParams.padding);
-
+    UVAtlas mua(*me, mp, ptsCams, texParams.textureSide, texParams.padding);
     // create a new mesh to store data
-    mv_mesh* m = new mv_mesh();
+    Mesh* m = new Mesh();
     m->pts = new staticVector<point3d>(me->pts->size());
-    m->tris = new staticVector<mv_mesh::triangle>(me->tris->size());
+    m->tris = new staticVector<Mesh::triangle>(me->tris->size());
     trisUvIds = new staticVector<voxel>(me->tris->size());
     uvCoords = new staticVector<point2d>(me->pts->size());
     _atlases.clear();
@@ -91,7 +89,7 @@ staticVector<staticVector<int>*>* meshRetex::generateUVs(multiviewParams& mp, st
                 // register triangle in corresponding atlas
                 _atlases[atlasId].push_back(triangleCount);
 
-                mv_mesh::triangle t;
+                Mesh::triangle t;
                 voxel triUv;
                 // for each point
                 for(int k = 0; k < 3; ++k)
@@ -162,7 +160,7 @@ staticVector<staticVector<int>*>* meshRetex::generateUVs(multiviewParams& mp, st
     return updatedPointsCams;
 }
 
-void meshRetex::generateTextures(const multiviewParams &mp, staticVector<staticVector<int> *> *ptsCams,
+void Retexturer::generateTextures(const multiviewParams &mp, staticVector<staticVector<int> *> *ptsCams,
                                  const boost::filesystem::path &outPath, EImageFileType textureFileType)
 {
     mv_images_cache imageCache(&mp, 0, false);
@@ -198,7 +196,7 @@ struct AccuColor {
 };
 
 
-void meshRetex::generateTexture(const multiviewParams& mp, staticVector<staticVector<int>*>* ptsCams,
+void Retexturer::generateTexture(const multiviewParams& mp, staticVector<staticVector<int>*>* ptsCams,
                                 size_t atlasID, mv_images_cache& imageCache, const bfs::path& outPath, EImageFileType textureFileType)
 {
     if(atlasID >= _atlases.size())
@@ -380,7 +378,7 @@ void meshRetex::generateTexture(const multiviewParams& mp, staticVector<staticVe
 }
 
 
-void meshRetex::loadFromOBJ(const std::string& filename, bool flipNormals)
+void Retexturer::loadFromOBJ(const std::string& filename, bool flipNormals)
 {
     // Load .obj
     if(!me->loadFromObjAscii(nmtls, &trisMtlIds,
@@ -404,7 +402,7 @@ void meshRetex::loadFromOBJ(const std::string& filename, bool flipNormals)
     }
 }
 
-void meshRetex::saveAsOBJ(const bfs::path& dir, const std::string& basename, EImageFileType textureFileType)
+void Retexturer::saveAsOBJ(const bfs::path& dir, const std::string& basename, EImageFileType textureFileType)
 {
     std::cout << "- writing .obj and .mtl file" << std::endl;
 

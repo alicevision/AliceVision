@@ -43,7 +43,7 @@ float confKernelVoting(staticVector<float>* confs, float c)
     return maxx;
 }
 
-void filterLargeEdgeTriangles(mv_mesh* me, float avelthr)
+void filterLargeEdgeTriangles(Mesh* me, float avelthr)
 {
     float averageEdgeLength = me->computeAverageEdgeLength();
 

@@ -5,10 +5,11 @@
 
 #pragma once
 
-#include "mv_mesh.hpp"
+#include <aliceVision/mesh/Mesh.hpp>
+
 #include <vector>
 
-class mv_mesh_uvatlas
+class UVAtlas
 {
 public:
     struct Edge
@@ -43,7 +44,7 @@ public:
     };
 
 public:
-    mv_mesh_uvatlas(const mv_mesh& mesh, multiviewParams& mp, staticVector<staticVector<int>*>* ptsCams,
+    UVAtlas(const Mesh& mesh, multiviewParams& mp, staticVector<staticVector<int>*>* ptsCams,
                     unsigned int textureSide, unsigned int gutterSize);
 
 public:
@@ -51,7 +52,7 @@ public:
     const std::vector<int>& visibleCameras(int triangleID) const { return _triangleCameraIDs[triangleID]; }
     int textureSide() const { return _textureSide; }
     int gutterSize() const { return _gutterSize; }
-    const mv_mesh& mesh() const { return _mesh; }
+    const Mesh& mesh() const { return _mesh; }
 
 private:
     void createCharts(std::vector<Chart>& charts, multiviewParams& mp, staticVector<staticVector<int>*>* ptsCams);
@@ -64,5 +65,5 @@ private:
     std::vector<std::vector<int>> _triangleCameraIDs;
     int _textureSide;
     int _gutterSize;
-    const mv_mesh& _mesh;
+    const Mesh& _mesh;
 };

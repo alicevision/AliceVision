@@ -3,14 +3,14 @@
 // v. 2.0. If a copy of the MPL was not distributed with this file,
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
-#include "mv_mesh_refine.hpp"
+#include "Mesh_refine.hpp"
 
 #include <boost/filesystem.hpp>
 
 namespace bfs = boost::filesystem;
 
-mv_mesh_refine::mv_mesh_refine(multiviewParams* _mp, mv_prematch_cams* _pc, std::string _tmpDir)
-    : mv_mesh()
+Mesh_refine::Mesh_refine(multiviewParams* _mp, mv_prematch_cams* _pc, std::string _tmpDir)
+    : Mesh()
 {
     mp = _mp;
     pc = _pc;
@@ -37,14 +37,14 @@ mv_mesh_refine::mv_mesh_refine(multiviewParams* _mp, mv_prematch_cams* _pc, std:
     prt = new RcTc(mp, cps);
 }
 
-mv_mesh_refine::~mv_mesh_refine()
+Mesh_refine::~Mesh_refine()
 {
     delete ic;
     delete cps;
     delete prt;
 }
 
-void mv_mesh_refine::smoothDepthMapAdaptiveByImage(RcTc* prt, int rc, staticVector<float>* tmpDepthMap)
+void Mesh_refine::smoothDepthMapAdaptiveByImage(RcTc* prt, int rc, staticVector<float>* tmpDepthMap)
 {
     DepthSimMap* depthSimMap = new DepthSimMap(rc, mp, 1, 1);
     depthSimMap->initJustFromDepthMapT(tmpDepthMap, -1.0f);
@@ -66,7 +66,7 @@ void mv_mesh_refine::smoothDepthMapAdaptiveByImage(RcTc* prt, int rc, staticVect
     delete depthSimMap;
 }
 
-void mv_mesh_refine::smoothDepthMapsAdaptiveByImages(staticVector<int>* usedCams)
+void Mesh_refine::smoothDepthMapsAdaptiveByImages(staticVector<int>* usedCams)
 {
     for(int c = 0; c < usedCams->size(); c++)
     {
@@ -79,7 +79,7 @@ void mv_mesh_refine::smoothDepthMapsAdaptiveByImages(staticVector<int>* usedCams
     }
 }
 
-void mv_mesh_refine::transposeDepthMap(staticVector<float>* depthMapTransposed, staticVector<float>* depthMap, int w,
+void Mesh_refine::transposeDepthMap(staticVector<float>* depthMapTransposed, staticVector<float>* depthMap, int w,
                                        int h)
 {
     depthMapTransposed->resize_with(h * w, -1.0f);
@@ -92,7 +92,7 @@ void mv_mesh_refine::transposeDepthMap(staticVector<float>* depthMapTransposed, 
     }
 }
 
-void mv_mesh_refine::alignSourceDepthMapToTarget(staticVector<float>* sourceDepthMapT,
+void Mesh_refine::alignSourceDepthMapToTarget(staticVector<float>* sourceDepthMapT,
                                                  staticVector<float>* targetDepthMapT, int rc, float maxPixelSizeDist)
 {
     long t1 = clock();

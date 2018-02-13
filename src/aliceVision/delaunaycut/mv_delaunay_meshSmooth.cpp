@@ -8,7 +8,7 @@
 
 #include <aliceVision/depthMap/cuda/PlaneSweepingCuda.hpp>
 #include <aliceVision/delaunaycut/hallucinations.hpp>
-#include <aliceVision/mesh/mv_mesh_energy_opt_photo_mem.hpp>
+#include <aliceVision/mesh/MeshEnergyOptPhotoMem.hpp>
 #include <aliceVision/depthMap/SemiGlobalMatchingParams.hpp>
 #include <aliceVision/common/ImagesCache.hpp>
 #include <aliceVision/structures/mv_point3d.hpp>
@@ -19,7 +19,7 @@
 
 namespace bfs = boost::filesystem;
 
-void meshPostProcessing(mv_mesh*& inout_mesh, staticVector<staticVector<int>*>*& inout_ptsCams, staticVector<int>& usedCams,
+void meshPostProcessing(Mesh*& inout_mesh, staticVector<staticVector<int>*>*& inout_ptsCams, staticVector<int>& usedCams,
                       multiviewParams& mp, mv_prematch_cams& pc,
                       const std::string& resultFolderName,
                       staticVector<point3d>* hexahsToExcludeFromResultingMesh, point3d* hexah)
@@ -98,7 +98,7 @@ void meshPostProcessing(mv_mesh*& inout_mesh, staticVector<staticVector<int>*>*&
         PlaneSweepingCuda* cps = nullptr; // new PlaneSweepingCuda(mp.CUDADeviceNo, ic, &mp, &pc, 1);
         SemiGlobalMatchingParams* sp = new SemiGlobalMatchingParams(&mp, &pc, cps);
 
-        mv_mesh_energy_opt_photo_mem* meOpt = new mv_mesh_energy_opt_photo_mem(&mp, sp, usedCams);
+        MeshEnergyOptPhotoMem* meOpt = new MeshEnergyOptPhotoMem(&mp, sp, usedCams);
         meOpt->addMesh(inout_mesh);
         delete inout_mesh;
 
@@ -106,7 +106,7 @@ void meshPostProcessing(mv_mesh*& inout_mesh, staticVector<staticVector<int>*>*&
         meOpt->cleanMesh(10);
 
         if(exportDebug)
-            meOpt->saveToObj(resultFolderName + "mesh_clean.obj");
+            meOpt->saveToObj(resultFolderName + "MeshClean.obj");
 
         /////////////////////////////
         {
@@ -226,7 +226,7 @@ void meshPostProcessing(mv_mesh*& inout_mesh, staticVector<staticVector<int>*>*&
         delete ptsCanMove;
         meOpt->deallocateCleaningAttributes();
 
-        inout_mesh = new mv_mesh();
+        inout_mesh = new Mesh();
         inout_mesh->addMesh(meOpt);
 
         delete meOpt;

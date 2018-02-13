@@ -6,7 +6,7 @@
 #include <aliceVision/structures/image.hpp>
 #include <aliceVision/common/fileIO.hpp>
 #include <aliceVision/mesh/meshVisibility.hpp>
-#include <aliceVision/mesh/mv_mesh_retexture_obj.hpp>
+#include <aliceVision/mesh/Retexturer.hpp>
 #include <aliceVision/delaunaycut/mv_delaunay_GC.hpp>
 #include <aliceVision/delaunaycut/mv_delaunay_meshSmooth.hpp>
 #include <aliceVision/largeScale/ReconstructionPlan.hpp>
@@ -104,9 +104,9 @@ int main(int argc, char* argv[])
     const double simThr = mip._ini.get<double>("global.simThr", 0.0);
     multiviewParams mp(mip.getNbCameras(), &mip, (float) simThr);
 
-    meshRetex mesh;
+    Retexturer mesh;
     mesh.texParams = texParams;
-    mesh.me = new mv_mesh();
+    mesh.me = new Mesh();
 
     if(!mesh.me->loadFromBin(inputDenseReconstruction))
     {
@@ -129,9 +129,9 @@ int main(int argc, char* argv[])
     {
         ALICEVISION_COUT("An external input mesh is provided, so we remap the visibility from the reconstruction on it.");
         // keep previous mesh as reference
-        mv_mesh* refMesh = mesh.me;
+        Mesh* refMesh = mesh.me;
         // load input obj file
-        mesh.me = new mv_mesh();
+        mesh.me = new Mesh();
         mesh.loadFromOBJ(inputMeshFilepath, flipNormals);
         // remap visibilities from reconstruction onto input mesh
         mesh::PointsVisibility otherPtsVisibilities;

@@ -5,13 +5,13 @@
 
 #pragma once
 
-#include "mv_mesh_clean.hpp"
+#include <aliceVision/mesh/MeshClean.hpp>
 
-class mv_mesh_analyze : public mv_mesh_clean
+class MeshAnalyze : public MeshClean
 {
 public:
-    mv_mesh_analyze(multiviewParams* _mp);
-    ~mv_mesh_analyze();
+    MeshAnalyze(multiviewParams* _mp);
+    ~MeshAnalyze();
 
     point3d getCotAlphaCotBetaCotGammaForTriangle(int i);
     point2d getCotAlphaijAndCotBetaij(int i, int j, staticVector<int>* ptNeighPtsOrdered);
