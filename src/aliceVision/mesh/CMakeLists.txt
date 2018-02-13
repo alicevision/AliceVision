@@ -28,4 +28,4 @@ target_include_directories(mv_mesh
          $<INSTALL_INTERFACE:include>
          ${Boost_INCLUDE_DIR})
 
-target_link_libraries(mv_mesh PUBLIC mv_structures aliceVision_common aliceVision_imageIO mv_planeSweeping mv_output3D mv_rply mv_cudaInterfaces mv_delaunaycut ${Boost_FILESYSTEM_LIBRARIES})
+target_link_libraries(mv_mesh PUBLIC mv_structures aliceVision_common aliceVision_imageIO mv_planeSweeping mv_output3D mv_rply mv_cudaInterfaces mv_delaunaycut ${Boost_FILESYSTEM_LIBRARIES} Geogram::geogram)

@@ -35,7 +35,7 @@ mv_images_cache::mv_images_cache(const multiviewParams* _mp, int _bandType, std:
 void mv_images_cache::initIC(int _bandType, std::vector<std::string>& _imagesNames,
                              bool _transposed)
 {
-    float oneimagemb = 3.f * (((float)(mp->mip->getMaxImageWidth() * mp->mip->getMaxImageHeight()) / 1024.f) / 1024.f);
+    float oneimagemb = (sizeof(Color) * mp->mip->getMaxImageWidth() * mp->mip->getMaxImageHeight()) / 1024.f / 1024.f;
     float maxmbCPU = (float)mp->mip->_ini.get<int>("images_cache.maxmbCPU", 5000);
     int _npreload = std::max((int)(maxmbCPU / oneimagemb), mp->mip->_ini.get<int>("grow.minNumOfConsistentCams", 10));
     N_PRELOADED_IMAGES = std::min(mp->ncams, _npreload);
