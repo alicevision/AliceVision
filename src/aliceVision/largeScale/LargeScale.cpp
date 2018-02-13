@@ -157,7 +157,7 @@ bool LargeScale::generateSpace(int maxPts, int ocTreeDim)
         spaceFolderName, mp, addRandomNoise, addRandomNoisePercNoisePts, addRandomNoiseNoisPixSizeDistHalfThr);
 
     printf("CREATING TRACKS %i %i %i\n", dimensions.x, dimensions.y, dimensions.z);
-    staticVector<point3d>* ReconstructionPlan = new staticVector<point3d>(1000000);
+    StaticVector<Point3d>* ReconstructionPlan = new StaticVector<Point3d>(1000000);
 
     std::string tmpdir = spaceFolderName + "tmp/";
     bfs::create_directory(tmpdir);
@@ -177,7 +177,7 @@ bool LargeScale::generateSpace(int maxPts, int ocTreeDim)
         printf("final dimmension is %i,%i,%i  %i\n", dimensions.x, dimensions.y, dimensions.z, maxOcTreeDim);
 
     VoxelsGrid* vgnew = new VoxelsGrid(dimensions, &space[0], mp, pc, spaceVoxelsFolderName, doVisualize);
-    vg->generateSpace(vgnew, voxel(0, 0, 0), dimensions, depthMapsPtsSimsTmpDir);
+    vg->generateSpace(vgnew, Voxel(0, 0, 0), dimensions, depthMapsPtsSimsTmpDir);
     vgnew->generateCamsPtsFromVoxelsTracks();
     if(doVisualize)
         vgnew->vizualize();
@@ -189,7 +189,7 @@ bool LargeScale::generateSpace(int maxPts, int ocTreeDim)
 
     deleteTempPtsSimsFiles(mp, depthMapsPtsSimsTmpDir);
 
-    saveArrayToFile<point3d>(spaceFolderName + "spacePatitioning.bin", ReconstructionPlan);
+    saveArrayToFile<Point3d>(spaceFolderName + "spacePatitioning.bin", ReconstructionPlan);
     delete ReconstructionPlan;
 
     saveSpaceToFile();
@@ -197,12 +197,12 @@ bool LargeScale::generateSpace(int maxPts, int ocTreeDim)
     return true;
 }
 
-point3d LargeScale::getSpaceSteps()
+Point3d LargeScale::getSpaceSteps()
 {
-    point3d vx = space[1] - space[0];
-    point3d vy = space[3] - space[0];
-    point3d vz = space[4] - space[0];
-    point3d sv;
+    Point3d vx = space[1] - space[0];
+    Point3d vy = space[3] - space[0];
+    Point3d vz = space[4] - space[0];
+    Point3d sv;
     sv.x = (vx.size() / (float)dimensions.x) / (float)maxOcTreeDim;
     sv.y = (vy.size() / (float)dimensions.y) / (float)maxOcTreeDim;
     sv.z = (vz.size() / (float)dimensions.z) / (float)maxOcTreeDim;

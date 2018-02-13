@@ -4,6 +4,9 @@
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
 #include "SemiGlobalMatchingParams.hpp"
+#include <aliceVision/structures/Pixel.hpp>
+#include <aliceVision/structures/Point2d.hpp>
+#include <aliceVision/structures/Point3d.hpp>
 #include <aliceVision/common/common.hpp>
 #include <aliceVision/common/fileIO.hpp>
 
@@ -122,9 +125,9 @@ std::string SemiGlobalMatchingParams::getSGM_depthsFileName(int cam)
     return mp->mip->_depthMapFolder + num2strFourDecimal(cam + 1) + "_depths.bin";
 }
 
-DepthSimMap* SemiGlobalMatchingParams::getDepthSimMapFromBestIdVal(int w, int h, staticVector<idValue>* volumeBestIdVal,
+DepthSimMap* SemiGlobalMatchingParams::getDepthSimMapFromBestIdVal(int w, int h, StaticVector<IdValue>* volumeBestIdVal,
                                                            int scale, int step, int rc, int zborder,
-                                                           staticVector<float>* planesDepths)
+                                                           StaticVector<float>* planesDepths)
 {
     long tall = clock();
 
@@ -138,17 +141,17 @@ DepthSimMap* SemiGlobalMatchingParams::getDepthSimMapFromBestIdVal(int w, int h,
     {
         for(int x = 0; x < volDimX; x++)
         {
-            pixel pix = pixel(x * step, y * step);
-            pixel pixScale1 = pixel(pix.x * scale, pix.y * scale);
+            Pixel pix = Pixel(x * step, y * step);
+            Pixel pixScale1 = Pixel(pix.x * scale, pix.y * scale);
             float sim = (*volumeBestIdVal)[y * volDimX + x].value;
             int fpdepthId = (*volumeBestIdVal)[y * volDimX + x].id;
             if((fpdepthId >= zborder) && (fpdepthId < planesDepths->size() - zborder))
             {
                 float fpPlaneDepth = (*planesDepths)[fpdepthId];
-                point3d planen = (mp->iRArr[rc] * point3d(0.0f, 0.0f, 1.0f)).normalize();
-                point3d planep = mp->CArr[rc] + planen * fpPlaneDepth;
-                point3d v = (mp->iCamArr[rc] * point2d((float)(pixScale1.x), (float)(pixScale1.y))).normalize();
-                point3d p = linePlaneIntersect(mp->CArr[rc], v, planep, planen);
+                Point3d planen = (mp->iRArr[rc] * Point3d(0.0f, 0.0f, 1.0f)).normalize();
+                Point3d planep = mp->CArr[rc] + planen * fpPlaneDepth;
+                Point3d v = (mp->iCamArr[rc] * Point2d((float)(pixScale1.x), (float)(pixScale1.y))).normalize();
+                Point3d p = linePlaneIntersect(mp->CArr[rc], v, planep, planen);
                 float depth = (mp->CArr[rc] - p).size();
 
                 // printf("fpdepthId %i, fpPlaneDepth %f, depth %f, x %i y

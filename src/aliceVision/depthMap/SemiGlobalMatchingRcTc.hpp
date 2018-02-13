@@ -5,25 +5,27 @@
 
 #pragma once
 
+#include <aliceVision/structures/StaticVector.hpp>
+#include <aliceVision/structures/Voxel.hpp>
 #include <aliceVision/depthMap/SemiGlobalMatchingParams.hpp>
 
 class SemiGlobalMatchingRcTc
 {
 public:
-    SemiGlobalMatchingRcTc(staticVector<float>* _rcTcDepths, int _rc, int _tc, int _scale, int _step, SemiGlobalMatchingParams* _sp,
-                staticVectorBool* _rcSilhoueteMap = NULL);
+    SemiGlobalMatchingRcTc(StaticVector<float>* _rcTcDepths, int _rc, int _tc, int _scale, int _step, SemiGlobalMatchingParams* _sp,
+                StaticVectorBool* _rcSilhoueteMap = NULL);
     ~SemiGlobalMatchingRcTc(void);
 
-    staticVector<unsigned char>* computeDepthSimMapVolume(float& volumeMBinGPUMem, int wsh, float gammaC, float gammaP);
+    StaticVector<unsigned char>* computeDepthSimMapVolume(float& volumeMBinGPUMem, int wsh, float gammaC, float gammaP);
 
 private:
-    staticVector<voxel>* getPixels();
+    StaticVector<Voxel>* getPixels();
 
     SemiGlobalMatchingParams* sp;
 
     int rc, tc, scale, step;
-    staticVector<float>* rcTcDepths;
+    StaticVector<float>* rcTcDepths;
     float epipShift;
     int w, h;
-    staticVectorBool* rcSilhoueteMap;
+    StaticVectorBool* rcSilhoueteMap;
 };

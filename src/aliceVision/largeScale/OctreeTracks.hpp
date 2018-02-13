@@ -5,8 +5,12 @@
 
 #pragma once
 
-#include <aliceVision/largeScale/Fuser.hpp>
+#include <aliceVision/structures/Pixel.hpp>
+#include <aliceVision/structures/Point3d.hpp>
+#include <aliceVision/structures/StaticVector.hpp>
+#include <aliceVision/structures/Voxel.hpp>
 #include <aliceVision/common/PreMatchCams.hpp>
+#include <aliceVision/largeScale/Fuser.hpp>
 
 class OctreeTracks : public Fuser
 {
@@ -39,16 +43,16 @@ public:
     {
     public:
         int npts;
-        point3d point;
-        staticVector<pixel> cams;
+        Point3d point;
+        StaticVector<Pixel> cams;
         float minPixSize;
         float minSim;
 
         trackStruct(trackStruct* t);
-        trackStruct(float sim, float pixSize, const point3d& p, int rc);
+        trackStruct(float sim, float pixSize, const Point3d& p, int rc);
         ~trackStruct();
         void resizeCamsAdd(int nadd);
-        void addPoint(float sim, float pixSize, const point3d& p, int rc);
+        void addPoint(float sim, float pixSize, const Point3d& p, int rc);
         void addTrack(trackStruct* t);
         void addDistinctNonzeroCamsFromTrackAsZeroCams(trackStruct* t);
         int indexOf(int val);
@@ -62,15 +66,15 @@ public:
     // trackStruct* at( int x, int y, int z );
     trackStruct* getTrack(int x, int y, int z);
     void addTrack(int x, int y, int z, trackStruct* t);
-    void addPoint(int x, int y, int z, float sim, float pixSize, point3d& p, int rc);
-    staticVector<trackStruct*>* getAllPoints();
-    void getAllPointsRecursive(staticVector<trackStruct*>* out, Node* node);
+    void addPoint(int x, int y, int z, float sim, float pixSize, Point3d& p, int rc);
+    StaticVector<trackStruct*>* getAllPoints();
+    void getAllPointsRecursive(StaticVector<trackStruct*>* out, Node* node);
 
-    point3d O, vx, vy, vz;
+    Point3d O, vx, vy, vz;
     float sx, sy, sz, svx, svy, svz;
     float avPixSize;
 
-    point3d vox[8];
+    Point3d vox[8];
     int numSubVoxsX;
     int numSubVoxsY;
     int numSubVoxsZ;
@@ -80,23 +84,23 @@ public:
     int minNumOfConsistentCams;
     float simWspThr;
 
-    OctreeTracks(const point3d* _voxel, multiviewParams* _mp, mv_prematch_cams* _pc, voxel dimensions);
+    OctreeTracks(const Point3d* _voxel, multiviewParams* _mp, mv_prematch_cams* _pc, Voxel dimensions);
     ~OctreeTracks();
 
     float computeAveragePixelSizeForVoxel();
-    bool getVoxelOfOctreeFor3DPoint(voxel& out, point3d& tp);
-    point3d getCenterOfVoxelOfOctreeForVoxel(voxel& vox);
+    bool getVoxelOfOctreeFor3DPoint(Voxel& out, Point3d& tp);
+    Point3d getCenterOfVoxelOfOctreeForVoxel(Voxel& vox);
     bool filterOctreeTrack(trackStruct* t);
-    void filterOctreeTracks(staticVector<trackStruct*>* tracks);
+    void filterOctreeTracks(StaticVector<trackStruct*>* tracks);
 
-    void filterMinNumConsistentCams(staticVector<trackStruct*>* tracks);
+    void filterMinNumConsistentCams(StaticVector<trackStruct*>* tracks);
 
-    void filterOctreeTracks2(staticVector<trackStruct*>* tracks);
-    void updateOctreeTracksCams(staticVector<trackStruct*>* tracks);
-    staticVector<trackStruct*>* fillOctreeFromTracks(staticVector<trackStruct*>* tracksIn);
-    staticVector<trackStruct*>* fillOctree(int maxPts, std::string depthMapsPtsSimsTmpDir);
-    staticVector<int>* getTracksCams(staticVector<OctreeTracks::trackStruct*>* tracks);
+    void filterOctreeTracks2(StaticVector<trackStruct*>* tracks);
+    void updateOctreeTracksCams(StaticVector<trackStruct*>* tracks);
+    StaticVector<trackStruct*>* fillOctreeFromTracks(StaticVector<trackStruct*>* tracksIn);
+    StaticVector<trackStruct*>* fillOctree(int maxPts, std::string depthMapsPtsSimsTmpDir);
+    StaticVector<int>* getTracksCams(StaticVector<OctreeTracks::trackStruct*>* tracks);
 
-    staticVector<int>* getNPointsByLevels();
-    void getNPointsByLevelsRecursive(Node* node, int level, staticVector<int>* nptsAtLevel);
+    StaticVector<int>* getNPointsByLevels();
+    void getNPointsByLevelsRecursive(Node* node, int level, StaticVector<int>* nptsAtLevel);
 };

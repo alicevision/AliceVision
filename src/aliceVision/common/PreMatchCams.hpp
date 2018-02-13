@@ -5,6 +5,8 @@
 
 #pragma once
 
+#include <aliceVision/structures/Point3d.hpp>
+#include <aliceVision/structures/StaticVector.hpp>
 #include <aliceVision/common/MultiViewParams.hpp>
 
 class mv_prematch_cams
@@ -20,15 +22,15 @@ public:
 
     float computeMinCamsDistance();
     bool overlap(int rc, int tc);
-    staticVector<int>* findNearestCams(int rc, int _nnearestcams);
+    StaticVector<int>* findNearestCams(int rc, int _nnearestcams);
 
     bool intersectsRcTc(int rc, float rmind, float rmaxd, int tc, float tmind, float tmaxd);
-    staticVector<int>* findCamsWhichIntersectsHexahedron(point3d hexah[8], std::string minMaxDepthsFileName);
-    staticVector<int>* findCamsWhichIntersectsHexahedron(point3d hexah[8]);
-    staticVector<int>* findCamsWhichAreInHexahedron(point3d hexah[8]);
-    staticVector<int>* findCamsWhichIntersectsCamHexah(int rc);
+    StaticVector<int>* findCamsWhichIntersectsHexahedron(Point3d hexah[8], std::string minMaxDepthsFileName);
+    StaticVector<int>* findCamsWhichIntersectsHexahedron(Point3d hexah[8]);
+    StaticVector<int>* findCamsWhichAreInHexahedron(Point3d hexah[8]);
+    StaticVector<int>* findCamsWhichIntersectsCamHexah(int rc);
 
-    staticVector<int>* precomputeIncidentMatrixCamsFromSeeds();
-    staticVector<int>* loadCamPairsMatrix();
-    staticVector<int>* findNearestCamsFromSeeds(int rc, int nnearestcams);
+    StaticVector<int>* precomputeIncidentMatrixCamsFromSeeds();
+    StaticVector<int>* loadCamPairsMatrix();
+    StaticVector<int>* findNearestCamsFromSeeds(int rc, int nnearestcams);
 };

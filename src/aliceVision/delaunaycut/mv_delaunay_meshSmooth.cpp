@@ -11,18 +11,18 @@
 #include <aliceVision/mesh/MeshEnergyOptPhotoMem.hpp>
 #include <aliceVision/depthMap/SemiGlobalMatchingParams.hpp>
 #include <aliceVision/common/ImagesCache.hpp>
-#include <aliceVision/structures/mv_point3d.hpp>
-#include <aliceVision/structures/mv_staticVector.hpp>
+#include <aliceVision/structures/Point3d.hpp>
+#include <aliceVision/structures/StaticVector.hpp>
 #include <aliceVision/common/PreMatchCams.hpp>
 
 #include <boost/filesystem/operations.hpp>
 
 namespace bfs = boost::filesystem;
 
-void meshPostProcessing(Mesh*& inout_mesh, staticVector<staticVector<int>*>*& inout_ptsCams, staticVector<int>& usedCams,
+void meshPostProcessing(Mesh*& inout_mesh, StaticVector<StaticVector<int>*>*& inout_ptsCams, StaticVector<int>& usedCams,
                       multiviewParams& mp, mv_prematch_cams& pc,
                       const std::string& resultFolderName,
-                      staticVector<point3d>* hexahsToExcludeFromResultingMesh, point3d* hexah)
+                      StaticVector<Point3d>* hexahsToExcludeFromResultingMesh, Point3d* hexah)
 {
     long timer = std::clock();
     std::cout << "meshPostProcessing" << std::endl;
@@ -45,8 +45,8 @@ void meshPostProcessing(Mesh*& inout_mesh, staticVector<staticVector<int>*>*& in
 
     // copy ptsCams
     {
-        staticVector<staticVector<int>*>* ptsCamsOld = inout_ptsCams;
-        staticVector<int>* ptIdToNewPtId;
+        StaticVector<StaticVector<int>*>* ptsCamsOld = inout_ptsCams;
+        StaticVector<int>* ptIdToNewPtId;
 
         //!!!!!!!!!!!!!
         bool doRemoveTrianglesInhexahsToExcludeFromResultingMesh =
@@ -60,14 +60,14 @@ void meshPostProcessing(Mesh*& inout_mesh, staticVector<staticVector<int>*>*& in
         const auto doLeaveLargestFullSegmentOnly = (bool)mp.mip->_ini.get<bool>("hallucinationsFiltering.doLeaveLargestFullSegmentOnly", false);
         if(doLeaveLargestFullSegmentOnly)
         {
-            staticVector<int>* trisIdsToStay = inout_mesh->getLargestConnectedComponentTrisIds(mp);
+            StaticVector<int>* trisIdsToStay = inout_mesh->getLargestConnectedComponentTrisIds(mp);
             inout_mesh->letJustTringlesIdsInMesh(trisIdsToStay);
             delete trisIdsToStay;
         }
 
         inout_mesh->removeFreePointsFromMesh(&ptIdToNewPtId);
 
-        inout_ptsCams = new staticVector<staticVector<int>*>(inout_mesh->pts->size());
+        inout_ptsCams = new StaticVector<StaticVector<int>*>(inout_mesh->pts->size());
         for(int i = 0; i < inout_mesh->pts->size(); i++)
         {
             inout_ptsCams->push_back(nullptr);
@@ -77,7 +77,7 @@ void meshPostProcessing(Mesh*& inout_mesh, staticVector<staticVector<int>*>*& in
             int newId = (*ptIdToNewPtId)[i];
             if(newId > -1)
             {
-                staticVector<int>* ptCamsNew = new staticVector<int>(sizeOfStaticVector<int>((*ptsCamsOld)[i]));
+                StaticVector<int>* ptCamsNew = new StaticVector<int>(sizeOfStaticVector<int>((*ptsCamsOld)[i]));
                 for(int j = 0; j < sizeOfStaticVector<int>((*ptsCamsOld)[i]); j++)
                 {
                     ptCamsNew->push_back((*(*ptsCamsOld)[i])[j]);
@@ -115,7 +115,7 @@ void meshPostProcessing(Mesh*& inout_mesh, staticVector<staticVector<int>*>*& in
             for(int i = 0; i < meOpt->newPtsOldPtId->size(); i++)
             {
                 int oldPtId = (*meOpt->newPtsOldPtId)[i];
-                staticVector<int>* ptCams = new staticVector<int>(sizeOfStaticVector<int>((*inout_ptsCams)[oldPtId]));
+                StaticVector<int>* ptCams = new StaticVector<int>(sizeOfStaticVector<int>((*inout_ptsCams)[oldPtId]));
                 for(int j = 0; j < sizeOfStaticVector<int>((*inout_ptsCams)[oldPtId]); j++)
                 {
                     ptCams->push_back((*(*inout_ptsCams)[oldPtId])[j]);
@@ -142,13 +142,13 @@ void meshPostProcessing(Mesh*& inout_mesh, staticVector<staticVector<int>*>*& in
         }
 
         /////////////////////////////
-        staticVectorBool* ptsCanMove = nullptr;
+        StaticVectorBool* ptsCanMove = nullptr;
         if(hexah != nullptr)
         {
-            point3d O = hexah[0];
-            point3d vx = hexah[1] - hexah[0];
-            point3d vy = hexah[3] - hexah[0];
-            point3d vz = hexah[4] - hexah[0];
+            Point3d O = hexah[0];
+            Point3d vx = hexah[1] - hexah[0];
+            Point3d vy = hexah[3] - hexah[0];
+            Point3d vz = hexah[4] - hexah[0];
             float svx = vx.size();
             float svy = vy.size();
             float svz = vz.size();
@@ -157,7 +157,7 @@ void meshPostProcessing(Mesh*& inout_mesh, staticVector<staticVector<int>*>*& in
             vz = vz.normalize();
             float avel = 10.0f * meOpt->computeAverageEdgeLength();
 
-            ptsCanMove = new staticVectorBool(meOpt->pts->size());
+            ptsCanMove = new StaticVectorBool(meOpt->pts->size());
             ptsCanMove->resize_with(meOpt->pts->size(), true);
             for(int i = 0; i < meOpt->pts->size(); i++)
             {
@@ -193,7 +193,7 @@ void meshPostProcessing(Mesh*& inout_mesh, staticVector<staticVector<int>*>*& in
         {
             // No support for "ptsCanMove"
             printf("Laplacian smoothing mesh\n");
-            staticVector<staticVector<int>*>* ptsNei = meOpt->getPtsNeighPtsOrdered();
+            StaticVector<StaticVector<int>*>* ptsNei = meOpt->getPtsNeighPtsOrdered();
             for(int iter = 0; iter < 2; iter++)
             {
                 meOpt->laplacianSmoothPts(ptsNei);
@@ -209,7 +209,7 @@ void meshPostProcessing(Mesh*& inout_mesh, staticVector<staticVector<int>*>*& in
         if(doOptimizeMesh)
         {
             printf("Optimize mesh\n");
-            staticVector<staticVector<int>*>* camsPts = convertObjectsCamsToCamsObjects(&mp, inout_ptsCams);
+            StaticVector<StaticVector<int>*>* camsPts = convertObjectsCamsToCamsObjects(&mp, inout_ptsCams);
 
             printf("Optimizing mesh\n");
             int niter = mp.mip->_ini.get<int>("meshEnergyOpt.optimizeNbIterations", 50);

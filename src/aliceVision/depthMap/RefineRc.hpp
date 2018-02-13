@@ -5,7 +5,8 @@
 
 #pragma once
 
-#include "SemiGlobalMatchingRc.hpp"
+#include <aliceVision/structures/StaticVector.hpp>
+#include <aliceVision/depthMap/SemiGlobalMatchingRc.hpp>
 
 class RefineRc : public SemiGlobalMatchingRc
 {
@@ -32,5 +33,5 @@ private:
     DepthSimMap* optimizeDepthSimMapCUDA(DepthSimMap* depthPixSizeMapVis, DepthSimMap* depthSimMapPhoto);
 };
 
-void refineDepthMaps(multiviewParams* mp, mv_prematch_cams* pc, const staticVector<int>& cams);
-void refineDepthMaps(int CUDADeviceNo, multiviewParams* mp, mv_prematch_cams* pc, const staticVector<int>& cams);
+void refineDepthMaps(multiviewParams* mp, mv_prematch_cams* pc, const StaticVector<int>& cams);
+void refineDepthMaps(int CUDADeviceNo, multiviewParams* mp, mv_prematch_cams* pc, const StaticVector<int>& cams);

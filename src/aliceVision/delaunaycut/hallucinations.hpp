@@ -6,8 +6,7 @@
 #pragma once
 
 #include <aliceVision/mesh/Mesh.hpp>
-#include <aliceVision/structures/mv_geometry.hpp>
+#include <aliceVision/structures/geometry.hpp>
 #include <aliceVision/common/PreMatchCams.hpp>
 
-//float confKernelVoting(staticVector<float>* confs, float c);
 void filterLargeEdgeTriangles(Mesh* me, float avelthr);

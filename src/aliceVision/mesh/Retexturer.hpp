@@ -6,6 +6,10 @@
 #pragma once
 
 #include <aliceVision/structures/image.hpp>
+#include <aliceVision/structures/Point2d.hpp>
+#include <aliceVision/structures/Point3d.hpp>
+#include <aliceVision/structures/StaticVector.hpp>
+#include <aliceVision/structures/Voxel.hpp>
 #include <aliceVision/common/ImagesCache.hpp>
 #include <aliceVision/mesh/Mesh.hpp>
 
@@ -25,11 +29,11 @@ struct Retexturer
     TexturingParams texParams;
 
     int nmtls = 0;
-    staticVector<int>* trisMtlIds = nullptr;
-    staticVector<point2d>* uvCoords = nullptr;
-    staticVector<voxel>* trisUvIds = nullptr;
-    staticVector<point3d>* normals = nullptr;
-    staticVector<voxel>* trisNormalsIds = nullptr;
+    StaticVector<int>* trisMtlIds = nullptr;
+    StaticVector<Point2d>* uvCoords = nullptr;
+    StaticVector<Voxel>* trisUvIds = nullptr;
+    StaticVector<Point3d>* normals = nullptr;
+    StaticVector<Voxel>* trisNormalsIds = nullptr;
     Mesh* me = nullptr;
 
     /// texture atlas to 3D triangle ids
@@ -61,14 +65,14 @@ public:
      * @param ptsCams visibilities of internal mesh's points
      * @return visibilities of new internal mesh's points
      */
-    staticVector<staticVector<int>*>* generateUVs(multiviewParams &mp, staticVector<staticVector<int> *> *ptsCams);
+    StaticVector<StaticVector<int>*>* generateUVs(multiviewParams &mp, StaticVector<StaticVector<int> *> *ptsCams);
 
     /// Generate texture files for all texture atlases
-    void generateTextures(const multiviewParams& mp, staticVector<staticVector<int>*>* ptsCams,
+    void generateTextures(const multiviewParams& mp, StaticVector<StaticVector<int>*>* ptsCams,
                           const bfs::path &outPath, EImageFileType textureFileType = EImageFileType::PNG);
 
     /// Generate texture files for the given texture atlas index
-    void generateTexture(const multiviewParams& mp, staticVector<staticVector<int>*>* ptsCams,
+    void generateTexture(const multiviewParams& mp, StaticVector<StaticVector<int>*>* ptsCams,
                          size_t atlasID, mv_images_cache& imageCache,
                          const bfs::path &outPath, EImageFileType textureFileType = EImageFileType::PNG);
 

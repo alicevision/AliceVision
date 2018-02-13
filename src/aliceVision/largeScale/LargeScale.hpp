@@ -5,6 +5,9 @@
 
 #pragma once
 
+#include <aliceVision/structures/Point3d.hpp>
+#include <aliceVision/structures/StaticVector.hpp>
+#include <aliceVision/structures/Voxel.hpp>
 #include <aliceVision/common/common.hpp>
 #include <aliceVision/common/PreMatchCams.hpp>
 #include <aliceVision/largeScale/OctreeTracks.hpp>
@@ -19,8 +22,8 @@ public:
     std::string spaceFolderName;
     std::string spaceVoxelsFolderName;
     std::string spaceFileName;
-    std::array<point3d, 8> space;
-    voxel dimensions;
+    std::array<Point3d, 8> space;
+    Voxel dimensions;
     int maxOcTreeDim;
     bool doVisualize;
 
@@ -34,13 +37,13 @@ public:
     void initialEstimateSpace(int maxOcTreeDim);
     LargeScale* cloneSpaceIfDoesNotExists(int newOcTreeDim, std::string newSpaceFolderName);
     bool generateSpace(int maxPts, int ocTreeDim);
-    point3d getSpaceSteps();
+    Point3d getSpaceSteps();
 
     std::string getReconstructionVoxelFolder(int i) const
     {
         return spaceFolderName + "reconstructedVoxel" + num2strFourDecimal(i) + "/";
     }
-    std::vector<std::string> getRecsDirs(const staticVector<point3d>* voxelsArray) const
+    std::vector<std::string> getRecsDirs(const StaticVector<Point3d>* voxelsArray) const
     {
         std::vector<std::string> recsDirs;
         recsDirs.reserve(voxelsArray->size() / 8);

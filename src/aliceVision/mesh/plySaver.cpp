@@ -4,6 +4,7 @@
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
 #include "plySaver.hpp"
+#include <aliceVision/structures/Color.hpp>
 
 int savePLY(std::string plyFileName, Mesh* me, bool diffuse)
 {
@@ -121,10 +122,10 @@ int savePLY(std::string plyFileName, Mesh* me, bool diffuse)
     return 0;
 }
 
-staticVector<rgb>* getPtsColorsRgb(Mesh* me, staticVector<rgb>* triColors)
+StaticVector<rgb>* getPtsColorsRgb(Mesh* me, StaticVector<rgb>* triColors)
 {
-    staticVector<Color>* ptsColors = new staticVector<Color>(me->pts->size());
-    staticVector<float>* nptsColors = new staticVector<float>(me->pts->size());
+    StaticVector<Color>* ptsColors = new StaticVector<Color>(me->pts->size());
+    StaticVector<float>* nptsColors = new StaticVector<float>(me->pts->size());
     ptsColors->resize_with(me->pts->size(), Color(0.0f, 0.0f, 0.0f));
     nptsColors->resize_with(me->pts->size(), 0.0f);
 
@@ -144,7 +145,7 @@ staticVector<rgb>* getPtsColorsRgb(Mesh* me, staticVector<rgb>* triColors)
     }
     delete nptsColors;
 
-    staticVector<rgb>* ptsColorsRgb = new staticVector<rgb>(me->pts->size());
+    StaticVector<rgb>* ptsColorsRgb = new StaticVector<rgb>(me->pts->size());
     for(int i = 0; i < me->pts->size(); i++)
     {
         Color c = (*ptsColors)[i];
@@ -159,9 +160,9 @@ staticVector<rgb>* getPtsColorsRgb(Mesh* me, staticVector<rgb>* triColors)
     return ptsColorsRgb;
 }
 
-staticVector<rgb>* getTrisColorsRgb(Mesh* me, staticVector<rgb>* ptsColors)
+StaticVector<rgb>* getTrisColorsRgb(Mesh* me, StaticVector<rgb>* ptsColors)
 {
-    staticVector<rgb>* trisColors = new staticVector<rgb>(me->tris->size());
+    StaticVector<rgb>* trisColors = new StaticVector<rgb>(me->tris->size());
     trisColors->resize(me->tris->size());
     for(int i = 0; i < me->tris->size(); i++)
     {
@@ -181,9 +182,9 @@ staticVector<rgb>* getTrisColorsRgb(Mesh* me, staticVector<rgb>* ptsColors)
     return trisColors;
 }
 
-int savePLY(std::string plyFileName, Mesh* me, staticVector<rgb>* triColors, bool diffuse)
+int savePLY(std::string plyFileName, Mesh* me, StaticVector<rgb>* triColors, bool diffuse)
 {
-    staticVector<rgb>* ptsColors = getPtsColorsRgb(me, triColors);
+    StaticVector<rgb>* ptsColors = getPtsColorsRgb(me, triColors);
 
     saveArrayToFile<rgb>(plyFileName + ".trisColors", triColors);
     saveArrayToFile<rgb>(plyFileName + ".ptsColors", ptsColors);
@@ -248,13 +249,13 @@ int savePLY(std::string plyFileName, Mesh* me, staticVector<rgb>* triColors, boo
             pos[1] = (float)((*me->pts)[i].y);
             pos[2] = (float)((*me->pts)[i].z);
             fwrite(&pos[0], sizeof(float), 3, plyf);
-            uchar r, g, b;
+            unsigned char r, g, b;
             r = (*ptsColors)[i].r;
             g = (*ptsColors)[i].g;
             b = (*ptsColors)[i].b;
-            fwrite(&r, sizeof(uchar), 1, plyf);
-            fwrite(&g, sizeof(uchar), 1, plyf);
-            fwrite(&b, sizeof(uchar), 1, plyf);
+            fwrite(&r, sizeof(unsigned char), 1, plyf);
+            fwrite(&g, sizeof(unsigned char), 1, plyf);
+            fwrite(&b, sizeof(unsigned char), 1, plyf);
         }
         else
         {

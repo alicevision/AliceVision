@@ -9,7 +9,7 @@
 
 namespace mesh {
 
-int getNearestVertices(const Mesh& refMesh, const Mesh& mesh, staticVector<int>& out_nearestVertex)
+int getNearestVertices(const Mesh& refMesh, const Mesh& mesh, StaticVector<int>& out_nearestVertex)
 {
     std::cout << "getNearestVertices begin" << std::endl;
     out_nearestVertex.resize(mesh.pts->size(), -1);
@@ -41,7 +41,7 @@ void remapMeshVisibilities(
     #pragma omp parallel for
     for(int i = 0; i < mesh.pts->size(); ++i)
     {
-        PointVisibility* pOut = new staticVector<int>();
+        PointVisibility* pOut = new StaticVector<int>();
         out_ptsVisibilities[i] = pOut; // give ownership
 
         int iRef = refMesh_kdTree.get_nearest_neighbor((*mesh.pts)[i].m);

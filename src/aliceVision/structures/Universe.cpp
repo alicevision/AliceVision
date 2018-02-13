@@ -3,10 +3,10 @@
 // v. 2.0. If a copy of the MPL was not distributed with this file,
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
-#include "mv_universe.hpp"
+#include "Universe.hpp"
 
 
-mv_universe::mv_universe(int elements)
+Universe::Universe(int elements)
 {
     elts = new uni_elt[elements];
     allelems = elements;
@@ -14,7 +14,7 @@ mv_universe::mv_universe(int elements)
     initialize();
 }
 
-void mv_universe::initialize()
+void Universe::initialize()
 {
     num = allelems;
     for(int i = 0; i < allelems; i++)
@@ -25,12 +25,12 @@ void mv_universe::initialize()
     }
 }
 
-mv_universe::~mv_universe()
+Universe::~Universe()
 {
     delete[] elts;
 }
 
-int mv_universe::find(int x)
+int Universe::find(int x)
 {
     int y = x;
     while(y != elts[y].p) // follow the index stored in p if not the same that the index
@@ -39,7 +39,7 @@ int mv_universe::find(int x)
     return y;
 }
 
-void mv_universe::join(int x, int y)
+void Universe::join(int x, int y)
 {
     // join elements in the one with the highest rank
     if(elts[x].rank > elts[y].rank)
@@ -57,7 +57,7 @@ void mv_universe::join(int x, int y)
     num--; // the number of elements has been reduced by one
 }
 
-void mv_universe::addEdge(int x, int y)
+void Universe::addEdge(int x, int y)
 {
     int a = find(x);
     int b = find(y);

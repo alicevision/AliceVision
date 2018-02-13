@@ -6,8 +6,8 @@
 #include "SemiGlobalMatchingRcTc.hpp"
 #include <aliceVision/common/common.hpp>
 
-SemiGlobalMatchingRcTc::SemiGlobalMatchingRcTc(staticVector<float>* _rcTcDepths, int _rc, int _tc, int _scale, int _step, SemiGlobalMatchingParams* _sp,
-                         staticVectorBool* _rcSilhoueteMap)
+SemiGlobalMatchingRcTc::SemiGlobalMatchingRcTc(StaticVector<float>* _rcTcDepths, int _rc, int _tc, int _scale, int _step, SemiGlobalMatchingParams* _sp,
+                         StaticVectorBool* _rcSilhoueteMap)
 {
     sp = _sp;
 
@@ -30,23 +30,23 @@ SemiGlobalMatchingRcTc::~SemiGlobalMatchingRcTc()
     //
 }
 
-staticVector<voxel>* SemiGlobalMatchingRcTc::getPixels()
+StaticVector<Voxel>* SemiGlobalMatchingRcTc::getPixels()
 {
-    staticVector<voxel>* pixels = new staticVector<voxel>(w * h);
+    StaticVector<Voxel>* pixels = new StaticVector<Voxel>(w * h);
     for(int y = 0; y < h; y++)
     {
         for(int x = 0; x < w; x++)
         {
             if(rcSilhoueteMap == nullptr)
             {
-                pixels->push_back(voxel(x * step, y * step, 0));
+                pixels->push_back(Voxel(x * step, y * step, 0));
             }
             else
             {
                 bool isBackgroundPixel = (*rcSilhoueteMap)[y * w + x];
                 if(!isBackgroundPixel)
                 {
-                    pixels->push_back(voxel(x * step, y * step, 0));
+                    pixels->push_back(Voxel(x * step, y * step, 0));
                 }
             }
         }
@@ -54,7 +54,7 @@ staticVector<voxel>* SemiGlobalMatchingRcTc::getPixels()
     return pixels;
 }
 
-staticVector<unsigned char>* SemiGlobalMatchingRcTc::computeDepthSimMapVolume(float& volumeMBinGPUMem, int wsh, float gammaC,
+StaticVector<unsigned char>* SemiGlobalMatchingRcTc::computeDepthSimMapVolume(float& volumeMBinGPUMem, int wsh, float gammaC,
                                                                    float gammaP)
 {
     long tall = clock();
@@ -64,13 +64,13 @@ staticVector<unsigned char>* SemiGlobalMatchingRcTc::computeDepthSimMapVolume(fl
     int volDimY = h;
     int volDimZ = rcTcDepths->size();
 
-    staticVector<unsigned char>* volume = new staticVector<unsigned char>(volDimX * volDimY * volDimZ);
+    StaticVector<unsigned char>* volume = new StaticVector<unsigned char>(volDimX * volDimY * volDimZ);
     volume->resize_with(volDimX * volDimY * volDimZ, 255);
 
-    staticVector<int>* tcams = new staticVector<int>(1);
+    StaticVector<int>* tcams = new StaticVector<int>(1);
     tcams->push_back(tc);
 
-    staticVector<voxel>* pixels = getPixels();
+    StaticVector<Voxel>* pixels = getPixels();
 
     volumeMBinGPUMem =
         sp->cps->sweepPixelsToVolume(rcTcDepths->size(), volume, volDimX, volDimY, volDimZ, volStepXY, 0, 0, 0,

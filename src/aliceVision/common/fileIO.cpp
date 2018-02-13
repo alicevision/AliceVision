@@ -320,9 +320,9 @@ FILE* mv_openFile(multiviewInputParams* mip, int index, EFileType mv_file_type, 
     return out;
 }
 
-point3d load3x1MatrixFromFile(FILE* fi)
+Point3d load3x1MatrixFromFile(FILE* fi)
 {
-    point3d m;
+    Point3d m;
 
     float a, b, c;
     fscanf(fi, "%f \n", &a);
@@ -336,9 +336,9 @@ point3d load3x1MatrixFromFile(FILE* fi)
     return m;
 }
 
-matrix3x3 load3x3MatrixFromFile(FILE* fi)
+Matrix3x3 load3x3MatrixFromFile(FILE* fi)
 {
-    matrix3x3 m;
+    Matrix3x3 m;
 
     // M[col*3 + row]
     float a, b, c;
@@ -358,9 +358,9 @@ matrix3x3 load3x3MatrixFromFile(FILE* fi)
     return m;
 }
 
-matrix3x4 load3x4MatrixFromFile(FILE* fi)
+Matrix3x4 load3x4MatrixFromFile(FILE* fi)
 {
-    matrix3x4 m;
+    Matrix3x4 m;
 
     // M[col*3 + row]
     float a, b, c, d;
@@ -383,9 +383,9 @@ matrix3x4 load3x4MatrixFromFile(FILE* fi)
     return m;
 }
 
-point3d loadPoint3dFromFile(FILE* fi)
+Point3d loadPoint3dFromFile(FILE* fi)
 {
-    point3d m;
+    Point3d m;
 
     // M[col*3 + row]
     float a, b, c;
@@ -419,17 +419,17 @@ int get2dPointsNum(int imgFileId, multiviewInputParams* mip)
     return n;
 }
 
-int load2dPoints(point2d** _out, int imgFileId, multiviewInputParams* mip)
+int load2dPoints(Point2d** _out, int imgFileId, multiviewInputParams* mip)
 {
-    point2d* out;
+    Point2d* out;
     int n = get2dPointsNum(imgFileId, mip);
     if(n == 0)
     {
-        out = new point2d[1];
+        out = new Point2d[1];
     }
     else
     {
-        out = new point2d[n];
+        out = new Point2d[n];
 
         FILE* f = mv_openFile(mip, imgFileId, EFileType::har, "r");
 
@@ -438,7 +438,7 @@ int load2dPoints(point2d** _out, int imgFileId, multiviewInputParams* mip)
         {
             float a, b;
             fscanf(f, "%f %f \n", &a, &b);
-            out[i] = point2d((float)a, (float)b);
+            out[i] = Point2d((float)a, (float)b);
             i++;
         }
 
@@ -450,11 +450,11 @@ int load2dPoints(point2d** _out, int imgFileId, multiviewInputParams* mip)
     return n;
 }
 
-staticVector<point2d>* load2dPoints(int imgFileId, multiviewInputParams* mip)
+StaticVector<Point2d>* load2dPoints(int imgFileId, multiviewInputParams* mip)
 {
     int n = get2dPointsNum(imgFileId, mip);
 
-    staticVector<point2d>* out = new staticVector<point2d>(std::max(n, 1));
+    StaticVector<Point2d>* out = new StaticVector<Point2d>(std::max(n, 1));
 
     if(n > 0)
     {
@@ -463,7 +463,7 @@ staticVector<point2d>* load2dPoints(int imgFileId, multiviewInputParams* mip)
         {
             float a, b;
             fscanf(f, "%f %f \n", &a, &b);
-            out->push_back(point2d((float)a, (float)b));
+            out->push_back(Point2d((float)a, (float)b));
         }
         fclose(f);
     }
@@ -471,7 +471,7 @@ staticVector<point2d>* load2dPoints(int imgFileId, multiviewInputParams* mip)
     return out;
 }
 
-void load2dPoints(staticVector<point2d>* out, int imgFileId, multiviewInputParams* mip)
+void load2dPoints(StaticVector<Point2d>* out, int imgFileId, multiviewInputParams* mip)
 {
     out->resize(0);
     FILE* f = mv_openFile(mip, imgFileId, EFileType::har, "r");
@@ -479,7 +479,7 @@ void load2dPoints(staticVector<point2d>* out, int imgFileId, multiviewInputParam
     {
         float a, b;
         fscanf(f, "%f %f \n", &a, &b);
-        out->push_back(point2d((float)a, (float)b));
+        out->push_back(Point2d((float)a, (float)b));
     }
     fclose(f);
 }
@@ -556,7 +556,7 @@ void memcpyRGBImageFromFileToArr(int camId, Color* imgArr, const std::string& fi
 }
 
 
-void saveSeedsToFile(staticVector<seedPoint>* seeds, const std::string& fileName)
+void saveSeedsToFile(StaticVector<SeedPoint>* seeds, const std::string& fileName)
 {
     FILE* f = fopen(fileName.c_str(), "wb");
     if(f == nullptr)
@@ -569,7 +569,7 @@ void saveSeedsToFile(staticVector<seedPoint>* seeds, const std::string& fileName
         fwrite(&size, sizeof(int), 1, f);
         for(int i = 0; i < size; i++)
         {
-            seedPoint* sp = &(*seeds)[i];
+            SeedPoint* sp = &(*seeds)[i];
             seed_io_block sb;
             sb.area = sp->area;
             sb.ncams = sp->cams.size();
@@ -589,37 +589,37 @@ void saveSeedsToFile(staticVector<seedPoint>* seeds, const std::string& fileName
 
             for(int j = 0; j < sb.ncams + 1; j++)
             {
-                point2d sh = sp->cams.shifts[j];
-                fwrite(&sh, sizeof(point2d), 1, f);
+                Point2d sh = sp->cams.shifts[j];
+                fwrite(&sh, sizeof(Point2d), 1, f);
             }
         }
         fclose(f);
     }
 }
 
-void saveSeedsToFile(staticVector<seedPoint>* seeds, int refImgFileId, multiviewInputParams* mip, EFileType mv_file_type)
+void saveSeedsToFile(StaticVector<SeedPoint>* seeds, int refImgFileId, multiviewInputParams* mip, EFileType mv_file_type)
 {
     std::string fileName = mv_getFileName(mip, refImgFileId, mv_file_type);
     saveSeedsToFile(seeds, fileName);
 }
 
-bool loadSeedsFromFile(staticVector<seedPoint>** seeds, const std::string& fileName)
+bool loadSeedsFromFile(StaticVector<SeedPoint>** seeds, const std::string& fileName)
 {
     FILE* f = fopen(fileName.c_str(), "rb");
     if(f == nullptr)
     {
         // printf("file does not exists \n");
-        *seeds = new staticVector<seedPoint>(1);
+        *seeds = new StaticVector<SeedPoint>(1);
         return false;
     }
 
     int size;
     fread(&size, sizeof(int), 1, f);
-    *seeds = new staticVector<seedPoint>(std::max(1, size));
+    *seeds = new StaticVector<SeedPoint>(std::max(1, size));
 
     for(int i = 0; i < size; i++)
     {
-        seedPoint sp = seedPoint();
+        SeedPoint sp = SeedPoint();
         seed_io_block sb;
 
         fread(&sb, sizeof(seed_io_block), 1, f);
@@ -644,8 +644,8 @@ bool loadSeedsFromFile(staticVector<seedPoint>** seeds, const std::string& fileN
 
         for(int j = 0; j < sb.ncams + 1; j++)
         {
-            point2d sh;
-            fread(&sh, sizeof(point2d), 1, f);
+            Point2d sh;
+            fread(&sh, sizeof(Point2d), 1, f);
             sp.cams.shifts[j] = sh;
         }
 
@@ -656,7 +656,7 @@ bool loadSeedsFromFile(staticVector<seedPoint>** seeds, const std::string& fileN
     return true;
 }
 
-bool loadSeedsFromFile(staticVector<seedPoint>** seeds, int refImgFileId, multiviewInputParams* mip, EFileType mv_file_type)
+bool loadSeedsFromFile(StaticVector<SeedPoint>** seeds, int refImgFileId, multiviewInputParams* mip, EFileType mv_file_type)
 {
     std::string fileName = mv_getFileName(mip, refImgFileId, mv_file_type);
     return loadSeedsFromFile(seeds, fileName);
@@ -752,7 +752,7 @@ void deleteFilesOfType(multiviewInputParams& mip, int ncams, EFileType mv_file_t
     finishEstimate();
 }
 
-void saveOrientedPointsToFile(staticVector<orientedPoint>* ops, int refImgFileId, multiviewInputParams* mip)
+void saveOrientedPointsToFile(StaticVector<OrientedPoint>* ops, int refImgFileId, multiviewInputParams* mip)
 {
     FILE* f = mv_openFile(mip, refImgFileId, EFileType::op, "wb");
     if(f == nullptr)
@@ -763,12 +763,12 @@ void saveOrientedPointsToFile(staticVector<orientedPoint>* ops, int refImgFileId
     {
         int size = ops->size();
         fwrite(&size, sizeof(int), 1, f);
-        fwrite(&(*ops)[0], sizeof(orientedPoint), size, f);
+        fwrite(&(*ops)[0], sizeof(OrientedPoint), size, f);
         fclose(f);
     }
 }
 
-staticVector<orientedPoint>* loadOrientedPointsFromFile(int refImgFileId, multiviewInputParams* mip)
+StaticVector<OrientedPoint>* loadOrientedPointsFromFile(int refImgFileId, multiviewInputParams* mip)
 {
     FILE* f = mv_openFile(mip, refImgFileId, EFileType::op, "rb");
     if(f == nullptr)
@@ -779,9 +779,9 @@ staticVector<orientedPoint>* loadOrientedPointsFromFile(int refImgFileId, multiv
     {
         int size;
         fread(&size, sizeof(int), 1, f);
-        staticVector<orientedPoint>* ops = new staticVector<orientedPoint>(size);
+        StaticVector<OrientedPoint>* ops = new StaticVector<OrientedPoint>(size);
         ops->resize(size);
-        fread(&(*ops)[0], sizeof(orientedPoint), size, f);
+        fread(&(*ops)[0], sizeof(OrientedPoint), size, f);
         fclose(f);
 
         return ops;
@@ -908,7 +908,7 @@ void deleteAllFiles(multiviewInputParams* mip)
 }
 
 bool getDepthMapInfo(int refImgFileId, multiviewInputParams* mip, float& mindepth, float& maxdepth,
-                     staticVector<int>** tcams)
+                     StaticVector<int>** tcams)
 {
     *tcams = nullptr;
     FILE* f = mv_openFile(mip, refImgFileId, EFileType::depthMapInfo, "r");
@@ -920,7 +920,7 @@ bool getDepthMapInfo(int refImgFileId, multiviewInputParams* mip, float& mindept
 
     int ntcams;
     fscanf(f, "minDepth %f, maxDepth %f, ntcams %i, tcams", &mindepth, &maxdepth, &ntcams);
-    (*tcams) = new staticVector<int>(ntcams);
+    (*tcams) = new StaticVector<int>(ntcams);
     for(int c = 0; c < ntcams; c++)
     {
         int tc;
@@ -975,7 +975,7 @@ bool getDirectoryFiles(std::vector<std::string>& out, const std::string& sPath, 
     return true;
 }
 
-void readSifts(const std::string& fileName, staticVector<float>** descriptors, staticVector<SiftKeypoint>** keys)
+void readSifts(const std::string& fileName, StaticVector<float>** descriptors, StaticVector<SiftKeypoint>** keys)
 {
     FILE* f = fopen(fileName.c_str(), "rb");
 
@@ -986,9 +986,9 @@ void readSifts(const std::string& fileName, staticVector<float>** descriptors, s
     // float mbsifts = ((float)(n*sizeof(SiftGPU::SiftKeypoint)+n*128*sizeof(float))/1024.0)/1024.0;
     // printf("%i sifts contains %f MB \n",n,mbsifts);
 
-    staticVector<SiftKeypoint>* Keys = new staticVector<SiftKeypoint>(n);
+    StaticVector<SiftKeypoint>* Keys = new StaticVector<SiftKeypoint>(n);
     Keys->resize(n);
-    staticVector<float>* Descriptors = new staticVector<float>(128 * n);
+    StaticVector<float>* Descriptors = new StaticVector<float>(128 * n);
     Descriptors->resize(128 * n);
 
     fread(&(*Keys)[0], sizeof(SiftKeypoint), n, f);

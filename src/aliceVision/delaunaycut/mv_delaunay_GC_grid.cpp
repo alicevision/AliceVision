@@ -6,7 +6,7 @@
 #include "mv_delaunay_GC_grid.hpp"
 #include <aliceVision/structures/mv_bin_search.hpp>
 
-void mv_delanuay_GC_grid::addCams(GC_Vertex_handle& vh, staticVector<int>* ptcams)
+void mv_delanuay_GC_grid::addCams(GC_Vertex_handle& vh, StaticVector<int>* ptcams)
 {
     if(vh->info().cams->size() + ptcams->size() + 1 >= vh->info().cams->reserved())
     {
@@ -14,7 +14,7 @@ void mv_delanuay_GC_grid::addCams(GC_Vertex_handle& vh, staticVector<int>* ptcam
     }
 
     int id;
-    point2d pix;
+    Point2d pix;
 
     for(int i = 0; i < ptcams->size(); i++)
     {
@@ -24,9 +24,9 @@ void mv_delanuay_GC_grid::addCams(GC_Vertex_handle& vh, staticVector<int>* ptcam
     vh->info().nrc++;
 }
 
-void mv_delanuay_GC_grid::createTriangulationFromDepthMapsCamsVoxelGrid(staticVector<int>* cams,
+void mv_delanuay_GC_grid::createTriangulationFromDepthMapsCamsVoxelGrid(StaticVector<int>* cams,
                                                                         std::string fileNameWrl, int scale,
-                                                                        staticVector<int>* voxelsIds, point3d voxel[8],
+                                                                        StaticVector<int>* voxelsIds, Point3d voxel[8],
                                                                         int numSubVoxs, bool doMoveIntoGridPosition)
 {
     ///////////////////////////////////////////////////////////////////////////////////////
@@ -71,7 +71,7 @@ void mv_delanuay_GC_grid::createTriangulationFromDepthMapsCamsVoxelGrid(staticVe
 
             GC_Vertex_handle v = T.nearest_vertex(p);
             GC_Point np;
-            point3d npp;
+            Point3d npp;
 
             if(v != NULL)
             {
@@ -94,9 +94,9 @@ void mv_delanuay_GC_grid::createTriangulationFromDepthMapsCamsVoxelGrid(staticVe
 
     // add 6 points to prevent singularities
     {
-        point3d vcg = (voxel[0] + voxel[1] + voxel[2] + voxel[3] + voxel[4] + voxel[5] + voxel[6] + voxel[7]) / 8.0f;
-        point3d extrPts[6];
-        point3d fcg;
+        Point3d vcg = (voxel[0] + voxel[1] + voxel[2] + voxel[3] + voxel[4] + voxel[5] + voxel[6] + voxel[7]) / 8.0f;
+        Point3d extrPts[6];
+        Point3d fcg;
         fcg = (voxel[0] + voxel[1] + voxel[2] + voxel[3]) / 4.0f;
         extrPts[0] = fcg + (fcg - vcg) / 2.0f;
         fcg = (voxel[0] + voxel[4] + voxel[7] + voxel[3]) / 4.0f;
@@ -115,7 +115,7 @@ void mv_delanuay_GC_grid::createTriangulationFromDepthMapsCamsVoxelGrid(staticVe
 
             GC_Vertex_handle v = T.nearest_vertex(p);
             GC_Point np;
-            point3d npp;
+            Point3d npp;
 
             if(v != NULL)
             {
@@ -149,21 +149,21 @@ void mv_delanuay_GC_grid::createTriangulationFromDepthMapsCamsVoxelGrid(staticVe
 
         if(FileExists(fileNameTracksPts))
         {
-            staticVector<float>* tracksPointsSims = loadArrayFromFile<float>(fileNameTracksPtsSims);
-            staticVector<int>* tracksPointsNrcs = loadArrayFromFile<int>(fileNameTracksPtsNrcs);
-            staticVector<point3d>* tracksPoints = loadArrayFromFile<point3d>(fileNameTracksPts);
-            staticVector<staticVector<int>*>* tracksPointsCams = loadArrayOfArraysFromFile<int>(fileNameTracksPtsCams);
+            StaticVector<float>* tracksPointsSims = loadArrayFromFile<float>(fileNameTracksPtsSims);
+            StaticVector<int>* tracksPointsNrcs = loadArrayFromFile<int>(fileNameTracksPtsNrcs);
+            StaticVector<Point3d>* tracksPoints = loadArrayFromFile<Point3d>(fileNameTracksPts);
+            StaticVector<StaticVector<int>*>* tracksPointsCams = loadArrayOfArraysFromFile<int>(fileNameTracksPtsCams);
 
             for(int j = 0; j < tracksPoints->size(); j++)
             {
-                point3d tp = (*tracksPoints)[j];
+                Point3d tp = (*tracksPoints)[j];
 
                 if(doMoveIntoGridPosition == true)
                 {
-                    point3d cpx = closestPointOnPlaneToPoint(tp, voxel[0], vx);
-                    point3d vpx = tp - cpx;
-                    point3d vpy = cpx - closestPointOnPlaneToPoint(cpx, voxel[0], vy);
-                    point3d vpz = cpx - closestPointOnPlaneToPoint(cpx, voxel[0], vz);
+                    Point3d cpx = closestPointOnPlaneToPoint(tp, voxel[0], vx);
+                    Point3d vpx = tp - cpx;
+                    Point3d vpy = cpx - closestPointOnPlaneToPoint(cpx, voxel[0], vy);
+                    Point3d vpz = cpx - closestPointOnPlaneToPoint(cpx, voxel[0], vz);
 
                     int nx = floor(vpx.size() / sx + 0.5f);
                     int ny = floor(vpy.size() / sy + 0.5f);
@@ -210,7 +210,7 @@ void mv_delanuay_GC_grid::createTriangulationFromDepthMapsCamsVoxelGrid(staticVe
                     */
 
                     GC_Point np;
-                    point3d npp;
+                    Point3d npp;
                     if(v != NULL)
                     {
                         np = v->point();
@@ -222,7 +222,7 @@ void mv_delanuay_GC_grid::createTriangulationFromDepthMapsCamsVoxelGrid(staticVe
                         // just in case that it is not a camera center
                         if(v->info().cams != NULL)
                         {
-                            staticVector<int>* ptcams = (*tracksPointsCams)[j];
+                            StaticVector<int>* ptcams = (*tracksPointsCams)[j];
                             if(ptcams != NULL)
                             {
                                 addCams(v, ptcams);
@@ -232,7 +232,7 @@ void mv_delanuay_GC_grid::createTriangulationFromDepthMapsCamsVoxelGrid(staticVe
                     }
                     else
                     {
-                        staticVector<int>* ptcams = (*tracksPointsCams)[j];
+                        StaticVector<int>* ptcams = (*tracksPointsCams)[j];
                         if((isPointInHexahedron(tp, voxel) == true) && (ptcams != NULL))
                         {
                             GC_Point p = GC_Point(tp.x, tp.y, tp.z);
@@ -245,7 +245,7 @@ void mv_delanuay_GC_grid::createTriangulationFromDepthMapsCamsVoxelGrid(staticVe
                             newv->info().segSize = 0;
                             newv->info().segId = -1;
 
-                            newv->info().cams = new staticVector<int>(ptcams->size());
+                            newv->info().cams = new StaticVector<int>(ptcams->size());
 
                             for(int c = 0; c < ptcams->size(); c++)
                             {
@@ -276,27 +276,27 @@ void mv_delanuay_GC_grid::createTriangulationFromDepthMapsCamsVoxelGrid(staticVe
     initTriangulationDefaults(fileNameWrl);
 }
 
-staticVector<int>* mv_delanuay_GC_grid::getCamsForWhoseThePointIsVisible(point3d p, point3d tris[12][3],
-                                                                         staticVector<int>* cams)
+StaticVector<int>* mv_delanuay_GC_grid::getCamsForWhoseThePointIsVisible(Point3d p, Point3d tris[12][3],
+                                                                         StaticVector<int>* cams)
 {
 
     int n = sizeOfStaticVector<int>(cams);
-    staticVector<int>* ptcams = new staticVector<int>(n);
+    StaticVector<int>* ptcams = new StaticVector<int>(n);
 
     for(int c = 0; c < n; c++)
     {
         int cam = (*cams)[c];
-        point3d linePoint1 = p;
-        point3d linePoint2 = mp->CArr[cam];
+        Point3d linePoint1 = p;
+        Point3d linePoint2 = mp->CArr[cam];
 
         bool isVisible = true;
         for(int i = 0; i < 12; i++)
         {
-            point3d A = tris[i][0];
-            point3d B = tris[i][0];
-            point3d C = tris[i][0];
+            Point3d A = tris[i][0];
+            Point3d B = tris[i][0];
+            Point3d C = tris[i][0];
 
-            point3d lpi;
+            Point3d lpi;
             if(((A - p).size() > 0.0f) && ((B - p).size() > 0.0f) && ((C - p).size() > 0.0f) &&
                (isLineSegmentInTriangle(lpi, A, B, C, linePoint1, linePoint2) == true))
             {
@@ -313,9 +313,9 @@ staticVector<int>* mv_delanuay_GC_grid::getCamsForWhoseThePointIsVisible(point3d
     return ptcams;
 }
 
-void mv_delanuay_GC_grid::createTriangulationFromDepthMapsCamsVoxelGrid1(staticVector<int>* cams,
+void mv_delanuay_GC_grid::createTriangulationFromDepthMapsCamsVoxelGrid1(StaticVector<int>* cams,
                                                                          std::string fileNameWrl, int scale,
-                                                                         staticVector<int>* voxelsIds, point3d voxel[8],
+                                                                         StaticVector<int>* voxelsIds, Point3d voxel[8],
                                                                          int numSubVoxs)
 {
     ///////////////////////////////////////////////////////////////////////////////////////
@@ -356,7 +356,7 @@ void mv_delanuay_GC_grid::createTriangulationFromDepthMapsCamsVoxelGrid1(staticV
 
             GC_Vertex_handle v = T.nearest_vertex(p);
             GC_Point np;
-            point3d npp;
+            Point3d npp;
 
             if(v != NULL)
             {
@@ -379,9 +379,9 @@ void mv_delanuay_GC_grid::createTriangulationFromDepthMapsCamsVoxelGrid1(staticV
 
     // add 6 points to prevent singularities
     {
-        point3d vcg = (voxel[0] + voxel[1] + voxel[2] + voxel[3] + voxel[4] + voxel[5] + voxel[6] + voxel[7]) / 8.0f;
-        point3d extrPts[6];
-        point3d fcg;
+        Point3d vcg = (voxel[0] + voxel[1] + voxel[2] + voxel[3] + voxel[4] + voxel[5] + voxel[6] + voxel[7]) / 8.0f;
+        Point3d extrPts[6];
+        Point3d fcg;
         fcg = (voxel[0] + voxel[1] + voxel[2] + voxel[3]) / 4.0f;
         extrPts[0] = fcg + (fcg - vcg) / 2.0f;
         fcg = (voxel[0] + voxel[4] + voxel[7] + voxel[3]) / 4.0f;
@@ -400,7 +400,7 @@ void mv_delanuay_GC_grid::createTriangulationFromDepthMapsCamsVoxelGrid1(staticV
 
             GC_Vertex_handle v = T.nearest_vertex(p);
             GC_Point np;
-            point3d npp;
+            Point3d npp;
 
             if(v != NULL)
             {
@@ -434,19 +434,19 @@ void mv_delanuay_GC_grid::createTriangulationFromDepthMapsCamsVoxelGrid1(staticV
 
         if(FileExists(fileNameTracksPts))
         {
-            staticVector<float>* tracksPointsSims = loadArrayFromFile<float>(fileNameTracksPtsSims);
-            staticVector<int>* tracksPointsNrcs = loadArrayFromFile<int>(fileNameTracksPtsNrcs);
-            staticVector<point3d>* tracksPoints = loadArrayFromFile<point3d>(fileNameTracksPts);
-            staticVector<staticVector<int>*>* tracksPointsCams = loadArrayOfArraysFromFile<int>(fileNameTracksPtsCams);
+            StaticVector<float>* tracksPointsSims = loadArrayFromFile<float>(fileNameTracksPtsSims);
+            StaticVector<int>* tracksPointsNrcs = loadArrayFromFile<int>(fileNameTracksPtsNrcs);
+            StaticVector<Point3d>* tracksPoints = loadArrayFromFile<Point3d>(fileNameTracksPts);
+            StaticVector<StaticVector<int>*>* tracksPointsCams = loadArrayOfArraysFromFile<int>(fileNameTracksPtsCams);
 
             for(int j = 0; j < tracksPoints->size(); j++)
             {
-                point3d tp = (*tracksPoints)[j];
+                Point3d tp = (*tracksPoints)[j];
 
-                point3d cpx = closestPointOnPlaneToPoint(tp, voxel[0], vx);
-                point3d vpx = tp - cpx;
-                point3d vpy = cpx - closestPointOnPlaneToPoint(cpx, voxel[0], vy);
-                point3d vpz = cpx - closestPointOnPlaneToPoint(cpx, voxel[0], vz);
+                Point3d cpx = closestPointOnPlaneToPoint(tp, voxel[0], vx);
+                Point3d vpx = tp - cpx;
+                Point3d vpy = cpx - closestPointOnPlaneToPoint(cpx, voxel[0], vy);
+                Point3d vpz = cpx - closestPointOnPlaneToPoint(cpx, voxel[0], vz);
 
                 int nx = floor(vpx.size() / sx);
                 int ny = floor(vpy.size() / sy);
@@ -454,11 +454,11 @@ void mv_delanuay_GC_grid::createTriangulationFromDepthMapsCamsVoxelGrid1(staticV
                 vpx = vpx.normalize() * ((float)nx * sx);
                 vpy = vpy.normalize() * ((float)ny * sy);
                 vpz = vpz.normalize() * ((float)nz * sz);
-                point3d vx1 = vpx.normalize() * sx;
-                point3d vy1 = vpy.normalize() * sy;
-                point3d vz1 = vpz.normalize() * sz;
+                Point3d vx1 = vpx.normalize() * sx;
+                Point3d vy1 = vpy.normalize() * sy;
+                Point3d vz1 = vpz.normalize() * sz;
 
-                point3d hexah[8];
+                Point3d hexah[8];
                 hexah[0] = voxel[0] + vpx + vpy + vpz;
                 hexah[1] = voxel[0] + vpx + vpy + vpz + vx1;
                 hexah[2] = voxel[0] + vpx + vpy + vpz + vx1 + vy1;
@@ -468,13 +468,13 @@ void mv_delanuay_GC_grid::createTriangulationFromDepthMapsCamsVoxelGrid1(staticV
                 hexah[6] = voxel[0] + vpx + vpy + vpz + vz1 + vx1 + vy1;
                 hexah[7] = voxel[0] + vpx + vpy + vpz + vz1 + vy1;
 
-                point3d tris[12][3];
+                Point3d tris[12][3];
                 getHexahedronTriangles(tris, hexah);
 
                 for(int k = 0; k < 8; k++)
                 {
                     tp = hexah[k];
-                    staticVector<int>* ptcams = getCamsForWhoseThePointIsVisible(tp, tris, (*tracksPointsCams)[j]);
+                    StaticVector<int>* ptcams = getCamsForWhoseThePointIsVisible(tp, tris, (*tracksPointsCams)[j]);
 
                     if((isPointInHexahedron(tp, voxel) == true) && (checkPoint3d(tp) == true) && (ptcams->size() > 0))
                     {
@@ -494,7 +494,7 @@ void mv_delanuay_GC_grid::createTriangulationFromDepthMapsCamsVoxelGrid1(staticV
                         */
 
                         GC_Point np;
-                        point3d npp;
+                        Point3d npp;
                         if(v != NULL)
                         {
                             np = v->point();
@@ -527,7 +527,7 @@ void mv_delanuay_GC_grid::createTriangulationFromDepthMapsCamsVoxelGrid1(staticV
                                 newv->info().segSize = 0;
                                 newv->info().segId = -1;
 
-                                newv->info().cams = new staticVector<int>(ptcams->size());
+                                newv->info().cams = new StaticVector<int>(ptcams->size());
 
                                 for(int c = 0; c < ptcams->size(); c++)
                                 {
@@ -562,19 +562,19 @@ void mv_delanuay_GC_grid::createTriangulationFromDepthMapsCamsVoxelGrid1(staticV
 }
 
 /*
-void mv_delanuay_GC_grid::fillBall(point3d pt, float lambda_vis_in, int cam)
+void mv_delanuay_GC_grid::fillBall(Point3d pt, float lambda_vis_in, int cam)
 {
         for (int x=-1;x<=1;x++) {
                 for (int y=-1;y<=1;y++) {
                         for (int z=-z;z<=1;z++)
                         {
-                                point3d tp = pt + vx*(sx*(float)x) + vy*(sy*(float)y) + vz*(sz*(float)z);
+                                Point3d tp = pt + vx*(sx*(float)x) + vy*(sy*(float)y) + vz*(sz*(float)z);
 
                                 GC_Point p = GC_Point(tp.x,tp.y,tp.z);
                                 GC_Vertex_handle v = T.nearest_vertex(p);
 
                                 GC_Point np;
-                                point3d npp;
+                                Point3d npp;
                                 if (v!=NULL) {
                                         np = v->point();
                                         npp = convertPointToPoint3d(np);
@@ -597,11 +597,11 @@ void mv_delanuay_GC_grid::fillGraph(bool negVisIn, bool negVisOut, bool facetCon
 };
 */
 
-bool mv_delanuay_GC_grid::createTriangulationForVoxelGrid(point3d voxel[8], staticVector<int>* voxelsIds,
+bool mv_delanuay_GC_grid::createTriangulationForVoxelGrid(Point3d voxel[8], StaticVector<int>* voxelsIds,
                                                           std::string folderName, float inflateHexahfactor,
                                                           int numSubVoxs, bool doMoveIntoGridPosition)
 {
-    point3d hexahInflated[8];
+    Point3d hexahInflated[8];
 
     printf("hexahedron inflate factor is %f\n", inflateHexahfactor);
 
@@ -620,7 +620,7 @@ bool mv_delanuay_GC_grid::createTriangulationForVoxelGrid(point3d voxel[8], stat
     long t1;
 
     t1 = clock();
-    staticVector<int>* cams = pc->findCamsWhichInteresctsHexahedron(hexahInflated);
+    StaticVector<int>* cams = pc->findCamsWhichInteresctsHexahedron(hexahInflated);
     printfElapsedTime(t1);
 
     if(cams->size() < 1)
@@ -657,11 +657,11 @@ bool mv_delanuay_GC_grid::createTriangulationForVoxelGrid(point3d voxel[8], stat
     delete cams;
 }
 
-bool mv_delanuay_GC_grid::reconstructVoxelGrid(point3d hexah[8], staticVector<int>* voxelsIds, std::string folderName,
+bool mv_delanuay_GC_grid::reconstructVoxelGrid(Point3d hexah[8], StaticVector<int>* voxelsIds, std::string folderName,
                                                std::string tmpCamsPtsFolderName, int numSubVoxs,
                                                bool doMoveIntoGridPosition)
 {
-    staticVector<int>* cams = pc->findCamsWhichInteresctsHexahedron(hexah);
+    StaticVector<int>* cams = pc->findCamsWhichInteresctsHexahedron(hexah);
 
     if(cams->size() < 1)
     {
@@ -703,7 +703,7 @@ bool mv_delanuay_GC_grid::reconstructVoxelGrid(point3d hexah[8], staticVector<in
 
     t1 = clock();
     reconstructExpetiments(cams, folderName, fileNameStGraph, fileNameStSolution, fileNameTxt, fileNameTxtCam,
-                           camerasPerOneOmni, true, hexah, tmpCamsPtsFolderName, false, point3d(2.0f, 0.0f, 0.0f));
+                           camerasPerOneOmni, true, hexah, tmpCamsPtsFolderName, false, Point3d(2.0f, 0.0f, 0.0f));
     et = printfElapsedTime(t1);
     mp->printStringToLog("reconstructExpetiments: " + et);
 

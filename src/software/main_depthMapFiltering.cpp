@@ -3,6 +3,7 @@
 // v. 2.0. If a copy of the MPL was not distributed with this file,
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
+#include <aliceVision/structures/StaticVector.hpp>
 #include <aliceVision/delaunaycut/mv_delaunay_GC.hpp>
 #include <aliceVision/delaunaycut/mv_delaunay_meshSmooth.hpp>
 #include <aliceVision/largeScale/ReconstructionPlan.hpp>
@@ -99,7 +100,7 @@ int main(int argc, char* argv[])
     multiviewParams mp(mip.getNbCameras(), &mip, (float) simThr);
     mv_prematch_cams pc(&mp);
 
-    staticVector<int> cams(mp.ncams);
+    StaticVector<int> cams(mp.ncams);
     if(rangeSize == -1)
     {
         for(int rc = 0; rc < mp.ncams; rc++) // process all cameras

@@ -8,7 +8,6 @@
 #include <string>
 #include <cmath>
 
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 class Color
 {
 public:
@@ -93,10 +92,6 @@ public:
     {
         return r * r + g * g + b * b;
     }
-
-    void doprintf() const;
-    void saveToFile(const std::string& fileName) const;
-    void loadFromFile(const std::string& fileName);
 
     friend float dot(const Color& p1, const Color& p2);
     friend Color cross(const Color& a, const Color& b);

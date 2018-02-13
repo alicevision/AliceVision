@@ -4,15 +4,16 @@
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
 #include "Retexturer.hpp"
-#include <aliceVision/mesh/UVAtlas.hpp>
-#include <aliceVision/structures/mv_geometry.hpp>
+#include <aliceVision/structures/Color.hpp>
+#include <aliceVision/structures/geometry.hpp>
+#include <aliceVision/structures/Pixel.hpp>
 #include <aliceVision/imageIO/image.hpp>
+#include <aliceVision/mesh/UVAtlas.hpp>
 
 #include <geogram/basic/geometry_nd.h>
 
 #include <map>
 #include <set>
-
 
 /**
  * @brief Return whether a pixel is contained in or intersected by a 2D triangle.
@@ -22,7 +23,7 @@
  *  coordinates of this pixel relative to \p triangle
  * @return
  */
-bool isPixelInTriangle(const point2d* triangle, const pixel& pixel, point2d& barycentricCoords)
+bool isPixelInTriangle(const Point2d* triangle, const Pixel& pixel, Point2d& barycentricCoords)
 {
     // get pixel center
     GEO::vec2 p(pixel.x + 0.5, pixel.y + 0.5);
@@ -39,18 +40,18 @@ bool isPixelInTriangle(const point2d* triangle, const pixel& pixel, point2d& bar
     return dist < 0.5 + std::numeric_limits<double>::epsilon();
 }
 
-point2d barycentricToCartesian(const point2d* triangle, const point2d& coords)
+Point2d barycentricToCartesian(const Point2d* triangle, const Point2d& coords)
 {
     return triangle[0] + (triangle[2] - triangle[0]) * coords.x + (triangle[1] - triangle[0]) * coords.y;
 }
 
-point3d barycentricToCartesian(const point3d* triangle, const point2d& coords)
+Point3d barycentricToCartesian(const Point3d* triangle, const Point2d& coords)
 {
     return triangle[0] + (triangle[2] - triangle[0]) * coords.x + (triangle[1] - triangle[0]) * coords.y;
 }
 
 
-staticVector<staticVector<int>*>* Retexturer::generateUVs(multiviewParams& mp, staticVector<staticVector<int>*>* ptsCams)
+StaticVector<StaticVector<int>*>* Retexturer::generateUVs(multiviewParams& mp, StaticVector<StaticVector<int>*>* ptsCams)
 {
     if(!me)
         throw std::runtime_error("Can't generate UVs without a mesh");
@@ -60,15 +61,15 @@ staticVector<staticVector<int>*>* Retexturer::generateUVs(multiviewParams& mp, s
     UVAtlas mua(*me, mp, ptsCams, texParams.textureSide, texParams.padding);
     // create a new mesh to store data
     Mesh* m = new Mesh();
-    m->pts = new staticVector<point3d>(me->pts->size());
-    m->tris = new staticVector<Mesh::triangle>(me->tris->size());
-    trisUvIds = new staticVector<voxel>(me->tris->size());
-    uvCoords = new staticVector<point2d>(me->pts->size());
+    m->pts = new StaticVector<Point3d>(me->pts->size());
+    m->tris = new StaticVector<Mesh::triangle>(me->tris->size());
+    trisUvIds = new StaticVector<Voxel>(me->tris->size());
+    uvCoords = new StaticVector<Point2d>(me->pts->size());
     _atlases.clear();
     _atlases.resize(mua.atlases().size());
 
     std::map<int, int> vertexCache;
-    auto* updatedPointsCams = new staticVector<staticVector<int>*>(ptsCams->size());
+    auto* updatedPointsCams = new StaticVector<StaticVector<int>*>(ptsCams->size());
 
     int atlasId = 0;
     int triangleCount = 0;
@@ -79,7 +80,7 @@ staticVector<staticVector<int>*>* Retexturer::generateUVs(multiviewParams& mp, s
         {
             std::map<int, int> uvCache;
 
-            pixel offset = chart.targetLU;
+            Pixel offset = chart.targetLU;
             offset = offset - chart.sourceLU;
 
             // for each triangle in this chart
@@ -90,25 +91,25 @@ staticVector<staticVector<int>*>* Retexturer::generateUVs(multiviewParams& mp, s
                 _atlases[atlasId].push_back(triangleCount);
 
                 Mesh::triangle t;
-                voxel triUv;
+                Voxel triUv;
                 // for each point
                 for(int k = 0; k < 3; ++k)
                 {
                     int pointId = (*me->tris)[triangleID].i[k];
                     // get 3d triangle points
-                    point3d p = (*me->pts)[pointId];
-                    point2d uvPix;
+                    Point3d p = (*me->pts)[pointId];
+                    Point2d uvPix;
                     if(chart.refCameraID != -1)
                     {
-                        point2d pix;
+                        Point2d pix;
                         mp.getPixelFor3DPoint(&pix, p, chart.refCameraID);
                         if(mp.isPixelInImage(pix, chart.refCameraID))
                         {
                             // compute the final pixel coordinates
-                            uvPix = (pix + point2d(offset.x, offset.y)) / (float)mua.textureSide();
+                            uvPix = (pix + Point2d(offset.x, offset.y)) / (float)mua.textureSide();
                             uvPix.y = 1.0 - uvPix.y;
                             if(uvPix.x >= mua.textureSide() || uvPix.y >= mua.textureSide())
-                                uvPix = point2d();
+                                uvPix = Point2d();
                         }
                     }
 
@@ -120,8 +121,8 @@ staticVector<staticVector<int>*>* Retexturer::generateUVs(multiviewParams& mp, s
                         m->pts->push_back(p);
                         newPointIdx = m->pts->size() - 1;
                         // map point visibilities
-                        staticVector<int>* pOther = new staticVector<int>();
-                        staticVector<int>* pRef = (*ptsCams)[pointId];
+                        StaticVector<int>* pOther = new StaticVector<int>();
+                        StaticVector<int>* pRef = (*ptsCams)[pointId];
                         if(pRef)
                             *pOther = *pRef;
                         updatedPointsCams->push_back(pOther);
@@ -160,13 +161,14 @@ staticVector<staticVector<int>*>* Retexturer::generateUVs(multiviewParams& mp, s
     return updatedPointsCams;
 }
 
-void Retexturer::generateTextures(const multiviewParams &mp, staticVector<staticVector<int> *> *ptsCams,
+void Retexturer::generateTextures(const multiviewParams &mp, StaticVector<StaticVector<int> *> *ptsCams,
                                  const boost::filesystem::path &outPath, EImageFileType textureFileType)
 {
     mv_images_cache imageCache(&mp, 0, false);
     for(size_t atlasID = 0; atlasID < _atlases.size(); ++atlasID)
         generateTexture(mp, ptsCams, atlasID, imageCache, outPath, textureFileType);
 }
+
 
 /// accumulates colors and keeps count for providing average
 struct AccuColor {
@@ -196,7 +198,7 @@ struct AccuColor {
 };
 
 
-void Retexturer::generateTexture(const multiviewParams& mp, staticVector<staticVector<int>*>* ptsCams,
+void Retexturer::generateTexture(const multiviewParams& mp, StaticVector<StaticVector<int>*>* ptsCams,
                                 size_t atlasID, mv_images_cache& imageCache, const bfs::path& outPath, EImageFileType textureFileType)
 {
     if(atlasID >= _atlases.size())
@@ -214,12 +216,13 @@ void Retexturer::generateTexture(const multiviewParams& mp, staticVector<staticV
     for(size_t i = 0; i < _atlases[atlasID].size(); ++i)
     {
         int triangleId = _atlases[atlasID][i];
+
         std::set<int> triCams;
         // retrieve triangle visibilities (set of triangle's points visibilities)
         for(int k = 0; k < 3; k++)
         {
             const int pointIndex = (*me->tris)[triangleId].i[k];
-            const staticVector<int>* pointVisibilities = (*ptsCams)[pointIndex];
+            const StaticVector<int>* pointVisibilities = (*ptsCams)[pointIndex];
             if(pointVisibilities != nullptr)
             {
                 std::copy(pointVisibilities->begin(), pointVisibilities->end(), std::inserter(triCams, triCams.end()));
@@ -245,8 +248,8 @@ void Retexturer::generateTexture(const multiviewParams& mp, staticVector<staticV
         for(const auto& triangleId : triangles)
         {
             // retrieve triangle 3D and UV coordinates
-            point2d triPixs[3];
-            point3d triPts[3];
+            Point2d triPixs[3];
+            Point3d triPts[3];
 
             for(int k = 0; k < 3; k++)
             {
@@ -268,8 +271,8 @@ void Retexturer::generateTexture(const multiviewParams& mp, staticVector<staticV
             {
                 for(unsigned int x = LUx; x <= RDx; x++)
                 {
-                    pixel pix(x, y); // top-left corner of the pixel
-                    point2d barycCoords;
+                    Pixel pix(x, y); // top-left corner of the pixel
+                    Point2d barycCoords;
 
                     // test if the pixel is inside triangle
                     // and retrieve its barycentric coordinates
@@ -283,9 +286,9 @@ void Retexturer::generateTexture(const multiviewParams& mp, staticVector<staticV
                     // 1D pixel index
                     unsigned int xyoffset = y_ * texParams.textureSide + x;
                     // get 3D coordinates
-                    point3d pt3d = barycentricToCartesian(triPts, barycCoords);
+                    Point3d pt3d = barycentricToCartesian(triPts, barycCoords);
                     // get 2D coordinates in source image
-                    point2d pixRC;
+                    Point2d pixRC;
                     mp.getPixelFor3DPoint(&pixRC, pt3d, camId);
                     // exclude out of bounds pixels
                     if(!mp.isPixelInImage(pixRC, camId))

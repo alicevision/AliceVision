@@ -15,7 +15,7 @@
 #include <stdexcept>
 
 template <class T>
-class staticVector
+class StaticVector
 {
     std::vector<T> _data;
 
@@ -25,11 +25,11 @@ class staticVector
     typedef typename std::vector<T>::const_reference ConstReference;
 
 public:
-    staticVector()
+    StaticVector()
     {
     }
 
-    staticVector(int _allocated)
+    StaticVector(int _allocated)
     {
         _data.reserve(_allocated);
     }
@@ -64,7 +64,7 @@ public:
     void resize(int n) { _data.resize(n); }
     void resize(int n, T value) { _data.resize(n, value); }
     void resize_with(int n, const T& val) { _data.resize(n, val); }
-    void swap( staticVector& other ) { _data.swap(other._data); }
+    void swap( StaticVector& other ) { _data.swap(other._data); }
 
     void shrink_to_fit()
     {
@@ -99,7 +99,7 @@ public:
         _data.insert(_data.begin(), val);
     }
 
-    void push_back_arr(staticVector<T>* arr)
+    void push_back_arr(StaticVector<T>* arr)
     {
         _data.insert(_data.end(), arr->getData().begin(), arr->getData().end());
     }
@@ -182,15 +182,15 @@ public:
 
 // TODO: to remove
 // Avoid the problematic case of std::vector<bool>::operator[]
-using staticVectorBool = staticVector<char>;
+using StaticVectorBool = StaticVector<char>;
 
 template <class T>
-int sizeOfStaticVector(staticVector<T>* a)
+int sizeOfStaticVector(StaticVector<T>* a)
 {
     if(a == nullptr)
         return 0;
     return a->size();
-};
+}
 
 template <class T>
 int indexOf(T* arr, int n, const T& what)
@@ -208,10 +208,10 @@ int indexOf(T* arr, int n, const T& what)
     };
 
     return isthereindex;
-};
+}
 
 template <class T>
-void saveArrayOfArraysToFile(std::string fileName, staticVector<staticVector<T>*>* aa)
+void saveArrayOfArraysToFile(std::string fileName, StaticVector<StaticVector<T>*>* aa)
 {
     std::cout << "[IO] saveArrayOfArraysToFile: " << fileName << std::endl;
     FILE* f = fopen(fileName.c_str(), "wb");
@@ -220,7 +220,7 @@ void saveArrayOfArraysToFile(std::string fileName, staticVector<staticVector<T>*
     for(int i = 0; i < n; i++)
     {
         int m = 0;
-        staticVector<T>* a = (*aa)[i];
+        StaticVector<T>* a = (*aa)[i];
         if(a == NULL)
         {
             fwrite(&m, sizeof(int), 1, f);
@@ -239,7 +239,7 @@ void saveArrayOfArraysToFile(std::string fileName, staticVector<staticVector<T>*
 }
 
 template <class T>
-staticVector<staticVector<T>*>* loadArrayOfArraysFromFile(std::string fileName)
+StaticVector<StaticVector<T>*>* loadArrayOfArraysFromFile(std::string fileName)
 {
     std::cout << "[IO] loadArrayOfArraysFromFile: " << fileName << std::endl;
     FILE* f = fopen(fileName.c_str(), "rb");
@@ -248,7 +248,7 @@ staticVector<staticVector<T>*>* loadArrayOfArraysFromFile(std::string fileName)
 
     int n = 0;
     fread(&n, sizeof(int), 1, f);
-    staticVector<staticVector<T>*>* aa = new staticVector<staticVector<T>*>(n);
+    StaticVector<StaticVector<T>*>* aa = new StaticVector<StaticVector<T>*>(n);
     aa->resize_with(n, NULL);
     for(int i = 0; i < n; i++)
     {
@@ -256,7 +256,7 @@ staticVector<staticVector<T>*>* loadArrayOfArraysFromFile(std::string fileName)
         fread(&m, sizeof(int), 1, f);
         if(m > 0)
         {
-            staticVector<T>* a = new staticVector<T>(m);
+            StaticVector<T>* a = new StaticVector<T>(m);
             a->resize(m);
             fread(&(*a)[0], sizeof(T), m, f);
             (*aa)[i] = a;
@@ -268,7 +268,7 @@ staticVector<staticVector<T>*>* loadArrayOfArraysFromFile(std::string fileName)
 }
 
 template <class T>
-void saveArrayToFile(std::string fileName, staticVector<T>* a, bool docompress = true)
+void saveArrayToFile(std::string fileName, StaticVector<T>* a, bool docompress = true)
 {
     std::cout << "[IO] saveArrayToFile: " << fileName << std::endl;
 
@@ -328,7 +328,7 @@ void saveArrayToFile(std::string fileName, staticVector<T>* a, bool docompress =
 }
 
 template <class T>
-staticVector<T>* loadArrayFromFile(std::string fileName, bool printfWarning = false)
+StaticVector<T>* loadArrayFromFile(std::string fileName, bool printfWarning = false)
 {
     std::cout << "[IO] loadArrayFromFile: " << fileName << std::endl;
 
@@ -341,12 +341,12 @@ staticVector<T>* loadArrayFromFile(std::string fileName, bool printfWarning = fa
     {
         int n = 0;
         fread(&n, sizeof(int), 1, f);
-        staticVector<T>* a = NULL;
+        StaticVector<T>* a = NULL;
 
         if(n == -1)
         {
             fread(&n, sizeof(int), 1, f);
-            a = new staticVector<T>(n);
+            a = new StaticVector<T>(n);
             a->resize(n);
 
             uLong comprLen;
@@ -371,7 +371,7 @@ staticVector<T>* loadArrayFromFile(std::string fileName, bool printfWarning = fa
         }
         else
         {
-            a = new staticVector<T>(n);
+            a = new StaticVector<T>(n);
             a->resize(n);
             fread(&(*a)[0], sizeof(T), n, f);
         }
@@ -383,7 +383,7 @@ staticVector<T>* loadArrayFromFile(std::string fileName, bool printfWarning = fa
 }
 
 template <class T>
-void loadArrayFromFileIntoArray(staticVector<T>* a, std::string fileName, bool printfWarning = false)
+void loadArrayFromFileIntoArray(StaticVector<T>* a, std::string fileName, bool printfWarning = false)
 {
     std::cout << "[IO] loadArrayFromFileIntoArray: " << fileName << std::endl;
 
@@ -442,7 +442,7 @@ void loadArrayFromFileIntoArray(staticVector<T>* a, std::string fileName, bool p
 int getArrayLengthFromFile(std::string fileName);
 
 template <class T>
-void deleteArrayOfArrays(staticVector<staticVector<T>*>** aa)
+void deleteArrayOfArrays(StaticVector<StaticVector<T>*>** aa)
 {
     for(int i = 0; i < (*aa)->size(); i++)
     {
@@ -456,9 +456,9 @@ void deleteArrayOfArrays(staticVector<staticVector<T>*>** aa)
 }
 
 template <class T>
-staticVector<staticVector<T>*>* cloneArrayOfArrays(staticVector<staticVector<T>*>* inAOA)
+StaticVector<StaticVector<T>*>* cloneArrayOfArrays(StaticVector<StaticVector<T>*>* inAOA)
 {
-    staticVector<staticVector<T>*>* outAOA = new staticVector<staticVector<T>*>(inAOA->size());
+    StaticVector<StaticVector<T>*>* outAOA = new StaticVector<StaticVector<T>*>(inAOA->size());
     // copy
     for(int i = 0; i < inAOA->size(); i++)
     {
@@ -468,7 +468,7 @@ staticVector<staticVector<T>*>* cloneArrayOfArrays(staticVector<staticVector<T>*
         }
         else
         {
-            staticVector<T>* outA = new staticVector<T>((*inAOA)[i]->size());
+            StaticVector<T>* outA = new StaticVector<T>((*inAOA)[i]->size());
             outA->push_back_arr((*inAOA)[i]);
             outAOA->push_back(outA);
         };

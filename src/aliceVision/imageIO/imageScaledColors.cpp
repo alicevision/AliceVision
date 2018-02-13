@@ -5,6 +5,7 @@
 
 #include "imageScaledColors.hpp"
 
+#include <aliceVision/structures/Color.hpp>
 #include <aliceVision/structures/jetColorMap.hpp>
 #include <aliceVision/imageIO/image.hpp>
 

@@ -4,6 +4,8 @@
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
 #include "PreMatchCams.hpp"
+#include <aliceVision/structures/Point2d.hpp>
+#include <aliceVision/structures/SeedPoint.hpp>
 #include <aliceVision/common/fileIO.hpp>
 #include <aliceVision/common/common.hpp>
 
@@ -26,12 +28,12 @@ float mv_prematch_cams::computeMinCamsDistance()
     float d = 0.0;
     for(int rc = 0; rc < mp->ncams; rc++)
     {
-        point3d rC = mp->CArr[rc];
+        Point3d rC = mp->CArr[rc];
         for(int tc = 0; tc < mp->ncams; tc++)
         {
             if(rc != tc)
             {
-                point3d tC = mp->CArr[tc];
+                Point3d tC = mp->CArr[tc];
                 d += (rC - tC).size();
                 nd++;
             }
@@ -47,8 +49,8 @@ bool mv_prematch_cams::overlap(int rc, int tc)
         return false;
     }
 
-    point2d rmid = point2d((float)mp->mip->getWidth(rc) / 2.0f, (float)mp->mip->getHeight(rc) / 2.0f);
-    point2d pFromTar, pToTar;
+    Point2d rmid = Point2d((float)mp->mip->getWidth(rc) / 2.0f, (float)mp->mip->getHeight(rc) / 2.0f);
+    Point2d pFromTar, pToTar;
 
     if(!getTarEpipolarDirectedLine(&pFromTar, &pToTar, rmid, rc, tc, mp))
     {
@@ -69,24 +71,24 @@ bool mv_prematch_cams::overlap(int rc, int tc)
     return true;
 }
 
-staticVector<int>* mv_prematch_cams::findNearestCams(int rc, int _nnearestcams)
+StaticVector<int>* mv_prematch_cams::findNearestCams(int rc, int _nnearestcams)
 {
-    staticVector<int>* out;
+    StaticVector<int>* out;
 
-    out = new staticVector<int>(_nnearestcams);
+    out = new StaticVector<int>(_nnearestcams);
 
-    staticVector<sortedId>* ids = new staticVector<sortedId>(mp->ncams - 1);
+    StaticVector<SortedId>* ids = new StaticVector<SortedId>(mp->ncams - 1);
 
     for(int c = 0; c < mp->ncams; c++)
     {
         if(c != rc)
         {
-            ids->push_back(sortedId(c, (mp->CArr[rc] - mp->CArr[c]).size()));
+            ids->push_back(SortedId(c, (mp->CArr[rc] - mp->CArr[c]).size()));
             // printf("(%i %f) \n", (*ids)[ids->size()-1].id, (*ids)[ids->size()-1].value);
         }
     }
 
-    qsort(&(*ids)[0], ids->size(), sizeof(sortedId), qsortCompareSortedIdAsc);
+    qsort(&(*ids)[0], ids->size(), sizeof(SortedId), qsortCompareSortedIdAsc);
 
     /*
     for (int c=0;c<ids->size();c++)
@@ -97,12 +99,12 @@ staticVector<int>* mv_prematch_cams::findNearestCams(int rc, int _nnearestcams)
 
     {
         int c = 0;
-        point3d rC = mp->CArr[rc];
+        Point3d rC = mp->CArr[rc];
 
         while((out->size() < _nnearestcams) && (c < ids->size()))
         {
             int tc = (*ids)[c].id;
-            point3d tC = mp->CArr[tc];
+            Point3d tC = mp->CArr[tc];
             float d = (rC - tC).size();
 
             if((rc != tc) && (d > minCamsDistance) && (overlap(rc, tc)))
@@ -118,7 +120,7 @@ staticVector<int>* mv_prematch_cams::findNearestCams(int rc, int _nnearestcams)
     return out;
 }
 
-staticVector<int>* mv_prematch_cams::precomputeIncidentMatrixCamsFromSeeds()
+StaticVector<int>* mv_prematch_cams::precomputeIncidentMatrixCamsFromSeeds()
 {
     std::string fn = mp->mip->mvDir + "camsPairsMatrixFromSeeds.bin";
     if(FileExists(fn))
@@ -127,15 +129,15 @@ staticVector<int>* mv_prematch_cams::precomputeIncidentMatrixCamsFromSeeds()
         return loadArrayFromFile<int>(fn);
     }
     std::cout << "Compute camera pairs matrix file: " << fn << std::endl;
-    staticVector<int>* camsmatrix = new staticVector<int>(mp->ncams * mp->ncams);
+    StaticVector<int>* camsmatrix = new StaticVector<int>(mp->ncams * mp->ncams);
     camsmatrix->resize_with(mp->ncams * mp->ncams, 0);
     for(int rc = 0; rc < mp->ncams; rc++)
     {
-        staticVector<seedPoint>* seeds;
+        StaticVector<SeedPoint>* seeds;
         loadSeedsFromFile(&seeds, mp->indexes[rc], mp->mip, EFileType::seeds);
         for(int i = 0; i < seeds->size(); i++)
         {
-            seedPoint* sp = &(*seeds)[i];
+            SeedPoint* sp = &(*seeds)[i];
             for(int c = 0; c < sp->cams.size(); c++)
             {
                 int tc = sp->cams[c];
@@ -148,7 +150,7 @@ staticVector<int>* mv_prematch_cams::precomputeIncidentMatrixCamsFromSeeds()
     return camsmatrix;    
 }
 
-staticVector<int>* mv_prematch_cams::loadCamPairsMatrix()
+StaticVector<int>* mv_prematch_cams::loadCamPairsMatrix()
 {
     std::string fn = mp->mip->mvDir + "camsPairsMatrixFromSeeds.bin"; // TODO: store this filename at one place
     if(!FileExists(fn))
@@ -157,9 +159,9 @@ staticVector<int>* mv_prematch_cams::loadCamPairsMatrix()
 }
 
 
-staticVector<int>* mv_prematch_cams::findNearestCamsFromSeeds(int rc, int nnearestcams)
+StaticVector<int>* mv_prematch_cams::findNearestCamsFromSeeds(int rc, int nnearestcams)
 {
-    staticVector<int>* out = nullptr;
+    StaticVector<int>* out = nullptr;
 
     std::string tarCamsFile = mp->mip->mvDir + "_tarCams/" + num2strFourDecimal(rc) + ".txt";
     if(FileExists(tarCamsFile))
@@ -167,7 +169,7 @@ staticVector<int>* mv_prematch_cams::findNearestCamsFromSeeds(int rc, int nneare
         FILE* f = fopen(tarCamsFile.c_str(), "r");
         int ntcams;
         fscanf(f, "ntcams %i, tcams", &ntcams);
-        out = new staticVector<int>(ntcams);
+        out = new StaticVector<int>(ntcams);
         for(int c = 0; c < ntcams; c++)
         {
             int tc;
@@ -178,17 +180,17 @@ staticVector<int>* mv_prematch_cams::findNearestCamsFromSeeds(int rc, int nneare
     }
     else
     {
-        staticVector<int>* camsmatrix = loadCamPairsMatrix();
-        staticVector<sortedId> ids(mp->ncams);
+        StaticVector<int>* camsmatrix = loadCamPairsMatrix();
+        StaticVector<SortedId> ids(mp->ncams);
         for(int tc = 0; tc < mp->ncams; tc++)
         {
-            ids.push_back(sortedId(tc, (float)(*camsmatrix)[std::min(rc, tc) * mp->ncams + std::max(rc, tc)]));
+            ids.push_back(SortedId(tc, (float)(*camsmatrix)[std::min(rc, tc) * mp->ncams + std::max(rc, tc)]));
         }
-        qsort(&ids[0], ids.size(), sizeof(sortedId), qsortCompareSortedIdDesc);
+        qsort(&ids[0], ids.size(), sizeof(SortedId), qsortCompareSortedIdDesc);
         
         // Ensure the ideal number of target cameras is not superior to the actual number of cameras
         const int maxNumTC = std::min(mp->ncams, nnearestcams);
-        out = new staticVector<int>(maxNumTC);
+        out = new StaticVector<int>(maxNumTC);
 
         for(int i = 0; i < maxNumTC; i++)
         {
@@ -208,27 +210,27 @@ staticVector<int>* mv_prematch_cams::findNearestCamsFromSeeds(int rc, int nneare
 
 bool mv_prematch_cams::intersectsRcTc(int rc, float rmind, float rmaxd, int tc, float tmind, float tmaxd)
 {
-    point3d rchex[8];
-    point3d tchex[8];
+    Point3d rchex[8];
+    Point3d tchex[8];
     getCamHexahedron(mp, rchex, rc, rmind, rmaxd);
     getCamHexahedron(mp, tchex, tc, tmind, tmaxd);
     return intersectsHexahedronHexahedron(rchex, tchex);
 }
 
 // hexahedron format ... 0-3 frontal face, 4-7 back face
-staticVector<int>* mv_prematch_cams::findCamsWhichIntersectsHexahedron(point3d hexah[8],
+StaticVector<int>* mv_prematch_cams::findCamsWhichIntersectsHexahedron(Point3d hexah[8],
                                                                        std::string minMaxDepthsFileName)
 {
-    staticVector<point2d>* minMaxDepths = loadArrayFromFile<point2d>(minMaxDepthsFileName);
+    StaticVector<Point2d>* minMaxDepths = loadArrayFromFile<Point2d>(minMaxDepthsFileName);
 
-    staticVector<int>* tcams = new staticVector<int>(mp->ncams);
+    StaticVector<int>* tcams = new StaticVector<int>(mp->ncams);
     for(int rc = 0; rc < mp->ncams; rc++)
     {
         float mindepth = (*minMaxDepths)[rc].x;
         float maxdepth = (*minMaxDepths)[rc].y;
         if((mindepth > 0.0f) && (maxdepth > mindepth))
         {
-            point3d rchex[8];
+            Point3d rchex[8];
             getCamHexahedron(mp, rchex, rc, mindepth, maxdepth);
             if(intersectsHexahedronHexahedron(rchex, hexah))
             {
@@ -241,18 +243,18 @@ staticVector<int>* mv_prematch_cams::findCamsWhichIntersectsHexahedron(point3d h
 }
 
 // hexahedron format ... 0-3 frontal face, 4-7 back face
-staticVector<int>* mv_prematch_cams::findCamsWhichIntersectsHexahedron(point3d hexah[8])
+StaticVector<int>* mv_prematch_cams::findCamsWhichIntersectsHexahedron(Point3d hexah[8])
 {
 
-    staticVector<int>* tcams = new staticVector<int>(mp->ncams);
+    StaticVector<int>* tcams = new StaticVector<int>(mp->ncams);
     for(int rc = 0; rc < mp->ncams; rc++)
     {
         float mindepth, maxdepth;
-        staticVector<int>* pscams;
+        StaticVector<int>* pscams;
         if(getDepthMapInfo(mp->indexes[rc], mp->mip, mindepth, maxdepth, &pscams))
         {
             delete pscams;
-            point3d rchex[8];
+            Point3d rchex[8];
             getCamHexahedron(mp, rchex, rc, mindepth, maxdepth);
 
             if(intersectsHexahedronHexahedron(rchex, hexah))
@@ -266,17 +268,17 @@ staticVector<int>* mv_prematch_cams::findCamsWhichIntersectsHexahedron(point3d h
 }
 
 // hexahedron format ... 0-3 frontal face, 4-7 back face
-staticVector<int>* mv_prematch_cams::findCamsWhichAreInHexahedron(point3d hexah[8])
+StaticVector<int>* mv_prematch_cams::findCamsWhichAreInHexahedron(Point3d hexah[8])
 {
-    staticVector<int>* tcams = new staticVector<int>(mp->ncams);
+    StaticVector<int>* tcams = new StaticVector<int>(mp->ncams);
     for(int rc = 0; rc < mp->ncams; rc++)
     {
         float mindepth, maxdepth;
-        staticVector<int>* pscams;
+        StaticVector<int>* pscams;
         getDepthMapInfo(mp->indexes[rc], mp->mip, mindepth, maxdepth, &pscams);
         delete pscams;
 
-        point3d rchex[8];
+        Point3d rchex[8];
         getCamHexahedron(mp, rchex, rc, mindepth, maxdepth);
 
         if(isPointInHexahedron(mp->CArr[rc], hexah))
@@ -288,11 +290,11 @@ staticVector<int>* mv_prematch_cams::findCamsWhichAreInHexahedron(point3d hexah[
     return tcams;
 }
 
-staticVector<int>* mv_prematch_cams::findCamsWhichIntersectsCamHexah(int rc)
+StaticVector<int>* mv_prematch_cams::findCamsWhichIntersectsCamHexah(int rc)
 {
-    point3d hexah[8];
+    Point3d hexah[8];
 
-    staticVector<int>* tcams;
+    StaticVector<int>* tcams;
     float mindepth, maxdepth;
     getDepthMapInfo(rc + 1, mp->mip, mindepth, maxdepth, &tcams);
     delete tcams;
@@ -300,7 +302,7 @@ staticVector<int>* mv_prematch_cams::findCamsWhichIntersectsCamHexah(int rc)
     getCamHexahedron(mp, hexah, rc, mindepth, maxdepth);
 
     tcams = findCamsWhichIntersectsHexahedron(hexah);
-    staticVector<int>* tcams1 = new staticVector<int>(tcams->size());
+    StaticVector<int>* tcams1 = new StaticVector<int>(tcams->size());
 
     for(int c = 0; c < tcams->size(); c++)
     {

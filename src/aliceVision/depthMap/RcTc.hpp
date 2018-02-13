@@ -5,6 +5,7 @@
 
 #pragma once
 
+#include <aliceVision/structures/Point3d.hpp>
 #include <aliceVision/depthMap/DepthSimMap.hpp>
 #include <aliceVision/depthMap/cuda/PlaneSweepingCuda.hpp>
 
@@ -23,6 +24,6 @@ public:
 
     void smoothDepthMap(DepthSimMap* depthSimMap, int rc, int wsh, float gammaC, float gammaP);
     void filterDepthMap(DepthSimMap* depthSimMap, int rc, int wsh, float gammaC);
-    void computeRotCSRcTcEpip(point3d& p, point3d& n, point3d& x, point3d& y, int rc, int tc);
+    void computeRotCSRcTcEpip(Point3d& p, Point3d& n, Point3d& x, Point3d& y, int rc, int tc);
 
 };

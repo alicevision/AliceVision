@@ -5,7 +5,12 @@
 
 #pragma once
 
-#include <aliceVision/structures/mv_structures.hpp>
+#include <aliceVision/structures/Matrix3x3.hpp>
+#include <aliceVision/structures/Point2d.hpp>
+#include <aliceVision/structures/Point3d.hpp>
+#include <aliceVision/structures/SeedPointCams.hpp>
+#include <aliceVision/structures/StaticVector.hpp>
+#include <aliceVision/structures/structures.hpp>
 
 #include <boost/property_tree/ptree.hpp>
 
@@ -115,15 +120,15 @@ class multiviewParams
 public:
     std::vector<timeIndex> mapiSort;
 
-    std::vector<matrix3x4> camArr;
-    std::vector<matrix3x3> KArr;
-    std::vector<matrix3x3> iKArr;
-    std::vector<matrix3x3> RArr;
-    std::vector<matrix3x3> iRArr;
-    std::vector<point3d> CArr;
-    std::vector<matrix3x3> iCamArr;
+    std::vector<Matrix3x4> camArr;
+    std::vector<Matrix3x3> KArr;
+    std::vector<Matrix3x3> iKArr;
+    std::vector<Matrix3x3> RArr;
+    std::vector<Matrix3x3> iRArr;
+    std::vector<Point3d> CArr;
+    std::vector<Matrix3x3> iCamArr;
     std::vector<short> indexes;
-    std::vector<point3d> FocK1K2Arr;
+    std::vector<Point3d> FocK1K2Arr;
 
     multiviewInputParams* mip;
 
@@ -135,7 +140,7 @@ public:
     bool verbose;
 
     multiviewParams(int _ncams, multiviewInputParams* _mip, float _simThr,
-                    staticVector<cameraMatrices>* cameras = nullptr);
+                    StaticVector<CameraMatrices>* cameras = nullptr);
     ~multiviewParams();
 
     void resizeCams(int _ncams)
@@ -157,32 +162,31 @@ public:
     void addCam();
     void reloadLastCam();
 
-    bool is3DPointInFrontOfCam(const point3d* X, int rc) const;
-    void getPixelFor3DPoint(point2d* out, const point3d& X, const matrix3x4& P) const;
-    void getPixelFor3DPoint(point2d* out, const point3d& X, int rc) const;
-    void getPixelFor3DPoint(pixel* out, const point3d& X, int rc) const;
-    float getCamPixelSize(const point3d& x0, int cam) const;
-    float getCamPixelSize(const point3d& x0, int cam, float d) const;
-    float getCamPixelSizeRcTc(const point3d& p, int rc, int tc, float d) const;
-    float getCamPixelSizePlaneSweepAlpha(const point3d& p, int rc, int tc, int scale, int step) const;
-    float getCamPixelSizePlaneSweepAlpha(const point3d& p, int rc, staticVector<int>* tcams, int scale, int step) const;
+    bool is3DPointInFrontOfCam(const Point3d* X, int rc) const;
+    void getPixelFor3DPoint(Point2d* out, const Point3d& X, const Matrix3x4& P) const;
+    void getPixelFor3DPoint(Point2d* out, const Point3d& X, int rc) const;
+    void getPixelFor3DPoint(Pixel* out, const Point3d& X, int rc) const;
+    float getCamPixelSize(const Point3d& x0, int cam) const;
+    float getCamPixelSize(const Point3d& x0, int cam, float d) const;
+    float getCamPixelSizeRcTc(const Point3d& p, int rc, int tc, float d) const;
+    float getCamPixelSizePlaneSweepAlpha(const Point3d& p, int rc, int tc, int scale, int step) const;
+    float getCamPixelSizePlaneSweepAlpha(const Point3d& p, int rc, StaticVector<int>* tcams, int scale, int step) const;
 
-    float getCamsMinPixelSize(const point3d& x0, std::vector<unsigned short>* tcams) const;
-    int getCamsMinPixelSizeIndex(const point3d& x0, int rc, seedPointCams* tcams) const;
-    int getCamsMinPixelSizeIndex(const point3d& x0, const staticVector<int>& tcams) const;
+    float getCamsMinPixelSize(const Point3d& x0, std::vector<unsigned short>* tcams) const;
+    int getCamsMinPixelSizeIndex(const Point3d& x0, int rc, SeedPointCams* tcams) const;
+    int getCamsMinPixelSizeIndex(const Point3d& x0, const StaticVector<int>& tcams) const;
 
-    float getCamsMinPixelSize(const point3d& x0, staticVector<int>& tcams) const;
-    float getCamsAveragePixelSize(const point3d& x0, staticVector<int>* tcams) const;
-    void computeNormal(point3d& n, const rotation& rot, int refCam) const;
-    bool isPixelInCutOut(const pixel* pix, const pixel* lu, const pixel* rd, int d, int camId) const;
-    bool isPixelInImage(const pixel& pix, int d, int camId) const;
-    bool isPixelInImage(const pixel& pix, int camId) const;
-    bool isPixelInImage(const point2d& pix, int camId) const;
+    float getCamsMinPixelSize(const Point3d& x0, StaticVector<int>& tcams) const;
+    float getCamsAveragePixelSize(const Point3d& x0, StaticVector<int>* tcams) const;
+    bool isPixelInCutOut(const Pixel* pix, const Pixel* lu, const Pixel* rd, int d, int camId) const;
+    bool isPixelInImage(const Pixel& pix, int d, int camId) const;
+    bool isPixelInImage(const Pixel& pix, int camId) const;
+    bool isPixelInImage(const Point2d& pix, int camId) const;
 
-    void computeHomographyInductedByPlaneRcTc(matrix3x3* H, const point3d& _p, const point3d& _n, int rc, int tc) const;
+    void computeHomographyInductedByPlaneRcTc(Matrix3x3* H, const Point3d& _p, const Point3d& _n, int rc, int tc) const;
 
-    void decomposeProjectionMatrix(point3d& Co, matrix3x3& Ro, matrix3x3& iRo, matrix3x3& Ko, matrix3x3& iKo,
-                                   matrix3x3& iPo, const matrix3x4& P) const;
+    void decomposeProjectionMatrix(Point3d& Co, Matrix3x3& Ro, Matrix3x3& iRo, Matrix3x3& Ko, Matrix3x3& iKo,
+                                   Matrix3x3& iPo, const Matrix3x4& P) const;
 
 private:
     int winSizeHalf;

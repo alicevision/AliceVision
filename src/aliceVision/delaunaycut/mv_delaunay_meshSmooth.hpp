@@ -5,15 +5,15 @@
 
 #pragma once
 
+#include <aliceVision/structures/StaticVector.hpp>
 #include <aliceVision/common/MultiViewParams.hpp>
-#include <aliceVision/structures/mv_staticVector.hpp>
 #include <aliceVision/mesh/Mesh.hpp>
 
-class point3d;
+class Point3d;
 class mv_delaunay_GC;
 class mv_prematch_cams;
 
-void meshPostProcessing(Mesh*& inout_mesh, staticVector<staticVector<int>*>*& inout_ptsCams, staticVector<int>& usedCams,
+void meshPostProcessing(Mesh*& inout_mesh, StaticVector<StaticVector<int>*>*& inout_ptsCams, StaticVector<int>& usedCams,
                       multiviewParams& mp, mv_prematch_cams& pc,
                       const std::string& resultFolderName,
-                      staticVector<point3d>* hexahsToExcludeFromResultingMesh, point3d* hexah);
+                      StaticVector<Point3d>* hexahsToExcludeFromResultingMesh, Point3d* hexah);

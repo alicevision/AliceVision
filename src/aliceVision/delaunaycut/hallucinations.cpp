@@ -17,7 +17,7 @@ void main_err_function(const char*  /*msg*/)
     printf("ERROR occured during solving maxflow!!!\n");
 }
 
-float confKernelVoting(staticVector<float>* confs, float c)
+float confKernelVoting(StaticVector<float>* confs, float c)
 {
     float a = 1.0f;
 
@@ -47,7 +47,7 @@ void filterLargeEdgeTriangles(Mesh* me, float avelthr)
 {
     float averageEdgeLength = me->computeAverageEdgeLength();
 
-    staticVector<int>* trisIdsToStay = new staticVector<int>(me->tris->size());
+    StaticVector<int>* trisIdsToStay = new StaticVector<int>(me->tris->size());
     for(int i = 0; i < me->tris->size(); i++)
     {
         float triMaxEdgelength = me->computeTriangleMaxEdgeLength(i);

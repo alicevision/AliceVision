@@ -1,41 +1,37 @@
 # Headers
 set(structures_files_headers
-  jetColorMap.hpp
+  Color.hpp
+  geometry.hpp
+  geometryTriTri.hpp
   image.hpp
-  mv_color.hpp
-  mv_double3d.hpp
-  mv_geometry.hpp
-  mv_geometry_triTri.hpp
-  mv_matrix.hpp
-  mv_matrix2x2.hpp
-  mv_matrix3x3.hpp
-  mv_matrix3x4.hpp
-  mv_point2d.hpp
-  mv_point3d.hpp
-  mv_staticVector.hpp
-  mv_structures.hpp
-  mv_universe.hpp
-  quaternion.hpp
+  jetColorMap.hpp
+  Matrix3x3.hpp
+  Matrix3x4.hpp
+  OrientedPoint.hpp
+  Point2d.hpp
+  Point3d.hpp
+  Point4d.hpp
+  Pixel.hpp
+  Rgb.hpp
+  SeedPoint.hpp
+  SeedPointCams.hpp
+  Stat3d.hpp
+  StaticVector.hpp
+  structures.hpp
+  Universe.hpp
+  Voxel.hpp
 )
 
 # Sources
 set(structures_files_sources
   jetColorMap.cpp
   image.cpp
-  mv_color.cpp
-  mv_double3d.cpp
-  mv_geometry.cpp
-  mv_geometry_triTri.cpp
-  mv_matrix.cpp
-  mv_matrix2x2.cpp
-  mv_matrix3x3.cpp
-  mv_matrix3x4.cpp
-  mv_point2d.cpp
-  mv_point3d.cpp
-  mv_staticVector.cpp
-  mv_structures.cpp
-  mv_universe.cpp
-  quaternion.cpp
+  geometry.cpp
+  geometryTriTri.cpp
+  Stat3d.cpp
+  StaticVector.cpp
+  structures.cpp
+  Universe.cpp
 )
 
 add_library(aliceVision_structures

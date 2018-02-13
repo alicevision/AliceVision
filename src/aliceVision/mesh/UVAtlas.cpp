@@ -9,7 +9,7 @@
 
 using namespace std;
 
-UVAtlas::UVAtlas(const Mesh& mesh, multiviewParams& mp, staticVector<staticVector<int>*>* ptsCams,
+UVAtlas::UVAtlas(const Mesh& mesh, multiviewParams& mp, StaticVector<StaticVector<int>*>* ptsCams,
                                  unsigned int textureSide, unsigned int gutterSize)
     : _textureSide(textureSide)
     , _gutterSize(gutterSize)
@@ -30,12 +30,12 @@ UVAtlas::UVAtlas(const Mesh& mesh, multiviewParams& mp, staticVector<staticVecto
     createTextureAtlases(charts, mp);
 }
 
-void UVAtlas::createCharts(vector<Chart>& charts, multiviewParams& mp, staticVector<staticVector<int>*>* ptsCams)
+void UVAtlas::createCharts(vector<Chart>& charts, multiviewParams& mp, StaticVector<StaticVector<int>*>* ptsCams)
 {
     cout << "Creating texture charts" << endl;
 
     // compute per cam triangle visibility
-    staticVector<staticVector<int>*>* trisCams = _mesh.computeTrisCamsFromPtsCams(ptsCams);
+    StaticVector<StaticVector<int>*>* trisCams = _mesh.computeTrisCamsFromPtsCams(ptsCams);
 
     // create one chart per triangle
     _triangleCameraIDs.resize(_mesh.tris->size());
@@ -51,9 +51,9 @@ void UVAtlas::createCharts(vector<Chart>& charts, multiviewParams& mp, staticVec
             //    continue;
             // project triangle
             Mesh::triangle_proj tp = _mesh.getTriangleProjection(i, &mp, cameraID, mp.mip->getWidth(cameraID), mp.mip->getHeight(cameraID));
-            if(!mp.isPixelInImage(pixel(tp.tp2ds[0]), 10, cameraID)
-                    || !mp.isPixelInImage(pixel(tp.tp2ds[1]), 10, cameraID)
-                    || !mp.isPixelInImage(pixel(tp.tp2ds[2]), 10, cameraID))
+            if(!mp.isPixelInImage(Pixel(tp.tp2ds[0]), 10, cameraID)
+                    || !mp.isPixelInImage(Pixel(tp.tp2ds[1]), 10, cameraID)
+                    || !mp.isPixelInImage(Pixel(tp.tp2ds[2]), 10, cameraID))
                 continue;
             // store this camera ID
             chart.commonCameraIDs.emplace_back(cameraID);
@@ -180,8 +180,8 @@ void UVAtlas::finalizeCharts(vector<Chart>& charts, multiviewParams& mp)
         sort(c.triangleIDs.begin(), c.triangleIDs.end());
         c.triangleIDs.erase(unique(c.triangleIDs.begin(), c.triangleIDs.end()), c.triangleIDs.end());
         // store triangle projs and compute chart bounds (in refCamera space)
-        c.sourceLU = pixel(std::numeric_limits<int>::max(), std::numeric_limits<int>::max());
-        c.sourceRD = pixel(std::numeric_limits<int>::min(), std::numeric_limits<int>::min());
+        c.sourceLU = Pixel(std::numeric_limits<int>::max(), std::numeric_limits<int>::max());
+        c.sourceRD = Pixel(std::numeric_limits<int>::min(), std::numeric_limits<int>::min());
         auto it = c.triangleIDs.begin();
         while(it != c.triangleIDs.end())
         {

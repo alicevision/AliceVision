@@ -18,14 +18,14 @@ MeshEnergyOpt::MeshEnergyOpt(multiviewParams* _mp)
 
 MeshEnergyOpt::~MeshEnergyOpt() = default;
 
-staticVector<point3d>* MeshEnergyOpt::computeLaplacianPts()
+StaticVector<Point3d>* MeshEnergyOpt::computeLaplacianPts()
 {
-    staticVector<point3d>* lapPts = new staticVector<point3d>(pts->size());
-    lapPts->resize_with(pts->size(), point3d(0.0f, 0.0f, 0.f));
+    StaticVector<Point3d>* lapPts = new StaticVector<Point3d>(pts->size());
+    lapPts->resize_with(pts->size(), Point3d(0.0f, 0.0f, 0.f));
     int nlabpts = 0;
     for(int i = 0; i < pts->size(); i++)
     {
-        point3d lapPt;
+        Point3d lapPt;
         if(getLaplacianSmoothingVector(i, lapPt))
         {
             (*lapPts)[i] = lapPt;
@@ -36,16 +36,16 @@ staticVector<point3d>* MeshEnergyOpt::computeLaplacianPts()
     return lapPts;
 }
 
-staticVector<point3d>* MeshEnergyOpt::computeLaplacianPtsParallel()
+StaticVector<Point3d>* MeshEnergyOpt::computeLaplacianPtsParallel()
 {
-    staticVector<point3d>* lapPts = new staticVector<point3d>(pts->size());
-    lapPts->resize_with(pts->size(), point3d(0.0f, 0.0f, 0.f));
+    StaticVector<Point3d>* lapPts = new StaticVector<Point3d>(pts->size());
+    lapPts->resize_with(pts->size(), Point3d(0.0f, 0.0f, 0.f));
     int nlabpts = 0;
 
 #pragma omp parallel for
     for(int i = 0; i < pts->size(); i++)
     {
-        point3d lapPt;
+        Point3d lapPt;
         if(getLaplacianSmoothingVector(i, lapPt))
         {
             (*lapPts)[i] = lapPt;
@@ -56,14 +56,14 @@ staticVector<point3d>* MeshEnergyOpt::computeLaplacianPtsParallel()
     return lapPts;
 }
 
-void MeshEnergyOpt::updateGradientParallel(float lambda, float epsilon, int type, const point3d& LU,
-                                                const point3d& RD, staticVectorBool* ptsCanMove)
+void MeshEnergyOpt::updateGradientParallel(float lambda, float epsilon, int type, const Point3d& LU,
+                                                const Point3d& RD, StaticVectorBool* ptsCanMove)
 {
     // printf("nlabpts %i of %i\n",nlabpts,pts->size());
-    // staticVector<point3d> *lapPts = computeLaplacianPts();
-    staticVector<point3d>* lapPts = computeLaplacianPtsParallel();
+    // StaticVector<Point3d> *lapPts = computeLaplacianPts();
+    StaticVector<Point3d>* lapPts = computeLaplacianPtsParallel();
 
-    staticVector<point3d>* newPts = new staticVector<point3d>(pts->size());
+    StaticVector<Point3d>* newPts = new StaticVector<Point3d>(pts->size());
     newPts->push_back_arr(pts);
 
 #pragma omp parallel for
@@ -72,7 +72,7 @@ void MeshEnergyOpt::updateGradientParallel(float lambda, float epsilon, int type
         if((ptsCanMove == nullptr) || ((*ptsCanMove)[i]))
         {
 
-            point3d n;
+            Point3d n;
 
             switch(type)
             {
@@ -104,7 +104,7 @@ void MeshEnergyOpt::updateGradientParallel(float lambda, float epsilon, int type
                     //{
                     if(getBiLaplacianSmoothingVector(i, lapPts, n))
                     {
-                        point3d p = (*newPts)[i] + n * lambda;
+                        Point3d p = (*newPts)[i] + n * lambda;
                         if((p.x > LU.x) && (p.y > LU.y) && (p.z > LU.z) && (p.x < RD.x) && (p.y < RD.y) && (p.z < RD.z))
                         {
                             (*newPts)[i] = p;
@@ -114,7 +114,7 @@ void MeshEnergyOpt::updateGradientParallel(float lambda, float epsilon, int type
             }else{
                     if (applyLaplacianOperator(i, pts, n)==true)
                     {
-                            point3d p = (*newPts)[i] + n * lamda;
+                            Point3d p = (*newPts)[i] + n * lamda;
                             if ((p.x>LU.x)&&(p.y>LU.y)&&(p.z>LU.z)&&
                                     (p.x<RD.x)&&(p.y<RD.y)&&(p.z<RD.z))
                             {
@@ -126,8 +126,8 @@ void MeshEnergyOpt::updateGradientParallel(float lambda, float epsilon, int type
                     break;
                 case 4:
                 // doesn't work
-                    point3d lap;
-                    point3d bilap;
+                    Point3d lap;
+                    Point3d bilap;
                     if((applyLaplacianOperator(i, pts, lap)) && (applyLaplacianOperator(i, lapPts, bilap)) &&
                        (!isIsBoundaryPt(i)))
                     {
@@ -143,7 +143,7 @@ void MeshEnergyOpt::updateGradientParallel(float lambda, float epsilon, int type
     delete lapPts;
 }
 
-bool MeshEnergyOpt::optimizeSmooth(float lambda, float epsilon, int type, int niter, staticVectorBool* ptsCanMove)
+bool MeshEnergyOpt::optimizeSmooth(float lambda, float epsilon, int type, int niter, StaticVectorBool* ptsCanMove)
 {
     if(pts->size() <= 4)
     {
@@ -152,7 +152,7 @@ bool MeshEnergyOpt::optimizeSmooth(float lambda, float epsilon, int type, int ni
 
     bool saveDebug = mp->mip->_ini.get<bool>("meshEnergyOpt.saveAllIterations", false);
 
-    point3d LU, RD;
+    Point3d LU, RD;
     LU = (*pts)[0];
     RD = (*pts)[0];
     for(int i = 0; i < pts->size(); i++)

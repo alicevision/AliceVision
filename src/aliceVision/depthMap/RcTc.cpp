@@ -4,6 +4,7 @@
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
 #include "RcTc.hpp"
+#include <aliceVision/structures/StaticVector.hpp>
 #include <aliceVision/common/common.hpp>
 
 RcTc::RcTc(multiviewParams* _mp, PlaneSweepingCuda* _cps)
@@ -34,8 +35,8 @@ void RcTc::refineRcTcDepthSimMap(bool useTcOrRcPixSize, DepthSimMap* depthSimMap
     {
         int xFrom = p * wPart;
         int wPartAct = std::min(wPart, w - xFrom);
-        staticVector<float>* depthMap = depthSimMap->getDepthMapStep1XPart(xFrom, wPartAct);
-        staticVector<float>* simMap = depthSimMap->getSimMapStep1XPart(xFrom, wPartAct);
+        StaticVector<float>* depthMap = depthSimMap->getDepthMapStep1XPart(xFrom, wPartAct);
+        StaticVector<float>* simMap = depthSimMap->getSimMapStep1XPart(xFrom, wPartAct);
 
         cps->refineRcTcDepthMap(useTcOrRcPixSize, ndepthsToRefine, simMap, depthMap, rc, tc, scale, wsh, gammaC, gammaP,
                                 epipShift, xFrom, wPartAct);
@@ -68,7 +69,7 @@ void RcTc::smoothDepthMap(DepthSimMap* depthSimMap, int rc, int wsh, float gamma
 {
     long t1 = clock();
 
-    staticVector<float>* depthMap = depthSimMap->getDepthMapStep1();
+    StaticVector<float>* depthMap = depthSimMap->getDepthMapStep1();
     cps->smoothDepthMap(depthMap, rc, depthSimMap->scale, gammaC, gammaP, wsh);
 
     for(int i = 0; i < depthSimMap->w * depthSimMap->h; i++)
@@ -90,7 +91,7 @@ void RcTc::filterDepthMap(DepthSimMap* depthSimMap, int rc, int wsh, float gamma
 
     float minCostThr = 25.0f;
 
-    staticVector<float>* depthMap = depthSimMap->getDepthMapStep1();
+    StaticVector<float>* depthMap = depthSimMap->getDepthMapStep1();
     cps->filterDepthMap(depthMap, rc, depthSimMap->scale, gammaC, minCostThr, wsh);
 
     for(int i = 0; i < depthSimMap->w * depthSimMap->h; i++)
@@ -106,7 +107,7 @@ void RcTc::filterDepthMap(DepthSimMap* depthSimMap, int rc, int wsh, float gamma
     delete depthMap;
 }
 
-void RcTc::computeRotCSRcTcEpip(point3d& p, point3d& n, point3d& x, point3d& y, int rc, int tc)
+void RcTc::computeRotCSRcTcEpip(Point3d& p, Point3d& n, Point3d& x, Point3d& y, int rc, int tc)
 {
     n = (mp->CArr[rc] - p).normalize();
     x = (mp->CArr[tc] - mp->CArr[rc]).normalize();

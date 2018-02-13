@@ -4,6 +4,7 @@
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
 #include "ReconstructionPlan.hpp"
+#include <aliceVision/structures/Rgb.hpp>
 #include <aliceVision/common/common.hpp>
 #include <aliceVision/common/fileIO.hpp>
 #include <aliceVision/mesh/plySaver.hpp>
@@ -15,7 +16,7 @@
 
 namespace bfs = boost::filesystem;
 
-ReconstructionPlan::ReconstructionPlan(voxel& dimmensions, point3d* space, multiviewParams* _mp, mv_prematch_cams* _pc,
+ReconstructionPlan::ReconstructionPlan(Voxel& dimmensions, Point3d* space, multiviewParams* _mp, mv_prematch_cams* _pc,
                                        std::string _spaceRootDir)
     : VoxelsGrid(dimmensions, space, _mp, _pc, _spaceRootDir)
 {
@@ -27,10 +28,10 @@ ReconstructionPlan::~ReconstructionPlan()
     delete nVoxelsTracks;
 }
 
-staticVector<int>* ReconstructionPlan::getNeigboursIds(float dist, int id, bool ceilOrFloor)
+StaticVector<int>* ReconstructionPlan::getNeigboursIds(float dist, int id, bool ceilOrFloor)
 {
-    staticVector<int>* ids = new staticVector<int>(voxels->size() / 8);
-    voxel v = getVoxelForId(id);
+    StaticVector<int>* ids = new StaticVector<int>(voxels->size() / 8);
+    Voxel v = getVoxelForId(id);
 
     int distN = (int)ceil((dist - 1.0f) / 2.0f);
     if(!ceilOrFloor)
@@ -45,7 +46,7 @@ staticVector<int>* ReconstructionPlan::getNeigboursIds(float dist, int id, bool 
         {
             for(int z = -distN; z <= distN; z++)
             {
-                voxel v1 = v + voxel(x, y, z);
+                Voxel v1 = v + Voxel(x, y, z);
                 // printf("voxel1 (%i,%i,%i)\n", v1.x,v1.y,v1.z);
                 if(isValidVoxel(v1))
                 {
@@ -58,9 +59,9 @@ staticVector<int>* ReconstructionPlan::getNeigboursIds(float dist, int id, bool 
     return ids;
 }
 
-staticVector<int>* ReconstructionPlan::voxelsIdsIntersectingHexah(point3d* hexah)
+StaticVector<int>* ReconstructionPlan::voxelsIdsIntersectingHexah(Point3d* hexah)
 {
-    staticVector<int>* ids = new staticVector<int>(voxels->size() / 8);
+    StaticVector<int>* ids = new StaticVector<int>(voxels->size() / 8);
 
     for(int i = 0; i < voxels->size() / 8; i++)
     {
@@ -76,7 +77,7 @@ staticVector<int>* ReconstructionPlan::voxelsIdsIntersectingHexah(point3d* hexah
 int ReconstructionPlan::getPtsCount(float dist, int id)
 {
     int npts = 0;
-    staticVector<int>* ids = getNeigboursIds(dist, id, false);
+    StaticVector<int>* ids = getNeigboursIds(dist, id, false);
     for(int i = 0; i < ids->size(); i++)
     {
         int actVoxId = (*ids)[i];
@@ -88,10 +89,10 @@ int ReconstructionPlan::getPtsCount(float dist, int id)
     return npts;
 }
 
-staticVector<float>* ReconstructionPlan::computeMaximaInflateFactors(int maxPts)
+StaticVector<float>* ReconstructionPlan::computeMaximaInflateFactors(int maxPts)
 {
     float maxDim = std::max(std::max(voxelDim.x, voxelDim.y), voxelDim.z) * 2.0f;
-    staticVector<float>* out = new staticVector<float>(voxels->size() / 8);
+    StaticVector<float>* out = new StaticVector<float>(voxels->size() / 8);
     for(int i = 0; i < voxels->size() / 8; i++)
     {
         printf("Computing max reconstructable inflate factor for voxel %i\n", i);
@@ -119,18 +120,18 @@ staticVector<float>* ReconstructionPlan::computeMaximaInflateFactors(int maxPts)
     return out;
 }
 
-staticVector<sortedId>* ReconstructionPlan::computeOptimalReconstructionPlan(const staticVector<float>* maximaInflateFactors)
+StaticVector<SortedId>* ReconstructionPlan::computeOptimalReconstructionPlan(const StaticVector<float>* maximaInflateFactors)
 {
-    staticVector<sortedId>* out = new staticVector<sortedId>(maximaInflateFactors->size());
-    staticVector<sortedId>* voxelsMIFsID = new staticVector<sortedId>(maximaInflateFactors->size());
+    StaticVector<SortedId>* out = new StaticVector<SortedId>(maximaInflateFactors->size());
+    StaticVector<SortedId>* voxelsMIFsID = new StaticVector<SortedId>(maximaInflateFactors->size());
     float maxif = 0.0f;
     for(int i = 0; i < maximaInflateFactors->size(); i++)
     {
-        voxelsMIFsID->push_back(sortedId(i, (*maximaInflateFactors)[i]));
+        voxelsMIFsID->push_back(SortedId(i, (*maximaInflateFactors)[i]));
         maxif = std::max(maxif, (*maximaInflateFactors)[i]);
     }
     // take the voxelid with minimal maximal inflate factor because it is the denselly sampled part
-    qsort(&(*voxelsMIFsID)[0], voxelsMIFsID->size(), sizeof(sortedId), qsortCompareSortedIdAsc);
+    qsort(&(*voxelsMIFsID)[0], voxelsMIFsID->size(), sizeof(SortedId), qsortCompareSortedIdAsc);
 
     while((*voxelsMIFsID)[0].value <= maxif)
     {
@@ -149,10 +150,10 @@ staticVector<sortedId>* ReconstructionPlan::computeOptimalReconstructionPlan(con
             }
 
             // get interlan voxels
-            staticVector<int>* ids = getNeigboursIds((*voxelsMIFsID)[0].value, id, false);
+            StaticVector<int>* ids = getNeigboursIds((*voxelsMIFsID)[0].value, id, false);
 
             // sort it by id to allow direct addressing
-            qsort(&(*voxelsMIFsID)[0], voxelsMIFsID->size(), sizeof(sortedId), qsortCompareSortedIdByIdAsc);
+            qsort(&(*voxelsMIFsID)[0], voxelsMIFsID->size(), sizeof(SortedId), qsortCompareSortedIdByIdAsc);
 
             // exclude internal voxels from further computation
             for(int i = 0; i < ids->size(); i++)
@@ -163,7 +164,7 @@ staticVector<sortedId>* ReconstructionPlan::computeOptimalReconstructionPlan(con
             delete ids;
         }
 
-        qsort(&(*voxelsMIFsID)[0], voxelsMIFsID->size(), sizeof(sortedId), qsortCompareSortedIdAsc);
+        qsort(&(*voxelsMIFsID)[0], voxelsMIFsID->size(), sizeof(SortedId), qsortCompareSortedIdAsc);
     }
 
     delete voxelsMIFsID;
@@ -171,10 +172,10 @@ staticVector<sortedId>* ReconstructionPlan::computeOptimalReconstructionPlan(con
     return out;
 }
 
-unsigned long ReconstructionPlan::getNTracks(const voxel& LU, const voxel& RD)
+unsigned long ReconstructionPlan::getNTracks(const Voxel& LU, const Voxel& RD)
 {
     unsigned long n = 0;
-    voxel v;
+    Voxel v;
     for(v.x = LU.x; v.x <= RD.x; v.x++)
     {
         for(v.y = LU.y; v.y <= RD.y; v.y++)
@@ -188,8 +189,8 @@ unsigned long ReconstructionPlan::getNTracks(const voxel& LU, const voxel& RD)
     return n;
 }
 
-bool ReconstructionPlan::divideBox(voxel& LU1o, voxel& RD1o, voxel& LU2o, voxel& RD2o, const voxel& LUi,
-                                   const voxel& RDi, unsigned long maxTracks)
+bool ReconstructionPlan::divideBox(Voxel& LU1o, Voxel& RD1o, Voxel& LU2o, Voxel& RD2o, const Voxel& LUi,
+                                   const Voxel& RDi, unsigned long maxTracks)
 {
     unsigned long n = getNTracks(LUi, RDi);
     if(n < maxTracks)
@@ -197,7 +198,7 @@ bool ReconstructionPlan::divideBox(voxel& LU1o, voxel& RD1o, voxel& LU2o, voxel&
         return false;
     }
 
-    voxel LUt, RDt;
+    Voxel LUt, RDt;
 
     unsigned long nx1, nx2, ny1, ny2, nz1, nz2;
     nx1 = 0;
@@ -290,10 +291,10 @@ bool ReconstructionPlan::divideBox(voxel& LU1o, voxel& RD1o, voxel& LU2o, voxel&
     return false;
 }
 
-staticVector<point3d>* ReconstructionPlan::computeReconstructionPlanBinSearch(unsigned long maxTracks)
+StaticVector<Point3d>* ReconstructionPlan::computeReconstructionPlanBinSearch(unsigned long maxTracks)
 {
-    voxel actHexahLU = voxel(0, 0, 0);
-    voxel actHexahRD = voxelDim - voxel(1, 1, 1);
+    Voxel actHexahLU = Voxel(0, 0, 0);
+    Voxel actHexahRD = voxelDim - Voxel(1, 1, 1);
 
     /*
     printf("------------\n");
@@ -301,10 +302,10 @@ staticVector<point3d>* ReconstructionPlan::computeReconstructionPlanBinSearch(un
     printf("actHexahRD %i %i %i\n",actHexahRD.x,actHexahRD.y,actHexahRD.z);
     */
 
-    staticVector<point3d>* hexahsToReconstruct = new staticVector<point3d>(nVoxelsTracks->size() * 8);
+    StaticVector<Point3d>* hexahsToReconstruct = new StaticVector<Point3d>(nVoxelsTracks->size() * 8);
 
-    staticVector<voxel>* toDivideLU = new staticVector<voxel>(10 * nVoxelsTracks->size());
-    staticVector<voxel>* toDivideRD = new staticVector<voxel>(10 * nVoxelsTracks->size());
+    StaticVector<Voxel>* toDivideLU = new StaticVector<Voxel>(10 * nVoxelsTracks->size());
+    StaticVector<Voxel>* toDivideRD = new StaticVector<Voxel>(10 * nVoxelsTracks->size());
     toDivideLU->push_back(actHexahLU);
     toDivideRD->push_back(actHexahRD);
 
@@ -319,7 +320,7 @@ staticVector<point3d>* ReconstructionPlan::computeReconstructionPlanBinSearch(un
         printf("actHexahRD %i %i %i\n",actHexahRD.x,actHexahRD.y,actHexahRD.z);
         */
 
-        voxel LU1, RD1, LU2, RD2;
+        Voxel LU1, RD1, LU2, RD2;
         if(divideBox(LU1, RD1, LU2, RD2, actHexahLU, actHexahRD, maxTracks))
         {
             toDivideLU->push_back(LU1);
@@ -339,7 +340,7 @@ staticVector<point3d>* ReconstructionPlan::computeReconstructionPlanBinSearch(un
         }
         else
         {
-            point3d hexah[8], hexahinf[8];
+            Point3d hexah[8], hexahinf[8];
 
             /*
             printf("------------\n");
@@ -362,12 +363,12 @@ staticVector<point3d>* ReconstructionPlan::computeReconstructionPlanBinSearch(un
     return hexahsToReconstruct;
 }
 
-void ReconstructionPlan::getHexahedronForID(float dist, int id, point3d* out)
+void ReconstructionPlan::getHexahedronForID(float dist, int id, Point3d* out)
 {
     inflateHexahedron(&(*voxels)[id * 8], out, dist);
 }
 
-void vizualizeReconstructionPlan(int gridLevel, LargeScale* ls, staticVector<sortedId>* optimalReconstructionPlan)
+void vizualizeReconstructionPlan(int gridLevel, LargeScale* ls, StaticVector<SortedId>* optimalReconstructionPlan)
 {
     auto subFolderName = ls->mp->mip->_ini.get<std::string>("LargeScale.subFolderName", "");
     if(subFolderName.empty())
@@ -436,15 +437,15 @@ void reconstructAccordingToOptimalReconstructionPlan(int gl, LargeScale* ls)
 
     std::string optimalReconstructionPlanFileName =
         ls->spaceFolderName + "optimalReconstructionPlan" + num2str(gridLevel) + ".bin";
-    staticVector<sortedId>* optimalReconstructionPlan = loadArrayFromFile<sortedId>(optimalReconstructionPlanFileName);
+    StaticVector<SortedId>* optimalReconstructionPlan = loadArrayFromFile<SortedId>(optimalReconstructionPlanFileName);
 
     std::string optimalReconstructionPlanDimTransformFileName =
         ls->spaceFolderName + "optimalReconstructionPlandimTransform.bin";
     ReconstructionPlan* rp =
         new ReconstructionPlan(ls->dimensions, &ls->space[0], ls->mp, ls->pc, ls->spaceVoxelsFolderName);
 
-    staticVector<point3d>* hexahsToExcludeFromResultingMesh =
-        new staticVector<point3d>(optimalReconstructionPlan->size() * 8);
+    StaticVector<Point3d>* hexahsToExcludeFromResultingMesh =
+        new StaticVector<Point3d>(optimalReconstructionPlan->size() * 8);
     for(int i = 0; i < optimalReconstructionPlan->size(); i++)
     {
         int id = (*optimalReconstructionPlan)[i].id;
@@ -458,13 +459,13 @@ void reconstructAccordingToOptimalReconstructionPlan(int gl, LargeScale* ls)
         bfs::create_directory(folderName);
 
         inflateFactor *= 1.1f;
-        point3d hexah[8];
+        Point3d hexah[8];
         rp->getHexahedronForID(inflateFactor, id, hexah);
 
         std::string testFn = folderName + "stGraphSolution.bin";
         // if (FileExists(testFn)==false)
         //{
-        staticVector<int>* voxelNeighs = rp->getNeigboursIds(inflateFactor, id, true);
+        StaticVector<int>* voxelNeighs = rp->getNeigboursIds(inflateFactor, id, true);
         mv_delaunay_GC* dgc = new mv_delaunay_GC(ls->mp, ls->pc);
         dgc->reconstructVoxel(hexah, voxelNeighs, folderName, ls->getSpaceCamsTracksDir(), false,
                               hexahsToExcludeFromResultingMesh, (VoxelsGrid*)rp, ls->getSpaceSteps());
@@ -472,7 +473,7 @@ void reconstructAccordingToOptimalReconstructionPlan(int gl, LargeScale* ls)
         delete voxelNeighs;
         //};
 
-        point3d hexahThin[8];
+        Point3d hexahThin[8];
         inflateHexahedron(hexah, hexahThin, 0.9);
         for(int k = 0; k < 8; k++)
         {
@@ -488,12 +489,12 @@ void reconstructAccordingToOptimalReconstructionPlan(int gl, LargeScale* ls)
 void reconstructSpaceAccordingToVoxelsArray(const std::string& voxelsArrayFileName, LargeScale* ls,
                                             bool doComputeColoredMeshes)
 {
-    staticVector<point3d>* voxelsArray = loadArrayFromFile<point3d>(voxelsArrayFileName);
+    StaticVector<Point3d>* voxelsArray = loadArrayFromFile<Point3d>(voxelsArrayFileName);
 
     ReconstructionPlan* rp =
         new ReconstructionPlan(ls->dimensions, &ls->space[0], ls->mp, ls->pc, ls->spaceVoxelsFolderName);
 
-    staticVector<point3d>* hexahsToExcludeFromResultingMesh = new staticVector<point3d>(voxelsArray->size());
+    StaticVector<Point3d>* hexahsToExcludeFromResultingMesh = new StaticVector<Point3d>(voxelsArray->size());
     for(int i = 0; i < voxelsArray->size() / 8; i++)
     {
         printf("RECONSTRUCTING %i-th VOXEL OF %i \n", i, voxelsArray->size() / 8);
@@ -504,17 +505,17 @@ void reconstructSpaceAccordingToVoxelsArray(const std::string& voxelsArrayFileNa
         const std::string meshBinFilepath = folderName + "mesh.bin";
         if(!FileExists(meshBinFilepath))
         {
-            staticVector<int>* voxelsIds = rp->voxelsIdsIntersectingHexah(&(*voxelsArray)[i * 8]);
+            StaticVector<int>* voxelsIds = rp->voxelsIdsIntersectingHexah(&(*voxelsArray)[i * 8]);
             mv_delaunay_GC delaunayGC(ls->mp, ls->pc);
-            point3d* hexah = &(*voxelsArray)[i * 8];
+            Point3d* hexah = &(*voxelsArray)[i * 8];
             delaunayGC.reconstructVoxel(hexah, voxelsIds, folderName, ls->getSpaceCamsTracksDir(), false,
                                   hexahsToExcludeFromResultingMesh, (VoxelsGrid*)rp, ls->getSpaceSteps());
             delete voxelsIds;
 
             // Save mesh as .bin and .obj
             Mesh* mesh = delaunayGC.createMesh();
-            staticVector<staticVector<int>*>* ptsCams = delaunayGC.createPtsCams();
-            staticVector<int> usedCams = delaunayGC.getSortedUsedCams();
+            StaticVector<StaticVector<int>*>* ptsCams = delaunayGC.createPtsCams();
+            StaticVector<int> usedCams = delaunayGC.getSortedUsedCams();
 
             meshPostProcessing(mesh, ptsCams, usedCams, *ls->mp, *ls->pc, ls->mp->mip->mvDir, hexahsToExcludeFromResultingMesh, hexah);
             mesh->saveToBin(folderName + "mesh.bin");
@@ -534,7 +535,7 @@ void reconstructSpaceAccordingToVoxelsArray(const std::string& voxelsArrayFileNa
         }
         */
 
-        point3d hexahThin[8];
+        Point3d hexahThin[8];
         inflateHexahedron(&(*voxelsArray)[i * 8], hexahThin, 0.9);
         for(int k = 0; k < 8; k++)
         {
@@ -548,9 +549,9 @@ void reconstructSpaceAccordingToVoxelsArray(const std::string& voxelsArrayFileNa
 }
 
 
-staticVector<staticVector<int>*>* loadLargeScalePtsCams(const std::vector<std::string>& recsDirs)
+StaticVector<StaticVector<int>*>* loadLargeScalePtsCams(const std::vector<std::string>& recsDirs)
 {
-    staticVector<staticVector<int>*>* ptsCamsFromDct = new staticVector<staticVector<int>*>();
+    StaticVector<StaticVector<int>*>* ptsCamsFromDct = new StaticVector<StaticVector<int>*>();
     for(int i = 0; i < recsDirs.size(); ++i)
     {
         std::string folderName = recsDirs[i];
@@ -558,7 +559,7 @@ staticVector<staticVector<int>*>* loadLargeScalePtsCams(const std::vector<std::s
         std::string filePtsCamsFromDCTName = folderName + "meshPtsCamsFromDGC.bin";
         if(!FileExists(filePtsCamsFromDCTName))
             throw std::runtime_error("Missing file: " + filePtsCamsFromDCTName);
-        staticVector<staticVector<int>*>* ptsCamsFromDcti = loadArrayOfArraysFromFile<int>(filePtsCamsFromDCTName);
+        StaticVector<StaticVector<int>*>* ptsCamsFromDcti = loadArrayOfArraysFromFile<int>(filePtsCamsFromDCTName);
         ptsCamsFromDct->resizeAdd(ptsCamsFromDcti->size());
         for(int i = 0; i < ptsCamsFromDcti->size(); i++)
         {
@@ -570,7 +571,7 @@ staticVector<staticVector<int>*>* loadLargeScalePtsCams(const std::vector<std::s
 }
 
 
-Mesh* joinMeshes(const std::vector<std::string>& recsDirs, staticVector<point3d>* voxelsArray,
+Mesh* joinMeshes(const std::vector<std::string>& recsDirs, StaticVector<Point3d>* voxelsArray,
                     LargeScale* ls)
 {
     ReconstructionPlan rp(ls->dimensions, &ls->space[0], ls->mp, ls->pc, ls->spaceVoxelsFolderName);
@@ -601,11 +602,11 @@ Mesh* joinMeshes(const std::vector<std::string>& recsDirs, staticVector<point3d>
     if(ls->mp->verbose)
         printf("Creating mesh\n");
     Mesh* me = new Mesh();
-    me->pts = new staticVector<point3d>(npts);
-    me->tris = new staticVector<Mesh::triangle>(ntris);
+    me->pts = new StaticVector<Point3d>(npts);
+    me->tris = new StaticVector<Mesh::triangle>(ntris);
 
-    staticVector<rgb>* trisCols = new staticVector<rgb>(ntris);
-    staticVector<rgb>* ptsCols = new staticVector<rgb>(npts);
+    StaticVector<rgb>* trisCols = new StaticVector<rgb>(ntris);
+    StaticVector<rgb>* ptsCols = new StaticVector<rgb>(npts);
 
     if(ls->mp->verbose)
         printf("Merging part to one mesh (not connecting them!!!)\n");
@@ -622,7 +623,7 @@ Mesh* joinMeshes(const std::vector<std::string>& recsDirs, staticVector<point3d>
             mei->loadFromBin(fileName);
 
             // to remove artefacts on the border
-            point3d hexah[8];
+            Point3d hexah[8];
             float inflateFactor = 0.96;
             inflateHexahedron(&(*voxelsArray)[i * 8], hexah, inflateFactor);
             mei->removeTrianglesOutsideHexahedron(hexah);
@@ -636,8 +637,8 @@ Mesh* joinMeshes(const std::vector<std::string>& recsDirs, staticVector<point3d>
             fileName = folderName + "meshAvImgCol.ply.ptsColors";
             if(FileExists(fileName))
             {
-                staticVector<rgb>* ptsColsi = loadArrayFromFile<rgb>(fileName);
-                staticVector<rgb>* trisColsi = getTrisColorsRgb(mei, ptsColsi);
+                StaticVector<rgb>* ptsColsi = loadArrayFromFile<rgb>(fileName);
+                StaticVector<rgb>* trisColsi = getTrisColorsRgb(mei, ptsColsi);
 
                 for(int j = 0; j < trisColsi->size(); j++)
                 {
@@ -683,7 +684,7 @@ Mesh* joinMeshes(int gl, LargeScale* ls)
 
     std::string optimalReconstructionPlanFileName =
         ls->spaceFolderName + "optimalReconstructionPlan" + num2str(gridLevel) + ".bin";
-    staticVector<sortedId>* optimalReconstructionPlan = loadArrayFromFile<sortedId>(optimalReconstructionPlanFileName);
+    StaticVector<SortedId>* optimalReconstructionPlan = loadArrayFromFile<SortedId>(optimalReconstructionPlanFileName);
 
     auto subFolderName = ls->mp->mip->_ini.get<std::string>("LargeScale.subFolderName", "");
     if(subFolderName.empty())
@@ -699,7 +700,7 @@ Mesh* joinMeshes(int gl, LargeScale* ls)
     }
     subFolderName = subFolderName + "/";
 
-    staticVector<point3d>* voxelsArray = new staticVector<point3d>(optimalReconstructionPlan->size() * 8);
+    StaticVector<Point3d>* voxelsArray = new StaticVector<Point3d>(optimalReconstructionPlan->size() * 8);
     std::vector<std::string> recsDirs;
     for(int i = 0; i < optimalReconstructionPlan->size(); i++)
     {
@@ -708,7 +709,7 @@ Mesh* joinMeshes(int gl, LargeScale* ls)
         std::string folderName = ls->spaceFolderName + "reconstructedSpacePart" + num2strFourDecimal(id) + "/";
         folderName +=  "GL_" + num2str(gridLevel) + "_IF_" + num2str((int)inflateFactor) + "/";
 
-        point3d hexah[8];
+        Point3d hexah[8];
         rp->getHexahedronForID(inflateFactor, id, hexah);
         for(int k = 0; k < 8; k++)
         {
@@ -728,7 +729,7 @@ Mesh* joinMeshes(int gl, LargeScale* ls)
 
 Mesh* joinMeshes(const std::string& voxelsArrayFileName, LargeScale* ls)
 {
-    staticVector<point3d>* voxelsArray = loadArrayFromFile<point3d>(voxelsArrayFileName);
+    StaticVector<Point3d>* voxelsArray = loadArrayFromFile<Point3d>(voxelsArrayFileName);
     std::vector<std::string> recsDirs = ls->getRecsDirs(voxelsArray);
 
     Mesh* me = joinMeshes(recsDirs, voxelsArray, ls);

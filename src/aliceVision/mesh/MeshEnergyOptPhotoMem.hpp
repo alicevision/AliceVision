@@ -5,6 +5,9 @@
 
 #pragma once
 
+#include <aliceVision/structures/Point3d.hpp>
+#include <aliceVision/structures/Point4d.hpp>
+#include <aliceVision/structures/StaticVector.hpp>
 #include <aliceVision/mesh/MeshEnergyOpt.hpp>
 #include <aliceVision/depthMap/DepthSimMap.hpp>
 #include <aliceVision/depthMap/SemiGlobalMatchingParams.hpp>
@@ -15,7 +18,7 @@ public:
     struct camPtStat
     {
     public:
-        point3d pt;
+        Point3d pt;
         float sim;
         float camPixSize;
         int cam;
@@ -33,14 +36,14 @@ public:
     class ptStat
     {
     public:
-        staticVector<camPtStat>* camsDepthMapsPtsSims;
-        staticVector<point4d>* historyPtsSims;
+        StaticVector<camPtStat>* camsDepthMapsPtsSims;
+        StaticVector<Point4d>* historyPtsSims;
         float actSim;
         float step;
         int optS;
-        point3d pt;
-        point3d optVect;
-        point3d optDepthMapsPt;
+        Point3d pt;
+        Point3d optVect;
+        Point3d optDepthMapsPt;
         float optDepthMapsSim;
 
         ptStat();
@@ -53,10 +56,10 @@ public:
     SemiGlobalMatchingParams* sp;
     std::string tmpDir;
     std::string meshDepthMapsDir;
-    staticVector<ptStat*>* ptsStats;
+    StaticVector<ptStat*>* ptsStats;
     float meshPtRcDepthMapPtDistPixSizeLimit;
     int stat_nActivePts;
-    staticVector<int> usedCams;
+    StaticVector<int> usedCams;
     int wsh;
     float gammaC;
     float gammaP;
@@ -66,38 +69,38 @@ public:
     float sigma;
     float pixSizeRatioThr;
 
-    MeshEnergyOptPhotoMem(multiviewParams* _mp, SemiGlobalMatchingParams* _sp, const staticVector<int>& _usedCams);
+    MeshEnergyOptPhotoMem(multiviewParams* _mp, SemiGlobalMatchingParams* _sp, const StaticVector<int>& _usedCams);
     ~MeshEnergyOptPhotoMem();
 
     void allocatePtsStats();
     void deAllocatePtsStats();
 
-    void smoothBiLaplacian(int niters, staticVectorBool* ptsCanMove);
+    void smoothBiLaplacian(int niters, StaticVectorBool* ptsCanMove);
     void smoothLaplacian(int niters);
-    void saveIterStat(staticVector<point3d>* lapPts, int iter, float avEdgeLength);
+    void saveIterStat(StaticVector<Point3d>* lapPts, int iter, float avEdgeLength);
 
     double computeEnergyFairForPt(int ptid);
 
-    void initPtsStats(staticVector<staticVector<int>*>* camsPts);
-    void actualizePtsStats(staticVector<staticVector<int>*>* camsPts);
+    void initPtsStats(StaticVector<StaticVector<int>*>* camsPts);
+    void actualizePtsStats(StaticVector<StaticVector<int>*>* camsPts);
 
-    staticVector<int>* getRcTcNVisTrisMap(staticVector<staticVector<int>*>* trisCams);
+    StaticVector<int>* getRcTcNVisTrisMap(StaticVector<StaticVector<int>*>* trisCams);
 
-    float fuse_gaussianKernelVoting_computePtSim(int ptId, int s, float step, point3d& pt, point3d& nNormalized,
+    float fuse_gaussianKernelVoting_computePtSim(int ptId, int s, float step, Point3d& pt, Point3d& nNormalized,
                                                  float sigma);
     void fuse_gaussianKernelVoting_depthsSimsSamples(double &optDist, double &optSim, double &actSim, int ptId,
-                                                     point3d& nNormalized, int iter);
-    void optimizePoint(int iter, int ptId, staticVector<point3d>* lapPts, bool photoSmooth,
-                       point3d& pt, point3d& normalVectorNormalized, double &smoothVal, double &simVal,
-                       staticVectorBool* ptsCanMove);
-    bool optimizePhoto(int niters, staticVectorBool* ptsCanMove, staticVector<staticVector<int>*>* camsPts);
+                                                     Point3d& nNormalized, int iter);
+    void optimizePoint(int iter, int ptId, StaticVector<Point3d>* lapPts, bool photoSmooth,
+                       Point3d& pt, Point3d& normalVectorNormalized, double &smoothVal, double &simVal,
+                       StaticVectorBool* ptsCanMove);
+    bool optimizePhoto(int niters, StaticVectorBool* ptsCanMove, StaticVector<StaticVector<int>*>* camsPts);
 
-    point4d getPtCurvatures(int ptId, staticVector<point3d>* lapPts);
+    Point4d getPtCurvatures(int ptId, StaticVector<Point3d>* lapPts);
 
-    DepthSimMap* getDepthPixSizeMap(staticVector<float>* rcDepthMap, int rc, staticVector<int>* tcams);
+    DepthSimMap* getDepthPixSizeMap(StaticVector<float>* rcDepthMap, int rc, StaticVector<int>* tcams);
 
-    staticVector<staticVector<int>*>* getRcTcamsFromPtsCams(int minPairPts, staticVector<staticVector<int>*>* ptsCams);
+    StaticVector<StaticVector<int>*>* getRcTcamsFromPtsCams(int minPairPts, StaticVector<StaticVector<int>*>* ptsCams);
 
-    void updateAddCamsSorted(staticVector<int>** cams, int rc);
+    void updateAddCamsSorted(StaticVector<int>** cams, int rc);
 
 };

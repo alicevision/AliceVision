@@ -9,7 +9,7 @@
 void mv_delanuay_TV::updateHistogram(GC_Cell_handle ch, int rc, float depths, float voxSize, float sigma, int weight)
 {
     int id = ch->info().cellId;
-    point3d p = cellCentreOfGravity(ch);
+    Point3d p = cellCentreOfGravity(ch);
     float depthp = (mp->CArr[rc] - p).size();
 
     int nsigma = (int)(fabs(depthp - depths) / voxSize);
@@ -44,7 +44,7 @@ void mv_delanuay_TV::updateHistogram(GC_Cell_handle ch, int rc, float depths, fl
     }
 }
 
-void mv_delanuay_TV::initTvData(staticVector<int>* cams, float voxSize, float sigma)
+void mv_delanuay_TV::initTvData(StaticVector<int>* cams, float voxSize, float sigma)
 {
     int w = mp->mip->imp.width;
     int h = mp->mip->imp.height;
@@ -60,7 +60,7 @@ void mv_delanuay_TV::initTvData(staticVector<int>* cams, float voxSize, float si
         nV++;
     }
 
-    tvData = new staticVector<TV_cellInfo>(nV);
+    tvData = new StaticVector<TV_cellInfo>(nV);
 
     // init histograms
     for(GC_Dh::Finite_cells_iterator fit = T.finite_cells_begin(); fit != T.finite_cells_end(); ++fit)
@@ -70,8 +70,8 @@ void mv_delanuay_TV::initTvData(staticVector<int>* cams, float voxSize, float si
         {
             tvc.hist[j] = 0;
         }
-        tvc.n = point3d(0.0f, 0.0f, 0.0f);
-        tvc.p = point3d(0.0f, 0.0f, 0.0f);
+        tvc.n = Point3d(0.0f, 0.0f, 0.0f);
+        tvc.p = Point3d(0.0f, 0.0f, 0.0f);
         tvc.u = 0.0f;
         tvc.u_ = 0.0f;
         tvData->push_back(tvc);
@@ -83,15 +83,15 @@ void mv_delanuay_TV::initTvData(staticVector<int>* cams, float voxSize, float si
     long t1=initEstimate();
     for (int c=0;c<cams->size();c++) {
             int rc = (*cams)[c];
-            staticVector<float> *depthMap = loadArrayFromFile<float>(mv_getFileName(mp->mip, rc+1,
+            StaticVector<float> *depthMap = loadArrayFromFile<float>(mv_getFileName(mp->mip, rc+1,
     mp->mip->MV_FILE_TYPE_depthMap, 1));
-            staticVector<float> *simMap = loadArrayFromFile<float>(mv_getFileName(mp->mip, rc+1,
+            StaticVector<float> *simMap = loadArrayFromFile<float>(mv_getFileName(mp->mip, rc+1,
     mp->mip->MV_FILE_TYPE_simMap, 1));
 
             for (GC_Dh::Finite_cells_iterator fit=T.finite_cells_begin();fit!=T.finite_cells_end();++fit) {
                     int id = fit->info().cellId;
                     GC_Cell_handle ch = fit;
-                    point3d p = cellCentreOfGravity(ch);
+                    Point3d p = cellCentreOfGravity(ch);
                     pixel pix; mp->getPixelFor3DPoint(&pix, p, rc);
                     if (mp->isPixelInImage(pix,1)==true) {
                             int pixi = pix.x*h+pix.y;
@@ -118,24 +118,24 @@ void mv_delanuay_TV::initTvData(staticVector<int>* cams, float voxSize, float si
     {
         if(fit->info().cams != NULL)
         {
-            staticVector<int>* cams = fit->info().cams;
+            StaticVector<int>* cams = fit->info().cams;
             for(int c = 0; c < cams->size(); c++)
             {
                 int cam = (*cams)[c];
                 GC_Cell_handle cv = getFacetInFrontVertexOnTheRayToTheCam((GC_Vertex_handle)fit, cam).first;
-                // point3d p = convertPointToPoint3d(fit->point());
-                point3d po = fit->info().point;
-                point3d p = fit->info().point;
+                // Point3d p = convertPointToPoint3d(fit->point());
+                Point3d po = fit->info().point;
+                Point3d p = fit->info().point;
                 float depths = (mp->CArr[cam] - p).size();
                 int weight = fit->info().nrc;
 
                 GC_Cell_handle lastFinite = NULL;
-                point3d lastLpi;
+                Point3d lastLpi;
                 bool ok = (cv != NULL);
                 while(ok)
                 {
                     GC_Facet f1, f2;
-                    point3d lpi;
+                    Point3d lpi;
                     // find cell which is nearest to the cam and which is intersected with cam-p ray
                     if(nearestNeighCellToTheCamOnTheRay(mp->CArr[cam], p, cv, f1, f2, lpi) == false)
                     {
@@ -158,7 +158,7 @@ void mv_delanuay_TV::initTvData(staticVector<int>* cams, float voxSize, float si
                 while(ok)
                 {
                     GC_Facet f1, f2;
-                    point3d lpi;
+                    Point3d lpi;
                     // find cell which is farest to the cam and which is intersected with cam-p ray
                     if(farestNeighCellToTheCamOnTheRay(mp->CArr[cam], p, cv, f1, f2, lpi) == false)
                     {
@@ -181,8 +181,8 @@ void mv_delanuay_TV::initTvData(staticVector<int>* cams, float voxSize, float si
     } // for i
     finishEstimate();
 
-    staticVector<point3d>* pts = new staticVector<point3d>(nV);
-    staticVector<voxel>* cls = new staticVector<voxel>(nV);
+    StaticVector<Point3d>* pts = new StaticVector<Point3d>(nV);
+    StaticVector<Voxel>* cls = new StaticVector<Voxel>(nV);
 
     // init energy data
     for(GC_Dh::Finite_cells_iterator fit = T.finite_cells_begin(); fit != T.finite_cells_end(); ++fit)
@@ -196,13 +196,13 @@ void mv_delanuay_TV::initTvData(staticVector<int>* cams, float voxSize, float si
         }
         (*tvData)[id].u = val;
         (*tvData)[id].u_ = val;
-        (*tvData)[id].n = point3d(0.0f, 0.0f, 0.0f);
-        (*tvData)[id].p = point3d(0.0f, 0.0f, 0.0f);
+        (*tvData)[id].n = Point3d(0.0f, 0.0f, 0.0f);
+        (*tvData)[id].p = Point3d(0.0f, 0.0f, 0.0f);
 
         /*
         if (((*tvData)[id].hist[8]-(*tvData)[id].hist[9])>3)
         {
-                point3d p = cellCentreOfGravity(fit);
+                Point3d p = cellCentreOfGravity(fit);
                 pts->push_back(p);
                 voxel c = voxel(0,0,0);
                 c.x = (int)((*tvData)[id].hist[8]>3)*255;
@@ -212,9 +212,9 @@ void mv_delanuay_TV::initTvData(staticVector<int>* cams, float voxSize, float si
         };
         */
 
-        point3d p = cellCentreOfGravity(fit);
+        Point3d p = cellCentreOfGravity(fit);
         pts->push_back(p);
-        voxel c = voxel(0, 0, 0);
+        Voxel c = Voxel(0, 0, 0);
         if((*tvData)[id].hist[8] > (*tvData)[id].hist[9])
         {
             c.x = 255;
@@ -262,25 +262,25 @@ void mv_delanuay_TV::saveStatistic(float voxSize, float sigma)
     int numvert = (int)T.number_of_vertices();
     for(GC_Dh::Finite_vertices_iterator fit = T.finite_vertices_begin(); fit != T.finite_vertices_end(); ++fit)
     {
-        pixel RCPIX;
+        Pixel RCPIX;
         mp->getPixelFor3DPoint(&RCPIX, fit->info().point, RC);
         if((fit->info().cams != NULL) && (mp->isPixelInImage(RCPIX) == true))
         {
             int cam = RC;
             GC_Cell_handle cv = getFacetInFrontVertexOnTheRayToTheCam((GC_Vertex_handle)fit, cam).first;
-            // point3d p = convertPointToPoint3d(fit->point());
-            point3d po = fit->info().point;
-            point3d p = fit->info().point;
+            // Point3d p = convertPointToPoint3d(fit->point());
+            Point3d po = fit->info().point;
+            Point3d p = fit->info().point;
             float depths = (mp->CArr[cam] - p).size();
             int weight = fit->info().nrc;
 
             GC_Cell_handle lastFinite = NULL;
-            point3d lastLpi;
+            Point3d lastLpi;
             bool ok = (cv != NULL);
             while(ok)
             {
                 GC_Facet f1, f2;
-                point3d lpi;
+                Point3d lpi;
                 // find cell which is nearest to the cam and which is intersected with cam-p ray
                 if(nearestNeighCellToTheCamOnTheRay(mp->CArr[cam], p, cv, f1, f2, lpi) == false)
                 {
@@ -316,7 +316,7 @@ void mv_delanuay_TV::saveStatistic(float voxSize, float sigma)
             while(ok)
             {
                 GC_Facet f1, f2;
-                point3d lpi;
+                Point3d lpi;
                 // find cell which is farest to the cam and which is intersected with cam-p ray
                 if(farestNeighCellToTheCamOnTheRay(mp->CArr[cam], p, cv, f1, f2, lpi) == false)
                 {
@@ -358,14 +358,14 @@ void mv_delanuay_TV::saveStatistic(float voxSize, float sigma)
 }
 
 /*
-float mv_delanuay_TV::getInterpolatedU(point3d tp)
+float mv_delanuay_TV::getInterpolatedU(Point3d tp)
 {
         GC_Point sp = GC_Point(tp.x,tp.y,tp.z);
         GC_Cell_handle c = T.locate(sp);
-        point3d p0 = c->vertex(0)->info().point;
-        point3d p1 = c->vertex(1)->info().point;
-        point3d p2 = c->vertex(2)->info().point;
-        point3d p3 = c->vertex(3)->info().point;
+        Point3d p0 = c->vertex(0)->info().point;
+        Point3d p1 = c->vertex(1)->info().point;
+        Point3d p2 = c->vertex(2)->info().point;
+        Point3d p3 = c->vertex(3)->info().point;
 
         float u0 = (*tvData)[c->vertex(0)->info().cellId].u;
         float u1 = (*tvData)[c->vertex(1)->info().cellId].u;
@@ -377,23 +377,23 @@ float mv_delanuay_TV::getInterpolatedU(point3d tp)
 
         pn = cross((p2-p1).normalize(),(p3-p1).normalize());
         v = (tp-p0).normalize();
-        point3d vp123 = linePlaneIntersect(p0,v,p1,pn);
+        Point3d vp123 = linePlaneIntersect(p0,v,p1,pn);
 
 
 
 }
 */
 
-void mv_delanuay_TV::compute_primal_energy(staticVector<int>* cams, float voxSize, float sigma)
+void mv_delanuay_TV::compute_primal_energy(StaticVector<int>* cams, float voxSize, float sigma)
 {
 
     for(GC_Dh::Finite_cells_iterator fit = T.finite_cells_begin(); fit != T.finite_cells_end(); ++fit)
     {
         int id = fit->info().cellId;
-        point3d p = cellCentreOfGravity(fit);
-        point3d px = p + vx * sx;
-        point3d py = p + vy * sy;
-        point3d pz = p + vz * sz;
+        Point3d p = cellCentreOfGravity(fit);
+        Point3d px = p + vx * sx;
+        Point3d py = p + vy * sy;
+        Point3d pz = p + vz * sz;
 
         /*
 
@@ -533,10 +533,10 @@ void mv_delanuay_TV::runMaxflowPrepareToFileTV(std::string fileNameStGraph, floa
     fclose(f);
 }
 
-bool mv_delanuay_TV::reconstructVoxelTV(point3d voxel[8], staticVector<int>* voxelsIds, std::string folderName,
+bool mv_delanuay_TV::reconstructVoxelTV(Point3d voxel[8], StaticVector<int>* voxelsIds, std::string folderName,
                                         float inflateHexahfactor, std::string tmpCamsPtsFolderName, int numSubVoxs)
 {
-    point3d hexahInflated[8];
+    Point3d hexahInflated[8];
 
     printf("hexahedron inflate factor is %f\n", inflateHexahfactor);
 
@@ -552,7 +552,7 @@ bool mv_delanuay_TV::reconstructVoxelTV(point3d voxel[8], staticVector<int>* vox
         inflateHexahedron(voxel, hexahInflated, inflateHexahfactor);
     }
 
-    staticVector<int>* cams = pc->findCamsWhichInteresctsHexahedron(hexahInflated);
+    StaticVector<int>* cams = pc->findCamsWhichInteresctsHexahedron(hexahInflated);
 
     if(cams->size() < 1)
     {
@@ -578,7 +578,7 @@ bool mv_delanuay_TV::reconstructVoxelTV(point3d voxel[8], staticVector<int>* vox
     createTriangulationFromDepthMapsCamsVoxelGrid(cams, fileNameDelanuayVerticesWrl, 0, voxelsIds, hexahInflated,
                                                   numSubVoxs, true);
 
-    float voxSize = point3d(sx, sy, sz).size();
+    float voxSize = Point3d(sx, sy, sz).size();
     float sigma = 5.0f * voxSize;
     initTvData(cams, voxSize, sigma);
 

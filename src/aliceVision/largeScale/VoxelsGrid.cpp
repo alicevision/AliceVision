@@ -4,13 +4,13 @@
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
 #include "VoxelsGrid.hpp"
-#include <aliceVision/delaunaycut/mv_delaunay_types.hpp>
-#include <aliceVision/mesh/plyLoader.hpp>
+#include <aliceVision/structures/Pixel.hpp>
 #include <aliceVision/common/fileIO.hpp>
+#include <aliceVision/mesh/plyLoader.hpp>
+#include <aliceVision/delaunaycut/mv_delaunay_types.hpp>
 #include <aliceVision/omp.hpp>
 
 #include <boost/filesystem.hpp>
-
 
 namespace bfs = boost::filesystem;
 
@@ -18,7 +18,7 @@ VoxelsGrid::VoxelsGrid()
 {
 }
 
-VoxelsGrid::VoxelsGrid(const voxel& dimmensions, point3d* _space, multiviewParams* _mp, mv_prematch_cams* _pc,
+VoxelsGrid::VoxelsGrid(const Voxel& dimmensions, Point3d* _space, multiviewParams* _mp, mv_prematch_cams* _pc,
                        const std::string& _spaceRootDir, bool _doVisualize)
 {
     doVisualize = _doVisualize;
@@ -45,7 +45,7 @@ VoxelsGrid* VoxelsGrid::clone(const std::string& _spaceRootDir)
     out->mp = mp;
     out->pc = pc;
     out->voxelDim = voxelDim;
-    out->voxels = new staticVector<point3d>(voxels->size());
+    out->voxels = new StaticVector<Point3d>(voxels->size());
     for(int i = 0; i < voxels->size(); i++)
     {
         out->voxels->push_back((*voxels)[i]);
@@ -68,12 +68,12 @@ VoxelsGrid::~VoxelsGrid()
     delete voxels;
 }
 
-staticVector<int>* VoxelsGrid::getNVoxelsTracks()
+StaticVector<int>* VoxelsGrid::getNVoxelsTracks()
 {
     if(mp->verbose)
         printf("reading number of tracks for each voxel file\n");
 
-    staticVector<int>* nVoxelsTracks = new staticVector<int>(voxels->size() / 8);
+    StaticVector<int>* nVoxelsTracks = new StaticVector<int>(voxels->size() / 8);
     long t1 = initEstimate();
     for(int i = 0; i < voxels->size() / 8; i++)
     {
@@ -90,7 +90,7 @@ staticVector<int>* VoxelsGrid::getNVoxelsTracks()
     return nVoxelsTracks;
 }
 
-staticVector<int>* VoxelsGrid::getVoxelNPointsByLevels(int numSubVoxs, int voxelId)
+StaticVector<int>* VoxelsGrid::getVoxelNPointsByLevels(int numSubVoxs, int voxelId)
 {
     std::string folderName = getVoxelFolderName(voxelId);
     std::string fileNameTracksPts = folderName + "tracksGridPts.bin";
@@ -98,12 +98,12 @@ staticVector<int>* VoxelsGrid::getVoxelNPointsByLevels(int numSubVoxs, int voxel
     if(FileExists(fileNameTracksPts))
     {
         OctreeTracks* ott =
-            new OctreeTracks(&(*voxels)[voxelId * 8], mp, pc, voxel(numSubVoxs, numSubVoxs, numSubVoxs));
-        staticVector<point3d>* tracksPoints = loadArrayFromFile<point3d>(fileNameTracksPts);
+            new OctreeTracks(&(*voxels)[voxelId * 8], mp, pc, Voxel(numSubVoxs, numSubVoxs, numSubVoxs));
+        StaticVector<Point3d>* tracksPoints = loadArrayFromFile<Point3d>(fileNameTracksPts);
         for(int i = 0; i < tracksPoints->size(); i++)
         {
-            point3d p = (*tracksPoints)[i];
-            voxel otVox;
+            Point3d p = (*tracksPoints)[i];
+            Voxel otVox;
             if(ott->getVoxelOfOctreeFor3DPoint(otVox, p))
             {
                 ott->addPoint(otVox.x, otVox.y, otVox.z, 0.0f, 0.0f, p, 0);
@@ -144,26 +144,26 @@ unsigned long VoxelsGrid::getNTracks() const
     return ntracks;
 }
 
-int VoxelsGrid::getIdForVoxel(const voxel& v) const
+int VoxelsGrid::getIdForVoxel(const Voxel& v) const
 {
     return v.x * voxelDim.y * voxelDim.z + v.y * voxelDim.z + v.z;
 }
 
-voxel VoxelsGrid::getVoxelForId(int id) const
+Voxel VoxelsGrid::getVoxelForId(int id) const
 {
     int xp = id / (voxelDim.y * voxelDim.z);
-    return voxel(xp, (id - xp * voxelDim.y * voxelDim.z) / voxelDim.z,
+    return Voxel(xp, (id - xp * voxelDim.y * voxelDim.z) / voxelDim.z,
                  (id - xp * voxelDim.y * voxelDim.z) % voxelDim.z);
 }
 
-bool VoxelsGrid::isValidVoxel(const voxel& v)
+bool VoxelsGrid::isValidVoxel(const Voxel& v)
 {
     return ((v.x >= 0) && (v.x < voxelDim.x) && (v.y >= 0) && (v.y < voxelDim.y) && (v.z >= 0) && (v.z < voxelDim.z));
 }
 
 std::string VoxelsGrid::getVoxelFolderName(int id) const
 {
-    const voxel v = getVoxelForId(id);
+    const Voxel v = getVoxelForId(id);
     // std::string fnx = spaceRootDir + "X"+num2str(v.x)+"/";
     // std::string fnxyz = fnx + "Y"+num2str(v.y)+"Z"+num2str(v.z)+"/";
     // bfs::create_directory(fnx);
@@ -183,7 +183,7 @@ std::string VoxelsGrid::getVoxelFolderName(int id) const
     return fnxyz;
 }
 
-staticVector<OctreeTracks::trackStruct*>* VoxelsGrid::loadTracksFromVoxelFiles(staticVector<int>** cams, int id)
+StaticVector<OctreeTracks::trackStruct*>* VoxelsGrid::loadTracksFromVoxelFiles(StaticVector<int>** cams, int id)
 {
     const std::string folderName = getVoxelFolderName(id);
 
@@ -195,17 +195,17 @@ staticVector<OctreeTracks::trackStruct*>* VoxelsGrid::loadTracksFromVoxelFiles(s
     if(!FileExists(fileNameTracksPts))
         return nullptr;
 
-    staticVector<point3d>* tracksStat = loadArrayFromFile<point3d>(fileNameTracksStat); // minPixSize, minSim, npts
-    staticVector<point3d>* tracksPoints = loadArrayFromFile<point3d>(fileNameTracksPts);
-    staticVector<staticVector<pixel>*>* tracksPointsCams = loadArrayOfArraysFromFile<pixel>(fileNameTracksPtsCams);
+    StaticVector<Point3d>* tracksStat = loadArrayFromFile<Point3d>(fileNameTracksStat); // minPixSize, minSim, npts
+    StaticVector<Point3d>* tracksPoints = loadArrayFromFile<Point3d>(fileNameTracksPts);
+    StaticVector<StaticVector<Pixel>*>* tracksPointsCams = loadArrayOfArraysFromFile<Pixel>(fileNameTracksPtsCams);
     *cams = loadArrayFromFile<int>(fileNameTracksCams);
 
-    staticVector<OctreeTracks::trackStruct*>* tracks =
-        new staticVector<OctreeTracks::trackStruct*>(tracksPoints->size());
+    StaticVector<OctreeTracks::trackStruct*>* tracks =
+        new StaticVector<OctreeTracks::trackStruct*>(tracksPoints->size());
     for(int i = 0; i < tracksPoints->size(); i++)
     {
-        staticVector<pixel>* tcams = (*tracksPointsCams)[i];
-        OctreeTracks::trackStruct* t = new OctreeTracks::trackStruct(0.0f, 0.0f, point3d(), 0);
+        StaticVector<Pixel>* tcams = (*tracksPointsCams)[i];
+        OctreeTracks::trackStruct* t = new OctreeTracks::trackStruct(0.0f, 0.0f, Point3d(), 0);
         t->point = (*tracksPoints)[i];
         t->minPixSize = (*tracksStat)[i].x;
         t->minSim = (*tracksStat)[i].y;
@@ -216,12 +216,12 @@ staticVector<OctreeTracks::trackStruct*>* VoxelsGrid::loadTracksFromVoxelFiles(s
 
     delete tracksStat;
     delete tracksPoints;
-    deleteArrayOfArrays<pixel>(&tracksPointsCams);
+    deleteArrayOfArrays<Pixel>(&tracksPointsCams);
 
     return tracks;
 }
 
-bool VoxelsGrid::saveTracksToVoxelFiles(staticVector<int>* cams, staticVector<OctreeTracks::trackStruct*>* tracks,
+bool VoxelsGrid::saveTracksToVoxelFiles(StaticVector<int>* cams, StaticVector<OctreeTracks::trackStruct*>* tracks,
                                         int id)
 {
     if(sizeOfStaticVector<OctreeTracks::trackStruct*>(tracks) <= 10)
@@ -237,17 +237,17 @@ bool VoxelsGrid::saveTracksToVoxelFiles(staticVector<int>* cams, staticVector<Oc
         printf("Warning folder %s does not exist!\n", folderName.c_str());
     }
 
-    staticVector<point3d>* tracksPoints = new staticVector<point3d>(tracks->size());
-    staticVector<staticVector<pixel>*>* tracksPointsCams = new staticVector<staticVector<pixel>*>(tracks->size());
-    staticVector<point3d>* tracksStat = new staticVector<point3d>(tracks->size());
+    StaticVector<Point3d>* tracksPoints = new StaticVector<Point3d>(tracks->size());
+    StaticVector<StaticVector<Pixel>*>* tracksPointsCams = new StaticVector<StaticVector<Pixel>*>(tracks->size());
+    StaticVector<Point3d>* tracksStat = new StaticVector<Point3d>(tracks->size());
 
     for(int j = 0; j < tracks->size(); j++)
     {
         OctreeTracks::trackStruct* info = (*tracks)[j];
         tracksPoints->push_back(info->point);
-        tracksStat->push_back(point3d(info->minPixSize, info->minSim, info->npts));
+        tracksStat->push_back(Point3d(info->minPixSize, info->minSim, info->npts));
 
-        staticVector<pixel>* tcams = new staticVector<pixel>(info->cams.size());
+        StaticVector<Pixel>* tcams = new StaticVector<Pixel>(info->cams.size());
         for(int k = 0; k < info->cams.size(); k++)
         {
             tcams->push_back(info->cams[k]);
@@ -265,18 +265,18 @@ bool VoxelsGrid::saveTracksToVoxelFiles(staticVector<int>* cams, staticVector<Oc
     fileNameTracksStat = folderName + "tracksGridStat.bin";
 
     saveArrayToFile<int>(fileNameTracksCams, cams);
-    saveArrayToFile<point3d>(fileNameTracksPts, tracksPoints);
-    saveArrayToFile<point3d>(fileNameTracksStat, tracksStat);
-    saveArrayOfArraysToFile<pixel>(fileNameTracksPtsCams, tracksPointsCams);
+    saveArrayToFile<Point3d>(fileNameTracksPts, tracksPoints);
+    saveArrayToFile<Point3d>(fileNameTracksStat, tracksStat);
+    saveArrayOfArraysToFile<Pixel>(fileNameTracksPtsCams, tracksPointsCams);
 
     delete tracksPoints;
     delete tracksStat;
-    deleteArrayOfArrays<pixel>(&tracksPointsCams);
+    deleteArrayOfArrays<Pixel>(&tracksPointsCams);
 
     return true;
 }
 
-void VoxelsGrid::generateTracksForEachVoxel(staticVector<point3d>* ReconstructionPlan, int numSubVoxs, int maxPts,
+void VoxelsGrid::generateTracksForEachVoxel(StaticVector<Point3d>* ReconstructionPlan, int numSubVoxs, int maxPts,
                                             int level, int& maxlevel, const std::string& depthMapsPtsSimsTmpDir)
 {
     if(mp->verbose)
@@ -290,7 +290,7 @@ void VoxelsGrid::generateTracksForEachVoxel(staticVector<point3d>* Reconstructio
     long tall = clock();
     int nvoxs = voxels->size() / 8;
 
-    staticVector<int>* toRecurse = new staticVector<int>(nvoxs);
+    StaticVector<int>* toRecurse = new StaticVector<int>(nvoxs);
 
 #pragma omp parallel for
     for(int i = 0; i < nvoxs; i++)
@@ -300,8 +300,8 @@ void VoxelsGrid::generateTracksForEachVoxel(staticVector<point3d>* Reconstructio
         std::string folderName = getVoxelFolderName(i);
 
         long t1 = clock();
-        OctreeTracks* ott = new OctreeTracks(&(*voxels)[i * 8], mp, pc, voxel(numSubVoxs, numSubVoxs, numSubVoxs));
-        staticVector<OctreeTracks::trackStruct*>* tracks = ott->fillOctree(maxPts, depthMapsPtsSimsTmpDir);
+        OctreeTracks* ott = new OctreeTracks(&(*voxels)[i * 8], mp, pc, Voxel(numSubVoxs, numSubVoxs, numSubVoxs));
+        StaticVector<OctreeTracks::trackStruct*>* tracks = ott->fillOctree(maxPts, depthMapsPtsSimsTmpDir);
         if(mp->verbose)
             printfElapsedTime(t1, "fillOctree");
         if(tracks == nullptr)
@@ -338,7 +338,7 @@ void VoxelsGrid::generateTracksForEachVoxel(staticVector<point3d>* Reconstructio
                         }
                     }
                 }
-                staticVector<int>* cams = ott->getTracksCams(tracks);
+                StaticVector<int>* cams = ott->getTracksCams(tracks);
                 saveTracksToVoxelFiles(cams, tracks, i);
                 delete cams;
             }
@@ -368,7 +368,7 @@ void VoxelsGrid::generateTracksForEachVoxel(staticVector<point3d>* Reconstructio
         FILE* f = fopen(subfnFileMark.c_str(), "w");
         fclose(f);
 
-        VoxelsGrid* vgnew = new VoxelsGrid(voxel(2, 2, 2), &(*voxels)[i * 8], mp, pc, subfn, doVisualize);
+        VoxelsGrid* vgnew = new VoxelsGrid(Voxel(2, 2, 2), &(*voxels)[i * 8], mp, pc, subfn, doVisualize);
         vgnew->generateTracksForEachVoxel(ReconstructionPlan, numSubVoxs / 2, maxPts, level + 1, maxlevel,
                                           depthMapsPtsSimsTmpDir);
         delete vgnew;
@@ -382,7 +382,7 @@ void VoxelsGrid::generateTracksForEachVoxel(staticVector<point3d>* Reconstructio
         vizualize();
 }
 
-void VoxelsGrid::generateSpace(VoxelsGrid* vgnew, const voxel& LU, const voxel& RD,
+void VoxelsGrid::generateSpace(VoxelsGrid* vgnew, const Voxel& LU, const Voxel& RD,
                                const std::string& depthMapsPtsSimsTmpDir)
 {
     if(mp->verbose)
@@ -396,34 +396,34 @@ void VoxelsGrid::generateSpace(VoxelsGrid* vgnew, const voxel& LU, const voxel& 
         std::string subfn = folderName;
         std::string subfnFileMark = folderName + "sub.txt";
 
-        voxel v = getVoxelForId(voxid);
-        voxel ns = RD - LU;
+        Voxel v = getVoxelForId(voxid);
+        Voxel ns = RD - LU;
         ns.x /= voxelDim.x;
         ns.y /= voxelDim.y;
         ns.z /= voxelDim.z;
-        voxel subLU = LU + v * ns;
-        voxel subRD = LU + (v + 1) * ns;
+        Voxel subLU = LU + v * ns;
+        Voxel subRD = LU + (v + 1) * ns;
 
         // if (FolderExists(subfn)==true)
         if(FileExists(subfnFileMark))
         {
-            VoxelsGrid* vgrec = new VoxelsGrid(voxel(2, 2, 2), &(*voxels)[voxid * 8], mp, pc, subfn, doVisualize);
+            VoxelsGrid* vgrec = new VoxelsGrid(Voxel(2, 2, 2), &(*voxels)[voxid * 8], mp, pc, subfn, doVisualize);
             vgrec->generateSpace(vgnew, subLU, subRD, depthMapsPtsSimsTmpDir);
             delete vgrec;
         }
         else
         {
-            voxel part = subRD - subLU;
+            Voxel part = subRD - subLU;
             OctreeTracks* ott = new OctreeTracks(&(*voxels)[voxid * 8], mp, pc, part);
             VoxelsGrid* vgg = new VoxelsGrid(part, &(*voxels)[voxid * 8], mp, pc, folderName, doVisualize);
-            staticVector<int>* cams = nullptr;
-            staticVector<OctreeTracks::trackStruct*>* tracks = loadTracksFromVoxelFiles(&cams, voxid);
-            voxel vrel;
+            StaticVector<int>* cams = nullptr;
+            StaticVector<OctreeTracks::trackStruct*>* tracks = loadTracksFromVoxelFiles(&cams, voxid);
+            Voxel vrel;
 
             if((tracks != nullptr) && (tracks->size() > 0))
             {
                 // estimate nubers // TODO FACA: remove costly estimation of numbers
-                staticVector<int>* nnewVoxsTracks = new staticVector<int>(part.x * part.y * part.z);
+                StaticVector<int>* nnewVoxsTracks = new StaticVector<int>(part.x * part.y * part.z);
                 nnewVoxsTracks->resize_with(part.x * part.y * part.z, 0);
                 for(int i = 0; i < tracks->size(); i++)
                 {
@@ -434,11 +434,11 @@ void VoxelsGrid::generateSpace(VoxelsGrid* vgnew, const voxel& LU, const voxel& 
                 }
 
                 // allocate
-                staticVector<staticVector<OctreeTracks::trackStruct*>*>* newVoxsTracks =
-                    new staticVector<staticVector<OctreeTracks::trackStruct*>*>(part.x * part.y * part.z);
+                StaticVector<StaticVector<OctreeTracks::trackStruct*>*>* newVoxsTracks =
+                    new StaticVector<StaticVector<OctreeTracks::trackStruct*>*>(part.x * part.y * part.z);
                 for(int i = 0; i < part.x * part.y * part.z; i++)
                 {
-                    newVoxsTracks->push_back(new staticVector<OctreeTracks::trackStruct*>((*nnewVoxsTracks)[i]));
+                    newVoxsTracks->push_back(new StaticVector<OctreeTracks::trackStruct*>((*nnewVoxsTracks)[i]));
                 }
 
                 // fill
@@ -452,8 +452,8 @@ void VoxelsGrid::generateSpace(VoxelsGrid* vgnew, const voxel& LU, const voxel& 
 
                 for(int i = 0; i < part.x * part.y * part.z; i++)
                 {
-                    voxel vact = vgg->getVoxelForId(i);
-                    voxel vglob = subLU + vact;
+                    Voxel vact = vgg->getVoxelForId(i);
+                    Voxel vglob = subLU + vact;
                     int newid = vgnew->getIdForVoxel(vglob);
 
                     vgnew->saveTracksToVoxelFiles(cams, (*newVoxsTracks)[i], newid);
@@ -499,10 +499,10 @@ void VoxelsGrid::cloneSpaceVoxel(int voxelId, int numSubVoxs, VoxelsGrid* newSpa
     if(FileExists(fileNameTracksPts))
     {
         OctreeTracks* ott =
-            new OctreeTracks(&(*voxels)[voxelId * 8], mp, pc, voxel(numSubVoxs, numSubVoxs, numSubVoxs));
-        staticVector<int>* tcams;
-        staticVector<OctreeTracks::trackStruct*>* tracksOld = loadTracksFromVoxelFiles(&tcams, voxelId);
-        staticVector<OctreeTracks::trackStruct*>* tracksNew = ott->fillOctreeFromTracks(tracksOld);
+            new OctreeTracks(&(*voxels)[voxelId * 8], mp, pc, Voxel(numSubVoxs, numSubVoxs, numSubVoxs));
+        StaticVector<int>* tcams;
+        StaticVector<OctreeTracks::trackStruct*>* tracksOld = loadTracksFromVoxelFiles(&tcams, voxelId);
+        StaticVector<OctreeTracks::trackStruct*>* tracksNew = ott->fillOctreeFromTracks(tracksOld);
         for(int i = 0; i < tracksOld->size(); i++)
         {
             delete(*tracksOld)[i];
@@ -544,8 +544,8 @@ void VoxelsGrid::copySpaceVoxel(int voxelId, VoxelsGrid* newSpace)
 
     if(FileExists(fileNameTracksPts))
     {
-        staticVector<int>* tcams;
-        staticVector<OctreeTracks::trackStruct*>* tracksOld = loadTracksFromVoxelFiles(&tcams, voxelId);
+        StaticVector<int>* tcams;
+        StaticVector<OctreeTracks::trackStruct*>* tracksOld = loadTracksFromVoxelFiles(&tcams, voxelId);
         newSpace->saveTracksToVoxelFiles(tcams, tracksOld, voxelId);
 
         for(int i = 0; i < tracksOld->size(); i++)
@@ -598,13 +598,13 @@ void VoxelsGrid::generateCamsPtsFromVoxelsTracks()
 
         if(FileExists(fileNameTracksPts))
         {
-            staticVector<point3d>* tracksPoints = loadArrayFromFile<point3d>(fileNameTracksPts);
-            staticVector<staticVector<pixel>*>* tracksPointsCams =
-                loadArrayOfArraysFromFile<pixel>(fileNameTracksPtsCams);
-            staticVector<int>* cams = loadArrayFromFile<int>(fileNameTracksCams);
+            StaticVector<Point3d>* tracksPoints = loadArrayFromFile<Point3d>(fileNameTracksPts);
+            StaticVector<StaticVector<Pixel>*>* tracksPointsCams =
+                loadArrayOfArraysFromFile<Pixel>(fileNameTracksPtsCams);
+            StaticVector<int>* cams = loadArrayFromFile<int>(fileNameTracksCams);
 
             // printf("distributing %i tracks to %i camspts files  \n", tracksPoints->size(), cams->size());
-            staticVector<staticVector<pixel>*>* camsTracksPoints =
+            StaticVector<StaticVector<Pixel>*>* camsTracksPoints =
                 convertObjectsCamsToCamsObjects(mp, tracksPointsCams);
 
 #pragma omp parallel for
@@ -615,8 +615,8 @@ void VoxelsGrid::generateCamsPtsFromVoxelsTracks()
                 // open camPtsFile for append
                 std::string camPtsFileName = spaceCamsTracksDir + "camPtsGrid_" + num2strFourDecimal(rc) + ".bin";
                 FILE* fin = fopen(camPtsFileName.c_str(), "ab");
-                staticVector<pixel>* camPtsIds = (*camsTracksPoints)[rc];
-                for(int j = 0; j < sizeOfStaticVector<pixel>(camPtsIds); j++)
+                StaticVector<Pixel>* camPtsIds = (*camsTracksPoints)[rc];
+                for(int j = 0; j < sizeOfStaticVector<Pixel>(camPtsIds); j++)
                 {
                     int ptid = (*camPtsIds)[j].x;
                     int nrc = (*camPtsIds)[j].y;
@@ -624,7 +624,7 @@ void VoxelsGrid::generateCamsPtsFromVoxelsTracks()
                     p.point = (*tracksPoints)[ptid];
                     p.sim = -0.91; // TODO FACA: why??
                     p.nrc = nrc;
-                    p.ncams = sizeOfStaticVector<pixel>((*tracksPointsCams)[ptid]);
+                    p.ncams = sizeOfStaticVector<Pixel>((*tracksPointsCams)[ptid]);
                     p.fwriteinfo(fin);
                 }
                 fclose(fin);
@@ -632,8 +632,8 @@ void VoxelsGrid::generateCamsPtsFromVoxelsTracks()
 
             delete cams;
             delete tracksPoints;
-            deleteArrayOfArrays<pixel>(&camsTracksPoints);
-            deleteArrayOfArrays<pixel>(&tracksPointsCams);
+            deleteArrayOfArrays<Pixel>(&camsTracksPoints);
+            deleteArrayOfArrays<Pixel>(&tracksPointsCams);
         }
 
         printfEstimate(i, nvoxs, t1);
@@ -660,9 +660,9 @@ void VoxelsGrid::vizualize()
     fclose(f);
 }
 
-void VoxelsGrid::getHexah(point3d* hexahOut, const voxel& LUi, const voxel& RDi)
+void VoxelsGrid::getHexah(Point3d* hexahOut, const Voxel& LUi, const Voxel& RDi)
 {
-    voxel LU, RD;
+    Voxel LU, RD;
     LU.x = std::min(LUi.x, RDi.x);
     LU.y = std::min(LUi.y, RDi.y);
     LU.z = std::min(LUi.z, RDi.z);
@@ -672,13 +672,13 @@ void VoxelsGrid::getHexah(point3d* hexahOut, const voxel& LUi, const voxel& RDi)
 
     int luid = getIdForVoxel(LU);
 
-    // point3d *vox = &(*voxels)[0];
-    // point3d O   = vox[0];
-    // point3d vvx = vox[1]-vox[0];
-    // point3d vvy = vox[3]-vox[0];
-    // point3d vvz = vox[4]-vox[0];
+    // Point3d *vox = &(*voxels)[0];
+    // Point3d O   = vox[0];
+    // Point3d vvx = vox[1]-vox[0];
+    // Point3d vvy = vox[3]-vox[0];
+    // Point3d vvz = vox[4]-vox[0];
 
-    voxel X, Y, Z;
+    Voxel X, Y, Z;
     int Xid, Yid, Zid;
     X.x = RD.x;
     X.y = LU.y;
@@ -693,10 +693,10 @@ void VoxelsGrid::getHexah(point3d* hexahOut, const voxel& LUi, const voxel& RDi)
     Z.z = RD.z;
     Zid = getIdForVoxel(Z);
 
-    point3d O = (*voxels)[luid * 8];
-    point3d vvx = (*voxels)[Xid * 8 + 1] - O;
-    point3d vvy = (*voxels)[Yid * 8 + 3] - O;
-    point3d vvz = (*voxels)[Zid * 8 + 4] - O;
+    Point3d O = (*voxels)[luid * 8];
+    Point3d vvx = (*voxels)[Xid * 8 + 1] - O;
+    Point3d vvy = (*voxels)[Yid * 8 + 3] - O;
+    Point3d vvz = (*voxels)[Zid * 8 + 4] - O;
 
     hexahOut[0] = O;
     hexahOut[1] = O + vvx;
@@ -725,17 +725,17 @@ void VoxelsGrid::cretatePSET(std::string psetFileName)
 
         if(FileExists(fileNameTracksPts))
         {
-            staticVector<point3d>* tracksPoints = loadArrayFromFile<point3d>(fileNameTracksPts);
-            staticVector<staticVector<pixel>*>* tracksPointsCams =
-                loadArrayOfArraysFromFile<pixel>(fileNameTracksPtsCams);
+            StaticVector<Point3d>* tracksPoints = loadArrayFromFile<Point3d>(fileNameTracksPts);
+            StaticVector<StaticVector<Pixel>*>* tracksPointsCams =
+                loadArrayOfArraysFromFile<Pixel>(fileNameTracksPtsCams);
 
             for(int j = 0; j < tracksPoints->size(); j++)
             {
-                point3d tp = (*tracksPoints)[j];
-                staticVector<pixel>* cams = (*tracksPointsCams)[j];
+                Point3d tp = (*tracksPoints)[j];
+                StaticVector<Pixel>* cams = (*tracksPointsCams)[j];
                 if(cams != nullptr)
                 {
-                    point3d n = point3d(0.0f, 0.0f, 0.0f);
+                    Point3d n = Point3d(0.0f, 0.0f, 0.0f);
                     for(int c = 0; c < cams->size(); c++)
                     {
                         int rc = (*cams)[c].x;
@@ -750,7 +750,7 @@ void VoxelsGrid::cretatePSET(std::string psetFileName)
             } // for j
 
             delete tracksPoints;
-            deleteArrayOfArrays<pixel>(&tracksPointsCams);
+            deleteArrayOfArrays<Pixel>(&tracksPointsCams);
         } // if fileexists
 
         printfEstimate(i, voxels->size() / 8, t1);

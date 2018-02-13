@@ -5,6 +5,10 @@
 
 #pragma once
 
+#include <aliceVision/structures/Point3d.hpp>
+#include <aliceVision/structures/Rgb.hpp>
+#include <aliceVision/structures/StaticVector.hpp>
+#include <aliceVision/structures/Voxel.hpp>
 #include <aliceVision/common/common.hpp>
 #include <aliceVision/common/PreMatchCams.hpp>
 #include <aliceVision/delaunaycut/mv_delaunay_types.hpp>
@@ -52,7 +56,7 @@ public:
         return _tetrahedralization->cell_vertex(f.cellIndex, ((f.localVertexIndex + i + 1) % 4));
     }
     GEO::Delaunay_var _tetrahedralization;
-    std::vector<point3d> _verticesCoords; /// 3D points coordinates
+    std::vector<Point3d> _verticesCoords; /// 3D points coordinates
     std::vector<GC_vertexInfo> _verticesAttr; /// Information attached to each vertex
     std::vector<GC_cellInfo> _cellsAttr; /// Information attached to each cell
     std::vector<bool> _cellIsFull; /// isFull info per cell: true is full / false is empty
@@ -64,7 +68,7 @@ public:
 
     std::size_t getNbVertices() const { return _verticesAttr.size(); }
 
-    GEO::index_t nearestVertexInCell(GEO::index_t cellIndex, const point3d& p) const
+    GEO::index_t nearestVertexInCell(GEO::index_t cellIndex, const Point3d& p) const
     {
         GEO::signed_index_t result = NO_TETRAHEDRON;
         double d = std::numeric_limits<double>::max();
@@ -83,7 +87,7 @@ public:
         return result;
     }
 
-    GEO::index_t locateNearestVertex(const point3d& p) const
+    GEO::index_t locateNearestVertex(const Point3d& p) const
     {
         if(_tetrahedralization->nb_vertices() == 0)
             return GEO::NO_VERTEX;
@@ -200,37 +204,37 @@ public:
     void saveDhInfo(std::string fileNameInfo);
     void saveDh(std::string fileNameDh, std::string fileNameInfo);
 
-    staticVector<staticVector<int>*>* createPtsCams();
-    staticVector<int>* getPtsCamsHist();
-    staticVector<int>* getPtsNrcHist();
-    staticVector<int> getIsUsedPerCamera() const;
-    staticVector<int> getSortedUsedCams() const;
+    StaticVector<StaticVector<int>*>* createPtsCams();
+    StaticVector<int>* getPtsCamsHist();
+    StaticVector<int>* getPtsNrcHist();
+    StaticVector<int> getIsUsedPerCamera() const;
+    StaticVector<int> getSortedUsedCams() const;
 
-    void addPointsFromCameraCenters(staticVector<int>* cams, float minDist);
+    void addPointsFromCameraCenters(StaticVector<int>* cams, float minDist);
 
-    void addPointsToPreventSingularities(point3d voxel[8], float minDist);
+    void addPointsToPreventSingularities(Point3d Voxel[8], float minDist);
 
     /**
      * @brief Add volume points to prevent singularities
      */
-    void addHelperPoints(int nGridHelperVolumePointsDim, point3d voxel[8], float minDist);
+    void addHelperPoints(int nGridHelperVolumePointsDim, Point3d Voxel[8], float minDist);
 
-    void createTetrahedralizationFromDepthMapsCamsVoxel(staticVector<int>* cams,
-                                                   staticVector<int>* voxelsIds, point3d voxel[8], VoxelsGrid* ls);
+    void createTetrahedralizationFromDepthMapsCamsVoxel(StaticVector<int>* cams,
+                                                   StaticVector<int>* voxelsIds, Point3d Voxel[8], VoxelsGrid* ls);
 
     void computeVerticesSegSize(bool allPoints, float alpha = 0.0f);
     void removeSmallSegs(int minSegSize);
 
-    bool rayCellIntersection(const point3d &camC, const point3d &p, int c, Facet& out_facet, bool nearestFarest,
-                            point3d& out_nlpi) const;
-    inline bool nearestNeighCellToTheCamOnTheRay(const point3d &camC, point3d& out_p, int tetrahedron, Facet &out_f1, Facet &f2,
-                                          point3d& out_lpi) const;
-    inline bool farestNeighCellToTheCamOnTheRay(point3d& camC, point3d& p, int tetrahedron, Facet &f1, Facet &f2,
-                                         point3d& lpi) const;
+    bool rayCellIntersection(const Point3d &camC, const Point3d &p, int c, Facet& out_facet, bool nearestFarest,
+                            Point3d& out_nlpi) const;
+    inline bool nearestNeighCellToTheCamOnTheRay(const Point3d &camC, Point3d& out_p, int tetrahedron, Facet &out_f1, Facet &f2,
+                                          Point3d& out_lpi) const;
+    inline bool farestNeighCellToTheCamOnTheRay(Point3d& camC, Point3d& p, int tetrahedron, Facet &f1, Facet &f2,
+                                         Point3d& lpi) const;
     inline Facet getFacetInFrontVertexOnTheRayToTheCam(int vertexIndex, int cam) const;
-    Facet getFacetInFrontVertexOnTheRayToThePoint3D(VertexIndex vi, point3d& ptt) const;
+    Facet getFacetInFrontVertexOnTheRayToThePoint3d(VertexIndex vi, Point3d& ptt) const;
     Facet getFacetBehindVertexOnTheRayToTheCam(VertexIndex vi, int cam) const;
-    int getFirstCellOnTheRayFromCamToThePoint(int cam, point3d& p, point3d& lpi) const;
+    int getFirstCellOnTheRayFromCamToThePoint(int cam, Point3d& p, Point3d& lpi) const;
     bool isIncidentToType(VertexIndex vi, float type) const;
     bool isIncidentToSink(VertexIndex vi, bool sink) const;
 
@@ -244,8 +248,8 @@ public:
     double getFacetProjectionMaxEdge(Facet& f, int cam) const;
     double maxEdgeLength() const;
     double averageEdgeLength() const;
-    point3d cellCircumScribedSphereCentre(CellIndex ci) const;
-    point3d cellCentreOfGravity(CellIndex ci) const;
+    Point3d cellCircumScribedSphereCentre(CellIndex ci) const;
+    Point3d cellCentreOfGravity(CellIndex ci) const;
     double cellVolume(CellIndex cv) const;
     double getFaceWeight(const Facet &f1) const;
     float weightFromSim(float sim);
@@ -264,9 +268,9 @@ public:
 
     void filterPointsWithHigherPixelSize(bool fixesSigma, float nPixelSizeBehind);
 
-    void updateGraphFromTmpPtsCamsHexah(staticVector<int>* incams, point3d hexah[8], std::string tmpCamsPtsFolderName,
+    void updateGraphFromTmpPtsCamsHexah(StaticVector<int>* incams, Point3d hexah[8], std::string tmpCamsPtsFolderName,
                                         bool labatutWeights, float distFcnHeight = 0.0f);
-    void updateGraphFromTmpPtsCamsHexahRC(int rc, point3d hexah[8], std::string tmpCamsPtsFolderName,
+    void updateGraphFromTmpPtsCamsHexahRC(int rc, Point3d hexah[8], std::string tmpCamsPtsFolderName,
                                           bool labatutWeights, float distFcnHeight);
 
     int setIsOnSurface();
@@ -281,30 +285,30 @@ public:
     void addToInfiniteSw(float sW);
 
     float getAveragePixelSize() const;
-    void freeUnwantedFullCells(std::string folderName, point3d* hexah);
+    void freeUnwantedFullCells(std::string folderName, Point3d* hexah);
     void saveMaxflowToWrl(std::string dirName, std::string fileNameTxt, std::string fileNameTxtCam,
                           std::string fileNameWrl, std::string fileNameWrlTex, std::string fileNamePly,
                           int camerasPerOneOmni);
     void saveMaxflowToWrl(std::string dirName, std::string fileNameTxt, std::string fileNameTxtCam,
                           std::string fileNameWrl, std::string fileNameWrlTex, std::string fileNamePly,
-                          int camerasPerOneOmni, staticVector<int>* cams);
+                          int camerasPerOneOmni, StaticVector<int>* cams);
 
-    void reconstructGC(float alphaQual, std::string baseName, staticVector<int>* cams, std::string folderName,
+    void reconstructGC(float alphaQual, std::string baseName, StaticVector<int>* cams, std::string folderName,
                        std::string fileNameStGraph, std::string fileNameStSolution, std::string fileNameTxt,
                        std::string fileNameTxtCam, int camerasPerOneOmni, bool doRemoveBubbles,
-                       staticVector<point3d>* hexahsToExcludeFromResultingMesh, point3d* hexah);
+                       StaticVector<Point3d>* hexahsToExcludeFromResultingMesh, Point3d* hexah);
 
     void maxflow();
 
-    void reconstructExpetiments(staticVector<int>* cams, std::string folderName, std::string fileNameStGraph,
+    void reconstructExpetiments(StaticVector<int>* cams, std::string folderName, std::string fileNameStGraph,
                                 std::string fileNameStSolution, std::string fileNameTxt, std::string fileNameTxtCam,
-                                int camerasPerOneOmni, bool update, point3d hexahInflated[8],
+                                int camerasPerOneOmni, bool update, Point3d hexahInflated[8],
                                 std::string tmpCamsPtsFolderName,
-                                staticVector<point3d>* hexahsToExcludeFromResultingMesh, point3d spaceSteps);
+                                StaticVector<Point3d>* hexahsToExcludeFromResultingMesh, Point3d spaceSteps);
 
-    void reconstructVoxel(point3d hexah[8], staticVector<int>* voxelsIds, std::string folderName,
+    void reconstructVoxel(Point3d hexah[8], StaticVector<int>* voxelsIds, std::string folderName,
                           std::string tmpCamsPtsFolderName, bool segment,
-                          staticVector<point3d>* hexahsToExcludeFromResultingMesh, VoxelsGrid* ls, point3d spaceSteps);
+                          StaticVector<Point3d>* hexahsToExcludeFromResultingMesh, VoxelsGrid* ls, Point3d spaceSteps);
 
     bool hasVertex(CellIndex ci, VertexIndex vi) const;
     void getIncidentCellsToCellAndVertexOfTheCellIndexes(int vIncident[3], CellIndex ci, VertexIndex vi) const;
@@ -323,27 +327,27 @@ public:
     void addNewPointsToOccupiedSpace();
     void clearOutAddIn();
     float computeSurfaceArea();
-    staticVector<int>* getNearestTrisFromMeshTris(Mesh* otherMesh);
-    staticVector<int>* getNearestPtsFromMesh(Mesh& otherMesh);
+    StaticVector<int>* getNearestTrisFromMeshTris(Mesh* otherMesh);
+    StaticVector<int>* getNearestPtsFromMesh(Mesh& otherMesh);
 
-    void segmentFullOrFree(bool full, staticVector<int>** inColors, int& nsegments);
+    void segmentFullOrFree(bool full, StaticVector<int>** inColors, int& nsegments);
     int removeBubbles();
     int removeDust(int minSegSize);
     void leaveLargestFullSegmentOnly();
-    staticVector<float>* computeSegmentsSurfaceArea(bool full, staticVector<int>& colors, int nsegments);
+    StaticVector<float>* computeSegmentsSurfaceArea(bool full, StaticVector<int>& colors, int nsegments);
 
     Mesh* createMesh(bool filterHelperPointsTriangles = true);
-    staticVector<rgb>* getPtsColorsByNCams();
+    StaticVector<rgb>* getPtsColorsByNCams();
 
     void initTetrahedralizationFromMeshTrianglesCenter(Mesh* mesh, bool _addPointsToPreventSingularities);
     void initTetrahedralizationFromMeshVertices(Mesh* mesh, bool _addPointsToPreventSingularities);
 
-    staticVector<staticVector<int>*>* createPtsCamsForAnotherMesh(staticVector<staticVector<int>*>* refPtsCams, Mesh& otherMesh);
+    StaticVector<StaticVector<int>*>* createPtsCamsForAnotherMesh(StaticVector<StaticVector<int>*>* refPtsCams, Mesh& otherMesh);
 };
 
 
-inline bool mv_delaunay_GC::nearestNeighCellToTheCamOnTheRay(const point3d& camC, point3d& out_p, int tetrahedron, Facet& out_f1,
-                                                      Facet& out_f2, point3d& out_lpi) const
+inline bool mv_delaunay_GC::nearestNeighCellToTheCamOnTheRay(const Point3d& camC, Point3d& out_p, int tetrahedron, Facet& out_f1,
+                                                      Facet& out_f2, Point3d& out_lpi) const
 {
     out_f1.cellIndex = GEO::NO_CELL;
     out_f1.localVertexIndex = GEO::NO_VERTEX;
@@ -360,8 +364,8 @@ inline bool mv_delaunay_GC::nearestNeighCellToTheCamOnTheRay(const point3d& camC
     return false;
 }
 
-inline bool mv_delaunay_GC::farestNeighCellToTheCamOnTheRay(point3d& camC, point3d& p, int tetrahedron, Facet& f1,
-                                                     Facet& f2, point3d& lpi) const
+inline bool mv_delaunay_GC::farestNeighCellToTheCamOnTheRay(Point3d& camC, Point3d& p, int tetrahedron, Facet& f1,
+                                                     Facet& f2, Point3d& lpi) const
 {
     f1.cellIndex = GEO::NO_CELL;
     f1.localVertexIndex = GEO::NO_VERTEX;
@@ -393,5 +397,5 @@ inline mv_delaunay_GC::Facet mv_delaunay_GC::getFacetInFrontVertexOnTheRayToTheC
         printf("WARNING cam %i, ptid %i\n", cam, vertexIndex);
     }
 
-    return getFacetInFrontVertexOnTheRayToThePoint3D(vertexIndex, mp->CArr[cam]);
+    return getFacetInFrontVertexOnTheRayToThePoint3d(vertexIndex, mp->CArr[cam]);
 }

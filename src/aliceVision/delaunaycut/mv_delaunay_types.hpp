@@ -5,9 +5,8 @@
 
 #pragma once
 
-#include <aliceVision/structures/mv_point3d.hpp>
-#include <aliceVision/structures/mv_double3d.hpp>
-#include <aliceVision/structures/mv_staticVector.hpp>
+#include <aliceVision/structures/Point3d.hpp>
+#include <aliceVision/structures/StaticVector.hpp>
 
 #include <array>
 
@@ -60,7 +59,7 @@ struct GC_vertexInfo
     int segSize = 0;
     int segId = -1;
     bool isOnSurface = false;
-    staticVector<int> cams;
+    StaticVector<int> cams;
 
     /**
      * @brief Is the vertex a virtual point without associated camera? Like helper points or camera points.
@@ -115,14 +114,14 @@ struct GC_camVertexInfo
     float sim; // TODO FACA: default value?
     int nrc = 0;
     int ncams = 0;
-    point3d point;
+    Point3d point;
 
     void fwriteinfo(FILE* f)
     {
         fwrite(&sim, sizeof(float), 1, f);
         fwrite(&nrc, sizeof(int), 1, f);
         fwrite(&ncams, sizeof(int), 1, f);
-        fwrite(&point, sizeof(point3d), 1, f);
+        fwrite(&point, sizeof(Point3d), 1, f);
     }
 
     void freadinfo(FILE* f)
@@ -130,7 +129,7 @@ struct GC_camVertexInfo
         fread(&sim, sizeof(float), 1, f);
         fread(&nrc, sizeof(int), 1, f);
         fread(&ncams, sizeof(int), 1, f);
-        fread(&point, sizeof(point3d), 1, f);
+        fread(&point, sizeof(Point3d), 1, f);
     }
 };
 

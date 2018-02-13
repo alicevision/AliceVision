@@ -5,11 +5,13 @@
 
 #pragma once
 
+#include <aliceVision/structures/Rgb.hpp>
+#include <aliceVision/structures/StaticVector.hpp>
+#include <aliceVision/common/ImagesCache.hpp>
+#include <aliceVision/common/PreMatchCams.hpp>
 #include <aliceVision/depthMap/DepthSimMap.hpp>
 #include <aliceVision/depthMap/RcTc.hpp>
 #include <aliceVision/depthMap/cuda/PlaneSweepingCuda.hpp>
-#include <aliceVision/common/ImagesCache.hpp>
-#include <aliceVision/common/PreMatchCams.hpp>
 
 class SemiGlobalMatchingParams
 {
@@ -57,8 +59,8 @@ public:
     SemiGlobalMatchingParams(multiviewParams* _mp, mv_prematch_cams* _pc, PlaneSweepingCuda* _cps);
     ~SemiGlobalMatchingParams(void);
 
-    DepthSimMap* getDepthSimMapFromBestIdVal(int w, int h, staticVector<idValue>* volumeBestIdVal, int scale,
-                                                int step, int rc, int zborder, staticVector<float>* planesDepths);
+    DepthSimMap* getDepthSimMapFromBestIdVal(int w, int h, StaticVector<IdValue>* volumeBestIdVal, int scale,
+                                                int step, int rc, int zborder, StaticVector<float>* planesDepths);
 
     std::string getREFINE_photo_depthMapFileName(int cam, int scale, int step);
     std::string getREFINE_photo_simMapFileName(int cam, int scale, int step);

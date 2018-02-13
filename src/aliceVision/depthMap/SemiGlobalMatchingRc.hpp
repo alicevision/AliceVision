@@ -5,6 +5,8 @@
 
 #pragma once
 
+#include <aliceVision/structures/Pixel.hpp>
+#include <aliceVision/structures/StaticVector.hpp>
 #include <aliceVision/depthMap/SemiGlobalMatchingParams.hpp>
 
 class SemiGlobalMatchingRc
@@ -14,31 +16,31 @@ public:
     ~SemiGlobalMatchingRc(void);
 
     bool sgmrc(bool checkIfExists = true);
-    staticVector<int>* tcams;
+    StaticVector<int>* tcams;
 
 protected:
 
     float getMinTcStepAtDepth(float depth, float minDepth, float maxDepth,
-                              staticVector<staticVector<float>*>* alldepths);
+                              StaticVector<StaticVector<float>*>* alldepths);
     float getMeanTcStepAtDepth(float depth, float minDepth, float maxDepth,
-                               staticVector<staticVector<float>*>* alldepths);
-    staticVector<float>* getTcSeedsRcPlaneDists(int rc, staticVector<int>* tcams);
-    bool selectBestDepthsRange(int nDepthsThr, staticVector<float>* rcSeedsDistsAsc);
-    bool selectBestDepthsRange(int nDepthsThr, staticVector<staticVector<float>*>* alldepths);
-    staticVector<staticVector<float>*>* computeAllDepthsAndResetTCams();
-    void computeDepthsTcamsLimits(staticVector<staticVector<float>*>* alldepths);
-    void computeDepths(float minDepth, float maxDepth, staticVector<staticVector<float>*>* alldepths);
+                               StaticVector<StaticVector<float>*>* alldepths);
+    StaticVector<float>* getTcSeedsRcPlaneDists(int rc, StaticVector<int>* tcams);
+    bool selectBestDepthsRange(int nDepthsThr, StaticVector<float>* rcSeedsDistsAsc);
+    bool selectBestDepthsRange(int nDepthsThr, StaticVector<StaticVector<float>*>* alldepths);
+    StaticVector<StaticVector<float>*>* computeAllDepthsAndResetTCams();
+    void computeDepthsTcamsLimits(StaticVector<StaticVector<float>*>* alldepths);
+    void computeDepths(float minDepth, float maxDepth, StaticVector<StaticVector<float>*>* alldepths);
     void computeDepthsAndResetTCams();
 
-    staticVector<float>* getSubDepthsForTCam(int tcamid);
+    StaticVector<float>* getSubDepthsForTCam(int tcamid);
 
     SemiGlobalMatchingParams* sp;
 
     int rc, scale, step;
     int wsh;
     float gammaC, gammaP;
-    staticVector<float>* depths;
-    staticVector<pixel>* depthsTcamsLimits;
+    StaticVector<float>* depths;
+    StaticVector<Pixel>* depthsTcamsLimits;
     int w, h;
 
     std::string outDir;
@@ -51,5 +53,5 @@ protected:
     std::string SGM_idDepthMapFileName;
 };
 
-void computeDepthMapsPSSGM(multiviewParams* mp, mv_prematch_cams* pc, const staticVector<int>& cams);
-void computeDepthMapsPSSGM(int CUDADeviceNo, multiviewParams* mp, mv_prematch_cams* pc, const staticVector<int>& cams);
+void computeDepthMapsPSSGM(multiviewParams* mp, mv_prematch_cams* pc, const StaticVector<int>& cams);
+void computeDepthMapsPSSGM(int CUDADeviceNo, multiviewParams* mp, mv_prematch_cams* pc, const StaticVector<int>& cams);

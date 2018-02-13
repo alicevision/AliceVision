@@ -3,6 +3,8 @@
 // v. 2.0. If a copy of the MPL was not distributed with this file,
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
+#include <aliceVision/structures/Point3d.hpp>
+#include <aliceVision/structures/StaticVector.hpp>
 #include <aliceVision/delaunaycut/mv_delaunay_GC.hpp>
 #include <aliceVision/delaunaycut/mv_delaunay_meshSmooth.hpp>
 #include <aliceVision/largeScale/ReconstructionPlan.hpp>
@@ -132,19 +134,19 @@ int main(int argc, char* argv[])
             LargeScale lsbase(&mp, &pc, tmpDirectory.string() + "/");
             lsbase.generateSpace(maxPtsPerVoxel, ocTreeDim);
             std::string voxelsArrayFileName = lsbase.spaceFolderName + "hexahsToReconstruct.bin";
-            staticVector<point3d>* voxelsArray = nullptr;
+            StaticVector<Point3d>* voxelsArray = nullptr;
             if(FileExists(voxelsArrayFileName))
             {
                 // If already computed reload it.
                 ALICEVISION_COUT("Voxels array already computed, reload from file: " << voxelsArrayFileName);
-                voxelsArray = loadArrayFromFile<point3d>(voxelsArrayFileName);
+                voxelsArray = loadArrayFromFile<Point3d>(voxelsArrayFileName);
             }
             else
             {
                 ALICEVISION_COUT("Compute voxels array");
                 ReconstructionPlan rp(lsbase.dimensions, &lsbase.space[0], lsbase.mp, lsbase.pc, lsbase.spaceVoxelsFolderName);
                 voxelsArray = rp.computeReconstructionPlanBinSearch(maxPts);
-                saveArrayToFile<point3d>(voxelsArrayFileName, voxelsArray);
+                saveArrayToFile<Point3d>(voxelsArrayFileName, voxelsArray);
             }
             reconstructSpaceAccordingToVoxelsArray(voxelsArrayFileName, &lsbase, true);
             // Join meshes
@@ -161,7 +163,7 @@ int main(int argc, char* argv[])
             delete mesh;
 
             // Join ptsCams
-            staticVector<staticVector<int>*>* ptsCams = loadLargeScalePtsCams(lsbase.getRecsDirs(voxelsArray));
+            StaticVector<StaticVector<int>*>* ptsCams = loadLargeScalePtsCams(lsbase.getRecsDirs(voxelsArray));
             saveArrayOfArraysToFile<int>((outDirectory/"meshPtsCamsFromDGC.bin").string(), ptsCams);
             deleteArrayOfArrays<int>(&ptsCams);
         }
@@ -193,12 +195,12 @@ int main(int argc, char* argv[])
             LargeScale lsbase(&mp, &pc, dirName.string()+"/");
             lsbase.loadSpaceFromFile();
             ReconstructionPlan rp(lsbase.dimensions, &lsbase.space[0], lsbase.mp, lsbase.pc, lsbase.spaceVoxelsFolderName);
-            staticVector<int> voxelNeighs(rp.voxels->size() / 8);
+            StaticVector<int> voxelNeighs(rp.voxels->size() / 8);
             for(int i = 0; i < rp.voxels->size() / 8; i++)
                 voxelNeighs.push_back(i);
             mv_delaunay_GC delaunayGC(lsbase.mp, lsbase.pc);
-            staticVector<point3d>* hexahsToExcludeFromResultingMesh = nullptr;
-            point3d* hexah = &lsbase.space[0];
+            StaticVector<Point3d>* hexahsToExcludeFromResultingMesh = nullptr;
+            Point3d* hexah = &lsbase.space[0];
             delaunayGC.reconstructVoxel(hexah, &voxelNeighs, outDirectory.string()+"/", lsbase.getSpaceCamsTracksDir(), false, hexahsToExcludeFromResultingMesh,
                                   (VoxelsGrid*)&rp, lsbase.getSpaceSteps());
 
@@ -209,8 +211,8 @@ int main(int argc, char* argv[])
             if(mesh->pts->empty())
               throw std::runtime_error("Empty mesh");
 
-            staticVector<staticVector<int>*>* ptsCams = delaunayGC.createPtsCams();
-            staticVector<int> usedCams = delaunayGC.getSortedUsedCams();
+            StaticVector<StaticVector<int>*>* ptsCams = delaunayGC.createPtsCams();
+            StaticVector<int> usedCams = delaunayGC.getSortedUsedCams();
 
             meshPostProcessing(mesh, ptsCams, usedCams, mp, pc, outDirectory.string()+"/", hexahsToExcludeFromResultingMesh, hexah);
             mesh->saveToBin((outDirectory/"denseReconstruction.bin").string());

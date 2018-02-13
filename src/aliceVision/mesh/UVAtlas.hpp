@@ -5,6 +5,7 @@
 
 #pragma once
 
+#include <aliceVision/structures/StaticVector.hpp>
 #include <aliceVision/mesh/Mesh.hpp>
 
 #include <vector>
@@ -25,9 +26,9 @@ public:
         int refCameraID = -1;                                   // refCamera, used to project all contained triangles
         std::vector<int> commonCameraIDs;                       // list of common cameras
         std::vector<int> triangleIDs;                           // list of all contained triangles
-        pixel sourceLU;                                         // left-up pixel coordinates (in refCamera space)
-        pixel sourceRD;                                         // right-down pixel coordinates (in refCamera space)
-        pixel targetLU;                                         // left-up pixel coordinates (in uvatlas texture)
+        Pixel sourceLU;                                         // left-up pixel coordinates (in refCamera space)
+        Pixel sourceRD;                                         // right-down pixel coordinates (in refCamera space)
+        Pixel targetLU;                                         // left-up pixel coordinates (in uvatlas texture)
         int mergedWith = -1;                                    // ID of target chart, or -1 (not merged)
         int width() const { return sourceRD.x - sourceLU.x; }
         int height() const { return sourceRD.y - sourceLU.y; }
@@ -37,14 +38,14 @@ public:
     {
         Chart* c = nullptr;
         ChartRect* child[2] {nullptr, nullptr};
-        pixel LU;
-        pixel RD;
+        Pixel LU;
+        Pixel RD;
         void clear();
         ChartRect* insert(Chart& chart, size_t gutter);
     };
 
 public:
-    UVAtlas(const Mesh& mesh, multiviewParams& mp, staticVector<staticVector<int>*>* ptsCams,
+    UVAtlas(const Mesh& mesh, multiviewParams& mp, StaticVector<StaticVector<int>*>* ptsCams,
                     unsigned int textureSide, unsigned int gutterSize);
 
 public:
@@ -55,7 +56,7 @@ public:
     const Mesh& mesh() const { return _mesh; }
 
 private:
-    void createCharts(std::vector<Chart>& charts, multiviewParams& mp, staticVector<staticVector<int>*>* ptsCams);
+    void createCharts(std::vector<Chart>& charts, multiviewParams& mp, StaticVector<StaticVector<int>*>* ptsCams);
     void packCharts(std::vector<Chart>& charts, multiviewParams& mp);
     void finalizeCharts(std::vector<Chart>& charts, multiviewParams& mp);
     void createTextureAtlases(std::vector<Chart>& charts, multiviewParams& mp);

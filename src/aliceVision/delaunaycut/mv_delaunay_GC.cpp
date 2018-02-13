@@ -12,7 +12,9 @@
 
 #include <aliceVision/common/fileIO.hpp>
 #include <aliceVision/structures/jetColorMap.hpp>
-#include <aliceVision/structures/mv_universe.hpp>
+#include <aliceVision/structures/Pixel.hpp>
+#include <aliceVision/structures/Point2d.hpp>
+#include <aliceVision/structures/Universe.hpp>
 #include <aliceVision/delaunaycut/hallucinations.hpp>
 #include <aliceVision/mesh/MeshEnergyOptPhotoMem.hpp>
 
@@ -160,14 +162,14 @@ void mv_delaunay_GC::displayStatistics()
 {
     // Display some statistics
 
-    staticVector<int>* ptsCamsHist = getPtsCamsHist();
+    StaticVector<int>* ptsCamsHist = getPtsCamsHist();
     std::cout << "Histogram of number of cams per point:\n";
     for(int i = 0; i < ptsCamsHist->size(); ++i)
         std::cout << "    " << i << ": " << num2str((*ptsCamsHist)[i]) << "\n";
     std::cout << "\n";
     delete ptsCamsHist;
 
-    staticVector<int>* ptsNrcsHist = getPtsNrcHist();
+    StaticVector<int>* ptsNrcsHist = getPtsNrcHist();
     std::cout << "Histogram of alpha_vis per point:\n";
     for(int i = 0; i < ptsNrcsHist->size(); ++i)
         std::cout << "    " << i << ": " << num2str((*ptsNrcsHist)[i]) << "\n";
@@ -215,16 +217,16 @@ void mv_delaunay_GC::loadDh(std::string fileNameDh, std::string fileNameInfo)
     printfElapsedTime(t1);
 }
 
-staticVector<staticVector<int>*>* mv_delaunay_GC::createPtsCams()
+StaticVector<StaticVector<int>*>* mv_delaunay_GC::createPtsCams()
 {
     long t = std::clock();
     std::cout << "Extract visibilities." << std::endl;
     int npts = getNbVertices();
-    staticVector<staticVector<int>*>* out = new staticVector<staticVector<int>*>(npts);
+    StaticVector<StaticVector<int>*>* out = new StaticVector<StaticVector<int>*>(npts);
 
     for(const GC_vertexInfo& v: _verticesAttr)
     {
-        staticVector<int>* cams = new staticVector<int>(v.getNbCameras());
+        StaticVector<int>* cams = new StaticVector<int>(v.getNbCameras());
         for(int c = 0; c < v.getNbCameras(); c++)
         {
             cams->push_back(v.cams[c]);
@@ -238,7 +240,7 @@ staticVector<staticVector<int>*>* mv_delaunay_GC::createPtsCams()
     return out;
 }
 
-staticVector<int>* mv_delaunay_GC::getPtsCamsHist()
+StaticVector<int>* mv_delaunay_GC::getPtsCamsHist()
 {
     int maxnCams = 0;
     for(const GC_vertexInfo& v: _verticesAttr)
@@ -249,7 +251,7 @@ staticVector<int>* mv_delaunay_GC::getPtsCamsHist()
     if(mp->verbose)
         printf("maxnCams %i\n", maxnCams);
 
-    staticVector<int>* ncamsHist = new staticVector<int>(maxnCams);
+    StaticVector<int>* ncamsHist = new StaticVector<int>(maxnCams);
     ncamsHist->resize_with(maxnCams, 0);
 
     for(const GC_vertexInfo& v: _verticesAttr)
@@ -260,7 +262,7 @@ staticVector<int>* mv_delaunay_GC::getPtsCamsHist()
     return ncamsHist;
 }
 
-staticVector<int>* mv_delaunay_GC::getPtsNrcHist()
+StaticVector<int>* mv_delaunay_GC::getPtsNrcHist()
 {
     int maxnnrcs = 0;
     for(const GC_vertexInfo& v: _verticesAttr)
@@ -274,7 +276,7 @@ staticVector<int>* mv_delaunay_GC::getPtsNrcHist()
     if(mp->verbose)
         printf("maxnnrcs %i\n", maxnnrcs);
 
-    staticVector<int>* nnrcsHist = new staticVector<int>(maxnnrcs);
+    StaticVector<int>* nnrcsHist = new StaticVector<int>(maxnnrcs);
     nnrcsHist->resize_with(maxnnrcs, 0);
 
     for(const GC_vertexInfo& v: _verticesAttr)
@@ -288,11 +290,11 @@ staticVector<int>* mv_delaunay_GC::getPtsNrcHist()
     return nnrcsHist;
 }
 
-staticVector<int> mv_delaunay_GC::getIsUsedPerCamera() const
+StaticVector<int> mv_delaunay_GC::getIsUsedPerCamera() const
 {
     long timer = std::clock();
 
-    staticVector<int> cams;
+    StaticVector<int> cams;
     cams.resize_with(mp->mip->getNbCameras(), 0);
 
 //#pragma omp parallel for
@@ -314,10 +316,10 @@ staticVector<int> mv_delaunay_GC::getIsUsedPerCamera() const
     return cams;
 }
 
-staticVector<int> mv_delaunay_GC::getSortedUsedCams() const
+StaticVector<int> mv_delaunay_GC::getSortedUsedCams() const
 {
-    const staticVector<int> isUsed = getIsUsedPerCamera();
-    staticVector<int> out;
+    const StaticVector<int> isUsed = getIsUsedPerCamera();
+    StaticVector<int> out;
     out.reserve(isUsed.size());
     for(int cameraIndex = 0; cameraIndex < isUsed.size(); ++cameraIndex)
     {
@@ -328,16 +330,16 @@ staticVector<int> mv_delaunay_GC::getSortedUsedCams() const
     return out;
 }
 
-void mv_delaunay_GC::addPointsFromCameraCenters(staticVector<int>* cams, float minDist)
+void mv_delaunay_GC::addPointsFromCameraCenters(StaticVector<int>* cams, float minDist)
 {
     for(int camid = 0; camid < cams->size(); camid++)
     {
         int rc = (*cams)[camid];
         {
-            point3d p(mp->CArr[rc].x, mp->CArr[rc].y, mp->CArr[rc].z);
+            Point3d p(mp->CArr[rc].x, mp->CArr[rc].y, mp->CArr[rc].z);
 
             GEO::index_t vi = locateNearestVertex(p);
-            point3d npp;
+            Point3d npp;
             if(vi != GEO::NO_VERTEX)
             {
                 npp = _verticesCoords[vi];
@@ -365,11 +367,11 @@ void mv_delaunay_GC::addPointsFromCameraCenters(staticVector<int>* cams, float m
     }
 }
 
-void mv_delaunay_GC::addPointsToPreventSingularities(point3d voxel[8], float minDist)
+void mv_delaunay_GC::addPointsToPreventSingularities(Point3d voxel[8], float minDist)
 {
-    point3d vcg = (voxel[0] + voxel[1] + voxel[2] + voxel[3] + voxel[4] + voxel[5] + voxel[6] + voxel[7]) / 8.0f;
-    point3d extrPts[6];
-    point3d fcg;
+    Point3d vcg = (voxel[0] + voxel[1] + voxel[2] + voxel[3] + voxel[4] + voxel[5] + voxel[6] + voxel[7]) / 8.0f;
+    Point3d extrPts[6];
+    Point3d fcg;
     fcg = (voxel[0] + voxel[1] + voxel[2] + voxel[3]) / 4.0f;
     extrPts[0] = fcg + (fcg - vcg) / 10.0f;
     fcg = (voxel[0] + voxel[4] + voxel[7] + voxel[3]) / 4.0f;
@@ -384,9 +386,9 @@ void mv_delaunay_GC::addPointsToPreventSingularities(point3d voxel[8], float min
     extrPts[5] = fcg + (fcg - vcg) / 10.0f;
     for(int i = 0; i < 6; i++)
     {
-        point3d p(extrPts[i].x, extrPts[i].y, extrPts[i].z);
+        Point3d p(extrPts[i].x, extrPts[i].y, extrPts[i].z);
         GEO::index_t vi = locateNearestVertex(p);
-        point3d npp;
+        Point3d npp;
 
         if(vi != GEO::NO_VERTEX)
         {
@@ -406,7 +408,7 @@ void mv_delaunay_GC::addPointsToPreventSingularities(point3d voxel[8], float min
     }
 }
 
-void mv_delaunay_GC::addHelperPoints(int nGridHelperVolumePointsDim, point3d voxel[8], float minDist)
+void mv_delaunay_GC::addHelperPoints(int nGridHelperVolumePointsDim, Point3d voxel[8], float minDist)
 {
     if(nGridHelperVolumePointsDim <= 0)
         return;
@@ -416,16 +418,16 @@ void mv_delaunay_GC::addHelperPoints(int nGridHelperVolumePointsDim, point3d vox
 
     int ns = nGridHelperVolumePointsDim;
     float md = 1.0f / 500.0f;
-    point3d vx = (voxel[1] - voxel[0]);
-    point3d vy = (voxel[3] - voxel[0]);
-    point3d vz = (voxel[4] - voxel[0]);
-    point3d O = voxel[0] + vx * md + vy * md + vz * md;
+    Point3d vx = (voxel[1] - voxel[0]);
+    Point3d vy = (voxel[3] - voxel[0]);
+    Point3d vz = (voxel[4] - voxel[0]);
+    Point3d O = voxel[0] + vx * md + vy * md + vz * md;
     vx = vx - vx * 2.0f * md;
     vy = vy - vy * 2.0f * md;
     vz = vz - vz * 2.0f * md;
 
     float maxSize = 2.0f * (O - voxel[0]).size();
-    point3d CG = (voxel[0] + voxel[1] + voxel[2] + voxel[3] + voxel[4] + voxel[5] + voxel[6] + voxel[7]) / 8.0f;
+    Point3d CG = (voxel[0] + voxel[1] + voxel[2] + voxel[3] + voxel[4] + voxel[5] + voxel[6] + voxel[7]) / 8.0f;
 
     for(int x = 0; x <= ns; x++)
     {
@@ -433,13 +435,13 @@ void mv_delaunay_GC::addHelperPoints(int nGridHelperVolumePointsDim, point3d vox
         {
             for(int z = 0; z <= ns; z++)
             {
-                point3d pt = voxel[0] + vx * ((float)x / (float)ns) + vy * ((float)y / (float)ns) +
+                Point3d pt = voxel[0] + vx * ((float)x / (float)ns) + vy * ((float)y / (float)ns) +
                              vz * ((float)z / (float)ns);
                 pt = pt + (CG - pt).normalize() * (maxSize * ((float)rand() / (float)RAND_MAX));
 
-                point3d p(pt.x, pt.y, pt.z);
+                Point3d p(pt.x, pt.y, pt.z);
                 GEO::index_t vi = locateNearestVertex(p);
-                point3d npp;
+                Point3d npp;
 
                 if(vi != GEO::NO_VERTEX)
                 {
@@ -466,8 +468,8 @@ void mv_delaunay_GC::addHelperPoints(int nGridHelperVolumePointsDim, point3d vox
 }
 
 
-void mv_delaunay_GC::createTetrahedralizationFromDepthMapsCamsVoxel(staticVector<int>* cams,
-                                                               staticVector<int>* voxelsIds, point3d voxel[8],
+void mv_delaunay_GC::createTetrahedralizationFromDepthMapsCamsVoxel(StaticVector<int>* cams,
+                                                               StaticVector<int>* voxelsIds, Point3d voxel[8],
                                                                VoxelsGrid* ls)
 {
     ///////////////////////////////////////////////////////////////////////////////////////
@@ -490,7 +492,7 @@ void mv_delaunay_GC::createTetrahedralizationFromDepthMapsCamsVoxel(staticVector
     // add 6 points to prevent singularities
     addPointsToPreventSingularities(voxel, minDist);
 
-    point3d cgpt;
+    Point3d cgpt;
     int ncgpt = 0;
 
     // add points from voxel
@@ -507,15 +509,15 @@ void mv_delaunay_GC::createTetrahedralizationFromDepthMapsCamsVoxel(staticVector
 
         if(FileExists(fileNameTracksPts))
         {
-            staticVector<point3d>* tracksPoints = loadArrayFromFile<point3d>(fileNameTracksPts);
-            staticVector<staticVector<pixel>*>* tracksPointsCams =
-                loadArrayOfArraysFromFile<pixel>(fileNameTracksPtsCams);
+            StaticVector<Point3d>* tracksPoints = loadArrayFromFile<Point3d>(fileNameTracksPts);
+            StaticVector<StaticVector<Pixel>*>* tracksPointsCams =
+                loadArrayOfArraysFromFile<Pixel>(fileNameTracksPtsCams);
 
             long t1 = initEstimate();
             for(int j = 0; j < tracksPoints->size(); j++)
             {
-                point3d tp = (*tracksPoints)[j];
-                staticVector<pixel>* cams = (*tracksPointsCams)[j];
+                Point3d tp = (*tracksPoints)[j];
+                StaticVector<Pixel>* cams = (*tracksPointsCams)[j];
                 if((isPointInHexahedron(tp, voxel)) && (cams != nullptr) &&
                    ((!doFilterOctreeTracks) || ((doFilterOctreeTracks) && (cams->size() >= minNumOfConsistentCams))))
                 {
@@ -548,7 +550,7 @@ void mv_delaunay_GC::createTetrahedralizationFromDepthMapsCamsVoxel(staticVector
             // delete randIds;
 
             delete tracksPoints;
-            deleteArrayOfArrays<pixel>(&tracksPointsCams);
+            deleteArrayOfArrays<Pixel>(&tracksPointsCams);
         } // if fileexists
     }
 
@@ -580,7 +582,7 @@ void mv_delaunay_GC::computeVerticesSegSize(bool allPoints, float alpha) // allP
     float pointToJoinPixSizeDist = (float)mp->mip->_ini.get<double>("delaunaycut.pointToJoinPixSizeDist", 2.0) *
                                    (float)scalePS * (float)step * 2.0f;
 
-    std::vector<pixel> edges;
+    std::vector<Pixel> edges;
     edges.reserve(_verticesAttr.size());
 
     if(alpha < 1.0f)
@@ -594,7 +596,7 @@ void mv_delaunay_GC::computeVerticesSegSize(bool allPoints, float alpha) // allP
     for(VertexIndex vi = 0; vi < _verticesAttr.size(); ++vi)
     {
         const GC_vertexInfo& v = _verticesAttr[vi];
-        const point3d& p = _verticesCoords[vi];
+        const Point3d& p = _verticesCoords[vi];
         if((v.getNbCameras() > 0) && ((allPoints) || (v.isOnSurface)))
         {
             int rc = v.getCamera(0);
@@ -606,7 +608,7 @@ void mv_delaunay_GC::computeVerticesSegSize(bool allPoints, float alpha) // allP
             for(VertexIndex nvi: adjVertices)
             {
                 const GC_vertexInfo& nv = _verticesAttr[nvi];
-                const point3d& np = _verticesCoords[nvi];
+                const Point3d& np = _verticesCoords[nvi];
                 if((vi != nvi) && ((allPoints) || (nv.isOnSurface)))
                 {
                     if((p - np).size() <
@@ -624,7 +626,7 @@ void mv_delaunay_GC::computeVerticesSegSize(bool allPoints, float alpha) // allP
     }
     finishEstimate();
 
-    mv_universe* u = new mv_universe(_verticesAttr.size());
+    Universe* u = new Universe(_verticesAttr.size());
 
     t1 = initEstimate();
     int s = (int)edges.size(); // Fuse all edges collected to be merged
@@ -661,7 +663,7 @@ void mv_delaunay_GC::removeSmallSegs(int minSegSize)
 {
     if(mp->verbose)
         std::cout << "removeSmallSegs: " << minSegSize << std::endl;
-    staticVector<int>* toRemove = new staticVector<int>(getNbVertices());
+    StaticVector<int>* toRemove = new StaticVector<int>(getNbVertices());
 
     for(int i = 0; i < _verticesAttr.size(); ++i)
     {
@@ -685,8 +687,8 @@ void mv_delaunay_GC::removeSmallSegs(int minSegSize)
     initVertices();
 }
 
-bool mv_delaunay_GC::rayCellIntersection(const point3d& camC, const point3d& p, int tetrahedron, Facet& out_facet,
-                                        bool nearestFarest, point3d& out_nlpi) const
+bool mv_delaunay_GC::rayCellIntersection(const Point3d& camC, const Point3d& p, int tetrahedron, Facet& out_facet,
+                                        bool nearestFarest, Point3d& out_nlpi) const
 {
     out_nlpi = p; // important
     out_facet.cellIndex = -1;
@@ -697,26 +699,26 @@ bool mv_delaunay_GC::rayCellIntersection(const point3d& camC, const point3d& p, 
         return false;
     }
 
-    point3d linePoint = p;
-    point3d lineVect = (camC - p).normalize();
+    Point3d linePoint = p;
+    Point3d lineVect = (camC - p).normalize();
     double mind = (camC - p).size();
 
     // go thru all triangles
     bool existsTriOnRay = false;
-    const point3d* A = &(_verticesCoords[_tetrahedralization->cell_vertex(tetrahedron, 0)]);
-    const point3d* B = &(_verticesCoords[_tetrahedralization->cell_vertex(tetrahedron, 1)]);
-    const point3d* C = &(_verticesCoords[_tetrahedralization->cell_vertex(tetrahedron, 2)]);
-    const point3d* D = &(_verticesCoords[_tetrahedralization->cell_vertex(tetrahedron, 3)]);
+    const Point3d* A = &(_verticesCoords[_tetrahedralization->cell_vertex(tetrahedron, 0)]);
+    const Point3d* B = &(_verticesCoords[_tetrahedralization->cell_vertex(tetrahedron, 1)]);
+    const Point3d* C = &(_verticesCoords[_tetrahedralization->cell_vertex(tetrahedron, 2)]);
+    const Point3d* D = &(_verticesCoords[_tetrahedralization->cell_vertex(tetrahedron, 3)]);
 
     // All the facets of the tetrahedron
-    std::array<std::array<const point3d*, 3>, 4> facets {{
+    std::array<std::array<const Point3d*, 3>, 4> facets {{
         {B, C, D}, // opposite vertex A, index 0
         {A, C, D}, // opposite vertex B, index 1
         {A, B, D}, // opposite vertex C, index 2
         {A, B, C}  // opposite vertex D, index 3
     }};
     int oppositeVertexIndex = -1;
-    point3d lpi;
+    Point3d lpi;
     double dist;
     // Test all facets of the tetrahedron
     for(int i = 0; i < 4; ++i)
@@ -758,10 +760,10 @@ bool mv_delaunay_GC::rayCellIntersection(const point3d& camC, const point3d& p, 
     return true;
 }
 
-mv_delaunay_GC::Facet mv_delaunay_GC::getFacetInFrontVertexOnTheRayToThePoint3D(VertexIndex vi,
-                                                                                   point3d& ptt) const
+mv_delaunay_GC::Facet mv_delaunay_GC::getFacetInFrontVertexOnTheRayToThePoint3d(VertexIndex vi,
+                                                                                   Point3d& ptt) const
 {
-    const point3d& p = _verticesCoords[vi];
+    const Point3d& p = _verticesCoords[vi];
 
     double minDist = (ptt - p).size(); // initialize minDist to the distance from 3d point p to camera center c
     Facet nearestFacet;
@@ -777,7 +779,7 @@ mv_delaunay_GC::Facet mv_delaunay_GC::getFacetInFrontVertexOnTheRayToThePoint3D(
         if(isInfiniteCell(adjCellIndex))
             continue;
         Facet f1;
-        point3d lpi;
+        Point3d lpi;
         if(rayCellIntersection(ptt, p, adjCellIndex, f1, true, lpi) == true)
         {
             // if it is inbetween the camera and the point
@@ -795,7 +797,7 @@ mv_delaunay_GC::Facet mv_delaunay_GC::getFacetInFrontVertexOnTheRayToThePoint3D(
 mv_delaunay_GC::Facet mv_delaunay_GC::getFacetBehindVertexOnTheRayToTheCam(VertexIndex vi,
                                                                               int cam) const
 {
-    const point3d& p = _verticesCoords[vi];
+    const Point3d& p = _verticesCoords[vi];
 
     double maxDist = (mp->CArr[cam] - p).size();
     Facet farestFacet;
@@ -809,7 +811,7 @@ mv_delaunay_GC::Facet mv_delaunay_GC::getFacetBehindVertexOnTheRayToTheCam(Verte
             continue;
 
         Facet f1;
-        point3d lpi;
+        Point3d lpi;
         if(rayCellIntersection(mp->CArr[cam], p, adjCellIndex, f1, false, lpi) == true)
         {
             // if it is after the point p (along the axis from the camera)
@@ -823,11 +825,11 @@ mv_delaunay_GC::Facet mv_delaunay_GC::getFacetBehindVertexOnTheRayToTheCam(Verte
     return farestFacet;
 }
 
-int mv_delaunay_GC::getFirstCellOnTheRayFromCamToThePoint(int cam, point3d& p, point3d& lpi) const
+int mv_delaunay_GC::getFirstCellOnTheRayFromCamToThePoint(int cam, Point3d& p, Point3d& lpi) const
 {
     int cam_vi = _camsVertexes[cam];
-    point3d camBehind = mp->CArr[cam] + (mp->CArr[cam] - p);
-    point3d dir = (p - mp->CArr[cam]).normalize();
+    Point3d camBehind = mp->CArr[cam] + (mp->CArr[cam] - p);
+    Point3d dir = (p - mp->CArr[cam]).normalize();
     float maxdist = 0.0f;
     int farestCell = -1;
 
@@ -902,9 +904,9 @@ float mv_delaunay_GC::distFcn(float maxDist, float dist, float distFcnHeight) co
 
 double mv_delaunay_GC::facetArea(const Facet &f) const
 {
-    const point3d& pa = _verticesCoords[getVertexIndex(f, 0)];
-    const point3d& pb = _verticesCoords[getVertexIndex(f, 1)];
-    const point3d& pc = _verticesCoords[getVertexIndex(f, 2)];
+    const Point3d& pa = _verticesCoords[getVertexIndex(f, 0)];
+    const Point3d& pb = _verticesCoords[getVertexIndex(f, 1)];
+    const Point3d& pc = _verticesCoords[getVertexIndex(f, 2)];
 
     double a = (pb - pa).size();
     double b = (pc - pa).size();
@@ -921,11 +923,11 @@ double mv_delaunay_GC::facetArea(const Facet &f) const
 
 double mv_delaunay_GC::getFacetProjectionMaxEdge(Facet& f, int cam) const
 {
-    const point3d& pa = _verticesCoords[getVertexIndex(f, 0)];
-    const point3d& pb = _verticesCoords[getVertexIndex(f, 1)];
-    const point3d& pc = _verticesCoords[getVertexIndex(f, 2)];
+    const Point3d& pa = _verticesCoords[getVertexIndex(f, 0)];
+    const Point3d& pb = _verticesCoords[getVertexIndex(f, 1)];
+    const Point3d& pc = _verticesCoords[getVertexIndex(f, 2)];
 
-    point2d pixa, pixb, pixc;
+    Point2d pixa, pixb, pixc;
     mp->getPixelFor3DPoint(&pixa, pa, cam);
     mp->getPixelFor3DPoint(&pixb, pb, cam);
     mp->getPixelFor3DPoint(&pixc, pc, cam);
@@ -942,10 +944,10 @@ double mv_delaunay_GC::cellMaxEdgeLength(CellIndex ci) const
     double dmax = 0.0f;
     for(int i = 0; i < 4; ++i)
     {
-        const point3d& pi = _verticesCoords[_tetrahedralization->cell_vertex(ci, i)];
+        const Point3d& pi = _verticesCoords[_tetrahedralization->cell_vertex(ci, i)];
         for(int j = i + 1; j < 4; ++j)
         {
-            const point3d& pj = _verticesCoords[_tetrahedralization->cell_vertex(ci, j)];
+            const Point3d& pj = _verticesCoords[_tetrahedralization->cell_vertex(ci, j)];
             double d0 = (pi - pj).size();
             if(std::isnan(d0))
             {
@@ -968,16 +970,16 @@ double mv_delaunay_GC::cellMaxEdgeLength(CellIndex ci) const
 
 double mv_delaunay_GC::cellMinEdgeLength(CellIndex ci)
 {
-    const point3d& p0 = _verticesCoords[_tetrahedralization->cell_vertex(ci, 0)];
-    const point3d& p1 = _verticesCoords[_tetrahedralization->cell_vertex(ci, 1)];
+    const Point3d& p0 = _verticesCoords[_tetrahedralization->cell_vertex(ci, 0)];
+    const Point3d& p1 = _verticesCoords[_tetrahedralization->cell_vertex(ci, 1)];
 
     double dmin = (p0 - p1).size();
     for(int i = 0; i < 4; i++)
     {
-        const point3d& pi = _verticesCoords[_tetrahedralization->cell_vertex(ci, i)];
+        const Point3d& pi = _verticesCoords[_tetrahedralization->cell_vertex(ci, i)];
         for(int j = i + 1; j < 4; j++)
         {
-            const point3d& pj = _verticesCoords[_tetrahedralization->cell_vertex(ci, j)];
+            const Point3d& pj = _verticesCoords[_tetrahedralization->cell_vertex(ci, j)];
             double d0 = (pi - pj).size();
             if(std::isnan(d0))
             {
@@ -1001,9 +1003,9 @@ double mv_delaunay_GC::cellMinEdgeLength(CellIndex ci)
 double mv_delaunay_GC::facetMaxEdgeLength(Facet& f) const
 {
     double dmax = 0.0;
-    const point3d& pa = _verticesCoords[getVertexIndex(f, 0)];
-    const point3d& pb = _verticesCoords[getVertexIndex(f, 1)];
-    const point3d& pc = _verticesCoords[getVertexIndex(f, 2)];
+    const Point3d& pa = _verticesCoords[getVertexIndex(f, 0)];
+    const Point3d& pb = _verticesCoords[getVertexIndex(f, 1)];
+    const Point3d& pc = _verticesCoords[getVertexIndex(f, 2)];
     double d0 = (pa - pb).size();
     double d1 = (pa - pc).size();
     double d2 = (pc - pb).size();
@@ -1040,9 +1042,9 @@ double mv_delaunay_GC::averageEdgeLength() const
         for(int k = 0; k < 4; ++k)
         {
             Facet f(ci, k);
-            const point3d& pa = _verticesCoords[getVertexIndex(f, 0)];
-            const point3d& pb = _verticesCoords[getVertexIndex(f, 1)];
-            const point3d& pc = _verticesCoords[getVertexIndex(f, 2)];
+            const Point3d& pa = _verticesCoords[getVertexIndex(f, 0)];
+            const Point3d& pb = _verticesCoords[getVertexIndex(f, 1)];
+            const Point3d& pc = _verticesCoords[getVertexIndex(f, 2)];
             d += (pa - pb).size();
             d += (pa - pc).size();
             d += (pc - pb).size();
@@ -1052,18 +1054,18 @@ double mv_delaunay_GC::averageEdgeLength() const
     return d / n;
 }
 
-point3d mv_delaunay_GC::cellCircumScribedSphereCentre(CellIndex ci) const
+Point3d mv_delaunay_GC::cellCircumScribedSphereCentre(CellIndex ci) const
 {
     // http://www.mps.mpg.de/homes/daly/CSDS/t4h/tetra.htm
 
-    const point3d r0 = _verticesCoords[_tetrahedralization->cell_vertex(ci, 0)];
-    const point3d r1 = _verticesCoords[_tetrahedralization->cell_vertex(ci, 1)];
-    const point3d r2 = _verticesCoords[_tetrahedralization->cell_vertex(ci, 2)];
-    const point3d r3 = _verticesCoords[_tetrahedralization->cell_vertex(ci, 3)];
+    const Point3d r0 = _verticesCoords[_tetrahedralization->cell_vertex(ci, 0)];
+    const Point3d r1 = _verticesCoords[_tetrahedralization->cell_vertex(ci, 1)];
+    const Point3d r2 = _verticesCoords[_tetrahedralization->cell_vertex(ci, 2)];
+    const Point3d r3 = _verticesCoords[_tetrahedralization->cell_vertex(ci, 3)];
 
-    const point3d d1 = r1 - r0;
-    const point3d d2 = r2 - r0;
-    const point3d d3 = r3 - r0;
+    const Point3d d1 = r1 - r0;
+    const Point3d d2 = r2 - r0;
+    const Point3d d3 = r3 - r0;
 
     float x = -(-(d1.x * d2.y * d3.z * conj(d1.x) - d1.x * d2.z * d3.y * conj(d1.x) + d1.y * d2.y * d3.z * conj(d1.y) -
                   d1.y * d2.z * d3.y * conj(d1.y) + d1.z * d2.y * d3.z * conj(d1.z) - d1.z * d2.z * d3.y * conj(d1.z) -
@@ -1090,27 +1092,27 @@ point3d mv_delaunay_GC::cellCircumScribedSphereCentre(CellIndex ci) const
                 (2 * d1.x * d2.y * d3.z - 2 * d1.x * d2.z * d3.y - 2 * d1.y * d2.x * d3.z + 2 * d1.y * d2.z * d3.x +
                  2 * d1.z * d2.x * d3.y - 2 * d1.z * d2.y * d3.x));
 
-    return r0 + point3d(x, y, z);
+    return r0 + Point3d(x, y, z);
 }
 
 double mv_delaunay_GC::cellVolume(CellIndex ci) const
 {
     // http://en.wikipedia.org/wiki/Tetrahedron#Volume
 
-    const point3d a = _verticesCoords[_tetrahedralization->cell_vertex(ci, 0)];
-    const point3d b = _verticesCoords[_tetrahedralization->cell_vertex(ci, 1)];
-    const point3d c = _verticesCoords[_tetrahedralization->cell_vertex(ci, 2)];
-    const point3d d = _verticesCoords[_tetrahedralization->cell_vertex(ci, 3)];
+    const Point3d a = _verticesCoords[_tetrahedralization->cell_vertex(ci, 0)];
+    const Point3d b = _verticesCoords[_tetrahedralization->cell_vertex(ci, 1)];
+    const Point3d c = _verticesCoords[_tetrahedralization->cell_vertex(ci, 2)];
+    const Point3d d = _verticesCoords[_tetrahedralization->cell_vertex(ci, 3)];
 
     return fabs(dot(a - d, cross(b - d, c - d))) / 6.0;
 }
 
-point3d mv_delaunay_GC::cellCentreOfGravity(CellIndex ci) const
+Point3d mv_delaunay_GC::cellCentreOfGravity(CellIndex ci) const
 {
-    const point3d r0 = _verticesCoords[_tetrahedralization->cell_vertex(ci, 0)];
-    const point3d r1 = _verticesCoords[_tetrahedralization->cell_vertex(ci, 1)];
-    const point3d r2 = _verticesCoords[_tetrahedralization->cell_vertex(ci, 2)];
-    const point3d r3 = _verticesCoords[_tetrahedralization->cell_vertex(ci, 3)];
+    const Point3d r0 = _verticesCoords[_tetrahedralization->cell_vertex(ci, 0)];
+    const Point3d r1 = _verticesCoords[_tetrahedralization->cell_vertex(ci, 1)];
+    const Point3d r2 = _verticesCoords[_tetrahedralization->cell_vertex(ci, 2)];
+    const Point3d r3 = _verticesCoords[_tetrahedralization->cell_vertex(ci, 3)];
     return (r0 + r1 + r2 + r3) / 4.0;
 }
 
@@ -1119,14 +1121,14 @@ point3d mv_delaunay_GC::cellCentreOfGravity(CellIndex ci) const
 double mv_delaunay_GC::getFaceWeight(const Facet& f1) const
 {
     const Facet f2 = mirrorFacet(f1);
-    const point3d s1 = cellCircumScribedSphereCentre(f1.cellIndex);
-    const point3d s2 = cellCircumScribedSphereCentre(f2.cellIndex);
+    const Point3d s1 = cellCircumScribedSphereCentre(f1.cellIndex);
+    const Point3d s2 = cellCircumScribedSphereCentre(f2.cellIndex);
 
-    const point3d A = _verticesCoords[getVertexIndex(f1, 0)];
-    const point3d B = _verticesCoords[getVertexIndex(f1, 1)];
-    const point3d C = _verticesCoords[getVertexIndex(f1, 2)];
+    const Point3d A = _verticesCoords[getVertexIndex(f1, 0)];
+    const Point3d B = _verticesCoords[getVertexIndex(f1, 1)];
+    const Point3d C = _verticesCoords[getVertexIndex(f1, 2)];
 
-    const point3d n = cross((B - A).normalize(), (C - A).normalize()).normalize();
+    const Point3d n = cross((B - A).normalize(), (C - A).normalize()).normalize();
 
     double a1 = fabs(angleBetwV1andV2(n, (A - s1).normalize()));
     if(a1 > 90)
@@ -1179,7 +1181,7 @@ bool mv_delaunay_GC::isCellSmallForPoint(CellIndex ci, VertexIndex vi) const
     const GC_vertexInfo& c = _verticesAttr[_tetrahedralization->cell_vertex(ci, 2)];
     const GC_vertexInfo& d = _verticesAttr[_tetrahedralization->cell_vertex(ci, 3)];
 
-    const point3d& pa = _verticesCoords[_tetrahedralization->cell_vertex(ci, 0)];
+    const Point3d& pa = _verticesCoords[_tetrahedralization->cell_vertex(ci, 0)];
 
     double chMaxPixSize = std::max(a.pixSize, std::max(b.pixSize, std::max(c.pixSize, d.pixSize)));
     double chSize = (cellCircumScribedSphereCentre(ci) - pa).size();
@@ -1210,7 +1212,7 @@ void mv_delaunay_GC::fillGraph(bool fixesSigma, float nPixelSizeBehind, bool all
     }
 
     // choose random order to prevent waiting
-    staticVector<int>* vetexesToProcessIdsRand = createRandomArrayOfIntegers(_verticesAttr.size());
+    StaticVector<int>* vetexesToProcessIdsRand = createRandomArrayOfIntegers(_verticesAttr.size());
 
     int64_t avStepsFront = 0;
     int64_t aAvStepsFront = 0;
@@ -1272,7 +1274,7 @@ void mv_delaunay_GC::fillGraphPartPtRc(int& out_nstepsFront, int& out_nstepsBehi
 
     int maxint = 1000000.0f; // std::numeric_limits<int>::std::max()
 
-    const point3d& po = _verticesCoords[vertexIndex];
+    const Point3d& po = _verticesCoords[vertexIndex];
     const float pixSize = mp->getCamPixelSize(po, cam);
     float maxDist = nPixelSizeBehind * pixSize;
     if(fixesSigma)
@@ -1293,7 +1295,7 @@ void mv_delaunay_GC::fillGraphPartPtRc(int& out_nstepsFront, int& out_nstepsBehi
         // tetrahedron connected to the point p and which intersect the ray from camera c to point p
         CellIndex ci = getFacetInFrontVertexOnTheRayToTheCam(vertexIndex, cam).cellIndex;
 
-        point3d p = po;
+        Point3d p = po;
         CellIndex lastFinite = GEO::NO_CELL;
         bool ok = ci != GEO::NO_CELL;
         while(ok)
@@ -1306,9 +1308,9 @@ void mv_delaunay_GC::fillGraphPartPtRc(int& out_nstepsFront, int& out_nstepsBehi
             ++out_nstepsFront;
             ++nsteps;
 
-            point3d pold = p;
+            Point3d pold = p;
             Facet f1, f2;
-            point3d lpi;
+            Point3d lpi;
             // find cell which is nearest to the cam and which is intersected with cam-p ray
             if(!nearestNeighCellToTheCamOnTheRay(mp->CArr[cam], p, ci, f1, f2, lpi))
             {
@@ -1351,7 +1353,7 @@ void mv_delaunay_GC::fillGraphPartPtRc(int& out_nstepsFront, int& out_nstepsBehi
             _cellsAttr[ci].on += weight;
         }
 
-        point3d p = po; // HAS TO BE HERE !!!
+        Point3d p = po; // HAS TO BE HERE !!!
 
         bool ok = (ci != GEO::NO_CELL) && allPoints;
         while(ok)
@@ -1370,8 +1372,8 @@ void mv_delaunay_GC::fillGraphPartPtRc(int& out_nstepsFront, int& out_nstepsBehi
             ++out_nstepsBehind;
             ++nsteps;
 
-            point3d pold = p;
-            point3d lpi;
+            Point3d pold = p;
+            Point3d lpi;
             // find cell which is farest to the cam and which intersect cam-p ray
             if((!farestNeighCellToTheCamOnTheRay(mp->CArr[cam], p, ci, f1, f2, lpi)) ||
                ((po - pold).size() >= maxDist) || (!allPoints))
@@ -1430,7 +1432,7 @@ void mv_delaunay_GC::forceTedgesByGradientCVPR11(bool fixesSigma, float nPixelSi
     }
 
     // choose random order to prevent waiting
-    staticVector<int>* vetexesToProcessIdsRand = createRandomArrayOfIntegers(_verticesAttr.size());
+    StaticVector<int>* vetexesToProcessIdsRand = createRandomArrayOfIntegers(_verticesAttr.size());
 
 #pragma omp parallel for
     for(int i = 0; i < vetexesToProcessIdsRand->size(); ++i)
@@ -1440,7 +1442,7 @@ void mv_delaunay_GC::forceTedgesByGradientCVPR11(bool fixesSigma, float nPixelSi
         if(v.isVirtual())
             continue;
 
-        const point3d& po = _verticesCoords[vi];
+        const Point3d& po = _verticesCoords[vi];
         for(int c = 0; c < v.cams.size(); ++c)
         {
             int cam = v.cams[c];
@@ -1457,7 +1459,7 @@ void mv_delaunay_GC::forceTedgesByGradientCVPR11(bool fixesSigma, float nPixelSi
 
                 f2 = mirrorFacet(f1);
                 CellIndex ci = f1.cellIndex;
-                point3d p = po; // HAS TO BE HERE !!!
+                Point3d p = po; // HAS TO BE HERE !!!
                 float maxDist = nPixelSizeBehind * mp->getCamPixelSize(p, cam);
                 if(fixesSigma)
                 {
@@ -1467,8 +1469,8 @@ void mv_delaunay_GC::forceTedgesByGradientCVPR11(bool fixesSigma, float nPixelSi
                 bool ok = (ci != GEO::NO_CELL);
                 while(ok)
                 {
-                    point3d pold = p;
-                    point3d lpi;
+                    Point3d pold = p;
+                    Point3d lpi;
                     Facet ff1, ff2;
                     // find cell which is farest to the cam and which is
                     // intersected with cam-p
@@ -1551,7 +1553,7 @@ void mv_delaunay_GC::forceTedgesByGradientIJCV(bool fixesSigma, float nPixelSize
     }
 
     // choose random order to prevent waiting
-    staticVector<int>* vetexesToProcessIdsRand = createRandomArrayOfIntegers(_verticesAttr.size());
+    StaticVector<int>* vetexesToProcessIdsRand = createRandomArrayOfIntegers(_verticesAttr.size());
 
     int64_t avStepsFront = 0;
     int64_t aAvStepsFront = 0;
@@ -1566,7 +1568,7 @@ void mv_delaunay_GC::forceTedgesByGradientIJCV(bool fixesSigma, float nPixelSize
         if(v.isVirtual())
             continue;
 
-        const point3d& po = _verticesCoords[vi];
+        const Point3d& po = _verticesCoords[vi];
         for(int c = 0; c < v.cams.size(); ++c)
         {
             int nstepsFront = 0;
@@ -1591,7 +1593,7 @@ void mv_delaunay_GC::forceTedgesByGradientIJCV(bool fixesSigma, float nPixelSize
 
             {
                 CellIndex ci = getFacetInFrontVertexOnTheRayToTheCam(vi, cam).cellIndex;
-                point3d p = po; // HAS TO BE HERE !!!
+                Point3d p = po; // HAS TO BE HERE !!!
                 bool ok = (ci != GEO::NO_CELL);
                 while(ok)
                 {
@@ -1610,7 +1612,7 @@ void mv_delaunay_GC::forceTedgesByGradientIJCV(bool fixesSigma, float nPixelSize
                     }
 
                     Facet f1, f2;
-                    point3d lpi;
+                    Point3d lpi;
                     // find cell which is nearest to the cam and which intersect cam-p ray
                     if(((p - po).size() > (nsigmaJumpPart + nsigmaFrontSilentPart) * maxDist) || // (2 + 2) * sigma
                        (!nearestNeighCellToTheCamOnTheRay(mp->CArr[cam], p, ci, f1, f2, lpi)))
@@ -1628,7 +1630,7 @@ void mv_delaunay_GC::forceTedgesByGradientIJCV(bool fixesSigma, float nPixelSize
 
             {
                 CellIndex ci = getFacetBehindVertexOnTheRayToTheCam(vi, cam).cellIndex; // T1
-                point3d p = po; // HAS TO BE HERE !!!
+                Point3d p = po; // HAS TO BE HERE !!!
                 bool ok = (ci != GEO::NO_CELL);
                 if(ok)
                 {
@@ -1644,7 +1646,7 @@ void mv_delaunay_GC::forceTedgesByGradientIJCV(bool fixesSigma, float nPixelSize
                     maxSilent = std::max(maxSilent, c.out);
 
                     Facet f1, f2;
-                    point3d lpi;
+                    Point3d lpi;
                     // find cell which is farest to the cam and which intersect cam-p ray
                     if(((p - po).size() > nsigmaBackSilentPart * maxDist) || // (p-po).size() > 2 * sigma
                        (!farestNeighCellToTheCamOnTheRay(mp->CArr[cam], p, ci, f1, f2, lpi)))
@@ -1723,7 +1725,7 @@ void mv_delaunay_GC::filterPointsWithHigherPixelSize(bool fixesSigma, float nPix
     long t2 = clock();
 
     // choose random order to prevent waiting
-    staticVector<int>* vetexesToProcessIdsRand = createRandomArrayOfIntegers(_verticesAttr.size());
+    StaticVector<int>* vetexesToProcessIdsRand = createRandomArrayOfIntegers(_verticesAttr.size());
 
     int64_t avStepsFront = 0;
     int64_t aAvStepsFront = 0;
@@ -1738,7 +1740,7 @@ void mv_delaunay_GC::filterPointsWithHigherPixelSize(bool fixesSigma, float nPix
         if(v.isVirtual() || v.nrc == 0)
             continue;
 
-        const point3d& po = _verticesCoords[vi];
+        const Point3d& po = _verticesCoords[vi];
         int c = mp->getCamsMinPixelSizeIndex(po, v.cams);
         // for (int c=0;c<cams->size();c++)
         {
@@ -1761,7 +1763,7 @@ void mv_delaunay_GC::filterPointsWithHigherPixelSize(bool fixesSigma, float nPix
 
             {
                 CellIndex ci = getFacetInFrontVertexOnTheRayToTheCam(vi, cam).cellIndex;
-                point3d p = po; // HAS TO BE HERE !!!
+                Point3d p = po; // HAS TO BE HERE !!!
                 bool ok = (ci != GEO::NO_CELL);
                 while(ok)
                 {
@@ -1771,7 +1773,7 @@ void mv_delaunay_GC::filterPointsWithHigherPixelSize(bool fixesSigma, float nPix
                     {
                         const VertexIndex ki = _tetrahedralization->cell_vertex(ci, k);
                         const GC_vertexInfo& kVertexAttr = _verticesAttr[ki];
-                        const point3d& kVertex = _verticesCoords[ki];
+                        const Point3d& kVertex = _verticesCoords[ki];
 
                         if(((kVertex - po).size() < maxDist) &&
                            (kVertexAttr.isReal()) && (kVertexAttr.pixSize < minPixSize))
@@ -1790,7 +1792,7 @@ void mv_delaunay_GC::filterPointsWithHigherPixelSize(bool fixesSigma, float nPix
                     }
 
                     Facet f1, f2;
-                    point3d lpi;
+                    Point3d lpi;
                     // find cell which is nearest to the cam and which is
                     // intersected with cam-p ray
                     if(((p - po).size() > maxDist) ||
@@ -1809,7 +1811,7 @@ void mv_delaunay_GC::filterPointsWithHigherPixelSize(bool fixesSigma, float nPix
 
             {
                 CellIndex ci = getFacetBehindVertexOnTheRayToTheCam(vi, cam).cellIndex;
-                point3d p = po; // HAS TO BE HERE !!!
+                Point3d p = po; // HAS TO BE HERE !!!
                 bool ok = (ci != GEO::NO_CELL);
                 while(ok)
                 {
@@ -1819,7 +1821,7 @@ void mv_delaunay_GC::filterPointsWithHigherPixelSize(bool fixesSigma, float nPix
                     {
                         const VertexIndex ki = _tetrahedralization->cell_vertex(ci, k);
                         const GC_vertexInfo& kVertexAttr = _verticesAttr[ki];
-                        const point3d& kVertex = _verticesCoords[ki];
+                        const Point3d& kVertex = _verticesCoords[ki];
 
                         if(((kVertex - po).size() < maxDist) &&
                            kVertexAttr.isReal() && (kVertexAttr.pixSize < minPixSize))
@@ -1832,7 +1834,7 @@ void mv_delaunay_GC::filterPointsWithHigherPixelSize(bool fixesSigma, float nPix
                     }
 
                     Facet f1, f2;
-                    point3d lpi;
+                    Point3d lpi;
                     // find cell which is farest to the cam and which is
                     // intersected with cam-p
                     // ray
@@ -1876,7 +1878,7 @@ void mv_delaunay_GC::filterPointsWithHigherPixelSize(bool fixesSigma, float nPix
     printfElapsedTime(t2, "t-edges forced : ");
 }
 
-void mv_delaunay_GC::updateGraphFromTmpPtsCamsHexah(staticVector<int>* incams, point3d hexah[8],
+void mv_delaunay_GC::updateGraphFromTmpPtsCamsHexah(StaticVector<int>* incams, Point3d hexah[8],
                                                     std::string tmpCamsPtsFolderName, bool labatutWeights,
                                                     float distFcnHeight)
 {
@@ -1895,7 +1897,7 @@ void mv_delaunay_GC::updateGraphFromTmpPtsCamsHexah(staticVector<int>* incams, p
     } // for c
 }
 
-void mv_delaunay_GC::updateGraphFromTmpPtsCamsHexahRC(int rc, point3d hexah[8], std::string tmpCamsPtsFolderName,
+void mv_delaunay_GC::updateGraphFromTmpPtsCamsHexahRC(int rc, Point3d hexah[8], std::string tmpCamsPtsFolderName,
                                                       bool labatutWeights, float  /*distFcnHeight*/)
 {
 
@@ -1919,25 +1921,25 @@ void mv_delaunay_GC::updateGraphFromTmpPtsCamsHexahRC(int rc, point3d hexah[8], 
         pnt.freadinfo(f);
         // printf("%f, %i, %f, %f,
         // %f\n",pnt.sim,pnt.nrc,pnt.point.x,pnt.point.y,pnt.point.z);
-        point3d pt = pnt.point;
+        Point3d pt = pnt.point;
 
         float weight = weightFcn((float)pnt.nrc, labatutWeights, (float)pnt.ncams);
 
         nout++;
 
-        staticVector<point3d>* lshi = lineSegmentHexahedronIntersection(pt, mp->CArr[rc], hexah);
+        StaticVector<Point3d>* lshi = lineSegmentHexahedronIntersection(pt, mp->CArr[rc], hexah);
         if((!isPointInHexahedron(pt, hexah)) && (lshi->size() >= 1) && (feof(f) == 0) &&
            ((!doFilterOctreeTracks) || ((doFilterOctreeTracks) && (pnt.ncams >= minNumOfConsistentCams))))
         {
             nin++;
-            point3d lpi = pt;
-            point3d camBehind = mp->CArr[rc] + (mp->CArr[rc] - pt);
+            Point3d lpi = pt;
+            Point3d camBehind = mp->CArr[rc] + (mp->CArr[rc] - pt);
             CellIndex ci = getFirstCellOnTheRayFromCamToThePoint(rc, pt, lpi);
             if(ci != GEO::NO_CELL)
             {
                 // update weights on the sp-cam half line
                 CellIndex tmp_ci = ci;
-                point3d p = mp->CArr[rc];
+                Point3d p = mp->CArr[rc];
                 // _cellsAttr[ci].cellSWeight = (float)maxint;
 
                 bool ok = tmp_ci != GEO::NO_CELL;
@@ -1950,7 +1952,7 @@ void mv_delaunay_GC::updateGraphFromTmpPtsCamsHexahRC(int rc, point3d hexah[8], 
                     }
 
                     Facet f1, f2;
-                    point3d lpi;
+                    Point3d lpi;
                     // find cell which is nearest to the pont and which is
                     // intersected with point-p ray
                     if(!farestNeighCellToTheCamOnTheRay(camBehind, p, tmp_ci, f1, f2, lpi))
@@ -2030,21 +2032,21 @@ int mv_delaunay_GC::setIsOnSurface()
 
 bool mv_delaunay_GC::isCamInFrontOfFacet(Facet f, int rc)
 {
-    // point3d pa =
+    // Point3d pa =
     // convertPointToPoint3d(f.first->vertex((f.second+1)%4)->point());
-    // point3d pb =
+    // Point3d pb =
     // convertPointToPoint3d(f.first->vertex((f.second+2)%4)->point());
-    // point3d pc =
+    // Point3d pc =
     // convertPointToPoint3d(f.first->vertex((f.second+3)%4)->point());
-    // point3d pd = convertPointToPoint3d(f.first->vertex(f.second)->point());
-    const point3d pa = _verticesCoords[getVertexIndex(f, 0)];
-    const point3d pb = _verticesCoords[getVertexIndex(f, 1)];
-    const point3d pc = _verticesCoords[getVertexIndex(f, 2)];
-    const point3d pd = _verticesCoords[getOppositeVertexIndex(f)];
+    // Point3d pd = convertPointToPoint3d(f.first->vertex(f.second)->point());
+    const Point3d pa = _verticesCoords[getVertexIndex(f, 0)];
+    const Point3d pb = _verticesCoords[getVertexIndex(f, 1)];
+    const Point3d pc = _verticesCoords[getVertexIndex(f, 2)];
+    const Point3d pd = _verticesCoords[getOppositeVertexIndex(f)];
 
-    const point3d v1 = (pb - pa).normalize();
-    const point3d v2 = (pc - pa).normalize();
-    point3d n = cross(v1, v2).normalize();
+    const Point3d v1 = (pb - pa).normalize();
+    const Point3d v2 = (pc - pa).normalize();
+    Point3d n = cross(v1, v2).normalize();
 
     double d1 = orientedPointPlaneDistance(pd, pa, n);
 
@@ -2130,7 +2132,7 @@ void mv_delaunay_GC::saveMaxflowToWrl(std::string dirName, std::string fileNameT
                                       std::string fileNameWrl, std::string fileNameWrlTex, std::string fileNamePly,
                                       int camerasPerOneOmni)
 {
-    staticVector<int>* cams = new staticVector<int>(mp->ncams);
+    StaticVector<int>* cams = new StaticVector<int>(mp->ncams);
     for(int i = 0; i < mp->ncams; i++)
     {
         cams->push_back(i);
@@ -2193,7 +2195,7 @@ int mv_delaunay_GC::erosionDilatation(bool sink)
 
     int nmorphed = 0;
 
-    staticVector<CellIndex> toDoInverse;
+    StaticVector<CellIndex> toDoInverse;
     toDoInverse.reserve(_cellIsFull.size());
 
     // standalone tetrahedrons
@@ -2234,7 +2236,7 @@ void mv_delaunay_GC::graphCutPostProcessing()
     std::cout << "Graph cut post-processing." << std::endl;
     invertFullStatusForSmallLabels();
 
-    staticVector<CellIndex> toDoInverse;
+    StaticVector<CellIndex> toDoInverse;
     toDoInverse.reserve(_cellIsFull.size());
 
     for(CellIndex ci = 0; ci < _cellIsFull.size(); ++ci)
@@ -2268,7 +2270,7 @@ float mv_delaunay_GC::getAveragePixelSize() const
     for(VertexIndex i = 0; i < _verticesAttr.size(); ++i)
     {
         const GC_vertexInfo& v = _verticesAttr[i];
-        const point3d& p = _verticesCoords[i];
+        const Point3d& p = _verticesCoords[i];
         for(int c = 0; c < v.cams.size(); ++c)
         {
             avPixelSize += mp->getCamPixelSize(p, v.cams[c]);
@@ -2280,7 +2282,7 @@ float mv_delaunay_GC::getAveragePixelSize() const
     return avPixelSize;
 }
 
-void mv_delaunay_GC::freeUnwantedFullCells(std::string  /*folderName*/, point3d* hexah)
+void mv_delaunay_GC::freeUnwantedFullCells(std::string  /*folderName*/, Point3d* hexah)
 {
     if(mp->verbose)
         printf("freeUnwantedFullCells\n");
@@ -2318,17 +2320,17 @@ void mv_delaunay_GC::freeUnwantedFullCells(std::string  /*folderName*/, point3d*
     if(hexah != nullptr)
     {
         int nremoved = 0;
-        point3d hexahinf[8];
+        Point3d hexahinf[8];
         inflateHexahedron(hexah, hexahinf, 1.001);
         for(CellIndex ci = 0; ci < _cellIsFull.size(); ++ci)
         {
             if(isInfiniteCell(ci) || !_cellIsFull[ci])
                 continue;
 
-            const point3d& pa = _verticesCoords[_tetrahedralization->cell_vertex(ci, 0)];
-            const point3d& pb = _verticesCoords[_tetrahedralization->cell_vertex(ci, 1)];
-            const point3d& pc = _verticesCoords[_tetrahedralization->cell_vertex(ci, 2)];
-            const point3d& pd = _verticesCoords[_tetrahedralization->cell_vertex(ci, 3)];
+            const Point3d& pa = _verticesCoords[_tetrahedralization->cell_vertex(ci, 0)];
+            const Point3d& pb = _verticesCoords[_tetrahedralization->cell_vertex(ci, 1)];
+            const Point3d& pc = _verticesCoords[_tetrahedralization->cell_vertex(ci, 2)];
+            const Point3d& pd = _verticesCoords[_tetrahedralization->cell_vertex(ci, 3)];
 
             if((!isPointInHexahedron(pa, hexahinf)) ||
                (!isPointInHexahedron(pb, hexahinf)) ||
@@ -2356,7 +2358,7 @@ void mv_delaunay_GC::freeUnwantedFullCells(std::string  /*folderName*/, point3d*
 
 void mv_delaunay_GC::saveMaxflowToWrl(std::string  /*dirName*/, std::string fileNameTxt, std::string  /*fileNameTxtCam*/,
                                       std::string fileNameWrl, std::string  /*fileNameWrlTex*/, std::string  /*fileNamePly*/,
-                                      int camerasPerOneOmni, staticVector<int>* cams)
+                                      int camerasPerOneOmni, StaticVector<int>* cams)
 {
     if(mp->verbose)
         printf("saving mincut to wrl\n");
@@ -2377,7 +2379,7 @@ void mv_delaunay_GC::saveMaxflowToWrl(std::string  /*dirName*/, std::string file
     fprintf(f, "%i\n", 3);
 
     fprintf(f, "%i\n", (int)getNbVertices());
-    for(const point3d& p: _verticesCoords)
+    for(const Point3d& p: _verticesCoords)
     {
         fprintf(f, "%f %f %f\n", p.x, p.y, p.z);
     }
@@ -2458,20 +2460,20 @@ void mv_delaunay_GC::saveMaxflowToWrl(std::string  /*dirName*/, std::string file
             trisColors->push_back(c);
             */
 
-            point3d points[3];
+            Point3d points[3];
             for(int k = 0; k < 3; ++k)
             {
                 points[k] = _verticesCoords[vertices[k]];
             }
-            point3d oax = (points[0] + points[1] + points[2]) / 3.0;
-            point3d VV[3];
+            Point3d oax = (points[0] + points[1] + points[2]) / 3.0;
+            Point3d VV[3];
             for(int k = 0; k < 3; ++k)
             {
                 VV[k] = (points[k] - oax).normalize();
             }
 
-            point3d D = _verticesCoords[getOppositeVertexIndex(f1)];
-            point3d N = cross((points[1] - points[0]).normalize(), (points[2] - points[0]).normalize()).normalize();
+            Point3d D = _verticesCoords[getOppositeVertexIndex(f1)];
+            Point3d N = cross((points[1] - points[0]).normalize(), (points[2] - points[0]).normalize()).normalize();
 
             if(orientedPointPlaneDistance(D, oax, N) < 0.0)
             {
@@ -2513,14 +2515,14 @@ void mv_delaunay_GC::invertFullStatusForSmallLabels()
         printf("filling small holes\n");
 
     const std::size_t nbCells = _cellIsFull.size();
-    staticVector<int>* colorPerCell = new staticVector<int>(nbCells);
+    StaticVector<int>* colorPerCell = new StaticVector<int>(nbCells);
     colorPerCell->resize_with(nbCells, -1);
 
-    staticVector<int>* nbCellsPerColor = new staticVector<int>(100);
+    StaticVector<int>* nbCellsPerColor = new StaticVector<int>(100);
     nbCellsPerColor->resize_with(1, 0);
     int lastColorId = 0;
 
-    staticVector<CellIndex>* buff = new staticVector<CellIndex>(nbCells);
+    StaticVector<CellIndex>* buff = new StaticVector<CellIndex>(nbCells);
 
     for(CellIndex ci = 0; ci < nbCells; ++ci)
     {
@@ -2575,12 +2577,12 @@ void mv_delaunay_GC::invertFullStatusForSmallLabels()
     delete colorPerCell;
 }
 
-void mv_delaunay_GC::reconstructVoxel(point3d hexah[8], staticVector<int>* voxelsIds, std::string folderName,
+void mv_delaunay_GC::reconstructVoxel(Point3d hexah[8], StaticVector<int>* voxelsIds, std::string folderName,
                                       std::string tmpCamsPtsFolderName, bool removeSmallSegments,
-                                      staticVector<point3d>* hexahsToExcludeFromResultingMesh, VoxelsGrid* ls,
-                                      point3d spaceSteps)
+                                      StaticVector<Point3d>* hexahsToExcludeFromResultingMesh, VoxelsGrid* ls,
+                                      Point3d spaceSteps)
 {
-    staticVector<int>* cams = pc->findCamsWhichIntersectsHexahedron(hexah);
+    StaticVector<int>* cams = pc->findCamsWhichIntersectsHexahedron(hexah);
 
     if(cams->size() < 1)
         throw std::logic_error("No camera to make the reconstruction");
@@ -2645,10 +2647,10 @@ void mv_delaunay_GC::addToInfiniteSw(float sW)
     }
 }
 
-void mv_delaunay_GC::reconstructGC(float alphaQual, std::string baseName, staticVector<int>* cams,
+void mv_delaunay_GC::reconstructGC(float alphaQual, std::string baseName, StaticVector<int>* cams,
                                    std::string folderName, std::string fileNameStGraph, std::string fileNameStSolution,
                                    std::string fileNameTxt, std::string fileNameTxtCam, int camerasPerOneOmni,
-                                   bool doRemoveBubbles, staticVector<point3d>* hexahsToExcludeFromResultingMesh, point3d* hexah) // alphaQual=5.0f
+                                   bool doRemoveBubbles, StaticVector<Point3d>* hexahsToExcludeFromResultingMesh, Point3d* hexah) // alphaQual=5.0f
 {
     std::cout << "reconstructGC" << std::endl;
 
@@ -2750,11 +2752,11 @@ void mv_delaunay_GC::maxflow()
     std::cout << "Maxflow: end" << std::endl;
 }
 
-void mv_delaunay_GC::reconstructExpetiments(staticVector<int>* cams, std::string folderName,
+void mv_delaunay_GC::reconstructExpetiments(StaticVector<int>* cams, std::string folderName,
                                             std::string fileNameStGraph, std::string fileNameStSolution,
                                             std::string fileNameTxt, std::string fileNameTxtCam, int camerasPerOneOmni,
-                                            bool update, point3d* hexahInflated, std::string tmpCamsPtsFolderName,
-                                            staticVector<point3d>* hexahsToExcludeFromResultingMesh, point3d spaceSteps)
+                                            bool update, Point3d* hexahInflated, std::string tmpCamsPtsFolderName,
+                                            StaticVector<Point3d>* hexahsToExcludeFromResultingMesh, Point3d spaceSteps)
 {
     int maxint = 1000000.0f;
 
@@ -2908,8 +2910,8 @@ Mesh* mv_delaunay_GC::createMesh(bool filterHelperPointsTriangles)
     Mesh* me = new Mesh();
 
     // TODO: copy only surface points and remap visibilities
-    me->pts = new staticVector<point3d>(_verticesCoords.size());
-    for(const point3d& p: _verticesCoords)
+    me->pts = new StaticVector<Point3d>(_verticesCoords.size());
+    for(const Point3d& p: _verticesCoords)
     {
         me->pts->push_back(p);
     }
@@ -2960,7 +2962,7 @@ Mesh* mv_delaunay_GC::createMesh(bool filterHelperPointsTriangles)
         }
     }
 
-    me->tris = new staticVector<Mesh::triangle>(nbSurfaceFacets);
+    me->tris = new StaticVector<Mesh::triangle>(nbSurfaceFacets);
     // loop over all facets
     for(CellIndex ci = 0; ci < _cellIsFull.size(); ++ci)
     {
@@ -3000,7 +3002,7 @@ Mesh* mv_delaunay_GC::createMesh(bool filterHelperPointsTriangles)
                     continue;
             }
 
-            point3d points[3];
+            Point3d points[3];
             for(int k = 0; k < 3; ++k)
             {
                 points[k] = _verticesCoords[vertices[k]];
@@ -3011,10 +3013,10 @@ Mesh* mv_delaunay_GC::createMesh(bool filterHelperPointsTriangles)
             //    printf("WARNINIG infinite vertex\n");
             // }
 
-            point3d D1 = _verticesCoords[getOppositeVertexIndex(f1)];
-            point3d D2 = _verticesCoords[getOppositeVertexIndex(f2)];
+            Point3d D1 = _verticesCoords[getOppositeVertexIndex(f1)];
+            Point3d D2 = _verticesCoords[getOppositeVertexIndex(f2)];
 
-            point3d N = cross((points[1] - points[0]).normalize(), (points[2] - points[0]).normalize()).normalize();
+            Point3d N = cross((points[1] - points[0]).normalize(), (points[2] - points[0]).normalize()).normalize();
 
             float dd1 = orientedPointPlaneDistance(D1, points[0], N);
             float dd2 = orientedPointPlaneDistance(D2, points[0], N);
@@ -3064,9 +3066,9 @@ Mesh* mv_delaunay_GC::createMesh(bool filterHelperPointsTriangles)
     return me;
 }
 
-staticVector<rgb>* mv_delaunay_GC::getPtsColorsByNCams()
+StaticVector<rgb>* mv_delaunay_GC::getPtsColorsByNCams()
 {
-    staticVector<rgb>* mePtsColors = new staticVector<rgb>(getNbVertices());
+    StaticVector<rgb>* mePtsColors = new StaticVector<rgb>(getNbVertices());
 
     for(VertexIndex i = 0; i < _verticesAttr.size(); ++i)
     {
@@ -3106,15 +3108,15 @@ void mv_delaunay_GC::initTetrahedralizationFromMeshTrianglesCenter(Mesh* mesh, b
         printf("creating 3D delaunay triangulation from mesh triangles center\n");
     long t1 = initEstimate();
 
-    point3d minP = mesh->computeTriangleCenterOfGravity(0);
-    point3d maxP = minP;
+    Point3d minP = mesh->computeTriangleCenterOfGravity(0);
+    Point3d maxP = minP;
 
     _verticesCoords.reserve(mesh->tris->size());
     _verticesAttr.reserve(mesh->tris->size());
 
     for(int i = 0; i < mesh->tris->size(); ++i)
     {
-        point3d mep = mesh->computeTriangleCenterOfGravity(i);
+        Point3d mep = mesh->computeTriangleCenterOfGravity(i);
         minP.x = std::min(mep.x, minP.x);
         minP.y = std::min(mep.y, minP.y);
         minP.z = std::min(mep.z, minP.z);
@@ -3137,15 +3139,15 @@ void mv_delaunay_GC::initTetrahedralizationFromMeshTrianglesCenter(Mesh* mesh, b
 
     if(_addPointsToPreventSingularities)
     {
-        std::array<point3d, 8> voxelCorners = {
-            point3d(minP.x, minP.y, minP.z), // 0: orig
-            point3d(maxP.x, minP.y, minP.z), // 1: X
-            point3d(maxP.x, maxP.y, minP.z),
-            point3d(minP.x, maxP.y, minP.z), // 3: Y
-            point3d(minP.x, minP.y, maxP.z), // 4: Z
-            point3d(maxP.x, minP.y, maxP.z),
-            point3d(maxP.x, maxP.y, maxP.z),
-            point3d(minP.x, maxP.y, maxP.z)
+        std::array<Point3d, 8> voxelCorners = {
+            Point3d(minP.x, minP.y, minP.z), // 0: orig
+            Point3d(maxP.x, minP.y, minP.z), // 1: X
+            Point3d(maxP.x, maxP.y, minP.z),
+            Point3d(minP.x, maxP.y, minP.z), // 3: Y
+            Point3d(minP.x, minP.y, maxP.z), // 4: Z
+            Point3d(maxP.x, minP.y, maxP.z),
+            Point3d(maxP.x, maxP.y, maxP.z),
+            Point3d(minP.x, maxP.y, maxP.z)
         };
 
         addPointsToPreventSingularities(&voxelCorners[0], 0.00001);
@@ -3160,15 +3162,15 @@ void mv_delaunay_GC::initTetrahedralizationFromMeshVertices(Mesh* mesh, bool _ad
     if(mp->verbose)
         printf("creating 3D delaunay triangulation from mesh vertices\n");
 
-    point3d minP = mesh->computeTriangleCenterOfGravity(0);
-    point3d maxP = minP;
+    Point3d minP = mesh->computeTriangleCenterOfGravity(0);
+    Point3d maxP = minP;
 
     _verticesCoords.reserve(mesh->pts->size());
     _verticesAttr.reserve(mesh->pts->size());
 
     for(int i = 0; i < mesh->pts->size(); ++i)
     {
-        point3d mep = (*mesh->pts)[i];
+        Point3d mep = (*mesh->pts)[i];
         minP.x = std::min(mep.x, minP.x);
         minP.y = std::min(mep.y, minP.y);
         minP.z = std::min(mep.z, minP.z);
@@ -3176,7 +3178,7 @@ void mv_delaunay_GC::initTetrahedralizationFromMeshVertices(Mesh* mesh, bool _ad
         maxP.y = std::max(mep.y, maxP.y);
         maxP.z = std::max(mep.z, maxP.z);
 
-        point3d p(mep.x, mep.y, mep.z);
+        Point3d p(mep.x, mep.y, mep.z);
         _verticesCoords.push_back(p);
 
         GC_vertexInfo newv;
@@ -3188,15 +3190,15 @@ void mv_delaunay_GC::initTetrahedralizationFromMeshVertices(Mesh* mesh, bool _ad
 
     if(_addPointsToPreventSingularities)
     {
-        std::array<point3d, 8> voxelCorners = {
-            point3d(minP.x, minP.y, minP.z), // 0: orig
-            point3d(maxP.x, minP.y, minP.z), // 1: X
-            point3d(maxP.x, maxP.y, minP.z),
-            point3d(minP.x, maxP.y, minP.z), // 3: Y
-            point3d(minP.x, minP.y, maxP.z), // 4: Z
-            point3d(maxP.x, minP.y, maxP.z),
-            point3d(maxP.x, maxP.y, maxP.z),
-            point3d(minP.x, maxP.y, maxP.z)
+        std::array<Point3d, 8> voxelCorners = {
+            Point3d(minP.x, minP.y, minP.z), // 0: orig
+            Point3d(maxP.x, minP.y, minP.z), // 1: X
+            Point3d(maxP.x, maxP.y, minP.z),
+            Point3d(minP.x, maxP.y, minP.z), // 3: Y
+            Point3d(minP.x, minP.y, maxP.z), // 4: Z
+            Point3d(maxP.x, minP.y, maxP.z),
+            Point3d(maxP.x, maxP.y, maxP.z),
+            Point3d(minP.x, maxP.y, maxP.z)
         };
 
         addPointsToPreventSingularities(&voxelCorners[0], 0.00001);
@@ -3206,19 +3208,19 @@ void mv_delaunay_GC::initTetrahedralizationFromMeshVertices(Mesh* mesh, bool _ad
     computeDelaunay();
 }
 
-staticVector<int>* mv_delaunay_GC::getNearestTrisFromMeshTris(Mesh* otherMesh)
+StaticVector<int>* mv_delaunay_GC::getNearestTrisFromMeshTris(Mesh* otherMesh)
 {
     ///////////////////////////////////////////////////////////////////////////////////////
     if(mp->verbose)
         printf("getNearestTrisFromMeshTris\n");
 
-    staticVector<int>* nearestTrisIds = new staticVector<int>();
+    StaticVector<int>* nearestTrisIds = new StaticVector<int>();
     nearestTrisIds->resize(otherMesh->tris->size());
 
 #pragma omp parallel for
     for(int otherMeshIdTri = 0; otherMeshIdTri < otherMesh->tris->size(); ++otherMeshIdTri)
     {
-        point3d mep = otherMesh->computeTriangleCenterOfGravity(otherMeshIdTri);
+        Point3d mep = otherMesh->computeTriangleCenterOfGravity(otherMeshIdTri);
         VertexIndex nvi = locateNearestVertex(mep);
         if(nvi != GEO::NO_VERTEX && _verticesAttr[nvi].segId == -2)
         {
@@ -3234,19 +3236,19 @@ staticVector<int>* mv_delaunay_GC::getNearestTrisFromMeshTris(Mesh* otherMesh)
     return nearestTrisIds;
 }
 
-staticVector<int>* mv_delaunay_GC::getNearestPtsFromMesh(Mesh& otherMesh)
+StaticVector<int>* mv_delaunay_GC::getNearestPtsFromMesh(Mesh& otherMesh)
 {
     ///////////////////////////////////////////////////////////////////////////////////////
     if(mp->verbose)
         printf("getNearestPtsFromMesh\n");
 
-    staticVector<int>* nearestPtsIds = new staticVector<int>();
+    StaticVector<int>* nearestPtsIds = new StaticVector<int>();
     nearestPtsIds->resize(otherMesh.pts->size());
 
 #pragma omp parallel for
     for(int otherMeshIdPt = 0; otherMeshIdPt < otherMesh.pts->size(); ++otherMeshIdPt)
     {
-        point3d mep = (*otherMesh.pts)[otherMeshIdPt];
+        Point3d mep = (*otherMesh.pts)[otherMeshIdPt];
         VertexIndex nvi = locateNearestVertex(mep);
         if(nvi != GEO::NO_VERTEX && _verticesAttr[nvi].segId == -2)
         {
@@ -3264,15 +3266,15 @@ staticVector<int>* mv_delaunay_GC::getNearestPtsFromMesh(Mesh& otherMesh)
     return nearestPtsIds;
 }
 
-void mv_delaunay_GC::segmentFullOrFree(bool full, staticVector<int>** out_fullSegsColor, int& out_nsegments)
+void mv_delaunay_GC::segmentFullOrFree(bool full, StaticVector<int>** out_fullSegsColor, int& out_nsegments)
 {
     if(mp->verbose)
         printf("segmenting connected space\n");
 
-    staticVector<int>* colors = new staticVector<int>(_cellIsFull.size());
+    StaticVector<int>* colors = new StaticVector<int>(_cellIsFull.size());
     colors->resize_with(_cellIsFull.size(), -1);
 
-    staticVector<CellIndex>* buff = new staticVector<CellIndex>(_cellIsFull.size());
+    StaticVector<CellIndex>* buff = new StaticVector<CellIndex>(_cellIsFull.size());
 
     int col = 0;
 
@@ -3316,13 +3318,13 @@ void mv_delaunay_GC::segmentFullOrFree(bool full, staticVector<int>** out_fullSe
 int mv_delaunay_GC::removeBubbles()
 {
     int nbEmptySegments = 0;
-    staticVector<int>* emptySegColors = nullptr;
+    StaticVector<int>* emptySegColors = nullptr;
     segmentFullOrFree(false, &emptySegColors, nbEmptySegments);
 
     if(mp->verbose)
         printf("removing bubbles\n");
 
-    staticVectorBool* colorsToFill = new staticVectorBool(nbEmptySegments);
+    StaticVectorBool* colorsToFill = new StaticVectorBool(nbEmptySegments);
     // all free space segments which contains camera has to remain free all others full
     colorsToFill->resize_with(nbEmptySegments, true);
 
@@ -3377,10 +3379,10 @@ int mv_delaunay_GC::removeDust(int minSegSize)
         printf("removing dust\n");
 
     int nbFullSegments = 0;
-    staticVector<int>* fullSegsColor = nullptr;
+    StaticVector<int>* fullSegsColor = nullptr;
     segmentFullOrFree(true, &fullSegsColor, nbFullSegments);
 
-    staticVector<int>* colorsSize = new staticVector<int>(nbFullSegments);
+    StaticVector<int>* colorsSize = new StaticVector<int>(nbFullSegments);
     colorsSize->resize_with(nbFullSegments, 0);
 
     // all free space segments which contains camera has to remain free
@@ -3420,10 +3422,10 @@ void mv_delaunay_GC::leaveLargestFullSegmentOnly()
         printf("Largest full segment only.\n");
 
     int nsegments;
-    staticVector<int>* colors = nullptr;
+    StaticVector<int>* colors = nullptr;
     segmentFullOrFree(true, &colors, nsegments);
 
-    staticVector<int>* colorsSize = new staticVector<int>(nsegments);
+    StaticVector<int>* colorsSize = new StaticVector<int>(nsegments);
     colorsSize->resize_with(nsegments, 0);
 
     // all free space segments which contains camera has to remain free
@@ -3461,9 +3463,9 @@ void mv_delaunay_GC::leaveLargestFullSegmentOnly()
         printf("Largest full segment only. Done.\n");
 }
 
-staticVector<float>* mv_delaunay_GC::computeSegmentsSurfaceArea(bool full, staticVector<int>& colors, int nsegments)
+StaticVector<float>* mv_delaunay_GC::computeSegmentsSurfaceArea(bool full, StaticVector<int>& colors, int nsegments)
 {
-    staticVector<float>* segmentsSurfAreas = new staticVector<float>(nsegments);
+    StaticVector<float>* segmentsSurfAreas = new StaticVector<float>(nsegments);
     segmentsSurfAreas->resize_with(nsegments, 0.0f);
 
     // loop over all facets
@@ -3501,23 +3503,23 @@ staticVector<float>* mv_delaunay_GC::computeSegmentsSurfaceArea(bool full, stati
     return segmentsSurfAreas;
 }
 
-staticVector<staticVector<int>*>* mv_delaunay_GC::createPtsCamsForAnotherMesh(staticVector<staticVector<int>*>* refPtsCams, Mesh& otherMesh)
+StaticVector<StaticVector<int>*>* mv_delaunay_GC::createPtsCamsForAnotherMesh(StaticVector<StaticVector<int>*>* refPtsCams, Mesh& otherMesh)
 {
     std::cout << "createPtsCamsForAnotherMesh" << std::endl;
 
-    staticVector<int>* otherObjPtsToNearestPts = getNearestPtsFromMesh(otherMesh);
+    StaticVector<int>* otherObjPtsToNearestPts = getNearestPtsFromMesh(otherMesh);
 
-    staticVector<staticVector<int>*>* otherMeshPtsCams = new staticVector<staticVector<int>*>();
+    StaticVector<StaticVector<int>*>* otherMeshPtsCams = new StaticVector<StaticVector<int>*>();
     otherMeshPtsCams->resize(otherObjPtsToNearestPts->size());
 
     for(int i = 0; i < otherObjPtsToNearestPts->size(); ++i)
     {
-        staticVector<int>* pOther = new staticVector<int>();
+        StaticVector<int>* pOther = new StaticVector<int>();
         (*otherMeshPtsCams)[i] = pOther; // give ownership
         int iRef = (*otherObjPtsToNearestPts)[i];
         if(iRef == -1)
             continue;
-        staticVector<int>* pRef = (*refPtsCams)[iRef];
+        StaticVector<int>* pRef = (*refPtsCams)[iRef];
         if(pRef == nullptr)
             continue;
 

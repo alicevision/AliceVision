@@ -55,9 +55,9 @@ void mv_images_cache::initIC(int _bandType, std::vector<std::string>& _imagesNam
 
     imgs = new Color*[N_PRELOADED_IMAGES];
 
-    camIdMapId = new staticVector<int>(mp->ncams);
-    mapIdCamId = new staticVector<int>(N_PRELOADED_IMAGES);
-    mapIdClock = new staticVector<long>(N_PRELOADED_IMAGES);
+    camIdMapId = new StaticVector<int>(mp->ncams);
+    mapIdCamId = new StaticVector<int>(N_PRELOADED_IMAGES);
+    mapIdClock = new StaticVector<long>(N_PRELOADED_IMAGES);
 
     for(int i = 0; i < mp->ncams; i++)
     {
@@ -122,7 +122,7 @@ void mv_images_cache::refreshData(int camId)
     }
 }
 
-Color mv_images_cache::getPixelValueInterpolated(const point2d* pix, int camId)
+Color mv_images_cache::getPixelValueInterpolated(const Point2d* pix, int camId)
 {
     refreshData(camId);
 
@@ -150,7 +150,7 @@ Color mv_images_cache::getPixelValueInterpolated(const point2d* pix, int camId)
     return out;
 }
 
-rgb mv_images_cache::getPixelValue(const pixel& pix, int camId)
+rgb mv_images_cache::getPixelValue(const Pixel& pix, int camId)
 {
     refreshData(camId);
 

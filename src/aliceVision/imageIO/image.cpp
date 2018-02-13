@@ -5,8 +5,8 @@
 
 #include "image.hpp"
 
-#include <aliceVision/structures/mv_structures.hpp>
-#include <aliceVision/structures/mv_color.hpp>
+#include <aliceVision/structures/Color.hpp>
+#include <aliceVision/structures/Rgb.hpp>
 
 #include <OpenImageIO/imageio.h>
 #include <OpenImageIO/imagebuf.h>
@@ -15,6 +15,7 @@
 #include <OpenEXR/half.h>
 
 #include <stdexcept>
+#include <memory>
 
 namespace imageIO {
 

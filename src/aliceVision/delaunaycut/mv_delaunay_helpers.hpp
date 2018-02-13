@@ -4,9 +4,9 @@
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
 #pragma once
-#include <aliceVision/structures/mv_staticVector.hpp>
+#include <aliceVision/structures/StaticVector.hpp>
 
 class multiviewParams;
 
-staticVector<staticVector<int>*>* getPtsCamsFromInfoFile(const std::string& fileNameInfo);
-staticVector<int>* getUsedCamsFromInfoFile(const std::string& fileNameInfo, multiviewParams* mp);
+StaticVector<StaticVector<int>*>* getPtsCamsFromInfoFile(const std::string& fileNameInfo);
+StaticVector<int>* getUsedCamsFromInfoFile(const std::string& fileNameInfo, multiviewParams* mp);

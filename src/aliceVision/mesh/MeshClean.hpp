@@ -5,6 +5,8 @@
 
 #pragma once
 
+#include <aliceVision/structures/StaticVector.hpp>
+#include <aliceVision/structures/Voxel.hpp>
 #include <aliceVision/mesh/Mesh.hpp>
 
 class MeshClean : public Mesh
@@ -44,43 +46,43 @@ public:
         path(MeshClean* _me, int _ptId);
         ~path();
 
-        void printfState(staticVector<pathPart>* _pth);
-        bool addNextTriIdToPathBack(int nextTriId, staticVector<pathPart>* _pth);
-        bool addNextTriIdToPathFront(int nextTriId, staticVector<pathPart>* _pth);
-        int getNextNeighBouringUnprocessedLast(staticVector<int>* ptNeighTrisSortedAscToProcess,
-                                               staticVector<pathPart>* _pth);
-        int getNextNeighBouringUnprocessedFirst(staticVector<int>* ptNeighTrisSortedAscToProcess,
-                                                staticVector<pathPart>* _pth);
-        int nCrossings(staticVector<pathPart>* _pth);
-        staticVector<pathPart>* removeCycleFromPath(staticVector<pathPart>* _pth);
+        void printfState(StaticVector<pathPart>* _pth);
+        bool addNextTriIdToPathBack(int nextTriId, StaticVector<pathPart>* _pth);
+        bool addNextTriIdToPathFront(int nextTriId, StaticVector<pathPart>* _pth);
+        int getNextNeighBouringUnprocessedLast(StaticVector<int>* ptNeighTrisSortedAscToProcess,
+                                               StaticVector<pathPart>* _pth);
+        int getNextNeighBouringUnprocessedFirst(StaticVector<int>* ptNeighTrisSortedAscToProcess,
+                                                StaticVector<pathPart>* _pth);
+        int nCrossings(StaticVector<pathPart>* _pth);
+        StaticVector<pathPart>* removeCycleFromPath(StaticVector<pathPart>* _pth);
         void deployTriangle(int triId);
-        int deployTriangles(staticVector<int>* trisIds, bool isBoundaryPt);
-        void deployPath(staticVector<pathPart>* _pth);
-        bool isClodePath(staticVector<pathPart>* _pth);
-        void updatePtNeighPtsOrderedByPath(int _ptId, staticVector<pathPart>* _pth);
-        staticVector<pathPart>* createPath(staticVector<int>* ptNeighTrisSortedAscToProcess);
+        int deployTriangles(StaticVector<int>* trisIds, bool isBoundaryPt);
+        void deployPath(StaticVector<pathPart>* _pth);
+        bool isClodePath(StaticVector<pathPart>* _pth);
+        void updatePtNeighPtsOrderedByPath(int _ptId, StaticVector<pathPart>* _pth);
+        StaticVector<pathPart>* createPath(StaticVector<int>* ptNeighTrisSortedAscToProcess);
         int deployAll();
         bool isWrongPt();
     };
 
     multiviewParams* mp;
 
-    staticVector<staticVector<int>*>* ptsNeighTrisSortedAsc;
-    staticVector<staticVector<int>*>* ptsNeighPtsOrdered;
-    staticVectorBool* ptsBoundary;
-    staticVector<int>* newPtsOldPtId;
+    StaticVector<StaticVector<int>*>* ptsNeighTrisSortedAsc;
+    StaticVector<StaticVector<int>*>* ptsNeighPtsOrdered;
+    StaticVectorBool* ptsBoundary;
+    StaticVector<int>* newPtsOldPtId;
 
-    staticVectorBool* edgesNeigTrisAlive;
-    staticVector<voxel>* edgesNeigTris;
-    staticVector<voxel>* edgesXStat;
-    staticVector<voxel>* edgesXYStat;
+    StaticVectorBool* edgesNeigTrisAlive;
+    StaticVector<Voxel>* edgesNeigTris;
+    StaticVector<Voxel>* edgesXStat;
+    StaticVector<Voxel>* edgesXYStat;
 
     int nPtsInit;
 
     MeshClean(multiviewParams* _mp);
     ~MeshClean();
 
-    bool getEdgeNeighTrisInterval(pixel& itr, int _ptId1, int _ptId2);
+    bool getEdgeNeighTrisInterval(Pixel& itr, int _ptId1, int _ptId2);
     bool isIsBoundaryPt(int ptId);
 
     void deallocateCleaningAttributes();

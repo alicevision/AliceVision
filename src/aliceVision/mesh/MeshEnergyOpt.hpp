@@ -5,6 +5,8 @@
 
 #pragma once
 
+#include <aliceVision/structures/Point3d.hpp>
+#include <aliceVision/structures/StaticVector.hpp>
 #include <aliceVision/mesh/MeshAnalyze.hpp>
 
 class MeshEnergyOpt : public MeshAnalyze
@@ -15,11 +17,11 @@ public:
     MeshEnergyOpt(multiviewParams* _mp);
     ~MeshEnergyOpt();
 
-    staticVector<point3d>* computeLaplacianPts();
-    staticVector<point3d>* computeLaplacianPtsParallel();
-    bool optimizeSmooth(float lambda, float epsilon, int type, int niter, staticVectorBool* ptsCanMove);
+    StaticVector<Point3d>* computeLaplacianPts();
+    StaticVector<Point3d>* computeLaplacianPtsParallel();
+    bool optimizeSmooth(float lambda, float epsilon, int type, int niter, StaticVectorBool* ptsCanMove);
 
 private:
-    void updateGradientParallel(float lambda, float epsilon, int type, const point3d& LU, const point3d& RD,
-                                staticVectorBool* ptsCanMove);
+    void updateGradientParallel(float lambda, float epsilon, int type, const Point3d& LU, const Point3d& RD,
+                                StaticVectorBool* ptsCanMove);
 };

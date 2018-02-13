@@ -4,6 +4,7 @@
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
 #include "SemiGlobalMatchingVolume.hpp"
+#include <aliceVision/structures/Point3d.hpp>
 #include <aliceVision/common/common.hpp>
 
 SemiGlobalMatchingVolume::SemiGlobalMatchingVolume(float _volGpuMB, int _volDimX, int _volDimY, int _volDimZ, SemiGlobalMatchingParams* _sp)
@@ -16,7 +17,7 @@ SemiGlobalMatchingVolume::SemiGlobalMatchingVolume(float _volGpuMB, int _volDimX
     volDimZ = _volDimZ;
 
     {
-        point3d dmi = sp->cps->getDeviceMemoryInfo();
+        Point3d dmi = sp->cps->getDeviceMemoryInfo();
         if(sp->mp->verbose)
             printf("GPU memory : free %f, total %f, used %f\n", dmi.x, dmi.y, dmi.z);
         volStepZ = 1;
@@ -36,16 +37,16 @@ SemiGlobalMatchingVolume::SemiGlobalMatchingVolume(float _volGpuMB, int _volDimX
         }
     }
 
-    _volume = new staticVector<unsigned char>(volDimX * volDimY * volDimZ);
+    _volume = new StaticVector<unsigned char>(volDimX * volDimY * volDimZ);
     _volume->resize_with(volDimX * volDimY * volDimZ, 255);
 
-    _volumeSecondBest = new staticVector<unsigned char>(volDimX * volDimY * volDimZ);
+    _volumeSecondBest = new StaticVector<unsigned char>(volDimX * volDimY * volDimZ);
     _volumeSecondBest->resize_with(volDimX * volDimY * volDimZ, 255);
 
-    _volumeStepZ = new staticVector<unsigned char>(volDimX * volDimY * (volDimZ / volStepZ));
+    _volumeStepZ = new StaticVector<unsigned char>(volDimX * volDimY * (volDimZ / volStepZ));
     _volumeStepZ->resize_with(volDimX * volDimY * (volDimZ / volStepZ), 255);
 
-    _volumeBestZ = new staticVector<int>(volDimX * volDimY * (volDimZ / volStepZ));
+    _volumeBestZ = new StaticVector<int>(volDimX * volDimY * (volDimZ / volStepZ));
     _volumeBestZ->resize_with(volDimX * volDimY * (volDimZ / volStepZ), -1);
 }
 
@@ -148,15 +149,15 @@ void SemiGlobalMatchingVolume::SGMoptimizeVolumeStepZ(int rc, int volStepXY, int
         printfElapsedTime(tall, "SemiGlobalMatchingVolume::SGMoptimizeVolumeStepZ");
 }
 
-staticVector<idValue>* SemiGlobalMatchingVolume::getOrigVolumeBestIdValFromVolumeStepZ(int zborder)
+StaticVector<IdValue>* SemiGlobalMatchingVolume::getOrigVolumeBestIdValFromVolumeStepZ(int zborder)
 {
     long tall = clock();
 
-    staticVector<idValue>* volumeBestIdVal = new staticVector<idValue>(volDimX * volDimY);
-    volumeBestIdVal->resize_with(volDimX * volDimY, idValue(-1, 1.0f));
+    StaticVector<IdValue>* volumeBestIdVal = new StaticVector<IdValue>(volDimX * volDimY);
+    volumeBestIdVal->resize_with(volDimX * volDimY, IdValue(-1, 1.0f));
     unsigned char* _volumeStepZPtr = _volumeStepZ->getDataWritable().data();
     int* _volumeBestZPtr = _volumeBestZ->getDataWritable().data();
-    idValue* volumeBestIdValPtr = volumeBestIdVal->getDataWritable().data();
+    IdValue* volumeBestIdValPtr = volumeBestIdVal->getDataWritable().data();
     for(int z = zborder; z < volDimZ / volStepZ - zborder; z++)
     {
         for(int y = 1; y < volDimY - 1; y++)
@@ -167,7 +168,7 @@ staticVector<idValue>* SemiGlobalMatchingVolume::getOrigVolumeBestIdValFromVolum
                 // value from volumeStepZ converted from (0, 255) to (-1, +1)
                 float val = (((float)_volumeStepZPtr[volumeIndex]) / 255.0f) * 2.0f - 1.0f;
                 int bestZ = _volumeBestZPtr[volumeIndex]; // TODO: what is bestZ?
-                idValue& idVal = volumeBestIdValPtr[y * volDimX + x];
+                IdValue& idVal = volumeBestIdValPtr[y * volDimX + x];
                 assert(bestZ >= 0);
 
                 if(idVal.id == -1)
@@ -192,7 +193,7 @@ staticVector<idValue>* SemiGlobalMatchingVolume::getOrigVolumeBestIdValFromVolum
     return volumeBestIdVal;
 }
 
-void SemiGlobalMatchingVolume::copyVolume(const staticVector<unsigned char>* volume, int zFrom, int nZSteps)
+void SemiGlobalMatchingVolume::copyVolume(const StaticVector<unsigned char>* volume, int zFrom, int nZSteps)
 {
     unsigned char* _volumePtr = _volume->getDataWritable().data();
     const unsigned char* volumePtr = volume->getData().data();
@@ -210,7 +211,7 @@ void SemiGlobalMatchingVolume::copyVolume(const staticVector<unsigned char>* vol
     }
 }
 
-void SemiGlobalMatchingVolume::copyVolume(const staticVector<int>* volume)
+void SemiGlobalMatchingVolume::copyVolume(const StaticVector<int>* volume)
 {
     unsigned char* _volumePtr = _volume->getDataWritable().data();
     const int* volumePtr = volume->getData().data();
@@ -228,7 +229,7 @@ void SemiGlobalMatchingVolume::copyVolume(const staticVector<int>* volume)
     }
 }
 
-void SemiGlobalMatchingVolume::addVolumeMin(const staticVector<unsigned char>* volume, int zFrom, int nZSteps)
+void SemiGlobalMatchingVolume::addVolumeMin(const StaticVector<unsigned char>* volume, int zFrom, int nZSteps)
 {
     unsigned char* _volumePtr = _volume->getDataWritable().data();
     const unsigned char* volumePtr = volume->getData().data();
@@ -248,7 +249,7 @@ void SemiGlobalMatchingVolume::addVolumeMin(const staticVector<unsigned char>* v
     }
 }
 
-void SemiGlobalMatchingVolume::addVolumeSecondMin(const staticVector<unsigned char>* volume, int zFrom, int nZSteps)
+void SemiGlobalMatchingVolume::addVolumeSecondMin(const StaticVector<unsigned char>* volume, int zFrom, int nZSteps)
 {
     unsigned char* _volumePtr = _volume->getDataWritable().data();
     unsigned char* _volumeSecondBestPtr = _volumeSecondBest->getDataWritable().data();
@@ -279,7 +280,7 @@ void SemiGlobalMatchingVolume::addVolumeSecondMin(const staticVector<unsigned ch
     }
 }
 
-void SemiGlobalMatchingVolume::addVolumeAvg(int n, const staticVector<unsigned char>* volume, int zFrom, int nZSteps)
+void SemiGlobalMatchingVolume::addVolumeAvg(int n, const StaticVector<unsigned char>* volume, int zFrom, int nZSteps)
 {
     unsigned char* _volumePtr = _volume->getDataWritable().data();
     const unsigned char* volumePtr = volume->getData().data();
@@ -303,10 +304,10 @@ void SemiGlobalMatchingVolume::addVolumeAvg(int n, const staticVector<unsigned c
 
 
 
-staticVector<unsigned char>* SemiGlobalMatchingVolume::getZSlice(int z) const
+StaticVector<unsigned char>* SemiGlobalMatchingVolume::getZSlice(int z) const
 {
     unsigned char* _volumePtr = _volume->getDataWritable().data();
-    staticVector<unsigned char>* zs = new staticVector<unsigned char>(volDimY * volDimX);
+    StaticVector<unsigned char>* zs = new StaticVector<unsigned char>(volDimY * volDimX);
     unsigned char* zsPtr = zs->getDataWritable().data();
 #pragma omp parallel for
     for(int y = 0; y < volDimY; y++)

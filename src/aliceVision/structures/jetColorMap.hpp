@@ -5,8 +5,8 @@
 
 #pragma once
 
-#include <aliceVision/structures/mv_color.hpp>
-#include <aliceVision/structures/mv_structures.hpp>
+#include <aliceVision/structures/Color.hpp>
+#include <aliceVision/structures/Rgb.hpp>
 
 /**
  * @brief Get the RGB color from the jet colormap for the given value.

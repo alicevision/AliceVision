@@ -4,6 +4,8 @@
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
 #include "MeshEnergyOptPhotoMem.hpp"
+#include <aliceVision/structures/Pixel.hpp>
+#include <aliceVision/structures/Point2d.hpp>
 #include <aliceVision/common/fileIO.hpp>
 #include <aliceVision/imageIO/imageScaledColors.hpp>
 
@@ -13,8 +15,8 @@ namespace bfs = boost::filesystem;
 
 MeshEnergyOptPhotoMem::ptStat::ptStat()
 {
-    camsDepthMapsPtsSims = new staticVector<camPtStat>(10);
-    historyPtsSims = new staticVector<point4d>(10);
+    camsDepthMapsPtsSims = new StaticVector<camPtStat>(10);
+    historyPtsSims = new StaticVector<Point4d>(10);
 }
 
 MeshEnergyOptPhotoMem::ptStat::~ptStat()
@@ -96,7 +98,7 @@ void MeshEnergyOptPhotoMem::ptStat::addCamPtStat(camPtStat& cptst)
 }
 
 MeshEnergyOptPhotoMem::MeshEnergyOptPhotoMem(multiviewParams* _mp, SemiGlobalMatchingParams* _sp,
-                                                           const staticVector<int>& _usedCams)
+                                                           const StaticVector<int>& _usedCams)
     : MeshEnergyOpt(_mp)
     , usedCams(_usedCams)
     , sp(_sp)
@@ -132,7 +134,7 @@ void MeshEnergyOptPhotoMem::allocatePtsStats()
 {
     if(mp->verbose)
         printf("allocatePtsStats\n");
-    ptsStats = new staticVector<ptStat*>(pts->size());
+    ptsStats = new StaticVector<ptStat*>(pts->size());
     for(int i = 0; i < pts->size(); i++)
     {
         ptStat* ptst = new ptStat();
@@ -155,7 +157,7 @@ void MeshEnergyOptPhotoMem::deAllocatePtsStats()
 
 double MeshEnergyOptPhotoMem::computeEnergyFairForPt(int ptid)
 {
-    point3d Kh;
+    Point3d Kh;
     double Kg;
     if((getVertexMeanCurvatureNormal(ptid, Kh)) && (getVertexGaussianCurvature(ptid, Kg)))
     {
@@ -170,18 +172,18 @@ double MeshEnergyOptPhotoMem::computeEnergyFairForPt(int ptid)
     return 0.0;
 }
 
-staticVector<int>* MeshEnergyOptPhotoMem::getRcTcNVisTrisMap(staticVector<staticVector<int>*>* trisCams)
+StaticVector<int>* MeshEnergyOptPhotoMem::getRcTcNVisTrisMap(StaticVector<StaticVector<int>*>* trisCams)
 {
     if(sp->mp->verbose)
         printf("getRcTcNVisTrisMap\n");
 
-    staticVector<int>* out = new staticVector<int>(sp->mp->ncams * sp->mp->ncams);
+    StaticVector<int>* out = new StaticVector<int>(sp->mp->ncams * sp->mp->ncams);
     out->resize_with(sp->mp->ncams * sp->mp->ncams, 0);
 
     int maxVal = 0;
     for(int i = 0; i < tris->size(); i++)
     {
-        staticVector<int>* triCams = (*trisCams)[i];
+        StaticVector<int>* triCams = (*trisCams)[i];
         int n = sizeOfStaticVector<int>(triCams);
         for(int j = 0; j < n; j++)
         {
@@ -204,7 +206,7 @@ staticVector<int>* MeshEnergyOptPhotoMem::getRcTcNVisTrisMap(staticVector<static
     return out;
 }
 
-void MeshEnergyOptPhotoMem::actualizePtsStats(staticVector<staticVector<int>*>* camsPts)
+void MeshEnergyOptPhotoMem::actualizePtsStats(StaticVector<StaticVector<int>*>* camsPts)
 {
     if(mp->verbose)
         printf("actualizePtsStats\n");
@@ -227,13 +229,13 @@ void MeshEnergyOptPhotoMem::actualizePtsStats(staticVector<staticVector<int>*>* 
         {
             // dsmap->load(rc,1); //from opt is worser than from photo ... don't use it
             // long t2 = initEstimate();
-            staticVector<int>* ptsIds = (*camsPts)[rc];
+            StaticVector<int>* ptsIds = (*camsPts)[rc];
             // for (int i=0;i<pts->size();i++)
             for(int j = 0; j < sizeOfStaticVector<int>(ptsIds); j++)
             {
                 int i = (*ptsIds)[j];
-                point3d pt = (*pts)[i];
-                pixel pix;
+                Point3d pt = (*pts)[i];
+                Pixel pix;
                 mp->getPixelFor3DPoint(&pix, pt, rc);
                 if(mp->isPixelInImage(pix, 1, rc))
                 {
@@ -246,7 +248,7 @@ void MeshEnergyOptPhotoMem::actualizePtsStats(staticVector<staticVector<int>*>* 
                         camPtStat cptst;
                         cptst.cam = rc;
                         cptst.pt = sp->mp->CArr[rc] +
-                                   (sp->mp->iCamArr[rc] * point2d((float)pix.x, (float)pix.y)).normalize() * depthSim.depth;
+                                   (sp->mp->iCamArr[rc] * Point2d((float)pix.x, (float)pix.y)).normalize() * depthSim.depth;
                         cptst.camPixSize = ptPixSize;
 
                         /////////////////////////////////////////////////////////////
@@ -283,7 +285,7 @@ void MeshEnergyOptPhotoMem::actualizePtsStats(staticVector<staticVector<int>*>* 
 
 
 
-void MeshEnergyOptPhotoMem::initPtsStats(staticVector<staticVector<int>*>* camsPts)
+void MeshEnergyOptPhotoMem::initPtsStats(StaticVector<StaticVector<int>*>* camsPts)
 {
     for(int i = 0; i < ptsStats->size(); i++)
     {
@@ -293,16 +295,16 @@ void MeshEnergyOptPhotoMem::initPtsStats(staticVector<staticVector<int>*>* camsP
     actualizePtsStats(camsPts);
 }
 
-float MeshEnergyOptPhotoMem::fuse_gaussianKernelVoting_computePtSim(int ptId, int s, float step, point3d& pt,
-                                                                           point3d& nNormalized, float sigma)
+float MeshEnergyOptPhotoMem::fuse_gaussianKernelVoting_computePtSim(int ptId, int s, float step, Point3d& pt,
+                                                                           Point3d& nNormalized, float sigma)
 {
     float sum = 0.0;
     for(int c = 0; c < (*ptsStats)[ptId]->camsDepthMapsPtsSims->size(); c++)
     {
-        point3d ptc = (*(*ptsStats)[ptId]->camsDepthMapsPtsSims)[c].pt;
+        Point3d ptc = (*(*ptsStats)[ptId]->camsDepthMapsPtsSims)[c].pt;
         float sim = (*(*ptsStats)[ptId]->camsDepthMapsPtsSims)[c].sim;
         // sim = sim * dot(nNormalized,(mp->CArr[rc]-ptc).normalize());
-        point3d ptcptn = closestPointToLine3D(&ptc, &pt, &nNormalized);
+        Point3d ptcptn = closestPointToLine3D(&ptc, &pt, &nNormalized);
         float dist = orientedPointPlaneDistance(ptcptn, pt, nNormalized);
         int i = dist / step;
         sum += sim * exp(-((float)(i - s) * (float)(i - s)) / (2.0f * sigma * sigma));
@@ -312,11 +314,11 @@ float MeshEnergyOptPhotoMem::fuse_gaussianKernelVoting_computePtSim(int ptId, in
 
 void MeshEnergyOptPhotoMem::fuse_gaussianKernelVoting_depthsSimsSamples(double& optDist, double& optSim,
                                                                                double& actSim, int ptId,
-                                                                               point3d& nNormalized, int iter)
+                                                                               Point3d& nNormalized, int iter)
 {
     double minSum = 10000.0;
     int minSums = 0;
-    point3d pt = (*pts)[ptId];
+    Point3d pt = (*pts)[ptId];
     double step = (*ptsStats)[ptId]->step;
     double sigma = 5.0;
     // int nSamplesHalf = ((ndepthsToRefine-1)/2)*5.0f;
@@ -355,7 +357,7 @@ void MeshEnergyOptPhotoMem::fuse_gaussianKernelVoting_depthsSimsSamples(double& 
     }
     else
     {
-        point3d ptcptn = closestPointToLine3D(&(*ptsStats)[ptId]->optDepthMapsPt, &pt, &nNormalized);
+        Point3d ptcptn = closestPointToLine3D(&(*ptsStats)[ptId]->optDepthMapsPt, &pt, &nNormalized);
         minSums = (int)(orientedPointPlaneDistance(pt, ptcptn, nNormalized) / step);
         minSum = (*ptsStats)[ptId]->optDepthMapsSim;
         actSim = fuse_gaussianKernelVoting_computePtSim(ptId, 0, step, pt, nNormalized, sigma);
@@ -365,17 +367,17 @@ void MeshEnergyOptPhotoMem::fuse_gaussianKernelVoting_depthsSimsSamples(double& 
     optSim = minSum;
 }
 
-void MeshEnergyOptPhotoMem::optimizePoint(int iter, int ptId, staticVector<point3d>* lapPts, bool photoSmooth,
-                                                 point3d& pt, point3d& normalVectorNormalized,
-                                                 double& smoothVal, double& simVal, staticVectorBool* ptsCanMove)
+void MeshEnergyOptPhotoMem::optimizePoint(int iter, int ptId, StaticVector<Point3d>* lapPts, bool photoSmooth,
+                                                 Point3d& pt, Point3d& normalVectorNormalized,
+                                                 double& smoothVal, double& simVal, StaticVectorBool* ptsCanMove)
 {
     smoothVal = 0.0;
     simVal = 0.0;
 
     double lamda = 0.01;
     pt = (*pts)[ptId];
-    normalVectorNormalized = point3d(1.0f, 0.0f, 0.0f);
-    point3d smoothingVector, smoothingVectorNormalized;
+    normalVectorNormalized = Point3d(1.0f, 0.0f, 0.0f);
+    Point3d smoothingVector, smoothingVectorNormalized;
     double smoothingVectorSize;
     double K1, K2, area, avNeighEdegeLenth;
     if(((ptsCanMove == nullptr) || ((*ptsCanMove)[ptId])) &&
@@ -395,7 +397,7 @@ void MeshEnergyOptPhotoMem::optimizePoint(int iter, int ptId, staticVector<point
 
             fuse_gaussianKernelVoting_depthsSimsSamples(photoStep, optSim, actSim, ptId, normalVectorNormalized, iter);
             /*
-            point3d optMove;
+            Point3d optMove;
             fuse_gaussianKernelVoting_computeOptMoveVect(optMove, optSim, ptId, pt);
             photoStep = optMove.size();
             normalVectorNormalized = (optMove.normalize()+normalVectorNormalized).normalize();
@@ -426,7 +428,7 @@ void MeshEnergyOptPhotoMem::optimizePoint(int iter, int ptId, staticVector<point
 
             double smoothWeight = (1.0 - photoWeight);
 
-            point3d finalStep = normalVectorNormalized * (photoWeight * photoStep) +
+            Point3d finalStep = normalVectorNormalized * (photoWeight * photoStep) +
                                 smoothingVectorNormalized * (smoothWeight * smoothingVectorSize * lamda);
 
             if(std::isnan(finalStep.x) || std::isnan(finalStep.y) || std::isnan(finalStep.z) ||
@@ -446,13 +448,13 @@ void MeshEnergyOptPhotoMem::optimizePoint(int iter, int ptId, staticVector<point
     }
 }
 
-point4d MeshEnergyOptPhotoMem::getPtCurvatures(int ptId, staticVector<point3d>* lapPts)
+Point4d MeshEnergyOptPhotoMem::getPtCurvatures(int ptId, StaticVector<Point3d>* lapPts)
 {
-    point4d out = point4d();
-    point3d n;
+    Point4d out = Point4d();
+    Point3d n;
     if((!isIsBoundaryPt(ptId)) && (getBiLaplacianSmoothingVector(ptId, lapPts, n)))
     {
-        point3d KhVect;
+        Point3d KhVect;
         getVertexMeanCurvatureNormal(ptId, KhVect);
         float Kh = KhVect.size();
 
@@ -471,8 +473,8 @@ point4d MeshEnergyOptPhotoMem::getPtCurvatures(int ptId, staticVector<point3d>* 
     return out;
 }
 
-DepthSimMap* MeshEnergyOptPhotoMem::getDepthPixSizeMap(staticVector<float>* rcDepthMap, int rc,
-                                                                 staticVector<int>* tcams)
+DepthSimMap* MeshEnergyOptPhotoMem::getDepthPixSizeMap(StaticVector<float>* rcDepthMap, int rc,
+                                                                 StaticVector<int>* tcams)
 {
     int w11 = sp->mp->mip->getWidth(rc);
     int h11 = sp->mp->mip->getHeight(rc);
@@ -485,8 +487,8 @@ DepthSimMap* MeshEnergyOptPhotoMem::getDepthPixSizeMap(staticVector<float>* rcDe
     {
         for(int x = 0; x < w11; x++)
         {
-            point3d p = sp->mp->CArr[rc] +
-                        (sp->mp->iCamArr[rc] * point2d((float)x, (float)y)).normalize() *
+            Point3d p = sp->mp->CArr[rc] +
+                        (sp->mp->iCamArr[rc] * Point2d((float)x, (float)y)).normalize() *
                             (*depthSimMapScale1Step1->dsm)[y * w11 + x].depth;
             if(useTcOrRcPixSize)
             {
@@ -502,22 +504,22 @@ DepthSimMap* MeshEnergyOptPhotoMem::getDepthPixSizeMap(staticVector<float>* rcDe
     return depthSimMapScale1Step1;
 }
 
-void MeshEnergyOptPhotoMem::smoothBiLaplacian(int niters, staticVectorBool* ptsCanMove)
+void MeshEnergyOptPhotoMem::smoothBiLaplacian(int niters, StaticVectorBool* ptsCanMove)
 {
     std::string energyStatFileNames = tmpDir + "energy_stat_smooth.txt";
     FILE* fes = fopen(energyStatFileNames.c_str(), "w");
     for(int iter = 0; iter < niters; iter++)
     {
         long t1 = clock();
-        staticVector<point3d>* lapPts = computeLaplacianPts();
-        staticVector<point3d>* newPts = new staticVector<point3d>(pts->size());
+        StaticVector<Point3d>* lapPts = computeLaplacianPts();
+        StaticVector<Point3d>* newPts = new StaticVector<Point3d>(pts->size());
         newPts->push_back_arr(pts);
         double smoothSum = 0.0;
         double simSum = 0.0;
 #pragma omp parallel for reduction(+:smoothSum,simSum)
         for(int i = 0; i < pts->size(); i++)
         {
-            point3d normal;
+            Point3d normal;
             double smoothVal = 0.0;
             double simVal = 0.0;
             optimizePoint(iter, i, lapPts, false, (*newPts)[i], normal, smoothVal, simVal, ptsCanMove);
@@ -540,12 +542,12 @@ void MeshEnergyOptPhotoMem::smoothLaplacian(int niters)
     for(int iter = 0; iter < niters; iter++)
     {
         long t1 = clock();
-        staticVector<point3d>* newPts = new staticVector<point3d>(pts->size());
+        StaticVector<Point3d>* newPts = new StaticVector<Point3d>(pts->size());
         newPts->push_back_arr(pts);
 #pragma omp parallel for
         for(int i = 0; i < pts->size(); i++)
         {
-            point3d normal;
+            Point3d normal;
             if(applyLaplacianOperator(i, pts, normal))
             {
                 (*newPts)[i] = (*newPts)[i] + normal * 0.1;
@@ -557,15 +559,15 @@ void MeshEnergyOptPhotoMem::smoothLaplacian(int niters)
     }
 }
 
-void MeshEnergyOptPhotoMem::saveIterStat(staticVector<point3d>* lapPts, int iter, float avEdgeLength)
+void MeshEnergyOptPhotoMem::saveIterStat(StaticVector<Point3d>* lapPts, int iter, float avEdgeLength)
 {
     std::string iterStatFileName = tmpDir + "iter" + num2strThreeDigits(iter) + "_stat.txt";
     FILE* f = fopen(iterStatFileName.c_str(), "w");
     for(int i = 0; i < pts->size(); i++)
     {
-        point4d ptcurvs = getPtCurvatures(i, lapPts);
-        staticVector<int>* ptNeighPtsOrdered = (*ptsNeighPtsOrdered)[i];
-        staticVector<int>* ptNeighTris = (*ptsNeighTrisSortedAsc)[i];
+        Point4d ptcurvs = getPtCurvatures(i, lapPts);
+        StaticVector<int>* ptNeighPtsOrdered = (*ptsNeighPtsOrdered)[i];
+        StaticVector<int>* ptNeighTris = (*ptsNeighTrisSortedAsc)[i];
 
         float ptNeighsAvEdgeLength = 0.0;
         if(sizeOfStaticVector<int>(ptNeighPtsOrdered) > 0)
@@ -591,8 +593,8 @@ void MeshEnergyOptPhotoMem::saveIterStat(staticVector<point3d>* lapPts, int iter
     fclose(f);
 }
 
-bool MeshEnergyOptPhotoMem::optimizePhoto(int niters, staticVectorBool* ptsCanMove,
-                                                 staticVector<staticVector<int>*>* camsPts)
+bool MeshEnergyOptPhotoMem::optimizePhoto(int niters, StaticVectorBool* ptsCanMove,
+                                                 StaticVector<StaticVector<int>*>* camsPts)
 {
     if(mp->verbose)
         printf("optimizePhoto\n");
@@ -619,12 +621,12 @@ bool MeshEnergyOptPhotoMem::optimizePhoto(int niters, staticVectorBool* ptsCanMo
     for(int iter = 0; iter < niters; iter++)
     {
 
-        staticVector<point3d>* lapPts = computeLaplacianPtsParallel();
+        StaticVector<Point3d>* lapPts = computeLaplacianPtsParallel();
 
-        staticVector<point3d>* newPts = new staticVector<point3d>(pts->size());
+        StaticVector<Point3d>* newPts = new StaticVector<Point3d>(pts->size());
         newPts->push_back_arr(pts);
 
-        staticVector<point3d>* nms = new staticVector<point3d>(pts->size());
+        StaticVector<Point3d>* nms = new StaticVector<Point3d>(pts->size());
         nms->resize(pts->size());
 
         if((iter > 0) && ((iter % 50 == 0) || (iter == 10) || (iter == 20)))
@@ -676,20 +678,20 @@ bool MeshEnergyOptPhotoMem::optimizePhoto(int niters, staticVectorBool* ptsCanMo
     return true;
 }
 
-staticVector<staticVector<int>*>*
-MeshEnergyOptPhotoMem::getRcTcamsFromPtsCams(int minPairPts, staticVector<staticVector<int>*>* ptsCams)
+StaticVector<StaticVector<int>*>*
+MeshEnergyOptPhotoMem::getRcTcamsFromPtsCams(int minPairPts, StaticVector<StaticVector<int>*>* ptsCams)
 {
     long tall = clock();
     if(mp->verbose)
         printf("getRcTcamsFromPtsCams\n");
 
-    staticVector<int>* rctcnpts = new staticVector<int>(mp->ncams * mp->ncams);
+    StaticVector<int>* rctcnpts = new StaticVector<int>(mp->ncams * mp->ncams);
     rctcnpts->resize_with(mp->ncams * mp->ncams, 0);
 
     long t1 = initEstimate();
     for(int k = 0; k < ptsCams->size(); k++)
     {
-        staticVector<int>* cams = (*ptsCams)[k];
+        StaticVector<int>* cams = (*ptsCams)[k];
         if(cams != nullptr)
         {
             for(int i = 0; i < cams->size(); i++)
@@ -706,7 +708,7 @@ MeshEnergyOptPhotoMem::getRcTcamsFromPtsCams(int minPairPts, staticVector<static
     }
     finishEstimate();
 
-    staticVector<staticVector<int>*>* rTcams = new staticVector<staticVector<int>*>(mp->ncams);
+    StaticVector<StaticVector<int>*>* rTcams = new StaticVector<StaticVector<int>*>(mp->ncams);
     t1 = initEstimate();
     for(int rc = 0; rc < mp->ncams; rc++)
     {
@@ -718,7 +720,7 @@ MeshEnergyOptPhotoMem::getRcTcamsFromPtsCams(int minPairPts, staticVector<static
                 n++;
             }
         }
-        staticVector<int>* tcams = new staticVector<int>(n);
+        StaticVector<int>* tcams = new StaticVector<int>(n);
         for(int tc = 0; tc < mp->ncams; tc++)
         {
             if((*rctcnpts)[std::min(rc, tc) * mp->ncams + std::max(rc, tc)] > minPairPts)
@@ -739,11 +741,11 @@ MeshEnergyOptPhotoMem::getRcTcamsFromPtsCams(int minPairPts, staticVector<static
     return rTcams;
 }
 
-void MeshEnergyOptPhotoMem::updateAddCamsSorted(staticVector<int>** cams, int rc)
+void MeshEnergyOptPhotoMem::updateAddCamsSorted(StaticVector<int>** cams, int rc)
 {
     if(*cams == nullptr)
     {
-        *cams = new staticVector<int>(10);
+        *cams = new StaticVector<int>(10);
     }
 
     if((*cams)->indexOfSorted(rc) == -1)

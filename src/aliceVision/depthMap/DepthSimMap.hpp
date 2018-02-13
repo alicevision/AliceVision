@@ -5,9 +5,11 @@
 
 #pragma once
 
-#include <aliceVision/structures/mv_universe.hpp>
-#include <aliceVision/structures/mv_structures.hpp>
-#include <aliceVision/structures/mv_staticVector.hpp>
+#include <aliceVision/structures/Universe.hpp>
+#include <aliceVision/structures/Pixel.hpp>
+#include <aliceVision/structures/Point2d.hpp>
+#include <aliceVision/structures/Point3d.hpp>
+#include <aliceVision/structures/StaticVector.hpp>
 #include <aliceVision/common/MultiViewParams.hpp>
 
 class DepthSim
@@ -47,58 +49,58 @@ class DepthSimMap
 public:
     multiviewParams* mp;
     int rc, w, h, scale, step;
-    staticVector<DepthSim>* dsm; //< depth similarity map
+    StaticVector<DepthSim>* dsm; //< depth similarity map
 
     DepthSimMap(int rc, multiviewParams* _mp, int _scale, int _step);
     ~DepthSimMap(void);
 
-    point3d get3DPtOfPixel(const pixel& pix, int pixScale, int rc);
-    float getFPDepthOfPixel(const pixel& pix, int pixScale, int rc);
+    Point3d get3DPtOfPixel(const Pixel& pix, int pixScale, int rc);
+    float getFPDepthOfPixel(const Pixel& pix, int pixScale, int rc);
 
-    void initJustFromDepthMapT(staticVector<float>* depthMapT, float defaultSim);
-    void initJustFromDepthMap(staticVector<float>* depthMap, float defaultSim);
-    void initFromDepthMapTAndSimMapT(staticVector<float>* depthMapT, staticVector<float>* simMapT,
+    void initJustFromDepthMapT(StaticVector<float>* depthMapT, float defaultSim);
+    void initJustFromDepthMap(StaticVector<float>* depthMap, float defaultSim);
+    void initFromDepthMapTAndSimMapT(StaticVector<float>* depthMapT, StaticVector<float>* simMapT,
                                      int depthSimMapsScale);
-    void initFromDepthMapAndSimMap(staticVector<float>* depthMap, staticVector<float>* simMap, int depthSimMapsScale);
+    void initFromDepthMapAndSimMap(StaticVector<float>* depthMap, StaticVector<float>* simMap, int depthSimMapsScale);
     void setUsedCellsSimTo(float defaultSim);
 
     void add11(DepthSimMap* depthSimMap);
     void add(DepthSimMap* depthSimMap);
 
-    void getReconstructedPixelsDepthsSims(staticVector<pixel>* pixels, staticVector<float>* depths,
-                                          staticVector<float>* sims);
+    void getReconstructedPixelsDepthsSims(StaticVector<Pixel>* pixels, StaticVector<float>* depths,
+                                          StaticVector<float>* sims);
 
-    point2d getMaxMinDepth();
-    point2d getMaxMinSim();
+    Point2d getMaxMinDepth();
+    Point2d getMaxMinSim();
     float getPercentileDepth(float perc);
-    staticVector<float>* getDepthMapStep1();
-    staticVector<float>* getDepthMapTStep1();
-    staticVector<float>* getSimMapStep1();
-    staticVector<float>* getSimMapTStep1();
-    staticVector<float>* getDepthMap();
+    StaticVector<float>* getDepthMapStep1();
+    StaticVector<float>* getDepthMapTStep1();
+    StaticVector<float>* getSimMapStep1();
+    StaticVector<float>* getSimMapTStep1();
+    StaticVector<float>* getDepthMap();
 
-    staticVector<float>* getDepthMapStep1XPart(int xFrom, int partW);
-    staticVector<float>* getSimMapStep1XPart(int xFrom, int partW);
+    StaticVector<float>* getDepthMapStep1XPart(int xFrom, int partW);
+    StaticVector<float>* getSimMapStep1XPart(int xFrom, int partW);
 
     void saveToImage(std::string pngFileName, float simThr);
-    void save(int rc, staticVector<int>* tcams);
+    void save(int rc, StaticVector<int>* tcams);
     void load(int rc, int fromScale);
 
     void saveRefine(int rc, std::string depthMapFileName, std::string simMapFileName);
     bool loadRefine(std::string depthMapFileName, std::string simMapFileName);
     bool loadRefine(std::string depthMapFileName, float defaultSim);
 
-    mv_universe* segment(float alpha, int rc);
+    Universe* segment(float alpha, int rc);
     void removeSmallSegments(int minSegSize, float alpha, int rc);
-    void cutout(const pixel& LU, const pixel& RD);
+    void cutout(const Pixel& LU, const Pixel& RD);
 
-    float getAngleBetwABandACdepth(int rc, const pixel& cellA, float dA, const pixel& cellB, float dB,
-                                   const pixel& cellC, float dC);
+    float getAngleBetwABandACdepth(int rc, const Pixel& cellA, float dA, const Pixel& cellB, float dB,
+                                   const Pixel& cellC, float dC);
     float getCellSmoothEnergy(int rc, const int cellId, float defaultE);
-    float getCellSmoothEnergy(int rc, const pixel& cell, float defaultE);
+    float getCellSmoothEnergy(int rc, const Pixel& cell, float defaultE);
 
-    float getASmoothStepBetwABandACdepth(int rc, const pixel& cellA, float dA, const pixel& cellB, float dB,
-                                         const pixel& cellC, float dC);
+    float getASmoothStepBetwABandACdepth(int rc, const Pixel& cellA, float dA, const Pixel& cellB, float dB,
+                                         const Pixel& cellC, float dC);
     float getCellSmoothStep(int rc, const int cellId);
-    float getCellSmoothStep(int rc, const pixel& cell);
+    float getCellSmoothStep(int rc, const Pixel& cell);
 };

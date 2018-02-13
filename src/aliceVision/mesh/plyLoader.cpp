@@ -4,6 +4,8 @@
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
 #include "plyLoader.hpp"
+#include <aliceVision/structures/Point3d.hpp>
+#include <aliceVision/structures/StaticVector.hpp>
 
 struct refine_tri
 {
@@ -22,7 +24,7 @@ struct refine_tri
 
 static int vertex_cb(p_ply_argument argument)
 {
-    point3d* pts;
+    Point3d* pts;
     long uservalue;
     p_ply_element element;
     long index;
@@ -100,7 +102,7 @@ bool loadPLY(std::string plyFileName, Mesh* me)
     int nvertices = ply_set_read_cb(ply, "vertex", "x", vertex_cb, nullptr, 0);
     int ntriangles = ply_set_read_cb(ply, "face", "vertex_indices", face_cb, nullptr, 0);
 
-    point3d* pts = new point3d[nvertices];
+    Point3d* pts = new Point3d[nvertices];
     void* ptrpts = (void*)pts;
 
     refine_tri* ids = new refine_tri[ntriangles];
@@ -146,14 +148,14 @@ bool loadPLY(std::string plyFileName, Mesh* me)
     ////////////////////////////////////////////////////////////////////////
     // fill mesh
 
-    // me->pts = new staticVector<scenePoint>(nvertices);
-    me->pts = new staticVector<point3d>(nvertices);
+    // me->pts = new StaticVector<scenePoint>(nvertices);
+    me->pts = new StaticVector<Point3d>(nvertices);
     for(int i = 0; i < nvertices; i++)
     {
         /*
         scenePoint m;
         m.op.p = pts[i];
-        m.op.n = point3d();
+        m.op.n = Point3d();
         m.op.sim = 1.0;
         m.refImgFileId = -1;
         m.seedId = -1;
@@ -163,7 +165,7 @@ bool loadPLY(std::string plyFileName, Mesh* me)
         me->pts->push_back(pts[i]);
     }
 
-    me->tris = new staticVector<Mesh::triangle>(ntriangles);
+    me->tris = new StaticVector<Mesh::triangle>(ntriangles);
     for(int i = 0; i < ntriangles; i++)
     {
         Mesh::triangle t;

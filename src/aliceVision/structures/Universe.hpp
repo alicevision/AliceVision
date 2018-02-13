@@ -15,11 +15,11 @@ typedef struct
 /**
  * @brief Allows to perform labelling by creating node and connecting them.
  */
-class mv_universe
+class Universe
 {
 public:
-    mv_universe(int elements);
-    ~mv_universe();
+    Universe(int elements);
+    ~Universe();
     /// Initialize all elements to the default values
     void initialize();
     /// Retrieve the smallest index of the elements connected to x.

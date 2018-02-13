@@ -44,7 +44,7 @@ Mesh_refine::~Mesh_refine()
     delete prt;
 }
 
-void Mesh_refine::smoothDepthMapAdaptiveByImage(RcTc* prt, int rc, staticVector<float>* tmpDepthMap)
+void Mesh_refine::smoothDepthMapAdaptiveByImage(RcTc* prt, int rc, StaticVector<float>* tmpDepthMap)
 {
     DepthSimMap* depthSimMap = new DepthSimMap(rc, mp, 1, 1);
     depthSimMap->initJustFromDepthMapT(tmpDepthMap, -1.0f);
@@ -56,7 +56,7 @@ void Mesh_refine::smoothDepthMapAdaptiveByImage(RcTc* prt, int rc, staticVector<
     if(doSmooth)
         prt->smoothDepthMap(depthSimMap, rc, s_wsh, s_gammaC, s_gammaP);
 
-    staticVector<float>* depthMaps = depthSimMap->getDepthMapTStep1();
+    StaticVector<float>* depthMaps = depthSimMap->getDepthMapTStep1();
     for(int i = 0; i < depthMaps->size(); i++)
     {
         (*tmpDepthMap)[i] = (*depthMaps)[i];
@@ -66,20 +66,20 @@ void Mesh_refine::smoothDepthMapAdaptiveByImage(RcTc* prt, int rc, staticVector<
     delete depthSimMap;
 }
 
-void Mesh_refine::smoothDepthMapsAdaptiveByImages(staticVector<int>* usedCams)
+void Mesh_refine::smoothDepthMapsAdaptiveByImages(StaticVector<int>* usedCams)
 {
     for(int c = 0; c < usedCams->size(); c++)
     {
         int rc = (*usedCams)[c];
         std::string fileName1 = meshDepthMapsDir + "depthMap" + num2strFourDecimal(rc) + ".bin";
-        staticVector<float>* tmpDepthMap1 = loadArrayFromFile<float>(fileName1);
+        StaticVector<float>* tmpDepthMap1 = loadArrayFromFile<float>(fileName1);
         smoothDepthMapAdaptiveByImage(prt, rc, tmpDepthMap1);
         saveArrayToFile<float>(fileName1, tmpDepthMap1);
         delete tmpDepthMap1;
     }
 }
 
-void Mesh_refine::transposeDepthMap(staticVector<float>* depthMapTransposed, staticVector<float>* depthMap, int w,
+void Mesh_refine::transposeDepthMap(StaticVector<float>* depthMapTransposed, StaticVector<float>* depthMap, int w,
                                        int h)
 {
     depthMapTransposed->resize_with(h * w, -1.0f);
@@ -92,18 +92,18 @@ void Mesh_refine::transposeDepthMap(staticVector<float>* depthMapTransposed, sta
     }
 }
 
-void Mesh_refine::alignSourceDepthMapToTarget(staticVector<float>* sourceDepthMapT,
-                                                 staticVector<float>* targetDepthMapT, int rc, float maxPixelSizeDist)
+void Mesh_refine::alignSourceDepthMapToTarget(StaticVector<float>* sourceDepthMapT,
+                                                 StaticVector<float>* targetDepthMapT, int rc, float maxPixelSizeDist)
 {
     long t1 = clock();
 
     int w = mp->mip->getWidth(rc);
     int h = mp->mip->getHeight(rc);
 
-    staticVector<float>* sourceDepthMap = new staticVector<float>(w * h);
+    StaticVector<float>* sourceDepthMap = new StaticVector<float>(w * h);
     transposeDepthMap(sourceDepthMap, sourceDepthMapT, h, w);
 
-    staticVector<float>* targetDepthMap = new staticVector<float>(w * h);
+    StaticVector<float>* targetDepthMap = new StaticVector<float>(w * h);
     transposeDepthMap(targetDepthMap, targetDepthMapT, h, w);
 
     int wsh = 16;

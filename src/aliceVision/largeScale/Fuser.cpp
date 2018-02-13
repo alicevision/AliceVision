@@ -4,6 +4,9 @@
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
 #include "Fuser.hpp"
+#include <aliceVision/structures/Pixel.hpp>
+#include <aliceVision/structures/Point2d.hpp>
+#include <aliceVision/structures/Stat3d.hpp>
 #include <aliceVision/common/common.hpp>
 #include <aliceVision/common/fileIO.hpp>
 #include <aliceVision/imageIO/image.hpp>
@@ -38,7 +41,7 @@ unsigned long Fuser::computeNumberOfAllPoints(int scale)
         unsigned long rc_npts = 0;
         int width, height;
 
-        staticVector<float> depthMap;
+        StaticVector<float> depthMap;
 
         imageIO::readImage(mv_getFileName(mp->mip, rc + 1, EFileType::depthMap, scale), width, height, depthMap.getDataWritable());
         // no need to transpose for this operation
@@ -68,21 +71,21 @@ unsigned long Fuser::computeNumberOfAllPoints(int scale)
  * @param[in] simMap
  * @param[in] scale
  */
-bool Fuser::updateInSurr(int pixSizeBall, int pixSizeBallWSP, point3d& p, int rc, int tc,
-                           staticVector<int>* numOfPtsMap, staticVector<float>* depthMap, staticVector<float>* simMap,
+bool Fuser::updateInSurr(int pixSizeBall, int pixSizeBallWSP, Point3d& p, int rc, int tc,
+                           StaticVector<int>* numOfPtsMap, StaticVector<float>* depthMap, StaticVector<float>* simMap,
                            int scale)
 {
     int w = mp->mip->getWidth(rc) / scale;
     int h = mp->mip->getHeight(rc) / scale;
 
-    pixel pix;
+    Pixel pix;
     mp->getPixelFor3DPoint(&pix, p, rc);
     if(!mp->isPixelInImage(pix, rc))
     {
         return false;
     }
 
-    pixel cell = pix;
+    Pixel cell = pix;
     cell.x /= scale;
     cell.y /= scale;
 
@@ -99,15 +102,15 @@ bool Fuser::updateInSurr(int pixSizeBall, int pixSizeBallWSP, point3d& p, int rc
     // float pixSize = 2.0f*(float)std::max(d,1)*mp->getCamPixelSize(p,cam);
     float pixSize = 2.0f * mp->getCamPixelSizePlaneSweepAlpha(p, rc, tc, scale, 1);
 
-    pixel ncell;
+    Pixel ncell;
     for(ncell.x = std::max(0, cell.x - d); ncell.x <= std::min(w - 1, cell.x + d); ncell.x++)
     {
         for(ncell.y = std::max(0, cell.y - d); ncell.y <= std::min(h - 1, cell.y + d); ncell.y++)
         {
             // printf("%i %i %i %i %i %i %i %i\n",ncell.x,ncell.y,w,h,w*h,depthMap->size(),cam,scale);
             float depth = (*depthMap)[ncell.x * h + ncell.y];
-            // point3d p1 = mp->CArr[rc] +
-            // (mp->iCamArr[rc]*point2d((float)ncell.x*(float)scale,(float)ncell.y*(float)scale)).normalize()*depth;
+            // Point3d p1 = mp->CArr[rc] +
+            // (mp->iCamArr[rc]*Point2d((float)ncell.x*(float)scale,(float)ncell.y*(float)scale)).normalize()*depth;
             // if ( (p1-p).size() < pixSize ) {
             if(fabs(pixDepth - depth) < pixSize)
             {
@@ -120,7 +123,7 @@ bool Fuser::updateInSurr(int pixSizeBall, int pixSizeBallWSP, point3d& p, int rc
 }
 
 // minNumOfModals number of other cams including this cam ... minNumOfModals /in 2,3,...
-void Fuser::filterGroups(const staticVector<int>& cams, int pixSizeBall, int pixSizeBallWSP, int nNearestCams)
+void Fuser::filterGroups(const StaticVector<int>& cams, int pixSizeBall, int pixSizeBallWSP, int nNearestCams)
 {
     printf("Precomputing groups\n");
     long t1 = clock();
@@ -146,8 +149,8 @@ bool Fuser::filterGroupsRC(int rc, int pixSizeBall, int pixSizeBallWSP, int nNea
     int w = mp->mip->getWidth(rc);
     int h = mp->mip->getHeight(rc);
 
-    staticVector<float> depthMap;
-    staticVector<float> simMap;
+    StaticVector<float> depthMap;
+    StaticVector<float> simMap;
 
     {
         int width, height;
@@ -169,19 +172,19 @@ bool Fuser::filterGroupsRC(int rc, int pixSizeBall, int pixSizeBallWSP, int nNea
        throw std::runtime_error(s.str());
     }
 
-    staticVector<int>* numOfPtsMap = new staticVector<int>(w * h);
+    StaticVector<int>* numOfPtsMap = new StaticVector<int>(w * h);
     numOfPtsMap->resize_with(w * h, 0);
 
-    // staticVector<int> *tcams = pc->findCamsWhichIntersectsCamHexah(rc);
-    // staticVector<int> *tcams = pc->findNearestCams(rc);
-    staticVector<int>* tcams = pc->findNearestCamsFromSeeds(rc, nNearestCams);
+    // StaticVector<int> *tcams = pc->findCamsWhichIntersectsCamHexah(rc);
+    // StaticVector<int> *tcams = pc->findNearestCams(rc);
+    StaticVector<int>* tcams = pc->findNearestCamsFromSeeds(rc, nNearestCams);
 
     for(int c = 0; c < tcams->size(); c++)
     {
         numOfPtsMap->resize_with(w * h, 0);
         int tc = (*tcams)[c];
 
-        staticVector<float> tcdepthMap;
+        StaticVector<float> tcdepthMap;
 
         {
             int width, height;
@@ -201,7 +204,7 @@ bool Fuser::filterGroupsRC(int rc, int pixSizeBall, int pixSizeBallWSP, int nNea
                 float depth = tcdepthMap[i];
                 if(depth > 0.0f)
                 {
-                    point3d p = mp->CArr[tc] + (mp->iCamArr[tc] * point2d((float)x, (float)y)).normalize() * depth;
+                    Point3d p = mp->CArr[tc] + (mp->iCamArr[tc] * Point2d((float)x, (float)y)).normalize() * depth;
                     updateInSurr(pixSizeBall, pixSizeBallWSP, p, rc, tc, numOfPtsMap, &depthMap, &simMap, 1);
                 }
             }
@@ -230,7 +233,7 @@ bool Fuser::filterGroupsRC(int rc, int pixSizeBall, int pixSizeBallWSP, int nNea
 }
 
 // minNumOfModals number of other cams including this cam ... minNumOfModals /in 2,3,...
-void Fuser::filterDepthMaps(const staticVector<int>& cams, int minNumOfModals, int minNumOfModalsWSP2SSP)
+void Fuser::filterDepthMaps(const StaticVector<int>& cams, int minNumOfModals, int minNumOfModalsWSP2SSP)
 {
     printf("Filtering depth maps\n");
     long t1 = clock();
@@ -315,11 +318,11 @@ bool Fuser::filterDepthMapsRC(int rc, int minNumOfModals, int minNumOfModalsWSP2
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-float Fuser::computeAveragePixelSizeInHexahedron(point3d* hexah, int step, int scale)
+float Fuser::computeAveragePixelSizeInHexahedron(Point3d* hexah, int step, int scale)
 {
     int scaleuse = std::max(1, scale);
 
-    staticVector<int>* cams = pc->findCamsWhichIntersectsHexahedron(hexah);
+    StaticVector<int>* cams = pc->findCamsWhichIntersectsHexahedron(hexah);
     int j = 0;
     float av = 0.0f;
     float nav = 0.0f;
@@ -329,7 +332,7 @@ float Fuser::computeAveragePixelSizeInHexahedron(point3d* hexah, int step, int s
     {
         int rc = (*cams)[c];
         int h = mp->mip->getHeight(rc) / scaleuse;
-        staticVector<float> rcdepthMap;
+        StaticVector<float> rcdepthMap;
         {
             int width, height;
 
@@ -347,8 +350,8 @@ float Fuser::computeAveragePixelSizeInHexahedron(point3d* hexah, int step, int s
             {
                 if(j % step == 0)
                 {
-                    point3d p = mp->CArr[rc] +
-                                (mp->iCamArr[rc] * point2d((float)x * (float)scaleuse, (float)y * (float)scaleuse))
+                    Point3d p = mp->CArr[rc] +
+                                (mp->iCamArr[rc] * Point2d((float)x * (float)scaleuse, (float)y * (float)scaleuse))
                                         .normalize() *
                                     depth;
                     if(isPointInHexahedron(p, hexah))
@@ -381,7 +384,7 @@ float Fuser::computeAveragePixelSizeInHexahedron(point3d* hexah, int step, int s
  *@param[out] hexah: table of 8 values
  *@param[out] minPixSize
  */
-void Fuser::divideSpace(point3d* hexah, float& minPixSize)
+void Fuser::divideSpace(Point3d* hexah, float& minPixSize)
 {
     printf("Estimate space\n");
     int scale = 0;
@@ -391,12 +394,12 @@ void Fuser::divideSpace(point3d* hexah, float& minPixSize)
 
     minPixSize = std::numeric_limits<float>::max();
     long t1 = initEstimate();
-    stat3d s3d = stat3d();
+    Stat3d s3d = Stat3d();
     for(int rc = 0; rc < mp->ncams; rc++)
     {
         int h = mp->mip->getHeight(rc);
 
-        staticVector<float> depthMap;
+        StaticVector<float> depthMap;
         {
             int width, height;
 
@@ -412,7 +415,7 @@ void Fuser::divideSpace(point3d* hexah, float& minPixSize)
             float depth = depthMap[i];
             if(depth > 0.0f)
             {
-                point3d p = mp->CArr[rc] + (mp->iCamArr[rc] * point2d((float)x, (float)y)).normalize() * depth;
+                Point3d p = mp->CArr[rc] + (mp->iCamArr[rc] * Point2d((float)x, (float)y)).normalize() * depth;
                 float pixSize = mp->getCamPixelSize(p, rc);
                 minPixSize = std::min(minPixSize, pixSize);
                 s3d.update(&p);
@@ -422,7 +425,7 @@ void Fuser::divideSpace(point3d* hexah, float& minPixSize)
     }
     finishEstimate();
 
-    point3d v1, v2, v3, cg;
+    Point3d v1, v2, v3, cg;
     float d1, d2, d3;
     s3d.getEigenVectorsDesc(cg, v1, v2, v3, d1, d2, d3);
 
@@ -442,7 +445,7 @@ void Fuser::divideSpace(point3d* hexah, float& minPixSize)
     {
         int h = mp->mip->getHeight(rc);
 
-        staticVector<float> depthMap;
+        StaticVector<float> depthMap;
         {
             int width, height;
 
@@ -458,7 +461,7 @@ void Fuser::divideSpace(point3d* hexah, float& minPixSize)
             float depth = depthMap[i];
             if(depth > 0.0f)
             {
-                point3d p = mp->CArr[rc] + (mp->iCamArr[rc] * point2d((float)x, (float)y)).normalize() * depth;
+                Point3d p = mp->CArr[rc] + (mp->iCamArr[rc] * Point2d((float)x, (float)y)).normalize() * depth;
                 float d1 = orientedPointPlaneDistance(p, cg, v1);
                 float d2 = orientedPointPlaneDistance(p, cg, v2);
                 float d3 = orientedPointPlaneDistance(p, cg, v3);
@@ -508,12 +511,12 @@ void Fuser::divideSpace(point3d* hexah, float& minPixSize)
     hexah[7] = cg + v1 * maxd1 + v2 * mind2 + v3 * mind3;
 }
 
-voxel Fuser::estimateDimensions(point3d* vox, point3d* newSpace, int scale, int maxOcTreeDim)
+Voxel Fuser::estimateDimensions(Point3d* vox, Point3d* newSpace, int scale, int maxOcTreeDim)
 {
-    point3d O = (vox[0] + vox[1] + vox[2] + vox[3] + vox[4] + vox[5] + vox[6] + vox[7]) / 8.0f;
-    point3d vx = vox[1] - vox[0];
-    point3d vy = vox[3] - vox[0];
-    point3d vz = vox[4] - vox[0];
+    Point3d O = (vox[0] + vox[1] + vox[2] + vox[3] + vox[4] + vox[5] + vox[6] + vox[7]) / 8.0f;
+    Point3d vx = vox[1] - vox[0];
+    Point3d vy = vox[3] - vox[0];
+    Point3d vz = vox[4] - vox[0];
     float svx = vx.size();
     float svy = vy.size();
     float svz = vz.size();
@@ -530,14 +533,14 @@ voxel Fuser::estimateDimensions(point3d* vox, point3d* newSpace, int scale, int 
     // Average 3D size for each pixel from all 3D points in the current voxel
     float aAvPixelSize = computeAveragePixelSizeInHexahedron(vox, stepPts, scale) * (float)std::max(scale, 1) * pointToJoinPixSizeDist;
 
-    voxel maxDim;
+    Voxel maxDim;
     maxDim.x = (int)ceil(svx / (aAvPixelSize * (float)maxOcTreeDim));
     maxDim.y = (int)ceil(svy / (aAvPixelSize * (float)maxOcTreeDim));
     maxDim.z = (int)ceil(svz / (aAvPixelSize * (float)maxOcTreeDim));
 
-    point3d vvx = vx * ((float)maxDim.x * ((aAvPixelSize * (float)maxOcTreeDim)));
-    point3d vvy = vy * ((float)maxDim.y * ((aAvPixelSize * (float)maxOcTreeDim)));
-    point3d vvz = vz * ((float)maxDim.z * ((aAvPixelSize * (float)maxOcTreeDim)));
+    Point3d vvx = vx * ((float)maxDim.x * ((aAvPixelSize * (float)maxOcTreeDim)));
+    Point3d vvy = vy * ((float)maxDim.y * ((aAvPixelSize * (float)maxOcTreeDim)));
+    Point3d vvz = vz * ((float)maxDim.z * ((aAvPixelSize * (float)maxOcTreeDim)));
     newSpace[0] = O - vvx / 2.0f - vvy / 2.0f - vvz / 2.0f;
     newSpace[1] = O + vvx - vvx / 2.0f - vvy / 2.0f - vvz / 2.0f;
     newSpace[2] = O + vvx + vvy - vvx / 2.0f - vvy / 2.0f - vvz / 2.0f;
@@ -557,13 +560,13 @@ voxel Fuser::estimateDimensions(point3d* vox, point3d* newSpace, int scale, int 
     return maxDim;
 }
 
-mv_universe* Fuser::segmentDepthMap(float alpha, int rc, staticVector<float>* depthMap, int* segMap, int scale)
+Universe* Fuser::segmentDepthMap(float alpha, int rc, StaticVector<float>* depthMap, int* segMap, int scale)
 {
     printf("segmenting to connected components \n");
     int w = mp->mip->getWidth(rc) / std::max(1, scale);
     int h = mp->mip->getHeight(rc) / std::max(1, scale);
 
-    staticVector<pixel>* edges = new staticVector<pixel>(w * h * 2);
+    StaticVector<Pixel>* edges = new StaticVector<Pixel>(w * h * 2);
     for(int x = 0; x < w - 1; x++)
     {
         for(int y = 0; y < h - 1; y++)
@@ -571,18 +574,18 @@ mv_universe* Fuser::segmentDepthMap(float alpha, int rc, staticVector<float>* de
             float depth = (*depthMap)[x * h + y];
             float depthr = (*depthMap)[(x + 1) * h + y];
             float depthd = (*depthMap)[x * h + (y + 1)];
-            point3d p = mp->CArr[rc] + (mp->iCamArr[rc] * point2d((float)x, (float)y)).normalize() * depth;
+            Point3d p = mp->CArr[rc] + (mp->iCamArr[rc] * Point2d((float)x, (float)y)).normalize() * depth;
             float pixSize = alpha * mp->getCamPixelSize(p, rc);
 
             if(segMap == nullptr)
             {
                 if(fabs(depth - depthr) < pixSize)
                 {
-                    edges->push_back(pixel(x * h + y, (x + 1) * h + y));
+                    edges->push_back(Pixel(x * h + y, (x + 1) * h + y));
                 }
                 if(fabs(depth - depthd) < pixSize)
                 {
-                    edges->push_back(pixel(x * h + y, x * h + (y + 1)));
+                    edges->push_back(Pixel(x * h + y, x * h + (y + 1)));
                 }
             }
             else
@@ -593,18 +596,18 @@ mv_universe* Fuser::segmentDepthMap(float alpha, int rc, staticVector<float>* de
 
                 if((fabs(depth - depthr) < pixSize) && (seg == segr))
                 {
-                    edges->push_back(pixel(x * h + y, (x + 1) * h + y));
+                    edges->push_back(Pixel(x * h + y, (x + 1) * h + y));
                 }
                 if((fabs(depth - depthd) < pixSize) && (seg == segd))
                 {
-                    edges->push_back(pixel(x * h + y, x * h + (y + 1)));
+                    edges->push_back(Pixel(x * h + y, x * h + (y + 1)));
                 }
             }
         }
     }
 
     // segments
-    mv_universe* u = new mv_universe(w * h);
+    Universe* u = new Universe(w * h);
     for(int i = 0; i < edges->size(); i++)
     {
         int a = u->find((*edges)[i].x);
@@ -631,8 +634,8 @@ void Fuser::filterSmallConnComponents(float alpha, int minSegSize, int scale)
         int w = mp->mip->getWidth(rc) / std::max(1, scale);
         int h = mp->mip->getHeight(rc) / std::max(1, scale);
 
-        staticVector<float> depthMap;
-        staticVector<float> simMap;
+        StaticVector<float> depthMap;
+        StaticVector<float> simMap;
 
         {
             int width, height;
@@ -644,7 +647,7 @@ void Fuser::filterSmallConnComponents(float alpha, int minSegSize, int scale)
             imageIO::transposeImage(width, height, simMap.getDataWritable());
         }
 
-        mv_universe* u = segmentDepthMap(alpha, rc, &depthMap, nullptr, scale);
+        Universe* u = segmentDepthMap(alpha, rc, &depthMap, nullptr, scale);
 
         for(int x = 0; x < w; x++)
         {
@@ -693,19 +696,19 @@ std::string generateTempPtsSimsFiles(std::string tmpDir, multiviewParams* mp, bo
         int scale = 0;
         int scaleuse = std::max(1, scale);
 
-        staticVector<point2d>* minMaxDepths = new staticVector<point2d>(mp->ncams);
-        minMaxDepths->resize_with(mp->ncams, point2d(-1.0, -1.0));
+        StaticVector<Point2d>* minMaxDepths = new StaticVector<Point2d>(mp->ncams);
+        minMaxDepths->resize_with(mp->ncams, Point2d(-1.0, -1.0));
 
 #pragma omp parallel for
         for(int rc = 0; rc < mp->ncams; rc++)
         {
             int w = mp->mip->getWidth(rc) / scaleuse;
             int h = mp->mip->getHeight(rc) / scaleuse;
-            staticVector<point3d>* pts = new staticVector<point3d>(w * h);
-            staticVector<float>* sims = new staticVector<float>(w * h);
+            StaticVector<Point3d>* pts = new StaticVector<Point3d>(w * h);
+            StaticVector<float>* sims = new StaticVector<float>(w * h);
 
-            staticVector<float> depthMap;
-            staticVector<float> simMap;
+            StaticVector<float> depthMap;
+            StaticVector<float> simMap;
 
             {
                 int width, height;
@@ -719,7 +722,7 @@ std::string generateTempPtsSimsFiles(std::string tmpDir, multiviewParams* mp, bo
 
             if(addRandomNoise)
             {
-                staticVector<int>* idsAlive = new staticVector<int>(w * h);
+                StaticVector<int>* idsAlive = new StaticVector<int>(w * h);
                 for(int i = 0; i < w * h; i++)
                 {
                     if(depthMap[i] > 0.0f)
@@ -729,7 +732,7 @@ std::string generateTempPtsSimsFiles(std::string tmpDir, multiviewParams* mp, bo
                 }
 
                 int nnoisePts = ((percNoisePts / 100.0f) * (float)(idsAlive->size()));
-                staticVector<int>* randIdsAlive = createRandomArrayOfIntegers(idsAlive->size());
+                StaticVector<int>* randIdsAlive = createRandomArrayOfIntegers(idsAlive->size());
 
                 srand(time(nullptr));
 
@@ -744,8 +747,8 @@ std::string generateTempPtsSimsFiles(std::string tmpDir, multiviewParams* mp, bo
                     double sim = simMap[i];
                     if(depth > 0.0f)
                     {
-                        point3d p = mp->CArr[rc] +
-                                    (mp->iCamArr[rc] * point2d((double)x * (double)scaleuse, (double)y * (double)scaleuse))
+                        Point3d p = mp->CArr[rc] +
+                                    (mp->iCamArr[rc] * Point2d((double)x * (double)scaleuse, (double)y * (double)scaleuse))
                                             .normalize() *
                                         depth;
 
@@ -757,7 +760,7 @@ std::string generateTempPtsSimsFiles(std::string tmpDir, multiviewParams* mp, bo
                             double rdepthAdd = pixSize * (double)rid;
                             depth = depth + rdepthAdd;
                             p = mp->CArr[rc] +
-                                (mp->iCamArr[rc] * point2d((double)x * (double)scaleuse, (double)y * (double)scaleuse))
+                                (mp->iCamArr[rc] * Point2d((double)x * (double)scaleuse, (double)y * (double)scaleuse))
                                         .normalize() *
                                     depth;
                         }
@@ -803,9 +806,9 @@ std::string generateTempPtsSimsFiles(std::string tmpDir, multiviewParams* mp, bo
                         double sim = simMap[i];
                         if(depth > 0.0f)
                         {
-                            point3d p =
+                            Point3d p =
                                 mp->CArr[rc] +
-                                (mp->iCamArr[rc] * point2d((double)x * (double)scaleuse, (double)y * (double)scaleuse))
+                                (mp->iCamArr[rc] * Point2d((double)x * (double)scaleuse, (double)y * (double)scaleuse))
                                         .normalize() *
                                     depth;
                             pts->push_back(p);
@@ -835,13 +838,13 @@ std::string generateTempPtsSimsFiles(std::string tmpDir, multiviewParams* mp, bo
                     printfElapsedTime(t1);
             }
 
-            saveArrayToFile<point3d>(depthMapsPtsSimsTmpDir + num2strFourDecimal(rc) + "pts.bin", pts);
+            saveArrayToFile<Point3d>(depthMapsPtsSimsTmpDir + num2strFourDecimal(rc) + "pts.bin", pts);
             saveArrayToFile<float>(depthMapsPtsSimsTmpDir + num2strFourDecimal(rc) + "sims.bin", sims);
             delete pts;
             delete sims;
         }
 
-        saveArrayToFile<point2d>(depthMapsPtsSimsTmpDir + "minMaxDepths.bin", minMaxDepths);
+        saveArrayToFile<Point2d>(depthMapsPtsSimsTmpDir + "minMaxDepths.bin", minMaxDepths);
         delete minMaxDepths;
     }
 

@@ -6,11 +6,11 @@
 #pragma once
 
 #include "Mesh.hpp"
-
-#include <aliceVision/depthMap/DepthSimMap.hpp>
-#include <aliceVision/depthMap/RcTc.hpp>
+#include <aliceVision/structures/StaticVector.hpp>
 #include <aliceVision/common/PreMatchCams.hpp>
 #include <aliceVision/common/ImagesCache.hpp>
+#include <aliceVision/depthMap/DepthSimMap.hpp>
+#include <aliceVision/depthMap/RcTc.hpp>
 
 class Mesh_refine : public Mesh
 {
@@ -20,7 +20,7 @@ public:
     std::string tmpDir;
     std::string meshDepthMapsDir;
     std::string tmpDirOld;
-    staticVector<staticVector<int>*>* ptsCams;
+    StaticVector<StaticVector<int>*>* ptsCams;
     mv_images_cache* ic;
     PlaneSweepingCuda* cps;
     RcTc* prt;
@@ -28,11 +28,11 @@ public:
     Mesh_refine(multiviewParams* _mp, mv_prematch_cams* _pc, std::string _tmpDir = "");
     ~Mesh_refine();
 
-    void smoothDepthMapsAdaptiveByImages(staticVector<int>* usedCams);
-    void smoothDepthMapAdaptiveByImage(RcTc* prt, int rc, staticVector<float>* tmpDepthMap);
+    void smoothDepthMapsAdaptiveByImages(StaticVector<int>* usedCams);
+    void smoothDepthMapAdaptiveByImage(RcTc* prt, int rc, StaticVector<float>* tmpDepthMap);
 
-    void transposeDepthMap(staticVector<float>* depthMapTransposed, staticVector<float>* depthMap, int w, int h);
-    void alignSourceDepthMapToTarget(staticVector<float>* sourceDepthMapT, staticVector<float>* targetDepthMapT, int rc,
+    void transposeDepthMap(StaticVector<float>* depthMapTransposed, StaticVector<float>* depthMap, int w, int h);
+    void alignSourceDepthMapToTarget(StaticVector<float>* sourceDepthMapT, StaticVector<float>* targetDepthMapT, int rc,
                                      float maxPixelSizeDist);
 
 };
