@@ -19,11 +19,11 @@ namespace geometry {
  * @param[in] S The scale factor.
  * @param[in] t The translation vector.
  * @param[in] R The rotation matrix.
- * @param[out] RTS The 4x4 similarity matrix [S*R | t; 0 0 0 1].
+ * @param[out] RTS The 4x4 similarity matrix [R*S | t; 0 0 0 1].
  */
 inline void composeRTS(double &S, const Vec3 &t, const Mat3 &R, Mat4 &RTS)
 {
-  RTS.topLeftCorner(3, 3) = S*R;
+  RTS.topLeftCorner(3, 3) = R*S;
   RTS.topRightCorner(3, 1) = t;
 }
 
