@@ -1,0 +1,34 @@
+version: '1.0.{build}'
+
+image: Visual Studio 2015
+
+platform:
+  - x64
+
+configuration:
+  - Release
+  # - Debug
+
+install:
+    - git submodule update --init --recursive
+#    - cmd: >-
+#          call cudaInstallAppveyor.cmd
+    - vcpkg upgrade
+    - vcpkg install --featurepackages boost-system:x64-windows boost-program-options:x64-windows boost-thread:x64-windows boost-filesystem:x64-windows boost-serialization:x64-windows boost-log:x64-windows openexr:x64-windows openimageio:x64-windows alembic:x64-windows
+
+before_build:
+    - md build
+    - cd build
+    - cmake -G "Visual Studio 14 2015 Win64" -DCMAKE_BUILD_TYPE=%configuration% -DALICEVISION_USE_INTERNAL_CERES:BOOL=ON -DCMAKE_TOOLCHAIN_FILE=c:/tools/vcpkg/scripts/buildsystems/vcpkg.cmake ..
+    - ls -l
+
+ build:
+  project: $(APPVEYOR_BUILD_FOLDER)\build\aliceVision.sln
+  parallel: true
+
+# comment the above and uncomment the following to just build the dependencies
+#build_script:
+#  - echo "Done!"
+
+cache:
+  c:\tools\vcpkg\installed\
