@@ -19,7 +19,9 @@
 #include <boost/log/expressions/message.hpp>
 #include <boost/log/support/date_time.hpp>
 
-#if BOOST_VERSION >= 105500
+#if BOOST_VERSION >= 105600
+#include <boost/core/null_deleter.hpp>
+#elif BOOST_VERSION >= 105500
 #include <boost/utility/empty_deleter.hpp>
 #else
 #include <boost/log/utility/empty_deleter.hpp>
@@ -36,17 +38,19 @@ Logger::Logger()
   namespace sinks = boost::log::sinks;
   using sink_t = sinks::synchronous_sink<boost::log::sinks::text_ostream_backend>;
 
-#if BOOST_VERSION >= 105500
-  using boost::empty_deleter;
+#if BOOST_VERSION >= 105600
+  using boost::null_deleter;
+#elif BOOST_VERSION >= 105500
+  using null_deleter = boost::empty_deleter;
 #else
-  using boost::log::empty_deleter;
+  using null_deleter = boost::log::empty_deleter;
 #endif
   boost::shared_ptr<sink_t> sink;
 
   {
     // create a backend and attach a stream to it
     boost::shared_ptr<sinks::text_ostream_backend> backend = boost::make_shared<sinks::text_ostream_backend>();
-    backend->add_stream(boost::shared_ptr<std::ostream>(&std::clog, empty_deleter()));
+    backend->add_stream(boost::shared_ptr<std::ostream>(&std::clog, null_deleter()));
     // backend->add_stream( boost::shared_ptr< std::ostream >( new std::ofstream("sample.log") ) );
 
     // enable auto-flushing after each log record written
