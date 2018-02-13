@@ -9,6 +9,7 @@
 
 #include <iterator>
 #include <algorithm>
+#include <vector>
 
 namespace aliceVision {
 namespace sensorDB {
