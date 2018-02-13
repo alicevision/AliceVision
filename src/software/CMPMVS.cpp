@@ -5,7 +5,7 @@
 
 #include <aliceVision/delaunaycut/mv_delaunay_GC.hpp>
 #include <aliceVision/delaunaycut/mv_delaunay_meshSmooth.hpp>
-#include <aliceVision/largeScale/reconstructionPlan.hpp>
+#include <aliceVision/largeScale/ReconstructionPlan.hpp>
 #include <aliceVision/depthMap/RefineRc.hpp>
 #include <aliceVision/common/fileIO.hpp>
 #include <aliceVision/mesh/mv_mesh_retexture_obj.hpp>
@@ -213,10 +213,10 @@ int main(int argc, char* argv[])
     multiviewInputParams mip(cmdline.iniFile, depthMapFolder.string(), depthMapFilterFolder.string());
     const double simThr = mip._ini.get<double>("global.simThr", 0.0);
     const int minNumOfConsistensCams = mip._ini.get<int>("filter.minNumOfConsistentCams", 3);
-    const int maxPts = mip._ini.get<int>("largeScale.planMaxPts", 30000000);
-    const int maxPtsPerVoxel = std::max(maxPts, mip._ini.get<int>("largeScale.planMaxPtsPerVoxel", 30000000));
-    int ocTreeDim = mip._ini.get<int>("largeScale.gridLevel0", 1024);
-    const auto baseDir = mip._ini.get<std::string>("largeScale.baseDirName", "root01024");
+    const int maxPts = mip._ini.get<int>("LargeScale.planMaxPts", 30000000);
+    const int maxPtsPerVoxel = std::max(maxPts, mip._ini.get<int>("LargeScale.planMaxPtsPerVoxel", 30000000));
+    int ocTreeDim = mip._ini.get<int>("LargeScale.gridLevel0", 1024);
+    const auto baseDir = mip._ini.get<std::string>("LargeScale.baseDirName", "root01024");
 
     // build out path
     bfs::path outPath(mip._ini.get<std::string>("global.outDir", "_OUT"));
@@ -265,7 +265,7 @@ int main(int argc, char* argv[])
     if(cmdline.steps.test(CommandLine::Step::FILTER_DEPTHMAP))
     {
         cout << "--- filter depthmap" << endl;
-        mv_fuse fs(&mp, &pc);
+        Fuser fs(&mp, &pc);
         fs.filterGroups(cams, 0, 0, 10);
         fs.filterDepthMaps(cams, minNumOfConsistensCams, 4); //minNumOfConsistensCamsWithLowSimilarity = 4
     }
@@ -277,7 +277,7 @@ int main(int argc, char* argv[])
         if(cmdline.meshingMode == "large")
         {
             cout << "--- meshing (large scale)" << endl;
-            largeScale lsbase(&mp, &pc, mip.mvDir + baseDir + "/");
+            LargeScale lsbase(&mp, &pc, mip.mvDir + baseDir + "/");
             lsbase.generateSpace(maxPtsPerVoxel, ocTreeDim);
             string voxelsArrayFileName = lsbase.spaceFolderName + "hexahsToReconstruct.bin";
             staticVector<point3d>* voxelsArray = nullptr;
@@ -290,7 +290,7 @@ int main(int argc, char* argv[])
             else
             {
                 std::cout << "Compute voxels array" << std::endl;
-                reconstructionPlan rp(lsbase.dimensions, &lsbase.space[0], lsbase.mp, lsbase.pc, lsbase.spaceVoxelsFolderName);
+                ReconstructionPlan rp(lsbase.dimensions, &lsbase.space[0], lsbase.mp, lsbase.pc, lsbase.spaceVoxelsFolderName);
                 voxelsArray = rp.computeReconstructionPlanBinSearch(maxPts);
                 saveArrayToFile<point3d>(voxelsArrayFileName, voxelsArray);
             }
@@ -317,14 +317,14 @@ int main(int argc, char* argv[])
         if(cmdline.meshingMode == "limited")
         {
             cout << "--- meshing (limited scale)" << endl;
-            largeScale ls0(&mp, &pc, mip.mvDir + baseDir + "/");
+            LargeScale ls0(&mp, &pc, mip.mvDir + baseDir + "/");
             ls0.generateSpace(maxPtsPerVoxel, ocTreeDim);
             unsigned long ntracks = std::numeric_limits<unsigned long>::max();
             while(ntracks > maxPts)
             {
-                string dirName = mip.mvDir + "largeScaleMaxPts" + num2strFourDecimal(ocTreeDim) + "/";
-                largeScale* ls = ls0.cloneSpaceIfDoesNotExists(ocTreeDim, dirName);
-                voxelsGrid vg(ls->dimensions, &ls->space[0], ls->mp, ls->pc, ls->spaceVoxelsFolderName);
+                string dirName = mip.mvDir + "LargeScaleMaxPts" + num2strFourDecimal(ocTreeDim) + "/";
+                LargeScale* ls = ls0.cloneSpaceIfDoesNotExists(ocTreeDim, dirName);
+                VoxelsGrid vg(ls->dimensions, &ls->space[0], ls->mp, ls->pc, ls->spaceVoxelsFolderName);
                 ntracks = vg.getNTracks();
                 delete ls;
                 if(ntracks > maxPts)
@@ -333,9 +333,9 @@ int main(int argc, char* argv[])
                     ocTreeDim = (t < 2.0) ? ocTreeDim-100 : ocTreeDim*0.5;
                 }
             }
-            largeScale lsbase(&mp, &pc, mip.mvDir + "largeScaleMaxPts" + num2strFourDecimal(ocTreeDim) + "/");
+            LargeScale lsbase(&mp, &pc, mip.mvDir + "LargeScaleMaxPts" + num2strFourDecimal(ocTreeDim) + "/");
             lsbase.loadSpaceFromFile();
-            reconstructionPlan rp(lsbase.dimensions, &lsbase.space[0], lsbase.mp, lsbase.pc, lsbase.spaceVoxelsFolderName);
+            ReconstructionPlan rp(lsbase.dimensions, &lsbase.space[0], lsbase.mp, lsbase.pc, lsbase.spaceVoxelsFolderName);
             staticVector<int> voxelNeighs(rp.voxels->size() / 8);
             for(int i = 0; i < rp.voxels->size() / 8; i++)
                 voxelNeighs.push_back(i);
@@ -343,7 +343,7 @@ int main(int argc, char* argv[])
             staticVector<point3d>* hexahsToExcludeFromResultingMesh = nullptr;
             point3d* hexah = &lsbase.space[0];
             delaunayGC.reconstructVoxel(hexah, &voxelNeighs, mip.mvDir, lsbase.getSpaceCamsTracksDir(), false, hexahsToExcludeFromResultingMesh,
-                                  (voxelsGrid*)&rp, lsbase.getSpaceSteps());
+                                  (VoxelsGrid*)&rp, lsbase.getSpaceSteps());
 
             delaunayGC.graphCutPostProcessing();
 

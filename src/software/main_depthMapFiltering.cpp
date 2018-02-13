@@ -5,7 +5,7 @@
 
 #include <aliceVision/delaunaycut/mv_delaunay_GC.hpp>
 #include <aliceVision/delaunaycut/mv_delaunay_meshSmooth.hpp>
-#include <aliceVision/largeScale/reconstructionPlan.hpp>
+#include <aliceVision/largeScale/ReconstructionPlan.hpp>
 #include <aliceVision/depthMap/RefineRc.hpp>
 #include <aliceVision/common/fileIO.hpp>
 
@@ -124,7 +124,7 @@ int main(int argc, char* argv[])
     ALICEVISION_COUT("--- filter depthmap");
 
     {
-        mv_fuse fs(&mp, &pc);
+        Fuser fs(&mp, &pc);
         fs.filterGroups(cams, pixSizeBall, pixSizeBallWithLowSimilarity, nNearestCams);
         fs.filterDepthMaps(cams, minNumOfConsistensCams, minNumOfConsistensCamsWithLowSimilarity);
     }

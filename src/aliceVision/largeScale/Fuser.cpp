@@ -3,7 +3,7 @@
 // v. 2.0. If a copy of the MPL was not distributed with this file,
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
-#include "mv_fuse.hpp"
+#include "Fuser.hpp"
 #include <aliceVision/common/common.hpp>
 #include <aliceVision/common/fileIO.hpp>
 #include <aliceVision/imageIO/image.hpp>
@@ -18,17 +18,17 @@
 
 namespace bfs = boost::filesystem;
 
-mv_fuse::mv_fuse(const multiviewParams* _mp, mv_prematch_cams* _pc)
+Fuser::Fuser(const multiviewParams* _mp, mv_prematch_cams* _pc)
   : mp(_mp)
   , pc(_pc)
 {
 }
 
-mv_fuse::~mv_fuse()
+Fuser::~Fuser()
 {
 }
 
-unsigned long mv_fuse::computeNumberOfAllPoints(int scale)
+unsigned long Fuser::computeNumberOfAllPoints(int scale)
 {
     unsigned long npts = 0;
 
@@ -68,7 +68,7 @@ unsigned long mv_fuse::computeNumberOfAllPoints(int scale)
  * @param[in] simMap
  * @param[in] scale
  */
-bool mv_fuse::updateInSurr(int pixSizeBall, int pixSizeBallWSP, point3d& p, int rc, int tc,
+bool Fuser::updateInSurr(int pixSizeBall, int pixSizeBallWSP, point3d& p, int rc, int tc,
                            staticVector<int>* numOfPtsMap, staticVector<float>* depthMap, staticVector<float>* simMap,
                            int scale)
 {
@@ -120,7 +120,7 @@ bool mv_fuse::updateInSurr(int pixSizeBall, int pixSizeBallWSP, point3d& p, int 
 }
 
 // minNumOfModals number of other cams including this cam ... minNumOfModals /in 2,3,...
-void mv_fuse::filterGroups(const staticVector<int>& cams, int pixSizeBall, int pixSizeBallWSP, int nNearestCams)
+void Fuser::filterGroups(const staticVector<int>& cams, int pixSizeBall, int pixSizeBallWSP, int nNearestCams)
 {
     printf("Precomputing groups\n");
     long t1 = clock();
@@ -135,7 +135,7 @@ void mv_fuse::filterGroups(const staticVector<int>& cams, int pixSizeBall, int p
 }
 
 // minNumOfModals number of other cams including this cam ... minNumOfModals /in 2,3,...
-bool mv_fuse::filterGroupsRC(int rc, int pixSizeBall, int pixSizeBallWSP, int nNearestCams)
+bool Fuser::filterGroupsRC(int rc, int pixSizeBall, int pixSizeBallWSP, int nNearestCams)
 {
     if(FileExists(mv_getFileName(mp->mip, rc + 1, EFileType::nmodMap)))
     {
@@ -230,7 +230,7 @@ bool mv_fuse::filterGroupsRC(int rc, int pixSizeBall, int pixSizeBallWSP, int nN
 }
 
 // minNumOfModals number of other cams including this cam ... minNumOfModals /in 2,3,...
-void mv_fuse::filterDepthMaps(const staticVector<int>& cams, int minNumOfModals, int minNumOfModalsWSP2SSP)
+void Fuser::filterDepthMaps(const staticVector<int>& cams, int minNumOfModals, int minNumOfModalsWSP2SSP)
 {
     printf("Filtering depth maps\n");
     long t1 = clock();
@@ -246,7 +246,7 @@ void mv_fuse::filterDepthMaps(const staticVector<int>& cams, int minNumOfModals,
 }
 
 // minNumOfModals number of other cams including this cam ... minNumOfModals /in 2,3,...
-bool mv_fuse::filterDepthMapsRC(int rc, int minNumOfModals, int minNumOfModalsWSP2SSP)
+bool Fuser::filterDepthMapsRC(int rc, int minNumOfModals, int minNumOfModalsWSP2SSP)
 {
     long t1 = clock();
     int w = mp->mip->getWidth(rc);
@@ -315,7 +315,7 @@ bool mv_fuse::filterDepthMapsRC(int rc, int minNumOfModals, int minNumOfModalsWS
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-float mv_fuse::computeAveragePixelSizeInHexahedron(point3d* hexah, int step, int scale)
+float Fuser::computeAveragePixelSizeInHexahedron(point3d* hexah, int step, int scale)
 {
     int scaleuse = std::max(1, scale);
 
@@ -381,7 +381,7 @@ float mv_fuse::computeAveragePixelSizeInHexahedron(point3d* hexah, int step, int
  *@param[out] hexah: table of 8 values
  *@param[out] minPixSize
  */
-void mv_fuse::divideSpace(point3d* hexah, float& minPixSize)
+void Fuser::divideSpace(point3d* hexah, float& minPixSize)
 {
     printf("Estimate space\n");
     int scale = 0;
@@ -483,7 +483,7 @@ void mv_fuse::divideSpace(point3d* hexah, float& minPixSize)
     }
     finishEstimate();
 
-    float perc = (float)mp->mip->_ini.get<double>("largeScale.universePercentile", 0.999f);
+    float perc = (float)mp->mip->_ini.get<double>("LargeScale.universePercentile", 0.999f);
 
     float mind1 = -quantile(accX1, quantile_probability = perc);
     float maxd1 = quantile(accX2, quantile_probability = perc);
@@ -508,7 +508,7 @@ void mv_fuse::divideSpace(point3d* hexah, float& minPixSize)
     hexah[7] = cg + v1 * maxd1 + v2 * mind2 + v3 * mind3;
 }
 
-voxel mv_fuse::estimateDimensions(point3d* vox, point3d* newSpace, int scale, int maxOcTreeDim)
+voxel Fuser::estimateDimensions(point3d* vox, point3d* newSpace, int scale, int maxOcTreeDim)
 {
     point3d O = (vox[0] + vox[1] + vox[2] + vox[3] + vox[4] + vox[5] + vox[6] + vox[7]) / 8.0f;
     point3d vx = vox[1] - vox[0];
@@ -522,7 +522,7 @@ voxel mv_fuse::estimateDimensions(point3d* vox, point3d* newSpace, int scale, in
     vz = vz.normalize();
 
     int nAllPts = computeNumberOfAllPoints(scale);
-    float pointToJoinPixSizeDist = (float)mp->mip->_ini.get<double>("mv_fuse.pointToJoinPixSizeDist", 2.0f);
+    float pointToJoinPixSizeDist = (float)mp->mip->_ini.get<double>("Fuser.pointToJoinPixSizeDist", 2.0f);
     std::cout << "pointToJoinPixSizeDist: " << pointToJoinPixSizeDist << std::endl;
     int maxpts = 1000000;
     int stepPts = nAllPts / maxpts + 1;
@@ -557,7 +557,7 @@ voxel mv_fuse::estimateDimensions(point3d* vox, point3d* newSpace, int scale, in
     return maxDim;
 }
 
-mv_universe* mv_fuse::segmentDepthMap(float alpha, int rc, staticVector<float>* depthMap, int* segMap, int scale)
+mv_universe* Fuser::segmentDepthMap(float alpha, int rc, staticVector<float>* depthMap, int* segMap, int scale)
 {
     printf("segmenting to connected components \n");
     int w = mp->mip->getWidth(rc) / std::max(1, scale);
@@ -621,7 +621,7 @@ mv_universe* mv_fuse::segmentDepthMap(float alpha, int rc, staticVector<float>* 
 }
 
 
-void mv_fuse::filterSmallConnComponents(float alpha, int minSegSize, int scale)
+void Fuser::filterSmallConnComponents(float alpha, int minSegSize, int scale)
 {
     printf("filtering out connected components smaller than %i pixels\n", minSegSize);
 

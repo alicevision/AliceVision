@@ -5,7 +5,7 @@
 
 #include <aliceVision/delaunaycut/mv_delaunay_GC.hpp>
 #include <aliceVision/delaunaycut/mv_delaunay_meshSmooth.hpp>
-#include <aliceVision/largeScale/reconstructionPlan.hpp>
+#include <aliceVision/largeScale/ReconstructionPlan.hpp>
 #include <aliceVision/depthMap/RefineRc.hpp>
 #include <aliceVision/common/fileIO.hpp>
 
@@ -115,8 +115,8 @@ int main(int argc, char* argv[])
     mv_prematch_cams pc(&mp);
 
     // .ini parsing
-    int ocTreeDim = mip._ini.get<int>("largeScale.gridLevel0", 1024);
-    const auto baseDir = mip._ini.get<std::string>("largeScale.baseDirName", "root01024");
+    int ocTreeDim = mip._ini.get<int>("LargeScale.gridLevel0", 1024);
+    const auto baseDir = mip._ini.get<std::string>("LargeScale.baseDirName", "root01024");
 
     bfs::path outDirectory = bfs::path(outputMesh).parent_path();
     if(!bfs::is_directory(outDirectory))
@@ -129,7 +129,7 @@ int main(int argc, char* argv[])
         case eAuto:
         {
             ALICEVISION_COUT("--- meshing partitioning: auto");
-            largeScale lsbase(&mp, &pc, tmpDirectory.string() + "/");
+            LargeScale lsbase(&mp, &pc, tmpDirectory.string() + "/");
             lsbase.generateSpace(maxPtsPerVoxel, ocTreeDim);
             std::string voxelsArrayFileName = lsbase.spaceFolderName + "hexahsToReconstruct.bin";
             staticVector<point3d>* voxelsArray = nullptr;
@@ -142,7 +142,7 @@ int main(int argc, char* argv[])
             else
             {
                 ALICEVISION_COUT("Compute voxels array");
-                reconstructionPlan rp(lsbase.dimensions, &lsbase.space[0], lsbase.mp, lsbase.pc, lsbase.spaceVoxelsFolderName);
+                ReconstructionPlan rp(lsbase.dimensions, &lsbase.space[0], lsbase.mp, lsbase.pc, lsbase.spaceVoxelsFolderName);
                 voxelsArray = rp.computeReconstructionPlanBinSearch(maxPts);
                 saveArrayToFile<point3d>(voxelsArrayFileName, voxelsArray);
             }
@@ -168,14 +168,14 @@ int main(int argc, char* argv[])
         case eSingleBlock:
         {
             ALICEVISION_COUT("--- meshing partitioning: single block");
-            largeScale ls0(&mp, &pc, tmpDirectory.string() + "/");
+            LargeScale ls0(&mp, &pc, tmpDirectory.string() + "/");
             ls0.generateSpace(maxPtsPerVoxel, ocTreeDim);
             unsigned long ntracks = std::numeric_limits<unsigned long>::max();
             while(ntracks > maxPts)
             {
-                bfs::path dirName = outDirectory/("largeScaleMaxPts" + num2strFourDecimal(ocTreeDim));
-                largeScale* ls = ls0.cloneSpaceIfDoesNotExists(ocTreeDim, dirName.string() + "/");
-                voxelsGrid vg(ls->dimensions, &ls->space[0], ls->mp, ls->pc, ls->spaceVoxelsFolderName);
+                bfs::path dirName = outDirectory/("LargeScaleMaxPts" + num2strFourDecimal(ocTreeDim));
+                LargeScale* ls = ls0.cloneSpaceIfDoesNotExists(ocTreeDim, dirName.string() + "/");
+                VoxelsGrid vg(ls->dimensions, &ls->space[0], ls->mp, ls->pc, ls->spaceVoxelsFolderName);
                 ntracks = vg.getNTracks();
                 delete ls;
                 ALICEVISION_COUT("Number of track candidates: " << ntracks);
@@ -189,10 +189,10 @@ int main(int argc, char* argv[])
             }
             ALICEVISION_COUT("Number of tracks: " << ntracks);
             ALICEVISION_COUT("ocTreeDim: " << ocTreeDim);
-            bfs::path dirName = outDirectory/("largeScaleMaxPts" + num2strFourDecimal(ocTreeDim));
-            largeScale lsbase(&mp, &pc, dirName.string()+"/");
+            bfs::path dirName = outDirectory/("LargeScaleMaxPts" + num2strFourDecimal(ocTreeDim));
+            LargeScale lsbase(&mp, &pc, dirName.string()+"/");
             lsbase.loadSpaceFromFile();
-            reconstructionPlan rp(lsbase.dimensions, &lsbase.space[0], lsbase.mp, lsbase.pc, lsbase.spaceVoxelsFolderName);
+            ReconstructionPlan rp(lsbase.dimensions, &lsbase.space[0], lsbase.mp, lsbase.pc, lsbase.spaceVoxelsFolderName);
             staticVector<int> voxelNeighs(rp.voxels->size() / 8);
             for(int i = 0; i < rp.voxels->size() / 8; i++)
                 voxelNeighs.push_back(i);
@@ -200,7 +200,7 @@ int main(int argc, char* argv[])
             staticVector<point3d>* hexahsToExcludeFromResultingMesh = nullptr;
             point3d* hexah = &lsbase.space[0];
             delaunayGC.reconstructVoxel(hexah, &voxelNeighs, outDirectory.string()+"/", lsbase.getSpaceCamsTracksDir(), false, hexahsToExcludeFromResultingMesh,
-                                  (voxelsGrid*)&rp, lsbase.getSpaceSteps());
+                                  (VoxelsGrid*)&rp, lsbase.getSpaceSteps());
 
             delaunayGC.graphCutPostProcessing();
 

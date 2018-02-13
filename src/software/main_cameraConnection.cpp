@@ -5,7 +5,7 @@
 
 #include <aliceVision/delaunaycut/mv_delaunay_GC.hpp>
 #include <aliceVision/delaunaycut/mv_delaunay_meshSmooth.hpp>
-#include <aliceVision/largeScale/reconstructionPlan.hpp>
+#include <aliceVision/largeScale/ReconstructionPlan.hpp>
 #include <aliceVision/depthMap/RefineRc.hpp>
 #include <aliceVision/common/fileIO.hpp>
 

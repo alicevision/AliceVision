@@ -1,19 +1,19 @@
 # Headers
 set(largeScale_files_headers
-  largeScale.hpp
-  octreeTracks.hpp
-  reconstructionPlan.hpp
-  voxelsGrid.hpp
-  mv_fuse.hpp
+  Fuser.hpp
+  LargeScale.hpp
+  OctreeTracks.hpp
+  ReconstructionPlan.hpp
+  VoxelsGrid.hpp
 )
 
 # Sources
 set(largeScale_files_sources
-  largeScale.cpp
-  octreeTracks.cpp
-  reconstructionPlan.cpp
-  voxelsGrid.cpp
-  mv_fuse.cpp
+  Fuser.cpp
+  LargeScale.cpp
+  OctreeTracks.cpp
+  ReconstructionPlan.cpp
+  VoxelsGrid.cpp
 )
 
 add_library(aliceVision_largeScale

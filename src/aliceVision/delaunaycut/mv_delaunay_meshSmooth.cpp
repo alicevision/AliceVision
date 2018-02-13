@@ -50,7 +50,7 @@ void meshPostProcessing(mv_mesh*& inout_mesh, staticVector<staticVector<int>*>*&
 
         //!!!!!!!!!!!!!
         bool doRemoveTrianglesInhexahsToExcludeFromResultingMesh =
-            (bool)mp.mip->_ini.get<bool>("largeScale.doRemoveTrianglesInhexahsToExcludeFromResultingMesh",
+            (bool)mp.mip->_ini.get<bool>("LargeScale.doRemoveTrianglesInhexahsToExcludeFromResultingMesh",
                                        false);
         if(doRemoveTrianglesInhexahsToExcludeFromResultingMesh && hexahsToExcludeFromResultingMesh)
         {

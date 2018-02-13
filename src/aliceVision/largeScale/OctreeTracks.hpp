@@ -5,10 +5,10 @@
 
 #pragma once
 
-#include <aliceVision/largeScale/mv_fuse.hpp>
+#include <aliceVision/largeScale/Fuser.hpp>
 #include <aliceVision/common/PreMatchCams.hpp>
 
-class octreeTracks : public mv_fuse
+class OctreeTracks : public Fuser
 {
 public:
     enum NodeType
@@ -80,8 +80,8 @@ public:
     int minNumOfConsistentCams;
     float simWspThr;
 
-    octreeTracks(const point3d* _voxel, multiviewParams* _mp, mv_prematch_cams* _pc, voxel dimensions);
-    ~octreeTracks();
+    OctreeTracks(const point3d* _voxel, multiviewParams* _mp, mv_prematch_cams* _pc, voxel dimensions);
+    ~OctreeTracks();
 
     float computeAveragePixelSizeForVoxel();
     bool getVoxelOfOctreeFor3DPoint(voxel& out, point3d& tp);
@@ -95,7 +95,7 @@ public:
     void updateOctreeTracksCams(staticVector<trackStruct*>* tracks);
     staticVector<trackStruct*>* fillOctreeFromTracks(staticVector<trackStruct*>* tracksIn);
     staticVector<trackStruct*>* fillOctree(int maxPts, std::string depthMapsPtsSimsTmpDir);
-    staticVector<int>* getTracksCams(staticVector<octreeTracks::trackStruct*>* tracks);
+    staticVector<int>* getTracksCams(staticVector<OctreeTracks::trackStruct*>* tracks);
 
     staticVector<int>* getNPointsByLevels();
     void getNPointsByLevelsRecursive(Node* node, int level, staticVector<int>* nptsAtLevel);

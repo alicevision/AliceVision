@@ -7,11 +7,11 @@
 
 #include <aliceVision/common/common.hpp>
 #include <aliceVision/common/PreMatchCams.hpp>
-#include <aliceVision/largeScale/octreeTracks.hpp>
+#include <aliceVision/largeScale/OctreeTracks.hpp>
 
 #include <array>
 
-class largeScale
+class LargeScale
 {
 public:
     multiviewParams* mp;
@@ -24,15 +24,15 @@ public:
     int maxOcTreeDim;
     bool doVisualize;
 
-    largeScale(multiviewParams* _mp, mv_prematch_cams* _pc, std::string _spaceFolderName);
-    ~largeScale();
+    LargeScale(multiviewParams* _mp, mv_prematch_cams* _pc, std::string _spaceFolderName);
+    ~LargeScale();
 
     std::string getSpaceCamsTracksDir();
     bool isSpaceSaved();
     void saveSpaceToFile();
     void loadSpaceFromFile();
     void initialEstimateSpace(int maxOcTreeDim);
-    largeScale* cloneSpaceIfDoesNotExists(int newOcTreeDim, std::string newSpaceFolderName);
+    LargeScale* cloneSpaceIfDoesNotExists(int newOcTreeDim, std::string newSpaceFolderName);
     bool generateSpace(int maxPts, int ocTreeDim);
     point3d getSpaceSteps();
 

@@ -38,7 +38,7 @@ mv_delaunay_GC::mv_delaunay_GC(multiviewParams* _mp, mv_prematch_cams* _pc)
 
     _camsVertexes.resize(mp->ncams, -1);
 
-    saveTemporaryBinFiles = mp->mip->_ini.get<bool>("largeScale.saveTemporaryBinFiles", false);
+    saveTemporaryBinFiles = mp->mip->_ini.get<bool>("LargeScale.saveTemporaryBinFiles", false);
 
     GEO::initialize();
     _tetrahedralization = GEO::Delaunay::create(3, "BDEL");
@@ -468,13 +468,13 @@ void mv_delaunay_GC::addHelperPoints(int nGridHelperVolumePointsDim, point3d vox
 
 void mv_delaunay_GC::createTetrahedralizationFromDepthMapsCamsVoxel(staticVector<int>* cams,
                                                                staticVector<int>* voxelsIds, point3d voxel[8],
-                                                               voxelsGrid* ls)
+                                                               VoxelsGrid* ls)
 {
     ///////////////////////////////////////////////////////////////////////////////////////
     printf("Creating delaunay tetrahedralization from depth maps voxel\n");
     long tall = clock();
 
-    bool doFilterOctreeTracks = mp->mip->_ini.get<bool>("largeScale.doFilterOctreeTracks", true);
+    bool doFilterOctreeTracks = mp->mip->_ini.get<bool>("LargeScale.doFilterOctreeTracks", true);
     int minNumOfConsistentCams = mp->mip->_ini.get<int>("filter.minNumOfConsistentCams", 2);
 
     ///////////////////////////////////////////////////////////////////////////////////////
@@ -558,7 +558,7 @@ void mv_delaunay_GC::createTetrahedralizationFromDepthMapsCamsVoxel(staticVector
     /* initialize random seed: */
     srand(time(nullptr));
 
-    int nGridHelperVolumePointsDim = mp->mip->_ini.get<int>("largeScale.nGridHelperVolumePointsDim", 10);
+    int nGridHelperVolumePointsDim = mp->mip->_ini.get<int>("LargeScale.nGridHelperVolumePointsDim", 10);
     // add volume points to prevent singularities
     addHelperPoints(nGridHelperVolumePointsDim, voxel, minDist);
 
@@ -1908,7 +1908,7 @@ void mv_delaunay_GC::updateGraphFromTmpPtsCamsHexahRC(int rc, point3d hexah[8], 
     std::string camPtsFileName;
     camPtsFileName = tmpCamsPtsFolderName + "camPtsGrid_" + num2strFourDecimal(rc) + ".bin";
 
-    bool doFilterOctreeTracks = mp->mip->_ini.get<bool>("largeScale.doFilterOctreeTracks", true);
+    bool doFilterOctreeTracks = mp->mip->_ini.get<bool>("LargeScale.doFilterOctreeTracks", true);
     int minNumOfConsistentCams = mp->mip->_ini.get<int>("filter.minNumOfConsistentCams", 2);
 
     /////////////////////////////////////////////////////////////////////////////////
@@ -2577,7 +2577,7 @@ void mv_delaunay_GC::invertFullStatusForSmallLabels()
 
 void mv_delaunay_GC::reconstructVoxel(point3d hexah[8], staticVector<int>* voxelsIds, std::string folderName,
                                       std::string tmpCamsPtsFolderName, bool removeSmallSegments,
-                                      staticVector<point3d>* hexahsToExcludeFromResultingMesh, voxelsGrid* ls,
+                                      staticVector<point3d>* hexahsToExcludeFromResultingMesh, VoxelsGrid* ls,
                                       point3d spaceSteps)
 {
     staticVector<int>* cams = pc->findCamsWhichIntersectsHexahedron(hexah);
@@ -2606,13 +2606,13 @@ void mv_delaunay_GC::reconstructVoxel(point3d hexah[8], staticVector<int>* voxel
         removeSmallSegs(2500); // TODO FACA: to decide
     }
 
-    bool updateLSC = mp->mip->_ini.get<bool>("largeScale.updateLSC", true);
+    bool updateLSC = mp->mip->_ini.get<bool>("LargeScale.updateLSC", true);
 
     reconstructExpetiments(cams, folderName, fileNameStGraph, fileNameStSolution, fileNameTxt, fileNameTxtCam,
                            camerasPerOneOmni, updateLSC, hexah, tmpCamsPtsFolderName, hexahsToExcludeFromResultingMesh,
                            spaceSteps);
 
-    bool saveOrNot = mp->mip->_ini.get<bool>("largeScale.saveDelaunayTriangulation", false);
+    bool saveOrNot = mp->mip->_ini.get<bool>("LargeScale.saveDelaunayTriangulation", false);
     if(saveOrNot)
     {
         saveDh(fileNameDh, fileNameInfo);

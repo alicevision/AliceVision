@@ -4,17 +4,17 @@
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
 #pragma once
-#include <aliceVision/largeScale/largeScale.hpp>
-#include <aliceVision/largeScale/voxelsGrid.hpp>
+#include <aliceVision/largeScale/LargeScale.hpp>
+#include <aliceVision/largeScale/VoxelsGrid.hpp>
 #include <aliceVision/mesh/mv_mesh.hpp>
 
-class reconstructionPlan : public voxelsGrid
+class ReconstructionPlan : public VoxelsGrid
 {
 public:
     staticVector<int>* nVoxelsTracks;
-    reconstructionPlan(voxel& dimmensions, point3d* space, multiviewParams* _mp, mv_prematch_cams* _pc,
+    ReconstructionPlan(voxel& dimmensions, point3d* space, multiviewParams* _mp, mv_prematch_cams* _pc,
                        std::string _spaceRootDir);
-    ~reconstructionPlan();
+    ~ReconstructionPlan();
 
     unsigned long getNTracks(const voxel& LU, const voxel& RD);
     bool divideBox(voxel& LU1o, voxel& RD1o, voxel& LU2o, voxel& RD2o, const voxel& LUi, const voxel& RDi,
@@ -25,16 +25,16 @@ public:
     staticVector<int>* voxelsIdsIntersectingHexah(point3d* hexah);
     int getPtsCount(float dist, int id);
     staticVector<float>* computeMaximaInflateFactors(int maxPts);
-    staticVector<sortedId>* computeOptimalreconstructionPlan(const staticVector<float>* maximaInflateFactors);
+    staticVector<sortedId>* computeOptimalReconstructionPlan(const staticVector<float>* maximaInflateFactors);
     void getHexahedronForID(float dist, int id, point3d* out);
 };
 
-void reconstructAccordingToOptimalReconstructionPlan(int gl, largeScale* ls);
-void reconstructSpaceAccordingToVoxelsArray(const std::string& voxelsArrayFileName, largeScale* ls,
+void reconstructAccordingToOptimalReconstructionPlan(int gl, LargeScale* ls);
+void reconstructSpaceAccordingToVoxelsArray(const std::string& voxelsArrayFileName, LargeScale* ls,
                                             bool doComputeColoredMeshes);
-mv_mesh* joinMeshes(const std::vector<std::string>& recsDirs, staticVector<point3d>* voxelsArray, largeScale* ls);
-mv_mesh* joinMeshes(int gl, largeScale* ls);
-mv_mesh* joinMeshes(const std::string& voxelsArrayFileName, largeScale* ls);
+mv_mesh* joinMeshes(const std::vector<std::string>& recsDirs, staticVector<point3d>* voxelsArray, LargeScale* ls);
+mv_mesh* joinMeshes(int gl, LargeScale* ls);
+mv_mesh* joinMeshes(const std::string& voxelsArrayFileName, LargeScale* ls);
 
 staticVector<staticVector<int>*>* loadLargeScalePtsCams(const std::vector<std::string>& recsDirs);
 

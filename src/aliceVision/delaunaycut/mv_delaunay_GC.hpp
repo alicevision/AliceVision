@@ -8,7 +8,7 @@
 #include <aliceVision/common/common.hpp>
 #include <aliceVision/common/PreMatchCams.hpp>
 #include <aliceVision/delaunaycut/mv_delaunay_types.hpp>
-#include <aliceVision/largeScale/voxelsGrid.hpp>
+#include <aliceVision/largeScale/VoxelsGrid.hpp>
 #include <aliceVision/mesh/mv_mesh.hpp>
 
 #include <geogram/delaunay/delaunay.h>
@@ -216,7 +216,7 @@ public:
     void addHelperPoints(int nGridHelperVolumePointsDim, point3d voxel[8], float minDist);
 
     void createTetrahedralizationFromDepthMapsCamsVoxel(staticVector<int>* cams,
-                                                   staticVector<int>* voxelsIds, point3d voxel[8], voxelsGrid* ls);
+                                                   staticVector<int>* voxelsIds, point3d voxel[8], VoxelsGrid* ls);
 
     void computeVerticesSegSize(bool allPoints, float alpha = 0.0f);
     void removeSmallSegs(int minSegSize);
@@ -304,7 +304,7 @@ public:
 
     void reconstructVoxel(point3d hexah[8], staticVector<int>* voxelsIds, std::string folderName,
                           std::string tmpCamsPtsFolderName, bool segment,
-                          staticVector<point3d>* hexahsToExcludeFromResultingMesh, voxelsGrid* ls, point3d spaceSteps);
+                          staticVector<point3d>* hexahsToExcludeFromResultingMesh, VoxelsGrid* ls, point3d spaceSteps);
 
     bool hasVertex(CellIndex ci, VertexIndex vi) const;
     void getIncidentCellsToCellAndVertexOfTheCellIndexes(int vIncident[3], CellIndex ci, VertexIndex vi) const;

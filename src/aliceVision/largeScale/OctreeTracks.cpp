@@ -3,7 +3,7 @@
 // v. 2.0. If a copy of the MPL was not distributed with this file,
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
-#include "octreeTracks.hpp"
+#include "OctreeTracks.hpp"
 #include <aliceVision/common/common.hpp>
 #include <aliceVision/common/fileIO.hpp>
 
@@ -13,12 +13,12 @@
 #include <iostream>
 
 
-octreeTracks::Node::Node(NodeType type)
+OctreeTracks::Node::Node(NodeType type)
 {
     type_ = type;
 }
 
-octreeTracks::trackStruct* octreeTracks::getTrack(int x, int y, int z)
+OctreeTracks::trackStruct* OctreeTracks::getTrack(int x, int y, int z)
 {
     if(!((x >= 0 && x < size_) && (y >= 0 && y < size_) && (z >= 0 && z < size_)))
     {
@@ -47,7 +47,7 @@ octreeTracks::trackStruct* octreeTracks::getTrack(int x, int y, int z)
     return reinterpret_cast<trackStruct*>(*n);
 }
 
-void octreeTracks::addPoint(int x, int y, int z, float sim, float pixSize, point3d& p, int rc)
+void OctreeTracks::addPoint(int x, int y, int z, float sim, float pixSize, point3d& p, int rc)
 {
     assert(x >= 0 && x < size_);
     assert(y >= 0 && y < size_);
@@ -80,7 +80,7 @@ void octreeTracks::addPoint(int x, int y, int z, float sim, float pixSize, point
     }
 }
 
-void octreeTracks::addTrack(int x, int y, int z, octreeTracks::trackStruct* t)
+void OctreeTracks::addTrack(int x, int y, int z, OctreeTracks::trackStruct* t)
 {
     assert(x >= 0 && x < size_);
     assert(y >= 0 && y < size_);
@@ -113,7 +113,7 @@ void octreeTracks::addTrack(int x, int y, int z, octreeTracks::trackStruct* t)
     }
 }
 
-staticVector<octreeTracks::trackStruct*>* octreeTracks::getAllPoints()
+staticVector<OctreeTracks::trackStruct*>* OctreeTracks::getAllPoints()
 {
     staticVector<trackStruct*>* out = new staticVector<trackStruct*>(leafsNumber_);
     if(root_ != nullptr)
@@ -123,7 +123,7 @@ staticVector<octreeTracks::trackStruct*>* octreeTracks::getAllPoints()
     return out;
 }
 
-void octreeTracks::getAllPointsRecursive(staticVector<trackStruct*>* out, Node* node)
+void OctreeTracks::getAllPointsRecursive(staticVector<trackStruct*>* out, Node* node)
 {
     assert(node);
 
@@ -153,7 +153,7 @@ void octreeTracks::getAllPointsRecursive(staticVector<trackStruct*>* out, Node* 
     }
 }
 
-staticVector<int>* octreeTracks::getNPointsByLevels()
+staticVector<int>* OctreeTracks::getNPointsByLevels()
 {
     staticVector<int>* nptsAtLevel = new staticVector<int>(size_ + 1);
     nptsAtLevel->resize_with(size_ + 1, 0);
@@ -165,7 +165,7 @@ staticVector<int>* octreeTracks::getNPointsByLevels()
     return nptsAtLevel;
 }
 
-void octreeTracks::getNPointsByLevelsRecursive(Node* node, int level, staticVector<int>* nptsAtLevel)
+void OctreeTracks::getNPointsByLevelsRecursive(Node* node, int level, staticVector<int>* nptsAtLevel)
 {
     assert(node);
 
@@ -196,7 +196,7 @@ void octreeTracks::getNPointsByLevelsRecursive(Node* node, int level, staticVect
     }
 }
 
-octreeTracks::Branch::Branch()
+OctreeTracks::Branch::Branch()
     : Node(BranchNode)
 {
     for(int i = 0; i < 2; ++i)
@@ -211,7 +211,7 @@ octreeTracks::Branch::Branch()
     }
 }
 
-octreeTracks::Branch::~Branch()
+OctreeTracks::Branch::~Branch()
 {
     for(int i = 0; i < 2; ++i)
     {
@@ -260,7 +260,7 @@ octreeTracks::Branch::~Branch()
     }
 }
 
-octreeTracks::trackStruct::trackStruct(float sim, float pixSize, const point3d& p, int rc)
+OctreeTracks::trackStruct::trackStruct(float sim, float pixSize, const point3d& p, int rc)
     : Node(LeafNode)
 {
     npts = 1;
@@ -271,7 +271,7 @@ octreeTracks::trackStruct::trackStruct(float sim, float pixSize, const point3d& 
     minSim = sim;
 }
 
-octreeTracks::trackStruct::trackStruct(trackStruct* t)
+OctreeTracks::trackStruct::trackStruct(trackStruct* t)
     : Node(LeafNode)
 {
     npts = t->npts;
@@ -281,11 +281,11 @@ octreeTracks::trackStruct::trackStruct(trackStruct* t)
     minSim = t->minSim;
 }
 
-octreeTracks::trackStruct::~trackStruct()
+OctreeTracks::trackStruct::~trackStruct()
 {
 }
 
-void octreeTracks::trackStruct::addPoint(float sim, float pixSize, const point3d& p, int rc)
+void OctreeTracks::trackStruct::addPoint(float sim, float pixSize, const point3d& p, int rc)
 {
     int index = indexOf(rc);
     if(index == -1)
@@ -337,7 +337,7 @@ void octreeTracks::trackStruct::addPoint(float sim, float pixSize, const point3d
     // else don't use the position information as it is less accurate.
 }
 
-void octreeTracks::trackStruct::addDistinctNonzeroCamsFromTrackAsZeroCams(trackStruct* t)
+void OctreeTracks::trackStruct::addDistinctNonzeroCamsFromTrackAsZeroCams(trackStruct* t)
 {
     for(int i = 0; i < t->cams.size(); i++)
     {
@@ -357,7 +357,7 @@ void octreeTracks::trackStruct::addDistinctNonzeroCamsFromTrackAsZeroCams(trackS
     }
 }
 
-void octreeTracks::trackStruct::addTrack(octreeTracks::trackStruct* t)
+void OctreeTracks::trackStruct::addTrack(OctreeTracks::trackStruct* t)
 {
     for(int i = 0; i < t->cams.size(); i++)
     {
@@ -412,7 +412,7 @@ void octreeTracks::trackStruct::addTrack(octreeTracks::trackStruct* t)
     // else don't use the position information as it is less accurate.
 }
 
-int octreeTracks::trackStruct::indexOf(int val)
+int OctreeTracks::trackStruct::indexOf(int val)
 {
     if(cams.size() == 0)
     {
@@ -459,7 +459,7 @@ int octreeTracks::trackStruct::indexOf(int val)
     return id;
 }
 
-void octreeTracks::trackStruct::doPrintf()
+void OctreeTracks::trackStruct::doPrintf()
 {
     printf("------------------------------------\n");
     printf("point %f %f %f\n", point.x, point.y, point.z);
@@ -468,8 +468,8 @@ void octreeTracks::trackStruct::doPrintf()
         printf("cams %i, rc %i, val %i \n", i, cams[i].x, cams[i].y);
 }
 
-octreeTracks::octreeTracks(const point3d* _voxel, multiviewParams* _mp, mv_prematch_cams* _pc, voxel dimensions)
-    : mv_fuse(_mp, _pc)
+OctreeTracks::OctreeTracks(const point3d* _voxel, multiviewParams* _mp, mv_prematch_cams* _pc, voxel dimensions)
+    : Fuser(_mp, _pc)
 {
     numSubVoxsX = dimensions.x;
     numSubVoxsY = dimensions.y;
@@ -494,11 +494,11 @@ octreeTracks::octreeTracks(const point3d* _voxel, multiviewParams* _mp, mv_prema
     sy = svy / (float)numSubVoxsY;
     sz = svz / (float)numSubVoxsZ;
 
-    doFilterOctreeTracks = mp->mip->_ini.get<bool>("largeScale.doFilterOctreeTracks", true);
-    doUseWeaklySupportedPoints = mp->mip->_ini.get<bool>("largeScale.doUseWeaklySupportedPoints", false);
-    doUseWeaklySupportedPointCam = mp->mip->_ini.get<bool>("largeScale.doUseWeaklySupportedPointCam", false);
+    doFilterOctreeTracks = mp->mip->_ini.get<bool>("LargeScale.doFilterOctreeTracks", true);
+    doUseWeaklySupportedPoints = mp->mip->_ini.get<bool>("LargeScale.doUseWeaklySupportedPoints", false);
+    doUseWeaklySupportedPointCam = mp->mip->_ini.get<bool>("LargeScale.doUseWeaklySupportedPointCam", false);
     minNumOfConsistentCams = mp->mip->_ini.get<int>("filter.minNumOfConsistentCams", 2);
-    simWspThr = (float)mp->mip->_ini.get<double>("largeScale.simWspThr", -0.0f);
+    simWspThr = (float)mp->mip->_ini.get<double>("LargeScale.simWspThr", -0.0f);
 
     int maxNumSubVoxs = std::max(std::max(numSubVoxsX, numSubVoxsY), numSubVoxsZ);
     size_ = 2;
@@ -511,7 +511,7 @@ octreeTracks::octreeTracks(const point3d* _voxel, multiviewParams* _mp, mv_prema
     leafsNumber_ = 0;
 }
 
-octreeTracks::~octreeTracks()
+OctreeTracks::~OctreeTracks()
 {
     // printf("deleting octree\n");
     if(root_ != nullptr)
@@ -521,7 +521,7 @@ octreeTracks::~octreeTracks()
     // printf("deleted\n");
 }
 
-bool octreeTracks::getVoxelOfOctreeFor3DPoint(voxel& out, point3d& tp)
+bool OctreeTracks::getVoxelOfOctreeFor3DPoint(voxel& out, point3d& tp)
 {
     out.x = (int)floor(orientedPointPlaneDistance(tp, O, vx) / sx);
     out.y = (int)floor(orientedPointPlaneDistance(tp, O, vy) / sy);
@@ -530,13 +530,13 @@ bool octreeTracks::getVoxelOfOctreeFor3DPoint(voxel& out, point3d& tp)
             (out.z < numSubVoxsZ));
 }
 
-point3d octreeTracks::getCenterOfVoxelOfOctreeForVoxel(voxel& vox)
+point3d OctreeTracks::getCenterOfVoxelOfOctreeForVoxel(voxel& vox)
 {
     return O + vx * sx * (float)vox.x + vx * (sx / 2.0f) + vy * sy * (float)vox.y + vy * (sy / 2.0f) +
            vz * sz * (float)vox.z + vz * (sz / 2.0f);
 }
 
-bool octreeTracks::filterOctreeTrack(trackStruct* t)
+bool OctreeTracks::filterOctreeTrack(trackStruct* t)
 {
     if((t == nullptr) || (t->cams.size() < minNumOfConsistentCams))
     {
@@ -628,7 +628,7 @@ bool octreeTracks::filterOctreeTrack(trackStruct* t)
     */
 }
 
-void octreeTracks::filterOctreeTracks(staticVector<trackStruct*>* tracks)
+void OctreeTracks::filterOctreeTracks(staticVector<trackStruct*>* tracks)
 {
     staticVector<trackStruct*>* tracksOut = new staticVector<trackStruct*>(tracks->size());
 
@@ -653,7 +653,7 @@ void octreeTracks::filterOctreeTracks(staticVector<trackStruct*>* tracks)
 }
 
 
-void octreeTracks::filterMinNumConsistentCams(staticVector<trackStruct*>* tracks)
+void OctreeTracks::filterMinNumConsistentCams(staticVector<trackStruct*>* tracks)
 {
     using namespace boost::accumulators;
 
@@ -700,7 +700,7 @@ void octreeTracks::filterMinNumConsistentCams(staticVector<trackStruct*>* tracks
 // if there are two neighbouring voxels and their representants are closer than
 // 1.2 minpixsize of each of them then they must have the same set of cameras
 // this should preserve the case when the density of points is smaller than sx
-void octreeTracks::updateOctreeTracksCams(staticVector<trackStruct*>* tracks)
+void OctreeTracks::updateOctreeTracksCams(staticVector<trackStruct*>* tracks)
 {
     float clusterSizeThr = 1.2f;
 
@@ -747,14 +747,14 @@ void octreeTracks::updateOctreeTracksCams(staticVector<trackStruct*>* tracks)
 
 /// if there is in near distance to actual track another track that has
 /// smaller enough pix size then remove the actual track
-void octreeTracks::filterOctreeTracks2(staticVector<trackStruct*>* tracks)
+void OctreeTracks::filterOctreeTracks2(staticVector<trackStruct*>* tracks)
 {
     if(mp->verbose)
         std::cout << "filterOctreeTracks2" << std::endl;
     staticVector<trackStruct*> tracksOut;
     tracksOut.reserve(tracks->size());
 
-    float clusterSizeThr = mp->mip->_ini.get<double>("octreeTracks.clusterSizeThr", 2.0f);
+    float clusterSizeThr = mp->mip->_ini.get<double>("OctreeTracks.clusterSizeThr", 2.0f);
 
     // long t1 = initEstimate();
     for(int i = 0; i < tracks->size(); i++)
@@ -799,7 +799,7 @@ void octreeTracks::filterOctreeTracks2(staticVector<trackStruct*>* tracks)
     tracks->swap(tracksOut);
 }
 
-staticVector<octreeTracks::trackStruct*>* octreeTracks::fillOctree(int maxPts, std::string depthMapsPtsSimsTmpDir)
+staticVector<OctreeTracks::trackStruct*>* OctreeTracks::fillOctree(int maxPts, std::string depthMapsPtsSimsTmpDir)
 {
     long t1 = clock();
     staticVector<int>* cams = pc->findCamsWhichIntersectsHexahedron(vox, depthMapsPtsSimsTmpDir + "minMaxDepths.bin");
@@ -907,8 +907,8 @@ staticVector<octreeTracks::trackStruct*>* octreeTracks::fillOctree(int maxPts, s
     return tracks;
 }
 
-staticVector<octreeTracks::trackStruct*>*
-octreeTracks::fillOctreeFromTracks(staticVector<octreeTracks::trackStruct*>* tracksIn)
+staticVector<OctreeTracks::trackStruct*>*
+OctreeTracks::fillOctreeFromTracks(staticVector<OctreeTracks::trackStruct*>* tracksIn)
 {
     long t1 = clock();
 
@@ -930,7 +930,7 @@ octreeTracks::fillOctreeFromTracks(staticVector<octreeTracks::trackStruct*>* tra
     return tracks;
 }
 
-staticVector<int>* octreeTracks::getTracksCams(staticVector<octreeTracks::trackStruct*>* tracks)
+staticVector<int>* OctreeTracks::getTracksCams(staticVector<OctreeTracks::trackStruct*>* tracks)
 {
     staticVectorBool* camsb = new staticVectorBool(mp->ncams);
     camsb->resize_with(mp->ncams, false);

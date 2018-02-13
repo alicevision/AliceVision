@@ -9,7 +9,7 @@
 #include <aliceVision/mesh/mv_mesh_retexture_obj.hpp>
 #include <aliceVision/delaunaycut/mv_delaunay_GC.hpp>
 #include <aliceVision/delaunaycut/mv_delaunay_meshSmooth.hpp>
-#include <aliceVision/largeScale/reconstructionPlan.hpp>
+#include <aliceVision/largeScale/ReconstructionPlan.hpp>
 #include <aliceVision/depthMap/RefineRc.hpp>
 
 #include <boost/program_options.hpp>

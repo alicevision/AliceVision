@@ -9,14 +9,14 @@
 #include <aliceVision/common/PreMatchCams.hpp>
 #include <aliceVision/structures/mv_universe.hpp>
 
-class mv_fuse
+class Fuser
 {
 public:
     const multiviewParams* mp;
     mv_prematch_cams* pc;
 
-    mv_fuse(const multiviewParams* _mp, mv_prematch_cams* _pc);
-    ~mv_fuse(void);
+    Fuser(const multiviewParams* _mp, mv_prematch_cams* _pc);
+    ~Fuser(void);
 
     // minNumOfModals number of other cams including this cam ... minNumOfModals /in 2,3,... default 3
     // pixSizeBall = default 2
