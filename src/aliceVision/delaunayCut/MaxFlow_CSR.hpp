@@ -99,10 +99,10 @@ public:
     {
         assert(capacity >= 0 && reverseCapacity >= 0);
         
-        int edgeIndex = _edges.size();
+        //int edgeIndex = _edges.size();
         _edges.push_back(std::make_pair(n1, n2)); // edge
 
-        int reverseEdgeIndex = _edges.size();
+        //int reverseEdgeIndex = _edges.size();
         _edges.push_back(std::make_pair(n2, n1)); // reverse edge
 
         ValueType defaultResidual = 0.0;

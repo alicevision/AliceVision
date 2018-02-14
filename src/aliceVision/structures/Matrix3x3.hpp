@@ -184,74 +184,6 @@ public:
         return m;
     }
 
-    inline void QR(Matrix3x3& Q, Matrix3x3& R)
-    {
-        /*
-        Point3d a1 = Point3d(m13,m23,m33);
-        Point3d a2 = Point3d(m12,m22,m32);
-        Point3d a3 = Point3d(m11,m21,m31);
-        */
-
-        /*
-        Point3d a1 = Point3d(m11,m21,m31);
-        Point3d a2 = Point3d(m12,m22,m32);
-        Point3d a3 = Point3d(m13,m23,m33);
-        */
-
-        /*
-        Point3d a1 = Point3d(m31,m32,m33);
-        Point3d a2 = Point3d(m21,m22,m23);
-        Point3d a3 = Point3d(m11,m12,m13);
-        */
-
-        Point3d a1 = Point3d(m11, m12, m13);
-        Point3d a2 = Point3d(m21, m22, m23);
-        Point3d a3 = Point3d(m31, m32, m33);
-
-        Point3d u1 = a1;
-        Point3d e1 = u1.normalize();
-        Point3d u2 = a2 - proj(e1, a2);
-        Point3d e2 = u2.normalize();
-        Point3d u3 = a3 - proj(e1, a3) - proj(e2, a3);
-        Point3d e3 = u3.normalize();
-
-        Q.m11 = e1.x;
-        Q.m12 = e1.y;
-        Q.m13 = e1.z;
-        Q.m21 = e2.x;
-        Q.m22 = e2.y;
-        Q.m23 = e2.z;
-        Q.m31 = e3.x;
-        Q.m32 = e3.y;
-        Q.m33 = e3.z;
-
-        R.m11 = dot(e1, a1);
-        R.m12 = dot(e1, a2);
-        R.m13 = dot(e1, a3);
-        R.m21 = 0.0f;
-        R.m22 = dot(e2, a2);
-        R.m23 = dot(e2, a3);
-        R.m31 = 0.0f;
-        R.m32 = 0.0f;
-        R.m33 = dot(e3, a3);
-    }
-
-    inline Matrix3x3 transpodeAndEnd1End1()
-    {
-        Matrix3x3 S = transpose();
-        Matrix3x3 SS;
-        SS.m11 = S.m33;
-        SS.m12 = S.m32;
-        SS.m13 = S.m31;
-        SS.m21 = S.m23;
-        SS.m22 = S.m22;
-        SS.m23 = S.m21;
-        SS.m31 = S.m13;
-        SS.m32 = S.m12;
-        SS.m33 = S.m11;
-        return SS;
-    }
-
     inline Point3d mldivide(const Point3d& b)
     {
         if(!isSingular())
@@ -394,24 +326,6 @@ public:
     }
 };
 
-inline Matrix3x3 I3x3()
-{
-    Matrix3x3 m;
-    m.m11 = 1.0;
-    m.m12 = 0.0;
-    m.m13 = 0.0;
-
-    m.m21 = 0.0;
-    m.m22 = 1.0;
-    m.m23 = 0.0;
-
-    m.m31 = 0.0;
-    m.m32 = 0.0;
-    m.m33 = 1.0;
-
-    return m;
-}
-
 inline Matrix3x3 diag3x3(double d1, double d2, double d3)
 {
     Matrix3x3 m;
@@ -426,82 +340,6 @@ inline Matrix3x3 diag3x3(double d1, double d2, double d3)
     m.m31 = 0.0;
     m.m32 = 0.0;
     m.m33 = d3;
-
-    return m;
-}
-
-inline Matrix3x3 angRad2rot(float radx, float rady, float radz)
-{
-    float angx = radx;
-    float angy = rady;
-    float angz = radz;
-
-    float sa = sin(angy);
-    float ca = cos(angy);
-    float sb = sin(angx);
-    float cb = cos(angx);
-    float sc = sin(angz);
-    float cc = cos(angz);
-
-    Matrix3x3 ra;
-    ra.m11 = ca;
-    ra.m12 = sa;
-    ra.m13 = 0.0f;
-    ra.m21 = -sa;
-    ra.m22 = ca;
-    ra.m23 = 0.0f;
-    ra.m31 = 0.0f;
-    ra.m32 = 0.0f;
-    ra.m33 = 1.0f;
-
-    Matrix3x3 rb;
-    rb.m11 = cb;
-    rb.m12 = 0.0f;
-    rb.m13 = sb;
-    rb.m21 = 0.0f;
-    rb.m22 = 1.0f;
-    rb.m23 = 0.0f;
-    rb.m31 = -sb;
-    rb.m32 = 0.0f;
-    rb.m33 = cb;
-
-    Matrix3x3 rc;
-    rc.m11 = 1.0f;
-    rc.m12 = 0.0f;
-    rc.m13 = 0.0f;
-    rc.m21 = 0.0f;
-    rc.m22 = cc;
-    rc.m23 = sc;
-    rc.m31 = 0.0f;
-    rc.m32 = -sc;
-    rc.m33 = cc;
-
-    return rc * rb * ra;
-}
-
-inline Matrix3x3 angDeg2rot(float degx, float degy, float degz)
-{
-    const float degToRad = boost::math::constants::pi<float>() / 180.0f;
-    float radx = degToRad * degx;
-    float rady = degToRad * degy;
-    float radz = degToRad * degz;
-
-    return angRad2rot(radx, rady, radz);
-}
-
-
-inline Matrix3x3 outerMultiply(const Point3d& a, const Point3d& b)
-{
-    Matrix3x3 m;
-    m.m11 = a.x * b.x;
-    m.m12 = a.x * b.y;
-    m.m13 = a.x * b.z;
-    m.m21 = a.y * b.x;
-    m.m22 = a.y * b.y;
-    m.m23 = a.y * b.z;
-    m.m31 = a.z * b.x;
-    m.m32 = a.z * b.y;
-    m.m33 = a.z * b.z;
 
     return m;
 }

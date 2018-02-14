@@ -37,17 +37,9 @@ public:
             return *this;
         }
 
-        inline bool operator==(const parameters& m)
+        inline bool operator==(const parameters& m) const
         {
             return ((epipShift == m.epipShift) && (rotX == m.rotX) && (rotY == m.rotY));
-        }
-
-        void doPrintf()
-        {
-            printf("epipShift %i\n", epipShift);
-            printf("rotX %i\n", rotX);
-            printf("rotY %i\n", rotY);
-            printf("estimated %i\n", (int)estimated);
         }
     };
 

@@ -52,7 +52,6 @@ public:
     const std::vector<std::vector<Chart>>& atlases() const { return _atlases; }
     const std::vector<int>& visibleCameras(int triangleID) const { return _triangleCameraIDs[triangleID]; }
     int textureSide() const { return _textureSide; }
-    int gutterSize() const { return _gutterSize; }
     const Mesh& mesh() const { return _mesh; }
 
 private:

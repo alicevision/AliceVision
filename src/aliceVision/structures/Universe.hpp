@@ -27,8 +27,11 @@ public:
     int find(int x);
     void join(int x, int y);
     void addEdge(int x, int y);
-    int size(int x) const { return elts[x].size; }
-    int num_sets() const { return num; }
+
+    inline int size(int x) const
+    {
+        return elts[x].size;
+    }
 
 public:
     uni_elt* elts;

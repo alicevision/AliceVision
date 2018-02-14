@@ -26,8 +26,6 @@ public:
     void SGMoptimizeVolumeStepZ(int rc, int volStepXY, int volLUX, int volLUY, int scale);
     StaticVector<IdValue>* getOrigVolumeBestIdValFromVolumeStepZ(int zborder);
 
-    StaticVector<unsigned char>* getZSlice(int z) const;
-
 private:
     SemiGlobalMatchingParams* sp;
 

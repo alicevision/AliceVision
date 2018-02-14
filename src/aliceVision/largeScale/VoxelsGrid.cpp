@@ -5,8 +5,8 @@
 
 #include "VoxelsGrid.hpp"
 #include <aliceVision/structures/Pixel.hpp>
+#include <aliceVision/common/common.hpp>
 #include <aliceVision/common/fileIO.hpp>
-#include <aliceVision/mesh/plyLoader.hpp>
 #include <aliceVision/delaunayCut/delaunayGraphCutTypes.hpp>
 #include <aliceVision/omp.hpp>
 
@@ -88,38 +88,6 @@ StaticVector<int>* VoxelsGrid::getNVoxelsTracks()
     finishEstimate();
 
     return nVoxelsTracks;
-}
-
-StaticVector<int>* VoxelsGrid::getVoxelNPointsByLevels(int numSubVoxs, int voxelId)
-{
-    std::string folderName = getVoxelFolderName(voxelId);
-    std::string fileNameTracksPts = folderName + "tracksGridPts.bin";
-
-    if(FileExists(fileNameTracksPts))
-    {
-        OctreeTracks* ott =
-            new OctreeTracks(&(*voxels)[voxelId * 8], mp, pc, Voxel(numSubVoxs, numSubVoxs, numSubVoxs));
-        StaticVector<Point3d>* tracksPoints = loadArrayFromFile<Point3d>(fileNameTracksPts);
-        for(int i = 0; i < tracksPoints->size(); i++)
-        {
-            Point3d p = (*tracksPoints)[i];
-            Voxel otVox;
-            if(ott->getVoxelOfOctreeFor3DPoint(otVox, p))
-            {
-                ott->addPoint(otVox.x, otVox.y, otVox.z, 0.0f, 0.0f, p, 0);
-            }
-            else
-            {
-                printf("WARNING !!! \n");
-            }
-        }
-
-        return ott->getNPointsByLevels();
-
-        delete ott;
-    }
-
-    return nullptr;
 }
 
 unsigned long VoxelsGrid::getNTracks() const
@@ -706,59 +674,4 @@ void VoxelsGrid::getHexah(Point3d* hexahOut, const Voxel& LUi, const Voxel& RDi)
     hexahOut[5] = O + vvz + vvx;
     hexahOut[6] = O + vvz + vvx + vvy;
     hexahOut[7] = O + vvz + vvy;
-}
-
-void VoxelsGrid::cretatePSET(std::string psetFileName)
-{
-    printf("Crating pset file for PoissonRecon\n");
-
-    FILE* f1 = fopen(psetFileName.c_str(), "w");
-    int npset = 0;
-    long t1 = initEstimate();
-    for(int i = 0; i < voxels->size() / 8; i++)
-    {
-        std::string folderName = getVoxelFolderName(i);
-        std::string fileNameTracksCams, fileNameTracksPts, fileNameTracksPtsCams;
-        fileNameTracksCams = folderName + "tracksGridCams.bin";
-        fileNameTracksPts = folderName + "tracksGridPts.bin";
-        fileNameTracksPtsCams = folderName + "tracksGridPtsCams.bin";
-
-        if(FileExists(fileNameTracksPts))
-        {
-            StaticVector<Point3d>* tracksPoints = loadArrayFromFile<Point3d>(fileNameTracksPts);
-            StaticVector<StaticVector<Pixel>*>* tracksPointsCams =
-                loadArrayOfArraysFromFile<Pixel>(fileNameTracksPtsCams);
-
-            for(int j = 0; j < tracksPoints->size(); j++)
-            {
-                Point3d tp = (*tracksPoints)[j];
-                StaticVector<Pixel>* cams = (*tracksPointsCams)[j];
-                if(cams != nullptr)
-                {
-                    Point3d n = Point3d(0.0f, 0.0f, 0.0f);
-                    for(int c = 0; c < cams->size(); c++)
-                    {
-                        int rc = (*cams)[c].x;
-                        n = n + (mp->CArr[rc] - tp).normalize();
-                    }
-                    n = n / (float)cams->size();
-                    n.normalize();
-
-                    fprintf(f1, "%f %f %f %f %f %f\n", tp.x, tp.y, tp.z, -n.x, -n.y, -n.z);
-                    npset++;
-                }
-            } // for j
-
-            delete tracksPoints;
-            deleteArrayOfArrays<Pixel>(&tracksPointsCams);
-        } // if fileexists
-
-        printfEstimate(i, voxels->size() / 8, t1);
-    } // for i
-    finishEstimate();
-
-    if(mp->verbose)
-        printf("pset oriented points %i \n", npset);
-
-    fclose(f1);
 }

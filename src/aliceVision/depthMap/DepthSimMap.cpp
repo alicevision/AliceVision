@@ -30,25 +30,6 @@ DepthSimMap::~DepthSimMap()
     delete dsm;
 }
 
-Point3d DepthSimMap::get3DPtOfPixel(const Pixel& pix, int pixScale, int rc)
-{
-    Pixel pix11 = Pixel(pix.x * pixScale, pix.y * pixScale);
-    int i = (pix11.y / (scale * step)) * w + pix11.x / (scale * step);
-    float depth = (*dsm)[i].depth;
-    return mp->CArr[rc] +
-           (mp->iCamArr[rc] *
-            Point2d((float)(pix11.x) + (float)pixScale / 2.0f, (float)pix11.y + (float)pixScale / 2.0f))
-                   .normalize() *
-               depth;
-}
-
-float DepthSimMap::getFPDepthOfPixel(const Pixel& pix, int pixScale, int rc)
-{
-    Point3d p = get3DPtOfPixel(pix, pixScale, rc);
-    Point3d zVect = (mp->iRArr[rc] * Point3d(0.0f, 0.0f, 1.0f)).normalize();
-    return pointPlaneDistance(p, mp->CArr[rc], zVect);
-}
-
 void DepthSimMap::add11(DepthSimMap* depthSimMap)
 {
     if((scale != 1) || (step != 1))
@@ -119,21 +100,7 @@ void DepthSimMap::add(DepthSimMap* depthSimMap)
     }
 }
 
-void DepthSimMap::getReconstructedPixelsDepthsSims(StaticVector<Pixel>* pixels, StaticVector<float>* depths,
-                                                      StaticVector<float>* sims)
-{
-    for(int j = 0; j < w * h; j++)
-    {
-        if((*dsm)[j].depth > 0.0f)
-        {
-            pixels->push_back(Pixel((j % w) * step, (j / w) * step));
-            depths->push_back((*dsm)[j].depth);
-            sims->push_back((*dsm)[j].sim);
-        }
-    }
-}
-
-Point2d DepthSimMap::getMaxMinDepth()
+Point2d DepthSimMap::getMaxMinDepth() const
 {
     float maxDepth = -1.0f;
     float minDepth = std::numeric_limits<float>::max();
@@ -148,7 +115,7 @@ Point2d DepthSimMap::getMaxMinDepth()
     return Point2d(maxDepth, minDepth);
 }
 
-Point2d DepthSimMap::getMaxMinSim()
+Point2d DepthSimMap::getMaxMinSim() const
 {
     float maxSim = -1.0f;
     float minSim = std::numeric_limits<float>::max();
@@ -161,17 +128,6 @@ Point2d DepthSimMap::getMaxMinSim()
         }
     }
     return Point2d(maxSim, minSim);
-}
-
-void DepthSimMap::setUsedCellsSimTo(float defaultSim)
-{
-    for(int j = 0; j < w * h; j++)
-    {
-        if((*dsm)[j].depth > -1.0f)
-        {
-            (*dsm)[j].sim = defaultSim;
-        }
-    }
 }
 
 float DepthSimMap::getPercentileDepth(float perc)
@@ -348,24 +304,6 @@ void DepthSimMap::initFromDepthMapTAndSimMapT(StaticVector<float>* depthMapT, St
     }
 }
 
-void DepthSimMap::initFromDepthMapAndSimMap(StaticVector<float>* depthMap, StaticVector<float>* simMap,
-                                               int depthSimMapsScale)
-{
-    int wdm = mp->mip->getWidth(rc) / depthSimMapsScale;
-    int hdm = mp->mip->getHeight(rc) / depthSimMapsScale;
-
-    for(int i = 0; i < dsm->size(); i++)
-    {
-        int x = (((i % w) * step) * scale) / depthSimMapsScale;
-        int y = (((i / w) * step) * scale) / depthSimMapsScale;
-        if((x < wdm) && (y < hdm))
-        {
-            (*dsm)[i].depth = (*depthMap)[y * wdm + x];
-            (*dsm)[i].sim = (*simMap)[y * wdm + x];
-        }
-    }
-}
-
 StaticVector<float>* DepthSimMap::getDepthMapTStep1()
 {
     int wdm = mp->mip->getWidth(rc) / scale;
@@ -395,27 +333,6 @@ StaticVector<float>* DepthSimMap::getDepthMap()
         depthMap->push_back((*dsm)[i].depth);
     }
     return depthMap;
-}
-
-StaticVector<float>* DepthSimMap::getSimMapTStep1()
-{
-    int wdm = mp->mip->getWidth(rc) / scale;
-    int hdm = mp->mip->getHeight(rc) / scale;
-
-    StaticVector<float>* simMap = new StaticVector<float>(wdm * hdm);
-    simMap->resize_with(wdm * hdm, -1.0f);
-    for(int i = 0; i < wdm * hdm; i++)
-    {
-        int x = (i / hdm) / step;
-        int y = (i % hdm) / step;
-        if((x < w) && (y < h))
-        {
-            float sim = (*dsm)[y * w + x].sim;
-            (*simMap)[i] = sim;
-        }
-    }
-
-    return simMap;
 }
 
 void DepthSimMap::saveToImage(std::string filename, float simThr)
@@ -566,175 +483,6 @@ bool DepthSimMap::loadRefine(std::string depthMapFileName, float defaultSim)
   }
 
   return true;
-}
-
-Universe* DepthSimMap::segment(float alpha, int rc)
-{
-    printf("segmenting to connected components \n");
-
-    StaticVector<Pixel>* edges = new StaticVector<Pixel>(w * h * 2);
-    for(int y = 0; y < h - 1; y++)
-    {
-        for(int x = 0; x < w - 1; x++)
-        {
-            float depth = (*dsm)[y * w + x].depth;
-            float depthr = (*dsm)[y * w + (x + 1)].depth;
-            float depthd = (*dsm)[(y + 1) * w + x].depth;
-
-            if(depth > 0.0f)
-            {
-                Point3d p =
-                    mp->CArr[rc] +
-                    (mp->iCamArr[rc] * Point2d((float)x * (scale * step), (float)y * (scale * step))).normalize() *
-                        depth;
-                float pixSize = alpha * mp->getCamPixelSize(p, rc);
-
-                if((depthr > 0.0f) && (fabs(depth - depthr) < pixSize))
-                {
-                    edges->push_back(Pixel(y * w + x, y * w + (x + 1)));
-                }
-                if((depthd > 0.0f) && (fabs(depth - depthd) < pixSize))
-                {
-                    edges->push_back(Pixel(y * w + x, (y + 1) * w + x));
-                }
-            }
-        }
-    }
-
-    // segments
-    Universe* u = new Universe(w * h);
-    for(int i = 0; i < edges->size(); i++)
-    {
-        int a = u->find((*edges)[i].x);
-        int b = u->find((*edges)[i].y);
-        if(a != b)
-        {
-            u->join(a, b);
-        }
-    }
-
-    delete edges;
-
-    return u;
-}
-
-void DepthSimMap::removeSmallSegments(int minSegSize, float alpha, int rc)
-{
-    long tall = clock();
-
-    Universe* u = DepthSimMap::segment(alpha, rc);
-
-    for(int i = 0; i < w * h; i++)
-    {
-        float depth = (*dsm)[i].depth;
-        if(depth > 0.0f)
-        {
-            int sid = u->find(i);
-            if(u->elts[sid].size < minSegSize)
-            {
-                (*dsm)[i] = DepthSim(-1.0f, 1.0f);
-            }
-        }
-    }
-
-    if(mp->verbose)
-        printfElapsedTime(tall, "removeSmallSegments");
-}
-
-void DepthSimMap::cutout(const Pixel& LU, const Pixel& RD)
-{
-    int wdm = mp->mip->getWidth(rc) / scale;
-    int hdm = mp->mip->getHeight(rc) / scale;
-
-    for(int i = 0; i < wdm * hdm; i++)
-    {
-        int x = (i % wdm) / step;
-        int y = (i / wdm) / step;
-        if((LU.x > x) || (LU.y > y) || (RD.x < x) || (RD.y < y))
-        {
-            (*dsm)[y * w + x].depth = -1.0f;
-            (*dsm)[y * w + x].sim = 1.0f;
-        }
-    }
-}
-
-float DepthSimMap::getAngleBetwABandACdepth(int rc, const Pixel& cellA, float dA, const Pixel& cellB, float dB,
-                                               const Pixel& cellC, float dC)
-{
-    Point3d pA =
-        mp->CArr[rc] +
-        (mp->iCamArr[rc] * Point2d((float)cellA.x * (scale * step), (float)cellA.y * (scale * step))).normalize() * dA;
-    Point3d pB =
-        mp->CArr[rc] +
-        (mp->iCamArr[rc] * Point2d((float)cellB.x * (scale * step), (float)cellB.y * (scale * step))).normalize() * dB;
-    Point3d pC =
-        mp->CArr[rc] +
-        (mp->iCamArr[rc] * Point2d((float)cellC.x * (scale * step), (float)cellC.y * (scale * step))).normalize() * dC;
-    return 180.0f - angleBetwABandAC(pA, pB, pC);
-}
-
-float DepthSimMap::getCellSmoothEnergy(int rc, const int cellId, float defaultE)
-{
-    return getCellSmoothEnergy(rc, Pixel(cellId % w, cellId / w), defaultE);
-}
-
-float DepthSimMap::getCellSmoothEnergy(int rc, const Pixel& cell, float defaultE)
-{
-    if((cell.x <= 0) || (cell.x >= w - 1) || (cell.y <= 0) || (cell.y >= h - 1))
-    {
-        return defaultE;
-    }
-
-    Pixel cell0 = cell;
-    Pixel cellL = cell0 + Pixel(0, -1);
-    Pixel cellR = cell0 + Pixel(0, 1);
-    Pixel cellU = cell0 + Pixel(-1, 0);
-    Pixel cellB = cell0 + Pixel(1, 0);
-
-    float d0 = (*dsm)[cell0.y * w + cell0.x].depth;
-    float dL = (*dsm)[cellL.y * w + cellL.x].depth;
-    float dR = (*dsm)[cellR.y * w + cellR.x].depth;
-    float dU = (*dsm)[cellU.y * w + cellU.x].depth;
-    float dB = (*dsm)[cellB.y * w + cellB.x].depth;
-
-    float e = 0.0f;
-    bool ok = false;
-
-    if((d0 > 0.0f) && (dL > 0.0f) && (dR > 0.0f))
-    {
-        e = std::max(e, getAngleBetwABandACdepth(rc, cell0, d0, cellL, dL, cellR, dR));
-        ok = true;
-    }
-
-    if((d0 > 0.0f) && (dU > 0.0f) && (dB > 0.0f))
-    {
-        e = std::max(e, getAngleBetwABandACdepth(rc, cell0, d0, cellU, dU, cellB, dB));
-        ok = true;
-    }
-
-    return (ok) ? e : defaultE;
-}
-
-float DepthSimMap::getASmoothStepBetwABandACdepth(int rc, const Pixel& cellA, float dA, const Pixel& cellB, float dB,
-                                                     const Pixel& cellC, float dC)
-{
-    Point3d pA =
-        mp->CArr[rc] +
-        (mp->iCamArr[rc] * Point2d((float)cellA.x * (scale * step), (float)cellA.y * (scale * step))).normalize() * dA;
-    Point3d pB =
-        mp->CArr[rc] +
-        (mp->iCamArr[rc] * Point2d((float)cellB.x * (scale * step), (float)cellB.y * (scale * step))).normalize() * dB;
-    Point3d pC =
-        mp->CArr[rc] +
-        (mp->iCamArr[rc] * Point2d((float)cellC.x * (scale * step), (float)cellC.y * (scale * step))).normalize() * dC;
-
-    Point3d vs = ((pB - pA) + (pC - pA)) / 4.0f;
-    Point3d vcn = (mp->CArr[rc] - pA).normalize();
-
-    Point3d A1 = pA + vs;
-    Point3d pS = closestPointToLine3D(&A1, &pA, &vcn);
-
-    return (mp->CArr[rc] - pS).size() - dA;
 }
 
 float DepthSimMap::getCellSmoothStep(int rc, const int cellId)

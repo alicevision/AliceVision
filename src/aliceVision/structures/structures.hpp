@@ -7,14 +7,11 @@
 
 #include <aliceVision/structures/Point2d.hpp>
 #include <aliceVision/structures/Point3d.hpp>
-#include <aliceVision/structures/Point4d.hpp>
 #include <aliceVision/structures/Matrix3x3.hpp>
 #include <aliceVision/structures/Matrix3x4.hpp>
-#include <aliceVision/structures/Pixel.hpp>
-#include <aliceVision/structures/Voxel.hpp>
 #include <aliceVision/structures/StaticVector.hpp>
 
-#include <queue>
+struct Voxel;
 
 struct imageParams
 {
@@ -55,31 +52,26 @@ struct SortedId
         return *this;
     }
 
-    bool operator>(const SortedId& param) const { return (value > param.value); }
+    inline bool operator>(const SortedId& param) const
+    {
+        return (value > param.value);
+    }
 
-    bool operator<(const SortedId& param) const { return (value < param.value); }
+    inline bool operator<(const SortedId& param) const
+    {
+        return (value < param.value);
+    }
 };
 
 int qSortCompareFloatAsc(const void* ia, const void* ib);
 int qSortCompareIntAsc(const void* ia, const void* ib);
-int qSortCompareFloatAsc(const void* ia, const void* ib);
-int qSortCompareIntDesc(const void* ia, const void* ib);
-int compareSortedId(const void* ia, const void* ib);
 int qsortCompareSortedIdDesc(const void* ia, const void* ib);
 int qsortCompareSortedIdAsc(const void* ia, const void* ib);
-int qsortCompareSortedIdByIdAsc(const void* ia, const void* ib);
-int qsortCompareScenePointPtrBySimAsc(const void* ia, const void* ib);
-int qSortCompareVoxelByZDesc(const void* ia, const void* ib);
 int qSortCompareVoxelByXAsc(const void* ia, const void* ib);
 int qSortCompareVoxelByYAsc(const void* ia, const void* ib);
 int qSortCompareVoxelByZAsc(const void* ia, const void* ib);
 int qSortComparePixelByXDesc(const void* ia, const void* ib);
 int qSortComparePixelByXAsc(const void* ia, const void* ib);
-int qSortComparePixelByYAsc(const void* ia, const void* ib);
-int qSortComparePixelByYDesc(const void* ia, const void* ib);
-int qSortComparePoint3dByXAsc(const void* ia, const void* ib);
-int qSortComparePoint3dByYAsc(const void* ia, const void* ib);
-int qSortComparePoint3dByZAsc(const void* ia, const void* ib);
 
 struct IdValue
 {
@@ -101,9 +93,15 @@ struct IdValue
         return *this;
     }
 
-    bool operator>(const IdValue& param) const { return (value > param.value); }
+    inline bool operator>(const IdValue& param) const
+    {
+        return (value > param.value);
+    }
 
-    bool operator<(const IdValue& param) const { return (value < param.value); }
+    inline bool operator<(const IdValue& param) const
+    {
+        return (value < param.value);
+    }
 };
 
 struct mv2DTriangle

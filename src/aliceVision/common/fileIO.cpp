@@ -519,115 +519,6 @@ bool loadSeedsFromFile(StaticVector<SeedPoint>** seeds, int refImgFileId, MultiV
     return loadSeedsFromFile(seeds, fileName);
 }
 
-int getSeedsSizeFromFile(int refImgFileId, MultiViewInputParams* mip, EFileType mv_file_type)
-{
-    FILE* f = mv_openFile(mip, refImgFileId, mv_file_type, "rb");
-    if(f == nullptr)
-    {
-        return 0;
-    }
-
-    int size;
-    fread(&size, sizeof(int), 1, f);
-    fclose(f);
-    return size;
-}
-
-int getGrowedSizeFromFile(int refImgFileId, MultiViewInputParams* mip)
-{
-    FILE* f = mv_openFile(mip, refImgFileId, EFileType::growed, "rb");
-    if(f == nullptr)
-    {
-        //
-    }
-    else
-    {
-        int size;
-        fread(&size, sizeof(int), 1, f);
-        fclose(f);
-        return size;
-    }
-
-    return 0;
-}
-
-void deleteFilesOfType(MultiViewInputParams& mip, int ncams, EFileType mv_file_type)
-{
-    // delete files
-    long t1 = initEstimate();
-    for(int rc = 0; rc < ncams; rc++)
-    {
-        std::string fileName = mv_getFileName(&mip, rc + 1, mv_file_type);
-        remove(fileName.c_str());
-        printfEstimate(rc, ncams, t1);
-    }
-    finishEstimate();
-}
-
-
-/*
-void loadVisibilityMapFromFileWithAllocation(bool **vis, int refImgFileId, MultiViewInputParams *mip)
-{
-        FILE *f = mv_openFile(mip, refImgFileId, EFileType::visibility_map, "rb");
-        if (f == NULL)
-        {
-                //
-        }else
-        {
-                int size;
-                fread(&size, sizeof(int), 1, f);
-                *vis = new bool[size];
-                fread(&((*vis)[0]), sizeof(bool), size, f);
-                fclose(f);
-        };
-}
-
-void saveVisibilityMapToFile(bool *vis, int size, int refImgFileId, MultiViewInputParams *mip)
-{
-        FILE *f = mv_openFile(mip, refImgFileId, EFileType::visibility_map, "wb");
-        if (f == NULL)
-        {
-                //
-        }else
-        {
-                fwrite(&size, sizeof(int), 1, f);
-                fwrite(&vis[0], sizeof(bool), size, f);
-                fclose(f);
-        };
-}
-*/
-
-void deleteAllFiles(MultiViewInputParams* mip)
-{
-    printf("deleteing temporary files\n");
-    // deletePremtachFiles(*mip,mip->getNbCameras());
-    deleteFilesOfType(*mip, mip->getNbCameras(), EFileType::seeds);
-    deleteFilesOfType(*mip, mip->getNbCameras(), EFileType::growed);
-    deleteFilesOfType(*mip, mip->getNbCameras(), EFileType::nearMap);
-    deleteFilesOfType(*mip, mip->getNbCameras(), EFileType::occMap);
-    deleteFilesOfType(*mip, mip->getNbCameras(), EFileType::op);
-    deleteFilesOfType(*mip, mip->getNbCameras(), EFileType::seeds_flt);
-    deleteFilesOfType(*mip, mip->getNbCameras(), EFileType::seeds_prm);
-    deleteFilesOfType(*mip, mip->getNbCameras(), EFileType::seeds_sfm);
-    deleteFilesOfType(*mip, mip->getNbCameras(), EFileType::refinedMap);
-    deleteFilesOfType(*mip, mip->getNbCameras(), EFileType::growedMap);
-    deleteFilesOfType(*mip, mip->getNbCameras(), EFileType::graphCutPts);
-    deleteFilesOfType(*mip, mip->getNbCameras(), EFileType::graphCutMap);
-    deleteFilesOfType(*mip, mip->getNbCameras(), EFileType::graphCutMesh);
-    deleteFilesOfType(*mip, mip->getNbCameras(), EFileType::agreedMap);
-    deleteFilesOfType(*mip, mip->getNbCameras(), EFileType::agreedPts);
-    deleteFilesOfType(*mip, mip->getNbCameras(), EFileType::agreedMesh);
-    deleteFilesOfType(*mip, mip->getNbCameras(), EFileType::nearMap);
-    deleteFilesOfType(*mip, mip->getNbCameras(), EFileType::occMap);
-    deleteFilesOfType(*mip, mip->getNbCameras(), EFileType::op);
-    deleteFilesOfType(*mip, mip->getNbCameras(), EFileType::nearestAgreedMap);
-    deleteFilesOfType(*mip, mip->getNbCameras(), EFileType::segPlanes);
-    deleteFilesOfType(*mip, mip->getNbCameras(), EFileType::agreedVisMap);
-    deleteFilesOfType(*mip, mip->getNbCameras(), EFileType::diskSizeMap);
-    deleteFilesOfType(*mip, mip->getNbCameras(), EFileType::depthMap);
-    deleteFilesOfType(*mip, mip->getNbCameras(), EFileType::simMap);
-}
-
 bool getDepthMapInfo(int refImgFileId, MultiViewInputParams* mip, float& mindepth, float& maxdepth,
                      StaticVector<int>** tcams)
 {
@@ -650,13 +541,6 @@ bool getDepthMapInfo(int refImgFileId, MultiViewInputParams* mip, float& mindept
     }
     fclose(f);
     return true;
-}
-
-bool IsDots(const char* str)
-{
-    std::string dd = ".";
-    std::string ddd = ".";
-    return !((strcmp(str, dd.c_str()) != 0) && (strcmp(str, ddd.c_str()) != 0));
 }
 
 bool DeleteDirectory(const std::string& sPath)

@@ -42,9 +42,6 @@ void saveSeedsToFile(StaticVector<SeedPoint>* seeds, const std::string& fileName
 void saveSeedsToFile(StaticVector<SeedPoint>* seeds, int refImgFileId, MultiViewInputParams* mip, EFileType mv_file_type);
 bool loadSeedsFromFile(StaticVector<SeedPoint>** seeds, const std::string& fileName);
 bool loadSeedsFromFile(StaticVector<SeedPoint>** seeds, int refImgFileId, MultiViewInputParams* mip, EFileType mv_file_type);
-int getSeedsSizeFromFile(int refImgFileId, MultiViewInputParams* mip, EFileType mv_file_type);
-void deleteFilesOfType(MultiViewInputParams& mip, int ncams, EFileType mv_file_type);
-void deleteAllFiles(MultiViewInputParams* mip);
 bool getDepthMapInfo(int refImgFileId, MultiViewInputParams* mip, float& mindepth, float& maxdepth,
                      StaticVector<int>** tcams);
 bool DeleteDirectory(const std::string& sPath);

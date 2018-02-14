@@ -16,10 +16,8 @@ public:
     MeshAnalyze(MultiViewParams* _mp);
     ~MeshAnalyze();
 
-    Point3d getCotAlphaCotBetaCotGammaForTriangle(int i);
     Point2d getCotAlphaijAndCotBetaij(int i, int j, StaticVector<int>* ptNeighPtsOrdered);
     float AreaVor(int i, StaticVector<int>* ptNeighPtsOrdered);
-    Point3d meanCurvVorAtPti(int i, StaticVector<int>* ptNeighPtsOrdered);
 
     double getCotanOfAngle(Point3d& vo, Point3d& v1, Point3d& v2);
     double getAngleFromCotan(Point3d& vo, Point3d& v1, Point3d& v2);

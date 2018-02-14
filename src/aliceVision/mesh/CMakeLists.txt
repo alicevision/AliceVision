@@ -8,9 +8,6 @@ set(mesh_files_headers
   meshVisibility.hpp
   Retexturer.hpp
   UVAtlas.hpp
-  plyLoader.hpp
-  plySaver.hpp
-  rply.h
 )
 
 # Sources
@@ -23,9 +20,6 @@ set(mesh_files_sources
   meshVisibility.cpp
   Retexturer.cpp
   UVAtlas.cpp
-  plyLoader.cpp
-  plySaver.cpp
-  rply.c
 )
 
 add_library(aliceVision_mesh

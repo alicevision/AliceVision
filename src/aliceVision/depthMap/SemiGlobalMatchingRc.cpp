@@ -244,32 +244,6 @@ float SemiGlobalMatchingRc::getMinTcStepAtDepth(float depth, float minDepth, flo
     return minTcStep;
 }
 
-float SemiGlobalMatchingRc::getMeanTcStepAtDepth(float depth, float minDepth, float maxDepth,
-                                      StaticVector<StaticVector<float>*>* alldepths)
-{
-    float meanTcStep = 0.0f;
-    float n = 0.0f;
-    for(int i = 0; i < alldepths->size(); i++)
-    {
-        int id = (*alldepths)[i]->indexOfNearestSorted(depth);
-        if((id >= 0) && (id < (*alldepths)[i]->size() - 1))
-        {
-            float did = (*(*alldepths)[i])[id];
-            float nid = (*(*alldepths)[i])[id + 1];
-            float tcStep = fabs(did - nid);
-            meanTcStep += tcStep;
-            n += 1.0f;
-        }
-    }
-
-    if(n > 0.0f)
-    {
-        return meanTcStep / n;
-    }
-
-    return maxDepth - minDepth;
-}
-
 void SemiGlobalMatchingRc::computeDepths(float minDepth, float maxDepth, StaticVector<StaticVector<float>*>* alldepths)
 {
     int maxNdetphs = 0;
@@ -279,7 +253,6 @@ void SemiGlobalMatchingRc::computeDepths(float minDepth, float maxDepth, StaticV
         {
             maxNdetphs++;
             depth += getMinTcStepAtDepth(depth, minDepth, maxDepth, alldepths);
-            // depth += getMeanTcStepAtDepth(depth, minDepth, maxDepth, alldepths);
         }
     }
 
@@ -291,7 +264,6 @@ void SemiGlobalMatchingRc::computeDepths(float minDepth, float maxDepth, StaticV
         {
             depths->push_back(depth);
             depth += getMinTcStepAtDepth(depth, minDepth, maxDepth, alldepths);
-            // depth += getMeanTcStepAtDepth(depth, minDepth, maxDepth, alldepths);
         }
     }
 }

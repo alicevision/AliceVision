@@ -25,7 +25,6 @@ public:
 
     StaticVector<int>* findCamsWhichIntersectsHexahedron(Point3d hexah[8], std::string minMaxDepthsFileName);
     StaticVector<int>* findCamsWhichIntersectsHexahedron(Point3d hexah[8]);
-    StaticVector<int>* findCamsWhichIntersectsCamHexah(int rc);
 
     StaticVector<int>* precomputeIncidentMatrixCamsFromSeeds();
     StaticVector<int>* loadCamPairsMatrix();

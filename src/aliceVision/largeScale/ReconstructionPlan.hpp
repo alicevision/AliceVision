@@ -25,11 +25,7 @@ public:
                    unsigned long maxTracks);
     StaticVector<Point3d>* computeReconstructionPlanBinSearch(unsigned long maxTracks);
 
-    StaticVector<int>* getNeigboursIds(float dist, int id, bool ceilOrFloor);
     StaticVector<int>* voxelsIdsIntersectingHexah(Point3d* hexah);
-    int getPtsCount(float dist, int id);
-    StaticVector<float>* computeMaximaInflateFactors(int maxPts);
-    StaticVector<SortedId>* computeOptimalReconstructionPlan(const StaticVector<float>* maximaInflateFactors);
     void getHexahedronForID(float dist, int id, Point3d* out);
 };
 

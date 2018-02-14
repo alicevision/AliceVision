@@ -45,8 +45,6 @@ public:
                                     int& maxlevel, const std::string& depthMapsPtsSimsTmpDir);
     void vizualize();
 
-    StaticVector<int>* getVoxelNPointsByLevels(int numSubVoxs, int voxelId);
-
     void cloneSpaceVoxel(int voxelId, int numSubVoxs, VoxelsGrid* newSpace);
     VoxelsGrid* cloneSpace(int numSubVoxs, std::string newSpaceRootDir);
 
@@ -54,6 +52,4 @@ public:
     VoxelsGrid* copySpace(std::string newSpaceRootDir);
 
     void getHexah(Point3d* hexahOut, const Voxel& LUi, const Voxel& RDi);
-
-    void cretatePSET(std::string psetFileName);
 };

@@ -89,9 +89,6 @@ public:
 
     float computeAveragePixelSizeForVoxel();
     bool getVoxelOfOctreeFor3DPoint(Voxel& out, Point3d& tp);
-    Point3d getCenterOfVoxelOfOctreeForVoxel(Voxel& vox);
-    bool filterOctreeTrack(trackStruct* t);
-    void filterOctreeTracks(StaticVector<trackStruct*>* tracks);
 
     void filterMinNumConsistentCams(StaticVector<trackStruct*>* tracks);
 
@@ -100,7 +97,5 @@ public:
     StaticVector<trackStruct*>* fillOctreeFromTracks(StaticVector<trackStruct*>* tracksIn);
     StaticVector<trackStruct*>* fillOctree(int maxPts, std::string depthMapsPtsSimsTmpDir);
     StaticVector<int>* getTracksCams(StaticVector<OctreeTracks::trackStruct*>* tracks);
-
-    StaticVector<int>* getNPointsByLevels();
     void getNPointsByLevelsRecursive(Node* node, int level, StaticVector<int>* nptsAtLevel);
 };

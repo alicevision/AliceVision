@@ -153,18 +153,6 @@ void OctreeTracks::getAllPointsRecursive(StaticVector<trackStruct*>* out, Node* 
     }
 }
 
-StaticVector<int>* OctreeTracks::getNPointsByLevels()
-{
-    StaticVector<int>* nptsAtLevel = new StaticVector<int>(size_ + 1);
-    nptsAtLevel->resize_with(size_ + 1, 0);
-    if(root_ != nullptr)
-    {
-        (*nptsAtLevel)[0] += 1;
-        getNPointsByLevelsRecursive(root_, 0, nptsAtLevel);
-    }
-    return nptsAtLevel;
-}
-
 void OctreeTracks::getNPointsByLevelsRecursive(Node* node, int level, StaticVector<int>* nptsAtLevel)
 {
     assert(node);
@@ -530,129 +518,6 @@ bool OctreeTracks::getVoxelOfOctreeFor3DPoint(Voxel& out, Point3d& tp)
             (out.z < numSubVoxsZ));
 }
 
-Point3d OctreeTracks::getCenterOfVoxelOfOctreeForVoxel(Voxel& vox)
-{
-    return O + vx * sx * (float)vox.x + vx * (sx / 2.0f) + vy * sy * (float)vox.y + vy * (sy / 2.0f) +
-           vz * sz * (float)vox.z + vz * (sz / 2.0f);
-}
-
-bool OctreeTracks::filterOctreeTrack(trackStruct* t)
-{
-    if((t == nullptr) || (t->cams.size() < minNumOfConsistentCams))
-    {
-        return false;
-    }
-
-    int ncams = t->cams.size();
-    float minPixSize = 0.0f;
-    // Retrieve min pixel size from all camera observations
-    for(int c = 0; c < ncams; c++)
-    {
-        float pixSize = mp->getCamPixelSize(t->point, t->cams[c].x);
-        if((t->cams[c].y > 0) && ((minPixSize == 0.0f) || (pixSize < minPixSize)))
-        {
-            minPixSize = pixSize;
-        }
-    }
-    float pixSizeThr = 0.2f;
-
-    StaticVector<Pixel> out;
-    out.reserve(ncams);
-    int nsspcams = 0;
-    int nwspcams = 0;
-    for(int c = 0; c < ncams; c++)
-    {
-        int rc = t->cams[c].x;
-        if(t->cams[c].y == 0)
-        {
-            out.push_back(t->cams[c]);
-            nwspcams++;
-        }
-        else
-        {
-            float pixsize = mp->getCamPixelSize(t->point, rc);
-            assert(minPixSize * (1.0f - pixSizeThr) < pixsize);
-            if(minPixSize * (1.0f + pixSizeThr) > pixsize)
-            {
-                out.push_back(t->cams[c]);
-                nsspcams++;
-            }
-        }
-    }
-
-    if((nsspcams + nwspcams < minNumOfConsistentCams) && (nwspcams > 0))
-    {
-        out.resize(0);
-        for(int c = 0; c < ncams; c++)
-        {
-            if(t->cams[c].y == 0)
-            {
-                out.push_back(t->cams[c]);
-            }
-        }
-        t->cams.swap(out);
-        return true;
-    }
-
-    if(nsspcams + nwspcams >= minNumOfConsistentCams)
-    {
-        t->cams.swap(out);
-        return true;
-    }
-
-    return false;
-
-    /*
-    // Filter the camera observations of the current Track/3dPoint
-    // to keep only the more precise ones (<1.2*minPixelSize)
-    StaticVector<pixel>* out = new StaticVector<pixel>(t->cams.size());
-    for(int c = 0; c < t->cams.size(); c++)
-    {
-        int rc = t->cams[c].x;
-        float pixsize = mp->getCamPixelSize(t->point, rc);
-        if(pixsize < t->minPixSize * 1.2f)
-        {
-            out->push_back(t->cams[c]);
-        }
-    }
-    // Return "valid" if we have enough camera observations
-    if(out->size() >= minNumOfConsistentCams)
-    {
-        delete t->cams;
-        t->cams = out;
-        return true;
-    }
-
-    delete out;
-    return false;
-    */
-}
-
-void OctreeTracks::filterOctreeTracks(StaticVector<trackStruct*>* tracks)
-{
-    StaticVector<trackStruct*>* tracksOut = new StaticVector<trackStruct*>(tracks->size());
-
-    // long t1 = initEstimate();
-    for(int i = 0; i < tracks->size(); i++)
-    {
-        if(filterOctreeTrack((*tracks)[i]))
-        {
-            tracksOut->push_back((*tracks)[i]);
-        } // ELSE DO NOT DELETE BECAUSE IT IS POINTER TO THE STRUCTURE
-          // printfEstimate(i, tracks->size(), t1);
-    }
-    // finishEstimate();
-
-    tracks->resize(0);
-    for(int i = 0; i < tracksOut->size(); i++)
-    {
-        tracks->push_back((*tracksOut)[i]);
-    }
-
-    delete tracksOut;
-}
-
-
 void OctreeTracks::filterMinNumConsistentCams(StaticVector<trackStruct*>* tracks)
 {
     using namespace boost::accumulators;
@@ -829,8 +694,6 @@ StaticVector<OctreeTracks::trackStruct*>* OctreeTracks::fillOctree(int maxPts, s
             Voxel otVox;
             if(((doUseWeaklySupportedPoints) || (sim < simWspThr)) && (getVoxelOfOctreeFor3DPoint(otVox, p))) // doUseWeaklySupportedPoints: false by default
             {
-                // p = getCenterOfVoxelOfOctreeForVoxel(otVox);
-
                 if(doUseWeaklySupportedPointCam)
                 {
                     if(sim > 1.0f)

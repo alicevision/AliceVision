@@ -367,53 +367,17 @@ float MultiViewParams::getCamPixelSizePlaneSweepAlpha(const Point3d& p, int rc, 
 float MultiViewParams::getCamPixelSizePlaneSweepAlpha(const Point3d& p, int rc, StaticVector<int>* tcams, int scale,
                                                       int step) const
 {
-    float av1 = 0.0f;
+    //float av1 = 0.0f;
     float avmax = 0.0f;
     for(int c = 0; c < tcams->size(); c++)
     {
         float dpxs = getCamPixelSizePlaneSweepAlpha(p, rc, (*tcams)[c], scale, step);
-        av1 += dpxs;
+        //av1 += dpxs;
         avmax = std::max(avmax, dpxs);
     }
-    av1 /= (float)(tcams->size());
+    //av1 /= (float)(tcams->size());
     // return av1;
     return avmax;
-}
-
-int MultiViewParams::getCamsMinPixelSizeIndex(const Point3d& x0, int rc, SeedPointCams* tcams) const
-{
-    int mini = -1;
-    float minPixSize = getCamPixelSize(x0, rc);
-
-    for(int ci = 0; ci < (int)tcams->size(); ci++)
-    {
-        float pixSize = getCamPixelSize(x0, (int)(*tcams)[ci]);
-        if(minPixSize > pixSize)
-        {
-            minPixSize = pixSize;
-            mini = ci;
-        }
-    }
-
-    return mini;
-}
-
-int MultiViewParams::getCamsMinPixelSizeIndex(const Point3d& x0, const StaticVector<int> &tcams) const
-{
-    int mini = 0;
-    float minPixSize = getCamPixelSize(x0, tcams[0]);
-
-    for(int ci = 1; ci < tcams.size(); ci++)
-    {
-        float pixSize = getCamPixelSize(x0, tcams[ci]);
-        if(minPixSize > pixSize)
-        {
-            minPixSize = pixSize;
-            mini = ci;
-        }
-    }
-
-    return mini;
 }
 
 float MultiViewParams::getCamsMinPixelSize(const Point3d& x0, StaticVector<int>& tcams) const

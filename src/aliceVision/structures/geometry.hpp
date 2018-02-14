@@ -121,17 +121,9 @@ bool TrianglesOverlap(const Point2d* t1, const Point2d* t2);
 
 double pointLineDistance3D(const Point3d& point, const Point3d& linePoint, const Point3d& lineVectNormalized);
 Point3d closestPointToLine3D(const Point3d* point, const Point3d* linePoint, const Point3d* lineVectNormalized);
-Point2d closestPointToLine2D(const Point2d& point, const Point2d& linePoint, const Point2d& lineVectNormalized);
-Point2d closestPointToLine2D(const Point2d& point, const Point3d& line);
-float pointLineDistance2DPAB(const Point2d& point, const Point2d& lineA, const Point2d& lineB);
-float pointLineDistance2DPPv(const Point2d& point, const Point2d& linePoint, const Point2d& lineVect);
 float pointPlaneDistance(const Point3d& point, const Point3d& planePoint, const Point3d& planeNormal);
-Point3d closestPointOnPlaneToPoint(const Point3d& point, const Point3d& planePoint,
-                                   const Point3d& planeNormalNormalized);
+
 double orientedPointPlaneDistance(const Point3d& point, const Point3d& planePoint, const Point3d& planeNormal);
-Point2d planeCoords(const Point3d& pointOnPlane, const Point3d& planePoint, const Point3d& xaxNormalized,
-                    const Point3d& yaxNormalized);
-Point2d rectangleCoords(const Point3d& P, const Point3d& A, const Point3d& B, const Point3d& C);
 void computeRotCS(Point3d* xax, Point3d* yax, const Point3d* n);
 bool lineLineIntersect(float* k, float* l, Point3d* llis, Point3d* lli1, Point3d* lli2, const Point3d& p1,
                        const Point3d& p2, const Point3d& p3, const Point3d& p4);
@@ -141,17 +133,10 @@ Point3d linePlaneIntersect(const Point3d& linePoint, const Point3d& lineVect, co
                            const Point3d& planeNormal);
 void linePlaneIntersect(Point3d* out, const Point3d* linePoint, const Point3d* lineVect, const Point3d* planePoint,
                         const Point3d* planeNormal);
-bool lineSegmentPlaneIntersect(Point3d* lp, const Point3d& linePointA, const Point3d& linePointB,
-                               const Point3d& planePoint, const Point3d& planeNormal);
-// this angle is always between 0 and 90
-float notOrientedangleBetwV1andV2(const Point3d& iV1, const Point3d& iV2);
-// this angle is always between -180 and 180
-float angleBetwUnitV1andUnitV2(const Point3d& V1, const Point3d& V2);
+
 float angleBetwV1andV2(const Point3d& iV1, const Point3d& iV2);
 float angleBetwABandAC(const Point3d& A, const Point3d& B, const Point3d& C);
-// return number from 0 to 360
-// N has to be ortogonal to V1 and V2
-float signedAngleBetwV1andV2(const Point3d& iV1, const Point3d& iV2, const Point3d& Nnormalized);
+
 void rotPointAroundVect(double* out, const double* X, const double* vect, const double angle);
 void rotPointAroundVect(Point3d* out, const Point3d* X, const Point3d* vect, const float angle);
 Point2d getLineTriangleIntersectBarycCoords(Point3d* P, const Point3d* A, const Point3d* B, const Point3d* C,
@@ -168,38 +153,4 @@ bool isPointInTriangle(const Point2d& A, const Point2d& B, const Point2d& C, con
 bool lineSegmentsIntersect2DTest(const Point2d* A, const Point2d* B, const Point2d* C, const Point2d* D);
 bool lineSegmentsIntersect2DTest(Point2d* S, const Point2d* A, const Point2d* B, const Point2d* C, const Point2d* D);
 
-inline void lineLineIntersect2D(Point2d& out, const Point2d& A, const Point2d& B, const Point2d& C, const Point2d& D)
-{
-    float r = ((A.y - C.y) * (D.x - C.x) - (A.x - C.x) * (D.y - C.y)) /
-              ((B.x - A.x) * (D.y - C.y) - (B.y - A.y) * (D.x - C.x));
-    // float s = ((A.y-C.y)*(B.x-A.x)-(A.x-C.x)*(B.y-A.y))/((B.x-A.x)*(D.y-C.y)-(B.y-A.y)*(D.x-C.x));
-    // return *A+(*B-*A)*r;
-    out.x = A.x + (B.x - A.x) * r;
-    out.y = A.y + (B.y - A.y) * r;
-}
-
-inline void lineLineIntersect2D(Point2d& out, const Point2d& A, const Point2d& B, const Point3d& line)
-{
-    float r = -line.z / (line.x * (A.x + (B.x - A.x)) + line.y * (A.y + (B.y - A.y)));
-    out.x = A.x + (B.x - A.x) * r;
-    out.y = A.y + (B.y - A.y) * r;
-}
-
-inline void lineLineIntersect2D(Point2d& out, const Point3d& line1, const Point3d& line2)
-{
-    out.y = (-line2.z / line2.y - (line2.x / line2.y) * (-line1.z / line1.x)) /
-            (1.0f - (line2.x / line2.y) * (line1.y / line1.x));
-    out.x = (-line1.z - line1.y * out.y) / line1.x;
-}
-
-void getOrientedPlaneFor4Points(double* a, double* b, double* c, double* d, Point3d* planeA, Point3d* planeB,
-                                Point3d* planeC, Point3d* dir);
-void getOrientedPlaneForPlaneAndPoint(double* a, double* b, double* c, double* d, Point3d* planePoint,
-                                      Point3d* planeNormal, Point3d* dir);
-
-bool isPointInTetrahedron(const Point3d& p, const Point3d* tet);
 bool interectsTriangleTriangle(Point3d* tri1, Point3d* tri2);
-bool interectsTriangleTetrahedron(Point3d* tri, Point3d* tet);
-bool interectsTetrahedronTetrahedron(Point3d* tet1, Point3d* tet2);
-Point2d circleCircleIntersection(float d, float r1, float r2);
-bool halfPlaneTest(Point2d& pt, Point2d& linePt, Point2d& lineNormal);

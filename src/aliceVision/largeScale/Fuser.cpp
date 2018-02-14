@@ -175,7 +175,6 @@ bool Fuser::filterGroupsRC(int rc, int pixSizeBall, int pixSizeBallWSP, int nNea
     StaticVector<int>* numOfPtsMap = new StaticVector<int>(w * h);
     numOfPtsMap->resize_with(w * h, 0);
 
-    // StaticVector<int> *tcams = pc->findCamsWhichIntersectsCamHexah(rc);
     // StaticVector<int> *tcams = pc->findNearestCams(rc);
     StaticVector<int>* tcams = pc->findNearestCamsFromSeeds(rc, nNearestCams);
 
@@ -558,129 +557,6 @@ Voxel Fuser::estimateDimensions(Point3d* vox, Point3d* newSpace, int scale, int 
                (int)((vvz.size() / (float)maxDim.z) / aAvPixelSize));
 
     return maxDim;
-}
-
-Universe* Fuser::segmentDepthMap(float alpha, int rc, StaticVector<float>* depthMap, int* segMap, int scale)
-{
-    printf("segmenting to connected components \n");
-    int w = mp->mip->getWidth(rc) / std::max(1, scale);
-    int h = mp->mip->getHeight(rc) / std::max(1, scale);
-
-    StaticVector<Pixel>* edges = new StaticVector<Pixel>(w * h * 2);
-    for(int x = 0; x < w - 1; x++)
-    {
-        for(int y = 0; y < h - 1; y++)
-        {
-            float depth = (*depthMap)[x * h + y];
-            float depthr = (*depthMap)[(x + 1) * h + y];
-            float depthd = (*depthMap)[x * h + (y + 1)];
-            Point3d p = mp->CArr[rc] + (mp->iCamArr[rc] * Point2d((float)x, (float)y)).normalize() * depth;
-            float pixSize = alpha * mp->getCamPixelSize(p, rc);
-
-            if(segMap == nullptr)
-            {
-                if(fabs(depth - depthr) < pixSize)
-                {
-                    edges->push_back(Pixel(x * h + y, (x + 1) * h + y));
-                }
-                if(fabs(depth - depthd) < pixSize)
-                {
-                    edges->push_back(Pixel(x * h + y, x * h + (y + 1)));
-                }
-            }
-            else
-            {
-                int seg = segMap[x * h + y];
-                int segr = segMap[(x + 1) * h + y];
-                int segd = segMap[x * h + (y + 1)];
-
-                if((fabs(depth - depthr) < pixSize) && (seg == segr))
-                {
-                    edges->push_back(Pixel(x * h + y, (x + 1) * h + y));
-                }
-                if((fabs(depth - depthd) < pixSize) && (seg == segd))
-                {
-                    edges->push_back(Pixel(x * h + y, x * h + (y + 1)));
-                }
-            }
-        }
-    }
-
-    // segments
-    Universe* u = new Universe(w * h);
-    for(int i = 0; i < edges->size(); i++)
-    {
-        int a = u->find((*edges)[i].x);
-        int b = u->find((*edges)[i].y);
-        if(a != b)
-        {
-            u->join(a, b);
-        }
-    }
-
-    delete edges;
-
-    return u;
-}
-
-
-void Fuser::filterSmallConnComponents(float alpha, int minSegSize, int scale)
-{
-    printf("filtering out connected components smaller than %i pixels\n", minSegSize);
-
-    long t1 = initEstimate();
-    for(int rc = 0; rc < mp->ncams; rc++)
-    {
-        int w = mp->mip->getWidth(rc) / std::max(1, scale);
-        int h = mp->mip->getHeight(rc) / std::max(1, scale);
-
-        StaticVector<float> depthMap;
-        StaticVector<float> simMap;
-
-        {
-            int width, height;
-
-            imageIO::readImage(mv_getFileName(mp->mip, rc + 1, EFileType::depthMap, scale), width, height, depthMap.getDataWritable());
-            imageIO::readImage(mv_getFileName(mp->mip, rc + 1, EFileType::simMap, scale), width, height, simMap.getDataWritable());
-
-            imageIO::transposeImage(width, height, depthMap.getDataWritable());
-            imageIO::transposeImage(width, height, simMap.getDataWritable());
-        }
-
-        Universe* u = segmentDepthMap(alpha, rc, &depthMap, nullptr, scale);
-
-        for(int x = 0; x < w; x++)
-        {
-            for(int y = 0; y < h; y++)
-            {
-                int id = x * h + y;
-                int a = u->find(id);
-                int size = u->elts[a].size;
-                if(size < minSegSize)
-                {
-                    depthMap[x * h + y] = -1.0f;
-                    simMap[x * h + y] = 1.0f;
-                }
-            }
-        }
-
-        delete u;
-
-        imageIO::transposeImage(h, w, depthMap.getDataWritable());
-        imageIO::transposeImage(h, w, simMap.getDataWritable());
-
-        oiio::ParamValueList metadata;
-        metadata.emplace_back(oiio::ParamValue("AliceVision:CArr", oiio::TypeDesc(oiio::TypeDesc::DOUBLE, oiio::TypeDesc::VEC3), 1, mp->CArr[rc].m));
-        metadata.emplace_back(oiio::ParamValue("AliceVision:iCamArr", oiio::TypeDesc(oiio::TypeDesc::DOUBLE, oiio::TypeDesc::MATRIX33), 1, mp->iCamArr[rc].m));
-
-        imageIO::writeImage(mv_getFileName(mp->mip, rc + 1, EFileType::depthMap, scale), w, h, depthMap.getDataWritable(), imageIO::EImageQuality::LOSSLESS, metadata);
-        imageIO::writeImage(mv_getFileName(mp->mip, rc + 1, EFileType::simMap, scale), w, h, simMap.getDataWritable());
-
-        // visualizeDepthMap(rc, mp->mip->newDir+num2strFourDecimal(rc)+"fused.wrl");
-
-        printfEstimate(rc, mp->ncams, t1);
-    }
-    finishEstimate();
 }
 
 std::string generateTempPtsSimsFiles(std::string tmpDir, MultiViewParams* mp, bool addRandomNoise, float percNoisePts,

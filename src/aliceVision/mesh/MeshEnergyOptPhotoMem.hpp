@@ -75,16 +75,10 @@ public:
     void allocatePtsStats();
     void deAllocatePtsStats();
 
-    void smoothBiLaplacian(int niters, StaticVectorBool* ptsCanMove);
-    void smoothLaplacian(int niters);
     void saveIterStat(StaticVector<Point3d>* lapPts, int iter, float avEdgeLength);
-
-    double computeEnergyFairForPt(int ptid);
 
     void initPtsStats(StaticVector<StaticVector<int>*>* camsPts);
     void actualizePtsStats(StaticVector<StaticVector<int>*>* camsPts);
-
-    StaticVector<int>* getRcTcNVisTrisMap(StaticVector<StaticVector<int>*>* trisCams);
 
     float fuse_gaussianKernelVoting_computePtSim(int ptId, int s, float step, Point3d& pt, Point3d& nNormalized,
                                                  float sigma);
@@ -96,11 +90,4 @@ public:
     bool optimizePhoto(int niters, StaticVectorBool* ptsCanMove, StaticVector<StaticVector<int>*>* camsPts);
 
     Point4d getPtCurvatures(int ptId, StaticVector<Point3d>* lapPts);
-
-    DepthSimMap* getDepthPixSizeMap(StaticVector<float>* rcDepthMap, int rc, StaticVector<int>* tcams);
-
-    StaticVector<StaticVector<int>*>* getRcTcamsFromPtsCams(int minPairPts, StaticVector<StaticVector<int>*>* ptsCams);
-
-    void updateAddCamsSorted(StaticVector<int>** cams, int rc);
-
 };

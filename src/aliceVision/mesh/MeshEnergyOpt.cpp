@@ -18,24 +18,6 @@ MeshEnergyOpt::MeshEnergyOpt(MultiViewParams* _mp)
 
 MeshEnergyOpt::~MeshEnergyOpt() = default;
 
-StaticVector<Point3d>* MeshEnergyOpt::computeLaplacianPts()
-{
-    StaticVector<Point3d>* lapPts = new StaticVector<Point3d>(pts->size());
-    lapPts->resize_with(pts->size(), Point3d(0.0f, 0.0f, 0.f));
-    int nlabpts = 0;
-    for(int i = 0; i < pts->size(); i++)
-    {
-        Point3d lapPt;
-        if(getLaplacianSmoothingVector(i, lapPt))
-        {
-            (*lapPts)[i] = lapPt;
-            nlabpts++;
-        }
-    }
-
-    return lapPts;
-}
-
 StaticVector<Point3d>* MeshEnergyOpt::computeLaplacianPtsParallel()
 {
     StaticVector<Point3d>* lapPts = new StaticVector<Point3d>(pts->size());
@@ -60,7 +42,6 @@ void MeshEnergyOpt::updateGradientParallel(float lambda, float epsilon, int type
                                                 const Point3d& RD, StaticVectorBool* ptsCanMove)
 {
     // printf("nlabpts %i of %i\n",nlabpts,pts->size());
-    // StaticVector<Point3d> *lapPts = computeLaplacianPts();
     StaticVector<Point3d>* lapPts = computeLaplacianPtsParallel();
 
     StaticVector<Point3d>* newPts = new StaticVector<Point3d>(pts->size());

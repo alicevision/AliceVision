@@ -301,21 +301,3 @@ void SemiGlobalMatchingVolume::addVolumeAvg(int n, const StaticVector<unsigned c
         }
     }
 }
-
-
-
-StaticVector<unsigned char>* SemiGlobalMatchingVolume::getZSlice(int z) const
-{
-    unsigned char* _volumePtr = _volume->getDataWritable().data();
-    StaticVector<unsigned char>* zs = new StaticVector<unsigned char>(volDimY * volDimX);
-    unsigned char* zsPtr = zs->getDataWritable().data();
-#pragma omp parallel for
-    for(int y = 0; y < volDimY; y++)
-    {
-        for(int x = 0; x < volDimX; x++)
-        {
-            zsPtr[y * volDimX + x] = _volumePtr[z * volDimY * volDimX + y * volDimX + x];
-        }
-    }
-    return zs;
-}

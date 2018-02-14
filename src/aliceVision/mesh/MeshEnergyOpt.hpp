@@ -17,7 +17,6 @@ public:
     MeshEnergyOpt(MultiViewParams* _mp);
     ~MeshEnergyOpt();
 
-    StaticVector<Point3d>* computeLaplacianPts();
     StaticVector<Point3d>* computeLaplacianPtsParallel();
     bool optimizeSmooth(float lambda, float epsilon, int type, int niter, StaticVectorBool* ptsCanMove);
 

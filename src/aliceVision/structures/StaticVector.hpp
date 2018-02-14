@@ -84,11 +84,6 @@ public:
         _data.reserve(capacity() + ntoallocated);
     }
 
-    void push_sorted_asc(const T& val)
-    {
-        _data.insert(std::lower_bound(_data.begin(), _data.end(), val), val);
-    }
-
     void push_back(const T& val)
     {
         _data.push_back(val);

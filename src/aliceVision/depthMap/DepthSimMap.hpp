@@ -54,29 +54,21 @@ public:
     DepthSimMap(int rc, MultiViewParams* _mp, int _scale, int _step);
     ~DepthSimMap(void);
 
-    Point3d get3DPtOfPixel(const Pixel& pix, int pixScale, int rc);
-    float getFPDepthOfPixel(const Pixel& pix, int pixScale, int rc);
-
     void initJustFromDepthMapT(StaticVector<float>* depthMapT, float defaultSim);
     void initJustFromDepthMap(StaticVector<float>* depthMap, float defaultSim);
     void initFromDepthMapTAndSimMapT(StaticVector<float>* depthMapT, StaticVector<float>* simMapT,
                                      int depthSimMapsScale);
-    void initFromDepthMapAndSimMap(StaticVector<float>* depthMap, StaticVector<float>* simMap, int depthSimMapsScale);
-    void setUsedCellsSimTo(float defaultSim);
 
     void add11(DepthSimMap* depthSimMap);
     void add(DepthSimMap* depthSimMap);
 
-    void getReconstructedPixelsDepthsSims(StaticVector<Pixel>* pixels, StaticVector<float>* depths,
-                                          StaticVector<float>* sims);
+    Point2d getMaxMinDepth() const;
+    Point2d getMaxMinSim() const;
 
-    Point2d getMaxMinDepth();
-    Point2d getMaxMinSim();
     float getPercentileDepth(float perc);
     StaticVector<float>* getDepthMapStep1();
     StaticVector<float>* getDepthMapTStep1();
     StaticVector<float>* getSimMapStep1();
-    StaticVector<float>* getSimMapTStep1();
     StaticVector<float>* getDepthMap();
 
     StaticVector<float>* getDepthMapStep1XPart(int xFrom, int partW);
@@ -90,17 +82,6 @@ public:
     bool loadRefine(std::string depthMapFileName, std::string simMapFileName);
     bool loadRefine(std::string depthMapFileName, float defaultSim);
 
-    Universe* segment(float alpha, int rc);
-    void removeSmallSegments(int minSegSize, float alpha, int rc);
-    void cutout(const Pixel& LU, const Pixel& RD);
-
-    float getAngleBetwABandACdepth(int rc, const Pixel& cellA, float dA, const Pixel& cellB, float dB,
-                                   const Pixel& cellC, float dC);
-    float getCellSmoothEnergy(int rc, const int cellId, float defaultE);
-    float getCellSmoothEnergy(int rc, const Pixel& cell, float defaultE);
-
-    float getASmoothStepBetwABandACdepth(int rc, const Pixel& cellA, float dA, const Pixel& cellB, float dB,
-                                         const Pixel& cellC, float dC);
     float getCellSmoothStep(int rc, const int cellId);
     float getCellSmoothStep(int rc, const Pixel& cell);
 };

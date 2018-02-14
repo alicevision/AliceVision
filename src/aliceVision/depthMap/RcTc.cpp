@@ -14,9 +14,6 @@ RcTc::RcTc(MultiViewParams* _mp, PlaneSweepingCuda* _cps)
     verbose = mp->verbose;
 }
 
-RcTc::~RcTc()
-{}
-
 void RcTc::refineRcTcDepthSimMap(bool useTcOrRcPixSize, DepthSimMap* depthSimMap, int rc, int tc,
                                     int ndepthsToRefine, int wsh, float gammaC, float gammaP, float epipShift)
 {
@@ -107,10 +104,3 @@ void RcTc::filterDepthMap(DepthSimMap* depthSimMap, int rc, int wsh, float gamma
     delete depthMap;
 }
 
-void RcTc::computeRotCSRcTcEpip(Point3d& p, Point3d& n, Point3d& x, Point3d& y, int rc, int tc)
-{
-    n = (mp->CArr[rc] - p).normalize();
-    x = (mp->CArr[tc] - mp->CArr[rc]).normalize();
-    y = cross(n, x).normalize();
-    x = cross(y, n).normalize();
-}

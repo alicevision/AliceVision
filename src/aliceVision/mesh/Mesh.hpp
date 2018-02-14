@@ -106,25 +106,15 @@ public:
     Mesh();
     ~Mesh();
 
-    bool loadFromPly(std::string plyFileName);
-    void saveToPly(std::string plyFileName);
-    void saveToPly(std::string plyFileName, StaticVector<rgb>* triColors);
     void saveToObj(const std::string& filename);
 
-    void loadFromMesh(std::string fileName);
-    void saveToOFF(std::string fileName);
-
     bool loadFromBin(std::string binFileName);
-    bool loadFromTxt(std::string txtFileName);
     void saveToBin(std::string binFileName);
     bool loadFromObjAscii(int& nmtls, StaticVector<int>** trisMtlIds, StaticVector<Point3d>** normals,
                           StaticVector<Voxel>** trisNormalsIds, StaticVector<Point2d>** uvCoords,
                           StaticVector<Voxel>** trisUvIds, std::string objAsciiFileName);
 
     void addMesh(Mesh* me);
-
-    void updateStatMaps(StaticVector<float>* depthMap, StaticVector<float>* sigmaMap, Pixel lu, Pixel rd,
-                        const MultiViewParams* mp, int rc, int gridSize);
 
     StaticVector<StaticVector<int>*>* getTrisMap(const MultiViewParams* mp, int rc, int scale, int w, int h);
     StaticVector<StaticVector<int>*>* getTrisMap(StaticVector<int>* visTris, const MultiViewParams* mp, int rc, int scale,
@@ -135,7 +125,6 @@ public:
 
     StaticVector<StaticVector<int>*>* getPtsNeighTris();
     StaticVector<StaticVector<int>*>* getPtsNeighPtsOrdered();
-    StaticVector<StaticVector<int>*>* getTrisNeighTris();
 
     StaticVector<int>* getVisibleTrianglesIndexes(std::string tmpDir, const MultiViewParams* mp, int rc, int w, int h);
     StaticVector<int>* getVisibleTrianglesIndexes(std::string depthMapFileName, std::string trisMapFileName,
@@ -149,9 +138,7 @@ public:
     Mesh* generateMeshFromTrianglesSubset(const StaticVector<int> &visTris, StaticVector<int>** out_ptIdToNewPtId) const;
 
     void getNotOrientedEdges(StaticVector<StaticVector<int>*>** edgesNeighTris, StaticVector<Pixel>** edgesPointsPairs);
-    StaticVector<Pixel>* getNotOrientedEdgesAsPointsPairs();
     StaticVector<Voxel>* getTrianglesEdgesIds(StaticVector<StaticVector<int>*>* edgesNeighTris);
-    StaticVector<Pixel>* getNotOrientedEdgesAsTrianglesPairs();
 
     StaticVector<Point3d>* getLaplacianSmoothingVectors(StaticVector<StaticVector<int>*>* ptsNeighPts,
                                                         double maximalNeighDist = -1.0f);
@@ -160,20 +147,13 @@ public:
     StaticVector<Point3d>* computeNormalsForPts();
     StaticVector<Point3d>* computeNormalsForPts(StaticVector<StaticVector<int>*>* ptsNeighTris);
     void smoothNormals(StaticVector<Point3d>* nms, StaticVector<StaticVector<int>*>* ptsNeighPts);
-    StaticVector<Point3d>* computeSmoothUnitVectsForPts(StaticVector<StaticVector<int>*>* ptsNeighPts);
-    StaticVector<float>* computePtsAvNeighEdgeLength(StaticVector<StaticVector<int>*>* ptsNeighPts);
     Point3d computeTriangleNormal(int idTri);
     Point3d computeTriangleCenterOfGravity(int idTri) const;
     float computeTriangleMaxEdgeLength(int idTri) const;
-    float computeTriangleAverageEdgeLength(int idTri);
 
     void removeFreePointsFromMesh(StaticVector<int>** out_ptIdToNewPtId = nullptr);
 
     void letJustTringlesIdsInMesh(StaticVector<int>* trisIdsToStay);
-
-    void cutout(const Pixel& lu, const Pixel& rd, int rc, const MultiViewParams* mp,
-                StaticVector<StaticVector<int>*>* ptsCams);
-    void cutout(const Pixel& lu, const Pixel& rd, int rc, const MultiViewParams* mp);
 
     float computeAverageEdgeLength() const;
 
@@ -187,8 +167,6 @@ public:
     float computeTriangleArea(int idTri);
     Mesh::triangle_proj getTriangleProjection(int triid, const MultiViewParams* mp, int rc, int w, int h) const;
     bool isTriangleProjectionInImage(Mesh::triangle_proj tp, int w, int h) const;
-    bool isTriangleInFrontOfCam(int triid, const MultiViewParams* mp, int rc) const;
-    bool isTriangleVisibleInCam(int triid, const MultiViewParams* mp, int rc) const;
     bool doesTriangleIntersectsRectangle(Mesh::triangle_proj* tp, Mesh::rectangle* re);
     bool doesTriangleIntersect4Poly(Point2d* _p, Point2d* A, Point2d* B, Point2d* C, Point2d* P0, Point2d* P1,
                                     Point2d* P2, Point2d* P3);
@@ -201,7 +179,6 @@ public:
     Point2d getTrianglePixelInternalPoint(Mesh::triangle_proj* tp, Mesh::rectangle* re);
 
     void subdivideMesh(const MultiViewParams* mp, float maxTriArea, std::string tmpDir, int maxMeshPts);
-    void subdivideMeshMaxEdgeLength(const MultiViewParams* mp, float maxEdgeLenght, int maxMeshPts);
     void subdivideMeshMaxEdgeLengthUpdatePtsCams(const MultiViewParams* mp, float maxEdgeLength,
                                                  StaticVector<StaticVector<int>*>* ptsCams, int maxMeshPts);
     StaticVector<StaticVector<int>*>* subdivideMesh(const MultiViewParams* mp, float maxTriArea, float maxEdgeLength,
@@ -218,57 +195,28 @@ public:
 
     bool isPointVisibleInRcAndTc(int idPt, StaticVector<StaticVector<int>*>* ptsCams, int rc, int tc,
                                  const MultiViewParams* mp);
-    bool isTriangleVisibleInRcAndTc(int idTri, StaticVector<StaticVector<int>*>* ptsCams, int rc, int tc,
-                                    const MultiViewParams* mp);
-    void getTrianglesIndexesForRcTc(StaticVector<int>** trisRcTc, StaticVector<StaticVector<int>*>* ptsCams, int rc,
-                                    int tc, const MultiViewParams* mp);
 
-    void removeDepthMaps(const MultiViewParams* mp, std::string tmpDir);
     StaticVector<StaticVector<int>*>* computeTrisCams(const MultiViewParams* mp, std::string tmpDir);
     StaticVector<StaticVector<int>*>* computeTrisCamsFromPtsCams(StaticVector<StaticVector<int>*>* ptsCams) const;
-    StaticVector<StaticVector<int>*>* computeCamsTris(std::string ptsCamsFileName, const MultiViewParams* mp);
-    StaticVector<StaticVector<int>*>* computePtsCams(const MultiViewParams* mp, std::string tmpDir);
-    StaticVector<StaticVector<int>*>* computePtsCamsFromTrisCams(StaticVector<StaticVector<int>*>* trisCams);
 
-    void initFromDepthMapT(const MultiViewParams* mp, float* depthMap, int rc, int scale, int step, float alpha);
     void initFromDepthMap(const MultiViewParams* mp, float* depthMap, int rc, int scale, int step, float alpha);
     void initFromDepthMap(const MultiViewParams* mp, StaticVector<float>* depthMap, int rc, int scale, float alpha);
     void initFromDepthMap(int stepDetail, const MultiViewParams* mp, float* depthMap, int rc, int scale, int step,
                           float alpha);
     void removeTrianglesInHexahedrons(StaticVector<Point3d>* hexahsToExcludeFromResultingMesh);
     void removeTrianglesOutsideHexahedron(Point3d* hexah);
-    StaticVector<int>* getNearPointsIds(int idPt, int maxLevel, StaticVector<StaticVector<int>*>* ptsNeighPts);
     void filterLargeEdgeTriangles(float maxEdgelengthThr);
-    void hideLargeEdgeTriangles(float maxEdgelengthThr);
-    StaticVector<int>* getUsedCams(const MultiViewParams* mp, StaticVector<StaticVector<int>*>* trisCams);
-    StaticVector<int>* getTargetCams(int rc, const MultiViewParams* mp, StaticVector<StaticVector<int>*>* trisCams);
-    float getMaxAdjFacesAngle(int idpt, StaticVector<StaticVector<int>*>* ptsNeighTris,
-                              StaticVector<StaticVector<int>*>* trisNeighTris);
-    float getCurvatureAngle(int idpt, StaticVector<StaticVector<int>*>* ptsNeighPts);
     void invertTriangleOrientations();
-    StaticVector<int>* getDistinctPtsIdsForTrisIds(StaticVector<int>* trisIds);
-    Point3d computeCentreOfGravity();
     void changeTriPtId(int triId, int oldPtId, int newPtId);
     int getTriPtIndex(int triId, int ptId, bool failIfDoesNotExists = true);
     Pixel getTriOtherPtsIds(int triId, int _ptId);
-    int getTriRemainingPtId(int triId, int ptId1, int ptId2);
-    int getTriRemainingPtIndex(int triId, int ptId1, int ptId2);
-    int getTriRemainingTriIndex(int ptIndex1, int ptIndex2);
     int getTri1EdgeIdWRTNeighTri2(int triId1, int triId2);
     bool areTwoTrisSameOriented(int triId1, int triId2, int edgePtId1, int edgePtId2);
     bool checkPtsForNaN();
     void filterWrongTriangles();
     StaticVector<int>* getLargestConnectedComponentTrisIds(const MultiViewParams& mp);
-    StaticVector<int>* getTrisIdsMapT(const MultiViewParams* mp, int rc, int scale, StaticVector<int>* trisIds);
-    void remeshByTextureAndGetTextureInfo(int& textureSide, int& natlases, bool verbose,
-                                          std::string meTextureCorrdsFileName, StaticVector<Point2d>** meshPtsUVO,
-                                          StaticVector<int>** meshPtsTexIdsO);
 
     bool getEdgeNeighTrisInterval(Pixel& itr, Pixel edge, StaticVector<Voxel>* edgesXStat,
                                   StaticVector<Voxel>* edgesXYStat);
-    StaticVector<Voxel>* getTrisNeighsTris();
     void Transform(Matrix3x3 Rs, Point3d t);
 };
-
-Mesh* createMeshForFrontPlanePolygonOfCamera(int rc, const MultiViewParams* mp, float border, Point3d pivot);
-Mesh* computeBoxMeshFromPlaneMeshAndZDimSize(Mesh* mePlane, float boxZsize);

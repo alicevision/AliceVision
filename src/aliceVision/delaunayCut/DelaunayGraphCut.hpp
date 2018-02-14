@@ -208,7 +208,6 @@ public:
     void displayStatistics();
 
     void loadDhInfo(std::string fileNameInfo);
-    void loadDh(std::string fileNameDh, std::string fileNameInfo);
 
     void saveDhInfo(std::string fileNameInfo);
     void saveDh(std::string fileNameDh, std::string fileNameInfo);
@@ -244,27 +243,17 @@ public:
     Facet getFacetInFrontVertexOnTheRayToThePoint3d(VertexIndex vi, Point3d& ptt) const;
     Facet getFacetBehindVertexOnTheRayToTheCam(VertexIndex vi, int cam) const;
     int getFirstCellOnTheRayFromCamToThePoint(int cam, Point3d& p, Point3d& lpi) const;
-    bool isIncidentToType(VertexIndex vi, float type) const;
-    bool isIncidentToSink(VertexIndex vi, bool sink) const;
 
     float distFcn(float maxDist, float dist, float distFcnHeight) const;
-    double facetArea(const Facet& f) const;
 
     inline double conj(double val) const { return val; }
-    double cellMaxEdgeLength(CellIndex ci) const;
-    double cellMinEdgeLength(CellIndex ci);
     double facetMaxEdgeLength(Facet& f1) const;
-    double getFacetProjectionMaxEdge(Facet& f, int cam) const;
     double maxEdgeLength() const;
-    double averageEdgeLength() const;
     Point3d cellCircumScribedSphereCentre(CellIndex ci) const;
-    Point3d cellCentreOfGravity(CellIndex ci) const;
-    double cellVolume(CellIndex cv) const;
     double getFaceWeight(const Facet &f1) const;
     float weightFromSim(float sim);
 
     float weightFcn(float nrc, bool labatutWeights, int ncams);
-    bool isCellSmallForPoint(CellIndex ci, VertexIndex vi) const;
 
     virtual void fillGraph(bool fixesSigma, float nPixelSizeBehind, bool allPoints, bool behind, bool labatutWeights,
                            bool fillOut, float distFcnHeight = 0.0f);
@@ -275,8 +264,6 @@ public:
     void forceTedgesByGradientCVPR11(bool fixesSigma, float nPixelSizeBehind);
     void forceTedgesByGradientIJCV(bool fixesSigma, float nPixelSizeBehind);
 
-    void filterPointsWithHigherPixelSize(bool fixesSigma, float nPixelSizeBehind);
-
     void updateGraphFromTmpPtsCamsHexah(StaticVector<int>* incams, Point3d hexah[8], std::string tmpCamsPtsFolderName,
                                         bool labatutWeights, float distFcnHeight = 0.0f);
     void updateGraphFromTmpPtsCamsHexahRC(int rc, Point3d hexah[8], std::string tmpCamsPtsFolderName,
@@ -284,23 +271,9 @@ public:
 
     int setIsOnSurface();
 
-    bool isCamInFrontOfFacet(Facet f, int rc);
-    float triangle_area(mv2DTriangle& t);
-    float triangle_maxSide(mv2DTriangle& t);
-    float triangle_minSide(mv2DTriangle& t);
-    float triangle_incircle_area(mv2DTriangle& t);
-    float triangle_circumscribed_area(mv2DTriangle& t);
-
     void addToInfiniteSw(float sW);
 
-    float getAveragePixelSize() const;
     void freeUnwantedFullCells(std::string folderName, Point3d* hexah);
-    void saveMaxflowToWrl(std::string dirName, std::string fileNameTxt, std::string fileNameTxtCam,
-                          std::string fileNameWrl, std::string fileNameWrlTex, std::string fileNamePly,
-                          int camerasPerOneOmni);
-    void saveMaxflowToWrl(std::string dirName, std::string fileNameTxt, std::string fileNameTxtCam,
-                          std::string fileNameWrl, std::string fileNameWrlTex, std::string fileNamePly,
-                          int camerasPerOneOmni, StaticVector<int>* cams);
 
     void reconstructGC(float alphaQual, std::string baseName, StaticVector<int>* cams, std::string folderName,
                        std::string fileNameStGraph, std::string fileNameStSolution, std::string fileNameTxt,
@@ -319,39 +292,25 @@ public:
                           std::string tmpCamsPtsFolderName, bool segment,
                           StaticVector<Point3d>* hexahsToExcludeFromResultingMesh, VoxelsGrid* ls, Point3d spaceSteps);
 
-    bool hasVertex(CellIndex ci, VertexIndex vi) const;
-    void getIncidentCellsToCellAndVertexOfTheCellIndexes(int vIncident[3], CellIndex ci, VertexIndex vi) const;
-    void getIncidentCellsToCellAndEdgeOfTheCellIndexes(int vIncident[2], CellIndex ci, int lvi, int lvj) const;
-
     /**
      * @brief Invert full/empty status of cells if they represent a too small group after labelling.
      */
     void invertFullStatusForSmallLabels();
 
-    int erosionDilatation(bool sink);
     void graphCutPostProcessing();
 
     void clearAllPointsInFreeSpace();
     void clearAllPointsNotOnSurface();
     void addNewPointsToOccupiedSpace();
     void clearOutAddIn();
-    float computeSurfaceArea();
     StaticVector<int>* getNearestTrisFromMeshTris(Mesh* otherMesh);
-    StaticVector<int>* getNearestPtsFromMesh(Mesh& otherMesh);
 
     void segmentFullOrFree(bool full, StaticVector<int>** inColors, int& nsegments);
     int removeBubbles();
     int removeDust(int minSegSize);
     void leaveLargestFullSegmentOnly();
-    StaticVector<float>* computeSegmentsSurfaceArea(bool full, StaticVector<int>& colors, int nsegments);
 
     Mesh* createMesh(bool filterHelperPointsTriangles = true);
-    StaticVector<rgb>* getPtsColorsByNCams();
-
-    void initTetrahedralizationFromMeshTrianglesCenter(Mesh* mesh, bool _addPointsToPreventSingularities);
-    void initTetrahedralizationFromMeshVertices(Mesh* mesh, bool _addPointsToPreventSingularities);
-
-    StaticVector<StaticVector<int>*>* createPtsCamsForAnotherMesh(StaticVector<StaticVector<int>*>* refPtsCams, Mesh& otherMesh);
 };
 
 

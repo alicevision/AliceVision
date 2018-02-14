@@ -29,7 +29,6 @@ public:
     bool filterDepthMapsRC(int rc, int minNumOfModals, int minNumOfModalsWSP2SSP);
 
     void divideSpace(Point3d* hexah, float& minPixSize);
-    void filterSmallConnComponents(float alpha, int minSegSize, int scale);
 
     /// @brief Compute average pixel size in the given hexahedron
     float computeAveragePixelSizeInHexahedron(Point3d* hexah, int step, int scale);
@@ -40,8 +39,6 @@ public:
 private:
     bool updateInSurr(int pixSizeBall, int pixSizeBallWSP, Point3d& p, int rc, int tc, StaticVector<int>* numOfPtsMap,
                       StaticVector<float>* depthMap, StaticVector<float>* simMap, int scale);
-
-    Universe* segmentDepthMap(float alpha, int rc, StaticVector<float>* depthMap,int* segMap, int scale);
 };
 
 std::string generateTempPtsSimsFiles(std::string tmpDir, MultiViewParams* mp, bool addRandomNoise = false,

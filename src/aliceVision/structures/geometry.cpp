@@ -19,126 +19,14 @@ Point3d closestPointToLine3D(const Point3d* point, const Point3d* linePoint, con
     return (*linePoint) + (*lineVectNormalized) * dot((*lineVectNormalized), (*point) - (*linePoint));
 }
 
-Point2d closestPointToLine2D(const Point2d& point, const Point2d& linePoint, const Point2d& lineVectNormalized)
-{
-    return linePoint + lineVectNormalized * dot(lineVectNormalized, point - linePoint);
-}
-
-Point2d closestPointToLine2D(const Point2d& point, const Point3d& line)
-{
-    Point2d linePoint, lineVectNormalized;
-    lineVectNormalized.x = line.y;
-    lineVectNormalized.y = -line.x;
-    lineVectNormalized = lineVectNormalized.normalize();
-
-    if(line.y > 0.00000001f)
-    {
-        linePoint.x = 0.0f;
-        linePoint.y = -line.z / line.y;
-    }
-    else
-    {
-        linePoint.y = 0.0f;
-        linePoint.x = -line.z / line.x;
-    }
-
-    return linePoint + lineVectNormalized * dot(lineVectNormalized, point - linePoint);
-}
-
-float pointLineDistance2DPAB(const Point2d& point, const Point2d& lineA, const Point2d& lineB)
-{
-    float x0 = lineA.x;
-    float y0 = lineA.y;
-    float x1 = lineB.x;
-    float y1 = lineB.y;
-    float x = point.x;
-    float y = point.y;
-
-    float v[2], d;
-    v[0] = x1 - x0;
-    v[1] = y1 - y0;
-    d = sqrt(v[0] * v[0] + v[1] * v[1]);
-
-    v[0] /= d;
-    v[1] /= d;
-
-    float a = v[1];
-    float b = -v[0];
-    float c = -(a * x0 + b * y0);
-
-    d = fabs(a * x + b * y + c) / sqrt(a * a + b * b);
-
-    return d;
-}
-
-float pointLineDistance2DPPv(const Point2d& point, const Point2d& linePoint, const Point2d& lineVect)
-{
-    float a = lineVect.y;
-    float b = -lineVect.x;
-    float c = -(a * linePoint.x + b * linePoint.y);
-    return fabs(a * point.x + b * point.y + c) / sqrt(a * a + b * b);
-}
-
 float pointPlaneDistance(const Point3d& point, const Point3d& planePoint, const Point3d& planeNormal)
 {
     return fabs(dot(point, planeNormal) - dot(planePoint, planeNormal)) / sqrt(dot(planeNormal, planeNormal));
 }
 
-Point3d closestPointOnPlaneToPoint(const Point3d& point, const Point3d& planePoint,
-                                   const Point3d& planeNormalNormalized)
-{
-    return point - planeNormalNormalized * dot(planeNormalNormalized, point - planePoint);
-}
-
 double orientedPointPlaneDistance(const Point3d& point, const Point3d& planePoint, const Point3d& planeNormal)
 {
     return (dot(point, planeNormal) - dot(planePoint, planeNormal)) / std::sqrt(dot(planeNormal, planeNormal));
-}
-
-Point2d planeCoords(const Point3d& pointOnPlane, const Point3d& planePoint, const Point3d& xaxNormalized,
-                    const Point3d& yaxNormalized)
-{
-    Point2d p;
-    p.x = orientedPointPlaneDistance(pointOnPlane, planePoint, xaxNormalized);
-    p.y = orientedPointPlaneDistance(pointOnPlane, planePoint, yaxNormalized);
-    return p;
-}
-
-Point2d rectangleCoords(const Point3d& P, const Point3d& A, const Point3d& B, const Point3d& C)
-{
-    Point3d v0 = B - A;
-    Point3d v1 = C - A;
-
-    Point2d p;
-    p.x = orientedPointPlaneDistance(P, A, v0.normalize()) / v0.size();
-    p.y = orientedPointPlaneDistance(P, A, v1.normalize()) / v1.size();
-
-    return p;
-
-    /*
-            Point3d v0 = B - A;
-            Point3d v1 = C - A;
-
-            Point3d n = cross(v0.normalize(), v1.normalize()).normalize();
-
-
-            // Compute vectors
-            Point3d v2 = P - A;
-
-            // Compute dot products
-            float dot00 = dot(v0, v0);
-            float dot01 = dot(v0, v1);
-            float dot02 = dot(v0, v2);
-            float dot11 = dot(v1, v1);
-            float dot12 = dot(v1, v2);
-
-            // Compute barycentric coordinates
-            float invDenom = 1.0 / (dot00 * dot11 - dot01 * dot01);
-            float u = (dot11 * dot02 - dot01 * dot12) * invDenom;
-            float v = (dot00 * dot12 - dot01 * dot02) * invDenom;
-
-            return Point2d(u,v);
-            */
 }
 
 void computeRotCS(Point3d* xax, Point3d* yax, const Point3d* n)
@@ -256,13 +144,6 @@ bool lineLineIntersect(Point3d& out, const Point3d& p1, const Point3d& v1, const
     return lineLineIntersect(&k, &l, &out, &lli1, &lli2, p1, p1v1, p2, p2v2);
 }
 
-bool lineLineIntersectLeft(Point3d& out, const Point3d& p1, const Point3d& p2, const Point3d& p3, const Point3d& p4)
-{
-    float k, l;
-    Point3d llis, lli2;
-    return lineLineIntersect(&k, &l, &llis, &out, &lli2, p1, p2, p3, p4);
-}
-
 Point3d linePlaneIntersect(const Point3d& linePoint, const Point3d& lineVect, const Point3d& planePoint,
                            const Point3d& planeNormal)
 {
@@ -307,39 +188,6 @@ void linePlaneIntersect(Point3d* out, const Point3d* linePoint, const Point3d* l
     //---KP---*out = *linePoint + (*lineVect) * k;
 }
 
-bool lineSegmentPlaneIntersect(Point3d* lp, const Point3d& linePointA, const Point3d& linePointB,
-                               const Point3d& planePoint, const Point3d& planeNormal)
-{
-    Point3d lineVect = (linePointB - linePointA).normalize();
-    float size = (linePointB - linePointA).size();
-
-    float k = (dot(planePoint, planeNormal) - dot(planeNormal, linePointA)) / dot(planeNormal, lineVect);
-    *lp = linePointA + lineVect * k;
-
-    return (k >= 0.0f) && (k <= size);
-}
-
-// this angle is always between 0 and 90
-float notOrientedangleBetwV1andV2(const Point3d& iV1, const Point3d& iV2)
-{
-    Point3d V1, V2;
-    V1 = iV1.normalize();
-    V2 = iV2.normalize();
-
-    float a = fabs(acos(V1.x * V2.x + V1.y * V2.y + V1.z * V2.z) / (M_PI / 180.0));
-    if(a > 90.0f)
-    {
-        a = 180.0f - a;
-    }
-
-    return a;
-}
-
-float angleBetwUnitV1andUnitV2(Point3d& V1, Point3d& V2)
-{
-    return fabs(acos(V1.x * V2.x + V1.y * V2.y + V1.z * V2.z) / (M_PI / 180.0f));
-}
-
 // this angle is always between 0 and 180
 float angleBetwV1andV2(const Point3d& iV1, const Point3d& iV2)
 {
@@ -371,48 +219,6 @@ float angleBetwABandAC(const Point3d& A, const Point3d& B, const Point3d& C)
     }
 
     return fabs(a) / (M_PI / 180.0);
-}
-
-float cosAngleBetwABandAC(Point3d& A, Point3d& B, Point3d& C)
-{
-    Point3d V1, V2;
-    V1 = B - A;
-    V2 = C - A;
-    V1 = V1.normalize();
-    V2 = V2.normalize();
-
-    return V1.x * V2.x + V1.y * V2.y + V1.z * V2.z;
-}
-
-// return number from 0 to 360
-// N has to be ortogonal to V1 and V2
-float signedAngleBetwV1andV2(const Point3d& iV1, const Point3d& iV2, const Point3d& Nnormalized)
-{
-    Point3d V1, V2, N;
-    V1 = iV1.normalize();
-    V2 = iV2.normalize();
-
-    // signed_angle = atan2(  N * ( V1 x V2 ), V1 * V2  );
-    // where * is dot product and x is cross product
-    // N is the normal to the polygon
-    // ALL vectors: N, V1, V2 must be normalized
-
-    float a = atan2(dot(Nnormalized, cross(V1, V2)), dot(V1, V2)) / (M_PI / 180.0);
-    if(a < 0.0f)
-    {
-        a = 360.0f + a;
-    }
-    return a;
-
-    /*
-    float angle = acos(dot(V1, V2))/ (M_PI/180.0f);
-    Point3d cr = cross(V1, V2);
-    if (dot(Nnormalized, cr) < 0.0f) { // Or > 0
-      angle = 360.0f-angle;
-    };
-
-    return angle;
-    */
 }
 
 void rotPointAroundVect(double* out, const double* X, const double* vect, const double angle)
@@ -673,205 +479,8 @@ bool TrianglesOverlap(const Point2d* t1, const Point2d* t2)
         return ccw_tri_tri_intersection_2d(t1[0], t1[1], t1[2], t2[0], t2[1], t2[2]);
 }
 
-void getOrientedPlaneFor4Points(double* a, double* b, double* c, double* d, Point3d* planeA, Point3d* planeB,
-                                Point3d* planeC, Point3d* dir)
-{
-    // ABCD ... N = (B-A)x(C-A) if (dot(N,D-A) < 0) N = -N
-
-    Point3d v1 = (*planeB - *planeA).normalize();
-    Point3d v2 = (*planeC - *planeA).normalize();
-    Point3d n = cross(v1, v2);
-    if(dot(n, *dir - *planeA) < 0.0)
-    {
-        n.x = -n.x;
-        n.y = -n.y;
-        n.z = -n.z;
-    }
-
-    *a = n.x;
-    *b = n.y;
-    *c = n.z;
-    *d = -dot(n, *planeA);
-}
-
-void getOrientedPlaneForPlaneAndPoint(double* a, double* b, double* c, double* d, Point3d* planePoint,
-                                      Point3d* planeNormal, Point3d* dir)
-{
-    // ABCD ... N = (B-A)x(C-A) if (dot(N,D-A) < 0) N = -N
-
-    Point3d n = *planeNormal;
-    if(dot(n, *dir - *planePoint) < 0.0)
-    {
-        n.x = -n.x;
-        n.y = -n.y;
-        n.z = -n.z;
-    }
-
-    *a = n.x;
-    *b = n.y;
-    *c = n.z;
-    *d = -dot(n, *planePoint);
-}
-
-bool isPointInTetrahedron(const Point3d& p, const Point3d* tet)
-{
-    for(int i1 = 0; i1 < 4; i1++)
-    {
-        for(int i2 = i1 + 1; i2 < 4; i2++)
-        {
-            for(int i3 = i2 + 1; i3 < 4; i3++)
-            {
-                int i4;
-                if((i1 != 0) && (i2 != 0) && (i3 != 0))
-                {
-                    i4 = 0;
-                }
-                if((i1 != 1) && (i2 != 1) && (i3 != 1))
-                {
-                    i4 = 1;
-                }
-                if((i1 != 2) && (i2 != 2) && (i3 != 2))
-                {
-                    i4 = 2;
-                }
-                if((i1 != 3) && (i2 != 3) && (i3 != 3))
-                {
-                    i4 = 3;
-                }
-
-                Point3d a = tet[i1];
-                Point3d b = tet[i2];
-                Point3d c = tet[i3];
-                Point3d d = tet[i4];
-                Point3d n = cross((a - b).normalize(), (b - c).normalize()).normalize();
-                float d1 = orientedPointPlaneDistance(p, a, n);
-                float d2 = orientedPointPlaneDistance(d, a, n);
-                if(d1 * d2 < 0.0f)
-                {
-                    return false;
-                }
-            }
-        }
-    }
-
-    return true;
-}
-
 bool interectsTriangleTriangle(Point3d* tri1, Point3d* tri2)
 {
     bool ok = (bool)tri_tri_intersect(tri1[0].m, tri1[1].m, tri1[2].m, tri2[0].m, tri2[1].m, tri2[2].m);
     return ok;
-}
-
-bool interectsTriangleTetrahedron(Point3d* tri, Point3d* tet)
-{
-    for(int i1 = 0; i1 < 4; i1++)
-    {
-        for(int i2 = i1 + 1; i2 < 4; i2++)
-        {
-            for(int i3 = i2 + 1; i3 < 4; i3++)
-            {
-                int i4;
-                if((i1 != 0) && (i2 != 0) && (i3 != 0))
-                {
-                    i4 = 0;
-                }
-                if((i1 != 1) && (i2 != 1) && (i3 != 1))
-                {
-                    i4 = 1;
-                }
-                if((i1 != 2) && (i2 != 2) && (i3 != 2))
-                {
-                    i4 = 2;
-                }
-                if((i1 != 3) && (i2 != 3) && (i3 != 3))
-                {
-                    i4 = 3;
-                }
-
-                Point3d a = tet[i1];
-                Point3d b = tet[i2];
-                Point3d c = tet[i3];
-
-                bool ok = (bool)tri_tri_intersect(tri[0].m, tri[1].m, tri[2].m, a.m, b.m, c.m);
-                if(ok)
-                {
-                    return true;
-                }
-            }
-        }
-    }
-
-    return false;
-}
-
-bool interectsTetrahedronTetrahedron(Point3d* tet1, Point3d* tet2)
-{
-    for(int i1 = 0; i1 < 4; i1++)
-    {
-        for(int i2 = i1 + 1; i2 < 4; i2++)
-        {
-            for(int i3 = i2 + 1; i3 < 4; i3++)
-            {
-                int i4;
-                if((i1 != 0) && (i2 != 0) && (i3 != 0))
-                {
-                    i4 = 0;
-                }
-                if((i1 != 1) && (i2 != 1) && (i3 != 1))
-                {
-                    i4 = 1;
-                }
-                if((i1 != 2) && (i2 != 2) && (i3 != 2))
-                {
-                    i4 = 2;
-                }
-                if((i1 != 3) && (i2 != 3) && (i3 != 3))
-                {
-                    i4 = 3;
-                }
-
-                Point3d tri[3];
-                tri[0] = tet1[i1];
-                tri[1] = tet1[i2];
-                tri[2] = tet1[i3];
-                // Point3d d = tet[i4];
-                // Point3d n = cross((a-b).normalize(),(b-c).normalize()).normalize();
-
-                bool ok = interectsTriangleTetrahedron(tri, tet2);
-                if(ok)
-                {
-                    return true;
-                }
-            }
-        }
-    }
-
-    return false;
-}
-
-// http://mathworld.wolfram.com/Circle-CircleIntersection.html
-Point2d circleCircleIntersection(float d, float r1, float r2)
-{
-    float R = r1;
-    float r = r2;
-    float k = (d * d - r * r + R * R);
-    float x = k / (2.0f * d);
-    float a = (1.0f / d) * sqrt(4.0f * d * d * R * R - k * k);
-
-    // printf("circleCircleIntersection d %f, r1 %f, r2 %f \n",d,r1,r2);
-    // printf("k %f, x %f, a %f \n",k,x,a);
-
-    Point2d o;
-    o.x = x;
-    o.y = a / 2.0f;
-
-    return o;
-}
-
-// http://mrl.nyu.edu/~dzorin/ug-graphics/lectures/lecture5/sld008.htm
-// is the point pt on the same side of the half plane defined by the line point and the normal
-bool halfPlaneTest(Point2d& pt, Point2d& linePt, Point2d& lineNormal)
-{
-    return (dot(lineNormal, pt - linePt) > 0.0f);
 }

@@ -8,6 +8,7 @@
 #include <aliceVision/structures/Matrix3x3.hpp>
 #include <aliceVision/structures/Point2d.hpp>
 #include <aliceVision/structures/Point3d.hpp>
+#include <aliceVision/structures/Pixel.hpp>
 #include <aliceVision/structures/SeedPointCams.hpp>
 #include <aliceVision/structures/StaticVector.hpp>
 #include <aliceVision/structures/structures.hpp>
@@ -65,44 +66,57 @@ enum class EFileType {
 struct MultiViewInputParams
 {
     static const int N_SCALES = 4;
-
-    MultiViewInputParams() = default;
-
-    explicit MultiViewInputParams(const std::string& file, const std::string& depthMapFolder, const std::string& depthMapFilterFolder);
-
-    void initFromConfigFile(const std::string& iniFile);
-
-    imageParams addImageFile(const std::string& filename);
-
-    int getWidth(int rc) const { return imps[rc].width; }
-    int getHeight(int rc) const { return imps[rc].height; }
-    int getSize(int rc) const { return imps[rc].im_size; }
-    int getMaxImageWidth() const { return maxImageWidth; }
-    int getMaxImageHeight() const { return maxImageHeight; }
-    int getNbCameras() const { return imps.size(); }
-    int getNbPixelsFromAllCameras() const
-    {
-        int fullSize = 0;
-        for(const auto& p: imps)
-            fullSize += p.im_size;
-        return fullSize;
-    }
-
     std::string newDir;
-    // int occMapScale;
-    std::string mvDir; //< prepareDenseScene data
-    std::string _depthMapFolder; //< depthMapEstimate data folder
-    std::string _depthMapFilterFolder; //< depthMapFilter data folder
+    /// prepareDenseScene data
+    std::string mvDir;
+    /// depthMapEstimate data folder
+    std::string _depthMapFolder;
+    /// depthMapFilter data folder
+    std::string _depthMapFilterFolder;
     std::string outDir;
     std::string prefix;
     std::string imageExt = "_c.png";
-
     std::vector<imageParams> imps;
     int maxImageWidth = 0;
     int maxImageHeight = 0;
-
     bool usesil = false;
     boost::property_tree::ptree _ini;
+
+    MultiViewInputParams() = default;
+    explicit MultiViewInputParams(const std::string& file, const std::string& depthMapFolder, const std::string& depthMapFilterFolder);
+
+    void initFromConfigFile(const std::string& iniFile);
+    imageParams addImageFile(const std::string& filename);
+
+    inline int getWidth(int rc) const
+    {
+        return imps[rc].width;
+    }
+
+    inline int getHeight(int rc) const
+    {
+        return imps[rc].height;
+    }
+
+    inline int getSize(int rc) const
+    {
+        return imps[rc].im_size;
+    }
+
+    inline int getMaxImageWidth() const
+    {
+        return maxImageWidth;
+    }
+
+    inline int getMaxImageHeight() const
+    {
+        return maxImageHeight;
+    }
+
+    inline int getNbCameras() const
+    {
+        return imps.size();
+    }
 };
 
 
@@ -160,9 +174,6 @@ public:
 
     float getCamsMinPixelSize(const Point3d& x0, std::vector<unsigned short>* tcams) const;
     float getCamsMinPixelSize(const Point3d& x0, StaticVector<int>& tcams) const;
-
-    int getCamsMinPixelSizeIndex(const Point3d& x0, int rc, SeedPointCams* tcams) const;
-    int getCamsMinPixelSizeIndex(const Point3d& x0, const StaticVector<int>& tcams) const;
 
     bool isPixelInCutOut(const Pixel* pix, const Pixel* lu, const Pixel* rd, int d, int camId) const;
     bool isPixelInImage(const Pixel& pix, int d, int camId) const;

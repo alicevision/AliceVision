@@ -47,8 +47,6 @@ void UVAtlas::createCharts(vector<Chart>& charts, MultiViewParams& mp, StaticVec
         for(int c = 0; c < cameras->size(); ++c)
         {
             int cameraID = (*cameras)[c];
-            //if(!mesh.isTriangleVisibleInCam(i, &mp, cameraID))
-            //    continue;
             // project triangle
             Mesh::triangle_proj tp = _mesh.getTriangleProjection(i, &mp, cameraID, mp.mip->getWidth(cameraID), mp.mip->getHeight(cameraID));
             if(!mp.isPixelInImage(Pixel(tp.tp2ds[0]), 10, cameraID)
