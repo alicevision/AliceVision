@@ -111,10 +111,10 @@ int main(int argc, char* argv[])
     ALICEVISION_COUT("ini file: " << iniFilepath);
 
     // .ini parsing
-    multiviewInputParams mip(iniFilepath, depthMapFolder, depthMapFilterFolder);
+    MultiViewInputParams mip(iniFilepath, depthMapFolder, depthMapFilterFolder);
     const double simThr = mip._ini.get<double>("global.simThr", 0.0);
-    multiviewParams mp(mip.getNbCameras(), &mip, (float) simThr);
-    mv_prematch_cams pc(&mp);
+    MultiViewParams mp(mip.getNbCameras(), &mip, (float) simThr);
+    PreMatchCams pc(&mp);
 
     // .ini parsing
     int ocTreeDim = mip._ini.get<int>("LargeScale.gridLevel0", 1024);

@@ -21,7 +21,7 @@
 
 namespace bfs = boost::filesystem;
 
-Fuser::Fuser(const multiviewParams* _mp, mv_prematch_cams* _pc)
+Fuser::Fuser(const MultiViewParams* _mp, PreMatchCams* _pc)
   : mp(_mp)
   , pc(_pc)
 {
@@ -683,7 +683,7 @@ void Fuser::filterSmallConnComponents(float alpha, int minSegSize, int scale)
     finishEstimate();
 }
 
-std::string generateTempPtsSimsFiles(std::string tmpDir, multiviewParams* mp, bool addRandomNoise, float percNoisePts,
+std::string generateTempPtsSimsFiles(std::string tmpDir, MultiViewParams* mp, bool addRandomNoise, float percNoisePts,
                                      int noisPixSizeDistHalfThr)
 {
     printf("generating temp files\n");
@@ -851,7 +851,7 @@ std::string generateTempPtsSimsFiles(std::string tmpDir, multiviewParams* mp, bo
     return depthMapsPtsSimsTmpDir;
 }
 
-void deleteTempPtsSimsFiles(multiviewParams* mp, std::string depthMapsPtsSimsTmpDir)
+void deleteTempPtsSimsFiles(MultiViewParams* mp, std::string depthMapsPtsSimsTmpDir)
 {
     for(int rc = 0; rc < mp->ncams; rc++)
     {

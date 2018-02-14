@@ -6,7 +6,7 @@
 #pragma once
 #include <aliceVision/structures/StaticVector.hpp>
 
-class multiviewParams;
+class MultiViewParams;
 
 StaticVector<StaticVector<int>*>* getPtsCamsFromInfoFile(const std::string& fileNameInfo);
-StaticVector<int>* getUsedCamsFromInfoFile(const std::string& fileNameInfo, multiviewParams* mp);
+StaticVector<int>* getUsedCamsFromInfoFile(const std::string& fileNameInfo, MultiViewParams* mp);

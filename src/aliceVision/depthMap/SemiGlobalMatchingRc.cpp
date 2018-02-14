@@ -697,7 +697,7 @@ bool SemiGlobalMatchingRc::sgmrc(bool checkIfExists)
     return true;
 }
 
-void computeDepthMapsPSSGM(int CUDADeviceNo, multiviewParams* mp, mv_prematch_cams* pc, const StaticVector<int>& cams)
+void computeDepthMapsPSSGM(int CUDADeviceNo, MultiViewParams* mp, PreMatchCams* pc, const StaticVector<int>& cams)
 {
     int scale = mp->mip->_ini.get<int>("semiGlobalMatching.scale", -1);
     int step = mp->mip->_ini.get<int>("semiGlobalMatching.step", -1);
@@ -716,7 +716,7 @@ void computeDepthMapsPSSGM(int CUDADeviceNo, multiviewParams* mp, mv_prematch_ca
     int bandType = 0;
     
     // load images from files into RAM 
-    mv_images_cache ic(mp, bandType, true);
+    ImagesCache ic(mp, bandType, true);
     // load stuff on GPU memory and creates multi-level images and computes gradients
     PlaneSweepingCuda cps(CUDADeviceNo,& ic, mp, pc, scale);
     // init plane sweeping parameters
@@ -740,7 +740,7 @@ void computeDepthMapsPSSGM(int CUDADeviceNo, multiviewParams* mp, mv_prematch_ca
     }
 }
 
-void computeDepthMapsPSSGM(multiviewParams* mp, mv_prematch_cams* pc, const StaticVector<int>& cams)
+void computeDepthMapsPSSGM(MultiViewParams* mp, PreMatchCams* pc, const StaticVector<int>& cams)
 {
     int num_gpus = listCUDADevices(true);
     int num_cpu_threads = omp_get_num_procs();

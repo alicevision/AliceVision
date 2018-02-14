@@ -468,7 +468,7 @@ void OctreeTracks::trackStruct::doPrintf()
         printf("cams %i, rc %i, val %i \n", i, cams[i].x, cams[i].y);
 }
 
-OctreeTracks::OctreeTracks(const Point3d* _voxel, multiviewParams* _mp, mv_prematch_cams* _pc, Voxel dimensions)
+OctreeTracks::OctreeTracks(const Point3d* _voxel, MultiViewParams* _mp, PreMatchCams* _pc, Voxel dimensions)
     : Fuser(_mp, _pc)
 {
     numSubVoxsX = dimensions.x;

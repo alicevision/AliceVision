@@ -17,15 +17,6 @@
 #include <vector>
 #include <string>
 
-struct timeIndex
-{
-    int index;
-    long timeStamp;
-
-    timeIndex();
-    timeIndex(int _index);
-};
-
 enum class EFileType {
     P = 0,
     K = 1,
@@ -71,13 +62,13 @@ enum class EFileType {
     D = 42,
 };
 
-struct multiviewInputParams
+struct MultiViewInputParams
 {
     static const int N_SCALES = 4;
 
-    multiviewInputParams() = default;
+    MultiViewInputParams() = default;
 
-    explicit multiviewInputParams(const std::string& file, const std::string& depthMapFolder, const std::string& depthMapFilterFolder);
+    explicit MultiViewInputParams(const std::string& file, const std::string& depthMapFolder, const std::string& depthMapFilterFolder);
 
     void initFromConfigFile(const std::string& iniFile);
 
@@ -115,11 +106,9 @@ struct multiviewInputParams
 };
 
 
-class multiviewParams
+class MultiViewParams
 {
 public:
-    std::vector<timeIndex> mapiSort;
-
     std::vector<Matrix3x4> camArr;
     std::vector<Matrix3x3> KArr;
     std::vector<Matrix3x3> iKArr;
@@ -130,7 +119,7 @@ public:
     std::vector<short> indexes;
     std::vector<Point3d> FocK1K2Arr;
 
-    multiviewInputParams* mip;
+    MultiViewInputParams* mip;
 
     int ncams;
     int CUDADeviceNo;
@@ -139,9 +128,9 @@ public:
     int g_maxPlaneNormalViewDirectionAngle;
     bool verbose;
 
-    multiviewParams(int _ncams, multiviewInputParams* _mip, float _simThr,
+    MultiViewParams(int _ncams, MultiViewInputParams* _mip, float _simThr,
                     StaticVector<CameraMatrices>* cameras = nullptr);
-    ~multiviewParams();
+    ~MultiViewParams();
 
     void resizeCams(int _ncams)
     {
@@ -159,9 +148,6 @@ public:
 
     void loadCameraFile(int i, const std::string& fileNameP, const std::string& fileNameD);
 
-    void addCam();
-    void reloadLastCam();
-
     bool is3DPointInFrontOfCam(const Point3d* X, int rc) const;
     void getPixelFor3DPoint(Point2d* out, const Point3d& X, const Matrix3x4& P) const;
     void getPixelFor3DPoint(Point2d* out, const Point3d& X, int rc) const;
@@ -173,18 +159,15 @@ public:
     float getCamPixelSizePlaneSweepAlpha(const Point3d& p, int rc, StaticVector<int>* tcams, int scale, int step) const;
 
     float getCamsMinPixelSize(const Point3d& x0, std::vector<unsigned short>* tcams) const;
+    float getCamsMinPixelSize(const Point3d& x0, StaticVector<int>& tcams) const;
+
     int getCamsMinPixelSizeIndex(const Point3d& x0, int rc, SeedPointCams* tcams) const;
     int getCamsMinPixelSizeIndex(const Point3d& x0, const StaticVector<int>& tcams) const;
 
-    float getCamsMinPixelSize(const Point3d& x0, StaticVector<int>& tcams) const;
-    float getCamsAveragePixelSize(const Point3d& x0, StaticVector<int>* tcams) const;
     bool isPixelInCutOut(const Pixel* pix, const Pixel* lu, const Pixel* rd, int d, int camId) const;
     bool isPixelInImage(const Pixel& pix, int d, int camId) const;
     bool isPixelInImage(const Pixel& pix, int camId) const;
     bool isPixelInImage(const Point2d& pix, int camId) const;
-
-    void computeHomographyInductedByPlaneRcTc(Matrix3x3* H, const Point3d& _p, const Point3d& _n, int rc, int tc) const;
-
     void decomposeProjectionMatrix(Point3d& Co, Matrix3x3& Ro, Matrix3x3& iRo, Matrix3x3& Ko, Matrix3x3& iKo,
                                    Matrix3x3& iPo, const Matrix3x4& P) const;
 

@@ -18,7 +18,7 @@ VoxelsGrid::VoxelsGrid()
 {
 }
 
-VoxelsGrid::VoxelsGrid(const Voxel& dimmensions, Point3d* _space, multiviewParams* _mp, mv_prematch_cams* _pc,
+VoxelsGrid::VoxelsGrid(const Voxel& dimmensions, Point3d* _space, MultiViewParams* _mp, PreMatchCams* _pc,
                        const std::string& _spaceRootDir, bool _doVisualize)
 {
     doVisualize = _doVisualize;

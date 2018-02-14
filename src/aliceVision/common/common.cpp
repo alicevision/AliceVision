@@ -20,7 +20,7 @@
 #endif
 
 bool get2dLineImageIntersection(Point2d* pFrom, Point2d* pTo, Point2d linePoint1, Point2d linePoint2,
-                                const multiviewParams* mp, int camId)
+                                const MultiViewParams* mp, int camId)
 {
     Point2d v = linePoint2 - linePoint1;
 
@@ -117,7 +117,7 @@ bool get2dLineImageIntersection(Point2d* pFrom, Point2d* pTo, Point2d linePoint1
 }
 
 bool getTarEpipolarDirectedLine(Point2d* pFromTar, Point2d* pToTar, Point2d refpix, int refCam, int tarCam,
-                                const multiviewParams* mp)
+                                const MultiViewParams* mp)
 {
     const Matrix3x4& rP = mp->camArr[refCam];
     const Matrix3x4& tP = mp->camArr[tarCam];
@@ -154,7 +154,7 @@ bool getTarEpipolarDirectedLine(Point2d* pFromTar, Point2d* pToTar, Point2d refp
 }
 
 bool triangulateMatch(Point3d& out, const Point2d& refpix, const Point2d& tarpix, int refCam, int tarCam,
-                      const multiviewParams* mp)
+                      const MultiViewParams* mp)
 {
     Point3d refvect = mp->iCamArr[refCam] * refpix;
     refvect = refvect.normalize();
@@ -171,7 +171,7 @@ bool triangulateMatch(Point3d& out, const Point2d& refpix, const Point2d& tarpix
 }
 
 bool triangulateMatchLeft(Point3d& out, const Point2d& refpix, const Point2d& tarpix, int refCam, int tarCam,
-                          const multiviewParams* mp)
+                          const MultiViewParams* mp)
 {
     Point3d refvect = mp->iCamArr[refCam] * refpix;
     refvect = refvect.normalize();
@@ -295,7 +295,7 @@ int ransac_nsamples(int ni, int npoints, int npoinsRansac, float conf)
 }
 
 bool ransacPlaneFit(OrientedPoint& plane, StaticVector<Point3d>* points, StaticVector<Point3d>* points_samples,
-                    const multiviewParams* mp, int rc, float pixEpsThr)
+                    const MultiViewParams* mp, int rc, float pixEpsThr)
 {
 
     // RANSAC best plane
@@ -360,7 +360,7 @@ bool ransacPlaneFit(OrientedPoint& plane, StaticVector<Point3d>* points, StaticV
 }
 
 bool multimodalRansacPlaneFit(OrientedPoint& plane, StaticVector<StaticVector<Point3d>*>* modalPoints,
-                              const multiviewParams* mp, int rc, float pixEpsThr)
+                              const MultiViewParams* mp, int rc, float pixEpsThr)
 {
     StaticVector<Point3d>* points = (*modalPoints)[0];
 
@@ -541,28 +541,28 @@ bool arecoincident(OrientedPoint* op1, OrientedPoint* op2, float pixSize)
             );
 }
 
-bool isVisibleInCamera(const multiviewParams* mp, OrientedPoint* op, int rc)
+bool isVisibleInCamera(const MultiViewParams* mp, OrientedPoint* op, int rc)
 {
     Point3d n1 = op->n.normalize();
     Point3d n2 = (mp->CArr[rc] - op->p).normalize();
     return (fabs(acos(dot(n1, n2))) / (M_PI / 180.0) < 80.0);
 }
 
-bool isVisibleInCamera(const multiviewParams* mp, OrientedPoint* op, int rc, int minAng)
+bool isVisibleInCamera(const MultiViewParams* mp, OrientedPoint* op, int rc, int minAng)
 {
     Point3d n1 = op->n.normalize();
     Point3d n2 = (mp->CArr[rc] - op->p).normalize();
     return ((int)(fabs(acos(dot(n1, n2))) / (M_PI / 180.0)) < minAng);
 }
 
-bool isNonVisibleInCamera(const multiviewParams* mp, OrientedPoint* op, int rc)
+bool isNonVisibleInCamera(const MultiViewParams* mp, OrientedPoint* op, int rc)
 {
     Point3d n1 = op->n;
     Point3d n2 = (mp->CArr[rc] - op->p).normalize();
     return (fabs(acos(dot(n1, n2))) / (M_PI / 180.0) > 150.0);
 }
 
-bool checkPair(const Point3d& p, int rc, int tc, const multiviewParams* mp, float minAng, float maxAng)
+bool checkPair(const Point3d& p, int rc, int tc, const MultiViewParams* mp, float minAng, float maxAng)
 {
     float ps1 = mp->getCamPixelSize(p, rc);
     float ps2 = mp->getCamPixelSize(p, tc);
@@ -571,7 +571,7 @@ bool checkPair(const Point3d& p, int rc, int tc, const multiviewParams* mp, floa
     return ((std::min(ps1, ps2) > std::max(ps1, ps2) * 0.8) && (ang >= minAng) && (ang <= maxAng));
 }
 
-bool checkCamPairAngle(int rc, int tc, const multiviewParams* mp, float minAng, float maxAng)
+bool checkCamPairAngle(int rc, int tc, const MultiViewParams* mp, float minAng, float maxAng)
 {
     if(rc == tc)
     {
@@ -666,7 +666,7 @@ void getHexahedronTriangles(Point3d tris[12][3], Point3d hexah[8])
 }
 
 // hexahedron format ... 0-3 frontal face, 4-7 back face
-void getCamRectangleHexahedron(const multiviewParams* mp, Point3d hexah[8], int cam, float mind, float maxd, Point2d P[4])
+void getCamRectangleHexahedron(const MultiViewParams* mp, Point3d hexah[8], int cam, float mind, float maxd, Point2d P[4])
 {
     hexah[0] = mp->CArr[cam] + (mp->iCamArr[cam] * P[0]).normalize() * mind;
     hexah[4] = mp->CArr[cam] + (mp->iCamArr[cam] * P[0]).normalize() * maxd;
@@ -679,7 +679,7 @@ void getCamRectangleHexahedron(const multiviewParams* mp, Point3d hexah[8], int 
 }
 
 // hexahedron format ... 0-3 frontal face, 4-7 back face
-void getCamHexahedron(const multiviewParams* mp, Point3d hexah[8], int cam, float mind, float maxd)
+void getCamHexahedron(const MultiViewParams* mp, Point3d hexah[8], int cam, float mind, float maxd)
 {
     float w = (float)mp->mip->getWidth(cam);
     float h = (float)mp->mip->getHeight(cam);
@@ -775,7 +775,7 @@ StaticVector<Point3d>* lineSegmentHexahedronIntersection(Point3d& linePoint1, Po
     return out;
 }
 
-StaticVector<Point3d>* triangleRectangleIntersection(Point3d& A, Point3d& B, Point3d& C, const multiviewParams* mp, int rc,
+StaticVector<Point3d>* triangleRectangleIntersection(Point3d& A, Point3d& B, Point3d& C, const MultiViewParams* mp, int rc,
                                                      Point2d P[4])
 {
     float maxd =
@@ -1095,7 +1095,7 @@ StaticVector<int>* getDistinctIndexes(StaticVector<int>* indexes)
     return out;
 }
 
-StaticVector<StaticVector<int>*>* convertObjectsCamsToCamsObjects(const multiviewParams* mp,
+StaticVector<StaticVector<int>*>* convertObjectsCamsToCamsObjects(const MultiViewParams* mp,
                                                                   StaticVector<StaticVector<int>*>* ptsCams)
 {
     StaticVector<int>* nCamsPts = new StaticVector<int>(mp->ncams);
@@ -1137,7 +1137,7 @@ StaticVector<StaticVector<int>*>* convertObjectsCamsToCamsObjects(const multivie
     return camsPts;
 }
 
-StaticVector<StaticVector<Pixel>*>* convertObjectsCamsToCamsObjects(const multiviewParams* mp,
+StaticVector<StaticVector<Pixel>*>* convertObjectsCamsToCamsObjects(const MultiViewParams* mp,
                                                                     StaticVector<StaticVector<Pixel>*>* ptsCams)
 {
     StaticVector<int>* nCamsPts = new StaticVector<int>(mp->ncams);
@@ -1170,7 +1170,7 @@ StaticVector<StaticVector<Pixel>*>* convertObjectsCamsToCamsObjects(const multiv
     return camsPts;
 }
 
-int computeStep(multiviewInputParams* mip, int scale, int maxWidth, int maxHeight)
+int computeStep(MultiViewInputParams* mip, int scale, int maxWidth, int maxHeight)
 {
     int step = 1;
     int ow = mip->getMaxImageWidth() / scale;
@@ -1286,7 +1286,7 @@ StaticVector<int>* createRandomArrayOfIntegers(int n)
     return tracksPointsRandomIds;
 }
 
-float getCGDepthFromSeeds(const multiviewParams* mp, int rc)
+float getCGDepthFromSeeds(const MultiViewParams* mp, int rc)
 {
     StaticVector<SeedPoint>* seeds;
     loadSeedsFromFile(&seeds, mp->indexes[rc], mp->mip, EFileType::seeds);

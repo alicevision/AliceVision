@@ -7,14 +7,14 @@
 #include <aliceVision/common/common.hpp>
 #include <aliceVision/common/fileIO.hpp>
 
-int mv_images_cache::getPixelId(int x, int y, int imgid)
+int ImagesCache::getPixelId(int x, int y, int imgid)
 {
     if(!transposed)
         return x * mp->mip->getHeight(imgid) + y;
     return y * mp->mip->getWidth(imgid) + x;
 }
 
-mv_images_cache::mv_images_cache(const multiviewParams* _mp, int _bandType, bool _transposed)
+ImagesCache::ImagesCache(const MultiViewParams* _mp, int _bandType, bool _transposed)
   : mp(_mp)
 {
     std::vector<std::string> _imagesNames;
@@ -25,14 +25,14 @@ mv_images_cache::mv_images_cache(const multiviewParams* _mp, int _bandType, bool
     initIC(_bandType, _imagesNames, _transposed);
 }
 
-mv_images_cache::mv_images_cache(const multiviewParams* _mp, int _bandType, std::vector<std::string>& _imagesNames,
+ImagesCache::ImagesCache(const MultiViewParams* _mp, int _bandType, std::vector<std::string>& _imagesNames,
                                  bool _transposed)
   : mp(_mp)
 {
     initIC(_bandType, _imagesNames, _transposed);
 }
 
-void mv_images_cache::initIC(int _bandType, std::vector<std::string>& _imagesNames,
+void ImagesCache::initIC(int _bandType, std::vector<std::string>& _imagesNames,
                              bool _transposed)
 {
     float oneimagemb = (sizeof(Color) * mp->mip->getMaxImageWidth() * mp->mip->getMaxImageHeight()) / 1024.f / 1024.f;
@@ -73,7 +73,7 @@ void mv_images_cache::initIC(int _bandType, std::vector<std::string>& _imagesNam
     }
 }
 
-mv_images_cache::~mv_images_cache()
+ImagesCache::~ImagesCache()
 {
     for(int ni = 0; ni < N_PRELOADED_IMAGES; ni++)
     {
@@ -86,7 +86,7 @@ mv_images_cache::~mv_images_cache()
     delete mapIdClock;
 }
 
-void mv_images_cache::refreshData(int camId)
+void ImagesCache::refreshData(int camId)
 {
     // printf("camId %i\n",camId);
     // test if the image is in the memory
@@ -122,7 +122,7 @@ void mv_images_cache::refreshData(int camId)
     }
 }
 
-Color mv_images_cache::getPixelValueInterpolated(const Point2d* pix, int camId)
+Color ImagesCache::getPixelValueInterpolated(const Point2d* pix, int camId)
 {
     refreshData(camId);
 
@@ -150,7 +150,7 @@ Color mv_images_cache::getPixelValueInterpolated(const Point2d* pix, int camId)
     return out;
 }
 
-rgb mv_images_cache::getPixelValue(const Pixel& pix, int camId)
+rgb ImagesCache::getPixelValue(const Pixel& pix, int camId)
 {
     refreshData(camId);
 

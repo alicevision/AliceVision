@@ -33,7 +33,7 @@
 
 namespace bfs = boost::filesystem;
 
-mv_delaunay_GC::mv_delaunay_GC(multiviewParams* _mp, mv_prematch_cams* _pc)
+mv_delaunay_GC::mv_delaunay_GC(MultiViewParams* _mp, PreMatchCams* _pc)
 {
     mp = _mp;
     pc = _pc;

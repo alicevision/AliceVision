@@ -9,7 +9,7 @@
 
 namespace bfs = boost::filesystem;
 
-Mesh_refine::Mesh_refine(multiviewParams* _mp, mv_prematch_cams* _pc, std::string _tmpDir)
+Mesh_refine::Mesh_refine(MultiViewParams* _mp, PreMatchCams* _pc, std::string _tmpDir)
     : Mesh()
 {
     mp = _mp;
@@ -32,7 +32,7 @@ Mesh_refine::Mesh_refine(multiviewParams* _mp, mv_prematch_cams* _pc, std::strin
     bfs::create_directory(meshDepthMapsDir);
 
     int bandType = 0;
-    ic = new mv_images_cache(mp, bandType, true);
+    ic = new ImagesCache(mp, bandType, true);
     cps = new PlaneSweepingCuda(mp->CUDADeviceNo, ic, mp, pc, 1);
     prt = new RcTc(mp, cps);
 }

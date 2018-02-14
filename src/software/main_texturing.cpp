@@ -100,9 +100,9 @@ int main(int argc, char* argv[])
     const EImageFileType outputTextureFileType = EImageFileType_stringToEnum(outTextureFileTypeName);
 
     // .ini parsing
-    multiviewInputParams mip(iniFilepath, "", "");
+    MultiViewInputParams mip(iniFilepath, "", "");
     const double simThr = mip._ini.get<double>("global.simThr", 0.0);
-    multiviewParams mp(mip.getNbCameras(), &mip, (float) simThr);
+    MultiViewParams mp(mip.getNbCameras(), &mip, (float) simThr);
 
     Retexturer mesh;
     mesh.texParams = texParams;

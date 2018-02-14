@@ -212,7 +212,7 @@ int main(int argc, char* argv[])
     const auto depthMapFilterFolder = rootPath / "depthMapFilter";
     bfs::create_directory(depthMapFolder);
     bfs::create_directory(depthMapFilterFolder);
-    multiviewInputParams mip(cmdline.iniFile, depthMapFolder.string(), depthMapFilterFolder.string());
+    MultiViewInputParams mip(cmdline.iniFile, depthMapFolder.string(), depthMapFilterFolder.string());
     const double simThr = mip._ini.get<double>("global.simThr", 0.0);
     const int minNumOfConsistensCams = mip._ini.get<int>("filter.minNumOfConsistentCams", 3);
     const int maxPts = mip._ini.get<int>("LargeScale.planMaxPts", 30000000);
@@ -227,8 +227,8 @@ int main(int argc, char* argv[])
     outPath += "/";
     mip.outDir = outPath.string();
 
-    multiviewParams mp(mip.getNbCameras(), &mip, (float) simThr);
-    mv_prematch_cams pc(&mp);
+    MultiViewParams mp(mip.getNbCameras(), &mip, (float) simThr);
+    PreMatchCams pc(&mp);
     StaticVector<int> cams(mp.ncams);
     if(cmdline.rangeSize == -1)
     {

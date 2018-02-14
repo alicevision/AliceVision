@@ -27,8 +27,8 @@
 class mv_delaunay_GC
 {
 public:
-    multiviewParams* mp;
-    mv_prematch_cams* pc;
+    MultiViewParams* mp;
+    PreMatchCams* pc;
 
     using VertexIndex = GEO::index_t;
     using CellIndex = GEO::index_t;
@@ -190,7 +190,7 @@ public:
     bool btest;
     bool saveTemporaryBinFiles;
 
-    mv_delaunay_GC(multiviewParams* _mp, mv_prematch_cams* _pc);
+    mv_delaunay_GC(MultiViewParams* _mp, PreMatchCams* _pc);
     virtual ~mv_delaunay_GC();
 
     void initVertices();

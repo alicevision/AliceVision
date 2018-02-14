@@ -9,25 +9,22 @@
 #include <aliceVision/structures/StaticVector.hpp>
 #include <aliceVision/common/MultiViewParams.hpp>
 
-class mv_prematch_cams
+class PreMatchCams
 {
 public:
-    multiviewParams* mp;
+    MultiViewParams* mp;
     float minang;
     float maxang;
     float minCamsDistance;
 
-    mv_prematch_cams(multiviewParams* _mp);
-    ~mv_prematch_cams(void);
+    PreMatchCams(MultiViewParams* _mp);
 
     float computeMinCamsDistance();
     bool overlap(int rc, int tc);
     StaticVector<int>* findNearestCams(int rc, int _nnearestcams);
 
-    bool intersectsRcTc(int rc, float rmind, float rmaxd, int tc, float tmind, float tmaxd);
     StaticVector<int>* findCamsWhichIntersectsHexahedron(Point3d hexah[8], std::string minMaxDepthsFileName);
     StaticVector<int>* findCamsWhichIntersectsHexahedron(Point3d hexah[8]);
-    StaticVector<int>* findCamsWhichAreInHexahedron(Point3d hexah[8]);
     StaticVector<int>* findCamsWhichIntersectsCamHexah(int rc);
 
     StaticVector<int>* precomputeIncidentMatrixCamsFromSeeds();

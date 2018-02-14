@@ -12,11 +12,11 @@
 class RcTc
 {
 public:
-    multiviewParams* mp;
+    MultiViewParams* mp;
     PlaneSweepingCuda* cps;
     bool verbose;
 
-    RcTc(multiviewParams* _mp, PlaneSweepingCuda* _cps);
+    RcTc(MultiViewParams* _mp, PlaneSweepingCuda* _cps);
     ~RcTc(void);
 
     void refineRcTcDepthSimMap(bool useTcOrRcPixSize, DepthSimMap* depthSimMap, int rc, int tc, int ndepthsToRefine,

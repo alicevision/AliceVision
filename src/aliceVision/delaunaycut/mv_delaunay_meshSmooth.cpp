@@ -20,7 +20,7 @@
 namespace bfs = boost::filesystem;
 
 void meshPostProcessing(Mesh*& inout_mesh, StaticVector<StaticVector<int>*>*& inout_ptsCams, StaticVector<int>& usedCams,
-                      multiviewParams& mp, mv_prematch_cams& pc,
+                      MultiViewParams& mp, PreMatchCams& pc,
                       const std::string& resultFolderName,
                       StaticVector<Point3d>* hexahsToExcludeFromResultingMesh, Point3d* hexah)
 {
@@ -94,7 +94,7 @@ void meshPostProcessing(Mesh*& inout_mesh, StaticVector<StaticVector<int>*>*& in
         printf("Cleaning mesh\n");
 
         int bandType = 0;
-        mv_images_cache* ic = new mv_images_cache(&mp, bandType, true);
+        ImagesCache* ic = new ImagesCache(&mp, bandType, true);
         PlaneSweepingCuda* cps = nullptr; // new PlaneSweepingCuda(mp.CUDADeviceNo, ic, &mp, &pc, 1);
         SemiGlobalMatchingParams* sp = new SemiGlobalMatchingParams(&mp, &pc, cps);
 

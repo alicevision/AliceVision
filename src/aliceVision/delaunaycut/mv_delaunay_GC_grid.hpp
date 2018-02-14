@@ -15,7 +15,7 @@ public:
     Point3d vx, vy, vz;
     float sx, sy, sz;
 
-    mv_delanuay_GC_grid(multiviewParams* _mp, mv_prematch_cams* _pc)
+    mv_delanuay_GC_grid(MultiViewParams* _mp, PreMatchCams* _pc)
         : mv_delanuay_GC(_mp, _pc)
     {}
 

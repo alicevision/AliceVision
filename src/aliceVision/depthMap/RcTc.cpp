@@ -7,7 +7,7 @@
 #include <aliceVision/structures/StaticVector.hpp>
 #include <aliceVision/common/common.hpp>
 
-RcTc::RcTc(multiviewParams* _mp, PlaneSweepingCuda* _cps)
+RcTc::RcTc(MultiViewParams* _mp, PlaneSweepingCuda* _cps)
 {
     cps = _cps;
     mp = _mp;

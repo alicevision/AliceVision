@@ -15,17 +15,17 @@
 class Mesh_refine : public Mesh
 {
 public:
-    multiviewParams* mp;
-    mv_prematch_cams* pc;
+    MultiViewParams* mp;
+    PreMatchCams* pc;
     std::string tmpDir;
     std::string meshDepthMapsDir;
     std::string tmpDirOld;
     StaticVector<StaticVector<int>*>* ptsCams;
-    mv_images_cache* ic;
+    ImagesCache* ic;
     PlaneSweepingCuda* cps;
     RcTc* prt;
 
-    Mesh_refine(multiviewParams* _mp, mv_prematch_cams* _pc, std::string _tmpDir = "");
+    Mesh_refine(MultiViewParams* _mp, PreMatchCams* _pc, std::string _tmpDir = "");
     ~Mesh_refine();
 
     void smoothDepthMapsAdaptiveByImages(StaticVector<int>* usedCams);

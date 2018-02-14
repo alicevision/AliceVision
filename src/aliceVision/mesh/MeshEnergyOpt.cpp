@@ -9,7 +9,7 @@
 
 namespace bfs = boost::filesystem;
 
-MeshEnergyOpt::MeshEnergyOpt(multiviewParams* _mp)
+MeshEnergyOpt::MeshEnergyOpt(MultiViewParams* _mp)
     : MeshAnalyze(_mp)
 {
 //    tmpDir = mp->mip->mvDir + "meshEnergyOpt/";

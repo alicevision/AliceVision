@@ -237,7 +237,7 @@ extern void ps_colorExtractionPushPull(CudaHostMemoryHeap<uchar4, 2>* bmp_hmh, i
                                        bool verbose);
 
 */
-void cps_fillCamera(cameraStruct* cam, int c, multiviewParams* mp, float** H, int scale)
+void cps_fillCamera(cameraStruct* cam, int c, MultiViewParams* mp, float** H, int scale)
 {
     cam->scale = scale;
 
@@ -335,7 +335,7 @@ void cps_fillCamera(cameraStruct* cam, int c, multiviewParams* mp, float** H, in
     }
 }
 
-void cps_fillCameraData(mv_images_cache* ic, cameraStruct* cam, int c, multiviewParams* mp)
+void cps_fillCameraData(ImagesCache* ic, cameraStruct* cam, int c, MultiViewParams* mp)
 {
     // memcpyGrayImageFromFileToArr(cam->tex_hmh->getBuffer(), mp->indexes[c], mp->mip, true, 1, 0);
     // memcpyRGBImageFromFileToArr(
@@ -373,8 +373,8 @@ void cps_updateCamH(cameraStruct* cam, float** H)
     }
 }
 
-PlaneSweepingCuda::PlaneSweepingCuda(int _CUDADeviceNo, mv_images_cache* _ic, multiviewParams* _mp,
-                                         mv_prematch_cams* _pc, int _scales)
+PlaneSweepingCuda::PlaneSweepingCuda(int _CUDADeviceNo, ImagesCache* _ic, MultiViewParams* _mp,
+                                         PreMatchCams* _pc, int _scales)
 {
     CUDADeviceNo = _CUDADeviceNo;
 
@@ -1065,7 +1065,7 @@ bool PlaneSweepingCuda::refinePixelsAllFine(StaticVector<Color>* pxsnormals, Sta
     return true;
 }
 
-void loadRGBImage(multiviewParams* mp, CudaHostMemoryHeap<uchar4, 2>& rimg_hmh, int rc, int w, int h)
+void loadRGBImage(MultiViewParams* mp, CudaHostMemoryHeap<uchar4, 2>& rimg_hmh, int rc, int w, int h)
 {
     std::string imageFileName = mp->mip->mvDir + mp->mip->prefix + num2strFourDecimal(rc + 1) + "._c.png";
     IplImage* bmp = cvLoadImage(imageFileName.c_str());

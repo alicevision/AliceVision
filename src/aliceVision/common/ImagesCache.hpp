@@ -11,10 +11,10 @@
 #include <aliceVision/structures/StaticVector.hpp>
 #include <aliceVision/common/MultiViewParams.hpp>
 
-class mv_images_cache
+class ImagesCache
 {
 public:
-    const multiviewParams* mp;
+    const MultiViewParams* mp;
 
     int N_PRELOADED_IMAGES;
     Color** imgs;
@@ -27,11 +27,11 @@ public:
     int bandType;
     bool transposed;
 
-    mv_images_cache(const multiviewParams* _mp, int _bandType, bool _transposed = false);
-    mv_images_cache(const multiviewParams* _mp, int _bandType, std::vector<std::string>& _imagesNames,
+    ImagesCache(const MultiViewParams* _mp, int _bandType, bool _transposed = false);
+    ImagesCache(const MultiViewParams* _mp, int _bandType, std::vector<std::string>& _imagesNames,
                     bool _transposed = false);
     void initIC(int _bandType, std::vector<std::string>& _imagesNames, bool _transposed);
-    ~mv_images_cache();
+    ~ImagesCache();
 
     int getPixelId(int x, int y, int imgid);
     void refreshData(int camId);

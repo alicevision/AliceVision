@@ -14,8 +14,8 @@
 class VoxelsGrid
 {
 public:
-    multiviewParams* mp;
-    mv_prematch_cams* pc;
+    MultiViewParams* mp;
+    PreMatchCams* pc;
 
     Voxel voxelDim;
     Point3d space[8]; // TODO FACA: array
@@ -25,7 +25,7 @@ public:
     bool doVisualize;
 
     VoxelsGrid();
-    VoxelsGrid(const Voxel& dimmensions, Point3d* _space, multiviewParams* _mp, mv_prematch_cams* _pc,
+    VoxelsGrid(const Voxel& dimmensions, Point3d* _space, MultiViewParams* _mp, PreMatchCams* _pc,
                const std::string& _spaceRootDir, bool _doVisualize = false);
     ~VoxelsGrid();
 

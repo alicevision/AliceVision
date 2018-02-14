@@ -13,7 +13,7 @@
 
 #include <iostream>
 
-DepthSimMap::DepthSimMap(int _rc, multiviewParams* _mp, int _scale, int _step)
+DepthSimMap::DepthSimMap(int _rc, MultiViewParams* _mp, int _scale, int _step)
 {
     rc = _rc;
     mp = _mp;

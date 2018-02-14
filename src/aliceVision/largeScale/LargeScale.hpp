@@ -17,8 +17,8 @@
 class LargeScale
 {
 public:
-    multiviewParams* mp;
-    mv_prematch_cams* pc;
+    MultiViewParams* mp;
+    PreMatchCams* pc;
     std::string spaceFolderName;
     std::string spaceVoxelsFolderName;
     std::string spaceFileName;
@@ -27,7 +27,7 @@ public:
     int maxOcTreeDim;
     bool doVisualize;
 
-    LargeScale(multiviewParams* _mp, mv_prematch_cams* _pc, std::string _spaceFolderName);
+    LargeScale(MultiViewParams* _mp, PreMatchCams* _pc, std::string _spaceFolderName);
     ~LargeScale();
 
     std::string getSpaceCamsTracksDir();

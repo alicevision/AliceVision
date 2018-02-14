@@ -14,7 +14,7 @@ class MeshEnergyOpt : public MeshAnalyze
 public:
     std::string tmpDir;
 
-    MeshEnergyOpt(multiviewParams* _mp);
+    MeshEnergyOpt(MultiViewParams* _mp);
     ~MeshEnergyOpt();
 
     StaticVector<Point3d>* computeLaplacianPts();

@@ -65,10 +65,10 @@ int main(int argc, char* argv[])
     ALICEVISION_COUT("ini file: " << iniFilepath);
 
     // .ini parsing
-    multiviewInputParams mip(iniFilepath, "", "");
+    MultiViewInputParams mip(iniFilepath, "", "");
     const double simThr = mip._ini.get<double>("global.simThr", 0.0);
-    multiviewParams mp(mip.getNbCameras(), &mip, (float) simThr);
-    mv_prematch_cams pc(&mp);
+    MultiViewParams mp(mip.getNbCameras(), &mip, (float) simThr);
+    PreMatchCams pc(&mp);
 
     ALICEVISION_COUT("--- compute camera pairs");
     pc.precomputeIncidentMatrixCamsFromSeeds();

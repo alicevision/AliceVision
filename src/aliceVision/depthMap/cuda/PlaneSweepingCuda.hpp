@@ -54,8 +54,8 @@ public:
     int scales;
     int nbest;
 
-    multiviewParams* mp;
-    mv_prematch_cams* pc;
+    MultiViewParams* mp;
+    PreMatchCams* pc;
 
     int CUDADeviceNo;
     void** ps_texs_arr;
@@ -79,9 +79,9 @@ public:
     int varianceWSH;
 
     // float gammaC,gammaP;
-    mv_images_cache* ic;
+    ImagesCache* ic;
 
-    PlaneSweepingCuda(int _CUDADeviceNo, mv_images_cache* _ic, multiviewParams* _mp, mv_prematch_cams* _pc,
+    PlaneSweepingCuda(int _CUDADeviceNo, ImagesCache* _ic, MultiViewParams* _mp, PreMatchCams* _pc,
                         int _scales);
     ~PlaneSweepingCuda(void);
 

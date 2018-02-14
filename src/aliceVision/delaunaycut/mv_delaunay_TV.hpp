@@ -24,7 +24,7 @@ public:
 
     StaticVector<TV_cellInfo>* tvData;
 
-    mv_delanuay_TV(multiviewParams* _mp, mv_prematch_cams* _pc)
+    mv_delanuay_TV(MultiViewParams* _mp, PreMatchCams* _pc)
         : mv_delanuay_GC_grid(_mp, _pc)
     {}
 

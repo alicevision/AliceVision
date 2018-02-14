@@ -33,5 +33,5 @@ private:
     DepthSimMap* optimizeDepthSimMapCUDA(DepthSimMap* depthPixSizeMapVis, DepthSimMap* depthSimMapPhoto);
 };
 
-void refineDepthMaps(multiviewParams* mp, mv_prematch_cams* pc, const StaticVector<int>& cams);
-void refineDepthMaps(int CUDADeviceNo, multiviewParams* mp, mv_prematch_cams* pc, const StaticVector<int>& cams);
+void refineDepthMaps(MultiViewParams* mp, PreMatchCams* pc, const StaticVector<int>& cams);
+void refineDepthMaps(int CUDADeviceNo, MultiViewParams* mp, PreMatchCams* pc, const StaticVector<int>& cams);

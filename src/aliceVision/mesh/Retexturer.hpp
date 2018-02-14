@@ -65,15 +65,15 @@ public:
      * @param ptsCams visibilities of internal mesh's points
      * @return visibilities of new internal mesh's points
      */
-    StaticVector<StaticVector<int>*>* generateUVs(multiviewParams &mp, StaticVector<StaticVector<int> *> *ptsCams);
+    StaticVector<StaticVector<int>*>* generateUVs(MultiViewParams &mp, StaticVector<StaticVector<int> *> *ptsCams);
 
     /// Generate texture files for all texture atlases
-    void generateTextures(const multiviewParams& mp, StaticVector<StaticVector<int>*>* ptsCams,
+    void generateTextures(const MultiViewParams& mp, StaticVector<StaticVector<int>*>* ptsCams,
                           const bfs::path &outPath, EImageFileType textureFileType = EImageFileType::PNG);
 
     /// Generate texture files for the given texture atlas index
-    void generateTexture(const multiviewParams& mp, StaticVector<StaticVector<int>*>* ptsCams,
-                         size_t atlasID, mv_images_cache& imageCache,
+    void generateTexture(const MultiViewParams& mp, StaticVector<StaticVector<int>*>* ptsCams,
+                         size_t atlasID, ImagesCache& imageCache,
                          const bfs::path &outPath, EImageFileType textureFileType = EImageFileType::PNG);
 
     /// Save textured mesh as an OBJ + MTL file

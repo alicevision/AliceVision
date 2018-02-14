@@ -555,7 +555,7 @@ bool MeshClean::path::isWrongPt()
     return (nNewPtsNeededToAdd > 0);
 }
 
-MeshClean::MeshClean(multiviewParams* _mp)
+MeshClean::MeshClean(MultiViewParams* _mp)
     : Mesh()
 {
     mp = _mp;

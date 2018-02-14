@@ -16,7 +16,7 @@
 
 namespace bfs = boost::filesystem;
 
-ReconstructionPlan::ReconstructionPlan(Voxel& dimmensions, Point3d* space, multiviewParams* _mp, mv_prematch_cams* _pc,
+ReconstructionPlan::ReconstructionPlan(Voxel& dimmensions, Point3d* space, MultiViewParams* _mp, PreMatchCams* _pc,
                                        std::string _spaceRootDir)
     : VoxelsGrid(dimmensions, space, _mp, _pc, _spaceRootDir)
 {

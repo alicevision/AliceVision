@@ -97,7 +97,7 @@ void MeshEnergyOptPhotoMem::ptStat::addCamPtStat(camPtStat& cptst)
     }
 }
 
-MeshEnergyOptPhotoMem::MeshEnergyOptPhotoMem(multiviewParams* _mp, SemiGlobalMatchingParams* _sp,
+MeshEnergyOptPhotoMem::MeshEnergyOptPhotoMem(MultiViewParams* _mp, SemiGlobalMatchingParams* _sp,
                                                            const StaticVector<int>& _usedCams)
     : MeshEnergyOpt(_mp)
     , usedCams(_usedCams)

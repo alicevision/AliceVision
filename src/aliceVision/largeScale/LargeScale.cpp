@@ -12,7 +12,7 @@
 
 namespace bfs = boost::filesystem;
 
-LargeScale::LargeScale(multiviewParams* _mp, mv_prematch_cams* _pc, std::string _spaceFolderName)
+LargeScale::LargeScale(MultiViewParams* _mp, PreMatchCams* _pc, std::string _spaceFolderName)
   : mp(_mp)
   , pc(_pc)
   , spaceFolderName(_spaceFolderName)

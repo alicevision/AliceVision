@@ -13,7 +13,7 @@
 class MeshAnalyze : public MeshClean
 {
 public:
-    MeshAnalyze(multiviewParams* _mp);
+    MeshAnalyze(MultiViewParams* _mp);
     ~MeshAnalyze();
 
     Point3d getCotAlphaCotBetaCotGammaForTriangle(int i);

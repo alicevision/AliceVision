@@ -35,7 +35,7 @@ StaticVector<StaticVector<int>*>* getPtsCamsFromInfoFile(const std::string& file
     return out;
 }
 
-StaticVector<int>* getUsedCamsFromInfoFile(const std::string& fileNameInfo, multiviewParams* mp)
+StaticVector<int>* getUsedCamsFromInfoFile(const std::string& fileNameInfo, MultiViewParams* mp)
 {
     FILE* f = fopen(fileNameInfo.c_str(), "rb");
     int npts = 0;

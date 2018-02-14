@@ -47,11 +47,11 @@ public:
 class DepthSimMap
 {
 public:
-    multiviewParams* mp;
+    MultiViewParams* mp;
     int rc, w, h, scale, step;
     StaticVector<DepthSim>* dsm; //< depth similarity map
 
-    DepthSimMap(int rc, multiviewParams* _mp, int _scale, int _step);
+    DepthSimMap(int rc, MultiViewParams* _mp, int _scale, int _step);
     ~DepthSimMap(void);
 
     Point3d get3DPtOfPixel(const Pixel& pix, int pixScale, int rc);

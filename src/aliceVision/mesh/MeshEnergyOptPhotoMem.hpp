@@ -69,7 +69,7 @@ public:
     float sigma;
     float pixSizeRatioThr;
 
-    MeshEnergyOptPhotoMem(multiviewParams* _mp, SemiGlobalMatchingParams* _sp, const StaticVector<int>& _usedCams);
+    MeshEnergyOptPhotoMem(MultiViewParams* _mp, SemiGlobalMatchingParams* _sp, const StaticVector<int>& _usedCams);
     ~MeshEnergyOptPhotoMem();
 
     void allocatePtsStats();

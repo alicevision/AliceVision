@@ -6,7 +6,7 @@
 #include "MeshAnalyze.hpp"
 #include <aliceVision/structures/geometry.hpp>
 
-MeshAnalyze::MeshAnalyze(multiviewParams* _mp)
+MeshAnalyze::MeshAnalyze(MultiViewParams* _mp)
     : MeshClean(_mp)
 {}
 

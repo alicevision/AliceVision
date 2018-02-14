@@ -16,11 +16,11 @@
 class SemiGlobalMatchingParams
 {
 public:
-    multiviewParams* mp;
-    mv_prematch_cams* pc;
+    MultiViewParams* mp;
+    PreMatchCams* pc;
     RcTc* prt;
     PlaneSweepingCuda* cps;
-    mv_images_cache* ic;
+    ImagesCache* ic;
     bool visualizeDepthMaps;
     bool visualizePartialDepthMaps;
     bool doSmooth;
@@ -56,7 +56,7 @@ public:
     bool useSilhouetteMaskCodedByColor;
     rgb silhouetteMaskColor;
 
-    SemiGlobalMatchingParams(multiviewParams* _mp, mv_prematch_cams* _pc, PlaneSweepingCuda* _cps);
+    SemiGlobalMatchingParams(MultiViewParams* _mp, PreMatchCams* _pc, PlaneSweepingCuda* _cps);
     ~SemiGlobalMatchingParams(void);
 
     DepthSimMap* getDepthSimMapFromBestIdVal(int w, int h, StaticVector<IdValue>* volumeBestIdVal, int scale,

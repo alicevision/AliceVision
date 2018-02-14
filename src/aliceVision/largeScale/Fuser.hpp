@@ -15,10 +15,10 @@
 class Fuser
 {
 public:
-    const multiviewParams* mp;
-    mv_prematch_cams* pc;
+    const MultiViewParams* mp;
+    PreMatchCams* pc;
 
-    Fuser(const multiviewParams* _mp, mv_prematch_cams* _pc);
+    Fuser(const MultiViewParams* _mp, PreMatchCams* _pc);
     ~Fuser(void);
 
     // minNumOfModals number of other cams including this cam ... minNumOfModals /in 2,3,... default 3
@@ -44,6 +44,6 @@ private:
     Universe* segmentDepthMap(float alpha, int rc, StaticVector<float>* depthMap,int* segMap, int scale);
 };
 
-std::string generateTempPtsSimsFiles(std::string tmpDir, multiviewParams* mp, bool addRandomNoise = false,
+std::string generateTempPtsSimsFiles(std::string tmpDir, MultiViewParams* mp, bool addRandomNoise = false,
                                      float percNoisePts = 0.0, int noisPixSizeDistHalfThr = 0);
-void deleteTempPtsSimsFiles(multiviewParams* mp, std::string depthMapsPtsSimsTmpDir);
+void deleteTempPtsSimsFiles(MultiViewParams* mp, std::string depthMapsPtsSimsTmpDir);

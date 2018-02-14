@@ -14,7 +14,7 @@
 
 namespace bfs = boost::filesystem;
 
-SemiGlobalMatchingParams::SemiGlobalMatchingParams(multiviewParams* _mp, mv_prematch_cams* _pc, PlaneSweepingCuda* _cps)
+SemiGlobalMatchingParams::SemiGlobalMatchingParams(MultiViewParams* _mp, PreMatchCams* _pc, PlaneSweepingCuda* _cps)
 {
     mp = _mp;
     pc = _pc;
