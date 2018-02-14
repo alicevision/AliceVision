@@ -11,7 +11,7 @@
 #include <aliceVision/structures/Voxel.hpp>
 #include <aliceVision/common/common.hpp>
 #include <aliceVision/common/PreMatchCams.hpp>
-#include <aliceVision/delaunaycut/mv_delaunay_types.hpp>
+#include <aliceVision/delaunayCut/delaunayGraphCutTypes.hpp>
 #include <aliceVision/largeScale/VoxelsGrid.hpp>
 #include <aliceVision/mesh/Mesh.hpp>
 
@@ -24,12 +24,9 @@
 #include <set>
 
 
-class mv_delaunay_GC
+class DelaunayGraphCut
 {
 public:
-    MultiViewParams* mp;
-    PreMatchCams* pc;
-
     using VertexIndex = GEO::index_t;
     using CellIndex = GEO::index_t;
 
@@ -42,33 +39,50 @@ public:
         {}
 
         CellIndex cellIndex = GEO::NO_CELL;
-        VertexIndex localVertexIndex = GEO::NO_VERTEX; /// local opposite vertex index
+        /// local opposite vertex index
+        VertexIndex localVertexIndex = GEO::NO_VERTEX;
     };
 
+    MultiViewParams* mp;
+    PreMatchCams* pc;
+
+    GEO::Delaunay_var _tetrahedralization;
+    /// 3D points coordinates
+    std::vector<Point3d> _verticesCoords;
+    /// Information attached to each vertex
+    std::vector<GC_vertexInfo> _verticesAttr;
+    /// Information attached to each cell
+    std::vector<GC_cellInfo> _cellsAttr;
+    /// isFull info per cell: true is full / false is empty
+    std::vector<bool> _cellIsFull;
+
+    std::vector<int> _camsVertexes;
+    std::vector<std::vector<CellIndex>> _neighboringCellsPerVertex;
+    bool btest;
+    bool saveTemporaryBinFiles;
+
+    static const GEO::index_t NO_TETRAHEDRON = GEO::NO_CELL;
+
+    DelaunayGraphCut(MultiViewParams* _mp, PreMatchCams* _pc);
+    virtual ~DelaunayGraphCut();
+
     /// Get absolute opposite vertex index
-    VertexIndex getOppositeVertexIndex(const Facet& f) const
+    inline VertexIndex getOppositeVertexIndex(const Facet& f) const
     {
         return _tetrahedralization->cell_vertex(f.cellIndex, f.localVertexIndex);
     }
     /// Get absolute vertex index
-    VertexIndex getVertexIndex(const Facet& f, int i) const
+    inline VertexIndex getVertexIndex(const Facet& f, int i) const
     {
         return _tetrahedralization->cell_vertex(f.cellIndex, ((f.localVertexIndex + i + 1) % 4));
     }
-    GEO::Delaunay_var _tetrahedralization;
-    std::vector<Point3d> _verticesCoords; /// 3D points coordinates
-    std::vector<GC_vertexInfo> _verticesAttr; /// Information attached to each vertex
-    std::vector<GC_cellInfo> _cellsAttr; /// Information attached to each cell
-    std::vector<bool> _cellIsFull; /// isFull info per cell: true is full / false is empty
 
-    std::vector<int> _camsVertexes;
-    std::vector<std::vector<CellIndex>> _neighboringCellsPerVertex;
+    inline std::size_t getNbVertices() const
+    {
+        return _verticesAttr.size();
+    }
 
-    static const GEO::index_t NO_TETRAHEDRON = GEO::NO_CELL;
-
-    std::size_t getNbVertices() const { return _verticesAttr.size(); }
-
-    GEO::index_t nearestVertexInCell(GEO::index_t cellIndex, const Point3d& p) const
+    inline GEO::index_t nearestVertexInCell(GEO::index_t cellIndex, const Point3d& p) const
     {
         GEO::signed_index_t result = NO_TETRAHEDRON;
         double d = std::numeric_limits<double>::max();
@@ -87,7 +101,7 @@ public:
         return result;
     }
 
-    GEO::index_t locateNearestVertex(const Point3d& p) const
+    inline GEO::index_t locateNearestVertex(const Point3d& p) const
     {
         if(_tetrahedralization->nb_vertices() == 0)
             return GEO::NO_VERTEX;
@@ -115,7 +129,7 @@ public:
         // return ci < 0 || ci > getNbVertices();
     }
 
-    Facet mirrorFacet(const Facet& f) const
+    inline Facet mirrorFacet(const Facet& f) const
     {
         std::set<VertexIndex> facetVertices;
         facetVertices.insert(getVertexIndex(f, 0));
@@ -139,6 +153,7 @@ public:
         }
         return out;
     }
+
     void updateVertexToCellsCache()
     {
         _neighboringCellsPerVertex.clear();
@@ -186,12 +201,6 @@ public:
             return GEO::NO_CELL;
         return localCells[lvi];
     }
-
-    bool btest;
-    bool saveTemporaryBinFiles;
-
-    mv_delaunay_GC(MultiViewParams* _mp, PreMatchCams* _pc);
-    virtual ~mv_delaunay_GC();
 
     void initVertices();
     void computeDelaunay();
@@ -346,7 +355,7 @@ public:
 };
 
 
-inline bool mv_delaunay_GC::nearestNeighCellToTheCamOnTheRay(const Point3d& camC, Point3d& out_p, int tetrahedron, Facet& out_f1,
+inline bool DelaunayGraphCut::nearestNeighCellToTheCamOnTheRay(const Point3d& camC, Point3d& out_p, int tetrahedron, Facet& out_f1,
                                                       Facet& out_f2, Point3d& out_lpi) const
 {
     out_f1.cellIndex = GEO::NO_CELL;
@@ -364,7 +373,7 @@ inline bool mv_delaunay_GC::nearestNeighCellToTheCamOnTheRay(const Point3d& camC
     return false;
 }
 
-inline bool mv_delaunay_GC::farestNeighCellToTheCamOnTheRay(Point3d& camC, Point3d& p, int tetrahedron, Facet& f1,
+inline bool DelaunayGraphCut::farestNeighCellToTheCamOnTheRay(Point3d& camC, Point3d& p, int tetrahedron, Facet& f1,
                                                      Facet& f2, Point3d& lpi) const
 {
     f1.cellIndex = GEO::NO_CELL;
@@ -383,7 +392,7 @@ inline bool mv_delaunay_GC::farestNeighCellToTheCamOnTheRay(Point3d& camC, Point
     return false;
 }
 
-inline mv_delaunay_GC::Facet mv_delaunay_GC::getFacetInFrontVertexOnTheRayToTheCam(int vertexIndex,
+inline DelaunayGraphCut::Facet DelaunayGraphCut::getFacetInFrontVertexOnTheRayToTheCam(int vertexIndex,
                                                                                int cam) const
 {
     // if (btest) {

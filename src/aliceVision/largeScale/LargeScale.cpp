@@ -6,7 +6,7 @@
 #include "LargeScale.hpp"
 #include <aliceVision/common/common.hpp>
 #include <aliceVision/common/fileIO.hpp>
-#include <aliceVision/delaunaycut/mv_delaunay_GC.hpp>
+#include <aliceVision/delaunayCut/DelaunayGraphCut.hpp>
 
 #include <boost/filesystem.hpp>
 

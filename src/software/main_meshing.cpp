@@ -5,8 +5,8 @@
 
 #include <aliceVision/structures/Point3d.hpp>
 #include <aliceVision/structures/StaticVector.hpp>
-#include <aliceVision/delaunaycut/mv_delaunay_GC.hpp>
-#include <aliceVision/delaunaycut/mv_delaunay_meshSmooth.hpp>
+#include <aliceVision/delaunayCut/DelaunayGraphCut.hpp>
+#include <aliceVision/delaunayCut/meshPostProcessing.hpp>
 #include <aliceVision/largeScale/ReconstructionPlan.hpp>
 #include <aliceVision/depthMap/RefineRc.hpp>
 #include <aliceVision/common/fileIO.hpp>
@@ -198,7 +198,7 @@ int main(int argc, char* argv[])
             StaticVector<int> voxelNeighs(rp.voxels->size() / 8);
             for(int i = 0; i < rp.voxels->size() / 8; i++)
                 voxelNeighs.push_back(i);
-            mv_delaunay_GC delaunayGC(lsbase.mp, lsbase.pc);
+            DelaunayGraphCut delaunayGC(lsbase.mp, lsbase.pc);
             StaticVector<Point3d>* hexahsToExcludeFromResultingMesh = nullptr;
             Point3d* hexah = &lsbase.space[0];
             delaunayGC.reconstructVoxel(hexah, &voxelNeighs, outDirectory.string()+"/", lsbase.getSpaceCamsTracksDir(), false, hexahsToExcludeFromResultingMesh,

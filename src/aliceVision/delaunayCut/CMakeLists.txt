@@ -1,22 +1,18 @@
 # Headers
 set(delaunayCut_files_headers
-  mv_delaunay_GC.hpp
-  mv_delaunay_helpers.hpp
-  mv_delaunay_meshSmooth.hpp
-  mv_delaunay_types.hpp
-  hallucinations.hpp
+  DelaunayGraphCut.hpp
+  delaunayGraphCutTypes.hpp
   MaxFlow_CSR.hpp
   MaxFlow_AdjList.hpp
+  meshPostProcessing.hpp
 )
 
 # Sources
 set(delaunayCut_files_sources
-  mv_delaunay_GC.cpp
-  mv_delaunay_helpers.cpp
-  mv_delaunay_meshSmooth.cpp
-  hallucinations.cpp
+  DelaunayGraphCut.cpp
   MaxFlow_CSR.cpp
   MaxFlow_AdjList.cpp
+  meshPostProcessing.cpp
 )
 
 add_library(aliceVision_delaunaycut

@@ -8,8 +8,8 @@
 #include <aliceVision/common/common.hpp>
 #include <aliceVision/common/fileIO.hpp>
 #include <aliceVision/mesh/plySaver.hpp>
-#include <aliceVision/delaunaycut/mv_delaunay_GC.hpp>
-#include <aliceVision/delaunaycut/mv_delaunay_meshSmooth.hpp>
+#include <aliceVision/delaunayCut/DelaunayGraphCut.hpp>
+#include <aliceVision/delaunayCut/meshPostProcessing.hpp>
 #include <aliceVision/largeScale/VoxelsGrid.hpp>
 
 #include <boost/filesystem.hpp>
@@ -466,7 +466,7 @@ void reconstructAccordingToOptimalReconstructionPlan(int gl, LargeScale* ls)
         // if (FileExists(testFn)==false)
         //{
         StaticVector<int>* voxelNeighs = rp->getNeigboursIds(inflateFactor, id, true);
-        mv_delaunay_GC* dgc = new mv_delaunay_GC(ls->mp, ls->pc);
+        DelaunayGraphCut* dgc = new DelaunayGraphCut(ls->mp, ls->pc);
         dgc->reconstructVoxel(hexah, voxelNeighs, folderName, ls->getSpaceCamsTracksDir(), false,
                               hexahsToExcludeFromResultingMesh, (VoxelsGrid*)rp, ls->getSpaceSteps());
         delete dgc;
@@ -506,7 +506,7 @@ void reconstructSpaceAccordingToVoxelsArray(const std::string& voxelsArrayFileNa
         if(!FileExists(meshBinFilepath))
         {
             StaticVector<int>* voxelsIds = rp->voxelsIdsIntersectingHexah(&(*voxelsArray)[i * 8]);
-            mv_delaunay_GC delaunayGC(ls->mp, ls->pc);
+            DelaunayGraphCut delaunayGC(ls->mp, ls->pc);
             Point3d* hexah = &(*voxelsArray)[i * 8];
             delaunayGC.reconstructVoxel(hexah, voxelsIds, folderName, ls->getSpaceCamsTracksDir(), false,
                                   hexahsToExcludeFromResultingMesh, (VoxelsGrid*)rp, ls->getSpaceSteps());

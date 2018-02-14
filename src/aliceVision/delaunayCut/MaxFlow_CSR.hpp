@@ -11,11 +11,9 @@
 #include <boost/graph/adjacency_list.hpp>
 #include <boost/graph/compressed_sparse_row_graph.hpp>
 #include <boost/graph/boykov_kolmogorov_max_flow.hpp>
-
 #include <boost/container/flat_map.hpp>
 
 #include <iostream>
-
 
 /**
  * @brief Maxflow computation based on a compressed sparse row graph reprensentation.
@@ -35,8 +33,8 @@ public:
         boost::directedS,
         boost::no_property, // VertexProperty
         boost::no_property, // EdgeProperty
-        unsigned int, // Vertex
-        unsigned int // EdgeIndex
+        unsigned int,       // Vertex
+        unsigned int        // EdgeIndex
         >::edge_descriptor;
 
     struct Vertex {
@@ -62,10 +60,10 @@ public:
     };
     using Graph = boost::compressed_sparse_row_graph<
         boost::directedS,
-        Vertex, // VertexProperty
-        Edge, // EdgeProperty
+        Vertex,       // VertexProperty
+        Edge,         // EdgeProperty
         unsigned int, // Vertex
-        unsigned int // EdgeIndex
+        unsigned int  // EdgeIndex
         >;
     using vertex_descriptor = typename Graph::vertex_descriptor;
     using vertex_size_type = typename Graph::vertices_size_type;

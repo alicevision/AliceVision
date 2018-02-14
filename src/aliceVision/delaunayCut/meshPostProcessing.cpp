@@ -3,11 +3,8 @@
 // v. 2.0. If a copy of the MPL was not distributed with this file,
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
-#include "mv_delaunay_meshSmooth.hpp"
-#include "mv_delaunay_GC.hpp"
-
+#include "meshPostProcessing.hpp"
 #include <aliceVision/depthMap/cuda/PlaneSweepingCuda.hpp>
-#include <aliceVision/delaunaycut/hallucinations.hpp>
 #include <aliceVision/mesh/MeshEnergyOptPhotoMem.hpp>
 #include <aliceVision/depthMap/SemiGlobalMatchingParams.hpp>
 #include <aliceVision/common/ImagesCache.hpp>
@@ -18,6 +15,24 @@
 #include <boost/filesystem/operations.hpp>
 
 namespace bfs = boost::filesystem;
+
+void filterLargeEdgeTriangles(Mesh* me, float avelthr)
+{
+    float averageEdgeLength = me->computeAverageEdgeLength();
+
+    StaticVector<int>* trisIdsToStay = new StaticVector<int>(me->tris->size());
+    for(int i = 0; i < me->tris->size(); i++)
+    {
+        float triMaxEdgelength = me->computeTriangleMaxEdgeLength(i);
+        if(triMaxEdgelength < averageEdgeLength * avelthr)
+        {
+            trisIdsToStay->push_back(i);
+        }
+    }
+    me->letJustTringlesIdsInMesh(trisIdsToStay);
+
+    delete trisIdsToStay;
+}
 
 void meshPostProcessing(Mesh*& inout_mesh, StaticVector<StaticVector<int>*>*& inout_ptsCams, StaticVector<int>& usedCams,
                       MultiViewParams& mp, PreMatchCams& pc,
@@ -35,6 +50,7 @@ void meshPostProcessing(Mesh*& inout_mesh, StaticVector<StaticVector<int>*>*& in
 
     const auto doRemoveHugeTriangles =
             mp.mip->_ini.get<bool>("hallucinationsFiltering.doRemoveHugeTriangles", false);
+
     if(doRemoveHugeTriangles)
     {
         filterLargeEdgeTriangles(

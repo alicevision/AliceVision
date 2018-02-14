@@ -10,7 +10,6 @@
 #include <aliceVision/mesh/Mesh.hpp>
 
 class Point3d;
-class mv_delaunay_GC;
 class PreMatchCams;
 
 void meshPostProcessing(Mesh*& inout_mesh, StaticVector<StaticVector<int>*>*& inout_ptsCams, StaticVector<int>& usedCams,

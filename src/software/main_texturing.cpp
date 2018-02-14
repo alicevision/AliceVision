@@ -7,8 +7,8 @@
 #include <aliceVision/common/fileIO.hpp>
 #include <aliceVision/mesh/meshVisibility.hpp>
 #include <aliceVision/mesh/Retexturer.hpp>
-#include <aliceVision/delaunaycut/mv_delaunay_GC.hpp>
-#include <aliceVision/delaunaycut/mv_delaunay_meshSmooth.hpp>
+#include <aliceVision/delaunayCut/DelaunayGraphCut.hpp>
+#include <aliceVision/delaunayCut/meshPostProcessing.hpp>
 #include <aliceVision/largeScale/ReconstructionPlan.hpp>
 #include <aliceVision/depthMap/RefineRc.hpp>
 

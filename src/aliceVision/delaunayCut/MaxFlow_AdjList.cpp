@@ -5,7 +5,6 @@
 
 #include "MaxFlow_AdjList.hpp"
 
-
 void MaxFlow_AdjList::printStats() const
 {
     std::cout << "nb vertices: " << _graph.m_vertices.size() << ", capacity: " << _graph.m_vertices.capacity() << std::endl;

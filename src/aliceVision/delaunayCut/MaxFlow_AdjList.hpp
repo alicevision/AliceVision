@@ -13,7 +13,6 @@
 
 #include <iostream>
 
-
 /**
  * @brief Maxflow computation based on a standard Adjacency List graph reprensentation.
  *
@@ -26,10 +25,10 @@ public:
     using ValueType = float;
 
     using Traits = boost::adjacency_list_traits<
-                boost::vecS, // OutEdgeListS
-                boost::vecS, // VertexListS
+                boost::vecS,  // OutEdgeListS
+                boost::vecS,  // VertexListS
                 boost::directedS,
-                boost::vecS // EdgeListS
+                boost::vecS   // EdgeListS
                 >;
     using edge_descriptor = typename Traits::edge_descriptor;
     using vertex_descriptor = typename Traits::vertex_descriptor;
@@ -39,13 +38,13 @@ public:
         ValueType residual{};
         edge_descriptor reverse;
     };
-    using Graph = boost::adjacency_list<boost::vecS, // OutEdgeListS
-                                        boost::vecS, // VertexListS
+    using Graph = boost::adjacency_list<boost::vecS,        // OutEdgeListS
+                                        boost::vecS,        // VertexListS
                                         boost::directedS,
                                         boost::no_property, // VertexProperty
-                                        Edge, // EdgeProperty
+                                        Edge,               // EdgeProperty
                                         boost::no_property, // GraphProperty
-                                        boost::vecS // EdgeListS
+                                        boost::vecS         // EdgeListS
                                         >;
     using VertexIterator = typename boost::graph_traits<Graph>::vertex_iterator;
 

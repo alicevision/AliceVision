@@ -7,7 +7,7 @@
 #include <aliceVision/structures/Pixel.hpp>
 #include <aliceVision/common/fileIO.hpp>
 #include <aliceVision/mesh/plyLoader.hpp>
-#include <aliceVision/delaunaycut/mv_delaunay_types.hpp>
+#include <aliceVision/delaunayCut/delaunayGraphCutTypes.hpp>
 #include <aliceVision/omp.hpp>
 
 #include <boost/filesystem.hpp>
