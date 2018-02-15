@@ -64,11 +64,20 @@ set(depthMap_cuda_files_sources
 )
 source_group("depthMap_cuda" FILES ${depthMap_cuda_files_sources})
 
-cuda_add_library(aliceVision_depthMap
-  ${depthMap_files_headers}
-  ${depthMap_files_sources}
-  ${depthMap_cuda_files_sources}
-)
+if(BUILD_SHARED_LIBS)
+  cuda_add_library(aliceVision_depthMap
+    SHARED ${depthMap_files_headers}
+           ${depthMap_files_sources}
+           ${depthMap_cuda_files_sources}
+    OPTIONS --compiler-options "-fPIC"
+  )
+else()
+  cuda_add_library(aliceVision_depthMap
+    ${depthMap_files_headers}
+    ${depthMap_files_sources}
+    ${depthMap_cuda_files_sources}
+  )
+endif()
 
 target_include_directories(aliceVision_depthMap
   PUBLIC $<BUILD_INTERFACE:${ALICEVISION_INCLUDE_DIR}>
@@ -85,4 +94,9 @@ target_link_libraries(aliceVision_depthMap
 
 set_property(TARGET aliceVision_depthMap
   PROPERTY FOLDER AliceVision
+)
+
+install(TARGETS aliceVision_depthMap
+  DESTINATION lib
+  EXPORT aliceVision-targets
 )

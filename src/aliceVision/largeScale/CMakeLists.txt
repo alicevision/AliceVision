@@ -38,3 +38,8 @@ target_link_libraries(aliceVision_largeScale
 set_property(TARGET aliceVision_largeScale
   PROPERTY FOLDER AliceVision
 )
+
+install(TARGETS aliceVision_largeScale
+  DESTINATION lib
+  EXPORT aliceVision-targets
+)

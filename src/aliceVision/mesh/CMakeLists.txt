@@ -45,3 +45,8 @@ target_link_libraries(aliceVision_mesh
 set_property(TARGET aliceVision_mesh
   PROPERTY FOLDER AliceVision
 )
+
+install(TARGETS aliceVision_mesh
+  DESTINATION lib
+  EXPORT aliceVision-targets
+)

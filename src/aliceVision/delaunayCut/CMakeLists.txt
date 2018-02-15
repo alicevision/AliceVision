@@ -39,3 +39,8 @@ target_link_libraries(aliceVision_delaunaycut
 set_property(TARGET aliceVision_delaunaycut
   PROPERTY FOLDER AliceVision
 )
+
+install(TARGETS aliceVision_delaunaycut
+  DESTINATION lib
+  EXPORT aliceVision-targets
+)

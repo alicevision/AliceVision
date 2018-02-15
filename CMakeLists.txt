@@ -3,6 +3,7 @@ cmake_minimum_required(VERSION 3.4)
 project(aliceVisionMVS LANGUAGES CXX C)
 
 # options
+option(ALICEVISION_BUILD_SHARED "Build AliceVision shared libs" OFF)
 option(ALICEVISION_USE_OPENMP "Enable OpenMP parallelization" ON)
 
 # C++11
@@ -22,6 +23,13 @@ set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
 # if cmake version < 3.10 use our hacked version of FindCUDA:
 if(${CMAKE_MAJOR_VERSION}.${CMAKE_MINOR_VERSION} VERSION_LESS 3.10)
   set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_CURRENT_SOURCE_DIR}/cmake/compatibilityCUDA)
+endif()
+
+# Set shared or static mode
+if(ALICEVISION_BUILD_SHARED)
+  set(BUILD_SHARED_LIBS ON)
+elseif()
+  set(BUILD_SHARED_LIBS OFF)
 endif()
 
 # ZLIB

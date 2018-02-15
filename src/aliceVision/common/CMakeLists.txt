@@ -35,3 +35,8 @@ target_link_libraries(aliceVision_common
 set_property(TARGET aliceVision_common
   PROPERTY FOLDER AliceVision
 )
+
+install(TARGETS aliceVision_common
+  DESTINATION lib
+  EXPORT aliceVision-targets
+)
