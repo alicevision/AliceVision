@@ -5,11 +5,12 @@
 
 #include <aliceVision/structures/Point3d.hpp>
 #include <aliceVision/structures/StaticVector.hpp>
+#include <aliceVision/common/common.hpp>
+#include <aliceVision/common/fileIO.hpp>
 #include <aliceVision/delaunayCut/DelaunayGraphCut.hpp>
 #include <aliceVision/delaunayCut/meshPostProcessing.hpp>
 #include <aliceVision/largeScale/ReconstructionPlan.hpp>
 #include <aliceVision/depthMap/RefineRc.hpp>
-#include <aliceVision/common/fileIO.hpp>
 
 #include <boost/program_options.hpp>
 #include <boost/filesystem.hpp>
@@ -167,6 +168,7 @@ int main(int argc, char* argv[])
             saveArrayOfArraysToFile<int>((outDirectory/"meshPtsCamsFromDGC.bin").string(), ptsCams);
             deleteArrayOfArrays<int>(&ptsCams);
         }
+        break;
         case eSingleBlock:
         {
             ALICEVISION_COUT("--- meshing partitioning: single block");
@@ -224,7 +226,9 @@ int main(int argc, char* argv[])
 
             delete mesh;
         }
+        break;
         case eUndefined:
+        default:
             throw std::invalid_argument("Partitioning not defined");
     }
 
