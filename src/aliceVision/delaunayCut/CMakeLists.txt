@@ -4,7 +4,6 @@ set(delaunayCut_files_headers
   delaunayGraphCutTypes.hpp
   MaxFlow_CSR.hpp
   MaxFlow_AdjList.hpp
-  meshPostProcessing.hpp
 )
 
 # Sources
@@ -12,7 +11,6 @@ set(delaunayCut_files_sources
   DelaunayGraphCut.cpp
   MaxFlow_CSR.cpp
   MaxFlow_AdjList.cpp
-  meshPostProcessing.cpp
 )
 
 add_library(aliceVision_delaunayCut
@@ -31,7 +29,6 @@ target_link_libraries(aliceVision_delaunayCut
          aliceVision_common
          aliceVision_mesh
          aliceVision_largeScale
-         aliceVision_depthMap
          Geogram::geogram
          ${Boost_LIBRARIES}
 )

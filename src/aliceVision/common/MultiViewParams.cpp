@@ -399,12 +399,6 @@ float MultiViewParams::getCamsMinPixelSize(const Point3d& x0, StaticVector<int>&
     return minPixSize;
 }
 
-bool MultiViewParams::isPixelInCutOut(const Pixel* pix, const Pixel* lu, const Pixel* rd, int d, int camId) const
-{
-    return ((pix->x >= std::max(lu->x, d)) && (pix->x <= std::min(rd->x, mip->getWidth(camId) - 1 - d)) &&
-            (pix->y >= std::max(lu->y, d)) && (pix->y <= std::min(rd->y, mip->getHeight(camId) - 1 - d)));
-}
-
 bool MultiViewParams::isPixelInImage(const Pixel& pix, int d, int camId) const
 {
     return ((pix.x >= d) && (pix.x < mip->getWidth(camId) - d) && (pix.y >= d) && (pix.y < mip->getHeight(camId) - d));

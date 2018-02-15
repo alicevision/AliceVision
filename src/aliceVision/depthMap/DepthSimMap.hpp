@@ -77,10 +77,7 @@ public:
     void saveToImage(std::string pngFileName, float simThr);
     void save(int rc, StaticVector<int>* tcams);
     void load(int rc, int fromScale);
-
     void saveRefine(int rc, std::string depthMapFileName, std::string simMapFileName);
-    bool loadRefine(std::string depthMapFileName, std::string simMapFileName);
-    bool loadRefine(std::string depthMapFileName, float defaultSim);
 
     float getCellSmoothStep(int rc, const int cellId);
     float getCellSmoothStep(int rc, const Pixel& cell);

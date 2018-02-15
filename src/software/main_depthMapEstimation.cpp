@@ -4,11 +4,11 @@
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
 #include <aliceVision/structures/StaticVector.hpp>
-#include <aliceVision/delaunayCut/DelaunayGraphCut.hpp>
-#include <aliceVision/delaunayCut/meshPostProcessing.hpp>
-#include <aliceVision/largeScale/ReconstructionPlan.hpp>
+#include <aliceVision/common/common.hpp>
+#include <aliceVision/common/MultiViewParams.hpp>
+#include <aliceVision/common/PreMatchCams.hpp>
 #include <aliceVision/depthMap/RefineRc.hpp>
-#include <aliceVision/common/fileIO.hpp>
+#include <aliceVision/depthMap/SemiGlobalMatchingRc.hpp>
 
 #include <boost/program_options.hpp>
 #include <boost/filesystem.hpp>

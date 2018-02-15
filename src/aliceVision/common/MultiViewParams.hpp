@@ -175,7 +175,6 @@ public:
     float getCamsMinPixelSize(const Point3d& x0, std::vector<unsigned short>* tcams) const;
     float getCamsMinPixelSize(const Point3d& x0, StaticVector<int>& tcams) const;
 
-    bool isPixelInCutOut(const Pixel* pix, const Pixel* lu, const Pixel* rd, int d, int camId) const;
     bool isPixelInImage(const Pixel& pix, int d, int camId) const;
     bool isPixelInImage(const Pixel& pix, int camId) const;
     bool isPixelInImage(const Point2d& pix, int camId) const;

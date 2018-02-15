@@ -160,8 +160,6 @@ public:
     bool isTriangleAngleAtVetexObtuse(int vertexIdInTriangle, int triId);
     bool isTriangleObtuse(int triId);
 
-    void filterObtuseTriangles();
-
 public:
     float computeTriangleProjectionArea(triangle_proj& tp);
     float computeTriangleArea(int idTri);
@@ -192,9 +190,6 @@ public:
                             StaticVector<Mesh::triangle>* tris1);
     void subdivideMeshCase3(int i, StaticVector<Pixel>* edgesi, Pixel& neptIdEdgeId1, Pixel& neptIdEdgeId2,
                             Pixel& neptIdEdgeId3, StaticVector<Mesh::triangle>* tris1);
-
-    bool isPointVisibleInRcAndTc(int idPt, StaticVector<StaticVector<int>*>* ptsCams, int rc, int tc,
-                                 const MultiViewParams* mp);
 
     StaticVector<StaticVector<int>*>* computeTrisCams(const MultiViewParams* mp, std::string tmpDir);
     StaticVector<StaticVector<int>*>* computeTrisCamsFromPtsCams(StaticVector<StaticVector<int>*>* ptsCams) const;

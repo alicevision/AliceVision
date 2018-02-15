@@ -4,13 +4,11 @@
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
 #include "meshPostProcessing.hpp"
-#include <aliceVision/depthMap/cuda/PlaneSweepingCuda.hpp>
-#include <aliceVision/mesh/MeshEnergyOptPhotoMem.hpp>
-#include <aliceVision/depthMap/SemiGlobalMatchingParams.hpp>
-#include <aliceVision/common/ImagesCache.hpp>
+#include <aliceVision/structures/geometry.hpp>
 #include <aliceVision/structures/Point3d.hpp>
 #include <aliceVision/structures/StaticVector.hpp>
 #include <aliceVision/common/PreMatchCams.hpp>
+#include <aliceVision/mesh/MeshEnergyOpt.hpp>
 
 #include <boost/filesystem/operations.hpp>
 
@@ -109,12 +107,7 @@ void meshPostProcessing(Mesh*& inout_mesh, StaticVector<StaticVector<int>*>*& in
     {
         printf("Cleaning mesh\n");
 
-        int bandType = 0;
-        ImagesCache* ic = new ImagesCache(&mp, bandType, true);
-        PlaneSweepingCuda* cps = nullptr; // new PlaneSweepingCuda(mp.CUDADeviceNo, ic, &mp, &pc, 1);
-        SemiGlobalMatchingParams* sp = new SemiGlobalMatchingParams(&mp, &pc, cps);
-
-        MeshEnergyOptPhotoMem* meOpt = new MeshEnergyOptPhotoMem(&mp, sp, usedCams);
+        MeshEnergyOpt* meOpt = new MeshEnergyOpt(&mp);
         meOpt->addMesh(inout_mesh);
         delete inout_mesh;
 
@@ -203,42 +196,6 @@ void meshPostProcessing(Mesh*& inout_mesh, StaticVector<StaticVector<int>*>*& in
                 meOpt->saveToObj(resultFolderName + "mesh_smoothed.obj");
         }
 
-        bool doLaplacianSmoothMesh =
-            mp.mip->_ini.get<bool>("meshEnergyOpt.doLaplacianSmoothMesh", false);
-        if(doLaplacianSmoothMesh)
-        {
-            // No support for "ptsCanMove"
-            printf("Laplacian smoothing mesh\n");
-            StaticVector<StaticVector<int>*>* ptsNei = meOpt->getPtsNeighPtsOrdered();
-            for(int iter = 0; iter < 2; iter++)
-            {
-                meOpt->laplacianSmoothPts(ptsNei);
-            }
-            deleteArrayOfArrays<int>(&ptsNei);
-
-            if(exportDebug)
-                meOpt->saveToObj(resultFolderName + "mesh_laplacianSmoothed.obj");
-        }
-
-        bool doOptimizeMesh =
-            mp.mip->_ini.get<bool>("meshEnergyOpt.doOptimizeMesh", false);
-        if(doOptimizeMesh)
-        {
-            printf("Optimize mesh\n");
-            StaticVector<StaticVector<int>*>* camsPts = convertObjectsCamsToCamsObjects(&mp, inout_ptsCams);
-
-            printf("Optimizing mesh\n");
-            int niter = mp.mip->_ini.get<int>("meshEnergyOpt.optimizeNbIterations", 50);
-            meOpt->allocatePtsStats();
-            meOpt->initPtsStats(camsPts);
-            meOpt->optimizePhoto(niter, ptsCanMove, camsPts);
-
-            deleteArrayOfArrays<int>(&camsPts);
-
-            if(exportDebug)
-                meOpt->saveToObj(resultFolderName + "mesh_optimized.obj");
-        }
-
         delete ptsCanMove;
         meOpt->deallocateCleaningAttributes();
 
@@ -246,10 +203,6 @@ void meshPostProcessing(Mesh*& inout_mesh, StaticVector<StaticVector<int>*>*& in
         inout_mesh->addMesh(meOpt);
 
         delete meOpt;
-
-        delete ic;
-        delete cps;
-        delete sp;
     }
     printfElapsedTime(timer, "Mesh post-processing ");
     std::cout << "meshPostProcessing done" << std::endl;

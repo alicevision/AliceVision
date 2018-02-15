@@ -4,13 +4,11 @@
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
 #include <aliceVision/structures/image.hpp>
-#include <aliceVision/common/fileIO.hpp>
+#include <aliceVision/common/common.hpp>
+#include <aliceVision/common/MultiViewParams.hpp>
+#include <aliceVision/mesh/Mesh.hpp>
+#include <aliceVision/mesh/Texturing.hpp>
 #include <aliceVision/mesh/meshVisibility.hpp>
-#include <aliceVision/mesh/Retexturer.hpp>
-#include <aliceVision/delaunayCut/DelaunayGraphCut.hpp>
-#include <aliceVision/delaunayCut/meshPostProcessing.hpp>
-#include <aliceVision/largeScale/ReconstructionPlan.hpp>
-#include <aliceVision/depthMap/RefineRc.hpp>
 
 #include <boost/program_options.hpp>
 #include <boost/filesystem.hpp>
@@ -104,7 +102,7 @@ int main(int argc, char* argv[])
     const double simThr = mip._ini.get<double>("global.simThr", 0.0);
     MultiViewParams mp(mip.getNbCameras(), &mip, (float) simThr);
 
-    Retexturer mesh;
+    Texturing mesh;
     mesh.texParams = texParams;
     mesh.me = new Mesh();
 

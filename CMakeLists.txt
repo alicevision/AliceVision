@@ -2,9 +2,23 @@ message("CMake version: ${CMAKE_MAJOR_VERSION}.${CMAKE_MINOR_VERSION}")
 cmake_minimum_required(VERSION 3.4)
 project(aliceVisionMVS LANGUAGES CXX C)
 
+# Trilean option
+function(trilean_option NAME DESCRIPTION DEFAULT_VALUE)
+  set(${NAME} ${DEFAULT_VALUE} CACHE STRING ${DESCRIPTION})
+  set(TRILEAN_VALUES "AUTO;ON;OFF")
+
+  set_property(CACHE ${NAME} PROPERTY STRINGS "${TRILEAN_VALUES}")
+  if("${${NAME}}" IN_LIST TRILEAN_VALUES)
+    message(STATUS "** ${NAME}: '${${NAME}}'")
+  else()
+    message(FATAL_ERROR "A trilean option only accept the values: '${TRILEAN_VALUES}'")
+  endif()
+endfunction()
+
 # options
 option(ALICEVISION_BUILD_SHARED "Build AliceVision shared libs" OFF)
 option(ALICEVISION_USE_OPENMP "Enable OpenMP parallelization" ON)
+trilean_option(ALICEVISION_USE_CUDA "Enable CUDA" ON)
 
 # C++11
 set(CMAKE_CXX_STANDARD 11)
@@ -79,53 +93,62 @@ else()
 endif()
 
 # CUDA
-find_package(CUDA 7.0)
-
-if(NOT CUDA_FOUND)
-  message(FATAL_ERROR "Could not find CUDA >= 7.0")
-endif()
-
-set(CUDA_SEPARABLE_COMPILATION ON)
-
-message("Build Mode: ${CMAKE_BUILD_TYPE}")
-
-set(CUDA_NVCC_FLAGS_DEBUG   "${CUDA_NVCC_FLAGS_DEBUG};-G;-g")
-set(CUDA_NVCC_FLAGS_RELEASE "${CUDA_NVCC_FLAGS_RELEASE};-O3")
-
-set(CUDA_NVCC_FLAGS         "${CUDA_NVCC_FLAGS};-gencode;arch=compute_20,code=sm_20")
-set(CUDA_NVCC_FLAGS         "${CUDA_NVCC_FLAGS};-gencode;arch=compute_30,code=sm_30")
-set(CUDA_NVCC_FLAGS         "${CUDA_NVCC_FLAGS};-gencode;arch=compute_35,code=sm_35")
-set(CUDA_NVCC_FLAGS         "${CUDA_NVCC_FLAGS};-gencode;arch=compute_50,code=sm_50")
-set(CUDA_NVCC_FLAGS         "${CUDA_NVCC_FLAGS};-gencode;arch=compute_52,code=sm_52")
-set(CUDA_NVCC_FLAGS         "${CUDA_NVCC_FLAGS};-gencode=arch=compute_52,code=compute_52")
-
-if(NOT CUDA_VERSION VERSION_LESS 8.0) # cuda >= 8.0
-  set(CUDA_NVCC_FLAGS         "${CUDA_NVCC_FLAGS};-gencode=arch=compute_60,code=sm_60")
-  set(CUDA_NVCC_FLAGS         "${CUDA_NVCC_FLAGS};-gencode=arch=compute_61,code=sm_61")
-  set(CUDA_NVCC_FLAGS         "${CUDA_NVCC_FLAGS};-gencode=arch=compute_62,code=sm_62")
-endif()
-
-if(NOT CUDA_VERSION VERSION_LESS 7.0) # cuda >= 7.0
-  set(CUDA_NVCC_FLAGS         "${CUDA_NVCC_FLAGS};-std=c++11")
-endif()
-
-# default stream legacy implies that the 0 stream synchronizes all streams
-set(CUDA_NVCC_FLAGS         "${CUDA_NVCC_FLAGS};--default-stream;legacy")
-# default stream per-thread implies that each host thread has one non-synchronizing 0-stream
-# set(CUDA_NVCC_FLAGS         "${CUDA_NVCC_FLAGS};--default-stream;per-thread")
-# print local memory usage per kernel: -Xptxas;-v
-# CUDA >= 7.5: -Xptxas;--warn-on-local-memory-usage;-Xptxas;--warn-on-spills
-message(STATUS "CUDA Version is ${CUDA_VERSION}")
-if(NOT CUDA_VERSION VERSION_LESS 7.5) # cuda >= 7.5
-  if(UNIX)
-    set(CUDA_NVCC_FLAGS         "${CUDA_NVCC_FLAGS};-D_FORCE_INLINES")
+if(ALICEVISION_USE_CUDA STREQUAL "OFF")
+  set(ALICEVISION_HAVE_CUDA 0)
+else() # ON OR AUTO
+  find_package(CUDA 7.0)
+  if(CUDA_FOUND)
+    set(ALICEVISION_HAVE_CUDA 1)
+    message(STATUS "CUDA found.")
+  elseif(ALICEVISION_USE_CUDA STREQUAL "ON")
+    set(ALICEVISION_HAVE_CUDA 0)
+    message(SEND_ERROR "Failed to find CUDA (>= 7.0).")
+  else()
+    set(ALICEVISION_HAVE_CUDA 0)
   endif()
-  set(CUDA_NVCC_FLAGS         "${CUDA_NVCC_FLAGS};-Xptxas;--warn-on-local-memory-usage")
-  set(CUDA_NVCC_FLAGS         "${CUDA_NVCC_FLAGS};-Xptxas;--warn-on-spills")
 endif()
 
-# library required for CUDA dynamic parallelism, forgotten by CMake 3.4
-cuda_find_library_local_first(CUDA_CUDADEVRT_LIBRARY cudadevrt "\"cudadevrt\" library")
+if(ALICEVISION_HAVE_CUDA)
+  set(CUDA_SEPARABLE_COMPILATION ON)
+  message("Build Mode: ${CMAKE_BUILD_TYPE}")
+
+  set(CUDA_NVCC_FLAGS_DEBUG   "${CUDA_NVCC_FLAGS_DEBUG};-G;-g")
+  set(CUDA_NVCC_FLAGS_RELEASE "${CUDA_NVCC_FLAGS_RELEASE};-O3")
+  set(CUDA_NVCC_FLAGS         "${CUDA_NVCC_FLAGS};-gencode;arch=compute_20,code=sm_20")
+  set(CUDA_NVCC_FLAGS         "${CUDA_NVCC_FLAGS};-gencode;arch=compute_30,code=sm_30")
+  set(CUDA_NVCC_FLAGS         "${CUDA_NVCC_FLAGS};-gencode;arch=compute_35,code=sm_35")
+  set(CUDA_NVCC_FLAGS         "${CUDA_NVCC_FLAGS};-gencode;arch=compute_50,code=sm_50")
+  set(CUDA_NVCC_FLAGS         "${CUDA_NVCC_FLAGS};-gencode;arch=compute_52,code=sm_52")
+  set(CUDA_NVCC_FLAGS         "${CUDA_NVCC_FLAGS};-gencode=arch=compute_52,code=compute_52")
+
+  if(NOT CUDA_VERSION VERSION_LESS 8.0) # cuda >= 8.0
+    set(CUDA_NVCC_FLAGS         "${CUDA_NVCC_FLAGS};-gencode=arch=compute_60,code=sm_60")
+    set(CUDA_NVCC_FLAGS         "${CUDA_NVCC_FLAGS};-gencode=arch=compute_61,code=sm_61")
+    set(CUDA_NVCC_FLAGS         "${CUDA_NVCC_FLAGS};-gencode=arch=compute_62,code=sm_62")
+  endif()
+
+  if(NOT CUDA_VERSION VERSION_LESS 7.0) # cuda >= 7.0
+    set(CUDA_NVCC_FLAGS         "${CUDA_NVCC_FLAGS};-std=c++11")
+  endif()
+
+  # default stream legacy implies that the 0 stream synchronizes all streams
+  set(CUDA_NVCC_FLAGS         "${CUDA_NVCC_FLAGS};--default-stream;legacy")
+  # default stream per-thread implies that each host thread has one non-synchronizing 0-stream
+  # set(CUDA_NVCC_FLAGS         "${CUDA_NVCC_FLAGS};--default-stream;per-thread")
+  # print local memory usage per kernel: -Xptxas;-v
+  # CUDA >= 7.5: -Xptxas;--warn-on-local-memory-usage;-Xptxas;--warn-on-spills
+  message(STATUS "CUDA Version is ${CUDA_VERSION}")
+  if(NOT CUDA_VERSION VERSION_LESS 7.5) # cuda >= 7.5
+    if(UNIX)
+      set(CUDA_NVCC_FLAGS         "${CUDA_NVCC_FLAGS};-D_FORCE_INLINES")
+    endif()
+    set(CUDA_NVCC_FLAGS         "${CUDA_NVCC_FLAGS};-Xptxas;--warn-on-local-memory-usage")
+    set(CUDA_NVCC_FLAGS         "${CUDA_NVCC_FLAGS};-Xptxas;--warn-on-spills")
+  endif()
+
+  # library required for CUDA dynamic parallelism, forgotten by CMake 3.4
+  cuda_find_library_local_first(CUDA_CUDADEVRT_LIBRARY cudadevrt "\"cudadevrt\" library")
+endif()
 
 # set the directory where all the generated files (config etc) will be placed
 set(generatedDir "${CMAKE_CURRENT_BINARY_DIR}/generated")

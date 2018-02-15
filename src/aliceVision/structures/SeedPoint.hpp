@@ -60,19 +60,4 @@ public:
     {
         return (op.sim > param.op.sim);
     }
-
-    bool isThereCam(int c)
-    {
-        bool isThere = false;
-        int i = 0;
-        while((i < (int)cams.size()) && (isThere == false))
-        {
-            if(cams[i] == c)
-            {
-                isThere = true;
-            };
-            i++;
-        };
-        return isThere;
-    }
 };

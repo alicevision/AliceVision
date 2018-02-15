@@ -1978,26 +1978,6 @@ float Mesh::computeAverageEdgeLength() const
     return (s / n);
 }
 
-bool Mesh::isPointVisibleInRcAndTc(int idPt, StaticVector<StaticVector<int>*>* ptsCams, int rc, int tc,
-                                      const MultiViewParams*  /*mp*/)
-{
-    bool isVisibleInRc = false;
-    bool isVisibleInTc = false;
-    for(int j = 0; j < sizeOfStaticVector<int>((*ptsCams)[idPt]); j++)
-    {
-        if((*(*ptsCams)[idPt])[j] == rc)
-        {
-            isVisibleInRc = true;
-        }
-        if((*(*ptsCams)[idPt])[j] == tc)
-        {
-            isVisibleInTc = true;
-        }
-    }
-
-    return (isVisibleInRc && isVisibleInTc);
-}
-
 void Mesh::letJustTringlesIdsInMesh(StaticVector<int>* trisIdsToStay)
 {
     // printf("letJustTringlesIdsInMesh %i\n",trisIdsToStay->size());

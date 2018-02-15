@@ -12,15 +12,13 @@
 class MeshEnergyOpt : public MeshAnalyze
 {
 public:
-    std::string tmpDir;
-
     MeshEnergyOpt(MultiViewParams* _mp);
     ~MeshEnergyOpt();
 
-    StaticVector<Point3d>* computeLaplacianPtsParallel();
     bool optimizeSmooth(float lambda, float epsilon, int type, int niter, StaticVectorBool* ptsCanMove);
 
 private:
+    StaticVector<Point3d>* computeLaplacianPtsParallel();
     void updateGradientParallel(float lambda, float epsilon, int type, const Point3d& LU, const Point3d& RD,
                                 StaticVectorBool* ptsCanMove);
 };

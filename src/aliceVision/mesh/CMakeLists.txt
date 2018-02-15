@@ -4,9 +4,9 @@ set(mesh_files_headers
   MeshAnalyze.hpp
   MeshClean.hpp
   MeshEnergyOpt.hpp
-  MeshEnergyOptPhotoMem.hpp
+  meshPostProcessing.hpp
   meshVisibility.hpp
-  Retexturer.hpp
+  Texturing.hpp
   UVAtlas.hpp
 )
 
@@ -16,9 +16,9 @@ set(mesh_files_sources
   MeshAnalyze.cpp
   MeshClean.cpp
   MeshEnergyOpt.cpp
-  MeshEnergyOptPhotoMem.cpp
+  meshPostProcessing.cpp
   meshVisibility.cpp
-  Retexturer.cpp
+  Texturing.cpp
   UVAtlas.cpp
 )
 
@@ -37,7 +37,6 @@ target_link_libraries(aliceVision_mesh
   PUBLIC aliceVision_structures
          aliceVision_common
          aliceVision_imageIO
-         aliceVision_depthMap
          Geogram::geogram
          ${Boost_FILESYSTEM_LIBRARIES}
 )

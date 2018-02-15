@@ -447,44 +447,6 @@ void DepthSimMap::saveRefine(int rc, std::string depthMapFileName, std::string s
     imageIO::writeImage(simMapFileName, width, height, simMap);
 }
 
-bool DepthSimMap::loadRefine(std::string depthMapFileName, std::string simMapFileName)
-{
-    int width;
-    int height;
-
-    std::vector<float> depthMap;
-    std::vector<float> simMap;
-
-    imageIO::readImage(depthMapFileName, width, height, depthMap);
-    imageIO::readImage(simMapFileName, width, height, simMap);
-
-    for(int i = 0; i < dsm->size(); ++i)
-    {
-        (*dsm)[i].depth = depthMap.at(i);
-        (*dsm)[i].sim = simMap.at(i);
-    }
-
-    return true;
-}
-
-bool DepthSimMap::loadRefine(std::string depthMapFileName, float defaultSim)
-{
-  int width;
-  int height;
-
-  std::vector<float> depthMap;
-
-  imageIO::readImage(depthMapFileName, width, height, depthMap);
-
-  for(int i = 0; i < dsm->size(); ++i)
-  {
-      (*dsm)[i].depth = depthMap.at(i);
-      (*dsm)[i].sim = defaultSim;
-  }
-
-  return true;
-}
-
 float DepthSimMap::getCellSmoothStep(int rc, const int cellId)
 {
     return getCellSmoothStep(rc, Pixel(cellId % w, cellId / w));

@@ -3,7 +3,7 @@
 // v. 2.0. If a copy of the MPL was not distributed with this file,
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
-#include "Retexturer.hpp"
+#include "Texturing.hpp"
 #include <aliceVision/structures/Color.hpp>
 #include <aliceVision/structures/geometry.hpp>
 #include <aliceVision/structures/Pixel.hpp>
@@ -51,7 +51,7 @@ Point3d barycentricToCartesian(const Point3d* triangle, const Point2d& coords)
 }
 
 
-StaticVector<StaticVector<int>*>* Retexturer::generateUVs(MultiViewParams& mp, StaticVector<StaticVector<int>*>* ptsCams)
+StaticVector<StaticVector<int>*>* Texturing::generateUVs(MultiViewParams& mp, StaticVector<StaticVector<int>*>* ptsCams)
 {
     if(!me)
         throw std::runtime_error("Can't generate UVs without a mesh");
@@ -161,7 +161,7 @@ StaticVector<StaticVector<int>*>* Retexturer::generateUVs(MultiViewParams& mp, S
     return updatedPointsCams;
 }
 
-void Retexturer::generateTextures(const MultiViewParams &mp, StaticVector<StaticVector<int> *> *ptsCams,
+void Texturing::generateTextures(const MultiViewParams &mp, StaticVector<StaticVector<int> *> *ptsCams,
                                  const boost::filesystem::path &outPath, EImageFileType textureFileType)
 {
     ImagesCache imageCache(&mp, 0, false);
@@ -198,7 +198,7 @@ struct AccuColor {
 };
 
 
-void Retexturer::generateTexture(const MultiViewParams& mp, StaticVector<StaticVector<int>*>* ptsCams,
+void Texturing::generateTexture(const MultiViewParams& mp, StaticVector<StaticVector<int>*>* ptsCams,
                                 size_t atlasID, ImagesCache& imageCache, const bfs::path& outPath, EImageFileType textureFileType)
 {
     if(atlasID >= _atlases.size())
@@ -381,7 +381,7 @@ void Retexturer::generateTexture(const MultiViewParams& mp, StaticVector<StaticV
 }
 
 
-void Retexturer::loadFromOBJ(const std::string& filename, bool flipNormals)
+void Texturing::loadFromOBJ(const std::string& filename, bool flipNormals)
 {
     // Load .obj
     if(!me->loadFromObjAscii(nmtls, &trisMtlIds,
@@ -405,7 +405,7 @@ void Retexturer::loadFromOBJ(const std::string& filename, bool flipNormals)
     }
 }
 
-void Retexturer::saveAsOBJ(const bfs::path& dir, const std::string& basename, EImageFileType textureFileType)
+void Texturing::saveAsOBJ(const bfs::path& dir, const std::string& basename, EImageFileType textureFileType)
 {
     std::cout << "- writing .obj and .mtl file" << std::endl;
 

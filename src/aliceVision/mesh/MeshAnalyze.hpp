@@ -16,29 +16,14 @@ public:
     MeshAnalyze(MultiViewParams* _mp);
     ~MeshAnalyze();
 
-    Point2d getCotAlphaijAndCotBetaij(int i, int j, StaticVector<int>* ptNeighPtsOrdered);
-    float AreaVor(int i, StaticVector<int>* ptNeighPtsOrdered);
-
     double getCotanOfAngle(Point3d& vo, Point3d& v1, Point3d& v2);
-    double getAngleFromCotan(Point3d& vo, Point3d& v1, Point3d& v2);
     double getRegionArea(int vertexIdInTriangle, int triId);
     int getVertexIdInTriangleForPtId(int ptId, int triId);
-
     bool getVertexMeanCurvatureNormal(int ptId, Point3d& Kh);
-    bool getVertexGaussianCurvature(int ptId, double& Kg);
     void getVertexPrincipalCurvatures(double Kh, double Kg, double& K1, double& K2);
-
     bool applyLaplacianOperator(int ptId, StaticVector<Point3d>* ptsToApplyLaplacianOp, Point3d& ln);
     bool getLaplacianSmoothingVector(int ptId, Point3d& ln);
     bool getBiLaplacianSmoothingVector(int ptId, StaticVector<Point3d>* ptsLaplacian, Point3d& tp);
-    bool getBiLaplacianSmoothingVectorAndPrincipalCurvatures(int ptId, StaticVector<Point3d>* ptsLaplacian,
-                                                             Point3d& smoothingVector,
-                                                             Point3d& smoothingVectorNormalized,
-                                                             Point3d& normalVectorNormalized,
-                                                             double &smoothingVectorSize, double& K1, double& K2,
-                                                             double& area, double& avNeighEdegeLenth);
-
     bool getMeanCurvAndLaplacianSmoothing(int ptId, Point3d& F, float epsilon);
-
     bool getVertexSurfaceNormal(int ptId, Point3d& N);
 };

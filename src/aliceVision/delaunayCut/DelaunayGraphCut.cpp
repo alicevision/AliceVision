@@ -4,17 +4,14 @@
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
 #include "DelaunayGraphCut.hpp"
-#include "meshPostProcessing.hpp"
-
-#include "MaxFlow_CSR.hpp"
-// #include "MaxFlow_AdjList.hpp"
-
-#include <aliceVision/common/fileIO.hpp>
+#include <aliceVision/delaunayCut/MaxFlow_CSR.hpp>
+// #include <aliceVision/delaunayCut/MaxFlow_AdjList.hpp>
+#include <aliceVision/structures/geometry.hpp>
 #include <aliceVision/structures/jetColorMap.hpp>
 #include <aliceVision/structures/Pixel.hpp>
 #include <aliceVision/structures/Point2d.hpp>
 #include <aliceVision/structures/Universe.hpp>
-#include <aliceVision/mesh/MeshEnergyOptPhotoMem.hpp>
+#include <aliceVision/common/fileIO.hpp>
 
 #include <boost/filesystem.hpp>
 #include <boost/filesystem/operations.hpp>

@@ -24,7 +24,7 @@ struct TexturingParams
     unsigned int downscale = 2;
 };
 
-struct Retexturer
+struct Texturing
 {
     TexturingParams texParams;
 
@@ -39,7 +39,7 @@ struct Retexturer
     /// texture atlas to 3D triangle ids
     std::vector<std::vector<int>> _atlases;
 
-    ~Retexturer()
+    ~Texturing()
     {
         delete trisMtlIds;
         delete uvCoords;

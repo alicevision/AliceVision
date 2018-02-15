@@ -3,11 +3,10 @@
 // v. 2.0. If a copy of the MPL was not distributed with this file,
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
-#include <aliceVision/delaunayCut/DelaunayGraphCut.hpp>
-#include <aliceVision/delaunayCut/meshPostProcessing.hpp>
-#include <aliceVision/largeScale/ReconstructionPlan.hpp>
-#include <aliceVision/depthMap/RefineRc.hpp>
+#include <aliceVision/common/common.hpp>
 #include <aliceVision/common/fileIO.hpp>
+#include <aliceVision/common/MultiViewParams.hpp>
+#include <aliceVision/common/PreMatchCams.hpp>
 
 #include <boost/program_options.hpp>
 #include <boost/filesystem.hpp>

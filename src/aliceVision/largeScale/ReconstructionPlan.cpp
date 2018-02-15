@@ -7,9 +7,9 @@
 #include <aliceVision/structures/Rgb.hpp>
 #include <aliceVision/common/common.hpp>
 #include <aliceVision/common/fileIO.hpp>
-#include <aliceVision/delaunayCut/DelaunayGraphCut.hpp>
-#include <aliceVision/delaunayCut/meshPostProcessing.hpp>
+#include <aliceVision/mesh/meshPostProcessing.hpp>
 #include <aliceVision/largeScale/VoxelsGrid.hpp>
+#include <aliceVision/delaunayCut/DelaunayGraphCut.hpp>
 
 #include <boost/filesystem.hpp>
 

@@ -55,8 +55,6 @@ int computeStep(MultiViewInputParams* mip, int scale, int maxWidth, int maxHeigh
 StaticVector<Point3d>* computeVoxels(const Point3d* space, const Voxel& dimensions);
 float getCGDepthFromSeeds(const MultiViewParams* mp, int rc); // TODO: require seeds vector as input param
 StaticVector<int>* createRandomArrayOfIntegers(int n);
-float sigmoidfcn(float zeroVal, float endVal, float sigwidth, float sigMid, float xval);
-
 
 int findNSubstrsInString(const std::string& str, const std::string& val);
 std::string num2str(int num);

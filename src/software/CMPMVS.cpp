@@ -6,11 +6,11 @@
 #include <aliceVision/structures/Point3d.hpp>
 #include <aliceVision/structures/StaticVector.hpp>
 #include <aliceVision/delaunayCut/DelaunayGraphCut.hpp>
-#include <aliceVision/delaunayCut/meshPostProcessing.hpp>
+#include <aliceVision/mesh/meshPostProcessing.hpp>
 #include <aliceVision/largeScale/ReconstructionPlan.hpp>
 #include <aliceVision/depthMap/RefineRc.hpp>
 #include <aliceVision/common/fileIO.hpp>
-#include <aliceVision/mesh/Retexturer.hpp>
+#include <aliceVision/mesh/Texturing.hpp>
 
 #include <boost/filesystem.hpp>
 
@@ -372,7 +372,7 @@ int main(int argc, char* argv[])
         cout << "--- texturing" << endl;
 
         // load mesh
-        Retexturer texMesh;
+        Texturing texMesh;
         texMesh.me = new Mesh();
         if(!texMesh.me->loadFromBin(mip.mvDir + "mesh.bin"))
         {

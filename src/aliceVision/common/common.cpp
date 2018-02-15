@@ -790,11 +790,6 @@ float getCGDepthFromSeeds(const MultiViewParams* mp, int rc)
     return midDepth;
 }
 
-float sigmoidfcn(float zeroVal, float endVal, float sigwidth, float sigMid, float xval)
-{
-    return zeroVal + (endVal - zeroVal) * (1.0f / (1.0f + exp(10.0f * ((xval - sigMid) / sigwidth))));
-}
-
 int findNSubstrsInString(const std::string& str, const std::string& val)
 {
     int last = 0;

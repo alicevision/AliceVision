@@ -10,7 +10,6 @@
 #include <aliceVision/structures/Universe.hpp>
 #include <aliceVision/structures/Voxel.hpp>
 #include <aliceVision/common/PreMatchCams.hpp>
-#include <aliceVision/depthMap/cuda/PlaneSweepingCuda.hpp>
 
 class Fuser
 {

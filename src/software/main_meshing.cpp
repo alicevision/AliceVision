@@ -6,11 +6,12 @@
 #include <aliceVision/structures/Point3d.hpp>
 #include <aliceVision/structures/StaticVector.hpp>
 #include <aliceVision/common/common.hpp>
-#include <aliceVision/common/fileIO.hpp>
-#include <aliceVision/delaunayCut/DelaunayGraphCut.hpp>
-#include <aliceVision/delaunayCut/meshPostProcessing.hpp>
+#include <aliceVision/common/MultiViewParams.hpp>
+#include <aliceVision/common/PreMatchCams.hpp>
+#include <aliceVision/mesh/meshPostProcessing.hpp>
+#include <aliceVision/largeScale/LargeScale.hpp>
 #include <aliceVision/largeScale/ReconstructionPlan.hpp>
-#include <aliceVision/depthMap/RefineRc.hpp>
+#include <aliceVision/delaunayCut/DelaunayGraphCut.hpp>
 
 #include <boost/program_options.hpp>
 #include <boost/filesystem.hpp>
@@ -136,7 +137,7 @@ int main(int argc, char* argv[])
             lsbase.generateSpace(maxPtsPerVoxel, ocTreeDim);
             std::string voxelsArrayFileName = lsbase.spaceFolderName + "hexahsToReconstruct.bin";
             StaticVector<Point3d>* voxelsArray = nullptr;
-            if(FileExists(voxelsArrayFileName))
+            if(bfs::exists(voxelsArrayFileName))
             {
                 // If already computed reload it.
                 ALICEVISION_COUT("Voxels array already computed, reload from file: " << voxelsArrayFileName);
