@@ -15,18 +15,18 @@ set(delaunayCut_files_sources
   meshPostProcessing.cpp
 )
 
-add_library(aliceVision_delaunaycut
+add_library(aliceVision_delaunayCut
   ${delaunayCut_files_headers}
   ${delaunayCut_files_sources}
 )
 
-target_include_directories(aliceVision_delaunaycut
+target_include_directories(aliceVision_delaunayCut
   PUBLIC $<BUILD_INTERFACE:${ALICEVISION_INCLUDE_DIR}>
          $<BUILD_INTERFACE:${generatedDir}>
          $<INSTALL_INTERFACE:include>
 )
 
-target_link_libraries(aliceVision_delaunaycut
+target_link_libraries(aliceVision_delaunayCut
   PUBLIC aliceVision_structures
          aliceVision_common
          aliceVision_mesh
@@ -36,11 +36,11 @@ target_link_libraries(aliceVision_delaunaycut
          ${Boost_LIBRARIES}
 )
 
-set_property(TARGET aliceVision_delaunaycut
+set_property(TARGET aliceVision_delaunayCut
   PROPERTY FOLDER AliceVision
 )
 
-install(TARGETS aliceVision_delaunaycut
+install(TARGETS aliceVision_delaunayCut
   DESTINATION lib
   EXPORT aliceVision-targets
 )
