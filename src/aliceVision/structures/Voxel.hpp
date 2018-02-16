@@ -5,6 +5,8 @@
 
 #pragma once
 
+#include <cmath>
+
 struct Voxel
 {
     union {
@@ -93,18 +95,18 @@ struct Voxel
             return Voxel(0, 0, 0);
 
         Voxel p;
-        p.x = (int)floor((float)x / (float)d + 0.5);
-        p.y = (int)floor((float)y / (float)d + 0.5);
-        p.z = (int)floor((float)z / (float)d + 0.5);
+        p.x = static_cast<int>(std::floor(static_cast<float>(x) / static_cast<float>(d) + 0.5f));
+        p.y = static_cast<int>(std::floor(static_cast<float>(y) / static_cast<float>(d) + 0.5f));
+        p.z = static_cast<int>(std::floor(static_cast<float>(z) / static_cast<float>(d) + 0.5f));
         return p;
     }
 
     float size() const
     {
-        float d = (float)(x * x + y * y + z * z);
+        float d = static_cast<float>(x * x + y * y + z * z);
         if(d == 0.0f)
             return 0.0f;
-        return sqrt(d);
+        return std::sqrt(d);
     }
 
     bool operator==(const Voxel& param) const
