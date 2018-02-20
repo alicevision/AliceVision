@@ -81,10 +81,9 @@ CMake Options
   We recommend: `git clone https://github.com/alicevision/opengv.git --branch=cmake_fix_install`
 
 * `ALICEVISION_USE_ALEMBIC` (default `AUTO`)
-  Build with Alembic file format support.
+  Build with Alembic file format support (required version >= 1.7).
   `-DAlembic_DIR:PATH=/path/to/alembic/install/lib/cmake/Alembic/` (where AlembicConfig.cmake can be found)
-  With old Alembic versions (<1.6), you need to set many variables: `ALEMBIC_ROOT`, `ALEMBIC_HDF5_ROOT`, `ALEMBIC_ILMBASE_ROOT`, `ALEMBIC_OPENEXR_ROOT`.
-  
+   
 * `ALICEVISION_USE_OIIO` (default: `AUTO`)
   Build code depending on OpenImageIO
   

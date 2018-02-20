@@ -337,21 +337,17 @@ set(LOG_LIB ${Boost_LOG_LIBRARY} ${Boost_LOG_SETUP_LIBRARY})
 if(ALICEVISION_USE_ALEMBIC STREQUAL "OFF")
   set(ALICEVISION_HAVE_ALEMBIC 0)
 else() # ON OR AUTO
-  find_package(Alembic)
+  find_package(Alembic 1.7.0 CONFIG)
 
-  if(ALEMBIC_FOUND)
+  if(Alembic_FOUND)
     set(ALICEVISION_HAVE_ALEMBIC 1)
-    message(STATUS "Alembic found.")
+    message(STATUS "Alembic version ${Alembic_VERSION} found.")
   elseif(ALICEVISION_USE_ALEMBIC STREQUAL "ON")
     set(ALICEVISION_HAVE_ALEMBIC 0)
     message(SEND_ERROR "Failed to find Alembic.")
   else()
     set(ALICEVISION_HAVE_ALEMBIC 0)
   endif()
-endif()
-
-if(ALICEVISION_HAVE_ALEMBIC)
-  include_directories(${ABC_INCLUDE_DIR})
 endif()
 
 # ==============================================================================
