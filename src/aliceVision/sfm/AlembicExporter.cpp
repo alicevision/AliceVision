@@ -148,7 +148,7 @@ void AlembicExporter::DataImpl::addCamera(const std::string& name,
   // set view metadata
   {
     std::vector<std::string> rawMetadata(view.getMetadata().size() * 2);
-    std::map<std::string, std::string>::const_iterator it = view.getMetadata().cbegin();
+    auto it = view.getMetadata().cbegin();
 
     for(std::size_t i = 0; i < rawMetadata.size(); i+=2)
     {
@@ -166,7 +166,7 @@ void AlembicExporter::DataImpl::addCamera(const std::string& name,
 
   if(isIntrinsicValid)
   {
-    const camera::Pinhole* pinhole = dynamic_cast<const camera::Pinhole*>(intrinsic);
+    const auto* pinhole = dynamic_cast<const camera::Pinhole*>(intrinsic);
     CameraSample camSample;
 
     // Use a common sensor width if we don't have this information.
