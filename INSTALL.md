@@ -73,6 +73,15 @@ AliceVision source tree contains some of the mandatory dependencies that are nee
 * For Eigen library, `EIGEN_INCLUDE_DIR_HINTS` can be passed pointing to the include directory, e.g.
   `-DEIGEN_INCLUDE_DIR_HINTS:PATH=/usr/local/include/eigen3`
 
+* For OpenEXR library, `OPENEXR_HOME` can be passed pointing to the install directory, e.g.
+  `-DOPENEXR_HOME:PATH=/path/to/openexr/install`
+
+* For OpenImageIO library, library and include dir paths can be passed, e.g.
+  `-DOPENIMAGEIO_LIBRARY_DIR_HINTS:PATH=/path/to/oiio/install/lib/`
+and `-DOPENIMAGEIO_INCLUDE_DIR:PATH=/path/to/oiio/install/include/`
+
+
+
 At the end of the cmake process, a report shows for each library which version (internal/external) will be used in the building process, e.g.:
 
 ```
@@ -96,12 +105,12 @@ CMake Options
 * `ALICEVISION_USE_OPENMP` (default `ON`)
   Use OpenMP parallelization (huge impact on performances)
 
-* `ALICEVISION_USE_CCTAG` (default `ON`)
+* `ALICEVISION_USE_CCTAG` (default: `AUTO`)
   Build with CCTag markers support.
   `-DCCTag_DIR:PATH=/path/to/cctag/install/lib/cmake/CCTag` (where CCTagConfig.cmake can be found)
 
 * `ALICEVISION_USE_OPENGV` (default `AUTO`)
-  Build with openGV for multi-cameras localization.
+  Enable use of OpenGV algorithms. Build with openGV for multi-cameras localization.
   `-DOPENGV_DIR:PATH=/path/to/opengv/install/` (where "include" and "lib" folders can be found)
   We recommend: `git clone https://github.com/alicevision/opengv.git --branch=cmake_fix_install`
 
@@ -113,14 +122,9 @@ CMake Options
 * `ALICEVISION_USE_OPENMP` (default: `AUTO`)
   Enable OpenMP parallelization
 
-* `ALICEVISION_USE_CCTAG` (default: `AUTO`)
-  Enable CCTAG markers
-  
 * `ALICEVISION_USE_POPSIFT` (default: `AUTO`)
-  Enable GPU SIFT implementation
-  
-* `ALICEVISION_USE_OPENGV` (default: `AUTO`)
-  Enable use of OpenGV algorithms
+  Enable GPU SIFT implementation.
+  `-DPopSift_DIR:PATH=/path/to/popsift/install/lib/cmake/PopSift` (where PopSiftConfig.cmake can be found)
   
 * `ALICEVISION_USE_OPENCV` (default: `OFF`)
   Build with openCV
