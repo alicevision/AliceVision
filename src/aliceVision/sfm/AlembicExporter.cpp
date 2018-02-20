@@ -90,8 +90,8 @@ void AlembicExporter::DataImpl::addCamera(const std::string& name,
   // set camera pose
   if(pose != nullptr)
   {
-    const Mat3 R = pose->rotation();
-    const Vec3 center = pose->center();
+    const Mat3& R = pose->rotation();
+    const Vec3& center = pose->center();
 
     // compensate translation with rotation
     // build transform matrix
@@ -363,7 +363,7 @@ void AlembicExporter::addLandmarks(const Landmarks& landmarks, bool withVisibili
   descTypes.reserve(landmarks.size());
 
   // For all the 3d points in the hash_map
-  for(const auto landmark : landmarks)
+  for(const auto& landmark : landmarks)
   {
     const Vec3& pt = landmark.second.X;
     const image::RGBColor& color = landmark.second.rgb;
@@ -397,7 +397,7 @@ void AlembicExporter::addLandmarks(const Landmarks& landmarks, bool withVisibili
   {
     std::vector<::uint32_t> visibilitySize;
     visibilitySize.reserve(positions.size());
-    for(const auto landmark : landmarks)
+    for(const auto& landmark : landmarks)
     {
       visibilitySize.emplace_back(landmark.second.observations.size());
     }
@@ -479,8 +479,8 @@ void AlembicExporter::addCameraKeyframe(const geometry::Pose3& pose,
                                         IndexT intrinsicId,
                                         float sensorWidth_mm)
 {
-  const aliceVision::Mat3 R = pose.rotation();
-  const aliceVision::Vec3 center = pose.center();
+  const aliceVision::Mat3& R = pose.rotation();
+  const aliceVision::Vec3& center = pose.center();
   // POSE
   // Compensate translation with rotation
   // Build transform matrix
