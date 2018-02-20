@@ -18,6 +18,8 @@
 #include <aliceVision/common/PreMatchCams.hpp>
 #include <aliceVision/depthMap/DepthSimMap.hpp>
 
+namespace aliceVision {
+
 class PlaneSweepingCuda
 {
 public:
@@ -154,3 +156,5 @@ public:
 };
 
 int listCUDADevices(bool verbose);
+
+} // namespace aliceVision

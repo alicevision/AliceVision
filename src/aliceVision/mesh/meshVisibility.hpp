@@ -8,6 +8,7 @@
 #include <aliceVision/mesh/Mesh.hpp>
 #include <aliceVision/structures/StaticVector.hpp>
 
+namespace aliceVision {
 namespace mesh {
 
 using PointVisibility = StaticVector<int>;
@@ -36,4 +37,5 @@ void remapMeshVisibilities(
     const Mesh& refMesh, const PointsVisibility& refPtsVisibilities,
     const Mesh& mesh, PointsVisibility& out_ptsVisibilities);
 
-}
+} // namespace mesh
+} // namespace aliceVision

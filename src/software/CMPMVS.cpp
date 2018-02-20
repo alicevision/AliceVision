@@ -17,8 +17,8 @@
 #include <bitset>
 
 using namespace std;
+using namespace aliceVision;
 namespace bfs = boost::filesystem;
-
 
 struct CommandLine
 {

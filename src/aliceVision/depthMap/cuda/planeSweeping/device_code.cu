@@ -1,24 +1,22 @@
-#ifndef DEVICE_CODE_CU
-#define DEVICE_CODE_CU
+// This file is part of the AliceVision project.
+// This Source Code Form is subject to the terms of the Mozilla Public License,
+// v. 2.0. If a copy of the MPL was not distributed with this file,
+// You can obtain one at https://mozilla.org/MPL/2.0/.
 
-#include "device_utils.cu"
+#pragma once
+
+#include <aliceVision/depthMap/cuda/planeSweeping/device_utils.cu>
 
 #include <math_constants.h>
 
-////////////////////////////////////////////////////////////////////////////////
+namespace aliceVision {
 
 // Global data handlers and parameters
 
-////////////////////////////////////////////////////////////////////////////////
-
 /*
-
 // defines
-
 texture<unsigned char, 2, cudaReadModeNormalizedFloat> rtex;
-
 texture<unsigned char, 2, cudaReadModeNormalizedFloat> ttex;
-
 */
 
 #define DCT_DIMENSION 7
@@ -1318,4 +1316,4 @@ __global__ void pushPull_Pull_kernel(uchar4* out, int out_p, int width, int heig
     }
 }
 
-#endif // DEVICE_CODE_CU
+} // namespace aliceVision

@@ -1,20 +1,22 @@
-#ifndef PLANE_SWEEPING_CU
-#define PLANE_SWEEPING_CU
+// This file is part of the AliceVision project.
+// This Source Code Form is subject to the terms of the Mozilla Public License,
+// v. 2.0. If a copy of the MPL was not distributed with this file,
+// You can obtain one at https://mozilla.org/MPL/2.0/.
 
 #include <aliceVision/depthMap/cuda/commonStructures.hpp>
 #include <aliceVision/depthMap/cuda/deviceCommon/device_color.cu>
 #include <aliceVision/depthMap/cuda/deviceCommon/device_patch_es.cu>
 #include <aliceVision/depthMap/cuda/deviceCommon/device_eig33.cu>
-//---#include <aliceVision/depthMap/cuda/patch_es/patch_es.cu>
-
-#include "device_code.cu"
-#include "device_code_refine.cu"
-#include "device_code_volume.cu"
-#include "device_code_fuse.cu"
+#include <aliceVision/depthMap/cuda/planeSweeping/device_code.cu>
+#include <aliceVision/depthMap/cuda/planeSweeping/device_code_refine.cu>
+#include <aliceVision/depthMap/cuda/planeSweeping/device_code_volume.cu>
+#include <aliceVision/depthMap/cuda/planeSweeping/device_code_fuse.cu>
 
 #include <math_constants.h>
 
 #include <algorithm>
+
+namespace aliceVision {
 
 //-----------------------------------------------------------------------------
 // Macro for checking cuda errors
@@ -66,7 +68,7 @@ void pr_printfDeviceMemoryInfo()
     cudaGetDevice(&CUDAdeviceNo);
 
     printf("Device %i memory - used: %f, free: %f, total: %f\n", CUDAdeviceNo, used, avail, total);
-};
+}
 
 float3 ps_getDeviceMemoryInfo()
 {
@@ -3363,6 +3365,6 @@ void ps_colorExtractionPushPull(CudaHostMemoryHeap<uchar4, 2>* bmp_hmh, int w, i
         delete pyramid_arr[i];
     };
     delete[] pyramid_arr;
-};
+}
 
-#endif // HOST_CODE_CU
+} // namespace aliceVision

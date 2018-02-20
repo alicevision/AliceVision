@@ -7,6 +7,8 @@
 
 #include <aliceVision/structures/Point3d.hpp>
 
+namespace aliceVision {
+
 struct Stat3d
 {
     double xsum = 0.0;
@@ -99,3 +101,5 @@ struct Stat3d
 private:
     static void eigen_decomposition(double A[3][3], double V0[], double V1[], double V2[], double d[]);
 };
+
+} // namespace aliceVision

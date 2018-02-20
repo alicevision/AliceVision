@@ -18,6 +18,8 @@
 #include <vector>
 #include <string>
 
+namespace aliceVision {
+
 enum class EFileType {
     P = 0,
     K = 1,
@@ -190,3 +192,5 @@ private:
     int winSizeHalf;
     int minWinSizeHalf;
 };
+
+} // namespace aliceVision

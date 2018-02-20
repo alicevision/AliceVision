@@ -11,6 +11,8 @@
 #include <aliceVision/structures/Voxel.hpp>
 #include <aliceVision/common/PreMatchCams.hpp>
 
+namespace aliceVision {
+
 class Fuser
 {
 public:
@@ -43,3 +45,5 @@ private:
 std::string generateTempPtsSimsFiles(std::string tmpDir, MultiViewParams* mp, bool addRandomNoise = false,
                                      float percNoisePts = 0.0, int noisPixSizeDistHalfThr = 0);
 void deleteTempPtsSimsFiles(MultiViewParams* mp, std::string depthMapsPtsSimsTmpDir);
+
+} // namespace aliceVision

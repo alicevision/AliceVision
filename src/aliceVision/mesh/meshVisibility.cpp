@@ -7,6 +7,7 @@
 
 #include <geogram/points/kd_tree.h>
 
+namespace aliceVision {
 namespace mesh {
 
 int getNearestVertices(const Mesh& refMesh, const Mesh& mesh, StaticVector<int>& out_nearestVertex)
@@ -57,4 +58,5 @@ void remapMeshVisibilities(
     std::cout << "remapMeshVisibility end" << std::endl;
 }
 
-}
+} // namespace mesh
+} // namespace aliceVision

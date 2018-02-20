@@ -11,6 +11,8 @@
 #include <boost/filesystem/operations.hpp>
 #include <boost/filesystem/path.hpp>
 
+namespace aliceVision {
+
 bool FileExists(const std::string& filePath)
 {
     return boost::filesystem::exists(filePath);
@@ -548,3 +550,5 @@ bool DeleteDirectory(const std::string& sPath)
     boost::filesystem::remove_all(sPath);
     return true;
 }
+
+} // namespace aliceVision

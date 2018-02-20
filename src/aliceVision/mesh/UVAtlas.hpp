@@ -10,6 +10,8 @@
 
 #include <vector>
 
+namespace aliceVision {
+
 class UVAtlas
 {
 public:
@@ -67,3 +69,5 @@ private:
     int _gutterSize;
     const Mesh& _mesh;
 };
+
+} // namespace aliceVision

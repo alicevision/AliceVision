@@ -9,6 +9,8 @@
 #include <aliceVision/common/MultiViewParams.hpp>
 #include <aliceVision/mesh/Mesh.hpp>
 
+namespace aliceVision {
+
 class Point3d;
 class PreMatchCams;
 
@@ -16,3 +18,5 @@ void meshPostProcessing(Mesh*& inout_mesh, StaticVector<StaticVector<int>*>*& in
                       MultiViewParams& mp, PreMatchCams& pc,
                       const std::string& resultFolderName,
                       StaticVector<Point3d>* hexahsToExcludeFromResultingMesh, Point3d* hexah);
+
+} // namespace aliceVision

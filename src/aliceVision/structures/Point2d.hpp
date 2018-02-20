@@ -7,6 +7,8 @@
 
 #include <cmath>
 
+namespace aliceVision {
+
 class Point2d
 {
 public:
@@ -86,3 +88,5 @@ inline double dot(const Point2d& p1, const Point2d& p2)
 {
     return p1.x * p2.x + p1.y * p2.y;
 }
+
+} // namespace aliceVision

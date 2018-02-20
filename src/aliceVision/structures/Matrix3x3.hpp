@@ -12,6 +12,7 @@
 
 #include <string>
 
+namespace aliceVision {
 
 class Matrix3x3
 {
@@ -343,3 +344,5 @@ inline Matrix3x3 diag3x3(double d1, double d2, double d3)
 
     return m;
 }
+
+} // namespace aliceVision

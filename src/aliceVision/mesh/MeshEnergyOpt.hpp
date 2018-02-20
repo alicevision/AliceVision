@@ -9,6 +9,8 @@
 #include <aliceVision/structures/StaticVector.hpp>
 #include <aliceVision/mesh/MeshAnalyze.hpp>
 
+namespace aliceVision {
+
 class MeshEnergyOpt : public MeshAnalyze
 {
 public:
@@ -22,3 +24,5 @@ private:
     void updateGradientParallel(float lambda, float epsilon, int type, const Point3d& LU, const Point3d& RD,
                                 StaticVectorBool* ptsCanMove);
 };
+
+} // namespace aliceVision

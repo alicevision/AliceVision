@@ -12,6 +12,8 @@
 
 #include <boost/filesystem.hpp>
 
+namespace aliceVision {
+
 namespace bfs = boost::filesystem;
 
 VoxelsGrid::VoxelsGrid()
@@ -675,3 +677,5 @@ void VoxelsGrid::getHexah(Point3d* hexahOut, const Voxel& LUi, const Voxel& RDi)
     hexahOut[6] = O + vvz + vvx + vvy;
     hexahOut[7] = O + vvz + vvy;
 }
+
+} // namespace aliceVision

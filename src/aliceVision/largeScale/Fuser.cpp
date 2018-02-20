@@ -19,6 +19,7 @@
 
 #include <iostream>
 
+namespace aliceVision {
 
 namespace bfs = boost::filesystem;
 
@@ -739,3 +740,5 @@ void deleteTempPtsSimsFiles(MultiViewParams* mp, std::string depthMapsPtsSimsTmp
     }
     DeleteDirectory(depthMapsPtsSimsTmpDir);
 }
+
+} // namespace aliceVision

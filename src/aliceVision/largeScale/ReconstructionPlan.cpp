@@ -13,6 +13,8 @@
 
 #include <boost/filesystem.hpp>
 
+namespace aliceVision {
+
 namespace bfs = boost::filesystem;
 
 ReconstructionPlan::ReconstructionPlan(Voxel& dimmensions, Point3d* space, MultiViewParams* _mp, PreMatchCams* _pc,
@@ -511,3 +513,4 @@ Mesh* joinMeshes(const std::string& voxelsArrayFileName, LargeScale* ls)
     return me;
 }
 
+} // namespace aliceVision

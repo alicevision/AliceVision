@@ -10,6 +10,8 @@
 #include <stdlib.h>
 #include <assert.h>
 
+namespace aliceVision {
+
 template <unsigned Dim> class CudaSizeBase
 {
 public:
@@ -627,3 +629,5 @@ struct ps_parameters
 
 #define MAX_PTS 500           // 500
 #define MAX_PATCH_PIXELS 2500 // 50*50
+
+} // namespace aliceVision

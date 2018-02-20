@@ -7,6 +7,8 @@
 #include <aliceVision/common/common.hpp>
 #include <aliceVision/common/fileIO.hpp>
 
+namespace aliceVision {
+
 int ImagesCache::getPixelId(int x, int y, int imgid)
 {
     if(!transposed)
@@ -163,3 +165,5 @@ rgb ImagesCache::getPixelValue(const Pixel& pix, int camId)
                static_cast<unsigned char>(floatRGB.g),
                static_cast<unsigned char>(floatRGB.b));
 }
+
+} // namespace aliceVision

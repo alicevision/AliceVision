@@ -5,6 +5,8 @@
 
 #include "jetColorMap.hpp"
 
+namespace aliceVision {
+
 static float jetr[64] = {0,      0,      0,      0,      0,      0,      0,      0,      0,      0,      0,
                          0,      0,      0,      0,      0,      0,      0,      0,      0,      0,      0,
                          0,      0,      0.0625, 0.1250, 0.1875, 0.2500, 0.3125, 0.3750, 0.4375, 0.5000, 0.5625,
@@ -62,3 +64,5 @@ Color getColorFromJetColorMap(float value)
     c.b = jetb[idx] * fractA + jetb[idx + 1] * fractB;
     return c;
 }
+
+} // namespace aliceVision

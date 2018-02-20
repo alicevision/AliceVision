@@ -8,6 +8,7 @@
 
 #include <cfloat>
 
+namespace aliceVision {
 
 double pointLineDistance3D(const Point3d& point, const Point3d& linePoint, const Point3d& lineVectNormalized)
 {
@@ -484,3 +485,5 @@ bool interectsTriangleTriangle(Point3d* tri1, Point3d* tri2)
     bool ok = (bool)tri_tri_intersect(tri1[0].m, tri1[1].m, tri1[2].m, tri2[0].m, tri2[1].m, tri2[2].m);
     return ok;
 }
+
+} // namespace aliceVision

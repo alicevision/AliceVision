@@ -6,6 +6,8 @@
 #include "SemiGlobalMatchingRcTc.hpp"
 #include <aliceVision/common/common.hpp>
 
+namespace aliceVision {
+
 SemiGlobalMatchingRcTc::SemiGlobalMatchingRcTc(StaticVector<float>* _rcTcDepths, int _rc, int _tc, int _scale, int _step, SemiGlobalMatchingParams* _sp,
                          StaticVectorBool* _rcSilhoueteMap)
 {
@@ -98,3 +100,5 @@ StaticVector<unsigned char>* SemiGlobalMatchingRcTc::computeDepthSimMapVolume(fl
 
     return volume;
 }
+
+} // namespace aliceVision

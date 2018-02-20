@@ -13,6 +13,8 @@
 
 #include <boost/filesystem.hpp>
 
+namespace aliceVision {
+
 namespace bfs = boost::filesystem;
 
 RefineRc::RefineRc(int _rc, int _scale, int _step, SemiGlobalMatchingParams* _sp)
@@ -367,3 +369,5 @@ void refineDepthMaps(MultiViewParams* mp, PreMatchCams* pc, const StaticVector<i
         }
     }
 }
+
+} // namespace aliceVision

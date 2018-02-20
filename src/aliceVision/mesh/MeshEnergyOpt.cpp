@@ -7,6 +7,8 @@
 
 #include <boost/filesystem.hpp>
 
+namespace aliceVision {
+
 namespace bfs = boost::filesystem;
 
 MeshEnergyOpt::MeshEnergyOpt(MultiViewParams* _mp)
@@ -157,3 +159,5 @@ bool MeshEnergyOpt::optimizeSmooth(float lambda, float epsilon, int type, int ni
 
     return true;
 }
+
+} // namespace aliceVision

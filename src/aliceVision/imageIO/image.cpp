@@ -4,7 +4,6 @@
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
 #include "image.hpp"
-
 #include <aliceVision/structures/Color.hpp>
 #include <aliceVision/structures/Rgb.hpp>
 
@@ -17,6 +16,7 @@
 #include <stdexcept>
 #include <memory>
 
+namespace aliceVision {
 namespace imageIO {
 
 std::string EImageQuality_informations()
@@ -386,3 +386,4 @@ void convolveImage(int inWidth, int inHeight, const std::vector<Color>& inBuffer
 }
 
 } // namespace imageIO
+} // namespace aliceVision

@@ -9,6 +9,8 @@
 #include <aliceVision/structures/Voxel.hpp>
 #include <aliceVision/mesh/Mesh.hpp>
 
+namespace aliceVision {
+
 class MeshClean : public Mesh
 {
 public:
@@ -95,3 +97,5 @@ public:
     int cleanMesh();
     int cleanMesh(int maxIters);
 };
+
+} // namespace aliceVision

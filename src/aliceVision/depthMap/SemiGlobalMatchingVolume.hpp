@@ -8,6 +8,8 @@
 #include <aliceVision/structures/StaticVector.hpp>
 #include <aliceVision/depthMap/SemiGlobalMatchingParams.hpp>
 
+namespace aliceVision {
+
 class SemiGlobalMatchingVolume
 {
 public:
@@ -46,3 +48,5 @@ private:
     /// Volume with the index of the original plane. Volume dimension (X, Y, Z/step).
     StaticVector<int>* _volumeBestZ;
 };
+
+} // namespace aliceVision

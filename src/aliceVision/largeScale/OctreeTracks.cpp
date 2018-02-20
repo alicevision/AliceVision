@@ -13,6 +13,7 @@
 
 #include <iostream>
 
+namespace aliceVision {
 
 OctreeTracks::Node::Node(NodeType type)
 {
@@ -819,3 +820,5 @@ StaticVector<int>* OctreeTracks::getTracksCams(StaticVector<OctreeTracks::trackS
     delete camsb;
     return cams;
 }
+
+} // namespace aliceVision

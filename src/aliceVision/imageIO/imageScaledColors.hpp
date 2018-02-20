@@ -7,6 +7,7 @@
 
 #include <string>
 
+namespace aliceVision {
 namespace imageIO {
 
 /**
@@ -23,3 +24,4 @@ void writeImageScaledColors(const std::string& path, int width, int height, int 
 void writeImageScaledColors(const std::string& path, int width, int height, unsigned short minVal, unsigned short maxVal, unsigned short* buffer, bool transpose);
 
 } // namespace imageIO
+} // namespace aliceVision

@@ -7,6 +7,8 @@
 
 #include <aliceVision/structures/Point2d.hpp>
 
+namespace aliceVision {
+
 struct Pixel
 {
     union {
@@ -93,3 +95,5 @@ struct Pixel
         return p1.x * p2.x + p1.y * p2.y;
     }
 };
+
+} // namespace aliceVision

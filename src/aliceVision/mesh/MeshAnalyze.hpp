@@ -10,6 +10,8 @@
 #include <aliceVision/structures/StaticVector.hpp>
 #include <aliceVision/mesh/MeshClean.hpp>
 
+namespace aliceVision {
+
 class MeshAnalyze : public MeshClean
 {
 public:
@@ -27,3 +29,5 @@ public:
     bool getMeanCurvAndLaplacianSmoothing(int ptId, Point3d& F, float epsilon);
     bool getVertexSurfaceNormal(int ptId, Point3d& N);
 };
+
+} // namespace aliceVision

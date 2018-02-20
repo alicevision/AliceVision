@@ -13,6 +13,8 @@
 
 #include <iostream>
 
+namespace aliceVision {
+
 /**
  * @brief Maxflow computation based on a standard Adjacency List graph reprensentation.
  *
@@ -148,3 +150,4 @@ protected:
     const NodeType _T;  //< fullness
 };
 
+} // namespace aliceVision

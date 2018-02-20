@@ -9,6 +9,8 @@
 #include <aliceVision/structures/Point3d.hpp>
 #include <aliceVision/structures/StaticVector.hpp>
 
+namespace aliceVision {
+
 class Matrix3x4
 {
 public:
@@ -151,3 +153,5 @@ inline Matrix3x4 operator|(const Matrix3x3& M, const Point3d& p)
 
     return m;
 }
+
+} // namespace aliceVision

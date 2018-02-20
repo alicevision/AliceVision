@@ -20,6 +20,8 @@
 #include <iostream>
 #include <set>
 
+namespace aliceVision {
+
 namespace bfs = boost::filesystem;
 
 MultiViewInputParams::MultiViewInputParams(const std::string& file, const std::string& depthMapFolder, const std::string& depthMapFilterFolder)
@@ -396,3 +398,4 @@ void MultiViewParams::decomposeProjectionMatrix(Point3d& Co, Matrix3x3& Ro, Matr
     iPo = iRo * iKo;
 }
 
+} // namespace aliceVision

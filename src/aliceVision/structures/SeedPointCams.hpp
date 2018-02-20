@@ -7,6 +7,8 @@
 
 #include <aliceVision/structures/Point2d.hpp>
 
+namespace aliceVision {
+
 class SeedPointCams
 {
 public:
@@ -78,3 +80,5 @@ public:
         return isthereindex;
     }
 };
+
+} // namespace aliceVision

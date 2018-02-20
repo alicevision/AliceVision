@@ -4,7 +4,6 @@
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
 #include "common.hpp"
-
 #include <aliceVision/common/fileIO.hpp>
 #include <aliceVision/structures/geometry.hpp>
 #include <aliceVision/structures/geometryTriTri.hpp>
@@ -14,10 +13,11 @@
 #include <aliceVision/structures/Pixel.hpp>
 #include <aliceVision/structures/SeedPoint.hpp>
 
-
 #ifdef _WIN32
 #include "Psapi.h"
 #endif
+
+namespace aliceVision {
 
 bool get2dLineImageIntersection(Point2d* pFrom, Point2d* pTo, Point2d linePoint1, Point2d linePoint2,
                                 const MultiViewParams* mp, int camId)
@@ -872,3 +872,5 @@ std::string num2strTwoDecimal(int index)
 
     return ms;
 }
+
+} // namespace aliceVision

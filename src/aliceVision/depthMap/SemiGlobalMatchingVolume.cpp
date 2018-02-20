@@ -7,6 +7,8 @@
 #include <aliceVision/structures/Point3d.hpp>
 #include <aliceVision/common/common.hpp>
 
+namespace aliceVision {
+
 SemiGlobalMatchingVolume::SemiGlobalMatchingVolume(float _volGpuMB, int _volDimX, int _volDimY, int _volDimZ, SemiGlobalMatchingParams* _sp)
 {
     sp = _sp;
@@ -301,3 +303,5 @@ void SemiGlobalMatchingVolume::addVolumeAvg(int n, const StaticVector<unsigned c
         }
     }
 }
+
+} // namespace aliceVision

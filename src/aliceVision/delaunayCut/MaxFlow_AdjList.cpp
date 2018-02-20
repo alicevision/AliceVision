@@ -5,6 +5,8 @@
 
 #include "MaxFlow_AdjList.hpp"
 
+namespace aliceVision {
+
 void MaxFlow_AdjList::printStats() const
 {
     std::cout << "nb vertices: " << _graph.m_vertices.size() << ", capacity: " << _graph.m_vertices.capacity() << std::endl;
@@ -63,3 +65,5 @@ void MaxFlow_AdjList::printColorStats() const
     std::cout << "color[" << it.first << "]: " << it.second << std::endl;
   }
 }
+
+} // namespace aliceVision

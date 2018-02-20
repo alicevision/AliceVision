@@ -5,6 +5,7 @@
 
 #include "Universe.hpp"
 
+namespace aliceVision {
 
 Universe::Universe(int elements)
 {
@@ -66,3 +67,5 @@ void Universe::addEdge(int x, int y)
         join(a, b);
     }
 }
+
+} // namespace aliceVision

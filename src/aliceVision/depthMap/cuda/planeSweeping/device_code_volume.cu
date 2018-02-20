@@ -1,3 +1,9 @@
+// This file is part of the AliceVision project.
+// This Source Code Form is subject to the terms of the Mozilla Public License,
+// v. 2.0. If a copy of the MPL was not distributed with this file,
+// You can obtain one at https://mozilla.org/MPL/2.0/.
+
+namespace aliceVision {
 
 __device__ void volume_computePatch(patch& ptch, int depthid, int2& pix)
 {
@@ -1126,3 +1132,4 @@ __global__ void volume_filter_enforceTWeightInVolume_kernel(unsigned int* ovolum
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+} // namespace aliceVision

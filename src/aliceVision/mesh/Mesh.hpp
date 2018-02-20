@@ -13,6 +13,8 @@
 #include <aliceVision/structures/Voxel.hpp>
 #include <aliceVision/common/common.hpp>
 
+namespace aliceVision {
+
 class Mesh
 {
 public:
@@ -215,3 +217,5 @@ public:
                                   StaticVector<Voxel>* edgesXYStat);
     void Transform(Matrix3x3 Rs, Point3d t);
 };
+
+} // namespace aliceVision

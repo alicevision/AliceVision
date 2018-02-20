@@ -1,8 +1,13 @@
-#ifndef DEVICE_COLOR_CU
-#define DEVICE_COLOR_CU
+// This file is part of the AliceVision project.
+// This Source Code Form is subject to the terms of the Mozilla Public License,
+// v. 2.0. If a copy of the MPL was not distributed with this file,
+// You can obtain one at https://mozilla.org/MPL/2.0/.
 
-#include "../planeSweeping/device_utils.cu"
+#pragma once
 
+#include <aliceVision/depthMap/cuda/planeSweeping/device_utils.cu>
+
+namespace aliceVision {
 
 inline __device__ float Euclidean(const float3 x1, const float3 x2)
 {
@@ -271,4 +276,4 @@ __global__ void downscale_kernel(unsigned char* tex, int tex_p, int width, int h
 }
 */
 
-#endif // DEVICE_COLOR_CU
+} // namespace aliceVision

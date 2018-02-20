@@ -12,6 +12,8 @@
 
 #include <boost/filesystem/operations.hpp>
 
+namespace aliceVision {
+
 namespace bfs = boost::filesystem;
 
 void filterLargeEdgeTriangles(Mesh* me, float avelthr)
@@ -207,3 +209,5 @@ void meshPostProcessing(Mesh*& inout_mesh, StaticVector<StaticVector<int>*>*& in
     printfElapsedTime(timer, "Mesh post-processing ");
     std::cout << "meshPostProcessing done" << std::endl;
 }
+
+} // namespace aliceVision

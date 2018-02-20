@@ -8,6 +8,8 @@
 #include <string>
 #include <cmath>
 
+namespace aliceVision {
+
 class Color
 {
 public:
@@ -111,3 +113,5 @@ inline Color cross(const Color& a, const Color& b)
 
     return vc;
 }
+
+} // namespace aliceVision

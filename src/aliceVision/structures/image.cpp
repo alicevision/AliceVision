@@ -9,6 +9,8 @@
 #include <algorithm>
 #include <stdexcept>
 
+namespace aliceVision {
+
 std::string EImageFileType_informations()
 {
   return "Image file type :\n"
@@ -55,3 +57,5 @@ std::istream& operator>>(std::istream& in, EImageFileType& imageFileType)
   imageFileType = EImageFileType_stringToEnum(token);
   return in;
 }
+
+} // namespace aliceVision

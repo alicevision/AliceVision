@@ -7,6 +7,8 @@
 
 #include <cmath>
 
+namespace aliceVision {
+
 struct Voxel
 {
     union {
@@ -119,3 +121,5 @@ struct Voxel
         return (x != param.x) || (y != param.y) || (z != param.z);
     }
 };
+
+} // namespace aliceVision

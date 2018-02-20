@@ -11,6 +11,8 @@
 
 #include <iostream>
 
+namespace aliceVision {
+
 PreMatchCams::PreMatchCams(MultiViewParams* _mp)
 {
     mp = _mp;
@@ -243,3 +245,5 @@ StaticVector<int>* PreMatchCams::findCamsWhichIntersectsHexahedron(Point3d hexah
     }
     return tcams;
 }
+
+} // namespace aliceVision

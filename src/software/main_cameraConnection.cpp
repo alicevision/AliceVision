@@ -11,12 +11,12 @@
 #include <boost/program_options.hpp>
 #include <boost/filesystem.hpp>
 
+using namespace aliceVision;
 namespace bfs = boost::filesystem;
 namespace po = boost::program_options;
 
 #define ALICEVISION_COUT(x) std::cout << x << std::endl
 #define ALICEVISION_CERR(x) std::cerr << x << std::endl
-
 
 int main(int argc, char* argv[])
 {

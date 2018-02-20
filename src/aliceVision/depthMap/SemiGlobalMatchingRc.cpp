@@ -19,6 +19,8 @@
 
 #include <iostream>
 
+namespace aliceVision {
+
 namespace bfs = boost::filesystem;
 
 SemiGlobalMatchingRc::SemiGlobalMatchingRc(bool doComputeDepthsAndResetTCams, int _rc, int _scale, int _step, SemiGlobalMatchingParams* _sp)
@@ -755,3 +757,5 @@ void computeDepthMapsPSSGM(MultiViewParams* mp, PreMatchCams* pc, const StaticVe
         }
     }
 }
+
+} // namespace aliceVision

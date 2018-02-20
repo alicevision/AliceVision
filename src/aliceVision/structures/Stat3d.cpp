@@ -5,6 +5,8 @@
 
 #include "Stat3d.hpp"
 
+namespace aliceVision {
+
 double hypot2(double x, double y)
 {
     return sqrt(x * x + y * y);
@@ -336,3 +338,5 @@ void Stat3d::eigen_decomposition(double A[3][3], double V0[], double V1[], doubl
     tred2(V0, V1, V2, d, e);
     tql2(V0, V1, V2, d, e);
 }
+
+} // namespace aliceVision

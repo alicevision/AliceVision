@@ -11,6 +11,8 @@
 #include <aliceVision/structures/StaticVector.hpp>
 #include <aliceVision/common/MultiViewParams.hpp>
 
+namespace aliceVision {
+
 class ImagesCache
 {
 public:
@@ -38,3 +40,5 @@ public:
     Color getPixelValueInterpolated(const Point2d* pix, int camId);
     rgb getPixelValue(const Pixel& pix, int camId);
 };
+
+} // namespace aliceVision

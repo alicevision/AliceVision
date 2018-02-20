@@ -15,6 +15,8 @@
 #include <map>
 #include <set>
 
+namespace aliceVision {
+
 /**
  * @brief Return whether a pixel is contained in or intersected by a 2D triangle.
  * @param[in] triangle the triangle as an array of 3 point2Ds
@@ -480,3 +482,5 @@ void Texturing::saveAsOBJ(const bfs::path& dir, const std::string& basename, EIm
     fclose(fmtl);
     std::cout << "MTL: " << mtlFilename << std::endl;
 }
+
+} // namespace aliceVision

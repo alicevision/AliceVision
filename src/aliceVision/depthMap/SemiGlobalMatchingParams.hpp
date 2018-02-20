@@ -13,6 +13,8 @@
 #include <aliceVision/depthMap/RcTc.hpp>
 #include <aliceVision/depthMap/cuda/PlaneSweepingCuda.hpp>
 
+namespace aliceVision {
+
 class SemiGlobalMatchingParams
 {
 public:
@@ -75,3 +77,5 @@ public:
     std::string getSGM_depthsFileName(IndexT viewId);
 
 };
+
+} // namespace aliceVision

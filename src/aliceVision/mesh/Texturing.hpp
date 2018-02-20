@@ -17,6 +17,8 @@
 
 namespace bfs = boost::filesystem;
 
+namespace aliceVision {
+
 struct TexturingParams
 {
     unsigned int textureSide = 8192;
@@ -80,3 +82,4 @@ public:
     void saveAsOBJ(const bfs::path& dir, const std::string& basename, EImageFileType textureFileType = EImageFileType::PNG);
 };
 
+} // namespace aliceVision

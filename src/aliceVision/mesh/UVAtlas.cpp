@@ -7,6 +7,8 @@
 
 #include <iostream>
 
+namespace aliceVision {
+
 using namespace std;
 
 UVAtlas::UVAtlas(const Mesh& mesh, MultiViewParams& mp, StaticVector<StaticVector<int>*>* ptsCams,
@@ -331,4 +333,6 @@ UVAtlas::ChartRect* UVAtlas::ChartRect::insert(Chart& chart, size_t gutter)
         c = &chart;
         return this;
     }
-};
+}
+
+} // namespace aliceVision

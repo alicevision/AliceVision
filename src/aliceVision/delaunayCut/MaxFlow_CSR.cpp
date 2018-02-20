@@ -5,3 +5,7 @@
 
 #include "MaxFlow_CSR.hpp"
 
+namespace aliceVision {
+
+} // namespace aliceVision
+

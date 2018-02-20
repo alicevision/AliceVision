@@ -26,6 +26,8 @@
 #define OMP_ATOMIC_WRITE  _Pragma("omp atomic")
 #endif
 
+namespace aliceVision {
+
 namespace bfs = boost::filesystem;
 
 DelaunayGraphCut::DelaunayGraphCut(MultiViewParams* _mp, PreMatchCams* _pc)
@@ -2455,3 +2457,5 @@ void DelaunayGraphCut::leaveLargestFullSegmentOnly()
     if(mp->verbose)
         printf("Largest full segment only. Done.\n");
 }
+
+} // namespace aliceVision

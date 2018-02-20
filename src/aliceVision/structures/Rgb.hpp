@@ -5,6 +5,8 @@
 
 #pragma once
 
+namespace aliceVision {
+
 struct rgb
 {
     unsigned char r = 0;
@@ -29,3 +31,5 @@ struct rgb
         return rgb(r + _p.r, g + _p.g, b + _p.b);
     }
 };
+
+} // namespace aliceVision

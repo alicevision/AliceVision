@@ -12,6 +12,8 @@
 
 #include <boost/filesystem.hpp>
 
+namespace aliceVision {
+
 namespace bfs = boost::filesystem;
 
 SemiGlobalMatchingParams::SemiGlobalMatchingParams(MultiViewParams* _mp, PreMatchCams* _pc, PlaneSweepingCuda* _cps)
@@ -177,3 +179,4 @@ DepthSimMap* SemiGlobalMatchingParams::getDepthSimMapFromBestIdVal(int w, int h,
     return depthSimMap;
 }
 
+} // namespace aliceVision

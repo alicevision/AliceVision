@@ -12,6 +12,8 @@
 #include <aliceVision/structures/StaticVector.hpp>
 #include <aliceVision/common/MultiViewParams.hpp>
 
+namespace aliceVision {
+
 class DepthSim
 {
 public:
@@ -82,3 +84,5 @@ public:
     float getCellSmoothStep(int rc, const int cellId);
     float getCellSmoothStep(int rc, const Pixel& cell);
 };
+
+} // namespace aliceVision

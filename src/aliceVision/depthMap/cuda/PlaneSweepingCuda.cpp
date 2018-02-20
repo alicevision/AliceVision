@@ -4,16 +4,17 @@
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
 #include "PlaneSweepingCuda.hpp"
-#include "commonStructures.hpp"
 #include <aliceVision/structures/Matrix3x3.hpp>
 #include <aliceVision/structures/Matrix3x4.hpp>
 #include <aliceVision/structures/OrientedPoint.hpp>
 #include <aliceVision/structures/SeedPoint.hpp>
 #include <aliceVision/common/common.hpp>
 #include <aliceVision/common/fileIO.hpp>
+#include <aliceVision/depthMap/cuda/commonStructures.hpp>
 
 #include <iostream>
 
+namespace aliceVision {
 
 extern float3 ps_getDeviceMemoryInfo();
 
@@ -2437,3 +2438,5 @@ int listCUDADevices(bool verbose)
 {
     return ps_listCUDADevices(verbose);
 }
+
+} // namespace aliceVision

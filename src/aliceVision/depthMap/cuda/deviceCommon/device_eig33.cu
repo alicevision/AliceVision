@@ -1,5 +1,11 @@
-#ifndef DEVICE_EIG33_CU
-#define DEVICE_EIG33_CU
+// This file is part of the AliceVision project.
+// This Source Code Form is subject to the terms of the Mozilla Public License,
+// v. 2.0. If a copy of the MPL was not distributed with this file,
+// You can obtain one at https://mozilla.org/MPL/2.0/.
+
+#pragma once
+
+namespace aliceVision {
 
 __device__ static double cuda_hypot2(double x, double y)
 {
@@ -365,7 +371,7 @@ struct cuda_stat3d
         xzsum = 0.0;
         yzsum = 0.0;
         count = 0;
-    };
+    }
 
     __device__ void update(const float3& p, const float& w)
     {
@@ -379,7 +385,7 @@ struct cuda_stat3d
         ysum += (double)p.y;
         zsum += (double)p.z;
         count += w;
-    };
+    }
 
     __device__ void getEigenVectorsDesc(float3& cg, float3& v1, float3& v2, float3& v3, float& d1, float& d2, float& d3)
     {
@@ -416,7 +422,7 @@ struct cuda_stat3d
         d1 = (float)d[2];
         d2 = (float)d[1];
         d3 = (float)d[0];
-    };
+    }
 
     __device__ bool computePlaneByPCA(float3& p, float3& n)
     {
@@ -433,7 +439,7 @@ struct cuda_stat3d
         n = v3;
 
         return true;
-    };
+    }
 };
 
-#endif // DEVICE_PATCH_ES_CU
+} // namespace aliceVision

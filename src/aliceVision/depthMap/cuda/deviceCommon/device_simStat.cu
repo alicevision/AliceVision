@@ -1,5 +1,11 @@
-#ifndef DEVICE_SIMSTAT_CU
-#define DEVICE_SIMSTAT_CU
+// This file is part of the AliceVision project.
+// This Source Code Form is subject to the terms of the Mozilla Public License,
+// v. 2.0. If a copy of the MPL was not distributed with this file,
+// You can obtain one at https://mozilla.org/MPL/2.0/.
+
+#pragma once
+
+namespace aliceVision {
 
 struct simStat
 {
@@ -22,7 +28,7 @@ struct simStat
         count = 0.0f;
         wsum = 0.0f;
         sim = 1.0f;
-    };
+    }
 
     __device__ simStat& operator=(const simStat& param)
     {
@@ -34,7 +40,7 @@ struct simStat
         wsum = param.wsum;
         count = param.count;
         return *this;
-    };
+    }
 
     __device__ void computeSimSub(simStat& ss)
     {
@@ -58,11 +64,11 @@ struct simStat
         };
     }
 
-    __device__ float getVarianceX() { return (xxsum / count - (xsum * xsum) / (count * count)); };
+    __device__ float getVarianceX() { return (xxsum / count - (xsum * xsum) / (count * count)); }
 
-    __device__ float getVarianceY() { return (yysum / count - (ysum * ysum) / (count * count)); };
+    __device__ float getVarianceY() { return (yysum / count - (ysum * ysum) / (count * count)); }
 
-    __device__ float getVarianceXY() { return (xysum / count - (xsum * ysum) / (count * count)); };
+    __device__ float getVarianceXY() { return (xysum / count - (xsum * ysum) / (count * count)); }
 
     /*
             __device__ void computeSim()
@@ -98,7 +104,7 @@ struct simStat
 
         sim = fmaxf(sim, -1.0f);
         sim = fminf(sim, 1.0f);
-    };
+    }
 
     /**
     * @brief Variance of X
@@ -138,7 +144,7 @@ struct simStat
         sim = getVarianceXYW() / sqrtf(getVarianceXW() * getVarianceYW());
         sim = isinf(sim) ? 1.0f : 0.0f - sim;
         sim = fmaxf(fminf(sim, 1.0f), -1.0f);
-    };
+    }
 
     __device__ void update(const float2 g)
     {
@@ -148,7 +154,8 @@ struct simStat
         xxsum += g.x * g.x;
         yysum += g.y * g.y;
         xysum += g.x * g.y;
-    };
+    }
+
     __device__ void update(const float2 g, float w)
     {
         wsum += w;
@@ -158,7 +165,7 @@ struct simStat
         xxsum += w * g.x * g.x;
         yysum += w * g.y * g.y;
         xysum += w * g.x * g.y;
-    };
+    }
 
     __device__ void update(const float gx, const float gy)
     {
@@ -168,7 +175,7 @@ struct simStat
         xxsum += gx * gx;
         yysum += gy * gy;
         xysum += gx * gy;
-    };
+    }
 
     __device__ void update(const float gx, const float gy, float w)
     {
@@ -179,7 +186,7 @@ struct simStat
         xxsum += w * gx * gx;
         yysum += w * gy * gy;
         xysum += w * gx * gy;
-    };
+    }
 
     __device__ void update(const uchar4 c1, const uchar4 c2)
     {
@@ -195,7 +202,7 @@ struct simStat
         g.x = (float)c1.z / 255.0f;
         g.y = (float)c2.z / 255.0f;
         update(g);
-    };
+    }
 
     __device__ void update(const float3 c1, const float3 c2)
     {
@@ -211,7 +218,7 @@ struct simStat
         g.x = c1.z;
         g.y = c2.z;
         update(g);
-    };
+    }
 };
 
-#endif // DEVICE_SIMSTAT_CU
+} // namespace aliceVision

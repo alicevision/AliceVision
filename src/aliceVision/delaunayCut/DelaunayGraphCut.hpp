@@ -23,6 +23,7 @@
 #include <map>
 #include <set>
 
+namespace aliceVision {
 
 class DelaunayGraphCut
 {
@@ -367,3 +368,5 @@ inline DelaunayGraphCut::Facet DelaunayGraphCut::getFacetInFrontVertexOnTheRayTo
 
     return getFacetInFrontVertexOnTheRayToThePoint3d(vertexIndex, mp->CArr[cam]);
 }
+
+} // namespace aliceVision

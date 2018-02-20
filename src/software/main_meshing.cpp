@@ -16,6 +16,7 @@
 #include <boost/program_options.hpp>
 #include <boost/filesystem.hpp>
 
+using namespace aliceVision;
 namespace bfs = boost::filesystem;
 namespace po = boost::program_options;
 

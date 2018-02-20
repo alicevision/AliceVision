@@ -9,6 +9,8 @@
 #include <aliceVision/structures/StaticVector.hpp>
 #include <aliceVision/common/MultiViewParams.hpp>
 
+namespace aliceVision {
+
 class PreMatchCams
 {
 public:
@@ -30,3 +32,5 @@ public:
     StaticVector<int>* loadCamPairsMatrix();
     StaticVector<int>* findNearestCamsFromSeeds(int rc, int nnearestcams);
 };
+
+} // namespace aliceVision

@@ -10,6 +10,7 @@
 
 #include <array>
 
+namespace aliceVision {
 
 struct GC_cellInfo
 {
@@ -133,3 +134,4 @@ struct GC_camVertexInfo
     }
 };
 
+} // namespace aliceVision

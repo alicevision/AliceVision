@@ -11,6 +11,8 @@
 #include <aliceVision/structures/Voxel.hpp>
 #include <aliceVision/common/PreMatchCams.hpp>
 
+namespace aliceVision {
+
 class VoxelsGrid
 {
 public:
@@ -53,3 +55,5 @@ public:
 
     void getHexah(Point3d* hexahOut, const Voxel& LUi, const Voxel& RDi);
 };
+
+} // namespace aliceVision

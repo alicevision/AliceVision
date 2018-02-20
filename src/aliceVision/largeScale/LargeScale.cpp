@@ -10,6 +10,8 @@
 
 #include <boost/filesystem.hpp>
 
+namespace aliceVision {
+
 namespace bfs = boost::filesystem;
 
 LargeScale::LargeScale(MultiViewParams* _mp, PreMatchCams* _pc, std::string _spaceFolderName)
@@ -208,3 +210,5 @@ Point3d LargeScale::getSpaceSteps()
     sv.z = (vz.size() / (float)dimensions.z) / (float)maxOcTreeDim;
     return sv;
 }
+
+} // namespace aliceVision

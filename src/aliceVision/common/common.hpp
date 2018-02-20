@@ -15,6 +15,8 @@
 
 #include <string>
 
+namespace aliceVision {
+
 bool get2dLineImageIntersection(Point2d* pFrom, Point2d* pTo, Point2d linePoint1, Point2d linePoint2,
                                 const MultiViewParams* mp, int camId);
 bool getTarEpipolarDirectedLine(Point2d* pFromTar, Point2d* pToTar, Point2d refpix, int refCam, int tarCam,
@@ -63,3 +65,5 @@ std::string num2str(int64_t num);
 std::string num2strThreeDigits(int index);
 std::string num2strFourDecimal(int index);
 std::string num2strTwoDecimal(int index);
+
+} // namespace aliceVision

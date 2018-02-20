@@ -9,6 +9,8 @@
 #include <aliceVision/structures/Voxel.hpp>
 #include <aliceVision/depthMap/SemiGlobalMatchingParams.hpp>
 
+namespace aliceVision {
+
 class SemiGlobalMatchingRcTc
 {
 public:
@@ -29,3 +31,5 @@ private:
     int w, h;
     StaticVectorBool* rcSilhoueteMap;
 };
+
+} // namespace aliceVision

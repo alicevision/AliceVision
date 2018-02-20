@@ -1,12 +1,18 @@
-#ifndef DEVICE_PATCH_ES_CU
-#define DEVICE_PATCH_ES_CU
+// This file is part of the AliceVision project.
+// This Source Code Form is subject to the terms of the Mozilla Public License,
+// v. 2.0. If a copy of the MPL was not distributed with this file,
+// You can obtain one at https://mozilla.org/MPL/2.0/.
 
-#include "device_global.cu"
-#include "device_matrix.cu"
-#include "device_patch_es_glob.hpp"
-#include "device_simStat.cu"
+#pragma once
+
+#include <aliceVision/depthMap/cuda/deviceCommon/device_global.cu>
+#include <aliceVision/depthMap/cuda/deviceCommon/device_matrix.cu>
+#include <aliceVision/depthMap/cuda/deviceCommon/device_patch_es_glob.hpp>
+#include <aliceVision/depthMap/cuda/deviceCommon/device_simStat.cu>
 
 #include <math_constants.h>
+
+namespace aliceVision {
 
 __device__ void computeRotCSEpip(patch& ptch, const float3& p)
 {
@@ -717,6 +723,6 @@ __device__ float refineDepthSubPixel(const float3& depths, const float3& sims)
     };
 
     return outDepth;
-};
+}
 
-#endif // DEVICE_PATCH_ES_CU
+} // namespace aliceVision

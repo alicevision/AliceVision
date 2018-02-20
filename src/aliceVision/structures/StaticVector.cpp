@@ -7,6 +7,8 @@
 
 #include <cstdio>
 
+namespace aliceVision {
+
 int getArrayLengthFromFile(std::string fileName)
 {
     FILE* f = fopen(fileName.c_str(), "rb");
@@ -25,3 +27,5 @@ int getArrayLengthFromFile(std::string fileName)
     fclose(f);
     return n;
 }
+
+} // namespace aliceVision

@@ -14,6 +14,8 @@
 #include <iostream>
 #include <stdexcept>
 
+namespace aliceVision {
+
 template <class T>
 class StaticVector
 {
@@ -471,3 +473,5 @@ StaticVector<StaticVector<T>*>* cloneArrayOfArrays(StaticVector<StaticVector<T>*
 
     return outAOA;
 }
+
+} // namespace aliceVision

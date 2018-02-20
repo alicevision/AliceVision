@@ -14,6 +14,8 @@
 
 #include <array>
 
+namespace aliceVision {
+
 class LargeScale
 {
 public:
@@ -54,3 +56,5 @@ public:
         return recsDirs;
     }
 };
+
+} // namespace aliceVision

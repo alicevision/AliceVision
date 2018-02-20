@@ -10,10 +10,12 @@
 
 #include <OpenImageIO/paramlist.h>
 
+namespace oiio = OIIO;
+
+namespace aliceVision {
+
 class rgb;
 class Color;
-
-namespace oiio = OIIO;
 
 namespace imageIO {
 
@@ -143,3 +145,4 @@ void convolveImage(int inWidth, int inHeight, const std::vector<float>& inBuffer
 void convolveImage(int inWidth, int inHeight, const std::vector<Color>& inBuffer, std::vector<Color>& outBuffer, const std::string& kernel = "gaussian", float kernelWidth = 5.0f, float kernelHeight = 5.0f);
 
 } // namespace imageIO
+} // namespace aliceVision

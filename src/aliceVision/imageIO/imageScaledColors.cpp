@@ -4,11 +4,11 @@
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
 #include "imageScaledColors.hpp"
-
 #include <aliceVision/structures/Color.hpp>
 #include <aliceVision/structures/jetColorMap.hpp>
 #include <aliceVision/imageIO/image.hpp>
 
+namespace aliceVision {
 namespace imageIO {
 
 template <typename T>
@@ -74,3 +74,4 @@ void writeImageScaledColors(const std::string& path, int width, int height, unsi
 }
 
 } // namespace imageIO
+} // namespace aliceVision

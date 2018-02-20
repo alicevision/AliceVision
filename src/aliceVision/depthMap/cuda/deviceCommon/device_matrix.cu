@@ -1,9 +1,15 @@
-#ifndef DEVICE_MATRIX_CU
-#define DEVICE_MATRIX_CU
+// This file is part of the AliceVision project.
+// This Source Code Form is subject to the terms of the Mozilla Public License,
+// v. 2.0. If a copy of the MPL was not distributed with this file,
+// You can obtain one at https://mozilla.org/MPL/2.0/.
+
+#pragma once
 
 // mn MATRIX ADDRESSING: mxy = x*n+y (x-row,y-col), (m-number of rows, n-number of columns)
 
 #include <math_constants.h>
+
+namespace aliceVision {
 
 __device__ float3 M3x3mulV3(float* M3x3, const float3& V)
 {
@@ -366,11 +372,11 @@ __device__ float3 lineLineIntersect(float* k, float* l, float3* lli1, float3* ll
 __device__ float sigmoid(float zeroVal, float endVal, float sigwidth, float sigMid, float xval)
 {
     return zeroVal + (endVal - zeroVal) * (1.0f / (1.0f + expf(10.0f * ((xval - sigMid) / sigwidth))));
-};
+}
 
 __device__ float sigmoid2(float zeroVal, float endVal, float sigwidth, float sigMid, float xval)
 {
     return zeroVal + (endVal - zeroVal) * (1.0f / (1.0f + expf(10.0f * ((sigMid - xval) / sigwidth))));
-};
+}
 
-#endif // DEVICE_PATCH_ES_CU
+} // namespace aliceVision

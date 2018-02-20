@@ -15,6 +15,8 @@
 
 #include <fstream>
 
+namespace aliceVision {
+
 struct MultiViewInputParams;
 
 bool FileExists(const std::string& filePath);
@@ -45,3 +47,5 @@ bool loadSeedsFromFile(StaticVector<SeedPoint>** seeds, int refImgFileId, MultiV
 bool getDepthMapInfo(int refImgFileId, MultiViewInputParams* mip, float& mindepth, float& maxdepth,
                      StaticVector<int>** tcams);
 bool DeleteDirectory(const std::string& sPath);
+
+} // namespace aliceVision

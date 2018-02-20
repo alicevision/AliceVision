@@ -7,6 +7,8 @@
 
 #include <aliceVision/structures/Point3d.hpp>
 
+namespace aliceVision {
+
 struct OrientedPoint
 {
     Point3d p; // 3 * float : 3 * 4 = 12 Bytes : (one float is 4 Bytes : 3.4E +/- 38 (7 digits) )
@@ -41,3 +43,5 @@ struct OrientedPoint
         return (sim > param.sim);
     }
 };
+
+} // namespace aliceVision

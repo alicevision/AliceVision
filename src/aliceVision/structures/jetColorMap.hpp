@@ -8,6 +8,8 @@
 #include <aliceVision/structures/Color.hpp>
 #include <aliceVision/structures/Rgb.hpp>
 
+namespace aliceVision {
+
 /**
  * @brief Get the RGB color from the jet colormap for the given value.
  * @param[in] value from range 0.0 1.0
@@ -27,3 +29,5 @@ rgb getRGBFromJetColorMap(float value);
  *          - 'value' >= 1.0f: white
  */
 Color getColorFromJetColorMap(float value);
+
+} // namespace aliceVision

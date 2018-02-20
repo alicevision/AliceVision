@@ -1,21 +1,23 @@
-#ifndef DEVICE_GLOBAL_CU
-#define DEVICE_GLOBAL_CU
+// This file is part of the AliceVision project.
+// This Source Code Form is subject to the terms of the Mozilla Public License,
+// v. 2.0. If a copy of the MPL was not distributed with this file,
+// You can obtain one at https://mozilla.org/MPL/2.0/.
+
+#pragma once
 
 #include <aliceVision/depthMap/cuda/commonStructures.hpp>
 
-////////////////////////////////////////////////////////////////////////////////
-// Helper functions
-////////////////////////////////////////////////////////////////////////////////
+namespace aliceVision {
 
+// Helper functions
 // function clamping x between a and b
 __device__ int clamp(int x, int a, int b)
 {
     return max(a, min(b, x));
 }
 
-////////////////////////////////////////////////////////////////////////////////
+
 // Global data handlers and parameters
-////////////////////////////////////////////////////////////////////////////////
 // defines
 
 texture<unsigned char, 2, cudaReadModeNormalizedFloat> rtex;
@@ -201,4 +203,4 @@ __device__ __constant__ struct shared_rCam_tCam
 __device__ __constant__ shared_rCam_tCam sg;
 */
 
-#endif // DEVICE_GLOBAL_CU
+} // namespace aliceVision

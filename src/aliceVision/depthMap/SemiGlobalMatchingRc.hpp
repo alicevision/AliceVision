@@ -9,6 +9,8 @@
 #include <aliceVision/structures/StaticVector.hpp>
 #include <aliceVision/depthMap/SemiGlobalMatchingParams.hpp>
 
+namespace aliceVision {
+
 class SemiGlobalMatchingRc
 {
 public:
@@ -53,3 +55,5 @@ protected:
 
 void computeDepthMapsPSSGM(MultiViewParams* mp, PreMatchCams* pc, const StaticVector<int>& cams);
 void computeDepthMapsPSSGM(int CUDADeviceNo, MultiViewParams* mp, PreMatchCams* pc, const StaticVector<int>& cams);
+
+} // namespace aliceVision

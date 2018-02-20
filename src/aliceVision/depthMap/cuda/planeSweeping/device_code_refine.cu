@@ -1,3 +1,9 @@
+// This file is part of the AliceVision project.
+// This Source Code Form is subject to the terms of the Mozilla Public License,
+// v. 2.0. If a copy of the MPL was not distributed with this file,
+// You can obtain one at https://mozilla.org/MPL/2.0/.
+
+namespace aliceVision {
 
 __global__ void refine_selectPartOfDepthMapNearFPPlaneDepth_kernel(float* o0depthMap, int o0depthMap_p,
                                                                    float* o1depthMap, int o1depthMap_p,
@@ -1320,3 +1326,5 @@ __global__ void refine_computeRcTcDepthMap_kernel(float* rcDepthMap, int rcDepth
         rcDepthMap[y * rcDepthMap_p + x] = rcDepthOut;
     };
 }
+
+} // namespace aliceVision

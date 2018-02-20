@@ -7,6 +7,8 @@
 #include <aliceVision/structures/StaticVector.hpp>
 #include <aliceVision/common/common.hpp>
 
+namespace aliceVision {
+
 RcTc::RcTc(MultiViewParams* _mp, PlaneSweepingCuda* _cps)
 {
     cps = _cps;
@@ -104,3 +106,4 @@ void RcTc::filterDepthMap(DepthSimMap* depthSimMap, int rc, int wsh, float gamma
     delete depthMap;
 }
 
+} // namespace aliceVision

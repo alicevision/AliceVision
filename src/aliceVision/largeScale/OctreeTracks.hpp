@@ -12,6 +12,8 @@
 #include <aliceVision/common/PreMatchCams.hpp>
 #include <aliceVision/largeScale/Fuser.hpp>
 
+namespace aliceVision {
+
 class OctreeTracks : public Fuser
 {
 public:
@@ -99,3 +101,5 @@ public:
     StaticVector<int>* getTracksCams(StaticVector<OctreeTracks::trackStruct*>* tracks);
     void getNPointsByLevelsRecursive(Node* node, int level, StaticVector<int>* nptsAtLevel);
 };
+
+} // namespace aliceVision

@@ -3,12 +3,12 @@
 // v. 2.0. If a copy of the MPL was not distributed with this file,
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
-#ifndef DEVICE_PATCH_ES_GLOB
-#define DEVICE_PATCH_ES_GLOB
+#pragma once
 
-////////////////////////////////////////////////////////////////////////////////
+namespace aliceVision {
+
+
 // patch exhaustive search
-////////////////////////////////////////////////////////////////////////////////
 
 struct patch
 {
@@ -100,4 +100,4 @@ __device__ void computeRotCS(float3& xax, float3& yax, float3& n)
     yax = cross(n, xax);
 }
 
-#endif // DEVICE_PATCH_ES_GLOB
+} // namespace aliceVision

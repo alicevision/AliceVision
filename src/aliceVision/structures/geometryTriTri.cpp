@@ -28,6 +28,8 @@
 
 #include <cmath>
 
+namespace aliceVision {
+
 #define FABS(x) ((double)fabs(x)) /* implement as is fastest on your machine */
 
 /* if USE_EPSILON_TEST is true then we do a check:
@@ -676,3 +678,5 @@ int tri_tri_intersect_with_isectline(double V0[3], double V1[3], double V2[3], d
     }
     return 1;
 }
+
+} // namespace aliceVision

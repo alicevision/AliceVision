@@ -5,6 +5,8 @@
 
 #pragma once
 
+namespace aliceVision {
+
 class Point4d
 {
 public:
@@ -95,3 +97,5 @@ public:
         return e * (dot(e, a) / dot(e, e));
     }
 };
+
+} // namespace aliceVision

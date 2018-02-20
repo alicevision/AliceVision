@@ -5,6 +5,8 @@
 
 #include "MeshClean.hpp"
 
+namespace aliceVision {
+
 MeshClean::path::path(MeshClean* _me, int _ptId)
 {
     me = _me;
@@ -931,4 +933,4 @@ bool MeshClean::isIsBoundaryPt(int ptId)
     return (*ptsBoundary)[ptId];
 }
 
-
+} // namespace aliceVision

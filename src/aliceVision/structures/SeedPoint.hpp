@@ -9,6 +9,8 @@
 #include <aliceVision/structures/Point3d.hpp>
 #include <aliceVision/structures/SeedPointCams.hpp>
 
+namespace aliceVision {
+
 class SeedPoint
 {
 public:
@@ -61,3 +63,5 @@ public:
         return (op.sim > param.op.sim);
     }
 };
+
+} // namespace aliceVision

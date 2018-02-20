@@ -7,6 +7,8 @@
 #include <aliceVision/structures/Pixel.hpp>
 #include <aliceVision/structures/Voxel.hpp>
 
+namespace aliceVision {
+
 int qSortCompareFloatAsc(const void* ia, const void* ib)
 {
     float a = *(float*)ia;
@@ -155,3 +157,4 @@ int indexOfSortedVoxelArrByX(int val, StaticVector<Voxel>* values, int startId, 
     return id;
 }
 
+} // namespace aliceVision

@@ -5,6 +5,8 @@
 
 #pragma once
 
+namespace aliceVision {
+
 typedef struct
 {
     int rank;
@@ -37,3 +39,5 @@ public:
     uni_elt* elts;
     int num, allelems;
 };
+
+} // namespace aliceVision

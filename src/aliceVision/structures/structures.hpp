@@ -11,6 +11,8 @@
 #include <aliceVision/structures/Matrix3x4.hpp>
 #include <aliceVision/structures/StaticVector.hpp>
 
+namespace aliceVision {
+
 struct Voxel;
 
 // TODO: Remove and replace with <aliceVision/types.hpp>
@@ -136,3 +138,5 @@ struct CameraMatrices
 };
 
 int indexOfSortedVoxelArrByX(int val, StaticVector<Voxel>* values, int startId, int stopId);
+
+} // namespace aliceVision

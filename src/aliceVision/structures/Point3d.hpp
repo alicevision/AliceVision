@@ -8,6 +8,8 @@
 #include <string>
 #include <cmath>
 
+namespace aliceVision {
+
 class Point3d
 {
 public:
@@ -117,3 +119,5 @@ inline Point3d proj(Point3d& e, Point3d& a)
 {
     return e * (dot(e, a) / dot(e, e));
 }
+
+} // namespace aliceVision

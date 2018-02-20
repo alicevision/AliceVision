@@ -1,3 +1,10 @@
+// This file is part of the AliceVision project.
+// This Source Code Form is subject to the terms of the Mozilla Public License,
+// v. 2.0. If a copy of the MPL was not distributed with this file,
+// You can obtain one at https://mozilla.org/MPL/2.0/.
+
+namespace aliceVision {
+
 /**
  * @param[in] s: iteration over nSamplesHalf
  */
@@ -236,3 +243,5 @@ __global__ void fuse_optimizeDepthSimMap_kernel(float2* out_optDepthSimMap, int 
         *out_optDepthSim_ptr = out_optDepthSim;
     };
 }
+
+} // namespace aliceVision
