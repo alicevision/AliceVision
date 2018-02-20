@@ -12,6 +12,7 @@
 #include <aliceVision/common/MultiViewParams.hpp>
 
 namespace aliceVision {
+namespace common {
 
 class ImagesCache
 {
@@ -41,4 +42,5 @@ public:
     rgb getPixelValue(const Pixel& pix, int camId);
 };
 
+} // namespace common
 } // namespace aliceVision

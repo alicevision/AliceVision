@@ -20,8 +20,8 @@ namespace largeScale {
 class LargeScale
 {
 public:
-    MultiViewParams* mp;
-    PreMatchCams* pc;
+    common::MultiViewParams* mp;
+    common::PreMatchCams* pc;
     std::string spaceFolderName;
     std::string spaceVoxelsFolderName;
     std::string spaceFileName;
@@ -30,7 +30,7 @@ public:
     int maxOcTreeDim;
     bool doVisualize;
 
-    LargeScale(MultiViewParams* _mp, PreMatchCams* _pc, std::string _spaceFolderName);
+    LargeScale(common::MultiViewParams* _mp, common::PreMatchCams* _pc, std::string _spaceFolderName);
     ~LargeScale();
 
     std::string getSpaceCamsTracksDir();
@@ -44,7 +44,7 @@ public:
 
     std::string getReconstructionVoxelFolder(int i) const
     {
-        return spaceFolderName + "reconstructedVoxel" + num2strFourDecimal(i) + "/";
+        return spaceFolderName + "reconstructedVoxel" + common::num2strFourDecimal(i) + "/";
     }
     std::vector<std::string> getRecsDirs(const StaticVector<Point3d>* voxelsArray) const
     {

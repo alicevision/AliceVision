@@ -45,8 +45,8 @@ public:
         VertexIndex localVertexIndex = GEO::NO_VERTEX;
     };
 
-    MultiViewParams* mp;
-    PreMatchCams* pc;
+    common::MultiViewParams* mp;
+    common::PreMatchCams* pc;
 
     GEO::Delaunay_var _tetrahedralization;
     /// 3D points coordinates
@@ -65,7 +65,7 @@ public:
 
     static const GEO::index_t NO_TETRAHEDRON = GEO::NO_CELL;
 
-    DelaunayGraphCut(MultiViewParams* _mp, PreMatchCams* _pc);
+    DelaunayGraphCut(common::MultiViewParams* _mp, common::PreMatchCams* _pc);
     virtual ~DelaunayGraphCut();
 
     /// Get absolute opposite vertex index

@@ -12,12 +12,15 @@
 namespace aliceVision {
 
 class Point3d;
+
+namespace common {
 class PreMatchCams;
+} // namespace common
 
 namespace mesh {
 
 void meshPostProcessing(Mesh*& inout_mesh, StaticVector<StaticVector<int>*>*& inout_ptsCams, StaticVector<int>& usedCams,
-                      MultiViewParams& mp, PreMatchCams& pc,
+                      common::MultiViewParams& mp, common::PreMatchCams& pc,
                       const std::string& resultFolderName,
                       StaticVector<Point3d>* hexahsToExcludeFromResultingMesh, Point3d* hexah);
 

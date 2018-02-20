@@ -82,7 +82,7 @@ StaticVector<unsigned char>* SemiGlobalMatchingRcTc::computeDepthSimMapVolume(fl
     delete tcams;
 
     if(sp->mp->verbose)
-        printfElapsedTime(tall, "SemiGlobalMatchingRcTc::computeDepthSimMapVolume ");
+        common::printfElapsedTime(tall, "SemiGlobalMatchingRcTc::computeDepthSimMapVolume ");
 
     if(sp->P3 > 0)
     {

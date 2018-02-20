@@ -18,7 +18,7 @@ namespace largeScale {
 
 namespace bfs = boost::filesystem;
 
-ReconstructionPlan::ReconstructionPlan(Voxel& dimmensions, Point3d* space, MultiViewParams* _mp, PreMatchCams* _pc,
+ReconstructionPlan::ReconstructionPlan(Voxel& dimmensions, Point3d* space, common::MultiViewParams* _mp, common::PreMatchCams* _pc,
                                        std::string _spaceRootDir)
     : VoxelsGrid(dimmensions, space, _mp, _pc, _spaceRootDir)
 {
@@ -36,7 +36,7 @@ StaticVector<int>* ReconstructionPlan::voxelsIdsIntersectingHexah(Point3d* hexah
 
     for(int i = 0; i < voxels->size() / 8; i++)
     {
-        if(intersectsHexahedronHexahedron(&(*voxels)[i * 8], hexah))
+        if(common::intersectsHexahedronHexahedron(&(*voxels)[i * 8], hexah))
         {
             ids->push_back(i);
         }
@@ -222,7 +222,7 @@ StaticVector<Point3d>* ReconstructionPlan::computeReconstructionPlanBinSearch(un
             */
 
             getHexah(hexah, actHexahLU, actHexahRD);
-            inflateHexahedron(hexah, hexahinf, 1.05);
+            common::inflateHexahedron(hexah, hexahinf, 1.05);
             for(int k = 0; k < 8; k++)
             {
                 hexahsToReconstruct->push_back(hexahinf[k]);
@@ -238,7 +238,7 @@ StaticVector<Point3d>* ReconstructionPlan::computeReconstructionPlanBinSearch(un
 
 void ReconstructionPlan::getHexahedronForID(float dist, int id, Point3d* out)
 {
-    inflateHexahedron(&(*voxels)[id * 8], out, dist);
+    common::inflateHexahedron(&(*voxels)[id * 8], out, dist);
 }
 
 void reconstructSpaceAccordingToVoxelsArray(const std::string& voxelsArrayFileName, LargeScale* ls,
@@ -258,7 +258,7 @@ void reconstructSpaceAccordingToVoxelsArray(const std::string& voxelsArrayFileNa
         bfs::create_directory(folderName);
 
         const std::string meshBinFilepath = folderName + "mesh.bin";
-        if(!FileExists(meshBinFilepath))
+        if(!common::FileExists(meshBinFilepath))
         {
             StaticVector<int>* voxelsIds = rp->voxelsIdsIntersectingHexah(&(*voxelsArray)[i * 8]);
             delaunayCut::DelaunayGraphCut delaunayGC(ls->mp, ls->pc);
@@ -291,7 +291,7 @@ void reconstructSpaceAccordingToVoxelsArray(const std::string& voxelsArrayFileNa
         */
 
         Point3d hexahThin[8];
-        inflateHexahedron(&(*voxelsArray)[i * 8], hexahThin, 0.9);
+        common::inflateHexahedron(&(*voxelsArray)[i * 8], hexahThin, 0.9);
         for(int k = 0; k < 8; k++)
         {
             hexahsToExcludeFromResultingMesh->push_back(hexahThin[k]);
@@ -312,7 +312,7 @@ StaticVector<StaticVector<int>*>* loadLargeScalePtsCams(const std::vector<std::s
         std::string folderName = recsDirs[i];
 
         std::string filePtsCamsFromDCTName = folderName + "meshPtsCamsFromDGC.bin";
-        if(!FileExists(filePtsCamsFromDCTName))
+        if(!common::FileExists(filePtsCamsFromDCTName))
             throw std::runtime_error("Missing file: " + filePtsCamsFromDCTName);
         StaticVector<StaticVector<int>*>* ptsCamsFromDcti = loadArrayOfArraysFromFile<int>(filePtsCamsFromDCTName);
         ptsCamsFromDct->resizeAdd(ptsCamsFromDcti->size());
@@ -361,7 +361,7 @@ mesh::Mesh* joinMeshes(const std::vector<std::string>& recsDirs, StaticVector<Po
         std::string folderName = recsDirs[i];
 
         std::string fileName = folderName + "mesh.bin";
-        if(FileExists(fileName))
+        if(common::FileExists(fileName))
         {
             mesh::Mesh* mei = new mesh::Mesh();
             mei->loadFromBin(fileName);
@@ -393,7 +393,7 @@ mesh::Mesh* joinMeshes(const std::vector<std::string>& recsDirs, StaticVector<Po
         std::string folderName = recsDirs[i];
 
         std::string fileName = folderName + "mesh.bin";
-        if(FileExists(fileName))
+        if(common::FileExists(fileName))
         {
             mesh::Mesh* mei = new mesh::Mesh();
             mei->loadFromBin(fileName);
@@ -401,7 +401,7 @@ mesh::Mesh* joinMeshes(const std::vector<std::string>& recsDirs, StaticVector<Po
             // to remove artefacts on the border
             Point3d hexah[8];
             float inflateFactor = 0.96;
-            inflateHexahedron(&(*voxelsArray)[i * 8], hexah, inflateFactor);
+            common::inflateHexahedron(&(*voxelsArray)[i * 8], hexah, inflateFactor);
             mei->removeTrianglesOutsideHexahedron(hexah);
 
             if(ls->mp->verbose)
@@ -411,7 +411,7 @@ mesh::Mesh* joinMeshes(const std::vector<std::string>& recsDirs, StaticVector<Po
             if(ls->mp->verbose)
                 printf("Merging colors of part %i\n", i);
             fileName = folderName + "meshAvImgCol.ply.ptsColors";
-            if(FileExists(fileName))
+            if(common::FileExists(fileName))
             {
                 StaticVector<rgb>* ptsColsi = loadArrayFromFile<rgb>(fileName);
                 StaticVector<rgb>* trisColsi = getTrisColorsRgb(mei, ptsColsi);
@@ -455,11 +455,11 @@ mesh::Mesh* joinMeshes(int gl, LargeScale* ls)
 {
     ReconstructionPlan* rp =
         new ReconstructionPlan(ls->dimensions, &ls->space[0], ls->mp, ls->pc, ls->spaceVoxelsFolderName);
-    std::string param = "LargeScale:gridLevel" + num2str(gl);
+    std::string param = "LargeScale:gridLevel" + common::num2str(gl);
     int gridLevel = ls->mp->mip->_ini.get<int>(param.c_str(), gl * 300);
 
     std::string optimalReconstructionPlanFileName =
-        ls->spaceFolderName + "optimalReconstructionPlan" + num2str(gridLevel) + ".bin";
+        ls->spaceFolderName + "optimalReconstructionPlan" + common::num2str(gridLevel) + ".bin";
     StaticVector<SortedId>* optimalReconstructionPlan = loadArrayFromFile<SortedId>(optimalReconstructionPlanFileName);
 
     auto subFolderName = ls->mp->mip->_ini.get<std::string>("LargeScale.subFolderName", "");
@@ -482,8 +482,8 @@ mesh::Mesh* joinMeshes(int gl, LargeScale* ls)
     {
         int id = (*optimalReconstructionPlan)[i].id;
         float inflateFactor = (*optimalReconstructionPlan)[i].value;
-        std::string folderName = ls->spaceFolderName + "reconstructedSpacePart" + num2strFourDecimal(id) + "/";
-        folderName +=  "GL_" + num2str(gridLevel) + "_IF_" + num2str((int)inflateFactor) + "/";
+        std::string folderName = ls->spaceFolderName + "reconstructedSpacePart" + common::num2strFourDecimal(id) + "/";
+        folderName +=  "GL_" + common::num2str(gridLevel) + "_IF_" + common::num2str((int)inflateFactor) + "/";
 
         Point3d hexah[8];
         rp->getHexahedronForID(inflateFactor, id, hexah);

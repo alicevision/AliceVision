@@ -36,7 +36,7 @@ void filterLargeEdgeTriangles(Mesh* me, float avelthr)
 }
 
 void meshPostProcessing(Mesh*& inout_mesh, StaticVector<StaticVector<int>*>*& inout_ptsCams, StaticVector<int>& usedCams,
-                      MultiViewParams& mp, PreMatchCams& pc,
+                      common::MultiViewParams& mp, common::PreMatchCams& pc,
                       const std::string& resultFolderName,
                       StaticVector<Point3d>* hexahsToExcludeFromResultingMesh, Point3d* hexah)
 {
@@ -207,7 +207,7 @@ void meshPostProcessing(Mesh*& inout_mesh, StaticVector<StaticVector<int>*>*& in
 
         delete meOpt;
     }
-    printfElapsedTime(timer, "Mesh post-processing ");
+    common::printfElapsedTime(timer, "Mesh post-processing ");
     std::cout << "meshPostProcessing done" << std::endl;
 }
 

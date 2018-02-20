@@ -114,10 +114,10 @@ int main(int argc, char* argv[])
     ALICEVISION_COUT("ini file: " << iniFilepath);
 
     // .ini parsing
-    MultiViewInputParams mip(iniFilepath, depthMapFolder, depthMapFilterFolder);
+    common::MultiViewInputParams mip(iniFilepath, depthMapFolder, depthMapFilterFolder);
     const double simThr = mip._ini.get<double>("global.simThr", 0.0);
-    MultiViewParams mp(mip.getNbCameras(), &mip, (float) simThr);
-    PreMatchCams pc(&mp);
+    common::MultiViewParams mp(mip.getNbCameras(), &mip, (float) simThr);
+    common::PreMatchCams pc(&mp);
 
     // .ini parsing
     int ocTreeDim = mip._ini.get<int>("LargeScale.gridLevel0", 1024);
@@ -179,7 +179,7 @@ int main(int argc, char* argv[])
             unsigned long ntracks = std::numeric_limits<unsigned long>::max();
             while(ntracks > maxPts)
             {
-                bfs::path dirName = outDirectory/("LargeScaleMaxPts" + num2strFourDecimal(ocTreeDim));
+                bfs::path dirName = outDirectory/("LargeScaleMaxPts" + common::num2strFourDecimal(ocTreeDim));
                 largeScale::LargeScale* ls = ls0.cloneSpaceIfDoesNotExists(ocTreeDim, dirName.string() + "/");
                 largeScale::VoxelsGrid vg(ls->dimensions, &ls->space[0], ls->mp, ls->pc, ls->spaceVoxelsFolderName);
                 ntracks = vg.getNTracks();
@@ -195,7 +195,7 @@ int main(int argc, char* argv[])
             }
             ALICEVISION_COUT("Number of tracks: " << ntracks);
             ALICEVISION_COUT("ocTreeDim: " << ocTreeDim);
-            bfs::path dirName = outDirectory/("LargeScaleMaxPts" + num2strFourDecimal(ocTreeDim));
+            bfs::path dirName = outDirectory/("LargeScaleMaxPts" + common::num2strFourDecimal(ocTreeDim));
             largeScale::LargeScale lsbase(&mp, &pc, dirName.string()+"/");
             lsbase.loadSpaceFromFile();
             largeScale::ReconstructionPlan rp(lsbase.dimensions, &lsbase.space[0], lsbase.mp, lsbase.pc, lsbase.spaceVoxelsFolderName);
@@ -234,6 +234,6 @@ int main(int argc, char* argv[])
             throw std::invalid_argument("Partitioning not defined");
     }
 
-    printfElapsedTime(startTime, "#");
+    common::printfElapsedTime(startTime, "#");
     return EXIT_SUCCESS;
 }

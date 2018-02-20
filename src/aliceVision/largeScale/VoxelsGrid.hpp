@@ -17,8 +17,8 @@ namespace largeScale {
 class VoxelsGrid
 {
 public:
-    MultiViewParams* mp;
-    PreMatchCams* pc;
+    common::MultiViewParams* mp;
+    common::PreMatchCams* pc;
 
     Voxel voxelDim;
     Point3d space[8]; // TODO FACA: array
@@ -28,7 +28,7 @@ public:
     bool doVisualize;
 
     VoxelsGrid();
-    VoxelsGrid(const Voxel& dimmensions, Point3d* _space, MultiViewParams* _mp, PreMatchCams* _pc,
+    VoxelsGrid(const Voxel& dimmensions, Point3d* _space, common::MultiViewParams* _mp, common::PreMatchCams* _pc,
                const std::string& _spaceRootDir, bool _doVisualize = false);
     ~VoxelsGrid();
 

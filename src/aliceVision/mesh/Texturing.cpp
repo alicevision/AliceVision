@@ -54,7 +54,7 @@ Point3d barycentricToCartesian(const Point3d* triangle, const Point2d& coords)
 }
 
 
-StaticVector<StaticVector<int>*>* Texturing::generateUVs(MultiViewParams& mp, StaticVector<StaticVector<int>*>* ptsCams)
+StaticVector<StaticVector<int>*>* Texturing::generateUVs(common::MultiViewParams& mp, StaticVector<StaticVector<int>*>* ptsCams)
 {
     if(!me)
         throw std::runtime_error("Can't generate UVs without a mesh");
@@ -164,10 +164,10 @@ StaticVector<StaticVector<int>*>* Texturing::generateUVs(MultiViewParams& mp, St
     return updatedPointsCams;
 }
 
-void Texturing::generateTextures(const MultiViewParams &mp, StaticVector<StaticVector<int> *> *ptsCams,
+void Texturing::generateTextures(const common::MultiViewParams &mp, StaticVector<StaticVector<int> *> *ptsCams,
                                  const boost::filesystem::path &outPath, EImageFileType textureFileType)
 {
-    ImagesCache imageCache(&mp, 0, false);
+    common::ImagesCache imageCache(&mp, 0, false);
     for(size_t atlasID = 0; atlasID < _atlases.size(); ++atlasID)
         generateTexture(mp, ptsCams, atlasID, imageCache, outPath, textureFileType);
 }
@@ -201,8 +201,8 @@ struct AccuColor {
 };
 
 
-void Texturing::generateTexture(const MultiViewParams& mp, StaticVector<StaticVector<int>*>* ptsCams,
-                                size_t atlasID, ImagesCache& imageCache, const bfs::path& outPath, EImageFileType textureFileType)
+void Texturing::generateTexture(const common::MultiViewParams& mp, StaticVector<StaticVector<int>*>* ptsCams,
+                                size_t atlasID, common::ImagesCache& imageCache, const bfs::path& outPath, EImageFileType textureFileType)
 {
     if(atlasID >= _atlases.size())
         throw std::runtime_error("Invalid atlas ID " + std::to_string(atlasID));

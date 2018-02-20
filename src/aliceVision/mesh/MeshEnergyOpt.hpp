@@ -15,7 +15,7 @@ namespace mesh {
 class MeshEnergyOpt : public MeshAnalyze
 {
 public:
-    MeshEnergyOpt(MultiViewParams* _mp);
+    MeshEnergyOpt(common::MultiViewParams* _mp);
     ~MeshEnergyOpt();
 
     bool optimizeSmooth(float lambda, float epsilon, int type, int niter, StaticVectorBool* ptsCanMove);

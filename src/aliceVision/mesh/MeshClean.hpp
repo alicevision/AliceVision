@@ -68,7 +68,7 @@ public:
         bool isWrongPt();
     };
 
-    MultiViewParams* mp;
+    common::MultiViewParams* mp;
 
     StaticVector<StaticVector<int>*>* ptsNeighTrisSortedAsc;
     StaticVector<StaticVector<int>*>* ptsNeighPtsOrdered;
@@ -82,7 +82,7 @@ public:
 
     int nPtsInit;
 
-    MeshClean(MultiViewParams* _mp);
+    MeshClean(common::MultiViewParams* _mp);
     ~MeshClean();
 
     bool getEdgeNeighTrisInterval(Pixel& itr, int _ptId1, int _ptId2);

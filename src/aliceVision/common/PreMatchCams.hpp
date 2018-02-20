@@ -10,6 +10,7 @@
 #include <aliceVision/common/MultiViewParams.hpp>
 
 namespace aliceVision {
+namespace common {
 
 class PreMatchCams
 {
@@ -33,4 +34,5 @@ public:
     StaticVector<int>* findNearestCamsFromSeeds(int rc, int nnearestcams);
 };
 
+} // namespace common
 } // namespace aliceVision

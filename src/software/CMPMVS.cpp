@@ -212,7 +212,7 @@ int main(int argc, char* argv[])
     const auto depthMapFilterFolder = rootPath / "depthMapFilter";
     bfs::create_directory(depthMapFolder);
     bfs::create_directory(depthMapFilterFolder);
-    MultiViewInputParams mip(cmdline.iniFile, depthMapFolder.string(), depthMapFilterFolder.string());
+    common::MultiViewInputParams mip(cmdline.iniFile, depthMapFolder.string(), depthMapFilterFolder.string());
     const double simThr = mip._ini.get<double>("global.simThr", 0.0);
     const int minNumOfConsistensCams = mip._ini.get<int>("filter.minNumOfConsistentCams", 3);
     const int maxPts = mip._ini.get<int>("LargeScale.planMaxPts", 30000000);
@@ -227,8 +227,8 @@ int main(int argc, char* argv[])
     outPath += "/";
     mip.outDir = outPath.string();
 
-    MultiViewParams mp(mip.getNbCameras(), &mip, (float) simThr);
-    PreMatchCams pc(&mp);
+    common::MultiViewParams mp(mip.getNbCameras(), &mip, (float) simThr);
+    common::PreMatchCams pc(&mp);
     StaticVector<int> cams(mp.ncams);
     if(cmdline.rangeSize == -1)
     {
@@ -283,7 +283,7 @@ int main(int argc, char* argv[])
             lsbase.generateSpace(maxPtsPerVoxel, ocTreeDim);
             string voxelsArrayFileName = lsbase.spaceFolderName + "hexahsToReconstruct.bin";
             StaticVector<Point3d>* voxelsArray = nullptr;
-            if(FileExists(voxelsArrayFileName))
+            if(common::FileExists(voxelsArrayFileName))
             {
                 // If already computed reload it.
                 std::cout << "Voxels array already computed, reload from file: " << voxelsArrayFileName << std::endl;
@@ -324,7 +324,7 @@ int main(int argc, char* argv[])
             unsigned long ntracks = std::numeric_limits<unsigned long>::max();
             while(ntracks > maxPts)
             {
-                string dirName = mip.mvDir + "LargeScaleMaxPts" + num2strFourDecimal(ocTreeDim) + "/";
+                string dirName = mip.mvDir + "LargeScaleMaxPts" + common::num2strFourDecimal(ocTreeDim) + "/";
                 largeScale::LargeScale* ls = ls0.cloneSpaceIfDoesNotExists(ocTreeDim, dirName);
                 largeScale::VoxelsGrid vg(ls->dimensions, &ls->space[0], ls->mp, ls->pc, ls->spaceVoxelsFolderName);
                 ntracks = vg.getNTracks();
@@ -335,7 +335,7 @@ int main(int argc, char* argv[])
                     ocTreeDim = (t < 2.0) ? ocTreeDim-100 : ocTreeDim*0.5;
                 }
             }
-            largeScale::LargeScale lsbase(&mp, &pc, mip.mvDir + "LargeScaleMaxPts" + num2strFourDecimal(ocTreeDim) + "/");
+            largeScale::LargeScale lsbase(&mp, &pc, mip.mvDir + "LargeScaleMaxPts" + common::num2strFourDecimal(ocTreeDim) + "/");
             lsbase.loadSpaceFromFile();
             largeScale::ReconstructionPlan rp(lsbase.dimensions, &lsbase.space[0], lsbase.mp, lsbase.pc, lsbase.spaceVoxelsFolderName);
             StaticVector<int> voxelNeighs(rp.voxels->size() / 8);
@@ -395,7 +395,7 @@ int main(int argc, char* argv[])
         texMesh.generateTextures(mp, ptsCams, outPath);
     }
 
-    printfElapsedTime(startTime, "#");
+    common::printfElapsedTime(startTime, "#");
 
     return EXIT_SUCCESS;
 }

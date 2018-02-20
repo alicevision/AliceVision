@@ -19,7 +19,7 @@ class ReconstructionPlan : public VoxelsGrid
 {
 public:
     StaticVector<int>* nVoxelsTracks;
-    ReconstructionPlan(Voxel& dimmensions, Point3d* space, MultiViewParams* _mp, PreMatchCams* _pc,
+    ReconstructionPlan(Voxel& dimmensions, Point3d* space, common::MultiViewParams* _mp, common::PreMatchCams* _pc,
                        std::string _spaceRootDir);
     ~ReconstructionPlan();
 

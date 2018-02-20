@@ -17,7 +17,7 @@ namespace depthMap {
 
 namespace bfs = boost::filesystem;
 
-SemiGlobalMatchingParams::SemiGlobalMatchingParams(MultiViewParams* _mp, PreMatchCams* _pc, PlaneSweepingCuda* _cps)
+SemiGlobalMatchingParams::SemiGlobalMatchingParams(common::MultiViewParams* _mp, common::PreMatchCams* _pc, PlaneSweepingCuda* _cps)
 {
     mp = _mp;
     pc = _pc;
@@ -80,22 +80,22 @@ SemiGlobalMatchingParams::~SemiGlobalMatchingParams()
 
 std::string SemiGlobalMatchingParams::getREFINE_photo_depthMapFileName(IndexT viewId, int scale, int step)
 {
-    return mp->mip->_depthMapFolder + std::to_string(viewId) + "_depthMap_scale" + num2str(scale) + "_step" + num2str(step) + "_refinePhoto.exr";
+    return mp->mip->_depthMapFolder + std::to_string(viewId) + "_depthMap_scale" + common::num2str(scale) + "_step" + common::num2str(step) + "_refinePhoto.exr";
 }
 
 std::string SemiGlobalMatchingParams::getREFINE_photo_simMapFileName(IndexT viewId, int scale, int step)
 {
-    return mp->mip->_depthMapFolder + std::to_string(viewId) + "_simMap_scale" + num2str(scale) + "_step" + num2str(step) + "_refinePhoto.exr";
+    return mp->mip->_depthMapFolder + std::to_string(viewId) + "_simMap_scale" + common::num2str(scale) + "_step" + common::num2str(step) + "_refinePhoto.exr";
 }
 
 std::string SemiGlobalMatchingParams::getREFINE_opt_depthMapFileName(IndexT viewId, int scale, int step)
 {
-    return mp->mip->_depthMapFolder + std::to_string(viewId) + "_depthMap_scale" + num2str(scale) + "_step" + num2str(step) + "_refineOpt.exr";
+    return mp->mip->_depthMapFolder + std::to_string(viewId) + "_depthMap_scale" + common::num2str(scale) + "_step" + common::num2str(step) + "_refineOpt.exr";
 }
 
 std::string SemiGlobalMatchingParams::getREFINE_opt_simMapFileName(IndexT viewId, int scale, int step)
 {
-    return mp->mip->_depthMapFolder + std::to_string(viewId) + "_simMap_scale" + num2str(scale) + "_step" + num2str(step) + "_refineOpt.exr";
+    return mp->mip->_depthMapFolder + std::to_string(viewId) + "_simMap_scale" + common::num2str(scale) + "_step" + common::num2str(step) + "_refineOpt.exr";
 }
 
 std::string SemiGlobalMatchingParams::getSGMTmpDir()
@@ -105,17 +105,17 @@ std::string SemiGlobalMatchingParams::getSGMTmpDir()
 
 std::string SemiGlobalMatchingParams::getSGM_depthMapFileName(IndexT viewId, int scale, int step)
 {
-    return mp->mip->_depthMapFolder + std::to_string(viewId) + "_depthMap_scale" + num2str(scale) + "_step" + num2str(step) + "_SGM.bin";
+    return mp->mip->_depthMapFolder + std::to_string(viewId) + "_depthMap_scale" + common::num2str(scale) + "_step" + common::num2str(step) + "_SGM.bin";
 }
 
 std::string SemiGlobalMatchingParams::getSGM_simMapFileName(IndexT viewId, int scale, int step)
 {
-    return mp->mip->_depthMapFolder + std::to_string(viewId) + "_simMap_scale" + num2str(scale) + "_step" + num2str(step) + "_SGM.bin";
+    return mp->mip->_depthMapFolder + std::to_string(viewId) + "_simMap_scale" + common::num2str(scale) + "_step" + common::num2str(step) + "_SGM.bin";
 }
 
 std::string SemiGlobalMatchingParams::getSGM_idDepthMapFileName(IndexT viewId, int scale, int step)
 {
-    return mp->mip->_depthMapFolder + std::to_string(viewId) + "_idDepthMap_scale" + num2str(scale) + "_step" + num2str(step) + "_SGM.png";
+    return mp->mip->_depthMapFolder + std::to_string(viewId) + "_idDepthMap_scale" + common::num2str(scale) + "_step" + common::num2str(step) + "_SGM.png";
 }
 
 std::string SemiGlobalMatchingParams::getSGM_tcamsFileName(IndexT viewId)
@@ -175,7 +175,7 @@ DepthSimMap* SemiGlobalMatchingParams::getDepthSimMapFromBestIdVal(int w, int h,
     }
 
     if(mp->verbose)
-        printfElapsedTime(tall, "getDepthSimMapFromBestIdVal");
+        common::printfElapsedTime(tall, "getDepthSimMapFromBestIdVal");
 
     return depthSimMap;
 }

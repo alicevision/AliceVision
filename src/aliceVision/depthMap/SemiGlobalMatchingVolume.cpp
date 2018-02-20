@@ -101,7 +101,7 @@ void SemiGlobalMatchingVolume::cloneVolumeStepZ()
     _volume = nullptr;
 
     if(sp->mp->verbose)
-        printfElapsedTime(tall, "SemiGlobalMatchingVolume::cloneVolumeStepZ ");
+        common::printfElapsedTime(tall, "SemiGlobalMatchingVolume::cloneVolumeStepZ ");
 }
 
 void SemiGlobalMatchingVolume::cloneVolumeSecondStepZ()
@@ -135,7 +135,7 @@ void SemiGlobalMatchingVolume::cloneVolumeSecondStepZ()
     }
 
     if (sp->mp->verbose)
-        printfElapsedTime(tall, "SemiGlobalMatchingVolume::cloneVolumeSecondStepZ ");
+        common::printfElapsedTime(tall, "SemiGlobalMatchingVolume::cloneVolumeSecondStepZ ");
 }
 
 /**
@@ -149,7 +149,7 @@ void SemiGlobalMatchingVolume::SGMoptimizeVolumeStepZ(int rc, int volStepXY, int
                                   scale, sp->P1, sp->P2);
 
     if(sp->mp->verbose)
-        printfElapsedTime(tall, "SemiGlobalMatchingVolume::SGMoptimizeVolumeStepZ");
+        common::printfElapsedTime(tall, "SemiGlobalMatchingVolume::SGMoptimizeVolumeStepZ");
 }
 
 StaticVector<IdValue>* SemiGlobalMatchingVolume::getOrigVolumeBestIdValFromVolumeStepZ(int zborder)
@@ -191,7 +191,7 @@ StaticVector<IdValue>* SemiGlobalMatchingVolume::getOrigVolumeBestIdValFromVolum
     }
 
     if(sp->mp->verbose)
-        printfElapsedTime(tall, "SemiGlobalMatchingVolume::getOrigVolumeBestIdValFromVolumeStepZ ");
+        common::printfElapsedTime(tall, "SemiGlobalMatchingVolume::getOrigVolumeBestIdValFromVolumeStepZ ");
 
     return volumeBestIdVal;
 }

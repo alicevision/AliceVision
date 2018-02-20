@@ -19,11 +19,11 @@ namespace depthMap {
 class SemiGlobalMatchingParams
 {
 public:
-    MultiViewParams* mp;
-    PreMatchCams* pc;
+    common::MultiViewParams* mp;
+    common::PreMatchCams* pc;
     RcTc* prt;
     PlaneSweepingCuda* cps;
-    ImagesCache* ic;
+    common::ImagesCache* ic;
     bool visualizeDepthMaps;
     bool visualizePartialDepthMaps;
     bool doSmooth;
@@ -59,7 +59,7 @@ public:
     bool useSilhouetteMaskCodedByColor;
     rgb silhouetteMaskColor;
 
-    SemiGlobalMatchingParams(MultiViewParams* _mp, PreMatchCams* _pc, PlaneSweepingCuda* _cps);
+    SemiGlobalMatchingParams(common::MultiViewParams* _mp, common::PreMatchCams* _pc, PlaneSweepingCuda* _cps);
     ~SemiGlobalMatchingParams(void);
 
     DepthSimMap* getDepthSimMapFromBestIdVal(int w, int h, StaticVector<IdValue>* volumeBestIdVal, int scale,

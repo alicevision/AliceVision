@@ -48,7 +48,7 @@ public:
     };
 
 public:
-    UVAtlas(const Mesh& mesh, MultiViewParams& mp, StaticVector<StaticVector<int>*>* ptsCams,
+    UVAtlas(const Mesh& mesh, common::MultiViewParams& mp, StaticVector<StaticVector<int>*>* ptsCams,
                     unsigned int textureSide, unsigned int gutterSize);
 
 public:
@@ -58,10 +58,10 @@ public:
     const Mesh& mesh() const { return _mesh; }
 
 private:
-    void createCharts(std::vector<Chart>& charts, MultiViewParams& mp, StaticVector<StaticVector<int>*>* ptsCams);
-    void packCharts(std::vector<Chart>& charts, MultiViewParams& mp);
-    void finalizeCharts(std::vector<Chart>& charts, MultiViewParams& mp);
-    void createTextureAtlases(std::vector<Chart>& charts, MultiViewParams& mp);
+    void createCharts(std::vector<Chart>& charts, common::MultiViewParams& mp, StaticVector<StaticVector<int>*>* ptsCams);
+    void packCharts(std::vector<Chart>& charts, common::MultiViewParams& mp);
+    void finalizeCharts(std::vector<Chart>& charts, common::MultiViewParams& mp);
+    void createTextureAtlases(std::vector<Chart>& charts, common::MultiViewParams& mp);
 
 private:
     std::vector<std::vector<Chart>> _atlases;

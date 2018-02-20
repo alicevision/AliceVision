@@ -95,10 +95,10 @@ int main(int argc, char* argv[])
     ALICEVISION_COUT("ini file: " << iniFilepath);
 
     // .ini parsing
-    MultiViewInputParams mip(iniFilepath, depthMapFolder, outputFolder);
+    common::MultiViewInputParams mip(iniFilepath, depthMapFolder, outputFolder);
     const double simThr = mip._ini.get<double>("global.simThr", 0.0);
-    MultiViewParams mp(mip.getNbCameras(), &mip, (float) simThr);
-    PreMatchCams pc(&mp);
+    common::MultiViewParams mp(mip.getNbCameras(), &mip, (float) simThr);
+    common::PreMatchCams pc(&mp);
 
     StaticVector<int> cams(mp.ncams);
     if(rangeSize == -1)
@@ -130,6 +130,6 @@ int main(int argc, char* argv[])
         fs.filterDepthMaps(cams, minNumOfConsistensCams, minNumOfConsistensCamsWithLowSimilarity);
     }
 
-    printfElapsedTime(startTime, "#");
+    common::printfElapsedTime(startTime, "#");
     return EXIT_SUCCESS;
 }

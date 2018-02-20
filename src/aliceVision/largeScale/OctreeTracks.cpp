@@ -459,7 +459,7 @@ void OctreeTracks::trackStruct::doPrintf()
         printf("cams %i, rc %i, val %i \n", i, cams[i].x, cams[i].y);
 }
 
-OctreeTracks::OctreeTracks(const Point3d* _voxel, MultiViewParams* _mp, PreMatchCams* _pc, Voxel dimensions)
+OctreeTracks::OctreeTracks(const Point3d* _voxel, common::MultiViewParams* _mp, common::PreMatchCams* _pc, Voxel dimensions)
     : Fuser(_mp, _pc)
 {
     numSubVoxsX = dimensions.x;
@@ -672,7 +672,7 @@ StaticVector<OctreeTracks::trackStruct*>* OctreeTracks::fillOctree(int maxPts, s
     long t1 = clock();
     StaticVector<int>* cams = pc->findCamsWhichIntersectsHexahedron(vox, depthMapsPtsSimsTmpDir + "minMaxDepths.bin");
     if(mp->verbose)
-        printfElapsedTime(t1, "findCamsWhichIntersectsHexahedron");
+        common::printfElapsedTime(t1, "findCamsWhichIntersectsHexahedron");
     if(mp->verbose)
         printf("ncams %i\n", cams->size());
 
@@ -725,7 +725,7 @@ StaticVector<OctreeTracks::trackStruct*>* OctreeTracks::fillOctree(int maxPts, s
 
     StaticVector<trackStruct*>* tracks = getAllPoints();
     if(mp->verbose)
-        printfElapsedTime(t1, "fillOctree fill");
+        common::printfElapsedTime(t1, "fillOctree fill");
 
     // TODO this is not working well ...
     // updateOctreeTracksCams(tracks);
@@ -739,7 +739,7 @@ StaticVector<OctreeTracks::trackStruct*>* OctreeTracks::fillOctree(int maxPts, s
 
         filterMinNumConsistentCams(tracks);
         if(mp->verbose)
-            printfElapsedTime(t2, "filterMinNumConsistentCams");
+            common::printfElapsedTime(t2, "filterMinNumConsistentCams");
 
         if(mp->verbose)
             printf("ntracks after filterMinNumConsistentCams %i\n", tracks->size());
@@ -749,7 +749,7 @@ StaticVector<OctreeTracks::trackStruct*>* OctreeTracks::fillOctree(int maxPts, s
         filterOctreeTracks2(tracks);
 
         if(mp->verbose)
-            printfElapsedTime(t2, "filterOctreeTracks2");
+            common::printfElapsedTime(t2, "filterOctreeTracks2");
 
         if(mp->verbose)
             printf("ntracks after filterOctreeTracks2 %i\n", tracks->size());
@@ -791,7 +791,7 @@ OctreeTracks::fillOctreeFromTracks(StaticVector<OctreeTracks::trackStruct*>* tra
     StaticVector<trackStruct*>* tracks = getAllPoints();
 
     if(mp->verbose)
-        printfElapsedTime(t1, "fillOctreeFromTracks");
+        common::printfElapsedTime(t1, "fillOctreeFromTracks");
 
     return tracks;
 }

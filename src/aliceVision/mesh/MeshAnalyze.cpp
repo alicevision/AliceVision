@@ -9,7 +9,7 @@
 namespace aliceVision {
 namespace mesh {
 
-MeshAnalyze::MeshAnalyze(MultiViewParams* _mp)
+MeshAnalyze::MeshAnalyze(common::MultiViewParams* _mp)
     : MeshClean(_mp)
 {}
 

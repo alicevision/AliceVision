@@ -10,7 +10,7 @@
 namespace aliceVision {
 namespace depthMap {
 
-RcTc::RcTc(MultiViewParams* _mp, PlaneSweepingCuda* _cps)
+RcTc::RcTc(common::MultiViewParams* _mp, PlaneSweepingCuda* _cps)
 {
     cps = _cps;
     mp = _mp;
@@ -58,7 +58,7 @@ void RcTc::refineRcTcDepthSimMap(bool useTcOrRcPixSize, DepthSimMap* depthSimMap
         }
 
         if(verbose)
-            printfElapsedTime(t1, "refineRcTcDepthSimMap");
+            common::printfElapsedTime(t1, "refineRcTcDepthSimMap");
 
         delete depthMap;
         delete simMap;
@@ -80,7 +80,7 @@ void RcTc::smoothDepthMap(DepthSimMap* depthSimMap, int rc, int wsh, float gamma
     }
 
     if(verbose)
-        printfElapsedTime(t1, "smoothDepth11");
+        common::printfElapsedTime(t1, "smoothDepth11");
 
     delete depthMap;
 }
@@ -102,7 +102,7 @@ void RcTc::filterDepthMap(DepthSimMap* depthSimMap, int rc, int wsh, float gamma
     }
 
     if(verbose)
-        printfElapsedTime(t1, "smoothDepth11");
+        common::printfElapsedTime(t1, "smoothDepth11");
 
     delete depthMap;
 }

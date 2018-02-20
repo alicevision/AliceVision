@@ -99,9 +99,9 @@ int main(int argc, char* argv[])
     const EImageFileType outputTextureFileType = EImageFileType_stringToEnum(outTextureFileTypeName);
 
     // .ini parsing
-    MultiViewInputParams mip(iniFilepath, "", "");
+    common::MultiViewInputParams mip(iniFilepath, "", "");
     const double simThr = mip._ini.get<double>("global.simThr", 0.0);
-    MultiViewParams mp(mip.getNbCameras(), &mip, (float) simThr);
+    common::MultiViewParams mp(mip.getNbCameras(), &mip, (float) simThr);
 
     mesh::Texturing mesh;
     mesh.texParams = texParams;
@@ -153,6 +153,6 @@ int main(int argc, char* argv[])
     ALICEVISION_COUT("Generate textures.");
     mesh.generateTextures(mp, ptsCams, outputFolder, outputTextureFileType);
 
-    printfElapsedTime(startTime, "#");
+    common::printfElapsedTime(startTime, "#");
     return EXIT_SUCCESS;
 }

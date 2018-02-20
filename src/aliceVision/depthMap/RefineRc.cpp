@@ -242,7 +242,7 @@ bool RefineRc::refinercCUDA(bool checkIfExists)
         return true;
     }
 
-    if(checkIfExists && (FileExists(sp->getREFINE_opt_simMapFileName(viewId, 1, 1))))
+    if(checkIfExists && (common::FileExists(sp->getREFINE_opt_simMapFileName(viewId, 1, 1))))
     {
         return false;
     }
@@ -283,7 +283,7 @@ bool RefineRc::refinercCUDA(bool checkIfExists)
                                sp->getREFINE_opt_depthMapFileName(viewId, 1, 1),
                                sp->getREFINE_opt_simMapFileName(viewId, 1, 1));
 
-    printfElapsedTime(tall, "refinerc CUDA: " + num2str(rc) + " of " + num2str(sp->mp->ncams) + ", " + std::to_string(viewId) + " done.");
+    common::printfElapsedTime(tall, "refinerc CUDA: " + common::num2str(rc) + " of " + common::num2str(sp->mp->ncams) + ", " + std::to_string(viewId) + " done.");
 
     delete depthPixSizeMapVis;
     delete depthSimMapPhoto;
@@ -292,7 +292,7 @@ bool RefineRc::refinercCUDA(bool checkIfExists)
     return true;
 }
 
-void refineDepthMaps(int CUDADeviceNo, MultiViewParams* mp, PreMatchCams* pc, const StaticVector<int>& cams)
+void refineDepthMaps(int CUDADeviceNo, common::MultiViewParams* mp, common::PreMatchCams* pc, const StaticVector<int>& cams)
 {
     int scale = mp->mip->_ini.get<int>("semiGlobalMatching.scale", -1);
     int step = mp->mip->_ini.get<int>("semiGlobalMatching.step", -1);
@@ -308,7 +308,7 @@ void refineDepthMaps(int CUDADeviceNo, MultiViewParams* mp, PreMatchCams* pc, co
     }
 
     int bandType = 0;
-    ImagesCache* ic = new ImagesCache(mp, bandType, true);
+    common::ImagesCache* ic = new common::ImagesCache(mp, bandType, true);
     PlaneSweepingCuda* cps = new PlaneSweepingCuda(CUDADeviceNo, ic, mp, pc, scale);
     SemiGlobalMatchingParams* sp = new SemiGlobalMatchingParams(mp, pc, cps);
 
@@ -316,7 +316,7 @@ void refineDepthMaps(int CUDADeviceNo, MultiViewParams* mp, PreMatchCams* pc, co
 
     for(const int rc : cams)
     {
-        if(!FileExists(sp->getREFINE_opt_simMapFileName(rc, 1, 1)))
+        if(!common::FileExists(sp->getREFINE_opt_simMapFileName(rc, 1, 1)))
         {
             RefineRc* rrc = new RefineRc(rc, scale, step, sp);
             rrc->refinercCUDA();
@@ -329,7 +329,7 @@ void refineDepthMaps(int CUDADeviceNo, MultiViewParams* mp, PreMatchCams* pc, co
     delete cps;
 }
 
-void refineDepthMaps(MultiViewParams* mp, PreMatchCams* pc, const StaticVector<int>& cams)
+void refineDepthMaps(common::MultiViewParams* mp, common::PreMatchCams* pc, const StaticVector<int>& cams)
 {
     int num_gpus = listCUDADevices(true);
     int num_cpu_threads = omp_get_num_procs();

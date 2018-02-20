@@ -17,10 +17,10 @@ namespace largeScale {
 class Fuser
 {
 public:
-    const MultiViewParams* mp;
-    PreMatchCams* pc;
+    const common::MultiViewParams* mp;
+    common::PreMatchCams* pc;
 
-    Fuser(const MultiViewParams* _mp, PreMatchCams* _pc);
+    Fuser(const common::MultiViewParams* _mp, common::PreMatchCams* _pc);
     ~Fuser(void);
 
     // minNumOfModals number of other cams including this cam ... minNumOfModals /in 2,3,... default 3
@@ -43,9 +43,9 @@ private:
                       StaticVector<float>* depthMap, StaticVector<float>* simMap, int scale);
 };
 
-std::string generateTempPtsSimsFiles(std::string tmpDir, MultiViewParams* mp, bool addRandomNoise = false,
+std::string generateTempPtsSimsFiles(std::string tmpDir, common::MultiViewParams* mp, bool addRandomNoise = false,
                                      float percNoisePts = 0.0, int noisPixSizeDistHalfThr = 0);
-void deleteTempPtsSimsFiles(MultiViewParams* mp, std::string depthMapsPtsSimsTmpDir);
+void deleteTempPtsSimsFiles(common::MultiViewParams* mp, std::string depthMapsPtsSimsTmpDir);
 
 } // namespace largeScale
 } // namespace aliceVision

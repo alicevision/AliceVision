@@ -19,6 +19,7 @@
 #include <string>
 
 namespace aliceVision {
+namespace common {
 
 enum class EFileType {
     P = 0,
@@ -193,4 +194,5 @@ private:
     int minWinSizeHalf;
 };
 
+} // namespace common
 } // namespace aliceVision

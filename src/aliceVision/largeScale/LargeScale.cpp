@@ -15,7 +15,7 @@ namespace largeScale {
 
 namespace bfs = boost::filesystem;
 
-LargeScale::LargeScale(MultiViewParams* _mp, PreMatchCams* _pc, std::string _spaceFolderName)
+LargeScale::LargeScale(common::MultiViewParams* _mp, common::PreMatchCams* _pc, std::string _spaceFolderName)
   : mp(_mp)
   , pc(_pc)
   , spaceFolderName(_spaceFolderName)
@@ -34,7 +34,7 @@ LargeScale::~LargeScale()
 
 bool LargeScale::isSpaceSaved()
 {
-    return FileExists(spaceFileName);
+    return common::FileExists(spaceFileName);
 }
 
 void LargeScale::saveSpaceToFile()
@@ -130,7 +130,7 @@ LargeScale* LargeScale::cloneSpaceIfDoesNotExists(int newOcTreeDim, std::string 
         out->saveSpaceToFile();
 
         if(mp->verbose)
-            printfElapsedTime(t1, "space cloned in:");
+            common::printfElapsedTime(t1, "space cloned in:");
 
         return out;
     }
@@ -188,7 +188,7 @@ bool LargeScale::generateSpace(int maxPts, int ocTreeDim)
     delete vgnew;
     delete vg;
 
-    DeleteDirectory(tmpdir);
+    common::DeleteDirectory(tmpdir);
 
     deleteTempPtsSimsFiles(mp, depthMapsPtsSimsTmpDir);
 

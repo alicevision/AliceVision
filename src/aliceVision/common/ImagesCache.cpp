@@ -8,6 +8,7 @@
 #include <aliceVision/common/fileIO.hpp>
 
 namespace aliceVision {
+namespace common {
 
 int ImagesCache::getPixelId(int x, int y, int imgid)
 {
@@ -166,4 +167,5 @@ rgb ImagesCache::getPixelValue(const Pixel& pix, int camId)
                static_cast<unsigned char>(floatRGB.b));
 }
 
+} // namespace common
 } // namespace aliceVision

@@ -31,7 +31,7 @@ namespace delaunayCut {
 
 namespace bfs = boost::filesystem;
 
-DelaunayGraphCut::DelaunayGraphCut(MultiViewParams* _mp, PreMatchCams* _pc)
+DelaunayGraphCut::DelaunayGraphCut(common::MultiViewParams* _mp, common::PreMatchCams* _pc)
 {
     mp = _mp;
     pc = _pc;
@@ -88,7 +88,7 @@ void DelaunayGraphCut::saveDh(std::string fileNameDh, std::string fileNameInfo)
     // std::ofstream oFileT(fileNameDh.c_str());
     // oFileT << *_tetrahedralization; // TODO GEOGRAM
 
-    printfElapsedTime(t1);
+    common::printfElapsedTime(t1);
 }
 
 void DelaunayGraphCut::initVertices()
@@ -119,7 +119,7 @@ void DelaunayGraphCut::computeDelaunay()
 
     long tall = clock();
     _tetrahedralization->set_vertices(_verticesCoords.size(), _verticesCoords.front().m);
-    printfElapsedTime(tall, "GEOGRAM Delaunay tetrahedralization ");
+    common::printfElapsedTime(tall, "GEOGRAM Delaunay tetrahedralization ");
 
     initCells();
 
@@ -163,14 +163,14 @@ void DelaunayGraphCut::displayStatistics()
     StaticVector<int>* ptsCamsHist = getPtsCamsHist();
     std::cout << "Histogram of number of cams per point:\n";
     for(int i = 0; i < ptsCamsHist->size(); ++i)
-        std::cout << "    " << i << ": " << num2str((*ptsCamsHist)[i]) << "\n";
+        std::cout << "    " << i << ": " << common::num2str((*ptsCamsHist)[i]) << "\n";
     std::cout << "\n";
     delete ptsCamsHist;
 
     StaticVector<int>* ptsNrcsHist = getPtsNrcHist();
     std::cout << "Histogram of alpha_vis per point:\n";
     for(int i = 0; i < ptsNrcsHist->size(); ++i)
-        std::cout << "    " << i << ": " << num2str((*ptsNrcsHist)[i]) << "\n";
+        std::cout << "    " << i << ": " << common::num2str((*ptsNrcsHist)[i]) << "\n";
     std::cout << "\n";
     delete ptsNrcsHist;
 }
@@ -194,7 +194,7 @@ StaticVector<StaticVector<int>*>* DelaunayGraphCut::createPtsCams()
 
     std::cout << "Extract visibilities done." << std::endl;
 
-    printfElapsedTime(t, "Extract visibilities ");
+    common::printfElapsedTime(t, "Extract visibilities ");
     return out;
 }
 
@@ -270,7 +270,7 @@ StaticVector<int> DelaunayGraphCut::getIsUsedPerCamera() const
         }
     }
 
-    printfElapsedTime(timer, "getIsUsedPerCamera ");
+    common::printfElapsedTime(timer, "getIsUsedPerCamera ");
     return cams;
 }
 
@@ -463,18 +463,18 @@ void DelaunayGraphCut::createTetrahedralizationFromDepthMapsCamsVoxel(StaticVect
         fileNameTracksPts = folderName + "tracksGridPts.bin";
         fileNameTracksPtsCams = folderName + "tracksGridPtsCams.bin";
 
-        if(FileExists(fileNameTracksPts))
+        if(common::FileExists(fileNameTracksPts))
         {
             StaticVector<Point3d>* tracksPoints = loadArrayFromFile<Point3d>(fileNameTracksPts);
             StaticVector<StaticVector<Pixel>*>* tracksPointsCams =
                 loadArrayOfArraysFromFile<Pixel>(fileNameTracksPtsCams);
 
-            long t1 = initEstimate();
+            long t1 = common::initEstimate();
             for(int j = 0; j < tracksPoints->size(); j++)
             {
                 Point3d tp = (*tracksPoints)[j];
                 StaticVector<Pixel>* cams = (*tracksPointsCams)[j];
-                if((isPointInHexahedron(tp, voxel)) && (cams != nullptr) &&
+                if((common::isPointInHexahedron(tp, voxel)) && (cams != nullptr) &&
                    ((!doFilterOctreeTracks) || ((doFilterOctreeTracks) && (cams->size() >= minNumOfConsistentCams))))
                 {
                     cgpt = cgpt + tp;
@@ -499,9 +499,9 @@ void DelaunayGraphCut::createTetrahedralizationFromDepthMapsCamsVoxel(StaticVect
                     _verticesAttr.push_back(newv);
                 }
 
-                printfEstimate(j, tracksPoints->size(), t1);
+                common::printfEstimate(j, tracksPoints->size(), t1);
             } // for j
-            finishEstimate();
+            common::finishEstimate();
 
             // delete randIds;
 
@@ -524,7 +524,7 @@ void DelaunayGraphCut::createTetrahedralizationFromDepthMapsCamsVoxel(StaticVect
 
     computeDelaunay();
 
-    printfElapsedTime(tall, "Create Delaunay tetrahedralization from depth map voxels ");
+    common::printfElapsedTime(tall, "Create Delaunay tetrahedralization from depth map voxels ");
 
     displayStatistics();
 }
@@ -546,7 +546,7 @@ void DelaunayGraphCut::computeVerticesSegSize(bool allPoints, float alpha) // al
         alpha = 2.0f * std::max(2.0f, pointToJoinPixSizeDist);
     }
 
-    long t1 = initEstimate();
+    long t1 = common::initEstimate();
     assert(_verticesCoords.size() == _verticesAttr.size());
 
     for(VertexIndex vi = 0; vi < _verticesAttr.size(); ++vi)
@@ -578,13 +578,13 @@ void DelaunayGraphCut::computeVerticesSegSize(bool allPoints, float alpha) // al
                 }
             }
         }
-        printfEstimate(vi, _verticesAttr.size(), t1);
+        common::printfEstimate(vi, _verticesAttr.size(), t1);
     }
-    finishEstimate();
+    common::finishEstimate();
 
     Universe* u = new Universe(_verticesAttr.size());
 
-    t1 = initEstimate();
+    t1 = common::initEstimate();
     int s = (int)edges.size(); // Fuse all edges collected to be merged
     for(int i = 0; i < s; i++)
     {
@@ -594,9 +594,9 @@ void DelaunayGraphCut::computeVerticesSegSize(bool allPoints, float alpha) // al
         {
             u->join(a, b);
         }
-        printfEstimate(i, s, t1);
+        common::printfEstimate(i, s, t1);
     }
-    finishEstimate();
+    common::finishEstimate();
 
     // Last loop over vertices to update segId
     for(int vi = 0; vi < _verticesAttr.size(); ++vi)
@@ -971,7 +971,7 @@ void DelaunayGraphCut::fillGraph(bool fixesSigma, float nPixelSizeBehind, bool a
     }
 
     // choose random order to prevent waiting
-    StaticVector<int>* vetexesToProcessIdsRand = createRandomArrayOfIntegers(_verticesAttr.size());
+    StaticVector<int>* vetexesToProcessIdsRand = common::createRandomArrayOfIntegers(_verticesAttr.size());
 
     int64_t avStepsFront = 0;
     int64_t aAvStepsFront = 0;
@@ -1017,11 +1017,11 @@ void DelaunayGraphCut::fillGraph(bool fixesSigma, float nPixelSizeBehind, bool a
     if(mp->verbose)
     {
         std::cout << "avStepsFront " << avStepsFront << " \n";
-        std::cout << "avStepsFront = " << num2str(avStepsFront) << " // " << num2str(aAvStepsFront) << " \n";
-        std::cout << "avStepsBehind = " << num2str(avStepsBehind) << " // " << num2str(nAvStepsBehind) << " \n";
-        std::cout << "avCams = " << num2str(avCams) << " // " << num2str(nAvCams) << " \n";
+        std::cout << "avStepsFront = " << common::num2str(avStepsFront) << " // " << common::num2str(aAvStepsFront) << " \n";
+        std::cout << "avStepsBehind = " << common::num2str(avStepsBehind) << " // " << common::num2str(nAvStepsBehind) << " \n";
+        std::cout << "avCams = " << common::num2str(avCams) << " // " << common::num2str(nAvCams) << " \n";
     }
-    printfElapsedTime(t1, "s-t graph weights computed : ");
+    common::printfElapsedTime(t1, "s-t graph weights computed : ");
 }
 
 void DelaunayGraphCut::fillGraphPartPtRc(int& out_nstepsFront, int& out_nstepsBehind, int vertexIndex, int cam,
@@ -1191,7 +1191,7 @@ void DelaunayGraphCut::forceTedgesByGradientCVPR11(bool fixesSigma, float nPixel
     }
 
     // choose random order to prevent waiting
-    StaticVector<int>* vetexesToProcessIdsRand = createRandomArrayOfIntegers(_verticesAttr.size());
+    StaticVector<int>* vetexesToProcessIdsRand = common::createRandomArrayOfIntegers(_verticesAttr.size());
 
 #pragma omp parallel for
     for(int i = 0; i < vetexesToProcessIdsRand->size(); ++i)
@@ -1271,7 +1271,7 @@ void DelaunayGraphCut::forceTedgesByGradientCVPR11(bool fixesSigma, float nPixel
         c.cellTWeight = std::max(c.cellTWeight, std::min(1000000.0f, std::max(1.0f, c.cellTWeight) * c.on));
     }
 
-    printfElapsedTime(t2, "t-edges forced : ");
+    common::printfElapsedTime(t2, "t-edges forced : ");
 }
 
 void DelaunayGraphCut::forceTedgesByGradientIJCV(bool fixesSigma, float nPixelSizeBehind)
@@ -1312,7 +1312,7 @@ void DelaunayGraphCut::forceTedgesByGradientIJCV(bool fixesSigma, float nPixelSi
     }
 
     // choose random order to prevent waiting
-    StaticVector<int>* vetexesToProcessIdsRand = createRandomArrayOfIntegers(_verticesAttr.size());
+    StaticVector<int>* vetexesToProcessIdsRand = common::createRandomArrayOfIntegers(_verticesAttr.size());
 
     int64_t avStepsFront = 0;
     int64_t aAvStepsFront = 0;
@@ -1469,12 +1469,12 @@ void DelaunayGraphCut::forceTedgesByGradientIJCV(bool fixesSigma, float nPixelSi
     if(mp->verbose)
     {
         std::string sstat;
-        sstat = "avStepsFront = " + num2str(avStepsFront) + " // " + num2str(aAvStepsFront) + " \n";
+        sstat = "avStepsFront = " + common::num2str(avStepsFront) + " // " + common::num2str(aAvStepsFront) + " \n";
         printf("%s", sstat.c_str());
-        sstat = "avStepsBehind = " + num2str(avStepsBehind) + " // " + num2str(nAvStepsBehind) + " \n";
+        sstat = "avStepsBehind = " + common::num2str(avStepsBehind) + " // " + common::num2str(nAvStepsBehind) + " \n";
         printf("%s", sstat.c_str());
     }
-    printfElapsedTime(t2, "t-edges forced : ");
+    common::printfElapsedTime(t2, "t-edges forced : ");
 }
 
 void DelaunayGraphCut::updateGraphFromTmpPtsCamsHexah(StaticVector<int>* incams, Point3d hexah[8],
@@ -1488,8 +1488,8 @@ void DelaunayGraphCut::updateGraphFromTmpPtsCamsHexah(StaticVector<int>* incams,
     {
         int rc = (*incams)[c];
         std::string camPtsFileName;
-        camPtsFileName = tmpCamsPtsFolderName + "camPtsGrid_" + num2strFourDecimal(rc) + ".bin";
-        if(FileExists(camPtsFileName))
+        camPtsFileName = tmpCamsPtsFolderName + "camPtsGrid_" + common::num2strFourDecimal(rc) + ".bin";
+        if(common::FileExists(camPtsFileName))
         {
             updateGraphFromTmpPtsCamsHexahRC(rc, hexah, tmpCamsPtsFolderName, labatutWeights, distFcnHeight);
         }
@@ -1507,7 +1507,7 @@ void DelaunayGraphCut::updateGraphFromTmpPtsCamsHexahRC(int rc, Point3d hexah[8]
     int nwup = 0;
 
     std::string camPtsFileName;
-    camPtsFileName = tmpCamsPtsFolderName + "camPtsGrid_" + num2strFourDecimal(rc) + ".bin";
+    camPtsFileName = tmpCamsPtsFolderName + "camPtsGrid_" + common::num2strFourDecimal(rc) + ".bin";
 
     bool doFilterOctreeTracks = mp->mip->_ini.get<bool>("LargeScale.doFilterOctreeTracks", true);
     int minNumOfConsistentCams = mp->mip->_ini.get<int>("filter.minNumOfConsistentCams", 2);
@@ -1526,8 +1526,8 @@ void DelaunayGraphCut::updateGraphFromTmpPtsCamsHexahRC(int rc, Point3d hexah[8]
 
         nout++;
 
-        StaticVector<Point3d>* lshi = lineSegmentHexahedronIntersection(pt, mp->CArr[rc], hexah);
-        if((!isPointInHexahedron(pt, hexah)) && (lshi->size() >= 1) && (feof(f) == 0) &&
+        StaticVector<Point3d>* lshi = common::lineSegmentHexahedronIntersection(pt, mp->CArr[rc], hexah);
+        if((!common::isPointInHexahedron(pt, hexah)) && (lshi->size() >= 1) && (feof(f) == 0) &&
            ((!doFilterOctreeTracks) || ((doFilterOctreeTracks) && (pnt.ncams >= minNumOfConsistentCams))))
         {
             nin++;
@@ -1658,7 +1658,7 @@ void DelaunayGraphCut::graphCutPostProcessing()
     }
     std::cout << "Graph cut post-processing done." << std::endl;
 
-    printfElapsedTime(timer, "Graph cut post-processing ");
+    common::printfElapsedTime(timer, "Graph cut post-processing ");
 }
 
 void DelaunayGraphCut::freeUnwantedFullCells(std::string  /*folderName*/, Point3d* hexah)
@@ -1700,7 +1700,7 @@ void DelaunayGraphCut::freeUnwantedFullCells(std::string  /*folderName*/, Point3
     {
         int nremoved = 0;
         Point3d hexahinf[8];
-        inflateHexahedron(hexah, hexahinf, 1.001);
+        common::inflateHexahedron(hexah, hexahinf, 1.001);
         for(CellIndex ci = 0; ci < _cellIsFull.size(); ++ci)
         {
             if(isInfiniteCell(ci) || !_cellIsFull[ci])
@@ -1711,10 +1711,10 @@ void DelaunayGraphCut::freeUnwantedFullCells(std::string  /*folderName*/, Point3
             const Point3d& pc = _verticesCoords[_tetrahedralization->cell_vertex(ci, 2)];
             const Point3d& pd = _verticesCoords[_tetrahedralization->cell_vertex(ci, 3)];
 
-            if((!isPointInHexahedron(pa, hexahinf)) ||
-               (!isPointInHexahedron(pb, hexahinf)) ||
-               (!isPointInHexahedron(pc, hexahinf)) ||
-               (!isPointInHexahedron(pd, hexahinf)))
+            if((!common::isPointInHexahedron(pa, hexahinf)) ||
+               (!common::isPointInHexahedron(pb, hexahinf)) ||
+               (!common::isPointInHexahedron(pc, hexahinf)) ||
+               (!common::isPointInHexahedron(pd, hexahinf)))
             {
                 _cellIsFull[ci] = false;
                 ++nremoved;
@@ -1960,7 +1960,7 @@ void DelaunayGraphCut::maxflow()
     // Find graph-cut solution
     std::cout << "Maxflow: compute" << std::endl;
     const float totalFlow = maxFlowGraph.compute();
-    printfElapsedTime(t_maxflow_compute, "Maxflow computation ");
+    common::printfElapsedTime(t_maxflow_compute, "Maxflow computation ");
     std::cout << "totalFlow: " << totalFlow << std::endl;
 
     std::cout << "Maxflow: update full/empty cells status" << std::endl;
@@ -1971,7 +1971,7 @@ void DelaunayGraphCut::maxflow()
         _cellIsFull[ci] = maxFlowGraph.isTarget(ci);
     }
 
-    printfElapsedTime(t_maxflow, "Full maxflow step");
+    common::printfElapsedTime(t_maxflow, "Full maxflow step");
 
     std::cout << "Maxflow: end" << std::endl;
 }
@@ -2013,7 +2013,7 @@ void DelaunayGraphCut::reconstructExpetiments(StaticVector<int>* cams, std::stri
         {
             t1 = clock();
             updateGraphFromTmpPtsCamsHexah(cams, hexahInflated, tmpCamsPtsFolderName, false, distFcnHeight);
-            printfElapsedTime(t1);
+            common::printfElapsedTime(t1);
         }
         addToInfiniteSw((float)maxint);
 
@@ -2049,7 +2049,7 @@ void DelaunayGraphCut::reconstructExpetiments(StaticVector<int>* cams, std::stri
         {
             t1 = clock();
             updateGraphFromTmpPtsCamsHexah(cams, hexahInflated, tmpCamsPtsFolderName, false, distFcnHeight);
-            printfElapsedTime(t1);
+            common::printfElapsedTime(t1);
         }
         addToInfiniteSw((float)maxint);
 
@@ -2079,7 +2079,7 @@ void DelaunayGraphCut::reconstructExpetiments(StaticVector<int>* cams, std::stri
         {
             t1 = clock();
             updateGraphFromTmpPtsCamsHexah(cams, hexahInflated, tmpCamsPtsFolderName, distFcnHeight != 0.0f);
-            printfElapsedTime(t1);
+            common::printfElapsedTime(t1);
         }
 
         if(saveTemporaryBinFiles)

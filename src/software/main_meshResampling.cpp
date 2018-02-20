@@ -183,6 +183,6 @@ int main(int argc, char* argv[])
     }
     ALICEVISION_CERR("Mesh \"" << outputMeshPath << "\" saved.");
 
-    printfElapsedTime(startTime, "#");
+    common::printfElapsedTime(startTime, "#");
     return EXIT_SUCCESS;
 }

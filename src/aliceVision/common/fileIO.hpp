@@ -16,6 +16,7 @@
 #include <fstream>
 
 namespace aliceVision {
+namespace common {
 
 struct MultiViewInputParams;
 
@@ -48,4 +49,5 @@ bool getDepthMapInfo(int refImgFileId, MultiViewInputParams* mip, float& mindept
                      StaticVector<int>** tcams);
 bool DeleteDirectory(const std::string& sPath);
 
+} // namespace common
 } // namespace aliceVision

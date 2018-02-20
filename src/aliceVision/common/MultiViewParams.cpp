@@ -21,6 +21,7 @@
 #include <set>
 
 namespace aliceVision {
+namespace common {
 
 namespace bfs = boost::filesystem;
 
@@ -398,4 +399,5 @@ void MultiViewParams::decomposeProjectionMatrix(Point3d& Co, Matrix3x3& Ro, Matr
     iPo = iRo * iKo;
 }
 
+} // namespace common
 } // namespace aliceVision

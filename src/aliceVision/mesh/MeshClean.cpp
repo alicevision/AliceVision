@@ -558,7 +558,7 @@ bool MeshClean::path::isWrongPt()
     return (nNewPtsNeededToAdd > 0);
 }
 
-MeshClean::MeshClean(MultiViewParams* _mp)
+MeshClean::MeshClean(common::MultiViewParams* _mp)
     : Mesh()
 {
     mp = _mp;
@@ -696,7 +696,7 @@ void MeshClean::init()
 
     // sort
     int i0 = 0;
-    long t1 = initEstimate();
+    long t1 = common::initEstimate();
     for(int i = 0; i < edgesNeigTris->size(); i++)
     {
 
@@ -735,9 +735,9 @@ void MeshClean::init()
             i0 = i + 1;
         }
 
-        printfEstimate(i, edgesNeigTris->size(), t1);
+        common::printfEstimate(i, edgesNeigTris->size(), t1);
     }
-    finishEstimate();
+    common::finishEstimate();
 }
 
 void MeshClean::testPtsNeighTrisSortedAsc()

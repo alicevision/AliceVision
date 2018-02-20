@@ -12,6 +12,7 @@
 #include <boost/filesystem/path.hpp>
 
 namespace aliceVision {
+namespace common {
 
 bool FileExists(const std::string& filePath)
 {
@@ -551,4 +552,5 @@ bool DeleteDirectory(const std::string& sPath)
     return true;
 }
 
+} // namespace common
 } // namespace aliceVision

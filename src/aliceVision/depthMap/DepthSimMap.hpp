@@ -50,11 +50,11 @@ public:
 class DepthSimMap
 {
 public:
-    MultiViewParams* mp;
+    common::MultiViewParams* mp;
     int rc, w, h, scale, step;
     StaticVector<DepthSim>* dsm; //< depth similarity map
 
-    DepthSimMap(int rc, MultiViewParams* _mp, int _scale, int _step);
+    DepthSimMap(int rc, common::MultiViewParams* _mp, int _scale, int _step);
     ~DepthSimMap(void);
 
     void initJustFromDepthMapT(StaticVector<float>* depthMapT, float defaultSim);

@@ -54,8 +54,8 @@ protected:
     std::string SGM_idDepthMapFileName;
 };
 
-void computeDepthMapsPSSGM(MultiViewParams* mp, PreMatchCams* pc, const StaticVector<int>& cams);
-void computeDepthMapsPSSGM(int CUDADeviceNo, MultiViewParams* mp, PreMatchCams* pc, const StaticVector<int>& cams);
+void computeDepthMapsPSSGM(common::MultiViewParams* mp, common::PreMatchCams* pc, const StaticVector<int>& cams);
+void computeDepthMapsPSSGM(int CUDADeviceNo, common::MultiViewParams* mp, common::PreMatchCams* pc, const StaticVector<int>& cams);
 
 } // namespace depthMap
 } // namespace aliceVision
