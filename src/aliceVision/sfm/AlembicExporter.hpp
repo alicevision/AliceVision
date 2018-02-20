@@ -11,8 +11,6 @@
 #include <aliceVision/camera/Pinhole.hpp>
 #include <aliceVision/types.hpp>
 
-#include <Alembic/Abc/OObject.h>
-
 #include <memory>
 #include <string>
 
@@ -74,8 +72,7 @@ public:
   void addCamera(const std::string& name,
                  const View& view,
                  const geometry::Pose3* pose = nullptr,
-                 const camera::IntrinsicBase* intrinsic = nullptr,
-                 Alembic::Abc::OObject* parent = nullptr);
+                 const camera::IntrinsicBase* intrinsic = nullptr);
 
   /**
    * @brief Add a keyframe to the animated camera
