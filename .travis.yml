@@ -33,7 +33,12 @@ env:
     - BUILD_TYPE="Release"
     - BUILD_SYSTEM="`uname -s`"
     - BUILD_PROCESSOR="`uname -p`"
-    - DEPS_INSTALL_PATH=${TRAVIS_BUILD_DIR}/../AliceVisionDependencies
+    # NOTE: we need to install the dependencies in install-deps because for those ones using the cmake config file,
+    # some of their dependencies are linked with hard-coded paths to the place where they where installed when said
+    # dependency was built. E.g. Alembic depends on openExr and the AlembicConfig.cmake contains hard-coded links to
+    # the path /home/travis/build/alicevision/AliceVisionDependencies/install-deps, which was where openExr was installed
+    # when Alembic was built (see AliceVisionDependencies repository).
+    - DEPS_INSTALL_PATH=${TRAVIS_BUILD_DIR}/../AliceVisionDependencies/install-deps
 
 
 before_install:
