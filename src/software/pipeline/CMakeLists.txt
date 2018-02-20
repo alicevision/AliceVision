@@ -238,13 +238,6 @@ target_link_libraries(aliceVision_cameraLocalization
 	${BOOST_LIBRARIES}
 )
 
-if(ALICEVISION_HAVE_ALEMBIC)
-	target_link_libraries(aliceVision_cameraLocalization 
-		aliceVision_sfm 
-		${ABC_LIBRARIES}
-	)
-endif()
-
 if(ALICEVISION_HAVE_CCTAG)
 	target_link_libraries(aliceVision_cameraLocalization CCTag::CCTag)
 endif()
@@ -271,9 +264,6 @@ target_link_libraries(aliceVision_rigLocalization
 	${Boost_LIBRARIES}
 )
 
-if(ALICEVISION_HAVE_ALEMBIC)
-  target_link_libraries(aliceVision_rigLocalization aliceVision_sfm ${ABC_LIBRARIES})
-endif()
 
 if(ALICEVISION_HAVE_CCTAG)
   target_link_libraries(aliceVision_rigLocalization CCTag::CCTag)
