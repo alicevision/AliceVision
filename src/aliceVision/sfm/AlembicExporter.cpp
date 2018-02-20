@@ -228,8 +228,7 @@ AlembicExporter::AlembicExporter(const std::string& filename)
   : _dataImpl(new DataImpl(filename))
 {}
 
-AlembicExporter::~AlembicExporter()
-{}
+AlembicExporter::~AlembicExporter() = default;
 
 std::string AlembicExporter::getFilename() const
 {
