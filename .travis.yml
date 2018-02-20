@@ -80,6 +80,8 @@ before_script:
        -DCeres_DIR="${DEPS_INSTALL_PATH}/share/Ceres" \
        -DEIGEN_INCLUDE_DIR_HINTS="${DEPS_INSTALL_PATH}" \
        -DALICEVISION_USE_CCTAG=OFF \
+       -DALICEVISION_USE_ALEMBIC:BOOL=ON  \
+       -DAlembic_DIR:PATH="${DEPS_INSTALL_PATH}/lib/cmake/Alembic" \
        . $ALICEVISION_SOURCE
   # Build for code coverage evaluation
   #- cmake -DALICEVISION_BUILD_COVERAGE=ON -DALICEVISION_BUILD_TESTS=ON -DALICEVISION_BUILD_EXAMPLES=ON . ../AliceVision
