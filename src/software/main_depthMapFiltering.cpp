@@ -125,7 +125,7 @@ int main(int argc, char* argv[])
     ALICEVISION_COUT("--- filter depthmap");
 
     {
-        Fuser fs(&mp, &pc);
+        largeScale::Fuser fs(&mp, &pc);
         fs.filterGroups(cams, pixSizeBall, pixSizeBallWithLowSimilarity, nNearestCams);
         fs.filterDepthMaps(cams, minNumOfConsistensCams, minNumOfConsistensCamsWithLowSimilarity);
     }

@@ -11,6 +11,7 @@
 #include <boost/filesystem.hpp>
 
 namespace aliceVision {
+namespace largeScale {
 
 namespace bfs = boost::filesystem;
 
@@ -211,4 +212,5 @@ Point3d LargeScale::getSpaceSteps()
     return sv;
 }
 
+} // namespace largeScale
 } // namespace aliceVision

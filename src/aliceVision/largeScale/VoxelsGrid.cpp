@@ -13,6 +13,7 @@
 #include <boost/filesystem.hpp>
 
 namespace aliceVision {
+namespace largeScale {
 
 namespace bfs = boost::filesystem;
 
@@ -678,4 +679,5 @@ void VoxelsGrid::getHexah(Point3d* hexahOut, const Voxel& LUi, const Voxel& RDi)
     hexahOut[7] = O + vvz + vvy;
 }
 
+} // namespace largeScale
 } // namespace aliceVision

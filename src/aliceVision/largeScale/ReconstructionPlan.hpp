@@ -13,6 +13,7 @@
 #include <aliceVision/mesh/Mesh.hpp>
 
 namespace aliceVision {
+namespace largeScale {
 
 class ReconstructionPlan : public VoxelsGrid
 {
@@ -40,4 +41,5 @@ mesh::Mesh* joinMeshes(const std::string& voxelsArrayFileName, LargeScale* ls);
 
 StaticVector<StaticVector<int>*>* loadLargeScalePtsCams(const std::vector<std::string>& recsDirs);
 
+} // namespace largeScale
 } // namespace aliceVision

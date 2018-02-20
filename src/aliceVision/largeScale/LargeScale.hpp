@@ -15,6 +15,7 @@
 #include <array>
 
 namespace aliceVision {
+namespace largeScale {
 
 class LargeScale
 {
@@ -57,4 +58,5 @@ public:
     }
 };
 
+} // namespace largeScale
 } // namespace aliceVision

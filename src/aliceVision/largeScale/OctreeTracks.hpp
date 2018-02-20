@@ -13,6 +13,7 @@
 #include <aliceVision/largeScale/Fuser.hpp>
 
 namespace aliceVision {
+namespace largeScale {
 
 class OctreeTracks : public Fuser
 {
@@ -102,4 +103,5 @@ public:
     void getNPointsByLevelsRecursive(Node* node, int level, StaticVector<int>* nptsAtLevel);
 };
 
+} // namespace largeScale
 } // namespace aliceVision

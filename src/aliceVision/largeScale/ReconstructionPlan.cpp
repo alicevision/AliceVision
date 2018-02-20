@@ -14,6 +14,7 @@
 #include <boost/filesystem.hpp>
 
 namespace aliceVision {
+namespace largeScale {
 
 namespace bfs = boost::filesystem;
 
@@ -263,7 +264,7 @@ void reconstructSpaceAccordingToVoxelsArray(const std::string& voxelsArrayFileNa
             DelaunayGraphCut delaunayGC(ls->mp, ls->pc);
             Point3d* hexah = &(*voxelsArray)[i * 8];
             delaunayGC.reconstructVoxel(hexah, voxelsIds, folderName, ls->getSpaceCamsTracksDir(), false,
-                                  hexahsToExcludeFromResultingMesh, (VoxelsGrid*)rp, ls->getSpaceSteps());
+                                  hexahsToExcludeFromResultingMesh, (largeScale::VoxelsGrid*)rp, ls->getSpaceSteps());
             delete voxelsIds;
 
             // Save mesh as .bin and .obj
@@ -513,4 +514,5 @@ mesh::Mesh* joinMeshes(const std::string& voxelsArrayFileName, LargeScale* ls)
     return me;
 }
 
+} // namespace largeScale
 } // namespace aliceVision
