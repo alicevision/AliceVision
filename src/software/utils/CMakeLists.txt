@@ -115,7 +115,6 @@ if(ALICEVISION_HAVE_ALEMBIC)
 		aliceVision_localization
 		aliceVision_dataio
 		aliceVision_rig
-		${ABC_LIBRARIES}
 		${BOOST_LIBRARIES}
 	)
 	
