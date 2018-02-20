@@ -180,15 +180,15 @@ void AlembicExporter::DataImpl::addCamera(const std::string& name,
     const float imgWidth = pinhole->w();
     const float imgHeight = pinhole->h();
     const float sensorWidth_pix = std::max(imgWidth, imgHeight);
-    const float focalLength_pix = pinhole->focal();
+    const float focalLength_pix = static_cast<const float>(pinhole->focal());
     const float focalLength_mm = sensorWidth_mm * focalLength_pix / sensorWidth_pix;
     const float pix2mm = sensorWidth_mm / sensorWidth_pix;
 
     // aliceVision: origin is (top,left) corner and orientation is (bottom,right)
     // ABC: origin is centered and orientation is (up,right)
     // Following values are in cm, hence the 0.1 multiplier
-    const float haperture_cm = 0.1 * imgWidth * pix2mm;
-    const float vaperture_cm = 0.1 * imgHeight * pix2mm;
+    const float haperture_cm = static_cast<const float>(0.1 * imgWidth * pix2mm);
+    const float vaperture_cm = static_cast<const float>(0.1 * imgHeight * pix2mm);
 
     camSample.setFocalLength(focalLength_mm);
     camSample.setHorizontalAperture(haperture_cm);
@@ -520,15 +520,15 @@ void AlembicExporter::addCameraKeyframe(const geometry::Pose3& pose,
   const float imgWidth = cam->w();
   const float imgHeight = cam->h();
   const float sensorWidth_pix = std::max(imgWidth, imgHeight);
-  const float focalLength_pix = cam->focal();
+  const float focalLength_pix = static_cast<const float>(cam->focal());
   const float focalLength_mm = sensorWidth_mm * focalLength_pix / sensorWidth_pix;
   const float pix2mm = sensorWidth_mm / sensorWidth_pix;
 
   // aliceVision: origin is (top,left) corner and orientation is (bottom,right)
   // ABC: origin is centered and orientation is (up,right)
   // Following values are in cm, hence the 0.1 multiplier
-  const float haperture_cm = 0.1 * imgWidth * pix2mm;
-  const float vaperture_cm = 0.1 * imgHeight * pix2mm;
+  const float haperture_cm = static_cast<const float>(0.1 * imgWidth * pix2mm);
+  const float vaperture_cm = static_cast<const float>(0.1 * imgHeight * pix2mm);
 
   camSample.setFocalLength(focalLength_mm);
   camSample.setHorizontalAperture(haperture_cm);
