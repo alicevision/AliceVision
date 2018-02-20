@@ -132,7 +132,7 @@ void AlembicExporter::DataImpl::addCamera(const std::string& name,
 
   // set view custom properties
   if(!view.getImagePath().empty())
-    OStringProperty(userProps, "mvg_imagePath").set(view.getImagePath().c_str());
+    OStringProperty(userProps, "mvg_imagePath").set(view.getImagePath());
 
   OUInt32Property(userProps, "mvg_viewId").set(view.getViewId());
   OUInt32Property(userProps, "mvg_poseId").set(view.getPoseId());
