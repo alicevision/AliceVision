@@ -27,6 +27,7 @@
 #endif
 
 namespace aliceVision {
+namespace delaunayCut {
 
 namespace bfs = boost::filesystem;
 
@@ -2458,4 +2459,5 @@ void DelaunayGraphCut::leaveLargestFullSegmentOnly()
         printf("Largest full segment only. Done.\n");
 }
 
+} // namespace delaunayCut
 } // namespace aliceVision

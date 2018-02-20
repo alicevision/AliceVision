@@ -11,6 +11,7 @@
 #include <array>
 
 namespace aliceVision {
+namespace delaunayCut {
 
 struct GC_cellInfo
 {
@@ -134,4 +135,5 @@ struct GC_camVertexInfo
     }
 };
 
+} // namespace delaunayCut
 } // namespace aliceVision

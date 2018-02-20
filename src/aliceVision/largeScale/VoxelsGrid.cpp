@@ -591,7 +591,7 @@ void VoxelsGrid::generateCamsPtsFromVoxelsTracks()
                 {
                     int ptid = (*camPtsIds)[j].x;
                     int nrc = (*camPtsIds)[j].y;
-                    GC_camVertexInfo p;
+                    delaunayCut::GC_camVertexInfo p;
                     p.point = (*tracksPoints)[ptid];
                     p.sim = -0.91; // TODO FACA: why??
                     p.nrc = nrc;

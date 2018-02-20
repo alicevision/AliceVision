@@ -261,7 +261,7 @@ void reconstructSpaceAccordingToVoxelsArray(const std::string& voxelsArrayFileNa
         if(!FileExists(meshBinFilepath))
         {
             StaticVector<int>* voxelsIds = rp->voxelsIdsIntersectingHexah(&(*voxelsArray)[i * 8]);
-            DelaunayGraphCut delaunayGC(ls->mp, ls->pc);
+            delaunayCut::DelaunayGraphCut delaunayGC(ls->mp, ls->pc);
             Point3d* hexah = &(*voxelsArray)[i * 8];
             delaunayGC.reconstructVoxel(hexah, voxelsIds, folderName, ls->getSpaceCamsTracksDir(), false,
                                   hexahsToExcludeFromResultingMesh, (largeScale::VoxelsGrid*)rp, ls->getSpaceSteps());

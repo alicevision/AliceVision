@@ -6,6 +6,7 @@
 #include "MaxFlow_AdjList.hpp"
 
 namespace aliceVision {
+namespace delaunayCut {
 
 void MaxFlow_AdjList::printStats() const
 {
@@ -66,4 +67,5 @@ void MaxFlow_AdjList::printColorStats() const
   }
 }
 
+} // namespace delaunayCut
 } // namespace aliceVision

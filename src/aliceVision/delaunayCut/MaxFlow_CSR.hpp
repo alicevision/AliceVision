@@ -16,6 +16,7 @@
 #include <iostream>
 
 namespace aliceVision {
+namespace delaunayCut {
 
 /**
  * @brief Maxflow computation based on a compressed sparse row graph reprensentation.
@@ -197,4 +198,5 @@ protected:
     const NodeType _T;  //< fullness
 };
 
+} // namespace delaunayCut
 } // namespace aliceVision

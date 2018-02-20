@@ -6,6 +6,8 @@
 #include "MaxFlow_CSR.hpp"
 
 namespace aliceVision {
+namespace delaunayCut {
 
+} // namespace delaunayCut
 } // namespace aliceVision
 
