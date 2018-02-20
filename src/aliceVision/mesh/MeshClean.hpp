@@ -10,6 +10,7 @@
 #include <aliceVision/mesh/Mesh.hpp>
 
 namespace aliceVision {
+namespace mesh {
 
 class MeshClean : public Mesh
 {
@@ -98,4 +99,5 @@ public:
     int cleanMesh(int maxIters);
 };
 
+} // namespace mesh
 } // namespace aliceVision

@@ -11,6 +11,7 @@
 #include <vector>
 
 namespace aliceVision {
+namespace mesh {
 
 class UVAtlas
 {
@@ -70,4 +71,5 @@ private:
     const Mesh& _mesh;
 };
 
+} // namespace mesh
 } // namespace aliceVision

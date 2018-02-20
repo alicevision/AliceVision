@@ -8,6 +8,7 @@
 #include <iostream>
 
 namespace aliceVision {
+namespace mesh {
 
 using namespace std;
 
@@ -335,4 +336,5 @@ UVAtlas::ChartRect* UVAtlas::ChartRect::insert(Chart& chart, size_t gutter)
     }
 }
 
+} // namespace mesh
 } // namespace aliceVision

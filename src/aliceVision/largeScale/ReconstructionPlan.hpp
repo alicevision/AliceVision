@@ -34,9 +34,9 @@ public:
 void reconstructAccordingToOptimalReconstructionPlan(int gl, LargeScale* ls);
 void reconstructSpaceAccordingToVoxelsArray(const std::string& voxelsArrayFileName, LargeScale* ls,
                                             bool doComputeColoredMeshes);
-Mesh* joinMeshes(const std::vector<std::string>& recsDirs, StaticVector<Point3d>* voxelsArray, LargeScale* ls);
-Mesh* joinMeshes(int gl, LargeScale* ls);
-Mesh* joinMeshes(const std::string& voxelsArrayFileName, LargeScale* ls);
+mesh::Mesh* joinMeshes(const std::vector<std::string>& recsDirs, StaticVector<Point3d>* voxelsArray, LargeScale* ls);
+mesh::Mesh* joinMeshes(int gl, LargeScale* ls);
+mesh::Mesh* joinMeshes(const std::string& voxelsArrayFileName, LargeScale* ls);
 
 StaticVector<StaticVector<int>*>* loadLargeScalePtsCams(const std::vector<std::string>& recsDirs);
 

@@ -10,6 +10,7 @@
 #include <aliceVision/mesh/MeshAnalyze.hpp>
 
 namespace aliceVision {
+namespace mesh {
 
 class MeshEnergyOpt : public MeshAnalyze
 {
@@ -25,4 +26,5 @@ private:
                                 StaticVectorBool* ptsCanMove);
 };
 
+} // namespace mesh
 } // namespace aliceVision

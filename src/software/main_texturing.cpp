@@ -35,7 +35,7 @@ int main(int argc, char* argv[])
     std::string outputFolder;
     std::string outTextureFileTypeName = EImageFileType_enumToString(EImageFileType::PNG);
     bool flipNormals = false;
-    TexturingParams texParams;
+    mesh::TexturingParams texParams;
 
     po::options_description allParams("AliceVision texturing");
 
@@ -103,9 +103,9 @@ int main(int argc, char* argv[])
     const double simThr = mip._ini.get<double>("global.simThr", 0.0);
     MultiViewParams mp(mip.getNbCameras(), &mip, (float) simThr);
 
-    Texturing mesh;
+    mesh::Texturing mesh;
     mesh.texParams = texParams;
-    mesh.me = new Mesh();
+    mesh.me = new mesh::Mesh();
 
     if(!mesh.me->loadFromBin(inputDenseReconstruction))
     {
@@ -128,9 +128,9 @@ int main(int argc, char* argv[])
     {
         ALICEVISION_COUT("An external input mesh is provided, so we remap the visibility from the reconstruction on it.");
         // keep previous mesh as reference
-        Mesh* refMesh = mesh.me;
+        mesh::Mesh* refMesh = mesh.me;
         // load input obj file
-        mesh.me = new Mesh();
+        mesh.me = new mesh::Mesh();
         mesh.loadFromOBJ(inputMeshFilepath, flipNormals);
         // remap visibilities from reconstruction onto input mesh
         mesh::PointsVisibility otherPtsVisibilities;

@@ -7,6 +7,7 @@
 #include <aliceVision/structures/geometry.hpp>
 
 namespace aliceVision {
+namespace mesh {
 
 MeshAnalyze::MeshAnalyze(MultiViewParams* _mp)
     : MeshClean(_mp)
@@ -284,4 +285,5 @@ bool MeshAnalyze::getMeanCurvAndLaplacianSmoothing(int ptId, Point3d& F, float e
     return false;
 }
 
+} // namespace mesh
 } // namespace aliceVision

@@ -267,11 +267,11 @@ void reconstructSpaceAccordingToVoxelsArray(const std::string& voxelsArrayFileNa
             delete voxelsIds;
 
             // Save mesh as .bin and .obj
-            Mesh* mesh = delaunayGC.createMesh();
+            mesh::Mesh* mesh = delaunayGC.createMesh();
             StaticVector<StaticVector<int>*>* ptsCams = delaunayGC.createPtsCams();
             StaticVector<int> usedCams = delaunayGC.getSortedUsedCams();
 
-            meshPostProcessing(mesh, ptsCams, usedCams, *ls->mp, *ls->pc, ls->mp->mip->mvDir, hexahsToExcludeFromResultingMesh, hexah);
+            mesh::meshPostProcessing(mesh, ptsCams, usedCams, *ls->mp, *ls->pc, ls->mp->mip->mvDir, hexahsToExcludeFromResultingMesh, hexah);
             mesh->saveToBin(folderName + "mesh.bin");
             mesh->saveToObj(folderName + "mesh.obj");
 
@@ -324,7 +324,7 @@ StaticVector<StaticVector<int>*>* loadLargeScalePtsCams(const std::vector<std::s
     return ptsCamsFromDct;
 }
 
-StaticVector<rgb>* getTrisColorsRgb(Mesh* me, StaticVector<rgb>* ptsColors)
+StaticVector<rgb>* getTrisColorsRgb(mesh::Mesh* me, StaticVector<rgb>* ptsColors)
 {
     StaticVector<rgb>* trisColors = new StaticVector<rgb>(me->tris->size());
     trisColors->resize(me->tris->size());
@@ -346,7 +346,7 @@ StaticVector<rgb>* getTrisColorsRgb(Mesh* me, StaticVector<rgb>* ptsColors)
     return trisColors;
 }
 
-Mesh* joinMeshes(const std::vector<std::string>& recsDirs, StaticVector<Point3d>* voxelsArray,
+mesh::Mesh* joinMeshes(const std::vector<std::string>& recsDirs, StaticVector<Point3d>* voxelsArray,
                     LargeScale* ls)
 {
     ReconstructionPlan rp(ls->dimensions, &ls->space[0], ls->mp, ls->pc, ls->spaceVoxelsFolderName);
@@ -362,7 +362,7 @@ Mesh* joinMeshes(const std::vector<std::string>& recsDirs, StaticVector<Point3d>
         std::string fileName = folderName + "mesh.bin";
         if(FileExists(fileName))
         {
-            Mesh* mei = new Mesh();
+            mesh::Mesh* mei = new mesh::Mesh();
             mei->loadFromBin(fileName);
             npts += mei->pts->size();
             ntris += mei->tris->size();
@@ -376,9 +376,9 @@ Mesh* joinMeshes(const std::vector<std::string>& recsDirs, StaticVector<Point3d>
 
     if(ls->mp->verbose)
         printf("Creating mesh\n");
-    Mesh* me = new Mesh();
+    mesh::Mesh* me = new mesh::Mesh();
     me->pts = new StaticVector<Point3d>(npts);
-    me->tris = new StaticVector<Mesh::triangle>(ntris);
+    me->tris = new StaticVector<mesh::Mesh::triangle>(ntris);
 
     StaticVector<rgb>* trisCols = new StaticVector<rgb>(ntris);
     StaticVector<rgb>* ptsCols = new StaticVector<rgb>(npts);
@@ -394,7 +394,7 @@ Mesh* joinMeshes(const std::vector<std::string>& recsDirs, StaticVector<Point3d>
         std::string fileName = folderName + "mesh.bin";
         if(FileExists(fileName))
         {
-            Mesh* mei = new Mesh();
+            mesh::Mesh* mei = new mesh::Mesh();
             mei->loadFromBin(fileName);
 
             // to remove artefacts on the border
@@ -450,7 +450,7 @@ Mesh* joinMeshes(const std::vector<std::string>& recsDirs, StaticVector<Point3d>
     return me;
 }
 
-Mesh* joinMeshes(int gl, LargeScale* ls)
+mesh::Mesh* joinMeshes(int gl, LargeScale* ls)
 {
     ReconstructionPlan* rp =
         new ReconstructionPlan(ls->dimensions, &ls->space[0], ls->mp, ls->pc, ls->spaceVoxelsFolderName);
@@ -496,18 +496,18 @@ Mesh* joinMeshes(int gl, LargeScale* ls)
     delete optimalReconstructionPlan;
     delete rp;
 
-    Mesh* me = joinMeshes(recsDirs, voxelsArray, ls);
+    mesh::Mesh* me = joinMeshes(recsDirs, voxelsArray, ls);
     delete voxelsArray;
 
     return me;
 }
 
-Mesh* joinMeshes(const std::string& voxelsArrayFileName, LargeScale* ls)
+mesh::Mesh* joinMeshes(const std::string& voxelsArrayFileName, LargeScale* ls)
 {
     StaticVector<Point3d>* voxelsArray = loadArrayFromFile<Point3d>(voxelsArrayFileName);
     std::vector<std::string> recsDirs = ls->getRecsDirs(voxelsArray);
 
-    Mesh* me = joinMeshes(recsDirs, voxelsArray, ls);
+    mesh::Mesh* me = joinMeshes(recsDirs, voxelsArray, ls);
     delete voxelsArray;
 
     return me;

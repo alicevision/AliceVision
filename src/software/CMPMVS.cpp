@@ -298,7 +298,7 @@ int main(int argc, char* argv[])
             }
             reconstructSpaceAccordingToVoxelsArray(voxelsArrayFileName, &lsbase, true);
             // Join meshes
-            Mesh* mesh = joinMeshes(voxelsArrayFileName, &lsbase);
+            mesh::Mesh* mesh = joinMeshes(voxelsArrayFileName, &lsbase);
 
             std::cout << "Saving joined meshes" << std::endl;
 
@@ -350,11 +350,11 @@ int main(int argc, char* argv[])
             delaunayGC.graphCutPostProcessing();
 
             // Save mesh as .bin and .obj
-            Mesh* mesh = delaunayGC.createMesh();
+            mesh::Mesh* mesh = delaunayGC.createMesh();
             StaticVector<StaticVector<int>*>* ptsCams = delaunayGC.createPtsCams();
             StaticVector<int> usedCams = delaunayGC.getSortedUsedCams();
 
-            meshPostProcessing(mesh, ptsCams, usedCams, mp, pc, mip.mvDir, hexahsToExcludeFromResultingMesh, hexah);
+            mesh::meshPostProcessing(mesh, ptsCams, usedCams, mp, pc, mip.mvDir, hexahsToExcludeFromResultingMesh, hexah);
             mesh->saveToBin(mip.mvDir + "mesh.bin");
 
             saveArrayOfArraysToFile<int>(mip.mvDir + "meshPtsCamsFromDGC.bin", ptsCams);
@@ -372,8 +372,8 @@ int main(int argc, char* argv[])
         cout << "--- texturing" << endl;
 
         // load mesh
-        Texturing texMesh;
-        texMesh.me = new Mesh();
+        mesh::Texturing texMesh;
+        texMesh.me = new mesh::Mesh();
         if(!texMesh.me->loadFromBin(mip.mvDir + "mesh.bin"))
         {
             cerr << "Unable to load " << mip.mvDir << "mesh.bin" << endl;

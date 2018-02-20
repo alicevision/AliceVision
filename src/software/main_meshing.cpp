@@ -153,7 +153,7 @@ int main(int argc, char* argv[])
             }
             reconstructSpaceAccordingToVoxelsArray(voxelsArrayFileName, &lsbase, true);
             // Join meshes
-            Mesh* mesh = joinMeshes(voxelsArrayFileName, &lsbase);
+            mesh::Mesh* mesh = joinMeshes(voxelsArrayFileName, &lsbase);
 
             ALICEVISION_COUT("Saving joined meshes");
 
@@ -211,14 +211,14 @@ int main(int argc, char* argv[])
             delaunayGC.graphCutPostProcessing();
 
             // Save mesh as .bin and .obj
-            Mesh* mesh = delaunayGC.createMesh();
+            mesh::Mesh* mesh = delaunayGC.createMesh();
             if(mesh->pts->empty())
               throw std::runtime_error("Empty mesh");
 
             StaticVector<StaticVector<int>*>* ptsCams = delaunayGC.createPtsCams();
             StaticVector<int> usedCams = delaunayGC.getSortedUsedCams();
 
-            meshPostProcessing(mesh, ptsCams, usedCams, mp, pc, outDirectory.string()+"/", hexahsToExcludeFromResultingMesh, hexah);
+            mesh::meshPostProcessing(mesh, ptsCams, usedCams, mp, pc, outDirectory.string()+"/", hexahsToExcludeFromResultingMesh, hexah);
             mesh->saveToBin((outDirectory/"denseReconstruction.bin").string());
 
             saveArrayOfArraysToFile<int>((outDirectory/"meshPtsCamsFromDGC.bin").string(), ptsCams);

@@ -14,6 +14,7 @@
 #include <map>
 
 namespace aliceVision {
+namespace mesh {
 
 namespace bfs = boost::filesystem;
 
@@ -2612,4 +2613,5 @@ bool Mesh::getEdgeNeighTrisInterval(Pixel& itr, Pixel edge, StaticVector<Voxel>*
     return true;
 }
 
+} // namespace mesh
 } // namespace aliceVision

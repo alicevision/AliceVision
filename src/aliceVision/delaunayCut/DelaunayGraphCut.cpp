@@ -2092,7 +2092,7 @@ void DelaunayGraphCut::reconstructExpetiments(StaticVector<int>* cams, std::stri
     }
 }
 
-Mesh* DelaunayGraphCut::createMesh(bool filterHelperPointsTriangles)
+mesh::Mesh* DelaunayGraphCut::createMesh(bool filterHelperPointsTriangles)
 {
     std::cout << "Extract mesh from GC" << std::endl;
 
@@ -2102,7 +2102,7 @@ Mesh* DelaunayGraphCut::createMesh(bool filterHelperPointsTriangles)
     std::cout << "Nb vertixes: " << _verticesCoords.size() << std::endl;
     std::cout << "_cellIsFull.size(): " << _cellIsFull.size() << std::endl;
 
-    Mesh* me = new Mesh();
+    mesh::Mesh* me = new mesh::Mesh();
 
     // TODO: copy only surface points and remap visibilities
     me->pts = new StaticVector<Point3d>(_verticesCoords.size());
@@ -2157,7 +2157,7 @@ Mesh* DelaunayGraphCut::createMesh(bool filterHelperPointsTriangles)
         }
     }
 
-    me->tris = new StaticVector<Mesh::triangle>(nbSurfaceFacets);
+    me->tris = new StaticVector<mesh::Mesh::triangle>(nbSurfaceFacets);
     // loop over all facets
     for(CellIndex ci = 0; ci < _cellIsFull.size(); ++ci)
     {
@@ -2238,7 +2238,7 @@ Mesh* DelaunayGraphCut::createMesh(bool filterHelperPointsTriangles)
 
             if(clockwise)
             {
-                Mesh::triangle t;
+                mesh::Mesh::triangle t;
                 t.alive = true;
                 t.i[0] = vertices[0];
                 t.i[1] = vertices[1];
@@ -2247,7 +2247,7 @@ Mesh* DelaunayGraphCut::createMesh(bool filterHelperPointsTriangles)
             }
             else
             {
-                Mesh::triangle t;
+                mesh::Mesh::triangle t;
                 t.alive = true;
                 t.i[0] = vertices[0];
                 t.i[1] = vertices[2];

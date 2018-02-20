@@ -11,6 +11,7 @@
 #include <aliceVision/mesh/MeshClean.hpp>
 
 namespace aliceVision {
+namespace mesh {
 
 class MeshAnalyze : public MeshClean
 {
@@ -30,4 +31,5 @@ public:
     bool getVertexSurfaceNormal(int ptId, Point3d& N);
 };
 
+} // namespace mesh
 } // namespace aliceVision

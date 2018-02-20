@@ -8,6 +8,7 @@
 #include <boost/filesystem.hpp>
 
 namespace aliceVision {
+namespace mesh {
 
 namespace bfs = boost::filesystem;
 
@@ -160,4 +161,5 @@ bool MeshEnergyOpt::optimizeSmooth(float lambda, float epsilon, int type, int ni
     return true;
 }
 
+} // namespace mesh
 } // namespace aliceVision

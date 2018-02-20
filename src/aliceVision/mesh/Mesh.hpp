@@ -14,6 +14,7 @@
 #include <aliceVision/common/common.hpp>
 
 namespace aliceVision {
+namespace mesh {
 
 class Mesh
 {
@@ -218,4 +219,5 @@ public:
     void Transform(Matrix3x3 Rs, Point3d t);
 };
 
+} // namespace mesh
 } // namespace aliceVision

@@ -13,6 +13,7 @@
 #include <boost/filesystem/operations.hpp>
 
 namespace aliceVision {
+namespace mesh {
 
 namespace bfs = boost::filesystem;
 
@@ -210,4 +211,5 @@ void meshPostProcessing(Mesh*& inout_mesh, StaticVector<StaticVector<int>*>*& in
     std::cout << "meshPostProcessing done" << std::endl;
 }
 
+} // namespace mesh
 } // namespace aliceVision

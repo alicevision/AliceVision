@@ -304,14 +304,14 @@ public:
     void clearAllPointsNotOnSurface();
     void addNewPointsToOccupiedSpace();
     void clearOutAddIn();
-    StaticVector<int>* getNearestTrisFromMeshTris(Mesh* otherMesh);
+    StaticVector<int>* getNearestTrisFromMeshTris(mesh::Mesh* otherMesh);
 
     void segmentFullOrFree(bool full, StaticVector<int>** inColors, int& nsegments);
     int removeBubbles();
     int removeDust(int minSegSize);
     void leaveLargestFullSegmentOnly();
 
-    Mesh* createMesh(bool filterHelperPointsTriangles = true);
+    mesh::Mesh* createMesh(bool filterHelperPointsTriangles = true);
 };
 
 

@@ -16,6 +16,7 @@
 #include <set>
 
 namespace aliceVision {
+namespace mesh {
 
 /**
  * @brief Return whether a pixel is contained in or intersected by a 2D triangle.
@@ -483,4 +484,5 @@ void Texturing::saveAsOBJ(const bfs::path& dir, const std::string& basename, EIm
     std::cout << "MTL: " << mtlFilename << std::endl;
 }
 
+} // namespace mesh
 } // namespace aliceVision
