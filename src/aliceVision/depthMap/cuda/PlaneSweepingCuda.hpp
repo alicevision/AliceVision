@@ -19,6 +19,7 @@
 #include <aliceVision/depthMap/DepthSimMap.hpp>
 
 namespace aliceVision {
+namespace depthMap {
 
 class PlaneSweepingCuda
 {
@@ -157,4 +158,5 @@ public:
 
 int listCUDADevices(bool verbose);
 
+} // namespace depthMap
 } // namespace aliceVision

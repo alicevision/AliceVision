@@ -171,8 +171,8 @@ int main(int argc, char* argv[])
 
     ALICEVISION_COUT("--- create depthmap");
 
-    computeDepthMapsPSSGM(&mp, &pc, cams);
-    refineDepthMaps(&mp, &pc, cams);
+    depthMap::computeDepthMapsPSSGM(&mp, &pc, cams);
+    depthMap::refineDepthMaps(&mp, &pc, cams);
 
     printfElapsedTime(startTime, "#");
     return EXIT_SUCCESS;

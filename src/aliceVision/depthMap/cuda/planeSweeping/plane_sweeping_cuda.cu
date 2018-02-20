@@ -17,27 +17,25 @@
 #include <algorithm>
 
 namespace aliceVision {
+namespace depthMap {
 
-//-----------------------------------------------------------------------------
 // Macro for checking cuda errors
-#define CHECK_CUDA_ERROR()                                                                                             \
-    if(cudaError_t err = cudaGetLastError())                                                                           \
-    \
-{                                                                                                               \
-        fprintf(stderr, "\n\nCUDAError: %s\n", cudaGetErrorString(err));                                               \
-        fprintf(stderr, "  file:       %s\n", __FILE__);                                                               \
-        fprintf(stderr, "  function:   %s\n", __FUNCTION__);                                                           \
-        fprintf(stderr, "  line:       %d\n\n", __LINE__);                                                             \
-    \
+#define CHECK_CUDA_ERROR()                                                    \
+    if(cudaError_t err = cudaGetLastError())                                  \
+                                                                              \
+{                                                                             \
+        fprintf(stderr, "\n\nCUDAError: %s\n", cudaGetErrorString(err));      \
+        fprintf(stderr, "  file:       %s\n", __FILE__);                      \
+        fprintf(stderr, "  function:   %s\n", __FUNCTION__);                  \
+        fprintf(stderr, "  line:       %d\n\n", __LINE__);                    \
+                                                                              \
 }
 
-//-----------------------------------------------------------------------------
-// Round a / b to nearest higher integer value.
 
+// Round a / b to nearest higher integer value.
 inline unsigned int divUp(unsigned int a, unsigned int b) {
   return (a % b != 0) ? (a / b + 1) : (a / b);
 }
-
 
 __host__ float3 ps_M3x3mulV3(float* M3x3, const float3& V)
 {
@@ -3367,4 +3365,5 @@ void ps_colorExtractionPushPull(CudaHostMemoryHeap<uchar4, 2>* bmp_hmh, int w, i
     delete[] pyramid_arr;
 }
 
+} // namespace depthMap
 } // namespace aliceVision

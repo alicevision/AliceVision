@@ -4,6 +4,7 @@
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
 namespace aliceVision {
+namespace depthMap {
 
 __device__ void volume_computePatch(patch& ptch, int depthid, int2& pix)
 {
@@ -1131,5 +1132,5 @@ __global__ void volume_filter_enforceTWeightInVolume_kernel(unsigned int* ovolum
     }
 }
 
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+} // namespace depthMap
 } // namespace aliceVision

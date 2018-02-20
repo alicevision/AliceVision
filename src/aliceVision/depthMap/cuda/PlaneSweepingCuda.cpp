@@ -15,6 +15,7 @@
 #include <iostream>
 
 namespace aliceVision {
+namespace depthMap {
 
 extern float3 ps_getDeviceMemoryInfo();
 
@@ -2439,4 +2440,5 @@ int listCUDADevices(bool verbose)
     return ps_listCUDADevices(verbose);
 }
 
+} // namespace depthMap
 } // namespace aliceVision

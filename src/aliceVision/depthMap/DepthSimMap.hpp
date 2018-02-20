@@ -13,6 +13,7 @@
 #include <aliceVision/common/MultiViewParams.hpp>
 
 namespace aliceVision {
+namespace depthMap {
 
 class DepthSim
 {
@@ -85,4 +86,5 @@ public:
     float getCellSmoothStep(int rc, const Pixel& cell);
 };
 
+} // namespace depthMap
 } // namespace aliceVision

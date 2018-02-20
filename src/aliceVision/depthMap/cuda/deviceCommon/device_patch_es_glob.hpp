@@ -6,7 +6,7 @@
 #pragma once
 
 namespace aliceVision {
-
+namespace depthMap {
 
 // patch exhaustive search
 
@@ -100,4 +100,5 @@ __device__ void computeRotCS(float3& xax, float3& yax, float3& n)
     yax = cross(n, xax);
 }
 
+} // namespace depthMap
 } // namespace aliceVision

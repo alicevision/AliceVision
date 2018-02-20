@@ -13,6 +13,7 @@
 #include <math_constants.h>
 
 namespace aliceVision {
+namespace depthMap {
 
 __device__ void computeRotCSEpip(patch& ptch, const float3& p)
 {
@@ -725,4 +726,5 @@ __device__ float refineDepthSubPixel(const float3& depths, const float3& sims)
     return outDepth;
 }
 
+} // namespace depthMap
 } // namespace aliceVision

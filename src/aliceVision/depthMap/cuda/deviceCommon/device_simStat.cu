@@ -6,6 +6,7 @@
 #pragma once
 
 namespace aliceVision {
+namespace depthMap {
 
 struct simStat
 {
@@ -221,4 +222,5 @@ struct simStat
     }
 };
 
+} // namespace depthMap
 } // namespace aliceVision

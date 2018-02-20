@@ -6,6 +6,7 @@
 #pragma once
 
 namespace aliceVision {
+namespace depthMap {
 
 // Helper functions
 
@@ -63,4 +64,5 @@ return fmaxf(a, fminf(b,x));
 
 */
 
+} // namespace depthMap
 } // namespace aliceVision

@@ -8,6 +8,7 @@
 #include <aliceVision/depthMap/cuda/commonStructures.hpp>
 
 namespace aliceVision {
+namespace depthMap {
 
 // Helper functions
 // function clamping x between a and b
@@ -203,4 +204,5 @@ __device__ __constant__ struct shared_rCam_tCam
 __device__ __constant__ shared_rCam_tCam sg;
 */
 
+} // namespace depthMap
 } // namespace aliceVision

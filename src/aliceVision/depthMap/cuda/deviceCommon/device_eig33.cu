@@ -6,6 +6,7 @@
 #pragma once
 
 namespace aliceVision {
+namespace depthMap {
 
 __device__ static double cuda_hypot2(double x, double y)
 {
@@ -442,4 +443,5 @@ struct cuda_stat3d
     }
 };
 
+} // namespace depthMap
 } // namespace aliceVision

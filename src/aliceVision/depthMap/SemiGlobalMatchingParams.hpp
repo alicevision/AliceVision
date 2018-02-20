@@ -14,6 +14,7 @@
 #include <aliceVision/depthMap/cuda/PlaneSweepingCuda.hpp>
 
 namespace aliceVision {
+namespace depthMap {
 
 class SemiGlobalMatchingParams
 {
@@ -78,4 +79,5 @@ public:
 
 };
 
+} // namespace depthMap
 } // namespace aliceVision

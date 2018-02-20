@@ -8,6 +8,7 @@
 #include <aliceVision/depthMap/cuda/planeSweeping/device_utils.cu>
 
 namespace aliceVision {
+namespace depthMap {
 
 inline __device__ float Euclidean(const float3 x1, const float3 x2)
 {
@@ -276,4 +277,5 @@ __global__ void downscale_kernel(unsigned char* tex, int tex_p, int width, int h
 }
 */
 
+} // namespace depthMap
 } // namespace aliceVision

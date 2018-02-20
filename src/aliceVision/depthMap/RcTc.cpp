@@ -8,6 +8,7 @@
 #include <aliceVision/common/common.hpp>
 
 namespace aliceVision {
+namespace depthMap {
 
 RcTc::RcTc(MultiViewParams* _mp, PlaneSweepingCuda* _cps)
 {
@@ -106,4 +107,5 @@ void RcTc::filterDepthMap(DepthSimMap* depthSimMap, int rc, int wsh, float gamma
     delete depthMap;
 }
 
+} // namespace depthMap
 } // namespace aliceVision

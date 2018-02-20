@@ -182,7 +182,7 @@ struct CommandLine
 
 bool checkHardwareCompatibility()
 {
-    if(listCUDADevices(false) < 1)
+    if(depthMap::listCUDADevices(false) < 1)
     {
         cerr << "ERROR: no CUDA capable devices were detected." << endl;
         return false;
@@ -260,8 +260,8 @@ int main(int argc, char* argv[])
     if(cmdline.steps.test(CommandLine::Step::CREATE_DEPTHMAP))
     {
         cout << "--- create depthmap" << endl;
-        computeDepthMapsPSSGM(&mp, &pc, cams);
-        refineDepthMaps(&mp, &pc, cams);
+        depthMap::computeDepthMapsPSSGM(&mp, &pc, cams);
+        depthMap::refineDepthMaps(&mp, &pc, cams);
     }
 
     if(cmdline.steps.test(CommandLine::Step::FILTER_DEPTHMAP))

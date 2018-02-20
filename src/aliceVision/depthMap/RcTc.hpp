@@ -10,6 +10,7 @@
 #include <aliceVision/depthMap/cuda/PlaneSweepingCuda.hpp>
 
 namespace aliceVision {
+namespace depthMap {
 
 class RcTc
 {
@@ -27,4 +28,5 @@ public:
     void filterDepthMap(DepthSimMap* depthSimMap, int rc, int wsh, float gammaC);
 };
 
+} // namespace depthMap
 } // namespace aliceVision

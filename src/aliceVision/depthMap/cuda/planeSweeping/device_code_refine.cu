@@ -4,6 +4,7 @@
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
 namespace aliceVision {
+namespace depthMap {
 
 __global__ void refine_selectPartOfDepthMapNearFPPlaneDepth_kernel(float* o0depthMap, int o0depthMap_p,
                                                                    float* o1depthMap, int o1depthMap_p,
@@ -1327,4 +1328,5 @@ __global__ void refine_computeRcTcDepthMap_kernel(float* rcDepthMap, int rcDepth
     };
 }
 
+} // namespace depthMap
 } // namespace aliceVision

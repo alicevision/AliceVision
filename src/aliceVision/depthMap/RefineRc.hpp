@@ -9,6 +9,7 @@
 #include <aliceVision/depthMap/SemiGlobalMatchingRc.hpp>
 
 namespace aliceVision {
+namespace depthMap {
 
 class RefineRc : public SemiGlobalMatchingRc
 {
@@ -38,4 +39,5 @@ private:
 void refineDepthMaps(MultiViewParams* mp, PreMatchCams* pc, const StaticVector<int>& cams);
 void refineDepthMaps(int CUDADeviceNo, MultiViewParams* mp, PreMatchCams* pc, const StaticVector<int>& cams);
 
+} // namespace depthMap
 } // namespace aliceVision

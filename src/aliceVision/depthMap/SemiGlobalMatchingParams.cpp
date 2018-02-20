@@ -13,6 +13,7 @@
 #include <boost/filesystem.hpp>
 
 namespace aliceVision {
+namespace depthMap {
 
 namespace bfs = boost::filesystem;
 
@@ -179,4 +180,5 @@ DepthSimMap* SemiGlobalMatchingParams::getDepthSimMapFromBestIdVal(int w, int h,
     return depthSimMap;
 }
 
+} // namespace depthMap
 } // namespace aliceVision

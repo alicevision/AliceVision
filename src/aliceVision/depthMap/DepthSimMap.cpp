@@ -14,6 +14,7 @@
 #include <iostream>
 
 namespace aliceVision {
+namespace depthMap {
 
 DepthSimMap::DepthSimMap(int _rc, MultiViewParams* _mp, int _scale, int _step)
 {
@@ -530,4 +531,5 @@ float DepthSimMap::getCellSmoothStep(int rc, const Pixel& cell)
     return 0.0f;
 }
 
+} // namespace depthMap
 } // namespace aliceVision

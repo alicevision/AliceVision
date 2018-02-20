@@ -9,6 +9,7 @@
 #include <aliceVision/depthMap/SemiGlobalMatchingParams.hpp>
 
 namespace aliceVision {
+namespace depthMap {
 
 class SemiGlobalMatchingVolume
 {
@@ -49,4 +50,5 @@ private:
     StaticVector<int>* _volumeBestZ;
 };
 
+} // namespace depthMap
 } // namespace aliceVision

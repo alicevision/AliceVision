@@ -4,6 +4,7 @@
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
 namespace aliceVision {
+namespace depthMap {
 
 /**
  * @param[in] s: iteration over nSamplesHalf
@@ -244,4 +245,5 @@ __global__ void fuse_optimizeDepthSimMap_kernel(float2* out_optDepthSimMap, int 
     };
 }
 
+} // namespace depthMap
 } // namespace aliceVision

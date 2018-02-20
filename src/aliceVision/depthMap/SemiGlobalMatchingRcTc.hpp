@@ -10,6 +10,7 @@
 #include <aliceVision/depthMap/SemiGlobalMatchingParams.hpp>
 
 namespace aliceVision {
+namespace depthMap {
 
 class SemiGlobalMatchingRcTc
 {
@@ -32,4 +33,5 @@ private:
     StaticVectorBool* rcSilhoueteMap;
 };
 
+} // namespace depthMap
 } // namespace aliceVision

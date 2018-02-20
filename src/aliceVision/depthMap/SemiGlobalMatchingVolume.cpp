@@ -8,6 +8,7 @@
 #include <aliceVision/common/common.hpp>
 
 namespace aliceVision {
+namespace depthMap {
 
 SemiGlobalMatchingVolume::SemiGlobalMatchingVolume(float _volGpuMB, int _volDimX, int _volDimY, int _volDimZ, SemiGlobalMatchingParams* _sp)
 {
@@ -304,4 +305,5 @@ void SemiGlobalMatchingVolume::addVolumeAvg(int n, const StaticVector<unsigned c
     }
 }
 
+} // namespace depthMap
 } // namespace aliceVision

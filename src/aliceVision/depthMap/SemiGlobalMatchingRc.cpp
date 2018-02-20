@@ -20,6 +20,7 @@
 #include <iostream>
 
 namespace aliceVision {
+namespace depthMap {
 
 namespace bfs = boost::filesystem;
 
@@ -758,4 +759,5 @@ void computeDepthMapsPSSGM(MultiViewParams* mp, PreMatchCams* pc, const StaticVe
     }
 }
 
+} // namespace depthMap
 } // namespace aliceVision

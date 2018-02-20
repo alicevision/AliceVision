@@ -11,6 +11,7 @@
 #include <assert.h>
 
 namespace aliceVision {
+namespace depthMap {
 
 template <unsigned Dim> class CudaSizeBase
 {
@@ -630,4 +631,5 @@ struct ps_parameters
 #define MAX_PTS 500           // 500
 #define MAX_PATCH_PIXELS 2500 // 50*50
 
+} // namespace depthMap
 } // namespace aliceVision

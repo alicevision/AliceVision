@@ -14,6 +14,7 @@
 #include <boost/filesystem.hpp>
 
 namespace aliceVision {
+namespace depthMap {
 
 namespace bfs = boost::filesystem;
 
@@ -370,4 +371,5 @@ void refineDepthMaps(MultiViewParams* mp, PreMatchCams* pc, const StaticVector<i
     }
 }
 
+} // namespace depthMap
 } // namespace aliceVision

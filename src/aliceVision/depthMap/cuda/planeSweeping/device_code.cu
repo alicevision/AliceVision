@@ -10,6 +10,7 @@
 #include <math_constants.h>
 
 namespace aliceVision {
+namespace depthMap {
 
 // Global data handlers and parameters
 
@@ -1316,4 +1317,5 @@ __global__ void pushPull_Pull_kernel(uchar4* out, int out_p, int width, int heig
     }
 }
 
+} // namespace depthMap
 } // namespace aliceVision

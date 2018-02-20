@@ -10,6 +10,7 @@
 #include <math_constants.h>
 
 namespace aliceVision {
+namespace depthMap {
 
 __device__ float3 M3x3mulV3(float* M3x3, const float3& V)
 {
@@ -379,4 +380,5 @@ __device__ float sigmoid2(float zeroVal, float endVal, float sigwidth, float sig
     return zeroVal + (endVal - zeroVal) * (1.0f / (1.0f + expf(10.0f * ((sigMid - xval) / sigwidth))));
 }
 
+} // namespace depthMap
 } // namespace aliceVision
