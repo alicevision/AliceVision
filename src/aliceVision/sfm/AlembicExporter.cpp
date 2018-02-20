@@ -475,9 +475,9 @@ void AlembicExporter::initAnimatedCamera(const std::string& cameraName)
 void AlembicExporter::addCameraKeyframe(const geometry::Pose3& pose,
                                         const camera::Pinhole* cam,
                                         const std::string& imagePath,
-                                        const IndexT viewId,
-                                        const IndexT intrinsicId,
-                                        const float sensorWidth_mm)
+                                        IndexT viewId,
+                                        IndexT intrinsicId,
+                                        float sensorWidth_mm)
 {
   const aliceVision::Mat3 R = pose.rotation();
   const aliceVision::Vec3 center = pose.center();
