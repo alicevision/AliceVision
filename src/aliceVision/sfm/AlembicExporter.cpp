@@ -24,7 +24,7 @@ using namespace Alembic::AbcGeom;
 
 struct AlembicExporter::DataImpl
 {
-  DataImpl(const std::string& filename)
+    explicit DataImpl(const std::string& filename)
     : _archive(Alembic::AbcCoreOgawa::WriteArchive(), filename)
     , _topObj(_archive, Alembic::Abc::kTop)
   {
