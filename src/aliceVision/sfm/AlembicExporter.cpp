@@ -409,11 +409,10 @@ void AlembicExporter::addLandmarks(const Landmarks& landmarks, bool withVisibili
     std::vector<float>featPos2d;
     featPos2d.reserve(nbObservations*2);
 
-    for(Landmarks::const_iterator itLandmark = landmarks.cbegin(), itLandmarkEnd = landmarks.cend();
-       itLandmark != itLandmarkEnd; ++itLandmark)
+    for (const auto &landmark : landmarks)
     {
-      const Observations& observations = itLandmark->second.observations;
-      for(const auto vObs: observations )
+      const Observations& observations = landmark.second.observations;
+      for(const auto& vObs: observations )
       {
         const Observation& obs = vObs.second;
         // (View ID, Feature ID)
