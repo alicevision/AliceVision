@@ -960,8 +960,8 @@ StaticVector<int>* Mesh::getVisibleTrianglesIndexes(std::string depthMapFileName
 
 StaticVector<int>* Mesh::getVisibleTrianglesIndexes(std::string tmpDir, const MultiViewParams* mp, int rc, int w, int h)
 {
-    std::string depthMapFileName = tmpDir + "depthMap" + num2strFourDecimal(rc) + ".bin";
-    std::string trisMapFileName = tmpDir + "trisMap" + num2strFourDecimal(rc) + ".bin";
+    std::string depthMapFileName = tmpDir + "depthMap" + std::to_string(mp->mip->getViewId(rc)) + ".bin";
+    std::string trisMapFileName = tmpDir + "trisMap" + std::to_string(mp->mip->getViewId(rc)) + ".bin";
 
     StaticVector<float>* depthMap = loadArrayFromFile<float>(depthMapFileName);
     StaticVector<StaticVector<int>*>* trisMap = loadArrayOfArraysFromFile<int>(trisMapFileName);
@@ -2003,7 +2003,7 @@ StaticVector<StaticVector<int>*>* Mesh::computeTrisCams(const MultiViewParams* m
     long t1 = initEstimate();
     for(int rc = 0; rc < mp->ncams; rc++)
     {
-        std::string visTrisFileName = tmpDir + "visTris" + num2strFourDecimal(rc) + ".bin";
+        std::string visTrisFileName = tmpDir + "visTris" + std::to_string(mp->mip->getViewId(rc)) + ".bin";
         StaticVector<int>* visTris = loadArrayFromFile<int>(visTrisFileName);
         if(visTris != nullptr)
         {
@@ -2032,7 +2032,7 @@ StaticVector<StaticVector<int>*>* Mesh::computeTrisCams(const MultiViewParams* m
     t1 = initEstimate();
     for(int rc = 0; rc < mp->ncams; rc++)
     {
-        std::string visTrisFileName = tmpDir + "visTris" + num2strFourDecimal(rc) + ".bin";
+        std::string visTrisFileName = tmpDir + "visTris" + std::to_string(mp->mip->getViewId(rc)) + ".bin";
         StaticVector<int>* visTris = loadArrayFromFile<int>(visTrisFileName);
         if(visTris != nullptr)
         {

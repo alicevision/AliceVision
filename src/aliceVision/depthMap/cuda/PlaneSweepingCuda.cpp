@@ -505,7 +505,7 @@ void PlaneSweepingCuda::getMinMaxdepths(int rc, StaticVector<int>* tcams, float&
                                           float& maxDepth)
 {
     StaticVector<SeedPoint>* seeds;
-    loadSeedsFromFile(&seeds, mp->indexes[rc], mp->mip, EFileType::seeds);
+    loadSeedsFromFile(&seeds, rc, mp->mip, EFileType::seeds);
 
     float minCamDist = (float)mp->mip->_ini.get<double>("prematching.minCamDist", 0.0f);
     float maxCamDist = (float)mp->mip->_ini.get<double>("prematching.maxCamDist", 15.0f);
@@ -1067,7 +1067,7 @@ bool PlaneSweepingCuda::refinePixelsAllFine(StaticVector<Color>* pxsnormals, Sta
 
 void loadRGBImage(MultiViewParams* mp, CudaHostMemoryHeap<uchar4, 2>& rimg_hmh, int rc, int w, int h)
 {
-    std::string imageFileName = mp->mip->mvDir + mp->mip->prefix + num2strFourDecimal(rc + 1) + "._c.png";
+    std::string imageFileName = mp->mip->mvDir + mp->mip->prefix + std::to_string(mp->mip->getViewId(rc)) + "._c.png";
     IplImage* bmp = cvLoadImage(imageFileName.c_str());
     for(int y = 0; y < h; y++)
     {
@@ -1608,8 +1608,9 @@ float PlaneSweepingCuda::sweepPixelsToVolume(int nDepthsToSearch, StaticVector<u
         }
     }
 
-    int slicesAtTime = std::min(pixels->size(), 4096);
+    int slicesAtTime = std::min(pixels->size(), 4096); //TODO
     // int slicesAtTime = 480/scale;
+    //int slicesAtTime = pixels->size();
 
     int npixs = pixels->size();
     int ntimes = npixs / slicesAtTime + 1;

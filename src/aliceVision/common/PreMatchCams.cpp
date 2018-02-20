@@ -122,10 +122,10 @@ StaticVector<int>* PreMatchCams::precomputeIncidentMatrixCamsFromSeeds()
     std::cout << "Compute camera pairs matrix file: " << fn << std::endl;
     StaticVector<int>* camsmatrix = new StaticVector<int>(mp->ncams * mp->ncams);
     camsmatrix->resize_with(mp->ncams * mp->ncams, 0);
-    for(int rc = 0; rc < mp->ncams; rc++)
+    for(int rc = 0; rc < mp->ncams; ++rc)
     {
         StaticVector<SeedPoint>* seeds;
-        loadSeedsFromFile(&seeds, mp->indexes[rc], mp->mip, EFileType::seeds);
+        loadSeedsFromFile(&seeds, rc, mp->mip, EFileType::seeds);
         for(int i = 0; i < seeds->size(); i++)
         {
             SeedPoint* sp = &(*seeds)[i];
@@ -229,7 +229,7 @@ StaticVector<int>* PreMatchCams::findCamsWhichIntersectsHexahedron(Point3d hexah
     {
         float mindepth, maxdepth;
         StaticVector<int>* pscams;
-        if(getDepthMapInfo(mp->indexes[rc], mp->mip, mindepth, maxdepth, &pscams))
+        if(getDepthMapInfo(rc, mp->mip, mindepth, maxdepth, &pscams))
         {
             delete pscams;
             Point3d rchex[8];

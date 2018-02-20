@@ -119,8 +119,8 @@ DepthSimMap* RefineRc::refineAndFuseDepthSimMapCUDA(DepthSimMap* depthPixSizeMap
         dataMaps->push_back(depthSimMapC);
 
         if(sp->visualizePartialDepthMaps)
-            depthSimMapC->saveToImage(outDir + "refineRc_Photo_" + num2strFourDecimal(rc) + "_tc_" +
-                                           num2strFourDecimal(tc) + ".depthSimMap.png", -2.0f);
+            depthSimMapC->saveToImage(outDir + "refineRc_Photo_" + std::to_string(sp->mp->mip->getViewId(rc)) + "_tc_" +
+                                           std::to_string(sp->mp->mip->getViewId(tc)) + ".depthSimMap.png", -2.0f);
     }
 
     // in order to fit into GPU memory
@@ -226,8 +226,10 @@ DepthSimMap* RefineRc::optimizeDepthSimMapCUDA(DepthSimMap* depthPixSizeMapVis,
 
 bool RefineRc::refinercCUDA(bool checkIfExists)
 {
+    const IndexT viewId = sp->mp->mip->getViewId(rc);
+
     if(sp->mp->verbose)
-        printf("processing refinercCUDA %i of %i\n", rc, sp->mp->ncams);
+        printf("processing refinercCUDA %i of %i\n", viewId, sp->mp->ncams);
 
     // generate default depthSimMap if rc has no tcam
     if(tcams == nullptr || depths == nullptr)
@@ -237,7 +239,7 @@ bool RefineRc::refinercCUDA(bool checkIfExists)
         return true;
     }
 
-    if(checkIfExists && (FileExists(sp->getREFINE_opt_simMapFileName(rc, 1, 1))))
+    if(checkIfExists && (FileExists(sp->getREFINE_opt_simMapFileName(viewId, 1, 1))))
     {
         return false;
     }
@@ -247,12 +249,12 @@ bool RefineRc::refinercCUDA(bool checkIfExists)
     DepthSimMap* depthPixSizeMapVis = getDepthPixSizeMapFromSGM();
 
     if(sp->visualizeDepthMaps)
-        depthPixSizeMapVis->saveToImage(outDir + "refineRc_" + num2strFourDecimal(rc) + "Vis.png", 0.0f);
+        depthPixSizeMapVis->saveToImage(outDir + "refineRc_" + std::to_string(viewId) + "Vis.png", 0.0f);
 
     DepthSimMap* depthSimMapPhoto = refineAndFuseDepthSimMapCUDA(depthPixSizeMapVis);
 
     if(sp->visualizeDepthMaps)
-        depthSimMapPhoto->saveToImage(outDir + "refineRc_" + num2strFourDecimal(rc) + "Photo.png", 0.0f);
+        depthSimMapPhoto->saveToImage(outDir + "refineRc_" + std::to_string(viewId) + "Photo.png", 0.0f);
 
     DepthSimMap* depthSimMapOpt = nullptr;
     if(sp->doRefineRc)
@@ -266,19 +268,19 @@ bool RefineRc::refinercCUDA(bool checkIfExists)
     }
 
     if(sp->visualizeDepthMaps)
-        depthSimMapOpt->saveToImage(outDir + "refineRc_" + num2strFourDecimal(rc) + "Opt.png", 0.0f);
+        depthSimMapOpt->saveToImage(outDir + "refineRc_" + std::to_string(viewId) + "Opt.png", 0.0f);
 
     depthSimMapOpt->save(rc, tcams);
 
     depthSimMapPhoto->saveRefine(rc,
-                                sp->getREFINE_photo_depthMapFileName(rc, 1, 1),
-                                sp->getREFINE_photo_simMapFileName(rc, 1, 1));
+                                sp->getREFINE_photo_depthMapFileName(viewId, 1, 1),
+                                sp->getREFINE_photo_simMapFileName(viewId, 1, 1));
 
     depthSimMapOpt->saveRefine(rc,
-                               sp->getREFINE_opt_depthMapFileName(rc, 1, 1),
-                               sp->getREFINE_opt_simMapFileName(rc, 1, 1));
+                               sp->getREFINE_opt_depthMapFileName(viewId, 1, 1),
+                               sp->getREFINE_opt_simMapFileName(viewId, 1, 1));
 
-    printfElapsedTime(tall, "REFINERC " + num2str(rc) + " of " + num2str(sp->mp->ncams));
+    printfElapsedTime(tall, "refinerc CUDA: " + num2str(rc) + " of " + num2str(sp->mp->ncams) + ", " + std::to_string(viewId) + " done.");
 
     delete depthPixSizeMapVis;
     delete depthSimMapPhoto;

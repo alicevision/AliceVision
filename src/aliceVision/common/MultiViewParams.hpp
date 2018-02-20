@@ -75,8 +75,8 @@ struct MultiViewInputParams
     std::string _depthMapFilterFolder;
     std::string outDir;
     std::string prefix;
-    std::string imageExt = "_c.png";
-    std::vector<imageParams> imps;
+    std::string imageExt = ".exr";
+
     int maxImageWidth = 0;
     int maxImageHeight = 0;
     bool usesil = false;
@@ -86,21 +86,25 @@ struct MultiViewInputParams
     explicit MultiViewInputParams(const std::string& file, const std::string& depthMapFolder, const std::string& depthMapFilterFolder);
 
     void initFromConfigFile(const std::string& iniFile);
-    imageParams addImageFile(const std::string& filename);
 
-    inline int getWidth(int rc) const
+    inline int getViewId(int index) const
     {
-        return imps[rc].width;
+        return _imagesParams.at(index).viewId;
     }
 
-    inline int getHeight(int rc) const
+    inline int getWidth(int index) const
     {
-        return imps[rc].height;
+        return _imagesParams.at(index).width;
     }
 
-    inline int getSize(int rc) const
+    inline int getHeight(int index) const
     {
-        return imps[rc].im_size;
+        return _imagesParams.at(index).height;
+    }
+
+    inline int getSize(int index) const
+    {
+        return _imagesParams.at(index).size;
     }
 
     inline int getMaxImageWidth() const
@@ -115,8 +119,11 @@ struct MultiViewInputParams
 
     inline int getNbCameras() const
     {
-        return imps.size();
+        return _imagesParams.size();
     }
+
+private:
+    std::vector<imageParams> _imagesParams;
 };
 
 
@@ -130,7 +137,6 @@ public:
     std::vector<Matrix3x3> iRArr;
     std::vector<Point3d> CArr;
     std::vector<Matrix3x3> iCamArr;
-    std::vector<short> indexes;
     std::vector<Point3d> FocK1K2Arr;
 
     MultiViewInputParams* mip;
@@ -149,7 +155,6 @@ public:
     void resizeCams(int _ncams)
     {
         ncams = _ncams;
-        indexes.resize(ncams);
         camArr.resize(ncams);
         KArr.resize(ncams);
         iKArr.resize(ncams);

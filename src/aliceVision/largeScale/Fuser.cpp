@@ -44,7 +44,7 @@ unsigned long Fuser::computeNumberOfAllPoints(int scale)
 
         StaticVector<float> depthMap;
 
-        imageIO::readImage(mv_getFileName(mp->mip, rc + 1, EFileType::depthMap, scale), width, height, depthMap.getDataWritable());
+        imageIO::readImage(mv_getFileName(mp->mip, rc, EFileType::depthMap, scale), width, height, depthMap.getDataWritable());
         // no need to transpose for this operation
 
         for(int i = 0; i < sizeOfStaticVector<float>(&depthMap); i++)
@@ -141,7 +141,7 @@ void Fuser::filterGroups(const StaticVector<int>& cams, int pixSizeBall, int pix
 // minNumOfModals number of other cams including this cam ... minNumOfModals /in 2,3,...
 bool Fuser::filterGroupsRC(int rc, int pixSizeBall, int pixSizeBallWSP, int nNearestCams)
 {
-    if(FileExists(mv_getFileName(mp->mip, rc + 1, EFileType::nmodMap)))
+    if(FileExists(mv_getFileName(mp->mip, rc, EFileType::nmodMap)))
     {
         return true;
     }
@@ -156,8 +156,8 @@ bool Fuser::filterGroupsRC(int rc, int pixSizeBall, int pixSizeBallWSP, int nNea
     {
         int width, height;
 
-        imageIO::readImage(mv_getFileName(mp->mip, rc + 1, EFileType::depthMap, 1), width, height, depthMap.getDataWritable());
-        imageIO::readImage(mv_getFileName(mp->mip, rc + 1, EFileType::simMap, 1), width, height, simMap.getDataWritable());
+        imageIO::readImage(mv_getFileName(mp->mip, rc, EFileType::depthMap, 1), width, height, depthMap.getDataWritable());
+        imageIO::readImage(mv_getFileName(mp->mip, rc, EFileType::simMap, 1), width, height, simMap.getDataWritable());
 
         imageIO::transposeImage(width, height, depthMap.getDataWritable());
         imageIO::transposeImage(width, height, simMap.getDataWritable());
@@ -168,7 +168,7 @@ bool Fuser::filterGroupsRC(int rc, int pixSizeBall, int pixSizeBallWSP, int nNea
     if((depthMap.empty()) || (simMap.empty()) || (depthMap.size() != w * h) || (simMap.size() != w * h))
     {
         std::stringstream s;
-        s << "filterGroupsRC: bad image dimension for camera: " << rc+1 << "\n";
+        s << "filterGroupsRC: bad image dimension for camera: " << mp->mip->getViewId(rc) << "\n";
         s << "depthMap size: " << depthMap.size() << ", simMap size: " << simMap.size() << ", width: " << w << ", height: " << h;
        throw std::runtime_error(s.str());
     }
@@ -189,7 +189,7 @@ bool Fuser::filterGroupsRC(int rc, int pixSizeBall, int pixSizeBallWSP, int nNea
         {
             int width, height;
 
-            imageIO::readImage(mv_getFileName(mp->mip, tc + 1, EFileType::depthMap, 1), width, height, tcdepthMap.getDataWritable());
+            imageIO::readImage(mv_getFileName(mp->mip, tc, EFileType::depthMap, 1), width, height, tcdepthMap.getDataWritable());
 
             // transpose image in-place, width/height are no more valid after this function.
             imageIO::transposeImage(width, height, tcdepthMap.getDataWritable());
@@ -219,7 +219,7 @@ bool Fuser::filterGroupsRC(int rc, int pixSizeBall, int pixSizeBallWSP, int nNea
 
     {
       imageIO::transposeImage(h, w, numOfModalsMap);
-      imageIO::writeImage(mv_getFileName(mp->mip, rc + 1, EFileType::nmodMap), w, h, numOfModalsMap);
+      imageIO::writeImage(mv_getFileName(mp->mip, rc, EFileType::nmodMap), w, h, numOfModalsMap);
     }
 
     delete numOfPtsMap;
@@ -262,9 +262,9 @@ bool Fuser::filterDepthMapsRC(int rc, int minNumOfModals, int minNumOfModalsWSP2
     {
         int width, height;
 
-        imageIO::readImage(mv_getFileName(mp->mip, rc + 1, EFileType::depthMap, 1), width, height, depthMap);
-        imageIO::readImage(mv_getFileName(mp->mip, rc + 1, EFileType::simMap, 1), width, height, simMap);
-        imageIO::readImage(mv_getFileName(mp->mip, rc + 1, EFileType::nmodMap), width, height, numOfModalsMap);
+        imageIO::readImage(mv_getFileName(mp->mip, rc, EFileType::depthMap, 1), width, height, depthMap);
+        imageIO::readImage(mv_getFileName(mp->mip, rc, EFileType::simMap, 1), width, height, simMap);
+        imageIO::readImage(mv_getFileName(mp->mip, rc, EFileType::nmodMap), width, height, numOfModalsMap);
 
         imageIO::transposeImage(width, height, depthMap);
         imageIO::transposeImage(width, height, simMap);
@@ -303,8 +303,8 @@ bool Fuser::filterDepthMapsRC(int rc, int minNumOfModals, int minNumOfModalsWSP2
     metadata.emplace_back(oiio::ParamValue("AliceVision:CArr", oiio::TypeDesc(oiio::TypeDesc::DOUBLE, oiio::TypeDesc::VEC3), 1, mp->CArr[rc].m));
     metadata.emplace_back(oiio::ParamValue("AliceVision:iCamArr", oiio::TypeDesc(oiio::TypeDesc::DOUBLE, oiio::TypeDesc::MATRIX33), 1, mp->iCamArr[rc].m));
 
-    imageIO::writeImage(mv_getFileName(mp->mip, rc + 1, EFileType::depthMap, 0), w, h, depthMap, imageIO::EImageQuality::LOSSLESS, metadata);
-    imageIO::writeImage(mv_getFileName(mp->mip, rc + 1, EFileType::simMap, 0), w, h, simMap);
+    imageIO::writeImage(mv_getFileName(mp->mip, rc, EFileType::depthMap, 0), w, h, depthMap, imageIO::EImageQuality::LOSSLESS, metadata);
+    imageIO::writeImage(mv_getFileName(mp->mip, rc, EFileType::simMap, 0), w, h, simMap);
 
     if(mp->verbose)
         printf("%i solved in ", rc);
@@ -336,7 +336,7 @@ float Fuser::computeAveragePixelSizeInHexahedron(Point3d* hexah, int step, int s
         {
             int width, height;
 
-            imageIO::readImage(mv_getFileName(mp->mip, rc + 1, EFileType::depthMap, scale), width, height, rcdepthMap.getDataWritable());
+            imageIO::readImage(mv_getFileName(mp->mip, rc, EFileType::depthMap, scale), width, height, rcdepthMap.getDataWritable());
 
             imageIO::transposeImage(width, height, rcdepthMap.getDataWritable());
         }
@@ -403,7 +403,7 @@ void Fuser::divideSpace(Point3d* hexah, float& minPixSize)
         {
             int width, height;
 
-            imageIO::readImage(mv_getFileName(mp->mip, rc + 1, EFileType::depthMap, scale), width, height, depthMap.getDataWritable());
+            imageIO::readImage(mv_getFileName(mp->mip, rc, EFileType::depthMap, scale), width, height, depthMap.getDataWritable());
 
             imageIO::transposeImage(width, height, depthMap.getDataWritable());
         }
@@ -449,7 +449,7 @@ void Fuser::divideSpace(Point3d* hexah, float& minPixSize)
         {
             int width, height;
 
-            imageIO::readImage(mv_getFileName(mp->mip, rc + 1, EFileType::depthMap, scale), width, height, depthMap.getDataWritable());
+            imageIO::readImage(mv_getFileName(mp->mip, rc, EFileType::depthMap, scale), width, height, depthMap.getDataWritable());
 
             imageIO::transposeImage(width, height, depthMap.getDataWritable());
         }
@@ -590,8 +590,8 @@ std::string generateTempPtsSimsFiles(std::string tmpDir, MultiViewParams* mp, bo
             {
                 int width, height;
 
-                imageIO::readImage(mv_getFileName(mp->mip, rc + 1, EFileType::depthMap, scale), width, height, depthMap.getDataWritable());
-                imageIO::readImage(mv_getFileName(mp->mip, rc + 1, EFileType::simMap, scale), width, height, simMap.getDataWritable());
+                imageIO::readImage(mv_getFileName(mp->mip, rc, EFileType::depthMap, scale), width, height, depthMap.getDataWritable());
+                imageIO::readImage(mv_getFileName(mp->mip, rc, EFileType::simMap, scale), width, height, simMap.getDataWritable());
 
                 imageIO::transposeImage(width, height, depthMap.getDataWritable());
                 imageIO::transposeImage(width, height, simMap.getDataWritable());
@@ -715,8 +715,8 @@ std::string generateTempPtsSimsFiles(std::string tmpDir, MultiViewParams* mp, bo
                     printfElapsedTime(t1);
             }
 
-            saveArrayToFile<Point3d>(depthMapsPtsSimsTmpDir + num2strFourDecimal(rc) + "pts.bin", pts);
-            saveArrayToFile<float>(depthMapsPtsSimsTmpDir + num2strFourDecimal(rc) + "sims.bin", sims);
+            saveArrayToFile<Point3d>(depthMapsPtsSimsTmpDir + std::to_string(mp->mip->getViewId(rc)) + "pts.bin", pts);
+            saveArrayToFile<float>(depthMapsPtsSimsTmpDir + std::to_string(mp->mip->getViewId(rc)) + "sims.bin", sims);
             delete pts;
             delete sims;
         }
@@ -732,8 +732,8 @@ void deleteTempPtsSimsFiles(MultiViewParams* mp, std::string depthMapsPtsSimsTmp
 {
     for(int rc = 0; rc < mp->ncams; rc++)
     {
-        std::string ptsfn = depthMapsPtsSimsTmpDir + num2strFourDecimal(rc) + "pts.bin";
-        std::string simsfn = depthMapsPtsSimsTmpDir + num2strFourDecimal(rc) + "sims.bin";
+        std::string ptsfn = depthMapsPtsSimsTmpDir + std::to_string(mp->mip->getViewId(rc)) + "pts.bin";
+        std::string simsfn = depthMapsPtsSimsTmpDir + std::to_string(mp->mip->getViewId(rc)) + "sims.bin";
         remove(ptsfn.c_str());
         remove(simsfn.c_str());
     }

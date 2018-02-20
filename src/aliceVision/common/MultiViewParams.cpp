@@ -29,22 +29,6 @@ MultiViewInputParams::MultiViewInputParams(const std::string& file, const std::s
     _depthMapFilterFolder = depthMapFilterFolder + "/";
 }
 
-imageParams MultiViewInputParams::addImageFile(const std::string& filename)
-{
-    int width = -1;
-    int height = -1;
-    int nchannels = -1;
-
-    imageIO::readImageSpec(filename, width, height, nchannels);
-    imageParams params(width, height);
-
-    maxImageWidth = std::max(maxImageWidth, width);
-    maxImageHeight = std::max(maxImageHeight, height);
-
-    imps.push_back(params);
-    return params;
-}
-
 void MultiViewInputParams::initFromConfigFile(const std::string& iniFile)
 {
     boost::property_tree::ini_parser::read_ini(iniFile, _ini);
@@ -63,37 +47,27 @@ void MultiViewInputParams::initFromConfigFile(const std::string& iniFile)
     usesil = _ini.get<bool>("global.use_silhouettes", usesil);
     int ncams = _ini.get<int>("global.ncams", 0);
     assert(ncams > 0);
-    // Load image dimensions
+    // Load image uid and dimensions
     std::set<std::pair<int, int>> dimensions;
     {
         boost::optional<boost::property_tree::ptree&> cameras = _ini.get_child_optional("imageResolutions");
         if(!cameras)
         {
-            std::cout << "No 'imageResolutions' section, load from image files." << std::endl;
-            for(std::size_t i = 0; i < ncams; ++i)
-            {
-                const std::string filename = mv_getFileNamePrefix(mvDir, this, static_cast<int>(i + 1)) + "." + imageExt;
-                const imageParams params = addImageFile(filename);
-                dimensions.emplace(params.width, params.height);
-            }
+         throw std::runtime_error("Can't find images UID and dimensions in .ini file");
         }
-        else
-        {
-            for (const auto v : *cameras)
-            {
-                const std::string values = v.second.get_value<std::string>();
-                std::vector<std::string> valuesVec;
-                boost::split(valuesVec, values, boost::algorithm::is_any_of("x"));
-                if(valuesVec.size() != 2)
-                    throw std::runtime_error("Error when loading image sizes from INI file.");
-                imageParams imgParams(boost::lexical_cast<int>(valuesVec[0]), boost::lexical_cast<int>(valuesVec[1]));
-                imps.push_back(imgParams);
-                maxImageWidth = std::max(maxImageWidth, imgParams.width);
-                maxImageHeight = std::max(maxImageHeight, imgParams.height);
 
-                dimensions.emplace(imgParams.width, imgParams.height);
-                // std::cout << " * "  << v.first << ": " << imgParams.width << "x" << imgParams.height << std::endl;
-            }
+        for (const auto v : *cameras)
+        {
+            const std::string values = v.second.get_value<std::string>();
+            std::vector<std::string> valuesVec;
+            boost::split(valuesVec, values, boost::algorithm::is_any_of("x"));
+            if(valuesVec.size() != 2)
+                throw std::runtime_error("Error when loading image sizes from INI file.");
+            imageParams imgParams(std::stoi(v.first), boost::lexical_cast<int>(valuesVec[0]), boost::lexical_cast<int>(valuesVec[1]));
+            _imagesParams.push_back(imgParams);
+            maxImageWidth = std::max(maxImageWidth, imgParams.width);
+            maxImageHeight = std::max(maxImageHeight, imgParams.height);
+            dimensions.emplace(imgParams.width, imgParams.height);
         }
     }
     if(getNbCameras() != ncams)
@@ -120,7 +94,6 @@ MultiViewParams::MultiViewParams(int _ncams, MultiViewInputParams* _mip, float _
     long t1 = initEstimate();
     for(int i = 0; i < ncams; i++)
     {
-        indexes[i] = i + 1;
         FocK1K2Arr[i] = Point3d(-1.0f, -1.0f, -1.0f);
 
         if(cameras != nullptr)
@@ -136,8 +109,8 @@ MultiViewParams::MultiViewParams(int _ncams, MultiViewInputParams* _mip, float _
         }
         else
         {
-            std::string fileNameP = mv_getFileName(mip, indexes[i], EFileType::P);
-            std::string fileNameD = mv_getFileName(mip, indexes[i], EFileType::D);
+            std::string fileNameP = mv_getFileName(mip, i, EFileType::P);
+            std::string fileNameD = mv_getFileName(mip, i, EFileType::D);
             loadCameraFile(i, fileNameP, fileNameD);
         }
 

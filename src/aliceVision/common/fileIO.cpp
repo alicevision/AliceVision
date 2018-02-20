@@ -23,7 +23,7 @@ bool FolderExists(const std::string& folderPath)
 
 std::string mv_getFileNamePrefix(const std::string& baseDir, MultiViewInputParams* mip, int index)
 {
-    return baseDir + mip->prefix + num2strFourDecimal(index);
+    return baseDir + mip->prefix + std::to_string(mip->getViewId(index));
 }
 
 std::string mv_getFileName(MultiViewInputParams* mip, int index, EFileType mv_file_type, int scale)

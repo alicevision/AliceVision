@@ -172,7 +172,6 @@ bool triangulateMatch(Point3d& out, const Point2d& refpix, const Point2d& tarpix
 
 long initEstimate()
 {
-    printf("                                      ");
     return clock();
 }
 
@@ -764,7 +763,7 @@ StaticVector<int>* createRandomArrayOfIntegers(int n)
 float getCGDepthFromSeeds(const MultiViewParams* mp, int rc)
 {
     StaticVector<SeedPoint>* seeds;
-    loadSeedsFromFile(&seeds, mp->indexes[rc], mp->mip, EFileType::seeds);
+    loadSeedsFromFile(&seeds, rc, mp->mip, EFileType::seeds);
 
     float midDepth = -1.0f;
 

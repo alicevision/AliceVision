@@ -581,7 +581,7 @@ void VoxelsGrid::generateCamsPtsFromVoxelsTracks()
                 int rc = (*cams)[c];
 
                 // open camPtsFile for append
-                std::string camPtsFileName = spaceCamsTracksDir + "camPtsGrid_" + num2strFourDecimal(rc) + ".bin";
+                std::string camPtsFileName = spaceCamsTracksDir + "camPtsGrid_" + std::to_string(mp->mip->getViewId(rc)) + ".bin";
                 FILE* fin = fopen(camPtsFileName.c_str(), "ab");
                 StaticVector<Pixel>* camPtsIds = (*camsTracksPoints)[rc];
                 for(int j = 0; j < sizeOfStaticVector<Pixel>(camPtsIds); j++)

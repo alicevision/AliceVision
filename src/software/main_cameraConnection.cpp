@@ -71,7 +71,6 @@ int main(int argc, char* argv[])
 
     ALICEVISION_COUT("--- compute camera pairs");
     pc.precomputeIncidentMatrixCamsFromSeeds();
-
     printfElapsedTime(startTime, "#");
     return EXIT_SUCCESS;
 }

@@ -20,7 +20,7 @@ ImagesCache::ImagesCache(const MultiViewParams* _mp, int _bandType, bool _transp
     std::vector<std::string> _imagesNames;
     for(int rc = 0; rc < _mp->ncams; rc++)
     {
-        _imagesNames.push_back(mv_getFileNamePrefix(_mp->mip->mvDir, _mp->mip, rc + 1) + "." + _mp->mip->imageExt);
+        _imagesNames.push_back(mv_getFileNamePrefix(_mp->mip->mvDir, _mp->mip, rc) + "." + _mp->mip->imageExt);
     }
     initIC(_bandType, _imagesNames, _transposed);
 }
@@ -111,7 +111,7 @@ void ImagesCache::refreshData(int camId)
             imgs[mapId] = new Color[maxsize];
         }
 
-        std::string imagePath = imagesNames[camId];
+        std::string imagePath = imagesNames.at(camId);
         memcpyRGBImageFromFileToArr(camId, imgs[mapId], imagePath, mp->mip, transposed, 1, bandType);
 
         if(mp->verbose)

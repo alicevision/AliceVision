@@ -390,13 +390,13 @@ void DepthSimMap::save(int rc, StaticVector<int>* tcams)
     oiio::ParamValueList metadata;
     metadata.emplace_back(oiio::ParamValue("AliceVision:CArr", oiio::TypeDesc(oiio::TypeDesc::DOUBLE, oiio::TypeDesc::VEC3), 1, mp->CArr[rc].m));
     metadata.emplace_back(oiio::ParamValue("AliceVision:iCamArr", oiio::TypeDesc(oiio::TypeDesc::DOUBLE, oiio::TypeDesc::MATRIX33), 1, mp->iCamArr[rc].m));
-    // TODO: remove "+ 1"
-    imageIO::writeImage(mv_getFileName(mp->mip, rc + 1, EFileType::depthMap, scale), width, height, depthMap->getDataWritable(), imageIO::EImageQuality::LOSSLESS, metadata);
-    imageIO::writeImage(mv_getFileName(mp->mip, rc + 1, EFileType::simMap, scale), width, height, simMap->getDataWritable());
+
+    imageIO::writeImage(mv_getFileName(mp->mip, rc, EFileType::depthMap, scale), width, height, depthMap->getDataWritable(), imageIO::EImageQuality::LOSSLESS, metadata);
+    imageIO::writeImage(mv_getFileName(mp->mip, rc, EFileType::simMap, scale), width, height, simMap->getDataWritable());
 
     {
         Point2d maxMinDepth = getMaxMinDepth();
-        FILE* f = mv_openFile(mp->mip, mp->indexes[rc], EFileType::depthMapInfo, "w");
+        FILE* f = mv_openFile(mp->mip, rc, EFileType::depthMapInfo, "w");
         int nbTCs = tcams ? tcams->size() : 0;
         fprintf(f, "minDepth %f, maxDepth %f, ntcams %i, tcams", maxMinDepth.y, maxMinDepth.x, nbTCs);
         for(int c = 0; c < nbTCs; c++)
@@ -415,8 +415,8 @@ void DepthSimMap::load(int rc, int fromScale)
     StaticVector<float> depthMap;
     StaticVector<float> simMap;
 
-    imageIO::readImage(mv_getFileName(mp->mip, rc + 1, EFileType::depthMap, fromScale), width, height, depthMap.getDataWritable());
-    imageIO::readImage(mv_getFileName(mp->mip, rc + 1, EFileType::simMap, fromScale), width, height, simMap.getDataWritable());
+    imageIO::readImage(mv_getFileName(mp->mip, rc, EFileType::depthMap, fromScale), width, height, depthMap.getDataWritable());
+    imageIO::readImage(mv_getFileName(mp->mip, rc, EFileType::simMap, fromScale), width, height, simMap.getDataWritable());
 
     imageIO::transposeImage(width, height, depthMap.getDataWritable());
     imageIO::transposeImage(width, height, simMap.getDataWritable());

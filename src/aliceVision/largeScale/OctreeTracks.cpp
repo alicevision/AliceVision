@@ -682,9 +682,9 @@ StaticVector<OctreeTracks::trackStruct*>* OctreeTracks::fillOctree(int maxPts, s
     {
         int rc = (*cams)[camid];
         StaticVector<Point3d>* pts =
-            loadArrayFromFile<Point3d>(depthMapsPtsSimsTmpDir + num2strFourDecimal(rc) + "pts.bin");
+            loadArrayFromFile<Point3d>(depthMapsPtsSimsTmpDir + std::to_string(mp->mip->getViewId(rc)) + "pts.bin");
         StaticVector<float>* sims =
-            loadArrayFromFile<float>(depthMapsPtsSimsTmpDir + num2strFourDecimal(rc) + "sims.bin");
+            loadArrayFromFile<float>(depthMapsPtsSimsTmpDir + std::to_string(mp->mip->getViewId(rc)) + "sims.bin");
 
         // long tpts=initEstimate();
         for(int i = 0; i < pts->size(); i++)
