@@ -1,29 +1,6 @@
 ## AliceVision
 ## Pipeline software
 
-# CMPMVS all-in-one software
-
-if(ALICEVISION_HAVE_CUDA) # Depth map computation need CUDA
-  add_executable(aliceVision_CMPMVS CMPMVS.cpp)
-
-  target_link_libraries(aliceVision_CMPMVS
-    PUBLIC aliceVision_structures
-           aliceVision_common
-           aliceVision_mesh
-           aliceVision_depthMap
-           aliceVision_meshConstruction
-           ${Boost_LIBRARIES}
-  )
-
-  set_property(TARGET aliceVision_CMPMVS
-    PROPERTY FOLDER AliceVision/Software/Pipeline
-  )
-
-  install(TARGETS aliceVision_CMPMVS
-    DESTINATION bin/
-  )
-endif()
-
 # Compute Nearby Cameras
 
 add_executable(aliceVision_cameraConnection main_cameraConnection.cpp)
