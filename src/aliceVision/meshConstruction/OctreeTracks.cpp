@@ -14,7 +14,7 @@
 #include <iostream>
 
 namespace aliceVision {
-namespace largeScale {
+namespace meshConstruction {
 
 OctreeTracks::Node::Node(NodeType type)
 {
@@ -822,5 +822,5 @@ StaticVector<int>* OctreeTracks::getTracksCams(StaticVector<OctreeTracks::trackS
     return cams;
 }
 
-} // namespace largeScale
+} // namespace meshConstruction
 } // namespace aliceVision

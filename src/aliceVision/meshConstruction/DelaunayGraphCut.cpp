@@ -4,8 +4,8 @@
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
 #include "DelaunayGraphCut.hpp"
-#include <aliceVision/delaunayCut/MaxFlow_CSR.hpp>
-// #include <aliceVision/delaunayCut/MaxFlow_AdjList.hpp>
+#include <aliceVision/meshConstruction/MaxFlow_CSR.hpp>
+// #include <aliceVision/meshConstruction/MaxFlow_AdjList.hpp>
 #include <aliceVision/structures/geometry.hpp>
 #include <aliceVision/structures/jetColorMap.hpp>
 #include <aliceVision/structures/Pixel.hpp>
@@ -27,7 +27,7 @@
 #endif
 
 namespace aliceVision {
-namespace delaunayCut {
+namespace meshConstruction {
 
 namespace bfs = boost::filesystem;
 
@@ -428,7 +428,7 @@ void DelaunayGraphCut::addHelperPoints(int nGridHelperVolumePointsDim, Point3d v
 
 void DelaunayGraphCut::createTetrahedralizationFromDepthMapsCamsVoxel(StaticVector<int>* cams,
                                                                StaticVector<int>* voxelsIds, Point3d voxel[8],
-                                                               largeScale::VoxelsGrid* ls)
+                                                               VoxelsGrid* ls)
 {
     ///////////////////////////////////////////////////////////////////////////////////////
     printf("Creating delaunay tetrahedralization from depth maps voxel\n");
@@ -1805,7 +1805,7 @@ void DelaunayGraphCut::invertFullStatusForSmallLabels()
 
 void DelaunayGraphCut::reconstructVoxel(Point3d hexah[8], StaticVector<int>* voxelsIds, std::string folderName,
                                       std::string tmpCamsPtsFolderName, bool removeSmallSegments,
-                                      StaticVector<Point3d>* hexahsToExcludeFromResultingMesh, largeScale::VoxelsGrid* ls,
+                                      StaticVector<Point3d>* hexahsToExcludeFromResultingMesh, VoxelsGrid* ls,
                                       Point3d spaceSteps)
 {
     StaticVector<int>* cams = pc->findCamsWhichIntersectsHexahedron(hexah);
@@ -2459,5 +2459,5 @@ void DelaunayGraphCut::leaveLargestFullSegmentOnly()
         printf("Largest full segment only. Done.\n");
 }
 
-} // namespace delaunayCut
+} // namespace meshConstruction
 } // namespace aliceVision

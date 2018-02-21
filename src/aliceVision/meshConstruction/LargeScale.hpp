@@ -10,12 +10,12 @@
 #include <aliceVision/structures/Voxel.hpp>
 #include <aliceVision/common/common.hpp>
 #include <aliceVision/common/PreMatchCams.hpp>
-#include <aliceVision/largeScale/OctreeTracks.hpp>
+#include <aliceVision/meshConstruction/OctreeTracks.hpp>
 
 #include <array>
 
 namespace aliceVision {
-namespace largeScale {
+namespace meshConstruction {
 
 class LargeScale
 {
@@ -58,5 +58,5 @@ public:
     }
 };
 
-} // namespace largeScale
+} // namespace meshConstruction
 } // namespace aliceVision

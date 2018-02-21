@@ -7,13 +7,13 @@
 #include <aliceVision/structures/Pixel.hpp>
 #include <aliceVision/common/common.hpp>
 #include <aliceVision/common/fileIO.hpp>
-#include <aliceVision/delaunayCut/delaunayGraphCutTypes.hpp>
+#include <aliceVision/meshConstruction/delaunayGraphCutTypes.hpp>
 #include <aliceVision/omp.hpp>
 
 #include <boost/filesystem.hpp>
 
 namespace aliceVision {
-namespace largeScale {
+namespace meshConstruction {
 
 namespace bfs = boost::filesystem;
 
@@ -591,7 +591,7 @@ void VoxelsGrid::generateCamsPtsFromVoxelsTracks()
                 {
                     int ptid = (*camPtsIds)[j].x;
                     int nrc = (*camPtsIds)[j].y;
-                    delaunayCut::GC_camVertexInfo p;
+                    GC_camVertexInfo p;
                     p.point = (*tracksPoints)[ptid];
                     p.sim = -0.91; // TODO FACA: why??
                     p.nrc = nrc;
@@ -679,5 +679,5 @@ void VoxelsGrid::getHexah(Point3d* hexahOut, const Voxel& LUi, const Voxel& RDi)
     hexahOut[7] = O + vvz + vvy;
 }
 
-} // namespace largeScale
+} // namespace meshConstruction
 } // namespace aliceVision

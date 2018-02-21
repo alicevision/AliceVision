@@ -11,9 +11,9 @@
 #include <aliceVision/structures/Voxel.hpp>
 #include <aliceVision/common/common.hpp>
 #include <aliceVision/common/PreMatchCams.hpp>
-#include <aliceVision/delaunayCut/delaunayGraphCutTypes.hpp>
-#include <aliceVision/largeScale/VoxelsGrid.hpp>
 #include <aliceVision/mesh/Mesh.hpp>
+#include <aliceVision/meshConstruction/delaunayGraphCutTypes.hpp>
+#include <aliceVision/meshConstruction/VoxelsGrid.hpp>
 
 #include <geogram/delaunay/delaunay.h>
 #include <geogram/delaunay/delaunay_3d.h>
@@ -24,7 +24,7 @@
 #include <set>
 
 namespace aliceVision {
-namespace delaunayCut {
+namespace meshConstruction {
 
 class DelaunayGraphCut
 {
@@ -230,7 +230,7 @@ public:
     void addHelperPoints(int nGridHelperVolumePointsDim, Point3d Voxel[8], float minDist);
 
     void createTetrahedralizationFromDepthMapsCamsVoxel(StaticVector<int>* cams,
-                                                   StaticVector<int>* voxelsIds, Point3d Voxel[8], largeScale::VoxelsGrid* ls);
+                                                   StaticVector<int>* voxelsIds, Point3d Voxel[8], VoxelsGrid* ls);
 
     void computeVerticesSegSize(bool allPoints, float alpha = 0.0f);
     void removeSmallSegs(int minSegSize);
@@ -292,7 +292,7 @@ public:
 
     void reconstructVoxel(Point3d hexah[8], StaticVector<int>* voxelsIds, std::string folderName,
                           std::string tmpCamsPtsFolderName, bool segment,
-                          StaticVector<Point3d>* hexahsToExcludeFromResultingMesh, largeScale::VoxelsGrid* ls, Point3d spaceSteps);
+                          StaticVector<Point3d>* hexahsToExcludeFromResultingMesh, VoxelsGrid* ls, Point3d spaceSteps);
 
     /**
      * @brief Invert full/empty status of cells if they represent a too small group after labelling.
@@ -370,5 +370,5 @@ inline DelaunayGraphCut::Facet DelaunayGraphCut::getFacetInFrontVertexOnTheRayTo
     return getFacetInFrontVertexOnTheRayToThePoint3d(vertexIndex, mp->CArr[cam]);
 }
 
-} // namespace delaunayCut
+} // namespace meshConstruction
 } // namespace aliceVision

@@ -7,7 +7,7 @@
 #include <aliceVision/common/common.hpp>
 #include <aliceVision/common/MultiViewParams.hpp>
 #include <aliceVision/common/PreMatchCams.hpp>
-#include <aliceVision/largeScale/Fuser.hpp>
+#include <aliceVision/meshConstruction/Fuser.hpp>
 
 #include <boost/program_options.hpp>
 #include <boost/filesystem.hpp>
@@ -125,7 +125,7 @@ int main(int argc, char* argv[])
     ALICEVISION_COUT("--- filter depthmap");
 
     {
-        largeScale::Fuser fs(&mp, &pc);
+        meshConstruction::Fuser fs(&mp, &pc);
         fs.filterGroups(cams, pixSizeBall, pixSizeBallWithLowSimilarity, nNearestCams);
         fs.filterDepthMaps(cams, minNumOfConsistensCams, minNumOfConsistensCamsWithLowSimilarity);
     }

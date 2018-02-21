@@ -12,7 +12,7 @@
 #include <aliceVision/common/PreMatchCams.hpp>
 
 namespace aliceVision {
-namespace largeScale {
+namespace meshConstruction {
 
 class Fuser
 {
@@ -47,5 +47,5 @@ std::string generateTempPtsSimsFiles(std::string tmpDir, common::MultiViewParams
                                      float percNoisePts = 0.0, int noisPixSizeDistHalfThr = 0);
 void deleteTempPtsSimsFiles(common::MultiViewParams* mp, std::string depthMapsPtsSimsTmpDir);
 
-} // namespace largeScale
+} // namespace meshConstruction
 } // namespace aliceVision

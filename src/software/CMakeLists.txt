@@ -10,9 +10,8 @@ if(ALICEVISION_HAVE_CUDA) # Depth map computation need CUDA
     PUBLIC aliceVision_structures
            aliceVision_common
            aliceVision_mesh
-           aliceVision_largeScale
-           aliceVision_delaunayCut
            aliceVision_depthMap
+           aliceVision_meshConstruction
            ${Boost_LIBRARIES}
   )
 
@@ -70,8 +69,7 @@ add_executable(aliceVision_depthMapFiltering main_depthMapFiltering.cpp)
 target_link_libraries(aliceVision_depthMapFiltering
   PUBLIC aliceVision_structures
          aliceVision_common
-         aliceVision_delaunayCut #TODO : aliceVision_delaunayCut temporary
-         aliceVision_largeScale
+         aliceVision_meshConstruction
          ${Boost_LIBRARIES}
 )
 
@@ -91,8 +89,7 @@ target_link_libraries(aliceVision_meshing
   PUBLIC aliceVision_structures
          aliceVision_common
          aliceVision_mesh
-         aliceVision_largeScale
-         aliceVision_delaunayCut
+         aliceVision_meshConstruction
          ${Boost_LIBRARIES}
 )
 

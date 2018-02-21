@@ -8,13 +8,13 @@
 #include <aliceVision/common/common.hpp>
 #include <aliceVision/common/fileIO.hpp>
 #include <aliceVision/mesh/meshPostProcessing.hpp>
-#include <aliceVision/largeScale/VoxelsGrid.hpp>
-#include <aliceVision/delaunayCut/DelaunayGraphCut.hpp>
+#include <aliceVision/meshConstruction/VoxelsGrid.hpp>
+#include <aliceVision/meshConstruction/DelaunayGraphCut.hpp>
 
 #include <boost/filesystem.hpp>
 
 namespace aliceVision {
-namespace largeScale {
+namespace meshConstruction {
 
 namespace bfs = boost::filesystem;
 
@@ -261,10 +261,10 @@ void reconstructSpaceAccordingToVoxelsArray(const std::string& voxelsArrayFileNa
         if(!common::FileExists(meshBinFilepath))
         {
             StaticVector<int>* voxelsIds = rp->voxelsIdsIntersectingHexah(&(*voxelsArray)[i * 8]);
-            delaunayCut::DelaunayGraphCut delaunayGC(ls->mp, ls->pc);
+            DelaunayGraphCut delaunayGC(ls->mp, ls->pc);
             Point3d* hexah = &(*voxelsArray)[i * 8];
             delaunayGC.reconstructVoxel(hexah, voxelsIds, folderName, ls->getSpaceCamsTracksDir(), false,
-                                  hexahsToExcludeFromResultingMesh, (largeScale::VoxelsGrid*)rp, ls->getSpaceSteps());
+                                  hexahsToExcludeFromResultingMesh, (VoxelsGrid*)rp, ls->getSpaceSteps());
             delete voxelsIds;
 
             // Save mesh as .bin and .obj
@@ -514,5 +514,5 @@ mesh::Mesh* joinMeshes(const std::string& voxelsArrayFileName, LargeScale* ls)
     return me;
 }
 
-} // namespace largeScale
+} // namespace meshConstruction
 } // namespace aliceVision

@@ -6,7 +6,7 @@
 #include "MaxFlow_AdjList.hpp"
 
 namespace aliceVision {
-namespace delaunayCut {
+namespace meshConstruction {
 
 void MaxFlow_AdjList::printStats() const
 {
@@ -67,5 +67,5 @@ void MaxFlow_AdjList::printColorStats() const
   }
 }
 
-} // namespace delaunayCut
+} // namespace meshConstruction
 } // namespace aliceVision

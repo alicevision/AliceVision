@@ -10,10 +10,10 @@
 #include <aliceVision/structures/StaticVector.hpp>
 #include <aliceVision/structures/Voxel.hpp>
 #include <aliceVision/common/PreMatchCams.hpp>
-#include <aliceVision/largeScale/Fuser.hpp>
+#include <aliceVision/meshConstruction/Fuser.hpp>
 
 namespace aliceVision {
-namespace largeScale {
+namespace meshConstruction {
 
 class OctreeTracks : public Fuser
 {
@@ -103,5 +103,5 @@ public:
     void getNPointsByLevelsRecursive(Node* node, int level, StaticVector<int>* nptsAtLevel);
 };
 
-} // namespace largeScale
+} // namespace meshConstruction
 } // namespace aliceVision

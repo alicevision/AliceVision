@@ -1,8 +1,7 @@
 add_subdirectory(common)
-add_subdirectory(delaunayCut)
 add_subdirectory(imageIO)
-add_subdirectory(largeScale)
 add_subdirectory(mesh)
+add_subdirectory(meshConstruction)
 add_subdirectory(structures)
 
 if(ALICEVISION_HAVE_CUDA)
