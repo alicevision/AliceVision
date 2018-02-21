@@ -39,7 +39,7 @@ bool Datasheet::operator==(const Datasheet& ds) const
       boost::split(vec_model1, ds._model, boost::is_any_of(" "));
       std::vector<std::string> vec_model2;
       boost::split(vec_model2, _model, boost::is_any_of(" "));
-      bool isAllFind = true;
+      bool isAllFound = true;
 
       for(const auto& model1 : vec_model1)
       {
@@ -63,7 +63,8 @@ bool Datasheet::operator==(const Datasheet& ds) const
             // to unsigned char (http://en.cppreference.com/w/cpp/string/byte/tolower)
             ch = static_cast<char>(std::tolower(static_cast<unsigned char>(ch)));
           }
-          bool isFind = false;
+
+          bool isFound = false;
           for(const auto& model2 : vec_model2)
           {
             std::string modellower2 = model2;
@@ -73,17 +74,17 @@ bool Datasheet::operator==(const Datasheet& ds) const
             }
             if (modellower2 == modellower1)
             {
-              isFind = true;
+              isFound = true;
             }
           }
-          if ( !isFind )
+          if ( !isFound )
           {
-            isAllFind = false;
+            isAllFound = false;
             break;
           }
         }
       }
-      if ( isAllFind )
+      if ( isAllFound )
         isEqual = true;
     }
   }
