@@ -27,11 +27,9 @@ bool Datasheet::operator==(const Datasheet& ds) const
   std::transform(brandlower.begin(), brandlower.end(),
     brandlower.begin(), ::tolower);
 
-  for ( std::vector<std::string>::const_iterator iter_brand = vec_brand.begin();
-          iter_brand != vec_brand.end();
-          ++iter_brand )
+  for(const auto& brand : vec_brand)
   {
-    std::string brandlower2 = *iter_brand;
+    std::string brandlower2 = brand;
     std::transform(brandlower2.begin(), brandlower2.end(),
       brandlower2.begin(), ::tolower);
     //ALICEVISION_LOG_DEBUG(brandlower << "\t" << brandlower2);
@@ -42,14 +40,13 @@ bool Datasheet::operator==(const Datasheet& ds) const
       std::vector<std::string> vec_model2;
       boost::split(vec_model2, _model, boost::is_any_of(" "));
       bool isAllFind = true;
-      for ( std::vector<std::string>::const_iterator iter_model1 = vec_model1.begin();
-          iter_model1 != vec_model1.end();
-          ++iter_model1 )
+
+      for(const auto& model1 : vec_model1)
       {
         bool hasDigit = false;
-        for(std::string::const_iterator c = (*iter_model1).begin(); c != (*iter_model1).end(); ++c )
+        for(const char& c : (model1))
         {
-          if(isdigit(*c))
+          if(isdigit(c))
           {
             hasDigit = true;
             break;
@@ -57,20 +54,22 @@ bool Datasheet::operator==(const Datasheet& ds) const
         }
         if ( hasDigit )
         {
-          std::string modellower1 = *iter_model1;
-          for ( int index = 0; index < modellower1.length(); index++ )
+          std::string modellower1 = model1;
+          for(char &ch : modellower1)
           {
-            modellower1[index] = tolower(modellower1[index]);
+            // the behavior of std::tolower is undefined if the argument's value is neither
+            // representable as unsigned char nor equal to EOF. To use these functions safely
+            // with plain chars (or signed chars), the argument should first be converted
+            // to unsigned char (http://en.cppreference.com/w/cpp/string/byte/tolower)
+            ch = static_cast<char>(std::tolower(static_cast<unsigned char>(ch)));
           }
           bool isFind = false;
-          for ( std::vector<std::string>::const_iterator iter_model2 = vec_model2.begin();
-                iter_model2 != vec_model2.end();
-                ++iter_model2 )
+          for(const auto& model2 : vec_model2)
           {
-            std::string modellower2 = *iter_model2;
-            for ( int index = 0; index < modellower2.length(); index++ )
+            std::string modellower2 = model2;
+            for (char &ch : modellower2)
             {
-              modellower2[index] = tolower(modellower2[index]);
+              ch = static_cast<char>(std::tolower(static_cast<unsigned char>(ch)));
             }
             if (modellower2 == modellower1)
             {
