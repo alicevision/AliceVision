@@ -59,7 +59,7 @@ bool getInfo(const std::string& brand, const std::string& model, const std::vect
   bool existInDatabase = false;
 
   Datasheet refDatasheet(brand, model, -1.);
-  std::vector<Datasheet>::const_iterator datasheet = std::find(databaseStructure.begin(), databaseStructure.end(), refDatasheet);
+  auto datasheet = std::find(databaseStructure.begin(), databaseStructure.end(), refDatasheet);
   if(datasheet != databaseStructure.end())
   {
     datasheetContent = *datasheet;
