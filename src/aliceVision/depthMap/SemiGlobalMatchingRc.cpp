@@ -635,16 +635,14 @@ bool SemiGlobalMatchingRc::sgmrc(bool checkIfExists)
         sp->getDepthSimMapFromBestIdVal(w, h, volumeBestIdVal, scale, step, rc, zborder, depths);
 
     // Save to :
-    //  - SGM/SGM_{RC}_scaleX_stepN_simMap.bin
-    //  - SGM/SGM_{RC}_scaleX_stepN_depthMap.bin
+    //  - SGM_{RC}_scaleX_stepN_simMap.bin
+    //  - SGM_{RC}_scaleX_stepN_depthMap.bin
     //depthSimMapFinal->saveToBin(SGM_depthMapFileName, SGM_simMapFileName);
 
     // Save to :
-    //  - {RC}_simMap_scaleX.bin
-    //  - {RC}_dephMap_scaleX.bin
-    //  - {RC}_simMap.bin
-    //  - {RC}_dephMap.bin
-    depthSimMapFinal->save(rc, tcams);
+    //  - {RC}_simMap_scaleX.exr
+    //  - {RC}_dephMap_scaleX.exr
+    // depthSimMapFinal->save(rc, tcams);
 
     {
         std::vector<unsigned short> volumeBestId(volumeBestIdVal->size());

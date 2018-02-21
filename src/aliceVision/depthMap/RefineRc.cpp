@@ -232,7 +232,7 @@ bool RefineRc::refinercCUDA(bool checkIfExists)
     const IndexT viewId = sp->mp->mip->getViewId(rc);
 
     if(sp->mp->verbose)
-        printf("processing refinercCUDA %i of %i\n", viewId, sp->mp->ncams);
+        printf("processing refinercCUDA %i of %i\n", rc + 1, sp->mp->ncams);
 
     // generate default depthSimMap if rc has no tcam
     if(tcams == nullptr || depths == nullptr)
@@ -275,13 +275,16 @@ bool RefineRc::refinercCUDA(bool checkIfExists)
 
     depthSimMapOpt->save(rc, tcams);
 
-    depthSimMapPhoto->saveRefine(rc,
-                                sp->getREFINE_photo_depthMapFileName(viewId, 1, 1),
-                                sp->getREFINE_photo_simMapFileName(viewId, 1, 1));
+    if(sp->visualizeDepthMaps)
+    {
+        depthSimMapPhoto->saveRefine(rc,
+                                    sp->getREFINE_photo_depthMapFileName(viewId, 1, 1),
+                                    sp->getREFINE_photo_simMapFileName(viewId, 1, 1));
 
-    depthSimMapOpt->saveRefine(rc,
-                               sp->getREFINE_opt_depthMapFileName(viewId, 1, 1),
-                               sp->getREFINE_opt_simMapFileName(viewId, 1, 1));
+        depthSimMapOpt->saveRefine(rc,
+                                   sp->getREFINE_opt_depthMapFileName(viewId, 1, 1),
+                                   sp->getREFINE_opt_simMapFileName(viewId, 1, 1));
+    }
 
     common::printfElapsedTime(tall, "refinerc CUDA: " + common::num2str(rc) + " of " + common::num2str(sp->mp->ncams) + ", " + std::to_string(viewId) + " done.");
 
