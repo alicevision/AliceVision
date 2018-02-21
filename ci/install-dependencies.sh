@@ -13,6 +13,7 @@ downloadFromAliceVisionDependencies()
 
 set -x
 
+downloadFromAliceVisionDependencies boost-1.61.0 ${DEPS_INSTALL_PATH}
 downloadFromAliceVisionDependencies eigen-3.2.8 ${DEPS_INSTALL_PATH}
 downloadFromAliceVisionDependencies ceres-1.11.0 ${DEPS_INSTALL_PATH}
 downloadFromAliceVisionDependencies opencv-3.0.0 ${DEPS_INSTALL_PATH}

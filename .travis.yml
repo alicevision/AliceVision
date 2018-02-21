@@ -15,7 +15,6 @@ addons:
       - boost-latest
     packages:
       #- cmake # Manually install latest version (>=3.0)
-      - libboost1.55-all-dev
       - lcov
       - libpng-dev
       - libjpeg8-dev
