@@ -151,7 +151,7 @@ bool mv_mesh_energy_opt::optimizeSmooth(float lambda, float epsilon, int type, i
         return false;
     }
 
-    bool saveDebug = mp->mip->_ini.get<bool>("meshEnergyOpt.saveAllIterations", false);
+    bool saveDebug = mp ? mp->mip->_ini.get<bool>("meshEnergyOpt.saveAllIterations", false) : false;
 
     point3d LU, RD;
     LU = (*pts)[0];
@@ -166,10 +166,10 @@ bool mv_mesh_energy_opt::optimizeSmooth(float lambda, float epsilon, int type, i
         RD.z = std::max(RD.z, (*pts)[i].z);
     }
 
-    if(mp->verbose)
-        printf("optimizing mesh : lamda %f, epsilon %f, type %i, niters %i\n", lambda, epsilon, type, niter);
+    printf("optimizing mesh : lamda %f, epsilon %f, type %i, niters %i\n", lambda, epsilon, type, niter);
     for(int i = 0; i < niter; i++)
     {
+        printf("Iteration: %i\n", i);
         updateGradientParallel(lambda, epsilon, type, LU, RD, ptsCanMove);
         if(saveDebug)
             o3d->saveMvMeshToObj(this, mp->mip->mvDir + "mesh_smoothed_" + std::to_string(i) + ".obj");

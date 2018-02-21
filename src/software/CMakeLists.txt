@@ -127,6 +127,20 @@ target_link_libraries(aliceVision_meshing PUBLIC mv_structures
 install(TARGETS aliceVision_meshing DESTINATION bin/)
 
 
+## Mesh Filtering
+set(SOURCES_files_meshFiltering main_meshFiltering.cpp)
+source_group("aliceVision_meshFiltering" FILES main_meshFiltering.cpp)
+
+add_executable(aliceVision_meshFiltering ${SOURCES_files_meshFiltering})
+target_link_libraries(aliceVision_meshFiltering PUBLIC
+                                    aliceVision_common
+                                    mv_mesh
+                                    ${Boost_LIBRARIES}
+                                    )
+target_compile_definitions(aliceVision_meshFiltering PUBLIC "$<$<CONFIG:RELEASE>:USE_OPENMP>")
+target_include_directories(aliceVision_meshFiltering PUBLIC
+                                    ${MESHSDFILTER_INCLUDE_DIR})
+install(TARGETS aliceVision_meshFiltering DESTINATION bin/)
 ## Mesh Resampling
 set(SOURCES_files_meshResampling main_meshResampling.cpp)
 source_group("aliceVision_meshResampling" FILES main_meshResampling.cpp)

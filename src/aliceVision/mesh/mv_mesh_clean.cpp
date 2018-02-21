@@ -770,10 +770,8 @@ void mv_mesh_clean::init()
 
 void mv_mesh_clean::testPtsNeighTrisSortedAsc()
 {
-    if(mp->verbose)
-        printf("-------------------------------------------------------------------------------\n");
-    if(mp->verbose)
-        printf("Testing if each point of each triangle has the triangleid in ptsNeighTris array\n");
+    printf("-------------------------------------------------------------------------------\n");
+    printf("Testing if each point of each triangle has the triangleid in ptsNeighTris array\n");
     int n = 0;
     for(int i = 0; i < tris->size(); i++)
     {
@@ -783,25 +781,20 @@ void mv_mesh_clean::testPtsNeighTrisSortedAsc()
             if((*ptsNeighTrisSortedAsc)[ptId]->indexOf(i) == -1)
             {
                 n++;
-                if(mp->verbose)
-                    printf("ptid %i triid %i\n", ptId, i);
+                printf("ptid %i triid %i\n", ptId, i);
             }
         }
     }
     if(n == 0)
     {
-        if(mp->verbose)
-            printf("test OK\n");
+        printf("test OK\n");
     }
     else
     {
-        if(mp->verbose)
-            printf("test %i BAD !!!!\n", n);
+        printf("test %i BAD !!!!\n", n);
     }
-    if(mp->verbose)
-        printf("-------------------------------------------------------------------------------\n");
-    if(mp->verbose)
-        printf("Testing for each pt if all neigh triangles are sorted by id in asc \n");
+    printf("-------------------------------------------------------------------------------\n");
+    printf("Testing for each pt if all neigh triangles are sorted by id in asc \n");
     n = 0;
     for(int i = 0; i < pts->size(); i++)
     {
@@ -818,24 +811,19 @@ void mv_mesh_clean::testPtsNeighTrisSortedAsc()
     }
     if(n == 0)
     {
-        if(mp->verbose)
-            printf("test OK\n");
+        printf("test OK\n");
     }
     else
     {
-        if(mp->verbose)
-            printf("test %i BAD !!!!\n", n);
+        printf("test %i BAD !!!!\n", n);
     }
-    if(mp->verbose)
-        printf("-------------------------------------------------------------------------------\n");
+    printf("-------------------------------------------------------------------------------\n");
 }
 
 void mv_mesh_clean::testEdgesNeighTris()
 {
-    if(mp->verbose)
-        printf("-------------------------------------------------------------------------------\n");
-    if(mp->verbose)
-        printf("Testing if each edge of each triangle has the triangleid in edgeNeighTris array\n");
+    printf("-------------------------------------------------------------------------------\n");
+    printf("Testing if each edge of each triangle has the triangleid in edgeNeighTris array\n");
     int n = 0;
     for(int i = 0; i < tris->size(); i++)
     {
@@ -865,24 +853,19 @@ void mv_mesh_clean::testEdgesNeighTris()
     }
     if(n == 0)
     {
-        if(mp->verbose)
-            printf("test OK\n");
+        printf("test OK\n");
     }
     else
     {
-        if(mp->verbose)
-            printf("test %i BAD !!!!\n", n);
+        printf("test %i BAD !!!!\n", n);
     }
-    if(mp->verbose)
-        printf("-------------------------------------------------------------------------------\n");
+    printf("-------------------------------------------------------------------------------\n");
 }
 
 void mv_mesh_clean::testPtsNeighPtsOrdered()
 {
-    if(mp->verbose)
-        printf("-------------------------------------------------------------------------------\n");
-    if(mp->verbose)
-        printf("Testing if each edge of each triangle has both pts in ptsNeighPtsOrdered\n");
+    printf("-------------------------------------------------------------------------------\n");
+    printf("Testing if each edge of each triangle has both pts in ptsNeighPtsOrdered\n");
     int n = 0;
     for(int i = 0; i < tris->size(); i++)
     {
@@ -913,16 +896,13 @@ void mv_mesh_clean::testPtsNeighPtsOrdered()
     }
     if(n == 0)
     {
-        if(mp->verbose)
-            printf("test OK\n");
+        printf("test OK\n");
     }
     else
     {
-        if(mp->verbose)
-            printf("test %i BAD !!!!\n", n);
+        printf("test %i BAD !!!!\n", n);
     }
-    if(mp->verbose)
-        printf("-------------------------------------------------------------------------------\n");
+    printf("-------------------------------------------------------------------------------\n");
 }
 
 int mv_mesh_clean::cleanMesh()
@@ -934,8 +914,7 @@ int mv_mesh_clean::cleanMesh()
         path pth(this, i);
         nWrongPts += static_cast<int>(pth.deployAll() > 0);
     }
-    if(mp->verbose)
-        printf("nWrongPts %i, nNewPts %i", nWrongPts, pts->size() - nv);
+    printf("nWrongPts %i, nNewPts %i", nWrongPts, pts->size() - nv);
 
     return pts->size() - nv;
 }

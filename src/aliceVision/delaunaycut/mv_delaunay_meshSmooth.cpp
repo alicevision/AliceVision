@@ -177,14 +177,14 @@ void meshPostProcessing(mv_mesh*& inout_mesh, staticVector<staticVector<int>*>*&
         /////////////////////////////
         bool doSmoothMesh =
             mp.mip->_ini.get<bool>("meshEnergyOpt.doSmoothMesh", true);
-        if(doSmoothMesh)
+        int smoothNIter = mp.mip->_ini.get<int>("meshEnergyOpt.smoothNbIterations", 10);
+        if(doSmoothMesh && smoothNIter != 0)
         {
             printf("Smoothing mesh\n");
             float lambda = (float)mp.mip->_ini.get<double>("meshEnergyOpt.lambda", 1.0f);
             float epsilon = (float)mp.mip->_ini.get<double>("meshEnergyOpt.epsilon", 0.1f); // unused in type 3
-            int niter = mp.mip->_ini.get<int>("meshEnergyOpt.smoothNbIterations", 10);
             int type = mp.mip->_ini.get<int>("meshEnergyOpt.smoothType", 3); // 0, 1, 2, 3, 4 => only 1 and 3 works
-            meOpt->optimizeSmooth(lambda, epsilon, type, niter, ptsCanMove);
+            meOpt->optimizeSmooth(lambda, epsilon, type, smoothNIter, ptsCanMove);
 
             if(exportDebug)
                 o3d.saveMvMeshToObj(meOpt, resultFolderName + "mesh_smoothed.obj");
