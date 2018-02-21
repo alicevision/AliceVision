@@ -5,6 +5,8 @@
 
 #include "Stat3d.hpp"
 
+#include <algorithm>
+
 namespace aliceVision {
 
 double hypot2(double x, double y)
