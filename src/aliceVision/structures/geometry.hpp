@@ -5,7 +5,6 @@
 
 #pragma once
 
-#define _USE_MATH_DEFINES
 #include <aliceVision/structures/Point2d.hpp>
 #include <aliceVision/structures/Point3d.hpp>
 

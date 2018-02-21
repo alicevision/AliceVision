@@ -27,6 +27,12 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 # Folders
 SET_PROPERTY(GLOBAL PROPERTY USE_FOLDERS ON)
 
+# Windows specific defines
+if(WIN32)
+  add_definitions(-DNOMINMAX)
+  add_definitions(-D_USE_MATH_DEFINES)
+endif()
+
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
 
 # There was a bug in FindCUDA fixed in cmake 3.10 that creates empty strings on the nvcc command line.
