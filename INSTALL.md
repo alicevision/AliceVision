@@ -20,7 +20,9 @@ Optional:
 * OpenMP
 
 ### CMake Options
+* `ALICEVISION_BUILD_SHARED` (default `OFF`) Build AliceVision as shared libs (instead of static libs)
 * `ALICEVISION_USE_OPENMP` (default: `ON`) Enable OpenMP parallelization
+* `ALICEVISION_USE_CUDA` (default: `ON`) Enable build with CUDA (for depth map computation)
 
 ### Linux/OSX compilation
 

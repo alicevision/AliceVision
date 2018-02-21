@@ -4,7 +4,9 @@
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
 #include "MultiViewParams.hpp"
-#include <aliceVision/structures/mv_geometry.hpp>
+#include <aliceVision/structures/geometry.hpp>
+#include <aliceVision/structures/Matrix3x4.hpp>
+#include <aliceVision/structures/Pixel.hpp>
 #include <aliceVision/common/fileIO.hpp>
 #include <aliceVision/common/common.hpp>
 #include <aliceVision/imageIO/image.hpp>
@@ -18,44 +20,19 @@
 #include <iostream>
 #include <set>
 
+namespace aliceVision {
+namespace common {
+
 namespace bfs = boost::filesystem;
 
-timeIndex::timeIndex()
-{
-    index = -1;
-    timeStamp = clock();
-}
-
-timeIndex::timeIndex(int _index)
-{
-    index = _index;
-    timeStamp = clock();
-}
-
-multiviewInputParams::multiviewInputParams(const std::string& file, const std::string& depthMapFolder, const std::string& depthMapFilterFolder)
+MultiViewInputParams::MultiViewInputParams(const std::string& file, const std::string& depthMapFolder, const std::string& depthMapFilterFolder)
 {
     initFromConfigFile(file);
     _depthMapFolder = depthMapFolder + "/";
     _depthMapFilterFolder = depthMapFilterFolder + "/";
 }
 
-imageParams multiviewInputParams::addImageFile(const std::string& filename)
-{
-    int width = -1;
-    int height = -1;
-    int nchannels = -1;
-
-    imageIO::readImageSpec(filename, width, height, nchannels);
-    imageParams params(width, height);
-
-    maxImageWidth = std::max(maxImageWidth, width);
-    maxImageHeight = std::max(maxImageHeight, height);
-
-    imps.push_back(params);
-    return params;
-}
-
-void multiviewInputParams::initFromConfigFile(const std::string& iniFile)
+void MultiViewInputParams::initFromConfigFile(const std::string& iniFile)
 {
     boost::property_tree::ini_parser::read_ini(iniFile, _ini);
     // debug, dump the read ini file to cout
@@ -73,37 +50,27 @@ void multiviewInputParams::initFromConfigFile(const std::string& iniFile)
     usesil = _ini.get<bool>("global.use_silhouettes", usesil);
     int ncams = _ini.get<int>("global.ncams", 0);
     assert(ncams > 0);
-    // Load image dimensions
+    // Load image uid and dimensions
     std::set<std::pair<int, int>> dimensions;
     {
         boost::optional<boost::property_tree::ptree&> cameras = _ini.get_child_optional("imageResolutions");
         if(!cameras)
         {
-            std::cout << "No 'imageResolutions' section, load from image files." << std::endl;
-            for(std::size_t i = 0; i < ncams; ++i)
-            {
-                const std::string filename = mv_getFileNamePrefix(mvDir, this, static_cast<int>(i + 1)) + "." + imageExt;
-                const imageParams params = addImageFile(filename);
-                dimensions.emplace(params.width, params.height);
-            }
+         throw std::runtime_error("Can't find images UID and dimensions in .ini file");
         }
-        else
-        {
-            for (const auto v : *cameras)
-            {
-                const std::string values = v.second.get_value<std::string>();
-                std::vector<std::string> valuesVec;
-                boost::split(valuesVec, values, boost::algorithm::is_any_of("x"));
-                if(valuesVec.size() != 2)
-                    throw std::runtime_error("Error when loading image sizes from INI file.");
-                imageParams imgParams(boost::lexical_cast<int>(valuesVec[0]), boost::lexical_cast<int>(valuesVec[1]));
-                imps.push_back(imgParams);
-                maxImageWidth = std::max(maxImageWidth, imgParams.width);
-                maxImageHeight = std::max(maxImageHeight, imgParams.height);
 
-                dimensions.emplace(imgParams.width, imgParams.height);
-                // std::cout << " * "  << v.first << ": " << imgParams.width << "x" << imgParams.height << std::endl;
-            }
+        for (const auto v : *cameras)
+        {
+            const std::string values = v.second.get_value<std::string>();
+            std::vector<std::string> valuesVec;
+            boost::split(valuesVec, values, boost::algorithm::is_any_of("x"));
+            if(valuesVec.size() != 2)
+                throw std::runtime_error("Error when loading image sizes from INI file.");
+            imageParams imgParams(std::stoi(v.first), boost::lexical_cast<int>(valuesVec[0]), boost::lexical_cast<int>(valuesVec[1]));
+            _imagesParams.push_back(imgParams);
+            maxImageWidth = std::max(maxImageWidth, imgParams.width);
+            maxImageHeight = std::max(maxImageHeight, imgParams.height);
+            dimensions.emplace(imgParams.width, imgParams.height);
         }
     }
     if(getNbCameras() != ncams)
@@ -114,14 +81,12 @@ void multiviewInputParams::initFromConfigFile(const std::string& iniFile)
     std::cout << "Overall maximum dimension: [" << maxImageWidth << "x" << maxImageHeight << "]" << std::endl;
 }
 
-multiviewParams::multiviewParams(int _ncams, multiviewInputParams* _mip, float _simThr,
-                                 staticVector<cameraMatrices>* cameras)
+MultiViewParams::MultiViewParams(int _ncams, MultiViewInputParams* _mip, float _simThr,
+                                 StaticVector<CameraMatrices>* cameras)
 {
     mip = _mip;
 
     verbose = (bool)mip->_ini.get<bool>("global.verbose", true);
-    bool doPrintfKRC = (bool)mip->_ini.get<bool>("global.doPrintfKRC", false);
-
     CUDADeviceNo = mip->_ini.get<int>("global.CUDADeviceNo", 0);
 
     minWinSizeHalf = 2;
@@ -132,8 +97,7 @@ multiviewParams::multiviewParams(int _ncams, multiviewInputParams* _mip, float _
     long t1 = initEstimate();
     for(int i = 0; i < ncams; i++)
     {
-        indexes[i] = i + 1;
-        FocK1K2Arr[i] = point3d(-1.0f, -1.0f, -1.0f);
+        FocK1K2Arr[i] = Point3d(-1.0f, -1.0f, -1.0f);
 
         if(cameras != nullptr)
         {
@@ -144,51 +108,18 @@ multiviewParams::multiviewParams(int _ncams, multiviewInputParams* _mip, float _
             iKArr[i] = (*cameras)[i].iK;
             iRArr[i] = (*cameras)[i].iR;
             iCamArr[i] = (*cameras)[i].iCam;
-            FocK1K2Arr[i] = point3d((*cameras)[i].f, (*cameras)[i].k1, (*cameras)[i].k2);
+            FocK1K2Arr[i] = Point3d((*cameras)[i].f, (*cameras)[i].k1, (*cameras)[i].k2);
         }
         else
         {
-            std::string fileNameP = mv_getFileName(mip, indexes[i], EFileType::P);
-            std::string fileNameD = mv_getFileName(mip, indexes[i], EFileType::D);
+            std::string fileNameP = mv_getFileName(mip, i, EFileType::P);
+            std::string fileNameD = mv_getFileName(mip, i, EFileType::D);
             loadCameraFile(i, fileNameP, fileNameD);
-        }
-
-        if(doPrintfKRC)
-        {
-            printf("----------------------\n");
-            printf("K\n");
-            KArr[i].doprintf();
-            printf("iK\n");
-            iKArr[i].doprintf();
-            printf("R\n");
-            RArr[i].doprintf();
-            printf("iR\n");
-            iRArr[i].doprintf();
-            printf("cam\n");
-            camArr[i].doprintf();
-            printf("icam\n");
-            iCamArr[i].doprintf();
-            printf("C\n");
-            CArr[i].doprintf();
         }
 
         if(KArr[i].m11 > (float)(mip->getWidth(i) * 100))
         {
-            printf("\n\n\n\n\n\n WARNING camera %i at infinity ... settitng to zero\n", i);
-            printf("\n K\n");
-            KArr[i].doprintf();
-            printf("\n R\n");
-            RArr[i].doprintf();
-            printf("\n iR\n");
-            iRArr[i].doprintf();
-            printf("\n iK\n");
-            iKArr[i].doprintf();
-            printf("\n P\n");
-            camArr[i].doprintf();
-            printf("\n iP\n");
-            iCamArr[i].doprintf();
-            printf("\n C\n");
-            CArr[i].doprintf();
+            printf("WARNING camera %i at infinity ... settitng to zero\n", i);
 
             KArr[i].m11 = mip->getWidth(i) / 2;
             KArr[i].m12 = 0;
@@ -226,7 +157,7 @@ multiviewParams::multiviewParams(int _ncams, multiviewInputParams* _mip, float _
             CArr[i].y = 0.0f;
             CArr[i].z = 0.0f;
 
-            camArr[i] = KArr[i] * (RArr[i] | (point3d(0.0, 0.0, 0.0) - RArr[i] * CArr[i]));
+            camArr[i] = KArr[i] * (RArr[i] | (Point3d(0.0, 0.0, 0.0) - RArr[i] * CArr[i]));
         }
 
         printfEstimate(i, ncams, t1);
@@ -238,9 +169,9 @@ multiviewParams::multiviewParams(int _ncams, multiviewInputParams* _mip, float _
 }
 
 
-void multiviewParams::loadCameraFile(int i, const std::string& fileNameP, const std::string& fileNameD)
+void MultiViewParams::loadCameraFile(int i, const std::string& fileNameP, const std::string& fileNameD)
 {
-    // std::cout << "multiviewParams::loadCameraFile: " << fileNameP << std::endl;
+    // std::cout << "MultiViewParams::loadCameraFile: " << fileNameP << std::endl;
 
     if(!FileExists(fileNameP))
     {
@@ -279,67 +210,26 @@ void multiviewParams::loadCameraFile(int i, const std::string& fileNameP, const 
     }
 }
 
-void multiviewParams::addCam()
-{
-    ncams++;
-    indexes.resize(ncams);
-    camArr.resize(ncams);
-    KArr.resize(ncams);
-    iKArr.resize(ncams);
-    RArr.resize(ncams);
-    iRArr.resize(ncams);
-    CArr.resize(ncams);
-    iCamArr.resize(ncams);
-
-    int i = ncams - 1;
-    indexes[i] = i + 1;
-
-    FILE* f;
-    f = mv_openFile(mip, indexes[i], EFileType::P, "r");
-    camArr[i] = load3x4MatrixFromFile(f);
-    fclose(f);
-
-    camArr[i].decomposeProjectionMatrix(KArr[i], RArr[i], CArr[i]);
-    iKArr[i] = KArr[i].inverse();
-    iRArr[i] = RArr[i].inverse();
-    iCamArr[i] = iRArr[i] * iKArr[i];
-}
-
-void multiviewParams::reloadLastCam()
-{
-    int i = ncams - 1;
-
-    FILE* f;
-    f = mv_openFile(mip, indexes[i], EFileType::P, "r");
-    camArr[i] = load3x4MatrixFromFile(f);
-    fclose(f);
-
-    camArr[i].decomposeProjectionMatrix(KArr[i], RArr[i], CArr[i]);
-    iKArr[i] = KArr[i].inverse();
-    iRArr[i] = RArr[i].inverse();
-    iCamArr[i] = iRArr[i] * iKArr[i];
-}
-
-multiviewParams::~multiviewParams()
+MultiViewParams::~MultiViewParams()
 {
     mip = nullptr;
 }
 
-bool multiviewParams::is3DPointInFrontOfCam(const point3d* X, int rc) const
+bool MultiViewParams::is3DPointInFrontOfCam(const Point3d* X, int rc) const
 {
-    point3d XT = camArr[rc] * (*X);
+    Point3d XT = camArr[rc] * (*X);
 
     return XT.z >= 0;
 }
 
-void multiviewParams::getPixelFor3DPoint(point2d* out, const point3d& X, int rc) const
+void MultiViewParams::getPixelFor3DPoint(Point2d* out, const Point3d& X, int rc) const
 {
     getPixelFor3DPoint(out, X, camArr[rc]);
 }
 
-void multiviewParams::getPixelFor3DPoint(point2d* out, const point3d& X, const matrix3x4& P) const
+void MultiViewParams::getPixelFor3DPoint(Point2d* out, const Point3d& X, const Matrix3x4& P) const
 {
-    point3d XT = P * X;
+    Point3d XT = P * X;
 
     if(XT.z <= 0)
     {
@@ -353,9 +243,9 @@ void multiviewParams::getPixelFor3DPoint(point2d* out, const point3d& X, const m
     }
 }
 
-void multiviewParams::getPixelFor3DPoint(pixel* out, const point3d& X, int rc) const
+void MultiViewParams::getPixelFor3DPoint(Pixel* out, const Point3d& X, int rc) const
 {
-    point3d XT = camArr[rc] * X;
+    Point3d XT = camArr[rc] * X;
 
     if(XT.z <= 0)
     {
@@ -375,28 +265,28 @@ void multiviewParams::getPixelFor3DPoint(pixel* out, const point3d& X, int rc) c
  * @param[in] x0 3d point
  * @param[in] cam camera index
  */
-float multiviewParams::getCamPixelSize(const point3d& x0, int cam) const
+float MultiViewParams::getCamPixelSize(const Point3d& x0, int cam) const
 {
-    point2d pix;
+    Point2d pix;
     getPixelFor3DPoint(&pix, x0, cam);
     pix.x = pix.x + 1.0;
-    point3d vect = iCamArr[cam] * pix;
+    Point3d vect = iCamArr[cam] * pix;
 
     vect = vect.normalize();
     return pointLineDistance3D(x0, CArr[cam], vect);
 }
 
-float multiviewParams::getCamPixelSize(const point3d& x0, int cam, float d) const
+float MultiViewParams::getCamPixelSize(const Point3d& x0, int cam, float d) const
 {
     if(d == 0.0f)
     {
         return 0.0f;
     }
 
-    point2d pix;
+    Point2d pix;
     getPixelFor3DPoint(&pix, x0, cam);
     pix.x = pix.x + d;
-    point3d vect = iCamArr[cam] * pix;
+    Point3d vect = iCamArr[cam] * pix;
 
     vect = vect.normalize();
     return pointLineDistance3D(x0, CArr[cam], vect);
@@ -406,27 +296,27 @@ float multiviewParams::getCamPixelSize(const point3d& x0, int cam, float d) cons
 * @brief Return the size of a pixel in space with an offset
 * of "d" pixels in the target camera (along the epipolar line).
 */
-float multiviewParams::getCamPixelSizeRcTc(const point3d& p, int rc, int tc, float d) const
+float MultiViewParams::getCamPixelSizeRcTc(const Point3d& p, int rc, int tc, float d) const
 {
     if(d == 0.0f)
     {
         return 0.0f;
     }
 
-    point3d p1 = CArr[rc] + (p - CArr[rc]) * 0.1f;
-    point2d rpix;
+    Point3d p1 = CArr[rc] + (p - CArr[rc]) * 0.1f;
+    Point2d rpix;
     getPixelFor3DPoint(&rpix, p, rc);
 
-    point2d pFromTar, pToTar;
+    Point2d pFromTar, pToTar;
     getTarEpipolarDirectedLine(&pFromTar, &pToTar, rpix, rc, tc, this);
     // A vector of 1 pixel length on the epipolar line in tc camera
     // of the 3D point p projected in camera rc.
-    point2d pixelVect = ((pToTar - pFromTar).normalize()) * d;
+    Point2d pixelVect = ((pToTar - pFromTar).normalize()) * d;
     // tpix is the point p projected in camera tc
-    point2d tpix;
+    Point2d tpix;
     getPixelFor3DPoint(&tpix, p, tc);
     // tpix1 is tpix with an offset of d pixels along the epipolar line
-    point2d tpix1 = tpix + pixelVect * d;
+    Point2d tpix1 = tpix + pixelVect * d;
 
     if(!triangulateMatch(p1, rpix, tpix1, rc, tc, this))
     {
@@ -437,7 +327,7 @@ float multiviewParams::getCamPixelSizeRcTc(const point3d& p, int rc, int tc, flo
     return (p - p1).size();
 }
 
-float multiviewParams::getCamPixelSizePlaneSweepAlpha(const point3d& p, int rc, int tc, int scale, int step) const
+float MultiViewParams::getCamPixelSizePlaneSweepAlpha(const Point3d& p, int rc, int tc, int scale, int step) const
 {
     float splaneSeweepAlpha = (float)(scale * step);
     // Compute the 3D volume defined by N pixels in the target camera.
@@ -450,59 +340,23 @@ float multiviewParams::getCamPixelSizePlaneSweepAlpha(const point3d& p, int rc, 
     return (avRcTc + avRc) * 0.5f;
 }
 
-float multiviewParams::getCamPixelSizePlaneSweepAlpha(const point3d& p, int rc, staticVector<int>* tcams, int scale,
+float MultiViewParams::getCamPixelSizePlaneSweepAlpha(const Point3d& p, int rc, StaticVector<int>* tcams, int scale,
                                                       int step) const
 {
-    float av1 = 0.0f;
+    //float av1 = 0.0f;
     float avmax = 0.0f;
     for(int c = 0; c < tcams->size(); c++)
     {
         float dpxs = getCamPixelSizePlaneSweepAlpha(p, rc, (*tcams)[c], scale, step);
-        av1 += dpxs;
+        //av1 += dpxs;
         avmax = std::max(avmax, dpxs);
     }
-    av1 /= (float)(tcams->size());
+    //av1 /= (float)(tcams->size());
     // return av1;
     return avmax;
 }
 
-int multiviewParams::getCamsMinPixelSizeIndex(const point3d& x0, int rc, seedPointCams* tcams) const
-{
-    int mini = -1;
-    float minPixSize = getCamPixelSize(x0, rc);
-
-    for(int ci = 0; ci < (int)tcams->size(); ci++)
-    {
-        float pixSize = getCamPixelSize(x0, (int)(*tcams)[ci]);
-        if(minPixSize > pixSize)
-        {
-            minPixSize = pixSize;
-            mini = ci;
-        }
-    }
-
-    return mini;
-}
-
-int multiviewParams::getCamsMinPixelSizeIndex(const point3d& x0, const staticVector<int> &tcams) const
-{
-    int mini = 0;
-    float minPixSize = getCamPixelSize(x0, tcams[0]);
-
-    for(int ci = 1; ci < tcams.size(); ci++)
-    {
-        float pixSize = getCamPixelSize(x0, tcams[ci]);
-        if(minPixSize > pixSize)
-        {
-            minPixSize = pixSize;
-            mini = ci;
-        }
-    }
-
-    return mini;
-}
-
-float multiviewParams::getCamsMinPixelSize(const point3d& x0, staticVector<int>& tcams) const
+float MultiViewParams::getCamsMinPixelSize(const Point3d& x0, StaticVector<int>& tcams) const
 {
     if(tcams.empty())
     {
@@ -521,83 +375,23 @@ float multiviewParams::getCamsMinPixelSize(const point3d& x0, staticVector<int>&
     return minPixSize;
 }
 
-float multiviewParams::getCamsAveragePixelSize(const point3d& x0, staticVector<int>* tcams) const
-{
-    if(sizeOfStaticVector<int>(tcams) == 0)
-    {
-        return 0.0f;
-    }
-    float avPixSize = 1000000000.0;
-    for(int ci = 0; ci < (int)tcams->size(); ci++)
-    {
-        avPixSize += getCamPixelSize(x0, (int)(*tcams)[ci]);
-    }
-    avPixSize /= (float)tcams->size();
-
-    return avPixSize;
-}
-
-void multiviewParams::computeNormal(point3d& n, const rotation& rot, int refCam) const
-{
-    float crx, cry, srx, sry, rx, ry;
-    rx = (float)rot.rx;
-    ry = (float)rot.ry - 90.0;
-
-    crx = cos(rx * (M_PI / 180.0));
-    srx = sin(rx * (M_PI / 180.0));
-    cry = cos(ry * (M_PI / 180.0));
-    sry = sin(ry * (M_PI / 180.0));
-
-    n.x = crx * cry;
-    n.y = sry;
-    n.z = -srx * cry;
-
-    // n is a vector in the reference camera coordinate system we have to convert it to global coordinate system
-    n = iRArr[refCam] * (n);
-    n = n.normalize();
-}
-
-bool multiviewParams::isPixelInCutOut(const pixel* pix, const pixel* lu, const pixel* rd, int d, int camId) const
-{
-    return ((pix->x >= std::max(lu->x, d)) && (pix->x <= std::min(rd->x, mip->getWidth(camId) - 1 - d)) &&
-            (pix->y >= std::max(lu->y, d)) && (pix->y <= std::min(rd->y, mip->getHeight(camId) - 1 - d)));
-}
-
-bool multiviewParams::isPixelInImage(const pixel& pix, int d, int camId) const
+bool MultiViewParams::isPixelInImage(const Pixel& pix, int d, int camId) const
 {
     return ((pix.x >= d) && (pix.x < mip->getWidth(camId) - d) && (pix.y >= d) && (pix.y < mip->getHeight(camId) - d));
 }
-bool multiviewParams::isPixelInImage(const pixel& pix, int camId) const
+bool MultiViewParams::isPixelInImage(const Pixel& pix, int camId) const
 {
     return ((pix.x >= g_border) && (pix.x < mip->getWidth(camId) - g_border) && (pix.y >= g_border) &&
             (pix.y < mip->getHeight(camId) - g_border));
 }
 
-bool multiviewParams::isPixelInImage(const point2d& pix, int camId) const
+bool MultiViewParams::isPixelInImage(const Point2d& pix, int camId) const
 {
-    return isPixelInImage(pixel(pix), camId);
+    return isPixelInImage(Pixel(pix), camId);
 }
 
-void multiviewParams::computeHomographyInductedByPlaneRcTc(matrix3x3* H, const point3d& _p, const point3d& _n, int rc,
-                                                           int tc) const
-{
-    point3d _tl = point3d(0.0, 0.0, 0.0) - RArr[rc] * CArr[rc];
-    point3d _tr = point3d(0.0, 0.0, 0.0) - RArr[tc] * CArr[tc];
-
-    point3d p = RArr[rc] * (_p - CArr[rc]);
-    point3d n = RArr[rc] * _n;
-    n = n.normalize();
-    float d = -dot(n, p);
-
-    matrix3x3 Rr = RArr[tc] * RArr[rc].transpose();
-    point3d tr = _tr - Rr * _tl;
-
-    // hartley zisserman second edition p.327 (13.2)
-    *H = (KArr[tc] * (Rr - outerMultiply(tr, n / d))) * iKArr[rc];
-}
-
-void multiviewParams::decomposeProjectionMatrix(point3d& Co, matrix3x3& Ro, matrix3x3& iRo, matrix3x3& Ko,
-                                                matrix3x3& iKo, matrix3x3& iPo, const matrix3x4& P) const
+void MultiViewParams::decomposeProjectionMatrix(Point3d& Co, Matrix3x3& Ro, Matrix3x3& iRo, Matrix3x3& Ko,
+                                                Matrix3x3& iKo, Matrix3x3& iPo, const Matrix3x4& P) const
 {
     P.decomposeProjectionMatrix(Ko, Ro, Co);
     iKo = Ko.inverse();
@@ -605,3 +399,5 @@ void multiviewParams::decomposeProjectionMatrix(point3d& Co, matrix3x3& Ro, matr
     iPo = iRo * iKo;
 }
 
+} // namespace common
+} // namespace aliceVision

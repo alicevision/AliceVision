@@ -7,32 +7,35 @@
 #include <aliceVision/common/common.hpp>
 #include <aliceVision/common/fileIO.hpp>
 
-int mv_images_cache::getPixelId(int x, int y, int imgid)
+namespace aliceVision {
+namespace common {
+
+int ImagesCache::getPixelId(int x, int y, int imgid)
 {
     if(!transposed)
         return x * mp->mip->getHeight(imgid) + y;
     return y * mp->mip->getWidth(imgid) + x;
 }
 
-mv_images_cache::mv_images_cache(const multiviewParams* _mp, int _bandType, bool _transposed)
+ImagesCache::ImagesCache(const MultiViewParams* _mp, int _bandType, bool _transposed)
   : mp(_mp)
 {
     std::vector<std::string> _imagesNames;
     for(int rc = 0; rc < _mp->ncams; rc++)
     {
-        _imagesNames.push_back(mv_getFileNamePrefix(_mp->mip->mvDir, _mp->mip, rc + 1) + "." + _mp->mip->imageExt);
+        _imagesNames.push_back(mv_getFileNamePrefix(_mp->mip->mvDir, _mp->mip, rc) + "." + _mp->mip->imageExt);
     }
     initIC(_bandType, _imagesNames, _transposed);
 }
 
-mv_images_cache::mv_images_cache(const multiviewParams* _mp, int _bandType, std::vector<std::string>& _imagesNames,
+ImagesCache::ImagesCache(const MultiViewParams* _mp, int _bandType, std::vector<std::string>& _imagesNames,
                                  bool _transposed)
   : mp(_mp)
 {
     initIC(_bandType, _imagesNames, _transposed);
 }
 
-void mv_images_cache::initIC(int _bandType, std::vector<std::string>& _imagesNames,
+void ImagesCache::initIC(int _bandType, std::vector<std::string>& _imagesNames,
                              bool _transposed)
 {
     float oneimagemb = (sizeof(Color) * mp->mip->getMaxImageWidth() * mp->mip->getMaxImageHeight()) / 1024.f / 1024.f;
@@ -55,9 +58,9 @@ void mv_images_cache::initIC(int _bandType, std::vector<std::string>& _imagesNam
 
     imgs = new Color*[N_PRELOADED_IMAGES];
 
-    camIdMapId = new staticVector<int>(mp->ncams);
-    mapIdCamId = new staticVector<int>(N_PRELOADED_IMAGES);
-    mapIdClock = new staticVector<long>(N_PRELOADED_IMAGES);
+    camIdMapId = new StaticVector<int>(mp->ncams);
+    mapIdCamId = new StaticVector<int>(N_PRELOADED_IMAGES);
+    mapIdClock = new StaticVector<long>(N_PRELOADED_IMAGES);
 
     for(int i = 0; i < mp->ncams; i++)
     {
@@ -73,7 +76,7 @@ void mv_images_cache::initIC(int _bandType, std::vector<std::string>& _imagesNam
     }
 }
 
-mv_images_cache::~mv_images_cache()
+ImagesCache::~ImagesCache()
 {
     for(int ni = 0; ni < N_PRELOADED_IMAGES; ni++)
     {
@@ -86,7 +89,7 @@ mv_images_cache::~mv_images_cache()
     delete mapIdClock;
 }
 
-void mv_images_cache::refreshData(int camId)
+void ImagesCache::refreshData(int camId)
 {
     // printf("camId %i\n",camId);
     // test if the image is in the memory
@@ -111,7 +114,7 @@ void mv_images_cache::refreshData(int camId)
             imgs[mapId] = new Color[maxsize];
         }
 
-        std::string imagePath = imagesNames[camId];
+        std::string imagePath = imagesNames.at(camId);
         memcpyRGBImageFromFileToArr(camId, imgs[mapId], imagePath, mp->mip, transposed, 1, bandType);
 
         if(mp->verbose)
@@ -122,7 +125,7 @@ void mv_images_cache::refreshData(int camId)
     }
 }
 
-Color mv_images_cache::getPixelValueInterpolated(const point2d* pix, int camId)
+Color ImagesCache::getPixelValueInterpolated(const Point2d* pix, int camId)
 {
     refreshData(camId);
 
@@ -150,7 +153,7 @@ Color mv_images_cache::getPixelValueInterpolated(const point2d* pix, int camId)
     return out;
 }
 
-rgb mv_images_cache::getPixelValue(const pixel& pix, int camId)
+rgb ImagesCache::getPixelValue(const Pixel& pix, int camId)
 {
     refreshData(camId);
 
@@ -163,3 +166,6 @@ rgb mv_images_cache::getPixelValue(const pixel& pix, int camId)
                static_cast<unsigned char>(floatRGB.g),
                static_cast<unsigned char>(floatRGB.b));
 }
+
+} // namespace common
+} // namespace aliceVision

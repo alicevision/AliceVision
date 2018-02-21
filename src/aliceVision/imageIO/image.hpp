@@ -10,10 +10,12 @@
 
 #include <OpenImageIO/paramlist.h>
 
+namespace oiio = OIIO;
+
+namespace aliceVision {
+
 class rgb;
 class Color;
-
-namespace oiio = OIIO;
 
 namespace imageIO {
 
@@ -70,6 +72,13 @@ std::istream& operator>>(std::istream& in, EImageQuality& imageQuality);
  * @param[out] nchannels The image channel number
  */
 void readImageSpec(const std::string& path, int& width, int& height, int& nchannels);
+
+/**
+ * @brief read image metadata from a given path
+ * @param[in] path The given path to the image
+ * @param[out] metadata The image metadata
+ */
+void readImageMetadata(const std::string& path, oiio::ParamValueList& metadata);
 
 /**
  * @brief read an image with a given path and buffer
@@ -143,3 +152,4 @@ void convolveImage(int inWidth, int inHeight, const std::vector<float>& inBuffer
 void convolveImage(int inWidth, int inHeight, const std::vector<Color>& inBuffer, std::vector<Color>& outBuffer, const std::string& kernel = "gaussian", float kernelWidth = 5.0f, float kernelHeight = 5.0f);
 
 } // namespace imageIO
+} // namespace aliceVision

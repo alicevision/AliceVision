@@ -3,6 +3,7 @@
 // v. 2.0. If a copy of the MPL was not distributed with this file,
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
+#include <aliceVision/common/common.hpp>
 
 #include <geogram/mesh/mesh.h>
 #include <geogram/mesh/mesh_io.h>
@@ -14,12 +15,10 @@
 #include <geogram/basic/command_line.h>
 #include <geogram/basic/command_line_args.h>
 
-#include <aliceVision/common/common.hpp>
-
 #include <boost/program_options.hpp>
 #include <boost/filesystem.hpp>
 
-
+using namespace aliceVision;
 namespace bfs = boost::filesystem;
 namespace po = boost::program_options;
 
@@ -184,6 +183,6 @@ int main(int argc, char* argv[])
     }
     ALICEVISION_CERR("Mesh \"" << outputMeshPath << "\" saved.");
 
-    printfElapsedTime(startTime, "#");
+    common::printfElapsedTime(startTime, "#");
     return EXIT_SUCCESS;
 }

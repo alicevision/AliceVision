@@ -7,6 +7,8 @@
 
 #include <string>
 
+namespace aliceVision {
+
 /**
  * @brief Available image file types for pipeline output
  */
@@ -53,3 +55,5 @@ std::ostream& operator<<(std::ostream& os, EImageFileType imageFileType);
  * @return the modified stream without the read enum.
  */
 std::istream& operator>>(std::istream& in, EImageFileType& imageFileType);
+
+} // namespace aliceVision

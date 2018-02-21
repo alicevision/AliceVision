@@ -1,31 +1,51 @@
-set(SOURCES_files_mesh
-  mv_mesh.cpp
-  mv_mesh.hpp
-  meshVisibility.cpp
+# Headers
+set(mesh_files_headers
+  Mesh.hpp
+  MeshAnalyze.hpp
+  MeshClean.hpp
+  MeshEnergyOpt.hpp
+  meshPostProcessing.hpp
   meshVisibility.hpp
-  mv_mesh_analyze.cpp
-  mv_mesh_analyze.hpp
-  mv_mesh_clean.cpp
-  mv_mesh_clean.hpp
-  mv_mesh_energy_opt.cpp
-  mv_mesh_energy_opt.hpp
-  mv_mesh_energy_opt_photo_mem.cpp
-  mv_mesh_energy_opt_photo_mem.hpp
-  mv_mesh_refine.cpp
-  mv_mesh_retexture_obj.cpp
-  mv_mesh_retexture_obj.hpp
-  mv_mesh_uvatlas.cpp
-  mv_mesh_uvatlas.hpp
+  Texturing.hpp
+  UVAtlas.hpp
 )
-source_group("mesh" FILES ${SOURCES_files_mesh})
 
+# Sources
+set(mesh_files_sources
+  Mesh.cpp
+  MeshAnalyze.cpp
+  MeshClean.cpp
+  MeshEnergyOpt.cpp
+  meshPostProcessing.cpp
+  meshVisibility.cpp
+  Texturing.cpp
+  UVAtlas.cpp
+)
 
-add_library(mv_mesh ${SOURCES_files_mesh})
-target_include_directories(mv_mesh
-         PUBLIC 
-         $<BUILD_INTERFACE:${ALICEVISION_INCLUDE_DIR}>
+add_library(aliceVision_mesh
+  ${mesh_files_headers}
+  ${mesh_files_sources}
+)
+
+target_include_directories(aliceVision_mesh
+  PUBLIC $<BUILD_INTERFACE:${ALICEVISION_INCLUDE_DIR}>
          $<BUILD_INTERFACE:${generatedDir}>
          $<INSTALL_INTERFACE:include>
-         ${Boost_INCLUDE_DIR})
+)
 
-target_link_libraries(mv_mesh PUBLIC mv_structures aliceVision_common aliceVision_imageIO mv_planeSweeping mv_output3D mv_rply mv_cudaInterfaces mv_delaunaycut ${Boost_FILESYSTEM_LIBRARIES} Geogram::geogram)
+target_link_libraries(aliceVision_mesh
+  PUBLIC aliceVision_structures
+         aliceVision_common
+         aliceVision_imageIO
+         Geogram::geogram
+         ${Boost_FILESYSTEM_LIBRARIES}
+)
+
+set_property(TARGET aliceVision_mesh
+  PROPERTY FOLDER AliceVision
+)
+
+install(TARGETS aliceVision_mesh
+  DESTINATION lib
+  EXPORT aliceVision-targets
+)

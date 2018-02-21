@@ -4,9 +4,8 @@
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
 #include "image.hpp"
-
-#include <aliceVision/structures/mv_structures.hpp>
-#include <aliceVision/structures/mv_color.hpp>
+#include <aliceVision/structures/Color.hpp>
+#include <aliceVision/structures/Rgb.hpp>
 
 #include <OpenImageIO/imageio.h>
 #include <OpenImageIO/imagebuf.h>
@@ -15,7 +14,9 @@
 #include <OpenEXR/half.h>
 
 #include <stdexcept>
+#include <memory>
 
+namespace aliceVision {
 namespace imageIO {
 
 std::string EImageQuality_informations()
@@ -75,6 +76,19 @@ void readImageSpec(const std::string& path,
   width = spec.width;
   height = spec.height;
   nchannels = spec.nchannels;
+
+  in->close();
+}
+
+void readImageMetadata(const std::string& path, oiio::ParamValueList& metadata)
+{
+  std::cout << "[IO] Read Image Metadata : " << path << std::endl;
+  std::unique_ptr<oiio::ImageInput> in(oiio::ImageInput::open(path));
+
+  if(!in)
+    throw std::runtime_error("Can't find/open image file '" + path + "'.");
+
+  metadata = in->spec().extra_attribs;
 
   in->close();
 }
@@ -385,3 +399,4 @@ void convolveImage(int inWidth, int inHeight, const std::vector<Color>& inBuffer
 }
 
 } // namespace imageIO
+} // namespace aliceVision

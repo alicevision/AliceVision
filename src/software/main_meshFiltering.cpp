@@ -4,20 +4,19 @@
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
 
-#include <aliceVision/mesh/mv_mesh_energy_opt.hpp>
-#include <aliceVision/mesh/mv_mesh_retexture_obj.hpp>
+#include <aliceVision/mesh/MeshEnergyOpt.hpp>
+#include <aliceVision/mesh/Texturing.hpp>
 #include <aliceVision/common/common.hpp>
 
 #include <boost/program_options.hpp>
 #include <boost/filesystem.hpp>
 
-
+using namespace aliceVision;
 namespace bfs = boost::filesystem;
 namespace po = boost::program_options;
 
 #define ALICEVISION_COUT(x) std::cout << x << std::endl
 #define ALICEVISION_CERR(x) std::cerr << x << std::endl
-
 
 int main(int argc, char* argv[])
 {
@@ -81,10 +80,10 @@ int main(int argc, char* argv[])
     if(!bfs::is_directory(outDirectory))
         bfs::create_directory(outDirectory);
 
-    meshRetex meshRetex;
-    meshRetex.me = new mv_mesh();
-    meshRetex.loadFromOBJ(inputMeshPath);
-    mv_mesh* mesh = meshRetex.me;
+    mesh::Texturing texturing;
+    texturing.me = new mesh::Mesh();
+    texturing.loadFromOBJ(inputMeshPath);
+    mesh::Mesh* mesh = texturing.me;
 
     if(!mesh)
     {
@@ -103,14 +102,14 @@ int main(int argc, char* argv[])
 
 //    ALICEVISION_COUT("Input mesh: " << mesh.n_vertices() << " vertices and " << mesh.n_faces() << " facets.");
 
-    mv_mesh_energy_opt meOpt(nullptr);
+    mesh::MeshEnergyOpt meOpt(nullptr);
     {
         ALICEVISION_COUT("Start mesh filtering.");
         meOpt.addMesh(mesh);
         meOpt.init();
         meOpt.cleanMesh(10);
 
-        staticVectorBool* ptsCanMove = nullptr;
+        StaticVectorBool* ptsCanMove = nullptr;
         float epsilon = 0.0f; // unused
         int type = 3; // 0, 1, 2, 3, 4 => only 1 and 3 works
         meOpt.optimizeSmooth(lambda, epsilon, type, smoothNIter, ptsCanMove);
@@ -118,7 +117,7 @@ int main(int argc, char* argv[])
         ALICEVISION_COUT("Mesh filtering done.");
     }
 
-    mv_mesh outMesh;
+    mesh::Mesh outMesh;
     outMesh.addMesh(&meOpt);
 
 //    ALICEVISION_COUT("Output mesh: " << mesh.n_vertices() << " vertices and " << mesh.n_faces() << " facets.");
@@ -132,11 +131,10 @@ int main(int argc, char* argv[])
     ALICEVISION_COUT("Save mesh");
 
     // Save output mesh
-    mv_output3D o3d(nullptr);
-    o3d.saveMvMeshToObj(&outMesh, outputMeshPath);
+    outMesh.saveToObj(outputMeshPath);
 
     ALICEVISION_CERR("Mesh \"" << outputMeshPath << "\" saved.");
 
-    printfElapsedTime(startTime, "#");
+    common::printfElapsedTime(startTime, "#");
     return EXIT_SUCCESS;
 }

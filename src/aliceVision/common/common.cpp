@@ -4,20 +4,23 @@
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
 #include "common.hpp"
-
 #include <aliceVision/common/fileIO.hpp>
-#include <aliceVision/structures/mv_geometry.hpp>
-#include <aliceVision/structures/mv_geometry_triTri.hpp>
+#include <aliceVision/structures/geometry.hpp>
+#include <aliceVision/structures/geometryTriTri.hpp>
+#include <aliceVision/structures/Matrix3x3.hpp>
+#include <aliceVision/structures/Matrix3x4.hpp>
+#include <aliceVision/structures/OrientedPoint.hpp>
+#include <aliceVision/structures/Pixel.hpp>
+#include <aliceVision/structures/SeedPoint.hpp>
 
 
-#ifdef _WIN32
-#include "Psapi.h"
-#endif
+namespace aliceVision {
+namespace common {
 
-bool get2dLineImageIntersection(point2d* pFrom, point2d* pTo, point2d linePoint1, point2d linePoint2,
-                                const multiviewParams* mp, int camId)
+bool get2dLineImageIntersection(Point2d* pFrom, Point2d* pTo, Point2d linePoint1, Point2d linePoint2,
+                                const MultiViewParams* mp, int camId)
 {
-    point2d v = linePoint2 - linePoint1;
+    Point2d v = linePoint2 - linePoint1;
 
     if(v.size() < FLT_EPSILON)
     {
@@ -42,7 +45,7 @@ bool get2dLineImageIntersection(point2d* pFrom, point2d* pTo, point2d linePoint1
     float y = -c / b;
     if((y >= 0) && (y < rh))
     {
-        *pFrom = point2d(x, y);
+        *pFrom = Point2d(x, y);
         intersections++;
     }
 
@@ -54,11 +57,11 @@ bool get2dLineImageIntersection(point2d* pFrom, point2d* pTo, point2d linePoint1
     {
         if(intersections == 0)
         {
-            *pFrom = point2d(x, y);
+            *pFrom = Point2d(x, y);
         }
         else
         {
-            *pTo = point2d(x, y);
+            *pTo = Point2d(x, y);
         }
         intersections++;
     }
@@ -71,11 +74,11 @@ bool get2dLineImageIntersection(point2d* pFrom, point2d* pTo, point2d linePoint1
     {
         if(intersections == 0)
         {
-            *pFrom = point2d(x, y);
+            *pFrom = Point2d(x, y);
         }
         else
         {
-            *pTo = point2d(x, y);
+            *pTo = Point2d(x, y);
         }
         intersections++;
     }
@@ -88,11 +91,11 @@ bool get2dLineImageIntersection(point2d* pFrom, point2d* pTo, point2d linePoint1
     {
         if(intersections == 0)
         {
-            *pFrom = point2d(x, y);
+            *pFrom = Point2d(x, y);
         }
         else
         {
-            *pTo = point2d(x, y);
+            *pTo = Point2d(x, y);
         }
         intersections++;
     }
@@ -101,7 +104,7 @@ bool get2dLineImageIntersection(point2d* pFrom, point2d* pTo, point2d linePoint1
     {
         if((linePoint1 - *pFrom).size() > (linePoint1 - *pTo).size())
         {
-            point2d p = *pFrom;
+            Point2d p = *pFrom;
             *pFrom = *pTo;
             *pTo = p;
         }
@@ -111,86 +114,62 @@ bool get2dLineImageIntersection(point2d* pFrom, point2d* pTo, point2d linePoint1
     return false;
 }
 
-bool getTarEpipolarDirectedLine(point2d* pFromTar, point2d* pToTar, point2d refpix, int refCam, int tarCam,
-                                const multiviewParams* mp)
+bool getTarEpipolarDirectedLine(Point2d* pFromTar, Point2d* pToTar, Point2d refpix, int refCam, int tarCam,
+                                const MultiViewParams* mp)
 {
-    const matrix3x4& rP = mp->camArr[refCam];
-    const matrix3x4& tP = mp->camArr[tarCam];
+    const Matrix3x4& rP = mp->camArr[refCam];
+    const Matrix3x4& tP = mp->camArr[tarCam];
 
-    point3d rC;
-    matrix3x3 rR;
-    matrix3x3 riR;
-    matrix3x3 rK;
-    matrix3x3 riK;
-    matrix3x3 riP;
+    Point3d rC;
+    Matrix3x3 rR;
+    Matrix3x3 riR;
+    Matrix3x3 rK;
+    Matrix3x3 riK;
+    Matrix3x3 riP;
     mp->decomposeProjectionMatrix(rC, rR, riR, rK, riK, riP, rP);
 
-    point3d tC;
-    matrix3x3 tR;
-    matrix3x3 tiR;
-    matrix3x3 tK;
-    matrix3x3 tiK;
-    matrix3x3 tiP;
+    Point3d tC;
+    Matrix3x3 tR;
+    Matrix3x3 tiR;
+    Matrix3x3 tK;
+    Matrix3x3 tiK;
+    Matrix3x3 tiP;
     mp->decomposeProjectionMatrix(tC, tR, tiR, tK, tiK, tiP, tP);
 
-    point3d refvect = riP * refpix;
+    Point3d refvect = riP * refpix;
     refvect = refvect.normalize();
 
     float d = (rC - tC).size();
-    point3d X = refvect * d + rC;
-    point2d tarpix1;
+    Point3d X = refvect * d + rC;
+    Point2d tarpix1;
     mp->getPixelFor3DPoint(&tarpix1, X, tP);
 
     X = refvect * d * 500.0 + rC;
-    point2d tarpix2;
+    Point2d tarpix2;
     mp->getPixelFor3DPoint(&tarpix2, X, tP);
 
     return get2dLineImageIntersection(pFromTar, pToTar, tarpix1, tarpix2, mp, tarCam);
 }
 
-bool triangulateMatch(point3d& out, const point2d& refpix, const point2d& tarpix, int refCam, int tarCam,
-                      const multiviewParams* mp)
+bool triangulateMatch(Point3d& out, const Point2d& refpix, const Point2d& tarpix, int refCam, int tarCam,
+                      const MultiViewParams* mp)
 {
-    point3d refvect = mp->iCamArr[refCam] * refpix;
+    Point3d refvect = mp->iCamArr[refCam] * refpix;
     refvect = refvect.normalize();
-    point3d refpoint = refvect + mp->CArr[refCam];
+    Point3d refpoint = refvect + mp->CArr[refCam];
 
-    point3d tarvect = mp->iCamArr[tarCam] * tarpix;
+    Point3d tarvect = mp->iCamArr[tarCam] * tarpix;
     tarvect = tarvect.normalize();
-    point3d tarpoint = tarvect + mp->CArr[tarCam];
+    Point3d tarpoint = tarvect + mp->CArr[tarCam];
 
     float k, l;
-    point3d lli1, lli2;
+    Point3d lli1, lli2;
 
     return lineLineIntersect(&k, &l, &out, &lli1, &lli2, mp->CArr[refCam], refpoint, mp->CArr[tarCam], tarpoint);
 }
 
-bool triangulateMatchLeft(point3d& out, const point2d& refpix, const point2d& tarpix, int refCam, int tarCam,
-                          const multiviewParams* mp)
-{
-    point3d refvect = mp->iCamArr[refCam] * refpix;
-    refvect = refvect.normalize();
-    point3d refpoint = refvect + mp->CArr[refCam];
-
-    point3d tarvect = mp->iCamArr[tarCam] * tarpix;
-    tarvect = tarvect.normalize();
-    point3d tarpoint = tarvect + mp->CArr[tarCam];
-
-    return lineLineIntersectLeft(out, mp->CArr[refCam], refpoint, mp->CArr[tarCam], tarpoint);
-}
-
-void printfPercent(int i, int n)
-{
-    if((int)((float)i / ((float)n / 100.0)) != (int)((float)(i + 1) / ((float)n / 100.0)))
-    {
-        int perc = (int)((float)i / ((float)n / 100.0));
-        printf("\b\b\b%s", num2strThreeDigits(perc).c_str());
-    }
-}
-
 long initEstimate()
 {
-    printf("                                      ");
     return clock();
 }
 
@@ -246,318 +225,7 @@ std::string printfElapsedTime(long t1, std::string prefix)
     return out;
 }
 
-void ransac_rsample(int* indexes, int npoints, int npoinsRansac)
-{
-    int* pool = new int[npoints];
-    for(int i = 0; i < npoints; i++)
-    {
-        pool[i] = i;
-    }
-
-    for(int i = 0; i < npoinsRansac; i++)
-    {
-        int s = rand() % (npoints - i);
-        int j = npoints - i - 1;
-        int q = pool[s];
-        pool[s] = pool[j];
-        pool[j] = q;
-        indexes[i] = pool[j];
-    }
-
-    delete[] pool;
-}
-
-// SampleCnt calculates number of samples needed to be done
-int ransac_nsamples(int ni, int npoints, int npoinsRansac, float conf)
-{
-    float q = 1.0f;
-    for(int i = 0; i < npoinsRansac; i++)
-    {
-        q = q * ((float)(ni - i) / (float)(npoints - i));
-    }
-
-    if(q < 0.0000000000001f)
-    {
-        return npoints * 100000;
-    }
-
-    if(q > conf)
-    {
-        return 1;
-    }
-
-    return (int)(log(1.0 - conf) / log(1.0 - q));
-}
-
-bool ransacPlaneFit(orientedPoint& plane, staticVector<point3d>* points, staticVector<point3d>* points_samples,
-                    const multiviewParams* mp, int rc, float pixEpsThr)
-{
-
-    // RANSAC best plane
-    int max_sam = points_samples->size() * 3;
-    int no_sam = 0;
-    int max_i = 3;
-    point3d max_p;
-    point3d max_n;
-
-    while(no_sam < max_sam)
-    // while (no_sam < 1000)
-    {
-        no_sam = no_sam + 1;
-
-        // randomne vyber 3 body
-        int indexes[3];
-        ransac_rsample(indexes, points_samples->size(), 3);
-
-        // vypocitaj rovinu
-        point3d p = (*points_samples)[indexes[0]];
-        point3d v1 = (*points_samples)[indexes[1]] - p;
-        v1 = v1.normalize();
-        point3d v2 = (*points_samples)[indexes[2]] - p;
-        v2 = v2.normalize();
-        point3d n = cross(v1, v2);
-        n = n.normalize();
-
-        point3d s =
-            ((*points_samples)[indexes[0]] + (*points_samples)[indexes[1]] + (*points_samples)[indexes[2]]) / 3.0f;
-        float epsThr = mp->getCamPixelSize(s, rc) * pixEpsThr;
-
-        // zisti kolko z bodov lezi na rovine urcenej tymi bodmi
-        int no_i = 0;
-        for(int i = 0; i < points->size(); i++)
-        {
-            float d = pointPlaneDistance((*points)[i], p, n);
-            if(d < epsThr)
-            {
-                no_i++;
-            }
-        }
-
-        if(max_i < no_i)
-        {
-            max_i = no_i;
-            max_p = p;
-            max_n = n;
-            max_sam = std::max(100, std::min(max_sam, ransac_nsamples(max_i, points->size(), 3, 0.9)));
-        }
-    }
-
-    if(max_i == 3)
-    {
-        return false;
-    }
-
-    plane.p = max_p;
-    plane.n = max_n;
-    plane.sim = (float)max_i;
-
-    return true;
-}
-
-bool multimodalRansacPlaneFit(orientedPoint& plane, staticVector<staticVector<point3d>*>* modalPoints,
-                              const multiviewParams* mp, int rc, float pixEpsThr)
-{
-    staticVector<point3d>* points = (*modalPoints)[0];
-
-    if(points->size() < 10)
-    {
-        return false;
-    }
-
-    staticVector<pixel>* modalHist = new staticVector<pixel>(modalPoints->size());
-
-    // RANSAC best plane
-    int max_sam = points->size() * 100;
-    int max_i = 0;
-    point3d max_p;
-    point3d max_n;
-    int no_sam = 0;
-
-    while(no_sam < max_sam)
-    {
-        no_sam = no_sam + 1;
-
-        // vypocitaj rovinu
-        point3d p, n;
-        int indexes[3];
-        // bool ok = false;
-        // while (ok==false)
-        //{
-        // randomne vyber 3 body
-        ransac_rsample(indexes, points->size(), 3);
-
-        p = (*points)[indexes[0]];
-        point3d v1 = (*points)[indexes[1]] - p;
-        v1 = v1.normalize();
-        point3d v2 = (*points)[indexes[2]] - p;
-        v2 = v2.normalize();
-        n = cross(v1, v2);
-        n = n.normalize();
-
-        // ok = (notOrientedangleBetwV1andV2((mp->CArr[rc]-p).normalize(),n) < 80.0f);
-        //};
-
-        // if (notOrientedangleBetwV1andV2((mp->CArr[rc]-p).normalize(),n) < 80.0f )
-        {
-            point3d s = ((*points)[indexes[0]] + (*points)[indexes[1]] + (*points)[indexes[2]]) / 3.0f;
-            float epsThr = mp->getCamPixelSize(s, rc) * pixEpsThr;
-
-            // zisti kolko z bodov lezi na rovine urcenej tymi bodmi
-            int no_i = 0;
-            for(int i = 0; i < points->size(); i++)
-            {
-                float d = pointPlaneDistance((*points)[i], p, n);
-                if(d < epsThr)
-                {
-                    no_i++;
-                }
-            }
-
-            // compute histogram
-            for(int m = 0; m < modalPoints->size(); m++)
-            {
-                staticVector<point3d>* mpts = (*modalPoints)[m];
-                (*modalHist)[m].x = 0;
-                (*modalHist)[m].y = m;
-                for(int i = 0; i < mpts->size(); i++)
-                {
-                    float d = pointPlaneDistance((*mpts)[i], p, n);
-                    if(d < epsThr)
-                    {
-                        (*modalHist)[m].x++;
-                    }
-                }
-            }
-
-            qsort(&(*modalHist)[0], modalHist->size(), sizeof(int), qSortComparePixelByXDesc);
-
-            // find 0 cams
-            int camid = 0;
-            for(int m = 0; m < modalPoints->size(); m++)
-            {
-                if((*modalHist)[m].y == 0)
-                {
-                    camid = m;
-                }
-            }
-
-            pixel rh = (*modalHist)[camid];
-            int i1 = 0;
-            pixel th1 = (*modalHist)[i1];
-            if(th1.y == 0)
-            {
-                i1++;
-                th1 = (*modalHist)[i1];
-            }
-
-            i1++;
-            pixel th2 = (*modalHist)[i1];
-            if(th2.y == 0)
-            {
-                i1++;
-                th2 = (*modalHist)[i1];
-            }
-
-            i1++;
-            pixel th3 = (*modalHist)[i1];
-            if(th3.y == 0)
-            {
-                i1++;
-                th3 = (*modalHist)[i1];
-            }
-
-            float perc1 = 100.0f;
-            if(rh.x > th1.x)
-            {
-                perc1 = ((float)th1.x / (float)rh.x) * 100.0f;
-            }
-
-            float perc2 = 100.0f;
-            if(rh.x > th2.x)
-            {
-                perc2 = ((float)th2.x / (float)rh.x) * 100.0f;
-            }
-
-            float perc3 = 100.0f;
-            if(rh.x > th3.x)
-            {
-                perc3 = ((float)th3.x / (float)rh.x) * 100.0f;
-            }
-
-            if((perc1 > 80.0f) && (perc2 > 80.0f) && (perc3 > 80.0f) && (max_i < rh.x))
-            {
-                max_i = rh.x;
-                max_p = p;
-                max_n = n;
-                max_sam = std::max(100, std::min(max_sam, ransac_nsamples(max_i, points->size(), 3, 0.9)));
-            }
-        }
-    }
-
-    plane.p = max_p;
-    plane.n = max_n;
-    plane.sim = (float)max_i;
-
-    delete modalHist;
-
-    return true;
-}
-
-float gaussKernelEnergy(orientedPoint* pt, staticVector<orientedPoint*>* pts, float sigma)
-{
-    float sum = 0.0;
-    for(int j = 0; j < pts->size(); j++)
-    {
-        orientedPoint* op = (*pts)[j];
-        // float d = dot(op->n, op->p - pt->p);
-        float d = (op->p - pt->p).size();
-        float a = (d * d) / (2.0 * sigma * sigma);
-        sum += 1.0 - exp(-a);
-    }
-
-    return sum;
-}
-
-float angularDistnace(orientedPoint* op1, orientedPoint* op2)
-{
-    // MJ090803
-    return std::max(pointPlaneDistance(op1->p, op2->p, op2->n), pointPlaneDistance(op2->p, op1->p, op1->n)) / 2.0;
-
-    // return fabs(dot(op1->p - op2->p, op1->n)) + fabs(dot(op1->p - op2->p, op2->n));
-}
-
-bool arecoincident(orientedPoint* op1, orientedPoint* op2, float pixSize)
-{
-    return ((angleBetwV1andV2(op1->n, op2->n) < 70.0) &&
-            //( pointLineDistance3D(&op1->p, &op2->p, &op2->n)+
-            //  pointLineDistance3D(&op2->p, &op1->p, &op1->n) > pixSize )&&
-            (fabs(dot(op1->p - op2->p, op1->n)) + fabs(dot(op1->p - op2->p, op2->n)) < 2.0 * pixSize)
-            //((op1->p - op2->p).size() < pixSize)
-            );
-}
-
-bool isVisibleInCamera(const multiviewParams* mp, orientedPoint* op, int rc)
-{
-    point3d n1 = op->n.normalize();
-    point3d n2 = (mp->CArr[rc] - op->p).normalize();
-    return (fabs(acos(dot(n1, n2))) / (M_PI / 180.0) < 80.0);
-}
-
-bool isVisibleInCamera(const multiviewParams* mp, orientedPoint* op, int rc, int minAng)
-{
-    point3d n1 = op->n.normalize();
-    point3d n2 = (mp->CArr[rc] - op->p).normalize();
-    return ((int)(fabs(acos(dot(n1, n2))) / (M_PI / 180.0)) < minAng);
-}
-
-bool isNonVisibleInCamera(const multiviewParams* mp, orientedPoint* op, int rc)
-{
-    point3d n1 = op->n;
-    point3d n2 = (mp->CArr[rc] - op->p).normalize();
-    return (fabs(acos(dot(n1, n2))) / (M_PI / 180.0) > 150.0);
-}
-
-bool checkPair(const point3d& p, int rc, int tc, const multiviewParams* mp, float minAng, float maxAng)
+bool checkPair(const Point3d& p, int rc, int tc, const MultiViewParams* mp, float minAng, float maxAng)
 {
     float ps1 = mp->getCamPixelSize(p, rc);
     float ps2 = mp->getCamPixelSize(p, tc);
@@ -566,56 +234,31 @@ bool checkPair(const point3d& p, int rc, int tc, const multiviewParams* mp, floa
     return ((std::min(ps1, ps2) > std::max(ps1, ps2) * 0.8) && (ang >= minAng) && (ang <= maxAng));
 }
 
-bool checkCamPairAngle(int rc, int tc, const multiviewParams* mp, float minAng, float maxAng)
+bool checkCamPairAngle(int rc, int tc, const MultiViewParams* mp, float minAng, float maxAng)
 {
     if(rc == tc)
     {
         return false;
     }
 
-    point3d rn = mp->iRArr[rc] * point3d(0.0, 0.0, 1.0);
-    point3d tn = mp->iRArr[tc] * point3d(0.0, 0.0, 1.0);
+    Point3d rn = mp->iRArr[rc] * Point3d(0.0, 0.0, 1.0);
+    Point3d tn = mp->iRArr[tc] * Point3d(0.0, 0.0, 1.0);
     float a = angleBetwV1andV2(rn, tn);
 
     return ((a >= minAng) && (a <= maxAng));
 }
 
-bool isClique(int k, int* perm, unsigned char* confidenceMatrix, int n)
-{
-    for(int i = 0; i < k; i++)
-    {
-        for(int j = 0; j < k; j++)
-        {
-            if((i != j) && (confidenceMatrix[perm[i] * n + perm[j]] == 0))
-            {
-                return false;
-            }
-        }
-    }
-
-    return true;
-}
-
-// factorial
-int myFact(int num)
-{
-    int result = 1;
-    for(int i = 1; i <= num; ++i)
-        result = result *= i;
-    return result;
-}
-
 // hexahedron format ... 0-3 frontal face, 4-7 back face
-void getHexahedronTriangles(point3d tris[12][3], point3d hexah[8])
+void getHexahedronTriangles(Point3d tris[12][3], Point3d hexah[8])
 {
-    point3d a1 = hexah[0];
-    point3d a2 = hexah[4];
-    point3d b1 = hexah[1];
-    point3d b2 = hexah[5];
-    point3d c1 = hexah[2];
-    point3d c2 = hexah[6];
-    point3d d1 = hexah[3];
-    point3d d2 = hexah[7];
+    Point3d a1 = hexah[0];
+    Point3d a2 = hexah[4];
+    Point3d b1 = hexah[1];
+    Point3d b2 = hexah[5];
+    Point3d c1 = hexah[2];
+    Point3d c2 = hexah[6];
+    Point3d d1 = hexah[3];
+    Point3d d2 = hexah[7];
 
     tris[0][0] = a1;
     tris[0][1] = a2;
@@ -661,38 +304,25 @@ void getHexahedronTriangles(point3d tris[12][3], point3d hexah[8])
 }
 
 // hexahedron format ... 0-3 frontal face, 4-7 back face
-void getCamRectangleHexahedron(const multiviewParams* mp, point3d hexah[8], int cam, float mind, float maxd, point2d P[4])
-{
-    hexah[0] = mp->CArr[cam] + (mp->iCamArr[cam] * P[0]).normalize() * mind;
-    hexah[4] = mp->CArr[cam] + (mp->iCamArr[cam] * P[0]).normalize() * maxd;
-    hexah[1] = mp->CArr[cam] + (mp->iCamArr[cam] * P[1]).normalize() * mind;
-    hexah[5] = mp->CArr[cam] + (mp->iCamArr[cam] * P[1]).normalize() * maxd;
-    hexah[2] = mp->CArr[cam] + (mp->iCamArr[cam] * P[2]).normalize() * mind;
-    hexah[6] = mp->CArr[cam] + (mp->iCamArr[cam] * P[2]).normalize() * maxd;
-    hexah[3] = mp->CArr[cam] + (mp->iCamArr[cam] * P[3]).normalize() * mind;
-    hexah[7] = mp->CArr[cam] + (mp->iCamArr[cam] * P[3]).normalize() * maxd;
-}
-
-// hexahedron format ... 0-3 frontal face, 4-7 back face
-void getCamHexahedron(const multiviewParams* mp, point3d hexah[8], int cam, float mind, float maxd)
+void getCamHexahedron(const MultiViewParams* mp, Point3d hexah[8], int cam, float mind, float maxd)
 {
     float w = (float)mp->mip->getWidth(cam);
     float h = (float)mp->mip->getHeight(cam);
-    hexah[0] = mp->CArr[cam] + (mp->iCamArr[cam] * point2d(0.0f, 0.0f)).normalize() * mind;
-    hexah[4] = mp->CArr[cam] + (mp->iCamArr[cam] * point2d(0.0f, 0.0f)).normalize() * maxd;
-    hexah[1] = mp->CArr[cam] + (mp->iCamArr[cam] * point2d(w, 0.0f)).normalize() * mind;
-    hexah[5] = mp->CArr[cam] + (mp->iCamArr[cam] * point2d(w, 0.0f)).normalize() * maxd;
-    hexah[2] = mp->CArr[cam] + (mp->iCamArr[cam] * point2d(w, h)).normalize() * mind;
-    hexah[6] = mp->CArr[cam] + (mp->iCamArr[cam] * point2d(w, h)).normalize() * maxd;
-    hexah[3] = mp->CArr[cam] + (mp->iCamArr[cam] * point2d(0.0f, h)).normalize() * mind;
-    hexah[7] = mp->CArr[cam] + (mp->iCamArr[cam] * point2d(0.0f, h)).normalize() * maxd;
+    hexah[0] = mp->CArr[cam] + (mp->iCamArr[cam] * Point2d(0.0f, 0.0f)).normalize() * mind;
+    hexah[4] = mp->CArr[cam] + (mp->iCamArr[cam] * Point2d(0.0f, 0.0f)).normalize() * maxd;
+    hexah[1] = mp->CArr[cam] + (mp->iCamArr[cam] * Point2d(w, 0.0f)).normalize() * mind;
+    hexah[5] = mp->CArr[cam] + (mp->iCamArr[cam] * Point2d(w, 0.0f)).normalize() * maxd;
+    hexah[2] = mp->CArr[cam] + (mp->iCamArr[cam] * Point2d(w, h)).normalize() * mind;
+    hexah[6] = mp->CArr[cam] + (mp->iCamArr[cam] * Point2d(w, h)).normalize() * maxd;
+    hexah[3] = mp->CArr[cam] + (mp->iCamArr[cam] * Point2d(0.0f, h)).normalize() * mind;
+    hexah[7] = mp->CArr[cam] + (mp->iCamArr[cam] * Point2d(0.0f, h)).normalize() * maxd;
 }
 
 // hexahedron format ... 0-3 frontal face, 4-7 back face
-bool intersectsHexahedronHexahedron(point3d rchex[8], point3d tchex[8])
+bool intersectsHexahedronHexahedron(Point3d rchex[8], Point3d tchex[8])
 {
-    point3d rctris[12][3];
-    point3d tctris[12][3];
+    Point3d rctris[12][3];
+    Point3d tctris[12][3];
     getHexahedronTriangles(rctris, rchex);
     getHexahedronTriangles(tctris, tchex);
 
@@ -722,20 +352,20 @@ bool intersectsHexahedronHexahedron(point3d rchex[8], point3d tchex[8])
     return false;
 }
 
-staticVector<point3d>* triangleHexahedronIntersection(point3d& A, point3d& B, point3d& C, point3d hexah[8])
+StaticVector<Point3d>* triangleHexahedronIntersection(Point3d& A, Point3d& B, Point3d& C, Point3d hexah[8])
 {
-    point3d tris[12][3];
+    Point3d tris[12][3];
     getHexahedronTriangles(tris, hexah);
 
-    staticVector<point3d>* out = new staticVector<point3d>(40);
+    StaticVector<Point3d>* out = new StaticVector<Point3d>(40);
     for(int i = 0; i < 12; i++)
     {
-        point3d a = tris[i][0];
-        point3d b = tris[i][1];
-        point3d c = tris[i][2];
+        Point3d a = tris[i][0];
+        Point3d b = tris[i][1];
+        Point3d c = tris[i][2];
 
         int coplanar;
-        point3d i1, i2;
+        Point3d i1, i2;
 
         bool ok = (bool)tri_tri_intersect_with_isectline(A.m, B.m, C.m, a.m, b.m, c.m, &coplanar, i1.m, i2.m);
         if(ok)
@@ -748,18 +378,18 @@ staticVector<point3d>* triangleHexahedronIntersection(point3d& A, point3d& B, po
     return out;
 }
 
-staticVector<point3d>* lineSegmentHexahedronIntersection(point3d& linePoint1, point3d& linePoint2, point3d hexah[8])
+StaticVector<Point3d>* lineSegmentHexahedronIntersection(Point3d& linePoint1, Point3d& linePoint2, Point3d hexah[8])
 {
-    point3d tris[12][3];
+    Point3d tris[12][3];
     getHexahedronTriangles(tris, hexah);
 
-    staticVector<point3d>* out = new staticVector<point3d>(40);
+    StaticVector<Point3d>* out = new StaticVector<Point3d>(40);
     for(int i = 0; i < 12; i++)
     {
-        point3d a = tris[i][0];
-        point3d b = tris[i][1];
-        point3d c = tris[i][2];
-        point3d lpi;
+        Point3d a = tris[i][0];
+        Point3d b = tris[i][1];
+        Point3d c = tris[i][2];
+        Point3d lpi;
 
         if(isLineSegmentInTriangle(lpi, a, b, c, linePoint1, linePoint2))
         {
@@ -770,17 +400,17 @@ staticVector<point3d>* lineSegmentHexahedronIntersection(point3d& linePoint1, po
     return out;
 }
 
-staticVector<point3d>* triangleRectangleIntersection(point3d& A, point3d& B, point3d& C, const multiviewParams* mp, int rc,
-                                                     point2d P[4])
+StaticVector<Point3d>* triangleRectangleIntersection(Point3d& A, Point3d& B, Point3d& C, const MultiViewParams* mp, int rc,
+                                                     Point2d P[4])
 {
     float maxd =
         std::max(std::max((mp->CArr[rc] - A).size(), (mp->CArr[rc] - B).size()), (mp->CArr[rc] - C).size()) * 1000.0f;
 
-    staticVector<point3d>* out = new staticVector<point3d>(40);
+    StaticVector<Point3d>* out = new StaticVector<Point3d>(40);
 
-    point3d a, b, c;
+    Point3d a, b, c;
     int coplanar;
-    point3d i1, i2;
+    Point3d i1, i2;
 
     a = mp->CArr[rc];
     b = mp->CArr[rc] + (mp->iCamArr[rc] * P[0]).normalize() * maxd;
@@ -822,19 +452,19 @@ staticVector<point3d>* triangleRectangleIntersection(point3d& A, point3d& B, poi
         out->push_back(i2);
     }
 
-    // point3d lp;
+    // Point3d lp;
     // if lineSegmentPlaneIntersect(&lp,A,B,mp->CArr[rc],n);
 
     return out;
 }
 
-bool isPointInHexahedron(const point3d& p, const point3d* hexah)
+bool isPointInHexahedron(const Point3d& p, const Point3d* hexah)
 {
-    point3d a = hexah[0];
-    point3d b = hexah[1];
-    point3d c = hexah[3];
-    point3d d = hexah[4];
-    point3d n = cross(a - b, b - c).normalize();
+    Point3d a = hexah[0];
+    Point3d b = hexah[1];
+    Point3d c = hexah[3];
+    Point3d d = hexah[4];
+    Point3d n = cross(a - b, b - c).normalize();
     float d1 = orientedPointPlaneDistance(p, a, n);
     float d2 = orientedPointPlaneDistance(d, a, n);
     if(d1 * d2 < 0.0)
@@ -890,9 +520,9 @@ bool isPointInHexahedron(const point3d& p, const point3d* hexah)
     return d1 * d2 >= 0.0;
 }
 
-void inflateHexahedron(point3d hexahIn[8], point3d hexahOut[8], float scale)
+void inflateHexahedron(Point3d hexahIn[8], Point3d hexahOut[8], float scale)
 {
-    point3d cg = point3d(0.0f, 0.0f, 0.0f);
+    Point3d cg = Point3d(0.0f, 0.0f, 0.0f);
     for(int i = 0; i < 8; i++)
     {
         cg = cg + hexahIn[i];
@@ -902,113 +532,6 @@ void inflateHexahedron(point3d hexahIn[8], point3d hexahOut[8], float scale)
     for(int i = 0; i < 8; i++)
     {
         hexahOut[i] = cg + (hexahIn[i] - cg) * scale;
-    }
-}
-
-void inflateHexahedronInDim(int dim, point3d hexahIn[8], point3d hexahOut[8], float scale)
-{
-    /*
-    the hexahedron was created :
-    float x = (float)xp*stepx;
-    float y = (float)yp*stepy;
-    float z = (float)zp*stepz;
-
-    (*voxels)[id*8+0] = ox + vx*x +        vy*y +        vz*z;
-    (*voxels)[id*8+1] = ox + vx*(x+stepx)+ vy*y +        vz*z;
-    (*voxels)[id*8+2] = ox + vx*(x+stepx)+ vy*(y+stepy)+ vz*z;
-    (*voxels)[id*8+3] = ox + vx*x +        vy*(y+stepy)+ vz*z;
-    (*voxels)[id*8+4] = ox + vx*x +        vy*y +        vz*(z+stepz);
-    (*voxels)[id*8+5] = ox + vx*(x+stepx)+ vy*y +        vz*(z+stepz);
-    (*voxels)[id*8+6] = ox + vx*(x+stepx)+ vy*(y+stepy)+ vz*(z+stepz);
-    (*voxels)[id*8+7] = ox + vx*x +        vy*(y+stepy)+ vz*(z+stepz);
-    */
-
-    if(dim == 0)
-    {
-        hexahOut[0] = hexahIn[0];
-        hexahOut[1] = hexahIn[0] + (hexahIn[1] - hexahIn[0]) * scale;
-        hexahOut[2] = hexahIn[3] + (hexahIn[2] - hexahIn[3]) * scale;
-        hexahOut[3] = hexahIn[3];
-        hexahOut[4] = hexahIn[4];
-        hexahOut[5] = hexahIn[4] + (hexahIn[5] - hexahIn[4]) * scale;
-        hexahOut[6] = hexahIn[7] + (hexahIn[6] - hexahIn[7]) * scale;
-        hexahOut[7] = hexahIn[7];
-    }
-
-    if(dim == 1)
-    {
-        hexahOut[0] = hexahIn[0];
-        hexahOut[1] = hexahIn[1];
-        hexahOut[2] = hexahIn[1] + (hexahIn[2] - hexahIn[1]) * scale;
-        hexahOut[3] = hexahIn[0] + (hexahIn[3] - hexahIn[0]) * scale;
-        hexahOut[4] = hexahIn[4];
-        hexahOut[5] = hexahIn[5];
-        hexahOut[6] = hexahIn[5] + (hexahIn[6] - hexahIn[5]) * scale;
-        hexahOut[7] = hexahIn[4] + (hexahIn[7] - hexahIn[4]) * scale;
-    }
-
-    if(dim == 2)
-    {
-        hexahOut[0] = hexahIn[0];
-        hexahOut[1] = hexahIn[1];
-        hexahOut[2] = hexahIn[2];
-        hexahOut[3] = hexahIn[3];
-        hexahOut[4] = hexahIn[0] + (hexahIn[4] - hexahIn[0]) * scale;
-        hexahOut[5] = hexahIn[1] + (hexahIn[5] - hexahIn[1]) * scale;
-        hexahOut[6] = hexahIn[2] + (hexahIn[6] - hexahIn[2]) * scale;
-        hexahOut[7] = hexahIn[3] + (hexahIn[7] - hexahIn[3]) * scale;
-    }
-}
-
-void inflateHexahedronAroundDim(int dim, point3d hexahIn[8], point3d hexahOut[8], float scale)
-{
-    int ids[8];
-    if(dim == 0)
-    {
-        ids[0] = 0;
-        ids[1] = 4;
-        ids[2] = 7;
-        ids[3] = 3;
-        ids[4] = 1;
-        ids[5] = 5;
-        ids[6] = 6;
-        ids[7] = 2;
-    }
-    if(dim == 1)
-    {
-        ids[0] = 0;
-        ids[1] = 1;
-        ids[2] = 5;
-        ids[3] = 4;
-        ids[4] = 3;
-        ids[5] = 2;
-        ids[6] = 6;
-        ids[7] = 7;
-    }
-    if(dim == 2)
-    {
-        ids[0] = 0;
-        ids[1] = 1;
-        ids[2] = 2;
-        ids[3] = 3;
-        ids[4] = 4;
-        ids[5] = 5;
-        ids[6] = 6;
-        ids[7] = 7;
-    }
-
-    for(int k = 0; k < 2; k++)
-    {
-        point3d cg = point3d(0.0f, 0.0f, 0.0f);
-        for(int i = 0; i < 4; i++)
-        {
-            cg = cg + hexahIn[ids[k * 4 + i]];
-        }
-        cg = cg / 4.0f;
-        for(int i = 0; i < 4; i++)
-        {
-            hexahOut[ids[k * 4 + i]] = cg + (hexahIn[ids[k * 4 + i]] - cg) * scale;
-        }
     }
 }
 
@@ -1043,57 +566,11 @@ end
 plot(x,y)
 
 */
-float similarityKernelVoting(staticVector<float>* sims)
+
+StaticVector<StaticVector<int>*>* convertObjectsCamsToCamsObjects(const MultiViewParams* mp,
+                                                                  StaticVector<StaticVector<int>*>* ptsCams)
 {
-    float a = 1.0f;
-    float c = 0.1f;
-
-    float maxy = 0.0f;
-    float maxx = 1.0f;
-    for(float x = -1.0f; x < 1.0f; x = x + 0.01f)
-    {
-        float y = 0;
-        for(int i = 0; i < sims->size(); i++)
-        {
-            float sim = (*sims)[i];
-            y = y + a * exp(-((x - sim) * (x - sim)) / (2.0f * c * c));
-        }
-        if(y > maxy)
-        {
-            maxy = y;
-            maxx = x;
-        }
-    }
-
-    return maxx;
-}
-
-bool checkPoint3d(point3d n)
-{
-    return !((n.x != n.x) || (n.y != n.y) || (n.z != n.z) || std::isnan(n.x) || std::isnan(n.y) || std::isnan(n.z));
-}
-
-
-staticVector<int>* getDistinctIndexes(staticVector<int>* indexes)
-{
-    qsort(&(*indexes)[0], indexes->size(), sizeof(int), qSortCompareIntAsc);
-    staticVector<int>* out = new staticVector<int>(indexes->size());
-    int i = 0;
-    while(i < indexes->size())
-    {
-        if((i == indexes->size() - 1) || ((*indexes)[i] != (*indexes)[i + 1]))
-        {
-            out->push_back((*indexes)[i]);
-        }
-        i++;
-    }
-    return out;
-}
-
-staticVector<staticVector<int>*>* convertObjectsCamsToCamsObjects(const multiviewParams* mp,
-                                                                  staticVector<staticVector<int>*>* ptsCams)
-{
-    staticVector<int>* nCamsPts = new staticVector<int>(mp->ncams);
+    StaticVector<int>* nCamsPts = new StaticVector<int>(mp->ncams);
     nCamsPts->resize_with(mp->ncams, 0);
     for(int i = 0; i < ptsCams->size(); i++)
     {
@@ -1111,10 +588,10 @@ staticVector<staticVector<int>*>* convertObjectsCamsToCamsObjects(const multivie
         }
     }
 
-    staticVector<staticVector<int>*>* camsPts = new staticVector<staticVector<int>*>(mp->ncams);
+    StaticVector<StaticVector<int>*>* camsPts = new StaticVector<StaticVector<int>*>(mp->ncams);
     for(int rc = 0; rc < mp->ncams; rc++)
     {
-        camsPts->push_back(new staticVector<int>((*nCamsPts)[rc]));
+        camsPts->push_back(new StaticVector<int>((*nCamsPts)[rc]));
     }
 
     for(int i = 0; i < ptsCams->size(); i++)
@@ -1132,40 +609,40 @@ staticVector<staticVector<int>*>* convertObjectsCamsToCamsObjects(const multivie
     return camsPts;
 }
 
-staticVector<staticVector<pixel>*>* convertObjectsCamsToCamsObjects(const multiviewParams* mp,
-                                                                    staticVector<staticVector<pixel>*>* ptsCams)
+StaticVector<StaticVector<Pixel>*>* convertObjectsCamsToCamsObjects(const MultiViewParams* mp,
+                                                                    StaticVector<StaticVector<Pixel>*>* ptsCams)
 {
-    staticVector<int>* nCamsPts = new staticVector<int>(mp->ncams);
+    StaticVector<int>* nCamsPts = new StaticVector<int>(mp->ncams);
     nCamsPts->resize_with(mp->ncams, 0);
     for(int i = 0; i < ptsCams->size(); i++)
     {
-        for(int j = 0; j < sizeOfStaticVector<pixel>((*ptsCams)[i]); j++)
+        for(int j = 0; j < sizeOfStaticVector<Pixel>((*ptsCams)[i]); j++)
         {
             int rc = (*(*ptsCams)[i])[j].x;
             (*nCamsPts)[rc]++;
         }
     }
 
-    staticVector<staticVector<pixel>*>* camsPts = new staticVector<staticVector<pixel>*>(mp->ncams);
+    StaticVector<StaticVector<Pixel>*>* camsPts = new StaticVector<StaticVector<Pixel>*>(mp->ncams);
     for(int rc = 0; rc < mp->ncams; rc++)
     {
-        camsPts->push_back(new staticVector<pixel>((*nCamsPts)[rc]));
+        camsPts->push_back(new StaticVector<Pixel>((*nCamsPts)[rc]));
     }
 
     for(int i = 0; i < ptsCams->size(); i++)
     {
-        for(int j = 0; j < sizeOfStaticVector<pixel>((*ptsCams)[i]); j++)
+        for(int j = 0; j < sizeOfStaticVector<Pixel>((*ptsCams)[i]); j++)
         {
             int rc = (*(*ptsCams)[i])[j].x;
             int value = (*(*ptsCams)[i])[j].y;
-            (*camsPts)[rc]->push_back(pixel(i, value));
+            (*camsPts)[rc]->push_back(Pixel(i, value));
         }
     }
 
     return camsPts;
 }
 
-int computeStep(multiviewInputParams* mip, int scale, int maxWidth, int maxHeight)
+int computeStep(MultiViewInputParams* mip, int scale, int maxWidth, int maxHeight)
 {
     int step = 1;
     int ow = mip->getMaxImageWidth() / scale;
@@ -1181,16 +658,16 @@ int computeStep(multiviewInputParams* mip, int scale, int maxWidth, int maxHeigh
     return step;
 }
 
-staticVector<point3d>* computeVoxels(const point3d* space, const voxel& dimensions)
+StaticVector<Point3d>* computeVoxels(const Point3d* space, const Voxel& dimensions)
 {
     float voxelDimX = (float)dimensions.x;
     float voxelDimY = (float)dimensions.y;
     float voxelDimZ = (float)dimensions.z;
 
-    point3d ox = space[0];
-    point3d vx = (space[1] - space[0]).normalize();
-    point3d vy = (space[3] - space[0]).normalize();
-    point3d vz = (space[4] - space[0]).normalize();
+    Point3d ox = space[0];
+    Point3d vx = (space[1] - space[0]).normalize();
+    Point3d vy = (space[3] - space[0]).normalize();
+    Point3d vz = (space[4] - space[0]).normalize();
     float sx = (space[1] - space[0]).size();
     float sy = (space[3] - space[0]).size();
     float sz = (space[4] - space[0]).size();
@@ -1199,7 +676,7 @@ staticVector<point3d>* computeVoxels(const point3d* space, const voxel& dimensio
     float stepz = sz / voxelDimZ;
 
     int nvoxels = dimensions.x * dimensions.y * dimensions.z;
-    staticVector<point3d>* voxels = new staticVector<point3d>(nvoxels * 8);
+    StaticVector<Point3d>* voxels = new StaticVector<Point3d>(nvoxels * 8);
     voxels->resize(nvoxels * 8);
 
     // printf("%i %i %i %i\n",dimensions.x,dimensions.y,dimensions.z,nvoxels,voxels->size());
@@ -1230,12 +707,12 @@ staticVector<point3d>* computeVoxels(const point3d* space, const voxel& dimensio
     return voxels;
 }
 
-staticVector<int>* createRandomArrayOfIntegers(int n)
+StaticVector<int>* createRandomArrayOfIntegers(int n)
 {
     /* initialize random seed: */
     srand(time(nullptr));
 
-    staticVector<int>* tracksPointsRandomIds = new staticVector<int>(n);
+    StaticVector<int>* tracksPointsRandomIds = new StaticVector<int>(n);
     for(int j = 0; j < n; j++)
     {
         tracksPointsRandomIds->push_back(j);
@@ -1259,7 +736,7 @@ staticVector<int>* createRandomArrayOfIntegers(int n)
     // test
     /*
     {
-            staticVectorBool *tracksPointsRandomIdsB = new staticVectorBool(n);
+            StaticVectorBool *tracksPointsRandomIdsB = new StaticVectorBool(n);
             tracksPointsRandomIdsB->resize_with(n,false);
             for (int k=0;k<n;k++) {
                     int j = (*tracksPointsRandomIds)[k];
@@ -1281,24 +758,24 @@ staticVector<int>* createRandomArrayOfIntegers(int n)
     return tracksPointsRandomIds;
 }
 
-float getCGDepthFromSeeds(const multiviewParams* mp, int rc)
+float getCGDepthFromSeeds(const MultiViewParams* mp, int rc)
 {
-    staticVector<seedPoint>* seeds;
-    loadSeedsFromFile(&seeds, mp->indexes[rc], mp->mip, EFileType::seeds);
+    StaticVector<SeedPoint>* seeds;
+    loadSeedsFromFile(&seeds, rc, mp->mip, EFileType::seeds);
 
     float midDepth = -1.0f;
 
     if(seeds->size() > 20)
     {
-        orientedPoint rcplane;
+        OrientedPoint rcplane;
         rcplane.p = mp->CArr[rc];
-        rcplane.n = mp->iRArr[rc] * point3d(0.0, 0.0, 1.0);
+        rcplane.n = mp->iRArr[rc] * Point3d(0.0, 0.0, 1.0);
         rcplane.n = rcplane.n.normalize();
 
-        point3d cg = point3d(0.0f, 0.0f, 0.0f);
+        Point3d cg = Point3d(0.0f, 0.0f, 0.0f);
         for(int i = 0; i < seeds->size(); i++)
         {
-            seedPoint* sp = &(*seeds)[i];
+            SeedPoint* sp = &(*seeds)[i];
             cg = cg + sp->op.p;
         }
         cg = cg / (float)seeds->size();
@@ -1308,16 +785,6 @@ float getCGDepthFromSeeds(const multiviewParams* mp, int rc)
     delete seeds;
 
     return midDepth;
-}
-
-float sigmoidfcn(float zeroVal, float endVal, float sigwidth, float sigMid, float xval)
-{
-    return zeroVal + (endVal - zeroVal) * (1.0f / (1.0f + exp(10.0f * ((xval - sigMid) / sigwidth))));
-}
-
-float sigmoid2fcn(float zeroVal, float endVal, float sigwidth, float sigMid, float xval)
-{
-    return zeroVal + (endVal - zeroVal) * (1.0f / (1.0f + exp(10.0f * ((sigMid - xval) / sigwidth))));
 }
 
 int findNSubstrsInString(const std::string& str, const std::string& val)
@@ -1380,12 +847,9 @@ std::string num2strThreeDigits(int index)
 
 std::string num2strFourDecimal(int index)
 {
-    std::string ms;
-
     char tmp[50];
     sprintf(tmp, "%05i", index);
     std::string s = tmp;
-
     return s;
 }
 
@@ -1406,3 +870,6 @@ std::string num2strTwoDecimal(int index)
 
     return ms;
 }
+
+} // namespace common
+} // namespace aliceVision

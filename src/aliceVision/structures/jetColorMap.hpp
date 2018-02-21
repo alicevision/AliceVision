@@ -5,8 +5,10 @@
 
 #pragma once
 
-#include <aliceVision/structures/mv_color.hpp>
-#include <aliceVision/structures/mv_structures.hpp>
+#include <aliceVision/structures/Color.hpp>
+#include <aliceVision/structures/Rgb.hpp>
+
+namespace aliceVision {
 
 /**
  * @brief Get the RGB color from the jet colormap for the given value.
@@ -27,3 +29,5 @@ rgb getRGBFromJetColorMap(float value);
  *          - 'value' >= 1.0f: white
  */
 Color getColorFromJetColorMap(float value);
+
+} // namespace aliceVision

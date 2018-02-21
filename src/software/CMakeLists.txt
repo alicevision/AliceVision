@@ -1,170 +1,132 @@
+## AliceVision
+## Pipeline software
 
-# Runtime library paths
-SET(LIB_RUNTIME_PATHS ${Boost_LIBRARY_DIRS})
+# Compute Nearby Cameras
 
-# "Escape" the list of library paths using $<SEMICOLON> to use it as a custom command argument
-string (REPLACE ";" "$<SEMICOLON>" LIB_RUNTIME_PATHS_ARG "${LIB_RUNTIME_PATHS}")
+add_executable(aliceVision_cameraConnection main_cameraConnection.cpp)
 
+target_link_libraries(aliceVision_cameraConnection
+  PUBLIC aliceVision_common
+         ${Boost_LIBRARIES}
+)
 
+set_property(TARGET aliceVision_cameraConnection
+  PROPERTY FOLDER AliceVision/Software/Pipeline
+)
 
-set(SOURCES_files_CMPMVS CMPMVS.cpp)
-source_group("CMPMVS" FILES CMPMVS.cpp)
+install(TARGETS aliceVision_cameraConnection
+  DESTINATION bin/
+)
 
-add_executable(CMPMVS ${SOURCES_files_CMPMVS})
-target_link_libraries(CMPMVS PUBLIC mv_structures
-                                    aliceVision_common
-                                    mv_cudaInterfaces
-                                    mv_mesh mv_largeScale
-                                    mv_filter mv_delaunaycut
-                                    mv_cudaInterfaces mv_prematching
-                                    eig33
-                                    ${Boost_LIBRARIES} ${ZLIB_LIBRARIES}
-                                    ${GMP_LIBRARIES} ${MPFR_LIBRARIES})
+# Depth Map Estimation
 
-## Install rule
-install(TARGETS CMPMVS DESTINATION bin/)
+if(ALICEVISION_HAVE_CUDA) # Depth map computation need CUDA
+  add_executable(aliceVision_depthMapEstimation main_depthMapEstimation.cpp)
 
-## Bundle rule
-# Custom target that calls fixup_bundle to copy needed runtime libraries
-# next to the target executable
+  target_link_libraries(aliceVision_depthMapEstimation
+    PUBLIC aliceVision_structures
+           aliceVision_common
+           aliceVision_depthMap
+           ${Boost_LIBRARIES}
+  )
 
-# Full path to executable
-set(CMPMVS_EXE ${CMAKE_INSTALL_PREFIX}/bin/CMPMVS${CMAKE_EXECUTABLE_SUFFIX})
+  set_property(TARGET aliceVision_depthMapEstimation
+    PROPERTY FOLDER AliceVision/Software/Pipeline
+  )
 
-# Bundle target (see MakeBundle.cmake)
-# Note: require that the install rule has been executed
-add_custom_target("bundle" 
-                  ${CMAKE_COMMAND}
-                  -DEXECUTABLE=${CMPMVS_EXE} -DLPATHS=${LIB_RUNTIME_PATHS_ARG} 
-                  -P ${CMAKE_CURRENT_SOURCE_DIR}/MakeBundle.cmake)
-set_target_properties("bundle" PROPERTIES FOLDER Packaging)
+  install(TARGETS aliceVision_depthMapEstimation
+    DESTINATION bin/
+  )
+endif()
 
+# Depth Map Filtering
 
+add_executable(aliceVision_depthMapFiltering main_depthMapFiltering.cpp)
 
+target_link_libraries(aliceVision_depthMapFiltering
+  PUBLIC aliceVision_structures
+         aliceVision_common
+         aliceVision_meshConstruction
+         ${Boost_LIBRARIES}
+)
 
-set(SOURCES_files_exportDepthMap main_exportDepthMap.cpp)
-source_group("aliceVision_exportDepthMap" FILES main_exportDepthMap.cpp)
+set_property(TARGET aliceVision_depthMapFiltering
+  PROPERTY FOLDER AliceVision/Software/Pipeline
+)
 
-add_executable(aliceVision_exportDepthMap ${SOURCES_files_exportDepthMap})
-target_link_libraries(aliceVision_exportDepthMap PUBLIC mv_structures
-                                    aliceVision_common
-                                    mv_cudaInterfaces
-                                    mv_mesh mv_largeScale
-                                    mv_filter mv_delaunaycut
-                                    mv_cudaInterfaces mv_prematching
-                                    eig33
-                                    ${Boost_LIBRARIES} ${ZLIB_LIBRARIES}
-                                    ${GMP_LIBRARIES} ${MPFR_LIBRARIES})
+install(TARGETS aliceVision_depthMapFiltering
+  DESTINATION bin/
+)
 
-## Install rule
-install(TARGETS aliceVision_exportDepthMap DESTINATION bin/)
+# Meshing
 
+add_executable(aliceVision_meshing main_meshing.cpp)
 
-## Compute Nearby Cameras
-set(SOURCES_files_cameraConnection main_cameraConnection.cpp)
-source_group("aliceVision_cameraConnection" FILES main_cameraConnection.cpp)
+target_link_libraries(aliceVision_meshing
+  PUBLIC aliceVision_structures
+         aliceVision_common
+         aliceVision_mesh
+         aliceVision_meshConstruction
+         ${Boost_LIBRARIES}
+)
 
-add_executable(aliceVision_cameraConnection ${SOURCES_files_cameraConnection})
-target_link_libraries(aliceVision_cameraConnection PUBLIC mv_structures
-                                    aliceVision_common
-                                    mv_cudaInterfaces
-                                    mv_mesh mv_largeScale
-                                    mv_filter mv_delaunaycut
-                                    mv_cudaInterfaces mv_prematching
-                                    eig33
-                                    ${Boost_LIBRARIES} ${ZLIB_LIBRARIES}
-                                    ${GMP_LIBRARIES} ${MPFR_LIBRARIES})
-install(TARGETS aliceVision_cameraConnection DESTINATION bin/)
+set_property(TARGET aliceVision_meshing
+  PROPERTY FOLDER AliceVision/Software/Pipeline
+)
 
+install(TARGETS aliceVision_meshing
+  DESTINATION bin/
+)
 
-## Depth Map Estimation
-set(SOURCES_files_depthMapEstimation main_depthMapEstimation.cpp)
-source_group("aliceVision_depthMapEstimation" FILES main_depthMapEstimation.cpp)
+# Mesh Filtering
 
-add_executable(aliceVision_depthMapEstimation ${SOURCES_files_depthMapEstimation})
-target_link_libraries(aliceVision_depthMapEstimation PUBLIC mv_structures
-                                    aliceVision_common
-                                    mv_cudaInterfaces
-                                    mv_mesh mv_largeScale
-                                    mv_filter mv_delaunaycut
-                                    mv_cudaInterfaces mv_prematching
-                                    eig33
-                                    ${Boost_LIBRARIES} ${ZLIB_LIBRARIES}
-                                    ${GMP_LIBRARIES} ${MPFR_LIBRARIES})
-install(TARGETS aliceVision_depthMapEstimation DESTINATION bin/)
+add_executable(aliceVision_meshFiltering main_meshFiltering.cpp)
 
-## Depth Map Filtering
-set(SOURCES_files_depthMapFiltering main_depthMapFiltering.cpp)
-source_group("aliceVision_depthMapFiltering" FILES main_depthMapFiltering.cpp)
+target_link_libraries(aliceVision_meshFiltering
+  PUBLIC aliceVision_common
+         aliceVision_mesh
+         ${Boost_LIBRARIES}
+)
 
-add_executable(aliceVision_depthMapFiltering ${SOURCES_files_depthMapFiltering})
-target_link_libraries(aliceVision_depthMapFiltering PUBLIC mv_structures
-                                    aliceVision_common
-                                    mv_cudaInterfaces
-                                    mv_mesh mv_largeScale
-                                    mv_filter mv_delaunaycut
-                                    mv_cudaInterfaces mv_prematching
-                                    eig33
-                                    ${Boost_LIBRARIES} ${ZLIB_LIBRARIES}
-                                    ${GMP_LIBRARIES} ${MPFR_LIBRARIES})
-install(TARGETS aliceVision_depthMapFiltering DESTINATION bin/)
+set_property(TARGET aliceVision_meshFiltering
+  PROPERTY FOLDER AliceVision/Software/Pipeline
+)
 
-
-## Meshing
-set(SOURCES_files_meshing main_meshing.cpp)
-source_group("aliceVision_meshing" FILES main_meshing.cpp)
-
-add_executable(aliceVision_meshing ${SOURCES_files_meshing})
-target_link_libraries(aliceVision_meshing PUBLIC mv_structures
-                                    aliceVision_common
-                                    mv_cudaInterfaces
-                                    mv_mesh mv_largeScale
-                                    mv_filter mv_delaunaycut
-                                    mv_cudaInterfaces mv_prematching
-                                    eig33
-                                    ${Boost_LIBRARIES} ${ZLIB_LIBRARIES}
-                                    ${GMP_LIBRARIES} ${MPFR_LIBRARIES})
-install(TARGETS aliceVision_meshing DESTINATION bin/)
-
-
-## Mesh Filtering
-set(SOURCES_files_meshFiltering main_meshFiltering.cpp)
-source_group("aliceVision_meshFiltering" FILES main_meshFiltering.cpp)
-
-add_executable(aliceVision_meshFiltering ${SOURCES_files_meshFiltering})
-target_link_libraries(aliceVision_meshFiltering PUBLIC
-                                    aliceVision_common
-                                    mv_mesh
-                                    ${Boost_LIBRARIES}
-                                    )
-target_compile_definitions(aliceVision_meshFiltering PUBLIC "$<$<CONFIG:RELEASE>:USE_OPENMP>")
-target_include_directories(aliceVision_meshFiltering PUBLIC
-                                    ${MESHSDFILTER_INCLUDE_DIR})
 install(TARGETS aliceVision_meshFiltering DESTINATION bin/)
-## Mesh Resampling
-set(SOURCES_files_meshResampling main_meshResampling.cpp)
-source_group("aliceVision_meshResampling" FILES main_meshResampling.cpp)
 
-add_executable(aliceVision_meshResampling ${SOURCES_files_meshResampling})
-target_link_libraries(aliceVision_meshResampling PUBLIC mv_structures
-                                    aliceVision_common
-                                    ${Boost_LIBRARIES}
-                                    Geogram::geogram)
-install(TARGETS aliceVision_meshResampling DESTINATION bin/)
+# Mesh Resampling
 
+add_executable(aliceVision_meshResampling main_meshResampling.cpp)
 
-## Texturing
-set(SOURCES_files_texturing main_texturing.cpp)
-source_group("aliceVision_texturing" FILES main_texturing.cpp)
+target_link_libraries(aliceVision_meshResampling
+  PUBLIC aliceVision_common
+         Geogram::geogram
+         ${Boost_LIBRARIES}
+)
 
-add_executable(aliceVision_texturing ${SOURCES_files_texturing})
-target_link_libraries(aliceVision_texturing PUBLIC mv_structures
-                                    aliceVision_common
-                                    mv_cudaInterfaces
-                                    mv_mesh mv_largeScale
-                                    mv_filter mv_delaunaycut
-                                    mv_cudaInterfaces mv_prematching
-                                    eig33
-                                    ${Boost_LIBRARIES} ${ZLIB_LIBRARIES}
-                                    ${GMP_LIBRARIES} ${MPFR_LIBRARIES})
-install(TARGETS aliceVision_texturing DESTINATION bin/)
+set_property(TARGET aliceVision_meshResampling
+  PROPERTY FOLDER AliceVision/Software/Pipeline
+)
+
+install(TARGETS aliceVision_meshResampling
+  DESTINATION bin/
+)
+
+# Texturing
+
+add_executable(aliceVision_texturing main_texturing.cpp)
+
+target_link_libraries(aliceVision_texturing
+  PUBLIC aliceVision_structures
+         aliceVision_common
+         aliceVision_mesh
+         ${Boost_LIBRARIES}
+)
+
+set_property(TARGET aliceVision_texturing
+  PROPERTY FOLDER AliceVision/Software/Pipeline
+)
+
+install(TARGETS aliceVision_texturing
+  DESTINATION bin/
+)

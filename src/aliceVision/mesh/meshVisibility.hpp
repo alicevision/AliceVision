@@ -5,13 +5,14 @@
 
 #pragma once
 
-#include "mv_mesh.hpp"
-#include <aliceVision/structures/mv_staticVector.hpp>
+#include <aliceVision/mesh/Mesh.hpp>
+#include <aliceVision/structures/StaticVector.hpp>
 
+namespace aliceVision {
 namespace mesh {
 
-using PointVisibility = staticVector<int>;
-using PointsVisibility = staticVector<PointVisibility*>;
+using PointVisibility = StaticVector<int>;
+using PointsVisibility = StaticVector<PointVisibility*>;
 
 /**
  * @brief Retrieve the nearest neighbor vertex in @p refMesh for each vertex in @p mesh.
@@ -20,7 +21,7 @@ using PointsVisibility = staticVector<PointVisibility*>;
  * @param[out] out_nearestVertex index of the nearest vertex in @p refMesh for each vertex in @p mesh
  * @return the nearest vertex in @p refMesh for each vertex in @p mesh
  */
-int getNearestVertices(const mv_mesh& refMesh, const mv_mesh& mesh, staticVector<int>& out_nearestVertex);
+int getNearestVertices(const Mesh& refMesh, const Mesh& mesh, StaticVector<int>& out_nearestVertex);
 
 /**
  * @brief Transfer the visibility per vertex from one mesh to another.
@@ -33,7 +34,8 @@ int getNearestVertices(const mv_mesh& refMesh, const mv_mesh& mesh, staticVector
  * @param[out] out_ptsVisibilities visibility array per vertex of @p mesh
  */
 void remapMeshVisibilities(
-    const mv_mesh& refMesh, const PointsVisibility& refPtsVisibilities,
-    const mv_mesh& mesh, PointsVisibility& out_ptsVisibilities);
+    const Mesh& refMesh, const PointsVisibility& refPtsVisibilities,
+    const Mesh& mesh, PointsVisibility& out_ptsVisibilities);
 
-}
+} // namespace mesh
+} // namespace aliceVision
