@@ -23,15 +23,13 @@ bool Datasheet::operator==(const Datasheet& ds) const
   boost::split(vec_brand, ds._brand, boost::is_any_of(" "));
 
   std::string brandlower = _brand;
-
-  std::transform(brandlower.begin(), brandlower.end(),
-    brandlower.begin(), ::tolower);
+  boost::algorithm::to_lower(brandlower);
 
   for(const auto& brand : vec_brand)
   {
     std::string brandlower2 = brand;
-    std::transform(brandlower2.begin(), brandlower2.end(),
-      brandlower2.begin(), ::tolower);
+    boost::algorithm::to_lower(brandlower2);
+
     //ALICEVISION_LOG_DEBUG(brandlower << "\t" << brandlower2);
     if (brandlower == brandlower2)
     {
@@ -55,23 +53,14 @@ bool Datasheet::operator==(const Datasheet& ds) const
         if ( hasDigit )
         {
           std::string modellower1 = model1;
-          for(char &ch : modellower1)
-          {
-            // the behavior of std::tolower is undefined if the argument's value is neither
-            // representable as unsigned char nor equal to EOF. To use these functions safely
-            // with plain chars (or signed chars), the argument should first be converted
-            // to unsigned char (http://en.cppreference.com/w/cpp/string/byte/tolower)
-            ch = static_cast<char>(std::tolower(static_cast<unsigned char>(ch)));
-          }
+          boost::algorithm::to_lower(modellower1);
 
           bool isFound = false;
           for(const auto& model2 : vec_model2)
           {
             std::string modellower2 = model2;
-            for (char &ch : modellower2)
-            {
-              ch = static_cast<char>(std::tolower(static_cast<unsigned char>(ch)));
-            }
+            boost::algorithm::to_lower(modellower2);
+
             if (modellower2 == modellower1)
             {
               isFound = true;
