@@ -13,9 +13,6 @@
 #include <aliceVision/structures/Pixel.hpp>
 #include <aliceVision/structures/SeedPoint.hpp>
 
-#ifdef _WIN32
-#include "Psapi.h"
-#endif
 
 namespace aliceVision {
 namespace common {
