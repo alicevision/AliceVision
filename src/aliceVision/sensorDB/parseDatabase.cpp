@@ -46,7 +46,7 @@ bool parseDatabase(const std::string& databaseFilePath, std::vector<Datasheet>& 
           const std::string brand = values[0];
           const std::string model = values[1];
           const double sensorSize = atof(values[2].c_str());
-          databaseStructure.push_back(Datasheet(brand, model, sensorSize));
+          databaseStructure.emplace_back(brand, model, sensorSize);
         }
       }
     }
