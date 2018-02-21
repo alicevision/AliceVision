@@ -35,7 +35,7 @@ bool Datasheet::operator==(const Datasheet& ds) const
     std::transform(brandlower2.begin(), brandlower2.end(),
       brandlower2.begin(), ::tolower);
     //ALICEVISION_LOG_DEBUG(brandlower << "\t" << brandlower2);
-    if ( brandlower.compare( brandlower2 ) == 0 )
+    if (brandlower == brandlower2)
     {
       std::vector<std::string> vec_model1;
       boost::split(vec_model1, ds._model, boost::is_any_of(" "));
@@ -72,7 +72,7 @@ bool Datasheet::operator==(const Datasheet& ds) const
             {
               modellower2[index] = tolower(modellower2[index]);
             }
-            if ( modellower2.compare( modellower1 ) == 0 )
+            if (modellower2 == modellower1)
             {
               isFind = true;
             }
