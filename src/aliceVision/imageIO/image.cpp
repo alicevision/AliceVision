@@ -80,6 +80,19 @@ void readImageSpec(const std::string& path,
   in->close();
 }
 
+void readImageMetadata(const std::string& path, oiio::ParamValueList& metadata)
+{
+  std::cout << "[IO] Read Image Metadata : " << path << std::endl;
+  std::unique_ptr<oiio::ImageInput> in(oiio::ImageInput::open(path));
+
+  if(!in)
+    throw std::runtime_error("Can't find/open image file '" + path + "'.");
+
+  metadata = in->spec().extra_attribs;
+
+  in->close();
+}
+
 template<typename T>
 void readImage(const std::string& path,
                oiio::TypeDesc typeDesc,

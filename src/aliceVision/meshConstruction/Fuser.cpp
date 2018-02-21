@@ -41,21 +41,16 @@ unsigned long Fuser::computeNumberOfAllPoints(int scale)
 #pragma omp parallel for reduction(+:npts)
     for(int rc = 0; rc < mp->ncams; rc++)
     {
-        unsigned long rc_npts = 0;
-        int width, height;
+      const std::string filename = common::mv_getFileName(mp->mip, rc, common::EFileType::depthMap, scale);
+      oiio::ParamValueList metadata;
+      imageIO::readImageMetadata(filename, metadata);
+      const int nbDepthValues = metadata.get_int("AliceVision:nbDepthValues", -1);
 
-        StaticVector<float> depthMap;
+      if(nbDepthValues < 0)
+        throw std::runtime_error("Can't find or invalid 'nbDepthValues' metadata in '" + filename + "'");
 
-        imageIO::readImage(mv_getFileName(mp->mip, rc, common::EFileType::depthMap, scale), width, height, depthMap.getDataWritable());
-        // no need to transpose for this operation
-
-        for(int i = 0; i < sizeOfStaticVector<float>(&depthMap); i++)
-        {
-            rc_npts += (unsigned long)(depthMap[i] > 0.0f);
-        }
-
-        npts += rc_npts;
-    } // for i
+      npts += nbDepthValues;
+    }
 
     return npts;
 }
@@ -273,6 +268,8 @@ bool Fuser::filterDepthMapsRC(int rc, int minNumOfModals, int minNumOfModalsWSP2
         imageIO::transposeImage(width, height, numOfModalsMap);
     }
 
+    int nbDepthValues = 0;
+
     for(int i = 0; i < w * h; i++)
     {
         // if the reference point is consistent in three target cameras and is denoted as weakly supported point
@@ -296,12 +293,16 @@ bool Fuser::filterDepthMapsRC(int rc, int minNumOfModals, int minNumOfModalsWSP2
             depthMap[i] = -1.0f;
             simMap[i] = 1.0f;
         }
+
+        if(depthMap[i] > 0.0f)
+          ++nbDepthValues;
     }
 
     imageIO::transposeImage(h, w, depthMap);
     imageIO::transposeImage(h, w, simMap);
 
     oiio::ParamValueList metadata;
+    metadata.emplace_back(oiio::ParamValue("AliceVision:nbDepthValues", oiio::TypeDesc::INT32, 1, &nbDepthValues));
     metadata.emplace_back(oiio::ParamValue("AliceVision:CArr", oiio::TypeDesc(oiio::TypeDesc::DOUBLE, oiio::TypeDesc::VEC3), 1, mp->CArr[rc].m));
     metadata.emplace_back(oiio::ParamValue("AliceVision:iCamArr", oiio::TypeDesc(oiio::TypeDesc::DOUBLE, oiio::TypeDesc::MATRIX33), 1, mp->iCamArr[rc].m));
 

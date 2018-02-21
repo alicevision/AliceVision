@@ -74,6 +74,13 @@ std::istream& operator>>(std::istream& in, EImageQuality& imageQuality);
 void readImageSpec(const std::string& path, int& width, int& height, int& nchannels);
 
 /**
+ * @brief read image metadata from a given path
+ * @param[in] path The given path to the image
+ * @param[out] metadata The image metadata
+ */
+void readImageMetadata(const std::string& path, oiio::ParamValueList& metadata);
+
+/**
  * @brief read an image with a given path and buffer
  * @param[in] path The given path to the image
  * @param[out] width The output image width
