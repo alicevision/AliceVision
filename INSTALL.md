@@ -27,7 +27,7 @@ git submodule update
 ```
 
 As AliceVision use some C++11 features you must have a c++11 ready compiler:
-- Visual studio >= 2013
+- Visual studio >= 2015
 - GCC >= 4.7
 - Clang >= 3.3
 
@@ -36,7 +36,7 @@ Dependencies
 
 AliceVision depends on:
 
-* Boost >= 1.53
+* Boost >= 1.60.0
 * Eigen 3.2.4 
 * Ceres 1.10.0
 * Flann 1.8.4
@@ -45,7 +45,7 @@ AliceVision depends on:
 * Open Solver Interface (Osi) 0.106.10
 * Lemon 1.3
 * OpenEXR 2.2.0
-* OpenImageIO >= 1.7
+* OpenImageIO >= 1.8.7
 
 Other optional libraries can enable specific features (check "CMake Options" for enabling them):
 
