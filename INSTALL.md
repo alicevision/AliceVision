@@ -7,7 +7,7 @@ Build instructions
 ------------------
 
 Required tools:
-* Cmake 
+* Cmake >= 3.3
 * Git
 * c/c++ compiler (gcc or visual studio or clang)
 
@@ -26,9 +26,37 @@ git submodule init
 git submodule update
 ```
 
-As aliceVision use some C++11 features you must have a c++11 ready compiler:
+As AliceVision use some C++11 features you must have a c++11 ready compiler:
 - Visual studio >= 2013
 - GCC >= 4.7
+- Clang >= 3.3
+
+Dependencies
+------------
+
+AliceVision depends on:
+
+* Boost >= 1.53
+* Eigen 3.2.4 
+* Ceres 1.10.0
+* Flann 1.8.4
+* CoinUtils 2.9.3
+* Coin-or linear programming (Clp)
+* Open Solver Interface (Osi) 0.106.10
+* Lemon 1.3
+* OpenEXR 2.2.0
+* OpenImageIO >= 1.7
+
+Other optional libraries can enable specific features (check "CMake Options" for enabling them):
+
+* OpenMP (enable multi-threading)
+* Mosek (linear programming)
+* OpenCV >= 3.0 (feature extraction, calibration module)
+* Alembic (data I/O)
+* CCTag (feature extraction/matching and localization)
+* PopSift (feature extraction/matching)
+* Cuda >=7.0 (feature extraction)
+* OpenGV (rig calibration and localization)
 
 
 Building using external dependencies
@@ -45,15 +73,21 @@ AliceVision source tree contains some of the mandatory dependencies that are nee
 * For Eigen library, `EIGEN_INCLUDE_DIR_HINTS` can be passed pointing to the include directory, e.g.
   `-DEIGEN_INCLUDE_DIR_HINTS:PATH=/usr/local/include/eigen3`
 
+* For OpenEXR library, `OPENEXR_HOME` can be passed pointing to the install directory, e.g.
+  `-DOPENEXR_HOME:PATH=/path/to/openexr/install`
+
+* For OpenImageIO library, library and include dir paths can be passed, e.g.
+  `-DOPENIMAGEIO_LIBRARY_DIR_HINTS:PATH=/path/to/oiio/install/lib/`
+and `-DOPENIMAGEIO_INCLUDE_DIR:PATH=/path/to/oiio/install/include/`
+
+
+
 At the end of the cmake process, a report shows for each library which version (internal/external) will be used in the building process, e.g.:
 
 ```
 -- EIGEN: 3.2.4 (external)
 -- CERES: 1.10.0 (external)
 -- FLANN: 1.8.4 (external)
--- LIBTIFF: 4.0.4 (external)
--- LIBPNG: 1.6.18 (external)
--- LIBJPEG (external)
 -- CLP: 1.15.11 (internal)
 -- COINUTILS: 2.9.3 (internal)
 -- OSI: 0.106.10 (internal)
@@ -71,12 +105,12 @@ CMake Options
 * `ALICEVISION_USE_OPENMP` (default `ON`)
   Use OpenMP parallelization (huge impact on performances)
 
-* `ALICEVISION_USE_CCTAG` (default `ON`)
+* `ALICEVISION_USE_CCTAG` (default: `AUTO`)
   Build with CCTag markers support.
   `-DCCTag_DIR:PATH=/path/to/cctag/install/lib/cmake/CCTag` (where CCTagConfig.cmake can be found)
 
 * `ALICEVISION_USE_OPENGV` (default `AUTO`)
-  Build with openGV for multi-cameras localization.
+  Enable use of OpenGV algorithms. Build with openGV for multi-cameras localization.
   `-DOPENGV_DIR:PATH=/path/to/opengv/install/` (where "include" and "lib" folders can be found)
   We recommend: `git clone https://github.com/alicevision/opengv.git --branch=cmake_fix_install`
 
@@ -85,20 +119,12 @@ CMake Options
   `-DAlembic_DIR:PATH=/path/to/alembic/install/lib/cmake/Alembic/` (where AlembicConfig.cmake can be found)
   With old Alembic versions (<1.6), you need to set many variables: `ALEMBIC_ROOT`, `ALEMBIC_HDF5_ROOT`, `ALEMBIC_ILMBASE_ROOT`, `ALEMBIC_OPENEXR_ROOT`.
   
-* `ALICEVISION_USE_OIIO` (default: `AUTO`)
-  Build code depending on OpenImageIO
-  
 * `ALICEVISION_USE_OPENMP` (default: `AUTO`)
   Enable OpenMP parallelization
 
-* `ALICEVISION_USE_CCTAG` (default: `AUTO`)
-  Enable CCTAG markers
-  
 * `ALICEVISION_USE_POPSIFT` (default: `AUTO`)
-  Enable GPU SIFT implementation
-  
-* `ALICEVISION_USE_OPENGV` (default: `AUTO`)
-  Enable use of OpenGV algorithms
+  Enable GPU SIFT implementation.
+  `-DPopSift_DIR:PATH=/path/to/popsift/install/lib/cmake/PopSift` (where PopSiftConfig.cmake can be found)
   
 * `ALICEVISION_USE_OPENCV` (default: `OFF`)
   Build with openCV
