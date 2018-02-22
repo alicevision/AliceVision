@@ -52,46 +52,6 @@ std::string myToString(std::size_t i, std::size_t zeroPadding)
   return ss.str();
 }
 
-/**
- * @brief It checks if the value for the reprojection error or the matching error
- * is compatible with the given robust estimator. The value cannot be 0 for 
- * LORansac, for ACRansac a value of 0 means to use infinity (ie estimate the 
- * threshold during ransac process)
- * @param e The estimator to be checked.
- * @param value The value for the reprojection or matching error.
- * @return true if the value is compatible
- */
-bool checkRobustEstimator(robustEstimation::ERobustEstimator e, double &value)
-{
-  if(e != robustEstimation::ERobustEstimator::LORANSAC &&
-     e != robustEstimation::ERobustEstimator::ACRANSAC)
-  {
-    ALICEVISION_CERR("Only " << robustEstimation::ERobustEstimator::ACRANSAC
-            << " and " << robustEstimation::ERobustEstimator::LORANSAC
-            << " are supported.");
-    return false;
-  }
-  if(value == 0 && 
-     e == robustEstimation::ERobustEstimator::ACRANSAC)
-  {
-    // for acransac set it to infinity
-    value = std::numeric_limits<double>::infinity();
-  }
-  // for loransac we need thresholds > 0
-  if(e == robustEstimation::ERobustEstimator::LORANSAC)
-  {
-    const double minThreshold = 1e-6;
-    if(value <= minThreshold)
-    {
-      ALICEVISION_CERR("Error: errorMax and matchingError cannot be 0 with " 
-              << robustEstimation::ERobustEstimator::LORANSAC
-              << " estimator.");
-      return false;     
-    }
-  }
-
-  return true;
-}
 
 int main(int argc, char** argv)
 {

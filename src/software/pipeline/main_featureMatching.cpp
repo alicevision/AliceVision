@@ -100,6 +100,7 @@ int main(int argc, char **argv)
   int rangeSize = 0;
   std::string nearestMatchingMethod = "ANN_L2";
   std::string geometricEstimatorName = robustEstimation::ERobustEstimator_enumToString(robustEstimation::ERobustEstimator::ACRANSAC);
+  double geometricErrorMax = 0.0; //< the maximum reprojection error allowed for image matching with geometric validation
   bool savePutativeMatches = false;
   bool guidedMatching = false;
   int maxIteration = 2048;
@@ -149,7 +150,10 @@ int main(int argc, char **argv)
     ("geometricEstimator", po::value<std::string>(&geometricEstimatorName)->default_value(geometricEstimatorName),
       "Geometric estimator:\n"
       "* acransac: A-Contrario Ransac\n"
-      "* loransac: LO-Ransac (only available for fundamental matrix)")
+      "* loransac: LO-Ransac (only available for fundamental matrix). Need to set '--geometricError'")
+    ("geometricError", po::value<double>(&geometricErrorMax)->default_value(geometricErrorMax), 
+          "Maximum matching error (in pixels) allowed for image matching with geometric verification. "
+          "If set to 0 it lets the ACRansac select an optimal value.")
     ("savePutativeMatches", po::value<bool>(&savePutativeMatches)->default_value(savePutativeMatches),
       "Save putative matches.")
     ("guidedMatching", po::value<bool>(&guidedMatching)->default_value(guidedMatching),
@@ -205,6 +209,10 @@ int main(int argc, char **argv)
     return EXIT_FAILURE;
   }
 
+  robustEstimation::ERobustEstimator geometricEstimator = robustEstimation::ERobustEstimator_stringToEnum(geometricEstimatorName);
+  if(!checkRobustEstimator(geometricEstimator, geometricErrorMax))
+    return EXIT_FAILURE;
+
   ALICEVISION_COUT("Program called with the following parameters:");
   ALICEVISION_COUT(vm);
 
@@ -253,8 +261,6 @@ int main(int argc, char **argv)
       ALICEVISION_LOG_ERROR("Unknown geometric model: " + geometricMode);
       return EXIT_FAILURE;
   }
-
-  robustEstimation::ERobustEstimator geometricEstimator = robustEstimation::ERobustEstimator_stringToEnum(geometricEstimatorName);
 
   // Feature matching
   // a. Load SfMData Views & intrinsics data
@@ -413,7 +419,7 @@ int main(int argc, char **argv)
     break;
     case FUNDAMENTAL_MATRIX:
     {
-      geometricFilter.Robust_model_estimation(GeometricFilterMatrix_F_AC(std::numeric_limits<double>::infinity(), maxIteration, geometricEstimator),
+      geometricFilter.Robust_model_estimation(GeometricFilterMatrix_F_AC(geometricErrorMax, maxIteration, geometricEstimator),
         mapPutativesMatches, guidedMatching);
       map_GeometricMatches = geometricFilter.Get_geometric_matches();
     }
