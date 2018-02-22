@@ -14,7 +14,7 @@
 #include <iostream>
 
 namespace aliceVision {
-namespace meshConstruction {
+namespace fuseCut {
 
 OctreeTracks::Node::Node(NodeType type)
 {
@@ -822,5 +822,5 @@ StaticVector<int>* OctreeTracks::getTracksCams(StaticVector<OctreeTracks::trackS
     return cams;
 }
 
-} // namespace meshConstruction
+} // namespace fuseCut
 } // namespace aliceVision

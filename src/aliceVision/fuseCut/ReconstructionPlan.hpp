@@ -8,12 +8,12 @@
 #include <aliceVision/structures/Point3d.hpp>
 #include <aliceVision/structures/StaticVector.hpp>
 #include <aliceVision/structures/Voxel.hpp>
-#include <aliceVision/meshConstruction/LargeScale.hpp>
-#include <aliceVision/meshConstruction/VoxelsGrid.hpp>
+#include <aliceVision/fuseCut/LargeScale.hpp>
+#include <aliceVision/fuseCut/VoxelsGrid.hpp>
 #include <aliceVision/mesh/Mesh.hpp>
 
 namespace aliceVision {
-namespace meshConstruction {
+namespace fuseCut {
 
 class ReconstructionPlan : public VoxelsGrid
 {
@@ -41,5 +41,5 @@ mesh::Mesh* joinMeshes(const std::string& voxelsArrayFileName, LargeScale* ls);
 
 StaticVector<StaticVector<int>*>* loadLargeScalePtsCams(const std::vector<std::string>& recsDirs);
 
-} // namespace meshConstruction
+} // namespace fuseCut
 } // namespace aliceVision

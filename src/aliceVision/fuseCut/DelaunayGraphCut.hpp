@@ -12,8 +12,8 @@
 #include <aliceVision/common/common.hpp>
 #include <aliceVision/common/PreMatchCams.hpp>
 #include <aliceVision/mesh/Mesh.hpp>
-#include <aliceVision/meshConstruction/delaunayGraphCutTypes.hpp>
-#include <aliceVision/meshConstruction/VoxelsGrid.hpp>
+#include <aliceVision/fuseCut/delaunayGraphCutTypes.hpp>
+#include <aliceVision/fuseCut/VoxelsGrid.hpp>
 
 #include <geogram/delaunay/delaunay.h>
 #include <geogram/delaunay/delaunay_3d.h>
@@ -24,7 +24,7 @@
 #include <set>
 
 namespace aliceVision {
-namespace meshConstruction {
+namespace fuseCut {
 
 class DelaunayGraphCut
 {
@@ -370,5 +370,5 @@ inline DelaunayGraphCut::Facet DelaunayGraphCut::getFacetInFrontVertexOnTheRayTo
     return getFacetInFrontVertexOnTheRayToThePoint3d(vertexIndex, mp->CArr[cam]);
 }
 
-} // namespace meshConstruction
+} // namespace fuseCut
 } // namespace aliceVision

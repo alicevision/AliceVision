@@ -16,7 +16,7 @@
 #include <iostream>
 
 namespace aliceVision {
-namespace meshConstruction {
+namespace fuseCut {
 
 /**
  * @brief Maxflow computation based on a compressed sparse row graph reprensentation.
@@ -198,5 +198,5 @@ protected:
     const NodeType _T;  //< fullness
 };
 
-} // namespace meshConstruction
+} // namespace fuseCut
 } // namespace aliceVision

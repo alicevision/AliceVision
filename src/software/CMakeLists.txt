@@ -46,7 +46,7 @@ add_executable(aliceVision_depthMapFiltering main_depthMapFiltering.cpp)
 target_link_libraries(aliceVision_depthMapFiltering
   PUBLIC aliceVision_structures
          aliceVision_common
-         aliceVision_meshConstruction
+         aliceVision_fuseCut
          ${Boost_LIBRARIES}
 )
 
@@ -66,7 +66,7 @@ target_link_libraries(aliceVision_meshing
   PUBLIC aliceVision_structures
          aliceVision_common
          aliceVision_mesh
-         aliceVision_meshConstruction
+         aliceVision_fuseCut
          ${Boost_LIBRARIES}
 )
 

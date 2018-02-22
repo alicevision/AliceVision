@@ -7,13 +7,13 @@
 #include <aliceVision/structures/Pixel.hpp>
 #include <aliceVision/common/common.hpp>
 #include <aliceVision/common/fileIO.hpp>
-#include <aliceVision/meshConstruction/delaunayGraphCutTypes.hpp>
+#include <aliceVision/fuseCut/delaunayGraphCutTypes.hpp>
 #include <aliceVision/omp.hpp>
 
 #include <boost/filesystem.hpp>
 
 namespace aliceVision {
-namespace meshConstruction {
+namespace fuseCut {
 
 namespace bfs = boost::filesystem;
 
@@ -679,5 +679,5 @@ void VoxelsGrid::getHexah(Point3d* hexahOut, const Voxel& LUi, const Voxel& RDi)
     hexahOut[7] = O + vvz + vvy;
 }
 
-} // namespace meshConstruction
+} // namespace fuseCut
 } // namespace aliceVision
