@@ -25,7 +25,7 @@ struct DocMatch
   DocId id;
   float score;
 
-  DocMatch() {}
+  DocMatch() = default;
   DocMatch(DocId _id, float _score)
     : id(_id)
     , score(_score)
@@ -63,7 +63,7 @@ public:
    * If computing weights for a new vocabulary, \c num_words should be the size of the vocabulary.
    * If calling loadWeights(), it can be left zero.
    */
-  Database(uint32_t num_words = 0);
+  explicit Database(uint32_t num_words = 0);
 
   /**
    * @brief Insert a new document.
@@ -138,7 +138,7 @@ private:
     DocId id;
     uint32_t count;
 
-    WordFrequency() {}
+    WordFrequency() = default;
     WordFrequency(DocId _id, uint32_t _count)
       : id(_id)
       , count(_count)
