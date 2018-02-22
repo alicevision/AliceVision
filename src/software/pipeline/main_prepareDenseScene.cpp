@@ -116,7 +116,7 @@ void retrieveSeedsPerView(
         const auto& obsBCamId_it = std::find(viewIds.begin(), viewIds.end(), obsB.first);
         if(obsBCamId_it == viewIds.end())
           continue; // this view cannot be exported to mvs, so we skip the observation
-        const unsigned char indexB = std::distance(viewIds.begin(), obsBCamId_it);
+        const unsigned short indexB = std::distance(viewIds.begin(), obsBCamId_it);
         const View& viewB = *sfm_data.GetViews().at(obsB.first).get();
         const geometry::Pose3& poseB = sfm_data.GetPoses().at(viewB.getPoseId());
         const Pinhole * intrinsicsB = dynamic_cast<const Pinhole*>(sfm_data.GetIntrinsics().at(viewB.getIntrinsicId()).get());
