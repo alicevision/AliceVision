@@ -39,8 +39,8 @@ typedef stl::flat_map<IndexT, Observation> Observations;
  */
 struct Landmark
 {
-  Landmark() {}
-  Landmark(feature::EImageDescriberType descType): descType(descType) {}
+  Landmark() = default;
+  explicit Landmark(feature::EImageDescriberType descType): descType(descType) {}
   Landmark(const Vec3& pos3d,
            feature::EImageDescriberType descType,
            const Observations& observations = Observations(),
