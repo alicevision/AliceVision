@@ -319,7 +319,7 @@ void refineDepthMaps(int CUDADeviceNo, common::MultiViewParams* mp, common::PreM
 
     for(const int rc : cams)
     {
-        if(!common::FileExists(sp->getREFINE_opt_simMapFileName(rc, 1, 1)))
+        if(!common::FileExists(sp->getREFINE_opt_simMapFileName(mp->mip->getViewId(rc), 1, 1)))
         {
             RefineRc* rrc = new RefineRc(rc, scale, step, sp);
             rrc->refinercCUDA();

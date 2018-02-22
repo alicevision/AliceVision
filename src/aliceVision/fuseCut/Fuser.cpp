@@ -20,7 +20,7 @@
 #include <iostream>
 
 namespace aliceVision {
-namespace meshConstruction {
+namespace fuseCut {
 
 namespace bfs = boost::filesystem;
 
@@ -743,5 +743,5 @@ void deleteTempPtsSimsFiles(common::MultiViewParams* mp, std::string depthMapsPt
     common::DeleteDirectory(depthMapsPtsSimsTmpDir);
 }
 
-} // namespace meshConstruction
+} // namespace fuseCut
 } // namespace aliceVision

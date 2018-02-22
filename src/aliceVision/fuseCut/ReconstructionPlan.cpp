@@ -8,13 +8,13 @@
 #include <aliceVision/common/common.hpp>
 #include <aliceVision/common/fileIO.hpp>
 #include <aliceVision/mesh/meshPostProcessing.hpp>
-#include <aliceVision/meshConstruction/VoxelsGrid.hpp>
-#include <aliceVision/meshConstruction/DelaunayGraphCut.hpp>
+#include <aliceVision/fuseCut/VoxelsGrid.hpp>
+#include <aliceVision/fuseCut/DelaunayGraphCut.hpp>
 
 #include <boost/filesystem.hpp>
 
 namespace aliceVision {
-namespace meshConstruction {
+namespace fuseCut {
 
 namespace bfs = boost::filesystem;
 
@@ -514,5 +514,5 @@ mesh::Mesh* joinMeshes(const std::string& voxelsArrayFileName, LargeScale* ls)
     return me;
 }
 
-} // namespace meshConstruction
+} // namespace fuseCut
 } // namespace aliceVision

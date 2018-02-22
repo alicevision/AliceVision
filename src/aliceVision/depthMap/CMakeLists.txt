@@ -93,7 +93,7 @@ target_link_libraries(aliceVision_depthMap
 )
 
 set_property(TARGET aliceVision_depthMap
-  PROPERTY FOLDER AliceVision
+  PROPERTY FOLDER AliceVision/AliceVision
 )
 
 install(TARGETS aliceVision_depthMap

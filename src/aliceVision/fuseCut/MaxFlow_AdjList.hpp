@@ -14,7 +14,7 @@
 #include <iostream>
 
 namespace aliceVision {
-namespace meshConstruction {
+namespace fuseCut {
 
 /**
  * @brief Maxflow computation based on a standard Adjacency List graph reprensentation.
@@ -151,5 +151,5 @@ protected:
     const NodeType _T;  //< fullness
 };
 
-} // namespace meshConstruction
+} // namespace fuseCut
 } // namespace aliceVision

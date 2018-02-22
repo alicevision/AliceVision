@@ -12,7 +12,7 @@
 #include <aliceVision/common/PreMatchCams.hpp>
 
 namespace aliceVision {
-namespace meshConstruction {
+namespace fuseCut {
 
 class VoxelsGrid
 {
@@ -57,5 +57,5 @@ public:
     void getHexah(Point3d* hexahOut, const Voxel& LUi, const Voxel& RDi);
 };
 
-} // namespace meshConstruction
+} // namespace fuseCut
 } // namespace aliceVision

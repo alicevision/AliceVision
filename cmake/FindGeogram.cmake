@@ -108,37 +108,3 @@ endif ()
 
 # Hide variables from the default CMake-Gui options
 mark_as_advanced (GEOGRAM_LIBRARY GEOGRAM_GFX_LIBRARY GEOGRAM_INCLUDE_DIR)
-
-# Some specific settings for Windows
-
-if(WIN32)
-
-  # Default mode for Windows uses static libraries. Use this variable to
-  # link with geogram compiled as DLLs.
-  set(VORPALINE_BUILD_DYNAMIC FALSE CACHE BOOL "Installed Geogram uses DLLs")
-
-  # remove warning for multiply defined symbols (caused by multiple
-  # instanciations of STL templates)
-  add_definitions(/wd4251)
-
-  # remove all unused stuff from windows.h
-  add_definitions(-DWIN32_LEAN_AND_MEAN)
-  add_definitions(-DVC_EXTRALEAN)
-
-  # do not define a min() and a max() macro, breaks
-  # std::min() and std::max() !!
-  add_definitions(-DNOMINMAX )
-
-  # we want M_PI etc...
-  add_definitions(-D_USE_MATH_DEFINES)
-
-  if(NOT VORPALINE_BUILD_DYNAMIC) 
-      # If we use static library, we link with the static C++ runtime.
-      foreach(config ${CMAKE_CONFIGURATION_TYPES})
-         string(TOUPPER ${config} config)
-         string(REPLACE /MD /MT CMAKE_C_FLAGS_${config} "${CMAKE_C_FLAGS_${config}}")
-         string(REPLACE /MD /MT CMAKE_CXX_FLAGS_${config} "${CMAKE_CXX_FLAGS_${config}}")
-      endforeach()
-  endif()
-
-endif()    

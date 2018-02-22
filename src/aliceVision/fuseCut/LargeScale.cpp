@@ -6,12 +6,12 @@
 #include "LargeScale.hpp"
 #include <aliceVision/common/common.hpp>
 #include <aliceVision/common/fileIO.hpp>
-#include <aliceVision/meshConstruction/DelaunayGraphCut.hpp>
+#include <aliceVision/fuseCut/DelaunayGraphCut.hpp>
 
 #include <boost/filesystem.hpp>
 
 namespace aliceVision {
-namespace meshConstruction {
+namespace fuseCut {
 
 namespace bfs = boost::filesystem;
 
@@ -212,5 +212,5 @@ Point3d LargeScale::getSpaceSteps()
     return sv;
 }
 
-} // namespace meshConstruction
+} // namespace fuseCut
 } // namespace aliceVision

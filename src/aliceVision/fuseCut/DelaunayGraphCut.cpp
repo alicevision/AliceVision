@@ -4,8 +4,8 @@
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
 #include "DelaunayGraphCut.hpp"
-#include <aliceVision/meshConstruction/MaxFlow_CSR.hpp>
-// #include <aliceVision/meshConstruction/MaxFlow_AdjList.hpp>
+#include <aliceVision/fuseCut/MaxFlow_CSR.hpp>
+// #include <aliceVision/fuseCut/MaxFlow_AdjList.hpp>
 #include <aliceVision/structures/geometry.hpp>
 #include <aliceVision/structures/jetColorMap.hpp>
 #include <aliceVision/structures/Pixel.hpp>
@@ -27,7 +27,7 @@
 #endif
 
 namespace aliceVision {
-namespace meshConstruction {
+namespace fuseCut {
 
 namespace bfs = boost::filesystem;
 
@@ -2459,5 +2459,5 @@ void DelaunayGraphCut::leaveLargestFullSegmentOnly()
         printf("Largest full segment only. Done.\n");
 }
 
-} // namespace meshConstruction
+} // namespace fuseCut
 } // namespace aliceVision

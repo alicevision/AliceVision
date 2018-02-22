@@ -1,5 +1,5 @@
 # Headers
-set(meshing_files_headers
+set(fuseCut_files_headers
   DelaunayGraphCut.hpp
   delaunayGraphCutTypes.hpp
   Fuser.hpp
@@ -12,7 +12,7 @@ set(meshing_files_headers
 )
 
 # Sources
-set(meshing_files_sources
+set(fuseCut_files_sources
   DelaunayGraphCut.cpp
   Fuser.cpp
   LargeScale.cpp
@@ -23,18 +23,18 @@ set(meshing_files_sources
   VoxelsGrid.cpp
 )
 
-add_library(aliceVision_meshConstruction
-  ${meshing_files_headers}
-  ${meshing_files_sources}
+add_library(aliceVision_fuseCut
+  ${fuseCut_files_headers}
+  ${fuseCut_files_sources}
 )
 
-target_include_directories(aliceVision_meshConstruction
+target_include_directories(aliceVision_fuseCut
   PUBLIC $<BUILD_INTERFACE:${ALICEVISION_INCLUDE_DIR}>
          $<BUILD_INTERFACE:${generatedDir}>
          $<INSTALL_INTERFACE:include>
 )
 
-target_link_libraries(aliceVision_meshConstruction
+target_link_libraries(aliceVision_fuseCut
   PUBLIC aliceVision_structures
          aliceVision_common
          aliceVision_imageIO
@@ -43,11 +43,11 @@ target_link_libraries(aliceVision_meshConstruction
          ${Boost_LIBRARIES}
 )
 
-set_property(TARGET aliceVision_meshConstruction
-  PROPERTY FOLDER AliceVision
+set_property(TARGET aliceVision_fuseCut
+  PROPERTY FOLDER AliceVision/AliceVision
 )
 
-install(TARGETS aliceVision_meshConstruction
+install(TARGETS aliceVision_fuseCut
   DESTINATION lib
   EXPORT aliceVision-targets
 )
