@@ -3,22 +3,19 @@
 // v. 2.0. If a copy of the MPL was not distributed with this file,
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
-#include <aliceVision/mesh/meshVisibility.hpp>
-#include <aliceVision/delaunaycut/mv_delaunay_GC.hpp>
-#include <aliceVision/delaunaycut/mv_delaunay_meshSmooth.hpp>
-#include <aliceVision/largeScale/reconstructionPlan.hpp>
-#include <aliceVision/planeSweeping/ps_refine_rc.hpp>
-#include <aliceVision/CUDAInterfaces/refine.hpp>
-#include <aliceVision/common/fileIO.hpp>
 #include <aliceVision/structures/image.hpp>
+#include <aliceVision/common/common.hpp>
+#include <aliceVision/common/MultiViewParams.hpp>
+#include <aliceVision/mesh/Mesh.hpp>
+#include <aliceVision/mesh/Texturing.hpp>
+#include <aliceVision/mesh/meshVisibility.hpp>
 
 #include <boost/program_options.hpp>
 #include <boost/filesystem.hpp>
 
-
+using namespace aliceVision;
 namespace bfs = boost::filesystem;
 namespace po = boost::program_options;
-
 
 bfs::path absolutePathNoExt(const bfs::path& p)
 {
@@ -38,7 +35,7 @@ int main(int argc, char* argv[])
     std::string outputFolder;
     std::string outTextureFileTypeName = EImageFileType_enumToString(EImageFileType::PNG);
     bool flipNormals = false;
-    TexturingParams texParams;
+    mesh::TexturingParams texParams;
 
     po::options_description allParams("AliceVision texturing");
 
@@ -102,13 +99,13 @@ int main(int argc, char* argv[])
     const EImageFileType outputTextureFileType = EImageFileType_stringToEnum(outTextureFileTypeName);
 
     // .ini parsing
-    multiviewInputParams mip(iniFilepath, "", "");
+    common::MultiViewInputParams mip(iniFilepath, "", "");
     const double simThr = mip._ini.get<double>("global.simThr", 0.0);
-    multiviewParams mp(mip.getNbCameras(), &mip, (float) simThr);
+    common::MultiViewParams mp(mip.getNbCameras(), &mip, (float) simThr);
 
-    meshRetex mesh;
+    mesh::Texturing mesh;
     mesh.texParams = texParams;
-    mesh.me = new mv_mesh();
+    mesh.me = new mesh::Mesh();
 
     if(!mesh.me->loadFromBin(inputDenseReconstruction))
     {
@@ -131,9 +128,9 @@ int main(int argc, char* argv[])
     {
         ALICEVISION_COUT("An external input mesh is provided, so we remap the visibility from the reconstruction on it.");
         // keep previous mesh as reference
-        mv_mesh* refMesh = mesh.me;
+        mesh::Mesh* refMesh = mesh.me;
         // load input obj file
-        mesh.me = new mv_mesh();
+        mesh.me = new mesh::Mesh();
         mesh.loadFromOBJ(inputMeshFilepath, flipNormals);
         // remap visibilities from reconstruction onto input mesh
         mesh::PointsVisibility otherPtsVisibilities;
@@ -156,6 +153,6 @@ int main(int argc, char* argv[])
     ALICEVISION_COUT("Generate textures.");
     mesh.generateTextures(mp, ptsCams, outputFolder, outputTextureFileType);
 
-    printfElapsedTime(startTime, "#");
+    common::printfElapsedTime(startTime, "#");
     return EXIT_SUCCESS;
 }

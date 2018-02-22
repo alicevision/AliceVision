@@ -5,70 +5,59 @@
 
 #pragma once
 
+#include <aliceVision/structures/OrientedPoint.hpp>
+#include <aliceVision/structures/Point2d.hpp>
+#include <aliceVision/structures/Point3d.hpp>
+#include <aliceVision/structures/Pixel.hpp>
+#include <aliceVision/structures/StaticVector.hpp>
+#include <aliceVision/structures/Voxel.hpp>
 #include <aliceVision/common/MultiViewParams.hpp>
 
 #include <string>
 
-bool get2dLineImageIntersection(point2d* pFrom, point2d* pTo, point2d linePoint1, point2d linePoint2,
-                                const multiviewParams* mp, int camId);
-bool getTarEpipolarDirectedLine(point2d* pFromTar, point2d* pToTar, point2d refpix, int refCam, int tarCam,
-                                const multiviewParams* mp);
-bool triangulateMatch(point3d& out, const point2d& refpix, const point2d& tarpix, int refCam, int tarCam,
-                      const multiviewParams* mp);
-bool triangulateMatchLeft(point3d& out, const point2d& refpix, const point2d& tarpix, int refCam, int tarCam,
-                          const multiviewParams* mp);
+namespace aliceVision {
+namespace common {
+
+bool get2dLineImageIntersection(Point2d* pFrom, Point2d* pTo, Point2d linePoint1, Point2d linePoint2,
+                                const MultiViewParams* mp, int camId);
+bool getTarEpipolarDirectedLine(Point2d* pFromTar, Point2d* pToTar, Point2d refpix, int refCam, int tarCam,
+                                const MultiViewParams* mp);
+bool triangulateMatch(Point3d& out, const Point2d& refpix, const Point2d& tarpix, int refCam, int tarCam,
+                      const MultiViewParams* mp);
+bool triangulateMatchLeft(Point3d& out, const Point2d& refpix, const Point2d& tarpix, int refCam, int tarCam,
+                          const MultiViewParams* mp);
 void printfPercent(int i, int n);
 long initEstimate();
 void printfEstimate(int i, int n, long startTime);
 void finishEstimate();
 std::string printfElapsedTime(long t1, std::string prefix = "");
-void ransac_rsample(int* indexes, int npoints, int npoinsRansac);
 // SampleCnt calculates number of samples needed to be done
-int ransac_nsamples(int ni, int npoints, int npoinsRansac, float conf);
-bool ransacPlaneFit(orientedPoint& plane, staticVector<point3d>* points, staticVector<point3d>* points_samples,
-                    const multiviewParams* mp, int rc, float pixEpsThr);
-bool multimodalRansacPlaneFit(orientedPoint& plane, staticVector<staticVector<point3d>*>* modalPoints,
-                              const multiviewParams* mp, int rc, float pixEpsThr);
-float gaussKernelEnergy(orientedPoint* pt, staticVector<orientedPoint*>* pts, float sigma);
-int gaussKernelVoting(staticVector<orientedPoint*>* pts, float sigma);
-float angularDistnace(orientedPoint* op1, orientedPoint* op2);
-bool arecoincident(orientedPoint* op1, orientedPoint* op2, float pixSize);
-bool isVisibleInCamera(const multiviewParams* mp, orientedPoint* op, int rc);
-bool isNonVisibleInCamera(const multiviewParams* mp, orientedPoint* op, int rc);
-bool checkPair(const point3d& p, int rc, int tc, const multiviewParams* mp, float minAng, float maxAng);
-bool checkCamPairAngle(int rc, int tc, const multiviewParams* mp, float minAng, float maxAng);
-bool isClique(int k, int* perm, unsigned char* confidenceMatrix, int n);
-// factorial
-int myFact(int num);
+int gaussKernelVoting(StaticVector<OrientedPoint*>* pts, float sigma);
+float angularDistnace(OrientedPoint* op1, OrientedPoint* op2);
+bool arecoincident(OrientedPoint* op1, OrientedPoint* op2, float pixSize);
+bool checkPair(const Point3d& p, int rc, int tc, const MultiViewParams* mp, float minAng, float maxAng);
+bool checkCamPairAngle(int rc, int tc, const MultiViewParams* mp, float minAng, float maxAng);
+void getHexahedronTriangles(Point3d tris[12][3], Point3d hexah[8]);
+void getCamHexahedron(const MultiViewParams* mp, Point3d hexah[8], int cam, float mind, float maxd);
+bool intersectsHexahedronHexahedron(Point3d rchex[8], Point3d tchex[8]);
+StaticVector<Point3d>* lineSegmentHexahedronIntersection(Point3d& linePoint1, Point3d& linePoint2, Point3d hexah[8]);
+StaticVector<Point3d>* triangleHexahedronIntersection(Point3d& A, Point3d& B, Point3d& C, Point3d hexah[8]);
+StaticVector<Point3d>* triangleRectangleIntersection(Point3d& A, Point3d& B, Point3d& C, const MultiViewParams* mp, int rc,
+                                                     Point2d P[4]);
+bool isPointInHexahedron(const Point3d &p, const Point3d *hexah);
+void inflateHexahedron(Point3d hexahIn[8], Point3d hexahOut[8], float scale);
+bool checkPoint3d(Point3d n);
+bool checkPoint2d(Point2d n);
 
-void getHexahedronTriangles(point3d tris[12][3], point3d hexah[8]);
-void getCamRectangleHexahedron(const multiviewParams* mp, point3d hexah[8], int cam, float mind, float maxd, point2d P[4]);
-void getCamHexahedron(const multiviewParams* mp, point3d hexah[8], int cam, float mind, float maxd);
-bool intersectsHexahedronHexahedron(point3d rchex[8], point3d tchex[8]);
-staticVector<point3d>* lineSegmentHexahedronIntersection(point3d& linePoint1, point3d& linePoint2, point3d hexah[8]);
-staticVector<point3d>* triangleHexahedronIntersection(point3d& A, point3d& B, point3d& C, point3d hexah[8]);
-staticVector<point3d>* triangleRectangleIntersection(point3d& A, point3d& B, point3d& C, const multiviewParams* mp, int rc,
-                                                     point2d P[4]);
-bool isPointInHexahedron(const point3d &p, const point3d *hexah);
-void inflateHexahedron(point3d hexahIn[8], point3d hexahOut[8], float scale);
-void inflateHexahedronInDim(int dim, point3d hexahIn[8], point3d hexahOut[8], float scale);
-void inflateHexahedronAroundDim(int dim, point3d hexahIn[8], point3d hexahOut[8], float scale);
-float similarityKernelVoting(staticVector<float>* sims);
-bool checkPoint3d(point3d n);
-bool checkPoint2d(point2d n);
-staticVector<int>* getDistinctIndexes(staticVector<int>* indexes);
-staticVector<staticVector<int>*>* convertObjectsCamsToCamsObjects(const multiviewParams* mp,
-                                                                  staticVector<staticVector<int>*>* ptsCams);
-staticVector<staticVector<pixel>*>* convertObjectsCamsToCamsObjects(const multiviewParams* mp,
-                                                                    staticVector<staticVector<pixel>*>* ptsCams);
-int computeStep(multiviewInputParams* mip, int scale, int maxWidth, int maxHeight);
+StaticVector<StaticVector<int>*>* convertObjectsCamsToCamsObjects(const MultiViewParams* mp,
+                                                                  StaticVector<StaticVector<int>*>* ptsCams);
+StaticVector<StaticVector<Pixel>*>* convertObjectsCamsToCamsObjects(const MultiViewParams* mp,
+                                                                    StaticVector<StaticVector<Pixel>*>* ptsCams);
+int computeStep(MultiViewInputParams* mip, int scale, int maxWidth, int maxHeight);
 
-staticVector<point3d>* computeVoxels(const point3d* space, const voxel& dimensions);
-float getCGDepthFromSeeds(const multiviewParams* mp, int rc); // TODO: require seeds vector as input param
-staticVector<int>* createRandomArrayOfIntegers(int n);
-float sigmoidfcn(float zeroVal, float endVal, float sigwidth, float sigMid, float xval);
-float sigmoid2fcn(float zeroVal, float endVal, float sigwidth, float sigMid, float xval);
-
+StaticVector<Point3d>* computeVoxels(const Point3d* space, const Voxel& dimensions);
+float getCGDepthFromSeeds(const MultiViewParams* mp, int rc); // TODO: require seeds vector as input param
+StaticVector<int>* createRandomArrayOfIntegers(int n);
 
 int findNSubstrsInString(const std::string& str, const std::string& val);
 std::string num2str(int num);
@@ -77,3 +66,6 @@ std::string num2str(int64_t num);
 std::string num2strThreeDigits(int index);
 std::string num2strFourDecimal(int index);
 std::string num2strTwoDecimal(int index);
+
+} // namespace common
+} // namespace aliceVision

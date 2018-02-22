@@ -3,23 +3,22 @@
 // v. 2.0. If a copy of the MPL was not distributed with this file,
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
-#include <aliceVision/delaunaycut/mv_delaunay_GC.hpp>
-#include <aliceVision/delaunaycut/mv_delaunay_meshSmooth.hpp>
-#include <aliceVision/largeScale/reconstructionPlan.hpp>
-#include <aliceVision/planeSweeping/ps_refine_rc.hpp>
-#include <aliceVision/CUDAInterfaces/refine.hpp>
-#include <aliceVision/common/fileIO.hpp>
+#include <aliceVision/structures/StaticVector.hpp>
+#include <aliceVision/common/common.hpp>
+#include <aliceVision/common/MultiViewParams.hpp>
+#include <aliceVision/common/PreMatchCams.hpp>
+#include <aliceVision/depthMap/RefineRc.hpp>
+#include <aliceVision/depthMap/SemiGlobalMatchingRc.hpp>
 
 #include <boost/program_options.hpp>
 #include <boost/filesystem.hpp>
 
-
+using namespace aliceVision;
 namespace bfs = boost::filesystem;
 namespace po = boost::program_options;
 
 #define ALICEVISION_COUT(x) std::cout << x << std::endl
 #define ALICEVISION_CERR(x) std::cerr << x << std::endl
-
 
 int main(int argc, char* argv[])
 {
@@ -123,7 +122,7 @@ int main(int argc, char* argv[])
     ALICEVISION_COUT("ini file: " << iniFilepath);
 
     // .ini parsing
-    multiviewInputParams mip(iniFilepath, outputFolder, "");
+    common::MultiViewInputParams mip(iniFilepath, outputFolder, "");
     const double simThr = mip._ini.get<double>("global.simThr", 0.0);
 
     // set params in bpt
@@ -145,10 +144,10 @@ int main(int argc, char* argv[])
     mip._ini.put("refineRc.gammaP", refineGammaP);
     mip._ini.put("refineRc.useTcOrRcPixSize", refineUseTcOrRcPixSize);
 
-    multiviewParams mp(mip.getNbCameras(), &mip, (float) simThr);
-    mv_prematch_cams pc(&mp);
+    common::MultiViewParams mp(mip.getNbCameras(), &mip, (float) simThr);
+    common::PreMatchCams pc(&mp);
 
-    staticVector<int> cams(mp.ncams);
+    StaticVector<int> cams(mp.ncams);
     if(rangeSize == -1)
     {
         for(int rc = 0; rc < mp.ncams; rc++) // process all cameras
@@ -172,9 +171,9 @@ int main(int argc, char* argv[])
 
     ALICEVISION_COUT("--- create depthmap");
 
-    computeDepthMapsPSSGM(&mp, &pc, cams);
-    refineDepthMaps(&mp, &pc, cams);
+    depthMap::computeDepthMapsPSSGM(&mp, &pc, cams);
+    depthMap::refineDepthMaps(&mp, &pc, cams);
 
-    printfElapsedTime(startTime, "#");
+    common::printfElapsedTime(startTime, "#");
     return EXIT_SUCCESS;
 }

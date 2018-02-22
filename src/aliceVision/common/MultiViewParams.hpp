@@ -5,21 +5,21 @@
 
 #pragma once
 
-#include <aliceVision/structures/mv_structures.hpp>
+#include <aliceVision/structures/Matrix3x3.hpp>
+#include <aliceVision/structures/Point2d.hpp>
+#include <aliceVision/structures/Point3d.hpp>
+#include <aliceVision/structures/Pixel.hpp>
+#include <aliceVision/structures/SeedPointCams.hpp>
+#include <aliceVision/structures/StaticVector.hpp>
+#include <aliceVision/structures/structures.hpp>
 
 #include <boost/property_tree/ptree.hpp>
 
 #include <vector>
 #include <string>
 
-struct timeIndex
-{
-    int index;
-    long timeStamp;
-
-    timeIndex();
-    timeIndex(int _index);
-};
+namespace aliceVision {
+namespace common {
 
 enum class EFileType {
     P = 0,
@@ -66,66 +66,83 @@ enum class EFileType {
     D = 42,
 };
 
-struct multiviewInputParams
+struct MultiViewInputParams
 {
     static const int N_SCALES = 4;
+    std::string newDir;
+    /// prepareDenseScene data
+    std::string mvDir;
+    /// depthMapEstimate data folder
+    std::string _depthMapFolder;
+    /// depthMapFilter data folder
+    std::string _depthMapFilterFolder;
+    std::string outDir;
+    std::string prefix;
+    std::string imageExt = ".exr";
 
-    multiviewInputParams() = default;
+    int maxImageWidth = 0;
+    int maxImageHeight = 0;
+    bool usesil = false;
+    boost::property_tree::ptree _ini;
 
-    explicit multiviewInputParams(const std::string& file, const std::string& depthMapFolder, const std::string& depthMapFilterFolder);
+    MultiViewInputParams() = default;
+    explicit MultiViewInputParams(const std::string& file, const std::string& depthMapFolder, const std::string& depthMapFilterFolder);
 
     void initFromConfigFile(const std::string& iniFile);
 
-    imageParams addImageFile(const std::string& filename);
-
-    int getWidth(int rc) const { return imps[rc].width; }
-    int getHeight(int rc) const { return imps[rc].height; }
-    int getSize(int rc) const { return imps[rc].im_size; }
-    int getMaxImageWidth() const { return maxImageWidth; }
-    int getMaxImageHeight() const { return maxImageHeight; }
-    int getNbCameras() const { return imps.size(); }
-    int getNbPixelsFromAllCameras() const
+    inline int getViewId(int index) const
     {
-        int fullSize = 0;
-        for(const auto& p: imps)
-            fullSize += p.im_size;
-        return fullSize;
+        return _imagesParams.at(index).viewId;
     }
 
-    std::string newDir;
-    // int occMapScale;
-    std::string mvDir; //< prepareDenseScene data
-    std::string _depthMapFolder; //< depthMapEstimate data folder
-    std::string _depthMapFilterFolder; //< depthMapFilter data folder
-    std::string outDir;
-    std::string prefix;
-    std::string imageExt = "_c.png";
+    inline int getWidth(int index) const
+    {
+        return _imagesParams.at(index).width;
+    }
 
-    std::vector<imageParams> imps;
-    int maxImageWidth = 0;
-    int maxImageHeight = 0;
+    inline int getHeight(int index) const
+    {
+        return _imagesParams.at(index).height;
+    }
 
-    bool usesil = false;
-    boost::property_tree::ptree _ini;
+    inline int getSize(int index) const
+    {
+        return _imagesParams.at(index).size;
+    }
+
+    inline int getMaxImageWidth() const
+    {
+        return maxImageWidth;
+    }
+
+    inline int getMaxImageHeight() const
+    {
+        return maxImageHeight;
+    }
+
+    inline int getNbCameras() const
+    {
+        return _imagesParams.size();
+    }
+
+private:
+    std::vector<imageParams> _imagesParams;
 };
 
 
-class multiviewParams
+class MultiViewParams
 {
 public:
-    std::vector<timeIndex> mapiSort;
+    std::vector<Matrix3x4> camArr;
+    std::vector<Matrix3x3> KArr;
+    std::vector<Matrix3x3> iKArr;
+    std::vector<Matrix3x3> RArr;
+    std::vector<Matrix3x3> iRArr;
+    std::vector<Point3d> CArr;
+    std::vector<Matrix3x3> iCamArr;
+    std::vector<Point3d> FocK1K2Arr;
 
-    std::vector<matrix3x4> camArr;
-    std::vector<matrix3x3> KArr;
-    std::vector<matrix3x3> iKArr;
-    std::vector<matrix3x3> RArr;
-    std::vector<matrix3x3> iRArr;
-    std::vector<point3d> CArr;
-    std::vector<matrix3x3> iCamArr;
-    std::vector<short> indexes;
-    std::vector<point3d> FocK1K2Arr;
-
-    multiviewInputParams* mip;
+    MultiViewInputParams* mip;
 
     int ncams;
     int CUDADeviceNo;
@@ -134,14 +151,13 @@ public:
     int g_maxPlaneNormalViewDirectionAngle;
     bool verbose;
 
-    multiviewParams(int _ncams, multiviewInputParams* _mip, float _simThr,
-                    staticVector<cameraMatrices>* cameras = nullptr);
-    ~multiviewParams();
+    MultiViewParams(int _ncams, MultiViewInputParams* _mip, float _simThr,
+                    StaticVector<CameraMatrices>* cameras = nullptr);
+    ~MultiViewParams();
 
     void resizeCams(int _ncams)
     {
         ncams = _ncams;
-        indexes.resize(ncams);
         camArr.resize(ncams);
         KArr.resize(ncams);
         iKArr.resize(ncams);
@@ -154,37 +170,29 @@ public:
 
     void loadCameraFile(int i, const std::string& fileNameP, const std::string& fileNameD);
 
-    void addCam();
-    void reloadLastCam();
+    bool is3DPointInFrontOfCam(const Point3d* X, int rc) const;
+    void getPixelFor3DPoint(Point2d* out, const Point3d& X, const Matrix3x4& P) const;
+    void getPixelFor3DPoint(Point2d* out, const Point3d& X, int rc) const;
+    void getPixelFor3DPoint(Pixel* out, const Point3d& X, int rc) const;
+    float getCamPixelSize(const Point3d& x0, int cam) const;
+    float getCamPixelSize(const Point3d& x0, int cam, float d) const;
+    float getCamPixelSizeRcTc(const Point3d& p, int rc, int tc, float d) const;
+    float getCamPixelSizePlaneSweepAlpha(const Point3d& p, int rc, int tc, int scale, int step) const;
+    float getCamPixelSizePlaneSweepAlpha(const Point3d& p, int rc, StaticVector<int>* tcams, int scale, int step) const;
 
-    bool is3DPointInFrontOfCam(const point3d* X, int rc) const;
-    void getPixelFor3DPoint(point2d* out, const point3d& X, const matrix3x4& P) const;
-    void getPixelFor3DPoint(point2d* out, const point3d& X, int rc) const;
-    void getPixelFor3DPoint(pixel* out, const point3d& X, int rc) const;
-    float getCamPixelSize(const point3d& x0, int cam) const;
-    float getCamPixelSize(const point3d& x0, int cam, float d) const;
-    float getCamPixelSizeRcTc(const point3d& p, int rc, int tc, float d) const;
-    float getCamPixelSizePlaneSweepAlpha(const point3d& p, int rc, int tc, int scale, int step) const;
-    float getCamPixelSizePlaneSweepAlpha(const point3d& p, int rc, staticVector<int>* tcams, int scale, int step) const;
+    float getCamsMinPixelSize(const Point3d& x0, std::vector<unsigned short>* tcams) const;
+    float getCamsMinPixelSize(const Point3d& x0, StaticVector<int>& tcams) const;
 
-    float getCamsMinPixelSize(const point3d& x0, std::vector<unsigned short>* tcams) const;
-    int getCamsMinPixelSizeIndex(const point3d& x0, int rc, seedPointCams* tcams) const;
-    int getCamsMinPixelSizeIndex(const point3d& x0, const staticVector<int>& tcams) const;
-
-    float getCamsMinPixelSize(const point3d& x0, staticVector<int>& tcams) const;
-    float getCamsAveragePixelSize(const point3d& x0, staticVector<int>* tcams) const;
-    void computeNormal(point3d& n, const rotation& rot, int refCam) const;
-    bool isPixelInCutOut(const pixel* pix, const pixel* lu, const pixel* rd, int d, int camId) const;
-    bool isPixelInImage(const pixel& pix, int d, int camId) const;
-    bool isPixelInImage(const pixel& pix, int camId) const;
-    bool isPixelInImage(const point2d& pix, int camId) const;
-
-    void computeHomographyInductedByPlaneRcTc(matrix3x3* H, const point3d& _p, const point3d& _n, int rc, int tc) const;
-
-    void decomposeProjectionMatrix(point3d& Co, matrix3x3& Ro, matrix3x3& iRo, matrix3x3& Ko, matrix3x3& iKo,
-                                   matrix3x3& iPo, const matrix3x4& P) const;
+    bool isPixelInImage(const Pixel& pix, int d, int camId) const;
+    bool isPixelInImage(const Pixel& pix, int camId) const;
+    bool isPixelInImage(const Point2d& pix, int camId) const;
+    void decomposeProjectionMatrix(Point3d& Co, Matrix3x3& Ro, Matrix3x3& iRo, Matrix3x3& Ko, Matrix3x3& iKo,
+                                   Matrix3x3& iPo, const Matrix3x4& P) const;
 
 private:
     int winSizeHalf;
     int minWinSizeHalf;
 };
+
+} // namespace common
+} // namespace aliceVision

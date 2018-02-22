@@ -3,23 +3,20 @@
 // v. 2.0. If a copy of the MPL was not distributed with this file,
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
-#include <aliceVision/delaunaycut/mv_delaunay_GC.hpp>
-#include <aliceVision/delaunaycut/mv_delaunay_meshSmooth.hpp>
-#include <aliceVision/largeScale/reconstructionPlan.hpp>
-#include <aliceVision/planeSweeping/ps_refine_rc.hpp>
-#include <aliceVision/CUDAInterfaces/refine.hpp>
+#include <aliceVision/common/common.hpp>
 #include <aliceVision/common/fileIO.hpp>
+#include <aliceVision/common/MultiViewParams.hpp>
+#include <aliceVision/common/PreMatchCams.hpp>
 
 #include <boost/program_options.hpp>
 #include <boost/filesystem.hpp>
 
-
+using namespace aliceVision;
 namespace bfs = boost::filesystem;
 namespace po = boost::program_options;
 
 #define ALICEVISION_COUT(x) std::cout << x << std::endl
 #define ALICEVISION_CERR(x) std::cerr << x << std::endl
-
 
 int main(int argc, char* argv[])
 {
@@ -67,14 +64,13 @@ int main(int argc, char* argv[])
     ALICEVISION_COUT("ini file: " << iniFilepath);
 
     // .ini parsing
-    multiviewInputParams mip(iniFilepath, "", "");
+    common::MultiViewInputParams mip(iniFilepath, "", "");
     const double simThr = mip._ini.get<double>("global.simThr", 0.0);
-    multiviewParams mp(mip.getNbCameras(), &mip, (float) simThr);
-    mv_prematch_cams pc(&mp);
+    common::MultiViewParams mp(mip.getNbCameras(), &mip, (float) simThr);
+    common::PreMatchCams pc(&mp);
 
     ALICEVISION_COUT("--- compute camera pairs");
     pc.precomputeIncidentMatrixCamsFromSeeds();
-
-    printfElapsedTime(startTime, "#");
+    common::printfElapsedTime(startTime, "#");
     return EXIT_SUCCESS;
 }
