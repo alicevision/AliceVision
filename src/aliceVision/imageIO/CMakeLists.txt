@@ -28,7 +28,7 @@ target_link_libraries(aliceVision_imageIO
 )
 
 set_property(TARGET aliceVision_imageIO
-  PROPERTY FOLDER AliceVision
+  PROPERTY FOLDER AliceVision/AliceVision
 )
 
 install(TARGETS aliceVision_imageIO

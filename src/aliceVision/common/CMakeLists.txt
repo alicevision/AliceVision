@@ -33,7 +33,7 @@ target_link_libraries(aliceVision_common
 )
 
 set_property(TARGET aliceVision_common
-  PROPERTY FOLDER AliceVision
+  PROPERTY FOLDER AliceVision/AliceVision
 )
 
 install(TARGETS aliceVision_common

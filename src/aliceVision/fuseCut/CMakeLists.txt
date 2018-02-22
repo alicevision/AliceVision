@@ -44,7 +44,7 @@ target_link_libraries(aliceVision_fuseCut
 )
 
 set_property(TARGET aliceVision_fuseCut
-  PROPERTY FOLDER AliceVision
+  PROPERTY FOLDER AliceVision/AliceVision
 )
 
 install(TARGETS aliceVision_fuseCut

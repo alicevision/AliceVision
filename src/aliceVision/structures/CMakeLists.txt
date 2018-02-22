@@ -53,7 +53,7 @@ target_link_libraries(aliceVision_structures
 )
 
 set_property(TARGET aliceVision_structures
-  PROPERTY FOLDER AliceVision
+  PROPERTY FOLDER AliceVision/AliceVision
 )
 
 install(TARGETS aliceVision_structures
