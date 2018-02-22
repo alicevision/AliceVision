@@ -2446,7 +2446,12 @@ bool Mesh::loadFromObjAscii(int& nmtls, StaticVector<int>** trisMtlIds, StaticVe
             }
             if((line[0] == 'f') && (line[1] == ' '))
             {
-                ntris += 1;
+                int n1 = common::findNSubstrsInString(line, "/");
+                int n2 = common::findNSubstrsInString(line, "//");
+                if((n2 == 0 && n1 == 3) || n2 == 3)
+                    ntris += 1;
+                else if((n2 == 0 && n1 == 4) || n2 == 4)
+                    ntris += 2;
             }
             nlines++;
         }
@@ -2458,13 +2463,20 @@ bool Mesh::loadFromObjAscii(int& nmtls, StaticVector<int>** trisMtlIds, StaticVe
     printf("uv coordinates %i\n", nuvs);
     printf("triangles %i\n", ntris);
 
-    pts = new StaticVector<Point3d>(npts);
-    tris = new StaticVector<Mesh::triangle>(ntris);
-    *uvCoords = new StaticVector<Point2d>(nuvs);
-    *trisUvIds = new StaticVector<Voxel>(ntris);
-    *normals = new StaticVector<Point3d>(nnorms);
-    *trisNormalsIds = new StaticVector<Voxel>(ntris);
-    *trisMtlIds = new StaticVector<int>(ntris);
+    pts = new StaticVector<Point3d>();
+    pts->reserve(npts);
+    tris = new StaticVector<Mesh::triangle>();
+    tris->reserve(ntris);
+    *uvCoords = new StaticVector<Point2d>();
+    (*uvCoords)->reserve(nuvs);
+    *trisUvIds = new StaticVector<Voxel>();
+    (*trisUvIds)->reserve(ntris);
+    *normals = new StaticVector<Point3d>();
+    (*normals)->reserve(nnorms);
+    *trisNormalsIds = new StaticVector<Voxel>();
+    (*trisNormalsIds)->reserve(ntris);
+    *trisMtlIds = new StaticVector<int>();
+    (*trisMtlIds)->reserve(ntris);
 
     std::map<std::string, int> materialCache;
 
@@ -2477,7 +2489,11 @@ bool Mesh::loadFromObjAscii(int& nmtls, StaticVector<int>** trisMtlIds, StaticVe
         int idline = 0;
         while(getline(in, line))
         {
-            if(common::findNSubstrsInString(line, "usemtl") == 1)
+            if(line.size() < 3 || line[0] == '#')
+            {
+                // nothing to do
+            }
+            else if(common::findNSubstrsInString(line, "usemtl") == 1)
             {
                 char buff[5000];
                 sscanf(line.c_str(), "usemtl %s", buff);
@@ -2487,90 +2503,130 @@ bool Mesh::loadFromObjAscii(int& nmtls, StaticVector<int>** trisMtlIds, StaticVe
                 else
                     mtlId = it->second;                   // already known material
             }
-
-            if((line[0] == 'v') && (line[1] == ' '))
+            else if((line[0] == 'v') && (line[1] == ' '))
             {
                 Point3d pt;
                 sscanf(line.c_str(), "v %lf %lf %lf", &pt.x, &pt.y, &pt.z);
                 pts->push_back(pt);
             }
-
-            if((line[0] == 'v') && (line[1] == 'n') && (line[2] == ' '))
+            else if((line[0] == 'v') && (line[1] == 'n') && (line[2] == ' '))
             {
                 Point3d pt;
                 sscanf(line.c_str(), "vn %lf %lf %lf", &pt.x, &pt.y, &pt.z);
                 // printf("%f %f %f\n", pt.x, pt.y, pt.z);
                 (*normals)->push_back(pt);
             }
-
-            if((line[0] == 'v') && (line[1] == 't') && (line[2] == ' '))
+            else if((line[0] == 'v') && (line[1] == 't') && (line[2] == ' '))
             {
                 Point2d pt;
                 sscanf(line.c_str(), "vt %lf %lf", &pt.x, &pt.y);
                 (*uvCoords)->push_back(pt);
             }
-
-            if((line[0] == 'f') && (line[1] == ' '))
+            else if((line[0] == 'f') && (line[1] == ' '))
             {
                 int n1 = common::findNSubstrsInString(line, "/");
                 int n2 = common::findNSubstrsInString(line, "//");
-                Voxel v1, v2, v3;
+                Voxel vertex, uvCoord, vertexNormal;
+                Voxel vertex2, uvCoord2;
                 bool ok = false;
-                bool okn = false;
-                bool okuv = false;
+                bool withNormal = false;
+                bool withUV = false;
+                bool withQuad = false;
                 if(n2 == 0)
                 {
                     if(n1 == 0)
                     {
-                        sscanf(line.c_str(), "f %i %i %i", &v1.x, &v1.y, &v1.z);
+                        sscanf(line.c_str(), "f %i %i %i", &vertex.x, &vertex.y, &vertex.z);
                         ok = true;
                     }
-                    if(n1 == 3)
+                    else if(n1 == 3)
                     {
-                        sscanf(line.c_str(), "f %i/%i %i/%i %i/%i", &v1.x, &v2.x, &v1.y, &v2.y, &v1.z, &v2.z);
+                        sscanf(line.c_str(), "f %i/%i %i/%i %i/%i", &vertex.x, &uvCoord.x, &vertex.y, &uvCoord.y, &vertex.z, &uvCoord.z);
                         ok = true;
-                        okuv = true;
+                        withUV = true;
                     }
-                    if(n1 == 6)
+                    else if(n1 == 6)
                     {
-                        sscanf(line.c_str(), "f %i/%i/%i %i/%i/%i %i/%i/%i", &v1.x, &v2.x, &v3.x, &v1.y, &v2.y, &v3.y,
-                               &v1.z, &v2.z, &v3.z);
+                        sscanf(line.c_str(), "f %i/%i/%i %i/%i/%i %i/%i/%i", &vertex.x, &uvCoord.x, &vertexNormal.x, &vertex.y, &uvCoord.y, &vertexNormal.y,
+                               &vertex.z, &uvCoord.z, &vertexNormal.z);
                         ok = true;
-                        okuv = true;
-                        okn = true;
+                        withUV = true;
+                        withNormal = true;
+                    }
+                    else if(n1 == 4)
+                    {
+                        sscanf(line.c_str(), "f %i/%i %i/%i %i/%i %i/%i", &vertex.x, &uvCoord.x, &vertex.y, &uvCoord.y, &vertex.z, &uvCoord.z, &vertex2.z, &uvCoord2.z);
+                        vertex2.x = vertex.x; // same first point
+                        uvCoord2.x = uvCoord.x;
+                        vertex2.y = vertex.z; // 3rd point of the 1st triangle is the 2nd of the 2nd triangle.
+                        uvCoord2.y = uvCoord.z;
+                        ok = true;
+                        withUV = true;
+                        withQuad = true;
                     }
                 }
                 else
                 {
                     if(n2 == 3)
                     {
-                        sscanf(line.c_str(), "f %i//%i %i//%i %i//%i", &v1.x, &v3.x, &v1.y, &v3.y, &v1.z, &v3.z);
+                        sscanf(line.c_str(), "f %i//%i %i//%i %i//%i", &vertex.x, &vertexNormal.x, &vertex.y, &vertexNormal.y, &vertex.z, &vertexNormal.z);
                         ok = true;
-                        okn = true;
+                        withNormal = true;
+                    }
+                    else if(n2 == 4)
+                    {
+                        sscanf(line.c_str(), "f %i/%i %i/%i %i/%i %i/%i", &vertex.x, &uvCoord.x, &vertex.y, &uvCoord.y, &vertex.z, &uvCoord.z, &vertex2.z, &uvCoord2.z);
+                        vertex2.x = vertex.x; // same first point
+                        uvCoord2.x = uvCoord.x;
+                        vertex2.y = vertex.z; // 3rd point of the 1st triangle is the 2nd of the 2nd triangle.
+                        uvCoord2.y = uvCoord.z;
+                        ok = true;
+                        withUV = true;
+                        withQuad = true;
+                    }
+                }
+                if(!ok)
+                {
+                    throw std::runtime_error("Mesh: Unrecognized facet syntax while reading obj file: " + objAsciiFileName);
+                }
+
+                // 1st triangle
+                {
+                    triangle t;
+                    t.i[0] = vertex.x - 1;
+                    t.i[1] = vertex.y - 1;
+                    t.i[2] = vertex.z - 1;
+                    t.alive = true;
+                    tris->push_back(t);
+                    (*trisMtlIds)->push_back(mtlId);
+                    if(withUV)
+                    {
+                        (*trisUvIds)->push_back(uvCoord - Voxel(1, 1, 1));
+                    }
+                    if(withNormal)
+                    {
+                        (*trisNormalsIds)->push_back(vertexNormal - Voxel(1, 1, 1));
                     }
                 }
 
-                if(!ok)
+                // potential 2nd triangle
+                if(withQuad)
                 {
-                    throw std::runtime_error("Mesh: Error occured while reading obj file: " + objAsciiFileName);
-                }
-
-                triangle t;
-                t.i[0] = v1.x - 1;
-                t.i[1] = v1.y - 1;
-                t.i[2] = v1.z - 1;
-                t.alive = true;
-                tris->push_back(t);
-                (*trisMtlIds)->push_back(mtlId);
-
-                if(okuv)
-                {
-                    (*trisUvIds)->push_back(v2 - Voxel(1, 1, 1));
-                }
-
-                if(okn)
-                {
-                    (*trisNormalsIds)->push_back(v3 - Voxel(1, 1, 1));
+                    triangle t;
+                    t.i[0] = vertex2.x - 1;
+                    t.i[1] = vertex2.y - 1;
+                    t.i[2] = vertex2.z - 1;
+                    t.alive = true;
+                    tris->push_back(t);
+                    (*trisMtlIds)->push_back(mtlId);
+                    if(withUV)
+                    {
+                        (*trisUvIds)->push_back(uvCoord2 - Voxel(1, 1, 1));
+                    }
+//                    if(withNormal)
+//                    {
+//                        (*trisNormalsIds)->push_back(vertexNormal2 - Voxel(1, 1, 1));
+//                    }
                 }
             }
 
@@ -2582,6 +2638,7 @@ bool Mesh::loadFromObjAscii(int& nmtls, StaticVector<int>** trisMtlIds, StaticVe
         in.close();
         nmtls = materialCache.size();
     }
+    std::cout << "Mesh loaded, nb points: " << npts << ", nb triangles: " << ntris << std::endl;
     return npts != 0 && ntris != 0;
 }
 

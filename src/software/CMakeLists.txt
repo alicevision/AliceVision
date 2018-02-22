@@ -78,6 +78,22 @@ install(TARGETS aliceVision_meshing
   DESTINATION bin/
 )
 
+# Mesh Filtering
+
+add_executable(aliceVision_meshFiltering main_meshFiltering.cpp)
+
+target_link_libraries(aliceVision_meshFiltering
+  PUBLIC aliceVision_common
+         aliceVision_mesh
+         ${Boost_LIBRARIES}
+)
+
+set_property(TARGET aliceVision_meshFiltering
+  PROPERTY FOLDER AliceVision/Software/Pipeline
+)
+
+install(TARGETS aliceVision_meshFiltering DESTINATION bin/)
+
 # Mesh Resampling
 
 add_executable(aliceVision_meshResampling main_meshResampling.cpp)
