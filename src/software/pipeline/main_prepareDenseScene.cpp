@@ -89,7 +89,7 @@ typedef stl::flat_map< size_t, SeedVector> SeedsPerView;
 
 void retrieveSeedsPerView(
     const SfMData & sfm_data,
-    const std::vector<IndexT> viewIds,
+    const std::vector<IndexT>& viewIds,
     SeedsPerView& outSeedsPerView)
 {
   static const double minAngle = 3.0;
