@@ -107,6 +107,7 @@ int main(int argc, char **argv)
   size_t numMatchesToKeep = 0;
   bool useGridSort = true;
   bool exportDebugFiles = false;
+  const std::string fileExtension = "txt";
 
   po::options_description allParams(
      "Compute corresponding features between a series of views:\n"
@@ -352,7 +353,7 @@ int main(int argc, char **argv)
 
   // export putative matches
   if(savePutativeMatches)
-    Save(mapPutativesMatches, matchesFolder, "putative", "txt", matchFilePerImage);
+    Save(mapPutativesMatches, matchesFolder, "putative", fileExtension, matchFilePerImage);
 
   ALICEVISION_LOG_INFO("Task (Regions Matching) done in (s): " + std::to_string(timer.elapsed()));
 
@@ -506,7 +507,7 @@ int main(int argc, char **argv)
   // export geometric filtered matches
 
   ALICEVISION_LOG_INFO("Save geometric matches.");
-  Save(finalMatches, matchesFolder, geometricMode, "txt", matchFilePerImage);
+  Save(finalMatches, matchesFolder, geometricMode, fileExtension, matchFilePerImage);
   ALICEVISION_LOG_INFO("Task done in (s): " + std::to_string(timer.elapsed()));
 
   // d. Export some statistics
