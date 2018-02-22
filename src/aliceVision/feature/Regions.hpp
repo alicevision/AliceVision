@@ -5,13 +5,11 @@
 
 #pragma once
 
-#include "aliceVision/types.hpp"
-#include "aliceVision/numeric/numeric.hpp"
-#include "aliceVision/feature/PointFeature.hpp"
-#include "aliceVision/feature/Descriptor.hpp"
-#include "aliceVision/matching/metric.hpp"
-
-#include "cereal/types/vector.hpp"
+#include <aliceVision/types.hpp>
+#include <aliceVision/numeric/numeric.hpp>
+#include <aliceVision/feature/PointFeature.hpp>
+#include <aliceVision/feature/Descriptor.hpp>
+#include <aliceVision/matching/metric.hpp>
 
 #include <string>
 #include <cstddef>
@@ -19,7 +17,6 @@
 
 namespace aliceVision {
 namespace feature {
-
 
 /**
  * @brief Store a featureIndes and the associated point3dId
@@ -39,7 +36,6 @@ struct FeatureInImage
     return _featureIndex < other._featureIndex;
   }
 };
-
 
 /// Describe an image a set of regions (position, ...) + attributes
 /// Each region is described by a set of attributes (descriptor)
@@ -314,13 +310,6 @@ public:
       out_associated3dPoint.push_back(feat._point3dId);
     }
     return regions;
-  }
-
-  template<class Archive>
-  void serialize(Archive & ar)
-  {
-    ar(this->_vec_feats);
-    ar(_vec_descs);
   }
 };
 

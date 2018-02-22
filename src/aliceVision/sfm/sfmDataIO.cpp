@@ -3,22 +3,22 @@
 // v. 2.0. If a copy of the MPL was not distributed with this file,
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
-#include "aliceVision/sfm/sfmDataIO.hpp"
-
-#include "aliceVision/config.hpp"
-#include "aliceVision/stl/mapUtils.hpp"
-#include "aliceVision/sfm/sfmDataIO_json.hpp"
-#include "aliceVision/sfm/sfmDataIO_cereal.hpp"
-#include "aliceVision/sfm/sfmDataIO_ply.hpp"
-#include "aliceVision/sfm/sfmDataIO_baf.hpp"
-#include "aliceVision/sfm/sfmDataIO_gt.hpp"
+#include "sfmDataIO.hpp"
+#include <aliceVision/config.hpp>
+#include <aliceVision/stl/mapUtils.hpp>
+#include <aliceVision/sfm/sfmDataIO_json.hpp>
+#include <aliceVision/sfm/sfmDataIO_ply.hpp>
+#include <aliceVision/sfm/sfmDataIO_baf.hpp>
+#include <aliceVision/sfm/sfmDataIO_gt.hpp>
 
 #if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_ALEMBIC)
-#include "aliceVision/sfm/AlembicExporter.hpp"
-#include "aliceVision/sfm/AlembicImporter.hpp"
+#include <aliceVision/sfm/AlembicExporter.hpp>
+#include <aliceVision/sfm/AlembicImporter.hpp>
 #endif
 
-#include "dependencies/stlplus3/filesystemSimplified/file_system.hpp"
+#include <boost/filesystem.hpp>
+
+namespace fs = boost::filesystem;
 
 namespace aliceVision {
 namespace sfm {
@@ -92,67 +92,65 @@ bool ValidIds(const SfMData& sfmData, ESfMData partFlag)
 
 bool Load(SfMData& sfmData, const std::string& filename, ESfMData partFlag)
 {
-  bool bStatus = false;
-  const std::string ext = stlplus::extension_part(filename);
-  if(ext == "sfm")
-    bStatus = loadJSON(sfmData, filename, partFlag);
-  else if (ext == "json")
-    bStatus = Load_Cereal<cereal::JSONInputArchive>(sfmData, filename, partFlag);
-  else if (ext == "bin")
-    bStatus = Load_Cereal<cereal::PortableBinaryInputArchive>(sfmData, filename, partFlag);
-  else if (ext == "xml")
-    bStatus = Load_Cereal<cereal::XMLInputArchive>(sfmData, filename, partFlag);
+  const std::string ext = fs::extension(filename);
+  bool status = false;
+
+  if(ext == ".sfm" || ext == ".json") // JSON File
+  {
+    status = loadJSON(sfmData, filename, partFlag);
+  }
 #if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_ALEMBIC)
-  else if (ext == "abc") {
+  else if(ext == ".abc") // Alembic
+  {
     AlembicImporter(filename).populateSfM(sfmData, partFlag);
-    bStatus = true;
+    status = true;
   }
 #endif // ALICEVISION_HAVE_ALEMBIC
-  else if (stlplus::folder_exists(filename))
+  else if(fs::is_directory(filename))
   {
-    bStatus = readGt(filename, sfmData);
+    status = readGt(filename, sfmData);
   }
-  // It is not a folder or known format, return false
-  else
+  else // It is not a folder or known format, return false
   {
-    ALICEVISION_LOG_WARNING("Unknown sfm_data input format: " << ext);
+    ALICEVISION_LOG_ERROR("Unknown input SfM data format: '" << ext << "'");
     return false;
   }
 
+  if(status)
+    sfmData.setAbsolutePath(filename);
+
   // Assert that loaded intrinsics | extrinsics are linked to valid view
-  if(bStatus &&
-     (partFlag & VIEWS) &&
-     ((partFlag & INTRINSICS) || (partFlag & EXTRINSICS)))
-  {
+  if(status && (partFlag & VIEWS) && ((partFlag & INTRINSICS) || (partFlag & EXTRINSICS)))
     return ValidIds(sfmData, partFlag);
-  }
-  return bStatus;
+
+  return status;
 }
 
 bool Save(const SfMData& sfmData, const std::string& filename, ESfMData partFlag)
 {
-  const std::string ext = stlplus::extension_part(filename);
-  if(ext == "sfm")
+  const std::string ext = fs::extension(filename);
+
+  if(ext == ".sfm" || ext == ".json") // JSON File
+  {
     return saveJSON(sfmData, filename, partFlag);
-  else if (ext == "json")
-    return Save_Cereal<cereal::JSONOutputArchive>(sfmData, filename, partFlag);
-  else if (ext == "bin")
-    return Save_Cereal<cereal::PortableBinaryOutputArchive>(sfmData, filename, partFlag);
-  else if (ext == "xml")
-    return Save_Cereal<cereal::XMLOutputArchive>(sfmData, filename, partFlag);
-  else if (ext == "ply")
-    return Save_PLY(sfmData, filename, partFlag);
-  else if (ext == "baf") // Bundle Adjustment file
-    return Save_BAF(sfmData, filename, partFlag);
+  }
+  else if(ext == ".ply") // Polygon File
+  {
+    return savePLY(sfmData, filename, partFlag);
+  }
+  else if (ext == ".baf") // Bundle Adjustment File
+  {
+    return saveBAF(sfmData, filename, partFlag);
+  }
 #if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_ALEMBIC)
-  else if (ext == "abc") // Alembic
+  else if (ext == ".abc") // Alembic
   {
     aliceVision::sfm::AlembicExporter(filename).addSfM(sfmData, partFlag);
     return true;
   }
 #endif // ALICEVISION_HAVE_ALEMBIC
-  ALICEVISION_LOG_WARNING("ERROR: Cannot save the SfM Data: " << filename << ".\n"
-            << "The file extension is not recognized.");
+  ALICEVISION_LOG_ERROR("Cannot save the SfM data file: '" << filename << "'."
+                        << std::endl << "The file extension is not recognized.");
   return false;
 }
 

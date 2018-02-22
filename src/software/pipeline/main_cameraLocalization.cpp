@@ -107,8 +107,8 @@ int main(int argc, char** argv)
   
   /// the Alembic export file
   std::string exportAlembicFile = "trackedcameras.abc";
-  /// the Binary export file
-  std::string exportBinaryFile = "";
+  /// the JSON export file
+  std::string exportJsonFile = "";
 
 #if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_CCTAG)
   // parameters for cctag localizer
@@ -226,8 +226,8 @@ int main(int argc, char** argv)
           "Filename for the SfMData export file (where camera poses will be stored). "
           "Default : trackedcameras.abc.")
 #endif
-      ("outputBinary", po::value<std::string>(&exportBinaryFile)->default_value(exportBinaryFile),
-          "Filename for the localization results (raw data) as .bin")
+      ("outputJSON", po::value<std::string>(&exportJsonFile)->default_value(exportJsonFile),
+          "Filename for the localization results (raw data) as .json")
 
       ;
   
@@ -289,14 +289,14 @@ int main(int argc, char** argv)
   }
  
   // this contains the full path and the root name of the file without the extension
-  const bool wantsBinaryOutput = exportBinaryFile.empty();
+  const bool wantsJsonOutput = exportJsonFile.empty();
 #if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_ALEMBIC)
-  std::string basenameAlembic = (bfs::path(exportBinaryFile).parent_path() / bfs::path(exportBinaryFile).stem()).string();
+  std::string basenameAlembic = (bfs::path(exportJsonFile).parent_path() / bfs::path(exportJsonFile).stem()).string();
 #endif
-  std::string basenameBinary;
-  if(wantsBinaryOutput)
+  std::string basenameJson;
+  if(wantsJsonOutput)
   {
-    basenameBinary = (bfs::path(exportBinaryFile).parent_path() / bfs::path(exportBinaryFile).stem()).string();
+    basenameJson = (bfs::path(exportJsonFile).parent_path() / bfs::path(exportJsonFile).stem()).string();
   }
 
   // load SfMData
@@ -443,9 +443,9 @@ int main(int argc, char** argv)
     feed.goToNextFrame();
   }
 
-  if(wantsBinaryOutput)
+  if(wantsJsonOutput)
   {
-    localization::save(vec_localizationResults, basenameBinary + ".bin");
+    localization::LocalizationResult::save(vec_localizationResults, basenameJson + ".json");
   }
 
   //***********************************************************************
@@ -467,7 +467,7 @@ int main(int argc, char** argv)
                                                        noDistortion, 
                                                        b_refinePose,
                                                        b_refineStructure,
-                                                       basenameBinary + ".sfmdata.BUNDLE",
+                                                       basenameJson + ".sfmdata.BUNDLE",
                                                        minPointVisibility);
     if(!BAresult)
     {
@@ -495,9 +495,9 @@ int main(int argc, char** argv)
       }
 
 #endif
-      if(wantsBinaryOutput)
+      if(wantsJsonOutput)
       {
-        localization::save(vec_localizationResults, basenameBinary +".BUNDLE.bin");
+        localization::LocalizationResult::save(vec_localizationResults, basenameJson +".BUNDLE.json");
       }
 
     }

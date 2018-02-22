@@ -10,14 +10,13 @@
 namespace aliceVision {
 namespace sfm {
 
-/// Save the structure and camera positions of a SfMData container as 3D points in a PLY ASCII file.
- bool Save_PLY(
-  const SfMData & sfm_data,
-  const std::string & filename,
-  ESfMData flags_part)
+bool savePLY(
+  const SfMData& sfmData,
+  const std::string& filename,
+  ESfMData partFlag)
 {
-  const bool b_structure = (flags_part & STRUCTURE) == STRUCTURE;
-  const bool b_extrinsics = (flags_part & EXTRINSICS) == EXTRINSICS;
+  const bool b_structure = (partFlag & STRUCTURE) == STRUCTURE;
+  const bool b_extrinsics = (partFlag & EXTRINSICS) == EXTRINSICS;
 
   if (!(b_structure || b_extrinsics))
     return false;
@@ -33,16 +32,16 @@ namespace sfm {
     IndexT view_with_pose_count = 0;
     if (b_extrinsics)
     {
-      for (const auto & view : sfm_data.GetViews())
+      for (const auto & view : sfmData.GetViews())
       {
-        view_with_pose_count += sfm_data.IsPoseAndIntrinsicDefined(view.second.get());
+        view_with_pose_count += sfmData.IsPoseAndIntrinsicDefined(view.second.get());
       }
     }
     stream << "ply"
       << '\n' << "format ascii 1.0"
       << '\n' << "element vertex "
         // Vertex count: (#landmark + #view_with_valid_pose)
-        << ((b_structure ? sfm_data.GetLandmarks().size() : 0) +
+        << ((b_structure ? sfmData.GetLandmarks().size() : 0) +
             view_with_pose_count)
       << '\n' << "property float x"
       << '\n' << "property float y"
@@ -54,11 +53,11 @@ namespace sfm {
 
       if (b_extrinsics)
       {
-        for (const auto & view : sfm_data.GetViews())
+        for (const auto & view : sfmData.GetViews())
         {
-          if (sfm_data.IsPoseAndIntrinsicDefined(view.second.get()))
+          if (sfmData.IsPoseAndIntrinsicDefined(view.second.get()))
           {
-            const geometry::Pose3 pose = sfm_data.getPose(*(view.second.get()));
+            const geometry::Pose3 pose = sfmData.getPose(*(view.second.get()));
             stream << pose.center().transpose()
               << " 0 255 0" << "\n";
           }
@@ -67,7 +66,7 @@ namespace sfm {
 
       if (b_structure)
       {
-        const Landmarks & landmarks = sfm_data.GetLandmarks();
+        const Landmarks & landmarks = sfmData.GetLandmarks();
         for (Landmarks::const_iterator iterLandmarks = landmarks.begin();
           iterLandmarks != landmarks.end();
           ++iterLandmarks)  {

@@ -3,9 +3,9 @@
 // v. 2.0. If a copy of the MPL was not distributed with this file,
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
-#include "aliceVision/system/Timer.hpp"
-#include "aliceVision/sfm/sfm.hpp"
-#include "dependencies/stlplus3/filesystemSimplified/file_system.hpp"
+#include <aliceVision/system/Timer.hpp>
+#include <aliceVision/sfm/sfm.hpp>
+#include <dependencies/stlplus3/filesystemSimplified/file_system.hpp>
 #include <sstream>
 
 #define BOOST_TEST_MODULE sfmDataIO
@@ -66,9 +66,9 @@ SfMData createTestScene(std::size_t viewsCount = 2, std::size_t observationCount
 
 BOOST_AUTO_TEST_CASE(SfMData_IO_SAVE_LOAD_JSON) {
 
-  const std::vector<std::string> ext_Type = {"sfm","json", "bin", "xml"};
+  const std::vector<std::string> ext_Type = {"sfm","json"};
 
-  for (int i=0; i < ext_Type.size(); ++i)
+  for(int i = 0; i < ext_Type.size(); ++i)
   {
     std::ostringstream os;
     os << "SAVE_LOAD" << "." << ext_Type[i];
@@ -171,7 +171,7 @@ BOOST_AUTO_TEST_CASE(SfMData_IO_SAVE_LOAD_JSON) {
 BOOST_AUTO_TEST_CASE(SfMData_IO_BigFile) {
   const int nbViews = 1000;
   const int nbObservationPerView = 100000;
-  std::vector<std::string> ext_Type = {"sfm","json", "bin", "xml"};
+  std::vector<std::string> ext_Type = {"sfm","json"};
 
 #if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_ALEMBIC)
   ext_Type.push_back("abc");

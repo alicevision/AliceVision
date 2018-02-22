@@ -260,11 +260,11 @@ bool saveJSON(const SfMData& sfmData, const std::string& filename, ESfMData part
   saveMatrix("version", version, fileTree);
 
   // folders
-  if(!sfmData.getFeaturesFolders().empty())
+  if(!sfmData.getRelativeFeaturesFolders().empty())
   {
     bpt::ptree featureFoldersTree;
 
-    for(const std::string& featuresFolder : sfmData.getFeaturesFolders())
+    for(const std::string& featuresFolder : sfmData.getRelativeFeaturesFolders())
     {
       bpt::ptree featureFolderTree;
       featureFolderTree.put("", featuresFolder);
@@ -274,11 +274,11 @@ bool saveJSON(const SfMData& sfmData, const std::string& filename, ESfMData part
     fileTree.add_child("featuresFolders", featureFoldersTree);
   }
 
-  if(!sfmData.getMatchesFolders().empty())
+  if(!sfmData.getRelativeMatchesFolders().empty())
   {
     bpt::ptree matchingFoldersTree;
 
-    for(const std::string& matchesFolder : sfmData.getMatchesFolders())
+    for(const std::string& matchesFolder : sfmData.getRelativeMatchesFolders())
     {
       bpt::ptree matchingFolderTree;
       matchingFolderTree.put("", matchesFolder);

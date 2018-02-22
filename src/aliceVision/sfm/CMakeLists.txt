@@ -25,7 +25,6 @@ set(sfm_files_headers
   FrustumFilter.hpp
   sfmDataIO.hpp
   sfmDataIO_baf.hpp
-  sfmDataIO_cereal.hpp
   sfmDataIO_gt.hpp
   sfmDataIO_json.hpp
   sfmDataIO_ply.hpp

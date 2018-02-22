@@ -9,6 +9,8 @@
 #include <Alembic/AbcGeom/All.h>
 #include <Alembic/AbcCoreOgawa/All.h>
 
+#include <dependencies/stlplus3/filesystemSimplified/file_system.hpp>
+
 #include <numeric>
 
 namespace aliceVision {
@@ -76,8 +78,8 @@ void AlembicExporter::addSfM(const SfMData& sfmData, ESfMData flagsPart)
 {
   OCompoundProperty userProps = _dataImpl->_mvgRoot.getProperties();
 
-  OStringArrayProperty(userProps, "mvg_featuresFolders").set(sfmData.getFeaturesFolders());
-  OStringArrayProperty(userProps, "mvg_matchesFolders").set(sfmData.getMatchesFolders());
+  OStringArrayProperty(userProps, "mvg_featuresFolders").set(sfmData.getRelativeFeaturesFolders());
+  OStringArrayProperty(userProps, "mvg_matchesFolders").set(sfmData.getRelativeMatchesFolders());
 
   if(flagsPart & ESfMData::STRUCTURE)
     addLandmarks(sfmData.GetLandmarks(), (flagsPart & ESfMData::OBSERVATIONS));

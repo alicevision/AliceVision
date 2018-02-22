@@ -5,14 +5,14 @@
 
 #pragma once
 
-#include "aliceVision/camera/cameraCommon.hpp"
-#include "aliceVision/camera/IntrinsicBase.hpp"
-#include "aliceVision/camera/Pinhole.hpp"
-#include "aliceVision/camera/PinholeRadial.hpp"
-#include "aliceVision/camera/PinholeBrown.hpp"
-#include "aliceVision/camera/PinholeFisheye.hpp"
-#include "aliceVision/camera/PinholeFisheye1.hpp"
-#include "aliceVision/camera/cameraUndistortImage.hpp"
+#include <aliceVision/camera/cameraCommon.hpp>
+#include <aliceVision/camera/IntrinsicBase.hpp>
+#include <aliceVision/camera/Pinhole.hpp>
+#include <aliceVision/camera/PinholeRadial.hpp>
+#include <aliceVision/camera/PinholeBrown.hpp>
+#include <aliceVision/camera/PinholeFisheye.hpp>
+#include <aliceVision/camera/PinholeFisheye1.hpp>
+#include <aliceVision/camera/cameraUndistortImage.hpp>
 
 namespace aliceVision {
 namespace camera {

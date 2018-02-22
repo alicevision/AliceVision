@@ -4,17 +4,11 @@
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
 #include "io.hpp"
-
-#include "aliceVision/matching/IndMatch.hpp"
+#include <aliceVision/matching/IndMatch.hpp>
 #include <aliceVision/config.hpp>
 #include <aliceVision/system/Logger.hpp>
 
-#include <cereal/archives/portable_binary.hpp>
-#include <cereal/types/map.hpp>
-#include <cereal/types/utility.hpp>
-#include <cereal/types/vector.hpp>
-
-#include "dependencies/stlplus3/filesystemSimplified/file_system.hpp"
+#include <dependencies/stlplus3/filesystemSimplified/file_system.hpp>
 
 #include <map>
 #include <fstream>
@@ -25,10 +19,9 @@
 namespace aliceVision {
 namespace matching {
 
-bool LoadMatchFile(
-  PairwiseMatches & matches,
-  const std::string& folder,
-  const std::string & filename)
+bool LoadMatchFile(PairwiseMatches& matches,
+                   const std::string& folder,
+                   const std::string& filename)
 {
   if(!stlplus::is_file(stlplus::create_filespec(folder, filename)))
     return false;
@@ -66,7 +59,7 @@ bool LoadMatchFile(
         feature::EImageDescriberType descType = feature::EImageDescriberType_stringToEnum(descTypeStr);
         std::vector<IndMatch> matchesPerDesc(nbMatches);
         // Read all matches
-        for (std::size_t i = 0; i < nbMatches; ++i)
+        for(std::size_t i = 0; i < nbMatches; ++i)
         {
           stream >> matchesPerDesc[i];
         }
@@ -74,30 +67,6 @@ bool LoadMatchFile(
       }
     }
     stream.close();
-    return true;
-  }
-  else if (ext == "bin")
-  {
-    std::ifstream stream (filepath.c_str(), std::ios::in | std::ios::binary);
-    if (!stream.is_open())
-      return false;
-
-    cereal::PortableBinaryInputArchive archive(stream);
-    PairwiseMatches loadMatches;
-    archive(loadMatches);
-    stream.close();
-    if(matches.empty())
-    {
-      matches.swap(loadMatches);
-    }
-    else
-    {
-      // merge the loaded matches into the output
-      for(const auto& v: loadMatches)
-      {
-        matches[v.first] = v.second;
-      }
-    }
     return true;
   }
   else
@@ -300,18 +269,6 @@ private:
     }
   }
 
-  void saveBinary(
-    const std::string & filepath,
-    const PairwiseMatches::const_iterator& matchBegin,
-    const PairwiseMatches::const_iterator& matchEnd)
-  {
-    std::ofstream stream(filepath.c_str(), std::ios::out | std::ios::binary);
-    cereal::PortableBinaryOutputArchive archive(stream);
-    const PairwiseMatches matchesToExport(matchBegin, matchEnd);
-    archive(matchesToExport);
-    stream.close();
-  }
-
 public:
   MatchExporter(
     const PairwiseMatches& matches,
@@ -334,10 +291,6 @@ public:
     if(m_ext == "txt")
     {
       saveTxt(filepath, m_matches.begin(), m_matches.end());
-    }
-    else if(m_ext == "bin")
-    {
-      saveBinary(filepath, m_matches.begin(), m_matches.end());
     }
     else
     {
@@ -369,10 +322,6 @@ public:
       if(m_ext == "txt")
       {
         saveTxt(filepath, matchBegin, match);
-      }
-      else if(m_ext == "bin")
-      {
-        saveBinary(filepath, matchBegin, match);
       }
       else
       {

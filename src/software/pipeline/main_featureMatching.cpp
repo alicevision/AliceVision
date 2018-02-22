@@ -108,7 +108,7 @@ int main(int argc, char **argv)
   size_t numMatchesToKeep = 0;
   bool useGridSort = true;
   bool exportDebugFiles = false;
-  std::string fileExtension = "bin";
+  const std::string fileExtension = "txt";
 
   po::options_description allParams(
      "Compute corresponding features between a series of views:\n"
@@ -168,8 +168,6 @@ int main(int argc, char **argv)
       "Use matching grid sort.")
     ("exportDebugFiles", po::value<bool>(&exportDebugFiles)->default_value(exportDebugFiles),
       "Export debug files (svg, dot).")
-    ("fileExtension", po::value<std::string>(&fileExtension)->default_value(fileExtension),
-      "File extension to store matches (bin or txt).")
     ("maxMatches", po::value<std::size_t>(&numMatchesToKeep)->default_value(numMatchesToKeep),
       "Maximum number pf matches to keep.")
     ("rangeStart", po::value<int>(&rangeStart)->default_value(rangeStart),

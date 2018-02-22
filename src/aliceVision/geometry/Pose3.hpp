@@ -3,11 +3,9 @@
 // v. 2.0. If a copy of the MPL was not distributed with this file,
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
-#ifndef ALICEVISION_GEOMETRY_POSE3_H_
-#define ALICEVISION_GEOMETRY_POSE3_H_
+#pragma once
 
-#include "aliceVision/multiview/projection.hpp"
-#include <cereal/cereal.hpp> // Serialization
+#include <aliceVision/multiview/projection.hpp>
 
 namespace aliceVision {
 namespace geometry {
@@ -78,38 +76,6 @@ class Pose3
       pose._rotation = _rotation * R.transpose();
       return pose;
     }
-
-    // Serialization
-    template <class Archive>
-    void save( Archive & ar) const
-    {
-      const std::vector<std::vector<double>> mat =
-        {
-          { _rotation(0,0), _rotation(0,1), _rotation(0,2) },
-          { _rotation(1,0), _rotation(1,1), _rotation(1,2) },
-          { _rotation(2,0), _rotation(2,1), _rotation(2,2) }
-        };
-
-      ar(cereal::make_nvp("rotation", mat));
-
-      const std::vector<double> vec = { _center(0), _center(1), _center(2) };
-      ar(cereal::make_nvp("center", vec ));
-    }
-
-    template <class Archive>
-    void load( Archive & ar)
-    {
-      std::vector<std::vector<double>> mat(3, std::vector<double>(3));
-      ar(cereal::make_nvp("rotation", mat));
-      // copy back to the rotation
-      _rotation.row(0) = Eigen::Map<const Vec3>(&(mat[0][0]));
-      _rotation.row(1) = Eigen::Map<const Vec3>(&(mat[1][0]));
-      _rotation.row(2) = Eigen::Map<const Vec3>(&(mat[2][0]));
-
-      std::vector<double> vec(3);
-      ar(cereal::make_nvp("center", vec));
-      _center = Eigen::Map<const Vec3>(&vec[0]);
-    }
 };
 
 /**
@@ -125,5 +91,3 @@ inline Pose3 poseFromRT(const Mat3& R, const Vec3& t)
 
 } // namespace geometry
 } // namespace aliceVision
-
-#endif  // ALICEVISION_GEOMETRY_POSE3_H_

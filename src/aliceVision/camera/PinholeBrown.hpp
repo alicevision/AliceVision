@@ -5,8 +5,8 @@
 
 #pragma once
 
-#include "aliceVision/numeric/numeric.hpp"
-#include "aliceVision/camera/cameraCommon.hpp"
+#include <aliceVision/numeric/numeric.hpp>
+#include <aliceVision/camera/cameraCommon.hpp>
 
 #include <vector>
 
@@ -69,22 +69,6 @@ class PinholeBrownT2 : public Pinhole
       return cam2ima( add_disto(ima2cam(p)) );
     }
 
-    // Serialization
-    template <class Archive>
-    void save( Archive & ar) const
-    {
-      Pinhole::save(ar);
-      ar(cereal::make_nvp("disto_t2", _distortionParams));
-    }
-
-    // Serialization
-    template <class Archive>
-    void load( Archive & ar)
-    {
-      Pinhole::load(ar);
-      ar(cereal::make_nvp("disto_t2", _distortionParams));
-    }
-
     private:
 
     /// Functor to calculate distortion offset accounting for both radial and tangential distortion
@@ -102,11 +86,5 @@ class PinholeBrownT2 : public Pinhole
     }
 };
 
-
 } // namespace camera
 } // namespace aliceVision
-
-#include <cereal/types/polymorphic.hpp>
-#include <cereal/types/vector.hpp>
-
-CEREAL_REGISTER_TYPE_WITH_NAME(aliceVision::camera::PinholeBrownT2, "PinholeBrownT2");

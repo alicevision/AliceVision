@@ -14,7 +14,7 @@ set(ALICEVISION_VERSION ${ALICEVISION_VERSION_MAJOR}.${ALICEVISION_VERSION_MINOR
 # ==============================================================================
 # Check that submodule have been initialized and updated
 # ==============================================================================
-if(NOT EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/dependencies/cereal/include)
+if(NOT EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/dependencies/osi_clp/CoinUtils)
   message(FATAL_ERROR
     "\n submodule(s) are missing, please update your repository:\n"
     "  > git submodule update -i\n")
@@ -308,7 +308,7 @@ endif()
 # Boost
 # ==============================================================================
 option(BOOST_NO_CXX11 "if Boost is compiled without C++11 support (as it is often the case in OS packages) this must be enabled to avoid symbol conflicts (SCOPED_ENUM)." OFF)
-find_package(Boost 1.53.0 QUIET COMPONENTS system filesystem program_options thread serialization log log_setup)
+find_package(Boost 1.60.0 QUIET COMPONENTS system filesystem program_options thread serialization log log_setup)
 
 if(Boost_FOUND)
   message(STATUS "Boost ${Boost_LIB_VERSION} found.")
@@ -474,7 +474,6 @@ set(ALICEVISION_INCLUDE_DIRS
   ${CMAKE_CURRENT_SOURCE_DIR} 
   ${generatedDir}
   ${CMAKE_CURRENT_SOURCE_DIR}/dependencies
-  ${CMAKE_CURRENT_SOURCE_DIR}/dependencies/cereal/include
   ${LEMON_INCLUDE_DIRS}
   ${EIGEN_INCLUDE_DIRS}
   ${CERES_INCLUDE_DIRS}

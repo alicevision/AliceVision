@@ -14,8 +14,6 @@
 #include <aliceVision/feature/akaze/descriptorMLDB.hpp>
 #include <aliceVision/feature/akaze/descriptorMSURF.hpp>
 
-#include <cereal/cereal.hpp>
-
 using namespace std;
 
 namespace aliceVision {
@@ -30,16 +28,11 @@ enum EAKAZE_DESCRIPTOR
 
 struct AKAZEParams
 {
-  AKAZEParams(
-    AKAZEConfig config = AKAZEConfig(),
-    EAKAZE_DESCRIPTOR eAkazeDescriptor = AKAZE_MSURF
-  ):_options(config),_eAkazeDescriptor(eAkazeDescriptor){}
-
-  template<class Archive>
-  void serialize(Archive & ar)
-  {
-    ar(_options, _eAkazeDescriptor);
-  }
+  AKAZEParams(AKAZEConfig config = AKAZEConfig(),
+              EAKAZE_DESCRIPTOR eAkazeDescriptor = AKAZE_MSURF)
+    : _options(config)
+    , _eAkazeDescriptor(eAkazeDescriptor)
+  {}
 
   // Parameters
   AKAZEConfig _options;

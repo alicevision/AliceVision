@@ -47,7 +47,7 @@ namespace robustEstimation{
 
 /// logarithm (base 10) of binomial coefficient
 template <typename T>
-static T logcombi
+T logcombi
 (
   size_t k,
   size_t n,
@@ -64,7 +64,7 @@ static T logcombi
 
 /// tabulate logcombi(.,n)
 template<typename Type>
-static void makelogcombi_n
+void makelogcombi_n
 (
   size_t n,
   std::vector<Type> & l,
@@ -78,7 +78,7 @@ static void makelogcombi_n
 
 /// tabulate logcombi(k,.)
 template<typename Type>
-static void makelogcombi_k
+void makelogcombi_k
 (
   size_t k,
   size_t nmax,
@@ -92,7 +92,7 @@ static void makelogcombi_k
 }
 
 template <typename Type>
-static void makelogcombi
+void makelogcombi
 (
   size_t k,
   size_t n,
@@ -113,7 +113,7 @@ static void makelogcombi
 typedef std::pair<double,size_t> ErrorIndex;
 
 /// Find best NFA and its index wrt square error threshold in e.
-static ErrorIndex bestNFA(
+inline ErrorIndex bestNFA(
   int startIndex, //number of point required for estimation
   double logalpha0,
   const std::vector<ErrorIndex>& e,

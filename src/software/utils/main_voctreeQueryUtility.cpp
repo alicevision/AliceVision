@@ -363,14 +363,6 @@ int main(int argc, char** argv)
     voctree::queryDatabase<DescriptorUChar>(*querySfmData, featuresFolder, tree, db, numImageQuery, allDocMatches, histograms, distance, Nmax);
   }
 
-  const std::string sImageDescriber = stlplus::create_filespec(featuresFolder, "image_describer", "json");
-  std::unique_ptr<Regions> regions_type = Init_region_type_from_file(sImageDescriber);
-  if (!regions_type)
-  {
-    std::cerr << "Invalid: "
-      << sImageDescriber << " regions type file." << std::endl;
-    return EXIT_FAILURE;
-  }
   // Load the corresponding RegionsPerView
   // Get imageDescriberMethodType
   EImageDescriberType describerType = EImageDescriberType_stringToEnum(describerMethod);

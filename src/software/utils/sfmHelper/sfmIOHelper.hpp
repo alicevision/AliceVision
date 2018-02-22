@@ -57,7 +57,7 @@ struct IntrinsicCameraInfo
 // - a camera with exif data found in the database
 // - a camera with exif data not found in the database
 // - a camera with known intrinsic
-static bool loadImageList( std::vector<CameraInfo> & vec_camImageName,
+inline bool loadImageList( std::vector<CameraInfo> & vec_camImageName,
                            std::vector<IntrinsicCameraInfo> & vec_focalGroup,
                            const std::string & sFileName,
                            bool bVerbose = true )
@@ -189,7 +189,7 @@ static bool loadImageList( std::vector<CameraInfo> & vec_camImageName,
 }
 
 //-- Load an image list file but only return camera image names
-static bool loadImageList( std::vector<std::string> & vec_camImageName,
+inline bool loadImageList( std::vector<std::string> & vec_camImageName,
                            const std::string & sListFileName,
                            bool bVerbose = true )
 {

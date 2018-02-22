@@ -9,11 +9,11 @@
 #include <Alembic/AbcCoreFactory/All.h>
 #include <Alembic/AbcCoreOgawa/All.h>
 
-using namespace Alembic::Abc;
-using namespace Alembic::AbcGeom;
-
 namespace aliceVision {
 namespace sfm {
+
+using namespace Alembic::Abc;
+using namespace Alembic::AbcGeom;
 
 template<class AbcArrayProperty, typename T>
 void getAbcArrayProp(ICompoundProperty& userProps, const std::string& id, index_t sampleFrame, T& outputArray)
@@ -559,33 +559,39 @@ void visitObject(IObject iObj, M44d mat, sfm::SfMData& sfmdata, sfm::ESfMData fl
 
 struct AlembicImporter::DataImpl
 {
-  DataImpl(const IObject &obj)
+  DataImpl(const std::string& filename)
   {
-    _rootEntity = obj;
+    Alembic::AbcCoreFactory::IFactory factory;
+    Alembic::AbcCoreFactory::IFactory::CoreType coreType;
+    Abc::IArchive archive = factory.getArchive(filename, coreType);
+
+    if(!archive.valid())
+      throw std::runtime_error("Can't open '" + filename + "' : Alembic file is not valid.");
+
+    _rootEntity = archive.getTop();
+    _filename = filename;
   }
   
   IObject _rootEntity;
+  std::string _filename;
 };
 
-AlembicImporter::AlembicImporter(const std::string &filename)
+AlembicImporter::AlembicImporter(const std::string& filename)
 {
-  Alembic::AbcCoreFactory::IFactory factory;
-  Alembic::AbcCoreFactory::IFactory::CoreType coreType;
-  Abc::IArchive archive = factory.getArchive(filename, coreType);
-
-  // TODO : test if archive is correctly opened
-  _dataImpl.reset(new DataImpl(archive.getTop()));
+  _dataImpl.reset(new DataImpl(filename));
 }
 
 AlembicImporter::~AlembicImporter()
-{
-}
+{}
 
 void AlembicImporter::populateSfM(sfm::SfMData& sfmdata, sfm::ESfMData flagsPart)
 {
   const index_t sampleFrame = 0;
   IObject rootObj = _dataImpl->_rootEntity.getChild("mvgRoot");
   ICompoundProperty userProps = rootObj.getProperties();
+
+  // set SfMData folder absolute path
+  sfmdata.setAbsolutePath(_dataImpl->_filename);
 
   if(userProps.getPropertyHeader("mvg_featuresFolders"))
   {

@@ -21,10 +21,10 @@ namespace sfm {
 /// Define a collection of View
 using Views = HashMap<IndexT, std::shared_ptr<View> >;
 
-/// Define a collection of Pose (indexed by View::id_pose)
+/// Define a collection of Pose (indexed by view.getPoseId())
 using Poses = HashMap<IndexT, geometry::Pose3>;
 
-/// Define a collection of IntrinsicParameter (indexed by View::id_intrinsic)
+/// Define a collection of IntrinsicParameter (indexed by view.getIntrinsicId())
 using Intrinsics = HashMap<IndexT, std::shared_ptr<camera::IntrinsicBase> >;
 
 /// Define a collection of landmarks are indexed by their TrackId
@@ -69,8 +69,12 @@ public:
   Landmarks& GetLandmarks() {return structure;}
   const Landmarks& GetControl_Points() const {return control_points;}
   Landmarks& GetControl_Points() {return control_points;}
-  const std::vector<std::string>& getFeaturesFolders() const {return _featuresFolders;}
-  const std::vector<std::string>& getMatchesFolders() const {return _matchesFolders;}
+
+  const std::vector<std::string>& getRelativeFeaturesFolders() const {return _featuresFolders;}
+  const std::vector<std::string>& getRelativeMatchesFolders() const {return _matchesFolders;}
+
+  std::vector<std::string> getFeaturesFolders() const;
+  std::vector<std::string> getMatchesFolders() const;
 
   /**
    * @brief List the view indexes that have valid camera intrinsic and pose.
@@ -234,6 +238,15 @@ public:
   }
 
   /**
+   * @brief Set the SfMData file folder absolute path
+   * @param[in] path The absolute path to the SfMData file folder
+   */
+  void setAbsolutePath(const std::string& path)
+  {
+    _absolutePath = path;
+  }
+
+  /**
    * @brief Set the given pose for the given view
    * if the view is part of a rig, this method update rig pose/sub-pose
    * @param[in] view The given view
@@ -282,7 +295,8 @@ public:
   void combine(const SfMData& sfmData);
 
 private:
-
+  /// Absolute path to the SfMData file (should not be saved)
+  std::string _absolutePath;
   /// Considered poses (indexed by view.getPoseId())
   Poses _poses;
   /// Considered rigs

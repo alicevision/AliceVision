@@ -5,8 +5,8 @@
 
 #pragma once
 
-#include "aliceVision/numeric/numeric.hpp"
-#include "aliceVision/camera/cameraCommon.hpp"
+#include <aliceVision/numeric/numeric.hpp>
+#include <aliceVision/camera/cameraCommon.hpp>
 
 #include <vector>
 
@@ -68,28 +68,7 @@ public:
   {
     return cam2ima( add_disto(ima2cam(p)) );
   }
-
-  // Serialization
-  template <class Archive>
-  void save( Archive & ar) const
-  {
-    Pinhole::save(ar);
-    ar(cereal::make_nvp("fisheye1", _distortionParams));
-  }
-
-  // Serialization
-  template <class Archive>
-  void load( Archive & ar)
-  {
-    Pinhole::load(ar);
-    ar(cereal::make_nvp("fisheye1", _distortionParams));
-  }
 };
 
 } // namespace camera
 } // namespace aliceVision
-
-#include <cereal/types/polymorphic.hpp>
-#include <cereal/types/vector.hpp>
-
-CEREAL_REGISTER_TYPE_WITH_NAME(aliceVision::camera::PinholeFisheye1, "fisheye1");
