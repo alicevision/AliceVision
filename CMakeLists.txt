@@ -26,6 +26,9 @@ function(trilean_option NAME DESCRIPTION DEFAULT_VALUE)
   endif()
 endfunction()
 
+# Enable folders in supported IDEs
+set_property(GLOBAL PROPERTY USE_FOLDERS ON)
+
 # ==============================================================================
 # AliceVision build options
 # ==============================================================================
@@ -69,6 +72,7 @@ set(LIBRARY_OUTPUT_PATH "${PROJECT_BINARY_DIR}/${CMAKE_SYSTEM_NAME}-${CMAKE_SYST
 
 if(WIN32)
   add_definitions(-DNOMINMAX)
+  add_definitions(-D_USE_MATH_DEFINES)
   if(MSVC)
     add_definitions(/bigobj)
     add_compile_options(/MP)
