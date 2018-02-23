@@ -95,11 +95,15 @@ else()
 endif()
 
 # OpenImageIO
-find_package(OpenImageIO)
+find_package(OpenImageIO REQUIRED)
 if(OPENIMAGEIO_FOUND)
   message(STATUS "OpenImageIO found.")
-else()
-  message(SEND_ERROR "Failed to find OpenImageIO.")
+endif()
+
+# Eigen
+find_package(Eigen3 3.3 REQUIRED)
+if(EIGEN3_FOUND)
+  message("Found external Eigen. include: ${EIGEN3_INCLUDE_DIR}, version: ${EIGEN3_VERSION_STRING}.")
 endif()
 
 # CUDA
@@ -168,8 +172,10 @@ set(generatedDir "${CMAKE_CURRENT_BINARY_DIR}/generated")
 # contains the "root" directory from which including all headers
 set(ALICEVISION_INCLUDE_DIR ${PROJECT_SOURCE_DIR}/src)
 
+add_subdirectory(src/dependencies/MeshSDFilter)
 add_subdirectory(src/aliceVision)
 add_subdirectory(src/software)
+
 # create the config.hpp file containing all the preprocessor definitions
 set(configfile "${generatedDir}/aliceVision/config.hpp")
 configure_file("${CMAKE_SOURCE_DIR}/cmake/config.hpp.in"
