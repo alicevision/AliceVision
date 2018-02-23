@@ -14,6 +14,8 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <cmath>
+#include <vector>
+#include <set>
 #include <iterator>
 #include <iomanip>
 
@@ -89,7 +91,7 @@ typedef stl::flat_map< size_t, SeedVector> SeedsPerView;
 
 void retrieveSeedsPerView(
     const SfMData & sfm_data,
-    const std::vector<IndexT>& viewIds,
+    const std::set<IndexT>& viewIds,
     SeedsPerView& outSeedsPerView)
 {
   static const double minAngle = 3.0;
@@ -101,7 +103,7 @@ void retrieveSeedsPerView(
     // all other observations with an angle > minAngle.
     for(const auto& obsA: landmark.observations)
     {
-      const auto& obsACamId_it = std::find(viewIds.begin(), viewIds.end(), obsA.first);
+      const auto& obsACamId_it = viewIds.find(obsA.first);
       if(obsACamId_it == viewIds.end())
         continue; // this view cannot be exported to mvs, so we skip the observation
       const View& viewA = *sfm_data.GetViews().at(obsA.first).get();
@@ -113,7 +115,7 @@ void retrieveSeedsPerView(
         // don't export itself
         if(obsA.first == obsB.first)
           continue;
-        const auto& obsBCamId_it = std::find(viewIds.begin(), viewIds.end(), obsB.first);
+        const auto& obsBCamId_it = viewIds.find(obsB.first);
         if(obsBCamId_it == viewIds.end())
           continue; // this view cannot be exported to mvs, so we skip the observation
         const unsigned short indexB = std::distance(viewIds.begin(), obsBCamId_it);
@@ -163,16 +165,15 @@ bool prepareDenseScene(
   image::EImageFileType outputFileType,
   const std::string & sOutDirectory)
 {
-  // As the MVS requires contiguous camera indexes and some views may not have a pose,
-  // we reindex the poses to ensure a contiguous pose list.
-  std::vector<IndexT> viewIds;
+  // defined view Ids
+  std::set<IndexT> viewIds;
   // Export valid views as Projective Cameras:
   for(const auto &iter : sfm_data.GetViews())
   {
     const View * view = iter.second.get();
     if (!sfm_data.IsPoseAndIntrinsicDefined(view))
       continue;
-    viewIds.push_back(view->getViewId());
+    viewIds.insert(view->getViewId());
   }
 
   SeedsPerView seedsPerView;
@@ -185,10 +186,14 @@ bool prepareDenseScene(
   //   - viewId_P.txt (Pose of the reconstructed camera)
   //   - viewId.exr (undistorted & scaled colored image)
   //   - viewId_seeds.bin (3d points visible in this image)
+
 #pragma omp parallel for num_threads(3)
   for(int i = 0; i < viewIds.size(); ++i)
   {
-    const IndexT viewId = viewIds.at(i);
+    auto itView = viewIds.begin();
+    std::advance(itView, i);
+
+    const IndexT viewId = *itView;
     const View * view = sfm_data.GetViews().at(viewId).get();
 
     assert(view->getViewId() == viewId);
