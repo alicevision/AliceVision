@@ -4,7 +4,7 @@
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
 #include <aliceVision/sfm/sfm.hpp>
-#include <aliceVision/image/image.hpp>
+#include <aliceVision/image/all.hpp>
 #include <aliceVision/image/convertion.hpp>
 #include <aliceVision/config.hpp>
 
@@ -14,6 +14,8 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <cmath>
+#include <vector>
+#include <set>
 #include <iterator>
 #include <iomanip>
 
@@ -89,7 +91,7 @@ typedef stl::flat_map< size_t, SeedVector> SeedsPerView;
 
 void retrieveSeedsPerView(
     const SfMData & sfm_data,
-    const HashMap<IndexT, IndexT> map_viewIdToContiguous,
+    const std::set<IndexT>& viewIds,
     SeedsPerView& outSeedsPerView)
 {
   static const double minAngle = 3.0;
@@ -101,10 +103,9 @@ void retrieveSeedsPerView(
     // all other observations with an angle > minAngle.
     for(const auto& obsA: landmark.observations)
     {
-      const auto& obsACamId_it = map_viewIdToContiguous.find(obsA.first);
-      if(obsACamId_it == map_viewIdToContiguous.end())
+      const auto& obsACamId_it = viewIds.find(obsA.first);
+      if(obsACamId_it == viewIds.end())
         continue; // this view cannot be exported to mvs, so we skip the observation
-      int obsACamId = obsACamId_it->second;
       const View& viewA = *sfm_data.GetViews().at(obsA.first).get();
       const geometry::Pose3& poseA = sfm_data.GetPoses().at(viewA.getPoseId());
       const Pinhole * intrinsicsA = dynamic_cast<const Pinhole*>(sfm_data.GetIntrinsics().at(viewA.getIntrinsicId()).get());
@@ -114,28 +115,29 @@ void retrieveSeedsPerView(
         // don't export itself
         if(obsA.first == obsB.first)
           continue;
-        const auto& obsBCamId_it = map_viewIdToContiguous.find(obsB.first);
-        if(obsBCamId_it == map_viewIdToContiguous.end())
+        const auto& obsBCamId_it = viewIds.find(obsB.first);
+        if(obsBCamId_it == viewIds.end())
           continue; // this view cannot be exported to mvs, so we skip the observation
+        const unsigned short indexB = std::distance(viewIds.begin(), obsBCamId_it);
         const View& viewB = *sfm_data.GetViews().at(obsB.first).get();
         const geometry::Pose3& poseB = sfm_data.GetPoses().at(viewB.getPoseId());
         const Pinhole * intrinsicsB = dynamic_cast<const Pinhole*>(sfm_data.GetIntrinsics().at(viewB.getIntrinsicId()).get());
 
-        const double angle = AngleBetweenRay(
+        const double angle = AngleBetweenRays(
           poseA, intrinsicsA, poseB, intrinsicsB, obsA.second.x, obsB.second.x);
  
         if(angle < minAngle)
           continue;
 
         Seed seed;
-        seed.camId = obsBCamId_it->second - 1; // Get 0-based index this time
+        seed.camId = indexB;
         seed.s.ncams = 1;
         seed.s.segId = landmarkId;
         seed.s.op.p.x = landmark.X(0);
         seed.s.op.p.y = landmark.X(1);
         seed.s.op.p.z = landmark.X(2);
 
-        outSeedsPerView[obsACamId].push_back(seed);
+        outSeedsPerView[obsA.first].push_back(seed);
       }
     }
   }
@@ -163,63 +165,75 @@ bool prepareDenseScene(
   image::EImageFileType outputFileType,
   const std::string & sOutDirectory)
 {
-  // As the MVS requires contiguous camera indexes and some views may not have a pose,
-  // we reindex the poses to ensure a contiguous pose list.
-  HashMap<IndexT, IndexT> map_viewIdToContiguous;
+  // defined view Ids
+  std::set<IndexT> viewIds;
   // Export valid views as Projective Cameras:
   for(const auto &iter : sfm_data.GetViews())
   {
     const View * view = iter.second.get();
     if (!sfm_data.IsPoseAndIntrinsicDefined(view))
       continue;
-    Intrinsics::const_iterator iterIntrinsic = sfm_data.GetIntrinsics().find(view->getIntrinsicId());
-    const IntrinsicBase * cam = iterIntrinsic->second.get();
-    // View Id re-indexing
-    // Need to start at 1 for MVS
-    map_viewIdToContiguous.insert(std::make_pair(view->getViewId(), map_viewIdToContiguous.size() + 1));
+    viewIds.insert(view->getViewId());
   }
 
   SeedsPerView seedsPerView;
-  retrieveSeedsPerView(sfm_data, map_viewIdToContiguous, seedsPerView);
+  retrieveSeedsPerView(sfm_data, viewIds, seedsPerView);
   
   // Export data
-  boost::progress_display my_progress_bar(map_viewIdToContiguous.size(),
-                                     std::cout, "\n- Exporting Data -\n");
+  boost::progress_display my_progress_bar(viewIds.size(), std::cout, "\n- Exporting Data -\n");
 
   // Export views:
-  //   - 00001_P.txt (Pose of the reconstructed camera)
-  //   - 00001.exr (undistorted & scaled colored image)
-  //   - 00001_seeds.bin (3d points visible in this image)
-  #pragma omp parallel for num_threads(3)
-  for(int i = 0; i < map_viewIdToContiguous.size(); ++i)
+  //   - viewId_P.txt (Pose of the reconstructed camera)
+  //   - viewId.exr (undistorted & scaled colored image)
+  //   - viewId_seeds.bin (3d points visible in this image)
+
+#pragma omp parallel for num_threads(3)
+  for(int i = 0; i < viewIds.size(); ++i)
   {
-    auto viewIdToContiguous = map_viewIdToContiguous.cbegin();
-    std::advance(viewIdToContiguous, i);
-    const IndexT viewId = viewIdToContiguous->first;
+    auto itView = viewIds.begin();
+    std::advance(itView, i);
+
+    const IndexT viewId = *itView;
     const View * view = sfm_data.GetViews().at(viewId).get();
 
     assert(view->getViewId() == viewId);
-    const IndexT contiguousViewIndex = viewIdToContiguous->second;
     Intrinsics::const_iterator iterIntrinsic = sfm_data.GetIntrinsics().find(view->getIntrinsicId());
+
     // We have a valid view with a corresponding camera & pose
-    assert(viewIdToContiguous->second == i + 1);
+    const std::string baseFilename = std::to_string(viewId);
 
-    std::ostringstream baseFilenameSS;
-    baseFilenameSS << std::setw(5) << std::setfill('0') << contiguousViewIndex;
-    const std::string baseFilename = baseFilenameSS.str();
-
-    // Export camera pose
+    // Export camera
     {
+      // Export camera pose
       const Pose3 pose = sfm_data.getPose(*view);
       Mat34 P = iterIntrinsic->second.get()->get_projective_equivalent(pose);
-      std::ofstream file(
+      std::ofstream fileP(
         stlplus::create_filespec(stlplus::folder_append_separator(sOutDirectory),
         baseFilename + "_P", "txt").c_str());
-      file << std::setprecision(10)
+      fileP << std::setprecision(10)
            << P(0, 0) / (double)scale << " " << P(0, 1) / (double)scale << " "  << P(0, 2) / (double)scale << " "  << P(0, 3) / (double)scale << "\n"
            << P(1, 0) / (double)scale << " " << P(1, 1) / (double)scale << " "  << P(1, 2) / (double)scale << " "  << P(1, 3) / (double)scale << "\n"
            << P(2, 0) << " " << P(2, 1) << " "  << P(2, 2) << " "  << P(2, 3) << "\n";
-      file.close();
+      fileP.close();
+
+      // Export camera intrinsics
+      const Mat3 K = dynamic_cast<const Pinhole*>(sfm_data.GetIntrinsicPtr(view->getIntrinsicId()))->K();
+      const Mat3 R = pose.rotation();
+      const Vec3 t = pose.translation();
+      std::ofstream fileKRt(
+        stlplus::create_filespec(stlplus::folder_append_separator(sOutDirectory),
+        baseFilename + "_KRt", "txt").c_str());
+      fileKRt << std::setprecision(10)
+           << K(0, 0) / (double)scale << " " << K(0, 1) / (double)scale << " " << K(0, 2) / (double)scale << "\n"
+           << K(1, 0) / (double)scale << " " << K(1, 1) / (double)scale << " " << K(1, 2) / (double)scale << "\n"
+           << K(2, 0) << " " << K(2, 1) << " "  << K(2, 2) << "\n"
+           << "\n"
+           << R(0, 0) << " " << R(0, 1) << " " << R(0, 2) << "\n"
+           << R(1, 0) << " " << R(1, 1) << " " << R(1, 2) << "\n"
+           << R(2, 0) << " " << R(2, 1) << " " << R(2, 2) << "\n"
+           << "\n"
+           << t(0) << " " << t(1) << " " << t(2) << "\n";
+      fileKRt.close();
     }
     
     // Export undistort image
@@ -286,10 +300,10 @@ bool prepareDenseScene(
         stlplus::folder_append_separator(sOutDirectory), baseFilename + "_seeds", "bin");
       std::ofstream seedsFile(seedsFilepath, std::ios::binary);
       
-      const int nbSeeds = seedsPerView[contiguousViewIndex].size();
+      const int nbSeeds = seedsPerView[viewId].size();
       seedsFile.write((char*)&nbSeeds, sizeof(int));
       
-      for(const Seed& seed: seedsPerView[contiguousViewIndex])
+      for(const Seed& seed: seedsPerView.at(viewId))
       {
         seedsFile.write((char*)&seed, sizeof(seed_io_block) + sizeof(unsigned short) + 2 * sizeof(point2d)); //sizeof(Seed));
       }
@@ -303,21 +317,17 @@ bool prepareDenseScene(
   std::ostringstream os;
   os << "[global]" << os.widen('\n')
   << "outDir=../../meshes" << os.widen('\n')
-  << "ncams=" << map_viewIdToContiguous.size() << os.widen('\n')
+  << "ncams=" << viewIds.size() << os.widen('\n')
   << "scale=" << scale << os.widen('\n')
   << "imgExt=" << image::EImageFileType_enumToString(outputFileType) << os.widen('\n')
   << "verbose=TRUE" << os.widen('\n')
   << os.widen('\n')
   << "[imageResolutions]" << os.widen('\n');
-  for(const auto& viewIdToContiguous: map_viewIdToContiguous)
-  {
-    const IndexT viewId = viewIdToContiguous.first;
-    const View * view = sfm_data.GetViews().at(viewId).get();
-    const IndexT contiguousViewIndex = viewIdToContiguous.second;
 
-    std::ostringstream baseFilenameSS;
-    baseFilenameSS << std::setw(5) << std::setfill('0') << contiguousViewIndex;
-    const std::string baseFilename = baseFilenameSS.str();
+  for(const IndexT viewId : viewIds)
+  {
+    const View * view = sfm_data.GetViews().at(viewId).get();
+    const std::string baseFilename = std::to_string(viewId);
 
     os << baseFilename << "=" << int(view->getWidth() / (double)scale) << "x" << int(view->getHeight() / (double)scale) << os.widen('\n');
   }

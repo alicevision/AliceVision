@@ -366,7 +366,7 @@ BOOST_AUTO_TEST_CASE(rigResection_simpleWithNoiseNoOutliers)
                                            nullptr,
                                            rigPose,
                                            inliers,
-                                           D2R(0.008));
+                                           degreeToRadian(0.008));
     BOOST_CHECK(status.isValid);
 
     ALICEVISION_LOG_DEBUG("rigPose\n" << rigPose.rotation() << "\n" << rigPose.center());
@@ -451,7 +451,7 @@ BOOST_AUTO_TEST_CASE(rigResection_simpleNoNoiseWithOutliers)
                                           nullptr,
                                           rigPose,
                                           inliers,
-                                          D2R(0.008));
+                                          degreeToRadian(0.008));
     BOOST_CHECK(status.hasStrongSupport);
 
     ALICEVISION_LOG_DEBUG("rigPose\n" << rigPose.rotation() << "\n" << rigPose.center());

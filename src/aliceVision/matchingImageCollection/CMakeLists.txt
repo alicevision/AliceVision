@@ -28,6 +28,7 @@ add_library(aliceVision_matchingImageCollection
 
 target_link_libraries(aliceVision_matchingImageCollection
   aliceVision_matching
+  ${Boost_LIBRARIES}
   ${LOG_LIB}
 )
 

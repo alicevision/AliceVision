@@ -3,8 +3,7 @@
 // v. 2.0. If a copy of the MPL was not distributed with this file,
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
-#ifndef TOOLS_PRECISION_EVALUATION_TO_GT_HPP
-#define TOOLS_PRECISION_EVALUATION_TO_GT_HPP
+#pragma once
 
 #include "aliceVision/numeric/numeric.hpp"
 #include "aliceVision/geometry/rigidTransformation3D.hpp"
@@ -19,8 +18,9 @@
 
 namespace aliceVision
 {
+
 /// Compute a 5DOF rigid transform between the two camera trajectories
-bool computeSimilarity(
+inline bool computeSimilarity(
   const std::vector<Vec3> & vec_camPosGT,
   const std::vector<Vec3> & vec_camPosComputed,
   std::vector<Vec3> & vec_camPosComputed_T,
@@ -64,7 +64,7 @@ bool computeSimilarity(
 }
 
 /// Export to PLY two camera trajectories
-static bool exportToPly(const std::vector<Vec3> & vec_camPosGT,
+inline bool exportToPly(const std::vector<Vec3> & vec_camPosGT,
   const std::vector<Vec3> & vec_camPosComputed,
   const std::string & sFileName)
 {
@@ -99,7 +99,7 @@ static bool exportToPly(const std::vector<Vec3> & vec_camPosGT,
 
 /// Compare two camera path (translation and rotation residual after a 5DOF rigid registration)
 /// Export computed statistics to a HTLM stream
-void EvaluteToGT(
+inline void EvaluteToGT(
   const std::vector<Vec3> & vec_camCenterGT,
   const std::vector<Vec3> & vec_camCenterComputed,
   const std::vector<Mat3> & vec_camRotGT,
@@ -153,7 +153,7 @@ void EvaluteToGT(
         const Mat3 R1 = *iter1; //GT
         const Mat3 R2T = *iter2 * R.transpose(); // Computed
 
-        const double angularErrorDegree = R2D(getRotationMagnitude(R1 * R2T.transpose()));
+        const double angularErrorDegree = radianToDegree(getRotationMagnitude(R1 * R2T.transpose()));
         vec_angularErrors.push_back(angularErrorDegree);
     }
   }
@@ -311,7 +311,7 @@ void EvaluteToGT(
 
 // Find a file in a list and return the index, or -1 if nothing found.
 // Handle relative/absolute paths
-int findIdGT(std::string file, std::vector<std::string> filelist)
+inline int findIdGT(std::string file, std::vector<std::string> filelist)
 {
   int result = -1;
   std::string file_relative = stlplus::filename_part(file);
@@ -328,5 +328,3 @@ int findIdGT(std::string file, std::vector<std::string> filelist)
 }
 
 } //namespace aliceVision
-
-#endif // TOOLS_PRECISION_EVALUATION_TO_GT_HPP

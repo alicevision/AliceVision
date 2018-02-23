@@ -22,7 +22,9 @@ using namespace aliceVision::camera;
 using namespace aliceVision::sfm;
 using namespace aliceVision::feature;
 using namespace std;
+
 namespace po = boost::program_options;
+namespace fs = boost::filesystem;
 
 /**
  * @brief Retrieve the view id in the sfmData from the image filename.
@@ -86,11 +88,11 @@ int main(int argc, char **argv)
   std::pair<std::string,std::string> initialPairString("","");
   int minInputTrackLength = 2;
   int maxNbMatches = 0;
-  int userCameraModel = static_cast<int>(PINHOLE_CAMERA_RADIAL3);
+  std::size_t minNbObservationsForTriangulation = 2;
   bool refineIntrinsics = true;
-  bool allowUserInteraction = true;
   bool useLocalBundleAdjustment = false;
   std::size_t localBundelAdjustementGraphDistanceLimit = 1;
+  std::string localizerEstimatorName = robustEstimation::ERobustEstimator_enumToString(robustEstimation::ERobustEstimator::ACRANSAC);
 
   po::options_description allParams(
     "Sequential/Incremental reconstruction\n"
@@ -111,7 +113,7 @@ int main(int argc, char **argv)
   po::options_description optionalParams("Optional parameters");
   optionalParams.add_options()
     ("outputViewsAndPoses", po::value<std::string>(&outputSfMViewsAndPoses)->default_value(outputSfMViewsAndPoses),
-      "Path to the output SfMData (with only views and poses) file.")
+      "Path to the output SfMData file (with only views and poses).")
     ("extraInfoFolder", po::value<std::string>(&extraInfoFolder)->default_value(extraInfoFolder),
       "Folder for intermediate reconstruction files and additional reconstruction information files.")
     ("describerTypes,d", po::value<std::string>(&describerTypesName)->default_value(describerTypesName),
@@ -123,24 +125,23 @@ int main(int argc, char **argv)
     ("maxNumberOfMatches", po::value<int>(&maxNbMatches)->default_value(maxNbMatches),
       "Maximum number of matches per image pair (and per feature type). "
       "This can be useful to have a quick reconstruction overview. 0 means no limit.")
-    ("cameraModel", po::value<int>(&userCameraModel)->default_value(userCameraModel),
-      "* 1: Pinhole\n"
-      "* 2: Pinhole radial 1\n"
-      "* 3: Pinhole radial 3")
+    ("minNumberOfObservationsForTriangulation", po::value<std::size_t>(&minNbObservationsForTriangulation)->default_value(minNbObservationsForTriangulation),
+      "Minimum number of observations to triangulate a point.\n"
+      "Set it to 3 (or more) reduces drastically the noise in the point cloud, but the number of final poses is a little bit reduced (from 1.5% to 11% on the tested datasets).\n"
+      "Note: set it to 0 or 1 to use the old triangulation algorithm (using 2 views only) during resection.")
     ("initialPairA", po::value<std::string>(&initialPairString.first)->default_value(initialPairString.first),
       "filename of the first image (without path).")
     ("initialPairB", po::value<std::string>(&initialPairString.second)->default_value(initialPairString.second),
       "filename of the second image (without path).")
     ("refineIntrinsics", po::value<bool>(&refineIntrinsics)->default_value(refineIntrinsics),
       "Refine intrinsic parameters.")
-    ("allowUserInteraction", po::value<bool>(&allowUserInteraction)->default_value(allowUserInteraction),
-      "Enable/Disable user interactions.\n"
-      "If the process is done on renderfarm, it doesn't make sense to wait for user inputs")
     ("useLocalBA,l", po::value<bool>(&useLocalBundleAdjustment)->default_value(useLocalBundleAdjustment),
       "Enable/Disable the Local bundle adjustment strategy.\n"
       "It reduces the reconstruction time, especially for big datasets (500+ images).")
     ("localBAGraphDistance", po::value<std::size_t>(&localBundelAdjustementGraphDistanceLimit)->default_value(localBundelAdjustementGraphDistanceLimit),
-      "Graph-distance limit setting the Active region in the Local Bundle Adjustment strategy.");
+      "Graph-distance limit setting the Active region in the Local Bundle Adjustment strategy.")
+    ("localizerEstimator", po::value<std::string>(&localizerEstimatorName)->default_value(localizerEstimatorName),
+      "Estimator type used to localize cameras (acransac (default), ransac, lsmeds, loransac, maxconsensus)");
 
   po::options_description logParams("Log parameters");
   logParams.add_options()
@@ -180,55 +181,42 @@ int main(int argc, char **argv)
   // set verbose level
   system::Logger::get()->setLogLevel(verboseLevel);
 
-  // check output SfM path
-  if(outputSfM.empty())
-  {
-    ALICEVISION_LOG_ERROR("Error: Invalid output SfMData file path.");
-    return EXIT_FAILURE;
-  }
-
-  // Check feature folder
-  if(featuresFolder.empty()) {
-    featuresFolder = matchesFolder;
-  }
-
-  // Load input SfMData scene
+  // load input SfMData scene
   SfMData sfmData;
-  if(!Load(sfmData, sfmDataFilename, ESfMData(ALL))) {
+  if(!Load(sfmData, sfmDataFilename, ESfMData::ALL))
+  {
     ALICEVISION_LOG_ERROR("Error: The input SfMData file '" + sfmDataFilename + "' cannot be read.");
     return EXIT_FAILURE;
   }
 
-  // Get imageDescriberMethodType
+  // get imageDescriber type
   const std::vector<feature::EImageDescriberType> describerTypes = feature::EImageDescriberType_stringToEnums(describerTypesName);
 
-  // Features reading
+  // features reading
   feature::FeaturesPerView featuresPerView;
   if(!sfm::loadFeaturesPerView(featuresPerView, sfmData, featuresFolder, describerTypes))
   {
-    ALICEVISION_LOG_ERROR("Error: Invalid features.");
+    ALICEVISION_LOG_ERROR("Invalid features.");
     return EXIT_FAILURE;
   }
   
-  // Matches reading
+  // matches reading
   matching::PairwiseMatches pairwiseMatches;
-
-  if(!loadPairwiseMatches(pairwiseMatches, sfmData, matchesFolder, describerTypes, "f", maxNbMatches))
+  if(!sfm::loadPairwiseMatches(pairwiseMatches, sfmData, matchesFolder, describerTypes, "f", maxNbMatches))
   {
-    ALICEVISION_LOG_ERROR("Error: Unable to load matches file from '" + matchesFolder + "'.");
+    ALICEVISION_LOG_ERROR("Unable to load matches file from '" + matchesFolder + "'.");
     return EXIT_FAILURE;
   }
 
   if(extraInfoFolder.empty())
   {
-    namespace bfs = boost::filesystem;
-    extraInfoFolder = bfs::path(outputSfM).parent_path().string();
+    extraInfoFolder = fs::path(outputSfM).parent_path().string();
   }
 
   if (!stlplus::folder_exists(extraInfoFolder))
     stlplus::folder_create(extraInfoFolder);
 
-  // Sequential reconstruction process
+  // sequential reconstruction process
   
   aliceVision::system::Timer timer;
   ReconstructionEngine_sequentialSfM sfmEngine(
@@ -236,25 +224,33 @@ int main(int argc, char **argv)
     extraInfoFolder,
     stlplus::create_filespec(extraInfoFolder, "sfm_log.html"));
 
-  // Configure the featuresPerView & the matches_provider
+  // configure the featuresPerView & the matches_provider
   sfmEngine.setFeatures(&featuresPerView);
   sfmEngine.setMatches(&pairwiseMatches);
 
-  // Configure reconstruction parameters
+  // configure reconstruction parameters
   sfmEngine.Set_bFixedIntrinsics(!refineIntrinsics);
-  sfmEngine.SetUnknownCameraType(EINTRINSIC(userCameraModel));
   sfmEngine.setMinInputTrackLength(minInputTrackLength);
-  sfmEngine.setSfmdataInterFileExtension(outInterFileExtension);
-  sfmEngine.setAllowUserInteraction(allowUserInteraction);
+  sfmEngine.setIntermediateFileExtension(outInterFileExtension);
   sfmEngine.setUseLocalBundleAdjustmentStrategy(useLocalBundleAdjustment);
   sfmEngine.setLocalBundleAdjustmentGraphDistance(localBundelAdjustementGraphDistanceLimit);
+  sfmEngine.setLocalizerEstimator(robustEstimation::ERobustEstimator_stringToEnum(localizerEstimatorName));
 
-  // Handle Initial pair parameter
+  if(minNbObservationsForTriangulation < 2)
+  {
+      // allows to use to the old triangulatation algorithm (using 2 views only) during resection.
+      minNbObservationsForTriangulation = 0;
+//    ALICEVISION_LOG_ERROR("The value associated to the argument '--minNbObservationsForTriangulation' must be >= 2 ");
+//    return EXIT_FAILURE;
+  }
+  sfmEngine.setNbOfObservationsForTriangulation(minNbObservationsForTriangulation);
+
+  // handle Initial pair parameter
   if(!initialPairString.first.empty() && !initialPairString.second.empty())
   {
     if(initialPairString.first == initialPairString.second)
     {
-      ALICEVISION_LOG_ERROR("Error: Invalid image names. You cannot use the same image to initialize a pair.");
+      ALICEVISION_LOG_ERROR("Invalid image names. You cannot use the same image to initialize a pair.");
       return EXIT_FAILURE;
     }
 
@@ -271,27 +267,39 @@ int main(int argc, char **argv)
   if(!sfmEngine.Process())
     return EXIT_FAILURE;
 
-  // Get the color for the 3D points
+  // get the color for the 3D points
   if(!sfmEngine.Colorize())
-    ALICEVISION_LOG_ERROR("Error: Colorize failed !");
+    ALICEVISION_LOG_ERROR("Colorize failed !");
 
-  sfmEngine.Get_SfMData().setFeatureFolder(featuresFolder);
-  sfmEngine.Get_SfMData().setMatchingFolder(matchesFolder);
+  // set featuresFolder and matchesFolder relative paths
+  {
+    const fs::path sfmFolder = fs::path(outputSfM).remove_filename();
+    const std::string relativeFeaturesFolder = fs::relative(fs::path(featuresFolder), sfmFolder).string();
+    const std::string relativeMatchesFolder = fs::relative(fs::path(matchesFolder), sfmFolder).string();
+
+    sfmEngine.Get_SfMData().addFeaturesFolder(relativeFeaturesFolder);
+    sfmEngine.Get_SfMData().addMatchesFolder(relativeMatchesFolder);
+    sfmEngine.Get_SfMData().setAbsolutePath(outputSfM);
+  }
 
   ALICEVISION_LOG_INFO("Structure from motion took (s): " + std::to_string(timer.elapsed()));
   ALICEVISION_LOG_INFO("Generating HTML report...");
 
-  Generate_SfM_Report(sfmEngine.Get_SfMData(),
-    stlplus::create_filespec(extraInfoFolder, "sfm_report.html"));
+  Generate_SfM_Report(sfmEngine.Get_SfMData(), stlplus::create_filespec(extraInfoFolder, "sfm_report.html"));
 
-  // Export to disk computed scene (data & visualizable results)
-  ALICEVISION_LOG_INFO("Export SfMData to disk:" + outputSfM);
+  // export to disk computed scene (data & visualizable results)
+  ALICEVISION_LOG_INFO("Export SfMData to disk: " + outputSfM);
 
   Save(sfmEngine.Get_SfMData(), stlplus::create_filespec(extraInfoFolder, "cloud_and_poses", outInterFileExtension), ESfMData(VIEWS | EXTRINSICS | INTRINSICS | STRUCTURE));
   Save(sfmEngine.Get_SfMData(), outputSfM, ESfMData(ALL));
 
   if(!outputSfMViewsAndPoses.empty())
     Save(sfmEngine.Get_SfMData(), outputSfMViewsAndPoses, ESfMData(VIEWS | EXTRINSICS | INTRINSICS));
+
+  ALICEVISION_LOG_INFO("Structure from Motion results:" << std::endl
+    << "\t- # input images: " << sfmEngine.Get_SfMData().GetViews().size() << std::endl
+    << "\t- # cameras calibrated: " << sfmEngine.Get_SfMData().GetPoses().size() << std::endl
+    << "\t- # landmarks: " << sfmEngine.Get_SfMData().GetLandmarks().size());
 
   return EXIT_SUCCESS;
 }

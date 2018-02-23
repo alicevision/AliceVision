@@ -39,7 +39,7 @@ class CCTagLocalizer : public ILocalizer
   
 public:
   
-  CCTagLocalizer(const std::string &sfmFilePath,
+  CCTagLocalizer(const sfm::SfMData &sfmData,
                  const std::string &descriptorsFolder);
    
   void setCudaPipe( int i ) override;
@@ -186,7 +186,7 @@ void kNearestKeyFrames(
           const feature::RegionsPerView & regionsPerView,
           std::size_t nNearestKeyFrames,
           std::vector<IndexT> & out_kNearestFrames,
-          const float similarityThreshold = 1.0f);
+          float similarityThreshold = 1.0f);
 
 /**
  * @brief Given a set of CCTag descriptors seen in a view, it creates a descriptor for the view: the

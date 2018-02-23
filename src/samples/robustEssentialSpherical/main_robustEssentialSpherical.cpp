@@ -1,7 +1,7 @@
 // This file is part of the AliceVision project and is made available under
 // the terms of the MPL2 license (see the COPYING.md file).
 
-#include "aliceVision/image/image.hpp"
+#include "aliceVision/image/all.hpp"
 #include "aliceVision/feature/feature.hpp"
 #include "aliceVision/feature/sift/ImageDescriber_SIFT.hpp"
 #include "aliceVision/matching/RegionsMatcher.hpp"
@@ -49,8 +49,8 @@ int main() {
   using namespace aliceVision::feature;
   std::unique_ptr<ImageDescriber> image_describer(new ImageDescriber_SIFT(SiftParams(-1)));
   std::map<IndexT, std::unique_ptr<feature::Regions> > regions_perImage;
-  image_describer->Describe(imageL, regions_perImage[0]);
-  image_describer->Describe(imageR, regions_perImage[1]);
+  image_describer->describe(imageL, regions_perImage[0]);
+  image_describer->describe(imageR, regions_perImage[1]);
 
   const SIFT_Regions* regionsL = dynamic_cast<SIFT_Regions*>(regions_perImage.at(0).get());
   const SIFT_Regions* regionsR = dynamic_cast<SIFT_Regions*>(regions_perImage.at(1).get());
@@ -161,7 +161,7 @@ int main() {
       const double & threshold = ACRansacOut.first;
       const double & NFA = ACRansacOut.second;
 
-      std::cout << "\n Angular threshold found: " << R2D(threshold) << "(Degree)"<<std::endl;
+      std::cout << "\n Angular threshold found: " << radianToDegree(threshold) << "(Degree)"<<std::endl;
       std::cout << "\n #Putatives/#inliers : " << xL_spherical.cols() << "/" << vec_inliers.size() << "\n" << std::endl;
 
       if (vec_inliers.size() > 120)

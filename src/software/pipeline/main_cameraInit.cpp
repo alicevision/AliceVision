@@ -7,13 +7,13 @@
 #include <aliceVision/sfm/viewIO.hpp>
 #include <aliceVision/sfm/sfmDataIO_json.hpp>
 #include <aliceVision/sensorDB/parseDatabase.hpp>
-#include <aliceVision/stl/split.hpp>
 #include <aliceVision/system/Logger.hpp>
 #include <aliceVision/system/cmdline.hpp>
 
 #include <dependencies/stlplus3/filesystemSimplified/file_system.hpp>
 
 #include <boost/program_options.hpp>
+#include <boost/algorithm/string.hpp>
 
 #include <iostream>
 #include <fstream>
@@ -42,10 +42,10 @@ bool checkIntrinsicStringValidity(const std::string& Kmatrix,
                                   double& ppy)
 {
   std::vector<std::string> vec_str;
-  stl::split(Kmatrix, ";", vec_str);
+  boost::split(vec_str, Kmatrix, boost::is_any_of(";"));
   if (vec_str.size() != 9)
   {
-    ALICEVISION_LOG_ERROR("Error: In K matrix string, missing ';' character");
+    ALICEVISION_LOG_ERROR("In K matrix string, missing ';' character");
     return false;
   }
 
@@ -57,7 +57,7 @@ bool checkIntrinsicStringValidity(const std::string& Kmatrix,
     ss.str(vec_str[i]);
     if(!(ss >> readvalue))
     {
-      ALICEVISION_LOG_ERROR("Error: In K matrix string, used an invalid not a number character");
+      ALICEVISION_LOG_ERROR("In K matrix string, used an invalid not a number character");
       return false;
     }
     if (i==0) focal = readvalue;
@@ -97,7 +97,7 @@ bool listFiles(const std::string& folderOrFile,
     const std::vector<std::string> allFiles = stlplus::folder_all(folderOrFile);
     if(allFiles.empty())
     {
-      ALICEVISION_LOG_ERROR("Error: Folder '" << stlplus::filename_part(folderOrFile) <<"' is empty.");
+      ALICEVISION_LOG_ERROR("'" << stlplus::filename_part(folderOrFile) <<"' is empty.");
       return false;
     }
 
@@ -110,7 +110,7 @@ bool listFiles(const std::string& folderOrFile,
   }
   else
   {
-    ALICEVISION_LOG_ERROR("Error: '" << folderOrFile << "' is not a valid folder or file path.");
+    ALICEVISION_LOG_ERROR("'" << folderOrFile << "' is not a valid folder or file path.");
     return false;
   }
   return true;
@@ -136,8 +136,10 @@ int main(int argc, char **argv)
   std::string defaultIntrinsicKMatrix;
   std::string defaultCameraModelName;
   double defaultFocalLengthPixel = -1.0;
-  double defaultSensorWidth = -1.0;
-  int groupCameraModel = 1;
+  double defaultFieldOfView = -1.0;
+  int groupCameraModel = 2;
+  bool allowIncompleteOutput = false;
+  bool allowSingleView = false;
 
   po::options_description allParams("AliceVision cameraInit");
 
@@ -155,17 +157,23 @@ int main(int argc, char **argv)
   po::options_description optionalParams("Optional parameters");
   optionalParams.add_options()
     ("defaultFocalLengthPix", po::value<double>(&defaultFocalLengthPixel)->default_value(defaultFocalLengthPixel),
-      "Focal length in pixels.")
-    ("defaultSensorWidth", po::value<double>(&defaultSensorWidth)->default_value(defaultSensorWidth),
-      "Sensor width in mm.")
+      "Focal length in pixels. (or '-1' to unset)")
+    ("defaultFieldOfView", po::value<double>(&defaultFieldOfView)->default_value(defaultFieldOfView),
+      "Empirical value for the field of view in degree. (or '-1' to unset)")
     ("defaultIntrinsic", po::value<std::string>(&defaultIntrinsicKMatrix)->default_value(defaultIntrinsicKMatrix),
       "Intrinsics Kmatrix \"f;0;ppx;0;f;ppy;0;0;1\".")
     ("defaultCameraModel", po::value<std::string>(&defaultCameraModelName)->default_value(defaultCameraModelName),
-      "Camera model type (pinhole, radial1, radial3, brown, fisheye4).")
+      "Camera model type (pinhole, radial1, radial3, brown, fisheye4, fisheye1).")
     ("groupCameraModel", po::value<int>(&groupCameraModel)->default_value(groupCameraModel),
       "* 0: each view have its own camera intrinsic parameters\n"
       "* 1: view share camera intrinsic parameters based on metadata, if no metadata each view has its own camera intrinsic parameters\n"
-      "* 2: view share camera intrinsic parameters based on metadata, if no metadata they are grouped by folder\n");
+      "* 2: view share camera intrinsic parameters based on metadata, if no metadata they are grouped by folder\n")
+    ("allowIncompleteOutput", po::value<bool>(&allowIncompleteOutput)->default_value(allowIncompleteOutput),
+      "Allow the program to output an incomplete SfMData file.\n"
+      "Warning: if incomplete the output file can't be use in another program and should be post-process.")
+    ("allowSingleView", po::value<bool>(&allowSingleView)->default_value(allowSingleView),
+      "Allow the program to process a single view.\n"
+      "Warning: if a single view is process, the output file can't be use in many other programs.");
 
   po::options_description logParams("Log parameters");
   logParams.add_options()
@@ -213,35 +221,35 @@ int main(int argc, char **argv)
   // check user choose at least one input option
   if(imageFolder.empty() && sfmFilePath.empty())
   {
-    ALICEVISION_LOG_ERROR("Error: Program need -i or -f option");
+    ALICEVISION_LOG_ERROR("Program need -i or -f option");
     return EXIT_FAILURE;
   }
 
   // check user don't choose both input options
   if(!imageFolder.empty() && !sfmFilePath.empty())
   {
-    ALICEVISION_LOG_ERROR("Error: Cannot combine -i and -f options");
+    ALICEVISION_LOG_ERROR("Cannot combine -i and -f options");
     return EXIT_FAILURE;
   }
 
   // check input folder
   if(!imageFolder.empty() && !stlplus::folder_exists(imageFolder))
   {
-    ALICEVISION_LOG_ERROR("Error: The input folder doesn't exist");
+    ALICEVISION_LOG_ERROR("The input folder doesn't exist");
     return EXIT_FAILURE;
   }
 
   // check sfm file
   if(!sfmFilePath.empty() && !stlplus::file_exists(sfmFilePath))
   {
-    ALICEVISION_LOG_ERROR("Error: The input sfm file doesn't exist");
+    ALICEVISION_LOG_ERROR("The input sfm file doesn't exist");
     return EXIT_FAILURE;
   }
 
   // check output  string
   if(outputFilePath.empty())
   {
-    ALICEVISION_LOG_ERROR("Error: Invalid output");
+    ALICEVISION_LOG_ERROR("Invalid output");
     return EXIT_FAILURE;
   }
 
@@ -253,16 +261,28 @@ int main(int argc, char **argv)
     {
       if(!stlplus::folder_create(outputFolderPart))
       {
-        ALICEVISION_LOG_ERROR("Error: Cannot create output folder");
+        ALICEVISION_LOG_ERROR("Cannot create output folder");
         return EXIT_FAILURE;
       }
     }
   }
 
-  // check user don't combine focal and K matrix
-  if(!defaultIntrinsicKMatrix.empty() && defaultFocalLengthPixel != -1.0)
+  // check user don't combine intrinsic options
+  if(!defaultIntrinsicKMatrix.empty() && defaultFocalLengthPixel > 0)
   {
-    ALICEVISION_LOG_ERROR("Error: Cannot combine --defaultIntrinsic and --defaultFocalLengthPix options");
+    ALICEVISION_LOG_ERROR("Cannot combine --defaultIntrinsic --defaultFocalLengthPix options");
+    return EXIT_FAILURE;
+  }
+
+  if(!defaultIntrinsicKMatrix.empty() && defaultFieldOfView > 0)
+  {
+    ALICEVISION_LOG_ERROR("Cannot combine --defaultIntrinsic --defaultFieldOfView options");
+    return EXIT_FAILURE;
+  }
+
+  if(defaultFocalLengthPixel > 0 && defaultFieldOfView > 0)
+  {
+    ALICEVISION_LOG_ERROR("Cannot combine --defaultFocalLengthPix --defaultFieldOfView options");
     return EXIT_FAILURE;
   }
 
@@ -272,10 +292,9 @@ int main(int argc, char **argv)
 
   if(!defaultIntrinsicKMatrix.empty() && !checkIntrinsicStringValidity(defaultIntrinsicKMatrix, defaultFocalLengthPixel, defaultPPx, defaultPPy))
   {
-    ALICEVISION_LOG_ERROR("Error: --defaultIntrinsic Invalid K matrix input");
+    ALICEVISION_LOG_ERROR("--defaultIntrinsic Invalid K matrix input");
     return EXIT_FAILURE;
   }
-
 
   // check sensor database
   std::vector<sensorDB::Datasheet> sensorDatabase;
@@ -283,7 +302,7 @@ int main(int argc, char **argv)
   {
     if(!sensorDB::parseDatabase(sensorDatabasePath, sensorDatabase))
     {
-      ALICEVISION_LOG_ERROR("Error: Invalid input database '" << sensorDatabasePath << "', please specify a valid file.");
+      ALICEVISION_LOG_ERROR("Invalid input database '" << sensorDatabasePath << "', please specify a valid file.");
       return EXIT_FAILURE;
     }
   }
@@ -332,7 +351,7 @@ int main(int argc, char **argv)
 
   if(sfmData.GetViews().empty())
   {
-    ALICEVISION_LOG_ERROR("Error: Can't find views in input.");
+    ALICEVISION_LOG_ERROR("Can't find views in input.");
     return EXIT_FAILURE;
   }
 
@@ -344,7 +363,10 @@ int main(int argc, char **argv)
   {
     View& view = *(std::next(viewPairItBegin,i)->second);
     IndexT intrinsicId = view.getIntrinsicId();
+    double sensorWidth = -1;
+    const bool hasCameraMetadata = (view.hasMetadata("Make") && view.hasMetadata("Model"));
 
+    // check if the view intrinsic is already defined
     if(intrinsicId != UndefinedIndexT)
     {
       std::shared_ptr<camera::IntrinsicBase> intrinsic = sfmData.GetIntrinsicSharedPtr(view.getIntrinsicId());
@@ -352,39 +374,60 @@ int main(int argc, char **argv)
       {
         if(intrinsic->initialFocalLengthPix() > 0)
         {
+          // the view intrinsic is initialized
           #pragma omp atomic
           ++completeViewCount;
         }
+        else
+        {
+          // intrinsic px focal length is undefined
+          // check if it is because the sensor is not in the database
+          aliceVision::sensorDB::Datasheet datasheet;
+          if(hasCameraMetadata && !getInfo(view.getMetadata("Make"), view.getMetadata("Model"), sensorDatabase, datasheet))
+          {
+            #pragma omp critical
+            unknownSensors.emplace(std::make_pair(view.getMetadata("Make"),view.getMetadata("Model")), view.getImagePath()); // will throw an error message
+          }
+        }
+        // don't need to build a new intrinsic
         continue;
       }
     }
 
-    bool hasCameraMetadata = (view.hasMetadata("Make") && view.hasMetadata("Model"));
-    double sensorWidth = -1;
-
+    // get view intrinsic sensor width
     if(hasCameraMetadata)
     {
       aliceVision::sensorDB::Datasheet datasheet;
       if(getInfo(view.getMetadata("Make"), view.getMetadata("Model"), sensorDatabase, datasheet))
-        sensorWidth = datasheet._sensorSize;
+        sensorWidth = datasheet._sensorSize; // sensor is in the database
       else
       {
         #pragma omp critical
-        unknownSensors.emplace(std::make_pair(view.getMetadata("Make"),view.getMetadata("Model")), view.getImagePath()); // will throw an error message and exit program
-        continue;
+        unknownSensors.emplace(std::make_pair(view.getMetadata("Make"),view.getMetadata("Model")), view.getImagePath()); // will throw an error message
+        if(!allowIncompleteOutput)
+          continue;
       }
-
     }
     else
     {
+      // no metadata 'Make' and 'Model' can't find sensor width
       #pragma omp critical
-      noMetadataImagePaths.emplace_back(view.getImagePath());
+      noMetadataImagePaths.emplace_back(view.getImagePath()); // will throw a warning message
+
+      if(allowIncompleteOutput)
+      {
+        view.setIntrinsicId(UndefinedIndexT);
+        // don't build an intrinsic
+        continue;
+      }
     }
 
-    std::shared_ptr<camera::IntrinsicBase> intrinsic = getViewIntrinsic(view, sensorWidth, defaultFocalLengthPixel, defaultCameraModel, defaultPPx, defaultPPy);
+    // build intrinsic
+    std::shared_ptr<camera::IntrinsicBase> intrinsic = getViewIntrinsic(view, sensorWidth, defaultFocalLengthPixel, defaultFieldOfView, defaultCameraModel, defaultPPx, defaultPPy);
 
     if(intrinsic->initialFocalLengthPix() > 0)
     {
+      // the view intrinsic is initialized
       #pragma omp atomic
       ++completeViewCount;
     }
@@ -412,7 +455,7 @@ int main(int argc, char **argv)
       intrinsicId = intrinsic->hashValue();
 
     // don't group camera that share common properties
-    if(!groupCameraModel)
+    if(groupCameraModel == 0)
       intrinsicId = std::rand(); // random number
 
     #pragma omp critical
@@ -424,14 +467,14 @@ int main(int argc, char **argv)
 
   if(!noMetadataImagePaths.empty())
   {
-    ALICEVISION_LOG_WARNING("Warning: No metadata in image(s) :");
+    ALICEVISION_LOG_WARNING("No metadata in image(s) :");
     for(const auto& imagePath : noMetadataImagePaths)
       ALICEVISION_LOG_WARNING("\t- '" << imagePath << "'");
   }
 
-  if(!unknownSensors.empty())
+  if(!unknownSensors.empty() && !allowIncompleteOutput)
   {
-    ALICEVISION_LOG_ERROR("Error: Sensor width doesn't exist in the database for image(s) :");
+    ALICEVISION_LOG_ERROR("Sensor width doesn't exist in the database for image(s) :");
     for(const auto& unknownSensor : unknownSensors)
       ALICEVISION_LOG_ERROR("image: '" << stlplus::filename_part(unknownSensor.second) << "'" << std::endl
                         << "\t- camera brand: " << unknownSensor.first.first <<  std::endl
@@ -440,24 +483,24 @@ int main(int argc, char **argv)
     return EXIT_FAILURE;
   }
 
-  if(completeViewCount < 2)
+  if(!allowIncompleteOutput && (completeViewCount < 1 || (completeViewCount < 2 && !allowSingleView)))
   {
-    ALICEVISION_LOG_ERROR("Error: At least two images should have an initialized intrinsic." << std::endl
+    ALICEVISION_LOG_ERROR("At least " << std::string(allowSingleView ? "one image" : "two images") << " should have an initialized intrinsic." << std::endl
                           << "Check your input images metadata (brand, model, focal length, ...), more should be set and correct." << std::endl);
     return EXIT_FAILURE;
   }
 
   // store SfMData views & intrinsic data
-  if (!Save(sfmData, outputFilePath, ESfMData(VIEWS|INTRINSICS|EXTRINSICS)))
+  if(!Save(sfmData, outputFilePath, ESfMData(VIEWS|INTRINSICS|EXTRINSICS)))
   {
     return EXIT_FAILURE;
   }
 
   // print report
   ALICEVISION_LOG_INFO("CameraInit report:" << std::endl
-                   << "\t- # view(s) listed in SfMData: " << sfmData.GetViews().size() << std::endl
-                   << "\t- # view(s) with an initialized intrinsic listed in SfMData: " << completeViewCount << std::endl
-                   << "\t- # intrinsic(s) listed in SfMData: " << sfmData.GetIntrinsics().size());
+                   << "\t- # views listed in SfMData: " << sfmData.GetViews().size() << std::endl
+                   << "\t- # views with an initialized intrinsic listed in SfMData: " << completeViewCount << std::endl
+                   << "\t- # intrinsics listed in SfMData: " << sfmData.GetIntrinsics().size());
 
   return EXIT_SUCCESS;
 }

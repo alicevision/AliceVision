@@ -1,4 +1,5 @@
-![AliceVision](https://github.com/alicevision/AliceVision/raw/develop/docs/logo/AliceVision.png) AliceVision - Photogrammetric Computer Vision Framework
+![AliceVision](https://github.com/alicevision/AliceVision/raw/develop/docs/logo/AliceVision_170.png) 
+AliceVision - Photogrammetric Computer Vision Framework
 =====================================
 
 [AliceVision](http://alicevision.github.io) is a Photogrammetric Computer Vision Framework which provides a 3D Reconstruction and Camera Tracking algorithms.
@@ -61,9 +62,9 @@ Use the public mailing-list to ask questions or request features and use github 
 ## Project history
 
 In 2009, CMP research team from CTU started the PhD thesis of Michal Jancosek supervised by Tomas Pajdla. They released windows binaries of their MVS pipeline, called CMPMVS, in 2012.
-In 2009, INPT, INRIA and Duran Duboi started a French ANR project to create a model based Camera Tracking solution based on natural features and a new marker design called CCTag.
+In 2009, Toulouse INP, INRIA and Duran Duboi started a French ANR project to create a model based Camera Tracking solution based on natural features and a new marker design called CCTag.
 In 2010, Mikros Image and IMAGINE research team (a joint research group between Ecole des Ponts ParisTech and Centre Scientifique et Technique du Batiment) started a partnership around Pierre Moulon’s thesis, supervised by Renaud Marlet and Pascal Monasse on the academic side and Benoit Maujean on the industrial side. In 2013, they released an open source SfM pipeline, called openMVG (“Multiple View Geometry”), to provide the basis of a better solution for the creation of visual effects matte-paintings.
-In 2015, Simula, INPT and Mikros Image joined their efforts in the EU project POPART to create a Previz system based on AliceVision.
+In 2015, Simula, Toulouse INP and Mikros Image joined their efforts in the EU project POPART to create a Previz system based on AliceVision.
 In 2017, CTU join the team in the EU project LADIO to create a central hub with structured access to all data generated on set based on AliceVision.
 
 See [CONTRIBUTORS.md](CONTRIBUTORS.md) for the full list of contributors. We hope to see you in this list soon!

@@ -4,17 +4,11 @@
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
 #include "io.hpp"
-
-#include "aliceVision/matching/IndMatch.hpp"
+#include <aliceVision/matching/IndMatch.hpp>
 #include <aliceVision/config.hpp>
 #include <aliceVision/system/Logger.hpp>
 
-#include <cereal/archives/portable_binary.hpp>
-#include <cereal/types/map.hpp>
-#include <cereal/types/utility.hpp>
-#include <cereal/types/vector.hpp>
-
-#include "dependencies/stlplus3/filesystemSimplified/file_system.hpp"
+#include <dependencies/stlplus3/filesystemSimplified/file_system.hpp>
 
 #include <map>
 #include <fstream>
@@ -25,10 +19,9 @@
 namespace aliceVision {
 namespace matching {
 
-bool LoadMatchFile(
-  PairwiseMatches & matches,
-  const std::string & folder,
-  const std::string & filename)
+bool LoadMatchFile(PairwiseMatches& matches,
+                   const std::string& folder,
+                   const std::string& filename)
 {
   if(!stlplus::is_file(stlplus::create_filespec(folder, filename)))
     return false;
@@ -36,7 +29,7 @@ bool LoadMatchFile(
   const std::string ext = stlplus::extension_part(filename);
   const std::string filepath = folder + "/" + filename;
 
-  if (ext == "txt")
+  if(ext == "txt")
   {
     std::ifstream stream(filepath.c_str());
     if (!stream.is_open())
@@ -66,7 +59,7 @@ bool LoadMatchFile(
         feature::EImageDescriberType descType = feature::EImageDescriberType_stringToEnum(descTypeStr);
         std::vector<IndMatch> matchesPerDesc(nbMatches);
         // Read all matches
-        for (std::size_t i = 0; i < nbMatches; ++i)
+        for(std::size_t i = 0; i < nbMatches; ++i)
         {
           stream >> matchesPerDesc[i];
         }
@@ -74,30 +67,6 @@ bool LoadMatchFile(
       }
     }
     stream.close();
-    return true;
-  }
-  else if (ext == "bin")
-  {
-    std::ifstream stream (filepath.c_str(), std::ios::in | std::ios::binary);
-    if (!stream.is_open())
-      return false;
-
-    cereal::PortableBinaryInputArchive archive(stream);
-    PairwiseMatches loadMatches;
-    archive(loadMatches);
-    stream.close();
-    if(matches.empty())
-    {
-      matches.swap(loadMatches);
-    }
-    else
-    {
-      // merge the loaded matches into the output
-      for(const auto& v: loadMatches)
-      {
-        matches[v.first] = v.second;
-      }
-    }
     return true;
   }
   else
@@ -164,10 +133,10 @@ void filterMatchesByDesc(
 
 
 bool LoadMatchFilePerImage(
-  PairwiseMatches & matches,
-  const std::set<IndexT> & viewsKeys,
-  const std::string & folder,
-  const std::string & basename)
+  PairwiseMatches& matches,
+  const std::set<IndexT>& viewsKeys,
+  const std::string& folder,
+  const std::string& basename)
 {
   int nbLoadedMatchFiles = 0;
   // Load one match file per image
@@ -183,7 +152,7 @@ bool LoadMatchFilePerImage(
     {
       #pragma omp critical
       {
-        ALICEVISION_LOG_DEBUG("Unable to load match file: " << folder << "/" << matchFilename);
+        ALICEVISION_LOG_DEBUG("Unable to load match file: " << matchFilename);
       }
       continue;
     }
@@ -197,7 +166,7 @@ bool LoadMatchFilePerImage(
       }
     }
   }
-  if( nbLoadedMatchFiles == 0 )
+  if(nbLoadedMatchFiles == 0)
   {
     ALICEVISION_LOG_WARNING("No matches file loaded in: " << folder);
     return false;
@@ -208,9 +177,7 @@ bool LoadMatchFilePerImage(
     std::stringstream ss;
     ss << " * " << imagePairIt.first.first << "-" << imagePairIt.first.second << ": " << imagePairIt.second.getNbAllMatches() << "    ";
     for(const auto& matchesPerDeskIt: imagePairIt.second)
-    {
        ss << " [" << feature::EImageDescriberType_enumToString(matchesPerDeskIt.first) << ": " << matchesPerDeskIt.second.size() << "]";
-    }
     ALICEVISION_LOG_TRACE(ss.str());
   }
   return true;
@@ -219,31 +186,36 @@ bool LoadMatchFilePerImage(
 bool Load(
   PairwiseMatches & matches,
   const std::set<IndexT> & viewsKeysFilter,
-  const std::string & folder,
+  const std::vector<std::string>& folders,
   const std::vector<feature::EImageDescriberType>& descTypesFilter,
   const std::string & mode,
   const int maxNbMatches)
 {
   bool res = false;
   const std::string basename = "matches." + mode;
-  if(stlplus::is_file(stlplus::create_filespec(folder, basename + ".txt")))
+
+  for(const std::string& folder : folders)
   {
-    res = LoadMatchFile(matches, folder, basename + ".txt");
+    if(stlplus::is_file(stlplus::create_filespec(folder, basename + ".txt")))
+    {
+      res = LoadMatchFile(matches, folder, basename + ".txt");
+    }
+    else if(stlplus::is_file(stlplus::create_filespec(folder, basename + ".bin")))
+    {
+      res = LoadMatchFile(matches, folder, basename + ".bin");
+    }
+    else if(!stlplus::folder_wildcard(folder, "*."+basename+".txt", false, true).empty())
+    {
+      res = LoadMatchFilePerImage(matches, viewsKeysFilter, folder, basename + ".txt");
+    }
+    else if(!stlplus::folder_wildcard(folder, "*."+basename+".bin", false, true).empty())
+    {
+      res = LoadMatchFilePerImage(matches, viewsKeysFilter, folder, basename + ".bin");
+    }
   }
-  else if(stlplus::is_file(stlplus::create_filespec(folder, basename + ".bin")))
-  {
-    res = LoadMatchFile(matches, folder, basename + ".bin");
-  }
-  else if(!stlplus::folder_wildcard(folder, "*."+basename+".txt", false, true).empty())
-  {
-    res = LoadMatchFilePerImage(matches, viewsKeysFilter, folder, basename + ".txt");
-  }
-  else if(!stlplus::folder_wildcard(folder, "*."+basename+".bin", false, true).empty())
-  {
-    res = LoadMatchFilePerImage(matches, viewsKeysFilter, folder, basename + ".bin");
-  }
+
   if(!res)
-    return res;
+    return false;
 
   if(!viewsKeysFilter.empty())
     filterMatchesByViews(matches, viewsKeysFilter);
@@ -297,18 +269,6 @@ private:
     }
   }
 
-  void saveBinary(
-    const std::string & filepath,
-    const PairwiseMatches::const_iterator& matchBegin,
-    const PairwiseMatches::const_iterator& matchEnd)
-  {
-    std::ofstream stream(filepath.c_str(), std::ios::out | std::ios::binary);
-    cereal::PortableBinaryOutputArchive archive(stream);
-    const PairwiseMatches matchesToExport(matchBegin, matchEnd);
-    archive(matchesToExport);
-    stream.close();
-  }
-
 public:
   MatchExporter(
     const PairwiseMatches& matches,
@@ -331,10 +291,6 @@ public:
     if(m_ext == "txt")
     {
       saveTxt(filepath, m_matches.begin(), m_matches.end());
-    }
-    else if(m_ext == "bin")
-    {
-      saveBinary(filepath, m_matches.begin(), m_matches.end());
     }
     else
     {
@@ -366,10 +322,6 @@ public:
       if(m_ext == "txt")
       {
         saveTxt(filepath, matchBegin, match);
-      }
-      else if(m_ext == "bin")
-      {
-        saveBinary(filepath, matchBegin, match);
       }
       else
       {

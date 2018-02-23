@@ -32,7 +32,6 @@ namespace impl
 template <typename ScalarT>
 void Match
 (
-  const sfm::SfMData & sfm_data,
   const feature::RegionsPerView& regionsPerView,
   const PairSet & pairs,
   EImageDescriberType descType,
@@ -210,7 +209,6 @@ void Match
 
 void ImageCollectionMatcher_cascadeHashing::Match
 (
-  const sfm::SfMData & sfm_data,
   const feature::RegionsPerView& regionsPerView,
   const PairSet & pairs,
   feature::EImageDescriberType descType,
@@ -232,7 +230,6 @@ void ImageCollectionMatcher_cascadeHashing::Match
   if(regions.Type_id() == typeid(unsigned char).name())
   {
     impl::Match<unsigned char>(
-      sfm_data,
       regionsPerView,
       pairs,
       descType,
@@ -243,7 +240,6 @@ void ImageCollectionMatcher_cascadeHashing::Match
   if(regions.Type_id() == typeid(float).name())
   {
     impl::Match<float>(
-      sfm_data,
       regionsPerView,
       pairs,
       descType,

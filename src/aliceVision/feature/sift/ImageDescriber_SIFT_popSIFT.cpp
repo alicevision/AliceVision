@@ -11,14 +11,14 @@ namespace feature {
 
 std::unique_ptr<PopSift> ImageDescriber_SIFT_popSIFT::_popSift = nullptr;
 
-bool ImageDescriber_SIFT_popSIFT::Describe(const image::Image<unsigned char>& image,
+bool ImageDescriber_SIFT_popSIFT::describe(const image::Image<float>& image,
                                       std::unique_ptr<Regions>& regions,
                                       const image::Image<unsigned char>* mask)
 {
   std::unique_ptr<SiftJob> job(_popSift->enqueue(image.Width(), image.Height(), &image(0,0)));
   std::unique_ptr<popsift::Features> popFeatures(job->get());
 
-  Allocate(regions);
+  allocate(regions);
 
   // Build alias to cached data
   SIFT_Regions * regionsCasted = dynamic_cast<SIFT_Regions*>(regions.get());

@@ -260,8 +260,33 @@ bool saveJSON(const SfMData& sfmData, const std::string& filename, ESfMData part
   saveMatrix("version", version, fileTree);
 
   // folders
-  fileTree.put("featureFolder", sfmData.getFeatureFolder());
-  fileTree.put("matchingFolder", sfmData.getMatchingFolder());
+  if(!sfmData.getRelativeFeaturesFolders().empty())
+  {
+    bpt::ptree featureFoldersTree;
+
+    for(const std::string& featuresFolder : sfmData.getRelativeFeaturesFolders())
+    {
+      bpt::ptree featureFolderTree;
+      featureFolderTree.put("", featuresFolder);
+      featureFoldersTree.push_back(std::make_pair("", featureFolderTree));
+    }
+
+    fileTree.add_child("featuresFolders", featureFoldersTree);
+  }
+
+  if(!sfmData.getRelativeMatchesFolders().empty())
+  {
+    bpt::ptree matchingFoldersTree;
+
+    for(const std::string& matchesFolder : sfmData.getRelativeMatchesFolders())
+    {
+      bpt::ptree matchingFolderTree;
+      matchingFolderTree.put("", matchesFolder);
+      matchingFoldersTree.push_back(std::make_pair("", matchingFolderTree));
+    }
+
+    fileTree.add_child("matchesFolders", matchingFoldersTree);
+  }
 
   // views
   if(saveViews && !sfmData.GetViews().empty())
@@ -367,8 +392,13 @@ bool loadJSON(SfMData& sfmData, const std::string& filename, ESfMData partFlag, 
   loadMatrix("version", version, fileTree);
 
   // folders
-  sfmData.setFeatureFolder(fileTree.get<std::string>("featureFolder"));
-  sfmData.setMatchingFolder(fileTree.get<std::string>("matchingFolder"));
+  if(fileTree.count("featuresFolders"))
+    for(bpt::ptree::value_type& featureFolderNode : fileTree.get_child("featuresFolders"))
+      sfmData.addFeaturesFolder(featureFolderNode.second.get_value<std::string>());
+
+  if(fileTree.count("matchesFolders"))
+    for(bpt::ptree::value_type& matchingFolderNode : fileTree.get_child("matchesFolders"))
+      sfmData.addMatchesFolder(matchingFolderNode.second.get_value<std::string>());
 
   // views
   if(loadViews && fileTree.count("views"))

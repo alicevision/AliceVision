@@ -16,17 +16,22 @@ namespace sfm {
 class AlembicImporter 
 {
 public:
-  explicit AlembicImporter(const std::string &filename);
+
+  explicit AlembicImporter(const std::string& filename);
+
   ~AlembicImporter();
 
-  void populate(sfm::SfMData &sfmdata, sfm::ESfMData flags_part = sfm::ESfMData::ALL);
+  /**
+   * @brief populate a SfMData from the alembic file
+   * @param[out] sfmData The output SfMData
+   * @param[in] flagsPart
+   */
+  void populateSfM(sfm::SfMData& sfmdata, ESfMData flagsPart = ESfMData::ALL);
 
 private:
-  
   struct DataImpl;
-  std::unique_ptr<DataImpl> _objImpl;
+  std::unique_ptr<DataImpl> _dataImpl;
 };
 
 } // namespace sfm
 } // namespace aliceVision
-

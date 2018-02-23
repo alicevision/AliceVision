@@ -4,7 +4,7 @@
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
 #include "KeyframeSelector.hpp"
-#include <aliceVision/image/image.hpp>
+#include <aliceVision/image/all.hpp>
 #include <aliceVision/sensorDB/parseDatabase.hpp>
 #include <aliceVision/feature/sift/ImageDescriber_SIFT.hpp>
 #include <aliceVision/system/Logger.hpp>
@@ -316,7 +316,7 @@ bool KeyframeSelector::computeFrameData(const image::Image<image::RGBColor>& ima
 
     // compute current frame sparse histogram
     std::unique_ptr<feature::Regions> regions;
-    _imageDescriber->Describe(imageGrayHalfSample, regions);
+    _imageDescriber->describe(imageGrayHalfSample, regions);
     currMediaData.histogram = voctree::SparseHistogram(_voctree->quantizeToSparse(dynamic_cast<feature::SIFT_Regions*>(regions.get())->Descriptors()));
 
     // compute sparseDistance

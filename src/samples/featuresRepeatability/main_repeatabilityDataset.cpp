@@ -1,7 +1,7 @@
 // This file is part of the AliceVision project and is made available under
 // the terms of the MPL2 license (see the COPYING.md file).
 
-#include "aliceVision/image/image.hpp"
+#include "aliceVision/image/all.hpp"
 #include "aliceVision/feature/feature.hpp"
 #include "aliceVision/feature/sift/ImageDescriber_SIFT.hpp"
 #include "aliceVision/feature/akaze/ImageDescriber_AKAZE.hpp"
@@ -281,11 +281,7 @@ int main(int argc, char **argv)
       }
       else
       {
-        if (!image_describer->Set_configuration_preset(describerPreset))
-        {
-          std::cerr << "Preset configuration failed." << std::endl;
-          return EXIT_FAILURE;
-        }
+        image_describer->setConfigurationPreset(describerPreset);
       }
 
       // For each image computes the regions:
@@ -294,7 +290,7 @@ int main(int argc, char **argv)
       for (size_t i = 0; i < dataset.size(); ++i)
       {
         image::ConvertPixelType(dataset.image(i), &imageGray);
-        image_describer->Describe(imageGray, map_regions[i]);
+        image_describer->describe(imageGray, map_regions[i]);
         std::cout << "image: " << i << "\t #found features: " << map_regions[i]->RegionCount() << std::endl;
       }
 

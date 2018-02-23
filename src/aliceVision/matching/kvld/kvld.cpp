@@ -17,7 +17,7 @@ the terms of the BSD license ( see the COPYING file).
 #include "algorithm.h"
 #include <functional>
 #include <numeric>
-#include <aliceVision/image/image.hpp>
+#include <aliceVision/image/all.hpp>
 #include <aliceVision/config.hpp>
 
 using namespace std;

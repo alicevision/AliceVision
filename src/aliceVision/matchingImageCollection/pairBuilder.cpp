@@ -5,13 +5,15 @@
 
 #include "pairBuilder.hpp"
 
-#include <aliceVision/stl/split.hpp>
 #include <aliceVision/system/Logger.hpp>
+
+#include <boost/algorithm/string.hpp>
 
 #include <set>
 #include <iostream>
 #include <fstream>
 #include <sstream>
+
 namespace aliceVision {
 
 /// Generate all the (I,J) pairs of the upper diagonal of the NxN matrix
@@ -41,42 +43,6 @@ PairSet exhaustivePairs(const sfm::Views& views, int rangeStart, int rangeSize)
   return pairs;
 }
 
-/// Generate the pairs that have a distance inferior to the overlapSize
-/// Usable to match video sequence
-PairSet contiguousWithOverlap(const sfm::Views& views, const size_t overlapSize, int rangeStart, int rangeSize)
-{
-  PairSet pairs;
-  sfm::Views::const_iterator itA = views.begin();
-  sfm::Views::const_iterator itAEnd = views.end();
-
-  // If we have a rangeStart, only compute the matching for (rangeStart, X).
-  if(rangeStart != -1 && rangeSize != 0)
-  {
-    if(rangeStart >= views.size())
-      return pairs;
-    std::advance(itA, rangeStart);
-    itAEnd = views.begin();
-    std::advance(itAEnd, std::min(std::size_t(rangeStart+rangeSize), views.size()));
-  }
-
-  for(; itA != itAEnd; ++itA)
-  {
-    sfm::Views::const_iterator itB = itA;
-    std::advance(itB, 1);
-    sfm::Views::const_iterator itBEnd = itA;
-    std::size_t advanceSize = overlapSize;
-    if(std::distance(itBEnd, views.end()) < 1 + overlapSize)
-    {
-      advanceSize = std::distance(itBEnd, views.end()) - 1;
-    }
-    std::advance(itBEnd, 1 + advanceSize);
-
-    for(; itB != views.end() && itB != itBEnd; ++itB)
-      pairs.insert(std::make_pair(itA->first, itB->first));
-  }
-  return pairs;
-}
-
 bool loadPairs(const std::string &sFileName,
                PairSet & pairs,
                int rangeStart,
@@ -90,7 +56,7 @@ bool loadPairs(const std::string &sFileName,
   }
   std::size_t nbLine = 0;
   std::string sValue;
-  std::vector<std::string> vec_str;
+
   for(; std::getline( in, sValue ); ++nbLine)
   {
     if(rangeStart != -1 && rangeSize != 0)
@@ -100,8 +66,11 @@ bool loadPairs(const std::string &sFileName,
       if(nbLine >= rangeStart + rangeSize)
         break;
     }
-    vec_str.clear();
-    stl::split(sValue, " ", vec_str);
+
+    std::vector<std::string> vec_str;
+    boost::trim(sValue);
+    boost::split(vec_str, sValue, boost::is_any_of("\t "), boost::token_compress_on);
+
     const size_t str_size = vec_str.size();
     if (str_size < 2)
     {
@@ -125,8 +94,9 @@ bool loadPairs(const std::string &sFileName,
       if(pairs.find(pairToInsert) != pairs.end())
       {
         // There is no reason to have the same image pair twice in the list of image pairs to match.
-        ALICEVISION_LOG_WARNING("loadPairs: Image pair " << I << ", " << J << " already added. File: \"" << sFileName << "\".");
+        ALICEVISION_LOG_WARNING("loadPairs: image pair (" << I << ", " << J << ") already added. File: \"" << sFileName << "\".");
       }
+      ALICEVISION_LOG_INFO("loadPairs: image pair (" << I << ", " << J << ") added. File: \"" << sFileName << "\".");
       pairs.insert(pairToInsert);
     }
   }

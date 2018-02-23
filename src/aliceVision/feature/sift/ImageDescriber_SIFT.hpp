@@ -6,6 +6,7 @@
 #pragma once
 
 #include <aliceVision/config.hpp>
+#include <aliceVision/system/gpu.hpp>
 #include <aliceVision/feature/sift/ImageDescriber_SIFT_vlfeat.hpp>
 
 #if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_POPSIFT)
@@ -15,14 +16,33 @@
 namespace aliceVision {
 namespace feature {
 
+/**
+ * @brief SIFT Image Describer class
+ * use :
+ *  - PopSIFT Image describer (if defined and only with compatible device)
+ *  - VLFeat SIFT Image describer
+ */
 class ImageDescriber_SIFT : public ImageDescriber
 {
 public:
   ImageDescriber_SIFT(const SiftParams& params = SiftParams(), bool isOriented = true)
     : _params(params)
+    , _isOriented(isOriented)
   {
-    // TODO: detect if CUDA is available on the computer
+#if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_POPSIFT)
+    setUseCuda(system::gpuSupportCUDA(3,5));
+#else
     setUseCuda(false);
+#endif
+  }
+
+  /**
+   * @brief Check if the image describer use CUDA
+   * @return True if the image describer use CUDA
+   */
+  bool useCuda() const override
+  {
+    return _imageDescriberImpl->useCuda();
   }
 
   /**
@@ -34,7 +54,6 @@ public:
     return _imageDescriberImpl->useFloatImage();
   }
 
-
   /**
    * @brief Get the corresponding EImageDescriberType
    * @return EImageDescriberType
@@ -45,14 +64,15 @@ public:
   }
 
   /**
-   * @brief Use a preset to control the number of detected regions
-   * @param[in] preset The preset configuration
-   * @return True if configuration succeed. (here always false)
+   * @brief Get the total amount of RAM needed for a
+   * feature extraction of an image of the given dimension.
+   * @param[in] width The image width
+   * @param[in] height The image height
+   * @return total amount of memory needed
    */
-  bool Set_configuration_preset(EImageDescriberPreset preset) override
+  std::size_t getMemoryConsumption(std::size_t width, std::size_t height) const override
   {
-    bool isSuccess =_imageDescriberImpl->Set_configuration_preset(preset);
-    return (isSuccess && _params.setPreset(preset));
+    return _imageDescriberImpl->getMemoryConsumption(width, height);
   }
 
   /**
@@ -70,37 +90,54 @@ public:
    */
   void setUseCuda(bool useCuda) override
   {
-    _useCuda = useCuda;
+    if(_imageDescriberImpl != nullptr && this->useCuda() == useCuda)
+      return;
 
 #if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_POPSIFT)
     if(useCuda)
     {
+      _imageDescriberImpl.release(); // release first to ensure that we don't create the new ImageDescriber before destroying the previous one
       _imageDescriberImpl.reset(new ImageDescriber_SIFT_popSIFT(_params, _isOriented));
       return;
     }
 #endif
 
+    _imageDescriberImpl.release(); // release first to ensure that we don't create the new ImageDescriber before destroying the previous one
     _imageDescriberImpl.reset(new ImageDescriber_SIFT_vlfeat(_params, _isOriented));
   }
 
+  /**
+   * @brief set the CUDA pipe
+   * @param[in] pipe The CUDA pipe id
+   */
   void setCudaPipe(int pipe) override
   {
     _imageDescriberImpl->setCudaPipe(pipe);
   }
 
   /**
+   * @brief Use a preset to control the number of detected regions
+   * @param[in] preset The preset configuration
+   */
+  void setConfigurationPreset(EImageDescriberPreset preset) override
+  {
+     _params.setPreset(preset);
+     _imageDescriberImpl->setConfigurationPreset(preset);
+  }
+
+  /**
    * @brief Detect regions on the 8-bit image and compute their attributes (description)
    * @param[in] image Image.
    * @param[out] regions The detected regions and attributes (the caller must delete the allocated data)
-   * @param[in] mask 8-bit gray image for keypoint filtering (optional).
+   * @param[in] mask 8-bit grayscale image for keypoint filtering (optional)
    *    Non-zero values depict the region of interest.
    * @return True if detection succed.
    */
-  bool Describe(const image::Image<unsigned char>& image,
+  bool describe(const image::Image<unsigned char>& image,
                 std::unique_ptr<Regions>& regions,
                 const image::Image<unsigned char>* mask = NULL) override
   {
-    return _imageDescriberImpl->Describe(image, regions, mask);
+    return _imageDescriberImpl->describe(image, regions, mask);
   }
 
   /**
@@ -111,27 +148,26 @@ public:
    *    Non-zero values depict the region of interest.
    * @return True if detection succed.
    */
-  bool Describe(const image::Image<float>& image,
+  bool describe(const image::Image<float>& image,
                 std::unique_ptr<Regions>& regions,
                 const image::Image<unsigned char>* mask = NULL) override
   {
-    return _imageDescriberImpl->Describe(image, regions, mask);
+    return _imageDescriberImpl->describe(image, regions, mask);
   }
 
   /**
    * @brief Allocate Regions type depending of the ImageDescriber
    * @param[in,out] regions
    */
-  void Allocate(std::unique_ptr<Regions>& regions) const override
+  void allocate(std::unique_ptr<Regions>& regions) const override
   {
-    _imageDescriberImpl->Allocate(regions);
+    _imageDescriberImpl->allocate(regions);
   }
 
 private:
   SiftParams _params;
   std::unique_ptr<ImageDescriber> _imageDescriberImpl = nullptr;
   bool _isOriented = true;
-  bool _useCuda = false;
 };
 
 } // namespace feature

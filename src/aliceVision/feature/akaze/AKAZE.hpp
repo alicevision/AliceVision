@@ -30,14 +30,12 @@
 //  TrueVision Solutions (2)
 //------
 
-#include <aliceVision/image/image.hpp>
+#include <aliceVision/image/all.hpp>
 #include <aliceVision/numeric/numeric.hpp>
 #include <aliceVision/numeric/MathTrait.hpp>
 
 #include <aliceVision/feature/PointFeature.hpp>
 #include <aliceVision/feature/Descriptor.hpp>
-
-#include <cereal/cereal.hpp>
 
 namespace aliceVision {
 namespace feature {
@@ -87,7 +85,6 @@ struct TEvolution
     Lhess;  ///< Current Determinant of Hessian
 };
 
-/* ************************************************************************* */
 // AKAZE Class Declaration
 class AKAZE {
 

@@ -15,6 +15,8 @@
 #include <aliceVision/dataio/FeedProvider.hpp>
 #include <aliceVision/feature/ImageDescriber.hpp>
 #include <aliceVision/feature/imageDescriberCommon.hpp>
+#include <aliceVision/sfm/SfMData.hpp>
+#include <aliceVision/sfm/sfmDataIO.hpp>
 #include <aliceVision/robustEstimation/estimators.hpp>
 #include <aliceVision/system/Logger.hpp>
 #include <aliceVision/system/cmdline.hpp>
@@ -52,47 +54,6 @@ std::string myToString(std::size_t i, std::size_t zeroPadding)
   std::stringstream ss;
   ss << std::setw(zeroPadding) << std::setfill('0') << i;
   return ss.str();
-}
-
-/**
- * @brief It checks if the value for the reprojection error or the matching error
- * is compatible with the given robust estimator. The value cannot be 0 for 
- * LORansac, for ACRansac a value of 0 means to use infinity (ie estimate the 
- * threshold during ransac process)
- * @param e The estimator to be checked.
- * @param value The value for the reprojection or matching error.
- * @return true if the value is compatible
- */
-bool checkRobustEstimator(robustEstimation::ERobustEstimator e, double &value)
-{
-  if(e != robustEstimation::ERobustEstimator::LORANSAC &&
-     e != robustEstimation::ERobustEstimator::ACRANSAC)
-  {
-    ALICEVISION_CERR("Only " << robustEstimation::ERobustEstimator::ACRANSAC
-            << " and " << robustEstimation::ERobustEstimator::LORANSAC
-            << " are supported.");
-    return false;
-  }
-  if(value == 0 && 
-     e == robustEstimation::ERobustEstimator::ACRANSAC)
-  {
-    // for acransac set it to infinity
-    value = std::numeric_limits<double>::infinity();
-  }
-  // for loransac we need thresholds > 0
-  if(e == robustEstimation::ERobustEstimator::LORANSAC)
-  {
-    const double minThreshold = 1e-6;
-    if( value <= minThreshold)
-    {
-      ALICEVISION_CERR("Error: errorMax and matchingError cannot be 0 with " 
-              << robustEstimation::ERobustEstimator::LORANSAC
-              << " estimator.");
-      return false;     
-    }
-  }
-
-  return true;
 }
 
 int main(int argc, char** argv)
@@ -146,8 +107,8 @@ int main(int argc, char** argv)
   
   /// the Alembic export file
   std::string exportAlembicFile = "trackedcameras.abc";
-  /// the Binary export file
-  std::string exportBinaryFile = "";
+  /// the JSON export file
+  std::string exportJsonFile = "";
 
 #if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_CCTAG)
   // parameters for cctag localizer
@@ -265,8 +226,8 @@ int main(int argc, char** argv)
           "Filename for the SfMData export file (where camera poses will be stored). "
           "Default : trackedcameras.abc.")
 #endif
-      ("outputBinary", po::value<std::string>(&exportBinaryFile)->default_value(exportBinaryFile),
-          "Filename for the localization results (raw data) as .bin")
+      ("outputJSON", po::value<std::string>(&exportJsonFile)->default_value(exportJsonFile),
+          "Filename for the localization results (raw data) as .json")
 
       ;
   
@@ -328,16 +289,23 @@ int main(int argc, char** argv)
   }
  
   // this contains the full path and the root name of the file without the extension
-  const bool wantsBinaryOutput = exportBinaryFile.empty();
+  const bool wantsJsonOutput = exportJsonFile.empty();
 #if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_ALEMBIC)
-  std::string basenameAlembic = (bfs::path(exportBinaryFile).parent_path() / bfs::path(exportBinaryFile).stem()).string();
+  std::string basenameAlembic = (bfs::path(exportJsonFile).parent_path() / bfs::path(exportJsonFile).stem()).string();
 #endif
-  std::string basenameBinary;
-  if(wantsBinaryOutput)
+  std::string basenameJson;
+  if(wantsJsonOutput)
   {
-    basenameBinary = (bfs::path(exportBinaryFile).parent_path() / bfs::path(exportBinaryFile).stem()).string();
+    basenameJson = (bfs::path(exportJsonFile).parent_path() / bfs::path(exportJsonFile).stem()).string();
   }
 
+  // load SfMData
+  sfm::SfMData sfmData;
+  if(!sfm::Load(sfmData, sfmFilePath, sfm::ESfMData::ALL))
+  {
+    ALICEVISION_LOG_ERROR("The input SfMData file '" + sfmFilePath + "' cannot be read.");
+    return EXIT_FAILURE;
+  }
   
   //***********************************************************************
   // Localizer initialization
@@ -352,7 +320,7 @@ int main(int argc, char** argv)
 #if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_CCTAG)
   if(!useVoctreeLocalizer)
   {
-    localization::CCTagLocalizer* tmpLoc = new localization::CCTagLocalizer(sfmFilePath, descriptorsFolder);
+    localization::CCTagLocalizer* tmpLoc = new localization::CCTagLocalizer(sfmData, descriptorsFolder);
     localizer.reset(tmpLoc);
 
     localization::CCTagLocalizer::Parameters* tmpParam = new localization::CCTagLocalizer::Parameters();
@@ -362,7 +330,8 @@ int main(int argc, char** argv)
   else
 #endif
   {
-    localization::VoctreeLocalizer* tmpLoc = new localization::VoctreeLocalizer(sfmFilePath,
+
+    localization::VoctreeLocalizer* tmpLoc = new localization::VoctreeLocalizer(sfmData,
                                                    descriptorsFolder,
                                                    vocTreeFilepath,
                                                    weightsFilepath,
@@ -474,9 +443,9 @@ int main(int argc, char** argv)
     feed.goToNextFrame();
   }
 
-  if(wantsBinaryOutput)
+  if(wantsJsonOutput)
   {
-    localization::save(vec_localizationResults, basenameBinary + ".bin");
+    localization::LocalizationResult::save(vec_localizationResults, basenameJson + ".json");
   }
 
   //***********************************************************************
@@ -498,7 +467,7 @@ int main(int argc, char** argv)
                                                        noDistortion, 
                                                        b_refinePose,
                                                        b_refineStructure,
-                                                       basenameBinary + ".sfmdata.BUNDLE",
+                                                       basenameJson + ".sfmdata.BUNDLE",
                                                        minPointVisibility);
     if(!BAresult)
     {
@@ -526,9 +495,9 @@ int main(int argc, char** argv)
       }
 
 #endif
-      if(wantsBinaryOutput)
+      if(wantsJsonOutput)
       {
-        localization::save(vec_localizationResults, basenameBinary +".BUNDLE.bin");
+        localization::LocalizationResult::save(vec_localizationResults, basenameJson +".BUNDLE.json");
       }
 
     }

@@ -53,13 +53,13 @@ find_path (OPENEXR_INCLUDE_PATH OpenEXR/OpenEXRConfig.h
            PATHS ${GENERIC_INCLUDE_PATHS})
 #find_path (OPENEXR_INCLUDE_PATH OpenEXR/OpenEXRConfig.h)
 
-message(WARNING "GENERIC_INCLUDE_PATHS: ${GENERIC_INCLUDE_PATHS}")
-message(WARNING "Test if file exist: ${OPENEXR_INCLUDE_PATH}/OpenEXR/ImfMultiPartInputFile.h")
+# message(WARNING "GENERIC_INCLUDE_PATHS: ${GENERIC_INCLUDE_PATHS}")
+# message(WARNING "Test if file exist: ${OPENEXR_INCLUDE_PATH}/OpenEXR/ImfMultiPartInputFile.h")
 
 
 # Try to figure out version number
 if (EXISTS "${OPENEXR_INCLUDE_PATH}/OpenEXR/ImfMultiPartInputFile.h")
-    message(WARNING "Yes, file exist")
+    # message(WARNING "Yes, file exist")
 
     # Must be at least 2.0
     file(STRINGS "${OPENEXR_INCLUDE_PATH}/OpenEXR/OpenEXRConfig.h" TMP REGEX "^#define OPENEXR_VERSION_STRING .*$")
@@ -69,7 +69,7 @@ if (EXISTS "${OPENEXR_INCLUDE_PATH}/OpenEXR/ImfMultiPartInputFile.h")
     file(STRINGS "${OPENEXR_INCLUDE_PATH}/OpenEXR/OpenEXRConfig.h" TMP REGEX "^#define OPENEXR_VERSION_MINOR .*$")
     string (REGEX MATCHALL "[0-9]+" OPENEXR_VERSION_MINOR ${TMP})
 else ()
-    message(WARNING "No, default to 1.6.1")
+    message(STATUS  "File ${OPENEXR_INCLUDE_PATH}/OpenEXR/ImfMultiPartInputFile.h does not exist. Default to 1.6.1")
     # Assume an old one, predates 2.x that had versions
     set (OPENEXR_VERSION 1.6.1)
     set (OPENEXR_MAJOR 1)

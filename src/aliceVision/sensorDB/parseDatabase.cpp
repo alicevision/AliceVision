@@ -5,10 +5,11 @@
 
 #include "parseDatabase.hpp"
 
-#include <aliceVision/stl/split.hpp>
 #include <aliceVision/sensorDB/Datasheet.hpp>
 
 #include <dependencies/stlplus3/filesystemSimplified/file_system.hpp>
+
+#include <boost/algorithm/string.hpp>
 
 #include <vector>
 #include <string>
@@ -36,7 +37,8 @@ bool parseDatabase(const std::string& databaseFilePath, std::vector<Datasheet>& 
       if(line[0] != '#')
       {
         std::vector<std::string> values;
-        stl::split(line, ";", values);
+        boost::split(values, line, boost::is_any_of(";"));
+
         if(values.size() == 3)
         {
           const std::string brand = values[0];

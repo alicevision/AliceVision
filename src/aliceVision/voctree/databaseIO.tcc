@@ -21,14 +21,14 @@ namespace aliceVision {
 namespace voctree {
 
 template<class DescriptorT, class VocDescriptorT>
-std::size_t populateDatabase(const std::string &filepath,
+std::size_t populateDatabase(const sfm::SfMData &sfmData,
                              const std::string &descFolder,
                              const VocabularyTree<VocDescriptorT> &tree,
                              Database &db,
                              const int Nmax)
 {
   std::map<IndexT, std::string> descriptorsFiles;
-  getListOfDescriptorFiles(filepath, descFolder, descriptorsFiles);
+  getListOfDescriptorFiles(sfmData, descFolder, descriptorsFiles);
   std::size_t numDescriptors = 0;
   
   // Read the descriptors
@@ -61,7 +61,7 @@ std::size_t populateDatabase(const std::string &filepath,
 }
 
 template<class DescriptorT, class VocDescriptorT>
-std::size_t populateDatabase(const std::string &filepath,
+std::size_t populateDatabase(const sfm::SfMData &sfmData,
                              const std::string &descFolder,
                              const VocabularyTree<VocDescriptorT> &tree,
                              Database &db,
@@ -69,7 +69,7 @@ std::size_t populateDatabase(const std::string &filepath,
                              const int Nmax)
 {
   std::map<IndexT, std::string> descriptorsFiles;
-  getListOfDescriptorFiles(filepath, descFolder, descriptorsFiles);
+  getListOfDescriptorFiles(sfmData, descFolder, descriptorsFiles);
   std::size_t numDescriptors = 0;
 
   // Read the descriptors
@@ -103,7 +103,7 @@ std::size_t populateDatabase(const std::string &filepath,
 }
 
 template<class DescriptorT, class VocDescriptorT>
-void queryDatabase(const std::string &fileFullPath,
+void queryDatabase(const sfm::SfMData &sfmData,
                    const VocabularyTree<VocDescriptorT> &tree,
                    const Database &db,
                    size_t numResults,
@@ -112,7 +112,7 @@ void queryDatabase(const std::string &fileFullPath,
                    const int Nmax)
 {
   std::map<size_t, Document> documents;
-  queryDatabase<DescriptorT>(fileFullPath, tree, db, numResults, allDocMatches, documents, distanceMethod, Nmax);
+  queryDatabase<DescriptorT>(sfmData, tree, db, numResults, allDocMatches, documents, distanceMethod, Nmax);
 }
 
 /**
@@ -131,7 +131,7 @@ void queryDatabase(const std::string &fileFullPath,
  * @param[in] Nmax The maximum number of features loaded in each desc file. For Nmax = 0 (default), all the descriptors are loaded.
  */
 template<class DescriptorT, class VocDescriptorT>
-void queryDatabase(const std::string &filepath,
+void queryDatabase(const sfm::SfMData &sfmData,
                    const std::string &descFolder,
                    const VocabularyTree<VocDescriptorT> &tree,
                    const Database &db,
@@ -142,7 +142,7 @@ void queryDatabase(const std::string &filepath,
                    const int Nmax)
 {
   std::map<IndexT, std::string> descriptorsFiles;
-  getListOfDescriptorFiles(filepath, descFolder, descriptorsFiles);
+  getListOfDescriptorFiles(sfmData, descFolder, descriptorsFiles);
   
   // Read the descriptors
   ALICEVISION_LOG_DEBUG("queryDatabase: Reading the descriptors from " << descriptorsFiles.size() << " files...");
@@ -180,7 +180,7 @@ void queryDatabase(const std::string &filepath,
 
 template<class DescriptorT, class VocDescriptorT>
 void voctreeStatistics(
-    const std::string &filepath,
+    const sfm::SfMData &sfmData,
     const std::string &descFolder,
     const VocabularyTree<VocDescriptorT> &tree,
     const Database &db,
@@ -188,7 +188,7 @@ void voctreeStatistics(
     std::map<int, int> &globalHistogram)
 {
   std::map<IndexT, std::string> descriptorsFiles;
-  getListOfDescriptorFiles(filepath, descFolder, descriptorsFiles);
+  getListOfDescriptorFiles(sfmData, descFolder, descriptorsFiles);
   
   // Read the descriptors
   ALICEVISION_LOG_DEBUG("Reading the descriptors from " << descriptorsFiles.size() << " files.");

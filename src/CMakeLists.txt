@@ -14,7 +14,7 @@ set(ALICEVISION_VERSION ${ALICEVISION_VERSION_MAJOR}.${ALICEVISION_VERSION_MINOR
 # ==============================================================================
 # Check that submodule have been initialized and updated
 # ==============================================================================
-if(NOT EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/dependencies/cereal/include)
+if(NOT EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/dependencies/osi_clp/CoinUtils)
   message(FATAL_ERROR
     "\n submodule(s) are missing, please update your repository:\n"
     "  > git submodule update -i\n")
@@ -322,7 +322,7 @@ endif()
 # Boost
 # ==============================================================================
 option(BOOST_NO_CXX11 "if Boost is compiled without C++11 support (as it is often the case in OS packages) this must be enabled to avoid symbol conflicts (SCOPED_ENUM)." OFF)
-find_package(Boost 1.53.0 QUIET COMPONENTS system filesystem program_options thread serialization log log_setup)
+find_package(Boost 1.60.0 QUIET COMPONENTS system filesystem program_options thread serialization log log_setup)
 
 if(Boost_FOUND)
   message(STATUS "Boost ${Boost_LIB_VERSION} found.")
@@ -384,6 +384,7 @@ else() # ON OR AUTO
 
     if(CCTag_FOUND)
       set(ALICEVISION_HAVE_CCTAG 1)
+      set(ALICEVISION_HAVE_CUDA 1)
       message(STATUS "CCTAG ${CCTag_VERSION} found.")
     elseif(ALICEVISION_USE_CCTAG STREQUAL "ON")
       set(ALICEVISION_HAVE_CCTAG 0)
@@ -409,6 +410,7 @@ else() # ON OR AUTO
 
   if(PopSift_FOUND)
     set(ALICEVISION_HAVE_POPSIFT 1)
+    set(ALICEVISION_HAVE_CUDA 1)
     message(STATUS "PopSIFT found.")
   elseif(ALICEVISION_USE_POPSIFT STREQUAL "ON")
     set(ALICEVISION_HAVE_POPSIFT 0)
@@ -416,6 +418,19 @@ else() # ON OR AUTO
   else()
     set(ALICEVISION_HAVE_POPSIFT 0)
   endif()
+endif()
+
+# ==============================================================================
+# CUDA
+# ==============================================================================
+find_package(CUDA 7.0)
+
+if(CUDA_FOUND)
+  message(STATUS "CUDA found.")
+  set(ALICEVISION_HAVE_CUDA 1)
+  include_directories(${CUDA_INCLUDE_DIRS})
+else()
+  set(ALICEVISION_HAVE_CUDA 0)
 endif()
 
 # ==============================================================================
@@ -469,6 +484,16 @@ if(ALICEVISION_HAVE_UNCERTAINTYTE)
 endif()
 
 # ==============================================================================
+# OpenEXR
+# ==============================================================================
+find_package(OpenEXR)
+if(OPENEXR_FOUND)
+  message(STATUS "OpenEXR found. (Version ${OPENEXR_VERSION})")
+else()
+  message(SEND_ERROR "Failed to find OpenEXR.")
+endif()
+
+# ==============================================================================
 # OpenImageIO
 # ==============================================================================
 find_package(OpenImageIO)
@@ -487,7 +512,6 @@ set(ALICEVISION_INCLUDE_DIRS
   ${CMAKE_CURRENT_SOURCE_DIR} 
   ${generatedDir}
   ${CMAKE_CURRENT_SOURCE_DIR}/dependencies
-  ${CMAKE_CURRENT_SOURCE_DIR}/dependencies/cereal/include
   ${LEMON_INCLUDE_DIRS}
   ${EIGEN_INCLUDE_DIRS}
   ${CERES_INCLUDE_DIRS}

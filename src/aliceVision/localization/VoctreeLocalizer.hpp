@@ -81,7 +81,7 @@ public:
   /**
    * @brief Initialize a localizer based on a vocabulary tree
    * 
-   * @param[in] sfmFilePath The path to the sfmdata file containing the scene 
+   * @param[in] sfmData The sfmdata containing the scene
    * reconstruction.
    * @param[in] descriptorsFolder The path to the directory containing the features 
    * of the scene (.desc and .feat files).
@@ -94,7 +94,7 @@ public:
    *
    * It enable the use of combined SIFT and CCTAG features.
    */
-  VoctreeLocalizer(const std::string &sfmFilePath,
+  VoctreeLocalizer(const sfm::SfMData &sfmData,
                    const std::string &descriptorsFolder,
                    const std::string &vocTreeFilepath,
                    const std::string &weightsFilepath,
@@ -202,13 +202,13 @@ public:
    * @param[out] associationIDs the ids of the 2D-3D correspondences used to compute the pose
    * @return true if the localization is successful
    */
-  bool localizeFirstBestResult(const feature::MapRegionsPerDesc & queryRegions,
-                               const std::pair<std::size_t, std::size_t> imageSize,
+  bool localizeFirstBestResult(const feature::MapRegionsPerDesc &queryRegions,
+                               const std::pair<std::size_t, std::size_t> &imageSize,
                                const Parameters &param,
                                bool useInputIntrinsics,
                                camera::PinholeRadialK3 &queryIntrinsics,
                                LocalizationResult &localizationResult,
-                               const std::string& imagePath = std::string());
+                               const std::string &imagePath = std::string());
 
   /**
    * @brief Try to localize an image in the database: it queries the database to 
@@ -228,7 +228,7 @@ public:
    * @return true if the localization is successful
    */
   bool localizeAllResults(const feature::MapRegionsPerDesc & queryRegions,
-                          const std::pair<std::size_t, std::size_t> imageSize,
+                          const std::pair<std::size_t, std::size_t> & imageSize,
                           const Parameters &param,
                           bool useInputIntrinsics,
                           camera::PinholeRadialK3 &queryIntrinsics,
@@ -278,7 +278,7 @@ private:
    */
   bool initDatabase(const std::string & vocTreeFilepath,
                     const std::string & weightsFilepath,
-                    const std::string & feat_directory);
+                    const std::string & featFolder);
 
   /**
    * @brief robustMatching
@@ -301,17 +301,17 @@ private:
                       const camera::IntrinsicBase * queryIntrinsics,// the intrinsics of the image we are using as reference
                       const feature::MapRegionsPerDesc & regionsToMatch,
                       const camera::IntrinsicBase * matchedIntrinsics,
-                      const float fDistRatio,
-                      const double matchingError,
-                      const bool useGeometricFiltering,
-                      const bool useGuidedMatching,
+                      float fDistRatio,
+                      double matchingError,
+                      bool useGeometricFiltering,
+                      bool useGuidedMatching,
                       const std::pair<size_t,size_t> & imageSizeI,     // size of the image in matcher  
                       const std::pair<size_t,size_t> & imageSizeJ,     // size of the query image
                       matching::MatchesPerDescType & out_featureMatches,
                       robustEstimation::ERobustEstimator estimator = robustEstimation::ERobustEstimator::ACRANSAC) const;
   
   void getAssociationsFromBuffer(matching::RegionsDatabaseMatcherPerDesc& matchers,
-                                 const std::pair<std::size_t, std::size_t> imageSize,
+                                 const std::pair<std::size_t, std::size_t> & imageSize,
                                  const Parameters &param,
                                  bool useInputIntrinsics,
                                  const camera::PinholeRadialK3 &queryIntrinsics,

@@ -12,6 +12,8 @@
 #include <aliceVision/image/io.hpp>
 #include <aliceVision/dataio/FeedProvider.hpp>
 #include <aliceVision/feature/ImageDescriber.hpp>
+#include <aliceVision/sfm/SfMData.hpp>
+#include <aliceVision/sfm/sfmDataIO.hpp>
 #include <aliceVision/robustEstimation/estimators.hpp>
 #include <aliceVision/system/Logger.hpp>
 #include <aliceVision/system/cmdline.hpp>
@@ -50,46 +52,6 @@ std::string myToString(std::size_t i, std::size_t zeroPadding)
   return ss.str();
 }
 
-/**
- * @brief It checks if the value for the reprojection error or the matching error
- * is compatible with the given robust estimator. The value cannot be 0 for 
- * LORansac, for ACRansac a value of 0 means to use infinity (ie estimate the 
- * threshold during ransac process)
- * @param e The estimator to be checked.
- * @param value The value for the reprojection or matching error.
- * @return true if the value is compatible
- */
-bool checkRobustEstimator(robustEstimation::ERobustEstimator e, double &value)
-{
-  if(e != robustEstimation::ERobustEstimator::LORANSAC &&
-     e != robustEstimation::ERobustEstimator::ACRANSAC)
-  {
-    ALICEVISION_CERR("Only " << robustEstimation::ERobustEstimator::ACRANSAC
-            << " and " << robustEstimation::ERobustEstimator::LORANSAC
-            << " are supported.");
-    return false;
-  }
-  if(value == 0 && 
-     e == robustEstimation::ERobustEstimator::ACRANSAC)
-  {
-    // for acransac set it to infinity
-    value = std::numeric_limits<double>::infinity();
-  }
-  // for loransac we need thresholds > 0
-  if(e == robustEstimation::ERobustEstimator::LORANSAC)
-  {
-    const double minThreshold = 1e-6;
-    if(value <= minThreshold)
-    {
-      ALICEVISION_CERR("Error: errorMax and matchingError cannot be 0 with " 
-              << robustEstimation::ERobustEstimator::LORANSAC
-              << " estimator.");
-      return false;     
-    }
-  }
-
-  return true;
-}
 
 int main(int argc, char** argv)
 {
@@ -286,12 +248,20 @@ int main(int argc, char** argv)
   std::unique_ptr<localization::LocalizerParameters> param;
   
   std::unique_ptr<localization::ILocalizer> localizer;
+
+  // load SfMData
+  sfm::SfMData sfmData;
+  if(!sfm::Load(sfmData, sfmFilePath, sfm::ESfMData::ALL))
+  {
+    ALICEVISION_LOG_ERROR("The input SfMData file '" + sfmFilePath + "' cannot be read.");
+    return EXIT_FAILURE;
+  }
   
   // initialize the localizer according to the chosen type of describer
   if(useVoctreeLocalizer)
   {
     ALICEVISION_COUT("Calibrating sequence using the voctree localizer");
-    localization::VoctreeLocalizer* tmpLoc = new localization::VoctreeLocalizer(sfmFilePath,
+    localization::VoctreeLocalizer* tmpLoc = new localization::VoctreeLocalizer(sfmData,
                                                             descriptorsFolder,
                                                             vocTreeFilepath,
                                                             weightsFilepath,
@@ -311,7 +281,7 @@ int main(int argc, char** argv)
 #if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_CCTAG)
   else
   {
-    localization::CCTagLocalizer* tmpLoc = new localization::CCTagLocalizer(sfmFilePath, descriptorsFolder);
+    localization::CCTagLocalizer* tmpLoc = new localization::CCTagLocalizer(sfmData, descriptorsFolder);
     localizer.reset(tmpLoc);
     
     localization::CCTagLocalizer::Parameters *tmpParam = new localization::CCTagLocalizer::Parameters();
@@ -338,7 +308,7 @@ int main(int argc, char** argv)
 
 #if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_ALEMBIC)
   sfm::AlembicExporter exporter(exportFile);
-  exporter.addPoints(localizer->getSfMData().GetLandmarks());
+  exporter.addLandmarks(localizer->getSfMData().GetLandmarks());
 #endif
 
   // Create a camera rig
@@ -422,20 +392,18 @@ int main(int argc, char** argv)
 #if ALICEVISION_IS_DEFINED(ALICEVISION_HAVE_ALEMBIC)
       if(localizationResult.isValid())
       {
-        exporter.appendCamera("camera"+std::to_string(idCamera)+"."+myToString(currentFrame,4),
-                              sfm::View(subMediaFilepath, currentFrame, currentFrame),
-                              subMediaFilepath,
-                              queryIntrinsics,
-                              localizationResult.getPose());
+        exporter.addCamera("camera"+std::to_string(idCamera)+"."+myToString(currentFrame,4),
+                           sfm::View(subMediaFilepath, currentFrame, currentFrame),
+                           &localizationResult.getPose(),
+                           &queryIntrinsics);
       }
       else
       {
         // @fixme for now just add a fake camera so that it still can be see in MAYA
-        exporter.appendCamera("camera"+std::to_string(idCamera)+".V."+myToString(currentFrame,4),
-                              sfm::View(subMediaFilepath, currentFrame, currentFrame),
-                              subMediaFilepath,
-                              queryIntrinsics,
-                              localizationResult.getPose());
+        exporter.addCamera("camera"+std::to_string(idCamera)+".V."+myToString(currentFrame,4),
+                           sfm::View(subMediaFilepath, currentFrame, currentFrame),
+                           &localizationResult.getPose(),
+                           &queryIntrinsics);
       }
 #endif
       ++iInputFrame;

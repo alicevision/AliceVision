@@ -8,13 +8,10 @@
 #include <aliceVision/types.hpp>
 #include <aliceVision/feature/imageDescriberCommon.hpp>
 
-#include <cereal/cereal.hpp>
-
 #include <iostream>
 #include <vector>
 #include <set>
 #include <map>
-
 
 #define ALICEVISION_DEBUG_MATCHING
 
@@ -59,12 +56,6 @@ struct IndMatch
     std::set<IndMatch> set_deduplicated( vec_match.begin(), vec_match.end());
     vec_match.assign(set_deduplicated.begin(), set_deduplicated.end());
     return sizeBefore != vec_match.size();
-  }
-
-  // Serialization
-  template <class Archive>
-  void serialize( Archive & ar )  {
-    ar(_i, _j);
   }
 
   IndexT _i, _j;  // Left, right index

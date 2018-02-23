@@ -5,9 +5,11 @@
 
 #pragma once
 
-#include "aliceVision/sfm/SfMData.hpp"
-#include "aliceVision/types.hpp"
-#include "aliceVision/track/Track.hpp"
+#include <aliceVision/types.hpp>
+#include <aliceVision/track/Track.hpp>
+#include <aliceVision/sfm/SfMData.hpp>
+
+#include <dependencies/stlplus3/filesystemSimplified/file_system.hpp>
 
 namespace aliceVision {
 namespace sfm {

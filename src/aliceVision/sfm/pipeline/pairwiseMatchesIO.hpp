@@ -11,6 +11,9 @@
 #include <aliceVision/matching/IndMatch.hpp>
 #include <aliceVision/matching/io.hpp>
 
+#include <vector>
+#include <string>
+
 namespace aliceVision {
 namespace sfm {
 
@@ -30,10 +33,17 @@ inline bool loadPairwiseMatches(
     const std::string& matchesMode,
     const int maxNbMatches = 0)
 {
-  ALICEVISION_LOG_DEBUG("- Loading matches...");
-  if (!matching::Load(out_pairwiseMatches, sfmData.GetViewsKeys(), folder, descTypes, matchesMode, maxNbMatches))
+  std::vector<std::string> matchesFolders = sfmData.getMatchesFolders();
+  matchesFolders.emplace_back(folder);
+
+  ALICEVISION_LOG_DEBUG("Loading matches");
+  if (!matching::Load(out_pairwiseMatches, sfmData.GetViewsKeys(), matchesFolders, descTypes, matchesMode, maxNbMatches))
   {
-    ALICEVISION_LOG_WARNING("Unable to read the matches file(s) from: " << folder << " (mode: " << matchesMode << ")");
+    std::stringstream ss("Unable to read the matches file(s) from:\n");
+    for(const std::string& folder : matchesFolders)
+      ss << "\t- " << folder << "\n";
+    ss << "(mode: " << matchesMode << ")\n";
+    ALICEVISION_LOG_WARNING(ss.str());
     return false;
   }
   return true;

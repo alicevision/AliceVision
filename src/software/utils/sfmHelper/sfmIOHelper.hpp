@@ -6,7 +6,8 @@
 #pragma once
 
 #include "aliceVision/numeric/numeric.hpp"
-#include "aliceVision/stl/split.hpp"
+
+#include <boost/algorithm/string.hpp>
 
 #include <fstream>
 #include <iterator>
@@ -56,13 +57,14 @@ struct IntrinsicCameraInfo
 // - a camera with exif data found in the database
 // - a camera with exif data not found in the database
 // - a camera with known intrinsic
-static bool loadImageList( std::vector<CameraInfo> & vec_camImageName,
+inline bool loadImageList( std::vector<CameraInfo> & vec_camImageName,
                            std::vector<IntrinsicCameraInfo> & vec_focalGroup,
                            const std::string & sFileName,
                            bool bVerbose = true )
 {
   std::ifstream in(sFileName.c_str());
-  if(!in.is_open())  {
+  if(!in.is_open())
+  {
     std::cerr << std::endl
       << "Impossible to read the specified file." << std::endl;
   }
@@ -71,7 +73,8 @@ static bool loadImageList( std::vector<CameraInfo> & vec_camImageName,
   while(getline( in, sValue ) )
   {
     vec_str.clear();
-    stl::split(sValue, ";", vec_str);
+    boost::trim(sValue);
+    boost::split(vec_str, sValue, boost::is_any_of(";"));
     if (vec_str.size() == 1)
     {
       std::cerr << "Invalid input file" << std::endl;
@@ -186,7 +189,7 @@ static bool loadImageList( std::vector<CameraInfo> & vec_camImageName,
 }
 
 //-- Load an image list file but only return camera image names
-static bool loadImageList( std::vector<std::string> & vec_camImageName,
+inline bool loadImageList( std::vector<std::string> & vec_camImageName,
                            const std::string & sListFileName,
                            bool bVerbose = true )
 {

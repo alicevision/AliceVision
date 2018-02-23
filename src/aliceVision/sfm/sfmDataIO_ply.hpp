@@ -7,13 +7,21 @@
 
 #include <aliceVision/sfm/sfmDataIO.hpp>
 
+#include <string>
+
 namespace aliceVision {
 namespace sfm {
 
-/// Save the structure and camera positions of a SfMData container as 3D points in a PLY ASCII file.
-bool Save_PLY(const SfMData & sfm_data,
-              const std::string & filename,
-              ESfMData flags_part);
+/**
+ * @brief Save the structure and camera positions of a SfMData container as 3D points in a PLY ASCII file.
+ * @param[in] sfmData The input SfMData
+ * @param[in] filename The filename
+ * @param[in] partFlag The ESfMData save flag
+ * @return true if completed
+ */
+bool savePLY(const SfMData& sfmData,
+             const std::string& filename,
+             ESfMData partFlag);
 
 } // namespace sfm
 } // namespace aliceVision

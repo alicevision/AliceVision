@@ -5,9 +5,8 @@
 
 #pragma once
 
-
-#include "aliceVision/sfm/BundleAdjustmentCeres.hpp"
-#include "aliceVision/sfm/LocalBundleAdjustmentData.hpp"
+#include <aliceVision/sfm/BundleAdjustmentCeres.hpp>
+#include <aliceVision/sfm/LocalBundleAdjustmentData.hpp>
 
 namespace aliceVision {
 namespace sfm {

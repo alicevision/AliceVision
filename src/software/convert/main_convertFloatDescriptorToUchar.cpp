@@ -5,6 +5,7 @@
 
 #include <aliceVision/feature/Descriptor.hpp>
 #include <aliceVision/system/Logger.hpp>
+#include <aliceVision/system/cmdline.hpp>
 
 #include <boost/progress.hpp>
 #include <boost/filesystem.hpp>
@@ -13,35 +14,49 @@
 
 #include <cstdlib>
 
-namespace bfs = boost::filesystem;
-namespace po = boost::program_options;
-
 using namespace aliceVision;
-/*
- * 
- */
+namespace po = boost::program_options;
+namespace fs = boost::filesystem;
+
 int main( int argc, char** argv )
 {
+  std::string verboseLevel = system::EVerboseLevel_enumToString(system::Logger::getDefaultVerboseLevel());
   std::string outputFolder;
   std::string inputFolder;
   bool doSanityCheck = false;
   const int siftSize = 128;
 
-  po::options_description desc("This program is used to convert SIFT features from float representation to unsigned char representation");
-  desc.add_options()
-        ("inputFolder,i", po::value<std::string>(&inputFolder)->required(), "Input folder containing the sift in float format.")
-        ("outputFolder,o", po::value<std::string>(&outputFolder)->required(), "Output folder that stores the sift in uchar format.")
-        ("sanityCheck,s", po::value<bool>(&doSanityCheck)->default_value(doSanityCheck), "Perform a sanity check to check that the conversion and the genrated files are the same.");
+  po::options_description allParams("This program is used to convert SIFT features from float representation to unsigned char representation\n"
+                                    "AliceVision convertRAW");
+
+  po::options_description requiredParams("Required parameters");
+  requiredParams.add_options()
+    ("input,i", po::value<std::string>(&inputFolder)->required(),
+      "Input folder containing the sift in float format.")
+    ("output,o", po::value<std::string>(&outputFolder)->required(),
+      "Output folder that stores the sift in uchar format.");
+
+  po::options_description optionalParams("Optional parameters");
+  optionalParams.add_options()
+    ("sanityCheck,s", po::value<bool>(&doSanityCheck)->default_value(doSanityCheck),
+       "Perform a sanity check to check that the conversion and the genrated files are the same.");
+
+  po::options_description logParams("Log parameters");
+  logParams.add_options()
+    ("verboseLevel,v", po::value<std::string>(&verboseLevel)->default_value(verboseLevel),
+      "verbosity level (fatal,  error, warning, info, debug, trace).");
+
+  allParams.add(requiredParams).add(optionalParams).add(logParams);
 
   po::variables_map vm;
 
   try
   {
-    po::store(po::parse_command_line(argc, argv, desc), vm);
+    po::store(po::parse_command_line(argc, argv, allParams), vm);
 
     if(vm.count("help") || (argc == 1))
     {
-      ALICEVISION_COUT(desc);
+      ALICEVISION_COUT(allParams);
       return EXIT_SUCCESS;
     }
 
@@ -50,33 +65,39 @@ int main( int argc, char** argv )
   catch(boost::program_options::required_option& e)
   {
     ALICEVISION_CERR("ERROR: " << e.what() << std::endl);
-    ALICEVISION_COUT("Usage:\n\n" << desc);
+    ALICEVISION_COUT("Usage:\n\n" << allParams);
     return EXIT_FAILURE;
   }
   catch(boost::program_options::error& e)
   {
     ALICEVISION_CERR("ERROR: " << e.what() << std::endl);
-    ALICEVISION_COUT("Usage:\n\n" << desc);
+    ALICEVISION_COUT("Usage:\n\n" << allParams);
     return EXIT_FAILURE;
   }
 
-  if(!(bfs::exists(inputFolder) && bfs::is_directory(inputFolder)))
+  ALICEVISION_COUT("Program called with the following parameters:");
+  ALICEVISION_COUT(vm);
+
+  // set verbose level
+  system::Logger::get()->setLogLevel(verboseLevel);
+
+  if(!(fs::exists(inputFolder) && fs::is_directory(inputFolder)))
   {
-    ALICEVISION_CERR("ERROR: " << inputFolder << " does not exists or it is not a folder" << std::endl);
+    ALICEVISION_LOG_ERROR(inputFolder << " does not exists or it is not a folder");
     return EXIT_FAILURE;
   }
 
   // if the folder does not exist create it (recursively)
-  if(!bfs::exists(outputFolder))
+  if(!fs::exists(outputFolder))
   {
-    bfs::create_directories(outputFolder);
+    fs::create_directories(outputFolder);
   }
   
   size_t countFeat = 0;
   size_t countDesc = 0;
 
-  bfs::directory_iterator iterator(inputFolder);
-  for(; iterator != bfs::directory_iterator(); ++iterator)
+  fs::directory_iterator iterator(inputFolder);
+  for(; iterator != fs::directory_iterator(); ++iterator)
   {
     // get the extension of the current file to check whether it is an image
     std::string ext = iterator->path().extension().string();
@@ -86,13 +107,13 @@ int main( int argc, char** argv )
     if(ext == ".feat")
     {
       // just copy the file into the output folder
-      bfs::copy_file(iterator->path(), bfs::path(outputFolder)/bfs::path(filename), bfs::copy_option::overwrite_if_exists);
+      fs::copy_file(iterator->path(), fs::path(outputFolder)/fs::path(filename), fs::copy_option::overwrite_if_exists);
       
       ++countFeat;
     }
     else if(ext == ".desc")
     {
-      const std::string outpath = (bfs::path(outputFolder)/bfs::path(filename)).string(); 
+      const std::string outpath = (fs::path(outputFolder)/fs::path(filename)).string();
       std::vector<feature::Descriptor<float, siftSize> > floatDescriptors;
       
       // load the float descriptors
@@ -152,5 +173,5 @@ int main( int argc, char** argv )
       ++countDesc;
     }
   }
-  ALICEVISION_COUT("Converted " << countDesc << " files .desc and copied " << countFeat << " files .feat");
+  ALICEVISION_LOG_INFO("Converted " << countDesc << " files .desc and copied " << countFeat << " files .feat");
 }

@@ -5,11 +5,16 @@
 
 #include "viewIO.hpp"
 
+#include <aliceVision/numeric/numeric.hpp>
 #include <aliceVision/sfm/utils/uid.hpp>
 #include <aliceVision/camera/camera.hpp>
 #include <aliceVision/image/io.hpp>
 
+#include <boost/filesystem.hpp>
+
 #include <stdexcept>
+
+namespace fs = boost::filesystem;
 
 namespace aliceVision {
 namespace sfm {
@@ -44,26 +49,30 @@ void updateIncompleteView(View& view)
     // check if the rig poseId id is defined
     if(view.isPartOfRig())
     {
-      ALICEVISION_LOG_ERROR("Error: Can't find poseId for'" << stlplus::filename_part(view.getImagePath()) << "' marked as part of a rig." << std::endl);
-      throw std::invalid_argument("Error: Can't find poseId for'" + stlplus::filename_part(view.getImagePath()) + "' marked as part of a rig.");
+      ALICEVISION_LOG_ERROR("Error: Can't find poseId for'" << fs::path(view.getImagePath()).filename().string() << "' marked as part of a rig." << std::endl);
+      throw std::invalid_argument("Error: Can't find poseId for'" + fs::path(view.getImagePath()).filename().string() + "' marked as part of a rig.");
     }
     else
       view.setPoseId(view.getViewId());
   }
   else if((!view.isPartOfRig()) && (view.getPoseId() != view.getViewId()))
   {
-    ALICEVISION_LOG_ERROR("Error: Bad poseId for image '" << stlplus::filename_part(view.getImagePath()) << "' (viewId should be equal to poseId)." << std::endl);
-    throw std::invalid_argument("Error: Bad poseId for image '" + stlplus::filename_part(view.getImagePath()) + "'.");
+    ALICEVISION_LOG_ERROR("Error: Bad poseId for image '" << fs::path(view.getImagePath()).filename().string() << "' (viewId should be equal to poseId)." << std::endl);
+    throw std::invalid_argument("Error: Bad poseId for image '" + fs::path(view.getImagePath()).filename().string() + "'.");
   }
 }
 
 std::shared_ptr<camera::IntrinsicBase> getViewIntrinsic(const View& view,
                                                         double sensorWidth,
                                                         double defaultFocalLengthPx,
+                                                        double defaultFieldOfView,
                                                         camera::EINTRINSIC defaultIntrinsicType,
                                                         double defaultPPx,
                                                         double defaultPPy)
 {
+  // can't combine defaultFocalLengthPx and defaultFieldOfView
+  assert(defaultFocalLengthPx < 0 || defaultFieldOfView < 0);
+
   // get view informations
   const std::string cameraBrand = view.getMetadataOrEmpty("Make");
   const std::string cameraModel = view.getMetadataOrEmpty("Model");
@@ -71,7 +80,19 @@ std::shared_ptr<camera::IntrinsicBase> getViewIntrinsic(const View& view,
   const std::string lensSerialNumber = view.getMetadataOrEmpty("Exif:LensSerialNumber");
 
   float mmFocalLength = view.hasMetadata("Exif:FocalLength") ? std::stof(view.getMetadata("Exif:FocalLength")) : -1;
-  double pxFocalLength = defaultFocalLengthPx;
+  double pxFocalLength;
+
+  if(defaultFocalLengthPx > 0)
+  {
+    pxFocalLength = defaultFocalLengthPx;
+  }
+
+  if(defaultFieldOfView > 0)
+  {
+    const double focalRatio = 0.5 / std::tan(0.5 * degreeToRadian(defaultFieldOfView));
+    pxFocalLength = focalRatio * std::max(view.getWidth(), view.getHeight());
+  }
+
   camera::EINTRINSIC intrinsicType = defaultIntrinsicType;
 
   double ppx = view.getWidth() / 2.0;
@@ -93,7 +114,7 @@ std::shared_ptr<camera::IntrinsicBase> getViewIntrinsic(const View& view,
     if(exifWidth > 0 && exifHeight > 0 &&
        (exifWidth != view.getWidth() || exifHeight != view.getHeight()))
     {
-      ALICEVISION_LOG_WARNING("Warning: Resized image detected: " << stlplus::filename_part(view.getImagePath()) << std::endl
+      ALICEVISION_LOG_WARNING("Warning: Resized image detected: " << fs::path(view.getImagePath()).filename().string() << std::endl
                           << "\t- real image size: " <<  view.getWidth() << "x" <<  view.getHeight() << std::endl
                           << "\t- image size from exif metadata is: " << exifWidth << "x" << exifHeight << std::endl);
       isResized = true;
@@ -108,7 +129,7 @@ std::shared_ptr<camera::IntrinsicBase> getViewIntrinsic(const View& view,
   // handle case where focal length (mm) is unset or false
   if(mmFocalLength <= .0f)
   {
-    ALICEVISION_LOG_WARNING("Warning: image '" << stlplus::filename_part(view.getImagePath()) << "' focal length (in mm) metadata is missing." << std::endl
+    ALICEVISION_LOG_WARNING("Warning: image '" << fs::path(view.getImagePath()).filename().string() << "' focal length (in mm) metadata is missing." << std::endl
                                                << "Can't compute focal length (px), use default." << std::endl);
   }
   else if(sensorWidth > 0)
@@ -128,7 +149,7 @@ std::shared_ptr<camera::IntrinsicBase> getViewIntrinsic(const View& view,
     // and we use a camera without lens distortion.
     intrinsicType = camera::PINHOLE_CAMERA;
   }
-  else if(mmFocalLength > 0.0 && mmFocalLength < 15)
+  else if((mmFocalLength > 0.0 && mmFocalLength < 15) || (defaultFieldOfView > 95))
   {
     // if the focal lens is short, the fisheye model should fit better.
     intrinsicType = camera::PINHOLE_CAMERA_FISHEYE;

@@ -64,80 +64,11 @@ localization::LocalizationResult generateRandomResult(std::size_t numPts)
   return localization::LocalizationResult(data, indMatch3D2D, pose, intrinsics, matchedImages, valid);
 }
 
-// generate a random localization result, save it to binary file, load it again
-// and compare each value
-
-BOOST_AUTO_TEST_CASE(LocalizationResult_LoadSaveBinSingle)
-{
-  const double threshold = 1e-10;
-  const std::string filename = "test_localizationResult.bin";
-  const localization::LocalizationResult &res = generateRandomResult(10);
-  localization::LocalizationResult check;
-
-  BOOST_CHECK(localization::save(res, filename));
-  BOOST_CHECK(localization::load(check, filename));
-
-  // same validity
-  BOOST_CHECK(res.isValid() == check.isValid());
-
-  // same pose
-  const Mat3 rotGT = res.getPose().rotation();
-  const Mat3 rot = check.getPose().rotation();
-  for(std::size_t i = 0; i < 3; ++i)
-  {
-    for(std::size_t j = 0; j < 3; ++j)
-    {
-      BOOST_CHECK_SMALL(rotGT(i, j)- rot(i, j), threshold);
-    }
-  }
-  const Vec3 centerGT = res.getPose().center();
-  const Vec3 center = check.getPose().center();
-  BOOST_CHECK_SMALL(centerGT(0)-center(0), threshold);
-  BOOST_CHECK_SMALL(centerGT(1)-center(1), threshold);
-  BOOST_CHECK_SMALL(centerGT(2)-center(2), threshold);
-
-  // same _indMatch3D2D
-  const auto idxGT = res.getIndMatch3D2D();
-  const auto idx = check.getIndMatch3D2D();
-  BOOST_CHECK(idxGT.size() == idx.size());
-  const std::size_t numpts = idxGT.size();
-  for(std::size_t i = 0; i < numpts; ++i)
-  {
-    BOOST_CHECK(idxGT[i].landmarkId == idx[i].landmarkId);
-    BOOST_CHECK(idxGT[i].featId == idx[i].featId);
-  }
-
-  // same _matchData
-  BOOST_CHECK(res.getInliers().size() == check.getInliers().size());
-  const auto inliersGT = res.getInliers();
-  const auto inliers = check.getInliers();
-  for(std::size_t i = 0; i < res.getInliers().size(); ++i)
-  {
-    BOOST_CHECK(inliersGT[i] == inliers[i]);
-  }
-
-
-  EXPECT_MATRIX_NEAR(res.getPt3D(), check.getPt3D(), threshold);
-  EXPECT_MATRIX_NEAR(res.getPt2D(), check.getPt2D(), threshold);
-  EXPECT_MATRIX_NEAR(res.getProjection(), check.getProjection(), threshold);
-
-    // same matchedImages
-  BOOST_CHECK(res.getMatchedImages().size() == check.getMatchedImages().size());
-  const std::vector<voctree::DocMatch>& matchedImagesGT = res.getMatchedImages();
-  const std::vector<voctree::DocMatch>& matchedImages = check.getMatchedImages();
-  for(std::size_t i = 0; i < res.getMatchedImages().size(); ++i)
-  {
-    BOOST_CHECK(matchedImagesGT[i] == matchedImages[i]);
-  }
-
-  stlplus::file_delete(filename);
-}
-
-BOOST_AUTO_TEST_CASE(LocalizationResult_LoadSaveBinVector)
+BOOST_AUTO_TEST_CASE(LocalizationResult_LoadSaveVector)
 {
   const double threshold = 1e-10;
   const std::size_t numResults = 10;
-  const std::string filename = "test_localizationResults.bin";
+  const std::string filename = "test_localizationResults.json";
   const unsigned seed1 = std::chrono::system_clock::now().time_since_epoch().count();
   std::random_device rd;
   std::mt19937 gen(seed1);
@@ -153,8 +84,8 @@ BOOST_AUTO_TEST_CASE(LocalizationResult_LoadSaveBinVector)
     resGT.push_back(generateRandomResult(numpts(gen)));
   }
 
-  BOOST_CHECK(localization::save(resGT, filename));
-  BOOST_CHECK(localization::load(resCheck, filename));
+  BOOST_CHECK_NO_THROW(localization::LocalizationResult::save(resGT, filename));
+  BOOST_CHECK_NO_THROW(localization::LocalizationResult::load(resCheck, filename));
   BOOST_CHECK(resCheck.size() == resGT.size());
 
   // check each element

@@ -7,10 +7,6 @@
 
 #include <aliceVision/types.hpp>
 
-#include <dependencies/stlplus3/filesystemSimplified/file_system.hpp>
-
-#include <cereal/cereal.hpp>
-
 #include <string>
 #include <utility>
 
@@ -293,66 +289,6 @@ public:
   void addMetadata(const std::string& key, const std::string& value)
   {
     _metadata.emplace(key, value);
-  }
-
-  /**
-   * @brief Cereal save method
-   * @param[in,out] ar The archive
-   */
-  template<class Archive>
-  void save(Archive& ar) const
-  {
-    //Define a view with two string (base_path & basename)
-    const std::string localPath = stlplus::folder_append_separator(stlplus::folder_part(_imagePath));
-    const std::string filename = stlplus::filename_part(_imagePath);
-
-    ar(cereal::make_nvp("local_path", localPath),
-       cereal::make_nvp("filename", filename),
-       cereal::make_nvp("width", _width),
-       cereal::make_nvp("height", _height),
-       cereal::make_nvp("id_view", _viewId),
-       cereal::make_nvp("id_intrinsic", _intrinsicId),
-       cereal::make_nvp("id_pose", _poseId),
-       cereal::make_nvp("id_rig", _rigId),
-       cereal::make_nvp("id_subpose", _subPoseId),
-       cereal::make_nvp("id_resection", _resectionId),
-       cereal::make_nvp("metadata", _metadata));
-  }
-
-  /**
-   * @brief Cereal load method
-   * @param[in,out] ar The archive
-   */
-  template<class Archive>
-  void load(Archive& ar)
-  {
-    std::string localPath;
-    std::string filename;
-
-    ar(cereal::make_nvp("local_path", localPath),
-       cereal::make_nvp("filename", filename),
-       cereal::make_nvp("width", _width),
-       cereal::make_nvp("height", _height),
-       cereal::make_nvp("id_view", _viewId),
-       cereal::make_nvp("id_intrinsic", _intrinsicId),
-       cereal::make_nvp("id_pose", _poseId));
-
-    // try to load from file rig id, sub-pose id and metadata
-    try
-    {
-      ar(cereal::make_nvp("id_rig", _rigId),
-         cereal::make_nvp("id_subpose", _subPoseId),
-         cereal::make_nvp("id_resection", _resectionId),
-         cereal::make_nvp("metadata", _metadata));
-    }
-    catch(cereal::Exception const &)
-    {
-      _rigId = UndefinedIndexT;
-      _subPoseId = UndefinedIndexT;
-      _metadata = std::map<std::string, std::string>();
-    }
-
-    _imagePath = stlplus::create_filespec(localPath, filename);
   }
 
 private:

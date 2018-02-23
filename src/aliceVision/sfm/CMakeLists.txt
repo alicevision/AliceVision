@@ -25,7 +25,6 @@ set(sfm_files_headers
   FrustumFilter.hpp
   sfmDataIO.hpp
   sfmDataIO_baf.hpp
-  sfmDataIO_cereal.hpp
   sfmDataIO_gt.hpp
   sfmDataIO_json.hpp
   sfmDataIO_ply.hpp
@@ -99,14 +98,9 @@ target_link_libraries(aliceVision_sfm
   aliceVision_feature
   aliceVision_geometry
   aliceVision_track
+  ${Boost_LIBRARIES}
   ${LOG_LIB}
 )
-
-if(Boost_FOUND)
-  target_link_libraries(aliceVision_sfm
-    ${Boost_LIBRARIES}
-  )
-endif()
 
 set_target_properties(aliceVision_sfm
   PROPERTIES SOVERSION ${ALICEVISION_VERSION_MAJOR}

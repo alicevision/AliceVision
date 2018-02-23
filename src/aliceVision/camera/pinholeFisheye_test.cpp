@@ -3,13 +3,12 @@
 // v. 2.0. If a copy of the MPL was not distributed with this file,
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
-#include "aliceVision/camera/camera.hpp"
+#include <aliceVision/camera/camera.hpp>
 
 #define BOOST_TEST_MODULE pinholeFisheye
 #include <boost/test/included/unit_test.hpp>
 #include <boost/test/floating_point_comparison.hpp>
 #include <aliceVision/unitTest.hpp>
-
 
 using namespace aliceVision;
 using namespace aliceVision::camera;

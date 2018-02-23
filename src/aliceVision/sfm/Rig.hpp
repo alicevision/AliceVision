@@ -8,9 +8,6 @@
 #include <aliceVision/types.hpp>
 #include <aliceVision/geometry/Pose3.hpp>
 
-#include <cereal/cereal.hpp>
-#include <cereal/types/vector.hpp>
-
 #include <vector>
 #include <cassert>
 #include <algorithm>
@@ -89,17 +86,6 @@ struct RigSubPose
   {
     return (status == other.status &&
             pose == other.pose);
-  }
-
-  /**
-   * @brief cereal serialize method
-   * @param ar The archive
-   */
-  template <class Archive>
-  void serialize(Archive & ar)
-  {
-    ar(cereal::make_nvp("status", status),
-       cereal::make_nvp("pose", pose));
   }
 };
 
@@ -200,16 +186,6 @@ public:
       subPose.status = ERigSubPoseStatus::UNINITIALIZED;
       subPose.pose = geometry::Pose3();
     }
-  }
-
-  /**
-   * @brief cereal serialize method
-   * @param ar The archive
-   */
-  template <class Archive>
-  void serialize(Archive & ar)
-  {
-    ar(cereal::make_nvp("subposes", _subPoses));
   }
 
 private:

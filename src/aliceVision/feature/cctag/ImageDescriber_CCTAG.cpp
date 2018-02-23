@@ -4,6 +4,7 @@
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
 #include "ImageDescriber_CCTAG.hpp"
+#include <aliceVision/system/gpu.hpp>
 
 #include <cctag/ICCTag.hpp>
 #include <cctag/utils/LogTime.hpp>
@@ -18,6 +19,11 @@ namespace feature {
 ImageDescriber_CCTAG::CCTagParameters::CCTagParameters(size_t nRings)
   : _internalParams(new cctag::Parameters(nRings))
 {
+#ifdef WITH_CUDA // CCTAG_WITH_CUDA
+  _internalParams->_useCuda = system::gpuSupportCUDA(3,5);
+else
+  _internalParams->_useCuda = false;
+#endif
 }
 
 ImageDescriber_CCTAG::CCTagParameters::~CCTagParameters()
@@ -55,14 +61,28 @@ ImageDescriber_CCTAG::~ImageDescriber_CCTAG()
 {
 }
 
-void ImageDescriber_CCTAG::Allocate(std::unique_ptr<Regions> &regions) const
+bool ImageDescriber_CCTAG::useCuda() const
+{
+  return _params._internalParams->_useCuda;
+}
+
+void ImageDescriber_CCTAG::allocate(std::unique_ptr<Regions> &regions) const
 {
   regions.reset( new CCTAG_Regions );
 }
 
-bool ImageDescriber_CCTAG::Set_configuration_preset(EImageDescriberPreset preset)
+void ImageDescriber_CCTAG::setConfigurationPreset(EImageDescriberPreset preset)
 {
-  return _params.setPreset(preset);
+  _params.setPreset(preset);
+}
+
+EImageDescriberType ImageDescriber_CCTAG::getDescriberType() const
+{
+  if(_params._internalParams->_nCrowns == 3)
+    return EImageDescriberType::CCTAG3;
+  if(_params._internalParams->_nCrowns == 4)
+    return EImageDescriberType::CCTAG4;
+  throw std::out_of_range("Invalid number of rings, can't find CCTag imageDescriber type !");
 }
 
 void ImageDescriber_CCTAG::setUseCuda(bool useCuda)
@@ -70,13 +90,13 @@ void ImageDescriber_CCTAG::setUseCuda(bool useCuda)
   _params._internalParams->_useCuda = useCuda;
 }
 
-bool ImageDescriber_CCTAG::Describe(const image::Image<unsigned char>& image,
+bool ImageDescriber_CCTAG::describe(const image::Image<unsigned char>& image,
     std::unique_ptr<Regions> &regions,
     const image::Image<unsigned char> * mask)
 {
 
   if ( !_doAppend )
-    Allocate(regions);
+    allocate(regions);
   // else regions are added to the current vector of features/descriptors
 
   // Build alias to cached data

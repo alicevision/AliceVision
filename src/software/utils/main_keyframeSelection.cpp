@@ -6,16 +6,15 @@
 #include <aliceVision/keyframe/KeyframeSelector.hpp>
 #include <aliceVision/system/Logger.hpp>
 
-#include <boost/filesystem.hpp>
 #include <boost/program_options.hpp> 
+#include <boost/filesystem.hpp>
 
 #include <string>
 #include <vector>
 
-namespace bfs = boost::filesystem;
-namespace po = boost::program_options;
-
 using namespace aliceVision::keyframe;
+namespace po = boost::program_options;
+namespace fs = boost::filesystem;
 
 int main(int argc, char** argv)
 {
@@ -28,7 +27,7 @@ int main(int argc, char** argv)
   std::vector<float> pxFocals;           // media focal (px) list
   std::string sensorDbPath;              // camera sensor width database
   std::string voctreeFilePath;           // SIFT voctree file path
-  std::string outputFolder;           // output folder for keyframes
+  std::string outputFolder;              // output folder for keyframes
 
   // algorithm variables
 
@@ -105,9 +104,9 @@ int main(int argc, char** argv)
   
   // check output folder and update to its absolute path
   {
-    const bfs::path outDir = bfs::absolute(outputFolder);
+    const fs::path outDir = fs::absolute(outputFolder);
     outputFolder = outDir.string();
-    if(!bfs::is_directory(outDir))
+    if(!fs::is_directory(outDir))
     {
       ALICEVISION_CERR("ERROR: can't find folder " << outputFolder);
       return EXIT_FAILURE;
@@ -138,16 +137,15 @@ int main(int argc, char** argv)
 
     for(std::size_t i = 0; i < nbCameras; ++i)
     {
-      ALICEVISION_COUT("\tcamera : "           << mediaPaths.at(i) << std::endl
+      ALICEVISION_COUT("\tcamera : "       << mediaPaths.at(i) << std::endl
                    << "\t - brand : "      << brands.at(i)     << std::endl
                    << "\t - model : "      << models.at(i)     << std::endl
                    << "\t - focal (mm) : " << mmFocals.at(i)   << std::endl
                    << "\t - focal (px) : " << pxFocals.at(i)   << std::endl);
     }
-
-    ALICEVISION_COUT("\tsensor database file path : "     << sensorDbPath    << std::endl
+    ALICEVISION_COUT("\tsensor database file path : " << sensorDbPath    << std::endl
                  << "\tvocabulary tree file path : "  << voctreeFilePath << std::endl
-                 << "\toutput folder : "           << outputFolder << std::endl
+                 << "\toutput folder : "              << outputFolder << std::endl
                  << "\tsharpness selection preset : " << sharpnessPreset << std::endl
                  << "\tsharp subset : "               << sharpSubset     << std::endl
                  << "\tmin frame step : "             << minFrameStep    << std::endl

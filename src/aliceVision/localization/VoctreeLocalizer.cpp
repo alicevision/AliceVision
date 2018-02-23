@@ -11,7 +11,6 @@
 #include <aliceVision/sfm/pipeline/RelativePoseInfo.hpp>
 #include <aliceVision/sfm/BundleAdjustmentCeres.hpp>
 #include <aliceVision/sfm/pipeline/regionsIO.hpp>
-#include <aliceVision/feature/regionsTypeIO.hpp>
 #include <aliceVision/feature/svgVisualization.hpp>
 #include <aliceVision/matching/RegionsMatcher.hpp>
 #include <aliceVision/matchingImageCollection/IImageCollectionMatcher.hpp>
@@ -117,7 +116,7 @@ VoctreeLocalizer::Algorithm VoctreeLocalizer::initFromString(const std::string &
 }
 
 
-VoctreeLocalizer::VoctreeLocalizer(const std::string &sfmFilePath,
+VoctreeLocalizer::VoctreeLocalizer(const sfm::SfMData &sfmData,
                                    const std::string &descriptorsFolder,
                                    const std::string &vocTreeFilepath,
                                    const std::string &weightsFilepath,
@@ -134,31 +133,14 @@ VoctreeLocalizer::VoctreeLocalizer(const std::string &sfmFilePath,
     _imageDescribers.push_back(createImageDescriber(matchingDescType));
   }
 
-  // load the sfm data containing the 3D reconstruction info
-  ALICEVISION_LOG_DEBUG("Loading SFM data...");
-  if (!Load(_sfm_data, sfmFilePath, sfm::ESfMData::ALL)) 
-  {
-    ALICEVISION_CERR("The input SfMData file " << sfmFilePath << " cannot be read!");
-    ALICEVISION_CERR("\n\nIf the error says \"JSON Parsing failed - provided NVP not found\" "
-            "it's likely that you have to convert your sfm_data to a recent version supporting "
-            "polymorphic Views. You can run the python script convertSfmData.py to update an existing sfmdata.");
-    _isInit = false;
-    return;
-  }
-
-  ALICEVISION_LOG_DEBUG("SfM data loaded from " << sfmFilePath << " containing: ");
-  ALICEVISION_LOG_DEBUG("\tnumber of views      : " << _sfm_data.GetViews().size());
-  ALICEVISION_LOG_DEBUG("\tnumber of poses      : " << _sfm_data.GetPoses().size());
-  ALICEVISION_LOG_DEBUG("\tnumber of points     : " << _sfm_data.GetLandmarks().size());
-  ALICEVISION_LOG_DEBUG("\tnumber of intrinsics : " << _sfm_data.GetIntrinsics().size());
+  _sfm_data = sfmData;
 
   // load the features and descriptors
   // initially we need all the feature in order to create the database
   // then we can store only those associated to 3D points
   //? can we use Feature_Provider to load the features and filter them later?
 
-  const std::string descFolder = descriptorsFolder.empty() ? _sfm_data.getFeatureFolder() : descriptorsFolder;
-  _isInit = initDatabase(vocTreeFilepath, weightsFilepath, descFolder);
+  _isInit = initDatabase(vocTreeFilepath, weightsFilepath, descriptorsFolder);
 }
 
 bool VoctreeLocalizer::localize(const feature::MapRegionsPerDesc & queryRegions,
@@ -216,12 +198,12 @@ bool VoctreeLocalizer::localize(const image::Image<unsigned char> & imageGrey,
     const auto descType = imageDescriber->getDescriberType();
     auto & queryRegions = queryRegionsPerDesc[descType];
 
-    imageDescriber->Allocate(queryRegions);
+    imageDescriber->allocate(queryRegions);
 
     system::Timer timer;
     imageDescriber->setCudaPipe(_cudaPipe);
-    imageDescriber->Set_configuration_preset(param->_featurePreset);
-    imageDescriber->Describe(imageGrey, queryRegions, nullptr);
+    imageDescriber->setConfigurationPreset(param->_featurePreset);
+    imageDescriber->describe(imageGrey, queryRegions, nullptr);
 
     ALICEVISION_LOG_DEBUG("[features]\tExtract " << feature::EImageDescriberType_enumToString(descType) << " done: found " << queryRegions->RegionCount() << " features in " << timer.elapsedMs() << " [ms]");
   }
@@ -269,7 +251,7 @@ bool VoctreeLocalizer::loadReconstructionDescriptors(const sfm::SfMData & sfm_da
  */
 bool VoctreeLocalizer::initDatabase(const std::string & vocTreeFilepath,
                                     const std::string & weightsFilepath,
-                                    const std::string & feat_directory)
+                                    const std::string & featFolder)
 {
 
   bool withWeights = !weightsFilepath.empty();
@@ -325,6 +307,10 @@ bool VoctreeLocalizer::initDatabase(const std::string & vocTreeFilepath,
     }
   }
 
+  std::vector<std::string> featuresFolders = _sfm_data.getFeaturesFolders();
+  if(!featFolder.empty())
+    featuresFolders.emplace_back(featFolder);
+
   // Read for each view the corresponding Regions and store them
 #pragma omp parallel for num_threads(3)
   for(int i = 0; i < _sfm_data.GetViews().size(); ++i)
@@ -351,13 +337,13 @@ bool VoctreeLocalizer::initDatabase(const std::string & vocTreeFilepath,
           // so you have a data structure with 0 element and you don't need to add
           // special cases everywhere for empty elements.
           _reconstructedRegionsMappingPerView[id_view][descType] = std::move(mapping);
-          imageDescriber->Allocate(_regionsPerView.getData()[id_view][descType]);
+          imageDescriber->allocate(_regionsPerView.getData()[id_view][descType]);
         }
         continue;
       }
 
       // Load from files
-      std::unique_ptr<feature::Regions> currRegions = sfm::loadRegions(feat_directory, id_view, *imageDescriber);
+      std::unique_ptr<feature::Regions> currRegions = sfm::loadRegions(featuresFolders, id_view, *imageDescriber);
 
       if(descType == _voctreeDescType)
       {
@@ -386,12 +372,12 @@ bool VoctreeLocalizer::initDatabase(const std::string & vocTreeFilepath,
 }
 
 bool VoctreeLocalizer::localizeFirstBestResult(const feature::MapRegionsPerDesc &queryRegions,
-                                               const std::pair<std::size_t, std::size_t> queryImageSize,
+                                               const std::pair<std::size_t, std::size_t> &queryImageSize,
                                                const Parameters &param,
                                                bool useInputIntrinsics,
                                                camera::PinholeRadialK3 &queryIntrinsics,
                                                LocalizationResult &localizationResult,
-                                               const std::string& imagePath)
+                                               const std::string &imagePath)
 {
   // A. Find the (visually) similar images in the database 
   ALICEVISION_LOG_DEBUG("[database]\tRequest closest images from voctree");
@@ -592,20 +578,19 @@ bool VoctreeLocalizer::localizeFirstBestResult(const feature::MapRegionsPerDesc 
       ALICEVISION_LOG_DEBUG("K refined\n" << queryIntrinsics.K());
       ALICEVISION_LOG_DEBUG("R_gt\n" << referencePose.rotation());
       ALICEVISION_LOG_DEBUG("t_gt\n" << referencePose.translation());
-      ALICEVISION_LOG_DEBUG("angular difference: " << R2D(getRotationMagnitude(pose.rotation()*referencePose.rotation().inverse())) << "deg");
+      ALICEVISION_LOG_DEBUG("angular difference: " << radianToDegree(getRotationMagnitude(pose.rotation()*referencePose.rotation().inverse())) << "deg");
       ALICEVISION_LOG_DEBUG("center difference: " << (pose.center()-referencePose.center()).norm());
-      ALICEVISION_LOG_DEBUG("err = [err; " << R2D(getRotationMagnitude(pose.rotation()*referencePose.rotation().inverse())) << ", "<< (pose.center()-referencePose.center()).norm() << "];");
+      ALICEVISION_LOG_DEBUG("err = [err; " << radianToDegree(getRotationMagnitude(pose.rotation()*referencePose.rotation().inverse())) << ", "<< (pose.center()-referencePose.center()).norm() << "];");
     }
     localizationResult = LocalizationResult(resectionData, associationIDs, pose, queryIntrinsics, matchedImages, refineStatus);
     break;
   }
   //@todo deal with unsuccesful case...
   return localizationResult.isValid();
-  
- } 
+} 
 
 bool VoctreeLocalizer::localizeAllResults(const feature::MapRegionsPerDesc &queryRegions,
-                                          const std::pair<std::size_t, std::size_t> queryImageSize,
+                                          const std::pair<std::size_t, std::size_t> & queryImageSize,
                                           const Parameters &param,
                                           bool useInputIntrinsics,
                                           camera::PinholeRadialK3 &queryIntrinsics,
@@ -977,7 +962,7 @@ void VoctreeLocalizer::getAllAssociations(const feature::MapRegionsPerDesc &quer
 }
 
 void VoctreeLocalizer::getAssociationsFromBuffer(matching::RegionsDatabaseMatcherPerDesc & matchers,
-                                                 const std::pair<std::size_t, std::size_t> queryImageSize,
+                                                 const std::pair<std::size_t, std::size_t> & queryImageSize,
                                                  const Parameters &param,
                                                  bool useInputIntrinsics,
                                                  const camera::PinholeRadialK3 &queryIntrinsics,
@@ -1052,10 +1037,10 @@ bool VoctreeLocalizer::robustMatching(matching::RegionsDatabaseMatcherPerDesc & 
                                       const camera::IntrinsicBase * queryIntrinsicsBase,   // the intrinsics of the image we are using as reference
                                       const feature::MapRegionsPerDesc & matchedRegions,
                                       const camera::IntrinsicBase * matchedIntrinsicsBase,
-                                      const float fDistRatio,
-                                      const double matchingError,
-                                      const bool useGeometricFiltering,
-                                      const bool useGuidedMatching,
+                                      float fDistRatio,
+                                      double matchingError,
+                                      bool useGeometricFiltering,
+                                      bool useGuidedMatching,
                                       const std::pair<std::size_t,std::size_t> & imageSizeI,     // size of the first image @fixme change the API of the kernel!! 
                                       const std::pair<std::size_t,std::size_t> & imageSizeJ,     // size of the second image
                                       matching::MatchesPerDescType & out_featureMatches,
@@ -1173,7 +1158,7 @@ bool VoctreeLocalizer::localizeRig(const std::vector<image::Image<unsigned char>
     for(auto& imageDescriber: _imageDescribers)
     {
       ALICEVISION_LOG_DEBUG("[features]\tExtract " << feature::EImageDescriberType_enumToString(imageDescriber->getDescriberType()) << " from query image...");
-      imageDescriber->Describe(vec_imageGrey[i], vec_queryRegions[i][imageDescriber->getDescriberType()]);
+      imageDescriber->describe(vec_imageGrey[i], vec_queryRegions[i][imageDescriber->getDescriberType()]);
       ALICEVISION_LOG_DEBUG("[features]\tExtract done: found " <<  vec_queryRegions[i][imageDescriber->getDescriberType()]->RegionCount() << " features");
     }
     ALICEVISION_LOG_DEBUG("[features]\tAll descriptors extracted. Found " <<  vec_queryRegions[i].getNbAllRegions() << " features");

@@ -5,12 +5,10 @@
 
 #pragma once
 
-#include "aliceVision/numeric/numeric.hpp"
-#include "aliceVision/camera/cameraCommon.hpp"
-#include "aliceVision/geometry/Pose3.hpp"
-#include "aliceVision/stl/hash.hpp"
-
-#include <cereal/cereal.hpp>
+#include <aliceVision/numeric/numeric.hpp>
+#include <aliceVision/camera/cameraCommon.hpp>
+#include <aliceVision/geometry/Pose3.hpp>
+#include <aliceVision/stl/hash.hpp>
 
 #include <vector>
 
@@ -135,41 +133,6 @@ struct IntrinsicBase
   /// Return the intrinsic (interior & exterior) as a simplified projective projection
   virtual Mat34 get_projective_equivalent(const geometry::Pose3 & pose) const = 0;
 
-  /// Serialization out
-  template <class Archive>
-  void save( Archive & ar) const
-  {
-    ar(cereal::make_nvp("width", _w));
-    ar(cereal::make_nvp("height", _h));
-    ar(cereal::make_nvp("serialNumber", _serialNumber));
-    ar(cereal::make_nvp("initialFocalLengthPix", _initialFocalLengthPix));
-  }
-
-  /// Serialization in
-  template <class Archive>
-  void load( Archive & ar)
-  {
-    ar(cereal::make_nvp("width", _w));
-    ar(cereal::make_nvp("height", _h));
-    // compatibility with older versions
-    try
-    {
-      ar(cereal::make_nvp("serialNumber", _serialNumber));
-    }
-    catch(cereal::Exception& e)
-    {
-      _serialNumber = "";
-    }
-    try
-    {
-      ar(cereal::make_nvp("initialFocalLengthPix", _initialFocalLengthPix));
-    }
-    catch(cereal::Exception& e)
-    {
-      _initialFocalLengthPix = -1;
-    }
-  }
-
   /// Generate an unique Hash from the camera parameters (used for grouping)
   virtual std::size_t hashValue() const
   {
@@ -186,7 +149,15 @@ struct IntrinsicBase
 };
 
 /// Return the angle (degree) between two bearing vector rays
-inline double AngleBetweenRay(
+inline double AngleBetweenRays(const Vec3 & ray1, const Vec3 & ray2)
+{
+  const double mag = ray1.norm() * ray2.norm();
+  const double dotAngle = ray1.dot(ray2);
+  return radianToDegree(acos(clamp(dotAngle/mag, -1.0 + 1.e-8, 1.0 - 1.e-8)));
+}
+
+/// Return the angle (degree) between two bearing vector rays
+inline double AngleBetweenRays(
   const geometry::Pose3 & pose1,
   const IntrinsicBase * intrinsic1,
   const geometry::Pose3 & pose2,
@@ -199,9 +170,18 @@ inline double AngleBetweenRay(
   // ray = X - C = R.t() * K.inv() * x
   const Vec3 ray1 = (pose1.rotation().transpose() * intrinsic1->operator()(x1)).normalized();
   const Vec3 ray2 = (pose2.rotation().transpose() * intrinsic2->operator()(x2)).normalized();
-  const double mag = ray1.norm() * ray2.norm();
-  const double dotAngle = ray1.dot(ray2);
-  return R2D(acos(clamp(dotAngle/mag, -1.0 + 1.e-8, 1.0 - 1.e-8)));
+  return AngleBetweenRays(ray1, ray2);
+}
+
+/// Return the angle (degree) between two poses and a 3D point.
+inline double AngleBetweenRays(
+  const geometry::Pose3 & pose1,
+  const geometry::Pose3 & pose2,
+  const Vec3 & pt3D)
+{
+  const Vec3 ray1 = pt3D - pose1.center();
+  const Vec3 ray2 = pt3D - pose2.center();
+  return AngleBetweenRays(ray1, ray2);
 }
 
 } // namespace camera

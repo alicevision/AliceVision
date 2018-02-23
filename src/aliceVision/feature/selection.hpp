@@ -8,7 +8,7 @@
 #include <aliceVision/matching/IndMatch.hpp>
 #include <aliceVision/feature/Regions.hpp>
 #include <aliceVision/feature/regionsFactory.hpp>
-#include <aliceVision/image/image.hpp>
+#include <aliceVision/image/all.hpp>
 #include <aliceVision/feature/feature.hpp>
 #include <aliceVision/matchingImageCollection/ImageCollectionMatcher_generic.hpp>
 

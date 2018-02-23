@@ -1,7 +1,7 @@
 // This file is part of the AliceVision project and is made available under
 // the terms of the MPL2 license (see the COPYING.md file).
 
-#include "aliceVision/image/image.hpp"
+#include "aliceVision/image/all.hpp"
 #include "aliceVision/feature/feature.hpp"
 #include "aliceVision/feature/sift/ImageDescriber_SIFT.hpp"
 #include "aliceVision/feature/akaze/ImageDescriber_AKAZE.hpp"
@@ -82,26 +82,22 @@ int main(int argc, char **argv)
   else if (describerTypesName == "AKAZE_MLDB")
     image_describer = std::make_shared<ImageDescriber_AKAZE>(AKAZEParams(AKAZEConfig(), AKAZE_MLDB));
 
-  if (image_describer.use_count()==0)
+  if(image_describer.use_count()==0)
   {
     std::cerr << "Invalid ImageDescriber type" << std::endl;
     return EXIT_FAILURE;
   }
-  if (!describerPreset.empty())
+  if(!describerPreset.empty())
   {
-    if (!image_describer->Set_configuration_preset(describerPreset))
-    {
-      std::cerr << "Preset configuration failed." << std::endl;
-      return EXIT_FAILURE;
-    }
+    image_describer->setConfigurationPreset(describerPreset);
   }
 
   //--
   // Detect regions thanks to the image_describer
   //--
   std::map<IndexT, std::unique_ptr<feature::Regions> > regions_perImage;
-  image_describer->Describe(imageL, regions_perImage[0]);
-  image_describer->Describe(imageR, regions_perImage[1]);
+  image_describer->describe(imageL, regions_perImage[0]);
+  image_describer->describe(imageR, regions_perImage[1]);
 
   const std::vector<PointFeature>
     featsL = regions_perImage.at(0)->GetRegionsPositions(),

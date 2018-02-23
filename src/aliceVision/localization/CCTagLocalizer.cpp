@@ -29,29 +29,17 @@
 namespace aliceVision {
 namespace localization {
 
-CCTagLocalizer::CCTagLocalizer(const std::string &sfmFilePath,
+CCTagLocalizer::CCTagLocalizer(const sfm::SfMData &sfmData,
                                const std::string &descriptorsFolder)
     : _cudaPipe( 0 )
 {
-  using namespace aliceVision::feature;
+  _sfm_data = sfmData;
 
-  // load the sfm data containing the 3D reconstruction info
-  if (!Load(_sfm_data, sfmFilePath, sfm::ESfMData::ALL))
-  {
-    ALICEVISION_CERR("The input SfMData file "<< sfmFilePath << " cannot be read.");
-    ALICEVISION_CERR("\n\nIf the error says \"JSON Parsing failed - provided NVP not found\" "
-        "it's likely that you have to convert your sfm_data to a recent version supporting "
-        "polymorphic Views. You can run the python script convertSfmData.py to update an existing sfmdata.");
-    throw std::invalid_argument("The input SfMData file "+ sfmFilePath + " cannot be read.");
-  }
-
-  const std::string descFolder = descriptorsFolder.empty() ? _sfm_data.getFeatureFolder() : descriptorsFolder;
-  
-  bool loadSuccessful = loadReconstructionDescriptors(_sfm_data, descFolder);
+  bool loadSuccessful = loadReconstructionDescriptors(_sfm_data, descriptorsFolder);
   
   if(!loadSuccessful)
   {
-    ALICEVISION_CERR("Unable to load the descriptors");
+    ALICEVISION_LOG_ERROR("Unable to load the descriptors");
     throw std::invalid_argument("Unable to load the descriptors from "+descriptorsFolder);
   }
   
@@ -109,6 +97,9 @@ bool CCTagLocalizer::loadReconstructionDescriptors(const sfm::SfMData & sfm_data
 
   ALICEVISION_LOG_DEBUG("Load Features and Descriptors per view");
 
+  std::vector<std::string> featuresFolders = _sfm_data.getFeaturesFolders();
+  featuresFolders.emplace_back(feat_directory);
+
   // Read for each view the corresponding Regions and store them
   for(const auto &iter : _sfm_data.GetViews())
   {
@@ -122,12 +113,12 @@ bool CCTagLocalizer::loadReconstructionDescriptors(const sfm::SfMData & sfm_data
       if(observations.count(descType) == 0)
       {
         // no descriptor of this type reconstructed in this View
-        _imageDescriber.Allocate(_regionsPerView.getData()[id_view][descType]);
+        _imageDescriber.allocate(_regionsPerView.getData()[id_view][descType]);
         continue;
       }
 
       // Load from files
-      std::unique_ptr<feature::Regions> currRegions = sfm::loadRegions(feat_directory, id_view, _imageDescriber);
+      std::unique_ptr<feature::Regions> currRegions = sfm::loadRegions(featuresFolders, id_view, _imageDescriber);
 
       // Filter descriptors to keep only the 3D reconstructed points
       _regionsPerView.getData()[id_view][descType] = createFilteredRegions(*currRegions, observations.at(descType), _reconstructedRegionsMappingPerView[id_view][descType]);
@@ -213,8 +204,8 @@ bool CCTagLocalizer::localize(const image::Image<unsigned char> & imageGrey,
   feature::MapRegionsPerDesc tmpQueryRegions;
 
   _imageDescriber.setCudaPipe( _cudaPipe );
-  _imageDescriber.Set_configuration_preset(param->_featurePreset);
-  _imageDescriber.Describe(imageGrey, tmpQueryRegions[_cctagDescType]);
+  _imageDescriber.setConfigurationPreset(param->_featurePreset);
+  _imageDescriber.describe(imageGrey, tmpQueryRegions[_cctagDescType]);
   ALICEVISION_LOG_DEBUG("[features]\tExtract CCTAG done: found " << tmpQueryRegions.at(_cctagDescType)->RegionCount() << " features");
   
   std::pair<std::size_t, std::size_t> imageSize = std::make_pair(imageGrey.Width(),imageGrey.Height());
@@ -253,7 +244,7 @@ bool CCTagLocalizer::localize(const feature::MapRegionsPerDesc & genQueryRegions
                               const std::string& imagePath)
 {
   namespace bfs = boost::filesystem;
-  
+
   const CCTagLocalizer::Parameters *param = dynamic_cast<const CCTagLocalizer::Parameters *>(parameters);
   if(!param)
   {
@@ -410,8 +401,8 @@ bool CCTagLocalizer::localizeRig(const std::vector<image::Image<unsigned char> >
   {
     // extract descriptors and features from each image
     ALICEVISION_LOG_DEBUG("[features]\tExtract CCTag from query image...");
-    _imageDescriber.Set_configuration_preset(param->_featurePreset);
-    _imageDescriber.Describe(vec_imageGrey[i], vec_queryRegions[i][_imageDescriber.getDescriberType()]);
+    _imageDescriber.setConfigurationPreset(param->_featurePreset);
+    _imageDescriber.describe(vec_imageGrey[i], vec_queryRegions[i][_imageDescriber.getDescriberType()]);
     ALICEVISION_LOG_DEBUG("[features]\tExtract CCTAG done: found " <<  vec_queryRegions[i].at(_imageDescriber.getDescriberType())->RegionCount() << " features");
     // add the image size for this image
     vec_imageSize.emplace_back(vec_imageGrey[i].Width(), vec_imageGrey[i].Height());
@@ -857,12 +848,12 @@ void CCTagLocalizer::getAllAssociations(const feature::CCTAG_Regions &queryRegio
     {
       const auto &key = idx.first;
       const auto &value = idx.second;
-       ALICEVISION_LOG_DEBUG("[matching]\tAssociations "
-               << feature::EImageDescriberType_enumToString(key.descType) << " "
-               << key.landmarkId << "," << key.featId <<" found "
-               << value << " times.");
-       if(value > maxOcc)
-         maxOcc = value;
+      ALICEVISION_LOG_DEBUG("[matching]\tAssociations "
+              << feature::EImageDescriberType_enumToString(key.descType) << " "
+              << key.landmarkId << "," << key.featId <<" found "
+              << value << " times.");
+      if(value > maxOcc)
+        maxOcc = value;
     }
     
     std::size_t numOccTreated = 0;
@@ -908,7 +899,7 @@ void kNearestKeyFrames(const feature::CCTAG_Regions & queryRegions,
                        const feature::RegionsPerView & regionsPerView,
                        std::size_t nNearestKeyFrames,
                        std::vector<IndexT> & out_kNearestFrames,
-                       const float similarityThreshold /*=.0f*/)
+                       float similarityThreshold /*=.0f*/)
 {
   out_kNearestFrames.clear();
   

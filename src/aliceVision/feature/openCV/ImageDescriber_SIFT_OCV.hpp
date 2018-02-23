@@ -29,7 +29,7 @@ public:
    * @param[in] preset The preset configuration
    * @return True if configuration succeed.
    */
-  bool Set_configuration_preset(EImageDescriberPreset preset);
+  void setConfigurationPreset(EImageDescriberPreset preset);
 
   /// Parameters
   std::size_t gridSize = 4;
@@ -50,6 +50,15 @@ class ImageDescriber_SIFT_openCV : public ImageDescriber
 public:
 
   /**
+   * @brief Check if the image describer use CUDA
+   * @return True if the image describer use CUDA
+   */
+  bool useCuda() const override
+  {
+    return false;
+  }
+
+  /**
    * @brief Check if the image describer use float image
    * @return True if the image describer use float image
    */
@@ -68,24 +77,36 @@ public:
   }
 
   /**
+   * @brief Get the total amount of RAM needed for a
+   * feature extraction of an image of the given dimension.
+   * @param[in] width The image width
+   * @param[in] height The image height
+   * @return total amount of memory needed
+   */
+  std::size_t getMemoryConsumption(std::size_t width, std::size_t height) const override
+  {
+    return 3 * width * height * sizeof(unsigned char) + (_params.maxTotalKeypoints * 128 * sizeof(unsigned char));
+  }
+
+  /**
    * @brief Use a preset to control the number of detected regions
    * @param[in] preset The preset configuration
    * @return True if configuration succeed.
    */
-  bool Set_configuration_preset(EImageDescriberPreset preset) override
+  void setConfigurationPreset(EImageDescriberPreset preset) override
   {
-    return _params.Set_configuration_preset(preset);
+    _params.setConfigurationPreset(preset);
   }
 
   /**
    * @brief Detect regions on the 8-bit image and compute their attributes (description)
    * @param[in] image Image.
    * @param[out] regions The detected regions and attributes (the caller must delete the allocated data)
-   * @param[in] mask 8-bit gray image for keypoint filtering (optional).
+   * @param[in] mask 8-bit grayscale image for keypoint filtering (optional)
    *    Non-zero values depict the region of interest.
    * @return True if detection succed.
    */
-  bool Describe(const image::Image<unsigned char>& image,
+  bool describe(const image::Image<unsigned char>& image,
                 std::unique_ptr<Regions>& regions,
                 const image::Image<unsigned char>* mask = NULL) override;
 
@@ -93,7 +114,7 @@ public:
    * @brief Allocate Regions type depending of the ImageDescriber
    * @param[in,out] regions
    */
-  void Allocate(std::unique_ptr<Regions> &regions) const override
+  void allocate(std::unique_ptr<Regions> &regions) const override
   {
     regions.reset( new SIFT_Regions );
   }

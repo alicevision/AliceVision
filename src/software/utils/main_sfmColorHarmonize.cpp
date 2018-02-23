@@ -3,20 +3,22 @@
 // v. 2.0. If a copy of the MPL was not distributed with this file,
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
-#include "aliceVision/system/Timer.hpp"
+#include <aliceVision/system/Timer.hpp>
+#include <aliceVision/system/Logger.hpp>
+#include <aliceVision/system/cmdline.hpp>
 
-#include "software/utils/sfmColorHarmonize/colorHarmonizeEngineGlobal.hpp"
-
-#include "dependencies/stlplus3/filesystemSimplified/file_system.hpp"
+#include <software/utils/sfmColorHarmonize/colorHarmonizeEngineGlobal.hpp>
 
 #include <boost/program_options.hpp>
+#include <boost/filesystem.hpp>
 
 #include <cstdlib>
 #include <memory>
 
-using namespace aliceVision;
 using namespace std;
+using namespace aliceVision;
 namespace po = boost::program_options;
+namespace fs = boost::filesystem;
 
 int main( int argc, char **argv )
 {
@@ -24,6 +26,7 @@ int main( int argc, char **argv )
 
   std::string verboseLevel = system::EVerboseLevel_enumToString(system::Logger::getDefaultVerboseLevel());
   std::string sfmDataFilename;
+  std::string featuresFolder;
   std::string matchesFolder;
   std::string describerTypesName = feature::EImageDescriberType_enumToString(feature::EImageDescriberType::SIFT);
   std::string matchesGeometricModel = "f";
@@ -39,6 +42,8 @@ int main( int argc, char **argv )
       "SfMData file.")
     ("output,o", po::value<std::string>(&outputFolder)->required(),
       "Output path.")
+    ("featuresFolder,f", po::value<std::string>(&featuresFolder)->required(),
+      "Path to a folder containing the extracted features.")
     ("matchesFolder,m", po::value<std::string>(&matchesFolder)->required(),
       "Path to a folder in which computed matches are stored.")
     ("referenceImage", po::value<int>(&imgRef)->required(),
@@ -91,27 +96,29 @@ int main( int argc, char **argv )
     return EXIT_FAILURE;
   }
 
+  ALICEVISION_COUT("Program called with the following parameters:");
+  ALICEVISION_COUT(vm);
+
   // set verbose level
   system::Logger::get()->setLogLevel(verboseLevel);
 
-  if (sfmDataFilename.empty())
+  if(sfmDataFilename.empty())
   {
-    std::cerr << "\nIt is an invalid file input" << std::endl;
+    ALICEVISION_LOG_ERROR("It is an invalid file input");
     return EXIT_FAILURE;
   }
 
   const std::vector<feature::EImageDescriberType> describerTypes = feature::EImageDescriberType_stringToEnums(describerTypesName);
 
-  if ( !stlplus::folder_exists( outputFolder ) )
-    stlplus::folder_create( outputFolder );
+  if(!fs::exists(outputFolder))
+    fs::create_directory(outputFolder);
 
-  //---------------------------------------
-  // Harmonization process
-  //---------------------------------------
+  // harmonization process
 
   aliceVision::system::Timer timer;
 
   ColorHarmonizationEngineGlobal colorHarmonizeEngine(sfmDataFilename,
+    featuresFolder,
     matchesFolder,
     matchesGeometricModel,
     outputFolder,
@@ -119,18 +126,14 @@ int main( int argc, char **argv )
     selectionMethod,
     imgRef);
 
-  if (colorHarmonizeEngine.Process() )
+  if(colorHarmonizeEngine.Process())
   {
-    clock_t timeEnd = clock();
-    std::cout << std::endl
-      << " ColorHarmonization took (s): "
-      << timer.elapsed() << std::endl;
-
+    ALICEVISION_LOG_INFO(" ColorHarmonization took: " << timer.elapsed() << " s");
     return EXIT_SUCCESS;
   }
   else
   {
-    std::cerr << "\n Something goes wrong in the process" << std::endl;
+    ALICEVISION_LOG_ERROR("Something goes wrong in the process");
   }
   return EXIT_FAILURE;
 }

@@ -21,10 +21,10 @@ namespace sfm {
 /// Define a collection of View
 using Views = HashMap<IndexT, std::shared_ptr<View> >;
 
-/// Define a collection of Pose (indexed by View::id_pose)
+/// Define a collection of Pose (indexed by view.getPoseId())
 using Poses = HashMap<IndexT, geometry::Pose3>;
 
-/// Define a collection of IntrinsicParameter (indexed by View::id_intrinsic)
+/// Define a collection of IntrinsicParameter (indexed by view.getIntrinsicId())
 using Intrinsics = HashMap<IndexT, std::shared_ptr<camera::IntrinsicBase> >;
 
 /// Define a collection of landmarks are indexed by their TrackId
@@ -55,9 +55,9 @@ public:
   LandmarksUncertainty _landmarksUncertainty;
 
   /// Feature folder path
-  std::string _featureFolder;
+  std::vector<std::string> _featuresFolders;
   /// Matching folder path
-  std::string _matchingFolder;
+  std::vector<std::string> _matchesFolders;
 
   // Operators
 
@@ -77,8 +77,12 @@ public:
   Landmarks& GetLandmarks() {return structure;}
   const Landmarks& GetControl_Points() const {return control_points;}
   Landmarks& GetControl_Points() {return control_points;}
-  const std::string& getFeatureFolder() const {return _featureFolder;}
-  const std::string& getMatchingFolder() const {return _matchingFolder;}
+
+  const std::vector<std::string>& getRelativeFeaturesFolders() const {return _featuresFolders;}
+  const std::vector<std::string>& getRelativeMatchesFolders() const {return _matchesFolders;}
+
+  std::vector<std::string> getFeaturesFolders() const;
+  std::vector<std::string> getMatchesFolders() const;
 
   /**
    * @brief List the view indexes that have valid camera intrinsic and pose.
@@ -205,14 +209,49 @@ public:
     return _rigs.at(view.getRigId());
   }
 
-  void setFeatureFolder(const std::string& featureFolder)
+  /**
+   * @brief Add the given features Folder
+   * @param[in] featuresFolder The given features folder
+   */
+  void addFeaturesFolder(const std::string& featuresFolder)
   {
-    _featureFolder = featureFolder;
+    _featuresFolders.emplace_back(featuresFolder);
   }
 
-  void setMatchingFolder(const std::string& matchingFolder)
+  /**
+   * @brief A the given matches Folder
+   * @param[in] matchesFolder The given mathes folder
+   */
+  void addMatchesFolder(const std::string& matchesFolder)
   {
-    _matchingFolder = matchingFolder;
+    _matchesFolders.emplace_back(matchesFolder);
+  }
+
+  /**
+   * @brief Set the given features folders
+   * @param[in] featuresFolders The given features folders
+   */
+  void setFeaturesFolders(const std::vector<std::string>& featuresFolders)
+  {
+    _featuresFolders = featuresFolders;
+  }
+
+  /**
+   * @brief Set the given mathes folders
+   * @param[in] matchesFolders The given mathes folders
+   */
+  void setMatchesFolders(const std::vector<std::string>& matchesFolders)
+  {
+    _matchesFolders = matchesFolders;
+  }
+
+  /**
+   * @brief Set the SfMData file folder absolute path
+   * @param[in] path The absolute path to the SfMData file folder
+   */
+  void setAbsolutePath(const std::string& path)
+  {
+    _absolutePath = path;
   }
 
   /**
@@ -256,8 +295,16 @@ public:
       rigIt.second.reset();
   }
 
-private:
+  /**
+   * @brief Insert data from the given sfmData if possible.
+   * note: This operation doesn't override existing data.
+   * @param[in] sfmData A given SfMData
+   */
+  void combine(const SfMData& sfmData);
 
+private:
+  /// Absolute path to the SfMData file (should not be saved)
+  std::string _absolutePath;
   /// Considered poses (indexed by view.getPoseId())
   Poses _poses;
   /// Considered rigs
