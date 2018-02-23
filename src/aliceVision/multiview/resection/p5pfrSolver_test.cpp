@@ -3,84 +3,36 @@
 // v. 2.0. If a copy of the MPL was not distributed with this file,
 // You can obtain one at https://mozilla.org/MPL/2.0/.
 
-#include <vector>
-#include "aliceVision/multiview/resection/P5PfrSolver.hpp"
-
 #define BOOST_TEST_MODULE P5PfrSolver
+
+#include <aliceVision/multiview/resection/ResectionKernel.hpp>
+#include <aliceVision/multiview/resection/P5PfrSolver.hpp>
+#include <aliceVision/unitTest.hpp>
+
 #include <boost/test/included/unit_test.hpp>
 #include <boost/test/floating_point_comparison.hpp>
 
-using namespace std;
+#include <vector>
+
+
 using namespace aliceVision;
 
-bool checkNear(const Mat &expect, const Mat &actual, double eps)
-{
-  if(expect.rows() != actual.rows() || expect.cols() != actual.cols())
-    return false;
-  for(int i = 0; i < expect.rows(); ++i)
-  {
-    for(int j = 0; j < expect.cols(); ++j)
-    {
-      if(std::abs(expect(i, j) - actual(i, j)) > (eps * std::abs(expect(i, j))))
-        return false;
-    }
-  }
-  return true;
+#define CHECK_SOLUTIONS(solutions, models, eps) \
+{ \
+  BOOST_CHECK_EQUAL(models.size(), solutions.size()); \
+  for(int i = 0; i < models.size(); ++i) \
+  { \
+    BOOST_CHECK_CLOSE(solutions.at(i)._f, models.at(i)._f, eps * solutions.at(i)._f); \
+    EXPECT_MATRIX_NEAR(solutions.at(i)._R, models.at(i)._R, eps); \
+    EXPECT_MATRIX_NEAR(solutions.at(i)._t, models.at(i)._t, eps); \
+    EXPECT_MATRIX_NEAR(solutions.at(i)._r, models.at(i)._r, eps); \
+  } \
 }
 
-bool checkNear(const Vec &expect, const Vec &actual, double eps)
-{
-  if(expect.rows() != actual.rows())
-    return false;
-  for(int i = 0; i < expect.rows(); ++i)
-  {
-    if(std::abs(expect(i) - actual(i)) > (eps * std::abs(expect(i))))
-      return false;
-  }
-  return true;
-}
-
-bool checkNear(const Vec3 &expect, const Vec3 &actual, double eps)
-{
-  if(expect.rows() != actual.rows())
-    return false;
-  for(Mat::Index i = 0; i < expect.rows(); ++i)
-  {
-    if(std::abs(expect(i) - actual(i)) >(eps * std::abs(expect(i))))
-      return false;
-  }
-  return true;
-}
-
-bool checkNear(double expect, double actual, double eps)
-{
-  if(std::abs(expect - actual) > (eps * std::abs(expect)))
-    return false;
-  return true;
-}
 
 bool sortM(const resection::p5pfrModel &i, const resection::p5pfrModel &j)
 {
   return (i._f < j._f);
-}
-
-bool testSolutions(const std::vector<resection::p5pfrModel> &solutions, const std::vector<resection::p5pfrModel> &models, double eps)
-{
-  if(models.size() != solutions.size())
-    return false;
-
-  for(int i = 0; i < models.size(); ++i)
-  {
-    if(!checkNear(solutions.at(i)._f, models.at(i)._f, eps))
-      return false;
-    if(!checkNear(solutions.at(i)._R, models.at(i)._R, eps))
-      return false;
-    if(!checkNear(solutions.at(i)._t, models.at(i)._t, eps))
-      return false;
-    if(!checkNear(solutions.at(i)._r, models.at(i)._r, eps))
-      return false;
-  }
-  return true;
 }
 
 BOOST_AUTO_TEST_CASE(Resection_P5Pfr_RandomRealExample)
@@ -167,7 +119,7 @@ BOOST_AUTO_TEST_CASE(Resection_P5Pfr_RandomRealExample)
 
   // BOOST_AUTO_TEST_CASE
   const double eps = 1e-4;
-  BOOST_CHECK(testSolutions(solutions, models, eps));
+  CHECK_SOLUTIONS(solutions, models, eps);
 }
 
 BOOST_AUTO_TEST_CASE(Resection_P5Pfr_Test01)
@@ -224,7 +176,7 @@ BOOST_AUTO_TEST_CASE(Resection_P5Pfr_Test01)
 
   // BOOST_AUTO_TEST_CASE
   const double eps = 1e-4;
-  BOOST_CHECK(testSolutions(solutions, models, eps));
+  CHECK_SOLUTIONS(solutions, models, eps);
 }
 
 BOOST_AUTO_TEST_CASE(Resection_P5Pfr_Test02)
@@ -280,7 +232,7 @@ BOOST_AUTO_TEST_CASE(Resection_P5Pfr_Test02)
 
   // BOOST_AUTO_TEST_CASE
   const double eps = 1e-4;
-  BOOST_CHECK(testSolutions(solutions, models, eps));
+  CHECK_SOLUTIONS(solutions, models, eps);
 }
 
 BOOST_AUTO_TEST_CASE(Resection_P5Pfr_Test03)
@@ -336,7 +288,7 @@ BOOST_AUTO_TEST_CASE(Resection_P5Pfr_Test03)
 
   // BOOST_AUTO_TEST_CASE
   const double eps = 1e-4;
-  BOOST_CHECK(testSolutions(solutions, models, eps));
+  CHECK_SOLUTIONS(solutions, models, eps);
 }
 
 BOOST_AUTO_TEST_CASE(Resection_P5Pfr_Test04)
@@ -392,7 +344,7 @@ BOOST_AUTO_TEST_CASE(Resection_P5Pfr_Test04)
 
   // BOOST_AUTO_TEST_CASE
   const double eps = 1e-3;
-  BOOST_CHECK(testSolutions(solutions, models, eps));
+  CHECK_SOLUTIONS(solutions, models, eps);
 }
 
 BOOST_AUTO_TEST_CASE(Resection_P5Pfr_Test05)
@@ -478,7 +430,7 @@ BOOST_AUTO_TEST_CASE(Resection_P5Pfr_Test05)
 
   // BOOST_AUTO_TEST_CASE
   const double eps = 1e-4;
-  BOOST_CHECK(testSolutions(solutions, models, eps));
+  CHECK_SOLUTIONS(solutions, models, eps);
 }
 
 BOOST_AUTO_TEST_CASE(Resection_P5Pfr_Test06)
@@ -564,7 +516,7 @@ BOOST_AUTO_TEST_CASE(Resection_P5Pfr_Test06)
 
   // BOOST_AUTO_TEST_CASE
   const double eps = 1e-4;
-  BOOST_CHECK(testSolutions(solutions, models, eps));
+  CHECK_SOLUTIONS(solutions, models, eps);
 }
 
 BOOST_AUTO_TEST_CASE(Resection_P5Pfr_ReprojectionErrRD)
@@ -691,10 +643,10 @@ BOOST_AUTO_TEST_CASE(Resection_P5Pfr_ConversionRD2RP)
   Mat pt2D_radius = pt2D.colwise().norm();
 
   m1._r = divisionToPolynomialModelDistortion(m1, pt2D_radius.maxCoeff(), (1 / f1) * pt2D_radius);
-  BOOST_CHECK(checkNear(m1._r, e_r1, eps));
+  EXPECT_MATRIX_NEAR(m1._r, e_r1, eps);
 
   m2._r = divisionToPolynomialModelDistortion(m2, pt2D_radius.maxCoeff(), (1 / f2) * pt2D_radius);
-  BOOST_CHECK(checkNear(m2._r, e_r2, eps));
+  EXPECT_MATRIX_NEAR(m2._r, e_r2, eps);
 }
 
 
@@ -706,7 +658,7 @@ BOOST_AUTO_TEST_CASE(Resection_P5Pfr_ConversionRD2RP)
 //  resection::P5PfrSolver::Solve(pt2D, pt3D, &models);
 //  std::sort(models.begin(), models.end(), sortM);
 //
-//  // BOOST_AUTO_TEST_CASE
 //  double eps = 1e-4;
-//  BOOST_CHECK(testSolutions(solutions, models, eps));
+//CHECK_SOLUTIONS(solutions, models, eps);
 //}
+
