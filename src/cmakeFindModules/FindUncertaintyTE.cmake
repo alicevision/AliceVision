@@ -57,14 +57,14 @@ GET_FILENAME_COMPONENT(UNCERTAINTYTE_LIBRARY_DIR "${UNCERTAINTYTE_LIBRARY}" PATH
 if(UNCERTAINTYTE_INCLUDE_DIR)
   message(STATUS "UncertaintyTE include directory: ${UNCERTAINTYTE_INCLUDE_DIR}")
 else()
-  message(SEND_ERROR "UncertaintyTE library include not found")
+  message(STATUS "UncertaintyTE library include not found")
 endif()
 
 if(UNCERTAINTYTE_LIBRARY)
   message(STATUS "UncertaintyTE libraries found: ${UNCERTAINTYTE_LIBRARY}")
   message(STATUS "UncertaintyTE libraries directories: ${UNCERTAINTYTE_LIBRARY_DIR}")
 else()
-  message(SEND_ERROR "UncertaintyTE library not found")
+  message(STATUS "UncertaintyTE library not found")
 endif()
 
 include(FindPackageHandleStandardArgs)
