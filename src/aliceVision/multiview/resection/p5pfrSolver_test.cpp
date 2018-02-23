@@ -343,7 +343,7 @@ BOOST_AUTO_TEST_CASE(Resection_P5Pfr_Test04)
   std::sort(models.begin(), models.end(), sortM);
 
   // BOOST_AUTO_TEST_CASE
-  const double eps = 1e-3;
+  const double eps = 1e-2;
   CHECK_SOLUTIONS(solutions, models, eps);
 }
 
