@@ -41,17 +41,27 @@ unsigned long Fuser::computeNumberOfAllPoints(int scale)
 #pragma omp parallel for reduction(+:npts)
     for(int rc = 0; rc < mp->ncams; rc++)
     {
-      const std::string filename = common::mv_getFileName(mp->mip, rc, common::EFileType::depthMap, scale);
-      oiio::ParamValueList metadata;
-      imageIO::readImageMetadata(filename, metadata);
-      const int nbDepthValues = metadata.get_int("AliceVision:nbDepthValues", -1);
+        const std::string filename = common::mv_getFileName(mp->mip, rc, common::EFileType::depthMap, scale);
+        oiio::ParamValueList metadata;
+        imageIO::readImageMetadata(filename, metadata);
+        int nbDepthValues = metadata.get_int("AliceVision:nbDepthValues", -1);
 
-      if(nbDepthValues < 0)
-        throw std::runtime_error("Can't find or invalid 'nbDepthValues' metadata in '" + filename + "'");
+        if(nbDepthValues < 0)
+        {
+            int width, height;
+            StaticVector<float> depthMap;
+            nbDepthValues = 0;
 
-      npts += nbDepthValues;
+            std::cout << "Warning: Can't find or invalid 'nbDepthValues' metadata in '" << filename << "'. Recompute the number of valid values." << std::endl;
+
+            imageIO::readImage(common::mv_getFileName(mp->mip, rc, common::EFileType::depthMap, scale), width, height, depthMap.getDataWritable());
+            // no need to transpose for this operation
+            for(int i = 0; i < sizeOfStaticVector<float>(&depthMap); ++i)
+                nbDepthValues += static_cast<unsigned long>(depthMap[i] > 0.0f);
+        }
+
+        npts += nbDepthValues;
     }
-
     return npts;
 }
 
