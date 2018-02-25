@@ -1,8 +1,9 @@
-
 ## AliceVision License
 
 AliceVision is licensed under the [MPL2 license](LICENSE-MPL2.md).
 
+[CMPMVS](http://people.ciirc.cvut.cz/~pajdla/) has been the first step to build the AliceVision MVS pipeline and was CTU proprietary solution before being part of AliceVision.
+[openMVG](https://github.com/openMVG/openMVG) has been the first step to build the AliceVision SfM pipeline and was released under [MPLv2](LICENSE-MPL2.md).
 [libmv](https://github.com/libmv/libmv) has been an important source of inspiration for the design and part of the code of the "multiview" and "robustEstimation"
 modules are based on the libmv code released under MIT, see [LICENSE-MIT-libmv.md](LICENSE-MIT-libmv.md).
 
