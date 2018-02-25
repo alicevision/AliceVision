@@ -264,7 +264,7 @@ void reconstructSpaceAccordingToVoxelsArray(const std::string& voxelsArrayFileNa
             DelaunayGraphCut delaunayGC(ls->mp, ls->pc);
             Point3d* hexah = &(*voxelsArray)[i * 8];
             delaunayGC.reconstructVoxel(hexah, voxelsIds, folderName, ls->getSpaceCamsTracksDir(), false,
-                                  hexahsToExcludeFromResultingMesh, (VoxelsGrid*)rp, ls->getSpaceSteps());
+                                  (VoxelsGrid*)rp, ls->getSpaceSteps());
             delete voxelsIds;
 
             // Save mesh as .bin and .obj
@@ -289,16 +289,14 @@ void reconstructSpaceAccordingToVoxelsArray(const std::string& voxelsArrayFileNa
             computeColoredMesh(resultFolderName, ls);
         }
         */
-
         Point3d hexahThin[8];
         common::inflateHexahedron(&(*voxelsArray)[i * 8], hexahThin, 0.9);
         for(int k = 0; k < 8; k++)
         {
             hexahsToExcludeFromResultingMesh->push_back(hexahThin[k]);
         }
+        delete hexahsToExcludeFromResultingMesh;
     }
-    delete hexahsToExcludeFromResultingMesh;
-
     delete rp;
     delete voxelsArray;
 }

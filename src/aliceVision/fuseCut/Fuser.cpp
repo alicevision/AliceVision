@@ -184,12 +184,12 @@ bool Fuser::filterGroupsRC(int rc, int pixSizeBall, int pixSizeBallWSP, int nNea
     numOfPtsMap->resize_with(w * h, 0);
 
     // StaticVector<int> *tcams = pc->findNearestCams(rc);
-    StaticVector<int>* tcams = pc->findNearestCamsFromSeeds(rc, nNearestCams);
+    StaticVector<int> tcams = pc->findNearestCamsFromSeeds(rc, nNearestCams);
 
-    for(int c = 0; c < tcams->size(); c++)
+    for(int c = 0; c < tcams.size(); c++)
     {
         numOfPtsMap->resize_with(w * h, 0);
-        int tc = (*tcams)[c];
+        int tc = tcams[c];
 
         StaticVector<float> tcdepthMap;
 
@@ -222,7 +222,6 @@ bool Fuser::filterGroupsRC(int rc, int pixSizeBall, int pixSizeBallWSP, int nNea
             }
         }
     }
-    delete tcams;
 
     {
       imageIO::transposeImage(h, w, numOfModalsMap);
@@ -335,15 +334,15 @@ float Fuser::computeAveragePixelSizeInHexahedron(Point3d* hexah, int step, int s
 {
     int scaleuse = std::max(1, scale);
 
-    StaticVector<int>* cams = pc->findCamsWhichIntersectsHexahedron(hexah);
+    StaticVector<int> cams = pc->findCamsWhichIntersectsHexahedron(hexah);
     int j = 0;
     float av = 0.0f;
     float nav = 0.0f;
     float minv = std::numeric_limits<float>::max();
     long t1 = common::initEstimate();
-    for(int c = 0; c < cams->size(); c++)
+    for(int c = 0; c < cams.size(); c++)
     {
-        int rc = (*cams)[c];
+        int rc = cams[c];
         int h = mp->mip->getHeight(rc) / scaleuse;
         StaticVector<float> rcdepthMap;
         {
@@ -378,10 +377,9 @@ float Fuser::computeAveragePixelSizeInHexahedron(Point3d* hexah, int step, int s
                 j++;
             }
         }
-        common::printfEstimate(c, cams->size(), t1);
+        common::printfEstimate(c, cams.size(), t1);
     }
     common::finishEstimate();
-    delete cams;
 
     if(nav == 0.0f)
     {

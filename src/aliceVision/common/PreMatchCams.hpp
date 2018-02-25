@@ -24,14 +24,14 @@ public:
 
     float computeMinCamsDistance();
     bool overlap(int rc, int tc);
-    StaticVector<int>* findNearestCams(int rc, int _nnearestcams);
+    StaticVector<int> findNearestCams(int rc, int _nnearestcams);
 
-    StaticVector<int>* findCamsWhichIntersectsHexahedron(Point3d hexah[8], std::string minMaxDepthsFileName);
-    StaticVector<int>* findCamsWhichIntersectsHexahedron(Point3d hexah[8]);
+    StaticVector<int> findCamsWhichIntersectsHexahedron(const Point3d hexah[8], const std::string& minMaxDepthsFileName);
+    StaticVector<int> findCamsWhichIntersectsHexahedron(const Point3d hexah[8]);
 
     StaticVector<int>* precomputeIncidentMatrixCamsFromSeeds();
     StaticVector<int>* loadCamPairsMatrix();
-    StaticVector<int>* findNearestCamsFromSeeds(int rc, int nnearestcams);
+    StaticVector<int> findNearestCamsFromSeeds(int rc, int nnearestcams);
 };
 
 } // namespace common

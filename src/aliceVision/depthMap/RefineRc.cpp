@@ -32,7 +32,8 @@ RefineRc::RefineRc(int _rc, int _scale, int _step, SemiGlobalMatchingParams* _sp
     _gammaP = (float)sp->mp->mip->_ini.get<double>("refineRc.gammaP", 8.0);
     
     int nnearestcams = sp->mp->mip->_ini.get<int>("refineRc.maxTCams", 6);
-    tcams = sp->pc->findNearestCamsFromSeeds(rc, nnearestcams);
+    tcams = new StaticVector<int>();
+    *tcams = sp->pc->findNearestCamsFromSeeds(rc, nnearestcams);
 }
 
 RefineRc::~RefineRc()

@@ -670,19 +670,19 @@ void OctreeTracks::filterOctreeTracks2(StaticVector<trackStruct*>* tracks)
 StaticVector<OctreeTracks::trackStruct*>* OctreeTracks::fillOctree(int maxPts, std::string depthMapsPtsSimsTmpDir)
 {
     long t1 = clock();
-    StaticVector<int>* cams = pc->findCamsWhichIntersectsHexahedron(vox, depthMapsPtsSimsTmpDir + "minMaxDepths.bin");
+    StaticVector<int> cams = pc->findCamsWhichIntersectsHexahedron(vox, depthMapsPtsSimsTmpDir + "minMaxDepths.bin");
     if(mp->verbose)
         common::printfElapsedTime(t1, "findCamsWhichIntersectsHexahedron");
     if(mp->verbose)
-        printf("ncams %i\n", cams->size());
+        printf("ncams %i\n", cams.size());
 
     t1 = clock();
 
 
     // long t1=initEstimate();
-    for(int camid = 0; camid < cams->size(); camid++)
+    for(int camid = 0; camid < cams.size(); camid++)
     {
-        int rc = (*cams)[camid];
+        int rc = cams[camid];
         StaticVector<Point3d>* pts =
             loadArrayFromFile<Point3d>(depthMapsPtsSimsTmpDir + std::to_string(mp->mip->getViewId(rc)) + "pts.bin");
         StaticVector<float>* sims =
@@ -719,7 +719,7 @@ StaticVector<OctreeTracks::trackStruct*>* OctreeTracks::fillOctree(int maxPts, s
         delete pts;
         delete sims;
 
-        // printfEstimate(camid, cams->size(), t1);
+        // printfEstimate(camid, cams.size(), t1);
     }
     // finishEstimate();
 
@@ -767,8 +767,6 @@ StaticVector<OctreeTracks::trackStruct*>* OctreeTracks::fillOctree(int maxPts, s
 
     if(mp->verbose)
         printf("number of tracks %i\n",tracks->size());
-
-    delete cams;
 
     return tracks;
 }

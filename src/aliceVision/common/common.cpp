@@ -249,7 +249,7 @@ bool checkCamPairAngle(int rc, int tc, const MultiViewParams* mp, float minAng, 
 }
 
 // hexahedron format ... 0-3 frontal face, 4-7 back face
-void getHexahedronTriangles(Point3d tris[12][3], Point3d hexah[8])
+void getHexahedronTriangles(Point3d tris[12][3], const Point3d hexah[8])
 {
     Point3d a1 = hexah[0];
     Point3d a2 = hexah[4];
@@ -319,7 +319,7 @@ void getCamHexahedron(const MultiViewParams* mp, Point3d hexah[8], int cam, floa
 }
 
 // hexahedron format ... 0-3 frontal face, 4-7 back face
-bool intersectsHexahedronHexahedron(Point3d rchex[8], Point3d tchex[8])
+bool intersectsHexahedronHexahedron(const Point3d rchex[8], const Point3d tchex[8])
 {
     Point3d rctris[12][3];
     Point3d tctris[12][3];

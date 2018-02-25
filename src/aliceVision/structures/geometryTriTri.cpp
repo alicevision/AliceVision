@@ -178,7 +178,7 @@ namespace aliceVision {
         }                                                                                                              \
     }
 
-int coplanar_tri_tri(double N[3], double V0[3], double V1[3], double V2[3], double U0[3], double U1[3], double U2[3])
+int coplanar_tri_tri(const double N[3], const double V0[3], const double V1[3], const double V2[3], const double U0[3], const double U1[3], const double U2[3])
 {
     double A[3];
     short i0, i1;
@@ -226,7 +226,7 @@ int coplanar_tri_tri(double N[3], double V0[3], double V1[3], double V2[3], doub
     return 0;
 }
 
-int tri_tri_intersect(double V0[3], double V1[3], double V2[3], double U0[3], double U1[3], double U2[3])
+int tri_tri_intersect(const double V0[3], const double V1[3], const double V2[3], const double U0[3], const double U1[3], const double U2[3])
 {
     double E1[3], E2[3];
     double N1[3], N2[3], d1, d2;
@@ -396,7 +396,7 @@ int tri_tri_intersect(double V0[3], double V1[3], double V2[3], double U0[3], do
     else                                                                                                               \
         smallest = 0;
 
-inline void isect2(double VTX0[3], double VTX1[3], double VTX2[3], double VV0, double VV1, double VV2, double D0, double D1,
+inline void isect2(const double VTX0[3], const double VTX1[3], const double VTX2[3], double VV0, double VV1, double VV2, double D0, double D1,
                    double D2, double* isect0, double* isect1, double isectpoint0[3], double isectpoint1[3])
 {
     double tmp = D0 / (D0 - D1);
@@ -426,7 +426,7 @@ inline void isect2(double VTX0[3], double VTX1[3], double VTX2[3], double VV0, d
 /*              ADD(isectpoint1,VTX0,diff);           */
 #endif
 
-inline int compute_intervals_isectline(double VERT0[3], double VERT1[3], double VERT2[3], double VV0, double VV1, double VV2,
+inline int compute_intervals_isectline(const double VERT0[3], const double VERT1[3], const double VERT2[3], double VV0, double VV1, double VV2,
                                        double D0, double D1, double D2, double D0D1, double D0D2, double* isect0,
                                        double* isect1, double isectpoint0[3], double isectpoint1[3])
 {
@@ -497,7 +497,7 @@ else if(D0D2>0.0f)                                    \
     }
 #endif
 
-int tri_tri_intersect_with_isectline(double V0[3], double V1[3], double V2[3], double U0[3], double U1[3], double U2[3],
+int tri_tri_intersect_with_isectline(const double V0[3], const double V1[3], const double V2[3], const double U0[3], const double U1[3], const double U2[3],
                                      int* coplanar, double isectpt1[3], double isectpt2[3])
 {
     double E1[3], E2[3];

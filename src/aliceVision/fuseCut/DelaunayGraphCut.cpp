@@ -288,11 +288,11 @@ StaticVector<int> DelaunayGraphCut::getSortedUsedCams() const
     return out;
 }
 
-void DelaunayGraphCut::addPointsFromCameraCenters(StaticVector<int>* cams, float minDist)
+void DelaunayGraphCut::addPointsFromCameraCenters(const StaticVector<int>& cams, float minDist)
 {
-    for(int camid = 0; camid < cams->size(); camid++)
+    for(int camid = 0; camid < cams.size(); camid++)
     {
-        int rc = (*cams)[camid];
+        int rc = cams[camid];
         {
             Point3d p(mp->CArr[rc].x, mp->CArr[rc].y, mp->CArr[rc].z);
 
@@ -426,7 +426,7 @@ void DelaunayGraphCut::addHelperPoints(int nGridHelperVolumePointsDim, Point3d v
 }
 
 
-void DelaunayGraphCut::createTetrahedralizationFromDepthMapsCamsVoxel(StaticVector<int>* cams,
+void DelaunayGraphCut::createTetrahedralizationFromDepthMapsCamsVoxel(const StaticVector<int>& allCams,
                                                                StaticVector<int>* voxelsIds, Point3d voxel[8],
                                                                VoxelsGrid* ls)
 {
@@ -443,7 +443,7 @@ void DelaunayGraphCut::createTetrahedralizationFromDepthMapsCamsVoxel(StaticVect
     float minDist = (voxel[0] - voxel[1]).size() / 1000.0f;
 
     // add points for cam centers
-    addPointsFromCameraCenters(cams, minDist);
+    addPointsFromCameraCenters(allCams, minDist);
 
     // add 6 points to prevent singularities
     addPointsToPreventSingularities(voxel, minDist);
@@ -457,11 +457,8 @@ void DelaunayGraphCut::createTetrahedralizationFromDepthMapsCamsVoxel(StaticVect
         printf("%i of %i\n", i, voxelsIds->size());
 
         std::string folderName = ls->getVoxelFolderName((*voxelsIds)[i]);
-
-        std::string fileNameTracksCams, fileNameTracksPts, fileNameTracksPtsCams;
-        fileNameTracksCams = folderName + "tracksGridCams.bin";
-        fileNameTracksPts = folderName + "tracksGridPts.bin";
-        fileNameTracksPtsCams = folderName + "tracksGridPtsCams.bin";
+        std::string fileNameTracksPts = folderName + "tracksGridPts.bin";
+        std::string fileNameTracksPtsCams = folderName + "tracksGridPtsCams.bin";
 
         if(common::FileExists(fileNameTracksPts))
         {
@@ -1477,16 +1474,16 @@ void DelaunayGraphCut::forceTedgesByGradientIJCV(bool fixesSigma, float nPixelSi
     common::printfElapsedTime(t2, "t-edges forced : ");
 }
 
-void DelaunayGraphCut::updateGraphFromTmpPtsCamsHexah(const StaticVector<int>* incams, Point3d hexah[8],
+void DelaunayGraphCut::updateGraphFromTmpPtsCamsHexah(const StaticVector<int>& incams, Point3d hexah[8],
                                                     std::string tmpCamsPtsFolderName, bool labatutWeights,
                                                     float distFcnHeight)
 {
     printf("Updating : LSC\n");
 
 #pragma omp parallel for
-    for(int c = 0; c < incams->size(); c++)
+    for(int c = 0; c < incams.size(); c++)
     {
-        int rc = (*incams)[c];
+        int rc = incams[c];
         std::string camPtsFileName;
         camPtsFileName = tmpCamsPtsFolderName + "camPtsGrid_" + common::num2strFourDecimal(rc) + ".bin";
         if(common::FileExists(camPtsFileName))
@@ -1803,14 +1800,13 @@ void DelaunayGraphCut::invertFullStatusForSmallLabels()
     delete colorPerCell;
 }
 
-void DelaunayGraphCut::reconstructVoxel(Point3d hexah[8], StaticVector<int>* voxelsIds, std::string folderName,
-                                      std::string tmpCamsPtsFolderName, bool removeSmallSegments,
-                                      StaticVector<Point3d>* hexahsToExcludeFromResultingMesh, VoxelsGrid* ls,
-                                      Point3d spaceSteps)
+void DelaunayGraphCut::reconstructVoxel(Point3d hexah[8], StaticVector<int>* voxelsIds, const std::string& folderName,
+                                      const std::string& tmpCamsPtsFolderName, bool removeSmallSegments,
+                                      VoxelsGrid* ls, const Point3d& spaceSteps)
 {
-    StaticVector<int>* cams = pc->findCamsWhichIntersectsHexahedron(hexah);
+    StaticVector<int> cams = pc->findCamsWhichIntersectsHexahedron(hexah);
 
-    if(cams->size() < 1)
+    if(cams.size() < 1)
         throw std::logic_error("No camera to make the reconstruction");
 
     // Load tracks and create tetrahedralization (into T variable)
@@ -1848,8 +1844,6 @@ void DelaunayGraphCut::reconstructVoxel(Point3d hexah[8], StaticVector<int>* vox
     // "meshTrisAreaColored.wrl",
     // "meshAreaConsistentTextured.wrl", "meshAreaConsistent.ply",
     // "meshAreaConsistent.wrl");
-
-    delete cams;
 }
 
 void DelaunayGraphCut::addToInfiniteSw(float sW)
@@ -1963,8 +1957,8 @@ void DelaunayGraphCut::maxflow()
     std::cout << "Maxflow: end" << std::endl;
 }
 
-void DelaunayGraphCut::reconstructExpetiments(const StaticVector<int>* cams, const std::string& folderName,
-                                            bool update, Point3d* hexahInflated, std::string tmpCamsPtsFolderName,
+void DelaunayGraphCut::reconstructExpetiments(const StaticVector<int>& cams, const std::string& folderName,
+                                            bool update, Point3d* hexahInflated, const std::string& tmpCamsPtsFolderName,
                                             const Point3d& spaceSteps)
 {
     int maxint = 1000000.0f;
