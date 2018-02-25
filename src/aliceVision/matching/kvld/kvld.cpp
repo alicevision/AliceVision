@@ -1,6 +1,8 @@
 // This file is part of the AliceVision project.
 // Copyright (c) 2016 AliceVision contributors.
 // Copyright (c) 2012 openMVG contributors.
+// Copyright (c) 2011-12 Zhe Liu and Pierre Moulon.
+// This file was initially part of the KVLD library under the terms of the BSD license (see the COPYING file).
 // This Source Code Form is subject to the terms of the Mozilla Public License,
 // v. 2.0. If a copy of the MPL was not distributed with this file,
 // You can obtain one at https://mozilla.org/MPL/2.0/.
@@ -10,13 +12,6 @@
  ** @author Zhe Liu
  **/
 
-/*
-Copyright (C) 2011-12 Zhe Liu and Pierre Moulon.
-All rights reserved.
-
-This file is part of the KVLD library and is made available under
-the terms of the BSD license ( see the COPYING file).
-*/
 
 #include "kvld.h"
 #include "algorithm.h"
