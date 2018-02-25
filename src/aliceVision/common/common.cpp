@@ -520,7 +520,7 @@ bool isPointInHexahedron(const Point3d& p, const Point3d* hexah)
     return d1 * d2 >= 0.0;
 }
 
-void inflateHexahedron(Point3d hexahIn[8], Point3d hexahOut[8], float scale)
+void inflateHexahedron(const Point3d hexahIn[8], Point3d hexahOut[8], float scale)
 {
     Point3d cg = Point3d(0.0f, 0.0f, 0.0f);
     for(int i = 0; i < 8; i++)

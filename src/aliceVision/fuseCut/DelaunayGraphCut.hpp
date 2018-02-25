@@ -266,7 +266,7 @@ public:
     void forceTedgesByGradientCVPR11(bool fixesSigma, float nPixelSizeBehind);
     void forceTedgesByGradientIJCV(bool fixesSigma, float nPixelSizeBehind);
 
-    void updateGraphFromTmpPtsCamsHexah(StaticVector<int>* incams, Point3d hexah[8], std::string tmpCamsPtsFolderName,
+    void updateGraphFromTmpPtsCamsHexah(const StaticVector<int>* incams, Point3d hexah[8], std::string tmpCamsPtsFolderName,
                                         bool labatutWeights, float distFcnHeight = 0.0f);
     void updateGraphFromTmpPtsCamsHexahRC(int rc, Point3d hexah[8], std::string tmpCamsPtsFolderName,
                                           bool labatutWeights, float distFcnHeight);
@@ -275,20 +275,15 @@ public:
 
     void addToInfiniteSw(float sW);
 
-    void freeUnwantedFullCells(std::string folderName, Point3d* hexah);
+    void freeUnwantedFullCells(const Point3d* hexah);
 
-    void reconstructGC(float alphaQual, std::string baseName, StaticVector<int>* cams, std::string folderName,
-                       std::string fileNameStGraph, std::string fileNameStSolution, std::string fileNameTxt,
-                       std::string fileNameTxtCam, int camerasPerOneOmni, bool doRemoveBubbles,
-                       StaticVector<Point3d>* hexahsToExcludeFromResultingMesh, Point3d* hexah);
+    void reconstructGC(const Point3d* hexah);
 
     void maxflow();
 
-    void reconstructExpetiments(StaticVector<int>* cams, std::string folderName, std::string fileNameStGraph,
-                                std::string fileNameStSolution, std::string fileNameTxt, std::string fileNameTxtCam,
-                                int camerasPerOneOmni, bool update, Point3d hexahInflated[8],
-                                std::string tmpCamsPtsFolderName,
-                                StaticVector<Point3d>* hexahsToExcludeFromResultingMesh, Point3d spaceSteps);
+    void reconstructExpetiments(const StaticVector<int>* cams, const std::string& folderName,
+                                bool update, Point3d hexahInflated[8], std::string tmpCamsPtsFolderName,
+                                const Point3d& spaceSteps);
 
     void reconstructVoxel(Point3d hexah[8], StaticVector<int>* voxelsIds, std::string folderName,
                           std::string tmpCamsPtsFolderName, bool segment,

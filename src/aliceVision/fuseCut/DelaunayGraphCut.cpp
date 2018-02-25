@@ -1477,7 +1477,7 @@ void DelaunayGraphCut::forceTedgesByGradientIJCV(bool fixesSigma, float nPixelSi
     common::printfElapsedTime(t2, "t-edges forced : ");
 }
 
-void DelaunayGraphCut::updateGraphFromTmpPtsCamsHexah(StaticVector<int>* incams, Point3d hexah[8],
+void DelaunayGraphCut::updateGraphFromTmpPtsCamsHexah(const StaticVector<int>* incams, Point3d hexah[8],
                                                     std::string tmpCamsPtsFolderName, bool labatutWeights,
                                                     float distFcnHeight)
 {
@@ -1661,7 +1661,7 @@ void DelaunayGraphCut::graphCutPostProcessing()
     common::printfElapsedTime(timer, "Graph cut post-processing ");
 }
 
-void DelaunayGraphCut::freeUnwantedFullCells(std::string  /*folderName*/, Point3d* hexah)
+void DelaunayGraphCut::freeUnwantedFullCells(const Point3d* hexah)
 {
     if(mp->verbose)
         printf("freeUnwantedFullCells\n");
@@ -1813,14 +1813,6 @@ void DelaunayGraphCut::reconstructVoxel(Point3d hexah[8], StaticVector<int>* vox
     if(cams->size() < 1)
         throw std::logic_error("No camera to make the reconstruction");
 
-    int camerasPerOneOmni = 1;
-    std::string fileNameDh = folderName + "delaunayTriangulation.bin";
-    std::string fileNameInfo = folderName + "delaunayTriangulationInfo.bin";
-    std::string fileNameStGraph = folderName + "stGraph.bin";
-    std::string fileNameStSolution = folderName + "stGraphSolution.bin";
-    std::string fileNameTxt = folderName + "delaunayTrianglesMaxflow.txt";
-    std::string fileNameTxtCam = folderName + "delaunayTrianglesCamerasForColoringMaxflow.txt";
-
     // Load tracks and create tetrahedralization (into T variable)
     createTetrahedralizationFromDepthMapsCamsVoxel(cams, voxelsIds, hexah, ls);
 
@@ -1835,19 +1827,20 @@ void DelaunayGraphCut::reconstructVoxel(Point3d hexah[8], StaticVector<int>* vox
 
     bool updateLSC = mp->mip->_ini.get<bool>("LargeScale.updateLSC", true);
 
-    reconstructExpetiments(cams, folderName, fileNameStGraph, fileNameStSolution, fileNameTxt, fileNameTxtCam,
-                           camerasPerOneOmni, updateLSC, hexah, tmpCamsPtsFolderName, hexahsToExcludeFromResultingMesh,
+    reconstructExpetiments(cams, folderName, updateLSC,
+                           hexah, tmpCamsPtsFolderName,
                            spaceSteps);
 
     bool saveOrNot = mp->mip->_ini.get<bool>("LargeScale.saveDelaunayTriangulation", false);
     if(saveOrNot)
     {
+        std::string fileNameDh = folderName + "delaunayTriangulation.bin";
+        std::string fileNameInfo = folderName + "delaunayTriangulationInfo.bin";
         saveDh(fileNameDh, fileNameInfo);
     }
 
-    // reconstructExpetiments(cams, folderName, fileNameStGraph,
-    // fileNameStSolution, fileNameTxt,
-    // fileNameTxtCam, camerasPerOneOmni, true, hexahInflated,
+    // reconstructExpetiments(cams, folderName,
+    // true, hexahInflated,
     // tmpCamsPtsFolderName);
 
     // smooth(mp,fileNameTxt,"delaunayTrianglesSmoothTextured.wrl","delaunayTrianglesSmoothTextured.ply",folderName,1,true);
@@ -1871,10 +1864,7 @@ void DelaunayGraphCut::addToInfiniteSw(float sW)
     }
 }
 
-void DelaunayGraphCut::reconstructGC(float alphaQual, std::string baseName, StaticVector<int>* cams,
-                                   std::string folderName, std::string fileNameStGraph, std::string fileNameStSolution,
-                                   std::string fileNameTxt, std::string fileNameTxtCam, int camerasPerOneOmni,
-                                   bool doRemoveBubbles, StaticVector<Point3d>* hexahsToExcludeFromResultingMesh, Point3d* hexah) // alphaQual=5.0f
+void DelaunayGraphCut::reconstructGC(const Point3d* hexah)
 {
     std::cout << "reconstructGC" << std::endl;
 
@@ -1884,10 +1874,7 @@ void DelaunayGraphCut::reconstructGC(float alphaQual, std::string baseName, Stat
     // Convert cells FULL/EMPTY into surface
     setIsOnSurface();
 
-    std::string resultFolderName = folderName + baseName + "/";
-    bfs::create_directory(resultFolderName);
-
-    freeUnwantedFullCells(resultFolderName, hexah);
+    freeUnwantedFullCells(hexah);
 
     std::cout << "reconstructGC end" << std::endl;
 }
@@ -1976,11 +1963,9 @@ void DelaunayGraphCut::maxflow()
     std::cout << "Maxflow: end" << std::endl;
 }
 
-void DelaunayGraphCut::reconstructExpetiments(StaticVector<int>* cams, std::string folderName,
-                                            std::string fileNameStGraph, std::string fileNameStSolution,
-                                            std::string fileNameTxt, std::string fileNameTxtCam, int camerasPerOneOmni,
+void DelaunayGraphCut::reconstructExpetiments(const StaticVector<int>* cams, const std::string& folderName,
                                             bool update, Point3d* hexahInflated, std::string tmpCamsPtsFolderName,
-                                            StaticVector<Point3d>* hexahsToExcludeFromResultingMesh, Point3d spaceSteps)
+                                            const Point3d& spaceSteps)
 {
     int maxint = 1000000.0f;
 
@@ -2028,8 +2013,7 @@ void DelaunayGraphCut::reconstructExpetiments(StaticVector<int>* cams, std::stri
         if(saveTemporaryBinFiles)
             saveDhInfo(folderName + "delaunayTriangulationInfoAfterForce.bin");
 
-        reconstructGC(5.0f, "", cams, folderName, fileNameStGraph, fileNameStSolution, fileNameTxt,
-                      fileNameTxtCam, camerasPerOneOmni, true, hexahsToExcludeFromResultingMesh, hexahInflated);
+        reconstructGC(hexahInflated);
 
         if(saveTemporaryBinFiles)
             saveDhInfo(folderName + "delaunayTriangulationInfoAfterHallRemoving.bin");
@@ -2064,8 +2048,7 @@ void DelaunayGraphCut::reconstructExpetiments(StaticVector<int>* cams, std::stri
         if(saveTemporaryBinFiles)
             saveDhInfo(folderName + "delaunayTriangulationInfoAfterForce.bin");
 
-        reconstructGC(5.0f, "", cams, folderName, fileNameStGraph, fileNameStSolution, fileNameTxt,
-                      fileNameTxtCam, camerasPerOneOmni, true, hexahsToExcludeFromResultingMesh, hexahInflated);
+        reconstructGC(hexahInflated);
 
         if(saveTemporaryBinFiles)
             saveDhInfo(folderName + "delaunayTriangulationInfoAfterHallRemoving.bin");
@@ -2085,8 +2068,7 @@ void DelaunayGraphCut::reconstructExpetiments(StaticVector<int>* cams, std::stri
         if(saveTemporaryBinFiles)
             saveDhInfo(folderName + "delaunayTriangulationInfoInit.bin");
 
-        reconstructGC(5.0f, "", cams, folderName, fileNameStGraph, fileNameStSolution, fileNameTxt,
-                      fileNameTxtCam, camerasPerOneOmni, true, hexahsToExcludeFromResultingMesh, hexahInflated);
+        reconstructGC(hexahInflated);
 
         if(saveTemporaryBinFiles)
             saveDhInfo(folderName + "delaunayTriangulationInfoAfterHallRemoving.bin");
