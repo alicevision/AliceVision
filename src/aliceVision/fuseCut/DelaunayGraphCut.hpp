@@ -229,6 +229,8 @@ public:
      */
     void addHelperPoints(int nGridHelperVolumePointsDim, Point3d Voxel[8], float minDist);
 
+    void loadPrecomputedDensePoints(StaticVector<int>* voxelsIds, Point3d voxel[8], VoxelsGrid* ls);
+
     void createTetrahedralizationFromDepthMapsCamsVoxel(const StaticVector<int>& allCams,
                                                    StaticVector<int>* voxelsIds, Point3d Voxel[8], VoxelsGrid* ls);
 

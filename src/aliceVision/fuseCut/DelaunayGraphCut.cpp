@@ -327,6 +327,8 @@ void DelaunayGraphCut::addPointsFromCameraCenters(const StaticVector<int>& cams,
 
 void DelaunayGraphCut::addPointsToPreventSingularities(Point3d voxel[8], float minDist)
 {
+    printf("Add points to prevent singularities");
+
     Point3d vcg = (voxel[0] + voxel[1] + voxel[2] + voxel[3] + voxel[4] + voxel[5] + voxel[6] + voxel[7]) / 8.0f;
     Point3d extrPts[6];
     Point3d fcg;
@@ -371,8 +373,7 @@ void DelaunayGraphCut::addHelperPoints(int nGridHelperVolumePointsDim, Point3d v
     if(nGridHelperVolumePointsDim <= 0)
         return;
 
-    if(mp->verbose)
-        printf("adding helper points ...");
+    printf("Add helper points");
 
     int ns = nGridHelperVolumePointsDim;
     float md = 1.0f / 500.0f;
@@ -425,31 +426,13 @@ void DelaunayGraphCut::addHelperPoints(int nGridHelperVolumePointsDim, Point3d v
         printf(" done\n");
 }
 
-
-void DelaunayGraphCut::createTetrahedralizationFromDepthMapsCamsVoxel(const StaticVector<int>& allCams,
-                                                               StaticVector<int>* voxelsIds, Point3d voxel[8],
-                                                               VoxelsGrid* ls)
+void DelaunayGraphCut::loadPrecomputedDensePoints(StaticVector<int>* voxelsIds, Point3d voxel[8], VoxelsGrid* ls)
 {
-    ///////////////////////////////////////////////////////////////////////////////////////
-    printf("Creating delaunay tetrahedralization from depth maps voxel\n");
-    long tall = clock();
+    Point3d cgpt;
+    int ncgpt = 0;
 
     bool doFilterOctreeTracks = mp->mip->_ini.get<bool>("LargeScale.doFilterOctreeTracks", true);
     int minNumOfConsistentCams = mp->mip->_ini.get<int>("filter.minNumOfConsistentCams", 2);
-
-    ///////////////////////////////////////////////////////////////////////////////////////
-    // build tetrahedralization
-
-    float minDist = (voxel[0] - voxel[1]).size() / 1000.0f;
-
-    // add points for cam centers
-    addPointsFromCameraCenters(allCams, minDist);
-
-    // add 6 points to prevent singularities
-    addPointsToPreventSingularities(voxel, minDist);
-
-    Point3d cgpt;
-    int ncgpt = 0;
 
     // add points from voxel
     for(int i = 0; i < voxelsIds->size(); i++)
@@ -507,8 +490,30 @@ void DelaunayGraphCut::createTetrahedralizationFromDepthMapsCamsVoxel(const Stat
         } // if fileexists
     }
 
-    if(mp->verbose)
-        printf("voxels tracks triangulated\n");
+    printf("Dense points loaded.\n");
+}
+
+
+void DelaunayGraphCut::createTetrahedralizationFromDepthMapsCamsVoxel(const StaticVector<int>& allCams,
+                                                               StaticVector<int>* voxelsIds, Point3d voxel[8],
+                                                               VoxelsGrid* ls)
+{
+    ///////////////////////////////////////////////////////////////////////////////////////
+    printf("Creating delaunay tetrahedralization from depth maps voxel\n");
+    long tall = clock();
+
+    ///////////////////////////////////////////////////////////////////////////////////////
+    // build tetrahedralization
+
+    float minDist = (voxel[0] - voxel[1]).size() / 1000.0f;
+
+    // add points for cam centers
+    addPointsFromCameraCenters(allCams, minDist);
+
+    // add 6 points to prevent singularities
+    addPointsToPreventSingularities(voxel, minDist);
+
+    loadPrecomputedDensePoints(voxelsIds, voxel, ls);
 
     /* initialize random seed: */
     srand(time(nullptr));
